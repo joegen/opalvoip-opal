@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2009  2001/11/02 10:45:19  robertj
+ * Revision 1.2010  2001/11/13 04:29:47  robertj
+ * Changed OpalTransportAddress CreateTransport and CreateListsner functions
+ *   to have extra parameter to control local binding of sockets.
+ *
+ * Revision 2.8  2001/11/02 10:45:19  robertj
  * Updated to OpenH323 v1.7.3
  *
  * Revision 2.7  2001/10/15 04:34:42  robertj
@@ -1081,7 +1085,8 @@ BOOL H323DataChannel::OnReceivedAckPDU(const H245_OpenLogicalChannelAck & ack)
 BOOL H323DataChannel::CreateListener()
 {
   if (listener == NULL) {
-    listener = connection.GetControlChannel().GetLocalAddress().CreateCompatibleListener(connection.GetEndPoint());
+    listener = connection.GetControlChannel().GetLocalAddress().CreateListener(
+                          connection.GetEndPoint(), OpalTransportAddress::HostOnly);
     if (listener == NULL)
       return FALSE;
   }
@@ -1093,7 +1098,8 @@ BOOL H323DataChannel::CreateListener()
 BOOL H323DataChannel::CreateTransport()
 {
   if (transport == NULL)
-    transport = connection.GetControlChannel().GetLocalAddress().CreateTransport(connection.GetEndPoint());
+    transport = connection.GetControlChannel().GetLocalAddress().CreateTransport(
+                          connection.GetEndPoint(), OpalTransportAddress::HostOnly);
   return transport != NULL;
 }
 
