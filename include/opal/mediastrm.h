@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2010  2002/02/11 07:39:15  robertj
+ * Revision 1.2011  2002/02/13 02:33:29  robertj
+ * Added ability for media patch (and transcoders) to handle multiple RTP frames.
+ * Removed media stream being descended from PChannel, not really useful.
+ *
+ * Revision 2.9  2002/02/11 07:39:15  robertj
  * Added media bypass for streams between compatible protocols.
  *
  * Revision 2.8  2002/01/22 05:10:58  robertj
@@ -80,9 +84,9 @@ class OpalLine;
    entities. For example, data being sent to an RTP session over a network
    would be through a media stream.
   */
-class OpalMediaStream : public PChannel
+class OpalMediaStream : public PObject
 {
-    PCLASSINFO(OpalMediaStream, PChannel);
+    PCLASSINFO(OpalMediaStream, PObject);
   protected:
   /**@name Construction */
   //@{
@@ -145,8 +149,16 @@ class OpalMediaStream : public PChannel
       */
     virtual BOOL Close();
 
+    /**Write a list of RTP frames of data to the sink media stream.
+       The default behaviour simply calls WritePacket() on each of the
+       elements in the list.
+      */
+    virtual BOOL WritePackets(
+      RTP_DataFrameList & packets
+    );
+
     /**Read an RTP frame of data from the source media stream.
-       The default behaviour simply calls Read() on the data portion of the
+       The default behaviour simply calls ReadData() on the data portion of the
        RTP_DataFrame and sets the frames timestamp and marker from the internal
        member variables of the media stream class.
       */
@@ -155,12 +167,34 @@ class OpalMediaStream : public PChannel
     );
 
     /**Write an RTP frame of data to the sink media stream.
-       The default behaviour simply calls Write() on the data portion of the
+       The default behaviour simply calls WriteData() on the data portion of the
        RTP_DataFrame and and sets the internal timestamp and marker from the
        member variables of the media stream class.
       */
     virtual BOOL WritePacket(
       RTP_DataFrame & packet
+    );
+
+    /**Read an RTP frame of data from the source media stream.
+       The default behaviour simply calls ReadPacket() on the data portion of the
+       RTP_DataFrame and sets the frames timestamp and marker from the internal
+       member variables of the media stream class.
+      */
+    virtual BOOL ReadData(
+      BYTE * data,      /// Data buffer to read to
+      PINDEX size,      /// Size of buffer
+      PINDEX & length   /// Length of data actually read
+    );
+
+    /**Write an RTP frame of data to the sink media stream.
+       The default behaviour calls WritePacket() on the data portion of the
+       RTP_DataFrame and and sets the internal timestamp and marker from the
+       member variables of the media stream class.
+      */
+    virtual BOOL WriteData(
+      const BYTE * data,   /// Data to write
+      PINDEX length,       /// Length of data to read.
+      PINDEX & written     /// Length of data actually written
     );
 
     /**Set the data size in bytes that is expected to be used. Some media
@@ -265,6 +299,24 @@ class OpalNullMediaStream : public OpalMediaStream
 
   /**@name Overrides of OpalMediaStream class */
   //@{
+    /**Read an RTP frame of data from the source media stream.
+       The default behaviour does nothing and returns FALSE.
+      */
+    virtual BOOL ReadData(
+      BYTE * data,      /// Data buffer to read to
+      PINDEX size,      /// Size of buffer
+      PINDEX & length   /// Length of data actually read
+    );
+
+    /**Write an RTP frame of data to the sink media stream.
+       The default behaviour does nothing and returns FALSE.
+      */
+    virtual BOOL WriteData(
+      const BYTE * data,   /// Data to write
+      PINDEX length,       /// Length of data to read.
+      PINDEX & written     /// Length of data actually written
+    );
+
     /**Indicate if the media stream requires a OpalMediaPatch thread.
        The default behaviour returns FALSE.
       */
@@ -295,7 +347,7 @@ class OpalRTPMediaStream : public OpalMediaStream
     );
   //@}
 
-  /**@name Overrides of PChannel class */
+  /**@name Overrides of OpalMediaStream class */
   //@{
     /**Close the media stream.
 
@@ -303,33 +355,6 @@ class OpalRTPMediaStream : public OpalMediaStream
       */
     virtual BOOL Close();
 
-    /** Low level read from the media stream. This overrides the PChannel
-        class behaviour.
-
-        The behaviour here is to create a RTP_DataFrame and read that from the
-        RTP session. The internal variables (eg timestamp) are set from that
-        RTP_DataFrame and the payload copied to the "buf" pointer.
-     */
-    virtual BOOL Read(
-      void * buf,   /// Pointer to a block of memory to receive the read bytes.
-      PINDEX len    /// Maximum number of bytes to read into the buffer.
-    );
-
-    /** Low level write to the media stream. This function overrides the
-        PChannel class behaviour.
-
-       The behaviour here is to create a single RTP_DataFrame, copy the
-       internal variables (eg timestamp) to it and copy the "buf" variable to
-       its payload. The 
-     */
-    virtual BOOL Write(
-      const void * buf, /// Pointer to a block of memory to write.
-      PINDEX len        /// Number of bytes to write.
-    );
-  //@}
-
-  /**@name Overrides of OpalMediaStream class */
-  //@{
     /**Read an RTP frame of data from the source media stream.
        The new behaviour simply calls RTP_Session::ReadData().
       */
@@ -380,29 +405,6 @@ class OpalLineMediaStream : public OpalMediaStream
     );
   //@}
 
-  /**@name Overrides of PChannel class */
-  //@{
-    /** Low level read from the media stream. This overrides the PChannel
-        class behaviour.
-
-       The new behaviour simply calls OpalLineInterfaceDevice::ReadBlock().
-     */
-    virtual BOOL Read(
-      void * buf,   /// Pointer to a block of memory to receive the read bytes.
-      PINDEX len    /// Maximum number of bytes to read into the buffer.
-    );
-
-    /** Low level write to the media stream. This function overrides the
-        PChannel class behaviour.
-
-       The new behaviour simply calls OpalLineInterfaceDevice::WriteBlock().
-     */
-    virtual BOOL Write(
-      const void * buf, /// Pointer to a block of memory to write.
-      PINDEX len        /// Number of bytes to write.
-    );
-  //@}
-
   /**@name Overrides of OpalMediaStream class */
   //@{
     /**Select the data format this channel is to operate.
@@ -418,6 +420,24 @@ class OpalLineMediaStream : public OpalMediaStream
        The default does nothing.
       */
     virtual BOOL Close();
+
+    /**Read an RTP frame of data from the source media stream.
+       The default behaviour reads from the OpalLine object.
+      */
+    virtual BOOL ReadData(
+      BYTE * data,      /// Data buffer to read to
+      PINDEX size,      /// Size of buffer
+      PINDEX & length   /// Length of data actually read
+    );
+
+    /**Write an RTP frame of data to the sink media stream.
+       The default behaviour writes to the OpalLine object.
+      */
+    virtual BOOL WriteData(
+      const BYTE * data,   /// Data to write
+      PINDEX length,       /// Length of data to read.
+      PINDEX & written     /// Length of data actually written
+    );
 
     /**Indicate if the media stream is synchronous.
        Returns TRUE for LID streams.
@@ -456,26 +476,24 @@ class OpalRawMediaStream : public OpalMediaStream
   //@}
 
   public:
-  /**@name Overrides of PChannel class */
+  /**@name Overrides of OpalMediaStream class */
   //@{
-    /** Low level read from the media stream. This overrides the PChannel
-        class behaviour.
-
-       The new behaviour simply calls PChannel::ReadBlock().
-     */
-    virtual BOOL Read(
-      void * buf,   /// Pointer to a block of memory to receive the read bytes.
-      PINDEX len    /// Maximum number of bytes to read into the buffer.
+    /**Read an RTP frame of data from the source media stream.
+       The default behaviour reads from the PChannel object.
+      */
+    virtual BOOL ReadData(
+      BYTE * data,      /// Data buffer to read to
+      PINDEX size,      /// Size of buffer
+      PINDEX & length   /// Length of data actually read
     );
 
-    /** Low level write to the media stream. This function overrides the
-        PChannel class behaviour.
-
-       The new behaviour simply calls PChannel::WriteBlock().
-     */
-    virtual BOOL Write(
-      const void * buf, /// Pointer to a block of memory to write.
-      PINDEX len        /// Number of bytes to write.
+    /**Write an RTP frame of data to the sink media stream.
+       The default behaviour writes to the PChannel object.
+      */
+    virtual BOOL WriteData(
+      const BYTE * data,   /// Data to write
+      PINDEX length,       /// Length of data to read.
+      PINDEX & written     /// Length of data actually written
     );
 
     /**Close the media stream.
