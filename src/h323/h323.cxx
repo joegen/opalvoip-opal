@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2003  2001/08/13 05:10:39  robertj
+ * Revision 1.2004  2001/08/17 08:27:44  robertj
+ * Update from OpenH323
+ * Moved call end reasons enum from OpalConnection to global.
+ *
+ * Revision 2.2  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
  *
  * Revision 2.1  2001/08/01 05:15:22  robertj
@@ -34,6 +38,10 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.191  2001/08/16 07:49:19  robertj
+ * Changed the H.450 support to be more extensible. Protocol handlers
+ *   are now in separate classes instead of all in H323Connection.
  *
  * Revision 1.190  2001/08/13 01:27:03  robertj
  * Changed GK admission so can return multiple aliases to be used in
@@ -724,11 +732,6 @@ H323Connection::H323Connection(OpalCall & call,
 
   bandwidthAvailable = endpoint.GetInitialBandwidth();
 
-  nextInvokeId = 0;
-  ctInvokeId = -1;
-  ctState = e_ctIdle;
-  holdState = e_ch_Idle;
-
   transmitterSidePaused = FALSE;
 
   fastStartState = disableFastStart ? FastStartDisabled : FastStartInitiate;
@@ -745,6 +748,10 @@ H323Connection::H323Connection(OpalCall & call,
   requestModeProcedure = new H245NegRequestMode(endpoint, *this);
   roundTripDelayProcedure = new H245NegRoundTripDelay(endpoint, *this);
 
+  h450dispatcher = new H450xDispatcher(*this);
+  h4502handler = new H4502Handler(*this, *h450dispatcher);
+  h4504handler = new H4504Handler(*this, *h450dispatcher);
+
   endSync = NULL;
 }
 
@@ -756,6 +763,7 @@ H323Connection::~H323Connection()
   delete logicalChannels;
   delete requestModeProcedure;
   delete roundTripDelayProcedure;
+  delete h450dispatcher;
   delete signallingChannel;
   delete controlChannel;
 
@@ -832,6 +840,7 @@ void H323Connection::CleanUpOnCallEnd()
       PTRACE(2, "H225\tSending release complete PDU: callRef=" << callReference);
       H323SignalPDU replyPDU;
       replyPDU.BuildReleaseComplete(*this);
+      h450dispatcher->AttachToReleaseComplete(replyPDU);
       replyPDU.Write(*signallingChannel);
     }
     signallingChannel->CloseWait();
@@ -944,10 +953,7 @@ BOOL H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
   
   // Check for presence of supplementary services
   if (pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_h4501SupplementaryService))
-  {
-    // Process H4501SupplementaryService APDU
-    HandleSupplementaryServicePDU(pdu);
-  }
+    h450dispatcher->HandlePDU(pdu); // Process H4501SupplementaryService APDU
 
   switch (q931.GetMessageType()) {
     case Q931::SetupMsg :
@@ -1019,500 +1025,6 @@ void H323Connection::HandleTunnelPDU(const H323SignalPDU & pdu, H323SignalPDU * 
 
   // Make sure does not get repeated, break const and clear tunnelled H.245 PDU's
   ((H323SignalPDU &)pdu).m_h323_uu_pdu.m_h245Control.SetSize(0);
-}
-
-
-void H323Connection::HandleSupplementaryServicePDU(const H323SignalPDU & pdu)
-{
-  for (PINDEX i = 0; i < pdu.m_h323_uu_pdu.m_h4501SupplementaryService.GetSize(); i++) {
-    H4501_SupplementaryService supplementaryService;
-
-    // Decode the supplementary service PDU from the PPER Stream
-    if (pdu.m_h323_uu_pdu.m_h4501SupplementaryService[i].DecodeSubType(supplementaryService)) {
-      PTRACE(4, "H4501\tSupplementary service PDU:\n  "
-             << setprecision(2) << supplementaryService);
-    }
-    else {
-      PTRACE(1, "H4501\tInvalid supplementary service PDU decode:\n  "
-             << setprecision(2) << supplementaryService);
-      continue;
-    }
-
-    if (supplementaryService.m_serviceApdu.GetTag() == H4501_ServiceApdus::e_rosApdus) {
-      H4501_ArrayOf_ROS& operations = (H4501_ArrayOf_ROS&) supplementaryService.m_serviceApdu;
-
-      for (PINDEX j = 0; j < operations.GetSize(); j ++) {
-        X880_ROS& operation = operations[j];
-
-        PTRACE(3, "H4501\tX880 ROS " << operation.GetTagName());
-
-        switch (operation.GetTag()) {
-          case X880_ROS::e_invoke:
-            OnReceivedInvoke((X880_Invoke&) operation);
-            break;
-
-          case X880_ROS::e_returnResult:
-            OnReceivedReturnResult((X880_ReturnResult&) operation);
-            break;
-
-          case X880_ROS::e_returnError:
-            OnReceivedReturnError((X880_ReturnError&) operation);
-            break;
-
-          case X880_ROS::e_reject:
-            OnReceivedReject((X880_Reject&) operation);
-            break;
-
-          default :
-            break;
-        }
-      }
-    }
-  }
-}
-
-
-void H323Connection::OnReceivedInvoke(X880_Invoke & invoke)
-{
-  // Get the invokeId
-  int invokeId = invoke.m_invokeId.GetValue();
-
-  // Get the linkedId if present
-  int linkedId = -1;
-  if (invoke.HasOptionalField(X880_Invoke::e_linkedId)) {
-    linkedId = invoke.m_linkedId.GetValue();
-  }
-
-  // Get the argument if present
-  PASN_OctetString * argument = NULL;
-  if (invoke.HasOptionalField(X880_Invoke::e_argument)) {
-    argument = &invoke.m_argument;
-  }
-
-  // Get the opcode
-  if (invoke.m_opcode.GetTag() == X880_Code::e_local) {
-    int opcode = ((PASN_Integer&) invoke.m_opcode).GetValue();
-
-    switch (opcode) {
-      case H4502_CallTransferOperation::e_callTransferIdentify:
-        OnReceivedCallTransferIdentify(invokeId, linkedId);
-        break;
-
-      case H4502_CallTransferOperation::e_callTransferAbandon:
-        OnReceivedCallTransferAbandon(invokeId, linkedId);
-        break;
-
-      case H4502_CallTransferOperation::e_callTransferInitiate:
-        OnReceivedCallTransferInitiate(invokeId, linkedId, argument);
-        break;
-
-      case H4502_CallTransferOperation::e_callTransferSetup:
-        OnReceivedCallTransferSetup(invokeId, linkedId, argument);
-        break;
-
-      case H4502_CallTransferOperation::e_callTransferUpdate:
-        OnReceivedCallTransferUpdate(invokeId, linkedId, argument);
-        break;
-
-      case H4502_CallTransferOperation::e_subaddressTransfer:
-        OnReceivedSubaddressTransfer(invokeId, linkedId, argument);
-        break;
-
-      case H4502_CallTransferOperation::e_callTransferComplete:
-        OnReceivedCallTransferComplete(invokeId, linkedId, argument);
-        break;
-
-      case H4502_CallTransferOperation::e_callTransferActive:
-        OnReceivedCallTransferActive(invokeId, linkedId, argument);
-        break;
-
-      case H4504_CallHoldOperation::e_holdNotific:
-	OnReceivedLocalCallHold(invokeId, linkedId);
-	break;
-
-      case H4504_CallHoldOperation::e_retrieveNotific:
-	OnReceivedLocalCallRetrieve(invokeId, linkedId);
-	break;
-
-      case H4504_CallHoldOperation::e_remoteHold:
-	OnReceivedRemoteCallHold(invokeId, linkedId);
-	break;
-
-      case H4504_CallHoldOperation::e_remoteRetrieve:
-	OnReceivedRemoteCallRetrieve(invokeId, linkedId);
-	break;
-
-      default:
-        PTRACE(2, "H4501\tInvoke of unsupported local opcode:\n  " << invoke);
-        SendInvokeReject(invokeId, 1 /*X880_InvokeProblem::e_unrecognisedOperation*/);
-        break;
-    }
-  }
-  else {
-    SendInvokeReject(invokeId, 1 /*X880_InvokeProblem::e_unrecognisedOperation*/);
-    PTRACE(2, "H4501\tInvoke of unsupported global opcode:\n  " << invoke);
-  }
-}
-
-
-void H323Connection::OnReceivedReturnResult(X880_ReturnResult & returnResult)
-{
-  int invokeId = returnResult.m_invokeId.GetValue();
-
-  if (invokeId == GetCallTransferInvokeId()) {
-    switch (GetCallTransferState()) {
-      default :
-        break;
-
-      case e_ctAwaitInitiateResponse:
-        // stop timer CT-T3
-        // clear the primary call, if it exists
-        SetCallTransferState(e_ctIdle);
-        endpoint.OnCallTransferInitiateReturnResult(*this);
-        break;
-
-      case e_ctAwaitSetupResponse:
-        // stop timer CT-T4
-
-        // Clear the call
-        SetCallTransferState(e_ctIdle);
-        endpoint.OnCallTransferSetupReturnResult(*this);
-        endpoint.ClearCall(GetTransferringToken(), EndedByCallForwarded);
-        break;
-    }
-  }
-}
-
-
-void H323Connection::OnReceivedReturnError(X880_ReturnError & returnError)
-{
-  int invokeId = returnError.m_invokeId.GetValue();
-  int errorCode = 0;
-
-  if (returnError.m_errorCode.GetTag() == X880_Code::e_local)
-    errorCode = ((PASN_Integer&) returnError.m_errorCode).GetValue();
-
-  if (invokeId == GetCallTransferInvokeId()) {
-    switch (GetCallTransferState()) {
-      default :
-        break;
-
-      case e_ctAwaitInitiateResponse:
-        // stop timer CT-T3
-        // clear the primary call, if it exists
-        SetCallTransferState(e_ctIdle);
-        endpoint.OnCallTransferInitiateReturnError(*this, errorCode);
-        break;
-
-      case H323Connection::e_ctAwaitSetupResponse:
-        // stop timer CT-T4
-
-        // Send a facility to the transferring endpoint
-        // containing a call transfer initiate return error
-        H323Connection * existingConnection = (H323Connection *)endpoint.FindConnectionWithLock(GetTransferringToken());
-
-        if (existingConnection != NULL)
-        {
-          H323SignalPDU facility;
-          H450ServiceAPDU serviceAPDU;
-
-          facility.BuildFacility(*existingConnection, TRUE);
-          serviceAPDU.BuildReturnError(existingConnection->GetCallTransferInvokeId(), errorCode);
-
-          facility.AttachSupplementaryServiceAPDU(serviceAPDU);
-          existingConnection->WriteSignalPDU(facility);
-
-          existingConnection->Unlock();
-        }
-        SetCallTransferState(e_ctIdle);
-        endpoint.OnCallTransferSetupReturnError(*this, errorCode);
-        break;
-    }
-  }
-}
-
-
-void H323Connection::OnReceivedReject(X880_Reject & reject)
-{
-  int invokeId = reject.m_invokeId;
-  int problem = 0;
-
-  switch (reject.m_problem.GetTag()) {
-    case X880_Reject_problem::e_general:
-    {
-      X880_GeneralProblem& generalProblem = (X880_GeneralProblem&) reject.m_problem;
-      problem = generalProblem.GetValue();
-    }
-    break;
-
-    case X880_Reject_problem::e_invoke:
-    {
-      X880_InvokeProblem& invokeProblem = (X880_InvokeProblem&) reject.m_problem;
-      problem = invokeProblem.GetValue();
-    }
-    break;
-
-    case X880_Reject_problem::e_returnResult:
-    {
-      X880_ReturnResultProblem& returnResultProblem = (X880_ReturnResultProblem&) reject.m_problem;
-      problem = returnResultProblem.GetValue();
-    }
-    break;
-
-    case X880_Reject_problem::e_returnError:
-    {
-      X880_ReturnErrorProblem& returnErrorProblem = (X880_ReturnErrorProblem&) reject.m_problem;
-      problem = returnErrorProblem.GetValue();
-    }
-    break;
-
-    default:
-      break;
-  }
-
-  endpoint.OnReject(*this, invokeId, problem);
-}
-
-
-void H323Connection::OnReceivedCallTransferIdentify(int /*invokeId*/,
-                                                    int /*linkedId*/)
-{
-}
-
-
-void H323Connection::OnReceivedCallTransferAbandon(int /*invokeId*/,
-                                                   int /*linkedId*/)
-{
-}
-
-
-static BOOL H4501ArgumentDecode(PASN_OctetString * argString, PASN_Object & argObject)
-{
-  if (argString == NULL)
-    return FALSE;
-
-  PPER_Stream argStream(*argString);
-  if (argObject.Decode(argStream)) {
-    PTRACE(4, "H4501\tSupplementary service argument:\n  "
-           << setprecision(2) << argObject);
-    return TRUE;
-  }
-
-  PTRACE(1, "H4501\tInvalid supplementary service argument:\n  "
-         << setprecision(2) << argObject);
-  return FALSE;
-}
-
-
-void H323Connection::OnReceivedCallTransferInitiate(int invokeId,
-                                                    int /*linkedId*/,
-                                                    PASN_OctetString * argument)
-{
-  // TBD: Check Call Hold status. If call is held, it must first be 
-  // retrieved before being transferred. -- dcassel 4/01
-
-
-  if (argument != NULL) {
-    H4502_CTInitiateArg ctInitiateArg;
-    if (H4501ArgumentDecode(argument, ctInitiateArg)) {
-      PString remoteParty;
-      H450ServiceAPDU::ParseEndpointAddress(ctInitiateArg.m_reroutingNumber, remoteParty);
-
-      if (endpoint.OnCallTransferInitiate(*this, remoteParty)) {
-        PString token;
-        endpoint.SetupTransfer(GetToken(), ctInitiateArg.m_callIdentity.GetValue(), remoteParty, token);
-        ctInvokeId = invokeId;
-      }
-      else {
-        SendReturnError(invokeId, H4502_CallTransferErrors::e_establishmentFailure);
-      }
-    }
-  }
-  else {
-    SendReturnError(invokeId, H4502_CallTransferErrors::e_invalidReroutingNumber);
-  }
-}
-
-
-void H323Connection::OnReceivedCallTransferSetup(int invokeId,
-                                                 int linkedId,
-                                                 PASN_OctetString * argument)
-{
-  if (argument != NULL) {
-    H4502_CTSetupArg ctSetupArg;
-    if (H4501ArgumentDecode(argument, ctSetupArg)) {
-      if (endpoint.OnCallTransferSetup(*this, invokeId, linkedId, ctSetupArg.m_callIdentity.GetValue())) {
-        SetCallTransferState(e_ctAwaitSetupResponse);
-        ctInvokeId = invokeId;
-      }
-      else {
-        SendReturnError(invokeId, H4502_CallTransferErrors::e_unrecognizedCallIdentity);
-      }
-    }
-  }
-  else {
-    SendReturnError(invokeId, H4502_CallTransferErrors::e_unrecognizedCallIdentity);
-  }
-}
-
-
-void H323Connection::OnReceivedCallTransferUpdate(int /*invokeId*/,
-                                                  int /*linkedId*/,
-                                                  PASN_OctetString * argument)
-{
-  H4502_CTUpdateArg ctUpdateArg;
-  if (H4501ArgumentDecode(argument, ctUpdateArg)) {
-    //
-  }
-}
-
-
-void H323Connection::OnReceivedSubaddressTransfer(int /*invokeId*/,
-                                                  int /*linkedId*/,
-                                                  PASN_OctetString * argument)
-{
-  H4502_SubaddressTransferArg subaddressTransferArg;
-  if (H4501ArgumentDecode(argument, subaddressTransferArg)) {
-    //
-  }
-}
-
-
-void H323Connection::OnReceivedCallTransferComplete(int /*invokeId*/,
-                                                    int /*linkedId*/,
-                                                    PASN_OctetString * argument)
-{
-  H4502_CTCompleteArg ctCompleteArg;
-  if (H4501ArgumentDecode(argument, ctCompleteArg)) {
-    //
-  }
-}
-
-
-void H323Connection::OnReceivedCallTransferActive(int /*invokeId*/,
-                                                  int /*linkedId*/,
-                                                  PASN_OctetString * argument)
-{
-  H4502_CTActiveArg ctActiveArg;
-  if (H4501ArgumentDecode(argument, ctActiveArg)) {
-    //
-  }
-}
-
-
-void H323Connection::OnReceivedLocalCallHold(int /*invokeId*/, int /*linkedId*/)
-{
-  // Pause channels
-  for (PINDEX i = 0; i < logicalChannels->GetSize(); i++) {
-    H323Channel * channel = logicalChannels->GetChannelAt(i);
-    if (NULL != channel)
-      channel->SetPause(true);
-  }
-}
-
-
-void H323Connection::OnReceivedLocalCallRetrieve(int /*invokeId*/, int /*linkedId*/)
-{
-  // Reactivate channels
-  for (PINDEX i = 0; i < logicalChannels->GetSize(); i++) {
-    H323Channel * channel = logicalChannels->GetChannelAt(i);
-    if (NULL != channel)
-      channel->SetPause(false);
-  }
-}
-
-
-void H323Connection::OnReceivedRemoteCallHold(int /*invokeId*/, int /*linkedId*/)
-{
-	// TBD
-}
-
-
-void H323Connection::OnReceivedRemoteCallRetrieve(int /*invokeId*/, int /*linkedId*/)
-{
-	// TBD
-}
-
-
-void H323Connection::SendReturnError(int invokeId, int returnError)
-{
-  H323SignalPDU facilityPDU;
-  facilityPDU.BuildFacility(*this, TRUE);
-
-  H450ServiceAPDU serviceAPDU;
-
-  serviceAPDU.BuildReturnError(invokeId, returnError);
-  facilityPDU.AttachSupplementaryServiceAPDU(serviceAPDU);
-
-  WriteSignalPDU(facilityPDU);
-}
-
-
-void H323Connection::SendGeneralReject(int invokeId, int problem)
-{
-  H323SignalPDU facilityPDU;
-  facilityPDU.BuildFacility(*this, TRUE);
-
-  H450ServiceAPDU serviceAPDU;
-
-  X880_Reject & reject = serviceAPDU.BuildReject(invokeId);
-  reject.m_problem.SetTag(X880_Reject_problem::e_general);
-  X880_GeneralProblem & generalProblem = (X880_GeneralProblem &) reject.m_problem;
-  generalProblem = problem;
-
-  facilityPDU.AttachSupplementaryServiceAPDU(serviceAPDU);
-  WriteSignalPDU(facilityPDU);
-}
-
-
-void H323Connection::SendInvokeReject(int invokeId, int problem)
-{
-  H323SignalPDU facilityPDU;
-  facilityPDU.BuildFacility(*this, TRUE);
-
-  H450ServiceAPDU serviceAPDU;
-
-  X880_Reject & reject = serviceAPDU.BuildReject(invokeId);
-  reject.m_problem.SetTag(X880_Reject_problem::e_invoke);
-  X880_InvokeProblem & invokeProblem = (X880_InvokeProblem &) reject.m_problem;
-  invokeProblem = problem;
-
-  facilityPDU.AttachSupplementaryServiceAPDU(serviceAPDU);
-  WriteSignalPDU(facilityPDU);
-}
-
-
-void H323Connection::SendReturnResultReject(int invokeId, int problem)
-{
-  H323SignalPDU facilityPDU;
-  facilityPDU.BuildFacility(*this, TRUE);
-
-  H450ServiceAPDU serviceAPDU;
-
-  X880_Reject & reject = serviceAPDU.BuildReject(invokeId);
-  reject.m_problem.SetTag(X880_Reject_problem::e_returnResult);
-  X880_ReturnResultProblem & returnResultProblem = (X880_ReturnResultProblem &) reject.m_problem;
-  returnResultProblem = problem;
-
-  facilityPDU.AttachSupplementaryServiceAPDU(serviceAPDU);
-  WriteSignalPDU(facilityPDU);
-}
-
-
-void H323Connection::SendReturnErrorReject(int invokeId, int problem)
-{
-  H323SignalPDU facilityPDU;
-  facilityPDU.BuildFacility(*this, TRUE);
-
-  H450ServiceAPDU serviceAPDU;
-
-  X880_Reject & reject = serviceAPDU.BuildReject(invokeId);
-  reject.m_problem.SetTag(X880_Reject_problem::e_returnError);
-  X880_ReturnErrorProblem & returnErrorProblem = (X880_ReturnErrorProblem &) reject.m_problem;
-  returnErrorProblem = problem;
-
-  facilityPDU.AttachSupplementaryServiceAPDU(serviceAPDU);
-  WriteSignalPDU(facilityPDU);
 }
 
 
@@ -1671,8 +1183,6 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
 
   PTRACE(3, "H225\tAnswer call response: " << answerResponse);
 
-  BOOL ctResponseSent = FALSE;
-
   // If pending response wait
   while ((answerResponse != AnswerCallNow) && (answerResponse != AnswerCallDenied)) {
 
@@ -1699,16 +1209,7 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
           }
         }
 
-        // Do we need to send a callTransferSetup return result APDU?
-        if ((ctInvokeId != -1) && (ctResponseSent == FALSE))
-        {
-          H450ServiceAPDU serviceAPDU;
-
-          serviceAPDU.BuildReturnResult(ctInvokeId);
-          alertingPDU.AttachSupplementaryServiceAPDU(serviceAPDU);
-          ctResponseSent = TRUE;
-        }
-
+        h450dispatcher->AttachToAlerting(alertingPDU);
         if (!WriteSignalPDU(alertingPDU))
           return FALSE;
 
@@ -1740,16 +1241,7 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
 
           if (sendPDU) {
 
-            // Do we need to send a callTransferSetup return result APDU?
-            if ((ctInvokeId != -1) && (ctResponseSent == FALSE))
-            {
-              H450ServiceAPDU serviceAPDU;
-
-              serviceAPDU.BuildReturnResult(ctInvokeId);
-              want245PDU.AttachSupplementaryServiceAPDU(serviceAPDU);
-              ctResponseSent = TRUE;
-            }
-
+            h450dispatcher->AttachToAlerting(alertingPDU);
             if (!WriteSignalPDU(want245PDU))
               return FALSE;
           }
@@ -1798,28 +1290,7 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
   // If response is denied, abort the call
   if (answerResponse == AnswerCallDenied) {
     PTRACE(1, "H225\tApplication has declined to answer incoming call");
-
-    // If the SETUP message we received from the other end had a callTransferSetup APDU
-    // in it, then we need to send back a RELEASE COMPLETE PDU with a callTransferSetup 
-    // ReturnError.
-    // Else normal call - clear it down
-    if ((ctInvokeId != -1) && (ctResponseSent == FALSE))
-    {
-      H323SignalPDU releaseCompletePDU;
-      releaseCompletePDU.BuildReleaseComplete(*this);
-
-      H450ServiceAPDU serviceAPDU;
-
-      serviceAPDU.BuildReturnError(ctInvokeId, H4501_GeneralErrorList::e_notAvailable);
-      releaseCompletePDU.AttachSupplementaryServiceAPDU(serviceAPDU);
-      ctResponseSent = TRUE;
-
-      WriteSignalPDU(releaseCompletePDU);
-    }
-    else
-    {
-      Release(EndedByAnswerDenied);
-    }
+    ClearCall(EndedByAnswerDenied);
     return FALSE;
   }
 
@@ -1832,14 +1303,7 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
     return FALSE;
   connectionState = HasExecutedSignalConnect;
 
-  if ((ctInvokeId != -1) && (ctResponseSent == FALSE))
-  {
-    H450ServiceAPDU serviceAPDU;
-
-    serviceAPDU.BuildReturnResult(ctInvokeId);
-    connectPDU.AttachSupplementaryServiceAPDU(serviceAPDU);
-    ctResponseSent = TRUE;
-  }
+  h450dispatcher->AttachToConnect(connectPDU);
 
   // Start separate H.245 channel if not tunneling.
   if (!h245Tunneling && controlChannel == NULL) {
@@ -1849,6 +1313,7 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
     connect.IncludeOptionalField(H225_Connect_UUIE::e_h245Address);
   }
 
+  h450dispatcher->AttachToConnect(connectPDU);
  
   if (h245Tunneling) {
     // If no channels selected (or never provided) do traditional H245 start
@@ -2097,7 +1562,7 @@ void H323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
     Release(EndedByCallerAbort);
   else {
     if (callEndReason == EndedByRefusal)
-      callEndReason = NumCallEndReasons;
+      callEndReason = OpalNumCallEndReasons;
     switch (pdu.GetQ931().GetCause()) {
       case Q931::UserBusy :
         Release(EndedByRemoteBusy);
@@ -2176,8 +1641,8 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
 }
 
 
-H323Connection::CallEndReason H323Connection::SendSignalSetup(const PString & alias,
-                                                              const H323TransportAddress & address)
+OpalCallEndReason H323Connection::SendSignalSetup(const PString & alias,
+                                                  const H323TransportAddress & address)
 {
   if (!Lock())
     return EndedByLocalUser;
@@ -2199,18 +1664,7 @@ H323Connection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   H323SignalPDU setupPDU;
   H225_Setup_UUIE & setup = setupPDU.BuildSetup(*this, address);
 
-  // Do we need to attach a call transfer setup invoke APDU?
-  if (GetCallTransferState() == e_ctAwaitSetupResponse) {
-    H450ServiceAPDU serviceAPDU;
-
-    // Store the outstanding invokeID associated with this connection
-    ctInvokeId = GetNextInvokeId();
-
-    // Use the call identity from the ctInitiateArg
-    serviceAPDU.BuildCallTransferSetup(GetCallTransferInvokeId(), GetTransferringCallIdentity());
-
-    setupPDU.AttachSupplementaryServiceAPDU(serviceAPDU);
-  }
+  h450dispatcher->AttachToSetup(setupPDU);
 
   // Save the identifiers generated by BuildSetup
   conferenceIdentifier = setup.m_conferenceID;
@@ -2337,7 +1791,7 @@ H323Connection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   // Set timeout for remote party to answer the call
   signallingChannel->SetReadTimeout(endpoint.GetSignallingChannelCallTimeout());
 
-  return NumCallEndReasons;
+  return OpalNumCallEndReasons;
 }
 
 
@@ -3018,85 +2472,65 @@ H323Channel * H323Connection::FindChannel(unsigned rtpSessionId, BOOL fromRemote
 
 void H323Connection::TransferCall(const PString & remoteParty)
 {
-  ctInvokeId = GetNextInvokeId();
+  h4502handler->TransferCall(remoteParty);
+}
 
-  // Send a FACILITY message with a callTransferInitiate Invoke
-  // Supplementary Service PDU to the transferred endpoint.
-  H323SignalPDU facilityPDU;
-  H450ServiceAPDU serviceAPDU;
 
-  PString alias;
-  OpalTransportAddress address;
-  endpoint.ParsePartyName(remoteParty, alias, address);
+BOOL H323Connection::IsTransferringCall() const
+{
+  switch (h4502handler->GetState()) {
+    case H4502Handler::e_ctAwaitIdentifyResponse :
+    case H4502Handler::e_ctAwaitInitiateResponse :
+    case H4502Handler::e_ctAwaitSetupResponse :
+      return TRUE;
 
-  PString callIdentity;
-  serviceAPDU.BuildCallTransferInitiate(GetCallTransferInvokeId(), callIdentity, alias, address);
-  facilityPDU.BuildFacility(*this, TRUE);
-  facilityPDU.AttachSupplementaryServiceAPDU(serviceAPDU);
-  WriteSignalPDU(facilityPDU);
+    default :
+      return FALSE;
+  }
+}
 
-  // start timer CT-T3
-  SetCallTransferState(H323Connection::e_ctAwaitInitiateResponse);
+
+BOOL H323Connection::IsTransferredCall() const
+{
+  return h4502handler->GetInvokeId() != -1 &&
+         h4502handler->GetState() == H4502Handler::e_ctIdle;
+}
+
+void H323Connection::HandleTransferCall(const PString & token,
+                                        const PString & identity)
+{
+  if (!token.IsEmpty() || !identity)
+    h4502handler->AwaitSetupResponse(token, identity);
+}
+
+
+int H323Connection::GetCallTransferInvokeId()
+{
+  return h4502handler->GetInvokeId();
 }
 
 
 void H323Connection::HoldCall(BOOL localHold)
 {
-  // TBD: Implement Remote Hold. This implementation only does 
-  // local hold. -- dcassel 4/01. 
-  if (!localHold)
-    return;
-  
-  // Send a FACILITY message with a callNotific Invoke
-  // Supplementary Service PDU to the held endpoint.
-  H323SignalPDU facilityPDU;
-  H450ServiceAPDU serviceAPDU;
-
-  chInvokeId = GetNextInvokeId();
-  serviceAPDU.BuildInvoke(chInvokeId, H4504_CallHoldOperation::e_holdNotific);
-  facilityPDU.BuildFacility(*this, TRUE);
-  facilityPDU.AttachSupplementaryServiceAPDU(serviceAPDU);
-  WriteSignalPDU(facilityPDU);
-  
-  // Pause channels
-  for (PINDEX i = 0; i < logicalChannels->GetSize(); i++) {
-    H323Channel * channel = logicalChannels->GetChannelAt(i);
-    if (NULL != channel)
-      channel->SetPause(true);
-  }
-  
-  // Update hold state
-  holdState = e_ch_NE_Held;
+  h4504handler->HoldCall(localHold);
 }
 
 
 void H323Connection::RetrieveCall(bool localHold)
 {
-  // TBD: Implement Remote Hold. This implementation only does 
-  // local hold. -- dcassel 4/01. 
-  if (!localHold)
-    return;
-  
-  // Send a FACILITY message with a retrieveNotific Invoke
-  // Supplementary Service PDU to the held endpoint.
-  chInvokeId = GetNextInvokeId();
-  H323SignalPDU facilityPDU;
-  H450ServiceAPDU serviceAPDU;
-  
-  serviceAPDU.BuildInvoke(chInvokeId, H4504_CallHoldOperation::e_retrieveNotific);
-  facilityPDU.BuildFacility(*this, TRUE);
-  facilityPDU.AttachSupplementaryServiceAPDU(serviceAPDU);
-  WriteSignalPDU(facilityPDU);
-  
-  // Pause channels
-  for (PINDEX i = 0; i < logicalChannels->GetSize(); i++) {
-    H323Channel * channel = logicalChannels->GetChannelAt(i);
-    if (NULL != channel)
-      channel->SetPause(false);
-  }
-  
-  // Update hold state
-  holdState = e_ch_Idle;
+  h4504handler->RetrieveCall(localHold);
+}
+
+
+BOOL H323Connection::IsLocalHold() const
+{
+  return h4504handler->GetState() == H4504Handler::e_ch_NE_Held;
+}
+
+
+BOOL H323Connection::IsRemoteHold() const
+{
+  return h4504handler->GetState() == H4504Handler::e_ch_RE_Held;
 }
 
 
