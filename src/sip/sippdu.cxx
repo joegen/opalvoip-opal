@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2018  2002/09/12 06:58:34  robertj
+ * Revision 1.2019  2003/03/19 00:47:06  robertj
+ * GNU 3.2 changes
+ *
+ * Revision 2.17  2002/09/12 06:58:34  robertj
  * Removed protocol prefix strings as static members as has problems with
  *   use in DLL environment.
  *
@@ -845,7 +848,11 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
 {
   // Do this to force a Read() by the PChannelBuffer outside of the
   // ios::lock() mutex which would prevent simultaneous reads and writes.
-  transport.rdbuf()->underflow();
+#if defined(__MWERKS__) || __GNUC__ >= 3
+  transport.rdbuf()->pubseekoff(0, ios_base::cur);
+#else
+  transport.rdbuf()->seekoff(0, ios::cur, ios::in);
+#endif
 
   PString cmd;
   transport >> cmd >> mime;
