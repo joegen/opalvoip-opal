@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjunix.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2001/08/01 05:21:21  robertj
+ * Made OpalMediaFormatList class global to help with documentation.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.113  2001/07/20 06:27:30  craigs
@@ -1043,9 +1046,9 @@ static const struct {
 
 
 
-OpalMediaFormat::List OpalIxJDevice::GetMediaFormats() const
+OpalMediaFormatList OpalIxJDevice::GetMediaFormats() const
 {
-  OpalMediaFormat::List codecs;
+  OpalMediaFormatList codecs;
 
   PINDEX idx = PARRAYSIZE(CodecInfo);
   while (idx-- > 1) { // Stop before we get to PCM
@@ -1053,7 +1056,7 @@ OpalMediaFormat::List OpalIxJDevice::GetMediaFormats() const
     cap.captype = codec;
     cap.cap = CodecInfo[idx].mode;
     if (IOCTL2(os_handle, PHONE_CAPABILITIES_CHECK, &cap))
-      codecs.Append(new OpalMediaFormat(CodecInfo[idx].mediaFormat));
+      codecs += CodecInfo[idx].mediaFormat;
   }
 
   return codecs;

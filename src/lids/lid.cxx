@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2001/08/01 05:21:21  robertj
+ * Made OpalMediaFormatList class global to help with documentation.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.72  2001/07/24 02:28:22  robertj
@@ -399,7 +402,7 @@ BOOL OpalLineInterfaceDevice::IsLineToLineDirect(unsigned, unsigned)
 
 OpalMediaFormat FindMediaFormat(RTP_DataFrame::PayloadTypes pt)
 {
-  const OpalMediaFormat::List & formats = OpalMediaFormat::GetRegisteredMediaFormats();
+  const OpalMediaFormatList & formats = OpalMediaFormat::GetRegisteredMediaFormats();
   for (PINDEX i = 0; i < formats.GetSize(); i++) {
     if (formats[i].GetPayloadType() == pt)
       return formats[i];

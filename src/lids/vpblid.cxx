@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vpblid.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2001/08/01 05:21:21  robertj
+ * Made OpalMediaFormatList class global to help with documentation.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.7  2001/05/11 04:43:43  robertj
@@ -185,9 +188,9 @@ static const struct {
 };
 
 
-OpalMediaFormat::List OpalVpbDevice::GetMediaFormats() const
+OpalMediaFormatList OpalVpbDevice::GetMediaFormats() const
 {
-  OpalMediaFormat::List formats;
+  OpalMediaFormatList formats;
 
   for (PINDEX i = 0; i < PARRAYSIZE(CodecInfo); i++)
     formats += CodecInfo[i].mediaFormat;
