@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.h,v $
- * Revision 1.2006  2002/01/22 05:05:16  robertj
+ * Revision 1.2007  2002/06/16 02:19:31  robertj
+ * Fixed and clarified function for initiating call, thanks Ted Szoczei
+ *
+ * Revision 2.5  2002/01/22 05:05:16  robertj
  * Revamp of user input API triggered by RFC2833 support
  *
  * Revision 2.4  2001/11/13 06:25:56  robertj
@@ -324,7 +327,12 @@ class OpalPCSSConnection : public OpalConnection
     );
   //@}
 
-    void StartOutgoing();
+    /**Call is initiated by PCSS for routing to some other endpoint.
+      */
+    void InitiateCall();
+
+    /**Start a call initated by another endpoint, reouted to the PCSS.
+      */
     void StartIncoming(const PString & callerName);
 
     /**Accept the incoming connection.
