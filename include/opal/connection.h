@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2016  2002/07/01 04:56:30  robertj
+ * Revision 1.2017  2002/09/12 06:54:06  robertj
+ * Added missing virtual to Release() function so can be overridden.
+ *
+ * Revision 2.15  2002/07/01 04:56:30  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.14  2002/04/10 03:08:42  robertj
@@ -360,7 +363,7 @@ class OpalConnection : public PObject
        Note that this function will return quickly as the release and
        disposal of the connections is done by another thread.
       */
-    void Release(
+    virtual void Release(
       OpalCallEndReason reason = EndedByLocalUser /// Reason for call release
     );
 
