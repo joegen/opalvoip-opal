@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2001/08/01 05:45:01  robertj
+ * Moved media formats list from endpoint to connection.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.1  2000/02/19 15:34:52  robertj
@@ -69,14 +72,6 @@ OpalPCSSEndPoint::OpalPCSSEndPoint(OpalManager & mgr)
 OpalPCSSEndPoint::~OpalPCSSEndPoint()
 {
   PTRACE(3, "PCSS\tDeleted PC sound system endpoint.");
-}
-
-
-OpalMediaFormat::List OpalPCSSEndPoint::GetMediaFormats() const
-{
-  OpalMediaFormat::List formatNames;
-  formatNames += OpalPCM16;
-  return formatNames;
 }
 
 
@@ -174,6 +169,15 @@ BOOL OpalPCSSConnection::SetAlerting(const PString & /*calleeName*/)
 BOOL OpalPCSSConnection::SetConnected()
 {
   return TRUE;
+}
+
+
+OpalMediaFormatList OpalPCSSConnection::GetMediaFormats() const
+{
+  // Sound card can only do 16 bit PCM
+  OpalMediaFormatList formatNames;
+  formatNames += OpalPCM16;
+  return formatNames;
 }
 
 
