@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ilbccodec.cxx,v $
- * Revision 1.2004  2004/09/01 12:21:27  rjongbloed
+ * Revision 1.2005  2005/02/21 12:19:54  rjongbloed
+ * Added new "options list" to the OpalMediaFormat class.
+ *
+ * Revision 2.3  2004/09/01 12:21:27  rjongbloed
  * Added initialisation of H323EndPoints capability table to be all codecs so can
  *   correctly build remote caps from fqast connect params. This had knock on effect
  *   with const keywords added in numerous places.
@@ -61,25 +64,21 @@ extern "C" {
 #define new PNEW
 
 
-OpalMediaFormat const OpaliLBC_13k3(OPAL_ILBC_13k3,
-                                    OpalMediaFormat::DefaultAudioSessionID,
-                                    RTP_DataFrame::DynamicBase,
-                                    "ilbc",
-                                    TRUE,  // Needs jitter
-                                    NO_OF_BYTES_30MS*8*8000/BLOCKL_30MS,
-                                    NO_OF_BYTES_30MS,
-                                    BLOCKL_30MS,
-                                    OpalMediaFormat::AudioClockRate);
+static OpalAudioFormat Opal_iLBC_13k3(
+                          OPAL_ILBC_13k3,
+                          RTP_DataFrame::DynamicBase,
+                          "ilbc",
+                          NO_OF_BYTES_30MS,
+                          BLOCKL_30MS,
+                          7, 3);
 
-OpalMediaFormat const OpaliLBC_15k2(OPAL_ILBC_15k2,
-                                    OpalMediaFormat::DefaultAudioSessionID,
-                                    RTP_DataFrame::DynamicBase,
-                                    "ilbc",
-                                    TRUE,  // Needs jitter
-                                    NO_OF_BYTES_20MS*8*8000/BLOCKL_20MS,
-                                    NO_OF_BYTES_20MS,
-                                    BLOCKL_20MS,
-                                    OpalMediaFormat::AudioClockRate);
+static OpalAudioFormat Opal_iLBC_15k2(
+                          OPAL_ILBC_15k2,
+                          RTP_DataFrame::DynamicBase,
+                          "ilbc",
+                          NO_OF_BYTES_20MS,
+                          BLOCKL_20MS,
+                          7, 4);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -87,7 +86,7 @@ OpalMediaFormat const OpaliLBC_15k2(OPAL_ILBC_15k2,
 #ifndef NO_H323
 
 H323_iLBC_Capability::H323_iLBC_Capability(const H323EndPoint & endpoint, Speed s)
-  : H323NonStandardAudioCapability(7, s == e_13k3 ? 3 : 4, endpoint,
+  : H323NonStandardAudioCapability(endpoint,
                                    (const BYTE *)(s == e_13k3 ? OPAL_ILBC_13k3 : OPAL_ILBC_15k2))
 {
   speed = s;

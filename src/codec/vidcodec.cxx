@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vidcodec.cxx,v $
- * Revision 1.2005  2004/09/01 12:21:27  rjongbloed
+ * Revision 1.2006  2005/02/21 12:19:54  rjongbloed
+ * Added new "options list" to the OpalMediaFormat class.
+ *
+ * Revision 2.4  2004/09/01 12:21:27  rjongbloed
  * Added initialisation of H323EndPoints capability table to be all codecs so can
  *   correctly build remote caps from fqast connect params. This had knock on effect
  *   with const keywords added in numerous places.
@@ -54,7 +57,7 @@
 #define FRAME_HEIGHT PVideoDevice::CIFHeight
 #define FRAME_RATE   25 // PAL
 
-OpalMediaFormat const OpalRGB24(
+const OpalMediaFormat OpalRGB24(
   OPAL_RGB24,
   OpalMediaFormat::DefaultVideoSessionID,
   RTP_DataFrame::MaxPayloadType,
@@ -66,7 +69,7 @@ OpalMediaFormat const OpalRGB24(
   OpalMediaFormat::VideoClockRate
 );
 
-OpalMediaFormat const OpalRGB32(
+const OpalMediaFormat OpalRGB32(
   OPAL_RGB32,
   OpalMediaFormat::DefaultVideoSessionID,
   RTP_DataFrame::MaxPayloadType,
@@ -78,7 +81,7 @@ OpalMediaFormat const OpalRGB32(
   OpalMediaFormat::VideoClockRate
 );
 
-OpalMediaFormat const OpalYUV420P(
+const OpalMediaFormat OpalYUV420P(
   OPAL_YUV420P,
   OpalMediaFormat::DefaultVideoSessionID,
   RTP_DataFrame::MaxPayloadType,
