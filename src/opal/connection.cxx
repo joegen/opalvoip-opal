@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2026  2003/03/18 06:42:39  robertj
+ * Revision 1.2027  2003/06/02 03:11:01  rjongbloed
+ * Fixed start media streams function actually starting the media streams.
+ * Fixed problem where a sink stream should be opened (for preference) using
+ *   the source streams media format. That is no transcoder is used.
+ *
+ * Revision 2.25  2003/03/18 06:42:39  robertj
  * Fixed incorrect return value, thanks gravsten
  *
  * Revision 2.24  2003/03/17 10:27:00  robertj
@@ -417,15 +422,20 @@ OpalMediaStream * OpalConnection::OpenSinkMediaStream(OpalMediaStream & source)
   unsigned sessionID = source.GetSessionID();
   PTRACE(3, "OpalCon\tOpenSinkMediaStream " << *this << " session=" << sessionID);
 
+  // Reorder the media formats from this protocol so we give preference
+  // to what has been selected in the source media stream.
+  OpalMediaFormatList destinationFormats = GetMediaFormats();
+  destinationFormats.Reorder(source.GetMediaFormat());
+
   OpalMediaFormat sourceFormat, destinationFormat;
   if (!OpalTranscoder::SelectFormats(sessionID,
                                      source.GetMediaFormat(), // Only use selected format on source
-                                     GetMediaFormats(),
+                                     destinationFormats,
                                      sourceFormat,
                                      destinationFormat)) {
     PTRACE(2, "OpalCon\tOpenSinkMediaStream, could not find compatible media format:\n"
               "  source formats=" << setfill(',') << source.GetMediaFormat() << "\n"
-              "   sink  formats=" << GetMediaFormats() << setfill(' '));
+              "   sink  formats=" << destinationFormats << setfill(' '));
     return NULL;
   }
 
@@ -457,7 +467,7 @@ OpalMediaStream * OpalConnection::OpenSinkMediaStream(OpalMediaStream & source)
 void OpalConnection::StartMediaStreams()
 {
   for (PINDEX i = 0; i < mediaStreams.GetSize(); i++)
-    mediaStreams[i].Open();
+    mediaStreams[i].Start();
   PTRACE(2, "OpalCon\tMedia stream threads started.");
 }
 
