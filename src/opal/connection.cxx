@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2025  2003/03/17 10:27:00  robertj
+ * Revision 1.2026  2003/03/18 06:42:39  robertj
+ * Fixed incorrect return value, thanks gravsten
+ *
+ * Revision 2.24  2003/03/17 10:27:00  robertj
  * Added video support.
  *
  * Revision 2.23  2003/03/07 08:12:54  robertj
@@ -432,7 +435,7 @@ OpalMediaStream * OpalConnection::OpenSinkMediaStream(OpalMediaStream & source)
   OpalMediaStream * stream = CreateMediaStream(destinationFormat, sessionID, FALSE);
   if (stream == NULL) {
     PTRACE(1, "OpalCon\tCreateMediaStream " << *this << " returned NULL");
-    return FALSE;
+    return NULL;
   }
 
   if (stream->Open()) {
