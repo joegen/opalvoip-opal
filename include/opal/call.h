@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2002  2001/08/01 05:28:59  robertj
+ * Revision 1.2003  2001/08/17 08:24:33  robertj
+ * Added call end reason for whole call, not just connection.
+ *
+ * Revision 2.1  2001/08/01 05:28:59  robertj
  * Added function to get all media formats possible in a call.
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
@@ -113,14 +116,31 @@ class OpalCall : public PObject
       */
     virtual void OnEstablished();
 
+    /**Get the call clearand reason for this connection shutting down.
+       Note that this function is only generally useful in the
+       H323EndPoint::OnConnectionCleared() function. This is due to the
+       connection not being cleared before that, and the object not even
+       exiting after that.
+
+       If the call is still active then this will return NumOpalCallEndReasons.
+      */
+    OpalCallEndReason GetCallEndReason() const { return callEndReason; }
+
+    /**Set the call clearance reason.
+       An application should have no cause to use this function. It is present
+       for the H323EndPoint::ClearCall() function to set the clearance reason.
+      */
+    void SetCallEndReason(
+      OpalCallEndReason reason   /// Reason for clearance of connection.
+    );
+
     /**Clear call.
        This releases all connections currently attached to the call. Note that
        this function will return quickly as the release and disposal of the
        connections is done by another thread.
      */
     void Clear(
-      OpalConnection::CallEndReason reason =
-                   OpalConnection::EndedByLocalUser, /// Reason for call clearing
+      OpalCallEndReason reason = EndedByLocalUser, /// Reason for call clearing
       PSyncPoint * sync = NULL
     );
 
@@ -271,6 +291,8 @@ class OpalCall : public PObject
     PString partyA;
     PString partyB;
     PTime   startTime;
+
+    OpalCallEndReason callEndReason;
 
     OpalConnectionList activeConnections;
     OpalConnectionList garbageConnections;
