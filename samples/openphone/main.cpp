@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cpp,v $
+ * Revision 1.10  2004/05/09 13:24:25  rjongbloed
+ * More work on wxWindows based OpenPhone
+ *
  * Revision 1.9  2004/05/06 13:23:43  rjongbloed
  * Work on wxWindows based OpenPhone
  *
@@ -44,6 +47,7 @@
 #include <wx/splitter.h>
 #include <wx/listctrl.h>
 #include <wx/image.h>
+#include <wx/valgen.h>
 #include <wx/xrc/xmlres.h>
 
 #if OPAL_SIP
@@ -57,6 +61,12 @@
 
 #include <opal/ivr.h>
 #include <lids/lidep.h>
+
+#ifdef OPAL_STATIC_LINK
+#define H323_STATIC_LIB
+#include <codec/allcodecs.h>
+#include <lids/alllids.h>
+#endif
 
 
 class TextCtrlChannel : public PChannel
@@ -185,6 +195,9 @@ MyFrame::~MyFrame()
 
 bool MyFrame::Initialise()
 {
+  PTrace::Initialise(4, "trace.log", PTrace::DateAndTime|PTrace::Thread|PTrace::FileAndLine);
+  PTrace::SetLevel(4);
+
 #if OPAL_H323
   h323EP = new H323EndPoint(*this);
 
@@ -296,6 +309,10 @@ void MyFrame::OnViewDetails(wxCommandEvent& WXUNUSED(event))
 
 void MyFrame::OnOptions(wxCommandEvent& event)
 {
+  OptionsDialog dlg(this);
+
+  if (dlg.ShowModal() == wxID_OK) {
+  }
 }
 
 
@@ -441,10 +458,15 @@ CallDialog::CallDialog(wxWindow *parent)
 {
   wxXmlResource::Get()->LoadDialog(this, parent, "CallDialog");
 
-  m_AddressCtrl = (wxComboBox *)FindWindowByName("Address");
-  m_AddressCtrl->SetValidator(wxTextValidator(wxFILTER_ASCII, &m_Address));
-  m_ok = (wxButton *)FindWindowByName("CallOK", this);
+  m_ok = (wxButton *)FindWindowByName("wxID_OK", this);
   m_ok->Disable();
+
+  m_AddressCtrl = (wxComboBox *)FindWindowByName("Address");
+  m_AddressCtrl->SetValidator(wxGenericValidator(&m_Address));
+
+  // Temprary, must get from config
+  m_AddressCtrl->Append("h323:h323.voxgratia.org");
+  m_AddressCtrl->Append("sip:gw.voxgratia.org");
 }
 
 
