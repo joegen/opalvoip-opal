@@ -42,7 +42,7 @@ RSC=rc.exe
 # PROP Intermediate_Dir "..\..\lib\Release"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /MD /W4 /GX /Zd /O2 /Ob2 /I "$(OPENSSLDIR)/inc32" /D "NDEBUG" /D "PTRACING" /D P_SSL=0$(OPENSSLFLAG) /D P_EXPAT=0$(EXPATFLAG) /D P_HAS_IPV6=0$(IPV6FLAG) /Yu"ptlib.h" /Fd"..\..\lib\opal.pdb" /FD /c
+# ADD CPP /nologo /MD /W4 /GX /Zd /O2 /Ob2 /D "NDEBUG" /D "PTRACING" /Yu"ptlib.h" /Fd"..\..\lib\opal.pdb" /FD /c
 # SUBTRACT CPP /u
 # ADD BASE RSC /l 0xc09
 # ADD RSC /l 0xc09
@@ -66,7 +66,7 @@ LIB32=link.exe -lib
 # PROP Intermediate_Dir "..\..\lib\Debug"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /Z7 /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /MDd /W4 /Gm /GX /ZI /Od /I "$(OPENSSLDIR)/inc32" /D "_DEBUG" /D "PTRACING" /D P_SSL=0$(OPENSSLFLAG) /D P_EXPAT=0$(EXPATFLAG) /D P_HAS_IPV6=0$(IPV6FLAG) /FR /Yu"ptlib.h" /Fd"..\..\lib\opald.pdb" /FD /c
+# ADD CPP /nologo /MDd /W4 /Gm /GX /ZI /Od /D "_DEBUG" /D "PTRACING" /FR /Yu"ptlib.h" /Fd"..\..\lib\opald.pdb" /FD /c
 # SUBTRACT CPP /u
 # ADD BASE RSC /l 0xc09
 # ADD RSC /l 0xc09
@@ -90,7 +90,7 @@ LIB32=link.exe -lib
 # PROP Intermediate_Dir "..\..\lib\NoTrace"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W4 /GX /O1 /Ob2 /I "./include" /D "NDEBUG" /D "PTRACING" /Yu"ptlib.h" /FD /c
-# ADD CPP /nologo /MD /W4 /GX /O1 /Ob2 /I "$(OPENSSLDIR)/inc32" /D "NDEBUG" /D "PASN_NOPRINTON" /D "PASN_LEANANDMEAN" /D P_SSL=0$(OPENSSLFLAG) /D P_EXPAT=0$(EXPATFLAG) /D P_HAS_IPV6=0$(IPV6FLAG) /Yu"ptlib.h" /Fd"..\..\lib\opaln.pdb" /FD /c
+# ADD CPP /nologo /MD /W4 /GX /O1 /Ob2 /D "NDEBUG" /D "PASN_NOPRINTON" /D "PASN_LEANANDMEAN" /Yu"ptlib.h" /Fd"..\..\lib\opaln.pdb" /FD /c
 # SUBTRACT CPP /u
 # ADD BASE RSC /l 0xc09
 # ADD RSC /l 0xc09
