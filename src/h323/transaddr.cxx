@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transaddr.cxx,v $
- * Revision 1.2003  2001/11/12 05:32:12  robertj
+ * Revision 1.2004  2002/07/01 04:56:32  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.2  2001/11/12 05:32:12  robertj
  * Added OpalTransportAddress::GetIpAddress when don't need port number.
  *
  * Revision 2.1  2001/11/09 05:49:47  robertj
@@ -98,9 +101,16 @@ H323TransportAddress::H323TransportAddress(const H245_TransportAddress & transpo
 }
 
 
-static void AppendTransportAddress(H225_ArrayOf_TransportAddress & pdu,
-                                   const PIPSocket::Address & addr, WORD port)
+static void AppendTransportAddress(OpalManager & manager,
+                                   const OpalTransport & associatedTransport,
+                                   PIPSocket::Address addr, WORD port,
+                                   H225_ArrayOf_TransportAddress & pdu)
 {
+  PIPSocket::Address remoteIP;
+  WORD dummy;
+  if (associatedTransport.GetRemoteAddress().GetIpAndPort(remoteIP, dummy))
+    manager.TranslateIPAddress(addr, remoteIP);
+
   H225_TransportAddress_ipAddress pduAddr;
   PINDEX i;
   for (i = 0; i < 4; i++)
@@ -129,15 +139,17 @@ static void AppendTransportAddress(H225_ArrayOf_TransportAddress & pdu,
 
 
 BOOL H323TransportAddress::SetPDU(H225_ArrayOf_TransportAddress & pdu,
-                                  const H323TransportAddress & first)
+                                  const OpalTransport & associatedTransport)
 {
+  OpalManager & manager = associatedTransport.GetEndPoint().GetManager();
+
   PIPSocket::Address ip;
   WORD port = H323EndPoint::DefaultSignalTcpPort;
   if (!GetIpAndPort(ip, port))
     return FALSE;
 
   if (ip != INADDR_ANY) {
-    AppendTransportAddress(pdu, ip, port);
+    AppendTransportAddress(manager, associatedTransport, ip, port, pdu);
     return TRUE;
   }
 
@@ -145,25 +157,25 @@ BOOL H323TransportAddress::SetPDU(H225_ArrayOf_TransportAddress & pdu,
   if (!PIPSocket::GetInterfaceTable(interfaces)) {
     PIPSocket::Address ipAddr;
     PIPSocket::GetHostAddress(ipAddr);
-    AppendTransportAddress(pdu, ipAddr, port);
+    AppendTransportAddress(manager, associatedTransport, ipAddr, port, pdu);
     return TRUE;
   }
 
   PINDEX i;
 
   PIPSocket::Address firstAddress;
-  if (first.GetIpAddress(firstAddress)) {
+  if (associatedTransport.GetLocalAddress().GetIpAddress(firstAddress)) {
     for (i = 0; i < interfaces.GetSize(); i++) {
       PIPSocket::Address ipAddr = interfaces[i].GetAddress();
       if (ipAddr == firstAddress)
-        AppendTransportAddress(pdu, ipAddr, port);
+        AppendTransportAddress(manager, associatedTransport, ipAddr, port, pdu);
     }
   }
 
   for (i = 0; i < interfaces.GetSize(); i++) {
     PIPSocket::Address ipAddr = interfaces[i].GetAddress();
     if (ipAddr != 0 && ipAddr != firstAddress && ipAddr != PIPSocket::Address()) // Ignore 127.0.0.1
-      AppendTransportAddress(pdu, ipAddr, port);
+      AppendTransportAddress(manager, associatedTransport, ipAddr, port, pdu);
   }
 
   return TRUE;

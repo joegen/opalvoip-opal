@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.cxx,v $
- * Revision 1.2009  2002/03/22 06:57:50  robertj
+ * Revision 1.2010  2002/07/01 04:56:32  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.8  2002/03/22 06:57:50  robertj
  * Updated to OpenH323 version 1.8.2
  *
  * Revision 2.7  2002/02/11 09:32:13  robertj
@@ -44,6 +47,44 @@
  *
  * Revision 2.3  2001/10/05 00:22:14  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.2  2001/08/17 08:29:44  robertj
+ * Update from OpenH323
+ * Moved call end reasons enum from OpalConnection to global.
+ *
+ * Revision 2.1  2001/08/13 05:10:40  robertj
+ * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
+ * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.103  2002/06/13 03:59:56  craigs
+ * Added codes to progress messages to allow inband audio before connect
+ *
+ * Revision 1.102  2002/05/29 03:55:21  robertj
+ * Added protocol version number checking infrastructure, primarily to improve
+ *   interoperability with stacks that are unforgiving of new features.
+ *
+ * Revision 1.101  2002/05/29 00:03:19  robertj
+ * Fixed unsolicited IRR support in gk client and server,
+ *   including support for IACK and INAK.
+ *
+ * Revision 1.100  2002/05/21 09:32:49  robertj
+ * Added ability to set multiple alias names ona  connection by connection
+ *   basis, defaults to endpoint list, thanks Artis Kugevics
+ *
+ * Revision 1.99  2002/05/07 03:18:15  robertj
+ * Added application info (name/version etc) into registered endpoint data.
+ *
+ * Revision 1.98  2002/05/03 09:18:49  robertj
+ * Added automatic retransmission of RAS responses to retried requests.
+ *
+ * Revision 1.97  2002/04/24 01:08:09  robertj
+ * Added output of RAS pdu sequence number to level 3 trace output.
+ *
+ * Revision 1.96  2002/03/27 06:04:43  robertj
+ * Added Temporary Failure end code for connection, an application may
+ *   immediately retry the call if this occurs.
  *
  * Revision 1.95  2002/03/14 07:56:48  robertj
  * Added ability to specify alias type in H323SetAliasAddress, if not specified
@@ -78,16 +119,6 @@
  * Revision 1.86  2001/10/09 06:55:26  robertj
  * Fixed separating destCallSignalAddress fields with tabs in
  *    GetDestinationAlias() function, thanks Lee Kirchhoff
- *
- * Revision 2.2  2001/08/17 08:29:44  robertj
- * Update from OpenH323
- * Moved call end reasons enum from OpalConnection to global.
- *
- * Revision 2.1  2001/08/13 05:10:40  robertj
- * Updates from OpenH323 v1.6.0 release.
- *
- * Revision 2.0  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.85  2001/09/26 07:05:29  robertj
  * Fixed incorrect tags in building some PDU's, thanks Chris Purvis.
@@ -378,8 +409,8 @@
 
 #define new PNEW
 
-const char H225_ProtocolID[] = "0.0.8.2250.0.4";
-const char H245_ProtocolID[] = "0.0.8.245.0.7";
+const unsigned H225_ProtocolID[] = { 0,0,8,2250,0,H225_PROTOCOL_VERSION };
+const unsigned H245_ProtocolID[] = { 0,0,8,245 ,0,H245_PROTOCOL_VERSION };
 
 static const char E164NumberPrefix[] = "E164:";
 static const char PrivatePartyPrefix[] = "Private:";
@@ -539,6 +570,23 @@ PString H323GetAliasAddressE164(const H225_ArrayOf_AliasAddress & aliases)
 
 ///////////////////////////////////////////////////////////////////////////////
 
+PString H323GetApplicationInfo(const H225_VendorIdentifier & vendor)
+{
+  PStringStream str;
+
+  str << vendor.m_productId.AsString() << '\t'
+      << vendor.m_versionId.AsString() << '\t'
+      << vendor.m_vendor.m_t35CountryCode;
+  if (vendor.m_vendor.m_t35Extension != 0)
+    str << '.' << vendor.m_vendor.m_t35Extension;
+  str << '/' << vendor.m_vendor.m_manufacturerCode;
+
+  return str;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
 H323SignalPDU::H323SignalPDU()
 {
 }
@@ -554,7 +602,7 @@ H225_Setup_UUIE & H323SignalPDU::BuildSetup(const H323Connection & connection,
 
   m_h323_uu_pdu.m_h323_message_body.SetTag(H225_H323_UU_PDU_h323_message_body::e_setup);
   H225_Setup_UUIE & setup = m_h323_uu_pdu.m_h323_message_body;
-  setup.m_protocolIdentifier.SetValue(H225_ProtocolID);
+  setup.m_protocolIdentifier.SetValue(H225_ProtocolID, PARRAYSIZE(H225_ProtocolID));
 
   setup.IncludeOptionalField(H225_Setup_UUIE::e_sourceAddress);
   H323SetAliasAddresses(endpoint.GetAliasNames(), setup.m_sourceAddress);
@@ -598,7 +646,7 @@ H225_CallProceeding_UUIE &
   m_h323_uu_pdu.m_h323_message_body.SetTag(H225_H323_UU_PDU_h323_message_body::e_callProceeding);
   H225_CallProceeding_UUIE & proceeding = m_h323_uu_pdu.m_h323_message_body;
 
-  proceeding.m_protocolIdentifier.SetValue(H225_ProtocolID);
+  proceeding.m_protocolIdentifier.SetValue(H225_ProtocolID, PARRAYSIZE(H225_ProtocolID));
   proceeding.m_callIdentifier.m_guid = connection.GetCallIdentifier();
   connection.GetEndPoint().SetEndpointTypeInfo(proceeding.m_destinationInfo);
 
@@ -614,7 +662,7 @@ H225_Connect_UUIE & H323SignalPDU::BuildConnect(const H323Connection & connectio
   m_h323_uu_pdu.m_h323_message_body.SetTag(H225_H323_UU_PDU_h323_message_body::e_connect);
   H225_Connect_UUIE & connect = m_h323_uu_pdu.m_h323_message_body;
 
-  connect.m_protocolIdentifier.SetValue(H225_ProtocolID);
+  connect.m_protocolIdentifier.SetValue(H225_ProtocolID, PARRAYSIZE(H225_ProtocolID));
   connect.m_callIdentifier.m_guid = connection.GetCallIdentifier();
   connect.m_conferenceID = connection.GetConferenceIdentifier();
 
@@ -655,7 +703,7 @@ H225_Alerting_UUIE & H323SignalPDU::BuildAlerting(const H323Connection & connect
   m_h323_uu_pdu.m_h323_message_body.SetTag(H225_H323_UU_PDU_h323_message_body::e_alerting);
   H225_Alerting_UUIE & alerting = m_h323_uu_pdu.m_h323_message_body;
 
-  alerting.m_protocolIdentifier.SetValue(H225_ProtocolID);
+  alerting.m_protocolIdentifier.SetValue(H225_ProtocolID, PARRAYSIZE(H225_ProtocolID));
   alerting.m_callIdentifier.m_guid = connection.GetCallIdentifier();
   connection.GetEndPoint().SetEndpointTypeInfo(alerting.m_destinationInfo);
 
@@ -671,7 +719,7 @@ H225_Information_UUIE & H323SignalPDU::BuildInformation(const H323Connection & c
   m_h323_uu_pdu.m_h323_message_body.SetTag(H225_H323_UU_PDU_h323_message_body::e_information);
   H225_Information_UUIE & information = m_h323_uu_pdu.m_h323_message_body;
 
-  information.m_protocolIdentifier.SetValue(H225_ProtocolID);
+  information.m_protocolIdentifier.SetValue(H225_ProtocolID, PARRAYSIZE(H225_ProtocolID));
   information.m_callIdentifier.m_guid = connection.GetCallIdentifier();
 
   return information;
@@ -698,6 +746,8 @@ OpalCallEndReason H323TranslateToCallEndReason(Q931::CauseValues cause,
           return EndedByGatekeeper;
         case H225_ReleaseCompleteReason::e_securityDenied:
           return EndedBySecurityDenial;
+        case H225_ReleaseCompleteReason::e_newConnectionNeeded:
+          return EndedByTemporaryFailure;
       }
       return EndedByRefusal;
     case Q931::NormalCallClearing :
@@ -719,6 +769,8 @@ OpalCallEndReason H323TranslateToCallEndReason(Q931::CauseValues cause,
       return EndedByCallForwarded;
     case Q931::DestinationOutOfOrder :
       return EndedByConnectFail;
+    case Q931::TemporaryFailure :
+      return EndedByTemporaryFailure;
     default:
       return EndedByRefusal;
   }
@@ -751,6 +803,7 @@ Q931::CauseValues H323TranslateFromCallEndReason(const H323Connection & connecti
     Q931::NoRouteToDestination,                             /// EndedByUnreachable,       Could not reach the remote party
     Q931::InvalidCallReference,                             /// EndedByNoEndPoint,        The remote party is not running an endpoint
     Q931::DestinationOutOfOrder,                            /// EndedByHostOffline,       The remote party host off line
+    Q931::TemporaryFailure                                  /// EndedByTemporaryFailure   The remote failed temporarily app may retry
   };
   int code = ReasonCodes[connection.GetCallEndReason()];
   if (code >= 0)
@@ -770,7 +823,7 @@ H225_ReleaseComplete_UUIE &
 
   H225_ReleaseComplete_UUIE & release = m_h323_uu_pdu.m_h323_message_body;
 
-  release.m_protocolIdentifier.SetValue(H225_ProtocolID);
+  release.m_protocolIdentifier.SetValue(H225_ProtocolID, PARRAYSIZE(H225_ProtocolID));
   release.m_callIdentifier.m_guid = connection.GetCallIdentifier();
 
   Q931::CauseValues cause = H323TranslateFromCallEndReason(connection, release.m_reason);
@@ -795,7 +848,7 @@ H225_Facility_UUIE * H323SignalPDU::BuildFacility(const H323Connection & connect
   m_h323_uu_pdu.m_h323_message_body.SetTag(H225_H323_UU_PDU_h323_message_body::e_facility);
   H225_Facility_UUIE & fac = m_h323_uu_pdu.m_h323_message_body;
 
-  fac.m_protocolIdentifier.SetValue(H225_ProtocolID);
+  fac.m_protocolIdentifier.SetValue(H225_ProtocolID, PARRAYSIZE(H225_ProtocolID));
   fac.IncludeOptionalField(H225_Facility_UUIE::e_callIdentifier);
   fac.m_callIdentifier.m_guid = connection.GetCallIdentifier();
 
@@ -805,13 +858,13 @@ H225_Facility_UUIE * H323SignalPDU::BuildFacility(const H323Connection & connect
 
 H225_Progress_UUIE & H323SignalPDU::BuildProgress(const H323Connection & connection)
 {
-  q931pdu.BuildProgress(connection.GetCallReference(), connection.HadAnsweredCall(), 0);
+  q931pdu.BuildProgress(connection.GetCallReference(), connection.HadAnsweredCall(), Q931::ProgressInbandInformationAvailable);
   SetQ931Fields(connection);
 
   m_h323_uu_pdu.m_h323_message_body.SetTag(H225_H323_UU_PDU_h323_message_body::e_progress);
   H225_Progress_UUIE & progress = m_h323_uu_pdu.m_h323_message_body;
 
-  progress.m_protocolIdentifier.SetValue(H225_ProtocolID);
+  progress.m_protocolIdentifier.SetValue(H225_ProtocolID, PARRAYSIZE(H225_ProtocolID));
   progress.m_callIdentifier.m_guid = connection.GetCallIdentifier();
   connection.GetEndPoint().SetEndpointTypeInfo(progress.m_destinationInfo);
 
@@ -826,7 +879,7 @@ H225_Status_UUIE & H323SignalPDU::BuildStatus(const H323Connection & connection)
   m_h323_uu_pdu.m_h323_message_body.SetTag(H225_H323_UU_PDU_h323_message_body::e_status);
   H225_Status_UUIE & status = m_h323_uu_pdu.m_h323_message_body;
 
-  status.m_protocolIdentifier.SetValue(H225_ProtocolID);
+  status.m_protocolIdentifier.SetValue(H225_ProtocolID, PARRAYSIZE(H225_ProtocolID));
   status.m_callIdentifier.m_guid = connection.GetCallIdentifier();
 
   return status;
@@ -839,7 +892,7 @@ H225_StatusInquiry_UUIE & H323SignalPDU::BuildStatusInquiry(const H323Connection
   m_h323_uu_pdu.m_h323_message_body.SetTag(H225_H323_UU_PDU_h323_message_body::e_statusInquiry);
   H225_StatusInquiry_UUIE & inquiry = m_h323_uu_pdu.m_h323_message_body;
 
-  inquiry.m_protocolIdentifier.SetValue(H225_ProtocolID);
+  inquiry.m_protocolIdentifier.SetValue(H225_ProtocolID, PARRAYSIZE(H225_ProtocolID));
   inquiry.m_callIdentifier.m_guid = connection.GetCallIdentifier();
 
   return inquiry;
@@ -853,7 +906,7 @@ H225_SetupAcknowledge_UUIE & H323SignalPDU::BuildSetupAcknowledge(const H323Conn
   m_h323_uu_pdu.m_h323_message_body.SetTag(H225_H323_UU_PDU_h323_message_body::e_setupAcknowledge);
   H225_SetupAcknowledge_UUIE & setupAck = m_h323_uu_pdu.m_h323_message_body;
 
-  setupAck.m_protocolIdentifier.SetValue(H225_ProtocolID);
+  setupAck.m_protocolIdentifier.SetValue(H225_ProtocolID, PARRAYSIZE(H225_ProtocolID));
   setupAck.m_callIdentifier.m_guid = connection.GetCallIdentifier();
 
   return setupAck;
@@ -867,7 +920,7 @@ H225_Notify_UUIE & H323SignalPDU::BuildNotify(const H323Connection & connection)
   m_h323_uu_pdu.m_h323_message_body.SetTag(H225_H323_UU_PDU_h323_message_body::e_notify);
   H225_Notify_UUIE & notify = m_h323_uu_pdu.m_h323_message_body;
 
-  notify.m_protocolIdentifier.SetValue(H225_ProtocolID);
+  notify.m_protocolIdentifier.SetValue(H225_ProtocolID, PARRAYSIZE(H225_ProtocolID));
   notify.m_callIdentifier.m_guid = connection.GetCallIdentifier();
 
   return notify;
@@ -1139,7 +1192,7 @@ void H323SignalPDU::SetQ931Fields(const H323Connection & connection,
                                   int screening)
 {
   PINDEX i;
-  const PStringList & aliases = connection.GetEndPoint().GetAliasNames();
+  const PStringList & aliases = connection.GetLocalAliasNames();
 
   PString number;
   PString localName = connection.GetLocalPartyName();
@@ -1267,7 +1320,7 @@ H245_TerminalCapabilitySet &
   H245_TerminalCapabilitySet & cap = Build(H245_RequestMessage::e_terminalCapabilitySet);
 
   cap.m_sequenceNumber = sequenceNumber;
-  cap.m_protocolIdentifier = H245_ProtocolID;
+  cap.m_protocolIdentifier.SetValue(H245_ProtocolID, PARRAYSIZE(H245_ProtocolID));
 
   if (empty)
     return cap;
@@ -1282,7 +1335,7 @@ H245_TerminalCapabilitySet &
   h225_0.m_t120DynamicPortCapability = TRUE;
 
   // Set the table of capabilities
-  connection.GetLocalCapabilities().BuildPDU(cap);
+  connection.GetLocalCapabilities().BuildPDU(connection, cap);
 
   return cap;
 }
@@ -1536,7 +1589,7 @@ H225_GatekeeperRequest & H323RasPDU::BuildGatekeeperRequest(unsigned seqNum)
   SetTag(e_gatekeeperRequest);
   H225_GatekeeperRequest & grq = *this;
   grq.m_requestSeqNum = seqNum;
-  grq.m_protocolIdentifier.SetValue(H225_ProtocolID);
+  grq.m_protocolIdentifier.SetValue(H225_ProtocolID, PARRAYSIZE(H225_ProtocolID));
   return grq;
 }
 
@@ -1546,7 +1599,7 @@ H225_GatekeeperConfirm & H323RasPDU::BuildGatekeeperConfirm(unsigned seqNum)
   SetTag(e_gatekeeperConfirm);
   H225_GatekeeperConfirm & gcf = *this;
   gcf.m_requestSeqNum = seqNum;
-  gcf.m_protocolIdentifier.SetValue(H225_ProtocolID);
+  gcf.m_protocolIdentifier.SetValue(H225_ProtocolID, PARRAYSIZE(H225_ProtocolID));
   return gcf;
 }
 
@@ -1556,7 +1609,7 @@ H225_GatekeeperReject & H323RasPDU::BuildGatekeeperReject(unsigned seqNum, unsig
   SetTag(e_gatekeeperReject);
   H225_GatekeeperReject & grj = *this;
   grj.m_requestSeqNum = seqNum;
-  grj.m_protocolIdentifier.SetValue(H225_ProtocolID);
+  grj.m_protocolIdentifier.SetValue(H225_ProtocolID, PARRAYSIZE(H225_ProtocolID));
   grj.m_rejectReason.SetTag(reason);
   return grj;
 }
@@ -1567,7 +1620,7 @@ H225_RegistrationRequest & H323RasPDU::BuildRegistrationRequest(unsigned seqNum)
   SetTag(e_registrationRequest);
   H225_RegistrationRequest & rrq = *this;
   rrq.m_requestSeqNum = seqNum;
-  rrq.m_protocolIdentifier.SetValue(H225_ProtocolID);
+  rrq.m_protocolIdentifier.SetValue(H225_ProtocolID, PARRAYSIZE(H225_ProtocolID));
   return rrq;
 }
 
@@ -1577,7 +1630,7 @@ H225_RegistrationConfirm & H323RasPDU::BuildRegistrationConfirm(unsigned seqNum)
   SetTag(e_registrationConfirm);
   H225_RegistrationConfirm & rcf = *this;
   rcf.m_requestSeqNum = seqNum;
-  rcf.m_protocolIdentifier.SetValue(H225_ProtocolID);
+  rcf.m_protocolIdentifier.SetValue(H225_ProtocolID, PARRAYSIZE(H225_ProtocolID));
   return rcf;
 }
 
@@ -1587,7 +1640,7 @@ H225_RegistrationReject & H323RasPDU::BuildRegistrationReject(unsigned seqNum, u
   SetTag(e_registrationReject);
   H225_RegistrationReject & rrj = *this;
   rrj.m_requestSeqNum = seqNum;
-  rrj.m_protocolIdentifier.SetValue(H225_ProtocolID);
+  rrj.m_protocolIdentifier.SetValue(H225_ProtocolID, PARRAYSIZE(H225_ProtocolID));
   rrj.m_rejectReason.SetTag(reason);
   return rrj;
 }
@@ -1743,6 +1796,25 @@ H225_InfoRequestResponse & H323RasPDU::BuildInfoRequestResponse(unsigned seqNum)
 }
 
 
+H225_InfoRequestAck & H323RasPDU::BuildInfoRequestAck(unsigned seqNum)
+{
+  SetTag(e_infoRequestAck);
+  H225_InfoRequestAck & iack = *this;
+  iack.m_requestSeqNum = seqNum;
+  return iack;
+}
+
+
+H225_InfoRequestNak & H323RasPDU::BuildInfoRequestNak(unsigned seqNum, unsigned reason)
+{
+  SetTag(e_infoRequestNak);
+  H225_InfoRequestNak & inak = *this;
+  inak.m_requestSeqNum = seqNum;
+  inak.m_nakReason.SetTag(reason);
+  return inak;
+}
+
+
 H225_UnknownMessageResponse & H323RasPDU::BuildUnknownMessageResponse(unsigned seqNum)
 {
   SetTag(e_unknownMessageResponse);
@@ -1759,6 +1831,105 @@ H225_RequestInProgress & H323RasPDU::BuildRequestInProgress(unsigned seqNum, uns
   rip.m_requestSeqNum = seqNum;
   rip.m_delay = delay;
   return rip;
+}
+
+
+unsigned H323RasPDU::GetSequenceNumber() const
+{
+  switch (GetTag()) {
+    case H225_RasMessage::e_gatekeeperRequest :
+      return ((const H225_GatekeeperRequest &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_gatekeeperConfirm :
+      return ((const H225_GatekeeperConfirm &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_gatekeeperReject :
+      return ((const H225_GatekeeperReject &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_registrationRequest :
+      return ((const H225_RegistrationRequest &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_registrationConfirm :
+      return ((const H225_RegistrationConfirm &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_registrationReject :
+      return ((const H225_RegistrationReject &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_unregistrationRequest :
+      return ((const H225_UnregistrationRequest &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_unregistrationConfirm :
+      return ((const H225_UnregistrationConfirm &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_unregistrationReject :
+      return ((const H225_UnregistrationReject &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_admissionRequest :
+      return ((const H225_AdmissionRequest &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_admissionConfirm :
+      return ((const H225_AdmissionConfirm &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_admissionReject :
+      return ((const H225_AdmissionReject &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_bandwidthRequest :
+      return ((const H225_BandwidthRequest &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_bandwidthConfirm :
+      return ((const H225_BandwidthConfirm &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_bandwidthReject :
+      return ((const H225_BandwidthReject &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_disengageRequest :
+      return ((const H225_DisengageRequest &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_disengageConfirm :
+      return ((const H225_DisengageConfirm &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_disengageReject :
+      return ((const H225_DisengageReject &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_locationRequest :
+      return ((const H225_LocationRequest &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_locationConfirm :
+      return ((const H225_LocationConfirm &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_locationReject :
+      return ((const H225_LocationReject &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_infoRequest :
+      return ((const H225_InfoRequest &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_infoRequestResponse :
+      return ((const H225_InfoRequestResponse &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_nonStandardMessage :
+      return ((const H225_NonStandardMessage &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_unknownMessageResponse :
+      return ((const H225_UnknownMessageResponse &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_requestInProgress :
+      return ((const H225_RequestInProgress &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_resourcesAvailableIndicate :
+      return ((const H225_ResourcesAvailableIndicate &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_resourcesAvailableConfirm :
+      return ((const H225_ResourcesAvailableConfirm &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_infoRequestAck :
+      return ((const H225_InfoRequestAck &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_infoRequestNak :
+      return ((const H225_InfoRequestNak &)*this).m_requestSeqNum;
+
+    default :
+      return 0;
+  }
 }
 
 
@@ -1786,7 +1957,7 @@ BOOL H323RasPDU::Read(OpalTransport & transport)
                                  << "\n "  << setprecision(2) << *this);
   }
   else {
-    PTRACE(3, "H225RAS\tReceived PDU: " << GetTagName());
+    PTRACE(3, "H225RAS\tReceived PDU: " << GetTagName() << ' ' << GetSequenceNumber());
   }
 #endif
 
@@ -1811,7 +1982,7 @@ BOOL H323RasPDU::Write(OpalTransport & transport) const
                                 << "\n "  << setprecision(2) << strm);
   }
   else {
-    PTRACE(3, "H225\tSending PDU: " << GetTagName());
+    PTRACE(3, "H225\tSending PDU: " << GetTagName() << ' ' << GetSequenceNumber());
   }
 #endif
 

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323neg.cxx,v $
- * Revision 1.2008  2002/02/19 07:48:25  robertj
+ * Revision 1.2009  2002/07/01 04:56:32  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.7  2002/02/19 07:48:25  robertj
  * Fixed problem where if capability is rejected it still thinks it has received them.
  *
  * Revision 2.6  2002/02/13 04:09:16  robertj
@@ -50,6 +53,16 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.66  2002/06/27 07:11:55  robertj
+ * Fixed GNU warning
+ *
+ * Revision 1.65  2002/06/26 08:51:19  robertj
+ * Fixed deadlock if logical channel is closed via H.245 at exactly same
+ *   time as being closed locally due to a channel I/O error.
+ *
+ * Revision 1.64  2002/05/03 03:08:40  robertj
+ * Added replacementFor field in OLC when resolving conflicting channels.
  *
  * Revision 1.63  2002/01/10 04:38:29  robertj
  * Fixed problem with having incorrect constraint if getting array from caller on
@@ -725,14 +738,18 @@ H245NegLogicalChannel::~H245NegLogicalChannel()
 }
 
 
-BOOL H245NegLogicalChannel::Open(const H323Capability & capability, unsigned sessionID)
+BOOL H245NegLogicalChannel::Open(const H323Capability & capability,
+                                 unsigned sessionID,
+                                 unsigned replacementFor)
 {
   PWaitAndSignal wait(mutex);
-  return OpenWhileLocked(capability, sessionID);
+  return OpenWhileLocked(capability, sessionID, replacementFor);
 }
 
 
-BOOL H245NegLogicalChannel::OpenWhileLocked(const H323Capability & capability, unsigned sessionID)
+BOOL H245NegLogicalChannel::OpenWhileLocked(const H323Capability & capability,
+                                            unsigned sessionID,
+                                            unsigned replacementFor)
 {
   if (state != e_Released && state != e_AwaitingRelease) {
     PTRACE(3, "H245\tOpen of channel currently in negotiations: " << channelNumber);
@@ -771,6 +788,17 @@ BOOL H245NegLogicalChannel::OpenWhileLocked(const H323Capability & capability, u
     PTRACE(3, "H245\tOpening channel: " << channelNumber
            << ", channel->OnSendingPDU() failed");
     return FALSE;
+  }
+
+  if (replacementFor > 0) {
+    if (open.HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters)) {
+      open.m_reverseLogicalChannelParameters.IncludeOptionalField(H245_OpenLogicalChannel_reverseLogicalChannelParameters::e_replacementFor);
+      open.m_reverseLogicalChannelParameters.m_replacementFor = replacementFor;
+    }
+    else {
+      open.m_forwardLogicalChannelParameters.IncludeOptionalField(H245_OpenLogicalChannel_forwardLogicalChannelParameters::e_replacementFor);
+      open.m_forwardLogicalChannelParameters.m_replacementFor = replacementFor;
+    }
   }
 
   if (!channel->Open())
@@ -867,12 +895,12 @@ BOOL H245NegLogicalChannel::HandleOpen(const H245_OpenLogicalChannel & pdu)
     }
   }
 
-  if (!ok) {
+  if (ok)
+    mutex.Signal();
+  else {
     reply.BuildOpenLogicalChannelReject(channelNumber, cause);
     Release();
   }
-
-  mutex.Signal();
 
   return connection.WriteControlPDU(reply);
 }
@@ -946,12 +974,13 @@ BOOL H245NegLogicalChannel::HandleOpenConfirm(const H245_OpenLogicalChannelConfi
 
 BOOL H245NegLogicalChannel::HandleReject(const H245_OpenLogicalChannelReject & pdu)
 {
-  PWaitAndSignal wait(mutex);
+  mutex.Wait();
 
   PTRACE(3, "H245\tReceived open channel reject: " << channelNumber << ", state=" << state);
 
   switch (state) {
     case e_Released :
+      mutex.Signal();
       return connection.OnControlProtocolError(H323Connection::e_LogicalChannel,
                                                "Reject unknown channel");
     case e_Established :
@@ -966,9 +995,10 @@ BOOL H245NegLogicalChannel::HandleReject(const H245_OpenLogicalChannelReject & p
 
     case e_AwaitingRelease :
       Release();
-      // Do next case
+      break;
 
     default :
+      mutex.Signal();
       break;
   }
 
@@ -978,7 +1008,7 @@ BOOL H245NegLogicalChannel::HandleReject(const H245_OpenLogicalChannelReject & p
 
 BOOL H245NegLogicalChannel::HandleClose(const H245_CloseLogicalChannel & /*pdu*/)
 {
-  PWaitAndSignal wait(mutex);
+  mutex.Wait();
 
   PTRACE(3, "H245\tReceived close channel: " << channelNumber << ", state=" << state);
 
@@ -986,17 +1016,16 @@ BOOL H245NegLogicalChannel::HandleClose(const H245_CloseLogicalChannel & /*pdu*/
 
   H323ControlPDU reply;
   reply.BuildCloseLogicalChannelAck(channelNumber);
-  if (!connection.WriteControlPDU(reply))
-    return FALSE;
 
   Release();
-  return TRUE;
+
+  return connection.WriteControlPDU(reply);
 }
 
 
 BOOL H245NegLogicalChannel::HandleCloseAck(const H245_CloseLogicalChannelAck & /*pdu*/)
 {
-  PWaitAndSignal wait(mutex);
+  mutex.Wait();
 
   PTRACE(3, "H245\tReceived close channel ack: " << channelNumber << ", state=" << state);
 
@@ -1007,8 +1036,10 @@ BOOL H245NegLogicalChannel::HandleCloseAck(const H245_CloseLogicalChannelAck & /
                                                "Close ack open channel");
     case e_AwaitingRelease :
       Release();
+      break;
 
     default :
+      mutex.Signal();
       break;
   }
 
@@ -1052,12 +1083,14 @@ BOOL H245NegLogicalChannel::HandleRequestClose(const H245_RequestChannelClose & 
 
 BOOL H245NegLogicalChannel::HandleRequestCloseAck(const H245_RequestChannelCloseAck & /*pdu*/)
 {
-  PWaitAndSignal wait(mutex);
+  mutex.Wait();
 
   PTRACE(3, "H245\tReceived request close ack channel: " << channelNumber << ", state=" << state);
 
   if (state == e_AwaitingResponse)
     Release();  // Other end says close OK, so do so.
+  else
+    mutex.Signal();
 
   return TRUE;
 }
@@ -1092,19 +1125,28 @@ BOOL H245NegLogicalChannel::HandleRequestCloseRelease(const H245_RequestChannelC
 
 void H245NegLogicalChannel::HandleTimeout(PTimer &, INT)
 {
-  PWaitAndSignal wait(mutex);
+  mutex.Wait();
 
   PTRACE(3, "H245\tTimeout on open channel: " << channelNumber << ", state=" << state);
 
-  if (state == e_AwaitingEstablishment) {
-    H323ControlPDU reply;
-    reply.BuildCloseLogicalChannel(channelNumber);
-    connection.WriteControlPDU(reply);
-  }
-  else if (state == e_AwaitingResponse) {
-    H323ControlPDU reply;
-    reply.BuildRequestChannelCloseRelease(channelNumber);
-    connection.WriteControlPDU(reply);
+  H323ControlPDU reply;
+  switch (state) {
+    case e_AwaitingEstablishment :
+      reply.BuildCloseLogicalChannel(channelNumber);
+      connection.WriteControlPDU(reply);
+      break;
+
+    case e_AwaitingResponse :
+      reply.BuildRequestChannelCloseRelease(channelNumber);
+      connection.WriteControlPDU(reply);
+      break;
+
+    case e_Released :
+      mutex.Signal();
+      return;
+
+    default :
+      break;
   }
 
   Release();
@@ -1114,15 +1156,17 @@ void H245NegLogicalChannel::HandleTimeout(PTimer &, INT)
 
 void H245NegLogicalChannel::Release()
 {
+  state = e_Released;
+  H323Channel * chan = channel;
+  channel = NULL;
+  mutex.Signal();
+
   replyTimer.Stop();
 
-  if (channel != NULL) {
-    channel->Close();
-    delete channel;
-    channel = NULL;
+  if (chan != NULL) {
+    chan->Close();
+    delete chan;
   }
-
-  state = e_Released;
 }
 
 
@@ -1162,7 +1206,9 @@ void H245NegLogicalChannels::Add(H323Channel & channel)
 }
 
 
-BOOL H245NegLogicalChannels::Open(const H323Capability & capability, unsigned sessionID)
+BOOL H245NegLogicalChannels::Open(const H323Capability & capability,
+                                  unsigned sessionID,
+                                  unsigned replacementFor)
 {
   mutex.Wait();
 
@@ -1173,7 +1219,7 @@ BOOL H245NegLogicalChannels::Open(const H323Capability & capability, unsigned se
 
   mutex.Signal();
 
-  return negChan->Open(capability, sessionID);
+  return negChan->Open(capability, sessionID, replacementFor);
 }
 
 
@@ -1245,15 +1291,12 @@ BOOL H245NegLogicalChannels::HandleReject(const H245_OpenLogicalChannelReject & 
 
 BOOL H245NegLogicalChannels::HandleClose(const H245_CloseLogicalChannel & pdu)
 {
-  H245NegLogicalChannel * chan = FindNegLogicalChannel(pdu.m_forwardLogicalChannelNumber, TRUE, TRUE);
-  if (chan != NULL) {
-    BOOL ok = chan->HandleClose(pdu);
-    mutex.Signal();
-    return ok;
-  }
+  H245NegLogicalChannel * chan = FindNegLogicalChannel(pdu.m_forwardLogicalChannelNumber, TRUE);
+  if (chan != NULL)
+    return chan->HandleClose(pdu);
 
   return connection.OnControlProtocolError(H323Connection::e_LogicalChannel,
-                                             "Close unknown");
+                                           "Close unknown");
 }
 
 
@@ -1351,21 +1394,12 @@ H245NegLogicalChannel & H245NegLogicalChannels::GetNegLogicalChannelAt(PINDEX i)
 
 
 H245NegLogicalChannel * H245NegLogicalChannels::FindNegLogicalChannel(unsigned channelNumber,
-                                                                      BOOL fromRemote,
-                                                                      BOOL leaveLocked)
+                                                                      BOOL fromRemote)
 {
   H323ChannelNumber chanNum(channelNumber, fromRemote);
 
-  H245NegLogicalChannel * channel = NULL;
-
   mutex.Wait();
-
-  if (channels.Contains(chanNum))
-    channel = &channels[chanNum];
-
-  if (channel != NULL && leaveLocked)
-    return channel;
-
+  H245NegLogicalChannel * channel = channels.GetAt(chanNum);
   mutex.Signal();
 
   return channel;

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2030  2002/06/16 02:23:43  robertj
+ * Revision 1.2031  2002/07/01 04:56:32  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.29  2002/06/16 02:23:43  robertj
  * Fixed memory leak of media streams in non H323 protocols, thanks Ted Szoczei
  *
  * Revision 2.28  2002/04/15 08:51:23  robertj
@@ -125,6 +128,107 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.277  2002/06/28 03:57:33  robertj
+ * Added fix to prevent endSession timeout if remote endpoint crashes or
+ *   disconnects TCP without having sent one.
+ *
+ * Revision 1.276  2002/06/25 08:30:12  robertj
+ * Changes to differentiate between stright G.723.1 and G.723.1 Annex A using
+ *   the OLC dataType silenceSuppression field so does not send SID frames
+ *   to receiver codecs that do not understand them.
+ *
+ * Revision 1.275  2002/06/24 00:07:31  robertj
+ * Fixed bandwidth usage being exactly opposite (adding when it should
+ *   be subtracting), thanks Saswat Praharaj.
+ *
+ * Revision 1.274  2002/06/22 06:11:33  robertj
+ * Fixed bug on sometimes missing received endSession causing 10 second
+ *   timeout in connection clean up.
+ *
+ * Revision 1.273  2002/06/22 05:48:42  robertj
+ * Added partial implementation for H.450.11 Call Intrusion
+ *
+ * Revision 1.272  2002/06/15 03:07:40  robertj
+ * Fixed correct detect of consultation transfer, thanks Gilles Delcayre
+ *
+ * Revision 1.271  2002/06/13 06:15:19  robertj
+ * Allowed TransferCall() to be used on H323Connection as well as H323EndPoint.
+ *
+ * Revision 1.270  2002/06/13 02:14:08  robertj
+ * Removed automatic clear of call when requesting a facility redirect form of
+ *   call forwarding. Causes interop problems with Cisco IOS.
+ *
+ * Revision 1.269  2002/06/07 02:18:20  robertj
+ * Fixed GNU warning
+ *
+ * Revision 1.268  2002/06/06 03:06:31  robertj
+ * Fixed unecessary delay in waiting for endSession if we actually do not
+ *   need to send one so don;t get one back (ie no H.245).
+ * Fixed crash when receive a tunneled H.245 PDU during connection shut down.
+ * Fixed tunnelled endSession in release complete PDU.
+ *
+ * Revision 1.267  2002/06/05 05:29:50  robertj
+ * Added code to detect if remote endpoint is Cisco IOS based gateway and
+ *   set remoteApplication variable accordingly.
+ * Added code to not do multiple tunnellled H.245 messages if Cisco IOS.
+ *
+ * Revision 1.266  2002/06/05 02:30:02  robertj
+ * Changed round trip time calculation to operate as soon as H.245 allows it
+ *   instead of when call is "established".
+ *
+ * Revision 1.265  2002/05/31 06:10:36  robertj
+ * Removed unecessary mutex grab (causes deadlocks), thanks Federico Pinna
+ *
+ * Revision 1.264  2002/05/29 06:37:57  robertj
+ * Changed sending of endSession/ReleaseComplete PDU's to occur immediately
+ *   on call clearance and not wait for background thread to do it.
+ * Stricter compliance by waiting for reply endSession before closing down.
+ *
+ * Revision 1.263  2002/05/29 03:55:21  robertj
+ * Added protocol version number checking infrastructure, primarily to improve
+ *   interoperability with stacks that are unforgiving of new features.
+ *
+ * Revision 1.262  2002/05/21 09:32:49  robertj
+ * Added ability to set multiple alias names ona  connection by connection
+ *   basis, defaults to endpoint list, thanks Artis Kugevics
+ *
+ * Revision 1.261  2002/05/16 00:57:27  robertj
+ * Fixed problem where if get early start separate H.245 channel and it take
+ *   more than 10 seconds for CONNECT then hangs up call.
+ *
+ * Revision 1.260  2002/05/16 00:00:37  robertj
+ * Added memory management of created T.38 and T.120 handlers.
+ * Added ability to initiate a mode change for non-standard T.38
+ *
+ * Revision 1.259  2002/05/07 03:18:15  robertj
+ * Added application info (name/version etc) into registered endpoint data.
+ *
+ * Revision 1.258  2002/05/03 05:38:19  robertj
+ * Added Q.931 Keypad IE mechanism for user indications (DTMF).
+ *
+ * Revision 1.257  2002/05/03 03:08:40  robertj
+ * Added replacementFor field in OLC when resolving conflicting channels.
+ *
+ * Revision 1.256  2002/05/02 07:56:27  robertj
+ * Added automatic clearing of call if no media (RTP data) is transferred in a
+ *   configurable (default 5 minutes) amount of time.
+ *
+ * Revision 1.255  2002/05/02 05:19:29  robertj
+ * Fixed processing of tunnelled H.245 in setup if have local tunnelling disabled.
+ *
+ * Revision 1.254  2002/05/01 05:59:05  robertj
+ * Added resolution of simultaneous starth245 messages.
+ *
+ * Revision 1.253  2002/04/18 00:21:45  robertj
+ * Fixed incorrect end call reason when call is abandoned by caller.
+ *
+ * Revision 1.252  2002/04/17 00:50:12  robertj
+ * Added ability to disable the in band DTMF detection.
+ *
+ * Revision 1.251  2002/03/27 06:04:42  robertj
+ * Added Temporary Failure end code for connection, an application may
+ *   immediately retry the call if this occurs.
  *
  * Revision 1.250  2002/03/27 00:17:27  robertj
  * Fixed fall back from RFC2833 to H.245 UII if remote does not have capability.
@@ -964,6 +1068,7 @@
 
 PLIST(H245_OpenLogicalChannel_List, H245_OpenLogicalChannel);
 
+const PTimeInterval MonitorCallStatusTime(0, 10); // Seconds
 
 #define new PNEW
 
@@ -999,6 +1104,7 @@ ostream & operator<<(ostream & o, H323Connection::AnswerCallResponse s)
 ostream & operator<<(ostream & o, H323Connection::SendUserInputModes m)
 {
   static const char * const SendUserInputModeNames[H323Connection::NumSendUserInputModes] = {
+    "SendUserInputAsQ931",
     "SendUserInputAsString",
     "SendUserInputAsTone",
     "SendUserInputAsRFC2833",
@@ -1052,11 +1158,17 @@ H323Connection::H323Connection(OpalCall & call,
   callReference = UINT_MAX;
   remoteCallWaiting = -1;
 
+  h225version = H225_PROTOCOL_VERSION;
+  h245version = H245_PROTOCOL_VERSION;
+  h245versionSet = FALSE;
+
   signallingChannel = NULL;
   controlChannel = NULL;
   controlListener = NULL;
   holdMediaChannel = NULL;
   isConsultationTransfer = FALSE;
+  isCallIntrusion = FALSE;
+  callIntrusionProtectionLevel = endpoint.GetCallIntrusionProtectionLevel();
 
   switch (options&H245TunnelingOptionMask) {
     case H245TunnelingOptionDisable :
@@ -1081,6 +1193,7 @@ H323Connection::H323Connection(OpalCall & call,
 
   uuiesRequested = 0; // Empty set
   addAccessTokenToSetup = TRUE; // Automatic inclusion of ACF access token in SETUP
+  sendUserInputMode = endpoint.GetSendUserInputMode();
 
   mediaWaitForConnect = FALSE;
   transmitterSidePaused = FALSE;
@@ -1105,6 +1218,8 @@ H323Connection::H323Connection(OpalCall & call,
   startT120 = TRUE;
   t38ModeChange = FALSE;
   lastPDUWasH245inSETUP = FALSE;
+  endSessionNeeded = FALSE;
+  endSessionSent = FALSE;
 
   switch (options&H245inSetupOptionMask) {
     case H245inSetupOptionDisable :
@@ -1123,6 +1238,19 @@ H323Connection::H323Connection(OpalCall & call,
   remoteMaxAudioDelayJitter = 0;
   maxAudioDelayJitter = endpoint.GetManager().GetMaxAudioDelayJitter();
 
+  switch (options&DetectInBandDTMFOptionMask) {
+    case DetectInBandDTMFOptionDisable :
+      detectInBandDTMF = FALSE;
+      break;
+
+    case DetectInBandDTMFOptionEnable :
+      detectInBandDTMF = TRUE;
+      break;
+
+    default :
+      break;
+  }
+
   masterSlaveDeterminationProcedure = new H245NegMasterSlaveDetermination(endpoint, *this);
   capabilityExchangeProcedure = new H245NegTerminalCapabilitySet(endpoint, *this);
   logicalChannels = new H245NegLogicalChannels(endpoint, *this);
@@ -1133,6 +1261,7 @@ H323Connection::H323Connection(OpalCall & call,
   h4502handler = new H4502Handler(*this, *h450dispatcher);
   h4504handler = new H4504Handler(*this, *h450dispatcher);
   h4506handler = new H4506Handler(*this, *h450dispatcher);
+  h45011handler = new H45011Handler(*this, *h450dispatcher);
 }
 
 
@@ -1165,6 +1294,43 @@ OpalConnection::Phases H323Connection::GetPhase() const
     ReleasedPhase
   };
   return mapping[connectionState];
+}
+
+
+void H323Connection::SetCallEndReason(OpalCallEndReason reason)
+{
+  OpalConnection::SetCallEndReason(reason);
+
+  if (callEndTime.GetTimeInSeconds() == 0)
+    callEndTime = PTime();
+
+  if (endSessionSent)
+    return;
+
+  endSessionSent = TRUE;
+
+  PTRACE(2, "H225\tSending release complete PDU: callRef=" << callReference);
+  H323SignalPDU rcPDU;
+  rcPDU.BuildReleaseComplete(*this);
+  h450dispatcher->AttachToReleaseComplete(rcPDU);
+
+  BOOL sendingReleaseComplete = OnSendReleaseComplete(rcPDU);
+
+  if (endSessionNeeded) {
+    if (sendingReleaseComplete)
+      h245TunnelTxPDU = &rcPDU; // Piggy back H245 on this reply
+
+    // Send an H.245 end session to the remote endpoint.
+    H323ControlPDU pdu;
+    pdu.BuildEndSessionCommand(H245_EndSessionCommand::e_disconnect);
+    WriteControlPDU(pdu);
+  }
+
+  if (sendingReleaseComplete) {
+    h245TunnelTxPDU = NULL;
+    rcPDU.m_h323_uu_pdu.m_h245Tunneling = h245Tunneling;
+    rcPDU.Write(*signallingChannel);
+  }
 }
 
 
@@ -1203,29 +1369,19 @@ void H323Connection::CleanUpOnCallEnd()
     WriteControlPDU(pdu);
   }
 
-  /* If we have a signalling channel, then we should send a release complete.
-     This may actually be redundent if we a terminating via the remote end
-     sending release complete or if there is a transport failure, but it does
-     not hurt to try and send it anyway.
-   */
-  if (signallingChannel != NULL) {
-    if (signallingChannel->IsOpen()) {
-      PTRACE(2, "H225\tSending release complete PDU: callRef=" << callReference);
-      H323SignalPDU replyPDU;
-      replyPDU.BuildReleaseComplete(*this);
-      h450dispatcher->AttachToReleaseComplete(replyPDU);
-      if (OnSendReleaseComplete(replyPDU)) {
-        replyPDU.Write(*signallingChannel);
-        if (callEndTime.GetTimeInSeconds() == 0)
-          callEndTime = PTime();
-      }
-    }
-    signallingChannel->CloseWait();
+  if (endSessionNeeded) {
+    // Wait a while for the remote to send an endSession
+    PTRACE(4, "H323\tAwaiting end session from remote");
+    endSessionReceived.Wait(endpoint.GetEndSessionTimeout());
   }
 
   // Wait for control channel to be cleaned up (thread ended).
   if (controlChannel != NULL)
     controlChannel->CloseWait();
+
+  // Wait for signalling channel to be cleaned up (thread ended).
+  if (signallingChannel != NULL)
+    signallingChannel->CloseWait();
 
   // Check for gatekeeper and do disengage if have one
   if (mustSendDRQ) {
@@ -1307,8 +1463,14 @@ void H323Connection::HandleSignallingChannel()
     }
 
     if (controlChannel == NULL)
-      StartRoundTripDelay();
+      MonitorCallStatus();
   }
+
+  // If we are the only link to the far end then indicate that we have
+  // received endSession even if we hadn't, because we are now never going
+  // to get one so there is no point in having CleanUpOnCallEnd wait.
+  if (controlChannel == NULL)
+    endSessionReceived.Signal();
 
   PTRACE(2, "H225\tSignal channel closed.");
 }
@@ -1316,11 +1478,22 @@ void H323Connection::HandleSignallingChannel()
 
 BOOL H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
 {
-  if (!Lock())
-    return FALSE;
-
   // Process the PDU.
   const Q931 & q931 = pdu.GetQ931();
+
+  if (!Lock()) {
+    // Continue to look for endSession/releaseComplete pdus
+    if (pdu.m_h323_uu_pdu.m_h245Tunneling) {
+      for (PINDEX i = 0; i < pdu.m_h323_uu_pdu.m_h245Control.GetSize(); i++) {
+        PPER_Stream strm = pdu.m_h323_uu_pdu.m_h245Control[i].GetValue();
+        if (!InternalEndSessionCheck(strm))
+          break;
+      }
+    }
+    if (q931.GetMessageType() == Q931::ReleaseCompleteMsg)
+      endSessionReceived.Signal();
+    return FALSE;
+  }
 
   PTRACE(3, "H225\tHandling PDU: " << q931.GetMessageTypeName()
                     << " callRef=" << q931.GetCallReference());
@@ -1340,8 +1513,25 @@ BOOL H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
   h245TunnelRxPDU = &pdu;
 
   // Check for presence of supplementary services
-  if (pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_h4501SupplementaryService))
-    h450dispatcher->HandlePDU(pdu); // Process H4501SupplementaryService APDU
+  if (pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_h4501SupplementaryService)) {
+    if (!h450dispatcher->HandlePDU(pdu)) // Process H4501SupplementaryService APDU
+      return FALSE;
+  }
+
+  // Add special code to detect if call is from a Cisco and remoteApplication needs setting
+  if (remoteApplication.IsEmpty() && pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_nonStandardControl)) {
+    for (PINDEX i = 0; i < pdu.m_h323_uu_pdu.m_nonStandardControl.GetSize(); i++) {
+      const H225_NonStandardIdentifier & id = pdu.m_h323_uu_pdu.m_nonStandardControl[i].m_nonStandardIdentifier;
+      if (id.GetTag() == H225_NonStandardIdentifier::e_h221NonStandard) {
+        const H225_H221NonStandard & h221 = id;
+        if (h221.m_t35CountryCode == 181 && h221.m_t35Extension == 0 && h221.m_manufacturerCode == 18) {
+          remoteApplication = "Cisco IOS\t12.x\t181/18";
+          PTRACE(2, "H225\tSet remote application name: \"" << remoteApplication << '"');
+          break;
+        }
+      }
+    }
+  }
 
   BOOL ok;
   switch (q931.GetMessageType()) {
@@ -1408,6 +1598,10 @@ BOOL H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
 
   h245TunnelRxPDU = NULL;
 
+  PString digits = pdu.GetQ931().GetKeypad();
+  if (!digits)
+    OnUserInputString(digits);
+
   Unlock();
 
   return ok;
@@ -1419,12 +1613,20 @@ void H323Connection::HandleTunnelPDU(H323SignalPDU * txPDU)
   if (h245TunnelRxPDU == NULL || !h245TunnelRxPDU->m_h323_uu_pdu.m_h245Tunneling)
     return;
 
+  if (!h245Tunneling && h245TunnelRxPDU->m_h323_uu_pdu.m_h323_message_body.GetTag() == H225_H323_UU_PDU_h323_message_body::e_setup)
+    return;
+
   H323SignalPDU localTunnelPDU;
   if (txPDU != NULL)
     h245TunnelTxPDU = txPDU;
   else {
+    /* Compensate for Cisco bug. IOS cannot seem to accept multiple tunnelled
+       H.245 PDUs insode the same facility message */
+    if (remoteApplication.Find("Cisco IOS") == P_MAX_INDEX) {
+      // Not Cisco, so OK to tunnel multiple PDUs
     localTunnelPDU.BuildFacility(*this, TRUE);
     h245TunnelTxPDU = &localTunnelPDU;
+  }
   }
 
   // if a response to a SETUP PDU containing TCS/MSD was ignored, then shutdown negotiations
@@ -1510,13 +1712,47 @@ void H323Connection::OnCleared()
 }
 
 
+void H323Connection::SetRemoteVersions(const H225_ProtocolIdentifier & protocolIdentifier)
+{
+  if (protocolIdentifier.GetSize() < 6)
+    return;
+
+  h225version = protocolIdentifier[5];
+
+  if (h245versionSet) {
+    PTRACE(3, "H225\tSet protocol version to " << h225version);
+    return;
+  }
+
+  // If has not been told explicitly what the H.245 version use, make an
+  // assumption based on the H.225 version
+  switch (h225version) {
+    case 1 :
+      h245version = 2;  // H.323 version 1
+      break;
+    case 2 :
+      h245version = 3;  // H.323 version 2
+      break;
+    case 3 :
+      h245version = 5;  // H.323 version 3
+      break;
+    default :
+      h245version = 7;  // H.323 version 4 (all we do so far)
+  }
+  PTRACE(3, "H225\tSet protocol version to " << h225version
+         << " and implying H.245 version " << h245version);
+}
+
+
 BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
 {
   PINDEX i;
-
+  
   if (setupPDU.m_h323_uu_pdu.m_h323_message_body.GetTag() != H225_H323_UU_PDU_h323_message_body::e_setup)
     return FALSE;
   const H225_Setup_UUIE & setup = setupPDU.m_h323_uu_pdu.m_h323_message_body;
+
+  SetRemoteVersions(setup.m_protocolIdentifier);
 
   // Get the ring pattern
   distinctiveRing = setupPDU.GetDistinctiveRing();
@@ -1623,11 +1859,17 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
   }
 
   if (!isConsultationTransfer) {
+    /** Here is a spot where we should wait in case of Call Intrusion
+	for CIPL from other endpoints 
+	if (isCallIntrusion) return TRUE;
+    */
+
     // if the application indicates not to contine, then send a Q931 Release Complete PDU
     alertingPDU = new H323SignalPDU;
     alertingPDU->BuildAlerting(*this);
 
-    if (!OnIncomingCall(setupPDU, *alertingPDU)) {
+    /** If we have a case of incoming call intrusion we should not Clear the Call*/
+    if (!OnIncomingCall(setupPDU, *alertingPDU) && (!isCallIntrusion)) {
       Release(EndedByNoAccept);
       PTRACE(1, "H225\tApplication not accepting calls");
       return FALSE;
@@ -1694,13 +1936,19 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
   connectPDU = new H323SignalPDU;
   connectPDU->BuildConnect(*this);
 
-  if (!isConsultationTransfer) {
-    // call the application callback to determine if to answer the call or not
-    connectionState = AwaitingLocalAnswer;
-    AnsweringCall(OnAnswerCall(remotePartyName, setupPDU, *connectPDU));
-  }
-  else
+  /** If Cal Intrusion is allowed es must answer the call*/
+  if (IsCallIntrusion()) {
     AnsweringCall(AnswerCallNow);
+  }
+  else {
+    if (!isConsultationTransfer) {
+      // call the application callback to determine if to answer the call or not
+      connectionState = AwaitingLocalAnswer;
+      AnsweringCall(OnAnswerCall(remotePartyName, setupPDU, *connectPDU));
+	}
+    else
+      AnsweringCall(AnswerCallNow);
+  }
 
   return connectionState != ShuttingDownConnection;
 }
@@ -1726,24 +1974,9 @@ void H323Connection::SetRemotePartyInfo(const H323SignalPDU & pdu)
 
 void H323Connection::SetRemoteApplication(const H225_EndpointType & pdu)
 {
-  PStringStream str;
-
-  if (pdu.HasOptionalField(H225_EndpointType::e_vendor))
-    str << pdu.m_vendor.m_productId.AsString() << '\t'
-        << pdu.m_vendor.m_versionId.AsString() << '\t'
-        << pdu.m_vendor.m_vendor.m_t35CountryCode << ':'
-        << pdu.m_vendor.m_vendor.m_t35Extension << ':'
-        << pdu.m_vendor.m_vendor.m_manufacturerCode;
-
-  remoteApplication = str;
-  PTRACE(2, "H225\tSet remote application name: \"" << remoteApplication << '"');
-
-  // Hack to fix Altigen problem. They do stupid things if there is an
-  // receiveUserInputCapability entry in the capabilityTable!
-  if (remoteApplication.Find("AltiServ-ITG") != P_MAX_INDEX) {
-    H323Capability * cap;
-    while ((cap = localCapabilities.FindCapability(H323Capability::e_UserInput, UINT_MAX)) != NULL)
-      localCapabilities.Remove(cap);
+  if (pdu.HasOptionalField(H225_EndpointType::e_vendor)) {
+    remoteApplication = H323GetApplicationInfo(pdu.m_vendor);
+    PTRACE(2, "H225\tSet remote application name: \"" << remoteApplication << '"');
   }
 }
 
@@ -1767,6 +2000,7 @@ BOOL H323Connection::OnReceivedCallProceeding(const H323SignalPDU & pdu)
     return FALSE;
   const H225_CallProceeding_UUIE & call = pdu.m_h323_uu_pdu.m_h323_message_body;
 
+  SetRemoteVersions(call.m_protocolIdentifier);
   SetRemotePartyInfo(pdu);
   SetRemoteApplication(call.m_destinationInfo);
 
@@ -1788,6 +2022,7 @@ BOOL H323Connection::OnReceivedProgress(const H323SignalPDU & pdu)
     return FALSE;
   const H225_Progress_UUIE & progress = pdu.m_h323_uu_pdu.m_h323_message_body;
 
+  SetRemoteVersions(progress.m_protocolIdentifier);
   SetRemotePartyInfo(pdu);
   SetRemoteApplication(progress.m_destinationInfo);
 
@@ -1809,6 +2044,7 @@ BOOL H323Connection::OnReceivedAlerting(const H323SignalPDU & pdu)
     return FALSE;
   const H225_Alerting_UUIE & alert = pdu.m_h323_uu_pdu.m_h323_message_body;
 
+  SetRemoteVersions(alert.m_protocolIdentifier);
   SetRemotePartyInfo(pdu);
   SetRemoteApplication(alert.m_destinationInfo);
 
@@ -1836,6 +2072,7 @@ BOOL H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
     return FALSE;
   const H225_Connect_UUIE & connect = pdu.m_h323_uu_pdu.m_h323_message_body;
 
+  SetRemoteVersions(connect.m_protocolIdentifier);
   SetRemotePartyInfo(pdu);
   SetRemoteApplication(connect.m_destinationInfo);
 
@@ -1852,8 +2089,8 @@ BOOL H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
     h4502handler->OnReceivedSetupReturnResult();
   }
 
-  // have answer, so set timeout to interval for pinging remote
-  signallingChannel->SetReadTimeout(endpoint.GetRoundTripDelayRate());
+  // have answer, so set timeout to interval for monitoring calls health
+  signallingChannel->SetReadTimeout(MonitorCallStatusTime);
 
   // Check for fastStart data and start fast
   if (connect.HasOptionalField(H225_Connect_UUIE::e_fastStart))
@@ -1913,13 +2150,41 @@ BOOL H323Connection::OnReceivedFacility(const H323SignalPDU & pdu)
     return FALSE;
   const H225_Facility_UUIE & fac = pdu.m_h323_uu_pdu.m_h323_message_body;
 
+  SetRemoteVersions(fac.m_protocolIdentifier);
+
   // Check for fastStart data and start fast
   if (fac.HasOptionalField(H225_Facility_UUIE::e_fastStart))
     HandleFastStartAcknowledge(fac.m_fastStart);
 
   // Check that it has the H.245 channel connection info
-  if (fac.HasOptionalField(H225_Facility_UUIE::e_h245Address))
+  if (fac.HasOptionalField(H225_Facility_UUIE::e_h245Address)) {
+    if (controlChannel != NULL) {
+      // Fix race condition where both side want to open H.245 channel. we have
+      // channel bit it is not open (ie we are listening) and the remote has
+      // sent us an address to connect to. To resolve we compare the addresses.
+
+      H323TransportAddress h323Address = controlChannel->GetLocalAddress();
+      H225_TransportAddress myAddress;
+      h323Address.SetPDU(myAddress);
+      PPER_Stream myBuffer;
+      myAddress.Encode(myBuffer);
+
+      PPER_Stream otherBuffer;
+      fac.m_h245Address.Encode(otherBuffer);
+
+      if (myBuffer < otherBuffer) {
+        PTRACE(2, "H225\tSimultaneous start of H.245 channel, connecting to remote.");
+        controlChannel->CloseWait();
+        delete controlChannel;
+        controlChannel = NULL;
+      }
+      else {
+        PTRACE(2, "H225\tSimultaneous start of H.245 channel, using local listener.");
+      }
+    }
+
     return CreateOutgoingControlChannel(fac.m_h245Address);
+  }
 
   if (fac.m_reason.GetTag() != H225_FacilityReason::e_callForwarded)
     return TRUE;
@@ -1944,20 +2209,33 @@ BOOL H323Connection::OnReceivedFacility(const H323SignalPDU & pdu)
 }
 
 
-BOOL H323Connection::OnReceivedSignalNotify(const H323SignalPDU & /*pdu*/)
+BOOL H323Connection::OnReceivedSignalNotify(const H323SignalPDU & pdu)
 {
+  if (pdu.m_h323_uu_pdu.m_h323_message_body.GetTag() == H225_H323_UU_PDU_h323_message_body::e_notify) {
+    const H225_Notify_UUIE & notify = pdu.m_h323_uu_pdu.m_h323_message_body;
+    SetRemoteVersions(notify.m_protocolIdentifier);
+  }
   return TRUE;
 }
 
 
-BOOL H323Connection::OnReceivedSignalStatus(const H323SignalPDU & /*pdu*/)
+BOOL H323Connection::OnReceivedSignalStatus(const H323SignalPDU & pdu)
 {
+  if (pdu.m_h323_uu_pdu.m_h323_message_body.GetTag() == H225_H323_UU_PDU_h323_message_body::e_status) {
+    const H225_Status_UUIE & status = pdu.m_h323_uu_pdu.m_h323_message_body;
+    SetRemoteVersions(status.m_protocolIdentifier);
+  }
   return TRUE;
 }
 
 
-BOOL H323Connection::OnReceivedStatusEnquiry(const H323SignalPDU & /*pdu*/)
+BOOL H323Connection::OnReceivedStatusEnquiry(const H323SignalPDU & pdu)
 {
+  if (pdu.m_h323_uu_pdu.m_h323_message_body.GetTag() == H225_H323_UU_PDU_h323_message_body::e_statusInquiry) {
+    const H225_StatusInquiry_UUIE & status = pdu.m_h323_uu_pdu.m_h323_message_body;
+    SetRemoteVersions(status.m_protocolIdentifier);
+  }
+
   H323SignalPDU reply;
   reply.BuildStatus(*this);
   return reply.Write(*signallingChannel);
@@ -1966,7 +2244,10 @@ BOOL H323Connection::OnReceivedStatusEnquiry(const H323SignalPDU & /*pdu*/)
 
 void H323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
 {
+  if (callEndTime.GetTimeInSeconds() == 0)
   callEndTime = PTime();
+
+  endSessionReceived.Signal();
 
   switch (connectionState) {
     case EstablishedConnection :
@@ -1993,6 +2274,7 @@ void H323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
         Release(EndedByRefusal);
       else {
         const H225_ReleaseComplete_UUIE & rc = pdu.m_h323_uu_pdu.m_h323_message_body;
+        SetRemoteVersions(rc.m_protocolIdentifier);
         Release(H323TranslateToCallEndReason(pdu.GetQ931().GetCause(), rc.m_reason));
       }
   }
@@ -2557,45 +2839,43 @@ BOOL H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_OctetStr
       if (replyCapability != NULL) {
         for (PINDEX ch = 0; ch < fastStartChannels.GetSize(); ch++) {
           H323Channel & channelToStart = fastStartChannels[ch];
-          if ((channelToStart.GetDirection() == H323Channel::IsReceiver) == reverse) {
-            if (channelToStart.GetCapability() == *replyCapability) {
-              H323Capability * remoteCapability = replyCapability;
-              unsigned error = 1000;
-              if (channelToStart.OnReceivedPDU(open, error)) {
-                // For transmitter, need to fake a capability into the remote table
-                if (channelToStart.GetDirection() == H323Channel::IsTransmitter) {
-                  remoteCapability = remoteCapabilities.Copy(*replyCapability);
-                  remoteCapabilities.SetCapability(0, replyCapability->GetDefaultSessionID()-1, remoteCapability);
-                }
-                if (OnCreateLogicalChannel(*remoteCapability, channelToStart.GetDirection(), error)) {
-                  if (channelToStart.SetInitialBandwidth()) {
-                    if (channelToStart.Open()) {
-                      if (channelToStart.GetDirection() == H323Channel::IsTransmitter) {
-                        fastStartedTransmitMediaStream = ((H323UnidirectionalChannel &)channelToStart).GetMediaStream();
-                        if (GetCall().OpenSourceMediaStreams(fastStartedTransmitMediaStream->GetMediaFormat(), channelToStart.GetSessionID(), this)) {
-                          if (!mediaWaitForConnect)
-                            channelToStart.Start();
-                        }
-                        else {
-                          fastStartedTransmitMediaStream = NULL;
-                          channelToStart.Close();
-                        }
+          if ((channelToStart.GetDirection() == H323Channel::IsReceiver) == reverse &&
+               channelToStart.GetCapability() == *replyCapability) {
+            unsigned error = 1000;
+            if (channelToStart.OnReceivedPDU(open, error)) {
+              // For transmitter, need to fake a capability into the remote table
+              if (channelToStart.GetDirection() == H323Channel::IsTransmitter) {
+                H323Capability * remoteCapability = remoteCapabilities.Copy(channelToStart.GetCapability());
+                remoteCapabilities.SetCapability(0, remoteCapability->GetDefaultSessionID()-1, remoteCapability);
+              }
+              if (OnCreateLogicalChannel(channelToStart.GetCapability(), channelToStart.GetDirection(), error)) {
+                if (channelToStart.SetInitialBandwidth()) {
+                  if (channelToStart.Open()) {
+                    if (channelToStart.GetDirection() == H323Channel::IsTransmitter) {
+                      fastStartedTransmitMediaStream = ((H323UnidirectionalChannel &)channelToStart).GetMediaStream();
+                      if (GetCall().OpenSourceMediaStreams(fastStartedTransmitMediaStream->GetMediaFormat(), channelToStart.GetSessionID(), this)) {
+                        if (!mediaWaitForConnect)
+                          channelToStart.Start();
                       }
-                      else
-                        channelToStart.Start();
-                      if (channelToStart.IsOpen())
-                        break;
+                      else {
+                        fastStartedTransmitMediaStream = NULL;
+                        channelToStart.Close();
+                      }
                     }
+                    else
+                      channelToStart.Start();
+                    if (channelToStart.IsOpen())
+                      break;
                   }
-                  else
-                    PTRACE(2, "H225\tFast start channel open fail: insufficent bandwidth");
                 }
                 else
-                  PTRACE(2, "H225\tFast start channel open error: " << error);
+                  PTRACE(2, "H225\tFast start channel open fail: insufficent bandwidth");
               }
               else
-                PTRACE(2, "H225\tFast start capability error: " << error);
+                PTRACE(2, "H225\tFast start channel open error: " << error);
             }
+            else
+              PTRACE(2, "H225\tFast start capability error: " << error);
           }
         }
       }
@@ -2767,11 +3047,6 @@ BOOL H323Connection::StartControlNegotiations()
 {
   PTRACE(2, "H245\tStarted control channel");
 
-  // Have to work around brain dead NetMeeting that does not understand
-  // the receiveRTPAudioTelephonyEventCapability code
-  if (GetRemoteApplication().Find("NetMeeting") != P_MAX_INDEX)
-    localCapabilities.Remove(H323_UserInputCapability::SubTypeNames[H323_UserInputCapability::SignalToneRFC2833]);
-
   // Get the local capabilities before fast start is handled
   OnSetLocalCapabilities();
 
@@ -2787,6 +3062,7 @@ BOOL H323Connection::StartControlNegotiations()
     return FALSE;
   }
 
+  endSessionNeeded = TRUE;
   return TRUE;
 }
 
@@ -2800,34 +3076,64 @@ void H323Connection::HandleControlChannel()
   if (!StartControlNegotiations())
     return;
 
-  controlChannel->SetReadTimeout(endpoint.GetRoundTripDelayRate());
+  // Disable the signalling channels timeout for monitoring call status and
+  // start up one in this thread instead. Then the Q.931 channel can be closed
+  // without affecting the call.
+  signallingChannel->SetReadTimeout(PMaxTimeInterval);
+  controlChannel->SetReadTimeout(MonitorCallStatusTime);
 
   BOOL ok = TRUE;
   while (ok) {
-    StartRoundTripDelay();
+    MonitorCallStatus();
 
     PPER_Stream strm;
     if (controlChannel->ReadPDU(strm)) {
       // Lock while checking for shutting down.
-      if (!Lock())
-        break;
-
-      // Process the received PDU
-      PTRACE(4, "H245\tReceived TPKT: " << strm);
-      ok = HandleControlData(strm);
-
-      // Unlock connection
-      Unlock();
+      if (Lock()) {
+        // Process the received PDU
+        PTRACE(4, "H245\tReceived TPKT: " << strm);
+        ok = HandleControlData(strm);
+        Unlock(); // Unlock connection
+      }
+      else
+        ok = InternalEndSessionCheck(strm);
     }
-    else if (connectionState != EstablishedConnection ||
-             controlChannel->GetErrorCode() != PChannel::Timeout) {
+    else if (controlChannel->GetErrorCode() != PChannel::Timeout) {
       PTRACE(1, "H245\tRead error: " << controlChannel->GetErrorText(PChannel::LastReadError));
       Release(EndedByTransportFail);
       ok = FALSE;
     }
   }
 
+  // If we are the only link to the far end then indicate that we have
+  // received endSession even if we hadn't, because we are now never going
+  // to get one so there is no point in having CleanUpOnCallEnd wait.
+  if (signallingChannel == NULL)
+    endSessionReceived.Signal();
+
   PTRACE(2, "H245\tControl channel closed.");
+}
+
+
+BOOL H323Connection::InternalEndSessionCheck(PPER_Stream & strm)
+{
+  H323ControlPDU pdu;
+
+  if (!pdu.Decode(strm)) {
+    PTRACE(1, "H245\tInvalid PDU decode:\n  " << setprecision(2) << pdu);
+    return FALSE;
+  }
+
+  PTRACE(3, "H245\tChecking for end session on PDU: " << pdu.GetTagName()
+         << ' ' << ((PASN_Choice &)pdu.GetObject()).GetTagName());
+
+  if (pdu.GetTag() != H245_MultimediaSystemControlMessage::e_command)
+    return TRUE;
+
+  H245_CommandMessage & command = pdu;
+  if (command.GetTag() == H245_CommandMessage::e_endSessionCommand)
+    endSessionReceived.Signal();
+  return FALSE;
 }
 
 
@@ -2902,7 +3208,15 @@ BOOL H323Connection::OnH245Request(const H323ControlPDU & pdu)
       return masterSlaveDeterminationProcedure->HandleIncoming(request);
 
     case H245_RequestMessage::e_terminalCapabilitySet :
-      return capabilityExchangeProcedure->HandleIncoming(request);
+    {
+      const H245_TerminalCapabilitySet & tcs = request;
+      if (tcs.m_protocolIdentifier.GetSize() >= 6) {
+        h245version = tcs.m_protocolIdentifier[5];
+        h245versionSet = TRUE;
+        PTRACE(3, "H245\tSet protocol version to " << h245version);
+      }
+      return capabilityExchangeProcedure->HandleIncoming(tcs);
+    }
 
     case H245_RequestMessage::e_openLogicalChannel :
       return logicalChannels->HandleOpen(request);
@@ -2985,11 +3299,13 @@ BOOL H323Connection::OnH245Command(const H323ControlPDU & pdu)
       return OnH245_MiscellaneousCommand(command);
 
     case H245_CommandMessage::e_endSessionCommand :
+      endSessionNeeded = TRUE;
+      endSessionReceived.Signal();
       switch (connectionState) {
         case EstablishedConnection :
           Release(EndedByRemoteUser);
           break;
-        case AnswerCallDeferred :
+        case AwaitingLocalAnswer :
           Release(EndedByCallerAbort);
           break;
         default :
@@ -3154,6 +3470,10 @@ H323Channel * H323Connection::FindChannel(unsigned rtpSessionId, BOOL fromRemote
 void H323Connection::TransferCall(const PString & remoteParty,
                                   const PString & callIdentity)
 {
+  // According to H.450.4, if prior to consultation the primary call has been put on hold, the 
+  // transferring endpoint shall first retrieve the call before Call Transfer is invoked.
+  if (!callIdentity.IsEmpty() && IsLocalHold())
+    RetrieveCall();
   h4502handler->TransferCall(remoteParty, callIdentity);
 }
 
@@ -3187,8 +3507,9 @@ BOOL H323Connection::IsTransferringCall() const
 
 BOOL H323Connection::IsTransferredCall() const
 {
-  return h4502handler->GetInvokeId() != 0 &&
-         h4502handler->GetState() == H4502Handler::e_ctIdle;
+   return (h4502handler->GetInvokeId() != 0 &&
+           h4502handler->GetState() == H4502Handler::e_ctIdle) ||
+           h4502handler->isConsultationTransferSuccess();
 }
 
 void H323Connection::HandleTransferCall(const PString & token,
@@ -3278,7 +3599,7 @@ PChannel * H323Connection::SwapHoldMediaChannels(PChannel * newChannel)
 
       H323_RTPChannel * chan2 = reinterpret_cast<H323_RTPChannel*>(channel);
 
-      if(!channelNumber.IsFromRemote()) { // Transmit channel
+      if (!channelNumber.IsFromRemote()) { // Transmit channel
         if (IsMediaOnHold()) {
 //          H323Codec & codec = *channel->GetCodec();
 //          existingTransmitChannel = codec.GetRawDataChannel();
@@ -3318,6 +3639,29 @@ BOOL H323Connection::IsCallOnHold() const
 }
 
 
+void H323Connection::IntrudeCall(unsigned capabilityLevel)
+{
+  h45011handler->IntrudeCall(capabilityLevel);
+}
+
+
+void H323Connection::HandleIntrudeCall(const PString & token,
+                                       const PString & identity)
+{
+  if (!token.IsEmpty() || !identity)
+    h45011handler->AwaitSetupResponse(token, identity);
+}
+
+
+unsigned H323Connection::GetRemoteCallIntrusionProtectionLevel()
+{
+  /** 
+  TBD
+  */
+  return 0;
+}
+
+
 void H323Connection::SendCallWaitingIndication(const unsigned nbOfAddWaitingCalls)
 {
   h4506handler->AttachToAlerting(*alertingPDU, nbOfAddWaitingCalls);
@@ -3331,17 +3675,11 @@ BOOL H323Connection::OnControlProtocolError(ControlProtocolErrors /*errorSource*
 }
 
 
-static void SetRFC2833PayloadType(H323Connection & connection,
-                                  H323Capabilities & capabilities,
+static void SetRFC2833PayloadType(H323Capabilities & capabilities,
                                   OpalRFC2833Proto & rfc2833handler)
 {
   H323Capability * capability = capabilities.FindCapability(H323_UserInputCapability::SubTypeNames[H323_UserInputCapability::SignalToneRFC2833]);
-  if (capability == NULL) {
-    // Local endpoint cannot do this mode, disable it if set
-    if (connection.GetSendUserInputMode() == H323Connection::SendUserInputAsInlineRFC2833)
-      connection.SetSendUserInputMode(H323Connection::SendUserInputAsTone);
-  }
-  else {
+  if (capability != NULL) {
     RTP_DataFrame::PayloadTypes pt = ((H323_UserInputCapability*)capability)->GetPayloadType();
     if (rfc2833handler.GetPayloadType() != pt) {
       PTRACE(2, "H323\tUser Input RFC2833 payload type set to " << pt);
@@ -3355,7 +3693,7 @@ void H323Connection::OnSendCapabilitySet(H245_TerminalCapabilitySet & /*pdu*/)
 {
   // If we originated call, then check for RFC2833 capability and set payload type
   if (!HadAnsweredCall())
-    SetRFC2833PayloadType(*this, localCapabilities, *rfc2833Handler);
+    SetRFC2833PayloadType(localCapabilities, *rfc2833Handler);
 }
 
 
@@ -3397,7 +3735,6 @@ BOOL H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remoteCaps
       transmitterSidePaused = FALSE;
       connectionState = HasExecutedSignalConnect;
       capabilityExchangeProcedure->Start(TRUE);
-      masterSlaveDeterminationProcedure->Start(TRUE);
     }
     else {
       if (localCapabilities.GetSize() > 0)
@@ -3405,9 +3742,7 @@ BOOL H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remoteCaps
 
       // If we terminated call, then check for RFC2833 capability and set payload type
       if (HadAnsweredCall())
-        SetRFC2833PayloadType(*this, remoteCapabilities, *rfc2833Handler);
-      else
-        SetSendUserInputMode(sendUserInputMode);
+        SetRFC2833PayloadType(remoteCapabilities, *rfc2833Handler);
     }
   }
 
@@ -3481,9 +3816,8 @@ BOOL H323Connection::IsH245Master() const
 void H323Connection::StartRoundTripDelay()
 {
   if (Lock()) {
-    if (connectionState == EstablishedConnection && !roundTripDelayTimer.IsRunning()) {
-      roundTripDelayTimer = endpoint.GetRoundTripDelayRate();
-
+    if (masterSlaveDeterminationProcedure->IsDetermined() &&
+        capabilityExchangeProcedure->HasSentCapabilities()) {
       if (roundTripDelayProcedure->IsRemoteOffline()) {
         PTRACE(2, "H245\tRemote failed to respond to PDU.");
         if (endpoint.ShouldClearCallOnRoundTripFail())
@@ -3512,6 +3846,9 @@ void H323Connection::InternalEstablishedConnectionCheck()
   BOOL h245_available = masterSlaveDeterminationProcedure->IsDetermined() &&
                         capabilityExchangeProcedure->HasSentCapabilities() &&
                         capabilityExchangeProcedure->HasReceivedCapabilities();
+
+  if (h245_available)
+    endSessionNeeded = TRUE;
 
   // Check for if all the 245 conditions are met so can start up logical
   // channels and complete the connection establishment.
@@ -3819,9 +4156,15 @@ BOOL H323Connection::OnConflictingLogicalChannel(H323Channel & conflictingChanne
   channel->Close();
   CloseLogicalChannelNumber(channel->GetNumber());
 
+  // Get the conflisting channel number to close
+  H323ChannelNumber number = channel->GetNumber();
+
   // Must be slave and conflict from something we are sending, so try starting a
   // new channel using the master endpoints transmitter codec.
-  OpenLogicalChannel(conflictingChannel.GetCapability(), session, H323Channel::IsTransmitter);
+  logicalChannels->Open(conflictingChannel.GetCapability(), session, number);
+
+  // Now close the conflicting channel
+  CloseLogicalChannelNumber(number);
   return TRUE;
 }
 
@@ -3983,12 +4326,14 @@ BOOL H323Connection::OnCreateLogicalChannel(const H323Capability & capability,
 
 BOOL H323Connection::OnStartLogicalChannel(H323Channel & channel)
 {
-  if (channel.GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
+  if (channel.GetSessionID() == OpalMediaFormat::DefaultAudioSessionID &&
+      channel.IsDescendant(H323_RTPChannel::Class())) {
     OpalMediaPatch * patch = channel.GetMediaStream()->GetPatch();
     if (patch != NULL) {
       if (channel.GetNumber().IsFromRemote()) {
         patch->AddFilter(rfc2833Handler->GetReceiveHandler());
-        patch->AddFilter(PCREATE_NOTIFIER(OnUserInputInBandDTMF), OPAL_PCM16);
+        if (detectInBandDTMF)
+          patch->AddFilter(PCREATE_NOTIFIER(OnUserInputInBandDTMF), OPAL_PCM16);
       }
       else
         patch->AddFilter(rfc2833Handler->GetTransmitHandler());
@@ -4094,53 +4439,108 @@ BOOL H323Connection::SetBandwidthAvailable(unsigned newBandwidth, BOOL force)
 
 void H323Connection::SetSendUserInputMode(SendUserInputModes mode)
 {
-  PTRACE(2, "H323\tAttempting to set User Input send mode to " << mode);
-  OpalConnection::SetSendUserInputMode(mode);
+  PAssert(mode != SendUserInputAsSeparateRFC2833, PUnimplementedFunction);
 
+  PTRACE(2, "H323\tSetting default User Input send mode to " << mode);
+  sendUserInputMode = mode;
+}
+
+
+static BOOL CheckSendUserInputMode(const H323Capabilities & caps,
+                                   H323Connection::SendUserInputModes mode)
+{
   // If have remote capabilities, then verify we can send selected mode,
   // otherwise just return and accept it for future validation
-  if (!capabilityExchangeProcedure->HasReceivedCapabilities())
-    return;
-
-  static const H323_UserInputCapability::SubTypes types[NumSendUserInputModes] = {
+  static const H323_UserInputCapability::SubTypes types[H323Connection::NumSendUserInputModes] = {
+    H323_UserInputCapability::NumSubTypes,
     H323_UserInputCapability::BasicString,
     H323_UserInputCapability::SignalToneH245,
-    H323_UserInputCapability::SignalToneRFC2833
+    H323_UserInputCapability::SignalToneRFC2833,
+    H323_UserInputCapability::NumSubTypes,
   };
 
-  if (remoteCapabilities.FindCapability(H323_UserInputCapability::SubTypeNames[types[mode]]) != NULL)
-    return; // Can do the specified mode
+  if (types[mode] == H323_UserInputCapability::NumSubTypes)
+    return mode == H323Connection::SendUserInputAsQ931;
 
-  // If no capability then fall back to simple string mode
-  sendUserInputMode = SendUserInputAsString;
-  PTRACE(1, "H323\tUser Input send mode reset to H.245 string mode");
+  return caps.FindCapability(H323_UserInputCapability::SubTypeNames[types[mode]]) != NULL;
+}
+
+
+H323Connection::SendUserInputModes H323Connection::GetRealSendUserInputMode() const
+{
+  // If have not yet exchanged capabilities then the only thing we can do
+  // is Q.931
+  if (!capabilityExchangeProcedure->HasReceivedCapabilities())
+    return SendUserInputAsQ931;
+
+  // First try recommended mode
+  if (CheckSendUserInputMode(remoteCapabilities, sendUserInputMode))
+    return sendUserInputMode;
+
+  // Then try H.245 tones
+  if (CheckSendUserInputMode(remoteCapabilities, SendUserInputAsTone))
+    return SendUserInputAsTone;
+
+  // Then try H.245 strings
+  if (CheckSendUserInputMode(remoteCapabilities, SendUserInputAsString))
+    return SendUserInputAsString;
+
+  // Give up and do it as Q.931
+  return SendUserInputAsQ931;
 }
 
 
 BOOL H323Connection::SendUserInputString(const PString & value)
 {
-  PTRACE(2, "H323\tSendUserInput(\"" << value << "\"), using mode " << sendUserInputMode);
-  if (sendUserInputMode != SendUserInputAsString)
-    return OpalConnection::SendUserInputString(value);
-  else
+  SendUserInputModes mode = GetRealSendUserInputMode();
+
+  PTRACE(2, "H323\tSendUserInput(\"" << value << "\"), using mode " << mode);
+
+  if (mode == SendUserInputAsString)
     return SendUserInputIndicationString(value);
+
+  return OpalConnection::SendUserInputString(value);
 }
 
 
 BOOL H323Connection::SendUserInputTone(char tone, unsigned duration)
 {
-  PTRACE(2, "H323\tSendUserInputTone(" << tone << ',' << duration << ')');
+  SendUserInputModes mode = GetRealSendUserInputMode();
 
-  switch (sendUserInputMode) {
+  PTRACE(2, "H323\tSendUserInputTime('" << tone << "', " << duration << "), using mode " << mode);
+
+  switch (mode) {
+    case SendUserInputAsQ931 :
+      SendUserInputIndicationQ931(PString(tone));
+      break;
+
     case SendUserInputAsString :
-      return SendUserInputIndicationString(PString(tone));
+      SendUserInputIndicationString(PString(tone));
+      break;
 
     case SendUserInputAsTone :
       return SendUserInputIndicationTone(tone, duration);
 
     default :
-      return OpalConnection::SendUserInputTone(tone, duration);
+      ;
   }
+
+  return OpalConnection::SendUserInputTone(tone, duration);
+}
+
+
+BOOL H323Connection::SendUserInputIndicationQ931(const PString & value)
+{
+  PTRACE(2, "H323\tSendUserInputIndicationQ931(\"" << value << "\")");
+
+  H323SignalPDU pdu;
+  pdu.BuildInformation(*this);
+  pdu.GetQ931().SetKeypad(value);
+  if (WriteSignalPDU(pdu))
+    return TRUE;
+
+  ClearCall(EndedByTransportFail);
+  return FALSE;
 }
 
 
@@ -4366,22 +4766,10 @@ void H323Connection::OnRefusedModeChange(const H245_RequestModeReject * /*pdu*/)
 }
 
 
-OpalT120Protocol * H323Connection::CreateT120ProtocolHandler() const
-{
-  return endpoint.CreateT120ProtocolHandler(*this);
-}
-
-
-OpalT38Protocol * H323Connection::CreateT38ProtocolHandler() const
-{
-  return endpoint.CreateT38ProtocolHandler(*this);
-}
-
-
-BOOL H323Connection::RequestModeChangeT38()
+BOOL H323Connection::RequestModeChangeT38(const char * capabilityName)
 {
   t38ModeChange = TRUE;
-  if (RequestModeChange("T.38"))
+  if (RequestModeChange(capabilityName))
     return TRUE;
 
   t38ModeChange = FALSE;
@@ -4407,5 +4795,41 @@ void H323Connection::SendLogicalChannelMiscCommand(H323Channel & channel,
     WriteControlPDU(pdu);
   }
 }
+
+
+void H323Connection::MonitorCallStatus()
+{
+  if (!Lock())
+    return;
+
+  if (endpoint.GetRoundTripDelayRate() > 0 && !roundTripDelayTimer.IsRunning()) {
+    roundTripDelayTimer = endpoint.GetRoundTripDelayRate();
+    StartRoundTripDelay();
+  }
+
+/*
+  if (endpoint.GetNoMediaTimeout() > 0) {
+    BOOL oneRunning = FALSE;
+    BOOL allSilent = TRUE;
+    for (PINDEX i = 0; i < logicalChannels->GetSize(); i++) {
+      H323Channel * channel = logicalChannels->GetChannelAt(i);
+      if (channel != NULL && channel->IsDescendant(H323_RTPChannel::Class())) {
+        if (channel->IsRunning()) {
+          oneRunning = TRUE;
+          if (((H323_RTPChannel *)channel)->GetSilenceDuration() < endpoint.GetNoMediaTimeout()) {
+            allSilent = FALSE;
+            break;
+          }
+        }
+      }
+    }
+    if (oneRunning && allSilent)
+      ClearCall(EndedByTransportFail);
+  }
+*/
+
+  Unlock();
+}
+
 
 /////////////////////////////////////////////////////////////////////////////

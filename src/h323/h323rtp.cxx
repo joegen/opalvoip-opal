@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323rtp.cxx,v $
- * Revision 1.2006  2002/01/22 05:26:39  robertj
+ * Revision 1.2007  2002/07/01 04:56:32  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.5  2002/01/22 05:26:39  robertj
  * Added enum for illegal payload type value.
  *
  * Revision 2.4  2001/12/07 08:53:30  robertj
@@ -41,6 +44,15 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.18  2002/06/24 08:07:49  robertj
+ * Fixed setting of H.225.0 logical channel parameter silenceSuppression field
+ *   to correctly indicate if codec is going to stop sending RTP on silence.
+ *
+ * Revision 1.17  2002/05/28 06:27:23  robertj
+ * Split UDP (for RAS) from RTP port bases.
+ * Added current port variable so cycles around the port range specified which
+ *   fixes some wierd problems on some platforms, thanks Federico Pinna
  *
  * Revision 1.16  2001/10/02 02:06:23  robertj
  * Fixed CIsco IOS compatibility, yet again!.
@@ -144,11 +156,14 @@ H323_RTP_UDP::H323_RTP_UDP(const H323Connection & conn, RTP_UDP & rtp_udp)
   PIPSocket::Address localAddress;
   transport.GetLocalAddress().GetIpAddress(localAddress);
 
-  const H323EndPoint & endpoint = connection.GetEndPoint();
-  rtp.Open(localAddress,
-           endpoint.GetManager().GetUDPPortBase(),
-           endpoint.GetManager().GetUDPPortMax(),
-           endpoint.GetManager().GetRtpIpTypeofService());
+  OpalManager & manager = connection.GetEndPoint().GetManager();
+  WORD firstPort = manager.GetRtpIpPortPair();
+  WORD nextPort = firstPort;
+  while (!rtp.Open(localAddress, nextPort, nextPort, manager.GetRtpIpTypeofService())) {
+    nextPort = manager.GetRtpIpPortPair();
+    if (nextPort == firstPort)
+      break;
+  }
 }
 
 
@@ -162,11 +177,6 @@ BOOL H323_RTP_UDP::OnSendingPDU(const H323_RTPChannel & channel,
   param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_mediaGuaranteedDelivery);
   param.m_mediaGuaranteedDelivery = FALSE;
 
-  if (channel.GetDirection() != H323Channel::IsReceiver) {
-    param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_silenceSuppression);
-    param.m_silenceSuppression = TRUE;
-  }
-
   // unicast must have mediaControlChannel
   H323TransportAddress mediaControlAddress(rtp.GetLocalAddress(), rtp.GetLocalControlPort());
   param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_mediaControlChannel);
@@ -177,6 +187,14 @@ BOOL H323_RTP_UDP::OnSendingPDU(const H323_RTPChannel & channel,
     H323TransportAddress mediaAddress(rtp.GetLocalAddress(), rtp.GetLocalDataPort());
     param.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaChannel);
     mediaAddress.SetPDU(param.m_mediaChannel);
+  }
+  else {
+    // Set flag for we are going to stop sending audio on silence
+    OpalMediaStream * mediaStream = channel.GetMediaStream();
+    if (mediaStream != NULL) {
+      param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_silenceSuppression);
+      //param.m_silenceSuppression = ((H323AudioCodec*)codec)->GetSilenceDetectionMode() != H323AudioCodec::NoSilenceDetection;
+    }
   }
 
   // Set dynamic payload type, if is one

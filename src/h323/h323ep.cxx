@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2018  2002/03/27 04:02:01  robertj
+ * Revision 1.2019  2002/07/01 04:56:32  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.17  2002/03/27 04:02:01  robertj
  * Fixed correct pasing of arguments for starting outgoing call.
  *
  * Revision 2.16  2002/03/18 00:33:36  robertj
@@ -77,6 +80,65 @@
  *
  * Revision 2.3  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 2.2  2001/08/01 05:14:19  robertj
+ * Moved media formats list from endpoint to connection.
+ * Fixed accept of call to early enough to set connections capabilities.
+ *
+ * Revision 2.1  2001/07/30 07:22:25  robertj
+ * Abstracted listener management from H.323 to OpalEndPoint class.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
+ * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.131  2002/06/22 05:48:42  robertj
+ * Added partial implementation for H.450.11 Call Intrusion
+ *
+ * Revision 1.130  2002/06/15 03:06:46  robertj
+ * Fixed locking of connection on H.250.2 transfer, thanks Gilles Delcayre
+ *
+ * Revision 1.129  2002/06/13 06:15:20  robertj
+ * Allowed TransferCall() to be used on H323Connection as well as H323EndPoint.
+ *
+ * Revision 1.128  2002/06/12 03:55:21  robertj
+ * Added function to add/remove multiple listeners in one go comparing against
+ *   what is already running so does not interrupt unchanged listeners.
+ *
+ * Revision 1.127  2002/05/29 06:40:33  robertj
+ * Changed sending of endSession/ReleaseComplete PDU's to occur immediately
+ *   on call clearance and not wait for background thread to do it.
+ * Stricter compliance by waiting for reply endSession before closing down.
+ *
+ * Revision 1.126  2002/05/28 06:16:12  robertj
+ * Split UDP (for RAS) from RTP port bases.
+ * Added current port variable so cycles around the port range specified which
+ *   fixes some wierd problems on some platforms, thanks Federico Pinna
+ *
+ * Revision 1.125  2002/05/17 03:39:01  robertj
+ * Fixed problems with H.235 authentication on RAS for server and client.
+ *
+ * Revision 1.124  2002/05/15 23:57:49  robertj
+ * Added function to get the tokens for all active calls.
+ * Fixed setting of password info in gatekeeper so is before discovery.
+ *
+ * Revision 1.123  2002/05/02 07:56:28  robertj
+ * Added automatic clearing of call if no media (RTP data) is transferred in a
+ *   configurable (default 5 minutes) amount of time.
+ *
+ * Revision 1.122  2002/04/18 01:40:56  robertj
+ * Fixed bad variable name for disabling DTMF detection, very confusing.
+ *
+ * Revision 1.121  2002/04/17 00:50:57  robertj
+ * Added ability to disable the in band DTMF detection.
+ *
+ * Revision 1.120  2002/04/10 08:09:03  robertj
+ * Allowed zero TCP ports
+ *
+ * Revision 1.119  2002/04/10 06:50:08  robertj
+ * Added functions to set port member variables.
+ *
+ * Revision 1.118  2002/04/01 21:32:24  robertj
+ * Fixed problem with busy loop on Solaris, thanks chad@broadmind.com
  *
  * Revision 1.117  2002/02/04 07:17:56  robertj
  * Added H.450.2 Consultation Transfer, thanks Norwood Systems.
@@ -157,16 +219,6 @@
  * Fixed problem with setting gk password before have a gk variable.
  * Fixed memory leak if listener fails to open.
  * Fixed problem with being able to specify an alias with an @ in it.
- *
- * Revision 2.2  2001/08/01 05:14:19  robertj
- * Moved media formats list from endpoint to connection.
- * Fixed accept of call to early enough to set connections capabilities.
- *
- * Revision 2.1  2001/07/30 07:22:25  robertj
- * Abstracted listener management from H.323 to OpalEndPoint class.
- *
- * Revision 2.0  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.92  2001/08/02 04:31:48  robertj
  * Changed to still maintain gatekeeper link if GRQ succeeded but RRQ
@@ -551,18 +603,26 @@ void H225CallThread::Main()
 H323EndPoint::H323EndPoint(OpalManager & manager)
   : OpalEndPoint(manager, "h323", CanTerminateCall),
     signallingChannelCallTimeout(0, 0, 1),  // Minutes
+    endSessionTimeout(0, 10),               // Seconds
     masterSlaveDeterminationTimeout(0, 30), // Seconds
     capabilityExchangeTimeout(0, 30),       // Seconds
     logicalChannelTimeout(0, 30),           // Seconds
     requestModeTimeout(0, 30),              // Seconds
     roundTripDelayTimeout(0, 10),           // Seconds
     roundTripDelayRate(0, 0, 1),            // Minutes
+    noMediaTimeout(0, 0, 5),                // Minutes
     gatekeeperRequestTimeout(0, 5),         // Seconds
     rasRequestTimeout(0, 3),                // Seconds
     callTransferT1(0,10),                   // Seconds
     callTransferT2(0,10),                   // Seconds
     callTransferT3(0,10),                   // Seconds
-    callTransferT4(0,10)                    // Seconds
+    callTransferT4(0,10),                   // Seconds
+    callIntrusionT1(0,30),                  // Seconds
+    callIntrusionT2(0,30),                  // Seconds
+    callIntrusionT3(0,30),                  // Seconds
+    callIntrusionT4(0,30),                  // Seconds
+    callIntrusionT5(0,10),                  // Seconds
+    callIntrusionT6(0,10)                   // Seconds
 {
   // Set port in OpalEndPoint class
   defaultSignalPort = DefaultSignalTcpPort;
@@ -577,6 +637,8 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   disableFastStart = FALSE;
   disableH245Tunneling = FALSE;
   disableH245inSetup = FALSE;
+  callIntrusionProtectionLevel = 3; //H45011_CIProtectionLevel::e_fullProtection;
+  defaultSendUserInputMode = H323Connection::SendUserInputAsString;
 
   terminalType = e_TerminalOnly;
   clearCallOnRoundTripFail = FALSE;
@@ -759,7 +821,12 @@ H323Gatekeeper * H323EndPoint::InternalCreateGatekeeper(OpalTransport * transpor
   if (transport == NULL)
     transport = new OpalTransportUDP(*this);
 
-  return CreateGatekeeper(transport);
+
+  H323Gatekeeper * gk = CreateGatekeeper(transport);
+
+  gk->SetPassword(gatekeeperPassword);
+
+  return gk;
 }
 
 
@@ -770,8 +837,9 @@ BOOL H323EndPoint::InternalRegisterGatekeeper(H323Gatekeeper * gk, BOOL discover
       gatekeeper = gk;
       return TRUE;
     }
-    else  // RRQ was rejected continue listening
-      gatekeeper = gk;
+
+    // RRQ was rejected continue trying
+    gatekeeper = gk;
   }
   else // Only stop listening if the GRQ was rejected
     delete gk;
@@ -805,12 +873,37 @@ BOOL H323EndPoint::RemoveGatekeeper(int reason)
 }
 
 
+void H323EndPoint::SetGatekeeperPassword(const PString & password)
+{
+  gatekeeperPassword = password;
+
+  if (gatekeeper != NULL) {
+    if (gatekeeper->IsRegistered()) // If we are registered send a URQ
+      gatekeeper->UnregistrationRequest(H225_UnregRequestReason::e_reregistrationRequired);
+    InternalRegisterGatekeeper(gatekeeper, TRUE);
+  }
+}
+
+
+H235Authenticators H323EndPoint::CreateAuthenticators()
+{
+  H235Authenticators authenticators;
+
+  authenticators.Append(new H235AuthSimpleMD5);
+#if P_SSL
+  authenticators.Append(new H235AuthProcedure1);
+#endif
+
+  return authenticators;
+}
+
+
 BOOL H323EndPoint::SetUpConnection(OpalCall & call,
                                    const PString & remoteParty,
                                    void * userData)
 {
   PTRACE(2, "H323\tMaking call to: " << remoteParty);
-  return InternalMakeCall(call, PString(), PString(), remoteParty, userData);
+  return InternalMakeCall(call, PString(), PString(), UINT_MAX, remoteParty, userData);
 }
 
 
@@ -886,13 +979,15 @@ BOOL H323EndPoint::SetupTransfer(const PString & oldToken,
                                  void * userData)
 {
   PTRACE(2, "H323\tTransferring call to: " << remoteParty);
-  return InternalMakeCall(*manager.CreateCall(), oldToken, callIdentity, remoteParty, userData);
+  return InternalMakeCall(*manager.CreateCall(),
+                          oldToken, callIdentity, UINT_MAX, remoteParty, userData);
 }
 
 
 BOOL H323EndPoint::InternalMakeCall(OpalCall & call,
                                     const PString & existingToken,
                                     const PString & callIdentity,
+                                    unsigned capabilityLevel,
                                     const PString & remoteParty,
                                     void * userData)
 {
@@ -931,7 +1026,12 @@ BOOL H323EndPoint::InternalMakeCall(OpalCall & call,
 
   connection->Lock();
   connection->AttachSignalChannel(transport, FALSE);
-  connection->HandleTransferCall(existingToken, callIdentity);
+  if (capabilityLevel == UINT_MAX)
+    connection->HandleTransferCall(existingToken, callIdentity);
+  else {
+    connection->HandleIntrudeCall(existingToken, callIdentity);
+    connection->IntrudeCall(capabilityLevel);
+  }
 
   PTRACE(3, "H323\tCreated new connection: " << newToken);
 
@@ -948,12 +1048,6 @@ void H323EndPoint::TransferCall(const PString & token,
 {
   H323Connection * connection = FindConnectionWithLock(token);
   if (connection != NULL) {
-
-    // According to H.450.4, if prior to consultation the primary call has been put on hold, the 
-    // transferring endpoint shall first retrieve the call before Call Transfer is invoked.
-    if (!callIdentity.IsEmpty() && connection->IsLocalHold()) {
-      connection->RetrieveCall();
-    }
     connection->TransferCall(remoteParty, callIdentity);
     connection->Unlock();
   }
@@ -978,6 +1072,16 @@ void H323EndPoint::HoldCall(const PString & token, BOOL localHold)
     connection->HoldCall(localHold);
     connection->Unlock();
   }
+}
+
+
+BOOL H323EndPoint::IntrudeCall(const PString & remoteParty,
+                               unsigned capabilityLevel,
+                               void * userData)
+{
+  return InternalMakeCall(*manager.CreateCall(),
+                          PString(), PString(), capabilityLevel,
+                          remoteParty, userData);
 }
 
 
@@ -1041,7 +1145,7 @@ H323Connection * H323EndPoint::FindConnectionWithLock(const PString & token)
     // Could not get connection lock, unlock the endpoint lists so a thread
     // that has the connection lock gets a chance at the endpoint lists.
     inUseFlag.Signal();
-    PThread::Yield();
+    PThread::Sleep(20);
     inUseFlag.Wait();
   }
 
@@ -1072,7 +1176,6 @@ H323Connection * H323EndPoint::FindConnectionWithoutLocks(const PString & token)
 
   return NULL;
 }
-
 
 BOOL H323EndPoint::OnIncomingCall(H323Connection & connection,
                                   const H323SignalPDU & /*setupPDU*/,
@@ -1194,18 +1297,6 @@ void H323EndPoint::OnClosedLogicalChannel(H323Connection & /*connection*/,
 void H323EndPoint::OnRTPStatistics(const H323Connection & /*connection*/,
                                    const RTP_Session & /*session*/) const
 {
-}
-
-
-OpalT120Protocol * H323EndPoint::CreateT120ProtocolHandler(const H323Connection &) const
-{
-  return NULL;
-}
-
-
-OpalT38Protocol * H323EndPoint::CreateT38ProtocolHandler(const H323Connection &) const
-{
-  return NULL;
 }
 
 
