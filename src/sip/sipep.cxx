@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2013  2004/02/17 12:41:54  csoutheren
+ * Revision 1.2014  2004/03/09 12:09:56  rjongbloed
+ * More work on SIP register.
+ *
+ * Revision 2.12  2004/02/17 12:41:54  csoutheren
  * Use correct Contact field when behind NAT
  *
  * Revision 2.11  2003/12/20 12:21:18  rjongbloed
@@ -274,9 +277,6 @@ static BOOL WriteREGISTER(OpalTransport & transport, PObject * param)
   SIPEndPoint & endpoint = *(SIPEndPoint *)param;
 
   SIPTransaction request(endpoint, transport);
-  SIPURL name(endpoint.GetRegistrationName(),
-              transport.GetLocalAddress(),
-              endpoint.GetDefaultSignalPort());
 
   // translate contact address
   OpalTransportAddress contactAddress = transport.GetLocalAddress();
@@ -291,24 +291,20 @@ static BOOL WriteREGISTER(OpalTransport & transport, PObject * param)
     }
   }
 
-  SIPURL contact(name.GetUserName(),
-                 contactAddress,
-                 contactPort);
+  PString name = endpoint.GetRegistrationName();
+  SIPURL contact(name.Left(name.Find('@')), contactAddress, contactPort);
   request.BuildREGISTER(name, contact);
 
   return request.Start();
 }
 
 
-BOOL SIPEndPoint::Register(const PString & server)
+BOOL SIPEndPoint::Register(const PString & hostname)
 {
   if (listeners.IsEmpty())
     return FALSE;
 
-  if (server.IsEmpty())
-    return FALSE;
-
-  OpalTransportAddress address(server, defaultSignalPort, "udp");
+  OpalTransportAddress address(hostname, defaultSignalPort, "udp");
 
   OpalTransport * transport = address.CreateTransport(*this, OpalTransportAddress::NoBinding);
   transport->ConnectTo(address);
@@ -316,7 +312,7 @@ BOOL SIPEndPoint::Register(const PString & server)
   transport->WriteConnect(WriteREGISTER, this);
 
   SIP_PDU response;
-  transport->SetReadTimeout(15000);
+  transport->SetReadTimeout(10000);
   if (!response.Read(*transport)) {
     delete transport;
     return FALSE;
