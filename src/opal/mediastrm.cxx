@@ -24,7 +24,11 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2021  2004/01/18 15:35:21  rjongbloed
+ * Revision 1.2022  2004/02/09 13:12:28  rjongbloed
+ * Fixed spin problem when closing channel, realted to not outputting silence
+ *   frames to the sound card when nothing coming out of jitter buffer.
+ *
+ * Revision 2.20  2004/01/18 15:35:21  rjongbloed
  * More work on video support
  *
  * Revision 2.19  2003/06/02 02:58:07  rjongbloed
@@ -523,8 +527,15 @@ BOOL OpalRawMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX & 
   if (channel == NULL)
     return FALSE;
 
-  if (!channel->Write(buffer, length))
-    return FALSE;
+  if (buffer != NULL && length != 0) {
+    if (!channel->Write(buffer, length))
+      return FALSE;
+  }
+  else {
+    PBYTEArray silence(defaultDataSize);
+    if (!channel->Write(silence, defaultDataSize))
+      return FALSE;
+  }
 
   written = channel->GetLastWriteCount();
   return TRUE;
