@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2011  2004/02/07 02:18:19  rjongbloed
+ * Revision 1.2012  2004/02/09 13:13:02  rjongbloed
+ * Added debug string output for media type enum.
+ *
+ * Revision 2.10  2004/02/07 02:18:19  rjongbloed
  * Improved searching for media format to use payload type AND the encoding name.
  *
  * Revision 2.9  2004/01/08 22:23:23  csoutheren
@@ -242,6 +245,22 @@ OpalMediaFormat SDPMediaFormat::GetMediaFormat() const
 
 
 //////////////////////////////////////////////////////////////////////////////
+
+#if PTRACING
+ostream & operator<<(ostream & out, SDPMediaDescription::MediaType type)
+{
+  static const char * const MediaTypeNames[SDPMediaDescription::NumMediaTypes] = {
+    "Audio", "Video", "Application", "Unknown"
+  };
+
+  if (type < PARRAYSIZE(MediaTypeNames) && MediaTypeNames[type] != NULL)
+    out << MediaTypeNames[type];
+  else
+    out << "MediaTypes<" << (int)type << '>';
+
+  return out;
+}
+#endif
 
 SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, MediaType _mediaType)
   : mediaType(_mediaType),
