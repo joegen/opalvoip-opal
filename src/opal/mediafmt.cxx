@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2010  2002/01/22 05:14:38  robertj
+ * Revision 1.2011  2002/02/11 09:32:13  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.9  2002/01/22 05:14:38  robertj
  * Added RTP encoding name string to media format database.
  * Changed time units to clock rate in Hz.
  *
@@ -57,6 +60,10 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.6  2002/01/22 07:08:26  robertj
+ * Added IllegalPayloadType enum as need marker for none set
+ *   and MaxPayloadType is a legal value.
  *
  * Revision 1.5  2001/12/11 04:27:28  craigs
  * Added support for 5.3kbps G723.1

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2006  2002/01/14 06:35:58  robertj
+ * Revision 1.2007  2002/02/11 09:32:13  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.5  2002/01/14 06:35:58  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.4  2002/01/14 02:24:06  robertj
@@ -44,6 +47,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.71  2002/02/09 02:33:49  robertj
+ * Improved payload type docuemntation and added Cisco CN.
  *
  * Revision 1.70  2001/12/20 04:34:56  robertj
  * Fixed display of some of the unknown RTP types.
@@ -392,7 +398,8 @@ static const char * const PayloadTypesNames[RTP_DataFrame::LastKnownPayloadType]
   "DVI4_11k",
   "DVI4_22k",
   "G729",
-  NULL, NULL, NULL, NULL, NULL, NULL,
+  "CiscoCN",
+  NULL, NULL, NULL, NULL, NULL,
   "CelB",
   "JPEG",
   NULL, NULL, NULL, NULL,

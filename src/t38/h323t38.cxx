@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t38.cxx,v $
- * Revision 1.2007  2002/01/14 06:35:59  robertj
+ * Revision 1.2008  2002/02/11 09:32:13  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.6  2002/01/14 06:35:59  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.5  2001/11/12 05:32:12  robertj
@@ -44,6 +47,10 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.15  2002/02/09 04:39:05  robertj
+ * Changes to allow T.38 logical channels to use single transport which is
+ *   now owned by the OpalT38Protocol object instead of H323Channel.
  *
  * Revision 1.14  2002/01/10 04:08:42  robertj
  * Fixed missing bit rate in mode request PDU.
@@ -245,6 +252,9 @@ H323_T38Channel::H323_T38Channel(H323Connection & connection,
 {
   PTRACE(3, "H323T38\tH323 channel created");
 
+  // Transport will be owned by OpalT38Protocol
+  autoDeleteTransport = FALSE;
+
   separateReverseChannel = capability.GetTransportMode() != H323_T38Capability::e_SingleTCP;
   usesTCP = capability.GetTransportMode() != H323_T38Capability::e_UDP;
 
@@ -255,6 +265,8 @@ H323_T38Channel::H323_T38Channel(H323Connection & connection,
   else {
     PTRACE(3, "H323T38\tCreating new T.38 handler");
     t38handler = connection.CreateT38ProtocolHandler();
+    if (!usesTCP && CreateTransport())
+      t38handler->SetTransport(transport, TRUE);
   }
 }
 
@@ -304,11 +316,13 @@ void H323_T38Channel::Receive()
   PTRACE(2, "H323T38\tReceive thread started.");
 
   if (t38handler != NULL) {
-    if (listener != NULL)
+    if (listener != NULL) {
       transport = listener->Accept(30000);  // 30 second wait for connect back
+      t38handler->SetTransport(transport);
+    }
 
     if (transport != NULL)
-      t38handler->Answer(*transport);
+      t38handler->Answer();
     else {
       PTRACE(1, "H323T38\tNo transport, aborting thread.");
     }
@@ -331,7 +345,7 @@ void H323_T38Channel::Transmit()
   PTRACE(2, "H323T38\tTransmit thread starting");
 
   if (t38handler != NULL)
-    t38handler->Originate(*transport);
+    t38handler->Originate();
   else {
     PTRACE(1, "H323T38\tTransmit no proto handler");
   }

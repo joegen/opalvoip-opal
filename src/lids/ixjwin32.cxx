@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjwin32.cxx,v $
- * Revision 1.2005  2002/01/14 06:35:58  robertj
+ * Revision 1.2006  2002/02/11 09:32:13  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.4  2002/01/14 06:35:58  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.3  2001/10/05 00:22:14  robertj
@@ -38,6 +41,9 @@
  *
  * Revision 2.1  2001/08/01 05:21:21  robertj
  * Made OpalMediaFormatList class global to help with documentation.
+ * Revision 1.107  2002/02/08 14:41:49  craigs
+ * Changed codec table to use mediatream #defines. Thanks to Roger Hardiman
+ *
  * Revision 1.106  2001/12/11 04:27:28  craigs
  * Added support for 5.3kbps G723.1
  *
@@ -851,14 +857,14 @@ static const struct {
   DWORD playbackMode;
   DWORD playbackRate;
 } CodecInfo[] = {
-  { OPAL_PCM16,       7, 0, 0, 0,   0, RECORD_MODE_16LINEAR,   0,                   PLAYBACK_MODE_16LINEAR,   0                     },
-  { "G.711-uLaw-64k", 7, 0, 0, 0,   0, RECORD_MODE_ULAW,       0,                   PLAYBACK_MODE_ULAW,       0                     },
-  { "G.711-ALaw-64k", 7, 0, 0, 0,   0, RECORD_MODE_ALAW,       0,                   PLAYBACK_MODE_ALAW,       0                     },
-  { "G.728",          2, 0, 0, 0,  20, RECORD_MODE_TRUESPEECH, RECORD_RATE_G728,    PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G728    },
-  { "G.729A",         6, 1, 0, 0,  10, RECORD_MODE_TRUESPEECH, RECORD_RATE_G729,    PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G729    },
-  { "G.729A/B",       6, 1, 0, 1,  10, RECORD_MODE_TRUESPEECH, RECORD_RATE_G729,    PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G729    },
-  { "G.723.1(6.3k)",  7, 0, 1, 1,  24, RECORD_MODE_TRUESPEECH, RECORD_RATE_G723_63, PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G723_63 },
-  { "G.723.1(5.3k)",  7, 0, 1, 1,  20, RECORD_MODE_TRUESPEECH, RECORD_RATE_G723_53, PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G723_53 },
+  { OPAL_PCM16,         7, 0, 0, 0,   0, RECORD_MODE_16LINEAR,   0,                   PLAYBACK_MODE_16LINEAR,   0                     },
+  { OPAL_G711_ULAW_64K, 7, 0, 0, 0,   0, RECORD_MODE_ULAW,       0,                   PLAYBACK_MODE_ULAW,       0                     },
+  { OPAL_G711_ALAW_64K, 7, 0, 0, 0,   0, RECORD_MODE_ALAW,       0,                   PLAYBACK_MODE_ALAW,       0                     },
+  { OPAL_G728,          2, 0, 0, 0,  20, RECORD_MODE_TRUESPEECH, RECORD_RATE_G728,    PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G728    },
+  { OPAL_G729,          6, 1, 0, 0,  10, RECORD_MODE_TRUESPEECH, RECORD_RATE_G729,    PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G729    },
+  { OPAL_G729AB,        6, 1, 0, 1,  10, RECORD_MODE_TRUESPEECH, RECORD_RATE_G729,    PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G729    },
+  { OPAL_G7231_6k3,     7, 0, 1, 1,  24, RECORD_MODE_TRUESPEECH, RECORD_RATE_G723_63, PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G723_63 },
+  { OPAL_G7231_5k3,     7, 0, 1, 1,  20, RECORD_MODE_TRUESPEECH, RECORD_RATE_G723_53, PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G723_53 },
 };
 
 

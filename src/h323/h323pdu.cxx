@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.cxx,v $
- * Revision 1.2007  2002/01/22 05:27:29  robertj
+ * Revision 1.2008  2002/02/11 09:32:13  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.6  2002/01/22 05:27:29  robertj
  * Update from OpenH323, rev 1.92
  *
  * Revision 2.5  2002/01/14 06:35:58  robertj
@@ -38,6 +41,9 @@
  *
  * Revision 2.3  2001/10/05 00:22:14  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 1.93  2002/02/01 01:48:45  robertj
+ * Some more fixes for T.120 channel establishment, more to do!
  *
  * Revision 1.92  2002/01/18 06:01:23  robertj
  * Added some H323v4 functions (fastConnectRefused & TCS in SETUP)
@@ -1209,6 +1215,7 @@ H245_TerminalCapabilitySet &
   h225_0.m_receiveMultipointCapability.m_mediaDistributionCapability.SetSize(1);
   h225_0.m_transmitMultipointCapability.m_mediaDistributionCapability.SetSize(1);
   h225_0.m_receiveAndTransmitMultipointCapability.m_mediaDistributionCapability.SetSize(1);
+  h225_0.m_t120DynamicPortCapability = TRUE;
 
   // Set the table of capabilities
   connection.GetLocalCapabilities().BuildPDU(cap);

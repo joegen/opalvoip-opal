@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t120.cxx,v $
- * Revision 1.2007  2002/01/14 06:35:58  robertj
+ * Revision 1.2008  2002/02/11 09:32:13  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.6  2002/01/14 06:35:58  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.5  2001/11/13 04:29:48  robertj
@@ -45,6 +48,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.7  2002/02/01 01:47:18  robertj
+ * Some more fixes for T.120 channel establishment, more to do!
  *
  * Revision 1.6  2002/01/09 00:21:40  robertj
  * Changes to support outgoing H.245 RequstModeChange.
@@ -89,6 +95,7 @@
 H323_T120Capability::H323_T120Capability()
   : H323DataCapability(OpalT120Protocol::MediaFormat)
 {
+  dynamicPortCapability = TRUE;
 }
 
 
@@ -166,44 +173,42 @@ H323_T120Channel::H323_T120Channel(H323Connection & connection,
 
 void H323_T120Channel::Receive()
 {
-  PTRACE(2, "H323T120\tReceive thread started.");
-
-  if (t120handler != NULL) {
-    if (listener != NULL) {
-      if ((transport = listener->Accept(30000)) != NULL)  // 30 second wait for connect back
-        t120handler->Answer(*transport);
-      else {
-        PTRACE(1, "H323T120\tAccept failed, aborting thread.");
-      }
-    }
-    else {
-      PTRACE(1, "H323T120\tNo listener, aborting thread.");
-    }
-  }
-  else {
-    PTRACE(1, "H323T120\tNo protocol handler, aborting thread.");
-  }
-
-  connection.CloseLogicalChannelNumber(number);
-
-  PTRACE(2, "H323T120\tReceive thread ended");
+  HandleChannel();
 }
 
 
 void H323_T120Channel::Transmit()
 {
-  PTRACE(2, "H323T120\tTransmit thread started.");
+  HandleChannel();
+}
 
-  if (t120handler == NULL)
+
+void H323_T120Channel::HandleChannel()
+{
+  PTRACE(2, "H323T120\tThread started.");
+
+  if (t120handler == NULL) {
     PTRACE(1, "H323T120\tNo protocol handler, aborting thread.");
-  else if (transport == NULL)
-    PTRACE(1, "H323T120\tNo transport, aborting thread.");
-  else
+  }
+  else if (transport == NULL && listener == NULL) {
+    PTRACE(1, "H323T120\tNo listener or transport, aborting thread.");
+  }
+  else if (listener != NULL) {
+    if ((transport = listener->Accept(30000)) != NULL)  // 30 second wait for connect back
+      t120handler->Answer(*transport);
+    else {
+      PTRACE(1, "H323T120\tAccept failed, aborting thread.");
+    }
+  }
+  else if (transport->IsOpen())
     t120handler->Originate(*transport);
+  else {
+    PTRACE(1, "H323T120\tConnect failed, aborting thread.");
+  }
 
   connection.CloseLogicalChannelNumber(number);
 
-  PTRACE(2, "H323T120\tTransmit thread ended");
+  PTRACE(2, "H323T120\tThread ended");
 }
 
 
@@ -319,8 +324,9 @@ BOOL H323_T120Channel::OnReceivedPDU(const H245_OpenLogicalChannel & open,
       return FALSE;
     }
 
-    if (!transport->SetRemoteAddress(address)) {
-      PTRACE(1, "H323T120\tCould not set transport remote address");
+    transport->SetReadTimeout(10000); // 10 second wait for connect
+    if (!transport->ConnectTo(address)) {
+      PTRACE(1, "H323T120\tCould not connect to remote address: " << address);
       errorCode = H245_OpenLogicalChannelReject_cause::e_separateStackEstablishmentFailed;
       return FALSE;
     }
@@ -336,6 +342,12 @@ BOOL H323_T120Channel::OnReceivedPDU(const H245_OpenLogicalChannel & open,
 BOOL H323_T120Channel::OnReceivedAckPDU(const H245_OpenLogicalChannelAck & /*ack*/)
 {
   PTRACE(3, "H323T120\tOnReceivedAckPDU");
+
+  t120handler = connection.CreateT120ProtocolHandler();
+  if (t120handler == NULL) {
+    PTRACE(1, "H323T120\tCould not create protocol handler");
+    return FALSE;
+  }
 
   return TRUE;
 }

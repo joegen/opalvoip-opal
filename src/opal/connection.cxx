@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2013  2002/02/11 07:41:58  robertj
+ * Revision 1.2014  2002/02/11 09:32:13  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.12  2002/02/11 07:41:58  robertj
  * Added media bypass for streams between compatible protocols.
  *
  * Revision 2.11  2002/01/22 05:12:12  robertj
@@ -633,6 +636,24 @@ void OpalConnection::OnUserInputInlineRFC2833(OpalRFC2833Info & info, INT)
 {
   if (!info.IsToneStart())
     OnUserInputTone(info.GetTone(), info.GetDuration()/8);
+}
+
+
+void OpalConnection::OnUserInputInBandDTMF(RTP_DataFrame & frame, INT)
+{
+  // This function is set up as an 'audio filter'.
+  // This allows us to access the 16 bit PCM audio (at 8Khz sample rate)
+  // before the audio is passed on to the sound card (or other output device)
+
+  // Pass the 16 bit PCM audio through the DTMF decoder   
+  PString tones = dtmfDecoder.Decode(frame.GetPayloadPtr(), frame.GetPayloadSize());
+  if (!tones.IsEmpty()) {
+    PTRACE(1, "DTMF detected. " << tones);
+    PINDEX i;
+    for (i = 0; i < tones.GetLength(); i++) {
+      OnUserInputTone(tones[i], 0);
+    }
+  }
 }
 
 

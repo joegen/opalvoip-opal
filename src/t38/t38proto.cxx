@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: t38proto.cxx,v $
- * Revision 1.2004  2002/01/22 05:21:54  robertj
+ * Revision 1.2005  2002/02/11 09:32:13  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.3  2002/01/22 05:21:54  robertj
  * Added RTP encoding name string to media format database.
  * Changed time units to clock rate in Hz.
  *
@@ -36,6 +39,10 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.10  2002/02/09 04:39:05  robertj
+ * Changes to allow T.38 logical channels to use single transport which is
+ *   now owned by the OpalT38Protocol object instead of H323Channel.
  *
  * Revision 1.9  2002/01/01 23:27:50  craigs
  * Added CleanupOnTermination functions
@@ -94,19 +101,39 @@ OpalMediaFormat const OpalT38Protocol::MediaFormat("T.38",
 
 OpalT38Protocol::OpalT38Protocol()
 {
+  transport = NULL;
+  autoDeleteTransport = FALSE;
 }
+
 
 OpalT38Protocol::~OpalT38Protocol()
 {
+  if (autoDeleteTransport)
+    delete transport;
 }
 
 void OpalT38Protocol::Close()
 {
+  transport->Close();
 }
 
-BOOL OpalT38Protocol::Originate(OpalTransport & transport)
+
+void OpalT38Protocol::SetTransport(OpalTransport * t, BOOL autoDelete)
 {
-  PTRACE(3, "T38\tOriginate, transport=" << transport);
+  if (transport != t) {
+    if (autoDeleteTransport)
+      delete transport;
+
+    transport = t;
+  }
+
+  autoDeleteTransport = autoDelete;
+}
+
+
+BOOL OpalT38Protocol::Originate()
+{
+  PTRACE(3, "T38\tOriginate, transport=" << *transport);
 
   WORD seq = 0;	// 16 bit
   T38_IFPPacket ifp;
@@ -134,8 +161,8 @@ BOOL OpalT38Protocol::Originate(OpalTransport & transport)
     }
 #endif
 
-    if(!transport.WritePDU(rawData) ) {
-      PTRACE(1, "T38\tOriginate - WritePDU ERROR: " << transport.GetErrorText());
+    if(!transport->WritePDU(rawData) ) {
+      PTRACE(1, "T38\tOriginate - WritePDU ERROR: " << transport->GetErrorText());
       break;
     }
 
@@ -146,29 +173,29 @@ BOOL OpalT38Protocol::Originate(OpalTransport & transport)
 }
 
 
-BOOL OpalT38Protocol::Answer(OpalTransport & transport)
+BOOL OpalT38Protocol::Answer()
 {
-  PTRACE(3, "T38\tAnswer, transport=" << transport);
+  PTRACE(3, "T38\tAnswer, transport=" << *transport);
 
   /* HACK HACK HACK -- need to figure out how to get the remote address
    * properly here */
-  transport.SetPromiscuous(TRUE);
+  transport->SetPromiscuous(TRUE);
 
   int consecutiveBadPackets = 0;
   WORD expectedSequenceNumber = 0;	// 16 bit
 
   for (;;) {
     PPER_Stream rawData;
-    if (!transport.ReadPDU(rawData)) {
-      PTRACE(1, "T38\tError reading PDU: " << transport.GetErrorText(PChannel::LastReadError));
+    if (!transport->ReadPDU(rawData)) {
+      PTRACE(1, "T38\tError reading PDU: " << transport->GetErrorText(PChannel::LastReadError));
       break;
     }
 
     /* when we get the first packet, set the RemoteAddress and then turn off
      * promiscuous listening */
     if (expectedSequenceNumber == 0) {
-      PTRACE(3, "T38\tReceived first packet, remote=" << transport.GetRemoteAddress());
-      transport.SetPromiscuous(FALSE);
+      PTRACE(3, "T38\tReceived first packet, remote=" << transport->GetRemoteAddress());
+      transport->SetPromiscuous(FALSE);
     }
 
     T38_UDPTLPacket udptl;

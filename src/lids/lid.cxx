@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.cxx,v $
- * Revision 1.2005  2002/01/14 06:35:58  robertj
+ * Revision 1.2006  2002/02/11 09:32:13  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.4  2002/01/14 06:35:58  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.3  2001/10/05 00:22:14  robertj
@@ -38,6 +41,12 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.81  2002/01/23 06:13:56  robertj
+ * Added filter function hooks to codec raw data channel.
+ *
+ * Revision 1.80  2002/01/23 01:58:28  robertj
+ * Added function to determine if codecs raw data channel is native format.
  *
  * Revision 1.79  2002/01/13 23:57:04  robertj
  * Added mutex so can change raw data channel while reading/writing from codec.
