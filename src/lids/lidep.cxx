@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2024  2004/07/11 12:42:12  rjongbloed
+ * Revision 1.2025  2004/08/14 07:56:31  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.23  2004/07/11 12:42:12  rjongbloed
  * Added function on endpoints to get the list of all media formats any
  *   connection the endpoint may create can support.
  *
@@ -116,6 +119,7 @@
 #include <lids/lidep.h>
 
 #include <opal/manager.h>
+#include <opal/call.h>
 #include <opal/patch.h>
 
 
@@ -180,15 +184,12 @@ BOOL OpalLIDEndPoint::MakeConnection(OpalCall & call,
     return FALSE;
 
   OpalLineConnection * connection = CreateConnection(call, *line, userData, number);
-
-  inUseFlag.Wait();
   connectionsActive.SetAt(connection->GetToken(), connection);
-  inUseFlag.Signal();
 
   // If we are the A-party then need to initiate a call now in this thread. If
   // we are the B-Party then SetUpConnection() gets called in the context of
   // the A-party thread.
-  if (&call.GetConnection(0) == connection)
+  if (call.GetConnection(0) == connection)
     connection->SetUpConnection();
 
   return TRUE;
@@ -429,11 +430,10 @@ void OpalLIDEndPoint::MonitorLines(PThread &, INT)
 
 void OpalLIDEndPoint::MonitorLine(OpalLine & line)
 {
-  OpalConnection * connection = GetConnectionWithLock(line.GetToken());
+  PSafePtr<OpalLineConnection> connection = GetLIDConnectionWithLock(line.GetToken());
   if (connection != NULL) {
     // Are still in a call, pass hook state it to the connection object for handling
-    ((OpalLineConnection *)connection)->Monitor(!line.IsDisconnected());
-    connection->Unlock();
+    connection->Monitor(!line.IsDisconnected());
     return;
   }
 
@@ -469,7 +469,7 @@ void OpalLIDEndPoint::MonitorLine(OpalLine & line)
   // Have incoming ring, create a new LID connection and let it handle it
   connection = CreateConnection(*manager.CreateCall(), line, NULL, PString::Empty());
   connectionsActive.SetAt(line.GetToken(), connection);
-  ((OpalLineConnection *)connection)->StartIncoming();
+  connection->StartIncoming();
 }
 
 
@@ -495,12 +495,9 @@ OpalLineConnection::OpalLineConnection(OpalCall & call,
 }
 
 
-BOOL OpalLineConnection::OnReleased()
+void OpalLineConnection::OnReleased()
 {
   PTRACE(2, "LID Con\tOnReleased " << *this);
-
-  LockOnRelease();
-  phase = ReleasedPhase;
 
   if (handlerThread != NULL) {
     PTRACE(3, "LID Con\tAwaiting handler thread termination " << *this);
@@ -516,7 +513,9 @@ BOOL OpalLineConnection::OnReleased()
   line.Ring(FALSE);
   line.SetOnHook();
 
-  return OpalConnection::OnReleased();
+  phase = ReleasedPhase;
+
+  OpalConnection::OnReleased();
 }
 
 
@@ -656,6 +655,8 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
         return;
       }
       PThread::Sleep(100);
+      if (phase >= ReleasingPhase)
+        return;
     } while (count < answerRingCount);
 
     // Get caller ID
