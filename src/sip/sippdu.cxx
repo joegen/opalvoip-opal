@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2008  2002/04/09 01:02:14  robertj
+ * Revision 1.2009  2002/04/10 03:16:23  robertj
+ * Major changes to RTP session management when initiating an INVITE.
+ * Improvements in error handling and transaction cancelling.
+ *
+ * Revision 2.7  2002/04/09 01:02:14  robertj
  * Fixed problems with restarting INVITE on  authentication required response.
  *
  * Revision 2.6  2002/04/05 10:42:04  robertj
@@ -717,13 +721,6 @@ void SIP_PDU::Construct(Methods meth,
     else
       mime.SetContact(connection.GetLocalPartyAddress(), "");
   }
-
-  if (meth == Method_INVITE) {
-    mime.SetContact(connection.GetLocalPartyAddress());
-    mime.SetAt("Date", PTime().AsString());
-    mime.SetAt("User-Agent", "OPAL/2.0");
-    sdp = connection.BuildSDP();
-  }
 }
 
 
@@ -908,7 +905,7 @@ void SIPTransaction::Construct()
 
 SIPTransaction::~SIPTransaction()
 {
-  if (connection != NULL && state < Terminated_Success) {
+  if (connection != NULL && state > NotStarted && state < Terminated_Success) {
     PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " aborted.");
     connection->RemoveTransaction(this);
   }
@@ -965,32 +962,42 @@ void SIPTransaction::Wait()
 }
 
 
-void SIPTransaction::SendCANCEL()
+BOOL SIPTransaction::SendCANCEL()
 {
   PWaitAndSignal m(mutex);
 
-  if (state >= Completed)
-    return;
+  if (state == NotStarted || state >= Cancelling)
+    return FALSE;
 
+  return ResendCANCEL();
+}
+
+
+BOOL SIPTransaction::ResendCANCEL()
+{
   SIP_PDU cancel(Method_CANCEL,
                  mime.GetTo(),
                  mime.GetFrom(),
                  mime.GetCallID(),
                  mime.GetCSeqIndex(),
                  transport);
-  if (cancel.Write(transport)) {
-    if (state < Cancelling) {
-      state = Cancelling;
-      retry = 0;
-      retryTimer = endpoint.GetRetryTimeoutMin();
-    }
-  }
-  else
+
+  if (!cancel.Write(transport)) {
     SetTerminated(Terminated_TransportError);
+    return FALSE;
+  }
+
+  if (state < Cancelling) {
+    state = Cancelling;
+    retry = 0;
+    retryTimer = endpoint.GetRetryTimeoutMin();
+  }
+
+  return TRUE;
 }
 
 
-void SIPTransaction::OnReceivedResponse(SIP_PDU & response)
+BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
 {
   PWaitAndSignal m(mutex);
 
@@ -998,17 +1005,18 @@ void SIPTransaction::OnReceivedResponse(SIP_PDU & response)
 
   // If is the response to a CANCEl we sent, then just ignore it
   if (cseq.Find(MethodNames[Method_CANCEL]) != P_MAX_INDEX) {
-    PTRACE(3, "SIP\tTransaction " << cseq << " acknowledged for " << *this);
-    return;
+    SetTerminated(Terminated_Cancelled);
+    return FALSE;
   }
 
   // Something wrong here, response is not for the request we made!
   if (cseq.Find(MethodNames[method]) == P_MAX_INDEX) {
     PTRACE(3, "SIP\tTransaction " << cseq << " response not for " << *this);
-    return;
+    return FALSE;
   }
 
 
+#if 0
   // If response had a contact field then start using that address for all
   // future communication with remote SIP endpoint
   PString contact = response.GetMIME().GetContact();
@@ -1016,6 +1024,7 @@ void SIPTransaction::OnReceivedResponse(SIP_PDU & response)
     SIPURL remote = contact;
     transport.SetRemoteAddress(remote.GetHostAddress());
   }
+#endif
 
 
   /* Really need to check if response is actually meant for us. Have a
@@ -1031,30 +1040,11 @@ void SIPTransaction::OnReceivedResponse(SIP_PDU & response)
 
     state = Proceeding;
     retry = 0;
-    if (method == Method_INVITE) {
-      retryTimer.Stop();
-      completionTimer = PTimeInterval(0, mime.GetInteger("Expires", 180));
-    }
-    else {
-      retryTimer = endpoint.GetRetryTimeoutMax();
-      completionTimer = endpoint.GetNonInviteTimeout();
-    }
+    retryTimer = endpoint.GetRetryTimeoutMax();
+    completionTimer = endpoint.GetNonInviteTimeout();
   }
   else {
     PTRACE(3, "SIP\tTransaction " << cseq << " completed.");
-
-    if (method == Method_INVITE) {
-      mime.SetTo(response.GetMIME().GetTo()); // Adjust to get added tag
-      SIP_PDU ack(Method_ACK,
-                  mime.GetTo(),
-                  mime.GetFrom(),
-                  mime.GetCallID(),
-                  mime.GetCSeqIndex(),
-                  transport);
-      if (connection != NULL)
-        connection->GetAuthentication().Authorise(ack);
-      ack.Write(transport);
-    }
 
     if (state < Completed && connection != NULL)
       connection->OnReceivedResponse(*this, response);
@@ -1062,9 +1052,10 @@ void SIPTransaction::OnReceivedResponse(SIP_PDU & response)
     state = Completed;
     finished.Signal();
     retryTimer.Stop();
-    completionTimer = method == Method_INVITE ? endpoint.GetAckTimeout()
-                                              : endpoint.GetPduCleanUpTimeout();
+    completionTimer = endpoint.GetPduCleanUpTimeout();
   }
+
+  return TRUE;
 }
 
 
@@ -1081,14 +1072,13 @@ void SIPTransaction::OnRetry(PTimer &, INT)
     return;
   }
 
-  if (state == Cancelling)
-    SendCANCEL();
-  else {
-    transport.SetLocalAddress(localAddress);
-    if (!Write(transport)) {
-      SetTerminated(Terminated_TransportError);
+  if (state == Cancelling) {
+    if (!ResendCANCEL())
       return;
-    }
+  }
+  else if (!transport.SetLocalAddress(localAddress) || !Write(transport)) {
+    SetTerminated(Terminated_TransportError);
+    return;
   }
 
   PTimeInterval t = endpoint.GetRetryTimeoutMin()*(1<<retry);
@@ -1112,6 +1102,22 @@ void SIPTransaction::SetTerminated(States newState)
   retryTimer.Stop();
   state = newState;
 
+#if PTRACING
+  static const char * const StateNames[NumStates] = {
+    "NotStarted",
+    "Trying",
+    "Proceeding",
+    "Cancelling",
+    "Completed",
+    "Terminated_Success",
+    "Terminated_Timeout",
+    "Terminated_RetriesExceeded",
+    "Terminated_TransportError",
+    "Terminated_Cancelled"
+  };
+#endif
+  PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " terminated: " << StateNames[state]);
+
   if (connection != NULL) {
     if (state != Terminated_Success)
       connection->OnTransactionFailed(*this);
@@ -1120,6 +1126,48 @@ void SIPTransaction::SetTerminated(States newState)
   }
 
   finished.Signal();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////
+
+SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport)
+  : SIPTransaction(connection, transport, Method_INVITE)
+{
+  mime.SetContact(connection.GetLocalPartyAddress());
+  mime.SetAt("Date", PTime().AsString());
+  mime.SetAt("User-Agent", "OPAL/2.0");
+
+  sdp = connection.BuildSDP(rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
+}
+
+
+BOOL SIPInvite::OnReceivedResponse(SIP_PDU & response)
+{
+  if (!SIPTransaction::OnReceivedResponse(response))
+    return FALSE;
+
+  if (response.GetStatusCode()/100 == 1) {
+    retryTimer.Stop();
+    completionTimer = PTimeInterval(0, mime.GetInteger("Expires", 180));
+  }
+  else {
+    completionTimer = endpoint.GetAckTimeout();
+
+    mime.SetTo(response.GetMIME().GetTo()); // Adjust to get added tag
+    SIP_PDU ack(Method_ACK,
+                mime.GetTo(),
+                mime.GetFrom(),
+                mime.GetCallID(),
+                mime.GetCSeqIndex(),
+                transport);
+    if (connection != NULL && 
+            (mime.Contains("Proxy-Authorization") || mime.Contains("Authorization")))
+      connection->GetAuthentication().Authorise(ack);
+    ack.Write(transport);
+  }
+
+  return TRUE;
 }
 
 
