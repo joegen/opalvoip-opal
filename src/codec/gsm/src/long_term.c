@@ -1,10 +1,11 @@
 /*
+ * long_term.c
+ *
  * Copyright 1992 by Jutta Degener and Carsten Bormann, Technische
  * Universitaet Berlin.  See the accompanying file "COPYRIGHT" for
  * details.  THERE IS ABSOLUTELY NO WARRANTY FOR THIS SOFTWARE.
  */
 
-/* $Header: /home/svnmigrate/clean_cvs/opal/src/codec/gsm/src/Attic/long_term.c,v 1.2001 2001/07/27 15:48:24 robertj Exp $ */
 
 #include <stdio.h>
 #include <assert.h>
@@ -853,7 +854,7 @@ static void Long_term_analysis_filtering P6((bc,Nc,dp,d,dpp,e),
 #	define STEP(BP)					\
 	for (k = 0; k <= 39; k++) {			\
 		dpp[k]  = GSM_MULT_R( BP, dp[k - Nc]);	\
-		e[k]	= GSM_SUB( d[k], dpp[k] );	\
+		e[k]	= (word) GSM_SUB( d[k], dpp[k] );	\
 	}
 
 	switch (bc) {
@@ -937,7 +938,7 @@ void Gsm_Long_Term_Synthesis_Filtering P5((S,Ncr,bcr,erp,drp),
 
 	for (k = 0; k <= 39; k++) {
 		drpp   = GSM_MULT_R( brp, drp[ k - Nr ] );
-		drp[k] = GSM_ADD( erp[k], drpp );
+		drp[k] = (word) GSM_ADD( erp[k], drpp );
 	}
 
 	/*

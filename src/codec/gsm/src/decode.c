@@ -1,10 +1,11 @@
 /*
+ * decode.c
+ *
  * Copyright 1992 by Jutta Degener and Carsten Bormann, Technische
  * Universitaet Berlin.  See the accompanying file "COPYRIGHT" for
  * details.  THERE IS ABSOLUTELY NO WARRANTY FOR THIS SOFTWARE.
  */
 
-/* $Header: /home/svnmigrate/clean_cvs/opal/src/codec/gsm/src/Attic/decode.c,v 1.2001 2001/07/27 15:48:24 robertj Exp $ */
 
 #include <stdio.h>
 
@@ -27,7 +28,7 @@ static void Postprocessing P2((S,s),
 
 	for (k = 160; k--; s++) {
 		tmp = GSM_MULT_R( msr, 28180 );
-		msr = GSM_ADD(*s, tmp);  	   /* Deemphasis 	     */
+		msr = (word) GSM_ADD(*s, tmp);     /* Deemphasis 	     */
 		*s  = GSM_ADD(msr, msr) & 0xFFF8;  /* Truncation & Upscaling */
 	}
 	S->msr = msr;

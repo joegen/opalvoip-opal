@@ -1,10 +1,11 @@
 /*
+ * rpe.c
+ *
  * Copyright 1992 by Jutta Degener and Carsten Bormann, Technische
  * Universitaet Berlin.  See the accompanying file "COPYRIGHT" for
  * details.  THERE IS ABSOLUTELY NO WARRANTY FOR THIS SOFTWARE.
  */
 
-/* $Header: /home/svnmigrate/clean_cvs/opal/src/codec/gsm/src/Attic/rpe.c,v 1.2001 2001/07/27 15:48:24 robertj Exp $ */
 
 #include <stdio.h>
 #include <assert.h>
@@ -106,8 +107,8 @@ static void Weighting_filter P2((e, x),
 		 */
 
 		L_result = SASR( L_result, 13 );
-		x[k] =  (  L_result < MIN_WORD ? MIN_WORD
-			: (L_result > MAX_WORD ? MAX_WORD : L_result ));
+		x[k] =  (word) ((  L_result < MIN_WORD ? MIN_WORD
+			: (L_result > MAX_WORD ? MAX_WORD : L_result )));
 	}
 }
 
@@ -377,7 +378,7 @@ static void APCM_inverse_quantization P4((xMc,mant,exp,xMp),
 
 		temp <<= 12;				/* 16 bit signed  */
 		temp = GSM_MULT_R( temp1, temp );
-		temp = GSM_ADD( temp, temp3 );
+		temp = (word) GSM_ADD( temp, temp3 );
 		*xMp++ = gsm_asr( temp, temp2 );
 	}
 }
