@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2014  2002/04/10 08:15:31  robertj
+ * Revision 1.2015  2002/04/17 07:19:38  robertj
+ * Fixed incorrect trace message for OnReleased
+ *
+ * Revision 2.13  2002/04/10 08:15:31  robertj
  * Added functions to set ports.
  *
  * Revision 2.12  2002/04/08 02:40:13  robertj
@@ -395,7 +398,7 @@ void OpalManager::OnConnected(OpalConnection & connection)
 
 BOOL OpalManager::OnReleased(OpalConnection & connection)
 {
-  PTRACE(3, "OpalMan\tOnConnected " << connection);
+  PTRACE(3, "OpalMan\tOnReleased " << connection);
 
   connection.GetCall().OnReleased(connection);
   return TRUE;
