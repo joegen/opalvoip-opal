@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2011  2004/03/14 10:13:03  rjongbloed
+ * Revision 1.2012  2004/03/14 11:32:19  rjongbloed
+ * Changes to better support SIP proxies.
+ *
+ * Revision 2.10  2004/03/14 10:13:03  rjongbloed
  * Moved transport on SIP top be constructed by endpoint as any transport created on
  *   an endpoint can receive data for any connection.
  * Changes to REGISTER to support authentication
@@ -265,8 +268,8 @@ class SIPEndPoint : public OpalEndPoint
 
     const SIPAuthentication & GetAuthentication() const { return authentication; }
 
-    const PString & GetProxyPassword() const { return proxyPassword; }
-    void SetProxyPassword(const PString & pwd) { proxyPassword = pwd; }
+    const SIPURL & GetProxy() const { return proxy; }
+    void SetProxy(const SIPURL & url) { proxy = url; }
 
     virtual PString GetUserAgent() const;
     void SetUserAgent(const PString & str) { userAgentString = str; }
@@ -276,7 +279,7 @@ class SIPEndPoint : public OpalEndPoint
     static BOOL WriteREGISTER(OpalTransport & transport, void * param);
 
   protected:
-    PString           proxyPassword;
+    SIPURL            proxy;
     PString           userAgentString;
     SIPAuthentication authentication;
 
