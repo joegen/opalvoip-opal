@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2025  2004/03/13 06:25:49  rjongbloed
+ * Revision 1.2026  2004/04/26 04:33:03  rjongbloed
+ * Move various call progress times from H.323 specific to general conenction.
+ *
+ * Revision 2.24  2004/03/13 06:25:49  rjongbloed
  * Slight rearrangement of local party name and alias list to beter match common
  *   behaviour in ancestor.
  * Abstracted local party name for endpoint into ancestor from H.,323.
@@ -2108,23 +2111,6 @@ class H323Connection : public OpalConnection
       */
     unsigned GetControlVersion() const { return h245version; }
 
-    /**Get the time at which the connection was begun
-      */
-    PTime GetSetupUpTime() const { return setupTime; }
-
-    /**Get the time at which the ALERTING was received
-      */
-    PTime GetAlertingTime() const { return alertingTime; }
-
-    /**Get the time at which the connection was connected. That is the point
-       at which charging is likely to have begun.
-      */
-    PTime GetConnectionStartTime() const { return connectedTime; }
-
-    /**Get the time at which the connection was cleared
-      */
-    PTime GetConnectionEndTime() const { return callEndTime; }
-
     /**Get the UUIE PDU monitor bit mask.
      */
     unsigned GetUUIEsRequested() const { return uuiesRequested; }
@@ -2229,10 +2215,6 @@ class H323Connection : public OpalConnection
       NumConnectionStates
     } connectionState;
 
-    PTime         setupTime;
-    PTime         alertingTime;
-    PTime         connectedTime;
-    PTime         callEndTime;
     unsigned      q931Cause;
 
     unsigned   h225version;
