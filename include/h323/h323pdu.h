@@ -27,11 +27,18 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.h,v $
- * Revision 1.2002  2001/08/13 05:10:39  robertj
+ * Revision 1.2003  2001/08/17 08:20:26  robertj
+ * Update from OpenH323
+ *
+ * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.41  2001/08/16 07:49:16  robertj
+ * Changed the H.450 support to be more extensible. Protocol handlers
+ *   are now in separate classes instead of all in H323Connection.
  *
  * Revision 1.40  2001/08/10 11:03:49  robertj
  * Major changes to H.235 support in RAS to support server.
@@ -179,7 +186,6 @@
 #include <asn/h245.h>
 
 
-class H450ServiceAPDU;
 class H323Connection;
 class H323TransportAddress;
 class H225_RAS;
@@ -303,12 +309,6 @@ class H323SignalPDU : public H225_H323_UserInformation
       */
     BOOL Write(
       OpalTransport & transport   /// Transport to write to
-    );
-
-    /**Attach a supplementary service APDU to the PDU.
-      */
-    void AttachSupplementaryServiceAPDU(
-      H450ServiceAPDU & serviceAPDU
     );
 
     /**Get the Q.931 wrapper PDU for H.225 signalling PDU.
