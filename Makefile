@@ -22,7 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2006  2002/02/01 04:53:01  robertj
+# Revision 1.2007  2002/02/01 04:58:23  craigs
+# Added sip directory to VPATH
+#
+# Revision 2.5  2002/02/01 04:53:01  robertj
 # Added (very primitive!) SIP support.
 #
 # Revision 2.4  2002/02/01 00:19:20  robertj
@@ -84,6 +87,7 @@ VPATH_CXX := $(OPAL_SRCDIR)/opal \
 	     $(OPAL_SRCDIR)/codec \
 	     $(OPAL_SRCDIR)/t120 \
 	     $(OPAL_SRCDIR)/t38 \
+	     $(OPAL_SRCDIR)/sip \
 
 VPATH_C := $(OPAL_SRCDIR)/codec
 
