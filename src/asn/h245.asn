@@ -1,8 +1,6 @@
 MULTIMEDIA-SYSTEM-CONTROL DEFINITIONS AUTOMATIC TAGS ::=
 BEGIN
 
--- H.245 v7
-
 -- Export all symbols
 
 -- ===================================================================================
@@ -249,7 +247,8 @@ MasterSlaveDeterminationRelease	::=SEQUENCE
 	...
 }
 
- -- ===================================================================================
+ 
+-- ===================================================================================
 -- Capability exchange definitions
 -- ===================================================================================
 
@@ -259,7 +258,7 @@ TerminalCapabilitySet	::=SEQUENCE
 
 	protocolIdentifier	OBJECT IDENTIFIER,
 				-- shall be set to the value
-				-- {itu-t (0) recommendation (0) h (8) 245 version (0) 7}
+				-- {itu-t (0) recommendation (0) h (8) 245 version (0) 9}
 				
 
 	multiplexCapability	MultiplexCapability OPTIONAL,
@@ -357,7 +356,9 @@ Capability		::=CHOICE
 	transmitMultiplexedStreamCapability	MultiplexedStreamCapability,
 	receiveAndTransmitMultiplexedStreamCapability	MultiplexedStreamCapability,
 	receiveRTPAudioTelephonyEventCapability	AudioTelephonyEventCapability,
-	receiveRTPAudioToneCapability	AudioToneCapability
+	receiveRTPAudioToneCapability	AudioToneCapability,
+	fecCapability	FECCapability,
+	multiplePayloadStreamCapability	MultiplePayloadStreamCapability
 }
 
 H235SecurityCapability	::=SEQUENCE
@@ -915,7 +916,7 @@ RefPictureSelection	::=SEQUENCE
 			...
 		} OPTIONAL,
 		...
-        }
+	}
 }
 
 CustomPictureClockFrequency	::=SEQUENCE
@@ -1063,7 +1064,10 @@ AudioCapability	::=CHOICE
 	gsmHalfRate	GSMAudioCapability,
 	gsmEnhancedFullRate	GSMAudioCapability,
 	genericAudioCapability	GenericCapability,
-	g729Extensions	G729Extensions
+	g729Extensions	G729Extensions,
+	vbd			VBDCapability,
+	audioTelephonyEvent	NoPTAudioTelephonyEventCapability,
+	audioTone	NoPTAudioToneCapability
 }
 
 G729Extensions	::= SEQUENCE
@@ -1149,6 +1153,12 @@ GSMAudioCapability	::= SEQUENCE
 	audioUnitSize	INTEGER (1..256),
 	comfortNoise	BOOLEAN,
 	scrambled	BOOLEAN,
+	...
+}
+
+VBDCapability 	::=SEQUENCE
+{
+	type		AudioCapability,	-- shall not be "vbd"
 	...
 }
 
@@ -1299,7 +1309,7 @@ T38FaxUdpOptions  	::= SEQUENCE
 
 T38FaxTcpOptions	::= SEQUENCE
 {
-        t38TCPBidirectionalMode           	BOOLEAN,
+         t38TCPBidirectionalMode           	BOOLEAN,
 	...
 }
 
@@ -1365,7 +1375,8 @@ ConferenceCapability	::=SEQUENCE
 	videoIndicateMixingCapability	BOOLEAN,
 	multipointVisualizationCapability	BOOLEAN OPTIONAL	-- same as H.230 MVC
 }
- -- ===================================================================================
+ 
+-- ===================================================================================
 -- Capability Exchange Definitions: Generic Capability
 -- ===================================================================================
 
@@ -1466,6 +1477,49 @@ AudioTelephonyEventCapability	::=SEQUENCE
 AudioToneCapability	::=SEQUENCE
 {
 	dynamicRTPPayloadType	INTEGER(96..127),
+	...
+}
+
+-- The following defintions are as above but without a Payload Type field
+
+NoPTAudioTelephonyEventCapability	::=SEQUENCE
+{
+	audioTelephoneEvent	GeneralString, -- As per <list of values> in 3.9/RFC2833
+	...
+}
+
+NoPTAudioToneCapability	::=SEQUENCE
+{
+	...
+}
+
+-- ===================================================================================
+-- Capability Exchange Definitions: MultiplePayloadStreamCapability
+-- ===================================================================================
+
+MultiplePayloadStreamCapability 	::=SEQUENCE
+{
+	capabilities	SET SIZE(1..256) OF AlternativeCapabilitySet,
+	...
+}
+
+-- ===================================================================================
+-- Capability Exchange Definitions: FECCapability
+-- ===================================================================================
+
+FECCapability 	::=CHOICE
+{
+	rfc2733 	SEQUENCE
+	{
+		redundancyEncoding	BOOLEAN,
+		separateStream	SEQUENCE
+		{
+			separatePort	BOOLEAN,
+			samePort	BOOLEAN,
+			...
+		},
+		...
+	},
 	...
 }
 
@@ -1593,7 +1647,10 @@ DataType		::=CHOICE
 	...,
 	h235Control	NonStandardParameter,
 	h235Media	H235Media,
-	multiplexedStream	MultiplexedStreamParameter
+	multiplexedStream	MultiplexedStreamParameter,
+	redundancyEncoding	RedundancyEncoding,
+	multiplePayloadStream	MultiplePayloadStream,
+	fec			FECData
 }
 
 H235Media		::=SEQUENCE
@@ -1606,7 +1663,10 @@ H235Media		::=SEQUENCE
 		videoData	VideoCapability,	
 		audioData	AudioCapability,
 		data	DataApplicationCapability,
-		...
+		...,
+		redundancyEncoding	RedundancyEncoding,
+		multiplePayloadStream	MultiplePayloadStream,
+		fec	FECData
 	},
 
 	...
@@ -1849,7 +1909,69 @@ RedundancyEncoding	::=SEQUENCE
 {
 	redundancyEncodingMethod	RedundancyEncodingMethod,
 	secondaryEncoding	DataType OPTIONAL,	-- depends on method
+	...,
+
+	-- The sequence below may be used in place of the above secondaryEncoding field
+
+	rtpRedundancyEncoding 	SEQUENCE
+	{
+		primary	RedundancyEncodingElement OPTIONAL,
+				-- Present when redundancyEncoding
+				-- is selected as the dataType
+				-- in an OpenLogicalChannel or
+				-- as part of a MultiplePayloadSteam
+
+		secondary	SEQUENCE OF RedundancyEncodingElement OPTIONAL,
+		...
+	} OPTIONAL
+}
+
+RedundancyEncodingElement 	::=SEQUENCE
+{
+	dataType	DataType,
+	payloadType	INTEGER(0..127) OPTIONAL,
 	...
+}
+
+MultiplePayloadStream 	::=SEQUENCE
+{
+	elements	SEQUENCE OF MultiplePayloadStreamElement,
+	...
+}
+
+MultiplePayloadStreamElement 	::=SEQUENCE
+{
+	dataType	DataType,
+	payloadType	INTEGER(0..127) OPTIONAL,
+	...
+}
+
+FECData 		::=CHOICE
+{
+	rfc2733 	SEQUENCE
+	{
+		mode 	CHOICE
+		{
+			redundancyEncoding 	NULL,
+			separateStream 	CHOICE
+			{
+				differentPort 	SEQUENCE
+				{
+					protectedSessionID	INTEGER(1..255),
+					protectedPayloadType	INTEGER(0..127) OPTIONAL,
+					...
+				},
+				samePort 	SEQUENCE
+				{
+					protectedPayloadType	INTEGER(0..127),
+					...
+				},
+				...
+			},
+			...
+		},
+		...
+	}
 }
 
 TransportAddress	::=CHOICE
@@ -2075,7 +2197,8 @@ RequestChannelCloseRelease	::=SEQUENCE
 	...
 }
 
- -- ===================================================================================
+ 
+-- ===================================================================================
 -- H.223 multiplex table definitions
 -- ===================================================================================
 
@@ -2176,7 +2299,8 @@ RequestMultiplexEntryRelease	::=SEQUENCE
 	...
 }
 
- -- ===================================================================================
+ 
+-- ===================================================================================
 -- Request mode definitions
 -- ===================================================================================
 
@@ -2226,19 +2350,24 @@ RequestModeRelease	::=SEQUENCE
 
 ModeDescription	::=SET SIZE (1..256) OF ModeElement
 
+ModeElementType 	::=CHOICE
+{
+	nonStandard	NonStandardParameter,
+	videoMode	VideoMode,
+	audioMode	AudioMode,
+	dataMode	DataMode,
+	encryptionMode	EncryptionMode,
+	...,
+	h235Mode	H235Mode,
+	multiplexedStreamMode	MultiplexedStreamParameter,
+	redundancyEncodingDTMode	RedundancyEncodingDTMode,
+	multiplePayloadStreamMode	MultiplePayloadStreamMode,
+	fecMode	FECMode
+}
+
 ModeElement	::= SEQUENCE
 {
-	type		CHOICE
-	{
-		nonStandard	NonStandardParameter,
-		videoMode	VideoMode,
-		audioMode	AudioMode,
-		dataMode	DataMode,
-		encryptionMode	EncryptionMode,
-		...,
-		h235Mode	H235Mode,
-		multiplexedStreamMode	MultiplexedStreamParameter
-	},
+	type		ModeElementType,
 
 	h223ModeParameters	H223ModeParameters OPTIONAL,
 	...,
@@ -2268,6 +2397,70 @@ H235Mode		::=SEQUENCE
 MultiplexedStreamModeParameters	::=SEQUENCE
 {
 	logicalChannelNumber	LogicalChannelNumber,
+	...
+}
+
+RedundancyEncodingDTMode 	::=SEQUENCE
+{
+	redundancyEncodingMethod	RedundancyEncodingMethod,
+	primary			RedundancyEncodingDTModeElement,
+	secondary			SEQUENCE OF RedundancyEncodingDTModeElement,
+	...
+}
+
+RedundancyEncodingDTModeElement 	::=SEQUENCE
+{
+	type 				CHOICE
+	{
+		nonStandard	NonStandardParameter,
+		videoMode	VideoMode,
+		audioMode	AudioMode,
+		dataMode	DataMode,
+		encryptionMode	EncryptionMode,
+		h235Mode	H235Mode,
+		...
+	},
+	...
+}
+
+MultiplePayloadStreamMode 	::=SEQUENCE
+{
+	elements			SEQUENCE OF MultiplePayloadStreamElementMode,
+	...
+}
+
+MultiplePayloadStreamElementMode 	::=SEQUENCE
+{
+	type 				ModeElementType,
+	...
+}
+
+FECMode 				::=CHOICE
+{
+	rfc2733Mode		SEQUENCE
+	{
+		mode 			CHOICE
+		{
+			redundancyEncoding 	NULL,
+			separateStream	CHOICE
+			{
+				differentPort 	SEQUENCE
+				{
+					protectedSessionID	INTEGER(1..255),
+					protectedPayloadType	INTEGER(0..127) OPTIONAL,
+					...
+				},
+				samePort 	SEQUENCE
+				{
+					protectedType	ModeElementType,
+					...
+				},
+				...
+			},
+			...
+		},
+		...
+	},
 	...
 }
 
@@ -2383,7 +2576,8 @@ H263VideoMode	::=SEQUENCE
 		cif		NULL,
 		cif4	NULL,
 		cif16	NULL,
-		...
+		...,
+		custom	NULL
 	},
 	bitRate	INTEGER (1..19200),	-- units 100 bit/s
 	unrestrictedVector	BOOLEAN,
@@ -2448,7 +2642,8 @@ AudioMode	::=CHOICE
 	gsmHalfRate	GSMAudioCapability,
 	gsmEnhancedFullRate	GSMAudioCapability,
 	genericAudioMode	GenericCapability,
-	g729Extensions	G729Extensions
+	g729Extensions	G729Extensions,
+	vbd			VBDMode
 }
 
 IS11172AudioMode	::=SEQUENCE
@@ -2536,6 +2731,12 @@ G7231AnnexCMode	::= SEQUENCE
 	...
 }
 
+VBDMode 		::=SEQUENCE
+{
+	type		AudioMode,	-- shall not be "vbd"
+	...
+}
+
 -- ===================================================================================
 -- Request mode definitions: Data modes
 -- ===================================================================================
@@ -2584,7 +2785,8 @@ EncryptionMode	::=CHOICE
 	...
 }
 
- -- ===================================================================================
+ 
+-- ===================================================================================
 -- Round Trip Delay definitions
 -- ===================================================================================
 
@@ -2987,7 +3189,7 @@ DialingInformation 	::= CHOICE
 
 	differential	SET SIZE (1..65535) OF DialingInformationNumber,
 				-- list of numbers for all additional channels; only least
-				-- significant digits different from initial channel's number
+				-- significant digits different from initial channel’s number
 
 	infoNotAvailable	INTEGER (1..65535), -- maximum no. of additional channels
 	...
@@ -3297,7 +3499,8 @@ H223MultiplexReconfiguration	::=CHOICE
 
 	...
 }
- -- ===================================================================================
+ 
+-- ===================================================================================
 -- Command Message : New ATM virtual channel command
 -- ===================================================================================
 
