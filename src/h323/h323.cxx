@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2045  2004/02/24 11:28:46  rjongbloed
+ * Revision 1.2046  2004/03/02 09:57:53  rjongbloed
+ * Fixed problems with recent changes to RTP UseSession() function which broke it for H.323
+ *
+ * Revision 2.44  2004/02/24 11:28:46  rjongbloed
  * Normalised RTP session management across protocols
  *
  * Revision 2.43  2004/02/19 10:47:04  rjongbloed
@@ -4931,8 +4934,8 @@ RTP_Session * H323Connection::UseSession(const OpalTransport & transport,
   if (udp_session == NULL)
     return NULL;
 
-  udp_session->SetUserData(new H323_RTP_UDP(*this, *udp_session));
-  rtpSessions.AddSession(udp_session);
+  if (udp_session->GetUserData() == NULL)
+    udp_session->SetUserData(new H323_RTP_UDP(*this, *udp_session));
   return udp_session;
 }
 
