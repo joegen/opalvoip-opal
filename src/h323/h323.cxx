@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2015  2001/11/15 07:01:36  robertj
+ * Revision 1.2016  2002/01/14 02:26:23  robertj
+ * Changes to support OPAL protocol model (eg SIP gateway).
+ *
+ * Revision 2.14  2001/11/15 07:01:36  robertj
  * Changed OpalCall::OpenSourceMediaStreams so the connection to not open
  *   a media stream on is optional.
  *
@@ -1260,8 +1263,39 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
   else
     remotePartyAddress = signallingChannel->GetRemoteAddress();
 
-  // ANything else we need from setup PDU
+  // Anything else we need from setup PDU
+  localDestinationAddress = setupPDU.GetDestinationAlias(TRUE);
   mediaWaitForConnect = setup.m_mediaWaitForConnect;
+
+  // See if remote endpoint wants to start fast
+  if ((fastStartState != FastStartDisabled) && setup.HasOptionalField(H225_Setup_UUIE::e_fastStart)) {
+    remoteCapabilities.RemoveAll();
+    PTRACE(3, "H225\tFast start detected");
+
+    // Extract capabilities from the fast start OpenLogicalChannel structures
+    for (i = 0; i < setup.m_fastStart.GetSize(); i++) {
+      H245_OpenLogicalChannel open;
+      if (setup.m_fastStart[i].DecodeSubType(open)) {
+        PTRACE(4, "H225\tFast start open:\n  " << setprecision(2) << open);
+        unsigned error;
+        H323Channel * channel = CreateLogicalChannel(open, TRUE, error);
+        if (channel != NULL) {
+          if (channel->GetDirection() == H323Channel::IsTransmitter)
+            channel->SetNumber(logicalChannels->GetNextChannelNumber());
+          fastStartChannels.Append(channel);
+        }
+      }
+      else {
+        PTRACE(1, "H225\tInvalid fast start PDU decode:\n  " << open);
+      }
+    }
+
+    PTRACE(3, "H225\tOpened " << fastStartChannels.GetSize() << " fast start channels");
+
+    // If we are incapable of ANY of the fast start channels, don't do fast start
+    if (!fastStartChannels.IsEmpty())
+      fastStartState = FastStartResponse;
+  }
 
   // Send back a H323 Call Proceeding PDU in case OnIncomingCall() takes a while
   PTRACE(3, "H225\tSending call proceeding PDU");
@@ -1306,36 +1340,6 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
 
   // Get the local capabilities before fast start is handled
   OnSetLocalCapabilities();
-
-  // See if remote endpoint wants to start fast
-  if ((fastStartState != FastStartDisabled) && setup.HasOptionalField(H225_Setup_UUIE::e_fastStart)) {
-    remoteCapabilities.RemoveAll();
-    PTRACE(3, "H225\tFast start detected");
-
-    // Extract capabilities from the fast start OpenLogicalChannel structures
-    for (i = 0; i < setup.m_fastStart.GetSize(); i++) {
-      H245_OpenLogicalChannel open;
-      if (setup.m_fastStart[i].DecodeSubType(open)) {
-        PTRACE(4, "H225\tFast start open:\n  " << setprecision(2) << open);
-        unsigned error;
-        H323Channel * channel = CreateLogicalChannel(open, TRUE, error);
-        if (channel != NULL) {
-          if (channel->GetDirection() == H323Channel::IsTransmitter)
-            channel->SetNumber(logicalChannels->GetNextChannelNumber());
-          fastStartChannels.Append(channel);
-        }
-      }
-      else {
-        PTRACE(1, "H225\tInvalid fast start PDU decode:\n  " << open);
-      }
-    }
-
-    PTRACE(3, "H225\tOpened " << fastStartChannels.GetSize() << " fast start channels");
-
-    // If we are incapable of ANY of the fast start channels, don't do fast start
-    if (!fastStartChannels.IsEmpty())
-      fastStartState = FastStartResponse;
-  }
 
   // Build the reply with the channels we are actually using
   connectPDU = new H323SignalPDU;
@@ -2961,7 +2965,9 @@ BOOL H323Connection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForm
                                            unsigned sessionID)
 {
   // Check if we have already got a transmitter running, select one if not
-  if (fastStartState != FastStartDisabled || FindChannel(sessionID, FALSE) != NULL)
+  if (fastStartState != FastStartDisabled ||
+      fastStartState != FastStartAcknowledged ||
+      FindChannel(sessionID, FALSE) != NULL)
     return FALSE;
 
   PStringArray order(mediaFormats.GetSize());
@@ -3231,7 +3237,25 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
   }
 
   // See if datatype is supported
-  H323Capability * capability = localCapabilities.FindCapability(*dataType);
+  H323Capability * capability;
+  if (startingFast) {
+    H323Capabilities allCapabilities;
+    allCapabilities.AddAllCapabilities(endpoint, 0, 0, "*");
+    capability = allCapabilities.FindCapability(*dataType);
+    if (capability != NULL) {
+      if (direction == H323Channel::IsTransmitter) {
+        capability = remoteCapabilities.Copy(*capability);
+        remoteCapabilities.SetCapability(0, capability->GetDefaultSessionID()-1, capability);
+      }
+      else {
+        capability = localCapabilities.Copy(*capability);
+        localCapabilities.SetCapability(0, capability->GetDefaultSessionID()-1, capability);
+      }
+    }
+  }
+  else
+    capability = localCapabilities.FindCapability(*dataType);
+
   if (capability == NULL) {
     errorCode = H245_OpenLogicalChannelReject_cause::e_unknownDataType;
     PTRACE(2, "H323\tCreateLogicalChannel - unknown data type");
@@ -3243,9 +3267,6 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
     PTRACE(2, "H323\tCreateLogicalChannel - data type not supported");
     return NULL; // If codec not supported, return error
   }
-
-  if (startingFast && (direction == H323Channel::IsTransmitter))
-    remoteCapabilities.SetCapability(0, 0, remoteCapabilities.Copy(*capability));
 
   if (!OnCreateLogicalChannel(*capability, direction, errorCode))
     return NULL; // If codec combination not supported, return error
