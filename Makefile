@@ -22,7 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2005  2002/02/01 00:19:20  robertj
+# Revision 1.2006  2002/02/01 04:53:01  robertj
+# Added (very primitive!) SIP support.
+#
+# Revision 2.4  2002/02/01 00:19:20  robertj
 # Updated to latest pwlilb.
 # Added rfc2833 module
 #
@@ -140,6 +143,10 @@ SOURCES := $(ASN_CXX_FILES) \
            $(OPAL_SRCDIR)/h323/gkserver.cxx \
            $(OPAL_SRCDIR)/h323/h225ras.cxx \
            $(OPAL_SRCDIR)/h323/h235auth.cxx \
+           $(OPAL_SRCDIR)/sip/sipep.cxx \
+           $(OPAL_SRCDIR)/sip/sipcon.cxx \
+           $(OPAL_SRCDIR)/sip/sippdu.cxx \
+           $(OPAL_SRCDIR)/sip/sdp.cxx \
 
 ifdef HAS_OPENSSL
 SOURCES += $(OPAL_SRCDIR)/h235auth1.cxx

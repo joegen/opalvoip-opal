@@ -1,11 +1,12 @@
 /*
- * version.h
+ * sip.h
  *
- * Version number header file for simple OPAL sample.
+ * Session Initiation Protocol support.
  *
- * A H.323 "net telephone" application.
+ * Open Phone Abstraction Library (OPAL)
+ * Formally known as the Open H323 project.
  *
- * Copyright (c) 2000 Equivalence Pty. Ltd.
+ * Copyright (c) 2001 Equivalence Pty. Ltd.
  *
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.0 (the "License"); you may not use this file except in
@@ -22,21 +23,21 @@
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
  * Contributor(s): ______________________________________.
+ *
+ * $Log: sip.h,v $
+ * Revision 1.2002  2002/02/01 04:53:01  robertj
+ * Added (very primitive!) SIP support.
+ *
  */
 
-#ifndef _SimpleOPAL_VERSION_H
-#define _SimpleOPAL_VERSION_H
+#ifndef __OPAL_SIP_H
+#define __OPAL_SIP_H
 
-// Sampple version is same as library version
-#include "../../version.h"
-
-//#define MAJOR_VERSION 2
-//#define MINOR_VERSION 0
-//#define BUILD_TYPE    BetaCode
-//#define BUILD_NUMBER 1
+#include <sip/sipep.h>
+#include <sip/sipcon.h>
 
 
-#endif  // _SimpleOPAL_VERSION_H
+#endif // __OPAL_SIP_H
 
 
 // End of File ///////////////////////////////////////////////////////////////
