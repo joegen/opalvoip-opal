@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q931.cxx,v $
- * Revision 1.2010  2004/06/06 08:45:11  rjongbloed
+ * Revision 1.2011  2004/11/07 12:22:14  rjongbloed
+ * Changed generation of call reference to include zero as it is an illegal value
+ *   anyway, thanks Dmitriy
+ *
+ * Revision 2.9  2004/06/06 08:45:11  rjongbloed
  * Fixed incorrect test for Q.931 calls state information element, thanks Stelios Vaiopoulos
  *
  * Revision 2.8  2004/02/19 10:47:04  rjongbloed
@@ -446,7 +450,7 @@ void Q931::BuildAlerting(int callRef)
 void Q931::BuildSetup(int callRef)
 {
   messageType = SetupMsg;
-  if (callRef < 0)
+  if (callRef <= 0)
     callReference = GenerateCallReference();
   else
     callReference = callRef;
