@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2003  2002/02/11 07:34:06  robertj
+ * Revision 1.2004  2002/02/13 04:55:59  craigs
+ * Fixed problem with endless loop if proxy keeps failing authentication with 407
+ *
+ * Revision 2.2  2002/02/11 07:34:06  robertj
  * Changed SDP to use OpalTransport for hosts instead of IP addresses/ports
  * Added media bypass for streams between compatible protocols.
  *
@@ -274,6 +277,7 @@ class SIPConnection : public OpalConnection
     unsigned expectedCseq;
     unsigned lastSentCseq;
     BOOL     sendBYE;
+    BOOL     inviteAuthenticateAlreadySent;
 
     OpalMediaFormatList remoteFormatList;
     RTP_SessionManager  rtpSessions;
