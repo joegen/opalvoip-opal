@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vpblid.h,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 1.2002  2001/08/01 05:18:51  robertj
+ * Made OpalMediaFormatList class global to help with documentation.
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.8  2001/02/09 05:16:24  robertj
@@ -128,7 +131,7 @@ class OpalVpbDevice : public OpalLineInterfaceDevice
 
     /**Get the media formats this device is capable of using.
       */
-    virtual OpalMediaFormat::List GetMediaFormats() const;
+    virtual OpalMediaFormatList GetMediaFormats() const;
 
     /**Set the codec for reading.
       */
