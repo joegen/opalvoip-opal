@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.cxx,v $
- * Revision 1.2003  2002/01/22 05:21:10  robertj
+ * Revision 1.2004  2002/04/15 08:52:20  robertj
+ * Added buffer reset on excess buffer overruns.
+ *
+ * Revision 2.2  2002/01/22 05:21:10  robertj
  * Update from OpenH323, rev 1.27
  *
  * Revision 2.1  2001/10/05 00:22:14  robertj
@@ -132,6 +135,9 @@
 #include <rtp/jitter.h>
 
 
+#define MAX_BUFFER_OVERRUNS 20
+
+
 #if PTRACING && !defined(NO_ANALYSER)
 
 class RTP_JitterBufferAnalyser : public PObject
@@ -183,6 +189,8 @@ RTP_JitterBuffer::RTP_JitterBuffer(RTP_Session & sess,
   // Nothing in the buffer so far
   currentDepth = 0;
   packetsTooLate = 0;
+  bufferOverruns = 0;
+  consecutiveBufferOverruns = 0;
   maxConsecutiveMarkerBits = 10;
   consecutiveMarkerBits = 0;
   shuttingDown = FALSE;
@@ -270,6 +278,8 @@ void RTP_JitterBuffer::SetDelay( unsigned delay)
 
   if (IsTerminated()) {
     packetsTooLate = 0;
+    bufferOverruns = 0;
+    consecutiveBufferOverruns = 0;
     consecutiveMarkerBits = 0;
     shuttingDown = FALSE;
     preBuffering = TRUE;
@@ -301,6 +311,10 @@ void RTP_JitterBuffer::Main()
       freeFrames = freeFrames->next;
       if (freeFrames != NULL)
         freeFrames->prev = NULL;
+      PTRACE_IF(2, consecutiveBufferOverruns > 1,
+                "RTP\tJitter buffer full, threw away "
+                << consecutiveBufferOverruns << " oldest frames");
+      consecutiveBufferOverruns = 0;
     }
     else {
       // We have a full jitter buffer, need a new frame so take the oldest one
@@ -309,8 +323,20 @@ void RTP_JitterBuffer::Main()
       if (oldestFrame != NULL)
         oldestFrame->prev = NULL;
       currentDepth--;
-      packetsTooLate++;
-      PTRACE(4, "RTP\tJitter buffer full, throwing away oldest frame");
+
+      bufferOverruns++;
+      consecutiveBufferOverruns++;
+      if (consecutiveBufferOverruns > MAX_BUFFER_OVERRUNS) {
+        PTRACE(2, "RTP\tJitter buffer continuously full, throwing away entire buffer.");
+        freeFrames = oldestFrame;
+        oldestFrame = newestFrame = NULL;
+        preBuffering = TRUE;
+      }
+      else {
+        PTRACE_IF(2, consecutiveBufferOverruns == 1,
+                  "RTP\tJitter buffer full, throwing away oldest frame ("
+                  << currentReadFrame->GetTimestamp() << ')');
+      }
     }
 
     currentReadFrame->next = NULL;
@@ -477,7 +503,9 @@ BOOL RTP_JitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
     // See if exceeded maximum jitter buffer time delay, waste them if so
     while ((newestTimestamp - oldestFrame->GetTimestamp()) > maxJitterTime) {
       PTRACE(4, "RTP\tJitter buffer oldest packet ("
-             << oldestFrame->GetTimestamp() << ") too late, throwing away");
+             << oldestFrame->GetTimestamp() << " < "
+             << (newestTimestamp - maxJitterTime)
+             << ") too late, throwing away");
 
       // Throw away the oldest entry
       Entry * wastedFrame = oldestFrame;
