@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g729codec.cxx,v $
- * Revision 1.2004  2003/01/07 04:39:53  robertj
+ * Revision 1.2005  2003/06/02 04:04:54  rjongbloed
+ * Changed to use new autoconf system
+ *
+ * Revision 2.3  2003/01/07 04:39:53  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.2  2002/09/04 06:01:47  robertj
@@ -71,22 +74,29 @@
 
 
 #if VOICE_AGE_G729A
+
 extern "C" {
 #include "va_g729a.h"
 };
+
+
+#if defined(_MSC_VER)
+
+#pragma comment(lib, VOICE_AGE_G729_LIBRARY)
+
+// All of PWLib/OpenH323 use MSVCRT.LIB or MSVCRTD.LIB, but vag729a.lib uses
+// libcmt.lib, so we need to tell the linker to ignore it, can't have two
+// Run Time libraries!
+#pragma comment(linker, "/NODEFAULTLIB:libcmt.lib")
+
 #endif
 
 
 #define new PNEW
 
 
-#if VOICE_AGE_G729A
-#pragma message("Using Voice Age G.729A Library")
 static OpalFramedTranscoder * voiceAgeEncoderInUse = NULL;
 static OpalFramedTranscoder * voiceAgeDecoderInUse = NULL;
-#else
-#pragma message("Using dummy G.729")
-#endif
 
 enum {
   FrameSize = 10,
@@ -99,14 +109,12 @@ enum {
 Opal_G729_PCM::Opal_G729_PCM(const OpalTranscoderRegistration & registration)
   : OpalFramedTranscoder(registration, FrameSize, FrameSamples*2)
 {
-#if VOICE_AGE_G729A
   if (voiceAgeDecoderInUse != NULL) {
     PTRACE(1, "Codec\tVoice Age G.729A decoder already in use!");
     return;
   }
   voiceAgeDecoderInUse = this;
   va_g729a_init_decoder();
-#endif
 
   PTRACE(1, "Codec\tG.729A decoder created");
 }
@@ -114,16 +122,13 @@ Opal_G729_PCM::Opal_G729_PCM(const OpalTranscoderRegistration & registration)
 
 Opal_G729_PCM::~Opal_G729_PCM()
 {
-#if VOICE_AGE_G729A
   if (voiceAgeDecoderInUse == this) {
     voiceAgeDecoderInUse = NULL;
     PTRACE(1, "Codec\tG.729A decoder destroyed");
   }
-#endif
 }
 
 
-#if VOICE_AGE_G729A
 BOOL Opal_G729_PCM::ConvertFrame(const BYTE * src, BYTE * dst)
 {
   if (voiceAgeDecoderInUse != this)
@@ -132,25 +137,17 @@ BOOL Opal_G729_PCM::ConvertFrame(const BYTE * src, BYTE * dst)
   va_g729a_decoder((unsigned char *)src, (short *)dst, 0);
   return TRUE;
 }
-#else
-BOOL Opal_G729_PCM::ConvertFrame(const BYTE * , BYTE * )
-{
-  return FALSE;
-}
-#endif
 
 
 Opal_PCM_G729::Opal_PCM_G729(const OpalTranscoderRegistration & registration)
   : OpalFramedTranscoder(registration, FrameSamples*2, FrameSize)
 {
-#if VOICE_AGE_G729A
   if (voiceAgeEncoderInUse != NULL) {
     PTRACE(1, "Codec\tVoice Age G.729A encoder already in use!");
     return;
   }
   voiceAgeEncoderInUse = this;
   va_g729a_init_encoder();
-#endif
 
   PTRACE(1, "Codec\tG.729A encoder created");
 }
@@ -158,16 +155,13 @@ Opal_PCM_G729::Opal_PCM_G729(const OpalTranscoderRegistration & registration)
 
 Opal_PCM_G729::~Opal_PCM_G729()
 {
-#if VOICE_AGE_G729A
   if (voiceAgeEncoderInUse == this) {
     voiceAgeEncoderInUse = NULL;
     PTRACE(1, "Codec\tG.729A encoder destroyed");
   }
-#endif
 }
 
 
-#if VOICE_AGE_G729A
 BOOL Opal_PCM_G729::ConvertFrame(const BYTE * src, BYTE * dst)
 {
   if (voiceAgeEncoderInUse != this)
@@ -176,12 +170,9 @@ BOOL Opal_PCM_G729::ConvertFrame(const BYTE * src, BYTE * dst)
   va_g729a_encoder((short *)src, dst);
   return TRUE;
 }
-#else
-BOOL Opal_PCM_G729::ConvertFrame(const BYTE * , BYTE * )
-{
-  return FALSE;
-}
-#endif
+
+
+#endif // VOICE_AGE_G729A
 
 
 /////////////////////////////////////////////////////////////////////////////

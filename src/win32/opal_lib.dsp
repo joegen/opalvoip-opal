@@ -255,7 +255,6 @@ SOURCE=..\codec\g726codec.cxx
 # Begin Source File
 
 SOURCE=..\codec\g729codec.cxx
-# ADD CPP /I "$(VAG729DIR)\\" /D VOICE_AGE_G729A=0$(VAG729FLAG)
 # End Source File
 # Begin Source File
 
@@ -640,6 +639,53 @@ SOURCE=..\..\include\sip\sipep.h
 SOURCE=..\..\include\sip\sippdu.h
 # End Source File
 # End Group
+# Begin Source File
+
+SOURCE=..\..\include\opal\buildopts.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\opal\buildopts.h.in
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+USERDEP__BUILD="..\..\configure.in"	"..\..\configure.exe"	
+# Begin Custom Build - Configuring Build Options
+InputDir=\Work\opal\include\opal
+InputPath=..\..\include\opal\buildopts.h.in
+
+"$(InputDir)\buildopts.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd ..\.. ; .\configure
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+USERDEP__BUILD="..\..\configure.in"	"..\..\configure.exe"	
+# Begin Custom Build - Configuring Build Options
+InputDir=\Work\opal\include\opal
+InputPath=..\..\include\opal\buildopts.h.in
+
+"$(InputDir)\buildopts.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd ..\.. ; .\configure
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+USERDEP__BUILD="..\..\configure.in"	"..\..\configure.exe"	
+# Begin Custom Build - Configuring Build Options
+InputDir=\Work\opal\include\opal
+InputPath=..\..\include\opal\buildopts.h.in
+
+"$(InputDir)\buildopts.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cd ..\.. ; .\configure
+
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
 # End Group
 # Begin Group "ASN Files"
 
