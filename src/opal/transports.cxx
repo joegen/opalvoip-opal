@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2032  2004/03/16 12:01:37  rjongbloed
+ * Revision 1.2033  2004/03/22 11:39:44  rjongbloed
+ * Fixed problems with correctly terminating the OpalTransportUDP that is generated from
+ *   an OpalListenerUDP, this should not close the socket or stop the thread.
+ *
+ * Revision 2.31  2004/03/16 12:01:37  rjongbloed
  * Temporary fix for closing UDP transport
  *
  * Revision 2.30  2004/03/13 06:30:03  rjongbloed
@@ -1278,12 +1282,14 @@ void OpalTransport::EndConnect(const OpalTransportAddress &)
 
 BOOL OpalTransport::Close()
 {
+  PTRACE(4, "Opal\tTransport Close");
+
   /* Do not use PIndirectChannel::Close() as this deletes the sub-channel
      member field crashing the background thread. Just close the base
      sub-channel so breaks the threads I/O block.
    */
   if (IsOpen())
-    GetBaseWriteChannel()->Close();
+    return GetBaseWriteChannel()->Close();
 
   return TRUE;
 }
@@ -1445,7 +1451,7 @@ BOOL OpalTransportTCP::Connect()
   PTCPSocket * socket = new PTCPSocket(remotePort);
   Open(socket);
 
-  channelPointerMutex.StartRead();
+  PReadWaitAndSignal mutex(channelPointerMutex);
 
   socket->SetReadTimeout(10000);
 
@@ -1465,7 +1471,6 @@ BOOL OpalTransportTCP::Connect()
                 << remoteAddress << ':' << remotePort
                 << " (local port=" << localPort << ") - "
                 << socket->GetErrorText() << '(' << errnum << ')');
-      channelPointerMutex.EndRead();
       return SetErrorValues(socket->GetErrorCode(), errnum);
     }
 
@@ -1473,14 +1478,11 @@ BOOL OpalTransportTCP::Connect()
     if (localPort == firstPort) {
       PTRACE(1, "OpalTCP\tCould not bind to any port in range " <<
                 manager.GetTCPPortBase() << " to " << manager.GetTCPPortMax());
-      channelPointerMutex.EndRead();
       return SetErrorValues(socket->GetErrorCode(), errnum);
     }
   }
 
   socket->SetReadTimeout(PMaxTimeInterval);
-
-  channelPointerMutex.EndRead();
 
   return OnOpen();
 }
@@ -1600,6 +1602,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
   : OpalTransportIP(ep, binding, port)
 {
   promiscuousReads = AcceptFromRemoteOnly;
+  socketOwnedByListener = FALSE;
 
   PUDPSocket * udp = new PUDPSocket;
   udp->Listen(binding, 0, port,
@@ -1617,6 +1620,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep, PUDPSocket & udp)
   : OpalTransportIP(ep, INADDR_ANY, 0)
 {
   promiscuousReads = AcceptFromAnyAutoSet;
+  socketOwnedByListener = TRUE;
 
   udp.GetLocalAddress(localAddress, localPort);
 
@@ -1635,6 +1639,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
     preReadPacket(packet)
 {
   promiscuousReads = AcceptFromAnyAutoSet;
+  socketOwnedByListener = FALSE;
 
   remoteAddress = remAddr;
   remotePort = remPort;
@@ -1652,21 +1657,33 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
 
 OpalTransportUDP::~OpalTransportUDP()
 {
-  if (connectSockets.GetSize() > 0)
-    writeChannel = readChannel = NULL;
-
   CloseWait();
 }
 
 
 BOOL OpalTransportUDP::Close()
 {
-//  if (readAutoDelete)
+  PTRACE(4, "OpalUDP\tClose");
+  PReadWaitAndSignal mutex(channelPointerMutex);
+
+  if (socketOwnedByListener) {
+    channelPointerMutex.StartWrite();
+    readChannel = writeChannel = NULL;
+    // Thread also owned by listener as well, don't wait on or delete it!
+    thread = NULL; 
+    channelPointerMutex.EndWrite();
+    return TRUE;
+  }
+
+  if (connectSockets.IsEmpty())
     return OpalTransport::Close();
 
-//  readChannel = writeChannel = NULL;
-//  thread = NULL;
-//  return TRUE;
+  // Still in connection on multiple interface phase. Close all of the
+  // sockets we have open.
+  for (PINDEX i = 0; i < connectSockets.GetSize(); i++)
+    connectSockets[i].Close();
+
+  return TRUE;
 }
 
 
