@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.cxx,v $
- * Revision 1.2016  2004/04/09 12:30:16  rjongbloed
+ * Revision 1.2017  2004/06/06 13:01:36  rjongbloed
+ * Fixed correct setting of Q.931 Display IE from DisplayName field of connection.
+ *
+ * Revision 2.15  2004/04/09 12:30:16  rjongbloed
  * Many and various changes to support new Visual C++ 2003
  *
  * Revision 2.14  2004/04/07 08:21:03  rjongbloed
@@ -1466,20 +1469,24 @@ void H323SignalPDU::SetQ931Fields(const H323Connection & connection,
   PINDEX i;
   const PStringList & aliases = connection.GetLocalAliasNames();
 
-  PString number;
   PString localName = connection.GetLocalPartyName();
+  PString displayName = connection.GetDisplayName();
+  PString number;
+
   if (IsE164(localName)) {
     number = localName;
-    for (i = 0; i < aliases.GetSize(); i++) {
-      if (!IsE164(aliases[i])) {
-        q931pdu.SetDisplayName(aliases[i]);
-        break;
+    if (displayName.IsEmpty()) {
+      for (i = 0; i < aliases.GetSize(); i++) {
+        if (!IsE164(aliases[i])) {
+          displayName = aliases[i];
+          break;
+        }
       }
     }
   }
   else {
-    if (!localName)
-      q931pdu.SetDisplayName(localName);
+    if (!localName && displayName.IsEmpty())
+      displayName = localName;
     for (i = 0; i < aliases.GetSize(); i++) {
       if (IsE164(aliases[i])) {
         number = aliases[i];
@@ -1487,6 +1494,10 @@ void H323SignalPDU::SetQ931Fields(const H323Connection & connection,
       }
     }
   }
+
+  if (displayName.IsEmpty())
+    displayName = number;
+  q931pdu.SetDisplayName(displayName);
 
   if (insertPartyNumbers) {
     PString otherNumber = connection.GetRemotePartyNumber();
