@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2019  2005/02/19 22:48:48  dsandras
+ * Revision 1.2020  2005/03/11 18:12:08  dsandras
+ * Added support to specify the realm when registering. That way softphones already know what authentication information to use when required. The realm/domain can also be used in the From field.
+ *
+ * Revision 2.18  2005/02/19 22:48:48  dsandras
  * Added the possibility to register to several registrars and be able to do authenticated calls to each of them. Added SUBSCRIBE/NOTIFY support for Message Waiting Indications.
  *
  * Revision 2.17  2004/12/12 12:31:03  dsandras
@@ -332,6 +335,7 @@ class SIPAuthentication : public PObject
 
     void SetUsername(const PString & user) { username = user; }
     void SetPassword(const PString & pass) { password = pass; }
+    void SetRealm(const PString & r) { realm = r; }
 
   protected:
     BOOL      isProxy;
