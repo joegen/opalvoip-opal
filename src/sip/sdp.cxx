@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2013  2004/03/22 11:32:42  rjongbloed
+ * Revision 1.2014  2004/03/25 11:51:12  rjongbloed
+ * Changed PCM-16 from IllegalPayloadType to MaxPayloadType to avoid problems
+ *   in other parts of the code.
+ * Changed to hame m= line for every codec, including "known" ones, thanks Ted Szoczei
+ *
+ * Revision 2.12  2004/03/22 11:32:42  rjongbloed
  * Added new codec type for 16 bit Linear PCM as must distinguish between the internal
  *   format used by such things as the sound card and the RTP payload format which
  *   is always big endian.
@@ -119,11 +124,13 @@ static OpalTransportAddress ParseConnectAddress(const PString & str)
 
 static PString GetConnectAddressString(const OpalTransportAddress & address)
 {
+  PStringStream str;
+
   PIPSocket::Address ip;
   if (address.GetIpAddress(ip))
-    return "IN IP4 " + ip.AsString();
+    str << "IN IP" << ip.GetVersion() << ' ' << ip;
 
-  return PString();
+  return str;
 }
 
 
@@ -413,17 +420,14 @@ void SDPMediaDescription::PrintOn(ostream & str) const
 
   // output RTP payload types
   PINDEX i;
-  for (i = 0; i < formats.GetSize(); i++) 
+  for (i = 0; i < formats.GetSize(); i++)
     str << ' ' << (int)formats[i].GetPayloadType();
   str << "\r\n"
          "c=" << GetConnectAddressString(transportAddress) << "\r\n";
 
   // output attributes for each payload type
-  for (i = 0; i < formats.GetSize(); i++) {
-    const SDPMediaFormat & format = formats[i];
-    if (format.GetPayloadType() > RTP_DataFrame::LastKnownPayloadType)
-      str << format;
-  }
+  for (i = 0; i < formats.GetSize(); i++)
+    str << formats[i];
 }
 
 
@@ -454,17 +458,20 @@ void SDPMediaDescription::AddSDPMediaFormat(SDPMediaFormat * sdpMediaFormat)
 
 void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
 {
-  if (mediaFormat.GetPayloadType() == RTP_DataFrame::IllegalPayloadType)
+  RTP_DataFrame::PayloadTypes payloadType = mediaFormat.GetPayloadType();
+  const char * encodingName = mediaFormat.GetEncodingName();
+
+  if (payloadType >= RTP_DataFrame::MaxPayloadType || encodingName == NULL || *encodingName == '\0')
     return;
 
   PINDEX i;
   for (i = 0; i < formats.GetSize(); i++) {
-    if (formats[i].GetPayloadType() == mediaFormat.GetPayloadType() ||
-        formats[i].GetEncodingName() == mediaFormat.GetEncodingName())
+    if (formats[i].GetPayloadType() == payloadType ||
+        strcasecmp(formats[i].GetEncodingName(), encodingName) == 0)
       return;
   }
 
-  AddSDPMediaFormat(new SDPMediaFormat(mediaFormat.GetPayloadType(), mediaFormat.GetEncodingName()));
+  AddSDPMediaFormat(new SDPMediaFormat(payloadType, encodingName));
 }
 
 
