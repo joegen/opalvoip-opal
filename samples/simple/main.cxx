@@ -22,7 +22,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2002  2001/07/30 07:22:25  robertj
+ * Revision 1.2003  2001/08/01 05:48:30  robertj
+ * Major changes to H.323 capabilities, uses OpalMediaFormat for base name.
+ * Fixed loading of transcoders from static library.
+ *
+ * Revision 2.1  2001/07/30 07:22:25  robertj
  * Abstracted listener management from H.323 to OpalEndPoint class.
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
@@ -82,8 +86,7 @@
 
 
 #ifdef OPAL_STATIC_LINK
-#include <codec/gsmcodec.h>
-const OpalMediaFormat * OPAL_GSM_Force_Inclusion = &OpalMediaFormat_GSM;
+#include <codec/allcodecs.h>
 #endif
 
 
@@ -213,7 +216,7 @@ MyManager::~MyManager()
 
 BOOL MyManager::Initialise(PArgList & args)
 {
-  // Set the various options
+  // Set the various global options
   autoAnswer           = args.HasOption('a');
   silenceOn            = !args.HasOption('e');
   busyForwardParty     = args.GetOptionString('B');
@@ -228,9 +231,14 @@ BOOL MyManager::Initialise(PArgList & args)
     }
   }
 
+  SetMediaFormatMask(args.GetOptionString('D').Lines());
+  SetMediaFormatOrder(args.GetOptionString('P').Lines());
+
   cout << "Auto answer is " << (autoAnswer ? "on" : "off") << "\n"
-          "Silence supression is " << silenceOn << "\n"
-          "Jitter buffer: "  << GetMaxAudioDelayJitter() << " ms" << endl;
+          "Silence supression is " << (silenceOn ? "on" : "off") << "\n"
+          "Jitter buffer: "  << GetMaxAudioDelayJitter() << " ms\n"
+          "Codecs removed: " << setfill(',') << GetMediaFormatMask() << "\n"
+          "Codec order: " << setfill(',') << GetMediaFormatOrder() << setfill(' ') << endl;
 
 
   ///////////////////////////////////////
@@ -303,19 +311,10 @@ BOOL MyManager::Initialise(PArgList & args)
     h323->SetInitialBandwidth(initialBandwidth);
   }
 
-  // Set the default codecs available on sound cards.
-  h323->AddAllCapabilities(0, 0, "GSM*{sw}");
-  h323->AddAllCapabilities(0, 0, "G.711*{sw}");
-  h323->AddAllCapabilities(0, 0, "LPC*{sw}");
-  h323->AddAllUserInputCapabilities(0, 1);
-
-  h323->RemoveCapabilities(args.GetOptionString('D').Lines());
-  h323->ReorderCapabilities(args.GetOptionString('P').Lines());
-
-  cout << "Local username: " << h323->GetLocalUserName() << "\n"
-       << "FastConnect is " << !noFastStart << "\n"
-       << "H245Tunnelling is " << noH245Tunnelling << "\n"
-       <<  "Codecs (in preference order):\n" << setprecision(2) << h323->GetCapabilities() << endl;
+  // .
+  cout << "H.323 Local username: " << h323->GetLocalUserName() << "\n"
+       << "H.323 FastConnect is " << !noFastStart << "\n"
+       << "H.323 H245Tunnelling is " << noH245Tunnelling << endl;
 
 
   // Start the listener thread for incoming calls.
