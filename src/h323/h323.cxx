@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2054  2004/04/26 05:39:27  rjongbloed
+ * Revision 1.2055  2004/04/29 11:47:54  rjongbloed
+ * Fixed problem with trying to open channels already open for session.
+ *
+ * Revision 2.53  2004/04/26 05:39:27  rjongbloed
  * Fixed missing propagation of OnEstablished() call to endpoint.
  *
  * Revision 2.52  2004/04/26 04:33:06  rjongbloed
@@ -4343,6 +4346,9 @@ void H323Connection::OnSelectLogicalChannels()
 
 void H323Connection::SelectDefaultLogicalChannel(unsigned sessionID)
 {
+  if (FindChannel(sessionID, FALSE))
+    return; 
+
   for (PINDEX i = 0; i < localCapabilities.GetSize(); i++) {
     H323Capability & localCapability = localCapabilities[i];
     if (localCapability.GetDefaultSessionID() == sessionID) {
