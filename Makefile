@@ -22,7 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2022  2003/03/26 02:49:00  robertj
+# Revision 1.2023  2003/04/02 06:52:04  robertj
+# Added dependencies for H450 ASN files
+#
+# Revision 2.21  2003/03/26 02:49:00  robertj
 # Added service/daemon sample application.
 #
 # Revision 2.20  2003/03/19 04:45:29  robertj
@@ -549,7 +552,18 @@ $(ASN_INCDIR)/h245.h: $(ASN_SRCDIR)/h245.asn .asnparser.version
 $(ASN_SRCDIR)/h235.cxx $(ASN_SRCDIR)/h235_t.cxx : $(ASN_INCDIR)/h235.h
 
 $(addprefix $(ASN_SRCDIR)/,$(addsuffix .cxx,$(H450_ASN_FILES))) : \
-                                $(ASN_INCDIR)/x880.h $(ASN_INCDIR)/h225.h
+                                $(ASN_INCDIR)/x880.h \
+                                $(ASN_INCDIR)/h4501.h \
+                                $(ASN_INCDIR)/h225.h
+
+$(ASN_SRCDIR)/h4506.cxx : $(ASN_INCDIR)/h4504.h
+$(ASN_SRCDIR)/h4507.cxx : $(ASN_INCDIR)/h4504.h
+$(ASN_SRCDIR)/h4508.cxx : $(ASN_INCDIR)/h4505.h
+$(ASN_SRCDIR)/h4509.cxx : $(ASN_INCDIR)/h4504.h $(ASN_INCDIR)/h4507.h
+$(ASN_SRCDIR)/h45010.cxx: $(ASN_INCDIR)/h4506.h
+$(ASN_SRCDIR)/h45011.cxx: $(ASN_INCDIR)/h4504.h $(ASN_INCDIR)/h4506.h $(ASN_INCDIR)/h45010.h
+
+
 
 
 
