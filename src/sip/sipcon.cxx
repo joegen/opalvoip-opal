@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2036  2004/03/14 10:09:54  rjongbloed
+ * Revision 1.2037  2004/03/14 11:32:20  rjongbloed
+ * Changes to better support SIP proxies.
+ *
+ * Revision 2.35  2004/03/14 10:09:54  rjongbloed
  * Moved transport on SIP top be constructed by endpoint as any transport created on
  *   an endpoint can receive data for any connection.
  *
@@ -179,22 +182,25 @@ SIPConnection::SIPConnection(OpalCall & call,
   : OpalConnection(call, ep, token),
     endpoint(ep),
     tag(OpalGloballyUniqueID().AsString()),    // local dialog tag
-    authentication(localPartyName, endpoint.GetProxyPassword()),
     pduSemaphore(0, P_MAX_INDEX)
 {
   targetAddress = destination;
 
+  // Look for a "proxy" parameter to override default proxy
   PStringToString params = targetAddress.GetParamVars();
-  if (params.Contains("proxyusername") && params.Contains("proxypassword")) {
-    localPartyName = params["proxyusername"];
-    authentication.SetUsername(localPartyName);
-    targetAddress.SetParamVar("proxyusername", PString::Empty());
-    authentication.SetPassword(params["proxypassword"]);
-    targetAddress.SetParamVar("proxypassword", PString::Empty());
-    PTRACE(3, "SIP\tExtracted proxy authentication user=\"" << localPartyName << '"');
-  }
+  SIPURL proxy = params.Contains("proxy");
+  targetAddress.SetParamVar("proxy", PString::Empty());
 
   remotePartyAddress = targetAddress.AsQuotedString();
+
+  if (proxy.IsEmpty())
+    proxy = endpoint.GetProxy();
+
+  if (!proxy.IsEmpty()) {
+    targetAddress = proxy.GetHostName();
+    authentication.SetUsername(proxy.GetUserName());
+    authentication.SetPassword(proxy.GetPassword());
+  }
 
   if (inviteTransport == NULL)
     transport = NULL;
