@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2045  2004/12/12 13:40:45  dsandras
+ * Revision 1.2046  2004/12/18 03:54:43  rjongbloed
+ * Added missing call of callback virtual for SIP 100 Trying response
+ *
+ * Revision 2.44  2004/12/12 13:40:45  dsandras
  * - Correctly update the remote party name, address and applications at various strategic places.
  * - If no outbound proxy authentication is provided, then use the registrar authentication parameters when proxy authentication is required.
  * - Fixed use of connectedTime.
@@ -784,6 +787,10 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     targetAddress = contact;
 
   switch (response.GetStatusCode()) {
+    case SIP_PDU::Information_Trying :
+      OnReceivedTrying(response);
+      break;
+
     case SIP_PDU::Information_Ringing :
       OnReceivedRinging(response);
       break;
