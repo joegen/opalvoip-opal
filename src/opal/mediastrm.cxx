@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2027  2004/05/24 13:36:30  rjongbloed
+ * Revision 1.2028  2004/08/14 07:56:43  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.26  2004/05/24 13:36:30  rjongbloed
  * Fixed not transmitting RTP packets with zero length payload which
  *   is rather important for silence suppression, thanks Ted Szoczei
  *
@@ -199,11 +202,13 @@ BOOL OpalMediaStream::Start()
   if (!Open())
     return FALSE;
 
+  patchMutex.Wait();
   if (patchThread != NULL && patchThread->IsSuspended()) {
     patchThread->Resume();
     PThread::Yield(); // This is so the thread name below is initialised.
     PTRACE(4, "Media\tStarting thread " << patchThread->GetThreadName());
   }
+  patchMutex.Signal();
 
   return TRUE;
 }
@@ -211,8 +216,15 @@ BOOL OpalMediaStream::Start()
 
 BOOL OpalMediaStream::Close()
 {
+  if (!isOpen)
+    return FALSE;
+
+  PTRACE(4, "Media\tClosing stream " << *this);
+
+  patchMutex.Wait();
+
   if (patchThread != NULL) {
-    PTRACE(4, "Media\tClosing stream " << *this);
+    PTRACE(4, "Media\tDisconnecting " << *this << " from patch thread " << *patchThread);
     OpalMediaPatch * patch = patchThread;
     patchThread = NULL;
 
@@ -223,6 +235,8 @@ BOOL OpalMediaStream::Close()
       delete patch;
     }
   }
+
+  patchMutex.Signal();
 
   isOpen = FALSE;
   return TRUE;
@@ -388,7 +402,9 @@ void OpalMediaStream::EnableJitterBuffer() const
 
 void OpalMediaStream::SetPatch(OpalMediaPatch * patch)
 {
+  patchMutex.Wait();
   patchThread = patch;
+  patchMutex.Signal();
 }
 
 
@@ -572,7 +588,9 @@ BOOL OpalRawMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX & 
 
 BOOL OpalRawMediaStream::Close()
 {
-  OpalMediaStream::Close();
+  PTRACE(1, "Media\tClosing raw media stream " << *this);
+  if (!OpalMediaStream::Close())
+    return FALSE;
 
   if (channel == NULL)
     return FALSE;
