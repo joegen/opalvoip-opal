@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2019  2003/03/07 05:53:03  robertj
+ * Revision 1.2020  2003/06/02 03:12:56  rjongbloed
+ * Made changes so that media stream in opposite direction to the one already
+ *   opened will use same media format for preference. That is try and use
+ *   symmetric codecs if possible.
+ *
+ * Revision 2.18  2003/03/07 05:53:03  robertj
  * Made sure connection is locked with all function calls that are across
  *   the "call" object.
  *
@@ -288,8 +293,7 @@ BOOL OpalCall::OnConnected(OpalConnection & connection)
   if (!ok)
     return FALSE;
 
-  OpalMediaFormatList formats = connection.GetMediaFormats();
-  connection.AdjustMediaFormats(formats);
+  OpalMediaFormatList formats = GetMediaFormats(connection, TRUE);
   BOOL createdOne = OpenSourceMediaStreams(formats, OpalMediaFormat::DefaultAudioSessionID);
   if (manager.CanAutoStartTransmitVideo()) {
     if (OpenSourceMediaStreams(formats, OpalMediaFormat::DefaultVideoSessionID))
@@ -333,10 +337,11 @@ OpalConnection * OpalCall::GetOtherPartyConnection(const OpalConnection & connec
 }
 
 
-OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection)
+OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection,
+                                              BOOL includeSpecifiedConnection)
 {
   PINDEX i;
-  OpalMediaFormatList formats;
+  OpalMediaFormatList commonFormats;
 
   inUseFlag.Wait();
 
@@ -344,17 +349,31 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection)
 
   for (i = 0; i < activeConnections.GetSize(); i++) {
     OpalConnection & conn = activeConnections[i];
-    if (&connection != &conn) {
-      OpalMediaFormatList list = conn.GetMediaFormats();
+    if (includeSpecifiedConnection || &connection != &conn) {
+      OpalMediaFormatList possibleFormats;
+
+      // Run through the formats connection can do directly and calculate all of
+      // the possible formats, including ones via a transcoder
+      OpalMediaFormatList connectionFormats = conn.GetMediaFormats();
+      for (i = 0; i < connectionFormats.GetSize(); i++) {
+        OpalMediaFormat format = connectionFormats[i];
+        possibleFormats += format;
+        OpalMediaFormatList srcFormats = OpalTranscoder::GetSourceFormats(format);
+        for (PINDEX j = 0; j < srcFormats.GetSize(); j++) {
+          if (OpalTranscoder::GetDestinationFormats(srcFormats[j]).GetSize() > 0)
+            possibleFormats += srcFormats[j];
+        }
+      }
+
       if (first) {
-        formats = list;
+        commonFormats = possibleFormats;
         first = FALSE;
       }
       else {
-        formats.MakeUnique();
-        for (PINDEX j = 0; j < formats.GetSize(); j++) {
-          if (list.GetValuesIndex(formats[j]) == P_MAX_INDEX)
-            formats.RemoveAt(j--);
+        // Want intersaction of the possioble formats for all connections.
+        for (PINDEX j = 0; j < commonFormats.GetSize(); j++) {
+          if (possibleFormats.GetValuesIndex(commonFormats[j]) == P_MAX_INDEX)
+            commonFormats.RemoveAt(j--);
         }
       }
     }
@@ -362,20 +381,12 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection)
 
   inUseFlag.Signal();
 
-  for (i = 0; i < formats.GetSize(); i++) {
-    OpalMediaFormatList srcFormats = OpalTranscoder::GetSourceFormats(formats[i]);
-    for (PINDEX j = 0; j < srcFormats.GetSize(); j++) {
-      if (OpalTranscoder::GetDestinationFormats(srcFormats[j]).GetSize() > 0)
-        formats += srcFormats[j];
-    }
-  }
-
-  connection.AdjustMediaFormats(formats);
+  connection.AdjustMediaFormats(commonFormats);
 
   PTRACE(3, "Call\tGetMediaFormats for " << connection << '\n'
-         << setfill('\n') << formats << setfill(' '));
+         << setfill('\n') << commonFormats << setfill(' '));
 
-  return formats;
+  return commonFormats;
 }
 
 
@@ -389,13 +400,24 @@ BOOL OpalCall::OpenSourceMediaStreams(const OpalMediaFormatList & mediaFormats,
 
   BOOL startedOne = FALSE;
 
+  OpalMediaFormatList adjustableMediaFormats = mediaFormats;
+
   inUseFlag.Wait();
 
   for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
     OpalConnection & conn = activeConnections[i];
     if (connection != &conn) {
-      if (conn.OpenSourceMediaStream(mediaFormats, sessionID))
+      if (conn.OpenSourceMediaStream(adjustableMediaFormats, sessionID)) {
         startedOne = TRUE;
+        // If opened the source stream, then reorder the media formats so we
+        // have a preference for symmetric codecs on subsequent connection(s)
+        OpalMediaStream * otherStream = conn.GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, TRUE);
+        if (otherStream != NULL && adjustableMediaFormats[0] != otherStream->GetMediaFormat()) {
+          adjustableMediaFormats.Reorder(otherStream->GetMediaFormat());
+          PTRACE(4, "Call\tOpenSourceMediaStreams for session " << sessionID
+                 << " adjusted media to " << setfill(',') << adjustableMediaFormats << setfill(' '));
+        }
+      }
     }
   }
 
