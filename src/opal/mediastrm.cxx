@@ -24,7 +24,11 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2010  2001/11/15 06:58:17  robertj
+ * Revision 1.2011  2002/01/14 02:24:33  robertj
+ * Added ability to turn jitter buffer off in media stream to allow for patches
+ *   that do not require it.
+ *
+ * Revision 2.9  2001/11/15 06:58:17  robertj
  * Changed default read size for media stream to 50ms (if is audio), fixes
  *   overly small packet size for G.711
  *
@@ -227,6 +231,11 @@ BOOL OpalMediaStream::SetDataSize(PINDEX dataSize)
 }
 
 
+void OpalMediaStream::EnableJitterBuffer() const
+{
+}
+
+
 void OpalMediaStream::SetPatch(OpalMediaPatch * patch)
 {
   patchThread = patch;
@@ -247,9 +256,6 @@ BOOL OpalRTPMediaStream::Open(const OpalMediaFormat & format)
 {
   if (!OpalMediaStream::Open(format))
     return FALSE;
-
-  if (IsSource() && mediaFormat.NeedsJitterBuffer())
-    rtpSession.SetJitterBufferSize(150);
 
   consecutiveMismatches = 0;
   mismatchPayloadType = mediaFormat.GetPayloadType();
@@ -339,6 +345,12 @@ BOOL OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
 BOOL OpalRTPMediaStream::IsSynchronous() const
 {
   return FALSE;
+}
+
+
+void OpalRTPMediaStream::EnableJitterBuffer() const
+{
+  rtpSession.SetJitterBufferSize(150);
 }
 
 
