@@ -345,7 +345,7 @@ void H225_RegistrationRejectReason_invalidTerminalAliases::PrintOn(ostream & str
     strm << setw(indent+23) << "terminalAliasPattern = " << setprecision(indent) << m_terminalAliasPattern << '\n';
   if (HasOptionalField(e_supportedPrefixes))
     strm << setw(indent+20) << "supportedPrefixes = " << setprecision(indent) << m_supportedPrefixes << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -353,7 +353,7 @@ void H225_RegistrationRejectReason_invalidTerminalAliases::PrintOn(ostream & str
 PObject::Comparison H225_RegistrationRejectReason_invalidTerminalAliases::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_RegistrationRejectReason_invalidTerminalAliases), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_RegistrationRejectReason_invalidTerminalAliases), PInvalidCast);
 #endif
   const H225_RegistrationRejectReason_invalidTerminalAliases & other = (const H225_RegistrationRejectReason_invalidTerminalAliases &)obj;
 
@@ -567,7 +567,7 @@ void H225_ServiceControlIndication_callSpecific::PrintOn(ostream & strm) const
   strm << setw(indent+17) << "callIdentifier = " << setprecision(indent) << m_callIdentifier << '\n';
   strm << setw(indent+15) << "conferenceID = " << setprecision(indent) << m_conferenceID << '\n';
   strm << setw(indent+15) << "answeredCall = " << setprecision(indent) << m_answeredCall << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -575,7 +575,7 @@ void H225_ServiceControlIndication_callSpecific::PrintOn(ostream & strm) const
 PObject::Comparison H225_ServiceControlIndication_callSpecific::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_ServiceControlIndication_callSpecific), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_ServiceControlIndication_callSpecific), PInvalidCast);
 #endif
   const H225_ServiceControlIndication_callSpecific & other = (const H225_ServiceControlIndication_callSpecific &)obj;
 
@@ -882,7 +882,7 @@ void H225_Status_UUIE::PrintOn(ostream & strm) const
     strm << setw(indent+9) << "tokens = " << setprecision(indent) << m_tokens << '\n';
   if (HasOptionalField(e_cryptoTokens))
     strm << setw(indent+15) << "cryptoTokens = " << setprecision(indent) << m_cryptoTokens << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -890,7 +890,7 @@ void H225_Status_UUIE::PrintOn(ostream & strm) const
 PObject::Comparison H225_Status_UUIE::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_Status_UUIE), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_Status_UUIE), PInvalidCast);
 #endif
   const H225_Status_UUIE & other = (const H225_Status_UUIE &)obj;
 
@@ -985,7 +985,7 @@ void H225_StatusInquiry_UUIE::PrintOn(ostream & strm) const
     strm << setw(indent+9) << "tokens = " << setprecision(indent) << m_tokens << '\n';
   if (HasOptionalField(e_cryptoTokens))
     strm << setw(indent+15) << "cryptoTokens = " << setprecision(indent) << m_cryptoTokens << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -993,7 +993,7 @@ void H225_StatusInquiry_UUIE::PrintOn(ostream & strm) const
 PObject::Comparison H225_StatusInquiry_UUIE::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_StatusInquiry_UUIE), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_StatusInquiry_UUIE), PInvalidCast);
 #endif
   const H225_StatusInquiry_UUIE & other = (const H225_StatusInquiry_UUIE &)obj;
 
@@ -1088,7 +1088,7 @@ void H225_SetupAcknowledge_UUIE::PrintOn(ostream & strm) const
     strm << setw(indent+9) << "tokens = " << setprecision(indent) << m_tokens << '\n';
   if (HasOptionalField(e_cryptoTokens))
     strm << setw(indent+15) << "cryptoTokens = " << setprecision(indent) << m_cryptoTokens << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1096,7 +1096,7 @@ void H225_SetupAcknowledge_UUIE::PrintOn(ostream & strm) const
 PObject::Comparison H225_SetupAcknowledge_UUIE::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_SetupAcknowledge_UUIE), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_SetupAcknowledge_UUIE), PInvalidCast);
 #endif
   const H225_SetupAcknowledge_UUIE & other = (const H225_SetupAcknowledge_UUIE &)obj;
 
@@ -1191,7 +1191,7 @@ void H225_Notify_UUIE::PrintOn(ostream & strm) const
     strm << setw(indent+9) << "tokens = " << setprecision(indent) << m_tokens << '\n';
   if (HasOptionalField(e_cryptoTokens))
     strm << setw(indent+15) << "cryptoTokens = " << setprecision(indent) << m_cryptoTokens << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1199,7 +1199,7 @@ void H225_Notify_UUIE::PrintOn(ostream & strm) const
 PObject::Comparison H225_Notify_UUIE::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_Notify_UUIE), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_Notify_UUIE), PInvalidCast);
 #endif
   const H225_Notify_UUIE & other = (const H225_Notify_UUIE &)obj;
 
@@ -1297,7 +1297,7 @@ void H225_VendorIdentifier::PrintOn(ostream & strm) const
     strm << setw(indent+12) << "versionId = " << setprecision(indent) << m_versionId << '\n';
   if (HasOptionalField(e_enterpriseNumber))
     strm << setw(indent+19) << "enterpriseNumber = " << setprecision(indent) << m_enterpriseNumber << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1305,7 +1305,7 @@ void H225_VendorIdentifier::PrintOn(ostream & strm) const
 PObject::Comparison H225_VendorIdentifier::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_VendorIdentifier), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_VendorIdentifier), PInvalidCast);
 #endif
   const H225_VendorIdentifier & other = (const H225_VendorIdentifier &)obj;
 
@@ -1395,7 +1395,7 @@ void H225_TunnelledProtocol::PrintOn(ostream & strm) const
   strm << setw(indent+5) << "id = " << setprecision(indent) << m_id << '\n';
   if (HasOptionalField(e_subIdentifier))
     strm << setw(indent+16) << "subIdentifier = " << setprecision(indent) << m_subIdentifier << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1403,7 +1403,7 @@ void H225_TunnelledProtocol::PrintOn(ostream & strm) const
 PObject::Comparison H225_TunnelledProtocol::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_TunnelledProtocol), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_TunnelledProtocol), PInvalidCast);
 #endif
   const H225_TunnelledProtocol & other = (const H225_TunnelledProtocol &)obj;
 
@@ -1480,7 +1480,7 @@ void H225_NonStandardParameter::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+24) << "nonStandardIdentifier = " << setprecision(indent) << m_nonStandardIdentifier << '\n';
   strm << setw(indent+7) << "data = " << setprecision(indent) << m_data << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1488,7 +1488,7 @@ void H225_NonStandardParameter::PrintOn(ostream & strm) const
 PObject::Comparison H225_NonStandardParameter::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_NonStandardParameter), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_NonStandardParameter), PInvalidCast);
 #endif
   const H225_NonStandardParameter & other = (const H225_NonStandardParameter &)obj;
 
@@ -1563,7 +1563,7 @@ void H225_PublicPartyNumber::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+21) << "publicTypeOfNumber = " << setprecision(indent) << m_publicTypeOfNumber << '\n';
   strm << setw(indent+21) << "publicNumberDigits = " << setprecision(indent) << m_publicNumberDigits << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1571,7 +1571,7 @@ void H225_PublicPartyNumber::PrintOn(ostream & strm) const
 PObject::Comparison H225_PublicPartyNumber::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_PublicPartyNumber), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_PublicPartyNumber), PInvalidCast);
 #endif
   const H225_PublicPartyNumber & other = (const H225_PublicPartyNumber &)obj;
 
@@ -1646,7 +1646,7 @@ void H225_PrivatePartyNumber::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+22) << "privateTypeOfNumber = " << setprecision(indent) << m_privateTypeOfNumber << '\n';
   strm << setw(indent+22) << "privateNumberDigits = " << setprecision(indent) << m_privateNumberDigits << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1654,7 +1654,7 @@ void H225_PrivatePartyNumber::PrintOn(ostream & strm) const
 PObject::Comparison H225_PrivatePartyNumber::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_PrivatePartyNumber), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_PrivatePartyNumber), PInvalidCast);
 #endif
   const H225_PrivatePartyNumber & other = (const H225_PrivatePartyNumber &)obj;
 
@@ -1761,7 +1761,7 @@ void H225_ANSI_41_UIM::PrintOn(ostream & strm) const
     strm << setw(indent+7) << "sesn = " << setprecision(indent) << m_sesn << '\n';
   if (HasOptionalField(e_soc))
     strm << setw(indent+6) << "soc = " << setprecision(indent) << m_soc << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1769,7 +1769,7 @@ void H225_ANSI_41_UIM::PrintOn(ostream & strm) const
 PObject::Comparison H225_ANSI_41_UIM::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_ANSI_41_UIM), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_ANSI_41_UIM), PInvalidCast);
 #endif
   const H225_ANSI_41_UIM & other = (const H225_ANSI_41_UIM &)obj;
 
@@ -1928,7 +1928,7 @@ void H225_AlternateTransportAddresses::PrintOn(ostream & strm) const
     strm << setw(indent+9) << "annexE = " << setprecision(indent) << m_annexE << '\n';
   if (HasOptionalField(e_sctp))
     strm << setw(indent+7) << "sctp = " << setprecision(indent) << m_sctp << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1936,7 +1936,7 @@ void H225_AlternateTransportAddresses::PrintOn(ostream & strm) const
 PObject::Comparison H225_AlternateTransportAddresses::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_AlternateTransportAddresses), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_AlternateTransportAddresses), PInvalidCast);
 #endif
   const H225_AlternateTransportAddresses & other = (const H225_AlternateTransportAddresses &)obj;
 
@@ -2014,7 +2014,7 @@ void H225_AlternateGK::PrintOn(ostream & strm) const
     strm << setw(indent+23) << "gatekeeperIdentifier = " << setprecision(indent) << m_gatekeeperIdentifier << '\n';
   strm << setw(indent+17) << "needToRegister = " << setprecision(indent) << m_needToRegister << '\n';
   strm << setw(indent+11) << "priority = " << setprecision(indent) << m_priority << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2022,7 +2022,7 @@ void H225_AlternateGK::PrintOn(ostream & strm) const
 PObject::Comparison H225_AlternateGK::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_AlternateGK), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_AlternateGK), PInvalidCast);
 #endif
   const H225_AlternateGK & other = (const H225_AlternateGK &)obj;
 
@@ -2111,7 +2111,7 @@ void H225_AltGKInfo::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+22) << "alternateGatekeeper = " << setprecision(indent) << m_alternateGatekeeper << '\n';
   strm << setw(indent+19) << "altGKisPermanent = " << setprecision(indent) << m_altGKisPermanent << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2119,7 +2119,7 @@ void H225_AltGKInfo::PrintOn(ostream & strm) const
 PObject::Comparison H225_AltGKInfo::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_AltGKInfo), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_AltGKInfo), PInvalidCast);
 #endif
   const H225_AltGKInfo & other = (const H225_AltGKInfo &)obj;
 
@@ -2197,7 +2197,7 @@ void H225_SecurityCapabilities::PrintOn(ostream & strm) const
   strm << setw(indent+13) << "encryption = " << setprecision(indent) << m_encryption << '\n';
   strm << setw(indent+16) << "authenticaton = " << setprecision(indent) << m_authenticaton << '\n';
   strm << setw(indent+12) << "integrity = " << setprecision(indent) << m_integrity << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2205,7 +2205,7 @@ void H225_SecurityCapabilities::PrintOn(ostream & strm) const
 PObject::Comparison H225_SecurityCapabilities::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_SecurityCapabilities), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_SecurityCapabilities), PInvalidCast);
 #endif
   const H225_SecurityCapabilities & other = (const H225_SecurityCapabilities &)obj;
 
@@ -2300,7 +2300,7 @@ void H225_QseriesOptions::PrintOn(ostream & strm) const
   strm << setw(indent+11) << "q956Full = " << setprecision(indent) << m_q956Full << '\n';
   strm << setw(indent+11) << "q957Full = " << setprecision(indent) << m_q957Full << '\n';
   strm << setw(indent+11) << "q954Info = " << setprecision(indent) << m_q954Info << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2308,7 +2308,7 @@ void H225_QseriesOptions::PrintOn(ostream & strm) const
 PObject::Comparison H225_QseriesOptions::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_QseriesOptions), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_QseriesOptions), PInvalidCast);
 #endif
   const H225_QseriesOptions & other = (const H225_QseriesOptions &)obj;
 
@@ -2423,7 +2423,7 @@ void H225_DataRate::PrintOn(ostream & strm) const
   strm << setw(indent+14) << "channelRate = " << setprecision(indent) << m_channelRate << '\n';
   if (HasOptionalField(e_channelMultiplier))
     strm << setw(indent+20) << "channelMultiplier = " << setprecision(indent) << m_channelMultiplier << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2431,7 +2431,7 @@ void H225_DataRate::PrintOn(ostream & strm) const
 PObject::Comparison H225_DataRate::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_DataRate), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_DataRate), PInvalidCast);
 #endif
   const H225_DataRate & other = (const H225_DataRate &)obj;
 
@@ -2517,7 +2517,7 @@ void H225_SupportedPrefix::PrintOn(ostream & strm) const
   if (HasOptionalField(e_nonStandardData))
     strm << setw(indent+18) << "nonStandardData = " << setprecision(indent) << m_nonStandardData << '\n';
   strm << setw(indent+9) << "prefix = " << setprecision(indent) << m_prefix << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2525,7 +2525,7 @@ void H225_SupportedPrefix::PrintOn(ostream & strm) const
 PObject::Comparison H225_SupportedPrefix::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_SupportedPrefix), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_SupportedPrefix), PInvalidCast);
 #endif
   const H225_SupportedPrefix & other = (const H225_SupportedPrefix &)obj;
 
@@ -2601,7 +2601,7 @@ void H225_CapacityReportingSpecification::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+7) << "when = " << setprecision(indent) << m_when << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2609,7 +2609,7 @@ void H225_CapacityReportingSpecification::PrintOn(ostream & strm) const
 PObject::Comparison H225_CapacityReportingSpecification::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_CapacityReportingSpecification), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_CapacityReportingSpecification), PInvalidCast);
 #endif
   const H225_CapacityReportingSpecification & other = (const H225_CapacityReportingSpecification &)obj;
 
@@ -2700,7 +2700,7 @@ void H225_CallCapacityInfo::PrintOn(ostream & strm) const
     strm << setw(indent+20) << "mcuCallsAvailable = " << setprecision(indent) << m_mcuCallsAvailable << '\n';
   if (HasOptionalField(e_sipGwCallsAvailable))
     strm << setw(indent+22) << "sipGwCallsAvailable = " << setprecision(indent) << m_sipGwCallsAvailable << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2708,7 +2708,7 @@ void H225_CallCapacityInfo::PrintOn(ostream & strm) const
 PObject::Comparison H225_CallCapacityInfo::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_CallCapacityInfo), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_CallCapacityInfo), PInvalidCast);
 #endif
   const H225_CallCapacityInfo & other = (const H225_CallCapacityInfo &)obj;
 
@@ -2867,7 +2867,7 @@ void H225_CallsAvailable::PrintOn(ostream & strm) const
     strm << setw(indent+8) << "group = " << setprecision(indent) << m_group << '\n';
   if (HasOptionalField(e_carrier))
     strm << setw(indent+10) << "carrier = " << setprecision(indent) << m_carrier << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2875,7 +2875,7 @@ void H225_CallsAvailable::PrintOn(ostream & strm) const
 PObject::Comparison H225_CallsAvailable::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_CallsAvailable), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_CallsAvailable), PInvalidCast);
 #endif
   const H225_CallsAvailable & other = (const H225_CallsAvailable &)obj;
 
@@ -2956,7 +2956,7 @@ void H225_CicInfo::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+6) << "cic = " << setprecision(indent) << m_cic << '\n';
   strm << setw(indent+12) << "pointCode = " << setprecision(indent) << m_pointCode << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2964,7 +2964,7 @@ void H225_CicInfo::PrintOn(ostream & strm) const
 PObject::Comparison H225_CicInfo::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_CicInfo), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_CicInfo), PInvalidCast);
 #endif
   const H225_CicInfo & other = (const H225_CicInfo &)obj;
 
@@ -3041,7 +3041,7 @@ void H225_GroupID::PrintOn(ostream & strm) const
   if (HasOptionalField(e_member))
     strm << setw(indent+9) << "member = " << setprecision(indent) << m_member << '\n';
   strm << setw(indent+8) << "group = " << setprecision(indent) << m_group << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3049,7 +3049,7 @@ void H225_GroupID::PrintOn(ostream & strm) const
 PObject::Comparison H225_GroupID::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_GroupID), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_GroupID), PInvalidCast);
 #endif
   const H225_GroupID & other = (const H225_GroupID &)obj;
 
@@ -3129,7 +3129,7 @@ void H225_ServiceControlSession::PrintOn(ostream & strm) const
   if (HasOptionalField(e_contents))
     strm << setw(indent+11) << "contents = " << setprecision(indent) << m_contents << '\n';
   strm << setw(indent+9) << "reason = " << setprecision(indent) << m_reason << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3137,7 +3137,7 @@ void H225_ServiceControlSession::PrintOn(ostream & strm) const
 PObject::Comparison H225_ServiceControlSession::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_ServiceControlSession), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_ServiceControlSession), PInvalidCast);
 #endif
   const H225_ServiceControlSession & other = (const H225_ServiceControlSession &)obj;
 
@@ -3225,7 +3225,7 @@ void H225_RasUsageInfoTypes::PrintOn(ostream & strm) const
     strm << setw(indent+10) << "endTime = " << setprecision(indent) << m_endTime << '\n';
   if (HasOptionalField(e_terminationCause))
     strm << setw(indent+19) << "terminationCause = " << setprecision(indent) << m_terminationCause << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3233,7 +3233,7 @@ void H225_RasUsageInfoTypes::PrintOn(ostream & strm) const
 PObject::Comparison H225_RasUsageInfoTypes::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_RasUsageInfoTypes), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_RasUsageInfoTypes), PInvalidCast);
 #endif
   const H225_RasUsageInfoTypes & other = (const H225_RasUsageInfoTypes &)obj;
 
@@ -3328,7 +3328,7 @@ void H225_RasUsageSpecification::PrintOn(ostream & strm) const
   if (HasOptionalField(e_callStartingPoint))
     strm << setw(indent+20) << "callStartingPoint = " << setprecision(indent) << m_callStartingPoint << '\n';
   strm << setw(indent+11) << "required = " << setprecision(indent) << m_required << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3336,7 +3336,7 @@ void H225_RasUsageSpecification::PrintOn(ostream & strm) const
 PObject::Comparison H225_RasUsageSpecification::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_RasUsageSpecification), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_RasUsageSpecification), PInvalidCast);
 #endif
   const H225_RasUsageSpecification & other = (const H225_RasUsageSpecification &)obj;
 
@@ -3424,7 +3424,7 @@ void H225_RasUsageInformation::PrintOn(ostream & strm) const
     strm << setw(indent+14) << "connectTime = " << setprecision(indent) << m_connectTime << '\n';
   if (HasOptionalField(e_endTime))
     strm << setw(indent+10) << "endTime = " << setprecision(indent) << m_endTime << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3432,7 +3432,7 @@ void H225_RasUsageInformation::PrintOn(ostream & strm) const
 PObject::Comparison H225_RasUsageInformation::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_RasUsageInformation), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_RasUsageInformation), PInvalidCast);
 #endif
   const H225_RasUsageInformation & other = (const H225_RasUsageInformation &)obj;
 
@@ -3527,7 +3527,7 @@ void H225_BandwidthDetails::PrintOn(ostream & strm) const
   strm << setw(indent+12) << "multicast = " << setprecision(indent) << m_multicast << '\n';
   strm << setw(indent+12) << "bandwidth = " << setprecision(indent) << m_bandwidth << '\n';
   strm << setw(indent+16) << "rtcpAddresses = " << setprecision(indent) << m_rtcpAddresses << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3535,7 +3535,7 @@ void H225_BandwidthDetails::PrintOn(ostream & strm) const
 PObject::Comparison H225_BandwidthDetails::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_BandwidthDetails), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_BandwidthDetails), PInvalidCast);
 #endif
   const H225_BandwidthDetails & other = (const H225_BandwidthDetails &)obj;
 
@@ -3632,7 +3632,7 @@ void H225_CallCreditServiceControl::PrintOn(ostream & strm) const
     strm << setw(indent+27) << "enforceCallDurationLimit = " << setprecision(indent) << m_enforceCallDurationLimit << '\n';
   if (HasOptionalField(e_callStartingPoint))
     strm << setw(indent+20) << "callStartingPoint = " << setprecision(indent) << m_callStartingPoint << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3640,7 +3640,7 @@ void H225_CallCreditServiceControl::PrintOn(ostream & strm) const
 PObject::Comparison H225_CallCreditServiceControl::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_CallCreditServiceControl), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_CallCreditServiceControl), PInvalidCast);
 #endif
   const H225_CallCreditServiceControl & other = (const H225_CallCreditServiceControl &)obj;
 
@@ -3745,7 +3745,7 @@ void H225_GenericData::PrintOn(ostream & strm) const
   strm << setw(indent+5) << "id = " << setprecision(indent) << m_id << '\n';
   if (HasOptionalField(e_parameters))
     strm << setw(indent+13) << "parameters = " << setprecision(indent) << m_parameters << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3753,7 +3753,7 @@ void H225_GenericData::PrintOn(ostream & strm) const
 PObject::Comparison H225_GenericData::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_GenericData), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_GenericData), PInvalidCast);
 #endif
   const H225_GenericData & other = (const H225_GenericData &)obj;
 
@@ -3831,7 +3831,7 @@ void H225_EnumeratedParameter::PrintOn(ostream & strm) const
   strm << setw(indent+5) << "id = " << setprecision(indent) << m_id << '\n';
   if (HasOptionalField(e_content))
     strm << setw(indent+10) << "content = " << setprecision(indent) << m_content << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3839,7 +3839,7 @@ void H225_EnumeratedParameter::PrintOn(ostream & strm) const
 PObject::Comparison H225_EnumeratedParameter::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_EnumeratedParameter), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_EnumeratedParameter), PInvalidCast);
 #endif
   const H225_EnumeratedParameter & other = (const H225_EnumeratedParameter &)obj;
 
@@ -3921,7 +3921,7 @@ void H225_FeatureSet::PrintOn(ostream & strm) const
     strm << setw(indent+18) << "desiredFeatures = " << setprecision(indent) << m_desiredFeatures << '\n';
   if (HasOptionalField(e_supportedFeatures))
     strm << setw(indent+20) << "supportedFeatures = " << setprecision(indent) << m_supportedFeatures << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3929,7 +3929,7 @@ void H225_FeatureSet::PrintOn(ostream & strm) const
 PObject::Comparison H225_FeatureSet::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_FeatureSet), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_FeatureSet), PInvalidCast);
 #endif
   const H225_FeatureSet & other = (const H225_FeatureSet &)obj;
 
@@ -4032,7 +4032,7 @@ void H225_RTPSession::PrintOn(ostream & strm) const
     strm << setw(indent+12) << "multicast = " << setprecision(indent) << m_multicast << '\n';
   if (HasOptionalField(e_bandwidth))
     strm << setw(indent+12) << "bandwidth = " << setprecision(indent) << m_bandwidth << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4040,7 +4040,7 @@ void H225_RTPSession::PrintOn(ostream & strm) const
 PObject::Comparison H225_RTPSession::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_RTPSession), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_RTPSession), PInvalidCast);
 #endif
   const H225_RTPSession & other = (const H225_RTPSession &)obj;
 
@@ -4168,7 +4168,7 @@ void H225_GatekeeperConfirm::PrintOn(ostream & strm) const
     strm << setw(indent+13) << "featureSet = " << setprecision(indent) << m_featureSet << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4176,7 +4176,7 @@ void H225_GatekeeperConfirm::PrintOn(ostream & strm) const
 PObject::Comparison H225_GatekeeperConfirm::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_GatekeeperConfirm), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_GatekeeperConfirm), PInvalidCast);
 #endif
   const H225_GatekeeperConfirm & other = (const H225_GatekeeperConfirm &)obj;
 
@@ -4317,7 +4317,7 @@ void H225_GatekeeperReject::PrintOn(ostream & strm) const
     strm << setw(indent+13) << "featureSet = " << setprecision(indent) << m_featureSet << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4325,7 +4325,7 @@ void H225_GatekeeperReject::PrintOn(ostream & strm) const
 PObject::Comparison H225_GatekeeperReject::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_GatekeeperReject), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_GatekeeperReject), PInvalidCast);
 #endif
   const H225_GatekeeperReject & other = (const H225_GatekeeperReject &)obj;
 
@@ -4457,7 +4457,7 @@ void H225_RegistrationReject::PrintOn(ostream & strm) const
     strm << setw(indent+13) << "featureSet = " << setprecision(indent) << m_featureSet << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4465,7 +4465,7 @@ void H225_RegistrationReject::PrintOn(ostream & strm) const
 PObject::Comparison H225_RegistrationReject::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_RegistrationReject), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_RegistrationReject), PInvalidCast);
 #endif
   const H225_RegistrationReject & other = (const H225_RegistrationReject &)obj;
 
@@ -4606,7 +4606,7 @@ void H225_UnregistrationRequest::PrintOn(ostream & strm) const
     strm << setw(indent+22) << "alternateGatekeeper = " << setprecision(indent) << m_alternateGatekeeper << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4614,7 +4614,7 @@ void H225_UnregistrationRequest::PrintOn(ostream & strm) const
 PObject::Comparison H225_UnregistrationRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_UnregistrationRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_UnregistrationRequest), PInvalidCast);
 #endif
   const H225_UnregistrationRequest & other = (const H225_UnregistrationRequest &)obj;
 
@@ -4752,7 +4752,7 @@ void H225_UnregistrationConfirm::PrintOn(ostream & strm) const
     strm << setw(indent+22) << "integrityCheckValue = " << setprecision(indent) << m_integrityCheckValue << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4760,7 +4760,7 @@ void H225_UnregistrationConfirm::PrintOn(ostream & strm) const
 PObject::Comparison H225_UnregistrationConfirm::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_UnregistrationConfirm), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_UnregistrationConfirm), PInvalidCast);
 #endif
   const H225_UnregistrationConfirm & other = (const H225_UnregistrationConfirm &)obj;
 
@@ -4861,7 +4861,7 @@ void H225_UnregistrationReject::PrintOn(ostream & strm) const
     strm << setw(indent+22) << "integrityCheckValue = " << setprecision(indent) << m_integrityCheckValue << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4869,7 +4869,7 @@ void H225_UnregistrationReject::PrintOn(ostream & strm) const
 PObject::Comparison H225_UnregistrationReject::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_UnregistrationReject), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_UnregistrationReject), PInvalidCast);
 #endif
   const H225_UnregistrationReject & other = (const H225_UnregistrationReject &)obj;
 
@@ -4985,7 +4985,7 @@ void H225_AdmissionReject::PrintOn(ostream & strm) const
     strm << setw(indent+13) << "featureSet = " << setprecision(indent) << m_featureSet << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4993,7 +4993,7 @@ void H225_AdmissionReject::PrintOn(ostream & strm) const
 PObject::Comparison H225_AdmissionReject::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_AdmissionReject), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_AdmissionReject), PInvalidCast);
 #endif
   const H225_AdmissionReject & other = (const H225_AdmissionReject &)obj;
 
@@ -5113,7 +5113,7 @@ void H225_BandwidthReject::PrintOn(ostream & strm) const
     strm << setw(indent+22) << "integrityCheckValue = " << setprecision(indent) << m_integrityCheckValue << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5121,7 +5121,7 @@ void H225_BandwidthReject::PrintOn(ostream & strm) const
 PObject::Comparison H225_BandwidthReject::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_BandwidthReject), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_BandwidthReject), PInvalidCast);
 #endif
   const H225_BandwidthReject & other = (const H225_BandwidthReject &)obj;
 
@@ -5241,7 +5241,7 @@ void H225_LocationReject::PrintOn(ostream & strm) const
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
   if (HasOptionalField(e_serviceControl))
     strm << setw(indent+17) << "serviceControl = " << setprecision(indent) << m_serviceControl << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5249,7 +5249,7 @@ void H225_LocationReject::PrintOn(ostream & strm) const
 PObject::Comparison H225_LocationReject::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_LocationReject), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_LocationReject), PInvalidCast);
 #endif
   const H225_LocationReject & other = (const H225_LocationReject &)obj;
 
@@ -5365,7 +5365,7 @@ void H225_DisengageReject::PrintOn(ostream & strm) const
     strm << setw(indent+22) << "integrityCheckValue = " << setprecision(indent) << m_integrityCheckValue << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5373,7 +5373,7 @@ void H225_DisengageReject::PrintOn(ostream & strm) const
 PObject::Comparison H225_DisengageReject::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_DisengageReject), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_DisengageReject), PInvalidCast);
 #endif
   const H225_DisengageReject & other = (const H225_DisengageReject &)obj;
 
@@ -5499,7 +5499,7 @@ void H225_InfoRequest::PrintOn(ostream & strm) const
     strm << setw(indent+24) << "capacityInfoRequested = " << setprecision(indent) << m_capacityInfoRequested << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5507,7 +5507,7 @@ void H225_InfoRequest::PrintOn(ostream & strm) const
 PObject::Comparison H225_InfoRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_InfoRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_InfoRequest), PInvalidCast);
 #endif
   const H225_InfoRequest & other = (const H225_InfoRequest &)obj;
 
@@ -5638,7 +5638,7 @@ void H225_InfoRequestAck::PrintOn(ostream & strm) const
     strm << setw(indent+15) << "cryptoTokens = " << setprecision(indent) << m_cryptoTokens << '\n';
   if (HasOptionalField(e_integrityCheckValue))
     strm << setw(indent+22) << "integrityCheckValue = " << setprecision(indent) << m_integrityCheckValue << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5646,7 +5646,7 @@ void H225_InfoRequestAck::PrintOn(ostream & strm) const
 PObject::Comparison H225_InfoRequestAck::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_InfoRequestAck), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_InfoRequestAck), PInvalidCast);
 #endif
   const H225_InfoRequestAck & other = (const H225_InfoRequestAck &)obj;
 
@@ -5757,7 +5757,7 @@ void H225_InfoRequestNak::PrintOn(ostream & strm) const
     strm << setw(indent+15) << "cryptoTokens = " << setprecision(indent) << m_cryptoTokens << '\n';
   if (HasOptionalField(e_integrityCheckValue))
     strm << setw(indent+22) << "integrityCheckValue = " << setprecision(indent) << m_integrityCheckValue << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5765,7 +5765,7 @@ void H225_InfoRequestNak::PrintOn(ostream & strm) const
 PObject::Comparison H225_InfoRequestNak::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_InfoRequestNak), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_InfoRequestNak), PInvalidCast);
 #endif
   const H225_InfoRequestNak & other = (const H225_InfoRequestNak &)obj;
 
@@ -5890,7 +5890,7 @@ void H225_NonStandardMessage::PrintOn(ostream & strm) const
     strm << setw(indent+13) << "featureSet = " << setprecision(indent) << m_featureSet << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5898,7 +5898,7 @@ void H225_NonStandardMessage::PrintOn(ostream & strm) const
 PObject::Comparison H225_NonStandardMessage::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_NonStandardMessage), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_NonStandardMessage), PInvalidCast);
 #endif
   const H225_NonStandardMessage & other = (const H225_NonStandardMessage &)obj;
 
@@ -5996,7 +5996,7 @@ void H225_UnknownMessageResponse::PrintOn(ostream & strm) const
     strm << setw(indent+22) << "integrityCheckValue = " << setprecision(indent) << m_integrityCheckValue << '\n';
   if (HasOptionalField(e_messageNotUnderstood))
     strm << setw(indent+23) << "messageNotUnderstood = " << setprecision(indent) << m_messageNotUnderstood << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6004,7 +6004,7 @@ void H225_UnknownMessageResponse::PrintOn(ostream & strm) const
 PObject::Comparison H225_UnknownMessageResponse::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_UnknownMessageResponse), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_UnknownMessageResponse), PInvalidCast);
 #endif
   const H225_UnknownMessageResponse & other = (const H225_UnknownMessageResponse &)obj;
 
@@ -6094,7 +6094,7 @@ void H225_RequestInProgress::PrintOn(ostream & strm) const
   if (HasOptionalField(e_integrityCheckValue))
     strm << setw(indent+22) << "integrityCheckValue = " << setprecision(indent) << m_integrityCheckValue << '\n';
   strm << setw(indent+8) << "delay = " << setprecision(indent) << m_delay << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6102,7 +6102,7 @@ void H225_RequestInProgress::PrintOn(ostream & strm) const
 PObject::Comparison H225_RequestInProgress::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_RequestInProgress), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_RequestInProgress), PInvalidCast);
 #endif
   const H225_RequestInProgress & other = (const H225_RequestInProgress &)obj;
 
@@ -6219,7 +6219,7 @@ void H225_ResourcesAvailableConfirm::PrintOn(ostream & strm) const
     strm << setw(indent+22) << "integrityCheckValue = " << setprecision(indent) << m_integrityCheckValue << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6227,7 +6227,7 @@ void H225_ResourcesAvailableConfirm::PrintOn(ostream & strm) const
 PObject::Comparison H225_ResourcesAvailableConfirm::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_ResourcesAvailableConfirm), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_ResourcesAvailableConfirm), PInvalidCast);
 #endif
   const H225_ResourcesAvailableConfirm & other = (const H225_ResourcesAvailableConfirm &)obj;
 
@@ -6353,7 +6353,7 @@ void H225_ServiceControlIndication::PrintOn(ostream & strm) const
     strm << setw(indent+13) << "featureSet = " << setprecision(indent) << m_featureSet << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6361,7 +6361,7 @@ void H225_ServiceControlIndication::PrintOn(ostream & strm) const
 PObject::Comparison H225_ServiceControlIndication::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_ServiceControlIndication), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_ServiceControlIndication), PInvalidCast);
 #endif
   const H225_ServiceControlIndication & other = (const H225_ServiceControlIndication &)obj;
 
@@ -6513,7 +6513,7 @@ void H225_ServiceControlResponse::PrintOn(ostream & strm) const
     strm << setw(indent+13) << "featureSet = " << setprecision(indent) << m_featureSet << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6521,7 +6521,7 @@ void H225_ServiceControlResponse::PrintOn(ostream & strm) const
 PObject::Comparison H225_ServiceControlResponse::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_ServiceControlResponse), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_ServiceControlResponse), PInvalidCast);
 #endif
   const H225_ServiceControlResponse & other = (const H225_ServiceControlResponse &)obj;
 
@@ -6650,7 +6650,7 @@ void H225_H323_UU_PDU_tunnelledSignallingMessage::PrintOn(ostream & strm) const
     strm << setw(indent+21) << "tunnellingRequired = " << setprecision(indent) << m_tunnellingRequired << '\n';
   if (HasOptionalField(e_nonStandardData))
     strm << setw(indent+18) << "nonStandardData = " << setprecision(indent) << m_nonStandardData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6658,7 +6658,7 @@ void H225_H323_UU_PDU_tunnelledSignallingMessage::PrintOn(ostream & strm) const
 PObject::Comparison H225_H323_UU_PDU_tunnelledSignallingMessage::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_H323_UU_PDU_tunnelledSignallingMessage), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_H323_UU_PDU_tunnelledSignallingMessage), PInvalidCast);
 #endif
   const H225_H323_UU_PDU_tunnelledSignallingMessage & other = (const H225_H323_UU_PDU_tunnelledSignallingMessage &)obj;
 
@@ -6753,7 +6753,7 @@ void H225_TransportAddress_ipSourceRoute::PrintOn(ostream & strm) const
   strm << setw(indent+7) << "port = " << setprecision(indent) << m_port << '\n';
   strm << setw(indent+8) << "route = " << setprecision(indent) << m_route << '\n';
   strm << setw(indent+10) << "routing = " << setprecision(indent) << m_routing << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6761,7 +6761,7 @@ void H225_TransportAddress_ipSourceRoute::PrintOn(ostream & strm) const
 PObject::Comparison H225_TransportAddress_ipSourceRoute::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_TransportAddress_ipSourceRoute), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_TransportAddress_ipSourceRoute), PInvalidCast);
 #endif
   const H225_TransportAddress_ipSourceRoute & other = (const H225_TransportAddress_ipSourceRoute &)obj;
 
@@ -6859,7 +6859,7 @@ void H225_RegistrationConfirm_preGrantedARQ::PrintOn(ostream & strm) const
     strm << setw(indent+30) << "alternateTransportAddresses = " << setprecision(indent) << m_alternateTransportAddresses << '\n';
   if (HasOptionalField(e_useSpecifiedTransport))
     strm << setw(indent+24) << "useSpecifiedTransport = " << setprecision(indent) << m_useSpecifiedTransport << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6867,7 +6867,7 @@ void H225_RegistrationConfirm_preGrantedARQ::PrintOn(ostream & strm) const
 PObject::Comparison H225_RegistrationConfirm_preGrantedARQ::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_RegistrationConfirm_preGrantedARQ), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_RegistrationConfirm_preGrantedARQ), PInvalidCast);
 #endif
   const H225_RegistrationConfirm_preGrantedARQ & other = (const H225_RegistrationConfirm_preGrantedARQ &)obj;
 
@@ -6970,7 +6970,7 @@ void H225_StimulusControl::PrintOn(ostream & strm) const
     strm << setw(indent+9) << "isText = " << setprecision(indent) << m_isText << '\n';
   if (HasOptionalField(e_h248Message))
     strm << setw(indent+14) << "h248Message = " << setprecision(indent) << m_h248Message << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6978,7 +6978,7 @@ void H225_StimulusControl::PrintOn(ostream & strm) const
 PObject::Comparison H225_StimulusControl::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_StimulusControl), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_StimulusControl), PInvalidCast);
 #endif
   const H225_StimulusControl & other = (const H225_StimulusControl &)obj;
 
@@ -7069,7 +7069,7 @@ void H225_ConferenceList::PrintOn(ostream & strm) const
     strm << setw(indent+18) << "conferenceAlias = " << setprecision(indent) << m_conferenceAlias << '\n';
   if (HasOptionalField(e_nonStandardData))
     strm << setw(indent+18) << "nonStandardData = " << setprecision(indent) << m_nonStandardData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7077,7 +7077,7 @@ void H225_ConferenceList::PrintOn(ostream & strm) const
 PObject::Comparison H225_ConferenceList::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_ConferenceList), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_ConferenceList), PInvalidCast);
 #endif
   const H225_ConferenceList & other = (const H225_ConferenceList &)obj;
 
@@ -7166,7 +7166,7 @@ void H225_GatewayInfo::PrintOn(ostream & strm) const
     strm << setw(indent+11) << "protocol = " << setprecision(indent) << m_protocol << '\n';
   if (HasOptionalField(e_nonStandardData))
     strm << setw(indent+18) << "nonStandardData = " << setprecision(indent) << m_nonStandardData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7174,7 +7174,7 @@ void H225_GatewayInfo::PrintOn(ostream & strm) const
 PObject::Comparison H225_GatewayInfo::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_GatewayInfo), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_GatewayInfo), PInvalidCast);
 #endif
   const H225_GatewayInfo & other = (const H225_GatewayInfo &)obj;
 
@@ -7258,7 +7258,7 @@ void H225_H310Caps::PrintOn(ostream & strm) const
     strm << setw(indent+21) << "dataRatesSupported = " << setprecision(indent) << m_dataRatesSupported << '\n';
   if (HasOptionalField(e_supportedPrefixes))
     strm << setw(indent+20) << "supportedPrefixes = " << setprecision(indent) << m_supportedPrefixes << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7266,7 +7266,7 @@ void H225_H310Caps::PrintOn(ostream & strm) const
 PObject::Comparison H225_H310Caps::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_H310Caps), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_H310Caps), PInvalidCast);
 #endif
   const H225_H310Caps & other = (const H225_H310Caps &)obj;
 
@@ -7348,7 +7348,7 @@ void H225_H320Caps::PrintOn(ostream & strm) const
     strm << setw(indent+21) << "dataRatesSupported = " << setprecision(indent) << m_dataRatesSupported << '\n';
   if (HasOptionalField(e_supportedPrefixes))
     strm << setw(indent+20) << "supportedPrefixes = " << setprecision(indent) << m_supportedPrefixes << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7356,7 +7356,7 @@ void H225_H320Caps::PrintOn(ostream & strm) const
 PObject::Comparison H225_H320Caps::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_H320Caps), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_H320Caps), PInvalidCast);
 #endif
   const H225_H320Caps & other = (const H225_H320Caps &)obj;
 
@@ -7438,7 +7438,7 @@ void H225_H321Caps::PrintOn(ostream & strm) const
     strm << setw(indent+21) << "dataRatesSupported = " << setprecision(indent) << m_dataRatesSupported << '\n';
   if (HasOptionalField(e_supportedPrefixes))
     strm << setw(indent+20) << "supportedPrefixes = " << setprecision(indent) << m_supportedPrefixes << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7446,7 +7446,7 @@ void H225_H321Caps::PrintOn(ostream & strm) const
 PObject::Comparison H225_H321Caps::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_H321Caps), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_H321Caps), PInvalidCast);
 #endif
   const H225_H321Caps & other = (const H225_H321Caps &)obj;
 
@@ -7528,7 +7528,7 @@ void H225_H322Caps::PrintOn(ostream & strm) const
     strm << setw(indent+21) << "dataRatesSupported = " << setprecision(indent) << m_dataRatesSupported << '\n';
   if (HasOptionalField(e_supportedPrefixes))
     strm << setw(indent+20) << "supportedPrefixes = " << setprecision(indent) << m_supportedPrefixes << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7536,7 +7536,7 @@ void H225_H322Caps::PrintOn(ostream & strm) const
 PObject::Comparison H225_H322Caps::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_H322Caps), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_H322Caps), PInvalidCast);
 #endif
   const H225_H322Caps & other = (const H225_H322Caps &)obj;
 
@@ -7618,7 +7618,7 @@ void H225_H323Caps::PrintOn(ostream & strm) const
     strm << setw(indent+21) << "dataRatesSupported = " << setprecision(indent) << m_dataRatesSupported << '\n';
   if (HasOptionalField(e_supportedPrefixes))
     strm << setw(indent+20) << "supportedPrefixes = " << setprecision(indent) << m_supportedPrefixes << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7626,7 +7626,7 @@ void H225_H323Caps::PrintOn(ostream & strm) const
 PObject::Comparison H225_H323Caps::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_H323Caps), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_H323Caps), PInvalidCast);
 #endif
   const H225_H323Caps & other = (const H225_H323Caps &)obj;
 
@@ -7708,7 +7708,7 @@ void H225_H324Caps::PrintOn(ostream & strm) const
     strm << setw(indent+21) << "dataRatesSupported = " << setprecision(indent) << m_dataRatesSupported << '\n';
   if (HasOptionalField(e_supportedPrefixes))
     strm << setw(indent+20) << "supportedPrefixes = " << setprecision(indent) << m_supportedPrefixes << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7716,7 +7716,7 @@ void H225_H324Caps::PrintOn(ostream & strm) const
 PObject::Comparison H225_H324Caps::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_H324Caps), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_H324Caps), PInvalidCast);
 #endif
   const H225_H324Caps & other = (const H225_H324Caps &)obj;
 
@@ -7798,7 +7798,7 @@ void H225_VoiceCaps::PrintOn(ostream & strm) const
     strm << setw(indent+21) << "dataRatesSupported = " << setprecision(indent) << m_dataRatesSupported << '\n';
   if (HasOptionalField(e_supportedPrefixes))
     strm << setw(indent+20) << "supportedPrefixes = " << setprecision(indent) << m_supportedPrefixes << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7806,7 +7806,7 @@ void H225_VoiceCaps::PrintOn(ostream & strm) const
 PObject::Comparison H225_VoiceCaps::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_VoiceCaps), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_VoiceCaps), PInvalidCast);
 #endif
   const H225_VoiceCaps & other = (const H225_VoiceCaps &)obj;
 
@@ -7888,7 +7888,7 @@ void H225_T120OnlyCaps::PrintOn(ostream & strm) const
     strm << setw(indent+21) << "dataRatesSupported = " << setprecision(indent) << m_dataRatesSupported << '\n';
   if (HasOptionalField(e_supportedPrefixes))
     strm << setw(indent+20) << "supportedPrefixes = " << setprecision(indent) << m_supportedPrefixes << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7896,7 +7896,7 @@ void H225_T120OnlyCaps::PrintOn(ostream & strm) const
 PObject::Comparison H225_T120OnlyCaps::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_T120OnlyCaps), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_T120OnlyCaps), PInvalidCast);
 #endif
   const H225_T120OnlyCaps & other = (const H225_T120OnlyCaps &)obj;
 
@@ -7976,7 +7976,7 @@ void H225_NonStandardProtocol::PrintOn(ostream & strm) const
   if (HasOptionalField(e_dataRatesSupported))
     strm << setw(indent+21) << "dataRatesSupported = " << setprecision(indent) << m_dataRatesSupported << '\n';
   strm << setw(indent+20) << "supportedPrefixes = " << setprecision(indent) << m_supportedPrefixes << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7984,7 +7984,7 @@ void H225_NonStandardProtocol::PrintOn(ostream & strm) const
 PObject::Comparison H225_NonStandardProtocol::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_NonStandardProtocol), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_NonStandardProtocol), PInvalidCast);
 #endif
   const H225_NonStandardProtocol & other = (const H225_NonStandardProtocol &)obj;
 
@@ -8074,7 +8074,7 @@ void H225_T38FaxAnnexbOnlyCaps::PrintOn(ostream & strm) const
   strm << setw(indent+20) << "supportedPrefixes = " << setprecision(indent) << m_supportedPrefixes << '\n';
   strm << setw(indent+17) << "t38FaxProtocol = " << setprecision(indent) << m_t38FaxProtocol << '\n';
   strm << setw(indent+16) << "t38FaxProfile = " << setprecision(indent) << m_t38FaxProfile << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -8082,7 +8082,7 @@ void H225_T38FaxAnnexbOnlyCaps::PrintOn(ostream & strm) const
 PObject::Comparison H225_T38FaxAnnexbOnlyCaps::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_T38FaxAnnexbOnlyCaps), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_T38FaxAnnexbOnlyCaps), PInvalidCast);
 #endif
   const H225_T38FaxAnnexbOnlyCaps & other = (const H225_T38FaxAnnexbOnlyCaps &)obj;
 
@@ -8183,7 +8183,7 @@ void H225_SIPCaps::PrintOn(ostream & strm) const
     strm << setw(indent+21) << "dataRatesSupported = " << setprecision(indent) << m_dataRatesSupported << '\n';
   if (HasOptionalField(e_supportedPrefixes))
     strm << setw(indent+20) << "supportedPrefixes = " << setprecision(indent) << m_supportedPrefixes << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -8191,7 +8191,7 @@ void H225_SIPCaps::PrintOn(ostream & strm) const
 PObject::Comparison H225_SIPCaps::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_SIPCaps), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_SIPCaps), PInvalidCast);
 #endif
   const H225_SIPCaps & other = (const H225_SIPCaps &)obj;
 
@@ -8280,7 +8280,7 @@ void H225_McuInfo::PrintOn(ostream & strm) const
     strm << setw(indent+18) << "nonStandardData = " << setprecision(indent) << m_nonStandardData << '\n';
   if (HasOptionalField(e_protocol))
     strm << setw(indent+11) << "protocol = " << setprecision(indent) << m_protocol << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -8288,7 +8288,7 @@ void H225_McuInfo::PrintOn(ostream & strm) const
 PObject::Comparison H225_McuInfo::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_McuInfo), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_McuInfo), PInvalidCast);
 #endif
   const H225_McuInfo & other = (const H225_McuInfo &)obj;
 
@@ -8362,7 +8362,7 @@ void H225_TerminalInfo::PrintOn(ostream & strm) const
   strm << "{\n";
   if (HasOptionalField(e_nonStandardData))
     strm << setw(indent+18) << "nonStandardData = " << setprecision(indent) << m_nonStandardData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -8370,7 +8370,7 @@ void H225_TerminalInfo::PrintOn(ostream & strm) const
 PObject::Comparison H225_TerminalInfo::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_TerminalInfo), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_TerminalInfo), PInvalidCast);
 #endif
   const H225_TerminalInfo & other = (const H225_TerminalInfo &)obj;
 
@@ -8441,7 +8441,7 @@ void H225_GatekeeperInfo::PrintOn(ostream & strm) const
   strm << "{\n";
   if (HasOptionalField(e_nonStandardData))
     strm << setw(indent+18) << "nonStandardData = " << setprecision(indent) << m_nonStandardData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -8449,7 +8449,7 @@ void H225_GatekeeperInfo::PrintOn(ostream & strm) const
 PObject::Comparison H225_GatekeeperInfo::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_GatekeeperInfo), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_GatekeeperInfo), PInvalidCast);
 #endif
   const H225_GatekeeperInfo & other = (const H225_GatekeeperInfo &)obj;
 
@@ -8541,7 +8541,7 @@ void H225_CallCapacity::PrintOn(ostream & strm) const
     strm << setw(indent+22) << "maximumCallCapacity = " << setprecision(indent) << m_maximumCallCapacity << '\n';
   if (HasOptionalField(e_currentCallCapacity))
     strm << setw(indent+22) << "currentCallCapacity = " << setprecision(indent) << m_currentCallCapacity << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -8549,7 +8549,7 @@ void H225_CallCapacity::PrintOn(ostream & strm) const
 PObject::Comparison H225_CallCapacity::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_CallCapacity), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_CallCapacity), PInvalidCast);
 #endif
   const H225_CallCapacity & other = (const H225_CallCapacity &)obj;
 
@@ -8632,7 +8632,7 @@ void H225_CircuitIdentifier::PrintOn(ostream & strm) const
     strm << setw(indent+8) << "group = " << setprecision(indent) << m_group << '\n';
   if (HasOptionalField(e_carrier))
     strm << setw(indent+10) << "carrier = " << setprecision(indent) << m_carrier << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -8640,7 +8640,7 @@ void H225_CircuitIdentifier::PrintOn(ostream & strm) const
 PObject::Comparison H225_CircuitIdentifier::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_CircuitIdentifier), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_CircuitIdentifier), PInvalidCast);
 #endif
   const H225_CircuitIdentifier & other = (const H225_CircuitIdentifier &)obj;
 
@@ -8766,7 +8766,7 @@ void H225_RegistrationConfirm::PrintOn(ostream & strm) const
     strm << setw(indent+13) << "featureSet = " << setprecision(indent) << m_featureSet << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -8774,7 +8774,7 @@ void H225_RegistrationConfirm::PrintOn(ostream & strm) const
 PObject::Comparison H225_RegistrationConfirm::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_RegistrationConfirm), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_RegistrationConfirm), PInvalidCast);
 #endif
   const H225_RegistrationConfirm & other = (const H225_RegistrationConfirm &)obj;
 
@@ -8967,7 +8967,7 @@ void H225_BandwidthRequest::PrintOn(ostream & strm) const
     strm << setw(indent+19) << "bandwidthDetails = " << setprecision(indent) << m_bandwidthDetails << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -8975,7 +8975,7 @@ void H225_BandwidthRequest::PrintOn(ostream & strm) const
 PObject::Comparison H225_BandwidthRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_BandwidthRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_BandwidthRequest), PInvalidCast);
 #endif
   const H225_BandwidthRequest & other = (const H225_BandwidthRequest &)obj;
 
@@ -9129,7 +9129,7 @@ void H225_BandwidthConfirm::PrintOn(ostream & strm) const
     strm << setw(indent+11) << "capacity = " << setprecision(indent) << m_capacity << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9137,7 +9137,7 @@ void H225_BandwidthConfirm::PrintOn(ostream & strm) const
 PObject::Comparison H225_BandwidthConfirm::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_BandwidthConfirm), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_BandwidthConfirm), PInvalidCast);
 #endif
   const H225_BandwidthConfirm & other = (const H225_BandwidthConfirm &)obj;
 
@@ -9250,7 +9250,7 @@ void H225_ResourcesAvailableIndicate::PrintOn(ostream & strm) const
     strm << setw(indent+11) << "capacity = " << setprecision(indent) << m_capacity << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9258,7 +9258,7 @@ void H225_ResourcesAvailableIndicate::PrintOn(ostream & strm) const
 PObject::Comparison H225_ResourcesAvailableIndicate::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_ResourcesAvailableIndicate), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_ResourcesAvailableIndicate), PInvalidCast);
 #endif
   const H225_ResourcesAvailableIndicate & other = (const H225_ResourcesAvailableIndicate &)obj;
 
@@ -9409,7 +9409,7 @@ void H225_H323_UU_PDU::PrintOn(ostream & strm) const
     strm << setw(indent+18) << "stimulusControl = " << setprecision(indent) << m_stimulusControl << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9417,7 +9417,7 @@ void H225_H323_UU_PDU::PrintOn(ostream & strm) const
 PObject::Comparison H225_H323_UU_PDU::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_H323_UU_PDU), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_H323_UU_PDU), PInvalidCast);
 #endif
   const H225_H323_UU_PDU & other = (const H225_H323_UU_PDU &)obj;
 
@@ -9541,7 +9541,7 @@ void H225_ReleaseComplete_UUIE::PrintOn(ostream & strm) const
     strm << setw(indent+17) << "serviceControl = " << setprecision(indent) << m_serviceControl << '\n';
   if (HasOptionalField(e_featureSet))
     strm << setw(indent+13) << "featureSet = " << setprecision(indent) << m_featureSet << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9549,7 +9549,7 @@ void H225_ReleaseComplete_UUIE::PrintOn(ostream & strm) const
 PObject::Comparison H225_ReleaseComplete_UUIE::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_ReleaseComplete_UUIE), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_ReleaseComplete_UUIE), PInvalidCast);
 #endif
   const H225_ReleaseComplete_UUIE & other = (const H225_ReleaseComplete_UUIE &)obj;
 
@@ -9670,7 +9670,7 @@ void H225_EndpointType::PrintOn(ostream & strm) const
     strm << setw(indent+6) << "set = " << setprecision(indent) << m_set << '\n';
   if (HasOptionalField(e_supportedTunnelledProtocols))
     strm << setw(indent+30) << "supportedTunnelledProtocols = " << setprecision(indent) << m_supportedTunnelledProtocols << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9678,7 +9678,7 @@ void H225_EndpointType::PrintOn(ostream & strm) const
 PObject::Comparison H225_EndpointType::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_EndpointType), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_EndpointType), PInvalidCast);
 #endif
   const H225_EndpointType & other = (const H225_EndpointType &)obj;
 
@@ -9811,7 +9811,7 @@ void H225_CircuitInfo::PrintOn(ostream & strm) const
     strm << setw(indent+23) << "destinationCircuitID = " << setprecision(indent) << m_destinationCircuitID << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9819,7 +9819,7 @@ void H225_CircuitInfo::PrintOn(ostream & strm) const
 PObject::Comparison H225_CircuitInfo::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_CircuitInfo), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_CircuitInfo), PInvalidCast);
 #endif
   const H225_CircuitInfo & other = (const H225_CircuitInfo &)obj;
 
@@ -9936,7 +9936,7 @@ void H225_GatekeeperRequest::PrintOn(ostream & strm) const
     strm << setw(indent+13) << "featureSet = " << setprecision(indent) << m_featureSet << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9944,7 +9944,7 @@ void H225_GatekeeperRequest::PrintOn(ostream & strm) const
 PObject::Comparison H225_GatekeeperRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_GatekeeperRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_GatekeeperRequest), PInvalidCast);
 #endif
   const H225_GatekeeperRequest & other = (const H225_GatekeeperRequest &)obj;
 
@@ -10153,7 +10153,7 @@ void H225_RegistrationRequest::PrintOn(ostream & strm) const
     strm << setw(indent+10) << "restart = " << setprecision(indent) << m_restart << '\n';
   if (HasOptionalField(e_supportsACFSequences))
     strm << setw(indent+23) << "supportsACFSequences = " << setprecision(indent) << m_supportsACFSequences << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -10161,7 +10161,7 @@ void H225_RegistrationRequest::PrintOn(ostream & strm) const
 PObject::Comparison H225_RegistrationRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_RegistrationRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_RegistrationRequest), PInvalidCast);
 #endif
   const H225_RegistrationRequest & other = (const H225_RegistrationRequest &)obj;
 
@@ -10422,7 +10422,7 @@ void H225_AdmissionRequest::PrintOn(ostream & strm) const
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
   if (HasOptionalField(e_canMapSrcAlias))
     strm << setw(indent+17) << "canMapSrcAlias = " << setprecision(indent) << m_canMapSrcAlias << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -10430,7 +10430,7 @@ void H225_AdmissionRequest::PrintOn(ostream & strm) const
 PObject::Comparison H225_AdmissionRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_AdmissionRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_AdmissionRequest), PInvalidCast);
 #endif
   const H225_AdmissionRequest & other = (const H225_AdmissionRequest &)obj;
 
@@ -10713,7 +10713,7 @@ void H225_AdmissionConfirm::PrintOn(ostream & strm) const
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
   if (HasOptionalField(e_modifiedSrcInfo))
     strm << setw(indent+18) << "modifiedSrcInfo = " << setprecision(indent) << m_modifiedSrcInfo << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -10721,7 +10721,7 @@ void H225_AdmissionConfirm::PrintOn(ostream & strm) const
 PObject::Comparison H225_AdmissionConfirm::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_AdmissionConfirm), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_AdmissionConfirm), PInvalidCast);
 #endif
   const H225_AdmissionConfirm & other = (const H225_AdmissionConfirm &)obj;
 
@@ -10930,7 +10930,7 @@ void H225_LocationRequest::PrintOn(ostream & strm) const
     strm << setw(indent+21) << "sourceEndpointInfo = " << setprecision(indent) << m_sourceEndpointInfo << '\n';
   if (HasOptionalField(e_canMapSrcAlias))
     strm << setw(indent+17) << "canMapSrcAlias = " << setprecision(indent) << m_canMapSrcAlias << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -10938,7 +10938,7 @@ void H225_LocationRequest::PrintOn(ostream & strm) const
 PObject::Comparison H225_LocationRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_LocationRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_LocationRequest), PInvalidCast);
 #endif
   const H225_LocationRequest & other = (const H225_LocationRequest &)obj;
 
@@ -11120,7 +11120,7 @@ void H225_LocationConfirm::PrintOn(ostream & strm) const
     strm << setw(indent+18) << "modifiedSrcInfo = " << setprecision(indent) << m_modifiedSrcInfo << '\n';
   if (HasOptionalField(e_bandWidth))
     strm << setw(indent+12) << "bandWidth = " << setprecision(indent) << m_bandWidth << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -11128,7 +11128,7 @@ void H225_LocationConfirm::PrintOn(ostream & strm) const
 PObject::Comparison H225_LocationConfirm::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_LocationConfirm), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_LocationConfirm), PInvalidCast);
 #endif
   const H225_LocationConfirm & other = (const H225_LocationConfirm &)obj;
 
@@ -11301,7 +11301,7 @@ void H225_DisengageRequest::PrintOn(ostream & strm) const
     strm << setw(indent+17) << "serviceControl = " << setprecision(indent) << m_serviceControl << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -11309,7 +11309,7 @@ void H225_DisengageRequest::PrintOn(ostream & strm) const
 PObject::Comparison H225_DisengageRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_DisengageRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_DisengageRequest), PInvalidCast);
 #endif
   const H225_DisengageRequest & other = (const H225_DisengageRequest &)obj;
 
@@ -11464,7 +11464,7 @@ void H225_DisengageConfirm::PrintOn(ostream & strm) const
     strm << setw(indent+19) << "usageInformation = " << setprecision(indent) << m_usageInformation << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -11472,7 +11472,7 @@ void H225_DisengageConfirm::PrintOn(ostream & strm) const
 PObject::Comparison H225_DisengageConfirm::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_DisengageConfirm), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_DisengageConfirm), PInvalidCast);
 #endif
   const H225_DisengageConfirm & other = (const H225_DisengageConfirm &)obj;
 
@@ -11597,7 +11597,7 @@ void H225_InfoRequestResponse::PrintOn(ostream & strm) const
     strm << setw(indent+14) << "unsolicited = " << setprecision(indent) << m_unsolicited << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -11605,7 +11605,7 @@ void H225_InfoRequestResponse::PrintOn(ostream & strm) const
 PObject::Comparison H225_InfoRequestResponse::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_InfoRequestResponse), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_InfoRequestResponse), PInvalidCast);
 #endif
   const H225_InfoRequestResponse & other = (const H225_InfoRequestResponse &)obj;
 
@@ -11779,7 +11779,7 @@ void H225_InfoRequestResponse_perCallInfo_subtype::PrintOn(ostream & strm) const
     strm << setw(indent+19) << "usageInformation = " << setprecision(indent) << m_usageInformation << '\n';
   if (HasOptionalField(e_circuitInfo))
     strm << setw(indent+14) << "circuitInfo = " << setprecision(indent) << m_circuitInfo << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -11787,7 +11787,7 @@ void H225_InfoRequestResponse_perCallInfo_subtype::PrintOn(ostream & strm) const
 PObject::Comparison H225_InfoRequestResponse_perCallInfo_subtype::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_InfoRequestResponse_perCallInfo_subtype), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_InfoRequestResponse_perCallInfo_subtype), PInvalidCast);
 #endif
   const H225_InfoRequestResponse_perCallInfo_subtype & other = (const H225_InfoRequestResponse_perCallInfo_subtype &)obj;
 
@@ -11956,7 +11956,7 @@ void H225_InfoRequestResponse_perCallInfo_subtype_pdu_subtype::PrintOn(ostream &
   strm << "{\n";
   strm << setw(indent+10) << "h323pdu = " << setprecision(indent) << m_h323pdu << '\n';
   strm << setw(indent+7) << "sent = " << setprecision(indent) << m_sent << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -11964,7 +11964,7 @@ void H225_InfoRequestResponse_perCallInfo_subtype_pdu_subtype::PrintOn(ostream &
 PObject::Comparison H225_InfoRequestResponse_perCallInfo_subtype_pdu_subtype::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_InfoRequestResponse_perCallInfo_subtype_pdu_subtype), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_InfoRequestResponse_perCallInfo_subtype_pdu_subtype), PInvalidCast);
 #endif
   const H225_InfoRequestResponse_perCallInfo_subtype_pdu_subtype & other = (const H225_InfoRequestResponse_perCallInfo_subtype_pdu_subtype &)obj;
 
@@ -12040,7 +12040,7 @@ void H225_H323_UserInformation::PrintOn(ostream & strm) const
   strm << setw(indent+14) << "h323_uu_pdu = " << setprecision(indent) << m_h323_uu_pdu << '\n';
   if (HasOptionalField(e_user_data))
     strm << setw(indent+12) << "user_data = " << setprecision(indent) << m_user_data << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -12048,7 +12048,7 @@ void H225_H323_UserInformation::PrintOn(ostream & strm) const
 PObject::Comparison H225_H323_UserInformation::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_H323_UserInformation), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_H323_UserInformation), PInvalidCast);
 #endif
   const H225_H323_UserInformation & other = (const H225_H323_UserInformation &)obj;
 
@@ -12158,7 +12158,7 @@ void H225_Alerting_UUIE::PrintOn(ostream & strm) const
     strm << setw(indent+11) << "capacity = " << setprecision(indent) << m_capacity << '\n';
   if (HasOptionalField(e_featureSet))
     strm << setw(indent+13) << "featureSet = " << setprecision(indent) << m_featureSet << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -12166,7 +12166,7 @@ void H225_Alerting_UUIE::PrintOn(ostream & strm) const
 PObject::Comparison H225_Alerting_UUIE::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_Alerting_UUIE), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_Alerting_UUIE), PInvalidCast);
 #endif
   const H225_Alerting_UUIE & other = (const H225_Alerting_UUIE &)obj;
 
@@ -12314,7 +12314,7 @@ void H225_CallProceeding_UUIE::PrintOn(ostream & strm) const
     strm << setw(indent+21) << "fastConnectRefused = " << setprecision(indent) << m_fastConnectRefused << '\n';
   if (HasOptionalField(e_featureSet))
     strm << setw(indent+13) << "featureSet = " << setprecision(indent) << m_featureSet << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -12322,7 +12322,7 @@ void H225_CallProceeding_UUIE::PrintOn(ostream & strm) const
 PObject::Comparison H225_CallProceeding_UUIE::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_CallProceeding_UUIE), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_CallProceeding_UUIE), PInvalidCast);
 #endif
   const H225_CallProceeding_UUIE & other = (const H225_CallProceeding_UUIE &)obj;
 
@@ -12468,7 +12468,7 @@ void H225_Connect_UUIE::PrintOn(ostream & strm) const
     strm << setw(indent+11) << "capacity = " << setprecision(indent) << m_capacity << '\n';
   if (HasOptionalField(e_featureSet))
     strm << setw(indent+13) << "featureSet = " << setprecision(indent) << m_featureSet << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -12476,7 +12476,7 @@ void H225_Connect_UUIE::PrintOn(ostream & strm) const
 PObject::Comparison H225_Connect_UUIE::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_Connect_UUIE), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_Connect_UUIE), PInvalidCast);
 #endif
   const H225_Connect_UUIE & other = (const H225_Connect_UUIE &)obj;
 
@@ -12622,7 +12622,7 @@ void H225_Information_UUIE::PrintOn(ostream & strm) const
     strm << setw(indent+21) << "fastConnectRefused = " << setprecision(indent) << m_fastConnectRefused << '\n';
   if (HasOptionalField(e_circuitInfo))
     strm << setw(indent+14) << "circuitInfo = " << setprecision(indent) << m_circuitInfo << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -12630,7 +12630,7 @@ void H225_Information_UUIE::PrintOn(ostream & strm) const
 PObject::Comparison H225_Information_UUIE::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_Information_UUIE), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_Information_UUIE), PInvalidCast);
 #endif
   const H225_Information_UUIE & other = (const H225_Information_UUIE &)obj;
 
@@ -12795,7 +12795,7 @@ void H225_Setup_UUIE::PrintOn(ostream & strm) const
     strm << setw(indent+28) << "additionalSourceAddresses = " << setprecision(indent) << m_additionalSourceAddresses << '\n';
   if (HasOptionalField(e_hopCount))
     strm << setw(indent+11) << "hopCount = " << setprecision(indent) << m_hopCount << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -12803,7 +12803,7 @@ void H225_Setup_UUIE::PrintOn(ostream & strm) const
 PObject::Comparison H225_Setup_UUIE::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_Setup_UUIE), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_Setup_UUIE), PInvalidCast);
 #endif
   const H225_Setup_UUIE & other = (const H225_Setup_UUIE &)obj;
 
@@ -13080,7 +13080,7 @@ void H225_Facility_UUIE::PrintOn(ostream & strm) const
     strm << setw(indent+18) << "destinationInfo = " << setprecision(indent) << m_destinationInfo << '\n';
   if (HasOptionalField(e_h245SecurityMode))
     strm << setw(indent+19) << "h245SecurityMode = " << setprecision(indent) << m_h245SecurityMode << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -13088,7 +13088,7 @@ void H225_Facility_UUIE::PrintOn(ostream & strm) const
 PObject::Comparison H225_Facility_UUIE::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_Facility_UUIE), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_Facility_UUIE), PInvalidCast);
 #endif
   const H225_Facility_UUIE & other = (const H225_Facility_UUIE &)obj;
 
@@ -13254,7 +13254,7 @@ void H225_Progress_UUIE::PrintOn(ostream & strm) const
     strm << setw(indent+21) << "maintainConnection = " << setprecision(indent) << m_maintainConnection << '\n';
   if (HasOptionalField(e_fastConnectRefused))
     strm << setw(indent+21) << "fastConnectRefused = " << setprecision(indent) << m_fastConnectRefused << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -13262,7 +13262,7 @@ void H225_Progress_UUIE::PrintOn(ostream & strm) const
 PObject::Comparison H225_Progress_UUIE::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_Progress_UUIE), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_Progress_UUIE), PInvalidCast);
 #endif
   const H225_Progress_UUIE & other = (const H225_Progress_UUIE &)obj;
 
@@ -13417,7 +13417,7 @@ void H225_Endpoint::PrintOn(ostream & strm) const
     strm << setw(indent+14) << "circuitInfo = " << setprecision(indent) << m_circuitInfo << '\n';
   if (HasOptionalField(e_featureSet))
     strm << setw(indent+13) << "featureSet = " << setprecision(indent) << m_featureSet << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -13425,7 +13425,7 @@ void H225_Endpoint::PrintOn(ostream & strm) const
 PObject::Comparison H225_Endpoint::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H225_Endpoint), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H225_Endpoint), PInvalidCast);
 #endif
   const H225_Endpoint & other = (const H225_Endpoint &)obj;
 

@@ -277,7 +277,7 @@ void H235_NonStandardParameter::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+24) << "nonStandardIdentifier = " << setprecision(indent) << m_nonStandardIdentifier << '\n';
   strm << setw(indent+7) << "data = " << setprecision(indent) << m_data << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -285,7 +285,7 @@ void H235_NonStandardParameter::PrintOn(ostream & strm) const
 PObject::Comparison H235_NonStandardParameter::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H235_NonStandardParameter), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H235_NonStandardParameter), PInvalidCast);
 #endif
   const H235_NonStandardParameter & other = (const H235_NonStandardParameter &)obj;
 
@@ -364,7 +364,7 @@ void H235_DHset::PrintOn(ostream & strm) const
   strm << setw(indent+10) << "halfkey = " << setprecision(indent) << m_halfkey << '\n';
   strm << setw(indent+10) << "modSize = " << setprecision(indent) << m_modSize << '\n';
   strm << setw(indent+12) << "generator = " << setprecision(indent) << m_generator << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -372,7 +372,7 @@ void H235_DHset::PrintOn(ostream & strm) const
 PObject::Comparison H235_DHset::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H235_DHset), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H235_DHset), PInvalidCast);
 #endif
   const H235_DHset & other = (const H235_DHset &)obj;
 
@@ -457,7 +457,7 @@ void H235_ECpoint::PrintOn(ostream & strm) const
     strm << setw(indent+4) << "x = " << setprecision(indent) << m_x << '\n';
   if (HasOptionalField(e_y))
     strm << setw(indent+4) << "y = " << setprecision(indent) << m_y << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -465,7 +465,7 @@ void H235_ECpoint::PrintOn(ostream & strm) const
 PObject::Comparison H235_ECpoint::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H235_ECpoint), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H235_ECpoint), PInvalidCast);
 #endif
   const H235_ECpoint & other = (const H235_ECpoint &)obj;
 
@@ -630,7 +630,7 @@ void H235_ECGDSASignature::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+4) << "r = " << setprecision(indent) << m_r << '\n';
   strm << setw(indent+4) << "s = " << setprecision(indent) << m_s << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -638,7 +638,7 @@ void H235_ECGDSASignature::PrintOn(ostream & strm) const
 PObject::Comparison H235_ECGDSASignature::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H235_ECGDSASignature), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H235_ECGDSASignature), PInvalidCast);
 #endif
   const H235_ECGDSASignature & other = (const H235_ECGDSASignature &)obj;
 
@@ -713,7 +713,7 @@ void H235_TypedCertificate::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+7) << "type = " << setprecision(indent) << m_type << '\n';
   strm << setw(indent+14) << "certificate = " << setprecision(indent) << m_certificate << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -721,7 +721,7 @@ void H235_TypedCertificate::PrintOn(ostream & strm) const
 PObject::Comparison H235_TypedCertificate::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H235_TypedCertificate), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H235_TypedCertificate), PInvalidCast);
 #endif
   const H235_TypedCertificate & other = (const H235_TypedCertificate &)obj;
 
@@ -1051,7 +1051,7 @@ void H235_Params::PrintOn(ostream & strm) const
     strm << setw(indent+5) << "iv = " << setprecision(indent) << m_iv << '\n';
   if (HasOptionalField(e_clearSalt))
     strm << setw(indent+12) << "clearSalt = " << setprecision(indent) << m_clearSalt << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1059,7 +1059,7 @@ void H235_Params::PrintOn(ostream & strm) const
 PObject::Comparison H235_Params::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H235_Params), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H235_Params), PInvalidCast);
 #endif
   const H235_Params & other = (const H235_Params &)obj;
 
@@ -1151,7 +1151,7 @@ void H235_ReturnSig::PrintOn(ostream & strm) const
     strm << setw(indent+16) << "requestRandom = " << setprecision(indent) << m_requestRandom << '\n';
   if (HasOptionalField(e_certificate))
     strm << setw(indent+14) << "certificate = " << setprecision(indent) << m_certificate << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1159,7 +1159,7 @@ void H235_ReturnSig::PrintOn(ostream & strm) const
 PObject::Comparison H235_ReturnSig::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H235_ReturnSig), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H235_ReturnSig), PInvalidCast);
 #endif
   const H235_ReturnSig & other = (const H235_ReturnSig &)obj;
 
@@ -1269,7 +1269,7 @@ void H235_KeySyncMaterial::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+12) << "generalID = " << setprecision(indent) << m_generalID << '\n';
   strm << setw(indent+14) << "keyMaterial = " << setprecision(indent) << m_keyMaterial << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1277,7 +1277,7 @@ void H235_KeySyncMaterial::PrintOn(ostream & strm) const
 PObject::Comparison H235_KeySyncMaterial::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H235_KeySyncMaterial), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H235_KeySyncMaterial), PInvalidCast);
 #endif
   const H235_KeySyncMaterial & other = (const H235_KeySyncMaterial &)obj;
 
@@ -1384,7 +1384,7 @@ void H235_V3KeySyncMaterial::PrintOn(ostream & strm) const
     strm << setw(indent+13) << "paramSsalt = " << setprecision(indent) << m_paramSsalt << '\n';
   if (HasOptionalField(e_keyDerivationOID))
     strm << setw(indent+19) << "keyDerivationOID = " << setprecision(indent) << m_keyDerivationOID << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1392,7 +1392,7 @@ void H235_V3KeySyncMaterial::PrintOn(ostream & strm) const
 PObject::Comparison H235_V3KeySyncMaterial::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H235_V3KeySyncMaterial), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H235_V3KeySyncMaterial), PInvalidCast);
 #endif
   const H235_V3KeySyncMaterial & other = (const H235_V3KeySyncMaterial &)obj;
 
@@ -1523,7 +1523,7 @@ void H235_ECKASDH_eckasdhp::PrintOn(ostream & strm) const
   strm << setw(indent+7) << "base = " << setprecision(indent) << m_base << '\n';
   strm << setw(indent+15) << "weierstrassA = " << setprecision(indent) << m_weierstrassA << '\n';
   strm << setw(indent+15) << "weierstrassB = " << setprecision(indent) << m_weierstrassB << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1531,7 +1531,7 @@ void H235_ECKASDH_eckasdhp::PrintOn(ostream & strm) const
 PObject::Comparison H235_ECKASDH_eckasdhp::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H235_ECKASDH_eckasdhp), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H235_ECKASDH_eckasdhp), PInvalidCast);
 #endif
   const H235_ECKASDH_eckasdhp & other = (const H235_ECKASDH_eckasdhp &)obj;
 
@@ -1630,7 +1630,7 @@ void H235_ECKASDH_eckasdh2::PrintOn(ostream & strm) const
   strm << setw(indent+7) << "base = " << setprecision(indent) << m_base << '\n';
   strm << setw(indent+15) << "weierstrassA = " << setprecision(indent) << m_weierstrassA << '\n';
   strm << setw(indent+15) << "weierstrassB = " << setprecision(indent) << m_weierstrassB << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1638,7 +1638,7 @@ void H235_ECKASDH_eckasdh2::PrintOn(ostream & strm) const
 PObject::Comparison H235_ECKASDH_eckasdh2::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H235_ECKASDH_eckasdh2), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H235_ECKASDH_eckasdh2), PInvalidCast);
 #endif
   const H235_ECKASDH_eckasdh2 & other = (const H235_ECKASDH_eckasdh2 &)obj;
 
@@ -1736,7 +1736,7 @@ void H235_KeySignedMaterial::PrintOn(ostream & strm) const
   if (HasOptionalField(e_timeStamp))
     strm << setw(indent+12) << "timeStamp = " << setprecision(indent) << m_timeStamp << '\n';
   strm << setw(indent+12) << "encrptval = " << setprecision(indent) << m_encrptval << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1744,7 +1744,7 @@ void H235_KeySignedMaterial::PrintOn(ostream & strm) const
 PObject::Comparison H235_KeySignedMaterial::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H235_KeySignedMaterial), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H235_KeySignedMaterial), PInvalidCast);
 #endif
   const H235_KeySignedMaterial & other = (const H235_KeySignedMaterial &)obj;
 
@@ -1863,7 +1863,7 @@ void H235_H235CertificateSignature::PrintOn(ostream & strm) const
   if (HasOptionalField(e_requesterRandom))
     strm << setw(indent+18) << "requesterRandom = " << setprecision(indent) << m_requesterRandom << '\n';
   strm << setw(indent+12) << "signature = " << setprecision(indent) << m_signature << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1871,7 +1871,7 @@ void H235_H235CertificateSignature::PrintOn(ostream & strm) const
 PObject::Comparison H235_H235CertificateSignature::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H235_H235CertificateSignature), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H235_H235CertificateSignature), PInvalidCast);
 #endif
   const H235_H235CertificateSignature & other = (const H235_H235CertificateSignature &)obj;
 
@@ -2117,7 +2117,7 @@ void H235_ClearToken::PrintOn(ostream & strm) const
     strm << setw(indent+12) << "sendersID = " << setprecision(indent) << m_sendersID << '\n';
   if (HasOptionalField(e_h235Key))
     strm << setw(indent+10) << "h235Key = " << setprecision(indent) << m_h235Key << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2125,7 +2125,7 @@ void H235_ClearToken::PrintOn(ostream & strm) const
 PObject::Comparison H235_ClearToken::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H235_ClearToken), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H235_ClearToken), PInvalidCast);
 #endif
   const H235_ClearToken & other = (const H235_ClearToken &)obj;
 
@@ -2462,7 +2462,7 @@ void H235_CryptoToken_cryptoEncryptedToken::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+11) << "tokenOID = " << setprecision(indent) << m_tokenOID << '\n';
   strm << setw(indent+8) << "token = " << setprecision(indent) << m_token << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2470,7 +2470,7 @@ void H235_CryptoToken_cryptoEncryptedToken::PrintOn(ostream & strm) const
 PObject::Comparison H235_CryptoToken_cryptoEncryptedToken::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H235_CryptoToken_cryptoEncryptedToken), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H235_CryptoToken_cryptoEncryptedToken), PInvalidCast);
 #endif
   const H235_CryptoToken_cryptoEncryptedToken & other = (const H235_CryptoToken_cryptoEncryptedToken &)obj;
 
@@ -2545,7 +2545,7 @@ void H235_CryptoToken_cryptoSignedToken::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+11) << "tokenOID = " << setprecision(indent) << m_tokenOID << '\n';
   strm << setw(indent+8) << "token = " << setprecision(indent) << m_token << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2553,7 +2553,7 @@ void H235_CryptoToken_cryptoSignedToken::PrintOn(ostream & strm) const
 PObject::Comparison H235_CryptoToken_cryptoSignedToken::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H235_CryptoToken_cryptoSignedToken), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H235_CryptoToken_cryptoSignedToken), PInvalidCast);
 #endif
   const H235_CryptoToken_cryptoSignedToken & other = (const H235_CryptoToken_cryptoSignedToken &)obj;
 
@@ -2629,7 +2629,7 @@ void H235_CryptoToken_cryptoHashedToken::PrintOn(ostream & strm) const
   strm << setw(indent+11) << "tokenOID = " << setprecision(indent) << m_tokenOID << '\n';
   strm << setw(indent+13) << "hashedVals = " << setprecision(indent) << m_hashedVals << '\n';
   strm << setw(indent+8) << "token = " << setprecision(indent) << m_token << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2637,7 +2637,7 @@ void H235_CryptoToken_cryptoHashedToken::PrintOn(ostream & strm) const
 PObject::Comparison H235_CryptoToken_cryptoHashedToken::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H235_CryptoToken_cryptoHashedToken), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H235_CryptoToken_cryptoHashedToken), PInvalidCast);
 #endif
   const H235_CryptoToken_cryptoHashedToken & other = (const H235_CryptoToken_cryptoHashedToken &)obj;
 
