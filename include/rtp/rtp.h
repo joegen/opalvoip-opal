@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2003  2001/10/05 00:22:13  robertj
+ * Revision 1.2004  2001/11/14 06:20:40  robertj
+ * Changed sending of control channel reports to be timer based.
+ *
+ * Revision 2.2  2001/10/05 00:22:13  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.1  2001/08/01 05:08:43  robertj
@@ -341,7 +344,7 @@ class RTP_UserData : public PObject
 
   public:
     /**Callback from the RTP session for transmit statistics monitoring.
-       This is called every RTP_Session::senderReportInterval packets on the
+       This is called every RTP_Session::senderReportTime milliseconds on the
        transmitter indicating that the statistics have been updated.
 
        The default behaviour does nothing.
@@ -351,7 +354,7 @@ class RTP_UserData : public PObject
     ) const;
 
     /**Callback from the RTP session for receive statistics monitoring.
-       This is called every RTP_Session::receiverReportInterval packets on the
+       This is called every RTP_Session::receiverReportTime milliseconds on the
        receiver indicating that the statistics have been updated.
 
        The default behaviour does nothing.
@@ -551,24 +554,24 @@ class RTP_Session : public PObject
       BOOL ignore   /// Flag for ignore out of order packets
     ) { ignoreOutOfOrderPackets = ignore; }
 
-    /**Get the interval for transmitter reports in the session.
+    /**Get the time interval for transmitter reports in the session.
       */
-    unsigned GetSenderReportInterval() { return senderReportInterval; }
+    const PTimeInterval & GetSenderReportTime() { return senderReportTimer.GetResetTime(); }
 
-    /**Set the interval for transmitter reports in the session.
+    /**Set the time interval for transmitter reports in the session.
       */
-    void SetSenderReportInterval(
-      unsigned packets   // Number of packets between reports
+    void SetSenderReportTime(
+      const PTimeInterval & time   // Time between reports
     );
 
     /**Get the interval for receiver reports in the session.
       */
-    unsigned GetReceiverReportInterval() { return receiverReportInterval; }
+    const PTimeInterval & GetReceiverReportTime() { return receiverReportTimer.GetResetTime(); }
 
     /**Set the interval for receiver reports in the session.
       */
-    void SetReceiverReportInterval(
-      unsigned packets   // Number of packets between reports
+    void SetReceiverReportTime(
+      const PTimeInterval & time  // Time between reports
     );
 
     /**Get total number of packets sent in session.
@@ -600,37 +603,37 @@ class RTP_Session : public PObject
     DWORD GetPacketsTooLate() const;
 
     /**Get average time between sent packets.
-       This is averaged over the last senderReportInterval packets and is in
+       This is averaged over the last senderReportTime milliseconds and is in
        milliseconds.
       */
     DWORD GetAverageSendTime() const { return averageSendTime; }
 
     /**Get maximum time between sent packets.
-       This is over the last senderReportInterval packets and is in
+       This is over the last senderReportTime milliseconds and is in
        milliseconds.
       */
     DWORD GetMaximumSendTime() const { return maximumSendTime; }
 
     /**Get minimum time between sent packets.
-       This is over the last senderReportInterval packets and is in
+       This is over the last senderReportTime milliseconds and is in
        milliseconds.
       */
     DWORD GetMinimumSendTime() const { return minimumSendTime; }
 
     /**Get average time between received packets.
-       This is averaged over the last receiverReportInterval packets and is in
+       This is averaged over the last receiverReportTime milliseconds and is in
        milliseconds.
       */
     DWORD GetAverageReceiveTime() const { return averageReceiveTime; }
 
     /**Get maximum time between received packets.
-       This is over the last receiverReportInterval packets and is in
+       This is over the last receiverReportTime milliseconds and is in
        milliseconds.
       */
     DWORD GetMaximumReceiveTime() const { return maximumReceiveTime; }
 
     /**Get minimum time between received packets.
-       This is over the last receiverReportInterval packets and is in
+       This is over the last receiverReportTime milliseconds and is in
        milliseconds.
       */
     DWORD GetMinimumReceiveTime() const { return minimumReceiveTime; }
@@ -654,8 +657,6 @@ class RTP_Session : public PObject
     BOOL          ignoreOutOfOrderPackets;
     DWORD         syncSourceOut;
     DWORD         syncSourceIn;
-    unsigned      senderReportInterval;
-    unsigned      receiverReportInterval;
     WORD          lastSentSequenceNumber;
     WORD          expectedSequenceNumber;
     PTimeInterval lastSentPacketTime;
@@ -678,6 +679,8 @@ class RTP_Session : public PObject
     DWORD minimumReceiveTime;
     DWORD jitterLevel;
 
+    PTimer   senderReportTimer;
+    PTimer   receiverReportTimer;
     unsigned senderReportCount;
     unsigned receiverReportCount;
     DWORD    averageSendTimeAccum;
