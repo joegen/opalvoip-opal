@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.h,v $
- * Revision 1.2005  2002/03/22 06:57:48  robertj
+ * Revision 1.2006  2002/07/01 04:56:30  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.4  2002/03/22 06:57:48  robertj
  * Updated to OpenH323 version 1.8.2
  *
  * Revision 2.3  2002/01/14 06:35:57  robertj
@@ -41,6 +44,20 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.49  2002/05/29 03:55:17  robertj
+ * Added protocol version number checking infrastructure, primarily to improve
+ *   interoperability with stacks that are unforgiving of new features.
+ *
+ * Revision 1.48  2002/05/29 00:03:15  robertj
+ * Fixed unsolicited IRR support in gk client and server,
+ *   including support for IACK and INAK.
+ *
+ * Revision 1.47  2002/05/07 03:18:12  robertj
+ * Added application info (name/version etc) into registered endpoint data.
+ *
+ * Revision 1.46  2002/05/03 09:18:45  robertj
+ * Added automatic retransmission of RAS responses to retried requests.
  *
  * Revision 1.45  2002/03/14 07:57:02  robertj
  * Added ability to specify alias type in H323SetAliasAddress, if not specified
@@ -211,6 +228,10 @@ class H323Connection;
 class H323TransportAddress;
 class H225_RAS;
 class OpalTransport;
+
+
+#define H225_PROTOCOL_VERSION 4
+#define H245_PROTOCOL_VERSION 7
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -546,6 +567,8 @@ class H323RasPDU : public H225_RasMessage
     H225_BandwidthConfirm      & BuildBandwidthConfirm(unsigned seqNum, unsigned bandwidth = 0);
     H225_BandwidthReject       & BuildBandwidthReject(unsigned seqNum, unsigned reason = H225_BandRejectReason::e_undefinedReason);
     H225_InfoRequestResponse   & BuildInfoRequestResponse(unsigned seqNum);
+    H225_InfoRequestAck        & BuildInfoRequestAck(unsigned seqNum);
+    H225_InfoRequestNak        & BuildInfoRequestNak(unsigned seqNum, unsigned reason = H225_InfoRequestNakReason::e_undefinedReason);
     H225_UnknownMessageResponse& BuildUnknownMessageResponse(unsigned seqNum);
     H225_RequestInProgress     & BuildRequestInProgress(unsigned seqNum, unsigned delay);
 
@@ -553,6 +576,8 @@ class H323RasPDU : public H225_RasMessage
     BOOL Write(OpalTransport & transport) const;
 
     const PBYTEArray & GetLastReceivedRawPDU() const { return rawPDU; }
+
+    unsigned GetSequenceNumber() const;
 
   protected:
     H225_RAS  & rasChannel;
@@ -576,6 +601,8 @@ Q931::CauseValues H323TranslateFromCallEndReason(
   const H323Connection & connection,
   H225_ReleaseCompleteReason & rcReason
 );
+
+PString H323GetApplicationInfo(const H225_VendorIdentifier & vendor);
 
 
 #endif // __H323_H323PDU_H
