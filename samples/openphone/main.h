@@ -22,6 +22,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.3  2004/04/26 07:36:22  rjongbloed
+ * Some more implementation, still a long way to go!
+ *
  * Revision 1.2  2004/04/25 13:12:22  rjongbloed
  * Converted OpenPhone v2 to use wxWindows
  *
@@ -38,49 +41,104 @@
 #include <ptlib.h>
 
 #include <opal/manager.h>
-#include <h323/h323ep.h>
-#include <sip/sipep.h>
 #include <opal/pcss.h>
+
+
+class MyFrame;
+
+class SIPEndPoint;
+class H323EndPoint;
+class OpalPOTSEndPoint;
+class OpalIVREndPoint;
+
+
+class MyPCSSEndPoint : public OpalPCSSEndPoint
+{
+  PCLASSINFO(MyPCSSEndPoint, OpalPCSSEndPoint);
+
+  public:
+    MyPCSSEndPoint(MyFrame & frame);
+
+    virtual PString OnGetDestination(const OpalPCSSConnection & connection);
+    virtual void OnShowIncoming(const OpalPCSSConnection & connection);
+    virtual BOOL OnShowOutgoing(const OpalPCSSConnection & connection);
+
+    PString destinationAddress;
+    PString incomingConnectionToken;
+    BOOL    autoAnswer;
+
+    MyFrame & frame;
+};
+
+
+enum MainMenuItems {
+  MENU_FILE_QUIT,
+  MENU_FILE_ABOUT
+};
+
+
+class MyFrame : public wxFrame, public OpalManager
+{
+  public:
+    MyFrame();
+    ~MyFrame();
+
+  protected:
+    void OnSize(wxSizeEvent& event);
+
+    void OnQuit(wxCommandEvent& event);
+    void OnAbout(wxCommandEvent& event);
+
+    virtual void OnEstablishedCall(
+      OpalCall & call   /// Call that was completed
+    );
+    virtual void OnClearedCall(
+      OpalCall & call   /// Connection that was established
+    );
+    virtual BOOL OnOpenMediaStream(
+      OpalConnection & connection,  /// Connection that owns the media stream
+      OpalMediaStream & stream    /// New media stream being opened
+    );
+    virtual void OnUserInputString(
+      OpalConnection & connection,  /// Connection input has come from
+      const PString & value         /// String value of indication
+    );
+
+  private:
+    wxPanel    * m_panel;
+    wxTextCtrl * m_logWindow;
+
+    MyPCSSEndPoint   * pcssEP;
+    OpalPOTSEndPoint * potsEP;
+#if OPAL_H323
+    H323EndPoint     * h323EP;
+#endif
+#if OPAL_SIP
+    SIPEndPoint      * sipEP;
+#endif
+#if P_EXPAT
+    OpalIVREndPoint  * ivrEP;
+#endif
+
+    PString currentCallToken;
+
+    DECLARE_EVENT_TABLE()
+};
 
 
 class OpenPhoneApp : public wxApp, public PProcess
 {
     PCLASSINFO(OpenPhoneApp, PProcess);
 
-public:
-  OpenPhoneApp();
+  public:
+    OpenPhoneApp();
 
-  void Main(); // Dummy function
+    void Main(); // Dummy function
 
-    // FUnction from wxWindows
-  virtual bool OnInit();
+      // FUnction from wxWindows
+    virtual bool OnInit();
 };
 
-
-class MainWindow : public wxFrame
-{
-public:
-    MainWindow();
-    ~MainWindow();
-
-protected:
-    void OnSize(wxSizeEvent& event);
-
-    void OnQuit(wxCommandEvent& event);
-    void OnAbout(wxCommandEvent& event);
-
-private:
-    wxPanel    * m_panel;
-    wxTextCtrl * m_logWindow;
-
-    DECLARE_EVENT_TABLE()
-};
-
-
-enum {
-  MENU_FILE_QUIT,
-  MENU_FILE_ABOUT
-};
 
 #endif
 
