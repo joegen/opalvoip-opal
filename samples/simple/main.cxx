@@ -22,7 +22,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2016  2002/07/01 09:05:54  robertj
+ * Revision 1.2017  2002/09/06 02:46:00  robertj
+ * Added routing table system to route calls by regular expressions.
+ * Added ability to set gatekeeper access token OID and password.
+ *
+ * Revision 2.15  2002/07/01 09:05:54  robertj
  * Changed TCp/UDP port allocation to use new thread safe functions.
  *
  * Revision 2.14  2002/04/12 14:02:41  robertj
@@ -167,10 +171,13 @@ void SimpleOpalProcess::Main()
              "a-auto-answer."
              "b-bandwidth:"
              "D-disable:"
+             "d-dial-peer:"
+             "-no-std-dial-peer."
              "e-silence."
              "f-fast-disable."
              "g-gatekeeper:"
-             "G-gateway:" 
+             "G-gateway:"
+             "-gk-token:"
              "h-help."
              "H-no-h323."
              "-h323-listen:"
@@ -214,6 +221,8 @@ void SimpleOpalProcess::Main()
             "      : " << GetName() << " [options] alias[@hostname]   (with gatekeeper)\n"
             "General options:\n"
             "  -l --listen             : Listen for incoming calls.\n"
+            "  -d --dial-peer spec     : Set dial peer for routing calls (see below)\n"
+            "     --no-std-dial-peer   : Do not include the standard dial peers\n"
             "  -a --auto-answer        : Automatically answer incoming calls.\n"
             "  -u --user name          : Set local alias name(s) (defaults to login name).\n"
             "  -p --password pwd       : Set password for user (gk or SIP authorisation).\n"
@@ -236,6 +245,7 @@ void SimpleOpalProcess::Main()
             "  -g --gatekeeper host    : Specify gatekeeper host.\n"
             "  -n --no-gatekeeper      : Disable gatekeeper discovery.\n"
             "  -R --require-gatekeeper : Exit if gatekeeper discovery fails.\n"
+            "     --gk-token str       : Set gatekeeper security token OID.\n"
             "  -G --gateway addr       : Use gateway/proxy\n"
             "  -b --bandwidth bps      : Limit bandwidth usage to bps bits/second.\n"
             "  -f --fast-disable       : Disable fast start.\n"
@@ -268,6 +278,47 @@ void SimpleOpalProcess::Main()
             "  -o --output             : File for trace output, default is stderr.\n"
 #endif
             "  -h --help               : This help message.\n"
+            "\n"
+            "\n"
+            "Dial peer specification:\n"
+"  General form is pattern=destination where pattern is a regular expression\n"
+"  matching the incoming calls destination address and will translate it to\n"
+"  the outgoing destination address for making an outgoing call. For example,\n"
+"  picking up a PhoneJACK handset and dialling 2, 6 would result in an address\n"
+"  of \"pots:26\" which would then be matched against, say, a spec of\n"
+"  pots:26=h323:10.0.1.1, resulting in a call from the pots handset to\n"
+"  10.0.1.1 using the H.323 protocol.\n"
+"\n"
+"  As the pattern field is a regular expression, you could have used in the\n"
+"  above .*:26=h323:10.0.1.1 to achieve the same result with the addition that\n"
+"  an incoming call from a SIP client would also be routed to the H.323 client.\n"
+"\n"
+"  Note that the pattern has an implicit ^ and $ at the beginning and end of\n"
+"  the regular expression. So it must match the entire address.\n"
+"\n"
+"  If the specification is of the form @filename, then the file is read with\n"
+"  each line consisting of a pattern=destination dial peer specification. Lines\n"
+"  without and equal sign or beginning with '#' are ignored.\n"
+"\n"
+"  The standard dial peers that will be included are:\n"
+"    If SIP is enabled:\n"
+"      pots:.*\\*.*\\*.* = sip:<dn2ip>\n"
+"      pots:.*         = sip:<da>\n"
+"      pcss:.*         = sip:<da>\n"
+"\n"
+"    If SIP is not enabled and H.323 is enabled:\n"
+"      pots:.*\\*.*\\*.* = h323:<dn2ip>\n"
+"      pots:.*         = h323:<da>\n"
+"      pcss:.*         = h323:<da>\n"
+"\n"
+"    If POTS is enabled:\n"
+"      h323:.* = pots:<da>\n"
+"      sip:.*  = pots:<da>\n"
+"\n"
+"    If POTS is not enabled and the PC sound system is enabled:\n"
+"      h323:.* = pcss:<da>\n"
+"      sip:.*  = pcss:<da>\n"
+"\n"
             << endl;
     return;
   }
@@ -438,9 +489,12 @@ BOOL MyManager::Initialise(PArgList & args)
       h323EP->SetInitialBandwidth(initialBandwidth);
     }
 
+    h323EP->SetGkAccessTokenOID(args.GetOptionString("gk-token"));
+
     cout << "H.323 Local username: " << h323EP->GetLocalUserName() << "\n"
          << "H.323 FastConnect is " << !noFastStart << "\n"
-         << "H.323 H245Tunnelling is " << noH245Tunnelling << endl;
+         << "H.323 H245Tunnelling is " << noH245Tunnelling << "\n"
+         << "H.323 gk Token OID is " << h323EP->GetGkAccessTokenOID() << endl;
 
 
     // Start the listener thread for incoming calls.
@@ -460,6 +514,9 @@ BOOL MyManager::Initialise(PArgList & args)
       }
     }
 
+
+    if (args.HasOption('p'))
+      h323EP->SetGatekeeperPassword(args.GetOptionString('p'));
 
     // Establish link with gatekeeper if required.
     if (args.HasOption('g')) {
@@ -532,6 +589,36 @@ BOOL MyManager::Initialise(PArgList & args)
     if (args.HasOption('r'))
       sipEP->Register(args.GetOptionString('r'));
   }
+
+  if (args.HasOption('d')) {
+    if (!SetRouteTable(args.GetOptionString('d').Lines())) {
+      cerr <<  "No legal entries in dial peer!" << endl;
+      return FALSE;
+    }
+  }
+
+  if (!args.HasOption("no-std-dial-peer")) {
+    if (sipEP != NULL) {
+      AddRouteEntry("pots:.*\\*.*\\*.* = sip:<dn2ip>");
+      AddRouteEntry("pots:.*           = sip:<da>");
+      AddRouteEntry("pcss:.*           = sip:<da>");
+    }
+    else if (h323EP != NULL) {
+      AddRouteEntry("pots:.*\\*.*\\*.* = h323:<dn2ip>");
+      AddRouteEntry("pots:.*           = h323:<da>");
+      AddRouteEntry("pcss:.*           = h323:<da>");
+    }
+
+    if (potsEP != NULL) {
+      AddRouteEntry("h323:.* = pots:<da>");
+      AddRouteEntry("sip:.*  = pots:<da>");
+    }
+    else if (pcssEP != NULL) {
+      AddRouteEntry("h323:.* = pcss:<da>");
+      AddRouteEntry("sip:.*  = pcss:<da>");
+    }
+  }
+
   return TRUE;
 }
 
@@ -577,90 +664,6 @@ void MyManager::Main(PArgList & args)
 
     // Process commands
   }
-}
-
-
-PString MyManager::OnRouteConnection(OpalConnection & connection)
-{
-  PString sourceProtocol = connection.GetEndPoint().GetPrefixName();
-  PString addr = connection.GetDestinationAddress();
-  PTRACE(2, "Sample\tRouting connection from " << sourceProtocol << " to " << addr);
-
-  if (addr.IsEmpty())
-    return addr;
-
-  // Have got explicit protocol defined
-  if (addr.Find(':') != P_MAX_INDEX)
-    return addr;
-
-  const char * destProtocol = NULL;
-  PStringArray stars;
-
-  if (sourceProtocol == "pots" || sourceProtocol == "pstn") {
-    stars = addr.Tokenise('*');
-
-    if (sipEP != NULL)
-      destProtocol = sipEP->GetPrefixName();
-    else if (h323EP != NULL)
-      destProtocol = h323EP->GetPrefixName();
-    else
-      destProtocol = sourceProtocol == "pstn" ? "pots" : "pstn";
-  }
-  else {
-    if (addr.Find('@') == P_MAX_INDEX) {
-      if (potsEP != NULL) // Route to local phone, if loaded
-        destProtocol = potsEP->GetPrefixName();
-      else if (pcssEP != NULL) // Route it to the PC, if loaded
-        destProtocol = pcssEP->GetPrefixName();
-    }
-    if (destProtocol == NULL) {
-      if (sourceProtocol == "h323") {
-        if (sipEP != NULL)
-          destProtocol = sipEP->GetPrefixName();   // H.323 -> SIP gateway
-        else
-          destProtocol = h323EP->GetPrefixName();  // H.323 -> H.323 gateway
-      }
-      else if (sourceProtocol == "sip") {
-        if (h323EP != NULL)
-          destProtocol = h323EP->GetPrefixName();  // SIP -> H.323 gateway
-      }
-    }
-  }
-
-  if (destProtocol == NULL)
-    return PString::Empty(); // Cannot route call
-
-  PStringStream route;
-  route << destProtocol << ':';
-
-  switch (stars.GetSize()) {
-    case 0 :
-    case 1 :
-    case 2 :
-    case 3 :
-      route << addr;
-      break;
-
-    case 4 :
-      route << stars[0] << '.' << stars[1] << '.'<< stars[2] << '.'<< stars[3];
-      break;
-
-    case 5 :
-      route << stars[0] << '@'
-            << stars[1] << '.' << stars[2] << '.'<< stars[3] << '.'<< stars[4];
-      break;
-
-    default :
-      route << stars[0] << '@'
-            << stars[1] << '.' << stars[2] << '.'<< stars[3] << '.'<< stars[4]
-            << ':' << stars[5];
-      break;
-  }
-
-  if (!gateway.IsEmpty())
-    route << '@' <<gateway;
-
-  return route;
 }
 
 
