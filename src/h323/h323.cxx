@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2042  2004/02/03 12:20:44  rjongbloed
+ * Revision 1.2043  2004/02/07 00:35:47  rjongbloed
+ * Fixed calls GetMediaFormats so no DOES return intersection of all connections formats.
+ * Tidied some API elements to make usage more explicit.
+ *
+ * Revision 2.41  2004/02/03 12:20:44  rjongbloed
  * Fixed setting of Q.931 call reference value in connection object, and thus all outgoing PDU's.
  *
  * Revision 2.40  2003/06/02 03:01:43  rjongbloed
@@ -3051,7 +3055,7 @@ BOOL H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_OctetStr
                   if (channelToStart.Open()) {
                     if (channelToStart.GetDirection() == H323Channel::IsTransmitter) {
                       fastStartedTransmitMediaStream = ((H323UnidirectionalChannel &)channelToStart).GetMediaStream();
-                      if (GetCall().OpenSourceMediaStreams(fastStartedTransmitMediaStream->GetMediaFormat(), channelToStart.GetSessionID(), this)) {
+                      if (GetCall().OpenSourceMediaStreams(*this, fastStartedTransmitMediaStream->GetMediaFormat(), channelToStart.GetSessionID())) {
                         if (!mediaWaitForConnect)
                           channelToStart.Start();
                       }
@@ -3959,7 +3963,7 @@ void H323Connection::SendCapabilitySet(BOOL empty)
 
 void H323Connection::OnSetLocalCapabilities()
 {
-  OpalMediaFormatList formats = ownerCall.GetMediaFormats(*this);
+  OpalMediaFormatList formats = ownerCall.GetMediaFormats(*this, FALSE);
   if (formats.IsEmpty()) {
     PTRACE(2, "H323\tSetLocalCapabilities - no formats from other party");
     return;
@@ -4161,7 +4165,7 @@ void H323Connection::StartFastStartChannel(unsigned sessionID, H323Channel::Dire
       if (channel.Open()) {
         if (direction == H323Channel::IsTransmitter) {
           fastStartedTransmitMediaStream = ((H323UnidirectionalChannel &)channel).GetMediaStream();
-          if (GetCall().OpenSourceMediaStreams(fastStartedTransmitMediaStream->GetMediaFormat(), channel.GetSessionID(), this)) {
+          if (GetCall().OpenSourceMediaStreams(*this, fastStartedTransmitMediaStream->GetMediaFormat(), channel.GetSessionID())) {
             if (!mediaWaitForConnect)
               channel.Start();
           }
