@@ -22,7 +22,11 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: opal_inc.mak,v $
-# Revision 1.2004  2002/04/19 01:24:30  robertj
+# Revision 1.2005  2002/09/11 05:55:40  robertj
+# Fixed double inclusion of common.mak
+# Added more directories to search to find pwlib
+#
+# Revision 2.3  2002/04/19 01:24:30  robertj
 # Changed /usr/include to SYSINCDIR helps with X-compiling, thanks Bob Lindell
 #
 # Revision 2.2  2002/03/15 10:51:53  robertj
@@ -37,22 +41,29 @@
 
 
 ifndef PWLIBDIR
+ifneq (,$(wildcard ../pwlib))
+PWLIBDIR=$(CURDIR)/../pwlib
+else
+ifneq (,$(wildcard $(HOME)/pwlib))
 PWLIBDIR=$(HOME)/pwlib
+else
+PWLIBDIR=/usr/local/pwlib
+endif
+endif
 endif
 
 
 LIBDIRS += $(OPALDIR)
 
 
-ifndef PWLIB_FILE
+ifdef LIBRARY_MAKEFILE
+include $(PWLIBDIR)/make/unix.mak
+else
 ifdef NOTRACE
-ifndef OPAL_LIBRARY_MAKEFILE
 OBJDIR_SUFFIX := n
-endif
 endif
 include $(PWLIBDIR)/make/ptlib.mak
 endif
-
 
 
 
@@ -112,7 +123,7 @@ endif
 
 $(TARGET) :	$(OPAL_LIBDIR)/$(OPAL_FILE)
 
-ifndef OPAL_LIBRARY_MAKEFILE
+ifndef LIBRARY_MAKEFILE
 
 ifdef DEBUG
 $(OPAL_LIBDIR)/$(OPAL_FILE):
