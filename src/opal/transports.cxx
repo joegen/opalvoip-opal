@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2016  2002/04/16 07:52:51  robertj
+ * Revision 1.2017  2002/06/16 23:07:19  robertj
+ * Fixed several memory leaks, thanks Ted Szoczei
+ * Fixed error opening UDP listener for broadcast packets under Win32.
+ *   Is not needed as it is under windows, thanks Ted Szoczei
+ *
+ * Revision 2.15  2002/04/16 07:52:51  robertj
  * Change to allow SetRemoteAddress before UDP is connected.
  *
  * Revision 2.14  2002/04/10 03:12:35  robertj
@@ -491,8 +496,10 @@ void OpalListener::CloseWait()
   Close();
 
   PAssert(PThread::Current() != thread, PLogicError);
-  if (thread != NULL)
+  if (thread != NULL) {
     PAssert(thread->WaitForTermination(1000), "Listener thread did not terminate");
+    delete thread;
+  }
 }
 
 
@@ -509,6 +516,7 @@ void OpalListener::ListenForConnections(PThread & thread, INT)
       if (singleThread) {
         transport->AttachThread(&thread);
         acceptHandler(*this, (INT)transport);
+        delete transport;
       }
       else {
         transport->AttachThread(PThread::Create(acceptHandler,
@@ -717,9 +725,11 @@ BOOL OpalListenerUDP::Open(const PNotifier & theAcceptHandler, BOOL /*isSingleTh
     PIPSocket::Address addr = interfaces[i].GetAddress();
     if (addr != 0 && (localAddress == INADDR_ANY || localAddress == addr)) {
       if (OpenOneSocket(addr)) {
+#ifndef _WIN32
         PIPSocket::Address mask = interfaces[i].GetNetMask();
         if (mask != 0 && mask != 0xffffffff)
           OpenOneSocket((addr&mask)|(0xffffffff&~mask));
+#endif
       }
     }
   }
@@ -1193,6 +1203,16 @@ OpalTransportUDP::~OpalTransportUDP()
     writeChannel = readChannel = NULL;
 
   CloseWait();
+}
+
+
+BOOL OpalTransportUDP::Close()
+{
+  if (readAutoDelete)
+    return OpalTransport::Close();
+
+  readChannel = writeChannel = NULL;
+  return TRUE;
 }
 
 
