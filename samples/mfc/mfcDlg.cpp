@@ -125,7 +125,7 @@ BOOL CMfcDlg::OnInitDialog()
 	SetIcon(m_hIcon, TRUE);			// Set big icon
 	SetIcon(m_hIcon, FALSE);		// Set small icon
 
-        m_endpoint.Initialise(this);
+        m_manager.Initialise(this);
 	
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -181,7 +181,7 @@ HCURSOR CMfcDlg::OnQueryDragIcon()
 
 void CMfcDlg::OnCall() 
 {
-  m_endpoint.MakeCall((const char *)m_destination, m_token);
+  m_manager.SetUpCall((const char *)m_destination, "pc:*", m_token);
   m_call.EnableWindow(FALSE);
   m_hangup.EnableWindow();
 }
@@ -194,12 +194,12 @@ void CMfcDlg::OnAnswer()
   m_hangup.EnableWindow(FALSE);
   m_call.EnableWindow();
 
-  H323Connection * connection = m_endpoint.FindConnectionWithLock(m_token);
-  if (connection == NULL)
+  OpalCall * call = m_manager.FindCallWithLock(m_token);
+  if (call == NULL)
     m_call.EnableWindow();
   else {
-    connection->AnsweringCall(H323Connection::AnswerCallNow);
-    connection->Unlock();
+//    call->AnsweringCall(H323Connection::AnswerCallNow);
+    call->Unlock();
   }
 }
 
@@ -210,18 +210,18 @@ void CMfcDlg::OnRefuse()
   m_refuse.EnableWindow(FALSE);
   m_hangup.EnableWindow(FALSE);
 
-  H323Connection * connection = m_endpoint.FindConnectionWithLock(m_token);
-  if (connection == NULL)
+  OpalCall * call = m_manager.FindCallWithLock(m_token);
+  if (call == NULL)
     m_call.EnableWindow();
   else {
-    connection->AnsweringCall(H323Connection::AnswerCallDenied);
-    connection->Unlock();
+//    call->AnsweringCall(H323Connection::AnswerCallDenied);
+    call->Unlock();
   }
 }
 
 void CMfcDlg::OnHangup() 
 {
-  m_endpoint.ClearCall(m_token);
+  m_manager.ClearCall(m_token);
   m_hangup.EnableWindow(FALSE);
   m_call.EnableWindow();
 }

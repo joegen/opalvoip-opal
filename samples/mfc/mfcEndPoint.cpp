@@ -7,7 +7,7 @@
 #include "MfcEndPoint.h"
 #include "MfcDlg.h"
 
-#include <gsmcodec.h>
+#include <h323/h323ep.h>
 
 #ifdef _DEBUG
 #undef THIS_FILE
@@ -19,33 +19,27 @@ static char THIS_FILE[]=__FILE__;
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-CMfcEndPoint::CMfcEndPoint()
+CMfcManager::CMfcManager()
 {
   m_dialog = NULL;
 }
 
-CMfcEndPoint::~CMfcEndPoint()
+CMfcManager::~CMfcManager()
 {
 
 }
 
-BOOL CMfcEndPoint::Initialise(CMfcDlg *dlg)
+BOOL CMfcManager::Initialise(CMfcDlg *dlg)
 {
   m_dialog = dlg;
 
-  SetCapability(0, 0, new H323_GSM0610Capability);
-  SetCapability(0, 0, new H323_G711Capability(H323_G711Capability::muLaw));
-  SetCapability(0, 0, new H323_G711Capability(H323_G711Capability::ALaw));
-  H323_UserInputCapability::AddAllCapabilities(capabilities, 0, 0);
+  new H323EndPoint(*this);
 
-  return StartListener("");
+  return true;
 }
 
-H323Connection * CMfcEndPoint::CreateConnection(unsigned int refID)
-{
-  return new H323Connection(*this, refID);
-}
 
+#if 0
 void CMfcEndPoint::OnConnectionEstablished(H323Connection & connection, const PString & token)
 {
   m_dialog->m_token = token;
@@ -74,3 +68,4 @@ H323Connection::AnswerCallResponse CMfcEndPoint::OnAnswerCall(H323Connection & c
   m_dialog->m_call.EnableWindow(FALSE);
   return H323Connection::AnswerCallPending;
 }
+#endif

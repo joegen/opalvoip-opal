@@ -9,20 +9,16 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
-#include <h323.h>
+#include <opal/manager.h>
 
 class CMfcDlg;
 
-class CMfcEndPoint : public H323EndPoint  
+class CMfcManager : public OpalManager
 {
 public:
-	virtual H323Connection::AnswerCallResponse OnAnswerCall(H323Connection &, const PString & caller,const H323SignalPDU &,H323SignalPDU &);
-	virtual void OnConnectionEstablished(H323Connection & connection, const PString & token);
-	virtual void OnConnectionCleared(H323Connection & connection, const PString & clearedCallToken);
 	BOOL Initialise(CMfcDlg * dlg);
-	virtual H323Connection * CreateConnection(unsigned refID);
-	CMfcEndPoint();
-	virtual ~CMfcEndPoint();
+	CMfcManager();
+	virtual ~CMfcManager();
 protected:
 	CMfcDlg * m_dialog;
 };
