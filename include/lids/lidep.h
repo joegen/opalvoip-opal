@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.h,v $
- * Revision 1.2007  2001/11/13 06:25:56  robertj
+ * Revision 1.2008  2002/01/22 05:00:54  robertj
+ * Revamp of user input API triggered by RFC2833 support
+ *
+ * Revision 2.6  2001/11/13 06:25:56  robertj
  * Changed SetUpConnection() so returns BOOL as returning
  *   pointer to connection is not useful.
  *
@@ -388,17 +391,17 @@ class OpalLineConnection : public OpalConnection
 
        The default behaviour plays the DTMF tones on the line.
       */
-    virtual BOOL SendUserIndicationString(
+    virtual BOOL SendUserInputString(
       const PString & value                   /// String value of indication
     );
 
     /**Send a user input indication to the remote endpoint.
        This sends DTMF emulation user input. If something other than the
-       standard tones need be sent use the SendUserIndicationString() function.
+       standard tones need be sent use the SendUserInputString() function.
 
        The default behaviour plays the DTMF tone on the line.
       */
-    virtual BOOL SendUserIndicationTone(
+    virtual BOOL SendUserInputTone(
       char tone,    /// DTMF tone code
       int duration  /// Duration of tone in milliseconds
     );
@@ -409,7 +412,7 @@ class OpalLineConnection : public OpalConnection
 
        The default behaviour does nothing.
       */
-    virtual BOOL PromptUserIndication(
+    virtual BOOL PromptUserInput(
       BOOL play   /// Flag to start or stop playing the prompt
     );
   //@}
