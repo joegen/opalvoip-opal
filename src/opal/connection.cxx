@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2006  2001/10/03 05:56:15  robertj
+ * Revision 1.2007  2001/10/04 00:44:51  robertj
+ * Removed GetMediaFormats() function as is not useful.
+ *
+ * Revision 2.5  2001/10/03 05:56:15  robertj
  * Changes abndwidth management API.
  *
  * Revision 2.4  2001/08/22 10:20:09  robertj
@@ -298,7 +301,7 @@ BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForm
 
   OpalMediaFormat sourceFormat, destinationFormat;
   if (OpalTranscoder::SelectFormats(sessionID,
-                                    stream->GetMediaFormats(),
+                                    GetMediaFormats(),
                                     mediaFormats,
                                     sourceFormat,
                                     destinationFormat)) {
@@ -316,7 +319,7 @@ BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForm
   }
   else {
     PTRACE(2, "OpalCon\tOpenSourceMediaStream, could not find compatible media format:\n"
-              "  source formats=" << setfill(',') << stream->GetMediaFormats() << "\n"
+              "  source formats=" << setfill(',') << GetMediaFormats() << "\n"
               "   sink  formats=" << mediaFormats << setfill(' '));
   }
 
@@ -338,8 +341,8 @@ OpalMediaStream * OpalConnection::OpenSinkMediaStream(OpalMediaStream & source)
 
   OpalMediaFormat sourceFormat, destinationFormat;
   if (OpalTranscoder::SelectFormats(sessionID,
-                                    source.GetMediaFormats(),
-                                    stream->GetMediaFormats(),
+                                    source.GetMediaFormat(), // Only use selected format on source
+                                    GetMediaFormats(),
                                     sourceFormat,
                                     destinationFormat)) {
     PTRACE(3, "OpalCon\tOpenSinkMediaStream, selected "
@@ -356,8 +359,8 @@ OpalMediaStream * OpalConnection::OpenSinkMediaStream(OpalMediaStream & source)
   }
   else {
     PTRACE(2, "OpalCon\tOpenSinkMediaStream, could not find compatible media format:\n"
-              "  source formats=" << setfill(',') << source.GetMediaFormats() << "\n"
-              "   sink  formats=" << stream->GetMediaFormats() << setfill(' '));
+              "  source formats=" << setfill(',') << source.GetMediaFormat() << "\n"
+              "   sink  formats=" << GetMediaFormats() << setfill(' '));
   }
 
   delete stream;
