@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.h,v $
- * Revision 1.2005  2001/11/13 06:25:56  robertj
+ * Revision 1.2006  2002/01/22 05:05:16  robertj
+ * Revamp of user input API triggered by RFC2833 support
+ *
+ * Revision 2.4  2001/11/13 06:25:56  robertj
  * Changed SetUpConnection() so returns BOOL as returning
  *   pointer to connection is not useful.
  *
@@ -168,7 +171,7 @@ class OpalPCSSEndPoint : public OpalEndPoint
 
        The default implementation does nothing.
       */
-    virtual BOOL OnShowUserIndication(
+    virtual BOOL OnShowUserInput(
       const OpalPCSSConnection & connection, /// Connection having event
       const PString & indication
     );
@@ -316,7 +319,7 @@ class OpalPCSSConnection : public OpalConnection
 
        The default behaviour plays the DTMF tones on the line.
       */
-    virtual BOOL SendUserIndicationString(
+    virtual BOOL SendUserInputString(
       const PString & value                   /// String value of indication
     );
   //@}
