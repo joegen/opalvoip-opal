@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.h,v $
- * Revision 1.2007  2002/02/11 09:32:11  robertj
+ * Revision 1.2008  2002/04/18 03:41:28  robertj
+ * Fixed logical channel so does not delete media stream too early.
+ *
+ * Revision 2.6  2002/02/11 09:32:11  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.5  2002/02/11 07:37:21  robertj
@@ -473,6 +476,10 @@ class H323UnidirectionalChannel : public H323Channel
       const H323Capability & capability,  /// Capability channel is using
       Directions direction                /// Direction of channel
     );
+
+    /**Destroy the channel, deleting the associated media stream.
+      */
+    ~H323UnidirectionalChannel();
   //@}
 
   /**@name Overrides from class H323Channel */
