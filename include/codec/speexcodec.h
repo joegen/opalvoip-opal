@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.h,v $
- * Revision 1.2002  2002/11/10 11:33:16  robertj
+ * Revision 1.2003  2002/11/10 23:20:52  robertj
+ * Fixed class names in static variable macros.
+ *
+ * Revision 2.1  2002/11/10 11:33:16  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 1.11  2002/10/24 05:32:57  robertj
@@ -169,12 +172,13 @@ H323_STATIC_LOAD_REGISTER_CAPABILITY(SpeexNarrow5AudioCapability);
 H323_STATIC_LOAD_REGISTER_CAPABILITY(SpeexNarrow6AudioCapability);
 #endif
 
+
 #define OPAL_REGISTER_SPEEX_H323 \
-          H323_REGISTER_CAPABILITY_EP(SpeexNarrow2AudioCapability, OpalSpeexNarrow_5k95) \
-          H323_REGISTER_CAPABILITY_EP(SpeexNarrow3AudioCapability, OpalSpeexNarrow_8k) \
-          H323_REGISTER_CAPABILITY_EP(SpeexNarrow4AudioCapability, OpalSpeexNarrow_11k) \
-          H323_REGISTER_CAPABILITY_EP(SpeexNarrow5AudioCapability, OpalSpeexNarrow_15k) \
-          H323_REGISTER_CAPABILITY_EP(SpeexNarrow6AudioCapability, OpalSpeexNarrow_18k2)
+          H323_REGISTER_CAPABILITY(SpeexNarrow2AudioCapability, OpalSpeexNarrow_5k95) \
+          H323_REGISTER_CAPABILITY(SpeexNarrow3AudioCapability, OpalSpeexNarrow_8k) \
+          H323_REGISTER_CAPABILITY(SpeexNarrow4AudioCapability, OpalSpeexNarrow_11k) \
+          H323_REGISTER_CAPABILITY(SpeexNarrow5AudioCapability, OpalSpeexNarrow_15k) \
+          H323_REGISTER_CAPABILITY(SpeexNarrow6AudioCapability, OpalSpeexNarrow_18k2)
 
 
 #else // ifndef NO_H323
@@ -304,16 +308,16 @@ class Opal_PCM_Speex_18k2 : public Opal_Speex_Encoder {
 
 #define OPAL_REGISTER_SPEEX() \
           OPAL_REGISTER_SPEEX_H323 \
-          OPAL_REGISTER_TRANSCODER(Opal_Speex_5k95_PCM, OPAL_Speex_5k95, OPAL_PCM16); \
-          OPAL_REGISTER_TRANSCODER(Opal_PCM_Speex_5k95, OPAL_PCM16, OPAL_Speex_5k95); \
-          OPAL_REGISTER_TRANSCODER(Opal_Speex_8k_PCM, OPAL_Speex_8k, OPAL_PCM16); \
-          OPAL_REGISTER_TRANSCODER(Opal_PCM_Speex_8k, OPAL_PCM16, OPAL_Speex_8k); \
-          OPAL_REGISTER_TRANSCODER(Opal_Speex_11k_PCM, OPAL_Speex_11k, OPAL_PCM16); \
-          OPAL_REGISTER_TRANSCODER(Opal_PCM_Speex_11k, OPAL_PCM16, OPAL_Speex_11k); \
-          OPAL_REGISTER_TRANSCODER(Opal_Speex_15k_PCM, OPAL_Speex_15k, OPAL_PCM16); \
-          OPAL_REGISTER_TRANSCODER(Opal_PCM_Speex_15k, OPAL_PCM16, OPAL_Speex_15k); \
-          OPAL_REGISTER_TRANSCODER(Opal_Speex_18k2_PCM, OPAL_Speex_18k2, OPAL_PCM16); \
-          OPAL_REGISTER_TRANSCODER(Opal_PCM_Speex_18k2, OPAL_PCM16, OPAL_Speex_18k2)
+          OPAL_REGISTER_TRANSCODER(Opal_Speex_5k95_PCM, OPAL_SPEEX_NARROW_5k95, OPAL_PCM16); \
+          OPAL_REGISTER_TRANSCODER(Opal_PCM_Speex_5k95, OPAL_PCM16, OPAL_SPEEX_NARROW_5k95); \
+          OPAL_REGISTER_TRANSCODER(Opal_Speex_8k_PCM, OPAL_SPEEX_NARROW_8k, OPAL_PCM16); \
+          OPAL_REGISTER_TRANSCODER(Opal_PCM_Speex_8k, OPAL_PCM16, OPAL_SPEEX_NARROW_8k); \
+          OPAL_REGISTER_TRANSCODER(Opal_Speex_11k_PCM, OPAL_SPEEX_NARROW_11k, OPAL_PCM16); \
+          OPAL_REGISTER_TRANSCODER(Opal_PCM_Speex_11k, OPAL_PCM16, OPAL_SPEEX_NARROW_11k); \
+          OPAL_REGISTER_TRANSCODER(Opal_Speex_15k_PCM, OPAL_SPEEX_NARROW_15k, OPAL_PCM16); \
+          OPAL_REGISTER_TRANSCODER(Opal_PCM_Speex_15k, OPAL_PCM16, OPAL_SPEEX_NARROW_15k); \
+          OPAL_REGISTER_TRANSCODER(Opal_Speex_18k2_PCM, OPAL_SPEEX_NARROW_18k2, OPAL_PCM16); \
+          OPAL_REGISTER_TRANSCODER(Opal_PCM_Speex_18k2, OPAL_PCM16, OPAL_SPEEX_NARROW_18k2)
 
 
 #endif // __OPAL_SPEEXCODEC_H
