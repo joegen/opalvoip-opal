@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cpp,v $
+ * Revision 1.26  2004/10/06 13:08:19  rjongbloed
+ * Implemented partial support for LIDs
+ *
  * Revision 1.25  2004/10/03 14:16:34  rjongbloed
  * Added panels for calling, answering and in call phases.
  *
@@ -269,12 +272,6 @@ void OpenPhoneApp::Main()
 
 bool OpenPhoneApp::OnInit()
 {
-  wxImage::AddHandler(new wxGIFHandler);
-  wxFileSystem::AddHandler(new wxZipFSHandler);
-  wxXmlResource::Get()->InitAllHandlers();
-  if (!wxXmlResource::Get()->Load("openphone.xrc"))
-    return false;
-
   // Create the main frame window
   MyFrame * frame = new MyFrame();
   SetTopWindow(frame);
@@ -324,15 +321,40 @@ MyFrame::MyFrame()
 #endif
     m_callState(IdleState)
 {
-  wxConfigBase * config = wxConfig::Get();
-  config->SetPath(AppearanceGroup);
-
   // Give it an icon
   SetIcon( wxICON(OpenOphone) );
+}
+
+
+MyFrame::~MyFrame()
+{
+  ClearAllCalls();
+
+  // Must do this before we destroy the manager or a crash will result
+  if (potsEP != NULL)
+    potsEP->RemoveAllLines();
+
+  LogWindow.SetTextCtrl(NULL);
+}
+
+
+bool MyFrame::Initialise()
+{
+  wxImage::AddHandler(new wxGIFHandler);
+  wxFileSystem::AddHandler(new wxZipFSHandler);
+  wxXmlResource::Get()->InitAllHandlers();
+  if (!wxXmlResource::Get()->Load("openphone.xrc"))
+    return false;
 
   // Make a menubar
   wxMenuBar * menubar = wxXmlResource::Get()->LoadMenuBar("MenuBar");
+  if (menubar == NULL)
+    return false;
+
   SetMenuBar(menubar);
+
+  wxConfigBase * config = wxConfig::Get();
+  config->SetPath(AppearanceGroup);
 
   int x, y = 0;
   if (config->Read(MainFrameXKey, &x) && config->Read(MainFrameYKey, &y))
@@ -379,18 +401,273 @@ MyFrame::MyFrame()
 
   // Show the frame
   Show(TRUE);
-}
+
+#if PTRACING
+  ////////////////////////////////////////
+  // Tracing fields
+  config->SetPath(TracingGroup);
+  if (config->Read(EnableTracingKey, &m_enableTracing, false) && m_enableTracing &&
+      config->Read(TraceFileNameKey, &m_traceFileName) && !m_traceFileName.empty()) {
+    int traceLevelThreshold = 3;
+    config->Read(TraceLevelThresholdKey, &traceLevelThreshold);
+    int traceOptions = PTrace::DateAndTime|PTrace::Thread|PTrace::FileAndLine;
+    config->Read(TraceOptionsKey, &traceOptions);
+    PTrace::Initialise(traceLevelThreshold, m_traceFileName, traceOptions);
+  }
+#endif
+
+  ////////////////////////////////////////
+  // Creating the endpoints
+#if OPAL_H323
+  h323EP = new MyH323EndPoint(*this);
+
+  if (h323EP->StartListeners(PStringArray()))
+    LogWindow << "H.323 listening on " << setfill(',') << h323EP->GetListeners() << setfill(' ') << endl;
+#endif
+
+#if OPAL_SIP
+  sipEP = new MySIPEndPoint(*this);
+
+  if (sipEP->StartListeners(PStringArray()))
+    LogWindow << "SIP listening on " << setfill(',') << sipEP->GetListeners() << setfill(' ') << endl;
+#endif
+
+#if P_EXPAT
+  ivrEP = new OpalIVREndPoint(*this);
+#endif
+
+  potsEP = new OpalPOTSEndPoint(*this);
+  pcssEP = new MyPCSSEndPoint(*this);
+
+  PwxString str;
+  bool on;
+  int value1, value2;
+
+#define LOAD_FIELD_STR(name, set) \
+  if (config->Read(name##Key, &str)) set(str)
+#define LOAD_FIELD_BOOL(name, set) \
+  if (config->Read(name##Key, &on)) set(on)
+#define LOAD_FIELD_INT(name, set) \
+  if (config->Read(name##Key, &value1)) set(value1)
+#define LOAD_FIELD_INT2(name1, name2, set) \
+  if (config->Read(name1##Key, &value1)) { \
+    config->Read(name2##Key, &value2, 0); \
+    set(value1, value2); \
+  }
+#define LOAD_FIELD_ENUM(name, set, type) \
+  if (config->Read(name##Key, &value1)) set((type)value1)
+
+  ////////////////////////////////////////
+  // General fields
+  config->SetPath(GeneralGroup);
+  LOAD_FIELD_STR(Username, SetDefaultUserName);
+  LOAD_FIELD_STR(DisplayName, SetDefaultDisplayName);
+  LOAD_FIELD_BOOL(AutoAnswer, m_autoAnswer=);
+#if P_EXPAT
+  LOAD_FIELD_STR(IVRScript, ivrEP->SetDefaultVXML);
+#endif
+
+  ////////////////////////////////////////
+  // Networking fields
+  config->SetPath(NetworkingGroup);
+  LOAD_FIELD_INT2(TCPPortBase, TCPPortBase, SetTCPPorts);
+  LOAD_FIELD_INT2(UDPPortBase, UDPPortBase, SetUDPPorts);
+  LOAD_FIELD_INT2(RTPPortBase, RTPPortBase, SetRtpIpPorts);
+  LOAD_FIELD_INT(RTPTOS, SetRtpIpTypeofService);
+  LOAD_FIELD_STR(NATRouter, SetTranslationAddress);
+  LOAD_FIELD_STR(STUNServer, SetSTUNServer);
+
+  ////////////////////////////////////////
+  // Sound fields
+  config->SetPath(AudioGroup);
+  LOAD_FIELD_STR(SoundPlayer, pcssEP->SetSoundChannelPlayDevice);
+  LOAD_FIELD_STR(SoundRecorder, pcssEP->SetSoundChannelRecordDevice);
+  LOAD_FIELD_INT(SoundBuffers, pcssEP->SetSoundChannelBufferDepth);
+
+  LOAD_FIELD_INT2(MinJitter, MaxJitter, SetAudioJitterDelay);
+
+  OpalSilenceDetector::Params silenceParams = GetSilenceDetectParams();
+  LOAD_FIELD_INT(SilenceSuppression, silenceParams.m_mode = (OpalSilenceDetector::Mode));
+  LOAD_FIELD_INT(SilenceThreshold, silenceParams.m_threshold = );
+  LOAD_FIELD_INT(SignalDeadband, silenceParams.m_signalDeadband = 8*);
+  LOAD_FIELD_INT(SilenceDeadband, silenceParams.m_silenceDeadband = 8*);
+  SetSilenceDetectParams(silenceParams);
+
+  if (config->Read(LineInterfaceDeviceKey, &str) && potsEP->AddDeviceName(str)) {
+    OpalLine * line = potsEP->GetLine("*");
+    if (PAssertNULL(line) != NULL) {
+      LOAD_FIELD_ENUM(AEC, line->SetAEC, OpalLineInterfaceDevice::AECLevels);
+      LOAD_FIELD_STR(Country, line->GetDevice().SetCountryCodeName);
+    }
+  }
 
 
-MyFrame::~MyFrame()
-{
-  ClearAllCalls();
+  ////////////////////////////////////////
+  // Video fields
+  config->SetPath(VideoGroup);
+  PVideoDevice::OpenArgs videoArgs = GetVideoInputDevice();
+  LOAD_FIELD_STR(VideoGrabber, videoArgs.deviceName = (PString));
+  LOAD_FIELD_INT(VideoGrabFormat, videoArgs.videoFormat = (PVideoDevice::VideoFormat));
+  LOAD_FIELD_INT(VideoGrabSource, videoArgs.channelNumber = );
+  LOAD_FIELD_INT(VideoGrabFrameRate, videoArgs.rate = );
+  LOAD_FIELD_BOOL(VideoFlipLocal, videoArgs.flip = );
+  SetVideoInputDevice(videoArgs);
 
-  // Must do this before we destroy the manager or a crash will result
-  if (potsEP != NULL)
-    potsEP->RemoveAllLines();
+//  LOAD_FIELD_INT(VideoEncodeQuality, );
+//  LOAD_FIELD_INT(VideoEncodeMaxBitRate, );
+//  LOAD_FIELD_BOOL(VideoGrabPreview, );
+  LOAD_FIELD_BOOL(VideoAutoTransmit, SetAutoStartTransmitVideo);
+  LOAD_FIELD_BOOL(VideoAutoReceive, SetAutoStartReceiveVideo);
 
-  LogWindow.SetTextCtrl(NULL);
+  videoArgs = GetVideoOutputDevice();
+  LOAD_FIELD_BOOL(VideoFlipRemote, videoArgs.flip = );
+  SetVideoOutputDevice(videoArgs);
+
+  ////////////////////////////////////////
+  // Codec fields
+  InitMediaInfo(pcssEP->GetPrefixName(), pcssEP->GetMediaFormats());
+  InitMediaInfo(potsEP->GetPrefixName(), potsEP->GetMediaFormats());
+#if P_EXPAT
+  InitMediaInfo(ivrEP->GetPrefixName(), ivrEP->GetMediaFormats());
+#endif
+
+  OpalMediaFormatList mediaFormats;
+  mediaFormats += pcssEP->GetMediaFormats();
+  mediaFormats += potsEP->GetMediaFormats();
+#if P_EXPAT
+  mediaFormats += ivrEP->GetMediaFormats();
+#endif
+  InitMediaInfo("sw", OpalTranscoder::GetPossibleFormats(mediaFormats));
+
+  config->SetPath(CodecsGroup);
+  int codecIndex = 0;
+  for (;;) {
+    wxString groupName;
+    groupName.sprintf("%04u", codecIndex);
+    if (!config->HasGroup(groupName))
+      break;
+
+    config->SetPath(groupName);
+    PwxString codecName;
+    if (config->Read(CodecNameKey, &codecName) && !codecName.empty()) {
+      for (MyMediaList::iterator mm = m_mediaInfo.begin(); mm != m_mediaInfo.end(); ++mm) {
+        if (codecName == mm->mediaFormat)
+          mm->preferenceOrder = codecIndex;
+      }
+    }
+    config->SetPath("..");
+    codecIndex++;
+  }
+
+  if (codecIndex > 0)
+    ApplyMediaInfo();
+  else {
+    PStringArray mediaFormatOrder = GetMediaFormatOrder();
+    for (PINDEX i = 0; i < mediaFormatOrder.GetSize(); i++) {
+      for (MyMediaList::iterator mm = m_mediaInfo.begin(); mm != m_mediaInfo.end(); ++mm) {
+        if (mm->mediaFormat == mediaFormatOrder[i])
+          mm->preferenceOrder = codecIndex++;
+      }
+    }
+    for (MyMediaList::iterator mm = m_mediaInfo.begin(); mm != m_mediaInfo.end(); ++mm) {
+      if (mm->preferenceOrder < 0)
+        mm->preferenceOrder = codecIndex++;
+    }
+    m_mediaInfo.sort();
+  }
+
+  ////////////////////////////////////////
+  // H.323 fields
+  config->SetPath(H323Group);
+  LOAD_FIELD_ENUM(DTMFSendMode, h323EP->SetSendUserInputMode, H323Connection::SendUserInputModes);
+  LOAD_FIELD_INT(CallIntrusionProtectionLevel, h323EP->SetCallIntrusionProtectionLevel);
+  LOAD_FIELD_BOOL(DisableFastStart, h323EP->DisableFastStart);
+  LOAD_FIELD_BOOL(DisableH245Tunneling, h323EP->DisableH245Tunneling);
+  LOAD_FIELD_BOOL(DisableH245inSETUP, h323EP->DisableH245inSetup);
+
+  PwxString username, password;
+  config->Read(GatekeeperModeKey, &m_gatekeeperMode, 0);
+  if (m_gatekeeperMode > 0) {
+    if (config->Read(GatekeeperTTLKey, &value1))
+      h323EP->SetGatekeeperTimeToLive(PTimeInterval(0, value1));
+
+    config->Read(GatekeeperLoginKey, &username, "");
+    config->Read(GatekeeperPasswordKey, &password, "");
+    h323EP->SetGatekeeperPassword(password, username);
+
+    config->Read(GatekeeperAddressKey, &m_gatekeeperAddress, "");
+    config->Read(GatekeeperIdentifierKey, &m_gatekeeperIdentifier, "");
+    if (!StartGatekeeper())
+      return false;
+  }
+
+  ////////////////////////////////////////
+  // SIP fields
+  config->SetPath(SIPGroup);
+  const SIPURL & proxy = sipEP->GetProxy();
+  PwxString hostname;
+  config->Read(SIPProxyUsedKey, &m_SIPProxyUsed, false);
+  config->Read(SIPProxyKey, &hostname, PwxString(proxy.GetHostName()));
+  config->Read(SIPProxyUsernameKey, &username, PwxString(proxy.GetUserName()));
+  config->Read(SIPProxyPasswordKey, &password, PwxString(proxy.GetPassword()));
+  if (m_SIPProxyUsed)
+    sipEP->SetProxy(hostname, username, password);
+
+  if (config->Read(RegistrarTimeToLiveKey, &value1))
+    sipEP->SetRegistrarTimeToLive(PTimeInterval(0, value1));
+
+  if (config->Read(RegistrarUsedKey, &m_registrarUsed, false) &&
+      config->Read(RegistrarNameKey, &m_registrarName) &&
+      config->Read(RegistrarUsernameKey, &m_registrarUser) &&
+      config->Read(RegistrarPasswordKey, &m_registrarPassword))
+    StartRegistrar();
+
+  ////////////////////////////////////////
+  // Routing fields
+  {
+#if OPAL_SIP
+    if (sipEP != NULL) {
+      AddRouteEntry("pots:.*\\*.*\\*.* = sip:<dn2ip>");
+      AddRouteEntry("pots:.*           = sip:<da>");
+      AddRouteEntry("pc:.*             = sip:<da>");
+    }
+#if OPAL_H323
+    else
+#endif
+#endif
+
+#if OPAL_H323
+    if (h323EP != NULL) {
+      AddRouteEntry("pots:.*\\*.*\\*.* = h323:<dn2ip>");
+      AddRouteEntry("pots:.*           = h323:<da>");
+      AddRouteEntry("pc:.*             = h323:<da>");
+    }
+#endif
+
+#if P_EXPAT
+    if (ivrEP != NULL)
+      AddRouteEntry(".*:#  = ivr:"); // A hash from anywhere goes to IVR
+#endif
+
+    if (potsEP != NULL && potsEP->GetLine("*") != NULL) {
+#if OPAL_H323
+      AddRouteEntry("h323:.* = pots:<da>");
+#endif
+#if OPAL_SIP
+      AddRouteEntry("sip:.*  = pots:<da>");
+#endif
+    }
+    else if (pcssEP != NULL) {
+#if OPAL_H323
+      AddRouteEntry("h323:.* = pc:<da>");
+#endif
+#if OPAL_SIP
+      AddRouteEntry("sip:.*  = pc:<da>");
+#endif
+    }
+  }
+
+  return true;
 }
 
 
@@ -905,277 +1182,6 @@ void MyFrame::SetState(CallState newState)
 }
 
 
-bool MyFrame::Initialise()
-{
-  wxConfigBase * config = wxConfig::Get();
-
-#if PTRACING
-  ////////////////////////////////////////
-  // Tracing fields
-  config->SetPath(TracingGroup);
-  if (config->Read(EnableTracingKey, &m_enableTracing, false) && m_enableTracing &&
-      config->Read(TraceFileNameKey, &m_traceFileName) && !m_traceFileName.empty()) {
-    int traceLevelThreshold = 3;
-    config->Read(TraceLevelThresholdKey, &traceLevelThreshold);
-    int traceOptions = PTrace::DateAndTime|PTrace::Thread|PTrace::FileAndLine;
-    config->Read(TraceOptionsKey, &traceOptions);
-    PTrace::Initialise(traceLevelThreshold, m_traceFileName, traceOptions);
-  }
-#endif
-
-  ////////////////////////////////////////
-  // Creating the endpoints
-#if OPAL_H323
-  h323EP = new MyH323EndPoint(*this);
-
-  if (h323EP->StartListeners(PStringArray()))
-    LogWindow << "H.323 listening on " << setfill(',') << h323EP->GetListeners() << setfill(' ') << endl;
-#endif
-
-#if OPAL_SIP
-  sipEP = new MySIPEndPoint(*this);
-
-  if (sipEP->StartListeners(PStringArray()))
-    LogWindow << "SIP listening on " << setfill(',') << sipEP->GetListeners() << setfill(' ') << endl;
-#endif
-
-#if P_EXPAT
-  ivrEP = new OpalIVREndPoint(*this);
-#endif
-
-  potsEP = new OpalPOTSEndPoint(*this);
-  pcssEP = new MyPCSSEndPoint(*this);
-
-  PwxString str;
-  bool on;
-  int value1, value2;
-
-#define LOAD_FIELD_STR(name, set) \
-  if (config->Read(name##Key, &str)) set(str)
-#define LOAD_FIELD_BOOL(name, set) \
-  if (config->Read(name##Key, &on)) set(on)
-#define LOAD_FIELD_INT(name, set) \
-  if (config->Read(name##Key, &value1)) set(value1)
-#define LOAD_FIELD_INT2(name1, name2, set) \
-  if (config->Read(name1##Key, &value1)) { \
-    config->Read(name2##Key, &value2, 0); \
-    set(value1, value2); \
-  }
-#define LOAD_FIELD_ENUM(name, set, type) \
-  if (config->Read(name##Key, &value1)) set((type)value1)
-
-  ////////////////////////////////////////
-  // General fields
-  config->SetPath(GeneralGroup);
-  LOAD_FIELD_STR(Username, SetDefaultUserName);
-  LOAD_FIELD_STR(DisplayName, SetDefaultDisplayName);
-  LOAD_FIELD_BOOL(AutoAnswer, m_autoAnswer=);
-#if P_EXPAT
-  LOAD_FIELD_STR(IVRScript, ivrEP->SetDefaultVXML);
-#endif
-
-  ////////////////////////////////////////
-  // Networking fields
-  config->SetPath(NetworkingGroup);
-  LOAD_FIELD_INT2(TCPPortBase, TCPPortBase, SetTCPPorts);
-  LOAD_FIELD_INT2(UDPPortBase, UDPPortBase, SetUDPPorts);
-  LOAD_FIELD_INT2(RTPPortBase, RTPPortBase, SetRtpIpPorts);
-  LOAD_FIELD_INT(RTPTOS, SetRtpIpTypeofService);
-  LOAD_FIELD_STR(NATRouter, SetTranslationAddress);
-  LOAD_FIELD_STR(STUNServer, SetSTUNServer);
-
-  ////////////////////////////////////////
-  // Sound fields
-  config->SetPath(AudioGroup);
-  LOAD_FIELD_STR(SoundPlayer, pcssEP->SetSoundChannelPlayDevice);
-  LOAD_FIELD_STR(SoundRecorder, pcssEP->SetSoundChannelRecordDevice);
-  LOAD_FIELD_INT(SoundBuffers, pcssEP->SetSoundChannelBufferDepth);
-
-  OpalLine * line = potsEP->GetLine("*");
-  if (line != NULL) {
-    LOAD_FIELD_STR(LineInterfaceDevice, line->GetDevice().Open);
-    LOAD_FIELD_ENUM(AEC, line->SetAEC, OpalLineInterfaceDevice::AECLevels);
-    LOAD_FIELD_STR(Country, line->GetDevice().SetCountryCodeName);
-  }
-
-  LOAD_FIELD_INT2(MinJitter, MaxJitter, SetAudioJitterDelay);
-
-  OpalSilenceDetector::Params silenceParams = GetSilenceDetectParams();
-  LOAD_FIELD_INT(SilenceSuppression, silenceParams.m_mode = (OpalSilenceDetector::Mode));
-  LOAD_FIELD_INT(SilenceThreshold, silenceParams.m_threshold = );
-  LOAD_FIELD_INT(SignalDeadband, silenceParams.m_signalDeadband = 8*);
-  LOAD_FIELD_INT(SilenceDeadband, silenceParams.m_silenceDeadband = 8*);
-  SetSilenceDetectParams(silenceParams);
-
-  ////////////////////////////////////////
-  // Video fields
-  config->SetPath(VideoGroup);
-  PVideoDevice::OpenArgs videoArgs = GetVideoInputDevice();
-  LOAD_FIELD_STR(VideoGrabber, videoArgs.deviceName = (PString));
-  LOAD_FIELD_INT(VideoGrabFormat, videoArgs.videoFormat = (PVideoDevice::VideoFormat));
-  LOAD_FIELD_INT(VideoGrabSource, videoArgs.channelNumber = );
-  LOAD_FIELD_INT(VideoGrabFrameRate, videoArgs.rate = );
-  LOAD_FIELD_BOOL(VideoFlipLocal, videoArgs.flip = );
-  SetVideoInputDevice(videoArgs);
-
-//  LOAD_FIELD_INT(VideoEncodeQuality, );
-//  LOAD_FIELD_INT(VideoEncodeMaxBitRate, );
-//  LOAD_FIELD_BOOL(VideoGrabPreview, );
-  LOAD_FIELD_BOOL(VideoAutoTransmit, SetAutoStartTransmitVideo);
-  LOAD_FIELD_BOOL(VideoAutoReceive, SetAutoStartReceiveVideo);
-
-  videoArgs = GetVideoOutputDevice();
-  LOAD_FIELD_BOOL(VideoFlipRemote, videoArgs.flip = );
-  SetVideoOutputDevice(videoArgs);
-
-  ////////////////////////////////////////
-  // Codec fields
-  InitMediaInfo(pcssEP->GetPrefixName(), pcssEP->GetMediaFormats());
-  InitMediaInfo(potsEP->GetPrefixName(), potsEP->GetMediaFormats());
-#if P_EXPAT
-  InitMediaInfo(ivrEP->GetPrefixName(), ivrEP->GetMediaFormats());
-#endif
-
-  OpalMediaFormatList mediaFormats;
-  mediaFormats += pcssEP->GetMediaFormats();
-  mediaFormats += potsEP->GetMediaFormats();
-#if P_EXPAT
-  mediaFormats += ivrEP->GetMediaFormats();
-#endif
-  InitMediaInfo("sw", OpalTranscoder::GetPossibleFormats(mediaFormats));
-
-  config->SetPath(CodecsGroup);
-  int codecIndex = 0;
-  for (;;) {
-    wxString groupName;
-    groupName.sprintf("%04u", codecIndex);
-    if (!config->HasGroup(groupName))
-      break;
-
-    config->SetPath(groupName);
-    PwxString codecName;
-    if (config->Read(CodecNameKey, &codecName) && !codecName.empty()) {
-      for (MyMediaList::iterator mm = m_mediaInfo.begin(); mm != m_mediaInfo.end(); ++mm) {
-        if (codecName == mm->mediaFormat)
-          mm->preferenceOrder = codecIndex;
-      }
-    }
-    config->SetPath("..");
-    codecIndex++;
-  }
-
-  if (codecIndex > 0)
-    ApplyMediaInfo();
-  else {
-    PStringArray mediaFormatOrder = GetMediaFormatOrder();
-    for (PINDEX i = 0; i < mediaFormatOrder.GetSize(); i++) {
-      for (MyMediaList::iterator mm = m_mediaInfo.begin(); mm != m_mediaInfo.end(); ++mm) {
-        if (mm->mediaFormat == mediaFormatOrder[i])
-          mm->preferenceOrder = codecIndex++;
-      }
-    }
-    for (MyMediaList::iterator mm = m_mediaInfo.begin(); mm != m_mediaInfo.end(); ++mm) {
-      if (mm->preferenceOrder < 0)
-        mm->preferenceOrder = codecIndex++;
-    }
-    m_mediaInfo.sort();
-  }
-
-  ////////////////////////////////////////
-  // H.323 fields
-  config->SetPath(H323Group);
-  LOAD_FIELD_ENUM(DTMFSendMode, h323EP->SetSendUserInputMode, H323Connection::SendUserInputModes);
-  LOAD_FIELD_INT(CallIntrusionProtectionLevel, h323EP->SetCallIntrusionProtectionLevel);
-  LOAD_FIELD_BOOL(DisableFastStart, h323EP->DisableFastStart);
-  LOAD_FIELD_BOOL(DisableH245Tunneling, h323EP->DisableH245Tunneling);
-  LOAD_FIELD_BOOL(DisableH245inSETUP, h323EP->DisableH245inSetup);
-
-  PwxString username, password;
-  config->Read(GatekeeperModeKey, &m_gatekeeperMode, 0);
-  if (m_gatekeeperMode > 0) {
-    if (config->Read(GatekeeperTTLKey, &value1))
-      h323EP->SetGatekeeperTimeToLive(PTimeInterval(0, value1));
-
-    config->Read(GatekeeperLoginKey, &username, "");
-    config->Read(GatekeeperPasswordKey, &password, "");
-    h323EP->SetGatekeeperPassword(password, username);
-
-    config->Read(GatekeeperAddressKey, &m_gatekeeperAddress, "");
-    config->Read(GatekeeperIdentifierKey, &m_gatekeeperIdentifier, "");
-    if (!StartGatekeeper())
-      return false;
-  }
-
-  ////////////////////////////////////////
-  // SIP fields
-  config->SetPath(SIPGroup);
-  const SIPURL & proxy = sipEP->GetProxy();
-  PwxString hostname;
-  config->Read(SIPProxyUsedKey, &m_SIPProxyUsed, false);
-  config->Read(SIPProxyKey, &hostname, PwxString(proxy.GetHostName()));
-  config->Read(SIPProxyUsernameKey, &username, PwxString(proxy.GetUserName()));
-  config->Read(SIPProxyPasswordKey, &password, PwxString(proxy.GetPassword()));
-  if (m_SIPProxyUsed)
-    sipEP->SetProxy(hostname, username, password);
-
-  if (config->Read(RegistrarTimeToLiveKey, &value1))
-    sipEP->SetRegistrarTimeToLive(PTimeInterval(0, value1));
-
-  if (config->Read(RegistrarUsedKey, &m_registrarUsed, false) &&
-      config->Read(RegistrarNameKey, &m_registrarName) &&
-      config->Read(RegistrarUsernameKey, &m_registrarUser) &&
-      config->Read(RegistrarPasswordKey, &m_registrarPassword))
-    StartRegistrar();
-
-  ////////////////////////////////////////
-  // Routing fields
-  {
-#if OPAL_SIP
-    if (sipEP != NULL) {
-      AddRouteEntry("pots:.*\\*.*\\*.* = sip:<dn2ip>");
-      AddRouteEntry("pots:.*           = sip:<da>");
-      AddRouteEntry("pc:.*             = sip:<da>");
-    }
-#if OPAL_H323
-    else
-#endif
-#endif
-
-#if OPAL_H323
-    if (h323EP != NULL) {
-      AddRouteEntry("pots:.*\\*.*\\*.* = h323:<dn2ip>");
-      AddRouteEntry("pots:.*           = h323:<da>");
-      AddRouteEntry("pc:.*             = h323:<da>");
-    }
-#endif
-
-#if P_EXPAT
-    if (ivrEP != NULL)
-      AddRouteEntry(".*:#  = ivr:"); // A hash from anywhere goes to IVR
-#endif
-
-    if (potsEP != NULL && potsEP->GetLine("*") != NULL) {
-#if OPAL_H323
-      AddRouteEntry("h323:.* = pots:<da>");
-#endif
-#if OPAL_SIP
-      AddRouteEntry("sip:.*  = pots:<da>");
-#endif
-    }
-    else if (pcssEP != NULL) {
-#if OPAL_H323
-      AddRouteEntry("h323:.* = pc:<da>");
-#endif
-#if OPAL_SIP
-      AddRouteEntry("sip:.*  = pc:<da>");
-#endif
-    }
-  }
-
-  return true;
-}
-
-
 bool MyFrame::StartGatekeeper()
 {
   if (m_gatekeeperMode == 0)
@@ -1253,6 +1259,10 @@ void MyFrame::OnOptions(wxCommandEvent& event)
 }
 
 BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
+  ////////////////////////////////////////
+  // Audio fields
+  EVT_COMBOBOX(XRCID(LineInterfaceDeviceKey), OptionsDialog::SelectedLID)
+
   ////////////////////////////////////////
   // Codec fields
   EVT_BUTTON(XRCID("AddCodec"), OptionsDialog::AddCodec)
@@ -1339,22 +1349,47 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
   m_SoundRecorder = m_frame.pcssEP->GetSoundChannelRecordDevice();
 
   // Fill line interface combo box with available devices and set selection
-  combo = (wxComboBox *)FindWindowByName(LineInterfaceDeviceKey);
-  combo->SetValidator(wxGenericValidator(&m_LineInterfaceDevice));
-  OpalLine * line = m_frame.potsEP->GetLine("*");
-  if (line != NULL) {
-    devices = line->GetDevice().GetAllNames();
-    for (i = 0; i < devices.GetSize(); i++)
-      combo->Append((const char *)devices[i]);
-    m_LineInterfaceDevice = line->GetDevice().GetName();
-    INIT_FIELD(AEC, line->GetAEC());
-    INIT_FIELD(Country, line->GetDevice().GetCountryCodeName());
+  m_selectedAEC = (wxComboBox *)FindWindowByName(AECKey);
+  m_selectedCountry = (wxTextCtrl *)FindWindowByName(CountryKey);
+  m_selectedLID = (wxComboBox *)FindWindowByName(LineInterfaceDeviceKey);
+  m_selectedLID->SetValidator(wxGenericValidator(&m_LineInterfaceDevice));
+  devices = OpalLineInterfaceDevice::GetAllDevices();
+  if (devices.IsEmpty()) {
+    m_LineInterfaceDevice = "<< None available >>";
+    m_selectedLID->Append(m_LineInterfaceDevice);
+    m_selectedAEC->Disable();
+    m_selectedCountry->Disable();
   }
   else {
-    m_LineInterfaceDevice = "<< None available >>";
-    combo->Append(m_LineInterfaceDevice);
-    FindWindowByName(AECKey)->Disable();
-    FindWindowByName(CountryKey)->Disable();
+    static const char UseSoundCard[] = "<< Use sound card only >>";
+    m_selectedLID->Append(UseSoundCard);
+    for (i = 0; i < devices.GetSize(); i++)
+      m_selectedLID->Append((const char *)devices[i]);
+
+    OpalLine * line = m_frame.potsEP->GetLine("*");
+    if (line != NULL) {
+      m_LineInterfaceDevice = line->GetDevice().GetDeviceType() + ": " + line->GetDevice().GetDeviceName();
+      for (i = 0; i < devices.GetSize(); i++) {
+        if (m_LineInterfaceDevice == devices[i])
+          break;
+      }
+      if (i >= devices.GetSize()) {
+        for (i = 0; i < devices.GetSize(); i++) {
+          if (devices[i].Find(m_LineInterfaceDevice.c_str()) == 0)
+            break;
+        }
+        if (i >= devices.GetSize())
+          m_LineInterfaceDevice = devices[0];
+      }
+
+      INIT_FIELD(AEC, line->GetAEC());
+      INIT_FIELD(Country, line->GetDevice().GetCountryCodeName());
+    }
+    else {
+      m_LineInterfaceDevice = UseSoundCard;
+      m_selectedAEC->Disable();
+      m_selectedCountry->Disable();
+    }
   }
 
   ////////////////////////////////////////
@@ -1531,9 +1566,6 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(SoundPlayer, m_frame.pcssEP->SetSoundChannelPlayDevice);
   SAVE_FIELD(SoundRecorder, m_frame.pcssEP->SetSoundChannelRecordDevice);
   SAVE_FIELD(SoundBuffers, m_frame.pcssEP->SetSoundChannelBufferDepth);
-//  SAVE_FIELD(LineInterfaceDevice, m_frame.potsEP->);
-//  SAVE_FIELD(AEC, m_frame.potsEP->);
-//  SAVE_FIELD(Country, m_frame.potsEP->);
   SAVE_FIELD2(MinJitter, MaxJitter, m_frame.SetAudioJitterDelay);
 
   OpalSilenceDetector::Params silenceParams;
@@ -1542,6 +1574,16 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(SignalDeadband, silenceParams.m_signalDeadband=8*);
   SAVE_FIELD(SilenceDeadband, silenceParams.m_silenceDeadband=8*);
   m_frame.SetSilenceDetectParams(silenceParams);
+
+  config->Write(LineInterfaceDeviceKey, m_LineInterfaceDevice);
+  if (m_frame.potsEP->AddDeviceName(m_LineInterfaceDevice)) {
+    OpalLine * line = m_frame.potsEP->GetLine("*");
+    if (PAssertNULL(line) != NULL) {
+      line->SetAEC((OpalLineInterfaceDevice::AECLevels)m_AEC);
+      config->Write(AECKey, m_AEC);
+      SAVE_FIELD(Country, line->GetDevice().SetCountryCodeName);
+    }
+  }
 
   ////////////////////////////////////////
   // Video fields
@@ -1722,6 +1764,17 @@ void OptionsDialog::AddInterface(wxCommandEvent & event)
 
 void OptionsDialog::RemoveInterface(wxCommandEvent & event)
 {
+}
+
+
+////////////////////////////////////////
+// Audio fields
+
+void OptionsDialog::SelectedLID(wxCommandEvent & event)
+{
+  bool enabled = m_selectedLID->GetSelection() > 0;
+  m_selectedAEC->Enable(enabled);
+  m_selectedCountry->Enable(enabled);
 }
 
 
