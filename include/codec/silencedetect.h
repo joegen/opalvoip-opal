@@ -23,6 +23,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: silencedetect.h,v $
+ * Revision 1.2  2004/05/24 13:39:26  rjongbloed
+ * Fixed setting marker bit when silence suppression transitions from
+ *   silence to signal, thanks Ted Szoczei
+ * Added a separate structure for the silence suppression paramters to make
+ *   it easier to set from global defaults in the manager class.
+ *
  * Revision 1.1  2004/05/17 13:24:26  rjongbloed
  * Added silence suppression.
  *
@@ -45,28 +51,54 @@ class OpalSilenceDetector : public PObject
 {
     PCLASSINFO(OpalSilenceDetector, PObject);
   public:
-    OpalSilenceDetector();
-
-    const PNotifier & GetReceiveHandler() const { return receiveHandler; }
-
     enum Mode {
       NoSilenceDetection,
       FixedSilenceDetection,
       AdaptiveSilenceDetection
     };
 
-    /**Enable/Disable silence detection.
-       The deadband periods are in audio samples of 8kHz.
+    struct Params {
+      Params(
+        Mode mode = AdaptiveSilenceDetection, /// New silence detection mode
+        unsigned threshold = 0,               /// Threshold value if FixedSilenceDetection
+        unsigned signalDeadband = 80,         /// 10 milliseconds of signal needed
+        unsigned silenceDeadband = 3200,      /// 400 milliseconds of silence needed
+        unsigned adaptivePeriod = 4800        /// 600 millisecond window for adaptive threshold
+      )
+        : m_mode(mode),
+          m_threshold(threshold),
+          m_signalDeadband(signalDeadband),
+          m_silenceDeadband(silenceDeadband),
+          m_adaptivePeriod(adaptivePeriod)
+        { }
+
+      Mode     m_mode;             /// Silence detection mode
+      unsigned m_threshold;        /// Threshold value if FixedSilenceDetection
+      unsigned m_signalDeadband;   /// 10 milliseconds of signal needed
+      unsigned m_silenceDeadband;  /// 400 milliseconds of silence needed
+      unsigned m_adaptivePeriod;   /// 600 millisecond window for adaptive threshold
+    };
+
+  /**@name Construction */
+  //@{
+    /**Create a new connection.
+     */
+    OpalSilenceDetector();
+  //@}
+
+  /**@name Basic operations */
+  //@{
+    const PNotifier & GetReceiveHandler() const { return receiveHandler; }
+
+    /**Set the silence detector parameters.
+       This enables, disables the silence detector as well as adjusting its
+       "agression". The deadband periods are in audio samples of 8kHz.
       */
-    void SetMode(
-      Mode mode,   /// New silence detection mode
-      unsigned threshold = 0,      /// Threshold value if FixedSilenceDetection
-      unsigned signalDeadband = 80,    /// 10 milliseconds of signal needed
-      unsigned silenceDeadband = 3200, /// 400 milliseconds of silence needed
-      unsigned adaptivePeriod = 4800   /// 600 millisecond window for adaptive threshold
+    void SetParameters(
+      const Params & newParam /// New parameters for silence detector
     );
 
-    /**Get silence detection mode
+    /**Get silence detection status
 
        The inTalkBurst value is TRUE if packet transmission is enabled and
        FALSE if it is being suppressed due to silence.
@@ -74,7 +106,7 @@ class OpalSilenceDetector : public PObject
        The currentThreshold value is the value from 0 to 32767 which is used
        as the threshold value for 16 bit PCM data.
       */
-    Mode GetMode(
+    Mode GetStatus(
       BOOL * isInTalkBurst,
       unsigned * currentThreshold
     ) const;
@@ -97,11 +129,7 @@ class OpalSilenceDetector : public PObject
 
     PNotifier receiveHandler;
 
-    Mode mode;
-
-    unsigned signalDeadbandTime;  // Duration of signal before talk burst starts
-    unsigned silenceDeadbandTime; // Duration of silence before talk burst ends
-    unsigned adaptiveThresholdTime; // Duration to min/max over for adaptive threshold
+    Params param;
 
     BOOL     inTalkBurst;           // Currently sending RTP data
     unsigned lastTimestamp;         // Last timestamp received
