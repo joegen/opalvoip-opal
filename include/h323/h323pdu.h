@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.h,v $
- * Revision 1.2010  2003/01/07 04:39:52  robertj
+ * Revision 1.2011  2004/02/19 10:46:44  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.9  2003/01/07 04:39:52  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.8  2002/11/10 11:33:16  robertj
@@ -57,6 +60,30 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.65  2003/04/10 09:36:52  robertj
+ * Added some more functions for converting to alias addresses.
+ *
+ * Revision 1.64  2003/04/01 03:11:01  robertj
+ * Added function to get array of AliasAddress into PStringArray.
+ *
+ * Revision 1.63  2003/03/25 04:56:17  robertj
+ * Fixed issues to do with multiple inheritence in transaction reply cache.
+ *
+ * Revision 1.62  2003/03/20 01:51:07  robertj
+ * More abstraction of H.225 RAS and H.501 protocols transaction handling.
+ *
+ * Revision 1.61  2003/03/01 00:23:42  craigs
+ * New PeerElement implementation
+ *
+ * Revision 1.60  2003/02/25 06:48:15  robertj
+ * More work on PDU transaction abstraction.
+ *
+ * Revision 1.59  2003/02/21 05:28:39  craigs
+ * Factored out code for user with peer elements
+ *
+ * Revision 1.58  2003/02/01 13:31:14  robertj
+ * Changes to support CAT authentication in RAS.
  *
  * Revision 1.57  2002/11/28 04:41:44  robertj
  * Added support for RAS ServiceControlIndication command.
@@ -263,9 +290,10 @@
 #include <h323/h323con.h>
 #include <h323/transaddr.h>
 #include <h323/q931.h>
+#include <h323/h235auth.h>
+#include <h323/h323trans.h>
 #include <asn/h225.h>
 #include <asn/h245.h>
-#include <h323/h235auth.h>
 
 
 class H323Connection;
@@ -582,7 +610,7 @@ class H323ControlPDU : public H245_MultimediaSystemControlMessage
 
 /**Wrapper class for the H323 gatekeeper RAS channel.
  */
-class H323RasPDU : public H225_RasMessage
+class H323RasPDU : public H225_RasMessage, public H323TransactionPDU
 {
   PCLASSINFO(H323RasPDU, H225_RasMessage);
 
@@ -592,6 +620,23 @@ class H323RasPDU : public H225_RasMessage
       const H235Authenticators & authenticators
     );
 
+    // overrides from PObject
+    virtual PObject * Clone() const;
+
+    // overrides from H323TransactionPDU
+    virtual PASN_Object & GetPDU();
+    virtual PASN_Choice & GetChoice();
+    virtual const PASN_Object & GetPDU() const;
+    virtual const PASN_Choice & GetChoice() const;
+    virtual unsigned GetSequenceNumber() const;
+    virtual unsigned GetRequestInProgressDelay() const;
+#if PTRACING
+    virtual const char * GetProtocolName() const;
+#endif
+    virtual H323TransactionPDU * ClonePDU() const;
+    virtual void DeletePDU();
+
+    // new functions
     H225_GatekeeperRequest       & BuildGatekeeperRequest(unsigned seqNum);
     H225_GatekeeperConfirm       & BuildGatekeeperConfirm(unsigned seqNum);
     H225_GatekeeperReject        & BuildGatekeeperReject(unsigned seqNum, unsigned reason = H225_GatekeeperRejectReason::e_undefinedReason);
@@ -621,39 +666,17 @@ class H323RasPDU : public H225_RasMessage
     H225_ServiceControlResponse  & BuildServiceControlResponse(unsigned seqNum);
     H225_UnknownMessageResponse  & BuildUnknownMessageResponse(unsigned seqNum);
     H225_RequestInProgress       & BuildRequestInProgress(unsigned seqNum, unsigned delay);
-
-    BOOL Read(H323Transport & transport);
-    BOOL Write(H323Transport & transport);
-
-    unsigned GetSequenceNumber() const;
-
-    const H235Authenticators & GetAuthenticators() const { return authenticators; }
-    void SetAuthenticators(
-      const H235Authenticators & auth
-    ) { authenticators = auth; }
-
-    BOOL Validate(
-      const H225_ArrayOf_CryptoH323Token & cryptoTokens,
-      const PASN_Sequence & pdu,
-      unsigned optionalField
-    ) const { return authenticators.ValidatePDU(cryptoTokens, pdu, optionalField, rawPDU); }
-
-    void Prepare(
-      H225_ArrayOf_CryptoH323Token & cryptoTokens,
-      PASN_Sequence & pdu,
-      unsigned optionalField
-    ) { authenticators.PreparePDU(cryptoTokens, pdu, optionalField); }
-
-  protected:
-    H235Authenticators authenticators;
-    PPER_Stream        rawPDU;
 };
 
 
 /////////////////////////////////////////////////////////////////////////////
 
-void H323SetAliasAddresses(const PStringList & name, H225_ArrayOf_AliasAddress & aliases);
+void H323SetAliasAddresses(const H323TransportAddressArray & addresses, H225_ArrayOf_AliasAddress & aliases);
+void H323SetAliasAddresses(const PStringArray & names, H225_ArrayOf_AliasAddress & aliases, int tag = -1);
+void H323SetAliasAddresses(const PStringList & names, H225_ArrayOf_AliasAddress & aliases, int tag = -1);
+void H323SetAliasAddress(const H323TransportAddress & address, H225_AliasAddress & alias);
 void H323SetAliasAddress(const PString & name, H225_AliasAddress & alias, int tag = -1);
+PStringArray H323GetAliasAddressStrings(const H225_ArrayOf_AliasAddress & aliases);
 PString H323GetAliasAddressString(const H225_AliasAddress & alias);
 PString H323GetAliasAddressE164(const H225_AliasAddress & alias);
 PString H323GetAliasAddressE164(const H225_ArrayOf_AliasAddress & aliases);

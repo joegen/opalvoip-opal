@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323rtp.h,v $
- * Revision 1.2004  2002/11/10 11:33:17  robertj
+ * Revision 1.2005  2004/02/19 10:46:44  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.3  2002/11/10 11:33:17  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.2  2002/09/16 02:52:34  robertj
@@ -39,6 +42,13 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.11  2003/10/27 06:03:39  csoutheren
+ * Added support for QoS
+ *   Thanks to Henry Harrison of AliceStreet
+ *
+ * Revision 1.10  2003/02/07 00:27:59  robertj
+ * Changed function to virtual to help in using external multiicast RTP stacks.
  *
  * Revision 1.9  2002/09/16 01:14:15  robertj
  * Added #define so can select if #pragma interface/implementation is used on
@@ -83,6 +93,7 @@
 
 class H225_RTPSession;
 
+class H245_TransportAddress;
 class H245_H2250LogicalChannelParameters;
 class H245_H2250LogicalChannelAckParameters;
 
@@ -196,7 +207,8 @@ class H323_RTP_UDP : public H323_RTP_Session
      */
     H323_RTP_UDP(
       const H323Connection & connection, /// Owner of the RTP session
-      RTP_UDP & rtp                      /// RTP session
+      RTP_UDP & rtp,                     /// RTP session
+      RTP_QOS * rtpqos = NULL            /// QoS spec if available
     );
   //@}
 
@@ -252,6 +264,12 @@ class H323_RTP_UDP : public H323_RTP_Session
   //@}
 
   protected:
+    virtual BOOL ExtractTransport(
+      const H245_TransportAddress & pdu,
+      BOOL isDataPort,
+      unsigned & errorCode
+    );
+
     RTP_UDP & rtp;
 };
 
