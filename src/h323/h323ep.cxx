@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2027  2003/03/07 08:12:01  robertj
+ * Revision 1.2028  2004/02/19 10:47:04  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.26  2003/03/07 08:12:01  robertj
  * Removed lock not needed in new architecture, hang over from OpenH323.
  *
  * Revision 2.25  2003/03/06 03:57:47  robertj
@@ -115,6 +118,75 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.170  2004/01/26 11:42:36  rjongbloed
+ * Added pass through of port numbers to STUN client
+ *
+ * Revision 1.169  2003/12/29 04:59:25  csoutheren
+ * Added callbacks on H323EndPoint when gatekeeper discovery succeeds or fails
+ *
+ * Revision 1.168  2003/12/28 02:37:49  csoutheren
+ * Added H323EndPoint::OnOutgoingCall
+ *
+ * Revision 1.167  2003/12/28 00:06:51  csoutheren
+ * Added callbacks on H323EndPoint when gatekeeper registration succeeds or fails
+ *
+ * Revision 1.166  2003/04/28 09:01:15  robertj
+ * Fixed problem with backward compatibility with non-url based remote
+ *   addresses passed to MakeCall()
+ *
+ * Revision 1.165  2003/04/24 01:49:33  dereks
+ * Add ability to set no media timeout interval
+ *
+ * Revision 1.164  2003/04/10 09:41:26  robertj
+ * Added associated transport to new GetInterfaceAddresses() function so
+ *   interfaces can be ordered according to active transport links. Improves
+ *   interoperability.
+ *
+ * Revision 1.163  2003/04/10 01:01:56  craigs
+ * Added functions to access to lists of interfaces
+ *
+ * Revision 1.162  2003/04/07 13:09:30  robertj
+ * Added ILS support to callto URL parsing in MakeCall(), ie can now call hosts
+ *   registered with an ILS directory.
+ *
+ * Revision 1.161  2003/04/07 11:11:45  craigs
+ * Fixed compile problem on Linux
+ *
+ * Revision 1.160  2003/04/04 08:04:35  robertj
+ * Added support for URL's in MakeCall, especially h323 and callto schemes.
+ *
+ * Revision 1.159  2003/03/04 03:58:32  robertj
+ * Fixed missing local interface usage if specified in UseGatekeeper()
+ *
+ * Revision 1.158  2003/02/28 09:00:37  rogerh
+ * remove redundant code
+ *
+ * Revision 1.157  2003/02/25 23:51:49  robertj
+ * Fxied bug where not getting last port in range, thanks Sonya Cooper-Hull
+ *
+ * Revision 1.156  2003/02/09 00:48:09  robertj
+ * Added function to return if registered with gatekeeper.
+ *
+ * Revision 1.155  2003/02/05 06:32:10  robertj
+ * Fixed non-stun symmetric NAT support recently broken.
+ *
+ * Revision 1.154  2003/02/05 04:56:35  robertj
+ * Fixed setting STUN server to enpty string clearing stun variable.
+ *
+ * Revision 1.153  2003/02/04 07:06:41  robertj
+ * Added STUN support.
+ *
+ * Revision 1.152  2003/02/01 13:31:22  robertj
+ * Changes to support CAT authentication in RAS.
+ *
+ * Revision 1.151  2003/01/26 05:57:29  robertj
+ * Changed ParsePartyName so will accept addresses of the form
+ *   alias@gk:address which will do an LRQ call to "address" using "alias"
+ *   to determine the IP address to connect to.
+ *
+ * Revision 1.150  2003/01/23 02:36:32  robertj
+ * Increased (and made configurable) timeout for H.245 channel TCP connection.
  *
  * Revision 1.149  2003/01/06 06:13:37  robertj
  * Increased maximum possible jitter configuration to 10 seconds.
@@ -623,6 +695,8 @@
 #include <ptclib/random.h>
 #include <h323/h323pdu.h>
 #include <h323/gkclient.h>
+#include <ptclib/url.h>
+#include <ptclib/pils.h>
 
 
 #define new PNEW
@@ -638,6 +712,7 @@
 H323EndPoint::H323EndPoint(OpalManager & manager)
   : OpalEndPoint(manager, "h323", CanTerminateCall),
     signallingChannelCallTimeout(0, 0, 1),  // Minutes
+    controlChannelStartTimeout(0, 0, 2),    // Minutes
     endSessionTimeout(0, 10),               // Seconds
     masterSlaveDeterminationTimeout(0, 30), // Seconds
     capabilityExchangeTimeout(0, 30),       // Seconds
@@ -645,7 +720,6 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
     requestModeTimeout(0, 30),              // Seconds
     roundTripDelayTimeout(0, 10),           // Seconds
     roundTripDelayRate(0, 0, 1),            // Minutes
-    noMediaTimeout(0, 0, 5),                // Minutes
     gatekeeperRequestTimeout(0, 5),         // Seconds
     rasRequestTimeout(0, 3),                // Seconds
     callTransferT1(0,10),                   // Seconds
@@ -844,17 +918,26 @@ BOOL H323EndPoint::UseGatekeeper(const PString & address,
     }
   }
 
+  H323Transport * transport = NULL;
+  if (!localAddress.IsEmpty()) {
+    H323TransportAddress iface(localAddress);
+    PIPSocket::Address ip;
+    WORD port = H225_RAS::DefaultRasUdpPort;
+    if (iface.GetIpAndPort(ip, port))
+      transport = new H323TransportUDP(*this, ip, port);
+  }
+
   if (address.IsEmpty()) {
     if (identifier.IsEmpty())
-      return DiscoverGatekeeper();
+      return DiscoverGatekeeper(transport);
     else
-      return LocateGatekeeper(identifier);
+      return LocateGatekeeper(identifier, transport);
   }
   else {
     if (identifier.IsEmpty())
-      return SetGatekeeper(address);
+      return SetGatekeeper(address, transport);
     else
-      return SetGatekeeperZone(address, identifier);
+      return SetGatekeeperZone(address, identifier, transport);
   }
 }
 
@@ -931,6 +1014,15 @@ H323Gatekeeper * H323EndPoint::CreateGatekeeper(H323Transport * transport)
 }
 
 
+BOOL H323EndPoint::IsRegisteredWithGatekeeper() const
+{
+  if (gatekeeper == NULL)
+    return FALSE;
+
+  return gatekeeper->IsRegistered();
+}
+
+
 BOOL H323EndPoint::RemoveGatekeeper(int reason)
 {
   BOOL ok = TRUE;
@@ -962,6 +1054,21 @@ void H323EndPoint::SetGatekeeperPassword(const PString & password)
   }
 }
 
+void H323EndPoint::OnGatekeeperConfirm()
+{
+}
+
+void H323EndPoint::OnGatekeeperReject()
+{
+}
+
+void H323EndPoint::OnRegistrationConfirm()
+{
+}
+
+void H323EndPoint::OnRegistrationReject()
+{
+}
 
 H235Authenticators H323EndPoint::CreateAuthenticators()
 {
@@ -971,6 +1078,7 @@ H235Authenticators H323EndPoint::CreateAuthenticators()
   authenticators.Append(new H235AuthProcedure1);
 #endif
   authenticators.Append(new H235AuthSimpleMD5);
+  authenticators.Append(new H235AuthCAT);
 
   return authenticators;
 }
@@ -1085,7 +1193,10 @@ BOOL H323EndPoint::InternalMakeCall(OpalCall & call,
 {
   PString alias;
   H323TransportAddress address;
-  ParsePartyName(remoteParty, alias, address);
+  if (!ParsePartyName(remoteParty, alias, address)) {
+    PTRACE(2, "H323\tCould not parse \"" << remoteParty << '"');
+    return FALSE;
+  }
 
   // Restriction: the call must be made on the same transport as the one
   // that the gatekeeper is using.
@@ -1201,38 +1312,163 @@ BOOL H323EndPoint::IntrudeCall(const PString & remoteParty,
 }
 
 
-void H323EndPoint::ParsePartyName(const PString & remoteParty,
+BOOL H323EndPoint::ParsePartyName(const PString & remoteParty,
                                   PString & alias,
-                                  H323TransportAddress & address) const
+                                  H323TransportAddress & address)
 {
-  /*Determine the alias part and the address part of the remote party name
-    string. This depends on if there is an '@' to separate the alias from the
-    transport address or a '$' for if it is explicitly a transport address.
-   */
+  PURL url(remoteParty, "h323");
 
-  PINDEX colon = remoteParty.Find(':');
-  if (colon == P_MAX_INDEX || prefixName != remoteParty.Left(colon))
-    colon = 0;
-  else
-    colon++;
-
-  PString gateway;
-  PINDEX at = remoteParty.Find('@', colon);
-  if (at != P_MAX_INDEX) {
-    alias = remoteParty(colon, at-1);
-    gateway = remoteParty.Mid(at+1);
-  }
-  else if (gatekeeper != NULL)
-    alias = remoteParty.Mid(colon);
-  else {
-    alias = "";
-    gateway = remoteParty.Mid(colon);
+  // Special adjustment if 
+  if (remoteParty.Find('@') == P_MAX_INDEX &&
+      remoteParty.NumCompare(url.GetScheme()) != EqualTo) {
+    if (gatekeeper == NULL)
+      url.Parse("h323:@" + remoteParty);
+    else
+      url.Parse("h323:" + remoteParty);
   }
 
-  if (gateway.IsEmpty())
-    address = H323TransportAddress();
-  else
-    address = H323TransportAddress(gateway, defaultSignalPort);
+  alias = url.GetUserName();
+
+  address = url.GetHostName();
+  if (!address && url.GetPort() != 0)
+    address.sprintf(":%u", url.GetPort());
+
+  if (alias.IsEmpty() && address.IsEmpty()) {
+    PTRACE(1, "H323\tAttempt to use invalid URL \"" << remoteParty << '"');
+    return FALSE;
+  }
+
+  BOOL gatekeeperSpecified = FALSE;
+  BOOL gatewaySpecified = FALSE;
+
+  PCaselessString type = url.GetParamVars()("type");
+
+  if (url.GetScheme() == "callto") {
+    // Do not yet support ILS
+    if (type == "directory") {
+#if P_LDAP
+      PString server = url.GetHostName();
+      if (server.IsEmpty())
+        server = GetDefaultILSServer();
+      if (server.IsEmpty())
+        return FALSE;
+
+      PILSSession ils;
+      if (!ils.Open(server, url.GetPort())) {
+        PTRACE(1, "H323\tCould not open ILS server at \"" << server
+               << "\" - " << ils.GetErrorText());
+        return FALSE;
+      }
+
+      PILSSession::RTPerson person;
+      if (!ils.SearchPerson(alias, person)) {
+        PTRACE(1, "H323\tCould not find "
+               << server << '/' << alias << ": " << ils.GetErrorText());
+        return FALSE;
+      }
+
+      if (!person.sipAddress.IsValid()) {
+        PTRACE(1, "H323\tILS user " << server << '/' << alias
+               << " does not have a valid IP address");
+        return FALSE;
+      }
+
+      // Get the IP address
+      address = H323TransportAddress(person.sipAddress);
+
+      // Get the port if provided
+      for (PINDEX i = 0; i < person.sport.GetSize(); i++) {
+        if (person.sport[i] != 1503) { // Dont use the T.120 port
+          address = H323TransportAddress(person.sipAddress, person.sport[i]);
+          break;
+        }
+      }
+
+      alias = PString::Empty(); // No alias for ILS lookup, only host
+      return TRUE;
+#else
+      return FALSE;
+#endif
+    }
+
+    if (url.GetParamVars().Contains("gateway"))
+      gatewaySpecified = TRUE;
+  }
+  else if (url.GetScheme() == "h323") {
+    if (type == "gw")
+      gatewaySpecified = TRUE;
+    else if (type == "gk")
+      gatekeeperSpecified = TRUE;
+    else if (!type) {
+      PTRACE(1, "H323\tUnsupported host type \"" << type << "\" in h323 URL");
+      return FALSE;
+    }
+  }
+
+  // User explicitly asked fo a look up to a gk
+  if (gatekeeperSpecified) {
+    if (alias.IsEmpty()) {
+      PTRACE(1, "H323\tAttempt to use explict gatekeeper without alias!");
+      return FALSE;
+    }
+
+    if (address.IsEmpty()) {
+      PTRACE(1, "H323\tAttempt to use explict gatekeeper without address!");
+      return FALSE;
+    }
+
+    H323TransportAddress gkAddr = address;
+    PTRACE(3, "H323\tLooking for \"" << alias << "\" on gatekeeper at " << gkAddr);
+
+    H323Gatekeeper * gk = CreateGatekeeper(new H323TransportUDP(*this));
+
+    BOOL ok = gk->DiscoverByAddress(gkAddr);
+    if (ok) {
+      ok = gk->LocationRequest(alias, address);
+      if (ok) {
+        PTRACE(3, "H323\tLocation Request of \"" << alias << "\" on gk " << gkAddr << " found " << address);
+      }
+      else {
+        PTRACE(1, "H323\tLocation Request failed for \"" << alias << "\" on gk " << gkAddr);
+      }
+    }
+    else {
+      PTRACE(1, "H323\tLocation Request discovery failed for gk " << gkAddr);
+    }
+
+    delete gk;
+
+    return ok;
+  }
+
+  // User explicitly said to use a gw, or we do not have a gk to do look up
+  if (gatekeeper == NULL || gatewaySpecified) {
+    // If URL did not have a host, but user said to use gw, or we do not have
+    // a gk to do a lookup so we MUST have a host, use alias must be host
+    if (address.IsEmpty()) {
+      address = alias;
+      alias = PString::Empty();
+    }
+    return TRUE;
+  }
+
+  // We have a gatekeeper and user provided a host, all done
+  if (!address)
+    return TRUE;
+
+  // We have a gk and user did not explicitly supply a host, so lets
+  // do a check to see if it is an IP address or hostname
+  if (alias.FindOneOf("$.:[") != P_MAX_INDEX) {
+    H323TransportAddress test = alias;
+    PIPSocket::Address ip;
+    if (test.GetIpAddress(ip) && ip.IsValid()) {
+      // The alias was a valid internet address, use it as such
+      alias = PString::Empty();
+      address = test;
+    }
+  }
+
+  return TRUE;
 }
 
 
@@ -1375,6 +1611,14 @@ BOOL H323EndPoint::IsConnectionEstablished(const PString & token)
   BOOL established = connection->IsEstablished();
   connection->Unlock();
   return established;
+}
+
+
+BOOL H323EndPoint::OnOutgoingCall(H323Connection & /*connection*/,
+                                  const H323SignalPDU & /*connectPDU*/)
+{
+  PTRACE(1, "H225\tReceived connect PDU.");
+  return TRUE;
 }
 
 

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323neg.cxx,v $
- * Revision 1.2011  2002/11/10 11:33:19  robertj
+ * Revision 1.2012  2004/02/19 10:47:04  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.10  2002/11/10 11:33:19  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.9  2002/09/04 06:01:48  robertj
@@ -59,6 +62,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.69  2003/01/30 01:38:19  robertj
+ * Fixed some trace log errors
  *
  * Revision 1.68  2002/11/05 05:33:56  robertj
  * Fixed problem where if capability is rejected by OnReceivedCapabilitySet()
@@ -1506,7 +1512,7 @@ BOOL H245NegRequestMode::StartRequest(const PString & newModes)
 
 BOOL H245NegRequestMode::StartRequest(const H245_ArrayOf_ModeDescription & newModes)
 {
-  PTRACE(1, "Started request mode: outSeq=" << outSequenceNumber
+  PTRACE(1, "H245\tStarted request mode: outSeq=" << outSequenceNumber
          << (awaitingResponse ? " awaitingResponse" : " idle"));
 
   if (awaitingResponse)
