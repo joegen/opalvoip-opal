@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2017  2002/07/08 12:48:54  craigs
+ * Revision 1.2018  2002/09/12 06:58:34  robertj
+ * Removed protocol prefix strings as static members as has problems with
+ *   use in DLL environment.
+ *
+ * Revision 2.16  2002/07/08 12:48:54  craigs
  * Do not set Record-Route if it is empty.
  *    Thanks to "Babara" <openh323@objectcrafts.org>
  *
@@ -202,7 +206,7 @@ SIPURL::SIPURL(const PString & name,
       else
         s << port;
       s << ";transport=";
-      if (strncmp(address, OpalTransportAddress::TcpPrefix, strlen(OpalTransportAddress::TcpPrefix)) == 0)
+      if (strncmp(address, "tcp", 3) == 0)
         s << "tcp";
       else
         s << "udp";
@@ -266,12 +270,7 @@ PString SIPURL::AsQuotedString() const
 
 OpalTransportAddress SIPURL::GetHostAddress() const
 {
-  PString addr;
-
-  if (paramVars("transport") == "tcp")
-    addr = OpalTransportAddress::TcpPrefix;
-  else
-    addr = OpalTransportAddress::UdpPrefix;
+  PString addr = paramVars("transport", "udp") + '$';
 
   if (paramVars.Contains("maddr"))
     addr += paramVars["maddr"];
