@@ -6,7 +6,7 @@
  * Open Phone Abstraction Library (OPAL)
  * Formally known as the Open H323 project.
  *
- * Copyright (c) 2000 Equivalence Pty. Ltd.
+ * Copyright (c) 2001 Equivalence Pty. Ltd.
  *
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.0 (the "License"); you may not use this file except in
@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 1.2002  2001/08/01 05:28:59  robertj
+ * Added function to get all media formats possible in a call.
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  */
@@ -203,11 +206,23 @@ class OpalCall : public PObject
 
   /**@name Media management */
   //@{
+    /**Get the media formats of the other connections in call.
+       This returns the intersection of all the media formats that all
+       connections in the call, except the one provided as a parameter,
+       are capable of.
+
+       This will also add to the list all media formats for which there are
+       transcoders registered.
+      */
+    OpalMediaFormatList GetMediaFormats(
+      const OpalConnection & connection  /// Source requesting formats
+    );
+
     /**Get the B party to start transmitters.
       */
     virtual BOOL OpenSourceMediaStreams(
       const OpalConnection & connection,   /// Sink connection
-      const OpalMediaFormat::List & mediaFormats, /// Optional media format to open
+      const OpalMediaFormatList & mediaFormats, /// Optional media format to open
       unsigned sessionID                   /// Session to start stream on
     );
 
