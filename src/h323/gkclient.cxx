@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2013  2002/09/12 06:58:33  robertj
+ * Revision 1.2014  2002/09/13 05:16:33  robertj
+ * Fixed missing address defaults in DiscoverByNameAndAddress()
+ *
+ * Revision 2.12  2002/09/12 06:58:33  robertj
  * Removed protocol prefix strings as static members as has problems with
  *   use in DLL environment.
  *
@@ -552,7 +555,8 @@ BOOL H323Gatekeeper::DiscoverByNameAndAddress(const PString & identifier,
                                               const PString & address)
 {
   gatekeeperIdentifier = identifier;
-  return StartDiscovery(address);
+  OpalTransportAddress fullAddress(address, H225_RAS::DefaultRasUdpPort, "udp");
+  return StartDiscovery(fullAddress);
 }
 
 
