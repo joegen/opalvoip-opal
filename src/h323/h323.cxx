@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2053  2004/04/26 04:33:06  rjongbloed
+ * Revision 1.2054  2004/04/26 05:39:27  rjongbloed
+ * Fixed missing propagation of OnEstablished() call to endpoint.
+ *
+ * Revision 2.52  2004/04/26 04:33:06  rjongbloed
  * Move various call progress times from H.323 specific to general conenction.
  *
  * Revision 2.51  2004/04/25 02:53:29  rjongbloed
@@ -1971,6 +1974,7 @@ static BOOL BuildFastStartList(const H323Channel & channel,
 void H323Connection::OnEstablished()
 {
   endpoint.OnConnectionEstablished(*this, callToken);
+  endpoint.OnEstablished(*this);
 }
 
 void H323Connection::OnCleared()
