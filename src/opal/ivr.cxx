@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.cxx,v $
- * Revision 1.2004  2003/03/19 02:30:45  robertj
+ * Revision 1.2005  2003/06/02 03:15:34  rjongbloed
+ * Changed default VXML to be simple "answering machine".
+ * Added additional media format names.
+ * Allowed for Open() to be called multiple times.
+ *
+ * Revision 2.3  2003/03/19 02:30:45  robertj
  * Added removal of IVR stuff if EXPAT is not installed on system.
  *
  * Revision 2.2  2003/03/17 10:15:01  robertj
@@ -56,18 +61,15 @@
 
 OpalIVREndPoint::OpalIVREndPoint(OpalManager & mgr, const char * prefix)
   : OpalEndPoint(mgr, prefix, CanTerminateCall),
-    defaultVXML("<?xml version=\"1.0\"?>\n"
-                "<vxml version=\"1.0\">\n"
-                "<form id=\"root\">\n"
-                "  <block>\n"
-                "    <prompt>\n"
-                "      <audio src=\"welcome.wav\"/>\n"
-                "        This is the OPAL, V X M L test program.\n"
-                "        Thank you for listening.\n"
-                "    </prompt>\n"
-                "  </block>\n"
-                "</form>\n"
-                "</vxml>\n")
+    defaultVXML("<?xml version=\"1.0\"?>"
+                "<vxml version=\"1.0\">"
+                  "<form id=\"root\">"
+                    "<audio src=\"welcome.wav\">"
+                      "This is the OPAL, V X M L test program, please speak after the tone."
+                    "</audio>"
+                    "<record name=\"msg\" beep=\"true\" dtmfterm=\"true\" dest=\"recording.wav\" maxtime=\"10s\"/>"
+                  "</form>"
+                "</vxml>")
 {
   nextTokenNumber = 1;
 
@@ -216,8 +218,10 @@ OpalMediaFormatList OpalIVRConnection::GetMediaFormats() const
   // Sound card can only do 16 bit PCM
   OpalMediaFormatList formatNames;
   formatNames += OpalPCM16;
+  formatNames += OpalG7231A_6k3;
   formatNames += OpalG7231_6k3;
   formatNames += OpalG729;
+  formatNames += OpalG729A;
   return formatNames;
 }
 
@@ -267,6 +271,9 @@ OpalIVRMediaStream::OpalIVRMediaStream(const OpalMediaFormat & mediaFormat,
 
 BOOL OpalIVRMediaStream::Open()
 {
+  if (isOpen)
+    return TRUE;
+
   if (vxmlSession.IsOpen()) {
     PVXMLChannel * vxmlChannel;
     if (IsSource())
