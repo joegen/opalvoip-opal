@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalvxml.h,v $
- * Revision 1.2002  2002/11/10 11:33:17  robertj
+ * Revision 1.2003  2003/03/07 05:48:12  robertj
+ * Added OnEndSession() to automatically close connection.
+ *
+ * Revision 2.1  2002/11/10 11:33:17  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 1.15  2002/09/16 01:14:15  robertj
@@ -110,9 +113,21 @@ class OpalVXMLSession : public PVXMLSession
 {
   PCLASSINFO(OpalVXMLSession, PVXMLSession);
   public:
-    OpalVXMLSession(OpalConnection * _conn, PTextToSpeech * tts = NULL, BOOL autoDelete = FALSE);
-    PWAVFile * CreateWAVFile(const PFilePath & fn, PFile::OpenMode mode, int opts, unsigned fmt);
-    BOOL Close();
+    OpalVXMLSession(
+      OpalConnection * _conn,
+      PTextToSpeech * tts = NULL,
+      BOOL autoDelete = FALSE
+    );
+
+    virtual BOOL Close();
+    virtual void OnEndSession();
+
+    virtual PWAVFile * CreateWAVFile(
+      const PFilePath & fn,
+      PFile::OpenMode mode,
+      int opts,
+      unsigned fmt
+    );
 
   protected:
     OpalConnection * conn;
