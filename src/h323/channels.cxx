@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2002  2001/07/30 01:40:01  robertj
+ * Revision 1.2003  2001/08/01 05:17:45  robertj
+ * Made OpalMediaFormatList class global to help with documentation.
+ *
+ * Revision 2.1  2001/07/30 01:40:01  robertj
  * Fixed GNU C++ warnings.
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
@@ -585,7 +588,7 @@ BOOL H323UnidirectionalChannel::Open()
     return FALSE;
 
   OpalMediaFormat mediaFormat = capability.GetMediaFormat();
-  if (!mediaFormat.IsValid()) {
+  if (mediaFormat.IsEmpty()) {
     PTRACE(1, "LogChan\t" << (GetDirection() == IsReceiver ? "Receive" : "Transmit")
            << " open failed (Invalid OpalMediaFormat)");
     return FALSE;
