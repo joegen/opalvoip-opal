@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2011  2002/02/13 08:17:31  robertj
+ * Revision 1.2012  2002/03/27 04:16:20  robertj
+ * Restructured default router for sample to allow more options.
+ *
+ * Revision 2.10  2002/02/13 08:17:31  robertj
  * Changed routing algorithm to route call to H323/SIP if contains an '@'
  *
  * Revision 2.9  2002/02/11 09:45:35  robertj
@@ -519,7 +522,10 @@ void MyManager::Main(PArgList & args)
 
 PString MyManager::OnRouteConnection(OpalConnection & connection)
 {
+  PString sourceProtocol = connection.GetEndPoint().GetPrefixName();
   PString addr = connection.GetDestinationAddress();
+  PTRACE(2, "Sample\tRouting connection from " << sourceProtocol << " to " << addr);
+
   if (addr.IsEmpty())
     return addr;
 
@@ -527,76 +533,74 @@ PString MyManager::OnRouteConnection(OpalConnection & connection)
   if (addr.Find(':') != P_MAX_INDEX)
     return addr;
 
-  PString sourceProtocol = connection.GetEndPoint().GetPrefixName();
+  const char * destProtocol = NULL;
+  PStringArray stars;
+
   if (sourceProtocol == "pots" || sourceProtocol == "pstn") {
-    PStringStream route;
+    stars = addr.Tokenise('*');
 
     if (sipEP != NULL)
-      route << "sip:";
+      destProtocol = sipEP->GetPrefixName();
     else if (h323EP != NULL)
-      route << "h323:";
+      destProtocol = h323EP->GetPrefixName();
     else
-      return PString();
-
-    if (!gateway.IsEmpty())
-      return route + addr + '@' + gateway;
-
-    PStringArray stars = addr.Tokenise('*');
-    switch (stars.GetSize()) {
-      case 0 :
-      case 1 :
-      case 2 :
-      case 3 :
-        route << addr << '@';
-        break;
-
-      case 4 :
-        route << stars[0] << '.' << stars[1] << '.'<< stars[2] << '.'<< stars[3];
-        break;
-
-      case 5 :
-        route << stars[0] << '@'
-              << stars[1] << '.' << stars[2] << '.'<< stars[3] << '.'<< stars[4];
-        break;
-
-      default :
-        route << stars[0] << '@'
-              << stars[1] << '.' << stars[2] << '.'<< stars[3] << '.'<< stars[4]
-              << ':' << stars[5];
-        break;
+      destProtocol = sourceProtocol == "pstn" ? "pots" : "pstn";
+  }
+  else {
+    if (addr.Find('@') == P_MAX_INDEX) {
+      if (potsEP != NULL) // Route to local phone, if loaded
+        destProtocol = potsEP->GetPrefixName();
+      else if (pcssEP != NULL) // Route it to the PC, if loaded
+        destProtocol = pcssEP->GetPrefixName();
     }
-
-    return route;
+    if (destProtocol == NULL) {
+      if (sourceProtocol == "h323") {
+        if (sipEP != NULL)
+          destProtocol = sipEP->GetPrefixName();   // H.323 -> SIP gateway
+        else
+          destProtocol = h323EP->GetPrefixName();  // H.323 -> H.323 gateway
+      }
+      else if (sourceProtocol == "sip") {
+        if (h323EP != NULL)
+          destProtocol = h323EP->GetPrefixName();  // SIP -> H.323 gateway
+      }
+    }
   }
 
-  if (addr.Find('@') == P_MAX_INDEX) {
-    // Route to local phone, if loaded
-    if (potsEP != NULL)
-      return "pots:" + addr;
+  if (destProtocol == NULL)
+    return PString::Empty(); // Cannot route call
 
-    // Route it to the PC, if loaded
-    if (pcssEP != NULL)
-      return "pc:" + addr;
+  PStringStream route;
+  route << destProtocol << ':';
+
+  switch (stars.GetSize()) {
+    case 0 :
+    case 1 :
+    case 2 :
+    case 3 :
+      route << addr;
+      break;
+
+    case 4 :
+      route << stars[0] << '.' << stars[1] << '.'<< stars[2] << '.'<< stars[3];
+      break;
+
+    case 5 :
+      route << stars[0] << '@'
+            << stars[1] << '.' << stars[2] << '.'<< stars[3] << '.'<< stars[4];
+      break;
+
+    default :
+      route << stars[0] << '@'
+            << stars[1] << '.' << stars[2] << '.'<< stars[3] << '.'<< stars[4]
+            << ':' << stars[5];
+      break;
   }
 
-  // H.323 -> SIP gateway
-  if (sourceProtocol == "h323" && sipEP != NULL) {
-    if (!gateway.IsEmpty())
-      return "sip:" + addr + '@' + gateway;
-    else
-      return "sip:" + addr;
-  }
+  if (!gateway.IsEmpty())
+    route << '@' <<gateway;
 
-  // SIP -> H.323 gateway
-  if (sourceProtocol == "sip" && h323EP != NULL) {
-    if (!gateway.IsEmpty())
-      return "h323:" + addr + '@' + gateway;
-      else
-    return "h323:" + addr;
-  }
-
-  // Cannot route call
-  return PString();
+  return route;
 }
 
 
