@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g726codec.cxx,v $
- * Revision 1.2007  2004/09/01 12:21:27  rjongbloed
+ * Revision 1.2008  2005/02/21 12:19:52  rjongbloed
+ * Added new "options list" to the OpalMediaFormat class.
+ *
+ * Revision 2.6  2004/09/01 12:21:27  rjongbloed
  * Added initialisation of H323EndPoints capability table to be all codecs so can
  *   correctly build remote caps from fqast connect params. This had knock on effect
  *   with const keywords added in numerous places.
@@ -68,46 +71,37 @@ extern "C" {
 #define new PNEW
 
 
-OpalMediaFormat const OpalG726_40(OPAL_G726_40,
-                                  OpalMediaFormat::DefaultAudioSessionID,
-                                  RTP_DataFrame::G721,
-                                  "G721",
-                                  TRUE,  // Needs jitter
-                                  40000, // bits/sec
-                                  5,  // 4 bytes per "frame"
-                                  8,  // 1 millisecond
-                                  OpalMediaFormat::AudioClockRate);
+static OpalAudioFormat OpalG726_40(
+  OPAL_G726_40,
+  RTP_DataFrame::G721,
+  "G721",
+  5,  // 5 bytes per "frame"
+  8,  // 1 millisecond
+  250, 30);
 
-OpalMediaFormat const OpalG726_32(OPAL_G726_32,
-                                  OpalMediaFormat::DefaultAudioSessionID,
-                                  RTP_DataFrame::G721,
-                                  "G721",
-                                  TRUE,  // Needs jitter
-                                  32000, // bits/sec
-                                  4,  // 4 bytes per "frame"
-                                  8,  // 1 millisecond
-                                  OpalMediaFormat::AudioClockRate);
+static OpalAudioFormat  OpalG726_32(
+  OPAL_G726_32,
+  RTP_DataFrame::G721,
+  "G721",
+  4,  // 4 bytes per "frame"
+  8,  // 1 millisecond
+  250, 30);
 
-OpalMediaFormat const OpalG726_24(OPAL_G726_24,
-                                  OpalMediaFormat::DefaultAudioSessionID,
-                                  RTP_DataFrame::G721,
-                                  "G721",
-                                  TRUE,  // Needs jitter
-                                  24000, // bits/sec
-                                  3,  // 4 bytes per "frame"
-                                  8,  // 1 millisecond
-                                  OpalMediaFormat::AudioClockRate);
+static OpalAudioFormat  OpalG726_24(
+  OPAL_G726_24,
+  RTP_DataFrame::G721,
+  "G721",
+  3,  // 4 bytes per "frame"
+  8,  // 1 millisecond
+  250, 30);
 
-OpalMediaFormat const OpalG726_16(OPAL_G726_16,
-                                  OpalMediaFormat::DefaultAudioSessionID,
-                                  RTP_DataFrame::G721,
-                                  "G721",
-                                  TRUE,  // Needs jitter
-                                  16000, // bits/sec
-                                  2,  // 4 bytes per "frame"
-                                  8,  // 1 millisecond
-                                  OpalMediaFormat::AudioClockRate);
-
+static OpalAudioFormat  OpalG726_16(
+  OPAL_G726_16,
+  RTP_DataFrame::G721,
+  "G721",
+  2,  // 4 bytes per "frame"
+  8,  // 1 millisecond
+  250, 30);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -129,7 +123,7 @@ static G726_NonStandardInfo const G726_NonStandard[H323_G726_Capability::NumSpee
 
 
 H323_G726_Capability::H323_G726_Capability(const H323EndPoint & endpoint, Speeds s)
-    : H323NonStandardAudioCapability(240, 10, endpoint,
+    : H323NonStandardAudioCapability(endpoint,
                                      (const BYTE *)&G726_NonStandard[s],
                                      sizeof(G726_NonStandardInfo),
                                      0, sizeof(G726_NonStandard[s].name))
