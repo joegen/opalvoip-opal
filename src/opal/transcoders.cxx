@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2003  2002/02/13 02:30:37  robertj
+ * Revision 1.2004  2003/03/17 10:27:00  robertj
+ * Added video support.
+ *
+ * Revision 2.2  2002/02/13 02:30:37  robertj
  * Added ability for media patch (and transcoders) to handle multiple RTP frames.
  *
  * Revision 2.1  2001/08/01 05:46:55  robertj
@@ -89,8 +92,11 @@ PString OpalTranscoderRegistration::GetOutputFormat() const
 /////////////////////////////////////////////////////////////////////////////
 
 OpalTranscoder::OpalTranscoder(const OpalTranscoderRegistration & reg)
-  : registration(reg)
+  : registration(reg),
+    inputMediaFormat(reg.GetInputFormat()),
+    outputMediaFormat(reg.GetOutputFormat())
 {
+  maxOutputPayloadSize = MaxEthernetPayloadSize;
 }
 
 
@@ -111,6 +117,8 @@ BOOL OpalTranscoder::ConvertFrames(const RTP_DataFrame & input,
       output.RemoveAt(1);
   }
 
+  output[0].SetPayloadType(outputMediaFormat.GetPayloadType());
+  output[0].SetTimestamp(input.GetTimestamp());
   return Convert(input, output[0]);
 }
 
@@ -245,7 +253,7 @@ OpalMediaFormatList OpalTranscoder::GetSourceFormats(const OpalMediaFormat & dst
 /////////////////////////////////////////////////////////////////////////////
 
 OpalFramedTranscoder::OpalFramedTranscoder(const OpalTranscoderRegistration & registration,
-                                           unsigned inputBytes, unsigned outputBytes)
+                                           PINDEX inputBytes, PINDEX outputBytes)
   : OpalTranscoder(registration),
     partialFrame(inputBytes)
 {
@@ -255,7 +263,7 @@ OpalFramedTranscoder::OpalFramedTranscoder(const OpalTranscoderRegistration & re
 }
 
 
-unsigned OpalFramedTranscoder::GetOptimalDataFrameSize(BOOL input) const
+PINDEX OpalFramedTranscoder::GetOptimalDataFrameSize(BOOL input) const
 {
   return input ? inputBytesPerFrame : outputBytesPerFrame;
 }
@@ -264,7 +272,7 @@ unsigned OpalFramedTranscoder::GetOptimalDataFrameSize(BOOL input) const
 BOOL OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFrame & output)
 {
   const BYTE * inputPtr = input.GetPayloadPtr();
-  unsigned inputLength = input.GetPayloadSize();
+  PINDEX inputLength = input.GetPayloadSize();
   output.SetPayloadSize(inputLength/inputBytesPerFrame*outputBytesPerFrame);
   BYTE * outputPtr = output.GetPayloadPtr();
 
@@ -315,7 +323,7 @@ BOOL OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFrame & 
 OpalStreamedTranscoder::OpalStreamedTranscoder(const OpalTranscoderRegistration & registration,
                                                unsigned inputBits,
                                                unsigned outputBits,
-                                               unsigned optimal)
+                                               PINDEX optimal)
   : OpalTranscoder(registration)
 {
   inputBitsPerSample = inputBits;
@@ -324,7 +332,7 @@ OpalStreamedTranscoder::OpalStreamedTranscoder(const OpalTranscoderRegistration 
 }
 
 
-unsigned OpalStreamedTranscoder::GetOptimalDataFrameSize(BOOL input) const
+PINDEX OpalStreamedTranscoder::GetOptimalDataFrameSize(BOOL input) const
 {
   return ((input ? inputBitsPerSample : outputBitsPerSample)+7)/8 * optimalSamples;
 }
@@ -438,21 +446,6 @@ BOOL OpalStreamedTranscoder::Convert(const RTP_DataFrame & input,
   }
 
   return TRUE;
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-
-OpalVideoTranscoder::OpalVideoTranscoder(const OpalTranscoderRegistration & registration)
-  : OpalTranscoder(registration)
-{
-  frameWidth = frameHeight = 0;
-}
-
-
-unsigned OpalVideoTranscoder::GetOptimalDataFrameSize(BOOL) const
-{
-  return 0;
 }
 
 

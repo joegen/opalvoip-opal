@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2023  2003/03/07 08:13:42  robertj
+ * Revision 1.2024  2003/03/17 10:27:00  robertj
+ * Added video support.
+ *
+ * Revision 2.22  2003/03/07 08:13:42  robertj
  * Fixed validation of "protocol:" part of address in routing system.
  *
  * Revision 2.21  2003/03/06 03:57:47  robertj
@@ -108,6 +111,8 @@
 
 #include <opal/patch.h>
 #include <opal/mediastrm.h>
+#include <codec/vidcodec.h>
+
 #include "../../version.h"
 
 
@@ -187,6 +192,10 @@ OpalManager::OpalManager()
 
   minAudioJitterDelay = 50;  // milliseconds
   maxAudioJitterDelay = 250; // milliseconds
+
+  PStringList grabbers = PVideoInputDevice::GetInputDeviceNames();
+  if (grabbers.GetSize() > 0)
+    videoInputDevice.deviceName = grabbers[0];
 
   lastCallTokenID = 1;
 
@@ -526,6 +535,43 @@ void OpalManager::OnClosedMediaStream(const OpalMediaStream & /*channel*/)
 }
 
 
+void OpalManager::AddVideoMediaFormats(const OpalConnection & /*connection*/,
+                                       OpalMediaFormatList & mediaFormats) const
+{
+  if (!videoInputDevice.deviceName) {
+    mediaFormats += OpalRGB24;
+    mediaFormats += OpalRGB32;
+    mediaFormats += OpalYUV420P;
+  }
+}
+
+
+PVideoInputDevice * OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection*/)
+{
+  PVideoInputDevice * videoDevice = new PVideoInputDevice();
+  if (videoDevice->OpenFull(videoInputDevice, FALSE))
+    return videoDevice;
+
+  delete videoDevice;
+  return NULL;
+}
+
+
+PVideoOutputDevice * OpalManager::CreateVideoOutputDevice(const OpalConnection & /*connection*/)
+{
+  PVideoOutputDevice * videoDevice = NULL;
+
+  if (videoOutputDevice.deviceName.IsEmpty() || videoOutputDevice.deviceName == "NULL") {
+    videoDevice = new PVideoOutputDeviceNULL();
+    if (videoDevice->OpenFull(videoOutputDevice))
+      return videoDevice;
+  }
+
+  delete videoDevice;
+  return NULL;
+}
+
+
 OpalMediaPatch * OpalManager::CreateMediaPatch(OpalMediaStream & source)
 {
   return new OpalMediaPatch(source);
@@ -716,20 +762,6 @@ PString OpalManager::ApplyRouteTable(const PString & proto, const PString & addr
 }
 
 
-void OpalManager::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
-{
-  PAssert(minDelay <= 10000 && maxDelay <= 10000, PInvalidParameter);
-
-  if (minDelay < 10)
-    minDelay = 10;
-  minAudioJitterDelay = minDelay;
-
-  if (maxDelay < minDelay)
-    maxDelay = minDelay;
-  maxAudioJitterDelay = maxDelay;
-}
-
-
 BOOL OpalManager::TranslateIPAddress(PIPSocket::Address & /*localAddr*/,
                                      const PIPSocket::Address & /*remoteAddr */)
 {
@@ -818,6 +850,48 @@ void OpalManager::SetRtpIpPorts(unsigned rtpIpBase, unsigned rtpIpMax)
 WORD OpalManager::GetRtpIpPortPair()
 {
   return rtpIpPorts.GetNext(2);
+}
+
+
+void OpalManager::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
+{
+  PAssert(minDelay <= 10000 && maxDelay <= 10000, PInvalidParameter);
+
+  if (minDelay < 10)
+    minDelay = 10;
+  minAudioJitterDelay = minDelay;
+
+  if (maxDelay < minDelay)
+    maxDelay = minDelay;
+  maxAudioJitterDelay = maxDelay;
+}
+
+
+BOOL OpalManager::SetVideoInputDevice(const PVideoDevice::OpenArgs & args)
+{
+  PStringList grabbers = PVideoInputDevice::GetInputDeviceNames();
+
+  if (args.deviceName[0] == '#') {
+    PINDEX id = args.deviceName.Mid(1).AsUnsigned();
+    if (id == 0 || id > grabbers.GetSize())
+      return FALSE;
+    videoInputDevice = args;
+    videoInputDevice.deviceName = grabbers[id-1];
+  }
+  else {
+    if (grabbers.GetValuesIndex(args.deviceName) == P_MAX_INDEX)
+      return FALSE;
+    videoInputDevice = args;
+  }
+
+  return TRUE;
+}
+
+
+BOOL OpalManager::SetVideoOutputDevice(const PVideoDevice::OpenArgs & args)
+{
+  videoOutputDevice = args;
+  return TRUE;
 }
 
 
