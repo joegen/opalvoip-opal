@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2001/08/01 05:45:34  robertj
+ * Made OpalMediaFormatList class global to help with documentation.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.3  2001/05/11 04:43:43  robertj
@@ -56,7 +59,7 @@
 
 OpalMediaFormat const OpalPCM16(
   OPAL_PCM16,
-  RTP_Session::DefaultAudioSessionID,
+  OpalMediaFormat::DefaultAudioSessionID,
   RTP_DataFrame::L16_Mono,
   TRUE,   // Needs jitter
   128000, // bits/sec
@@ -67,7 +70,7 @@ OpalMediaFormat const OpalPCM16(
 
 OpalMediaFormat const OpalG711uLaw(
   OPAL_G711_ULAW_64K,
-  RTP_Session::DefaultAudioSessionID,
+  OpalMediaFormat::DefaultAudioSessionID,
   RTP_DataFrame::PCMU,
   TRUE,   // Needs jitter
   64000, // bits/sec
@@ -78,7 +81,7 @@ OpalMediaFormat const OpalG711uLaw(
 
 OpalMediaFormat const OpalG711ALaw(
   OPAL_G711_ALAW_64K,
-  RTP_Session::DefaultAudioSessionID,
+  OpalMediaFormat::DefaultAudioSessionID,
   RTP_DataFrame::PCMA,
   TRUE,   // Needs jitter
   64000, // bits/sec
@@ -89,7 +92,7 @@ OpalMediaFormat const OpalG711ALaw(
 
 OpalMediaFormat const OpalG728(  
   OPAL_G728,
-  RTP_Session::DefaultAudioSessionID,
+  OpalMediaFormat::DefaultAudioSessionID,
   RTP_DataFrame::G728,
   TRUE, // Needs jitter
   16000,// bits/sec
@@ -98,9 +101,31 @@ OpalMediaFormat const OpalG728(
   OpalMediaFormat::AudioTimeUnits
 );
 
+OpalMediaFormat const OpalG729( 
+  OPAL_G729,
+  OpalMediaFormat::DefaultAudioSessionID,
+  RTP_DataFrame::G729,
+  TRUE, // Needs jitter
+  8000, // bits/sec
+  10,   // bytes
+  80,   // 10 milliseconds
+  OpalMediaFormat::AudioTimeUnits
+);
+
 OpalMediaFormat const OpalG729A( 
   OPAL_G729A,
-  RTP_Session::DefaultAudioSessionID,
+  OpalMediaFormat::DefaultAudioSessionID,
+  RTP_DataFrame::G729,
+  TRUE, // Needs jitter
+  8000, // bits/sec
+  10,   // bytes
+  80,   // 10 milliseconds
+  OpalMediaFormat::AudioTimeUnits
+);
+
+OpalMediaFormat const OpalG729B(
+  OPAL_G729B,
+  OpalMediaFormat::DefaultAudioSessionID,
   RTP_DataFrame::G729,
   TRUE, // Needs jitter
   8000, // bits/sec
@@ -111,7 +136,7 @@ OpalMediaFormat const OpalG729A(
 
 OpalMediaFormat const OpalG729AB(
   OPAL_G729AB,
-  RTP_Session::DefaultAudioSessionID,
+  OpalMediaFormat::DefaultAudioSessionID,
   RTP_DataFrame::G729,
   TRUE, // Needs jitter
   8000, // bits/sec
@@ -122,12 +147,23 @@ OpalMediaFormat const OpalG729AB(
 
 OpalMediaFormat const OpalG7231(
   OPAL_G7231,
-  RTP_Session::DefaultAudioSessionID,
+  OpalMediaFormat::DefaultAudioSessionID,
   RTP_DataFrame::G7231,
   TRUE, // Needs jitter
   6400, // bits/sec
   24,   // bytes
   240,  // 30 milliseconds
+  OpalMediaFormat::AudioTimeUnits
+);
+
+OpalMediaFormat const OpalGSM0610(
+  OPAL_GSM0610,
+  OpalMediaFormat::DefaultAudioSessionID,
+  RTP_DataFrame::GSM,
+  TRUE,  // Needs jitter
+  13200, // bits/sec
+  33,    // bytes
+  160,   // 20 milliseconds
   OpalMediaFormat::AudioTimeUnits
 );
 
@@ -146,25 +182,15 @@ OpalMediaFormat::OpalMediaFormat()
 }
 
 
-OpalMediaFormat::OpalMediaFormat(const char * search, BOOL exact)
-  : PCaselessString(search)
+OpalMediaFormat::OpalMediaFormat(const char * wildcard)
 {
-  rtpPayloadType = RTP_DataFrame::MaxPayloadType;
+  operator=(PString(wildcard));
+}
 
-  needsJitter = FALSE;
-  bandwidth = 0;
-  frameSize = 0;
-  frameTime = 0;
-  timeUnits = 0;
 
-  const List & registeredFormats = GetRegisteredMediaFormats();
-  for (PINDEX i = 0; i < registeredFormats.GetSize(); i++) {
-    if (exact ? (registeredFormats[i] == search)
-              : (registeredFormats[i].Find(search) != P_MAX_INDEX)) {
-      *this = registeredFormats[i];
-      return;
-    }
-  }
+OpalMediaFormat::OpalMediaFormat(const PString & wildcard)
+{
+  operator=(wildcard);
 }
 
 
@@ -187,7 +213,7 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
   timeUnits = tu;
 
   PINDEX i;
-  List & registeredFormats = GetMediaFormatsList();
+  OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
 
   if ((i = registeredFormats.GetValuesIndex(*this)) != P_MAX_INDEX) {
     *this = registeredFormats[i]; // Already registered, use previous values
@@ -206,65 +232,118 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
     } while (i < registeredFormats.GetSize());
   }
 
-  registeredFormats.Append(this);
+  registeredFormats.OpalMediaFormatBaseList::Append(this);
 }
 
 
-OpalMediaFormat & OpalMediaFormat::operator=(const char * search)
+OpalMediaFormat & OpalMediaFormat::operator=(const char * wildcard)
 {
-  rtpPayloadType = RTP_DataFrame::MaxPayloadType;
+  return operator=(PString(wildcard));
+}
 
-  needsJitter = FALSE;
-  bandwidth = 0;
-  frameSize = 0;
-  frameTime = 0;
-  timeUnits = 0;
 
-  const List & registeredFormats = GetRegisteredMediaFormats();
-  for (PINDEX i = 0; i < registeredFormats.GetSize(); i++) {
-    if (registeredFormats[i] == search) {
-      *this = registeredFormats[i];
-      break;
-    }
+OpalMediaFormat & OpalMediaFormat::operator=(const PString & wildcard)
+{
+  const OpalMediaFormatList & registeredFormats = GetRegisteredMediaFormats();
+  PINDEX idx = registeredFormats.FindFormat(wildcard);
+  if (idx != P_MAX_INDEX)
+    *this = registeredFormats[idx];
+  else {
+    PCaselessString::operator=(PString());
+
+    rtpPayloadType = RTP_DataFrame::MaxPayloadType;
+    needsJitter = FALSE;
+    bandwidth = 0;
+    frameSize = 0;
+    frameTime = 0;
+    timeUnits = 0;
   }
 
   return *this;
 }
 
 
-OpalMediaFormat::List & OpalMediaFormat::GetMediaFormatsList()
+OpalMediaFormatList & OpalMediaFormat::GetMediaFormatsList()
 {
-  static List registeredFormats(TRUE);
+  static OpalMediaFormatList registeredFormats;
   return registeredFormats;
 }
 
 
-OpalMediaFormat::List::List(BOOL disallow)
+OpalMediaFormatList::OpalMediaFormatList()
 {
-  if (disallow)
-    DisallowDeleteObjects();
+  DisallowDeleteObjects();
 }
 
 
-OpalMediaFormat::List & OpalMediaFormat::List::operator+=(const OpalMediaFormat & format)
+OpalMediaFormatList & OpalMediaFormatList::operator+=(const OpalMediaFormat & format)
 {
-  if (format.IsValid()) {
-    PINDEX idx = GetValuesIndex(format);
-    if (idx == P_MAX_INDEX)
-      Append(new OpalMediaFormat(format));
+  if (!format) {
+    if (!HasFormat(format)) {
+      const OpalMediaFormatList & registeredFormats = OpalMediaFormat::GetRegisteredMediaFormats();
+      PINDEX idx = registeredFormats.FindFormat(format);
+      if (idx != P_MAX_INDEX)
+        OpalMediaFormatBaseList::Append(&registeredFormats[idx]);
+    }
   }
-
   return *this;
 }
 
 
-OpalMediaFormat::List & OpalMediaFormat::List::operator-=(const OpalMediaFormat & format)
+OpalMediaFormatList & OpalMediaFormatList::operator-=(const OpalMediaFormat & format)
 {
-  PINDEX idx = GetValuesIndex(format);
+  PINDEX idx = FindFormat(format);
   if (idx != P_MAX_INDEX)
     RemoveAt(idx);
 
   return *this;
+}
+
+
+PINDEX OpalMediaFormatList::FindFormat(const PString & search) const
+{
+  PINDEX idx;
+  PStringArray wildcards = search.Tokenise('*', TRUE);
+  if (wildcards.GetSize() == 1) {
+    for (idx = 0; idx < GetSize(); idx++) {
+      if ((*this)[idx] == search)
+        return idx;
+    }
+  }
+  else {
+    for (idx = 0; idx < GetSize(); idx++) {
+      PCaselessString str = (*this)[idx];
+
+      PINDEX last = 0;
+      for (PINDEX i = 0; i < wildcards.GetSize(); i++) {
+        PString wildcard = wildcards[i];
+
+        PINDEX next;
+        if (wildcard.IsEmpty())
+          next = last;
+        else {
+          next = str.Find(wildcard, last);
+          if (next == P_MAX_INDEX)
+            break;
+        }
+
+        // Check for having * at beginning of search string
+        if (i == 0 && next != 0 && !wildcard)
+          break;
+
+        last = next + wildcard.GetLength();
+
+        // Check for having * at end of search string
+        if (i == search.GetSize()-1 && !wildcard && last != str.GetLength())
+          break;
+      }
+
+      if (i >= search.GetSize())
+        return idx;
+    }
+  }
+
+  return P_MAX_INDEX;
 }
 
 
