@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2007  2002/03/15 10:55:28  robertj
+ * Revision 1.2008  2002/04/05 10:42:04  robertj
+ * Major changes to support transactions (UDP timeouts and retries).
+ *
+ * Revision 2.6  2002/03/15 10:55:28  robertj
  * Added ability to specify proxy username/password in URL.
  *
  * Revision 2.5  2002/03/08 06:28:19  craigs
@@ -79,7 +82,7 @@ class SIPConnection : public OpalConnection
       OpalCall & call,            /// Owner calll for connection
       SIPEndPoint & endpoint,     /// Owner endpoint for connection
       const PString & token,      /// token to identify the connection
-      SIP_PDU * invite            /// Original INVITE pdu
+      OpalTransport * transport   /// Transport INVITE came in on
     );
 
     /**Destroy connection.
@@ -190,12 +193,18 @@ class SIPConnection : public OpalConnection
       const PString & calleeName    /// Name of endpoint being alerted.
     );
   //@}
-  
+
   /**@name Protocol handling functions */
   //@{
+    /**Handle the fail of a transaction we initiated.
+      */
+    virtual void OnTransactionFailed(
+      SIPTransaction & transaction
+    );
+
     /**Handle an incoming SIP PDU that has been full decoded
       */
-    virtual BOOL OnReceivedPDU(SIP_PDU & pdu);
+    virtual void OnReceivedPDU(SIP_PDU & pdu);
 
     /**Handle an incoming INVITE request
       */
@@ -217,10 +226,13 @@ class SIPConnection : public OpalConnection
       */
     virtual void OnReceivedCANCEL(SIP_PDU & pdu);
   
-    /**Handle an incoming REGISTER PDU
+    /**Handle an incoming response PDU.
       */
-    virtual void OnReceivedREGISTER(SIP_PDU & pdu);
-  
+    virtual void OnReceivedResponse(
+      SIPTransaction & transaction,
+      SIP_PDU & response
+    );
+
     /**Handle an incoming Trying response PDU
       */
     virtual void OnReceivedTrying(SIP_PDU & pdu);
@@ -237,26 +249,40 @@ class SIPConnection : public OpalConnection
       */
     virtual void OnReceivedRedirection(SIP_PDU & pdu);
 
-    /**Handle an incoming OK response PDU
+    /**Handle an incoming OK response PDU.
+       This actually gets any PDU of the class 2xx not just 200.
       */
-    virtual void OnReceivedOK(SIP_PDU & pdu);
+    virtual void OnReceivedOK(
+      SIPTransaction & transaction,
+      SIP_PDU & response
+    );
   
-    /**Handle an incoming response PDU, if not handled by specific function.
+    /**Queue a PDU for the PDU handler thread to handle.
+       Any listener threads on the endpoint upon receiving a PDU and
+       determining the SIPConnection to use from the Call-ID field queues up
+       the PDU so that it can get back to getting PDU's as quickly as
+       possible. All time consuming operations on the PDU are done in the
+       separate thread.
       */
-    virtual void OnReceivedResponse(SIP_PDU & pdu);
+    void QueuePDU(
+      SIP_PDU * pdu
+    );
   //@}
 
     void SendResponse(SIP_PDU::StatusCodes code, const char * str = NULL);
 
-    PINDEX GetLastSentCSeq() const { return lastSentCseq; }
+    unsigned GetNextCSeq() { return ++lastSentCSeq; }
 
     void InitiateCall(
       const SIPURL & destination
     );
+
     SDPSessionDescription * BuildSDP();
 
     OpalTransportAddress GetLocalAddress(WORD port = 0) const;
     RTP_Session * UseSession(unsigned rtpSessionId);
+
+    OpalTransport & GetTransport() const { return *transport; }
 
     PString GetLocalPartyAddress() const { return localPartyAddress; }
     void SetLocalPartyAddress();
@@ -266,12 +292,20 @@ class SIPConnection : public OpalConnection
 
     SIPEndPoint & GetEndPoint() const { return endpoint; }
 
-    void AddAuthorisation(SIP_PDU & pdu);
+    const SIPAuthentication & GetAuthentication() const { return authentication; }
+
+    void AddTransaction(
+      SIPTransaction * transaction
+    ) { transactions.SetAt(transaction->GetTransactionID(), transaction); }
+
+    void RemoveTransaction(
+      SIPTransaction * transaction
+    ) { transactions.SetAt(transaction->GetTransactionID(), NULL); }
 
   protected:
-    PDECLARE_NOTIFIER(PThread, SIPConnection, InitiateCallThreadMain);
     PDECLARE_NOTIFIER(PThread, SIPConnection, HandlePDUsThreadMain);
     virtual void OnReceivedSDP(SIP_PDU & pdu);
+    static BOOL WriteINVITE(OpalTransport & transport, PObject * param);
 
     SIPEndPoint   & endpoint;
     Phases          currentPhase;
@@ -280,18 +314,22 @@ class SIPConnection : public OpalConnection
     PString   localPartyAddress;
     SIP_PDU * originalInvite;
     SIPURL    originalDestination;
+    SIPAuthentication authentication;
 
-    unsigned inviteCSeq;
-    //unsigned expectedCseq;
-    unsigned lastSentCseq;
-    unsigned lastReceivedCseq;
-    BOOL     haveLastReceivedCseq;
+    SIP_PDU_Queue pduQueue;
+    PSemaphore    pduSemaphore;
+    PThread     * pduHandler;
 
-    BOOL     sendBYE;
-    BOOL     isProxyAuthenticate;
-    PString  realm;
-    PString  nonce;
-    PString  password;
+    SIPTransactionList invitations;
+    SIPTransactionDict transactions;
+    unsigned           lastSentCSeq;
+
+    enum {
+      ReleaseWithBYE,
+      ReleaseWithCANCEL,
+      ReleaseWithResponse,
+      ReleaseWithNothing,
+    } releaseMethod;
 
     OpalMediaFormatList remoteFormatList;
     RTP_SessionManager  rtpSessions;

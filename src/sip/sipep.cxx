@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2002  2002/02/01 04:53:01  robertj
+ * Revision 1.2003  2002/04/05 10:42:04  robertj
+ * Major changes to support transactions (UDP timeouts and retries).
+ *
+ * Revision 2.1  2002/02/01 04:53:01  robertj
  * Added (very primitive!) SIP support.
  *
  */
@@ -40,14 +43,8 @@
 #include <sip/sippdu.h>
 #include <sip/sipcon.h>
 
-//#include <ptclib/cypher.h>
 #include <opal/manager.h>
-//#include <opal/call.h>
-//#include <opal/patch.h>
-//#include <codec/rfc2833.h>
 
-
-#define	ALLOWED_METHODS	"INVITE"
 
 #define new PNEW
 
@@ -57,11 +54,18 @@
 SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   : OpalEndPoint(mgr, "sip", CanTerminateCall),
     registrationID(OpalGloballyUniqueID().AsString()),
-    registrationName(PProcess::Current().GetUserName())
+    registrationName(PProcess::Current().GetUserName()),
+    retryTimeoutMin(500),     // 0.5 seconds
+    retryTimeoutMax(0, 4),    // 4 seconds
+    nonInviteTimeout(0, 16),  // 16 seconds
+    pduCleanUpTimeout(0, 5),  // 5 seconds
+    inviteTimeout(0, 32),     // 32 seconds
+    ackTimeout(0, 32)         // 32 seconds
 {
   defaultSignalPort = 5060;
   mimeForm = FALSE;
-  lastSentCSeq = 1;
+  maxRetries = 10;
+  lastSentCSeq = 0;
 
   PTRACE(3, "SIP\tCreated endpoint.");
 }
@@ -80,7 +84,7 @@ void SIPEndPoint::NewIncomingConnection(OpalTransport * transport)
 {
   PTRACE_IF(2, transport->IsReliable(), "SIP\tListening thread started.");
 
-  transport->SetBufferSize(MAX_SIP_UDP_PDU_SIZE);
+  transport->SetBufferSize(SIP_PDU::MaxSize);
 
   do {
     HandlePDU(*transport);
@@ -93,19 +97,25 @@ void SIPEndPoint::NewIncomingConnection(OpalTransport * transport)
 void SIPEndPoint::HandlePDU(OpalTransport & transport)
 {
   // create a SIP_PDU structure, then get it to read and process PDU
-  SIP_PDU pdu(transport);
+  SIP_PDU * pdu = new SIP_PDU;
 
-  PTRACE(3, "SIP\tWaiting for PDU on " << transport);
-  if (pdu.Read()) {
-    if (!OnReceivedPDU(pdu)) {
-      SIP_PDU response(pdu, SIP_PDU::Failure_MethodNotAllowed);
-      response.GetMIME().SetAt("Allow", ALLOWED_METHODS);
-      response.Write();
+  PTRACE(4, "SIP\tWaiting for PDU on " << transport);
+  if (pdu->Read(transport)) {
+    if (!transport.IsReliable()) {
+      PString contact = pdu->GetMIME().GetContact();
+      if (!contact) {
+        SIPURL remote = contact;
+        transport.SetRemoteAddress(remote.GetHostAddress());
+      }
     }
+    if (!OnReceivedPDU(transport, pdu))
+      delete pdu;
   }
   else if (transport.good()) {
     PTRACE(1, "SIP\tMalformed request received on " << transport);
-    pdu.SendResponse(SIP_PDU::Failure_BadRequest);
+    SIP_PDU response(*pdu, SIP_PDU::Failure_BadRequest);
+    response.Write(transport);
+    delete pdu;
   }
 }
 
@@ -120,7 +130,7 @@ BOOL SIPEndPoint::SetUpConnection(OpalCall & call,
   PStringStream callID;
   OpalGloballyUniqueID id;
   callID << id << '@' << PIPSocket::GetHostName();
-  SIPConnection * connection = CreateConnection(call, callID, NULL, userData);
+  SIPConnection * connection = CreateConnection(call, callID, userData, NULL, NULL);
   if (connection == NULL)
     return FALSE;
 
@@ -133,18 +143,6 @@ BOOL SIPEndPoint::SetUpConnection(OpalCall & call,
 }
 
 
-SIPConnection * SIPEndPoint::GetSIPConnectionWithLock(const SIPMIMEInfo & mime)
-{
-  return GetSIPConnectionWithLock(mime.GetCallID());
-}
-
-
-SIPConnection * SIPEndPoint::GetSIPConnectionWithLock(const PString & str)
-{
-  return (SIPConnection *)GetConnectionWithLock(str);
-}
-
-
 BOOL SIPEndPoint::IsAcceptedAddress(const SIPURL & /*toAddr*/)
 {
   return TRUE;
@@ -153,10 +151,11 @@ BOOL SIPEndPoint::IsAcceptedAddress(const SIPURL & /*toAddr*/)
 
 SIPConnection * SIPEndPoint::CreateConnection(OpalCall & call,
                                               const PString & token,
-                                              SIP_PDU * invite,
-                                              void * /*userData*/)
+                                              void * /*userData*/,
+                                              OpalTransport * transport,
+                                              SIP_PDU * /*invite*/)
 {
-  return new SIPConnection(call, *this, token, invite);
+  return new SIPConnection(call, *this, token, transport);
 }
 
 
@@ -167,74 +166,71 @@ void SIPEndPoint::AddNewConnection(SIPConnection * conn)
 }
 
 
-BOOL SIPEndPoint::OnReceivedPDU(SIP_PDU & pdu)
+BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
 {
-  SIPMIMEInfo & mime = pdu.GetMIME();
-
-  SIPConnection * connection = GetSIPConnectionWithLock(mime);
+  SIPConnection * connection = GetSIPConnectionWithLock(pdu->GetMIME().GetCallID());
   if (connection != NULL) {
-    BOOL ok = connection->OnReceivedPDU(pdu);
+    connection->QueuePDU(pdu);
     connection->Unlock();
-     return ok;
-  }
-
-  PString method = pdu.GetMethod();
-
-  // An INVITE is a special case
-  if (method *= "INVITE") {
-    OnReceivedINVITE(pdu);
     return TRUE;
   }
 
-  // dispatch other commands not associated with a connection
-  // ....
+  // An INVITE is a special case
+  switch (pdu->GetMethod()) {
+    case SIP_PDU::Method_INVITE :
+      return OnReceivedINVITE(transport, pdu);
+
+    case SIP_PDU::Method_REGISTER :
+      {
+        SIP_PDU response(*pdu, SIP_PDU::Failure_MethodNotAllowed);
+        response.GetMIME().SetAt("Allow", "INVITE");
+        response.Write(transport);
+      }
+      break;
+
+    default :
+      {
+        SIP_PDU response(*pdu, SIP_PDU::Failure_TransactionDoesNotExist);
+        response.Write(transport);
+      }
+  }
 
   return FALSE;
 }
 
 
-BOOL SIPEndPoint::OnReceivedINVITE(SIP_PDU & request)
+BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
 {
   // send a response just in case this takes a while
-  request.SendResponse(SIP_PDU::Information_Trying);
+  SIP_PDU trying(*request, SIP_PDU::Information_Trying);
+  trying.Write(transport);
 
-  SIPMIMEInfo & mime = request.GetMIME();
-  PString callID     = mime.GetCallID();
+  SIPMIMEInfo & mime = request->GetMIME();
 
   // parse the incoming To field, and check if we accept incoming calls for this address
   SIPURL toAddr(mime.GetTo());
   if (!IsAcceptedAddress(toAddr)) {
-    PTRACE(1, "SIP\tIncoming INVITE from " << request.GetURI() << " for unknown address " << toAddr);
-    request.SendResponse(SIP_PDU::Failure_NotFound);
+    PTRACE(1, "SIP\tIncoming INVITE from " << request->GetURI() << " for unknown address " << toAddr);
+    SIP_PDU response(*request, SIP_PDU::Failure_NotFound);
+    response.Write(transport);
     return FALSE;
   }
 
-  // create outgoing To field
-  PString outgoingTo = mime.GetTo() + ";tag=12345678";
-  mime.SetTo(outgoingTo);
-
   // ask the endpoint for a connection
-  SIPConnection * connection = CreateConnection(*GetManager().CreateCall(), callID, &request);
-
-  // clean up the connection
+  SIPConnection * connection = CreateConnection(*GetManager().CreateCall(),
+                                                mime.GetCallID(), NULL, &transport, request);
   if (connection == NULL) {
-    request.SendResponse(SIP_PDU::Failure_NotFound);
-    PTRACE(2, "SIP\tFailed to create SIPConnection for INVITE from " << request.GetURI() << " for " << toAddr);
+    PTRACE(2, "SIP\tFailed to create SIPConnection for INVITE from " << request->GetURI() << " for " << toAddr);
+    SIP_PDU response(*request, SIP_PDU::Failure_NotFound);
+    response.Write(transport);
     return FALSE;
   }
 
   // add the connection to the endpoint list
   AddNewConnection(connection);
 
-  // indicate the other is to start ringing
-  if (!connection->OnIncomingConnection()) {
-    PTRACE(2, "SIP\tOnIncomingConnection failed for INVITE from " << request.GetURI() << " for " << toAddr);
-    connection->Release();
-    return FALSE;
-  }
-
-  PTRACE(2, "SIP\tOnIncomingConnection succeeded for INVITE from " << request.GetURI() << " for " << toAddr);
-  connection->OnReceivedINVITE(request);
+  // Get the connection to handle the rest of the INVITE
+  connection->QueuePDU(request);
   return TRUE;
 }
 
@@ -243,16 +239,16 @@ static BOOL WriteREGISTER(OpalTransport & transport, PObject * param)
 {
   SIPEndPoint & endpoint = *(SIPEndPoint *)param;
 
-  SIP_PDU request(transport);
+  SIPTransaction request(endpoint, transport);
   SIPURL name(endpoint.GetRegistrationName(),
               transport.GetLocalAddress(),
               endpoint.GetDefaultSignalPort());
   SIPURL contact(name.GetUserName(),
                  transport.GetLocalAddress(),
                  endpoint.GetDefaultSignalPort());
-  request.BuildREGISTER(endpoint, name, contact);
+  request.BuildREGISTER(name, contact);
 
-  return request.Write();
+  return request.Start();
 }
 
 
@@ -268,9 +264,9 @@ BOOL SIPEndPoint::Register(const PString & server)
 
   transport->WriteConnect(WriteREGISTER, this);
 
-  SIP_PDU response(*transport);
+  SIP_PDU response;
   transport->SetReadTimeout(15000);
-  if (!response.Read()) {
+  if (!response.Read(*transport)) {
     delete transport;
     return FALSE;
   }
@@ -281,7 +277,7 @@ BOOL SIPEndPoint::Register(const PString & server)
   PTRACE(2, "SIP\tSelecting reply from " << *transport);
 
   while (response.GetStatusCode() < SIP_PDU::Successful_OK) {
-    if (!response.Read())
+    if (!response.Read(*transport))
       break;
   }
 
