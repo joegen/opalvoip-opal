@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2035  2004/05/15 12:53:03  rjongbloed
+ * Revision 1.2036  2004/05/17 13:24:18  rjongbloed
+ * Added silence suppression.
+ *
+ * Revision 2.34  2004/05/15 12:53:03  rjongbloed
  * Added default username and display name to manager, for all endpoints.
  *
  * Revision 2.33  2004/05/01 10:00:52  rjongbloed
@@ -152,6 +155,7 @@
 #include <opal/endpoint.h>
 #include <opal/call.h>
 #include <opal/transcoders.h>
+#include <codec/silencedetect.h>
 #include <codec/rfc2833.h>
 #include <rtp/rtp.h>
 #include <t120/t120proto.h>
@@ -236,6 +240,7 @@ OpalConnection::OpalConnection(OpalCall & call,
   maxAudioJitterDelay = endpoint.GetManager().GetMaxAudioJitterDelay();
   bandwidthAvailable = endpoint.GetInitialBandwidth();
 
+  silenceDetector = NULL;
   rfc2833Handler = new OpalRFC2833Proto(PCREATE_NOTIFIER(OnUserInputInlineRFC2833));
 
   ownerCall.AddConnection(this);
@@ -248,6 +253,7 @@ OpalConnection::OpalConnection(OpalCall & call,
 
 OpalConnection::~OpalConnection()
 {
+  delete silenceDetector;
   delete rfc2833Handler;
   delete t120handler;
   delete t38handler;

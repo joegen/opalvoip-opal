@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2028  2004/05/01 10:00:51  rjongbloed
+ * Revision 1.2029  2004/05/17 13:24:18  rjongbloed
+ * Added silence suppression.
+ *
+ * Revision 2.27  2004/05/01 10:00:51  rjongbloed
  * Fixed ClearCallSynchronous so now is actually signalled when call is destroyed.
  *
  * Revision 2.26  2004/04/26 04:33:05  rjongbloed
@@ -135,6 +138,7 @@
 
 class OpalEndPoint;
 class OpalCall;
+class OpalSilenceDetector;
 class OpalRFC2833Proto;
 class OpalRFC2833Info;
 class OpalT120Protocol;
@@ -896,6 +900,10 @@ class OpalConnection : public PObject
       unsigned minDelay,   // New minimum jitter buffer delay in milliseconds
       unsigned maxDelay    // New maximum jitter buffer delay in milliseconds
     );
+
+    /**Get the silence detector activate on connection.
+     */
+    OpalSilenceDetector * GetSilenceDetector() const { return silenceDetector; }
   //@}
 
   protected:
@@ -923,13 +931,14 @@ class OpalConnection : public PObject
     PString             remotePartyAddress;
     CallEndReason       callEndReason;
 
-    PString             userInputString;
-    PMutex              userInputMutex;
-    PSyncPoint          userInputAvailable;
-    BOOL                detectInBandDTMF;
-    OpalRFC2833Proto  * rfc2833Handler;
-    OpalT120Protocol  * t120handler;
-    OpalT38Protocol   * t38handler;
+    PString               userInputString;
+    PMutex                userInputMutex;
+    PSyncPoint            userInputAvailable;
+    BOOL                  detectInBandDTMF;
+    OpalSilenceDetector * silenceDetector;
+    OpalRFC2833Proto    * rfc2833Handler;
+    OpalT120Protocol    * t120handler;
+    OpalT38Protocol     * t38handler;
 
 
     PDICTIONARY(MediaAddressesDict, POrdinalKey, OpalTransportAddress);

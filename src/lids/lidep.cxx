@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2021  2004/04/25 08:34:08  rjongbloed
+ * Revision 1.2022  2004/05/17 13:24:18  rjongbloed
+ * Added silence suppression.
+ *
+ * Revision 2.20  2004/04/25 08:34:08  rjongbloed
  * Fixed various GCC 3.4 warnings
  *
  * Revision 2.19  2004/04/18 13:35:27  rjongbloed
@@ -105,6 +108,7 @@
 #include <lids/lidep.h>
 
 #include <opal/manager.h>
+#include <opal/patch.h>
 
 
 #define new PNEW
@@ -455,6 +459,7 @@ OpalLineConnection::OpalLineConnection(OpalCall & call,
     line(ln)
 {
   remotePartyNumber = number;
+  silenceDetector = new OpalLineSilenceDetector(line);
 
   answerRingCount = 3;
   requireTonesForDial = TRUE;
@@ -527,6 +532,21 @@ OpalMediaStream * OpalLineConnection::CreateMediaStream(const OpalMediaFormat & 
     return OpalConnection::CreateMediaStream(mediaFormat, sessionID, isSource);
 
   return new OpalLineMediaStream(mediaFormat, sessionID, isSource, line);
+}
+
+
+BOOL OpalLineConnection::OnOpenMediaStream(OpalMediaStream & mediaStream)
+{
+  if (!OpalConnection::OnOpenMediaStream(mediaStream))
+    return FALSE;
+
+  if (mediaStream.IsSource()) {
+    OpalMediaPatch * patch = mediaStream.GetPatch();
+    if (patch != NULL)
+      patch->AddFilter(silenceDetector->GetReceiveHandler(), line.GetReadFormat());
+  }
+
+  return TRUE;
 }
 
 
@@ -849,6 +869,20 @@ BOOL OpalLineMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX &
 BOOL OpalLineMediaStream::IsSynchronous() const
 {
   return TRUE;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+OpalLineSilenceDetector::OpalLineSilenceDetector(OpalLine & l)
+  : line(l)
+{
+}
+
+
+unsigned OpalLineSilenceDetector::GetAverageSignalLevel(const BYTE *, PINDEX)
+{
+  return line.GetAverageSignalLevel(TRUE);
 }
 
 

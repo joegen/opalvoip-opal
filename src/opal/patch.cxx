@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2008  2004/04/25 02:53:29  rjongbloed
+ * Revision 1.2009  2004/05/17 13:24:18  rjongbloed
+ * Added silence suppression.
+ *
+ * Revision 2.7  2004/04/25 02:53:29  rjongbloed
  * Fixed GNU 3.4 warnings
  *
  * Revision 2.6  2004/02/15 04:34:08  rjongbloed
@@ -282,8 +285,9 @@ void OpalMediaPatch::FilterFrame(RTP_DataFrame & frame,
                                  const OpalMediaFormat & mediaFormat)
 {
   for (PINDEX f = 0; f < filters.GetSize(); f++) {
-    if (filters[f].stage == mediaFormat)
-      filters[f].notifier(frame, (INT)this);
+    Filter & filter = filters[f];
+    if (filter.stage.IsEmpty() || filter.stage == mediaFormat)
+      filter.notifier(frame, (INT)this);
   }
 }
 
