@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2045  2004/08/18 07:14:00  csoutheren
+ * Revision 1.2046  2004/11/29 08:20:04  csoutheren
+ * Added support for setting SIP authentication domain
+ *
+ * Revision 2.44  2004/08/18 07:14:00  csoutheren
  * Called ancestor OnClearedCall
  *
  * Revision 2.43  2004/08/14 07:56:30  rjongbloed
@@ -301,6 +304,7 @@ void SimpleOpalProcess::Main()
              "-sound-out:"
              "-sip-listen:"
              "-sip-proxy:"
+             "-sip-domain:"
              "-sip-user-agent:"
              "-stun:"
              "T-h245tunneldisable."
@@ -361,6 +365,7 @@ void SimpleOpalProcess::Main()
             "                          : '*' is all interfaces, (default udp$:*:5060)\n"
             "     --sip-user-agent name: SIP UserAgent name to use.\n"
             "     --use-long-mime      : Use long MIME headers on outgoing SIP messages\n"
+            "     --sip-domain str     : set authentication domain/realm\n"
             "\n"
 #endif
 
@@ -766,6 +771,9 @@ BOOL MyManager::Initialise(PArgList & args)
     if (args.HasOption("sip-proxy"))
       sipEP->SetProxy(args.GetOptionString("sip-proxy"));
 
+    if (args.HasOption("sip-domain"))
+      sipEP->SetDomain(args.GetOptionString("sip-domain"));
+
     // set MIME format
     sipEP->SetMIMEForm(args.HasOption("use-long-mime"));
 
@@ -774,6 +782,8 @@ BOOL MyManager::Initialise(PArgList & args)
       PStringArray aliases = args.GetOptionString('u').Lines();
       sipEP->SetDefaultLocalPartyName(aliases[0]);
     }
+
+    sipEP->SetRetryTimeouts(10000, 30000);
 
     // Start the listener thread for incoming calls.
     PStringArray listeners = args.GetOptionString("sip-listen").Lines();
