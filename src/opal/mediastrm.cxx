@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2005  2001/10/03 05:53:25  robertj
+ * Revision 1.2006  2001/10/03 06:42:32  craigs
+ * Changed to remove WIN32isms from error return values
+ *
+ * Revision 2.4  2001/10/03 05:53:25  robertj
  * Update to new PTLib channel error system.
  *
  * Revision 2.3  2001/08/21 01:12:10  robertj
@@ -383,7 +386,7 @@ BOOL OpalLineMediaStream::Read(void * buffer, PINDEX length)
   DWORD osError = line.GetDevice().GetErrorNumber();
   PTRACE_IF(1, osError != 0, "Media\tDevice read frame error: " << line.GetDevice().GetErrorText());
 
-  return SetErrorValues(Miscellaneous, osError|PWIN32ErrorFlag, LastReadError);
+  return SetErrorValues(Miscellaneous, osError, LastReadError);
 }
 
 
@@ -451,7 +454,7 @@ BOOL OpalLineMediaStream::Write(const void * buffer, PINDEX length)
   DWORD osError = line.GetDevice().GetErrorNumber();
   PTRACE_IF(1, osError != 0, "Media\tLID write frame error: " << line.GetDevice().GetErrorText());
 
-  return SetErrorValues(Miscellaneous, osError|PWIN32ErrorFlag, LastWriteError);
+  return SetErrorValues(Miscellaneous, osError, LastWriteError);
 }
 
 
