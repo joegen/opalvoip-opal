@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2040  2004/10/16 03:10:04  rjongbloed
+ * Revision 1.2041  2005/02/21 12:19:55  rjongbloed
+ * Added new "options list" to the OpalMediaFormat class.
+ *
+ * Revision 2.39  2004/10/16 03:10:04  rjongbloed
  * Fixed correct detection of when to use STUN, this does not include the local host!
  *
  * Revision 2.38  2004/10/03 15:16:04  rjongbloed
@@ -589,9 +592,9 @@ void OpalManager::AddVideoMediaFormats(OpalMediaFormatList & mediaFormats,
                                        const OpalConnection * /*connection*/) const
 {
   if (!videoInputDevice.deviceName) {
-    mediaFormats += OpalRGB24;
-    mediaFormats += OpalRGB32;
-    mediaFormats += OpalYUV420P;
+    mediaFormats += OPAL_RGB24;
+    mediaFormats += OPAL_RGB32;
+    mediaFormats += OPAL_YUV420P;
   }
 }
 
