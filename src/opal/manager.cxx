@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2027  2004/02/19 10:47:06  rjongbloed
+ * Revision 1.2028  2004/02/24 11:37:02  rjongbloed
+ * More work on NAT support, manual external address translation and STUN
+ *
+ * Revision 2.26  2004/02/19 10:47:06  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.25  2004/01/18 15:36:07  rjongbloed
@@ -183,7 +186,8 @@ unsigned OpalGetBuildNumber()
 
 OpalManager::OpalManager()
   : mediaFormatOrder(PARRAYSIZE(DefaultMediaFormatOrder), DefaultMediaFormatOrder),
-    noMediaTimeout(0, 0, 5)      // Minutes
+    noMediaTimeout(0, 0, 5),     // Minutes
+    translationAddress(0)        // Invalid address to disable
 {
   autoStartReceiveVideo = autoStartTransmitVideo = TRUE;
 
@@ -786,10 +790,48 @@ PString OpalManager::ApplyRouteTable(const PString & proto, const PString & addr
 }
 
 
-BOOL OpalManager::TranslateIPAddress(PIPSocket::Address & /*localAddr*/,
-                                     const PIPSocket::Address & /*remoteAddr */)
+BOOL OpalManager::IsLocalAddress(const PIPSocket::Address & ip) const
 {
-  return FALSE;
+  /* Check if the remote address is a private IP address.
+   * RFC 1918 specifies the following private IP addresses
+   * 10.0.0.0    - 10.255.255.255.255
+   * 172.16.0.0  - 172.31.255.255
+   * 192.168.0.0 - 192.168.255.255
+   */
+
+  return (ip.Byte1() == 10)
+         ||
+         (
+           (ip.Byte1() == 172)
+           &&
+           (ip.Byte2() >= 16) && (ip.Byte2() <= 31)
+         )
+         ||
+         (
+           (ip.Byte1() == 192) 
+           &&
+           (ip.Byte2() == 168)
+         )
+         ||
+         ip.IsBroadcast();
+}
+
+
+BOOL OpalManager::TranslateIPAddress(PIPSocket::Address & localAddress,
+                                     const PIPSocket::Address & remoteAddress)
+{
+  if (!translationAddress.IsValid())
+    return FALSE; // Have nothing to translate it to
+
+  if (!IsLocalAddress(localAddress))
+    return FALSE; // Is already translated
+
+  if (IsLocalAddress(remoteAddress))
+    return FALSE; // Does not need to be translated
+
+  // Tranlsate it!
+  localAddress = translationAddress;
+  return TRUE;
 }
 
 
@@ -813,32 +855,8 @@ void OpalManager::SetSTUNServer(const PString & server)
                            GetUDPPortBase(), GetUDPPortMax(),
                            GetRtpIpPortBase(), GetRtpIpPortMax());
     PTRACE(2, "OPAL\tSTUN server \"" << server << "\" replies " << stun->GetNatTypeName());
+    stun->GetExternalAddress(translationAddress);
   }
-}
-
-
-BOOL OpalManager::IsLocalAddress(const PIPSocket::Address & ip) const
-{
-  /* Check if the remote address is a private IP address.
-   * RFC 1918 specifies the following private IP addresses
-   * 10.0.0.0    - 10.255.255.255.255
-   * 172.16.0.0  - 172.31.255.255
-   * 192.168.0.0 - 192.168.255.255
-   */
-
-  return (ip.Byte1() == 10)
-         ||
-         (
-           (ip.Byte1() == 172)
-           &&
-           (ip.Byte2() >= 16) && (ip.Byte2() <= 31)
-         )
-         ||
-         (
-           (ip.Byte1() == 192) 
-           &&
-           (ip.Byte2() == 168)
-         );
 }
 
 

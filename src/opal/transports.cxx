@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2029  2004/02/19 10:47:06  rjongbloed
+ * Revision 1.2030  2004/02/24 11:37:02  rjongbloed
+ * More work on NAT support, manual external address translation and STUN
+ *
+ * Revision 2.28  2004/02/19 10:47:06  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.27  2003/01/07 06:01:07  robertj
@@ -394,7 +397,7 @@
 #include <opal/manager.h>
 #include <opal/endpoint.h>
 
-#include <ptclib/asner.h>
+#include <ptclib/pstun.h>
 
 
 static const char IpPrefix[] = "ip$"; // For backward compatibility with OpenH323
@@ -1692,6 +1695,19 @@ BOOL OpalTransportUDP::Connect()
   readAutoDelete = writeAutoDelete = FALSE;
 
   OpalManager & manager = endpoint.GetManager();
+
+  PSTUNClient * stun = manager.GetSTUN(remoteAddress);
+  if (stun != NULL) {
+    PUDPSocket * socket;
+    if (stun->CreateSocket(socket)) {
+      Open(socket);
+      socket->GetLocalAddress(localAddress, localPort);
+      socket->SetSendAddress(remoteAddress, remotePort);
+      PTRACE(4, "OpalUDP\tSTUN created socket: " << localAddress << ':' << localPort);
+      return true;
+    }
+    PTRACE(4, "OpalUDP\tSTUN could not create socket!");
+  }
 
   // See if prebound to interface, only use that if so
   PIPSocket::InterfaceTable interfaces;
