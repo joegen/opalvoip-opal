@@ -281,6 +281,14 @@ SOURCE=..\codec\rfc2833.cxx
 
 SOURCE=..\codec\speexcodec.cxx
 # End Source File
+# Begin Source File
+
+SOURCE=..\codec\vidcodec.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\codec\vidcodec.h
+# End Source File
 # End Group
 # Begin Group "LID Sources"
 
@@ -3412,7 +3420,7 @@ SOURCE=..\codec\speex\libspeex\bits.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /W1 /Od /D syn_filt=speex_syn_filt /D autocorr=speex_autocorr
+# ADD CPP /W1 /Od
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -3434,7 +3442,7 @@ SOURCE=..\codec\speex\libspeex\cb_search.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /W1 /Od /D syn_filt=speex_syn_filt /D autocorr=speex_autocorr
+# ADD CPP /W1 /Od
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -3456,7 +3464,7 @@ SOURCE=..\codec\speex\libspeex\exc_10_16_table.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /W1 /Od /D syn_filt=speex_syn_filt /D autocorr=speex_autocorr
+# ADD CPP /W1 /Od
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -3478,7 +3486,7 @@ SOURCE=..\codec\speex\libspeex\exc_10_32_table.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /W1 /Od /D syn_filt=speex_syn_filt /D autocorr=speex_autocorr
+# ADD CPP /W1 /Od
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -3500,7 +3508,7 @@ SOURCE=..\codec\speex\libspeex\exc_5_256_table.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /W1 /Od /D syn_filt=speex_syn_filt /D autocorr=speex_autocorr
+# ADD CPP /W1 /Od
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -3522,7 +3530,7 @@ SOURCE=..\codec\speex\libspeex\exc_5_64_table.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /W1 /Od /D syn_filt=speex_syn_filt /D autocorr=speex_autocorr
+# ADD CPP /W1 /Od
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -3544,7 +3552,7 @@ SOURCE=..\codec\speex\libspeex\exc_8_128_table.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /W1 /Od /D syn_filt=speex_syn_filt /D autocorr=speex_autocorr
+# ADD CPP /W1 /Od
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -3566,7 +3574,7 @@ SOURCE=..\codec\speex\libspeex\filters.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /W1 /Od /D syn_filt=speex_syn_filt /D autocorr=speex_autocorr
+# ADD CPP /W1 /Od
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -3588,7 +3596,7 @@ SOURCE=..\codec\speex\libspeex\gain_table.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /W1 /Od /D syn_filt=speex_syn_filt /D autocorr=speex_autocorr
+# ADD CPP /W1 /Od
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -3610,7 +3618,7 @@ SOURCE=..\codec\speex\libspeex\gain_table_lbr.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /W1 /Od /D syn_filt=speex_syn_filt /D autocorr=speex_autocorr
+# ADD CPP /W1 /Od
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -3632,7 +3640,7 @@ SOURCE=..\codec\speex\libspeex\hexc_10_32_table.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /W1 /Od /D syn_filt=speex_syn_filt /D autocorr=speex_autocorr
+# ADD CPP /W1 /Od
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -3654,7 +3662,7 @@ SOURCE=..\codec\speex\libspeex\hexc_table.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /W1 /Od /D syn_filt=speex_syn_filt /D autocorr=speex_autocorr
+# ADD CPP /W1 /Od
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -3676,7 +3684,7 @@ SOURCE=..\codec\speex\libspeex\high_lsp_tables.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /W1 /Od /D syn_filt=speex_syn_filt /D autocorr=speex_autocorr
+# ADD CPP /W1 /Od
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -3698,7 +3706,7 @@ SOURCE=..\codec\speex\libspeex\lpc.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /W1 /Od /D syn_filt=speex_syn_filt /D autocorr=speex_autocorr
+# ADD CPP /W1 /Od
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -3720,7 +3728,7 @@ SOURCE=..\codec\speex\libspeex\lsp.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /W1 /Od /D syn_filt=speex_syn_filt /D autocorr=speex_autocorr
+# ADD CPP /W1 /Od
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -3742,7 +3750,7 @@ SOURCE=..\codec\speex\libspeex\lsp_tables_nb.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /W1 /Od /D syn_filt=speex_syn_filt /D autocorr=speex_autocorr
+# ADD CPP /W1 /Od
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -3764,7 +3772,7 @@ SOURCE=..\codec\speex\libspeex\ltp.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /W1 /Od /D syn_filt=speex_syn_filt /D autocorr=speex_autocorr
+# ADD CPP /W1 /Od
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -3786,7 +3794,7 @@ SOURCE=..\codec\speex\libspeex\misc.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /W1 /Od /D syn_filt=speex_syn_filt /D autocorr=speex_autocorr
+# ADD CPP /W1 /Od
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -3808,7 +3816,7 @@ SOURCE=..\codec\speex\libspeex\modes.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /W1 /Od /D syn_filt=speex_syn_filt /D autocorr=speex_autocorr
+# ADD CPP /W1 /Od
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -3830,7 +3838,7 @@ SOURCE=..\codec\speex\libspeex\nb_celp.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /W1 /Od /D syn_filt=speex_syn_filt /D autocorr=speex_autocorr
+# ADD CPP /W1 /Od
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -3852,7 +3860,7 @@ SOURCE=..\codec\speex\libspeex\quant_lsp.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /W1 /Od /D syn_filt=speex_syn_filt /D autocorr=speex_autocorr
+# ADD CPP /W1 /Od
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -3874,7 +3882,7 @@ SOURCE=..\codec\speex\libspeex\sb_celp.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /W1 /Od /D syn_filt=speex_syn_filt /D autocorr=speex_autocorr
+# ADD CPP /W1 /Od
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -3896,7 +3904,7 @@ SOURCE=..\codec\speex\libspeex\speex_callbacks.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /W1 /Od /D syn_filt=speex_syn_filt /D autocorr=speex_autocorr
+# ADD CPP /W1 /Od
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -3918,7 +3926,7 @@ SOURCE=..\codec\speex\libspeex\speex_header.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /W1 /Od /D syn_filt=speex_syn_filt /D autocorr=speex_autocorr
+# ADD CPP /W1 /Od
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -3940,7 +3948,7 @@ SOURCE=..\codec\speex\libspeex\vbr.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /W1 /Od /D syn_filt=speex_syn_filt /D autocorr=speex_autocorr
+# ADD CPP /W1 /Od
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -3962,7 +3970,7 @@ SOURCE=..\codec\speex\libspeex\vq.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /W1 /Od /D syn_filt=speex_syn_filt /D autocorr=speex_autocorr
+# ADD CPP /W1 /Od
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
