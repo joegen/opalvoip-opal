@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.h,v $
- * Revision 1.2006  2002/03/22 06:57:48  robertj
+ * Revision 1.2007  2002/07/01 04:56:29  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.5  2002/03/22 06:57:48  robertj
  * Updated to OpenH323 version 1.8.2
  *
  * Revision 2.4  2001/11/09 05:49:47  robertj
@@ -44,6 +47,16 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.35  2002/06/26 03:47:45  robertj
+ * Added support for alternate gatekeepers.
+ *
+ * Revision 1.34  2002/05/29 00:03:15  robertj
+ * Fixed unsolicited IRR support in gk client and server,
+ *   including support for IACK and INAK.
+ *
+ * Revision 1.33  2002/05/17 04:12:38  robertj
+ * Added support for unsolicited IRR transmission in background (heartbeat).
  *
  * Revision 1.32  2002/03/19 05:17:11  robertj
  * Normalised ACF destExtraCallIInfo to be same as other parameters.
@@ -165,6 +178,8 @@
 class H323Connection;
 class H225_ArrayOf_AliasAddress;
 class H225_H323_UU_PDU;
+class H225_AlternateGK;
+class H225_ArrayOf_AlternateGK;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -201,6 +216,7 @@ class H323Gatekeeper : public H225_RAS
   /**@name Overrides from H225_RAS */
   //@{
     BOOL OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm & gcf);
+    BOOL OnReceiveGatekeeperReject(const H225_GatekeeperReject & grj);
     BOOL OnReceiveRegistrationConfirm(const H225_RegistrationConfirm & rcf);
     BOOL OnReceiveRegistrationReject(const H225_RegistrationReject & rrj);
     BOOL OnReceiveUnregistrationRequest(const H225_UnregistrationRequest & urq);
@@ -314,11 +330,14 @@ class H323Gatekeeper : public H225_RAS
       unsigned requestedBandwidth     /// New bandwidth wanted in 0.1kbps
     );
 
-    /**Send an info response to the gatekeeper.
+    /**Send an unsolicited info response to the gatekeeper.
+     */
+    void InfoRequestResponse();
+
+    /**Send an unsolicited info response to the gatekeeper.
      */
     void InfoRequestResponse(
-      const H323Connection * connection,  /// Connection to send info about
-      unsigned seqNum                     /// Sequence number responding to
+      const H323Connection & connection  /// Connection to send info about
     );
 
     /**Send an unsolicited info response to the gatekeeper.
@@ -374,12 +393,23 @@ class H323Gatekeeper : public H225_RAS
   protected:
     BOOL StartDiscovery(const OpalTransportAddress & address);
     BOOL DiscoverGatekeeper(H323RasPDU & request, const OpalTransportAddress & address);
+    PDECLARE_NOTIFIER(PThread, H323Gatekeeper, MonitorMain);
+    PDECLARE_NOTIFIER(PTimer, H323Gatekeeper, TickleMonitor);
     unsigned SetupGatekeeperRequest(H323RasPDU & request);
-    PDECLARE_NOTIFIER(PTimer, H323Gatekeeper, RegistrationTimeToLive);
-    void BuildInfoRequestResponse(
-      H225_InfoRequestResponse & irr,
-      const H323Connection * connection
+    void RegistrationTimeToLive();
+    H225_InfoRequestResponse & BuildInfoRequestResponse(
+      H323RasPDU & response,
+      unsigned seqNum
     );
+    BOOL SendUnsolicitedIRR(
+      H225_InfoRequestResponse & irr,
+      H323RasPDU & response
+    );
+    void SetAlternates(
+      const H225_ArrayOf_AlternateGK & alts,
+      BOOL permanent
+    );
+    virtual BOOL MakeRequest(Request & request);
 
 
     // Option variables
@@ -389,6 +419,28 @@ class H323Gatekeeper : public H225_RAS
     BOOL    discoveryComplete;
     BOOL    isRegistered;
     PString endpointIdentifier;
+
+    class AlternateInfo : public PObject {
+        PCLASSINFO(AlternateInfo, PObject);
+      public:
+        AlternateInfo(H225_AlternateGK & alt);
+
+        Comparison Compare(const PObject & obj);
+
+        H323TransportAddress rasAddress;
+        PString              gatekeeperIdentifier;
+        unsigned             priority;
+        enum {
+          NoRegistrationNeeded,
+          NeedToRegister,
+          Register,
+          IsRegistered,
+          RegistrationFailed
+        } registrationState;
+    };
+    PSORTED_LIST(AlternateList, AlternateInfo);
+    AlternateList alternates;
+    BOOL          alternatePermanent;
 
     H235Authenticators authenticators;
 
@@ -400,10 +452,15 @@ class H323Gatekeeper : public H225_RAS
     H323TransportAddress gkRouteAddress;
 
     // Gatekeeper operation variables
-    BOOL    autoReregister;
-    PTimer  timeToLive;
-    BOOL    requiresDiscovery;
-    PMutex  mutexForSeparateAuthenticationInARQ;
+    BOOL       autoReregister;
+    PTimer     timeToLive;
+    BOOL       requiresDiscovery;
+    PMutex     mutexForSeparateAuthenticationInARQ;
+    PTimer     infoRequestRate;
+    BOOL       willRespondToIRR;
+    PThread  * monitor;
+    BOOL       monitorStop;
+    PSyncPoint monitorTickle;
 };
 
 

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h225ras.h,v $
- * Revision 1.2003  2001/10/05 00:22:13  robertj
+ * Revision 1.2004  2002/07/01 04:56:29  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.2  2001/10/05 00:22:13  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.1  2001/08/13 05:10:39  robertj
@@ -35,6 +38,22 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.13  2002/06/26 03:47:45  robertj
+ * Added support for alternate gatekeepers.
+ *
+ * Revision 1.12  2002/06/21 02:52:44  robertj
+ * Fixed problem with double checking H.235 hashing, this causes failure as
+ *   the authenticator thinks it is a replay attack.
+ *
+ * Revision 1.11  2002/06/12 03:49:56  robertj
+ * Added PrintOn function for trace output of RAS channel.
+ *
+ * Revision 1.10  2002/05/03 09:18:45  robertj
+ * Added automatic retransmission of RAS responses to retried requests.
+ *
+ * Revision 1.9  2001/10/09 08:04:59  robertj
+ * Fixed unregistration so still unregisters if gk goes offline, thanks Chris Purvis
  *
  * Revision 1.8  2001/09/18 10:36:54  robertj
  * Allowed multiple overlapping requests in RAS channel.
@@ -145,6 +164,15 @@ class H225_RAS : public PObject
     /**Destroy protocol handler.
      */
     ~H225_RAS();
+  //@}
+
+  /**@name Overrides from PObject */
+  //@{
+    /**Print the name of the gatekeeper.
+      */
+    void PrintOn(
+      ostream & strm    /// Stream to print to.
+    ) const;
   //@}
 
   /**@name Operations */
@@ -279,6 +307,14 @@ class H225_RAS : public PObject
     /**Get flag to check all crypto tokens on responses.
       */
     BOOL GetCheckResponseCryptoTokens() { return checkResponseCryptoTokens; }
+
+    /**Check all crypto tokens on responses for the PDU.
+      */
+    BOOL CheckCryptoTokens(
+      const H225_ArrayOf_CryptoH323Token & cryptoTokens,
+      const PASN_Sequence & pdu,
+      unsigned optionalField
+    );
   //@}
 
 
@@ -313,11 +349,12 @@ class H225_RAS : public PObject
           AwaitingResponse,
           ConfirmReceived,
           RejectReceived,
-          RequestInProgress
+          RequestInProgress,
+          NoResponseReceived
         } responseResult;
     };
 
-    BOOL MakeRequest(Request & request);
+    virtual BOOL MakeRequest(Request & request);
     BOOL CheckForResponse(unsigned, unsigned, const PASN_Choice * = NULL);
 
     void SetCryptoTokens(
@@ -325,11 +362,9 @@ class H225_RAS : public PObject
       PASN_Sequence & pdu,
       unsigned optionalField
     );
-    BOOL CheckCryptoTokens(
-      const H225_ArrayOf_CryptoH323Token & cryptoTokens,
-      const PASN_Sequence & pdu,
-      unsigned optionalField
-    );
+
+    void AgeResponses();
+    BOOL SendCachedResponse(const H323RasPDU & pdu);
 
 
     // Configuration variables
@@ -341,7 +376,8 @@ class H225_RAS : public PObject
     BOOL    checkResponseCryptoTokens;
 
     // Inter-thread synchronisation variables
-    H323RasPDU *  lastReceivedPDU;
+    const H323RasPDU   * lastReceivedPDU;
+    H323TransportAddress lastReceivedFrom;
 
     unsigned      nextSequenceNumber;
     PMutex        nextSequenceNumberMutex;
@@ -350,6 +386,22 @@ class H225_RAS : public PObject
     RequestDict requests;
     PMutex      requestsMutex;
     Request   * lastRequest;
+
+    class Response : public PString
+    {
+        PCLASSINFO(Response, PString);
+      public:
+        Response(const H323TransportAddress & addr, unsigned seqNum);
+        ~Response();
+
+        void SetPDU(const H323RasPDU & pdu);
+        BOOL SendCachedResponse(OpalTransport & transport);
+
+        PTime lastUsedTime;
+        H323RasPDU * replyPDU;
+    };
+    PSORTED_LIST(ResponseDict, Response);
+    ResponseDict responses;
 };
 
 

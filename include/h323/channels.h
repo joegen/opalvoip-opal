@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.h,v $
- * Revision 1.2008  2002/04/18 03:41:28  robertj
+ * Revision 1.2009  2002/07/01 04:56:29  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.7  2002/04/18 03:41:28  robertj
  * Fixed logical channel so does not delete media stream too early.
  *
  * Revision 2.6  2002/02/11 09:32:11  robertj
@@ -50,6 +53,27 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.37  2002/06/25 08:30:08  robertj
+ * Changes to differentiate between stright G.723.1 and G.723.1 Annex A using
+ *   the OLC dataType silenceSuppression field so does not send SID frames
+ *   to receiver codecs that do not understand them.
+ *
+ * Revision 1.36  2002/05/23 04:53:54  robertj
+ * Added function to remove a filter from logical channel.
+ *
+ * Revision 1.35  2002/05/10 05:46:46  robertj
+ * Added session ID to the data logical channel class.
+ *
+ * Revision 1.34  2002/05/02 07:56:24  robertj
+ * Added automatic clearing of call if no media (RTP data) is transferred in a
+ *   configurable (default 5 minutes) amount of time.
+ *
+ * Revision 1.33  2002/05/02 06:28:50  robertj
+ * Fixed problem with external RTP channels not fast starting.
+ *
+ * Revision 1.32  2002/04/17 05:56:28  robertj
+ * Added trace output of H323Channel::Direction enum.
  *
  * Revision 1.31  2002/02/09 04:39:01  robertj
  * Changes to allow T.38 logical channels to use single transport which is
@@ -249,8 +273,12 @@ class H323Channel : public PObject
     enum Directions {
       IsBidirectional,
       IsTransmitter,
-      IsReceiver
+      IsReceiver,
+      NumDirections
     };
+#if PTRACING
+    friend ostream & operator<<(ostream & out, Directions dir);
+#endif
 
     /**Indicate the direction of the channel.
        Return if the channel is bidirectional, or unidirectional, and which
@@ -412,7 +440,7 @@ class H323Channel : public PObject
 
     /**Get the capability that created this channel.
       */
-    const H323Capability & GetCapability() const { return capability; }
+    const H323Capability & GetCapability() const { return *capability; }
 
     /**Get the "pause" flag.
        A paused channel is one that prevents the annunciation of the channels
@@ -440,7 +468,7 @@ class H323Channel : public PObject
   protected:
     H323EndPoint         & endpoint;
     H323Connection       & connection;
-    const H323Capability & capability;
+    H323Capability       * capability;
     H323ChannelNumber      number;
     H323ChannelNumber      reverseChannel;
     BOOL                   opened;
@@ -912,7 +940,8 @@ class H323DataChannel : public H323UnidirectionalChannel
     H323DataChannel(
       H323Connection & connection,        /// Connection to endpoint for channel
       const H323Capability & capability,  /// Capability channel is using
-      Directions direction                /// Direction of channel
+      Directions direction,               /// Direction of channel
+      unsigned sessionID                  /// Session ID for channel
     );
 
     /**Destroy the channel.
@@ -925,6 +954,12 @@ class H323DataChannel : public H323UnidirectionalChannel
     /**This is called to clean up any threads on connection termination.
      */
     virtual void Close();
+
+    /**Indicate the session number of the channel.
+       Return session for channel. This returns the session ID of the
+       RTP_Session member variable.
+     */
+    virtual unsigned GetSessionID() const;
 
     /**Fill out the OpenLogicalChannel PDU for the particular channel type.
      */
@@ -986,6 +1021,7 @@ class H323DataChannel : public H323UnidirectionalChannel
 
   protected:
     OpalListener  * listener;
+    unsigned        sessionID;
     BOOL            autoDeleteListener;
     OpalTransport * transport;
     BOOL            autoDeleteTransport;

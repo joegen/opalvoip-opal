@@ -24,7 +24,10 @@
  * Contributor(s): Fürbass Franz <franz.fuerbass@infonova.at>
  *
  * $Log: h235auth.h,v $
- * Revision 1.2004  2002/01/14 06:35:56  robertj
+ * Revision 1.2005  2002/07/01 04:56:29  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.3  2002/01/14 06:35:56  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.2  2001/10/05 00:22:13  robertj
@@ -32,6 +35,9 @@
  *
  * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 1.5  2002/05/17 03:39:28  robertj
+ * Fixed problems with H.235 authentication on RAS for server and client.
  *
  * Revision 1.4  2001/12/06 06:44:42  robertj
  * Removed "Win32 SSL xxx" build configurations in favour of system
@@ -58,6 +64,8 @@ class H225_CryptoH323Token;
 class H225_ArrayOf_CryptoH323Token;
 class H225_ArrayOf_AuthenticationMechanism;
 class H225_ArrayOf_PASN_ObjectId;
+class H235_AuthenticationMechanism;
+class PASN_ObjectId;
 
 
 /** This abtract class embodies an H.235 authentication mechanism.
@@ -98,10 +106,15 @@ class H235Authenticator : public PObject
       const PBYTEArray & rawPDU
     ) = 0;
 
+    virtual BOOL IsCapability(
+      const H235_AuthenticationMechanism & mechansim,
+      const PASN_ObjectId & algorithmOID
+    ) = 0;
+
     virtual BOOL SetCapability(
-      H225_ArrayOf_AuthenticationMechanism & authenticationCapabilities,
+      H225_ArrayOf_AuthenticationMechanism & mechansims,
       H225_ArrayOf_PASN_ObjectId & algorithmOIDs
-    );
+    ) = 0;
 
     virtual BOOL UseGkAndEpIdentifiers() const;
 
@@ -122,6 +135,13 @@ class H235Authenticator : public PObject
     void SetPassword(const PString & pw) { password = pw; }
 
   protected:
+    BOOL AddCapability(
+      unsigned mechanism,
+      const PString & oid,
+      H225_ArrayOf_AuthenticationMechanism & mechansims,
+      H225_ArrayOf_PASN_ObjectId & algorithmOIDs
+    );
+
     BOOL     enabled;
 
     PString  remoteId;      // ID of remote entity
@@ -149,7 +169,7 @@ class H235AuthSimpleMD5 : public H235Authenticator
       H225_CryptoH323Token & cryptoTokens
     );
 
-    virtual BOOL Finalise(
+     virtual BOOL Finalise(
       PBYTEArray & rawPDU
     );
 
@@ -158,8 +178,13 @@ class H235AuthSimpleMD5 : public H235Authenticator
       const PBYTEArray & rawPDU
     );
 
+    virtual BOOL IsCapability(
+      const H235_AuthenticationMechanism & mechansim,
+      const PASN_ObjectId & algorithmOID
+    );
+
     virtual BOOL SetCapability(
-      H225_ArrayOf_AuthenticationMechanism & authenticationCapabilities,
+      H225_ArrayOf_AuthenticationMechanism & mechansim,
       H225_ArrayOf_PASN_ObjectId & algorithmOIDs
     );
 
@@ -190,11 +215,21 @@ class H235AuthProcedure1 : public H235Authenticator
       const PBYTEArray & rawPDU
     );
 
+    virtual BOOL IsCapability(
+      const H235_AuthenticationMechanism & mechansim,
+      const PASN_ObjectId & algorithmOID
+    );
+
+    virtual BOOL SetCapability(
+      H225_ArrayOf_AuthenticationMechanism & mechansim,
+      H225_ArrayOf_PASN_ObjectId & algorithmOIDs
+    );
+
     virtual BOOL UseGkAndEpIdentifiers() const;
 
   protected:
-    unsigned   lastRandomSequenceNumber;
-    unsigned   lastTimestamp;
+    unsigned lastRandomSequenceNumber;
+    unsigned lastTimestamp;
 };
 
 #endif

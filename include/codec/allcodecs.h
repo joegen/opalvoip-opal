@@ -23,7 +23,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: allcodecs.h,v $
- * Revision 1.2002  2001/08/01 05:03:26  robertj
+ * Revision 1.2003  2002/07/01 04:56:29  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.1  2001/08/01 05:03:26  robertj
  * Changes to allow control of linking software transcoders, use macros
  *   to force linking.
  *
@@ -34,6 +37,9 @@
 
 #include <codec/g711codec.h>
 OPAL_REGISTER_G711();
+
+#include <codec/g729codec.h>
+OPAL_REGISTER_G729();
 
 #include <codec/gsmcodec.h>
 OPAL_REGISTER_GSM0610();
