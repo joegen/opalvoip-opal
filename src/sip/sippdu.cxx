@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2025  2004/03/14 08:34:10  csoutheren
+ * Revision 1.2026  2004/03/14 10:14:13  rjongbloed
+ * Changes to REGISTER to support authentication
+ *
+ * Revision 2.24  2004/03/14 08:34:10  csoutheren
  * Added ability to set User-Agent string
  *
  * Revision 2.23  2004/03/13 06:32:18  rjongbloed
@@ -117,6 +120,7 @@
 #include <sip/sipep.h>
 #include <sip/sipcon.h>
 #include <opal/call.h>
+#include <opal/manager.h>
 #include <opal/connection.h>
 #include <opal/transports.h>
 
@@ -279,10 +283,6 @@ BOOL SIPURL::InternalParse(const char * cstr, const char * defaultScheme)
 
 //  if (!paramVars.Contains("transport"))
 //    SetParamVar("transport", "udp");
-
-  // ensure transport is always lower case for GetTransactionID
-  if (paramVars.Contains("transport"))
-    SetParamVar("transport", paramVars("transport").ToLower());
 
   Recalculate();
   return !IsEmpty();
@@ -1192,7 +1192,7 @@ PString SIP_PDU::GetTransactionID() const
 {
   // sometimes peers put <> around address, use GetHostAddress on GetFrom to handle all cases
   SIPURL fromURL(mime.GetFrom());
-  return fromURL.GetHostAddress() + PString(mime.GetCSeqIndex());
+  return fromURL.GetHostAddress().ToLower() + PString(mime.GetCSeqIndex());
 }
 
 
@@ -1239,23 +1239,6 @@ SIPTransaction::~SIPTransaction()
 }
 
 
-void SIPTransaction::BuildREGISTER(const SIPURL & address,
-                                   const SIPURL & contact)
-{
-  PString addrStr = address.AsQuotedString();
-  SIP_PDU::Construct(Method_REGISTER,
-                     "sip:"+address.GetHostName(),
-                     addrStr,
-                     addrStr,
-                     endpoint.GetRegistrationID(),
-                     endpoint.GetNextCSeq(),
-                     transport.GetLocalAddress());
-
-  mime.SetContact(contact);
-//  mime.SetExpires(60);
-}
-
-
 BOOL SIPTransaction::Start()
 {
   if (state != NotStarted) {
@@ -1266,6 +1249,10 @@ BOOL SIPTransaction::Start()
   if (connection != NULL) {
     connection->AddTransaction(this);
     connection->GetAuthentication().Authorise(*this);
+  }
+  else {
+    endpoint.AddTransaction(this);
+    endpoint.GetAuthentication().Authorise(*this);
   }
 
   PWaitAndSignal m(mutex);
@@ -1359,6 +1346,8 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
 
     if (connection != NULL)
       connection->OnReceivedResponse(*this, response);
+    else
+      endpoint.OnReceivedResponse(*this, response);
 
     state = Proceeding;
     retry = 0;
@@ -1373,6 +1362,8 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
 
     if (state < Completed && connection != NULL)
       connection->OnReceivedResponse(*this, response);
+    else
+      endpoint.OnReceivedResponse(*this, response);
 
     state = Completed;
     retryTimer.Stop();
@@ -1522,6 +1513,41 @@ BOOL SIPInvite::OnCompleted(SIP_PDU & response)
 
   SetTerminated(Terminated_TransportError);
   return FALSE;
+}
+
+
+SIPRegister::SIPRegister(SIPEndPoint & ep,
+                         OpalTransport & trans,
+                         const SIPURL & address,
+                         const PString & id)
+  : SIPTransaction(ep, trans)
+{
+  // translate contact address
+  OpalTransportAddress contactAddress = transport.GetLocalAddress();
+  WORD contactPort = endpoint.GetDefaultSignalPort();
+
+  PIPSocket::Address localIP;
+  if (transport.GetLocalAddress().GetIpAddress(localIP)) {
+    PIPSocket::Address remoteIP;
+    if (transport.GetRemoteAddress().GetIpAddress(remoteIP)) {
+      endpoint.GetManager().TranslateIPAddress(localIP, remoteIP);
+      contactAddress = OpalTransportAddress(localIP, contactPort, "udp");
+    }
+  }
+
+  SIPURL contact(address.GetUserName(), contactAddress, contactPort);
+
+  PString addrStr = address.AsQuotedString();
+  SIP_PDU::Construct(Method_REGISTER,
+                     "sip:"+address.GetHostName(),
+                     addrStr,
+                     addrStr,
+                     id,
+                     endpoint.GetNextCSeq(),
+                     transport.GetLocalAddress());
+
+  mime.SetContact(contact);
+//  mime.SetExpires(60);
 }
 
 
