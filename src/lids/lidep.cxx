@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2009  2001/10/04 00:47:02  robertj
+ * Revision 1.2010  2001/10/15 04:31:56  robertj
+ * Removed answerCall signal and replaced with state based functions.
+ *
+ * Revision 2.8  2001/10/04 00:47:02  robertj
  * Removed redundent parameter.
  *
  * Revision 2.7  2001/08/23 05:51:17  robertj
@@ -369,7 +372,6 @@ BOOL OpalLineConnection::OnReleased()
     PTRACE(3, "LID Con\tAwaiting handler thread termination " << *this);
     // Stop the signalling handler thread
     SetUserIndication(PString()); // Break out of ReadUserInput
-    SetAnswerResponse(AnswerCallDenied); // Break out of answer loop
     handlerThread->WaitForTermination();
     delete handlerThread;
     handlerThread = NULL;
@@ -394,7 +396,7 @@ PString OpalLineConnection::GetDestinationAddress()
 }
 
 
-BOOL OpalLineConnection::SetAlerting(const PString & calleeName)
+BOOL OpalLineConnection::SetAlerting(const PString & calleeName, BOOL)
 {
   line.SetCallerID(calleeName);
   return line.PlayTone(OpalLineInterfaceDevice::RingTone);
@@ -526,19 +528,6 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
     Release(EndedByCallerAbort);
     return;
   }
-
-  // If pending response wait
-  while (answerResponse == AnswerCallPending || answerResponse == AnswerCallDeferred) {
-    PTRACE(3, "LID Con\tAwaiting answer call response, is " << answerResponse);
-    if (answerResponse == AnswerCallPending)
-      SetAlerting(remotePartyName);
-    answerWaitFlag.Wait();
-  }
-  PTRACE(3, "LID Con\tAnswer call response: " << answerResponse);
-
-  // If response is denied, abort the call
-  if (answerResponse == AnswerCallDenied)
-    Release(EndedByNoAnswer);
 }
 
 
