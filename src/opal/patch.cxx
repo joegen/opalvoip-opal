@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2004  2002/03/07 02:25:52  craigs
+ * Revision 1.2005  2003/03/17 10:27:00  robertj
+ * Added video support.
+ *
+ * Revision 2.3  2002/03/07 02:25:52  craigs
  * Patch threads now take notice of failed writes by removing the offending sink from the list
  *
  * Revision 2.2  2002/01/22 05:13:15  robertj
@@ -108,48 +111,15 @@ void OpalMediaPatch::Main()
   }
   inUse.Signal();
 
-  RTP_DataFrame sourceFrame, intermediateFrame, finalFrame;
+  RTP_DataFrame sourceFrame(source.GetDataSize());
   while (source.ReadPacket(sourceFrame)) {
     inUse.Wait();
 
     FilterFrame(sourceFrame, source.GetMediaFormat());
 
     for (i = 0; i < sinks.GetSize(); i++) {
-      Sink & sink = sinks[i];
-
-      RTP_DataFrame * sinkFrame;
-      if (sink.primaryCodec == NULL || sourceFrame.GetPayloadSize() == 0)
-        sinkFrame = &sourceFrame;
-      else {
-        intermediateFrame.SetTimestamp(sourceFrame.GetTimestamp());
-        sinkFrame = &intermediateFrame;
-        if (sink.primaryCodec->Convert(sourceFrame, intermediateFrame)) {
-          FilterFrame(intermediateFrame, sink.primaryCodec->GetOutputFormat());
-
-          if (sink.secondaryCodec != NULL) {
-            finalFrame.SetTimestamp(sourceFrame.GetTimestamp());
-            sinkFrame = &finalFrame;
-            if (sink.secondaryCodec->Convert(intermediateFrame, finalFrame))
-              FilterFrame(finalFrame, sink.secondaryCodec->GetOutputFormat());
-            else {
-              PTRACE(1, "Patch\tMedia conversion failed");
-              finalFrame.SetPayloadSize(0);
-            }
-          }
-        }
-        else {
-          PTRACE(1, "Patch\tMedia conversion failed");
-          intermediateFrame.SetPayloadSize(0);
-        }
-      }
-
-      FilterFrame(*sinkFrame, OpalMediaFormat());
-
-      // if the write fails, remove the sink from the list for this patch
-      if (sink.stream->WritePacket(*sinkFrame))
-        sourceFrame.SetTimestamp(sinkFrame->GetTimestamp());
-      else
-        sinks.RemoveAt(i--);  // note rthis 
+      if (!sinks[i].WriteFrame(sourceFrame))
+        sinks.RemoveAt(i--);  // Got write error, remove from sink list
     }
 
     PINDEX len = sinks.GetSize();
@@ -184,7 +154,7 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream)
 
   PWaitAndSignal mutex(inUse);
 
-  Sink * sink = new Sink(stream);
+  Sink * sink = new Sink(*this, stream);
   sinks.Append(sink);
 
   stream->SetPatch(this);
@@ -241,11 +211,14 @@ void OpalMediaPatch::RemoveSink(OpalMediaStream * stream)
 }
 
 
-OpalMediaPatch::Sink::Sink(OpalMediaStream * s)
+OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, OpalMediaStream * s)
+  : patch(p)
 {
   stream = s;
   primaryCodec = NULL;
   secondaryCodec = NULL;
+  intermediateFrames.Append(new RTP_DataFrame);
+  finalFrames.Append(new RTP_DataFrame);
 }
 
 
@@ -286,6 +259,40 @@ void OpalMediaPatch::FilterFrame(RTP_DataFrame & frame,
     if (filters[f].stage == mediaFormat)
       filters[f].notifier(frame, (INT)this);
   }
+}
+
+
+BOOL OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
+{
+  if (primaryCodec == NULL || sourceFrame.GetPayloadSize() == 0)
+    return stream->WritePacket(sourceFrame);
+
+  if (!primaryCodec->ConvertFrames(sourceFrame, intermediateFrames)) {
+    PTRACE(1, "Patch\tMedia conversion (primary) failed");
+    return FALSE;
+  }
+
+  for (PINDEX i = 0; i < intermediateFrames.GetSize(); i++) {
+    patch.FilterFrame(intermediateFrames[i], primaryCodec->GetOutputFormat());
+    if (secondaryCodec == NULL) {
+      if (!stream->WritePacket(intermediateFrames[i]))
+        return FALSE;
+    }
+    else {
+      if (!secondaryCodec->ConvertFrames(intermediateFrames[i], finalFrames)) {
+        PTRACE(1, "Patch\tMedia conversion (secondary) failed");
+        return FALSE;
+      }
+
+      for (PINDEX f = 0; f < finalFrames.GetSize(); f++) {
+        patch.FilterFrame(finalFrames[f], secondaryCodec->GetOutputFormat());
+        if (!stream->WritePacket(finalFrames[f]))
+          return FALSE;
+      }
+    }
+  }
+
+  return TRUE;
 }
 
 

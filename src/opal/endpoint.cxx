@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2016  2002/11/10 11:33:19  robertj
+ * Revision 1.2017  2003/03/17 10:27:00  robertj
+ * Added video support.
+ *
+ * Revision 2.15  2002/11/10 11:33:19  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.14  2002/09/06 02:42:03  robertj
@@ -333,6 +336,25 @@ BOOL OpalEndPoint::OnOpenMediaStream(OpalConnection & connection,
 void OpalEndPoint::OnClosedMediaStream(const OpalMediaStream & stream)
 {
   manager.OnClosedMediaStream(stream);
+}
+
+
+void OpalEndPoint::AddVideoMediaFormats(const OpalConnection & connection,
+                                      OpalMediaFormatList & mediaFormats) const
+{
+  manager.AddVideoMediaFormats(connection, mediaFormats);
+}
+
+
+PVideoInputDevice * OpalEndPoint::CreateVideoInputDevice(const OpalConnection & connection)
+{
+  return manager.CreateVideoInputDevice(connection);
+}
+
+
+PVideoOutputDevice * OpalEndPoint::CreateVideoOutputDevice(const OpalConnection & connection)
+{
+  return manager.CreateVideoOutputDevice(connection);
 }
 
 
