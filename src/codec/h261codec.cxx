@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.cxx,v $
- * Revision 1.2006  2002/01/22 05:18:59  robertj
+ * Revision 1.2007  2002/07/01 04:56:31  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.5  2002/01/22 05:18:59  robertj
  * Added RTP encoding name string to media format database.
  * Changed time units to clock rate in Hz.
  *
@@ -47,6 +50,18 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.48  2002/05/19 22:03:45  dereks
+ * Add fix from Sean Miceli, so correct P64Decoder is picked in calls with Netmeeting.
+ * Many thanks, good work!
+ *
+ * Revision 1.47  2002/04/26 04:58:34  dereks
+ * Add Walter Whitlock's fixes, based on Victor Ivashim's suggestions to improve
+ * the quality with Netmeeting. Thanks guys!!!
+ *
+ * Revision 1.46  2002/04/05 00:53:19  dereks
+ * Modify video frame encoding so that frame is encoded on an incremental basis.
+ * Thanks to Walter Whitlock - good work.
  *
  * Revision 1.45  2002/01/09 06:07:13  robertj
  * Fixed setting of RTP timestamp values on video transmission.
@@ -725,7 +740,7 @@ BOOL H323_H261Codec::Read(BYTE * buffer,
   PINDEX bytesInFrame = 0;
   BOOL ok=TRUE;
 
-  if( !videoEncoder->PacketsOutStanding() ) {
+  if( !videoEncoder->MoreToIncEncode() ) {
     if( videoBitRate != 0 && (videoBitRateControlModes & DynamicVideoQuality) ) {    
       if( (frameNum % frameRateDivider) == 0 ) {
 	int error = reqBitsPerFrame - frameBits;  // error signal
@@ -784,15 +799,13 @@ BOOL H323_H261Codec::Read(BYTE * buffer,
 
   //NO data is waiting to be read. Go and get some with the read call.
     if(rawDataChannel->Read(videoEncoder->GetFramePtr(), bytesInFrame)) {
-      PTRACE(6,"H261\tSuccess. Read frame from the video source.");
 
       // If there is a Renderer attached, display the grabbed video.
       if( ((PVideoChannel *)rawDataChannel)->IsRenderOpen() ) {
 	ok=RenderFrame();                     //use data from grab process.
       }
-      videoEncoder->ProcessOneFrame();        //Generate H261 packets.                
-      PTRACE(6, "H261\t" << videoEncoder->GetCountPacketsOutStanding() << 
-	        " packets for this frame" );      
+      videoEncoder->PreProcessOneFrame();        
+
       if( videoBitRate != 0 && (videoBitRateControlModes & DynamicVideoQuality) ) {    
         if( (frameNum % frameRateDivider) == 0 ) {
 	  frameBits=0;  //clear frame bits counter
@@ -819,11 +832,13 @@ BOOL H323_H261Codec::Read(BYTE * buffer,
     /////////////////////////////////////////////////////////////////
     timestampDelta = 3003;
 
-  } else {  //if(!videoEncoder->PacketsOutstanding())
-    PThread::Current()->Sleep(5);  // Place a 5 ms interval betwen 
+  } else {  //if(!videoEncoder->MoreToIncEncode())...    There is more to inc encode
+    PThread::Current()->Sleep(5);  // Place a 5 ms interval between packets.
     timestampDelta = 0;
   }
   // packets of the same frame.
+  videoEncoder->IncEncodeAndGetPacket(buffer,length); //get next packet from this frame.
+  frame.SetMarker(!videoEncoder->MoreToIncEncode());
 
   PTRACE(6, "H261\t" << videoEncoder->GetCountPacketsOutStanding() << " packets outstanding" );
 
@@ -849,20 +864,18 @@ BOOL H323_H261Codec::Read(BYTE * buffer,
   // video bandwidth to certain value introducing a variable delay between
   // packets
   if( videoBitRate != 0 && 
-      (videoBitRateControlModes & AdaptivePacketDelay) )
-  {    
+      (videoBitRateControlModes & AdaptivePacketDelay) ) {    
     PTimeInterval sinceLastReturnInterval = PTimer::Tick() - lastReadReturn;
     
     // ms = (bytes * 8) / (bps / 1024)
     PInt64 waitForNextPacket = (length*8)/(videoBitRate/1024)
-                                  - sinceLastReturnInterval.GetMilliSeconds();
+                              - sinceLastReturnInterval.GetMilliSeconds();
     
-    PTRACE(3, "H261\tFrame bits: " << length*8
+    PTRACE(3, "H261\tFrame bits: "          << length*8
            << ", sinceLastReturnInterval: " << sinceLastReturnInterval.GetMilliSeconds()
-           << ", waitForNextPacket: " << waitForNextPacket);
+           << ", waitForNextPacket: "       << waitForNextPacket);
 
-    if (waitForNextPacket>0)
-    {
+    if (waitForNextPacket>0) {
       PThread::Current()->Sleep(waitForNextPacket);
     }
     
@@ -871,6 +884,7 @@ BOOL H323_H261Codec::Read(BYTE * buffer,
 
   return ok;
 }
+
 
 
 BOOL H323_H261Codec::Write(const BYTE * buffer,
@@ -885,8 +899,12 @@ BOOL H323_H261Codec::Write(const BYTE * buffer,
     return FALSE;
   }
 
+  BOOL lostPreviousPacket = FALSE;
   if( (++lastSequenceNumber) != frame.GetSequenceNumber() ) {
-    PTRACE(3,"H261\tDetected loss of one video packet. Will recover.");
+    lostPreviousPacket = TRUE;
+    PTRACE(3,"H261\tDetected loss of one video packet. "
+      << lastSequenceNumber << " != "
+      << frame.GetSequenceNumber() << " Will recover.");
     lastSequenceNumber = frame.GetSequenceNumber();
     SendMiscCommand(H245_MiscellaneousCommand_type::e_lostPartialPicture);
   }
@@ -894,57 +912,27 @@ BOOL H323_H261Codec::Write(const BYTE * buffer,
   // always indicate we have written the entire packet
   written = length;
 
-  // assume buffer is start of H.261 header
-  const BYTE * header  = buffer;
-
-  // see if any contributing source
+  // H.261 header is usually at start of buffer
+  const unsigned char * header = buffer;
+  // adjust for any contributing source (what's that?)
   PINDEX cnt = frame.GetContribSrcCount();
   if (cnt > 0) {
     header += cnt * 4;
     length -= cnt * 4;
   }
 
-  // rh = RTP header -> header
-  // bp = payload
-  // cc = payload length
-
   // determine video codec type
   if (videoDecoder == NULL) {
-    if ( (*(buffer+1)) & 2)
+    if ((*header & 2) && !(*header & 1)) // check value of I field in header
       videoDecoder = new IntraP64Decoder();
     else
       videoDecoder = new FullP64Decoder();
     videoDecoder->marks(rvts);
   }
 
-  // decode values from the RTP H261 header
-  u_int v = ntohl(*(u_int*)header);
-  int sbit  = (v >> 29) & 0x07;
-  int ebit  = (v >> 26) & 0x07;
-  int gob   = (v >> 20) & 0xf;
-  int mba   = (v >> 15) & 0x1f;
-  int quant = (v >> 10) & 0x1f;
-  int mvdh  = (v >>  5) & 0x1f;
-  int mvdv  =  v & 0x1f;
-
-
-  //if (gob > 12) {
-  //  h261_rtp_bug_ = 1;
-  //  mba = (v >> 19) & 0x1f;
-  //  gob = (v >> 15) & 0xf;
- // }
-
-  if (gob > 12) {
-    //count(STAT_BAD_HEADER);
-    return FALSE;
-  }
-
-  // leave 4 bytes for H.261 header
-  const BYTE * payload = header + 4;
-  length = length - 4;
-
   videoDecoder->mark(now);
-  (void)videoDecoder->decode(payload, length, sbit, ebit, mba, gob, quant, mvdh, mvdv);
+  BOOL ok = videoDecoder->decode(header, length, lostPreviousPacket);
+  if (!ok) return FALSE;
 
   BOOL ok = TRUE;
 

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t120.h,v $
- * Revision 1.2004  2002/02/11 09:32:12  robertj
+ * Revision 1.2005  2002/07/01 04:56:31  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.3  2002/02/11 09:32:12  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.2  2002/01/14 06:35:57  robertj
@@ -35,6 +38,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.4  2002/05/10 05:47:37  robertj
+ * Added session ID to the data logical channel class.
  *
  * Revision 1.3  2002/02/01 01:46:50  robertj
  * Some more fixes for T.120 channel establishment, more to do!
@@ -190,7 +196,8 @@ class H323_T120Channel : public H323DataChannel
     H323_T120Channel(
       H323Connection & connection,        /// Connection to endpoint for channel
       const H323Capability & capability,  /// Capability channel is using
-      Directions direction                /// Direction of channel
+      Directions direction,               /// Direction of channel
+      unsigned sessionID                  /// Session ID for channel
     );
   //@}
 

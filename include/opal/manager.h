@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2011  2002/04/10 08:15:31  robertj
+ * Revision 1.2012  2002/07/01 04:56:31  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.10  2002/04/10 08:15:31  robertj
  * Added functions to set ports.
  *
  * Revision 2.9  2002/02/19 07:42:50  robertj
@@ -511,14 +514,6 @@ class OpalManager : public PObject
 
   /**@name User indications */
   //@{
-    /**Get the default mode for sending User Input Indications.
-      */
-    OpalConnection::SendUserInputModes GetSendUserInputModes() const { return defaultSendUserInputMode; }
-
-    /**Set the default mode for sending User Input Indications.
-      */
-    void SetSendUserInputModes(OpalConnection::SendUserInputModes mode) { defaultSendUserInputMode = mode; }
-
     /**Call back for remote endpoint has sent user input as a string.
 
        The default behaviour call OpalConnection::SetUserInput() which
@@ -542,6 +537,37 @@ class OpalManager : public PObject
     );
   //@}
 
+  /**@name Other services */
+  //@{
+    /**Create an instance of the T.120 protocol handler.
+       This is called when the OpenLogicalChannel subsystem requires that
+       a T.120 channel be established.
+
+       Note that if the application overrides this it should return a pointer to a
+       heap variable (using new) as it will be automatically deleted when the
+       H323Connection is deleted.
+
+       The default behavour returns NULL.
+      */
+    virtual OpalT120Protocol * CreateT120ProtocolHandler(
+      const OpalConnection & connection  /// Connection for which T.120 handler created
+    ) const;
+
+    /**Create an instance of the T.38 protocol handler.
+       This is called when the OpenLogicalChannel subsystem requires that
+       a T.38 fax channel be established.
+
+       Note that if the application overrides this it should return a pointer to a
+       heap variable (using new) as it will be automatically deleted when the
+       H323Connection is deleted.
+
+       The default behavour returns NULL.
+      */
+    virtual OpalT38Protocol * CreateT38ProtocolHandler(
+      const OpalConnection & connection  /// Connection for which T.38 handler created
+    ) const;
+  //@}
+
   /**@name Member variable access */
   //@{
     /**See if should auto-start receive video channels on connection.
@@ -551,6 +577,13 @@ class OpalManager : public PObject
     /**See if should auto-start transmit video channels on connection.
      */
     BOOL CanAutoStartTransmitVideo() const { return autoStartTransmitVideo; }
+
+    /**Provide address translation hook.
+     */
+    virtual BOOL TranslateIPAddress(
+      PIPSocket::Address & localAddress,
+      const PIPSocket::Address & remoteAddress
+    );
 
     /**Get the TCP port number base for signalling channels
      */
@@ -564,6 +597,10 @@ class OpalManager : public PObject
      */
     void SetTCPPorts(unsigned tcpBase, unsigned tcpMax);
 
+    /**Get the next TCP port number for H.245 channels
+     */
+    WORD GetNextTCPPort();
+
     /**Get the UDP port number base for media (eg RTP) channels.
      */
     WORD GetUDPPortBase() const { return udpPortBase; }
@@ -576,12 +613,25 @@ class OpalManager : public PObject
      */
     void SetUDPPorts(unsigned udpBase, unsigned udpMax);
 
-    /**Provide address translation hook.
+    /**Get the next UDP port number for RAS channels
      */
-    virtual BOOL TranslateIPAddress(
-      PIPSocket::Address & localAddress,
-      const PIPSocket::Address & remoteAddress
-    );
+    WORD GetNextUDPPort();
+
+    /**Get the UDP port number base for RTP channels.
+     */
+    WORD GetRtpIpPortBase() const { return rtpIpPortBase; }
+
+    /**Get the max UDP port number for RTP channels.
+     */
+    WORD GetRtpIpPortMax() const { return rtpIpPortMax; }
+
+    /**Set the UDP port number base and max for RTP channels.
+     */
+    void SetRtpIpPorts(unsigned udpBase, unsigned udpMax);
+
+    /**Get the UDP port number pair for RTP channels.
+     */
+    WORD GetRtpIpPortPair();
 
     /**Get the IP Type Of Service byte for media (eg RTP) channels.
      */
@@ -614,6 +664,15 @@ class OpalManager : public PObject
     /**Set the default media format order.
      */
     void SetMediaFormatMask(const PStringArray & mask) { mediaFormatMask = mask; }
+
+    BOOL DetectInBandDTMFDisabled() const
+      { return disableDetectInBandDTMF; }
+
+    /**Set the default H.245 tunneling mode.
+      */
+    void DisableDetectInBandDTMF(
+      BOOL mode /// New default mode
+    ) { disableDetectInBandDTMF = mode; } 
   //@}
 
 
@@ -621,13 +680,15 @@ class OpalManager : public PObject
     // Configuration variables
     BOOL         autoStartReceiveVideo;
     BOOL         autoStartTransmitVideo;
-    WORD         udpPortBase, udpPortMax;
-    WORD         tcpPortBase, tcpPortMax;
+    PMutex       ipPortMutex;
+    WORD         udpPort, udpPortBase, udpPortMax;
+    WORD         tcpPort, tcpPortBase, tcpPortMax;
+    WORD         rtpIpPort, rtpIpPortBase, rtpIpPortMax;
     BYTE         rtpIpTypeofService;
     WORD         maxAudioDelayJitter;
     PStringArray mediaFormatOrder;
     PStringArray mediaFormatMask;
-    OpalConnection::SendUserInputModes defaultSendUserInputMode;
+    BOOL         disableDetectInBandDTMF;
 
     // Dynamic variables
     PMutex inUseFlag;
