@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2007  2001/12/07 08:56:19  robertj
+ * Revision 1.2008  2002/01/22 05:04:58  robertj
+ * Revamp of user input API triggered by RFC2833 support
+ *
+ * Revision 2.6  2001/12/07 08:56:19  robertj
  * Renamed RTP to be more general UDP port base, and TCP to be IP.
  *
  * Revision 2.5  2001/11/14 01:31:55  robertj
@@ -491,22 +494,31 @@ class OpalManager : public PObject
 
   /**@name User indications */
   //@{
+    /**Get the default mode for sending User Input Indications.
+      */
+    OpalConnection::SendUserInputModes GetSendUserInputModes() const { return defaultSendUserInputMode; }
+
+    /**Set the default mode for sending User Input Indications.
+      */
+    void SetSendUserInputModes(OpalConnection::SendUserInputModes mode) { defaultSendUserInputMode = mode; }
+
     /**Call back for remote endpoint has sent user input as a string.
 
-       The default behaviour call OpalConnection::SetUserIndication() which
-       saves the value so the GetUserIndication() function can return it.
+       The default behaviour call OpalConnection::SetUserInput() which
+       saves the value so the GetUserInput() function can return it.
       */
-    virtual void OnUserIndicationString(
+    virtual void OnUserInputString(
       OpalConnection & connection,  /// Connection input has come from
       const PString & value         /// String value of indication
     );
 
     /**Call back for remote enpoint has sent user input as tones.
+       If duration is zero then this indicates the beginning of the tone. If
+       duration is non-zero then it indicates the end of the tone output.
 
-       The default behaviour creates a string from the tone character and
-       calls the OnUserIndicationString() function.
+       The default behaviour calls the OpalCall function of the same name.
       */
-    virtual void OnUserIndicationTone(
+    virtual void OnUserInputTone(
       OpalConnection & connection,  /// Connection input has come from
       char tone,                    /// Tone received
       int duration                  /// Duration of tone
@@ -590,6 +602,7 @@ class OpalManager : public PObject
     WORD         maxAudioDelayJitter;
     PStringArray mediaFormatOrder;
     PStringArray mediaFormatMask;
+    OpalConnection::SendUserInputModes defaultSendUserInputMode;
 
     // Dynamic variables
     PMutex inUseFlag;
