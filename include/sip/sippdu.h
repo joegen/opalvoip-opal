@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2016  2004/03/14 10:14:13  rjongbloed
+ * Revision 1.2017  2004/08/22 12:27:44  rjongbloed
+ * More work on SIP registration, time to live refresh and deregistration on exit.
+ *
+ * Revision 2.15  2004/03/14 10:14:13  rjongbloed
  * Changes to REGISTER to support authentication
  *
  * Revision 2.14  2004/03/14 08:34:09  csoutheren
@@ -590,7 +593,8 @@ class SIPRegister : public SIPTransaction
       SIPEndPoint   & endpoint,
       OpalTransport & transport,
       const SIPURL & address,
-      const PString & id
+      const PString & id,
+      unsigned expires
     );
 };
 
