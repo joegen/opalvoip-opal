@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2030  2004/08/14 07:56:32  rjongbloed
+ * Revision 1.2031  2004/08/18 13:03:57  rjongbloed
+ * Changed to make calling OPalManager::OnClearedCall() in override optional.
+ * Added setting of party A and B fields in call for display purposes.
+ * Fixed warning.
+ *
+ * Revision 2.29  2004/08/14 07:56:32  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.28  2004/07/14 13:26:14  rjongbloed
@@ -236,6 +241,13 @@ BOOL OpalCall::OnSetUp(OpalConnection & connection)
 
   BOOL ok = FALSE;
 
+  if (!LockReadWrite())
+    return FALSE;
+
+  partyA = connection.GetRemotePartyName();
+
+  UnlockReadWrite();
+
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
     if (conn != &connection) {
       if (conn->SetUpConnection())
@@ -252,6 +264,13 @@ BOOL OpalCall::OnAlerting(OpalConnection & connection)
   PTRACE(3, "Call\tOnAlerting " << connection);
 
   BOOL ok = FALSE;
+
+  if (!LockReadWrite())
+    return FALSE;
+
+  partyB = connection.GetRemotePartyName();
+
+  UnlockReadWrite();
 
   BOOL hasMedia = connection.GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, TRUE) != NULL;
 
@@ -309,7 +328,7 @@ BOOL OpalCall::OnConnected(OpalConnection & connection)
 }
 
 
-BOOL OpalCall::OnEstablished(OpalConnection & connection)
+BOOL OpalCall::OnEstablished(OpalConnection & PTRACE_PARAM(connection))
 {
   PTRACE(3, "Call\tOnEstablished " << connection);
 
@@ -500,8 +519,10 @@ void OpalCall::OnReleased(OpalConnection & connection)
   if (last != NULL && connectionsActive.GetSize() == 1)
     last->Release(connection.GetCallEndReason());
 
-  if (connectionsActive.IsEmpty())
+  if (connectionsActive.IsEmpty()) {
     OnCleared();
+    manager.activeCalls.RemoveAt(GetToken());
+  }
 }
 
 
