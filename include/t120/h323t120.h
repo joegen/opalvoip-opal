@@ -24,11 +24,17 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t120.h,v $
- * Revision 1.2002  2001/08/01 05:06:10  robertj
+ * Revision 1.2003  2002/01/14 06:35:57  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.1  2001/08/01 05:06:10  robertj
  * Major changes to H.323 capabilities, uses OpalMediaFormat for base name.
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.2  2002/01/09 00:21:36  robertj
+ * Changes to support outgoing H.245 RequstModeChange.
  *
  * Revision 1.1  2001/07/17 04:44:29  robertj
  * Partial implementation of T.120 and T.38 logical channels.
@@ -106,10 +112,33 @@ class H323_T120Capability : public H323DataCapability
        It allows the capability to set the PDU fields from information in
        members specific to the class.
 
-       The default behaviour sets the data rate field in the PDU.
+       The default behaviour sets the pdu and calls OnSendingPDU with a
+       H245_DataProtocolCapability parameter.
      */
     virtual BOOL OnSendingPDU(
       H245_DataApplicationCapability & pdu
+    ) const;
+
+    /**This function is called whenever and outgoing RequestMode
+       PDU is being constructed for the control channel. It allows the
+       capability to set the PDU fields from information in members specific
+       to the class.
+
+       The default behaviour sets the pdu and calls OnSendingPDU with a
+       H245_DataProtocolCapability parameter.
+     */
+    virtual BOOL OnSendingPDU(
+      H245_DataMode & pdu  /// PDU to set information on
+    ) const;
+
+    /**This function is called whenever and outgoing PDU is being constructed
+       for the control channel. It allows the capability to set the PDU fields
+       from information in members specific to the class.
+
+       The default behaviour sets separate LAN stack.
+     */
+    virtual BOOL OnSendingPDU(
+      H245_DataProtocolCapability & pdu  /// PDU to set information on
     ) const;
 
     /**This function is called whenever and incoming TerminalCapabilitySet

@@ -24,11 +24,20 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h450pdu.h,v $
- * Revision 1.2002  2001/08/17 08:20:26  robertj
+ * Revision 1.2003  2002/01/14 06:35:57  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.1  2001/08/17 08:20:26  robertj
  * Update from OpenH323
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.3  2002/01/14 00:02:40  robertj
+ * Added H.450.6
+ * Added extra "failure mode" parts of H.250.2.
+ * Various other bug fixes.
+ *   Thanks Ben Madsen of Norwood Systems
  *
  * Revision 1.2  2001/08/16 07:49:16  robertj
  * Changed the H.450 support to be more extensible. Protocol handlers
@@ -76,8 +85,12 @@ class H450ServiceAPDU : public X880_ROS
                                    const PString & alias,
                                    const H323TransportAddress & address);
 
+    void BuildCallTransferIdentify(int invokeId);
+    void BuildCallTransferAbandon(int invokeId);
     void BuildCallTransferSetup(int invokeId,
                                 const PString & callIdentity);
+
+    void BuildCallWaiting(int invokeId, int numCallsWaiting);
 
     void AttachSupplementaryServiceAPDU(H323SignalPDU & pdu);
     BOOL WriteFacilityPDU(
@@ -372,19 +385,56 @@ class H4502Handler : public H450xHandler
       e_ctAwaitIdentifyResponse,
       e_ctAwaitInitiateResponse,
       e_ctAwaitSetupResponse,
-      e_ctAwaitSetup
+      e_ctAwaitSetup,
+      e_ctAwaitConnect
     };
 
     /**Get the current call transfer state.
      */
     State GetState() const { return ctState; }
 
+    /**Handle the reception of an Admission Reject during a pending call
+       transfer operation at the transferred endpoint. If the call transfer
+       state of the current connection is e_ctAwaitSetupResponse, the stack
+       attempts to find the existing connection between the transferred and
+       transferring endpoints and inform this connection that a
+       callTransferInitiateReturnError PDU needs to be sent.  No action is
+       taken if the current connection is not in call transfer state
+       e_ctAwaitSetupResponse.
+     */
+    virtual void onReceivedAdmissionReject(const int returnError);
+
+    /**Handle the failure of a call transfer operation.
+      */
+    void HandleCallTransferFailure(const int returnError    // failure reason
+    );
+
+    /** Start the Call Transfer Timer using the specified time interval.
+     */
+    void StartctTimer(const PTimeInterval value) { ctTimer = value; }
+
+    /** Stop the Call Transfer Timer
+     */
+    void StopctTimer();
+
+    /**Callback mechanism for Call Transfer Timers CT-T1, CT-T2, CT-T3 & CT-T4
+     */
+    PDECLARE_NOTIFIER(PTimer, H4502Handler, OnCallTransferTimeOut);
+
+    /**Get the connection assoicated with this H4502Handler.
+     */
+    const H323Connection& getAssociatedConnection() const { return connection; }
+
+    /**Get the transferringCallToken member
+     */
+    const PString& getTransferringCallToken() const { return transferringCallToken; }
 
   protected:
     PString transferringCallToken;    // Stores the call token for the transferring connection (if there is one)
     PString transferringCallIdentity; // Stores the call identity for the transferring call (if there is one)
     State   ctState;                  // Call Transfer state of the conneciton
-    BOOL    ctResponseSent;
+    BOOL    ctResponseSent;           // Has a callTransferSetupReturnResult been sent?
+    PTimer  ctTimer;                  // Call Transfer Timer - Handles all four timers CT-T1,
 };
 
 
@@ -440,9 +490,7 @@ class H4504Handler : public H450xHandler
     /**Retrieve the call from hold, activating all media channels (H.450.4)
     * NOTE: Only Local Hold is implemented so far. 
     */
-    void RetrieveCall(
-      bool localHold						  /// true for Local Hold, false for Remote Hold
-    );
+    void RetrieveCall();
 
     /**Sub-state for call hold.
       */
@@ -459,6 +507,54 @@ class H4504Handler : public H450xHandler
 
   protected:
     State holdState;  // Call Hold state of this connection
+};
+
+
+class H4506Handler : public H450xHandler
+{
+    PCLASSINFO(H4506Handler, H450xHandler);
+  public:
+    H4506Handler(
+      H323Connection & connection,
+      H450xDispatcher & dispatcher
+    );
+
+    virtual BOOL OnReceivedInvoke(
+      int opcode,
+      int invokeId,                           /// InvokeId of operation (used in response)
+      int linkedId,                           /// InvokeId of associated operation (if any)
+      PASN_OctetString * argument             /// Parameters for the initiate operation
+    );
+
+    /**Handle an incoming Call Waiting Indication PDU
+    */
+    virtual void OnReceivedCallWaitingIndication(
+      int linkedId,
+      PASN_OctetString *argument
+    );
+
+    /**Attach a call waiting APDU to the passed in Alerting PDU.  The second paramter is used to
+       indicate to the calling user how many additional users are "camped on" the called user.  A
+       value of zero indicates to the calling user that he/she is the only user attempting to reach
+       the busy called user.
+    */
+    virtual void AttachToAlerting(
+      H323SignalPDU & pdu,
+      unsigned numberOfCallsWaiting = 0
+    );
+
+    /**Sub-state for call waiting.
+      */
+    enum State {
+      e_cw_Idle,
+      e_cw_Invoked
+    };
+
+    State GetState() const { return cwState; }
+
+
+  protected:
+    State cwState;  // Call Waiting state of this connection
 };
 
 

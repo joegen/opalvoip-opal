@@ -24,11 +24,33 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t38.h,v $
- * Revision 1.2002  2001/08/01 05:08:04  robertj
+ * Revision 1.2003  2002/01/14 06:35:57  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.1  2001/08/01 05:08:04  robertj
  * Major changes to H.323 capabilities, uses OpalMediaFormat for base name.
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.8  2002/01/09 00:21:36  robertj
+ * Changes to support outgoing H.245 RequstModeChange.
+ *
+ * Revision 1.7  2002/01/01 23:27:50  craigs
+ * Added CleanupOnTermination functions
+ * Thanks to Vyacheslav Frolov
+ *
+ * Revision 1.6  2001/12/22 01:55:20  robertj
+ * Removed vast quatities of redundent code that is done by ancestor class.
+ *
+ * Revision 1.5  2001/12/14 08:36:36  robertj
+ * More implementation of T.38, thanks Adam Lazur
+ *
+ * Revision 1.4  2001/11/20 03:04:30  robertj
+ * Added ability to reuse t38 channels with same session ID.
+ *
+ * Revision 1.3  2001/11/09 05:39:54  craigs
+ * Added initial T.38 support thanks to Adam Lazur
  *
  * Revision 1.2  2001/07/24 02:25:57  robertj
  * Added UDP, dual TCP and single TCP modes to T.38 capability.
@@ -49,6 +71,7 @@
 #include <h323/h323caps.h>
 
 
+class H245_T38FaxProfile;
 class OpalT38Protocol;
 
 
@@ -119,10 +142,34 @@ class H323_T38Capability : public H323DataCapability
        It allows the capability to set the PDU fields from information in
        members specific to the class.
 
-       The default behaviour sets the data rate field in the PDU.
+       The default behaviour sets the pdu and calls OnSendingPDU with a
+       H245_DataProtocolCapability parameter.
      */
     virtual BOOL OnSendingPDU(
       H245_DataApplicationCapability & pdu
+    ) const;
+
+    /**This function is called whenever and outgoing RequestMode
+       PDU is being constructed for the control channel. It allows the
+       capability to set the PDU fields from information in members specific
+       to the class.
+
+       The default behaviour sets the pdu and calls OnSendingPDU with a
+       H245_DataProtocolCapability parameter.
+     */
+    virtual BOOL OnSendingPDU(
+      H245_DataMode & pdu  /// PDU to set information on
+    ) const;
+
+    /**This function is called whenever and outgoing PDU is being constructed
+       for the control channel. It allows the capability to set the PDU fields
+       from information in members specific to the class.
+
+       The default behaviour sets tcp or udp as required.
+     */
+    virtual BOOL OnSendingPDU(
+      H245_DataProtocolCapability & proto,  /// PDU to set information on
+      H245_T38FaxProfile & profile          /// PDU to set information on
     ) const;
 
     /**This function is called whenever and incoming TerminalCapabilitySet
@@ -157,12 +204,36 @@ class H323_T38Channel : public H323DataChannel
     H323_T38Channel(
       H323Connection & connection,           /// Connection to endpoint for channel
       const H323_T38Capability & capability, /// Capability channel is using
-      Directions direction                   /// Direction of channel
+      Directions direction,                  /// Direction of channel
+      OpalT38Protocol * t38handler           /// Handler for channel
     );
+    ~H323_T38Channel();
   //@}
 
   /**@name Overrides from class H323Channel */
   //@{
+    /**Fill out the OpenLogicalChannel PDU for the particular channel type.
+     */
+    virtual BOOL OnSendingPDU(
+      H245_OpenLogicalChannel & openPDU  /// Open PDU to send. 
+    ) const;
+
+    /**This is called after a request to create a channel occurs from the
+       local machine via the H245LogicalChannelDict::Open() function, and
+       the request has been acknowledged by the remote endpoint.
+
+       The default makes sure the parameters are compatible and passes on
+       the PDU to the rtp session.
+     */
+    virtual BOOL OnReceivedPDU(
+      const H245_OpenLogicalChannel & pdu,    /// Open PDU
+      unsigned & errorCode                    /// Error code on failure
+    );
+
+    /**This is called to clean up any threads on connection termination.
+     */
+    virtual void Close();
+
     /**Handle channel data reception.
 
        This is called by the thread started by the Start() function and is
@@ -196,6 +267,8 @@ class H323_T38Channel : public H323DataChannel
       */
     virtual BOOL CreateTransport();
   //@}
+
+    OpalT38Protocol * GetHandler() const { return t38handler; }
 
   protected:
     BOOL              usesTCP;

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2007  2001/11/13 06:25:56  robertj
+ * Revision 1.2008  2002/01/14 06:35:57  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.6  2001/11/13 06:25:56  robertj
  * Changed SetUpConnection() so returns BOOL as returning
  *   pointer to connection is not useful.
  *
@@ -49,6 +52,23 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.14  2002/01/13 23:59:43  robertj
+ * Added CallTransfer timeouts to endpoint, hanks Ben Madsen of Norwood Systems.
+ *
+ * Revision 1.13  2002/01/08 04:45:35  robertj
+ * Added MakeCallLocked() so can start a call with the H323Connection instance
+ *   initally locked so can do things to it before the call really starts.
+ *
+ * Revision 1.12  2001/12/22 03:20:44  robertj
+ * Added create protocol function to H323Connection.
+ *
+ * Revision 1.11  2001/12/13 10:55:30  robertj
+ * Added gatekeeper access token OID specification for auto inclusion of
+ *   access tokens frm ACF to SETUP pdu.
+ *
+ * Revision 1.10  2001/11/09 05:39:54  craigs
+ * Added initial T.38 support thanks to Adam Lazur
  *
  * Revision 1.9  2001/11/01 00:27:33  robertj
  * Added default Fast Start disabled and H.245 tunneling disable flags
@@ -423,7 +443,8 @@ class H323EndPoint : public OpalEndPoint
     virtual BOOL SetupTransfer(
       const PString & token,        /// Existing connection to be transferred
       const PString & callIdentity, /// Call identity of the secondary call (if it exists)
-      const PString & remoteParty   /// Remote party to transfer the existing call to
+      const PString & remoteParty,  /// Remote party to transfer the existing call to
+      void * userData = NULL        /// user data to pass to CreateConnection
     );
 
     /**Initiate the transfer of an existing call (connection) to a new remote party
@@ -643,7 +664,9 @@ class H323EndPoint : public OpalEndPoint
 
        The default behavour returns NULL.
       */
-    virtual OpalT120Protocol * CreateT120ProtocolHandler() const;
+    virtual OpalT120Protocol * CreateT120ProtocolHandler(
+      const H323Connection & connection  /// Connection for which T.38 handler created
+    ) const;
 
     /**Create an instance of the T.38 protocol handler.
        This is called when the OpenLogicalChannel subsystem requires that
@@ -651,7 +674,9 @@ class H323EndPoint : public OpalEndPoint
 
        The default behavour returns NULL.
       */
-    virtual OpalT38Protocol * CreateT38ProtocolHandler() const;
+    virtual OpalT38Protocol * CreateT38ProtocolHandler(
+      const H323Connection & connection  /// Connection for which T.38 handler created
+    ) const;
   //@}
 
   /**@name Member variable access */
@@ -726,6 +751,14 @@ class H323EndPoint : public OpalEndPoint
     /**See if should auto-start transmit video channels on connection.
      */
     BOOL CanAutoStartTransmitVideo() const { return manager.CanAutoStartTransmitVideo(); }
+
+    /**See if should auto-start receive fax channels on connection.
+     */
+    BOOL CanAutoStartReceiveFax() const { return autoStartReceiveFax; }
+
+    /**See if should auto-start transmit fax channels on connection.
+     */
+    BOOL CanAutoStartTransmitFax() const { return autoStartTransmitFax; }
 
     /**Get the current capability table for this endpoint.
      */
@@ -815,6 +848,22 @@ class H323EndPoint : public OpalEndPoint
      */
     BOOL ShouldClearCallOnRoundTripFail() const { return clearCallOnRoundTripFail; }
 
+    /**Get the default timeout for Call Transfer Timer CT-T1.
+     */
+    PTimeInterval GetCallTransferT1() const { return callTransferT1; }
+
+    /**Get the default timeout for Call Transfer Timer CT-T2.
+     */
+    PTimeInterval GetCallTransferT2() const { return callTransferT2; }
+
+    /**Get the default timeout for Call Transfer Timer CT-T3.
+     */
+    PTimeInterval GetCallTransferT3() const { return callTransferT3; }
+
+    /**Get the default timeout for Call Transfer Timer CT-T4.
+     */
+    PTimeInterval GetCallTransferT4() const { return callTransferT4; }
+
     /**Get the default timeout for GatekeeperRequest and Gatekeeper discovery.
      */
     PTimeInterval GetGatekeeperRequestTimeout() const { return gatekeeperRequestTimeout; }
@@ -835,6 +884,10 @@ class H323EndPoint : public OpalEndPoint
        A value of zero disables the keep alive facility.
      */
     PTimeInterval GetGatekeeperTimeToLive() const { return registrationTimeToLive; }
+
+    /**Get the iNow Gatekeeper Access Token OID.
+     */
+    const PString GetGkAccessTokenOID() const { return gkAccessTokenOID; }
   //@}
 
 
@@ -853,6 +906,8 @@ class H323EndPoint : public OpalEndPoint
 
     // Configuration variables, commonly changed
     PStringList localAliasNames;
+    BOOL        autoStartReceiveFax;
+    BOOL        autoStartTransmitFax;
     BOOL        disableFastStart;
     BOOL        disableH245Tunneling;
 
@@ -878,6 +933,21 @@ class H323EndPoint : public OpalEndPoint
     PTimeInterval rasRequestTimeout;
     unsigned      rasRequestRetries;
     PTimeInterval registrationTimeToLive;
+
+    PString       gkAccessTokenOID;
+
+    /* Protect against absence of a response to the ctIdentify reqest
+       (Transferring Endpoint - Call Transfer with a secondary Call) */
+    PTimeInterval callTransferT1;
+    /* Protect against failure of completion of the call transfer operation
+       involving a secondary Call (Transferred-to Endpoint) */
+    PTimeInterval callTransferT2;
+    /* Protect against failure of the Transferred Endpoint not responding
+       within sufficient time to the ctInitiate APDU (Transferring Endpoint) */
+    PTimeInterval callTransferT3;
+    /* May optionally operate - protects against absence of a response to the
+       ctSetup request (Transferred Endpoint) */
+    PTimeInterval callTransferT4;
 
     // Dynamic variables
     H323Capabilities capabilities;
