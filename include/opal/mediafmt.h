@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2010  2002/02/11 09:32:12  robertj
+ * Revision 1.2011  2002/02/19 07:36:28  robertj
+ * Added OpalRFC2833 as a OpalMediaFormat variable.
+ *
+ * Revision 2.9  2002/02/11 09:32:12  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.8  2002/01/22 05:06:30  robertj
@@ -397,6 +400,7 @@ class OpalMediaFormat : public PCaselessString
 #define OPAL_G7231_6k3     OPAL_G7231
 #define OPAL_G7231_5k3     "G.723.1(5.3k)"
 #define OPAL_GSM0610       "GSM-06.10"
+#define OPAL_RFC2833       "UserInput/RFC2833"
 
 extern OpalMediaFormat const OpalPCM16;
 
@@ -412,6 +416,7 @@ extern OpalMediaFormat const OpalG729AB;
 extern OpalMediaFormat const OpalG7231_6k3;
 extern OpalMediaFormat const OpalG7231_5k3;
 extern OpalMediaFormat const OpalGSM0610;
+extern OpalMediaFormat const OpalRFC2833;
 
 #endif
 
