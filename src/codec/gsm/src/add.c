@@ -1,10 +1,11 @@
 /*
+ * add.c
+ *
  * Copyright 1992 by Jutta Degener and Carsten Bormann, Technische
  * Universitaet Berlin.  See the accompanying file "COPYRIGHT" for
  * details.  THERE IS ABSOLUTELY NO WARRANTY FOR THIS SOFTWARE.
  */
 
-/* $Header: /home/svnmigrate/clean_cvs/opal/src/codec/gsm/src/Attic/add.c,v 1.2001 2001/07/27 15:48:24 robertj Exp $ */
 
 /*
  *  See private.h for the more commonly used macro versions.
@@ -23,13 +24,13 @@
 word gsm_add P2((a,b), word a, word b)
 {
 	longword sum = (longword)a + (longword)b;
-	return saturate(sum);
+	return (word) saturate(sum);
 }
 
 word gsm_sub P2((a,b), word a, word b)
 {
 	longword diff = (longword)a - (longword)b;
-	return saturate(diff);
+	return (word) saturate(diff);
 }
 
 word gsm_mult P2((a,b), word a, word b)
