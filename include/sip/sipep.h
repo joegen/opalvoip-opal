@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2021  2004/12/12 12:30:09  dsandras
+ * Revision 1.2022  2004/12/17 12:06:52  dsandras
+ * Added error code to OnRegistrationFailed. Made Register/Unregister wait until the transaction is over. Fixed Unregister so that the SIPRegister is used as a pointer or the object is deleted at the end of the function and make Opal crash when transactions are cleaned. Reverted part of the patch that was sending authentication again when it had already been done on a Register.
+ *
+ * Revision 2.20  2004/12/12 12:30:09  dsandras
  * Added virtual function called when registration to a registrar fails.
  *
  * Revision 2.19  2004/11/29 08:18:31  csoutheren
@@ -280,15 +283,54 @@ class SIPEndPoint : public OpalEndPoint
 
     virtual BOOL IsAcceptedAddress(const SIPURL & toAddr);
 
+
+    /** Register to a registrar. This function is synchronous.
+     */
     BOOL Register(
       const PString & hostname,
       const PString & username = PString::Empty(),
       const PString & password = PString::Empty()
     );
-    virtual void OnRegistrationFailed();
-    virtual void OnRegistered();
-    bool IsRegistered() const { return registered; }
-    BOOL Unregister(BOOL wait = TRUE);
+
+    
+    enum RegistrationFailReasons {
+
+      BadRequest,
+      PaymentRequired,
+      Forbidden,
+      Timeout,
+      Conflict,
+      TemporarilyUnavailable,
+      RegistrationFailed,
+      NumRegistrationFailReasons
+    };
+    
+    
+    /** Callback called when a registration or an unregistration fails.
+     *  The BOOL indicates if the operation that failed was a registration or
+     *  not.
+     */
+    virtual void OnRegistrationFailed(
+      RegistrationFailReasons reason,
+      BOOL wasRegistering);
+   
+    
+    /** Callback called when a registration or an unregistration is successful.
+     *  The BOOL indicates if the operation that failed was a registration or
+     *  not.
+     */
+    virtual void OnRegistered(BOOL wasRegistering);
+    
+
+    /** Returns TRUE if registered to the current registrar.
+     */
+    BOOL IsRegistered() const { return registered; }
+    
+    
+    /** Unregister from the a registrar. This function
+     *  is synchronous.
+     */
+    BOOL Unregister ();
 
     void SetMIMEForm(BOOL v) { mimeForm = v; }
     BOOL GetMIMEForm() const { return mimeForm; }

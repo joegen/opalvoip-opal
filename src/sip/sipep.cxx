@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2031  2004/12/12 13:42:31  dsandras
+ * Revision 1.2032  2004/12/17 12:06:52  dsandras
+ * Added error code to OnRegistrationFailed. Made Register/Unregister wait until the transaction is over. Fixed Unregister so that the SIPRegister is used as a pointer or the object is deleted at the end of the function and make Opal crash when transactions are cleaned. Reverted part of the patch that was sending authentication again when it had already been done on a Register.
+ *
+ * Revision 2.30  2004/12/12 13:42:31  dsandras
  * - Send back authentication when required when doing a REGISTER as it might be consecutive to an unregister.
  * - Update the registered variable when unregistering from a SIP registrar.
  * - Added OnRegistrationFailed () function to indicate when a registration failed. Call that function at various strategic places.
@@ -370,6 +373,8 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
 
 void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
 {
+  RegistrationFailReasons reason;
+  
   if (transaction.GetMethod() == SIP_PDU::Method_REGISTER) {
     // Have a response to the REGISTER, so CANCEL all the other registrations sent.
     for (PINDEX i = 0; i < registrations.GetSize(); i++) {
@@ -380,9 +385,39 @@ void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & res
     // Have a response to the INVITE, so end Connect mode on the transport
     transaction.GetTransport().EndConnect(transaction.GetLocalAddress());
 
-    // Forbidden
-    if (response.GetStatusCode() == SIP_PDU::Failure_Forbidden)
-      OnRegistrationFailed();
+    // Failure, in the 4XX class, handle some cases to give feedback.
+    if (response.GetStatusCode()/100 == 4
+	&& response.GetStatusCode() != SIP_PDU::Failure_UnAuthorised
+	&& response.GetStatusCode() != SIP_PDU::Failure_ProxyAuthenticationRequired) {
+
+      switch (response.GetStatusCode()) {
+
+      case SIP_PDU::Failure_BadRequest:
+	reason = BadRequest;
+	break;
+      case SIP_PDU::Failure_UnAuthorised:
+      case SIP_PDU::Failure_Forbidden:
+	reason = Forbidden;
+	break;
+      case SIP_PDU::Failure_PaymentRequired:
+	reason = PaymentRequired;
+	break;
+      case SIP_PDU::Failure_RequestTimeout:
+	reason = Timeout;
+	break;
+      case SIP_PDU::Failure_Conflict:
+	reason = Conflict;
+	break;
+      case SIP_PDU::Failure_TemporarilyUnavailable:
+	reason = TemporarilyUnavailable;
+	break;
+
+      default:
+	reason = RegistrationFailed;
+      }
+
+      OnRegistrationFailed (reason, TRUE);
+    }
   }
 
   switch (response.GetStatusCode()) {
@@ -447,6 +482,7 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
 
   if (authentication.IsValid()) {
     PTRACE(1, "SIP\tAlready done INVITE for " << proxyTrace << "Authentication Required");
+    return;
   }
 
   if (transaction.GetMethod() != SIP_PDU::Method_REGISTER) {
@@ -486,25 +522,31 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 
   PTRACE(2, "SIP\tReceived REGISTER OK response");
 
-  if (registered)
+  /* We were registered */
+  if (registered) {
+    
+    registered = FALSE;
+    OnRegistered(FALSE);
     return;
-
+  }
+  
+  /* We were not registered */
   registered = true;
 
   SIPURL contact = response.GetMIME().GetContact();
   registrationTimer.SetInterval(0, contact.GetParamVars()("expires", "3600").AsUnsigned()*9/10);
 
-  OnRegistered();
+  OnRegistered(TRUE);
 }
 
 
-void SIPEndPoint::OnRegistered()
+void SIPEndPoint::OnRegistered(BOOL wasRegistering)
 {
   PTRACE(2, "SIP\tREGISTER success");
 }
 
 
-void SIPEndPoint::OnRegistrationFailed()
+void SIPEndPoint::OnRegistrationFailed(RegistrationFailReasons reason, BOOL wasRegistering)
 {
   PTRACE(2, "SIP\tREGISTER failed");
 }
@@ -540,6 +582,7 @@ BOOL SIPEndPoint::WriteREGISTER(OpalTransport & transport, void * param)
 
   if (request->Start()) {
     endpoint.registrations.Append(request);
+    request->Wait ();
     return TRUE;
   }
 
@@ -554,6 +597,8 @@ BOOL SIPEndPoint::Register(const PString & domain,
 {
   if (listeners.IsEmpty() || domain.IsEmpty() || username.IsEmpty())
     return FALSE;
+
+  registered = false;
 
   PString adjustedUsername = username;
   if (adjustedUsername.IsEmpty())
@@ -600,20 +645,26 @@ BOOL SIPEndPoint::Register(const PString & domain,
 }
 
 
-BOOL SIPEndPoint::Unregister(BOOL wait)
+BOOL SIPEndPoint::Unregister()
 {
   if (!registered || registrarTransport == NULL)
     return FALSE;
 
-  SIPRegister unregister(*this, *registrarTransport, registrationAddress, registrationID, 0);
+  SIPRegister *unregister =
+    new SIPRegister (*this, *registrarTransport, registrationAddress, registrationID, 0);
 
-  if (!unregister.Start())
+  if (!unregister->Start()) {
+
+    PTRACE(1, "SIP\tCould not start UNREGISTER");
+    delete (unregister);
+    unregister = NULL;
+    
     return FALSE;
+  }
 
-  if (wait)
-    unregister.Wait();
+  registrations.Append(unregister);
+  unregister->Wait();
 
-  registered = FALSE;
 
   return TRUE;
 }
