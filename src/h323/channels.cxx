@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2014  2002/02/11 09:32:12  robertj
+ * Revision 1.2015  2002/02/13 04:17:53  robertj
+ * Fixed return of both data and control if only have one from OLC.
+ *
+ * Revision 2.13  2002/02/11 09:32:12  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.12  2002/02/11 07:40:02  robertj
@@ -1047,6 +1050,21 @@ BOOL H323_ExternalRTPChannel::GetMediaTransportAddress(OpalTransportAddress & da
 {
   data = remoteMediaAddress;
   control = remoteMediaControlAddress;
+
+  if (data.IsEmpty() && control.IsEmpty())
+    return FALSE;
+
+  PIPSocket::Address ip;
+  WORD port;
+  if (data.IsEmpty()) {
+    if (control.GetIpAndPort(ip, port))
+      data = OpalTransportAddress(ip, (WORD)(port-1));
+  }
+  else if (control.IsEmpty()) {
+    if (data.GetIpAndPort(ip, port))
+      control = OpalTransportAddress(ip, (WORD)(port+1));
+  }
+
   return TRUE;
 }
 
