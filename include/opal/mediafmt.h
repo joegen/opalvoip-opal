@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2021  2004/03/22 11:32:41  rjongbloed
+ * Revision 1.2022  2004/05/03 00:59:18  csoutheren
+ * Fixed problem with OpalMediaFormat::GetMediaFormatsList
+ * Added new version of OpalMediaFormat::GetMediaFormatsList that minimses copying
+ *
+ * Revision 2.20  2004/03/22 11:32:41  rjongbloed
  * Added new codec type for 16 bit Linear PCM as must distinguish between the internal
  *   format used by such things as the sound card and the RTP payload format which
  *   is always big endian.
@@ -426,7 +430,7 @@ class OpalMediaFormat : public PCaselessString
     /**Get a copy of the list of media formats that have been registered.
       */
     static OpalMediaFormatList GetAllRegisteredMediaFormats();
-
+    static void GetAllRegisteredMediaFormats(OpalMediaFormatList & copy);
 
   protected:
     RTP_DataFrame::PayloadTypes rtpPayloadType;
