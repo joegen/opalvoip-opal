@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2022  2002/03/15 00:24:33  robertj
+ * Revision 1.2023  2002/03/18 00:33:36  robertj
+ * Removed duplicate initialBandwidth variable in H.323 class, moved to ancestor.
+ *
+ * Revision 2.21  2002/03/15 00:24:33  robertj
  * Assure capabilities are set to other connections media list (if not already)
  *    before doing fast start accept in CONNECT response.
  *
@@ -1010,8 +1013,6 @@ H323Connection::H323Connection(OpalCall & call,
   connectPDU = NULL;
 
   connectionState = NoConnectionActive;
-
-  bandwidthAvailable = endpoint.GetInitialBandwidth();
 
   uuiesRequested = 0; // Empty set
   addAccessTokenToSetup = TRUE; // Automatic inclusion of ACF access token in SETUP
