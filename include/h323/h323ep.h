@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2024  2004/06/04 06:54:17  csoutheren
+ * Revision 1.2025  2004/06/05 14:31:32  rjongbloed
+ * Added function to set gatekeeper registration time to live.
+ * Added ability to have separate gatekeeper username to endpoint local alias name.
+ *
+ * Revision 2.23  2004/06/04 06:54:17  csoutheren
  * Migrated updates from OpenH323 1.14.1
  *
  * Revision 2.22  2004/02/24 09:40:27  rjongbloed
@@ -629,8 +633,13 @@ class H323EndPoint : public OpalEndPoint
     /**Set the H.235 password for the gatekeeper.
       */
     virtual void SetGatekeeperPassword(
-      const PString & password
+      const PString & password,
+      const PString & username = PString::Empty()
     );
+
+    /**Get the H.235 username for the gatekeeper.
+      */
+    virtual const PString & GetGatekeeperUsername() const { return gatekeeperUsername; }
 
     /**Get the H.235 password for the gatekeeper.
       */
@@ -1392,6 +1401,11 @@ class H323EndPoint : public OpalEndPoint
      */
     const PTimeInterval & GetGatekeeperTimeToLive() const { return registrationTimeToLive; }
 
+    /**Set the default time for gatekeeper to reregister.
+       A value of zero disables the keep alive facility.
+     */
+    void SetGatekeeperTimeToLive(const PTimeInterval & ttl) { registrationTimeToLive = ttl; }
+
     /**Get the iNow Gatekeeper Access Token OID.
      */
     const PString & GetGkAccessTokenOID() const { return gkAccessTokenOID; }
@@ -1512,6 +1526,7 @@ class H323EndPoint : public OpalEndPoint
     // Dynamic variables
     H323Capabilities     capabilities;
     H323Gatekeeper *     gatekeeper;
+    PString              gatekeeperUsername;
     PString              gatekeeperPassword;
     H323CallIdentityDict secondaryConenctionsActive;
 };
