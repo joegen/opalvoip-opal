@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2036  2004/07/14 13:26:14  rjongbloed
+ * Revision 1.2037  2004/08/14 07:56:41  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.35  2004/07/14 13:26:14  rjongbloed
  * Fixed issues with the propagation of the "established" phase of a call. Now
  *   calling an OnEstablished() chain like OnAlerting() and OnConnected() to
  *   finally arrive at OnEstablishedCall() on OpalManager
@@ -149,6 +152,8 @@
 
 #include <opal/manager.h>
 
+#include <opal/endpoint.h>
+#include <opal/call.h>
 #include <opal/patch.h>
 #include <opal/mediastrm.h>
 #include <codec/vidcodec.h>
@@ -212,12 +217,17 @@ unsigned OpalGetBuildNumber()
 
 /////////////////////////////////////////////////////////////////////////////
 
+#ifdef _MSC_VER
+#pragma warning(disable:4355)
+#endif
+
 OpalManager::OpalManager()
   : defaultUserName(PProcess::Current().GetUserName()),
     defaultDisplayName(defaultUserName),
     mediaFormatOrder(PARRAYSIZE(DefaultMediaFormatOrder), DefaultMediaFormatOrder),
     noMediaTimeout(0, 0, 5),     // Minutes
-    translationAddress(0)        // Invalid address to disable
+    translationAddress(0),       // Invalid address to disable
+    activeCalls(*this)
 {
   autoStartReceiveVideo = autoStartTransmitVideo = TRUE;
 
@@ -249,9 +259,6 @@ OpalManager::OpalManager()
 
   lastCallTokenID = 1;
 
-  callsActive.DisallowDeleteObjects();
-  collectingGarbage = TRUE;
-
   garbageCollector = PThread::Create(PCREATE_NOTIFIER(GarbageMain), 0,
                                      PThread::NoAutoDeleteThread,
                                      PThread::LowPriority,
@@ -260,6 +267,10 @@ OpalManager::OpalManager()
   PTRACE(3, "OpalMan\tCreated manager.");
 }
 
+#ifdef _MSC_VER
+#pragma warning(default:4355)
+#endif
+
 
 OpalManager::~OpalManager()
 {
@@ -267,8 +278,7 @@ OpalManager::~OpalManager()
   ClearAllCalls();
 
   // Shut down the cleaner thread
-  collectingGarbage = FALSE;
-  garbageCollectFlag.Signal();
+  garbageCollectExit.Signal();
   garbageCollector->WaitForTermination();
 
   // Clean up any calls that the cleaner thread missed
@@ -300,8 +310,11 @@ void OpalManager::AttachEndPoint(OpalEndPoint * endpoint)
 }
 
 
-void OpalManager::RemoveEndPoint(OpalEndPoint * endpoint)
+void OpalManager::DetachEndPoint(OpalEndPoint * endpoint)
 {
+  if (PAssertNULL(endpoint) == NULL)
+    return;
+
   inUseFlag.Wait();
   endpoints.Remove(endpoint);
   inUseFlag.Signal();
@@ -345,49 +358,13 @@ void OpalManager::OnEstablishedCall(OpalCall & /*call*/)
 }
 
 
-BOOL OpalManager::HasCall(const PString & token)
-{
-  PWaitAndSignal wait(callsMutex);
-
-  return FindCallWithoutLocks(token) != NULL;
-}
-
-
 BOOL OpalManager::IsCallEstablished(const PString & token)
 {
-  PWaitAndSignal wait(callsMutex);
-
-  OpalCall * call = FindCallWithoutLocks(token);
+  PSafePtr<OpalCall> call = activeCalls.FindWithLock(token, PSafeReadOnly);
   if (call == NULL)
     return FALSE;
 
   return call->IsEstablished();
-}
-
-
-OpalCall * OpalManager::FindCallWithLock(const PString & token)
-{
-  PWaitAndSignal wait(callsMutex);
-
-  OpalCall * call = FindCallWithoutLocks(token);
-  if (call == NULL)
-    return NULL;
-
-  call->Lock();
-  return call;
-}
-
-
-OpalCall * OpalManager::FindCallWithoutLocks(const PString & token)
-{
-  if (token.IsEmpty())
-    return NULL;
-
-  OpalCall * conn_ptr = callsActive.GetAt(token);
-  if (conn_ptr != NULL)
-    return conn_ptr;
-
-  return NULL;
 }
 
 
@@ -404,10 +381,8 @@ BOOL OpalManager::ClearCall(const PString & token,
    */
 
   {
-    PWaitAndSignal wait(callsMutex);
-
     // Find the call by token, callid or conferenceid
-    OpalCall * call = FindCallWithoutLocks(token);
+    PSafePtr<OpalCall> call = activeCalls.FindWithLock(token);
     if (call == NULL)
       return FALSE;
 
@@ -431,32 +406,19 @@ BOOL OpalManager::ClearCallSynchronous(const PString & token,
 
 void OpalManager::ClearAllCalls(OpalConnection::CallEndReason reason, BOOL wait)
 {
-  /*The hugely multi-threaded nature of the OpalCall objects means that
-    to avoid many forms of race condition, a call is cleared by moving it from
-    the "active" call dictionary to a list of calls to be cleared that will be
-    processed by a background thread specifically for the purpose of cleaning
-    up cleared calls. So that is all that this function actually does.
-    The real work is done in the OpalGarbageCollector thread.
-   */
-
-  callsMutex.Wait();
-
   // Remove all calls from the active list first
-  PINDEX i;
-  for (i = 0; i < callsActive.GetSize(); i++)
-    callsActive.GetDataAt(i).Clear(reason);
-
-  callsMutex.Signal();
-
-  SignalGarbageCollector();
+  for (PSafePtr<OpalCall> call = activeCalls; call != NULL; ++call)
+    call->Clear(reason);
 
   if (wait)
     allCallsCleared.Wait();
 }
 
 
-void OpalManager::OnClearedCall(OpalCall & /*call*/)
+void OpalManager::OnClearedCall(OpalCall & call)
 {
+  PTRACE(3, "OpalMan\tOnClearedCall \"" << call.GetPartyA() << "\" to \"" << call.GetPartyB() << '"');
+  activeCalls.RemoveAt(call.GetToken());
 }
 
 
@@ -475,18 +437,10 @@ void OpalManager::DestroyCall(OpalCall * call)
 PString OpalManager::GetNextCallToken()
 {
   PString token;
-  callsMutex.Wait();
+  inUseFlag.Wait();
   token.sprintf("%u", lastCallTokenID++);
-  callsMutex.Signal();
+  inUseFlag.Signal();
   return token;
-}
-
-
-void OpalManager::AttachCall(OpalCall * call)
-{
-  callsMutex.Wait();
-  callsActive.SetAt(call->GetToken(), call);
-  callsMutex.Signal();
 }
 
 
@@ -518,7 +472,7 @@ BOOL OpalManager::OnIncomingConnection(OpalConnection & connection)
   PTRACE(3, "OpalMan\tOn incoming connection " << connection);
 
   OpalCall & call = connection.GetCall();
-  if (call.GetConnectionCount() > 1)
+  if (call.GetOtherPartyConnection(connection) != NULL)
     return TRUE;
 
   // See if have pre-allocated B party address, otherwise use routing algorithm
@@ -579,12 +533,11 @@ void OpalManager::OnEstablished(OpalConnection & connection)
 }
 
 
-BOOL OpalManager::OnReleased(OpalConnection & connection)
+void OpalManager::OnReleased(OpalConnection & connection)
 {
   PTRACE(3, "OpalMan\tOnReleased " << connection);
 
   connection.GetCall().OnReleased(connection);
-  return TRUE;
 }
 
 
@@ -712,7 +665,7 @@ OpalT38Protocol * OpalManager::CreateT38ProtocolHandler(const OpalConnection & )
 }
 
 
-OpalManager::RouteEntry::RouteEntry(const PString & pat, const PString dest)
+OpalManager::RouteEntry::RouteEntry(const PString & pat, const PString & dest)
   : pattern(pat),
     destination(dest),
     regex('^'+pat+'$')
@@ -1077,46 +1030,26 @@ BOOL OpalManager::SetNoMediaTimeout(const PTimeInterval & newInterval)
 
 void OpalManager::GarbageCollection()
 {
-  OpalCallList callsToRemove;
-  callsToRemove.DisallowDeleteObjects();
-
-  callsMutex.Wait();
-
-  PINDEX i;
-  for (i = 0; i < callsActive.GetSize(); i++) {
-    OpalCall & call = callsActive.GetDataAt(i);
-    if (call.GarbageCollection())
-      callsToRemove.Append(&call);
+  BOOL allCleared = activeCalls.DeleteObjectsToBeRemoved();
+  for (PINDEX i = 0; i < endpoints.GetSize(); i++) {
+    if (!endpoints[i].connectionsActive.DeleteObjectsToBeRemoved())
+      allCleared = FALSE;
   }
-
-  for (i = 0; i < callsToRemove.GetSize(); i++)
-    callsActive.SetAt(callsToRemove[i].GetToken(), NULL);
-
-  callsMutex.Signal();
-
-  for (i = 0; i < callsToRemove.GetSize(); i++)
-    callsToRemove[i].OnCleared();
-
-  for (i = 0; i < callsToRemove.GetSize(); i++)
-    DestroyCall(&callsToRemove[i]);
-
-  allCallsCleared.Signal();
+  if (allCleared)
+    allCallsCleared.Signal();
 }
 
 
-void OpalManager::SignalGarbageCollector()
+void OpalManager::CallDict::DeleteObject(PObject * object) const
 {
-  // Signal the background threads that there is some stuff to process.
-  garbageCollectFlag.Signal();
+  manager.DestroyCall(PDownCast(OpalCall, object));
 }
 
 
 void OpalManager::GarbageMain(PThread &, INT)
 {
-  while (collectingGarbage) {
-    garbageCollectFlag.Wait();
+  while (!garbageCollectExit.Wait(1000))
     GarbageCollection();
-  }
 }
 
 
