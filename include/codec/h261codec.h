@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.h,v $
- * Revision 1.2008  2002/11/10 11:33:16  robertj
+ * Revision 1.2009  2002/11/10 23:21:26  robertj
+ * Fixed capability class usage in static variable macros.
+ *
+ * Revision 2.7  2002/11/10 11:33:16  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.6  2002/09/16 02:52:33  robertj
@@ -170,18 +173,12 @@
 class P64Decoder;
 class P64Encoder;
 
-#define OPAL_H261 "H.261"
-
-extern OpalMediaFormat const OpalH261;
-
-
-#define OPAL_H261_CIF "H.261-CIF"
-
-extern OpalMediaFormat const OpalH261_CIF;
-
-
+#define OPAL_H261      "H.261"
+#define OPAL_H261_CIF  "H.261-CIF"
 #define OPAL_H261_QCIF "H.261-QCIF"
 
+extern OpalMediaFormat const OpalH261;
+extern OpalMediaFormat const OpalH261_CIF;
 extern OpalMediaFormat const OpalH261_QCIF;
 
 
@@ -312,18 +309,19 @@ class H323_H261Capability : public H323VideoCapability
 };
 
 #define OPAL_REGISTER_H261_H323 \
-H323_REGISTER_CAPABILITY_FUNCTION(H323_H261_QCIF_CIF, OPAL_H261, H323_NO_EP_VAR) \
-  { return new H323_H261Capability(OpalH261, 2, 4, FALSE, FALSE, 6217); } \
-H323_REGISTER_CAPABILITY_FUNCTION(H323_H261_CIF, OPAL_H261_CIF, H323_NO_EP_VAR) \
-  { return new H323_H261Capability(OpalH261_CIF, 0, 4, FALSE, FALSE, 6217); } \
-H323_REGISTER_CAPABILITY_FUNCTION(H323_H261_QCIF, OPAL_H261_QCIF, H323_NO_EP_VAR) \
-  { return new H323_H261Capability(OpalH261_QCIF, 2, 0, FALSE, FALSE, 6217); }
+  H323_REGISTER_CAPABILITY_FUNCTION(H323_H261_QCIF_CIF, OPAL_H261, H323_NO_EP_VAR) \
+    { return new H323_H261Capability(2, 4, FALSE, FALSE, 6217); } \
+  H323_REGISTER_CAPABILITY_FUNCTION(H323_H261_CIF, OPAL_H261_CIF, H323_NO_EP_VAR) \
+    { return new H323_H261Capability(0, 4, FALSE, FALSE, 6217); } \
+  H323_REGISTER_CAPABILITY_FUNCTION(H323_H261_QCIF, OPAL_H261_QCIF, H323_NO_EP_VAR) \
+    { return new H323_H261Capability(2, 0, FALSE, FALSE, 6217); }
 
 #else // ifndef NO_H323
 
 #define OPAL_REGISTER_H261_H323
 
 #endif // ifndef NO_H323
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
