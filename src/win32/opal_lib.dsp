@@ -3143,6 +3143,7 @@ SOURCE=..\codec\g726\g726_16.c
 
 !IF  "$(CFG)" == "OPAL_lib - Win32 Release"
 
+# ADD CPP /W1
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
@@ -3151,6 +3152,9 @@ SOURCE=..\codec\g726\g726_16.c
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
 
 !ENDIF 
 
@@ -3161,6 +3165,7 @@ SOURCE=..\codec\g726\g726_24.c
 
 !IF  "$(CFG)" == "OPAL_lib - Win32 Release"
 
+# ADD CPP /W1
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
@@ -3169,6 +3174,9 @@ SOURCE=..\codec\g726\g726_24.c
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
 
 !ENDIF 
 
@@ -3179,6 +3187,7 @@ SOURCE=..\codec\g726\g726_32.c
 
 !IF  "$(CFG)" == "OPAL_lib - Win32 Release"
 
+# ADD CPP /W1
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
@@ -3187,6 +3196,9 @@ SOURCE=..\codec\g726\g726_32.c
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
 
 !ENDIF 
 
@@ -3197,6 +3209,7 @@ SOURCE=..\codec\g726\g726_40.c
 
 !IF  "$(CFG)" == "OPAL_lib - Win32 Release"
 
+# ADD CPP /W1
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
@@ -3205,6 +3218,9 @@ SOURCE=..\codec\g726\g726_40.c
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
 
 !ENDIF 
 
@@ -3215,6 +3231,7 @@ SOURCE=..\codec\g726\g72x.c
 
 !IF  "$(CFG)" == "OPAL_lib - Win32 Release"
 
+# ADD CPP /W1
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
@@ -3223,6 +3240,9 @@ SOURCE=..\codec\g726\g72x.c
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
 
 !ENDIF 
 
