@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2003  2002/04/05 10:42:04  robertj
+ * Revision 1.2004  2002/04/16 08:06:35  robertj
+ * Fixed GNU warnings.
+ *
+ * Revision 2.2  2002/04/05 10:42:04  robertj
  * Major changes to support transactions (UDP timeouts and retries).
  *
  * Revision 2.1  2002/02/01 04:53:01  robertj
@@ -212,6 +215,10 @@ class SIPEndPoint : public OpalEndPoint
     ) { registrationPassword = name; }
 
   protected:
+    PString  registrationID;
+    PString  registrationName;
+    PString  registrationPassword;
+
     BOOL          mimeForm;
     unsigned      maxRetries;
     PTimeInterval retryTimeoutMin;   // T1
@@ -221,9 +228,6 @@ class SIPEndPoint : public OpalEndPoint
     PTimeInterval inviteTimeout;
     PTimeInterval ackTimeout;
 
-    PString  registrationID;
-    PString  registrationName;
-    PString  registrationPassword;
     unsigned lastSentCSeq;
 };
 
