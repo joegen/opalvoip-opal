@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2032  2004/04/29 11:48:32  rjongbloed
+ * Revision 1.2033  2004/05/01 10:00:53  rjongbloed
+ * Fixed ClearCallSynchronous so now is actually signalled when call is destroyed.
+ *
+ * Revision 2.31  2004/04/29 11:48:32  rjongbloed
  * Fixed possible deadlock if close all and close synchronous.
  *
  * Revision 2.30  2004/04/25 02:53:29  rjongbloed
@@ -394,7 +397,7 @@ BOOL OpalManager::ClearCall(const PString & token,
     if (call == NULL)
       return FALSE;
 
-    call->Clear(reason);
+    call->Clear(reason, sync);
   }
 
   if (sync != NULL)
