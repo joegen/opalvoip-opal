@@ -21,11 +21,12 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="$(QTDIR)\include"
-				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;QT_DLL;QT_THREAD_SUPPORT;OPAL_STATIC_LINK"
+				AdditionalIncludeDirectories=""
+				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;wxUSE_GUI=1;OPAL_STATIC_LINK"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
+				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile=".\Release/OpenPhone.pch"
 				AssemblerListingLocation=".\Release/"
@@ -38,11 +39,11 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="opals.lib ptclib.lib ptlib.lib $(QTLIBS) vfw32.lib imm32.lib wsock32.lib"
+				AdditionalDependencies="opals.lib ptclib.lib ptlib.lib zlib.lib regex.lib png.lib jpeg.lib tiff.lib wxmsw.lib wsock32.lib odbc32.lib odbccp32.lib comctl32.lib rpcrt4.lib"
 				OutputFile=".\Release/OpenPhone.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				AdditionalLibraryDirectories="$(QTDIR)/lib"
+				AdditionalLibraryDirectories=""
 				ProgramDatabaseFile=".\Release/OpenPhone.pdb"
 				SubSystem="2"
 				TargetMachine="1"/>
