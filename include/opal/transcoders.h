@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2006  2003/03/17 10:26:59  robertj
+ * Revision 1.2007  2003/03/24 04:32:11  robertj
+ * Fixed macro for transcoder with parameter (not used yet!)
+ * Fixed so OPAL_NO_PARAM can be defined in other modules.
+ *
+ * Revision 2.5  2003/03/17 10:26:59  robertj
  * Added video support.
  *
  * Revision 2.4  2002/09/16 02:52:35  robertj
@@ -120,14 +124,16 @@ static class cls##_Registration : public OpalTranscoderRegistration { \
 } instance_##cls##_Registration; \
 OpalTranscoder * cls##_Registration::Create(void * param) const
 
+#ifndef OPAL_NO_PARAM
 #define OPAL_NO_PARAM
+#endif
 
 #define OPAL_REGISTER_TRANSCODER(cls, src, dst) \
   OPAL_REGISTER_TRANSCODER_FUNCTION(cls, src, dst, OPAL_NO_PARAM) \
   { return new cls(*this); }
 
-#define OPAL_REGISTER_TRANSCODER_PARAM(cls, name) \
-  OPAL_REGISTER_TRANSCODER_FUNCTION(cls, name, parameter) \
+#define OPAL_REGISTER_TRANSCODER_PARAM(cls, src, dst) \
+  OPAL_REGISTER_TRANSCODER_FUNCTION(cls, src, dst, parameter) \
   { return new cls(*this, parameter); }
 
 
