@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2019  2004/02/19 10:47:05  rjongbloed
+ * Revision 1.2020  2004/03/13 06:25:54  rjongbloed
+ * Slight rearrangement of local party name and alias list to beter match common
+ *   behaviour in ancestor.
+ * Abstracted local party name for endpoint into ancestor from H.,323.
+ *
+ * Revision 2.18  2004/02/19 10:47:05  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.17  2003/03/24 04:36:53  robertj
@@ -109,6 +114,7 @@ OpalEndPoint::OpalEndPoint(OpalManager & mgr,
                            unsigned attributes)
   : manager(mgr),
     prefixName(prefix),
+    defaultLocalPartyName(PProcess::Current().GetUserName()),
     attributeBits(attributes)
 {
   manager.AttachEndPoint(this);
@@ -117,6 +123,9 @@ OpalEndPoint::OpalEndPoint(OpalManager & mgr,
   initialBandwidth = UINT_MAX; // Infinite bandwidth
 
   connectionsActive.DisallowDeleteObjects();
+
+  if (defaultLocalPartyName.IsEmpty())
+    defaultLocalPartyName = PProcess::Current().GetName() & "User";
 
   PTRACE(3, "OpalEP\tCreated endpoint: " << prefixName);
 }

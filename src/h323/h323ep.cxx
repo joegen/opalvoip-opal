@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2028  2004/02/19 10:47:04  rjongbloed
+ * Revision 1.2029  2004/03/13 06:25:54  rjongbloed
+ * Slight rearrangement of local party name and alias list to beter match common
+ *   behaviour in ancestor.
+ * Abstracted local party name for endpoint into ancestor from H.,323.
+ *
+ * Revision 2.27  2004/02/19 10:47:04  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.26  2003/03/07 08:12:01  robertj
@@ -736,10 +741,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   // Set port in OpalEndPoint class
   defaultSignalPort = DefaultTcpPort;
 
-  PString username = PProcess::Current().GetUserName();
-  if (username.IsEmpty())
-    username = PProcess::Current().GetName() & "User";
-  localAliasNames.AppendString(username);
+  localAliasNames.AppendString(defaultLocalPartyName);
 
   autoStartReceiveFax = autoStartTransmitFax = FALSE;
 
