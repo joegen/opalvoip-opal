@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2046  2004/03/02 09:57:53  rjongbloed
+ * Revision 1.2047  2004/03/13 06:25:52  rjongbloed
+ * Slight rearrangement of local party name and alias list to beter match common
+ *   behaviour in ancestor.
+ * Abstracted local party name for endpoint into ancestor from H.,323.
+ *
+ * Revision 2.45  2004/03/02 09:57:53  rjongbloed
  * Fixed problems with recent changes to RTP UseSession() function which broke it for H.323
  *
  * Revision 2.44  2004/02/24 11:28:46  rjongbloed
@@ -2157,6 +2162,17 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
   }
 
   return connectionState != ShuttingDownConnection;
+}
+
+
+void H323Connection::SetLocalPartyName(const PString & name)
+{
+  localPartyName = name;
+
+  if (!name.IsEmpty()) {
+    localAliasNames.RemoveAll();
+    localAliasNames.AppendString(name);
+  }
 }
 
 
