@@ -8,12 +8,20 @@
 
     -----------------------------------------------------------------
 
-	$Header: /home/svnmigrate/clean_cvs/opal/include/lids/Attic/ixjDefs.h,v 1.2001 2001/07/27 15:48:24 robertj Exp $
-	
+	$Header: /home/svnmigrate/clean_cvs/opal/include/lids/Attic/ixjDefs.h,v 1.2002 2002/03/22 06:57:48 robertj Exp $
+
+  $Log: ixjDefs.h,v $
+  Revision 1.2002  2002/03/22 06:57:48  robertj
+  Updated to OpenH323 version 1.8.2
+
+  Revision 1.4  2002/03/21 21:21:10  craigs
+  Move idb stuff to separate file
 */
 
 #ifndef _IXJDEFS_H
 #define _IXJDEFS_H
+
+#include "ixjIdb.h"
 
 //==========================================================================
 //==========================================================================
@@ -31,6 +39,7 @@
 #define MODEL_INTERNET_LINEJACK			0x0300
 #define MODEL_INTERNET_PHONEJACK_LITE	0x0400
 #define MODEL_INTERNET_PHONEJACK_PCI	0x0500
+#define MODEL_INTERNET_PHONEJACK_TJPCI	0x0501
 #define MODEL_INTERNET_PHONECARD		0x0600
 
 //--------------------------------------------------------------------------
@@ -371,31 +380,6 @@ const WORD COMPRESS_SYNC_MODE_HOST  = 3;
 #define DTMFValid( LineMonitor ) ((LineMonitor>>5)&1)
 #define CPFValid( LineMonitor ) ((LineMonitor>>4)&1)
 #define DTMFDigit( LineMonitor ) (LineMonitor&0x0f)
-
-typedef enum {
-  QTH_DETECT_TONE_TYPE_ADD,
-  QTH_DETECT_TONE_TYPE_MOD_BEAT
-} qthDetectToneType;
-
-typedef enum {
-  QTH_DETECT_TONE_REPEAT_LAST,
-  QTH_DETECT_TONE_REPEAT_ALL
-} qthDetectToneCadenceTerm;
-
-typedef struct {
-  UINT32 ulOnTime; // In ms
-  UINT32 ulOffTime; // In ms
-} qthDetectToneCadenceElement;
-
-typedef struct {
-  UINT32 ulFilter;
-  UINT32 ulNumElements;
-  qthDetectToneType type;
-  qthDetectToneCadenceTerm term;
-  UINT32 ulTolerance;
-  UINT32 ulMinDetectLoops;
-  qthDetectToneCadenceElement element[4]; // Array
-} qthDetectToneCadence;
 
 
 //==========================================================================

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.h,v $
- * Revision 1.2004  2002/01/14 06:35:57  robertj
+ * Revision 1.2005  2002/03/22 06:57:48  robertj
+ * Updated to OpenH323 version 1.8.2
+ *
+ * Revision 2.3  2002/01/14 06:35:57  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.2  2001/08/17 08:20:26  robertj
@@ -38,6 +41,10 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.45  2002/03/14 07:57:02  robertj
+ * Added ability to specify alias type in H323SetAliasAddress, if not specified
+ *   then defaults to previous behaviour, thanks Nils Bokerman.
  *
  * Revision 1.44  2001/12/15 07:09:56  robertj
  * Added functions to get E.164 address from alias address or addresses.
@@ -556,7 +563,7 @@ class H323RasPDU : public H225_RasMessage
 /////////////////////////////////////////////////////////////////////////////
 
 void H323SetAliasAddresses(const PStringList & name, H225_ArrayOf_AliasAddress & aliases);
-void H323SetAliasAddress(const PString & name, H225_AliasAddress & alias);
+void H323SetAliasAddress(const PString & name, H225_AliasAddress & alias, int tag = -1);
 PString H323GetAliasAddressString(const H225_AliasAddress & alias);
 PString H323GetAliasAddressE164(const H225_AliasAddress & alias);
 PString H323GetAliasAddressE164(const H225_ArrayOf_AliasAddress & aliases);
