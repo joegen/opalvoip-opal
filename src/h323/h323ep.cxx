@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2024  2003/01/07 04:39:53  robertj
+ * Revision 1.2025  2003/01/24 11:31:01  robertj
+ * Fixed correct UDP address being used for gatkeeper discovery, thanks Chih-Wei Huang
+ *
+ * Revision 2.23  2003/01/07 04:39:53  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.22  2002/11/10 11:33:19  robertj
@@ -913,7 +916,8 @@ BOOL H323EndPoint::UseGatekeeper(const PString & address,
 BOOL H323EndPoint::SetGatekeeper(const PString & address, H323Transport * transport)
 {
   H323Gatekeeper * gk = InternalCreateGatekeeper(transport);
-  return InternalRegisterGatekeeper(gk, gk->DiscoverByAddress(address));
+  H323TransportAddress h323addr(address, H225_RAS::DefaultRasUdpPort, "udp");
+  return InternalRegisterGatekeeper(gk, gk->DiscoverByAddress(h323addr));
 }
 
 
@@ -922,7 +926,8 @@ BOOL H323EndPoint::SetGatekeeperZone(const PString & address,
                                      H323Transport * transport)
 {
   H323Gatekeeper * gk = InternalCreateGatekeeper(transport);
-  return InternalRegisterGatekeeper(gk, gk->DiscoverByNameAndAddress(identifier, address));
+  H323TransportAddress h323addr(address, H225_RAS::DefaultRasUdpPort, "udp");
+  return InternalRegisterGatekeeper(gk, gk->DiscoverByNameAndAddress(identifier, h323addr));
 }
 
 
