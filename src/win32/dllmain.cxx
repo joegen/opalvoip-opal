@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: dllmain.cxx,v $
- * Revision 1.2002  2001/08/01 05:53:31  robertj
+ * Revision 1.2003  2002/11/10 23:04:29  robertj
+ * Added flag to assure linking of static variables (codecs etc).
+ *
+ * Revision 2.1  2001/08/01 05:53:31  robertj
  * Fixed loading of transcoders from static library.
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
@@ -42,6 +45,7 @@
 
 #include <ptlib.h>
 
+#define OPAL_STATIC_LINK
 #include <codec/allcodecs.h>
 
 
