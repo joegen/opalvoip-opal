@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2009  2004/03/22 11:32:42  rjongbloed
+ * Revision 1.2010  2004/05/24 13:37:32  rjongbloed
+ * Fixed propagating marker bit across transcoder which is important for
+ *   silence suppression, thanks Ted Szoczei
+ *
+ * Revision 2.8  2004/03/22 11:32:42  rjongbloed
  * Added new codec type for 16 bit Linear PCM as must distinguish between the internal
  *   format used by such things as the sound card and the RTP payload format which
  *   is always big endian.
@@ -140,6 +144,7 @@ BOOL OpalTranscoder::ConvertFrames(const RTP_DataFrame & input,
 
   output[0].SetPayloadType(outputMediaFormat.GetPayloadType());
   output[0].SetTimestamp(input.GetTimestamp());
+  output[0].SetMarker(input.GetMarker());
   return Convert(input, output[0]);
 }
 
