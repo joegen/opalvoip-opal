@@ -23,7 +23,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: alllids.h,v $
- * Revision 1.2002  2003/03/24 07:18:29  robertj
+ * Revision 1.2003  2004/10/06 13:03:40  rjongbloed
+ * Added "configure" support for known LIDs
+ * Changed LID GetName() function to be normalised against the GetAllNames()
+ *   return values and fixed the pre-factory registration system.
+ * Added a GetDescription() function to do what the previous GetName() did.
+ *
+ * Revision 2.1  2003/03/24 07:18:29  robertj
  * Added registration system for LIDs so can work with various LID types by
  *   name instead of class instance.
  *
@@ -32,20 +38,16 @@
 #ifndef __LIDS_ALLLIDS_H
 #define __LIDS_ALLLIDS_H
 
-#if HAS_IXJ
+#include <opal/buildopts.h>
+
 #include <lids/ixjlid.h>
 OPAL_REGISTER_IXJ();
-#endif
 
-#if HAS_VPB
-#include <lids/vpblib.h>
+#include <lids/vpblid.h>
 OPAL_REGISTER_VPB();
-#endif
 
-#if HAS_VBLASTER
 #include <lids/vblasterlid.h>
 OPAL_REGISTER_VBLASTER();
-#endif
 
 
 #endif // __LIDS_ALLLIDS_H

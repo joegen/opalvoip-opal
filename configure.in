@@ -216,7 +216,7 @@ AC_SUBST(OPAL_H323, $OPAL_H323)
 
 dnl ########################################################################
 dnl
-dnl feature detections migrated from Makefile
+dnl Quicknet xJACK cards
 dnl 
 dnl MSWIN_DISPLAY ixj,Quicknet Internet xJACK cards
 dnl MSWIN_DEFINE  ixj,HAS_IXJ
@@ -225,6 +225,28 @@ AC_CHECK_HEADERS(linux/telephony.h sys/telephony.h /usr/local/include/sys/teleph
 if test "x$HAS_IXJ" != "x" ; then
   AC_DEFINE(HAS_IXJ, 1)
 fi
+
+
+dnl ########################################################################
+dnl
+dnl VoiceBlaster
+dnl 
+dnl MSWIN_DISPLAY vblaster,Voice Blaster
+dnl MSWIN_DEFINE  vblaster,HAS_VBLASTER
+
+
+dnl ########################################################################
+dnl
+dnl VoiceTronics VPB card
+dnl 
+dnl MSWIN_DISPLAY     vpb,VoiceTronics VPB
+dnl MSWIN_CHECK_FILE  vpb,src\vpbapi.h,HAS_VPB=1
+dnl MSWIN_DIR_SYMBOL  vpb,VPB_DIR
+dnl MSWIN_CHECK_DIR   vpb,..\vpb-driver\
+dnl MSWIN_CHECK_DIR   vpb,..\external\vpb-driver
+dnl MSWIN_CHECK_DIR   vpb,\vpb-driver
+dnl MSWIN_CHECK_DIR   vpb,c:\vpb-driver
+
 
 dnl ########################################################################
 dnl output make directives
