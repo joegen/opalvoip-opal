@@ -707,7 +707,7 @@ SOURCE=..\..\include\opal\buildopts.h.in
 
 USERDEP__BUILD="..\..\configure.in"	"..\..\configure.exe"	
 # Begin Custom Build - Configuring Build Options
-InputDir=\opal\include\opal
+InputDir=\Work\opal\include\opal
 InputPath=..\..\include\opal\buildopts.h.in
 
 "$(InputDir)\buildopts.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
@@ -720,7 +720,7 @@ InputPath=..\..\include\opal\buildopts.h.in
 
 USERDEP__BUILD="..\..\configure.in"	"..\..\configure.exe"	
 # Begin Custom Build - Configuring Build Options
-InputDir=\opal\include\opal
+InputDir=\Work\opal\include\opal
 InputPath=..\..\include\opal\buildopts.h.in
 
 "$(InputDir)\buildopts.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
@@ -733,7 +733,7 @@ InputPath=..\..\include\opal\buildopts.h.in
 
 USERDEP__BUILD="..\..\configure.in"	"..\..\configure.exe"	
 # Begin Custom Build - Configuring Build Options
-InputDir=\opal\include\opal
+InputDir=\Work\opal\include\opal
 InputPath=..\..\include\opal\buildopts.h.in
 
 "$(InputDir)\buildopts.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
@@ -923,6 +923,10 @@ SOURCE=..\asn\h245_2.cxx
 
 !ENDIF 
 
+# End Source File
+# Begin Source File
+
+SOURCE=..\asn\h245_3.cxx
 # End Source File
 # Begin Source File
 
