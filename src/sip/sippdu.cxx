@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2010  2002/04/10 08:12:52  robertj
+ * Revision 1.2011  2002/04/12 12:22:45  robertj
+ * Allowed for endpoint listener that is not on port 5060.
+ *
+ * Revision 2.9  2002/04/10 08:12:52  robertj
  * Added call back for when transaction completed, used for invite descendant.
  *
  * Revision 2.8  2002/04/10 03:16:23  robertj
@@ -564,7 +567,7 @@ SIP_PDU::SIP_PDU(Methods method,
                  const PString & from,
                  const PString & callID,
                  unsigned cseq,
-                 const OpalTransport & via)
+                 const OpalTransportAddress & via)
 {
   Construct(method, to, from, callID, cseq, via);
 }
@@ -672,30 +675,30 @@ void SIP_PDU::Construct(Methods meth,
                         const PString & from,
                         const PString & callID,
                         unsigned cseq,
-                        const OpalTransport & via)
+                        const OpalTransportAddress & via)
 {
   Construct(meth);
 
   uri = to;
   uri.SetParamVar("tag", PString::Empty());
 
-  mime.RemoveAll();
   mime.SetTo(to);
   mime.SetFrom(from);
   mime.SetCallID(callID);
   mime.SetCSeq(PString(cseq) & MethodNames[method]);
 
-  OpalTransportAddress localAddress = via.GetLocalAddress();
-  PIPSocket::Address ip;
-  WORD port;
-  localAddress.GetIpAndPort(ip, port);
-  if (!via.IsRunning())
-    port = 5060;
+  PINDEX dollar = via.Find('$');
 
   PStringStream str;
   str << "SIP/" << versionMajor << '.' << versionMinor << '/'
-      << localAddress.Left(localAddress.Find('$')).ToUpper()
-      << ' ' << ip << ':' << port;
+      << via.Left(dollar).ToUpper() << ' ';
+  PIPSocket::Address ip;
+  WORD port;
+  if (via.GetIpAndPort(ip, port))
+    str << ip << ':' << port;
+  else
+    str << via.Mid(dollar+1);
+
   mime.SetVia(str);
 }
 
@@ -704,26 +707,23 @@ void SIP_PDU::Construct(Methods meth,
                         SIPConnection & connection,
                         const OpalTransport & transport)
 {
+  PIPSocket::Address ip;
+  WORD port;
+  if (transport.IsRunning())
+    transport.GetLocalAddress().GetIpAndPort(ip, port);
+  else
+    connection.GetEndPoint().GetListeners()[0].GetLocalAddress().GetIpAndPort(ip, port);
+
+  OpalTransportAddress localAddress = connection.GetLocalAddress(port);
+  SIPURL contact(connection.GetLocalPartyName(), localAddress);
+  mime.SetContact(contact);
+
   Construct(meth,
             connection.GetRemotePartyAddress(),
             connection.GetLocalPartyAddress(),
             connection.GetToken(),
             connection.GetNextCSeq(),
-            transport);
-
-  if (transport.IsRunning()) {
-    PIPSocket::Address ip;
-    WORD port;
-    transport.GetLocalAddress().GetIpAndPort(ip, port);
-
-    OpalTransportAddress localAddress = connection.GetLocalAddress(port);
-    if (!localAddress) {
-      SIPURL contact(connection.GetLocalPartyName(), localAddress);
-      mime.SetContact(contact);
-    }
-    else
-      mime.SetContact(connection.GetLocalPartyAddress(), "");
-  }
+            localAddress);
 }
 
 
@@ -922,7 +922,7 @@ void SIPTransaction::BuildREGISTER(const SIPURL & name, const SIPURL & contact)
                      str, str,
                      endpoint.GetRegistrationID(),
                      endpoint.GetNextCSeq(),
-                     transport);
+                     transport.GetLocalAddress());
 
   mime.SetContact(contact);
   mime.SetAt("Expires", "60");
@@ -983,7 +983,7 @@ BOOL SIPTransaction::ResendCANCEL()
                  mime.GetFrom(),
                  mime.GetCallID(),
                  mime.GetCSeqIndex(),
-                 transport);
+                 localAddress);
 
   if (!cancel.Write(transport)) {
     SetTerminated(Terminated_TransportError);
@@ -1146,7 +1146,6 @@ void SIPTransaction::SetTerminated(States newState)
 SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport)
   : SIPTransaction(connection, transport, Method_INVITE)
 {
-  mime.SetContact(connection.GetLocalPartyAddress());
   mime.SetAt("Date", PTime().AsString());
   mime.SetAt("User-Agent", "OPAL/2.0");
 
@@ -1181,7 +1180,7 @@ BOOL SIPInvite::OnCompleted(SIP_PDU & response)
               mime.GetFrom(),
               mime.GetCallID(),
               mime.GetCSeqIndex(),
-              transport);
+              localAddress);
 
   // Add authentication if had any on INVITE
   if (connection != NULL && 
