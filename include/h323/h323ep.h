@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2022  2004/02/19 10:46:44  rjongbloed
+ * Revision 1.2023  2004/02/24 09:40:27  rjongbloed
+ * Fixed missing return in GetSTUN()
+ *
+ * Revision 2.21  2004/02/19 10:46:44  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.20  2003/03/06 03:57:46  robertj
@@ -1204,7 +1207,7 @@ class H323EndPoint : public OpalEndPoint
       */
     PSTUNClient * GetSTUN(
       const PIPSocket::Address & address = 0
-    ) const { manager.GetSTUN(address); }
+    ) const { return manager.GetSTUN(address); }
 
     /**Set the STUN server address, is of the form host[:port]
       */
