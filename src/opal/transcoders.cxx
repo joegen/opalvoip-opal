@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2001/08/01 05:46:55  robertj
+ * Made OpalMediaFormatList class global to help with documentation.
+ * Added functions to aid in determining if a transcoder can be used to get
+ *   to another media format.
+ * Fixed problem with streamed transcoder used in G.711.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  */
@@ -110,8 +116,8 @@ OpalTranscoder * OpalTranscoder::Create(const OpalMediaFormat & srcFormat,
 
 
 BOOL OpalTranscoder::SelectFormats(unsigned sessionID,
-                                   const OpalMediaFormat::List & srcFormats,
-                                   const OpalMediaFormat::List & dstFormats,
+                                   const OpalMediaFormatList & srcFormats,
+                                   const OpalMediaFormatList & dstFormats,
                                    OpalMediaFormat & srcFormat,
                                    OpalMediaFormat & dstFormat)
 {
@@ -189,6 +195,36 @@ BOOL OpalTranscoder::FindIntermediateFormat(const OpalMediaFormat & srcFormat,
 }
 
 
+OpalMediaFormatList OpalTranscoder::GetDestinationFormats(const OpalMediaFormat & srcFormat)
+{
+  OpalMediaFormatList list;
+
+  OpalTranscoderRegistration * find = RegisteredTranscodersListHead;
+  while (find != NULL) {
+    if (find->GetInputFormat() == srcFormat)
+      list += find->GetOutputFormat();
+    find = find->link;
+  }
+
+  return list;
+}
+
+
+OpalMediaFormatList OpalTranscoder::GetSourceFormats(const OpalMediaFormat & dstFormat)
+{
+  OpalMediaFormatList list;
+
+  OpalTranscoderRegistration * find = RegisteredTranscodersListHead;
+  while (find != NULL) {
+    if (find->GetOutputFormat() == dstFormat)
+      list += find->GetInputFormat();
+    find = find->link;
+  }
+
+  return list;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 OpalFramedTranscoder::OpalFramedTranscoder(const OpalTranscoderRegistration & registration,
@@ -260,11 +296,20 @@ BOOL OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFrame & 
 /////////////////////////////////////////////////////////////////////////////
 
 OpalStreamedTranscoder::OpalStreamedTranscoder(const OpalTranscoderRegistration & registration,
-                                               unsigned inputBits, unsigned outputBits)
+                                               unsigned inputBits,
+                                               unsigned outputBits,
+                                               unsigned optimal)
   : OpalTranscoder(registration)
 {
   inputBitsPerSample = inputBits;
   outputBitsPerSample = outputBits;
+  optimalSamples = optimal;
+}
+
+
+unsigned OpalStreamedTranscoder::GetOptimalDataFrameSize(BOOL input) const
+{
+  return ((input ? inputBitsPerSample : outputBitsPerSample)+7)/8 * optimalSamples;
 }
 
 
