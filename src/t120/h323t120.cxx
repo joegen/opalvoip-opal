@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t120.cxx,v $
- * Revision 1.2011  2002/11/10 11:33:20  robertj
+ * Revision 1.2012  2005/02/21 12:20:06  rjongbloed
+ * Added new "options list" to the OpalMediaFormat class.
+ *
+ * Revision 2.10  2002/11/10 11:33:20  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.9  2002/09/04 06:01:49  robertj
@@ -141,7 +144,7 @@ unsigned H323_T120Capability::GetSubType() const
 
 PString H323_T120Capability::GetFormatName() const
 {
-  return OpalT120Protocol::MediaFormat;
+  return OPAL_T120;
 }
 
 
