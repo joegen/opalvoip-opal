@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2023  2003/03/17 08:12:08  robertj
+ * Revision 1.2024  2003/03/19 02:30:45  robertj
+ * Added removal of IVR stuff if EXPAT is not installed on system.
+ *
+ * Revision 2.22  2003/03/17 08:12:08  robertj
  * Added protocol name to media stream open output.
  *
  * Revision 2.21  2003/03/07 08:18:47  robertj
@@ -231,8 +234,10 @@ void SimpleOpalProcess::Main()
              "-udp-base:"
              "-udp-max:"
 	     "-use-long-mime."
+#if P_EXPAT
              "V-no-ivr."
              "x-vxml:"
+#endif
           , FALSE);
 
 
@@ -284,10 +289,12 @@ void SimpleOpalProcess::Main()
             "     --sound-in device    : Select sound input device.\n"
             "     --sound-out device   : Select sound output device.\n"
             "\n"
+#if P_EXPAT
             "IVR options:\n"
             "  -V --no-ivr             : Disable IVR.\n"
             "  -x --vxml file          : Set vxml file to use for IVR.\n"
             "\n"
+#endif
             "IP options:\n"
             "     --tcp-base n         : Set TCP port base (default 0)\n"
             "     --tcp-max n          : Set TCP port max (default base+99)\n"
@@ -344,9 +351,11 @@ void SimpleOpalProcess::Main()
 "      h323:.* = pc:<da>\n"
 "      sip:.*  = pc:<da>\n"
 "\n"
+#if P_EXPAT
 "    If IVR is enabled then a # from any protocol will route it it, ie:\n"
 "      .*:#  = ivr:\n"
 "\n"
+#endif
             << endl;
     return;
   }
@@ -377,7 +386,9 @@ MyManager::MyManager()
   pcssEP = NULL;
   h323EP = NULL;
   sipEP  = NULL;
+#if P_EXPAT
   ivrEP  = NULL;
+#endif
 }
 
 
@@ -630,6 +641,7 @@ BOOL MyManager::Initialise(PArgList & args)
   }
 
 
+#if P_EXPAT
   ///////////////////////////////////////
   // Create IVR protocol handler
 
@@ -638,6 +650,7 @@ BOOL MyManager::Initialise(PArgList & args)
     if (args.HasOption('x'))
       ivrEP->SetDefaultVXML(args.GetOptionString('x'));
   }
+#endif
 
 
   ///////////////////////////////////////
@@ -662,8 +675,10 @@ BOOL MyManager::Initialise(PArgList & args)
       AddRouteEntry("pc:.*             = h323:<da>");
     }
 
+#if P_EXPAT
     if (ivrEP != NULL)
       AddRouteEntry(".*:#  = ivr:"); // A hash from anywhere goes to IVR
+#endif
 
     if (potsEP != NULL) {
       AddRouteEntry("h323:.* = pots:<da>");

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.h,v $
- * Revision 1.2004  2003/03/17 10:26:59  robertj
+ * Revision 1.2005  2003/03/19 02:30:45  robertj
+ * Added removal of IVR stuff if EXPAT is not installed on system.
+ *
+ * Revision 2.3  2003/03/17 10:26:59  robertj
  * Added video support.
  *
  * Revision 2.2  2003/03/07 05:49:54  robertj
@@ -43,6 +46,8 @@
 #pragma interface
 #endif
 
+
+#if P_EXPAT
 
 #include <opal/opalvxml.h>
 #include <opal/endpoint.h>
@@ -292,6 +297,8 @@ class OpalIVRMediaStream : public OpalRawMediaStream
     PVXMLSession & vxmlSession;
 };
 
+
+#endif // P_EXPAT
 
 #endif // __OPAL_IVR_H
 
