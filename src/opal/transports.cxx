@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2037  2004/04/27 07:23:40  rjongbloed
+ * Revision 1.2038  2004/05/09 13:12:38  rjongbloed
+ * Fixed issues with non fast start and non-tunnelled connections
+ *
+ * Revision 2.36  2004/04/27 07:23:40  rjongbloed
  * Fixed uninitialised variable getting ip without port
  *
  * Revision 2.35  2004/04/27 04:40:17  rjongbloed
@@ -1064,10 +1067,9 @@ OpalListenerTCP::OpalListenerTCP(OpalEndPoint & ep,
                                  PIPSocket::Address binding,
                                  WORD port,
                                  BOOL exclusive)
-  : OpalListenerIP(ep, binding, port, exclusive),
-    listener(port)
+  : OpalListenerIP(ep, binding, port, exclusive)
 {
-  listenerPort = listener.GetPort();
+  listenerPort = port;
 }
 
 
@@ -1079,7 +1081,22 @@ OpalListenerTCP::~OpalListenerTCP()
 
 BOOL OpalListenerTCP::Open(const PNotifier & theAcceptHandler, BOOL isSingleThread)
 {
-  if (listener.Listen(localAddress))
+  if (listenerPort == 0) {
+    OpalManager & manager = endpoint.GetManager();
+    listenerPort = manager.GetNextTCPPort();
+    WORD firstPort = listenerPort;
+    while (!listener.Listen(localAddress, 1, listenerPort)) {
+      listenerPort = manager.GetNextTCPPort();
+      if (listenerPort == firstPort) {
+        PTRACE(1, "Listen\tOpen on " << localAddress << " failed: " << listener.GetErrorText());
+        break;
+      }
+    }
+    listenerPort = listener.GetPort();
+    return StartThread(theAcceptHandler, isSingleThread);
+  }
+
+  if (listener.Listen(localAddress, 1, listenerPort))
     return StartThread(theAcceptHandler, isSingleThread);
 
   if (exclusiveListener) {

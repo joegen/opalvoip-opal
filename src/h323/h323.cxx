@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2056  2004/05/01 10:00:51  rjongbloed
+ * Revision 1.2057  2004/05/09 13:12:38  rjongbloed
+ * Fixed issues with non fast start and non-tunnelled connections
+ *
+ * Revision 2.55  2004/05/01 10:00:51  rjongbloed
  * Fixed ClearCallSynchronous so now is actually signalled when call is destroyed.
  *
  * Revision 2.54  2004/04/29 11:47:54  rjongbloed
@@ -1452,7 +1455,7 @@ H323Connection::H323Connection(OpalCall & call,
 
   mediaWaitForConnect = FALSE;
   transmitterSidePaused = FALSE;
-  fastStartedTransmitMediaStream = NULL;
+  transmitterMediaStream = NULL;
 
   switch (options&FastStartOptionMask) {
     case FastStartOptionDisable :
@@ -3175,13 +3178,13 @@ BOOL H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_OctetStr
                 if (channelToStart.SetInitialBandwidth()) {
                   if (channelToStart.Open()) {
                     if (channelToStart.GetDirection() == H323Channel::IsTransmitter) {
-                      fastStartedTransmitMediaStream = ((H323UnidirectionalChannel &)channelToStart).GetMediaStream();
-                      if (GetCall().OpenSourceMediaStreams(*this, fastStartedTransmitMediaStream->GetMediaFormat(), channelToStart.GetSessionID())) {
+                      transmitterMediaStream = ((H323UnidirectionalChannel &)channelToStart).GetMediaStream();
+                      if (GetCall().OpenSourceMediaStreams(*this, transmitterMediaStream->GetMediaFormat(), channelToStart.GetSessionID())) {
                         if (!mediaWaitForConnect)
                           channelToStart.Start();
                       }
                       else {
-                        fastStartedTransmitMediaStream = NULL;
+                        transmitterMediaStream = NULL;
                         channelToStart.Close();
                       }
                     }
@@ -3269,7 +3272,20 @@ BOOL H323Connection::CreateOutgoingControlChannel(const H225_TransportAddress & 
     return FALSE;
   }
 
+  controlChannel->AttachThread(PThread::Create(PCREATE_NOTIFIER(NewOutgoingControlChannel), 0,
+                                               PThread::NoAutoDeleteThread,
+                                               PThread::NormalPriority,
+                                               "H.245 Handler"));
   return TRUE;
+}
+
+
+void H323Connection::NewOutgoingControlChannel(PThread &, INT)
+{
+  if (PAssertNULL(controlChannel) == NULL)
+    return;
+
+  HandleControlChannel();
 }
 
 
@@ -3300,12 +3316,11 @@ void H323Connection::NewIncomingControlChannel(PThread & listener, INT param)
 {
   ((OpalListener&)listener).Close();
 
-  // If H.245 channel failed to connect and have no media (no fast start)
-  // then clear the call as it is useless.
-  if (param == 0 &&
-      FindChannel(OpalMediaFormat::DefaultAudioSessionID, TRUE) == NULL ||
-      FindChannel(OpalMediaFormat::DefaultAudioSessionID, FALSE) == NULL) {
-    Release(EndedByTransportFail);
+  if (param == 0) {
+    // If H.245 channel failed to connect and have no media (no fast start)
+    // then clear the call as it is useless.
+    if (mediaStreams.IsEmpty())
+      Release(EndedByTransportFail);
     return;
   }
 
@@ -4227,11 +4242,7 @@ BOOL H323Connection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForm
       FindChannel(sessionID, FALSE) != NULL)
     return FALSE;
 
-  PStringArray order(mediaFormats.GetSize());
-  for (PINDEX i = 0; i < mediaFormats.GetSize(); i++)
-    order[i] = mediaFormats[i];
-  localCapabilities.Reorder(order);
-  OnSelectLogicalChannels();
+  PTRACE(1, "H323\tOpenSourceMediaStream called: session " << sessionID);
   return TRUE;
 }
 
@@ -4240,16 +4251,22 @@ OpalMediaStream * H323Connection::CreateMediaStream(const OpalMediaFormat & medi
                                                     unsigned sessionID,
                                                     BOOL isSource)
 {
-  if (!isSource && fastStartedTransmitMediaStream != NULL) {
-    OpalMediaStream * stream = fastStartedTransmitMediaStream;
-    fastStartedTransmitMediaStream = NULL;
-    return stream;
-  }
-
   if (ownerCall.IsMediaBypassPossible(*this, sessionID))
     return new OpalNullMediaStream(mediaFormat, sessionID, isSource);
 
-  return new OpalRTPMediaStream(mediaFormat, isSource, *GetSession(sessionID),
+  if (!isSource) {
+    if (PAssertNULL(transmitterMediaStream) == NULL)
+      return NULL;
+    OpalMediaStream * stream = transmitterMediaStream;
+    transmitterMediaStream = NULL;
+    return stream;
+  }
+
+  RTP_Session * session = GetSession(sessionID);
+  if (session == NULL)
+    return NULL;
+
+  return new OpalRTPMediaStream(mediaFormat, isSource, *session,
                                 endpoint.GetManager().GetMinAudioJitterDelay(),
                                 endpoint.GetManager().GetMaxAudioJitterDelay());
 }
@@ -4287,13 +4304,13 @@ void H323Connection::StartFastStartChannel(unsigned sessionID, H323Channel::Dire
     if (channel.GetSessionID() == sessionID && channel.GetDirection() == direction) {
       if (channel.Open()) {
         if (direction == H323Channel::IsTransmitter) {
-          fastStartedTransmitMediaStream = ((H323UnidirectionalChannel &)channel).GetMediaStream();
-          if (GetCall().OpenSourceMediaStreams(*this, fastStartedTransmitMediaStream->GetMediaFormat(), channel.GetSessionID())) {
+          transmitterMediaStream = ((H323UnidirectionalChannel &)channel).GetMediaStream();
+          if (GetCall().OpenSourceMediaStreams(*this, transmitterMediaStream->GetMediaFormat(), channel.GetSessionID())) {
             if (!mediaWaitForConnect)
               channel.Start();
           }
           else {
-            fastStartedTransmitMediaStream = NULL;
+            transmitterMediaStream = NULL;
             channel.Close();
           }
         }
@@ -4401,7 +4418,13 @@ BOOL H323Connection::OpenLogicalChannel(const H323Capability & capability,
         return FALSE;
 
       // Traditional H245 handshake
-      return logicalChannels->Open(capability, sessionID);
+      if (!logicalChannels->Open(capability, sessionID))
+        return FALSE;
+      transmitterMediaStream = logicalChannels->FindChannelBySession(sessionID, FALSE)->GetMediaStream();
+      if (GetCall().OpenSourceMediaStreams(*this, capability.GetMediaFormat(), sessionID))
+        return TRUE;
+      PTRACE(2, "H323\tOpenLogicalChannel, OpenSourceMediaStreams failed: " << capability);
+      return FALSE;
 
     case FastStartResponse :
       // Do not use OpenLogicalChannel for starting these.
