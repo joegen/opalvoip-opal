@@ -23,7 +23,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g711codec.cxx,v $
- * Revision 1.2002  2001/08/01 05:04:14  robertj
+ * Revision 1.2003  2002/03/15 03:07:25  robertj
+ * Added static access to internal conversion functions.
+ *
+ * Revision 2.1  2001/08/01 05:04:14  robertj
  * Changes to allow control of linking software transcoders, use macros
  *   to force linking.
  *
@@ -65,6 +68,12 @@ int Opal_G711_uLaw_PCM::ConvertOne(int sample) const
 }
 
 
+int Opal_G711_uLaw_PCM::ConvertSample(int sample)
+{
+  return ulaw2linear((unsigned char)sample);
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 Opal_PCM_G711_uLaw::Opal_PCM_G711_uLaw(const OpalTranscoderRegistration & registration)
@@ -75,6 +84,12 @@ Opal_PCM_G711_uLaw::Opal_PCM_G711_uLaw(const OpalTranscoderRegistration & regist
 
 
 int Opal_PCM_G711_uLaw::ConvertOne(int sample) const
+{
+  return linear2ulaw((unsigned short)sample);
+}
+
+
+int Opal_PCM_G711_uLaw::ConvertSample(int sample)
 {
   return linear2ulaw((unsigned short)sample);
 }
@@ -95,6 +110,12 @@ int Opal_G711_ALaw_PCM::ConvertOne(int sample) const
 }
 
 
+int Opal_G711_ALaw_PCM::ConvertSample(int sample)
+{
+  return alaw2linear((unsigned char)sample);
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 Opal_PCM_G711_ALaw::Opal_PCM_G711_ALaw(const OpalTranscoderRegistration & registration)
@@ -105,6 +126,12 @@ Opal_PCM_G711_ALaw::Opal_PCM_G711_ALaw(const OpalTranscoderRegistration & regist
 
 
 int Opal_PCM_G711_ALaw::ConvertOne(int sample) const
+{
+  return linear2alaw((unsigned short)sample);
+}
+
+
+int Opal_PCM_G711_ALaw::ConvertSample(int sample)
 {
   return linear2alaw((unsigned short)sample);
 }
