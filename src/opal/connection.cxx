@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2007  2001/10/04 00:44:51  robertj
+ * Revision 1.2008  2001/10/15 04:34:02  robertj
+ * Added delayed start of media patch threads.
+ * Removed answerCall signal and replaced with state based functions.
+ *
+ * Revision 2.6  2001/10/04 00:44:51  robertj
  * Removed GetMediaFormats() function as is not useful.
  *
  * Revision 2.5  2001/10/03 05:56:15  robertj
@@ -79,20 +83,6 @@ ostream & operator<<(ostream & out, OpalConnection::Phases phase)
 }
 
 
-ostream & operator<<(ostream & out, OpalConnection::AnswerCallResponse response)
-{
-  const char * const names[OpalConnection::NumAnswerCallResponses] = {
-    "AnswerCallNow",
-    "AnswerCallDenied",
-    "AnswerCallAlert",
-    "AnswerCallDeferred",
-    "AnswerCallAlertWithMedia",
-    "AnswerCallDeferredWithMedia"
-  };
-  return out << names[response];
-}
-
-
 ostream & operator<<(ostream & out, OpalCallEndReason reason)
 {
   const char * const names[OpalNumCallEndReasons] = {
@@ -137,7 +127,6 @@ OpalConnection::OpalConnection(OpalCall & call,
 
   callAnswered = FALSE;
   callEndReason = OpalNumCallEndReasons;
-  answerResponse = AnswerCallDeferred;
   bandwidthAvailable = endpoint.GetInitialBandwidth();
 
   mediaStreams.DisallowDeleteObjects();
@@ -256,16 +245,6 @@ BOOL OpalConnection::ForwardCall(const PString & /*forwardParty*/)
 }
 
 
-void OpalConnection::SetAnswerResponse(AnswerCallResponse response)
-{
-  if (response == AnswerCallDeferred)
-    return;
-
-  answerResponse = response;
-  answerWaitFlag.Signal();
-}
-
-
 void OpalConnection::OnAlerting()
 {
   endpoint.OnAlerting(*this);
@@ -365,6 +344,14 @@ OpalMediaStream * OpalConnection::OpenSinkMediaStream(OpalMediaStream & source)
 
   delete stream;
   return NULL;
+}
+
+
+void OpalConnection::StartMediaStreams()
+{
+  for (PINDEX i = 0; i < mediaStreams.GetSize(); i++)
+    mediaStreams[i].Start();
+  PTRACE(2, "OpalCon\tMedia stream threads started.");
 }
 
 
