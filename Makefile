@@ -22,7 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2020  2003/03/18 23:09:37  robertj
+# Revision 1.2021  2003/03/19 04:45:29  robertj
+# Added opalvxml to build
+#
+# Revision 2.19  2003/03/18 23:09:37  robertj
 # Fixed LD_LIBRARY_PATH issue with Solaris
 #
 # Revision 2.18  2003/03/17 23:08:41  robertj
@@ -173,6 +176,7 @@ SOURCES := $(ASN_CXX_FILES) \
            $(OPAL_SRCDIR)/opal/guid.cxx \
            $(OPAL_SRCDIR)/opal/pcss.cxx \
            $(OPAL_SRCDIR)/opal/ivr.cxx \
+           $(OPAL_SRCDIR)/opal/opalvxml.cxx \
            $(OPAL_SRCDIR)/rtp/rtp.cxx \
            $(OPAL_SRCDIR)/rtp/jitter.cxx \
            $(OPAL_SRCDIR)/h323/h323ep.cxx \
