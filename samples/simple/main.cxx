@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2015  2002/04/12 14:02:41  robertj
+ * Revision 1.2016  2002/07/01 09:05:54  robertj
+ * Changed TCp/UDP port allocation to use new thread safe functions.
+ *
+ * Revision 2.14  2002/04/12 14:02:41  robertj
  * Separated interface option for SIP and H.323.
  *
  * Revision 2.13  2002/03/27 05:34:55  robertj
@@ -184,6 +187,8 @@ void SimpleOpalProcess::Main()
              "Q-no-quicknet."
              "R-require-gatekeeper."
              "r-register-sip:"
+             "-rtp-base:"
+             "-rtp-max:"
              "-rtp_tos:"
              "s-sound:"
              "S-no-sound."
@@ -251,8 +256,10 @@ void SimpleOpalProcess::Main()
             "IP options:\n"
             "     --tcp-base n         : Set TCP port base (default 0)\n"
             "     --tcp-max n          : Set TCP port max (default base+99)\n"
-            "     --udp-base n         : Set UDP port base (default 5000)\n"
-            "     --udp-max n          : Set UDP port max (default base+999)"
+            "     --udp-base n         : Set UDP port base (default 6000)\n"
+            "     --udp-max n          : Set UDP port max (default base+199)"
+            "     --rtp-base n         : Set RTP port base (default 5000)\n"
+            "     --rtp-max n          : Set RTP port max (default base+199)"
             "     --rtp-tos n          : Set RTP packet IP TOS bits to n\n"
             "\n"
             "Debug options:\n"
@@ -327,41 +334,17 @@ BOOL MyManager::Initialise(PArgList & args)
   if (args.HasOption('P'))
     SetMediaFormatOrder(args.GetOptionString('P').Lines());
 
-  if (args.HasOption("tcp-base")) {
-    unsigned base = args.GetOptionString("tcp-base").AsUnsigned();
-    if (base < 1024 || base > 65535) {
-      cerr << "TCP port base must be between 1024 and 65535." << endl;
-      return FALSE;
-    }
-    tcpPortBase = (WORD)base;
-    tcpPortMax = (WORD)(base+99);
-    if (args.HasOption("tcp-max")) {
-      unsigned max = args.GetOptionString("tcp-max").AsUnsigned();
-      if (max <= base || max > 65535) {
-        cerr << "TCP port base must be between base (" << base << ") and 65535." << endl;
-        return FALSE;
-      }
-      tcpPortMax = (WORD)max;
-    }
-  }
+  if (args.HasOption("tcp-base"))
+    SetTCPPorts(args.GetOptionString("tcp-base").AsUnsigned(),
+                args.GetOptionString("tcp-max").AsUnsigned());
 
-  if (args.HasOption("udp-base")) {
-    unsigned base = args.GetOptionString("udp-base").AsUnsigned();
-    if (base < 1024 || base > 65535) {
-      cerr << "UDP port base must be between 1024 and 65535." << endl;
-      return FALSE;
-    }
-    udpPortBase = (WORD)base;
-    udpPortMax = (WORD)(base+999);
-    if (args.HasOption("udp-max")) {
-      unsigned max = args.GetOptionString("udp-max").AsUnsigned();
-      if (max <= base || max > 65535) {
-        cerr << "UDP port base must be between base (" << base << ") and 65535." << endl;
-        return FALSE;
-      }
-      udpPortMax = (WORD)max;
-    }
-  }
+  if (args.HasOption("udp-base"))
+    SetUDPPorts(args.GetOptionString("udp-base").AsUnsigned(),
+                args.GetOptionString("udp-max").AsUnsigned());
+
+  if (args.HasOption("rtp-base"))
+    SetRtpIpPorts(args.GetOptionString("rtp-base").AsUnsigned(),
+                  args.GetOptionString("rtp-max").AsUnsigned());
 
   if (args.HasOption("rtp-tos")) {
     unsigned tos = args.GetOptionString("rtp-tos").AsUnsigned();
@@ -379,6 +362,7 @@ BOOL MyManager::Initialise(PArgList & args)
           "Codec order: " << setfill(',') << GetMediaFormatOrder() << setfill(' ') << "\n"
           "TCP ports: " << GetTCPPortBase() << '-' << GetTCPPortMax() << "\n"
           "UDP ports: " << GetUDPPortBase() << '-' << GetUDPPortMax() << "\n"
+          "RTP ports: " << GetRtpIpPortBase() << '-' << GetRtpIpPortMax() << "\n"
           "RTP IP TOS: 0x" << hex << (unsigned)GetRtpIpTypeofService() << dec << endl;
 
 
@@ -469,7 +453,7 @@ BOOL MyManager::Initialise(PArgList & args)
       }
     }
     else {
-      if (!h323EP->StartListener(NULL)) {
+      if (!h323EP->StartListener("*")) {
         cerr <<  "Could not open H.323 listener on TCP port "
              << h323EP->GetDefaultSignalPort() << endl;
         return FALSE;
