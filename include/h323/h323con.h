@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2031  2004/12/12 12:29:02  dsandras
+ * Revision 1.2032  2005/01/16 11:28:04  csoutheren
+ * Added GetIdentifier virtual function to OpalConnection, and changed H323
+ * and SIP descendants to use this function. This allows an application to
+ * obtain a GUID for any connection regardless of the protocol used
+ *
+ * Revision 2.30  2004/12/12 12:29:02  dsandras
  * Moved GetRemoteApplication () to OpalConnection so that it is usable for all types of connection.
  *
  * Revision 2.29  2004/08/14 07:56:28  rjongbloed
@@ -2048,8 +2053,10 @@ class H323Connection : public OpalConnection
     unsigned GetCallReference() const { return callReference; }
 
     /**Get the call identifier for this connection.
+      * preserved for backwards compatibility with OpenH323 only
      */
-    const OpalGloballyUniqueID & GetCallIdentifier() const { return callIdentifier; }
+    inline const OpalGloballyUniqueID & GetCallIdentifier() const 
+    { return GetIdentifier(); }
 
     /**Get the conference identifier for this connection.
      */
@@ -2171,7 +2178,6 @@ class H323Connection : public OpalConnection
     BOOL                 gatekeeperRouted;
     unsigned             distinctiveRing;
     unsigned             callReference;
-    OpalGloballyUniqueID callIdentifier;
     OpalGloballyUniqueID conferenceIdentifier;
 
     PString            localDestinationAddress;
