@@ -24,7 +24,11 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2014  2002/02/13 02:33:15  robertj
+ * Revision 1.2015  2002/04/15 08:48:14  robertj
+ * Fixed problem with mismatched payload type being propagated.
+ * Fixed correct setting of jitter buffer size in RTP media stream.
+ *
+ * Revision 2.13  2002/02/13 02:33:15  robertj
  * Added ability for media patch (and transcoders) to handle multiple RTP frames.
  * Removed media stream being descended from PChannel, not really useful.
  *
@@ -85,6 +89,9 @@
 #include <rtp/rtp.h>
 
 
+#define MAX_PAYLOAD_TYPE_MISMATCHES 10
+
+
 #define new PNEW
 
 
@@ -96,6 +103,7 @@ OpalMediaStream::OpalMediaStream(BOOL isSourceStream, unsigned id)
   sessionID = id;
   timestamp = 0;
   marker = TRUE;
+  mismatchedPayloadTypes = 0;
   patchThread = NULL;
 }
 
@@ -212,6 +220,29 @@ BOOL OpalMediaStream::WritePacket(RTP_DataFrame & packet)
 {
   timestamp = packet.GetTimestamp();
   int size = packet.GetPayloadSize();
+
+  if (packet.GetPayloadType() == mediaFormat.GetPayloadType()) {
+    PTRACE_IF(2, mismatchedPayloadTypes > 0,
+              "H323RTP\tPayload type matched again " << mediaFormat.GetPayloadType());
+    mismatchedPayloadTypes = 0;
+  }
+  else {
+    mismatchedPayloadTypes++;
+    if (mismatchedPayloadTypes < MAX_PAYLOAD_TYPE_MISMATCHES) {
+      PTRACE(2, "Media\tRTP data with mismatched payload type,"
+                " is " << packet.GetPayloadType() << 
+                " expected " << mediaFormat.GetPayloadType() <<
+                ", ignoring packet.");
+      size = 0;
+    }
+    else {
+      PTRACE_IF(2, mismatchedPayloadTypes == MAX_PAYLOAD_TYPE_MISMATCHES,
+                "Media\tRTP data with consecutive mismatched payload types,"
+                " is " << packet.GetPayloadType() << 
+                " expected " << mediaFormat.GetPayloadType() <<
+                ", ignoring payload type from now on.");
+    }
+  }
 
   if (size == 0) {
     timestamp += CalculateTimestamp(1, mediaFormat);
@@ -334,9 +365,11 @@ BOOL OpalNullMediaStream::IsSynchronous() const
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalRTPMediaStream::OpalRTPMediaStream(BOOL isSourceStream,
-                                       RTP_Session & rtp)
+                                       RTP_Session & rtp,
+                                       unsigned jitter)
   : OpalMediaStream(isSourceStream, rtp.GetSessionID()),
-    rtpSession(rtp)
+    rtpSession(rtp),
+    jitterBufferSize(jitter)
 {
 }
 
@@ -377,7 +410,8 @@ BOOL OpalRTPMediaStream::IsSynchronous() const
 
 void OpalRTPMediaStream::EnableJitterBuffer() const
 {
-  rtpSession.SetJitterBufferSize(150);
+  if (mediaFormat.NeedsJitterBuffer())
+    rtpSession.SetJitterBufferSize(jitterBufferSize*mediaFormat.GetTimeUnits());
 }
 
 
