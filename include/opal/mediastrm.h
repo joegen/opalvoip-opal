@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2005  2001/10/04 05:44:00  craigs
+ * Revision 1.2006  2001/10/15 04:28:35  robertj
+ * Added delayed start of media patch threads.
+ *
+ * Revision 2.4  2001/10/04 05:44:00  craigs
  * Changed to start media patch threads in Paused state
  *
  * Revision 2.3  2001/10/04 00:41:20  robertj
@@ -115,6 +118,13 @@ class OpalMediaStream : public PChannel
       const OpalMediaFormat & format /// Media format to select
     );
 
+    /**Start the media stream.
+
+       The default behaviour calls Resume() on the associated OpalMediaPatch
+       thread if it was suspended.
+      */
+    virtual BOOL Start();
+
     /**Close the media stream.
 
        The default does nothing.
@@ -192,10 +202,6 @@ class OpalMediaStream : public PChannel
     void SetPatch(
       OpalMediaPatch * patch  /// Media patch thread
     );
-
-    /**Resume the patch thread
-      */
-    void ResumePatch();
 
   //@}
 
