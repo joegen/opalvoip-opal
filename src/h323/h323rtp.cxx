@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323rtp.cxx,v $
- * Revision 1.2007  2002/07/01 04:56:32  robertj
+ * Revision 1.2008  2002/09/04 06:01:49  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.6  2002/07/01 04:56:32  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.5  2002/01/22 05:26:39  robertj
@@ -44,6 +47,13 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.20  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
+ *
+ * Revision 1.19  2002/07/02 10:02:32  robertj
+ * Added H323TransportAddress::GetIpAddress() so don't have to provide port
+ *   when you don't need it as in GetIpAndPort(),.
  *
  * Revision 1.18  2002/06/24 08:07:49  robertj
  * Fixed setting of H.225.0 logical channel parameter silenceSuppression field

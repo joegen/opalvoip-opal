@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2017  2002/07/01 04:56:33  robertj
+ * Revision 1.2018  2002/09/04 06:01:49  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.16  2002/07/01 04:56:33  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.15  2002/06/16 02:25:11  robertj
@@ -123,16 +126,12 @@ OpalManager::OpalManager()
 {
   autoStartReceiveVideo = autoStartTransmitVideo = TRUE;
 
-  // Ports for UDP use, eg SIP or RAS
-  udpPortBase = 6000;
-  udpPortMax  = 6049;
+  rtpIpPorts.current = rtpIpPorts.base = 5000;
+  rtpIpPorts.max = 5199;
 
   // use dynamic port allocation by default
-  tcpPortBase = tcpPortMax = 0;
-
-  // RTP port range
-  rtpIpPortBase = 5000;
-  rtpIpPortMax  = 5199;
+  tcpPorts.current = tcpPorts.base = tcpPorts.max = 0;
+  udpPorts.current = udpPorts.base = udpPorts.max = 0;
 
 #ifdef _WIN32
   rtpIpTypeofService = IPTOS_PREC_CRITIC_ECP|IPTOS_LOWDELAY;
@@ -505,95 +504,87 @@ BOOL OpalManager::TranslateIPAddress(PIPSocket::Address & /*localAddr*/,
 }
 
 
-static void LimitPorts(unsigned & pBase, unsigned & pMax, unsigned range)
+void OpalManager::PortInfo::Set(unsigned newBase,
+                                unsigned newMax,
+                                unsigned range,
+                                unsigned dflt)
 {
-  if (pBase < 1024)
-    pBase = 1024;
-  else if (pBase > 65500)
-    pBase = 65500;
+  if (newBase == 0) {
+    newBase = dflt;
+    newMax = dflt;
+    if (dflt > 0)
+      newMax += range;
+  }
+  else {
+    if (newBase < 1024)
+      newBase = 1024;
+    else if (newBase > 65500)
+      newBase = 65500;
 
-  if (pMax <= pBase)
-    pMax = pBase + range;
-  if (pMax > 65535)
-    pMax = 65535;
+    if (newMax <= newBase)
+      newMax = newBase + range;
+    if (newMax > 65535)
+      newMax = 65535;
+  }
+
+  mutex.Wait();
+
+  current = base = (WORD)newBase;
+  max = (WORD)newMax;
+
+  mutex.Signal();
+}
+
+
+WORD OpalManager::PortInfo::GetNext(unsigned increment)
+{
+  PWaitAndSignal m(mutex);
+
+  if (current < base || current >= (max-increment))
+    current = base;
+
+  if (current == 0)
+    return 0;
+
+  WORD p = current;
+  current = (WORD)(current + increment);
+  return p;
 }
 
 
 void OpalManager::SetTCPPorts(unsigned tcpBase, unsigned tcpMax)
 {
-  PWaitAndSignal mutex(ipPortMutex);
-
-  if (tcpBase == 0)
-    tcpPort = tcpPortBase = tcpPortMax = 0;
-  else {
-    LimitPorts(tcpBase, tcpMax, 99);
-
-    tcpPort = tcpPortBase = (WORD)tcpBase;
-    tcpPortMax = (WORD)tcpMax;
-  }
-}
-
-
-void OpalManager::SetUDPPorts(unsigned udpBase, unsigned udpMax)
-{
-  PWaitAndSignal mutex(ipPortMutex);
-
-  LimitPorts(udpBase, udpMax, 49);
-
-  udpPort = udpPortBase = (WORD)udpBase;
-  udpPortMax  = (WORD)udpMax;
-}
-
-
-void OpalManager::SetRtpIpPorts(unsigned udpBase, unsigned udpMax)
-{
-  PWaitAndSignal mutex(ipPortMutex);
-
-  LimitPorts(udpBase, udpMax, 199);
-
-  rtpIpPort = rtpIpPortBase = (WORD)udpBase;
-  rtpIpPortMax  = (WORD)udpMax;
-}
-
-
-static WORD GetNextPort(WORD base, WORD max, WORD & port, WORD inc)
-{
-  if (port < base || port > max)
-    port = base;
-
-  if (port == 0)
-    return 0;
-
-  WORD p = port;
-
-  if (port != 0) {
-    port = (WORD)(port + inc);
-    if (port > max)
-      port = base;
-  }
-
-  return p;
+  tcpPorts.Set(tcpBase, tcpMax, 49, 0);
 }
 
 
 WORD OpalManager::GetNextTCPPort()
 {
-  PWaitAndSignal mutex(ipPortMutex);
-  return GetNextPort(tcpPortBase, tcpPortMax, tcpPort, 1);
+  return tcpPorts.GetNext(1);
+}
+
+
+void OpalManager::SetUDPPorts(unsigned udpBase, unsigned udpMax)
+{
+  udpPorts.Set(udpBase, udpMax, 99, 0);
 }
 
 
 WORD OpalManager::GetNextUDPPort()
 {
-  PWaitAndSignal mutex(ipPortMutex);
-  return GetNextPort(udpPortBase, udpPortMax, udpPort, 1);
+  return udpPorts.GetNext(1);
+}
+
+
+void OpalManager::SetRtpIpPorts(unsigned rtpIpBase, unsigned rtpIpMax)
+{
+  rtpIpPorts.Set((rtpIpBase+1)&0xfffe, rtpIpMax&0xfffe, 199, 5000);
 }
 
 
 WORD OpalManager::GetRtpIpPortPair()
 {
-  PWaitAndSignal mutex(ipPortMutex);
-  return GetNextPort(rtpIpPortBase, rtpIpPortMax, rtpIpPort, 2);
+  return rtpIpPorts.GetNext(2);
 }
 
 

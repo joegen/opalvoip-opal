@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vpblid.cxx,v $
- * Revision 1.2006  2002/07/01 04:56:33  robertj
+ * Revision 1.2007  2002/09/04 06:01:49  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.5  2002/07/01 04:56:33  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.4  2002/03/22 06:57:50  robertj
@@ -39,6 +42,21 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.18  2002/09/03 06:22:26  robertj
+ * Cosmetic change to formatting.
+ *
+ * Revision 1.17  2002/08/01 01:33:42  dereks
+ * Adjust verbosity of PTRACE statements.
+ *
+ * Revision 1.16  2002/07/02 03:20:37  dereks
+ * Fix check for line disconnected state.   Remove timer on line ringing.
+ *
+ * Revision 1.15  2002/07/01 23:57:35  dereks
+ * Clear dtmf and tone event queue when changing hook status, to remove spurious events.
+ *
+ * Revision 1.14  2002/07/01 02:52:52  dereks
+ * IsToneDetected now reports the RING tone.   Add PTRACE statements.
  *
  * Revision 1.13  2002/05/21 09:16:31  robertj
  * Fixed segmentation fault, if OpalVPBDevice::StopTone() is called more than
@@ -135,7 +153,7 @@ BOOL OpalVpbDevice::LineState::Open(unsigned cardNumber, unsigned lineNumber)
   readFrameSize = writeFrameSize = 480;
   currentHookState = FALSE;
   vpb_sethook_sync(handle, VPB_ONHOOK);
-  vpb_set_event_mask(handle, VPB_MRING|VPB_MTONEDETECT);
+  vpb_set_event_mask(handle, VPB_MRING | VPB_MTONEDETECT );
   myToneThread = NULL;
 
   return TRUE;
@@ -165,6 +183,14 @@ unsigned OpalVpbDevice::GetLineCount()
   return lineCount;
 }
 
+BOOL OpalVpbDevice::IsLineDisconnected(unsigned line, BOOL /*checkForWink*/)
+{
+  //  unsigned thisTone = IsToneDetected(line);
+  BOOL lineIsDisconnected = (IsToneDetected(line) != NoTone);
+
+  PTRACE(3, "VPB\tLine is disconnected: " << (lineIsDisconnected ? " TRUE" : "FALSE"));
+  return lineIsDisconnected;
+}
 
 BOOL OpalVpbDevice::IsLineOffHook(unsigned line)
 {
@@ -189,12 +215,15 @@ BOOL OpalVpbDevice::LineState::SetLineOffHook(BOOL newState)
   currentHookState = newState;
   VPB_EVENT        event;
 
-  if (newState == TRUE) {
-    // DR - clear DTMF buffer and event queue at start of each call
-    vpb_flush_digits(handle);   
-    while(vpb_get_event_ch_async(handle, &event) == VPB_OK);
-  }
-  return vpb_sethook_sync(handle, newState ? VPB_OFFHOOK : VPB_ONHOOK) >= 0;
+  BOOL setHookOK = vpb_sethook_sync(handle, newState ? VPB_OFFHOOK : VPB_ONHOOK) >= 0;
+  PTRACE(3, "vpb\tSetLineOffHook to " << (newState ? "offhook" : "on hook") << 
+	 (setHookOK ? " succeeded." : " failed."));
+
+  // clear DTMF buffer and event queue after changing hook state.
+  vpb_flush_digits(handle);   
+  while (vpb_get_event_ch_async(handle, &event) == VPB_OK);
+
+  return setHookOK;
 }
 
 
@@ -210,17 +239,27 @@ BOOL OpalVpbDevice::IsLineRinging(unsigned line, DWORD * cadence)
 BOOL OpalVpbDevice::LineState::IsLineRinging(DWORD * /*cadence*/)
 {
   VPB_EVENT event;
+  BOOL lineIsRinging = FALSE;
 
-  if (!currentHookState) {
-    // DR 13/1/02 - Dont look at event queue here if off hook, as we will steal events 
-    // that IsToneDetected may be looking for.
-    	  
-    if (vpb_get_event_ch_async(handle, &event) == VPB_OK && event.type == VPB_RING)
-      ringTimeout = 5000;
+  if (currentHookState) {
+    PTRACE(6, "VPB\tTest IsLineRinging() returns FALSE");
+    return FALSE;
   }
 
-  return ringTimeout.IsRunning();
+  // DR 13/1/02 - Dont look at event queue here if off hook, as we will steal events 
+  // that IsToneDetected may be looking for.
+  
+  if (vpb_get_event_ch_async(handle, &event) == VPB_OK) 
+    if (event.type == VPB_RING) {
+      PTRACE(3, "VPB\tRing event detected in IsLineRinging");
+      lineIsRinging = TRUE;
+    }
+
+  return lineIsRinging;
 }
+
+
+  
 
 static const struct {
   const char * mediaFormat;
@@ -394,9 +433,9 @@ BOOL OpalVpbDevice::ReadFrame(unsigned line, void * buf, PINDEX & count)
     return FALSE;
 
   count = lineState[line].readFrameSize;
-  PTRACE(3, "VPB\tReadFrame before vpb_record_buf_sync");
+  PTRACE(4, "VPB\tReadFrame before vpb_record_buf_sync");
   vpb_record_buf_sync(lineState[line].handle, (char *)buf, (WORD)count);
-  PTRACE(3, "VPB\tReadFrame after vpb_record_buf_sync");
+  PTRACE(4, "VPB\tReadFrame after vpb_record_buf_sync");
   return TRUE;
 }
 
@@ -407,9 +446,9 @@ BOOL OpalVpbDevice::WriteFrame(unsigned line, const void * buf, PINDEX count, PI
   if (line >= MaxLineCount)
     return FALSE;
 
-  PTRACE(3, "VPB\tWriteFrame before vpb_play_buf_sync");
+  PTRACE(4, "VPB\tWriteFrame before vpb_play_buf_sync");
   vpb_play_buf_sync(lineState[line].handle, (char *)buf,(WORD)count);
-  PTRACE(3, "VPB\tWriteFrame after vpb_play_buf_sync");
+  PTRACE(4, "VPB\tWriteFrame after vpb_play_buf_sync");
 
   written = count;
   return TRUE;
@@ -470,28 +509,42 @@ BOOL OpalVpbDevice::PlayDTMF(unsigned line, const char * digits, DWORD, DWORD)
 
 unsigned OpalVpbDevice::IsToneDetected(unsigned line)
 {
-  if (line >= MaxLineCount)
+  if (line >= MaxLineCount) {
+    PTRACE(3, "VPB\tTone Detect no tone detected, line is > MaxLineCount (" << MaxLineCount << ")");
     return NoTone;
+  }
 
   VPB_EVENT event;
-  if (vpb_get_event_ch_async(lineState[line].handle, &event) == VPB_NO_EVENTS)
+  if (vpb_get_event_ch_async(lineState[line].handle, &event) == VPB_NO_EVENTS) {
+    PTRACE(3, "VPB\tTone Detect no events in  tone detected");    
     return NoTone;
+  }
 
-  if (event.type != VPB_TONEDETECT)
+  if (event.type == VPB_RING) {
+    PTRACE(3, "VPB\t Tone Detect: Ring tone (generated from ring event)");
+    return RingTone;
+  }
+
+  if (event.type != VPB_TONEDETECT) {
+    PTRACE(3, "VPB\tTone Detect. Event type is not (ring | tone). No tone detected.");
     return NoTone;
+  }
 
-  PTRACE(3, "VPB\tTone Detect: " << event.data);
   switch (event.data) {
     case VPB_DIAL :
+      PTRACE(3, "VPB\tTone Detect: Dial tone.");
       return DialTone;
 
     case VPB_RINGBACK :
+      PTRACE(3, "VPB\tTone Detect: Ring tone.");
       return RingTone;
 
     case VPB_BUSY :
+      PTRACE(3, "VPB\tTone Detect: Busy tone.");
       return BusyTone;
 
     case VPB_GRUNT :
+      PTRACE(3, "VPB\tTone Detect: Grunt tone.");
       break;
   }
 
@@ -578,6 +631,4 @@ void ToneThread::Main() {
 }
 
 
-
-
-
+/////////////////////////////////////////////////////////////////////////////
