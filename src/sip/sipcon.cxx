@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2011  2002/04/08 02:40:13  robertj
+ * Revision 1.2012  2002/04/09 01:02:14  robertj
+ * Fixed problems with restarting INVITE on  authentication required response.
+ *
+ * Revision 2.10  2002/04/08 02:40:13  robertj
  * Fixed issues with using double originate call, eg from simple app command line.
  *
  * Revision 2.9  2002/04/05 10:42:04  robertj
@@ -195,8 +198,10 @@ BOOL SIPConnection::OnReleased()
 
 BOOL SIPConnection::SetAlerting(const PString & /*calleeName*/, BOOL /*withMedia*/)
 {
-  if (!HadAnsweredCall())
+  if (IsOriginator()) {
+    PTRACE(2, "SIP\tSetAlerting ignored on call we originated.");
     return TRUE;
+  }
 
   PTRACE(2, "SIP\tSetAlerting");
   if (!Lock())
@@ -216,8 +221,10 @@ BOOL SIPConnection::SetAlerting(const PString & /*calleeName*/, BOOL /*withMedia
 
 BOOL SIPConnection::SetConnected()
 {
-  if (!HadAnsweredCall())
+  if (IsOriginator()) {
+    PTRACE(2, "SIP\tSetConnected ignored on call we originated.");
     return TRUE;
+  }
 
   PINDEX i;
   PTRACE(2, "SIP\tSetConnected");
@@ -242,7 +249,7 @@ BOOL SIPConnection::SetConnected()
     PTRACE(2, "SIP\tCould not find matching media type");
     return FALSE;
   }
-   
+
   // create the list of Opal format names for the remote end
   remoteFormatList = incomingMedia->GetMediaFormats();
 
@@ -434,6 +441,7 @@ void SIPConnection::InitiateCall(const SIPURL & destination)
   PTRACE(2, "SIP\tInitiating connection to " << destination);
 
   originalDestination = destination;
+  originating = TRUE;
 
   PStringToString params = originalDestination.GetParamVars();
   if (params.Contains("proxyusername") && params.Contains("proxypassword")) {
@@ -596,12 +604,6 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   localPartyAddress  = mime.GetTo() + ";tag=XXXXX";
   mime.SetTo(localPartyAddress);
 
-  PString contact = mime.GetContact();
-  if (!contact) {
-    SIPURL remote = contact;
-    transport->SetRemoteAddress(remote.GetHostAddress());
-  }
-
   // indicate the other is to start ringing
   if (!OnIncomingConnection()) {
     PTRACE(2, "SIP\tOnIncomingConnection failed for INVITE from " << request.GetURI() << " for " << *this);
@@ -635,8 +637,8 @@ void SIPConnection::OnReceivedBYE(SIP_PDU & request)
   PTRACE(2, "SIP\tBYE received for call " << request.GetMIME().GetCallID());
   SIP_PDU response(request, SIP_PDU::Successful_OK);
   response.Write(*transport);
-  Release(EndedByRemoteUser);
   releaseMethod = ReleaseWithNothing;
+  Release(EndedByRemoteUser);
 }
 
 
@@ -649,6 +651,8 @@ void SIPConnection::OnReceivedCANCEL(SIP_PDU & request)
       request.GetMIME().GetFrom() != originalInvite->GetMIME().GetFrom() ||
       request.GetMIME().GetCSeqIndex() != originalInvite->GetMIME().GetCSeqIndex()) {
     PTRACE(1, "SIP\tUnattached " << request << " received for " << *this);
+    SIP_PDU response(request, SIP_PDU::Failure_TransactionDoesNotExist);
+    response.Write(*transport);
     return;
   }
 
@@ -699,9 +703,15 @@ void SIPConnection::OnReceivedRedirection(SIP_PDU & response)
 }
 
 
-void SIPConnection::OnReceivedAuthenticationRequired(SIP_PDU & response)
+void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
+                                                     SIP_PDU & response)
 {
   BOOL isProxy = response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
+
+  if (transaction.GetMethod() != SIP_PDU::Method_INVITE) {
+    PTRACE(1, "SIP\tCannot do " << (isProxy ? "Proxy " : "") << "Authentication Required for non INVITE");
+    return;
+  }
 
   PTRACE(2, "SIP\tReceived " << (isProxy ? "Proxy " : "") << "Authentication Required response");
 
@@ -713,11 +723,16 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIP_PDU & response)
   }
 
   // make sure the To field is the same as the original
-  remotePartyAddress = '<' + originalDestination.AsString() + '>';
+  remotePartyAddress = originalDestination.AsString();
 
-  // build the PDU and add authorisation
-  SIPTransaction request(*this, *transport, SIP_PDU::Method_INVITE);
-  request.Start();
+  // Restart the transaction with new authentication info
+  SIPTransaction * invite = new SIPTransaction(*this, *transport, SIP_PDU::Method_INVITE);
+  if (invite->Start())
+    invitations.Append(invite);
+  else {
+    delete invite;
+    PTRACE(1, "SIP\tCould not restart INVITE for " << (isProxy ? "Proxy " : "") << "Authentication Required");
+  }
 }
 
 
@@ -757,8 +772,6 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     transaction.GetTransport().EndConnect(transaction.GetLocalAddress());
   }
 
-  OnReceivedSDP(response);
-
   switch (response.GetStatusCode()) {
     case SIP_PDU::Information_Session_Progress :
       OnReceivedSessionProgress(response);
@@ -766,7 +779,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
     case SIP_PDU::Failure_UnAuthorised :
     case SIP_PDU::Failure_ProxyAuthenticationRequired :
-      OnReceivedAuthenticationRequired(response);
+      OnReceivedAuthenticationRequired(transaction, response);
       break;
 
     case SIP_PDU::Redirection_MovedTemporarily :
