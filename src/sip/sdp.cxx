@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2014  2004/03/25 11:51:12  rjongbloed
+ * Revision 1.2015  2004/04/27 07:22:40  rjongbloed
+ * Adjusted some logging
+ *
+ * Revision 2.13  2004/03/25 11:51:12  rjongbloed
  * Changed PCM-16 from IllegalPayloadType to MaxPayloadType to avoid problems
  *   in other parts of the code.
  * Changed to hame m= line for every codec, including "known" ones, thanks Ted Szoczei
@@ -325,6 +328,7 @@ BOOL SDPMediaDescription::Decode(const PString & str)
     portStr   = portStr.Left(pos);
   }
   unsigned port = portStr.AsUnsigned();
+  PTRACE(4, "SDP\tMedia session port=" << port);
 
   if (transport != SDP_MEDIA_TRANSPORT) {
     PTRACE(1, "SDP\tMedia session has only " << tokens.GetSize() << " elements");
@@ -548,7 +552,7 @@ BOOL SDPSessionDescription::Decode(const PString & str)
           currentMedia = new SDPMediaDescription(defaultConnectAddress);
           if (currentMedia->Decode(value)) {
             mediaDescriptions.Append(currentMedia);
-            PTRACE(2, "SDP\tAdding media session with " << currentMedia->GetSDPMediaFormats().GetSize() << " formats");
+            PTRACE(3, "SDP\tAdding media session with " << currentMedia->GetSDPMediaFormats().GetSize() << " formats");
           }
           else
             delete currentMedia;
