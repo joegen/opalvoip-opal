@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.cxx,v $
- * Revision 1.2013  2004/02/19 10:47:02  rjongbloed
+ * Revision 1.2014  2004/03/11 06:54:28  csoutheren
+ * Added ability to disable SIP or H.323 stacks
+ *
+ * Revision 2.12  2004/02/19 10:47:02  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.11  2004/01/18 15:35:20  rjongbloed
@@ -273,7 +276,7 @@
 
 #include <codec/h261codec.h>
 
-#ifndef NO_H323_VIDEO
+#ifndef NO_OPAL_VIDEO
 
 #include <asn/h245.h>
 #include "vic/p64.h"
@@ -324,6 +327,8 @@ OpalMediaFormat const OpalH261_QCIF(
 
 
 ///////////////////////////////////////////////////////////////////////////////
+
+#ifndef NO_H323
 
 H323_H261Capability::H323_H261Capability(unsigned _qcifMPI,
                                          unsigned _cifMPI,
@@ -428,6 +433,8 @@ BOOL H323_H261Capability::OnReceivedPDU(const H245_VideoCapability & cap)
   stillImageTransmission = h261.m_stillImageTransmission;
   return TRUE;
 }
+
+#endif
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1180,7 +1187,7 @@ void H323_H261Codec::OnLostPicture()
 #endif
 
 
-#endif // NO_H323_VIDEO
+#endif // NO_OPAL_VIDEO
 
 
 /////////////////////////////////////////////////////////////////////////////

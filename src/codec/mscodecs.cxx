@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mscodecs.cxx,v $
- * Revision 1.2006  2002/11/10 11:33:18  robertj
+ * Revision 1.2007  2004/03/11 06:54:28  csoutheren
+ * Added ability to disable SIP or H.323 stacks
+ *
+ * Revision 2.5  2002/11/10 11:33:18  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.4  2002/09/04 06:01:47  robertj
@@ -114,6 +117,7 @@ extern "C" {
 
 #define new PNEW
 
+#ifndef NO_H323
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -189,6 +193,7 @@ PString MicrosoftGSMAudioCapability::GetFormatName() const
   return OpalMSGSM;
 }
 
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -273,6 +278,8 @@ OpalMediaFormat const OpalMSIMA(
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#ifndef NO_H323
+
 static const BYTE msIMAHeader[] = {
 
   // unknown data
@@ -318,6 +325,7 @@ PString MicrosoftIMAAudioCapability::GetFormatName() const
   return OpalMSIMA;
 }
 
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 
