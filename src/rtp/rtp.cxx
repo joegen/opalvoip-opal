@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2016  2004/03/02 10:02:46  rjongbloed
+ * Revision 1.2017  2004/04/26 05:37:13  rjongbloed
+ * Allowed for selectable auto deletion of RTP user data attached to an RTP session.
+ *
+ * Revision 2.15  2004/03/02 10:02:46  rjongbloed
  * Added check for unusual error in reading UDP socket, thanks Michael Smith
  *
  * Revision 2.14  2004/03/02 09:57:54  rjongbloed
@@ -706,7 +709,7 @@ void RTP_UserData::OnRxStatistics(const RTP_Session & /*session*/) const
 
 /////////////////////////////////////////////////////////////////////////////
 
-RTP_Session::RTP_Session(unsigned id, RTP_UserData * data)
+RTP_Session::RTP_Session(unsigned id, RTP_UserData * data, BOOL autoDelete)
   : canonicalName(PProcess::Current().GetUserName()),
     toolName(PProcess::Current().GetName()),
     reportTimeInterval(0, 12),  // Seconds
@@ -717,6 +720,7 @@ RTP_Session::RTP_Session(unsigned id, RTP_UserData * data)
 
   referenceCount = 1;
   userData = data;
+  autoDeleteUserData = autoDelete;
   jitter = NULL;
 
   ignoreOtherSources = TRUE;
@@ -778,7 +782,8 @@ RTP_Session::~RTP_Session()
             "    averageJitter     = " << (jitterLevel >> 7) << "\n"
             "    maximumJitter     = " << (maximumJitterLevel >> 7)
             );
-  delete userData;
+  if (autoDeleteUserData)
+    delete userData;
   delete jitter;
 }
 
@@ -815,10 +820,12 @@ void RTP_Session::SetToolName(const PString & name)
 }
 
 
-void RTP_Session::SetUserData(RTP_UserData * data)
+void RTP_Session::SetUserData(RTP_UserData * data, BOOL autoDelete)
 {
-  delete userData;
+  if (autoDeleteUserData)
+    delete userData;
   userData = data;
+  autoDeleteUserData = autoDelete;
 }
 
 
