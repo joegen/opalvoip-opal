@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2033  2004/03/22 11:39:44  rjongbloed
+ * Revision 1.2034  2004/03/29 11:04:19  rjongbloed
+ * Fixed shut down of OpalTransportUDP when still in "connect" phase.
+ *
+ * Revision 2.32  2004/03/22 11:39:44  rjongbloed
  * Fixed problems with correctly terminating the OpalTransportUDP that is generated from
  *   an OpalListenerUDP, this should not close the socket or stop the thread.
  *
@@ -1678,10 +1681,15 @@ BOOL OpalTransportUDP::Close()
   if (connectSockets.IsEmpty())
     return OpalTransport::Close();
 
+  channelPointerMutex.StartWrite();
+  readChannel = writeChannel = NULL;
+
   // Still in connection on multiple interface phase. Close all of the
   // sockets we have open.
   for (PINDEX i = 0; i < connectSockets.GetSize(); i++)
     connectSockets[i].Close();
+
+  channelPointerMutex.EndWrite();
 
   return TRUE;
 }
