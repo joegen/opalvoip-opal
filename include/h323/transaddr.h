@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transaddr.h,v $
- * Revision 1.2003  2002/07/01 04:56:30  robertj
+ * Revision 1.2004  2002/09/12 06:58:17  robertj
+ * Removed protocol prefix strings as static members as has problems with
+ *   use in DLL environment.
+ *
+ * Revision 2.2  2002/07/01 04:56:30  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.1  2001/11/09 05:49:47  robertj
@@ -78,11 +82,11 @@ class H323TransportAddress : public OpalTransportAddress
 
     H323TransportAddress(
       const H225_TransportAddress & pdu,
-      const char * proto = OpalTransportAddress::TcpPrefix
+      const char * proto = NULL // Default to tcp
     );
     H323TransportAddress(
       const H245_TransportAddress & pdu,
-      const char * proto = OpalTransportAddress::UdpPrefix
+      const char * proto = NULL // default to udp
     );
 
     BOOL SetPDU(
