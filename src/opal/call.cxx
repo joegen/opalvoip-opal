@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2005  2001/10/04 05:43:44  craigs
+ * Revision 1.2006  2001/10/15 04:33:17  robertj
+ * Removed answerCall signal and replaced with state based functions.
+ *
+ * Revision 2.4  2001/10/04 05:43:44  craigs
  * Changed to start media patch threads in Paused state
  *
  * Revision 2.3  2001/08/22 10:20:09  robertj
@@ -109,7 +112,7 @@ void OpalCall::CheckEstablished()
       case OpalConnection::EstablishedPhase :
         break;
       case OpalConnection::AlertingPhase :
-        activeConnections[idx].SetAnswerResponse(OpalConnection::AnswerCallNow);
+        activeConnections[idx].SetConnected();
       default :
         return;
     }
@@ -169,7 +172,7 @@ void OpalCall::OnAlerting(OpalConnection & connection)
   for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
     OpalConnection & conn = activeConnections[i];
     if (&connection != &conn)
-      conn.SetAlerting(connection.GetRemotePartyName());
+      conn.SetAlerting(connection.GetRemotePartyName(), FALSE);
   }
 
   inUseFlag.Signal();
