@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2006  2002/06/16 02:22:49  robertj
+ * Revision 1.2007  2003/03/17 22:31:35  robertj
+ * Fixed warnings
+ *
+ * Revision 2.5  2002/06/16 02:22:49  robertj
  * Fixed memory leak of RFC2833 ordinals, thanks Ted Szoczei
  *
  * Revision 2.4  2002/02/19 07:51:37  robertj
@@ -111,8 +114,8 @@ SDPMediaFormat::SDPMediaFormat(RTP_DataFrame::PayloadTypes pt,
                                PINDEX _clockRate,
                                const char * _parms)
   : payloadType(pt),
-    encodingName(_name),
     clockRate(_clockRate),
+    encodingName(_name),
     parameters(_parms),
     nteSet(TRUE)
 {
@@ -124,8 +127,8 @@ SDPMediaFormat::SDPMediaFormat(RTP_DataFrame::PayloadTypes pt,
 SDPMediaFormat::SDPMediaFormat(const PString & nteString, RTP_DataFrame::PayloadTypes pt)
 
   : payloadType(pt),
-    encodingName(OpalRFC2833.GetEncodingName()),
     clockRate(8000),
+    encodingName(OpalRFC2833.GetEncodingName()),
     nteSet(TRUE)
 {
   AddNTEString(nteString);
@@ -444,10 +447,10 @@ void SDPMediaDescription::AddMediaFormats(const OpalMediaFormatList & mediaForma
 //////////////////////////////////////////////////////////////////////////////
 
 SDPSessionDescription::SDPSessionDescription(const OpalTransportAddress & address)
-  : ownerAddress(address),
-    defaultConnectAddress(address),
-    sessionName(SIP_DEFAULT_SESSION_NAME),
-    ownerUsername('-')
+  : sessionName(SIP_DEFAULT_SESSION_NAME),
+    ownerUsername('-'),
+    ownerAddress(address),
+    defaultConnectAddress(address)
 {
   protocolVersion  = 0;
   ownerSessionId  = ownerVersion = PTime().GetTimeInSeconds();
