@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2011  2002/03/18 00:33:36  robertj
+ * Revision 1.2012  2002/03/22 06:57:48  robertj
+ * Updated to OpenH323 version 1.8.2
+ *
+ * Revision 2.10  2002/03/18 00:33:36  robertj
  * Removed duplicate initialBandwidth variable in H.323 class, moved to ancestor.
  *
  * Revision 2.9  2002/02/11 09:32:11  robertj
@@ -61,6 +64,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.18  2002/03/14 03:49:38  dereks
+ * Fix minor documentation error.
  *
  * Revision 1.17  2002/02/04 07:17:52  robertj
  * Added H.450.2 Consultation Transfer, thanks Norwood Systems.
@@ -682,7 +688,7 @@ class H323EndPoint : public OpalEndPoint
        The default behavour returns NULL.
       */
     virtual OpalT120Protocol * CreateT120ProtocolHandler(
-      const H323Connection & connection  /// Connection for which T.38 handler created
+      const H323Connection & connection  /// Connection for which T.120 handler created
     ) const;
 
     /**Create an instance of the T.38 protocol handler.

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkserver.h,v $
- * Revision 1.2004  2002/02/11 09:32:11  robertj
+ * Revision 1.2005  2002/03/22 06:57:48  robertj
+ * Updated to OpenH323 version 1.8.2
+ *
+ * Revision 2.3  2002/02/11 09:32:11  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.2  2002/01/14 06:35:56  robertj
@@ -38,6 +41,25 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.16  2002/03/06 02:01:31  robertj
+ * Fixed race condition when starting slow server response thread.
+ *
+ * Revision 1.15  2002/03/05 00:36:01  craigs
+ * Added GetReplyAddress for H323GatekeeperRequest
+ *
+ * Revision 1.14  2002/03/03 21:34:50  robertj
+ * Added gatekeeper monitor thread.
+ *
+ * Revision 1.13  2002/03/02 05:58:57  robertj
+ * Fixed possible bandwidth leak (thanks Francisco Olarte Sanz) and in
+ *   the process added OnBandwidth function to H323GatekeeperCall class.
+ *
+ * Revision 1.12  2002/03/01 04:09:09  robertj
+ * Fixed problems with keeping track of calls. Calls are now indexed by call-id
+ *   alone and maintain both endpoints of call in its structure. Fixes problem
+ *   with calls form an endpoint to itself, and having two objects being tracked
+ *   where there is really only one call.
  *
  * Revision 1.11  2002/02/04 05:21:13  robertj
  * Lots of changes to fix multithreaded slow response code (RIP).
@@ -134,7 +156,9 @@ class H323GatekeeperRequest : public PObject
     };
     inline static Response InProgress(unsigned time) { return (Response)(time&0xffff); }
 
-    BOOL IsFastResponseRequired() const { return thread == NULL; }
+    BOOL IsFastResponseRequired() const { return fastResponseRequired; }
+
+    H323TransportAddress GetReplyAddress() const { return replyAddress; }
 
     BOOL HandlePDU();
     BOOL WritePDU(
@@ -153,6 +177,7 @@ class H323GatekeeperRequest : public PObject
     H323TransportAddress     replyAddress;
     H323RasPDU               confirm;
     H323RasPDU               reject;
+    BOOL                     fastResponseRequired;
     PThread                * thread;
 };
 
@@ -294,7 +319,7 @@ class H323GatekeeperCall : public PObject
     /**Create a new gatekeeper call tracking record.
      */
     H323GatekeeperCall(
-      H323RegisteredEndPoint & endpoint,           /// Owner endpoint
+      H323GatekeeperServer & server, /// Gatekeeper server data
       const OpalGloballyUniqueID & callIdentifier  /// Unique call identifier
     );
 
@@ -310,6 +335,13 @@ class H323GatekeeperCall : public PObject
     Comparison Compare(
       const PObject & obj  /// Other object
     ) const;
+
+    /**Print the name of the gatekeeper.
+      */
+    void PrintOn(
+      ostream & strm    /// Stream to print to.
+    ) const;
+  //@}
 
   /**@name Operations */
   //@{
@@ -327,18 +359,28 @@ class H323GatekeeperCall : public PObject
     virtual H323GatekeeperRequest::Response OnDisengage(
       H323GatekeeperDRQ & request
     );
-  //@}
 
-    /**Print the name of the gatekeeper.
+    /**Handle a bandwidth BRQ PDU.
+       The default behaviour adjusts the bandwidth used by the gatekeeper and
+       adjusts the remote endpoint according to those limits.
       */
-    void PrintOn(
-      ostream & strm    /// Stream to print to.
-    ) const;
+    virtual H323GatekeeperRequest::Response OnBandwidth(
+      H323GatekeeperBRQ & request
+    );
+
+    /**Remove call from endpoint.
+      */
+    void RemoveFromEndpoint(
+      H323RegisteredEndPoint * ep
+    );
   //@}
 
   /**@name Access functions */
   //@{
-    H323RegisteredEndPoint & GetEndPoint() const { return endpoint; }
+    H323RegisteredEndPoint * GetSourceEndPoint() const { return sourceEndpoint; }
+    void SetSourceEndPoint(H323RegisteredEndPoint * ep) { sourceEndpoint = ep; }
+    H323RegisteredEndPoint * GetDestinationEndPoint() const { return destinationEndpoint; }
+    void SetDestinationEndPoint(H323RegisteredEndPoint * ep) { destinationEndpoint = ep; }
     unsigned GetCallReference() const { return callReference; }
     const OpalGloballyUniqueID & GetCallIdentifier() const { return callIdentifier; }
     const OpalGloballyUniqueID & GetConferenceIdentifier() const { return conferenceIdentifier; }
@@ -355,7 +397,9 @@ class H323GatekeeperCall : public PObject
   //@}
 
   protected:
-    H323RegisteredEndPoint & endpoint;
+    H323GatekeeperServer   & server;
+    H323RegisteredEndPoint * sourceEndpoint;
+    H323RegisteredEndPoint * destinationEndpoint;
 
     unsigned                 callReference;
     OpalGloballyUniqueID     callIdentifier;
@@ -712,6 +756,10 @@ class H323GatekeeperServer : public PObject
     H323GatekeeperServer(
       H323EndPoint & endpoint
     );
+
+    /**Destroy gatekeeper.
+     */
+    ~H323GatekeeperServer();
   //@}
 
   /**@name Protocol Handler Operations */
@@ -886,10 +934,6 @@ class H323GatekeeperServer : public PObject
        called.
       */
     H323RegisteredEndPoint * NextEndPoint();
-
-    /**Process all registered endpoints and remove them if they are too old.
-      */
-    void AgeEndPoints();
   //@}
 
   /**@name Call Operations */
@@ -912,28 +956,11 @@ class H323GatekeeperServer : public PObject
     );
 
     /**Handle a bandwidth BRQ PDU.
-       The default behaviour adjusts the bandwidth used by the gatekeeper and
-       adjusts the remote endpoit according to those limits.
+       The default behaviour finds the call and does some checks then calls
+       the H323GatkeeperCall function of the same name.
       */
     virtual H323GatekeeperRequest::Response OnBandwidth(
       H323GatekeeperBRQ & request
-    );
-
-    /**Add a new call to the server database.
-       Once the call has been added it is then owned by the server and
-       will be deleted when it is removed.
-
-       The user woiuld not usually use this function as it is used internally
-       by the server when new registration requests (RRQ) are received.
-      */
-    virtual void AddCall(
-      H323GatekeeperCall * call
-    );
-
-    /**Remove a call from the server database.
-      */
-    virtual void RemoveCall(
-      H323GatekeeperCall * call
     );
 
     /**Create a new call object.
@@ -945,14 +972,19 @@ class H323GatekeeperServer : public PObject
        maintain extra information on a call by call basis.
       */
     virtual H323GatekeeperCall * CreateCall(
-      H323RegisteredEndPoint & endpoint,         /// Local endpoint
       const OpalGloballyUniqueID & callIdentifier
+    );
+
+    /**Remove a call from the server database.
+      */
+    virtual void RemoveCall(
+      H323RegisteredEndPoint * ep,
+      H323GatekeeperCall * call
     );
 
     /**Find the call given the identifier.
       */
     virtual H323GatekeeperCall * FindCall(
-      H323RegisteredEndPoint & endpoint,
       const OpalGloballyUniqueID & callIdentifier
     );
 
@@ -1122,11 +1154,10 @@ class H323GatekeeperServer : public PObject
   //@}
 
   protected:
-    H323EndPoint & endpoint;
+    PDECLARE_NOTIFIER(PThread, H323GatekeeperServer, MonitorMain);
 
     // Configuration & policy variables
     PString  gatekeeperIdentifier;
-
     unsigned availableBandwidth;
     unsigned defaultBandwidth;
     unsigned maximumBandwidth;
@@ -1143,13 +1174,15 @@ class H323GatekeeperServer : public PObject
     PStringToString passwords;
 
     // Dynamic variables
-    PMutex mutex;
+    H323EndPoint & endpoint;
+    PMutex         mutex;
+    time_t         identifierBase;
+    unsigned       nextIdentifier;
+    PThread      * monitorThread;
+    PSyncPoint     monitorExit;
 
     PLIST(ListenerList, H323GatekeeperListener);
     ListenerList listeners;
-
-    time_t   identifierBase;
-    unsigned nextIdentifier;
 
     PDICTIONARY(IdentifierDict, PString, H323RegisteredEndPoint);
     IdentifierDict byIdentifier;
