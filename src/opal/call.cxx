@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2003  2001/08/17 08:26:59  robertj
+ * Revision 1.2004  2001/08/22 10:20:09  robertj
+ * Changed connection locking to use double mutex to guarantee that
+ *   no threads can ever deadlock or access deleted connection.
+ *
+ * Revision 2.2  2001/08/17 08:26:59  robertj
  * Added call end reason for whole call, not just connection.
  *
  * Revision 2.1  2001/08/01 05:29:19  robertj
@@ -134,10 +138,8 @@ void OpalCall::Clear(OpalCallEndReason reason, PSyncPoint * sync)
 
   SetCallEndReason(reason);
 
-  while (activeConnections.GetSize() > 0) {
-    activeConnections[0].SetCallEndReason(reason);
-    garbageConnections.Append(activeConnections.RemoveAt(0));
-  }
+  while (activeConnections.GetSize() > 0)
+    InternalReleaseConnection(0, reason);
 
   inUseFlag.Signal();
 
@@ -196,11 +198,14 @@ void OpalCall::OnReleased(OpalConnection & connection)
   PTRACE(3, "Call\tOnReleased " << connection);
 
   inUseFlag.Wait();
+
   SetCallEndReason(connection.GetCallEndReason());
-  if (activeConnections.GetSize() == 1) {
-    activeConnections[0].SetCallEndReason(connection.GetCallEndReason());
-    garbageConnections.Append(activeConnections.RemoveAt(0));
-  }
+
+  // A call will evaporate when one connection left, at some point this is
+  // to be changes so can have "parked" connections.
+  if (activeConnections.GetSize() == 1)
+    InternalReleaseConnection(0, connection.GetCallEndReason());
+
   inUseFlag.Signal();
 
   // Signal the background threads that there is some stuff to process.
@@ -215,8 +220,7 @@ void OpalCall::Release(OpalConnection * connection)
   PTRACE(3, "Call\tReleasing connection " << *connection);
 
   inUseFlag.Wait();
-  if (activeConnections.Remove(connection))
-    garbageConnections.Append(connection);
+  InternalReleaseConnection(activeConnections.GetObjectsIndex(connection), EndedByLocalUser);
   inUseFlag.Signal();
 
   // Signal the background threads that there is some stuff to process.
@@ -320,6 +324,18 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
     patch->Resume();
 
   return patchedOne;
+}
+
+
+void OpalCall::InternalReleaseConnection(PINDEX activeIndex, OpalCallEndReason reason)
+{
+  if (activeIndex >= activeConnections.GetSize())
+    return;
+
+  OpalConnection * connection = (OpalConnection *)activeConnections.RemoveAt(activeIndex);
+  garbageConnections.Append(connection);
+  connection->GetEndPoint().RemoveConnection(connection);
+  connection->SetCallEndReason(reason);
 }
 
 

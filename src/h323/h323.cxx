@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2005  2001/08/21 11:05:06  robertj
+ * Revision 1.2006  2001/08/22 10:20:09  robertj
+ * Changed connection locking to use double mutex to guarantee that
+ *   no threads can ever deadlock or access deleted connection.
+ *
+ * Revision 2.4  2001/08/21 11:05:06  robertj
  * Fixed GNU warning.
  *
  * Revision 2.3  2001/08/17 08:27:44  robertj
@@ -754,8 +758,6 @@ H323Connection::H323Connection(OpalCall & call,
   h450dispatcher = new H450xDispatcher(*this);
   h4502handler = new H4502Handler(*this, *h450dispatcher);
   h4504handler = new H4504Handler(*this, *h450dispatcher);
-
-  endSync = NULL;
 }
 
 
@@ -771,9 +773,6 @@ H323Connection::~H323Connection()
   delete controlChannel;
 
   PTRACE(3, "H323\tConnection " << callToken << " deleted.");
-
-  if (endSync != NULL)
-    endSync->Signal();
 }
 
 
@@ -803,19 +802,9 @@ void H323Connection::CleanUpOnCallEnd()
 {
   PTRACE(3, "H323\tConnection " << callToken << " closing: connectionState=" << connectionState);
 
-  // A kludge to avoid a deadlock, grab the lock, set the connectionState to
-  // indicate we are shutting down then release the lock with a short sleep
-  // to assure all threads waiting on that lock have time to get scheduled.
-  // When they are they see the connection state and exit immediately.
+  LockOnRelease();
 
-  inUseFlag.Wait();
   connectionState = ShuttingDownConnection;
-  inUseFlag.Signal();
-  PThread::Current()->Sleep(1);
-  inUseFlag.Wait();
-
-//  if (connectionState == AwaitingTransportConnect)
-//    signallingChannel->CleanUpOnTermination();
 
   // Clean up any fast start "pending" channels we may have running.
   PINDEX i;
@@ -938,8 +927,6 @@ BOOL H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
   if (!Lock())
     return FALSE;
 
-  PWaitAndSignal lockedConnection(inUseFlag, FALSE);
-
   // Process the PDU.
   const Q931 & q931 = pdu.GetQ931();
 
@@ -958,57 +945,56 @@ BOOL H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
   if (pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_h4501SupplementaryService))
     h450dispatcher->HandlePDU(pdu); // Process H4501SupplementaryService APDU
 
+  BOOL ok;
   switch (q931.GetMessageType()) {
     case Q931::SetupMsg :
-      if (!OnReceivedSignalSetup(pdu))
-        return FALSE;
+      ok = OnReceivedSignalSetup(pdu);
       break;
 
     case Q931::CallProceedingMsg :
-      if (!OnReceivedCallProceeding(pdu))
-        return FALSE;
+      ok = OnReceivedCallProceeding(pdu);
       break;
 
     case Q931::ProgressMsg :
-      if (!OnReceivedProgress(pdu))
-        return FALSE;
+      ok = OnReceivedProgress(pdu);
       break;
 
     case Q931::AlertingMsg :
-      if (!OnReceivedAlerting(pdu))
-        return FALSE;
+      ok = OnReceivedAlerting(pdu);
       break;
 
     case Q931::ConnectMsg :
-      if (!OnReceivedSignalConnect(pdu))
-        return FALSE;
+      ok = OnReceivedSignalConnect(pdu);
       break;
 
     case Q931::FacilityMsg :
-      if (!OnReceivedFacility(pdu))
-        return FALSE;
+      ok = OnReceivedFacility(pdu);
       break;
 
     case Q931::StatusEnquiryMsg :
-      if (!OnReceivedStatusEnquiry(pdu))
-        return FALSE;
+      ok = OnReceivedStatusEnquiry(pdu);
       break;
 
     case Q931::ReleaseCompleteMsg :
       OnReceivedReleaseComplete(pdu);
-      return FALSE;
+      ok = FALSE;
+      break;
 
     default :
-      if (!OnUnknownSignalPDU(pdu))
-        return FALSE;
+      ok = OnUnknownSignalPDU(pdu);
   }
 
-  // Process tunnelled H245 PDU, if present.
-  HandleTunnelPDU(pdu, NULL);
+  if (ok) {
+    // Process tunnelled H245 PDU, if present.
+    HandleTunnelPDU(pdu, NULL);
 
-  // Check for establishment criteria met
-  InternalEstablishedConnectionCheck();
-  return TRUE;
+    // Check for establishment criteria met
+    InternalEstablishedConnectionCheck();
+  }
+
+  Unlock();
+
+  return ok;
 }
 
 
@@ -1261,7 +1247,7 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
     // the mean time. Need to unlock ourselves here as can deadlock waiting
     // for application to do a FindConnectionWithLock() to set the answer
     // call state variable in AnswerCall().
-    inUseFlag.Signal();
+    Unlock();
 
     // Wait for answer
     BOOL answerWaitTimedOut = !answerWaitFlag.Wait(500);
@@ -1278,7 +1264,7 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
 
       H323SignalPDU pdu;
       if (pdu.Read(*signallingChannel)) {
-        inUseFlag.Signal(); // Prevent recursive locking in HandleSignalPDE()
+        Unlock(); // Prevent recursive locking in HandleSignalPDE()
         if (!HandleSignalPDU(pdu))
           return FALSE;
         if (!Lock())
@@ -1651,11 +1637,6 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
 OpalCallEndReason H323Connection::SendSignalSetup(const PString & alias,
                                                   const H323TransportAddress & address)
 {
-  if (!Lock())
-    return EndedByLocalUser;
-
-  PWaitAndSignal lockedConnection(inUseFlag, FALSE);
-
   // Start the call, first state is asking gatekeeper
   connectionState = AwaitingGatekeeperAdmission;
 
@@ -1716,7 +1697,7 @@ OpalCallEndReason H323Connection::SendSignalSetup(const PString & alias,
   connectionState = AwaitingTransportConnect;
 
   // Release the mutex as can deadlock trying to clear call during connect.
-  inUseFlag.Signal();
+  Unlock();
 
   BOOL connectFailed = !signallingChannel->Connect();
 
@@ -1768,8 +1749,9 @@ OpalCallEndReason H323Connection::SendSignalSetup(const PString & alias,
       setup.IncludeOptionalField(H225_Setup_UUIE::e_fastStart);
   }
 
-  if (!OnSendSignalSetup(setupPDU))
+  if (!OnSendSignalSetup(setupPDU)) {
     return EndedByNoAccept;
+  }
 
   // Do this again (was done when PDU was constructed) in case
   // OnSendSignalSetup() changed something.

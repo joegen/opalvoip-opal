@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2005  2001/08/17 08:26:26  robertj
+ * Revision 1.2006  2001/08/22 10:20:09  robertj
+ * Changed connection locking to use double mutex to guarantee that
+ *   no threads can ever deadlock or access deleted connection.
+ *
+ * Revision 2.4  2001/08/17 08:26:26  robertj
  * Moved call end reasons enum from OpalConnection to global.
  *
  * Revision 2.3  2001/08/01 05:44:40  robertj
@@ -189,6 +193,15 @@ BOOL OpalEndPoint::HasConnection(const PString & token)
 }
 
 
+void OpalEndPoint::RemoveConnection(OpalConnection * connection)
+{
+  PAssertNULL(connection);
+  inUseFlag.Wait();
+  connectionsActive.SetAt(connection->GetToken(), NULL);
+  inUseFlag.Signal();
+}
+
+
 BOOL OpalEndPoint::OnIncomingConnection(OpalConnection & connection)
 {
   return manager.OnIncomingConnection(connection);
@@ -214,10 +227,6 @@ void OpalEndPoint::OnEstablished(OpalConnection & /*connection*/)
 
 BOOL OpalEndPoint::OnReleased(OpalConnection & connection)
 {
-  inUseFlag.Wait();
-  connectionsActive.SetAt(connection.GetToken(), NULL);
-  inUseFlag.Signal();
-
   return manager.OnReleased(connection);
 }
 

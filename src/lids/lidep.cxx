@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2005  2001/08/17 08:36:48  robertj
+ * Revision 1.2006  2001/08/22 10:20:09  robertj
+ * Changed connection locking to use double mutex to guarantee that
+ *   no threads can ever deadlock or access deleted connection.
+ *
+ * Revision 2.4  2001/08/17 08:36:48  robertj
  * Moved call end reasons enum from OpalConnection to global.
  * Fixed missing mutex on connections structure..
  *
@@ -277,7 +281,7 @@ void OpalLIDEndPoint::MonitorLine(OpalLine & line)
 {
   OpalConnection * connection = GetConnectionWithLock(line.GetToken());
   if (connection != NULL) {
-    // Are still in a call, pass hook state it to the connetion object for handling
+    // Are still in a call, pass hook state it to the connection object for handling
     ((OpalLineConnection *)connection)->Monitor(!line.IsDisconnected());
     connection->Unlock();
     return;
@@ -348,16 +352,8 @@ BOOL OpalLineConnection::OnReleased()
 {
   PTRACE(2, "LID Con\tOnReleased " << *this);
 
-  // A kludge to avoid a deadlock, grab the lock, set the connectionState to
-  // indicate we are shutting down then release the lock with a short sleep
-  // to assure all threads waiting on that lock have time to get scheduled.
-  // When they are they see the connection state and exit immediately.
-
-  inUseFlag.Wait();
+  LockOnRelease();
   phase = ReleasedPhase;
-  inUseFlag.Signal();
-  PThread::Current()->Sleep(1);
-  inUseFlag.Wait();
 
   if (handlerThread != NULL) {
     PTRACE(3, "LID Con\tAwaiting handler thread termination " << *this);

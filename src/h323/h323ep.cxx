@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2005  2001/08/17 08:27:44  robertj
+ * Revision 1.2006  2001/08/22 10:20:09  robertj
+ * Changed connection locking to use double mutex to guarantee that
+ *   no threads can ever deadlock or access deleted connection.
+ *
+ * Revision 2.4  2001/08/17 08:27:44  robertj
  * Update from OpenH323
  * Moved call end reasons enum from OpalConnection to global.
  *
@@ -417,11 +421,14 @@ void H225CallThread::Main()
 {
   PTRACE(3, "H225\tStarted call thread");
 
-  OpalCallEndReason reason = connection.SendSignalSetup(alias, address);
-  if (reason != OpalNumCallEndReasons)
-    connection.ClearCall(reason);
-  else
-    connection.HandleSignallingChannel();
+  if (connection.Lock()) {
+    OpalCallEndReason reason = connection.SendSignalSetup(alias, address);
+    connection.Unlock();
+    if (reason != OpalNumCallEndReasons)
+      connection.ClearCall(reason);
+    else
+      connection.HandleSignallingChannel();
+  }
 }
 
 
@@ -703,16 +710,15 @@ void H323EndPoint::NewIncomingConnection(OpalTransport * transport)
   PString token = transport->GetRemoteAddress();
   token.sprintf("/%u", pdu.GetQ931().GetCallReference());
 
-  inUseFlag.Wait();
-
   H323Connection * connection;
+
+  inUseFlag.Wait();
 
   if (connectionsActive.Contains(token))
     connection = (H323Connection *)&connectionsActive[token];
   else {
     connection = CreateConnection(*manager.CreateCall(), token, NULL, transport, &pdu);
     connectionsActive.SetAt(token, connection);
-    PTRACE(3, "H323\tCreated new connection: " << token);
   }
 
   inUseFlag.Signal();
@@ -727,6 +733,7 @@ void H323EndPoint::NewIncomingConnection(OpalTransport * transport)
     transport->WritePDU(rawData);
   }
   else {
+    PTRACE(3, "H323\tCreated new connection: " << token);
     connection->AttachSignalChannel(transport, TRUE);
 
     if (connection->HandleSignalPDU(pdu)) {
@@ -790,15 +797,14 @@ H323Connection * H323EndPoint::InternalMakeCall(OpalCall & call,
   newToken.sprintf("localhost/%u", lastCallReference++);
 
   H323Connection * connection = CreateConnection(call, newToken, userData, transport, NULL);
-  if (connection == NULL) {
-    PTRACE(1, "H323\tCreateConnection returned NULL");
-    inUseFlag.Signal();
-    return NULL;
-  }
-
   connectionsActive.SetAt(newToken, connection);
 
   inUseFlag.Signal();
+
+  if (connection == NULL) {
+    PTRACE(1, "H225\tEndpoint could not create connection, aborting setup.");
+    return NULL;
+  }
 
   connection->AttachSignalChannel(transport, FALSE);
   connection->HandleTransferCall(existingToken, callIdentity);

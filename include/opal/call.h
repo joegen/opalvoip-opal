@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2003  2001/08/17 08:24:33  robertj
+ * Revision 1.2004  2001/08/22 10:20:09  robertj
+ * Changed connection locking to use double mutex to guarantee that
+ *   no threads can ever deadlock or access deleted connection.
+ *
+ * Revision 2.2  2001/08/17 08:24:33  robertj
  * Added call end reason for whole call, not just connection.
  *
  * Revision 2.1  2001/08/01 05:28:59  robertj
@@ -284,6 +288,8 @@ class OpalCall : public PObject
 
 
   protected:
+    void InternalReleaseConnection(PINDEX activeIndex, OpalCallEndReason reason);
+
     OpalManager & manager;
 
     PString myToken;
