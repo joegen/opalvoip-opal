@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2019  2004/01/18 15:36:07  rjongbloed
+ * Revision 1.2020  2004/02/19 10:47:01  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.18  2004/01/18 15:36:07  rjongbloed
  * Added stun support
  *
  * Revision 2.17  2003/03/17 10:26:59  robertj
@@ -849,21 +852,44 @@ class OpalManager : public PObject
     void DisableDetectInBandDTMF(
       BOOL mode /// New default mode
     ) { disableDetectInBandDTMF = mode; } 
+
+    /**Get the amount of time with no media that should cause call to clear
+     */
+    const PTimeInterval & GetNoMediaTimeout() const { return noMediaTimeout; }
+
+    /**Set the amount of time with no media that should cause call to clear
+     */
+    BOOL SetNoMediaTimeout(
+      const PTimeInterval & newInterval  /// New timeout for media
+    );
+
+    /**Get the default ILS server to use for user lookup.
+      */
+    const PString & GetDefaultILSServer() const { return ilsServer; }
+
+    /**Set the default ILS server to use for user lookup.
+      */
+    void SetDefaultILSServer(
+      const PString & server
+    ) { ilsServer = server; }
   //@}
 
 
   protected:
     // Configuration variables
-    BOOL         autoStartReceiveVideo;
-    BOOL         autoStartTransmitVideo;
-    BYTE         rtpIpTypeofService;
-    unsigned     minAudioJitterDelay;
-    unsigned     maxAudioJitterDelay;
-    PStringArray mediaFormatOrder;
-    PStringArray mediaFormatMask;
+    BOOL          autoStartReceiveVideo;
+    BOOL          autoStartTransmitVideo;
+    BYTE          rtpIpTypeofService;
+    unsigned      minAudioJitterDelay;
+    unsigned      maxAudioJitterDelay;
+    PStringArray  mediaFormatOrder;
+    PStringArray  mediaFormatMask;
+    BOOL          disableDetectInBandDTMF;
+    PTimeInterval noMediaTimeout;
+    PString       ilsServer;
+
     PVideoDevice::OpenArgs videoInputDevice;
     PVideoDevice::OpenArgs videoOutputDevice;
-    BOOL         disableDetectInBandDTMF;
 
     struct PortInfo {
       void Set(

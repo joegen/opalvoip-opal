@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2015  2004/01/18 15:35:20  rjongbloed
+ * Revision 1.2016  2004/02/19 10:47:01  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.14  2004/01/18 15:35:20  rjongbloed
  * More work on video support
  *
  * Revision 2.13  2003/01/07 04:39:53  robertj
@@ -72,6 +75,33 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.51  2003/10/27 06:03:39  csoutheren
+ * Added support for QoS
+ *   Thanks to Henry Harrison of AliceStreet
+ *
+ * Revision 1.50  2003/10/09 09:47:45  csoutheren
+ * Fixed problem with re-opening RTP half-channels under unusual
+ * circumstances. Thanks to Damien Sandras
+ *
+ * Revision 1.49  2003/05/14 13:46:39  rjongbloed
+ * Removed hack of using special payload type for H.263 for a method which
+ *   would be less prone to failure in the future.
+ *
+ * Revision 1.48  2003/05/02 04:57:43  robertj
+ * Added header extension support to RTP data frame class.
+ *
+ * Revision 1.47  2003/05/02 04:21:53  craigs
+ * Added hacked OpalH263 codec
+ *
+ * Revision 1.46  2003/02/07 00:30:41  robertj
+ * Changes for bizarre usage of RTP code outside of scope of H.323 specs.
+ *
+ * Revision 1.45  2003/02/05 06:32:08  robertj
+ * Fixed non-stun symmetric NAT support recently broken.
+ *
+ * Revision 1.44  2003/02/04 07:06:41  robertj
+ * Added STUN support.
  *
  * Revision 1.43  2002/11/19 01:48:15  robertj
  * Allowed get/set of canonical anme and tool name.
@@ -228,7 +258,21 @@
 
 
 class RTP_JitterBuffer;
+class PSTUNClient;
 
+
+
+///////////////////////////////////////////////////////////////////////////////
+// 
+// class to hold the QoS definitions for an RTP channel
+
+class RTP_QOS : public PObject
+{
+  PCLASSINFO(RTP_QOS,PObject);
+  public:
+    PQoS dataQoS;
+    PQoS ctrlQoS;
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 // Real Time Protocol - IETF RFC1889 and RFC1890
@@ -280,6 +324,7 @@ class RTP_DataFrame : public PBYTEArray
       H263,         // H.263
 
       LastKnownPayloadType,
+
       DynamicBase = 96,
       MaxPayloadType = 127,
       IllegalPayloadType
@@ -309,7 +354,13 @@ class RTP_DataFrame : public PBYTEArray
     DWORD  GetContribSource(PINDEX idx) const;
     void   SetContribSource(PINDEX idx, DWORD src);
 
-    PINDEX GetHeaderSize()     const { return 12 + 4*GetContribSrcCount(); }
+    PINDEX GetHeaderSize() const;
+
+    int GetExtensionType() const; // -1 is no extension
+    void   SetExtensionType(int type);
+    PINDEX GetExtensionSize() const;
+    BOOL   SetExtensionSize(PINDEX sz);
+    BYTE * GetExtensionPtr() const;
 
     PINDEX GetPayloadSize() const { return payloadSize; }
     BOOL   SetPayloadSize(PINDEX sz);
@@ -504,6 +555,10 @@ class RTP_Session : public PObject
        the SetJitterBufferSize() function.
       */
     unsigned GetJitterBufferSize() const;
+
+    /**Modifies the QOS specifications for this RTP session*/
+    virtual BOOL ModifyQOS(RTP_QOS * )
+    { return FALSE; }
 
     /**Read a data frame from the RTP channel.
        This function will conditionally read data from eth jitter buffer or
@@ -992,6 +1047,10 @@ class RTP_UDP : public RTP_Session
     virtual PString GetLocalHostName();
   //@}
 
+    /**Change the QoS settings
+      */
+    virtual BOOL ModifyQOS(RTP_QOS * rtpqos);
+
   /**@name New functions for class */
   //@{
     /**Open the UDP ports for the RTP session.
@@ -1000,8 +1059,15 @@ class RTP_UDP : public RTP_Session
       PIPSocket::Address localAddress,  /// Local interface to bind to
       WORD portBase,                    /// Base of ports to search
       WORD portMax,                     /// end of ports to search (inclusive)
-      BYTE ipTypeOfService              /// Type of Service byte
+      BYTE ipTypeOfService,             /// Type of Service byte
+      PSTUNClient * stun = NULL,        /// STUN server to use createing sockets (or NULL if no STUN)
+      RTP_QOS * rtpqos = NULL           /// QOS spec (or NULL if no QoS)
     );
+  //@}
+
+   /**Reopens an existing session in the given direction.
+      */
+    void Reopen(BOOL isReading);
   //@}
 
   /**@name Member variable access */
@@ -1009,6 +1075,12 @@ class RTP_UDP : public RTP_Session
     /**Get local address of session.
       */
     PIPSocket::Address GetLocalAddress() const { return localAddress; }
+
+    /**Set local address of session.
+      */
+    void SetLocalAddress(
+      const PIPSocket::Address & addr
+    ) { localAddress = addr; }
 
     /**Get remote address of session.
       */
@@ -1032,11 +1104,11 @@ class RTP_UDP : public RTP_Session
 
     /**Get data UDP socket of session.
       */
-    PUDPSocket & GetDataSocket() { return dataSocket; }
+    PUDPSocket & GetDataSocket() { return *dataSocket; }
 
     /**Get control UDP socket of session.
       */
-    PUDPSocket & GetControlSocket() { return controlSocket; }
+    PUDPSocket & GetControlSocket() { return *controlSocket; }
 
     /**Set the remote address and port information for session.
       */
@@ -1044,6 +1116,12 @@ class RTP_UDP : public RTP_Session
       PIPSocket::Address address,   /// Address of remote
       WORD port,                    /// Port on remote
       BOOL isDataPort               /// Flag for data or control channel
+    );
+
+    /**Apply QOS - requires address to connect the socket on Windows platforms
+     */
+    void ApplyQOS(
+      const PIPSocket::Address & addr
     );
   //@}
 
@@ -1053,7 +1131,7 @@ class RTP_UDP : public RTP_Session
     SendReceiveStatus ReadDataOrControlPDU(
       PUDPSocket & socket,
       PBYTEArray & frame,
-      const char * PTRACE_name
+      BOOL fromDataChannel
     );
 
     PIPSocket::Address localAddress;
@@ -1069,8 +1147,10 @@ class RTP_UDP : public RTP_Session
     BOOL shutdownRead;
     BOOL shutdownWrite;
 
-    PUDPSocket dataSocket;
-    PUDPSocket controlSocket;
+    PUDPSocket * dataSocket;
+    PUDPSocket * controlSocket;
+
+    BOOL appliedQOS;
 };
 
 

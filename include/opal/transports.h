@@ -25,11 +25,34 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.h,v $
- * Revision 1.2013  2003/01/07 04:39:53  robertj
+ * Revision 1.2014  2004/02/19 10:47:01  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.12  2003/01/07 04:39:53  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.11  2002/11/10 11:33:17  robertj
  * Updated to OpenH323 v1.10.3
+ *
+ * Revision 1.43  2003/12/29 13:28:45  dominance
+ * fixed docbook syntax trying to generate LaTeX formula with ip$10.x.x.x.
+ *
+ * Revision 1.42  2003/04/10 09:44:55  robertj
+ * Added associated transport to new GetInterfaceAddresses() function so
+ *   interfaces can be ordered according to active transport links. Improves
+ *   interoperability.
+ * Replaced old listener GetTransportPDU() with GetInterfaceAddresses()
+ *   and H323SetTransportAddresses() functions.
+ *
+ * Revision 1.41  2003/04/10 01:03:25  craigs
+ * Added functions to access to lists of interfaces
+ *
+ * Revision 1.40  2003/03/21 05:24:02  robertj
+ * Added setting of remote port in UDP transport constructor.
+ *
+ * Revision 1.39  2003/02/06 04:29:23  robertj
+ * Added more support for adding things to H323TransportAddressArrays
+ *
  * Revision 1.38  2002/11/21 06:39:56  robertj
  * Changed promiscuous mode to be three way. Fixes race condition in gkserver
  *   which can cause crashes or more PDUs to be sent to the wrong place.
@@ -227,7 +250,38 @@ class OpalTransportAddress : public PString
 };
 
 
-PARRAY(OpalTransportAddressArray, OpalTransportAddress);
+PDECLARE_ARRAY(OpalTransportAddressArray, OpalTransportAddress)
+  public:
+    OpalTransportAddressArray(
+      const OpalTransportAddress & address
+    ) { AppendAddress(address); }
+    OpalTransportAddressArray(
+      const PStringArray & array
+    ) { AppendStringCollection(array); }
+    OpalTransportAddressArray(
+      const PStringList & list
+    ) { AppendStringCollection(list); }
+    OpalTransportAddressArray(
+      const PSortedStringList & list
+    ) { AppendStringCollection(list); }
+
+    void AppendString(
+      const char * address
+    );
+    void AppendString(
+      const PString & address
+    );
+    void AppendAddress(
+      const OpalTransportAddress & address
+    );
+
+  protected:
+    void AppendStringCollection(
+      const PCollection & coll
+    );
+};
+
+
 
 
 ///////////////////////////////////////////////////////
@@ -346,6 +400,23 @@ class OpalListener : public PObject
 
 
 PLIST(OpalListenerList, OpalListener);
+
+
+/** Return a list of transport addresses corresponding to a listener list
+  */
+OpalTransportAddressArray OpalGetInterfaceAddresses(
+  const OpalListenerList & listeners, /// List of listeners
+  BOOL excludeLocalHost = TRUE,       /// Flag to exclude 127.0.0.1
+  OpalTransport * associatedTransport = NULL
+                          /// Associated transport for precedence and translation
+);
+
+OpalTransportAddressArray OpalGetInterfaceAddresses(
+  const OpalTransportAddress & addr,  /// Possible INADDR_ANY address
+  BOOL excludeLocalHost = TRUE,       /// Flag to exclude 127.0.0.1
+  OpalTransport * associatedTransport = NULL
+                          /// Associated transport for precedence and translation
+);
 
 
 class OpalListenerIP : public OpalListener
