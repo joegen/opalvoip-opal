@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2015  2002/02/13 04:17:53  robertj
+ * Revision 1.2016  2002/02/19 07:45:28  robertj
+ * Restructured media bypass functions to fix problems with RFC2833.
+ *
+ * Revision 2.14  2002/02/13 04:17:53  robertj
  * Fixed return of both data and control if only have one from OLC.
  *
  * Revision 2.13  2002/02/11 09:32:12  robertj
@@ -1071,12 +1074,16 @@ BOOL H323_ExternalRTPChannel::GetMediaTransportAddress(OpalTransportAddress & da
 
 BOOL H323_ExternalRTPChannel::Start()
 {
-  if (!connection.GetCall().GetMediaTransportAddress(connection,
-                                                     sessionID,
-                                                     externalMediaAddress,
-                                                     externalMediaControlAddress))
+  OpalConnection * otherParty = connection.GetCall().GetOtherPartyConnection(connection);
+  if (otherParty == NULL)
     return FALSE;
 
+  OpalConnection::MediaInformation info;
+  if (!otherParty->GetMediaInformation(sessionID, info))
+    return FALSE;
+
+  externalMediaAddress = info.data;
+  externalMediaControlAddress = info.control;
   return Open();
 }
 
