@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2068  2004/11/07 12:29:05  rjongbloed
+ * Revision 1.2069  2005/01/15 21:33:56  dsandras
+ * Only start the H.245 channel if it doesn't exist yet.
+ *
+ * Revision 2.67  2004/11/07 12:29:05  rjongbloed
  * Fixed missing initialisation of call reference value.
  * Added change so that a DNS lookup is not made if an e164 calling party number
  *   is present in SETUP, for Dmitriy
@@ -3108,7 +3111,7 @@ BOOL H323Connection::SetConnected()
         return FALSE;
     }
   }
-  else { // Start separate H.245 channel if not tunneling.
+  else if (!controlChannel) { // Start separate H.245 channel if not tunneling.
     if (!CreateIncomingControlChannel(connect.m_h245Address))
       return FALSE;
     connect.IncludeOptionalField(H225_Connect_UUIE::e_h245Address);
