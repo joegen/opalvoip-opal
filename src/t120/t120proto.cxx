@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: t120proto.cxx,v $
- * Revision 1.2003  2001/08/01 05:05:49  robertj
+ * Revision 1.2004  2002/01/22 05:22:19  robertj
+ * Added RTP encoding name string to media format database.
+ * Changed time units to clock rate in Hz.
+ *
+ * Revision 2.2  2001/08/01 05:05:49  robertj
  * Major changes to H.323 capabilities, uses OpalMediaFormat for base name.
  *
  * Revision 2.1  2001/07/30 01:07:52  robertj
@@ -56,7 +60,8 @@
 
 OpalMediaFormat const OpalT120Protocol::MediaFormat("T.120",
                                                     OpalMediaFormat::DefaultDataSessionID,
-                                                    RTP_DataFrame::MaxPayloadType,
+                                                    RTP_DataFrame::IllegalPayloadType,
+                                                    "t120",
                                                     FALSE,   // No jitter for data
                                                     825000); // 100's bits/sec
 
