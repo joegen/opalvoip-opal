@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2010  2002/02/11 09:45:35  robertj
+ * Revision 1.2011  2002/02/13 08:17:31  robertj
+ * Changed routing algorithm to route call to H323/SIP if contains an '@'
+ *
+ * Revision 2.9  2002/02/11 09:45:35  robertj
  * Moved version file to library root directoy
  *
  * Revision 2.8  2002/02/06 13:29:03  rogerh
@@ -566,13 +569,15 @@ PString MyManager::OnRouteConnection(OpalConnection & connection)
     return route;
   }
 
-  // Route to local phone, if loaded
-  if (potsEP != NULL)
-    return "pots:" + addr;
+  if (addr.Find('@') == P_MAX_INDEX) {
+    // Route to local phone, if loaded
+    if (potsEP != NULL)
+      return "pots:" + addr;
 
-  // Route it to the PC, if loaded
-  if (pcssEP != NULL)
-    return "pc:" + addr;
+    // Route it to the PC, if loaded
+    if (pcssEP != NULL)
+      return "pc:" + addr;
+  }
 
   // H.323 -> SIP gateway
   if (sourceProtocol == "h323" && sipEP != NULL) {
