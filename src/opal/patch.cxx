@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2010  2004/08/14 07:56:43  rjongbloed
+ * Revision 1.2011  2004/08/15 10:10:28  rjongbloed
+ * Fixed possible deadlock when closing media patch
+ *
+ * Revision 2.9  2004/08/14 07:56:43  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.8  2004/05/17 13:24:18  rjongbloed
@@ -139,10 +142,8 @@ void OpalMediaPatch::Main()
 
     FilterFrame(sourceFrame, source.GetMediaFormat());
 
-    for (i = 0; i < sinks.GetSize(); i++) {
-      if (!sinks[i].WriteFrame(sourceFrame))
-        sinks[i].stream->Close();  // Got write error, remove from sink list
-    }
+    for (i = 0; i < sinks.GetSize(); i++)
+      sinks[i].WriteFrame(sourceFrame);  // Got write error, remove from sink list
 
     PINDEX len = sinks.GetSize();
     inUse.Signal();
@@ -261,6 +262,7 @@ OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, OpalMediaStream * s)
   secondaryCodec = NULL;
   intermediateFrames.Append(new RTP_DataFrame);
   finalFrames.Append(new RTP_DataFrame);
+  writeSuccessful = true;
 }
 
 
@@ -305,14 +307,17 @@ void OpalMediaPatch::FilterFrame(RTP_DataFrame & frame,
 }
 
 
-BOOL OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
+bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
 {
+  if (!writeSuccessful)
+    return false;
+
   if (primaryCodec == NULL || sourceFrame.GetPayloadSize() == 0)
-    return stream->WritePacket(sourceFrame);
+    return writeSuccessful = stream->WritePacket(sourceFrame);
 
   if (!primaryCodec->ConvertFrames(sourceFrame, intermediateFrames)) {
     PTRACE(1, "Patch\tMedia conversion (primary) failed");
-    return FALSE;
+    return false;
   }
 
   for (PINDEX i = 0; i < intermediateFrames.GetSize(); i++) {
@@ -320,26 +325,26 @@ BOOL OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
     patch.FilterFrame(intermediateFrame, primaryCodec->GetOutputFormat());
     if (secondaryCodec == NULL) {
       if (!stream->WritePacket(intermediateFrame))
-        return FALSE;
+        return writeSuccessful = false;
       sourceFrame.SetTimestamp(intermediateFrame.GetTimestamp());
     }
     else {
       if (!secondaryCodec->ConvertFrames(intermediateFrame, finalFrames)) {
         PTRACE(1, "Patch\tMedia conversion (secondary) failed");
-        return FALSE;
+        return false;
       }
 
       for (PINDEX f = 0; f < finalFrames.GetSize(); f++) {
         RTP_DataFrame & finalFrame = finalFrames[f];
         patch.FilterFrame(finalFrame, secondaryCodec->GetOutputFormat());
         if (!stream->WritePacket(finalFrame))
-          return FALSE;
+          return writeSuccessful = false;
         sourceFrame.SetTimestamp(finalFrame.GetTimestamp());
       }
     }
   }
 
-  return TRUE;
+  return true;
 }
 
 
