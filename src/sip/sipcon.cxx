@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2008  2002/03/15 10:55:28  robertj
+ * Revision 1.2009  2002/03/18 08:13:42  robertj
+ * Added more logging.
+ * Removed proxyusername/proxypassword parameters from URL passed on.
+ * Fixed GNU warning.
+ *
+ * Revision 2.7  2002/03/15 10:55:28  robertj
  * Added ability to specify proxy username/password in URL.
  *
  * Revision 2.6  2002/03/08 06:28:03  craigs
@@ -259,7 +264,7 @@ BOOL SIPConnection::SetConnected()
   if (!rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
     PTRACE(1, "SIP\tCannot set remote ports on RTP session");
     delete rtpSession;
-    return NULL;
+    return FALSE;
   }
 
 
@@ -326,7 +331,7 @@ OpalTransportAddress SIPConnection::GetLocalAddress(WORD port) const
   }
 
   endpoint.GetManager().TranslateIPAddress(localIP, remoteIP);
-  return OpalTransportAddress(localIP, port);
+  return OpalTransportAddress(localIP, port, OpalTransportAddress::UdpPrefix);
 }
 
 
@@ -419,16 +424,22 @@ BOOL SIPConnection::SendConnectionAlert(const PString & calleeName)
 
 void SIPConnection::InitiateCall(const SIPURL & destination)
 {
-  PStringToString & params = destination.GetParamVars();
-  if (params.Contains("proxyusername") && params.Contains("proxypassword")) {
-    localPartyName = params["proxyusername"];
-    password = params["proxypassword"];
-  }
+  PTRACE(2, "SIP\tInitiating connection to " << destination);
 
   originalDestination = destination;
-  remotePartyAddress = '<' + destination.AsString() + '>';
 
-  OpalTransportAddress address = destination.GetHostAddress();
+  PStringToString params = originalDestination.GetParamVars();
+  if (params.Contains("proxyusername") && params.Contains("proxypassword")) {
+    localPartyName = params["proxyusername"];
+    originalDestination.SetParamVar("proxyusername", PString::Empty());
+    password = params["proxypassword"];
+    originalDestination.SetParamVar("proxypassword", PString::Empty());
+    PTRACE(3, "SIP\tExtracted proxy authentication user=\"" << localPartyName << '"');
+  }
+
+  remotePartyAddress = '<' + originalDestination.AsString() + '>';
+
+  OpalTransportAddress address = originalDestination.GetHostAddress();
   transport = address.CreateTransport(endpoint, OpalTransportAddress::NoBinding);
   if (transport == NULL)
     return;
@@ -458,25 +469,28 @@ static BOOL WriteINVITE(OpalTransport & transport, PObject * param)
 
 void SIPConnection::InitiateCallThreadMain(PThread &, INT)
 {
+  PTRACE(3, "SIP\tStarted Initiate Call thread.");
+
   transport->WriteConnect(WriteINVITE, this);
 
   SIP_PDU response(*transport);
   transport->SetReadTimeout(15000);
-  if (!response.Read()) {
-    Release(EndedByConnectFail);
-    return;
+  if (response.Read()) {
+    transport->SetReadTimeout(PMaxTimeInterval);
+    transport->EndConnect(transport->GetLocalAddress());
+  
+    PTRACE(2, "SIP\tSelecting reply from " << *transport);
+    SetLocalPartyAddress();
+
+    endpoint.OnReceivedPDU(response);
+
+    while (transport->IsOpen())
+      endpoint.HandlePDU(*transport);
   }
+  else
+    Release(EndedByConnectFail);
 
-  transport->SetReadTimeout(PMaxTimeInterval);
-  transport->EndConnect(transport->GetLocalAddress());
-
-  PTRACE(2, "SIP\tSelecting reply from " << *transport);
-  SetLocalPartyAddress();
-
-  endpoint.OnReceivedPDU(response);
-
-  while (transport->IsOpen())
-    endpoint.HandlePDU(*transport);
+  PTRACE(3, "SIP\tStarted Initiate Call thread.");
 }
 
 
