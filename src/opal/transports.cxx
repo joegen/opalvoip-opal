@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2010  2002/02/06 06:07:10  robertj
+ * Revision 1.2011  2002/03/15 00:20:54  robertj
+ * Fixed bug when closing UDP transport when in "connect" mode.
+ *
+ * Revision 2.9  2002/02/06 06:07:10  robertj
  * Fixed shutting down UDP listener thread
  *
  * Revision 2.8  2002/01/14 00:19:33  craigs
@@ -803,7 +806,7 @@ BOOL OpalTransport::Close()
      sub-channel so breaks the threads I/O block.
    */
   if (IsOpen())
-    GetBaseReadChannel()->Close();
+    GetBaseWriteChannel()->Close();
 
   return TRUE;
 }
