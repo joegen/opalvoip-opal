@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2019  2004/05/17 13:24:18  rjongbloed
+ * Revision 1.2020  2004/08/14 07:56:29  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.18  2004/05/17 13:24:18  rjongbloed
  * Added silence suppression.
  *
  * Revision 2.17  2004/03/11 06:54:27  csoutheren
@@ -308,6 +311,7 @@ class OpalMediaStream : public PObject
     unsigned        mismatchedPayloadTypes;
 
     OpalMediaPatch * patchThread;
+    PMutex           patchMutex;
 };
 
 PLIST(OpalMediaStreamList, OpalMediaStream);

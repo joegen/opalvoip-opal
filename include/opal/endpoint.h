@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2021  2004/07/11 12:42:10  rjongbloed
+ * Revision 1.2022  2004/08/14 07:56:29  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.20  2004/07/11 12:42:10  rjongbloed
  * Added function on endpoints to get the list of all media formats any
  *   connection the endpoint may create can support.
  *
@@ -107,12 +110,11 @@
 
 #include <opal/buildopts.h>
 
-#include <opal/connection.h>
+#include <opal/manager.h>
 #include <opal/mediafmt.h>
 #include <opal/transports.h>
 
 
-class OpalManager;
 class OpalCall;
 class OpalMediaStream;
 
@@ -363,10 +365,6 @@ class OpalEndPoint : public PObject
        that function being called. For example if MakeConnection() was used
        but the call never completed.
 
-       The return value indicates if the connection object is to be deleted. A
-       value of FALSE can be returned and it then someone elses responsibility
-       to free the memory used.
-
        Classes that override this function should make sure they call the
        ancestor version for correct operation.
 
@@ -376,7 +374,7 @@ class OpalEndPoint : public PObject
        The default behaviour removes the connection from the internal database
        and calls the OpalManager function of the same name.
       */
-    virtual BOOL OnReleased(
+    virtual void OnReleased(
       OpalConnection & connection   /// Connection that was established
     );
 
@@ -417,14 +415,11 @@ class OpalEndPoint : public PObject
     /**Find a connection that uses the specified token.
        This searches the endpoint for the connection that contains the token
        as provided by functions such as MakeConnection().
-
-       Note the caller of this function MUSt call the OpalConnection::Unlock()
-       function if this function returns a non-NULL pointer. If it does not
-       then a deadlock can occur.
       */
-    virtual OpalConnection * GetConnectionWithLock(
-      const PString & token     /// Token to identify connection
-    );
+    PSafePtr<OpalConnection> GetConnectionWithLock(
+      const PString & token,     /// Token to identify connection
+      PSafetyMode mode = PSafeReadWrite
+    ) { return connectionsActive.FindWithLock(token, mode); }
 
     /**Get all calls current on the endpoint.
       */
@@ -434,6 +429,12 @@ class OpalEndPoint : public PObject
       */
     virtual BOOL HasConnection(
       const PString & token   /// Token for identifying connection
+    );
+
+    /**Destroy the connection.
+      */
+    virtual void DestroyConnection(
+      OpalConnection * connection  /// Connection to destroy
     );
   //@}
 
@@ -623,14 +624,18 @@ class OpalEndPoint : public PObject
     unsigned initialBandwidth;  // in 100s of bits/sev
 
     OpalListenerList   listeners;
-    OpalConnectionDict connectionsActive;
     PSyncPoint         allConnectionsCleared;
 
+    class ConnectionDict : public PSafeDictionary<PString, OpalConnection>
+    {
+        virtual void DeleteObject(PObject * object) const;
+    } connectionsActive;
+
     PMutex inUseFlag;
+
+  friend void OpalManager::GarbageCollection();
+  friend void OpalConnection::Release(CallEndReason reason);
 };
-
-
-PLIST(OpalEndPointList, OpalEndPoint);
 
 
 #endif // __OPAL_ENDPOINT_H

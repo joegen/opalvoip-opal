@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.h,v $
- * Revision 1.2016  2004/07/11 12:42:09  rjongbloed
+ * Revision 1.2017  2004/08/14 07:56:29  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.15  2004/07/11 12:42:09  rjongbloed
  * Added function on endpoints to get the list of all media formats any
  *   connection the endpoint may create can support.
  *
@@ -183,6 +186,15 @@ class OpalLIDEndPoint : public OpalEndPoint
 
   /**@name LID management */
   //@{
+    /**Find a connection that uses the specified token.
+       This searches the endpoint for the connection that contains the token
+       as provided by functions such as MakeConnection().
+      */
+    PSafePtr<OpalLineConnection> GetLIDConnectionWithLock(
+      const PString & token,     /// Token to identify connection
+      PSafetyMode mode = PSafeReadWrite
+    ) { return PSafePtrCast<OpalConnection, OpalLineConnection>(GetConnectionWithLock(token, mode)); }
+
     /**Add a line to the endpoint.
        Note that once the line is added it is "owned" by the endpoint and
        should not be deleted directly. Use the RemoveLine() function to
@@ -412,10 +424,6 @@ class OpalLineConnection : public OpalConnection
        that function being called. For example if SetUpConnection() was used
        but the call never completed.
 
-       The return value indicates if the connection object is to be deleted. A
-       value of FALSE can be returned and it then someone elses responsibility
-       to free the memory used.
-
        Classes that override this function should make sure they call the
        ancestor version for correct operation.
 
@@ -425,7 +433,7 @@ class OpalLineConnection : public OpalConnection
        The default behaviour calls starts playing the busy tone and calls the
        ancestor function.
       */
-    virtual BOOL OnReleased();
+    virtual void OnReleased();
 
     /**Get the destination address of an incoming connection.
        The default behaviour collects a DTMF number terminated with a '#' or

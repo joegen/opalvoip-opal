@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2029  2004/07/14 13:26:14  rjongbloed
+ * Revision 1.2030  2004/08/14 07:56:29  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.28  2004/07/14 13:26:14  rjongbloed
  * Fixed issues with the propagation of the "established" phase of a call. Now
  *   calling an OnEstablished() chain like OnAlerting() and OnConnected() to
  *   finally arrive at OnEstablishedCall() on OpalManager
@@ -130,13 +133,12 @@
 
 #include <opal/buildopts.h>
 
-#include <opal/endpoint.h>
-#include <opal/connection.h>
 #include <opal/call.h>
+#include <opal/guid.h>
 #include <codec/silencedetect.h>
 
 
-class OpalCall;
+class OpalEndPoint;
 class OpalMediaPatch;
 class PSTUNClient;
 
@@ -190,7 +192,7 @@ class OpalManager : public PObject
     /**Remove an endpoint from the manager.
        This will delete the endpoint object.
       */
-    void RemoveEndPoint(
+    void DetachEndPoint(
       OpalEndPoint * endpoint
     );
 
@@ -202,7 +204,7 @@ class OpalManager : public PObject
 
     /**Get the endpoints attached to this manager.
       */
-    const OpalEndPointList & GetEndPoints() const { return endpoints; }
+    const PList<OpalEndPoint> & GetEndPoints() const { return endpoints; }
   //@}
 
   /**@name Call management */
@@ -251,7 +253,7 @@ class OpalManager : public PObject
       */
     virtual BOOL HasCall(
       const PString & token  /// Token for identifying call
-    );
+    ) { return activeCalls.FindWithLock(token, PSafeReference) != NULL; }
 
     /**Determine if a call is established.
        Return TRUE if there is an active call with the specified token and
@@ -271,9 +273,10 @@ class OpalManager : public PObject
        function if this function returns a non-NULL pointer. If it does not
        then a deadlock can occur.
       */
-    OpalCall * FindCallWithLock(
-      const PString & token  /// Token to identify connection
-    );
+    PSafePtr<OpalCall> FindCallWithLock(
+      const PString & token,  /// Token to identify connection
+      PSafetyMode mode = PSafeReadWrite
+    ) { return activeCalls.FindWithLock(token, mode); }
 
     /**Clear a call.
        This finds the call by using the token then calls the OpalCall::Clear()
@@ -320,7 +323,7 @@ class OpalManager : public PObject
        function being called. For example if MakeConnection() was used but
        the call never completed.
 
-       The default behaviour does nothing.
+       The default behaviour removes the call from the activeCalls dictionary.
       */
     virtual void OnClearedCall(
       OpalCall & call   /// Connection that was established
@@ -352,32 +355,6 @@ class OpalManager : public PObject
        This is an internal function called by the OpalCall constructor.
       */
     PString GetNextCallToken();
-
-    /**Attach a new call to the manager.
-       This is an internal function called by the OpalCall constructor.
-
-       Note that any call is automatically "owned" by the manager. They
-       should not be deleted directly. The ClearCall() command should be
-       used to do this.
-      */
-    void AttachCall(
-      OpalCall * call
-    );
-
-    /**Clean up calls and connections.
-       This is an internal function called from a background thread and
-       checks for closed calls and connections to clean up.
-
-       This would not normally be called by an application.
-      */
-    void GarbageCollection();
-
-    /**Signal background thread to do garbage collection.
-       This is an internal function used by the OpalCall to indicate that a
-       connection has been released and it should call the GarbageCollection()
-       function at its earliest convenience.
-      */
-    void SignalGarbageCollector();
   //@}
 
   /**@name Connection management */
@@ -516,10 +493,6 @@ class OpalManager : public PObject
        This function can do any internal cleaning up and waiting on background
        threads that may be using the connection object.
 
-       The return value indicates if the connection object is to be deleted. A
-       value of FALSE can be returned and it then someone elses responsibility
-       to free the memory used.
-
        Classes that override this function should make sure they call the
        ancestor version for correct operation.
 
@@ -531,7 +504,7 @@ class OpalManager : public PObject
        conection has been released so it can release the last remaining
        connection and then returns TRUE.
       */
-    virtual BOOL OnReleased(
+    virtual void OnReleased(
       OpalConnection & connection   /// Connection that was established
     );
   //@}
@@ -699,7 +672,7 @@ class OpalManager : public PObject
     {
         PCLASSINFO(RouteEntry, PObject);
       public:
-        RouteEntry(const PString & pat, const PString dest);
+        RouteEntry(const PString & pat, const PString & dest);
         void PrintOn(ostream & strm) const;
         PString            pattern;
         PString            destination;
@@ -1057,22 +1030,25 @@ class OpalManager : public PObject
     // Dynamic variables
     PMutex inUseFlag;
 
-    OpalEndPointList endpoints;
+    PList<OpalEndPoint> endpoints;
 
     unsigned     lastCallTokenID;
-    OpalCallDict callsActive;
-    PMutex       callsMutex;
+
+    class CallDict : public PSafeDictionary<OpalGloballyUniqueID, OpalCall>
+    {
+      public:
+        CallDict(OpalManager & mgr) : manager(mgr) { }
+        virtual void DeleteObject(PObject * object) const;
+        OpalManager & manager;
+    } activeCalls;
+
     PSyncPoint   allCallsCleared;
     PThread    * garbageCollector;
-    PSyncPoint   garbageCollectFlag;
-    BOOL         collectingGarbage;
+    PSyncPoint   garbageCollectExit;
     PDECLARE_NOTIFIER(PThread, OpalManager, GarbageMain);
+    void GarbageCollection();
 
-
-  private:
-    OpalCall * FindCallWithoutLocks(
-      const PString & token     /// Token to identify connection
-    );
+  friend OpalCall::OpalCall(OpalManager & mgr);
 };
 
 

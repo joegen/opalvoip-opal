@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.h,v $
- * Revision 1.2008  2004/07/15 12:32:29  rjongbloed
+ * Revision 1.2009  2004/08/14 07:56:29  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.7  2004/07/15 12:32:29  rjongbloed
  * Various enhancements to the VXML code
  *
  * Revision 2.6  2004/07/11 12:42:10  rjongbloed
@@ -147,23 +150,39 @@ class OpalIVREndPoint : public OpalEndPoint
       void * userData,        /// Arbitrary data to pass to connection
       const PString & vxml    /// vxml to execute
     );
-  //@}
 
-  /**@name Customisation call backs */
-  //@{
     /**Create a unique token for a new conection.
       */
     virtual PString CreateConnectionToken();
   //@}
 
+  /**@name Options and configuration */
+  //@{
+    /**Find a connection that uses the specified token.
+       This searches the endpoint for the connection that contains the token
+       as provided by functions such as MakeConnection().
+      */
+    PSafePtr<OpalIVRConnection> GetIVRConnectionWithLock(
+      const PString & token,     /// Token to identify connection
+      PSafetyMode mode = PSafeReadWrite
+    ) { return PSafePtrCast<OpalConnection, OpalIVRConnection>(GetConnectionWithLock(token, mode)); }
+
+    /**Get the default VXML to use.
+      */
     const PString & GetDefaultVXML() const { return defaultVXML; }
+
+    /** Set the default VXML to use.
+      */
     void SetDefaultVXML(
       const PString & vxml
     );
 
+    /**Set the default emdia formats for all connections using VXML.
+      */
     void SetDefaultMediaFormats(
       const OpalMediaFormatList & formats
     );
+  //@}
 
   protected:
     unsigned            nextTokenNumber;
