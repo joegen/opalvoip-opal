@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2039  2004/03/22 10:20:34  rjongbloed
+ * Revision 1.2040  2004/03/29 10:53:23  rjongbloed
+ * Fixed missing mutex unlock which would invariably cause a deadlock.
+ *
+ * Revision 2.38  2004/03/22 10:20:34  rjongbloed
  * Changed to use UseGatekeeper() function so can select by gk-id as well as host.
  *
  * Revision 2.37  2004/03/14 11:32:20  rjongbloed
@@ -458,9 +461,9 @@ void SimpleOpalProcess::Main()
   if (opal->Initialise(args))
     opal->Main(args);
 
-  delete opal;
-
   cout << "Exiting " << GetName() << endl;
+
+  delete opal;
 }
 
 
@@ -909,8 +912,11 @@ void MyManager::Main(PArgList & args)
     cmd = params[0];
     if (cmd == "h" || cmd == "hangup") {
       OpalCall * call = FindCallWithLock(currentCallToken);
-      if (call != NULL)
+      if (call != NULL) {
+        cout << "Clearing call " << *call << endl;
         call->Clear();
+        call->Unlock();
+      }
       else
         cout << "Not in a call!\n";
     }
