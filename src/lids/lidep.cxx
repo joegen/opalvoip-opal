@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2023  2004/05/24 13:52:30  rjongbloed
+ * Revision 1.2024  2004/07/11 12:42:12  rjongbloed
+ * Added function on endpoints to get the list of all media formats any
+ *   connection the endpoint may create can support.
+ *
+ * Revision 2.22  2004/05/24 13:52:30  rjongbloed
  * Added a separate structure for the silence suppression paramters to make
  *   it easier to set from global defaults in the manager class.
  *
@@ -188,6 +192,23 @@ BOOL OpalLIDEndPoint::MakeConnection(OpalCall & call,
     connection->SetUpConnection();
 
   return TRUE;
+}
+
+
+OpalMediaFormatList OpalLIDEndPoint::GetMediaFormats() const
+{
+  OpalMediaFormatList mediaFormats;
+  AddVideoMediaFormats(mediaFormats);
+
+  PWaitAndSignal mutex(linesMutex);
+
+  for (PINDEX i = 0; i < lines.GetSize(); i++) {
+    OpalMediaFormatList devFormats = lines[i].GetDevice().GetMediaFormats();
+    for (PINDEX j = 0; j < devFormats.GetSize(); j++)
+      mediaFormats += devFormats[j];
+  }
+
+  return mediaFormats;
 }
 
 
