@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2058  2004/06/04 06:54:18  csoutheren
+ * Revision 1.2059  2004/07/04 12:52:43  rjongbloed
+ * Fixed setting of local capabilities to after routing, so we know the peer protocols media list.
+ *
+ * Revision 2.57  2004/06/04 06:54:18  csoutheren
  * Migrated updates from OpenH323 1.14.1
  *
  * Revision 2.56  2004/05/09 13:12:38  rjongbloed
@@ -2100,9 +2103,6 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
   if (signallingChannel->GetLocalAddress().IsEquivalent(localDestinationAddress))
     localDestinationAddress = '*';
 
-  // Get the local capabilities before fast start or tunnelled TCS is handled
-  OnSetLocalCapabilities();
-
   // Send back a H323 Call Proceeding PDU in case OnIncomingCall() takes a while
   PTRACE(3, "H225\tSending call proceeding PDU");
   H323SignalPDU callProceedingPDU;
@@ -2173,6 +2173,9 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
       gatekeeperRouted = response.gatekeeperRouted;
     }
   }
+
+  // Get the local capabilities before fast start or tunnelled TCS is handled
+  OnSetLocalCapabilities();
 
   // Check that it has the H.245 channel connection info
   if (setup.HasOptionalField(H225_Setup_UUIE::e_h245Address))
