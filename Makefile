@@ -22,7 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2008  2002/02/01 10:29:35  rogerh
+# Revision 1.2009  2002/02/06 11:52:53  rogerh
+# Move -I$(ASN_INCDIR) so Opal's ldap.h is found instead of the OS's ldap.h
+#
+# Revision 2.7  2002/02/01 10:29:35  rogerh
 # Use the right version.h file. (the other one had comments which confused
 # pwlib's lib.mak)
 #
@@ -364,12 +367,12 @@ $(ASN_SRCDIR)/%.cxx : $(ASN_INCDIR)/%.h
 
 $(OBJDIR)/%.o : $(ASN_SRCDIR)/%.cxx
 	@if [ ! -d $(OBJDIR) ] ; then mkdir -p $(OBJDIR) ; fi
-	$(CPLUS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -I$(ASN_INCDIR) -c $< -o $@
+	$(CPLUS) -I$(ASN_INCDIR) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
 
 $(DEPDIR)/%.dep : $(ASN_SRCDIR)/%.cxx
 	@if [ ! -d $(DEPDIR) ] ; then mkdir -p $(DEPDIR) ; fi
 	@printf %s $(OBJDIR)/ > $@
-	$(CPLUS) $(STDCCFLAGS) -I$(ASN_INCDIR) -M $< >> $@
+	$(CPLUS) -I$(ASN_INCDIR) $(STDCCFLAGS) -M $< >> $@
 
 
 
