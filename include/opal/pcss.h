@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.h,v $
- * Revision 1.2013  2004/07/11 12:42:10  rjongbloed
+ * Revision 1.2014  2004/08/14 07:56:29  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.12  2004/07/11 12:42:10  rjongbloed
  * Added function on endpoints to get the list of all media formats any
  *   connection the endpoint may create can support.
  *
@@ -176,6 +179,15 @@ class OpalPCSSEndPoint : public OpalEndPoint
 
   /**@name User Interface operations */
   //@{
+    /**Find a connection that uses the specified token.
+       This searches the endpoint for the connection that contains the token
+       as provided by functions such as MakeConnection().
+      */
+    PSafePtr<OpalPCSSConnection> GetPCSSConnectionWithLock(
+      const PString & token,     /// Token to identify connection
+      PSafetyMode mode = PSafeReadWrite
+    ) { return PSafePtrCast<OpalConnection, OpalPCSSConnection>(GetConnectionWithLock(token, mode)); }
+
     /**Call back to get the destination for outgoing call.
        If FALSE is returned the call is aborted.
 
