@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: buildopts.h.in,v $
+ * Revision 1.2  2004/03/11 06:54:27  csoutheren
+ * Added ability to disable SIP or H.323 stacks
+ *
  * Revision 1.1  2003/06/02 04:04:54  rjongbloed
  * Changed to use new autoconf system
  *
@@ -32,6 +35,19 @@
 #ifndef _OPAL_BUILDOPTS_H
 #define _OPAL_BUILDOPTS_H
 
+
+/////////////////////////////////////////////////
+//
+// Protocol support
+//
+
+#undef	OPAL_SIP
+#undef	OPAL_H323
+
+#if OPAL_H323 == 0
+#define NO_H323
+#define NO_H323_AUDIO
+#endif
 
 /////////////////////////////////////////////////
 //
@@ -49,6 +65,12 @@
 #define VOICE_AGE_G729_LIBRARY "@VOICE_AGE_DIR@/va_g729a.lib"
 
 #endif
+
+/////////////////////////////////////////////////
+//
+// use system Speex
+
+#undef	OPAL_SYSTEM_SPEEX
 
 
 /////////////////////////////////////////////////

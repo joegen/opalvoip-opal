@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.h,v $
- * Revision 1.2014  2004/02/19 10:47:01  rjongbloed
+ * Revision 1.2015  2004/03/11 06:54:27  csoutheren
+ * Added ability to disable SIP or H.323 stacks
+ *
+ * Revision 2.13  2004/02/19 10:47:01  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.12  2003/01/07 04:39:53  robertj
@@ -106,6 +109,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <ptlib/sockets.h>
 
