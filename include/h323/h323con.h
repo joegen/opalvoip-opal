@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2019  2002/11/10 22:59:20  robertj
+ * Revision 1.2020  2003/01/07 04:39:52  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.18  2002/11/10 22:59:20  robertj
  * Fixed override of SetCallEndReason to have same parameters as base virtual.
  *
  * Revision 2.17  2002/11/10 11:33:16  robertj
@@ -86,6 +89,22 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.58  2002/11/27 06:54:52  robertj
+ * Added Service Control Session management as per Annex K/H.323 via RAS
+ *   only at this stage.
+ * Added H.248 ASN and very primitive infrastructure for linking into the
+ *   Service Control Session management system.
+ * Added basic infrastructure for Annex K/H.323 HTTP transport system.
+ * Added Call Credit Service Control to display account balances.
+ *
+ * Revision 1.57  2002/11/15 05:17:22  robertj
+ * Added facility redirect support without changing the call token for access
+ *   to the call. If it gets redirected a new H323Connection object is
+ *   created but it looks like the same thing to an application.
+ *
+ * Revision 1.56  2002/11/13 04:37:23  robertj
+ * Added ability to get (and set) Q.931 release complete cause codes.
  *
  * Revision 1.55  2002/11/10 06:17:26  robertj
  * Fixed minor documentation errors.
@@ -545,6 +564,7 @@ class H323Connection : public OpalConnection
     /**Attach a transport to this connection as the signalling channel.
       */
     void AttachSignalChannel(
+      const PString & token,    /// New token to use to identify connection
       H323Transport * channel,  /// Transport for the PDU's
       BOOL answeringCall        /// Flag for if incoming/outgoing call.
     );
@@ -1939,6 +1959,11 @@ class H323Connection : public OpalConnection
      */
     BOOL HadAnsweredCall() const { return !originating; }
 
+    /**Get the Q.931 cause code (Q.850) that terminated this call.
+       See Q931::CauseValues for common values.
+     */
+    unsigned GetQ931Cause() const { return q931Cause; }
+
     /**Get the distinctive ring code for incoming call.
        This returns an integer from 0 to 7 that may indicate to an application
        that different ring cadences are to be used.
@@ -2076,6 +2101,14 @@ class H323Connection : public OpalConnection
        n - n plus this connection
      */
     const int GetRemoteCallWaiting() const { return remoteCallWaiting; }
+
+    /**Set the enforced duration limit for the call.
+       This starts a timer that will automatically shut down the call when it
+       expires.
+      */
+    void SetEnforcedDurationLimit(
+      unsigned seconds  /// max duration of call in seconds
+    );
   //@}
 
 
@@ -2137,6 +2170,7 @@ class H323Connection : public OpalConnection
     PTime         alertingTime;
     PTime         connectedTime;
     PTime         callEndTime;
+    unsigned      q931Cause;
 
     unsigned   h225version;
     unsigned   h245version;
@@ -2154,6 +2188,7 @@ class H323Connection : public OpalConnection
     BOOL       endSessionNeeded;
     BOOL       endSessionSent;
     PSyncPoint endSessionReceived;
+    PTimer     enforcedDurationLimit;
 
     // Used as part of a local call hold operation involving MOH
     PChannel * holdMediaChannel;
