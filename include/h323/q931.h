@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q931.h,v $
- * Revision 1.2006  2002/02/11 09:32:12  robertj
+ * Revision 1.2007  2002/07/01 04:56:30  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.5  2002/02/11 09:32:12  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.4  2002/01/14 06:35:57  robertj
@@ -41,6 +44,26 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.44  2002/05/22 23:12:01  robertj
+ * Enhanced the display of Release-Complete cause codes.
+ *
+ * Revision 1.43  2002/05/03 05:38:16  robertj
+ * Added Q.931 Keypad IE mechanism for user indications (DTMF).
+ *
+ * Revision 1.42  2002/04/22 08:03:41  craigs
+ * Added Q931 progress codes
+ *
+ * Revision 1.41  2002/04/22 07:33:02  craigs
+ * Changed GetProgressIndicator to be const
+ * Fixed spelling mistake in SignalType enums list
+ *
+ * Revision 1.40  2002/04/18 09:35:00  robertj
+ * Added CallState IE processing.
+ *
+ * Revision 1.39  2002/03/27 06:04:42  robertj
+ * Added Temporary Failure end code for connection, an application may
+ *   immediately retry the call if this occurs.
  *
  * Revision 1.38  2002/02/08 00:05:14  robertj
  * Changed release complete causes so can dsitinguish between unknown
@@ -250,6 +273,7 @@ class Q931 : public PObject
       ProgressIndicatorIE  = 0x1e,
       CallStateIE          = 0x14,
       DisplayIE            = 0x28,
+      KeypadIE             = 0x2c,
       SignalIE             = 0x34,
       ConnectedNumberIE    = 0x4c,
       CallingPartyNumberIE = 0x6c,
@@ -286,25 +310,38 @@ class Q931 : public PObject
     );
 
     enum CauseValues {
-      UnknownCauseIE        = 0x00,
-      NoRouteToNetwork      = 0x02,
-      NoRouteToDestination  = 0x03,
-      ChannelUnacceptable   = 0x06,
-      NormalCallClearing    = 0x10,
-      UserBusy              = 0x11,
-      NoResponse            = 0x12,
-      NoAnswer              = 0x13,
-      SubscriberAbsent      = 0x14,
-      CallRejected          = 0x15,
-      NumberChanged         = 0x16,
-      Redirection           = 0x17,
-      DestinationOutOfOrder = 0x1b,
-      InvalidNumberFormat   = 0x1c,
-      StatusEnquiryResponse = 0x1e,
-      NoCircuitChannelAvailable = 0x22,
-      Congestion            = 0x2a,
-      InvalidCallReference  = 0x51,
-      ErrorInCauseIE        = 0x100
+      UnknownCauseIE,
+      UnallocatedNumber         =  1,
+      NoRouteToNetwork          =  2,
+      NoRouteToDestination      =  3,
+      SendSpecialTone           =  4,
+      MisdialledTrunkPrefix     =  5,
+      ChannelUnacceptable       =  6,
+      NormalCallClearing        = 16,
+      UserBusy                  = 17,
+      NoResponse                = 18,
+      NoAnswer                  = 19,
+      SubscriberAbsent          = 20,
+      CallRejected              = 21,
+      NumberChanged             = 22,
+      Redirection               = 23,
+      ExchangeRoutingError      = 25,
+      NonSelectedUserClearing   = 26,
+      DestinationOutOfOrder     = 27,
+      InvalidNumberFormat       = 28,
+      FacilityRejected          = 29,
+      StatusEnquiryResponse     = 30,
+      NormalUnspecified         = 31,
+      NoCircuitChannelAvailable = 34,
+      NetworkOutOfOrder         = 38,
+      TemporaryFailure          = 41,
+      Congestion                = 42,
+      ResourceUnavailable       = 47,
+      InvalidCallReference      = 81,
+      IncompatibleDestination   = 88,
+      InterworkingUnspecified   = 111,
+      NonStandardReason         = 127,
+      ErrorInCauseIE            = 0x100
     };
     void SetCause(
       CauseValues value,
@@ -314,6 +351,33 @@ class Q931 : public PObject
     CauseValues GetCause(
       unsigned * standard = NULL,  // 0 = ITU-T standardized coding
       unsigned * location = NULL   // 0 = User
+    ) const;
+
+    enum CallStates {
+      CallState_Null                  = 0,
+      CallState_CallInitiated         = 1,
+      CallState_OverlapSending        = 2,
+      CallState_OutgoingCallProceeding= 3,
+      CallState_CallDelivered         = 4,
+      CallState_CallPresent           = 6,
+      CallState_CallReceived          = 7,
+      CallState_ConnectRequest        = 8,
+      CallState_IncomingCallProceeding= 9,
+      CallState_Active                = 10,
+      CallState_DisconnectRequest     = 11,
+      CallState_DisconnectIndication  = 12,
+      CallState_SuspendRequest        = 15,
+      CallState_ResumeRequest         = 17,
+      CallState_ReleaseRequest        = 19,
+      CallState_OverlapReceiving      = 25,
+      CallState_ErrorInIE             = 0x100
+    };
+    void SetCallState(
+      CallStates value,
+      unsigned standard = 0  // 0 = ITU-T standardized coding
+    );
+    CallStates GetCallState(
+      unsigned * standard = NULL  // 0 = ITU-T standardized coding
     ) const;
 
     enum SignalInfo {
@@ -336,11 +400,25 @@ class Q931 : public PObject
       SignalAlertingPattern5,
       SignalAlertingPattern6,
       SignalAlertingPattern7,
-      SignalAlretingOff = 0x4f,
+      SignalAlertingOff = 0x4f,
       SignalErrorInIE = 0x100
     };
     void SetSignalInfo(SignalInfo value);
     SignalInfo GetSignalInfo() const;
+
+    void SetKeypad(const PString & digits);
+    PString GetKeypad() const;
+
+    enum ProgressIndication {
+       ProgressNotEndToEndISDN      = 1,      // Call is not end-to-end ISDN; 
+                                              // further call progress information may be available in-band  
+       ProgressDestinationNonISDN   = 2,      // Destination address is non ISDN  
+       ProgressOriginNotISDN        = 3,      // Origination address is non ISDN  
+       ProgressReturnedToISDN       = 4,      // Call has returned to the ISDN 
+       ProgressServiceChange        = 5,      // Interworking has occurred and has 
+                                              // resulted in a telecommunication service change
+       ProgressInbandInformationAvailable = 8 // In-band information or an appropriate pattern is now available.   
+    };
 
     void SetProgressIndicator(
       unsigned description,
@@ -351,7 +429,7 @@ class Q931 : public PObject
       unsigned & description,
       unsigned * codingStandard = NULL,
       unsigned * location = NULL
-    );
+    ) const;
 
     void SetDisplayName(const PString & name);
     PString GetDisplayName() const;

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h450pdu.h,v $
- * Revision 1.2004  2002/02/11 09:32:11  robertj
+ * Revision 1.2005  2002/07/01 04:56:30  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.3  2002/02/11 09:32:11  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.2  2002/01/14 06:35:57  robertj
@@ -35,6 +38,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.5  2002/06/22 05:48:38  robertj
+ * Added partial implementation for H.450.11 Call Intrusion
  *
  * Revision 1.4  2002/02/04 07:17:52  robertj
  * Added H.450.2 Consultation Transfer, thanks Norwood Systems.
@@ -97,6 +103,12 @@ class H450ServiceAPDU : public X880_ROS
                                 const PString & callIdentity);
 
     void BuildCallWaiting(int invokeId, int numCallsWaiting);
+    
+    void BuildCallIntrusionForcedRelease(int invokeId, int CICL);
+
+    void BuildCallIntrusionForcedReleaseResult();
+
+    void BuildCallIntrusionForcedReleaseError();
 
     void AttachSupplementaryServiceAPDU(H323SignalPDU & pdu);
     BOOL WriteFacilityPDU(
@@ -142,16 +154,16 @@ class H450xHandler : public PObject
       PASN_OctetString * argument             /// Parameters for the initiate operation
     ) = 0;
 
-    virtual void OnReceivedReturnResult(
+    virtual BOOL OnReceivedReturnResult(
       X880_ReturnResult & returnResult
     );
 
-    virtual void OnReceivedReturnError(
+    virtual BOOL OnReceivedReturnError(
       int errorCode,
       X880_ReturnError & returnError
     );
 
-    virtual void OnReceivedReject(
+    virtual BOOL OnReceivedReject(
       int problemType,
       int problemNumber
     );
@@ -221,7 +233,7 @@ class H450xDispatcher : public PObject
 
     /** Handle the H.450.x Supplementary Service PDU if present in the H225_H323_UU_PDU
      */
-    virtual void HandlePDU(
+    virtual BOOL HandlePDU(
       const H323SignalPDU & pdu
     );
 
@@ -229,28 +241,28 @@ class H450xDispatcher : public PObject
        The default behaviour is to attempt to decode the invoke operation
        and call the corresponding OnReceived<Operation> method on the EndPoint.
      */
-    virtual void OnReceivedInvoke(X880_Invoke& invoke);
+    virtual BOOL OnReceivedInvoke(X880_Invoke& invoke);
 
     /**Handle an incoming X880 Return Result PDU.
        The default behaviour is to attempt to match the return result
        to a previous invoke operation and call the corresponding
        OnReceived<Operation>Success method on the EndPoint.
      */
-    virtual void OnReceivedReturnResult(X880_ReturnResult& returnResult);
+    virtual BOOL OnReceivedReturnResult(X880_ReturnResult& returnResult);
 
     /**Handle an incoming X880 Return Error PDU.
        The default behaviour is to attempt to match the return error
        to a previous invoke operation and call the corresponding
        OnReceived<Operation>Error method on the EndPoint.
      */
-    virtual void OnReceivedReturnError(X880_ReturnError& returnError);
+    virtual BOOL OnReceivedReturnError(X880_ReturnError& returnError);
 
     /**Handle an incoming X880 Reject PDU.
        The default behaviour is to attempt to match the reject
        to a previous invoke, return result or return error operation
        and call OnReceived<Operation>Reject method on the EndPoint.
      */
-    virtual void OnReceivedReject(X880_Reject& reject);
+    virtual BOOL OnReceivedReject(X880_Reject& reject);
 
     /**Send a return error in response to an invoke operation.
      */
@@ -266,7 +278,7 @@ class H450xDispatcher : public PObject
 
     /**Get the next available invoke Id for H450 operations
      */
-    unsigned GetNextInvokeId() const { return nextInvokeId++; }
+    unsigned GetNextInvokeId() const { return ++nextInvokeId; }
 
   protected:
     H323Connection & connection;
@@ -362,7 +374,7 @@ class H4502Handler : public H450xHandler
       PASN_OctetString * argument             /// Parameters for the active operation
     );
 
-    virtual void OnReceivedReturnResult(
+    virtual BOOL OnReceivedReturnResult(
       X880_ReturnResult & returnResult
     );
 
@@ -385,7 +397,7 @@ class H4502Handler : public H450xHandler
      */
     void OnReceivedIdentifyReturnResult(X880_ReturnResult &returnResult);
 
-    virtual void OnReceivedReturnError(
+    virtual BOOL OnReceivedReturnError(
       int errorCode,
       X880_ReturnError & returnError
     );
@@ -650,6 +662,215 @@ class H4506Handler : public H450xHandler
 
   protected:
     State cwState;  // Call Waiting state of this connection
+};
+
+
+class H45011Handler : public H450xHandler
+{
+  PCLASSINFO(H45011Handler, H450xHandler);
+  public:
+    H45011Handler(
+      H323Connection & connection,
+      H450xDispatcher & dispatcher
+    );
+
+    virtual void AttachToSetup(
+      H323SignalPDU & pdu
+    );
+
+    virtual void AttachToAlerting(
+      H323SignalPDU & pdu
+    );
+
+    virtual void AttachToConnect(
+      H323SignalPDU & pdu
+    );
+
+    virtual void AttachToReleaseComplete(
+      H323SignalPDU & pdu
+    );
+
+    virtual BOOL OnReceivedInvoke(
+      int opcode,
+      int invokeId,                           /// InvokeId of operation (used in response)
+      int linkedId,                           /// InvokeId of associated operation (if any)
+      PASN_OctetString * argument             /// Parameters for the initiate operation
+    );
+
+    /**Handle an incoming Call Intrusion operation
+    */
+    virtual void OnReceivedCallIntrusionRequest(
+      int linkedId,
+      PASN_OctetString *argument
+    );
+
+    /**Handle an incoming Call Intrusion GetCIPL operation
+    */
+    virtual void OnReceivedCallIntrusionGetCIPL(
+      int linkedId,
+      PASN_OctetString *argument
+    );
+
+    /**Handle an incoming Call Intrusion Isolate operation
+    */
+    virtual void OnReceivedCallIntrusionIsolate(
+      int linkedId,
+      PASN_OctetString *argument
+    );
+
+    /**Handle an incoming Call Intrusion Forced Release operation
+    */
+    virtual BOOL OnReceivedCallIntrusionForcedRelease(
+      int linkedId,
+      PASN_OctetString *argument
+    );
+
+    /**Handle an incoming Call Intrusion WOB operation
+    */
+    virtual void OnReceivedCallIntrusionWOBRequest(
+      int linkedId,
+      PASN_OctetString *argument
+    );
+
+    /**Handle an incoming Call Intrusion Silent Monitor operation
+    */
+    virtual void OnReceivedCallIntrusionSilentMonitor(
+      int linkedId,
+      PASN_OctetString *argument
+    );
+
+    /**Handle an incoming Call Intrusion Notification operation
+    */
+    virtual void OnReceivedCallIntrusionNotification(
+      int linkedId,
+      PASN_OctetString *argument
+    );
+
+    /**Handle an incoming Call Intrusion cfb Override operation
+    */
+    virtual void OnReceivedCfbOverride(
+      int linkedId,
+      PASN_OctetString *argument
+    );
+
+    /**Handle an incoming Call Intrusion Remote User Alerting operation
+    */
+    virtual void OnReceivedRemoteUserAlerting(
+      int linkedId,
+      PASN_OctetString *argument
+    );
+
+    /**Handle an incoming Call Intrusion Call Waiting operation
+    */
+    virtual void OnReceivedCallWaiting(
+      int linkedId,
+      PASN_OctetString *argument
+    );
+
+    virtual BOOL OnReceivedReturnResult(
+      X880_ReturnResult & returnResult
+    );
+
+    void OnReceivedCIRequestResult(/*X880_ReturnResult & returnResult*/);
+
+    virtual BOOL OnReceivedReturnError(
+      int errorCode,
+      X880_ReturnError & returnError
+    );
+
+    BOOL OnReceivedInvokeReturnError (
+      int errorCode,
+      const bool timerExpiry = false /// Flag to indicate expiry
+    );
+
+    void IntrudeCall(int CICL );
+
+    void AwaitSetupResponse(
+      const PString & token,
+      const PString & identity
+    );
+
+    /**Sub-state for call intrusion.
+      */
+    enum State {
+      e_ci_Idle,
+      e_ci_WaitAck,
+      e_ci_GetCIPL,
+      e_ci_OrigInvoked,
+      e_ci_OrigIsolated,
+      e_ci_DestNotify,
+      e_ci_DestInvoked,
+      e_ci_DestIsolated,
+      e_ci_DestWOB,
+      e_ci_IsolationRequest,
+      e_ci_ForcedReleaseRequest,
+      e_ci_WOBRequest
+    };
+
+    /**What to generate */
+    enum Generate{
+      e_ci_gIdle,
+      e_ci_gConferenceRequest,
+      e_ci_gHeldRequest,
+      e_ci_gSilentMonitorRequest,
+      e_ci_gIsolationRequest,
+      e_ci_gForcedReleaseRequest,
+      e_ci_gWOBRequest
+    };
+
+    /** When to send SS message */
+    enum SendState{
+      e_ci_sIdle,
+      e_ci_sAttachToSetup,
+      e_ci_sAttachToAlerting,
+      e_ci_sAttachToConnect,
+      e_ci_sAttachToReleseComplete
+    };
+
+    /** What to return */
+    enum ReturnState{
+      e_ci_rIdle,
+      e_ci_rCallIntrusionImpending,
+      e_ci_rCallIntruded,
+      e_ci_rCallIsolated,
+      e_ci_rCallForceReleased,
+      e_ci_rCallForceReleaseResult,
+      e_ci_rCallIntrusionComplete,
+      e_ci_rCallIntrusionEnd,
+      e_ci_rNotBusy,
+      e_ci_rTempUnavailable,
+      e_ci_rNotAuthorized
+    };
+    
+    /**Get the current call intrusion state.
+     */
+    State GetState() const { return ciState; }
+
+    /** Start the Call Intrusion Timer using the specified time interval.
+     */
+    void StartciTimer(const PTimeInterval value) { ciTimer = value; }
+
+    /** Stop the Call Intrusion Timer
+     */
+    void StopciTimer();
+
+    /**Is the Call Intrusion Timer running?
+     */
+    BOOL IsctTimerRunning() { return ciTimer.IsRunning(); }
+
+    /**Callback mechanism for Call Intrusion Timers CI-T1, CI-T2, CI-T3 & CI-T4 & CI-T5 & CI-T6
+     */
+    PDECLARE_NOTIFIER(PTimer, H45011Handler, OnCallIntrudeTimeOut);
+
+  protected:
+    State       ciState;               // Call state of this connection
+    PTimer      ciTimer;               // Call Intrusion Timer - Handles all six timers CI-T1 to CI-T6,
+    PString     intrudingCallToken;
+    PString     intrudingCallIdentity;
+    ReturnState ciReturnState;
+    SendState   ciSendState;
+    Generate    ciGenerateState;
+    int         ciCICL;
 };
 
 

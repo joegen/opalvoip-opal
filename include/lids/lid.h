@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.h,v $
- * Revision 1.2004  2002/02/11 09:32:12  robertj
+ * Revision 1.2005  2002/07/01 04:56:30  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.3  2002/02/11 09:32:12  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.2  2001/08/17 01:10:48  robertj
@@ -38,6 +41,23 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.48  2002/06/27 08:52:53  robertj
+ * Fixed typo and naming convention for Cisco G.723.1 annex A capability.
+ *
+ * Revision 1.47  2002/06/26 05:45:41  robertj
+ * Added capability for Cisco IOS non-standard name for G.723.1 Annex A so
+ *   can now utilise SID frames with Cisco gateways.
+ *
+ * Revision 1.46  2002/06/25 08:30:08  robertj
+ * Changes to differentiate between stright G.723.1 and G.723.1 Annex A using
+ *   the OLC dataType silenceSuppression field so does not send SID frames
+ *   to receiver codecs that do not understand them.
+ *
+ * Revision 1.45  2002/05/09 06:26:30  robertj
+ * Added fuction to get the current audio enable state for line in device.
+ * Changed IxJ EnableAudio() semantics so is exclusive, no direct switching
+ *   from PSTN to POTS and vice versa without disabling the old one first.
  *
  * Revision 1.44  2002/01/23 01:58:25  robertj
  * Added function to determine if codecs raw data channel is native format.
@@ -546,10 +566,10 @@ class OpalLineInterfaceDevice : public PObject
       unsigned line   /// Number of line
     ) { return EnableAudio(line, FALSE); }
 
-    /**Determine if audio is ebabled for the line.
+    /**Determine if audio for the line is enabled.
       */
     virtual BOOL IsAudioEnabled(
-      unsigned line   /// Number of line
+      unsigned line      /// Number of line
     );
 
 
