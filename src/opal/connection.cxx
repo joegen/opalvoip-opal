@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2023  2003/03/06 03:57:47  robertj
+ * Revision 1.2024  2003/03/07 08:12:54  robertj
+ * Changed DTMF entry so single # returns itself instead of an empty string.
+ *
+ * Revision 2.22  2003/03/06 03:57:47  robertj
  * IVR support (work in progress) requiring large changes everywhere.
  *
  * Revision 2.21  2003/01/07 04:39:53  robertj
@@ -669,8 +672,11 @@ PString OpalConnection::ReadUserInput(const char * terminators,
         PTRACE(3, "OpalCon\tReadUserInput last character timeout on " << *this);
         break;
       }
-      if (next.FindOneOf(terminators) != P_MAX_INDEX)
+      if (next.FindOneOf(terminators) != P_MAX_INDEX) {
+        if (input.IsEmpty())
+          input = next;
         break;
+      }
       input += next;
     }
   }
