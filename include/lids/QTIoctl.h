@@ -8,7 +8,7 @@
 
 	-----------------------------------------------------------------
 
-	$Header: /home/svnmigrate/clean_cvs/opal/include/lids/Attic/QTIoctl.h,v 1.2001 2001/07/27 15:48:24 robertj Exp $
+	$Header: /home/svnmigrate/clean_cvs/opal/include/lids/Attic/QTIoctl.h,v 1.2002 2001/10/04 00:40:31 robertj Exp $
 */
 
 #ifndef _QTIOCTL_H_
@@ -282,6 +282,8 @@
 #define IOCTL_DevCtrl_GetLineWinkDetTime	DEVCTRL_IOCTL_CODE( 54, FILE_READ_WRITE_ACCESS, ARG_DWORD)	// (DWORD)
 #define IOCTL_DevCtrl_SetAutoPhoneHookSwitch	DEVCTRL_IOCTL_CODE( 55, FILE_READ_WRITE_ACCESS, ARG_DWORD)	// (DWORD)
 #define IOCTL_DevCtrl_GetAutoPhoneHookSwitch	DEVCTRL_IOCTL_CODE( 56, FILE_READ_WRITE_ACCESS, ARG_DWORD)	// (DWORD)
+#define IOCTL_DevCtrl_SetLEDState			DEVCTRL_IOCTL_CODE( 57, FILE_READ_WRITE_ACCESS, ARG_DWORD)	// (DWORD)
+#define IOCTL_DevCtrl_GetLEDState			DEVCTRL_IOCTL_CODE( 58, FILE_READ_WRITE_ACCESS, ARG_VOID)	// (void)
 
 #define fnDevCtrl_CheckROM				IOCTL_DevCtrl_CheckROM 
 #define fnDevCtrl_TestSRAM				IOCTL_DevCtrl_TestSRAM 
@@ -340,6 +342,8 @@
 #define	fnDevCtrl_GetLineWinkDetTime	IOCTL_DevCtrl_GetLineWinkDetTime
 #define	fnDevCtrl_SetAutoPhoneHookSwitch	IOCTL_DevCtrl_SetAutoPhoneHookSwitch
 #define	fnDevCtrl_GetAutoPhoneHookSwitch	IOCTL_DevCtrl_GetAutoPhoneHookSwitch
+#define	fnDevCtrl_SetLEDState			IOCTL_DevCtrl_SetLEDState
+#define	fnDevCtrl_GetLEDState			IOCTL_DevCtrl_GetLEDState
 
 //==========================================================================
 //--------------------------------------------------------------------------
@@ -473,7 +477,7 @@
 #define IOCTL_Playback_GetDTMF_DIGIT			PLAYBACK_IOCTL_CODE( 6, FILE_READ_ACCESS, ARG_VOID)	// (void)
 #define IOCTL_Playback_SetRate					PLAYBACK_IOCTL_CODE( 7, FILE_READ_WRITE_ACCESS, ARG_DWORD)	// (WORD wNew)
 #define IOCTL_Playback_GetRate					PLAYBACK_IOCTL_CODE( 8, FILE_READ_ACCESS, ARG_VOID)	// (void)
-#define IOCTL_Playback_Start					PLAYBACK_IOCTL_CODE( 9, FILE_READ_ACCESS, ARG_VOID)	// (void)
+#define IOCTL_Playback_Start_Old				PLAYBACK_IOCTL_CODE( 9, FILE_READ_ACCESS, ARG_VOID)	// (void)
 //#define IOCTL_Playback_Continue					PLAYBACK_IOCTL_CODE( 10, FILE_READ_ACCESS, ARG_VOID)	// (void)
 #define IOCTL_Playback_Continue					CTL_CODE( FILE_DEVICE_PLAYBACK, 0x80a, METHOD_NEITHER, FILE_READ_ACCESS )	// (void)
 #define IOCTL_Playback_Stop						PLAYBACK_IOCTL_CODE( 11, FILE_READ_ACCESS, ARG_VOID)	// (void)
@@ -492,6 +496,8 @@
 #define IOCTL_Playback_GetMute					PLAYBACK_IOCTL_CODE( 24, FILE_READ_ACCESS, ARG_VOID)	// (void)
 #define IOCTL_Playback_GetBufferDepth			PLAYBACK_IOCTL_CODE( 25, FILE_READ_ACCESS, ARG_VOID)	// (void)
 #define IOCTL_Playback_GetPlaybackLevelValue	PLAYBACK_IOCTL_CODE( 26, FILE_READ_ACCESS, ARG_VOID) // (void)
+#define IOCTL_Playback_IsPlaying				PLAYBACK_IOCTL_CODE( 27, FILE_READ_ACCESS, ARG_VOID) // (void)
+#define IOCTL_Playback_Start					PLAYBACK_IOCTL_CODE( 28, FILE_READ_ACCESS, ARG_VOID)	// (void)
 
 #define fnPlayback_SetTFRMode				IOCTL_Playback_SetTFRMode 
 #define fnPlayback_GetTFRMode				IOCTL_Playback_GetTFRMode 
@@ -520,6 +526,7 @@
 #define fnPlayback_GetMute					IOCTL_Playback_GetMute 
 #define fnPlayback_GetBufferDepth			IOCTL_Playback_GetBufferDepth 
 #define fnPlayback_GetPlaybackLevelValue	IOCTL_Playback_GetPlaybackLevelValue
+#define fnPlayback_IsPlaying				IOCTL_Playback_IsPlaying
 
 //==========================================================================
 //--------------------------------------------------------------------------
@@ -541,7 +548,7 @@
 #define	IOCTL_Record_SetThresholdValue		RECORD_IOCTL_CODE( 8, FILE_READ_WRITE_ACCESS, ARG_DWORD) // (WORD wNew)
 #define	IOCTL_Record_GetThresholdValue		RECORD_IOCTL_CODE( 9, FILE_READ_ACCESS, ARG_VOID) // (void)
 #define	IOCTL_Record_GetRecordLevelValue	RECORD_IOCTL_CODE( 10, FILE_READ_ACCESS, ARG_VOID) // (void)
-#define	IOCTL_Record_Start					RECORD_IOCTL_CODE( 11, FILE_READ_ACCESS, ARG_VOID) // (void)
+#define	IOCTL_Record_Start_Old				RECORD_IOCTL_CODE( 11, FILE_READ_ACCESS, ARG_VOID) // (void)
 //#define	IOCTL_Record_Continue				RECORD_IOCTL_CODE( 12, FILE_READ_ACCESS, ARG_VOID) // (void)
 #define	IOCTL_Record_Continue				CTL_CODE( FILE_DEVICE_RECORD, 0x80c, METHOD_NEITHER, FILE_READ_ACCESS ) // (void)
 #define	IOCTL_Record_Stop					RECORD_IOCTL_CODE( 13, FILE_READ_ACCESS, ARG_VOID) // (void)
@@ -580,6 +587,8 @@
 #define	IOCTL_Record_DisableVAD				RECORD_IOCTL_CODE( 46, FILE_READ_ACCESS, ARG_VOID) // (void)
 #define	IOCTL_Record_SetDisableOnDTMFDetect		RECORD_IOCTL_CODE( 47, FILE_READ_WRITE_ACCESS, ARG_DWORD) // (WORD wNew)
 #define	IOCTL_Record_GetDisableOnDTMFDetect		RECORD_IOCTL_CODE( 48, FILE_READ_ACCESS, ARG_VOID) // (void)
+#define	IOCTL_Record_IsRecording			RECORD_IOCTL_CODE( 49, FILE_READ_ACCESS, ARG_VOID) // (void)
+#define	IOCTL_Record_Start					RECORD_IOCTL_CODE( 50, FILE_READ_ACCESS, ARG_VOID) // (void)
 
 #define fnRecord_SetTFRMode				IOCTL_Record_SetTFRMode 
 #define fnRecord_GetTFRMode				IOCTL_Record_GetTFRMode 
@@ -624,6 +633,7 @@
 #define fnRecord_SetMute				IOCTL_Record_SetMute 
 #define fnRecord_GetMute				IOCTL_Record_GetMute 
 #define fnRecord_ContinueLogFrame       IOCTL_Record_ContinueLogFrame
+#define fnRecord_IsRecording	        IOCTL_Record_IsRecording
 
 //==========================================================================
 //--------------------------------------------------------------------------
