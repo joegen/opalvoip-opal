@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vidcodec.cxx,v $
- * Revision 1.2003  2004/01/18 15:35:20  rjongbloed
+ * Revision 1.2004  2004/07/11 12:37:00  rjongbloed
+ * Changed internal video formats to use value so do not appear in available media lists.
+ *
+ * Revision 2.2  2004/01/18 15:35:20  rjongbloed
  * More work on video support
  *
  * Revision 2.1  2003/03/17 10:26:59  robertj
@@ -49,7 +52,7 @@
 OpalMediaFormat const OpalRGB24(
   OPAL_RGB24,
   OpalMediaFormat::DefaultVideoSessionID,
-  RTP_DataFrame::DynamicBase,
+  RTP_DataFrame::MaxPayloadType,
   OPAL_RGB24,
   FALSE,   // No jitter
   24*FRAME_WIDTH*FRAME_HEIGHT*FRAME_RATE,  // Bandwidth
@@ -61,7 +64,7 @@ OpalMediaFormat const OpalRGB24(
 OpalMediaFormat const OpalRGB32(
   OPAL_RGB32,
   OpalMediaFormat::DefaultVideoSessionID,
-  RTP_DataFrame::DynamicBase,
+  RTP_DataFrame::MaxPayloadType,
   OPAL_RGB32,
   FALSE,   // No jitter
   32*FRAME_WIDTH*FRAME_HEIGHT*FRAME_RATE,  // Bandwidth
@@ -73,7 +76,7 @@ OpalMediaFormat const OpalRGB32(
 OpalMediaFormat const OpalYUV420P(
   OPAL_YUV420P,
   OpalMediaFormat::DefaultVideoSessionID,
-  RTP_DataFrame::DynamicBase,
+  RTP_DataFrame::MaxPayloadType,
   OPAL_YUV420P,
   FALSE,   // No jitter
   12*FRAME_WIDTH*FRAME_HEIGHT*FRAME_RATE,  // Bandwidth
