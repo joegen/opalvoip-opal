@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2003  2001/08/13 05:10:40  robertj
+ * Revision 1.2004  2001/08/17 08:26:26  robertj
+ * Moved call end reasons enum from OpalConnection to global.
+ *
+ * Revision 2.2  2001/08/13 05:10:40  robertj
  * Updates from OpenH323 v1.6.0 release.
  *
  * Revision 2.1  2001/08/01 05:45:01  robertj
@@ -53,47 +56,61 @@
 
 
 #if PTRACING
-const char * const OpalConnection::PhasesNames[NumPhases] = {
-  "SetUpPhase",
-  "AlertingPhase",
-  "ConnectedPhase",
-  "EstablishedPhase",
-  "ReleasedPhase"
-};
+ostream & operator<<(ostream & out, OpalConnection::Phases phase)
+{
+  const char * const names[OpalConnection::NumPhases] = {
+    "SetUpPhase",
+    "AlertingPhase",
+    "ConnectedPhase",
+    "EstablishedPhase",
+    "ReleasedPhase"
+  };
+  return out << names[phase];
+}
 
-const char * const OpalConnection::AnswerCallResponseNames[NumAnswerCallResponses] = {
-  "AnswerCallNow",
-  "AnswerCallDenied",
-  "AnswerCallAlert",
-  "AnswerCallDeferred",
-  "AnswerCallAlertWithMedia",
-  "AnswerCallDeferredWithMedia"
-};
 
-const char * const OpalConnection::CallEndReasonNames[NumCallEndReasons] = {
-  "EndedByLocalUser",         /// Local endpoint application cleared call
-  "EndedByNoAccept",          /// Local endpoint did not accept call OnIncomingCall()=FALSE
-  "EndedByAnswerDenied",      /// Local endpoint declined to answer call
-  "EndedByRemoteUser",        /// Remote endpoint application cleared call
-  "EndedByRefusal",           /// Remote endpoint refused call
-  "EndedByNoAnswer",          /// Remote endpoint did not answer in required time
-  "EndedByCallerAbort",       /// Remote endpoint stopped calling
-  "EndedByTransportFail",     /// Transport error cleared call
-  "EndedByConnectFail",       /// Transport connection failed to establish call
-  "EndedByGatekeeper",        /// Gatekeeper has cleared call
-  "EndedByNoUser",            /// Call failed as could not find user (in GK)
-  "EndedByNoBandwidth",       /// Call failed as could not get enough bandwidth
-  "EndedByCapabilityExchange",/// Could not find common capabilities
-  "EndedByCallForwarded",     /// Call was forwarded using FACILITY message
-  "EndedBySecurityDenial",    /// Call failed a security check and was ended
-  "EndedByLocalBusy",         /// Local endpoint busy
-  "EndedByLocalCongestion",   /// Local endpoint congested
-  "EndedByRemoteBusy",        /// Remote endpoint busy
-  "EndedByRemoteCongestion",  /// Remote endpoint congested
-  "EndedByUnreachable",       /// Could not reach the remote party
-  "EndedByNoEndPoint",        /// The remote party is not running an endpoint
-  "EndedByOffline",           /// The remote party is off line
-};
+ostream & operator<<(ostream & out, OpalConnection::AnswerCallResponse response)
+{
+  const char * const names[OpalConnection::NumAnswerCallResponses] = {
+    "AnswerCallNow",
+    "AnswerCallDenied",
+    "AnswerCallAlert",
+    "AnswerCallDeferred",
+    "AnswerCallAlertWithMedia",
+    "AnswerCallDeferredWithMedia"
+  };
+  return out << names[response];
+}
+
+
+ostream & operator<<(ostream & out, OpalCallEndReason reason)
+{
+  const char * const names[OpalNumCallEndReasons] = {
+    "EndedByLocalUser",         /// Local endpoint application cleared call
+    "EndedByNoAccept",          /// Local endpoint did not accept call OnIncomingCall()=FALSE
+    "EndedByAnswerDenied",      /// Local endpoint declined to answer call
+    "EndedByRemoteUser",        /// Remote endpoint application cleared call
+    "EndedByRefusal",           /// Remote endpoint refused call
+    "EndedByNoAnswer",          /// Remote endpoint did not answer in required time
+    "EndedByCallerAbort",       /// Remote endpoint stopped calling
+    "EndedByTransportFail",     /// Transport error cleared call
+    "EndedByConnectFail",       /// Transport connection failed to establish call
+    "EndedByGatekeeper",        /// Gatekeeper has cleared call
+    "EndedByNoUser",            /// Call failed as could not find user (in GK)
+    "EndedByNoBandwidth",       /// Call failed as could not get enough bandwidth
+    "EndedByCapabilityExchange",/// Could not find common capabilities
+    "EndedByCallForwarded",     /// Call was forwarded using FACILITY message
+    "EndedBySecurityDenial",    /// Call failed a security check and was ended
+    "EndedByLocalBusy",         /// Local endpoint busy
+    "EndedByLocalCongestion",   /// Local endpoint congested
+    "EndedByRemoteBusy",        /// Remote endpoint busy
+    "EndedByRemoteCongestion",  /// Remote endpoint congested
+    "EndedByUnreachable",       /// Could not reach the remote party
+    "EndedByNoEndPoint",        /// The remote party is not running an endpoint
+    "EndedByOffline",           /// The remote party is off line
+  };
+  return out << names[reason];
+}
 #endif
 
 
@@ -109,7 +126,7 @@ OpalConnection::OpalConnection(OpalCall & call,
   PTRACE(3, "OpalCon\tCreated connection " << *this);
 
   callAnswered = FALSE;
-  callEndReason = NumCallEndReasons;
+  callEndReason = OpalNumCallEndReasons;
   answerResponse = AnswerCallDeferred;
   bandwidthAvailable = endpoint.GetInitialBandwidth();
 
@@ -149,15 +166,15 @@ BOOL OpalConnection::Lock()
 }
 
 
-void OpalConnection::SetCallEndReason(CallEndReason reason)
+void OpalConnection::SetCallEndReason(OpalCallEndReason reason)
 {
   // Only set reason if not already set to something
-  if (callEndReason == NumCallEndReasons)
+  if (callEndReason == OpalNumCallEndReasons)
     callEndReason = reason;
 }
 
 
-void OpalConnection::ClearCall(CallEndReason reason)
+void OpalConnection::ClearCall(OpalCallEndReason reason)
 {
   // Now set reason for the connection close
   SetCallEndReason(reason);
@@ -165,7 +182,7 @@ void OpalConnection::ClearCall(CallEndReason reason)
 }
 
 
-void OpalConnection::ClearCallSynchronous(PSyncPoint * sync, CallEndReason reason)
+void OpalConnection::ClearCallSynchronous(PSyncPoint * sync, OpalCallEndReason reason)
 {
   // Now set reason for the connection close
   SetCallEndReason(reason);
@@ -173,7 +190,7 @@ void OpalConnection::ClearCallSynchronous(PSyncPoint * sync, CallEndReason reaso
 }
 
 
-void OpalConnection::Release(CallEndReason reason)
+void OpalConnection::Release(OpalCallEndReason reason)
 {
   // Now set reason for the connection close
   SetCallEndReason(reason);
