@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2008  2001/12/07 08:55:32  robertj
+ * Revision 1.2009  2002/01/14 00:19:33  craigs
+ * Fixed problems with remote address used instead of local address
+ *
+ * Revision 2.7  2001/12/07 08:55:32  robertj
  * Used UDP port base when creating UDP transport.
  *
  * Revision 2.6  2001/11/14 06:28:20  robertj
@@ -1245,13 +1248,13 @@ BOOL OpalTransportUDP::Connect()
 
 void OpalTransportUDP::EndConnect(const OpalTransportAddress & theLocalAddress)
 {
-  PAssert(theLocalAddress.GetIpAndPort(remoteAddress, remotePort), PInvalidParameter);
+  PAssert(theLocalAddress.GetIpAndPort(localAddress, localPort), PInvalidParameter);
 
   for (PINDEX i = 0; i < connectSockets.GetSize(); i++) {
     PUDPSocket * socket = (PUDPSocket *)connectSockets.GetAt(i);
     PIPSocket::Address addr;
     WORD port;
-    if (socket->GetLocalAddress(addr, port) && addr == remoteAddress && port == remotePort) {
+    if (socket->GetLocalAddress(addr, port) && addr == localAddress && port == localPort) {
       connectSockets.DisallowDeleteObjects();
       connectSockets.RemoveAt(i);
       connectSockets.AllowDeleteObjects();
@@ -1321,9 +1324,9 @@ BOOL OpalTransportUDP::Read(void * buffer, PINDEX length)
 
     socket->GetLastReceiveAddress(address, port);
     if (promiscuousReads) {
-      remoteAddress = address;
-      remotePort = port;
-      socket->SetSendAddress(remoteAddress, remotePort);
+      //remoteAddress = address;
+      //remotePort = port;
+      //socket->SetSendAddress(remoteAddress, remotePort);
       return TRUE;
     }
 
