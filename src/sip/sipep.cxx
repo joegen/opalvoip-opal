@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2010  2003/03/06 03:57:47  robertj
+ * Revision 1.2011  2003/03/24 04:32:58  robertj
+ * SIP register must have a server address
+ *
+ * Revision 2.9  2003/03/06 03:57:47  robertj
  * IVR support (work in progress) requiring large changes everywhere.
  *
  * Revision 2.8  2002/10/09 04:27:44  robertj
@@ -284,6 +287,9 @@ static BOOL WriteREGISTER(OpalTransport & transport, PObject * param)
 BOOL SIPEndPoint::Register(const PString & server)
 {
   if (listeners.IsEmpty())
+    return FALSE;
+
+  if (server.IsEmpty())
     return FALSE;
 
   OpalTransportAddress address(server, defaultSignalPort, "udp");
