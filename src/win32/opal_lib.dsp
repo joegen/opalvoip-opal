@@ -271,6 +271,10 @@ SOURCE=..\lids\lidep.cxx
 # End Source File
 # Begin Source File
 
+SOURCE=..\lids\vblasterlid.cxx
+# End Source File
+# Begin Source File
+
 SOURCE=..\lids\vpblid.cxx
 # PROP Exclude_From_Build 1
 # End Source File
@@ -478,6 +482,10 @@ SOURCE=..\..\include\lids\lid.h
 # Begin Source File
 
 SOURCE=..\..\include\lids\lidep.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\lids\vblasterlid.h
 # End Source File
 # Begin Source File
 
