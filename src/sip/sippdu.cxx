@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2011  2002/04/12 12:22:45  robertj
+ * Revision 1.2012  2002/04/15 08:54:46  robertj
+ * Fixed setting correct local UDP port on cancelling INVITE.
+ *
+ * Revision 2.10  2002/04/12 12:22:45  robertj
  * Allowed for endpoint listener that is not on port 5060.
  *
  * Revision 2.9  2002/04/10 08:12:52  robertj
@@ -985,7 +988,7 @@ BOOL SIPTransaction::ResendCANCEL()
                  mime.GetCSeqIndex(),
                  localAddress);
 
-  if (!cancel.Write(transport)) {
+  if (!transport.SetLocalAddress(localAddress) || !cancel.Write(transport)) {
     SetTerminated(Terminated_TransportError);
     return FALSE;
   }
