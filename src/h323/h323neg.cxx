@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323neg.cxx,v $
- * Revision 1.2004  2001/10/05 00:22:14  robertj
+ * Revision 1.2005  2001/10/15 04:35:09  robertj
+ * Added delayed start of media patch threads.
+ *
+ * Revision 2.3  2001/10/05 00:22:14  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.2  2001/08/17 08:30:00  robertj
@@ -695,7 +698,7 @@ BOOL H245NegLogicalChannel::OpenWhileLocked(const H323Capability & capability, u
   PTRACE(3, "H245\tOpening channel: " << channelNumber);
 
   if (channel != NULL) {
-    channel->CleanUpOnTermination();
+    channel->Close();
     delete channel;
     channel = NULL;
   }
@@ -776,7 +779,7 @@ BOOL H245NegLogicalChannel::HandleOpen(const H245_OpenLogicalChannel & pdu)
   PTRACE(3, "H245\tReceived open channel: " << channelNumber << ", state=" << state);
 
   if (channel != NULL) {
-    channel->CleanUpOnTermination();
+    channel->Close();
     delete channel;
     channel = NULL;
   }
@@ -1070,7 +1073,7 @@ void H245NegLogicalChannel::Release()
   replyTimer.Stop();
 
   if (channel != NULL) {
-    channel->CleanUpOnTermination();
+    channel->Close();
     delete channel;
     channel = NULL;
   }
@@ -1351,7 +1354,7 @@ void H245NegLogicalChannels::RemoveAll()
     neg.mutex.Wait();
     H323Channel * channel = neg.GetChannel();
     if (channel != NULL)
-      channel->CleanUpOnTermination();
+      channel->Close();
     neg.mutex.Signal();
   }
 
