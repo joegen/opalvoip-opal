@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2014  2004/03/13 06:32:17  rjongbloed
+ * Revision 1.2015  2004/03/14 08:34:09  csoutheren
+ * Added ability to set User-Agent string
+ *
+ * Revision 2.13  2004/03/13 06:32:17  rjongbloed
  * Fixes for removal of SIP and H.323 subsystems.
  * More registration work.
  *
@@ -261,7 +264,7 @@ class SIPMIMEInfo : public PMIMEInfo
     void SetUnsupported(const PString & v);
 
     PString GetUserAgent() const;
-    void SetUserAgent();        // "OPAL/2.0"
+    void SetUserAgent(const SIPEndPoint & sipep);        // normally "OPAL/2.0"
 
     PString GetWWWAuthenticate() const;
     void SetWWWAuthenticate(const PString & v);

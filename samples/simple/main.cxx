@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2036  2004/03/14 06:15:36  rjongbloed
+ * Revision 1.2037  2004/03/14 08:34:09  csoutheren
+ * Added ability to set User-Agent string
+ *
+ * Revision 2.35  2004/03/14 06:15:36  rjongbloed
  * Must set ports before stun as stun code uses those port numbers.
  *
  * Revision 2.34  2004/03/13 06:32:17  rjongbloed
@@ -272,6 +275,7 @@ void SimpleOpalProcess::Main()
              "-sound-in:"
              "-sound-out:"
              "-sip-listen:"
+             "-sip-useragent:"
              "-stun:"
              "T-h245tunneldisable."
              "-translate:"
@@ -718,6 +722,9 @@ BOOL MyManager::Initialise(PArgList & args)
 
   if (!args.HasOption("no-sip")) {
     sipEP = new SIPEndPoint(*this);
+
+    if (args.HasOption("sip-useragent"))
+      sipEP->SetUserAgent(args.GetOptionString("sip-useragent"));
 
     // set MIME format
     sipEP->SetMIMEForm(args.HasOption("use-long-mime"));

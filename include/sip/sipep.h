@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2009  2004/03/13 06:51:31  rjongbloed
+ * Revision 1.2010  2004/03/14 08:34:09  csoutheren
+ * Added ability to set User-Agent string
+ *
+ * Revision 2.8  2004/03/13 06:51:31  rjongbloed
  * Alllowed for empty "username" in registration
  *
  * Revision 2.7  2004/03/13 06:32:17  rjongbloed
@@ -228,9 +231,13 @@ class SIPEndPoint : public OpalEndPoint
 
     const PString & GetRegistrationID() const { return registrationID; }
 
+    virtual PString GetUserAgent() const;
+    void SetUserAgent(const PString & str) { userAgentString = str; }
+
   protected:
     PString  proxyPassword;
     PString  registrationID;
+    PString  userAgentString;
 
     BOOL          mimeForm;
     unsigned      maxRetries;
