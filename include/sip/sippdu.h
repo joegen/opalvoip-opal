@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2003  2002/03/08 06:28:19  craigs
+ * Revision 1.2004  2002/04/05 10:42:04  robertj
+ * Major changes to support transactions (UDP timeouts and retries).
+ *
+ * Revision 2.2  2002/03/08 06:28:19  craigs
  * Changed to allow Authorisation to be included in other PDUs
  *
  * Revision 2.1  2002/02/01 04:53:01  robertj
@@ -51,6 +54,7 @@ class OpalTransportAddress;
 
 class SIPEndPoint;
 class SIPConnection;
+class SIP_PDU;
 
 
 /////////////////////////////////////////////////////////////////////////
@@ -120,6 +124,7 @@ class SIPMIMEInfo : public PMIMEInfo
 
     PString GetContact() const         { return GetSIPString("Contact",          "m"); }
     void SetContact(const PString & v);
+    void SetContact(const PURL & url, const char * name = NULL);
 
     PString GetSubject() const         { return GetSIPString("Subject",          "s"); }
     void SetSubject(const PString & v);
@@ -136,11 +141,59 @@ class SIPMIMEInfo : public PMIMEInfo
     PString GetCSeq() const            { return (*this)("CSeq"); }
     void SetCSeq(const PString & v);
 
-    PINDEX GetCSeqIndex() const;
+    unsigned GetCSeqIndex() const      { return GetCSeq().AsUnsigned(); }
 
   protected:
     BOOL compactForm;
 };
+
+
+/////////////////////////////////////////////////////////////////////////
+
+class SIPAuthentication : public PObject
+{
+    PCLASSINFO(SIPAuthentication, PObject);
+  public:
+    SIPAuthentication(
+      const PString & username,
+      const PString & password
+    );
+
+    BOOL Parse(
+      const PString & auth,
+      BOOL proxy
+    );
+
+    BOOL IsValid() const;
+
+    BOOL Authorise(
+      SIP_PDU & pdu
+    ) const;
+
+    enum Algorithm {
+      Algorithm_MD5,
+      NumAlgorithms
+    };
+
+    BOOL IsProxy() const                { return isProxy; }
+    const PString & GetRealm() const    { return realm; }
+    const PString & GetUsername() const { return username; }
+    const PString & GetPassword() const { return password; }
+    const PString & GetNonce() const    { return nonce; }
+    Algorithm GetAlgorithm() const      { return algorithm; }
+
+    void SetUsername(const PString & user) { username = user; }
+    void SetPassword(const PString & pass) { password = pass; }
+
+  protected:
+    BOOL      isProxy;
+    PString   realm;
+    PString   username;
+    PString   password;
+    PString   nonce;
+    Algorithm algorithm;
+};
+
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -148,7 +201,19 @@ class SIP_PDU : public PObject
 {
   PCLASSINFO(SIP_PDU, PObject);
   public:
+    enum Methods {
+      Method_INVITE,
+      Method_ACK,
+      Method_OPTIONS,
+      Method_BYE,
+      Method_CANCEL,
+      Method_REGISTER,
+      NumMethods
+    };
+
     enum StatusCodes {
+      IllegalStatusCode,
+
       Information_Trying                       = 100,
       Information_Ringing                      = 180,
       Information_CallForwarded                = 181,
@@ -159,51 +224,101 @@ class SIP_PDU : public PObject
 
       Redirection_MovedTemporarily             = 302,
 
-      Failure_BadRequest                       = 400,
-      Failure_UnAuthorised                     = 401,
-      Failure_PaymentRequired                  = 402,
-      Failure_Forbidden                        = 403,
-      Failure_NotFound                         = 404,
-      Failure_MethodNotAllowed                 = 405,
-      Failure_NotAcceptable                    = 406,
-      Failure_ProxyAuthenticationRequired      = 407,
-      Failure_RequestTimeout                   = 408,
-      Failure_Conflict                         = 409,
-      Failure_Gone                             = 410,
-      Failure_LengthRequired                   = 411,
-      Failure_RequestEntityTooLarge            = 412,
-      Failure_RequestURITooLong                = 413,
-      Failure_UnsupportedMediaType             = 414,
-      Failure_BadExtension                     = 420,
-      Failure_TemporarilyUnavailable           = 480,
-      Failure_CallLegOrTransactionDoesNotExist = 481,
-      Failure_LoopDetected                     = 482,
-      Failure_TooManyHops                      = 483,
-      Failure_AddressIncomplete                = 484,
-      Failure_Ambiguous                        = 485,
-      Failure_BusyHere                         = 486
+      Failure_BadRequest                  = 400,
+      Failure_UnAuthorised                = 401,
+      Failure_PaymentRequired             = 402,
+      Failure_Forbidden                   = 403,
+      Failure_NotFound                    = 404,
+      Failure_MethodNotAllowed            = 405,
+      Failure_NotAcceptable               = 406,
+      Failure_ProxyAuthenticationRequired = 407,
+      Failure_RequestTimeout              = 408,
+      Failure_Conflict                    = 409,
+      Failure_Gone                        = 410,
+      Failure_LengthRequired              = 411,
+      Failure_RequestEntityTooLarge       = 412,
+      Failure_RequestURITooLong           = 413,
+      Failure_UnsupportedMediaType        = 414,
+      Failure_BadExtension                = 420,
+      Failure_TemporarilyUnavailable      = 480,
+      Failure_TransactionDoesNotExist     = 481,
+      Failure_LoopDetected                = 482,
+      Failure_TooManyHops                 = 483,
+      Failure_AddressIncomplete           = 484,
+      Failure_Ambiguous                   = 485,
+      Failure_BusyHere                    = 486,
+      Failure_RequestTerminated           = 487,
+
+      Failure_BadGateway                  = 502,
+
+      Failure_Decline                     = 603,
+
+      MaxStatusCode                       = 699
     };
 
+    enum {
+      MaxSize = 65535
+    };
+
+    SIP_PDU();
     SIP_PDU(
-      OpalTransport & transport,
-      SIPConnection * connection = NULL
+      Methods method,
+      const PString & to,
+      const PString & from,
+      const PString & callID,
+      unsigned cseq,
+      const OpalTransport & via
+    );
+    SIP_PDU(
+      Methods method,
+      SIPConnection & connection,
+      const OpalTransport & transport
     );
     SIP_PDU(
       const SIP_PDU & request,
       StatusCodes code,
       const char * extra = NULL
     );
+    SIP_PDU(const SIP_PDU &);
+    SIP_PDU & operator=(const SIP_PDU &);
     ~SIP_PDU();
+
+    void PrintOn(
+      ostream & strm
+    ) const;
+
+    void Construct(
+      Methods method
+    );
+    void Construct(
+      Methods method,
+      const PString & to,
+      const PString & from,
+      const PString & callID,
+      unsigned cseq,
+      const OpalTransport & via
+    );
+    void Construct(
+      Methods method,
+      SIPConnection & connection,
+      const OpalTransport & transport
+    );
 
     /**Read PDU from the specified transport.
       */
-    BOOL Read();
+    BOOL Read(
+      OpalTransport & transport
+    );
 
     /**Write the PDU to the transport.
       */
-    BOOL Write();
+    BOOL Write(
+      OpalTransport & transport
+    );
 
-    const PString & GetMethod() const        { return method; }
+    PString GetTransactionID() const;
+
+    Methods GetMethod() const                { return method; }
     StatusCodes GetStatusCode () const       { return statusCode; }
     const SIPURL & GetURI() const            { return uri; }
     unsigned GetVersionMajor() const         { return versionMajor; }
@@ -214,29 +329,11 @@ class SIP_PDU : public PObject
           SIPMIMEInfo & GetMIME()            { return mime; }
     BOOL HasSDP() const                      { return sdp != NULL; }
     SDPSessionDescription & GetSDP() const   { return *PAssertNULL(sdp); }
+    void SetSDP(SDPSessionDescription * s)   { sdp = s; }
     void SetSDP(const SDPSessionDescription & s) { sdp = new SDPSessionDescription(s); }
-    OpalTransport & GetTransport() const     { return transport; }
-    SIPConnection * GetConnection() const    { return connection; }
-    void SetConnection(SIPConnection * conn) { connection = conn; }
-
-    void BuildVia();
-    void BuildCommon();
-    void BuildINVITE();
-    void BuildBYE();
-    void BuildACK();
-    void BuildREGISTER(
-      const SIPEndPoint & endpoint,
-      const SIPURL & name,
-      const SIPURL & contact
-    );
-
-    void SendResponse(
-      StatusCodes code,
-      const char * extra = NULL
-    );
 
   protected:
-    PString     method;
+    Methods     method;
     StatusCodes statusCode;
     SIPURL      uri;
     unsigned    versionMajor;
@@ -246,15 +343,86 @@ class SIP_PDU : public PObject
     PString     entityBody;
 
     SDPSessionDescription * sdp;
-
-    OpalTransport & transport;
-    SIPConnection * connection;
 };
 
-typedef void (SIPConnection::* SIPMethodFunction)(SIP_PDU & pdu);
+
+PQUEUE(SIP_PDU_Queue, SIP_PDU);
 
 
-#define MAX_SIP_UDP_PDU_SIZE (8*1024)
+/////////////////////////////////////////////////////////////////////////
+
+class SIPTransaction : public SIP_PDU
+{
+    PCLASSINFO(SIPTransaction, SIP_PDU);
+  public:
+    SIPTransaction(
+      SIPEndPoint   & endpoint,
+      OpalTransport & transport
+    );
+    SIPTransaction(
+      SIPConnection & connection,
+      OpalTransport & transport,
+      Methods method = NumMethods
+    );
+    ~SIPTransaction();
+
+    void BuildREGISTER(
+      const SIPURL & name,
+      const SIPURL & contact
+    );
+
+    BOOL Start();
+    BOOL IsInProgress() const { return state < Completed; }
+    BOOL IsFailed() const { return state > Terminated_Success; }
+    BOOL IsFinished()     { return finished.Wait(0); }
+    void Wait();
+    void SendCANCEL();
+
+    virtual void OnReceivedResponse(SIP_PDU & response);
+
+    OpalTransport & GetTransport() const  { return transport; }
+    SIPConnection * GetConnection() const { return connection; }
+
+    const OpalTransportAddress & GetLocalAddress() const { return localAddress; }
+
+  protected:
+    void Construct();
+
+    PDECLARE_NOTIFIER(PTimer, SIPTransaction, OnRetry);
+    PDECLARE_NOTIFIER(PTimer, SIPTransaction, OnTimeout);
+
+    enum States {
+      NotStarted,
+      Trying,
+      Proceeding,
+      Cancelling,
+      Completed,
+      Terminated_Success,
+      Terminated_Timeout,
+      Terminated_RetriesExceeded,
+      Terminated_TransportError,
+      Terminated_Cancelled
+    };
+    void SetTerminated(States newState);
+
+    SIPEndPoint   & endpoint;
+    OpalTransport & transport;
+    SIPConnection * connection;
+
+    States   state;
+    unsigned retry;
+    PTimer   retryTimer;
+    PTimer   completionTimer;
+
+    PSyncPoint finished;
+    PMutex     mutex;
+
+    OpalTransportAddress localAddress;
+};
+
+
+PLIST(SIPTransactionList, SIPTransaction);
+PDICTIONARY(SIPTransactionDict, PString, SIPTransaction);
 
 
 #endif // __OPAL_SIPPDU_H

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2009  2002/03/18 08:13:42  robertj
+ * Revision 1.2010  2002/04/05 10:42:04  robertj
+ * Major changes to support transactions (UDP timeouts and retries).
+ *
+ * Revision 2.8  2002/03/18 08:13:42  robertj
  * Added more logging.
  * Removed proxyusername/proxypassword parameters from URL passed on.
  * Fixed GNU warning.
@@ -54,7 +57,6 @@
  */
 
 #include <ptlib.h>
-#include <ptclib/cypher.h>
 
 #ifdef __GNUC__
 #pragma implementation "sipcon.h"
@@ -69,30 +71,7 @@
 #include <opal/patch.h>
 
 
-static struct {
-  const char        * method;
-  SIPMethodFunction function;
-  BOOL              cseqSameAsInvite;
-} sipMethods[] = {
-  { "INVITE",     &SIPConnection::OnReceivedINVITE,   TRUE  },
-  { "ACK",        &SIPConnection::OnReceivedACK,      TRUE  },
-  { "CANCEL",     &SIPConnection::OnReceivedCANCEL,   TRUE  },
-  { "BYE",        &SIPConnection::OnReceivedBYE,      FALSE },
-  { "OPTIONS",    &SIPConnection::OnReceivedOPTIONS,  FALSE },
-  { "REGISTER",   &SIPConnection::OnReceivedREGISTER, FALSE }
-};
-
-static struct {
-  SIP_PDU::StatusCodes code;
-  SIPMethodFunction    function;
-} sipResponses[] = {
-  { SIP_PDU::Information_Trying,                  &SIPConnection::OnReceivedTrying },
-  { SIP_PDU::Information_Session_Progress,        &SIPConnection::OnReceivedSessionProgress },
-  { SIP_PDU::Failure_UnAuthorised,                &SIPConnection::OnReceivedAuthenticationRequired },
-  { SIP_PDU::Failure_ProxyAuthenticationRequired, &SIPConnection::OnReceivedAuthenticationRequired },
-  { SIP_PDU::Redirection_MovedTemporarily,        &SIPConnection::OnReceivedRedirection },
-  { SIP_PDU::Successful_OK,                       &SIPConnection::OnReceivedOK }
-};
+typedef void (SIPConnection::* SIPMethodFunction)(SIP_PDU & pdu);
 
 
 #define new PNEW
@@ -103,10 +82,12 @@ static struct {
 SIPConnection::SIPConnection(OpalCall & call,
                              SIPEndPoint & ep,
                              const PString & token,
-                             SIP_PDU * invite)
+                             OpalTransport * inviteTransport)
   : OpalConnection(call, ep, token),
     endpoint(ep),
-    password(endpoint.GetRegistrationPassword())
+    authentication(endpoint.GetRegistrationName(),
+                   endpoint.GetRegistrationPassword()),
+    pduSemaphore(0, P_MAX_INDEX)
 {
   sendUserInputMode = SendUserInputAsInlineRFC2833;
 
@@ -114,37 +95,21 @@ SIPConnection::SIPConnection(OpalCall & call,
 
   localPartyName = endpoint.GetRegistrationName();
 
-  if (invite != NULL) {
-    transport = invite->GetTransport().GetLocalAddress().CreateTransport(
-                                  endpoint, OpalTransportAddress::HostOnly);
-    PString contact = invite->GetMIME().GetContact();
-    if (contact.IsEmpty())
-      transport->SetRemoteAddress(invite->GetTransport().GetRemoteAddress());
-    else {
-      SIPURL remote = contact;
-      transport->SetRemoteAddress(remote.GetHostAddress());
-    }
-    transport->SetBufferSize(MAX_SIP_UDP_PDU_SIZE);
-
-    originalInvite = new SIP_PDU(*transport, this);
-    originalInvite->GetMIME() = invite->GetMIME();
-    if (invite->HasSDP())
-      originalInvite->SetSDP(invite->GetSDP());
-
-    inviteCSeq         = invite->GetMIME().GetCSeqIndex();
-    remotePartyAddress = invite->GetMIME().GetFrom();
-    localPartyAddress = invite->GetMIME().GetTo();
-  }
-  else {
-    originalInvite = NULL;
+  if (inviteTransport == NULL)
     transport = NULL;
-    //expectedCseq = 0;
+  else {
+    transport = inviteTransport->GetLocalAddress().CreateTransport(
+                                         endpoint, OpalTransportAddress::HostOnly);
+    transport->SetRemoteAddress(inviteTransport->GetRemoteAddress());
+    transport->SetBufferSize(SIP_PDU::MaxSize); // Maximum possible PDU size
   }
 
-  lastSentCseq = 1;               // initial CSeq for outgoing PDUs
-  haveLastReceivedCseq = FALSE;   // not yet received CSeq for incoming PDUs
+  originalInvite = NULL;
+  pduHandler = NULL;
+  lastSentCSeq = 0;
+  releaseMethod = ReleaseWithNothing;
 
-  sendBYE = TRUE;
+  transactions.DisallowDeleteObjects();
 
   PTRACE(3, "SIP\tCreated connection.");
 }
@@ -169,27 +134,53 @@ BOOL SIPConnection::OnReleased()
 {
   PTRACE(3, "SIP\tOnReleased");
 
+  switch (releaseMethod) {
+    case ReleaseWithNothing :
+      break;
+
+    case ReleaseWithResponse :
+      switch (callEndReason) {
+        case EndedByAnswerDenied :
+          SendResponse(SIP_PDU::Failure_Decline);
+          break;
+        case EndedByLocalBusy :
+          SendResponse(SIP_PDU::Failure_BusyHere);
+          break;
+        case EndedByCallerAbort :
+          SendResponse(SIP_PDU::Failure_RequestTerminated);
+          break;
+        default :
+          SendResponse(SIP_PDU::Failure_BadGateway);
+      }
+      break;
+
+    case ReleaseWithBYE :
+      {
+        SIPTransaction bye(*this, *transport, SIP_PDU::Method_BYE);
+        bye.Wait();
+      }
+      break;
+
+    case ReleaseWithCANCEL :
+      for (PINDEX i = 0; i < invitations.GetSize(); i++) {
+        if (invitations[i].IsInProgress()) {
+          invitations[i].SendCANCEL();
+          invitations[i].Wait();
+        }
+      }
+  }
+
   LockOnRelease();
 
   // send the appropriate form 
   PTRACE(2, "SIP\tReceived OnReleased in phase " << currentPhase);
-  switch (currentPhase) {
-    case SetUpPhase:
-      SendResponse(SIP_PDU::Failure_NotFound);
-      break;
 
-    case AlertingPhase:
-      SendResponse(SIP_PDU::Failure_BusyHere);
-      break;
+  invitations.RemoveAll();
 
-    default:
-      if (sendBYE) {
-        SIP_PDU bye(*transport, this);
-        bye.BuildBYE();
-        AddAuthorisation(bye);
-        bye.Write();
-      }
-      break;
+  if (pduHandler != NULL) {
+    pduSemaphore.Signal();
+    pduHandler->WaitForTermination();
+    delete pduHandler;
   }
 
   if (transport != NULL)
@@ -226,11 +217,15 @@ BOOL SIPConnection::SetConnected()
   // for now, just hard code it
   unsigned rtpSessionId = OpalMediaFormat::DefaultAudioSessionID;
 
-  // look for audio sessions only, at this stage
-  SDPMediaDescription::MediaType rtpMediaType = SDPMediaDescription::Audio;
+  SDPSessionDescription sdpOut(GetLocalAddress());
 
   // get the remote media formats
   SDPSessionDescription & sdpIn = originalInvite->GetSDP();
+
+
+  // look for audio sessions only, at this stage
+  SDPMediaDescription::MediaType rtpMediaType = SDPMediaDescription::Audio;
+
 
   // if no matching media type, return FALSE
   SDPMediaDescription * incomingMedia = sdpIn.GetMediaDescription(rtpMediaType);
@@ -281,11 +276,9 @@ BOOL SIPConnection::SetConnected()
     return FALSE;
   }
 
-  SDPSessionDescription sdpOut(GetLocalAddress());
-
   // construct a new media session list with the selected format
-  SDPMediaDescription * localMedia =
-            new SDPMediaDescription(sdpOut.GetDefaultConnectAddress(), rtpMediaType);
+  SDPMediaDescription * localMedia = new SDPMediaDescription(
+                            GetLocalAddress(rtpSession->GetLocalDataPort()), rtpMediaType);
   
   for (i = 0; i < mediaStreams.GetSize(); i++) {
     OpalMediaStream & mediaStream = mediaStreams[i];
@@ -309,7 +302,7 @@ BOOL SIPConnection::SetConnected()
   // send the response
   SIP_PDU response(*originalInvite, SIP_PDU::Successful_OK);
   response.SetSDP(sdpOut);
-  response.Write();
+  response.Write(*transport);
   currentPhase = ConnectedPhase;
   
   return TRUE;
@@ -422,6 +415,19 @@ BOOL SIPConnection::SendConnectionAlert(const PString & calleeName)
 }
 
 
+BOOL SIPConnection::WriteINVITE(OpalTransport & transport, PObject * param)
+{
+  SIPConnection & connection = *(SIPConnection *)param;
+
+  connection.SetLocalPartyAddress();
+
+  SIPTransaction * invite = new SIPTransaction(connection, transport, SIP_PDU::Method_INVITE);
+  connection.invitations.Append(invite);
+
+  return invite->Start();
+}
+
+
 void SIPConnection::InitiateCall(const SIPURL & destination)
 {
   PTRACE(2, "SIP\tInitiating connection to " << destination);
@@ -431,8 +437,9 @@ void SIPConnection::InitiateCall(const SIPURL & destination)
   PStringToString params = originalDestination.GetParamVars();
   if (params.Contains("proxyusername") && params.Contains("proxypassword")) {
     localPartyName = params["proxyusername"];
+    authentication.SetUsername(localPartyName);
     originalDestination.SetParamVar("proxyusername", PString::Empty());
-    password = params["proxypassword"];
+    authentication.SetPassword(params["proxypassword"]);
     originalDestination.SetParamVar("proxypassword", PString::Empty());
     PTRACE(3, "SIP\tExtracted proxy authentication user=\"" << localPartyName << '"');
   }
@@ -440,57 +447,18 @@ void SIPConnection::InitiateCall(const SIPURL & destination)
   remotePartyAddress = '<' + originalDestination.AsString() + '>';
 
   OpalTransportAddress address = originalDestination.GetHostAddress();
+
+  delete transport;
   transport = address.CreateTransport(endpoint, OpalTransportAddress::NoBinding);
   if (transport == NULL)
     return;
 
-  transport->SetBufferSize(MAX_SIP_UDP_PDU_SIZE);
+  transport->SetBufferSize(SIP_PDU::MaxSize);
   transport->ConnectTo(address);
-
-  transport->AttachThread(PThread::Create(PCREATE_NOTIFIER(InitiateCallThreadMain), 0,
-                                          PThread::NoAutoDeleteThread,
-                                          PThread::NormalPriority,
-                                          "SIP Call:%x"));
-}
-
-
-static BOOL WriteINVITE(OpalTransport & transport, PObject * param)
-{
-  SIPConnection & connection = *(SIPConnection *)param;
-
-  connection.SetLocalPartyAddress();
-
-  SIP_PDU request(transport, &connection);
-  request.BuildINVITE();
-
-  return request.Write();
-}
-
-
-void SIPConnection::InitiateCallThreadMain(PThread &, INT)
-{
-  PTRACE(3, "SIP\tStarted Initiate Call thread.");
 
   transport->WriteConnect(WriteINVITE, this);
 
-  SIP_PDU response(*transport);
-  transport->SetReadTimeout(15000);
-  if (response.Read()) {
-    transport->SetReadTimeout(PMaxTimeInterval);
-    transport->EndConnect(transport->GetLocalAddress());
-  
-    PTRACE(2, "SIP\tSelecting reply from " << *transport);
-    SetLocalPartyAddress();
-
-    endpoint.OnReceivedPDU(response);
-
-    while (transport->IsOpen())
-      endpoint.HandlePDU(*transport);
-  }
-  else
-    Release(EndedByConnectFail);
-
-  PTRACE(3, "SIP\tStarted Initiate Call thread.");
+  releaseMethod = ReleaseWithCANCEL;
 }
 
 
@@ -563,94 +531,84 @@ void SIPConnection::SetLocalPartyAddress()
 }
 
 
-void SIPConnection::HandlePDUsThreadMain(PThread &, INT)
+void SIPConnection::OnTransactionFailed(SIPTransaction & transaction)
 {
-  PTRACE(2, "SIP\tAnswer thread started.");
+  if (transaction.GetMethod() != SIP_PDU::Method_INVITE)
+    return;
 
-  while (transport->IsOpen())
-    endpoint.HandlePDU(*transport);
+  for (PINDEX i = 0; i < invitations.GetSize(); i++) {
+    if (!invitations[i].IsFailed())
+      return;
+  }
 
-  PTRACE(2, "SIP\tAnswer thread finished.");
+  // All invitations failed, die now
+  Release(EndedByConnectFail);
 }
 
 
-BOOL SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
+void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
 {
-  PINDEX i;
-  SIPMIMEInfo & mime = pdu.GetMIME();
-  PString callId     = mime.GetCallID();
+  SIPTransaction * transaction = transactions.GetAt(pdu.GetTransactionID());
+  PTRACE(4, "SIP\tHandling PDU " << pdu << " (" <<
+            (transaction != NULL ? "with" : "no") << " transaction)");
 
-  PString method = pdu.GetMethod();
-
-  // if no method, must be response
-  if (method.IsEmpty()) {
-    PTRACE(4, "SIP\tChecking request CSeq " << mime.GetCSeqIndex() << " against expected CSeq " << lastSentCseq);
-    if (mime.GetCSeqIndex() != (PINDEX)lastSentCseq)
-      PTRACE(3, "SIP\tIgnoring response " << pdu.GetStatusCode() << " for callId " << mime.GetCallID() << " with CSeq " << mime.GetCSeq());
-    else {
-      remotePartyAddress = pdu.GetMIME().GetTo();
-      for (i = 0; i < PARRAYSIZE(sipResponses); i++) {
-        if (pdu.GetStatusCode() == sipResponses[i].code) {
-          (this->*sipResponses[i].function)(pdu);
-          return TRUE;
-        }
-      }
-      OnReceivedResponse(pdu);
-    }
-    return TRUE;
+  switch (pdu.GetMethod()) {
+    case SIP_PDU::Method_INVITE :
+      OnReceivedINVITE(pdu);
+      break;
+    case SIP_PDU::Method_ACK :
+      OnReceivedACK(pdu);
+      break;
+    case SIP_PDU::Method_CANCEL :
+      OnReceivedCANCEL(pdu);
+      break;
+    case SIP_PDU::Method_BYE :
+      OnReceivedBYE(pdu);
+      break;
+    case SIP_PDU::Method_OPTIONS :
+      OnReceivedOPTIONS(pdu);
+      break;
+    case SIP_PDU::Method_REGISTER :
+      // Shouldn't have got this!
+      break;
+    case SIP_PDU::NumMethods :  // if no method, must be response
+      if (transaction != NULL)
+        transaction->OnReceivedResponse(pdu);
+      break;
   }
-
-  // ignore duplicate INVITES
-  if (method *= "INVITE") {
-    PTRACE(4, "SIP\tIgnoring duplicate INVITE");
-    return TRUE;
-  }
-
-  // process other commands
-  for (i = 0; i < PARRAYSIZE(sipMethods); i++) {
-    if (method *= sipMethods[i].method) {
-
-      PINDEX expectedCseq;
-      if (sipMethods[i].cseqSameAsInvite) 
-        expectedCseq = inviteCSeq;
-      else if (haveLastReceivedCseq)
-        expectedCseq = lastReceivedCseq + 1;
-      else {
-        expectedCseq = lastReceivedCseq = mime.GetCSeqIndex();
-        haveLastReceivedCseq = TRUE;
-      }
-
-      // check the CSeq
-      if (mime.GetCSeqIndex() != expectedCseq)
-        PTRACE(3, "SIP\tIgnoring " << method << " for callId " << mime.GetCallID() << " with unexpected CSeq " << mime.GetCSeq());
-      else {
-        PTRACE(3, "SIP\tAccepting " << method << " for callId " << mime.GetCallID() << " with CSeq " << expectedCseq);
-
-        // process the command
-        PTRACE(3, "SIP\tHandling " << method << " for callId " << mime.GetCallID());
-        pdu.SetConnection(this);
-        (this->*sipMethods[i].function)(pdu);
-        lastReceivedCseq++;
-      }
-      return TRUE;
-    }
-  }
-
-  return FALSE;
 }
 
 
 void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 {
-  if (transport->IsRunning()) {
-    PTRACE(2, "SIP\tIgnoring duplicate INVITE from " << request.GetURI() << " for " << request.GetMIME().GetTo());
+  // ignore duplicate INVITES
+  if (originalInvite != NULL) {
+    PTRACE(2, "SIP\tIgnoring duplicate INVITE from " << request.GetURI() << " for " << *this);
     return;
   }
 
-  transport->AttachThread(PThread::Create(PCREATE_NOTIFIER(HandlePDUsThreadMain), 0,
-                                          PThread::NoAutoDeleteThread,
-                                          PThread::NormalPriority,
-                                          "SIP Answer:%x"));
+  originalInvite = new SIP_PDU(request);
+  releaseMethod = ReleaseWithResponse;
+
+  SIPMIMEInfo & mime = originalInvite->GetMIME();
+  remotePartyAddress = mime.GetFrom();
+  localPartyAddress  = mime.GetTo() + ";tag=XXXXX";
+  mime.SetTo(localPartyAddress);
+
+  PString contact = mime.GetContact();
+  if (!contact) {
+    SIPURL remote = contact;
+    transport->SetRemoteAddress(remote.GetHostAddress());
+  }
+
+  // indicate the other is to start ringing
+  if (!OnIncomingConnection()) {
+    PTRACE(2, "SIP\tOnIncomingConnection failed for INVITE from " << request.GetURI() << " for " << *this);
+    Release();
+    return;
+  }
+
+  PTRACE(2, "SIP\tOnIncomingConnection succeeded for INVITE from " << request.GetURI() << " for " << *this);
 }
 
 
@@ -661,6 +619,7 @@ void SIPConnection::OnReceivedACK(SIP_PDU & /*request*/)
   // start all of the media threads for the connection
   StartMediaStreams();
   currentPhase = EstablishedPhase;
+  releaseMethod = ReleaseWithBYE;
 }
 
 
@@ -673,25 +632,30 @@ void SIPConnection::OnReceivedOPTIONS(SIP_PDU & /*request*/)
 void SIPConnection::OnReceivedBYE(SIP_PDU & request)
 {
   PTRACE(2, "SIP\tBYE received for call " << request.GetMIME().GetCallID());
-  request.SendResponse(SIP_PDU::Successful_OK);
+  SIP_PDU response(request, SIP_PDU::Successful_OK);
+  response.Write(*transport);
   Release(EndedByRemoteUser);
-  sendBYE = FALSE;
+  releaseMethod = ReleaseWithNothing;
 }
 
 
 void SIPConnection::OnReceivedCANCEL(SIP_PDU & request)
 {
-  PTRACE(2, "SIP\tCancel received for call " << request.GetMIME().GetCallID());
+  // Currently only handle CANCEL requests for the original INVITE that
+  // created this connection, all else ignored
+  if (originalInvite == NULL ||
+      request.GetMIME().GetTo() != originalInvite->GetMIME().GetTo() ||
+      request.GetMIME().GetFrom() != originalInvite->GetMIME().GetFrom() ||
+      request.GetMIME().GetCSeqIndex() != originalInvite->GetMIME().GetCSeqIndex()) {
+    PTRACE(1, "SIP\tUnattached " << request << " received for " << *this);
+    return;
+  }
 
-  request.SendResponse(SIP_PDU::Successful_OK);
-  Release(EndedByRemoteUser);
-  sendBYE = FALSE;
-}
+  PTRACE(2, "SIP\tCancel received for " << *this);
 
-
-void SIPConnection::OnReceivedREGISTER(SIP_PDU & /*request*/)
-{
-  PTRACE(1, "SIP\tREGISTER not yet supported");
+  SIP_PDU response(request, SIP_PDU::Successful_OK);
+  response.Write(*transport);
+  Release(EndedByCallerAbort);
 }
 
 
@@ -717,44 +681,8 @@ void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
 }
 
 
-static PString GetAuthParam(const PString & auth, const char * name)
-{
-  PString value;
-
-  PINDEX pos = auth.Find(name);
-  if (pos != P_MAX_INDEX)  {
-    pos += strlen(name);
-    while (isspace(auth[pos]))
-      pos++;
-    if (auth[pos] == '=') {
-      pos++;
-      while (isspace(auth[pos]))
-        pos++;
-      if (auth[pos] == '"') {
-        pos++;
-        value = auth(pos, auth.Find('"', pos)-1);
-      }
-      else {
-        PINDEX base = pos;
-        while (auth[pos] != '\0' && !isspace(auth[pos]))
-          pos++;
-        value = auth(base, pos-1);
-      }
-    }
-  }
-
-  return value;
-}
-
 void SIPConnection::OnReceivedRedirection(SIP_PDU & response)
 {
-  // HACK: write an ack with the old CSeq
-  {
-    SIP_PDU ack(*transport, this);
-    ack.BuildACK();
-    ack.Write();
-  }
-
   // extract the contact field, and set that as the new Contact address
   PString newContact = response.GetMIME()("Contact");
   PTRACE(2, "SIP\tCall redirected to " << newContact);
@@ -765,62 +693,20 @@ void SIPConnection::OnReceivedRedirection(SIP_PDU & response)
   remotePartyAddress = newContact;
 
   // send a new INVITE
-  SIP_PDU request(*transport, this);
-  request.BuildINVITE();
-  request.Write();
+  SIPTransaction request(*this, *transport, SIP_PDU::Method_INVITE);
+  request.Start();
 }
 
 
 void SIPConnection::OnReceivedAuthenticationRequired(SIP_PDU & response)
 {
-  // HACK: write an ack with the old CSeq
-  {
-    SIP_PDU ack(*transport, this);
-    ack.BuildACK();
-    ack.Write();
-  }
+  BOOL isProxy = response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
 
-  lastSentCseq++;
+  PTRACE(2, "SIP\tReceived " << (isProxy ? "Proxy " : "") << "Authentication Required response");
 
-  isProxyAuthenticate = response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
-
-  PTRACE(2, "SIP\tReceived " << (isProxyAuthenticate ? "Proxy " : "") << "Authentication Required response");
-
-  PCaselessString auth;
-  if (isProxyAuthenticate)
-    auth = response.GetMIME()("Proxy-Authenticate");
-  else
-    auth = response.GetMIME()("WWW-Authenticate");
-
-  if (!realm.IsEmpty()) {
-    PTRACE(1, "SIP\tINVITE authentication failed");
-    Release(EndedBySecurityDenial);
-    return;
-  }
-
-  if (auth.Find("digest") != 0) {
-    PTRACE(1, "SIP\tUnknown proxy authentication scheme");
-    Release(EndedBySecurityDenial);
-    return;
-  }
-
-  PCaselessString algorithm = GetAuthParam(auth, "algorithm");
-  if (!algorithm && algorithm != "md5") {
-    PTRACE(1, "SIP\tUnknown proxy authentication algorithm");
-    Release(EndedBySecurityDenial);
-    return;
-  }
-
-  realm = GetAuthParam(auth, "realm");
-  if (realm.IsEmpty()) {
-    PTRACE(1, "SIP\tNo realm in proxy authentication");
-    Release(EndedBySecurityDenial);
-    return;
-  }
-
-  nonce = GetAuthParam(auth, "nonce");
-  if (nonce.IsEmpty()) {
-    PTRACE(1, "SIP\tNo nonce in proxy authentication");
+  if (!authentication.Parse(response.GetMIME()(isProxy ? "Proxy-Authenticate"
+                                                       : "WWW-Authenticate"),
+                                               isProxy)) {
     Release(EndedBySecurityDenial);
     return;
   }
@@ -829,85 +715,19 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIP_PDU & response)
   remotePartyAddress = '<' + originalDestination.AsString() + '>';
 
   // build the PDU and add authorisation
-  SIP_PDU request(*transport, this);
-
-  request.BuildINVITE();
-  AddAuthorisation(request);
-  request.Write();
+  SIPTransaction request(*this, *transport, SIP_PDU::Method_INVITE);
+  request.Start();
 }
 
-static PString AsHex(PMessageDigest5::Code & digest)
+
+void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 {
-  PStringStream out;
-  out << hex << setfill('0');
-  for (PINDEX i = 0; i < 16; i++)
-    out << setw(2) << (unsigned)((BYTE *)&digest)[i];
-  return out;
-}
-
-void SIPConnection::AddAuthorisation(SIP_PDU & pdu)
-{ 
-  if (realm.IsEmpty()) {
-    PTRACE(1, "SIP\tNo authentication information available");
+  PINDEX index = invitations.GetObjectsIndex(&transaction);
+  if (index  == P_MAX_INDEX) {
+    PTRACE(3, "SIP\tIgnoring OK response");
     return;
   }
 
-  PTRACE(1, "SIP\tAdding authentication information");
-
-  SIPMIMEInfo & mime = pdu.GetMIME();
-  PString method   = pdu.GetMethod();
-  PString username = GetLocalPartyName();
-  SIPURL uri       = pdu.GetURI();
-
-  PMessageDigest5 digestor;
-  PMessageDigest5::Code a1, a2, response;
-
-  PStringStream uriText; uriText << uri;
-  PINDEX pos = uriText.Find(";");
-  if (pos != P_MAX_INDEX)
-    uriText = uriText.Left(pos);
-
-  digestor.Start();
-  digestor.Process(username);
-  digestor.Process(":");
-  digestor.Process(realm);
-  digestor.Process(":");
-  digestor.Process(password);
-  digestor.Complete(a1);
-
-  digestor.Start();
-  digestor.Process(method);
-  digestor.Process(":");
-  digestor.Process(uriText);
-  digestor.Complete(a2);
-
-  digestor.Start();
-  digestor.Process(AsHex(a1));
-  digestor.Process(":");
-  digestor.Process(nonce);
-  digestor.Process(":");
-  digestor.Process(AsHex(a2));
-  digestor.Complete(response);
-
-  PStringStream auth;
-  auth << "Digest "
-          "username=\"" << username << "\", "
-          "realm=\"" << realm << "\", "
-          "nonce=\"" << nonce << "\", "
-          "uri=\"" << uriText << "\", "
-          "response=\"" << AsHex(response) << "\", "
-          "algorithm=md5";
-
-  if (isProxyAuthenticate)
-    mime.SetAt("Proxy-Authorization", auth);
-
-  else
-    mime.SetAt("Authorization", auth);
-}
-
-
-void SIPConnection::OnReceivedOK(SIP_PDU & response)
-{
   if (currentPhase == EstablishedPhase) {
     PTRACE(2, "SIP\tIgnoring OK response");
     return;
@@ -917,32 +737,57 @@ void SIPConnection::OnReceivedOK(SIP_PDU & response)
 
   OnReceivedSDP(response);
 
-  SIP_PDU ack(*transport, this);
-  ack.BuildACK();
-  ack.Write();
-  lastSentCseq++;
-
   OnConnected();
 
   currentPhase = EstablishedPhase;
   StartMediaStreams();
+  releaseMethod = ReleaseWithBYE;
 }
 
 
-void SIPConnection::OnReceivedResponse(SIP_PDU & response)
+void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
 {
+  if (transaction.GetMethod() == SIP_PDU::Method_INVITE) {
+    // Stop all the other invitations that went out
+    for (PINDEX i = 0; i < invitations.GetSize(); i++) {
+      if (&transaction != &invitations[i])
+        invitations.RemoveAt(i--);
+    }
+    transaction.GetTransport().EndConnect(transaction.GetLocalAddress());
+  }
+
   OnReceivedSDP(response);
 
-  if (response.GetStatusCode()/100 < 3)
-    return;
-
   switch (response.GetStatusCode()) {
+    case SIP_PDU::Information_Session_Progress :
+      OnReceivedSessionProgress(response);
+      break;
+
+    case SIP_PDU::Failure_UnAuthorised :
+    case SIP_PDU::Failure_ProxyAuthenticationRequired :
+      OnReceivedAuthenticationRequired(response);
+      break;
+
+    case SIP_PDU::Redirection_MovedTemporarily :
+      OnReceivedRedirection(response);
+      break;
+
     case SIP_PDU::Failure_BusyHere :
       Release(EndedByRemoteBusy);
       break;
 
     default :
-      Release(EndedByRefusal);
+      switch (response.GetStatusCode()/100) {
+        case 1 :
+          // Do nothing on 1xx
+          break;
+        case 2 :
+          OnReceivedOK(transaction, response);
+          break;
+        default :
+          // All other final responses cause a call end.
+          Release(EndedByRefusal);
+      }
   }
 }
 
@@ -985,10 +830,52 @@ void SIPConnection::OnReceivedSDP(SIP_PDU & pdu)
 }
 
 
+void SIPConnection::QueuePDU(SIP_PDU * pdu)
+{
+  PAssertNULL(pdu);
+
+  PTRACE(4, "SIP\tQueueing PDU: " << *pdu);
+  pduQueue.Enqueue(pdu);
+  pduSemaphore.Signal();
+
+  if (pduHandler == NULL)
+    pduHandler = PThread::Create(PCREATE_NOTIFIER(HandlePDUsThreadMain), 0,
+                                 PThread::NoAutoDeleteThread,
+                                 PThread::NormalPriority,
+                                 "SIP Handler:%x");
+}
+
+
+void SIPConnection::HandlePDUsThreadMain(PThread &, INT)
+{
+  PTRACE(2, "SIP\tPDU handler thread started.");
+
+  for(;;) {
+    PTRACE(4, "SIP\tAwaiting next PDU.");
+    pduSemaphore.Wait();
+
+    if (!Lock())
+      break;
+
+    SIP_PDU * pdu = pduQueue.Dequeue();
+    if (pdu != NULL) {
+      OnReceivedPDU(*pdu);
+      delete pdu;
+    }
+
+    Unlock();
+  }
+
+  PTRACE(2, "SIP\tPDU handler thread finished.");
+}
+
+
 void SIPConnection::SendResponse(SIP_PDU::StatusCodes code, const char * extra)
 {
-  if (originalInvite != NULL)
-    originalInvite->SendResponse(code, extra);
+  if (originalInvite != NULL) {
+    SIP_PDU response(*originalInvite, code, extra);
+    response.Write(*transport);
+  }
 }
 
 

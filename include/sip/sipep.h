@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2002  2002/02/01 04:53:01  robertj
+ * Revision 1.2003  2002/04/05 10:42:04  robertj
+ * Major changes to support transactions (UDP timeouts and retries).
+ *
+ * Revision 2.1  2002/02/01 04:53:01  robertj
  * Added (very primitive!) SIP support.
  *
  */
@@ -121,10 +124,11 @@ class SIPEndPoint : public OpalEndPoint
        The default implementation is to create a OpalSIPConnection.
       */
     virtual SIPConnection * CreateConnection(
-      OpalCall & call,        /// Owner of connection
-      const PString & token,  /// token used to identify connection
-      SIP_PDU * invite,       /// Original INVITE pdu
-      void * userData = NULL
+      OpalCall & call,          /// Owner of connection
+      const PString & token,    /// token used to identify connection
+      void * userData,          /// User data for connection
+      OpalTransport * transport,/// Transport INVITE has been received on
+      SIP_PDU * invite          /// Original INVITE pdu
     );
   //@}
   
@@ -137,31 +141,64 @@ class SIPEndPoint : public OpalEndPoint
     /**Handle an incoming SIP PDU that has been full decoded
       */
     virtual BOOL OnReceivedPDU(
-      SIP_PDU & pdu
+      OpalTransport & transport,
+      SIP_PDU * pdu
     );
 
-    /**Handle an incoming INVITE request
+    /**Handle an incoming INVITE request.
       */
     virtual BOOL OnReceivedINVITE(
-      SIP_PDU & pdu
+      OpalTransport & transport,
+      SIP_PDU * pdu
     );
   //@}
  
   
-    SIPConnection * GetSIPConnectionWithLock(const PString & str);
-    SIPConnection * GetSIPConnectionWithLock(const SIPMIMEInfo & mime);
+    SIPConnection * GetSIPConnectionWithLock(const PString & str)
+      { return (SIPConnection *)GetConnectionWithLock(str); }
+
     void AddNewConnection(SIPConnection * conn);
 
     virtual BOOL IsAcceptedAddress(const SIPURL & toAddr);
-
-    void  SetMIMEForm(BOOL v) { mimeForm = v; }
-    BOOL  GetMIMEForm() const { return mimeForm; }
 
     BOOL Register(
       const PString & server
     );
 
-    unsigned GetLastSentCSeq() const { return lastSentCSeq; }
+    void SetMIMEForm(BOOL v) { mimeForm = v; }
+    BOOL GetMIMEForm() const { return mimeForm; }
+
+    void SetMaxRetries(unsigned r) { maxRetries = r; }
+    unsigned GetMaxRetries() const { return maxRetries; }
+
+    void SetRetryTimeouts(
+      const PTimeInterval & t1,
+      const PTimeInterval & t2
+    ) { retryTimeoutMin = t1; retryTimeoutMax = t2; }
+    const PTimeInterval & GetRetryTimeoutMin() const { return retryTimeoutMin; }
+    const PTimeInterval & GetRetryTimeoutMax() const { return retryTimeoutMax; }
+
+    void SetNonInviteTimeout(
+      const PTimeInterval & t
+    ) { nonInviteTimeout = t; }
+    const PTimeInterval & GetNonInviteTimeout() const { return nonInviteTimeout; }
+
+    void SetPduCleanUpTimeout(
+      const PTimeInterval & t
+    ) { pduCleanUpTimeout = t; }
+    const PTimeInterval & GetPduCleanUpTimeout() const { return pduCleanUpTimeout; }
+
+    void SetInviteTimeout(
+      const PTimeInterval & t
+    ) { inviteTimeout = t; }
+    const PTimeInterval & GetInviteTimeout() const { return inviteTimeout; }
+
+    void SetAckTimeout(
+      const PTimeInterval & t
+    ) { ackTimeout = t; }
+    const PTimeInterval & GetAckTimeout() const { return ackTimeout; }
+
+    unsigned GetNextCSeq() { return ++lastSentCSeq; }
 
     const PString & GetRegistrationID() const { return registrationID; }
     const PString & GetRegistrationName() const { return registrationName; }
@@ -175,7 +212,14 @@ class SIPEndPoint : public OpalEndPoint
     ) { registrationPassword = name; }
 
   protected:
-    BOOL     mimeForm;
+    BOOL          mimeForm;
+    unsigned      maxRetries;
+    PTimeInterval retryTimeoutMin;   // T1
+    PTimeInterval retryTimeoutMax;   // T2
+    PTimeInterval nonInviteTimeout;  // T3
+    PTimeInterval pduCleanUpTimeout; // T4
+    PTimeInterval inviteTimeout;
+    PTimeInterval ackTimeout;
 
     PString  registrationID;
     PString  registrationName;
