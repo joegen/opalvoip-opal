@@ -26,6 +26,9 @@
 
 /*
  * $Log: g72x.c,v $
+ * Revision 1.2  2002/11/20 04:53:16  robertj
+ * Included optimisations for G.711 and G.726 codecs, thanks Ted Szoczei
+ *
  * Revision 1.1  2002/02/11 23:24:23  robertj
  * Updated to openH323 v1.8.0
  *
@@ -39,8 +42,9 @@
  */
 
 #include "g72x.h"
+#include "private.h"
 
-static short power2[15] = {1, 2, 4, 8, 0x10, 0x20, 0x40, 0x80,
+static int power2[15] = {1, 2, 4, 8, 0x10, 0x20, 0x40, 0x80,
 			0x100, 0x200, 0x400, 0x800, 0x1000, 0x2000, 0x4000};
 
 /*
@@ -54,7 +58,7 @@ static short power2[15] = {1, 2, 4, 8, 0x10, 0x20, 0x40, 0x80,
 static int
 quan(
 	int		val,
-	short		*table,
+	int *	table,
 	int		size)
 {
 	int		i;
@@ -76,9 +80,12 @@ fmult(
 	int		an,
 	int		srn)
 {
-	short		anmag, anexp, anmant;
-	short		wanexp, wanmag, wanmant;
-	short		retval;
+	int anmag;
+	int anexp;
+	int anmant;
+	int wanexp;
+	int wanmant;
+	int retval;
 
 	anmag = (an > 0) ? an : ((-an) & 0x1FFF);
 	anexp = quan(anmag, power2, 15) - 6;
@@ -195,14 +202,14 @@ int
 quantize(
 	int		d,	/* Raw difference signal sample */
 	int		y,	/* Step size multiplier */
-	short		*table,	/* quantization table */
-	int		size)	/* table size of short integers */
+	int	*	table,	/* quantization table */
+	int		size)	/* table size of integers */
 {
-	short		dqm;	/* Magnitude of 'd' */
-	short		exp;	/* Integer part of base 2 log of 'd' */
-	short		mant;	/* Fractional part of base 2 log */
-	short		dl;	/* Log of magnitude of 'd' */
-	short		dln;	/* Step size scale factor normalized log */
+	int		dqm;	/* Magnitude of 'd' */
+	int		exp;	/* Integer part of base 2 log of 'd' */
+	int		mant;	/* Fractional part of base 2 log */
+	int		dl;	/* Log of magnitude of 'd' */
+	int		dln;	/* Step size scale factor normalized log */
 	int		i;
 
 	/*
@@ -246,12 +253,12 @@ int
 reconstruct(
 	int		sign,	/* 0 for non-negative value */
 	int		dqln,	/* G.72x codeword */
-	int		y)	/* Step size multiplier */
+	int		y)		/* Step size multiplier */
 {
-	short		dql;	/* Log of 'dq' magnitude */
-	short		dex;	/* Integer part of log */
-	short		dqt;
-	short		dq;	/* Reconstructed difference signal sample */
+	int		dql;	/* Log of 'dq' magnitude */
+	int		dex;	/* Integer part of log */
+	int		dqt;
+	int		dq;		/* Reconstructed difference signal sample */
 
 	dql = dqln + (y >> 2);	/* ADDA */
 
@@ -260,7 +267,7 @@ reconstruct(
 	} else {		/* ANTILOG */
 		dex = (dql >> 7) & 15;
 		dqt = 128 + (dql & 127);
-		dq = (dqt << 7) >> (14 - dex);
+		dq = (short)((dqt << 7) >> (14 - dex));
 		return ((sign) ? (dq - 0x8000) : dq);
 	}
 }
@@ -283,16 +290,15 @@ update(
 	g726_state *state_ptr)	/* coder state pointer */
 {
 	int		cnt;
-	short		mag, exp, mant;	/* Adaptive predictor, FLOAT A */
-	short		a2p;		/* LIMC */
-	short		a1ul;		/* UPA1 */
-	short		ua2, pks1;	/* UPA2 */
-	short		uga2a, fa1;
-	short		uga2b;
-	char		tr;		/* tone/transition detector */
-	short		ylint, thr2, dqthr;
-	short  		ylfrac, thr1;
-	short		pk0;
+	int		mag, exp;	/* Adaptive predictor, FLOAT A */
+	int		a2p;		/* LIMC */
+	int		a1ul;		/* UPA1 */
+	int		pks1;		/* UPA2 */
+	int		fa1;
+	int		tr;			/* tone/transition detector */
+	int		ylint, thr2, dqthr;
+	int  	ylfrac, thr1;
+	int		pk0;
 
 	pk0 = (dqsez < 0) ? 1 : 0;	/* needed in updating predictor poles */
 
@@ -340,6 +346,7 @@ update(
 		state_ptr->b[3] = 0;
 		state_ptr->b[4] = 0;
 		state_ptr->b[5] = 0;
+		a2p = 0 ;
 	} else {			/* update a's and b's */
 		pks1 = pk0 ^ state_ptr->pk[0];		/* UPA2 */
 
@@ -411,9 +418,9 @@ update(
 		state_ptr->dq[0] = (dq >= 0) ? 0x20 : 0xFC20;
 	} else {
 		exp = quan(mag, power2, 15);
-		state_ptr->dq[0] = (dq >= 0) ?
+		state_ptr->dq[0] = (short)((dq >= 0) ?
 		    (exp << 6) + ((mag << 6) >> exp) :
-		    (exp << 6) + ((mag << 6) >> exp) - 0x400;
+		    (exp << 6) + ((mag << 6) >> exp) - 0x400);
 	}
 
 	state_ptr->sr[1] = state_ptr->sr[0];
@@ -486,11 +493,11 @@ tandem_adjust_alaw(
 	int		y,	/* quantizer step size */
 	int		i,	/* decoder input code */
 	int		sign,
-	short		*qtab)
+	int *	qtab)
 {
-	unsigned char	sp;	/* A-law compressed 8-bit code */
-	short		dx;	/* prediction error */
-	char		id;	/* quantized prediction error */
+	int		sp;	/* A-law compressed 8-bit code */
+	int		dx;	/* prediction error */
+	int		id;	/* quantized prediction error */
 	int		sd;	/* adjusted A-law decoded sample value */
 	int		im;	/* biased magnitude of i */
 	int		imx;	/* biased magnitude of id */
@@ -535,11 +542,11 @@ tandem_adjust_ulaw(
 	int		y,	/* quantizer step size */
 	int		i,	/* decoder input code */
 	int		sign,
-	short		*qtab)
+	int *	qtab)
 {
-	unsigned char	sp;	/* u-law compressed 8-bit code */
-	short		dx;	/* prediction error */
-	char		id;	/* quantized prediction error */
+	int		sp;	/* u-law compressed 8-bit code */
+	int		dx;	/* prediction error */
+	int		id;	/* quantized prediction error */
 	int		sd;	/* adjusted u-law decoded sample value */
 	int		im;	/* biased magnitude of i */
 	int		imx;	/* biased magnitude of id */

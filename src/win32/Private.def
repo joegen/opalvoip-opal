@@ -251,3 +251,5 @@ EXPORTS
     _vq_index @31087 NONAME ;_vq_index
     _vq_nbest @31088 NONAME ;_vq_nbest
     _wld @31089 NONAME ;_wld
+    _a2u @31767 NONAME ;_a2u
+    _u2a @31768 NONAME ;_u2a

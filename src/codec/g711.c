@@ -47,13 +47,13 @@
 #define	SEG_SHIFT	(4)		/* Left shift for segment number. */
 #define	SEG_MASK	(0x70)		/* Segment field mask. */
 
-static short seg_aend[8] = {0x1F, 0x3F, 0x7F, 0xFF,
+static int seg_aend[8] = {0x1F, 0x3F, 0x7F, 0xFF,
 			    0x1FF, 0x3FF, 0x7FF, 0xFFF};
-static short seg_uend[8] = {0x3F, 0x7F, 0xFF, 0x1FF,
+static int seg_uend[8] = {0x3F, 0x7F, 0xFF, 0x1FF,
 			    0x3FF, 0x7FF, 0xFFF, 0x1FFF};
 
 /* copy from CCITT G.711 specifications */
-unsigned char _u2a[128] = {			/* u- to A-law conversions */
+unsigned char u2a[128] = {			/* u- to A-law conversions */
 	1,	1,	2,	2,	3,	3,	4,	4,
 	5,	5,	6,	6,	7,	7,	8,	8,
 	9,	10,	11,	12,	13,	14,	15,	16,
@@ -74,7 +74,7 @@ unsigned char _u2a[128] = {			/* u- to A-law conversions */
 	113,	114,	115,	116,	117,	118,	119,	120,
 	121,	122,	123,	124,	125,	126,	127,	128};
 
-unsigned char _a2u[128] = {			/* A- to u-law conversions */
+unsigned char a2u[128] = {			/* A- to u-law conversions */
 	1,	3,	5,	7,	9,	11,	13,	15,
 	16,	17,	18,	19,	20,	21,	22,	23,
 	24,	25,	26,	27,	28,	29,	30,	31,
@@ -96,10 +96,10 @@ unsigned char _a2u[128] = {			/* A- to u-law conversions */
 	112,	113,	114,	115,	116,	117,	118,	119,
 	120,	121,	122,	123,	124,	125,	126,	127};
 
-static short
+static int
 search(
 	int		val,	//changed from "short" *drago*
-	short	*table,
+	int *	table,
 	int		size)	//changed from "short" *drago*
 {
 	int		i;		//changed from "short" *drago*
@@ -130,14 +130,12 @@ search(
  * For further information see John C. Bellamy's Digital Telephony, 1982,
  * John Wiley & Sons, pps 98-111 and 472-476.
  */
-unsigned char
-linear2alaw(
-	int		pcm_val)	/* 2's complement (16-bit range) */
-						//changed from "short" *drago*
+int linear2alaw(int	pcm_val)	/* 2's complement (16-bit range) */
+								//changed from "short" *drago*
 {
 	int		mask;	//changed from "short" *drago*
 	int		seg;	//changed from "short" *drago*
-	unsigned char	aval;
+	int		aval;
 
 	pcm_val = pcm_val >> 3;
 
@@ -154,9 +152,9 @@ linear2alaw(
 	/* Combine the sign, segment, and quantization bits. */
 
 	if (seg >= 8)		/* out of range, return maximum value. */
-		return (unsigned char) (0x7F ^ mask);
+		return (0x7F ^ mask);
 	else {
-		aval = (unsigned char) seg << SEG_SHIFT;
+		aval = seg << SEG_SHIFT;
 		if (seg < 2)
 			aval |= (pcm_val >> 1) & QUANT_MASK;
 		else
@@ -169,9 +167,7 @@ linear2alaw(
  * alaw2linear() - Convert an A-law value to 16-bit linear PCM
  *
  */
-int
-alaw2linear(
-	unsigned char	a_val)
+int alaw2linear(int	a_val)		
 {
 	int		t;		//changed from "short" *drago*
 	int		seg;	//changed from "short" *drago*
@@ -226,13 +222,11 @@ alaw2linear(
  * For further information see John C. Bellamy's Digital Telephony, 1982,
  * John Wiley & Sons, pps 98-111 and 472-476.
  */
-unsigned char
-linear2ulaw(
-	short		pcm_val)	/* 2's complement (16-bit range) */
+int linear2ulaw( int	pcm_val)	/* 2's complement (16-bit range) */
 {
-	short		mask;
-	short		seg;
-	unsigned char	uval;
+	int		mask;
+	int		seg;
+	int		uval;
 
 	/* Get the sign and the magnitude of the value. */
 	pcm_val = pcm_val >> 2;
@@ -253,9 +247,9 @@ linear2ulaw(
 	 * and complement the code word.
 	 */
 	if (seg >= 8)		/* out of range, return maximum value. */
-		return (unsigned char) (0x7F ^ mask);
+		return (0x7F ^ mask);
 	else {
-		uval = (unsigned char) (seg << 4) | ((pcm_val >> (seg + 1)) & 0xF);
+		uval = (seg << 4) | ((pcm_val >> (seg + 1)) & 0xF);
 		return (uval ^ mask);
 	}
 
@@ -270,11 +264,9 @@ linear2ulaw(
  * Note that this function expects to be passed the complement of the
  * original code word. This is in keeping with ISDN conventions.
  */
-short
-ulaw2linear(
-	unsigned char	u_val)
+int ulaw2linear( int	u_val)
 {
-	short		t;
+	int t;
 
 	/* Complement to obtain normal u-law value. */
 	u_val = ~u_val;
@@ -284,27 +276,25 @@ ulaw2linear(
 	 * shift up by the segment number and subtract out the bias.
 	 */
 	t = ((u_val & QUANT_MASK) << 3) + BIAS;
-	t <<= ((unsigned)u_val & SEG_MASK) >> SEG_SHIFT;
+	t <<= (u_val & SEG_MASK) >> SEG_SHIFT;
 
 	return ((u_val & SIGN_BIT) ? (BIAS - t) : (t - BIAS));
 }
 
 /* A-law to u-law conversion */
-unsigned char
-alaw2ulaw(
-	unsigned char	aval)
+int alaw2ulaw (int	aval)
 {
 	aval &= 0xff;
-	return (unsigned char) ((aval & 0x80) ? (0xFF ^ _a2u[aval ^ 0xD5]) :
-	    (0x7F ^ _a2u[aval ^ 0x55]));
+	return ((aval & 0x80) ? (0xFF ^ a2u[aval ^ 0xD5]) :
+	    (0x7F ^ a2u[aval ^ 0x55]));
 }
 
 /* u-law to A-law conversion */
-unsigned char
-ulaw2alaw(
-	unsigned char	uval)
+int ulaw2alaw (int	uval)
 {
 	uval &= 0xff;
-	return (unsigned char) ((uval & 0x80) ? (0xD5 ^ (_u2a[0xFF ^ uval] - 1)) :
-	    (unsigned char) (0x55 ^ (_u2a[0x7F ^ uval] - 1)));
+	return ((uval & 0x80) ? (0xD5 ^ (u2a[0xFF ^ uval] - 1)) :
+	    (0x55 ^ (u2a[0x7F ^ uval] - 1)));
 }
+
+
