@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjunix.cxx,v $
- * Revision 1.2011  2004/02/19 10:47:05  rjongbloed
+ * Revision 1.2012  2005/01/15 09:19:40  csoutheren
+ * Fixed compile problems and IXJ link problems
+ *
+ * Revision 2.10  2004/02/19 10:47:05  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.9  2003/03/24 07:18:29  robertj
@@ -973,30 +976,47 @@ BOOL OpalIxJDevice::Close()
 }
 
 
-PString OpalIxJDevice::GetName() const
+PString OpalIxJDevice::GetDeviceType() const
 {
+  return OPAL_IXJ_TYPE_NAME;
+}
+
+
+PString OpalIxJDevice::GetDeviceName() const
+{
+  return deviceName;
+}
+
+PString OpalIxJDevice::GetDescription() const
+{
+  PStringStream name;
+
+  name << "Internet ";
+
   switch (dwCardType) {
-  case 0:
-  case PhoneJACK:
-    return "Internet PhoneJACK-ISA " + deviceName;
-    
-  case LineJACK:
-    return "Internet LineJACK " + deviceName;
-    
-  case PhoneJACK_Lite:
-    return "Internet PhoneJACK-Lite " + deviceName;
-    
-  case PhoneJACK_PCI:
-    return "Internet PhoneJACK-PCI " + deviceName;
-    
-  case PhoneCARD:
-    return "Internet PhoneCARD " + deviceName;
-    
-  case PhoneJACK_PCI_TJ:
-    return "Internet PhoneJack-PCI " + deviceName;
+    case 0 :
+    case 1 :
+      name << "PhoneJACK";
+      break;
+    case 3 :
+      name << "LineJACK";
+      break;
+    case 4 :
+      name << "PhoneJACK-Lite";
+      break;
+    case 5 :
+      name << "PhoneJACK-PCI";
+      break;
+    case 6 :
+      name << "PhoneCARD";
+      break;
+    default :
+      name << "xJACK";
   }
-  
-  return "xJACK " + deviceName;
+
+  name << " (" << deviceName << ')';
+
+  return name;
 }
 
 PStringArray OpalIxJDevice::GetAllNames() const
