@@ -24,7 +24,10 @@
  * Contributor(s): Vyacheslav Frolov.
  *
  * $Log: t38proto.cxx,v $
- * Revision 1.2008  2003/01/07 04:39:53  robertj
+ * Revision 1.2009  2005/02/21 12:20:08  rjongbloed
+ * Added new "options list" to the OpalMediaFormat class.
+ *
+ * Revision 2.7  2003/01/07 04:39:53  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.6  2002/11/10 11:33:20  robertj
@@ -123,12 +126,16 @@
 #define new PNEW
 
 
-OpalMediaFormat const OpalT38Protocol::MediaFormat("T.38",
-                                                   OpalMediaFormat::DefaultDataSessionID,
-                                                   RTP_DataFrame::IllegalPayloadType,
-                                                   "t38",
-                                                   FALSE, // No jitter for data
-                                                   1440); // 100's bits/sec
+const OpalMediaFormat OpalT38(
+  OPAL_T38,
+  OpalMediaFormat::DefaultDataSessionID,
+  RTP_DataFrame::IllegalPayloadType,
+  "t38",
+  FALSE, // No jitter for data
+  1440, // 100's bits/sec
+  0,
+  0,
+  0);
 
 
 /////////////////////////////////////////////////////////////////////////////

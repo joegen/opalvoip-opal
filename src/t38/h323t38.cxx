@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t38.cxx,v $
- * Revision 1.2013  2004/04/07 08:21:10  rjongbloed
+ * Revision 1.2014  2005/02/21 12:20:08  rjongbloed
+ * Added new "options list" to the OpalMediaFormat class.
+ *
+ * Revision 2.12  2004/04/07 08:21:10  rjongbloed
  * Changes for new RTTI system.
  *
  * Revision 2.11  2002/11/10 11:33:20  robertj
@@ -211,7 +214,7 @@ PString H323_T38Capability::GetFormatName() const
   static const char * const modes[NumTransportModes] = {
     "UDP", "TCP2", "TCP"
   };
-  return OpalT38Protocol::MediaFormat + '{' + modes[mode] + '}';
+  return PString(OPAL_T38"{") + modes[mode] + '}';
 }
 
 
@@ -319,7 +322,7 @@ PObject * H323_T38NonStandardCapability::Clone() const
 
 PString H323_T38NonStandardCapability::GetFormatName() const
 {
-  return OpalT38Protocol::MediaFormat + '{' + T38NonStandardCapabilityName + '}';
+  return PString(OPAL_T38"{") + T38NonStandardCapabilityName + '}';
 }
 
 
