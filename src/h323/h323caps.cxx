@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2016  2003/01/07 04:39:53  robertj
+ * Revision 1.2017  2003/04/08 02:44:04  robertj
+ * Removed the {sw} from media format name, this is a hang over from
+ *   OpenH323, thanks Guilhem Tardy for pointing this out.
+ *
+ * Revision 2.15  2003/01/07 04:39:53  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.14  2002/11/10 11:33:18  robertj
@@ -1259,8 +1263,8 @@ unsigned H323_G711Capability::GetSubType() const
 PString H323_G711Capability::GetFormatName() const
 {
   static const char * const G711Name[2][2] = {
-    { "G.711-ALaw-64k{sw}", "G.711-ALaw-56k{sw}" },
-    { "G.711-uLaw-64k{sw}", "G.711-uLaw-56k{sw}" }
+    { OPAL_G711_ALAW_64K, "G.711-ALaw-56k" },
+    { OPAL_G711_ULAW_64K, "G.711-uLaw-56k" }
   };
   return G711Name[mode][speed];
 }
