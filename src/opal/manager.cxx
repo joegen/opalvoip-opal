@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2034  2004/05/15 12:53:03  rjongbloed
+ * Revision 1.2035  2004/07/11 12:42:13  rjongbloed
+ * Added function on endpoints to get the list of all media formats any
+ *   connection the endpoint may create can support.
+ *
+ * Revision 2.33  2004/05/15 12:53:03  rjongbloed
  * Added default username and display name to manager, for all endpoints.
  *
  * Revision 2.32  2004/05/01 10:00:53  rjongbloed
@@ -607,8 +611,8 @@ void OpalManager::OnClosedMediaStream(const OpalMediaStream & /*channel*/)
 }
 
 
-void OpalManager::AddVideoMediaFormats(const OpalConnection & /*connection*/,
-                                       OpalMediaFormatList & mediaFormats) const
+void OpalManager::AddVideoMediaFormats(OpalMediaFormatList & mediaFormats,
+                                       const OpalConnection * /*connection*/) const
 {
   if (!videoInputDevice.deviceName) {
     mediaFormats += OpalRGB24;

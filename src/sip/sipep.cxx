@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2024  2004/06/05 14:36:32  rjongbloed
+ * Revision 1.2025  2004/07/11 12:42:13  rjongbloed
+ * Added function on endpoints to get the list of all media formats any
+ *   connection the endpoint may create can support.
+ *
+ * Revision 2.23  2004/06/05 14:36:32  rjongbloed
  * Added functions to get registration URL.
  * Added ability to set proxy bu host/user/password strings.
  *
@@ -269,6 +273,12 @@ BOOL SIPEndPoint::MakeConnection(OpalCall & call,
     connection->SetUpConnection();
 
   return TRUE;
+}
+
+
+OpalMediaFormatList SIPEndPoint::GetMediaFormats() const
+{
+  return OpalMediaFormat::GetAllRegisteredMediaFormats();
 }
 
 

@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2018  2004/05/24 13:52:38  rjongbloed
+ * Revision 1.2019  2004/07/11 12:42:13  rjongbloed
+ * Added function on endpoints to get the list of all media formats any
+ *   connection the endpoint may create can support.
+ *
+ * Revision 2.17  2004/05/24 13:52:38  rjongbloed
  * Added a separate structure for the silence suppression paramters to make
  *   it easier to set from global defaults in the manager class.
  *
@@ -212,6 +216,18 @@ BOOL OpalPCSSEndPoint::MakeConnection(OpalCall & call,
     connection->InitiateCall();
 
   return TRUE;
+}
+
+
+OpalMediaFormatList OpalPCSSEndPoint::GetMediaFormats() const
+{
+  OpalMediaFormatList formats;
+
+  formats += OpalPCM16; // Sound card can only do 16 bit PCM
+
+  AddVideoMediaFormats(formats);
+
+  return formats;
 }
 
 

@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2036  2004/05/17 13:24:18  rjongbloed
+ * Revision 1.2037  2004/07/11 12:42:13  rjongbloed
+ * Added function on endpoints to get the list of all media formats any
+ *   connection the endpoint may create can support.
+ *
+ * Revision 2.35  2004/05/17 13:24:18  rjongbloed
  * Added silence suppression.
  *
  * Revision 2.34  2004/05/15 12:53:03  rjongbloed
@@ -599,7 +603,7 @@ BOOL OpalConnection::GetMediaInformation(unsigned sessionID,
 
 void OpalConnection::AddVideoMediaFormats(OpalMediaFormatList & mediaFormats) const
 {
-  endpoint.AddVideoMediaFormats(*this, mediaFormats);
+  endpoint.AddVideoMediaFormats(mediaFormats, this);
 }
 
 
