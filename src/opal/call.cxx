@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2020  2003/06/02 03:12:56  rjongbloed
+ * Revision 1.2021  2004/01/18 15:36:47  rjongbloed
+ * Fixed problem with symmetric codecs
+ *
+ * Revision 2.19  2003/06/02 03:12:56  rjongbloed
  * Made changes so that media stream in opposite direction to the one already
  *   opened will use same media format for preference. That is try and use
  *   symmetric codecs if possible.
@@ -411,7 +414,7 @@ BOOL OpalCall::OpenSourceMediaStreams(const OpalMediaFormatList & mediaFormats,
         startedOne = TRUE;
         // If opened the source stream, then reorder the media formats so we
         // have a preference for symmetric codecs on subsequent connection(s)
-        OpalMediaStream * otherStream = conn.GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, TRUE);
+        OpalMediaStream * otherStream = conn.GetMediaStream(sessionID, TRUE);
         if (otherStream != NULL && adjustableMediaFormats[0] != otherStream->GetMediaFormat()) {
           adjustableMediaFormats.Reorder(otherStream->GetMediaFormat());
           PTRACE(4, "Call\tOpenSourceMediaStreams for session " << sessionID
@@ -432,13 +435,9 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
 {
   PTRACE(3, "Call\tPatchMediaStreams " << connection);
 
-  BOOL patchedOne = FALSE;
+  PWaitAndSignal mutex(inUseFlag);
 
-  OpalMediaPatch * patch = manager.CreateMediaPatch(source);
-  if (patch == NULL)
-    return FALSE;
-
-  inUseFlag.Wait();
+  OpalMediaPatch * patch = NULL;
 
   for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
     OpalConnection & conn = activeConnections[i];
@@ -447,15 +446,17 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
       conn.Unlock();
 
       if (sink != NULL) {
-        patchedOne = TRUE;
+        if (patch == NULL) {
+          patch = manager.CreateMediaPatch(source);
+          if (patch == NULL)
+            return FALSE;
+        }
         patch->AddSink(sink);
       }
     }
   }
 
-  inUseFlag.Signal();
-
-  return patchedOne;
+  return patch != NULL;
 }
 
 

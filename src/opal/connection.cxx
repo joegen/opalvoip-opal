@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2027  2003/06/02 03:11:01  rjongbloed
+ * Revision 1.2028  2004/01/18 15:36:47  rjongbloed
+ * Fixed problem with symmetric codecs
+ *
+ * Revision 2.26  2003/06/02 03:11:01  rjongbloed
  * Fixed start media streams function actually starting the media streams.
  * Fixed problem where a sink stream should be opened (for preference) using
  *   the source streams media format. That is no transcoder is used.
@@ -422,14 +425,22 @@ OpalMediaStream * OpalConnection::OpenSinkMediaStream(OpalMediaStream & source)
   unsigned sessionID = source.GetSessionID();
   PTRACE(3, "OpalCon\tOpenSinkMediaStream " << *this << " session=" << sessionID);
 
+  OpalMediaFormat sourceFormat = source.GetMediaFormat();
+
   // Reorder the media formats from this protocol so we give preference
   // to what has been selected in the source media stream.
   OpalMediaFormatList destinationFormats = GetMediaFormats();
-  destinationFormats.Reorder(source.GetMediaFormat());
+  PStringArray order = sourceFormat;
+  // Second preference is given to the previous media stream already
+  // opened to maintain symmetric codecs, if possible.
+  OpalMediaStream * otherStream = GetMediaStream(sessionID, TRUE);
+  if (otherStream != NULL)
+    order += otherStream->GetMediaFormat();
+  destinationFormats.Reorder(order);
 
-  OpalMediaFormat sourceFormat, destinationFormat;
+  OpalMediaFormat destinationFormat;
   if (!OpalTranscoder::SelectFormats(sessionID,
-                                     source.GetMediaFormat(), // Only use selected format on source
+                                     sourceFormat, // Only use selected format on source
                                      destinationFormats,
                                      sourceFormat,
                                      destinationFormat)) {
