@@ -24,7 +24,12 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2029  2004/10/02 11:50:58  rjongbloed
+ * Revision 1.2030  2005/03/12 00:33:28  csoutheren
+ * Fixed problems with STL compatibility on MSVC 6
+ * Fixed problems with video streams
+ * Thanks to Adrian Sietsma
+ *
+ * Revision 2.28  2004/10/02 11:50:58  rjongbloed
  * Fixed RTP media stream so assures RTP session is open before starting.
  *
  * Revision 2.27  2004/08/14 07:56:43  rjongbloed
@@ -702,7 +707,7 @@ OpalVideoMediaStream::OpalVideoMediaStream(const OpalMediaFormat & mediaFormat,
   PAssert(in != NULL || out != NULL, PInvalidParameter);
 
   if (in != NULL)
-    SetDataSize(sizeof(OpalVideoTranscoder::FrameHeader)+in->GetMaxFrameBytes());
+    SetDataSize(in->GetMaxFrameBytes());
 }
 
 
@@ -712,6 +717,12 @@ OpalVideoMediaStream::~OpalVideoMediaStream()
     delete inputDevice;
     delete outputDevice;
   }
+}
+
+
+BOOL OpalVideoMediaStream::SetDataSize(PINDEX dataSize)
+{ 
+  return OpalMediaStream::SetDataSize(sizeof(OpalVideoTranscoder::FrameHeader)+dataSize); 
 }
 
 
