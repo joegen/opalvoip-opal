@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2024  2004/02/24 11:28:45  rjongbloed
+ * Revision 1.2025  2004/03/13 06:25:49  rjongbloed
+ * Slight rearrangement of local party name and alias list to beter match common
+ *   behaviour in ancestor.
+ * Abstracted local party name for endpoint into ancestor from H.,323.
+ *
+ * Revision 2.23  2004/02/24 11:28:45  rjongbloed
  * Normalised RTP session management across protocols
  *
  * Revision 2.22  2004/02/19 10:46:43  rjongbloed
@@ -2042,6 +2047,14 @@ class H323Connection : public OpalConnection
      */
     const OpalGloballyUniqueID & GetConferenceIdentifier() const { return conferenceIdentifier; }
 
+    /**Set the local name/alias from information in the PDU.
+      */
+    void SetLocalPartyName(const PString & name);
+
+    /**Get the list of all alias names this connection is using.
+      */
+    const PStringList & GetLocalAliasNames() const { return localAliasNames; }
+
     /**Set the name/alias of remote end from information in the PDU.
       */
     void SetRemotePartyInfo(
@@ -2181,6 +2194,7 @@ class H323Connection : public OpalConnection
     OpalGloballyUniqueID conferenceIdentifier;
 
     PString            localDestinationAddress;
+    PStringList        localAliasNames;
     H323Capabilities   localCapabilities; // Capabilities local system supports
     PString            destExtraCallInfo;
     PString            remoteApplication;
