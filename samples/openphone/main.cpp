@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cpp,v $
+ * Revision 1.20  2004/08/14 07:56:30  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
  * Revision 1.19  2004/07/17 08:21:24  rjongbloed
  * Added ability to manipulate codec lists
  *
@@ -1178,7 +1181,7 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
   // Fill combo box with possible protocols
   m_RouteSource = (wxComboBox *)FindWindowByName("RouteSource");
   m_RouteSource->Append(AllSources);
-  const OpalEndPointList & endponts = mainFrame.GetEndPoints();
+  const PList<OpalEndPoint> & endponts = mainFrame.GetEndPoints();
   for (i = 0; i < endponts.GetSize(); i++)
     m_RouteSource->Append((const char *)endponts[i].GetPrefixName());
   m_RouteSource->SetSelection(0);

@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2043  2004/04/26 07:06:07  rjongbloed
+ * Revision 1.2044  2004/08/14 07:56:30  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.42  2004/04/26 07:06:07  rjongbloed
  * Removed some ancient pieces of code and used new API's for them.
  *
  * Revision 2.41  2004/04/26 06:33:18  rjongbloed
@@ -902,11 +905,10 @@ void MyManager::Main(PArgList & args)
 
     cmd = params[0];
     if (cmd == "h" || cmd == "hangup") {
-      OpalCall * call = FindCallWithLock(currentCallToken);
+      PSafePtr<OpalCall> call = FindCallWithLock(currentCallToken);
       if (call != NULL) {
         cout << "Clearing call " << *call << endl;
         call->Clear();
-        call->Unlock();
       }
       else
         cout << "Not in a call!\n";

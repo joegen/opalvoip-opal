@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2020  2004/04/07 08:21:02  rjongbloed
+ * Revision 1.2021  2004/08/14 07:56:30  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.19  2004/04/07 08:21:02  rjongbloed
  * Changes for new RTTI system.
  *
  * Revision 2.18  2004/03/13 06:30:03  rjongbloed
@@ -1708,7 +1711,7 @@ BOOL H323Gatekeeper::OnReceiveDisengageRequest(const H225_DisengageRequest & drq
     id = drq.m_conferenceID;
 
   H323RasPDU response(authenticators);
-  H323Connection * connection = endpoint.FindConnectionWithLock(id.AsString());
+  PSafePtr<H323Connection> connection = endpoint.FindConnectionWithLock(id.AsString());
   if (connection == NULL)
     response.BuildDisengageReject(drq.m_requestSeqNum,
                                   H225_DisengageRejectReason::e_requestToDropOther);
@@ -1719,7 +1722,6 @@ BOOL H323Gatekeeper::OnReceiveDisengageRequest(const H225_DisengageRequest & drq
     SetRasUsageInformation(*connection, dcf.m_usageInformation);
 
     connection->Release(H323Connection::EndedByGatekeeper);
-    connection->Unlock();
   }
 
   if (drq.HasOptionalField(H225_DisengageRequest::e_serviceControl))
@@ -1774,7 +1776,7 @@ BOOL H323Gatekeeper::OnReceiveBandwidthRequest(const H225_BandwidthRequest & brq
     return FALSE;
 
   OpalGloballyUniqueID id = brq.m_callIdentifier.m_guid;
-  H323Connection * connection = endpoint.FindConnectionWithLock(id.AsString());
+  PSafePtr<H323Connection> connection = endpoint.FindConnectionWithLock(id.AsString());
 
   H323RasPDU response(authenticators);
   if (connection == NULL)
@@ -1786,7 +1788,6 @@ BOOL H323Gatekeeper::OnReceiveBandwidthRequest(const H225_BandwidthRequest & brq
     else
       response.BuildBandwidthReject(brq.m_requestSeqNum,
                                     H225_BandRejectReason::e_insufficientResources);
-    connection->Unlock();
   }
 
   return WritePDU(response);
@@ -1907,10 +1908,9 @@ static BOOL AddAllInfoRequestResponseCall(H225_InfoRequestResponse & irr,
   BOOL addedOne = FALSE;
 
   for (PINDEX i = 0; i < tokens.GetSize(); i++) {
-    H323Connection * connection = endpoint.FindConnectionWithLock(tokens[i]);
+    PSafePtr<H323Connection> connection = endpoint.FindConnectionWithLock(tokens[i]);
     if (connection != NULL) {
       AddInfoRequestResponseCall(irr, *connection);
-      connection->Unlock();
       addedOne = TRUE;
     }
   }
@@ -1989,7 +1989,7 @@ BOOL H323Gatekeeper::OnReceiveInfoRequest(const H225_InfoRequest & irq)
   }
   else {
     OpalGloballyUniqueID id = irq.m_callIdentifier.m_guid;
-    H323Connection * connection = endpoint.FindConnectionWithLock(id.AsString());
+    PSafePtr<H323Connection> connection = endpoint.FindConnectionWithLock(id.AsString());
     if (connection == NULL) {
       irr.IncludeOptionalField(H225_InfoRequestResponse::e_irrStatus);
       irr.m_irrStatus.SetTag(H225_InfoRequestResponseStatus::e_invalidCall);
@@ -1999,8 +1999,6 @@ BOOL H323Gatekeeper::OnReceiveInfoRequest(const H225_InfoRequest & irq)
         connection->SetUUIEsRequested(::GetUUIEsRequested(irq.m_uuiesRequested));
 
       AddInfoRequestResponseCall(irr, *connection);
-
-      connection->Unlock();
     }
   }
 
