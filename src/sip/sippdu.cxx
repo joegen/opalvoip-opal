@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2039  2004/12/17 12:06:53  dsandras
+ * Revision 1.2040  2004/12/22 18:57:50  dsandras
+ * Added support for Call Forwarding via the "302 Moved Temporarily" SIP response.
+ *
+ * Revision 2.38  2004/12/17 12:06:53  dsandras
  * Added error code to OnRegistrationFailed. Made Register/Unregister wait until the transaction is over. Fixed Unregister so that the SIPRegister is used as a pointer or the object is deleted at the end of the function and make Opal crash when transactions are cleaned. Reverted part of the patch that was sending authentication again when it had already been done on a Register.
  *
  * Revision 2.37  2004/12/12 13:44:38  dsandras
@@ -974,11 +977,14 @@ SIP_PDU::SIP_PDU(Methods method,
 
 SIP_PDU::SIP_PDU(const SIP_PDU & request, StatusCodes code, const char * extra)
 {
+  char *extraInfo = NULL;
+ 
   method       = NumMethods;
   statusCode   = code;
   versionMajor = request.GetVersionMajor();
   versionMinor = request.GetVersionMinor();
 
+  extraInfo = (char *) extra;
   sdp = NULL;
 
   // add mandatory fields to response (RFC 2543, 11.2)
@@ -990,12 +996,23 @@ SIP_PDU::SIP_PDU(const SIP_PDU & request, StatusCodes code, const char * extra)
   mime.SetVia(requestMIME.GetVia());
   mime.SetRecordRoute(requestMIME.GetRecordRoute());
 
+  
+  /* Use extra paramater as redirection URL in case of 302 */
+  if (code == SIP_PDU::Redirection_MovedTemporarily) {
+
+    SIPURL contact (extraInfo);
+    mime.SetContact (contact.AsQuotedString ());
+    extraInfo = NULL;
+  }
+    
   // format response
-  if (extra != NULL)
-    info = extra;
+  if (extraInfo != NULL) {
+
+    info = extraInfo;
+  }
   else {
     PINDEX i;
-    for (i = 0; (extra == NULL) && (sipErrorDescriptions[i].code != 0); i++) {
+    for (i = 0; (extraInfo == NULL) && (sipErrorDescriptions[i].code != 0); i++) {
       if (sipErrorDescriptions[i].code == code) {
         info = sipErrorDescriptions[i].desc;
         break;
