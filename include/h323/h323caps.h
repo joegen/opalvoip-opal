@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.h,v $
- * Revision 1.2007  2002/02/11 09:32:11  robertj
+ * Revision 1.2008  2002/02/19 07:44:13  robertj
+ * Added function to set teh RTP payload type for the capability.
+ *
+ * Revision 2.6  2002/02/11 09:32:11  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.5  2002/01/22 04:59:04  robertj
@@ -414,6 +417,9 @@ class H323Capability : public PObject
 
     /// Get the payload type for the capaibility
     RTP_DataFrame::PayloadTypes GetPayloadType() const { return rtpPayloadType; }
+
+    /// Set the payload type for the capaibility
+    void SetPayloadType(RTP_DataFrame::PayloadTypes pt) { rtpPayloadType = pt; }
   //@}
 
 #if PTRACING
