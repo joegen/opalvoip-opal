@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q931.cxx,v $
- * Revision 1.2005  2002/01/14 06:35:58  robertj
+ * Revision 1.2006  2002/07/01 04:56:32  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.4  2002/01/14 06:35:58  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.3  2001/10/05 00:22:14  robertj
@@ -41,6 +44,27 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.49  2002/05/22 23:12:03  robertj
+ * Enhanced the display of Release-Complete cause codes.
+ *
+ * Revision 1.48  2002/05/07 23:49:35  craigs
+ * Changed comment on length of userUserIE field thanks to Paul Long
+ *
+ * Revision 1.47  2002/05/03 05:38:19  robertj
+ * Added Q.931 Keypad IE mechanism for user indications (DTMF).
+ *
+ * Revision 1.46  2002/04/22 07:32:16  craigs
+ * Changed GetProgressIndicator to be const
+ *
+ * Revision 1.45  2002/04/19 04:49:14  robertj
+ * Fixed currect bit shift for CallState IE standard bits.
+ *
+ * Revision 1.44  2002/04/19 02:16:47  robertj
+ * Added CallState IE processing.
+ *
+ * Revision 1.43  2002/04/18 06:16:32  craigs
+ * Extra robustness in handling of strange UserUserIE lengths
  *
  * Revision 1.42  2002/01/07 04:25:21  robertj
  * Added support for Connected-Number Information Element, thanks Hans Verbeek
@@ -192,6 +216,59 @@
 #define new PNEW
 
 
+static POrdinalToString::Initialiser InformationElementNames[] = {
+  { Q931::BearerCapabilityIE,   "Bearer-Capability"     },
+  { Q931::CauseIE,              "Cause"                 },
+  { Q931::FacilityIE,           "Facility"              },
+  { Q931::ProgressIndicatorIE,  "Progress-Indicator"    },
+  { Q931::CallStateIE,          "Call-State"            },
+  { Q931::DisplayIE,            "Display"               },
+  { Q931::SignalIE,             "Signal"                },
+  { Q931::KeypadIE,             "Keypad"                },
+  { Q931::ConnectedNumberIE,    "Connected-Number"      },
+  { Q931::CallingPartyNumberIE, "Calling-Party-Number"  },
+  { Q931::CalledPartyNumberIE,  "Called-Party-Number"   },
+  { Q931::RedirectingNumberIE,  "Redirecting-Number"    },
+  { Q931::UserUserIE,           "User-User"             }
+};
+
+
+static POrdinalToString::Initialiser CauseNames[] = {
+  { Q931::UnallocatedNumber,         "Unallocated number"           },
+  { Q931::NoRouteToNetwork,          "No route to network"          },
+  { Q931::NoRouteToDestination,      "No route to destination"      },
+  { Q931::SendSpecialTone,           "Send special tone"            },
+  { Q931::MisdialledTrunkPrefix,     "Misdialled trunk prefix"      },
+  { Q931::ChannelUnacceptable,       "Channel unacceptable"         },
+  { Q931::NormalCallClearing,        "Normal call clearing"         },
+  { Q931::UserBusy,                  "User busy"                    },
+  { Q931::NoResponse,                "No response"                  },
+  { Q931::NoAnswer,                  "No answer"                    },
+  { Q931::SubscriberAbsent,          "Subscriber absent"            },
+  { Q931::CallRejected,              "Call rejected"                },
+  { Q931::NumberChanged,             "Number changed"               },
+  { Q931::Redirection,               "Redirection"                  },
+  { Q931::ExchangeRoutingError,      "Exchange routing error"       },
+  { Q931::NonSelectedUserClearing,   "Non selected user clearing"   },
+  { Q931::DestinationOutOfOrder,     "Destination out of order"     },
+  { Q931::InvalidNumberFormat,       "Invalid number format"        },
+  { Q931::FacilityRejected,          "Facility rejected"            },
+  { Q931::StatusEnquiryResponse,     "Status enquiry response"      },
+  { Q931::NormalUnspecified,         "Normal unspecified"           },
+  { Q931::NoCircuitChannelAvailable, "No circuit/channel available" },
+  { Q931::NetworkOutOfOrder,         "Network out of order"         },
+  { Q931::TemporaryFailure,          "Temporary failure"            },
+  { Q931::Congestion,                "Congestion"                   },
+  { Q931::ResourceUnavailable,       "Resource unavailable"         },
+  { Q931::InvalidCallReference,      "Invalid call reference"       },
+  { Q931::IncompatibleDestination,   "Incompatible destination"     },
+  { Q931::InterworkingUnspecified,   "Interworking, unspecified"    },
+  { Q931::NonStandardReason,         "Non standard reason"          }
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
+
 Q931::Q931()
 {
   protocolDiscriminator = 8;  // Q931 always has 00001000
@@ -315,12 +392,7 @@ void Q931::BuildStatus(int callRef, BOOL fromDest)
   callReference = callRef;
   fromDestination = fromDest;
   informationElements.RemoveAll();
-  PBYTEArray data(1);
-
-  // Call State as per Q.931 section 4.5.7
-  data[0] = 0; // Use CCITT Null
-  SetIE(CallStateIE, data);
-
+  SetCallState(CallState_Active);
   // Cause field as per Q.850
   SetCause(StatusEnquiryResponse);
 }
@@ -375,19 +447,18 @@ BOOL Q931::Decode(const PBYTEArray & data)
       int len = data[offset++];
 
       if (discriminator == UserUserIE) {
-        // Special case of User-user field, there is some confusion here as
-        // the Q931 documentation claims the length is a single byte,
-        // unfortunately all H.323 based apps have a 16 bit length here, so
-        // we allow for said longer length. There is presumably an addendum
-        // to Q931 which describes this, and provides a means to discriminate
-        // between the old 1 byte and the new 2 byte systems. However, at
-        // present we assume it is always 2 bytes until we find something that
-        // breaks it.
+        // Special case of User-user field. See 7.2.2.31/H.225.0v4.
         len <<= 8;
         len |= data[offset++];
 
         // we also have a protocol discriminator, which we ignore
         offset++;
+
+	// before decrementing the length, make sure it is not zero
+	if (len == 0)
+          return FALSE;
+
+        // adjust for protocol discriminator
         len--;
       }
 
@@ -467,38 +538,6 @@ BOOL Q931::Encode(PBYTEArray & data) const
 }
 
 
-static PString Q931IENameString(int number)
-{
-  switch (number) {
-    case Q931::BearerCapabilityIE :
-      return "Bearer-Capability";
-    case Q931::CauseIE :
-      return "Cause";
-    case Q931::FacilityIE :
-      return "Facility";
-    case Q931::ProgressIndicatorIE :
-      return "Progress-Indicator";
-    case Q931::CallStateIE :
-      return "Call-State";
-    case Q931::DisplayIE :
-      return "Display";
-    case Q931::SignalIE :
-      return "Signal";
-    case Q931::ConnectedNumberIE :
-      return "Connected-Number";
-    case Q931::CallingPartyNumberIE :
-      return "Calling-Party-Number";
-    case Q931::CalledPartyNumberIE :
-      return "Called-Party-Number";
-    case Q931::RedirectingNumberIE :
-      return "Redirecting-Number";
-    case Q931::UserUserIE :
-      return "User-User";
-  }
-  return psprintf("0x%02x", number);
-}
-
-
 void Q931::PrintOn(ostream & strm) const
 {
   int indent = strm.precision() + 2;
@@ -508,14 +547,30 @@ void Q931::PrintOn(ostream & strm) const
        << setw(indent+7)  << "from = " << (fromDestination ? "destination" : "originator") << '\n'
        << setw(indent+14) << "messageType = " << GetMessageTypeName() << '\n';
 
-  for (unsigned discriminator = 0; discriminator < 256; discriminator++)
-    if (informationElements.Contains(discriminator))
-      strm << setw(indent+4)
-           << "IE: " << Q931IENameString(discriminator) << " = {\n"
+  for (unsigned discriminator = 0; discriminator < 256; discriminator++) {
+    if (informationElements.Contains(discriminator)) {
+      static const POrdinalToString ieName(PARRAYSIZE(InformationElementNames),
+                                                      InformationElementNames);
+      strm << setw(indent+4) << "IE: ";
+      if (ieName.Contains(discriminator))
+        strm << ieName[discriminator];
+      else
+        strm << "0x" << hex << discriminator << dec;
+      if (discriminator == CauseIE) {
+        static const POrdinalToString causeName(PARRAYSIZE(CauseNames), CauseNames);
+        if (informationElements[discriminator].GetSize() > 1) {
+          PINDEX cause = informationElements[discriminator][1]&0x7f;
+          if (causeName.Contains(cause))
+            strm << " - " << causeName[cause];
+        }
+      }
+      strm << " = {\n"
            << hex << setfill('0')
            << setprecision(indent+2) << informationElements[discriminator] << '\n'
            << dec << setfill(' ')
            << setw(indent+2) << "}\n";
+    }
+  }
 
   strm << setw(indent-1) << "}";
 }
@@ -727,6 +782,34 @@ Q931::CauseValues Q931::GetCause(unsigned * standard, unsigned * location) const
 }
 
 
+void Q931::SetCallState(CallStates value, unsigned standard)
+{
+  if (value >= CallState_ErrorInIE)
+    return;
+
+  // Call State as per Q.931 section 4.5.7
+  PBYTEArray data(1);
+  data[0] = (BYTE)(((standard&3) << 6) | value);
+  SetIE(CallStateIE, data);
+}
+
+
+Q931::CallStates Q931::GetCallState(unsigned * standard) const
+{
+  if (!HasIE(SignalIE))
+    return CallState_ErrorInIE;
+
+  PBYTEArray data = GetIE(CallStateIE);
+  if (data.IsEmpty())
+    return CallState_ErrorInIE;
+
+  if (standard != NULL)
+    *standard = (data[0] >> 6)&3;
+
+  return (CallStates)(data[0]&0x3f);
+}
+
+
 void Q931::SetSignalInfo(SignalInfo value)
 {
   PBYTEArray data(1);
@@ -748,6 +831,26 @@ Q931::SignalInfo Q931::GetSignalInfo() const
 }
 
 
+void Q931::SetKeypad(const PString & digits)
+{
+  PBYTEArray bytes((const BYTE *)(const char *)digits, digits.GetLength()+1);
+  SetIE(KeypadIE, bytes);
+}
+
+
+PString Q931::GetKeypad() const
+{
+  if (!HasIE(Q931::KeypadIE))
+    return PString();
+
+  PBYTEArray digits = GetIE(Q931::KeypadIE);
+  if (digits.IsEmpty())
+    return PString();
+
+  return PString((const char *)(const BYTE *)digits, digits.GetSize());
+}
+
+
 void Q931::SetProgressIndicator(unsigned description,
                                 unsigned codingStandard,
                                 unsigned location)
@@ -761,7 +864,7 @@ void Q931::SetProgressIndicator(unsigned description,
 
 BOOL Q931::GetProgressIndicator(unsigned & description,
                                 unsigned * codingStandard,
-                                unsigned * location)
+                                unsigned * location) const
 {
   if (!HasIE(ProgressIndicatorIE))
     return FALSE;

@@ -24,7 +24,10 @@
  * Contributor(s): Fürbass Franz <franz.fuerbass@infonova.at>
  *
  * $Log: h235auth1.cxx,v $
- * Revision 1.2006  2002/01/14 06:35:57  robertj
+ * Revision 1.2007  2002/07/01 04:56:32  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.5  2002/01/14 06:35:57  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.4  2001/10/05 00:22:14  robertj
@@ -38,6 +41,9 @@
  *
  * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 1.5  2002/05/17 03:40:25  robertj
+ * Fixed problems with H.235 authentication on RAS for server and client.
  *
  * Revision 1.4  2001/12/06 06:44:42  robertj
  * Removed "Win32 SSL xxx" build configurations in favour of system
@@ -445,6 +451,21 @@ H235Authenticator::State H235AuthProcedure1::VerifyToken(
   }
   
   return e_Attacked;
+}
+
+
+BOOL H235AuthProcedure1::IsCapability(const H235_AuthenticationMechanism & mechansim,
+                                      const PASN_ObjectId & algorithmOID)
+{
+  return mechansim.GetTag() == H235_AuthenticationMechanism::e_pwdHash &&
+         algorithmOID.AsString() == OID_U;
+}
+
+
+BOOL H235AuthProcedure1::SetCapability(H225_ArrayOf_AuthenticationMechanism & mechanisms,
+                                      H225_ArrayOf_PASN_ObjectId & algorithmOIDs)
+{
+  return AddCapability(H235_AuthenticationMechanism::e_pwdHash, OID_U, mechanisms, algorithmOIDs);
 }
 
 
