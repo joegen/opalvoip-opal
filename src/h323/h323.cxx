@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2071  2005/01/15 23:27:31  dsandras
+ * Revision 1.2072  2005/01/15 23:32:41  csoutheren
+ * Added debugging to help find slow-start problem
+ *
+ * Revision 2.70  2005/01/15 23:27:31  dsandras
  * Only start channels if H.245 Master.
  *
  * Revision 2.69  2005/01/15 22:35:14  dsandras
@@ -4375,8 +4378,10 @@ OpalMediaStream * H323Connection::CreateMediaStream(const OpalMediaFormat & medi
   }
 
   RTP_Session * session = GetSession(sessionID);
-  if (session == NULL)
+  if (session == NULL) {
+    PTRACE(1, "H323\tCreateMediaStream could not find session " << sessionID);
     return NULL;
+  }
 
   return new OpalRTPMediaStream(mediaFormat, isSource, *session,
                                 endpoint.GetManager().GetMinAudioJitterDelay(),
