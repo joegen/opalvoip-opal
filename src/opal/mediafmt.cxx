@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2026  2004/10/24 10:46:41  rjongbloed
+ * Revision 1.2027  2005/02/21 12:20:05  rjongbloed
+ * Added new "options list" to the OpalMediaFormat class.
+ *
+ * Revision 2.25  2004/10/24 10:46:41  rjongbloed
  * Back out change of strcasecmp to strcmp for WinCE
  *
  * Revision 2.24  2004/10/23 11:42:38  ykiryanov
@@ -165,187 +168,27 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalMediaFormat const OpalPCM16(
-  OPAL_PCM16,
-  OpalMediaFormat::DefaultAudioSessionID,
-  RTP_DataFrame::MaxPayloadType,
-  "",
-  TRUE,   // Needs jitter
-  128000, // bits/sec
-  16, // bytes/frame
-  8, // 1 millisecond
-  OpalMediaFormat::AudioClockRate
-);
+#define STD_AUDIO(name, rtpPayloadType, encodingName, frameSize, frameTime, rxFrames, txFrames) \
+  OpalAudioFormat OpalMediaFormat_##name##_Instance( \
+          OPAL_##name, rtpPayloadType, encodingName, frameSize, frameTime, rxFrames, txFrames); \
 
-OpalMediaFormat const OpalL16Mono8kHz(
-  OPAL_L16_MONO_8KHZ,
-  OpalMediaFormat::DefaultAudioSessionID,
-  RTP_DataFrame::L16_Mono,
-  "L16",
-  TRUE,   // Needs jitter
-  128000, // bits/sec
-  16, // bytes/frame
-  8, // 1 millisecond
-  OpalMediaFormat::AudioClockRate
-);
+const OpalAudioFormat OpalPCM16         (OPAL_PCM16,          RTP_DataFrame::MaxPayloadType, "",     16, 8,  240, 30);
+const OpalAudioFormat OpalL16_MONO_8KHZ (OPAL_L16_MONO_8KHZ,  RTP_DataFrame::L16_Mono,       "L16",  16, 8,  240, 30);
+const OpalAudioFormat OpalL16_MONO_16KHZ(OPAL_L16_MONO_16KHZ, RTP_DataFrame::L16_Mono,       "L16",  16, 4,  120, 15);
+const OpalAudioFormat OpalG711_ULAW_64K (OPAL_G711_ULAW_64K,  RTP_DataFrame::PCMU,           "PCMU",  8, 8,  240, 30);
+const OpalAudioFormat OpalG711_ALAW_64K (OPAL_G711_ALAW_64K,  RTP_DataFrame::PCMA,           "PCMA",  8, 8,  240, 30);
+const OpalAudioFormat OpalG728          (OPAL_G728,           RTP_DataFrame::G728,           "G728",  5, 20, 100, 10);
+const OpalAudioFormat OpalG729          (OPAL_G729,           RTP_DataFrame::G729,           "G729", 10, 80,  24,  5);
+const OpalAudioFormat OpalG729A         (OPAL_G729A,          RTP_DataFrame::G729,           "G729", 10, 80,  24,  5);
+const OpalAudioFormat OpalG729B         (OPAL_G729B,          RTP_DataFrame::G729,           "G729", 10, 80,  24,  5);
+const OpalAudioFormat OpalG729AB        (OPAL_G729AB,         RTP_DataFrame::G729,           "G729", 10, 80,  24,  5);
+const OpalAudioFormat OpalG7231_6k3     (OPAL_G7231_6k3,      RTP_DataFrame::G7231,          "G723", 24, 240,  8,  3);
+const OpalAudioFormat OpalG7231_5k3     (OPAL_G7231_5k3,      RTP_DataFrame::G7231,          "G723", 24, 240,  8,  3);
+const OpalAudioFormat OpalG7231A_6k3    (OPAL_G7231A_6k3,     RTP_DataFrame::G7231,          "G723", 24, 240,  8,  3);
+const OpalAudioFormat OpalG7231A_5k3    (OPAL_G7231A_5k3,     RTP_DataFrame::G7231,          "G723", 24, 240,  8,  3);
+const OpalAudioFormat OpalGSM0610       (OPAL_GSM0610,        RTP_DataFrame::GSM,            "GSM",  33, 160,  7,  4);
 
-OpalMediaFormat const OpalL16Mono16kHz(
-  OPAL_L16_MONO_16KHZ,
-  OpalMediaFormat::DefaultAudioSessionID,
-  RTP_DataFrame::L16_Mono,
-  "L16",
-  TRUE,   // Needs jitter
-  256000, // bits/sec
-  16, // bytes/frame
-  16, // 1 millisecond
-  16000
-);
-
-OpalMediaFormat const OpalG711uLaw(
-  OPAL_G711_ULAW_64K,
-  OpalMediaFormat::DefaultAudioSessionID,
-  RTP_DataFrame::PCMU,
-  "PCMU",
-  TRUE,   // Needs jitter
-  64000, // bits/sec
-  8, // bytes/frame
-  8, // 1 millisecond/frame
-  OpalMediaFormat::AudioClockRate
-);
-
-OpalMediaFormat const OpalG711ALaw(
-  OPAL_G711_ALAW_64K,
-  OpalMediaFormat::DefaultAudioSessionID,
-  RTP_DataFrame::PCMA,
-  "PCMA",
-  TRUE,   // Needs jitter
-  64000, // bits/sec
-  8, // bytes/frame
-  8, // 1 millisecond/frame
-  OpalMediaFormat::AudioClockRate
-);
-
-OpalMediaFormat const OpalG728(  
-  OPAL_G728,
-  OpalMediaFormat::DefaultAudioSessionID,
-  RTP_DataFrame::G728,
-  "G728",
-  TRUE, // Needs jitter
-  16000,// bits/sec
-  5,    // bytes
-  20,   // 2.5 milliseconds
-  OpalMediaFormat::AudioClockRate
-);
-
-OpalMediaFormat const OpalG729( 
-  OPAL_G729,
-  OpalMediaFormat::DefaultAudioSessionID,
-  RTP_DataFrame::G729,
-  "G729",
-  TRUE, // Needs jitter
-  8000, // bits/sec
-  10,   // bytes
-  80,   // 10 milliseconds
-  OpalMediaFormat::AudioClockRate
-);
-
-OpalMediaFormat const OpalG729A( 
-  OPAL_G729A,
-  OpalMediaFormat::DefaultAudioSessionID,
-  RTP_DataFrame::G729,
-  "G729",
-  TRUE, // Needs jitter
-  8000, // bits/sec
-  10,   // bytes
-  80,   // 10 milliseconds
-  OpalMediaFormat::AudioClockRate
-);
-
-OpalMediaFormat const OpalG729B(
-  OPAL_G729B,
-  OpalMediaFormat::DefaultAudioSessionID,
-  RTP_DataFrame::G729,
-  "G729",
-  TRUE, // Needs jitter
-  8000, // bits/sec
-  10,   // bytes
-  80,   // 10 milliseconds
-  OpalMediaFormat::AudioClockRate
-);
-
-OpalMediaFormat const OpalG729AB(
-  OPAL_G729AB,
-  OpalMediaFormat::DefaultAudioSessionID,
-  RTP_DataFrame::G729,
-  "G729",
-  TRUE, // Needs jitter
-  8000, // bits/sec
-  10,   // bytes
-  80,   // 10 milliseconds
-  OpalMediaFormat::AudioClockRate
-);
-
-OpalMediaFormat const OpalG7231_6k3(
-  OPAL_G7231_6k3,
-  OpalMediaFormat::DefaultAudioSessionID,
-  RTP_DataFrame::G7231,
-  "G723",
-  TRUE, // Needs jitter
-  6400, // bits/sec
-  24,   // bytes
-  240,  // 30 milliseconds
-  OpalMediaFormat::AudioClockRate
-);
-
-OpalMediaFormat const OpalG7231_5k3(
-  OPAL_G7231_5k3,
-  OpalMediaFormat::DefaultAudioSessionID,
-  RTP_DataFrame::G7231,
-  "G723",
-  TRUE, // Needs jitter
-  5300, // bits/sec
-  24,   // bytes
-  240,  // 30 milliseconds
-  OpalMediaFormat::AudioClockRate
-);
-
-OpalMediaFormat const OpalG7231A_6k3(
-  OPAL_G7231A_6k3,
-  OpalMediaFormat::DefaultAudioSessionID,
-  RTP_DataFrame::G7231,
-  "G723",
-  TRUE, // Needs jitter
-  6400, // bits/sec
-  24,   // bytes
-  240,  // 30 milliseconds
-  OpalMediaFormat::AudioClockRate
-);
-
-OpalMediaFormat const OpalG7231A_5k3(
-  OPAL_G7231A_5k3,
-  OpalMediaFormat::DefaultAudioSessionID,
-  RTP_DataFrame::G7231,
-  "G723",
-  TRUE, // Needs jitter
-  5300, // bits/sec
-  24,   // bytes
-  240,  // 30 milliseconds
-  OpalMediaFormat::AudioClockRate
-);
-
-OpalMediaFormat const OpalGSM0610(
-  OPAL_GSM0610,
-  OpalMediaFormat::DefaultAudioSessionID,
-  RTP_DataFrame::GSM,
-  "GSM",
-  TRUE,  // Needs jitter
-  13200, // bits/sec
-  33,    // bytes
-  160,   // 20 milliseconds
-  OpalMediaFormat::AudioClockRate
-);
-
-OpalMediaFormat const OpalRFC2833(
+const OpalMediaFormat OpalRFC2833(
   OPAL_RFC2833,
   0,
   (RTP_DataFrame::PayloadTypes)101,  // Set to this for Cisco compatibility
@@ -360,15 +203,248 @@ OpalMediaFormat const OpalRFC2833(
 
 /////////////////////////////////////////////////////////////////////////////
 
+OpalMediaOption::OpalMediaOption(const char * name, bool readOnly, MergeType merge)
+  : m_name(name),
+    m_readOnly(readOnly),
+    m_merge(merge)
+{
+  m_name.Replace("=", "_", TRUE);
+}
+
+
+PObject::Comparison OpalMediaOption::Compare(const PObject & obj) const
+{
+  const OpalMediaOption * otherOption = PDownCast(const OpalMediaOption, &obj);
+  if (otherOption == NULL)
+    return GreaterThan;
+  return m_name.Compare(otherOption->m_name);
+}
+
+
+bool OpalMediaOption::Merge(const OpalMediaOption & option)
+{
+  switch (m_merge) {
+    case MinMerge :
+      if (Compare(option) == GreaterThan)
+        Assign(option);
+      break;
+
+    case MaxMerge :
+      if (Compare(option) == LessThan)
+        Assign(option);
+      break;
+
+    case EqualMerge :
+      return Compare(option) == EqualTo;
+
+    case NotEqualMerge :
+      return Compare(option) != EqualTo;
+
+    default :
+      break;
+  }
+
+  return true;
+}
+
+
+PString OpalMediaOption::AsString() const
+{
+  PStringStream strm;
+  PrintOn(strm);
+  return strm;
+}
+
+
+bool OpalMediaOption::FromString(const PString & value)
+{
+  PStringStream strm = value;
+  ReadFrom(strm);
+  return strm.good();
+}
+
+
+OpalMediaOptionEnum::OpalMediaOptionEnum(const char * name,
+                                         bool readOnly,
+                                         const char * const * enumerations,
+                                         PINDEX count,
+                                         MergeType merge,
+                                         PINDEX value)
+  : OpalMediaOption(name, readOnly, merge),
+    m_enumerations(count, enumerations),
+    m_value(value)
+{
+  if (m_value >= count)
+    m_value = count;
+}
+
+
+PObject * OpalMediaOptionEnum::Clone() const
+{
+  return new OpalMediaOptionEnum(*this);
+}
+
+
+PObject::Comparison OpalMediaOptionEnum::Compare(const PObject & obj) const
+{
+  const OpalMediaOptionEnum * otherOption = PDownCast(const OpalMediaOptionEnum, &obj);
+  if (otherOption == NULL)
+    return GreaterThan;
+
+  if (m_value < otherOption->m_value)
+    return LessThan;
+
+  if (m_value > otherOption->m_value)
+    return GreaterThan;
+
+  return EqualTo;
+}
+
+
+void OpalMediaOptionEnum::PrintOn(ostream & strm) const
+{
+  if (m_value < m_enumerations.GetSize())
+    strm << m_enumerations[m_value];
+  else
+    strm << m_value;
+}
+
+
+void OpalMediaOptionEnum::ReadFrom(istream & strm)
+{
+  PCaselessString str;
+  while (strm.good()) {
+    char ch;
+    strm.get(ch);
+    str += ch;
+    for (PINDEX i = 0; i < m_enumerations.GetSize(); i++) {
+      if (str == m_enumerations[i]) {
+        m_value = i;
+        return;
+      }
+    }
+  }
+
+  m_value = m_enumerations.GetSize();
+  strm.setstate(ios::badbit, true);
+}
+
+
+void OpalMediaOptionEnum::Assign(const OpalMediaOption & option)
+{
+  const OpalMediaOptionEnum * otherOption = PDownCast(const OpalMediaOptionEnum, &option);
+  if (otherOption != NULL)
+    m_value = otherOption->m_value;
+}
+
+
+void OpalMediaOptionEnum::SetValue(PINDEX value)
+{
+  if (value < m_enumerations.GetSize())
+    m_value = value;
+  else
+    m_value = m_enumerations.GetSize();
+}
+
+
+OpalMediaOptionString::OpalMediaOptionString(const char * name, bool readOnly)
+  : OpalMediaOption(name, readOnly, MinMerge)
+{
+}
+
+
+OpalMediaOptionString::OpalMediaOptionString(const char * name, bool readOnly, const PString & value)
+  : OpalMediaOption(name, readOnly, MinMerge),
+    m_value(value)
+{
+}
+
+
+PObject * OpalMediaOptionString::Clone() const
+{
+  OpalMediaOptionString * newObj = new OpalMediaOptionString(*this);
+  newObj->m_value.MakeUnique();
+  return newObj;
+}
+
+
+PObject::Comparison OpalMediaOptionString::Compare(const PObject & obj) const
+{
+  const OpalMediaOptionString * otherOption = PDownCast(const OpalMediaOptionString, &obj);
+  if (otherOption == NULL)
+    return GreaterThan;
+
+  return m_value.Compare(otherOption->m_value);
+}
+
+
+void OpalMediaOptionString::PrintOn(ostream & strm) const
+{
+  strm << m_value.ToLiteral();
+}
+
+
+void OpalMediaOptionString::ReadFrom(istream & strm)
+{
+  char c;
+  strm >> c; // Skip whitespace
+
+  if (c != '"') {
+    strm.putback(c);
+    strm >> m_value; // If no " then read to end of line.
+  }
+  else {
+    // If there was a '"' then assume it is a C style literal string with \ escapes etc
+
+    PINDEX count = 0;
+    PStringStream str;
+    str << '"';
+
+    while (strm.get(c).good()) {
+      str << c;
+
+      // Keep reading till get a '"' that is not preceded by a '\' that is not itself preceded by a '\'
+      if (c == '"' && count > 0 && (str[count] != '\\' || !(count > 1 && str[count-1] == '\\')))
+        break;
+
+      count++;
+    }
+
+    m_value = PString(PString::Literal, (const char *)str);
+  }
+}
+
+
+void OpalMediaOptionString::Assign(const OpalMediaOption & option)
+{
+  const OpalMediaOptionString * otherOption = PDownCast(const OpalMediaOptionString, &option);
+  if (otherOption != NULL) {
+    m_value = otherOption->m_value;
+    m_value.MakeUnique();
+  }
+}
+
+
+void OpalMediaOptionString::SetValue(const PString & value)
+{
+  m_value = value;
+  m_value.MakeUnique();
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+const char * const OpalMediaFormat::NeedsJitterOption = "NeedsJitter";
+const char * const OpalMediaFormat::MaxBitRateOption = "MaxBitRate";
+const char * const OpalMediaFormat::MaxFrameSizeOption = "MaxFrameSize";
+const char * const OpalMediaFormat::FrameTimeOption = "FrameTime";
+const char * const OpalMediaFormat::ClockRateOption = "ClockRate";
+
 OpalMediaFormat::OpalMediaFormat()
 {
   rtpPayloadType = RTP_DataFrame::IllegalPayloadType;
-
-  needsJitter = FALSE;
-  bandwidth = 0;
-  frameSize = 0;
-  frameTime = 0;
-  clockRate = 0;
+  rtpEncodingName = NULL;
+  defaultSessionID = 0;
 }
 
 
@@ -408,15 +484,6 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
                                  unsigned cr)
   : PCaselessString(fullName)
 {
-  rtpPayloadType = pt;
-  rtpEncodingName = en;
-  defaultSessionID = dsid;
-  needsJitter = nj;
-  bandwidth = bw;
-  frameSize = fs;
-  frameTime = ft;
-  clockRate = cr;
-
   PINDEX i;
   PWaitAndSignal mutex(GetMediaFormatsListMutex());
   OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
@@ -425,6 +492,24 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
     *this = registeredFormats[i]; // Already registered, use previous values
     return;
   }
+
+  rtpPayloadType = pt;
+  rtpEncodingName = en;
+  defaultSessionID = dsid;
+
+  if (nj)
+    AddOption(new OpalMediaOptionBoolean(NeedsJitterOption, true, OpalMediaOption::OrMerge, true));
+
+  AddOption(new OpalMediaOptionInteger(MaxBitRateOption, true, OpalMediaOption::MinMerge, bw));
+
+  if (fs > 0)
+    AddOption(new OpalMediaOptionInteger(MaxFrameSizeOption, true, OpalMediaOption::MinMerge, fs));
+
+  if (ft > 0)
+    AddOption(new OpalMediaOptionInteger(FrameTimeOption, true, OpalMediaOption::EqualMerge, ft));
+
+  if (cr > 0)
+    AddOption(new OpalMediaOptionInteger(ClockRateOption, true, OpalMediaOption::EqualMerge, cr));
 
   // assume non-dynamic payload types are correct and do not need deconflicting
   if (rtpPayloadType < RTP_DataFrame::DynamicBase || rtpPayloadType == RTP_DataFrame::MaxPayloadType) {
@@ -503,12 +588,184 @@ void OpalMediaFormat::GetAllRegisteredMediaFormats(OpalMediaFormatList & copy)
     copy.OpalMediaFormatBaseList::Append(registeredFormats[i].Clone());
 }
 
+
+bool OpalMediaFormat::GetOptionValue(const PString & name, PString & value) const
+{
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return false;
+
+  value = option->AsString();
+  return true;
+}
+
+
+bool OpalMediaFormat::SetOptionValue(const PString & name, const PString & value)
+{
+  if (!options.MakeUnique())
+    return false;
+
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return false;
+
+  return option->FromString(value);
+}
+
+
+bool OpalMediaFormat::GetOptionBoolean(const PString & name, bool dflt) const
+{
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return dflt;
+
+  return PDownCast(OpalMediaOptionBoolean, option)->GetValue();
+}
+
+
+bool OpalMediaFormat::SetOptionBoolean(const PString & name, bool value)
+{
+  if (!options.MakeUnique())
+    return false;
+
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return false;
+
+  PDownCast(OpalMediaOptionBoolean, option)->SetValue(value);
+  return true;
+}
+
+
+int OpalMediaFormat::GetOptionInteger(const PString & name, int dflt) const
+{
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return dflt;
+
+  return PDownCast(OpalMediaOptionInteger, option)->GetValue();
+}
+
+
+bool OpalMediaFormat::SetOptionInteger(const PString & name, int value)
+{
+  if (!options.MakeUnique())
+    return false;
+
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return false;
+
+  PDownCast(OpalMediaOptionInteger, option)->SetValue(value);
+  return true;
+}
+
+
+double OpalMediaFormat::GetOptionReal(const PString & name, double dflt) const
+{
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return dflt;
+
+  return PDownCast(OpalMediaOptionReal, option)->GetValue();
+}
+
+
+bool OpalMediaFormat::SetOptionReal(const PString & name, double value)
+{
+  if (!options.MakeUnique())
+    return false;
+
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return false;
+
+  PDownCast(OpalMediaOptionReal, option)->SetValue(value);
+  return true;
+}
+
+
+PINDEX OpalMediaFormat::GetOptionEnum(const PString & name, PINDEX dflt) const
+{
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return dflt;
+
+  return PDownCast(OpalMediaOptionEnum, option)->GetValue();
+}
+
+
+bool OpalMediaFormat::SetOptionEnum(const PString & name, PINDEX value)
+{
+  if (!options.MakeUnique())
+    return false;
+
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return false;
+
+  PDownCast(OpalMediaOptionEnum, option)->SetValue(value);
+  return true;
+}
+
+
+PString OpalMediaFormat::GetOptionString(const PString & name, const PString & dflt) const
+{
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return dflt;
+
+  return PDownCast(OpalMediaOptionString, option)->GetValue();
+}
+
+
+bool OpalMediaFormat::SetOptionString(const PString & name, const PString & value)
+{
+  if (!options.MakeUnique())
+    return false;
+
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return false;
+
+  PDownCast(OpalMediaOptionString, option)->SetValue(value);
+  return true;
+}
+
+
+bool OpalMediaFormat::AddOption(OpalMediaOption * option)
+{
+  if (PAssertNULL(option) == NULL)
+    return false;
+
+  if (options.GetValuesIndex(*option) != P_MAX_INDEX) {
+    delete option;
+    return false;
+  }
+
+  options.Append(option);
+  return true;
+}
+
+
+OpalMediaOption * OpalMediaFormat::FindOption(const PString & name) const
+{
+  OpalMediaOptionString search(name, false);
+  PINDEX index = options.GetValuesIndex(search);
+  if (index == P_MAX_INDEX)
+    return NULL;
+
+  return &options[index];
+}
+
+
 OpalMediaFormatList OpalMediaFormat::GetAllRegisteredMediaFormats()
 {
   OpalMediaFormatList copy;
   GetAllRegisteredMediaFormats(copy);
   return copy;
 }
+
 
 OpalMediaFormatList & OpalMediaFormat::GetMediaFormatsList()
 {
@@ -521,6 +778,33 @@ PMutex & OpalMediaFormat::GetMediaFormatsListMutex()
 {
   static PMutex mutex;
   return mutex;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+const char * const OpalAudioFormat::RxFramesPerPacketOption = "RxFramesPerPacket";
+const char * const OpalAudioFormat::TxFramesPerPacketOption = "TxFramesPerPacket";
+
+OpalAudioFormat::OpalAudioFormat(const char * fullName,
+                                 RTP_DataFrame::PayloadTypes rtpPayloadType,
+                                 const char * encodingName,
+                                 PINDEX   frameSize,
+                                 unsigned frameTime,
+                                 unsigned rxFrames,
+                                 unsigned txFrames)
+  : OpalMediaFormat(fullName,
+                    OpalMediaFormat::DefaultAudioSessionID,
+                    rtpPayloadType,
+                    encodingName,
+                    TRUE,
+                    8*frameSize*8000/frameTime,
+                    frameSize,
+                    frameTime,
+                    OpalMediaFormat::AudioClockRate)
+{
+  AddOption(new OpalMediaOptionInteger(RxFramesPerPacketOption, false, OpalMediaOption::MinMerge, rxFrames));
+  AddOption(new OpalMediaOptionInteger(TxFramesPerPacketOption, false, OpalMediaOption::MinMerge, txFrames));
 }
 
 
