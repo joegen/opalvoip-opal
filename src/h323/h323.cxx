@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2066  2004/10/03 14:18:47  rjongbloed
+ * Revision 1.2067  2004/10/04 12:57:06  rjongbloed
+ * Fixed temporary unlocking of read/write mutex so if cannot relock does not
+ *   get an unbalanced unlock error.
+ *
+ * Revision 2.65  2004/10/03 14:18:47  rjongbloed
  * Fixed missing check for established after connecting.
  *
  * Revision 2.64  2004/10/02 12:30:22  rjongbloed
@@ -2879,12 +2883,12 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   phase = SetUpPhase;
 
   // Release the mutex as can deadlock trying to clear call during connect.
-  UnlockReadWrite();
+  safeLock.Unlock();
 
   BOOL connectFailed = !signallingChannel->Connect();
 
     // Lock while checking for shutting down.
-  if (!LockReadWrite())
+  if (!safeLock.Lock())
     return EndedByCallerAbort;
 
   if (phase >= ReleasingPhase)
