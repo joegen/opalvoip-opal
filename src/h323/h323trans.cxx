@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323trans.cxx,v $
- * Revision 1.2002  2004/02/19 10:47:04  rjongbloed
+ * Revision 1.2003  2005/01/16 23:07:34  csoutheren
+ * Fixed problem with IPv6 INADDR_ANY
+ *
+ * Revision 2.1  2004/02/19 10:47:04  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 1.23  2003/12/11 05:41:00  csoutheren
@@ -939,7 +942,7 @@ BOOL H323TransactionServer::AddListener(const H323TransportAddress & interfaceNa
   if (!interfaceName.GetIpAndPort(addr, port))
     return AddListener(interfaceName.CreateTransport(ownerEndPoint));
 
-  if (addr != INADDR_ANY)
+  if (addr.IsAny())
     return AddListener(new H323TransportUDP(ownerEndPoint, addr, port));
 
   PIPSocket::InterfaceTable interfaces;
