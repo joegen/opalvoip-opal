@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g729codec.h,v $
- * Revision 1.2008  2004/02/19 10:46:43  rjongbloed
+ * Revision 1.2009  2004/02/23 01:32:06  rjongbloed
+ * Removed duplicate #if for if voice age included and made sure there was a
+ *   dummy G729 declaration macro if no G.729 included.
+ *
+ * Revision 2.7  2004/02/19 10:46:43  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.6  2003/06/02 04:04:54  rjongbloed
@@ -87,10 +91,6 @@
 
 #if VOICE_AGE_G729A
 
-#include <opal/buildopts.h>
-
-#if VOICE_AGE_G729A
-
 #include <opal/transcoders.h>
 
 
@@ -131,8 +131,9 @@ typedef Opal_PCM_G729 Opal_PCM_G729A;
           OPAL_REGISTER_TRANSCODER(Opal_PCM_G729A, OPAL_PCM16, OPAL_G729A)
 
 
+#else // VOICE_AGE_G729A
 
-#endif // VOICE_AGE_G729A
+#define OPAL_REGISTER_G729()
 
 #endif // VOICE_AGE_G729A
 
