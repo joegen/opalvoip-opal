@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2031  2004/08/18 13:02:48  rjongbloed
+ * Revision 1.2032  2004/12/21 08:24:31  dsandras
+ * The dictionnary key is a PString, not an OpalGloballyUniqueID. Fixes problem when doing several calls at the same time.
+ *
+ * Revision 2.30  2004/08/18 13:02:48  rjongbloed
  * Changed to make calling OPalManager::OnClearedCall() in override optional.
  *
  * Revision 2.29  2004/08/14 07:56:29  rjongbloed
@@ -1037,7 +1040,7 @@ class OpalManager : public PObject
 
     unsigned     lastCallTokenID;
 
-    class CallDict : public PSafeDictionary<OpalGloballyUniqueID, OpalCall>
+    class CallDict : public PSafeDictionary<PString, OpalCall>
     {
       public:
         CallDict(OpalManager & mgr) : manager(mgr) { }
