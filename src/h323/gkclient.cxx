@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2012  2002/09/04 06:01:48  robertj
+ * Revision 1.2013  2002/09/12 06:58:33  robertj
+ * Removed protocol prefix strings as static members as has problems with
+ *   use in DLL environment.
+ *
+ * Revision 2.11  2002/09/04 06:01:48  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.10  2002/07/01 04:56:31  robertj
@@ -539,9 +543,7 @@ BOOL H323Gatekeeper::DiscoverByName(const PString & identifier)
 BOOL H323Gatekeeper::DiscoverByAddress(const PString & address)
 {
   gatekeeperIdentifier = PString();
-  OpalTransportAddress fullAddress(address,
-                                   H225_RAS::DefaultRasUdpPort,
-                                   OpalTransportAddress::UdpPrefix);
+  OpalTransportAddress fullAddress(address, H225_RAS::DefaultRasUdpPort, "udp");
   return StartDiscovery(fullAddress);
 }
 
@@ -684,7 +686,7 @@ BOOL H323Gatekeeper::OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm & g
     }
   }
 
-  H323TransportAddress locatedAddress(gcf.m_rasAddress, OpalTransportAddress::UdpPrefix);
+  H323TransportAddress locatedAddress(gcf.m_rasAddress, "udp");
   PTRACE(2, "RAS\tGatekeeper discovery found " << locatedAddress);
 
   if (!transport->SetRemoteAddress(locatedAddress)) {
