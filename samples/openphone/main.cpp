@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cpp,v $
+ * Revision 1.16  2004/07/04 12:53:09  rjongbloed
+ * Added support for route editing.
+ *
  * Revision 1.15  2004/06/05 14:37:03  rjongbloed
  * More implemntation of options dialog.
  *
@@ -163,6 +166,7 @@ DEF_FIELD(TraceTimestamp);
 DEF_FIELD(TraceThreadName);
 DEF_FIELD(TraceThreadAddress);
 DEF_FIELD(TraceFileName);
+DEF_FIELD(TraceOptions);
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -250,7 +254,6 @@ END_EVENT_TABLE()
 MyFrame::MyFrame()
   : wxFrame(NULL, -1, wxT("OpenPhone"), wxDefaultPosition, wxSize(640, 480)),
     m_speedDials(NULL),
-    m_TraceFile(NULL),
     pcssEP(NULL),
     potsEP(NULL),
 #if OPAL_H323
@@ -320,14 +323,6 @@ MyFrame::~MyFrame()
     potsEP->RemoveAllLines();
 
   LogWindow.SetTextCtrl(NULL);
-
-#if PTRACING
-  if (m_TraceFile != NULL) {
-    PTrace::SetStream(NULL);
-    m_TraceFile->Close();
-    delete m_TraceFile;
-  }
-#endif
 }
 
 
@@ -393,7 +388,7 @@ void MyFrame::OnClose(wxCloseEvent& event)
 void MyFrame::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
 {
   wxMenuBar * menubar = GetMenuBar();
-  bool inCall = !currentCallToken;
+  bool inCall = !m_currentCallToken.IsEmpty();
   menubar->Enable(XRCID("MenuCall"),   !inCall);
   menubar->Enable(XRCID("MenuAnswer"), !pcssEP->m_incomingConnectionToken);
   menubar->Enable(XRCID("MenuHangUp"),  inCall);
@@ -426,16 +421,16 @@ void MyFrame::OnMenuCall(wxCommandEvent& WXUNUSED(event))
 
 void MyFrame::OnMenuAnswer(wxCommandEvent& WXUNUSED(event))
 {
-  currentCallToken = pcssEP->m_incomingConnectionToken;
+  m_currentCallToken = pcssEP->m_incomingConnectionToken;
   pcssEP->m_incomingConnectionToken.MakeEmpty();
-  pcssEP->AcceptIncomingConnection(currentCallToken);
+  pcssEP->AcceptIncomingConnection(m_currentCallToken);
 }
 
 
 void MyFrame::OnMenuHangUp(wxCommandEvent& WXUNUSED(event))
 {
-  if (!currentCallToken)
-    ClearCall(currentCallToken);
+  if (!m_currentCallToken.IsEmpty())
+    ClearCall(m_currentCallToken);
 }
 
 
@@ -488,24 +483,24 @@ void MyFrame::MakeCall(const PwxString & address)
 
   LogWindow << "Calling \"" << address << '"' << endl;
 
-  if (potsEP != NULL)
-    SetUpCall("pots:*", address, currentCallToken);
+  if (potsEP != NULL && potsEP->GetLine("*") != NULL)
+    SetUpCall("pots:*", address, m_currentCallToken);
   else
-    SetUpCall("pc:*", address, currentCallToken);
+    SetUpCall("pc:*", address, m_currentCallToken);
 }
 
 
 void MyFrame::OnEstablishedCall(OpalCall & call)
 {
-  currentCallToken = call.GetToken();
+  m_currentCallToken = call.GetToken();
   LogWindow << "In call with " << call.GetPartyB() << " using " << call.GetPartyA() << endl;
 }
 
 
 void MyFrame::OnClearedCall(OpalCall & call)
 {
-  if (currentCallToken == call.GetToken())
-    currentCallToken = PString();
+  if (m_currentCallToken == call.GetToken())
+    m_currentCallToken.MakeEmpty();
 
   PString remoteName = '"' + call.GetPartyB() + '"';
   switch (call.GetCallEndReason()) {
@@ -601,13 +596,13 @@ bool MyFrame::Initialise()
 {
   wxConfigBase * config = wxConfig::Get();
 
-  wxString traceFileName;
-  if (config->Read("TraceFileName", &traceFileName) && !traceFileName.IsEmpty()) {
+  if (config->Read(EnableTracingKey, &m_enableTracing, false) && m_enableTracing &&
+      config->Read(TraceFileNameKey, &m_traceFileName) && !m_traceFileName.empty()) {
     int traceLevelThreshold = 3;
-    config->Read("TraceLevelThreshold", &traceLevelThreshold);
+    config->Read(TraceLevelThresholdKey, &traceLevelThreshold);
     int traceOptions = PTrace::DateAndTime|PTrace::Thread|PTrace::FileAndLine;
-    config->Read("TraceOptions", &traceOptions);
-    PTrace::Initialise(traceLevelThreshold, traceFileName, traceOptions);
+    config->Read(TraceOptionsKey, &traceOptions);
+    PTrace::Initialise(traceLevelThreshold, m_traceFileName, traceOptions);
   }
 
 #if OPAL_H323
@@ -738,6 +733,49 @@ bool MyFrame::Initialise()
     }
   }
 
+  {
+#if OPAL_SIP
+    if (sipEP != NULL) {
+      AddRouteEntry("pots:.*\\*.*\\*.* = sip:<dn2ip>");
+      AddRouteEntry("pots:.*           = sip:<da>");
+      AddRouteEntry("pc:.*             = sip:<da>");
+    }
+#if OPAL_H323
+    else
+#endif
+#endif
+
+#if OPAL_H323
+    if (h323EP != NULL) {
+      AddRouteEntry("pots:.*\\*.*\\*.* = h323:<dn2ip>");
+      AddRouteEntry("pots:.*           = h323:<da>");
+      AddRouteEntry("pc:.*             = h323:<da>");
+    }
+#endif
+
+#if P_EXPAT
+    if (ivrEP != NULL)
+      AddRouteEntry(".*:#  = ivr:"); // A hash from anywhere goes to IVR
+#endif
+
+    if (potsEP != NULL && potsEP->GetLine("*") != NULL) {
+#if OPAL_H323
+      AddRouteEntry("h323:.* = pots:<da>");
+#endif
+#if OPAL_SIP
+      AddRouteEntry("sip:.*  = pots:<da>");
+#endif
+    }
+    else if (pcssEP != NULL) {
+#if OPAL_H323
+      AddRouteEntry("h323:.* = pc:<da>");
+#endif
+#if OPAL_SIP
+      AddRouteEntry("sip:.*  = pc:<da>");
+#endif
+    }
+  }
+
   return true;
 }
 
@@ -751,6 +789,12 @@ void MyFrame::OnOptions(wxCommandEvent& event)
 }
 
 BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
+  EVT_BUTTON(XRCID("AddRoute"), OptionsDialog::AddRoute)
+  EVT_BUTTON(XRCID("RemoveRoute"), OptionsDialog::RemoveRoute)
+  EVT_LIST_ITEM_SELECTED(XRCID("Routes"), OptionsDialog::SelectedRoute)
+  EVT_LIST_ITEM_DESELECTED(XRCID("Routes"), OptionsDialog::DeselectedRoute)
+  EVT_TEXT(XRCID("RoutePattern"), OptionsDialog::ChangedRouteInfo)
+  EVT_TEXT(XRCID("RouteDestination"), OptionsDialog::ChangedRouteInfo)
 END_EVENT_TABLE()
 
 #define INIT_FIELD(name, value) \
@@ -816,8 +860,9 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
   INIT_FIELD(RegistrarName, mainFrame.sipEP->GetRegistrationAddress().GetHostName());
   INIT_FIELD(RegistrarUsername, mainFrame.sipEP->GetRegistrationAddress().GetUserName());
   INIT_FIELD(RegistrarPassword, mainFrame.sipEP->GetRegistrationAddress().GetPassword());
+
 #if PTRACING
-  INIT_FIELD(EnableTracing, mainFrame.m_TraceFile != NULL);
+  INIT_FIELD(EnableTracing, mainFrame.m_enableTracing);
   INIT_FIELD(TraceLevelThreshold, PTrace::GetLevel());
   INIT_FIELD(TraceLevelNumber, (PTrace::GetOptions()&PTrace::TraceLevel) != 0);
   INIT_FIELD(TraceFileLine, (PTrace::GetOptions()&PTrace::FileAndLine) != 0);
@@ -826,9 +871,10 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
   INIT_FIELD(TraceTimestamp, (PTrace::GetOptions()&PTrace::Timestamp) != 0);
   INIT_FIELD(TraceThreadName, (PTrace::GetOptions()&PTrace::Thread) != 0);
   INIT_FIELD(TraceThreadAddress, (PTrace::GetOptions()&PTrace::ThreadAddress) != 0);
-  INIT_FIELD(TraceFileName, m_EnableTracing ? mainFrame.m_TraceFile->GetFilePath() : "");
+  INIT_FIELD(TraceFileName, mainFrame.m_traceFileName);
 #endif // PTRACING
 
+  // Fill sound player combo box with available devices and set selection
   wxComboBox * combo = (wxComboBox *)FindWindowByName(SoundPlayerKey);
   combo->SetValidator(wxGenericValidator(&m_SoundPlayer));
   PStringList devices = PSoundChannel::GetDeviceNames(PSoundChannel::Player);
@@ -836,6 +882,7 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
     combo->Append((const char *)devices[i]);
   m_SoundPlayer = mainFrame.pcssEP->GetSoundChannelPlayDevice();
 
+  // Fill sound recorder combo box with available devices and set selection
   combo = (wxComboBox *)FindWindowByName(SoundRecorderKey);
   combo->SetValidator(wxGenericValidator(&m_SoundRecorder));
   devices = PSoundChannel::GetDeviceNames(PSoundChannel::Recorder);
@@ -843,6 +890,7 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
     combo->Append((const char *)devices[i]);
   m_SoundRecorder = mainFrame.pcssEP->GetSoundChannelRecordDevice();
 
+  // Fill line interface combo box with available devices and set selection
   combo = (wxComboBox *)FindWindowByName(LineInterfaceDeviceKey);
   combo->SetValidator(wxGenericValidator(&m_LineInterfaceDevice));
   OpalLine * line = mainFrame.potsEP->GetLine("*");
@@ -860,6 +908,50 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
     FindWindowByName(AECKey)->Disable();
     FindWindowByName(CountryKey)->Disable();
   }
+
+  // Fill list box with active routes
+  static char const AllSources[] = "<ALL>";
+  m_Routes = (wxListCtrl *)FindWindowByName("Routes");
+  m_Routes->InsertColumn(0, _T("Source"));
+  m_Routes->InsertColumn(1, _T("Pattern"));
+  m_Routes->InsertColumn(2, _T("Destination"));
+  const OpalManager::RouteTable & routeTable = mainFrame.GetRouteTable();
+  for (i = 0; i < routeTable.GetSize(); i++) {
+    PString pattern = routeTable[i].pattern;
+    PINDEX colon = pattern.Find(':');
+    wxString source;
+    if (colon == P_MAX_INDEX) {
+      source = AllSources;
+      colon = 0;
+    }
+    else {
+      source = (const char *)pattern.Left(colon);
+      if (source == ".*")
+        source = AllSources;
+      ++colon;
+    }
+    int pos = m_Routes->InsertItem(INT_MAX, source);
+    m_Routes->SetItem(pos, 1, (const char *)pattern.Mid(colon));
+    m_Routes->SetItem(pos, 2, (const char *)routeTable[i].destination);
+  }
+
+  // Fill combo box with possible protocols
+  m_RouteSource = (wxComboBox *)FindWindowByName("RouteSource");
+  m_RouteSource->Append(AllSources);
+  const OpalEndPointList & endponts = mainFrame.GetEndPoints();
+  for (i = 0; i < endponts.GetSize(); i++)
+    m_RouteSource->Append((const char *)endponts[i].GetPrefixName());
+  m_RouteSource->SetSelection(0);
+
+  m_RoutePattern = (wxTextCtrl *)FindWindowByName("RoutePattern");
+  m_RouteDestination = (wxTextCtrl *)FindWindowByName("RouteDestination");
+
+  m_AddRoute = (wxButton *)FindWindowByName("AddRoute");
+  m_AddRoute->Disable();
+
+  m_RemoveRoute = (wxButton *)FindWindowByName("RemoveRoute");
+  m_RemoveRoute->Disable();
+  m_SelectedRoute = INT_MAX;
 }
 
 
@@ -942,56 +1034,40 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD3(RegistrarName, RegistrarUsername, RegistrarPassword, mainFrame.sipEP->Register);
 
 #if PTRACING
-  SAVE_FIELD(TraceLevelThreshold, PTrace::SetLevel);
+  int traceOptions = 0;
+  if (m_TraceLevelNumber)
+    traceOptions |= PTrace::TraceLevel;
+  if (m_TraceFileLine)
+    traceOptions |= PTrace::FileAndLine;
+  if (m_TraceBlocks)
+    traceOptions |= PTrace::Blocks;
+  if (m_TraceDateTime)
+    traceOptions |= PTrace::DateAndTime;
+  if (m_TraceTimestamp)
+    traceOptions |= PTrace::Timestamp;
+  if (m_TraceThreadName)
+    traceOptions |= PTrace::Thread;
+  if (m_TraceThreadAddress)
+    traceOptions |= PTrace::ThreadAddress;
+
+  config->Write(EnableTracingKey, m_EnableTracing);
+  config->Write(TraceLevelThresholdKey, m_TraceLevelThreshold);
+  config->Write(TraceFileNameKey, m_TraceFileName);
+  config->Write(TraceOptionsKey, traceOptions);
 
   // Check for stopping tracing
-  if (mainFrame.m_TraceFile != NULL &&
-            (!m_EnableTracing || mainFrame.m_TraceFile->GetFilePath() != PFilePath((PString)m_TraceFileName))) {
+  if (mainFrame.m_enableTracing && (!m_EnableTracing || m_TraceFileName.empty()))
     PTrace::SetStream(NULL);
-    delete mainFrame.m_TraceFile;
-    config->DeleteEntry("TraceFileName");
+  else if (m_EnableTracing && (!mainFrame.m_enableTracing || mainFrame.m_traceFileName != m_TraceFileName))
+    PTrace::Initialise(m_TraceLevelThreshold, m_TraceFileName, traceOptions);
+  else {
+    PTrace::SetLevel(m_TraceLevelThreshold);
+    PTrace::SetOptions(traceOptions);
+    PTrace::ClearOptions(~traceOptions);
   }
 
-  if (m_EnableTracing && !m_TraceFileName.IsEmpty() && mainFrame.m_TraceFile == NULL) {
-    PTextFile * traceFile = new PTextFile;
-    if (traceFile->Open(m_TraceFileName.c_str(), PFile::WriteOnly)) {
-      mainFrame.m_TraceFile = traceFile;
-      PTrace::SetStream(traceFile);
-      PProcess & process = PProcess::Current();
-      PTRACE(0, process.GetName()
-            << " Version " << process.GetVersion(TRUE)
-            << " by " << process.GetManufacturer()
-            << " on " << process.GetOSClass() << ' ' << process.GetOSName()
-            << " (" << process.GetOSVersion() << '-' << process.GetOSHardware() << ')');
-      config->Write("TraceFileName", traceFile->GetFilePath());
-    }
-    else {
-      wxString msg;
-      msg << "Could not open trace log file \"" << m_TraceFileName << '"';
-      wxMessageDialog messageBox(this, msg, _T("OpenPhone Error"), wxOK|wxICON_EXCLAMATION);
-      messageBox.ShowModal();
-      delete traceFile;
-    }
-  }
-
-  int newOptions = 0;
-  if (m_TraceLevelNumber)
-    newOptions |= PTrace::TraceLevel;
-  if (m_TraceFileLine)
-    newOptions |= PTrace::FileAndLine;
-  if (m_TraceBlocks)
-    newOptions |= PTrace::Blocks;
-  if (m_TraceDateTime)
-    newOptions |= PTrace::DateAndTime;
-  if (m_TraceTimestamp)
-    newOptions |= PTrace::Timestamp;
-  if (m_TraceThreadName)
-    newOptions |= PTrace::Thread;
-  if (m_TraceThreadAddress)
-    newOptions |= PTrace::ThreadAddress;
-  PTrace::SetOptions(newOptions);
-  PTrace::ClearOptions(~newOptions);
-  config->Write("TraceOptions", newOptions);
+  mainFrame.m_enableTracing = m_EnableTracing;
+  mainFrame.m_traceFileName = m_TraceFileName;
 #endif // PTRACING
 
   return true;
@@ -1073,18 +1149,37 @@ void OptionsDialog::RemoveAlias(wxCommandEvent & event)
 }
 
 
-void OptionsDialog::AddRoute(wxCommandEvent & event)
+void OptionsDialog::AddRoute(wxCommandEvent & )
 {
+  int pos = m_Routes->InsertItem(m_SelectedRoute, m_RouteSource->GetValue());
+  m_Routes->SetItem(pos, 1, m_RoutePattern->GetValue());
+  m_Routes->SetItem(pos, 2, m_RouteDestination->GetValue());
 }
 
 
 void OptionsDialog::RemoveRoute(wxCommandEvent & event)
 {
+  m_Routes->DeleteItem(m_SelectedRoute);
 }
 
 
-void OptionsDialog::SelectedRoute(wxCommandEvent & event)
+void OptionsDialog::SelectedRoute(wxListEvent & event)
 {
+  m_SelectedRoute = event.GetIndex();
+  m_RemoveRoute->Enable(true);
+}
+
+
+void OptionsDialog::DeselectedRoute(wxListEvent & event)
+{
+  m_SelectedRoute = INT_MAX;
+  m_RemoveRoute->Enable(false);
+}
+
+
+void OptionsDialog::ChangedRouteInfo(wxCommandEvent & event)
+{
+  m_AddRoute->Enable(!m_RoutePattern->GetValue().IsEmpty() && !m_RouteDestination->GetValue().IsEmpty());
 }
 
 
