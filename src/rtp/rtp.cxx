@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2007  2002/02/11 09:32:13  robertj
+ * Revision 1.2008  2002/04/10 03:10:39  robertj
+ * Added referential (container) copy functions to session manager class.
+ *
+ * Revision 2.6  2002/02/11 09:32:13  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.5  2002/01/14 06:35:58  robertj
@@ -1109,13 +1112,29 @@ RTP_SessionManager::RTP_SessionManager()
 }
 
 
+RTP_SessionManager::RTP_SessionManager(const RTP_SessionManager & sm)
+  : sessions(sm.sessions)
+{
+  enumerationIndex = P_MAX_INDEX;
+}
+
+
+RTP_SessionManager & RTP_SessionManager::operator=(const RTP_SessionManager & sm)
+{
+  PWaitAndSignal m1(mutex);
+  PWaitAndSignal m2(sm.mutex);
+  sessions = sm.sessions;
+  return *this;
+}
+
+
 RTP_Session * RTP_SessionManager::UseSession(unsigned sessionID)
 {
   mutex.Wait();
 
   RTP_Session * session = sessions.GetAt(sessionID);
   if (session == NULL)
-    return NULL;
+    return NULL;  // Deliberately have not release mutex here! See AddSession.
 
   PTRACE(3, "RTP\tFound existing session " << sessionID);
   session->IncrementReference();
@@ -1131,6 +1150,8 @@ void RTP_SessionManager::AddSession(RTP_Session * session)
 
   PTRACE(2, "RTP\tAdding session " << *session);
   sessions.SetAt(session->GetSessionID(), session);
+
+  // The following is the mutex.Signal() that was not done in the UseSession()
   mutex.Signal();
 }
 
