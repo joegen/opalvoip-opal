@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2006  2001/10/03 05:56:15  robertj
+ * Revision 1.2007  2001/10/15 04:29:14  robertj
+ * Added delayed start of media patch threads.
+ * Removed answerCall signal and replaced with state based functions.
+ *
+ * Revision 2.5  2001/10/03 05:56:15  robertj
  * Changes abndwidth management API.
  *
  * Revision 2.4  2001/08/22 10:20:09  robertj
@@ -237,32 +241,6 @@ class OpalConnection : public PObject
      */
     virtual BOOL OnIncomingConnection();
 
-    enum AnswerCallResponse {
-      AnswerCallNow,      /// Answer the call continuing with the connection.
-      AnswerCallDenied,   /// Refuse the call sending a release complete.
-      AnswerCallAlert,  /// Send an Alerting PDU and wait for AnsweringCall()
-      AnswerCallPending = AnswerCallAlert,
-      AnswerCallDeferred, /// As for AnswerCallPending but does not send Alerting PDU
-      AnswerCallAlertWithMedia, /// As for AnswerCallPending but starts media channels
-      AnswerCallDeferredWithMedia, /// As for AnswerCallPending but starts media channels
-      NumAnswerCallResponses
-    };
-
-    /**Indicate the result of answering an incoming call.
-       This should only be called if the OnIncomingConnection() callback
-       function has returned TRUE. It is an anychronous indication for
-       other threads that are waiting for a response to continue.
-
-       Note sending further AnswerCallPending responses via this function will
-       have the result of an alerting message being sent to the remote
-       endpoint. In this way multiple alerting mesages may be sent.
-
-       Sending a AnswerCallDeferred response would have no effect.
-      */
-    virtual void SetAnswerResponse(
-      AnswerCallResponse response /// Answer response to incoming call
-    );
-
     /**Call back for remote party being alerted.
        This function is called after the connection is informed that the
        remote endpoint is "ringing". Generally some time after the
@@ -291,7 +269,8 @@ class OpalConnection : public PObject
        The default behaviour is pure.
       */
     virtual BOOL SetAlerting(
-      const PString & calleeName    /// Name of endpoint being alerted.
+      const PString & calleeName,   /// Name of endpoint being alerted.
+      BOOL withMedia                /// Open media with alerting
     ) = 0;
 
     /**A call back function whenever a connection is "connected".
@@ -407,6 +386,10 @@ class OpalConnection : public PObject
     virtual OpalMediaStream * OpenSinkMediaStream(
       OpalMediaStream & source    /// Source media sink format to open to
     );
+
+    /**Start media streams for session.
+      */
+    virtual void StartMediaStreams();
 
     /**Create a new media stream.
        This will create a media stream of an appropriate subclass as required
@@ -671,9 +654,6 @@ class OpalConnection : public PObject
     PString             remotePartyAddress;
     OpalCallEndReason   callEndReason;
 
-    AnswerCallResponse  answerResponse;
-    PSyncPoint          answerWaitFlag;
-
     PString             userIndicationString;
     PMutex              userIndicationMutex;
     PSyncPoint          userIndicationAvailable;
@@ -690,7 +670,6 @@ class OpalConnection : public PObject
 
 #if PTRACING
     friend ostream & operator<<(ostream & o, Phases p);
-    friend ostream & operator<<(ostream & o, AnswerCallResponse s);
 #endif
 };
 
