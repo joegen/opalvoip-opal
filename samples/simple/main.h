@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2015  2004/03/22 10:20:34  rjongbloed
+ * Revision 1.2016  2004/04/26 07:06:08  rjongbloed
+ * Removed some ancient pieces of code and used new API's for them.
+ *
+ * Revision 2.14  2004/03/22 10:20:34  rjongbloed
  * Changed to use UseGatekeeper() function so can select by gk-id as well as host.
  *
  * Revision 2.13  2004/03/11 06:54:28  csoutheren
@@ -117,6 +120,7 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
 
     PString destinationAddress;
     PString incomingConnectionToken;
+    BOOL    autoAnswer;
 };
 
 
@@ -148,10 +152,6 @@ class MyManager : public OpalManager
 
   protected:
     PString currentCallToken;
-    BOOL silenceOn;
-    BOOL autoAnswer;
-    BOOL noFastStart;
-    BOOL noH245Tunnelling;
 
     OpalPOTSEndPoint * potsEP;
     MyPCSSEndPoint   * pcssEP;
