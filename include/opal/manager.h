@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2025  2004/05/24 13:40:12  rjongbloed
+ * Revision 1.2026  2004/06/05 14:34:44  rjongbloed
+ * Added functions to set the auto start video tx/rx flags.
+ *
+ * Revision 2.24  2004/05/24 13:40:12  rjongbloed
  * Added default values for silence suppression parameters.
  *
  * Revision 2.23  2004/05/15 12:53:03  rjongbloed
@@ -754,9 +757,17 @@ class OpalManager : public PObject
      */
     BOOL CanAutoStartReceiveVideo() const { return autoStartReceiveVideo; }
 
+    /**Set if should auto-start receive video channels on connection.
+     */
+    void SetAutoStartReceiveVideo(BOOL can) { autoStartReceiveVideo = can; }
+
     /**See if should auto-start transmit video channels on connection.
      */
     BOOL CanAutoStartTransmitVideo() const { return autoStartTransmitVideo; }
+
+    /**Set if should auto-start transmit video channels on connection.
+     */
+    void SetAutoStartTransmitVideo(BOOL can) { autoStartTransmitVideo = can; }
 
     /**Determine if the address is "local", ie does not need any address
        translation (fixed or via STUN) to access.
