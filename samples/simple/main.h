@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2011  2004/02/17 11:00:10  csoutheren
+ * Revision 1.2012  2004/02/21 02:40:09  rjongbloed
+ * Tidied up the translate address to utilise more of the library infrastructure.
+ *
+ * Revision 2.10  2004/02/17 11:00:10  csoutheren
  * Added --translate, --port-base and --port-max options
  *
  * Revision 2.9  2003/03/19 02:30:45  robertj
@@ -152,7 +155,6 @@ class MyManager : public OpalManager
     OpalIVREndPoint  * ivrEP;
 #endif
 
-    BOOL haveExternalAddress;
     PIPSocket::Address externalAddress;
 };
 
