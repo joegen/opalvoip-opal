@@ -24,7 +24,11 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2019  2003/04/08 02:46:29  robertj
+ * Revision 1.2020  2003/06/02 02:58:07  rjongbloed
+ * Moved LID specific media stream class to LID source file.
+ * Added assurance media stream is open when Start() is called.
+ *
+ * Revision 2.18  2003/04/08 02:46:29  robertj
  * Fixed incorrect returned buffer size on video read, thanks Guilhem Tardy.
  * Fixed missing set of corrct colour format for video grabber/display when
  *   starting vide media stream, thanks Guilhem Tardy.
@@ -166,6 +170,9 @@ BOOL OpalMediaStream::Open()
 
 BOOL OpalMediaStream::Start()
 {
+  if (!Open())
+    return FALSE;
+
   if (patchThread != NULL && patchThread->IsSuspended()) {
     PTRACE(4, "Media\tStarting media patch: " << patchThread->GetThreadName());
     patchThread->Resume();
@@ -455,181 +462,6 @@ void OpalRTPMediaStream::EnableJitterBuffer() const
   if (mediaFormat.NeedsJitterBuffer())
     rtpSession.SetJitterBufferSize(minAudioJitterDelay*mediaFormat.GetTimeUnits(),
                                    maxAudioJitterDelay*mediaFormat.GetTimeUnits());
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-
-OpalLineMediaStream::OpalLineMediaStream(const OpalMediaFormat & mediaFormat,
-                                         unsigned sessionID,
-                                         BOOL isSource,
-                                         OpalLine & ln)
-  : OpalMediaStream(mediaFormat, sessionID, isSource),
-    line(ln)
-{
-  useDeblocking = FALSE;
-  missedCount = 0;
-  lastSID[0] = 2;
-  lastFrameWasSignal = TRUE;
-}
-
-
-BOOL OpalLineMediaStream::Open()
-{
-  if (isOpen)
-    return TRUE;
-
-  if (IsSource()) {
-    if (!line.SetReadFormat(mediaFormat))
-      return FALSE;
-    useDeblocking = mediaFormat.GetFrameSize() != line.GetReadFrameSize();
-  }
-  else {
-    if (!line.SetWriteFormat(mediaFormat))
-      return FALSE;
-    useDeblocking = mediaFormat.GetFrameSize() != line.GetWriteFrameSize();
-  }
-
-  PTRACE(3, "Media\tStream set to " << mediaFormat << ", frame size: rd="
-         << line.GetReadFrameSize() << " wr="
-         << line.GetWriteFrameSize() << ", "
-         << (useDeblocking ? "needs" : "no") << " reblocking.");
-
-  return OpalMediaStream::Open();
-}
-
-
-BOOL OpalLineMediaStream::Close()
-{
-  if (IsSource())
-    line.StopReadCodec();
-  else
-    line.StopWriteCodec();
-
-  return OpalMediaStream::Close();
-}
-
-
-BOOL OpalLineMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & length)
-{
-  length = 0;
-
-  if (IsSink()) {
-    PTRACE(1, "Media\tTried to read from sink media stream");
-    return FALSE;
-  }
-
-  if (useDeblocking) {
-    line.SetReadFrameSize(size);
-    if (line.ReadBlock(buffer, size)) {
-      length = size;
-      return TRUE;
-    }
-  }
-  else {
-    if (line.ReadFrame(buffer, length)) {
-      // In the case of G.723.1 remember the last SID frame we sent and send
-      // it again if the hardware sends us a CNG frame.
-      if (mediaFormat.GetPayloadType() == RTP_DataFrame::G7231) {
-        switch (length) {
-          case 1 : // CNG frame
-            memcpy(buffer, lastSID, 4);
-            length = 4;
-            lastFrameWasSignal = FALSE;
-            break;
-          case 4 :
-            if ((*(BYTE *)buffer&3) == 2)
-              memcpy(lastSID, buffer, 4);
-            lastFrameWasSignal = FALSE;
-            break;
-          default :
-            lastFrameWasSignal = TRUE;
-        }
-      }
-      return TRUE;
-    }
-  }
-
-  PTRACE_IF(1, line.GetDevice().GetErrorNumber() != 0,
-            "Media\tDevice read frame error: " << line.GetDevice().GetErrorText());
-
-  return FALSE;
-}
-
-
-BOOL OpalLineMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX & written)
-{
-  written = 0;
-
-  if (IsSource()) {
-    PTRACE(1, "Media\tTried to write to source media stream");
-    return FALSE;
-  }
-
-  // Check for writing silence
-  PBYTEArray silenceBuffer;
-  if (length != 0)
-    missedCount = 0;
-  else {
-    switch (mediaFormat.GetPayloadType()) {
-      case RTP_DataFrame::G7231 :
-        if (missedCount++ < 4) {
-          static const BYTE g723_erasure_frame[24] = { 0xff, 0xff, 0xff, 0xff };
-          buffer = g723_erasure_frame;
-          length = 24;
-        }
-        else {
-          static const BYTE g723_cng_frame[4] = { 3 };
-          buffer = g723_cng_frame;
-          length = 1;
-        }
-        break;
-
-      case RTP_DataFrame::PCMU :
-      case RTP_DataFrame::PCMA :
-        buffer = silenceBuffer.GetPointer(line.GetWriteFrameSize());
-        length = silenceBuffer.GetSize();
-        memset((void *)buffer, 0xff, length);
-        break;
-
-      case RTP_DataFrame::G729 :
-        if (mediaFormat.Find('B') != P_MAX_INDEX) {
-          static const BYTE g729_sid_frame[2] = { 1 };
-          buffer = g729_sid_frame;
-          length = 2;
-          break;
-        }
-        // Else fall into default case
-
-      default :
-        buffer = silenceBuffer.GetPointer(line.GetWriteFrameSize()); // Fills with zeros
-        length = silenceBuffer.GetSize();
-        break;
-    }
-  }
-
-  if (useDeblocking) {
-    line.SetWriteFrameSize(length);
-    if (line.WriteBlock(buffer, length)) {
-      written = length;
-      return TRUE;
-    }
-  }
-  else {
-    if (line.WriteFrame(buffer, length, written))
-      return TRUE;
-  }
-
-  PTRACE_IF(1, line.GetDevice().GetErrorNumber() != 0,
-            "Media\tLID write frame error: " << line.GetDevice().GetErrorText());
-
-  return FALSE;
-}
-
-
-BOOL OpalLineMediaStream::IsSynchronous() const
-{
-  return TRUE;
 }
 
 
