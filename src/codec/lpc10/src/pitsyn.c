@@ -1,8 +1,11 @@
 /*
 
 $Log: pitsyn.c,v $
-Revision 1.2001  2001/07/27 15:48:25  robertj
-Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+Revision 1.2002  2003/03/14 09:53:27  robertj
+Updated to openH323 v1.11.7
+
+Revision 1.2  2002/02/15 03:57:55  yurik
+Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
 
 Revision 1.1  2000/06/05 04:45:12  robertj
 Added LPC-10 2400bps codec
@@ -37,9 +40,12 @@ extern int pitsyn_(integer *order, integer *voice, integer *pitch, real *rms, re
 /* 	PITSYN Version 53 */
 
 /* $Log: pitsyn.c,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/14 09:53:27  robertj
+ * Updated to openH323 v1.11.7
  *
+/* Revision 1.2  2002/02/15 03:57:55  yurik
+/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+/*
 /* Revision 1.1  2000/06/05 04:45:12  robertj
 /* Added LPC-10 2400bps codec
 /*
@@ -143,9 +149,12 @@ extern int pitsyn_(integer *order, integer *voice, integer *pitch, real *rms, re
 
 /*       Arguments */
 /* $Log: pitsyn.c,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/14 09:53:27  robertj
+ * Updated to openH323 v1.11.7
  *
+/* Revision 1.2  2002/02/15 03:57:55  yurik
+/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+/*
 /* Revision 1.1  2000/06/05 04:45:12  robertj
 /* Added LPC-10 2400bps codec
 /*
@@ -438,9 +447,9 @@ after */
 	    i__1 = lsamp;
 	    for (i__ = istart; i__ <= i__1; ++i__) {
 		r__1 = *ipito + slope * i__;
-		ip = r__1 + .5f;
+		ip = (integer)(r__1 + .5f);
 		if (uvpit != 0.f) {
-		    ip = uvpit;
+		    ip = (integer)uvpit;
 		}
 		if (ip <= i__ - jused) {
 		    ++(*nout);
@@ -460,14 +469,14 @@ over 16. */
 		    prop = (jused - ip / 2) / (real) lsamp;
 		    i__2 = *order;
 		    for (j = 1; j <= i__2; ++j) {
-			alro = log((rco[j - 1] + 1) / (1 - rco[j - 1]));
-			alrn = log((rc[j] + 1) / (1 - rc[j]));
+			alro = (real)log((rco[j - 1] + 1) / (1 - rco[j - 1]));
+			alrn = (real)log((rc[j] + 1) / (1 - rc[j]));
 			xxy = alro + prop * (alrn - alro);
-			xxy = exp(xxy);
+			xxy = (real)exp(xxy);
 			rci[j + *nout * rci_dim1] = (xxy - 1) / (xxy + 1);
 		    }
-		    rmsi[*nout] = log(*rmso) + prop * (log(*rms) - log(*rmso));
-		    rmsi[*nout] = exp(rmsi[*nout]);
+		    rmsi[*nout] = (real)(log(*rmso) + prop * (log(*rms) - log(*rmso)));
+		    rmsi[*nout] = (real)exp(rmsi[*nout]);
 		}
 	    }
 	    if (vflag != 1) {

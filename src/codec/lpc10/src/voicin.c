@@ -1,8 +1,11 @@
 /*
 
 $Log: voicin.c,v $
-Revision 1.2001  2001/07/27 15:48:25  robertj
-Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+Revision 1.2002  2003/03/14 09:53:27  robertj
+Updated to openH323 v1.11.7
+
+Revision 1.2  2002/02/15 03:57:55  yurik
+Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
 
 Revision 1.1  2000/06/05 04:45:12  robertj
 Added LPC-10 2400bps codec
@@ -48,9 +51,12 @@ extern struct {
 /* 	VOICIN Version 52 */
 
 /* $Log: voicin.c,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/14 09:53:27  robertj
+ * Updated to openH323 v1.11.7
  *
+/* Revision 1.2  2002/02/15 03:57:55  yurik
+/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+/*
 /* Revision 1.1  2000/06/05 04:45:12  robertj
 /* Added LPC-10 2400bps codec
 /*
@@ -290,9 +296,12 @@ s*/
 /* 	Global Variables: */
 /*       Arguments */
 /* $Log: voicin.c,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/14 09:53:27  robertj
+ * Updated to openH323 v1.11.7
  *
+/* Revision 1.2  2002/02/15 03:57:55  yurik
+/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+/*
 /* Revision 1.1  2000/06/05 04:45:12  robertj
 /* Added LPC-10 2400bps codec
 /*
@@ -751,7 +760,7 @@ d*/
 /*   NOTE: The divisor is a function of REF, the expected energies. */
 /* Computing MIN */
 /* Computing MAX */
-    r__2 = sqrt((real) (*lbue * *lbve)) * 64 / 3000;
+    r__2 = (real)(sqrt((real) (*lbue * *lbve)) * 64 / 3000);
     r__1 = max(r__2,1.f);
     *dither = min(r__1,20.f);
 /*   Voicing decisions are returned in VOIBUF. */
