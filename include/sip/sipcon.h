@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2021  2004/04/26 05:40:38  rjongbloed
+ * Revision 1.2022  2004/08/14 07:56:30  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.20  2004/04/26 05:40:38  rjongbloed
  * Added RTP statistics callback to SIP
  *
  * Revision 2.19  2004/03/14 10:09:53  rjongbloed
@@ -208,10 +211,6 @@ class SIPConnection : public OpalConnection
        that function being called. For example if SetUpConnection() was used
        but the call never completed.
 
-       The return value indicates if the connection object is to be deleted. A
-       value of FALSE can be returned and it then someone elses responsibility
-       to free the memory used.
-
        Classes that override this function should make sure they call the
        ancestor version for correct operation.
 
@@ -220,7 +219,7 @@ class SIPConnection : public OpalConnection
 
        The default behaviour calls the OpalEndPoint function of the same name.
       */
-    virtual BOOL OnReleased();
+    virtual void OnReleased();
   //@}
 
   /**@name Protocol handling functions */

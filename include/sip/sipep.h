@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2016  2004/07/11 12:42:10  rjongbloed
+ * Revision 1.2017  2004/08/14 07:56:30  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.15  2004/07/11 12:42:10  rjongbloed
  * Added function on endpoints to get the list of all media formats any
  *   connection the endpoint may create can support.
  *
@@ -253,10 +256,14 @@ class SIPEndPoint : public OpalEndPoint
   //@}
  
 
-    SIPConnection * GetSIPConnectionWithLock(const PString & str)
-      { return (SIPConnection *)GetConnectionWithLock(str); }
-
-    void AddNewConnection(SIPConnection * conn);
+    /**Find a connection that uses the specified token.
+       This searches the endpoint for the connection that contains the token
+       as provided by functions such as MakeConnection().
+      */
+    PSafePtr<SIPConnection> GetSIPConnectionWithLock(
+      const PString & token,     /// Token to identify connection
+      PSafetyMode mode = PSafeReadWrite
+    ) { return PSafePtrCast<OpalConnection, SIPConnection>(GetConnectionWithLock(token, mode)); }
 
     virtual BOOL IsAcceptedAddress(const SIPURL & toAddr);
 
