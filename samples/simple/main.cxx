@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2040  2004/03/29 10:53:23  rjongbloed
+ * Revision 1.2041  2004/04/25 09:32:48  rjongbloed
+ * Fixed correct usage of HAS_IXJ
+ *
+ * Revision 2.39  2004/03/29 10:53:23  rjongbloed
  * Fixed missing mutex unlock which would invariably cause a deadlock.
  *
  * Revision 2.38  2004/03/22 10:20:34  rjongbloed
@@ -364,10 +367,12 @@ void SimpleOpalProcess::Main()
 #endif
 
             "\n"
+#if HAS_IXJ
             "Quicknet options:\n"
             "  -Q --no-quicknet        : Do not use Quicknet xJACK device.\n"
             "  -q --quicknet device    : Select Quicknet xJACK device (default ALL).\n"
             "\n"
+#endif
             "Sound card options:\n"
             "  -S --no-sound           : Do not use sound input/output device.\n"
             "  -s --sound device       : Select sound input/output device.\n"
@@ -598,7 +603,7 @@ BOOL MyManager::Initialise(PArgList & args)
   ///////////////////////////////////////
   // Open the LID if parameter provided, create LID based endpoint
 
-#ifdef HAS_IXJ
+#if HAS_IXJ
   if (!args.HasOption('Q')) {
     PStringArray devices = args.GetOptionString('q').Lines();
     if (devices.IsEmpty() || devices[0] == "ALL")
