@@ -27,7 +27,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gsmcodec.h,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 1.2002  2001/08/01 05:03:09  robertj
+ * Changes to allow control of linking software transcoders, use macros
+ *   to force linking.
+ * Allowed codecs to be used without H.,323 being linked by using the
+ *   new NO_H323 define.
+ * Major changes to H.323 capabilities, uses OpalMediaFormat for base name.
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.10  2001/02/11 22:48:30  robertj
@@ -72,21 +79,20 @@
 
 
 #include <opal/transcoders.h>
-#include <h323/h323caps.h>
 
 
 ///////////////////////////////////////////////////////////////////////////////
 
 struct gsm_state;
 
-class Opal_GSM : public OpalFramedTranscoder {
+class Opal_GSM0610 : public OpalFramedTranscoder {
   public:
-    Opal_GSM(
-      const OpalTranscoderRegistration & registration, /// Registration fro transcoder
+    Opal_GSM0610(
+      const OpalTranscoderRegistration & registration, /// Registration for transcoder
       unsigned inputBytesPerFrame,  /// Number of bytes in an input frame
       unsigned outputBytesPerFrame  /// Number of bytes in an output frame
     );
-    ~Opal_GSM();
+    ~Opal_GSM0610();
   protected:
     gsm_state * gsm;
 };
@@ -94,10 +100,10 @@ class Opal_GSM : public OpalFramedTranscoder {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-class Opal_GSM_PCM : public Opal_GSM {
+class Opal_GSM0610_PCM : public Opal_GSM0610 {
   public:
-    Opal_GSM_PCM(
-      const OpalTranscoderRegistration & registration /// Registration fro transcoder
+    Opal_GSM0610_PCM(
+      const OpalTranscoderRegistration & registration /// Registration for transcoder
     );
     virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
 };
@@ -105,10 +111,10 @@ class Opal_GSM_PCM : public Opal_GSM {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-class Opal_PCM_GSM : public Opal_GSM {
+class Opal_PCM_GSM0610 : public Opal_GSM0610 {
   public:
-    Opal_PCM_GSM(
-      const OpalTranscoderRegistration & registration /// Registration fro transcoder
+    Opal_PCM_GSM0610(
+      const OpalTranscoderRegistration & registration /// Registration for transcoder
     );
     virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
 };
@@ -116,86 +122,10 @@ class Opal_PCM_GSM : public Opal_GSM {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-/**This class describes the GSM 06.10 codec capability.
- */
-class H323_GSM0610Capability : public H323AudioCapability
-{
-  PCLASSINFO(H323_GSM0610Capability, H323AudioCapability)
+#define OPAL_REGISTER_GSM0610() \
+          OPAL_REGISTER_TRANSCODER(Opal_GSM0610_PCM, OPAL_GSM0610, OPAL_PCM16); \
+          OPAL_REGISTER_TRANSCODER(Opal_PCM_GSM0610, OPAL_PCM16, OPAL_GSM0610)
 
-  public:
-  /**@name Construction */
-  //@{
-    /**Create a new GSM 06.10 capability.
-     */
-    H323_GSM0610Capability();
-  //@}
-
-  /**@name Overrides from class PObject */
-  //@{
-    /**Create a copy of the object.
-      */
-    virtual PObject * Clone() const;
-  //@}
-
-  /**@name Identification functions */
-  //@{
-    /**Get the sub-type of the capability. This is a code dependent on the
-       main type of the capability.
-
-       This returns one of the four possible combinations of mode and speed
-       using the enum values of the protocol ASN H245_AudioCapability class.
-     */
-    virtual unsigned GetSubType() const;
-
-    /**Get the name of the media data format this class represents.
-     */
-    virtual PString GetFormatName() const;
-
-    /**Set the maximum size (in frames) of data that will be transmitted in a
-       single PDU.
-
-       This will also be the desired number that will be sent by most codec
-       implemetations.
-
-       The default behaviour sets the txFramesInPacket variable.
-     */
-    virtual void SetTxFramesInPacket(
-      unsigned frames   /// Number of frames per packet
-    );
-  //@}
-
-  /**@name Protocol manipulation */
-  //@{
-    /**This function is called whenever and outgoing TerminalCapabilitySet
-       or OpenLogicalChannel PDU is being constructed for the control channel.
-       It allows the capability to set the PDU fields from information in
-       members specific to the class.
-
-       The default behaviour sets the data rate field in the PDU.
-     */
-    virtual BOOL OnSendingPDU(
-      H245_AudioCapability & pdu,  /// PDU to set information on
-      unsigned packetSize          /// Packet size to use in capability
-    ) const;
-
-    /**This function is called whenever and incoming TerminalCapabilitySet
-       or OpenLogicalChannel PDU has been used to construct the control
-       channel. It allows the capability to set from the PDU fields,
-       information in members specific to the class.
-
-       The default behaviour gets the data rate field from the PDU.
-     */
-    virtual BOOL OnReceivedPDU(
-      const H245_AudioCapability & pdu,  /// PDU to get information from
-      unsigned & packetSize              /// Packet size to use in capability
-    );
-  //@}
-};
-
-
-/////////////////////////////////////////////////////////////////////////////
-
-extern OpalMediaFormat const OpalMediaFormat_GSM;
 
 
 #endif // __CODEC_GSMCODEC_H
