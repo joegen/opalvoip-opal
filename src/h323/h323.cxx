@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2024  2002/03/22 06:57:49  robertj
+ * Revision 1.2025  2002/03/26 23:40:05  robertj
+ * Added missing call to OnCleared() for backward compatibility.
+ *
+ * Revision 2.23  2002/03/22 06:57:49  robertj
  * Updated to OpenH323 version 1.8.2
  *
  * Revision 2.22  2002/03/18 00:33:36  robertj
@@ -1144,6 +1147,7 @@ OpalConnection::Phases H323Connection::GetPhase() const
 BOOL H323Connection::OnReleased()
 {
   CleanUpOnCallEnd();
+  OnCleared();
   return OpalConnection::OnReleased();
 }
 
