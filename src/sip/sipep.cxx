@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2030  2004/10/02 04:30:11  rjongbloed
+ * Revision 1.2031  2004/12/12 13:42:31  dsandras
+ * - Send back authentication when required when doing a REGISTER as it might be consecutive to an unregister.
+ * - Update the registered variable when unregistering from a SIP registrar.
+ * - Added OnRegistrationFailed () function to indicate when a registration failed. Call that function at various strategic places.
+ *
+ * Revision 2.29  2004/10/02 04:30:11  rjongbloed
  * Added unregister function for SIP registrar
  *
  * Revision 2.28  2004/08/22 12:27:46  rjongbloed
@@ -374,6 +379,10 @@ void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & res
 
     // Have a response to the INVITE, so end Connect mode on the transport
     transaction.GetTransport().EndConnect(transaction.GetLocalAddress());
+
+    // Forbidden
+    if (response.GetStatusCode() == SIP_PDU::Failure_Forbidden)
+      OnRegistrationFailed();
   }
 
   switch (response.GetStatusCode()) {
@@ -437,8 +446,7 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
 #endif
 
   if (authentication.IsValid()) {
-    PTRACE(1, "SIP\tAlready done INVITE for " << proxyTrace << "Authentication Required, aborting call");
-    return;
+    PTRACE(1, "SIP\tAlready done INVITE for " << proxyTrace << "Authentication Required");
   }
 
   if (transaction.GetMethod() != SIP_PDU::Method_REGISTER) {
@@ -492,6 +500,13 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 
 void SIPEndPoint::OnRegistered()
 {
+  PTRACE(2, "SIP\tREGISTER success");
+}
+
+
+void SIPEndPoint::OnRegistrationFailed()
+{
+  PTRACE(2, "SIP\tREGISTER failed");
 }
 
 
@@ -597,6 +612,8 @@ BOOL SIPEndPoint::Unregister(BOOL wait)
 
   if (wait)
     unregister.Wait();
+
+  registered = FALSE;
 
   return TRUE;
 }
