@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2016  2004/02/19 10:47:01  rjongbloed
+ * Revision 1.2017  2004/04/26 05:37:13  rjongbloed
+ * Allowed for selectable auto deletion of RTP user data attached to an RTP session.
+ *
+ * Revision 2.15  2004/02/19 10:47:01  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.14  2004/01/18 15:35:20  rjongbloed
@@ -523,11 +526,12 @@ class RTP_Session : public PObject
      */
     RTP_Session(
       unsigned id,                    /// Session ID for RTP channel
-      RTP_UserData * userData = NULL  /// Optional data for session.
+      RTP_UserData * userData = NULL, /// Optional data for session.
+      BOOL autoDeleteUserData = TRUE  /// Delete optional data with session.
     );
 
     /**Delete a session.
-       This deletes the userData field.
+       This deletes the userData field if autoDeleteUserData is TRUE.
      */
     ~RTP_Session();
   //@}
@@ -696,7 +700,8 @@ class RTP_Session : public PObject
     /**Set the user data for the session.
       */
     void SetUserData(
-      RTP_UserData * data   // New user data to be used
+      RTP_UserData * data,            /// New user data to be used
+      BOOL autoDeleteUserData = TRUE  /// Delete optional data with session.
     );
 
     /**Get the source output identifier.
@@ -845,6 +850,7 @@ class RTP_Session : public PObject
     PString            toolName;
     unsigned           referenceCount;
     RTP_UserData     * userData;
+    BOOL               autoDeleteUserData;
     RTP_JitterBuffer * jitter;
 
     BOOL          ignoreOtherSources;
