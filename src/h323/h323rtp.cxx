@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323rtp.cxx,v $
- * Revision 1.2005  2001/12/07 08:53:30  robertj
+ * Revision 1.2006  2002/01/22 05:26:39  robertj
+ * Added enum for illegal payload type value.
+ *
+ * Revision 2.4  2001/12/07 08:53:30  robertj
  * Renamed RTP to be more general UDP port base.
  *
  * Revision 2.3  2001/11/12 05:32:12  robertj
@@ -178,7 +181,7 @@ BOOL H323_RTP_UDP::OnSendingPDU(const H323_RTPChannel & channel,
 
   // Set dynamic payload type, if is one
   int rtpPayloadType = channel.GetDynamicRTPPayloadType();
-  if (rtpPayloadType >= RTP_DataFrame::DynamicBase && rtpPayloadType < RTP_DataFrame::MaxPayloadType) {
+  if (rtpPayloadType >= RTP_DataFrame::DynamicBase && rtpPayloadType < RTP_DataFrame::IllegalPayloadType) {
     param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_dynamicRTPPayloadType);
     param.m_dynamicRTPPayloadType = rtpPayloadType;
   }
@@ -204,7 +207,7 @@ void H323_RTP_UDP::OnSendingAckPDU(const H323_RTPChannel & channel,
 
   // Set dynamic payload type, if is one
   int rtpPayloadType = channel.GetDynamicRTPPayloadType();
-  if (rtpPayloadType >= RTP_DataFrame::DynamicBase && rtpPayloadType < RTP_DataFrame::MaxPayloadType) {
+  if (rtpPayloadType >= RTP_DataFrame::DynamicBase && rtpPayloadType < RTP_DataFrame::IllegalPayloadType) {
     param.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_dynamicRTPPayloadType);
     param.m_dynamicRTPPayloadType = rtpPayloadType;
   }
