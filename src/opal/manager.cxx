@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2015  2002/04/17 07:19:38  robertj
+ * Revision 1.2016  2002/06/16 02:25:11  robertj
+ * Fixed memory leak of garbage collector, thanks Ted Szoczei
+ *
+ * Revision 2.14  2002/04/17 07:19:38  robertj
  * Fixed incorrect trace message for OnReleased
  *
  * Revision 2.13  2002/04/10 08:15:31  robertj
@@ -159,6 +162,8 @@ OpalManager::~OpalManager()
 
   // Clean up any calls that the cleaner thread missed
   GarbageCollection();
+
+  delete garbageCollector;
 
   // Kill off the endpoints, could wait till compiler generated destructor but
   // prefer to keep the PTRACE's in sequence.
