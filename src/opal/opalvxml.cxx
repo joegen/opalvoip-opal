@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalvxml.cxx,v $
- * Revision 1.2005  2003/03/07 05:48:52  robertj
+ * Revision 1.2006  2003/03/17 23:36:19  robertj
+ * Fixed pragma
+ *
+ * Revision 2.4  2003/03/07 05:48:52  robertj
  * Added OnEndSession() to automatically close connection.
  *
  * Revision 2.3  2003/01/07 04:39:53  robertj
@@ -110,7 +113,7 @@
 
 #include <ptlib.h>
 
-#ifdef __GNUC__
+#ifdef P_USE_PRAGMA
 #pragma implementation "opalvxml.h"
 #endif
 
