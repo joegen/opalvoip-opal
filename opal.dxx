@@ -10,7 +10,10 @@
 */
 
 // $Log: opal.dxx,v $
-// Revision 1.2003  2002/02/11 02:27:54  dereks
+// Revision 1.2004  2002/02/11 03:24:17  dereks
+// Add SIP to list of include files.
+//
+// Revision 2.2  2002/02/11 02:27:54  dereks
 // Adjust format of CVS logging command.
 //
 // Revision 2.1  2002/02/11 02:17:21  dereks
@@ -162,6 +165,11 @@ Detailed tutorials will be forthcoming.
 	//@Include: src/codec/lpc10/src/f2c.h
 	//@Include: src/codec/lpc10/bitio.h
 	//@Include: src/codec/lpc10/lpc10.h
+	//@Include: include/sip/sdp.h
+	//@Include: include/sip/sip.h
+	//@Include: include/sip/sipcon.h
+	//@Include: include/sip/sipep.h
+	//@Include: include/sip/sippdu.h
     //@}
 
 //@}
