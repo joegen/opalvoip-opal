@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2002  2001/07/30 07:22:25  robertj
+ * Revision 1.2003  2001/08/01 05:10:40  robertj
+ * Moved media formats list from endpoint to connection.
+ *
+ * Revision 2.1  2001/07/30 07:22:25  robertj
  * Abstracted listener management from H.323 to OpalEndPoint class.
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
@@ -528,13 +531,6 @@ class H323EndPoint : public OpalEndPoint
       const PString & party,  /// Remote party to call
       void * userData = NULL  /// Arbitrary data to pass to connection
     );
-
-    /**Get the data formats this endpoint is capable of operating in.
-       This provides a list of media data format names that an
-       OpalMediaStream may be created in within connections created by this
-       endpoint.
-      */
-    virtual OpalMediaFormat::List GetMediaFormats() const;
   //@}
 
   /**@name Set up functions */
