@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2019  2003/06/02 02:56:41  rjongbloed
+ * Revision 1.2020  2004/04/18 13:35:27  rjongbloed
+ * Fixed ability to make calls where both endpoints are specified a priori. In particular
+ *   fixing the VXML support for an outgoing sip/h323 call.
+ *
+ * Revision 2.18  2003/06/02 02:56:41  rjongbloed
  * Moved LID specific media stream class to LID source file.
  *
  * Revision 2.17  2003/03/24 07:18:29  robertj
@@ -481,11 +485,7 @@ BOOL OpalLineConnection::OnReleased()
 
 PString OpalLineConnection::GetDestinationAddress()
 {
-  PString str = ReadUserInput();
-  if (phase == SetUpPhase)
-    return str;
-
-  return PString();
+  return ReadUserInput();
 }
 
 
