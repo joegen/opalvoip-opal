@@ -3,7 +3,10 @@
  *
  * An OPAL GUI phone application.
  *
- * Copyright (c) 2003 Equivalence Pty. Ltd.
+ * Open Phone Abstraction Library (OPAL)
+ * Formally known as the Open H323 project.
+ *
+ * Copyright (c) 2004 Post Increment
  *
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.0 (the "License"); you may not use this file except in
@@ -15,21 +18,15 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Open Phone client.
  *
- * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
+ * The Initial Developer of the Original Code is Post Increment
  *
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.3  2004/04/26 07:36:22  rjongbloed
- * Some more implementation, still a long way to go!
- *
- * Revision 1.2  2004/04/25 13:12:22  rjongbloed
- * Converted OpenPhone v2 to use wxWindows
- *
- * Revision 1.1  2003/03/07 06:33:28  craigs
- * More implementation
+ * Revision 1.4  2004/05/01 13:38:05  rjongbloed
+ * Some early implementation of wxWIndows based OPAL GUI client.
  *
  */
 
@@ -71,9 +68,27 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
 };
 
 
+class CallDialog : public wxDialog
+{
+  public:
+    CallDialog(wxWindow *parent);
+
+    void OnAddressChange(wxCommandEvent & event);
+
+    wxString m_Address;
+
+  private:
+    wxTextCtrl * m_AddressCtrl;
+    wxButton   * m_ok;
+
+    DECLARE_EVENT_TABLE()
+};
+
+
 enum MainMenuItems {
   MENU_FILE_QUIT,
-  MENU_FILE_ABOUT
+  MENU_FILE_ABOUT,
+  MENU_FILE_CALL
 };
 
 
@@ -83,11 +98,14 @@ class MyFrame : public wxFrame, public OpalManager
     MyFrame();
     ~MyFrame();
 
+    bool Initialise();
+
   protected:
     void OnSize(wxSizeEvent& event);
 
-    void OnQuit(wxCommandEvent& event);
-    void OnAbout(wxCommandEvent& event);
+    void OnMenuQuit(wxCommandEvent& event);
+    void OnMenuAbout(wxCommandEvent& event);
+    void OnMenuCall(wxCommandEvent& event);
 
     virtual void OnEstablishedCall(
       OpalCall & call   /// Call that was completed
@@ -105,8 +123,8 @@ class MyFrame : public wxFrame, public OpalManager
     );
 
   private:
-    wxPanel    * m_panel;
-    wxTextCtrl * m_logWindow;
+    wxPanel                  * m_panel;
+    wxTextCtrl               * m_logWindow;
 
     MyPCSSEndPoint   * pcssEP;
     OpalPOTSEndPoint * potsEP;
