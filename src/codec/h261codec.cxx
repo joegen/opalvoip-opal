@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.cxx,v $
- * Revision 1.2014  2004/03/11 06:54:28  csoutheren
+ * Revision 1.2015  2004/04/07 08:21:00  rjongbloed
+ * Changes for new RTTI system.
+ *
+ * Revision 2.13  2004/03/11 06:54:28  csoutheren
  * Added ability to disable SIP or H.323 stacks
  *
  * Revision 2.12  2004/02/19 10:47:02  rjongbloed
@@ -356,7 +359,7 @@ PObject::Comparison H323_H261Capability::Compare(const PObject & obj) const
   if (result != EqualTo)
     return result;
 
-  PAssert(obj.IsDescendant(H323_H261Capability::Class()), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H323_H261Capability), PInvalidCast);
   const H323_H261Capability & other = (const H323_H261Capability &)obj;
 
   if (((qcifMPI > 0) && (other.qcifMPI > 0)) ||
