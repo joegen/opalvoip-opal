@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2008  2002/09/12 06:58:34  robertj
+ * Revision 1.2009  2002/10/09 04:27:44  robertj
+ * Fixed memory leak on error reading PDU, thanks Ted Szoczei
+ *
+ * Revision 2.7  2002/09/12 06:58:34  robertj
  * Removed protocol prefix strings as static members as has problems with
  *   use in DLL environment.
  *
@@ -126,15 +129,16 @@ void SIPEndPoint::HandlePDU(OpalTransport & transport)
         transport.SetRemoteAddress(via.Mid(via.FindLast(' ')));
       }
     }
-    if (!OnReceivedPDU(transport, pdu))
-      delete pdu;
+    if (OnReceivedPDU(transport, pdu))
+      return;
   }
   else if (transport.good()) {
     PTRACE(1, "SIP\tMalformed request received on " << transport);
     SIP_PDU response(*pdu, SIP_PDU::Failure_BadRequest);
     response.Write(transport);
-    delete pdu;
   }
+
+  delete pdu;
 }
 
 
