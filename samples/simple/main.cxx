@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2014  2002/03/27 05:34:55  robertj
+ * Revision 1.2015  2002/04/12 14:02:41  robertj
+ * Separated interface option for SIP and H.323.
+ *
+ * Revision 2.13  2002/03/27 05:34:55  robertj
  * Removed redundent busy forward field.
  * Added ability to set tcp and udp port bases.
  *
@@ -167,7 +170,7 @@ void SimpleOpalProcess::Main()
              "G-gateway:" 
              "h-help."
              "H-no-h323."
-             "i-interface:"
+             "-h323-listen:"
              "I-no-sip."
              "j-jitter:"
              "l-listen."
@@ -186,6 +189,7 @@ void SimpleOpalProcess::Main()
              "S-no-sound."
              "-sound-in:"
              "-sound-out:"
+             "-sip-listen:"
              "T-h245tunneldisable."
 #if PTRACING
              "t-trace."
@@ -218,6 +222,8 @@ void SimpleOpalProcess::Main()
             "SIP options:\n"
             "  -I --no-sip             : Disable SIP protocol.\n"
             "  -r --register-sip host  : Register with SIP server.\n"
+            "     --sip-listen iface   : Interface/port(s) to listen for SIP requests\n"
+            "                          : '*' is all interfaces, (default udp$:*:5060)\n"
             "     --use-long-mime      : Use long MIME headers on outgoing SIP messages\n"
             "\n"
             "H.323 options:\n"
@@ -229,6 +235,8 @@ void SimpleOpalProcess::Main()
             "  -b --bandwidth bps      : Limit bandwidth usage to bps bits/second.\n"
             "  -f --fast-disable       : Disable fast start.\n"
             "  -T --h245tunneldisable  : Disable H245 tunnelling.\n"
+            "     --h323-listen iface  : Interface/port(s) to listen for H.323 requests\n"
+            "                          : '*' is all interfaces, (default tcp$:*:1720)\n"
             "\n"
             "Quicknet options:\n"
             "  -Q --no-quicknet        : Do not use Quicknet xJACK device.\n"
@@ -241,7 +249,6 @@ void SimpleOpalProcess::Main()
             "     --sound-out device   : Select sound output device.\n"
             "\n"
             "IP options:\n"
-            "  -i --interface ipnum    : Select interface to bind to.\n"
             "     --tcp-base n         : Set TCP port base (default 0)\n"
             "     --tcp-max n          : Set TCP port max (default base+99)\n"
             "     --udp-base n         : Set UDP port base (default 5000)\n"
@@ -453,8 +460,8 @@ BOOL MyManager::Initialise(PArgList & args)
 
 
     // Start the listener thread for incoming calls.
-    if (args.HasOption('i')) {
-      PStringArray listeners = args.GetOptionString('i').Lines();
+    if (args.HasOption("h323-listen")) {
+      PStringArray listeners = args.GetOptionString("h323-listen").Lines();
       if (!h323EP->StartListeners(listeners)) {
         cerr <<  "Could not open any H.323 listener from "
              << setfill(',') << listeners << endl;
@@ -474,10 +481,10 @@ BOOL MyManager::Initialise(PArgList & args)
     if (args.HasOption('g')) {
       PString gkName = args.GetOptionString('g');
       OpalTransportUDP * rasChannel;
-      if (args.GetOptionString('i').IsEmpty())
+      if (args.GetOptionString("h323-listen").IsEmpty())
         rasChannel  = new OpalTransportUDP(*h323EP);
       else {
-        PIPSocket::Address interfaceAddress(args.GetOptionString('i'));
+        PIPSocket::Address interfaceAddress(args.GetOptionString("h323-listen"));
         rasChannel  = new OpalTransportUDP(*h323EP, interfaceAddress);
       }
       if (h323EP->SetGatekeeper(gkName, rasChannel))
@@ -517,8 +524,8 @@ BOOL MyManager::Initialise(PArgList & args)
       sipEP->SetRegistrationPassword(args.GetOptionString('p'));
 
     // Start the listener thread for incoming calls.
-    if (args.HasOption('i')) {
-      PStringArray listeners = args.GetOptionString('i').Lines();
+    if (args.HasOption("sip-listen")) {
+      PStringArray listeners = args.GetOptionString("sip-listen").Lines();
       if (!sipEP->StartListeners(listeners)) {
         cerr <<  "Could not open any SIP listener from "
              << setfill(',') << listeners << endl;
