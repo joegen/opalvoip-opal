@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2011  2001/11/12 05:32:12  robertj
+ * Revision 1.2012  2001/11/13 04:29:48  robertj
+ * Changed OpalTransportAddress CreateTransport and CreateListsner functions
+ *   to have extra parameter to control local binding of sockets.
+ *
+ * Revision 2.10  2001/11/12 05:32:12  robertj
  * Added OpalTransportAddress::GetIpAddress when don't need port number.
  *
  * Revision 2.9  2001/11/02 10:45:19  robertj
@@ -847,9 +851,10 @@ H323Connection * H323EndPoint::InternalMakeCall(OpalCall & call,
   // that the gatekeeper is using.
   OpalTransport * transport;
   if (gatekeeper != NULL)
-    transport = gatekeeper->GetTransport().GetLocalAddress().CreateTransport(*this);
+    transport = gatekeeper->GetTransport().GetLocalAddress().CreateTransport(
+                                          *this, OpalTransportAddress::HostOnly);
   else
-    transport = address.CreateTransport(*this);
+    transport = address.CreateTransport(*this, OpalTransportAddress::NoBinding);
 
   if (transport == NULL) {
     PTRACE(1, "H323\tInvalid transport in \"" << remoteParty << '"');
