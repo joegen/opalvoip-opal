@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.cxx,v $
- * Revision 1.2015  2004/04/07 08:21:03  rjongbloed
+ * Revision 1.2016  2004/04/09 12:30:16  rjongbloed
+ * Many and various changes to support new Visual C++ 2003
+ *
+ * Revision 2.14  2004/04/07 08:21:03  rjongbloed
  * Changes for new RTTI system.
  *
  * Revision 2.13  2004/02/19 10:47:04  rjongbloed
@@ -723,10 +726,10 @@ PString H323GetAliasAddressString(const H225_AliasAddress & alias)
     case H225_AliasAddress::e_dialedDigits :
     case H225_AliasAddress::e_url_ID :
     case H225_AliasAddress::e_email_ID :
-      return (const PASN_IA5String &)alias;
+      return ((const PASN_IA5String &)alias).GetValue();
 
     case H225_AliasAddress::e_h323_ID :
-      return (const PASN_BMPString &)alias;
+      return ((const PASN_BMPString &)alias).GetValue();
 
     case H225_AliasAddress::e_transportID :
       return H323TransportAddress(alias);
