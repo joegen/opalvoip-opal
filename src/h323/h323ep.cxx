@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2035  2004/09/24 10:06:22  rjongbloed
+ * Revision 1.2036  2004/11/07 12:30:12  rjongbloed
+ * Minor optimisation
+ *
+ * Revision 2.34  2004/09/24 10:06:22  rjongbloed
  * Changed default endpoint capabilities to be all possible capabilities if not
  *   set explicitly by application before first call.
  *
@@ -1157,7 +1160,7 @@ BOOL H323EndPoint::NewIncomingConnection(OpalTransport * transport)
 
   // Get a new (or old) connection from the endpoint, calculate token
   PString token = transport->GetRemoteAddress();
-  token.sprintf("/%u", pdu.GetQ931().GetCallReference());
+  token.sprintf("/%u", callReference);
 
   PSafePtr<H323Connection> connection = FindConnectionWithLock(token);
 
