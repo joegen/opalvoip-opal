@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkserver.cxx,v $
- * Revision 1.2009  2002/09/04 06:01:48  robertj
+ * Revision 1.2010  2002/09/13 07:13:14  robertj
+ * Fixed numerous incorrect transport address protocol types.
+ *
+ * Revision 2.8  2002/09/04 06:01:48  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.7  2002/07/01 04:56:31  robertj
@@ -383,15 +386,19 @@ BOOL H323GatekeeperRequest::WritePDU(H323RasPDU & pdu)
     pdu.SetAuthenticators(endpoint->GetAuthenticators());
 
     for (PINDEX i = 0; i < endpoint->GetRASAddressCount(); i++) {
-      if (rasChannel.GetTransport().ConnectTo(endpoint->GetRASAddress(i))) {
+      if (rasChannel.GetTransport().SetRemoteAddress(endpoint->GetRASAddress(i))) {
         useDefault = FALSE;
         break;
       }
     }
   }
 
-  if (useDefault)
-    rasChannel.GetTransport().ConnectTo(replyAddress);
+  if (useDefault) {
+    if (!rasChannel.GetTransport().SetRemoteAddress(replyAddress)) {
+      PTRACE(1, "RAS\tCould not set transport address!");
+      return FALSE;
+    }
+  }
 
   return rasChannel.WritePDU(pdu);
 }
@@ -473,8 +480,9 @@ H323GatekeeperGRQ::H323GatekeeperGRQ(H323GatekeeperListener & rasChannel,
     grj(reject.BuildGatekeeperReject(grq.m_requestSeqNum,
                                      H225_GatekeeperRejectReason::e_terminalExcluded))
 {
-  if (rasChannel.GetTransport().IsCompatibleTransport(H323TransportAddress(grq.m_rasAddress)))
-    replyAddress = grq.m_rasAddress;
+  H323TransportAddress addr(grq.m_rasAddress, "udp");
+  if (rasChannel.GetTransport().IsCompatibleTransport(addr))
+    replyAddress = addr;
 }
 
 
@@ -557,8 +565,9 @@ H323GatekeeperRRQ::H323GatekeeperRRQ(H323GatekeeperListener & rasChannel,
     rrj(reject.BuildRegistrationReject(rrq.m_requestSeqNum))
 {
   for (PINDEX i = 0; i < rrq.m_rasAddress.GetSize(); i++) {
-    if (rasChannel.GetTransport().IsCompatibleTransport(H323TransportAddress(rrq.m_rasAddress[i]))) {
-      replyAddress = rrq.m_rasAddress[i];
+    H323TransportAddress addr(rrq.m_rasAddress[i], "udp");
+    if (rasChannel.GetTransport().IsCompatibleTransport(addr)) {
+      replyAddress = addr;
       break;
     }
   }
@@ -976,8 +985,9 @@ H323GatekeeperLRQ::H323GatekeeperLRQ(H323GatekeeperListener & rasChannel,
     lcf(confirm.BuildLocationConfirm(lrq.m_requestSeqNum)),
     lrj(reject.BuildLocationReject(lrq.m_requestSeqNum))
 {
-  if (rasChannel.GetTransport().IsCompatibleTransport(H323TransportAddress(lrq.m_replyAddress)))
-    replyAddress = lrq.m_replyAddress;
+  H323TransportAddress addr(lrq.m_replyAddress, "udp");
+  if (rasChannel.GetTransport().IsCompatibleTransport(addr))
+    replyAddress = addr;
 }
 
 
@@ -1513,7 +1523,7 @@ BOOL H323GatekeeperCall::OnHeartbeat()
 
 static PString MakeAddress(const PString & number,
                            const PStringArray aliases,
-                           const H323TransportAddress host)
+                           const H323TransportAddress & host)
 {
   PStringStream addr;
 
@@ -1645,9 +1655,9 @@ H323GatekeeperRequest::Response H323RegisteredEndPoint::OnFullRegistration(H323G
   if (info.rrq.m_rasAddress.GetSize() > 0) {
     count = 0;
     for (i = 0; i < info.rrq.m_rasAddress.GetSize(); i++) {
-      H323TransportAddress address(info.rrq.m_rasAddress[i]);
+      H323TransportAddress address(info.rrq.m_rasAddress[i], "udp");
       if (!address)
-        rasAddresses.SetAt(count++, new OpalTransportAddress(address));
+        rasAddresses.SetAt(count++, new H323TransportAddress(address));
     }
   }
 
@@ -1673,7 +1683,7 @@ H323GatekeeperRequest::Response H323RegisteredEndPoint::OnFullRegistration(H323G
 
   info.rcf.m_callSignalAddress.SetSize(signalAddresses.GetSize());
   for (i = 0; i < signalAddresses.GetSize(); i++) {
-    H323TransportAddress address = signalAddresses[i];
+    H323TransportAddress address(signalAddresses[i]);
     address.SetPDU(info.rcf.m_callSignalAddress[i]);
   }
 
@@ -2314,7 +2324,7 @@ H323GatekeeperServer::~H323GatekeeperServer()
 BOOL H323GatekeeperServer::AddListeners(const OpalTransportAddressArray & ifaces)
 {
   if (ifaces.IsEmpty())
-    return AddListener("*");
+    return AddListener("udp$*");
 
   PINDEX i;
 
@@ -2453,7 +2463,7 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnDiscovery(H323Gatekeeper
       for (PINDEX alg = 0; alg < info.grq.m_algorithmOIDs.GetSize(); alg++) {
         if (authenticators[auth].IsCapability(info.grq.m_authenticationCapability[cap],
                                               info.grq.m_algorithmOIDs[alg])) {
-          PTRACE(3, "RAS\tGRQ accepted on " << H323TransportAddress(info.gcf.m_rasAddress)
+          PTRACE(3, "RAS\tGRQ accepted on " << H323TransportAddress(info.gcf.m_rasAddress, "udp")
                  << " using authenticator " << authenticators[auth]);
           info.gcf.IncludeOptionalField(H225_GatekeeperConfirm::e_authenticationMode);
           info.gcf.m_authenticationMode = info.grq.m_authenticationCapability[cap];
@@ -2470,7 +2480,7 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnDiscovery(H323Gatekeeper
     return H323GatekeeperRequest::Reject;
   }
   else {
-    PTRACE(3, "RAS\tGRQ accepted on " << H323TransportAddress(info.gcf.m_rasAddress));
+    PTRACE(3, "RAS\tGRQ accepted on " << H323TransportAddress(info.gcf.m_rasAddress, "udp"));
     return H323GatekeeperRequest::Confirm;
   }
 }
