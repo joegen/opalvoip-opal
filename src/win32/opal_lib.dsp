@@ -132,6 +132,10 @@ SOURCE=..\opal\guid.cxx
 # End Source File
 # Begin Source File
 
+SOURCE=..\opal\ivr.cxx
+# End Source File
+# Begin Source File
+
 SOURCE=..\opal\manager.cxx
 # End Source File
 # Begin Source File
@@ -390,6 +394,10 @@ SOURCE=..\..\include\opal\endpoint.h
 # Begin Source File
 
 SOURCE=..\..\include\opal\guid.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\opal\ivr.h
 # End Source File
 # Begin Source File
 
@@ -1114,7 +1122,7 @@ InputPath=..\asn\gcc.asn
 InputName=gcc
 
 BuildCmds= \
-	asnparser -m GCC -c $(InputPath) \
+	asnparser  -h asn/ -m GCC-c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1135,7 +1143,7 @@ InputPath=..\asn\gcc.asn
 InputName=gcc
 
 BuildCmds= \
-	asnparser -m GCC -c $(InputPath) \
+	asnparser  -h asn/ -m GCC -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1156,7 +1164,7 @@ InputPath=..\asn\gcc.asn
 InputName=gcc
 
 BuildCmds= \
-	asnparser -m GCC -c $(InputPath) \
+	asnparser  -h asn/ -m GCC-c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1185,7 +1193,7 @@ InputPath=..\asn\h225.asn
 InputName=h225
 
 BuildCmds= \
-	asnparser -m H225 -r MULTIMEDIA-SYSTEM-CONTROL=H245 -c $(InputPath) \
+	asnparser  -h asn/ -m H225 -r MULTIMEDIA-SYSTEM-CONTROL=H245 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1207,7 +1215,7 @@ InputPath=..\asn\h225.asn
 InputName=h225
 
 BuildCmds= \
-	asnparser -m H225 -r MULTIMEDIA-SYSTEM-CONTROL=H245 -c $(InputPath) \
+	asnparser  -h asn/ -m H225 -r MULTIMEDIA-SYSTEM-CONTROL=H245 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1229,7 +1237,7 @@ InputPath=..\asn\h225.asn
 InputName=h225
 
 BuildCmds= \
-	asnparser -m H225 -r MULTIMEDIA-SYSTEM-CONTROL=H245 -c $(InputPath) \
+	asnparser  -h asn/ -m H225 -r MULTIMEDIA-SYSTEM-CONTROL=H245 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1257,7 +1265,7 @@ InputPath=..\asn\h235.asn
 InputName=h235
 
 BuildCmds= \
-	asnparser -m H235 -c $(InputPath) \
+	asnparser  -h asn/ -m H235 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1278,7 +1286,7 @@ InputPath=..\asn\h235.asn
 InputName=h235
 
 BuildCmds= \
-	asnparser -m H235 -c $(InputPath) \
+	asnparser  -h asn/ -m H235 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1299,7 +1307,7 @@ InputPath=..\asn\h235.asn
 InputName=h235
 
 BuildCmds= \
-	asnparser -m H235 -c $(InputPath) \
+	asnparser  -h asn/ -m H235 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1327,7 +1335,7 @@ InputPath=..\asn\h245.asn
 InputName=h245
 
 BuildCmds= \
-	asnparser -s2 -m H245 --classheader "H245_AudioCapability=#ifndef PASN_NOPRINTON\nvoid PrintOn(ostream & strm) const;\n#endif" -c $(InputPath) \
+	asnparser  -h asn/ -s2 -m H245 --classheader "H245_AudioCapability=#ifndef PASN_NOPRINTON\nvoid PrintOn(ostream & strm) const;\n#endif" -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1351,7 +1359,7 @@ InputPath=..\asn\h245.asn
 InputName=h245
 
 BuildCmds= \
-	asnparser -s2 -m H245 --classheader "H245_AudioCapability=#ifndef PASN_NOPRINTON\nvoid PrintOn(ostream & strm) const;\n#endif" -c $(InputPath) \
+	asnparser  -h asn/ -s2 -m H245 --classheader "H245_AudioCapability=#ifndef PASN_NOPRINTON\nvoid PrintOn(ostream & strm) const;\n#endif" -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1375,7 +1383,7 @@ InputPath=..\asn\h245.asn
 InputName=h245
 
 BuildCmds= \
-	asnparser -s2 -m H245 --classheader "H245_AudioCapability=#ifndef PASN_NOPRINTON\nvoid PrintOn(ostream & strm) const;\n#endif" -c $(InputPath) \
+	asnparser  -h asn/ -s2 -m H245 --classheader "H245_AudioCapability=#ifndef PASN_NOPRINTON\nvoid PrintOn(ostream & strm) const;\n#endif" -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1406,7 +1414,7 @@ InputPath=..\asn\h248.asn
 InputName=h248
 
 BuildCmds= \
-	asnparser -m H248 -c $(InputPath) \
+	asnparser  -h asn/ -m H248 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1427,7 +1435,7 @@ InputPath=..\asn\h248.asn
 InputName=h248
 
 BuildCmds= \
-	asnparser -m H248 -c $(InputPath) \
+	asnparser  -h asn/ -m H248 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1448,7 +1456,7 @@ InputPath=..\asn\h248.asn
 InputName=h248
 
 BuildCmds= \
-	asnparser -m H248 -c $(InputPath) \
+	asnparser  -h asn/ -m H248 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1476,7 +1484,7 @@ InputPath=..\asn\h4501.asn
 InputName=h4501
 
 BuildCmds= \
-	asnparser -m H4501 -c $(InputPath) \
+	asnparser  -h asn/ -m H4501 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1497,7 +1505,7 @@ InputPath=..\asn\h4501.asn
 InputName=h4501
 
 BuildCmds= \
-	asnparser -m H4501 -c $(InputPath) \
+	asnparser  -h asn/ -m H4501 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1518,7 +1526,7 @@ InputPath=..\asn\h4501.asn
 InputName=h4501
 
 BuildCmds= \
-	asnparser -m H4501 -c $(InputPath) \
+	asnparser  -h asn/ -m H4501 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1546,7 +1554,7 @@ InputPath=..\asn\h45010.asn
 InputName=h45010
 
 BuildCmds= \
-	asnparser -m H45010 -c $(InputPath) \
+	asnparser  -h asn/ -m H45010 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1567,7 +1575,7 @@ InputPath=..\asn\h45010.asn
 InputName=h45010
 
 BuildCmds= \
-	asnparser -m H45010 -c $(InputPath) \
+	asnparser  -h asn/ -m H45010 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1588,7 +1596,7 @@ InputPath=..\asn\h45010.asn
 InputName=h45010
 
 BuildCmds= \
-	asnparser -m H45010 -c $(InputPath) \
+	asnparser  -h asn/ -m H45010 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1616,7 +1624,7 @@ InputPath=..\asn\h45011.asn
 InputName=h45011
 
 BuildCmds= \
-	asnparser -m H45011 -c $(InputPath) \
+	asnparser  -h asn/ -m H45011 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1637,7 +1645,7 @@ InputPath=..\asn\h45011.asn
 InputName=h45011
 
 BuildCmds= \
-	asnparser -m H45011 -c $(InputPath) \
+	asnparser  -h asn/ -m H45011 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1658,7 +1666,7 @@ InputPath=..\asn\h45011.asn
 InputName=h45011
 
 BuildCmds= \
-	asnparser -m H45011 -c $(InputPath) \
+	asnparser  -h asn/ -m H45011 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1686,7 +1694,7 @@ InputPath=..\asn\h4502.asn
 InputName=h4502
 
 BuildCmds= \
-	asnparser -m H4502 -c $(InputPath) \
+	asnparser  -h asn/ -m H4502 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1707,7 +1715,7 @@ InputPath=..\asn\h4502.asn
 InputName=h4502
 
 BuildCmds= \
-	asnparser -m H4502 -c $(InputPath) \
+	asnparser  -h asn/ -m H4502 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1728,7 +1736,7 @@ InputPath=..\asn\h4502.asn
 InputName=h4502
 
 BuildCmds= \
-	asnparser -m H4502 -c $(InputPath) \
+	asnparser  -h asn/ -m H4502 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1756,7 +1764,7 @@ InputPath=..\asn\h4503.asn
 InputName=h4503
 
 BuildCmds= \
-	asnparser -m H4503 -c $(InputPath) \
+	asnparser  -h asn/ -m H4503 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1777,7 +1785,7 @@ InputPath=..\asn\h4503.asn
 InputName=h4503
 
 BuildCmds= \
-	asnparser -m H4503 -c $(InputPath) \
+	asnparser  -h asn/ -m H4503 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1798,7 +1806,7 @@ InputPath=..\asn\h4503.asn
 InputName=h4503
 
 BuildCmds= \
-	asnparser -m H4503 -c $(InputPath) \
+	asnparser  -h asn/ -m H4503 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1826,7 +1834,7 @@ InputPath=..\asn\h4504.asn
 InputName=h4504
 
 BuildCmds= \
-	asnparser -m H4504 -c $(InputPath) \
+	asnparser  -h asn/ -m H4504 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1847,7 +1855,7 @@ InputPath=..\asn\h4504.asn
 InputName=h4504
 
 BuildCmds= \
-	asnparser -m H4504 -c $(InputPath) \
+	asnparser  -h asn/ -m H4504 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1868,7 +1876,7 @@ InputPath=..\asn\h4504.asn
 InputName=h4504
 
 BuildCmds= \
-	asnparser -m H4504 -c $(InputPath) \
+	asnparser  -h asn/ -m H4504 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1896,7 +1904,7 @@ InputPath=..\asn\h4505.asn
 InputName=h4505
 
 BuildCmds= \
-	asnparser -m H4505 -c $(InputPath) \
+	asnparser  -h asn/ -m H4505 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1917,7 +1925,7 @@ InputPath=..\asn\h4505.asn
 InputName=h4505
 
 BuildCmds= \
-	asnparser -m H4505 -c $(InputPath) \
+	asnparser  -h asn/ -m H4505 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1938,7 +1946,7 @@ InputPath=..\asn\h4505.asn
 InputName=h4505
 
 BuildCmds= \
-	asnparser -m H4505 -c $(InputPath) \
+	asnparser  -h asn/ -m H4505 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1966,7 +1974,7 @@ InputPath=..\asn\h4506.asn
 InputName=h4506
 
 BuildCmds= \
-	asnparser -m H4506 -c $(InputPath) \
+	asnparser  -h asn/ -m H4506 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1987,7 +1995,7 @@ InputPath=..\asn\h4506.asn
 InputName=h4506
 
 BuildCmds= \
-	asnparser -m H4506 -c $(InputPath) \
+	asnparser  -h asn/ -m H4506 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -2008,7 +2016,7 @@ InputPath=..\asn\h4506.asn
 InputName=h4506
 
 BuildCmds= \
-	asnparser -m H4506 -c $(InputPath) \
+	asnparser  -h asn/ -m H4506 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -2036,7 +2044,7 @@ InputPath=..\asn\h4507.asn
 InputName=h4507
 
 BuildCmds= \
-	asnparser -m H4507 -c $(InputPath) \
+	asnparser  -h asn/ -m H4507 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -2057,7 +2065,7 @@ InputPath=..\asn\h4507.asn
 InputName=h4507
 
 BuildCmds= \
-	asnparser -m H4507 -c $(InputPath) \
+	asnparser  -h asn/ -m H4507 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -2078,7 +2086,7 @@ InputPath=..\asn\h4507.asn
 InputName=h4507
 
 BuildCmds= \
-	asnparser -m H4507 -c $(InputPath) \
+	asnparser  -h asn/ -m H4507 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -2106,7 +2114,7 @@ InputPath=..\asn\h4508.asn
 InputName=h4508
 
 BuildCmds= \
-	asnparser -m H4508 -c $(InputPath) \
+	asnparser  -h asn/ -m H4508 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -2127,7 +2135,7 @@ InputPath=..\asn\h4508.asn
 InputName=h4508
 
 BuildCmds= \
-	asnparser -m H4508 -c $(InputPath) \
+	asnparser  -h asn/ -m H4508 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -2148,7 +2156,7 @@ InputPath=..\asn\h4508.asn
 InputName=h4508
 
 BuildCmds= \
-	asnparser -m H4508 -c $(InputPath) \
+	asnparser  -h asn/ -m H4508 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -2176,7 +2184,7 @@ InputPath=..\asn\h4509.asn
 InputName=h4509
 
 BuildCmds= \
-	asnparser -m H4509 -c $(InputPath) \
+	asnparser  -h asn/ -m H4509 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -2197,7 +2205,7 @@ InputPath=..\asn\h4509.asn
 InputName=h4509
 
 BuildCmds= \
-	asnparser -m H4509 -c $(InputPath) \
+	asnparser  -h asn/ -m H4509 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -2218,7 +2226,7 @@ InputPath=..\asn\h4509.asn
 InputName=h4509
 
 BuildCmds= \
-	asnparser -m H4509 -c $(InputPath) \
+	asnparser  -h asn/ -m H4509 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -2246,7 +2254,7 @@ InputPath=..\asn\ldap.asn
 InputName=ldap
 
 BuildCmds= \
-	asnparser -m LDAP -c $(InputPath) \
+	asnparser  -h asn/ -m LDAP -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -2267,7 +2275,7 @@ InputPath=..\asn\ldap.asn
 InputName=ldap
 
 BuildCmds= \
-	asnparser -m LDAP -c $(InputPath) \
+	asnparser  -h asn/ -m LDAP -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -2288,7 +2296,7 @@ InputPath=..\asn\ldap.asn
 InputName=ldap
 
 BuildCmds= \
-	asnparser -m LDAP -c $(InputPath) \
+	asnparser  -h asn/ -m LDAP -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -2316,7 +2324,7 @@ InputPath=..\asn\mcs.asn
 InputName=mcs
 
 BuildCmds= \
-	asnparser -m MCS -c $(InputPath) \
+	asnparser  -h asn/ -m MCS -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -2337,7 +2345,7 @@ InputPath=..\asn\mcs.asn
 InputName=mcs
 
 BuildCmds= \
-	asnparser -m MCS -c $(InputPath) \
+	asnparser  -h asn/ -m MCS -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -2358,7 +2366,7 @@ InputPath=..\asn\mcs.asn
 InputName=mcs
 
 BuildCmds= \
-	asnparser -m MCS -c $(InputPath) \
+	asnparser  -h asn/ -m MCS -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -2386,7 +2394,7 @@ InputPath=..\asn\t38.asn
 InputName=t38
 
 BuildCmds= \
-	asnparser -m T38 -c $(InputPath) \
+	asnparser  -h asn/ -m T38 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -2407,7 +2415,7 @@ InputPath=..\asn\t38.asn
 InputName=t38
 
 BuildCmds= \
-	asnparser -m T38 -c $(InputPath) \
+	asnparser  -h asn/ -m T38 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -2428,7 +2436,7 @@ InputPath=..\asn\t38.asn
 InputName=t38
 
 BuildCmds= \
-	asnparser -m T38 -c $(InputPath) \
+	asnparser  -h asn/ -m T38 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -2456,7 +2464,7 @@ InputPath=..\asn\x880.asn
 InputName=x880
 
 BuildCmds= \
-	asnparser -m X880 -c $(InputPath) \
+	asnparser  -h asn/ -m X880 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -2477,7 +2485,7 @@ InputPath=..\asn\x880.asn
 InputName=x880
 
 BuildCmds= \
-	asnparser -m X880 -c $(InputPath) \
+	asnparser  -h asn/ -m X880 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -2498,7 +2506,7 @@ InputPath=..\asn\x880.asn
 InputName=x880
 
 BuildCmds= \
-	asnparser -m X880 -c $(InputPath) \
+	asnparser  -h asn/ -m X880 -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -2554,7 +2562,7 @@ SOURCE=..\codec\gsm\src\add.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /w /W0 /ZI /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
+# ADD CPP /w /W0 /Zi /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -2578,7 +2586,7 @@ SOURCE=..\codec\gsm\src\code.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /w /W0 /ZI /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
+# ADD CPP /w /W0 /Zi /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -2602,7 +2610,7 @@ SOURCE=..\codec\gsm\src\decode.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /w /W0 /ZI /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
+# ADD CPP /w /W0 /Zi /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -2626,7 +2634,7 @@ SOURCE=..\codec\gsm\src\gsm_create.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /w /W0 /ZI /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
+# ADD CPP /w /W0 /Zi /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -2650,7 +2658,7 @@ SOURCE=..\codec\gsm\src\gsm_decode.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /w /W0 /ZI /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
+# ADD CPP /w /W0 /Zi /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -2674,7 +2682,7 @@ SOURCE=..\codec\gsm\src\gsm_destroy.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /w /W0 /ZI /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
+# ADD CPP /w /W0 /Zi /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -2698,7 +2706,7 @@ SOURCE=..\codec\gsm\src\gsm_encode.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /w /W0 /ZI /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
+# ADD CPP /w /W0 /Zi /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -2714,8 +2722,24 @@ SOURCE=..\codec\gsm\src\gsm_encode.c
 # Begin Source File
 
 SOURCE=..\codec\gsm\src\gsm_lpc.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
 # ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
 # SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /w /W0 /Zi /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -2728,7 +2752,7 @@ SOURCE=..\codec\gsm\src\gsm_option.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /w /W0 /ZI /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
+# ADD CPP /w /W0 /Zi /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -2750,7 +2774,7 @@ SOURCE=..\codec\gsm\src\long_term.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /w /W0 /ZI /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
+# ADD CPP /w /W0 /Zi /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -2774,7 +2798,7 @@ SOURCE=..\codec\gsm\src\preprocess.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /w /W0 /ZI /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
+# ADD CPP /w /W0 /Zi /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -2798,7 +2822,7 @@ SOURCE=..\codec\gsm\src\rpe.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /w /W0 /ZI /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
+# ADD CPP /w /W0 /Zi /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -2822,7 +2846,7 @@ SOURCE=..\codec\gsm\src\short_term.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /w /W0 /ZI /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
+# ADD CPP /w /W0 /Zi /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -2846,7 +2870,7 @@ SOURCE=..\codec\gsm\src\table.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-# ADD CPP /w /W0 /ZI /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
+# ADD CPP /w /W0 /Zi /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
