@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2004  2002/02/13 04:55:59  craigs
+ * Revision 1.2005  2002/02/19 07:52:40  robertj
+ * Restructured media bypass functions to fix problems with RFC2833.
+ *
+ * Revision 2.3  2002/02/13 04:55:59  craigs
  * Fixed problem with endless loop if proxy keeps failing authentication with 407
  *
  * Revision 2.2  2002/02/11 07:34:06  robertj
@@ -133,20 +136,17 @@ class SIPConnection : public OpalConnection
        The default behaviour returns FALSE indicating that media bypass is not
        possible.
      */
-    virtual BOOL CanDoMediaBypass(
+    virtual BOOL IsMediaBypassPossible(
       unsigned sessionID                  /// Session ID for media channel
     ) const;
 
-    /**Get the media transport address for the connection.
-       This is primarily used to determine if media bypass is possible for the
-       call between two connections.
-
-       The default behaviour returns TRUE if the media format is RTP based.
+    /**Get information on the media channel for the connection.
+       The default behaviour returns TRUE and fills the info structure if
+       there is a media channel active for the sessionID.
      */
-    virtual BOOL GetMediaTransportAddress(
-      unsigned sessionID,                 /// Session ID for media channel
-      OpalTransportAddress & data,        /// Data channel address
-      OpalTransportAddress & control      /// Control channel address
+    virtual BOOL GetMediaInformation(
+      unsigned sessionID,     /// Session ID for media channel
+      MediaInformation & info /// Information on media channel
     ) const;
 
     /**Clean up the termination of the connection.
