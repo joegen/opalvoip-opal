@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2006  2001/11/13 04:29:48  robertj
+ * Revision 1.2007  2001/11/14 06:28:20  robertj
+ * Added missing break when ending UDP connect phase.
+ *
+ * Revision 2.5  2001/11/13 04:29:48  robertj
  * Changed OpalTransportAddress CreateTransport and CreateListsner functions
  *   to have extra parameter to control local binding of sockets.
  *
@@ -1248,6 +1251,7 @@ void OpalTransportUDP::EndConnect(const OpalTransportAddress & theLocalAddress)
       writeChannel = NULL;
       socket->SetOption(SO_BROADCAST, 0);
       PAssert(Open(socket), PLogicError);
+      break;
     }
   }
 
