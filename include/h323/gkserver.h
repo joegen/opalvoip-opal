@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkserver.h,v $
- * Revision 1.2005  2002/03/22 06:57:48  robertj
+ * Revision 1.2006  2002/07/01 04:56:29  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.4  2002/03/22 06:57:48  robertj
  * Updated to OpenH323 version 1.8.2
  *
  * Revision 2.3  2002/02/11 09:32:11  robertj
@@ -41,6 +44,38 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.25  2002/06/21 02:52:44  robertj
+ * Fixed problem with double checking H.235 hashing, this causes failure as
+ *   the authenticator thinks it is a replay attack.
+ *
+ * Revision 1.24  2002/06/19 05:03:08  robertj
+ * Changed gk code to allow for H.235 security on an endpoint by endpoint basis.
+ *
+ * Revision 1.23  2002/06/12 03:55:21  robertj
+ * Added function to add/remove multiple listeners in one go comparing against
+ *   what is already running so does not interrupt unchanged listeners.
+ *
+ * Revision 1.22  2002/05/29 00:03:15  robertj
+ * Fixed unsolicited IRR support in gk client and server,
+ *   including support for IACK and INAK.
+ *
+ * Revision 1.21  2002/05/21 06:30:31  robertj
+ * Changed GRQ to the same as all the other xRQ request handlers.
+ *
+ * Revision 1.20  2002/05/17 03:42:08  robertj
+ * Fixed problems with H.235 authentication on RAS for server and client.
+ *
+ * Revision 1.19  2002/05/07 03:18:12  robertj
+ * Added application info (name/version etc) into registered endpoint data.
+ *
+ * Revision 1.18  2002/05/06 00:56:37  robertj
+ * Sizeable rewrite of gatekeeper server code to make more bulletproof against
+ *   multithreaded operation. Especially when using slow response/RIP feature.
+ * Also changed the call indexing to use call id and direction as key.
+ *
+ * Revision 1.17  2002/04/30 23:19:00  dereks
+ * Fix documentation typos.
  *
  * Revision 1.16  2002/03/06 02:01:31  robertj
  * Fixed race condition when starting slow server response thread.
@@ -108,6 +143,7 @@
 #endif
 
 
+#include <ptlib/safecoll.h>
 #include <opal/guid.h>
 #include <h323/h225ras.h>
 #include <h323/transaddr.h>
@@ -124,6 +160,7 @@ class H225_GatekeeperIdentifier;
 class H225_ArrayOf_TransportAddress;
 class H225_GatekeeperIdentifier;
 class H225_EndpointIdentifier;
+class H225_InfoRequestResponse_perCallInfo_subtype;
 
 class H323RegisteredEndPoint;
 class H323GatekeeperListener;
@@ -143,14 +180,10 @@ class H323GatekeeperRequest : public PObject
       H323GatekeeperListener & rasChannel,
       unsigned requestSequenceNumber
     );
-
-    /**Delete the server request.
-       This deletes the endpoint if required.
-      */
-    ~H323GatekeeperRequest();
   //@}
 
     enum Response {
+      Ignore = -2,
       Reject = -1,
       Confirm = 0
     };
@@ -165,8 +198,19 @@ class H323GatekeeperRequest : public PObject
       H323RasPDU & pdu
     );
 
-    H323RegisteredEndPoint * endpoint;
-    BOOL                     deleteEndpoint;
+    BOOL CheckCryptoTokens(
+      unsigned optionalField
+    );
+
+    virtual const PASN_Sequence & GetRawPDU() const = 0;
+    virtual PString GetGatekeeperIdentifier() const = 0;
+    virtual PString GetEndpointIdentifier() const = 0;
+    virtual const H225_ArrayOf_CryptoH323Token & GetCryptoTokens() const = 0;
+    virtual void SetRejectReason(
+      unsigned reasonCode
+    ) = 0;
+
+    PSafePtr<H323RegisteredEndPoint> endpoint;
 
   protected:
     virtual Response OnHandlePDU() = 0;
@@ -179,6 +223,12 @@ class H323GatekeeperRequest : public PObject
     H323RasPDU               reject;
     BOOL                     fastResponseRequired;
     PThread                * thread;
+
+    enum {
+      UnknownAuthentication,
+      FailedAuthentication,
+      IsAuthenticated
+    } authenticity;
 };
 
 
@@ -191,9 +241,17 @@ class H323GatekeeperGRQ : public H323GatekeeperRequest
       const H225_GatekeeperRequest & grq
     );
 
-    const H225_GatekeeperRequest & grq;
-    H225_GatekeeperConfirm       & gcf;
-    H225_GatekeeperReject        & grj;
+    virtual const PASN_Sequence & GetRawPDU() const;
+    virtual PString GetGatekeeperIdentifier() const;
+    virtual PString GetEndpointIdentifier() const;
+    virtual const H225_ArrayOf_CryptoH323Token & GetCryptoTokens() const;
+    virtual void SetRejectReason(
+      unsigned reasonCode
+    );
+
+    H225_GatekeeperRequest   grq;
+    H225_GatekeeperConfirm & gcf;
+    H225_GatekeeperReject  & grj;
 
   protected:
     virtual Response OnHandlePDU();
@@ -207,6 +265,14 @@ class H323GatekeeperRRQ : public H323GatekeeperRequest
     H323GatekeeperRRQ(
       H323GatekeeperListener & listener,
       const H225_RegistrationRequest & rrq
+    );
+
+    virtual const PASN_Sequence & GetRawPDU() const;
+    virtual PString GetGatekeeperIdentifier() const;
+    virtual PString GetEndpointIdentifier() const;
+    virtual const H225_ArrayOf_CryptoH323Token & GetCryptoTokens() const;
+    virtual void SetRejectReason(
+      unsigned reasonCode
     );
 
     H225_RegistrationRequest   rrq;
@@ -227,6 +293,14 @@ class H323GatekeeperURQ : public H323GatekeeperRequest
       const H225_UnregistrationRequest & urq
     );
 
+    virtual const PASN_Sequence & GetRawPDU() const;
+    virtual PString GetGatekeeperIdentifier() const;
+    virtual PString GetEndpointIdentifier() const;
+    virtual const H225_ArrayOf_CryptoH323Token & GetCryptoTokens() const;
+    virtual void SetRejectReason(
+      unsigned reasonCode
+    );
+
     H225_UnregistrationRequest   urq;
     H225_UnregistrationConfirm & ucf;
     H225_UnregistrationReject  & urj;
@@ -243,6 +317,14 @@ class H323GatekeeperARQ : public H323GatekeeperRequest
     H323GatekeeperARQ(
       H323GatekeeperListener & listener,
       const H225_AdmissionRequest & arq
+    );
+
+    virtual const PASN_Sequence & GetRawPDU() const;
+    virtual PString GetGatekeeperIdentifier() const;
+    virtual PString GetEndpointIdentifier() const;
+    virtual const H225_ArrayOf_CryptoH323Token & GetCryptoTokens() const;
+    virtual void SetRejectReason(
+      unsigned reasonCode
     );
 
     H225_AdmissionRequest   arq;
@@ -263,6 +345,14 @@ class H323GatekeeperDRQ : public H323GatekeeperRequest
       const H225_DisengageRequest & drq
     );
 
+    virtual const PASN_Sequence & GetRawPDU() const;
+    virtual PString GetGatekeeperIdentifier() const;
+    virtual PString GetEndpointIdentifier() const;
+    virtual const H225_ArrayOf_CryptoH323Token & GetCryptoTokens() const;
+    virtual void SetRejectReason(
+      unsigned reasonCode
+    );
+
     H225_DisengageRequest   drq;
     H225_DisengageConfirm & dcf;
     H225_DisengageReject  & drj;
@@ -279,6 +369,14 @@ class H323GatekeeperBRQ : public H323GatekeeperRequest
     H323GatekeeperBRQ(
       H323GatekeeperListener & listener,
       const H225_BandwidthRequest & brq
+    );
+
+    virtual const PASN_Sequence & GetRawPDU() const;
+    virtual PString GetGatekeeperIdentifier() const;
+    virtual PString GetEndpointIdentifier() const;
+    virtual const H225_ArrayOf_CryptoH323Token & GetCryptoTokens() const;
+    virtual void SetRejectReason(
+      unsigned reasonCode
     );
 
     H225_BandwidthRequest   brq;
@@ -299,6 +397,14 @@ class H323GatekeeperLRQ : public H323GatekeeperRequest
       const H225_LocationRequest & lrq
     );
 
+    virtual const PASN_Sequence & GetRawPDU() const;
+    virtual PString GetGatekeeperIdentifier() const;
+    virtual PString GetEndpointIdentifier() const;
+    virtual const H225_ArrayOf_CryptoH323Token & GetCryptoTokens() const;
+    virtual void SetRejectReason(
+      unsigned reasonCode
+    );
+
     H225_LocationRequest   lrq;
     H225_LocationConfirm & lcf;
     H225_LocationReject  & lrj;
@@ -308,19 +414,52 @@ class H323GatekeeperLRQ : public H323GatekeeperRequest
 };
 
 
+class H323GatekeeperIRR : public H323GatekeeperRequest
+{
+    PCLASSINFO(H323GatekeeperIRR, H323GatekeeperRequest);
+  public:
+    H323GatekeeperIRR(
+      H323GatekeeperListener & listener,
+      const H225_InfoRequestResponse & irr
+    );
+
+    virtual const PASN_Sequence & GetRawPDU() const;
+    virtual PString GetGatekeeperIdentifier() const;
+    virtual PString GetEndpointIdentifier() const;
+    virtual const H225_ArrayOf_CryptoH323Token & GetCryptoTokens() const;
+    virtual void SetRejectReason(
+      unsigned reasonCode
+    );
+
+    H225_InfoRequestResponse irr;
+    H225_InfoRequestAck    & iack;
+    H225_InfoRequestNak    & inak;
+
+  protected:
+    virtual Response OnHandlePDU();
+};
+
+
 /**This class describes an active call on a gatekeeper.
   */
-class H323GatekeeperCall : public PObject
+class H323GatekeeperCall : public PSafeObject
 {
-    PCLASSINFO(H323GatekeeperCall, PObject);
+    PCLASSINFO(H323GatekeeperCall, PSafeObject);
   public:
   /**@name Construction */
   //@{
+    enum Direction {
+      AnsweringCall,
+      OriginatingCall,
+      UnknownDirection
+    };
+
     /**Create a new gatekeeper call tracking record.
      */
     H323GatekeeperCall(
-      H323GatekeeperServer & server, /// Gatekeeper server data
-      const OpalGloballyUniqueID & callIdentifier  /// Unique call identifier
+      H323GatekeeperServer & server,               /// Owner gatekeeper server
+      const OpalGloballyUniqueID & callIdentifier, /// Unique call identifier
+      Direction direction                          /// Direction of call
     );
 
     /**Destroy the call, removing itself from the endpoint.
@@ -347,11 +486,17 @@ class H323GatekeeperCall : public PObject
   //@{
     /**Handle an admission ARQ PDU.
        The default behaviour sets some internal variables from the ARQ data
-       and then returns TRUE.
+       and then calls OnResolveAdmission, if necessary, and OnReplyAdmission
+       every time.
       */
     virtual H323GatekeeperRequest::Response OnAdmission(
       H323GatekeeperARQ & request
     );
+
+    /**Shut down a call.
+       This sendsa DRQ to the endpoint(s) to close the call down.
+      */
+    virtual BOOL Disengage();
 
     /**Handle a disengage DRQ PDU.
        The default behaviour simply returns TRUE.
@@ -368,19 +513,31 @@ class H323GatekeeperCall : public PObject
       H323GatekeeperBRQ & request
     );
 
-    /**Remove call from endpoint.
+    /**Handle an info request response IRR PDU.
+       The default behaviour resets the heartbeat time monitoring the call.
       */
-    void RemoveFromEndpoint(
-      H323RegisteredEndPoint * ep
+    virtual H323GatekeeperRequest::Response OnInfoResponse(
+      H323GatekeeperIRR & request,
+      H225_InfoRequestResponse_perCallInfo_subtype & call
     );
+
+    /**Function called to do heartbeat check of the call.
+       Monitor the state of the call and make sure everything is OK.
+
+       A return value of FALSE indicates the call is to be closed for some
+       reason.
+
+       Default behaviour does an IRQ to see if the call (and endpoint!) is
+       still there and running. If the IRQ fails, FALSE is returned.
+      */
+    virtual BOOL OnHeartbeat();
   //@}
 
   /**@name Access functions */
   //@{
-    H323RegisteredEndPoint * GetSourceEndPoint() const { return sourceEndpoint; }
-    void SetSourceEndPoint(H323RegisteredEndPoint * ep) { sourceEndpoint = ep; }
-    H323RegisteredEndPoint * GetDestinationEndPoint() const { return destinationEndpoint; }
-    void SetDestinationEndPoint(H323RegisteredEndPoint * ep) { destinationEndpoint = ep; }
+    H323GatekeeperServer & GetGatekeeper() const { return gatekeeper; }
+    H323RegisteredEndPoint & GetEndPoint() const { return *PAssertNULL(endpoint); }
+    BOOL IsAnsweringCall() const { return direction == AnsweringCall; }
     unsigned GetCallReference() const { return callReference; }
     const OpalGloballyUniqueID & GetCallIdentifier() const { return callIdentifier; }
     const OpalGloballyUniqueID & GetConferenceIdentifier() const { return conferenceIdentifier; }
@@ -397,24 +554,26 @@ class H323GatekeeperCall : public PObject
   //@}
 
   protected:
-    H323GatekeeperServer   & server;
-    H323RegisteredEndPoint * sourceEndpoint;
-    H323RegisteredEndPoint * destinationEndpoint;
+    H323GatekeeperServer   & gatekeeper;
+    H323RegisteredEndPoint * endpoint;
 
-    unsigned                 callReference;
-    OpalGloballyUniqueID     callIdentifier;
-    OpalGloballyUniqueID     conferenceIdentifier;
-    PString                  srcNumber;
-    PStringArray             srcAliases;
-    H323TransportAddress     srcHost;
-    PString                  dstNumber;
-    PStringArray             dstAliases;
-    H323TransportAddress     dstHost;
-    unsigned                 bandwidthUsed;
-    PTime                    alertingTime;
-    PTime                    connectedTime;
-    PTime                    callEndTime;
-    OpalCallEndReason        callEndReason;
+    Direction            direction;
+    unsigned             callReference;
+    OpalGloballyUniqueID callIdentifier;
+    OpalGloballyUniqueID conferenceIdentifier;
+    PString              srcNumber;
+    PStringArray         srcAliases;
+    H323TransportAddress srcHost;
+    PString              dstNumber;
+    PStringArray         dstAliases;
+    H323TransportAddress dstHost;
+    unsigned             bandwidthUsed;
+    unsigned             infoResponseRate;
+    PTime                lastInfoResponse;
+    PTime                alertingTime;
+    PTime                connectedTime;
+    PTime                callEndTime;
+    OpalCallEndReason    callEndReason;
 };
 
 
@@ -426,9 +585,9 @@ PSORTED_LIST(H323GatekeeperCallList, H323GatekeeperCall);
    H323EndPoint class. This is purely a description of endpoints that are
    registered with the gatekeeper.
   */
-class H323RegisteredEndPoint : public PObject
+class H323RegisteredEndPoint : public PSafeObject
 {
-    PCLASSINFO(H323RegisteredEndPoint, PObject);
+    PCLASSINFO(H323RegisteredEndPoint, PSafeObject);
   public:
   /**@name Construction */
   //@{
@@ -463,7 +622,7 @@ class H323RegisteredEndPoint : public PObject
       */
     void AddCall(
       H323GatekeeperCall * call
-    ) { activeCalls.Append(call); }
+    );
 
     /**Remove a call from the endpoints list of active calls.
        This is largely an internal routine, it is not expected the user would
@@ -496,11 +655,50 @@ class H323RegisteredEndPoint : public PObject
       H323GatekeeperRRQ & request
     );
 
+    /**Call back on receiving a RAS full registration for this endpoint.
+       This is not called if the keepAlive flag is set indicating a
+       lightweight RRQ has been received.
+
+       The default behaviour extract information from the RRQ and sets
+       internal variables to that data.
+
+       If returns TRUE then a RCF is sent otherwise an RRJ is sent.
+      */
+    virtual H323GatekeeperRequest::Response OnFullRegistration(
+      H323GatekeeperRRQ & request
+    );
+
+    /**Call back to set security on RAS full registration for this endpoint.
+       This is called from OnFullRegistration().
+
+       The default behaviour extract information from the RRQ and sets
+       internal variables to that data.
+
+       If returns TRUE then a RCF is sent otherwise an RRJ is sent.
+      */
+    virtual H323GatekeeperRequest::Response OnSecureRegistration(
+      H323GatekeeperRRQ & request
+    );
+
     /**Call back on receiving a RAS unregistration for this endpoint.
        The default behaviour clears all calls owned by this endpoint.
       */
     virtual H323GatekeeperRequest::Response OnUnregistration(
       H323GatekeeperURQ & request
+    );
+
+    /**Handle an info request response IRR PDU.
+       The default behaviour finds each call current for endpoint and calls 
+       the function of the same name in the H323GatekeeperCall instance.
+      */
+    virtual H323GatekeeperRequest::Response OnInfoResponse(
+      H323GatekeeperIRR & request
+    );
+
+    /**Set password for user activating H.235 security.
+      */
+    virtual BOOL SetPassword(
+      const PString & password
     );
 
     /**Determine of this endpoint has exceeded its time to live.
@@ -572,6 +770,10 @@ class H323RegisteredEndPoint : public PObject
       PINDEX idx
     ) const { return voicePrefixes[idx]; }
 
+    /**Get application info (name/version etc) for endpoint.
+      */
+    const PString GetApplicationInfo() const { return applicationInfo; }
+
   //@}
 
   protected:
@@ -582,11 +784,10 @@ class H323RegisteredEndPoint : public PObject
     OpalTransportAddressArray signalAddresses;
     PStringArray              aliases;
     PStringArray              voicePrefixes;
+    PString                   applicationInfo;
     unsigned                  timeToLive;
     H235Authenticators        authenticators;
-
     PTime                     lastRegistration;
-
     H323GatekeeperCallList    activeCalls;
 };
 
@@ -619,7 +820,8 @@ class H323GatekeeperListener : public H225_RAS
   /**@name Operation callbacks */
   //@{
     /**Handle a discovery GRQ PDU.
-       The default behaviour does some checks and returns TRUE if suitable.
+       The default behaviour does some checks and calls the gatekeeper server
+       instances function of the same name.
       */
     virtual H323GatekeeperRequest::Response OnDiscovery(
       H323GatekeeperGRQ & request
@@ -672,6 +874,14 @@ class H323GatekeeperListener : public H225_RAS
     virtual H323GatekeeperRequest::Response OnLocation(
       H323GatekeeperLRQ & request
     );
+
+    /**Handle an info request response IRR PDU.
+       The default behaviour does some checks and calls the gatekeeper server
+       instances function of the same name.
+      */
+    virtual H323GatekeeperRequest::Response OnInfoResponse(
+      H323GatekeeperIRR & request
+    );
   //@}
 
   /**@name Low level protocol callbacks */
@@ -689,8 +899,6 @@ class H323GatekeeperListener : public H225_RAS
     virtual BOOL OnReceiveDisengageConfirm(const H225_DisengageConfirm &);
     virtual BOOL OnReceiveDisengageReject(const H225_DisengageReject &);
     virtual BOOL OnReceiveLocationRequest(const H225_LocationRequest &);
-    virtual BOOL OnReceiveInfoRequestAck(const H225_InfoRequestAck &);
-    virtual BOOL OnReceiveInfoRequestNak(const H225_InfoRequestNak &);
     virtual BOOL OnReceiveInfoRequestResponse(const H225_InfoRequestResponse &);
     virtual BOOL OnReceiveResourcesAvailableConfirm(const H225_ResourcesAvailableConfirm &);
 
@@ -699,32 +907,22 @@ class H323GatekeeperListener : public H225_RAS
     virtual H235Authenticators GetAuthenticators() const;
   //@}
 
-    void LockCurrentEP(
+    void AttachCurrentEP(
       H323RegisteredEndPoint * ep
     );
-    void ReleaseCurrentEP();
+    void DetachCurrentEP();
 
   protected:
     BOOL CheckGatekeeperIdentifier(
-      unsigned optionalField,
-      const PASN_Sequence & pdu,
-      const H225_GatekeeperIdentifier & identifier
-    );
-    BOOL CheckCryptoTokensForEndPoint(
       H323GatekeeperRequest & info,
-      const H225_ArrayOf_CryptoH323Token & cryptoTokens,
-      const PASN_Sequence & pdu,
-      unsigned optionalField
+      unsigned optionalField,
+      unsigned rejectTag
     );
     BOOL GetRegisteredEndPoint(
+      H323GatekeeperRequest & info,
       unsigned rejectTag,
       unsigned securityRejectTag,
-      PASN_Choice & reject,
-      unsigned securityField,
-      H323GatekeeperRequest & info,
-      const PASN_Sequence & pdu,
-      const H225_ArrayOf_CryptoH323Token & cryptoTokens,
-      const H225_EndpointIdentifier & identifier
+      unsigned securityField
     );
 
     H323GatekeeperServer & gatekeeper;
@@ -738,7 +936,7 @@ class H323GatekeeperListener : public H225_RAS
 /**This class implements a basic gatekeeper server functionality.
    An instance of this class contains all of the state information and
    operations for a gatekeeper. Multiple gatekeeper listeners may be using
-   thsi class to link individual UDP (or other protocol) packets from various
+   this class to link individual UDP (or other protocol) packets from various
    sources (interfaces etc) into a single instance.
 
    There is typically only one instance of this class, though it is not
@@ -764,6 +962,21 @@ class H323GatekeeperServer : public PObject
 
   /**@name Protocol Handler Operations */
   //@{
+    /**Add listeners to the gatekeeper server.
+       If a listener already exists on the interface specified in the list
+       then it is ignored. If a listener does not yet exist a new one is
+       created and if a listener is running that is not in the list then it
+       is stopped and removed.
+
+       If the array is empty then the string "*" is assumed which will listen
+       on the standard UDP port on INADDR_ANY.
+
+       Returns TRUE if at least one interface was successfully started.
+      */
+    BOOL AddListeners(
+      const OpalTransportAddressArray & ifaces /// Interfaces to listen on.
+    );
+
     /**Add a gatekeeper listener to this gatekeeper server given the
        transport address for the local interface.
       */
@@ -791,7 +1004,7 @@ class H323GatekeeperServer : public PObject
       H323GatekeeperListener * listener
     );
 
-    /**Create a new H323Gatlistner.
+    /**Create a new H323GatkeeperListener.
        The user woiuld not usually use this function as it is used internally
        by the server when new listeners are added by OpalTransportAddress.
 
@@ -813,6 +1026,13 @@ class H323GatekeeperServer : public PObject
 
   /**@name EndPoint Operations */
   //@{
+    /**Handle a discovery GRQ PDU.
+       The default behaviour deals with the authentication scheme nogotiation.
+      */
+    virtual H323GatekeeperRequest::Response OnDiscovery(
+      H323GatekeeperGRQ & request
+    );
+
     /**Call back on receiving a RAS registration for this endpoint.
        The default behaviour checks if the registered endpoint already exists
        and if not creates a new endpoint. It then calls the OnRegistration()
@@ -833,6 +1053,14 @@ class H323GatekeeperServer : public PObject
       H323GatekeeperURQ & request
     );
 
+    /**Handle an info request response IRR PDU.
+       The default behaviour calls the function of the same name in the
+       endpoint instance.
+      */
+    virtual H323GatekeeperRequest::Response OnInfoResponse(
+      H323GatekeeperIRR & request
+    );
+
     /**Add a new registered endpoint to the server database.
        Once the endpoint has been added it is then owned by the server and
        will be deleted when it is removed.
@@ -850,9 +1078,7 @@ class H323GatekeeperServer : public PObject
     /**Remove a registered endpoint from the server database.
       */
     virtual void RemoveEndPoint(
-      H323RegisteredEndPoint * ep,
-      BOOL autoDelete = TRUE,
-      BOOL lock = TRUE
+      H323RegisteredEndPoint * ep
     );
 
     /**Remove an alias from the server database.
@@ -863,8 +1089,7 @@ class H323GatekeeperServer : public PObject
        Returns TRUE if the endpoint itself was removed.
       */
     virtual BOOL RemoveAlias(
-      const PString & alias,
-      BOOL autoDelete = TRUE
+      const PString & alias
     );
 
     /**Create a new registered endpoint object.
@@ -876,7 +1101,7 @@ class H323GatekeeperServer : public PObject
        maintain extra information on a endpoint by endpoint basis.
       */
     virtual H323RegisteredEndPoint * CreateRegisteredEndPoint(
-      const H225_RegistrationRequest & rrq
+      H323GatekeeperRRQ & request
     );
 
     /**Create a new unique identifier for the registered endpoint.
@@ -891,49 +1116,44 @@ class H323GatekeeperServer : public PObject
 
     /**Find a registered alias given its endpoint identifier.
       */
-    virtual H323RegisteredEndPoint * FindEndPointByIdentifier(
-      const PString & identifier
+    virtual PSafePtr<H323RegisteredEndPoint> FindEndPointByIdentifier(
+      const PString & identifier,
+      PSafetyMode mode = PSafeReference
     );
 
     /**Find a registered alias given a list of signal addresses.
       */
-    virtual H323RegisteredEndPoint * FindEndPointBySignalAddresses(
-      const H225_ArrayOf_TransportAddress & addresses
+    virtual PSafePtr<H323RegisteredEndPoint> FindEndPointBySignalAddresses(
+      const H225_ArrayOf_TransportAddress & addresses,
+      PSafetyMode mode = PSafeReference
     );
 
     /**Find a registered alias given its signal address.
       */
-    virtual H323RegisteredEndPoint * FindEndPointBySignalAddress(
-      const H323TransportAddress & address
+    virtual PSafePtr<H323RegisteredEndPoint> FindEndPointBySignalAddress(
+      const H323TransportAddress & address,
+      PSafetyMode mode = PSafeReference
     );
 
     /**Find a registered alias given its raw alias address.
       */
-    virtual H323RegisteredEndPoint * FindEndPointByAliasAddress(
-      const H225_AliasAddress & alias
+    virtual PSafePtr<H323RegisteredEndPoint> FindEndPointByAliasAddress(
+      const H225_AliasAddress & alias,
+      PSafetyMode mode = PSafeReadWrite
     );
 
     /**Find a registered alias given its simple alias string.
       */
-    virtual H323RegisteredEndPoint * FindEndPointByAliasString(
-      const PString & alias
+    virtual PSafePtr<H323RegisteredEndPoint> FindEndPointByAliasString(
+      const PString & alias,
+      PSafetyMode mode = PSafeReference
     );
 
-    /**Get the first registered endpoint in the gatekeeper server database.
-       Note that the database is locked and no access to endpoints or calls
-       may be made until all registered endpoints or calls are enumerated
-       (NextEndPoint() or NextCall() returns NULL) or AbortEnumeration() is
-       called.
+    /**Get first endpoint for enumeration.
       */
-    H323RegisteredEndPoint * FirstEndPoint();
-
-    /**Get the next registered endpoint in the gatekeeper server database.
-       Note that the database is locked and no access to endpoints or calls
-       may be made until all registered endpoints or calls are enumerated
-       (NextEndPoint() or NextCall() returns NULL) or AbortEnumeration() is
-       called.
-      */
-    H323RegisteredEndPoint * NextEndPoint();
+    PSafePtr<H323RegisteredEndPoint> GetFirstEndPoint(
+      PSafetyMode mode = PSafeReference
+    ) { return PSafePtr<H323RegisteredEndPoint>(byIdentifier, mode); }
   //@}
 
   /**@name Call Operations */
@@ -957,7 +1177,7 @@ class H323GatekeeperServer : public PObject
 
     /**Handle a bandwidth BRQ PDU.
        The default behaviour finds the call and does some checks then calls
-       the H323GatkeeperCall function of the same name.
+       the H323GatekeeperCall function of the same name.
       */
     virtual H323GatekeeperRequest::Response OnBandwidth(
       H323GatekeeperBRQ & request
@@ -972,37 +1192,37 @@ class H323GatekeeperServer : public PObject
        maintain extra information on a call by call basis.
       */
     virtual H323GatekeeperCall * CreateCall(
-      const OpalGloballyUniqueID & callIdentifier
+      const OpalGloballyUniqueID & callIdentifier,
+      H323GatekeeperCall::Direction direction
     );
 
     /**Remove a call from the server database.
       */
     virtual void RemoveCall(
-      H323RegisteredEndPoint * ep,
       H323GatekeeperCall * call
     );
 
     /**Find the call given the identifier.
       */
-    virtual H323GatekeeperCall * FindCall(
-      const OpalGloballyUniqueID & callIdentifier
+    virtual PSafePtr<H323GatekeeperCall> FindCall(
+      const OpalGloballyUniqueID & callIdentifier,
+      BOOL answeringCall,
+      PSafetyMode mode = PSafeReference
     );
 
-    /**Get the first call in the gatekeeper server database.
-       Note that the database is locked and no access to endpoints or calls
-       may be made until all registered endpoints or calls are enumerated
-       (NextEndPoint() or NextCall() returns NULL) or AbortEnumeration() is
-       called.
+    /**Find the call given the identifier.
       */
-    H323GatekeeperCall * FirstCall();
+    virtual PSafePtr<H323GatekeeperCall> FindCall(
+      const OpalGloballyUniqueID & callIdentifier,
+      H323GatekeeperCall::Direction direction = H323GatekeeperCall::UnknownDirection,
+      PSafetyMode mode = PSafeReference
+    );
 
-    /**Get the next registered endpoint in the gatekeeper server database.
-       Note that the database is locked and no access to endpoints or calls
-       may be made until all registered endpoints or calls are enumerated
-       (NextEndPoint() or NextCall() returns NULL) or AbortEnumeration() is
-       called.
+    /**Get first endpoint for enumeration.
       */
-    H323GatekeeperCall * NextCall();
+    PSafePtr<H323GatekeeperCall> GetFirstCall(
+      PSafetyMode mode = PSafeReference
+    ) { return PSafePtr<H323GatekeeperCall>(activeCalls, mode); }
   //@}
 
   /**@name Routing operations */
@@ -1095,16 +1315,6 @@ class H323GatekeeperServer : public PObject
       const PString & alias
     );
 
-    /**Get password for user if H.235 security active.
-       Returns FALSE if security active and user not found. Returns TRUE if
-       security active and user is found. Also returns TRUE if security
-       inactive, and the password is always the empty string.
-      */
-    virtual BOOL GetUsersPassword(
-      const PString & alias,
-      PString & password
-    ) const;
-
     /**Allocate or change the bandwidth being used.
        This function modifies the total bandwidth used by the all endpoints
        registered with this gatekeeper. It is called when ARQ or BRQ PDU's are
@@ -1116,12 +1326,25 @@ class H323GatekeeperServer : public PObject
     );
   //@}
 
+  /**@name Security and authentication functions */
+  //@{
+    /**Get the default list of authenticators for endpoint.
+      */
+    virtual H235Authenticators CreateAuthenticators() const;
+
+    /**Get password for user if H.235 security active.
+       Returns FALSE if security active and user not found. Returns TRUE if
+       security active and user is found. Also returns TRUE if security
+       inactive, and the password is always the empty string.
+      */
+    virtual BOOL GetUsersPassword(
+      const PString & alias,
+      PString & password
+    ) const;
+  //@}
+
   /**@name Access functions */
   //@{
-    /**Abort the enumeration process, unlocking the gatekeeper server database.
-      */
-    void AbortEnumeration();
-
     /**Get the identifier name for this gatekeeper.
       */
     const PString & GetGatekeeperIdentifier() const { return gatekeeperIdentifier; }
@@ -1144,6 +1367,10 @@ class H323GatekeeperServer : public PObject
       */
     void SetAvailableBandwidth(unsigned bps100) { availableBandwidth = bps100; }
 
+    /**Get the default bandwidth for calls.
+      */
+    unsigned GetDefaultBandwidth() const { return defaultBandwidth; }
+
     /**Get the default time to live for new registered endpoints.
       */
     unsigned GetTimeToLive() const { return defaultTimeToLive; }
@@ -1151,6 +1378,22 @@ class H323GatekeeperServer : public PObject
     /**Set the default time to live for new registered endpoints.
       */
     void SetTimeToLive(unsigned seconds) { defaultTimeToLive = seconds; }
+
+    /**Get the default time for monitoring calls via IRR.
+      */
+    unsigned GetInfoResponseRate() const { return defaultInfoResponseRate; }
+
+    /**Set the default time for monitoring calls via IRR.
+      */
+    void SetInfoResponseRate(unsigned seconds) { defaultInfoResponseRate = seconds; }
+
+    /**Get flag for is gatekeeper routed.
+      */
+    BOOL IsGatekeeperRouted() const { return isGatekeeperRouted; }
+
+    /**Get flag for if H.235 authentication is required.
+      */
+    BOOL IsRequiredH235() const { return requireH235; }
   //@}
 
   protected:
@@ -1162,6 +1405,7 @@ class H323GatekeeperServer : public PObject
     unsigned defaultBandwidth;
     unsigned maximumBandwidth;
     unsigned defaultTimeToLive;
+    unsigned defaultInfoResponseRate;
     BOOL     overwriteOnSameSignalAddress;
     BOOL     canOnlyCallRegisteredEP;
     BOOL     canOnlyAnswerRegisteredEP;
@@ -1169,7 +1413,7 @@ class H323GatekeeperServer : public PObject
     BOOL     makeCallPreGrantedARQ;
     BOOL     isGatekeeperRouted;
     BOOL     aliasCanBeHostName;
-    BOOL     usingH235;
+    BOOL     requireH235;
 
     PStringToString passwords;
 
@@ -1185,20 +1429,12 @@ class H323GatekeeperServer : public PObject
     ListenerList listeners;
 
     PDICTIONARY(IdentifierDict, PString, H323RegisteredEndPoint);
-    IdentifierDict byIdentifier;
+    PSafeDictionary<IdentifierDict, PString, H323RegisteredEndPoint> byIdentifier;
+    PStringToString byAddress;
+    PStringToString byAlias;
+    PStringToString byVoicePrefix;
 
-    PDICTIONARY(AddressDict, PString, H323RegisteredEndPoint);
-    AddressDict byAddress;
-
-    PDICTIONARY(AliasDict, PString, H323RegisteredEndPoint);
-    AliasDict byAlias;
-
-    PDICTIONARY(PrefixDict, PString, H323RegisteredEndPoint);
-    PrefixDict byVoicePrefix;
-
-    H323GatekeeperCallList activeCalls;
-
-    PINDEX enumerationIndex;
+    PSafeList<H323GatekeeperCallList, H323GatekeeperCall> activeCalls;
 };
 
 

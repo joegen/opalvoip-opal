@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2014  2002/04/09 00:17:08  robertj
+ * Revision 1.2015  2002/07/01 04:56:29  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.13  2002/04/09 00:17:08  robertj
  * Changed "callAnswered" to better description of "originating".
  *
  * Revision 2.12  2002/02/19 07:43:40  robertj
@@ -70,6 +73,58 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.46  2002/06/22 06:11:30  robertj
+ * Fixed bug on sometimes missing received endSession causing 10 second
+ *   timeout in connection clean up.
+ *
+ * Revision 1.45  2002/06/22 05:48:38  robertj
+ * Added partial implementation for H.450.11 Call Intrusion
+ *
+ * Revision 1.44  2002/06/13 06:15:19  robertj
+ * Allowed TransferCall() to be used on H323Connection as well as H323EndPoint.
+ *
+ * Revision 1.43  2002/06/05 08:58:58  robertj
+ * Fixed documentation of remote application name string.
+ * Added missing virtual keywards on some protocol handler functions.
+ *
+ * Revision 1.42  2002/05/29 06:40:29  robertj
+ * Changed sending of endSession/ReleaseComplete PDU's to occur immediately
+ *   on call clearance and not wait for background thread to do it.
+ * Stricter compliance by waiting for reply endSession before closing down.
+ *
+ * Revision 1.41  2002/05/29 03:55:17  robertj
+ * Added protocol version number checking infrastructure, primarily to improve
+ *   interoperability with stacks that are unforgiving of new features.
+ *
+ * Revision 1.40  2002/05/21 09:32:49  robertj
+ * Added ability to set multiple alias names ona  connection by connection
+ *   basis, defaults to endpoint list, thanks Artis Kugevics
+ *
+ * Revision 1.39  2002/05/15 23:59:33  robertj
+ * Added memory management of created T.38 and T.120 handlers.
+ * Improved documentation for use of T.38 and T.120 functions.
+ * Added ability to initiate a mode change for non-standard T.38
+ *
+ * Revision 1.38  2002/05/07 01:31:51  dereks
+ * Fix typo in documentation.
+ *
+ * Revision 1.37  2002/05/03 05:38:15  robertj
+ * Added Q.931 Keypad IE mechanism for user indications (DTMF).
+ *
+ * Revision 1.36  2002/05/02 07:56:24  robertj
+ * Added automatic clearing of call if no media (RTP data) is transferred in a
+ *   configurable (default 5 minutes) amount of time.
+ *
+ * Revision 1.35  2002/04/25 20:55:25  dereks
+ * Fix documentation. Thanks Olaf Schulz.
+ *
+ * Revision 1.34  2002/04/17 00:50:34  robertj
+ * Added ability to disable the in band DTMF detection.
+ *
+ * Revision 1.33  2002/03/27 06:04:42  robertj
+ * Added Temporary Failure end code for connection, an application may
+ *   immediately retry the call if this occurs.
  *
  * Revision 1.32  2002/02/11 04:20:48  robertj
  * Fixed documentation errors, thanks Horacio J. Peña
@@ -201,6 +256,7 @@ class PASN_OctetString;
 class H225_EndpointType;
 class H225_TransportAddress;
 class H225_ArrayOf_PASN_OctetString;
+class H225_ProtocolIdentifier;
 
 class H245_TerminalCapabilitySet;
 class H245_TerminalCapabilitySetReject;
@@ -235,10 +291,9 @@ class H450xDispatcher;
 class H4502Handler;
 class H4504Handler;
 class H4506Handler;
+class H45011Handler;
 
 class OpalCall;
-class OpalT120Protocol;
-class OpalT38Protocol;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -257,17 +312,21 @@ class H323Connection : public OpalConnection
   /**@name Construction */
   //@{
     enum Options {
-      FastStartOptionDisable      = 0x0001,
-      FastStartOptionEnable       = 0x0002,
-      FastStartOptionMask         = 0x0003,
+      FastStartOptionDisable       = 0x0001,
+      FastStartOptionEnable        = 0x0002,
+      FastStartOptionMask          = 0x0003,
 
-      H245TunnelingOptionDisable  = 0x0004,
-      H245TunnelingOptionEnable   = 0x0008,
-      H245TunnelingOptionMask     = 0x000c,
+      H245TunnelingOptionDisable   = 0x0004,
+      H245TunnelingOptionEnable    = 0x0008,
+      H245TunnelingOptionMask      = 0x000c,
 
-      H245inSetupOptionDisable    = 0x0010,
-      H245inSetupOptionEnable     = 0x0020,
-      H245inSetupOptionMask       = 0x0030,
+      H245inSetupOptionDisable     = 0x0010,
+      H245inSetupOptionEnable      = 0x0020,
+      H245inSetupOptionMask        = 0x0030,
+
+      DetectInBandDTMFOptionDisable= 0x0040,
+      DetectInBandDTMFOptionEnable = 0x0080,
+      DetectInBandDTMFOptionMask   = 0x00c0,
     };
 
     /**Create a new connection.
@@ -294,6 +353,14 @@ class H323Connection : public OpalConnection
       */
     virtual Phases GetPhase() const;
 
+    /**Set the call clearance reason.
+       An application should have no cause to use this function. It is present
+       for the H323EndPoint::ClearCall() function to set the clearance reason.
+      */
+    virtual void SetCallEndReason(
+      OpalCallEndReason reason   /// Reason for clearance of connection.
+    );
+
     /**Indicate to remote endpoint an alert is in progress.
        If this is an incoming connection and it is in the Alerting phase, then
        this function is used to indicate to that endpoint that an alert is in
@@ -315,7 +382,7 @@ class H323Connection : public OpalConnection
     virtual BOOL SetConnected();
 
     /** Called when a connection is established.
-        Defautl behaviour is to call H323Connection::OnConnectionEstablished
+        Default behaviour is to call H323EndPoint::OnConnectionEstablished
       */
     virtual void OnEstablished();
 
@@ -415,13 +482,6 @@ class H323Connection : public OpalConnection
       */
     BOOL IsEstablished() const { return connectionState == EstablishedConnection; }
 
-    /**Inernal function to check if call established.
-       This checks all the criteria for establishing a call an initiating the
-       starting of media channels, if they have not already been started vi
-       the fast start algorithm.
-    */
-    virtual void InternalEstablishedConnectionCheck();
-
     /**Clean up the call clearance of the connection.
        This function will do any internal cleaning up and waiting on background
        threads that may be using the connection object. After this returns it
@@ -452,7 +512,7 @@ class H323Connection : public OpalConnection
     /**Handle reading PDU's from the signalling channel.
        This is an internal function and is unlikely to be used by applications.
      */
-    void HandleSignallingChannel();
+    virtual void HandleSignallingChannel();
 
     /**Handle PDU from the signalling channel.
        This is an internal function and is unlikely to be used by applications.
@@ -640,7 +700,8 @@ class H323Connection : public OpalConnection
      */
     void TransferCall(
       const PString & remoteParty,   /// Remote party to transfer the existing call to
-      const PString & callIdentity   /// Call Identity of secondary call if present
+      const PString & callIdentity = PString::Empty()
+                                    /// Call Identity of secondary call if present
     );
 
     /**Transfer the call through consultation so the remote party in the primary call is connected to
@@ -657,7 +718,7 @@ class H323Connection : public OpalConnection
        This is an internal function and it is not expected the user will call
        it directly.
      */
-    void HandleConsultationTransfer(
+    virtual void HandleConsultationTransfer(
       const PString & callIdentity, /**Call Identity of secondary call 
                                        received in SETUP Message. */
       H323Connection & incoming     /// Connection upon which SETUP PDU was received.
@@ -675,7 +736,7 @@ class H323Connection : public OpalConnection
        This is an internal function and it is not expected the user will call
        it directly.
      */
-    void HandleTransferCall(
+    virtual void HandleTransferCall(
       const PString & token,
       const PString & identity
     );
@@ -693,7 +754,7 @@ class H323Connection : public OpalConnection
        Reception of a callTransferSetup return error APDU.
        Expiry of Call Transfer timer CT-T4.
      */
-    void HandleCallTransferFailure(
+    virtual void HandleCallTransferFailure(
       const int returnError    /// Failure reason code
     );
 
@@ -753,6 +814,41 @@ class H323Connection : public OpalConnection
     /**Determine if the current call is held or in the process of being held.
       */
     BOOL IsCallOnHold() const;
+
+    /**Begin a call intrusion request.
+       Calls h45011handler->IntrudeCall where SS pdu is added to Call Setup
+       message.
+      */
+    virtual void IntrudeCall(
+      unsigned capabilityLevel
+    );
+
+    /**Handle an incoming call instrusion request.
+       Calls h45011handler->AwaitSetupResponse where we set Handler state to
+       CI-Wait-Ack
+      */
+    virtual void HandleIntrudeCall(
+      const PString & token,
+      const PString & identity
+    );
+
+    /**Set flag indicating call intrusion.
+       Used to set a flag when intrusion occurs and to determine if
+       connection is created for Call Intrusion. This flag is used when we
+       should decide whether to Answer the call or to Close it.
+      */
+    void SetCallIntrusion() { isCallIntrusion = TRUE; }
+
+    BOOL IsCallIntrusion() { return isCallIntrusion; }
+
+    /**Get Call Intrusion Protection Level of the local endpoint.
+      */
+    unsigned GetLocalCallIntrusionProtectionLevel() { return callIntrusionProtectionLevel; }
+
+    /**Get Call Intrusion Protection Level of other endpoints that we are in
+       connection with. Not yet implemented.
+      */
+    virtual unsigned GetRemoteCallIntrusionProtectionLevel();
 
     /**Send a Call Waiting indication message to the remote endpoint using
        H.450.6.  The second paramter is used to indicate to the calling user
@@ -1151,7 +1247,7 @@ class H323Connection : public OpalConnection
        it is about to send the Capabilities Set to the remote endpoint. This
        gives the application an oppurtunity to alter the PDU to be sent.
 
-       The default behaviour will make "adjustments" for compatibiliry with
+       The default behaviour will make "adjustments" for compatibility with
        some broken remote endpoints.
      */
     virtual void OnSendCapabilitySet(
@@ -1504,9 +1600,32 @@ class H323Connection : public OpalConnection
 
   /**@name Indications */
   //@{
+    enum SendUserInputModes {
+      SendUserInputAsQ931,
+      SendUserInputAsString,
+      SendUserInputAsTone,
+      SendUserInputAsInlineRFC2833,
+      SendUserInputAsSeparateRFC2833,  // Not implemented
+      NumSendUserInputModes
+    };
+#if PTRACING
+    friend ostream & operator<<(ostream & o, SendUserInputModes m);
+#endif
+
     /**Set the user input indication transmission mode.
       */
-    virtual void SetSendUserInputMode(SendUserInputModes mode);
+    void SetSendUserInputMode(SendUserInputModes mode);
+
+    /**Get the user input indication transmission mode.
+      */
+    SendUserInputModes GetSendUserInputMode() const { return sendUserInputMode; }
+
+    /**Get the real user input indication transmission mode.
+       This will return the user input mode that will actually be used for
+       transmissions. It will be the value of GetSendUserInputMode() provided
+       the remote endpoint is capable of that mode.
+      */
+    SendUserInputModes GetRealSendUserInputMode() const;
 
     /**Send a user input indication to the remote endpoint.
        This is for sending arbitrary strings as user indications.
@@ -1552,6 +1671,16 @@ class H323Connection : public OpalConnection
     virtual BOOL SendUserInputTone(
       char tone,             /// DTMF tone code
       unsigned duration = 0  /// Duration of tone in milliseconds
+    );
+
+    /**Send a user input indication to the remote endpoint.
+       This is for sending arbitrary strings as user indications.
+
+       This always uses a Q.931 Keypad Information Element in a Information
+       pdu sending the entire string in one go.
+      */
+    virtual BOOL SendUserInputIndicationQ931(
+      const PString & value                   /// String value of indication
     );
 
     /**Send a user input indication to the remote endpoint.
@@ -1722,25 +1851,11 @@ class H323Connection : public OpalConnection
 
   /**@name Other services */
   //@{
-    /**Create an instance of the T.120 protocol handler.
-       This is called when the OpenLogicalChannel subsystem requires that
-       a T.120 channel be established.
-
-       The default behavour returns H323Endpoint::CreateT120ProtocolHandler().
-      */
-    virtual OpalT120Protocol * CreateT120ProtocolHandler() const;
-
-    /**Create an instance of the T.38 protocol handler.
-       This is called when the OpenLogicalChannel subsystem requires that
-       a T.38 fax channel be established.
-
-       The default behavour returns H323Endpoint::CreateT38ProtocolHandler().
-      */
-    virtual OpalT38Protocol * CreateT38ProtocolHandler() const;
-
     /**Request a mode change to T.38 data.
       */
-    virtual BOOL RequestModeChangeT38();
+    virtual BOOL RequestModeChangeT38(
+      const char * capabilityName = "T.38"
+    );
   //@}
 
   /**@name Member variable access */
@@ -1789,10 +1904,12 @@ class H323Connection : public OpalConnection
        This information is obtained from the sourceInfo field of the H.225
        Setup PDU or the destinationInfo of the call proceeding or alerting
        PDU's. The general format of the string will be information extracted
-       from the VendorIdentifier field of the EndpointType. In partcular:
+       from the VendorIdentifier field of the EndpointType. In particular:
 
-          productId\tversionId\tt35CountryCode:t35Extension:manufacturerCode
+          productId <tab> versionId <tab> t35CountryCode/manufacturerCode
 
+       for example
+          "Equivalence OpenPhone\t1.4.2\t9/61"
       */
     const PString & GetRemoteApplication() const { return remoteApplication; }
 
@@ -1818,9 +1935,17 @@ class H323Connection : public OpalConnection
       */
     const OpalTransport * GetSignallingChannel() const { return signallingChannel; }
 
+    /**Get the signalling channel protocol version number.
+      */
+    unsigned GetSignallingVersion() const { return h225version; }
+
     /**Get the control channel being used (may return signalling channel).
       */
     const OpalTransport & GetControlChannel() const;
+
+    /**Get the control channel protocol version number.
+      */
+    unsigned GetControlVersion() const { return h245version; }
 
     /**Get the time at which the connection was begun
       */
@@ -1887,6 +2012,16 @@ class H323Connection : public OpalConnection
 
 
   protected:
+    /**Internal function to check if call established.
+       This checks all the criteria for establishing a call an initiating the
+       starting of media channels, if they have not already been started via
+       the fast start algorithm.
+    */
+    virtual void InternalEstablishedConnectionCheck();
+    BOOL InternalEndSessionCheck(PPER_Stream & strm);
+    void SetRemoteVersions(const H225_ProtocolIdentifier & id);
+    void MonitorCallStatus();
+
     H323EndPoint & endpoint;
 
     int                  remoteCallWaiting; // Number of call's waiting at the remote endpoint
@@ -1907,6 +2042,7 @@ class H323Connection : public OpalConnection
     PString            gkAccessTokenOID;
     PBYTEArray         gkAccessTokenData;
     BOOL               addAccessTokenToSetup;
+    SendUserInputModes sendUserInputMode;
 
     OpalTransport * signallingChannel;
     OpalTransport * controlChannel;
@@ -1934,8 +2070,12 @@ class H323Connection : public OpalConnection
     PTime         connectedTime;
     PTime         callEndTime;
 
+    unsigned   h225version;
+    unsigned   h245version;
+    BOOL       h245versionSet;
     BOOL doH245inSETUP;
     BOOL lastPDUWasH245inSETUP;
+    BOOL detectInBandDTMF;
     BOOL mustSendDRQ;
     BOOL mediaWaitForConnect;
     BOOL transmitterSidePaused;
@@ -1943,10 +2083,17 @@ class H323Connection : public OpalConnection
     BOOL startT120;
     BOOL t38ModeChange;
     PSyncPoint digitsWaitFlag;
+    BOOL       endSessionNeeded;
+    BOOL       endSessionSent;
+    PSyncPoint endSessionReceived;
 
     // Used as part of a local call hold operation involving MOH
     PChannel * holdMediaChannel;
     BOOL       isConsultationTransfer;
+
+    /** Call Intrusion flag and parameters */
+    BOOL     isCallIntrusion;
+    unsigned callIntrusionProtectionLevel;
 
     RTP_SessionManager rtpSessions;
 
@@ -1981,6 +2128,7 @@ class H323Connection : public OpalConnection
     H4502Handler                     * h4502handler;
     H4504Handler                     * h4504handler;
     H4506Handler                     * h4506handler;
+    H45011Handler                    * h45011handler;
 
   private:
     PChannel * SwapHoldMediaChannels(PChannel * newChannel);
