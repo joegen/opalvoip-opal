@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: t38proto.h,v $
- * Revision 1.2008  2003/01/07 04:39:53  robertj
+ * Revision 1.2009  2005/02/21 12:19:48  rjongbloed
+ * Added new "options list" to the OpalMediaFormat class.
+ *
+ * Revision 2.7  2003/01/07 04:39:53  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.6  2002/11/10 11:33:17  robertj
@@ -99,6 +102,9 @@ class T38_IFPPacket;
 class PASN_OctetString;
 
 
+#define OPAL_T38 "T.38"
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 /**This class handles the processing of the T.38 protocol.
@@ -107,9 +113,6 @@ class OpalT38Protocol : public PObject
 {
     PCLASSINFO(OpalT38Protocol, PObject);
   public:
-    static OpalMediaFormat const MediaFormat;
-
-
   /**@name Construction */
   //@{
     /**Create a new protocol handler.
