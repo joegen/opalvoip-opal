@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323rtp.cxx,v $
- * Revision 1.2004  2001/11/12 05:32:12  robertj
+ * Revision 1.2005  2001/12/07 08:53:30  robertj
+ * Renamed RTP to be more general UDP port base.
+ *
+ * Revision 2.3  2001/11/12 05:32:12  robertj
  * Added OpalTransportAddress::GetIpAddress when don't need port number.
  *
  * Revision 2.2  2001/10/05 00:22:14  robertj
@@ -140,8 +143,8 @@ H323_RTP_UDP::H323_RTP_UDP(const H323Connection & conn, RTP_UDP & rtp_udp)
 
   const H323EndPoint & endpoint = connection.GetEndPoint();
   rtp.Open(localAddress,
-           endpoint.GetManager().GetRtpIpPortBase(),
-           endpoint.GetManager().GetRtpIpPortMax(),
+           endpoint.GetManager().GetUDPPortBase(),
+           endpoint.GetManager().GetUDPPortMax(),
            endpoint.GetManager().GetRtpIpTypeofService());
 }
 
