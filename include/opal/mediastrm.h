@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 1.2002  2001/08/01 05:51:47  robertj
+ * Made OpalMediaFormatList class global to help with documentation.
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  */
@@ -87,7 +90,7 @@ class OpalMediaStream : public PChannel
   //@{
     /**Get the available media formats the stream is capable of handling.
       */
-    virtual OpalMediaFormat::List GetMediaFormats() const = 0;
+    virtual OpalMediaFormatList GetMediaFormats() const = 0;
 
     /**Get the currently selected media format.
        The media data format is a string representation of the format being
@@ -263,7 +266,7 @@ class OpalRTPMediaStream : public OpalMediaStream
   //@{
     /**Get the available media formats the stream is capable of handling.
       */
-    virtual OpalMediaFormat::List GetMediaFormats() const;
+    virtual OpalMediaFormatList GetMediaFormats() const;
 
     /**Read an RTP frame of data from the source media stream.
        The new behaviour simply calls RTP_Session::ReadData().
@@ -338,7 +341,7 @@ class OpalLineMediaStream : public OpalMediaStream
   //@{
     /**Get the available media formats the stream is capable of handling.
       */
-    virtual OpalMediaFormat::List GetMediaFormats() const;
+    virtual OpalMediaFormatList GetMediaFormats() const;
 
     /**Select the data format this channel is to operate.
 
@@ -457,7 +460,7 @@ class OpalFileMediaStream : public OpalRawMediaStream
   //@{
     /**Get the available media formats the stream is capable of handling.
       */
-    virtual OpalMediaFormat::List GetMediaFormats() const;
+    virtual OpalMediaFormatList GetMediaFormats() const;
 
     /**Indicate if the media stream is synchronous.
        Returns TRUE for LID streams.
@@ -501,7 +504,7 @@ class OpalAudioMediaStream : public OpalRawMediaStream
   //@{
     /**Get the available media formats the stream is capable of handling.
       */
-    virtual OpalMediaFormat::List GetMediaFormats() const;
+    virtual OpalMediaFormatList GetMediaFormats() const;
 
     /**Indicate if the media stream is synchronous.
        Returns TRUE for LID streams.
