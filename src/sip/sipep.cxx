@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2021  2004/04/25 08:46:08  rjongbloed
+ * Revision 1.2022  2004/04/26 05:40:39  rjongbloed
+ * Added RTP statistics callback to SIP
+ *
+ * Revision 2.20  2004/04/25 08:46:08  rjongbloed
  * Fixed GNU compatibility
  *
  * Revision 2.19  2004/03/29 10:56:31  rjongbloed
@@ -502,5 +505,12 @@ PString SIPEndPoint::GetUserAgent() const
 { 
   return userAgentString;
 }
+
+
+void SIPEndPoint::OnRTPStatistics(const SIPConnection & /*connection*/,
+                                  const RTP_Session & /*session*/) const
+{
+}
+
 
 // End of file ////////////////////////////////////////////////////////////////
