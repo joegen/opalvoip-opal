@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2029  2004/08/22 12:27:46  rjongbloed
+ * Revision 1.2030  2004/10/02 04:30:11  rjongbloed
+ * Added unregister function for SIP registrar
+ *
+ * Revision 2.28  2004/08/22 12:27:46  rjongbloed
  * More work on SIP registration, time to live refresh and deregistration on exit.
  *
  * Revision 2.27  2004/08/20 12:54:48  rjongbloed
@@ -167,10 +170,7 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
 
 SIPEndPoint::~SIPEndPoint()
 {
-  if (registered && registrarTransport != NULL) {
-    SIPRegister unregister(*this, *registrarTransport, registrationAddress, registrationID, 0);
-    unregister.Wait();
-  }
+  Unregister();
 
   delete registrarTransport;
 
@@ -478,6 +478,9 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 
   PTRACE(2, "SIP\tReceived REGISTER OK response");
 
+  if (registered)
+    return;
+
   registered = true;
 
   SIPURL contact = response.GetMIME().GetContact();
@@ -577,6 +580,23 @@ BOOL SIPEndPoint::Register(const PString & domain,
     PTRACE(1, "SIP\tCould not write to " << registrarAddress << " - " << registrarTransport->GetErrorText());
     return FALSE;
   }
+
+  return TRUE;
+}
+
+
+BOOL SIPEndPoint::Unregister(BOOL wait)
+{
+  if (!registered || registrarTransport == NULL)
+    return FALSE;
+
+  SIPRegister unregister(*this, *registrarTransport, registrationAddress, registrationID, 0);
+
+  if (!unregister.Start())
+    return FALSE;
+
+  if (wait)
+    unregister.Wait();
 
   return TRUE;
 }
