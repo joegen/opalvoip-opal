@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2015  2002/11/10 11:33:18  robertj
+ * Revision 1.2016  2002/11/12 08:53:01  robertj
+ * Fixed GNU comaptibility
+ *
+ * Revision 2.14  2002/11/10 11:33:18  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.13  2002/09/13 05:16:33  robertj
@@ -692,7 +695,7 @@ BOOL H323Gatekeeper::OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm & g
     discoveryComplete = TRUE;
   }
   else {
-    PCaselessString gkid = (PString)gcf.m_gatekeeperIdentifier;
+    PCaselessString gkid = gcf.m_gatekeeperIdentifier.GetValue();
     if (gkid != gatekeeperIdentifier) {
       PTRACE(2, "RAS\tReceived a GCF from " << gkid
              << " but wanted it from " << gatekeeperIdentifier);
