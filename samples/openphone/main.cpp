@@ -511,12 +511,12 @@ BOOL MyManager::Initialise(const MyOptions & options)
     if (sipEP != NULL) {
       AddRouteEntry("pots:.*\\*.*\\*.* = sip:<dn2ip>");
       AddRouteEntry("pots:.*           = sip:<da>");
-      AddRouteEntry("pcss:.*           = sip:<da>");
+      AddRouteEntry("pc:.*             = sip:<da>");
     }
     else if (h323EP != NULL) {
       AddRouteEntry("pots:.*\\*.*\\*.* = h323:<dn2ip>");
       AddRouteEntry("pots:.*           = h323:<da>");
-      AddRouteEntry("pcss:.*           = h323:<da>");
+      AddRouteEntry("pc:.*             = h323:<da>");
     }
 
     if (ivrEP != NULL) {
@@ -529,8 +529,8 @@ BOOL MyManager::Initialise(const MyOptions & options)
       AddRouteEntry("sip:.*  = pots:<da>");
     }
     else if (pcssEP != NULL) {
-      AddRouteEntry("h323:.* = pcss:<da>");
-      AddRouteEntry("sip:.*  = pcss:<da>");
+      AddRouteEntry("h323:.* = pc:<da>");
+      AddRouteEntry("sip:.*  = pc:<da>");
     }
   }
 */
@@ -538,20 +538,20 @@ BOOL MyManager::Initialise(const MyOptions & options)
     //AddRouteEntry("pots:.*\\*.*\\*.* = sip:<dn2ip>");
     //AddRouteEntry("pots:.*           = sip:<da>");
     if (pcssEP != NULL)
-      AddRouteEntry("pcss:.*           = sip:<da>");
+      AddRouteEntry("pc:.*             = sip:<da>");
   }
   else if (h323EP != NULL) {
     //AddRouteEntry("pots:.*\\*.*\\*.* = h323:<dn2ip>");
     //AddRouteEntry("pots:.*           = h323:<da>");
     if (pcssEP != NULL)
-      AddRouteEntry("pcss:.*           = h323:<da>");
+      AddRouteEntry("pc:.*             = h323:<da>");
   }
 
   if (pcssEP != NULL) {
     if (h323EP != NULL)
-      AddRouteEntry("h323:.* = pcss:<da>");
+      AddRouteEntry("h323:.* = pc:<da>");
     if (sipEP != NULL)
-      AddRouteEntry("sip:.*  = pcss:<da>");
+      AddRouteEntry("sip:.*  = pc:<da>");
   }
 
   return TRUE;
