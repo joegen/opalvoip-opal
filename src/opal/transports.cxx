@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2013  2002/04/09 00:22:16  robertj
+ * Revision 1.2014  2002/04/09 04:44:36  robertj
+ * Fixed bug where crahses if close channel while in UDP connect mode.
+ *
+ * Revision 2.12  2002/04/09 00:22:16  robertj
  * Added ability to set the local address on a transport, under some circumstances.
  *
  * Revision 2.11  2002/03/27 05:37:39  robertj
@@ -1171,6 +1174,9 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
 
 OpalTransportUDP::~OpalTransportUDP()
 {
+  if (connectSockets.GetSize() > 0)
+    writeChannel = readChannel = NULL;
+
   CloseWait();
 }
 
