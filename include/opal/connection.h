@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2009  2001/11/14 01:31:55  robertj
+ * Revision 1.2010  2002/01/22 05:04:21  robertj
+ * Revamp of user input API triggered by RFC2833 support
+ *
+ * Revision 2.8  2001/11/14 01:31:55  robertj
  * Corrected placement of adjusting media format list.
  *
  * Revision 2.7  2001/11/02 10:45:19  robertj
@@ -70,6 +73,8 @@
 
 class OpalEndPoint;
 class OpalCall;
+class OpalRFC2833;
+class OpalRFC2833Info;
 
 
 /**Call/Connection ending reasons.
@@ -543,65 +548,122 @@ class OpalConnection : public PObject
     );
   //@}
 
-  /**@name User indications */
+  /**@name User input */
   //@{
-    /**Send a user input indication to the remote endpoint.
-       This sends an arbitrary string as a user indication. If DTMF tones in
-       particular are required to be sent then the SendIndicationTone()
-       function should be used.
+    enum SendUserInputModes {
+      SendUserInputAsString,
+      SendUserInputAsTone,
+      SendUserInputAsInlineRFC2833,
+      SendUserInputAsSeparateRFC2833,  // Not implemented
+      NumSendUserInputModes
+    };
 
-       The default behaviour calls SendUserIndicationTone() for each character
+    /**Set the user input indication transmission mode.
+      */
+    virtual void SetSendUserInputMode(SendUserInputModes mode);
+
+    /**Get the user input indication transmission mode.
+      */
+    SendUserInputModes GetSendUserInputMode() const { return sendUserInputMode; }
+
+    /**Send a user input indication to the remote endpoint.
+       This is for sending arbitrary strings as user indications.
+
+       The user indication is sent according to the sendUserInputMode member
+       variable. If SendUserInputAsString then this uses an H.245 "string"
+       UserInputIndication pdu sending the entire string in one go. If
+       SendUserInputAsTone then a separate H.245 "signal" UserInputIndication
+       pdu is sent for each character. If SendUserInputAsInlineRFC2833 then
+       the indication is inserted into the outgoing audio stream as an RFC2833
+       RTP data pdu.
+
+       SendUserInputAsSeparateRFC2833 is not yet supported.
+
+       The default behaviour is to call SendUserInputTone() for each character
        in the string.
       */
-    virtual BOOL SendUserIndicationString(
+    virtual BOOL SendUserInputString(
       const PString & value                   /// String value of indication
     );
 
     /**Send a user input indication to the remote endpoint.
-       This sends DTMF emulation user input. If something other than the
-       standard tones need be sent use the SendUserIndicationString() function.
+       This sends DTMF emulation user input. If something more sophisticated
+       than the simple tones that can be sent using the SendUserInput()
+       function.
 
-       The default behaviour does nothing.
+       A duration of zero indicates that no duration is to be indicated.
+       A non-zero logical channel indicates that the tone is to be syncronised
+       with the logical channel at the rtpTimestamp value specified.
+
+       The tone parameter must be one of "0123456789#*ABCD!" where '!'
+       indicates a hook flash. If tone is a ' ' character then a
+       signalUpdate PDU is sent that updates the last tone indication
+       sent. See the H.245 specifcation for more details on this.
+
+       The user indication is sent according to the sendUserInputMode member
+       variable. If SendUserInputAsString then this uses an H.245 "string"
+       UserInputIndication pdu sending the entire string in one go. If
+       SendUserInputAsTone then a separate H.245 "signal" UserInputIndication
+       pdu is sent for each character. If SendUserInputAsInlineRFC2833 then
+       the indication is inserted into the outgoing audio stream as an RFC2833
+       RTP data pdu.
+
+       SendUserInputAsSeparateRFC2833 is not yet supported.
+
+       The default behaviour calls the SendUserInputInlineRFC2833() if the
+       sendUserInputMode is SendUserInputAsInlineRFC2833, otherwise it does
+       nothing.
       */
-    virtual BOOL SendUserIndicationTone(
-      char tone,    /// DTMF tone code
-      int duration  /// Duration of tone in milliseconds
+    virtual BOOL SendUserInputTone(
+      char tone,        /// DTMF tone code
+      int duration = 0  /// Duration of tone in milliseconds
     );
 
     /**Call back for remote enpoint has sent user input as a string.
+       This will be called irrespective of the source (H.245 string, H.245
+       signal or RFC2833).
 
-       The default behaviour calls the OpalEndPoint function of the same name.
+       The default behaviour calls the endpoint function of the same name.
       */
-    virtual void OnUserIndicationString(
+    virtual void OnUserInputString(
       const PString & value   /// String value of indication
     );
 
     /**Call back for remote enpoint has sent user input.
+       If duration is zero then this indicates the beginning of the tone. If
+       duration is non-zero then it indicates the end of the tone output.
 
        The default behaviour calls the OpalEndPoint function of the same name.
       */
-    virtual void OnUserIndicationTone(
+    virtual void OnUserInputTone(
       char tone,
       int duration
     );
 
-    /**Get a user indication string, waiting until one arrives.
+    /**Send a user input indication to the remote endpoint.
+       This sends a Hook Flash emulation user input.
       */
-    virtual PString GetUserIndication(
+    void SendUserInputHookFlash(
+      int duration = 500  /// Duration of tone in milliseconds
+    ) { SendUserInputTone('!', duration); }
+
+    /**Get a user input indication string, waiting until one arrives.
+      */
+    virtual PString GetUserInput(
       unsigned timeout = 30   /// Timeout in seconds on input
     );
 
     /**Set a user indication string.
-       This allows the GetUserIndication() function to unblock and return this
+       This allows the GetUserInput() function to unblock and return this
        string.
       */
-    virtual void SetUserIndication(
+    virtual void SetUserInput(
       const PString & input     /// Input string
     );
 
     /**Read a sequence of user indications with timeouts.
       */
-    virtual PString ReadUserIndication(
+    virtual PString ReadUserInput(
       const char * terminators = "#\r\n", /// Characters that can terminte input
       unsigned lastDigitTimeout = 4,      /// Timeout on last digit in string
       unsigned firstDigitTimeout = 30     /// Timeout on receiving any digits
@@ -613,7 +675,7 @@ class OpalConnection : public PObject
 
        The default behaviour does nothing.
       */
-    virtual BOOL PromptUserIndication(
+    virtual BOOL PromptUserInput(
       BOOL play   /// Flag to start or stop playing the prompt
     );
   //@}
@@ -671,6 +733,7 @@ class OpalConnection : public PObject
     /**Lock the connection at start of OnReleased() function.
       */
     void LockOnRelease();
+    PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);
 
   // Member variables
     OpalCall          & ownerCall;
@@ -685,9 +748,11 @@ class OpalConnection : public PObject
     PString             remotePartyAddress;
     OpalCallEndReason   callEndReason;
 
-    PString             userIndicationString;
-    PMutex              userIndicationMutex;
-    PSyncPoint          userIndicationAvailable;
+    PString             userInputString;
+    PMutex              userInputMutex;
+    PSyncPoint          userInputAvailable;
+    SendUserInputModes  sendUserInputMode;
+    OpalRFC2833       * rfc2833Handler;
 
     OpalMediaStreamList mediaStreams;
     RTP_SessionManager  rtpSessions;
