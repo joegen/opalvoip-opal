@@ -27,11 +27,17 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2002  2001/08/01 05:08:43  robertj
+ * Revision 1.2003  2001/10/05 00:22:13  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.1  2001/08/01 05:08:43  robertj
  * Moved default session ID's to OpalMediaFormat class.
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.31  2001/09/11 00:21:21  robertj
+ * Fixed missing stack sizes in endpoint for cleaner thread and jitter thread.
  *
  * Revision 1.30  2001/07/06 06:32:22  robertj
  * Added flag and checks for RTP data having specific SSRC.
@@ -390,7 +396,8 @@ class RTP_Session : public PObject
        attached to this RTP session.
       */
     void SetJitterBufferSize(
-      unsigned jitterDelay    /// Total jitter buffer delay in milliseconds
+      unsigned jitterDelay,    /// Total jitter buffer delay in milliseconds
+      PINDEX stackSize = 30000 /// Stack size for jitter thread
     );
 
     /**Read a data frame from the RTP channel.

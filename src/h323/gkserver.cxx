@@ -27,11 +27,21 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkserver.cxx,v $
- * Revision 1.2002  2001/08/13 05:10:39  robertj
+ * Revision 1.2003  2001/10/05 00:22:13  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.7  2001/09/18 10:06:54  robertj
+ * Added trace for if RRJ on security because user has no password.
+ *
+ * Revision 1.6  2001/09/13 01:15:20  robertj
+ * Added flag to H235Authenticator to determine if gkid and epid is to be
+ *   automatically set as the crypto token remote id and local id.
  *
  * Revision 1.5  2001/08/10 11:03:52  robertj
  * Major changes to H.235 support in RAS to support server.
@@ -195,15 +205,18 @@ BOOL H323RegisteredEndPoint::OnRegistration(const H323GatekeeperServer & server,
 
       PString password;
       if (!server.GetUsersPassword(alias, password)) {
+        PTRACE(2, "RAS\tUser \"" << alias << "\" has no password.");
         rrj.m_rejectReason.SetTag(H225_RegistrationRejectReason::e_securityDenial);
         return FALSE;
       }
       if (!password) {
         for (PINDEX j = 0; j < authenticators.GetSize(); j++) {
-          authenticators[j].SetRemoteId(identifier);
-          authenticators[j].SetPassword(password);
+          H235Authenticator & authenticator = authenticators[j];
+          if (authenticator.UseGkAndEpIdentifiers())
+            authenticator.SetRemoteId(identifier);
+          authenticator.SetPassword(password);
           if (!rrq.m_keepAlive)
-            authenticators[j].Enable();
+            authenticator.Enable();
         }
       }
     }
@@ -714,8 +727,11 @@ H235Authenticators H323GatekeeperListener::GetAuthenticators() const
   if (authenticators.IsEmpty())
     return empty;
 
-  for (PINDEX i = 0; i < authenticators.GetSize(); i++)
-    authenticators[i].SetLocalId(gatekeeperIdentifier);
+  for (PINDEX i = 0; i < authenticators.GetSize(); i++) {
+    H235Authenticator & authenticator = authenticators[i];
+    if (authenticator.UseGkAndEpIdentifiers())
+      authenticator.SetLocalId(gatekeeperIdentifier);
+  }
 
   return authenticators;
 }

@@ -27,8 +27,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.h,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 1.2002  2001/10/05 00:22:13  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.8  2001/09/11 00:21:21  robertj
+ * Fixed missing stack sizes in endpoint for cleaner thread and jitter thread.
  *
  * Revision 1.7  2001/02/09 05:16:24  robertj
  * Added #pragma interface for GNU C++.
@@ -75,8 +81,9 @@ class RTP_JitterBuffer : public PThread
 
   public:
     RTP_JitterBuffer(
-      RTP_Session & session,  /// Associated RTP session tor ead data from
-      unsigned jitterDelay    /// Delay in RTP timestamp units
+      RTP_Session & session,   /// Associated RTP session tor ead data from
+      unsigned jitterDelay,    /// Delay in RTP timestamp units
+      PINDEX stackSize = 30000 /// Stack size for jitter thread
     );
     ~RTP_JitterBuffer();
 

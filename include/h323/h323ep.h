@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2004  2001/08/17 08:21:15  robertj
+ * Revision 1.2005  2001/10/05 00:22:13  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.3  2001/08/17 08:21:15  robertj
  * Update from OpenH323
  * Moved call end reasons enum from OpalConnection to global.
  *
@@ -39,6 +42,15 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.8  2001/09/11 01:24:36  robertj
+ * Added conditional compilation to remove video and/or audio codecs.
+ *
+ * Revision 1.7  2001/09/11 00:21:21  robertj
+ * Fixed missing stack sizes in endpoint for cleaner thread and jitter thread.
+ *
+ * Revision 1.6  2001/08/24 14:03:26  rogerh
+ * Fix some spelling mistakes
  *
  * Revision 1.5  2001/08/16 07:49:16  robertj
  * Changed the H.450 support to be more extensible. Protocol handlers
@@ -848,8 +860,6 @@ class H323EndPoint : public OpalEndPoint
     H323Capabilities capabilities;
     H323Gatekeeper * gatekeeper;
     PString          gatekeeperPassword;
-
-    unsigned lastCallReference;
 };
 
 

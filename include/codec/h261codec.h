@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.h,v $
- * Revision 1.2002  2001/08/01 05:03:09  robertj
+ * Revision 1.2003  2001/10/05 00:22:13  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.1  2001/08/01 05:03:09  robertj
  * Changes to allow control of linking software transcoders, use macros
  *   to force linking.
  * Allowed codecs to be used without H.,323 being linked by using the
@@ -34,6 +37,10 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.23  2001/09/25 03:14:47  dereks
+ * Add constant bitrate control for the h261 video codec.
+ * Thanks Tiziano Morganti for the code to set bit rate. Good work!
  *
  * Revision 1.22  2001/05/25 01:10:26  dereks
  * Remove unnecessary packet receive variable.
@@ -268,6 +275,12 @@ class H323_H261Capability : public H323VideoCapability
     unsigned GetCIFMPI() const
       { return cifMPI; }
 
+    /**Set the quality level of transmitted video data. 
+       Is irrelevant when this codec is used to receive video data.
+       Has a value of 1 (good quality) to 31 (poor quality).
+       Quality is improved at the expense of bit rate.
+    */
+    void SetTxQualityLevel(int qLevel);
   //@}
 
   protected:
