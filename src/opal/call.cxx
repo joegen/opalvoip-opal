@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2018  2003/03/06 03:57:47  robertj
+ * Revision 1.2019  2003/03/07 05:53:03  robertj
+ * Made sure connection is locked with all function calls that are across
+ *   the "call" object.
+ *
+ * Revision 2.17  2003/03/06 03:57:47  robertj
  * IVR support (work in progress) requiring large changes everywhere.
  *
  * Revision 2.16  2002/11/10 11:33:19  robertj
@@ -211,9 +215,10 @@ BOOL OpalCall::OnSetUp(OpalConnection & connection)
 
   for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
     OpalConnection & conn = activeConnections[i];
-    if (&connection != &conn) {
+    if (&connection != &conn && conn.Lock()) {
       if (conn.SetUpConnection())
         ok = TRUE;
+      conn.Unlock();
     }
   }
 
@@ -235,9 +240,10 @@ BOOL OpalCall::OnAlerting(OpalConnection & connection)
 
   for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
     OpalConnection & conn = activeConnections[i];
-    if (&connection != &conn) {
+    if (&connection != &conn && conn.Lock()) {
       if (conn.SetAlerting(connection.GetRemotePartyName(), hasMedia))
         ok = TRUE;
+      conn.Unlock();
     }
   }
 
@@ -265,8 +271,11 @@ BOOL OpalCall::OnConnected(OpalConnection & connection)
   for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
     OpalConnection & conn = activeConnections[i];
     if (&connection != &conn) {
-      if (conn.SetConnected())
-        ok = TRUE;
+      if (conn.Lock()) {
+        if (conn.SetConnected())
+          ok = TRUE;
+        conn.Unlock();
+      }
     }
     else if (i == 0)
       partyA = connection.GetRemotePartyAddress();
@@ -290,48 +299,18 @@ BOOL OpalCall::OnConnected(OpalConnection & connection)
   if (createdOne) {
     inUseFlag.Wait();
 
-    for (PINDEX i = 0; i < activeConnections.GetSize(); i++)
-      activeConnections[i].StartMediaStreams();
+    for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
+      OpalConnection & conn = activeConnections[i];
+      if (conn.Lock()) {
+        activeConnections[i].StartMediaStreams();
+        conn.Unlock();
+      }
+    }
 
     inUseFlag.Signal();
   }
 
   return TRUE;
-}
-
-
-void OpalCall::OnReleased(OpalConnection & connection)
-{
-  PTRACE(3, "Call\tOnReleased " << connection);
-
-  inUseFlag.Wait();
-
-  SetCallEndReason(connection.GetCallEndReason());
-
-  // A call will evaporate when one connection left, at some point this is
-  // to be changes so can have "parked" connections.
-  if (activeConnections.GetSize() == 1)
-    InternalReleaseConnection(0, connection.GetCallEndReason());
-
-  inUseFlag.Signal();
-
-  // Signal the background threads that there is some stuff to process.
-  manager.SignalGarbageCollector();
-}
-
-
-void OpalCall::Release(OpalConnection * connection)
-{
-  PAssertNULL(connection);
-
-  PTRACE(3, "Call\tReleasing connection " << *connection);
-
-  inUseFlag.Wait();
-  InternalReleaseConnection(activeConnections.GetObjectsIndex(connection), OpalConnection::EndedByLocalUser);
-  inUseFlag.Signal();
-
-  // Signal the background threads that there is some stuff to process.
-  manager.SignalGarbageCollector();
 }
 
 
@@ -441,8 +420,10 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
 
   for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
     OpalConnection & conn = activeConnections[i];
-    if (&connection != &conn) {
+    if (&connection != &conn && conn.Lock()) {
       OpalMediaStream * sink = conn.OpenSinkMediaStream(source);
+      conn.Unlock();
+
       if (sink != NULL) {
         patchedOne = TRUE;
         patch->AddSink(sink);
@@ -485,8 +466,10 @@ void OpalCall::OnUserInputString(OpalConnection & connection,
   else {
     for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
       OpalConnection & conn = activeConnections[i];
-      if (&connection != &conn)
+      if (&connection != &conn && conn.Lock()) {
         conn.SendUserInputString(value);
+        conn.Unlock();
+      }
     }
   }
 
@@ -507,12 +490,49 @@ void OpalCall::OnUserInputTone(OpalConnection & connection,
   else {
     for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
       OpalConnection & conn = activeConnections[i];
-      if (&connection != &conn)
+      if (&connection != &conn && conn.Lock()) {
         conn.SendUserInputTone(tone, duration);
+        conn.Unlock();
+      }
     }
   }
 
   inUseFlag.Signal();
+}
+
+
+void OpalCall::OnReleased(OpalConnection & connection)
+{
+  PTRACE(3, "Call\tOnReleased " << connection);
+
+  inUseFlag.Wait();
+
+  SetCallEndReason(connection.GetCallEndReason());
+
+  // A call will evaporate when one connection left, at some point this is
+  // to be changes so can have "parked" connections.
+  if (activeConnections.GetSize() == 1)
+    InternalReleaseConnection(0, connection.GetCallEndReason());
+
+  inUseFlag.Signal();
+
+  // Signal the background threads that there is some stuff to process.
+  manager.SignalGarbageCollector();
+}
+
+
+void OpalCall::Release(OpalConnection * connection)
+{
+  PAssertNULL(connection);
+
+  PTRACE(3, "Call\tReleasing connection " << *connection);
+
+  inUseFlag.Wait();
+  InternalReleaseConnection(activeConnections.GetObjectsIndex(connection), OpalConnection::EndedByLocalUser);
+  inUseFlag.Signal();
+
+  // Signal the background threads that there is some stuff to process.
+  manager.SignalGarbageCollector();
 }
 
 
