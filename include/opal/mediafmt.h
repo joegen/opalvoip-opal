@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2005  2001/08/23 05:51:17  robertj
+ * Revision 1.2006  2001/10/04 00:42:12  robertj
+ * Added function to remove wildcard from list.
+ * Added constructor to make a list with one format in it.
+ *
+ * Revision 2.4  2001/08/23 05:51:17  robertj
  * Completed implementation of codec reordering.
  *
  * Revision 2.3  2001/08/22 03:51:31  robertj
@@ -78,10 +82,18 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
   public:
   /**@name Construction */
   //@{
-    /**Create a new media format list.
+    /**Create an empty media format list.
      */
     OpalMediaFormatList();
 
+    /**Create a media format list with one media format in it.
+     */
+    OpalMediaFormatList(
+      const OpalMediaFormat & format    /// Format to add
+    );
+
+    /**Create a copy of a media format list.
+     */
     OpalMediaFormatList(const OpalMediaFormatList & l) : OpalMediaFormatBaseList(l) { }
   //@}
 
@@ -134,6 +146,12 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
     BOOL HasFormat(
       const PString & wildcard    /// Wildcard string name.
     ) const { return FindFormat(wildcard) != P_MAX_INDEX; }
+
+    /**Remove all the formats specified.
+      */
+    void Remove(
+      const PStringArray & mask
+    );
 
     /**Reorder the formats in the list.
        The order variable is an array of wildcards and the list is reordered
