@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2027  2005/02/21 12:20:05  rjongbloed
+ * Revision 1.2028  2005/02/21 20:27:18  dsandras
+ * Fixed compilation with gcc.
+ *
+ * Revision 2.26  2005/02/21 12:20:05  rjongbloed
  * Added new "options list" to the OpalMediaFormat class.
  *
  * Revision 2.25  2004/10/24 10:46:41  rjongbloed
@@ -258,7 +261,8 @@ PString OpalMediaOption::AsString() const
 
 bool OpalMediaOption::FromString(const PString & value)
 {
-  PStringStream strm = value;
+  PStringStream strm;
+  strm = value;
   ReadFrom(strm);
   return strm.good();
 }
@@ -326,7 +330,7 @@ void OpalMediaOptionEnum::ReadFrom(istream & strm)
   }
 
   m_value = m_enumerations.GetSize();
-  strm.setstate(ios::badbit, true);
+  strm.setstate(ios::badbit);
 }
 
 
