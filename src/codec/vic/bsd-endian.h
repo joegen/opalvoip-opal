@@ -31,14 +31,19 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Header: /home/svnmigrate/clean_cvs/opal/src/codec/vic/Attic/bsd-endian.h,v 1.2001 2001/07/27 15:48:25 robertj Exp $ (LBL)
  */
 
 /************ Change log
  *
  * $Log: bsd-endian.h,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/15 23:42:59  robertj
+ * Update to OpenH323 v1.11.7
+ *
+ * Revision 1.8  2003/03/14 07:25:55  robertj
+ * Removed $header keyword so is not different on alternate repositories
+ *
+ * Revision 1.7  2002/10/10 05:35:42  robertj
+ * VxWorks port, thanks Martijn Roest
  *
  * Revision 1.6  2001/05/25 04:32:25  yurik
  * Added Arm based to list of little endian machines
@@ -63,7 +68,9 @@
 #ifdef WIN32
 #include <winsock.h>
 #else
+#ifndef P_VXWORKS
 #include <sys/param.h>
+#endif
 #endif
 #ifdef __linux__
 #include <endian.h>

@@ -34,8 +34,36 @@
 /************ Change log
  *
  * $Log: dct.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/15 23:42:59  robertj
+ * Update to OpenH323 v1.11.7
+ *
+ * Revision 1.14  2003/03/14 07:25:55  robertj
+ * Removed $header keyword so is not different on alternate repositories
+ *
+ * Revision 1.13  2002/10/24 21:05:26  dereks
+ * Fix compile time warning.
+ *
+ * Revision 1.12  2002/05/17 01:47:33  dereks
+ * backout the integer maths in the h261 codec.
+ *
+ * Revision 1.11  2002/02/15 03:54:31  yurik
+ * Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+ *
+ * Revision 1.10  2001/10/24 20:24:32  dereks
+ * Remove green stripes under windows for INT_64. Thanks to Robert Lupa.
+ *
+ * Revision 1.9  2001/10/17 03:52:39  robertj
+ * Fixed MSVC compatibility
+ *
+ * Revision 1.8  2001/10/17 01:54:36  yurik
+ * Fixed clash with CE includes for INT32 type
+ *
+ * Revision 1.7  2001/10/16 23:51:42  dereks
+ * Change vic's fdct() from floating-point to fix-point. Improves performance
+ * for h261 video significantly on some machines. Thanks to Cosmos Jiang
+ *
+ * Revision 1.6  2001/10/16 21:20:07  yurik
+ * Removed warnings on Windows CE. Submitted by Jehan Bing, jehan@bravobrava.com
  *
  * Revision 1.3  2000/12/19 22:22:34  dereks
  * Remove connection to grabber-OS.cxx files. grabber-OS.cxx files no longer used.
@@ -47,13 +75,6 @@
  *
  *
  ********/
-
-#ifndef lint
-//static char rcsid[] =
-//    "@(#) $Header: /home/svnmigrate/clean_cvs/opal/src/codec/vic/Attic/dct.cxx,v 1.2001 2001/07/27 15:48:25 robertj Exp $ (LBL)";
-#endif
-
-
 
 #include <sys/types.h>
 #include "bsd-endian.h"
@@ -73,8 +94,8 @@
 #define FP_NBITS 15
 #define FP_MUL(a, b)	((((a) >> 5) * ((b) >> 5)) >> (FP_NBITS - 10))
 #define FP_SCALE(v)	(int)((double)(v) * double(1 << FP_NBITS) + 0.5)
-#define FP_NORM(v)	((v) + (1 << (FP_NBITS-1)) >> FP_NBITS)
-#define FP_JNORM(v)	((v) + (257 << (FP_NBITS-1)) >> FP_NBITS)
+#define FP_NORM(v)	(((v) + (1 << (FP_NBITS-1))) >> FP_NBITS)
+#define FP_JNORM(v)	(((v) + (257 << (FP_NBITS-1))) >> FP_NBITS)
 
 #define M(n) ((m0 >> (n)) & 1)
 
@@ -124,6 +145,9 @@ const u_char COLZAG[] = {
 #define FA4 (1.306562965f)
 #define FA5 (0.382683433f)
 
+#ifdef B0
+#undef B0
+#endif
 /*
  * these magic numbers are scaling factors for each coef of the 1-d
  * AA&N DCT.  The scale factor for coef 0 is 1 and coef 1<=n<=7 is
@@ -226,77 +250,77 @@ static const int cross_stage[64] = {
 	FP_SCALE(B7 * B7),
 };
 static const float f_cross_stage[64] = {
-	B0 * B0,
-	B0 * B1,
-	B0 * B2,
-	B0 * B3,
-	B0 * B4,
-	B0 * B5,
-	B0 * B6,
-	B0 * B7,
+	(float)(B0 * B0),
+	(float)(B0 * B1),
+	(float)(B0 * B2),
+	(float)(B0 * B3),
+	(float)(B0 * B4),
+	(float)(B0 * B5),
+	(float)(B0 * B6),
+	(float)(B0 * B7),
 
-	B1 * B0,
-	B1 * B1,
-	B1 * B2,
-	B1 * B3,
-	B1 * B4,
-	B1 * B5,
-	B1 * B6,
-	B1 * B7,
+	(float)(B1 * B0),
+	(float)(B1 * B1),
+	(float)(B1 * B2),
+	(float)(B1 * B3),
+	(float)(B1 * B4),
+	(float)(B1 * B5),
+	(float)(B1 * B6),
+	(float)(B1 * B7),
 
-	B2 * B0,
-	B2 * B1,
-	B2 * B2,
-	B2 * B3,
-	B2 * B4,
-	B2 * B5,
-	B2 * B6,
-	B2 * B7,
+	(float)(B2 * B0),
+	(float)(B2 * B1),
+	(float)(B2 * B2),
+	(float)(B2 * B3),
+	(float)(B2 * B4),
+	(float)(B2 * B5),
+	(float)(B2 * B6),
+	(float)(B2 * B7),
 
-	B3 * B0,
-	B3 * B1,
-	B3 * B2,
-	B3 * B3,
-	B3 * B4,
-	B3 * B5,
-	B3 * B6,
-	B3 * B7,
+	(float)(B3 * B0),
+	(float)(B3 * B1),
+	(float)(B3 * B2),
+	(float)(B3 * B3),
+	(float)(B3 * B4),
+	(float)(B3 * B5),
+	(float)(B3 * B6),
+	(float)(B3 * B7),
 
-	B4 * B0,
-	B4 * B1,
-	B4 * B2,
-	B4 * B3,
-	B4 * B4,
-	B4 * B5,
-	B4 * B6,
-	B4 * B7,
+	(float)(B4 * B0),
+	(float)(B4 * B1),
+	(float)(B4 * B2),
+	(float)(B4 * B3),
+	(float)(B4 * B4),
+	(float)(B4 * B5),
+	(float)(B4 * B6),
+	(float)(B4 * B7),
 
-	B5 * B0,
-	B5 * B1,
-	B5 * B2,
-	B5 * B3,
-	B5 * B4,
-	B5 * B5,
-	B5 * B6,
-	B5 * B7,
+	(float)(B5 * B0),
+	(float)(B5 * B1),
+	(float)(B5 * B2),
+	(float)(B5 * B3),
+	(float)(B5 * B4),
+	(float)(B5 * B5),
+	(float)(B5 * B6),
+	(float)(B5 * B7),
 
-	B6 * B0,
-	B6 * B1,
-	B6 * B2,
-	B6 * B3,
-	B6 * B4,
-	B6 * B5,
-	B6 * B6,
-	B6 * B7,
+	(float)(B6 * B0),
+	(float)(B6 * B1),
+	(float)(B6 * B2),
+	(float)(B6 * B3),
+	(float)(B6 * B4),
+	(float)(B6 * B5),
+	(float)(B6 * B6),
+	(float)(B6 * B7),
 
-	B7 * B0,
-	B7 * B1,
-	B7 * B2,
-	B7 * B3,
-	B7 * B4,
-	B7 * B5,
-	B7 * B6,
-	B7 * B7,
+	(float)(B7 * B0),
+	(float)(B7 * B1),
+	(float)(B7 * B2),
+	(float)(B7 * B3),
+	(float)(B7 * B4),
+	(float)(B7 * B5),
+	(float)(B7 * B6),
+	(float)(B7 * B7),
 };
 
 /*
@@ -326,8 +350,7 @@ rdct_fold_q(const int* in, int* out)
 /*
  * Just like rdct_fold_q() but we divide by the quantizer.
  */
-void
-fdct_fold_q(const int* in, float* out)
+void fdct_fold_q(const int* in, float* out)
 {
 	for (int i = 0; i < 64; ++i) {
 		double v = first_stage[i >> 3];
@@ -344,14 +367,14 @@ void dcsum(int dc, u_char* in, u_char* out, int stride)
 #ifdef INT_64
 		/*XXX assume little-endian */
 		INT_64 i = *(INT_64*)in;
-		INT_64 o = (INT_64)LIMIT(dc + (i >> 56), t) << 56;
-		o |=  (INT_64)LIMIT(dc + (i >> 48 & 0xff), t) << 48;
-		o |=  (INT_64)LIMIT(dc + (i >> 40 & 0xff), t) << 40;
-		o |=  (INT_64)LIMIT(dc + (i >> 32 & 0xff), t) << 32;
-		o |=  (INT_64)LIMIT(dc + (i >> 24 & 0xff), t) << 24;
-		o |=  (INT_64)LIMIT(dc + (i >> 16 & 0xff), t) << 16;
-		o |=  (INT_64)LIMIT(dc + (i >> 8 & 0xff), t) << 8;
-		o |=  (INT_64)LIMIT(dc + (i & 0xff), t);
+		INT_64 o = (INT_64)LIMIT(dc + (int)(i >> 56 & 0xff), t) << 56;
+		o |=  (INT_64)LIMIT(dc + (int)(i >> 48 & 0xff), t) << 48;
+		o |=  (INT_64)LIMIT(dc + (int)(i >> 40 & 0xff), t) << 40;
+		o |=  (INT_64)LIMIT(dc + (int)(i >> 32 & 0xff), t) << 32;
+		o |=  (INT_64)LIMIT(dc + (int)(i >> 24 & 0xff), t) << 24;
+		o |=  (INT_64)LIMIT(dc + (int)(i >> 16 & 0xff), t) << 16;
+		o |=  (INT_64)LIMIT(dc + (int)(i >> 8 & 0xff), t) << 8;
+		o |=  (INT_64)LIMIT(dc + (int)(i & 0xff), t);
 		*(INT_64*)out = o;
 #else
 		u_int o = 0;
@@ -1088,6 +1111,7 @@ rdct(register short *bp, u_int m0, u_int m1, u_char* p, int stride, const u_char
  * multiply.  It truncates rather than rounds to give
  * the behavior required for the h.261 deadband quantizer.
  */
+ 
 #define FWD_DandQ(v, iq) short((v) * qt[iq])
 
 void fdct(const u_char* in, int stride, short* out, const float* qt)
@@ -1097,15 +1121,16 @@ void fdct(const u_char* in, int stride, short* out, const float* qt)
 
 	int i;
 	for (i = 8; --i >= 0; ) {
-		float x0, x1, x2, x3, t0, t1, t2, t3, t4, t5, t6, t7;
-		t0 = float(in[0] + in[7]);
-		t7 = float(in[0] - in[7]);
-		t1 = float(in[1] + in[6]);
-		t6 = float(in[1] - in[6]);
-		t2 = float(in[2] + in[5]);
-		t5 = float(in[2] - in[5]);
-		t3 = float(in[3] + in[4]);
-		t4 = float(in[3] - in[4]);
+               float x0, x1, x2, x3, t0, t1, t2, t3, t4, t5, t6, t7;
+               t0 = float(in[0] + in[7]);
+               t7 = float(in[0] - in[7]);
+               t1 = float(in[1] + in[6]);
+               t6 = float(in[1] - in[6]);
+               t2 = float(in[2] + in[5]);
+               t5 = float(in[2] - in[5]);
+               t3 = float(in[3] + in[4]);
+               t4 = float(in[3] - in[4]);
+
 
 		/* even part */
 		x0 = t0 + t3;
@@ -1174,7 +1199,7 @@ void fdct(const u_char* in, int stride, short* out, const float* qt)
 		t4 = t7 - t3;
 
 		t0 = (x0 - x2) * FA5;
-		t1 = x0 * FA2 + t0;
+		t1 =  x0 * FA2 + t0;
 		out[3] = FWD_DandQ(t4 - t1, 3);
 		out[5] = FWD_DandQ(t4 + t1, 5);
 

@@ -41,8 +41,25 @@
 /************ Change log
  *
  * $Log: encoder-h261.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/15 23:42:59  robertj
+ * Update to OpenH323 v1.11.7
+ *
+ * Revision 1.19  2003/03/14 07:25:55  robertj
+ * Removed $header keyword so is not different on alternate repositories
+ *
+ * Revision 1.18  2003/02/10 00:33:02  robertj
+ * Removed code for redundent class and constructor.
+ *
+ * Revision 1.17  2002/05/17 01:47:33  dereks
+ * backout the integer maths in the h261 codec.
+ *
+ * Revision 1.16  2002/04/05 00:53:19  dereks
+ * Modify video frame encoding so that frame is encoded on an incremental basis.
+ * Thanks to Walter Whitlock - good work.
+ *
+ * Revision 1.15  2001/10/14 21:48:45  dereks
+ * Change vic's fdct() from floating-point to fix-point. Improves performance
+ * for h261 video significantly on some machines. Thanks to Cosmos Jiang
  *
  * Revision 1.14  2001/05/10 05:25:44  robertj
  * Removed need for VIC code to use ptlib.
@@ -79,15 +96,12 @@
  ********/
 
 
-//static const char rcsid[] =
-//    "@(#) $Header: /home/svnmigrate/clean_cvs/opal/src/codec/vic/Attic/encoder-h261.cxx,v 1.2001 2001/07/27 15:48:25 robertj Exp $ (LBL)";
-
 #include "encoder-h261.h"
 
 
 H261Encoder::H261Encoder(Transmitter *T) : Encoder(T),
-        bs_(0), bc_(0), 
-        ngob_(12)
+        bs_(0), bc_(0), ngob_(12),
+        gDone(TRUE) // must initialize to TRUE
 {
  	for (int q = 0; q < 32; ++q) {
 		llm_[q] = 0;
@@ -98,10 +112,10 @@ H261Encoder::H261Encoder(Transmitter *T) : Encoder(T),
 H261Encoder::~H261Encoder(void)
 {
  	for (int q = 0; q < 32; ++q) {
-	  if(llm_[q]) 
+	  if(llm_[q])
 	    delete (char *)llm_[q];
 	  if(clm_[q])
-            delete (char *)clm_[q];
+      delete (char *)clm_[q];
 	}
 }
 
@@ -351,7 +365,7 @@ H261Encoder::encode_blk(const short* blk, const char* lm)
 		int level = lm[((const u_short*)blk)[zag] & 0xfff];
 		if (level != 0) {
 			int val, nb;
-			huffent* he;
+			huffent* he; 
 			if (u_int(level + 15) <= 30 &&
 			    (nb = (he = &hte_tc[((level&0x1f) << 6)|run])->nb))
 				/* we can use a VLC. */
@@ -379,8 +393,11 @@ H261Encoder::encode_blk(const short* blk, const char* lm)
  *	encode a macroblock given a set of input YUV pixels
  */
 void
-H261PixelEncoder::encode_mb(u_int mba, const u_char* frm,
-			    u_int loff, u_int coff, int how)
+H261PixelEncoder::encode_mb(u_int mba, // address of macroblock to encode
+                    const u_char* frm, // address of YUV pixels
+                           u_int loff, // Luminance offset from frm
+                           u_int coff, // Chrominance offset from frm
+                           int how)
 {
 	register int q;
 	float* qt;
@@ -454,9 +471,9 @@ H261PixelEncoder::encode_mb(u_int mba, const u_char* frm,
 		}
 	}
 
-	u_int m = mba - mba_;
-	mba_ = mba;
-	huffent* he = &hte_mba[m - 1];
+	u_int m = mba - mba_; // set macroblock address difference 
+	mba_ = mba; // set last absolute macroblock address transmitted
+	huffent* he = &hte_mba[m - 1]; // Huffman coded macroblock address
 	/* MBA */
 	PUT_BITS(he->val, he->nb, nbb_, bb_, bc_);
 	if (q != mquant_) {
@@ -633,8 +650,7 @@ int H261DCTEncoder::consume(const VideoFrame *vf)
 {
 	if (!SameSize(vf))
 		SetSize(vf->width, vf->height);
-	DCTFrame* df = (DCTFrame *)vf;
-	return(encode(df, df->crvec));
+	return(encode(vf, vf->crvec));
 }
 
 int H261PixelEncoder::consume(const VideoFrame *vf)
@@ -642,50 +658,47 @@ int H261PixelEncoder::consume(const VideoFrame *vf)
 	if (!SameSize(vf))
 		SetSize(vf->width, vf->height);
 	return(encode(vf, vf->crvec));
-} 
-		
-//////NOTE: HDRSIZE is the size of the H261 hdr in the rtp packet.==4
-int
-H261Encoder::encode(const VideoFrame* vf, const BYTE *crvec)
-{
-        
-        Transmitter::pktbuf* pb = tx_->alloc();
-	bs_ = (u_char*)pb->buf->data;
-	bc_ = bs_;
-	u_int ec = (tx_->mtu() - HDRSIZE) << 3;
-	bb_ = 0;
-	nbb_ = 0;
+}
+
+//////NOTE: HDRSIZE is the size of the H261 hdr in the rtp packet.== 4
+int H261Encoder::encode(const VideoFrame* vf, const BYTE *crvec) {
+  Transmitter::pktbuf* pb = tx_->alloc();
+	bs_ = (u_char*)pb->buf->data; // pointer to start of buffer
+	bc_ = bs_; // pointer to destination in buffer
+	u_int ec = (tx_->mtu() - HDRSIZE) << 3; // bits available in H261 packet
+	bb_ = 0; // intermediate working space
+	nbb_ = 0; // cumulative put bit count
 	sbit_ = 0;
 	/* RTP/H.261 header */
-	u_int* rh = (u_int*)pb->hdr;
-	*rh = 1 << 24 | lq_ << 10;
+	u_int* rh = (u_int*)pb->hdr; // H.261 header (32 bits)
+	*rh = (1 << 24) | (lq_ << 10); // set motion vector flag V to 1 & set QUANT
 
-	/* PSC */
+	/* PSC Picture Start Code */
 	PUT_BITS(0x0001, 16, nbb_, bb_, bc_);
-	/* GOB 0 -> picture header */
+	/* GOB 0 -> picture header Finishes PSC */
 	PUT_BITS(0, 4, nbb_, bb_, bc_);
-	/* TR (XXX should do this right) */
+	/* TR Temporal Reference (XXX should do this right) */
 	PUT_BITS(0, 5, nbb_, bb_, bc_);
 
 	/* PTYPE = CIF */
 	int pt = cif_ ? 7 : 3;
-
 	PUT_BITS(pt, 6, nbb_, bb_, bc_);
-	/* PEI */
+
+	/* PEI Picture Extra Information = none */
 	PUT_BITS(0, 1, nbb_, bb_, bc_);
 
 	int step = cif_ ? 1 : 2;
 	int cc = 0;
 
 	BYTE* frm = vf->frameptr;
-	for (u_int gob = 0; gob < ngob_; gob += step) {
-		u_int loff = loff_[gob];
-		u_int coff = coff_[gob];
-		u_int blkno = blkno_[gob];
-		u_int nbit = ((bc_ - bs_) << 3) + nbb_;
+  for (u_int gobIndex = 0; gobIndex < ngob_; gobIndex += step) { // fill in GOB layer
+		u_int loff = loff_[gobIndex];
+		u_int coff = coff_[gobIndex];
+		u_int blkno = blkno_[gobIndex];
+		u_int nbit = ((bc_ - bs_) << 3) + nbb_; // # of bits already in buffer
 
 		/* GSC/GN */
-		PUT_BITS(0x10 | (gob + 1), 20, nbb_, bb_, bc_);
+		PUT_BITS(0x10 | (gobIndex + 1), 20, nbb_, bb_, bc_);
 		/* GQUANT/GEI */
 		mquant_ = lq_;
 		PUT_BITS(mquant_ << 1, 6, nbb_, bb_, bc_);
@@ -702,9 +715,9 @@ H261Encoder::encode(const VideoFrame* vf, const BYTE *crvec)
 
 			if ((s & CR_SEND) != 0) {
 				u_int mbpred = mba_;
-				encode_mb(mba, frm, loff, coff, CR_STATE(s));
+				encode_mb(mba, frm, loff, coff, CR_STATE(s)); // encode MB
 				u_int cbits = ((bc_ - bs_) << 3) + nbb_;
-				if (cbits > ec) {
+				if (cbits > ec) { // make new packet
 					Transmitter::pktbuf* npb;
 					npb = tx_->alloc();
 					cc += flush(pb, nbit, npb);
@@ -714,16 +727,16 @@ H261Encoder::encode(const VideoFrame* vf, const BYTE *crvec)
 					u_int m = mbpred;
 					u_int g;
 					if (m != 0) {
-						g = gob + 1;
+						g = gobIndex + 1;
 						m -= 1;
 					} else
 						g = 0;
 
 					rh = (u_int*)pb->hdr;
 					*rh =	1 << 24 |  //set motion vector flag.
- 					        m << 15 |  //macroblock address predictor.
-					        g << 20 |  //Group of blocks number.
-               					mquant_ << 10;//quantizer value.
+ 					      m << 15 |  //macroblock address predictor.
+					      g << 20 |  //Group of blocks number.
+             mquant_ << 10;//quantizer value.
                                         
 				}
 				nbit = cbits;
@@ -741,6 +754,192 @@ H261Encoder::encode(const VideoFrame* vf, const BYTE *crvec)
 
 		}
 	}
-	cc += flush(pb, ((bc_ - bs_) << 3) + nbb_, 0);
+	cc += flush(pb, ((bc_ - bs_) << 3) + nbb_, 0); 
 	return (cc);
+}
+
+int H261PixelEncoder::PreIncEncodeSetup(const VideoFrame *vf)
+{
+  if (!SameSize(vf))
+    SetSize(vf->width, vf->height);
+  gVf = vf;
+  gPicture = TRUE; //if TRUE, send picture layer header
+  gNbytes = 0;  //number of bytes in previous packet
+  gDbase = 0; //offset from gData where valid data starts
+  nbb_ = 0; //# of valid bits in bb_
+  bb_ = 0; //intermediate working space
+  bc_ = gData; //where to put encoded bits
+  gStep = cif_ ? 1 : 2; //Macro Block step size
+  gGobMax = cif_ ? 12 : 5; //how many GOB per frame
+  sbit_ = 0;
+  gSendGOBhdr = TRUE; //must send GOB hdr before sending MB
+  gGOBhdrNxt = TRUE; //will start out with GOB header
+  //because gGOBhdrNxt == TRUE, no need to initialize the following 2 header variables:
+  //gHdrGOBN; // next GOB number for last encoded MB
+  //gHdrMBAP; // address of last macroblock encoded in previous packet 1..32
+  //mba_= 0; // should not be necessary to initialize this
+  gHdrQUANT = lq_; // QUANT in effect for next MB to be encoded
+  gNxtMBA = 1; // address of next macroblock to be considered for encoding 1..33
+  gNxtGOB = 1; // start encoding at GOB 1
+  gDone = FALSE;
+  return 1;
+} 
+
+void H261PixelEncoder::IncEncodeAndGetPacket(
+  u_char * buffer,    // returns buffer of encoded data
+  unsigned & length ) // returns actual length of encoded data buffer
+{
+  u_int previousBitCount, currentBitCount;
+  h261hdr_t h261hdr;
+
+  if (gDone) {
+    length = 0;
+    return;
+  }
+
+  // TESTING
+  if (!gGOBhdrNxt && ((33 <= gHdrMBAP) || (0 >= gHdrMBAP))) {
+    cerr << __FILE__<< "(" << __LINE__ << ") " <<
+      "illegal gHdrMBAP value when gGOBhdrNxt is FALSE = " << gHdrMBAP << endl;
+    gHdrMBAP = 1;
+  }
+  //  unsigned t1 = sbit_ << 29;
+  //  unsigned t2 = (gGOBhdrNxt?0:gHdrGOBN) << 20;
+  //  unsigned t3 = (gGOBhdrNxt||(0==gHdrMBAP)?0:gHdrMBAP-1) << 15;
+  //  unsigned t4 = (gGOBhdrNxt?0:gHdrQUANT) << 10;
+
+  // set the H.261 header (32 bits) bits that we know now
+  h261hdr =               1 << 24 | // V = 1, I = 0, HMVD = 0, VMVD = 0
+                      sbit_ << 29 | // SBIT
+    (gGOBhdrNxt?0:gHdrGOBN) << 20 | // GOBN
+  (gGOBhdrNxt?0:gHdrMBAP-1) << 15 | // MBAP 
+   (gGOBhdrNxt?0:gHdrQUANT) << 10;  // QUANT
+                  // gHdrQUANT << 10;  // QUANT set the old & incorrect way
+
+  // if any, move unsent bits encoded during previous packet encode
+  unsigned usedBB_INTs;
+  u_char* msrc;
+  unsigned m1;
+  if (sbit_) gNbytes--; // last byte of previous packet has bits needed for this packet
+  usedBB_INTs = (gNbytes + gDbase)/sizeof(BB_INT);
+  msrc = gData + usedBB_INTs*sizeof(BB_INT);
+  gDbase = (gDbase + gNbytes) % sizeof(BB_INT);
+  m1 = bc_ - msrc;
+  if (m1) memcpy(gData, msrc, m1);
+  bc_ = gData + m1; // set starting bc_ address
+  
+  // encode H.261 stream
+  if (gPicture) { // only ever sent at start of 1st packet 
+    /* PSC Picture Start Code */
+    PUT_BITS(0x0001, 16, nbb_, bb_, bc_);
+    /* GOB 0 -> picture header Finishes PSC */
+    PUT_BITS(0, 4, nbb_, bb_, bc_);
+    /* TR Temporal Reference (XXX should do this right) */
+    PUT_BITS(0, 5, nbb_, bb_, bc_);
+    /* PTYPE = CIF */
+    int pt = cif_ ? 7 : 3;
+    PUT_BITS(pt, 6, nbb_, bb_, bc_);
+    /* PEI Picture Extra Information = none */
+    PUT_BITS(0, 1, nbb_, bb_, bc_);
+    gloff = loff_[0];
+    gcoff = coff_[0];
+    gblkno = blkno_[0];
+    gline = 11;
+    gPicture = FALSE;
+  }
+  unsigned bitLimit = 8*(RTP_MTU - sizeof(h261hdr));
+  u_char* bbase = gData + gDbase;
+  if (!(gNxtGOB > gGobMax)) {
+    while ((currentBitCount = nbb_ + 8*(bc_ - bbase)) <= bitLimit) {
+      // everything encoded up till now fits within the RTP_MTU buffer
+      // test to see if the packet can be broken here
+      if (gSendGOBhdr || (0 != mba_)){ // if packet can be broken,
+        // record conditions that will be needed to construct the h261 header
+        // for the next packet if the packet breaks here
+        gHdrGOBN = gNxtGOB; // GOB number in effect for next MB to be encoded
+        gHdrMBAP = mba_; // MBA of the last encoded MB & now in the buffer
+        gHdrQUANT = mquant_; // QUANT in effect for next MB to be encoded
+        gGOBhdrNxt = gSendGOBhdr; // is GOB header next?
+        previousBitCount = currentBitCount; // encoded bits now in the buffer
+      }
+      if (gSendGOBhdr) { // need to send GOB header before can send MB ?
+        /* GSC/GN */
+        PUT_BITS(0x10 | gNxtGOB, 20, nbb_, bb_, bc_);
+        /* GQUANT/GEI */
+        mquant_ = lq_;
+        PUT_BITS(mquant_ << 1, 6, nbb_, bb_, bc_);
+        mba_= 0;
+        gSendGOBhdr = FALSE;
+      }
+      /** If the conditional replenishment algorithm
+      * has decided to send any of the blocks of
+      * this macroblock, encode it.
+      */
+      u_int s = gVf->crvec[gblkno];
+      if ((s & CR_SEND) != 0) {
+        //H261PixelEncoder::encode_mb(u_int mba, // address of macroblock to encode
+        //  const u_char* frm, // address of YUV pixels
+        //  u_int loff, // Luminance offset from frm
+        //  u_int coff, // Chrominance offset from frm
+        //  int how)
+        encode_mb(gNxtMBA, gVf->frameptr, gloff, gcoff, CR_STATE(s)); // encode MB
+        mba_= gNxtMBA;
+      }
+      gNxtMBA++;
+      if (gNxtMBA > 33) {
+        gNxtGOB += gStep;
+        if (gNxtGOB > gGobMax) {
+          gDone = TRUE;
+          break; // out of while(), done encoding frame
+        }
+        gNxtMBA = 1;
+        gSendGOBhdr = TRUE; // must send GOB hdr before sending MB
+        gloff = loff_[gNxtGOB-1];
+        gcoff = coff_[gNxtGOB-1];
+        gblkno = blkno_[gNxtGOB-1];
+        gline = 11;
+      }
+      else {
+        gloff += loffsize_;
+        gcoff += coffsize_;
+        gblkno += bloffsize_;
+        if (--gline <= 0) {
+          gline = 11;
+          gblkno += bstride_;
+          gloff += lstride_;
+          gcoff += cstride_;
+        }
+      }
+    }
+  }
+  else 
+    gDone = TRUE;
+  // have full packet now, finish & set up for next packet
+  // break packet at end of previous MB unless this is end of frame
+  // flush bits from bb_
+  STORE_BITS(bb_, bc_); // necessary when gDbase != 0
+  if (gDone) {
+    unsigned totalBits = nbb_ + 8*(bc_ - bbase);
+    if (totalBits <= bitLimit) { // would packet be too big?
+      previousBitCount = totalBits;
+    }
+    else { // need another packet to finish frame
+      gDone = FALSE;
+    }
+  }
+  gNbytes = previousBitCount / 8;
+  sbit_ = previousBitCount % 8; // SBIT for next packet = good bits for this packet
+  if (sbit_) gNbytes++; // include last bits for this frame
+  
+  // set the H.261 header (32 bits) bits that we know now
+  h261hdr |= ((8 - sbit_) & 7) << 26; //EBIT = 8 - SBIT for next packet
+  h261hdr = htonl(h261hdr);
+  *(h261hdr_t*)buffer = h261hdr;
+  memcpy(buffer+sizeof(h261hdr), gData+gDbase, gNbytes);
+  length = gNbytes+sizeof(h261hdr);
+
+  if (RTP_MTU < length) { // test for too large packet (I haven't seen one yet)
+    cerr << __FILE__<< "(" << __LINE__ << ") " <<
+      "packet size of " << length << " > RTP_MTU(" << RTP_MTU << ")" << endl;
+  }
 }
