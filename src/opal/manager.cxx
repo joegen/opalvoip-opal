@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2033  2004/05/01 10:00:53  rjongbloed
+ * Revision 1.2034  2004/05/15 12:53:03  rjongbloed
+ * Added default username and display name to manager, for all endpoints.
+ *
+ * Revision 2.32  2004/05/01 10:00:53  rjongbloed
  * Fixed ClearCallSynchronous so now is actually signalled when call is destroyed.
  *
  * Revision 2.31  2004/04/29 11:48:32  rjongbloed
@@ -201,7 +204,9 @@ unsigned OpalGetBuildNumber()
 /////////////////////////////////////////////////////////////////////////////
 
 OpalManager::OpalManager()
-  : mediaFormatOrder(PARRAYSIZE(DefaultMediaFormatOrder), DefaultMediaFormatOrder),
+  : defaultUserName(PProcess::Current().GetUserName()),
+    defaultDisplayName(defaultUserName),
+    mediaFormatOrder(PARRAYSIZE(DefaultMediaFormatOrder), DefaultMediaFormatOrder),
     noMediaTimeout(0, 0, 5),     // Minutes
     translationAddress(0)        // Invalid address to disable
 {

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2023  2004/04/18 07:09:12  rjongbloed
+ * Revision 1.2024  2004/05/15 12:53:03  rjongbloed
+ * Added default username and display name to manager, for all endpoints.
+ *
+ * Revision 2.22  2004/04/18 07:09:12  rjongbloed
  * Added a couple more API functions to bring OPAL into line with similar functions in OpenH323.
  *
  * Revision 2.21  2004/03/11 06:54:27  csoutheren
@@ -723,6 +726,26 @@ class OpalManager : public PObject
 
   /**@name Member variable access */
   //@{
+    /**Get the default username for all endpoints.
+      */
+    const PString & GetDefaultUserName() const { return defaultUserName; }
+
+    /**Set the default username for all endpoints.
+      */
+    void SetDefaultUserName(
+      const PString & name
+    ) { defaultUserName = name; }
+
+    /**Get the default display name for all endpoints.
+      */
+    const PString & GetDefaultDisplayName() const { return defaultDisplayName; }
+
+    /**Set the default display name for all endpoints.
+      */
+    void SetDefaultDisplayName(
+      const PString & name
+    ) { defaultDisplayName = name; }
+
     /**See if should auto-start receive video channels on connection.
      */
     BOOL CanAutoStartReceiveVideo() const { return autoStartReceiveVideo; }
@@ -929,6 +952,8 @@ class OpalManager : public PObject
 
   protected:
     // Configuration variables
+    PString       defaultUserName;
+    PString       defaultDisplayName;
     BOOL          autoStartReceiveVideo;
     BOOL          autoStartTransmitVideo;
     BYTE          rtpIpTypeofService;
