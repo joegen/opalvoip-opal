@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.cxx,v $
- * Revision 1.2008  2004/07/15 12:19:24  rjongbloed
+ * Revision 1.2009  2004/07/15 12:32:29  rjongbloed
+ * Various enhancements to the VXML code
+ *
+ * Revision 2.7  2004/07/15 12:19:24  rjongbloed
  * Various enhancements to the VXML code
  *
  * Revision 2.6  2004/07/11 12:42:13  rjongbloed
@@ -84,6 +87,8 @@ OpalIVREndPoint::OpalIVREndPoint(OpalManager & mgr, const char * prefix)
 {
   nextTokenNumber = 1;
 
+  defaultMediaFormats += OpalPCM16;
+
   PTRACE(3, "IVR\tCreated endpoint.");
 }
 
@@ -124,14 +129,8 @@ BOOL OpalIVREndPoint::MakeConnection(OpalCall & call,
 
 OpalMediaFormatList OpalIVREndPoint::GetMediaFormats() const
 {
- 
-  OpalMediaFormatList formats;
-
-  formats += OpalPCM16; // Sound card can only do 16 bit PCM
-
-  AddVideoMediaFormats(formats);
-
-  return formats;
+  PWaitAndSignal mutex(inUseFlag);
+  return defaultMediaFormats;
 }
 
 
@@ -161,6 +160,14 @@ void OpalIVREndPoint::SetDefaultVXML(const PString & vxml)
 }
 
 
+void OpalIVREndPoint::SetDefaultMediaFormats(const OpalMediaFormatList & formats)
+{
+  inUseFlag.Wait();
+  defaultMediaFormats = formats;
+  inUseFlag.Signal();
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 OpalIVRConnection::OpalIVRConnection(OpalCall & call,
@@ -171,6 +178,7 @@ OpalIVRConnection::OpalIVRConnection(OpalCall & call,
   : OpalConnection(call, ep, token),
     endpoint(ep),
     vxmlToLoad(vxml),
+    vxmlMediaFormats(ep.GetMediaFormats()),
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4355)
@@ -240,21 +248,7 @@ BOOL OpalIVRConnection::SetConnected()
 
 OpalMediaFormatList OpalIVRConnection::GetMediaFormats() const
 {
-  // Sound card can only do 16 bit PCM
-  OpalMediaFormatList formatNames;
-
-  formatNames += OpalPCM16;
-
-#if 0
-  /* This is removed until some code is added to add them it it detects that
-     there is a directory containing G.723.1 and/or G.729 wav files. */
-  formatNames += OpalG7231A_6k3;
-  formatNames += OpalG7231_6k3;
-  formatNames += OpalG729;
-  formatNames += OpalG729A;
-#endif
-
-  return formatNames;
+  return vxmlMediaFormats;
 }
 
 
