@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2022  2004/03/25 11:48:48  rjongbloed
+ * Revision 1.2023  2004/05/03 00:59:19  csoutheren
+ * Fixed problem with OpalMediaFormat::GetMediaFormatsList
+ * Added new version of OpalMediaFormat::GetMediaFormatsList that minimses copying
+ *
+ * Revision 2.21  2004/03/25 11:48:48  rjongbloed
  * Changed PCM-16 from IllegalPayloadType to MaxPayloadType to avoid problems
  *   in other parts of the code.
  *
@@ -481,19 +485,21 @@ OpalMediaFormat & OpalMediaFormat::operator=(const PString & wildcard)
 }
 
 
-OpalMediaFormatList OpalMediaFormat::GetAllRegisteredMediaFormats()
+void OpalMediaFormat::GetAllRegisteredMediaFormats(OpalMediaFormatList & copy)
 {
-  OpalMediaFormatList copy;
-
   PWaitAndSignal mutex(GetMediaFormatsListMutex());
   const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
 
   for (PINDEX i = 0; i < registeredFormats.GetSize(); i++)
-    copy.OpalMediaFormatBaseList::Append(&registeredFormats[i]);
-
-  return copy;
+    copy.OpalMediaFormatBaseList::Append(registeredFormats[i].Clone());
 }
 
+OpalMediaFormatList OpalMediaFormat::GetAllRegisteredMediaFormats()
+{
+  OpalMediaFormatList copy;
+  GetAllRegisteredMediaFormats(copy);
+  return copy;
+}
 
 OpalMediaFormatList & OpalMediaFormat::GetMediaFormatsList()
 {
