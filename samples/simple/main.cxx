@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2003  2001/08/01 05:48:30  robertj
+ * Revision 1.2004  2001/08/01 06:19:00  robertj
+ * Added flags for disabling H.323 or Quicknet endpoints.
+ *
+ * Revision 2.2  2001/08/01 05:48:30  robertj
  * Major changes to H.323 capabilities, uses OpalMediaFormat for base name.
  * Fixed loading of transcoders from static library.
  *
@@ -124,6 +127,7 @@ void SimpleOpalProcess::Main()
              "f-fast-disable."
              "g-gatekeeper:"
              "h-help."
+             "H-no-h323."
              "i-interface:"
              "j-jitter:"
              "l-listen."
@@ -136,8 +140,10 @@ void SimpleOpalProcess::Main()
              "p-password:"
 #endif
              "q-quicknet:"
+             "Q-no-quicknet:"
              "r-require-gatekeeper."
              "s-sound:"
+             "S-no-sound:"
              "-sound-in:"
              "-sound-out:"
              "T-h245tunneldisable."
@@ -168,8 +174,10 @@ void SimpleOpalProcess::Main()
             "  -e --silence            : Disable transmitter silence detection.\n"
             "  -f --fast-disable       : Disable fast start.\n"
             "  -T --h245tunneldisable  : Disable H245 tunnelling.\n"
-            "  -q --quicknet device    : Select Quicknet xJACK device.\n"
+            "  -q --quicknet device    : Select Quicknet xJACK device (default ALL).\n"
+            "  -Q --no-quicknet        : Do not use Quicknet xJACK device.\n"
             "  -s --sound device       : Select sound input/output device.\n"
+            "  -S --no-sound           : Do not use sound input/output device.\n"
             "     --sound-in device    : Select sound input device.\n"
             "     --sound-out device   : Select sound output device.\n"
 #if PTRACING
@@ -204,11 +212,13 @@ MyManager::MyManager()
 {
   potsEP = NULL;
   pcssEP = NULL;
+  h323EP = NULL;
 }
 
 
 MyManager::~MyManager()
 {
+  // Must do this before we destroy the xJack or a crash will result
   if (potsEP != NULL)
     potsEP->RemoveLinesFromDevice(xJack);
 }
@@ -244,52 +254,56 @@ BOOL MyManager::Initialise(PArgList & args)
   ///////////////////////////////////////
   // Open the LID if parameter provided, create LID based endpoint
 
-  PString device = args.GetOptionString('q');
-  if (device.IsEmpty() || device == "*") {
-    PStringArray devices = OpalIxJDevice::GetDeviceNames();
-    if (devices.GetSize() > 0)
-      device = devices[0];
-    else
-      device = PString();
-  }
-  if (!device) {
-    if (xJack.Open(device)) {
-      // Create LID protocol handler, automatically adds to manager
-      potsEP = new OpalPOTSEndPoint(*this);
-      if (potsEP->AddLinesFromDevice(xJack))
-        cout << "Quicknet device is " << device << endl;
-      else {
-        RemoveEndPoint(potsEP);
-        potsEP = NULL;
-      }
+  if (!args.HasOption('Q')) {
+    PString device = args.GetOptionString('q');
+    if (device.IsEmpty() || device == "ALL") {
+      PStringArray devices = OpalIxJDevice::GetDeviceNames();
+      if (devices.GetSize() > 0)
+        device = devices[0];
+      else
+        device = PString();
     }
-    else
-      cerr << "Could not open device \"" << device << '"' << endl;
+    if (!device) {
+      if (xJack.Open(device)) {
+        // Create LID protocol handler, automatically adds to manager
+        potsEP = new OpalPOTSEndPoint(*this);
+        if (potsEP->AddLinesFromDevice(xJack))
+          cout << "Quicknet device is " << device << endl;
+        else {
+          RemoveEndPoint(potsEP);
+          potsEP = NULL;
+        }
+      }
+      else
+        cerr << "Could not open device \"" << device << '"' << endl;
+    }
   }
 
 
   ///////////////////////////////////////
   // Create PC Sound System handler
 
-  pcssEP = new MyPCSSEndPoint(*this);
+  if (!args.HasOption('S')) {
+    pcssEP = new MyPCSSEndPoint(*this);
 
-  if (!pcssEP->SetSoundDevice(args, "sound", PSoundChannel::Recorder))
-    return FALSE;
-  if (!pcssEP->SetSoundDevice(args, "sound", PSoundChannel::Player))
-    return FALSE;
-  if (!pcssEP->SetSoundDevice(args, "sound-in", PSoundChannel::Recorder))
-    return FALSE;
-  if (!pcssEP->SetSoundDevice(args, "sound-out", PSoundChannel::Player))
-    return FALSE;
+    if (!pcssEP->SetSoundDevice(args, "sound", PSoundChannel::Recorder))
+      return FALSE;
+    if (!pcssEP->SetSoundDevice(args, "sound", PSoundChannel::Player))
+      return FALSE;
+    if (!pcssEP->SetSoundDevice(args, "sound-in", PSoundChannel::Recorder))
+      return FALSE;
+    if (!pcssEP->SetSoundDevice(args, "sound-out", PSoundChannel::Player))
+      return FALSE;
 
-  cout << "Sound output device: \"" << pcssEP->GetSoundChannelPlayDevice() << "\"\n"
-          "Sound  input device: \"" << pcssEP->GetSoundChannelRecordDevice() << '"' << endl;
+    cout << "Sound output device: \"" << pcssEP->GetSoundChannelPlayDevice() << "\"\n"
+            "Sound  input device: \"" << pcssEP->GetSoundChannelRecordDevice() << '"' << endl;
+  }
 
 
   ///////////////////////////////////////
   // Create H.323 protocol handler
 
-  H323EndPoint * h323 = new H323EndPoint(*this);
+  h323EP = new H323EndPoint(*this);
 
   noFastStart      = args.HasOption('f');
   noH245Tunnelling = args.HasOption('h');
@@ -297,9 +311,9 @@ BOOL MyManager::Initialise(PArgList & args)
   // Get local username, multiple uses of -u indicates additional aliases
   if (args.HasOption('u')) {
     PStringArray aliases = args.GetOptionString('u').Lines();
-    h323->SetLocalUserName(aliases[0]);
+    h323EP->SetLocalUserName(aliases[0]);
     for (PINDEX i = 1; i < aliases.GetSize(); i++)
-      h323->AddAliasName(aliases[i]);
+      h323EP->AddAliasName(aliases[i]);
   }
 
   if (args.HasOption('b')) {
@@ -308,11 +322,11 @@ BOOL MyManager::Initialise(PArgList & args)
       cerr << "Illegal bandwidth specified." << endl;
       return FALSE;
     }
-    h323->SetInitialBandwidth(initialBandwidth);
+    h323EP->SetInitialBandwidth(initialBandwidth);
   }
 
   // .
-  cout << "H.323 Local username: " << h323->GetLocalUserName() << "\n"
+  cout << "H.323 Local username: " << h323EP->GetLocalUserName() << "\n"
        << "H.323 FastConnect is " << !noFastStart << "\n"
        << "H.323 H245Tunnelling is " << noH245Tunnelling << endl;
 
@@ -320,16 +334,16 @@ BOOL MyManager::Initialise(PArgList & args)
   // Start the listener thread for incoming calls.
   if (args.HasOption('i')) {
     PStringArray listeners = args.GetOptionString('i').Lines();
-    if (!h323->StartListeners(listeners)) {
+    if (!h323EP->StartListeners(listeners)) {
       cerr <<  "Could not open any H.323 listener from "
            << setfill(',') << listeners << endl;
       return FALSE;
     }
   }
   else {
-    if (!h323->StartListener(NULL)) {
+    if (!h323EP->StartListener(NULL)) {
       cerr <<  "Could not open H.323 listener on TCP port "
-           << h323->GetDefaultSignalPort() << endl;
+           << h323EP->GetDefaultSignalPort() << endl;
       return FALSE;
     }
   }
@@ -340,13 +354,13 @@ BOOL MyManager::Initialise(PArgList & args)
     PString gkName = args.GetOptionString('g');
     OpalTransportUDP * rasChannel;
     if (args.GetOptionString('i').IsEmpty())
-      rasChannel  = new OpalTransportUDP(*h323);
+      rasChannel  = new OpalTransportUDP(*h323EP);
     else {
       PIPSocket::Address interfaceAddress(args.GetOptionString('i'));
-      rasChannel  = new OpalTransportUDP(*h323, interfaceAddress);
+      rasChannel  = new OpalTransportUDP(*h323EP, interfaceAddress);
     }
-    if (h323->SetGatekeeper(gkName, rasChannel))
-      cout << "Gatekeeper set: " << *h323->GetGatekeeper() << endl;
+    if (h323EP->SetGatekeeper(gkName, rasChannel))
+      cout << "Gatekeeper set: " << *h323EP->GetGatekeeper() << endl;
     else {
       cerr << "Error registering with gatekeeper at \"" << gkName << '"' << endl;
       return FALSE;
@@ -354,8 +368,8 @@ BOOL MyManager::Initialise(PArgList & args)
   }
   else if (!args.HasOption('n') || args.HasOption('r')) {
     cout << "Searching for gatekeeper..." << flush;
-    if (h323->DiscoverGatekeeper(new OpalTransportUDP(*h323)))
-      cout << "\nGatekeeper found: " << *h323->GetGatekeeper() << endl;
+    if (h323EP->DiscoverGatekeeper(new OpalTransportUDP(*h323EP)))
+      cout << "\nGatekeeper found: " << *h323EP->GetGatekeeper() << endl;
     else {
       cerr << "\nNo gatekeeper found." << endl;
       if (args.HasOption("require-gatekeeper")) 
@@ -397,17 +411,21 @@ PString MyManager::OnRouteConnection(OpalConnection & connection)
   if (addr.IsEmpty())
     return addr;
 
+  // Have got explicit protocol defined
   if (addr.Find(':') != P_MAX_INDEX)
     return addr;
 
-  if (connection.GetEndPoint().GetPrefixName() != "h323") {
+  // Default to H323 if loaded, or not come from the H.323 endpoint
+  if (h323EP != NULL && connection.GetEndPoint().GetPrefixName() != "h323") {
     addr.Replace("*", ".", TRUE);
     return "h323:" + addr;
   }
 
+  // Default to local phone, if loaded
   if (potsEP != NULL)
     return "pots:" + addr;
 
+  // Finally route it to the PC
   return "pc:" + addr;
 }
 

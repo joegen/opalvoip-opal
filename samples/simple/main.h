@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 1.2002  2001/08/01 06:19:00  robertj
+ * Added flags for disabling H.323 or Quicknet endpoints.
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.5  2001/03/21 04:52:40  robertj
@@ -97,6 +100,7 @@ class MyManager : public OpalManager
     OpalIxJDevice xJack;
     OpalPOTSEndPoint * potsEP;
     MyPCSSEndPoint * pcssEP;
+    H323EndPoint * h323EP;
 };
 
 
