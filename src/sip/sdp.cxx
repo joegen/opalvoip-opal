@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2008  2003/12/15 11:56:17  rjongbloed
+ * Revision 1.2009  2004/01/08 22:20:43  csoutheren
+ * Fixed problem with not using session ID when constructing SDP lists
+ *
+ * Revision 2.7  2003/12/15 11:56:17  rjongbloed
  * Applied numerous bug fixes, thank you very much Ted Szoczei
  *
  * Revision 2.6  2003/03/17 22:31:35  robertj
@@ -440,7 +443,7 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
 }
 
 
-void SDPMediaDescription::AddMediaFormats(const OpalMediaFormatList & mediaFormats)
+void SDPMediaDescription::AddMediaFormats(const OpalMediaFormatList & mediaFormats, unsigned session)
 {
   for (PINDEX i = 0; i < mediaFormats.GetSize(); i++)
     AddMediaFormat(mediaFormats[i]);
