@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2011  2002/11/10 11:33:17  robertj
+ * Revision 1.2012  2003/03/06 03:57:46  robertj
+ * IVR support (work in progress) requiring large changes everywhere.
+ *
+ * Revision 2.10  2002/11/10 11:33:17  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.9  2002/09/16 02:52:35  robertj
@@ -199,12 +202,21 @@ class OpalCall : public PObject
       OpalConnection * connection  /// Connection to add.
     );
 
+    /**Call back for SetUp conenction.
+
+       The default behaviour is to call SetUpConnection() on all the other
+       connections in the call.
+      */
+    virtual BOOL OnSetUp(
+      OpalConnection & connection   /// Connection that indicates it is alerting
+    );
+
     /**Call back for alerting.
 
        The default behaviour is to call SetAlerting() on all the other
        connections in the call.
       */
-    virtual void OnAlerting(
+    virtual BOOL OnAlerting(
       OpalConnection & connection   /// Connection that indicates it is alerting
     );
 
@@ -219,7 +231,7 @@ class OpalCall : public PObject
        The default behaviour is to call SetConnected() on all other
        connections in the call.
       */
-    virtual void OnConnected(
+    virtual BOOL OnConnected(
       OpalConnection & connection   /// Connection that indicates it is alerting
     );
 
