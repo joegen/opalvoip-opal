@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2013  2004/02/24 11:37:01  rjongbloed
+ * Revision 1.2014  2004/03/11 06:54:28  csoutheren
+ * Added ability to disable SIP or H.323 stacks
+ *
+ * Revision 2.12  2004/02/24 11:37:01  rjongbloed
  * More work on NAT support, manual external address translation and STUN
  *
  * Revision 2.11  2004/02/21 02:40:09  rjongbloed
@@ -150,8 +153,12 @@ class MyManager : public OpalManager
 
     OpalPOTSEndPoint * potsEP;
     MyPCSSEndPoint   * pcssEP;
+#if OPAL_H323
     H323EndPoint     * h323EP;
+#endif
+#if OPAL_SIP
     SIPEndPoint      * sipEP;
+#endif
 #if P_EXPAT
     OpalIVREndPoint  * ivrEP;
 #endif

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ilbccodec.cxx,v $
- * Revision 1.2002  2004/02/19 10:47:02  rjongbloed
+ * Revision 1.2003  2004/03/11 06:54:28  csoutheren
+ * Added ability to disable SIP or H.323 stacks
+ *
+ * Revision 2.1  2004/02/19 10:47:02  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 1.2  2004/01/27 12:44:01  csoutheren
@@ -110,7 +113,7 @@ Opal_iLBC_Decoder::Opal_iLBC_Decoder(const OpalTranscoderRegistration & registra
 {
   decoder = (struct iLBC_Dec_Inst_t_ *)malloc((unsigned)sizeof(struct iLBC_Dec_Inst_t_));
   if (decoder != NULL) 
-    initDecode(decoder, speed == H323_iLBC_Capability::e_13k3 ? 30 : 20, 1); 
+    initDecode(decoder, speed, 1); 
 
   PTRACE(3, "Codec\tiLBC decoder created");
 }

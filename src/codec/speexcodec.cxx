@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.cxx,v $
- * Revision 1.2003  2004/02/19 10:47:02  rjongbloed
+ * Revision 1.2004  2004/03/11 06:54:28  csoutheren
+ * Added ability to disable SIP or H.323 stacks
+ *
+ * Revision 2.2  2004/02/19 10:47:02  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.1  2002/11/10 11:33:18  robertj
@@ -213,6 +216,8 @@ OpalMediaFormat const OpalSpeexNarrow_18k2(OPAL_SPEEX_NARROW_18k2,
 
 /////////////////////////////////////////////////////////////////////////
 
+#ifndef NO_H323
+
 SpeexNonStandardAudioCapability::SpeexNonStandardAudioCapability(int mode)
   : H323NonStandardAudioCapability(1, 1,
                                    EQUIVALENCE_COUNTRY_CODE,
@@ -325,6 +330,8 @@ PString SpeexNarrow6AudioCapability::GetFormatName() const
 {
   return OpalSpeexNarrow_18k2;
 }
+
+#endif
 
 
 /////////////////////////////////////////////////////////////////////////////

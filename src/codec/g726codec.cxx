@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g726codec.cxx,v $
- * Revision 1.2005  2004/02/19 10:47:02  rjongbloed
+ * Revision 1.2006  2004/03/11 06:54:28  csoutheren
+ * Added ability to disable SIP or H.323 stacks
+ *
+ * Revision 2.4  2004/02/19 10:47:02  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.3  2002/11/10 11:33:17  robertj
@@ -101,6 +104,11 @@ OpalMediaFormat const OpalG726_16(OPAL_G726_16,
                                   OpalMediaFormat::AudioClockRate);
 
 
+
+/////////////////////////////////////////////////////////////////////////////
+
+#ifndef NO_H323
+
 struct G726_NonStandardInfo {
   char name[10]; /// G.726-xxk
   BYTE count;
@@ -114,10 +122,6 @@ static G726_NonStandardInfo const G726_NonStandard[H323_G726_Capability::NumSpee
   { OPAL_G726_16 }
 };
 
-
-/////////////////////////////////////////////////////////////////////////////
-
-#ifndef NO_H323
 
 H323_G726_Capability::H323_G726_Capability(H323EndPoint & endpoint, Speeds s)
     : H323NonStandardAudioCapability(240, 10, endpoint,
