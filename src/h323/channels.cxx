@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2003  2001/08/01 05:17:45  robertj
+ * Revision 1.2004  2001/08/13 05:10:39  robertj
+ * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 2.2  2001/08/01 05:17:45  robertj
  * Made OpalMediaFormatList class global to help with documentation.
  *
  * Revision 2.1  2001/07/30 01:40:01  robertj
@@ -35,6 +38,16 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.95  2001/08/10 01:34:41  robertj
+ * Fixed problem with incorrect timestamp if codec returns more than one
+ *    frame in read, thanks Lee Kirchhoff.
+ *
+ * Revision 1.94  2001/08/06 05:36:00  robertj
+ * Fixed GNU warnings.
+ *
+ * Revision 1.93  2001/08/06 03:08:56  robertj
+ * Fission of h323.h to h323ep.h & h323con.h, h323.h now just includes files.
  *
  * Revision 1.92  2001/07/24 02:26:44  robertj
  * Added start for handling reverse channels.
@@ -838,6 +851,7 @@ H323DataChannel::H323DataChannel(H323Connection & conn,
 {
   listener = NULL;
   transport = NULL;
+  separateReverseChannel = 0;
 }
 
 

@@ -27,8 +27,22 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkserver.h,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 1.2002  2001/08/13 05:10:39  robertj
+ * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.4  2001/08/10 11:03:49  robertj
+ * Major changes to H.235 support in RAS to support server.
+ *
+ * Revision 1.3  2001/08/06 07:44:52  robertj
+ * Fixed problems with building without SSL
+ *
+ * Revision 1.2  2001/08/06 03:18:35  robertj
+ * Fission of h323.h to h323ep.h & h323con.h, h323.h now just includes files.
+ * Improved access to H.235 secure RAS functionality.
+ * Changes to H.323 secure RAS contexts to help use with gk server.
  *
  * Revision 1.1  2001/07/24 02:30:55  robertj
  * Added gatekeeper RAS protocol server classes.
@@ -46,17 +60,22 @@
 #include <opal/guid.h>
 #include <h323/h225ras.h>
 #include <h323/transaddr.h>
+#include <h323/h235auth.h>
 
 
 class PASN_Sequence;
+class PASN_Choice;
+
 class H225_AliasAddress;
 class H225_EndpointIdentifier;
 class H225_GatekeeperIdentifier;
 class H225_ArrayOf_TransportAddress;
+class H225_GatekeeperIdentifier;
+class H225_EndpointIdentifier;
 
 class H323RegisteredEndPoint;
 class H323GatekeeperServer;
-
+class H323RasPDU;
 
 
 /**This class describes an active call on a gatekeeper.
@@ -269,6 +288,10 @@ class H323RegisteredEndPoint : public PObject
     void RemoveAlias(
       const PString & alias
     ) { aliases.RemoveAt(aliases.GetValuesIndex(alias)); }
+
+    /**Get the security context for this RAS connection.
+      */
+    virtual const H235Authenticators & GetAuthenticators() const { return authenticators; }
   //@}
 
   protected:
@@ -277,6 +300,7 @@ class H323RegisteredEndPoint : public PObject
     OpalTransportAddressArray signalAddresses;
     PStringArray              aliases;
     unsigned                  timeToLive;
+    H235Authenticators        authenticators;
 
     PTime                     lastRegistration;
 
@@ -383,41 +407,48 @@ class H323GatekeeperListener : public H225_RAS
 
   /**@name Low level protocol callbacks */
   //@{
-    virtual void OnReceiveGatekeeperRequest(const H225_GatekeeperRequest &);
-    virtual void OnReceiveRegistrationRequest(const H225_RegistrationRequest &);
-    virtual void OnReceiveUnregistrationRequest(const H225_UnregistrationRequest &);
+    virtual BOOL HandleRasPDU(const H323RasPDU & response);
+    virtual BOOL OnReceiveGatekeeperRequest(const H225_GatekeeperRequest &);
+    virtual BOOL OnReceiveRegistrationRequest(const H225_RegistrationRequest &);
+    virtual BOOL OnReceiveUnregistrationRequest(const H225_UnregistrationRequest &);
     virtual BOOL OnReceiveUnregistrationConfirm(const H225_UnregistrationConfirm &);
     virtual BOOL OnReceiveUnregistrationReject(const H225_UnregistrationReject &);
-    virtual void OnReceiveAdmissionRequest(const H225_AdmissionRequest &);
-    virtual void OnReceiveBandwidthRequest(const H225_BandwidthRequest &);
+    virtual BOOL OnReceiveAdmissionRequest(const H225_AdmissionRequest &);
+    virtual BOOL OnReceiveBandwidthRequest(const H225_BandwidthRequest &);
     virtual BOOL OnReceiveBandwidthConfirm(const H225_BandwidthConfirm &);
     virtual BOOL OnReceiveBandwidthReject(const H225_BandwidthReject &);
-    virtual void OnReceiveDisengageRequest(const H225_DisengageRequest &);
+    virtual BOOL OnReceiveDisengageRequest(const H225_DisengageRequest &);
     virtual BOOL OnReceiveDisengageConfirm(const H225_DisengageConfirm &);
     virtual BOOL OnReceiveDisengageReject(const H225_DisengageReject &);
-    virtual void OnReceiveLocationRequest(const H225_LocationRequest &);
+    virtual BOOL OnReceiveLocationRequest(const H225_LocationRequest &);
     virtual BOOL OnReceiveInfoRequestAck(const H225_InfoRequestAck &);
     virtual BOOL OnReceiveInfoRequestNak(const H225_InfoRequestNak &);
     virtual BOOL OnReceiveInfoRequestResponse(const H225_InfoRequestResponse &);
     virtual BOOL OnReceiveResourcesAvailableConfirm(const H225_ResourcesAvailableConfirm &);
+
+    /**Get the security context for this RAS connection.
+      */
+    virtual H235Authenticators GetAuthenticators() const;
   //@}
 
   protected:
     BOOL CheckGatekeeperIdentifier(
       unsigned optionalField,
       const PASN_Sequence & pdu,
-      const char * pdu_name,
       const H225_GatekeeperIdentifier & identifier
     );
     BOOL GetRegisteredEndPoint(
       unsigned rejectTag,
+      unsigned securityRejectTag,
       PASN_Choice & reject,
-      const char * pdu_name,
-      const H225_EndpointIdentifier & identifier,
-      H323RegisteredEndPoint * & ep
+      unsigned securityField,
+      const PASN_Sequence & pdu,
+      const H225_ArrayOf_CryptoH323Token & cryptoTokens,
+      const H225_EndpointIdentifier & identifier
     );
 
-    H323GatekeeperServer & gatekeeper;
+    H323GatekeeperServer   & gatekeeper;
+    H323RegisteredEndPoint * currentEP;
 };
 
 
@@ -503,7 +534,7 @@ class H323GatekeeperServer : public PObject
        If returns TRUE then a RCF is sent otherwise an RRJ is sent.
       */
     virtual BOOL OnRegistration(
-      H323RegisteredEndPoint * ep,
+      H323RegisteredEndPoint * & ep,
       const H225_RegistrationRequest & rrq,
       H225_RegistrationConfirm & rcf,
       H225_RegistrationReject & rrj
@@ -539,6 +570,7 @@ class H323GatekeeperServer : public PObject
       */
     virtual void RemoveEndPoint(
       H323RegisteredEndPoint * ep,
+      BOOL autoDelete = TRUE,
       BOOL lock = TRUE
     );
 
@@ -548,7 +580,8 @@ class H323GatekeeperServer : public PObject
        registered endpoint itself is removed from the database.
       */
     virtual void RemoveAlias(
-      const PString & alias
+      const PString & alias,
+      BOOL autoDelete = TRUE
     );
 
     /**Create a new registered endpoint object.
@@ -791,6 +824,16 @@ class H323GatekeeperServer : public PObject
       const PString & alias
     );
 
+    /**Get password for user if H.235 security active.
+       Returns FALSE if security active and user not found. Returns TRUE if
+       security active and user is found. Also returns TRUE if security
+       inactive, and the password is always the empty string.
+      */
+    virtual BOOL GetUsersPassword(
+      const PString & alias,
+      PString & password
+    ) const;
+
     /**Allocate or change the bandwidth being used.
        This function modifies the total bandwidth used by the all endpoints
        registered with this gatekeeper. It is called when ARQ or BRQ PDU's are
@@ -848,8 +891,13 @@ class H323GatekeeperServer : public PObject
     BOOL     overwriteOnSameSignalAddress;
     BOOL     canOnlyCallRegisteredEP;
     BOOL     canOnlyAnswerRegisteredEP;
+    BOOL     answerCallPreGrantedARQ;
+    BOOL     makeCallPreGrantedARQ;
     BOOL     isGatekeeperRouted;
     BOOL     aliasCanBeHostName;
+    BOOL     usingH235;
+
+    PStringToString passwords;
 
     // Dynamic variables
     PMutex mutex;

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2002  2001/08/01 05:26:35  robertj
+ * Revision 1.2003  2001/08/13 05:10:39  robertj
+ * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 2.1  2001/08/01 05:26:35  robertj
  * Moved media formats list from endpoint to connection.
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
@@ -222,9 +225,11 @@ class OpalConnection : public PObject
     enum AnswerCallResponse {
       AnswerCallNow,      /// Answer the call continuing with the connection.
       AnswerCallDenied,   /// Refuse the call sending a release complete.
-      AnswerCallPending,  /// Send an Alerting PDU and wait for AnsweringCall()
+      AnswerCallAlert,  /// Send an Alerting PDU and wait for AnsweringCall()
+      AnswerCallPending = AnswerCallAlert,
       AnswerCallDeferred, /// As for AnswerCallPending but does not send Alerting PDU
       AnswerCallAlertWithMedia, /// As for AnswerCallPending but starts media channels
+      AnswerCallDeferredWithMedia, /// As for AnswerCallPending but starts media channels
       NumAnswerCallResponses
     };
 

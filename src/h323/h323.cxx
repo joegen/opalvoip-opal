@@ -24,13 +24,34 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2002  2001/08/01 05:15:22  robertj
+ * Revision 1.2003  2001/08/13 05:10:39  robertj
+ * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 2.1  2001/08/01 05:15:22  robertj
  * Moved default session ID's to OpalMediaFormat class.
  * Added setting of connections capabilities from other connections in
  *   calls media format list.
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.190  2001/08/13 01:27:03  robertj
+ * Changed GK admission so can return multiple aliases to be used in
+ *   setup packet, thanks Nick Hoath.
+ *
+ * Revision 1.189  2001/08/06 03:08:56  robertj
+ * Fission of h323.h to h323ep.h & h323con.h, h323.h now just includes files.
+ *
+ * Revision 1.188  2001/08/03 03:49:57  craigs
+ * Fixed problem with AnswerCallDeferredWithMedia not working with fastStart
+ * on some machine
+ *
+ * Revision 1.187  2001/08/02 04:32:17  robertj
+ * Added ability for AdmissionRequest to alter destination alias used in
+ *   the outgoing call. Thanks Ben Madsen & Graeme Reid.
+ *
+ * Revision 1.186  2001/08/01 00:46:16  craigs
+ * Added ability to early start without Alerting
  *
  * Revision 1.185  2001/07/19 09:29:47  robertj
  * Adde X.880 invoke reject if get global opcode.
@@ -1577,6 +1598,7 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
   // if the application indicates not to contine, then send a Q931 Release Complete PDU
   H323SignalPDU alertingPDU;
   H225_Alerting_UUIE & alerting = alertingPDU.BuildAlerting(*this);
+
   if (!OnIncomingCall(setupPDU, alertingPDU)) {
     Release(EndedByNoAccept);
     PTRACE(1, "H225\tApplication not accepting calls");
@@ -1652,45 +1674,88 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
   BOOL ctResponseSent = FALSE;
 
   // If pending response wait
-  while ((answerResponse == AnswerCallPending) ||
-         (answerResponse == AnswerCallDeferred) ||
-         (answerResponse == AnswerCallAlertWithMedia)) {
+  while ((answerResponse != AnswerCallNow) && (answerResponse != AnswerCallDenied)) {
 
     // send alerting PDU if required
-    if (answerResponse == AnswerCallPending || answerResponse == AnswerCallAlertWithMedia) {
-      // send Q931 Alerting PDU
-      PTRACE(3, "H225\tSending Alerting PDU");
-      HandleTunnelPDU(setupPDU, &alertingPDU);
+    switch (answerResponse) {
+      case AnswerCallPending:
+      case AnswerCallAlertWithMedia :
+        // send Q931 Alerting PDU
+        PTRACE(3, "H225\tSending Alerting PDU");
+        HandleTunnelPDU(setupPDU, &alertingPDU);
 
-      if (!setup.m_mediaWaitForConnect && answerResponse == AnswerCallAlertWithMedia) {
-        if (SendFastStartAcknowledge(alerting.m_fastStart))
-          alerting.IncludeOptionalField(H225_Alerting_UUIE::e_fastStart);
-        else {
-          // Do early H.245 start
-          earlyStart = TRUE;
-          if (!h245Tunneling && controlChannel == NULL) {
-            if (!CreateIncomingControlChannel(alerting.m_h245Address))
-              return FALSE;
+        if (!setup.m_mediaWaitForConnect && answerResponse == AnswerCallAlertWithMedia) {
+          if (SendFastStartAcknowledge(alerting.m_fastStart))
+            alerting.IncludeOptionalField(H225_Alerting_UUIE::e_fastStart);
+          else {
+            // Do early H.245 start
+            earlyStart = TRUE;
+            if (!h245Tunneling && controlChannel == NULL) {
+              if (!CreateIncomingControlChannel(alerting.m_h245Address))
+                return FALSE;
 
-            alerting.IncludeOptionalField(H225_Alerting_UUIE::e_h245Address);
+              alerting.IncludeOptionalField(H225_Alerting_UUIE::e_h245Address);
+            }
           }
         }
-      }
 
-      // Do we need to send a callTransferSetup return result APDU?
-      if ((ctInvokeId != -1) && (ctResponseSent == FALSE))
-      {
-        H450ServiceAPDU serviceAPDU;
+        // Do we need to send a callTransferSetup return result APDU?
+        if ((ctInvokeId != -1) && (ctResponseSent == FALSE))
+        {
+          H450ServiceAPDU serviceAPDU;
 
-        serviceAPDU.BuildReturnResult(ctInvokeId);
-        alertingPDU.AttachSupplementaryServiceAPDU(serviceAPDU);
-        ctResponseSent = TRUE;
-      }
+          serviceAPDU.BuildReturnResult(ctInvokeId);
+          alertingPDU.AttachSupplementaryServiceAPDU(serviceAPDU);
+          ctResponseSent = TRUE;
+        }
 
-      if (!WriteSignalPDU(alertingPDU))
-        return FALSE;
+        if (!WriteSignalPDU(alertingPDU))
+          return FALSE;
 
-      answerResponse = AnswerCallDeferred;
+        answerResponse = AnswerCallDeferred;
+        break;
+
+      case AnswerCallDeferredWithMedia :
+        if (!setup.m_mediaWaitForConnect) {
+          H323SignalPDU want245PDU;
+          H225_Progress_UUIE & prog = want245PDU.BuildProgress(*this);
+
+          BOOL sendPDU = TRUE;
+
+          if (SendFastStartAcknowledge(prog.m_fastStart))
+            prog.IncludeOptionalField(H225_Progress_UUIE::e_fastStart);
+          else {
+            // Do early H.245 start
+            H225_Facility_UUIE & fac = *want245PDU.BuildFacility(*this, FALSE);
+            fac.m_reason.SetTag(H225_FacilityReason::e_startH245);
+            earlyStart = TRUE;
+            if (!h245Tunneling && (controlChannel == NULL)) {
+              if (!CreateIncomingControlChannel(fac.m_h245Address))
+                return FALSE;
+
+              fac.IncludeOptionalField(H225_Facility_UUIE::e_h245Address);
+            } else
+              sendPDU = FALSE;
+          }
+
+          if (sendPDU) {
+
+            // Do we need to send a callTransferSetup return result APDU?
+            if ((ctInvokeId != -1) && (ctResponseSent == FALSE))
+            {
+              H450ServiceAPDU serviceAPDU;
+
+              serviceAPDU.BuildReturnResult(ctInvokeId);
+              want245PDU.AttachSupplementaryServiceAPDU(serviceAPDU);
+              ctResponseSent = TRUE;
+            }
+
+            if (!WriteSignalPDU(want245PDU))
+              return FALSE;
+          }
+
+          answerResponse = AnswerCallDeferred;
+        }
     }
 
     // Wait for answer from application, but check for call being cleared in
@@ -2155,8 +2220,9 @@ H323Connection::CallEndReason H323Connection::SendSignalSetup(const PString & al
 
   // Check for gatekeeper and do admission check if have one
   H323Gatekeeper * gatekeeper = endpoint.GetGatekeeper();
+  H225_ArrayOf_AliasAddress newAliasAddress;
   if (gatekeeper != NULL) {
-    if (!gatekeeper->AdmissionRequest(*this, gatekeeperRoute, alias.IsEmpty())) {
+    if (!gatekeeper->AdmissionRequest(*this, gatekeeperRoute, newAliasAddress, alias.IsEmpty())) {
       unsigned reason = gatekeeper->GetRejectReason();
       PTRACE(1, "H225\tGatekeeper refused admission: "
              << H225_AdmissionRejectReason(reason).GetTagName());
@@ -2168,6 +2234,13 @@ H323Connection::CallEndReason H323Connection::SendSignalSetup(const PString & al
       }
       return EndedByGatekeeper;
     }
+  }
+
+  // Update the field e_destinationAddress in the SETUP PDU to reflect the new 
+  // alias received in the ACF (m_destinationInfo).
+  if (newAliasAddress.GetSize() > 0) {
+    setup.IncludeOptionalField(H225_Setup_UUIE::e_destinationAddress);
+    setup.m_destinationAddress = newAliasAddress;
   }
 
   if (!signallingChannel->SetRemoteAddress(gatekeeperRoute)) {
@@ -2239,7 +2312,8 @@ H323Connection::CallEndReason H323Connection::SendSignalSetup(const PString & al
 
   // Do this again (was done when PDU was constructed) in case
   // OnSendSignalSetup() changed something.
-  setupPDU.SetQ931Fields(*this);
+  setupPDU.SetQ931Fields(*this, TRUE);
+  setupPDU.GetQ931().GetCalledPartyNumber(remotePartyNumber);
 
   fastStartState = FastStartDisabled;
 

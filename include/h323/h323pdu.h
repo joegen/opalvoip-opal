@@ -27,8 +27,20 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.h,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 1.2002  2001/08/13 05:10:39  robertj
+ * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.40  2001/08/10 11:03:49  robertj
+ * Major changes to H.235 support in RAS to support server.
+ *
+ * Revision 1.39  2001/08/06 07:44:52  robertj
+ * Fixed problems with building without SSL
+ *
+ * Revision 1.38  2001/08/06 03:08:11  robertj
+ * Fission of h323.h to h323ep.h & h323con.h, h323.h now just includes files.
  *
  * Revision 1.37  2001/06/14 06:25:13  robertj
  * Added further H.225 PDU build functions.
@@ -169,8 +181,8 @@
 
 class H450ServiceAPDU;
 class H323Connection;
-
 class H323TransportAddress;
+class H225_RAS;
 class OpalTransport;
 
 
@@ -370,6 +382,8 @@ class H323SignalPDU : public H225_H323_UserInformation
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+
 /**Wrapper class for the H323 control channel.
  */
 class H323ControlPDU : public H245_MultimediaSystemControlMessage
@@ -478,46 +492,53 @@ class H323ControlPDU : public H245_MultimediaSystemControlMessage
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+
+/**Wrapper class for the H323 gatekeeper RAS channel.
+ */
 class H323RasPDU : public H225_RasMessage
 {
   PCLASSINFO(H323RasPDU, H225_RasMessage);
 
   public:
-    virtual H225_GatekeeperRequest     & BuildGatekeeperRequest(unsigned seqNum);
-    virtual H225_GatekeeperConfirm     & BuildGatekeeperConfirm(unsigned seqNum);
-    virtual H225_GatekeeperReject      & BuildGatekeeperReject(unsigned seqNum, unsigned reason = H225_GatekeeperRejectReason::e_undefinedReason);
-    virtual H225_RegistrationRequest   & BuildRegistrationRequest(unsigned seqNum);
-    virtual H225_RegistrationConfirm   & BuildRegistrationConfirm(unsigned seqNum);
-    virtual H225_RegistrationReject    & BuildRegistrationReject(unsigned seqNum, unsigned reason = H225_RegistrationRejectReason::e_undefinedReason);
-    virtual H225_UnregistrationRequest & BuildUnregistrationRequest(unsigned seqNum);
-    virtual H225_UnregistrationConfirm & BuildUnregistrationConfirm(unsigned seqNum);
-    virtual H225_UnregistrationReject  & BuildUnregistrationReject(unsigned seqNum, unsigned reason = H225_UnregRejectReason::e_undefinedReason);
-    virtual H225_LocationRequest       & BuildLocationRequest(unsigned seqNum);
-    virtual H225_LocationConfirm       & BuildLocationConfirm(unsigned seqNum);
-    virtual H225_LocationReject        & BuildLocationReject(unsigned seqNum, unsigned reason = H225_LocationRejectReason::e_undefinedReason);
-    virtual H225_AdmissionRequest      & BuildAdmissionRequest(unsigned seqNum);
-    virtual H225_AdmissionConfirm      & BuildAdmissionConfirm(unsigned seqNum);
-    virtual H225_AdmissionReject       & BuildAdmissionReject(unsigned seqNum, unsigned reason = H225_AdmissionRejectReason::e_undefinedReason);
-    virtual H225_DisengageRequest      & BuildDisengageRequest(unsigned seqNum);
-    virtual H225_DisengageConfirm      & BuildDisengageConfirm(unsigned seqNum);
-    virtual H225_DisengageReject       & BuildDisengageReject(unsigned seqNum, unsigned reason = H225_DisengageRejectReason::e_securityDenial);
-    virtual H225_BandwidthRequest      & BuildBandwidthRequest(unsigned seqNum);
-    virtual H225_BandwidthConfirm      & BuildBandwidthConfirm(unsigned seqNum, unsigned bandwidth = 0);
-    virtual H225_BandwidthReject       & BuildBandwidthReject(unsigned seqNum, unsigned reason = H225_BandRejectReason::e_undefinedReason);
-    virtual H225_InfoRequestResponse   & BuildInfoRequestResponse(unsigned seqNum);
-    virtual H225_UnknownMessageResponse& BuildUnknownMessageResponse(unsigned seqNum);
+    H323RasPDU(H225_RAS & ras);
 
-    virtual BOOL Read(OpalTransport & transport);
-    virtual BOOL Write(OpalTransport & transport) const;
+    H225_GatekeeperRequest     & BuildGatekeeperRequest(unsigned seqNum);
+    H225_GatekeeperConfirm     & BuildGatekeeperConfirm(unsigned seqNum);
+    H225_GatekeeperReject      & BuildGatekeeperReject(unsigned seqNum, unsigned reason = H225_GatekeeperRejectReason::e_undefinedReason);
+    H225_RegistrationRequest   & BuildRegistrationRequest(unsigned seqNum);
+    H225_RegistrationConfirm   & BuildRegistrationConfirm(unsigned seqNum);
+    H225_RegistrationReject    & BuildRegistrationReject(unsigned seqNum, unsigned reason = H225_RegistrationRejectReason::e_undefinedReason);
+    H225_UnregistrationRequest & BuildUnregistrationRequest(unsigned seqNum);
+    H225_UnregistrationConfirm & BuildUnregistrationConfirm(unsigned seqNum);
+    H225_UnregistrationReject  & BuildUnregistrationReject(unsigned seqNum, unsigned reason = H225_UnregRejectReason::e_undefinedReason);
+    H225_LocationRequest       & BuildLocationRequest(unsigned seqNum);
+    H225_LocationConfirm       & BuildLocationConfirm(unsigned seqNum);
+    H225_LocationReject        & BuildLocationReject(unsigned seqNum, unsigned reason = H225_LocationRejectReason::e_undefinedReason);
+    H225_AdmissionRequest      & BuildAdmissionRequest(unsigned seqNum);
+    H225_AdmissionConfirm      & BuildAdmissionConfirm(unsigned seqNum);
+    H225_AdmissionReject       & BuildAdmissionReject(unsigned seqNum, unsigned reason = H225_AdmissionRejectReason::e_undefinedReason);
+    H225_DisengageRequest      & BuildDisengageRequest(unsigned seqNum);
+    H225_DisengageConfirm      & BuildDisengageConfirm(unsigned seqNum);
+    H225_DisengageReject       & BuildDisengageReject(unsigned seqNum, unsigned reason = H225_DisengageRejectReason::e_securityDenial);
+    H225_BandwidthRequest      & BuildBandwidthRequest(unsigned seqNum);
+    H225_BandwidthConfirm      & BuildBandwidthConfirm(unsigned seqNum, unsigned bandwidth = 0);
+    H225_BandwidthReject       & BuildBandwidthReject(unsigned seqNum, unsigned reason = H225_BandRejectReason::e_undefinedReason);
+    H225_InfoRequestResponse   & BuildInfoRequestResponse(unsigned seqNum);
+    H225_UnknownMessageResponse& BuildUnknownMessageResponse(unsigned seqNum);
 
-    virtual BOOL OnReadPDU(
-      PPER_Stream & strm
-    );
-    virtual BOOL OnWritePDU(
-      PPER_Stream & strm
-    ) const;
+    BOOL Read(OpalTransport & transport);
+    BOOL Write(OpalTransport & transport) const;
+
+    const PBYTEArray & GetLastReceivedRawPDU() const { return rawPDU; }
+
+  protected:
+    H225_RAS  & rasChannel;
+    PPER_Stream rawPDU;
 };
 
+
+/////////////////////////////////////////////////////////////////////////////
 
 void H323SetAliasAddresses(const PStringList & name, H225_ArrayOf_AliasAddress & aliases);
 void H323SetAliasAddress(const PString & name, H225_AliasAddress & alias);
