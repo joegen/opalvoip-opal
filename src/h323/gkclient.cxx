@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2021  2004/08/14 07:56:30  rjongbloed
+ * Revision 1.2022  2005/01/16 23:07:33  csoutheren
+ * Fixed problem with IPv6 INADDR_ANY
+ *
+ * Revision 2.20  2004/08/14 07:56:30  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.19  2004/04/07 08:21:02  rjongbloed
@@ -2184,7 +2187,7 @@ void H323Gatekeeper::Connect(const H323TransportAddress & address,
                              const PString & gkid)
 {
   if (transport == NULL)
-    transport = new H323TransportUDP(endpoint, INADDR_ANY);
+    transport = new H323TransportUDP(endpoint, PIPSocket::GetDefaultIpAny());
 
   transport->SetRemoteAddress(address);
   transport->Connect();
