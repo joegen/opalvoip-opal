@@ -22,7 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2016  2002/11/12 12:06:34  robertj
+# Revision 1.2017  2003/01/15 00:08:18  robertj
+# Updated to OpenH323 v1.10.3
+#
+# Revision 2.15  2002/11/12 12:06:34  robertj
 # Fixed Solaris compatibility
 #
 # Revision 2.14  2002/11/11 07:43:32  robertj
@@ -139,6 +142,9 @@ ASN_CXX_FILES += $(ASN_SRCDIR)/h235.cxx
 
 ASN_H_FILES   += $(ASN_INCDIR)/h245.h
 ASN_CXX_FILES += $(ASN_SRCDIR)/h245_1.cxx $(ASN_SRCDIR)/h245_2.cxx $(ASN_SRCDIR)/h245_3.cxx
+
+ASN_H_FILES   += $(ASN_INCDIR)/h248.h
+ASN_CXX_FILES += $(ASN_SRCDIR)/h248.cxx
 
 .PRECIOUS: $(ASN_CXX_FILES) $(ASN_H_FILES)
 
@@ -496,7 +502,9 @@ $(DEPDIR)/%.dep : $(ASN_SRCDIR)/%.cxx
 #### h225
 
 $(ASN_SRCDIR)/h225_1.cxx \
-$(ASN_SRCDIR)/h225_2.cxx : $(ASN_INCDIR)/h225.h $(ASN_SRCDIR)/h235_t.cxx
+$(ASN_SRCDIR)/h225_1.dep \
+$(ASN_SRCDIR)/h225_2.cxx \
+$(ASN_SRCDIR)/h225_2.dep : $(ASN_INCDIR)/h225.h $(ASN_SRCDIR)/h235_t.cxx
 
 $(ASN_INCDIR)/h225.h: $(ASN_SRCDIR)/h225.asn $(ASN_INCDIR)/h235.h $(ASN_INCDIR)/h245.h .asnparser.version
 	$(ASNPARSER) -s2 -m H225 -r MULTIMEDIA-SYSTEM-CONTROL=H245 -c $<
@@ -506,12 +514,15 @@ $(ASN_INCDIR)/h225.h: $(ASN_SRCDIR)/h225.asn $(ASN_INCDIR)/h235.h $(ASN_INCDIR)/
 #### h245
 
 $(ASN_SRCDIR)/h245_1.cxx \
+$(ASN_SRCDIR)/h245_1.dep \
 $(ASN_SRCDIR)/h245_2.cxx \
-$(ASN_SRCDIR)/h245_3.cxx : $(ASN_INCDIR)/h245.h
+$(ASN_SRCDIR)/h245_2.dep \
+$(ASN_SRCDIR)/h245_3.cxx \
+$(ASN_SRCDIR)/h245_3.dep : $(ASN_INCDIR)/h245.h
 
 
 $(ASN_INCDIR)/h245.h: $(ASN_SRCDIR)/h245.asn .asnparser.version
-	$(ASNPARSER) -s3 -m H245 -c $<
+	$(ASNPARSER) -s3 -m H245 --classheader "H245_AudioCapability=#ifndef PASN_NOPRINTON\nvoid PrintOn(ostream & strm) const;\n#endif" -c $<
 	mv $(basename $<).h $@
 
 
