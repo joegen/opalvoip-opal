@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjunix.cxx,v $
- * Revision 1.2010  2003/03/24 07:18:29  robertj
+ * Revision 1.2011  2004/02/19 10:47:05  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.9  2003/03/24 07:18:29  robertj
  * Added registration system for LIDs so can work with various LID types by
  *   name instead of class instance.
  *
@@ -57,6 +60,34 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.143  2004/02/06 10:19:57  csoutheren
+ * Added PThread::Yield to ReadFrame and WriteFrame calls to see if this
+ * fixes the starvation problem on 2.6 kernels
+ *
+ * Revision 1.142  2004/01/31 13:13:22  csoutheren
+ * Fixed problem with HAS_IXJ being tested but not included
+ *
+ * Revision 1.141  2004/01/09 10:13:33  dereksmithies
+ * Reads hookstate at startup, and does not assume phone is on hook.
+ *
+ * Revision 1.140  2003/12/23 22:52:56  dsandras
+ * IXJ devices that fail opening because they are busy should be listed in the list of detected devices.
+ *
+ * Revision 1.139  2003/11/10 12:04:25  dsandras
+ * Added missing math.h include.
+ *
+ * Revision 1.138  2003/10/24 03:39:54  dereksmithies
+ * Add card dependant dsp maximums. and log scaling volumes.
+ *
+ * Revision 1.137  2003/10/17 01:33:24  dereksmithies
+ * Code now correctly reports the type string of the card.
+ *
+ * Revision 1.136  2003/04/29 08:31:44  robertj
+ * Fixed return type of get wink function.
+ *
+ * Revision 1.135  2003/04/28 01:47:52  dereks
+ * Add ability to set/get wink duration for ixj device.
  *
  * Revision 1.134  2002/11/05 04:44:20  robertj
  * Fixed typo
@@ -493,7 +524,10 @@
 
 #include <lids/ixjlid.h>
 
+#ifdef HAS_IXJ
+
 #include <sys/time.h>
+#include <math.h>
 
 #define new PNEW
 
@@ -511,7 +545,7 @@
 #endif
 
 
-#define	IsLineJACK()	(dwCardType==3)
+#define	IsLineJACK()	(dwCardType == LineJACK)
 
 #define	FLASH_TIME	1000
 #define	MANUAL_FLASH		// undefine to use FLASH exception
@@ -795,6 +829,8 @@ BOOL OpalIxJDevice::Open(const PString & device)
   int new_handle = os_handle = ::open(deviceName, O_RDWR);
   if (!ConvertOSError(new_handle))
     return FALSE;
+  currentHookState = lastHookState = 
+    (IOCTL(os_handle, PHONE_HOOKSTATE) != 0);
 
   // add the new handle to the exception info
   {
@@ -809,7 +845,7 @@ BOOL OpalIxJDevice::Open(const PString & device)
     memset(&info, 0, sizeof(info));
 
     info.fd  = os_handle;
-    info.hookState  = FALSE;
+    info.hookState  = currentHookState;
     info.hasRing    = FALSE;
     info.hasWink    = FALSE;
     info.hasFlash   = FALSE;
@@ -862,7 +898,31 @@ BOOL OpalIxJDevice::Open(const PString & device)
   os_handle = new_handle;
 
   // determine if the card is a phonejack or linejack
-  dwCardType = IOCTL(os_handle, IXJCTL_CARDTYPE)/100;
+  dwCardType = IOCTL(os_handle, IXJCTL_CARDTYPE);
+  switch (dwCardType) {
+  case 3:
+    dwCardType = PhoneJACK_PCI_TJ;
+    break;
+  case 0x100: 
+  case 100:
+    dwCardType = PhoneJACK;
+    break;
+  case 0x300:
+  case 300:
+    dwCardType = LineJACK;
+    break;
+  case 0x400:
+  case 400:
+    dwCardType = PhoneJACK_Lite;
+    break;
+  case 0x500:
+  case 500: 
+    dwCardType = PhoneJACK_PCI;
+    break;
+  case 0x600:
+  case 600:
+    dwCardType = PhoneCARD;
+  }
 
   char * str = ::getenv("IXJ_COUNTRY");
   if (str != NULL) {
@@ -876,8 +936,6 @@ BOOL OpalIxJDevice::Open(const PString & device)
   pstnIsOffHook = FALSE;
   gotWink       = FALSE;
   IOCTL2(os_handle, PHONE_PSTN_SET_STATE, PSTN_ON_HOOK);
-
-  lastHookState = FALSE;
 
   inRawMode     = FALSE;
 
@@ -918,23 +976,26 @@ BOOL OpalIxJDevice::Close()
 PString OpalIxJDevice::GetName() const
 {
   switch (dwCardType) {
-    case 0:
-    case 1:
-      return "Internet PhoneJACK-ISA " + deviceName;
-
-    case 3:
-      return "Internet LineJACK " + deviceName;
-
-    case 4:
-      return "Internet PhoneJACK-Lite " + deviceName;
-
-    case 5:
-      return "Internet PhoneJACK-PCI " + deviceName;
-
-    case 6:
-      return "Internet PhoneCARD " + deviceName;
+  case 0:
+  case PhoneJACK:
+    return "Internet PhoneJACK-ISA " + deviceName;
+    
+  case LineJACK:
+    return "Internet LineJACK " + deviceName;
+    
+  case PhoneJACK_Lite:
+    return "Internet PhoneJACK-Lite " + deviceName;
+    
+  case PhoneJACK_PCI:
+    return "Internet PhoneJACK-PCI " + deviceName;
+    
+  case PhoneCARD:
+    return "Internet PhoneCARD " + deviceName;
+    
+  case PhoneJACK_PCI_TJ:
+    return "Internet PhoneJack-PCI " + deviceName;
   }
-
+  
   return "xJACK " + deviceName;
 }
 
@@ -945,7 +1006,9 @@ PStringArray OpalIxJDevice::GetAllNames() const
 
 unsigned OpalIxJDevice::GetLineCount()
 {
-  return IsLineJACK() ? NumLines : 1;
+  return 1;     
+  /*Each card has just one line that can be active. 
+    Consequently, return (IsLineJACK() ? NumLines : 1); is wrong.*/
 }
 
 BOOL OpalIxJDevice::IsLinePresent(unsigned line, BOOL /* force */)
@@ -954,7 +1017,7 @@ BOOL OpalIxJDevice::IsLinePresent(unsigned line, BOOL /* force */)
     return FALSE;
 
   BOOL stat = IOCTL(os_handle, IXJCTL_PSTN_LINETEST) == 1;
-  PThread::Current()->Sleep(2000);
+  PThread::Sleep(2000);
 
   // clear ring signal status
   IsLineRinging(line);
@@ -1398,8 +1461,8 @@ BOOL OpalIxJDevice::SetRawCodec(unsigned line)
 
   // set the new (maximum) volumes
   SetAEC         (line, AECOff);
-  SetRecordVolume(line, 0x100);
-  SetPlayVolume  (line, 0x100);
+  SetRecordVolume(line, 100);
+  SetPlayVolume  (line, 100);
 
   // stop values from changing
   inRawMode = TRUE;
@@ -1483,121 +1546,125 @@ static const PINDEX G723count[4] = { 24, 20, 4, 1 };
 
 BOOL OpalIxJDevice::ReadFrame(unsigned, void * buffer, PINDEX & count)
 {
-  PWaitAndSignal rmutex(readMutex);
+  {
+    PWaitAndSignal rmutex(readMutex);
 
-  count = 0;
+    count = 0;
 
-  if (readStopped) {
-      PTRACE(1, "IXJ\tRead stopped, so ReadFrame returns false");    
-      return FALSE;
-  }
+    if (readStopped) {
+        PTRACE(1, "IXJ\tRead stopped, so ReadFrame returns false");    
+        return FALSE;
+    }
 
-  if (writeStopped) {
-    PThread::Current()->Sleep(30);
-    memset(buffer, 0, readFrameSize);
+    if (writeStopped) {
+      PThread::Sleep(30);
+      memset(buffer, 0, readFrameSize);
+      switch (CodecInfo[readCodecType].mode) {
+        case G723_63:
+        case G723_53:
+          *((DWORD *)buffer) = 0x02;
+          count = 4;
+          break;
+        case G729B:
+          *((WORD *)buffer) = 0;
+          count = 2;
+          break;
+        default:
+          memset(buffer, 0, readFrameSize);
+          count = readFrameSize;
+          break;
+      }
+      return TRUE;
+    }
+  
+    WORD temp_frame_buffer[48];   // 30ms = 12 frames = 48 vectors = 48 WORDS for unpacked vectors
+    void * readBuf;
+    int    readLen;
+    switch (CodecInfo[readCodecType].mode) {
+      case G728 :
+        readBuf = temp_frame_buffer;
+        readLen = sizeof(temp_frame_buffer);
+        break;
+      case G729B :
+        readBuf = temp_frame_buffer;
+        readLen = 12;
+        break;
+      default :
+        readBuf = buffer;
+        readLen = readFrameSize;
+    }
+  
+    for (;;) {
+      fd_set rfds;
+      FD_ZERO(&rfds);
+      FD_SET(os_handle, &rfds);
+      struct timeval ts;
+      ts.tv_sec = 30;
+      ts.tv_usec = 0;
+  #if PTRACING
+      PTime then;
+  #endif
+      int stat = ::select(os_handle+1, &rfds, NULL, NULL, &ts);
+      if (stat == 0) {
+        PTRACE(1, "IXJ\tRead timeout:" << (PTime() - then));
+        return FALSE;
+      }
+      
+      if (stat > 0) {
+        stat = ::read(os_handle, readBuf, readLen);
+        if (stat == (int)readLen)
+          break;
+      }
+  
+      if ((stat >= 0) || (errno != EINTR)) {
+        PTRACE(1, "IXJ\tRead error = " << errno);
+        return FALSE;
+      }
+  
+      PTRACE(1, "IXJ\tRead EINTR");
+    }
+  
     switch (CodecInfo[readCodecType].mode) {
       case G723_63:
       case G723_53:
-        *((DWORD *)buffer) = 0x02;
-        count = 4;
+        count = G723count[(*(BYTE *)readBuf)&3];
         break;
-      case G729B:
-        *((WORD *)buffer) = 0;
-        count = 2;
-        break;
-      default:
-        memset(buffer, 0, readFrameSize);
+  
+      case G728 :
+        // for G728, pack four x 4 vectors
+        PINDEX i;
+        for (i = 0; i < 12; i++)
+          G728_Pack(temp_frame_buffer+i*4, ((BYTE *)buffer)+i*5);
         count = readFrameSize;
         break;
-    }
-    return TRUE;
-  }
-
-  WORD temp_frame_buffer[48];   // 30ms = 12 frames = 48 vectors = 48 WORDS for unpacked vectors
-  void * readBuf;
-  int    readLen;
-  switch (CodecInfo[readCodecType].mode) {
-    case G728 :
-      readBuf = temp_frame_buffer;
-      readLen = sizeof(temp_frame_buffer);
-      break;
-    case G729B :
-      readBuf = temp_frame_buffer;
-      readLen = 12;
-      break;
-    default :
-      readBuf = buffer;
-      readLen = readFrameSize;
-  }
-
-  for (;;) {
-    fd_set rfds;
-    FD_ZERO(&rfds);
-    FD_SET(os_handle, &rfds);
-    struct timeval ts;
-    ts.tv_sec = 30;
-    ts.tv_usec = 0;
-#if PTRACING
-    PTime then;
-#endif
-    int stat = ::select(os_handle+1, &rfds, NULL, NULL, &ts);
-    if (stat == 0) {
-      PTRACE(1, "IXJ\tRead timeout:" << (PTime() - then));
-      return FALSE;
-    }
-    
-    if (stat > 0) {
-      stat = ::read(os_handle, readBuf, readLen);
-      if (stat == (int)readLen)
+  
+      case G729B :
+        switch (temp_frame_buffer[0]) {
+          case 0 : // Silence
+            memset(buffer, 0, 10);
+            count = 10;
+            break;
+          case 1 : // Signal
+            memcpy(buffer, &temp_frame_buffer[1], 10);
+            count = 10;
+            break;
+          case 2 : // VAD
+            memcpy(buffer, &temp_frame_buffer[1], 2);
+            count = 2;
+            break;
+          default : // error
+            PTRACE(1, "IXJ\tIllegal value from codec in G729");
+            return FALSE;
+        }
         break;
+  
+      default :
+        count = readFrameSize;
     }
-
-    if ((stat >= 0) || (errno != EINTR)) {
-      PTRACE(1, "IXJ\tRead error = " << errno);
-      return FALSE;
-    }
-
-    PTRACE(1, "IXJ\tRead EINTR");
   }
 
-  switch (CodecInfo[readCodecType].mode) {
-    case G723_63:
-    case G723_53:
-      count = G723count[(*(BYTE *)readBuf)&3];
-      break;
-
-    case G728 :
-      // for G728, pack four x 4 vectors
-      PINDEX i;
-      for (i = 0; i < 12; i++)
-        G728_Pack(temp_frame_buffer+i*4, ((BYTE *)buffer)+i*5);
-      count = readFrameSize;
-      break;
-
-    case G729B :
-      switch (temp_frame_buffer[0]) {
-        case 0 : // Silence
-          memset(buffer, 0, 10);
-          count = 10;
-          break;
-        case 1 : // Signal
-          memcpy(buffer, &temp_frame_buffer[1], 10);
-          count = 10;
-          break;
-        case 2 : // VAD
-          memcpy(buffer, &temp_frame_buffer[1], 2);
-          count = 2;
-          break;
-        default : // error
-          PTRACE(1, "IXJ\tIllegal value from codec in G729");
-          return FALSE;
-      }
-      break;
-
-    default :
-      count = readFrameSize;
-  }
-
+  PThread::Yield();
+  
   return TRUE;
 }
 
@@ -1621,104 +1688,108 @@ static void G728_Unpack(const BYTE * packed, unsigned short * unpacked)
 
 BOOL OpalIxJDevice::WriteFrame(unsigned, const void * buffer, PINDEX count, PINDEX & written)
 {
-  PWaitAndSignal rmutex(readMutex);
-
-  written = 0;
-
-  if (writeStopped) 
-    return FALSE;
-
-  if (readStopped) {
-    PThread::Current()->Sleep(30);
-    written = writeFrameSize;
-    return TRUE;
-  }
-
-  WORD temp_frame_buffer[48];
-  const void * writeBuf;
-  int writeLen;
-
-  switch (CodecInfo[writeCodecType].mode) {
-    case G723_63:
-    case G723_53:
-      writeBuf = buffer;
-      writeLen = 24;
-      written = G723count[(*(BYTE *)buffer)&3];
-      break;
-
-    case G728 :
-      writeBuf = temp_frame_buffer;
-      writeLen = sizeof(temp_frame_buffer);
-
-      // for G728, unpack twelve x 4 vectors
-      PINDEX i;
-      for (i = 0; i < 12; i++) 
-        G728_Unpack(((const BYTE *)buffer)+i*5, temp_frame_buffer+i*4);
-      written = 60;
-      break;
-
-    case G729B :
-      writeBuf = temp_frame_buffer;
-      writeLen = 12;
-
-      if (count == 2) {
-        temp_frame_buffer[0] = 2;
-        temp_frame_buffer[1] = *(const WORD *)buffer;
-        memset(&temp_frame_buffer[2], 0, 8);
-        written = 2;
-      }
-      else {
-        if (memcmp(buffer, "\0\0\0\0\0\0\0\0\0", 10) != 0)
-          temp_frame_buffer[0] = 1;
-        else
-          temp_frame_buffer[0] = 0;
-        memcpy(&temp_frame_buffer[1], buffer, 10);
-        written = 10;
-      }
-      break;
-
-    default :
-      writeBuf = buffer;
-      writeLen = writeFrameSize;
+  {
+    PWaitAndSignal rmutex(readMutex);
+  
+    written = 0;
+  
+    if (writeStopped) 
+      return FALSE;
+  
+    if (readStopped) {
+      PThread::Sleep(30);
       written = writeFrameSize;
-  }
-
-  if (count < written) {
-    osError = EINVAL;
-    PTRACE(1, "xJack\tWrite of too small a buffer : " << count << " vs " << written);
-    return FALSE;
-  }
-
-  for (;;) {
-
-    fd_set wfds;
-    FD_ZERO(&wfds);
-    FD_SET(os_handle, &wfds);
-    struct timeval ts;
-    ts.tv_sec = 5;
-    ts.tv_usec = 0;
-    int stat = ::select(os_handle+1, NULL, &wfds, NULL, &ts);
-
-    if (stat == 0) {
-      PTRACE(1, "IXJ\tWrite timeout");
-      return FALSE;
+      return TRUE;
     }
-
-    if (stat > 0) {
-      stat = ::write(os_handle, writeBuf, writeLen);
-      if (stat == (int)writeLen)
+  
+    WORD temp_frame_buffer[48];
+    const void * writeBuf;
+    int writeLen;
+  
+    switch (CodecInfo[writeCodecType].mode) {
+      case G723_63:
+      case G723_53:
+        writeBuf = buffer;
+        writeLen = 24;
+        written = G723count[(*(BYTE *)buffer)&3];
         break;
+  
+      case G728 :
+        writeBuf = temp_frame_buffer;
+        writeLen = sizeof(temp_frame_buffer);
+  
+        // for G728, unpack twelve x 4 vectors
+        PINDEX i;
+        for (i = 0; i < 12; i++) 
+          G728_Unpack(((const BYTE *)buffer)+i*5, temp_frame_buffer+i*4);
+        written = 60;
+        break;
+  
+      case G729B :
+        writeBuf = temp_frame_buffer;
+        writeLen = 12;
+  
+        if (count == 2) {
+          temp_frame_buffer[0] = 2;
+          temp_frame_buffer[1] = *(const WORD *)buffer;
+          memset(&temp_frame_buffer[2], 0, 8);
+          written = 2;
+        }
+        else {
+          if (memcmp(buffer, "\0\0\0\0\0\0\0\0\0", 10) != 0)
+            temp_frame_buffer[0] = 1;
+          else
+            temp_frame_buffer[0] = 0;
+          memcpy(&temp_frame_buffer[1], buffer, 10);
+          written = 10;
+        }
+        break;
+  
+      default :
+        writeBuf = buffer;
+        writeLen = writeFrameSize;
+        written = writeFrameSize;
     }
-
-    if ((stat >= 0) || (errno != EINTR)) {
-      PTRACE(1, "IXJ\tWrite error = " << errno);
+  
+    if (count < written) {
+      osError = EINVAL;
+      PTRACE(1, "xJack\tWrite of too small a buffer : " << count << " vs " << written);
       return FALSE;
     }
+  
+    for (;;) {
+  
+      fd_set wfds;
+      FD_ZERO(&wfds);
+      FD_SET(os_handle, &wfds);
+      struct timeval ts;
+      ts.tv_sec = 5;
+      ts.tv_usec = 0;
+      int stat = ::select(os_handle+1, NULL, &wfds, NULL, &ts);
+  
+      if (stat == 0) {
+        PTRACE(1, "IXJ\tWrite timeout");
+        return FALSE;
+      }
+  
+      if (stat > 0) {
+        stat = ::write(os_handle, writeBuf, writeLen);
+        if (stat == (int)writeLen)
+          break;
+      }
+  
+      if ((stat >= 0) || (errno != EINTR)) {
+        PTRACE(1, "IXJ\tWrite error = " << errno);
+        return FALSE;
+      }
 
-    PTRACE(1, "IXJ\tWrite EINTR");
+      PTRACE(1, "IXJ\tWrite EINTR");
+    }
   }
 
 //  PTRACE(4, "IXJ\tWrote " << writeLen << " bytes to codec");
+
+  PThread::Yield();
 
   return TRUE;
 }
@@ -1759,39 +1830,52 @@ BOOL OpalIxJDevice::IsAudioEnabled(unsigned line)
   return enabledAudioLine == line;
 }
 
-
-static unsigned ConvertVolume(unsigned volume, unsigned max)
+PINDEX OpalIxJDevice::LogScaleVolume(unsigned line, PINDEX volume, BOOL isPlay)
 {
-  // Use four tier logarithmic scale
-  unsigned zone1 = max/64;
-  if (volume < 25)
-    return volume*zone1/25;
+  PINDEX dspMax = isPlay ? 0x100 : 0x200;
 
-  unsigned zone2 = max/16;
-  if (volume < 50)
-    return (volume-25)*(zone2-zone1)/25 + zone1;
+  switch (dwCardType) {
+  case 0:
+  case PhoneJACK:
+    dspMax = isPlay ? 0x100 : 0x200;
+    break;
+  case LineJACK:
+    dspMax = 0x200;
+    break;
+  case PhoneJACK_Lite:
+    dspMax = 0x200;
+    break;
+  case PhoneJACK_PCI:
+    dspMax = 0x100;
+    break;
+  case PhoneCARD:
+    dspMax = 0x200;
+    break;    
+  case PhoneJACK_PCI_TJ:
+    if (line == POTSLine)
+      dspMax = 0x100;
+    else
+      dspMax = 0x60;
+  }
 
-  unsigned zone3 = max/4;
-  if (volume < 75)
-    return (volume-50)*(zone3-zone2)/25 + zone2;
+/* The dsp volume is exponential in nature.
+   You can plot this exponential function with gnuplot.
+   gnuplot
+   plot [t=0:100] exp((t/20) -1) / exp(4) */
+  PINDEX res = (PINDEX) (dspMax * exp((((double)volume) / 20.0) - 1) / exp(4.0));
 
-  if (volume < 100)
-    return (volume-75)*(max-zone3)/25 + zone3;
-
-  return max;
-}  
+  return res;
+}
  
 
-BOOL OpalIxJDevice::SetRecordVolume(unsigned, unsigned volume)
+BOOL OpalIxJDevice::SetRecordVolume(unsigned line, unsigned volume)
 {
   PWaitAndSignal mutex1(readMutex);
   userRecVol = volume;
   if ((aecLevel == AECAGC) || inRawMode)
     return TRUE;
 
-  // Need to figure out values for each card type here.
-  unsigned dspRecMax = 0x200;
-  return IOCTL2(os_handle, IXJCTL_REC_VOLUME, ConvertVolume(volume, dspRecMax));
+  return IOCTL2(os_handle, IXJCTL_REC_VOLUME, LogScaleVolume(line, volume, FALSE));
 }
 
 BOOL OpalIxJDevice::GetRecordVolume(unsigned, unsigned & volume)
@@ -1800,16 +1884,14 @@ BOOL OpalIxJDevice::GetRecordVolume(unsigned, unsigned & volume)
   return TRUE;
 }
 
-BOOL OpalIxJDevice::SetPlayVolume(unsigned, unsigned volume)
+BOOL OpalIxJDevice::SetPlayVolume(unsigned line, unsigned volume)
 {
   PWaitAndSignal mutex1(readMutex);
   userPlayVol = volume;
   if (inRawMode)
     return TRUE;
 
-  // Need to figure out values for each card type here.
-  unsigned dspPlayMax = 0x100;
-  return IOCTL2(os_handle, IXJCTL_PLAY_VOLUME, ConvertVolume(volume, dspPlayMax));
+  return IOCTL2(os_handle, IXJCTL_PLAY_VOLUME, LogScaleVolume(line, volume, TRUE));
 }
 
 BOOL OpalIxJDevice::GetPlayVolume(unsigned, unsigned & volume)
@@ -1839,6 +1921,24 @@ BOOL OpalIxJDevice::SetAEC(unsigned line, AECLevels level)
     SetRecordVolume(line, userRecVol);
 
   return TRUE;
+}
+
+
+unsigned OpalIxJDevice::GetWinkDuration(unsigned)
+{
+  if (!IsOpen())
+    return 0;
+
+  return IOCTL2(os_handle, IXJCTL_WINK_DURATION, 0);
+}
+
+
+BOOL OpalIxJDevice::SetWinkDuration(unsigned, unsigned winkDuration)
+{
+  if (!IsOpen())
+    return FALSE;  
+
+  return IOCTL2(os_handle, IXJCTL_WINK_DURATION, winkDuration);
 }
 
 
@@ -2026,11 +2126,11 @@ BOOL OpalIxJDevice::PlayDTMF(unsigned, const char * tones, DWORD onTime, DWORD o
 
     IOCTL2(os_handle, PHONE_PLAY_TONE, code);
 
-    PThread::Current()->Sleep(onTime + offTime);
+    PThread::Sleep(onTime + offTime);
 
     long countDown = 200;  // a tone longer than 2 seconds? I don't think so...
     while ((countDown > 0) && IOCTL(os_handle, PHONE_GET_TONE_STATE) != 0) {
-      PThread::Current()->Sleep(10);
+      PThread::Sleep(10);
       countDown--;
     }
     if (countDown == 0)
@@ -2356,13 +2456,15 @@ PStringArray OpalIxJDevice::GetDeviceNames()
   for (i = 0; i < 10; i++) {
     PString devName = psprintf("/dev/phone%i", i);
     int handle = ::open((const char *)devName, O_RDWR);
-    if (handle < 0)
+    if (handle < 0 && errno != EBUSY)
       continue;
     ::close(handle);
     array[j++] = devName;
   }
   return array;
 }
+
+#endif // HAS_IXJ
 
 
 /////////////////////////////////////////////////////////////////////////////

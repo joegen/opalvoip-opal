@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2018  2003/03/24 04:36:53  robertj
+ * Revision 1.2019  2004/02/19 10:47:05  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.17  2003/03/24 04:36:53  robertj
  * Changed StartListsners() so if have empty list, starts default.
  *
  * Revision 2.16  2003/03/17 10:27:00  robertj
@@ -195,6 +198,13 @@ BOOL OpalEndPoint::RemoveListener(OpalListener * listener)
 
   listeners.RemoveAll();
   return TRUE;
+}
+
+
+OpalTransportAddressArray OpalEndPoint::GetInterfaceAddresses(BOOL excludeLocalHost,
+                                                              OpalTransport * associatedTransport)
+{
+  return OpalGetInterfaceAddresses(listeners, excludeLocalHost, associatedTransport);
 }
 
 

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vblasterlid.cxx,v $
- * Revision 1.2006  2003/03/24 07:18:30  robertj
+ * Revision 1.2007  2004/02/19 10:47:05  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.5  2003/03/24 07:18:30  robertj
  * Added registration system for LIDs so can work with various LID types by
  *   name instead of class instance.
  *
@@ -39,6 +42,12 @@
  *
  * Revision 2.1  2002/01/22 06:28:43  robertj
  * Added voice blaster support
+ *
+ * Revision 1.9  2003/12/03 06:58:00  csoutheren
+ * More vblaster implementation
+ *
+ * Revision 1.8  2003/11/10 12:38:20  csoutheren
+ * Additional fixes for Fobbit Windows driver
  *
  * Revision 1.7  2002/09/03 06:25:00  robertj
  * Cosmetic change to formatting.
@@ -71,7 +80,7 @@
 
 #include <lids/vblasterlid.h>
 
-
+#define   STARTUP_TIMEOUT   500
 /*
 
   This code uses the VoIPBlaster interface as written by Dave Fobbitt (http://www.fobbit.com).
@@ -157,7 +166,8 @@ static BYTE blasterInit2[] =
     0x0a,0x00,0x0f
 };
 
-static u_char blasterInit3[] =
+// this gets sent each time the voice output goes idle
+static BYTE blasterInit3[] =
 {
     0x75,0x58,0x9b,0x04,0x72,0x00,0x00,0x11,
     0xe0,0x00,0x65,0x82,0x00,0x90,0x00,0x1c,
@@ -169,6 +179,50 @@ static u_char blasterInit3[] =
     0x3d,0xdb,0x77,0xd0,0x77,0x03,0x1f,0x05
 };
 
+// some silence data, for now only used in 'vblast_ring' to kill the dialtone
+static BYTE silence[] =
+{
+    0xd5,0x14,0x0a,0x0d,0x1a,0x00,0x00,0x0a,
+    0x80,0x00,0xaf,0x06,0x00,0x00,0xfc,0x24,
+    0x9b,0x70,0xcf,0xc0,0xa1,0x53,0x18,0x00,
+    0x08,0x04,0xfe,0x50,0x8f,0x12,0x50,0x50,
+    0x4b,0x32,0x56,0x77,0x15,0xe9,0x0f,0xe8,
+    0xd5,0xc8,0xad,0x68,0xc8,0x74,0xe4,0x27,
+    0x71,0xd8,0x87,0x34,0xad,0x60,0x07,0xa8,
+    0xb6,0x64,0x0f,0x44,0x59,0x02,0xf4,0x00,
+    0x0e,0x80,0xba,0x68,0x73,0x00,0xe0,0xdf,
+    0x82,0xf4,0xa3,0x1f,0x18,0xb3,0x70,0x2e,
+    0xdd,0x1c,0xb1,0x00,0x02,0xfc,0x07,0xde,
+    0x09,0xc2,0x5e,0x82,0xaf,0xbc,0x5a,0x6c,
+    0xa2,0x02,0xbb,0xac,0x65,0x47,0x99,0x74,
+    0xfe,0xf4,0xe5,0xf7,0x70,0x90,0xe7,0x21,
+    0x15,0x33,0x56,0x8a,0x77,0x50,0xb5,0x42,
+    0x51,0x17,0xf2,0x4c,0xa8,0xfc,0x10,0x60,
+    0x82,0x1e,0x50,0x2f,0xa4,0x57,0x31,0x1e,
+    0xdd,0xc0,0xaf,0x6f,0x4d,0x1f,0xf5,0x08,
+    0x18,0x90,0x15,0x7f,0x70,0x1e,0x60,0x3e,
+    0x15,0xfb,0xa0,0x0d,0xbd,0x60,0x90,0x6d,
+    0x65,0x43,0xb1,0xdc,0xc2,0xd5,0x19,0xe5,
+    0xe1,0xe8,0x27,0xe4,0xcf,0x82,0x39,0xec,
+    0x38,0x84,0x3b,0x75,0x51,0x3b,0xb1,0x70,
+    0xde,0x68,0xba,0x06,0x79,0x0f,0x76,0x18,
+    0x74,0x53,0x45,0x4f,0x83,0x52,0xa0,0xa0,
+    0x5d,0xc1,0xed,0xc4,0x9f,0x77,0x27,0x36,
+    0x83,0xf9,0x07,0x7f,0x28,0xf3,0x41,0x41,
+    0x85,0x94,0x15,0xc0,0x45,0x13,0xee,0x30,
+    0x54,0x8c,0xea,0x37,0x03,0xf8,0xae,0x1f,
+    0x85,0xe7,0xed,0x21,0x58,0x01,0xff,0xe5,
+    0x75,0xc3,0x09,0x05,0x12,0x00,0x26,0xa7,
+    0x0b,0x26,0x9f,0x81,0x26,0x50,0x06,0x97,
+    0x31,0xa4,0x3c,0xca,0x1d,0x97,0xc2,0x9d,
+    0x42,0x6d,0xcf,0xae,0xe6,0xe5,0x27,0x04,
+    0x03,0xc2,0x93,0x5d,0xa7,0x62,0xf1,0x87,
+    0x5d,0x41,0xe5,0x0a,0x0a,0x70,0x69,0x3f,
+    0xf1,0xf4,0xfe,0x0d,0x4e,0x27,0x97,0x5b,
+    0xb0,0x0b,0xe5,0x78,0xa5,0x26,0x09,0x49,
+    0x90,0xfc,0xf1,0x77,0x52,0x0c,0xdf,0xef,
+    0x7f,0x8d,0x84,0x15,0x48,0xc7,0xff,0x5b,
+};
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -196,6 +250,60 @@ BOOL OpalVoipBlasterDevice::Open(const PString & device)
     PTRACE(3, "vBlaster\tCould not open VoipBlaster device \"" << device << '"');
     return FALSE;
   }
+  if (!vBlaster.OpenData()) {
+    PTRACE(3, "vBlaster\tCould not open VoipBlaster data for device \"" << device << '"');
+    return FALSE;
+  }
+
+  // put device into setup mode
+  PTRACE(3, "vBlaster\tSending setup command");
+
+  // put the handset on hook, which should stop all voice data
+  vBlaster.WriteCommand(VoipBlasterInterface::Command_HS_ONHOOK); 
+
+  // flush all input
+  vBlaster.Flush(STARTUP_TIMEOUT);
+
+  vBlaster.WriteCommand(VoipBlasterInterface::Command_SETUP_MODE); 
+
+  // setup for incoming status
+  hookState = FALSE;
+  headset   = FALSE;
+  ringOn    = TRUE;     // so we can detect ring off
+  firstTime = FALSE;
+
+
+  //vBlaster.Flush(STARTUP_TIMEOUT);
+
+  vBlaster.WriteData(blasterInit1, sizeof(blasterInit1));
+
+  //vBlaster.Flush(STARTUP_TIMEOUT);
+
+  vBlaster.WriteData(blasterInit2, sizeof(blasterInit2));
+
+  //vBlaster.Flush(STARTUP_TIMEOUT);
+
+  int status = VoipBlasterInterface::Status_Empty;
+
+  for (int i = 3; ringOn && i > 0; i--) {
+
+    vBlaster.WriteCommand(VoipBlasterInterface::Command_VOL_3);
+    vBlaster.WriteCommand(VoipBlasterInterface::Command_RING_OFF);
+    vBlaster.WriteCommand(VoipBlasterInterface::Command_PHONE_ON);
+
+    PTimer timer(2000);
+
+    do {
+      status = vBlaster.ReadStatus(STARTUP_TIMEOUT);
+      if (status != VoipBlasterInterface::Status_Empty)
+        HandleStatus(status);
+    } while (ringOn && timer.IsRunning());
+  }
+
+  if (i == 0) {
+    PTRACE(3, "vBlaster\tCould not initialise");
+    return FALSE;
+  }
 
   // set up thread to read status pipe
   statusRunning = TRUE;
@@ -203,55 +311,6 @@ BOOL OpalVoipBlasterDevice::Open(const PString & device)
                                  PThread::NoAutoDeleteThread,
                                  PThread::NormalPriority,
                                  "VbStatus:%x");
-
-  // put device into setup mode
-  vBlaster.WriteCommand(VoipBlasterInterface::Command_SETUP_MODE); 
-  vBlaster.OpenData();
-
-  // write initialisation data
-  vBlaster.WriteData(blasterInit1, sizeof(blasterInit1));
-  vBlaster.WriteData(blasterInit2, sizeof(blasterInit2));
-
-  // remove 17 bytes from the voice channel
-  // if 0xa returned on status channel, then this was a serial number
-  // otherwise remove 3 more to make a 20 byte frame
-  PThread::Sleep(100);
-  if (firstTime) {
-    // read 17 bytes. This may be a serial number or not
-    BYTE serialNumber[17];
-    vBlaster.ReadData(serialNumber, sizeof(serialNumber));
-    PTRACE(3, "vBlaster\tGot serial number");
-    PError << "vBlaster\tGot serial number";
-  } 
-
-  // this will close the data channel
-  vBlaster.CloseData();
-
-  // send ring off command and wait for reply
-  PINDEX i;
-  ringOn = TRUE;
-  for (i = 0; ringOn && (i < 2); i++) {
-    PError << "Init " << i << endl;
-    vBlaster.WriteCommand(VoipBlasterInterface::Command_VOL_3);
-    vBlaster.WriteCommand(VoipBlasterInterface::Command_RING_OFF);
-    vBlaster.WriteCommand(VoipBlasterInterface::Command_PHONE_ON);
-
-    PTimer timer(2000);
-    while (timer.IsRunning()) {
-      if (!ringOn)
-        break;
-      PThread::Sleep(100);
-    }
-  }
-
-
-  // if we did not receive a ring off, then error
-  if (ringOn) {
-    PTRACE(1, "VB\tCould not initialise VoIPBlaster");
-    PError << "Could not initialise VoIPBlaster" << endl;
-    Close();
-    //return FALSE;
-  }
 
   // unmute output and set default value
   vBlaster.WriteCommand(VoipBlasterInterface::Command_VOL_3);
@@ -314,83 +373,96 @@ PStringArray OpalVoipBlasterDevice::GetAllNames() const
 
 void OpalVoipBlasterDevice::StatusHandler(PThread &, INT)
 {
-  hookState = FALSE;
-  headset   = FALSE;
-  ringOn    = FALSE;
-  firstTime = FALSE;
-
   while (statusRunning) {
     int status = vBlaster.ReadStatus();
-    if (status != VoipBlasterInterface::Status_Empty) {
-      switch (status) {
-        case VoipBlasterInterface::Status_NONE:        // No status
-          break;
-
-        case VoipBlasterInterface::Status_HOOK_OFF:    // Offhook
-          PTRACE(1, "VB\tHook off");
-          hookState = TRUE;
-          break;
-
-        case VoipBlasterInterface::Status_HOOK_ON:     // Onhook
-          PTRACE(1, "VB\tHook on");
-          hookState = FALSE;
-          break;
-
-        case VoipBlasterInterface::Status_RINGING_ON:  // Ring started 
-          PTRACE(1, "VB\tRing start");
-          ringOn = TRUE;
-          break;
-
-        case VoipBlasterInterface::Status_RINGING_OFF: // Ring stopped
-          PTRACE(1, "VB\tRing end");
-          ringOn = FALSE;
-          break;
-
-        case VoipBlasterInterface::Status_HEADSET_IN:  // Headset plugged in
-          PTRACE(1, "VB\tHeadset in");
-          headset = TRUE;
-          break;
-
-        case VoipBlasterInterface::Status_HEADSET_OUT: // Headset unplugged
-          PTRACE(1, "VB\tHeadset off");
-          headset = FALSE;
-          break;
-
-        case VoipBlasterInterface::Status_0x0a:        // Unknown (setup accepted?)
-          PTRACE(1, "VB\tStatus 0xa");
-          firstTime = TRUE;
-          break;
-
-        case VoipBlasterInterface::Status_VOUT_DONE:   // Voice output done
-          PTRACE(1, "VB\tVOUT done");
-          break;
-
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9':
-        case 'A':
-        case 'B':
-        case 'C':
-        case 'D':
-        case '*':
-        case '#':
-          PTRACE(1, "VB\tDTMF digit " << (char )status);
-          dtmfQueue.Enqueue((BYTE)status);
-          break;
-
-        default:
-          PTRACE(1, "VB\tUnknown status value " << status);
-      }
-    }
+    if (status != VoipBlasterInterface::Status_Empty)
+      HandleStatus(status);
   }
 }
+
+void OpalVoipBlasterDevice::HandleStatus(int status)
+{
+  switch (status) {
+    //case VoipBlasterInterface::Status_NONE:        // No status
+    //  break;
+
+    case VoipBlasterInterface::Status_HOOK_OFF:    // Offhook
+      PTRACE(1, "VB\tHook off");
+      hookState = TRUE;
+      headset   = FALSE;
+      break;
+
+    case VoipBlasterInterface::Status_HOOK_ON:     // Onhook
+      PTRACE(1, "VB\tHook on");
+      hookState = FALSE;
+      headset   = FALSE;
+      break;
+
+    case VoipBlasterInterface::Status_RINGING_ON:  // Ring started 
+      PTRACE(1, "VB\tRing start");
+      ringOn = TRUE;
+      break;
+
+    case VoipBlasterInterface::Status_RINGING_OFF: // Ring stopped
+      PTRACE(1, "VB\tRing end");
+      ringOn = FALSE;
+      break;
+
+    case VoipBlasterInterface::Status_HEADSET_IN:  // Headset plugged in
+      PTRACE(1, "VB\tHeadset in");
+      headset = TRUE;
+      break;
+
+    case VoipBlasterInterface::Status_HEADSET_OUT: // Headset unplugged
+      PTRACE(1, "VB\tHeadset out");
+      headset = FALSE;
+      break;
+
+    case VoipBlasterInterface::Status_0x0a:        // Unknown (setup accepted?)
+      PTRACE(1, "VB\tStatus 0xa");
+
+      // read 17 byte serial number
+      BYTE serialNumber[17];
+      memset(serialNumber, 0, sizeof(serialNumber));
+      vBlaster.ReadData(serialNumber, sizeof(serialNumber), STARTUP_TIMEOUT);
+      {
+        PString str;
+        for (int i = 0; i < sizeof(serialNumber); i++)
+          str.sprintf("%02x ", serialNumber[i]);
+        PTRACE(3, "vBlaster\tFirst time serial number " << str);
+      }
+      firstTime = TRUE;
+      break;
+
+    case VoipBlasterInterface::Status_VOUT_DONE:   // Voice output done
+      PTRACE(1, "VB\tVOUT done");
+      break;
+
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+    case 'A':
+    case 'B':
+    case 'C':
+    case 'D':
+    case '*':
+    case '#':
+      PTRACE(1, "VB\tDTMF digit " << (char )status);
+      dtmfQueue.Enqueue((BYTE)status);
+      break;
+
+    default:
+      PTRACE(1, "VB\tUnknown status value " << status);
+  }
+}
+
 
 BOOL OpalVoipBlasterDevice::IsLineOffHook(unsigned line)
 {
@@ -932,6 +1004,8 @@ BOOL OpalVoipBlasterDevice::ByteQueue::Enqueue(BYTE v)
 #include <initguid.h>
 #include <setupapi.h>
 
+#pragma comment(lib, "setupapi.lib")
+
 // {00873FDF-61A8-11d1-AA5E-00C04FB1728B}  for VB_USB.SYS
 
 DEFINE_GUID(GUID_CLASS_VOIP_BLASTER,
@@ -1034,7 +1108,7 @@ static HANDLE OpenPipe(const PString & filename, DWORD dwIndex)
                         FILE_SHARE_WRITE | FILE_SHARE_READ, 
                         NULL, 
                         OPEN_EXISTING, 
-                        0, 
+                        FILE_FLAG_OVERLAPPED, 
                         NULL);
 
   if (h == INVALID_HANDLE_VALUE) {
@@ -1157,10 +1231,10 @@ BOOL VoipBlasterInterface::WriteCommand(Command cmd)
   return WritePipe(pipes[CommandPipe], &b, 1) == 1;
 }
 
-VoipBlasterInterface::Status VoipBlasterInterface::ReadStatus()
+VoipBlasterInterface::Status VoipBlasterInterface::ReadStatus(const PTimeInterval duration)
 {
   BYTE b;
-  if (ReadPipe(pipes[StatusPipe], &b, 1) == 1)
+  if (ReadPipe(pipes[StatusPipe], &b, 1, duration) == 1)
     return (Status)b;
 
   return Status_Empty;
@@ -1171,13 +1245,21 @@ BOOL VoipBlasterInterface::WriteData(const void * data, PINDEX len)
   return WritePipe(pipes[VoiceOutPipe], data, len) == len;
 }
 
-int VoipBlasterInterface::ReadData(void * data, PINDEX len)
+int VoipBlasterInterface::ReadData(void * data, PINDEX len, const PTimeInterval duration)
 {
-  return ReadPipe(pipes[VoiceInPipe], data, len);
+  return ReadPipe(pipes[VoiceInPipe], data, len, duration);
 }
 
-void VoipBlasterInterface::FlushData(PTimeInterval wait)
+void VoipBlasterInterface::Flush(const PTimeInterval wait)
 {
+  BYTE buffer[1000];
+  while (ReadData(buffer, 1000, wait) > 0)
+    ;
+
+  while (ReadPipe(pipes[StatusPipe], buffer, 1000, wait) > 0)
+    ;
+
+#if 0
   BOOL closeOnEnd = (pipes[VoiceInPipe] == INVALID_HANDLE_VALUE);
   if (closeOnEnd && !OpenVOIPPipe(VoiceInPipe)) {
     PTRACE(2, "VB\tCould not open voice in pipe for flush");
@@ -1199,6 +1281,7 @@ void VoipBlasterInterface::FlushData(PTimeInterval wait)
   closeTimer.Stop();
 
   PError << "Flushed " << count << " bytes" << endl;
+#endif
 }
 
 void VoipBlasterInterface::CloseTimeout(PTimer &, INT)
@@ -1209,20 +1292,68 @@ void VoipBlasterInterface::CloseTimeout(PTimer &, INT)
   }
 }
 
-int VoipBlasterInterface::WritePipe(HANDLE fd, const void *bp, DWORD len)
+int VoipBlasterInterface::WritePipe(HANDLE handle, const void *bp, DWORD len)
 {
-  DWORD wrote;
-  if (::WriteFile(fd, bp, len, &wrote, NULL))
-    return wrote; 
+  DWORD writeCount;
+  PWin32Overlapped overlap;
 
-  return -1;
+  ResetEvent(overlap.hEvent);
+
+  if (::WriteFile(handle, bp, len, &writeCount, &overlap))
+    return writeCount; 
+
+  if (GetLastError() != ERROR_IO_PENDING) {
+    PTRACE(1, "VB\tWriteFile to pipe failed");
+    return -1;
+  }
+
+  if (!GetOverlappedResult(handle, &overlap, &writeCount, TRUE)) {
+    PTRACE(1, "VB\tGetOverlappedResult on pipe failed");
+    return -1;
+  }
+  
+  return writeCount;
 }
 
-int VoipBlasterInterface::ReadPipe(HANDLE fd, void *bp, DWORD len)
+
+int VoipBlasterInterface::ReadPipe(HANDLE handle, void *bp, DWORD len, const PTimeInterval duration)
 {
   DWORD readCount;
-  if (!::ReadFile(fd, bp, len, &readCount, NULL))
+  PWin32Overlapped overlap;
+
+  ResetEvent(overlap.hEvent);
+
+  if (::ReadFile(handle, bp, len, &readCount, &overlap))
+    return readCount;
+
+  if (GetLastError() != ERROR_IO_PENDING) {
+    PTRACE(1, "VB\tReadFile from pipe failed");
     return -1;
+  }
+
+  DWORD msecs = (duration == PMaxTimeInterval) ? INFINITE : duration.GetInterval();
+  if (msecs < 500)
+    msecs = 500;
+
+  switch (WaitForSingleObject(overlap.hEvent, msecs)) {
+    case WAIT_OBJECT_0:
+      // do nothing ; the device is ready
+      break;
+
+    case WAIT_TIMEOUT:
+      // cancel the I/O operation;
+      CancelIo(handle);
+      break;
+
+    default:
+      PTRACE(1, "VB\tWaitForSingleObject on pipe failed");
+      return -1;
+  }
+
+  if (!GetOverlappedResult(handle, &overlap, &readCount, TRUE)) {
+    PTRACE(1, "VB\tGetOverlappedResult on pipe failed");
+    return -1;
+  }
 
   return readCount;
 }
