@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2037  2004/03/14 08:34:09  csoutheren
+ * Revision 1.2038  2004/03/14 11:32:20  rjongbloed
+ * Changes to better support SIP proxies.
+ *
+ * Revision 2.36  2004/03/14 08:34:09  csoutheren
  * Added ability to set User-Agent string
  *
  * Revision 2.35  2004/03/14 06:15:36  rjongbloed
@@ -275,6 +278,7 @@ void SimpleOpalProcess::Main()
              "-sound-in:"
              "-sound-out:"
              "-sip-listen:"
+             "-sip-proxy:"
              "-sip-useragent:"
              "-stun:"
              "T-h245tunneldisable."
@@ -329,6 +333,8 @@ void SimpleOpalProcess::Main()
             "SIP options:\n"
             "  -I --no-sip             : Disable SIP protocol.\n"
             "  -r --register-sip host  : Register with SIP server.\n"
+            "     --sip-proxy url      : SIP proxy information, may be just a host name\n"
+            "                          : or full URL eg sip:user:pwd@host\n"
             "     --sip-listen iface   : Interface/port(s) to listen for SIP requests\n"
             "                          : '*' is all interfaces, (default udp$:*:5060)\n"
             "     --use-long-mime      : Use long MIME headers on outgoing SIP messages\n"
@@ -726,6 +732,9 @@ BOOL MyManager::Initialise(PArgList & args)
     if (args.HasOption("sip-useragent"))
       sipEP->SetUserAgent(args.GetOptionString("sip-useragent"));
 
+    if (args.HasOption("sip-proxy"))
+      sipEP->SetProxy(args.GetOptionString("sip-proxy"));
+
     // set MIME format
     sipEP->SetMIMEForm(args.HasOption("use-long-mime"));
 
@@ -734,8 +743,6 @@ BOOL MyManager::Initialise(PArgList & args)
       PStringArray aliases = args.GetOptionString('u').Lines();
       sipEP->SetDefaultLocalPartyName(aliases[0]);
     }
-    if (args.HasOption('p'))
-      sipEP->SetProxyPassword(args.GetOptionString('p'));
 
     // Start the listener thread for incoming calls.
     if (args.HasOption("sip-listen")) {
