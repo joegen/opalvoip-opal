@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mscodecs.cxx,v $
- * Revision 1.2005  2002/09/04 06:01:47  robertj
+ * Revision 1.2006  2002/11/10 11:33:18  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.4  2002/09/04 06:01:47  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.3  2002/01/22 05:19:42  robertj
@@ -43,6 +46,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.15  2002/09/30 09:33:03  craigs
+ * Removed ability to set no. of frames per packet for MS-GSM - there can be only one!
  *
  * Revision 1.14  2002/09/03 06:03:48  robertj
  * Added globally accessible functions for media format name.
@@ -116,13 +122,12 @@ extern "C" {
 #define	MICROSOFT_MANUFACTURER	21324
 
 MicrosoftNonStandardAudioCapability::MicrosoftNonStandardAudioCapability(
-            const OpalMediaFormat & fmt,
-            const BYTE * header,
-            PINDEX headerSize,
-            PINDEX offset,
-            PINDEX len)
+                                                          const BYTE * header,
+                                                          PINDEX headerSize,
+                                                          PINDEX offset,
+                                                          PINDEX len)
 
-  : H323NonStandardAudioCapability(fmt, 1, 1,
+  : H323NonStandardAudioCapability(1, 1,
                                    MICROSOFT_COUNTRY_CODE,
                                    MICROSOFT_T35EXTENSION,
                                    MICROSOFT_MANUFACTURER,
@@ -130,6 +135,60 @@ MicrosoftNonStandardAudioCapability::MicrosoftNonStandardAudioCapability(
 {
 }
                                                                          
+
+/////////////////////////////////////////////////////////////////////////
+
+static const BYTE msGSMHeader[] = {
+
+  // unknown data
+  0x02, 0x00, 0x00, 0x00, 
+  0x00, 0x00, 0x40, 0x01, 
+  0x00, 0x00, 0x40, 0x01, 
+  0x02, 0x00, 0x08, 0x00, 
+  0x00, 0x00, 0x00, 0x00,
+
+#define	GSM_FIXED_START 20  // Offset to this point in header
+
+  // standard MS waveformatex structure follows
+  0x31, 0x00,                 //    WORD    wFormatTag;        /* format type */
+  0x01, 0x00,                 //    WORD    nChannels;         /* number of channels (i.e. mono, stereo...) */
+  0x40, 0x1f, 0x00, 0x00,     //    DWORD   nSamplesPerSec;    /* sample rate */  
+  0x59, 0x06, 0x00, 0x00,     //    DWORD   nAvgBytesPerSec;   /* for buffer estimation */
+  0x41, 0x00,                 //    WORD    nBlockAlign;       /* block size of data */
+  0x00, 0x00,                 //    WORD    wBitsPerSample;    /* Number of bits per sample of mono data */
+  0x02, 0x00,                 //    WORD    cbSize;            /* The count in bytes of the size of 
+
+#define	GSM_FIXED_LEN 18  // Number of bytes from GSM_FIXED_START to here 
+
+  // extra GSM information
+  0x40, 0x01,                 //    WORD    numberOfSamples    /* 320 */
+  
+  // unknown data
+  0x00, 0x00  
+};
+
+MicrosoftGSMAudioCapability::MicrosoftGSMAudioCapability()
+  : MicrosoftNonStandardAudioCapability(msGSMHeader, sizeof(msGSMHeader),
+                                        GSM_FIXED_START, GSM_FIXED_LEN)
+{
+  txFramesInPacket = 1;
+}
+
+void MicrosoftGSMAudioCapability::SetTxFramesInPacket(unsigned /*frames*/)
+{
+}
+
+PObject * MicrosoftGSMAudioCapability::Clone() const
+{
+  return new MicrosoftGSMAudioCapability(*this);
+}
+
+
+PString MicrosoftGSMAudioCapability::GetFormatName() const
+{
+  return OpalMSGSM;
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -195,51 +254,6 @@ BOOL Opal_PCM_MSGSM::ConvertFrame(const BYTE * src, BYTE * dst)
 
 /////////////////////////////////////////////////////////////////////////
 
-static const BYTE msGSMHeader[] = {
-
-  // unknown data
-  0x02, 0x00, 0x00, 0x00, 
-  0x00, 0x00, 0x40, 0x01, 
-  0x00, 0x00, 0x40, 0x01, 
-  0x02, 0x00, 0x08, 0x00, 
-  0x00, 0x00, 0x00, 0x00,
-
-#define	GSM_FIXED_START 20  // Offset to this point in header
-
-  // standard MS waveformatex structure follows
-  0x31, 0x00,                 //    WORD    wFormatTag;        /* format type */
-  0x01, 0x00,                 //    WORD    nChannels;         /* number of channels (i.e. mono, stereo...) */
-  0x40, 0x1f, 0x00, 0x00,     //    DWORD   nSamplesPerSec;    /* sample rate */  
-  0x59, 0x06, 0x00, 0x00,     //    DWORD   nAvgBytesPerSec;   /* for buffer estimation */
-  0x41, 0x00,                 //    WORD    nBlockAlign;       /* block size of data */
-  0x00, 0x00,                 //    WORD    wBitsPerSample;    /* Number of bits per sample of mono data */
-  0x02, 0x00,                 //    WORD    cbSize;            /* The count in bytes of the size of 
-
-#define	GSM_FIXED_LEN 18  // Number of bytes from GSM_FIXED_START to here 
-
-  // extra GSM information
-  0x40, 0x01,                 //    WORD    numberOfSamples    /* 320 */
-  
-  // unknown data
-  0x00, 0x00  
-};
-
-MicrosoftGSMAudioCapability::MicrosoftGSMAudioCapability()
-  : MicrosoftNonStandardAudioCapability(OpalMSGSM,
-                                        msGSMHeader, sizeof(msGSMHeader),
-                                        GSM_FIXED_START, GSM_FIXED_LEN)
-{
-}
-
-
-PObject * MicrosoftGSMAudioCapability::Clone() const
-{
-  return new MicrosoftGSMAudioCapability(*this);
-}
-
-
-/////////////////////////////////////////////////////////////////////////
-
 //By LH, Microsoft IMA ADPCM CODEC Capability
 #define IMA_SAMPLES_PER_FRAME		505
 #define IMA_BYTES_PER_FRAME		256
@@ -288,8 +302,7 @@ static const BYTE msIMAHeader[] = {
 };
 
 MicrosoftIMAAudioCapability::MicrosoftIMAAudioCapability()
-  : MicrosoftNonStandardAudioCapability(OpalMSIMA,
-                                        msIMAHeader, sizeof(msIMAHeader),
+  : MicrosoftNonStandardAudioCapability(msIMAHeader, sizeof(msIMAHeader),
                                         IMA_FIXED_START, IMA_FIXED_LEN)
 {
 }
@@ -297,6 +310,12 @@ MicrosoftIMAAudioCapability::MicrosoftIMAAudioCapability()
 PObject * MicrosoftIMAAudioCapability::Clone() const
 {
   return new MicrosoftIMAAudioCapability(*this);
+}
+
+
+PString MicrosoftIMAAudioCapability::GetFormatName() const
+{
+  return OpalMSIMA;
 }
 
 

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2021  2002/09/04 06:01:47  robertj
+ * Revision 1.2022  2002/11/10 11:33:18  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.20  2002/09/04 06:01:47  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.19  2002/07/01 04:56:31  robertj
@@ -91,6 +94,10 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.131  2002/10/31 00:37:47  robertj
+ * Enhanced jitter buffer system so operates dynamically between minimum and
+ *   maximum values. Altered API to assure app writers note the change!
  *
  * Revision 1.130  2002/08/05 10:03:47  robertj
  * Cosmetic changes to normalise the usage of pragma interface/implementation.
@@ -1030,7 +1037,8 @@ H323_RTPChannel::H323_RTPChannel(H323Connection & conn,
     rtpCallbacks(*(H323_RTP_Session *)r.GetUserData())
 {
   mediaStream = new OpalRTPMediaStream(receiver, rtpSession,
-                                       endpoint.GetManager().GetMaxAudioDelayJitter());
+                                       endpoint.GetManager().GetMinAudioJitterDelay(),
+                                       endpoint.GetManager().GetMaxAudioJitterDelay());
   PTRACE(3, "H323RTP\t" << (receiver ? "Receiver" : "Transmitter")
          << " created using session " << GetSessionID());
 }

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2014  2002/09/13 05:16:33  robertj
+ * Revision 1.2015  2002/11/10 11:33:18  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.13  2002/09/13 05:16:33  robertj
  * Fixed missing address defaults in DiscoverByNameAndAddress()
  *
  * Revision 2.12  2002/09/12 06:58:33  robertj
@@ -51,6 +54,48 @@
  *
  * Revision 2.6  2001/11/18 23:10:42  craigs
  * Added cast to allow compilation under Linux
+ *
+ * Revision 2.5  2001/11/09 05:49:47  robertj
+ * Abstracted UDP connection algorithm
+ *
+ * Revision 2.4  2001/10/05 00:22:13  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.3  2001/08/17 08:30:21  robertj
+ * Update from OpenH323
+ * Moved call end reasons enum from OpalConnection to global.
+ *
+ * Revision 2.2  2001/08/13 05:10:39  robertj
+ * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 2.1  2001/08/01 05:16:18  robertj
+ * Moved default session ID's to OpalMediaFormat class.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
+ * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.119  2002/11/10 08:10:43  robertj
+ * Moved constants for "well known" ports to better place (OPAL change).
+ *
+ * Revision 1.118  2002/11/01 03:48:18  robertj
+ * Fixed previous two hacks!! Neither of which would have worked.
+ *
+ * Revision 1.117  2002/10/31 23:31:41  dereks
+ * Fix for previous quick hack. Thanks Damien Sandras.
+ *
+ * Revision 1.116  2002/10/31 21:40:28  dereks
+ * Quick (and temporary) hack to enable compilation on redhat 8.0 boxes.
+ *
+ * Revision 1.115  2002/09/19 23:19:25  robertj
+ * Fixed setting of info request rate, broken in a previous patch
+ *
+ * Revision 1.114  2002/09/18 06:58:32  robertj
+ * Fixed setting of IRR frequency, an RCF could reset timer so it did not time
+ *   out correctly and send IRR in time causing problems with gatekeeper.
+ *
+ * Revision 1.113  2002/09/09 23:59:59  robertj
+ * Fixed incorrect inserting of UUIE pdu's into IRR, thanks Ravelli Rossano
+ *
  * Revision 1.112  2002/08/29 07:02:19  robertj
  * Allowed network latency deadband in unsolicited IRR response time.
  *
@@ -182,24 +227,11 @@
  * Changed gk unregister so only way it doe not actually unregister is if
  *   get URJ with reason code callInProgress, thanks Chris Purvis.
  *
- * Revision 2.5  2001/11/09 05:49:47  robertj
- * Abstracted UDP connection algorithm
+ * Revision 1.75  2001/10/09 08:04:59  robertj
+ * Fixed unregistration so still unregisters if gk goes offline, thanks Chris Purvis
  *
- * Revision 2.4  2001/10/05 00:22:13  robertj
- * Updated to PWLib 1.2.0 and OpenH323 1.7.0
- *
- * Revision 2.3  2001/08/17 08:30:21  robertj
- * Update from OpenH323
- * Moved call end reasons enum from OpalConnection to global.
- *
- * Revision 2.2  2001/08/13 05:10:39  robertj
- * Updates from OpenH323 v1.6.0 release.
- *
- * Revision 2.1  2001/08/01 05:16:18  robertj
- * Moved default session ID's to OpalMediaFormat class.
- *
- * Revision 2.0  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.74  2001/10/08 01:37:42  robertj
+ * Fixed uninitialised variable for ARQ authentication override.
  *
  * Revision 1.73  2001/09/26 07:03:08  robertj
  * Added needed mutex for SeparateAuthenticationInARQ mode, thanks Nick Hoath
@@ -464,7 +496,7 @@ static PTimeInterval AdjustTimeout(unsigned seconds)
 
 /////////////////////////////////////////////////////////////////////////////
 
-H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, OpalTransport * trans)
+H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
   : H225_RAS(ep, trans),
     authenticators(ep.CreateAuthenticators())
 {
@@ -507,7 +539,7 @@ void H323Gatekeeper::PrintOn(ostream & strm) const
   if (!gatekeeperIdentifier)
     strm << gatekeeperIdentifier << "@";
 
-  OpalTransportAddress addr = transport->GetRemoteAddress();
+  H323TransportAddress addr = transport->GetRemoteAddress();
 
   PIPSocket::Address ip;
   WORD port;
@@ -532,35 +564,33 @@ PString H323Gatekeeper::GetName() const
 BOOL H323Gatekeeper::DiscoverAny()
 {
   gatekeeperIdentifier = PString();
-  return StartDiscovery(OpalTransportAddress());
+  return StartDiscovery(H323TransportAddress());
 }
 
 
 BOOL H323Gatekeeper::DiscoverByName(const PString & identifier)
 {
   gatekeeperIdentifier = identifier;
-  return StartDiscovery(OpalTransportAddress());
+  return StartDiscovery(H323TransportAddress());
 }
 
 
-BOOL H323Gatekeeper::DiscoverByAddress(const PString & address)
+BOOL H323Gatekeeper::DiscoverByAddress(const H323TransportAddress & address)
 {
   gatekeeperIdentifier = PString();
-  OpalTransportAddress fullAddress(address, H225_RAS::DefaultRasUdpPort, "udp");
-  return StartDiscovery(fullAddress);
+  return StartDiscovery(address);
 }
 
 
 BOOL H323Gatekeeper::DiscoverByNameAndAddress(const PString & identifier,
-                                              const PString & address)
+                                              const H323TransportAddress & address)
 {
   gatekeeperIdentifier = identifier;
-  OpalTransportAddress fullAddress(address, H225_RAS::DefaultRasUdpPort, "udp");
-  return StartDiscovery(fullAddress);
+  return StartDiscovery(address);
 }
 
 
-static BOOL WriteGRQ(OpalTransport & transport, PObject * data)
+static BOOL WriteGRQ(H323Transport & transport, PObject * data)
 {
   H323RasPDU & pdu = *(H323RasPDU *)data;
   H225_GatekeeperRequest & grq = pdu;
@@ -570,7 +600,7 @@ static BOOL WriteGRQ(OpalTransport & transport, PObject * data)
 }
 
 
-BOOL H323Gatekeeper::StartDiscovery(const OpalTransportAddress & address)
+BOOL H323Gatekeeper::StartDiscovery(const H323TransportAddress & address)
 {
   PAssert(!transport->IsRunning(), "Cannot do discovery on running RAS channel");
 
@@ -741,13 +771,13 @@ BOOL H323Gatekeeper::RegistrationRequest(BOOL autoReg)
   // If discoveryComplete flag is FALSE then do lightweight reregister
   rrq.m_discoveryComplete = discoveryComplete;
 
-  H323TransportAddress rasAddress = transport->GetLocalAddress();
   rrq.m_rasAddress.SetSize(1);
+  H323TransportAddress rasAddress = transport->GetLocalAddress();
   rasAddress.SetPDU(rrq.m_rasAddress[0]);
 
-  const OpalListenerList & listeners = endpoint.GetListeners();
+  const H323ListenerList & listeners = endpoint.GetListeners();
   if (listeners.IsEmpty()) {
-    PTRACE(1, "RAS\tCannot register with Gatekeeper without a OpalListener!");
+    PTRACE(1, "RAS\tCannot register with Gatekeeper without a H323Listener!");
     return FALSE;
   }
 
@@ -857,12 +887,12 @@ BOOL H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationConfirm
       pregrantAnswerCall = rcf.m_preGrantedARQ.m_useGKCallSignalAddressToAnswer
                                                       ? PreGkRoutedARQ : PregrantARQ;
     if (rcf.m_preGrantedARQ.HasOptionalField(H225_RegistrationConfirm_preGrantedARQ::e_irrFrequencyInCall))
-      infoRequestRate = AdjustTimeout(rcf.m_preGrantedARQ.m_irrFrequencyInCall);
+      SetInfoRequestRate(AdjustTimeout(rcf.m_preGrantedARQ.m_irrFrequencyInCall));
     else
-      infoRequestRate = 0; // zero disables unsolicited IRRs
+      ClearInfoRequestRate();
   }
   else
-    infoRequestRate = 0; // zero disables unsolicited IRRs
+    ClearInfoRequestRate();
 
   // Remove the endpoint aliases that the gatekeeper did not like and add the
   // ones that it really wants us to be.
@@ -914,24 +944,6 @@ BOOL H323Gatekeeper::OnReceiveRegistrationReject(const H225_RegistrationReject &
 
   // Registration rejected us, so not registered any more
   isRegistered = FALSE;
-
-  switch (lastRequest->rejectReason) {
-    case H225_RegistrationRejectReason::e_discoveryRequired :
-      // If have been told by GK that we need to discover it again, set flag
-      // for next register done by timeToLive handler to do discovery
-      requiresDiscovery = TRUE;
-      // Do next case
-
-    case H225_RegistrationRejectReason::e_fullRegistrationRequired :
-      // Set timer to retry registration
-      timeToLive = 0;
-      monitorTickle.Signal();
-      break;
-
-    default :
-      // Got a permananent error, so don't try again
-      break;
-  }
 
   if (rrj.HasOptionalField(H225_RegistrationReject::e_altGKInfo)) {
     SetAlternates(rrj.m_altGKInfo.m_alternateGatekeeper,
@@ -985,7 +997,7 @@ BOOL H323Gatekeeper::UnregistrationRequest(int reason)
 
   H323TransportAddress rasAddress = transport->GetLocalAddress();
 
-  const OpalListenerList & listeners = endpoint.GetListeners();
+  const H323ListenerList & listeners = endpoint.GetListeners();
   for (i = 0; i < listeners.GetSize(); i++) {
     H323TransportAddress signalAddress = listeners[i].GetLocalAddress(rasAddress);
     signalAddress.SetPDU(urq.m_callSignalAddress, *transport);
@@ -1046,7 +1058,7 @@ BOOL H323Gatekeeper::OnReceiveUnregistrationRequest(const H225_UnregistrationReq
     return FALSE;
 
   PTRACE(2, "RAS\tUnregistration received");
-  endpoint.ClearAllCalls(EndedByGatekeeper, FALSE);
+  endpoint.ClearAllCalls(H323Connection::EndedByGatekeeper, FALSE);
 
   PTRACE(3, "RAS\tUnregistered, calls cleared");
   isRegistered = FALSE;
@@ -1078,7 +1090,7 @@ BOOL H323Gatekeeper::OnReceiveUnregistrationReject(const H225_UnregistrationReje
   if (!H225_RAS::OnReceiveUnregistrationReject(urj))
     return FALSE;
 
-  if (lastRequest->rejectReason == H225_UnregRejectReason::e_notCurrentlyRegistered) {
+  if (lastRequest->rejectReason != H225_UnregRejectReason::e_callInProgress) {
     isRegistered = FALSE;
     timeToLive = 0; // zero disables lightweight RRQ
   }
@@ -1088,7 +1100,7 @@ BOOL H323Gatekeeper::OnReceiveUnregistrationReject(const H225_UnregistrationReje
 
 
 BOOL H323Gatekeeper::LocationRequest(const PString & alias,
-                                     OpalTransportAddress & address)
+                                     H323TransportAddress & address)
 {
   PStringList aliases;
   aliases.AppendString(alias);
@@ -1097,7 +1109,7 @@ BOOL H323Gatekeeper::LocationRequest(const PString & alias,
 
 
 BOOL H323Gatekeeper::LocationRequest(const PStringList & aliases,
-                                     OpalTransportAddress & address)
+                                     H323TransportAddress & address)
 {
   H323RasPDU pdu;
   H225_LocationRequest & lrq = pdu.BuildLocationRequest(GetNextSequenceNumber());
@@ -1216,7 +1228,7 @@ BOOL H323Gatekeeper::AdmissionRequest(H323Connection & connection,
     }
   }
 
-  const OpalTransport * signallingChannel = connection.GetSignallingChannel();
+  const H323Transport * signallingChannel = connection.GetSignallingChannel();
   arq.IncludeOptionalField(H225_AdmissionRequest::e_srcCallSignalAddress);
   if (answeringCall) {
     H323TransportAddress signalAddress = signallingChannel->GetRemoteAddress();
@@ -1430,7 +1442,7 @@ BOOL H323Gatekeeper::OnReceiveAdmissionConfirm(const H225_AdmissionConfirm & acf
   }
 
   if (acf.HasOptionalField(H225_AdmissionConfirm::e_irrFrequency))
-    infoRequestRate = AdjustTimeout(acf.m_irrFrequency);
+    SetInfoRequestRate(AdjustTimeout(acf.m_irrFrequency));
   willRespondToIRR = acf.m_willRespondToIRR;
 
   return TRUE;
@@ -1507,8 +1519,6 @@ BOOL H323Gatekeeper::OnReceiveDisengageRequest(const H225_DisengageRequest & drq
   if (id == NULL)
     id = drq.m_conferenceID;
 
-  endpoint.ClearCall(id.AsString(), EndedByGatekeeper);
-
   H323RasPDU response(authenticators);
   H323Connection * connection = endpoint.FindConnectionWithLock(id.AsString());
   if (connection == NULL)
@@ -1520,7 +1530,7 @@ BOOL H323Gatekeeper::OnReceiveDisengageRequest(const H225_DisengageRequest & drq
     dcf.IncludeOptionalField(H225_DisengageConfirm::e_usageInformation);
     SetRasUsageInformation(*connection, dcf.m_usageInformation);
 
-    connection->Release(EndedByGatekeeper);
+    connection->Release(H323Connection::EndedByGatekeeper);
     connection->Unlock();
   }
 
@@ -1592,6 +1602,27 @@ BOOL H323Gatekeeper::OnReceiveBandwidthRequest(const H225_BandwidthRequest & brq
 }
 
 
+void H323Gatekeeper::SetInfoRequestRate(const PTimeInterval & rate)
+{
+  if (rate < infoRequestRate.GetResetTime() || infoRequestRate.GetResetTime() == 0) {
+    // Have to be sneaky here becuase we do not want to actually change the
+    // amount of time to run on the timer.
+    PTimeInterval timeToGo = infoRequestRate;
+    infoRequestRate = rate;
+    if (rate > timeToGo)
+      infoRequestRate.PTimeInterval::operator=(timeToGo);
+  }
+}
+
+
+void H323Gatekeeper::ClearInfoRequestRate()
+{
+  // Only reset rate to zero (disabled) if no calls present
+  if (endpoint.GetAllConnections().IsEmpty())
+    infoRequestRate = 0;
+}
+
+
 H225_InfoRequestResponse & H323Gatekeeper::BuildInfoRequestResponse(H323RasPDU & response,
                                                                     unsigned seqNum)
 {
@@ -1603,7 +1634,7 @@ H225_InfoRequestResponse & H323Gatekeeper::BuildInfoRequestResponse(H323RasPDU &
   H323TransportAddress address = transport->GetLocalAddress();
   address.SetPDU(irr.m_rasAddress);
 
-  const OpalListenerList & listeners = endpoint.GetListeners();
+  const H323ListenerList & listeners = endpoint.GetListeners();
   for (PINDEX i = 0; i < listeners.GetSize(); i++) {
     address = listeners[i].GetLocalAddress();
     address.SetPDU(irr.m_callSignalAddress, *transport);
@@ -1737,14 +1768,10 @@ void H323Gatekeeper::InfoRequestResponse(const H323Connection & connection,
 
   AddInfoRequestResponseCall(irr, connection);
 
-  PINDEX index = irr.m_perCallInfo.GetSize();
-  irr.m_perCallInfo.SetSize(index+1);
-  irr.m_perCallInfo[index].IncludeOptionalField(H225_InfoRequestResponse_perCallInfo_subtype::e_pdu);
-
-  PINDEX index2 = irr.m_perCallInfo[index].m_pdu.GetSize();
-  irr.m_perCallInfo[index].m_pdu.SetSize(index2+1);
-  irr.m_perCallInfo[index].m_pdu[index2].m_sent = sent;
-  irr.m_perCallInfo[index].m_pdu[index2].m_h323pdu = pdu;
+  irr.m_perCallInfo[0].IncludeOptionalField(H225_InfoRequestResponse_perCallInfo_subtype::e_pdu);
+  irr.m_perCallInfo[0].m_pdu.SetSize(1);
+  irr.m_perCallInfo[0].m_pdu[0].m_sent = sent;
+  irr.m_perCallInfo[0].m_pdu[0].m_h323pdu = pdu;
 
   SendUnsolicitedIRR(irr, response);
 }
@@ -1861,7 +1888,7 @@ void H323Gatekeeper::SetAlternates(const H225_ArrayOf_AlternateGK & alts, BOOL p
 
 void H323Gatekeeper::RegisterToAlternatesGK()
 {
-  OpalTransport * trans;
+  H323Transport * trans;
   PINDEX index;
 
   if (alternatePermanent) {
@@ -1876,7 +1903,7 @@ void H323Gatekeeper::RegisterToAlternatesGK()
   else {
     for (index = 0 ; index < alternates.GetSize(); index++) {
       AlternateInfo & altgk = alternates[index];
-      trans = new OpalTransportUDP(endpoint);
+      trans = new H323TransportUDP(endpoint);
       altgk.registeredGK = new H323Gatekeeper(endpoint, trans);
       
       if (altgk.registeredGK->DiscoverByNameAndAddress(altgk.gatekeeperIdentifier, altgk.rasAddress)) {
@@ -2006,7 +2033,7 @@ BOOL H323Gatekeeper::MakeRequest(Request & request)
 
 H323Gatekeeper::AlternateInfo::AlternateInfo(H225_AlternateGK & alt)
   : rasAddress(alt.m_rasAddress),
-    gatekeeperIdentifier(alt.m_gatekeeperIdentifier),
+    gatekeeperIdentifier(alt.m_gatekeeperIdentifier.GetValue()),
     priority(alt.m_priority),
     registeredGK(NULL)
 {

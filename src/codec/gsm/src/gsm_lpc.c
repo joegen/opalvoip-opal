@@ -4,7 +4,7 @@
  * details.  THERE IS ABSOLUTELY NO WARRANTY FOR THIS SOFTWARE.
  */
 
-/* $Header: /home/svnmigrate/clean_cvs/opal/src/codec/gsm/src/Attic/lpc.c,v 1.2001 2001/07/27 15:48:24 robertj Exp $ */
+/* $Header: /home/svnmigrate/clean_cvs/opal/src/codec/gsm/src/Attic/gsm_lpc.c,v 1.1 2002/11/10 11:33:18 robertj Exp $ */
 
 #include <stdio.h>
 #include <assert.h>

@@ -1,0 +1,10 @@
+The Speex codec is part of the Speex Library by
+Jean-Marc Valin<jean-marc.valin@hermes.usherb.ca>
+
+	http://www.speex.org
+
+
+The Speex codec was imported from Speex 1.0 beta 1.
+The file lpc.c was renamed to speex_lpc.c to solve a linker clash with
+the lpc.c file in the GSM codec directory.
+

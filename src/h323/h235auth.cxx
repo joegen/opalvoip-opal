@@ -24,7 +24,10 @@
  * Contributor(s): __________________________________
  *
  * $Log: h235auth.cxx,v $
- * Revision 1.2007  2002/09/04 06:01:48  robertj
+ * Revision 1.2008  2002/11/10 11:33:18  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.6  2002/09/04 06:01:48  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.5  2002/07/01 04:56:32  robertj
@@ -41,6 +44,13 @@
  *
  * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 1.14  2002/11/05 00:04:21  robertj
+ * Returned code back to including trailing NULL in BMPString after
+ *   PString::AsUCS2() implementation changes.
+ *
+ * Revision 1.13  2002/10/31 07:11:16  robertj
+ * Added UTF-8/UCS-2 conversion functions to PString.
  *
  * Revision 1.12  2002/08/13 05:11:03  robertj
  * Removed redundent code.
@@ -298,6 +308,16 @@ PObject * H235AuthSimpleMD5::Clone() const
 }
 
 
+static PWORDArray GetUCS2plusNULL(const PString & str)
+{
+  PWORDArray ucs2 = str.AsUCS2();
+  PINDEX len = ucs2.GetSize();
+  if (len > 0 && ucs2[len-1] != 0)
+    ucs2.SetSize(len+1);
+  return ucs2;
+}
+
+
 BOOL H235AuthSimpleMD5::PrepareToken(H225_CryptoH323Token & cryptoToken)
 {
   if (!IsActive())
@@ -310,10 +330,10 @@ BOOL H235AuthSimpleMD5::PrepareToken(H225_CryptoH323Token & cryptoToken)
   clearToken.m_tokenOID = "0.0";
 
   clearToken.IncludeOptionalField(H235_ClearToken::e_generalID);
-  clearToken.m_generalID = localId + "&#0;"; // Need a terminating null character
+  clearToken.m_generalID = GetUCS2plusNULL(localId);
 
   clearToken.IncludeOptionalField(H235_ClearToken::e_password);
-  clearToken.m_password = password + "&#0;"; // Need a terminating null character 
+  clearToken.m_password = GetUCS2plusNULL(password);
 
   clearToken.IncludeOptionalField(H235_ClearToken::e_timeStamp);
   clearToken.m_timeStamp = (int)time(NULL);
@@ -376,10 +396,10 @@ H235Authenticator::State H235AuthSimpleMD5::VerifyToken(
   clearToken.m_tokenOID = "0.0";
 
   clearToken.IncludeOptionalField(H235_ClearToken::e_generalID);
-  clearToken.m_generalID = alias + "&#0;"; // Need a terminating null character
+  clearToken.m_generalID = GetUCS2plusNULL(alias);
 
   clearToken.IncludeOptionalField(H235_ClearToken::e_password);
-  clearToken.m_password = password + "&#0;"; // Need a terminating null character 
+  clearToken.m_password = GetUCS2plusNULL(password);
 
   clearToken.IncludeOptionalField(H235_ClearToken::e_timeStamp);
   clearToken.m_timeStamp = cryptoEPPwdHash.m_timeStamp;

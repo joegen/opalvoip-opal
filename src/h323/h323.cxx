@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2033  2002/09/13 02:27:10  robertj
+ * Revision 1.2034  2002/11/10 11:33:18  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.32  2002/09/13 02:27:10  robertj
  * Fixed GNU warning.
  * Fixed accidentally lost function call to set up H.245 in call proceeding.
  *
@@ -135,6 +138,22 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.298  2002/10/31 00:39:21  robertj
+ * Enhanced jitter buffer system so operates dynamically between minimum and
+ *   maximum values. Altered API to assure app writers note the change!
+ *
+ * Revision 1.297  2002/10/30 05:53:32  craigs
+ * Changed to allow h245InSetup acknowledge to be in packet after CallProceeding
+ *
+ * Revision 1.296  2002/10/29 00:10:11  robertj
+ * Added IsValid() function to indicate that a PTime is set correctly.
+ *
+ * Revision 1.295  2002/10/16 02:30:51  robertj
+ * Fixed incorrect ipv6 symbol for H.245 pdu, thanks Sébastien Josset.
+ *
+ * Revision 1.294  2002/10/08 13:08:21  robertj
+ * Changed for IPv6 support, thanks Sébastien Josset.
  *
  * Revision 1.293  2002/09/03 06:07:54  robertj
  * Removed redundent dump of H.245 pdu.
@@ -1298,7 +1317,6 @@ H323Connection::H323Connection(OpalCall & call,
   }
 
   remoteMaxAudioDelayJitter = 0;
-  maxAudioDelayJitter = endpoint.GetManager().GetMaxAudioDelayJitter();
 
   switch (options&DetectInBandDTMFOptionMask) {
     case DetectInBandDTMFOptionDisable :
@@ -1359,11 +1377,11 @@ OpalConnection::Phases H323Connection::GetPhase() const
 }
 
 
-void H323Connection::SetCallEndReason(OpalCallEndReason reason)
+void H323Connection::SetCallEndReason(CallEndReason reason)
 {
   OpalConnection::SetCallEndReason(reason);
 
-  if (callEndTime.GetTimeInSeconds() == 0)
+  if (!callEndTime.IsValid())
     callEndTime = PTime();
 
   if (endSessionSent)
@@ -1434,7 +1452,7 @@ void H323Connection::CleanUpOnCallEnd()
     // Calculate time since we sent the end session command so we do not actually
     // wait for returned endSession if it has already been that long
     PTimeInterval waitTime = endpoint.GetEndSessionTimeout();
-    if (callEndTime.GetTimeInSeconds() != 0) {
+    if (callEndTime.IsValid()) {
       PTime now;
       if (now > callEndTime) { // Allow for backward motion in time (DST change)
         waitTime -= now - callEndTime;
@@ -1478,7 +1496,7 @@ PString H323Connection::GetDestinationAddress()
 }
 
 
-void H323Connection::AttachSignalChannel(OpalTransport * channel, BOOL answeringCall)
+void H323Connection::AttachSignalChannel(H323Transport * channel, BOOL answeringCall)
 {
   originating = !answeringCall;
 
@@ -1720,7 +1738,9 @@ void H323Connection::HandleTunnelPDU(H323SignalPDU * txPDU)
 
   // if a response to a SETUP PDU containing TCS/MSD was ignored, then shutdown negotiations
   PINDEX i;
-  if (lastPDUWasH245inSETUP && h245TunnelRxPDU->m_h323_uu_pdu.m_h245Control.GetSize() == 0) {
+  if (lastPDUWasH245inSETUP && 
+      (h245TunnelRxPDU->m_h323_uu_pdu.m_h245Control.GetSize() == 0) &&
+      (h245TunnelRxPDU->GetQ931().GetMessageType() != Q931::CallProceedingMsg)) {
     PTRACE(4, "H225\tH.245 in SETUP ignored - resetting H.245 negotiations");
     masterSlaveDeterminationProcedure->Stop();
     lastPDUWasH245inSETUP = FALSE;
@@ -1875,8 +1895,6 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
 
   if (!isConsultationTransfer) {
     if (OnSendCallProceeding(callProceedingPDU)) {
-      HandleTunnelPDU(&callProceedingPDU);
-
       if (fastStartState == FastStartDisabled)
         callProceeding.IncludeOptionalField(H225_CallProceeding_UUIE::e_fastConnectRefused);
 
@@ -2340,7 +2358,7 @@ BOOL H323Connection::OnReceivedStatusEnquiry(const H323SignalPDU & pdu)
 
 void H323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
 {
-  if (callEndTime.GetTimeInSeconds() == 0)
+  if (!callEndTime.IsValid())
     callEndTime = PTime();
 
   endSessionReceived.Signal();
@@ -2356,7 +2374,7 @@ void H323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
 
     default :
       if (callEndReason == EndedByRefusal)
-        callEndReason = OpalNumCallEndReasons;
+        callEndReason = NumCallEndReasons;
       
       // Are we involved in a transfer with a non H.450.2 compatible transferred-to endpoint?
       if (h4502handler->GetState() == H4502Handler::e_ctAwaitSetupResponse &&
@@ -2497,7 +2515,7 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
 }
 
 
-OpalCallEndReason H323Connection::SendSignalSetup(const PString & alias,
+OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & alias,
                                                   const H323TransportAddress & address)
 {
   // Start the call, first state is asking gatekeeper
@@ -2718,7 +2736,7 @@ OpalCallEndReason H323Connection::SendSignalSetup(const PString & alias,
   // Set timeout for remote party to answer the call
   signallingChannel->SetReadTimeout(endpoint.GetSignallingChannelCallTimeout());
 
-  return OpalNumCallEndReasons;
+  return NumCallEndReasons;
 }
 
 
@@ -3065,7 +3083,7 @@ BOOL H323Connection::CreateIncomingControlChannel(H225_TransportAddress & h245Ad
 {
   PAssert(controlChannel == NULL, PLogicError);
 
-  OpalTransportAddress localSignallingInterface = signallingChannel->GetLocalAddress();
+  H323TransportAddress localSignallingInterface = signallingChannel->GetLocalAddress();
   if (controlListener == NULL) {
     controlListener = localSignallingInterface.CreateListener(
                             endpoint, OpalTransportAddress::HostOnly);
@@ -3097,7 +3115,7 @@ void H323Connection::NewIncomingControlChannel(PThread & listener, INT param)
     return;
   }
 
-  controlChannel = (OpalTransport *)param;
+  controlChannel = (H323Transport *)param;
   HandleControlChannel();
 }
 
@@ -4026,7 +4044,8 @@ OpalMediaStream * H323Connection::CreateMediaStream(BOOL isSource, unsigned sess
     if (ownerCall.IsMediaBypassPossible(*this, sessionID))
       return new OpalNullMediaStream(isSource, sessionID);
     return new OpalRTPMediaStream(isSource, *GetSession(sessionID),
-                                  endpoint.GetManager().GetMaxAudioDelayJitter());
+                                  endpoint.GetManager().GetMinAudioJitterDelay(),
+                                  endpoint.GetManager().GetMaxAudioJitterDelay());
   }
 
   OpalMediaStream * stream = fastStartedTransmitMediaStream;
@@ -4751,7 +4770,11 @@ RTP_Session * H323Connection::UseSession(unsigned sessionID,
   }
 
   const H245_UnicastAddress & uaddr = taddr;
-  if (uaddr.GetTag() != H245_UnicastAddress::e_iPAddress) {
+  if (uaddr.GetTag() != H245_UnicastAddress::e_iPAddress
+#if P_HAS_IPV6
+        && uaddr.GetTag() != H245_UnicastAddress::e_iP6Address
+#endif
+     ) {
     return NULL;
   }
 
@@ -4931,7 +4954,7 @@ BOOL H323Connection::GetAdmissionRequestAuthentication(const H225_AdmissionReque
 }
 
 
-const OpalTransport & H323Connection::GetControlChannel() const
+const H323Transport & H323Connection::GetControlChannel() const
 {
   return *(controlChannel != NULL ? controlChannel : signallingChannel);
 }

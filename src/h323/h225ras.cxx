@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h225ras.cxx,v $
- * Revision 1.2007  2002/09/04 06:01:48  robertj
+ * Revision 1.2008  2002/11/10 11:33:18  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.6  2002/09/04 06:01:48  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.5  2002/07/01 04:56:32  robertj
@@ -47,6 +50,23 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.34  2002/11/10 08:10:43  robertj
+ * Moved constants for "well known" ports to better place (OPAL change).
+ *
+ * Revision 1.33  2002/10/17 02:10:55  robertj
+ * Backed out previous change for including PDU tag, doesn't work!
+ *
+ * Revision 1.32  2002/10/16 03:46:05  robertj
+ * Added PDU tag to cache look up key.
+ *
+ * Revision 1.31  2002/10/09 05:38:50  robertj
+ * Fixed correct mutexing of response cache buffer.
+ * Fixed correct setting of remote address when cached response transmitted.
+ *
+ * Revision 1.30  2002/09/19 09:16:01  robertj
+ * Fixed problem with making (and assuring with multi-threading) IRQ and DRQ
+ *   requests are sent to the correct endpoint address, thanks Martijn Roest.
+ *
  * Revision 1.29  2002/08/29 06:58:37  robertj
  * Fixed (again) cached response age timeout adjusted to RIP time.
  *
@@ -170,13 +190,13 @@ static PTimeInterval ResponseRetirementAge(0, 30); // Seconds
 
 /////////////////////////////////////////////////////////////////////////////
 
-H225_RAS::H225_RAS(H323EndPoint & ep, OpalTransport * trans)
+H225_RAS::H225_RAS(H323EndPoint & ep, H323Transport * trans)
   : endpoint(ep)
 {
   if (trans != NULL)
     transport = trans;
   else
-    transport = new OpalTransportUDP(ep, INADDR_ANY, DefaultRasUdpPort);
+    transport = new H323TransportUDP(ep, INADDR_ANY, DefaultRasUdpPort);
 
   checkResponseCryptoTokens = TRUE;
 
@@ -514,11 +534,47 @@ BOOL H225_RAS::WritePDU(H323RasPDU & pdu)
 {
   OnSendPDU(*this, pdu);
 
+  PWaitAndSignal mutex(pduWriteMutex);
+
   PINDEX idx = responses.GetValuesIndex(Response(lastReceivedFrom, pdu.GetSequenceNumber()));
   if (idx != P_MAX_INDEX)
     responses[idx].SetPDU(pdu);
 
   return pdu.Write(*transport);
+}
+
+
+BOOL H225_RAS::WriteTo(H323RasPDU & pdu,
+                       const H323TransportAddressArray & addresses,
+                       BOOL callback)
+{
+  if (addresses.IsEmpty()) {
+    if (callback)
+      return WritePDU(pdu);
+
+    return pdu.Write(*transport);
+  }
+
+  pduWriteMutex.Wait();
+
+  H323TransportAddress oldAddress = transport->GetRemoteAddress();
+
+  BOOL ok = FALSE;
+  for (PINDEX i = 0; i < addresses.GetSize(); i++) {
+    if (transport->ConnectTo(addresses[i])) {
+      PTRACE(3, "RAS\tWrite address set to " << addresses[i]);
+      if (callback)
+        ok = WritePDU(pdu);
+      else
+        ok = pdu.Write(*transport);
+    }
+  }
+
+  transport->ConnectTo(oldAddress);
+
+  pduWriteMutex.Signal();
+
+  return ok;
 }
 
 
@@ -532,7 +588,7 @@ BOOL H225_RAS::MakeRequest(Request & request)
   requests.SetAt(request.sequenceNumber, &request);
   requestsMutex.Signal();
 
-  BOOL ok = request.Poll(endpoint, *transport);
+  BOOL ok = request.Poll(*this);
 
   requestsMutex.Wait();
   requests.SetAt(request.sequenceNumber, NULL);
@@ -1532,6 +1588,8 @@ void H225_RAS::AgeResponses()
 {
   PTime now;
 
+  PWaitAndSignal mutex(pduWriteMutex);
+
   for (PINDEX i = 0; i < responses.GetSize(); i++) {
     const Response & response = responses[i];
     if ((now - response.lastUsedTime) > response.retirementAge) {
@@ -1545,6 +1603,8 @@ void H225_RAS::AgeResponses()
 BOOL H225_RAS::SendCachedResponse(const H323RasPDU & pdu)
 {
   Response key(lastReceivedFrom, pdu.GetSequenceNumber());
+
+  PWaitAndSignal mutex(pduWriteMutex);
 
   PINDEX idx = responses.GetValuesIndex(key);
   if (idx != P_MAX_INDEX)
@@ -1564,8 +1624,10 @@ H225_RAS::Request::Request(unsigned seqNum, H323RasPDU  & pdu)
 }
 
 
-BOOL H225_RAS::Request::Poll(H323EndPoint & endpoint, OpalTransport & transport)
+BOOL H225_RAS::Request::Poll(H225_RAS & rasChannel)
 {
+  H323EndPoint & endpoint = rasChannel.GetEndPoint();
+
   // Assume a confirm, reject callbacks will set to RejectReceived
   responseResult = AwaitingResponse;
 
@@ -1573,7 +1635,7 @@ BOOL H225_RAS::Request::Poll(H323EndPoint & endpoint, OpalTransport & transport)
     // To avoid race condition with RIP must set timeout before sending the packet
     whenResponseExpected = PTimer::Tick() + endpoint.GetRasRequestTimeout();
 
-    if (!requestPDU.Write(transport))
+    if (!rasChannel.WriteTo(requestPDU, requestAddresses, FALSE))
       break;
 
     PTRACE(3, "RAS\tWaiting on response to seqnum=" << requestPDU.GetSequenceNumber()
@@ -1672,12 +1734,16 @@ void H225_RAS::Response::SetPDU(const H323RasPDU & pdu)
 }
 
 
-BOOL H225_RAS::Response::SendCachedResponse(OpalTransport & transport)
+BOOL H225_RAS::Response::SendCachedResponse(H323Transport & transport)
 {
   PTRACE(3, "RAS\tSending cached response: " << *this);
 
-  if (replyPDU != NULL)
+  if (replyPDU != NULL) {
+    H323TransportAddress oldAddress = transport.GetRemoteAddress();
+    transport.ConnectTo(Left(FindLast('#')));
     replyPDU->Write(transport);
+    transport.ConnectTo(oldAddress);
+  }
   else {
     PTRACE(2, "RAS\tRetry made by remote before sending response: " << *this);
   }
