@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cpp,v $
+ * Revision 1.14  2004/05/25 12:55:52  rjongbloed
+ * Added all silence suppression modes to Options dialog.
+ *
  * Revision 1.13  2004/05/24 13:44:03  rjongbloed
  * More implementation on OPAL OpenPhone.
  *
@@ -602,6 +605,17 @@ bool MyFrame::Initialise()
     SetAudioJitterDelay(i, i2);
   }
 
+  OpalSilenceDetector::Params silenceParams = GetSilenceDetectParams();
+  if (config->Read("SilenceSuppression", &i))
+    silenceParams.m_mode = (OpalSilenceDetector::Mode)i;
+  if (config->Read("SilenceThreshold", &i))
+    silenceParams.m_threshold = i;
+  if (config->Read("SignalDeadband", &i))
+    silenceParams.m_signalDeadband = 8*i;
+  if (config->Read("SilenceDeadband", &i))
+    silenceParams.m_silenceDeadband = 8*i;
+  SetSilenceDetectParams(silenceParams);
+
   return true;
 }
 
@@ -646,9 +660,10 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
   INIT_FIELD(SoundBuffers, mainFrame.pcssEP->GetSoundChannelBufferDepth());
   INIT_FIELD(MinJitter, mainFrame.GetMinAudioJitterDelay());
   INIT_FIELD(MaxJitter, mainFrame.GetMaxAudioJitterDelay());
-  INIT_FIELD(SilenceSuppression, mainFrame.GetSilenceDetectParams().m_mode == OpalSilenceDetector::AdaptiveSilenceDetection);
-  INIT_FIELD(SignalDeadband, mainFrame.GetSilenceDetectParams().m_signalDeadband);
-  INIT_FIELD(SilenceDeadband, mainFrame.GetSilenceDetectParams().m_silenceDeadband);
+  INIT_FIELD(SilenceSuppression, mainFrame.GetSilenceDetectParams().m_mode);
+  INIT_FIELD(SilenceThreshold, mainFrame.GetSilenceDetectParams().m_threshold);
+  INIT_FIELD(SignalDeadband, mainFrame.GetSilenceDetectParams().m_signalDeadband/8);
+  INIT_FIELD(SilenceDeadband, mainFrame.GetSilenceDetectParams().m_silenceDeadband/8);
 #if PTRACING
   INIT_FIELD(EnableTracing, mainFrame.m_TraceFile != NULL);
   INIT_FIELD(TraceLevelThreshold, PTrace::GetLevel());
@@ -710,11 +725,10 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(TraceLevelThreshold, PTrace::SetLevel);
 
   OpalSilenceDetector::Params silenceParams;
-  silenceParams.m_mode = m_SilenceSuppression ? OpalSilenceDetector::AdaptiveSilenceDetection
-                                              : OpalSilenceDetector::NoSilenceDetection;
-  config->Write("SignalDeadband", m_SignalDeadband);
-  SAVE_FIELD(SignalDeadband, silenceParams.m_signalDeadband=);
-  SAVE_FIELD(SilenceDeadband, silenceParams.m_silenceDeadband=);
+  SAVE_FIELD(SilenceSuppression, silenceParams.m_mode=(OpalSilenceDetector::Mode));
+  SAVE_FIELD(SilenceThreshold, silenceParams.m_threshold=);
+  SAVE_FIELD(SignalDeadband, silenceParams.m_signalDeadband=8*);
+  SAVE_FIELD(SilenceDeadband, silenceParams.m_silenceDeadband=8*);
   mainFrame.SetSilenceDetectParams(silenceParams);
 
 #if PTRACING
