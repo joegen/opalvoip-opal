@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2016  2002/02/11 09:32:13  robertj
+ * Revision 1.2017  2002/03/18 00:33:36  robertj
+ * Removed duplicate initialBandwidth variable in H.323 class, moved to ancestor.
+ *
+ * Revision 2.15  2002/02/11 09:32:13  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.14  2002/01/22 05:28:27  robertj
@@ -573,7 +576,6 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   disableH245inSetup = FALSE;
 
   terminalType = e_TerminalOnly;
-  initialBandwidth = 100000; // Standard 10base LAN in 100's of bits/sec
   clearCallOnRoundTripFail = FALSE;
 
   t35CountryCode = 9; // Country code for Australia

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2010  2002/02/11 09:32:11  robertj
+ * Revision 1.2011  2002/03/18 00:33:36  robertj
+ * Removed duplicate initialBandwidth variable in H.323 class, moved to ancestor.
+ *
+ * Revision 2.9  2002/02/11 09:32:11  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.8  2002/01/22 04:59:04  robertj
@@ -829,14 +832,6 @@ class H323EndPoint : public OpalEndPoint
      */
     BOOL IsMCU() const;
 
-    /**Get the initial bandwidth parameter.
-     */
-    unsigned GetInitialBandwidth() const { return initialBandwidth; }
-
-    /**Get the initial bandwidth parameter.
-     */
-    void SetInitialBandwidth(unsigned bandwidth) { initialBandwidth = bandwidth; }
-
     /**Get the default timeout for calling another endpoint.
      */
     PTimeInterval GetSignallingChannelCallTimeout() const { return signallingChannelCallTimeout; }
@@ -946,7 +941,6 @@ class H323EndPoint : public OpalEndPoint
     WORD          manufacturerCode;
     TerminalTypes terminalType;
 
-    unsigned initialBandwidth;  // in 100s of bits/sev
     BOOL     clearCallOnRoundTripFail;
 
     // Some more configuration variables, rarely changed.
