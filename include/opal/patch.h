@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.h,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 1.2002  2002/01/22 05:07:49  robertj
+ * Added filter functions to media patch.
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  */
@@ -36,6 +39,9 @@
 #ifdef __GNUC__
 #pragma interface
 #endif
+
+
+#include <opal/mediafmt.h>
 
 
 class OpalMediaStream;
@@ -114,9 +120,30 @@ class OpalMediaPatch : public PThread
     /**Get the current source stream for patch.
       */
     OpalMediaStream & GetSource() const { return source; }
+
+    /**Add a filter to the media pipeline.
+       Use PDECLARE_NOTIFIER(RTP_DataFrame, YourClass, YourFunction) for the
+       filter function notifier.
+      */
+    void AddFilter(
+      const PNotifier & filter,
+      const OpalMediaFormat & stage = OpalMediaFormat()
+    );
+
+    /**Remove a filter from the media pipeline.
+      */
+    BOOL RemoveFilter(
+      const PNotifier & filter,
+      const OpalMediaFormat & stage = OpalMediaFormat()
+    );
   //@}
 
   protected:
+    virtual void FilterFrame(
+      RTP_DataFrame & frame,
+      const OpalMediaFormat & mediaFormat
+    );
+
     OpalMediaStream & source;
 
     class Sink : public PObject {
@@ -129,9 +156,19 @@ class OpalMediaPatch : public PThread
         OpalTranscoder  * secondaryCodec;
     };
     PARRAY(SinkArray, Sink);
+    SinkArray sinks;
 
-    SinkArray      sinks;
-    PMutex         inUse;
+    class Filter : public PObject {
+        PCLASSINFO(Filter, PObject);
+      public:
+        Filter(const PNotifier & n, const OpalMediaFormat & s) : notifier(n), stage(s) { }
+        PNotifier notifier;
+        OpalMediaFormat stage;
+    };
+    PLIST(FilterList, Filter);
+    FilterList filters;
+
+    PMutex inUse;
 };
 
 
