@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.17  2004/09/29 12:47:39  rjongbloed
+ * Added gatekeeper support
+ *
  * Revision 1.16  2004/09/29 12:02:40  rjongbloed
  * Added popup menu to edit Speed DIals
  *
@@ -464,12 +467,23 @@ class MyFrame : public wxFrame, public OpalManager
 
     MyPCSSEndPoint   * pcssEP;
     OpalPOTSEndPoint * potsEP;
+
 #if OPAL_H323
-    MyH323EndPoint   * h323EP;
+    MyH323EndPoint * h323EP;
+    int              m_gatekeeperMode;
+    PwxString        m_gatekeeperAddress;
+    PwxString        m_gatekeeperIdentifier;
+    bool StartGatekeeper();
 #endif
+
 #if OPAL_SIP
-    MySIPEndPoint    * sipEP;
+    MySIPEndPoint * sipEP;
+    PwxString       m_registrarName;
+    PwxString       m_registrarUser;
+    PwxString       m_registrarPassword;
+    bool StartRegistrar();
 #endif
+
 #if P_EXPAT
     OpalIVREndPoint  * ivrEP;
 #endif
@@ -478,11 +492,10 @@ class MyFrame : public wxFrame, public OpalManager
     void InitMediaInfo(const char * source, const OpalMediaFormatList & formats);
     void ApplyMediaInfo();
 
+#if PTRACING
     bool      m_enableTracing;
     wxString  m_traceFileName;
-    PwxString m_registrarName;
-    PwxString m_registrarUser;
-    PwxString m_registrarPassword;
+#endif
 
     PString  m_currentCallToken;
 
