@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2005  2002/01/22 05:03:06  robertj
+ * Revision 1.2006  2002/01/22 05:58:55  robertj
+ * Put MaxPayloadType back in for backward compatibility
+ *
+ * Revision 2.4  2002/01/22 05:03:06  robertj
  * Added enum for illegal payload type value.
  *
  * Revision 2.3  2001/11/14 06:20:40  robertj
@@ -202,7 +205,7 @@ class RTP_DataFrame : public PBYTEArray
       H263,
       LastKnownPayloadType,
       DynamicBase = 96,
-      maxPayloadType = 127,
+      MaxPayloadType = 127,
       IllegalPayloadType
     };
 
