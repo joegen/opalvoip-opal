@@ -7707,6 +7707,7 @@ EXPORTS
     ??_7OpalVideoMediaStream@@6B@ @19569 NONAME
     ??_7OpalVideoTranscoder@@6B@ @7117 NONAME
     ??_7OpalVoipBlasterDevice@@6B@ @19570 NONAME
+    ??_7OpalVXMLSession@@6B@ @42850 NONAME
     ??_7OpalVXMLSession@@6Biostream@@@ @41398 NONAME
     ??_7OpalVXMLSession@@6BPObject@@@ @20972 NONAME
     ??_7OpalWAVFile@@6Biostream@@@ @41399 NONAME
@@ -9685,6 +9686,7 @@ EXPORTS
     ??_R0?AVPPER_Stream@@@8 @27688 NONAME
     ??_R0?AVPre_Vid_Coder@@@8 @27689 NONAME
     ??_R0?AVPURL@@@8 @27690 NONAME
+    ??_R0?AVPVXMLChannelInterface@@@8 @42851 NONAME
     ??_R0?AVPVXMLSession@@@8 @27691 NONAME
     ??_R0?AVPWAVFile@@@8 @27692 NONAME
     ??_R0?AVQ931@@@8 @27693 NONAME
@@ -11637,6 +11639,7 @@ EXPORTS
     ??_R1BM@?0A@A@H323NonStandardCapabilityInfo@@8 @29638 NONAME
     ??_R1CE@?0A@A@H323TransactionPDU@@8 @29639 NONAME
     ??_R1EMI@?0A@A@H323TransactionPDU@@8 @29640 NONAME
+    ??_R1PI@?0A@A@PVXMLChannelInterface@@8 @42852 NONAME
     ??_R2?$H235_ENCRYPTED@VH235_EncodedGeneralToken@@@@8 @29641 NONAME
     ??_R2?$H235_ENCRYPTED@VH235_EncodedKeySyncMaterial@@@@8 @29642 NONAME
     ??_R2?$H235_ENCRYPTED@VH235_EncodedPwdCertToken@@@@8 @29643 NONAME
@@ -17005,6 +17008,7 @@ EXPORTS
     ??_R4OpalVideoMediaStream@@6B@ @35026 NONAME
     ??_R4OpalVideoTranscoder@@6B@ @35027 NONAME
     ??_R4OpalVoipBlasterDevice@@6B@ @35028 NONAME
+    ??_R4OpalVXMLSession@@6B@ @42853 NONAME
     ??_R4OpalVXMLSession@@6Biostream@@@ @41662 NONAME
     ??_R4OpalVXMLSession@@6BPObject@@@ @35030 NONAME
     ??_R4OpalWAVFile@@6Biostream@@@ @41663 NONAME
@@ -22983,7 +22987,6 @@ EXPORTS
     ?Disengage@H323GatekeeperCall@@UAEHH@Z @21035 NONAME
     ?DisengageRequest@H323Gatekeeper@@QAEHABVH323Connection@@I@Z @11686 NONAME
     ?DisengageRequest@H323GatekeeperListener@@QAEHABVH323GatekeeperCall@@I@Z @19847 NONAME
-    ?DoExit@PVXMLSession@@UAEHXZ @41835 NONAME
     ?DoTransfer@PVXMLSession@@UAEHABVPVXMLTransferOptions@@@Z @41836 NONAME
     ?EnableAudio@OpalIxJDevice@@UAEHIH@Z @11687 NONAME
     ?EnableAudio@OpalLine@@UAEHH@Z @11688 NONAME
@@ -23766,6 +23769,7 @@ EXPORTS
     ?FilterFrame@OpalMediaPatch@@UAEXAAVRTP_DataFrame@@ABVOpalMediaFormat@@@Z @37612 NONAME
     ?Finalise@H235Authenticator@@UAEHAAVPBYTEArray@@@Z @37613 NONAME
     ?Finalise@H235AuthProcedure1@@UAEHAAVPBYTEArray@@@Z @18887 NONAME
+    ?find@?$_Tree@VPString@@U?$pair@$$CBVPString@@VAbstractInfo@?$PGenericFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@VAbstractInfo@?$PGenericFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@VAbstractInfo@?$PGenericFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@VAbstractInfo@?$PGenericFactory@VPTextToSpeech@@VPString@@@@@3@@std@@QAE?AViterator@12@ABVPString@@@Z @42854 NONAME
     ?FindCall@H323GatekeeperServer@@UAE?AV?$PSafePtr@VH323GatekeeperCall@@@@ABVOpalGloballyUniqueID@@HW4PSafetyMode@@@Z @19858 NONAME
     ?FindCall@H323GatekeeperServer@@UAE?AV?$PSafePtr@VH323GatekeeperCall@@@@ABVOpalGloballyUniqueID@@W4Direction@H323GatekeeperCall@@W4PSafetyMode@@@Z @19859 NONAME
     ?FindCall@H323GatekeeperServer@@UAE?AV?$PSafePtr@VH323GatekeeperCall@@@@ABVPString@@W4PSafetyMode@@@Z @21036 NONAME
@@ -26476,6 +26480,7 @@ EXPORTS
     ?GetIpAndPort@OpalTransportAddress@@QBEHAAVAddress@PIPSocket@@AAG@Z @14351 NONAME
     ?GetJitterBufferSize@RTP_Session@@QBEIXZ @21068 NONAME
     ?GetKeyAt@?$PSet@VPOrdinalKey@@@@UBEABVPOrdinalKey@@H@Z @20019 NONAME
+    ?GetKeyList@?$PGenericFactory@VPTextToSpeech@@VPString@@@@SA?AV?$vector@VPString@@V?$allocator@VPString@@@std@@@std@@XZ @42855 NONAME
     ?GetKeypad@Q931@@QBE?AVPString@@XZ @20020 NONAME
     ?GetLastReceivedAddress@OpalTransport@@UBE?AVOpalTransportAddress@@XZ @22907 NONAME
     ?GetLastReceivedAddress@OpalTransportUDP@@UBE?AVOpalTransportAddress@@XZ @22908 NONAME
@@ -28753,7 +28758,6 @@ EXPORTS
     ?OnDisengage@H323GatekeeperCall@@UAE?AW4Response@H323Transaction@@AAVH323GatekeeperDRQ@@@Z @39960 NONAME
     ?OnDisengage@H323GatekeeperListener@@UAE?AW4Response@H323Transaction@@AAVH323GatekeeperDRQ@@@Z @39961 NONAME
     ?OnDisengage@H323GatekeeperServer@@UAE?AW4Response@H323Transaction@@AAVH323GatekeeperDRQ@@@Z @39962 NONAME
-    ?OnEmptyAction@PVXMLSession@@UAEHXZ @21102 NONAME
     ?OnEndReceive@OpalRFC2833Proto@@UAEXDII@Z @20379 NONAME
     ?OnEndSession@OpalVXMLSession@@UAEXXZ @39963 NONAME
     ?OnEstablished@H323Connection@@UAEXXZ @17318 NONAME
@@ -30494,7 +30498,6 @@ EXPORTS
     ?SetDisplayName@Q931@@QAEXABVPString@@@Z @18403 NONAME
     ?SetDomainName@H323PeerElement@@QAEXABVPString@@@Z @40972 NONAME
     ?SetDynamicRTPPayloadType@H323_RealTimeChannel@@UAEHH@Z @20722 NONAME
-    ?SetEmptyAction@PVXMLSession@@UAEXH@Z @40973 NONAME
     ?SetEndpointTypeInfo@H323EndPoint@@UBEXAAVH225_EndpointType@@@Z @18405 NONAME
     ?SetEnforcedDurationLimit@H323Connection@@QAEXI@Z @23366 NONAME
     ?SetExpires@SIPMIMEInfo@@QAEXI@Z @40975 NONAME
@@ -30837,5 +30840,7 @@ EXPORTS
     ?WriteREGISTER@SIPEndPoint@@KAHAAVOpalTransport@@PAX@Z @41086 NONAME
     ?WriteSignalPDU@H323Connection@@QAEHAAVH323SignalPDU@@@Z @18588 NONAME
     ?WriteTo@H323Transactor@@UAEHAAVH323TransactionPDU@@ABVH323TransportAddressArray@@H@Z @41087 NONAME
+    ?_Min@?$_Tree@VPString@@U?$pair@$$CBVPString@@VAbstractInfo@?$PGenericFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@VAbstractInfo@?$PGenericFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@VAbstractInfo@?$PGenericFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@VAbstractInfo@?$PGenericFactory@VPTextToSpeech@@VPString@@@@@3@@std@@KAPAU_Node@12@PAU312@@Z @42856 NONAME
+    ?_Nil@?$_Tree@VPString@@U?$pair@$$CBVPString@@VAbstractInfo@?$PGenericFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@VAbstractInfo@?$PGenericFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@VAbstractInfo@?$PGenericFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@VAbstractInfo@?$PGenericFactory@VPTextToSpeech@@VPString@@@@@3@@std@@1PAU_Node@12@A @42857 NONAME
     ?__resetiosflags@@YAAAVios@@AAV1@J@Z @42845 NONAME
     ?__setiosflags@@YAAAVios@@AAV1@J@Z @42846 NONAME
