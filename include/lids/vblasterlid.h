@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vblasterlid.h,v $
- * Revision 1.2003  2002/09/04 06:01:47  robertj
+ * Revision 1.2004  2002/09/06 07:20:14  robertj
+ * Fixed previous update, did not port properly.
+ *
+ * Revision 2.2  2002/09/04 06:01:47  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.1  2002/01/22 06:28:43  robertj
@@ -55,9 +58,7 @@
 
 #define HAS_VBLASTER
 
-#include "lid.h"
-#include "h323caps.h"
-
+#include <lids/lid.h>
 #include <ptclib/delaychan.h>
 
 
@@ -289,7 +290,7 @@ class OpalVoipBlasterDevice : public OpalLineInterfaceDevice
 
     /**Get the media formats this device is capable of using.
       */
-    virtual OpalMediaFormat::List GetMediaFormats() const;
+    virtual OpalMediaFormatList GetMediaFormats() const;
 
     /**Set the VoIPBlaster codec for reading.
       */
