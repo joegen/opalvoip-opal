@@ -24,7 +24,11 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2026  2004/05/02 05:18:45  rjongbloed
+ * Revision 1.2027  2004/05/24 13:36:30  rjongbloed
+ * Fixed not transmitting RTP packets with zero length payload which
+ *   is rather important for silence suppression, thanks Ted Szoczei
+ *
+ * Revision 2.25  2004/05/02 05:18:45  rjongbloed
  * More logging
  *
  * Revision 2.24  2004/03/25 11:53:42  rjongbloed
@@ -477,6 +481,10 @@ BOOL OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
   }
 
   timestamp = packet.GetTimestamp();
+
+  if (packet.GetPayloadSize() == 0)
+    return TRUE;
+
   return rtpSession.WriteData(packet);
 }
 
