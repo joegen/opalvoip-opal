@@ -22,7 +22,11 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2013  2002/03/15 10:51:53  robertj
+# Revision 1.2014  2002/09/11 05:56:16  robertj
+# Fixed double inclusion of common.mak
+# Added opalwavfile.cxx module
+#
+# Revision 2.12  2002/03/15 10:51:53  robertj
 # Fixed problem with recursive inclusion on make files.
 #
 # Revision 2.11  2002/03/05 06:27:34  robertj
@@ -67,23 +71,14 @@
 # Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
 #
 
-ifndef PWLIBDIR
-PWLIBDIR=$(HOME)/pwlib
-endif
-
-include $(PWLIBDIR)/make/unix.mak
-
-
-
 SUBDIRS := samples/simple
-
-
-OPAL_LIBRARY_MAKEFILE=1
 
 ifndef OPALDIR
 OPALDIR=$(CURDIR)
 export OPALDIR
 endif
+
+LIBRARY_MAKEFILE:=1
 
 include $(OPALDIR)/opal_inc.mak
 
@@ -197,7 +192,8 @@ endif
 
 SOURCES += $(OPAL_SRCDIR)/codec/g711codec.cxx \
            $(OPAL_SRCDIR)/codec/g711.c \
-           $(OPAL_SRCDIR)/codec/rfc2833.cxx
+           $(OPAL_SRCDIR)/codec/rfc2833.cxx \
+           $(OPAL_SRCDIR)/codec/opalwavfile.cxx
 
 G726_DIR = g726
 
