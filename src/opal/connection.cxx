@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2034  2004/05/01 10:00:52  rjongbloed
+ * Revision 1.2035  2004/05/15 12:53:03  rjongbloed
+ * Added default username and display name to manager, for all endpoints.
+ *
+ * Revision 2.33  2004/05/01 10:00:52  rjongbloed
  * Fixed ClearCallSynchronous so now is actually signalled when call is destroyed.
  *
  * Revision 2.32  2004/04/26 04:33:06  rjongbloed
@@ -220,6 +223,7 @@ OpalConnection::OpalConnection(OpalCall & call,
     connectedTime(0),
     callEndTime(0),
     localPartyName(ep.GetDefaultLocalPartyName()),
+    displayName(ep.GetDefaultDisplayName()),
     remotePartyName(token)
 {
   PTRACE(3, "OpalCon\tCreated connection " << *this);
