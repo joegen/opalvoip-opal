@@ -655,8 +655,9 @@ InputDir=\Work\opal\include\opal
 InputPath=..\..\include\opal\buildopts.h.in
 
 "$(InputDir)\buildopts.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd ..\.. ; .\configure
-
+	cd ..\.. 
+	.\configure 
+	
 # End Custom Build
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
@@ -667,8 +668,9 @@ InputDir=\Work\opal\include\opal
 InputPath=..\..\include\opal\buildopts.h.in
 
 "$(InputDir)\buildopts.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd ..\.. ; .\configure
-
+	cd ..\.. 
+	.\configure 
+	
 # End Custom Build
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
@@ -679,8 +681,9 @@ InputDir=\Work\opal\include\opal
 InputPath=..\..\include\opal\buildopts.h.in
 
 "$(InputDir)\buildopts.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd ..\.. ; .\configure
-
+	cd ..\.. 
+	.\configure 
+	
 # End Custom Build
 
 !ENDIF 
