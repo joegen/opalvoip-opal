@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2039  2004/08/14 07:56:43  rjongbloed
+ * Revision 1.2040  2004/12/12 13:37:02  dsandras
+ * Made the transport type comparison insensitive. Required for interoperation with some IP Phones.
+ *
+ * Revision 2.38  2004/08/14 07:56:43  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.37  2004/05/09 13:12:38  rjongbloed
@@ -1472,8 +1475,8 @@ BOOL OpalTransportTCP::IsReliable() const
 
 BOOL OpalTransportTCP::IsCompatibleTransport(const OpalTransportAddress & address) const
 {
-  return address.Left(strlen(TcpPrefix)) == TcpPrefix ||
-         address.Left(sizeof(IpPrefix)-1) == IpPrefix;
+  return (address.Left(strlen(TcpPrefix)) *= TcpPrefix) ||
+         (address.Left(sizeof(IpPrefix)-1) *= IpPrefix);
 }
 
 
@@ -1734,8 +1737,8 @@ BOOL OpalTransportUDP::IsReliable() const
 
 BOOL OpalTransportUDP::IsCompatibleTransport(const OpalTransportAddress & address) const
 {
-  return address.Left(strlen(UdpPrefix)) == UdpPrefix ||
-         address.Left(sizeof(IpPrefix)-1) == IpPrefix;
+  return address.Left(strlen(UdpPrefix)).ToLower () == UdpPrefix ||
+         address.Left(sizeof(IpPrefix)-1).ToLower () == IpPrefix;
 }
 
 
