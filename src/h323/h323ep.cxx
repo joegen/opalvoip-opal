@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2008  2001/10/05 00:22:14  robertj
+ * Revision 1.2009  2001/10/15 04:35:44  robertj
+ * Removed answerCall signal and replaced with state based functions.
+ * Maintained H.323 answerCall API for backward compatibility.
+ *
+ * Revision 2.7  2001/10/05 00:22:14  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.6  2001/08/23 03:15:51  robertj
@@ -967,7 +971,7 @@ H323Connection::AnswerCallResponse
                                   const H323SignalPDU & /*setupPDU*/,
                                   H323SignalPDU & /*connectPDU*/)
 {
-  return OpalConnection::NumAnswerCallResponses;
+  return H323Connection::NumAnswerCallResponses;
 }
 
 
