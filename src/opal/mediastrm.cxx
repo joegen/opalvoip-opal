@@ -24,7 +24,11 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2009  2001/10/15 04:32:14  robertj
+ * Revision 1.2010  2001/11/15 06:58:17  robertj
+ * Changed default read size for media stream to 50ms (if is audio), fixes
+ *   overly small packet size for G.711
+ *
+ * Revision 2.8  2001/10/15 04:32:14  robertj
  * Added delayed start of media patch threads.
  *
  * Revision 2.7  2001/10/04 05:43:44  craigs
@@ -112,7 +116,14 @@ BOOL OpalMediaStream::Open(const OpalMediaFormat & format)
          << " as " << (IsSource() ? "source" : "sink"));
 
   mediaFormat = format;
-  defaultDataSize = format.GetFrameSize();
+
+  // Set default frame size to 50ms of audio, otherwise just one frame
+  unsigned frameTime = format.GetFrameTime();
+  if (frameTime != 0 && format.GetTimeUnits() == OpalMediaFormat::AudioTimeUnits)
+    defaultDataSize = ((400+frameTime-1)/frameTime)*format.GetFrameSize();
+  else
+    defaultDataSize = format.GetFrameSize();
+
   return TRUE;
 }
 
