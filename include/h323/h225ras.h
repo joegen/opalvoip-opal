@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h225ras.h,v $
- * Revision 1.2006  2002/09/16 02:52:33  robertj
+ * Revision 1.2007  2002/11/10 11:33:16  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.5  2002/09/16 02:52:33  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -45,6 +48,23 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.24  2002/11/04 11:52:08  robertj
+ * Fixed comment
+ *
+ * Revision 1.23  2002/10/17 02:09:01  robertj
+ * Backed out previous change for including PDU tag, doesn't work!
+ *
+ * Revision 1.22  2002/10/16 03:40:12  robertj
+ * Added PDU tag to cache look up key.
+ *
+ * Revision 1.21  2002/09/19 09:15:56  robertj
+ * Fixed problem with making (and assuring with multi-threading) IRQ and DRQ
+ *   requests are sent to the correct endpoint address, thanks Martijn Roest.
+ *
+ * Revision 1.20  2002/09/16 01:14:15  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
  * Revision 1.19  2002/09/03 05:37:17  robertj
  * Normalised the multi-include header prevention ifdef/define symbol.
@@ -160,13 +180,10 @@ class H225_ResourcesAvailableIndicate;
 class H225_ResourcesAvailableConfirm;
 class H225_InfoRequestAck;
 class H225_InfoRequestNak;
-class H225_ArrayOf_TransportAddress;
 class H225_ArrayOf_CryptoH323Token;
 
 class H323EndPoint;
 class H323RasPDU;
-
-class OpalTransport;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -188,7 +205,7 @@ class H225_RAS : public PObject
      */
     H225_RAS(
       H323EndPoint & endpoint,  /// Endpoint gatekeeper is associated with.
-      OpalTransport * transport /// Transport over which gatekeepers communicates.
+      H323Transport * transport /// Transport over which gatekeepers communicates.
     );
 
     /**Destroy protocol handler.
@@ -221,6 +238,14 @@ class H225_RAS : public PObject
       */
     virtual BOOL WritePDU(
       H323RasPDU & pdu
+    );
+
+    /**Write PDU to transport after executing callback.
+      */
+    virtual BOOL WriteTo(
+      H323RasPDU & pdu,
+      const H323TransportAddressArray & addresses,
+      BOOL callback
     );
   //@}
 
@@ -368,9 +393,13 @@ class H225_RAS : public PObject
 
   /**@name Member variable access */
   //@{
+    /**Get the gatekeepers associated endpoint.
+      */
+    H323EndPoint & GetEndPoint() const { return endpoint; }
+
     /**Get the gatekeepers transport channel.
       */
-    OpalTransport & GetTransport() const { return *transport; }
+    H323Transport & GetTransport() const { return *transport; }
 
     /**Get the gatekeeper identifer.
        For clients at least one successful registration must have been
@@ -419,13 +448,15 @@ class H225_RAS : public PObject
       public:
         Request(unsigned seqNum, H323RasPDU  & pdu);
 
-        BOOL Poll(H323EndPoint &, OpalTransport &);
+        BOOL Poll(H225_RAS &);
         void CheckResponse(unsigned, const PASN_Choice *);
         void OnReceiveRIP(const H225_RequestInProgress & rip);
 
         // Inter-thread transfer variables
         unsigned rejectReason;
         void   * responseInfo;
+
+        H323TransportAddressArray requestAddresses;
 
         unsigned      sequenceNumber;
         H323RasPDU  & requestPDU;
@@ -451,7 +482,7 @@ class H225_RAS : public PObject
 
     // Configuration variables
     H323EndPoint  & endpoint;
-    OpalTransport * transport;
+    H323Transport * transport;
 
     // Option variables
     PString gatekeeperIdentifier;
@@ -476,7 +507,7 @@ class H225_RAS : public PObject
         ~Response();
 
         void SetPDU(const H323RasPDU & pdu);
-        BOOL SendCachedResponse(OpalTransport & transport);
+        BOOL SendCachedResponse(H323Transport & transport);
 
         PTime         lastUsedTime;
         PTimeInterval retirementAge;
@@ -484,6 +515,8 @@ class H225_RAS : public PObject
     };
     PSORTED_LIST(ResponseDict, Response);
     ResponseDict responses;
+
+    PMutex pduWriteMutex;
 };
 
 

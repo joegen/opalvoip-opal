@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2018  2002/09/16 02:52:33  robertj
+ * Revision 1.2019  2002/11/10 11:33:16  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.17  2002/09/16 02:52:33  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -83,6 +86,26 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.40  2002/11/10 08:10:43  robertj
+ * Moved constants for "well known" ports to better place (OPAL change).
+ *
+ * Revision 1.39  2002/10/31 00:32:15  robertj
+ * Enhanced jitter buffer system so operates dynamically between minimum and
+ *   maximum values. Altered API to assure app writers note the change!
+ *
+ * Revision 1.38  2002/10/23 06:06:10  robertj
+ * Added function to be smarter in using a gatekeeper for use by endpoint.
+ *
+ * Revision 1.37  2002/10/21 06:07:44  robertj
+ * Added function to set gatekeeper access token OID.
+ *
+ * Revision 1.36  2002/09/16 01:14:15  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
+ *
+ * Revision 1.35  2002/09/10 06:32:25  robertj
+ * Added function to get gatekeeper password.
  *
  * Revision 1.34  2002/09/03 06:19:36  robertj
  * Normalised the multi-include header prevention ifdef/define symbol.
@@ -245,7 +268,7 @@ class H323EndPoint : public OpalEndPoint
 
   public:
     enum {
-      DefaultSignalTcpPort = 1720
+      DefaultTcpPort = 1720
     };
 
   /**@name Construction */
@@ -412,6 +435,29 @@ class H323EndPoint : public OpalEndPoint
 
   /**@name Gatekeeper management */
   //@{
+    /**Use and register with an explicit gatekeeper.
+       This will call other functions according to the following table:
+
+           address    identifier   function
+           empty      empty        DiscoverGatekeeper()
+           non-empty  empty        SetGatekeeper()
+           empty      non-empty    LocateGatekeeper()
+           non-empty  non-empty    SetGatekeeperZone()
+
+       The localAddress field, if non-empty, indicates the interface on which
+       to look for the gatekeeper. An empty string is equivalent to "ip$*:*"
+       which is any interface or port.
+
+       If the endpoint is already registered with a gatekeeper that meets
+       the same criteria then the gatekeeper is not changed, otherwise it is
+       deleted (with unregistration) and new one created and registered to.
+     */
+    BOOL UseGatekeeper(
+      const PString & address = PString::Empty(),     /// Address of gatekeeper to use.
+      const PString & identifier = PString::Empty(),  /// Identifier of gatekeeper to use.
+      const PString & localAddress = PString::Empty() /// Local interface to use.
+    );
+
     /**Select and register with an explicit gatekeeper.
        This will use the specified transport and a string giving a transport
        dependent address to locate a specific gatekeeper. The endpoint will
@@ -420,11 +466,11 @@ class H323EndPoint : public OpalEndPoint
 
        Note the transport being passed in will be deleted by this function or
        the H323Gatekeeper object it becomes associated with. Also if transport
-       is NULL then a OpalTransportUDP is created.
+       is NULL then a H323TransportUDP is created.
      */
     BOOL SetGatekeeper(
       const PString & address,          /// Address of gatekeeper to use.
-      OpalTransport * transport = NULL  /// Transport over which to talk to gatekeeper.
+      H323Transport * transport = NULL  /// Transport over which to talk to gatekeeper.
     );
 
     /**Select and register with an explicit gatekeeper and zone.
@@ -439,12 +485,12 @@ class H323EndPoint : public OpalEndPoint
 
        Note the transport being passed in will be deleted by this function or
        the H323Gatekeeper object it becomes associated with. Also if transport
-       is NULL then a OpalTransportUDP is created.
+       is NULL then a H323TransportUDP is created.
      */
     BOOL SetGatekeeperZone(
       const PString & address,          /// Address of gatekeeper to use.
       const PString & identifier,       /// Identifier of gatekeeper to use.
-      OpalTransport * transport = NULL  /// Transport over which to talk to gatekeeper.
+      H323Transport * transport = NULL  /// Transport over which to talk to gatekeeper.
     );
 
     /**Locate and select gatekeeper.
@@ -454,11 +500,11 @@ class H323EndPoint : public OpalEndPoint
 
        Note the transport being passed in will be deleted becomes owned by the
        H323Gatekeeper created by this function and will be deleted by it. Also
-       if transport is NULL then a OpalTransportUDP is created.
+       if transport is NULL then a H323TransportUDP is created.
      */
     BOOL LocateGatekeeper(
       const PString & identifier,       /// Identifier of gatekeeper to locate.
-      OpalTransport * transport = NULL  /// Transport over which to talk to gatekeeper.
+      H323Transport * transport = NULL  /// Transport over which to talk to gatekeeper.
     );
 
     /**Discover and select gatekeeper.
@@ -467,10 +513,10 @@ class H323EndPoint : public OpalEndPoint
 
        Note the transport being passed in will be deleted becomes owned by the
        H323Gatekeeper created by this function and will be deleted by it. Also
-       if transport is NULL then a OpalTransportUDP is created.
+       if transport is NULL then a H323TransportUDP is created.
      */
     BOOL DiscoverGatekeeper(
-      OpalTransport * transport = NULL  /// Transport over which to talk to gatekeeper.
+      H323Transport * transport = NULL  /// Transport over which to talk to gatekeeper.
     );
 
     /**Create a gatekeeper.
@@ -481,7 +527,7 @@ class H323EndPoint : public OpalEndPoint
        The default creates an instance of the H323Gatekeeper class.
      */
     virtual H323Gatekeeper * CreateGatekeeper(
-      OpalTransport * transport  /// Transport over which gatekeepers communicates.
+      H323Transport * transport  /// Transport over which gatekeepers communicates.
     );
 
     /**Get the gatekeeper we are registered with.
@@ -601,7 +647,7 @@ class H323EndPoint : public OpalEndPoint
     void ParsePartyName(
       const PString & party,          /// Party name string.
       PString & alias,                /// Parsed alias name
-      OpalTransportAddress & address  /// Parsed transport address
+      H323TransportAddress & address  /// Parsed transport address
     ) const;
 
     /**Find a connection that uses the specified token.
@@ -924,6 +970,13 @@ class H323EndPoint : public OpalEndPoint
      */
     BOOL IsMCU() const;
 
+    /**Provide TCP address translation hook
+     */
+    virtual void TranslateTCPAddress(
+      PIPSocket::Address & localAddr,
+      const PIPSocket::Address & remoteAddr
+    );
+
     /**Get the default timeout for calling another endpoint.
      */
     const PTimeInterval & GetSignallingChannelCallTimeout() const { return signallingChannelCallTimeout; }
@@ -1028,7 +1081,7 @@ class H323EndPoint : public OpalEndPoint
 
 
   protected:
-    H323Gatekeeper * InternalCreateGatekeeper(OpalTransport * transport);
+    H323Gatekeeper * InternalCreateGatekeeper(H323Transport * transport);
     BOOL InternalRegisterGatekeeper(H323Gatekeeper * gk, BOOL discovered);
     H323Connection * FindConnectionWithoutLocks(const PString & token);
     BOOL InternalMakeCall(

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.h,v $
- * Revision 1.2011  2002/09/16 02:52:33  robertj
+ * Revision 1.2012  2002/11/10 11:33:16  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.10  2002/09/16 02:52:33  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -60,6 +63,10 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.40  2002/09/16 01:14:15  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
  * Revision 1.39  2002/09/03 06:19:36  robertj
  * Normalised the multi-include header prevention ifdef/define symbol.
@@ -214,9 +221,6 @@ class H323EndPoint;
 class H323Connection;
 class H323Capability;
 class H323_RTP_Session;
-
-class OpalListener;
-class OpalTransport;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1014,7 +1018,7 @@ class H323DataChannel : public H323UnidirectionalChannel
 
   /**@name Operations */
   //@{
-    /**Create the OpalListener class to be used.
+    /**Create the H323Listener class to be used.
        This is called on receipt of an OpenLogicalChannel request.
 
        The default behaviour creates a compatible listener using the
@@ -1022,7 +1026,7 @@ class H323DataChannel : public H323UnidirectionalChannel
       */
     virtual BOOL CreateListener();
 
-    /**Create the OpalTransport class to be used.
+    /**Create the H323Transport class to be used.
        This is called on receipt of an OpenLogicalChannelAck response. It
        should not return TRUE unless the transport member variable is set.
 
@@ -1033,10 +1037,10 @@ class H323DataChannel : public H323UnidirectionalChannel
   //@}
 
   protected:
-    OpalListener  * listener;
     unsigned        sessionID;
+    H323Listener  * listener;
     BOOL            autoDeleteListener;
-    OpalTransport * transport;
+    H323Transport * transport;
     BOOL            autoDeleteTransport;
     BOOL            separateReverseChannel;
 };

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.h,v $
- * Revision 1.2009  2002/09/16 02:52:33  robertj
+ * Revision 1.2010  2002/11/10 11:33:16  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.8  2002/09/16 02:52:33  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -54,6 +57,14 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.43  2002/09/18 06:58:29  robertj
+ * Fixed setting of IRR frequency, an RCF could reset timer so it did not time
+ *   out correctly and send IRR in time causing problems with gatekeeper.
+ *
+ * Revision 1.42  2002/09/16 01:14:15  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
  * Revision 1.41  2002/09/03 06:19:36  robertj
  * Normalised the multi-include header prevention ifdef/define symbol.
@@ -225,7 +236,7 @@ class H323Gatekeeper : public H225_RAS
      */
     H323Gatekeeper(
       H323EndPoint & endpoint,  /// Endpoint gatekeeper is associated with.
-      OpalTransport * transport       /// Transport over which gatekeepers communicates.
+      H323Transport * transport       /// Transport over which gatekeepers communicates.
     );
 
     /**Destroy gatekeeper.
@@ -279,7 +290,7 @@ class H323Gatekeeper : public H225_RAS
        to a broadcast is used.
      */
     BOOL DiscoverByAddress(
-      const PString & address /// Address of gatekeeper.
+      const H323TransportAddress & address /// Address of gatekeeper.
     );
 
     /**Discover a gatekeeper on the local network.
@@ -287,7 +298,7 @@ class H323Gatekeeper : public H225_RAS
      */
     BOOL DiscoverByNameAndAddress(
       const PString & identifier,
-      const PString & address
+      const H323TransportAddress & address
     );
 
     /**Register with gatekeeper.
@@ -306,14 +317,14 @@ class H323Gatekeeper : public H225_RAS
      */
     BOOL LocationRequest(
       const PString & alias,          /// Alias name we wish to find.
-      OpalTransportAddress & address  /// Resultant transport address.
+      H323TransportAddress & address  /// Resultant transport address.
     );
 
     /**Location request to gatekeeper.
      */
     BOOL LocationRequest(
       const PStringList & aliases,    /// Alias names we wish to find.
-      OpalTransportAddress & address  /// Resultant transport address.
+      H323TransportAddress & address  /// Resultant transport address.
     );
 
     struct AdmissionResponse {
@@ -402,14 +413,18 @@ class H323Gatekeeper : public H225_RAS
 
 
   protected:
-    BOOL StartDiscovery(const OpalTransportAddress & address);
-    BOOL DiscoverGatekeeper(H323RasPDU & request, const OpalTransportAddress & address);
+    BOOL StartDiscovery(const H323TransportAddress & address);
+    BOOL DiscoverGatekeeper(H323RasPDU & request, const H323TransportAddress & address);
     unsigned SetupGatekeeperRequest(H323RasPDU & request);
 
     PDECLARE_NOTIFIER(PThread, H323Gatekeeper, MonitorMain);
     PDECLARE_NOTIFIER(PTimer, H323Gatekeeper, TickleMonitor);
     void RegistrationTimeToLive();
 
+    void SetInfoRequestRate(
+      const PTimeInterval & rate
+    );
+    void ClearInfoRequestRate();
     H225_InfoRequestResponse & BuildInfoRequestResponse(
       H323RasPDU & response,
       unsigned seqNum

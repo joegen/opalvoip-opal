@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323neg.h,v $
- * Revision 1.2007  2002/09/16 02:52:34  robertj
+ * Revision 1.2008  2002/11/10 11:33:16  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.6  2002/09/16 02:52:34  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -48,6 +51,10 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.34  2002/09/16 01:14:15  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
  * Revision 1.33  2002/09/03 06:19:36  robertj
  * Normalised the multi-include header prevention ifdef/define symbol.

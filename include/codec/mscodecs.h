@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mscodecs.h,v $
- * Revision 1.2005  2002/09/16 02:52:33  robertj
+ * Revision 1.2006  2002/11/10 11:33:16  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.4  2002/09/16 02:52:33  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -43,6 +46,13 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.11  2002/09/30 09:32:50  craigs
+ * Removed ability to set no. of frames per packet for MS-GSM - there can be only one!
+ *
+ * Revision 1.10  2002/09/16 01:14:15  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
  * Revision 1.9  2002/09/03 05:41:56  robertj
  * Normalised the multi-include header prevention ifdef/define symbol.
@@ -99,49 +109,6 @@ extern OpalMediaFormat const OpalMSIMA;
 
 ///////////////////////////////////////////////////////////////////////////////
 
-class Opal_MSGSM_PCM : public Opal_GSM0610 {
-  public:
-    Opal_MSGSM_PCM(const OpalTranscoderRegistration & registration);
-    virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
-};
-
-
-///////////////////////////////////////////////////////////////////////////////
-
-class Opal_PCM_MSGSM : public Opal_GSM0610 {
-  public:
-    Opal_PCM_MSGSM(const OpalTranscoderRegistration & registration);
-    virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
-};
-
-
-///////////////////////////////////////////////////////////////////////////////
-
-class Opal_MSIMA_PCM : public OpalFramedTranscoder {
-  public:
-    Opal_MSIMA_PCM(const OpalTranscoderRegistration & registration);
-    virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
-};
-
-
-///////////////////////////////////////////////////////////////////////////////
-
-struct adpcm_state {
-  short valprev;        /* Previous output value */
-  char  index;          /* Index into stepsize table */
-};
-
-class Opal_PCM_MSIMA : public OpalFramedTranscoder {
-  public:
-    Opal_PCM_MSIMA(const OpalTranscoderRegistration & registration);
-    virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
-  protected:
-    adpcm_state s_adpcm;
-};
-
-
-///////////////////////////////////////////////////////////////////////////////
-
 #ifndef NO_H323
 
 class MicrosoftNonStandardAudioCapability : public H323NonStandardAudioCapability
@@ -150,7 +117,6 @@ class MicrosoftNonStandardAudioCapability : public H323NonStandardAudioCapabilit
 
   public:
     MicrosoftNonStandardAudioCapability(
-      const OpalMediaFormat & mediaFormat,
       const BYTE * header,
       PINDEX headerSize,
       PINDEX offset,
@@ -168,6 +134,8 @@ class MicrosoftGSMAudioCapability : public MicrosoftNonStandardAudioCapability
   public:
     MicrosoftGSMAudioCapability();
     PObject * MicrosoftGSMAudioCapability::Clone() const;
+    PString MicrosoftGSMAudioCapability::GetFormatName() const;
+    void SetTxFramesInPacket(unsigned /*frames*/);
 };
 
 
@@ -180,6 +148,7 @@ class MicrosoftIMAAudioCapability : public MicrosoftNonStandardAudioCapability
   public:
     MicrosoftIMAAudioCapability();
     PObject * MicrosoftIMAAudioCapability::Clone() const;
+    PString MicrosoftIMAAudioCapability::GetFormatName() const;
 };
 
 #define OPAL_REGISTER_MSCODECS_H323 \
@@ -197,6 +166,48 @@ H323_STATIC_LOAD_REGISTER_CAPABILITY(MicrosoftIMAAudioCapability);
 #define OPAL_REGISTER_MSCODECS_H323
 
 #endif // ifndef NO_H323
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+class Opal_MSGSM_PCM : public Opal_GSM0610 {
+  public:
+    Opal_MSGSM_PCM(const OpalTranscoderRegistration & registration);
+    virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
+};
+
+
+class Opal_PCM_MSGSM : public Opal_GSM0610 {
+  public:
+    Opal_PCM_MSGSM(const OpalTranscoderRegistration & registration);
+    virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+class Opal_MSIMA_PCM : public OpalFramedTranscoder {
+  public:
+    Opal_MSIMA_PCM(const OpalTranscoderRegistration & registration);
+    virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
+};
+
+
+struct adpcm_state {
+  short valprev;        /* Previous output value */
+  char  index;          /* Index into stepsize table */
+};
+
+class Opal_PCM_MSIMA : public OpalFramedTranscoder {
+  public:
+    Opal_PCM_MSIMA(const OpalTranscoderRegistration & registration);
+    virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
+  protected:
+    adpcm_state s_adpcm;
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
 
 #define OPAL_REGISTER_MSCODECS() \
           OPAL_REGISTER_MSCODECS_H323 \

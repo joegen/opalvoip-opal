@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g729codec.h,v $
- * Revision 1.2004  2002/09/16 02:52:33  robertj
+ * Revision 1.2005  2002/11/10 11:33:16  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.3  2002/09/16 02:52:33  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -36,6 +39,10 @@
  *
  * Revision 2.1  2002/07/01 04:56:29  robertj
  * Updated to OpenH323 v1.9.1
+ *
+ * Revision 1.5  2002/09/16 01:14:15  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
  * Revision 1.4  2002/09/03 06:19:36  robertj
  * Normalised the multi-include header prevention ifdef/define symbol.

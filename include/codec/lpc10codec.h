@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lpc10codec.h,v $
- * Revision 1.2005  2002/09/16 02:52:33  robertj
+ * Revision 1.2006  2002/11/10 11:33:16  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.4  2002/09/16 02:52:33  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -43,6 +46,10 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.9  2002/09/16 01:14:15  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
  * Revision 1.8  2002/09/03 05:41:25  robertj
  * Normalised the multi-include header prevention ifdef/define symbol.
@@ -97,30 +104,6 @@ extern OpalMediaFormat const OpalLPC10;
 
 ///////////////////////////////////////////////////////////////////////////////
 
-class Opal_LPC10_PCM : public OpalFramedTranscoder {
-  public:
-    Opal_LPC10_PCM(const OpalTranscoderRegistration & registration);
-    ~Opal_LPC10_PCM();
-    virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
-  protected:
-    struct lpc10_decoder_state * decoder;
-};
-
-
-///////////////////////////////////////////////////////////////////////////////
-
-class Opal_PCM_LPC10 : public OpalFramedTranscoder {
-  public:
-    Opal_PCM_LPC10(const OpalTranscoderRegistration & registration);
-    ~Opal_PCM_LPC10();
-    virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
-  protected:
-    struct lpc10_encoder_state * encoder;
-};
-
-
-///////////////////////////////////////////////////////////////////////////////
-
 #ifndef NO_H323
 
 /**This class describes the LPC-10 (FS-1015) codec capability.
@@ -145,6 +128,13 @@ class H323_LPC10Capability : public H323NonStandardAudioCapability
       */
     virtual PObject * Clone() const;
   //@}
+
+  /**@name Identification functions */
+  //@{
+    /**Get the name of the media data format this class represents.
+     */
+    virtual PString GetFormatName() const;
+  //@}
 };
 
 #define OPAL_REGISTER_LPC10_H323 \
@@ -160,6 +150,31 @@ H323_STATIC_LOAD_REGISTER_CAPABILITY(H323_LPC10Capability);
 #define OPAL_REGISTER_LPC10_H323
 
 #endif // ifndef NO_H323
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+class Opal_LPC10_PCM : public OpalFramedTranscoder {
+  public:
+    Opal_LPC10_PCM(const OpalTranscoderRegistration & registration);
+    ~Opal_LPC10_PCM();
+    virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
+  protected:
+    struct lpc10_decoder_state * decoder;
+};
+
+
+class Opal_PCM_LPC10 : public OpalFramedTranscoder {
+  public:
+    Opal_PCM_LPC10(const OpalTranscoderRegistration & registration);
+    ~Opal_PCM_LPC10();
+    virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
+  protected:
+    struct lpc10_encoder_state * encoder;
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
 
 #define OPAL_REGISTER_LPC10() \
           OPAL_REGISTER_LPC10_H323 \

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkserver.h,v $
- * Revision 1.2008  2002/09/16 02:52:33  robertj
+ * Revision 1.2009  2002/11/10 11:33:16  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.7  2002/09/16 02:52:33  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -51,6 +54,44 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.45  2002/11/06 23:23:48  robertj
+ * Fixed minor error in parameter, should be reference not value
+ *
+ * Revision 1.44  2002/10/29 00:12:02  robertj
+ * Changed template classes so things like PSafeList actually creates the
+ *   base collection class as well.
+ * Improved setting of usage info, included getting it from BRQ etc.
+ *
+ * Revision 1.43  2002/10/21 00:54:47  robertj
+ * Added function to unregister an endpoint via user interface.
+ * Added reason code to call disengage.
+ * Added ability to find call by a description string.
+ *
+ * Revision 1.42  2002/10/17 05:26:33  robertj
+ * Added function to get at registered endpoints protocol version.
+ *
+ * Revision 1.41  2002/10/16 07:22:50  robertj
+ * Added support for endpoints that do not support RRQ timeToLive parameter,
+ *   will actively go see if ep is there using IRQ before expiring the ep.
+ *
+ * Revision 1.40  2002/10/01 08:17:34  robertj
+ * Fixed (benign) race condition between client and server both wanting to do
+ *   a DRQ of a call at the same time. Caused an Assert, but no crash.
+ *
+ * Revision 1.39  2002/09/26 01:27:31  robertj
+ * Changed appliation info name in registered endpoint to be caseless string.
+ *
+ * Revision 1.38  2002/09/24 08:03:51  robertj
+ * Added H.225 RAS protocol version number to registered endpoint structure.
+ *
+ * Revision 1.37  2002/09/19 09:15:56  robertj
+ * Fixed problem with making (and assuring with multi-threading) IRQ and DRQ
+ *   requests are sent to the correct endpoint address, thanks Martijn Roest.
+ *
+ * Revision 1.36  2002/09/16 01:14:15  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
  * Revision 1.35  2002/09/03 06:19:36  robertj
  * Normalised the multi-include header prevention ifdef/define symbol.
@@ -203,6 +244,7 @@ class H225_ArrayOf_TransportAddress;
 class H225_GatekeeperIdentifier;
 class H225_EndpointIdentifier;
 class H225_InfoRequestResponse_perCallInfo_subtype;
+class H225_RasUsageInformation;
 
 class H323RegisteredEndPoint;
 class H323GatekeeperListener;
@@ -259,7 +301,7 @@ class H323GatekeeperRequest : public PObject
     ) = 0;
 
     BOOL IsFastResponseRequired() const { return fastResponseRequired; }
-    H323TransportAddress GetReplyAddress() const { return replyAddress; }
+    H323TransportAddress GetReplyAddress() const { return replyAddresses[0]; }
     H323GatekeeperListener & GetRasChannel() const { return rasChannel; }
 
     PSafePtr<H323RegisteredEndPoint> endpoint;
@@ -270,7 +312,7 @@ class H323GatekeeperRequest : public PObject
 
     H323GatekeeperListener & rasChannel;
     unsigned                 requestSequenceNumber;
-    H323TransportAddress     replyAddress;
+    H323TransportAddressArray replyAddresses;
     H323RasPDU               request;
     H323RasPDU               confirm;
     H323RasPDU               reject;
@@ -606,7 +648,9 @@ class H323GatekeeperCall : public PSafeObject
     /**Shut down a call.
        This sendsa DRQ to the endpoint(s) to close the call down.
       */
-    virtual BOOL Disengage();
+    virtual BOOL Disengage(
+      int reason = -1   // Reason for disengage
+    );
 
     /**Handle a disengage DRQ PDU.
        The default behaviour simply returns TRUE.
@@ -666,10 +710,12 @@ class H323GatekeeperCall : public PSafeObject
     const PTime & GetAlertingTime() const { return alertingTime; }
     const PTime & GetConnectedTime() const { return connectedTime; }
     const PTime & GetCallEndTime() const { return callEndTime; }
-    OpalCallEndReason GetCallEndReason() const { return callEndReason; }
+    H323Connection::CallEndReason GetCallEndReason() const { return callEndReason; }
   //@}
 
   protected:
+    void SetUsageInfo(const H225_RasUsageInformation & usage);
+
     H323GatekeeperServer   & gatekeeper;
     H323RegisteredEndPoint * endpoint;
     H323GatekeeperListener * rasChannel;
@@ -687,14 +733,12 @@ class H323GatekeeperCall : public PSafeObject
     unsigned             bandwidthUsed;
     unsigned             infoResponseRate;
     PTime                lastInfoResponse;
+    BOOL                 drqReceived;
     PTime                alertingTime;
     PTime                connectedTime;
     PTime                callEndTime;
-    OpalCallEndReason    callEndReason;
+    H323Connection::CallEndReason callEndReason;
 };
-
-
-PSORTED_LIST(H323GatekeeperCallList, H323GatekeeperCall);
 
 
 /**This class describes endpoints that are registered with a gatekeeper server.
@@ -804,6 +848,13 @@ class H323RegisteredEndPoint : public PSafeObject
       H323GatekeeperURQ & request
     );
 
+    /**Force unregistration of the endpoint.
+       This sendsa URQ to the endpoint(s) to close the call down.
+      */
+    virtual BOOL Unregister(
+      int reason = -1   // Reason for unregistration
+    );
+
     /**Handle an info request response IRR PDU.
        The default behaviour finds each call current for endpoint and calls 
        the function of the same name in the H323GatekeeperCall instance.
@@ -812,19 +863,27 @@ class H323RegisteredEndPoint : public PSafeObject
       H323GatekeeperIRR & request
     );
 
+    /**Function called to do time to live check of the call.
+       Monitor the state of the endpoint and make sure everything is OK.
+
+       A return value of FALSE indicates the endpoint has expired and is to be
+       unregistered and removed.
+
+       Default behaviour checks the time since the last received RRQ and if
+       it has been too long does an IRQ to see if the endpoint is
+       still there and running. If the IRQ fails, FALSE is returned.
+      */
+    virtual BOOL OnTimeToLive();
+  //@}
+
+  /**@name Access functions */
+  //@{
     /**Set password for user activating H.235 security.
       */
     virtual BOOL SetPassword(
       const PString & password
     );
 
-    /**Determine of this endpoint has exceeded its time to live.
-      */
-    BOOL HasExceededTimeToLive() const;
-  //@}
-
-  /**@name Access functions */
-  //@{
     /**Get the endpoint identifier assigned to the endpoint.
       */
     const PString & GetIdentifier() const { return identifier; }
@@ -832,6 +891,11 @@ class H323RegisteredEndPoint : public PSafeObject
     /**Get the gatekeeper server data object that owns this endpoint.
       */
     H323GatekeeperServer & GetGatekeeper() const { return gatekeeper; }
+
+    /**Get the addresses that can be used to contact this endpoint via the
+       RAS protocol.
+      */
+    const H323TransportAddressArray & GetRASAddresses() const { return rasAddresses; }
 
     /**Get the number of addresses that can be used to contact this
        endpoint via the RAS protocol.
@@ -841,7 +905,7 @@ class H323RegisteredEndPoint : public PSafeObject
     /**Get an address that can be used to contact this endpoint via the RAS
        protocol.
       */
-    OpalTransportAddress GetRASAddress(
+    H323TransportAddress GetRASAddress(
       PINDEX idx
     ) const { return rasAddresses[idx]; }
 
@@ -853,7 +917,7 @@ class H323RegisteredEndPoint : public PSafeObject
     /**Get an address that can be used to contact this endpoint via the
        H.225/Q.931 protocol, ie normal calls.
       */
-    OpalTransportAddress GetSignalAddress(
+    H323TransportAddress GetSignalAddress(
       PINDEX idx
     ) const { return signalAddresses[idx]; }
 
@@ -889,23 +953,31 @@ class H323RegisteredEndPoint : public PSafeObject
 
     /**Get application info (name/version etc) for endpoint.
       */
-    const PString GetApplicationInfo() const { return applicationInfo; }
+    const PCaselessString & GetApplicationInfo() const { return applicationInfo; }
 
+    /**Get the protocol version the endpoint registered with.
+      */
+    unsigned GetProtocolVersion() const { return protocolVersion; }
   //@}
 
   protected:
     H323GatekeeperServer    & gatekeeper;
+    H323GatekeeperListener  * rasChannel;
 
     PString                   identifier;
-    OpalTransportAddressArray rasAddresses;
-    OpalTransportAddressArray signalAddresses;
+    H323TransportAddressArray rasAddresses;
+    H323TransportAddressArray signalAddresses;
     PStringArray              aliases;
     PStringArray              voicePrefixes;
-    PString                   applicationInfo;
+    PCaselessString           applicationInfo;
+    unsigned                  protocolVersion;
     unsigned                  timeToLive;
     H235Authenticators        authenticators;
-    PTime                     lastRegistration;
-    H323GatekeeperCallList    activeCalls;
+
+    PTime lastRegistration;
+    PTime lastInfoResponse;
+
+    PSortedList<H323GatekeeperCall> activeCalls;
 };
 
 
@@ -926,7 +998,7 @@ class H323GatekeeperListener : public H225_RAS
       H323EndPoint & endpoint,               /// Local endpoint
       H323GatekeeperServer & server,         /// Database for gatekeeper
       const PString & gatekeeperIdentifier,  /// Name of this gatekeeper
-      OpalTransport * transport = NULL       /// Transport over which gatekeepers communicates.
+      H323Transport * transport = NULL       /// Transport over which gatekeepers communicates.
     );
 
     /**Destroy gatekeeper listener.
@@ -936,6 +1008,13 @@ class H323GatekeeperListener : public H225_RAS
 
   /**@name Operations */
   //@{
+    /**Send a UnregistrationRequest (URQ) to endpoint.
+      */
+    BOOL UnregistrationRequest(
+      const H323RegisteredEndPoint & ep,
+      unsigned reason
+    );
+
     /**Send a DisengageRequest (DRQ) to endpoint.
       */
     BOOL DisengageRequest(
@@ -1089,14 +1168,14 @@ class H323GatekeeperServer : public PObject
        Returns TRUE if at least one interface was successfully started.
       */
     BOOL AddListeners(
-      const OpalTransportAddressArray & ifaces /// Interfaces to listen on.
+      const H323TransportAddressArray & ifaces /// Interfaces to listen on.
     );
 
     /**Add a gatekeeper listener to this gatekeeper server given the
        transport address for the local interface.
       */
     BOOL AddListener(
-      const OpalTransportAddress & interfaceName
+      const H323TransportAddress & interfaceName
     );
 
     /**Add a gatekeeper listener to this gatekeeper server given the transport.
@@ -1106,7 +1185,7 @@ class H323GatekeeperServer : public PObject
        created.
       */
     BOOL AddListener(
-      OpalTransport * transport
+      H323Transport * transport
     );
 
     /**Add a gatekeeper listener to this gatekeeper server.
@@ -1121,14 +1200,14 @@ class H323GatekeeperServer : public PObject
 
     /**Create a new H323GatkeeperListener.
        The user woiuld not usually use this function as it is used internally
-       by the server when new listeners are added by OpalTransportAddress.
+       by the server when new listeners are added by H323TransportAddress.
 
        However, a user may override this function to create objects that are
        user defined descendants of H323GatekeeperListener so the user can
        maintain extra information on a interface by interface basis.
       */
     virtual H323GatekeeperListener * CreateListener(
-      OpalTransport * transport  // Transport for listener
+      H323Transport * transport  // Transport for listener
     );
 
     /**Remove a gatekeeper listener from this gatekeeper server.
@@ -1320,6 +1399,13 @@ class H323GatekeeperServer : public PObject
     /**Find the call given the identifier.
       */
     virtual PSafePtr<H323GatekeeperCall> FindCall(
+      const PString & description,
+      PSafetyMode mode = PSafeReference
+    );
+
+    /**Find the call given the identifier.
+      */
+    virtual PSafePtr<H323GatekeeperCall> FindCall(
       const OpalGloballyUniqueID & callIdentifier,
       BOOL answeringCall,
       PSafetyMode mode = PSafeReference
@@ -1329,7 +1415,7 @@ class H323GatekeeperServer : public PObject
       */
     virtual PSafePtr<H323GatekeeperCall> FindCall(
       const OpalGloballyUniqueID & callIdentifier,
-      H323GatekeeperCall::Direction direction = H323GatekeeperCall::UnknownDirection,
+      H323GatekeeperCall::Direction direction,
       PSafetyMode mode = PSafeReference
     );
 
@@ -1391,7 +1477,7 @@ class H323GatekeeperServer : public PObject
     virtual BOOL CheckSignalAddressPolicy(
       const H323RegisteredEndPoint & ep,
       const H225_AdmissionRequest & arq,
-      const OpalTransportAddress & address
+      const H323TransportAddress & address
     );
 
     /**Check the alias address against the security policy.
@@ -1584,13 +1670,12 @@ class H323GatekeeperServer : public PObject
     PLIST(ListenerList, H323GatekeeperListener);
     ListenerList listeners;
 
-    PDICTIONARY(IdentifierDict, PString, H323RegisteredEndPoint);
-    PSafeDictionary<IdentifierDict, PString, H323RegisteredEndPoint> byIdentifier;
+    PSafeDictionary<PString, H323RegisteredEndPoint> byIdentifier;
     PStringToString byAddress;
     PStringToString byAlias;
     PStringToString byVoicePrefix;
 
-    PSafeList<H323GatekeeperCallList, H323GatekeeperCall> activeCalls;
+    PSafeSortedList<H323GatekeeperCall> activeCalls;
 
     PINDEX peakRegistrations;
     PINDEX totalRegistrations;

@@ -21,13 +21,13 @@
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
- * Portions of this code were written with the assisance of funding from
- * Vovida Networks, Inc. http://www.vovida.com.
- *
  * Contributor(s): ______________________________________.
  *
  * $Log: g726codec.h,v $
- * Revision 1.2004  2002/09/16 02:52:33  robertj
+ * Revision 1.2005  2002/11/10 11:33:16  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.3  2002/09/16 02:52:33  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -62,6 +62,107 @@ extern OpalMediaFormat const OpalG726_40;
 extern OpalMediaFormat const OpalG726_32;
 extern OpalMediaFormat const OpalG726_24;
 extern OpalMediaFormat const OpalG726_16;
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+#ifndef NO_H323
+
+/**This class describes the G726 codec capability.
+ */
+class H323_G726_Capability : public H323NonStandardAudioCapability
+{
+  PCLASSINFO(H323_G726_Capability, H323NonStandardAudioCapability)
+	
+
+  public:
+    enum Speeds {
+      e_40k,
+      e_32k,
+      e_24k,
+      e_16k,
+      NumSpeeds
+    };
+
+  /**@name Construction */
+  //@{
+    /**Create a new G.726 capability.
+     */
+    H323_G726_Capability(
+      H323EndPoint & endpoint,  /// Endpoint to get NonStandardInfo from.
+      Speeds speed              /// Speed of encoding
+    );
+  //@}
+
+  /**@name Overrides from class PObject */
+  //@{
+    /**Create a copy of the object.
+      */
+    virtual PObject * Clone() const;
+  //@}
+
+  /**@name Identification functions */
+  //@{
+    /**Get the name of the media data format this class represents.
+     */
+    virtual PString GetFormatName() const;
+  //@}
+
+  /**@name Protocol manipulation */
+  //@{
+    /**This function is called whenever and outgoing TerminalCapabilitySet
+       or OpenLogicalChannel PDU is being constructed for the control channel.
+       It allows the capability to set the PDU fields from information in
+       members specific to the class.
+
+       The default behaviour sets the data rate field in the PDU.
+     */
+    virtual BOOL OnSendingPDU(
+      H245_AudioCapability & pdu,  /// PDU to set information on
+      unsigned packetSize          /// Packet size to use in capability
+    ) const;
+
+    /**This function is called whenever and incoming TerminalCapabilitySet
+       or OpenLogicalChannel PDU has been used to construct the control
+       channel. It allows the capability to set from the PDU fields,
+       information in members specific to the class.
+
+       The default behaviour gets the data rate field from the PDU.
+     */
+    virtual BOOL OnReceivedPDU(
+      const H245_AudioCapability & pdu,  /// PDU to get information from
+      unsigned & packetSize              /// Packet size to use in capability
+    );
+  //@}
+
+  protected:
+    Speeds speed;
+};
+
+
+#define OPAL_REGISTER_G726_H323 \
+  H323_REGISTER_CAPABILITY_FUNCTION(H323_G726_40_Capability, G726_40, ep) \
+    { return new H323_G726_Capability(ep, H323_G726_Capability::e_40k); } \
+  H323_REGISTER_CAPABILITY_FUNCTION(H323_G726_32_Capability, G726_32, ep) \
+    { return new H323_G726_Capability(ep, H323_G726_Capability::e_32k); } \
+  H323_REGISTER_CAPABILITY_FUNCTION(H323_G726_24_Capability, G726_24, ep) \
+    { return new H323_G726_Capability(ep, H323_G726_Capability::e_24k); } \
+  H323_REGISTER_CAPABILITY_FUNCTION(H323_G726_16_Capability, G726_16, ep) \
+    { return new H323_G726_Capability(ep, H323_G726_Capability::e_16k); }
+
+#ifdef H323_STATIC_LIB
+H323_STATIC_LOAD_REGISTER_CAPABILITY(H323_G726_40_Capability);
+H323_STATIC_LOAD_REGISTER_CAPABILITY(H323_G726_32_Capability);
+H323_STATIC_LOAD_REGISTER_CAPABILITY(H323_G726_24_Capability);
+H323_STATIC_LOAD_REGISTER_CAPABILITY(H323_G726_16_Capability);
+#endif
+
+
+#else // ifndef NO_H323
+
+#define OPAL_REGISTER_G726_H323
+
+#endif // ifndef NO_H323
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -132,98 +233,6 @@ class Opal_PCM_G726_16 : public Opal_G726_Transcoder {
 
 
 ///////////////////////////////////////////////////////////////////////////////
-
-#ifndef NO_H323
-
-/**This class describes the G726 codec capability.
- */
-class H323_G726_Capability : public H323NonStandardAudioCapability
-{
-  PCLASSINFO(H323_G726_Capability, H323NonStandardAudioCapability)
-	
-
-  public:
-    enum Speeds {
-      e_40k,
-      e_32k,
-      e_24k,
-      e_16k,
-      NumSpeeds
-    };
-
-  /**@name Construction */
-  //@{
-    /**Create a new G.726 capability.
-     */
-    H323_G726_Capability(
-      H323EndPoint & endpoint,  /// Endpoint to get NonStandardInfo from.
-      Speeds speed              /// Speed of encoding
-    );
-  //@}
-
-  /**@name Overrides from class PObject */
-  //@{
-    /**Create a copy of the object.
-      */
-    virtual PObject * Clone() const;
-  //@}
-
-  /**@name Protocol manipulation */
-  //@{
-    /**This function is called whenever and outgoing TerminalCapabilitySet
-       or OpenLogicalChannel PDU is being constructed for the control channel.
-       It allows the capability to set the PDU fields from information in
-       members specific to the class.
-
-       The default behaviour sets the data rate field in the PDU.
-     */
-    virtual BOOL OnSendingPDU(
-      H245_AudioCapability & pdu,  /// PDU to set information on
-      unsigned packetSize          /// Packet size to use in capability
-    ) const;
-
-    /**This function is called whenever and incoming TerminalCapabilitySet
-       or OpenLogicalChannel PDU has been used to construct the control
-       channel. It allows the capability to set from the PDU fields,
-       information in members specific to the class.
-
-       The default behaviour gets the data rate field from the PDU.
-     */
-    virtual BOOL OnReceivedPDU(
-      const H245_AudioCapability & pdu,  /// PDU to get information from
-      unsigned & packetSize              /// Packet size to use in capability
-    );
-  //@}
-
-  protected:
-    Speeds speed;
-};
-
-
-
-#define OPAL_REGISTER_G726_H323 \
-  H323_REGISTER_CAPABILITY_FUNCTION(H323_G726_40_Capability, G726_40, ep) \
-    { return new H323_G726_Capability(ep, H323_G726_Capability::e_40k); } \
-  H323_REGISTER_CAPABILITY_FUNCTION(H323_G726_32_Capability, G726_32, ep) \
-    { return new H323_G726_Capability(ep, H323_G726_Capability::e_32k); } \
-  H323_REGISTER_CAPABILITY_FUNCTION(H323_G726_24_Capability, G726_24, ep) \
-    { return new H323_G726_Capability(ep, H323_G726_Capability::e_24k); } \
-  H323_REGISTER_CAPABILITY_FUNCTION(H323_G726_16_Capability, G726_16, ep) \
-    { return new H323_G726_Capability(ep, H323_G726_Capability::e_16k); }
-
-#ifdef H323_STATIC_LIB
-H323_STATIC_LOAD_REGISTER_CAPABILITY(H323_G726_40_Capability);
-H323_STATIC_LOAD_REGISTER_CAPABILITY(H323_G726_32_Capability);
-H323_STATIC_LOAD_REGISTER_CAPABILITY(H323_G726_24_Capability);
-H323_STATIC_LOAD_REGISTER_CAPABILITY(H323_G726_16_Capability);
-#endif
-
-
-#else // ifndef NO_H323
-
-#define OPAL_REGISTER_G726_H323
-
-#endif // ifndef NO_H323
 
 #define OPAL_REGISTER_G726() \
           OPAL_REGISTER_G726_H323 \
