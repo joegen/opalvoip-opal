@@ -38,7 +38,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="opals.lib ptclib.lib ptlib.lib zlib.lib regex.lib png.lib jpeg.lib tiff.lib wxmsw.lib wsock32.lib odbc32.lib odbccp32.lib comctl32.lib rpcrt4.lib"
+				AdditionalDependencies="opals.lib ptclib.lib ptlib.lib zlib.lib regex.lib png.lib jpeg.lib tiff.lib wxxrc.lib wxmsw.lib wsock32.lib odbc32.lib odbccp32.lib comctl32.lib rpcrt4.lib"
 				OutputFile=".\Release/OpenPhone.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -102,7 +102,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="opalsd.lib ptclibd.lib ptlibsd.lib zlibd.lib regexd.lib pngd.lib jpegd.lib tiffd.lib wxmswd.lib wsock32.lib odbc32.lib odbccp32.lib comctl32.lib rpcrt4.lib"
+				AdditionalDependencies="opalsd.lib ptclibd.lib ptlibsd.lib zlibd.lib regexd.lib pngd.lib jpegd.lib tiffd.lib wxxrcd.lib wxmswd.lib wsock32.lib odbc32.lib odbccp32.lib comctl32.lib rpcrt4.lib"
 				OutputFile=".\Debug/OpenPhone.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
@@ -183,6 +183,9 @@
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;cnt;rtf;gif;jpg;jpeg;jpe">
 			<File
 				RelativePath=".\openphone.rc">
+			</File>
+			<File
+				RelativePath=".\openphone.xrc">
 			</File>
 		</Filter>
 	</Files>

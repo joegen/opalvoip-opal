@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.5  2004/05/06 13:23:43  rjongbloed
+ * Work on wxWindows based OpenPhone
+ *
  * Revision 1.4  2004/05/01 13:38:05  rjongbloed
  * Some early implementation of wxWIndows based OPAL GUI client.
  *
@@ -47,6 +50,9 @@ class SIPEndPoint;
 class H323EndPoint;
 class OpalPOTSEndPoint;
 class OpalIVREndPoint;
+
+class wxSplitterWindow;
+class wxListCtrl;
 
 
 class MyPCSSEndPoint : public OpalPCSSEndPoint
@@ -73,22 +79,25 @@ class CallDialog : public wxDialog
   public:
     CallDialog(wxWindow *parent);
 
-    void OnAddressChange(wxCommandEvent & event);
-
     wxString m_Address;
 
   private:
-    wxTextCtrl * m_AddressCtrl;
+    void OnAddressChange(wxCommandEvent & event);
+
+    wxComboBox * m_AddressCtrl;
     wxButton   * m_ok;
 
     DECLARE_EVENT_TABLE()
 };
 
 
-enum MainMenuItems {
-  MENU_FILE_QUIT,
-  MENU_FILE_ABOUT,
-  MENU_FILE_CALL
+class OptionsDialog : public wxDialog
+{
+  public:
+    OptionsDialog(wxWindow *parent);
+
+  private:
+    DECLARE_EVENT_TABLE()
 };
 
 
@@ -100,12 +109,15 @@ class MyFrame : public wxFrame, public OpalManager
 
     bool Initialise();
 
-  protected:
-    void OnSize(wxSizeEvent& event);
-
+  private:
     void OnMenuQuit(wxCommandEvent& event);
     void OnMenuAbout(wxCommandEvent& event);
     void OnMenuCall(wxCommandEvent& event);
+    void OnViewLarge(wxCommandEvent& event);
+    void OnViewSmall(wxCommandEvent& event);
+    void OnViewList(wxCommandEvent& event);
+    void OnViewDetails(wxCommandEvent& event);
+    void OnOptions(wxCommandEvent& event);
 
     virtual void OnEstablishedCall(
       OpalCall & call   /// Call that was completed
@@ -122,8 +134,12 @@ class MyFrame : public wxFrame, public OpalManager
       const PString & value         /// String value of indication
     );
 
-  private:
-    wxPanel                  * m_panel;
+    void RecreateSpeedDials(
+      long flags
+    );
+
+    wxSplitterWindow         * m_splitter;
+    wxListCtrl               * m_speedDials;
     wxTextCtrl               * m_logWindow;
 
     MyPCSSEndPoint   * pcssEP;
