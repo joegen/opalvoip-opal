@@ -252,34 +252,11 @@ SOURCE=..\h323\h225ras.cxx
 # End Source File
 # Begin Source File
 
-SOURCE=..\h323\h235ras.cxx
-
-!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 SSL Release"
-
-!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 SSL Debug"
-
-!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 SSL No Trace"
-
-# PROP BASE Exclude_From_Build 1
-
-!ENDIF 
-
+SOURCE=..\h323\h235auth.cxx
 # End Source File
 # Begin Source File
 
-SOURCE=..\h323\h235security.cxx
+SOURCE=..\h323\h235auth1.cxx
 # End Source File
 # Begin Source File
 
@@ -486,11 +463,7 @@ SOURCE=..\..\include\h323\h225ras.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\include\h323\h235ras.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\include\h323\h235security.h
+SOURCE=..\..\include\h323\h235auth.h
 # End Source File
 # Begin Source File
 
