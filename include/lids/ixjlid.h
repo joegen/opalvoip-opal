@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjlid.h,v $
- * Revision 1.2007  2002/11/10 11:33:17  robertj
+ * Revision 1.2008  2003/03/24 07:18:29  robertj
+ * Added registration system for LIDs so can work with various LID types by
+ *   name instead of class instance.
+ *
+ * Revision 2.6  2002/11/10 11:33:17  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.5  2002/09/16 02:52:34  robertj
@@ -307,6 +311,10 @@ class OpalIxJDevice : public OpalLineInterfaceDevice
     /**Get the device name.
       */
     virtual PString GetName() const;
+
+    /**Get all the possible devices that can be opened.
+      */
+    virtual PStringArray GetAllNames() const;
 
 
     enum {
@@ -845,6 +853,9 @@ class OpalIxJDevice : public OpalLineInterfaceDevice
 
 #endif
 };
+
+
+#define OPAL_REGISTER_IXJ() OPAL_REGISTER_LID(OpalIxJDevice, "Quicknet")
 
 
 #endif // __OPAL_IXJLID_H

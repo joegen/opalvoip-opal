@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.cxx,v $
- * Revision 1.2011  2003/03/17 08:17:47  robertj
+ * Revision 1.2012  2003/03/24 07:18:29  robertj
+ * Added registration system for LIDs so can work with various LID types by
+ *   name instead of class instance.
+ *
+ * Revision 2.10  2003/03/17 08:17:47  robertj
  * Removed redundant code to search for media format, use existing function.
  *
  * Revision 2.9  2003/01/07 04:39:53  robertj
@@ -366,6 +370,9 @@
 
 
 #define new PNEW
+
+
+static OpalLIDRegistration * RegisteredLIDsListHead;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1264,6 +1271,52 @@ void OpalLineInterfaceDevice::PrintOn(ostream & strm) const
 }
 
 
+OpalLineInterfaceDevice * OpalLineInterfaceDevice::Create(const PString & newType,
+                                                          void * parameters)
+{
+  OpalLIDRegistration * type = RegisteredLIDsListHead;
+  while (type != NULL) {
+    if (*type == newType)
+      return type->Create(parameters);
+    type = type->link;
+  }
+
+  return NULL;
+}
+
+
+PStringList OpalLineInterfaceDevice::GetAllTypes()
+{
+  PStringList types;
+
+  OpalLIDRegistration * type = RegisteredLIDsListHead;
+  while (type != NULL) {
+    types.AppendString(*type);
+    type = type->link;
+  }
+
+  return types;
+}
+
+
+PStringList OpalLineInterfaceDevice::GetAllDevices()
+{
+  PStringList devices;
+
+  OpalLIDRegistration * type = RegisteredLIDsListHead;
+  while (type != NULL) {
+    OpalLineInterfaceDevice * device = type->Create(NULL);
+    PStringArray names = device->GetAllNames();
+    for (PINDEX i = 0; i < names.GetSize(); i++)
+      devices.AppendString(*type + ": " + names[i]);
+    delete device;
+    type = type->link;
+  }
+
+  return devices;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 OpalLine::OpalLine(OpalLineInterfaceDevice & dev, unsigned num, const char * descript)
@@ -1309,6 +1362,23 @@ unsigned OpalLine::GetRingCount(DWORD * cadence)
   }
 
   return ringCount;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+OpalLIDRegistration::OpalLIDRegistration(const char * name)
+  : PCaselessString(name)
+{
+  OpalLIDRegistration * test = RegisteredLIDsListHead;
+  while (test != NULL) {
+    if (*test == *this)
+      return;
+    test = test->link;
+  }
+
+  link = RegisteredLIDsListHead;
+  RegisteredLIDsListHead = this;
 }
 
 
