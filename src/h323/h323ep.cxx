@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2034  2004/08/14 07:56:31  rjongbloed
+ * Revision 1.2035  2004/09/24 10:06:22  rjongbloed
+ * Changed default endpoint capabilities to be all possible capabilities if not
+ *   set explicitly by application before first call.
+ *
+ * Revision 2.33  2004/08/14 07:56:31  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.32  2004/07/11 12:42:12  rjongbloed
@@ -860,20 +864,20 @@ void H323EndPoint::SetH221NonStandardInfo(H225_H221NonStandard & info) const
 
 H323Capability * H323EndPoint::FindCapability(const H245_Capability & cap) const
 {
-  return capabilities.FindCapability(cap);
+  return GetCapabilities().FindCapability(cap);
 }
 
 
 H323Capability * H323EndPoint::FindCapability(const H245_DataType & dataType) const
 {
-  return capabilities.FindCapability(dataType);
+  return GetCapabilities().FindCapability(dataType);
 }
 
 
 H323Capability * H323EndPoint::FindCapability(H323Capability::MainTypes mainType,
                                               unsigned subType) const
 {
-  return capabilities.FindCapability(mainType, subType);
+  return GetCapabilities().FindCapability(mainType, subType);
 }
 
 
@@ -915,6 +919,17 @@ void H323EndPoint::RemoveCapabilities(const PStringArray & codecNames)
 void H323EndPoint::ReorderCapabilities(const PStringArray & preferenceOrder)
 {
   capabilities.Reorder(preferenceOrder);
+}
+
+
+const H323Capabilities & H323EndPoint::GetCapabilities() const
+{
+  if (capabilities.GetSize() == 0) {
+    capabilities.AddAllCapabilities(*this, P_MAX_INDEX, P_MAX_INDEX, "*");
+    H323_UserInputCapability::AddAllCapabilities(capabilities, P_MAX_INDEX, P_MAX_INDEX);
+  }
+
+  return capabilities;
 }
 
 
