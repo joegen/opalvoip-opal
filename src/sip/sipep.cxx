@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2022  2004/04/26 05:40:39  rjongbloed
+ * Revision 1.2023  2004/04/26 06:30:35  rjongbloed
+ * Added ability to specify more than one defualt listener for an endpoint,
+ *   required by SIP which listens on both UDP and TCP.
+ *
+ * Revision 2.21  2004/04/26 05:40:39  rjongbloed
  * Added RTP statistics callback to SIP
  *
  * Revision 2.20  2004/04/25 08:46:08  rjongbloed
@@ -141,6 +145,15 @@ SIPEndPoint::~SIPEndPoint()
   delete registrarTransport;
 
   PTRACE(3, "SIP\tDeleted endpoint.");
+}
+
+
+PStringArray SIPEndPoint::GetDefaultListeners() const
+{
+  PStringArray listenerAddresses = OpalEndPoint::GetDefaultListeners();
+  if (!listenerAddresses.IsEmpty())
+    listenerAddresses.AppendString(psprintf("udp$*:%u", defaultSignalPort));
+  return listenerAddresses;
 }
 
 
