@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2029  2004/04/18 07:09:12  rjongbloed
+ * Revision 1.2030  2004/04/18 13:35:28  rjongbloed
+ * Fixed ability to make calls where both endpoints are specified a priori. In particular
+ *   fixing the VXML support for an outgoing sip/h323 call.
+ *
+ * Revision 2.28  2004/04/18 07:09:12  rjongbloed
  * Added a couple more API functions to bring OPAL into line with similar functions in OpenH323.
  *
  * Revision 2.27  2004/02/24 11:37:02  rjongbloed
@@ -478,6 +482,7 @@ BOOL OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty)
     }
   }
 
+  PTRACE(1, "OpalMan\tCould not find endpoint to handle protocol \"" << epname << '"');
   return FALSE;
 }
 
@@ -490,7 +495,12 @@ BOOL OpalManager::OnIncomingConnection(OpalConnection & connection)
   if (call.GetConnectionCount() > 1)
     return TRUE;
 
-  PString destinationAddress = OnRouteConnection(connection);
+  // See if have pre-allocated B party address, otherwise use routing algorithm
+  PString destinationAddress = call.GetPartyB();
+  if (destinationAddress.IsEmpty())
+    destinationAddress = OnRouteConnection(connection);
+
+  // Nowhere to go
   if (destinationAddress.IsEmpty())
     return FALSE;
 
