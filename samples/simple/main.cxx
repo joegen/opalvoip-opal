@@ -22,7 +22,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2030  2004/02/17 11:00:06  csoutheren
+ * Revision 1.2031  2004/02/21 02:41:10  rjongbloed
+ * Tidied up the translate address to utilise more of the library infrastructure.
+ * Changed cmd line args port-base/port-max to portbase/portmax, same as OhPhone.
+ *
+ * Revision 2.29  2004/02/17 11:00:06  csoutheren
  * Added --translate, --port-base and --port-max options
  *
  * Revision 2.28  2004/02/03 12:22:28  rjongbloed
@@ -212,7 +216,6 @@ void SimpleOpalProcess::Main()
              "b-bandwidth:"
              "D-disable:"
              "d-dial-peer:"
-             "-no-std-dial-peer."
              "e-silence."
              "f-fast-disable."
              "g-gatekeeper:"
@@ -225,13 +228,14 @@ void SimpleOpalProcess::Main()
              "j-jitter:"
              "l-listen."
              "n-no-gatekeeper."
+             "-no-std-dial-peer."
 #if PTRACING
              "o-output:"
 #endif
              "P-prefer:"
              "p-password:"
-             "-port-base:"
-             "-port-max:"
+             "-portbase:"
+             "-portmax:"
              "q-quicknet:"
              "Q-no-quicknet."
              "R-require-gatekeeper."
@@ -244,7 +248,7 @@ void SimpleOpalProcess::Main()
              "-sound-in:"
              "-sound-out:"
              "-sip-listen:"
-			       "-stun:"
+             "-stun:"
              "T-h245tunneldisable."
              "-translate:"
 
@@ -256,7 +260,7 @@ void SimpleOpalProcess::Main()
              "u-user:"
              "-udp-base:"
              "-udp-max:"
-	         "-use-long-mime."
+             "-use-long-mime."
              "-rx-video."
              "-tx-video."
              "-grabber:"
@@ -330,8 +334,8 @@ void SimpleOpalProcess::Main()
 #endif
             "IP options:\n"
             "     --translate ip       : Set external IP address if masqueraded\n"
-            "     --port-base n        : Set TCP/UDP/RTP port base\n"
-            "     --port-max n         : Set TCP/UDP/RTP port max\n"
+            "     --portbase n         : Set TCP/UDP/RTP port base\n"
+            "     --portmax n          : Set TCP/UDP/RTP port max\n"
             "     --tcp-base n         : Set TCP port base (default 0)\n"
             "     --tcp-max n          : Set TCP port max (default base+99)\n"
             "     --udp-base n         : Set UDP port base (default 6000)\n"
@@ -418,8 +422,8 @@ void SimpleOpalProcess::Main()
 ///////////////////////////////////////////////////////////////
 
 MyManager::MyManager()
+  : externalAddress(0)
 {
-  haveExternalAddress = FALSE;
   potsEP = NULL;
   pcssEP = NULL;
   h323EP = NULL;
@@ -504,14 +508,13 @@ BOOL MyManager::Initialise(PArgList & args)
   cout << '\n';
 
   if (args.HasOption("translate")) {
-    haveExternalAddress = TRUE;
     externalAddress = PIPSocket::Address(args.GetOptionString("translate"));
     cout << "External address set to " << externalAddress << "\n";
   }
 
-  if (args.HasOption("port-base")) {
-    unsigned portbase = args.GetOptionString("port-base").AsUnsigned();
-    unsigned portmax  = args.GetOptionString("port-max").AsUnsigned();
+  if (args.HasOption("portbase")) {
+    unsigned portbase = args.GetOptionString("portbase").AsUnsigned();
+    unsigned portmax  = args.GetOptionString("portmax").AsUnsigned();
     SetTCPPorts  (portbase, portmax);
     SetUDPPorts  (portbase, portmax);
     SetRtpIpPorts(portbase, portmax);
@@ -773,14 +776,7 @@ BOOL MyManager::Initialise(PArgList & args)
 
 BOOL MyManager::TranslateIPAddress(PIPSocket::Address & localAddress, const PIPSocket::Address & remoteAddress)
 {
-  if (!haveExternalAddress)
-    return FALSE;
-
-  DWORD a = remoteAddress;
-  BOOL remoteIsPrivate = (a & 0x000000ff) == ( 10U << 0) ||
-                         (a & 0x00000fff) == (172U << 0 | 16U << 8) || 
-                         (a & 0x0000ffff) == (192U << 0 | 168U << 8);
-  if (remoteIsPrivate)
+  if (!externalAddress.IsValid() || IsLocalAddress(remoteAddress))
     return FALSE;
 
   localAddress = externalAddress;
