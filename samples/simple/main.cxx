@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2009  2002/02/06 13:29:03  rogerh
+ * Revision 1.2010  2002/02/11 09:45:35  robertj
+ * Moved version file to library root directoy
+ *
+ * Revision 2.8  2002/02/06 13:29:03  rogerh
  * H245 tunnelling is controlled by 'T' and not by 'h'
  *
  * Revision 2.7  2002/02/01 04:53:01  robertj
@@ -108,7 +111,7 @@
 #endif
 
 #include "main.h"
-#include "version.h"
+#include "../../version.h"
 
 
 #ifdef OPAL_STATIC_LINK
