@@ -78,7 +78,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 ptlibd.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib imm32.lib wsock32.lib $(QTDIR)\lib\qt-mt300.lib $(QTDIR)\lib\qtmain.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
+# ADD LINK32 opalsd.lib ptclibd.lib ptlibsd.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib imm32.lib wsock32.lib $(QTDIR)\lib\qt-mt305.lib $(QTDIR)\lib\qtmain.lib winmm.lib snmpapi.lib $(OPENSSLLIBS) $(EXPATLIBS) mpr.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
 
 !ENDIF 
 
@@ -91,15 +91,23 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat;for;f90"
 # Begin Source File
 
-SOURCE=.\configuration.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=.\main.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=.\mainwindow.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\makecall.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\moc_options.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\options.cpp
 # End Source File
 # End Group
 # Begin Group "Header Files"
@@ -107,11 +115,23 @@ SOURCE=.\mainwindow.cpp
 # PROP Default_Filter "h;hpp;hxx;hm;inl;fi;fd"
 # Begin Source File
 
-SOURCE=.\configuration.h
+SOURCE=.\main.h
 # End Source File
 # Begin Source File
 
 SOURCE=.\mainwindow.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\mainwindow.ui.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\makecall.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\options.h
 # End Source File
 # Begin Source File
 
@@ -121,59 +141,6 @@ SOURCE=.\version.h
 # Begin Group "Resource Files"
 
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;cnt;rtf;gif;jpg;jpeg;jpe"
-# Begin Source File
-
-SOURCE=.\configuration.ui
-
-!IF  "$(CFG)" == "OpenPhone - Win32 Release"
-
-# Begin Custom Build - Uic'ing $(InputName).ui ...
-InputDir=.
-InputPath=.\configuration.ui
-InputName=configuration
-
-BuildCmds= \
-	%qtdir%\bin\uic.exe $(InputPath) -o $(InputDir)\$(InputName).h \
-	%qtdir%\bin\uic.exe $(InputPath) -i $(InputName).h -o $(InputDir)\$(InputName).cpp \
-	%qtdir%\bin\moc.exe $(InputDir)\$(InputName).h -o $(InputDir)\moc_$(InputName).cpp \
-	
-
-"$(InputDir)\$(InputName).h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-   $(BuildCmds)
-
-"$(InputDir)\$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-   $(BuildCmds)
-
-"$(InputDir)\moc_$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-   $(BuildCmds)
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "OpenPhone - Win32 Debug"
-
-# Begin Custom Build - Uic'ing $(InputName).ui ...
-InputDir=.
-InputPath=.\configuration.ui
-InputName=configuration
-
-BuildCmds= \
-	%qtdir%\bin\uic.exe $(InputPath) -o $(InputDir)\$(InputName).h \
-	%qtdir%\bin\uic.exe $(InputPath) -i $(InputName).h -o $(InputDir)\$(InputName).cpp \
-	%qtdir%\bin\moc.exe $(InputDir)\$(InputName).h -o $(InputDir)\moc_$(InputName).cpp \
-	
-
-"$(InputDir)\$(InputName).h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-   $(BuildCmds)
-
-"$(InputDir)\$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-   $(BuildCmds)
-
-"$(InputDir)\moc_$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-   $(BuildCmds)
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
 # Begin Source File
 
 SOURCE=.\mainwindow.ui
@@ -203,7 +170,7 @@ BuildCmds= \
 
 !ELSEIF  "$(CFG)" == "OpenPhone - Win32 Debug"
 
-# Begin Custom Build - Uic'ing $(InputName).ui ...
+# Begin Custom Build - Compiling $(InputName).ui ...
 InputDir=.
 InputPath=.\mainwindow.ui
 InputName=mainwindow
@@ -229,16 +196,72 @@ BuildCmds= \
 # End Source File
 # Begin Source File
 
-SOURCE=.\mainwindow.ui.h
+SOURCE=.\makecall.ui
+
+!IF  "$(CFG)" == "OpenPhone - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "OpenPhone - Win32 Debug"
+
+# Begin Custom Build - Compiling $(InputName).ui ...
+InputDir=.
+InputPath=.\makecall.ui
+InputName=makecall
+
+BuildCmds= \
+	%qtdir%\bin\uic.exe $(InputPath) -o $(InputDir)\$(InputName).h \
+	%qtdir%\bin\uic.exe $(InputPath) -i $(InputName).h -o $(InputDir)\$(InputName).cpp \
+	%qtdir%\bin\moc.exe $(InputDir)\$(InputName).h -o $(InputDir)\moc_$(InputName).cpp \
+	
+
+"$(InputDir)\$(InputName).h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   $(BuildCmds)
+
+"$(InputDir)\$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   $(BuildCmds)
+
+"$(InputDir)\moc_$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   $(BuildCmds)
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\options.ui
+
+!IF  "$(CFG)" == "OpenPhone - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "OpenPhone - Win32 Debug"
+
+# Begin Custom Build - Compiling $(InputName).ui ...
+InputDir=.
+InputPath=.\options.ui
+InputName=options
+
+BuildCmds= \
+	%qtdir%\bin\uic.exe $(InputPath) -o $(InputDir)\$(InputName).h \
+	%qtdir%\bin\uic.exe $(InputPath) -i $(InputName).h -o $(InputDir)\$(InputName).cpp \
+	%qtdir%\bin\moc.exe $(InputDir)\$(InputName).h -o $(InputDir)\moc_$(InputName).cpp \
+	
+
+"$(InputDir)\$(InputName).h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   $(BuildCmds)
+
+"$(InputDir)\$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   $(BuildCmds)
+
+"$(InputDir)\moc_$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   $(BuildCmds)
+# End Custom Build
+
+!ENDIF 
+
 # End Source File
 # End Group
 # Begin Group "MOC files"
 
 # PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=.\moc_configuration.cpp
-# End Source File
 # Begin Source File
 
 SOURCE=.\moc_mainwindow.cpp
