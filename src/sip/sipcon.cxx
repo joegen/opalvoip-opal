@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2012  2002/04/09 01:02:14  robertj
+ * Revision 1.2013  2002/04/09 01:19:41  robertj
+ * Fixed typo on changing "callAnswered" to better description of "originating".
+ *
+ * Revision 2.11  2002/04/09 01:02:14  robertj
  * Fixed problems with restarting INVITE on  authentication required response.
  *
  * Revision 2.10  2002/04/08 02:40:13  robertj
@@ -198,7 +201,7 @@ BOOL SIPConnection::OnReleased()
 
 BOOL SIPConnection::SetAlerting(const PString & /*calleeName*/, BOOL /*withMedia*/)
 {
-  if (IsOriginator()) {
+  if (IsOriginating()) {
     PTRACE(2, "SIP\tSetAlerting ignored on call we originated.");
     return TRUE;
   }
@@ -221,7 +224,7 @@ BOOL SIPConnection::SetAlerting(const PString & /*calleeName*/, BOOL /*withMedia
 
 BOOL SIPConnection::SetConnected()
 {
-  if (IsOriginator()) {
+  if (IsOriginating()) {
     PTRACE(2, "SIP\tSetConnected ignored on call we originated.");
     return TRUE;
   }
