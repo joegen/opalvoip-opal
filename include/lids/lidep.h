@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.h,v $
- * Revision 1.2003  2001/08/01 06:23:55  robertj
+ * Revision 1.2004  2001/08/17 01:11:52  robertj
+ * Added ability to add whole LID's to LID endpoint.
+ * Added ability to change the prefix on POTS and PSTN endpoints.
+ *
+ * Revision 2.2  2001/08/01 06:23:55  robertj
  * Changed to use separate mutex for LIDs structure to avoid Unix nested mutex problem.
  *
  * Revision 2.1  2001/08/01 05:18:51  robertj
@@ -156,6 +160,12 @@ class OpalLIDEndPoint : public OpalEndPoint
       const PString & token
     );
 
+    /**Remove all lines from the endpoint.
+       The line is removed from the endpoints processing and deleted. All
+       devices are also deleted from the endpoint
+      */
+    void RemoveAllLines();
+
     /**Add all lines on a device to the endpoint.
        Note that once the line is added it is "owned" by the endpoint and
        should not be deleted directly. Use the RemoveLine() function to
@@ -166,14 +176,36 @@ class OpalLIDEndPoint : public OpalEndPoint
        Returns TRUE if at least one line was added.
       */
     BOOL AddLinesFromDevice(
-      OpalLineInterfaceDevice & device
+      OpalLineInterfaceDevice & device  /// Device to add lines
     );
 
     /**Remove all lines on a device from the endpoint.
        The lines are removed from the endpoints processing and deleted.
       */
     void RemoveLinesFromDevice(
-      OpalLineInterfaceDevice & device
+      OpalLineInterfaceDevice & device  /// Device to remove lines
+    );
+
+    /**Add a line interface device to the endpoint.
+       This will add the OpalLineInterfaceDevice descendent and all of the
+       lines that it has to the endpoint.
+
+       The lid is then "owned" by the endpoint and will be deleted
+       automatically when the endpoint is destroyed.
+
+       Note the device should already be open or no lines are added.
+
+       Returns TRUE if at least one line was added.
+      */
+    BOOL AddDevice(
+      OpalLineInterfaceDevice * device    /// Device to add
+    );
+
+    /**Remove the device and all its lines from the endpoint.
+       The device will be automatically deleted.
+      */
+    void RemoveDevice(
+      OpalLineInterfaceDevice * device  /// Device to remove
     );
 
     /**Get the line by name.
@@ -187,6 +219,7 @@ class OpalLIDEndPoint : public OpalEndPoint
     PDECLARE_NOTIFIER(PThread, OpalLIDEndPoint, MonitorLines);
     virtual void MonitorLine(OpalLine & line);
 
+    OpalLIDList  devices;
     OpalLineList lines;
     PMutex       linesMutex;
     PThread    * monitorThread;
@@ -208,8 +241,9 @@ class OpalPSTNEndPoint : public OpalLIDEndPoint
     /**Create a new endpoint.
      */
     OpalPSTNEndPoint(
-      OpalManager & manager /// Manager of all endpoints.
-    ) : OpalLIDEndPoint(manager, "pstn", HasLineInterface) { }
+      OpalManager & manager,  /// Manager of all endpoints.
+      const char * prefix = "pstn" /// Prefix for URL style address strings
+    ) : OpalLIDEndPoint(manager, prefix, HasLineInterface) { }
   //@}
 };
 
@@ -228,8 +262,9 @@ class OpalPOTSEndPoint : public OpalLIDEndPoint
     /**Create a new endpoint.
      */
     OpalPOTSEndPoint(
-      OpalManager & manager /// Manager of all endpoints.
-    ) : OpalLIDEndPoint(manager, "pots", CanTerminateCall) { }
+      OpalManager & manager,  /// Manager of all endpoints.
+      const char * prefix = "pots" /// Prefix for URL style address strings
+    ) : OpalLIDEndPoint(manager, prefix, CanTerminateCall) { }
   //@}
 };
 
