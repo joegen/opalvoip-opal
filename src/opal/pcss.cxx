@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2012  2003/03/07 08:14:50  robertj
+ * Revision 1.2013  2003/03/17 10:13:18  robertj
+ * Added call back functions for creating sound channel.
+ * Added video support.
+ *
+ * Revision 2.11  2003/03/07 08:14:50  robertj
  * Fixed support of dual address SetUpCall()
  * Fixed use of new call set up sequence, calling OnSetUp() in outgoing call.
  *
@@ -77,6 +81,8 @@
 
 #include <opal/pcss.h>
 
+#include <ptlib/videoio.h>
+#include <codec/vidcodec.h>
 #include <opal/call.h>
 
 
@@ -129,7 +135,7 @@ BOOL OpalPCSSEndPoint::MakeConnection(OpalCall & call,
 
   PString playDevice;
   PString recordDevice;
-  PINDEX separator = remoteParty.Find('\\', prefixLength);
+  PINDEX separator = remoteParty.FindOneOf('\n\t\\', prefixLength);
   if (separator == P_MAX_INDEX)
     playDevice = recordDevice = remoteParty.Mid(prefixLength);
   else {
@@ -173,6 +179,35 @@ OpalPCSSConnection * OpalPCSSEndPoint::CreateConnection(OpalCall & call,
                                                         void * /*userData*/)
 {
   return new OpalPCSSConnection(call, *this, playDevice, recordDevice);
+}
+
+
+PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & connection,
+                                                     BOOL isSource)
+{
+  PString deviceName;
+  if (isSource)
+    deviceName = connection.GetSoundChannelRecordDevice();
+  else
+    deviceName = connection.GetSoundChannelPlayDevice();
+
+  PSoundChannel * soundChannel = new PSoundChannel;
+
+  if (soundChannel->Open(deviceName,
+                         isSource ? PSoundChannel::Recorder
+                                  : PSoundChannel::Player,
+                         1, 8000, 16)) {
+    PTRACE(3, "PCSS\tOpened sound channel \"" << deviceName
+           << "\" for " << (isSource ? "record" : "play") << "ing.");
+    return soundChannel;
+  }
+
+  PTRACE(1, "PCSS\tCould not open sound channel \"" << deviceName
+         << "\" for " << (isSource ? "record" : "play")
+         << "ing: " << soundChannel->GetErrorText());
+
+  delete soundChannel;
+  return NULL;
 }
 
 
@@ -242,7 +277,8 @@ OpalPCSSConnection::OpalPCSSConnection(OpalCall & call,
   : OpalConnection(call, ep, MakeToken(playDevice, recordDevice)),
     endpoint(ep),
     soundChannelPlayDevice(playDevice),
-    soundChannelRecordDevice(recordDevice)
+    soundChannelRecordDevice(recordDevice),
+    soundChannelBuffers(ep.GetSoundChannelBufferDepth())
 {
   PTRACE(3, "PCSS\tCreated PC sound system connection.");
 }
@@ -295,41 +331,35 @@ PString OpalPCSSConnection::GetDestinationAddress()
 
 OpalMediaFormatList OpalPCSSConnection::GetMediaFormats() const
 {
-  // Sound card can only do 16 bit PCM
-  OpalMediaFormatList formatNames;
-  formatNames += OpalPCM16;
-  return formatNames;
+ 
+  OpalMediaFormatList formats;
+
+  formats += OpalPCM16; // Sound card can only do 16 bit PCM
+
+  AddVideoMediaFormats(formats);
+
+  return formats;
 }
 
 
-OpalMediaStream * OpalPCSSConnection::CreateMediaStream(BOOL isSource, unsigned sessionID)
+OpalMediaStream * OpalPCSSConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
+                                                        unsigned sessionID,
+                                                        BOOL isSource)
 {
-  PString deviceName;
-  if (isSource)
-    deviceName = soundChannelRecordDevice;
-  else
-    deviceName = soundChannelPlayDevice;
+  if (sessionID != OpalMediaFormat::DefaultAudioSessionID)
+    return OpalConnection::CreateMediaStream(mediaFormat, sessionID, isSource);
 
-  PSoundChannel * soundChannel = new PSoundChannel;
+  PSoundChannel * soundChannel = CreateSoundChannel(isSource);
+  if (soundChannel == NULL)
+    return NULL;
 
-  if (soundChannel->Open(deviceName,
-                         isSource ? PSoundChannel::Recorder
-                                  : PSoundChannel::Player,
-                         1, 8000, 16)) {
-    PTRACE(3, "PCSS\tOpened sound channel \"" << deviceName
-           << "\" for " << (isSource ? "record" : "play") << "ing.");
-    return new OpalAudioMediaStream(isSource,
-                                    sessionID,
-                                    endpoint.GetSoundChannelBufferDepth(),
-                                    soundChannel);
-  }
+  return new OpalAudioMediaStream(mediaFormat, sessionID, isSource, soundChannelBuffers, soundChannel);
+}
 
-  PTRACE(1, "PCSS\tCould not open sound channel \"" << deviceName
-         << "\" for " << (isSource ? "record" : "play")
-         << "ing: " << soundChannel->GetErrorText());
 
-  delete soundChannel;
-  return NULL;
+PSoundChannel * OpalPCSSConnection::CreateSoundChannel(BOOL isSource)
+{
+  return endpoint.CreateSoundChannel(*this, isSource);
 }
 
 
