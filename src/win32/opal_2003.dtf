@@ -2494,19 +2494,19 @@ EXPORTS
     ??0H323HTTPServiceControl@@QAE@ABVH225_ServiceControlDescriptor@@@Z @2339 NONAME
     ??0H323HTTPServiceControl@@QAE@ABVPString@@@Z @2340 NONAME
     ??0H323NonStandardAudioCapability@@QAE@ABV0@@Z @2341 NONAME
-    ??0H323NonStandardAudioCapability@@QAE@IIAAVH323EndPoint@@PBEHHH@Z @2342 NONAME
+    ??0H323NonStandardAudioCapability@@QAE@IIABVH323EndPoint@@PBEHHH@Z @36082 NONAME
     ??0H323NonStandardAudioCapability@@QAE@IIABVPString@@PBEHHH@Z @2343 NONAME
     ??0H323NonStandardAudioCapability@@QAE@IIEEGPBEHHH@Z @2344 NONAME
-    ??0H323NonStandardCapabilityInfo@@QAE@AAVH323EndPoint@@PBEHHH@Z @2345 NONAME
     ??0H323NonStandardCapabilityInfo@@QAE@ABV0@@Z @2346 NONAME
+    ??0H323NonStandardCapabilityInfo@@QAE@ABVH323EndPoint@@PBEHHH@Z @36083 NONAME
     ??0H323NonStandardCapabilityInfo@@QAE@ABVPString@@PBEHHH@Z @2347 NONAME
     ??0H323NonStandardCapabilityInfo@@QAE@EEGPBEHHH@Z @2348 NONAME
     ??0H323NonStandardDataCapability@@QAE@ABV0@@Z @2349 NONAME
-    ??0H323NonStandardDataCapability@@QAE@IAAVH323EndPoint@@PBEHHH@Z @2350 NONAME
+    ??0H323NonStandardDataCapability@@QAE@IABVH323EndPoint@@PBEHHH@Z @36084 NONAME
     ??0H323NonStandardDataCapability@@QAE@IABVPString@@PBEHHH@Z @2351 NONAME
     ??0H323NonStandardDataCapability@@QAE@IEEGPBEHHH@Z @2352 NONAME
-    ??0H323NonStandardVideoCapability@@QAE@AAVH323EndPoint@@PBEHHH@Z @2353 NONAME
     ??0H323NonStandardVideoCapability@@QAE@ABV0@@Z @2354 NONAME
+    ??0H323NonStandardVideoCapability@@QAE@ABVH323EndPoint@@PBEHHH@Z @36085 NONAME
     ??0H323NonStandardVideoCapability@@QAE@ABVPString@@PBEHHH@Z @2355 NONAME
     ??0H323NonStandardVideoCapability@@QAE@EEGPBEHHH@Z @2356 NONAME
     ??0H323PeerElement@@QAE@AAVH323EndPoint@@ABVH323TransportAddress@@@Z @2357 NONAME
@@ -2561,8 +2561,8 @@ EXPORTS
     ??0H323_G7231Capability@@QAE@H@Z @2406 NONAME
     ??0H323_G7231Capability_5k3_Registration@@QAE@XZ @2407 NONAME
     ??0H323_G7231Capability_6k3_Registration@@QAE@XZ @2408 NONAME
-    ??0H323_G726_Capability@@QAE@AAVH323EndPoint@@W4Speeds@0@@Z @2409 NONAME
     ??0H323_G726_Capability@@QAE@ABV0@@Z @2410 NONAME
+    ??0H323_G726_Capability@@QAE@ABVH323EndPoint@@W4Speeds@0@@Z @36086 NONAME
     ??0H323_G728Capability@@QAE@ABV0@@Z @2411 NONAME
     ??0H323_G728Capability@@QAE@XZ @2412 NONAME
     ??0H323_G728Capability_Registration@@QAE@XZ @2413 NONAME
@@ -2577,10 +2577,10 @@ EXPORTS
     ??0H323_GSM0610Capability_Registration@@QAE@XZ @2422 NONAME
     ??0H323_H261Capability@@QAE@ABV0@@Z @2423 NONAME
     ??0H323_H261Capability@@QAE@IIHHI@Z @2424 NONAME
-    ??0H323_iLBC_Capability@@QAE@AAVH323EndPoint@@W4Speed@0@@Z @2425 NONAME
     ??0H323_iLBC_Capability@@QAE@ABV0@@Z @2426 NONAME
-    ??0H323_LPC10Capability@@QAE@AAVH323EndPoint@@@Z @2427 NONAME
+    ??0H323_iLBC_Capability@@QAE@ABVH323EndPoint@@W4Speed@0@@Z @36087 NONAME
     ??0H323_LPC10Capability@@QAE@ABV0@@Z @2428 NONAME
+    ??0H323_LPC10Capability@@QAE@ABVH323EndPoint@@@Z @36088 NONAME
     ??0H323_RealTimeChannel@@QAE@AAVH323Connection@@ABVH323Capability@@W4Directions@H323Channel@@@Z @2429 NONAME
     ??0H323_RTPChannel@@QAE@AAVH323Connection@@ABVH323Capability@@W4Directions@H323Channel@@AAVRTP_Session@@@Z @2430 NONAME
     ??0H323_RTP_Session@@IAE@ABVH323Connection@@@Z @2431 NONAME
@@ -2593,8 +2593,8 @@ EXPORTS
     ??0H323_T38Channel@@QAE@AAVH323Connection@@ABVH323Capability@@W4Directions@H323Channel@@IW4TransportMode@H323_T38Capability@@@Z @2438 NONAME
     ??0H323_T38NonStandardCapability@@QAE@ABV0@@Z @2439 NONAME
     ??0H323_T38NonStandardCapability@@QAE@EEG@Z @2440 NONAME
-    ??0H323_UncompVideoCapability@@QAE@AAVH323EndPoint@@ABVPString@@@Z @2441 NONAME
     ??0H323_UncompVideoCapability@@QAE@ABV0@@Z @2442 NONAME
+    ??0H323_UncompVideoCapability@@QAE@ABVH323EndPoint@@ABVPString@@@Z @36089 NONAME
     ??0H323_UserInputCapability@@QAE@ABV0@@Z @2443 NONAME
     ??0H323_UserInputCapability@@QAE@W4SubTypes@0@@Z @2444 NONAME
     ??0H323_UserInputCapability_BasicString_Registration@@QAE@XZ @2445 NONAME
@@ -19180,7 +19180,7 @@ EXPORTS
     ?Add@H245NegLogicalChannels@@UAEXAAVH323Channel@@@Z @18902 NONAME
     ?Add@H323Capabilities@@QAEXPAVH323Capability@@@Z @18903 NONAME
     ?AddAliasName@H323EndPoint@@QAEHABVPString@@@Z @18904 NONAME
-    ?AddAllCapabilities@H323Capabilities@@QAEHAAVH323EndPoint@@HHABVPString@@@Z @18905 NONAME
+    ?AddAllCapabilities@H323Capabilities@@QAEHABVH323EndPoint@@HHABVPString@@@Z @36090 NONAME
     ?AddAllCapabilities@H323EndPoint@@QAEHHHABVPString@@@Z @18906 NONAME
     ?AddAllCapabilities@H323_UserInputCapability@@SAXAAVH323Capabilities@@HH@Z @18907 NONAME
     ?AddAllUserInputCapabilities@H323EndPoint@@QAEXHH@Z @18908 NONAME
@@ -25360,23 +25360,23 @@ EXPORTS
     ?CopyToAddressTemplate@H323PeerElementDescriptor@@SAHAAVH501_AddressTemplate@@ABVH225_EndpointType@@ABVH225_ArrayOf_AliasAddress@@2I@Z @25054 NONAME
     ?Create@?$Worker@VPWAVFileConverterALaw@@@?$PFactory@VPWAVFileConverter@@I@@MBEPAVPWAVFileConverter@@ABI@Z @36064 NONAME
     ?Create@?$Worker@VPWAVFileConverterULaw@@@?$PFactory@VPWAVFileConverter@@I@@MBEPAVPWAVFileConverter@@ABI@Z @36065 NONAME
-    ?Create@H323Capability@@SAPAV1@AAVH323EndPoint@@ABVPString@@@Z @25055 NONAME
-    ?Create@H323_G711ALaw64Capability_Registration@@UBEPAVH323Capability@@AAVH323EndPoint@@@Z @25056 NONAME
-    ?Create@H323_G711uLaw64Capability_Registration@@UBEPAVH323Capability@@AAVH323EndPoint@@@Z @25057 NONAME
-    ?Create@H323_G7231Capability_5k3_Registration@@UBEPAVH323Capability@@AAVH323EndPoint@@@Z @25058 NONAME
-    ?Create@H323_G7231Capability_6k3_Registration@@UBEPAVH323Capability@@AAVH323EndPoint@@@Z @25059 NONAME
-    ?Create@H323_G728Capability_Registration@@UBEPAVH323Capability@@AAVH323EndPoint@@@Z @25060 NONAME
-    ?Create@H323_G729CapabilityAB_Registration@@UBEPAVH323Capability@@AAVH323EndPoint@@@Z @25061 NONAME
-    ?Create@H323_G729CapabilityA_Registration@@UBEPAVH323Capability@@AAVH323EndPoint@@@Z @25062 NONAME
-    ?Create@H323_G729CapabilityB_Registration@@UBEPAVH323Capability@@AAVH323EndPoint@@@Z @25063 NONAME
-    ?Create@H323_G729Capability_Registration@@UBEPAVH323Capability@@AAVH323EndPoint@@@Z @25064 NONAME
-    ?Create@H323_GSM0610Capability_Registration@@UBEPAVH323Capability@@AAVH323EndPoint@@@Z @25065 NONAME
-    ?Create@H323_UserInputCapability_BasicString_Registration@@UBEPAVH323Capability@@AAVH323EndPoint@@@Z @25066 NONAME
-    ?Create@H323_UserInputCapability_GeneralString_Registration@@UBEPAVH323Capability@@AAVH323EndPoint@@@Z @25067 NONAME
-    ?Create@H323_UserInputCapability_HookFlashH245_Registration@@UBEPAVH323Capability@@AAVH323EndPoint@@@Z @25068 NONAME
-    ?Create@H323_UserInputCapability_IA5String_Registration@@UBEPAVH323Capability@@AAVH323EndPoint@@@Z @25069 NONAME
-    ?Create@H323_UserInputCapability_RFC2833_Registration@@UBEPAVH323Capability@@AAVH323EndPoint@@@Z @25070 NONAME
-    ?Create@H323_UserInputCapability_SignalToneH245_Registration@@UBEPAVH323Capability@@AAVH323EndPoint@@@Z @25071 NONAME
+    ?Create@H323Capability@@SAPAV1@ABVH323EndPoint@@ABVPString@@@Z @36091 NONAME
+    ?Create@H323_G711ALaw64Capability_Registration@@UBEPAVH323Capability@@ABVH323EndPoint@@@Z @36092 NONAME
+    ?Create@H323_G711uLaw64Capability_Registration@@UBEPAVH323Capability@@ABVH323EndPoint@@@Z @36093 NONAME
+    ?Create@H323_G7231Capability_5k3_Registration@@UBEPAVH323Capability@@ABVH323EndPoint@@@Z @36094 NONAME
+    ?Create@H323_G7231Capability_6k3_Registration@@UBEPAVH323Capability@@ABVH323EndPoint@@@Z @36095 NONAME
+    ?Create@H323_G728Capability_Registration@@UBEPAVH323Capability@@ABVH323EndPoint@@@Z @36096 NONAME
+    ?Create@H323_G729CapabilityAB_Registration@@UBEPAVH323Capability@@ABVH323EndPoint@@@Z @36097 NONAME
+    ?Create@H323_G729CapabilityA_Registration@@UBEPAVH323Capability@@ABVH323EndPoint@@@Z @36098 NONAME
+    ?Create@H323_G729CapabilityB_Registration@@UBEPAVH323Capability@@ABVH323EndPoint@@@Z @36099 NONAME
+    ?Create@H323_G729Capability_Registration@@UBEPAVH323Capability@@ABVH323EndPoint@@@Z @36100 NONAME
+    ?Create@H323_GSM0610Capability_Registration@@UBEPAVH323Capability@@ABVH323EndPoint@@@Z @36101 NONAME
+    ?Create@H323_UserInputCapability_BasicString_Registration@@UBEPAVH323Capability@@ABVH323EndPoint@@@Z @36102 NONAME
+    ?Create@H323_UserInputCapability_GeneralString_Registration@@UBEPAVH323Capability@@ABVH323EndPoint@@@Z @36103 NONAME
+    ?Create@H323_UserInputCapability_HookFlashH245_Registration@@UBEPAVH323Capability@@ABVH323EndPoint@@@Z @36104 NONAME
+    ?Create@H323_UserInputCapability_IA5String_Registration@@UBEPAVH323Capability@@ABVH323EndPoint@@@Z @36105 NONAME
+    ?Create@H323_UserInputCapability_RFC2833_Registration@@UBEPAVH323Capability@@ABVH323EndPoint@@@Z @36106 NONAME
+    ?Create@H323_UserInputCapability_SignalToneH245_Registration@@UBEPAVH323Capability@@ABVH323EndPoint@@@Z @36107 NONAME
     ?Create@OpalLineInterfaceDevice@@SAPAV1@ABVPString@@PAX@Z @25072 NONAME
     ?Create@OpalTranscoder@@SAPAV1@ABVOpalMediaFormat@@0PAX@Z @25073 NONAME
     ?Create@WorkerBase@?$PFactory@VPWAVFileConverter@@I@@MBEPAVPWAVFileConverter@@ABI@Z @36066 NONAME
@@ -27697,6 +27697,7 @@ EXPORTS
     ?GetCallTransferT3@H323EndPoint@@QBEABVPTimeInterval@@XZ @27328 NONAME
     ?GetCallTransferT4@H323EndPoint@@QBEABVPTimeInterval@@XZ @27329 NONAME
     ?GetCanonicalName@RTP_Session@@QBE?AVPString@@XZ @27330 NONAME
+    ?GetCapabilities@H323EndPoint@@QBEABVH323Capabilities@@XZ @36108 NONAME
     ?GetCapability@H323Channel@@QBEABVH323Capability@@XZ @27331 NONAME
     ?GetCapabilityDirection@H323Capability@@QBE?AW4CapabilityDirection@1@XZ @27332 NONAME
     ?GetCapabilityExchangeTimeout@H323EndPoint@@QBEABVPTimeInterval@@XZ @27333 NONAME
