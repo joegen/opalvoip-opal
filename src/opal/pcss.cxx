@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2003  2001/08/17 08:33:50  robertj
+ * Revision 1.2004  2001/08/21 01:13:22  robertj
+ * Fixed propagation of sound channel buffers through media stream.
+ * Allowed setting of sound card by number using #1 etc.
+ * Fixed calling OnAlerting when alerting.
+ *
+ * Revision 2.2  2001/08/17 08:33:50  robertj
  * More implementation.
  *
  * Revision 2.1  2001/08/01 05:45:01  robertj
@@ -161,23 +166,37 @@ BOOL OpalPCSSEndPoint::OnShowUserIndication(const OpalPCSSConnection &, const PS
 }
 
 
+static BOOL SetDeviceName(const PString & name,
+                          PSoundChannel::Directions dir,
+                          PString & result)
+{
+  PStringArray devices = PSoundChannel::GetDeviceNames(dir);
+
+  if (name[0] == '#') {
+    PINDEX id = name.Mid(1).AsUnsigned();
+    if (id == 0 || id > devices.GetSize())
+      return FALSE;
+    result = devices[id-1];
+  }
+  else {
+    if (devices.GetValuesIndex(name) == P_MAX_INDEX)
+      return FALSE;
+    result = name;
+  }
+
+  return TRUE;
+}
+
+
 BOOL OpalPCSSEndPoint::SetSoundChannelPlayDevice(const PString & name)
 {
-  if (PSoundChannel::GetDeviceNames(PSoundChannel::Player).GetValuesIndex(name) == P_MAX_INDEX)
-    return FALSE;
-
-  soundChannelPlayDevice = name;
-  return TRUE;
+  return SetDeviceName(name, PSoundChannel::Player, soundChannelPlayDevice);
 }
 
 
 BOOL OpalPCSSEndPoint::SetSoundChannelRecordDevice(const PString & name)
 {
-  if (PSoundChannel::GetDeviceNames(PSoundChannel::Recorder).GetValuesIndex(name) == P_MAX_INDEX)
-    return FALSE;
-
-  soundChannelRecordDevice = name;
-  return TRUE;
+  return SetDeviceName(name, PSoundChannel::Recorder, soundChannelRecordDevice);
 }
 
 
@@ -257,7 +276,6 @@ OpalMediaStream * OpalPCSSConnection::CreateMediaStream(BOOL isSource, unsigned 
     deviceName = soundChannelPlayDevice;
 
   PSoundChannel * soundChannel = new PSoundChannel;
-//  soundChannel->SetBuffers(format.GetFrameSize(), 2);
 
   if (soundChannel->Open(deviceName,
                          isSource ? PSoundChannel::Recorder
@@ -265,7 +283,10 @@ OpalMediaStream * OpalPCSSConnection::CreateMediaStream(BOOL isSource, unsigned 
                          1, 8000, 16)) {
     PTRACE(3, "PCSS\tOpened sound channel \"" << deviceName
            << "\" for " << (isSource ? "record" : "play") << "ing.");
-    return new OpalAudioMediaStream(isSource, sessionID, soundChannel);
+    return new OpalAudioMediaStream(isSource,
+                                    sessionID,
+                                    endpoint.GetSoundChannelBufferDepth(),
+                                    soundChannel);
   }
 
   PTRACE(1, "PCSS\tCould not open sound channel \"" << deviceName
@@ -297,6 +318,7 @@ void OpalPCSSConnection::StartIncoming(const PString & callerName)
   phase = AlertingPhase;
   remotePartyName = callerName;
   endpoint.OnShowIncoming(*this);
+  OnAlerting();
 }
 
 
