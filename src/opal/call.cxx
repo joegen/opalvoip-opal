@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2008  2001/11/14 01:31:55  robertj
+ * Revision 1.2009  2001/11/15 07:01:55  robertj
+ * Changed OpalCall::OpenSourceMediaStreams so the connection to not open
+ *   a media stream on is optional.
+ *
+ * Revision 2.7  2001/11/14 01:31:55  robertj
  * Corrected placement of adjusting media format list.
  *
  * Revision 2.6  2001/11/06 05:33:52  robertj
@@ -199,9 +203,9 @@ void OpalCall::OnConnected(OpalConnection & connection)
 
   inUseFlag.Signal();
 
-  BOOL createdOne = OpenSourceMediaStreams(connection, connection.GetMediaFormats(), OpalMediaFormat::DefaultAudioSessionID);
+  BOOL createdOne = OpenSourceMediaStreams(connection.GetMediaFormats(), OpalMediaFormat::DefaultAudioSessionID);
   if (manager.CanAutoStartTransmitVideo()) {
-    if (OpenSourceMediaStreams(connection, connection.GetMediaFormats(), OpalMediaFormat::DefaultVideoSessionID))
+    if (OpenSourceMediaStreams(connection.GetMediaFormats(), OpalMediaFormat::DefaultVideoSessionID))
       createdOne = TRUE;
   }
 
@@ -297,11 +301,13 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection)
 }
 
 
-BOOL OpalCall::OpenSourceMediaStreams(const OpalConnection & connection,
-                                      const OpalMediaFormatList & mediaFormats,
-                                      unsigned sessionID)
+BOOL OpalCall::OpenSourceMediaStreams(const OpalMediaFormatList & mediaFormats,
+                                      unsigned sessionID,
+                                      const OpalConnection * connection)
 {
-  PTRACE(3, "Call\tOpenSourceMediaStreams " << connection);
+  PTRACE(2, "Call\tOpenSourceMediaStreams for session " << sessionID
+         << " with media " << setfill(',') << mediaFormats << setfill(' '));
+  PTRACE_IF(3, connection != NULL, "Call\tExcluding " << *connection);
 
   BOOL startedOne = FALSE;
 
@@ -309,7 +315,7 @@ BOOL OpalCall::OpenSourceMediaStreams(const OpalConnection & connection,
 
   for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
     OpalConnection & conn = activeConnections[i];
-    if (&connection != &conn) {
+    if (connection != &conn) {
       if (conn.OpenSourceMediaStream(mediaFormats, sessionID))
         startedOne = TRUE;
     }
