@@ -22,7 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2025  2003/04/08 11:46:35  robertj
+# Revision 1.2026  2004/02/16 09:15:19  csoutheren
+# Fixed problems with codecs on Unix systems
+#
+# Revision 2.24  2003/04/08 11:46:35  robertj
 # Better portability for tr command when doing ASN parse.
 #
 # Revision 2.23  2003/04/08 06:09:19  robertj
@@ -125,7 +128,6 @@ endif
 OBJDIR	=	$(OPAL_OBJDIR)
 LIBDIR	=	$(OPAL_LIBDIR)
 TARGET	=	$(LIBDIR)/$(OPAL_FILE)
-
 
 ifdef NOTRACE
 STDCCFLAGS += -DPASN_NOPRINTON
@@ -268,6 +270,7 @@ SOURCES += $(OPAL_SRCDIR)/codec/gsmcodec.cxx \
            $(GSM_SRCDIR)/table.c
 
 
+SOURCES += $(OPAL_SRCDIR)/codec/mscodecs.cxx
 
 LPC10_DIR 	= $(OPAL_SRCDIR)/codec/lpc10
 LPC10_INCDIR	= $(LPC10_DIR)
@@ -310,7 +313,6 @@ SOURCES += $(OPAL_SRCDIR)/codec/lpc10codec.cxx \
            $(LPC10_SRCDIR)/vparms.c \
 
 
-
 SPEEX_DIR       = $(OPAL_SRCDIR)/codec/speex
 SPEEX_INCDIR    = $(SPEEX_DIR)/libspeex
 SPEEX_SRCDIR    = $(SPEEX_DIR)/libspeex
@@ -322,7 +324,10 @@ HEADER_FILES    += $(OH323_INCDIR)/speexcodec.h \
                    $(SPEEX_INCDIR)/speex_callbacks.h
 
 
-COMMON_SOURCES  += $(OH323_SRCDIR)/speexcodec.cxx \
+VPATH_C		+= $(SPEEX_SRCDIR)
+VPATH_CXX	+= $(SPEEX_SRCDIR)
+
+SOURCES += $(OH323_SRCDIR)/speexcodec.cxx \
 		   $(SPEEX_SRCDIR)/nb_celp.c \
                    $(SPEEX_SRCDIR)/sb_celp.c \
                    $(SPEEX_SRCDIR)/lpc.c \
@@ -345,6 +350,7 @@ COMMON_SOURCES  += $(OH323_SRCDIR)/speexcodec.cxx \
                    $(SPEEX_SRCDIR)/exc_8_128_table.c \
                    $(SPEEX_SRCDIR)/exc_10_32_table.c \
                    $(SPEEX_SRCDIR)/exc_10_16_table.c \
+                   $(SPEEX_SRCDIR)/exc_20_32_table.c \
                    $(SPEEX_SRCDIR)/hexc_10_32_table.c \
                    $(SPEEX_SRCDIR)/misc.c \
                    $(SPEEX_SRCDIR)/speex_header.c \
