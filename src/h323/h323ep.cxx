@@ -27,8 +27,23 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2004  2001/08/13 05:10:39  robertj
+ * Revision 1.2005  2001/08/17 08:27:44  robertj
+ * Update from OpenH323
+ * Moved call end reasons enum from OpalConnection to global.
+ *
+ * Revision 2.3  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
+ * Revision 1.97  2001/08/16 07:49:19  robertj
+ * Changed the H.450 support to be more extensible. Protocol handlers
+ *   are now in separate classes instead of all in H323Connection.
+ *
+ * Revision 1.96  2001/08/10 11:03:52  robertj
+ * Major changes to H.235 support in RAS to support server.
+ *
+ * Revision 1.95  2001/08/08 23:55:27  robertj
+ * Fixed problem with setting gk password before have a gk variable.
+ * Fixed memory leak if listener fails to open.
+ * Fixed problem with being able to specify an alias with an @ in it.
  *
  * Revision 2.2  2001/08/01 05:14:19  robertj
  * Moved media formats list from endpoint to connection.
@@ -402,8 +417,8 @@ void H225CallThread::Main()
 {
   PTRACE(3, "H225\tStarted call thread");
 
-  OpalConnection::CallEndReason reason = connection.SendSignalSetup(alias, address);
-  if (reason != OpalConnection::NumCallEndReasons)
+  OpalCallEndReason reason = connection.SendSignalSetup(alias, address);
+  if (reason != OpalNumCallEndReasons)
     connection.ClearCall(reason);
   else
     connection.HandleSignallingChannel();
@@ -516,12 +531,6 @@ void H323EndPoint::SetH221NonStandardInfo(H225_H221NonStandard & info) const
   info.m_t35CountryCode = t35CountryCode;
   info.m_t35Extension = t35Extension;
   info.m_manufacturerCode = manufacturerCode;
-}
-
-
-H235SecurityInfo * H323EndPoint::GetSecurityInfo()
-{
-  return NULL;
 }
 
 
@@ -673,46 +682,7 @@ OpalConnection * H323EndPoint::SetUpConnection(OpalCall & call,
                                                void * userData)
 {
   PTRACE(2, "H323\tMaking call to: " << remoteParty);
-
-  PString alias;
-  OpalTransportAddress address;
-  ParsePartyName(remoteParty, alias, address);
-
-  // Restriction: the call must be made on the same transport as the one
-  // that the gatekeeper is using.
-  OpalTransport * transport;
-  if (gatekeeper != NULL)
-    transport = gatekeeper->GetTransport().GetRemoteAddress().CreateTransport(*this);
-  else
-    transport = address.CreateTransport(*this);
-
-  if (transport == NULL) {
-    PTRACE(1, "H323\tInvalid transport in \"" << remoteParty << '"');
-    return NULL;
-  }
-
-  inUseFlag.Wait();
-
-  PString token;
-  token.sprintf("localhost/%u", lastCallReference++);
-
-  H323Connection * connection = CreateConnection(call, token, userData, transport, NULL);
-  if (connection == NULL) {
-    PTRACE(1, "H323\tCreateConnection returned NULL");
-    inUseFlag.Signal();
-    return NULL;
-  }
-
-  connectionsActive.SetAt(token, connection);
-
-  inUseFlag.Signal();
-
-  connection->AttachSignalChannel(transport, FALSE);
-
-  PTRACE(3, "H323\tCreated new connection: " << token);
-
-  new H225CallThread(*connection, *transport, alias, address);
-  return connection;
+  return InternalMakeCall(call, remoteParty, PString(), PString(), userData);
 }
 
 
@@ -765,7 +735,7 @@ void H323EndPoint::NewIncomingConnection(OpalTransport * transport)
       connection->HandleSignallingChannel();
     }
     else {
-      connection->ClearCall(H323Connection::EndedByTransportFail);
+      connection->ClearCall(EndedByTransportFail);
       PTRACE(1, "H225\tSignal channel stopped on first PDU.");
     }
   }
@@ -779,6 +749,64 @@ H323Connection * H323EndPoint::CreateConnection(OpalCall & call,
                                                 H323SignalPDU * /*setupPDU*/)
 {
   return new H323Connection(call, *this, token);
+}
+
+
+H323Connection * H323EndPoint::SetupTransfer(const PString & oldToken,
+                                             const PString & callIdentity,
+                                             const PString & remoteParty)
+{
+  PTRACE(2, "H323\tTransferring call to: " << remoteParty);
+  return InternalMakeCall(*manager.CreateCall(), oldToken, callIdentity, remoteParty, NULL);
+}
+
+
+H323Connection * H323EndPoint::InternalMakeCall(OpalCall & call,
+                                                const PString & existingToken,
+                                                const PString & callIdentity,
+                                                const PString & remoteParty,
+                                                void * userData)
+{
+  PString alias;
+  OpalTransportAddress address;
+  ParsePartyName(remoteParty, alias, address);
+
+  // Restriction: the call must be made on the same transport as the one
+  // that the gatekeeper is using.
+  OpalTransport * transport;
+  if (gatekeeper != NULL)
+    transport = gatekeeper->GetTransport().GetRemoteAddress().CreateTransport(*this);
+  else
+    transport = address.CreateTransport(*this);
+
+  if (transport == NULL) {
+    PTRACE(1, "H323\tInvalid transport in \"" << remoteParty << '"');
+    return NULL;
+  }
+
+  inUseFlag.Wait();
+
+  PString newToken;
+  newToken.sprintf("localhost/%u", lastCallReference++);
+
+  H323Connection * connection = CreateConnection(call, newToken, userData, transport, NULL);
+  if (connection == NULL) {
+    PTRACE(1, "H323\tCreateConnection returned NULL");
+    inUseFlag.Signal();
+    return NULL;
+  }
+
+  connectionsActive.SetAt(newToken, connection);
+
+  inUseFlag.Signal();
+
+  connection->AttachSignalChannel(transport, FALSE);
+  connection->HandleTransferCall(existingToken, callIdentity);
+
+  PTRACE(3, "H323\tCreated new connection: " << newToken);
+
+  new H225CallThread(*connection, *transport, alias, address);
+  return connection;
 }
 
 
@@ -799,57 +827,6 @@ void H323EndPoint::HoldCall(const PString & token, BOOL localHold)
     connection->HoldCall(localHold);
     connection->Unlock();
   }
-}
-
-
-H323Connection * H323EndPoint::SetupTransfer(const PString & token,
-                                             const PString & callIdentity,
-                                             const PString & remoteParty,
-                                             PString & newToken)
-{
-  PTRACE(2, "H323\tTransferring call to: " << remoteParty);
-  OpalTransport * transport;
-
-  PString alias;
-  OpalTransportAddress address;
-  ParsePartyName(remoteParty, alias, address);
-
-  // Restriction: the call must be made on the same transport as the one
-  // that the gatekeeper is using.
-  if (gatekeeper != NULL)
-    transport = gatekeeper->GetTransport().GetRemoteAddress().CreateTransport(*this);
-  else
-    transport = address.CreateTransport(*this);
-  if (transport == NULL) {
-    PTRACE(1, "H323\tInvalid transport in \"" << remoteParty << '"');
-    return NULL;
-  }
-
-  inUseFlag.Wait();
-
-  newToken.sprintf("localhost/%u", lastCallReference++);
-
-  H323Connection * connection = CreateConnection(*manager.CreateCall(), newToken, NULL, transport, NULL);
-  if (connection == NULL) {
-    PTRACE(1, "H323\tCreateConnection returned NULL");
-    inUseFlag.Signal();
-    return NULL;
-  }
-
-  connectionsActive.SetAt(newToken, connection);
-
-  inUseFlag.Signal();
-
-  connection->SetTransferringToken(token);
-  connection->SetTransferringCallIdentity(callIdentity);
-  connection->SetCallTransferState(H323Connection::e_ctAwaitSetupResponse);
-  // start timer CT-T4
-  connection->AttachSignalChannel(transport, FALSE);
-
-  PTRACE(3, "H323\tCreated new connection: " << newToken);
-
-  new H225CallThread(*connection, *transport, alias, address);
-  return connection;
 }
 
 
@@ -934,6 +911,13 @@ BOOL H323EndPoint::OnIncomingCall(H323Connection & connection,
 }
 
 
+BOOL H323EndPoint::OnCallTransferInitiate(H323Connection & /*connection*/,
+                                          const PString & /*remoteParty*/)
+{
+  return TRUE;
+}
+
+
 H323Connection::AnswerCallResponse
        H323EndPoint::OnAnswerCall(H323Connection & /*connection*/,
                                   const PString & /*caller*/,
@@ -982,68 +966,6 @@ BOOL H323EndPoint::IsConnectionEstablished(const PString & token)
 
 void H323EndPoint::OnConnectionCleared(H323Connection & /*connection*/,
                                        const PString & /*token*/)
-{
-}
-
-
-BOOL H323EndPoint::OnCallTransferInitiate(H323Connection & /*existingConnection*/,
-                                          const PString & /*remoteParty*/)
-{
-  return TRUE;
-}
-
-
-BOOL H323EndPoint::OnCallTransferSetup(H323Connection & connection,
-                                       int /*invokeId*/,
-                                       int /*linkedId*/,
-                                       const PString & callIdentity)
-{
-  switch (connection.GetCallTransferState()) {
-    case H323Connection::e_ctIdle:
-      if (callIdentity != "")
-        return FALSE;
-      break;
-
-    case H323Connection::e_ctAwaitSetup:
-      // stop timer CT-T2
-      // Need to check that the call identity and destination address match
-      // those in the Identify message; for now we just check for empty.
-       if (callIdentity == "")
-         return FALSE;
-      break;
-
-    default:
-      return FALSE;
-  }
-  return TRUE;
-}
-
-
-void H323EndPoint::OnCallTransferInitiateReturnResult(H323Connection & /*connection*/)
-{
-}
-
-
-void H323EndPoint::OnCallTransferSetupReturnResult(H323Connection & /*connection*/)
-{
-}
-
-
-void H323EndPoint::OnCallTransferInitiateReturnError(H323Connection & /*connection*/,
-                                                     int /*errorCode*/)
-{
-}
-
-
-void H323EndPoint::OnCallTransferSetupReturnError(H323Connection & /*connection*/,
-                                                  int /*errorCode*/)
-{
-}
-
-
-void H323EndPoint::OnReject(H323Connection & /*connection*/,
-                            int /*invokeId*/,
-                            int /*problem*/)
 {
 }
 
