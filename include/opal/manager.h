@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2002  2001/08/01 05:52:55  robertj
+ * Revision 1.2003  2001/08/17 08:23:59  robertj
+ * Changed OnEstablished() to OnEstablishedCall() to be consistent.
+ * Moved call end reasons enum from OpalConnection to global.
+ *
+ * Revision 2.1  2001/08/01 05:52:55  robertj
  * Moved media formats list from endpoint to connection.
  * Added function to adjust calls media formats list.
  *
@@ -61,7 +65,7 @@ class OpalMediaPatch;
    The manager is the eventual destination for call back indications from
    various other objects. It is possible, for instance, to get an indication
    of a completed call by creating a descendant of the OpalCall and overriding
-   the OnEstablished() virtual. However, this could quite unwieldy for all of
+   the OnClearedCall() virtual. However, this could quite unwieldy for all of
    the possible classes, so the default behaviour is to call the equivalent
    function on the OpalManager. This allows most applications to only have to
    create a descendant of the OpalManager and override virtual functions there
@@ -140,7 +144,7 @@ class OpalManager : public PObject
 
        The default behaviour does nothing.
       */
-    virtual void OnEstablished(
+    virtual void OnEstablishedCall(
       OpalCall & call   /// Call that was completed
     );
 
@@ -174,8 +178,7 @@ class OpalManager : public PObject
       */
     virtual BOOL ClearCall(
       const PString & token,    /// Token for identifying connection
-      OpalConnection::CallEndReason reason =
-                  OpalConnection::EndedByLocalUser, /// Reason for call clearing
+      OpalCallEndReason reason = EndedByLocalUser, /// Reason for call clearing
       PSyncPoint * sync = NULL  /// Sync point to wait on.
     );
 
@@ -184,16 +187,20 @@ class OpalManager : public PObject
        manager has active.
       */
     virtual void ClearAllCalls(
-      OpalConnection::CallEndReason reason =
-                  OpalConnection::EndedByLocalUser, /// Reason for call clearing
+      OpalCallEndReason reason = EndedByLocalUser, /// Reason for call clearing
       BOOL wait = TRUE   /// Flag for wait for calls to e cleared.
     );
 
     /**A call back function whenever a call is cleared.
        A call is cleared whenever there is no longer any connections attached
        to it. This function is called just before the call is deleted.
-       However, it may be sued to display information on the call after
+       However, it may be used to display information on the call after
        completion, eg the call parties and duration.
+
+       Note that there is not a one to one relationship with the
+       OnEstablishedCall() function. This function may be called without that
+       function being called. For example if SetUpConnection() was used but
+       the call never completed.
 
        The default behaviour does nothing.
       */
@@ -378,11 +385,6 @@ class OpalManager : public PObject
     /**A call back function whenever a connection is released.
        This function can do any internal cleaning up and waiting on background
        threads that may be using the connection object.
-
-       Note that there is not a one to one relationship with the
-       OnEstablishedConnection() function. This function may be called without
-       that function being called. For example if SetUpConnection() was used
-       but the call never completed.
 
        The return value indicates if the connection object is to be deleted. A
        value of FALSE can be returned and it then someone elses responsibility
