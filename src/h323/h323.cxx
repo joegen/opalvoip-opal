@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2059  2004/07/04 12:52:43  rjongbloed
+ * Revision 1.2060  2004/07/11 12:46:45  rjongbloed
+ * Added function on endpoints to get the list of all media formats any
+ *   connection the endpoint may create can support.
+ * Fixed multple calls of OnSetLocalCapabilities changing caps after having sent to remote.
+ * Made sure local caps have the UII caps set in it.
+ *
+ * Revision 2.58  2004/07/04 12:52:43  rjongbloed
  * Fixed setting of local capabilities to after routing, so we know the peer protocols media list.
  *
  * Revision 2.57  2004/06/04 06:54:18  csoutheren
@@ -3051,8 +3057,7 @@ BOOL H323Connection::SetConnected()
     return FALSE;
 
   // Assure capabilities are set to other connections media list (if not already)
-  if (!capabilityExchangeProcedure->HasSentCapabilities())
-    OnSetLocalCapabilities();
+  OnSetLocalCapabilities();
 
   H225_Connect_UUIE & connect = connectPDU->m_h323_uu_pdu.m_h323_message_body;
   // Now ask the application to select which channels to start
@@ -4145,6 +4150,9 @@ void H323Connection::SendCapabilitySet(BOOL empty)
 
 void H323Connection::OnSetLocalCapabilities()
 {
+  if (capabilityExchangeProcedure->HasSentCapabilities())
+    return;
+
   OpalMediaFormatList formats = ownerCall.GetMediaFormats(*this, FALSE);
   if (formats.IsEmpty()) {
     PTRACE(2, "H323\tSetLocalCapabilities - no formats from other connection(s) in call");
@@ -4179,7 +4187,9 @@ void H323Connection::OnSetLocalCapabilities()
     }
   }
 
-  // Special test for the RFC2833 capability to get teh correct dynamic payload type
+  H323_UserInputCapability::AddAllCapabilities(localCapabilities, 0, P_MAX_INDEX);
+
+  // Special test for the RFC2833 capability to get the correct dynamic payload type
   H323Capability * capability = localCapabilities.FindCapability(OpalRFC2833);
   if (capability != NULL) {
     MediaInformation info;
@@ -4278,7 +4288,7 @@ OpalMediaFormatList H323Connection::GetMediaFormats() const
 }
 
 
-BOOL H323Connection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats,
+BOOL H323Connection::OpenSourceMediaStream(const OpalMediaFormatList & /*mediaFormats*/,
                                            unsigned sessionID)
 {
   // Check if we have already got a transmitter running, select one if not
