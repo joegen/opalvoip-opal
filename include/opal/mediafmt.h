@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2018  2003/03/17 10:12:02  robertj
+ * Revision 1.2019  2004/02/07 02:18:18  rjongbloed
+ * Improved searching for media format to use payload type AND the encoding name.
+ *
+ * Revision 2.17  2003/03/17 10:12:02  robertj
  * Fixed mutex problem with media format database.
  *
  * Revision 2.16  2003/01/07 04:39:53  robertj
@@ -192,7 +195,8 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
        Returns P_MAX_INDEX if not in list.
       */
     PINDEX FindFormat(
-      RTP_DataFrame::PayloadTypes rtpPayloadType /// RTP payload type code
+      RTP_DataFrame::PayloadTypes rtpPayloadType, /// RTP payload type code
+      const char * rtpEncodingName = NULL          /// RTP payload type name
     ) const;
 
     /**Get a format position in the list matching the wildcard.
@@ -272,7 +276,8 @@ class OpalMediaFormat : public PCaselessString
        should not be relied on.
       */
     OpalMediaFormat(
-      RTP_DataFrame::PayloadTypes rtpPayloadType /// RTP payload type code
+      RTP_DataFrame::PayloadTypes rtpPayloadType, /// RTP payload type code
+      const char * rtpEncodingName = NULL          /// RTP payload type name
     );
 
     /**Construct a media format, searching database for information.
