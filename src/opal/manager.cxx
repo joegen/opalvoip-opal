@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2022  2003/03/06 03:57:47  robertj
+ * Revision 1.2023  2003/03/07 08:13:42  robertj
+ * Fixed validation of "protocol:" part of address in routing system.
+ *
+ * Revision 2.21  2003/03/06 03:57:47  robertj
  * IVR support (work in progress) requiring large changes everywhere.
  *
  * Revision 2.20  2003/01/07 04:39:53  robertj
@@ -451,7 +454,7 @@ PString OpalManager::OnRouteConnection(OpalConnection & connection)
 
   // Have explicit protocol defined, so use that
   PINDEX colon = addr.Find(':');
-  if (colon != P_MAX_INDEX && FindEndPoint(addr.Left(':')) != NULL)
+  if (colon != P_MAX_INDEX && FindEndPoint(addr.Left(colon)) != NULL)
     return addr;
 
   // No routes specified, just return what we've got so far
