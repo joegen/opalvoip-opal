@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2011  2002/02/11 07:38:35  robertj
+ * Revision 1.2012  2002/02/11 09:32:12  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.10  2002/02/11 07:38:35  robertj
  * Added media bypass for streams between compatible protocols.
  *
  * Revision 2.9  2002/01/22 05:04:21  robertj
@@ -72,6 +75,7 @@
 
 #include <opal/mediafmt.h>
 #include <opal/mediastrm.h>
+#include <ptclib/dtmf.h>
 
 
 class OpalEndPoint;
@@ -760,6 +764,7 @@ class OpalConnection : public PObject
       */
     void LockOnRelease();
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);
+    PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnUserInputInBandDTMF);
 
   // Member variables
     OpalCall          & ownerCall;
@@ -783,6 +788,10 @@ class OpalConnection : public PObject
     OpalMediaStreamList mediaStreams;
     RTP_SessionManager  rtpSessions;
     unsigned            bandwidthAvailable;
+
+    // The In-Band DTMF detector. This is used inside an audio filter which is
+    // added to the audio channel.
+    PDTMFDecoder        dtmfDecoder;
 
   private:
     PMutex innerMutex;
