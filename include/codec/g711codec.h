@@ -23,7 +23,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g711codec.h,v $
- * Revision 1.2002  2001/08/01 05:03:26  robertj
+ * Revision 1.2003  2002/03/15 03:07:25  robertj
+ * Added static access to internal conversion functions.
+ *
+ * Revision 2.1  2001/08/01 05:03:26  robertj
  * Changes to allow control of linking software transcoders, use macros
  *   to force linking.
  *
@@ -48,6 +51,7 @@ class Opal_G711_uLaw_PCM : public OpalStreamedTranscoder {
       const OpalTranscoderRegistration & registration /// Registration for transcoder
     );
     virtual int ConvertOne(int sample) const;
+    static int ConvertSample(int sample);
 };
 
 
@@ -59,6 +63,7 @@ class Opal_PCM_G711_uLaw : public OpalStreamedTranscoder {
       const OpalTranscoderRegistration & registration /// Registration for transcoder
     );
     virtual int ConvertOne(int sample) const;
+    static int ConvertSample(int sample);
 };
 
 
@@ -70,6 +75,7 @@ class Opal_G711_ALaw_PCM : public OpalStreamedTranscoder {
       const OpalTranscoderRegistration & registration /// Registration for transcoder
     );
     virtual int ConvertOne(int sample) const;
+    static int ConvertSample(int sample);
 };
 
 
@@ -81,6 +87,7 @@ class Opal_PCM_G711_ALaw : public OpalStreamedTranscoder {
       const OpalTranscoderRegistration & registration /// Registration for transcoder
     );
     virtual int ConvertOne(int sample) const;
+    static int ConvertSample(int sample);
 };
 
 
