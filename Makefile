@@ -22,7 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2026  2004/02/16 09:15:19  csoutheren
+# Revision 1.2027  2004/02/23 01:28:49  rjongbloed
+# Fixed unix build for recent upgrade to OpenH323 latest code.
+#
+# Revision 2.25  2004/02/16 09:15:19  csoutheren
 # Fixed problems with codecs on Unix systems
 #
 # Revision 2.24  2003/04/08 11:46:35  robertj
@@ -172,6 +175,9 @@ ASN_CXX_FILES += $(ASN_SRCDIR)/h245_1.cxx $(ASN_SRCDIR)/h245_2.cxx $(ASN_SRCDIR)
 ASN_H_FILES   += $(ASN_INCDIR)/h248.h
 ASN_CXX_FILES += $(ASN_SRCDIR)/h248.cxx
 
+ASN_H_FILES   += $(ASN_INCDIR)/h501.h
+ASN_CXX_FILES += $(ASN_SRCDIR)/h501.cxx
+
 .PRECIOUS: $(ASN_CXX_FILES) $(ASN_H_FILES)
 
 
@@ -200,13 +206,18 @@ SOURCES := $(ASN_CXX_FILES) \
            $(OPAL_SRCDIR)/h323/h323pdu.cxx \
            $(OPAL_SRCDIR)/h323/h323rtp.cxx \
            $(OPAL_SRCDIR)/h323/channels.cxx \
+           $(OPAL_SRCDIR)/h323/svcctrl.cxx \
            $(OPAL_SRCDIR)/h323/h450pdu.cxx \
            $(OPAL_SRCDIR)/h323/q931.cxx \
            $(OPAL_SRCDIR)/h323/transaddr.cxx \
            $(OPAL_SRCDIR)/h323/gkclient.cxx \
            $(OPAL_SRCDIR)/h323/gkserver.cxx \
            $(OPAL_SRCDIR)/h323/h225ras.cxx \
+           $(OPAL_SRCDIR)/h323/h323trans.cxx \
            $(OPAL_SRCDIR)/h323/h235auth.cxx \
+           $(OPAL_SRCDIR)/h323/h501pdu.cxx \
+           $(OPAL_SRCDIR)/h323/h323annexg.cxx \
+           $(OPAL_SRCDIR)/h323/peclient.cxx \
            $(OPAL_SRCDIR)/sip/sipep.cxx \
            $(OPAL_SRCDIR)/sip/sipcon.cxx \
            $(OPAL_SRCDIR)/sip/sippdu.cxx \
@@ -228,6 +239,7 @@ SOURCES += $(OPAL_SRCDIR)/lids/vpblid.cxx
 endif
 
 
+##################
 # Software codecs
 
 SOURCES += $(OPAL_SRCDIR)/codec/g711codec.cxx \
@@ -237,6 +249,7 @@ SOURCES += $(OPAL_SRCDIR)/codec/g711codec.cxx \
            $(OPAL_SRCDIR)/codec/opalwavfile.cxx
 
 
+# G.726
 
 G726_DIR = g726
 
@@ -248,6 +261,7 @@ SOURCES  += $(OPAL_SRCDIR)/codec/g726codec.cxx \
             $(G726_DIR)/g726_40.c
 
 
+# GSM06.10
 
 GSM_DIR 	= $(OPAL_SRCDIR)/codec/gsm
 GSM_SRCDIR	= $(GSM_DIR)/src
@@ -271,6 +285,9 @@ SOURCES += $(OPAL_SRCDIR)/codec/gsmcodec.cxx \
 
 
 SOURCES += $(OPAL_SRCDIR)/codec/mscodecs.cxx
+
+
+# LPC-10
 
 LPC10_DIR 	= $(OPAL_SRCDIR)/codec/lpc10
 LPC10_INCDIR	= $(LPC10_DIR)
@@ -313,21 +330,22 @@ SOURCES += $(OPAL_SRCDIR)/codec/lpc10codec.cxx \
            $(LPC10_SRCDIR)/vparms.c \
 
 
+# Speex
+
 SPEEX_DIR       = $(OPAL_SRCDIR)/codec/speex
 SPEEX_INCDIR    = $(SPEEX_DIR)/libspeex
 SPEEX_SRCDIR    = $(SPEEX_DIR)/libspeex
 
-HEADER_FILES    += $(OH323_INCDIR)/speexcodec.h \
+VPATH_C		+= $(SPEEX_SRCDIR)
+VPATH_CXX	+= $(SPEEX_SRCDIR)
+
+HEADER_FILES    += $(OPAL_INCDIR)/speexcodec.h \
 		   $(SPEEX_INCDIR)/speex.h \
                    $(SPEEX_INCDIR)/speex_bits.h \
                    $(SPEEX_INCDIR)/speex_header.h \
                    $(SPEEX_INCDIR)/speex_callbacks.h
 
-
-VPATH_C		+= $(SPEEX_SRCDIR)
-VPATH_CXX	+= $(SPEEX_SRCDIR)
-
-SOURCES += $(OH323_SRCDIR)/speexcodec.cxx \
+SOURCES 	+= $(OPAL_SRCDIR)/codec/speexcodec.cxx \
 		   $(SPEEX_SRCDIR)/nb_celp.c \
                    $(SPEEX_SRCDIR)/sb_celp.c \
                    $(SPEEX_SRCDIR)/lpc.c \
@@ -356,6 +374,64 @@ SOURCES += $(OH323_SRCDIR)/speexcodec.cxx \
                    $(SPEEX_SRCDIR)/speex_header.c \
                    $(SPEEX_SRCDIR)/speex_callbacks.c
 
+
+# iLBC
+
+ILBC_DIR 	= $(OPAL_SRCDIR)/codec/iLBC
+
+VPATH_C		+= $(ILBC_DIR)
+VPATH_CXX	+= $(ILBC_DIR)
+
+HEADER_FILES	+= $(OPAL_INCDIR)/codec/ilbccodec.h
+SOURCES	+= $(OPAL_SRCDIR)/codec/ilbccodec.cxx
+
+HEADER_FILES	+= $(ILBC_DIR)/iLBC_define.h
+HEADER_FILES	+= $(ILBC_DIR)/iLBC_decode.h
+SOURCES		+= $(ILBC_DIR)/iLBC_decode.c
+HEADER_FILES	+= $(ILBC_DIR)/iLBC_encode.h
+SOURCES		+= $(ILBC_DIR)/iLBC_encode.c
+HEADER_FILES	+= $(ILBC_DIR)/FrameClassify.h
+SOURCES		+= $(ILBC_DIR)/FrameClassify.c
+HEADER_FILES	+= $(ILBC_DIR)/LPCdecode.h
+SOURCES		+= $(ILBC_DIR)/LPCdecode.c
+HEADER_FILES	+= $(ILBC_DIR)/LPCencode.h
+SOURCES		+= $(ILBC_DIR)/LPCencode.c
+HEADER_FILES	+= $(ILBC_DIR)/StateConstructW.h
+SOURCES		+= $(ILBC_DIR)/StateConstructW.c
+HEADER_FILES	+= $(ILBC_DIR)/StateSearchW.h
+SOURCES		+= $(ILBC_DIR)/StateSearchW.c
+HEADER_FILES	+= $(ILBC_DIR)/anaFilter.h
+SOURCES		+= $(ILBC_DIR)/anaFilter.c
+HEADER_FILES	+= $(ILBC_DIR)/constants.h
+SOURCES		+= $(ILBC_DIR)/constants.c
+HEADER_FILES	+= $(ILBC_DIR)/createCB.h
+SOURCES		+= $(ILBC_DIR)/createCB.c
+HEADER_FILES	+= $(ILBC_DIR)/doCPLC.h
+SOURCES		+= $(ILBC_DIR)/doCPLC.c
+HEADER_FILES	+= $(ILBC_DIR)/enhancer.h
+SOURCES		+= $(ILBC_DIR)/enhancer.c
+HEADER_FILES	+= $(ILBC_DIR)/filter.h
+SOURCES		+= $(ILBC_DIR)/filter.c
+HEADER_FILES	+= $(ILBC_DIR)/gainquant.h
+SOURCES		+= $(ILBC_DIR)/gainquant.c
+HEADER_FILES	+= $(ILBC_DIR)/getCBvec.h
+SOURCES		+= $(ILBC_DIR)/getCBvec.c
+HEADER_FILES	+= $(ILBC_DIR)/helpfun.h
+SOURCES		+= $(ILBC_DIR)/helpfun.c
+HEADER_FILES	+= $(ILBC_DIR)/hpInput.h
+SOURCES		+= $(ILBC_DIR)/hpInput.c
+HEADER_FILES	+= $(ILBC_DIR)/hpOutput.h
+SOURCES		+= $(ILBC_DIR)/hpOutput.c
+HEADER_FILES	+= $(ILBC_DIR)/iCBConstruct.h
+SOURCES		+= $(ILBC_DIR)/iCBConstruct.c
+HEADER_FILES	+= $(ILBC_DIR)/iCBSearch.h
+SOURCES		+= $(ILBC_DIR)/iCBSearch.c
+HEADER_FILES	+= $(ILBC_DIR)/lsf.h
+SOURCES		+= $(ILBC_DIR)/lsf.c
+HEADER_FILES	+= $(ILBC_DIR)/packing.h
+SOURCES		+= $(ILBC_DIR)/packing.c
+HEADER_FILES	+= $(ILBC_DIR)/syntFilter.h
+SOURCES		+= $(ILBC_DIR)/syntFilter.c
 
 
 VIC_DIR = $(OPAL_SRCDIR)/codec/vic
@@ -452,7 +528,7 @@ $(OPAL_OBJDIR)/%.o : $(G726_DIR)/%.c
 
 $(DEPDIR)/%.dep : $(G726_DIR)/%.c
 	@if [ ! -d $(DEPDIR) ] ; then mkdir -p $(DEPDIR) ; fi
-	@printf %s $(OH323_OBJDIR)/ > $@
+	@printf %s $(OPAL_OBJDIR)/ > $@
 	$(CC) $(CFLAGS) -M $< >> $@
 
 
