@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2014  2004/02/07 00:35:46  rjongbloed
+ * Revision 1.2015  2004/03/11 06:54:27  csoutheren
+ * Added ability to disable SIP or H.323 stacks
+ *
+ * Revision 2.13  2004/02/07 00:35:46  rjongbloed
  * Fixed calls GetMediaFormats so no DOES return intersection of all connections formats.
  * Tidied some API elements to make usage more explicit.
  *
@@ -82,6 +85,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <opal/connection.h>
 #include <opal/guid.h>

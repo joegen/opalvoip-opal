@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2010  2004/02/17 08:47:38  csoutheren
+ * Revision 1.2011  2004/03/11 06:54:27  csoutheren
+ * Added ability to disable SIP or H.323 stacks
+ *
+ * Revision 2.9  2004/02/17 08:47:38  csoutheren
  * Changed codec loading macros to work with Linux
  *
  * Revision 2.8  2004/01/18 15:35:20  rjongbloed
@@ -69,6 +72,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <opal/mediafmt.h>
 

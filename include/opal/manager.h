@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2021  2004/02/24 11:37:01  rjongbloed
+ * Revision 1.2022  2004/03/11 06:54:27  csoutheren
+ * Added ability to disable SIP or H.323 stacks
+ *
+ * Revision 2.20  2004/02/24 11:37:01  rjongbloed
  * More work on NAT support, manual external address translation and STUN
  *
  * Revision 2.19  2004/02/19 10:47:01  rjongbloed
@@ -101,6 +104,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <opal/endpoint.h>
 #include <opal/connection.h>

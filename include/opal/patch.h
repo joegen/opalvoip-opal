@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.h,v $
- * Revision 1.2004  2003/03/17 10:26:59  robertj
+ * Revision 1.2005  2004/03/11 06:54:27  csoutheren
+ * Added ability to disable SIP or H.323 stacks
+ *
+ * Revision 2.3  2003/03/17 10:26:59  robertj
  * Added video support.
  *
  * Revision 2.2  2002/09/16 02:52:35  robertj
@@ -47,6 +50,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <opal/mediafmt.h>
 

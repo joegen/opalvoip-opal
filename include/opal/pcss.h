@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.h,v $
- * Revision 1.2010  2003/03/17 10:11:05  robertj
+ * Revision 1.2011  2004/03/11 06:54:27  csoutheren
+ * Added ability to disable SIP or H.323 stacks
+ *
+ * Revision 2.9  2003/03/17 10:11:05  robertj
  * Added call back functions for creating sound channel.
  * Added video support.
  *
@@ -67,6 +70,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <opal/endpoint.h>
 

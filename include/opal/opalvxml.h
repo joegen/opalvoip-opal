@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalvxml.h,v $
- * Revision 1.2003  2003/03/07 05:48:12  robertj
+ * Revision 1.2004  2004/03/11 06:54:27  csoutheren
+ * Added ability to disable SIP or H.323 stacks
+ *
+ * Revision 2.2  2003/03/07 05:48:12  robertj
  * Added OnEndSession() to automatically close connection.
  *
  * Revision 2.1  2002/11/10 11:33:17  robertj
@@ -95,6 +98,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <ptclib/vxml.h>
 

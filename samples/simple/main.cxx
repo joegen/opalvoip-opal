@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2033  2004/03/09 12:09:56  rjongbloed
+ * Revision 1.2034  2004/03/11 06:54:27  csoutheren
+ * Added ability to disable SIP or H.323 stacks
+ *
+ * Revision 2.32  2004/03/09 12:09:56  rjongbloed
  * More work on SIP register.
  *
  * Revision 2.31  2004/02/24 11:37:01  rjongbloed
@@ -174,9 +177,17 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+
+#if OPAL_SIP
 #include <sip/sip.h>
+#endif
+
+#if OPAL_H323
 #include <h323/h323.h>
 #include <h323/gkclient.h>
+#endif
+
 #include <lids/lidep.h>
 #include <lids/ixjlid.h>
 #include <ptclib/pstun.h>
@@ -302,6 +313,8 @@ void SimpleOpalProcess::Main()
             "     --grabber dev        : Set the video grabber device.\n"
             "     --display dev        : Set the video display device.\n"
             "\n"
+
+#if OPAL_SIP
             "SIP options:\n"
             "  -I --no-sip             : Disable SIP protocol.\n"
             "  -r --register-sip host  : Register with SIP server.\n"
@@ -309,6 +322,9 @@ void SimpleOpalProcess::Main()
             "                          : '*' is all interfaces, (default udp$:*:5060)\n"
             "     --use-long-mime      : Use long MIME headers on outgoing SIP messages\n"
             "\n"
+#endif
+
+#if OPAL_H323
             "H.323 options:\n"
             "  -H --no-h323            : Disable H.323 protocol.\n"
             "  -g --gatekeeper host    : Specify gatekeeper host.\n"
@@ -321,6 +337,8 @@ void SimpleOpalProcess::Main()
             "  -T --h245tunneldisable  : Disable H245 tunnelling.\n"
             "     --h323-listen iface  : Interface/port(s) to listen for H.323 requests\n"
             "                          : '*' is all interfaces, (default tcp$:*:1720)\n"
+#endif
+
             "\n"
             "Quicknet options:\n"
             "  -Q --no-quicknet        : Do not use Quicknet xJACK device.\n"
@@ -431,8 +449,13 @@ MyManager::MyManager()
 {
   potsEP = NULL;
   pcssEP = NULL;
+
+#if OPAL_H323
   h323EP = NULL;
+#endif
+#if OPAL_SIP
   sipEP  = NULL;
+#endif
 #if P_EXPAT
   ivrEP  = NULL;
 #endif
@@ -597,6 +620,7 @@ BOOL MyManager::Initialise(PArgList & args)
             "Sound  input device: \"" << pcssEP->GetSoundChannelRecordDevice() << '"' << endl;
   }
 
+#if OPAL_H323
 
   ///////////////////////////////////////
   // Create H.323 protocol handler
@@ -682,6 +706,10 @@ BOOL MyManager::Initialise(PArgList & args)
     }
   }
 
+#endif
+
+#if OPAL_SIP
+
   ///////////////////////////////////////
   // Create SIP protocol handler
 
@@ -732,6 +760,8 @@ BOOL MyManager::Initialise(PArgList & args)
     }
   }
 
+#endif
+
 
 #if P_EXPAT
   ///////////////////////////////////////
@@ -756,16 +786,24 @@ BOOL MyManager::Initialise(PArgList & args)
   }
 
   if (!args.HasOption("no-std-dial-peer")) {
+#if OPAL_SIP
     if (sipEP != NULL) {
       AddRouteEntry("pots:.*\\*.*\\*.* = sip:<dn2ip>");
       AddRouteEntry("pots:.*           = sip:<da>");
       AddRouteEntry("pc:.*             = sip:<da>");
     }
-    else if (h323EP != NULL) {
+#if OPAL_H323
+    else
+#endif
+#endif
+
+#if OPAL_H323
+    if (h323EP != NULL) {
       AddRouteEntry("pots:.*\\*.*\\*.* = h323:<dn2ip>");
       AddRouteEntry("pots:.*           = h323:<da>");
       AddRouteEntry("pc:.*             = h323:<da>");
     }
+#endif
 
 #if P_EXPAT
     if (ivrEP != NULL)
@@ -773,12 +811,20 @@ BOOL MyManager::Initialise(PArgList & args)
 #endif
 
     if (potsEP != NULL) {
+#if OPAL_H323
       AddRouteEntry("h323:.* = pots:<da>");
+#endif
+#if OPAL_SIP
       AddRouteEntry("sip:.*  = pots:<da>");
+#endif
     }
     else if (pcssEP != NULL) {
+#if OPAL_H323
       AddRouteEntry("h323:.* = pc:<da>");
+#endif
+#if OPAL_SIP
       AddRouteEntry("sip:.*  = pc:<da>");
+#endif
     }
   }
 

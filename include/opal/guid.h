@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: guid.h,v $
- * Revision 1.2004  2002/11/10 11:33:17  robertj
+ * Revision 1.2005  2004/03/11 06:54:27  csoutheren
+ * Added ability to disable SIP or H.323 stacks
+ *
+ * Revision 2.3  2002/11/10 11:33:17  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.2  2002/09/16 02:52:35  robertj
@@ -59,6 +62,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 class PASN_OctetString;
 

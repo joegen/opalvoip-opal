@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.2  2004/03/11 06:54:27  csoutheren
+ * Added ability to disable SIP or H.323 stacks
+ *
  * Revision 1.1  2003/03/26 02:49:00  robertj
  * Added service/daemon sample application.
  *
@@ -33,9 +36,15 @@
 #include "main.h"
 #include "custom.h"
 
+#if OPAL_H323
 #include <h323/h323.h>
 #include <h323/gkclient.h>
+#endif
+
+#if OPAL_SIP
 #include <sip/sip.h>
+#endif
+
 #include <lids/lidep.h>
 
 #ifdef OPAL_STATIC_LINK
@@ -257,8 +266,12 @@ void OpalGw::Main()
 
 MyManager::MyManager()
 {
+#if OPAL_H323
   h323EP = NULL;
+#endif
+#if OPAL_SIP
   sipEP = NULL;
+#endif
   potsEP = NULL;
   pstnEP = NULL;
 #if P_EXPAT
@@ -279,16 +292,19 @@ MyManager::~MyManager()
 
 BOOL MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 {
-  PINDEX i;
   PHTTPFieldArray * fieldArray;
 
   // Create all the endpoints
 
+#if OPAL_H323
   if (h323EP == NULL)
     h323EP = new H323EndPoint(*this);
+#endif
 
+#if OPAL_SIP
   if (sipEP == NULL)
     sipEP = new SIPEndPoint(*this);
+#endif
 
   if (potsEP == NULL)
     potsEP = new OpalPOTSEndPoint(*this);
@@ -337,6 +353,7 @@ BOOL MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   SetRtpIpTypeofService(cfg.GetInteger(RTPTOSKey, GetRtpIpTypeofService()));
   rsrc->Add(new PHTTPIntegerField(RTPTOSKey,  0, 255, GetRtpIpTypeofService()));
 
+#if OPAL_H323
 
   // Add H.323 parameters
   fieldArray = new PHTTPFieldArray(new PHTTPStringField(H323AliasesKey, 25), TRUE);
@@ -345,7 +362,7 @@ BOOL MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     fieldArray->SetStrings(cfg, h323EP->GetAliasNames());
   else {
     h323EP->SetLocalUserName(aliases[0]);
-    for (i = 1; i < aliases.GetSize(); i++)
+    for (PINDEX i = 1; i < aliases.GetSize(); i++)
       h323EP->AddAliasName(aliases[i]);
   }
 
@@ -390,7 +407,9 @@ BOOL MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     PSYSTEMLOG(Error, "Could not register with gatekeeper!");
   }
 
+#endif
 
+#if OPAL_SIP
   // Add SIP parameters
   sipEP->SetRegistrationName(cfg.GetString(SIPUsernameKey, sipEP->GetRegistrationName()));
   rsrc->Add(new PHTTPStringField(SIPUsernameKey, 25, sipEP->GetRegistrationName()));
@@ -414,6 +433,8 @@ BOOL MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
       PSYSTEMLOG(Error, "Could not register with registrar!");
     }
   }
+
+#endif
 
   // Add POTS and PSTN endpoints
   fieldArray = new PHTTPFieldArray(new PHTTPSelectField(LIDKey, OpalLineInterfaceDevice::GetAllDevices()), FALSE);
@@ -453,6 +474,7 @@ BOOL MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     pstnRoute = 0;
   rsrc->Add(new PHTTPRadioField(DefaultPSTNDialPeerKey, dialPeerDestination, pstnRoute));
   
+#if OPAL_H323
   static const PStringArray h323DialPeerDestination(
                  PARRAYSIZE(H323DialPeerDestination),
                             H323DialPeerDestination);
@@ -460,7 +482,9 @@ BOOL MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   if (h323Route == P_MAX_INDEX)
     h323Route = 0;
   rsrc->Add(new PHTTPRadioField(DefaultH323DialPeerKey, h323DialPeerDestination, h323Route));
+#endif
   
+#if OPAL_SIP
   static const PStringArray sipDialPeerDestination(
                  PARRAYSIZE(SIPDialPeerDestination),
                             SIPDialPeerDestination);
@@ -468,6 +492,7 @@ BOOL MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   if (sipRoute == P_MAX_INDEX)
     sipRoute = 0;
   rsrc->Add(new PHTTPRadioField(DefaultSIPDialPeerKey, sipDialPeerDestination, sipRoute));
+#endif
   
   fieldArray = new PHTTPFieldArray(new PHTTPStringField(DialPeerKey, 25), TRUE);
   rsrc->Add(fieldArray);
@@ -477,25 +502,34 @@ BOOL MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     routes += ".*:" + ivrAlias + "  = ivr:";
 
   switch (potsRoute) {
+#if OPAL_H323
     case 1 :
       routes += "pots:.*\\*.*\\*.* = h323:<dn2ip>";
       routes += "pots:.*           = h323:<da>";
       break;
+#endif
+#if OPAL_SIP
     case 2 :
       routes += "pots:.*\\*.*\\*.* = sip:<dn2ip>";
       routes += "pots:.*           = sip:<da>";
+#endif
   }
 
   switch (pstnRoute) {
+#if OPAL_H323
     case 1 :
       routes += "pstn:.*\\*.*\\*.* = h323:<dn2ip>";
       routes += "pstn:.*           = h323:<da>";
       break;
+#endif
+#if OPAL_SIP
     case 2 :
       routes += "pstn:.*\\*.*\\*.* = sip:<dn2ip>";
       routes += "pstn:.*           = sip:<da>";
+#endif
   }
 
+#if OPAL_H323
   switch (h323Route) {
     case 1 :
       routes += "h323:.*           = pots:<da>";
@@ -506,7 +540,9 @@ BOOL MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     case 3 :
       routes += "h323:.*           = sip:<da>";
   }
+#endif
 
+#if OPAL_SIP
   switch (sipRoute) {
     case 1 :
       routes += "sip:.*           = pots:<da>";
@@ -517,6 +553,7 @@ BOOL MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     case 3 :
       routes += "sip:.*           = h323:<da>";
   }
+#endif
 
   if (!SetRouteTable(routes)) {
     PSYSTEMLOG(Error, "No legal entries in dial peers!");
