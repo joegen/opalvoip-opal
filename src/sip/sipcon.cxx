@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2038  2004/03/15 12:33:48  rjongbloed
+ * Revision 1.2039  2004/03/16 12:03:33  rjongbloed
+ * Fixed poropagating port of proxy to connection target address.
+ *
+ * Revision 2.37  2004/03/15 12:33:48  rjongbloed
  * Fixed proxy override in URL
  *
  * Revision 2.36  2004/03/14 11:32:20  rjongbloed
@@ -203,7 +206,7 @@ SIPConnection::SIPConnection(OpalCall & call,
     proxy = endpoint.GetProxy();
 
   if (!proxy.IsEmpty()) {
-    targetAddress = proxy.GetHostName();
+    targetAddress = proxy.GetScheme() + ':' + proxy.GetHostName() + ':' + PString(proxy.GetPort());
     authentication.SetUsername(proxy.GetUserName());
     authentication.SetPassword(proxy.GetPassword());
   }
