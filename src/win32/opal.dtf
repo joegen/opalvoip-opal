@@ -26459,6 +26459,7 @@ EXPORTS
     ?GetGatekeeperRejectTag@H323GatekeeperLRQ@@UBEIXZ @20013 NONAME
     ?GetGatekeeperRejectTag@H323GatekeeperRRQ@@UBEIXZ @20014 NONAME
     ?GetGatekeeperRejectTag@H323GatekeeperURQ@@UBEIXZ @20015 NONAME
+    ?GetGatekeeperUsername@H323EndPoint@@UBEABVPString@@XZ @42847 NONAME
     ?GetGkAccessTokenOID@H323Connection@@QBE?BVPString@@XZ @20016 NONAME
     ?GetHeaderSize@RTP_DataFrame@@QBEHXZ @37941 NONAME
     ?GetHostAddress@SIPURL@@QBE?AVOpalTransportAddress@@XZ @20017 NONAME
@@ -30507,7 +30508,7 @@ EXPORTS
     ?SetFrom@SIPMIMEInfo@@QAEXABVPString@@@Z @20727 NONAME
     ?SetGatekeeper@H323EndPoint@@QAEHABVPString@@PAVOpalTransport@@@Z @18407 NONAME
     ?SetGatekeeperIdentifier@H323GatekeeperServer@@QAEXABVPString@@H@Z @18408 NONAME
-    ?SetGatekeeperPassword@H323EndPoint@@UAEXABVPString@@@Z @23367 NONAME
+    ?SetGatekeeperPassword@H323EndPoint@@UAEXABVPString@@0@Z @42848 NONAME
     ?SetGatekeeperZone@H323EndPoint@@QAEHABVPString@@0PAVOpalTransport@@@Z @18409 NONAME
     ?SetH221NonStandardInfo@H323EndPoint@@UBEXAAVH225_H221NonStandard@@@Z @18410 NONAME
     ?SetHoldMedia@H323Connection@@QAEXPAVPChannel@@@Z @20729 NONAME
@@ -30564,6 +30565,7 @@ EXPORTS
     ?SetPromiscuous@OpalTransport@@UAEXW4PromisciousModes@1@@Z @23369 NONAME
     ?SetPromiscuous@OpalTransportUDP@@UAEXW4PromisciousModes@OpalTransport@@@Z @23370 NONAME
     ?SetProtocolList@H323PeerElementDescriptor@@SAXAAVH501_ArrayOf_SupportedProtocols@@I@Z @41001 NONAME
+    ?SetProxy@SIPEndPoint@@QAEXABVPString@@00@Z @42849 NONAME
     ?SetProxyAuthenticate@SIPMIMEInfo@@QAEXABVPString@@@Z @41002 NONAME
     ?SetQ931Fields@H323SignalPDU@@QAEXABVH323Connection@@HIIHH@Z @18441 NONAME
     ?setq@H261Encoder@@QAEXH@Z @18442 NONAME
