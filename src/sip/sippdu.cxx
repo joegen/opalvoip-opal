@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2026  2004/03/14 10:14:13  rjongbloed
+ * Revision 1.2027  2004/03/16 12:06:11  rjongbloed
+ * Changed SIP command URI to always be same as "to" address, not sure if this is correct though.
+ *
+ * Revision 2.25  2004/03/14 10:14:13  rjongbloed
  * Changes to REGISTER to support authentication
  *
  * Revision 2.24  2004/03/14 08:34:10  csoutheren
@@ -1018,7 +1021,7 @@ void SIP_PDU::Construct(Methods meth,
   mime.SetContact(contact);
 
   Construct(meth,
-            connection.GetTargetAddress(),
+            connection.GetRemotePartyAddress(),
             connection.GetRemotePartyAddress(),
             connection.GetLocalPartyAddress(),
             connection.GetToken(),
