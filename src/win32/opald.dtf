@@ -29889,6 +29889,7 @@ EXPORTS
     ?GetDeviceNames@OpalVoipBlasterDevice@@SA?AVPStringArray@@XZ @29683 NONAME
     ?GetDirection@H323BidirectionalChannel@@UBE?AW4Directions@H323Channel@@XZ @19523 NONAME
     ?GetDirection@H323UnidirectionalChannel@@UBE?AW4Directions@H323Channel@@XZ @19524 NONAME
+    ?GetDisplayName@OpalConnection@@QBEABVPString@@XZ @50026 NONAME
     ?GetDisplayName@Q931@@QBE?AVPString@@XZ @19525 NONAME
     ?GetDistinctiveRing@H323Connection@@QBEIXZ @19526 NONAME
     ?GetDistinctiveRing@H323SignalPDU@@QBEIXZ @19527 NONAME
@@ -29977,6 +29978,7 @@ EXPORTS
     ?GetGatekeeperRejectTag@H323GatekeeperURQ@@UBEIXZ @29722 NONAME
     ?GetGatekeeperRequestRetries@H323EndPoint@@QBEIXZ @19549 NONAME
     ?GetGatekeeperTimeToLive@H323EndPoint@@QBEABVPTimeInterval@@XZ @29723 NONAME
+    ?GetGatekeeperUsername@H323EndPoint@@UBEABVPString@@XZ @50027 NONAME
     ?GetGkAccessTokenOID@H323Connection@@QBE?BVPString@@XZ @29724 NONAME
     ?GetGkAccessTokenOID@H323EndPoint@@QBEABVPString@@XZ @29725 NONAME
     ?GetHandler@H323_T38Channel@@QBEPAVOpalT38Protocol@@XZ @29726 NONAME
@@ -34253,7 +34255,7 @@ EXPORTS
     ?SetFrom@SIPMIMEInfo@@QAEXABVPString@@@Z @30522 NONAME
     ?SetGatekeeper@H323EndPoint@@QAEHABVPString@@PAVOpalTransport@@@Z @23738 NONAME
     ?SetGatekeeperIdentifier@H323GatekeeperServer@@QAEXABVPString@@H@Z @23739 NONAME
-    ?SetGatekeeperPassword@H323EndPoint@@UAEXABVPString@@@Z @33870 NONAME
+    ?SetGatekeeperPassword@H323EndPoint@@UAEXABVPString@@0@Z @50028 NONAME
     ?SetGatekeeperZone@H323EndPoint@@QAEHABVPString@@0PAVOpalTransport@@@Z @23740 NONAME
     ?SetH221NonStandardInfo@H323EndPoint@@UBEXAAVH225_H221NonStandard@@@Z @23741 NONAME
     ?SetHoldMedia@H323Connection@@QAEXPAVPChannel@@@Z @30524 NONAME
@@ -34324,6 +34326,7 @@ EXPORTS
     ?SetPromiscuous@OpalTransport@@UAEXW4PromisciousModes@1@@Z @33872 NONAME
     ?SetPromiscuous@OpalTransportUDP@@UAEXW4PromisciousModes@OpalTransport@@@Z @33873 NONAME
     ?SetProtocolList@H323PeerElementDescriptor@@SAXAAVH501_ArrayOf_SupportedProtocols@@I@Z @48141 NONAME
+    ?SetProxy@SIPEndPoint@@QAEXABVPString@@00@Z @50029 NONAME
     ?SetProxyAuthenticate@SIPMIMEInfo@@QAEXABVPString@@@Z @48142 NONAME
     ?SetQ931Fields@H323SignalPDU@@QAEXABVH323Connection@@HIIHH@Z @23776 NONAME
     ?setq@H261Encoder@@QAEXH@Z @23777 NONAME
