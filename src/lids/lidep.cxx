@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2013  2002/01/22 05:16:59  robertj
+ * Revision 1.2014  2002/04/09 00:18:39  robertj
+ * Added correct setting of originating flag when originating the connection.
+ *
+ * Revision 2.12  2002/01/22 05:16:59  robertj
  * Revamp of user input API triggered by RFC2833 support
  *
  * Revision 2.11  2001/11/14 01:31:55  robertj
@@ -545,6 +548,8 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
 BOOL OpalLineConnection::StartOutgoing(const PString & number)
 {
   PTRACE(3, "LID Con\tHandling outgoing call on " << *this);
+
+  originating = TRUE;
 
   if (line.IsTerminal()) {
     line.SetCallerID(number);
