@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2020  2004/03/14 10:09:53  rjongbloed
+ * Revision 1.2021  2004/04/26 05:40:38  rjongbloed
+ * Added RTP statistics callback to SIP
+ *
+ * Revision 2.19  2004/03/14 10:09:53  rjongbloed
  * Moved transport on SIP top be constructed by endpoint as any transport created on
  *   an endpoint can receive data for any connection.
  *
@@ -296,6 +299,17 @@ class SIPConnection : public OpalConnection
     void QueuePDU(
       SIP_PDU * pdu
     );
+
+    /**Callback from the RTP session for statistics monitoring.
+       This is called every so many packets on the transmitter and receiver
+       threads of the RTP session indicating that the statistics have been
+       updated.
+
+       The default behaviour does nothing.
+      */
+    virtual void OnRTPStatistics(
+      const RTP_Session & session         /// Session with statistics
+    ) const;
   //@}
 
     void SendResponseToINVITE(SIP_PDU::StatusCodes code, const char * str = NULL);
@@ -378,6 +392,50 @@ class SIPConnection : public OpalConnection
     } releaseMethod;
 
     OpalMediaFormatList remoteFormatList;
+};
+
+
+/**This class is for encpsulating the IETF Real Time Protocol interface.
+ */
+class SIP_RTP_Session : public RTP_UserData
+{
+  PCLASSINFO(SIP_RTP_Session, RTP_UserData);
+
+  /**@name Construction */
+  //@{
+    /**Create a new channel.
+     */
+    SIP_RTP_Session(
+      const SIPConnection & connection  /// Owner of the RTP session
+    );
+  //@}
+
+  /**@name Overrides from RTP_UserData */
+  //@{
+    /**Callback from the RTP session for transmit statistics monitoring.
+       This is called every RTP_Session::senderReportInterval packets on the
+       transmitter indicating that the statistics have been updated.
+
+       The default behaviour calls H323Connection::OnRTPStatistics().
+      */
+    virtual void OnTxStatistics(
+      const RTP_Session & session   /// Session with statistics
+    ) const;
+
+    /**Callback from the RTP session for receive statistics monitoring.
+       This is called every RTP_Session::receiverReportInterval packets on the
+       receiver indicating that the statistics have been updated.
+
+       The default behaviour calls H323Connection::OnRTPStatistics().
+      */
+    virtual void OnRxStatistics(
+      const RTP_Session & session   /// Session with statistics
+    ) const;
+  //@}
+
+
+  protected:
+    const SIPConnection & connection; /// Owner of the RTP session
 };
 
 
