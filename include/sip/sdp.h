@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2009  2004/02/07 02:18:19  rjongbloed
+ * Revision 1.2010  2004/02/09 13:13:01  rjongbloed
+ * Added debug string output for media type enum.
+ *
+ * Revision 2.8  2004/02/07 02:18:19  rjongbloed
  * Improved searching for media format to use payload type AND the encoding name.
  *
  * Revision 2.7  2004/01/08 22:27:03  csoutheren
@@ -144,8 +147,13 @@ class SDPMediaDescription : public PObject
     enum MediaType {
       Audio,
       Video,
-      Unknown
+      Application,
+      Unknown,
+      NumMediaTypes
     };
+#if PTRACING
+    friend ostream & operator<<(ostream & out, MediaType type);
+#endif
 
     SDPMediaDescription(
       const OpalTransportAddress & address,
