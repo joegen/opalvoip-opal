@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2013  2002/07/01 04:56:33  robertj
+ * Revision 1.2014  2002/07/04 07:41:47  robertj
+ * Fixed memory/thread leak of transports.
+ *
+ * Revision 2.12  2002/07/01 04:56:33  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.11  2002/06/16 02:24:43  robertj
@@ -186,12 +189,15 @@ void OpalEndPoint::ListenerCallback(PThread &, INT param)
   if (param == 0)
     return;
 
-  NewIncomingConnection((OpalTransport *)param);
+  OpalTransport * transport = (OpalTransport *)param;
+  if (NewIncomingConnection(transport))
+    delete transport;
 }
 
 
-void OpalEndPoint::NewIncomingConnection(OpalTransport * /*transport*/)
+BOOL OpalEndPoint::NewIncomingConnection(OpalTransport * /*transport*/)
 {
+  return TRUE;
 }
 
 
