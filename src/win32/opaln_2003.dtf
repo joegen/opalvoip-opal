@@ -3512,6 +3512,7 @@ EXPORTS
     ??0ReceivedPacket_PNotifier@OpalSilenceDetector@@QAE@PAV1@@Z @28024 NONAME
     ??0ReceiverReport@RTP_Session@@QAE@XZ @3453 NONAME
     ??0ReceiveTimeout_PNotifier@OpalRFC2833Proto@@QAE@PAV1@@Z @3454 NONAME
+    ??0RegistrationRefresh_PNotifier@SIPEndPoint@@QAE@PAV1@@Z @29312 NONAME
     ??0Request@H323Transactor@@QAE@IAAVH323TransactionPDU@@@Z @3455 NONAME
     ??0Request@H323Transactor@@QAE@IAAVH323TransactionPDU@@ABVH323TransportAddressArray@@@Z @3456 NONAME
     ??0Response@H323Transactor@@QAE@ABV01@@Z @3457 NONAME
@@ -3541,7 +3542,7 @@ EXPORTS
     ??0SIPInvite@@QAE@AAVSIPConnection@@AAVOpalTransport@@@Z @3481 NONAME
     ??0SIPMIMEInfo@@QAE@ABV0@@Z @3482 NONAME
     ??0SIPMIMEInfo@@QAE@H@Z @3483 NONAME
-    ??0SIPRegister@@QAE@AAVSIPEndPoint@@AAVOpalTransport@@ABVSIPURL@@ABVPString@@@Z @3484 NONAME
+    ??0SIPRegister@@QAE@AAVSIPEndPoint@@AAVOpalTransport@@ABVSIPURL@@ABVPString@@I@Z @29313 NONAME
     ??0SIPTransaction@@QAE@AAVSIPConnection@@AAVOpalTransport@@W4Methods@SIP_PDU@@@Z @3485 NONAME
     ??0SIPTransaction@@QAE@AAVSIPEndPoint@@AAVOpalTransport@@@Z @3486 NONAME
     ??0SIPURL@@QAE@ABV0@@Z @3487 NONAME
@@ -5464,6 +5465,7 @@ EXPORTS
     ??1ReceivedPacket_PNotifier@OpalSilenceDetector@@UAE@XZ @28028 NONAME
     ??1ReceiverReport@RTP_Session@@UAE@XZ @5380 NONAME
     ??1ReceiveTimeout_PNotifier@OpalRFC2833Proto@@UAE@XZ @5381 NONAME
+    ??1RegistrationRefresh_PNotifier@SIPEndPoint@@UAE@XZ @29314 NONAME
     ??1Request@H323Transactor@@UAE@XZ @5382 NONAME
     ??1Response@H323Transactor@@UAE@XZ @5383 NONAME
     ??1RouteEntry@OpalManager@@UAE@XZ @5384 NONAME
@@ -9612,6 +9614,7 @@ EXPORTS
     ??_7ReceivedPacket_PNotifier@OpalSilenceDetector@@6B@ @28032 NONAME
     ??_7ReceiverReport@RTP_Session@@6B@ @9453 NONAME
     ??_7ReceiveTimeout_PNotifier@OpalRFC2833Proto@@6B@ @9454 NONAME
+    ??_7RegistrationRefresh_PNotifier@SIPEndPoint@@6B@ @29315 NONAME
     ??_7Request@H323Transactor@@6B@ @9455 NONAME
     ??_7Response@H323Transactor@@6B@ @9456 NONAME
     ??_7RouteEntry@OpalManager@@6B@ @9457 NONAME
@@ -11521,6 +11524,7 @@ EXPORTS
     ??_R0?AVReceivedPacket_PNotifier@OpalSilenceDetector@@@8 @28036 NONAME
     ??_R0?AVReceiverReport@RTP_Session@@@8 @11340 NONAME
     ??_R0?AVReceiveTimeout_PNotifier@OpalRFC2833Proto@@@8 @11341 NONAME
+    ??_R0?AVRegistrationRefresh_PNotifier@SIPEndPoint@@@8 @29316 NONAME
     ??_R0?AVRequest@H323Transactor@@@8 @11342 NONAME
     ??_R0?AVResponse@H323Transactor@@@8 @11343 NONAME
     ??_R0?AVRouteEntry@OpalManager@@@8 @11344 NONAME
@@ -13404,6 +13408,7 @@ EXPORTS
     ??_R1A@?0A@A@ReceivedPacket_PNotifier@OpalSilenceDetector@@8 @28040 NONAME
     ??_R1A@?0A@A@ReceiverReport@RTP_Session@@8 @13201 NONAME
     ??_R1A@?0A@A@ReceiveTimeout_PNotifier@OpalRFC2833Proto@@8 @13202 NONAME
+    ??_R1A@?0A@A@RegistrationRefresh_PNotifier@SIPEndPoint@@8 @29317 NONAME
     ??_R1A@?0A@A@Request@H323Transactor@@8 @13203 NONAME
     ??_R1A@?0A@A@Response@H323Transactor@@8 @13204 NONAME
     ??_R1A@?0A@A@RouteEntry@OpalManager@@8 @13205 NONAME
@@ -15281,6 +15286,7 @@ EXPORTS
     ??_R2ReceivedPacket_PNotifier@OpalSilenceDetector@@8 @28044 NONAME
     ??_R2ReceiverReport@RTP_Session@@8 @15056 NONAME
     ??_R2ReceiveTimeout_PNotifier@OpalRFC2833Proto@@8 @15057 NONAME
+    ??_R2RegistrationRefresh_PNotifier@SIPEndPoint@@8 @29318 NONAME
     ??_R2Request@H323Transactor@@8 @15058 NONAME
     ??_R2Response@H323Transactor@@8 @15059 NONAME
     ??_R2RouteEntry@OpalManager@@8 @15060 NONAME
@@ -17153,6 +17159,7 @@ EXPORTS
     ??_R3ReceivedPacket_PNotifier@OpalSilenceDetector@@8 @28048 NONAME
     ??_R3ReceiverReport@RTP_Session@@8 @16907 NONAME
     ??_R3ReceiveTimeout_PNotifier@OpalRFC2833Proto@@8 @16908 NONAME
+    ??_R3RegistrationRefresh_PNotifier@SIPEndPoint@@8 @29319 NONAME
     ??_R3Request@H323Transactor@@8 @16909 NONAME
     ??_R3Response@H323Transactor@@8 @16910 NONAME
     ??_R3RouteEntry@OpalManager@@8 @16911 NONAME
@@ -19046,6 +19053,7 @@ EXPORTS
     ??_R4ReceivedPacket_PNotifier@OpalSilenceDetector@@6B@ @28052 NONAME
     ??_R4ReceiverReport@RTP_Session@@6B@ @18778 NONAME
     ??_R4ReceiveTimeout_PNotifier@OpalRFC2833Proto@@6B@ @18779 NONAME
+    ??_R4RegistrationRefresh_PNotifier@SIPEndPoint@@6B@ @29320 NONAME
     ??_R4Request@H323Transactor@@6B@ @18780 NONAME
     ??_R4Response@H323Transactor@@6B@ @18781 NONAME
     ??_R4RouteEntry@OpalManager@@6B@ @18782 NONAME
@@ -19421,6 +19429,7 @@ EXPORTS
     ?Call@ReceivedPacket_PNotifier@OpalRFC2833Proto@@UBEXAAVPObject@@H@Z @19146 NONAME
     ?Call@ReceivedPacket_PNotifier@OpalSilenceDetector@@UBEXAAVPObject@@H@Z @28053 NONAME
     ?Call@ReceiveTimeout_PNotifier@OpalRFC2833Proto@@UBEXAAVPObject@@H@Z @19147 NONAME
+    ?Call@RegistrationRefresh_PNotifier@SIPEndPoint@@UBEXAAVPObject@@H@Z @29321 NONAME
     ?Call@SlowHandler_PNotifier@H323Transaction@@UBEXAAVPObject@@H@Z @19148 NONAME
     ?Call@StartOutgoing_PNotifier@H323Connection@@UBEXAAVPObject@@H@Z @19149 NONAME
     ?Call@StatusHandler_PNotifier@OpalVoipBlasterDevice@@UBEXAAVPObject@@H@Z @19150 NONAME
@@ -27399,6 +27408,7 @@ EXPORTS
     ?OnReceiveValidationRejection@H323_AnnexG@@UAEHABVH501PDU@@ABVH501_ValidationRejection@@@Z @26970 NONAME
     ?OnReceiveValidationRequest@H323_AnnexG@@UAEHABVH501PDU@@ABVH501_ValidationRequest@@@Z @26971 NONAME
     ?OnRefusedModeChange@H323Connection@@UAEXPBVH245_RequestModeReject@@@Z @26972 NONAME
+    ?OnRegistered@SIPEndPoint@@UAEXXZ @29322 NONAME
     ?OnRegistration@H323GatekeeperListener@@UAE?AW4Response@H323Transaction@@AAVH323GatekeeperRRQ@@@Z @26973 NONAME
     ?OnRegistration@H323GatekeeperServer@@UAE?AW4Response@H323Transaction@@AAVH323GatekeeperRRQ@@@Z @26974 NONAME
     ?OnRegistration@H323RegisteredEndPoint@@UAE?AW4Response@H323Transaction@@AAVH323GatekeeperRRQ@@@Z @26975 NONAME
@@ -27835,6 +27845,7 @@ EXPORTS
     ?Register@SIPEndPoint@@QAEHABVPString@@00@Z @27401 NONAME
     ?registeredCapabilitiesListHead@H323CapabilityRegistration@@1PAV1@A @27402 NONAME
     ?Register_Internal@?$PFactory@VPWAVFileConverter@@I@@IAEXABIPAVWorkerBase@1@@Z @29005 NONAME
+    ?RegistrationRefresh@SIPEndPoint@@MAEXAAVPTimer@@H@Z @29323 NONAME
     ?RegistrationRequest@H323Gatekeeper@@QAEHH@Z @27403 NONAME
     ?RegistrationTimeToLive@H323Gatekeeper@@IAEXXZ @27404 NONAME
     ?Release@H245NegLogicalChannel@@MAEXXZ @27405 NONAME
@@ -27898,6 +27909,7 @@ EXPORTS
     ?RemoveServiceRelationship@H323PeerElement@@QAEHABVOpalGloballyUniqueID@@H@Z @27461 NONAME
     ?RemoveSink@OpalMediaPatch@@QAEXPAVOpalMediaStream@@@Z @27462 NONAME
     ?RemoveTransaction@SIPConnection@@QAEXPAVSIPTransaction@@@Z @27463 NONAME
+    ?RemoveTransaction@SIPEndPoint@@QAEXPAVSIPTransaction@@@Z @29324 NONAME
     ?Reopen@RTP_UDP@@QAEXH@Z @27464 NONAME
     ?Reorder@H323Capabilities@@QAEXABVPStringArray@@@Z @27465 NONAME
     ?Reorder@OpalMediaFormatList@@QAEXABVPStringArray@@@Z @27466 NONAME
