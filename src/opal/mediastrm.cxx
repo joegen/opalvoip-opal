@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2012  2002/01/22 05:10:44  robertj
+ * Revision 1.2013  2002/02/11 07:42:39  robertj
+ * Added media bypass for streams between compatible protocols.
+ *
+ * Revision 2.11  2002/01/22 05:10:44  robertj
  * Removed payload mismatch detection from RTP media stream.
  * Added function to get media patch from media stream.
  *
@@ -233,6 +236,12 @@ BOOL OpalMediaStream::SetDataSize(PINDEX dataSize)
 }
 
 
+BOOL OpalMediaStream::RequiresPatchThread() const
+{
+  return TRUE;
+}
+
+
 void OpalMediaStream::EnableJitterBuffer() const
 {
 }
@@ -241,6 +250,26 @@ void OpalMediaStream::EnableJitterBuffer() const
 void OpalMediaStream::SetPatch(OpalMediaPatch * patch)
 {
   patchThread = patch;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+OpalNullMediaStream::OpalNullMediaStream(BOOL isSourceStream, unsigned sessionID)
+  : OpalMediaStream(isSourceStream, sessionID)
+{
+}
+
+
+BOOL OpalNullMediaStream::RequiresPatchThread() const
+{
+  return FALSE;
+}
+
+
+BOOL OpalNullMediaStream::IsSynchronous() const
+{
+  return FALSE;
 }
 
 
