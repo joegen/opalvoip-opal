@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalvxml.cxx,v $
- * Revision 1.2010  2004/06/22 11:01:16  csoutheren
+ * Revision 1.2011  2004/06/30 12:48:23  rjongbloed
+ * Rewrite of plug in system to use single global variable for all factories to avoid all sorts
+ *   of issues with startup orders and Windows DLL multiple instances.
+ *
+ * Revision 2.9  2004/06/22 11:01:16  csoutheren
  * Fixed to compile on Linux
  *
  * Revision 2.8  2004/06/22 06:27:58  csoutheren
@@ -144,7 +148,7 @@ OpalVXMLSession::OpalVXMLSession(OpalConnection * _conn, PTextToSpeech * tts, BO
     conn(_conn)
 {
   if (tts == NULL) {
-    PGenericFactory<PTextToSpeech>::KeyList_T engines = PGenericFactory<PTextToSpeech>::GetKeyList();
+    PFactory<PTextToSpeech>::KeyList_T engines = PFactory<PTextToSpeech>::GetKeyList();
     if (engines.size() != 0) {
     PString name;
 #ifdef _WIN32
@@ -152,7 +156,7 @@ OpalVXMLSession::OpalVXMLSession(OpalConnection * _conn, PTextToSpeech * tts, BO
       if (std::find(engines.begin(), engines.end(), name) == engines.end())
 #endif
         name = engines[0];
-      tts = PGenericFactory<PTextToSpeech>::CreateInstance(name);
+      tts = PFactory<PTextToSpeech>::CreateInstance(name);
     }
   }
 }
