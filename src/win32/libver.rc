@@ -23,7 +23,7 @@
  */
 
 #include <winver.h>
-#include "../samples/simple/version.h"
+#include "../../version.h"
 
 
 
