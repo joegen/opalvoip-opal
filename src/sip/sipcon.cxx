@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2037  2004/03/14 11:32:20  rjongbloed
+ * Revision 1.2038  2004/03/15 12:33:48  rjongbloed
+ * Fixed proxy override in URL
+ *
+ * Revision 2.36  2004/03/14 11:32:20  rjongbloed
  * Changes to better support SIP proxies.
  *
  * Revision 2.35  2004/03/14 10:09:54  rjongbloed
@@ -188,8 +191,11 @@ SIPConnection::SIPConnection(OpalCall & call,
 
   // Look for a "proxy" parameter to override default proxy
   PStringToString params = targetAddress.GetParamVars();
-  SIPURL proxy = params.Contains("proxy");
-  targetAddress.SetParamVar("proxy", PString::Empty());
+  SIPURL proxy;
+  if (params.Contains("proxy")) {
+    proxy.Parse(params("proxy"));
+    targetAddress.SetParamVar("proxy", PString::Empty());
+  }
 
   remotePartyAddress = targetAddress.AsQuotedString();
 
