@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2029  2004/05/17 13:24:18  rjongbloed
+ * Revision 1.2030  2004/08/14 07:56:29  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.28  2004/05/17 13:24:18  rjongbloed
  * Added silence suppression.
  *
  * Revision 2.27  2004/05/01 10:00:51  rjongbloed
@@ -134,6 +137,7 @@
 #include <opal/mediastrm.h>
 #include <opal/transports.h>
 #include <ptclib/dtmf.h>
+#include <ptlib/safecoll.h>
 
 
 class OpalEndPoint;
@@ -162,9 +166,9 @@ class OpalT38Protocol;
    When media streams are created they must make requests for bandwidth which
    is managed by the connection.
  */
-class OpalConnection : public PObject
+class OpalConnection : public PSafeObject
 {
-    PCLASSINFO(OpalConnection, PObject);
+    PCLASSINFO(OpalConnection, PSafeObject);
   public:
     /**Call/Connection ending reasons.
        NOTE: if anything is added to this, you also need to add the field to
@@ -233,37 +237,13 @@ class OpalConnection : public PObject
 
   /**@name Basic operations */
   //@{
-    /**Lock connection.
-       When the OpalManager::FindCallWithLock() function (or other Find
-       functions that are protocol specific) is used to gain access to a
-       call or connection object, this is called to prevent it from being
-       closed and deleted by the background threads.
-     */
-    virtual BOOL Lock();
-
-    /**Try to lock connection.
-       When the FindConnectionWithLock() function is used to gain access to
-       a connection object, this is called to prevent it from being closed
-       and deleted by the background threads.
-
-       Note this is an internal function and it is not expected an application
-       would use it.
-
-       Returns 0 if the lock was not obtainable due to the connection being
-       shut down, -1 if it was not available, and +1 if lock is obtained.
-     */
-    int TryLock();
-
-    /**Unlock connection.
-     */
-    void Unlock();
-
     enum Phases {
       UninitialisedPhase,
       SetUpPhase,
       AlertingPhase,
       ConnectedPhase,
       EstablishedPhase,
+      ReleasingPhase, // Note these must be the last two phases.
       ReleasedPhase,
       NumPhases
     };
@@ -427,10 +407,6 @@ class OpalConnection : public PObject
        that function being called. For example if SetUpConnection() was used
        but the call never completed.
 
-       The return value indicates if the connection object is to be deleted. A
-       value of FALSE can be returned and it then someone elses responsibility
-       to free the memory used.
-
        Classes that override this function should make sure they call the
        ancestor version for correct operation.
 
@@ -439,7 +415,7 @@ class OpalConnection : public PObject
 
        The default behaviour calls the OpalEndPoint function of the same name.
       */
-    virtual BOOL OnReleased();
+    virtual void OnReleased();
   //@}
 
   /**@name Additional signalling functions */
@@ -907,11 +883,9 @@ class OpalConnection : public PObject
   //@}
 
   protected:
-    /**Lock the connection at start of OnReleased() function.
-      */
-    void LockOnRelease();
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnUserInputInBandDTMF);
+    PDECLARE_NOTIFIER(PThread, OpalConnection, OnReleaseThreadMain);
 
   // Member variables
     OpalCall          & ownerCall;
@@ -953,20 +927,10 @@ class OpalConnection : public PObject
     // added to the audio channel.
     PDTMFDecoder        dtmfDecoder;
 
-  private:
-    PMutex innerMutex;
-    PMutex outerMutex;
-    BOOL   isBeingReleased;
-
-
 #if PTRACING
     friend ostream & operator<<(ostream & o, Phases p);
 #endif
 };
-
-
-PLIST(OpalConnectionList, OpalConnection);
-PDICTIONARY(OpalConnectionDict, PString, OpalConnection);
 
 
 #endif // __OPAL_CONNECTION_H

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2018  2004/07/14 13:26:14  rjongbloed
+ * Revision 1.2019  2004/08/14 07:56:29  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.17  2004/07/14 13:26:14  rjongbloed
  * Fixed issues with the propagation of the "established" phase of a call. Now
  *   calling an OnEstablished() chain like OnAlerting() and OnConnected() to
  *   finally arrive at OnEstablishedCall() on OpalManager
@@ -101,6 +104,8 @@
 #include <opal/connection.h>
 #include <opal/guid.h>
 
+#include <ptlib/safecoll.h>
+
 
 class OpalManager;
 
@@ -108,14 +113,11 @@ class OpalManager;
 /**This class manages a call.
    A call consists of one or more OpalConnection instances. While these
    connections may be created elsewhere this class is responsible for their
-   disposal. The GarbageCollection() function is called from a thread managed
-   by the OpalManager instance. This function disposes of connections. The
-   OpalManager then disposes of the call itself if it has not more connections
-   attached to it.
+   disposal.
  */
-class OpalCall : public PObject
+class OpalCall : public PSafeObject
 {
-    PCLASSINFO(OpalCall, PObject);
+    PCLASSINFO(OpalCall, PSafeObject);
   public:
   /**@name Construction */
   //@{
@@ -143,20 +145,6 @@ class OpalCall : public PObject
 
   /**@name Basic operations */
   //@{
-    /**Lock connection.
-       When the OpalEndPoint::FindCallWithLock() function is used to gain
-       access to a connection object, this is called to prevent it from being
-       closed and deleted by the background threads.
-     */
-    void Lock() { inUseFlag.Wait(); }
-
-    /**Unlock connection.
-       If the OpalEndPoint::FindCallWithLock() function is used to gain
-       access to a connection object, this MUST be called to allow it to
-       subsequently be closed and disposed of.
-     */
-    void Unlock() { inUseFlag.Signal(); }
-
     /**Indicate tha all connections in call are connected and media is going.
       */
     BOOL IsEstablished() const { return isEstablished; }
@@ -205,28 +193,10 @@ class OpalCall : public PObject
        The default behaviour is to call OpalManager::OnClearedCall().
       */
     virtual void OnCleared();
-
-    /**Clean up calls and connections.
-       This function is called from a background thread created by the
-       OpalManager and checks for released connections to clean up.
-
-       Returns TRUE if there are no connections left.
-
-       This would not normally be called by an application.
-      */
-    BOOL GarbageCollection();
   //@}
 
   /**@name Connection management */
   //@{
-    /**Add a connection.
-       This is an internal called by the OpalConnection constructor to add
-       the newly created instance to the calls internal structures.
-      */
-    void AddConnection(
-      OpalConnection * connection  /// Connection to add.
-    );
-
     /**Call back for SetUp conenction.
 
        The default behaviour is to call SetUpConnection() on all the other
@@ -286,32 +256,21 @@ class OpalCall : public PObject
       OpalConnection & connection   /// Connection that was established
     );
 
-    /**Release a connection.
-       This is an internal function called by the OpalConnection::Release
-       function to remove it from the calls internal structures. Note that the
-       connection is not destroyed immediately, as this is done in another
-       thread.
-      */
-    void Release(
-      OpalConnection * connection  /// Connection to add.
-    );
-
     /**Get the other party's connection object.
        This will return the other party in the call. It will return NULL if
        there is no other party yet, or there are more than two parties in the
        call. Usefull during certain stages during initial call set up.
       */
-    OpalConnection * GetOtherPartyConnection(
+    PSafePtr<OpalConnection> GetOtherPartyConnection(
       const OpalConnection & connection  /// Source requesting formats
     ) const;
 
-    /**Get the number of active connections in call.
-      */
-    PINDEX GetConnectionCount() const { return activeConnections.GetSize(); }
-
     /**Get the specified active connection in call.
       */
-    OpalConnection & GetConnection(PINDEX idx) const { return activeConnections[idx]; }
+    PSafePtr<OpalConnection> GetConnection(
+      PINDEX idx,
+      PSafetyMode mode = PSafeReference
+    ) { return connectionsActive.GetAt(idx, mode); }
   //@}
 
   /**@name Media management */
@@ -424,8 +383,6 @@ class OpalCall : public PObject
 
 
   protected:
-    void InternalReleaseConnection(PINDEX activeIndex, OpalConnection::CallEndReason reason);
-
     OpalManager & manager;
 
     PString myToken;
@@ -437,15 +394,12 @@ class OpalCall : public PObject
 
     OpalConnection::CallEndReason callEndReason;
 
-    OpalConnectionList activeConnections;
-    OpalConnectionList garbageConnections;
-    PMutex             inUseFlag;
-    PSyncPoint       * endCallSyncPoint;
+    PSafeList<OpalConnection> connectionsActive;
+
+    PSyncPoint * endCallSyncPoint;
+
+  friend OpalConnection::OpalConnection(OpalCall & call, OpalEndPoint & ep, const PString & token);
 };
-
-
-PLIST(OpalCallList, OpalCall);
-PDICTIONARY(OpalCallDict, OpalGloballyUniqueID, OpalCall);
 
 
 #endif // __OPAL_CALL_H

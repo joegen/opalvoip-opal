@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.h,v $
- * Revision 1.2005  2004/03/11 06:54:27  csoutheren
+ * Revision 1.2006  2004/08/14 07:56:29  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.4  2004/03/11 06:54:27  csoutheren
  * Added ability to disable SIP or H.323 stacks
  *
  * Revision 2.3  2003/03/17 10:26:59  robertj
@@ -173,8 +176,7 @@ class OpalMediaPatch : public PThread
         RTP_DataFrameList intermediateFrames;
         RTP_DataFrameList finalFrames;
     };
-    PARRAY(SinkArray, Sink);
-    SinkArray sinks;
+    PList<Sink> sinks;
 
     class Filter : public PObject {
         PCLASSINFO(Filter, PObject);
@@ -183,10 +185,9 @@ class OpalMediaPatch : public PThread
         PNotifier notifier;
         OpalMediaFormat stage;
     };
-    PLIST(FilterList, Filter);
-    FilterList filters;
+    PList<Filter> filters;
 
-    PMutex inUse;
+    mutable PMutex inUse;
 };
 
 
