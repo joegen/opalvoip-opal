@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2028  2004/01/18 15:36:47  rjongbloed
+ * Revision 1.2029  2004/02/24 11:30:11  rjongbloed
+ * Normalised RTP session management across protocols
+ *
+ * Revision 2.27  2004/01/18 15:36:47  rjongbloed
  * Fixed problem with symmetric codecs
  *
  * Revision 2.26  2003/06/02 03:11:01  rjongbloed
@@ -130,6 +133,7 @@
 #include <opal/call.h>
 #include <opal/transcoders.h>
 #include <codec/rfc2833.h>
+#include <rtp/rtp.h>
 #include <t120/t120proto.h>
 #include <t38/t38proto.h>
 
@@ -585,15 +589,65 @@ RTP_Session * OpalConnection::GetSession(unsigned sessionID) const
 }
 
 
-RTP_Session * OpalConnection::UseSession(unsigned sessionID)
+RTP_Session * OpalConnection::UseSession(const OpalTransport & transport,
+                                         unsigned sessionID,
+                                         RTP_QOS * rtpqos)
 {
-  return rtpSessions.UseSession(sessionID);
+  RTP_Session * rtpSession = rtpSessions.UseSession(sessionID);
+  if (rtpSession == NULL) {
+    rtpSession = CreateSession(transport, sessionID, rtpqos);
+    if (rtpSession != NULL)
+      rtpSessions.AddSession(rtpSession);
+  }
+
+  return rtpSession;
 }
 
 
 void OpalConnection::ReleaseSession(unsigned sessionID)
 {
   rtpSessions.ReleaseSession(sessionID);
+}
+
+
+RTP_Session * OpalConnection::CreateSession(const OpalTransport & transport,
+                                            unsigned sessionID,
+                                            RTP_QOS * rtpqos)
+{
+  // We only support RTP over UDP at this point in time ...
+  if (!transport.IsCompatibleTransport("udp$127.0.0.1"))
+    return NULL;
+                                        
+  PIPSocket::Address localAddress;
+  transport.GetLocalAddress().GetIpAddress(localAddress);
+
+  OpalManager & manager = GetEndPoint().GetManager();
+
+  PIPSocket::Address remoteAddress;
+  transport.GetRemoteAddress().GetIpAddress(remoteAddress);
+  PSTUNClient * stun = manager.GetSTUN(remoteAddress);
+
+  // create an RTP session
+  RTP_UDP * rtpSession = new RTP_UDP(sessionID);
+
+  WORD firstPort = manager.GetRtpIpPortPair();
+  WORD nextPort = firstPort;
+  while (!rtpSession->Open(localAddress,
+                           nextPort, nextPort,
+                           manager.GetRtpIpTypeofService(),
+                           stun,
+                           rtpqos)) {
+    nextPort = manager.GetRtpIpPortPair();
+    if (nextPort == firstPort) {
+      delete rtpSession;
+      return NULL;
+    }
+  }
+
+  localAddress = rtpSession->GetLocalAddress();
+  if (manager.TranslateIPAddress(localAddress, remoteAddress))
+    rtpSession->SetLocalAddress(localAddress);
+  return rtpSession;
 }
 
 
