@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2007  2001/11/14 06:28:20  robertj
+ * Revision 1.2008  2001/12/07 08:55:32  robertj
+ * Used UDP port base when creating UDP transport.
+ *
+ * Revision 2.6  2001/11/14 06:28:20  robertj
  * Added missing break when ending UDP connect phase.
  *
  * Revision 2.5  2001/11/13 04:29:48  robertj
@@ -1172,7 +1175,8 @@ BOOL OpalTransportUDP::Connect()
   PIndirectChannel::Close();
   readAutoDelete = writeAutoDelete = FALSE;
 
-  localPort = 0;
+  WORD portBase = endpoint.GetManager().GetUDPPortBase();
+  WORD portMax  = endpoint.GetManager().GetUDPPortMax();
 
   // See if prebound to interface, only use that if so
   PIPSocket::InterfaceTable interfaces;
@@ -1204,12 +1208,16 @@ BOOL OpalTransportUDP::Connect()
       continue;
 
     // Not explicitly multicast
-    PUDPSocket * socket = new PUDPSocket(localPort);
+    PUDPSocket * socket = new PUDPSocket;
     connectSockets.Append(socket);
 
-    if (!socket->Listen(interfaceAddress)) {
-      PTRACE(2, "OpalUDP\tError on connect listen: " << socket->GetErrorText());
-      return FALSE;
+    localPort = portBase;
+    while (!socket->Listen(interfaceAddress, 0, localPort)) {
+      localPort++;
+      if (localPort > portMax) {
+        PTRACE(2, "OpalUDP\tError on connect listen: " << socket->GetErrorText());
+        return FALSE;
+      }
     }
 
 #ifndef __BEOS__
