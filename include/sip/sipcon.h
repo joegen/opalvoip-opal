@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2006  2002/03/08 06:28:19  craigs
+ * Revision 1.2007  2002/03/15 10:55:28  robertj
+ * Added ability to specify proxy username/password in URL.
+ *
+ * Revision 2.5  2002/03/08 06:28:19  craigs
  * Changed to allow Authorisation to be included in other PDUs
  *
  * Revision 2.4  2002/02/19 07:52:40  robertj
@@ -288,6 +291,7 @@ class SIPConnection : public OpalConnection
     BOOL     isProxyAuthenticate;
     PString  realm;
     PString  nonce;
+    PString  password;
 
     OpalMediaFormatList remoteFormatList;
     RTP_SessionManager  rtpSessions;
