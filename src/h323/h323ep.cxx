@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2033  2004/07/11 12:42:12  rjongbloed
+ * Revision 1.2034  2004/08/14 07:56:31  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.32  2004/07/11 12:42:12  rjongbloed
  * Added function on endpoints to get the list of all media formats any
  *   connection the endpoint may create can support.
  *
@@ -711,6 +714,7 @@
 #include <h323/h323ep.h>
 
 #include <ptclib/random.h>
+#include <opal/call.h>
 #include <h323/h323pdu.h>
 #include <h323/gkclient.h>
 #include <ptclib/url.h>
@@ -1140,29 +1144,23 @@ BOOL H323EndPoint::NewIncomingConnection(OpalTransport * transport)
   PString token = transport->GetRemoteAddress();
   token.sprintf("/%u", pdu.GetQ931().GetCallReference());
 
-  H323Connection * connection;
-
-  inUseFlag.Wait();
-
-  if (connectionsActive.Contains(token))
-    connection = (H323Connection *)&connectionsActive[token];
-  else {
-    connection = CreateConnection(*manager.CreateCall(), token, NULL,
-                                  *transport, PString::Empty(), PString::Empty(), &pdu);
-    connectionsActive.SetAt(token, connection);
-  }
-
-  inUseFlag.Signal();
+  PSafePtr<H323Connection> connection = FindConnectionWithLock(token);
 
   if (connection == NULL) {
-    PTRACE(1, "H225\tEndpoint could not create connection, "
-              "sending release complete PDU: callRef=" << callReference);
-    Q931 reply;
-    reply.BuildReleaseComplete(callReference, TRUE);
-    PBYTEArray rawData;
-    reply.Encode(rawData);
-    transport->WritePDU(rawData);
-    return TRUE;
+    connection = CreateConnection(*manager.CreateCall(), token, NULL,
+                                  *transport, PString::Empty(), PString::Empty(), &pdu);
+    if (connection == NULL) {
+      PTRACE(1, "H225\tEndpoint could not create connection, "
+                "sending release complete PDU: callRef=" << callReference);
+      Q931 reply;
+      reply.BuildReleaseComplete(callReference, TRUE);
+      PBYTEArray rawData;
+      reply.Encode(rawData);
+      transport->WritePDU(rawData);
+      return TRUE;
+    }
+
+    connectionsActive.SetAt(token, connection);
   }
 
   PTRACE(3, "H323\tCreated new connection: " << token);
@@ -1237,8 +1235,6 @@ BOOL H323EndPoint::InternalMakeCall(OpalCall & call,
     return FALSE;
   }
 
-  H323Connection * connection;
-
   inUseFlag.Wait();
 
   PString newToken;
@@ -1248,6 +1244,11 @@ BOOL H323EndPoint::InternalMakeCall(OpalCall & call,
     } while (connectionsActive.Contains(newToken));
   }
   else {
+    PSafePtr<OpalConnection> otherConnection = GetConnectionWithLock(existingToken, PSafeReference);
+    if (otherConnection == NULL) {
+      PTRACE(1, "H225\tTransfer connection disappeared, aborting setup.");
+      return FALSE;
+    }
     // Move old connection on token to new value and flag for removal
     PString adjustedToken;
     unsigned tieBreaker = 0;
@@ -1255,12 +1256,13 @@ BOOL H323EndPoint::InternalMakeCall(OpalCall & call,
       adjustedToken = newToken + "-replaced";
       adjustedToken.sprintf("-%u", ++tieBreaker);
     } while (connectionsActive.Contains(adjustedToken));
-    connectionsActive.SetAt(adjustedToken, connectionsActive.RemoveAt(newToken));
+    connectionsActive.RemoveAt(newToken);
+    connectionsActive.SetAt(adjustedToken, otherConnection);
 //    call.Release(connection);
     PTRACE(3, "H323\tOverwriting call " << newToken << ", renamed to " << adjustedToken);
   }
 
-  connection = CreateConnection(call, newToken, userData, *transport, alias, address, NULL);
+  H323Connection * connection = CreateConnection(call, newToken, userData, *transport, alias, address, NULL);
   if (connection == NULL) {
     PTRACE(1, "H225\tEndpoint could not create connection, aborting setup.");
     return FALSE;
@@ -1284,7 +1286,7 @@ BOOL H323EndPoint::InternalMakeCall(OpalCall & call,
   PTRACE(3, "H323\tCreated new connection: " << newToken);
 
   // See if we are starting an outgoing connection as first in a call
-  if (&call.GetConnection(0) == connection)
+  if (call.GetConnection(0) == connection)
     connection->SetUpConnection();
 
   return TRUE;
@@ -1295,32 +1297,26 @@ void H323EndPoint::TransferCall(const PString & token,
                                 const PString & remoteParty,
                                 const PString & callIdentity)
 {
-  H323Connection * connection = FindConnectionWithLock(token);
-  if (connection != NULL) {
+  PSafePtr<H323Connection> connection = FindConnectionWithLock(token);
+  if (connection != NULL)
     connection->TransferCall(remoteParty, callIdentity);
-    connection->Unlock();
-  }
 }
 
 
 void H323EndPoint::ConsultationTransfer(const PString & primaryCallToken,   
                                         const PString & secondaryCallToken)
 {
-  H323Connection * secondaryCall = FindConnectionWithLock(secondaryCallToken);
-  if (secondaryCall != NULL) {
+  PSafePtr<H323Connection> secondaryCall = FindConnectionWithLock(secondaryCallToken);
+  if (secondaryCall != NULL)
     secondaryCall->ConsultationTransfer(primaryCallToken);
-    secondaryCall->Unlock();
-  }
 }
 
 
 void H323EndPoint::HoldCall(const PString & token, BOOL localHold)
 {
-  H323Connection * connection = FindConnectionWithLock(token);
-  if (connection != NULL) {
+  PSafePtr<H323Connection> connection = FindConnectionWithLock(token);
+  if (connection != NULL)
     connection->HoldCall(localHold);
-    connection->Unlock();
-  }
 }
 
 
@@ -1497,62 +1493,22 @@ BOOL H323EndPoint::ParsePartyName(const PString & remoteParty,
 }
 
 
-H323Connection * H323EndPoint::FindConnectionWithLock(const PString & token)
+PSafePtr<H323Connection> H323EndPoint::FindConnectionWithLock(const PString & token, PSafetyMode mode)
 {
-  PWaitAndSignal mutex(inUseFlag);
+  PSafePtr<H323Connection> connnection = PSafePtrCast<OpalConnection, H323Connection>(GetConnectionWithLock(token, mode));
+  if (connnection != NULL)
+    return connnection;
 
-  /*We have a very yucky polling loop here as a semi permanant measure.
-    Why? We cannot call Lock() inside the inUseFlag critical section as
-    it will cause a deadlock with something like a RELEASE-COMPLETE coming in
-    on separate thread. But if we put it outside there is a small window where
-    the connection could get deleted before the Lock() test is done.
-    The solution is to attempt to get the mutex while inside the
-    inUseFlag but not block. That means a polling loop. There is
-    probably a way to do this properly with mutexes but I don't have time to
-    figure it out.
-   */
-  H323Connection * connection;
-  while ((connection = FindConnectionWithoutLocks(token)) != NULL) {
-    switch (connection->TryLock()) {
-      case 0 :
-        return NULL;
-      case 1 :
-        return connection;
-    }
-    // Could not get connection lock, unlock the endpoint lists so a thread
-    // that has the connection lock gets a chance at the endpoint lists.
-    inUseFlag.Signal();
-    PThread::Sleep(20);
-    inUseFlag.Wait();
+  for (connnection = PSafePtrCast<OpalConnection, H323Connection>(connectionsActive.GetAt(0)); connnection != NULL; ++connnection) {
+    if (connnection->GetCallIdentifier().AsString() == token)
+      return connnection;
+    if (connnection->GetConferenceIdentifier().AsString() == token)
+      return connnection;
   }
 
   return NULL;
 }
 
-
-H323Connection * H323EndPoint::FindConnectionWithoutLocks(const PString & token)
-{
-  PWaitAndSignal wait(inUseFlag);
-
-  OpalConnection * conn_ptr = connectionsActive.GetAt(token);
-  if (conn_ptr != NULL && PIsDescendant(conn_ptr, H323Connection))
-    return (H323Connection *)conn_ptr;
-
-  PINDEX i;
-  for (i = 0; i < connectionsActive.GetSize(); i++) {
-    H323Connection & conn = (H323Connection &)connectionsActive.GetDataAt(i);
-    if (conn.GetCallIdentifier().AsString() == token)
-      return &conn;
-  }
-
-  for (i = 0; i < connectionsActive.GetSize(); i++) {
-    H323Connection & conn = (H323Connection &)connectionsActive.GetDataAt(i);
-    if (conn.GetConferenceIdentifier().AsString() == token)
-      return &conn;
-  }
-
-  return NULL;
-}
 
 BOOL H323EndPoint::OnIncomingCall(H323Connection & connection,
                                   const H323SignalPDU & /*setupPDU*/,
@@ -1629,13 +1585,8 @@ void H323EndPoint::OnConnectionEstablished(H323Connection & /*connection*/,
 
 BOOL H323EndPoint::IsConnectionEstablished(const PString & token)
 {
-  H323Connection * connection = FindConnectionWithLock(token);
-  if (connection == NULL)
-    return FALSE;
-
-  BOOL established = connection->IsEstablished();
-  connection->Unlock();
-  return established;
+  PSafePtr<H323Connection> connection = FindConnectionWithLock(token);
+  return connection != NULL && connection->IsEstablished();
 }
 
 

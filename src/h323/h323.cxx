@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2061  2004/07/17 09:48:26  rjongbloed
+ * Revision 1.2062  2004/08/14 07:56:31  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.60  2004/07/17 09:48:26  rjongbloed
  * Allowed for case where OnSetUp() goes all the way to connected/established in
  *   one go, eg on an auto answer IVR system.
  *
@@ -1330,6 +1333,7 @@
 #include <h323/gkclient.h>
 #include <h323/h450pdu.h>
 #include <h323/transaddr.h>
+#include <opal/call.h>
 #include <opal/patch.h>
 #include <codec/rfc2833.h>
 
@@ -1492,7 +1496,6 @@ H323Connection::H323Connection(OpalCall & call,
   startT120 = TRUE;
   lastPDUWasH245inSETUP = FALSE;
   endSessionNeeded = FALSE;
-  endSessionSent = FALSE;
 
   switch (options&H245inSetupOptionMask) {
     case H245inSetupOptionDisable :
@@ -1557,17 +1560,22 @@ H323Connection::~H323Connection()
 }
 
 
-void H323Connection::SetCallEndReason(CallEndReason reason)
+void H323Connection::OnReleased()
 {
-  OpalConnection::SetCallEndReason(reason);
+  OpalConnection::OnReleased();
+  CleanUpOnCallEnd();
+  OnCleared();
+}
+
+
+void H323Connection::CleanUpOnCallEnd()
+{
+  PTRACE(3, "H323\tConnection " << callToken << " closing: connectionState=" << connectionState);
+
+  connectionState = ShuttingDownConnection;
 
   if (!callEndTime.IsValid())
     callEndTime = PTime();
-
-  if (endSessionSent)
-    return;
-
-  endSessionSent = TRUE;
 
   PTRACE(2, "H225\tSending release complete PDU: callRef=" << callReference);
   H323SignalPDU rcPDU;
@@ -1590,25 +1598,13 @@ void H323Connection::SetCallEndReason(CallEndReason reason)
     h245TunnelTxPDU = NULL;
     WriteSignalPDU(rcPDU);
   }
-}
 
-
-BOOL H323Connection::OnReleased()
-{
-  CleanUpOnCallEnd();
-  OnCleared();
-  return OpalConnection::OnReleased();
-}
-
-
-void H323Connection::CleanUpOnCallEnd()
-{
-  PTRACE(3, "H323\tConnection " << callToken << " closing: connectionState=" << connectionState);
-
-  LockOnRelease();
-
-  connectionState = ShuttingDownConnection;
-  phase = ReleasedPhase;
+  // Check for gatekeeper and do disengage if have one
+  if (mustSendDRQ) {
+    H323Gatekeeper * gatekeeper = endpoint.GetGatekeeper();
+    if (gatekeeper != NULL)
+      gatekeeper->DisengageRequest(*this, H225_DisengageReason::e_normalDrop);
+  }
 
   // Unblock sync points
   digitsWaitFlag.Signal();
@@ -1621,13 +1617,6 @@ void H323Connection::CleanUpOnCallEnd()
 
   // Dispose of all the logical channels
   logicalChannels->RemoveAll();
-
-  if (callEndReason == EndedByLocalUser || callEndReason == EndedByCallForwarded) {
-    // Send an H.245 end session to the remote endpoint.
-    H323ControlPDU pdu;
-    pdu.BuildEndSessionCommand(H245_EndSessionCommand::e_disconnect);
-    WriteControlPDU(pdu);
-  }
 
   if (endSessionNeeded) {
     // Calculate time since we sent the end session command so we do not actually
@@ -1649,6 +1638,8 @@ void H323Connection::CleanUpOnCallEnd()
     }
   }
 
+  phase = ReleasedPhase;
+
   // Wait for control channel to be cleaned up (thread ended).
   if (controlChannel != NULL)
     controlChannel->CloseWait();
@@ -1656,13 +1647,6 @@ void H323Connection::CleanUpOnCallEnd()
   // Wait for signalling channel to be cleaned up (thread ended).
   if (signallingChannel != NULL)
     signallingChannel->CloseWait();
-
-  // Check for gatekeeper and do disengage if have one
-  if (mustSendDRQ) {
-    H323Gatekeeper * gatekeeper = endpoint.GetGatekeeper();
-    if (gatekeeper != NULL)
-      gatekeeper->DisengageRequest(*this, H225_DisengageReason::e_normalDrop);
-  }
 
   PTRACE(1, "H323\tConnection " << callToken << " terminated.");
 }
@@ -1777,7 +1761,11 @@ BOOL H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
   PTRACE(3, "H225\tHandling PDU: " << q931.GetMessageTypeName()
                     << " callRef=" << q931.GetCallReference());
 
-  if (!Lock()) {
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked())
+    return FALSE;
+
+  if (phase >= ReleasingPhase) {
     // Continue to look for endSession/releaseComplete pdus
     if (pdu.m_h323_uu_pdu.m_h245Tunneling) {
       for (PINDEX i = 0; i < pdu.m_h323_uu_pdu.m_h245Control.GetSize(); i++) {
@@ -1804,7 +1792,6 @@ BOOL H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
   // Check for presence of supplementary services
   if (pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_h4501SupplementaryService)) {
     if (!h450dispatcher->HandlePDU(pdu)) { // Process H4501SupplementaryService APDU
-      Unlock();
       return FALSE;
     }
   }
@@ -1896,8 +1883,6 @@ BOOL H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
   H323Gatekeeper * gk = endpoint.GetGatekeeper();
   if (gk != NULL)
     gk->InfoRequestResponse(*this, pdu.m_h323_uu_pdu, FALSE);
-
-  Unlock();
 
   return ok;
 }
@@ -2657,7 +2642,8 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
 {
   PTRACE(2, "H323\tAnswering call: " << response);
 
-  if (!Lock())
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked() || phase >= ReleasingPhase)
     return;
 
   switch (response) {
@@ -2719,7 +2705,6 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
   }
 
   InternalEstablishedConnectionCheck();
-  Unlock();
 }
 
 
@@ -2737,7 +2722,7 @@ void H323Connection::StartOutgoing(PThread &, INT)
 {
   PTRACE(3, "H225\tStarted call thread");
 
-  if (!Lock())
+  if (!SafeReference())
     return;
 
   PString alias, address;
@@ -2752,21 +2737,23 @@ void H323Connection::StartOutgoing(PThread &, INT)
   H323TransportAddress h323addr(address, endpoint.GetDefaultSignalPort());
   CallEndReason reason = SendSignalSetup(alias, h323addr);
 
-  // Special case, if we aborted the call then already will be unlocked
-  if (reason != EndedByCallerAbort)
-    Unlock();
-
   // Check if had an error, clear call if so
   if (reason != NumCallEndReasons)
     Release(reason);
   else
     HandleSignallingChannel();
+
+  SafeDereference();
 }
 
 
 OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & alias,
                                                               const H323TransportAddress & address)
 {
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked())
+    return EndedByCallerAbort;
+
   // Start the call, first state is asking gatekeeper
   connectionState = AwaitingGatekeeperAdmission;
   phase = SetUpPhase;
@@ -2820,9 +2807,11 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
 
       PString lastRemotePartyName = remotePartyName;
       while (lastRemotePartyName == remotePartyName) {
-        Unlock(); // Release the mutex as can deadlock trying to clear call during connect.
+        UnlockReadWrite(); // Release the mutex as can deadlock trying to clear call during connect.
         digitsWaitFlag.Wait();
-        if (!Lock()) // Lock while checking for shutting down.
+        if (!LockReadWrite()) // Lock while checking for shutting down.
+          return EndedByCallerAbort;
+        if (phase >= ReleasingPhase)
           return EndedByCallerAbort;
       }
     }
@@ -2877,12 +2866,15 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   phase = SetUpPhase;
 
   // Release the mutex as can deadlock trying to clear call during connect.
-  Unlock();
+  UnlockReadWrite();
 
   BOOL connectFailed = !signallingChannel->Connect();
 
     // Lock while checking for shutting down.
-  if (!Lock())
+  if (!LockReadWrite())
+    return EndedByCallerAbort;
+
+  if (phase >= ReleasingPhase)
     return EndedByCallerAbort;
 
   // See if transport connect failed, abort if so.
@@ -3341,7 +3333,11 @@ void H323Connection::NewOutgoingControlChannel(PThread &, INT)
   if (PAssertNULL(controlChannel) == NULL)
     return;
 
+  if (!SafeReference())
+    return;
+
   HandleControlChannel();
+  SafeDereference();
 }
 
 
@@ -3380,8 +3376,12 @@ void H323Connection::NewIncomingControlChannel(PThread & listener, INT param)
     return;
   }
 
+  if (!SafeReference())
+    return;
+
   controlChannel = (H323Transport *)param;
   HandleControlChannel();
+  SafeDereference();
 }
 
 
@@ -3474,14 +3474,16 @@ void H323Connection::HandleControlChannel()
     PPER_Stream strm;
     if (controlChannel->ReadPDU(strm)) {
       // Lock while checking for shutting down.
-      if (Lock()) {
+      ok = LockReadWrite();
+      if (ok) {
         // Process the received PDU
         PTRACE(4, "H245\tReceived TPKT: " << strm);
-        ok = HandleControlData(strm);
-        Unlock(); // Unlock connection
+        if (phase < ReleasingPhase)
+          ok = HandleControlData(strm);
+        else
+          ok = InternalEndSessionCheck(strm);
+        UnlockReadWrite(); // Unlock connection
       }
-      else
-        ok = InternalEndSessionCheck(strm);
     }
     else if (controlChannel->GetErrorCode() != PChannel::Timeout) {
       PTRACE(1, "H245\tRead error: " << controlChannel->GetErrorText(PChannel::LastReadError));
@@ -4219,8 +4221,9 @@ BOOL H323Connection::IsH245Master() const
 
 void H323Connection::StartRoundTripDelay()
 {
-  if (Lock()) {
-    if (masterSlaveDeterminationProcedure->IsDetermined() &&
+  if (LockReadWrite()) {
+    if (phase < ReleasingPhase &&
+        masterSlaveDeterminationProcedure->IsDetermined() &&
         capabilityExchangeProcedure->HasSentCapabilities()) {
       if (roundTripDelayProcedure->IsRemoteOffline()) {
         PTRACE(2, "H245\tRemote failed to respond to PDU.");
@@ -4230,7 +4233,7 @@ void H323Connection::StartRoundTripDelay()
       else
         roundTripDelayProcedure->StartRequest();
     }
-    Unlock();
+    UnlockReadWrite();
   }
 }
 
@@ -5266,7 +5269,11 @@ void H323Connection::SetEnforcedDurationLimit(unsigned seconds)
 
 void H323Connection::MonitorCallStatus()
 {
-  if (!Lock())
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked())
+    return;
+
+  if (phase >= ReleasingPhase)
     return;
 
   if (endpoint.GetRoundTripDelayRate() > 0 && !roundTripDelayTimer.IsRunning()) {
@@ -5297,8 +5304,6 @@ void H323Connection::MonitorCallStatus()
 
   if (enforcedDurationLimit.GetResetTime() > 0 && enforcedDurationLimit == 0)
     ClearCall(EndedByDurationLimit);
-
-  Unlock();
 }
 
 
