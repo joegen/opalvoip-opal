@@ -22,7 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2012  2002/03/05 06:27:34  robertj
+# Revision 1.2013  2002/03/15 10:51:53  robertj
+# Fixed problem with recursive inclusion on make files.
+#
+# Revision 2.11  2002/03/05 06:27:34  robertj
 # Added ASN parser build and version check code.
 #
 # Revision 2.10  2002/02/22 04:16:25  robertj
@@ -63,6 +66,13 @@
 # Revision 2.0  2001/07/27 15:48:24  robertj
 # Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
 #
+
+ifndef PWLIBDIR
+PWLIBDIR=$(HOME)/pwlib
+endif
+
+include $(PWLIBDIR)/make/unix.mak
+
 
 
 SUBDIRS := samples/simple
