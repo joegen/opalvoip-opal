@@ -17,7 +17,7 @@ class CMfcDlg : public CDialog
 // Construction
 public:
 	PString m_token;
-	CMfcEndPoint m_endpoint;
+	CMfcManager m_manager;
 	CMfcDlg(CWnd* pParent = NULL);	// standard constructor
 
 // Dialog Data
