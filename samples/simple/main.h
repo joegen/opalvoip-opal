@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2009  2003/03/06 03:57:47  robertj
+ * Revision 1.2010  2003/03/19 02:30:45  robertj
+ * Added removal of IVR stuff if EXPAT is not installed on system.
+ *
+ * Revision 2.8  2003/03/06 03:57:47  robertj
  * IVR support (work in progress) requiring large changes everywhere.
  *
  * Revision 2.7  2002/09/06 02:44:52  robertj
@@ -140,7 +143,9 @@ class MyManager : public OpalManager
     MyPCSSEndPoint   * pcssEP;
     H323EndPoint     * h323EP;
     SIPEndPoint      * sipEP;
+#if P_EXPAT
     OpalIVREndPoint  * ivrEP;
+#endif
 };
 
 
