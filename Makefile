@@ -22,7 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2027  2004/02/23 01:28:49  rjongbloed
+# Revision 1.2028  2004/03/11 06:54:25  csoutheren
+# Added ability to disable SIP or H.323 stacks
+#
+# Revision 2.26  2004/02/23 01:28:49  rjongbloed
 # Fixed unix build for recent upgrade to OpenH323 latest code.
 #
 # Revision 2.25  2004/02/16 09:15:19  csoutheren
@@ -149,10 +152,29 @@ VPATH_CXX := $(OPAL_SRCDIR)/opal \
 
 VPATH_C := $(OPAL_SRCDIR)/codec
 
+########################################
+# Source files for library
+
+SOURCES := $(OPAL_SRCDIR)/opal/manager.cxx \
+           $(OPAL_SRCDIR)/opal/endpoint.cxx \
+           $(OPAL_SRCDIR)/opal/connection.cxx \
+           $(OPAL_SRCDIR)/opal/call.cxx \
+           $(OPAL_SRCDIR)/opal/mediafmt.cxx \
+           $(OPAL_SRCDIR)/opal/mediastrm.cxx \
+           $(OPAL_SRCDIR)/opal/patch.cxx \
+           $(OPAL_SRCDIR)/opal/transcoders.cxx \
+           $(OPAL_SRCDIR)/opal/transports.cxx \
+           $(OPAL_SRCDIR)/opal/guid.cxx \
+           $(OPAL_SRCDIR)/opal/pcss.cxx \
+           $(OPAL_SRCDIR)/opal/ivr.cxx \
+           $(OPAL_SRCDIR)/opal/opalvxml.cxx \
+           $(OPAL_SRCDIR)/rtp/rtp.cxx \
+           $(OPAL_SRCDIR)/rtp/jitter.cxx \
 
 ########################################
+# H.323 files
 
-# ASN files
+ifeq ($(OPAL_H323),1)
 
 ASN_SRCDIR := $(OPAL_SRCDIR)/asn
 ASN_INCDIR := $(OPAL_INCDIR)/asn
@@ -181,24 +203,7 @@ ASN_CXX_FILES += $(ASN_SRCDIR)/h501.cxx
 .PRECIOUS: $(ASN_CXX_FILES) $(ASN_H_FILES)
 
 
-# Source files for library
-
-SOURCES := $(ASN_CXX_FILES) \
-           $(OPAL_SRCDIR)/opal/manager.cxx \
-           $(OPAL_SRCDIR)/opal/endpoint.cxx \
-           $(OPAL_SRCDIR)/opal/connection.cxx \
-           $(OPAL_SRCDIR)/opal/call.cxx \
-           $(OPAL_SRCDIR)/opal/mediafmt.cxx \
-           $(OPAL_SRCDIR)/opal/mediastrm.cxx \
-           $(OPAL_SRCDIR)/opal/patch.cxx \
-           $(OPAL_SRCDIR)/opal/transcoders.cxx \
-           $(OPAL_SRCDIR)/opal/transports.cxx \
-           $(OPAL_SRCDIR)/opal/guid.cxx \
-           $(OPAL_SRCDIR)/opal/pcss.cxx \
-           $(OPAL_SRCDIR)/opal/ivr.cxx \
-           $(OPAL_SRCDIR)/opal/opalvxml.cxx \
-           $(OPAL_SRCDIR)/rtp/rtp.cxx \
-           $(OPAL_SRCDIR)/rtp/jitter.cxx \
+SOURCES += $(ASN_CXX_FILES) \
            $(OPAL_SRCDIR)/h323/h323ep.cxx \
            $(OPAL_SRCDIR)/h323/h323.cxx \
            $(OPAL_SRCDIR)/h323/h323caps.cxx \
@@ -218,14 +223,35 @@ SOURCES := $(ASN_CXX_FILES) \
            $(OPAL_SRCDIR)/h323/h501pdu.cxx \
            $(OPAL_SRCDIR)/h323/h323annexg.cxx \
            $(OPAL_SRCDIR)/h323/peclient.cxx \
-           $(OPAL_SRCDIR)/sip/sipep.cxx \
-           $(OPAL_SRCDIR)/sip/sipcon.cxx \
-           $(OPAL_SRCDIR)/sip/sippdu.cxx \
-           $(OPAL_SRCDIR)/sip/sdp.cxx \
 
 ifdef HAS_OPENSSL
 SOURCES += $(OPAL_SRCDIR)/h235auth1.cxx
 endif
+
+SOURCES += $(OPAL_SRCDIR)/t120/t120proto.cxx \
+           $(OPAL_SRCDIR)/t120/h323t120.cxx \
+           $(OPAL_SRCDIR)/t120/x224.cxx \
+           $(OPAL_SRCDIR)/t38/t38proto.cxx \
+           $(OPAL_SRCDIR)/t38/h323t38.cxx \
+
+
+endif
+
+##################
+# SIP files
+
+ifeq ($(OPAL_SIP),1)
+
+SOURCES += $(OPAL_SRCDIR)/sip/sipep.cxx \
+           $(OPAL_SRCDIR)/sip/sipcon.cxx \
+           $(OPAL_SRCDIR)/sip/sippdu.cxx \
+           $(OPAL_SRCDIR)/sip/sdp.cxx \
+
+endif
+
+##################
+# LIDS
+
 
 SOURCES += $(OPAL_SRCDIR)/lids/lid.cxx \
            $(OPAL_SRCDIR)/lids/lidep.cxx \
@@ -446,14 +472,6 @@ SOURCES += $(OPAL_SRCDIR)/codec/h261codec.c \
            $(VIC_DIR)/transmitter.cxx \
            $(VIC_DIR)/vid_coder.cxx 
 
-# More protocols
-
-SOURCES += $(OPAL_SRCDIR)/t120/t120proto.cxx \
-           $(OPAL_SRCDIR)/t120/h323t120.cxx \
-           $(OPAL_SRCDIR)/t120/x224.cxx \
-           $(OPAL_SRCDIR)/t38/t38proto.cxx \
-           $(OPAL_SRCDIR)/t38/h323t38.cxx \
-
 
 #
 # Files to be cleande during make clean
@@ -543,6 +561,8 @@ $(DEPDIR)/%.dep : $(LPC10_SRCDIR)/%.c
 	@printf %s $(OPAL_OBJDIR)/ > $@
 	$(CC) -I$(LPC10_INCDIR) $(CFLAGS) -M $< >> $@
 
+
+ifeq ($(OPAL_H323),1)
 
 # Make sure the asnparser is built and if new version force recompiles
 
@@ -651,7 +671,7 @@ $(ASN_SRCDIR)/h4509.cxx : $(ASN_INCDIR)/h4504.h $(ASN_INCDIR)/h4507.h
 $(ASN_SRCDIR)/h45010.cxx: $(ASN_INCDIR)/h4506.h
 $(ASN_SRCDIR)/h45011.cxx: $(ASN_INCDIR)/h4504.h $(ASN_INCDIR)/h4506.h $(ASN_INCDIR)/h45010.h
 
-
+endif  # OPAL_H323
 
 
 
