@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2032  2004/02/14 22:52:51  csoutheren
+ * Revision 1.2033  2004/02/15 03:12:10  rjongbloed
+ * More patches from Ted Szoczei, fixed shutting down of RTP session if INVITE fails. Added correct return if no meda formats can be matched.
+ *
+ * Revision 2.31  2004/02/14 22:52:51  csoutheren
  * Re-ordered initialisations to remove warning on Linux
  *
  * Revision 2.30  2004/02/07 02:23:21  rjongbloed
@@ -224,12 +227,20 @@ BOOL SIPConnection::OnReleased()
         case EndedByAnswerDenied :
           SendResponseToINVITE(SIP_PDU::Failure_Decline);
           break;
+
         case EndedByLocalBusy :
           SendResponseToINVITE(SIP_PDU::Failure_BusyHere);
           break;
+
         case EndedByCallerAbort :
           SendResponseToINVITE(SIP_PDU::Failure_RequestTerminated);
           break;
+
+        // call ended by no codec match or stream open failure
+        case EndedByCapabilityExchange :
+          SendResponseToINVITE(SIP_PDU::Failure_UnsupportedMediaType);
+          break;
+
         default :
           SendResponseToINVITE(SIP_PDU::Failure_BadGateway);
       }
@@ -308,8 +319,10 @@ BOOL SIPConnection::SetConnected()
   // get the remote media formats
   SDPSessionDescription & sdpIn = originalInvite->GetSDP();
 
-  if (!OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut))
+  if (!OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut)) {
+    Release(EndedByCapabilityExchange);
     return FALSE;
+  }
 
   if (endpoint.GetManager().CanAutoStartTransmitVideo())
     OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut);
@@ -362,7 +375,7 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   incomingMedia->GetTransportAddress().GetIpAndPort(ip, port);
   if (!rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
     PTRACE(1, "SIP\tCannot set remote ports on RTP session");
-    delete rtpSession;
+    ReleaseSession(rtpSessionId);
     return FALSE;
   }
 
@@ -370,6 +383,7 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   // look for matching codec in peer connection
   if (!ownerCall.OpenSourceMediaStreams(*this, remoteFormatList, rtpSessionId)) {
     PTRACE(2, "SIP\tCould not find compatible codecs");
+    ReleaseSession(rtpSessionId);
     return FALSE;
   }
 
@@ -377,6 +391,7 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   // and get the payload type that was selected
   if (mediaStreams.IsEmpty()) {
     PTRACE(2, "SIP\tNo media streams opened");
+    ReleaseSession(rtpSessionId);
     return FALSE;
   }
 
@@ -401,6 +416,7 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
     PTRACE(2, "SIP\tNo reverse media streams opened");
     mediaStreams.RemoveAll();
     delete localMedia;
+    ReleaseSession(rtpSessionId);
     return FALSE;
   }
 
