@@ -27,11 +27,18 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q931.cxx,v $
- * Revision 1.2002  2001/08/13 05:10:40  robertj
+ * Revision 1.2003  2001/08/21 01:11:31  robertj
+ * Update from OpenH323
+ *
+ * Revision 2.1  2001/08/13 05:10:40  robertj
  * Updates from OpenH323 v1.6.0 release.
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.37  2001/08/20 06:48:28  robertj
+ * Added Q.931 function for setting bearer capabilities, allowing
+ *    applications to set the data rate as they require.
  *
  * Revision 1.36  2001/08/07 02:57:09  robertj
  * Fixed incorrect Q.931 bearer capability, thanks Carlo Kielstra.
@@ -257,8 +264,6 @@ void Q931::BuildAlerting(int callRef)
 }
 
 
-static const BYTE BearerCapabilityData[3] = { 0x88, 0x80, 0xa5 };
-
 void Q931::BuildSetup(int callRef)
 {
   messageType = SetupMsg;
@@ -268,7 +273,7 @@ void Q931::BuildSetup(int callRef)
     callReference = callRef;
   fromDestination = FALSE;
   informationElements.RemoveAll();
-  SetIE(BearerCapabilityIE, PBYTEArray(BearerCapabilityData, sizeof(BearerCapabilityData)));
+  SetBearerCapabilities(TransferUnrestrictedDigital, 1);
 }
 
 
@@ -278,7 +283,7 @@ void Q931::BuildConnect(int callRef)
   callReference = callRef;
   fromDestination = TRUE;
   informationElements.RemoveAll();
-  SetIE(BearerCapabilityIE, PBYTEArray(BearerCapabilityData, sizeof(BearerCapabilityData)));
+  SetBearerCapabilities(TransferUnrestrictedDigital, 1);
 }
 
 
@@ -572,6 +577,96 @@ void Q931::RemoveIE(InformationElementCodes ie)
 {
   informationElements.RemoveAt(ie);
 }
+
+
+void Q931::SetBearerCapabilities(InformationTransferCapability capability,
+                                 unsigned transferRate,
+                                 unsigned codingStandard,
+                                 unsigned userInfoLayer1)
+{
+  PBYTEArray data(3);
+  data[0] = (BYTE)(0x80 | ((codingStandard&3) << 5) | (capability&31));
+
+  // Note this is always "Circuit Mode"
+  switch (transferRate) {
+    case 1 :
+      data[1] = 0x90;
+      break;
+    case 2 :
+      data[1] = 0x91;
+      break;
+    case 6 :
+      data[1] = 0x93;
+      break;
+    case 24 :
+      data[1] = 0x95;
+      break;
+    case 30 :
+      data[1] = 0x97;
+      break;
+    default :
+      PAssert(transferRate > 0 && transferRate < 128, PInvalidParameter);
+      data.SetSize(4);
+      data[1] = 0x18;
+      data[2] = (BYTE)(0x80 | transferRate);
+  }
+
+  PAssert(userInfoLayer1 >= 2 && userInfoLayer1 <= 5, PInvalidParameter);
+  data[data.GetSize()-1] = (BYTE)(0x80 | (1<<5) | userInfoLayer1);
+
+  SetIE(BearerCapabilityIE, data);
+}
+
+
+BOOL Q931::GetBearerCapabilities(InformationTransferCapability & capability,
+                                 unsigned & transferRate,
+                                 unsigned * codingStandard,
+                                 unsigned * userInfoLayer1)
+{
+  if (!HasIE(BearerCapabilityIE))
+    return FALSE;
+
+  PBYTEArray data = GetIE(BearerCapabilityIE);
+  if (data.GetSize() < 3)
+    return FALSE;
+
+  capability = (InformationTransferCapability)data[0];
+  if (codingStandard != NULL)
+    *codingStandard = (data[0] >> 5)&3;
+
+  PINDEX nextByte = 2;
+  switch (data[1]) {
+    case 0x90 :
+      transferRate = 1;
+      break;
+    case 0x91 :
+      transferRate = 2;
+      break;
+    case 0x93 :
+      transferRate = 6;
+      break;
+    case 0x95 :
+      transferRate = 24;
+      break;
+    case 0x97 :
+      transferRate = 30;
+      break;
+    case 0x18 :
+      if (data.GetSize() < 4)
+        return FALSE;
+      transferRate = data[2]&0x7f;
+      nextByte = 3;
+      break;
+    default :
+      return FALSE;
+  }
+
+  if (userInfoLayer1 != NULL && ((data[nextByte]>>5)&3) == 1)
+    *userInfoLayer1 = data[nextByte]&0x31;
+
+  return TRUE;
+}
+
 
 void Q931::SetCause(CauseValues value, unsigned standard, unsigned location)
 {
