@@ -22,7 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2002  2001/07/30 03:07:15  robertj
+# Revision 1.2003  2002/02/11 09:38:28  robertj
+# Moved version to root directory
+#
+# Revision 2.1  2001/07/30 03:07:15  robertj
 # Improved reporting of incorrect OPALDIR
 #
 # Revision 2.0  2001/07/27 15:48:24  robertj
@@ -37,6 +40,8 @@
 
 PROG		= simpleopal
 SOURCES		:= main.cxx
+
+VERSION_FILE =  ../../version.h
 
 ifndef OPALDIR
 ifneq (,$(wildcard $(HOME)/opal))
