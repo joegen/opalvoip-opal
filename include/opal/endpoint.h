@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2018  2004/03/11 06:54:27  csoutheren
+ * Revision 1.2019  2004/03/13 06:25:52  rjongbloed
+ * Slight rearrangement of local party name and alias list to beter match common
+ *   behaviour in ancestor.
+ * Abstracted local party name for endpoint into ancestor from H.,323.
+ *
+ * Revision 2.17  2004/03/11 06:54:27  csoutheren
  * Added ability to disable SIP or H.323 stacks
  *
  * Revision 2.16  2004/02/19 10:46:44  rjongbloed
@@ -548,6 +553,22 @@ class OpalEndPoint : public PObject
      */
     WORD GetDefaultSignalPort() const { return defaultSignalPort; }
 
+    /**Get the default local party name for all connections on this endpoint.
+      */
+    const PString & GetDefaultLocalPartyName() const { return defaultLocalPartyName; }
+
+    /**Set the default local party name for all connections on this endpoint.
+      */
+    void SetDefaultLocalPartyName(const PString & name) { defaultLocalPartyName = name; }
+
+    /**Get the default local display name for all connections on this endpoint.
+      */
+    const PString & GetDefaultDisplayName() const { return defaultDisplayName; }
+
+    /**Set the default local display name for all connections on this endpoint.
+      */
+    void SetDefaultDisplayName(const PString & name) { defaultDisplayName = name; }
+
     /**Get the initial bandwidth parameter.
      */
     unsigned GetInitialBandwidth() const { return initialBandwidth; }
@@ -567,6 +588,8 @@ class OpalEndPoint : public PObject
     PCaselessString prefixName;
     unsigned        attributeBits;
     WORD            defaultSignalPort;
+    PString         defaultLocalPartyName;
+    PString         defaultDisplayName;
 
     unsigned initialBandwidth;  // in 100s of bits/sev
 

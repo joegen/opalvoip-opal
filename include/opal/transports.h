@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.h,v $
- * Revision 1.2015  2004/03/11 06:54:27  csoutheren
+ * Revision 1.2016  2004/03/13 06:25:52  rjongbloed
+ * Slight rearrangement of local party name and alias list to beter match common
+ *   behaviour in ancestor.
+ * Abstracted local party name for endpoint into ancestor from H.,323.
+ *
+ * Revision 2.14  2004/03/11 06:54:27  csoutheren
  * Added ability to disable SIP or H.323 stacks
  *
  * Revision 2.13  2004/02/19 10:47:01  rjongbloed
@@ -750,7 +755,7 @@ class OpalTransport : public PIndirectChannel
       const PBYTEArray & pdu     /// Packet to write
     ) = 0;
 
-    typedef BOOL (*WriteConnectCallback)(OpalTransport & transport, PObject * data);
+    typedef BOOL (*WriteConnectCallback)(OpalTransport & transport, void * userData);
 
     /**Write the first packet to the transport, after a connect.
        This will adjust the transport object and call the callback function,
@@ -766,7 +771,7 @@ class OpalTransport : public PIndirectChannel
       */
     virtual BOOL WriteConnect(
       WriteConnectCallback function,  /// Function for writing data
-      PObject * data                  /// Data to write
+      void * userData                 /// user data to pass to write function
     );
 
     /**Attach a thread to the transport.
@@ -1072,7 +1077,7 @@ class OpalTransportUDP : public OpalTransportIP
       */
     virtual BOOL WriteConnect(
       WriteConnectCallback function,  /// Function for writing data
-      PObject * data                  /// Data to write
+      void * userData                 /// User data to pass to write function
     );
   //@}
 
