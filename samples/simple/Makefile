@@ -22,7 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2001  2001/07/27 15:48:24  robertj
+# Revision 1.2002  2001/07/30 03:07:15  robertj
+# Improved reporting of incorrect OPALDIR
+#
+# Revision 2.0  2001/07/27 15:48:24  robertj
 # Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
 #
 # Revision 1.2  2000/10/30 00:24:49  robertj
@@ -32,12 +35,24 @@
 # Simple sample program.
 #
 
-PROG		= simopal
+PROG		= simpleopal
 SOURCES		:= main.cxx
 
 ifndef OPALDIR
+ifneq (,$(wildcard $(HOME)/opal))
 OPALDIR=$(HOME)/opal
+else
+ifneq (,$(wildcard /usr/local/opal))
+OPALDIR=/usr/local/opal
+else
+default_target :
+	@echo Cannot find OPAL in standard locations, you must set the OPALDIR
+	@echo environment variable to build this application.
+endif
+endif
 endif
 
+ifdef OPALDIR
 include $(OPALDIR)/opal_inc.mak
+endif
 
