@@ -27298,6 +27298,7 @@ EXPORTS
     ?OnReceivedReturnResult@H4502Handler@@UAEHAAVX880_ReturnResult@@@Z @26870 NONAME
     ?OnReceivedReturnResult@H450xDispatcher@@UAEHAAVX880_ReturnResult@@@Z @26871 NONAME
     ?OnReceivedReturnResult@H450xHandler@@UAEHAAVX880_ReturnResult@@@Z @26872 NONAME
+    ?OnReceivedRinging@SIPConnection@@UAEXAAVSIP_PDU@@@Z @29311 NONAME
     ?OnReceivedSDP@SIPConnection@@MAEXAAVSIP_PDU@@@Z @26873 NONAME
     ?OnReceivedSDPMediaDescription@SIPConnection@@MAEHAAVSDPSessionDescription@@W4MediaType@SDPMediaDescription@@I@Z @26874 NONAME
     ?OnReceivedSessionProgress@SIPConnection@@UAEXAAVSIP_PDU@@@Z @26875 NONAME
