@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2009  2002/01/14 06:35:58  robertj
+ * Revision 1.2010  2002/01/22 05:14:38  robertj
+ * Added RTP encoding name string to media format database.
+ * Changed time units to clock rate in Hz.
+ *
+ * Revision 2.8  2002/01/14 06:35:58  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.7  2001/11/15 06:55:26  robertj
@@ -92,11 +96,12 @@ OpalMediaFormat const OpalPCM16(
   OPAL_PCM16,
   OpalMediaFormat::DefaultAudioSessionID,
   RTP_DataFrame::L16_Mono,
+  "L16",
   TRUE,   // Needs jitter
   128000, // bits/sec
   16, // bytes/frame
   8, // 1 millisecond
-  OpalMediaFormat::AudioTimeUnits
+  OpalMediaFormat::AudioClockRate
 );
 
 #if !defined(NO_H323_AUDIO_CODECS) && !defined(NO_OPAL_AUDIO_CODECS)
@@ -105,110 +110,120 @@ OpalMediaFormat const OpalG711uLaw(
   OPAL_G711_ULAW_64K,
   OpalMediaFormat::DefaultAudioSessionID,
   RTP_DataFrame::PCMU,
+  "PCMU",
   TRUE,   // Needs jitter
   64000, // bits/sec
   8, // bytes/frame
   8, // 1 millisecond/frame
-  OpalMediaFormat::AudioTimeUnits
+  OpalMediaFormat::AudioClockRate
 );
 
 OpalMediaFormat const OpalG711ALaw(
   OPAL_G711_ALAW_64K,
   OpalMediaFormat::DefaultAudioSessionID,
   RTP_DataFrame::PCMA,
+  "PCMA",
   TRUE,   // Needs jitter
   64000, // bits/sec
   8, // bytes/frame
   8, // 1 millisecond/frame
-  OpalMediaFormat::AudioTimeUnits
+  OpalMediaFormat::AudioClockRate
 );
 
 OpalMediaFormat const OpalG728(  
   OPAL_G728,
   OpalMediaFormat::DefaultAudioSessionID,
   RTP_DataFrame::G728,
+  "G728",
   TRUE, // Needs jitter
   16000,// bits/sec
   5,    // bytes
   20,   // 2.5 milliseconds
-  OpalMediaFormat::AudioTimeUnits
+  OpalMediaFormat::AudioClockRate
 );
 
 OpalMediaFormat const OpalG729( 
   OPAL_G729,
   OpalMediaFormat::DefaultAudioSessionID,
   RTP_DataFrame::G729,
+  "G729",
   TRUE, // Needs jitter
   8000, // bits/sec
   10,   // bytes
   80,   // 10 milliseconds
-  OpalMediaFormat::AudioTimeUnits
+  OpalMediaFormat::AudioClockRate
 );
 
 OpalMediaFormat const OpalG729A( 
   OPAL_G729A,
   OpalMediaFormat::DefaultAudioSessionID,
   RTP_DataFrame::G729,
+  "G729",
   TRUE, // Needs jitter
   8000, // bits/sec
   10,   // bytes
   80,   // 10 milliseconds
-  OpalMediaFormat::AudioTimeUnits
+  OpalMediaFormat::AudioClockRate
 );
 
 OpalMediaFormat const OpalG729B(
   OPAL_G729B,
   OpalMediaFormat::DefaultAudioSessionID,
   RTP_DataFrame::G729,
+  "G729",
   TRUE, // Needs jitter
   8000, // bits/sec
   10,   // bytes
   80,   // 10 milliseconds
-  OpalMediaFormat::AudioTimeUnits
+  OpalMediaFormat::AudioClockRate
 );
 
 OpalMediaFormat const OpalG729AB(
   OPAL_G729AB,
   OpalMediaFormat::DefaultAudioSessionID,
   RTP_DataFrame::G729,
+  "G729",
   TRUE, // Needs jitter
   8000, // bits/sec
   10,   // bytes
   80,   // 10 milliseconds
-  OpalMediaFormat::AudioTimeUnits
+  OpalMediaFormat::AudioClockRate
 );
 
 OpalMediaFormat const OpalG7231_6k3(
   OPAL_G7231_6k3,
   OpalMediaFormat::DefaultAudioSessionID,
   RTP_DataFrame::G7231,
+  "G723",
   TRUE, // Needs jitter
   6400, // bits/sec
   24,   // bytes
   240,  // 30 milliseconds
-  OpalMediaFormat::AudioTimeUnits
+  OpalMediaFormat::AudioClockRate
 );
 
 OpalMediaFormat const OpalG7231_5k3(
   OPAL_G7231_5k3,
   OpalMediaFormat::DefaultAudioSessionID,
   RTP_DataFrame::G7231,
+  "G723",
   TRUE, // Needs jitter
   5300, // bits/sec
   20,   // bytes
   240,  // 30 milliseconds
-  OpalMediaFormat::AudioTimeUnits
+  OpalMediaFormat::AudioClockRate
 );
 
 OpalMediaFormat const OpalGSM0610(
   OPAL_GSM0610,
   OpalMediaFormat::DefaultAudioSessionID,
   RTP_DataFrame::GSM,
+  "GSM",
   TRUE,  // Needs jitter
   13200, // bits/sec
   33,    // bytes
   160,   // 20 milliseconds
-  OpalMediaFormat::AudioTimeUnits
+  OpalMediaFormat::AudioClockRate
 );
 
 #endif // NO_H323_AUDIO_CODECS
@@ -218,13 +233,13 @@ OpalMediaFormat const OpalGSM0610(
 
 OpalMediaFormat::OpalMediaFormat()
 {
-  rtpPayloadType = RTP_DataFrame::MaxPayloadType;
+  rtpPayloadType = RTP_DataFrame::IllegalPayloadType;
 
   needsJitter = FALSE;
   bandwidth = 0;
   frameSize = 0;
   frameTime = 0;
-  timeUnits = 0;
+  clockRate = 0;
 }
 
 
@@ -249,20 +264,22 @@ OpalMediaFormat::OpalMediaFormat(const PString & wildcard)
 OpalMediaFormat::OpalMediaFormat(const char * fullName,
                                  unsigned dsid,
                                  RTP_DataFrame::PayloadTypes pt,
+                                 const char * en,
                                  BOOL     nj,
                                  unsigned bw,
                                  PINDEX   fs,
                                  unsigned ft,
-                                 unsigned tu)
+                                 unsigned cr)
   : PCaselessString(fullName)
 {
   rtpPayloadType = pt;
+  rtpEncodingName = en;
   defaultSessionID = dsid;
   needsJitter = nj;
   bandwidth = bw;
   frameSize = fs;
   frameTime = ft;
-  timeUnits = tu;
+  clockRate = cr;
 
   PINDEX i;
   OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
