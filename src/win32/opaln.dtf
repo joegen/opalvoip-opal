@@ -1869,6 +1869,7 @@ EXPORTS
     ??0OpalTransportTCP@@QAE@AAVOpalEndPoint@@PAVPTCPSocket@@@Z @1867 NONAME ;public: __thiscall OpalTransportTCP::OpalTransportTCP(class OpalEndPoint &,class PTCPSocket *)
     ??0OpalTransportTCP@@QAE@AAVOpalEndPoint@@VAddress@PIPSocket@@G@Z @1868 NONAME ;public: __thiscall OpalTransportTCP::OpalTransportTCP(class OpalEndPoint &,class PIPSocket::Address,unsigned short)
     ??0OpalTransportUDP@@QAE@AAVOpalEndPoint@@VAddress@PIPSocket@@GH@Z @1869 NONAME ;public: __thiscall OpalTransportUDP::OpalTransportUDP(class OpalEndPoint &,class PIPSocket::Address,unsigned short,int)
+    ??0OpalVideoMediaStream@@IAE@HIAAVPVideoDevice@@@Z @12637 NONAME ;protected: __thiscall OpalVideoMediaStream::OpalVideoMediaStream(int,unsigned int,class PVideoDevice &)
     ??0OpalVideoTranscoder@@QAE@ABVOpalTranscoderRegistration@@@Z @1870 NONAME ;public: __thiscall OpalVideoTranscoder::OpalVideoTranscoder(class OpalTranscoderRegistration const &)
     ??0OpalVpbDevice@@QAE@XZ @1871 NONAME ;public: __thiscall OpalVpbDevice::OpalVpbDevice(void)
     ??0Opal_GSM@@QAE@ABVOpalTranscoderRegistration@@II@Z @1872 NONAME ;public: __thiscall Opal_GSM::Opal_GSM(class OpalTranscoderRegistration const &,unsigned int,unsigned int)
@@ -3257,6 +3258,7 @@ EXPORTS
     ??1OpalTransportIP@@UAE@XZ @3255 NONAME ;public: virtual __thiscall OpalTransportIP::~OpalTransportIP(void)
     ??1OpalTransportTCP@@UAE@XZ @3256 NONAME ;public: virtual __thiscall OpalTransportTCP::~OpalTransportTCP(void)
     ??1OpalTransportUDP@@UAE@XZ @3257 NONAME ;public: virtual __thiscall OpalTransportUDP::~OpalTransportUDP(void)
+    ??1OpalVideoMediaStream@@UAE@XZ @12638 NONAME ;public: virtual __thiscall OpalVideoMediaStream::~OpalVideoMediaStream(void)
     ??1OpalVideoTranscoder@@UAE@XZ @3258 NONAME ;public: virtual __thiscall OpalVideoTranscoder::~OpalVideoTranscoder(void)
     ??1OpalVpbDevice@@UAE@XZ @3259 NONAME ;public: virtual __thiscall OpalVpbDevice::~OpalVpbDevice(void)
     ??1Opal_GSM@@UAE@XZ @3260 NONAME ;public: virtual __thiscall Opal_GSM::~Opal_GSM(void)
@@ -6404,6 +6406,8 @@ EXPORTS
     ??_7OpalTransportTCP@@6BPObject@@@ @6402 NONAME ;const  OpalTransportTCP::`vftable'{for `PObject'}
     ??_7OpalTransportUDP@@6Biostream@@@ @6403 NONAME ;const  OpalTransportUDP::`vftable'{for `iostream'}
     ??_7OpalTransportUDP@@6BPObject@@@ @6404 NONAME ;const  OpalTransportUDP::`vftable'{for `PObject'}
+    ??_7OpalVideoMediaStream@@6Biostream@@@ @12639 NONAME ;const  OpalVideoMediaStream::`vftable'{for `iostream'}
+    ??_7OpalVideoMediaStream@@6BPObject@@@ @12640 NONAME ;const  OpalVideoMediaStream::`vftable'{for `PObject'}
     ??_7OpalVideoTranscoder@@6B@ @6405 NONAME ;const  OpalVideoTranscoder::`vftable'
     ??_7OpalVpbDevice@@6B@ @6406 NONAME ;const  OpalVpbDevice::`vftable'
     ??_7Opal_GSM@@6B@ @6407 NONAME ;const  Opal_GSM::`vftable'
@@ -6503,6 +6507,8 @@ EXPORTS
     ??_8OpalTransportTCP@@7Bostream@@@ @6501 NONAME ;const  OpalTransportTCP::`vbtable'{for `ostream'}
     ??_8OpalTransportUDP@@7Bistream@@@ @6502 NONAME ;const  OpalTransportUDP::`vbtable'{for `istream'}
     ??_8OpalTransportUDP@@7Bostream@@@ @6503 NONAME ;const  OpalTransportUDP::`vbtable'{for `ostream'}
+    ??_8OpalVideoMediaStream@@7Bistream@@@ @12641 NONAME ;const  OpalVideoMediaStream::`vbtable'{for `istream'}
+    ??_8OpalVideoMediaStream@@7Bostream@@@ @12642 NONAME ;const  OpalVideoMediaStream::`vbtable'{for `ostream'}
     ??_DPTCPSocket@@QAEXXZ @6504 NONAME ;public: void __thiscall PTCPSocket::`vbase destructor'(void)
     ??_DPUDPSocket@@QAEXXZ @6505 NONAME ;public: void __thiscall PUDPSocket::`vbase destructor'(void)
     ?AbortEnumeration@H323GatekeeperServer@@QAEXXZ @6506 NONAME ;public: void __thiscall H323GatekeeperServer::AbortEnumeration(void)
@@ -8647,6 +8653,7 @@ EXPORTS
     ?CompareObjectMemoryDirect@OpalTransportIP@@UBE?AW4Comparison@PObject@@ABV3@@Z @8645 NONAME ;public: virtual enum PObject::Comparison  __thiscall OpalTransportIP::CompareObjectMemoryDirect(class PObject const &)const 
     ?CompareObjectMemoryDirect@OpalTransportTCP@@UBE?AW4Comparison@PObject@@ABV3@@Z @8646 NONAME ;public: virtual enum PObject::Comparison  __thiscall OpalTransportTCP::CompareObjectMemoryDirect(class PObject const &)const 
     ?CompareObjectMemoryDirect@OpalTransportUDP@@UBE?AW4Comparison@PObject@@ABV3@@Z @8647 NONAME ;public: virtual enum PObject::Comparison  __thiscall OpalTransportUDP::CompareObjectMemoryDirect(class PObject const &)const 
+    ?CompareObjectMemoryDirect@OpalVideoMediaStream@@UBE?AW4Comparison@PObject@@ABV3@@Z @12643 NONAME ;public: virtual enum PObject::Comparison  __thiscall OpalVideoMediaStream::CompareObjectMemoryDirect(class PObject const &)const 
     ?CompareObjectMemoryDirect@OpalVideoTranscoder@@UBE?AW4Comparison@PObject@@ABV3@@Z @8648 NONAME ;public: virtual enum PObject::Comparison  __thiscall OpalVideoTranscoder::CompareObjectMemoryDirect(class PObject const &)const 
     ?CompareObjectMemoryDirect@OpalVpbDevice@@UBE?AW4Comparison@PObject@@ABV3@@Z @8649 NONAME ;public: virtual enum PObject::Comparison  __thiscall OpalVpbDevice::CompareObjectMemoryDirect(class PObject const &)const 
     ?CompareObjectMemoryDirect@PASN_Array@@UBE?AW4Comparison@PObject@@ABV3@@Z @8650 NONAME ;public: virtual enum PObject::Comparison  __thiscall PASN_Array::CompareObjectMemoryDirect(class PObject const &)const 
@@ -10598,6 +10605,7 @@ EXPORTS
     ?GetClass@OpalTransportIP@@UBEPBDI@Z @10596 NONAME ;public: virtual char const * __thiscall OpalTransportIP::GetClass(unsigned int)const 
     ?GetClass@OpalTransportTCP@@UBEPBDI@Z @10597 NONAME ;public: virtual char const * __thiscall OpalTransportTCP::GetClass(unsigned int)const 
     ?GetClass@OpalTransportUDP@@UBEPBDI@Z @10598 NONAME ;public: virtual char const * __thiscall OpalTransportUDP::GetClass(unsigned int)const 
+    ?GetClass@OpalVideoMediaStream@@UBEPBDI@Z @12644 NONAME ;public: virtual char const * __thiscall OpalVideoMediaStream::GetClass(unsigned int)const 
     ?GetClass@OpalVideoTranscoder@@UBEPBDI@Z @10599 NONAME ;public: virtual char const * __thiscall OpalVideoTranscoder::GetClass(unsigned int)const 
     ?GetClass@OpalVpbDevice@@UBEPBDI@Z @10600 NONAME ;public: virtual char const * __thiscall OpalVpbDevice::GetClass(unsigned int)const 
     ?GetClass@PASN_Array@@UBEPBDI@Z @10601 NONAME ;public: virtual char const * __thiscall PASN_Array::GetClass(unsigned int)const 
@@ -11611,6 +11619,7 @@ EXPORTS
     ?IsClass@OpalTransportIP@@UBEHPBD@Z @11609 NONAME ;public: virtual int __thiscall OpalTransportIP::IsClass(char const *)const 
     ?IsClass@OpalTransportTCP@@UBEHPBD@Z @11610 NONAME ;public: virtual int __thiscall OpalTransportTCP::IsClass(char const *)const 
     ?IsClass@OpalTransportUDP@@UBEHPBD@Z @11611 NONAME ;public: virtual int __thiscall OpalTransportUDP::IsClass(char const *)const 
+    ?IsClass@OpalVideoMediaStream@@UBEHPBD@Z @12645 NONAME ;public: virtual int __thiscall OpalVideoMediaStream::IsClass(char const *)const 
     ?IsClass@OpalVideoTranscoder@@UBEHPBD@Z @11612 NONAME ;public: virtual int __thiscall OpalVideoTranscoder::IsClass(char const *)const 
     ?IsClass@OpalVpbDevice@@UBEHPBD@Z @11613 NONAME ;public: virtual int __thiscall OpalVpbDevice::IsClass(char const *)const 
     ?IsClass@PASN_Array@@UBEHPBD@Z @11614 NONAME ;public: virtual int __thiscall PASN_Array::IsClass(char const *)const 
@@ -11767,6 +11776,7 @@ EXPORTS
     ?IsDescendant@OpalTransportIP@@UBEHPBD@Z @11765 NONAME ;public: virtual int __thiscall OpalTransportIP::IsDescendant(char const *)const 
     ?IsDescendant@OpalTransportTCP@@UBEHPBD@Z @11766 NONAME ;public: virtual int __thiscall OpalTransportTCP::IsDescendant(char const *)const 
     ?IsDescendant@OpalTransportUDP@@UBEHPBD@Z @11767 NONAME ;public: virtual int __thiscall OpalTransportUDP::IsDescendant(char const *)const 
+    ?IsDescendant@OpalVideoMediaStream@@UBEHPBD@Z @12646 NONAME ;public: virtual int __thiscall OpalVideoMediaStream::IsDescendant(char const *)const 
     ?IsDescendant@OpalVideoTranscoder@@UBEHPBD@Z @11768 NONAME ;public: virtual int __thiscall OpalVideoTranscoder::IsDescendant(char const *)const 
     ?IsDescendant@OpalVpbDevice@@UBEHPBD@Z @11769 NONAME ;public: virtual int __thiscall OpalVpbDevice::IsDescendant(char const *)const 
     ?IsDescendant@PASN_Array@@UBEHPBD@Z @11770 NONAME ;public: virtual int __thiscall PASN_Array::IsDescendant(char const *)const 
@@ -12253,6 +12263,7 @@ EXPORTS
     ?Read@OpalLineMediaStream@@UAEHPAXH@Z @12251 NONAME ;public: virtual int __thiscall OpalLineMediaStream::Read(void *,int)
     ?Read@OpalRawMediaStream@@UAEHPAXH@Z @12252 NONAME ;public: virtual int __thiscall OpalRawMediaStream::Read(void *,int)
     ?Read@OpalRTPMediaStream@@UAEHPAXH@Z @12253 NONAME ;public: virtual int __thiscall OpalRTPMediaStream::Read(void *,int)
+    ?Read@OpalVideoMediaStream@@UAEHPAXH@Z @12647 NONAME ;public: virtual int __thiscall OpalVideoMediaStream::Read(void *,int)
     ?ReadBlock@OpalLine@@UAEHPAXH@Z @12254 NONAME ;public: virtual int __thiscall OpalLine::ReadBlock(void *,int)
     ?ReadBlock@OpalLineInterfaceDevice@@UAEHIPAXH@Z @12255 NONAME ;public: virtual int __thiscall OpalLineInterfaceDevice::ReadBlock(unsigned int,void *,int)
     ?ReadBufferedData@RTP_Session@@QAEHKAAVRTP_DataFrame@@@Z @12256 NONAME ;public: int __thiscall RTP_Session::ReadBufferedData(unsigned long,class RTP_DataFrame &)
@@ -12556,6 +12567,7 @@ EXPORTS
     ?Write@OpalLineMediaStream@@UAEHPBXH@Z @12554 NONAME ;public: virtual int __thiscall OpalLineMediaStream::Write(void const *,int)
     ?Write@OpalRawMediaStream@@UAEHPBXH@Z @12555 NONAME ;public: virtual int __thiscall OpalRawMediaStream::Write(void const *,int)
     ?Write@OpalRTPMediaStream@@UAEHPBXH@Z @12556 NONAME ;public: virtual int __thiscall OpalRTPMediaStream::Write(void const *,int)
+    ?Write@OpalVideoMediaStream@@UAEHPBXH@Z @12648 NONAME ;public: virtual int __thiscall OpalVideoMediaStream::Write(void const *,int)
     ?WriteBlock@OpalLine@@UAEHPBXH@Z @12557 NONAME ;public: virtual int __thiscall OpalLine::WriteBlock(void const *,int)
     ?WriteBlock@OpalLineInterfaceDevice@@UAEHIPBXH@Z @12558 NONAME ;public: virtual int __thiscall OpalLineInterfaceDevice::WriteBlock(unsigned int,void const *,int)
     ?WriteControl@RTP_UDP@@UAEHAAVRTP_ControlFrame@@@Z @12559 NONAME ;public: virtual int __thiscall RTP_UDP::WriteControl(class RTP_ControlFrame &)
