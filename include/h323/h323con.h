@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2006  2001/10/05 00:22:13  robertj
+ * Revision 1.2007  2001/10/15 04:31:14  robertj
+ * Removed answerCall signal and replaced with state based functions.
+ * Maintained H.323 answerCall API for backward compatibility.
+ *
+ * Revision 2.5  2001/10/05 00:22:13  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.4  2001/10/03 05:56:15  robertj
@@ -178,17 +182,17 @@ class H323Connection : public OpalConnection
     virtual Phases GetPhase() const;
 
     /**Indicate to remote endpoint an alert is in progress.
-       If this is an incoming connection and the AnswerCallResponse is in a
-       AnswerCallDeferred or AnswerCallPending state, then this function is
-       used to indicate to that endpoint that an alert is in progress. This is
-       usually due to another connection which is in the call (the B party)
-       has received an OnAlerting() indicating that its remoteendpoint is
-       "ringing".
+       If this is an incoming connection and it is in the Alerting phase, then
+       this function is used to indicate to that endpoint that an alert is in
+       progress. This is usually due to another connection which is in the
+       call (the B party) has received an OnAlerting() indicating that its
+       remote endpoint is "ringing".
 
        The default behaviour sends an ALERTING pdu.
       */
     virtual BOOL SetAlerting(
-      const PString & calleeName    /// Name of endpoint being alerted.
+      const PString & calleeName,   /// Name of endpoint being alerted.
+      BOOL withMedia                /// Open media with alerting
     );
 
     /**Indicate to remote endpoint we are connected.
@@ -548,6 +552,16 @@ class H323Connection : public OpalConnection
       */
     BOOL IsRemoteHold() const;
 
+
+    enum AnswerCallResponse {
+      AnswerCallNow,               /// Answer the call continuing with the connection.
+      AnswerCallDenied,            /// Refuse the call sending a release complete.
+      AnswerCallPending,           /// Send an Alerting PDU and wait for AnsweringCall()
+      AnswerCallDeferred,          /// As for AnswerCallPending but does not send Alerting PDU
+      AnswerCallAlertWithMedia,    /// As for AnswerCallPending but starts media channels
+      AnswerCallDeferredWithMedia, /// As for AnswerCallDeferred but starts media channels
+      NumAnswerCallResponses
+    };
 
     /**Call back for answering an incoming call.
        This function is used for an application to control the answering of
@@ -1556,6 +1570,7 @@ class H323Connection : public OpalConnection
     BOOL startT120;
 
 #if PTRACING
+    friend ostream & operator<<(ostream & out, AnswerCallResponse response);
     static const char * const ConnectionStatesNames[NumConnectionStates];
     friend ostream & operator<<(ostream & o, ConnectionStates s) { return o << ConnectionStatesNames[s]; }
     static const char * const FastStartStateNames[NumFastStartStates];
