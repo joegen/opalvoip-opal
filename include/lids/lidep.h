@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.h,v $
- * Revision 1.2012  2003/03/17 10:26:59  robertj
+ * Revision 1.2013  2003/03/24 07:18:29  robertj
+ * Added registration system for LIDs so can work with various LID types by
+ *   name instead of class instance.
+ *
+ * Revision 2.11  2003/03/17 10:26:59  robertj
  * Added video support.
  *
  * Revision 2.10  2003/03/06 03:57:46  robertj
@@ -206,6 +210,28 @@ class OpalLIDEndPoint : public OpalEndPoint
       */
     void RemoveLinesFromDevice(
       OpalLineInterfaceDevice & device  /// Device to remove lines
+    );
+
+    /**Add a line interface devices to the endpoint by name.
+       This will add the registered OpalLineInterfaceDevice descendent and
+       all of the lines that it has to the endpoint. It uses a strng to create
+       and open the device as would be returned from the 
+
+       Returns TRUE if at least one line was added.
+      */
+    BOOL AddDeviceNames(
+      const PStringArray & descriptors  /// Device descritptions to add
+    );
+
+    /**Add a line interface device to the endpoint by name.
+       This will add the registered OpalLineInterfaceDevice descendent and
+       all of the lines that it has to the endpoint. It uses a strng to create
+       and open the device as would be returned from the 
+
+       Returns TRUE if at least one line was added.
+      */
+    BOOL AddDeviceName(
+      const PString & descriptor  /// Device descritption to add
     );
 
     /**Add a line interface device to the endpoint.

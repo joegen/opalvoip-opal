@@ -22,7 +22,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2024  2003/03/19 02:30:45  robertj
+ * Revision 1.2025  2003/03/24 07:18:29  robertj
+ * Added registration system for LIDs so can work with various LID types by
+ *   name instead of class instance.
+ *
+ * Revision 2.23  2003/03/19 02:30:45  robertj
  * Added removal of IVR stuff if EXPAT is not installed on system.
  *
  * Revision 2.22  2003/03/17 08:12:08  robertj
@@ -150,10 +154,6 @@
 #include <h323/gkclient.h>
 #include <lids/lidep.h>
 
-#ifdef HAS_IXJ
-#include <lids/ixjlid.h>
-#endif
-
 #include "main.h"
 #include "../../version.h"
 
@@ -161,6 +161,7 @@
 #ifdef OPAL_STATIC_LINK
 #define H323_STATIC_LIB
 #include <codec/allcodecs.h>
+#include <lids/alllids.h>
 #endif
 
 

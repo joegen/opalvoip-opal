@@ -22,7 +22,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vpblid.h,v $
- * Revision 1.2007  2002/11/10 11:33:17  robertj
+ * Revision 1.2008  2003/03/24 07:18:29  robertj
+ * Added registration system for LIDs so can work with various LID types by
+ *   name instead of class instance.
+ *
+ * Revision 2.6  2002/11/10 11:33:17  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.5  2002/09/16 02:52:35  robertj
@@ -154,6 +158,10 @@ class OpalVpbDevice : public OpalLineInterfaceDevice
     /**Get the device name.
       */
     virtual PString GetName() const;
+
+    /**Get all the possible devices that can be opened.
+      */
+    virtual PStringArray GetAllNames() const;
 
     /**Get the total number of lines supported by this device.
       */
@@ -359,6 +367,9 @@ class OpalVpbDevice : public OpalLineInterfaceDevice
       ToneThread *myToneThread;
     } lineState[MaxLineCount];
 };
+
+
+#define OPAL_REGISTER_VPB() OPAL_REGISTER_LID(OpalVpbDevice, "VPB")
 
 
 #endif // __OPAL_VPBLID_H

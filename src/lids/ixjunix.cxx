@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjunix.cxx,v $
- * Revision 1.2009  2002/11/10 11:33:19  robertj
+ * Revision 1.2010  2003/03/24 07:18:29  robertj
+ * Added registration system for LIDs so can work with various LID types by
+ *   name instead of class instance.
+ *
+ * Revision 2.8  2002/11/10 11:33:19  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.7  2002/09/04 06:01:49  robertj
@@ -932,6 +936,11 @@ PString OpalIxJDevice::GetName() const
   }
 
   return "xJACK " + deviceName;
+}
+
+PStringArray OpalIxJDevice::GetAllNames() const
+{
+  return GetDeviceNames();
 }
 
 unsigned OpalIxJDevice::GetLineCount()

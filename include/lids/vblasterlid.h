@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vblasterlid.h,v $
- * Revision 1.2006  2002/11/10 11:33:17  robertj
+ * Revision 1.2007  2003/03/24 07:18:29  robertj
+ * Added registration system for LIDs so can work with various LID types by
+ *   name instead of class instance.
+ *
+ * Revision 2.5  2002/11/10 11:33:17  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.4  2002/09/16 02:52:34  robertj
@@ -220,6 +224,10 @@ class OpalVoipBlasterDevice : public OpalLineInterfaceDevice
     /**Get the device name.
       */
     virtual PString GetName() const;
+
+    /**Get all the possible devices that can be opened.
+      */
+    virtual PStringArray GetAllNames() const;
 
     /**Get the total number of lines supported by this device.
       */
@@ -633,6 +641,9 @@ class OpalVoipBlasterDevice : public OpalLineInterfaceDevice
     PMutex               vbMutex;
     VoipBlasterInterface vBlaster;
 };
+
+
+#define OPAL_REGISTER_VBLASTER() OPAL_REGISTER_LID(OpalVoipBlasterDevice, "VoIPBlaster")
 
 
 #endif // __OPAL_VBLASTERLID_H

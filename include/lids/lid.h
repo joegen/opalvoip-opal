@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.h,v $
- * Revision 1.2008  2002/11/10 11:33:17  robertj
+ * Revision 1.2009  2003/03/24 07:18:29  robertj
+ * Added registration system for LIDs so can work with various LID types by
+ *   name instead of class instance.
+ *
+ * Revision 2.7  2002/11/10 11:33:17  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.6  2002/09/16 02:52:34  robertj
@@ -270,6 +274,10 @@ class OpalLineInterfaceDevice : public PObject
     /**Close the line interface device.
       */
     virtual BOOL Close();
+
+    /**Get all the possible devices that can be opened.
+      */
+    virtual PStringArray GetAllNames() const = 0;
 
     /**Determine the type of line interface device.
        This is a string indication of the card type for user interface
@@ -965,6 +973,23 @@ class OpalLineInterfaceDevice : public PObject
       ostream & strm
     ) const;
 
+    /**Create a new device from the registration string
+      */
+    static OpalLineInterfaceDevice * Create(
+      const PString & type,     /// Type of device to create
+      void * parameters = NULL  /// Arbitrary parameters for the LID
+    );
+
+    /**Return an array of all the LID types registered.
+      */
+    static PStringList GetAllTypes();
+
+    /**Return an array of all the LID types registered and all of the possible
+       devices each one can open. Each string will be of the form
+          "type: name"  eg "Quicknet: 3211FFFF"
+      */
+    static PStringList GetAllDevices();
+
   protected:
     int             os_handle;
     int             osError;
@@ -1466,6 +1491,62 @@ class OpalLine : public PObject
 
 
 PLIST(OpalLineList, OpalLine);
+
+
+/**This class embodies the description of a Line Interface Device.
+
+   An application may create a descendent off this class and override
+   the Create() function to make the instance of a class implementing a
+   transcoder.
+ */
+class OpalLIDRegistration : public PCaselessString
+{
+    PCLASSINFO(OpalLIDRegistration, PCaselessString);
+  public:
+  /**@name Construction */
+  //@{
+    /**Create a new transcoder registration.
+     */
+    OpalLIDRegistration(
+      const char * name  /// Line Interface Device type name
+    );
+  //@}
+
+  /**@name Operations */
+  //@{
+    /**Create an instance of the transcoder implementation.
+      */
+    virtual OpalLineInterfaceDevice * Create(
+      void * parameters   /// Arbitrary parameters for the LID
+    ) const = 0;
+  //@}
+
+  protected:
+    OpalLIDRegistration * link;
+
+  friend class OpalLineInterfaceDevice;
+};
+
+
+#define OPAL_REGISTER_LID_FUNCTION(cls, type, param) \
+static class cls##_Registration : public OpalLIDRegistration { \
+  public: \
+    cls##_Registration() : OpalLIDRegistration(type) { } \
+    OpalLineInterfaceDevice * Create(void * param) const; \
+} instance_##cls##_Registration; \
+OpalLineInterfaceDevice * cls##_Registration::Create(void * param) const
+
+#ifndef OPAL_NO_PARAM
+#define OPAL_NO_PARAM
+#endif
+
+#define OPAL_REGISTER_LID(cls, type) \
+  OPAL_REGISTER_LID_FUNCTION(cls, type, OPAL_NO_PARAM) \
+  { return new cls; }
+
+#define OPAL_REGISTER_LID_PARAM(cls, type) \
+  OPAL_REGISTER_LID_FUNCTION(cls, type, parameter) \
+  { return new cls(parameter); }
 
 
 #endif // __OPAL_LID_H
