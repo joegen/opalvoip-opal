@@ -54,7 +54,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 /nologo /subsystem:windows /machine:I386
-# ADD LINK32 opals.lib ptclib.lib ptlib.lib $(VAG729LIB) winmm.lib comdlg32.lib winspool.lib wsock32.lib mpr.lib kernel32.lib user32.lib gdi32.lib shell32.lib advapi32.lib /nologo /subsystem:console /machine:I386 /libpath:"$(VAG729DIR)\\"
+# ADD LINK32 opals.lib ptclib.lib ptlib.lib winmm.lib comdlg32.lib winspool.lib wsock32.lib mpr.lib kernel32.lib user32.lib gdi32.lib shell32.lib advapi32.lib /nologo /subsystem:console /machine:I386
 
 !ELSEIF  "$(CFG)" == "SimpleOPAL - Win32 Debug"
 
@@ -80,7 +80,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 opalsd.lib ptclibd.lib ptlibd.lib $(VAG729LIB) winmm.lib comdlg32.lib winspool.lib wsock32.lib mpr.lib kernel32.lib user32.lib gdi32.lib shell32.lib advapi32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept /libpath:"$(VAG729DIR)\\"
+# ADD LINK32 opalsd.lib ptclibd.lib ptlibd.lib winmm.lib comdlg32.lib winspool.lib wsock32.lib mpr.lib kernel32.lib user32.lib gdi32.lib shell32.lib advapi32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
 
 !ELSEIF  "$(CFG)" == "SimpleOPAL - Win32 No Trace"
 
@@ -106,7 +106,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 ptclib.lib ptlib.lib comdlg32.lib winspool.lib wsock32.lib mpr.lib kernel32.lib user32.lib gdi32.lib shell32.lib advapi32.lib /nologo /subsystem:console /machine:I386
-# ADD LINK32 opalsn.lib ptclib.lib ptlib.lib $(VAG729LIB) winmm.lib comdlg32.lib winspool.lib wsock32.lib mpr.lib kernel32.lib user32.lib gdi32.lib shell32.lib advapi32.lib /nologo /subsystem:console /machine:I386 /libpath:"$(VAG729DIR)\\"
+# ADD LINK32 opalsn.lib ptclib.lib ptlib.lib winmm.lib comdlg32.lib winspool.lib wsock32.lib mpr.lib kernel32.lib user32.lib gdi32.lib shell32.lib advapi32.lib /nologo /subsystem:console /machine:I386
 
 !ENDIF 
 

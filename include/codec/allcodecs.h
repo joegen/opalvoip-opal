@@ -1,5 +1,5 @@
 /*
- * g711codec.h
+ * allcodecs.h
  *
  * Open Phone Abstraction Library (OPAL)
  * Formally known as the Open H323 project.
@@ -23,7 +23,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: allcodecs.h,v $
- * Revision 1.2005  2003/03/17 10:26:59  robertj
+ * Revision 1.2006  2003/06/02 04:04:54  rjongbloed
+ * Changed to use new autoconf system
+ *
+ * Revision 2.4  2003/03/17 10:26:59  robertj
  * Added video support.
  *
  * Revision 2.3  2002/11/10 11:33:16  robertj
@@ -40,6 +43,8 @@
 
 #ifndef __CODEC_ALLCODECS_H
 #define __CODEC_ALLCODECS_H
+
+#include <opal/buildopts.h>
 
 #include <codec/g711codec.h>
 OPAL_REGISTER_G711();

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g729codec.h,v $
- * Revision 1.2006  2003/01/07 04:39:52  robertj
+ * Revision 1.2007  2003/06/02 04:04:54  rjongbloed
+ * Changed to use new autoconf system
+ *
+ * Revision 2.5  2003/01/07 04:39:52  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.4  2002/11/10 11:33:16  robertj
@@ -75,6 +78,10 @@
 #endif
 
 
+#include <opal/buildopts.h>
+
+#if VOICE_AGE_G729A
+
 #include <opal/transcoders.h>
 
 
@@ -115,6 +122,8 @@ typedef Opal_PCM_G729 Opal_PCM_G729A;
           OPAL_REGISTER_TRANSCODER(Opal_PCM_G729A, OPAL_PCM16, OPAL_G729A)
 
 
+
+#endif // VOICE_AGE_G729A
 
 #endif // __OPAL_G729CODEC_H
 

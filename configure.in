@@ -1,0 +1,136 @@
+AC_INIT(include/opal/manager.h)
+
+AC_PROG_CXX
+
+dnl ########################################################################
+dnl set the OPAL directory to the current directory
+
+OPALDIR=`pwd`
+AC_SUBST(OPALDIR)
+
+dnl ########################################################################
+dnl set the PREFIX accordingly
+if test "x$prefix" = "xNONE"; then
+   INSTALLPREFIX="/usr/local"
+else
+   INSTALLPREFIX="${prefix}"
+fi
+
+AC_SUBST(INSTALLPREFIX)
+
+dnl ########################################################################
+dnl extract the OPAL version
+MAJOR_VERSION=`cat ${OPALDIR}/version.h | grep MAJOR_VERSION | cut -f3 -d' '`
+MINOR_VERSION=`cat ${OPALDIR}/version.h | grep MINOR_VERSION | cut -f3 -d' '`
+BUILD_NUMBER=`cat ${OPALDIR}/version.h | grep BUILD_NUMBER | cut -f3 -d' '`
+OPAL_VERSION="${MAJOR_VERSION}.${MINOR_VERSION}.${BUILD_NUMBER}"
+AC_SUBST(OPAL_VERSION)
+
+echo "OPAL version is ${OPAL_VERSION}"
+
+dnl ########################################################################
+dnl look for ptlib
+
+PLATFORM_PTLIB="ptlib_${OSTYPE}_${MACHTYPE}_r"
+
+CPPFLAGS_save="$CPPFLAGS"
+CPPFLAGS="-I/usr/include/ptlib/unix/ -I/usr/include/ptclib/ -I/usr/local/include/ptlib/unix/ -I/usr/local/include/ptclib/ $CPPFLAGS"
+AC_LANG([C++])
+AC_CHECK_HEADERS(ptlib.h, HAS_PTLIB=1)
+CPPFLAGS="$CPPFLAGS_save"
+
+if test "${HAS_PTLIB:-unset}" != "unset" ; then
+dnl  AC_CHECK_LIB(${PLATFORM_PTLIB}, ldap_open, HAS_PTLIB=1, HAS_PTLIB=)
+  AC_PATH_PROG(PTLIB_CONFIG, ptlib-config)
+else
+  dnl find include files
+  AC_CHECK_FILE(${PWLIBDIR}/include/ptlib, HAS_PTLIB=1)
+  if test "${HAS_PTLIB:-unset}" != "unset" ; then
+    AC_PATH_PROG(PTLIB_CONFIG, ptlib-config, , ${PWLIBDIR}/make/)
+  else
+    AC_CHECK_FILE(/usr/local/include/ptlib.h, HAS_PTLIB=1)
+    if test "${HAS_PTLIB:-unset}" != "unset" ; then
+      AC_PATH_PROG(PTLIB_CONFIG, ptlib-config, , /usr/local/bin)
+    else
+      AC_CHECK_FILE(${HOME}/pwlib/include/ptlib.h, HAS_PTLIB=1)
+      if test "${HAS_PTLIB:-unset}" != "unset" ; then
+        AC_CHECK_FILE(${HOME}/pwlib/make/ptlib-config, PTLIB_CONFIG=${HOME}/pwlib/make/ptlib-config)
+        PWLIBDIR="${HOME}/pwlib"
+      fi
+    fi
+  fi
+fi
+
+if test "${HAS_PTLIB:-unset}" = "unset" ; then
+  echo "Cannot find ptlib - please install and try again"
+  exit
+fi
+
+if test "${PTLIB_CONFIG:-unset}" = "unset" ; then
+  echo "Cannot find ptlib-config - please install and try again"
+  exit
+fi
+
+dnl ########################################################################
+dnl get pwlib directory
+if test "${PWLIBDIR:-unset}" == "unset" ; then
+  PWLIBDIR=`ptlib-config --prefix`
+fi
+if test "x$PWLIBDIR" == "x/usr" -o "x$PWLIBDIR" == "x/usr/"; then
+  PWLIBDIR="/usr/share/pwlib/"
+fi
+if test "xPWLIBDIR" == "x/usr/local" -o "x$PWLIBDIR" == "x/usr/"; then
+  PWLIBDIR="/usr/local/share/pwlib/"
+fi
+echo "PWLib prefix set to.... $PWLIBDIR"
+AC_SUBST(PWLIBDIR)
+
+dnl ########################################################################
+dnl look for avcodec
+
+dnl MSWIN ffmpeg AVCODEC Library,avcodec,OPAL_AVCODEC,1,@OPAL_AVCODEC_DIR@,avcodec.h,,..\ffmpeg\libavcodec\,..\external\ffmpeg\libavcodec\,\ffmpeg\libavcodec\,c:\ffmpeg\libavcodec\
+
+AC_CHECK_HEADERS(avcodec.h, OPAL_AVCODEC=1)
+if test "${OPAL_AVCODEC:-unset}" != "unset" ; then
+  AC_CHECK_LIB(avcodec, ldap_open, OPAL_AVCODEC=1, OPAL_AVCODEC=)
+else
+  AC_CHECK_FILE(/usr/local/include/ffmpeg/avcodec.h, OPAL_AVCODEC=1)
+  if test "${OPAL_AVCODEC:-unset}" != "unset" ; then
+    AVCODECINCLUDEDIR=/usr/local/include/ffmpeg
+    AVCODECLIBDIR=/usr/local/lib
+  fi
+fi
+
+if test "${OPAL_AVCODEC:-unset}" != "unset" ; then
+  AC_SUBST(OPAL_AVCODEC, 1)
+  AC_DEFINE(OPAL_AVCODEC, 1, "ffmpeg AVCodec found")
+  if test ${AVCODECINCLUDEDIR:-unset} != "unset" ; then
+    STDCCFLAGS="$STDCCFLAGS -I${AVCODECINCLUDEDIR}"
+  fi
+  if test ${AVCODECLIBDIR:-unset} != "unset" ; then
+    LDFLAGS="$LDFLAGS -L${AVCODECLIBDIR}"
+  fi
+  ENDLDLIBS="$ENDLDLIBS -lavcodec"
+fi
+AC_SUBST(OPAL_AVCODEC)
+
+dnl ########################################################################
+dnl Look for G.729 codec
+
+dnl MSWIN Voice Age G.729A,vag729,VOICE_AGE_G729A,1,@VOICE_AGE_DIR@,va_g729a.h,,..\va_g729\,..\external\va_g729,\va_g729,c:\va_g729
+
+
+dnl ########################################################################
+dnl output make directives
+
+AC_SUBST(STDCCFLAGS)
+AC_SUBST(LDFLAGS)
+AC_SUBST(ENDLDLIBS)
+
+dnl ########################################################################
+dnl output header file
+
+dnl AC_CONFIG_FILES(Makefile)
+AC_CONFIG_HEADERS(include/opal/buildopts.h)
+
+AC_OUTPUT()
