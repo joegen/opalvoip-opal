@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2030  2004/08/14 07:56:29  rjongbloed
+ * Revision 1.2031  2004/08/18 13:02:48  rjongbloed
+ * Changed to make calling OPalManager::OnClearedCall() in override optional.
+ *
+ * Revision 2.29  2004/08/14 07:56:29  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.28  2004/07/14 13:26:14  rjongbloed
@@ -1049,6 +1052,7 @@ class OpalManager : public PObject
     void GarbageCollection();
 
   friend OpalCall::OpalCall(OpalManager & mgr);
+  friend void OpalCall::OnReleased(OpalConnection & connection);
 };
 
 
