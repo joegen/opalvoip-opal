@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2013  2002/09/16 02:52:35  robertj
+ * Revision 1.2014  2002/11/10 11:33:17  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.12  2002/09/16 02:52:35  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -342,7 +345,7 @@ class OpalEndPoint : public PObject
       */
     virtual BOOL ClearCall(
       const PString & token,    /// Token for identifying connection
-      OpalCallEndReason reason = EndedByLocalUser, /// Reason for call clearing
+      OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser, /// Reason for call clearing
       PSyncPoint * sync = NULL  /// Sync point to wait on.
     );
 
@@ -352,7 +355,7 @@ class OpalEndPoint : public PObject
       */
     virtual BOOL ClearCallSynchronous(
       const PString & token,    /// Token for identifying connection
-      OpalCallEndReason reason = EndedByLocalUser, /// Reason for call clearing
+      OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser, /// Reason for call clearing
       PSyncPoint * sync = NULL  /// Sync point to wait on.
     );
 
@@ -363,7 +366,7 @@ class OpalEndPoint : public PObject
        the destructor for your descendant of H323EndPoint.
       */
     virtual void ClearAllCalls(
-      OpalCallEndReason reason = EndedByLocalUser, /// Reason for call clearing
+      OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser, /// Reason for call clearing
       BOOL wait = TRUE   /// Flag for wait for calls to e cleared.
     );
 

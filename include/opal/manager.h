@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2015  2002/09/16 02:52:35  robertj
+ * Revision 1.2016  2002/11/10 11:33:17  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.14  2002/09/16 02:52:35  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -216,7 +219,7 @@ class OpalManager : public PObject
       */
     virtual BOOL ClearCall(
       const PString & token,    /// Token for identifying connection
-      OpalCallEndReason reason = EndedByLocalUser, /// Reason for call clearing
+      OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser, /// Reason for call clearing
       PSyncPoint * sync = NULL  /// Sync point to wait on.
     );
 
@@ -225,7 +228,7 @@ class OpalManager : public PObject
        manager has active.
       */
     virtual void ClearAllCalls(
-      OpalCallEndReason reason = EndedByLocalUser, /// Reason for call clearing
+      OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser, /// Reason for call clearing
       BOOL wait = TRUE   /// Flag for wait for calls to e cleared.
     );
 
@@ -717,13 +720,22 @@ class OpalManager : public PObject
      */
     void SetRtpIpTypeofService(unsigned tos) { rtpIpTypeofService = (BYTE)tos; }
 
-    /**Get the default maximum audio delay jitter parameter.
+    /**Get the default maximum audio jitter delay parameter.
+       Defaults to 50ms
      */
-    WORD GetMaxAudioDelayJitter() const { return maxAudioDelayJitter; }
+    unsigned GetMinAudioJitterDelay() const { return minAudioJitterDelay; }
 
-    /**Set the default maximum audio delay jitter parameter.
+    /**Get the default maximum audio delay jitter parameter.
+       Defaults to 250ms.
      */
-    void SetMaxAudioDelayJitter(unsigned jitter) { maxAudioDelayJitter = (WORD)jitter; }
+    unsigned GetMaxAudioJitterDelay() const { return maxAudioJitterDelay; }
+
+    /**Set the maximum audio delay jitter parameter.
+     */
+    void SetAudioJitterDelay(
+      unsigned minDelay,   // New minimum jitter buffer delay in milliseconds
+      unsigned maxDelay    // New maximum jitter buffer delay in milliseconds
+    );
 
     /**Get the default media format order.
      */
@@ -757,7 +769,8 @@ class OpalManager : public PObject
     BOOL         autoStartReceiveVideo;
     BOOL         autoStartTransmitVideo;
     BYTE         rtpIpTypeofService;
-    WORD         maxAudioDelayJitter;
+    unsigned     minAudioJitterDelay;
+    unsigned     maxAudioJitterDelay;
     PStringArray mediaFormatOrder;
     PStringArray mediaFormatMask;
     BOOL         disableDetectInBandDTMF;
@@ -802,6 +815,12 @@ class OpalManager : public PObject
       const PString & token     /// Token to identify connection
     );
 };
+
+
+PString  OpalGetVersion();
+unsigned OpalGetMajorVersion();
+unsigned OpalGetMinorVersion();
+unsigned OpalGetBuildNumber();
 
 
 #endif // __OPAL_MANAGER_H

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t38.h,v $
- * Revision 1.2006  2002/09/16 02:52:35  robertj
+ * Revision 1.2007  2002/11/10 11:33:17  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.5  2002/09/16 02:52:35  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -42,6 +45,10 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.14  2002/09/16 01:14:15  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
  * Revision 1.13  2002/09/03 06:19:37  robertj
  * Normalised the multi-include header prevention ifdef/define symbol.
@@ -149,6 +156,10 @@ class H323_T38Capability : public H323DataCapability
        H245_DataApplicationCapability_application class.
      */
     virtual unsigned GetSubType() const;
+
+    /**Get the name of the media data format this class represents.
+     */
+    virtual PString GetFormatName() const;
   //@}
 
   /**@name Operations */
@@ -244,6 +255,13 @@ class H323_T38NonStandardCapability : public H323NonStandardDataCapability
     virtual PObject * Clone() const;
   //@}
 
+  /**@name Identification functions */
+  //@{
+    /**Get the name of the media data format this class represents.
+     */
+    virtual PString GetFormatName() const;
+  //@}
+
   /**@name Operations */
   //@{
     /**Create the channel instance, allocating resources as required.
@@ -319,7 +337,7 @@ class H323_T38Channel : public H323DataChannel
       */
     virtual void Transmit();
 
-    /**Create the OpalListener class to be used.
+    /**Create the H323Listener class to be used.
        This is called on receipt of an OpenLogicalChannel request.
 
        The default behaviour creates a compatible listener using the
@@ -327,7 +345,7 @@ class H323_T38Channel : public H323DataChannel
       */
     virtual BOOL CreateListener();
 
-    /**Create the OpalTransport class to be used.
+    /**Create the H323Transport class to be used.
        This is called on receipt of an OpenLogicalChannelAck response. It
        should not return TRUE unless the transport member variable is set.
 

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2013  2002/09/16 02:52:35  robertj
+ * Revision 1.2014  2002/11/10 11:33:17  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.12  2002/09/16 02:52:35  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -353,7 +356,8 @@ class OpalRTPMediaStream : public OpalMediaStream
     OpalRTPMediaStream(
       BOOL isSourceStream,         /// Direction of I/O for stream
       RTP_Session & rtpSession,    /// RTP session to stream to/from
-      unsigned jitterBufferSize    /// Jitter buffer size (if applicable)
+      unsigned minAudioJitterDelay,/// Minimum jitter buffer size (if applicable)
+      unsigned maxAudioJitterDelay /// Maximum jitter buffer size (if applicable)
     );
   //@}
 
@@ -393,7 +397,8 @@ class OpalRTPMediaStream : public OpalMediaStream
 
   protected:
     RTP_Session & rtpSession;
-    unsigned      jitterBufferSize;
+    unsigned      minAudioJitterDelay;
+    unsigned      maxAudioJitterDelay;
 };
 
 

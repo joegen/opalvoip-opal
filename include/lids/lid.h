@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.h,v $
- * Revision 1.2007  2002/09/16 02:52:34  robertj
+ * Revision 1.2008  2002/11/10 11:33:17  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.6  2002/09/16 02:52:34  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -48,6 +51,16 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.53  2002/11/05 04:26:48  robertj
+ * Imported RingLine() by array from OPAL.
+ *
+ * Revision 1.52  2002/10/29 00:46:04  dereks
+ * Fix typo in comments.
+ *
+ * Revision 1.51  2002/09/16 01:14:15  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
  * Revision 1.50  2002/09/03 06:19:37  robertj
  * Normalised the multi-include header prevention ifdef/define symbol.
@@ -808,7 +821,7 @@ class OpalLineInterfaceDevice : public PObject
           1100:0.4-0.4  1100Hz with cadence 400ms on, 400ms off
           900-1300:1.5  900Hz to 1300Hz for minimum of 1.5 seconds
           425:0.4-0.2-0.4-2    425Hz with cadence
-                                400ms on, 400ms off, 400ms on, 2 seconds off
+                                400ms on, 200ms off, 400ms on, 2 seconds off
       */
     virtual BOOL SetToneFilter(
       unsigned line,              /// Number of line

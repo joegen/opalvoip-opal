@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.h,v $
- * Revision 1.2005  2002/09/16 02:52:35  robertj
+ * Revision 1.2006  2002/11/10 11:33:17  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.4  2002/09/16 02:52:35  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -42,6 +45,14 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.12  2002/10/31 00:32:39  robertj
+ * Enhanced jitter buffer system so operates dynamically between minimum and
+ *   maximum values. Altered API to assure app writers note the change!
+ *
+ * Revision 1.11  2002/09/16 01:14:15  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
  * Revision 1.10  2002/09/03 05:40:18  robertj
  * Normalised the multi-include header prevention ifdef/define symbol.
@@ -100,7 +111,8 @@ class RTP_JitterBuffer : public PThread
   public:
     RTP_JitterBuffer(
       RTP_Session & session,   /// Associated RTP session tor ead data from
-      unsigned jitterDelay,    /// Delay in RTP timestamp units
+      unsigned minJitterDelay, /// Minimum delay in RTP timestamp units
+      unsigned maxJitterDelay, /// Maximum delay in RTP timestamp units
       PINDEX stackSize = 30000 /// Stack size for jitter thread
     );
     ~RTP_JitterBuffer();
@@ -109,7 +121,8 @@ class RTP_JitterBuffer : public PThread
     /**Set the maximum delay the jitter buffer will operate to.
       */
     void SetDelay(
-      unsigned delay    /// Delay in RTP timestamp units
+      unsigned minJitterDelay, /// Minimum delay in RTP timestamp units
+      unsigned maxJitterDelay  /// Maximum delay in RTP timestamp units
     );
 
     /**Read a data frame from the RTP channel.
@@ -121,6 +134,10 @@ class RTP_JitterBuffer : public PThread
       DWORD timestamp,        /// Timestamp to read from buffer.
       RTP_DataFrame & frame   /// Frame read from the RTP session
     );
+
+    /**Get current delay for jitter buffer.
+      */
+    DWORD GetJitterTime() const { return currentJitterTime; }
 
     /**Get total number received packets too late to go into jitter buffer.
       */
@@ -147,18 +164,22 @@ class RTP_JitterBuffer : public PThread
       public:
         Entry * next;
         Entry * prev;
+        PTimeInterval tick;
     };
 
     RTP_Session & session;
     PINDEX        bufferSize;
+    DWORD         minJitterTime;
     DWORD         maxJitterTime;
     DWORD         maxConsecutiveMarkerBits;
 
     unsigned currentDepth;
+    DWORD    currentJitterTime;
     DWORD    packetsTooLate;
     unsigned bufferOverruns;
     unsigned consecutiveBufferOverruns;
     DWORD    consecutiveMarkerBits;
+    DWORD    consecutiveEarlyPacketStartTime;
 
     Entry * oldestFrame;
     Entry * newestFrame;
