@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2014  2002/04/09 00:16:46  robertj
+ * Revision 1.2015  2002/04/10 03:08:42  robertj
+ * Moved code for handling media bypass address resolution into ancestor as
+ *   now done ths same way in both SIP and H.323.
+ *
+ * Revision 2.13  2002/04/09 00:16:46  robertj
  * Changed "callAnswered" to better description of "originating".
  *
  * Revision 2.12  2002/02/19 07:42:07  robertj
@@ -514,8 +518,12 @@ class OpalConnection : public PObject
     };
 
     /**Get information on the media channel for the connection.
-       The default behaviour returns FALSE indicating that no media information
-       is available for the session ID.
+       The default behaviour checked the mediaTransportAddresses dictionary
+       for the session ID and returns information based on that. It also uses
+       the rfc2833Handler variable for that part of the info.
+
+       It is up to the descendant class to assure that the mediaTransportAddresses
+       dictionary is set correctly before OnIncomingCall() is executed.
      */
     virtual BOOL GetMediaInformation(
       unsigned sessionID,     /// Session ID for media channel
@@ -798,6 +806,9 @@ class OpalConnection : public PObject
     SendUserInputModes  sendUserInputMode;
     OpalRFC2833Proto  * rfc2833Handler;
 
+
+    PDICTIONARY(MediaAddressesDict, POrdinalKey, OpalTransportAddress);
+    MediaAddressesDict  mediaTransportAddresses;
     OpalMediaStreamList mediaStreams;
     RTP_SessionManager  rtpSessions;
     unsigned            bandwidthAvailable;
