@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transaddr.h,v $
- * Revision 1.2002  2001/11/09 05:49:47  robertj
+ * Revision 1.2003  2002/07/01 04:56:30  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.1  2001/11/09 05:49:47  robertj
  * Abstracted UDP connection algorithm
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
@@ -84,7 +87,7 @@ class H323TransportAddress : public OpalTransportAddress
 
     BOOL SetPDU(
       H225_ArrayOf_TransportAddress & pdu,  /// List of transport addresses listening on
-      const H323TransportAddress & first    /// Transport address to take precedence
+      const OpalTransport & associatedTransport /// Associated transport for precendence and translation
     );
     BOOL SetPDU(H225_TransportAddress & pdu) const;
     BOOL SetPDU(H245_TransportAddress & pdu) const;

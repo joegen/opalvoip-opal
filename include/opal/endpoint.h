@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2010  2002/04/05 10:36:53  robertj
+ * Revision 1.2011  2002/07/01 04:56:30  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.9  2002/04/05 10:36:53  robertj
  * Rearranged OnRelease to remove the connection from endpoints connection
  *   list at the end of the release phase rather than the beginning.
  *
@@ -365,6 +368,10 @@ class OpalEndPoint : public PObject
       const PString & token     /// Token to identify connection
     );
 
+    /**Get all calls current on the endpoint.
+      */
+    PStringList GetAllConnections();
+
     /**Determine if a connection is active.
       */
     virtual BOOL HasConnection(
@@ -434,6 +441,37 @@ class OpalEndPoint : public PObject
       char tone,                    /// Tone received
       int duration                  /// Duration of tone
     );
+  //@}
+
+  /**@name Other services */
+  //@{
+    /**Create an instance of the T.120 protocol handler.
+       This is called when the OpenLogicalChannel subsystem requires that
+       a T.120 channel be established.
+
+       Note that if the application overrides this it should return a pointer to a
+       heap variable (using new) as it will be automatically deleted when the
+       H323Connection is deleted.
+
+       The default behavour calls the OpalManager function of the same name.
+      */
+    virtual OpalT120Protocol * CreateT120ProtocolHandler(
+      const OpalConnection & connection  /// Connection for which T.120 handler created
+    ) const;
+
+    /**Create an instance of the T.38 protocol handler.
+       This is called when the OpenLogicalChannel subsystem requires that
+       a T.38 fax channel be established.
+
+       Note that if the application overrides this it should return a pointer to a
+       heap variable (using new) as it will be automatically deleted when the
+       H323Connection is deleted.
+
+       The default behavour calls the OpalManager function of the same name.
+      */
+    virtual OpalT38Protocol * CreateT38ProtocolHandler(
+      const OpalConnection & connection  /// Connection for which T.38 handler created
+    ) const;
   //@}
 
   /**@name Member variable access */

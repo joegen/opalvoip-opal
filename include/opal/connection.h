@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2015  2002/04/10 03:08:42  robertj
+ * Revision 1.2016  2002/07/01 04:56:30  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.14  2002/04/10 03:08:42  robertj
  * Moved code for handling media bypass address resolution into ancestor as
  *   now done ths same way in both SIP and H.323.
  *
@@ -94,6 +97,8 @@ class OpalEndPoint;
 class OpalCall;
 class OpalRFC2833Proto;
 class OpalRFC2833Info;
+class OpalT120Protocol;
+class OpalT38Protocol;
 
 
 /**Call/Connection ending reasons.
@@ -123,6 +128,7 @@ enum OpalCallEndReason {
   EndedByUnreachable,       /// Could not reach the remote party
   EndedByNoEndPoint,        /// The remote party is not running an endpoint
   EndedByHostOffline,       /// The remote party host off line
+  EndedByTemporaryFailure,  /// The remote failed temporarily app may retry
   OpalNumCallEndReasons
 };
 
@@ -236,7 +242,7 @@ class OpalConnection : public PObject
        An application should have no cause to use this function. It is present
        for the H323EndPoint::ClearCall() function to set the clearance reason.
       */
-    void SetCallEndReason(
+    virtual void SetCallEndReason(
       OpalCallEndReason reason   /// Reason for clearance of connection.
     );
 
@@ -601,34 +607,8 @@ class OpalConnection : public PObject
 
   /**@name User input */
   //@{
-    enum SendUserInputModes {
-      SendUserInputAsString,
-      SendUserInputAsTone,
-      SendUserInputAsInlineRFC2833,
-      SendUserInputAsSeparateRFC2833,  // Not implemented
-      NumSendUserInputModes
-    };
-
-    /**Set the user input indication transmission mode.
-      */
-    virtual void SetSendUserInputMode(SendUserInputModes mode);
-
-    /**Get the user input indication transmission mode.
-      */
-    SendUserInputModes GetSendUserInputMode() const { return sendUserInputMode; }
-
     /**Send a user input indication to the remote endpoint.
        This is for sending arbitrary strings as user indications.
-
-       The user indication is sent according to the sendUserInputMode member
-       variable. If SendUserInputAsString then this uses an H.245 "string"
-       UserInputIndication pdu sending the entire string in one go. If
-       SendUserInputAsTone then a separate H.245 "signal" UserInputIndication
-       pdu is sent for each character. If SendUserInputAsInlineRFC2833 then
-       the indication is inserted into the outgoing audio stream as an RFC2833
-       RTP data pdu.
-
-       SendUserInputAsSeparateRFC2833 is not yet supported.
 
        The default behaviour is to call SendUserInputTone() for each character
        in the string.
@@ -651,23 +631,11 @@ class OpalConnection : public PObject
        signalUpdate PDU is sent that updates the last tone indication
        sent. See the H.245 specifcation for more details on this.
 
-       The user indication is sent according to the sendUserInputMode member
-       variable. If SendUserInputAsString then this uses an H.245 "string"
-       UserInputIndication pdu sending the entire string in one go. If
-       SendUserInputAsTone then a separate H.245 "signal" UserInputIndication
-       pdu is sent for each character. If SendUserInputAsInlineRFC2833 then
-       the indication is inserted into the outgoing audio stream as an RFC2833
-       RTP data pdu.
-
-       SendUserInputAsSeparateRFC2833 is not yet supported.
-
-       The default behaviour calls the SendUserInputInlineRFC2833() if the
-       sendUserInputMode is SendUserInputAsInlineRFC2833, otherwise it does
-       nothing.
+       The default behaviour sends the tone using RFC2833.
       */
     virtual BOOL SendUserInputTone(
       char tone,        /// DTMF tone code
-      int duration = 0  /// Duration of tone in milliseconds
+      unsigned duration = 0  /// Duration of tone in milliseconds
     );
 
     /**Call back for remote enpoint has sent user input as a string.
@@ -688,14 +656,14 @@ class OpalConnection : public PObject
       */
     virtual void OnUserInputTone(
       char tone,
-      int duration
+      unsigned duration
     );
 
     /**Send a user input indication to the remote endpoint.
        This sends a Hook Flash emulation user input.
       */
     void SendUserInputHookFlash(
-      int duration = 500  /// Duration of tone in milliseconds
+      unsigned duration = 500  /// Duration of tone in milliseconds
     ) { SendUserInputTone('!', duration); }
 
     /**Get a user input indication string, waiting until one arrives.
@@ -731,6 +699,37 @@ class OpalConnection : public PObject
     );
   //@}
 
+  /**@name Other services */
+  //@{
+    /**Create an instance of the T.120 protocol handler.
+       This is called when the OpenLogicalChannel subsystem requires that
+       a T.120 channel be established.
+
+       Note that if the application overrides this and returns a pointer to a
+       heap variable (using new) then it is the responsibility of the creator
+       to subsequently delete the object. The user of this function (the 
+       H323_T120Channel class) will not do so.
+
+       The default behavour returns H323Endpoint::CreateT120ProtocolHandler()
+       while keeping track of that variable for autmatic deletion.
+      */
+    virtual OpalT120Protocol * CreateT120ProtocolHandler();
+
+    /**Create an instance of the T.38 protocol handler.
+       This is called when the OpenLogicalChannel subsystem requires that
+       a T.38 fax channel be established.
+
+       Note that if the application overrides this and returns a pointer to a
+       heap variable (using new) then it is the responsibility of the creator
+       to subsequently delete the object. The user of this function (the 
+       H323_T38Channel class) will not do so.
+
+       The default behavour returns H323Endpoint::CreateT38ProtocolHandler()
+       while keeping track of that variable for autmatic deletion.
+      */
+    virtual OpalT38Protocol * CreateT38ProtocolHandler();
+  //@}
+
   /**@name Member variable access */
   //@{
     /**Get the owner endpoint for this connection.
@@ -757,9 +756,13 @@ class OpalConnection : public PObject
       */
     const PString & GetLocalPartyName() const { return localPartyName; }
 
-    /**Set the local name/alias from information in the PDU.
+    /**Get the local names/aliases.
       */
-    void SetLocalPartyName(const PString & name) { localPartyName = name; }
+    const PStringList & GetLocalAliasNames() const { return localAliasNames; }
+
+    /**Set the local name/alias.
+      */
+    void SetLocalPartyName(const PString & name);
 
     /**Get the caller name/alias.
       */
@@ -795,6 +798,7 @@ class OpalConnection : public PObject
     BOOL                originating;
     PTime               connectionStartTime;
     PString             localPartyName;
+    PStringList         localAliasNames;
     PString             remotePartyName;
     PString             remotePartyNumber;
     PString             remotePartyAddress;
@@ -803,8 +807,10 @@ class OpalConnection : public PObject
     PString             userInputString;
     PMutex              userInputMutex;
     PSyncPoint          userInputAvailable;
-    SendUserInputModes  sendUserInputMode;
+    BOOL                detectInBandDTMF;
     OpalRFC2833Proto  * rfc2833Handler;
+    OpalT120Protocol  * t120handler;
+    OpalT38Protocol   * t38handler;
 
 
     PDICTIONARY(MediaAddressesDict, POrdinalKey, OpalTransportAddress);

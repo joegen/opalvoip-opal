@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjlid.h,v $
- * Revision 1.2003  2001/10/05 00:22:13  robertj
+ * Revision 1.2004  2002/07/01 04:56:30  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.2  2001/10/05 00:22:13  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.1  2001/08/01 05:18:51  robertj
@@ -35,6 +38,11 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.56  2002/05/09 06:26:30  robertj
+ * Added fuction to get the current audio enable state for line in device.
+ * Changed IxJ EnableAudio() semantics so is exclusive, no direct switching
+ *   from PSTN to POTS and vice versa without disabling the old one first.
  *
  * Revision 1.55  2001/09/24 12:31:35  robertj
  * Added backward compatibility with old drivers.
@@ -490,10 +498,10 @@ class OpalIxJDevice : public OpalLineInterfaceDevice
       BOOL enable = TRUE
     );
 
-    /**Determine if audio is ebabled for the line.
+    /**Determine if audio for the line is enabled.
       */
     virtual BOOL IsAudioEnabled(
-      unsigned line   /// Number of line
+      unsigned line      /// Number of line
     );
 
 
@@ -727,6 +735,7 @@ class OpalIxJDevice : public OpalLineInterfaceDevice
     PTimer    hookTimeout;
     BOOL      inRawMode;
     unsigned  enabledAudioLine;
+    BOOL      exclusiveAudioMode;
 
 #if defined(WIN32)
     BOOL InternalSetVolume(BOOL record, unsigned id, int volume, int mute);

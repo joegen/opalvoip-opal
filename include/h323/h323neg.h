@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323neg.h,v $
- * Revision 1.2004  2002/01/14 06:35:57  robertj
+ * Revision 1.2005  2002/07/01 04:56:30  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.3  2002/01/14 06:35:57  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.2  2001/10/05 00:22:13  robertj
@@ -38,6 +41,13 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.31  2002/06/26 08:51:16  robertj
+ * Fixed deadlock if logical channel is closed via H.245 at exactly same
+ *   time as being closed locally due to a channel I/O error.
+ *
+ * Revision 1.30  2002/05/03 03:08:35  robertj
+ * Added replacementFor field in OLC when resolving conflicting channels.
  *
  * Revision 1.29  2002/01/09 00:21:36  robertj
  * Changes to support outgoing H.245 RequstModeChange.
@@ -266,7 +276,11 @@ class H245NegLogicalChannel : public H245Negotiator
                           H323Channel & channel);
     ~H245NegLogicalChannel();
 
-    virtual BOOL Open(const H323Capability & capability, unsigned sessionID);
+    virtual BOOL Open(
+      const H323Capability & capability,
+      unsigned sessionID,
+      unsigned replacementFor = 0
+    );
     virtual BOOL Close();
     virtual BOOL HandleOpen(const H245_OpenLogicalChannel & pdu);
     virtual BOOL HandleOpenAck(const H245_OpenLogicalChannelAck & pdu);
@@ -284,7 +298,11 @@ class H245NegLogicalChannel : public H245Negotiator
 
 
   protected:
-    virtual BOOL OpenWhileLocked(const H323Capability & capability, unsigned sessionID);
+    virtual BOOL OpenWhileLocked(
+      const H323Capability & capability,
+      unsigned sessionID,
+      unsigned replacementFor = 0
+    );
     virtual BOOL CloseWhileLocked();
     virtual void Release();
 
@@ -325,7 +343,11 @@ class H245NegLogicalChannels : public H245Negotiator
 
     virtual void Add(H323Channel & channel);
 
-    virtual BOOL Open(const H323Capability & capability, unsigned sessionID);
+    virtual BOOL Open(
+      const H323Capability & capability,
+      unsigned sessionID,
+      unsigned replacementFor = 0
+    );
     virtual BOOL Close(unsigned channelNumber, BOOL fromRemote);
     virtual BOOL HandleOpen(const H245_OpenLogicalChannel & pdu);
     virtual BOOL HandleOpenAck(const H245_OpenLogicalChannelAck & pdu);
@@ -343,7 +365,7 @@ class H245NegLogicalChannels : public H245Negotiator
     H323Channel * GetChannelAt(PINDEX i);
     H323Channel * FindChannel(unsigned channelNumber, BOOL fromRemote);
     H245NegLogicalChannel & GetNegLogicalChannelAt(PINDEX i);
-    H245NegLogicalChannel * FindNegLogicalChannel(unsigned channelNumber, BOOL fromRemote, BOOL leaveLocked = FALSE);
+    H245NegLogicalChannel * FindNegLogicalChannel(unsigned channelNumber, BOOL fromRemote);
     H323Channel * FindChannelBySession(unsigned rtpSessionId, BOOL fromRemote);
     void RemoveAll();
 
