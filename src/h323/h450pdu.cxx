@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h450pdu.cxx,v $
- * Revision 1.2015  2004/04/25 08:59:50  rjongbloed
+ * Revision 1.2016  2004/08/14 07:56:31  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.14  2004/04/25 08:59:50  rjongbloed
  * Fixed GCC 3.4 warning
  *
  * Revision 2.13  2004/02/19 10:47:04  rjongbloed
@@ -416,6 +419,7 @@ BOOL H450ServiceAPDU::WriteFacilityPDU(H323Connection & connection)
 
   AttachSupplementaryServiceAPDU(facilityPDU);
 
+  PSafeLockReadOnly lock(connection);
   return connection.WriteSignalPDU(facilityPDU);
 }
 
@@ -1259,15 +1263,13 @@ void H4502Handler::OnReceivedIdentifyReturnResult(X880_ReturnResult &returnResul
     // Store the secondary call token on the primary connection so we can send a 
     // callTransferAbandon invoke APDU on the secondary call at a later stage if we 
     // get back a callTransferInitiateReturnError
-    H323Connection* primaryConnection = endpoint.FindConnectionWithLock(CallToken);
+    PSafePtr<H323Connection> primaryConnection = endpoint.FindConnectionWithLock(CallToken);
     if (primaryConnection != NULL) {
       primaryConnection->SetAssociatedCallToken(connection.GetCallToken());
 
       // Send a callTransferInitiate invoke APDU in a FACILITY message
       // to the transferred endpoint on the primary call
       endpoint.TransferCall(primaryConnection->GetCallToken(), remoteParty, callIdentity);
-
-      primaryConnection->Unlock();
     }
   }
 }
@@ -1313,14 +1315,11 @@ void H4502Handler::OnReceivedInitiateReturnError(const bool timerExpiry)
 
   // Send a callTransferAbandon invoke APDU in a FACILITY message on the secondary call
   // (if it exists) and enter state CT-Idle.
-  H323Connection* secondaryConnection = endpoint.FindConnectionWithLock(CallToken);
-
+  PSafePtr<H323Connection> secondaryConnection = endpoint.FindConnectionWithLock(CallToken, PSafeReadOnly);
   if (secondaryConnection != NULL) {
     H450ServiceAPDU serviceAPDU;
-
     serviceAPDU.BuildCallTransferAbandon(dispatcher.GetNextInvokeId());
     serviceAPDU.WriteFacilityPDU(*secondaryConnection);
-    secondaryConnection->Unlock();
   }
 }
 
@@ -1345,12 +1344,9 @@ void H4502Handler::OnReceivedSetupReturnError(int errorCode,
 
   // Send a facility message to the transferring endpoint
   // containing a call transfer initiate return error
-  H323Connection* primaryConnection = endpoint.FindConnectionWithLock(transferringCallToken);
-
-  if (primaryConnection != NULL) {
+  PSafePtr<H323Connection> primaryConnection = endpoint.FindConnectionWithLock(transferringCallToken);
+  if (primaryConnection != NULL)
     primaryConnection->HandleCallTransferFailure(errorCode);
-    primaryConnection->Unlock();
-  }
 }
 
 
@@ -1370,14 +1366,10 @@ void H4502Handler::OnReceivedIdentifyReturnError(const bool timerExpiry)
 
     // send a callTransferAbandon invoke APDU in a FACILITY message on the secondary call
     // and enter state CT-Idle.
-    connection.Lock();
-
     H450ServiceAPDU serviceAPDU;
 
     serviceAPDU.BuildCallTransferAbandon(dispatcher.GetNextInvokeId());
     serviceAPDU.WriteFacilityPDU(connection);
-
-    connection.Unlock();
   }
 }
 
@@ -1483,12 +1475,10 @@ void H4502Handler::onReceivedAdmissionReject(const int returnError)
     PTRACE(3, "H4502\tStopping timer CT-T4");
 
     // Send a FACILITY message back to the transferring party on the primary connection
-    H323Connection * primaryConnection = endpoint.FindConnectionWithLock(transferringCallToken);
-
+    PSafePtr<H323Connection> primaryConnection = endpoint.FindConnectionWithLock(transferringCallToken);
     if (primaryConnection != NULL) {
       PTRACE(3, "H4502\tReceived an Admission Reject at the Transferred Endpoint - aborting the transfer.");
       primaryConnection->HandleCallTransferFailure(returnError);
-      primaryConnection->Unlock();
     }
   }
 }
@@ -2080,7 +2070,7 @@ BOOL H45011Handler::OnReceivedCallIntrusionForcedRelease(int /*linkedId*/,
   if(tokens.GetSize() >1) {
     for (PINDEX i = 0; i < tokens.GetSize(); i++) {
       if(endpoint.HasConnection(tokens[i])){
-        H323Connection* conn = endpoint.FindConnectionWithLock(tokens[i]);
+        PSafePtr<H323Connection> conn = endpoint.FindConnectionWithLock(tokens[i], PSafeReadOnly);
         if (conn != NULL){
           if (conn->IsEstablished()){
             if((conn->GetLocalCallIntrusionProtectionLevel() < ciArg.m_ciCapabilityLevel)){
@@ -2088,16 +2078,14 @@ BOOL H45011Handler::OnReceivedCallIntrusionForcedRelease(int /*linkedId*/,
               intrudingCallToken = connection.GetCallToken();
               conn->GetRemoteCallIntrusionProtectionLevel(connection.GetCallToken(), (unsigned)ciArg.m_ciCapabilityLevel);
               result = TRUE;
-              conn->Unlock ();
               break;
             }
-            else
-              result = FALSE;
+            result = FALSE;
           }
-          conn->Unlock ();
         }
       }
     }
+
     if(result){
       ciSendState = e_ci_sAttachToConnect;
       ciReturnState = e_ci_rCallForceReleaseResult;
@@ -2109,7 +2097,7 @@ BOOL H45011Handler::OnReceivedCallIntrusionForcedRelease(int /*linkedId*/,
       connection.ClearCall(H323Connection::EndedByLocalBusy);
     }
   }
-  else{
+  else {
     ciSendState = e_ci_sAttachToAlerting;
     ciReturnState = e_ci_rNotBusy;
   }
@@ -2256,19 +2244,17 @@ void H45011Handler::OnReceivedCIGetCIPLResult(X880_ReturnResult & returnResult)
     if (intrudingCallCICL > ciGetCIPLResult.m_ciProtectionLevel){
 
       // Send ciNotification.inv (ciImpending) To C
-      connection.Lock();
       H450ServiceAPDU serviceAPDU;
       currentInvokeId = dispatcher.GetNextInvokeId();
       serviceAPDU.BuildCallIntrusionImpending(currentInvokeId);
       serviceAPDU.WriteFacilityPDU(connection);
-      connection.Unlock();
 
       // Send ciNotification.inv (ciImpending) to  intruding (A)
-      H323Connection* conn = endpoint.FindConnectionWithLock(intrudingCallToken);
-      conn->SetIntrusionImpending ();
+      PSafePtr<H323Connection> conn = endpoint.FindConnectionWithLock(intrudingCallToken);
+      conn->SetIntrusionImpending();
 
       //Send Ringing to intruding (A)
-	  conn->AnsweringCall (conn->AnswerCallPending);
+      conn->AnsweringCall(conn->AnswerCallPending);
 
       // MUST RETURN ciNotification.inv (callForceRelesed) to active call (C) when releasing call !!!!!!
       ciSendState = e_ci_sAttachToReleseComplete;
@@ -2276,15 +2262,14 @@ void H45011Handler::OnReceivedCIGetCIPLResult(X880_ReturnResult & returnResult)
       
       //Send Forced Release Accepted when Answering call to intruding (A)
       conn->SetForcedReleaseAccepted();
-      conn->Unlock ();
     }
     else {
       PTRACE(4 ,"H450.11\tCICL<CIPL -> Clear Call");
       // Clear Call with intruding (A)
-      H323Connection* conn = endpoint.FindConnectionWithLock(intrudingCallToken);
-      conn->SetIntrusionNotAuthorized();
-      conn->Unlock();
-      endpoint.ClearCall (intrudingCallToken);
+      PSafePtr<H323Connection> conn = endpoint.FindConnectionWithLock(intrudingCallToken);
+      if (conn != NULL)
+        conn->SetIntrusionNotAuthorized();
+      endpoint.ClearCall(intrudingCallToken);
     }
   }
 
@@ -2368,27 +2353,26 @@ BOOL H45011Handler::OnReceivedGetCIPLReturnError(int PTRACE_errorCode,
   }
 
   // Send ciNotification.inv (ciImpending) to active call (C)
-  connection.Lock();
   H450ServiceAPDU serviceAPDU;
   currentInvokeId = dispatcher.GetNextInvokeId();
   serviceAPDU.BuildCallIntrusionImpending(currentInvokeId);
   serviceAPDU.WriteFacilityPDU(connection);
-  connection.Unlock();
 
   // Send ciNotification.inv (ciImpending) to intruding (A)
-  H323Connection* conn = endpoint.FindConnectionWithLock(intrudingCallToken);
-  conn->SetIntrusionImpending ();
+  PSafePtr<H323Connection> conn = endpoint.FindConnectionWithLock(intrudingCallToken);
+  if (conn != NULL) {
+    conn->SetIntrusionImpending();
 
-  //Send Ringing to intruding (A)
-  conn->AnsweringCall (conn->AnswerCallPending);
+    //Send Ringing to intruding (A)
+    conn->AnsweringCall(conn->AnswerCallPending);
+
+    //Forced Release Accepted to send when Answering call to intruding (A)
+    conn->SetForcedReleaseAccepted();
+  }
 
   ciSendState = e_ci_sAttachToReleseComplete;
   ciReturnState = e_ci_rCallForceReleased;
       
-  //Forced Release Accepted to send when Answering call to intruding (A)
-  conn->SetForcedReleaseAccepted();
-  conn->Unlock ();
-
   return FALSE;
 }
 
@@ -2414,9 +2398,6 @@ void H45011Handler::AwaitSetupResponse(const PString & token,
 BOOL H45011Handler::GetRemoteCallIntrusionProtectionLevel(const PString & token,
                                                           unsigned intrusionCICL)
 {
-  if (!connection.Lock())
-    return FALSE;
-
   intrudingCallToken = token;
   intrudingCallCICL = intrusionCICL;
 
@@ -2425,8 +2406,6 @@ BOOL H45011Handler::GetRemoteCallIntrusionProtectionLevel(const PString & token,
   currentInvokeId = dispatcher.GetNextInvokeId();
 
   serviceAPDU.BuildCallIntrusionGetCIPL(currentInvokeId);
-
-  connection.Unlock();
 
   if (!serviceAPDU.WriteFacilityPDU(connection))
     return FALSE;
@@ -2492,9 +2471,9 @@ void H45011Handler::OnCallIntrudeTimeOut(PTimer &, INT)
         // Answer intruding call (call with A)
         PTRACE(4, "H450.11\tOnCallIntrudeTimeOut Trying to answer Call");
         if(endpoint.HasConnection(intrudingCallToken)){
-          H323Connection* conn = endpoint.FindConnectionWithLock(intrudingCallToken);
-          conn->AnsweringCall (conn->AnswerCallNow);
-          conn->Unlock ();
+          PSafePtr<H323Connection> conn = endpoint.FindConnectionWithLock(intrudingCallToken);
+          if (conn != NULL)
+            conn->AnsweringCall(H323Connection::AnswerCallNow);
         }
       }
       break;
@@ -2525,13 +2504,12 @@ BOOL H45011Handler::OnReceivedReject(int PTRACE_problemType, int PTRACE_problemN
   switch (ciState) {
     case e_ci_GetCIPL:
     {
-      H323Connection* conn = endpoint.FindConnectionWithLock(intrudingCallToken);
+      PSafePtr<H323Connection> conn = endpoint.FindConnectionWithLock(intrudingCallToken);
       conn->SetIntrusionImpending ();
 
       //Send Ringing to  intruding (A)
       conn->AnsweringCall (conn->AnswerCallPending);
       conn->SetForcedReleaseAccepted();  
-      conn->Unlock ();
       break;
     }
 
