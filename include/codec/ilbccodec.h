@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ilbccodec.h,v $
- * Revision 1.2002  2004/02/19 10:46:43  rjongbloed
+ * Revision 1.2003  2004/04/25 09:27:33  rjongbloed
+ * Fixed correct H.323 capability definitions for iLBC codec variants
+ *
+ * Revision 2.1  2004/02/19 10:46:43  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 1.1  2003/06/06 02:19:04  rjongbloed
@@ -104,7 +107,8 @@ class H323_iLBC_Capability : public H323NonStandardAudioCapability
 
 
 #ifdef H323_STATIC_LIB
-H323_STATIC_LOAD_REGISTER_CAPABILITY(H323_iLBC_Capability);
+H323_STATIC_LOAD_REGISTER_CAPABILITY(H323_ILBC_13k3_Capability);
+H323_STATIC_LOAD_REGISTER_CAPABILITY(H323_ILBC_15k2_Capability);
 #endif
 
 
