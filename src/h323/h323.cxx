@@ -24,8 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2063  2004/08/23 12:21:01  rjongbloed
- * Fixed double call to OnEstablished()
+ * Revision 1.2064  2004/09/01 12:21:28  rjongbloed
+ * Added initialisation of H323EndPoints capability table to be all codecs so can
+ *   correctly build remote caps from fqast connect params. This had knock on effect
+ *   with const keywords added in numerous places.
  *
  * Revision 2.61  2004/08/14 07:56:31  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
@@ -2181,12 +2183,13 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
       return FALSE;
 
   // See if remote endpoint wants to start fast
-  if ((fastStartState != FastStartDisabled) && 
-       setup.HasOptionalField(H225_Setup_UUIE::e_fastStart) &&
-       localCapabilities.GetSize() > 0) {
+  if ((fastStartState != FastStartDisabled) && setup.HasOptionalField(H225_Setup_UUIE::e_fastStart)) {
+    PTRACE(3, "H225\tFast start detected");
+
+    // If we have not received caps from remote, we are going to build a
+    // fake one from the fast connect data.
     if (!capabilityExchangeProcedure->HasReceivedCapabilities())
       remoteCapabilities.RemoveAll();
-    PTRACE(3, "H225\tFast start detected");
 
     // Extract capabilities from the fast start OpenLogicalChannel structures
     for (i = 0; i < setup.m_fastStart.GetSize(); i++) {
@@ -4602,6 +4605,7 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
   const H245_H2250LogicalChannelParameters * param;
   const H245_DataType * dataType;
   H323Channel::Directions direction;
+  H323Capability * capability;
 
   if (startingFast && open.HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters)) {
     if (open.m_reverseLogicalChannelParameters.m_multiplexParameters.GetTag() !=
@@ -4617,6 +4621,22 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
     param = &(const H245_H2250LogicalChannelParameters &)
                       open.m_reverseLogicalChannelParameters.m_multiplexParameters;
     direction = H323Channel::IsTransmitter;
+
+    capability = remoteCapabilities.FindCapability(*dataType);
+    if (capability == NULL) {
+      // If we actually have the remote capabilities then the remote (very oddly)
+      // had a fast connect entry it could not do. If we have not yet got a remote
+      // cap table then build one using all possible caps.
+      if (capabilityExchangeProcedure->HasReceivedCapabilities() ||
+                (capability = endpoint.FindCapability(*dataType)) == NULL) {
+        errorCode = H245_OpenLogicalChannelReject_cause::e_unknownDataType;
+        PTRACE(2, "H323\tCreateLogicalChannel - unknown data type");
+        return NULL; // If codec not supported, return error
+      }
+      
+      capability = remoteCapabilities.Copy(*capability);
+      remoteCapabilities.SetCapability(0, capability->GetDefaultSessionID(), capability);
+    }
   }
   else {
     if (open.m_forwardLogicalChannelParameters.m_multiplexParameters.GetTag() !=
@@ -4632,30 +4652,20 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
     param = &(const H245_H2250LogicalChannelParameters &)
                       open.m_forwardLogicalChannelParameters.m_multiplexParameters;
     direction = H323Channel::IsReceiver;
-  }
 
-  // See if datatype is supported
-  H323Capability * capability = localCapabilities.FindCapability(*dataType);
-  if (capability == NULL) {
-    errorCode = H245_OpenLogicalChannelReject_cause::e_unknownDataType;
-    PTRACE(2, "H323\tCreateLogicalChannel - unknown data type");
-    return NULL; // If codec not supported, return error
+    // See if datatype is supported
+    capability = localCapabilities.FindCapability(*dataType);
+    if (capability == NULL) {
+      errorCode = H245_OpenLogicalChannelReject_cause::e_unknownDataType;
+      PTRACE(2, "H323\tCreateLogicalChannel - unknown data type");
+      return NULL; // If codec not supported, return error
+    }
   }
 
   if (!capability->OnReceivedPDU(*dataType, direction == H323Channel::IsReceiver)) {
     errorCode = H245_OpenLogicalChannelReject_cause::e_dataTypeNotSupported;
     PTRACE(2, "H323\tCreateLogicalChannel - data type not supported");
     return NULL; // If codec not supported, return error
-  }
-
-  if (startingFast && (direction == H323Channel::IsTransmitter)) {
-    H323Capability * remoteCapability = remoteCapabilities.FindCapability(*capability);
-    if (remoteCapability != NULL)
-      capability = remoteCapability;
-    else {
-      capability = remoteCapabilities.Copy(*capability);
-      remoteCapabilities.SetCapability(0, 0, capability);
-    }
   }
 
   if (!OnCreateLogicalChannel(*capability, direction, errorCode))
