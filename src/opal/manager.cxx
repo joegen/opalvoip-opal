@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2004  2001/08/23 05:51:17  robertj
+ * Revision 1.2005  2001/10/04 00:44:26  robertj
+ * Added function to remove wildcard from list.
+ *
+ * Revision 2.3  2001/08/23 05:51:17  robertj
  * Completed implementation of codec reordering.
  *
  * Revision 2.2  2001/08/17 08:25:41  robertj
@@ -379,11 +382,10 @@ BOOL OpalManager::OnReleased(OpalConnection & connection)
 void OpalManager::AdjustMediaFormats(const OpalConnection & /*connection*/,
                                      OpalMediaFormatList & mediaFormats)
 {
-  PINDEX i;
-  for (i = 0; i < mediaFormatMask.GetSize(); i++)
-    mediaFormats -= mediaFormatMask[i];
-
+  mediaFormats.Remove(mediaFormatMask);
   mediaFormats.Reorder(mediaFormatOrder);
+  PTRACE(3, "OpalMan\tAdjusted media formats to "
+         << setfill(',') << mediaFormats << setfill(' '));
 }
 
 
