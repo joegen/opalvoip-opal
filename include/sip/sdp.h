@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2002  2002/02/01 04:53:01  robertj
+ * Revision 1.2003  2002/02/11 07:34:58  robertj
+ * Changed SDP to use OpalTransport for hosts instead of IP addresses/ports
+ *
+ * Revision 2.1  2002/02/01 04:53:01  robertj
  * Added (very primitive!) SIP support.
  *
  */
@@ -38,11 +41,9 @@
 #endif
 
 
+#include <opal/transports.h>
 #include <opal/mediafmt.h>
 #include <rtp/rtp.h>
-
-
-class OpalTransportAddress;
 
 
 /////////////////////////////////////////////////////////
@@ -115,6 +116,7 @@ class SDPMediaFormat : public PObject
 
 PLIST(SDPMediaFormatList, SDPMediaFormat);
 
+
 /////////////////////////////////////////////////////////
 
 class SDPMediaDescription : public PObject
@@ -127,12 +129,15 @@ class SDPMediaDescription : public PObject
       Unknown
     };
 
-    SDPMediaDescription(MediaType mediaType, WORD port = 0);
-    SDPMediaDescription(const PString & str);
+    SDPMediaDescription(
+      const OpalTransportAddress & address,
+      MediaType mediaType = Unknown
+    );
+
+    void PrintOn(ostream & strm) const;
+    BOOL Parse(const PString & str);
 
     MediaType GetMediaType() const { return mediaType; }
-
-    void SetAttribute(const PString & attr);
 
     const SDPMediaFormatList & GetSDPMediaFormats() const
       { return formats; }
@@ -144,10 +149,9 @@ class SDPMediaDescription : public PObject
     void AddMediaFormat(const OpalMediaFormat & mediaFormat);
     void AddMediaFormats(const OpalMediaFormatList & mediaFormats);
 
-    void PrintOn(ostream & strm) const;
+    void SetAttribute(const PString & attr);
 
-    WORD GetPort() const  { return port; }
-    void SetPort(WORD v)  { port = v; }
+    const OpalTransportAddress & GetTransportAddress() const { return transportAddress; }
 
     PString GetTransport() const         { return transport; }
     void SetTransport(const PString & v) { transport = v; }
@@ -156,8 +160,10 @@ class SDPMediaDescription : public PObject
     MediaType mediaType;
     WORD port;
     WORD portCount;
-    PString media;
-    PString transport;
+    PCaselessString media;
+    PCaselessString transport;
+    OpalTransportAddress transportAddress;
+
     SDPMediaFormatList formats;
 };
 
@@ -170,9 +176,9 @@ class SDPSessionDescription : public PObject
 {
   PCLASSINFO(SDPSessionDescription, PObject);
   public:
-    SDPSessionDescription();
-    SDPSessionDescription(const PString & str);
-    SDPSessionDescription(const PIPSocket::Address & ip);
+    SDPSessionDescription(
+      const OpalTransportAddress & address = OpalTransportAddress()
+    );
 
     void PrintOn(ostream & strm) const;
     PString Encode() const;
@@ -191,16 +197,14 @@ class SDPSessionDescription : public PObject
     );
     void AddMediaDescription(SDPMediaDescription * md) { mediaDescriptions.Append(md); }
 
-    const PString & GetConnectAddress() const { return connectAddress; }
-    BOOL SetConnectAddress(
+    const OpalTransportAddress & GetDefaultConnectAddress() const { return defaultConnectAddress; }
+    BOOL SetDefaultConnectAddress(
       const OpalTransportAddress & address
-    );
+    ) { defaultConnectAddress = address; }
 
 
   protected:
-    void Construct(const PIPSocket::Address & addr);
     void ParseOwner(const PString & str);
-    void ParseConnect(const PString & str);
 
     SDPMediaDescriptionList mediaDescriptions;
 
@@ -208,14 +212,10 @@ class SDPSessionDescription : public PObject
     PString sessionName;
 
     PString ownerUsername;
-    PString ownerSessionId;
-    PString ownerVersion;
-    PString ownerNetworkType;
-    PString ownerAddressType;
-    PString ownerAddress;
-    PString connectNetworkType;
-    PString connectAddressType;
-    PString connectAddress;
+    unsigned ownerSessionId;
+    unsigned ownerVersion;
+    OpalTransportAddress ownerAddress;
+    OpalTransportAddress defaultConnectAddress;
 };
 
 /////////////////////////////////////////////////////////
