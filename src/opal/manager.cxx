@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2037  2004/08/14 07:56:41  rjongbloed
+ * Revision 1.2038  2004/08/18 13:03:23  rjongbloed
+ * Changed to make calling OPalManager::OnClearedCall() in override optional.
+ *
+ * Revision 2.36  2004/08/14 07:56:41  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.35  2004/07/14 13:26:14  rjongbloed
@@ -418,7 +421,6 @@ void OpalManager::ClearAllCalls(OpalConnection::CallEndReason reason, BOOL wait)
 void OpalManager::OnClearedCall(OpalCall & call)
 {
   PTRACE(3, "OpalMan\tOnClearedCall \"" << call.GetPartyA() << "\" to \"" << call.GetPartyB() << '"');
-  activeCalls.RemoveAt(call.GetToken());
 }
 
 
