@@ -103,11 +103,23 @@ SOURCE=.\makecall.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\moc_makecall.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\moc_options.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\moc_trace.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\options.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\trace.cpp
 # End Source File
 # End Group
 # Begin Group "Header Files"
@@ -132,6 +144,10 @@ SOURCE=.\makecall.h
 # Begin Source File
 
 SOURCE=.\options.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\trace.h
 # End Source File
 # Begin Source File
 
@@ -238,6 +254,38 @@ SOURCE=.\options.ui
 InputDir=.
 InputPath=.\options.ui
 InputName=options
+
+BuildCmds= \
+	%qtdir%\bin\uic.exe $(InputPath) -o $(InputDir)\$(InputName).h \
+	%qtdir%\bin\uic.exe $(InputPath) -i $(InputName).h -o $(InputDir)\$(InputName).cpp \
+	%qtdir%\bin\moc.exe $(InputDir)\$(InputName).h -o $(InputDir)\moc_$(InputName).cpp \
+	
+
+"$(InputDir)\$(InputName).h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   $(BuildCmds)
+
+"$(InputDir)\$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   $(BuildCmds)
+
+"$(InputDir)\moc_$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   $(BuildCmds)
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\trace.ui
+
+!IF  "$(CFG)" == "OpenPhone - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "OpenPhone - Win32 Debug"
+
+# Begin Custom Build - Compiling $(InputPath)...
+InputDir=.
+InputPath=.\trace.ui
+InputName=trace
 
 BuildCmds= \
 	%qtdir%\bin\uic.exe $(InputPath) -o $(InputDir)\$(InputName).h \
