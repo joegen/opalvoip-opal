@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2014  2001/11/14 01:31:55  robertj
+ * Revision 1.2015  2001/11/15 07:01:36  robertj
+ * Changed OpalCall::OpenSourceMediaStreams so the connection to not open
+ *   a media stream on is optional.
+ *
+ * Revision 2.13  2001/11/14 01:31:55  robertj
  * Corrected placement of adjusting media format list.
  *
  * Revision 2.12  2001/11/13 04:29:47  robertj
@@ -2144,7 +2148,7 @@ BOOL H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_OctetStr
                     if (channelToStart.Open()) {
                       if (channelToStart.GetDirection() == H323Channel::IsTransmitter) {
                         fastStartedTransmitMediaStream = ((H323UnidirectionalChannel &)channelToStart).GetMediaStream();
-                        if (GetCall().OpenSourceMediaStreams(*this, fastStartedTransmitMediaStream->GetMediaFormat(), channelToStart.GetSessionID())) {
+                        if (GetCall().OpenSourceMediaStreams(fastStartedTransmitMediaStream->GetMediaFormat(), channelToStart.GetSessionID(), this)) {
                           if (!mediaWaitForConnect)
                             channelToStart.Start();
                         }
@@ -2988,7 +2992,7 @@ void H323Connection::StartFastStartChannel(unsigned sessionID, H323Channel::Dire
       if (channel.Open()) {
         if (direction == H323Channel::IsTransmitter) {
           fastStartedTransmitMediaStream = ((H323UnidirectionalChannel &)channel).GetMediaStream();
-          if (GetCall().OpenSourceMediaStreams(*this, fastStartedTransmitMediaStream->GetMediaFormat(), channel.GetSessionID())) {
+          if (GetCall().OpenSourceMediaStreams(fastStartedTransmitMediaStream->GetMediaFormat(), channel.GetSessionID(), this)) {
             if (!mediaWaitForConnect)
               channel.Start();
           }
