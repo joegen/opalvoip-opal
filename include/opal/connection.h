@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2026  2004/04/18 13:31:28  rjongbloed
+ * Revision 1.2027  2004/04/26 04:33:05  rjongbloed
+ * Move various call progress times from H.323 specific to general conenction.
+ *
+ * Revision 2.25  2004/04/18 13:31:28  rjongbloed
  * Added new end call value from OpenH323.
  *
  * Revision 2.24  2004/03/13 06:25:50  rjongbloed
@@ -825,9 +828,21 @@ class OpalConnection : public PObject
      */
     BOOL IsOriginating() const { return originating; }
 
+    /**Get the time at which the connection was begun
+      */
+    PTime GetSetupUpTime() const { return setupTime; }
+
+    /**Get the time at which the ALERTING was received
+      */
+    PTime GetAlertingTime() const { return alertingTime; }
+
     /**Get the time at which the connection was established
       */
-    PTime GetConnectionStartTime() const { return connectionStartTime; }
+    PTime GetConnectionStartTime() const { return connectedTime; }
+
+    /**Get the time at which the connection was cleared
+      */
+    PTime GetConnectionEndTime() const { return callEndTime; }
 
     /**Get the local name/alias.
       */
@@ -895,7 +910,10 @@ class OpalConnection : public PObject
     Phases              phase;
     PString             callToken;
     BOOL                originating;
-    PTime               connectionStartTime;
+    PTime               setupTime;
+    PTime               alertingTime;
+    PTime               connectedTime;
+    PTime               callEndTime;
     PString             localPartyName;
     PString             displayName;
     PString             remotePartyName;
