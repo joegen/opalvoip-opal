@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vblasterlid.h,v $
- * Revision 1.2004  2002/09/06 07:20:14  robertj
+ * Revision 1.2005  2002/09/16 02:52:34  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
+ *
+ * Revision 2.3  2002/09/06 07:20:14  robertj
  * Fixed previous update, did not port properly.
  *
  * Revision 2.2  2002/09/04 06:01:47  robertj
@@ -51,7 +55,7 @@
 #ifndef __OPAL_VBLASTERLID_H
 #define __OPAL_VBLASTERLID_H
 
-#ifdef __GNUC__
+#ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
