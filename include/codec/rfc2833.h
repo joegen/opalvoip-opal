@@ -23,7 +23,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc2833.h,v $
- * Revision 1.2002  2002/01/22 05:35:28  robertj
+ * Revision 1.2003  2002/02/19 07:34:44  robertj
+ * Added OpalRFC2833 as a OpalMediaFormat variable.
+ *
+ * Revision 2.1  2002/01/22 05:35:28  robertj
  * Added RFC2833 support
  *
  */
@@ -62,10 +65,10 @@ class OpalRFC2833Info : public PObject {
 };
 
 
-class OpalRFC2833 : public PObject {
-    PCLASSINFO(OpalRFC2833, PObject);
+class OpalRFC2833Proto : public PObject {
+    PCLASSINFO(OpalRFC2833Proto, PObject);
   public:
-    OpalRFC2833(
+    OpalRFC2833Proto(
       const PNotifier & receiveNotifier
     );
 
@@ -98,10 +101,10 @@ class OpalRFC2833 : public PObject {
     const PNotifier & GetTransmitHandler() const { return transmitHandler; }
 
   protected:
-    PDECLARE_NOTIFIER(RTP_DataFrame, OpalRFC2833, ReceivedPacket);
-    PDECLARE_NOTIFIER(RTP_DataFrame, OpalRFC2833, TransmitPacket);
-    PDECLARE_NOTIFIER(PTimer, OpalRFC2833, ReceiveTimeout);
-    PDECLARE_NOTIFIER(PTimer, OpalRFC2833, TransmitEnded);
+    PDECLARE_NOTIFIER(RTP_DataFrame, OpalRFC2833Proto, ReceivedPacket);
+    PDECLARE_NOTIFIER(RTP_DataFrame, OpalRFC2833Proto, TransmitPacket);
+    PDECLARE_NOTIFIER(PTimer, OpalRFC2833Proto, ReceiveTimeout);
+    PDECLARE_NOTIFIER(PTimer, OpalRFC2833Proto, TransmitEnded);
 
     RTP_DataFrame::PayloadTypes payloadType;
 
