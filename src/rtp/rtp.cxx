@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2003  2001/11/14 06:20:40  robertj
+ * Revision 1.2004  2001/12/07 08:52:28  robertj
+ * Used new const PWaitAndSignal
+ *
+ * Revision 2.2  2001/11/14 06:20:40  robertj
  * Changed sending of control channel reports to be timer based.
  *
  * Revision 2.1  2001/10/05 00:22:14  robertj
@@ -1136,7 +1139,7 @@ void RTP_SessionManager::ReleaseSession(unsigned sessionID)
 
 RTP_Session * RTP_SessionManager::GetSession(unsigned sessionID) const
 {
-  PWaitAndSignal wait(((RTP_SessionManager*)this)->mutex);
+  PWaitAndSignal wait(mutex);
   if (!sessions.Contains(sessionID))
     return NULL;
 
