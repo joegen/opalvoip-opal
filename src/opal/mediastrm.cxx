@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2020  2003/06/02 02:58:07  rjongbloed
+ * Revision 1.2021  2004/01/18 15:35:21  rjongbloed
+ * More work on video support
+ *
+ * Revision 2.19  2003/06/02 02:58:07  rjongbloed
  * Moved LID specific media stream class to LID source file.
  * Added assurance media stream is open when Start() is called.
  *
@@ -174,8 +177,9 @@ BOOL OpalMediaStream::Start()
     return FALSE;
 
   if (patchThread != NULL && patchThread->IsSuspended()) {
-    PTRACE(4, "Media\tStarting media patch: " << patchThread->GetThreadName());
     patchThread->Resume();
+    PThread::Yield(); // This is so the thread name below is initialised.
+    PTRACE(4, "Media\tStarting thread " << patchThread->GetThreadName());
   }
 
   return TRUE;
@@ -410,6 +414,8 @@ OpalRTPMediaStream::OpalRTPMediaStream(const OpalMediaFormat & mediaFormat,
     minAudioJitterDelay(minJitter),
     maxAudioJitterDelay(maxJitter)
 {
+  if (defaultDataSize > RTP_DataFrame::MaxEthernetPayloadSize)
+    defaultDataSize = RTP_DataFrame::MaxEthernetPayloadSize;
 }
 
 
@@ -684,9 +690,12 @@ BOOL OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & length)
     return FALSE;
   }
 
+  unsigned width, height;
+  inputDevice->GetFrameSize(width, height);
   OpalVideoTranscoder::FrameHeader * frame = (OpalVideoTranscoder::FrameHeader *)data;
   frame->x = frame->y = 0;
-  inputDevice->GetFrameSize(frame->width, frame->height);
+  frame->width = width;
+  frame->height = height;
 
   PINDEX bytesReturned;
   if (!inputDevice->GetFrameData(frame->data, &bytesReturned))

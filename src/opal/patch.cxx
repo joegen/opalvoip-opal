@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2005  2003/03/17 10:27:00  robertj
+ * Revision 1.2006  2004/01/18 15:35:21  rjongbloed
+ * More work on video support
+ *
+ * Revision 2.4  2003/03/17 10:27:00  robertj
  * Added video support.
  *
  * Revision 2.3  2002/03/07 02:25:52  craigs
@@ -163,14 +166,19 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream)
   OpalMediaFormat sourceFormat = source.GetMediaFormat();
   OpalMediaFormat destinationFormat = stream->GetMediaFormat();
 
-  if (sourceFormat == destinationFormat) {
+  if (sourceFormat == destinationFormat && source.GetDataSize() <= stream->GetDataSize()) {
     PTRACE(3, "Patch\tAdded direct media stream sink " << *stream);
     return TRUE;
   }
 
   sink->primaryCodec = OpalTranscoder::Create(sourceFormat, destinationFormat);
   if (sink->primaryCodec != NULL) {
-    stream->SetDataSize(sink->primaryCodec->GetOptimalDataFrameSize(FALSE));
+    if (sink->primaryCodec->GetOptimalDataFrameSize(FALSE) > stream->GetDataSize()) {
+      PTRACE(2, "Patch\tSink stream " << *stream << " cannot support data size "
+              << sink->primaryCodec->GetOptimalDataFrameSize(FALSE));
+      return FALSE;
+    }
+
     PTRACE(3, "Patch\tAdded media stream sink " << *stream
            << " using transcoder " << *sink->primaryCodec);
   }
@@ -184,7 +192,12 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream)
 
     sink->primaryCodec = OpalTranscoder::Create(sourceFormat, intermediateFormat);
     sink->secondaryCodec = OpalTranscoder::Create(intermediateFormat, destinationFormat);
-    stream->SetDataSize(sink->secondaryCodec->GetOptimalDataFrameSize(FALSE));
+    if (sink->secondaryCodec->GetOptimalDataFrameSize(FALSE) > stream->GetDataSize()) {
+      PTRACE(2, "Patch\tSink stream " << *stream << " cannot support data size "
+              << sink->secondaryCodec->GetOptimalDataFrameSize(FALSE));
+      return FALSE;
+    }
+
     PTRACE(3, "Patch\tAdded media stream sink " << *stream
            << " using transcoders " << *sink->primaryCodec
            << " and " << *sink->secondaryCodec);
