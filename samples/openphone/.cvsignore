@@ -1,0 +1,7 @@
+obj_*_*_d Debug
+obj_*_*_r Release
+NoTrace
+*.plg *.opt *.ncb *.Tags.WW
+trace.txt
+mainwindow.h    mainwindow.cpp    moc_mainwindow.cpp
+configuration.h configuration.cpp moc_configuration.cpp
