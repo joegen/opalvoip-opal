@@ -30,7 +30,7 @@
 #define MAJOR_VERSION 2
 #define MINOR_VERSION 0
 #define BUILD_TYPE    BetaCode
-#define BUILD_NUMBER 2
+#define BUILD_NUMBER 3
 
 
 #endif  // _OPAL_VERSION_H
