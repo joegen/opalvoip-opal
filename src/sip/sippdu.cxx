@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2037  2004/11/29 06:53:25  csoutheren
+ * Revision 1.2038  2004/12/12 13:44:38  dsandras
+ * - Modified InternalParse so that the remote displayName defaults to the sip url when none is provided.
+ * - Changed GetDisplayName accordingly.
+ * - Added call to OnRegistrationFailed when the REGISTER fails for any reason.
+ *
+ * Revision 2.36  2004/11/29 06:53:25  csoutheren
  * Prevent attempt to read infinite size
  * buffer if no ContentLength specified in MIME
  *
@@ -295,8 +300,9 @@ BOOL SIPURL::InternalParse(const char * cstr, const char * defaultScheme)
 
   // see if URL is just a URI or it contains a display address as well
   if (start == P_MAX_INDEX || end == P_MAX_INDEX) {
-    if (!PURL::InternalParse(cstr, defaultScheme))
+    if (!PURL::InternalParse(cstr, defaultScheme)) {
       return FALSE;
+    }
   }
   else {
     // get the URI from between the angle brackets
@@ -306,8 +312,30 @@ BOOL SIPURL::InternalParse(const char * cstr, const char * defaultScheme)
     // extract the display address
     end = str.FindLast('"', start);
     start = str.FindLast('"', end-1);
-    if (start == P_MAX_INDEX && end == P_MAX_INDEX)
+    // There are no double quotes around the display name
+    if (start == P_MAX_INDEX && end == P_MAX_INDEX) {
+      
       displayName = str.Left(start-1).Trim();
+      start = str.FindLast ('<');
+      
+      // See if there is something before the <
+      if (start != P_MAX_INDEX && start > 0)
+	displayName = str.Left(start).Trim();
+      else { // Use the url as display name
+
+	end = str.FindLast('>');
+	if (end != P_MAX_INDEX)
+	  str = displayName.Mid ((start == P_MAX_INDEX) ? 0:start+1, end-1);
+
+	/* Remove the tag from the display name, if any */
+	end = str.Find (';');
+	if (end != P_MAX_INDEX)
+	  str = str.Left (end);
+
+	displayName = str;
+	displayName.Replace  ("sip:", "");
+      }
+    }
     else if (start != P_MAX_INDEX && end != P_MAX_INDEX) {
       // No trim quotes off
       displayName = str(start+1, end-1);
@@ -334,6 +362,30 @@ PString SIPURL::AsQuotedString() const
   if (!displayName)
     s << '"' << displayName << "\" ";
   s << '<' << AsString() << '>';
+
+  return s;
+}
+
+
+PString SIPURL::GetDisplayName () const
+{
+  PString s;
+  PINDEX tag;
+    
+  s = displayName;
+  
+  if (displayName.IsEmpty ()) {
+    
+    s = AsString ();
+    s.Replace ("sip:", "");
+    
+    /* There could be a tag if we are using the URL,
+     * remove it
+     */
+    tag = s.Find (';');
+    if (tag != P_MAX_INDEX)
+      s = s.Left (tag);
+  }
 
   return s;
 }
@@ -1517,6 +1569,13 @@ void SIPTransaction::SetTerminated(States newState)
   else {
     endpoint.RemoveTransaction(this);
   }
+    
+
+  // REGISTER Failed, tell the endpoint
+  if (GetMethod() == SIP_PDU::Method_REGISTER
+      && state != Terminated_Success) 
+    endpoint.OnRegistrationFailed();
+    
 
   finished.Signal();
 }
