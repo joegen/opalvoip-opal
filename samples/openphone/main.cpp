@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cpp,v $
+ * Revision 1.15  2004/06/05 14:37:03  rjongbloed
+ * More implemntation of options dialog.
+ *
  * Revision 1.14  2004/05/25 12:55:52  rjongbloed
  * Added all silence suppression modes to Options dialog.
  *
@@ -83,11 +86,84 @@
 #endif
 
 
-static const char ActiveViewKey[] = "ActiveView";
-static const char MainFrameXKey[] = "MainFrameX";
-static const char MainFrameYKey[] = "MainFrameY";
-static const char MainFrameWidthKey[] = "MainFrameWidth";
-static const char MainFrameHeightKey[] = "MainFrameHeight";
+#define DEF_FIELD(name) static const char name##Key[] = #name;
+DEF_FIELD(ActiveView);
+DEF_FIELD(MainFrameX);
+DEF_FIELD(MainFrameY);
+DEF_FIELD(MainFrameWidth);
+DEF_FIELD(MainFrameHeight);
+
+DEF_FIELD(Username);
+DEF_FIELD(DisplayName);
+DEF_FIELD(RingSoundFileName);
+DEF_FIELD(AutoAnswer);
+DEF_FIELD(IVRScript);
+DEF_FIELD(Bandwidth);
+DEF_FIELD(TCPPortBase);
+DEF_FIELD(TCPPortMax);
+DEF_FIELD(UDPPortBase);
+DEF_FIELD(UDPPortMax);
+DEF_FIELD(RTPPortBase);
+DEF_FIELD(RTPPortMax);
+DEF_FIELD(RTPTOS);
+DEF_FIELD(STUNServer);
+DEF_FIELD(NATRouter);
+DEF_FIELD(SoundPlayer);
+DEF_FIELD(SoundRecorder);
+DEF_FIELD(SoundBuffers);
+DEF_FIELD(LineInterfaceDevice);
+DEF_FIELD(AEC);
+DEF_FIELD(Country);
+DEF_FIELD(MinJitter);
+DEF_FIELD(MaxJitter);
+DEF_FIELD(SilenceSuppression);
+DEF_FIELD(SilenceThreshold);
+DEF_FIELD(SignalDeadband);
+DEF_FIELD(SilenceDeadband);
+DEF_FIELD(VideoGrabber);
+DEF_FIELD(VideoGrabFormat);
+DEF_FIELD(VideoGrabSource);
+DEF_FIELD(VideoEncodeQuality);
+DEF_FIELD(VideoGrabFrameRate);
+DEF_FIELD(VideoEncodeMaxBitRate);
+DEF_FIELD(VideoGrabPreview);
+DEF_FIELD(VideoFlipLocal);
+DEF_FIELD(VideoAutoTransmit);
+DEF_FIELD(VideoAutoReceive);
+DEF_FIELD(VideoFlipRemote);
+DEF_FIELD(NewAlias);
+DEF_FIELD(GatekeeperMode);
+DEF_FIELD(GatekeeperAddress);
+DEF_FIELD(GatekeeperIdentifier);
+DEF_FIELD(GatekeeperTTL);
+DEF_FIELD(GatekeeperLogin);
+DEF_FIELD(GatekeeperPassword);
+DEF_FIELD(DTMFSendMode);
+DEF_FIELD(CallIntrusionProtectionLevel);
+DEF_FIELD(DisableFastStart);
+DEF_FIELD(DisableH245Tunneling);
+DEF_FIELD(DisableH245inSETUP);
+DEF_FIELD(SIPProxy);
+DEF_FIELD(SIPProxyUsername);
+DEF_FIELD(SIPProxyPassword);
+DEF_FIELD(RegistrarName);
+DEF_FIELD(RegistrarUsername);
+DEF_FIELD(RegistrarPassword);
+DEF_FIELD(RouteSource);
+DEF_FIELD(RoutePattern);
+DEF_FIELD(RouteDestination);
+#if PTRACING
+DEF_FIELD(EnableTracing);
+DEF_FIELD(TraceLevelThreshold);
+DEF_FIELD(TraceLevelNumber);
+DEF_FIELD(TraceFileLine);
+DEF_FIELD(TraceBlocks);
+DEF_FIELD(TraceDateTime);
+DEF_FIELD(TraceTimestamp);
+DEF_FIELD(TraceThreadName);
+DEF_FIELD(TraceThreadAddress);
+DEF_FIELD(TraceFileName);
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -552,69 +628,115 @@ bool MyFrame::Initialise()
   ivrEP = new OpalIVREndPoint(*this);
 #endif
 
+  potsEP = new OpalPOTSEndPoint(*this);
   pcssEP = new MyPCSSEndPoint(*this);
 
   PwxString str;
-  if (config->Read("Username", &str))
-    SetDefaultUserName(str);
-
-  if (config->Read("DisplayName", &str))
-    SetDefaultDisplayName(str);
-
   bool on;
-  if (config->Read("AutoAnswer", &on))
-    pcssEP->SetAutoAnswer(on);
+  int value1, value2;
 
-  int i, i2;
+#define LOAD_FIELD_STR(name, set) \
+  if (config->Read(name##Key, &str)) set(str)
+#define LOAD_FIELD_BOOL(name, set) \
+  if (config->Read(name##Key, &on)) set(on)
+#define LOAD_FIELD_INT(name, set) \
+  if (config->Read(name##Key, &value1)) set(value1)
+#define LOAD_FIELD_INT2(name1, name2, set) \
+  if (config->Read(name1##Key, &value1)) { \
+    config->Read(name2##Key, &value2, 0); \
+    set(value1, value2); \
+  }
+#define LOAD_FIELD_ENUM(name, set, type) \
+  if (config->Read(name##Key, &value1)) set((type)value1)
 
-  if (config->Read("TCPPortBase", &i)) {
-    config->Read("TCPPortBase", &i2, 0);
-    SetTCPPorts(i, i2);
+  LOAD_FIELD_STR(Username, SetDefaultUserName);
+  LOAD_FIELD_STR(DisplayName, SetDefaultDisplayName);
+  LOAD_FIELD_BOOL(AutoAnswer, pcssEP->SetAutoAnswer);
+#if P_EXPAT
+  LOAD_FIELD_STR(IVRScript, ivrEP->SetDefaultVXML);
+#endif
+  LOAD_FIELD_INT2(TCPPortBase, TCPPortBase, SetTCPPorts);
+  LOAD_FIELD_INT2(UDPPortBase, UDPPortBase, SetUDPPorts);
+  LOAD_FIELD_INT2(RTPPortBase, RTPPortBase, SetRtpIpPorts);
+  LOAD_FIELD_INT(RTPTOS, SetRtpIpTypeofService);
+  LOAD_FIELD_STR(NATRouter, SetTranslationAddress);
+  LOAD_FIELD_STR(STUNServer, SetSTUNServer);
+  LOAD_FIELD_STR(SoundPlayer, pcssEP->SetSoundChannelPlayDevice);
+  LOAD_FIELD_STR(SoundRecorder, pcssEP->SetSoundChannelRecordDevice);
+  LOAD_FIELD_INT(SoundBuffers, pcssEP->SetSoundChannelBufferDepth);
+
+  OpalLine * line = potsEP->GetLine("*");
+  if (line != NULL) {
+    LOAD_FIELD_STR(LineInterfaceDevice, line->GetDevice().Open);
+    LOAD_FIELD_ENUM(AEC, line->SetAEC, OpalLineInterfaceDevice::AECLevels);
+    LOAD_FIELD_STR(Country, line->GetDevice().SetCountryCodeName);
   }
 
-  if (config->Read("UDPPortBase", &i)) {
-    config->Read("UDPPortBase", &i2, 0);
-    SetUDPPorts(i, i2);
-  }
-
-  if (config->Read("RTPPortBase", &i)) {
-    config->Read("RTPPortBase", &i2, 0);
-    SetRtpIpPorts(i, i2);
-  }
-
-  if (config->Read("RTPTOS", &i))
-    SetRtpIpTypeofService(i);
-
-  if (config->Read("NATRouter", &str))
-    SetTranslationAddress(str);
-
-  if (config->Read("STUNServer", &str))
-    SetSTUNServer(str);
-
-  if (config->Read("SoundPlayer", &str))
-    pcssEP->SetSoundChannelPlayDevice(str);
-
-  if (config->Read("SoundRecorder", &str))
-    pcssEP->SetSoundChannelRecordDevice(str);
-
-  if (config->Read("SoundBuffers", &i))
-    pcssEP->SetSoundChannelBufferDepth(i);
-
-  if (config->Read("MinJitter", &i)) {
-    config->Read("MaxJitter", &i2, i);
-    SetAudioJitterDelay(i, i2);
-  }
+  LOAD_FIELD_INT2(MinJitter, MaxJitter, SetAudioJitterDelay);
 
   OpalSilenceDetector::Params silenceParams = GetSilenceDetectParams();
-  if (config->Read("SilenceSuppression", &i))
-    silenceParams.m_mode = (OpalSilenceDetector::Mode)i;
-  if (config->Read("SilenceThreshold", &i))
-    silenceParams.m_threshold = i;
-  if (config->Read("SignalDeadband", &i))
-    silenceParams.m_signalDeadband = 8*i;
-  if (config->Read("SilenceDeadband", &i))
-    silenceParams.m_silenceDeadband = 8*i;
+  LOAD_FIELD_INT(SilenceSuppression, silenceParams.m_mode = (OpalSilenceDetector::Mode));
+  LOAD_FIELD_INT(SilenceThreshold, silenceParams.m_threshold = );
+  LOAD_FIELD_INT(SignalDeadband, silenceParams.m_signalDeadband = 8*);
+  LOAD_FIELD_INT(SilenceDeadband, silenceParams.m_silenceDeadband = 8*);
   SetSilenceDetectParams(silenceParams);
+
+  PVideoDevice::OpenArgs videoArgs = GetVideoInputDevice();
+  LOAD_FIELD_STR(VideoGrabber, videoArgs.deviceName = (PString));
+  LOAD_FIELD_INT(VideoGrabFormat, videoArgs.videoFormat = (PVideoDevice::VideoFormat));
+  LOAD_FIELD_INT(VideoGrabSource, videoArgs.channelNumber = );
+  LOAD_FIELD_INT(VideoGrabFrameRate, videoArgs.rate = );
+  LOAD_FIELD_BOOL(VideoFlipLocal, videoArgs.flip = );
+  SetVideoInputDevice(videoArgs);
+
+//  LOAD_FIELD_INT(VideoEncodeQuality, );
+//  LOAD_FIELD_INT(VideoEncodeMaxBitRate, );
+//  LOAD_FIELD_BOOL(VideoGrabPreview, );
+  LOAD_FIELD_BOOL(VideoAutoTransmit, SetAutoStartTransmitVideo);
+  LOAD_FIELD_BOOL(VideoAutoReceive, SetAutoStartReceiveVideo);
+
+  videoArgs = GetVideoOutputDevice();
+  LOAD_FIELD_BOOL(VideoFlipRemote, videoArgs.flip = );
+  SetVideoOutputDevice(videoArgs);
+
+  LOAD_FIELD_ENUM(DTMFSendMode, h323EP->SetSendUserInputMode, H323Connection::SendUserInputModes);
+  LOAD_FIELD_INT(CallIntrusionProtectionLevel, h323EP->SetCallIntrusionProtectionLevel);
+  LOAD_FIELD_BOOL(DisableFastStart, h323EP->DisableFastStart);
+  LOAD_FIELD_BOOL(DisableH245Tunneling, h323EP->DisableH245Tunneling);
+  LOAD_FIELD_BOOL(DisableH245inSETUP, h323EP->DisableH245inSetup);
+
+  PwxString hostname, username, password;
+  const SIPURL & proxy = sipEP->GetProxy();
+  config->Read(SIPProxyKey, &hostname, PwxString(proxy.GetHostName()));
+  config->Read(SIPProxyUsernameKey, &username, PwxString(proxy.GetUserName()));
+  config->Read(SIPProxyPasswordKey, &password, PwxString(proxy.GetPassword()));
+  sipEP->SetProxy(hostname, username, password);
+
+  const SIPURL & registrationAddress = sipEP->GetRegistrationAddress();
+  config->Read(RegistrarNameKey, &hostname, PwxString(registrationAddress.GetHostName()));
+  config->Read(RegistrarUsernameKey, &username, PwxString(registrationAddress.GetUserName()));
+  config->Read(RegistrarPasswordKey, &password, PwxString(registrationAddress.GetPassword()));
+  sipEP->Register(hostname, username, password);
+
+  int mode;
+  config->Read(GatekeeperModeKey, &mode, 0);
+  if (mode > 0) {
+    config->Read(GatekeeperAddressKey, &hostname, "");
+    config->Read(GatekeeperIdentifierKey, &username, "");
+    if (h323EP->UseGatekeeper(hostname, username)) {
+      if (config->Read(GatekeeperTTLKey, &value1))
+        h323EP->SetGatekeeperTimeToLive(PTimeInterval(0, value1));
+
+      config->Read(GatekeeperLoginKey, &username, "");
+      config->Read(GatekeeperPasswordKey, &password, "");
+      h323EP->SetGatekeeperPassword(password, username);
+    }
+    else {
+      if (mode > 1) {
+        return false;
+      }
+    }
+  }
 
   return true;
 }
@@ -633,7 +755,7 @@ END_EVENT_TABLE()
 
 #define INIT_FIELD(name, value) \
   m_##name = value; \
-  FindWindowByName(#name)->SetValidator(wxGenericValidator(&m_##name))
+  FindWindowByName(name##Key)->SetValidator(wxGenericValidator(&m_##name))
 
 OptionsDialog::OptionsDialog(MyFrame *parent)
   : mainFrame(*parent)
@@ -647,7 +769,11 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
   INIT_FIELD(DisplayName, mainFrame.GetDefaultDisplayName());
   INIT_FIELD(RingSoundFileName, "");
   INIT_FIELD(AutoAnswer, mainFrame.pcssEP->GetAutoAnswer());
-  INIT_FIELD(Bandwidth, INT_MAX);
+#if P_EXPAT
+  INIT_FIELD(IVRScript, mainFrame.ivrEP->GetDefaultVXML());
+#endif
+
+  INIT_FIELD(Bandwidth, mainFrame.h323EP->GetInitialBandwidth());
   INIT_FIELD(TCPPortBase, mainFrame.GetTCPPortBase());
   INIT_FIELD(TCPPortMax, mainFrame.GetTCPPortMax());
   INIT_FIELD(UDPPortBase, mainFrame.GetUDPPortBase());
@@ -657,6 +783,7 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
   INIT_FIELD(RTPTOS, mainFrame.GetRtpIpTypeofService());
   INIT_FIELD(STUNServer, mainFrame.GetSTUN() != NULL ? mainFrame.GetSTUN()->GetServer() : PString());
   INIT_FIELD(NATRouter, mainFrame.GetTranslationAddress().AsString());
+
   INIT_FIELD(SoundBuffers, mainFrame.pcssEP->GetSoundChannelBufferDepth());
   INIT_FIELD(MinJitter, mainFrame.GetMinAudioJitterDelay());
   INIT_FIELD(MaxJitter, mainFrame.GetMaxAudioJitterDelay());
@@ -664,6 +791,31 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
   INIT_FIELD(SilenceThreshold, mainFrame.GetSilenceDetectParams().m_threshold);
   INIT_FIELD(SignalDeadband, mainFrame.GetSilenceDetectParams().m_signalDeadband/8);
   INIT_FIELD(SilenceDeadband, mainFrame.GetSilenceDetectParams().m_silenceDeadband/8);
+
+  INIT_FIELD(VideoGrabber, mainFrame.GetVideoInputDevice().deviceName);
+  INIT_FIELD(VideoGrabFormat, mainFrame.GetVideoInputDevice().videoFormat);
+  INIT_FIELD(VideoGrabSource, mainFrame.GetVideoInputDevice().channelNumber);
+  INIT_FIELD(VideoGrabFrameRate, mainFrame.GetVideoInputDevice().rate);
+  INIT_FIELD(VideoFlipLocal, mainFrame.GetVideoInputDevice().flip != FALSE);
+//  INIT_FIELD(VideoEncodeQuality, mainFrame);
+//  INIT_FIELD(VideoEncodeMaxBitRate, mainFrame);
+//  INIT_FIELD(VideoGrabPreview, mainFrame);
+  INIT_FIELD(VideoAutoTransmit, mainFrame.CanAutoStartTransmitVideo() != FALSE);
+  INIT_FIELD(VideoAutoReceive, mainFrame.CanAutoStartReceiveVideo() != FALSE);
+  INIT_FIELD(VideoFlipRemote, mainFrame.GetVideoOutputDevice().flip != FALSE);
+
+  INIT_FIELD(DTMFSendMode, mainFrame.h323EP->GetSendUserInputMode());
+  INIT_FIELD(CallIntrusionProtectionLevel, mainFrame.h323EP->GetCallIntrusionProtectionLevel());
+  INIT_FIELD(DisableFastStart, mainFrame.h323EP->IsFastStartDisabled() != FALSE);
+  INIT_FIELD(DisableH245Tunneling, mainFrame.h323EP->IsH245TunnelingDisabled() != FALSE);
+  INIT_FIELD(DisableH245inSETUP, mainFrame.h323EP->IsH245inSetupDisabled() != FALSE);
+
+  INIT_FIELD(SIPProxy, mainFrame.sipEP->GetProxy().GetHostName());
+  INIT_FIELD(SIPProxyUsername, mainFrame.sipEP->GetProxy().GetUserName());
+  INIT_FIELD(SIPProxyPassword, mainFrame.sipEP->GetProxy().GetPassword());
+  INIT_FIELD(RegistrarName, mainFrame.sipEP->GetRegistrationAddress().GetHostName());
+  INIT_FIELD(RegistrarUsername, mainFrame.sipEP->GetRegistrationAddress().GetUserName());
+  INIT_FIELD(RegistrarPassword, mainFrame.sipEP->GetRegistrationAddress().GetPassword());
 #if PTRACING
   INIT_FIELD(EnableTracing, mainFrame.m_TraceFile != NULL);
   INIT_FIELD(TraceLevelThreshold, PTrace::GetLevel());
@@ -677,30 +829,54 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
   INIT_FIELD(TraceFileName, m_EnableTracing ? mainFrame.m_TraceFile->GetFilePath() : "");
 #endif // PTRACING
 
-  wxComboBox * combo = (wxComboBox *)FindWindowByName("SoundPlayer");
+  wxComboBox * combo = (wxComboBox *)FindWindowByName(SoundPlayerKey);
+  combo->SetValidator(wxGenericValidator(&m_SoundPlayer));
   PStringList devices = PSoundChannel::GetDeviceNames(PSoundChannel::Player);
   for (i = 0; i < devices.GetSize(); i++)
     combo->Append((const char *)devices[i]);
   m_SoundPlayer = mainFrame.pcssEP->GetSoundChannelPlayDevice();
-  combo->SetValidator(wxGenericValidator(&m_SoundPlayer));
 
-  combo = (wxComboBox *)FindWindowByName("SoundRecorder");
+  combo = (wxComboBox *)FindWindowByName(SoundRecorderKey);
+  combo->SetValidator(wxGenericValidator(&m_SoundRecorder));
   devices = PSoundChannel::GetDeviceNames(PSoundChannel::Recorder);
   for (i = 0; i < devices.GetSize(); i++)
     combo->Append((const char *)devices[i]);
   m_SoundRecorder = mainFrame.pcssEP->GetSoundChannelRecordDevice();
-  combo->SetValidator(wxGenericValidator(&m_SoundRecorder));
+
+  combo = (wxComboBox *)FindWindowByName(LineInterfaceDeviceKey);
+  combo->SetValidator(wxGenericValidator(&m_LineInterfaceDevice));
+  OpalLine * line = mainFrame.potsEP->GetLine("*");
+  if (line != NULL) {
+    devices = line->GetDevice().GetAllNames();
+    for (i = 0; i < devices.GetSize(); i++)
+      combo->Append((const char *)devices[i]);
+    m_LineInterfaceDevice = line->GetDevice().GetName();
+    INIT_FIELD(AEC, line->GetAEC());
+    INIT_FIELD(Country, line->GetDevice().GetCountryCodeName());
+  }
+  else {
+    m_LineInterfaceDevice = "<< None available >>";
+    combo->Append(m_LineInterfaceDevice);
+    FindWindowByName(AECKey)->Disable();
+    FindWindowByName(CountryKey)->Disable();
+  }
 }
 
 
 #define SAVE_FIELD(name, set) \
   set(m_##name); \
-  config->Write(#name, m_##name)
+  config->Write(name##Key, m_##name)
 
 #define SAVE_FIELD2(name1, name2, set) \
   set(m_##name1, m_##name2); \
-  config->Write(#name1, m_##name1); \
-  config->Write(#name2, m_##name2)
+  config->Write(name1##Key, m_##name1); \
+  config->Write(name2##Key, m_##name2)
+
+#define SAVE_FIELD3(name1, name2, name3, set) \
+  set(m_##name1, m_##name2, m_##name3); \
+  config->Write(name1##Key, m_##name1); \
+  config->Write(name2##Key, m_##name2); \
+  config->Write(name3##Key, m_##name3)
 
 bool OptionsDialog::TransferDataFromWindow()
 {
@@ -712,17 +888,25 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(Username, mainFrame.SetDefaultUserName);
   SAVE_FIELD(DisplayName, mainFrame.SetDefaultDisplayName);
   SAVE_FIELD(AutoAnswer, mainFrame.pcssEP->SetAutoAnswer);
+#if P_EXPAT
+  SAVE_FIELD(IVRScript, mainFrame.ivrEP->SetDefaultVXML);
+#endif
+
+  SAVE_FIELD(Bandwidth, mainFrame.h323EP->SetInitialBandwidth);
   SAVE_FIELD2(TCPPortBase, TCPPortMax, mainFrame.SetTCPPorts);
   SAVE_FIELD2(UDPPortBase, UDPPortMax, mainFrame.SetUDPPorts);
   SAVE_FIELD2(RTPPortBase, RTPPortMax, mainFrame.SetRtpIpPorts);
   SAVE_FIELD(RTPTOS, mainFrame.SetRtpIpTypeofService);
   SAVE_FIELD(STUNServer, mainFrame.SetSTUNServer);
   SAVE_FIELD(NATRouter, mainFrame.SetTranslationAddress);
+
   SAVE_FIELD(SoundPlayer, mainFrame.pcssEP->SetSoundChannelPlayDevice);
   SAVE_FIELD(SoundRecorder, mainFrame.pcssEP->SetSoundChannelRecordDevice);
   SAVE_FIELD(SoundBuffers, mainFrame.pcssEP->SetSoundChannelBufferDepth);
+//  SAVE_FIELD(LineInterfaceDevice, mainFrame.potsEP->);
+//  SAVE_FIELD(AEC, mainFrame.potsEP->);
+//  SAVE_FIELD(Country, mainFrame.potsEP->);
   SAVE_FIELD2(MinJitter, MaxJitter, mainFrame.SetAudioJitterDelay);
-  SAVE_FIELD(TraceLevelThreshold, PTrace::SetLevel);
 
   OpalSilenceDetector::Params silenceParams;
   SAVE_FIELD(SilenceSuppression, silenceParams.m_mode=(OpalSilenceDetector::Mode));
@@ -731,7 +915,35 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(SilenceDeadband, silenceParams.m_silenceDeadband=8*);
   mainFrame.SetSilenceDetectParams(silenceParams);
 
+  PVideoDevice::OpenArgs grabber = mainFrame.GetVideoInputDevice();
+  SAVE_FIELD(VideoGrabber, grabber.deviceName = (PString));
+  SAVE_FIELD(VideoGrabFormat, grabber.videoFormat = (PVideoDevice::VideoFormat));
+  SAVE_FIELD(VideoGrabSource, grabber.channelNumber = );
+  SAVE_FIELD(VideoGrabFrameRate, grabber.rate = );
+  SAVE_FIELD(VideoFlipLocal, grabber.flip = );
+  mainFrame.SetVideoInputDevice(grabber);
+//  SAVE_FIELD(VideoEncodeQuality, );
+//  SAVE_FIELD(VideoEncodeMaxBitRate, );
+//  SAVE_FIELD(VideoGrabPreview, );
+  SAVE_FIELD(VideoAutoTransmit, mainFrame.SetAutoStartTransmitVideo);
+  SAVE_FIELD(VideoAutoReceive, mainFrame.SetAutoStartReceiveVideo);
+//  SAVE_FIELD(VideoFlipRemote, );
+
+  SAVE_FIELD2(GatekeeperPassword, GatekeeperLogin, mainFrame.h323EP->SetGatekeeperPassword);
+
+  mainFrame.h323EP->SetSendUserInputMode((H323Connection::SendUserInputModes)m_DTMFSendMode);
+  config->Write(DTMFSendModeKey, m_DTMFSendMode);
+  SAVE_FIELD(CallIntrusionProtectionLevel, mainFrame.h323EP->SetCallIntrusionProtectionLevel);
+  SAVE_FIELD(DisableFastStart, mainFrame.h323EP->DisableFastStart);
+  SAVE_FIELD(DisableH245Tunneling, mainFrame.h323EP->DisableH245Tunneling);
+  SAVE_FIELD(DisableH245inSETUP, mainFrame.h323EP->DisableH245inSetup);
+
+  SAVE_FIELD3(SIPProxy, SIPProxyUsername, SIPProxyPassword, mainFrame.sipEP->SetProxy);
+  SAVE_FIELD3(RegistrarName, RegistrarUsername, RegistrarPassword, mainFrame.sipEP->Register);
+
 #if PTRACING
+  SAVE_FIELD(TraceLevelThreshold, PTrace::SetLevel);
+
   // Check for stopping tracing
   if (mainFrame.m_TraceFile != NULL &&
             (!m_EnableTracing || mainFrame.m_TraceFile->GetFilePath() != PFilePath((PString)m_TraceFileName))) {
@@ -783,6 +995,96 @@ bool OptionsDialog::TransferDataFromWindow()
 #endif // PTRACING
 
   return true;
+}
+
+
+void OptionsDialog::BrowseSoundFile(wxCommandEvent & event)
+{
+}
+
+
+void OptionsDialog::PlaySoundFile(wxCommandEvent & event)
+{
+}
+
+
+void OptionsDialog::BandwidthClass(wxCommandEvent & event)
+{
+}
+
+
+void OptionsDialog::SelectedLocalInterface(wxCommandEvent & event)
+{
+}
+
+
+void OptionsDialog::AddInterface(wxCommandEvent & event)
+{
+}
+
+
+void OptionsDialog::RemoveInterface(wxCommandEvent & event)
+{
+}
+
+
+void OptionsDialog::SelectedCodecToAdd(wxCommandEvent & event)
+{
+}
+
+
+void OptionsDialog::AddCodec(wxCommandEvent & event)
+{
+}
+
+
+void OptionsDialog::RemoveCodec(wxCommandEvent & event)
+{
+}
+
+
+void OptionsDialog::MoveUpCodec(wxCommandEvent & event)
+{
+}
+
+
+void OptionsDialog::MoveDownCodec(wxCommandEvent & event)
+{
+}
+
+
+void OptionsDialog::ConfigureCodec(wxCommandEvent & event)
+{
+}
+
+
+void OptionsDialog::SelectedCodec(wxCommandEvent & event)
+{
+}
+
+
+void OptionsDialog::AddAlias(wxCommandEvent & event)
+{
+}
+
+
+void OptionsDialog::RemoveAlias(wxCommandEvent & event)
+{
+}
+
+
+void OptionsDialog::AddRoute(wxCommandEvent & event)
+{
+}
+
+
+void OptionsDialog::RemoveRoute(wxCommandEvent & event)
+{
+}
+
+
+void OptionsDialog::SelectedRoute(wxCommandEvent & event)
+{
 }
 
 
