@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalvxml.cxx,v $
- * Revision 1.2007  2003/03/18 04:43:27  robertj
+ * Revision 1.2008  2004/04/18 13:36:15  rjongbloed
+ * Added autmatic inclusion of a text to speach converter, if available.
+ *
+ * Revision 2.6  2003/03/18 04:43:27  robertj
  * Fixed pragma implementation
  *
  * Revision 2.5  2003/03/17 23:36:19  robertj
@@ -134,6 +137,16 @@ OpalVXMLSession::OpalVXMLSession(OpalConnection * _conn, PTextToSpeech * tts, BO
   : PVXMLSession(tts, autoDelete),
     conn(_conn)
 {
+  if (tts == NULL) {
+    tts = new PTextToSpeech();
+    PStringArray engines = tts->GetEngines();
+    if (engines.IsEmpty())
+      delete tts;
+    else {
+      tts->SetEngine(engines[0]);
+      SetTextToSpeech(tts, TRUE);
+    }
+  }
 }
 
 
