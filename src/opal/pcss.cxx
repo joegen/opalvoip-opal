@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2014  2003/03/17 22:27:36  robertj
+ * Revision 1.2015  2004/02/03 12:21:30  rjongbloed
+ * Fixed random destination alias from being interpreted as a sound card device name, unless it is a valid sound card device name.
+ *
+ * Revision 2.13  2003/03/17 22:27:36  robertj
  * Fixed multi-byte character that should have been string.
  *
  * Revision 2.12  2003/03/17 10:13:18  robertj
@@ -127,6 +130,28 @@ OpalPCSSEndPoint::~OpalPCSSEndPoint()
 }
 
 
+static BOOL SetDeviceName(const PString & name,
+                          PSoundChannel::Directions dir,
+                          PString & result)
+{
+  PStringArray devices = PSoundChannel::GetDeviceNames(dir);
+
+  if (name[0] == '#') {
+    PINDEX id = name.Mid(1).AsUnsigned();
+    if (id == 0 || id > devices.GetSize())
+      return FALSE;
+    result = devices[id-1];
+  }
+  else {
+    if (devices.GetValuesIndex(name) == P_MAX_INDEX)
+      return FALSE;
+    result = name;
+  }
+
+  return TRUE;
+}
+
+
 BOOL OpalPCSSEndPoint::MakeConnection(OpalCall & call,
                                       const PString & remoteParty,
                                       void * userData)
@@ -146,9 +171,9 @@ BOOL OpalPCSSEndPoint::MakeConnection(OpalCall & call,
     recordDevice = remoteParty.Mid(separator+1);
   }
 
-  if (playDevice == "*")
+  if (!SetDeviceName(playDevice, PSoundChannel::Player, playDevice))
     playDevice = soundChannelPlayDevice;
-  if (recordDevice == "*")
+  if (!SetDeviceName(recordDevice, PSoundChannel::Recorder, recordDevice))
     recordDevice = soundChannelRecordDevice;
 
   OpalPCSSConnection * connection;
@@ -226,28 +251,6 @@ void OpalPCSSEndPoint::AcceptIncomingConnection(const PString & token)
 
 BOOL OpalPCSSEndPoint::OnShowUserInput(const OpalPCSSConnection &, const PString &)
 {
-  return TRUE;
-}
-
-
-static BOOL SetDeviceName(const PString & name,
-                          PSoundChannel::Directions dir,
-                          PString & result)
-{
-  PStringArray devices = PSoundChannel::GetDeviceNames(dir);
-
-  if (name[0] == '#') {
-    PINDEX id = name.Mid(1).AsUnsigned();
-    if (id == 0 || id > devices.GetSize())
-      return FALSE;
-    result = devices[id-1];
-  }
-  else {
-    if (devices.GetValuesIndex(name) == P_MAX_INDEX)
-      return FALSE;
-    result = name;
-  }
-
   return TRUE;
 }
 
