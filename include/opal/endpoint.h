@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2020  2004/04/26 06:30:32  rjongbloed
+ * Revision 1.2021  2004/07/11 12:42:10  rjongbloed
+ * Added function on endpoints to get the list of all media formats any
+ *   connection the endpoint may create can support.
+ *
+ * Revision 2.19  2004/04/26 06:30:32  rjongbloed
  * Added ability to specify more than one defualt listener for an endpoint,
  *   required by SIP which listens on both UDP and TCP.
  *
@@ -435,6 +439,17 @@ class OpalEndPoint : public PObject
 
   /**@name Media Streams management */
   //@{
+    /**Get the data formats this endpoint is capable of operating.
+       This provides a list of media data format names that may be used by an
+       OpalMediaStream may be created by a connection from this endpoint.
+
+       Note that a specific connection may not actually support all of the
+       media formats returned here, but should return no more.
+
+       The default behaviour is pure.
+      */
+    virtual OpalMediaFormatList GetMediaFormats() const = 0;
+
     /**Adjust media formats available on a connection.
        This is called by a connection after it has called
        OpalCall::GetMediaFormats() to get all media formats that it can use so
@@ -477,8 +492,8 @@ class OpalEndPoint : public PObject
        The default behaviour calls the OpalEndPoint function of the same name.
       */
     virtual void AddVideoMediaFormats(
-      const OpalConnection & connection,  /// Connection that is about to use formats
-      OpalMediaFormatList & mediaFormats  /// Media formats to use
+      OpalMediaFormatList & mediaFormats, /// Media formats to use
+      const OpalConnection * connection = NULL  /// Optional connection that is using formats
     ) const;
 
     /**Create an PVideoInputDevice for a source media stream.
