@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2014  2002/04/05 10:38:35  robertj
+ * Revision 1.2015  2002/04/08 02:40:13  robertj
+ * Fixed issues with using double originate call, eg from simple app command line.
+ *
+ * Revision 2.13  2002/04/05 10:38:35  robertj
  * Rearranged OnRelease to remove the connection from endpoints connection
  *   list at the end of the release phase rather than the beginning.
  *
@@ -213,10 +216,21 @@ void OpalCall::OnConnected(OpalConnection & connection)
 
   inUseFlag.Wait();
 
+  if (activeConnections.GetSize() == 1 && !partyB.IsEmpty()) {
+    inUseFlag.Signal();
+    if (!manager.SetUpConnection(*this, partyB))
+      connection.Release(EndedByNoUser);
+    return;
+  }
+
   for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
     OpalConnection & conn = activeConnections[i];
     if (&connection != &conn)
       conn.SetConnected();
+    else if (i == 0)
+      partyA = connection.GetRemotePartyAddress();
+    else
+      partyB = connection.GetRemotePartyAddress();
   }
 
   inUseFlag.Signal();

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2010  2002/04/05 10:42:04  robertj
+ * Revision 1.2011  2002/04/08 02:40:13  robertj
+ * Fixed issues with using double originate call, eg from simple app command line.
+ *
+ * Revision 2.9  2002/04/05 10:42:04  robertj
  * Major changes to support transactions (UDP timeouts and retries).
  *
  * Revision 2.8  2002/03/18 08:13:42  robertj
@@ -141,16 +144,16 @@ BOOL SIPConnection::OnReleased()
     case ReleaseWithResponse :
       switch (callEndReason) {
         case EndedByAnswerDenied :
-          SendResponse(SIP_PDU::Failure_Decline);
+          SendResponseToINVITE(SIP_PDU::Failure_Decline);
           break;
         case EndedByLocalBusy :
-          SendResponse(SIP_PDU::Failure_BusyHere);
+          SendResponseToINVITE(SIP_PDU::Failure_BusyHere);
           break;
         case EndedByCallerAbort :
-          SendResponse(SIP_PDU::Failure_RequestTerminated);
+          SendResponseToINVITE(SIP_PDU::Failure_RequestTerminated);
           break;
         default :
-          SendResponse(SIP_PDU::Failure_BadGateway);
+          SendResponseToINVITE(SIP_PDU::Failure_BadGateway);
       }
       break;
 
@@ -192,6 +195,9 @@ BOOL SIPConnection::OnReleased()
 
 BOOL SIPConnection::SetAlerting(const PString & /*calleeName*/, BOOL /*withMedia*/)
 {
+  if (!HadAnsweredCall())
+    return TRUE;
+
   PTRACE(2, "SIP\tSetAlerting");
   if (!Lock())
     return FALSE;
@@ -199,7 +205,7 @@ BOOL SIPConnection::SetAlerting(const PString & /*calleeName*/, BOOL /*withMedia
   if (currentPhase != SetUpPhase) 
     return FALSE;
 
-  SendResponse(SIP_PDU::Information_Ringing);
+  SendResponseToINVITE(SIP_PDU::Information_Ringing);
   currentPhase = AlertingPhase;
 
   Unlock();
@@ -210,6 +216,9 @@ BOOL SIPConnection::SetAlerting(const PString & /*calleeName*/, BOOL /*withMedia
 
 BOOL SIPConnection::SetConnected()
 {
+  if (!HadAnsweredCall())
+    return TRUE;
+
   PINDEX i;
   PTRACE(2, "SIP\tSetConnected");
 
@@ -403,14 +412,6 @@ BOOL SIPConnection::GetMediaInformation(unsigned sessionID,
   info.rfc2833 = rfc2833Handler->GetPayloadType();
   PTRACE(3, "SIP\tGetMediaInformation for session " << sessionID
          << " data=" << info.data << " rfc2833=" << info.rfc2833);
-  return TRUE;
-}
-
-
-BOOL SIPConnection::SendConnectionAlert(const PString & calleeName)
-{
-  currentPhase = AlertingPhase;
-  remotePartyName = calleeName;
   return TRUE;
 }
 
@@ -870,7 +871,7 @@ void SIPConnection::HandlePDUsThreadMain(PThread &, INT)
 }
 
 
-void SIPConnection::SendResponse(SIP_PDU::StatusCodes code, const char * extra)
+void SIPConnection::SendResponseToINVITE(SIP_PDU::StatusCodes code, const char * extra)
 {
   if (originalInvite != NULL) {
     SIP_PDU response(*originalInvite, code, extra);
