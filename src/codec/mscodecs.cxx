@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mscodecs.cxx,v $
- * Revision 1.2003  2001/10/05 00:22:13  robertj
+ * Revision 1.2004  2002/01/22 05:19:42  robertj
+ * Added RTP encoding name string to media format database.
+ * Changed time units to clock rate in Hz.
+ *
+ * Revision 2.2  2001/10/05 00:22:13  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.1  2001/08/01 05:04:28  robertj
@@ -125,11 +129,12 @@ OpalMediaFormat const OpalMSGSM(
   OPAL_MSGSM,
   OpalMediaFormat::DefaultAudioSessionID,
   RTP_DataFrame::DynamicBase,
+  OPAL_MSGSM,
   TRUE,  // Needs jitter
   13200, // bits/sec
   GSM_BYTES_PER_FRAME,
   GSM_SAMPLES_PER_FRAME, // 40 milliseconds
-  OpalMediaFormat::AudioTimeUnits
+  OpalMediaFormat::AudioClockRate
 );
 
 
@@ -232,11 +237,12 @@ OpalMediaFormat const OpalMSIMA(
   OPAL_MSIMA,
   OpalMediaFormat::DefaultAudioSessionID,
   RTP_DataFrame::DynamicBase,
+  OPAL_MSIMA,
   TRUE,  // Needs jitter
   32443, // bits/sec
   IMA_BYTES_PER_FRAME,
   IMA_SAMPLES_PER_FRAME, // 63.1 milliseconds
-  OpalMediaFormat::AudioTimeUnits
+  OpalMediaFormat::AudioClockRate
 );
 
 
