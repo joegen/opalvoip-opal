@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.h,v $
- * Revision 1.2002  2001/08/01 05:18:51  robertj
+ * Revision 1.2003  2001/08/01 06:23:55  robertj
+ * Changed to use separate mutex for LIDs structure to avoid Unix nested mutex problem.
+ *
+ * Revision 2.1  2001/08/01 05:18:51  robertj
  * Made OpalMediaFormatList class global to help with documentation.
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
@@ -185,6 +188,7 @@ class OpalLIDEndPoint : public OpalEndPoint
     virtual void MonitorLine(OpalLine & line);
 
     OpalLineList lines;
+    PMutex       linesMutex;
     PThread    * monitorThread;
     PSyncPoint   exitFlag;
 };
