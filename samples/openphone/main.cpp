@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cpp,v $
+ * Revision 1.27  2005/02/21 12:19:49  rjongbloed
+ * Added new "options list" to the OpalMediaFormat class.
+ *
  * Revision 1.26  2004/10/06 13:08:19  rjongbloed
  * Implemented partial support for LIDs
  *
@@ -97,6 +100,7 @@
 #include <wx/config.h>
 #include <wx/splitter.h>
 #include <wx/listctrl.h>
+#include <wx/grid.h>
 #include <wx/image.h>
 #include <wx/valgen.h>
 #include <wx/filesys.h>
@@ -551,8 +555,18 @@ bool MyFrame::Initialise()
     PwxString codecName;
     if (config->Read(CodecNameKey, &codecName) && !codecName.empty()) {
       for (MyMediaList::iterator mm = m_mediaInfo.begin(); mm != m_mediaInfo.end(); ++mm) {
-        if (codecName == mm->mediaFormat)
+        if (codecName == mm->mediaFormat) {
           mm->preferenceOrder = codecIndex;
+          for (PINDEX i = 0; i < mm->mediaFormat.GetOptionCount(); i++) {
+            const OpalMediaOption & option = mm->mediaFormat.GetOption(i);
+            if (!option.IsReadOnly()) {
+              PwxString codecOptionName = option.GetName();
+              PwxString codecOptionValue;
+              if (config->Read(codecOptionName, &codecOptionValue) && !codecOptionValue.empty())
+                mm->mediaFormat.SetOptionValue(codecOptionName, codecOptionValue);
+            }
+          }
+        }
       }
     }
     config->SetPath("..");
@@ -1211,9 +1225,9 @@ bool MyFrame::StartRegistrar()
     LogWindow << "SIP registration started for " << m_registrarUser << '@' << m_registrarName << endl;
   }
   else {
-    if (sipEP->IsRegistered()) {
+    if (sipEP->IsRegistered(m_registrarName)) {
       LogWindow << "SIP registration ended for " << m_registrarUser << '@' << m_registrarName << endl;
-      sipEP->Unregister();
+      sipEP->Unregister(m_registrarName, m_registrarUser);
     }
   }
   return true;
@@ -1269,9 +1283,11 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   EVT_BUTTON(XRCID("RemoveCodec"), OptionsDialog::RemoveCodec)
   EVT_BUTTON(XRCID("MoveUpCodec"), OptionsDialog::MoveUpCodec)
   EVT_BUTTON(XRCID("MoveDownCodec"), OptionsDialog::MoveDownCodec)
-  EVT_BUTTON(XRCID("ConfigureCodec"), OptionsDialog::ConfigureCodec)
   EVT_LISTBOX(XRCID("AllCodecs"), OptionsDialog::SelectedCodecToAdd)
   EVT_LISTBOX(XRCID("SelectedCodecs"), OptionsDialog::SelectedCodec)
+  EVT_LIST_ITEM_SELECTED(XRCID("CodecOptionsList"), OptionsDialog::SelectedCodecOption)
+  EVT_LIST_ITEM_DESELECTED(XRCID("CodecOptionsList"), OptionsDialog::DeselectedCodecOption)
+  EVT_TEXT(XRCID("CodecOptionValue"), OptionsDialog::ChangedCodecOptionValue)
 
   ////////////////////////////////////////
   // Routing fields
@@ -1416,8 +1432,6 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
   m_MoveUpCodec->Disable();
   m_MoveDownCodec = (wxButton *)FindWindowByName("MoveDownCodec");
   m_MoveDownCodec ->Disable();
-  m_ConfigureCodec = (wxButton *)FindWindowByName("ConfigureCodec");
-  m_ConfigureCodec->Disable();
 
   m_allCodecs = (wxListBox *)FindWindowByName("AllCodecs");
   m_selectedCodecs = (wxListBox *)FindWindowByName("SelectedCodecs");
@@ -1425,12 +1439,18 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
     wxString str = mm->sourceProtocol;
     str += ": ";
     str += (const char *)mm->mediaFormat;
-    m_allCodecs->Append(str);
+    m_allCodecs->Append(str, &*mm);
 
     str = (const char *)mm->mediaFormat;
     if (mm->preferenceOrder >= 0 && m_selectedCodecs->FindString(str) < 0)
-      m_selectedCodecs->Append(str);
+      m_selectedCodecs->Append(str, &*mm);
   }
+  m_codecOptions = (wxListCtrl *)FindWindowByName("CodecOptionsList");
+  int columnWidth = (m_codecOptions->GetClientSize().GetWidth()-30)/2;
+  m_codecOptions->InsertColumn(0, "Option", wxLIST_FORMAT_LEFT, columnWidth);
+  m_codecOptions->InsertColumn(1, "Value", wxLIST_FORMAT_LEFT, columnWidth);
+  m_codecOptionValue = (wxTextCtrl *)FindWindowByName("CodecOptionValue");
+  m_codecOptionValue->Disable();
 
   ////////////////////////////////////////
   // H.323 fields
@@ -1628,6 +1648,11 @@ bool OptionsDialog::TransferDataFromWindow()
       groupName.sprintf("%s/%04u", CodecsGroup, mm->preferenceOrder);
       config->SetPath(groupName);
       config->Write(CodecNameKey, mm->mediaFormat);
+      for (PINDEX i = 0; i < mm->mediaFormat.GetOptionCount(); i++) {
+        const OpalMediaOption & option = mm->mediaFormat.GetOption(i);
+        if (!option.IsReadOnly())
+          config->Write(PwxString(option.GetName()), PwxString(option.AsString()));
+      }
     }
   }
 
@@ -1791,13 +1816,17 @@ void OptionsDialog::AddCodec(wxCommandEvent & event)
   wxArrayInt sourceSelections;
   m_allCodecs->GetSelections(sourceSelections);
   for (size_t i = 0; i < sourceSelections.GetCount(); i++) {
-    wxString value = m_allCodecs->GetString(sourceSelections[i]);
+    int sourceSelection = sourceSelections[i];
+    wxString value = m_allCodecs->GetString(sourceSelection);
+    void * data = m_allCodecs->GetClientData(sourceSelection);
     value.Remove(0, value.Find(':')+2);
     if (m_selectedCodecs->FindString(value) < 0) {
       if (insertionPoint < 0)
-        m_selectedCodecs->Append(value);
-      else
+        m_selectedCodecs->Append(value, data);
+      else {
         m_selectedCodecs->InsertItems(1, &value, insertionPoint);
+        m_selectedCodecs->SetClientData(insertionPoint, data);
+      }
     }
     m_allCodecs->Deselect(sourceSelections[i]);
   }
@@ -1844,11 +1873,6 @@ void OptionsDialog::MoveDownCodec(wxCommandEvent & event)
 }
 
 
-void OptionsDialog::ConfigureCodec(wxCommandEvent & event)
-{
-}
-
-
 void OptionsDialog::SelectedCodecToAdd(wxCommandEvent & /*event*/)
 {
   wxArrayInt selections;
@@ -1863,7 +1887,75 @@ void OptionsDialog::SelectedCodec(wxCommandEvent & /*event*/)
   m_RemoveCodec->Enable(count > 0);
   m_MoveUpCodec->Enable(count == 1 && selections[0] > 0);
   m_MoveDownCodec->Enable(count == 1 && selections[0] < m_selectedCodecs->GetCount()-1);
-  m_ConfigureCodec->Enable(count == 1);
+
+  m_codecOptions->DeleteAllItems();
+  m_codecOptionValue->SetValue("");
+  m_codecOptionValue->Disable();
+
+  if (count == 1) {
+    MyMedia * media = (MyMedia *)m_selectedCodecs->GetClientData(selections[0]);
+    PAssert(media != NULL, PLogicError);
+    for (PINDEX i = 0; i < media->mediaFormat.GetOptionCount(); i++) {
+      const OpalMediaOption & option = media->mediaFormat.GetOption(i);
+      wxListItem item;
+      item.m_mask = wxLIST_MASK_TEXT|wxLIST_MASK_DATA;
+      item.m_itemId = LONG_MAX;
+      item.m_text = PwxString(option.GetName());
+      item.m_data = option.IsReadOnly();
+      long index = m_codecOptions->InsertItem(item);
+      m_codecOptions->SetItem(index, 1, PwxString(option.AsString()));
+    }
+  }
+}
+
+
+void OptionsDialog::SelectedCodecOption(wxCommandEvent & /*event*/)
+{
+  wxListItem item;
+  item.m_mask = wxLIST_MASK_TEXT|wxLIST_MASK_DATA;
+  item.m_itemId = m_codecOptions->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
+  item.m_col = 1;
+  m_codecOptions->GetItem(item);
+  m_codecOptionValue->Enable(!item.m_data);
+  if (!item.m_data)
+    m_codecOptionValue->SetValue(item.m_text);
+}
+
+
+void OptionsDialog::DeselectedCodecOption(wxCommandEvent & /*event*/)
+{
+  m_codecOptionValue->SetValue("");
+  m_codecOptionValue->Disable();
+}
+
+
+void OptionsDialog::ChangedCodecOptionValue(wxCommandEvent & /*event*/)
+{
+  PwxString newValue = m_codecOptionValue->GetValue();
+
+  wxListItem item;
+  item.m_itemId = m_codecOptions->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
+  if (item.m_itemId < 0)
+    return;
+
+  item.m_mask = wxLIST_MASK_TEXT;
+  item.m_col = 1;
+  m_codecOptions->GetItem(item);
+
+  if (item.m_text == newValue)
+    return;
+
+  item.m_text = newValue;
+  m_codecOptions->SetItem(item);
+
+  item.m_col = 0;
+  m_codecOptions->GetItem(item);
+
+  wxArrayInt selections;
+  PAssert(m_selectedCodecs->GetSelections(selections) == 1, PLogicError);
+  MyMedia * media = (MyMedia *)m_selectedCodecs->GetClientData(selections[0]);
+  PAssert(media != NULL, PLogicError);
+  media->mediaFormat.SetOptionValue(PwxString(item.m_text), newValue);
 }
 
 
