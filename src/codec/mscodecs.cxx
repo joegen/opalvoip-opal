@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mscodecs.cxx,v $
- * Revision 1.2008  2004/04/25 08:34:08  rjongbloed
+ * Revision 1.2009  2005/02/21 12:19:54  rjongbloed
+ * Added new "options list" to the OpalMediaFormat class.
+ *
+ * Revision 2.7  2004/04/25 08:34:08  rjongbloed
  * Fixed various GCC 3.4 warnings
  *
  * Revision 2.6  2004/03/11 06:54:28  csoutheren
@@ -134,8 +137,7 @@ MicrosoftNonStandardAudioCapability::MicrosoftNonStandardAudioCapability(
                                                           PINDEX offset,
                                                           PINDEX len)
 
-  : H323NonStandardAudioCapability(1, 1,
-                                   MICROSOFT_COUNTRY_CODE,
+  : H323NonStandardAudioCapability(MICROSOFT_COUNTRY_CODE,
                                    MICROSOFT_T35EXTENSION,
                                    MICROSOFT_MANUFACTURER,
                                    header, headerSize, offset, len)
@@ -143,7 +145,20 @@ MicrosoftNonStandardAudioCapability::MicrosoftNonStandardAudioCapability(
 }
                                                                          
 
-/////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+#define	GSM_BYTES_PER_FRAME 65
+#define GSM_SAMPLES_PER_FRAME 320
+
+static OpalAudioFormat MSGSM(
+  OPAL_MSGSM,
+  RTP_DataFrame::DynamicBase,
+  OPAL_MSGSM,
+  GSM_BYTES_PER_FRAME,
+  GSM_SAMPLES_PER_FRAME, // 40 milliseconds
+  1, 1
+);
+
 
 static const BYTE msGSMHeader[] = {
 
@@ -178,7 +193,6 @@ MicrosoftGSMAudioCapability::MicrosoftGSMAudioCapability()
   : MicrosoftNonStandardAudioCapability(msGSMHeader, sizeof(msGSMHeader),
                                         GSM_FIXED_START, GSM_FIXED_LEN)
 {
-  txFramesInPacket = 1;
 }
 
 void MicrosoftGSMAudioCapability::SetTxFramesInPacket(unsigned /*frames*/)
@@ -193,28 +207,10 @@ PObject * MicrosoftGSMAudioCapability::Clone() const
 
 PString MicrosoftGSMAudioCapability::GetFormatName() const
 {
-  return OpalMSGSM;
+  return MSGSM;
 }
 
 #endif
-
-///////////////////////////////////////////////////////////////////////////////
-
-#define	GSM_BYTES_PER_FRAME 65
-#define GSM_SAMPLES_PER_FRAME 320
-
-OpalMediaFormat const OpalMSGSM(
-  OPAL_MSGSM,
-  OpalMediaFormat::DefaultAudioSessionID,
-  RTP_DataFrame::DynamicBase,
-  OPAL_MSGSM,
-  TRUE,  // Needs jitter
-  13200, // bits/sec
-  GSM_BYTES_PER_FRAME,
-  GSM_SAMPLES_PER_FRAME, // 40 milliseconds
-  OpalMediaFormat::AudioClockRate
-);
-
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -266,20 +262,15 @@ BOOL Opal_PCM_MSGSM::ConvertFrame(const BYTE * src, BYTE * dst)
 #define IMA_SAMPLES_PER_FRAME		505
 #define IMA_BYTES_PER_FRAME		256
 
-OpalMediaFormat const OpalMSIMA(
+static OpalAudioFormat MSIMA(
   OPAL_MSIMA,
-  OpalMediaFormat::DefaultAudioSessionID,
   RTP_DataFrame::DynamicBase,
   OPAL_MSIMA,
-  TRUE,  // Needs jitter
-  32443, // bits/sec
   IMA_BYTES_PER_FRAME,
   IMA_SAMPLES_PER_FRAME, // 63.1 milliseconds
-  OpalMediaFormat::AudioClockRate
+  1, 1
 );
 
-
-///////////////////////////////////////////////////////////////////////////////
 
 #ifndef NO_H323
 
@@ -325,7 +316,7 @@ PObject * MicrosoftIMAAudioCapability::Clone() const
 
 PString MicrosoftIMAAudioCapability::GetFormatName() const
 {
-  return OpalMSIMA;
+  return MSIMA;
 }
 
 #endif

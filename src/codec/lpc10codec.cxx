@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lpc10codec.cxx,v $
- * Revision 1.2008  2004/09/01 12:21:27  rjongbloed
+ * Revision 1.2009  2005/02/21 12:19:54  rjongbloed
+ * Added new "options list" to the OpalMediaFormat class.
+ *
+ * Revision 2.7  2004/09/01 12:21:27  rjongbloed
  * Added initialisation of H323EndPoints capability table to be all codecs so can
  *   correctly build remote caps from fqast connect params. This had knock on effect
  *   with const keywords added in numerous places.
@@ -121,16 +124,13 @@ const real MinSampleValue = -32767.0;
 
 
 
-OpalMediaFormat const OpalLPC10(
+static OpalAudioFormat OpalLPC10(
   OPAL_LPC10,
-  OpalMediaFormat::DefaultAudioSessionID,
   RTP_DataFrame::LPC,
   "LPC",
-  TRUE,  // Needs jitter
-  2400,  // bits/sec
   BytesPerFrame,
   SamplesPerFrame,
-  OpalMediaFormat::AudioClockRate
+  7, 4
 );
 
 
@@ -139,7 +139,7 @@ OpalMediaFormat const OpalLPC10(
 #ifndef NO_H323
 
 H323_LPC10Capability::H323_LPC10Capability(const H323EndPoint & endpoint)
-  : H323NonStandardAudioCapability(7, 4, endpoint,
+  : H323NonStandardAudioCapability(endpoint,
                                    (const BYTE *)(const char *)OpalLPC10,
                                    OpalLPC10.GetLength())
 {
