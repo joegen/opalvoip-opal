@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2030  2004/03/02 09:57:54  rjongbloed
+ * Revision 1.2031  2004/03/13 06:25:54  rjongbloed
+ * Slight rearrangement of local party name and alias list to beter match common
+ *   behaviour in ancestor.
+ * Abstracted local party name for endpoint into ancestor from H.,323.
+ *
+ * Revision 2.29  2004/03/02 09:57:54  rjongbloed
  * Fixed problems with recent changes to RTP UseSession() function which broke it for H.323
  *
  * Revision 2.28  2004/02/24 11:30:11  rjongbloed
@@ -201,6 +206,7 @@ OpalConnection::OpalConnection(OpalCall & call,
   : ownerCall(call),
     endpoint(ep),
     callToken(token),
+    localPartyName(ep.GetDefaultLocalPartyName()),
     remotePartyName(token)
 {
   PTRACE(3, "OpalCon\tCreated connection " << *this);
@@ -862,11 +868,6 @@ OpalT38Protocol * OpalConnection::CreateT38ProtocolHandler()
 void OpalConnection::SetLocalPartyName(const PString & name)
 {
   localPartyName = name;
-
-  if (!name.IsEmpty()) {
-    localAliasNames.RemoveAll();
-    localAliasNames.AppendString(name);
-  }
 }
 
 
