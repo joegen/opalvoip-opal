@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.h,v $
- * Revision 1.2006  2002/11/10 11:33:16  robertj
+ * Revision 1.2007  2004/02/19 10:46:43  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.5  2002/11/10 11:33:16  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.4  2002/07/01 04:56:29  robertj
@@ -41,6 +44,12 @@
  *
  * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 1.132  2003/06/06 02:19:03  rjongbloed
+ * Added iLBC codec
+ *
+ * Revision 1.131  2003/05/14 03:29:56  rjongbloed
+ * Added H.263 codec and autoconf options header file.
  *
  * Revision 1.130  2002/11/05 02:18:03  robertj
  * Changed default for speex codec to be included.
@@ -462,13 +471,18 @@
 #include <h323/h323ep.h>
 #include <h323/h323con.h>
 #include <h323/gkclient.h>
+#include <opal/buildopts.h>
+
 #ifndef NO_H323_AUDIO_CODECS
 #include <codec/gsmcodec.h>
 #include <codec/mscodecs.h>
 #include <codec/lpc10codec.h>
 #include <codec/g729codec.h>
 #include <codec/g726codec.h>
+#ifndef NO_SPEEX
 #include <codec/speexcodec.h>
+#endif
+#include <codec/ilbccodec.h>
 #endif // NO_H323_AUDIO_CODECS
 #ifndef NO_H323_VIDEO
 #include <codec/h261codec.h>

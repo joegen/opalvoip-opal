@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.h,v $
- * Revision 1.2011  2003/01/07 04:39:52  robertj
+ * Revision 1.2012  2004/02/19 10:46:43  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.10  2003/01/07 04:39:52  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.9  2002/11/10 11:33:16  robertj
@@ -60,6 +63,18 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.51  2003/03/26 00:46:25  robertj
+ * Had another go at making H323Transactor being able to be created
+ *   without having a listener running.
+ *
+ * Revision 1.50  2003/02/12 23:59:22  robertj
+ * Fixed adding missing endpoint identifer in SETUP packet when gatekeeper
+ * routed, pointed out by Stefan Klein
+ * Also fixed correct rutrn of gk routing in IRR packet.
+ *
+ * Revision 1.49  2003/02/07 06:37:42  robertj
+ * Changed registration state to an enum so can determine why the RRQ failed.
  *
  * Revision 1.48  2003/01/06 07:09:28  robertj
  * Further fixes for alternate gatekeeper, thanks Kevin Bouchard
@@ -269,15 +284,6 @@ class H323Gatekeeper : public H225_RAS
     ~H323Gatekeeper();
   //@}
 
-  /**@name Overrides from PObject */
-  //@{
-    /**Print the name of the gatekeeper.
-      */
-    void PrintOn(
-      ostream & strm    /// Stream to print to.
-    ) const;
-  //@}
-
   /**@name Overrides from H225_RAS */
   //@{
     BOOL OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm & gcf);
@@ -359,6 +365,7 @@ class H323Gatekeeper : public H225_RAS
 
       unsigned rejectReason;                      /// Reject reason if returns FALSE
 
+      BOOL gatekeeperRouted;                      /// Flag for call is through gk
       PINDEX endpointCount;                       /// Number of endpoints that can be returned
       H323TransportAddress * transportAddress;    /// Transport address or remote endpoint.
       PBYTEArray * accessTokenData;               /// iNow Gatekeeper Access Token data
@@ -423,7 +430,23 @@ class H323Gatekeeper : public H225_RAS
 
     /**Determine if the endpoint is registered with the gatekeeper.
       */
-    BOOL IsRegistered() const { return isRegistered; }
+    BOOL IsRegistered() const { return registrationFailReason == RegistrationSuccessful; }
+
+    enum RegistrationFailReasons {
+      RegistrationSuccessful,
+      UnregisteredLocally,
+      UnregisteredByGatekeeper,
+      GatekeeperLostRegistration,
+      InvalidListener,
+      DuplicateAlias,
+      SecurityDenied,
+      TransportError,
+      NumRegistrationFailReasons,
+      RegistrationRejectReasonMask = 0x8000
+    };
+    /**Get the registration fail reason.
+     */
+    RegistrationFailReasons GetRegistrationFailReason() const { return registrationFailReason; }
 
     /**Get the gatekeeper name.
        The gets the name of the gatekeeper. It will be of the form id@address
@@ -488,9 +511,9 @@ class H323Gatekeeper : public H225_RAS
 
 
     // Gatekeeper registration state variables
-    BOOL    discoveryComplete;
-    BOOL    isRegistered;
-    PString endpointIdentifier;
+    BOOL     discoveryComplete;
+    PString  endpointIdentifier;
+    RegistrationFailReasons registrationFailReason;
 
     class AlternateInfo : public PObject {
         PCLASSINFO(AlternateInfo, PObject);

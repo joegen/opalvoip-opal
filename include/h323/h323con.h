@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2022  2003/03/17 10:26:59  robertj
+ * Revision 1.2023  2004/02/19 10:46:43  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.21  2003/03/17 10:26:59  robertj
  * Added video support.
  *
  * Revision 2.20  2003/03/06 03:57:46  robertj
@@ -95,6 +98,30 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.64  2003/12/28 02:38:14  csoutheren
+ * Added H323EndPoint::OnOutgoingCall
+ *
+ * Revision 1.63  2003/12/14 10:42:29  rjongbloed
+ * Changes for compilability without video support.
+ *
+ * Revision 1.62  2003/10/27 06:03:38  csoutheren
+ * Added support for QoS
+ *   Thanks to Henry Harrison of AliceStreet
+ *
+ * Revision 1.61  2003/10/09 09:47:45  csoutheren
+ * Fixed problem with re-opening RTP half-channels under unusual
+ * circumstances. Thanks to Damien Sandras
+ *
+ * Revision 1.60  2003/04/30 00:28:50  robertj
+ * Redesigned the alternate credentials in ARQ system as old implementation
+ *   was fraught with concurrency issues, most importantly it can cause false
+ *   detection of replay attacks taking out an endpoint completely.
+ *
+ * Revision 1.59  2003/02/12 23:59:22  robertj
+ * Fixed adding missing endpoint identifer in SETUP packet when gatekeeper
+ * routed, pointed out by Stefan Klein
+ * Also fixed correct rutrn of gk routing in IRR packet.
  *
  * Revision 1.58  2002/11/27 06:54:52  robertj
  * Added Service Control Session management as per Annex K/H.323 via RAS
@@ -311,7 +338,9 @@
 
 #include <opal/connection.h>
 #include <opal/guid.h>
+#include <opal/buildopts.h>
 #include <h323/h323caps.h>
+#include <ptclib/dtmf.h>
 
 
 /* The following classes have forward references to avoid including the VERY
@@ -350,6 +379,8 @@ class H323SignalPDU;
 class H323ControlPDU;
 class H323EndPoint;
 class H323TransportAddress;
+
+class H235Authenticators;
 
 class H245NegMasterSlaveDetermination;
 class H245NegTerminalCapabilitySet;
@@ -1114,7 +1145,7 @@ class H323Connection : public OpalConnection
        If FALSE is returned the connection is aborted and a Release Complete
        PDU is sent.
 
-       The default behaviour simply returns TRUE.
+       The default behaviour calls H323EndPoint::OnOutgoingCall
      */
     virtual BOOL OnOutgoingCall(
       const H323SignalPDU & connectPDU   /// Received Connect PDU
@@ -1542,8 +1573,9 @@ class H323Connection : public OpalConnection
       const H323Capability & capability, /// Capability creating channel
       H323Channel::Directions dir,       /// Direction of channel
       unsigned sessionID,                /// Session ID for RTP channel
-      const H245_H2250LogicalChannelParameters * param
+      const H245_H2250LogicalChannelParameters * param,
                                          /// Parameters for channel
+      RTP_QOS * rtpqos = NULL            /// QoS for RTP
     );
 
     /**This function is called when the remote endpoint want's to create
@@ -1825,9 +1857,9 @@ class H323Connection : public OpalConnection
       unsigned sessionID
     ) const;
 
-    /**Use an RTP session for the specified ID.
+    /**Use an RTP session for the specified ID and for the given direction.
        If there is no session of the specified ID, a new one is created using
-       the information prvided in the H245_TransportAddress PDU. If the system
+       the information provided in the H245_TransportAddress PDU. If the system
        does not support the specified transport, NULL is returned.
 
        If this function is used, then the ReleaseSession() function MUST be
@@ -1835,7 +1867,8 @@ class H323Connection : public OpalConnection
        connection.
       */
     virtual RTP_Session * UseSession(
-      unsigned sessionID
+      unsigned sessionID,
+      RTP_QOS * rtpqos = NULL
     );
 
     /**Release the session. If the session ID is not being used any more any
@@ -1951,9 +1984,7 @@ class H323Connection : public OpalConnection
       */
     virtual BOOL GetAdmissionRequestAuthentication(
       const H225_AdmissionRequest & arq,  /// ARQ being constructed
-      PString & remoteId,                 /// Remote ID to be modified
-      PString & localId,                  /// Local ID to be modified
-      PString & password                  /// Password to be modified
+      H235Authenticators & authenticators /// New authenticators for ARQ
     );
   //@}
 
@@ -1966,6 +1997,10 @@ class H323Connection : public OpalConnection
     /**Get the call direction for this connection.
      */
     BOOL HadAnsweredCall() const { return !originating; }
+
+    /**Determined if connection is gatekeeper routed.
+     */
+    BOOL IsGatekeeperRouted() const { return gatekeeperRouted; }
 
     /**Get the Q.931 cause code (Q.850) that terminated this call.
        See Q931::CauseValues for common values.
@@ -2135,6 +2170,7 @@ class H323Connection : public OpalConnection
     H323EndPoint & endpoint;
 
     int                  remoteCallWaiting; // Number of call's waiting at the remote endpoint
+    BOOL                 gatekeeperRouted;
     unsigned             distinctiveRing;
     unsigned             callReference;
     OpalGloballyUniqueID callIdentifier;

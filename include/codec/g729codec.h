@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g729codec.h,v $
- * Revision 1.2007  2003/06/02 04:04:54  rjongbloed
+ * Revision 1.2008  2004/02/19 10:46:43  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.6  2003/06/02 04:04:54  rjongbloed
  * Changed to use new autoconf system
  *
  * Revision 2.5  2003/01/07 04:39:52  robertj
@@ -45,6 +48,9 @@
  *
  * Revision 2.1  2002/07/01 04:56:29  robertj
  * Updated to OpenH323 v1.9.1
+ *
+ * Revision 1.7  2003/05/05 11:59:21  robertj
+ * Changed to use autoconf style selection of options and subsystems.
  *
  * Revision 1.6  2002/11/12 00:06:10  robertj
  * Added check for Voice Age G.729 only being able to do a single instance
@@ -77,6 +83,9 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
+
+#if VOICE_AGE_G729A
 
 #include <opal/buildopts.h>
 
@@ -122,6 +131,8 @@ typedef Opal_PCM_G729 Opal_PCM_G729A;
           OPAL_REGISTER_TRANSCODER(Opal_PCM_G729A, OPAL_PCM16, OPAL_G729A)
 
 
+
+#endif // VOICE_AGE_G729A
 
 #endif // VOICE_AGE_G729A
 
