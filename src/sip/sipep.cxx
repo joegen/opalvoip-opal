@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2034  2004/12/25 20:45:12  dsandras
+ * Revision 1.2035  2004/12/27 22:20:17  dsandras
+ * Added preliminary support for OPTIONS requests sent outside of a connection.
+ *
+ * Revision 2.33  2004/12/25 20:45:12  dsandras
  * Only fail a REGISTER when proxy authentication is required and has already
  * been done if the credentials are identical. Fixes registration refresh problem
  * where some registrars request authentication with a new nonce.
@@ -368,6 +371,11 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
       }
       break;
 
+    case SIP_PDU::Method_OPTIONS :
+     {
+       SIP_PDU response(*pdu, SIP_PDU::Successful_OK);
+       response.Write(transport);
+     }
     case SIP_PDU::Method_ACK :
       {
 	// If we receive an ACK outside of the context of a connection,
