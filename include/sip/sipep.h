@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2014  2004/04/26 06:30:33  rjongbloed
+ * Revision 1.2015  2004/06/05 14:36:32  rjongbloed
+ * Added functions to get registration URL.
+ * Added ability to set proxy bu host/user/password strings.
+ *
+ * Revision 2.13  2004/04/26 06:30:33  rjongbloed
  * Added ability to specify more than one defualt listener for an endpoint,
  *   required by SIP which listens on both UDP and TCP.
  *
@@ -246,6 +250,7 @@ class SIPEndPoint : public OpalEndPoint
       const PString & username = PString::Empty(),
       const PString & password = PString::Empty()
     );
+    const SIPURL & GetRegistrationAddress() const { return registrationAddress; }
 
     void SetMIMEForm(BOOL v) { mimeForm = v; }
     BOOL GetMIMEForm() const { return mimeForm; }
@@ -294,6 +299,11 @@ class SIPEndPoint : public OpalEndPoint
 
     const SIPURL & GetProxy() const { return proxy; }
     void SetProxy(const SIPURL & url) { proxy = url; }
+    void SetProxy(
+      const PString & hostname,
+      const PString & username,
+      const PString & password
+    );
 
     virtual PString GetUserAgent() const;
     void SetUserAgent(const PString & str) { userAgentString = str; }
