@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2015  2002/09/04 05:28:14  robertj
+ * Revision 1.2016  2003/03/06 03:57:47  robertj
+ * IVR support (work in progress) requiring large changes everywhere.
+ *
+ * Revision 2.14  2002/09/04 05:28:14  robertj
  * Added ability to set default line name to be used when the destination
  *   does not match any lines configured.
  *
@@ -114,9 +117,9 @@ OpalLIDEndPoint::~OpalLIDEndPoint()
 }
 
 
-BOOL OpalLIDEndPoint::SetUpConnection(OpalCall & call,
-                                      const PString & remoteParty,
-                                      void * userData)
+BOOL OpalLIDEndPoint::MakeConnection(OpalCall & call,
+                                     const PString & remoteParty,
+                                     void * userData)
 {
   // First strip of the prefix if present
   PINDEX prefixLength = 0;
@@ -147,15 +150,17 @@ BOOL OpalLIDEndPoint::SetUpConnection(OpalCall & call,
   if (line == NULL)
     return FALSE;
 
-  OpalLineConnection * connection = CreateConnection(call, *line, userData);
+  OpalLineConnection * connection = CreateConnection(call, *line, userData, number);
 
   inUseFlag.Wait();
   connectionsActive.SetAt(connection->GetToken(), connection);
   inUseFlag.Signal();
 
-  connection->Lock();
-  connection->StartOutgoing(lineName);
-  connection->Unlock();
+  // If we are the A-party then need to initiate a call now in this thread. If
+  // we are the B-Party then SetUpConnection() gets called in the context of
+  // the A-party thread.
+  if (&call.GetConnection(0) == connection)
+    connection->SetUpConnection();
 
   return TRUE;
 }
@@ -163,9 +168,10 @@ BOOL OpalLIDEndPoint::SetUpConnection(OpalCall & call,
 
 OpalLineConnection * OpalLIDEndPoint::CreateConnection(OpalCall & call,
                                                        OpalLine & line,
-                                                       void * /*userData*/)
+                                                       void * /*userData*/,
+                                                       const PString & number)
 {
-  return new OpalLineConnection(call, *this, line);
+  return new OpalLineConnection(call, *this, line, number);
 }
 
 
@@ -359,14 +365,14 @@ void OpalLIDEndPoint::MonitorLine(OpalLine & line)
     PTRACE(3, "LID EP\tLine " << line << " is ringing.");
   }
 
-  // See if we can get exlusive use of the line. With soemthing like a LinJACK
-  // enableing audio on the PSTN line the POTS line will no longer be enableable
+  // See if we can get exlusive use of the line. With something like a LineJACK
+  // enabling audio on the PSTN line the POTS line will no longer be enable-able
   // so this will fail and the ringing will be ignored
   if (!line.EnableAudio())
     return;
 
   // Have incoming ring, create a new LID connection and let it handle it
-  connection = CreateConnection(*manager.CreateCall(), line, NULL);
+  connection = CreateConnection(*manager.CreateCall(), line, NULL, PString::Empty());
   connectionsActive.SetAt(line.GetToken(), connection);
   ((OpalLineConnection *)connection)->StartIncoming();
 }
@@ -376,24 +382,20 @@ void OpalLIDEndPoint::MonitorLine(OpalLine & line)
 
 OpalLineConnection::OpalLineConnection(OpalCall & call,
                                        OpalLIDEndPoint & ep,
-                                       OpalLine & ln)
+                                       OpalLine & ln,
+                                       const PString & number)
   : OpalConnection(call, ep, ln.GetToken()),
     endpoint(ep),
     line(ln)
 {
-  phase = SetUpPhase;
+  remotePartyNumber = number;
+
   answerRingCount = 3;
   requireTonesForDial = TRUE;
   wasOffHook = FALSE;
   handlerThread = NULL;
 
   PTRACE(3, "LID Con\tConnection " << callToken << " created");
-}
-
-
-OpalConnection::Phases OpalLineConnection::GetPhase() const
-{
-  return phase;
 }
 
 
@@ -523,6 +525,8 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
 {
   PTRACE(3, "LID Con\tHandling incoming call on " << *this);
 
+  phase = SetUpPhase;
+
   if (line.IsTerminal())
     remotePartyName = line.GetDescription();
   else {
@@ -562,23 +566,28 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
     Release(EndedByCallerAbort);
     return;
   }
+
+  PTRACE(2, "LID\tIncoming call routed for " << *this);
+  if (!ownerCall.OnSetUp(*this))
+    Release(EndedByNoAccept);
 }
 
 
-BOOL OpalLineConnection::StartOutgoing(const PString & number)
+BOOL OpalLineConnection::SetUpConnection()
 {
   PTRACE(3, "LID Con\tHandling outgoing call on " << *this);
 
+  phase = SetUpPhase;
   originating = TRUE;
 
   if (line.IsTerminal()) {
-    line.SetCallerID(number);
+    line.SetCallerID(remotePartyNumber);
     line.Ring(TRUE);
     phase = AlertingPhase;
     OnAlerting();
   }
   else {
-    switch (line.DialOut(number, requireTonesForDial)) {
+    switch (line.DialOut(remotePartyNumber, requireTonesForDial)) {
       case OpalLineInterfaceDevice::DialTone :
         PTRACE(3, "LID Con\tNo dial tone on " << line);
         return FALSE;
@@ -590,7 +599,7 @@ BOOL OpalLineConnection::StartOutgoing(const PString & number)
         break;
 
       default :
-        PTRACE(3, "LID Con\tError dialling " << number << " on " << line);
+        PTRACE(3, "LID Con\tError dialling " << remotePartyNumber << " on " << line);
         return FALSE;
     }
   }

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2021  2003/01/07 04:39:53  robertj
+ * Revision 1.2022  2003/03/06 03:57:47  robertj
+ * IVR support (work in progress) requiring large changes everywhere.
+ *
+ * Revision 2.20  2003/01/07 04:39:53  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.19  2002/11/10 11:33:19  robertj
@@ -240,6 +243,19 @@ void OpalManager::RemoveEndPoint(OpalEndPoint * endpoint)
 }
 
 
+OpalEndPoint * OpalManager::FindEndPoint(const PString & prefix)
+{
+  PWaitAndSignal mutex(inUseFlag);
+
+  for (PINDEX i = 0; i < endpoints.GetSize(); i++) {
+    if (endpoints[i].GetPrefixName() *= prefix)
+      return &endpoints[i];
+  }
+
+  return NULL;
+}
+
+
 BOOL OpalManager::SetUpCall(const PString & partyA,
                             const PString & partyB,
                             PString & token)
@@ -251,7 +267,7 @@ BOOL OpalManager::SetUpCall(const PString & partyA,
 
   call->SetPartyB(partyB);
 
-  if (SetUpConnection(*call, partyA))
+  if (MakeConnection(*call, partyA))
     return TRUE;
 
   call->Clear();
@@ -387,7 +403,7 @@ void OpalManager::AttachCall(OpalCall * call)
 }
 
 
-BOOL OpalManager::SetUpConnection(OpalCall & call, const PString & remoteParty)
+BOOL OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty)
 {
   PTRACE(3, "OpalMan\tSet up connection to \"" << remoteParty << '"');
 
@@ -400,7 +416,7 @@ BOOL OpalManager::SetUpConnection(OpalCall & call, const PString & remoteParty)
 
   for (PINDEX i = 0; i < endpoints.GetSize(); i++) {
     if (epname == endpoints[i].GetPrefixName()) {
-      if (endpoints[i].SetUpConnection(call, remoteParty, NULL))
+      if (endpoints[i].MakeConnection(call, remoteParty, NULL))
         return TRUE;
     }
   }
@@ -421,7 +437,7 @@ BOOL OpalManager::OnIncomingConnection(OpalConnection & connection)
   if (destinationAddress.IsEmpty())
     return FALSE;
 
-  return SetUpConnection(call, destinationAddress);
+  return MakeConnection(call, destinationAddress);
 }
 
 
@@ -434,7 +450,8 @@ PString OpalManager::OnRouteConnection(OpalConnection & connection)
     return PString::Empty();
 
   // Have explicit protocol defined, so use that
-  if (addr.Find(':') != P_MAX_INDEX)
+  PINDEX colon = addr.Find(':');
+  if (colon != P_MAX_INDEX && FindEndPoint(addr.Left(':')) != NULL)
     return addr;
 
   // No routes specified, just return what we've got so far
@@ -552,9 +569,16 @@ OpalT38Protocol * OpalManager::CreateT38ProtocolHandler(const OpalConnection & )
 
 
 OpalManager::RouteEntry::RouteEntry(const PString & pat, const PString dest)
-  : pattern('^'+pat+'$'),
-    destination(dest)
+  : pattern(pat),
+    destination(dest),
+    regex('^'+pat+'$')
 {
+}
+
+
+void OpalManager::RouteEntry::PrintOn(ostream & strm) const
+{
+  strm << pattern << '=' << destination;
 }
 
 
@@ -566,9 +590,10 @@ BOOL OpalManager::AddRouteEntry(const PString & spec)
   if (spec[0] == '@') { // Load from file
     PTextFile file;
     if (!file.Open(spec.Mid(1), PFile::ReadOnly)) {
-      PTRACE(1, "OpalMan\nCould not open route file \"" << spec << '"');
+      PTRACE(1, "OpalMan\tCould not open route file \"" << file.GetFilePath() << '"');
       return FALSE;
     }
+    PTRACE(4, "OpalMan\tAdding routes from file \"" << file.GetFilePath() << '"');
     BOOL ok = FALSE;
     PString line;
     while (file.good()) {
@@ -586,12 +611,13 @@ BOOL OpalManager::AddRouteEntry(const PString & spec)
   }
 
   RouteEntry * entry = new RouteEntry(spec.Left(equal).Trim(), spec.Mid(equal+1).Trim());
-  if (entry->pattern.GetErrorCode() != PRegularExpression::NoError) {
+  if (entry->regex.GetErrorCode() != PRegularExpression::NoError) {
     PTRACE(1, "OpalMan\tIllegal regular expression in route table entry: \"" << spec << '"');
     delete entry;
     return FALSE;
   }
 
+  PTRACE(4, "OpalMan\tAdded route \"" << *entry << '"');
   routeTableMutex.Wait();
   routeTable.Append(entry);
   routeTableMutex.Signal();
@@ -631,10 +657,11 @@ PString OpalManager::ApplyRouteTable(const PString & proto, const PString & addr
   PWaitAndSignal mutex(routeTableMutex);
 
   PString destination;
-  PString patternSearch = proto + ':' + addr;
+  PString search = proto + ':' + addr;
+  PTRACE(4, "OpalMan\tSearching for route \"" << search << '"');
   for (PINDEX i = 0; i < routeTable.GetSize(); i++) {
     PINDEX pos;
-    if (routeTable[i].pattern.Execute(patternSearch, pos)) {
+    if (routeTable[i].regex.Execute(search, pos)) {
       destination = routeTable[i].destination;
       break;
     }

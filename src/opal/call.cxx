@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2017  2002/11/10 11:33:19  robertj
+ * Revision 1.2018  2003/03/06 03:57:47  robertj
+ * IVR support (work in progress) requiring large changes everywhere.
+ *
+ * Revision 2.16  2002/11/10 11:33:19  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.15  2002/04/09 00:21:41  robertj
@@ -198,9 +201,33 @@ void OpalCall::OnCleared()
 }
 
 
-void OpalCall::OnAlerting(OpalConnection & connection)
+BOOL OpalCall::OnSetUp(OpalConnection & connection)
+{
+  PTRACE(3, "Call\tOnSetUp " << connection);
+
+  BOOL ok = FALSE;
+
+  inUseFlag.Wait();
+
+  for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
+    OpalConnection & conn = activeConnections[i];
+    if (&connection != &conn) {
+      if (conn.SetUpConnection())
+        ok = TRUE;
+    }
+  }
+
+  inUseFlag.Signal();
+
+  return ok;
+}
+
+
+BOOL OpalCall::OnAlerting(OpalConnection & connection)
 {
   PTRACE(3, "Call\tOnAlerting " << connection);
+
+  BOOL ok = FALSE;
 
   BOOL hasMedia = connection.GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, TRUE) != NULL;
 
@@ -208,15 +235,19 @@ void OpalCall::OnAlerting(OpalConnection & connection)
 
   for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
     OpalConnection & conn = activeConnections[i];
-    if (&connection != &conn)
-      conn.SetAlerting(connection.GetRemotePartyName(), hasMedia);
+    if (&connection != &conn) {
+      if (conn.SetAlerting(connection.GetRemotePartyName(), hasMedia))
+        ok = TRUE;
+    }
   }
 
   inUseFlag.Signal();
+
+  return ok;
 }
 
 
-void OpalCall::OnConnected(OpalConnection & connection)
+BOOL OpalCall::OnConnected(OpalConnection & connection)
 {
   PTRACE(3, "Call\tOnConnected " << connection);
 
@@ -224,15 +255,19 @@ void OpalCall::OnConnected(OpalConnection & connection)
 
   if (activeConnections.GetSize() == 1 && !partyB.IsEmpty()) {
     inUseFlag.Signal();
-    if (!manager.SetUpConnection(*this, partyB))
+    if (!manager.MakeConnection(*this, partyB))
       connection.Release(OpalConnection::EndedByNoUser);
-    return;
+    return OnSetUp(connection);
   }
+
+  BOOL ok = FALSE;
 
   for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
     OpalConnection & conn = activeConnections[i];
-    if (&connection != &conn)
-      conn.SetConnected();
+    if (&connection != &conn) {
+      if (conn.SetConnected())
+        ok = TRUE;
+    }
     else if (i == 0)
       partyA = connection.GetRemotePartyAddress();
     else
@@ -240,6 +275,9 @@ void OpalCall::OnConnected(OpalConnection & connection)
   }
 
   inUseFlag.Signal();
+
+  if (!ok)
+    return FALSE;
 
   OpalMediaFormatList formats = connection.GetMediaFormats();
   connection.AdjustMediaFormats(formats);
@@ -257,6 +295,8 @@ void OpalCall::OnConnected(OpalConnection & connection)
 
     inUseFlag.Signal();
   }
+
+  return TRUE;
 }
 
 

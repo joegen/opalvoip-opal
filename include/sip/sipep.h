@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2006  2002/09/16 02:52:35  robertj
+ * Revision 1.2007  2003/03/06 03:57:47  robertj
+ * IVR support (work in progress) requiring large changes everywhere.
+ *
+ * Revision 2.5  2002/09/16 02:52:35  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -93,7 +96,7 @@ class SIPEndPoint : public OpalEndPoint
     );
 
     /**Set up a connection to a remote party.
-       This is called from the OpalManager::SetUpConnection() function once
+       This is called from the OpalManager::MakeConnection() function once
        it has determined that this is the endpoint for the protocol.
 
        The general form for this party parameter is:
@@ -121,7 +124,7 @@ class SIPEndPoint : public OpalEndPoint
 
        The default behaviour is pure.
      */
-    virtual BOOL SetUpConnection(
+    virtual BOOL MakeConnection(
       OpalCall & call,        /// Owner of connection
       const PString & party,  /// Remote party to call
       void * userData = NULL  /// Arbitrary data to pass to connection
@@ -134,11 +137,12 @@ class SIPEndPoint : public OpalEndPoint
        The default implementation is to create a OpalSIPConnection.
       */
     virtual SIPConnection * CreateConnection(
-      OpalCall & call,          /// Owner of connection
-      const PString & token,    /// token used to identify connection
-      void * userData,          /// User data for connection
-      OpalTransport * transport,/// Transport INVITE has been received on
-      SIP_PDU * invite          /// Original INVITE pdu
+      OpalCall & call,            /// Owner of connection
+      const PString & token,      /// token used to identify connection
+      void * userData,            /// User data for connection
+      const SIPURL & destination, /// Destination for outgoing call
+      OpalTransport * transport,  /// Transport INVITE has been received on
+      SIP_PDU * invite            /// Original INVITE pdu
     );
   //@}
   

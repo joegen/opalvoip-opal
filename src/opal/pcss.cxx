@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2010  2002/07/04 07:54:53  robertj
+ * Revision 1.2011  2003/03/06 03:57:47  robertj
+ * IVR support (work in progress) requiring large changes everywhere.
+ *
+ * Revision 2.9  2002/07/04 07:54:53  robertj
  * Fixed GNU warning
  *
  * Revision 2.8  2002/06/16 02:19:55  robertj
@@ -111,9 +114,9 @@ OpalPCSSEndPoint::~OpalPCSSEndPoint()
 }
 
 
-BOOL OpalPCSSEndPoint::SetUpConnection(OpalCall & call,
-                                       const PString & remoteParty,
-                                       void * userData)
+BOOL OpalPCSSEndPoint::MakeConnection(OpalCall & call,
+                                      const PString & remoteParty,
+                                      void * userData)
 {
   // First strip of the prefix if present
   PINDEX prefixLength = 0;
@@ -149,16 +152,12 @@ BOOL OpalPCSSEndPoint::SetUpConnection(OpalCall & call,
     connectionsActive.SetAt(connection->GetToken(), connection);
   }
 
-  connection->Lock();
-
-  // See if we are initiating or answering call.
-  OpalConnection & caller = call.GetConnection(0);
-  if (connection == &caller)
+  // If we are the A-party then need to initiate a call now in this thread and
+  // go through the routing engine via OnIncomingConnection. If we are the
+  // B-Party then SetUpConnection() gets called in the context of the A-party
+  // thread.
+  if (&call.GetConnection(0) == connection)
     connection->InitiateCall();
-  else
-    connection->StartIncoming(caller.GetRemotePartyName());
-
-  connection->Unlock();
 
   return TRUE;
 }
@@ -169,7 +168,7 @@ OpalPCSSConnection * OpalPCSSEndPoint::CreateConnection(OpalCall & call,
                                                         const PString & recordDevice,
                                                         void * /*userData*/)
 {
-  return new OpalPCSSConnection(call, playDevice, recordDevice, *this);
+  return new OpalPCSSConnection(call, *this, playDevice, recordDevice);
 }
 
 
@@ -233,15 +232,14 @@ void OpalPCSSEndPoint::SetSoundChannelBufferDepth(unsigned depth)
 /////////////////////////////////////////////////////////////////////////////
 
 OpalPCSSConnection::OpalPCSSConnection(OpalCall & call,
+                                       OpalPCSSEndPoint & ep,
                                        const PString & playDevice,
-                                       const PString & recordDevice,
-                                       OpalPCSSEndPoint & ep)
+                                       const PString & recordDevice)
   : OpalConnection(call, ep, MakeToken(playDevice, recordDevice)),
     endpoint(ep),
     soundChannelPlayDevice(playDevice),
     soundChannelRecordDevice(recordDevice)
 {
-  phase = SetUpPhase;
   PTRACE(3, "PCSS\tCreated PC sound system connection.");
 }
 
@@ -252,9 +250,16 @@ OpalPCSSConnection::~OpalPCSSConnection()
 }
 
 
-OpalConnection::Phases OpalPCSSConnection::GetPhase() const
+BOOL OpalPCSSConnection::SetUpConnection()
 {
-  return phase;
+  remotePartyName = ownerCall.GetConnection(0).GetRemotePartyName();
+
+  PTRACE(3, "PCSS\tSetUpConnection(" << remotePartyName << ')');
+  phase = AlertingPhase;
+  endpoint.OnShowIncoming(*this);
+  OnAlerting();
+
+  return TRUE;
 }
 
 
@@ -330,27 +335,27 @@ BOOL OpalPCSSConnection::SendUserInputString(const PString & value)
 
 void OpalPCSSConnection::InitiateCall()
 {
+  if (!Lock())
+    return;
+
   phase = SetUpPhase;
   OnIncomingConnection();
-}
 
-
-void OpalPCSSConnection::StartIncoming(const PString & callerName)
-{
-  PTRACE(3, "PCSS\tStartIncoming(" << callerName << ')');
-  phase = AlertingPhase;
-  remotePartyName = callerName;
-  endpoint.OnShowIncoming(*this);
-  OnAlerting();
+  Unlock();
 }
 
 
 void OpalPCSSConnection::AcceptIncoming()
 {
+  if (!Lock())
+    return;
+
   if (phase == AlertingPhase) {
     phase = ConnectedPhase;
     OnConnected();
   }
+
+  Unlock();
 }
 
 
