@@ -21,8 +21,11 @@
 #
 # Contributor(s): ______________________________________.
 #
-# $Log: Makefile,v $
-# Revision 1.2030  2004/06/04 05:29:28  csoutheren
+# $Log: Makefile.in,v $
+# Revision 1.1  2004/12/04 18:37:58  dsandras
+# Ported the "make install" / "make uninstall" system from OpenH323 to OPAL.
+#
+# Revision 2.29  2004/06/04 05:29:28  csoutheren
 # Updated for ASN file changes and added silencedetect.cxx
 #
 # Revision 2.28  2004/04/25 02:53:28  rjongbloed
@@ -119,17 +122,27 @@
 # Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
 #
 
-SUBDIRS := samples/simple samples/opalgw
+export OPALDIR=@OPALDIR@
 
-ifndef OPALDIR
-OPALDIR=$(CURDIR)
-export OPALDIR
-endif
+INSTALL=@INSTALL@
+
+default :: optshared
+
+all :: bothdepend both
+
+SUBDIRS := 
 
 LIBRARY_MAKEFILE:=1
 
 include $(OPALDIR)/opal_inc.mak
 
+PREFIX=@INSTALLPREFIX@/
+exec_prefix = ${PREFIX}
+LIBDIR=@LIBDIR@
+
+ifndef PREFIX
+PREFIX=/usr/local
+endif
 
 OPAL_OBJDIR = $(OPAL_LIBDIR)/$(PT_OBJBASE)
 ifdef NOTRACE
@@ -138,7 +151,7 @@ endif
 
 
 OBJDIR	=	$(OPAL_OBJDIR)
-LIBDIR	=	$(OPAL_LIBDIR)
+LIBDIR  =	$(OPAL_LIBDIR)
 TARGET	=	$(LIBDIR)/$(OPAL_FILE)
 
 ifdef NOTRACE
@@ -490,7 +503,7 @@ CLEAN_FILES = $(OPAL_LIB)
 
 ####################################################
 
-include $(PWLIBDIR)/make/common.mak
+include @PWLIBDIR@/make/common.mak
 
 ####################################################
 
@@ -504,7 +517,7 @@ LIB_BASENAME=$(OPAL_BASE)
 LIB_FILENAME=$(OPAL_FILE)
 
 
-include $(PWLIBDIR)/make/lib.mak
+include @PWLIBDIR@/make/lib.mak
 
 ####################################################
 
@@ -579,5 +592,69 @@ $(STANDARD_TARGETS) ::
 
 test:
 	@echo $(ASN_CXX_FILES)
+
+###############################################################################
+#### Install targets
+LIBDIR=@LIBDIR@
+
+install:
+	mkdir -p $(DESTDIR)$(LIBDIR)
+	rm -f $(DESTDIR)$(LIBDIR)/libopal_*_r.so*
+	$(INSTALL) -m 444 lib/*_r.so $(DESTDIR)$(LIBDIR)
+	(for fn in lib/*_r.so.* ; do \
+		cd $(DESTDIR)$(LIBDIR) ; \
+		rm -f `basename $$fn` ; \
+		ln -s libopal_*_r.so `basename $$fn` ; \
+	done)
+	$(INSTALL) -m 444 lib/$(OPAL_FILE) $(DESTDIR)$(LIBDIR)
+	( cd $(DESTDIR)$(LIBDIR); rm libopal.so ; ln -s $(OPAL_FILE) libopal.so)
+	( for dir in $(DESTDIR)$(LIBDIR) \
+		     $(DESTDIR)$(PREFIX)/include/opal/asn \
+		     $(DESTDIR)$(PREFIX)/include/opal/codec \
+		     $(DESTDIR)$(PREFIX)/include/opal/h323 \
+		     $(DESTDIR)$(PREFIX)/include/opal/lids \
+		     $(DESTDIR)$(PREFIX)/include/opal/opal \
+		     $(DESTDIR)$(PREFIX)/include/opal/rtp \
+		     $(DESTDIR)$(PREFIX)/include/opal/sip \
+		     $(DESTDIR)$(PREFIX)/include/opal/t120 \
+		     $(DESTDIR)$(PREFIX)/include/opal/t38 \
+		     $(DESTDIR)$(PREFIX)/share/opal ;\
+		do mkdir -p $$dir ; chmod 755 $$dir ; \
+	done)
+	( for fn in include/asn/*.h ; do \
+		$(INSTALL) -m 444 $$fn $(DESTDIR)$(PREFIX)/include/opal/asn ; \
+	done)
+	( for fn in include/codec/*.h ; do \
+		$(INSTALL) -m 444 $$fn $(DESTDIR)$(PREFIX)/include/opal/codec ; \
+	done)
+	( for fn in include/h323/*.h ; do \
+		$(INSTALL) -m 444 $$fn $(DESTDIR)$(PREFIX)/include/opal/h323 ; \
+	done)
+	( for fn in include/lids/*.h ; do \
+		$(INSTALL) -m 444 $$fn $(DESTDIR)$(PREFIX)/include/opal/lids ; \
+	done)
+	( for fn in include/opal/*.h ; do \
+		$(INSTALL) -m 444 $$fn $(DESTDIR)$(PREFIX)/include/opal/opal ; \
+	done)
+	( for fn in include/rtp/*.h ; do \
+		$(INSTALL) -m 444 $$fn $(DESTDIR)$(PREFIX)/include/opal/rtp ; \
+	done)
+	( for fn in include/sip/*.h ; do \
+		$(INSTALL) -m 444 $$fn $(DESTDIR)$(PREFIX)/include/opal/sip ; \
+	done)
+	( for fn in include/t120/*.h ; do \
+		$(INSTALL) -m 444 $$fn $(DESTDIR)$(PREFIX)/include/opal/t120 ; \
+	done)
+	( for fn in include/t38/*.h ; do \
+		$(INSTALL) -m 444 $$fn $(DESTDIR)$(PREFIX)/include/opal/t38 ; \
+	done)
+	$(INSTALL) -m 444 opal_inc.mak $(DESTDIR)$(PREFIX)/share/opal
+
+uninstall:
+	rm -rf $(DESTDIR)$(PREFIX)/include/opal \
+	       $(DESTDIR)$(PREFIX)/share/opal
+	rm -f $(DESTDIR)$(LIBDIR)/$(OPAL_FILE) \
+	      $(DESTDIR)$(LIBDIR)/libopal.so
+
 # End of file #################################################################
 
