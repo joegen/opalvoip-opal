@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2017  2003/03/17 10:26:59  robertj
+ * Revision 1.2018  2003/03/24 07:18:29  robertj
+ * Added registration system for LIDs so can work with various LID types by
+ *   name instead of class instance.
+ *
+ * Revision 2.16  2003/03/17 10:26:59  robertj
  * Added video support.
  *
  * Revision 2.15  2003/03/06 03:57:47  robertj
@@ -275,6 +279,51 @@ void OpalLIDEndPoint::RemoveLinesFromDevice(OpalLineInterfaceDevice & device)
       lines.RemoveAt(i--);
   }
   linesMutex.Signal();
+}
+
+
+BOOL OpalLIDEndPoint::AddDeviceNames(const PStringArray & descriptors)
+{
+  BOOL ok = FALSE;
+
+  for (PINDEX i = 0; i < descriptors.GetSize(); i++) {
+    if (AddDeviceName(descriptors[i]))
+      ok = TRUE;
+  }
+
+  return ok;
+}
+
+
+BOOL OpalLIDEndPoint::AddDeviceName(const PString & descriptor)
+{
+  PINDEX colon = descriptor.Find(':');
+  if (colon == P_MAX_INDEX)
+    return FALSE;
+
+  PString deviceType = descriptor.Left(colon).Trim();
+  PString deviceName = descriptor.Mid(colon+1).Trim();
+
+  // Make sure not already there.
+  linesMutex.Wait();
+  for (PINDEX i = 0; i < devices.GetSize(); i++) {
+    if (devices[i].GetName().Find(deviceName) != P_MAX_INDEX) {
+      linesMutex.Signal();
+      return TRUE;
+    }
+  }
+  linesMutex.Signal();
+
+  // Not there so add it.
+  OpalLineInterfaceDevice * device = OpalLineInterfaceDevice::Create(deviceType);
+  if (device == NULL)
+    return FALSE;
+
+  if (device->Open(deviceName))
+    return AddDevice(device);
+
+  delete device;
+  return FALSE;
 }
 
 
