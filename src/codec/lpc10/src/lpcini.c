@@ -1,8 +1,11 @@
 /*
 
 $Log: lpcini.c,v $
-Revision 1.2001  2001/07/27 15:48:25  robertj
-Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+Revision 1.2002  2003/03/14 09:53:27  robertj
+Updated to openH323 v1.11.7
+
+Revision 1.3  2002/10/10 05:29:04  robertj
+Removed non-ansi-C comments to maximise portability, thanks Martijn Roest
 
 Revision 1.2  2001/02/24 14:00:10  rogerh
 Select the correct header file for malloc (stdlib.h or malloc.h)
@@ -34,7 +37,7 @@ extern int lpcini_(void);
 
 #include "f2c.h"
 
-// malloc is now defined in stdlib.h in serveral systems
+/* malloc is now defined in stdlib.h in serveral systems */
 #ifdef  HAS_STDLIB_H
 #       include <stdlib.h>
 #else
@@ -57,9 +60,12 @@ struct {
 /* ***************************************************************** */
 
 /* $Log: lpcini.c,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/14 09:53:27  robertj
+ * Updated to openH323 v1.11.7
  *
+/* Revision 1.3  2002/10/10 05:29:04  robertj
+/* Removed non-ansi-C comments to maximise portability, thanks Martijn Roest
+/*
 /* Revision 1.2  2001/02/24 14:00:10  rogerh
 /* Select the correct header file for malloc (stdlib.h or malloc.h)
 /*
@@ -86,9 +92,12 @@ struct {
 {
 
 /* $Log: lpcini.c,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/14 09:53:27  robertj
+ * Updated to openH323 v1.11.7
  *
+/* Revision 1.3  2002/10/10 05:29:04  robertj
+/* Removed non-ansi-C comments to maximise portability, thanks Martijn Roest
+/*
 /* Revision 1.2  2001/02/24 14:00:10  rogerh
 /* Select the correct header file for malloc (stdlib.h or malloc.h)
 /*
@@ -115,9 +124,12 @@ struct {
 /*   LPC Configuration parameters: */
 /* Frame size, Prediction order, Pitch period */
 /* $Log: lpcini.c,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/14 09:53:27  robertj
+ * Updated to openH323 v1.11.7
  *
+/* Revision 1.3  2002/10/10 05:29:04  robertj
+/* Removed non-ansi-C comments to maximise portability, thanks Martijn Roest
+/*
 /* Revision 1.2  2001/02/24 14:00:10  rogerh
 /* Select the correct header file for malloc (stdlib.h or malloc.h)
 /*

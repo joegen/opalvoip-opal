@@ -1,8 +1,11 @@
 /*
 
 $Log: placea.c,v $
-Revision 1.2001  2001/07/27 15:48:25  robertj
-Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+Revision 1.2002  2003/03/14 09:53:27  robertj
+Updated to openH323 v1.11.7
+
+Revision 1.2  2001/10/16 21:21:14  yurik
+Removed warnings on Windows CE. Submitted by Jehan Bing, jehan@bravobrava.com
 
 Revision 1.1  2000/06/05 04:45:12  robertj
 Added LPC-10 2400bps codec
@@ -29,9 +32,12 @@ extern int placea_(integer *ipitch, integer *voibuf, integer *obound, integer *a
 /* 	PLACEA Version 48 */
 
 /* $Log: placea.c,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/14 09:53:27  robertj
+ * Updated to openH323 v1.11.7
  *
+/* Revision 1.2  2001/10/16 21:21:14  yurik
+/* Removed warnings on Windows CE. Submitted by Jehan Bing, jehan@bravobrava.com
+/*
 /* Revision 1.1  2000/06/05 04:45:12  robertj
 /* Added LPC-10 2400bps codec
 /*
@@ -140,18 +146,18 @@ extern int placea_(integer *ipitch, integer *voibuf, integer *obound, integer *a
 /*   is not altered from MAXWIN, since this would defeat the purpose */
 /*   of phase-synchronous placement. */
 /* Check for case 1 and case 2 */
-    allv = voibuf[(*af - 2 << 1) + 2] == 1;
-    allv = allv && voibuf[(*af - 1 << 1) + 1] == 1;
-    allv = allv && voibuf[(*af - 1 << 1) + 2] == 1;
+    allv = voibuf[((*af - 2) << 1) + 2] == 1;
+    allv = allv && voibuf[((*af - 1) << 1) + 1] == 1;
+    allv = allv && voibuf[((*af - 1) << 1) + 2] == 1;
     allv = allv && voibuf[(*af << 1) + 1] == 1;
     allv = allv && voibuf[(*af << 1) + 2] == 1;
     winv = voibuf[(*af << 1) + 1] == 1 || voibuf[(*af << 1) + 2] == 1;
     if (allv || winv && *obound == 0) {
 /* APHASE:  Phase synchronous window placement. */
 /* Get minimum lower index of the window. */
-	i__ = (lrange + *ipitch - 1 - awin[(*af - 1 << 1) + 1]) / *ipitch;
+	i__ = (lrange + *ipitch - 1 - awin[((*af - 1) << 1) + 1]) / *ipitch;
 	i__ *= *ipitch;
-	i__ += awin[(*af - 1 << 1) + 1];
+	i__ += awin[((*af - 1) << 1) + 1];
 /* L = the actual length of this frame's analysis window. */
 	l = *maxwin;
 /* Calculate the location where a perfectly centered window would star

@@ -1,8 +1,11 @@
 /*
 
 $Log: irc2pc.c,v $
-Revision 1.2001  2001/07/27 15:48:24  robertj
-Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+Revision 1.2002  2003/03/14 09:53:27  robertj
+Updated to openH323 v1.11.7
+
+Revision 1.2  2002/02/15 03:57:55  yurik
+Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
 
 Revision 1.1  2000/06/05 04:45:12  robertj
 Added LPC-10 2400bps codec
@@ -29,9 +32,12 @@ extern int irc2pc_(real *rc, real *pc, integer *order, real *gprime, real *g2pas
 /* 	IRC2PC Version 48 */
 
 /* $Log: irc2pc.c,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/14 09:53:27  robertj
+ * Updated to openH323 v1.11.7
  *
+/* Revision 1.2  2002/02/15 03:57:55  yurik
+/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+/*
 /* Revision 1.1  2000/06/05 04:45:12  robertj
 /* Added LPC-10 2400bps codec
 /*
@@ -82,9 +88,12 @@ extern int irc2pc_(real *rc, real *pc, integer *order, real *gprime, real *g2pas
 
 /* 	Arguments */
 /* $Log: irc2pc.c,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/14 09:53:27  robertj
+ * Updated to openH323 v1.11.7
  *
+/* Revision 1.2  2002/02/15 03:57:55  yurik
+/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+/*
 /* Revision 1.1  2000/06/05 04:45:12  robertj
 /* Added LPC-10 2400bps codec
 /*
@@ -114,7 +123,7 @@ extern int irc2pc_(real *rc, real *pc, integer *order, real *gprime, real *g2pas
     for (i__ = 1; i__ <= i__1; ++i__) {
 	*g2pass *= 1.f - rc[i__] * rc[i__];
     }
-    *g2pass = *gprime * sqrt(*g2pass);
+    *g2pass = (real)(*gprime * sqrt(*g2pass));
     pc[1] = rc[1];
     i__1 = *order;
     for (i__ = 2; i__ <= i__1; ++i__) {

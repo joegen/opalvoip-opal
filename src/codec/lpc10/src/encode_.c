@@ -1,8 +1,11 @@
 /*
 
 $Log: encode_.c,v $
-Revision 1.2001  2001/07/27 15:48:24  robertj
-Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+Revision 1.2002  2003/03/14 09:53:27  robertj
+Updated to openH323 v1.11.7
+
+Revision 1.2  2002/02/15 03:57:55  yurik
+Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
 
 Revision 1.1  2000/06/05 04:45:12  robertj
 Added LPC-10 2400bps codec
@@ -43,9 +46,12 @@ static integer c__2 = 2;
 /* 	ENCODE Version 54 */
 
 /* $Log: encode_.c,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/14 09:53:27  robertj
+ * Updated to openH323 v1.11.7
  *
+/* Revision 1.2  2002/02/15 03:57:55  yurik
+/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+/*
 /* Revision 1.1  2000/06/05 04:45:12  robertj
 /* Added LPC-10 2400bps codec
 /*
@@ -128,9 +134,12 @@ static integer c__2 = 2;
     integer idel, nbit, i__, j, i2, i3, mrk;
 
 /* $Log: encode_.c,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/14 09:53:27  robertj
+ * Updated to openH323 v1.11.7
  *
+/* Revision 1.2  2002/02/15 03:57:55  yurik
+/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+/*
 /* Revision 1.1  2000/06/05 04:45:12  robertj
 /* Added LPC-10 2400bps codec
 /*
@@ -151,9 +160,12 @@ static integer c__2 = 2;
 /* Frame size, Prediction order, Pitch period */
 /*       Arguments */
 /* $Log: encode_.c,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/14 09:53:27  robertj
+ * Updated to openH323 v1.11.7
  *
+/* Revision 1.2  2002/02/15 03:57:55  yurik
+/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+/*
 /* Revision 1.1  2000/06/05 04:45:12  robertj
 /* Added LPC-10 2400bps codec
 /*
@@ -255,10 +267,10 @@ static integer c__2 = 2;
 
     /* Function Body */
 /*  Scale RMS and RC's to integers */
-    *irms = *rms;
+    *irms = (integer)*rms;
     i__1 = contrl_1.order;
     for (i__ = 1; i__ <= i__1; ++i__) {
-	irc[i__] = rc[i__] * 32768.f;
+	irc[i__] = (integer)(rc[i__] * 32768.f);
     }
 /* 	IF(LISTL.GE.3)WRITE(FDEBUG,800)VOICE,PITCH,IRMS,(IRC(I),I=1,ORDER) */
 /* 800	FORMAT(1X,/,' <<ENCODE IN>>',T32,2I3,I6,I5,T50,10I8) */
@@ -312,8 +324,8 @@ static integer c__2 = 2;
     i__1 = contrl_1.order;
     for (i__ = 3; i__ <= i__1; ++i__) {
 	i2 = irc[i__] / 2;
-	i2 = (i2 + enadd[contrl_1.order + 1 - i__ - 1]) * enscl[
-		contrl_1.order + 1 - i__ - 1];
+	i2 = (integer)((i2 + enadd[contrl_1.order + 1 - i__ - 1]) * enscl[
+		contrl_1.order + 1 - i__ - 1]);
 /* Computing MIN */
 	i__2 = max(i2,-127);
 	i2 = min(i__2,127);

@@ -1,8 +1,11 @@
 /*
 
 $Log: tbdm.c,v $
-Revision 1.2001  2001/07/27 15:48:25  robertj
-Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+Revision 1.2002  2003/03/14 09:53:27  robertj
+Updated to openH323 v1.11.7
+
+Revision 1.2  2002/02/15 03:57:55  yurik
+Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
 
 Revision 1.1  2000/06/05 04:45:12  robertj
 Added LPC-10 2400bps codec
@@ -30,9 +33,12 @@ extern int tbdm_(real *speech, integer *lpita, integer *tau, integer *ltau, real
 /* 	TBDM Version 49 */
 
 /* $Log: tbdm.c,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/14 09:53:27  robertj
+ * Updated to openH323 v1.11.7
  *
+/* Revision 1.2  2002/02/15 03:57:55  yurik
+/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+/*
 /* Revision 1.1  2000/06/05 04:45:12  robertj
 /* Added LPC-10 2400bps codec
 /*
@@ -109,7 +115,7 @@ extern int tbdm_(real *speech, integer *lpita, integer *tau, integer *ltau, real
     difmag_(&speech[1], lpita, &tau[1], ltau, &tau[*ltau], &amdf[1], minptr, 
 	    maxptr);
     *mintau = tau[*minptr];
-    minamd = amdf[*minptr];
+    minamd = (integer)amdf[*minptr];
 /*   Build table containing all lags within +/- 3 of the AMDF minimum */
 /*    excluding all that have already been computed */
     ltau2 = 0;
@@ -135,7 +141,7 @@ extern int tbdm_(real *speech, integer *lpita, integer *tau, integer *ltau, real
 		maxp2);
 	if (amdf2[minp2 - 1] < (real) minamd) {
 	    *mintau = tau2[minp2 - 1];
-	    minamd = amdf2[minp2 - 1];
+	    minamd = (integer)amdf2[minp2 - 1];
 	}
     }
 /*   Check one octave up, if there are any lags not yet computed */
@@ -153,7 +159,7 @@ extern int tbdm_(real *speech, integer *lpita, integer *tau, integer *ltau, real
 		maxp2);
 	if (amdf2[minp2 - 1] < (real) minamd) {
 	    *mintau = tau2[minp2 - 1];
-	    minamd = amdf2[minp2 - 1];
+	    minamd = (integer)amdf2[minp2 - 1];
 	    *minptr += -20;
 	}
     }
