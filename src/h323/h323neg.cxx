@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323neg.cxx,v $
- * Revision 1.2007  2002/02/13 04:09:16  robertj
+ * Revision 1.2008  2002/02/19 07:48:25  robertj
+ * Fixed problem where if capability is rejected it still thinks it has received them.
+ *
+ * Revision 2.6  2002/02/13 04:09:16  robertj
  * Removed superfluous trace
  *
  * Revision 2.5  2002/01/14 06:35:58  robertj
@@ -585,7 +588,6 @@ BOOL H245NegTerminalCapabilitySet::HandleIncoming(const H245_TerminalCapabilityS
   }
 
   inSequenceNumber = pdu.m_sequenceNumber;
-  receivedCapabilites = TRUE;
 
   mutex.Signal();
 
@@ -599,6 +601,7 @@ BOOL H245NegTerminalCapabilitySet::HandleIncoming(const H245_TerminalCapabilityS
   if (connection.OnReceivedCapabilitySet(remoteCapabilities, muxCap,
                     reject.BuildTerminalCapabilitySetReject(inSequenceNumber,
                             H245_TerminalCapabilitySetReject_cause::e_unspecified))) {
+    receivedCapabilites = TRUE;
     H323ControlPDU ack;
     ack.BuildTerminalCapabilitySetAck(inSequenceNumber);
     return connection.WriteControlPDU(ack);
