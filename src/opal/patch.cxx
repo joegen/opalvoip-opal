@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2002  2002/01/14 02:19:03  robertj
+ * Revision 1.2003  2002/01/22 05:13:15  robertj
+ * Added filter functions to media patch.
+ *
+ * Revision 2.1  2002/01/14 02:19:03  robertj
  * Added ability to turn jitter buffer off in media stream to allow for patches
  *   that do not require it.
  *
@@ -106,6 +109,8 @@ void OpalMediaPatch::Main()
   while (source.ReadPacket(sourceFrame)) {
     inUse.Wait();
 
+    FilterFrame(sourceFrame, source.GetMediaFormat());
+
     for (i = 0; i < sinks.GetSize(); i++) {
       Sink & sink = sinks[i];
 
@@ -113,11 +118,17 @@ void OpalMediaPatch::Main()
       if (sink.primaryCodec == NULL || sourceFrame.GetPayloadSize() == 0)
         sinkFrame = &sourceFrame;
       else {
+        intermediateFrame.SetTimestamp(sourceFrame.GetTimestamp());
         sinkFrame = &intermediateFrame;
         if (sink.primaryCodec->Convert(sourceFrame, intermediateFrame)) {
+          FilterFrame(intermediateFrame, sink.primaryCodec->GetOutputFormat());
+
           if (sink.secondaryCodec != NULL) {
+            finalFrame.SetTimestamp(sourceFrame.GetTimestamp());
             sinkFrame = &finalFrame;
-            if (!sink.secondaryCodec->Convert(intermediateFrame, finalFrame)) {
+            if (sink.secondaryCodec->Convert(intermediateFrame, finalFrame))
+              FilterFrame(finalFrame, sink.secondaryCodec->GetOutputFormat());
+            else {
               PTRACE(1, "Patch\tMedia conversion failed");
               finalFrame.SetPayloadSize(0);
             }
@@ -129,7 +140,7 @@ void OpalMediaPatch::Main()
         }
       }
 
-      sinkFrame->SetTimestamp(sourceFrame.GetTimestamp());
+      FilterFrame(*sinkFrame, OpalMediaFormat());
       sink.stream->WritePacket(*sinkFrame);
       sourceFrame.SetTimestamp(sinkFrame->GetTimestamp());
     }
@@ -232,6 +243,39 @@ OpalMediaPatch::Sink::~Sink()
 {
   delete primaryCodec;
   delete secondaryCodec;
+}
+
+
+void OpalMediaPatch::AddFilter(const PNotifier & filter, const OpalMediaFormat & stage)
+{
+  inUse.Wait();
+  filters.Append(new Filter(filter, stage));
+  inUse.Signal();
+}
+
+
+BOOL OpalMediaPatch::RemoveFilter(const PNotifier & filter, const OpalMediaFormat & stage)
+{
+  PWaitAndSignal mutex(inUse);
+
+  for (PINDEX i = 0; i < filters.GetSize(); i++) {
+    if (filters[i].notifier == filter && filters[i].stage == stage) {
+      filters.RemoveAt(i);
+      return TRUE;
+    }
+  }
+
+  return FALSE;
+}
+
+
+void OpalMediaPatch::FilterFrame(RTP_DataFrame & frame,
+                                 const OpalMediaFormat & mediaFormat)
+{
+  for (PINDEX f = 0; f < filters.GetSize(); f++) {
+    if (filters[f].stage == mediaFormat)
+      filters[f].notifier(frame, (INT)this);
+  }
 }
 
 
