@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2018  2003/03/17 10:26:59  robertj
+ * Revision 1.2019  2004/01/18 15:36:07  rjongbloed
+ * Added stun support
+ *
+ * Revision 2.17  2003/03/17 10:26:59  robertj
  * Added video support.
  *
  * Revision 2.16  2003/03/06 03:57:47  robertj
@@ -100,6 +103,7 @@
 
 class OpalCall;
 class OpalMediaPatch;
+class PSTUNClient;
 
 
 /**This class is the central manager for OPAL.
@@ -699,6 +703,27 @@ class OpalManager : public PObject
       const PIPSocket::Address & remoteAddress
     );
 
+    /**Return the STUN server to use.
+       Returns NULL if address is a local address as per IsLocalAddress().
+       Always returns the STUN server if address is zero.
+       Note, the pointer is NOT to be deleted by the user.
+      */
+    PSTUNClient * GetSTUN(
+      const PIPSocket::Address & address = 0
+    ) const;
+
+    /**Set the STUN server address, is of the form host[:port]
+      */
+    void SetSTUNServer(
+      const PString & server
+    );
+
+    /**Determine if the address is "local", ie does not need STUN
+     */
+    virtual BOOL IsLocalAddress(
+      const PIPSocket::Address & remoteAddress
+    ) const;
+
     /**Get the TCP port number base for H.245 channels
      */
     WORD GetTCPPortBase() const { return tcpPorts.base; }
@@ -856,6 +881,7 @@ class OpalManager : public PObject
       WORD   max;
       WORD   current;
     } tcpPorts, udpPorts, rtpIpPorts;
+    PSTUNClient * stun;
 
     RouteTable routeTable;
     PMutex     routeTableMutex;

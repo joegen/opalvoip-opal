@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2027  2003/04/09 01:38:27  robertj
+ * Revision 1.2028  2004/01/18 15:36:07  rjongbloed
+ * Added stun support
+ *
+ * Revision 2.26  2003/04/09 01:38:27  robertj
  * Changed default to not send/receive video and added options to turn it on.
  *
  * Revision 2.25  2003/03/26 03:51:46  robertj
@@ -160,6 +163,7 @@
 #include <h323/gkclient.h>
 #include <lids/lidep.h>
 #include <lids/ixjlid.h>
+#include <ptclib/pstun.h>
 
 #include "main.h"
 #include "../../version.h"
@@ -232,6 +236,7 @@ void SimpleOpalProcess::Main()
              "-sound-in:"
              "-sound-out:"
              "-sip-listen:"
+			 "-stun:"
              "T-h245tunneldisable."
 #if PTRACING
              "t-trace."
@@ -241,10 +246,11 @@ void SimpleOpalProcess::Main()
              "u-user:"
              "-udp-base:"
              "-udp-max:"
-	     "-use-long-mime."
+	         "-use-long-mime."
              "-rx-video."
              "-tx-video."
              "-grabber:"
+             "-display:"
 #if P_EXPAT
              "V-no-ivr."
              "x-vxml:"
@@ -274,6 +280,7 @@ void SimpleOpalProcess::Main()
             "     --rx-video           : Start receiving video immediately.\n"
             "     --tx-video           : Start transmitting video immediately.\n"
             "     --grabber dev        : Set the video grabber device.\n"
+            "     --display dev        : Set the video display device.\n"
             "\n"
             "SIP options:\n"
             "  -I --no-sip             : Disable SIP protocol.\n"
@@ -319,6 +326,7 @@ void SimpleOpalProcess::Main()
             "     --rtp-base n         : Set RTP port base (default 5000)\n"
             "     --rtp-max n          : Set RTP port max (default base+199)"
             "     --rtp-tos n          : Set RTP packet IP TOS bits to n\n"
+			"     --stun server        : Set STUN server\n"
             "\n"
             "Debug options:\n"
 #if PTRACING
@@ -430,6 +438,12 @@ BOOL MyManager::Initialise(PArgList & args)
     SetVideoInputDevice(video);
   }
 
+  if (args.HasOption("display")) {
+    PVideoDevice::OpenArgs video = GetVideoOutputDevice();
+    video.deviceName = args.GetOptionString("display");
+    SetVideoOutputDevice(video);
+  }
+
   // get the protocols in use
   BOOL useSIP  = !args.HasOption("no-sip");
   BOOL useH323 = !args.HasOption("no-h323");
@@ -459,6 +473,22 @@ BOOL MyManager::Initialise(PArgList & args)
   if (args.HasOption('P'))
     SetMediaFormatOrder(args.GetOptionString('P').Lines());
 
+  cout << "Auto answer is " << (autoAnswer ? "on" : "off") << "\n"
+          "Silence supression is " << (silenceOn ? "on" : "off") << "\n"
+          "Jitter buffer: "  << GetMinAudioJitterDelay() << '-' << GetMaxAudioJitterDelay() << " ms\n"
+          "Codecs removed: " << setfill(',') << GetMediaFormatMask() << "\n"
+          "Codec order: " << setfill(',') << GetMediaFormatOrder() << setfill(' ') << "\n"
+          "STUN server: " << flush;
+
+  if (args.HasOption("stun"))
+    SetSTUNServer(args.GetOptionString("stun"));
+
+  if (stun != NULL)
+    cout << stun->GetServer() << " replies " << stun->GetNatTypeName();
+  else
+    cout << "None";
+  cout << '\n';
+
   if (args.HasOption("tcp-base"))
     SetTCPPorts(args.GetOptionString("tcp-base").AsUnsigned(),
                 args.GetOptionString("tcp-max").AsUnsigned());
@@ -480,12 +510,7 @@ BOOL MyManager::Initialise(PArgList & args)
     SetRtpIpTypeofService(tos);
   }
 
-  cout << "Auto answer is " << (autoAnswer ? "on" : "off") << "\n"
-          "Silence supression is " << (silenceOn ? "on" : "off") << "\n"
-          "Jitter buffer: "  << GetMinAudioJitterDelay() << '-' << GetMaxAudioJitterDelay() << " ms\n"
-          "Codecs removed: " << setfill(',') << GetMediaFormatMask() << "\n"
-          "Codec order: " << setfill(',') << GetMediaFormatOrder() << setfill(' ') << "\n"
-          "TCP ports: " << GetTCPPortBase() << '-' << GetTCPPortMax() << "\n"
+  cout << "TCP ports: " << GetTCPPortBase() << '-' << GetTCPPortMax() << "\n"
           "UDP ports: " << GetUDPPortBase() << '-' << GetUDPPortMax() << "\n"
           "RTP ports: " << GetRtpIpPortBase() << '-' << GetRtpIpPortMax() << "\n"
           "RTP IP TOS: 0x" << hex << (unsigned)GetRtpIpTypeofService() << dec << endl;
