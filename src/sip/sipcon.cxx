@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2002  2002/02/01 04:53:01  robertj
+ * Revision 1.2003  2002/02/01 05:47:55  craigs
+ * Removed :: from in front of isspace that confused gcc 2.96
+ *
+ * Revision 2.1  2002/02/01 04:53:01  robertj
  * Added (very primitive!) SIP support.
  *
  */
@@ -573,7 +576,7 @@ static PString GetAuthParam(const PString & auth, const char * name)
   PINDEX pos = auth.Find(name);
   if (pos != P_MAX_INDEX)  {
     pos += strlen(name);
-    while (::isspace(auth[pos]))
+    while (isspace(auth[pos]))
       pos++;
     if (auth[pos] == '=') {
       pos++;
