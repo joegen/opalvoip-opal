@@ -27,11 +27,17 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.h,v $
- * Revision 1.2002  2001/10/15 04:30:09  robertj
+ * Revision 1.2003  2001/11/02 10:45:19  robertj
+ * Updated to OpenH323 v1.7.3
+ *
+ * Revision 2.1  2001/10/15 04:30:09  robertj
  * Added delayed start of media patch threads.
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.24  2001/10/23 02:18:06  dereks
+ * Initial release of CU30 video codec.
  *
  * Revision 1.23  2001/07/24 02:26:53  robertj
  * Added start for handling reverse channels.
@@ -191,7 +197,7 @@ class H323Channel : public PObject
     ~H323Channel();
   //@}
 
-  /**@name Overriedes from PObject */
+  /**@name Overrides from PObject */
   //@{
     virtual void PrintOn(
       ostream & strm
@@ -315,6 +321,12 @@ class H323Channel : public PObject
       int skippedFrameCount,  /// Frames skipped by decodec
       int additionalBuffer    /// Additional size of video decoder buffer
     );
+
+    /**
+       Send a miscellanous command to the remote transmitting video codec.
+       Typically, used to indicate a problem in the received video stream.
+    */
+    void SendMiscCommand(unsigned command);
   //@}
 
   /**@name Member variable access */

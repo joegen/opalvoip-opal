@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2007  2001/10/15 04:29:14  robertj
+ * Revision 1.2008  2001/11/02 10:45:19  robertj
+ * Updated to OpenH323 v1.7.3
+ *
+ * Revision 2.6  2001/10/15 04:29:14  robertj
  * Added delayed start of media patch threads.
  * Removed answerCall signal and replaced with state based functions.
  *
@@ -157,6 +160,19 @@ class OpalConnection : public PObject
        closed and deleted by the background threads.
      */
     virtual BOOL Lock();
+
+    /**Try to lock connection.
+       When the FindConnectionWithLock() function is used to gain access to
+       a connection object, this is called to prevent it from being closed
+       and deleted by the background threads.
+
+       Note this is an internal function and it is not expected an application
+       would use it.
+
+       Returns 0 if the lock was not obtainable due to the connection being
+       shut down, -1 if it was not available, and +1 if lock is obtained.
+     */
+    int TryLock();
 
     /**Unlock connection.
      */

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2010  2001/10/15 04:36:37  robertj
+ * Revision 1.2011  2001/11/02 10:45:19  robertj
+ * Updated to OpenH323 v1.7.3
+ *
+ * Revision 2.9  2001/10/15 04:36:37  robertj
  * Added delayed start of media patch threads.
  * Removed answerCall signal and replaced with state based functions.
  * Maintained H.323 answerCall API for backward compatibility.
@@ -59,6 +62,23 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.210  2001/11/01 06:11:57  robertj
+ * Plugged very small mutex hole that could cause crashes.
+ *
+ * Revision 1.209  2001/11/01 00:27:35  robertj
+ * Added default Fast Start disabled and H.245 tunneling disable flags
+ *   to the endpoint instance.
+ *
+ * Revision 1.208  2001/10/30 23:58:42  robertj
+ * Fixed problem with transmit channels not being started
+ *   under some circumstances (eg Cisco early start).
+ *
+ * Revision 1.207  2001/10/24 00:55:49  robertj
+ * Made cosmetic changes to H.245 miscellaneous command function.
+ *
+ * Revision 1.206  2001/10/23 02:17:16  dereks
+ * Initial release of cu30 video codec.
  *
  * Revision 1.205  2001/10/04 06:40:55  robertj
  * Fixed GNU warning
@@ -792,12 +812,41 @@ const char * const H323Connection::FastStartStateNames[NumFastStartStates] = {
 
 H323Connection::H323Connection(OpalCall & call,
                                H323EndPoint & ep,
+                               const PString & token)
+  : OpalConnection(call, ep, token),
+    endpoint(ep),
+    localCapabilities(ep.GetCapabilities())
+{
+  Construct(ep.IsFastStartDisabled(), ep.IsH245TunnelingDisabled());
+}
+
+
+H323Connection::H323Connection(OpalCall & call,
+                               H323EndPoint & ep,
+                               const PString & token,
+                               BOOL disableFastStart)
+  : OpalConnection(call, ep, token),
+    endpoint(ep),
+    localCapabilities(ep.GetCapabilities())
+{
+  Construct(disableFastStart, !ep.IsH245TunnelingDisabled());
+}
+
+
+H323Connection::H323Connection(OpalCall & call,
+                               H323EndPoint & ep,
                                const PString & token,
                                BOOL disableFastStart,
                                BOOL disableTunneling)
   : OpalConnection(call, ep, token),
     endpoint(ep),
     localCapabilities(ep.GetCapabilities())
+{
+  Construct(disableFastStart, disableTunneling);
+}
+
+
+void H323Connection::Construct(BOOL disableFastStart, BOOL disableTunneling)
 {
   callAnswered = FALSE;
   distinctiveRing = 0;
@@ -827,7 +876,7 @@ H323Connection::H323Connection(OpalCall & call,
   startT120 = TRUE;
 
   remoteMaxAudioDelayJitter = 0;
-  maxAudioDelayJitter = ep.GetManager().GetMaxAudioDelayJitter();
+  maxAudioDelayJitter = endpoint.GetManager().GetMaxAudioDelayJitter();
 
   masterSlaveDeterminationProcedure = new H245NegMasterSlaveDetermination(endpoint, *this);
   capabilityExchangeProcedure = new H245NegTerminalCapabilitySet(endpoint, *this);
@@ -1620,6 +1669,8 @@ H323Connection::AnswerCallResponse
 
 void H323Connection::AnsweringCall(AnswerCallResponse response)
 {
+  PTRACE(2, "H323\tAnswering call: " << response);
+
   switch (response) {
     default : // AnswerCallDeferred
       break;
@@ -1677,6 +1728,8 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
     case AnswerCallNow :
       SetConnected();
   }
+
+  InternalEstablishedConnectionCheck();
 }
 
 
@@ -2580,7 +2633,7 @@ BOOL H323Connection::OnH245_MiscellaneousCommand(
   if (chan != NULL)
     chan->OnMiscellaneousCommand(pdu.m_type);
   else
-    PTRACE(3, "H245\tMiscellaneousCommand: chan=" << pdu.m_logicalChannelNumber
+    PTRACE(3, "H245\tMiscellaneousCommand: is ignored chan=" << pdu.m_logicalChannelNumber
            << ", type=" << pdu.m_type.GetTagName());
 
   return TRUE;
@@ -2594,7 +2647,7 @@ BOOL H323Connection::OnH245_MiscellaneousIndication(
   if (chan != NULL)
     chan->OnMiscellaneousIndication(pdu.m_type);
   else
-    PTRACE(3, "H245\tMiscellaneousIndication: chan=" << pdu.m_logicalChannelNumber
+    PTRACE(3, "H245\tMiscellaneousIndication is ignored. chan=" << pdu.m_logicalChannelNumber
            << ", type=" << pdu.m_type.GetTagName());
 
   return TRUE;
@@ -3498,5 +3551,18 @@ const OpalTransport & H323Connection::GetControlChannel() const
   return *(controlChannel != NULL ? controlChannel : signallingChannel);
 }
 
+
+void H323Connection::SendLogicalChannelMiscCommand(H323Channel & channel,
+                                                   unsigned commandIdentifier)
+{
+  if (channel.GetDirection() == H323Channel::IsReceiver) {
+    H323ControlPDU pdu;
+    H245_CommandMessage & command = pdu.Build(H245_CommandMessage::e_miscellaneousCommand);
+    H245_MiscellaneousCommand & miscCommand = command;
+    miscCommand.m_logicalChannelNumber = (unsigned)channel.GetNumber();
+    miscCommand.m_type.SetTag(commandIdentifier);
+    WriteControlPDU(pdu);
+  }
+}
 
 /////////////////////////////////////////////////////////////////////////////

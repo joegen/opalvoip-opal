@@ -27,11 +27,17 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.h,v $
- * Revision 1.2003  2001/10/05 00:22:13  robertj
+ * Revision 1.2004  2001/11/02 10:45:19  robertj
+ * Updated to OpenH323 v1.7.3
+ *
+ * Revision 2.2  2001/10/05 00:22:13  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 1.125  2001/10/23 02:18:06  dereks
+ * Initial release of CU30 video codec.
  *
  * Revision 1.124  2001/09/11 01:24:36  robertj
  * Added conditional compilation to remove video and/or audio codecs.
@@ -441,6 +447,9 @@
 #endif // NO_H323_AUDIO_CODECS
 #ifndef NO_H323_VIDEO
 #include <codec/h261codec.h>
+#ifdef HAS_CU30
+#include <codec/cu30codec.h>
+#endif
 #endif // NO_H323_VIDEO
 
 
