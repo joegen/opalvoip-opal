@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2057  2004/05/09 13:12:38  rjongbloed
+ * Revision 1.2058  2004/06/04 06:54:18  csoutheren
+ * Migrated updates from OpenH323 1.14.1
+ *
+ * Revision 2.56  2004/05/09 13:12:38  rjongbloed
  * Fixed issues with non fast start and non-tunnelled connections
  *
  * Revision 2.55  2004/05/01 10:00:51  rjongbloed
@@ -1518,6 +1521,8 @@ H323Connection::H323Connection(OpalCall & call,
   h4504handler = new H4504Handler(*this, *h450dispatcher);
   h4506handler = new H4506Handler(*this, *h450dispatcher);
   h45011handler = new H45011Handler(*this, *h450dispatcher);
+
+  remoteIsNAT = FALSE;
 }
 
 
@@ -2030,35 +2035,73 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
 
   if (setupPDU.m_h323_uu_pdu.m_h323_message_body.GetTag() != H225_H323_UU_PDU_h323_message_body::e_setup)
     return FALSE;
+
   const H225_Setup_UUIE & setup = setupPDU.m_h323_uu_pdu.m_h323_message_body;
 
-  // Save the identifiers sent by caller
-  callReference = setupPDU.GetQ931().GetCallReference();
-  if (setup.HasOptionalField(H225_Setup_UUIE::e_callIdentifier))
-    callIdentifier = setup.m_callIdentifier.m_guid;
-  conferenceIdentifier = setup.m_conferenceID;
+  switch (setup.m_conferenceGoal.GetTag()) {
+    case H225_Setup_UUIE_conferenceGoal::e_create:
+    case H225_Setup_UUIE_conferenceGoal::e_join:
+      break;
 
-  SetRemoteApplication(setup.m_sourceInfo);
+    case H225_Setup_UUIE_conferenceGoal::e_invite:
+      return endpoint.OnConferenceInvite(setupPDU);
+
+    case H225_Setup_UUIE_conferenceGoal::e_callIndependentSupplementaryService:
+      return endpoint.OnCallIndependentSupplementaryService(setupPDU);
+
+    case H225_Setup_UUIE_conferenceGoal::e_capability_negotiation:
+      return endpoint.OnNegotiateConferenceCapabilities(setupPDU);
+  }
+
   SetRemoteVersions(setup.m_protocolIdentifier);
 
   // Get the ring pattern
   distinctiveRing = setupPDU.GetDistinctiveRing();
 
+  // Save the identifiers sent by caller
+  if (setup.HasOptionalField(H225_Setup_UUIE::e_callIdentifier))
+    callIdentifier = setup.m_callIdentifier.m_guid;
+  conferenceIdentifier = setup.m_conferenceID;
+  SetRemoteApplication(setup.m_sourceInfo);
+
   // Determine the remote parties name/number/address as best we can
   setupPDU.GetQ931().GetCallingPartyNumber(remotePartyNumber);
   remotePartyName = setupPDU.GetSourceAliases(signallingChannel);
 
+  // get the peer address
+  remotePartyAddress = signallingChannel->GetRemoteAddress();
   if (setup.m_sourceAddress.GetSize() > 0)
     remotePartyAddress = H323GetAliasAddressString(setup.m_sourceAddress[0]) + '@' + signallingChannel->GetRemoteAddress();
-  else
-    remotePartyAddress = signallingChannel->GetRemoteAddress();
+
+  // compare the source call signalling address
+  if (setup.HasOptionalField(H225_Setup_UUIE::e_sourceCallSignalAddress)) {
+
+    H323TransportAddress sourceAddress(setup.m_sourceCallSignalAddress);
+
+    // if the source address is different from the peer address, then the remote endpoint is most likely behind a NAT
+    // but make sure we don't have an external address set before enabling it
+    PIPSocket::Address srcAddr, sigAddr;
+    sourceAddress.GetIpAddress(srcAddr);
+    signallingChannel->GetRemoteAddress().GetIpAddress(sigAddr);
+    if (!sigAddr.IsRFC1918() && srcAddr.IsRFC1918()) {
+      PIPSocket::Address localAddress = signallingChannel->GetLocalAddress();
+      PIPSocket::Address ourAddress = localAddress;
+      endpoint.TranslateTCPAddress(localAddress, sigAddr);
+      if (localAddress == ourAddress) {
+        PTRACE(3, "H225\tSource signal address " << srcAddr << " and TCP peer address " << sigAddr << " indicate remote endpoint is behind NAT");
+        remoteIsNAT = TRUE;
+      }
+    }
+  }
 
   // Anything else we need from setup PDU
+  mediaWaitForConnect = setup.m_mediaWaitForConnect;
   localDestinationAddress = setupPDU.GetDestinationAlias(TRUE);
   if (signallingChannel->GetLocalAddress().IsEquivalent(localDestinationAddress))
     localDestinationAddress = '*';
 
-  mediaWaitForConnect = setup.m_mediaWaitForConnect;
+  // Get the local capabilities before fast start or tunnelled TCS is handled
+  OnSetLocalCapabilities();
 
   // Send back a H323 Call Proceeding PDU in case OnIncomingCall() takes a while
   PTRACE(3, "H225\tSending call proceeding PDU");
@@ -2131,16 +2174,15 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
     }
   }
 
-  // Get the local capabilities before fast start or tunnelled TCS is handled
-  OnSetLocalCapabilities();
-
   // Check that it has the H.245 channel connection info
   if (setup.HasOptionalField(H225_Setup_UUIE::e_h245Address))
     if (!CreateOutgoingControlChannel(setup.m_h245Address))
       return FALSE;
 
   // See if remote endpoint wants to start fast
-  if ((fastStartState != FastStartDisabled) && setup.HasOptionalField(H225_Setup_UUIE::e_fastStart)) {
+  if ((fastStartState != FastStartDisabled) && 
+       setup.HasOptionalField(H225_Setup_UUIE::e_fastStart) &&
+       localCapabilities.GetSize() > 0) {
     if (!capabilityExchangeProcedure->HasReceivedCapabilities())
       remoteCapabilities.RemoveAll();
     PTRACE(3, "H225\tFast start detected");
@@ -2607,14 +2649,6 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
     default : // AnswerCallDeferred
       break;
 
-    case AnswerCallPending :
-      SetAlerting(localPartyName, FALSE);
-      break;
-
-    case AnswerCallAlertWithMedia :
-      SetAlerting(localPartyName, TRUE);
-      break;
-
     case AnswerCallDeferredWithMedia :
       if (!mediaWaitForConnect) {
         // create a new facility PDU if doing AnswerDeferredWithMedia
@@ -2649,6 +2683,14 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
           WriteSignalPDU(want245PDU);
         }
       }
+      break;
+
+    case AnswerCallAlertWithMedia :
+      SetAlerting(localPartyName, TRUE);
+      break;
+
+    case AnswerCallPending :
+      SetAlerting(localPartyName, FALSE);
       break;
 
     case AnswerCallDenied :

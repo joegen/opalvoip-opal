@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2030  2004/04/07 08:21:03  rjongbloed
+ * Revision 1.2031  2004/06/04 06:54:18  csoutheren
+ * Migrated updates from OpenH323 1.14.1
+ *
+ * Revision 2.29  2004/04/07 08:21:03  rjongbloed
  * Changes for new RTTI system.
  *
  * Revision 2.28  2004/03/13 06:25:54  rjongbloed
@@ -714,6 +717,9 @@
 #define PTRACE_channel
 #endif
 
+BYTE H323EndPoint::defaultT35CountryCode    = 9; // Country code for Australia
+BYTE H323EndPoint::defaultT35Extension      = 0;
+WORD H323EndPoint::defaultManufacturerCode  = 61; // Allocated by Australian Communications Authority, Oct 2000;
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -760,9 +766,9 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   terminalType = e_TerminalOnly;
   clearCallOnRoundTripFail = FALSE;
 
-  t35CountryCode = 9; // Country code for Australia
-  t35Extension = 0;
-  manufacturerCode = 61; // Allocated by Australian Communications Authority, Oct 2000
+  t35CountryCode   = defaultT35CountryCode;   // Country code for Australia
+  t35Extension     = defaultT35Extension;
+  manufacturerCode = defaultManufacturerCode; // Allocated by Australian Communications Authority, Oct 2000
 
   masterSlaveDeterminationRetries = 10;
   gatekeeperRequestRetries = 2;
@@ -1703,6 +1709,20 @@ void H323EndPoint::OnServiceControlSession(unsigned type,
   session.OnChange(type, sessionId, *this, connection);
 }
 
+BOOL H323EndPoint::OnConferenceInvite(const H323SignalPDU & /*setupPDU */)
+{
+  return FALSE;
+}
+
+BOOL H323EndPoint::OnCallIndependentSupplementaryService(const H323SignalPDU & /* setupPDU */)
+{
+  return FALSE;
+}
+
+BOOL H323EndPoint::OnNegotiateConferenceCapabilities(const H323SignalPDU & /* setupPDU */)
+{
+  return FALSE;
+}
 
 H323ServiceControlSession * H323EndPoint::CreateServiceControlSession(const H225_ServiceControlDescriptor & contents)
 {
