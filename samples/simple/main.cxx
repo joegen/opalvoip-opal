@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2025  2003/03/24 07:18:29  robertj
+ * Revision 1.2026  2003/03/26 03:51:46  robertj
+ * Fixed failure to compile if not statically linked.
+ *
+ * Revision 2.24  2003/03/24 07:18:29  robertj
  * Added registration system for LIDs so can work with various LID types by
  *   name instead of class instance.
  *
@@ -153,6 +156,7 @@
 #include <h323/h323.h>
 #include <h323/gkclient.h>
 #include <lids/lidep.h>
+#include <lids/ixjlid.h>
 
 #include "main.h"
 #include "../../version.h"
