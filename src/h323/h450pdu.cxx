@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h450pdu.cxx,v $
- * Revision 1.2004  2001/08/23 03:14:30  robertj
+ * Revision 1.2005  2001/10/05 00:22:14  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.3  2001/08/23 03:14:30  robertj
  * Fixed GNU warnings
  *
  * Revision 2.2  2001/08/17 08:29:27  robertj
@@ -35,6 +38,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.8  2001/08/27 03:59:16  robertj
+ * Fixed GNU warnings.
  *
  * Revision 1.7  2001/08/16 07:49:19  robertj
  * Changed the H.450 support to be more extensible. Protocol handlers
@@ -895,8 +901,6 @@ void H4502Handler::OnReceivedReturnError(int errorCode, X880_ReturnError &)
           serviceAPDU.WriteFacilityPDU(*existingConnection);
           existingConnection->Unlock();
         }
-
-        ctState = e_ctIdle;
       }
       break;
 

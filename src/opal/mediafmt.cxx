@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2006  2001/10/04 00:43:57  robertj
+ * Revision 1.2007  2001/10/05 00:22:14  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.5  2001/10/04 00:43:57  robertj
  * Added function to remove wildcard from list.
  * Added constructor to make a list with one format in it.
  * Fixed wildcard matching so trailing * works.
@@ -44,6 +47,10 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.4  2001/09/21 02:51:45  robertj
+ * Implemented static object for all "known" media formats.
+ * Added default session ID to media format description.
  *
  * Revision 1.3  2001/05/11 04:43:43  robertj
  * Added variable names for standard PCM-16 media format name.
@@ -70,7 +77,7 @@
 #define new PNEW
 
 
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
 
 OpalMediaFormat const OpalPCM16(
   OPAL_PCM16,
@@ -82,6 +89,8 @@ OpalMediaFormat const OpalPCM16(
   8, // 1 millisecond
   OpalMediaFormat::AudioTimeUnits
 );
+
+#if !defined(NO_H323_AUDIO_CODECS) && !defined(NO_OPAL_AUDIO_CODECS)
 
 OpalMediaFormat const OpalG711uLaw(
   OPAL_G711_ULAW_64K,
@@ -182,6 +191,8 @@ OpalMediaFormat const OpalGSM0610(
   OpalMediaFormat::AudioTimeUnits
 );
 
+#endif // NO_H323_AUDIO_CODECS
+
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -216,7 +227,7 @@ OpalMediaFormat::OpalMediaFormat(const PString & wildcard)
 
 
 OpalMediaFormat::OpalMediaFormat(const char * fullName,
-                                 unsigned id,
+                                 unsigned dsid,
                                  RTP_DataFrame::PayloadTypes pt,
                                  BOOL     nj,
                                  unsigned bw,
@@ -226,7 +237,7 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
   : PCaselessString(fullName)
 {
   rtpPayloadType = pt;
-  defaultSessionID = id;
+  defaultSessionID = dsid;
   needsJitter = nj;
   bandwidth = bw;
   frameSize = fs;

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q931.cxx,v $
- * Revision 1.2003  2001/08/21 01:11:31  robertj
+ * Revision 1.2004  2001/10/05 00:22:14  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.2  2001/08/21 01:11:31  robertj
  * Update from OpenH323
  *
  * Revision 2.1  2001/08/13 05:10:40  robertj
@@ -35,6 +38,16 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.40  2001/09/17 02:06:40  robertj
+ * Added Redirecting Number IE to Q.931, thanks Frank Derks
+ *
+ * Revision 1.39  2001/09/13 02:41:21  robertj
+ * Fixed call reference generation to use full range and common code, thanks Carlo Kielstra
+ *
+ * Revision 1.38  2001/08/27 03:45:59  robertj
+ * Added automatic setting of bearer capability transfer mode from H.323
+ *    capabilities on connection at time of SETUP PDU.
  *
  * Revision 1.37  2001/08/20 06:48:28  robertj
  * Added Q.931 function for setting bearer capabilities, allowing
@@ -268,12 +281,12 @@ void Q931::BuildSetup(int callRef)
 {
   messageType = SetupMsg;
   if (callRef < 0)
-    GenerateCallReference();
+    callReference = GenerateCallReference();
   else
     callReference = callRef;
   fromDestination = FALSE;
   informationElements.RemoveAll();
-  SetBearerCapabilities(TransferUnrestrictedDigital, 1);
+  SetBearerCapabilities(TransferSpeech, 1);
 }
 
 
@@ -283,7 +296,7 @@ void Q931::BuildConnect(int callRef)
   callReference = callRef;
   fromDestination = TRUE;
   informationElements.RemoveAll();
-  SetBearerCapabilities(TransferUnrestrictedDigital, 1);
+  SetBearerCapabilities(TransferSpeech, 1);
 }
 
 
@@ -466,6 +479,8 @@ static PString Q931IENameString(int number)
       return "Calling-Party-Number";
     case Q931::CalledPartyNumberIE :
       return "Called-Party-Number";
+    case Q931::RedirectingNumberIE :
+      return "Redirecting-Number";
     case Q931::UserUserIE :
       return "User-User";
   }
@@ -532,24 +547,23 @@ PString Q931::GetMessageTypeName() const
 }
 
 
-void Q931::GenerateCallReference()
+unsigned Q931::GenerateCallReference()
 {
-  static const char LastCallReference[] = "Last Call Reference";
+  static unsigned LastCallReference;
+  static PMutex mutex;
+  PWaitAndSignal wait(mutex);
 
-  PConfig cfg("Globals");
-  callReference = cfg.GetInteger(LastCallReference);
-
-  if (callReference == 0)
-    callReference = PRandom::Number();
+  if (LastCallReference == 0)
+    LastCallReference = PRandom::Number();
   else
-    callReference++;
+    LastCallReference++;
 
-  callReference &= 0x7fff;
+  LastCallReference &= 0x7fff;
 
-  if (callReference == 0)
-    callReference = 1;
+  if (LastCallReference == 0)
+    LastCallReference = 1;
 
-  cfg.SetInteger(LastCallReference, callReference);
+  return LastCallReference;
 }
 
 
@@ -775,43 +789,64 @@ PString Q931::GetDisplayName() const
 }
 
 
-void Q931::SetCallingPartyNumber(const PString & number,
-                                 unsigned plan,
-                                 unsigned type,
-                                 int presentation,
-                                 int screening)
+static PBYTEArray SetNumberIE(const PString & number,
+                              unsigned plan,
+                              unsigned type,
+                              int presentation,
+                              int screening,
+                              int reason)
 {
-  PINDEX len = number.GetLength();
   PBYTEArray bytes;
-  if (presentation == -1 || screening == -1) {
-    bytes.SetSize(len+1);
-    bytes[0] = (BYTE)(0x80|((type&7)<<4)|(plan&15));
-    memcpy(bytes.GetPointer()+1, (const char *)number, len);
-  }
+
+  PINDEX len = number.GetLength();
+
+  if (reason == -1) {
+    if (presentation == -1 || screening == -1) {
+      bytes.SetSize(len+1);
+      bytes[0] = (BYTE)(0x80|((type&7)<<4)|(plan&15));
+      memcpy(bytes.GetPointer()+1, (const char *)number, len);
+    }
+    else {
+      bytes.SetSize(len+2);
+      bytes[0] = (BYTE)(((type&7)<<4)|(plan&15));
+      bytes[1] = (BYTE)(0x80|((presentation&3)<<5)|(screening&3));
+      memcpy(bytes.GetPointer()+2, (const char *)number, len);
+    }
+  } 
   else {
-    bytes.SetSize(len+2);
-    bytes[0] = (BYTE)(((type&7)<<4)|(plan&15));
-    bytes[1] = (BYTE)(0x80|((presentation&3)<<5)|(screening&3));
-    memcpy(bytes.GetPointer()+2, (const char *)number, len);
+    // If octet 3b is present, then octet 3a must also be present!
+    if (presentation == -1 || screening == -1) {
+      // This situation should never occur!!!
+      bytes.SetSize(len+1);
+      bytes[0] = (BYTE)(0x80|((type&7)<<4)|(plan&15));
+      memcpy(bytes.GetPointer()+1, (const char *)number, len);
+    }
+    else {
+      bytes.SetSize(len+3);
+      bytes[0] = (BYTE)(0x80|((type&7)<<4)|(plan&15));
+      bytes[1] = (BYTE)(0x80|((presentation&3)<<5)|(screening&3));
+      bytes[2] = (BYTE)(0x80|(reason&15));
+      memcpy(bytes.GetPointer()+3, (const char *)number, len);
+    }
   }
-  SetIE(CallingPartyNumberIE, bytes);
+
+  return bytes;
 }
 
 
-BOOL Q931::GetCallingPartyNumber(PString  & number,
-                                 unsigned * plan,
-                                 unsigned * type,
-                                 unsigned * presentation,
-                                 unsigned * screening,
-                                 unsigned   defPresentation,
-                                 unsigned   defScreening) const
+static BOOL GetNumberIE(const PBYTEArray & bytes,
+                        PString  & number,
+                        unsigned * plan,
+                        unsigned * type,
+                        unsigned * presentation,
+                        unsigned * screening,
+                        unsigned * reason,
+                        unsigned   defPresentation,
+                        unsigned   defScreening,
+                        unsigned   defReason)
 {
   number = PString();
 
-  if (!HasIE(CallingPartyNumberIE))
-    return FALSE;
-
-  PBYTEArray bytes = GetIE(CallingPartyNumberIE);
   if (bytes.IsEmpty())
     return FALSE;
 
@@ -822,7 +857,7 @@ BOOL Q931::GetCallingPartyNumber(PString  & number,
     *type = (bytes[0]>>4)&7;
 
   PINDEX offset;
-  if (bytes[0] & 0x80) {  // Octet 3a not provided, set defaults
+  if ((bytes[0] & 0x80) != 0) {  // Octet 3a not provided, set defaults
     if (presentation != NULL)
       *presentation = defPresentation;
 
@@ -838,47 +873,91 @@ BOOL Q931::GetCallingPartyNumber(PString  & number,
     if (screening != NULL)
       *screening = bytes[1]&3;
 
-    offset = 2;
-   }
+    if ((bytes[1] & 0x80) != 0) { // Octet 3b not provided, set defaults
+      if (reason != NULL)
+        *reason = defReason;
+
+      offset = 2;
+    }
+    else {
+      if (reason != NULL)
+        *reason = bytes[2]&15;
+
+      offset = 3;
+    }
+  }
 
   PINDEX len = bytes.GetSize()-offset;
-  memcpy(number.GetPointer(len+1), &bytes[offset], len);
+  memcpy(number.GetPointer(len+1), ((const BYTE *)bytes)+offset, len);
 
   return !number;
+}
+
+
+void Q931::SetCallingPartyNumber(const PString & number,
+                                 unsigned plan,
+                                 unsigned type,
+                                 int presentation,
+                                 int screening)
+{
+  SetIE(CallingPartyNumberIE,
+        SetNumberIE(number, plan, type, presentation, screening, -1));
+}
+
+
+BOOL Q931::GetCallingPartyNumber(PString  & number,
+                                 unsigned * plan,
+                                 unsigned * type,
+                                 unsigned * presentation,
+                                 unsigned * screening,
+                                 unsigned   defPresentation,
+                                 unsigned   defScreening) const
+{
+  return GetNumberIE(GetIE(CallingPartyNumberIE), number,
+                     plan, type, presentation, screening, NULL,
+                     defPresentation, defScreening, 0);
 }
 
 
 void Q931::SetCalledPartyNumber(const PString & number, unsigned plan, unsigned type)
 {
-  PINDEX len = number.GetLength();
-  PBYTEArray bytes(len+1);
-  bytes[0] = (BYTE)(0x80|((type&7)<<4)|(plan&15));
-  memcpy(bytes.GetPointer()+1, (const char *)number, len);
-  SetIE(CalledPartyNumberIE, bytes);
+  SetIE(CalledPartyNumberIE,
+        SetNumberIE(number, plan, type, -1, -1, -1));
 }
 
 
 BOOL Q931::GetCalledPartyNumber(PString & number, unsigned * plan, unsigned * type) const
 {
-  number = PString();
+  return GetNumberIE(GetIE(CalledPartyNumberIE),
+                     number, plan, type, NULL, NULL, NULL, 0, 0, 0);
+}
 
-  if (!HasIE(CalledPartyNumberIE))
-    return FALSE;
 
-  PBYTEArray bytes = GetIE(CalledPartyNumberIE);
-  if (bytes.IsEmpty())
-    return FALSE;
+void Q931::SetRedirectingNumber(const PString & number,
+                                unsigned plan,
+                                unsigned type,
+                                int presentation,
+                                int screening,
+                                int reason)
+{
+  SetIE(RedirectingNumberIE,
+        SetNumberIE(number, plan, type, presentation, screening, reason));
+}
 
-  if (plan != NULL)
-    *plan = bytes[0]&15;
 
-  if (type != NULL)
-    *type = (bytes[0]>>4)&7;
-
-  PINDEX len = bytes.GetSize()-1;
-  memcpy(number.GetPointer(len+1), &bytes[1], len);
-
-  return !number;
+BOOL Q931::GetRedirectingNumber(PString  & number,
+                                unsigned * plan,
+                                unsigned * type,
+                                unsigned * presentation,
+                                unsigned * screening,
+                                unsigned * reason,
+                                unsigned   defPresentation,
+                                unsigned   defScreening,
+                                unsigned   defReason) const
+{
+  return GetNumberIE(GetIE(RedirectingNumberIE),
+                     number, plan, type, presentation, screening, reason,
+                     defPresentation, defScreening, defReason);
 }
 
 

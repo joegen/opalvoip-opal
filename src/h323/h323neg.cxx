@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323neg.cxx,v $
- * Revision 1.2003  2001/08/17 08:30:00  robertj
+ * Revision 1.2004  2001/10/05 00:22:14  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.2  2001/08/17 08:30:00  robertj
  * Moved call end reasons enum from OpalConnection to global.
  *
  * Revision 2.1  2001/08/13 05:10:39  robertj
@@ -35,6 +38,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.52  2001/09/13 04:18:57  robertj
+ * Added support for "reopen" function when closing logical channel.
  *
  * Revision 1.51  2001/08/06 03:08:56  robertj
  * Fission of h323.h to h323ep.h & h323con.h, h323.h now just includes files.
@@ -963,7 +969,7 @@ BOOL H245NegLogicalChannel::HandleCloseAck(const H245_CloseLogicalChannelAck & /
 }
 
 
-BOOL H245NegLogicalChannel::HandleRequestClose(const H245_RequestChannelClose & /*pdu*/)
+BOOL H245NegLogicalChannel::HandleRequestClose(const H245_RequestChannelClose & pdu)
 {
   PWaitAndSignal wait(mutex);
 
@@ -982,6 +988,13 @@ BOOL H245NegLogicalChannel::HandleRequestClose(const H245_RequestChannelClose & 
     replyTimer = endpoint.GetLogicalChannelTimeout();
     reply.BuildCloseLogicalChannel(channelNumber);
     state = e_AwaitingRelease;
+
+    if (pdu.m_reason.GetTag() == H245_RequestChannelClose_reason::e_reopen) {
+      PTRACE(2, "H245\tReopening channel: " << channelNumber);
+      connection.OpenLogicalChannel(channel->GetCapability(),
+                                    channel->GetSessionID(),
+                                    channel->GetDirection());
+    }
   }
   else
     reply.BuildRequestChannelCloseReject(channelNumber);

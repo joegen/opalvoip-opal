@@ -24,8 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: guid.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2001/10/05 00:22:14  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.12  2001/10/03 03:18:29  robertj
+ * Changed to only get (or fake) MAC address once.
  *
  * Revision 1.11  2001/04/05 01:45:13  robertj
  * Fixed MSVC warning.
@@ -136,27 +142,34 @@ OpalGloballyUniqueID::OpalGloballyUniqueID()
   theArray[8] = (BYTE)(((clockSequence>>8)&0x1f) | 0x80); // DCE compatible GUID
   theArray[9] = (BYTE)clockSequence;
 
-  PIPSocket::InterfaceTable interfaces;
-  if (PIPSocket::GetInterfaceTable(interfaces)) {
-    for (PINDEX i = 0; i < interfaces.GetSize(); i++) {
-      PString macAddrStr = interfaces[i].GetMACAddress();
-      if (!macAddrStr && macAddrStr != "44-45-53-54-00-00") {  /* not Win32 PPP device */
-        PEthSocket::Address macAddress = macAddrStr;
-        if (macAddress != PEthSocket::Address("")) {
-          memcpy(theArray+10, macAddress.b, 6);
-          return;
+  static PEthSocket::Address macAddress;
+  static BOOL needMacAddress = TRUE;
+  if (needMacAddress) {
+    PIPSocket::InterfaceTable interfaces;
+    if (PIPSocket::GetInterfaceTable(interfaces)) {
+      for (PINDEX i = 0; i < interfaces.GetSize(); i++) {
+        PString macAddrStr = interfaces[i].GetMACAddress();
+        if (!macAddrStr && macAddrStr != "44-45-53-54-00-00") { /* not Win32 PPP device */
+          macAddress = macAddrStr;
+          if (macAddress != NULL) {
+            needMacAddress = FALSE;
+            break;
+          }
         }
       }
     }
+
+    if (needMacAddress) {
+      PRandom rand;
+      macAddress.ls.l = rand;
+      macAddress.ls.s = (WORD)rand;
+      macAddress.b[0] |= '\x80';
+
+      needMacAddress = FALSE;
+    }
   }
 
-  PRandom rand;
-  theArray[10] = (BYTE)(rand|0x80);
-  theArray[11] = (BYTE)rand;
-  theArray[12] = (BYTE)rand;
-  theArray[13] = (BYTE)rand;
-  theArray[14] = (BYTE)rand;
-  theArray[15] = (BYTE)rand;
+  memcpy(theArray+10, macAddress.b, 6);
 }
 
 

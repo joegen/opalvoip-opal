@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.cxx,v $
- * Revision 1.2003  2001/08/17 08:29:44  robertj
+ * Revision 1.2004  2001/10/05 00:22:14  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.2  2001/08/17 08:29:44  robertj
  * Update from OpenH323
  * Moved call end reasons enum from OpalConnection to global.
  *
@@ -36,6 +39,15 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.85  2001/09/26 07:05:29  robertj
+ * Fixed incorrect tags in building some PDU's, thanks Chris Purvis.
+ *
+ * Revision 1.84  2001/09/14 00:08:20  robertj
+ * Optimised H323SetAliasAddress to use IsE164 function.
+ *
+ * Revision 1.83  2001/09/12 07:48:05  robertj
+ * Fixed various problems with tracing.
  *
  * Revision 1.82  2001/08/16 07:49:19  robertj
  * Changed the H.450 support to be more extensible. Protocol handlers
@@ -332,25 +344,71 @@ void H323SetAliasAddresses(const PStringList & names,
 }
 
 
-void H323SetAliasAddress(const PString & name, H225_AliasAddress & alias)
-{
-  PAssert(!name, "Must have non-empty string in AliasAddress!");
-
-  alias.SetTag(H225_AliasAddress::e_dialedDigits);
-  PASN_IA5String & ia5 = (PASN_IA5String &)alias;
-  ia5 = name;
-  if (name == (PString)ia5)
-    return;
-
-  // Could not encode it as a phone number, so do it as a full string.
-  alias.SetTag(H225_AliasAddress::e_h323_ID);
-  (PASN_BMPString &)alias = name;
-}
-
-
 static BOOL IsE164(const PString & str)
 {
   return strspn(str, "1234567890*#") == strlen(str);
+}
+
+
+void H323SetAliasAddress(const PString & name, H225_AliasAddress & alias)
+{
+  if (IsE164(name)) {
+    alias.SetTag(H225_AliasAddress::e_dialedDigits);
+    (PASN_IA5String &)alias = name;
+  }
+  else {
+    // Could not encode it as a phone number, so do it as a full string.
+    alias.SetTag(H225_AliasAddress::e_h323_ID);
+    (PASN_BMPString &)alias = name;
+  }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+PString H323GetAliasAddressString(const H225_AliasAddress & alias)
+{
+  switch (alias.GetTag()) {
+    case H225_AliasAddress::e_dialedDigits :
+    case H225_AliasAddress::e_url_ID :
+    case H225_AliasAddress::e_email_ID :
+      return (const PASN_IA5String &)alias;
+
+    case H225_AliasAddress::e_h323_ID :
+      return (const PASN_BMPString &)alias;
+
+    case H225_AliasAddress::e_transportID :
+      return H323TransportAddress(alias);
+
+    case H225_AliasAddress::e_partyNumber :
+    {
+      const H225_PartyNumber & party = alias;
+      switch (party.GetTag()) {
+        case H225_PartyNumber::e_e164Number :
+        {
+          const H225_PublicPartyNumber & number = party;
+          return "PublicParty:" + (PString)number.m_publicNumberDigits;
+        }
+
+        case H225_PartyNumber::e_privateNumber :
+        {
+          const H225_PrivatePartyNumber & number = party;
+          return "PrivateParty:" + (PString)number.m_privateNumberDigits;
+        }
+
+        case H225_PartyNumber::e_dataPartyNumber :
+        case H225_PartyNumber::e_telexPartyNumber :
+        case H225_PartyNumber::e_nationalStandardPartyNumber :
+          return (const H225_NumberDigits &)party;
+      }
+      break;
+    }
+
+    default :
+      break;
+  }
+
+  return PString();
 }
 
 
@@ -602,7 +660,7 @@ H225_Status_UUIE & H323SignalPDU::BuildStatus(const H323Connection & connection)
 {
   q931pdu.BuildStatus(connection.GetCallReference(), connection.HadAnsweredCall());
 
-  m_h323_uu_pdu.m_h323_message_body.SetTag(H225_H323_UU_PDU_h323_message_body::e_progress);
+  m_h323_uu_pdu.m_h323_message_body.SetTag(H225_H323_UU_PDU_h323_message_body::e_status);
   H225_Status_UUIE & status = m_h323_uu_pdu.m_h323_message_body;
 
   status.m_protocolIdentifier.SetValue(H225_ProtocolID);
@@ -615,7 +673,7 @@ H225_StatusInquiry_UUIE & H323SignalPDU::BuildStatusInquiry(const H323Connection
 {
   q931pdu.BuildStatusEnquiry(connection.GetCallReference(), connection.HadAnsweredCall());
 
-  m_h323_uu_pdu.m_h323_message_body.SetTag(H225_H323_UU_PDU_h323_message_body::e_progress);
+  m_h323_uu_pdu.m_h323_message_body.SetTag(H225_H323_UU_PDU_h323_message_body::e_statusInquiry);
   H225_StatusInquiry_UUIE & inquiry = m_h323_uu_pdu.m_h323_message_body;
 
   inquiry.m_protocolIdentifier.SetValue(H225_ProtocolID);
@@ -629,7 +687,7 @@ H225_SetupAcknowledge_UUIE & H323SignalPDU::BuildSetupAcknowledge(const H323Conn
 {
   q931pdu.BuildSetupAcknowledge(connection.GetCallReference());
 
-  m_h323_uu_pdu.m_h323_message_body.SetTag(H225_H323_UU_PDU_h323_message_body::e_progress);
+  m_h323_uu_pdu.m_h323_message_body.SetTag(H225_H323_UU_PDU_h323_message_body::e_setupAcknowledge);
   H225_SetupAcknowledge_UUIE & setupAck = m_h323_uu_pdu.m_h323_message_body;
 
   setupAck.m_protocolIdentifier.SetValue(H225_ProtocolID);
@@ -643,7 +701,7 @@ H225_Notify_UUIE & H323SignalPDU::BuildNotify(const H323Connection & connection)
 {
   q931pdu.BuildNotify(connection.GetCallReference(), connection.HadAnsweredCall());
 
-  m_h323_uu_pdu.m_h323_message_body.SetTag(H225_H323_UU_PDU_h323_message_body::e_progress);
+  m_h323_uu_pdu.m_h323_message_body.SetTag(H225_H323_UU_PDU_h323_message_body::e_notify);
   H225_Notify_UUIE & notify = m_h323_uu_pdu.m_h323_message_body;
 
   notify.m_protocolIdentifier.SetValue(H225_ProtocolID);
@@ -679,8 +737,9 @@ BOOL H323SignalPDU::Read(OpalTransport & transport)
 {
   PBYTEArray rawData;
   if (!transport.ReadPDU(rawData)) {
-    PTRACE_IF(1, transport.GetErrorCode() != PChannel::Timeout,
-              "H225\tRead error: " << transport.GetErrorText());
+    PTRACE_IF(1, transport.GetErrorCode(PChannel::LastReadError) != PChannel::Timeout,
+              "H225\tRead error (" << transport.GetErrorNumber(PChannel::LastReadError)
+              << "): " << transport.GetErrorText(PChannel::LastReadError));
     return FALSE;
   }
 
@@ -709,10 +768,12 @@ BOOL H323SignalPDU::Read(OpalTransport & transport)
   }
 
 #if PTRACING
-  if (PTrace::CanTrace(4))
+  if (PTrace::CanTrace(4)) {
     PTRACE(4, "H225\tReceived PDU:\n  " << setprecision(2) << *this);
-  else
+  }
+  else {
     PTRACE(3, "H225\tReceived PDU: " << m_h323_uu_pdu.m_h323_message_body.GetTagName());
+  }
 #endif
   return TRUE;
 }
@@ -728,19 +789,23 @@ BOOL H323SignalPDU::Write(OpalTransport & transport)
     return FALSE;
   
 #if PTRACING
-  if (PTrace::CanTrace(4))
+  if (PTrace::CanTrace(4)) {
     PTRACE(4, "H225\tSending PDU:\n  " << setprecision(2) << *this << '\n'
                                        << hex << setfill('0')
                                        << setprecision(2) << rawData
                                        << dec << setfill(' '));
-  else
+  }
+  else {
     PTRACE(3, "H225\tSending PDU: " << m_h323_uu_pdu.m_h323_message_body.GetTagName());
+  }
 #endif
 
   if (transport.WritePDU(rawData))
     return TRUE;
 
-  PTRACE(1, "H225\tWrite PDU failed: " << transport.GetErrorText());
+  PTRACE(1, "H225\tWrite PDU failed ("
+         << transport.GetErrorNumber(PChannel::LastWriteError)
+         << "): " << transport.GetErrorText(PChannel::LastWriteError));
   return FALSE;
 }
 
@@ -1296,54 +1361,6 @@ H245_EndSessionCommand & H323ControlPDU::BuildEndSessionCommand(unsigned reason)
 
 /////////////////////////////////////////////////////////////////////////////
 
-PString H323GetAliasAddressString(const H225_AliasAddress & alias)
-{
-  switch (alias.GetTag()) {
-    case H225_AliasAddress::e_dialedDigits :
-    case H225_AliasAddress::e_url_ID :
-    case H225_AliasAddress::e_email_ID :
-      return (const PASN_IA5String &)alias;
-
-    case H225_AliasAddress::e_h323_ID :
-      return (const PASN_BMPString &)alias;
-
-    case H225_AliasAddress::e_transportID :
-      return H323TransportAddress(alias);
-
-    case H225_AliasAddress::e_partyNumber :
-    {
-      const H225_PartyNumber & party = alias;
-      switch (party.GetTag()) {
-        case H225_PartyNumber::e_e164Number :
-        {
-          const H225_PublicPartyNumber & number = party;
-          return "PublicParty:" + (PString)number.m_publicNumberDigits;
-        }
-
-        case H225_PartyNumber::e_privateNumber :
-        {
-          const H225_PrivatePartyNumber & number = party;
-          return "PrivateParty:" + (PString)number.m_privateNumberDigits;
-        }
-
-        case H225_PartyNumber::e_dataPartyNumber :
-        case H225_PartyNumber::e_telexPartyNumber :
-        case H225_PartyNumber::e_nationalStandardPartyNumber :
-          return (const H225_NumberDigits &)party;
-      }
-      break;
-    }
-
-    default :
-      break;
-  }
-
-  return PString();
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-
 H323RasPDU::H323RasPDU(H225_RAS & ras)
   : rasChannel(ras)
 {
@@ -1574,7 +1591,9 @@ H225_UnknownMessageResponse & H323RasPDU::BuildUnknownMessageResponse(unsigned s
 BOOL H323RasPDU::Read(OpalTransport & transport)
 {
   if (!transport.ReadPDU(rawPDU)) {
-    PTRACE(1, "H225RAS\tRead error: " << transport.GetErrorText());
+    PTRACE(1, "H225RAS\tRead error ("
+           << transport.GetErrorNumber(PChannel::LastReadError)
+           << "): " << transport.GetErrorText(PChannel::LastReadError));
     return FALSE;
   }
 
@@ -1588,11 +1607,13 @@ BOOL H323RasPDU::Read(OpalTransport & transport)
   }
 
 #if PTRACING
-  if (PTrace::CanTrace(4))
+  if (PTrace::CanTrace(4)) {
     PTRACE(4, "H225RAS\tReceived PDU:\n  " << setprecision(2) << rawPDU
                                  << "\n "  << setprecision(2) << *this);
-  else
+  }
+  else {
     PTRACE(3, "H225RAS\tReceived PDU: " << GetTagName());
+  }
 #endif
 
   return TRUE;
@@ -1611,17 +1632,21 @@ BOOL H323RasPDU::Write(OpalTransport & transport) const
     authenticators[i].Finalise(strm);
 
 #if PTRACING
-  if (PTrace::CanTrace(4))
+  if (PTrace::CanTrace(4)) {
     PTRACE(4, "H225RAS\tSending PDU:\n  " << setprecision(2) << *this
                                 << "\n "  << setprecision(2) << strm);
-  else
+  }
+  else {
     PTRACE(3, "H225\tSending PDU: " << GetTagName());
+  }
 #endif
 
   if (transport.WritePDU(strm))
     return TRUE;
 
-  PTRACE(1, "H225\tWrite PDU failed: " << transport.GetErrorText());
+  PTRACE(1, "H225\tWrite PDU failed ("
+         << transport.GetErrorNumber(PChannel::LastWriteError)
+         << "): " << transport.GetErrorText(PChannel::LastWriteError));
   return FALSE;
 }
 

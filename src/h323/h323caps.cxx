@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2003  2001/08/13 05:10:39  robertj
+ * Revision 1.2004  2001/10/05 00:22:14  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.2  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
  *
  * Revision 2.1  2001/08/01 05:12:59  robertj
@@ -36,6 +39,13 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.39  2001/09/21 02:52:56  robertj
+ * Added default implementation for PDU encode/decode for codecs
+ *   that have simple integer as frames per packet.
+ *
+ * Revision 1.38  2001/09/11 10:21:42  robertj
+ * Added direction field to capabilities, thanks Nick Hoath.
  *
  * Revision 1.37  2001/08/06 03:08:56  robertj
  * Fission of h323.h to h323ep.h & h323con.h, h323.h now just includes files.
@@ -223,12 +233,32 @@ static H323CapabilityRegistration * RegisteredCapabilitiesListHead;
 #define new PNEW
 
 
+#if PTRACING
+ostream & operator<<(ostream & o , H323Capability::MainTypes t)
+{
+  const char * const names[] = {
+    "Audio", "Video", "Data", "UserInput"
+  };
+  return o << names[t];
+}
+
+ostream & operator<<(ostream & o , H323Capability::CapabilityDirection d)
+{
+  const char * const names[] = {
+    "Unknown", "Receive", "Transmit", "ReceiveAndTransmit", "NoDirection"
+  };
+  return o << names[d];
+}
+#endif
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 H323Capability::H323Capability(const OpalMediaFormat & fmt)
   : mediaFormat(fmt)
 {
   assignedCapabilityNumber = 0; // Unassigned
+  capabilityDirection = e_Unknown;
 }
 
 
@@ -305,11 +335,40 @@ BOOL H323Capability::IsNonStandardMatch(const H245_NonStandardParameter &) const
 }
 
 
-#if PTRACING
-const char * const H323Capability::MainTypesNames[] = {
-  "Audio", "Video", "Data", "UserInput"
-};
-#endif
+BOOL H323Capability::OnReceivedPDU(const H245_Capability & cap)
+{
+  switch (cap.GetTag()) {
+    case H245_Capability::e_receiveVideoCapability:
+    case H245_Capability::e_receiveAudioCapability:
+    case H245_Capability::e_receiveDataApplicationCapability:
+    case H245_Capability::e_h233EncryptionReceiveCapability:
+    case H245_Capability::e_receiveUserInputCapability:
+      capabilityDirection = e_Receive;
+      break;
+
+    case H245_Capability::e_transmitVideoCapability:
+    case H245_Capability::e_transmitAudioCapability:
+    case H245_Capability::e_transmitDataApplicationCapability:
+    case H245_Capability::e_h233EncryptionTransmitCapability:
+    case H245_Capability::e_transmitUserInputCapability:
+      capabilityDirection = e_Transmit;
+      break;
+
+    case H245_Capability::e_receiveAndTransmitVideoCapability:
+    case H245_Capability::e_receiveAndTransmitAudioCapability:
+    case H245_Capability::e_receiveAndTransmitDataApplicationCapability:
+    case H245_Capability::e_receiveAndTransmitUserInputCapability:
+      capabilityDirection = e_ReceiveAndTransmit;
+      break;
+
+    case H245_Capability::e_conferenceCapability:
+    case H245_Capability::e_h235SecurityCapability:
+    case H245_Capability::e_maxPendingReplacementFor:
+      capabilityDirection = e_NoDirection;
+  }
+
+  return TRUE;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -582,12 +641,13 @@ BOOL H323AudioCapability::OnSendingPDU(H245_DataType & dataType) const
 }
 
 
-BOOL H323AudioCapability::OnSendingPDU(H245_AudioCapability & cap,
+BOOL H323AudioCapability::OnSendingPDU(H245_AudioCapability & pdu,
                                        unsigned packetSize) const
 {
-  cap.SetTag(GetSubType());
+  pdu.SetTag(GetSubType());
 
-  PASN_Integer & value = cap;
+  // Set the maximum number of frames
+  PASN_Integer & value = pdu;
   value = packetSize;
   return TRUE;
 }
@@ -595,6 +655,8 @@ BOOL H323AudioCapability::OnSendingPDU(H245_AudioCapability & cap,
 
 BOOL H323AudioCapability::OnReceivedPDU(const H245_Capability & cap)
 {
+  H323Capability::OnReceivedPDU(cap);
+
   if (cap.GetTag() != H245_Capability::e_receiveAudioCapability &&
     cap.GetTag() != H245_Capability::e_receiveAndTransmitAudioCapability)
     return FALSE;
@@ -643,13 +705,15 @@ BOOL H323AudioCapability::OnReceivedPDU(const H245_DataType & dataType, BOOL rec
 }
 
 
-BOOL H323AudioCapability::OnReceivedPDU(const H245_AudioCapability & cap,
+BOOL H323AudioCapability::OnReceivedPDU(const H245_AudioCapability & pdu,
                                         unsigned & packetSize)
 {
-  if (cap.GetTag() != GetSubType())
+  if (pdu.GetTag() != GetSubType())
     return FALSE;
 
-  const PASN_Integer & value = cap;
+  const PASN_Integer & value = pdu;
+
+  // Get the maximum number of frames
   packetSize = value;
   return TRUE;
 }
@@ -780,6 +844,8 @@ BOOL H323VideoCapability::OnSendingPDU(H245_DataType & dataType) const
 
 BOOL H323VideoCapability::OnReceivedPDU(const H245_Capability & cap)
 {
+  H323Capability::OnReceivedPDU(cap);
+
   if (cap.GetTag() != H245_Capability::e_receiveVideoCapability &&
       cap.GetTag() != H245_Capability::e_receiveAndTransmitVideoCapability)
     return FALSE;
@@ -920,6 +986,8 @@ BOOL H323DataCapability::OnSendingPDU(H245_DataType & dataType) const
 
 BOOL H323DataCapability::OnReceivedPDU(const H245_Capability & cap)
 {
+  H323Capability::OnReceivedPDU(cap);
+
   if (cap.GetTag() != H245_Capability::e_receiveDataApplicationCapability &&
       cap.GetTag() != H245_Capability::e_receiveAndTransmitDataApplicationCapability)
     return FALSE;
@@ -1287,6 +1355,8 @@ BOOL H323_UserInputCapability::OnSendingPDU(H245_DataType &) const
 
 BOOL H323_UserInputCapability::OnReceivedPDU(const H245_Capability & pdu)
 {
+  H323Capability::OnReceivedPDU(pdu);
+
   if (pdu.GetTag() != H245_Capability::e_receiveUserInputCapability)
     return FALSE;
 
@@ -1622,7 +1692,8 @@ H323Capability * H323Capabilities::FindCapability(unsigned capabilityNumber) con
 }
 
 
-H323Capability * H323Capabilities::FindCapability(const PString & formatName) const
+H323Capability * H323Capabilities::FindCapability(const PString & formatName,
+                              H323Capability::CapabilityDirection direction) const
 {
   PTRACE(3, "H323\tFindCapability: \"" << formatName << '"');
 
@@ -1630,8 +1701,26 @@ H323Capability * H323Capabilities::FindCapability(const PString & formatName) co
 
   for (PINDEX i = 0; i < table.GetSize(); i++) {
     PCaselessString str = table[i].GetMediaFormat();
-    if (MatchWildcard(str, wildcard)) {
+    if (MatchWildcard(str, wildcard) &&
+          (direction == H323Capability::e_Unknown ||
+           table[i].GetCapabilityDirection() == direction)) {
       PTRACE(2, "H323\tFound capability: " << table[i]);
+      return &table[i];
+    }
+  }
+
+  return NULL;
+}
+
+
+H323Capability * H323Capabilities::FindCapability(
+                              H323Capability::CapabilityDirection direction) const
+{
+  PTRACE(1, "H323\tFindCapability: \"" << direction << '"');
+
+  for (PINDEX i = 0; i < table.GetSize(); i++) {
+    if (table[i].GetCapabilityDirection() == direction) {
+      PTRACE(1, "H323\tFound capability: " << table[i]);
       return &table[i];
     }
   }
@@ -1904,9 +1993,10 @@ BOOL H323Capabilities::IsAllowed(const H323Capability & capability1,
 
 BOOL H323Capabilities::IsAllowed(const unsigned a_capno1, const unsigned a_capno2)
 {
-  PAssert((a_capno1 != a_capno2),"Capabilities are the same");
-  if (a_capno1 == a_capno2)
+  if (a_capno1 == a_capno2) {
+    PTRACE(1, "H323\tH323Capabilities::IsAllowed() capabilities are the same.");
     return TRUE;
+  }
 
   PINDEX outerSize = set.GetSize();
   for (PINDEX outer = 0; outer < outerSize; outer++) {
