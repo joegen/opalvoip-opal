@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2005  2001/08/22 10:20:09  robertj
+ * Revision 1.2006  2001/10/03 05:56:15  robertj
+ * Changes abndwidth management API.
+ *
+ * Revision 2.4  2001/08/22 10:20:09  robertj
  * Changed connection locking to use double mutex to guarantee that
  *   no threads can ever deadlock or access deleted connection.
  *
@@ -452,34 +455,28 @@ unsigned OpalConnection::GetBandwidthUsed() const
 }
 
 
-BOOL OpalConnection::RequestBandwidth(unsigned bandwidth)
+BOOL OpalConnection::SetBandwidthUsed(unsigned releasedBandwidth,
+                                      unsigned requiredBandwidth)
 {
-  if (bandwidth == 0)
-    return TRUE;
+  PTRACE_IF(3, releasedBandwidth > 0, "OpalCon\tBandwidth release of "
+            << releasedBandwidth/10 << '.' << releasedBandwidth%10 << "kb/s");
 
-  PTRACE(3, "OpalCon\tBandwidth request of "
-         << bandwidth << "00b/s for " << *this);
+  bandwidthAvailable += releasedBandwidth;
 
-  if (bandwidth > bandwidthAvailable) {
+  PTRACE_IF(3, requiredBandwidth > 0, "OpalCon\tBandwidth request of "
+            << requiredBandwidth/10 << '.' << requiredBandwidth%10
+            << "kb/s, available: "
+            << bandwidthAvailable/10 << '.' << bandwidthAvailable%10
+            << "kb/s");
+
+  if (requiredBandwidth > bandwidthAvailable) {
     PTRACE(2, "OpalCon\tAvailable bandwidth exceeded on " << *this);
     return FALSE;
   }
 
-  bandwidthAvailable -= bandwidth;
+  bandwidthAvailable -= requiredBandwidth;
 
   return TRUE;
-}
-
-
-void OpalConnection::ReleaseBandwidth(unsigned bandwidth)
-{
-  if (bandwidth == 0)
-    return;
-
-  PTRACE(3, "OpalCon\tBandwidth release of "
-         << bandwidth << "00b/s for " << *this);
-
-  bandwidthAvailable += bandwidth;
 }
 
 

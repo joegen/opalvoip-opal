@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.h,v $
- * Revision 1.2004  2001/08/17 01:11:52  robertj
+ * Revision 1.2005  2001/10/03 05:56:15  robertj
+ * Changes abndwidth management API.
+ *
+ * Revision 2.3  2001/08/17 01:11:52  robertj
  * Added ability to add whole LID's to LID endpoint.
  * Added ability to change the prefix on POTS and PSTN endpoints.
  *
@@ -436,7 +439,6 @@ class OpalLineConnection : public OpalConnection
     BOOL              wasOffHook;
     unsigned          answerRingCount;
     BOOL              requireTonesForDial;
-    PString           remotePartyNumber;
 
     PDECLARE_NOTIFIER(PThread, OpalLineConnection, HandleIncoming);
     PThread         * handlerThread;

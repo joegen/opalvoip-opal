@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2004  2001/08/22 09:42:14  robertj
+ * Revision 1.2005  2001/10/03 05:56:15  robertj
+ * Changes abndwidth management API.
+ *
+ * Revision 2.3  2001/08/22 09:42:14  robertj
  * Removed duplicate member variables moved to ancestor.
  *
  * Revision 2.2  2001/08/17 08:21:15  robertj
@@ -1088,34 +1091,20 @@ class H323Connection : public OpalConnection
 
   /**@name Bandwidth Management */
   //@{
-    /**Get the bandwidth currently used.
-       This totals the open channels and returns the total bandwidth used in
-       100's of bits/sec
-      */
-    unsigned GetBandwidthUsed() const;
-
-    /**Request use the available bandwidth in 100's of bits/sec.
-       If there is insufficient bandwidth available, FALSE is returned. If
-       sufficient bandwidth is available, then TRUE is returned and the amount
-       of available bandwidth is reduced by the specified amount.
-      */
-    BOOL UseBandwidth(
-      unsigned bandwidth,     /// Bandwidth required
-      BOOL removing           /// Flag for adding/removing bandwidth usage
-    );
-
-    /**Get the available bandwidth in 100's of bits/sec.
-      */
-    unsigned GetBandwidthAvailable() const { return bandwidthAvailable; }
-
     /**Set the available bandwidth in 100's of bits/sec.
        Note if the force parameter is TRUE this function will close down
        active logical channels to meet the new bandwidth requirement.
       */
-    BOOL SetBandwidthAvailable(
+    virtual BOOL SetBandwidthAvailable(
       unsigned newBandwidth,    /// New bandwidth limit
       BOOL force = FALSE        /// Force bandwidth limit
     );
+
+    /**Get the bandwidth currently used.
+       This totals the open channels and returns the total bandwidth used in
+       100's of bits/sec
+      */
+    virtual unsigned GetBandwidthUsed() const;
   //@}
 
   /**@name Indications */
@@ -1316,36 +1305,6 @@ class H323Connection : public OpalConnection
      */
     const OpalGloballyUniqueID & GetConferenceIdentifier() const { return conferenceIdentifier; }
 
-    /**Get the local name/alias.
-      */
-    const PString & GetLocalPartyName() const { return localPartyName; }
-
-    /**Set the local name/alias from information in the PDU.
-      */
-    void SetLocalPartyName(const PString & name) { localPartyName = name; }
-
-    /**Get the remote party name.
-       This returns a string indicating the remote parties names and aliases.
-       This can be a complicated string containing all the aliases and the
-       remote host name. For example:
-              "Fred Nurk (fred, 5551234) [fred.nurk.com]"
-      */
-    const PString & GetRemotePartyName() const { return remotePartyName; }
-
-    /**Get the remote party number, if there was one one.
-       If the remote party has indicated an e164 number as one of its aliases
-       or as a field in the Q.931 PDU, then this function will return it.
-      */
-    const PString & GetRemotePartyNumber() const { return remotePartyNumber; }
-
-    /**Get the remote party address.
-       This will return the "best guess" at an address to use in a
-       H323EndPoint::MakeCall() function to call the remote party back again.
-       Note that due to the presence of gatekeepers/proxies etc this may not
-       always be accurate.
-      */
-    const PString & GetRemotePartyAddress() const { return remotePartyAddress; }
-
     /**Set the name/alias of remote end from information in the PDU.
       */
     void SetRemotePartyInfo(
@@ -1411,18 +1370,13 @@ class H323Connection : public OpalConnection
     OpalGloballyUniqueID callIdentifier;
     OpalGloballyUniqueID conferenceIdentifier;
 
-    PString            localPartyName;
     PString            localDestinationAddress;
     H323Capabilities   localCapabilities; // Capabilities local system supports
-    PString            remotePartyNumber;
-    PString            remotePartyAddress;
     PString            remoteApplication;
     H323Capabilities   remoteCapabilities; // Capabilities remote system supports
     unsigned           remoteMaxAudioDelayJitter;
     PTimer             roundTripDelayTimer;
     WORD               maxAudioDelayJitter;
-
-    unsigned bandwidthAvailable;
 
     OpalTransport * signallingChannel;
     OpalTransport * controlChannel;

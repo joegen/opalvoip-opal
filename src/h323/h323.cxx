@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2006  2001/08/22 10:20:09  robertj
+ * Revision 1.2007  2001/10/03 05:56:15  robertj
+ * Changes abndwidth management API.
+ *
+ * Revision 2.5  2001/08/22 10:20:09  robertj
  * Changed connection locking to use double mutex to guarantee that
  *   no threads can ever deadlock or access deleted connection.
  *
@@ -722,7 +725,6 @@ H323Connection::H323Connection(OpalCall & call,
                                BOOL disableTunneling)
   : OpalConnection(call, ep, token),
     endpoint(ep),
-    localPartyName(ep.GetLocalUserName()),
     localCapabilities(ep.GetCapabilities())
 {
   callAnswered = FALSE;
@@ -3118,30 +3120,6 @@ unsigned H323Connection::GetBandwidthUsed() const
   PTRACE(3, "H323\tBandwidth used: " << used);
 
   return used;
-}
-
-
-BOOL H323Connection::UseBandwidth(unsigned bandwidth, BOOL removing)
-{
-  PTRACE(3, "H323\tBandwidth request: "
-         << (removing ? '+' : '-')
-         << bandwidth/10 << '.' << bandwidth%10
-         << "kb/s, available: "
-         << bandwidthAvailable/10 << '.' << bandwidthAvailable%10
-         << "kb/s");
-
-  if (removing)
-    bandwidthAvailable += bandwidth;
-  else {
-    if (bandwidth > bandwidthAvailable) {
-      PTRACE(2, "H323\tAvailable bandwidth exceeded");
-      return FALSE;
-    }
-
-    bandwidthAvailable -= bandwidth;
-  }
-
-  return TRUE;
 }
 
 
