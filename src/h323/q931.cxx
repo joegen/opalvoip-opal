@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q931.cxx,v $
- * Revision 1.2011  2004/11/07 12:22:14  rjongbloed
+ * Revision 1.2012  2004/11/07 12:45:50  rjongbloed
+ * Minor change to parsing of bearer capabilities, thanks Michal Zygmuntowicz
+ *
+ * Revision 2.10  2004/11/07 12:22:14  rjongbloed
  * Changed generation of call reference to include zero as it is an illegal value
  *   anyway, thanks Dmitriy
  *
@@ -812,7 +815,7 @@ BOOL Q931::GetBearerCapabilities(InformationTransferCapability & capability,
     return FALSE;
 
   PBYTEArray data = GetIE(BearerCapabilityIE);
-  if (data.GetSize() < 3)
+  if (data.GetSize() < 2)
     return FALSE;
 
   capability = (InformationTransferCapability)data[0];
@@ -837,7 +840,7 @@ BOOL Q931::GetBearerCapabilities(InformationTransferCapability & capability,
       transferRate = 30;
       break;
     case 0x18 :
-      if (data.GetSize() < 4)
+      if (data.GetSize() < 3)
         return FALSE;
       transferRate = data[2]&0x7f;
       nextByte = 3;
@@ -846,8 +849,8 @@ BOOL Q931::GetBearerCapabilities(InformationTransferCapability & capability,
       return FALSE;
   }
 
-  if (userInfoLayer1 != NULL && ((data[nextByte]>>5)&3) == 1)
-    *userInfoLayer1 = data[nextByte]&0x1f;
+  if (userInfoLayer1 != NULL)
+    *userInfoLayer1 = data.GetSize() >= nextByte && ((data[nextByte]>>5)&3) == 1 ? (data[nextByte]&0x1f) : 0;
 
   return TRUE;
 }
