@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2017  2004/08/22 12:27:44  rjongbloed
+ * Revision 1.2018  2004/12/12 12:31:03  dsandras
+ * GetDisplayName now contains more complex code.
+ *
+ * Revision 2.16  2004/08/22 12:27:44  rjongbloed
  * More work on SIP registration, time to live refresh and deregistration on exit.
  *
  * Revision 2.15  2004/03/14 10:14:13  rjongbloed
@@ -141,8 +144,7 @@ class SIPURL : public PURL
 
     /** Returns display name only
       */
-    PString GetDisplayName() const
-      { return displayName; }
+    PString GetDisplayName() const;
     
     void SetDisplayName(const PString & str) 
       { displayName = str; }
