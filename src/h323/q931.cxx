@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q931.cxx,v $
- * Revision 1.2006  2002/07/01 04:56:32  robertj
+ * Revision 1.2007  2002/09/04 06:01:49  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.5  2002/07/01 04:56:32  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.4  2002/01/14 06:35:58  robertj
@@ -44,6 +47,22 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.54  2002/08/06 02:27:39  robertj
+ * GNU C++ v3 compatibility.
+ *
+ * Revision 1.53  2002/08/05 10:03:48  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
+ *
+ * Revision 1.52  2002/07/25 10:55:44  robertj
+ * Changes to allow more granularity in PDU dumps, hex output increasing
+ *   with increasing trace level.
+ *
+ * Revision 1.51  2002/07/05 03:13:38  robertj
+ * Added copy constructor for Q.931 so makes duplicate instead of reference to IE's.
+ *
+ * Revision 1.50  2002/07/03 10:26:05  robertj
+ * Fixed bearer capabilities for H,450.1 needing non ITU standard, thanks Florian Winterstein
  *
  * Revision 1.49  2002/05/22 23:12:03  robertj
  * Enhanced the display of Release-Complete cause codes.
@@ -278,11 +297,17 @@ Q931::Q931()
 }
 
 
+Q931::Q931(const Q931 & other)
+{
+  operator=(other);
+}
+
+
 Q931 & Q931::operator=(const Q931 & other)
 {
-  protocolDiscriminator = other.protocolDiscriminator;
   callReference = other.callReference;
   fromDestination = other.fromDestination;
+  protocolDiscriminator = other.protocolDiscriminator;
   messageType = other.messageType;
 
   informationElements.RemoveAll();
@@ -541,6 +566,8 @@ BOOL Q931::Encode(PBYTEArray & data) const
 void Q931::PrintOn(ostream & strm) const
 {
   int indent = strm.precision() + 2;
+  _Ios_Fmtflags flags = strm.flags();
+
   strm << "{\n"
        << setw(indent+24) << "protocolDiscriminator = " << protocolDiscriminator << '\n'
        << setw(indent+16) << "callReference = " << callReference << '\n'
@@ -565,14 +592,28 @@ void Q931::PrintOn(ostream & strm) const
         }
       }
       strm << " = {\n"
-           << hex << setfill('0')
-           << setprecision(indent+2) << informationElements[discriminator] << '\n'
-           << dec << setfill(' ')
+           << hex << setfill('0') << resetiosflags(ios::floatfield)
+           << setprecision(indent+2) << setw(16);
+
+      PBYTEArray value = informationElements[discriminator];
+      if (value.GetSize() <= 32 || (flags&ios::floatfield) != ios::fixed)
+        strm << value;
+      else {
+        PBYTEArray truncatedArray(value, 32);
+        strm << truncatedArray << '\n'
+             << setfill(' ')
+             << setw(indent+5) << "...";
+      }
+
+      strm << dec << setfill(' ')
+           << '\n'
            << setw(indent+2) << "}\n";
     }
   }
 
   strm << setw(indent-1) << "}";
+
+  strm.flags(flags);
 }
 
 
@@ -664,37 +705,52 @@ void Q931::SetBearerCapabilities(InformationTransferCapability capability,
                                  unsigned codingStandard,
                                  unsigned userInfoLayer1)
 {
-  PBYTEArray data(3);
+  BYTE data[4];
+  PINDEX size = 1;
   data[0] = (BYTE)(0x80 | ((codingStandard&3) << 5) | (capability&31));
 
-  // Note this is always "Circuit Mode"
-  switch (transferRate) {
-    case 1 :
-      data[1] = 0x90;
+  switch (codingStandard) {
+    case 0 :  // ITU-T standardized coding
+      size = 3;
+
+      // Note this is always "Circuit Mode"
+      switch (transferRate) {
+        case 1 :
+          data[1] = 0x90;
+          break;
+        case 2 :
+          data[1] = 0x91;
+          break;
+        case 6 :
+          data[1] = 0x93;
+          break;
+        case 24 :
+          data[1] = 0x95;
+          break;
+        case 30 :
+          data[1] = 0x97;
+          break;
+        default :
+          PAssert(transferRate > 0 && transferRate < 128, PInvalidParameter);
+          data[1] = 0x18;
+          data[2] = (BYTE)(0x80 | transferRate);
+          size = 4;
+      }
+
+      PAssert(userInfoLayer1 >= 2 && userInfoLayer1 <= 5, PInvalidParameter);
+      data[size-1] = (BYTE)(0x80 | (1<<5) | userInfoLayer1);
       break;
-    case 2 :
-      data[1] = 0x91;
+
+    case 1 : // Other international standard
+      size = 2;
+      data[1] = 0x80; // Call independent signalling connection
       break;
-    case 6 :
-      data[1] = 0x93;
-      break;
-    case 24 :
-      data[1] = 0x95;
-      break;
-    case 30 :
-      data[1] = 0x97;
-      break;
+
     default :
-      PAssert(transferRate > 0 && transferRate < 128, PInvalidParameter);
-      data.SetSize(4);
-      data[1] = 0x18;
-      data[2] = (BYTE)(0x80 | transferRate);
+      break;
   }
 
-  PAssert(userInfoLayer1 >= 2 && userInfoLayer1 <= 5, PInvalidParameter);
-  data[data.GetSize()-1] = (BYTE)(0x80 | (1<<5) | userInfoLayer1);
-
-  SetIE(BearerCapabilityIE, data);
+  SetIE(BearerCapabilityIE, PBYTEArray(data, size));
 }
 
 

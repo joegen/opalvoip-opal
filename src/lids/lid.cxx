@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.cxx,v $
- * Revision 1.2007  2002/07/01 04:56:33  robertj
+ * Revision 1.2008  2002/09/04 06:01:49  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.6  2002/07/01 04:56:33  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.5  2002/02/11 09:32:13  robertj
@@ -44,6 +47,12 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.87  2002/08/05 10:03:48  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
+ *
+ * Revision 1.86  2002/07/01 02:56:17  dereks
+ * Add PTRACE statements to  "IsToneDetected"
  *
  * Revision 1.85  2002/06/27 08:52:57  robertj
  * Fixed typo and naming convention for Cisco G.723.1 annex A capability.
@@ -748,6 +757,8 @@ unsigned OpalLineInterfaceDevice::IsToneDetected(unsigned)
 
 unsigned OpalLineInterfaceDevice::WaitForToneDetect(unsigned line, unsigned timeout)
 {
+  PTRACE(2, "LID\tWaitForToneDetect");
+
   static const unsigned sampleRate = 25;
 
   timeout = (timeout+sampleRate-1)/sampleRate;
@@ -773,7 +784,11 @@ BOOL OpalLineInterfaceDevice::WaitForTone(unsigned line,
                                           CallProgressTones tone,
                                           unsigned timeout)
 {
-  return WaitForToneDetect(line, timeout) & tone;
+  PTRACE(3, "LID\tWaitFor the tone " << tone );
+  BOOL res = WaitForToneDetect(line, timeout) & tone;
+  PTRACE(3, "LID\tWaitFor the tone " << tone << 
+	 " is successfull-" << (res ? "YES" : "No"));
+  return res;
 }
 
 

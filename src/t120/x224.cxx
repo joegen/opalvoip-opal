@@ -24,11 +24,20 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: x224.cxx,v $
- * Revision 1.2002  2002/07/01 04:56:33  robertj
+ * Revision 1.2003  2002/09/04 06:01:49  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.1  2002/07/01 04:56:33  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.12  2002/09/03 06:21:01  robertj
+ * Cosmetic change to formatting.
+ *
+ * Revision 1.11  2002/08/05 10:03:48  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
  *
  * Revision 1.10  2002/06/27 03:11:12  robertj
  * Fixed encoding bugs, thanks Greg Adams
@@ -72,7 +81,6 @@
 #include <t120/x224.h>
 
 #include <ptlib/sockets.h>
-
 
 
 ///////////////////////////////////////////////////////////////////////////////

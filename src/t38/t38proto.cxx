@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: t38proto.cxx,v $
- * Revision 1.2005  2002/02/11 09:32:13  robertj
+ * Revision 1.2006  2002/09/04 06:01:49  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.4  2002/02/11 09:32:13  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.3  2002/01/22 05:21:54  robertj
@@ -39,6 +42,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.11  2002/08/05 10:03:48  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
  *
  * Revision 1.10  2002/02/09 04:39:05  robertj
  * Changes to allow T.38 logical channels to use single transport which is

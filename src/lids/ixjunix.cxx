@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjunix.cxx,v $
- * Revision 1.2007  2002/07/01 04:56:33  robertj
+ * Revision 1.2008  2002/09/04 06:01:49  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.6  2002/07/01 04:56:33  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.5  2002/02/11 09:32:13  robertj
@@ -47,6 +50,20 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.129  2002/08/30 08:20:22  craigs
+ * Added G.723.1A based codecs
+ *
+ * Revision 1.128  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
+ *
+ * Revision 1.127  2002/07/25 09:57:57  rogerh
+ * Make sure we pick the G.723.1 6.3k codec before the 5.3k codec
+ * if it is available.
+ *
+ * Revision 1.126  2002/07/19 10:47:16  robertj
+ * Fixed bug where can still receive 24 byte frames even whan selected
+ *   G.723.1(5.3k) mode, it only controls what is transmitted.
  *
  * Revision 1.125  2002/06/25 09:56:07  robertj
  * Fixed GNU warnings
@@ -1108,18 +1125,23 @@ BOOL OpalIxJDevice::ConvertOSError(int err)
 
 static const struct {
   const char * mediaFormat;
-  PINDEX frameSize;
+  PINDEX writeFrameSize;
+  PINDEX readFrameSize;
   int mode;
   int frameTime;
+  BOOL vad;
 } CodecInfo[] = {
-  { OPAL_PCM16,         480, LINEAR16, 30 },   // 480 bytes = 240 samples = 30ms
-  { OPAL_G711_ULAW_64K, 240, ULAW,     30 },   // 240 bytes = 240 samples = 30ms
-  { OPAL_G711_ALAW_64K, 240, ALAW,     30 },   // 240 bytes = 240 samples = 30ms
-  { OPAL_G728,           60, G728,     30 },   // 60 bytes  = 12 frames   = 30ms
-  { OPAL_G729A,          10, G729,     10 },   // 10 bytes = 1 frame = 10 ms
-  { OPAL_G729AB,         10, G729B,    10 },   // 10 bytes = 1 frame = 10 ms
-  { OPAL_G7231_6k3,      24, G723_63,  30 },   // 24 bytes = 1 frame = 30 ms
-  { OPAL_G7231_5k3 ,     20, G723_53,  30 }    // 20 bytes = 1 frame = 30 ms
+  /* NOTE: These are enumerated in reverse order. */
+  { OPAL_PCM16,         480, 480, LINEAR16, 30, FALSE },   // 480 bytes = 240 samples = 30ms
+  { OPAL_G711_ULAW_64K, 240, 240, ULAW,     30, FALSE },   // 240 bytes = 240 samples = 30ms
+  { OPAL_G711_ALAW_64K, 240, 240, ALAW,     30, FALSE },   // 240 bytes = 240 samples = 30ms
+  { OPAL_G728,           60,  60, G728,     30, FALSE },   // 60 bytes  = 12 frames   = 30ms
+  { OPAL_G729A,          10,  10, G729,     10, FALSE },   // 10 bytes = 1 frame = 10 ms
+  { OPAL_G729AB,         10,  10, G729B,    10,  TRUE },   // 10 bytes = 1 frame = 10 ms
+  { OPAL_G7231_5k3 ,     24,  20, G723_53,  30, FALSE },   // 20 bytes = 1 frame = 30 ms
+  { OPAL_G7231_6k3,      24,  24, G723_63,  30, FALSE },   // 24 bytes = 1 frame = 30 ms
+  { OPAL_G7231A_5k3 ,    24,  20, G723_53,  30,  TRUE },   // 20 bytes = 1 frame = 30 ms
+  { OPAL_G7231A_6k3,     24,  24, G723_63,  30,  TRUE }    // 24 bytes = 1 frame = 30 ms
 };
 
 
@@ -1187,7 +1209,7 @@ BOOL OpalIxJDevice::SetReadFormat(unsigned line, const OpalMediaFormat & mediaFo
          << CodecInfo[readCodecType].mediaFormat
          << " code=" << CodecInfo[readCodecType].mode);
 
-  readFrameSize = CodecInfo[readCodecType].frameSize;
+  readFrameSize = CodecInfo[readCodecType].readFrameSize;
 
   // set frame time
   if (writeStopped)
@@ -1253,7 +1275,7 @@ BOOL OpalIxJDevice::SetWriteFormat(unsigned line, const OpalMediaFormat & mediaF
          << CodecInfo[writeCodecType].mediaFormat
          << " code=" << CodecInfo[writeCodecType].mode);
 
-  writeFrameSize = CodecInfo[writeCodecType].frameSize;
+  writeFrameSize = CodecInfo[writeCodecType].writeFrameSize;
 
   // set frame time
   if (readStopped)

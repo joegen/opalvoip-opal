@@ -24,11 +24,23 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vblasterlid.cxx,v $
- * Revision 1.2003  2002/02/11 09:32:13  robertj
+ * Revision 1.2004  2002/09/04 06:01:49  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.2  2002/02/11 09:32:13  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.1  2002/01/22 06:28:43  robertj
  * Added voice blaster support
+ *
+ * Revision 1.7  2002/09/03 06:25:00  robertj
+ * Cosmetic change to formatting.
+ *
+ * Revision 1.6  2002/08/05 10:03:48  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
+ *
+ * Revision 1.5  2002/07/09 00:39:08  robertj
+ * Patches for latest fobbit driver, thanks Jian Yang
  *
  * Revision 1.4  2002/02/05 06:19:47  craigs
  * Changed to use OPAL define rather than strings
@@ -45,7 +57,13 @@
  */
 
 #include <ptlib.h>
+
+#ifdef __GNUC__
+#pragma implementation "vblasterlid.h"
+#endif
+
 #include "vblasterlid.h"
+
 
 /*
 
@@ -164,6 +182,8 @@ BOOL OpalVoipBlasterDevice::Open(const PString & device)
 
   int deviceIndex = device.AsInteger();
 
+  readStopped = writeStopped = TRUE;
+
   // open the lowlevel device
   if (!vBlaster.OpenCommand(deviceIndex)) {
     PTRACE(3, "vBlaster\tCould not open VoipBlaster device \"" << device << '"');
@@ -179,11 +199,7 @@ BOOL OpalVoipBlasterDevice::Open(const PString & device)
 
   // put device into setup mode
   vBlaster.WriteCommand(VoipBlasterInterface::Command_SETUP_MODE); 
-
-  // read 17 bytes. This may be a serial number or not
   vBlaster.OpenData();
-  BYTE serialNumber[17];
-  vBlaster.ReadData(serialNumber, sizeof(serialNumber));
 
   // write initialisation data
   vBlaster.WriteData(blasterInit1, sizeof(blasterInit1));
@@ -194,12 +210,12 @@ BOOL OpalVoipBlasterDevice::Open(const PString & device)
   // otherwise remove 3 more to make a 20 byte frame
   PThread::Sleep(100);
   if (firstTime) {
+    // read 17 bytes. This may be a serial number or not
+    BYTE serialNumber[17];
+    vBlaster.ReadData(serialNumber, sizeof(serialNumber));
     PTRACE(3, "vBlaster\tGot serial number");
     PError << "vBlaster\tGot serial number";
-  } else {
-    BYTE waste[3];
-    vBlaster.ReadData(waste, sizeof(waste));
-  }
+  } 
 
   // this will close the data channel
   vBlaster.CloseData();
@@ -638,37 +654,16 @@ BOOL OpalVoipBlasterDevice::ReadFrame(unsigned, void * buffer, PINDEX & wasRead)
 
   readDelay.Delay(30);
 
+  if (!hookState)
+    return FALSE;
+
   int stat;
-
-  BYTE * p = (BYTE *)buffer;
-  if ((stat = vBlaster.ReadData(p, 1)) != 1) {
-    cout << "Could not read first byte of frame - " << stat << endl;
+  if ((stat = vBlaster.ReadData(buffer, 20)) != 20) {
+    PTRACE(1, "Error reading frame - " << stat);
     return FALSE;
   }
 
-  switch (*p & 3) {
-    case 0:
-      wasRead = 20;
-      break;
-    case 1:
-      wasRead = 20;
-      break;
-    case 2:
-      wasRead = 4;
-      break;
-    default:
-      break;
-  }
-
-  if (wasRead == 0) {
-    PError << "Unknown frame type 3" << endl;
-    return FALSE;
-  }
-
-  if ((stat = vBlaster.ReadData(p+1, wasRead-1)) != wasRead-1) {
-    PError << "Read of frame length " << wasRead << " failed - " << endl;
-    return FALSE;
-  }
+  wasRead = 20;
 
   return TRUE;
 }
@@ -1212,14 +1207,14 @@ int VoipBlasterInterface::WritePipe(HANDLE fd, const void *bp, DWORD len)
 int VoipBlasterInterface::ReadPipe(HANDLE fd, void *bp, DWORD len)
 {
   DWORD readCount;
-  do {
-    if (!::ReadFile(fd, bp, len, &readCount, NULL)) 
-      return -1;
-  } while (readCount == 0);
+  if (!::ReadFile(fd, bp, len, &readCount, NULL))
+    return -1;
 
   return readCount;
 }
 
-#endif
 
-////////////////////////////////////////////////////////
+#endif // _WIN32
+
+
+/////////////////////////////////////////////////////////////////////////////

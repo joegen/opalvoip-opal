@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.cxx,v $
- * Revision 1.2004  2002/04/15 08:52:20  robertj
+ * Revision 1.2005  2002/09/04 06:01:49  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.3  2002/04/15 08:52:20  robertj
  * Added buffer reset on excess buffer overruns.
  *
  * Revision 2.2  2002/01/22 05:21:10  robertj
@@ -38,6 +41,12 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.29  2002/09/03 07:31:35  robertj
+ * Added buffer reset on excess buffer overruns.
+ *
+ * Revision 1.28  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
  *
  * Revision 1.27  2002/01/17 07:01:28  robertj
  * Fixed jitter buffer failing to deliver a talk burst shorted than the size of
@@ -323,7 +332,6 @@ void RTP_JitterBuffer::Main()
       if (oldestFrame != NULL)
         oldestFrame->prev = NULL;
       currentDepth--;
-
       bufferOverruns++;
       consecutiveBufferOverruns++;
       if (consecutiveBufferOverruns > MAX_BUFFER_OVERRUNS) {
