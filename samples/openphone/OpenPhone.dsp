@@ -106,10 +106,6 @@ SOURCE=.\makecall.cpp
 
 SOURCE=.\options.cpp
 # End Source File
-# Begin Source File
-
-SOURCE=.\trace.cpp
-# End Source File
 # End Group
 # Begin Group "Header Files"
 
@@ -278,10 +274,6 @@ SOURCE=.\moc_makecall.cpp
 # Begin Source File
 
 SOURCE=.\moc_options.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\moc_trace.cpp
 # End Source File
 # End Group
 # Begin Source File
