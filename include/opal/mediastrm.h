@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2008  2002/01/22 05:09:00  robertj
+ * Revision 1.2009  2002/01/22 05:10:58  robertj
+ * Removed redundant code
+ *
+ * Revision 2.7  2002/01/22 05:09:00  robertj
  * Removed payload mismatch detection from RTP media stream.
  * Added function to get media patch from media stream.
  *
@@ -249,7 +252,6 @@ class OpalRTPMediaStream : public OpalMediaStream
       */
     OpalRTPMediaStream(
       BOOL isSourceStream,         /// Direction of I/O for stream
-      OpalConnection & connection, /// Connection for user indications
       RTP_Session & rtpSession     /// RTP session to stream to/from
     );
   //@}
@@ -316,7 +318,6 @@ class OpalRTPMediaStream : public OpalMediaStream
   //@}
 
   protected:
-    OpalConnection & connection;
     RTP_Session & rtpSession;
 };
 
