@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2007  2002/04/10 08:12:17  robertj
+ * Revision 1.2008  2002/04/12 12:23:03  robertj
+ * Allowed for endpoint listener that is not on port 5060.
+ *
+ * Revision 2.6  2002/04/10 08:12:17  robertj
  * Added call back for when transaction completed, used for invite descendant.
  *
  * Revision 2.5  2002/04/10 03:16:02  robertj
@@ -278,7 +281,7 @@ class SIP_PDU : public PObject
       const PString & from,
       const PString & callID,
       unsigned cseq,
-      const OpalTransport & via
+      const OpalTransportAddress & via
     );
     SIP_PDU(
       Methods method,
@@ -307,7 +310,7 @@ class SIP_PDU : public PObject
       const PString & from,
       const PString & callID,
       unsigned cseq,
-      const OpalTransport & via
+      const OpalTransportAddress & via
     );
     void Construct(
       Methods method,
