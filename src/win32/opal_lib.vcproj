@@ -1472,8 +1472,7 @@
 				<File
 					RelativePath="..\lids\vpblid.cxx">
 					<FileConfiguration
-						Name="Debug|Win32"
-						ExcludedFromBuild="TRUE">
+						Name="Debug|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="0"
@@ -1481,16 +1480,14 @@
 							BrowseInformation="1"/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
-						ExcludedFromBuild="TRUE">
+						Name="Release|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
 							PreprocessorDefinitions=""/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="No Trace|Win32"
-						ExcludedFromBuild="TRUE">
+						Name="No Trace|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="1"
