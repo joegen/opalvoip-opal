@@ -22,7 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2010  2002/02/11 09:38:28  robertj
+# Revision 1.2011  2002/02/22 04:16:25  robertj
+# Added G.726 codec and fixed the lpc10 and GSM codecs.
+#
+# Revision 2.9  2002/02/11 09:38:28  robertj
 # Moved version to root directory
 #
 # Revision 2.8  2002/02/06 11:52:53  rogerh
@@ -183,11 +186,21 @@ SOURCES += $(OPAL_SRCDIR)/codec/g711codec.cxx \
            $(OPAL_SRCDIR)/codec/g711.c \
            $(OPAL_SRCDIR)/codec/rfc2833.cxx
 
+G726_DIR = g726
+
+SOURCES  += $(OPAL_SRCDIR)/codec/g726codec.cxx \
+            $(G726_DIR)/g72x.c \
+            $(G726_DIR)/g726_16.c \
+            $(G726_DIR)/g726_24.c \
+            $(G726_DIR)/g726_32.c \
+            $(G726_DIR)/g726_40.c
+
+
 GSM_DIR 	= $(OPAL_SRCDIR)/codec/gsm
 GSM_SRCDIR	= $(GSM_DIR)/src
 GSM_INCDIR	= $(GSM_DIR)/inc
 
-SOURCES += $(OPAL_SRCDIR)/codec/gsmcodec.c \
+SOURCES += $(OPAL_SRCDIR)/codec/gsmcodec.cxx \
            $(GSM_SRCDIR)/gsm_create.c \
            $(GSM_SRCDIR)/gsm_destroy.c \
            $(GSM_SRCDIR)/gsm_decode.c \
@@ -207,7 +220,7 @@ LPC10_DIR 	= $(OPAL_SRCDIR)/codec/lpc10
 LPC10_INCDIR	= $(LPC10_DIR)
 LPC10_SRCDIR	= $(LPC10_DIR)/src
 
-SOURCES += $(OPAL_SRCDIR)/codec/lpc10codec.c \
+SOURCES += $(OPAL_SRCDIR)/codec/lpc10codec.cxx \
            $(LPC10_SRCDIR)/f2clib.c \
            $(LPC10_SRCDIR)/analys.c \
            $(LPC10_SRCDIR)/bsynz.c \
@@ -327,6 +340,18 @@ $(DEPDIR)/%.dep : $(GSM_SRCDIR)/%.c
 	@if [ ! -d $(DEPDIR) ] ; then mkdir -p $(DEPDIR) ; fi
 	@printf %s $(OPAL_OBJDIR)/ > $@
 	$(CC) -ansi -I$(GSM_INCDIR) -DWAV49 -DNeedFunctionPrototypes=1 $(CFLAGS) -M $< >> $@
+
+
+# Build rules for the G.726 codec
+
+$(OPAL_OBJDIR)/%.o : $(G726_DIR)/%.c
+	@if [ ! -d $(OPAL_OBJDIR) ] ; then mkdir -p $(OPAL_OBJDIR) ; fi
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(DEPDIR)/%.dep : $(G726_DIR)/%.c
+	@if [ ! -d $(DEPDIR) ] ; then mkdir -p $(DEPDIR) ; fi
+	@printf %s $(OH323_OBJDIR)/ > $@
+	$(CC) $(CFLAGS) -M $< >> $@
 
 
 # Build rules for the LPC10 codec
