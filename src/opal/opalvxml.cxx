@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalvxml.cxx,v $
- * Revision 1.2006  2003/03/17 23:36:19  robertj
+ * Revision 1.2007  2003/03/18 04:43:27  robertj
+ * Fixed pragma implementation
+ *
+ * Revision 2.5  2003/03/17 23:36:19  robertj
  * Fixed pragma
  *
  * Revision 2.4  2003/03/07 05:48:52  robertj
@@ -111,11 +114,11 @@
  *
  */
 
-#include <ptlib.h>
-
 #ifdef P_USE_PRAGMA
 #pragma implementation "opalvxml.h"
 #endif
+
+#include <ptlib.h>
 
 #include <opal/opalvxml.h>
 
