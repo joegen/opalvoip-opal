@@ -27,11 +27,27 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.cxx,v $
- * Revision 1.2005  2001/11/02 10:45:19  robertj
+ * Revision 1.2006  2002/01/14 06:35:58  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.4  2001/11/02 10:45:19  robertj
  * Updated to OpenH323 v1.7.3
  *
  * Revision 2.3  2001/10/05 00:22:14  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 1.91  2001/12/15 07:10:59  robertj
+ * Added functions to get E.164 address from alias address or addresses.
+ *
+ * Revision 1.90  2001/12/14 08:36:36  robertj
+ * More implementation of T.38, thanks Adam Lazur
+ *
+ * Revision 1.89  2001/12/14 06:38:35  robertj
+ * Broke out conversion of Q.850 and H.225 release complete codes to
+ *   OpenH323 call end reasons enum.
+ *
+ * Revision 1.88  2001/12/13 10:56:28  robertj
+ * Added build of request in progress pdu.
  *
  * Revision 1.87  2001/10/18 00:58:51  robertj
  * Fixed problem with GetDestinationAlias() adding source aliases instead
@@ -357,7 +373,7 @@ void H323SetAliasAddresses(const PStringList & names,
 
 static BOOL IsE164(const PString & str)
 {
-  return strspn(str, "1234567890*#") == strlen(str);
+  return !str && strspn(str, "1234567890*#") == strlen(str);
 }
 
 
@@ -417,6 +433,28 @@ PString H323GetAliasAddressString(const H225_AliasAddress & alias)
 
     default :
       break;
+  }
+
+  return PString();
+}
+
+
+PString H323GetAliasAddressE164(const H225_AliasAddress & alias)
+{
+  PString str = H323GetAliasAddressString(alias);
+  if (IsE164(str))
+    return str;
+
+  return PString();
+}
+
+
+PString H323GetAliasAddressE164(const H225_ArrayOf_AliasAddress & aliases)
+{
+  for (PINDEX i = 0; i < aliases.GetSize(); i++) {
+    PString alias = H323GetAliasAddressE164(aliases[i]);
+    if (!alias)
+      return alias;
   }
 
   return PString();
@@ -564,6 +602,89 @@ H225_Information_UUIE & H323SignalPDU::BuildInformation(const H323Connection & c
 }
 
 
+OpalCallEndReason H323TranslateToCallEndReason(Q931::CauseValues cause,
+                                               const H225_ReleaseCompleteReason & reason)
+{
+  switch (cause) {
+    case Q931::ErrorInCauseIE :
+      switch (reason.GetTag()) {
+        case H225_ReleaseCompleteReason::e_noBandwidth :
+          return EndedByNoBandwidth;
+        case H225_ReleaseCompleteReason::e_gatekeeperResources :
+        case H225_ReleaseCompleteReason::e_gatewayResources :
+        case H225_ReleaseCompleteReason::e_adaptiveBusy :
+          return EndedByRemoteCongestion;
+        case H225_ReleaseCompleteReason::e_unreachableDestination :
+          return EndedByUnreachable;
+        case H225_ReleaseCompleteReason::e_calledPartyNotRegistered :
+          return EndedByNoUser;
+        case H225_ReleaseCompleteReason::e_callerNotRegistered:
+          return EndedByGatekeeper;
+        case H225_ReleaseCompleteReason::e_securityDenied:
+          return EndedBySecurityDenial;
+      }
+      return EndedByRefusal;
+    case Q931::NormalCallClearing :
+      return EndedByRemoteUser;
+    case Q931::UserBusy :
+      return EndedByRemoteBusy;
+    case Q931::Congestion :
+      return EndedByRemoteCongestion;
+    case Q931::NoResponse :
+    case Q931::NoAnswer :
+      return EndedByNoAnswer;
+    case Q931::NoRouteToNetwork :
+    case Q931::ChannelUnacceptable :
+      return EndedByUnreachable;
+    case Q931::NoRouteToDestination :
+    case Q931::SubscriberAbsent :
+      return EndedByNoUser;
+    case Q931::Redirection :
+      return EndedByCallForwarded;
+    case Q931::DestinationOutOfOrder :
+      return EndedByConnectFail;
+    default:
+      return EndedByRefusal;
+  }
+}
+
+
+Q931::CauseValues H323TranslateFromCallEndReason(const H323Connection & connection,
+                                                 H225_ReleaseCompleteReason & reason)
+{
+  static int const ReasonCodes[OpalNumCallEndReasons] = {
+    Q931::NormalCallClearing,                               /// EndedByLocalUser,         Local endpoint application cleared call
+    Q931::UserBusy,                                         /// EndedByNoAccept,          Local endpoint did not accept call
+    Q931::CallRejected,                                     /// EndedByAnswerDenied,      Local endpoint declined to answer call
+    Q931::NormalCallClearing,                               /// EndedByRemoteUser,        Remote endpoint application cleared call
+    -H225_ReleaseCompleteReason::e_destinationRejection,    /// EndedByRefusal,           Remote endpoint refused call
+    Q931::NormalCallClearing,                               /// EndedByNoAnswer,          Remote endpoint did not answer in required time
+    Q931::NormalCallClearing,                               /// EndedByCallerAbort,       Remote endpoint stopped calling
+    -H225_ReleaseCompleteReason::e_undefinedReason,         /// EndedByTransportFail,     Transport error cleared call
+    -H225_ReleaseCompleteReason::e_unreachableDestination,  /// EndedByConnectFail,       Transport connection failed to establish call
+    -H225_ReleaseCompleteReason::e_gatekeeperResources,     /// EndedByGatekeeper,        Gatekeeper has cleared call
+    -H225_ReleaseCompleteReason::e_calledPartyNotRegistered,/// EndedByNoUser,            Call failed as could not find user (in GK)
+    -H225_ReleaseCompleteReason::e_noBandwidth,             /// EndedByNoBandwidth,       Call failed as could not get enough bandwidth
+    -H225_ReleaseCompleteReason::e_undefinedReason,         /// EndedByCapabilityExchange,Could not find common capabilities
+    -H225_ReleaseCompleteReason::e_facilityCallDeflection,  /// EndedByCallForwarded,     Call was forwarded using FACILITY message
+    -H225_ReleaseCompleteReason::e_securityDenied,          /// EndedBySecurityDenial,    Call failed a security check and was ended
+    Q931::UserBusy,                                         /// EndedByLocalBusy,         Local endpoint busy
+    Q931::Congestion,                                       /// EndedByLocalCongestion,   Local endpoint congested
+    Q931::NormalCallClearing,                               /// EndedByRemoteBusy,        Remote endpoint busy
+    Q931::NormalCallClearing,                               /// EndedByRemoteCongestion,  Remote endpoint congested
+    Q931::NoRouteToDestination,                             /// EndedByUnreachable,       Could not reach the remote party
+    Q931::InvalidCallReference,                             /// EndedByNoEndPoint,        The remote party is not running an endpoint
+    Q931::DestinationOutOfOrder,                            /// EndedByHostOffline,       The remote party host off line
+  };
+  int code = ReasonCodes[connection.GetCallEndReason()];
+  if (code >= 0)
+    return (Q931::CauseValues)code;
+
+  reason.SetTag(-code);
+  return Q931::ErrorInCauseIE;
+}
+
+
 H225_ReleaseComplete_UUIE &
         H323SignalPDU::BuildReleaseComplete(const H323Connection & connection)
 {
@@ -576,56 +697,11 @@ H225_ReleaseComplete_UUIE &
   release.m_protocolIdentifier.SetValue(H225_ProtocolID);
   release.m_callIdentifier.m_guid = connection.GetCallIdentifier();
 
-  OpalCallEndReason reason = connection.GetCallEndReason();
-  static Q931::CauseValues const Q931cause[OpalNumCallEndReasons] = {
-    Q931::NormalCallClearing, /// Local endpoint application cleared call
-    Q931::UserBusy,           /// Local endpoint did not accept call OnIncomingCall()=FALSE
-    Q931::CallRejected,       /// Local endpoint declined to answer call
-    Q931::NormalCallClearing, /// Remote endpoint application cleared call
-    Q931::ErrorInCauseIE,     /// Remote endpoint refused call
-    Q931::NormalCallClearing, /// Remote endpoint did not answer in required time
-    Q931::NormalCallClearing, /// Remote endpoint stopped calling
-    Q931::ErrorInCauseIE,     /// Transport error cleared call
-    Q931::NoRouteToDestination, /// Transport connection failed to establish call
-    Q931::NormalCallClearing, /// Gatekeeper has cleared call
-    Q931::ErrorInCauseIE,     /// Call failed as could not find user (in GK)
-    Q931::ErrorInCauseIE,     /// Call failed as could not get enough bandwidth
-    Q931::ErrorInCauseIE,     /// Could not find common capabilities
-    Q931::Redirection,        /// Call was forwarded using FACILITY message
-    Q931::ErrorInCauseIE,     /// Call failed a security check and was ended
-    Q931::UserBusy,           /// Local endpoint busy
-    Q931::Congestion,          /// Local endpoint congested
-    Q931::NormalCallClearing, /// Remote endpoint busy
-    Q931::NormalCallClearing, /// Remote endpoint congested
-  };
-  if (Q931cause[reason] != Q931::ErrorInCauseIE)
-    q931pdu.SetCause(Q931cause[reason]);
-
-  static unsigned const H225reason[OpalNumCallEndReasons] = {
-    0, /// Local endpoint application cleared call
-    0, /// Local endpoint did not accept call OnIncomingCall()=FALSE
-    0, /// Local endpoint declined to answer call
-    0, /// Remote endpoint application cleared call
-    1+H225_ReleaseCompleteReason::e_destinationRejection, /// Remote endpoint refused call
-    0, /// Remote endpoint did not answer in required time
-    0, /// Remote endpoint stopped calling
-    1+H225_ReleaseCompleteReason::e_undefinedReason, /// Transport error cleared call
-    1+H225_ReleaseCompleteReason::e_unreachableDestination, /// Transport connection failed to establish call
-    0, /// Gatekeeper has cleared call
-    1+H225_ReleaseCompleteReason::e_calledPartyNotRegistered, /// Call failed as could not find user (in GK)
-    1+H225_ReleaseCompleteReason::e_noBandwidth, /// Call failed as could not get enough bandwidth
-    1+H225_ReleaseCompleteReason::e_undefinedReason, /// Could not find common capabilities
-    1+H225_ReleaseCompleteReason::e_facilityCallDeflection, /// Call was forwarded using FACILITY message
-    1+H225_ReleaseCompleteReason::e_securityDenied,  /// Call failed a security check and was ended
-    0, /// Local endpoint busy
-    0, /// Local endpoint congested
-    0, /// Remote endpoint busy
-    0, /// Remote endpoint congested
-  };
-  if (H225reason[reason] != 0) {
+  Q931::CauseValues cause = H323TranslateFromCallEndReason(connection, release.m_reason);
+  if (cause != Q931::ErrorInCauseIE)
+    q931pdu.SetCause(cause);
+  else
     release.IncludeOptionalField(H225_ReleaseComplete_UUIE::e_reason);
-    release.m_reason.SetTag(H225reason[reason]-1);
-  }
 
   return release;
 }
@@ -1596,6 +1672,16 @@ H225_UnknownMessageResponse & H323RasPDU::BuildUnknownMessageResponse(unsigned s
   H225_UnknownMessageResponse & umr = *this;
   umr.m_requestSeqNum = seqNum;
   return umr;
+}
+
+
+H225_RequestInProgress & H323RasPDU::BuildRequestInProgress(unsigned seqNum, unsigned delay)
+{
+  SetTag(e_requestInProgress);
+  H225_RequestInProgress & rip = *this;
+  rip.m_requestSeqNum = seqNum;
+  rip.m_delay = delay;
+  return rip;
 }
 
 

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2008  2001/11/15 06:55:26  robertj
+ * Revision 1.2009  2002/01/14 06:35:58  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.7  2001/11/15 06:55:26  robertj
  * Fixed Reorder() function so reorders EVERY format that matches wildcard.
  *
  * Revision 2.6  2001/10/05 00:22:14  robertj
@@ -50,6 +53,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.5  2001/12/11 04:27:28  craigs
+ * Added support for 5.3kbps G723.1
  *
  * Revision 1.4  2001/09/21 02:51:45  robertj
  * Implemented static object for all "known" media formats.
@@ -172,13 +178,24 @@ OpalMediaFormat const OpalG729AB(
   OpalMediaFormat::AudioTimeUnits
 );
 
-OpalMediaFormat const OpalG7231(
-  OPAL_G7231,
+OpalMediaFormat const OpalG7231_6k3(
+  OPAL_G7231_6k3,
   OpalMediaFormat::DefaultAudioSessionID,
   RTP_DataFrame::G7231,
   TRUE, // Needs jitter
   6400, // bits/sec
   24,   // bytes
+  240,  // 30 milliseconds
+  OpalMediaFormat::AudioTimeUnits
+);
+
+OpalMediaFormat const OpalG7231_5k3(
+  OPAL_G7231_5k3,
+  OpalMediaFormat::DefaultAudioSessionID,
+  RTP_DataFrame::G7231,
+  TRUE, // Needs jitter
+  5300, // bits/sec
+  20,   // bytes
   240,  // 30 milliseconds
   OpalMediaFormat::AudioTimeUnits
 );
