@@ -24,7 +24,11 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2011  2002/01/14 02:24:33  robertj
+ * Revision 1.2012  2002/01/22 05:10:44  robertj
+ * Removed payload mismatch detection from RTP media stream.
+ * Added function to get media patch from media stream.
+ *
+ * Revision 2.10  2002/01/14 02:24:33  robertj
  * Added ability to turn jitter buffer off in media stream to allow for patches
  *   that do not require it.
  *
@@ -76,8 +80,6 @@
 
 #define new PNEW
 
-#define	MAX_PAYLOAD_TYPE_MISMATCHES 8
-
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -123,7 +125,7 @@ BOOL OpalMediaStream::Open(const OpalMediaFormat & format)
 
   // Set default frame size to 50ms of audio, otherwise just one frame
   unsigned frameTime = format.GetFrameTime();
-  if (frameTime != 0 && format.GetTimeUnits() == OpalMediaFormat::AudioTimeUnits)
+  if (frameTime != 0 && format.GetClockRate() == OpalMediaFormat::AudioClockRate)
     defaultDataSize = ((400+frameTime-1)/frameTime)*format.GetFrameSize();
   else
     defaultDataSize = format.GetFrameSize();
@@ -244,22 +246,12 @@ void OpalMediaStream::SetPatch(OpalMediaPatch * patch)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalRTPMediaStream::OpalRTPMediaStream(BOOL isSourceStream, RTP_Session & rtp)
+OpalRTPMediaStream::OpalRTPMediaStream(BOOL isSourceStream,
+                                       RTP_Session & rtp)
   : OpalMediaStream(isSourceStream, rtp.GetSessionID()),
     rtpSession(rtp)
 {
   os_handle = 1; // RTP session is always open
-}
-
-
-BOOL OpalRTPMediaStream::Open(const OpalMediaFormat & format)
-{
-  if (!OpalMediaStream::Open(format))
-    return FALSE;
-
-  consecutiveMismatches = 0;
-  mismatchPayloadType = mediaFormat.GetPayloadType();
-  return TRUE;
 }
 
 
@@ -294,6 +286,7 @@ BOOL OpalRTPMediaStream::Write(const void * buf, PINDEX len)
 {
   RTP_DataFrame packet(len);
   memcpy(packet.GetPayloadPtr(), buf, len);
+  packet.SetPayloadType(mediaFormat.GetPayloadType());
   packet.SetTimestamp(timestamp);
   packet.SetMarker(marker);
   return WritePacket(packet);
@@ -306,38 +299,13 @@ BOOL OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
     return FALSE;
 
   timestamp = packet.GetTimestamp();
-
-  // Empty packet indicates silence (jitter buffer underrun)
-  if (packet.GetPayloadSize() == 0)
-    return TRUE;
-
-  // Have data, confirm payload type
-  if (packet.GetPayloadType() == mismatchPayloadType) {
-    consecutiveMismatches = 0;
-    return TRUE;
-  }
-
-  // Ignore first few in the case of some pathalogical conditions by some stacks
-  if (consecutiveMismatches < MAX_PAYLOAD_TYPE_MISMATCHES) {
-    packet.SetPayloadSize(0);
-    consecutiveMismatches++;
-    return TRUE;
-  }
-
-  // After a few RTP packets with the wrong payload type, we start using it
-  // anyway as some stacks out there just put in the wrong value
-  PTRACE(1, "Media\tRTP payload type mismatch: expected "
-           << mediaFormat.GetPayloadType() << ", got " << packet.GetPayloadType()
-           << ". Ignoring from now on.");
-  mismatchPayloadType = packet.GetPayloadType();
-
   return TRUE;
 }
 
 
 BOOL OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
 {
-  packet.SetPayloadType(mediaFormat.GetPayloadType());
+  timestamp = packet.GetTimestamp();
   return rtpSession.WriteData(packet);
 }
 
