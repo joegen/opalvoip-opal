@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2042  2004/08/14 07:56:43  rjongbloed
+ * Revision 1.2043  2004/08/20 12:13:32  rjongbloed
+ * Added correct handling of SIP 180 response
+ *
+ * Revision 2.41  2004/08/14 07:56:43  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.40  2004/04/26 05:40:39  rjongbloed
@@ -743,6 +746,10 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     targetAddress = contact;
 
   switch (response.GetStatusCode()) {
+    case SIP_PDU::Information_Ringing :
+      OnReceivedRinging(response);
+      break;
+
     case SIP_PDU::Information_Session_Progress :
       OnReceivedSessionProgress(response);
       break;
@@ -876,14 +883,29 @@ void SIPConnection::OnReceivedTrying(SIP_PDU & /*response*/)
 }
 
 
+void SIPConnection::OnReceivedRinging(SIP_PDU & /*response*/)
+{
+  PTRACE(2, "SIP\tReceived Ringing response");
+
+  if (phase < AlertingPhase)
+  {
+    phase = AlertingPhase;
+    OnAlerting();
+  }
+}
+
+
 void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
 {
   PTRACE(2, "SIP\tReceived Session Progress response");
 
   OnReceivedSDP(response);
 
-  OnAlerting();
-  phase = AlertingPhase;
+  if (phase < AlertingPhase)
+  {
+    phase = AlertingPhase;
+    OnAlerting();
+  }
 
   PTRACE(3, "SIP\tStarting receive media to annunciate remote progress tones");
   for (PINDEX i = 0; i < mediaStreams.GetSize(); i++) {
