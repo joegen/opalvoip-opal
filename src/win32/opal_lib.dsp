@@ -249,6 +249,10 @@ SOURCE=..\codec\lpc10codec.cxx
 
 SOURCE=..\codec\mscodecs.cxx
 # End Source File
+# Begin Source File
+
+SOURCE=..\codec\rfc2833.cxx
+# End Source File
 # End Group
 # Begin Group "LID Sources"
 
@@ -454,6 +458,10 @@ SOURCE=..\..\include\codec\lpc10codec.h
 # Begin Source File
 
 SOURCE=..\..\include\codec\mscodecs.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\codec\rfc2833.h
 # End Source File
 # End Group
 # Begin Group "LID Headers"
