@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323neg.cxx,v $
- * Revision 1.2006  2002/01/14 06:35:58  robertj
+ * Revision 1.2007  2002/02/13 04:09:16  robertj
+ * Removed superfluous trace
+ *
+ * Revision 2.5  2002/01/14 06:35:58  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.4  2001/10/15 04:35:09  robertj
@@ -1150,7 +1153,6 @@ H245NegLogicalChannels::H245NegLogicalChannels(H323EndPoint & end,
 
 void H245NegLogicalChannels::Add(H323Channel & channel)
 {
-  PTRACE(1, "H245NegLogicalChannels::Add");
   mutex.Wait();
   channels.SetAt(channel.GetNumber(), new H245NegLogicalChannel(endpoint, connection, channel));
   mutex.Signal();
