@@ -3,6 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="OPAL_dll"
+	RootNamespace="OPAL_dll"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>
@@ -38,8 +39,7 @@
 			<Tool
 				Name="VCCustomBuildTool"
 				Description="Extracting debug symbols"
-				CommandLine="rebase -b 0x10000000 -x . &quot;$(OutDir)&quot;\&quot;$(TargetName)&quot;.dll
-"
+				CommandLine="rebase -b 0x10000000 -x . &quot;$(TargetPath)&quot;"
 				Outputs="$(OutDir)\$(TargetName).dbg"/>
 			<Tool
 				Name="VCLinkerTool"
@@ -174,8 +174,7 @@
 			<Tool
 				Name="VCCustomBuildTool"
 				Description="Extracting debug symbols"
-				CommandLine="rebase -b 0x30000000 -x . &quot;$(OutDir)&quot;\&quot;$(TargetName)&quot;.dll
-"
+				CommandLine="rebase -b 0x30000000 -x . &quot;$(TargetPath)&quot;"
 				Outputs="$(OutDir)\$(TargetName).dbg"/>
 			<Tool
 				Name="VCLinkerTool"
