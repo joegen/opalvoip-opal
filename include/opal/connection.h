@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2022  2003/03/17 10:26:59  robertj
+ * Revision 1.2023  2004/02/24 11:28:45  rjongbloed
+ * Normalised RTP session management across protocols
+ *
+ * Revision 2.21  2003/03/17 10:26:59  robertj
  * Added video support.
  *
  * Revision 2.20  2003/03/06 03:57:47  robertj
@@ -601,10 +604,15 @@ class OpalConnection : public PObject
        called or the session is never deleted for the lifetime of the Opal
        connection.
 
-       If there is no session of the specified ID, NULL is returned.
+       If there is no session of the specified ID one is created.
+
+       The type of RTP session that is created will be compatible with the
+       transport. At this time only IP (RTp over UDP) is supported.
       */
     virtual RTP_Session * UseSession(
-      unsigned sessionID    /// RTP session number
+      const OpalTransport & transport,  /// Transport of signalling
+      unsigned sessionID,               /// RTP session number
+      RTP_QOS * rtpqos = NULL           /// Quiality of Service information
     );
 
     /**Release the session.
@@ -613,6 +621,16 @@ class OpalConnection : public PObject
      */
     virtual void ReleaseSession(
       unsigned sessionID    /// RTP session number
+    );
+
+    /**Create and open a new RTP session.
+       The type of RTP session that is created will be compatible with the
+       transport. At this time only IP (RTp over UDP) is supported.
+      */
+    virtual RTP_Session * CreateSession(
+      const OpalTransport & transport,
+      unsigned sessionID,
+      RTP_QOS * rtpqos
     );
   //@}
 
