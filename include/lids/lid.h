@@ -27,7 +27,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.h,v $
- * Revision 1.2010  2004/02/19 10:46:44  rjongbloed
+ * Revision 1.2011  2004/10/06 13:03:41  rjongbloed
+ * Added "configure" support for known LIDs
+ * Changed LID GetName() function to be normalised against the GetAllNames()
+ *   return values and fixed the pre-factory registration system.
+ * Added a GetDescription() function to do what the previous GetName() did.
+ *
+ * Revision 2.9  2004/02/19 10:46:44  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.8  2003/03/24 07:18:29  robertj
@@ -287,16 +293,27 @@ class OpalLineInterfaceDevice : public PObject
       */
     virtual BOOL Close();
 
+    /**Get the device type identifier.
+       This is as is used in the factory registration.
+      */
+    virtual PString GetDeviceType() const = 0;
+
+    /**Get the device name, as used to open the device.
+       Note the format of this name should be as is returned from GetAllName()
+       and must be able to be used in a subsequent Open() call.
+      */
+    virtual PString GetDeviceName() const = 0;
+
     /**Get all the possible devices that can be opened.
       */
     virtual PStringArray GetAllNames() const = 0;
 
-    /**Determine the type of line interface device.
+    /**Get the description of the line interface device.
        This is a string indication of the card type for user interface
        display purposes or device specific control. The device should be
        as detailed as possible eg "Quicknet LineJACK".
       */
-    virtual PString GetName() const = 0;
+    virtual PString GetDescription() const = 0;
 
     /**Get the total number of lines supported by this device.
       */

@@ -27,7 +27,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.h,v $
- * Revision 1.2017  2004/08/14 07:56:29  rjongbloed
+ * Revision 1.2018  2004/10/06 13:03:41  rjongbloed
+ * Added "configure" support for known LIDs
+ * Changed LID GetName() function to be normalised against the GetAllNames()
+ *   return values and fixed the pre-factory registration system.
+ * Added a GetDescription() function to do what the previous GetName() did.
+ *
+ * Revision 2.16  2004/08/14 07:56:29  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.15  2004/07/11 12:42:09  rjongbloed
@@ -247,11 +253,9 @@ class OpalLIDEndPoint : public OpalEndPoint
     );
 
     /**Add a line interface devices to the endpoint by name.
-       This will add the registered OpalLineInterfaceDevice descendent and
-       all of the lines that it has to the endpoint. It uses a strng to create
-       and open the device as would be returned from the 
+       This calls AddDeviceName() for each entry in the array.
 
-       Returns TRUE if at least one line was added.
+       Returns TRUE if at least one line from one device was added.
       */
     BOOL AddDeviceNames(
       const PStringArray & descriptors  /// Device descritptions to add
@@ -259,10 +263,12 @@ class OpalLIDEndPoint : public OpalEndPoint
 
     /**Add a line interface device to the endpoint by name.
        This will add the registered OpalLineInterfaceDevice descendent and
-       all of the lines that it has to the endpoint. It uses a strng to create
-       and open the device as would be returned from the 
+       all of the lines that it has to the endpoint. The parameter is a string
+       as would be returned from the OpalLineInterfaceDevice::GetAllDevices()
+       function.
 
-       Returns TRUE if at least one line was added.
+       Returns TRUE if at least one line was added or the descriptor was
+       already present.
       */
     BOOL AddDeviceName(
       const PString & descriptor  /// Device descritption to add

@@ -22,7 +22,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vpblid.h,v $
- * Revision 1.2009  2004/02/19 10:46:44  rjongbloed
+ * Revision 1.2010  2004/10/06 13:03:41  rjongbloed
+ * Added "configure" support for known LIDs
+ * Changed LID GetName() function to be normalised against the GetAllNames()
+ *   return values and fixed the pre-factory registration system.
+ * Added a GetDescription() function to do what the previous GetName() did.
+ *
+ * Revision 2.8  2004/02/19 10:46:44  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.7  2003/03/24 07:18:29  robertj
@@ -112,6 +118,10 @@
 #endif
 
 
+#include <opal/buildopts.h>
+
+#ifdef HAS_VPB
+
 #include <lids/lid.h>
 #include <vpbapi.h>
 
@@ -164,18 +174,27 @@ class OpalVpbDevice : public OpalLineInterfaceDevice
       */
     virtual BOOL Close();
 
-    /**Get the device name.
+    /**Get the device type identifier.
+       This is as is used in the factory registration.
       */
-    virtual PString GetName() const;
+    virtual PString GetDeviceType() const;
+
+    /**Get the device name, as used to open the device
+      */
+    virtual PString GetDeviceName() const;
 
     /**Get all the possible devices that can be opened.
       */
     virtual PStringArray GetAllNames() const;
 
+    /**Get the description of the line interface device.
+      */
+    virtual PString GetDescription() const;
+
+
     /**Get the total number of lines supported by this device.
       */
     virtual unsigned GetLineCount();
-
 
     /**Determine if line is currently off hook.
        This returns TRUE if GetLineState() is a state that implies the line is
@@ -392,8 +411,14 @@ class OpalVpbDevice : public OpalLineInterfaceDevice
 };
 
 
-#define OPAL_REGISTER_VPB() OPAL_REGISTER_LID(OpalVpbDevice, "VPB")
+#define OPAL_VPB_TYPE_NAME  "VPB"
+#define OPAL_REGISTER_VPB() OPAL_REGISTER_LID(OpalVpbDevice, OPAL_VPB_TYPE_NAME)
 
+#else // HAS_VPB
+
+#define OPAL_REGISTER_VPB()
+
+#endif // HAS_VPB
 
 #endif // __OPAL_VPBLID_H
 
