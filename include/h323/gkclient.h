@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.h,v $
- * Revision 1.2005  2001/11/09 05:49:47  robertj
+ * Revision 1.2006  2002/03/22 06:57:48  robertj
+ * Updated to OpenH323 version 1.8.2
+ *
+ * Revision 2.4  2001/11/09 05:49:47  robertj
  * Abstracted UDP connection algorithm
  *
  * Revision 2.3  2001/10/05 00:22:13  robertj
@@ -41,6 +44,10 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.32  2002/03/19 05:17:11  robertj
+ * Normalised ACF destExtraCallIInfo to be same as other parameters.
+ * Added ability to get multiple endpoint addresses and tokens from ACF.
  *
  * Revision 1.31  2001/09/26 07:02:49  robertj
  * Added needed mutex for SeparateAuthenticationInARQ mode, thanks Nick Hoath
@@ -267,9 +274,13 @@ class H323Gatekeeper : public H225_RAS
       AdmissionResponse();
 
       unsigned rejectReason;                      /// Reject reason if returns FALSE
-      H323TransportAddress * transportAddress;    /// Gatekeeper routed transport address.
-      H225_ArrayOf_AliasAddress * aliasAddresses; /// DestinationInfo to use in SETUP if not empty
+
+      PINDEX endpointCount;                       /// Number of endpoints that can be returned
+      H323TransportAddress * transportAddress;    /// Transport address or remote endpoint.
       PBYTEArray * accessTokenData;               /// iNow Gatekeeper Access Token data
+
+      H225_ArrayOf_AliasAddress * aliasAddresses; /// DestinationInfo to use in SETUP if not empty
+      H225_ArrayOf_AliasAddress * destExtraCallInfo; /// DestinationInfo to use in SETUP if not empty
     };
 
     /**Admission request to gatekeeper.
