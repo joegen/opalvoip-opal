@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2016  2003/04/16 02:30:21  robertj
+ * Revision 1.2017  2003/06/02 02:57:10  rjongbloed
+ * Moved LID specific media stream class to LID source file.
+ *
+ * Revision 2.15  2003/04/16 02:30:21  robertj
  * Fixed comments on ReadData() and WriteData() functions.
  *
  * Revision 2.14  2003/03/17 10:26:59  robertj
@@ -411,74 +414,6 @@ class OpalRTPMediaStream : public OpalMediaStream
     RTP_Session & rtpSession;
     unsigned      minAudioJitterDelay;
     unsigned      maxAudioJitterDelay;
-};
-
-
-
-/**This class describes a media stream that transfers data to/from a Line
-   Interface Device.
-  */
-class OpalLineMediaStream : public OpalMediaStream
-{
-    PCLASSINFO(OpalLineMediaStream, OpalMediaStream);
-  public:
-  /**@name Construction */
-  //@{
-    /**Construct a new media stream for Line Interface Devices.
-      */
-    OpalLineMediaStream(
-      const OpalMediaFormat & mediaFormat, /// Media format for stream
-      unsigned sessionID,                  /// Session number for stream
-      BOOL isSource,                       /// Is a source stream
-      OpalLine & line                      /// LID line to stream to/from
-    );
-  //@}
-
-  /**@name Overrides of OpalMediaStream class */
-  //@{
-    /**Open the media stream.
-
-       The default behaviour sets the OpalLineInterfaceDevice format and
-       calls Resume() on the associated OpalMediaPatch thread.
-      */
-    virtual BOOL Open();
-
-    /**Close the media stream.
-
-       The default does nothing.
-      */
-    virtual BOOL Close();
-
-    /**Read raw media data from the source media stream.
-       The default behaviour reads from the OpalLine object.
-      */
-    virtual BOOL ReadData(
-      BYTE * data,      /// Data buffer to read to
-      PINDEX size,      /// Size of buffer
-      PINDEX & length   /// Length of data actually read
-    );
-
-    /**Write raw media data to the sink media stream.
-       The default behaviour writes to the OpalLine object.
-      */
-    virtual BOOL WriteData(
-      const BYTE * data,   /// Data to write
-      PINDEX length,       /// Length of data to read.
-      PINDEX & written     /// Length of data actually written
-    );
-
-    /**Indicate if the media stream is synchronous.
-       Returns TRUE for LID streams.
-      */
-    virtual BOOL IsSynchronous() const;
-  //@}
-
-  protected:
-    OpalLine & line;
-    BOOL       useDeblocking;
-    unsigned   missedCount;
-    BYTE       lastSID[4];
-    BOOL       lastFrameWasSignal;
 };
 
 
