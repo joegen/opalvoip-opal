@@ -36,7 +36,11 @@
 #define MISC_H
 
 #ifndef VERSION
-#define VERSION "unknown version"
+#define VERSION "Speex-1.0beta4"
+#endif
+
+#ifndef RELEASE
+void print_vec(float *vec, int len, char *name);
 #endif
 
 unsigned int be_int(unsigned int i);

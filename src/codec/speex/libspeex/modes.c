@@ -40,8 +40,9 @@
 #include "cb_search.h"
 #include "sb_celp.h"
 #include "nb_celp.h"
+#include "vbr.h"
 
-SpeexMode *speex_mode_list[SPEEX_NB_MODES] = {&speex_nb_mode, &speex_wb_mode};
+SpeexMode *speex_mode_list[SPEEX_NB_MODES] = {&speex_nb_mode, &speex_wb_mode, &speex_uwb_mode};
 
 /* Extern declarations for all codebooks we use here */
 extern float gain_cdbk_nb[];
@@ -91,6 +92,7 @@ static split_cb_params split_cb_nb_vlbr = {
    4,               /*nb_subvect*/
    exc_10_16_table, /*shape_cb*/
    4,               /*shape_bits*/
+   0,
 };
 
 /* Split-VQ innovation parameters for low bit-rate narrowband */
@@ -99,6 +101,7 @@ static split_cb_params split_cb_nb_lbr = {
    4,               /*nb_subvect*/
    exc_10_32_table, /*shape_cb*/
    5,               /*shape_bits*/
+   0,
 };
 
 
@@ -108,6 +111,7 @@ static split_cb_params split_cb_nb = {
    8,               /*nb_subvect*/
    exc_5_64_table, /*shape_cb*/
    6,               /*shape_bits*/
+   0,
 };
 
 /* Split-VQ innovation parameters narrowband */
@@ -116,6 +120,7 @@ static split_cb_params split_cb_nb_med = {
    5,               /*nb_subvect*/
    exc_8_128_table, /*shape_cb*/
    7,               /*shape_bits*/
+   0,
 };
 
 /* Split-VQ innovation for low-band wideband */
@@ -124,6 +129,7 @@ static split_cb_params split_cb_sb = {
    8,              /*nb_subvect*/
    exc_5_256_table,    /*shape_cb*/
    8,               /*shape_bits*/
+   0,
 };
 
 /* Split-VQ innovation for high-band wideband */
@@ -132,6 +138,7 @@ static split_cb_params split_cb_high = {
    5,               /*nb_subvect*/
    hexc_table,       /*shape_cb*/
    7,               /*shape_bits*/
+   1,
 };
 
 
@@ -141,6 +148,7 @@ static split_cb_params split_cb_high_lbr = {
    4,               /*nb_subvect*/
    hexc_10_32_table,       /*shape_cb*/
    5,               /*shape_bits*/
+   0,
 };
 
 /* 2150 bps "vocoder-like" mode for comfort noise */
@@ -160,7 +168,7 @@ static SpeexSubmode nb_submode1 = {
    noise_codebook_quant,
    noise_codebook_unquant,
    NULL,
-   0, 0, -1,
+   .7, .7, -1,
    43
 };
 
@@ -178,11 +186,11 @@ static SpeexSubmode nb_submode2 = {
    pitch_unquant_3tap,
    &ltp_params_vlbr,
    /*Innovation quantization*/
-   split_cb_search_nogain,
-   split_cb_nogain_unquant,
+   split_cb_search_shape_sign,
+   split_cb_shape_sign_unquant,
    &split_cb_nb_vlbr,
 
-   0.75, 0.6, .6,
+   0.7, 0.5, .55,
    119
 };
 
@@ -200,11 +208,11 @@ static SpeexSubmode nb_submode3 = {
    pitch_unquant_3tap,
    &ltp_params_lbr,
    /*Innovation quantization*/
-   split_cb_search_nogain,
-   split_cb_nogain_unquant,
+   split_cb_search_shape_sign,
+   split_cb_shape_sign_unquant,
    &split_cb_nb_lbr,
 
-   0.75, 0.6, .5,
+   0.7, 0.55, .45,
    160
 };
 
@@ -222,11 +230,11 @@ static SpeexSubmode nb_submode4 = {
    pitch_unquant_3tap,
    &ltp_params_med,
    /*Innovation quantization*/
-   split_cb_search_nogain,
-   split_cb_nogain_unquant,
+   split_cb_search_shape_sign,
+   split_cb_shape_sign_unquant,
    &split_cb_nb_med,
 
-   0.72, 0.65, .3,
+   0.7, 0.63, .35,
    220
 };
 
@@ -244,11 +252,11 @@ static SpeexSubmode nb_submode5 = {
    pitch_unquant_3tap,
    &ltp_params_nb,
    /*Innovation quantization*/
-   split_cb_search_nogain,
-   split_cb_nogain_unquant,
+   split_cb_search_shape_sign,
+   split_cb_shape_sign_unquant,
    &split_cb_nb,
 
-   0.7, 0.65, .2,
+   0.7, 0.65, .25,
    300
 };
 
@@ -266,8 +274,8 @@ static SpeexSubmode nb_submode6 = {
    pitch_unquant_3tap,
    &ltp_params_nb,
    /*Innovation quantization*/
-   split_cb_search_nogain,
-   split_cb_nogain_unquant,
+   split_cb_search_shape_sign,
+   split_cb_shape_sign_unquant,
    &split_cb_sb,
 
    0.68, 0.65, .1,
@@ -288,11 +296,11 @@ static SpeexSubmode nb_submode7 = {
    pitch_unquant_3tap,
    &ltp_params_nb,
    /*Innovation quantization*/
-   split_cb_search_nogain,
-   split_cb_nogain_unquant,
+   split_cb_search_shape_sign,
+   split_cb_shape_sign_unquant,
    &split_cb_nb,
 
-   0.65, 0.65, 0,
+   0.65, 0.65, -1,
    492
 };
 
@@ -312,10 +320,12 @@ static SpeexNBMode nb_mode = {
    0.0,    /*preemph*/
    {NULL, &nb_submode1, &nb_submode2, &nb_submode3, &nb_submode4, &nb_submode5, &nb_submode6, &nb_submode7,
    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
-   5
+   5,
+   {1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7}
 };
 
 
+/* Default mode for narrowband */
 SpeexMode speex_nb_mode = {
    &nb_mode,
    nb_mode_query,
@@ -331,6 +341,9 @@ SpeexMode speex_nb_mode = {
    &nb_encoder_ctl,
    &nb_decoder_ctl,
 };
+
+
+/* Wideband part */
 
 static SpeexSubmode wb_submode1 = {
    0,
@@ -349,7 +362,7 @@ static SpeexSubmode wb_submode1 = {
    NULL,
    NULL,
 
-   0, 0, -1,
+   .75, .75, -1,
    36
 };
 
@@ -367,11 +380,11 @@ static SpeexSubmode wb_submode2 = {
    NULL,
    NULL,
    /*Innovation quantization*/
-   split_cb_search_nogain,
-   split_cb_nogain_unquant,
+   split_cb_search_shape_sign,
+   split_cb_shape_sign_unquant,
    &split_cb_high_lbr,
 
-   0, 0, -1,
+   .85, .6, -1,
    112
 };
 
@@ -393,7 +406,7 @@ static SpeexSubmode wb_submode3 = {
    split_cb_shape_sign_unquant,
    &split_cb_high,
 
-   0, 0, -1,
+   .75, .7, -1,
    192
 };
 
@@ -414,7 +427,7 @@ static SpeexSubmode wb_submode4 = {
    split_cb_shape_sign_unquant,
    &split_cb_high,
 
-   0, 0, -1,
+   .75, .75, -1,
    352
 };
 
@@ -432,14 +445,18 @@ static SpeexSBMode sb_wb_mode = {
    1.0001, /*lpc_floor*/
    0.0,    /*preemph*/
    {NULL, &wb_submode1, &wb_submode2, &wb_submode3, &wb_submode4, NULL, NULL, NULL},
-   3
+   3,
+   {1, 1, 2, 3, 4, 5, 5, 6, 6, 7, 7},
+   {0, 1, 1, 1, 1, 1, 2, 2, 3, 3, 4},
+   vbr_hb_thresh,
+   5
 };
 
 
 SpeexMode speex_wb_mode = {
    &sb_wb_mode,
    wb_mode_query,
-   "full-rate wideband (sub-band CELP)",
+   "wideband (sub-band CELP)",
    1,
    4,
    &sb_encoder_init,
@@ -451,6 +468,50 @@ SpeexMode speex_wb_mode = {
    &sb_encoder_ctl,
    &sb_decoder_ctl,
 };
+
+
+
+/* "Ultra-wideband" mode stuff */
+
+
+
+/* Split-band "ultra-wideband" (32 kbps) CELP mode*/
+static SpeexSBMode sb_uwb_mode = {
+   &speex_wb_mode,
+   320,    /*frameSize*/
+   80,     /*subframeSize*/
+   8,     /*lpcSize*/
+   1280,    /*bufSize*/
+   .9,    /*gamma1*/
+   0.6,    /*gamma2*/
+   .002,   /*lag_factor*/
+   1.0001, /*lpc_floor*/
+   0.0,    /*preemph*/
+   {NULL, &wb_submode1, NULL, NULL, NULL, NULL, NULL, NULL},
+   1,
+   {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+   {0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+   vbr_uhb_thresh,
+   2
+};
+
+
+SpeexMode speex_uwb_mode = {
+   &sb_uwb_mode,
+   wb_mode_query,
+   "ultra-wideband (sub-band CELP)",
+   2,
+   4,
+   &sb_encoder_init,
+   &sb_encoder_destroy,
+   &sb_encode,
+   &sb_decoder_init,
+   &sb_decoder_destroy,
+   &sb_decode,
+   &sb_encoder_ctl,
+   &sb_decoder_ctl,
+};
+
 
 
 
@@ -469,9 +530,9 @@ void speex_encoder_destroy(void *state)
    (*((SpeexMode**)state))->enc_destroy(state);
 }
 
-void speex_encode(void *state, float *in, SpeexBits *bits)
+int speex_encode(void *state, float *in, SpeexBits *bits)
 {
-   (*((SpeexMode**)state))->enc(state, in, bits);
+   return (*((SpeexMode**)state))->enc(state, in, bits);
 }
 
 void speex_decoder_destroy(void *state)
@@ -499,7 +560,7 @@ void speex_decoder_ctl(void *state, int request, void *ptr)
 
 static void nb_mode_query(void *mode, int request, void *ptr)
 {
-   SpeexNBMode *m = mode;
+   SpeexNBMode *m = (SpeexNBMode*)mode;
    
    switch (request)
    {
@@ -517,7 +578,7 @@ static void nb_mode_query(void *mode, int request, void *ptr)
 
 static void wb_mode_query(void *mode, int request, void *ptr)
 {
-   SpeexSBMode *m = mode;
+   SpeexSBMode *m = (SpeexSBMode*)mode;
 
    switch (request)
    {

@@ -90,7 +90,7 @@ int main(int argc, char **argv)
       }
       speex_bits_reset(&bits);
       for (i=0;i<FRAME_SIZE;i++)
-         in[i]=input[i];
+         in[i]=(short)input[i];
       for (i=0;i<FRAME_SIZE;i++)
          bak2[i]=bak[i];
       fwrite(in, sizeof(short), FRAME_SIZE, fout);
@@ -99,6 +99,7 @@ int main(int argc, char **argv)
    fprintf (stderr, "Total encoded size: %d bits\n", bitCount);
    speex_encoder_destroy(st);
    speex_decoder_destroy(dec);
+   speex_bits_destroy(&bits);
    fclose(fin);
    fclose(fout);
    return 1;

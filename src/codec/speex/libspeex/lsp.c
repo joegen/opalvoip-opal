@@ -68,42 +68,32 @@ Modified by Jean-Marc Valin
 
 
 
-float cheb_poly_eva(float *coef,float x,int m,float *stack)
+static float cheb_poly_eva(float *coef,float x,int m,void *stack)
 /*  float coef[]  	coefficients of the polynomial to be evaluated 	*/
 /*  float x   		the point where polynomial is to be evaluated 	*/
 /*  int m 		order of the polynomial 			*/
-
-
 {
     int i;
-    float *T,*t,*u,*v,sum;
+    float *T,sum;
+    int m2=m>>1;
 
     /* Allocate memory for chebyshev series formulation */
+    T=PUSH(stack, m2+1, float);
 
-    T=PUSH(stack, m/2+1);
-
-    /* Initialise pointers */
-
-    t = T;                          	/* T[i-2] 			*/
-    *t++ = 1.0;
-    u = t--;                        	/* T[i-1] 			*/
-    *u++ = x;
-    v = u--;                        	/* T[i] 			*/
+    /* Initialise values */
+    T[0]=1;
+    T[1]=x;
 
     /* Evaluate chebyshev series formulation using iterative approach 	*/
-
-    for(i=2;i<=m/2;i++)
-	*v++ = (2*x)*(*u++) - *t++;  	/* T[i] = 2*x*T[i-1] - T[i-2]	*/
-
-    sum=0.0;                        	/* initialise sum to zero 	*/
-    t = T;                          	/* reset pointer 		*/
-
     /* Evaluate polynomial and return value also free memory space */
-
-    for(i=0;i<=m/2;i++)
-	sum+=coef[(m/2)-i]**t++;
-
-    POP(stack);
+    sum = coef[m2] + coef[m2-1]*x;
+    x *= 2;
+    for(i=2;i<=m2;i++)
+    {
+       T[i] = x*T[i-1] - T[i-2];
+       sum += coef[m2-i] * T[i];
+    }
+    
     return sum;
 }
 
@@ -121,7 +111,7 @@ float cheb_poly_eva(float *coef,float x,int m,float *stack)
 \*---------------------------------------------------------------------------*/
 
 
-int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta, float *stack)
+int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta, void *stack)
 /*  float *a 		     	lpc coefficients			*/
 /*  int lpcrdr			order of LPC coefficients (10) 		*/
 /*  float *freq 	      	LSP frequencies in the x domain       	*/
@@ -149,8 +139,8 @@ int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta, float *stack
 
 
     /* Allocate memory space for polynomials */
-    Q = PUSH(stack, (m+1));
-    P = PUSH(stack, (m+1));
+    Q = PUSH(stack, (m+1), float);
+    P = PUSH(stack, (m+1), float);
 
     /* determine P'(z)'s and Q'(z)'s coefficients where
       P'(z) = P(z)/(1 + z^(-1)) and Q'(z) = Q(z)/(1-z^(-1)) */
@@ -240,8 +230,6 @@ int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta, float *stack
 	    }
 	}
     }
-    POP(stack);
-    POP(stack);
     return(roots);
 }
 
@@ -259,7 +247,7 @@ int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta, float *stack
 \*---------------------------------------------------------------------------*/
 
 
-void lsp_to_lpc(float *freq,float *ak,int lpcrdr, float *stack)
+void lsp_to_lpc(float *freq,float *ak,int lpcrdr, void *stack)
 /*  float *freq 	array of LSP frequencies in the x domain	*/
 /*  float *ak 		array of LPC coefficients 			*/
 /*  int lpcrdr  	order of LPC coefficients 			*/
@@ -272,7 +260,7 @@ void lsp_to_lpc(float *freq,float *ak,int lpcrdr, float *stack)
     float *pw,*n1,*n2,*n3,*n4=NULL;
     int m = lpcrdr/2;
 
-    Wp = PUSH(stack, 4*m+2);
+    Wp = PUSH(stack, 4*m+2, float);
     pw = Wp;
 
     /* initialise contents of array */
@@ -292,13 +280,14 @@ void lsp_to_lpc(float *freq,float *ak,int lpcrdr, float *stack)
       LSP coefficient */
 
     for(j=0;j<=lpcrdr;j++){
-	for(i=0;i<m;i++){
+       int i2=0;
+	for(i=0;i<m;i++,i2+=2){
 	    n1 = pw+(i*4);
 	    n2 = n1 + 1;
 	    n3 = n2 + 1;
 	    n4 = n3 + 1;
-	    xout1 = xin1 - 2*(freq[2*i]) * *n1 + *n2;
-	    xout2 = xin2 - 2*(freq[2*i+1]) * *n3 + *n4;
+	    xout1 = xin1 - 2*(freq[i2]) * *n1 + *n2;
+	    xout2 = xin2 - 2*(freq[i2+1]) * *n3 + *n4;
 	    *n2 = *n1;
 	    *n4 = *n3;
 	    *n1 = xin1;
@@ -315,7 +304,7 @@ void lsp_to_lpc(float *freq,float *ak,int lpcrdr, float *stack)
 	xin1 = 0.0;
 	xin2 = 0.0;
     }
-    POP(stack);
+
 }
 
 /*Added by JMV
@@ -326,7 +315,7 @@ void lsp_enforce_margin(float *lsp, int len, float margin)
    if (lsp[0]<margin)
       lsp[0]=margin;
    if (lsp[len-1]>M_PI-margin)
-      lsp[len]=margin;
+      lsp[len-1]=M_PI-margin;
    for (i=1;i<len-1;i++)
    {
       if (lsp[i]<lsp[i-1]+margin)

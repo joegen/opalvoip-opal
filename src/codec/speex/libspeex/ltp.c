@@ -37,7 +37,9 @@
 #include "filters.h"
 #include "speex_bits.h"
 
-
+#ifdef _USE_SSE
+#include "ltp_sse.h"
+#else
 static float inner_prod(float *x, float *y, int len)
 {
    int i;
@@ -52,6 +54,7 @@ static float inner_prod(float *x, float *y, int len)
    }
    return sum1+sum2+sum3+sum4;
 }
+#endif
 
 /*Original, non-optimized version*/
 /*static float inner_prod(float *x, float *y, int len)
@@ -65,43 +68,57 @@ static float inner_prod(float *x, float *y, int len)
 */
 
 
-void open_loop_nbest_pitch(float *sw, int start, int end, int len, int *pitch, float *gain, int N, float *stack)
+void open_loop_nbest_pitch(float *sw, int start, int end, int len, int *pitch, float *gain, int N, void *stack)
 {
    int i,j,k;
-   float corr=0;
-   float energy;
-   float score=0, *best_score;
+   /*float corr=0;*/
+   /*float energy;*/
+   float *best_score;
    float e0;
+   float *corr, *energy, *score;
 
-   best_score = PUSH(stack,N);
+   best_score = PUSH(stack,N, float);
+   corr = PUSH(stack,end-start+1, float);
+   energy = PUSH(stack,end-start+2, float);
+   score = PUSH(stack,end-start+1, float);
    for (i=0;i<N;i++)
    {
         best_score[i]=-1;
         gain[i]=0;
    }
-   energy=inner_prod(sw-start, sw-start, len);
+   energy[0]=inner_prod(sw-start, sw-start, len);
    e0=inner_prod(sw, sw, len);
    for (i=start;i<=end;i++)
    {
-      if (0&&score < .3*best_score[N-1])
-         score = .9*best_score[N-1];
-      else
-      {
-         corr=inner_prod(sw, sw-i, len);
-         score=corr*corr/(energy+1);
-      }
-      if (score>best_score[N-1])
+      /* Update energy for next pitch*/
+      energy[i-start+1] = energy[i-start] + sw[-i-1]*sw[-i-1] - sw[-i+len-1]*sw[-i+len-1];
+   }
+   for (i=start;i<=end;i++)
+   {
+      corr[i-start]=0;
+      score[i-start]=0;
+   }
+
+   for (i=start;i<=end;i++)
+   {
+      /* Compute correlation*/
+      corr[i-start]=inner_prod(sw, sw-i, len);
+      score[i-start]=corr[i-start]*corr[i-start]/(energy[i-start]+1);
+   }
+   for (i=start;i<=end;i++)
+   {
+      if (score[i-start]>best_score[N-1])
       {
          float g1, g;
-         g1 = corr/(energy+10);
-         g = sqrt(g1*corr/(e0+10));
+         g1 = corr[i-start]/(energy[i-start]+10);
+         g = sqrt(g1*corr[i-start]/(e0+10));
          if (g>g1)
             g=g1;
          if (g<0)
             g=0;
          for (j=0;j<N;j++)
          {
-            if (score > best_score[j])
+            if (score[i-start] > best_score[j])
             {
                for (k=N-1;k>j;k--)
                {
@@ -109,18 +126,15 @@ void open_loop_nbest_pitch(float *sw, int start, int end, int len, int *pitch, f
                   pitch[k]=pitch[k-1];
                   gain[k] = gain[k-1];
                }
-               best_score[j]=score;
+               best_score[j]=score[i-start];
                pitch[j]=i;
                gain[j]=g;
                break;
             }
          }
       }
-      /* Update energy for next pitch*/
-      energy+=sw[-i-1]*sw[-i-1] - sw[-i+len-1]*sw[-i+len-1];
    }
 
-   POP(stack);
 }
 
 
@@ -138,8 +152,9 @@ int   pitch,                    /* Pitch value */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
-float *stack,
+void *stack,
 float *exc2,
+float *r,
 int  *cdbk_index
 )
 {
@@ -153,12 +168,13 @@ int  *cdbk_index
    int   gain_cdbk_size;
    float *gain_cdbk;
    float err1,err2;
+
    ltp_params *params;
    params = (ltp_params*) par;
    gain_cdbk=params->gain_cdbk;
    gain_cdbk_size=1<<params->gain_bits;
-   tmp = PUSH(stack, 3*nsf);
-   tmp2 = PUSH(stack, 3*nsf);
+   tmp = PUSH(stack, 3*nsf, float);
+   tmp2 = PUSH(stack, 3*nsf, float);
 
    x[0]=tmp;
    x[1]=tmp+nsf;
@@ -168,7 +184,7 @@ int  *cdbk_index
    e[1]=tmp2+nsf;
    e[2]=tmp2+2*nsf;
    
-   for (i=0;i<3;i++)
+   for (i=2;i>=0;i--)
    {
       int pp=pitch+1-i;
       for (j=0;j<nsf;j++)
@@ -181,13 +197,14 @@ int  *cdbk_index
             e[i][j]=0;
       }
 
-      if (p==10)
-      {
-         syn_percep_zero(e[i], ak, awk1, awk2, x[i], nsf, p);
-      } else {
-         residue_zero(e[i],awk1,x[i],nsf,p);
-         syn_filt_zero(x[i],ak,x[i],nsf,p);
-         syn_filt_zero(x[i],awk2,x[i],nsf,p);
+      if (i==2)
+         syn_percep_zero(e[i], ak, awk1, awk2, x[i], nsf, p, stack);
+      else {
+         for (j=0;j<nsf-1;j++)
+            x[i][j+1]=x[i+1][j];
+         x[i][0]=0;
+         for (j=0;j<nsf;j++)
+            x[i][j]+=e[i][0]*r[j];
       }
    }
 
@@ -220,6 +237,15 @@ int  *cdbk_index
          ptr = gain_cdbk+12*i;
          for (j=0;j<9;j++)
             sum+=C[j]*ptr[j+3];
+         if (0) {
+            float tot = fabs(ptr[1]);
+            if (ptr[0]>0)
+               tot+=ptr[0];
+            if (ptr[2]>0)
+               tot+=ptr[2];
+            if (tot>1)
+               continue;
+         }
          if (0) {
             float tot=ptr[0]+ptr[1]+ptr[2];
             if (tot < 1.1)
@@ -302,8 +328,6 @@ int  *cdbk_index
    printf ("prediction gain = %f\n",err1/(err2+1));
 #endif
 
-   POP(stack);
-   POP(stack);
    return err2;
 }
 
@@ -323,8 +347,9 @@ float pitch_coef,               /* Voicing (pitch) coefficient */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
-float *stack,
+void *stack,
 float *exc2,
+float *r,
 int complexity
 )
 {
@@ -333,22 +358,29 @@ int complexity
    float *best_exc;
    int best_pitch=0;
    float err, best_err=-1;
-   int N=3;
+   int N;
    ltp_params *params;
    int *nbest;
    float *gains;
 
    N=complexity;
-   if (N<1)
-      N=1;
    if (N>10)
       N=10;
 
-   nbest=(int*)PUSH(stack, N);
-   gains = PUSH(stack, N);
+   nbest=PUSH(stack, N, int);
+   gains = PUSH(stack, N, float);
    params = (ltp_params*) par;
+
+   if (N==0 || end<start)
+   {
+      speex_bits_pack(bits, 0, params->pitch_bits);
+      speex_bits_pack(bits, 0, params->gain_bits);
+      for (i=0;i<nsf;i++)
+         exc[i]=0;
+      return start;
+   }
    
-   best_exc=PUSH(stack,nsf);
+   best_exc=PUSH(stack,nsf, float);
    
    if (N>end-start+1)
       N=end-start+1;
@@ -359,7 +391,7 @@ int complexity
       for (j=0;j<nsf;j++)
          exc[j]=0;
       err=pitch_gain_search_3tap(target, ak, awk1, awk2, exc, par, pitch, p, nsf,
-                                 bits, stack, exc2, &cdbk_index);
+                                 bits, stack, exc2, r, &cdbk_index);
       if (err<best_err || best_err<0)
       {
          for (j=0;j<nsf;j++)
@@ -377,12 +409,8 @@ int complexity
    for (i=0;i<nsf;i++)
       exc[i]=best_exc[i];
 
-   POP(stack);
-   POP(stack);
-   POP(stack);
    return pitch;
 }
-
 
 void pitch_unquant_3tap(
 float exc[],                    /* Excitation */
@@ -394,8 +422,10 @@ int   nsf,                      /* Number of samples in subframe */
 int *pitch_val,
 float *gain_val,
 SpeexBits *bits,
-float *stack,
-int lost)
+void *stack,
+int count_lost,
+int subframe_offset,
+float last_pitch_gain)
 {
    int i;
    int pitch;
@@ -413,16 +443,44 @@ int lost)
    gain[0] = gain_cdbk[gain_index*12];
    gain[1] = gain_cdbk[gain_index*12+1];
    gain[2] = gain_cdbk[gain_index*12+2];
-   if (lost)
+
+   if (count_lost && pitch > subframe_offset)
    {
       float gain_sum;
+
+      if (1) {
+	 float tmp = count_lost < 4 ? last_pitch_gain : 0.4 * last_pitch_gain;
+         if (tmp>.95)
+            tmp=.95;
+         gain_sum = fabs(gain[1]);
+         if (gain[0]>0)
+            gain_sum += gain[0];
+         else
+            gain_sum -= .5*gain[0];
+         if (gain[2]>0)
+            gain_sum += gain[2];
+         else
+            gain_sum -= .5*gain[0];
+	 if (gain_sum > tmp) {
+	    float fact = tmp/gain_sum;
+	    for (i=0;i<3;i++)
+	       gain[i]*=fact;
+
+#ifdef DEBUG
+	 printf ("recovered unquantized pitch: %d, gain: [%f %f %f] (fact=%f)\n", pitch, gain[0], gain[1], gain[2], fact);
+#endif
+	 }
+
+      }
+
+      if (0) {
       gain_sum = fabs(gain[0])+fabs(gain[1])+fabs(gain[2]);
-      if (gain_sum>.95)
-      {
+	 if (gain_sum>.95) {
          float fact = .95/gain_sum;
          for (i=0;i<3;i++)
             gain[i]*=fact;
       }
+   }
    }
 
    *pitch_val = pitch;
@@ -434,13 +492,11 @@ int lost)
 #ifdef DEBUG
    printf ("unquantized pitch: %d %f %f %f\n", pitch, gain[0], gain[1], gain[2]);
 #endif
-   for(i=0;i<nsf;i++)
-      exc[i]=0;
 
    {
       float *e[3];
       float *tmp2;
-      tmp2=PUSH(stack, 3*nsf);
+      tmp2=PUSH(stack, 3*nsf, float);
       e[0]=tmp2;
       e[1]=tmp2+nsf;
       e[2]=tmp2+2*nsf;
@@ -449,18 +505,36 @@ int lost)
       {
          int j;
          int pp=pitch+1-i;
+#if 0
          for (j=0;j<nsf;j++)
          {
             if (j-pp<0)
                e[i][j]=exc[j-pp];
-            else
+            else if (j-pp-pitch<0)
                e[i][j]=exc[j-pp-pitch];
+            else
+               e[i][j]=0;
          }
+#else
+         {
+            int tmp1, tmp2;
+            tmp1=nsf;
+            if (tmp1>pp)
+               tmp1=pp;
+            for (j=0;j<tmp1;j++)
+               e[i][j]=exc[j-pp];
+            tmp2=nsf;
+            if (tmp2>pp+pitch)
+               tmp2=pp+pitch;
+            for (j=tmp1;j<tmp2;j++)
+               e[i][j]=exc[j-pp-pitch];
+            for (j=tmp2;j<nsf;j++)
+               e[i][j]=0;
+         }
+#endif
       }
       for (i=0;i<nsf;i++)
-         exc[i]=gain[0]*e[2][i]+gain[1]*e[1][i]+gain[2]*e[0][i];
-      
-      POP(stack);
+           exc[i]=gain[0]*e[2][i]+gain[1]*e[1][i]+gain[2]*e[0][i];
    }
 }
 
@@ -480,8 +554,9 @@ float pitch_coef,               /* Voicing (pitch) coefficient */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
-float *stack,
+void *stack,
 float *exc2,
+float *r,
 int complexity
 )
 {
@@ -506,8 +581,10 @@ int   nsf,                      /* Number of samples in subframe */
 int *pitch_val,
 float *gain_val,
 SpeexBits *bits,
-float *stack,
-int lost)
+void *stack,
+int count_lost,
+int subframe_offset,
+float last_pitch_gain)
 {
    int i;
    /*pitch_coef=.9;*/

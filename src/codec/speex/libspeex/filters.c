@@ -32,21 +32,8 @@
 
 #include "filters.h"
 #include "stack_alloc.h"
-#include <stdio.h>
 #include <math.h>
 
-#define min(a,b) ((a) < (b) ? (a) : (b))
-
-#define MAX_ORD 20
-
-void print_vec(float *vec, int len, char *name)
-{
-   int i;
-   printf ("%s ", name);
-   for (i=0;i<len;i++)
-      printf (" %f", vec[i]);
-   printf ("\n");
-}
 
 void bw_lpc(float gamma, float *lpc_in, float *lpc_out, int order)
 {
@@ -59,125 +46,41 @@ void bw_lpc(float gamma, float *lpc_in, float *lpc_out, int order)
    }
 }
 
-void enh_lpc(float *ak, int order, float *num, float *den, float k1, float k2, float *stack)
-{
-   int i;
-   float *n2, *d2;
-   float k3, r;
-   n2=PUSH(stack,order+1);
-   d2=PUSH(stack,order+1);
-   for (i=0;i<=order;i++)
-   {
-      /*FIXME: Big kludge here!!!*/
-      den[i]=0*ak[i];
-      num[i]=0;
-   }
-   den[0]=1;
-   for (i=order+1;i<=(order<<1);i++)
-      den[i]=num[i]=0;
-   r=.9;
-   k3=(1-(1-r*k1)/(1-r*k2))/r;
-   bw_lpc(k1, ak, d2, order);
-   num[0]=1;
-   bw_lpc(k2, ak, num, order);
-   bw_lpc(k3, ak, n2, order);
-   residue_zero(num,n2,num,1+(order<<1),order);
-   residue_zero(den,d2,den,1+(order<<1),order);
-   POP(stack);
-   POP(stack);
-}
-
-void syn_filt(float *x, float *a, float *y, int N, int ord)
-{
-   int i,j;
-   for (i=0;i<N;i++)
-   {
-      y[i]=x[i];
-      for (j=1;j<=ord;j++)
-         y[i] -= a[j]*y[i-j];
-   }
-}
-
-void syn_filt_zero(float *x, float *a, float *y, int N, int ord)
-{
-   int i,j;
-   for (i=0;i<N;i++)
-   {
-      y[i]=x[i];
-      for (j=1;j<=min(ord,i);j++)
-         y[i] -= a[j]*y[i-j];
-   }
-}
-
-void syn_filt_mem(float *x, float *a, float *y, int N, int ord, float *mem)
-{
-   int i,j;
-   for (i=0;i<N;i++)
-   {
-      y[i]=x[i];
-      for (j=1;j<=min(ord,i);j++)
-         y[i] -= a[j]*y[i-j];
-      for (j=i+1;j<=ord;j++)
-         y[i] -= a[j]*mem[j-i-1];
-   }
-   for (i=0;i<ord;i++)
-      mem[i]=y[N-i-1];
-}
-
-
-void residue(float *x, float *a, float *y, int N, int ord)
-{
-   int i,j;
-   for (i=N-1;i>=0;i--)
-   {
-      y[i]=x[i];
-      for (j=1;j<=ord;j++)
-         y[i] += a[j]*x[i-j];
-   }
-}
-
-void residue_zero(float *x, float *a, float *y, int N, int ord)
-{
-   int i,j;
-   for (i=N-1;i>=0;i--)
-   {
-      y[i]=x[i];
-      for (j=1;j<=min(ord,i);j++)
-         y[i] += a[j]*x[i-j];
-   }
-}
-
-void residue_mem(float *x, float *a, float *y, int N, int ord, float *mem)
-{
-   int i,j;
-   for (i=N-1;i>=0;i--)
-   {
-      y[i]=x[i];
-      for (j=1;j<=min(ord,i);j++)
-         y[i] += a[j]*x[i-j];
-      for (j=i+1;j<=ord;j++)
-         y[i] += a[j]*mem[j-i-1];
-   }
-   for (i=0;i<ord;i++)
-      mem[i]=x[N-i-1];
-}
-
-
+#ifdef _USE_SSE
+#include "filters_sse.h"
+#else
 void filter_mem2(float *x, float *num, float *den, float *y, int N, int ord, float *mem)
 {
    int i,j;
-   float xi;
+   float xi,yi;
    for (i=0;i<N;i++)
    {
       xi=x[i];
       y[i] = num[0]*xi + mem[0];
+      yi=y[i];
       for (j=0;j<ord-1;j++)
       {
-         mem[j] = mem[j+1] + num[j+1]*xi - den[j+1]*y[i];
+         mem[j] = mem[j+1] + num[j+1]*xi - den[j+1]*yi;
       }
-      mem[ord-1] = num[ord]*xi - den[ord]*y[i];
+      mem[ord-1] = num[ord]*xi - den[ord]*yi;
    }
 }
+
+
+void iir_mem2(float *x, float *den, float *y, int N, int ord, float *mem)
+{
+   int i,j;
+   for (i=0;i<N;i++)
+   {
+      y[i] = x[i] + mem[0];
+      for (j=0;j<ord-1;j++)
+      {
+         mem[j] = mem[j+1] - den[j+1]*y[i];
+      }
+      mem[ord-1] = - den[ord]*y[i];
+   }
+}
+#endif
 
 void fir_mem2(float *x, float *num, float *y, int N, int ord, float *mem)
 {
@@ -195,144 +98,125 @@ void fir_mem2(float *x, float *num, float *y, int N, int ord, float *mem)
    }
 }
 
-void iir_mem2(float *x, float *den, float *y, int N, int ord, float *mem)
+void syn_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, int N, int ord, void *stack)
 {
-   int i,j;
-   for (i=0;i<N;i++)
-   {
-      y[i] = x[i] + mem[0];
-      for (j=0;j<ord-1;j++)
-      {
-         mem[j] = mem[j+1] - den[j+1]*y[i];
-      }
-      mem[ord-1] = - den[ord]*y[i];
-   }
-}
-
-
-void pole_zero_mem(float *x, float *num, float *den, float *y, int N, int ord, float *mem, float *stack)
-{
-   float *tmp=PUSH(stack, N);
-   syn_filt_mem(x, den, tmp, N, ord, mem);
-   residue_mem(tmp, num, y, N, ord, mem+ord);
-   POP(stack);
-}
-
-
-/*
-void fir_mem(float *x, float *a, float *y, int N, int M, float *mem)
-{
-   int i,j;
-   for (i=0;i<N;i++)
-   {
-      y[i]=0;
-      for (j=0;j<=min(M-1,i);j++)
-         y[i] += a[j]*x[i-j];
-      for (j=i+1;j<=M-1;j++)
-         y[i] += a[j]*mem[j-i-1];
-   }
-   for (i=0;i<M-1;i++)
-      mem[i]=x[N-i-1];
-}
-*/
-
-void syn_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, int N, int ord)
-{
-   int i,j;
-   float long_filt[21];
-   float iir[20];
-   float fir[10];
-   float x[40];
-   int ord2=ord<<1;
-   for (i=0;i<=ord;i++)
-      long_filt[i]=ak[i];
-   for (i=ord+1;i<=ord2;i++)
-      long_filt[i]=0;
-   residue_zero(long_filt,awk2,long_filt,1+(ord<<1),ord);
-
-   for (i=0;i<N;i++)
-      x[i]=xx[i];
-   for (i=0;i<ord2;i++)
-      iir[i]=long_filt[ord2-i];
+   int i;
+   float *mem = PUSH(stack,ord, float);
    for (i=0;i<ord;i++)
-      fir[i]=awk1[ord-i];
-
-   for (i=0;i<ord2;i++)
-   {
-      y[i]=x[i];
-      for (j=1;j<=min(ord2,i);j++)
-         y[i] -= long_filt[j]*y[i-j];
-      for (j=1;j<=min(ord,i);j++)
-         y[i] += awk1[j]*x[i-j];
-   }
-#if 0
-   for (i=ord2;i<N;i++)
-   {
-      float *yptr=y+i-ord2;
-      float *xptr=x+i-ord;
-      y[i]=x[i];
-      for (j=0;j<ord2;j++)
-         y[i]-= iir[j]*yptr[j];
-      for (j=0;j<ord;j++)
-         y[i]+= fir[j]*xptr[j];
-   }
-#else
-   for (i=ord2;i<N;i++)
-   {
-      float *f, *ptr;
-      float sum1=x[i], sum2=0;
-      f=iir;
-      ptr=y+i-ord2;
-      for (j=0;j<ord2;j+=2)
-      {
-         sum1-= f[0]*ptr[0];
-         sum2-= f[1]*ptr[1];
-         f+=2;
-         ptr+=2;
-      }
-      f=fir;
-      ptr=x+i-ord;
-      for (j=0;j<ord;j+=2)
-      {
-         sum1+= f[0]*ptr[0];
-         sum2+= f[1]*ptr[1];
-         f+=2;
-         ptr+=2;
-      }
-      y[i]=sum1+sum2;
-   }
-#endif
+      mem[i]=0;
+   filter_mem2(xx, awk1, ak, y, N, ord, mem);
+   for (i=0;i<ord;i++)
+     mem[i]=0;
+   iir_mem2(y, awk2, y, N, ord, mem);
 }
 
-#if 1
-#define MAX_FILTER 100
-#define MAX_SIGNAL 1000
-void fir_mem(float *xx, float *aa, float *y, int N, int M, float *mem)
+void residue_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, int N, int ord, void *stack)
 {
-   int i,j;
-   float a[MAX_FILTER];
-   float x[MAX_SIGNAL];
+   int i;
+   float *mem = PUSH(stack,ord, float);
+   for (i=0;i<ord;i++)
+      mem[i]=0;
+   filter_mem2(xx, ak, awk1, y, N, ord, mem);
+   for (i=0;i<ord;i++)
+     mem[i]=0;
+   fir_mem2(y, awk2, y, N, ord, mem);
+}
+
+
+void qmf_decomp(float *xx, float *aa, float *y1, float *y2, int N, int M, float *mem, void *stack)
+{
+   int i,j,k,M2;
+   float *a;
+   float *x;
+   float *x2;
+   
+   a = PUSH(stack, M, float);
+   x = PUSH(stack, N+M-1, float);
+   x2=x+M-1;
+   M2=M>>1;
    for (i=0;i<M;i++)
       a[M-i-1]=aa[i];
    for (i=0;i<M-1;i++)
       x[i]=mem[M-i-2];
    for (i=0;i<N;i++)
       x[i+M-1]=xx[i];
-   for (i=0;i<N;i++)
+   for (i=0,k=0;i<N;i+=2,k++)
    {
-      y[i]=0;
-      for (j=0;j<M;j++)
-         y[i]+=a[j]*x[i+j];
+      y1[k]=0;
+      y2[k]=0;
+      for (j=0;j<M2;j++)
+      {
+         y1[k]+=a[j]*(x[i+j]+x2[i-j]);
+         y2[k]-=a[j]*(x[i+j]-x2[i-j]);
+         j++;
+         y1[k]+=a[j]*(x[i+j]+x2[i-j]);
+         y2[k]+=a[j]*(x[i+j]-x2[i-j]);
+      }
    }
    for (i=0;i<M-1;i++)
      mem[i]=xx[N-i-1];
 }
-#else
-void fir_mem(float *xx, float *aa, float *y, int N, int M, float *mem)
+
+/* By segher */
+void fir_mem_up(float *x, float *a, float *y, int N, int M, float *mem, void *stack)
+   /* assumptions:
+      all odd x[i] are zero -- well, actually they are left out of the array now
+      N and M are multiples of 4 */
 {
-   fir_mem2(xx, aa, y, N, M-1, mem);
+   int i, j;
+   float *xx=PUSH(stack, M+N-1, float);
+
+   for (i = 0; i < N/2; i++)
+      xx[2*i] = x[N/2-1-i];
+   for (i = 0; i < M - 1; i += 2)
+      xx[N+i] = mem[i+1];
+
+   for (i = 0; i < N; i += 4) {
+      float y0, y1, y2, y3;
+      float x0;
+
+      y0 = y1 = y2 = y3 = 0.f;
+      x0 = xx[N-4-i];
+
+      for (j = 0; j < M; j += 4) {
+         float x1;
+         float a0, a1;
+
+         a0 = a[j];
+         a1 = a[j+1];
+         x1 = xx[N-2+j-i];
+
+         y0 += a0 * x1;
+         y1 += a1 * x1;
+         y2 += a0 * x0;
+         y3 += a1 * x0;
+
+         a0 = a[j+2];
+         a1 = a[j+3];
+         x0 = xx[N+j-i];
+
+         y0 += a0 * x0;
+         y1 += a1 * x0;
+         y2 += a0 * x1;
+         y3 += a1 * x1;
+      }
+      y[i] = y0;
+      y[i+1] = y1;
+      y[i+2] = y2;
+      y[i+3] = y3;
+   }
+
+   for (i = 0; i < M - 1; i += 2)
+      mem[i+1] = xx[i];
 }
-#endif
+
+
+void comp_filter_mem_init (CombFilterMem *mem)
+{
+   mem->last_pitch=0;
+   mem->last_pitch_gain[0]=mem->last_pitch_gain[1]=mem->last_pitch_gain[2]=0;
+   mem->smooth_gain=1;
+}
 
 void comb_filter(
 float *exc,          /*decoded excitation*/
@@ -342,33 +226,67 @@ int p,               /*LPC order*/
 int nsf,             /*sub-frame size*/
 int pitch,           /*pitch period*/
 float *pitch_gain,   /*pitch gain (3-tap)*/
-float  comb_gain     /*gain of comb filter*/
+float  comb_gain,    /*gain of comb filter*/
+CombFilterMem *mem
 )
 {
    int i;
    float exc_energy=0, new_exc_energy=0;
    float gain;
-
+   float step;
+   float fact;
    /*Compute excitation energy prior to enhancement*/
    for (i=0;i<nsf;i++)
       exc_energy+=exc[i]*exc[i];
 
+   /*Some gain adjustment is pitch is too high or if unvoiced*/
+   {
+      float g=0;
+      g = .5*fabs(pitch_gain[0]+pitch_gain[1]+pitch_gain[2] +
+      mem->last_pitch_gain[0] + mem->last_pitch_gain[1] + mem->last_pitch_gain[2]);
+      if (g>1.3)
+         comb_gain*=1.3/g;
+      if (g<.5)
+         comb_gain*=2*g;
+   }
+   step = 1.0/nsf;
+   fact=0;
    /*Apply pitch comb-filter (filter out noise between pitch harmonics)*/
    for (i=0;i<nsf;i++)
    {
-      new_exc[i] = exc[i] + comb_gain * (
+      fact += step;
+
+      new_exc[i] = exc[i] + comb_gain * fact * (
                                          pitch_gain[0]*exc[i-pitch+1] +
                                          pitch_gain[1]*exc[i-pitch] +
                                          pitch_gain[2]*exc[i-pitch-1]
+                                         )
+      + comb_gain * (1-fact) * (
+                                         mem->last_pitch_gain[0]*exc[i-mem->last_pitch+1] +
+                                         mem->last_pitch_gain[1]*exc[i-mem->last_pitch] +
+                                         mem->last_pitch_gain[2]*exc[i-mem->last_pitch-1]
                                          );
    }
-   
+
+   mem->last_pitch_gain[0] = pitch_gain[0];
+   mem->last_pitch_gain[1] = pitch_gain[1];
+   mem->last_pitch_gain[2] = pitch_gain[2];
+   mem->last_pitch = pitch;
+
    /*Gain after enhancement*/
    for (i=0;i<nsf;i++)
       new_exc_energy+=new_exc[i]*new_exc[i];
 
    /*Compute scaling factor and normalize energy*/
    gain = sqrt(exc_energy)/sqrt(.1+new_exc_energy);
+   if (gain < .5)
+      gain=.5;
+   if (gain>1)
+      gain=1;
+
    for (i=0;i<nsf;i++)
-      new_exc[i] *= gain;
+   {
+      mem->smooth_gain = .96*mem->smooth_gain + .04*gain;
+      new_exc[i] *= mem->smooth_gain;
+   }
 }
