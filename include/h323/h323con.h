@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2029  2004/06/04 06:54:17  csoutheren
+ * Revision 1.2030  2004/08/14 07:56:28  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.28  2004/06/04 06:54:17  csoutheren
  * Migrated updates from OpenH323 1.14.1
  *
  * Revision 2.27  2004/05/09 13:12:37  rjongbloed
@@ -468,14 +471,6 @@ class H323Connection : public OpalConnection
 
   /**@name Overrides from OpalConnection */
   //@{
-    /**Set the call clearance reason.
-       An application should have no cause to use this function. It is present
-       for the H323EndPoint::ClearCall() function to set the clearance reason.
-      */
-    virtual void SetCallEndReason(
-      CallEndReason reason        /// Reason for clearance of connection.
-    );
-
     /**Start an outgoing connection.
        This function will initiate the connection to the remote entity, for
        example in H.323 it sends a SETUP, in SIP it sends an INVITE etc.
@@ -518,10 +513,6 @@ class H323Connection : public OpalConnection
        that function being called. For example if SetUpConnection() was used
        but the call never completed.
 
-       The return value indicates if the connection object is to be deleted. A
-       value of FALSE can be returned and it then someone elses responsibility
-       to free the memory used.
-
        Classes that override this function should make sure they call the
        ancestor version for correct operation.
 
@@ -530,7 +521,7 @@ class H323Connection : public OpalConnection
 
        The default behaviour calls CleanUpOnCallEnd() then calls the ancestor.
       */
-    virtual BOOL OnReleased();
+    virtual void OnReleased();
 
     /**Get the destination address of an incoming connection.
        This will, for example, collect a phone number from a POTS line, or
@@ -2245,7 +2236,6 @@ class H323Connection : public OpalConnection
     PString    t38ModeChangeCapabilities;
     PSyncPoint digitsWaitFlag;
     BOOL       endSessionNeeded;
-    BOOL       endSessionSent;
     PSyncPoint endSessionReceived;
     PTimer     enforcedDurationLimit;
 
