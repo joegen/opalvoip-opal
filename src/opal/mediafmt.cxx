@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2007  2001/10/05 00:22:14  robertj
+ * Revision 1.2008  2001/11/15 06:55:26  robertj
+ * Fixed Reorder() function so reorders EVERY format that matches wildcard.
+ *
+ * Revision 2.6  2001/10/05 00:22:14  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.5  2001/10/04 00:43:57  robertj
@@ -368,48 +371,46 @@ PINDEX OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt) const
 }
 
 
+static BOOL WildcardMatch(const PCaselessString & str, const PStringArray & wildcards)
+{
+  if (wildcards.GetSize() == 1)
+    return str == wildcards[0];
+
+  PINDEX i;
+  PINDEX last = 0;
+  for (i = 0; i < wildcards.GetSize(); i++) {
+    PString wildcard = wildcards[i];
+
+    PINDEX next;
+    if (wildcard.IsEmpty())
+      next = last;
+    else {
+      next = str.Find(wildcard, last);
+      if (next == P_MAX_INDEX)
+        return FALSE;
+    }
+
+    // Check for having * at beginning of search string
+    if (i == 0 && next != 0 && !wildcard)
+      return FALSE;
+
+    last = next + wildcard.GetLength();
+
+    // Check for having * at end of search string
+    if (i == wildcards.GetSize()-1 && !wildcard && last != str.GetLength())
+      return FALSE;
+  }
+
+  return TRUE;
+}
+
+
 PINDEX OpalMediaFormatList::FindFormat(const PString & search) const
 {
-  PINDEX idx;
   PStringArray wildcards = search.Tokenise('*', TRUE);
-  if (wildcards.GetSize() == 1) {
-    for (idx = 0; idx < GetSize(); idx++) {
-      if ((*this)[idx] == search)
-        return idx;
-    }
-  }
-  else {
-    for (idx = 0; idx < GetSize(); idx++) {
-      PCaselessString str = (*this)[idx];
-
-      PINDEX i;
-      PINDEX last = 0;
-      for (i = 0; i < wildcards.GetSize(); i++) {
-        PString wildcard = wildcards[i];
-
-        PINDEX next;
-        if (wildcard.IsEmpty())
-          next = last;
-        else {
-          next = str.Find(wildcard, last);
-          if (next == P_MAX_INDEX)
-            break;
-        }
-
-        // Check for having * at beginning of search string
-        if (i == 0 && next != 0 && !wildcard)
-          break;
-
-        last = next + wildcard.GetLength();
-
-        // Check for having * at end of search string
-        if (i == wildcards.GetSize()-1 && !wildcard && last != str.GetLength())
-          break;
-      }
-
-      if (i >= wildcards.GetSize())
-        return idx;
-    }
+  for (PINDEX idx = 0; idx < GetSize(); idx++) {
+    if (WildcardMatch((*this)[idx], wildcards))
+      return idx;
   }
 
   return P_MAX_INDEX;
@@ -419,12 +420,17 @@ PINDEX OpalMediaFormatList::FindFormat(const PString & search) const
 void OpalMediaFormatList::Reorder(const PStringArray & order)
 {
   PINDEX nextPos = 0;
-  for (PINDEX i =0; i < order.GetSize(); i++) {
-    PINDEX findPos = FindFormat(order[i]);
-    if (findPos != P_MAX_INDEX) {
-      if (nextPos != findPos)
-        OpalMediaFormatBaseList::InsertAt(nextPos, RemoveAt(findPos));
-      nextPos++;
+  for (PINDEX i = 0; i < order.GetSize(); i++) {
+    PStringArray wildcards = order[i].Tokenise('*', TRUE);
+
+    PINDEX findPos = 0;
+    while (findPos < GetSize()) {
+      if (WildcardMatch((*this)[findPos], wildcards)) {
+        if (findPos > nextPos)
+          OpalMediaFormatBaseList::InsertAt(nextPos, RemoveAt(findPos));
+        nextPos++;
+      }
+      findPos++;
     }
   }
 }
