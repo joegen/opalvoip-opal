@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: t120proto.cxx,v $
- * Revision 1.2002  2001/07/30 01:07:52  robertj
+ * Revision 1.2003  2001/08/01 05:05:49  robertj
+ * Major changes to H.323 capabilities, uses OpalMediaFormat for base name.
+ *
+ * Revision 2.1  2001/07/30 01:07:52  robertj
  * Post first check in fix ups.
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
@@ -49,6 +52,13 @@
 
 
 #define new PNEW
+
+
+OpalMediaFormat const OpalT120Protocol::MediaFormat("T.120",
+                                                    OpalMediaFormat::DefaultDataSessionID,
+                                                    RTP_DataFrame::MaxPayloadType,
+                                                    FALSE,   // No jitter for data
+                                                    825000); // 100's bits/sec
 
 
 /////////////////////////////////////////////////////////////////////////////

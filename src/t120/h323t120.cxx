@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t120.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2001/08/01 05:05:49  robertj
+ * Major changes to H.323 capabilities, uses OpalMediaFormat for base name.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.2  2001/07/18 02:27:24  robertj
@@ -53,6 +56,12 @@
 
 
 /////////////////////////////////////////////////////////////////////////////
+
+H323_T120Capability::H323_T120Capability()
+  : H323DataCapability(OpalT120Protocol::MediaFormat)
+{
+}
+
 
 PObject * H323_T120Capability::Clone() const
 {
