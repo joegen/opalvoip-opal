@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2027  2003/01/07 04:39:53  robertj
+ * Revision 1.2028  2003/01/07 06:01:07  robertj
+ * Fixed MSVC warnings.
+ *
+ * Revision 2.26  2003/01/07 04:39:53  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.25  2002/11/10 11:33:20  robertj
@@ -1005,7 +1008,7 @@ BOOL OpalTransportIP::SetLocalAddress(const OpalTransportAddress & newLocalAddre
     return newLocalAddress.GetIpAndPort(localAddress, localPort);
 
   PIPSocket::Address address;
-  WORD port;
+  WORD port = 0;
   if (!newLocalAddress.GetIpAndPort(address, port))
     return FALSE;
 
@@ -1433,7 +1436,7 @@ BOOL OpalTransportUDP::SetLocalAddress(const OpalTransportAddress & newLocalAddr
   for (PINDEX i = 0; i < connectSockets.GetSize(); i++) {
     PUDPSocket * socket = (PUDPSocket *)connectSockets.GetAt(i);
     PIPSocket::Address ip;
-    WORD port;
+    WORD port = 0;
     if (socket->GetLocalAddress(ip, port) && ip == localAddress && port == localPort) {
       writeChannel = &connectSockets[i];
       return TRUE;
