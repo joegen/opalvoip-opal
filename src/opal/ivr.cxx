@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.cxx,v $
- * Revision 1.2010  2004/07/17 09:45:58  rjongbloed
+ * Revision 1.2011  2004/08/14 07:56:39  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.9  2004/07/17 09:45:58  rjongbloed
  * Fixed issues with the propagation of the "established" phase of a call. Now
  *   calling an OnEstablished() chain like OnAlerting() and OnConnected() to
  *   finally arrive at OnEstablishedCall() on OpalManager
@@ -121,11 +124,13 @@ BOOL OpalIVREndPoint::MakeConnection(OpalCall & call,
   if (connection == NULL)
     return FALSE;
 
+  connectionsActive.SetAt(connection->GetToken(), connection);
+
   // If we are the A-party then need to initiate a call now in this thread and
   // go through the routing engine via OnIncomingConnection. If we are the
   // B-Party then SetUpConnection() gets called in the context of the A-party
   // thread.
-  if (&call.GetConnection(0) == connection)
+  if (call.GetConnection(0, PSafeReference) == connection)
     connection->InitiateCall();
 
   return TRUE;
@@ -207,7 +212,7 @@ OpalIVRConnection::~OpalIVRConnection()
 
 BOOL OpalIVRConnection::SetUpConnection()
 {
-  remotePartyName = ownerCall.GetConnection(0).GetRemotePartyName();
+  remotePartyName = ownerCall.GetOtherPartyConnection(*this)->GetRemotePartyName();
 
   PTRACE(3, "IVR\tSetUpConnection(" << remotePartyName << ')');
 
@@ -235,8 +240,14 @@ BOOL OpalIVRConnection::SetUpConnection()
 BOOL OpalIVRConnection::SetAlerting(const PString & calleeName, BOOL)
 {
   PTRACE(3, "IVR\tSetAlerting(" << calleeName << ')');
+
+  if (!LockReadWrite())
+    return FALSE;
+
   phase = AlertingPhase;
   remotePartyName = calleeName;
+  UnlockReadWrite();
+
   return TRUE;
 }
 
@@ -244,18 +255,27 @@ BOOL OpalIVRConnection::SetAlerting(const PString & calleeName, BOOL)
 BOOL OpalIVRConnection::SetConnected()
 {
   PTRACE(3, "IVR\tSetConnected()");
-  phase = ConnectedPhase;
 
-  if (!vxmlSession.Load(vxmlToLoad)) {
-    PTRACE(1, "IVR\tVXML session not loaded, aborting.");
-    Release(EndedByLocalUser);
-    return FALSE;
-  }
+  {
+    PSafeLockReadWrite safeLock(*this);
+    if (!safeLock.IsLocked())
+      return FALSE;
 
-  if (!mediaStreams.IsEmpty()) {
+    phase = ConnectedPhase;
+
+    if (!vxmlSession.Load(vxmlToLoad)) {
+      PTRACE(1, "IVR\tVXML session not loaded, aborting.");
+      Release(EndedByLocalUser);
+      return FALSE;
+    }
+
+    if (mediaStreams.IsEmpty())
+      return TRUE;
+
     phase = EstablishedPhase;
-    OnEstablished();
   }
+
+  OnEstablished();
 
   return TRUE;
 }
@@ -288,9 +308,6 @@ BOOL OpalIVRConnection::SendUserInputString(const PString & value)
 
 void OpalIVRConnection::InitiateCall()
 {
-  if (!Lock())
-    return;
-
   phase = SetUpPhase;
   if (!OnIncomingConnection())
     Release(EndedByCallerAbort);
@@ -299,8 +316,6 @@ void OpalIVRConnection::InitiateCall()
     if (!ownerCall.OnSetUp(*this))
       Release(EndedByNoAccept);
   }
-
-  Unlock();
 }
 
 

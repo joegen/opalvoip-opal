@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2025  2004/07/14 13:26:14  rjongbloed
+ * Revision 1.2026  2004/08/14 07:56:39  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.24  2004/07/14 13:26:14  rjongbloed
  * Fixed issues with the propagation of the "established" phase of a call. Now
  *   calling an OnEstablished() chain like OnAlerting() and OnConnected() to
  *   finally arrive at OnEstablishedCall() on OpalManager
@@ -141,8 +144,6 @@ OpalEndPoint::OpalEndPoint(OpalManager & mgr,
 
   defaultSignalPort = 0;
   initialBandwidth = UINT_MAX; // Infinite bandwidth
-
-  connectionsActive.DisallowDeleteObjects();
 
   if (defaultLocalPartyName.IsEmpty())
     defaultLocalPartyName = PProcess::Current().GetName() & "User";
@@ -273,31 +274,12 @@ BOOL OpalEndPoint::NewIncomingConnection(OpalTransport * /*transport*/)
 }
 
 
-OpalConnection * OpalEndPoint::GetConnectionWithLock(const PString & token)
-{
-  PWaitAndSignal wait(inUseFlag);
-
-  OpalConnection * connection = connectionsActive.GetAt(token);
-  if (connection == NULL)
-    return NULL;
-
-  if (connection->Lock())
-    return connection;
-
-  return NULL;
-}
-
-
 PStringList OpalEndPoint::GetAllConnections()
 {
   PStringList tokens;
 
-  inUseFlag.Wait();
-
-  for (PINDEX i = 0; i < connectionsActive.GetSize(); i++)
-    tokens.AppendString(connectionsActive.GetKeyAt(i));
-
-  inUseFlag.Signal();
+  for (PSafePtr<OpalConnection> connection(connectionsActive, PSafeReadOnly); connection != NULL; ++connection)
+    tokens.AppendString(connection->GetToken());
 
   return tokens;
 }
@@ -307,6 +289,12 @@ BOOL OpalEndPoint::HasConnection(const PString & token)
 {
   PWaitAndSignal wait(inUseFlag);
   return connectionsActive.Contains(token);
+}
+
+
+void OpalEndPoint::DestroyConnection(OpalConnection * connection)
+{
+  delete connection;
 }
 
 
@@ -334,13 +322,19 @@ void OpalEndPoint::OnEstablished(OpalConnection & connection)
 }
 
 
-BOOL OpalEndPoint::OnReleased(OpalConnection & connection)
+void OpalEndPoint::OnReleased(OpalConnection & connection)
 {
-  inUseFlag.Wait();
-  connectionsActive.SetAt(connection.GetToken(), NULL);
-  inUseFlag.Signal();
+  PTRACE(4, "OpalEP\tOnReleased " << connection);
+  connectionsActive.RemoveAt(connection.GetToken());
+  manager.OnReleased(connection);
+}
 
-  return manager.OnReleased(connection);
+
+void OpalEndPoint::ConnectionDict::DeleteObject(PObject * object) const
+{
+  OpalConnection * connection = PDownCast(OpalConnection, object);
+  if (connection != NULL)
+    connection->GetEndPoint().DestroyConnection(connection);
 }
 
 
@@ -365,20 +359,13 @@ BOOL OpalEndPoint::ClearCallSynchronous(const PString & token,
 
 void OpalEndPoint::ClearAllCalls(OpalConnection::CallEndReason reason, BOOL wait)
 {
-  inUseFlag.Wait();
-
-  if (connectionsActive.IsEmpty())
-    wait = FALSE;
-  else {
-    // Add all connections to the to be deleted set
-    PINDEX i;
-    for (i = 0; i < connectionsActive.GetSize(); i++)
-      manager.ClearCall(connectionsActive.GetKeyAt(i), reason);
+  BOOL releasedOne = FALSE;
+  for (PSafePtr<OpalConnection> connection(connectionsActive, PSafeReadOnly); connection; ++connection) {
+    connection->Release(reason);
+    releasedOne = TRUE;
   }
 
-  inUseFlag.Signal();
-
-  if (wait)
+  if (wait && releasedOne)
     allConnectionsCleared.Wait();
 }
 
