@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2032  2004/02/24 11:37:01  rjongbloed
+ * Revision 1.2033  2004/03/09 12:09:56  rjongbloed
+ * More work on SIP register.
+ *
+ * Revision 2.31  2004/02/24 11:37:01  rjongbloed
  * More work on NAT support, manual external address translation and STUN
  *
  * Revision 2.30  2004/02/21 02:41:10  rjongbloed
@@ -718,8 +721,15 @@ BOOL MyManager::Initialise(PArgList & args)
       }
     }
 
-    if (args.HasOption('r'))
-      sipEP->Register(args.GetOptionString('r'));
+    if (args.HasOption('r')) {
+      PString registrar = args.GetOptionString('r');
+      cout << "Using SIP registrar " << registrar << " ... " << flush;
+      if (sipEP->Register(registrar))
+        cout << "done.";
+      else
+        cout << "failed!";
+      cout << endl;
+    }
   }
 
 

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2022  2004/02/24 11:35:25  rjongbloed
+ * Revision 1.2023  2004/03/09 12:09:56  rjongbloed
+ * More work on SIP register.
+ *
+ * Revision 2.21  2004/02/24 11:35:25  rjongbloed
  * Bullet proofed reply parsing for if get a command we don't understand.
  *
  * Revision 2.20  2003/12/16 10:22:45  rjongbloed
@@ -1224,17 +1227,20 @@ SIPTransaction::~SIPTransaction()
 }
 
 
-void SIPTransaction::BuildREGISTER(const SIPURL & name, const SIPURL & contact)
+void SIPTransaction::BuildREGISTER(const PString & name,
+                                   const SIPURL & contact)
 {
-  PString str = name.AsString();
+  PString strName = "<sip:"+name+";user=phone>";
   SIP_PDU::Construct(Method_REGISTER,
-                     str, str, str,
+                     "sip:"+name.Mid(name.Find('@')+1),
+                     strName,
+                     strName,
                      endpoint.GetRegistrationID(),
                      endpoint.GetNextCSeq(),
                      transport.GetLocalAddress());
 
   mime.SetContact(contact);
-  mime.SetExpires(60);
+//  mime.SetExpires(60);
 }
 
 
@@ -1258,8 +1264,10 @@ BOOL SIPTransaction::Start()
   completionTimer = endpoint.GetNonInviteTimeout();
   localAddress = transport.GetLocalAddress();
 
-  if (transport.SetRemoteAddress(uri.GetHostAddress()) && Write(transport))
-    return TRUE;
+  if (method == Method_REGISTER || transport.SetRemoteAddress(uri.GetHostAddress())) {
+    if (Write(transport))
+      return TRUE;
+  }
 
   SetTerminated(Terminated_TransportError);
   return FALSE;
