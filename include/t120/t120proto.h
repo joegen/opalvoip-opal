@@ -24,11 +24,17 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: t120proto.h,v $
- * Revision 1.2002  2001/08/01 05:06:10  robertj
+ * Revision 1.2003  2002/02/11 09:32:12  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.1  2001/08/01 05:06:10  robertj
  * Major changes to H.323 capabilities, uses OpalMediaFormat for base name.
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.2  2002/02/01 01:47:02  robertj
+ * Some more fixes for T.120 channel establishment, more to do!
  *
  * Revision 1.1  2001/07/17 04:44:29  robertj
  * Partial implementation of T.120 and T.38 logical channels.

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2006  2002/01/22 05:58:55  robertj
+ * Revision 1.2007  2002/02/11 09:32:12  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.5  2002/01/22 05:58:55  robertj
  * Put MaxPayloadType back in for backward compatibility
  *
  * Revision 2.4  2002/01/22 05:03:06  robertj
@@ -35,6 +38,16 @@
  *
  * Revision 2.3  2001/11/14 06:20:40  robertj
  * Changed sending of control channel reports to be timer based.
+ *
+ * Revision 1.34  2002/02/09 02:33:37  robertj
+ * Improved payload type docuemntation and added Cisco CN.
+ *
+ * Revision 1.33  2002/01/22 07:08:26  robertj
+ * Added IllegalPayloadType enum as need marker for none set
+ *   and MaxPayloadType is a legal value.
+ *
+ * Revision 1.32  2001/11/09 05:39:54  craigs
+ * Added initial T.38 support thanks to Adam Lazur
  *
  * Revision 2.2  2001/10/05 00:22:13  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
@@ -178,31 +191,35 @@ class RTP_DataFrame : public PBYTEArray
     };
 
     enum PayloadTypes {
-      PCMU,
-      FS1016,
-      G721,
-      GSM,
-      G7231,
-      DVI4_8k,
-      DVI4_16k,
-      LPC,
-      PCMA,
-      G722,
-      L16_Stereo,
-      L16_Mono,
-      G723,
-      CN,
-      MPA,
-      G728,
-      DVI4_11k,
-      DVI4_22k,
-      G729,
-      CelB = 25,
-      JPEG,
-      H261 = 31,
-      MPV,
-      MP2T,
-      H263,
+      PCMU,         // G.711 u-Law
+      FS1016,       // Federal Standard 1016 CELP
+      G721,         // ADPCM - Subsumed by G.726
+      G726 = G721,
+      GSM,          // GSM 06.10
+      G7231,        // G.723.1 at 6.3kbps or 5.3 kbps
+      DVI4_8k,      // DVI4 at 8kHz sample rate
+      DVI4_16k,     // DVI4 at 16kHz sample rate
+      LPC,          // LPC-10 Linear Predictive CELP
+      PCMA,         // G.711 A-Law
+      G722,         // G.722
+      L16_Stereo,   // 16 bit linear PCM
+      L16_Mono,     // 16 bit linear PCM
+      G723,         // G.723
+      CN,           // Confort Noise
+      MPA,          // MPEG1 or MPEG2 audio
+      G728,         // G.728 16kbps CELP
+      DVI4_11k,     // DVI4 at 11kHz sample rate
+      DVI4_22k,     // DVI4 at 22kHz sample rate
+      G729,         // G.729 8kbps
+      Cisco_CN,     // Cisco systems comfort noise (unofficial)
+
+      CelB = 25,    // Sun Systems Cell-B video
+      JPEG,         // Motion JPEG
+      H261 = 31,    // H.261
+      MPV,          // MPEG1 or MPEG2 video
+      MP2T,         // MPEG2 transport system
+      H263,         // H.263
+
       LastKnownPayloadType,
       DynamicBase = 96,
       MaxPayloadType = 127,

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2009  2002/01/22 05:06:30  robertj
+ * Revision 1.2010  2002/02/11 09:32:12  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.8  2002/01/22 05:06:30  robertj
  * Added RTP encoding name string to media format database.
  * Changed time units to clock rate in Hz.
  *
@@ -53,6 +56,14 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.7  2002/02/11 04:15:56  robertj
+ * Put G.723.1 at 6.3kbps back to old string value of "G.723.1" to improve
+ *   backward compatibility. New #define is a synonym for it.
+ *
+ * Revision 1.6  2002/01/22 07:08:26  robertj
+ * Added IllegalPayloadType enum as need marker for none set
+ *   and MaxPayloadType is a legal value.
  *
  * Revision 1.5  2001/12/11 04:27:50  craigs
  * Added support for 5.3kbps G723.1
@@ -382,7 +393,8 @@ class OpalMediaFormat : public PCaselessString
 #define OPAL_G729A         "G.729A"
 #define OPAL_G729B         "G.729B"
 #define OPAL_G729AB        "G.729A/B"
-#define OPAL_G7231_6k3     "G.723.1(6.3k)"
+#define OPAL_G7231         "G.723.1"
+#define OPAL_G7231_6k3     OPAL_G7231
 #define OPAL_G7231_5k3     "G.723.1(5.3k)"
 #define OPAL_GSM0610       "GSM-06.10"
 

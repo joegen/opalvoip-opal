@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: t38proto.h,v $
- * Revision 1.2003  2002/01/14 06:35:57  robertj
+ * Revision 1.2004  2002/02/11 09:32:12  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.2  2002/01/14 06:35:57  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.1  2001/08/01 05:06:00  robertj
@@ -32,6 +35,10 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.5  2002/02/09 04:39:01  robertj
+ * Changes to allow T.38 logical channels to use single transport which is
+ *   now owned by the OpalT38Protocol object instead of H323Channel.
  *
  * Revision 1.4  2002/01/01 23:27:50  craigs
  * Added CleanupOnTermination functions
@@ -93,15 +100,11 @@ class OpalT38Protocol : public PObject
 
     /**Handle the origination of a T.38 connection.
       */
-    virtual BOOL Originate(
-      OpalTransport & transport
-    );
+    virtual BOOL Originate();
 
     /**Handle the origination of a T.38 connection.
       */
-    virtual BOOL Answer(
-      OpalTransport & transport
-    );
+    virtual BOOL Answer();
 
     /**Prepare outgoing T.38 packet.
 
@@ -127,6 +130,16 @@ class OpalT38Protocol : public PObject
       unsigned nLost
     );
   //@}
+
+    OpalTransport * GetTransport() const { return transport; }
+    void SetTransport(
+      OpalTransport * transport,
+      BOOL autoDelete = TRUE
+    );
+
+  protected:
+    OpalTransport * transport;
+    BOOL            autoDeleteTransport;
 };
 
 
