@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2015  2002/04/15 08:48:14  robertj
+ * Revision 1.2016  2002/11/10 11:33:20  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.14  2002/04/15 08:48:14  robertj
  * Fixed problem with mismatched payload type being propagated.
  * Fixed correct setting of jitter buffer size in RTP media stream.
  *
@@ -366,10 +369,12 @@ BOOL OpalNullMediaStream::IsSynchronous() const
 
 OpalRTPMediaStream::OpalRTPMediaStream(BOOL isSourceStream,
                                        RTP_Session & rtp,
-                                       unsigned jitter)
+                                       unsigned minJitter,
+                                       unsigned maxJitter)
   : OpalMediaStream(isSourceStream, rtp.GetSessionID()),
     rtpSession(rtp),
-    jitterBufferSize(jitter)
+    minAudioJitterDelay(minJitter),
+    maxAudioJitterDelay(maxJitter)
 {
 }
 
@@ -411,7 +416,8 @@ BOOL OpalRTPMediaStream::IsSynchronous() const
 void OpalRTPMediaStream::EnableJitterBuffer() const
 {
   if (mediaFormat.NeedsJitterBuffer())
-    rtpSession.SetJitterBufferSize(jitterBufferSize*mediaFormat.GetTimeUnits());
+    rtpSession.SetJitterBufferSize(minAudioJitterDelay*mediaFormat.GetTimeUnits(),
+                                   maxAudioJitterDelay*mediaFormat.GetTimeUnits());
 }
 
 

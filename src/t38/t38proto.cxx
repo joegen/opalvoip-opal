@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: t38proto.cxx,v $
- * Revision 1.2006  2002/09/04 06:01:49  robertj
+ * Revision 1.2007  2002/11/10 11:33:20  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.5  2002/09/04 06:01:49  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.4  2002/02/11 09:32:13  robertj
@@ -42,6 +45,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.12  2002/09/25 05:20:40  robertj
+ * Fixed warning on no trace version.
  *
  * Revision 1.11  2002/08/05 10:03:48  robertj
  * Cosmetic changes to normalise the usage of pragma interface/implementation.
@@ -124,7 +130,7 @@ void OpalT38Protocol::Close()
 }
 
 
-void OpalT38Protocol::SetTransport(OpalTransport * t, BOOL autoDelete)
+void OpalT38Protocol::SetTransport(H323Transport * t, BOOL autoDelete)
 {
   if (transport != t) {
     if (autoDeleteTransport)
@@ -282,9 +288,15 @@ BOOL OpalT38Protocol::PreparePacket(T38_IFPPacket & pdu)
 }
 
 
-BOOL OpalT38Protocol::HandlePacketLost(unsigned nLost)
+#if PTRACING
+#define PTRACE_nLost nLost
+#else
+#define PTRACE_nLost
+#endif
+
+BOOL OpalT38Protocol::HandlePacketLost(unsigned PTRACE_nLost)
 {
-  PTRACE(2, "T38\tHandlePacketLost, n=" << nLost);
+  PTRACE(2, "T38\tHandlePacketLost, n=" << PTRACE_nLost);
   /* don't handle lost packets yet */
   return TRUE;
 }

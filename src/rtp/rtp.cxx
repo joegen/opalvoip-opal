@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2011  2002/10/09 04:28:10  robertj
+ * Revision 1.2012  2002/11/10 11:33:20  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.10  2002/10/09 04:28:10  robertj
  * Added session ID to soem trace logs, thanks Ted Szoczei
  *
  * Revision 2.9  2002/09/04 06:01:49  robertj
@@ -59,6 +62,20 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.82  2002/11/05 03:32:04  robertj
+ * Added session ID to trace logs.
+ * Fixed possible extra wait exiting RTP read loop on close.
+ *
+ * Revision 1.81  2002/11/05 01:55:50  robertj
+ * Added comments about strange mutex usage.
+ *
+ * Revision 1.80  2002/10/31 00:47:07  robertj
+ * Enhanced jitter buffer system so operates dynamically between minimum and
+ *   maximum values. Altered API to assure app writers note the change!
+ *
+ * Revision 1.79  2002/09/26 04:01:49  robertj
+ * Fixed calculation of fraction of packets lost in RR, thanks Awais Ali
  *
  * Revision 1.78  2002/09/03 06:15:32  robertj
  * Added copy constructor/operator for session manager.
@@ -612,6 +629,7 @@ RTP_Session::RTP_Session(unsigned id, RTP_UserData * data)
   maximumReceiveTime = 0;
   minimumReceiveTime = 0;
   jitterLevel = 0;
+  maximumJitterLevel = 0;
 
   txStatisticsCount = 0;
   rxStatisticsCount = 0;
@@ -621,6 +639,7 @@ RTP_Session::RTP_Session(unsigned id, RTP_UserData * data)
   averageReceiveTimeAccum = 0;
   maximumReceiveTimeAccum = 0;
   minimumReceiveTimeAccum = 0xffffffff;
+  packetsLostSinceLastRR = 0;
   lastTransitTime = 0;
 }
 
@@ -642,7 +661,8 @@ RTP_Session::~RTP_Session()
             "    averageReceiveTime= " << averageReceiveTime << "\n"
             "    maximumReceiveTime= " << maximumReceiveTime << "\n"
             "    minimumReceiveTime= " << minimumReceiveTime << "\n"
-            "    jitter            = " << (jitterLevel >> 7)
+            "    averageJitter     = " << (jitterLevel >> 7) << "\n"
+            "    maximumJitter     = " << (maximumJitterLevel >> 7)
             );
   delete userData;
   delete jitter;
@@ -656,18 +676,26 @@ void RTP_Session::SetUserData(RTP_UserData * data)
 }
 
 
-void RTP_Session::SetJitterBufferSize(unsigned jitterDelay, PINDEX stackSize)
+void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
+                                      unsigned maxJitterDelay,
+                                      PINDEX stackSize)
 {
-  if (jitterDelay == 0) {
+  if (minJitterDelay == 0 && maxJitterDelay == 0) {
     delete jitter;
     jitter = NULL;
   }
   else if (jitter != NULL)
-    jitter->SetDelay(jitterDelay);
+    jitter->SetDelay(minJitterDelay, maxJitterDelay);
   else {
     SetIgnoreOutOfOrderPackets(FALSE);
-    jitter = new RTP_JitterBuffer(*this, jitterDelay, stackSize);
+    jitter = new RTP_JitterBuffer(*this, minJitterDelay, maxJitterDelay, stackSize);
   }
+}
+
+
+unsigned RTP_Session::GetJitterBufferSize() const
+{
+  return jitter != NULL ? jitter->GetJitterTime() : 0;
 }
 
 
@@ -703,10 +731,17 @@ void RTP_Session::SetRxStatisticsInterval(unsigned packets)
 void RTP_Session::AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver)
 {
   receiver.ssrc = syncSourceIn;
-  receiver.fraction = (BYTE)(256*packetsLost/packetsReceived);
   receiver.SetLostPackets(packetsLost);
+
+  if (expectedSequenceNumber > lastRRSequenceNumber)
+    receiver.fraction = (BYTE)((packetsLostSinceLastRR<<8)/(expectedSequenceNumber - lastRRSequenceNumber));
+  else
+    receiver.fraction = 0;
+  packetsLostSinceLastRR = 0;
+
   receiver.last_seq = lastRRSequenceNumber;
   lastRRSequenceNumber = expectedSequenceNumber;
+
   receiver.jitter = jitterLevel >> 4; // Allow for rounding protection bits
 
   // The following have not been calculated yet.
@@ -844,6 +879,8 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(const RTP_DataFrame & 
         if (variance < 0)
           variance = -variance;
         jitterLevel += variance - ((jitterLevel+8) >> 4);
+        if (jitterLevel > maximumJitterLevel)
+          maximumJitterLevel = jitterLevel;
       }
     }
     else if (sequenceNumber < expectedSequenceNumber) {
@@ -866,6 +903,7 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(const RTP_DataFrame & 
     else {
       unsigned dropped = sequenceNumber - expectedSequenceNumber;
       packetsLost += dropped;
+      packetsLostSinceLastRR += dropped;
       PTRACE(3, "RTP\tDropped " << dropped << " packet(s) at " << sequenceNumber
              << ", ssrc=" << syncSourceIn);
       expectedSequenceNumber = (WORD)(sequenceNumber + 1);
@@ -907,7 +945,8 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(const RTP_DataFrame & 
             " avgTime=" << averageReceiveTime <<
             " maxTime=" << maximumReceiveTime <<
             " minTime=" << minimumReceiveTime <<
-            " jitter=" << (jitterLevel >> 7)
+            " jitter=" << (jitterLevel >> 7) <<
+            " maxJitter=" << (maximumJitterLevel >> 7)
             );
 
   if (userData != NULL)
@@ -1261,7 +1300,7 @@ void RTP_SessionManager::ReleaseSession(unsigned sessionID)
   if (sessions.Contains(sessionID)) {
     if (sessions[sessionID].DecrementReference()) {
       PTRACE(3, "RTP\tDeleting session " << sessionID);
-      sessions[sessionID].SetJitterBufferSize(0);
+      sessions[sessionID].SetJitterBufferSize(0, 0);
       sessions.SetAt(sessionID, NULL);
     }
   }
@@ -1491,10 +1530,6 @@ BOOL RTP_UDP::ReadData(RTP_DataFrame & frame)
         return FALSE;
     }
   }
-
-  PTRACE(3, "RTP_UDP\tSession " << sessionID << ", Read shutdown.");
-  shutdownRead = FALSE;
-  return FALSE;
 }
 
 
