@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.h,v $
- * Revision 1.2005  2002/01/22 04:56:55  robertj
+ * Revision 1.2006  2002/02/11 07:37:21  robertj
+ * Added media bypass for streams between compatible protocols.
+ *
+ * Revision 2.4  2002/01/22 04:56:55  robertj
  * Update from OpenH323, rev 1.26 to 1.28
  *
  * Revision 2.3  2002/01/14 06:35:56  robertj
@@ -245,6 +248,17 @@ class H323Channel : public PObject
        meaningfull, the default simply returns 0.
      */
     virtual unsigned GetSessionID() const;
+
+    /**Get the media transport address for the connection.
+       This is primarily used to determine if media bypass is possible for the
+       call between two connections.
+
+       The default behaviour returns FALSE.
+     */
+    virtual BOOL GetMediaTransportAddress(
+      OpalTransportAddress & data,        /// Data channel address
+      OpalTransportAddress & control      /// Control channel address
+    ) const;
 
     /**Set the initial bandwidth for the channel.
        This calculates the initial bandwidth required by the channel and
@@ -733,9 +747,17 @@ class H323_ExternalRTPChannel : public H323_RealTimeChannel
       H323Connection & connection,        /// Connection to endpoint for channel
       const H323Capability & capability,  /// Capability channel is using
       Directions direction,               /// Direction of channel
+      unsigned sessionID                  /// Session ID for channel
+    );
+    /**Create a new channel.
+     */
+    H323_ExternalRTPChannel(
+      H323Connection & connection,        /// Connection to endpoint for channel
+      const H323Capability & capability,  /// Capability channel is using
+      Directions direction,               /// Direction of channel
       unsigned sessionID,                 /// Session ID for channel
-      H323TransportAddress & data,        /// Data address
-      H323TransportAddress & control      /// Control address
+      const H323TransportAddress & data,  /// Data address
+      const H323TransportAddress & control /// Control address
     );
     /**Create a new channel.
      */
@@ -756,6 +778,17 @@ class H323_ExternalRTPChannel : public H323_RealTimeChannel
        RTP_Session member variable.
      */
     virtual unsigned GetSessionID() const;
+
+    /**Get the media transport address for the connection.
+       This is primarily used to determine if media bypass is possible for the
+       call between two connections.
+
+       The default behaviour returns FALSE.
+     */
+    virtual BOOL GetMediaTransportAddress(
+      OpalTransportAddress & data,        /// Data channel address
+      OpalTransportAddress & control      /// Control channel address
+    ) const;
 
     /**Start the channel.
       */
@@ -815,6 +848,11 @@ class H323_ExternalRTPChannel : public H323_RealTimeChannel
     );
   //@}
 
+    void SetExternalAddress(
+      const H323TransportAddress & data,        /// Data address
+      const H323TransportAddress & control      /// Control address
+    );
+
     const H323TransportAddress & GetRemoteMediaAddress()        const { return remoteMediaAddress; }
     const H323TransportAddress & GetRemoteMediaControlAddress() const { return remoteMediaControlAddress; }
 
@@ -824,6 +862,8 @@ class H323_ExternalRTPChannel : public H323_RealTimeChannel
     ) const;
 
   protected:
+    void Construct(unsigned id);
+
     unsigned             sessionID;
     H323TransportAddress externalMediaAddress;
     H323TransportAddress externalMediaControlAddress;
