@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h225ras.cxx,v $
- * Revision 1.2003  2001/10/05 00:22:13  robertj
+ * Revision 1.2004  2002/02/11 09:32:12  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.2  2001/10/05 00:22:13  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.1  2001/08/13 05:10:39  robertj
@@ -35,6 +38,15 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.15  2002/01/29 02:38:31  robertj
+ * Fixed nasty race condition when getting RIP, end up with wrong timeout.
+ * Improved tracing (included sequence numbers)
+ *
+ * Revision 1.14  2002/01/24 01:02:04  robertj
+ * Removed trace when authenticator not used, implied error when wasn't one.
+ *
+ * Revision 1.13  2001/10/09 12:03:30  robertj
+ * Fixed uninitialised variable for H.235 authentication checking.
  *
  * Revision 1.11  2001/09/18 10:36:57  robertj
  * Allowed multiple overlapping requests in RAS channel.
@@ -417,10 +429,12 @@ BOOL H225_RAS::Request::Poll(H323EndPoint & endpoint, OpalTransport & transport)
   responseResult = AwaitingResponse;
 
   for (unsigned retry = 1; retry <= endpoint.GetRasRequestRetries(); retry++) {
+    // To avoid race condition with RIP must set timeout before sending the packet
+    whenResponseExpected = PTimer::Tick() + endpoint.GetRasRequestTimeout();
+
     if (!requestPDU.Write(transport))
       break;
 
-    whenResponseExpected = PTimer::Tick() + endpoint.GetRasRequestTimeout();
     PTRACE(3, "RAS\tWaiting on response for "
            << setprecision(1) << endpoint.GetRasRequestTimeout() << " seconds");
     while (responseHandled.Wait(whenResponseExpected - PTimer::Tick())) {
@@ -434,7 +448,7 @@ BOOL H225_RAS::Request::Poll(H323EndPoint & endpoint, OpalTransport & transport)
         case RequestInProgress :
           responseResult = ConfirmReceived;
           PTRACE(3, "RAS\tWaiting again on response for "
-            << setprecision(1) << (whenResponseExpected - PTimer::Tick()) << " seconds");
+                 << setprecision(1) << (whenResponseExpected - PTimer::Tick()) << " seconds");
 
         default :
           ; // Keep waiting
@@ -501,7 +515,7 @@ BOOL H225_RAS::CheckForResponse(unsigned reqTag, unsigned seqNum, const PASN_Cho
   PWaitAndSignal mutex(requestsMutex);
 
   if (!requests.Contains(seqNum)) {
-    PTRACE(3, "RAS\tReceived sequence number for PDU we never requested or timed out");
+    PTRACE(3, "RAS\tTimed out or received sequence number (" << seqNum << ") for PDU we never requested");
     return FALSE;
   }
 
@@ -533,12 +547,13 @@ BOOL H225_RAS::OnReceiveRequestInProgress(const H225_RequestInProgress & rip)
 
   unsigned seqNum = rip.m_requestSeqNum;
   if (requests.Contains(seqNum)) {
+    PTRACE(3, "RAS\tReceived RIP on sequence number " << seqNum);
     lastRequest = &requests[seqNum];
     lastRequest->OnReceiveRIP(rip);
     return TRUE;
   }
 
-  PTRACE(3, "RAS\tReceived sequence number for PDU we never requested or timed out");
+  PTRACE(3, "RAS\tTimed out or received sequence number (" << seqNum << ") for PDU we never requested");
   return FALSE;
 }
 
@@ -558,7 +573,7 @@ void H225_RAS::OnSendGatekeeperRequest(H225_GatekeeperRequest & grq)
     }
     else {
        PTRACE(1, "RAS\tAuthenticator " << authenticators[i]
-             << " SetCapability failed during GRQ");
+              << " SetCapability failed during GRQ");
     }
   }
 }
@@ -983,9 +998,6 @@ void H225_RAS::SetCryptoTokens(H225_ArrayOf_CryptoH323Token & cryptoTokens,
     if (authenticators[i].Prepare(cryptoTokens)) {
       PTRACE(4, "RAS\tPrepared PDU with authenticator " << authenticators[i]);
       pdu.IncludeOptionalField(optionalField);
-    }
-    else {
-      PTRACE(4, "RAS\tFailed to prepare PDU with authenticator " << authenticators[i]);
     }
   }
 }

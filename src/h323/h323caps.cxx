@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2007  2002/01/22 05:29:12  robertj
+ * Revision 1.2008  2002/02/11 09:32:12  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.6  2002/01/22 05:29:12  robertj
  * Revamp of user input API triggered by RFC2833 support
  * Update from OpenH323
  *
@@ -49,6 +52,13 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.46  2002/01/22 07:08:26  robertj
+ * Added IllegalPayloadType enum as need marker for none set
+ *   and MaxPayloadType is a legal value.
+ *
+ * Revision 1.45  2002/01/22 06:07:35  robertj
+ * Moved payload type to ancestor so any capability can adjust it on logical channel.
  *
  * Revision 1.44  2002/01/17 07:05:03  robertj
  * Added support for RFC2833 embedded DTMF in the RTP stream.
@@ -293,6 +303,7 @@ H323Capability::H323Capability(const OpalMediaFormat & fmt)
 {
   assignedCapabilityNumber = 0; // Unassigned
   capabilityDirection = e_Unknown;
+  rtpPayloadType = RTP_DataFrame::IllegalPayloadType;
 }
 
 
@@ -1422,7 +1433,7 @@ H323_UserInputCapability::H323_UserInputCapability(SubTypes _subType)
   : H323Capability(H323_UserInputCapability::SubTypeNames[_subType])
 {
   subType = _subType;
-  rfc2833PayloadType = UserInput_RFC2833.GetPayloadType();
+  rtpPayloadType = UserInput_RFC2833.GetPayloadType();
 }
 
 
@@ -1470,7 +1481,7 @@ BOOL H323_UserInputCapability::OnSendingPDU(H245_Capability & pdu) const
   if (subType == SignalToneRFC2833) {
     pdu.SetTag(H245_Capability::e_receiveRTPAudioTelephonyEventCapability);
     H245_AudioTelephonyEventCapability & atec = pdu;
-    atec.m_dynamicRTPPayloadType = rfc2833PayloadType;
+    atec.m_dynamicRTPPayloadType = rtpPayloadType;
     atec.m_audioTelephoneEvent = "0-16"; // Support DTMF 0-9,*,#,A-D & hookflash
   }
   else {
@@ -1503,7 +1514,7 @@ BOOL H323_UserInputCapability::OnReceivedPDU(const H245_Capability & pdu)
   if (pdu.GetTag() == H245_Capability::e_receiveRTPAudioTelephonyEventCapability) {
     subType = SignalToneRFC2833;
     const H245_AudioTelephonyEventCapability & atec = pdu;
-    rfc2833PayloadType = (RTP_DataFrame::PayloadTypes)(int)atec.m_dynamicRTPPayloadType;
+    rtpPayloadType = (RTP_DataFrame::PayloadTypes)(int)atec.m_dynamicRTPPayloadType;
     // Really should verify atec.m_audioTelephoneEvent here
     return TRUE;
   }

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.h,v $
- * Revision 1.2003  2001/08/17 01:10:48  robertj
+ * Revision 1.2004  2002/02/11 09:32:12  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.2  2001/08/17 01:10:48  robertj
  * Added ability to add whole LID's to LID endpoint.
  *
  * Revision 2.1  2001/08/01 05:18:51  robertj
@@ -35,6 +38,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.44  2002/01/23 01:58:25  robertj
+ * Added function to determine if codecs raw data channel is native format.
  *
  * Revision 1.43  2001/07/19 05:54:27  robertj
  * Updated interface to xJACK drivers to utilise cadence and filter functions

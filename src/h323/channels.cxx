@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2013  2002/02/11 07:40:02  robertj
+ * Revision 1.2014  2002/02/11 09:32:12  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.12  2002/02/11 07:40:02  robertj
  * Added media bypass for streams between compatible protocols.
  *
  * Revision 2.11  2002/01/22 05:24:36  robertj
@@ -67,6 +70,32 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.117  2002/02/09 04:39:05  robertj
+ * Changes to allow T.38 logical channels to use single transport which is
+ *   now owned by the OpalT38Protocol object instead of H323Channel.
+ *
+ * Revision 1.116  2002/02/05 08:13:02  robertj
+ * Added ability to not have addresses when external RTP channel created.
+ *
+ * Revision 1.115  2002/02/04 06:04:19  robertj
+ * Fixed correct exit on terminating transmit channel, thanks Norwood Systems.
+ *
+ * Revision 1.114  2002/01/27 10:49:51  rogerh
+ * Catch a division by zero case in a PTRACE()
+ *
+ * Revision 1.113  2002/01/24 03:33:07  robertj
+ * Fixed payload type being incorrect for audio after sending RFC2833 packet.
+ *
+ * Revision 1.112  2002/01/22 22:48:25  robertj
+ * Fixed RFC2833 support (transmitter) requiring large rewrite
+ *
+ * Revision 1.111  2002/01/22 07:08:26  robertj
+ * Added IllegalPayloadType enum as need marker for none set
+ *   and MaxPayloadType is a legal value.
+ *
+ * Revision 1.110  2002/01/22 06:05:03  robertj
+ * Added ability for RTP payload type to be overridden at capability level.
  *
  * Revision 1.109  2002/01/17 07:05:03  robertj
  * Added support for RFC2833 embedded DTMF in the RTP stream.
@@ -1150,6 +1179,15 @@ void H323_ExternalRTPChannel::SetExternalAddress(const H323TransportAddress & da
 {
   externalMediaAddress = data;
   externalMediaControlAddress = control;
+
+  if (data.IsEmpty() || control.IsEmpty()) {
+    PIPSocket::Address ip;
+    WORD port;
+    if (data.GetIpAndPort(ip, port))
+      externalMediaControlAddress = H323TransportAddress(ip, (WORD)(port+1));
+    else if (control.GetIpAndPort(ip, port))
+      externalMediaAddress = H323TransportAddress(ip, (WORD)(port-1));
+  }
 }
 
 
@@ -1178,15 +1216,19 @@ H323DataChannel::H323DataChannel(H323Connection & conn,
   : H323UnidirectionalChannel(conn, cap, dir)
 {
   listener = NULL;
+  autoDeleteListener = TRUE;
   transport = NULL;
-  separateReverseChannel = 0;
+  autoDeleteTransport = TRUE;
+  separateReverseChannel = FALSE;
 }
 
 
 H323DataChannel::~H323DataChannel()
 {
-  delete transport;
-  delete listener;
+  if (autoDeleteListener)
+    delete listener;
+  if (autoDeleteTransport)
+    delete transport;
 }
 
 
@@ -1218,7 +1260,12 @@ BOOL H323DataChannel::OnSendingPDU(H245_OpenLogicalChannel & open) const
               H245_OpenLogicalChannel_forwardLogicalChannelParameters_multiplexParameters
                   ::e_h2250LogicalChannelParameters);
   H245_H2250LogicalChannelParameters & fparam = open.m_forwardLogicalChannelParameters.m_multiplexParameters;
-  fparam.m_sessionID = capability.GetDefaultSessionID();
+
+  unsigned session = GetSessionID();
+  if (session != 0) {
+    fparam.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_sessionID);
+    fparam.m_sessionID = GetSessionID();
+  }
 
   if (separateReverseChannel)
     return TRUE;
@@ -1261,6 +1308,12 @@ void H323DataChannel::OnSendOpenAck(const H245_OpenLogicalChannel & /*open*/,
                   ::e_h2250LogicalChannelParameters);
     param = (H245_H2250LogicalChannelAckParameters*)
                 &ack.m_reverseLogicalChannelParameters.m_multiplexParameters.GetObject();
+  }
+
+  unsigned session = GetSessionID();
+  if (session != 0) {
+    param->IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_sessionID);
+    param->m_sessionID = GetSessionID();
   }
 
   H323TransportAddress address;

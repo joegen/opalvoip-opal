@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t120.h,v $
- * Revision 1.2003  2002/01/14 06:35:57  robertj
+ * Revision 1.2004  2002/02/11 09:32:12  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.2  2002/01/14 06:35:57  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.1  2001/08/01 05:06:10  robertj
@@ -32,6 +35,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.3  2002/02/01 01:46:50  robertj
+ * Some more fixes for T.120 channel establishment, more to do!
  *
  * Revision 1.2  2002/01/09 00:21:36  robertj
  * Changes to support outgoing H.245 RequstModeChange.
@@ -65,8 +71,8 @@ class H323_T120Capability : public H323DataCapability
   public:
   /**@name Construction */
   //@{
-    /**Create a new T.120 capability.
-     */
+    /**Create capability.
+      */
     H323_T120Capability();
   //@}
 
@@ -152,6 +158,22 @@ class H323_T120Capability : public H323DataCapability
       const H245_DataApplicationCapability & pdu  /// PDU to set information on
     );
   //@}
+
+  /**@name Member access */
+  //@{
+    /**Get the dynamic port capability.
+       Indicates endpoint can use something other than port 1503.
+      */
+    BOOL GetDynamicPortCapability() const { return dynamicPortCapability; }
+
+    /**Set the dynamic port capability.
+       Indicates endpoint can use something other than port 1503.
+      */
+    void SetDynamicPortCapability(BOOL dynamic) { dynamicPortCapability = dynamic; }
+  //@}
+
+  protected:
+    BOOL dynamicPortCapability;
 };
 
 
@@ -178,6 +200,8 @@ class H323_T120Channel : public H323DataChannel
 
        This is called by the thread started by the Start() function and is
        typically a loop reading  from the transport and handling PDU's.
+
+       The default behaviour here is to call HandleChannel()
       */
     virtual void Receive();
 
@@ -186,6 +210,8 @@ class H323_T120Channel : public H323DataChannel
        This is called by the thread started by the Start() function and is
        typically a loop reading from the codec and writing to the transport
        (eg an RTP_session).
+
+       The default behaviour here is to call HandleChannel()
       */
     virtual void Transmit();
 
@@ -226,6 +252,8 @@ class H323_T120Channel : public H323DataChannel
       const H245_OpenLogicalChannelAck & pdu /// Acknowledgement PDU
     );
   //@}
+
+    virtual void HandleChannel();
 
   protected:
     OpalT120Protocol * t120handler;

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q931.h,v $
- * Revision 1.2005  2002/01/14 06:35:57  robertj
+ * Revision 1.2006  2002/02/11 09:32:12  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.4  2002/01/14 06:35:57  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.3  2001/10/05 00:22:13  robertj
@@ -38,6 +41,10 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.38  2002/02/08 00:05:14  robertj
+ * Changed release complete causes so can dsitinguish between unknown
+ *   cause and no cause at all.
  *
  * Revision 1.37  2002/01/07 04:25:41  robertj
  * Added support for Connected-Number Information Element, thanks Hans Verbeek
@@ -279,6 +286,7 @@ class Q931 : public PObject
     );
 
     enum CauseValues {
+      UnknownCauseIE        = 0x00,
       NoRouteToNetwork      = 0x02,
       NoRouteToDestination  = 0x03,
       ChannelUnacceptable   = 0x06,
@@ -296,7 +304,7 @@ class Q931 : public PObject
       NoCircuitChannelAvailable = 0x22,
       Congestion            = 0x2a,
       InvalidCallReference  = 0x51,
-      ErrorInCauseIE        = 0
+      ErrorInCauseIE        = 0x100
     };
     void SetCause(
       CauseValues value,

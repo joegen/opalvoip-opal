@@ -27,11 +27,18 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2008  2002/01/14 06:35:57  robertj
+ * Revision 1.2009  2002/02/11 09:32:12  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.7  2002/01/14 06:35:57  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.6  2001/11/18 23:10:42  craigs
  * Added cast to allow compilation under Linux
+ * Revision 1.84  2002/02/11 04:25:57  robertj
+ * Added ability to automatically reregister if do an ARQ and are told are not
+ *   registered. Can occur if gk is restarted and is faster than waiting for TTL..
+ *
  * Revision 1.83  2002/01/13 23:58:48  robertj
  * Added ability to set destination extra call info in ARQ
  * Filled in destinationInfo in ARQ when answering call.
@@ -976,7 +983,20 @@ BOOL H323Gatekeeper::AdmissionRequest(H323Connection & connection,
 
   if (!MakeRequest(request)) {
     response.rejectReason = request.rejectReason;
-    return FALSE;
+
+    if (request.rejectReason != H225_AdmissionRejectReason::e_calledPartyNotRegistered)
+      return FALSE;
+
+    if (!autoReregister)
+      return FALSE;
+
+    if (!RegistrationRequest(autoReregister))
+      return FALSE;
+
+    if (!MakeRequest(request)) {
+      response.rejectReason = request.rejectReason;
+      return FALSE;
+    }
   }
 
   connection.SetBandwidthAvailable(info.allocatedBandwidth);
@@ -1098,7 +1118,6 @@ static unsigned GetUUIEsRequested(const H225_UUIEsRequested & pdu)
 
   return uuiesRequested;
 }
-
 
 
 BOOL H323Gatekeeper::OnReceiveAdmissionConfirm(const H225_AdmissionConfirm & acf)
