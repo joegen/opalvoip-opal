@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lpc10codec.cxx,v $
- * Revision 1.2005  2002/09/04 06:01:47  robertj
+ * Revision 1.2006  2002/11/10 11:33:18  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.4  2002/09/04 06:01:47  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.3  2002/01/22 05:19:27  robertj
@@ -119,6 +122,31 @@ OpalMediaFormat const OpalLPC10(
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#ifndef NO_H323
+
+H323_LPC10Capability::H323_LPC10Capability(H323EndPoint & endpoint)
+  : H323NonStandardAudioCapability(7, 4, endpoint)
+{
+}
+
+
+PObject * H323_LPC10Capability::Clone() const
+{
+  return new H323_LPC10Capability(*this);
+}
+
+
+PString H323_LPC10Capability::GetFormatName() const
+{
+  return OpalLPC10;
+}
+
+
+#endif
+
+
+///////////////////////////////////////////////////////////////////////////////
+
 Opal_LPC10_PCM::Opal_LPC10_PCM(const OpalTranscoderRegistration & registration)
   : OpalFramedTranscoder(registration, BytesPerFrame, SamplesPerFrame*2)
 {
@@ -195,20 +223,6 @@ BOOL Opal_PCM_LPC10::ConvertFrame(const BYTE * src, BYTE * dst)
   }
 
   return TRUE;
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-
-H323_LPC10Capability::H323_LPC10Capability(H323EndPoint & endpoint)
-  : H323NonStandardAudioCapability(OpalLPC10, 7, 4, endpoint)
-{
-}
-
-
-PObject * H323_LPC10Capability::Clone() const
-{
-  return new H323_LPC10Capability(*this);
 }
 
 

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2014  2002/09/06 02:43:03  robertj
+ * Revision 1.2015  2002/11/10 11:33:18  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.13  2002/09/06 02:43:03  robertj
  * Fixed function to add capabilities to return correct table entry index.
  *
  * Revision 2.12  2002/09/04 06:01:48  robertj
@@ -71,6 +74,10 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.57  2002/11/09 04:44:24  robertj
+ * Fixed function to add capabilities to return correct table entry index.
+ * Cosmetic changes.
  *
  * Revision 1.56  2002/08/05 10:03:47  robertj
  * Cosmetic changes to normalise the usage of pragma interface/implementation.
@@ -354,8 +361,7 @@ ostream & operator<<(ostream & o , H323Capability::CapabilityDirection d)
 
 /////////////////////////////////////////////////////////////////////////////
 
-H323Capability::H323Capability(const OpalMediaFormat & fmt)
-  : mediaFormat(fmt)
+H323Capability::H323Capability()
 {
   assignedCapabilityNumber = 0; // Unassigned
   capabilityDirection = e_Unknown;
@@ -388,7 +394,7 @@ PObject::Comparison H323Capability::Compare(const PObject & obj) const
 
 void H323Capability::PrintOn(ostream & strm) const
 {
-  strm << GetMediaFormat();
+  strm << GetFormatName();
   if (assignedCapabilityNumber != 0)
     strm << " <" << assignedCapabilityNumber << '>';
 }
@@ -479,12 +485,6 @@ BOOL H323Capability::IsUsable(const H323Connection &) const
 
 
 /////////////////////////////////////////////////////////////////////////////
-
-H323RealTimeCapability::H323RealTimeCapability(const OpalMediaFormat & fmt)
-  : H323Capability(fmt)
-{
-}
-
 
 H323Channel * H323RealTimeCapability::CreateChannel(H323Connection & connection,
                                                     H323Channel::Directions dir,
@@ -675,9 +675,7 @@ PObject::Comparison H323NonStandardCapabilityInfo::CompareData(const PBYTEArray 
 
 /////////////////////////////////////////////////////////////////////////////
 
-H323AudioCapability::H323AudioCapability(const OpalMediaFormat & fmt,
-                                         unsigned rx, unsigned tx)
-  : H323RealTimeCapability(fmt)
+H323AudioCapability::H323AudioCapability(unsigned rx, unsigned tx)
 {
   rxFramesInPacket = rx;
   txFramesInPacket = tx;
@@ -855,44 +853,33 @@ BOOL H323AudioCapability::OnReceivedPDU(const H245_AudioCapability & pdu,
 
 /////////////////////////////////////////////////////////////////////////////
 
-H323NonStandardAudioCapability::H323NonStandardAudioCapability(const OpalMediaFormat & fmt,
-                                                               unsigned max,
+H323NonStandardAudioCapability::H323NonStandardAudioCapability(unsigned max,
                                                                unsigned desired,
                                                                H323EndPoint & endpoint,
                                                                const BYTE * fixedData,
                                                                PINDEX dataSize,
                                                                PINDEX offset,
                                                                PINDEX length)
-  : H323AudioCapability(fmt, max, desired),
-    H323NonStandardCapabilityInfo(endpoint,
-                                  fixedData != NULL ? fixedData : (const BYTE *)(const char *)fmt,
-                                  fixedData != NULL ? dataSize : fmt.GetLength(),
-                                  offset,
-                                  length)
+  : H323AudioCapability(max, desired),
+    H323NonStandardCapabilityInfo(endpoint, fixedData, dataSize, offset, length)
 {
 }
 
 
-H323NonStandardAudioCapability::H323NonStandardAudioCapability(const OpalMediaFormat & fmt,
-                                                               unsigned max,
+H323NonStandardAudioCapability::H323NonStandardAudioCapability(unsigned max,
                                                                unsigned desired,
                                                                const PString & oid,
                                                                const BYTE * fixedData,
                                                                PINDEX dataSize,
                                                                PINDEX offset,
                                                                PINDEX length)
-  : H323AudioCapability(fmt, max, desired),
-    H323NonStandardCapabilityInfo(oid,
-                                  fixedData != NULL ? fixedData : (const BYTE *)(const char *)fmt,
-                                  fixedData != NULL ? dataSize : fmt.GetLength(),
-                                  offset,
-                                  length)
+  : H323AudioCapability(max, desired),
+    H323NonStandardCapabilityInfo(oid, fixedData, dataSize, offset, length)
 {
 }
 
 
-H323NonStandardAudioCapability::H323NonStandardAudioCapability(const OpalMediaFormat & fmt,
-                                                               unsigned max,
+H323NonStandardAudioCapability::H323NonStandardAudioCapability(unsigned max,
                                                                unsigned desired,
                                                                BYTE country,
                                                                BYTE extension,
@@ -901,14 +888,8 @@ H323NonStandardAudioCapability::H323NonStandardAudioCapability(const OpalMediaFo
                                                                PINDEX dataSize,
                                                                PINDEX offset,
                                                                PINDEX length)
-  : H323AudioCapability(fmt, max, desired),
-    H323NonStandardCapabilityInfo(country,
-                                  extension,
-                                  maufacturer,
-                                  fixedData != NULL ? fixedData : (const BYTE *)(const char *)fmt,
-                                  fixedData != NULL ? dataSize : fmt.GetLength(),
-                                  offset,
-                                  length)
+  : H323AudioCapability(max, desired),
+    H323NonStandardCapabilityInfo(country, extension, maufacturer, fixedData, dataSize, offset, length)
 {
 }
 
@@ -955,12 +936,6 @@ BOOL H323NonStandardAudioCapability::IsNonStandardMatch(const H245_NonStandardPa
 
 
 /////////////////////////////////////////////////////////////////////////////
-
-H323VideoCapability::H323VideoCapability(const OpalMediaFormat & fmt)
-  : H323RealTimeCapability(fmt)
-{
-}
-
 
 H323Capability::MainTypes H323VideoCapability::GetMainType() const
 {
@@ -1018,54 +993,34 @@ unsigned H323VideoCapability::GetDefaultSessionID() const
 
 /////////////////////////////////////////////////////////////////////////////
 
-H323NonStandardVideoCapability::H323NonStandardVideoCapability(const OpalMediaFormat & fmt,
-                                                               H323EndPoint & endpoint,
+H323NonStandardVideoCapability::H323NonStandardVideoCapability(H323EndPoint & endpoint,
                                                                const BYTE * fixedData,
                                                                PINDEX dataSize,
                                                                PINDEX offset,
                                                                PINDEX length)
-  : H323VideoCapability(fmt),
-    H323NonStandardCapabilityInfo(endpoint,
-                                  fixedData != NULL ? fixedData : (const BYTE *)(const char *)fmt,
-                                  fixedData != NULL ? dataSize : fmt.GetLength(),
-                                  offset,
-                                  length)
+  : H323NonStandardCapabilityInfo(endpoint, fixedData, dataSize, offset, length)
 {
 }
 
 
-H323NonStandardVideoCapability::H323NonStandardVideoCapability(const OpalMediaFormat & fmt,
-                                                               const PString & oid,
+H323NonStandardVideoCapability::H323NonStandardVideoCapability(const PString & oid,
                                                                const BYTE * fixedData,
                                                                PINDEX dataSize,
                                                                PINDEX offset,
                                                                PINDEX length)
-  : H323VideoCapability(fmt),
-    H323NonStandardCapabilityInfo(oid,
-                                  fixedData != NULL ? fixedData : (const BYTE *)(const char *)fmt,
-                                  fixedData != NULL ? dataSize : fmt.GetLength(),
-                                  offset,
-                                  length)
+  : H323NonStandardCapabilityInfo(oid, fixedData, dataSize, offset, length)
 {
 }
 
 
-H323NonStandardVideoCapability::H323NonStandardVideoCapability(const OpalMediaFormat & fmt,
-                                                               BYTE country,
+H323NonStandardVideoCapability::H323NonStandardVideoCapability(BYTE country,
                                                                BYTE extension,
                                                                WORD maufacturer,
                                                                const BYTE * fixedData,
                                                                PINDEX dataSize,
                                                                PINDEX offset,
                                                                PINDEX length)
-  : H323VideoCapability(fmt),
-    H323NonStandardCapabilityInfo(country,
-                                  extension,
-                                  maufacturer,
-                                  fixedData != NULL ? fixedData : (const BYTE *)(const char *)fmt,
-                                  fixedData != NULL ? dataSize : fmt.GetLength(),
-                                  offset,
-                                  length)
+  : H323NonStandardCapabilityInfo(country, extension, maufacturer, fixedData, dataSize, offset, length)
 {
 }
 
@@ -1111,9 +1066,8 @@ BOOL H323NonStandardVideoCapability::IsNonStandardMatch(const H245_NonStandardPa
 
 /////////////////////////////////////////////////////////////////////////////
 
-H323DataCapability::H323DataCapability(const OpalMediaFormat & fmt, unsigned rate)
-  : H323Capability(fmt),
-    maxBitRate(rate)
+H323DataCapability::H323DataCapability(unsigned rate)
+  : maxBitRate(rate)
 {
 }
 
@@ -1184,42 +1138,31 @@ BOOL H323DataCapability::OnReceivedPDU(const H245_DataType & dataType, BOOL)
 
 /////////////////////////////////////////////////////////////////////////////
 
-H323NonStandardDataCapability::H323NonStandardDataCapability(const OpalMediaFormat & fmt,
-                                                             unsigned maxBitRate,
+H323NonStandardDataCapability::H323NonStandardDataCapability(unsigned maxBitRate,
                                                              H323EndPoint & endpoint,
                                                              const BYTE * fixedData,
                                                              PINDEX dataSize,
                                                              PINDEX offset,
                                                              PINDEX length)
-  : H323DataCapability(fmt, maxBitRate),
-    H323NonStandardCapabilityInfo(endpoint,
-                                  fixedData != NULL ? fixedData : (const BYTE *)(const char *)fmt,
-                                  fixedData != NULL ? dataSize : fmt.GetLength(),
-                                  offset,
-                                  length)
+  : H323DataCapability(maxBitRate),
+    H323NonStandardCapabilityInfo(endpoint, fixedData, dataSize, offset, length)
 {
 }
 
 
-H323NonStandardDataCapability::H323NonStandardDataCapability(const OpalMediaFormat & fmt,
-                                                             unsigned maxBitRate,
+H323NonStandardDataCapability::H323NonStandardDataCapability(unsigned maxBitRate,
                                                              const PString & oid,
                                                              const BYTE * fixedData,
                                                              PINDEX dataSize,
                                                              PINDEX offset,
                                                              PINDEX length)
-  : H323DataCapability(fmt, maxBitRate),
-    H323NonStandardCapabilityInfo(oid,
-                                  fixedData != NULL ? fixedData : (const BYTE *)(const char *)fmt,
-                                  fixedData != NULL ? dataSize : fmt.GetLength(),
-                                  offset,
-                                  length)
+  : H323DataCapability(maxBitRate),
+    H323NonStandardCapabilityInfo(oid, fixedData, dataSize, offset, length)
 {
 }
 
 
-H323NonStandardDataCapability::H323NonStandardDataCapability(const OpalMediaFormat & fmt,
-                                                             unsigned maxBitRate,
+H323NonStandardDataCapability::H323NonStandardDataCapability(unsigned maxBitRate,
                                                              BYTE country,
                                                              BYTE extension,
                                                              WORD maufacturer,
@@ -1227,14 +1170,8 @@ H323NonStandardDataCapability::H323NonStandardDataCapability(const OpalMediaForm
                                                              PINDEX dataSize,
                                                              PINDEX offset,
                                                              PINDEX length)
-  : H323DataCapability(fmt, maxBitRate),
-    H323NonStandardCapabilityInfo(country,
-                                  extension,
-                                  maufacturer,
-                                  fixedData != NULL ? fixedData : (const BYTE *)(const char *)fmt,
-                                  fixedData != NULL ? dataSize : fmt.GetLength(),
-                                  offset,
-                                  length)
+  : H323DataCapability(maxBitRate),
+    H323NonStandardCapabilityInfo(country, extension, maufacturer, fixedData, dataSize, offset, length)
 {
 }
 
@@ -1280,13 +1217,8 @@ BOOL H323NonStandardDataCapability::IsNonStandardMatch(const H245_NonStandardPar
 
 /////////////////////////////////////////////////////////////////////////////
 
-static const char * const G711Name[2][2] = {
-  { OPAL_G711_ALAW_64K, "G.711-ALaw-56k" },
-  { OPAL_G711_ULAW_64K, "G.711-uLaw-56k" }
-};
-
 H323_G711Capability::H323_G711Capability(Mode m, Speed s)
-  : H323AudioCapability(G711Name[m][s], 240, 30) // 240ms max, 30ms desired
+  : H323AudioCapability(240, 30) // 240ms max, 30ms desired
 {
   mode = m;
   speed = s;
@@ -1309,10 +1241,20 @@ unsigned H323_G711Capability::GetSubType() const
 }
 
 
+PString H323_G711Capability::GetFormatName() const
+{
+  static const char * const G711Name[2][2] = {
+    { "G.711-ALaw-64k{sw}", "G.711-ALaw-56k{sw}" },
+    { "G.711-uLaw-64k{sw}", "G.711-uLaw-56k{sw}" }
+  };
+  return G711Name[mode][speed];
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 H323_G728Capability::H323_G728Capability()
-  : H323AudioCapability(OpalG728, 75, 15) // 300ms max, 60ms desired
+  : H323AudioCapability(75, 15) // 300ms max, 60ms desired
 {
 }
 
@@ -1329,6 +1271,12 @@ unsigned H323_G728Capability::GetSubType() const
 }
 
 
+PString H323_G728Capability::GetFormatName() const
+{
+  return OpalG728;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 static const char * const G729Name[4] = {
@@ -1339,7 +1287,7 @@ static const char * const G729Name[4] = {
 };
 
 H323_G729Capability::H323_G729Capability(Mode m)
-  : H323AudioCapability(G729Name[m], 30,  8) // 300ms max, 80ms desired
+  : H323AudioCapability(30,  8) // 300ms max, 80ms desired
 {
   mode = m;
 }
@@ -1363,10 +1311,16 @@ unsigned H323_G729Capability::GetSubType() const
 }
 
 
+PString H323_G729Capability::GetFormatName() const
+{
+  return G729Name[mode];
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 H323_G7231Capability::H323_G7231Capability(BOOL sid)
-  : H323AudioCapability(OpalG7231_6k3, 10, 3) // 300ms max, 90ms desired
+  : H323AudioCapability(10, 3) // 300ms max, 90ms desired
 {
   allowSIDFrames = sid;
 }
@@ -1381,6 +1335,12 @@ PObject * H323_G7231Capability::Clone() const
 unsigned H323_G7231Capability::GetSubType() const
 {
   return H245_AudioCapability::e_g7231;
+}
+
+
+PString H323_G7231Capability::GetFormatName() const
+{
+  return OpalG7231_6k3;
 }
 
 
@@ -1411,7 +1371,7 @@ BOOL H323_G7231Capability::OnReceivedPDU(const H245_AudioCapability & pdu,
 ///////////////////////////////////////////////////////////////////////////////
 
 H323_GSM0610Capability::H323_GSM0610Capability()
-  : H323AudioCapability(OpalGSM0610, 7, 4) // 140ms max, 80ms desired
+  : H323AudioCapability(7, 4) // 140ms max, 80ms desired
 {
 }
 
@@ -1425,6 +1385,12 @@ PObject * H323_GSM0610Capability::Clone() const
 unsigned H323_GSM0610Capability::GetSubType() const
 {
   return H245_AudioCapability::e_gsmFullRate;
+}
+
+
+PString H323_GSM0610Capability::GetFormatName() const
+{
+  return OpalGSM0610;
 }
 
 
@@ -1501,7 +1467,6 @@ H323_REGISTER_CAPABILITY_FUNCTION(H323_UserInputCapability_RFC2833,
 
 
 H323_UserInputCapability::H323_UserInputCapability(SubTypes _subType)
-  : H323Capability(H323_UserInputCapability::SubTypeNames[_subType])
 {
   subType = _subType;
   rtpPayloadType = OpalRFC2833.GetPayloadType();
@@ -1534,6 +1499,12 @@ static unsigned UserInputCapabilitySubTypeCodes[] = {
 unsigned  H323_UserInputCapability::GetSubType()  const
 {
   return UserInputCapabilitySubTypeCodes[subType];
+}
+
+
+PString H323_UserInputCapability::GetFormatName() const
+{
+  return SubTypeNames[subType];
 }
 
 
@@ -1971,7 +1942,7 @@ H323Capability * H323Capabilities::FindCapability(const PString & formatName,
   PStringArray wildcard = formatName.Tokenise('*', FALSE);
 
   for (PINDEX i = 0; i < table.GetSize(); i++) {
-    PCaselessString str = table[i].GetMediaFormat();
+    PCaselessString str = table[i].GetFormatName();
     if (MatchWildcard(str, wildcard) &&
           (direction == H323Capability::e_Unknown ||
            table[i].GetCapabilityDirection() == direction)) {
@@ -2226,7 +2197,7 @@ BOOL H323Capabilities::Merge(const H323Capabilities & newCaps)
   PINDEX i;
   for (i = 0; i < newCaps.GetSize(); i++) {
     // Only add if not already in
-    if (FindCapability(newCaps[i].GetCapabilityNumber()) == NULL)
+    if (!FindCapability(newCaps[i]))
       Copy(newCaps[i]);
   }
 
@@ -2267,7 +2238,7 @@ void H323Capabilities::Reorder(const PStringArray & preferenceOrder)
   for (preference = 0; preference < preferenceOrder.GetSize(); preference++) {
     PStringArray wildcard = preferenceOrder[preference].Tokenise('*', FALSE);
     for (PINDEX idx = base; idx < table.GetSize(); idx++) {
-      PCaselessString str = table[idx].GetMediaFormat();
+      PCaselessString str = table[idx].GetFormatName();
       if (MatchWildcard(str, wildcard)) {
         if (idx != base)
           table.InsertAt(base, table.RemoveAt(idx));
