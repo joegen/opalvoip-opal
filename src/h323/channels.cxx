@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2011  2002/01/14 06:35:57  robertj
+ * Revision 1.2012  2002/01/22 05:24:36  robertj
+ * Added enum for illegal payload type value.
+ * Update from OpenH323
+ *
+ * Revision 2.10  2002/01/14 06:35:57  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.9  2001/11/13 04:29:47  robertj
@@ -60,6 +64,15 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.109  2002/01/17 07:05:03  robertj
+ * Added support for RFC2833 embedded DTMF in the RTP stream.
+ *
+ * Revision 1.108  2002/01/17 00:10:37  robertj
+ * Fixed double copy of rtpPayloadType in RTP channel, caused much confusion.
+ *
+ * Revision 1.107  2002/01/14 05:18:44  robertj
+ * Fixed typo on external RTP channel constructor.
  *
  * Revision 1.106  2002/01/10 05:13:54  robertj
  * Added support for external RTP stacks, thanks NuMind Software Systems.
@@ -744,6 +757,7 @@ H323_RealTimeChannel::H323_RealTimeChannel(H323Connection & connection,
                                            Directions direction)
   : H323UnidirectionalChannel(connection, capability, direction)
 {
+  rtpPayloadType = RTP_DataFrame::IllegalPayloadType;
 }
 
 
@@ -856,6 +870,28 @@ BOOL H323_RealTimeChannel::OnReceivedAckPDU(const H245_OpenLogicalChannelAck & a
 }
 
 
+BOOL H323_RealTimeChannel::SetDynamicRTPPayloadType(int newType)
+{
+  PTRACE(1, "H323RTP\tSetting dynamic RTP payload type: " << newType);
+
+  // This is "no change"
+  if (newType == -1)
+    return TRUE;
+
+  // Check for illegal type
+  if (newType < RTP_DataFrame::DynamicBase || newType >= RTP_DataFrame::IllegalPayloadType)
+    return FALSE;
+
+  // Check for overwriting "known" type
+  if (rtpPayloadType < RTP_DataFrame::DynamicBase)
+    return FALSE;
+
+  rtpPayloadType = (RTP_DataFrame::PayloadTypes)newType;
+  PTRACE(3, "H323RTP\tSetting dynamic payload type to " << rtpPayloadType);
+  return TRUE;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 H323_RTPChannel::H323_RTPChannel(H323Connection & conn,
@@ -866,7 +902,6 @@ H323_RTPChannel::H323_RTPChannel(H323Connection & conn,
     rtpSession(r),
     rtpCallbacks(*(H323_RTP_Session *)r.GetUserData())
 {
-  rtpPayloadType = RTP_DataFrame::MaxPayloadType;
   mediaStream = new OpalRTPMediaStream(receiver, rtpSession);
   PTRACE(3, "H323RTP\t" << (receiver ? "Receiver" : "Transmitter")
          << " created using session " << GetSessionID());
@@ -909,28 +944,6 @@ BOOL H323_RTPChannel::OnReceivedPDU(const H245_H2250LogicalChannelParameters & p
 BOOL H323_RTPChannel::OnReceivedAckPDU(const H245_H2250LogicalChannelAckParameters & param)
 {
   return rtpCallbacks.OnReceivedAckPDU(*this, param);
-}
-
-
-BOOL H323_RTPChannel::SetDynamicRTPPayloadType(int newType)
-{
-  PTRACE(1, "H323RTP\tSetting dynamic RTP payload type: " << newType);
-
-  // This is "no change"
-  if (newType == -1)
-    return TRUE;
-
-  // Check for illegal type
-  if (newType < RTP_DataFrame::DynamicBase || newType > RTP_DataFrame::MaxPayloadType)
-    return FALSE;
-
-  // Check for overwriting "known" type
-  if (rtpPayloadType < RTP_DataFrame::DynamicBase)
-    return FALSE;
-
-  rtpPayloadType = (RTP_DataFrame::PayloadTypes)newType;
-  PTRACE(3, "H323RTP\tSetting dynamic payload type to " << rtpPayloadType);
-  return TRUE;
 }
 
 
@@ -1061,8 +1074,9 @@ BOOL H323_ExternalRTPChannel::OnReceivedAckPDU(const H245_H2250LogicalChannelAck
     return FALSE;
   }
 
-  if (param.m_sessionID != sessionID)
+  if (param.m_sessionID != sessionID) {
     PTRACE(1, "LogChan\tAck for invalid session: " << param.m_sessionID);
+  }
 
   if (!param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaControlChannel)) {
     PTRACE(1, "LogChan\tNo mediaControlChannel specified");
