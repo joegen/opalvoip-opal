@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2039  2004/10/03 15:16:04  rjongbloed
+ * Revision 1.2040  2004/10/16 03:10:04  rjongbloed
+ * Fixed correct detection of when to use STUN, this does not include the local host!
+ *
+ * Revision 2.38  2004/10/03 15:16:04  rjongbloed
  * Removed no trace warning
  *
  * Revision 2.37  2004/08/18 13:03:23  rjongbloed
@@ -817,28 +820,8 @@ PString OpalManager::ApplyRouteTable(const PString & proto, const PString & addr
 
 BOOL OpalManager::IsLocalAddress(const PIPSocket::Address & ip) const
 {
-  /* Check if the remote address is a private IP address.
-   * RFC 1918 specifies the following private IP addresses
-   * 10.0.0.0    - 10.255.255.255.255
-   * 172.16.0.0  - 172.31.255.255
-   * 192.168.0.0 - 192.168.255.255
-   */
-
-  return (ip.Byte1() == 10)
-         ||
-         (
-           (ip.Byte1() == 172)
-           &&
-           (ip.Byte2() >= 16) && (ip.Byte2() <= 31)
-         )
-         ||
-         (
-           (ip.Byte1() == 192) 
-           &&
-           (ip.Byte2() == 168)
-         )
-         ||
-         ip.IsBroadcast();
+  /* Check if the remote address is a private IP, broadcast, or us */
+  return ip.IsRFC1918() || ip.IsBroadcast() || PIPSocket::IsLocalHost(ip);
 }
 
 
