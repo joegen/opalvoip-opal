@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.h,v $
- * Revision 1.2003  2001/11/09 05:49:47  robertj
+ * Revision 1.2004  2001/11/12 05:32:12  robertj
+ * Added OpalTransportAddress::GetIpAddress when don't need port number.
+ *
+ * Revision 2.2  2001/11/09 05:49:47  robertj
  * Abstracted UDP connection algorithm
  *
  * Revision 2.1  2001/11/06 05:40:13  robertj
@@ -84,6 +87,11 @@ class OpalTransportAddress : public PString
 
   /**@name Operations */
   //@{
+    /**Extract the ip address from transport address.
+       Returns FALSE, if the address is not an IP transport address.
+      */
+    BOOL GetIpAddress(PIPSocket::Address & ip) const;
+
     /**Extract the ip address and port number from transport address.
        Returns FALSE, if the address is not an IP transport address.
       */

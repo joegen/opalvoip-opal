@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2010  2001/11/02 10:45:19  robertj
+ * Revision 1.2011  2001/11/12 05:32:12  robertj
+ * Added OpalTransportAddress::GetIpAddress when don't need port number.
+ *
+ * Revision 2.9  2001/11/02 10:45:19  robertj
  * Updated to OpenH323 v1.7.3
  *
  * Revision 2.8  2001/10/15 04:35:44  robertj
@@ -844,7 +847,7 @@ H323Connection * H323EndPoint::InternalMakeCall(OpalCall & call,
   // that the gatekeeper is using.
   OpalTransport * transport;
   if (gatekeeper != NULL)
-    transport = gatekeeper->GetTransport().GetRemoteAddress().CreateTransport(*this);
+    transport = gatekeeper->GetTransport().GetLocalAddress().CreateTransport(*this);
   else
     transport = address.CreateTransport(*this);
 

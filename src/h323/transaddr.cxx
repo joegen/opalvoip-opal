@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transaddr.cxx,v $
- * Revision 1.2002  2001/11/09 05:49:47  robertj
+ * Revision 1.2003  2001/11/12 05:32:12  robertj
+ * Added OpalTransportAddress::GetIpAddress when don't need port number.
+ *
+ * Revision 2.1  2001/11/09 05:49:47  robertj
  * Abstracted UDP connection algorithm
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
@@ -149,8 +152,7 @@ BOOL H323TransportAddress::SetPDU(H225_ArrayOf_TransportAddress & pdu,
   PINDEX i;
 
   PIPSocket::Address firstAddress;
-  WORD dummy;
-  if (first.GetIpAndPort(firstAddress, dummy)) {
+  if (first.GetIpAddress(firstAddress)) {
     for (i = 0; i < interfaces.GetSize(); i++) {
       PIPSocket::Address ipAddr = interfaces[i].GetAddress();
       if (ipAddr == firstAddress)
