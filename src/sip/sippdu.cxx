@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2041  2004/12/27 22:19:27  dsandras
+ * Revision 1.2042  2005/01/16 11:28:06  csoutheren
+ * Added GetIdentifier virtual function to OpalConnection, and changed H323
+ * and SIP descendants to use this function. This allows an application to
+ * obtain a GUID for any connection regardless of the protocol used
+ *
+ * Revision 2.40  2004/12/27 22:19:27  dsandras
  * Added Allow field to PDUs.
  *
  * Revision 2.39  2004/12/22 18:57:50  dsandras
@@ -278,7 +283,12 @@ SIPURL::SIPURL(const PString & name,
     WORD port;
     if (address.GetIpAndPort(ip, port)) {
       PStringStream s;
-      s << "sip:" << name << '@' << ip << ':';
+	    s << "sip:" << name << '@';
+	    if (ip.GetVersion() == 6)
+        s << '[' << ip << ']';
+      else
+        s << ip;
+      s << ':';
       if (listenerPort != 0)
         s << listenerPort;
       else
