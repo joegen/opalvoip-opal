@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2012  2003/03/06 03:57:46  robertj
+ * Revision 1.2013  2003/06/02 03:13:28  rjongbloed
+ * Made changes so that media stream in opposite direction to the one already
+ *   opened will use same media format for preference. That is try and use
+ *   symmetric codecs if possible.
+ *
+ * Revision 2.11  2003/03/06 03:57:46  robertj
  * IVR support (work in progress) requiring large changes everywhere.
  *
  * Revision 2.10  2002/11/10 11:33:17  robertj
@@ -274,16 +279,17 @@ class OpalCall : public PObject
 
   /**@name Media management */
   //@{
-    /**Get the media formats of the other connections in call.
+    /**Get the media formats of the connections in call.
        This returns the intersection of all the media formats that all
-       connections in the call, except the one provided as a parameter,
-       are capable of.
+       connections in the call, optionally excepting the one provided as a
+       parameter, are capable of.
 
        This will also add to the list all media formats for which there are
        transcoders registered.
       */
     OpalMediaFormatList GetMediaFormats(
-      const OpalConnection & connection  /// Source requesting formats
+      const OpalConnection & connection,  /// Source requesting formats
+      BOOL includeSpecifiedConnection = FALSE  /// Include parameters media
     );
 
     /**Open transmitter media streams for each connection.
