@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2003  2001/08/17 08:34:28  robertj
+ * Revision 1.2004  2001/08/21 01:12:10  robertj
+ * Fixed propagation of sound channel buffers through media stream.
+ *
+ * Revision 2.2  2001/08/17 08:34:28  robertj
  * Fixed not setting counts in read/write of sound channel.
  *
  * Revision 2.1  2001/08/01 05:45:34  robertj
@@ -612,15 +615,18 @@ BOOL OpalFileMediaStream::IsSynchronous() const
 
 OpalAudioMediaStream::OpalAudioMediaStream(BOOL isSourceStream,
                                            unsigned id,
+                                           PINDEX buffers,
                                            PSoundChannel * channel,
                                            BOOL autoDel)
   : OpalRawMediaStream(isSourceStream, id, channel, autoDel)
 {
+  soundChannelBuffers = buffers;
 }
 
 
 OpalAudioMediaStream::OpalAudioMediaStream(BOOL isSourceStream,
                                            unsigned id,
+                                           PINDEX buffers,
                                            const PString & deviceName)
   : OpalRawMediaStream(isSourceStream,
                        id,
@@ -630,6 +636,7 @@ OpalAudioMediaStream::OpalAudioMediaStream(BOOL isSourceStream,
                                          1, 8000, 16),
                        FALSE)
 {
+  soundChannelBuffers = buffers;
 }
 
 
@@ -639,6 +646,12 @@ OpalMediaFormatList OpalAudioMediaStream::GetMediaFormats() const
   OpalMediaFormatList pcmOnly;
   pcmOnly += OpalPCM16;
   return pcmOnly;
+}
+
+
+BOOL OpalAudioMediaStream::SetDataSize(PINDEX dataSize)
+{
+  return ((PSoundChannel *)channel)->SetBuffers(dataSize, soundChannelBuffers);
 }
 
 
