@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2072  2005/01/15 23:32:41  csoutheren
+ * Revision 1.2073  2005/02/19 22:42:55  dsandras
+ * Removed unuseful assertion.
+ *
+ * Revision 2.71  2005/01/15 23:32:41  csoutheren
  * Added debugging to help find slow-start problem
  *
  * Revision 2.70  2005/01/15 23:27:31  dsandras
@@ -4370,7 +4373,7 @@ OpalMediaStream * H323Connection::CreateMediaStream(const OpalMediaFormat & medi
     return new OpalNullMediaStream(mediaFormat, sessionID, isSource);
 
   if (!isSource) {
-    if (PAssertNULL(transmitterMediaStream) == NULL)
+    if (transmitterMediaStream == NULL)
       return NULL;
     OpalMediaStream * stream = transmitterMediaStream;
     transmitterMediaStream = NULL;
