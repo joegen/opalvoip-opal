@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2009  2002/07/01 04:56:33  robertj
+ * Revision 1.2010  2002/09/04 06:01:49  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.8  2002/07/01 04:56:33  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.7  2002/04/10 03:10:39  robertj
@@ -53,6 +56,16 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.78  2002/09/03 06:15:32  robertj
+ * Added copy constructor/operator for session manager.
+ *
+ * Revision 1.77  2002/08/05 10:03:48  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
+ *
+ * Revision 1.76  2002/07/23 06:28:16  robertj
+ * Added statistics call back on first sent or received RTP packet, helps with,
+ *   for example, detecting if remote endpoint has started to send audio.
  *
  * Revision 1.75  2002/05/28 02:37:55  robertj
  * Fixed reading data out of RTCP compound statements.
@@ -311,6 +324,7 @@
 
 
 #define new PNEW
+
 
 #if !PTRACING // Stuff to remove unised parameters warning
 #define PTRACE_sender
@@ -732,6 +746,10 @@ RTP_Session::SendReceiveStatus RTP_Session::OnSendData(RTP_DataFrame & frame)
   octetsSent += frame.GetPayloadSize();
   packetsSent++;
 
+  // Call the statistics call-back on the first PDU with total count == 1
+  if (packetsSent == 1 && userData != NULL)
+    userData->OnTxStatistics(*this);
+
   if (!SendReport())
     return e_AbortTransport;
 
@@ -856,6 +874,10 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(const RTP_DataFrame & 
 
   octetsReceived += frame.GetPayloadSize();
   packetsReceived++;
+
+  // Call the statistics call-back on the first PDU with total count == 1
+  if (packetsReceived == 1 && userData != NULL)
+    userData->OnRxStatistics(*this);
 
   if (!SendReport())
     return e_AbortTransport;

@@ -24,11 +24,17 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: guid.cxx,v $
- * Revision 1.2002  2001/10/05 00:22:14  robertj
+ * Revision 1.2003  2002/09/04 06:01:49  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.1  2001/10/05 00:22:14  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.13  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
  *
  * Revision 1.12  2001/10/03 03:18:29  robertj
  * Changed to only get (or fake) MAC address once.

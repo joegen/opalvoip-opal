@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: t120proto.cxx,v $
- * Revision 1.2005  2002/02/11 09:32:13  robertj
+ * Revision 1.2006  2002/09/04 06:01:49  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.4  2002/02/11 09:32:13  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.3  2002/01/22 05:22:19  robertj
@@ -39,6 +42,12 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.4  2002/09/03 06:04:11  robertj
+ * Added globally accessible functions for media format name.
+ *
+ * Revision 1.3  2002/08/05 10:03:48  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
  *
  * Revision 1.2  2002/02/01 01:47:34  robertj
  * Some more fixes for T.120 channel establishment, more to do!
@@ -79,15 +88,15 @@ class T120ConnectPDU : public MCS_ConnectMCSPDU {
 };
 
 
-#define new PNEW
-
-
 OpalMediaFormat const OpalT120Protocol::MediaFormat("T.120",
                                                     OpalMediaFormat::DefaultDataSessionID,
                                                     RTP_DataFrame::IllegalPayloadType,
                                                     "t120",
                                                     FALSE,   // No jitter for data
                                                     825000); // 100's bits/sec
+
+
+#define new PNEW
 
 
 /////////////////////////////////////////////////////////////////////////////

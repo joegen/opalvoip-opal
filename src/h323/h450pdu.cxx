@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h450pdu.cxx,v $
- * Revision 1.2009  2002/07/01 04:56:32  robertj
+ * Revision 1.2010  2002/09/04 06:01:49  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.8  2002/07/01 04:56:32  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.7  2002/03/15 03:04:03  robertj
@@ -50,6 +53,12 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.16  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
+ *
+ * Revision 1.15  2002/07/04 00:40:34  robertj
+ * More H.450.11 call intrusion implementation, thanks Aleksandar Todorovic
  *
  * Revision 1.14  2002/06/25 09:56:07  robertj
  * Fixed GNU warnings
@@ -101,7 +110,6 @@
  */
 
 #include <ptlib.h>
-
 
 #ifdef __GNUC__
 #pragma implementation "h450pdu.h"
@@ -283,19 +291,68 @@ void H450ServiceAPDU::BuildCallIntrusionForcedRelease(int invokeId,
 }
 
 
-void BuildCallIntrusionForcedReleaseResult()
+X880_ReturnResult& H450ServiceAPDU::BuildCallIntrusionForcedReleaseResult(int invokeId)
 {
-/**
-  TBD
-*/
+  PTRACE(1 ,"H450.11\tH450ServiceAPDU::BuildCallIntrusionForcedReleaseResult BEGIN");
+  
+  X880_ReturnResult& result = BuildReturnResult(invokeId);
+  result.IncludeOptionalField(X880_ReturnResult::e_result);
+  result.m_result.m_opcode.SetTag(X880_Code::e_local);
+  PASN_Integer& operation = (PASN_Integer&) result.m_result.m_opcode;
+  operation.SetValue(H45011_H323CallIntrusionOperations::e_callIntrusionForcedRelease);
+
+  H45011_CIFrcRelOptRes ciCIPLRes;
+
+  PPER_Stream resultStream;
+  ciCIPLRes.Encode(resultStream);
+  resultStream.CompleteEncoding();
+  result.m_result.m_result.SetValue(resultStream);
+  PTRACE(4 ,"H450.11\tH450ServiceAPDU::BuildCallIntrusionForcedReleaseResult END");
+
+  return result;
 }
-;
+
 
 void H450ServiceAPDU::BuildCallIntrusionForcedReleaseError()
 {
 /**
   TBD
 */
+}
+
+
+void H450ServiceAPDU::BuildCallIntrusionGetCIPL(int invokeId)
+{
+  PTRACE(4, "H450.11\tBuildCallIntrusionGetCIPL invokeId=" << invokeId);
+  X880_Invoke invoke = BuildInvoke(invokeId, H45011_H323CallIntrusionOperations::e_callIntrusionGetCIPL);
+}
+
+
+void H450ServiceAPDU::BuildCallIntrusionImpending(int invokeId)
+{
+  PTRACE(4, "H450.11\tBuildCallIntrusionImpending invokeId=" << invokeId);
+  X880_Invoke& invoke = BuildInvoke(invokeId, H45011_H323CallIntrusionOperations::e_callIntrusionNotification);
+ 
+  H45011_CINotificationArg argument;
+
+  argument.m_ciStatusInformation = H45011_CIStatusInformation::e_callIntrusionImpending;
+
+  invoke.IncludeOptionalField(X880_Invoke::e_argument);
+  invoke.m_argument.EncodeSubType(argument);
+}
+
+
+void H450ServiceAPDU::BuildCallIntrusionForceRelesed(int invokeId)
+{
+  PTRACE(4, "H450.11\tBuildCallIntrusionForceRelesed invokeId=" << invokeId);
+  X880_Invoke& invoke = BuildInvoke(invokeId, H45011_H323CallIntrusionOperations::e_callIntrusionNotification);
+ 
+  H45011_CINotificationArg argument;
+
+  argument.m_ciStatusInformation = H45011_CIStatusInformation::e_callForceReleased;
+
+  invoke.IncludeOptionalField(X880_Invoke::e_argument);
+  invoke.m_argument.EncodeSubType(argument);
 }
 
 
@@ -482,7 +539,7 @@ BOOL H450xDispatcher::OnReceivedInvoke(X880_Invoke & invoke)
     if (!opcodeHandler.Contains(opcode)) {
       PTRACE(2, "H4501\tInvoke of unsupported local opcode:\n  " << invoke);
       SendInvokeReject(invokeId, 1 /*X880_InvokeProblem::e_unrecognisedOperation*/);
-	  result = FALSE;
+      result = FALSE;
     }
     else
       result = opcodeHandler[opcode].OnReceivedInvoke(opcode, invokeId, linkedId, argument);
@@ -1748,6 +1805,8 @@ void H45011Handler::AttachToAlerting(H323SignalPDU & pdu)
   if (ciSendState != e_ci_sAttachToAlerting)
     return;
 
+  PTRACE(4, "H450.11\tAttachToAlerting Invoke ID=" << currentInvokeId);
+
   // Store the outstanding invokeID associated with this connection
   currentInvokeId = dispatcher.GetNextInvokeId();
   PTRACE(4, "H450.11\tAttachToAlerting Invoke ID=" << currentInvokeId);
@@ -1755,6 +1814,8 @@ void H45011Handler::AttachToAlerting(H323SignalPDU & pdu)
     H450ServiceAPDU serviceAPDU;
     switch (ciReturnState){
       case e_ci_rCallIntrusionImpending:
+        serviceAPDU.BuildCallIntrusionImpending(currentInvokeId);
+        PTRACE(4, "H450.11\tReturned e_ci_rCallIntrusionImpending");
         break;
       case e_ci_rCallIntruded:
         break;
@@ -1763,7 +1824,7 @@ void H45011Handler::AttachToAlerting(H323SignalPDU & pdu)
       case e_ci_rCallForceReleased:
         break;
       case e_ci_rCallForceReleaseResult:
-        serviceAPDU.BuildReturnResult(currentInvokeId);
+        serviceAPDU.BuildCallIntrusionForcedReleaseResult(currentInvokeId);
         PTRACE(4, "H450.11\tReturned H45011_CallIntrusionForced Release Result");
         break;
       case e_ci_rCallIntrusionComplete:
@@ -1813,7 +1874,7 @@ void H45011Handler::AttachToConnect(H323SignalPDU & pdu)
       case e_ci_rCallForceReleased:
         break;
       case e_ci_rCallForceReleaseResult:
-        serviceAPDU.BuildReturnResult(currentInvokeId);
+        serviceAPDU.BuildCallIntrusionForcedReleaseResult(currentInvokeId);
         PTRACE(4, "H450.11\tReturned H45011_CallIntrusionForced Release Result");
         break;
       case e_ci_rCallIntrusionComplete:
@@ -1870,10 +1931,13 @@ void H45011Handler::AttachToReleaseComplete(H323SignalPDU & pdu)
         PTRACE(4, "H450.11\tReturned H45011_CallIntrusionErrors::e_notAuthorized");
         serviceAPDU.BuildReturnError(currentInvokeId, H45011_CallIntrusionErrors::e_notAuthorized);
         break;
+      case e_ci_rCallForceReleased:
+        PTRACE(4, "H450.11\tReturned H45011_CallIntrusionForceRelease::e_ci_rCallForceReleased");
+        serviceAPDU.BuildCallIntrusionForceRelesed(currentInvokeId);
+        break;
       default :
         break;
     }
-    serviceAPDU.BuildReturnError(currentInvokeId, H45011_CallIntrusionErrors::e_notAuthorized);
     serviceAPDU.AttachSupplementaryServiceAPDU(pdu);
   }
 
@@ -1901,11 +1965,40 @@ void H45011Handler::OnReceivedCallIntrusionRequest(int /*linkedId*/,
 void H45011Handler::OnReceivedCallIntrusionGetCIPL(int /*linkedId*/,
                                                    PASN_OctetString *argument)
 {
+  PTRACE(4, "H450.11\tReceived GetCIPL Invoke");
 
   H45011_CIGetCIPLOptArg ciArg;
 
-  if(!DecodeArguments(argument, ciArg, -1))
+  // !!!!!!!!
+  DecodeArguments(argument, ciArg, -1);
+/*  if(!DecodeArguments(argument, ciArg, -1))
     return;
+*/
+  
+
+  // Send a FACILITY message with a callTransferIdentify return result
+  // Supplementary Service PDU to the transferring endpoint.
+  H450ServiceAPDU serviceAPDU;
+
+  X880_ReturnResult& result = serviceAPDU.BuildReturnResult(currentInvokeId);
+  result.IncludeOptionalField(X880_ReturnResult::e_result);
+  result.m_result.m_opcode.SetTag(X880_Code::e_local);
+  PASN_Integer& operation = (PASN_Integer&) result.m_result.m_opcode;
+  operation.SetValue(H45011_H323CallIntrusionOperations::e_callIntrusionGetCIPL);
+
+  H45011_CIGetCIPLRes ciCIPLRes;
+
+  ciCIPLRes.m_ciProtectionLevel = endpoint.GetCallIntrusionProtectionLevel();
+  ciCIPLRes.IncludeOptionalField(H45011_CIGetCIPLRes::e_silentMonitoringPermitted);
+  ciCIPLRes.m_silentMonitoringPermitted = FALSE;
+
+  PPER_Stream resultStream;
+  ciCIPLRes.Encode(resultStream);
+  resultStream.CompleteEncoding();
+  result.m_result.m_result.SetValue(resultStream);
+
+  serviceAPDU.WriteFacilityPDU(connection);
+  PTRACE(4, "H450.11\tSent GetCIPL Result CIPL=" << ciCIPLRes.m_ciProtectionLevel);
 /*
   TBD
 */
@@ -1947,8 +2040,10 @@ BOOL H45011Handler::OnReceivedCallIntrusionForcedRelease(int /*linkedId*/,
         H323Connection* conn = endpoint.FindConnectionWithLock(tokens[i]);
         if (conn != NULL){
           if (conn->IsEstablished()){
-            if((conn->GetLocalCallIntrusionProtectionLevel() < ciArg.m_ciCapabilityLevel) /**&& (!Conn->IsCallIntrusion ())*/){
-              endpoint.ClearCall(conn->GetToken());
+            if((conn->GetLocalCallIntrusionProtectionLevel() < (int)ciArg.m_ciCapabilityLevel)){
+              activeCallToken = conn->GetToken();
+              intrudingCallToken = connection.GetToken();
+              conn->GetRemoteCallIntrusionProtectionLevel(connection.GetToken (), (unsigned)ciArg.m_ciCapabilityLevel);
               result = TRUE;
               conn->Unlock ();
               break;
@@ -1968,6 +2063,7 @@ BOOL H45011Handler::OnReceivedCallIntrusionForcedRelease(int /*linkedId*/,
     else {
       ciSendState = e_ci_sAttachToReleseComplete;
       ciReturnState = e_ci_rNotAuthorized;
+      connection.ClearCall(EndedByLocalBusy);
     }
   }
   else{
@@ -2078,7 +2174,9 @@ BOOL H45011Handler::OnReceivedReturnResult(X880_ReturnResult & returnResult)
       case e_ci_WaitAck:
         OnReceivedCIRequestResult(); 
         break;
-
+      case e_ci_GetCIPL:
+        OnReceivedCIGetCIPLResult(returnResult); 
+        break;
       default :
         break;
     }
@@ -2096,16 +2194,74 @@ void H45011Handler::OnReceivedCIRequestResult()
 }
 
 
+void H45011Handler::OnReceivedCIGetCIPLResult(X880_ReturnResult & returnResult)
+{
+  PTRACE(4, "H450.11\tOnReceivedCIRequestResult");
+  // Get the return result if present
+  PASN_OctetString * result = NULL;
+  if (returnResult.HasOptionalField(X880_ReturnResult::e_result)) {
+    result = &returnResult.m_result.m_result;
+
+    // Extract the C Party Details
+    H45011_CIGetCIPLRes ciGetCIPLResult;
+
+    PPER_Stream resultStream(*result);
+    ciGetCIPLResult.Decode(resultStream);
+
+    PTRACE(4 ,"H450.11\tReceived CIPL=" << ciGetCIPLResult.m_ciProtectionLevel );
+
+    if (intrudingCallCICL > ciGetCIPLResult.m_ciProtectionLevel){
+
+      // Send ciNotification.inv (ciImpending) To C
+      connection.Lock();
+      H450ServiceAPDU serviceAPDU;
+      currentInvokeId = dispatcher.GetNextInvokeId();
+      serviceAPDU.BuildCallIntrusionImpending(currentInvokeId);
+      serviceAPDU.WriteFacilityPDU(connection);
+      connection.Unlock();
+
+      // Send ciNotification.inv (ciImpending) to  intruding (A)
+      H323Connection* conn = endpoint.FindConnectionWithLock(intrudingCallToken);
+      conn->SetIntrusionImpending ();
+
+      //Send Ringing to intruding (A)
+	  conn->AnsweringCall (conn->AnswerCallPending);
+
+      // MUST RETURN ciNotification.inv (callForceRelesed) to active call (C) when releasing call !!!!!!
+      ciSendState = e_ci_sAttachToReleseComplete;
+      ciReturnState = e_ci_rCallForceReleased;
+      
+      //Send Forced Release Accepted when Answering call to intruding (A)
+      conn->SetForcedReleaseAccepted();
+      conn->Unlock ();
+    }
+    else {
+      PTRACE(4 ,"H450.11\tCICL<CIPL -> Clear Call");
+      // Clear Call with intruding (A)
+      H323Connection* conn = endpoint.FindConnectionWithLock(intrudingCallToken);
+      conn->SetIntrusionNotAuthorized();
+      endpoint.ClearCall (intrudingCallToken);
+    }
+  }
+
+  // stop timer CI-T5
+  PTRACE(4, "H450.11\tTrying to stop timer CI-T5");
+  StopciTimer();
+}
+
+
 BOOL H45011Handler::OnReceivedReturnError(int errorCode, X880_ReturnError &returnError)
 {
   BOOL result = TRUE;
-  PTRACE(4, "H450.11\tReceived Return Error CODE=" <<errorCode);
+  PTRACE(4, "H450.11\tReceived Return Error CODE=" <<errorCode << ", InvokeId=" <<returnError.m_invokeId.GetValue());
   if (currentInvokeId == returnError.m_invokeId.GetValue()) {
     switch (ciState) {
       case e_ci_WaitAck:
         result = OnReceivedInvokeReturnError(errorCode);
         break;
-
+      case e_ci_GetCIPL:
+        result = OnReceivedGetCIPLReturnError(errorCode);
+        break;
       default :
         break;
     }
@@ -2140,6 +2296,7 @@ BOOL H45011Handler::OnReceivedInvokeReturnError(int errorCode, const bool timerE
       break;
     case H45011_CallIntrusionErrors::e_notAuthorized :
       PTRACE(4, "H450.11\tH45011_CallIntrusionErrors::e_notAuthorized");
+      result = TRUE;
       break;
     default:
       PTRACE(4, "H450.11\tH45011_CallIntrusionErrors::DEFAULT");
@@ -2147,6 +2304,43 @@ BOOL H45011Handler::OnReceivedInvokeReturnError(int errorCode, const bool timerE
   }
   return result;
 }
+
+
+BOOL H45011Handler::OnReceivedGetCIPLReturnError(int errorCode, const bool timerExpiry)
+{
+  PTRACE(4, "H450.11\tOnReceivedGetCIPLReturnError ErrorCode="<<errorCode);
+  if(!timerExpiry){
+    if (ciTimer.IsRunning()){
+      ciTimer.Stop();
+      PTRACE(4, "H450.11\tStopping timer CI-TX");
+    }
+  }
+
+  // Send ciNotification.inv (ciImpending) to active call (C)
+  connection.Lock();
+  H450ServiceAPDU serviceAPDU;
+  currentInvokeId = dispatcher.GetNextInvokeId();
+  serviceAPDU.BuildCallIntrusionImpending(currentInvokeId);
+  serviceAPDU.WriteFacilityPDU(connection);
+  connection.Unlock();
+
+  // Send ciNotification.inv (ciImpending) to intruding (A)
+  H323Connection* conn = endpoint.FindConnectionWithLock(intrudingCallToken);
+  conn->SetIntrusionImpending ();
+
+  //Send Ringing to intruding (A)
+  conn->AnsweringCall (conn->AnswerCallPending);
+
+  ciSendState = e_ci_sAttachToReleseComplete;
+  ciReturnState = e_ci_rCallForceReleased;
+      
+  //Forced Release Accepted to send when Answering call to intruding (A)
+  conn->SetForcedReleaseAccepted();
+  conn->Unlock ();
+
+  return FALSE;
+}
+
 
 void H45011Handler::IntrudeCall(int CICL)
 {
@@ -2166,6 +2360,57 @@ void H45011Handler::AwaitSetupResponse(const PString & token,
 }
 
 
+BOOL H45011Handler::GetRemoteCallIntrusionProtectionLevel(const PString & token,
+                                                          unsigned intrusionCICL)
+{
+  if (!connection.Lock())
+    return FALSE;
+
+  intrudingCallToken = token;
+  intrudingCallCICL = intrusionCICL;
+
+  H450ServiceAPDU serviceAPDU;
+
+  currentInvokeId = dispatcher.GetNextInvokeId();
+
+  serviceAPDU.BuildCallIntrusionGetCIPL(currentInvokeId);
+
+  connection.Unlock();
+
+  if (!serviceAPDU.WriteFacilityPDU(connection))
+    return FALSE;
+
+  PTRACE(4, "H450.11\tStarting timer CI-T5");
+  StartciTimer(connection.GetEndPoint().GetCallIntrusionT5());
+  ciState = e_ci_GetCIPL;
+  return TRUE;
+}
+
+
+void H45011Handler::SetIntrusionNotAuthorized()
+{
+  ciSendState = e_ci_sAttachToReleseComplete;
+  ciReturnState = e_ci_rNotAuthorized;
+}
+
+
+void H45011Handler::SetIntrusionImpending()
+{
+  ciSendState = e_ci_sAttachToAlerting;
+  ciReturnState = e_ci_rCallIntrusionImpending;
+}
+
+
+void H45011Handler::SetForcedReleaseAccepted()
+{
+  ciSendState = e_ci_sAttachToConnect;
+  ciReturnState = e_ci_rCallForceReleaseResult;
+  ciState = e_ci_DestNotify;
+
+  StartciTimer(connection.GetEndPoint().GetCallIntrusionT6());
+}
+
+
 void H45011Handler::StopciTimer()
 {
   if (ciTimer.IsRunning()){
@@ -2181,9 +2426,59 @@ void H45011Handler::OnCallIntrudeTimeOut(PTimer &, INT)
     // CI-T1 Timeout
     case e_ci_WaitAck:
       PTRACE(4, "H450.11\tTimer CI-T1 has expired");
-      OnReceivedInvokeReturnError(true);
+      OnReceivedInvokeReturnError(0,true);
+      break;
+    case e_ci_GetCIPL:
+      PTRACE(4, "H450.11\tTimer CI-T5 has expired");
+      OnReceivedGetCIPLReturnError(0,true);
+      break;
+    case e_ci_DestNotify:
+      {
+        PTRACE(4, "H450.11\tOnCallIntrudeTimeOut Timer CI-T6 has expired");
+        // Clear the active call (call with C)
+       PSyncPoint sync;
+       endpoint.ClearCallSynchronous(activeCallToken, EndedByLocalUser, &sync);
+        // Answer intruding call (call with A)
+        PTRACE(4, "H450.11\tOnCallIntrudeTimeOut Trying to answer Call");
+        if(endpoint.HasConnection(intrudingCallToken)){
+          H323Connection* conn = endpoint.FindConnectionWithLock(intrudingCallToken);
+          conn->AnsweringCall (conn->AnswerCallNow);
+          conn->Unlock ();
+        }
+      }
       break;
     default:
       break;
   }
 }
+
+
+BOOL H45011Handler::OnReceivedReject(int problemType, int problemNumber)
+{
+  PTRACE(4, "H450.11\tH45011Handler::OnReceivedReject - problemType= "
+         << problemType << ", problemNumber= " << problemNumber);
+
+  if (ciTimer.IsRunning()){
+    ciTimer.Stop();
+    PTRACE(4, "H450.11\tStopping timer CI-TX");
+  }
+
+  switch (ciState) {
+    case e_ci_GetCIPL:
+    {
+      H323Connection* conn = endpoint.FindConnectionWithLock(intrudingCallToken);
+      conn->SetIntrusionImpending ();
+
+      //Send Ringing to  intruding (A)
+      conn->AnsweringCall (conn->AnswerCallPending);
+      conn->SetForcedReleaseAccepted();  
+      conn->Unlock ();
+      break;
+    }
+
+    default:
+      break;
+  }
+  ciState = e_ci_Idle;
+  return TRUE;
+};
