@@ -30,14 +30,23 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Header: /home/svnmigrate/clean_cvs/opal/src/codec/vic/Attic/dct.h,v 1.2001 2001/07/27 15:48:25 robertj Exp $ (LBL)
  */
 
 /************ Change log
  *
  * $Log: dct.h,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/15 23:42:59  robertj
+ * Update to OpenH323 v1.11.7
+ *
+ * Revision 1.5  2003/03/14 07:25:55  robertj
+ * Removed $header keyword so is not different on alternate repositories
+ *
+ * Revision 1.4  2002/05/17 01:47:33  dereks
+ * backout the integer maths in the h261 codec.
+ *
+ * Revision 1.3  2001/10/14 21:48:45  dereks
+ * Change vic's fdct() from floating-point to fix-point. Improves performance
+ * for h261 video significantly on some machines. Thanks to Cosmos Jiang
  *
  * Revision 1.2  2000/08/25 03:18:49  dereks
  * Add change log facility (Thanks Robert for the info on implementation)
