@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.h,v $
- * Revision 1.2016  2004/03/13 06:25:52  rjongbloed
+ * Revision 1.2017  2004/03/22 11:39:44  rjongbloed
+ * Fixed problems with correctly terminating the OpalTransportUDP that is generated from
+ *   an OpalListenerUDP, this should not close the socket or stop the thread.
+ *
+ * Revision 2.15  2004/03/13 06:25:52  rjongbloed
  * Slight rearrangement of local party name and alias list to beter match common
  *   behaviour in ancestor.
  * Abstracted local party name for endpoint into ancestor from H.,323.
@@ -1089,6 +1093,7 @@ class OpalTransportUDP : public OpalTransportIP
 
     PromisciousModes     promiscuousReads;
     OpalTransportAddress lastReceivedAddress;
+    BOOL                 socketOwnedByListener;
     PBYTEArray           preReadPacket;
     PSocketList          connectSockets;
 };
