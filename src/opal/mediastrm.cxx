@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2002  2001/08/01 05:45:34  robertj
+ * Revision 1.2003  2001/08/17 08:34:28  robertj
+ * Fixed not setting counts in read/write of sound channel.
+ *
+ * Revision 2.1  2001/08/01 05:45:34  robertj
  * Made OpalMediaFormatList class global to help with documentation.
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
@@ -529,24 +532,38 @@ OpalRawMediaStream::~OpalRawMediaStream()
 
 BOOL OpalRawMediaStream::Read(void * buf, PINDEX len)
 {
+  lastReadCount = 0;
+
   if (channel == NULL)
     return FALSE;
 
-  return channel->Read(buf, len);
+  if (!channel->Read(buf, len))
+    return FALSE;
+
+  lastReadCount = channel->GetLastReadCount();
+  return TRUE;
 }
 
 
 BOOL OpalRawMediaStream::Write(const void * buf, PINDEX len)
 {
+  lastWriteCount = 0;
+
   if (channel == NULL)
     return FALSE;
 
-  return channel->Write(buf, len);
+  if (!channel->Write(buf, len))
+    return FALSE;
+
+  lastWriteCount = channel->GetLastWriteCount();
+  return TRUE;
 }
 
 
 BOOL OpalRawMediaStream::Close()
 {
+  OpalMediaStream::Close();
+
   os_handle = -1;
 
   if (channel == NULL)
