@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2016  2002/11/10 11:33:20  robertj
+ * Revision 1.2017  2003/01/07 06:00:43  robertj
+ * Fixed MSVC warnings.
+ *
+ * Revision 2.15  2002/11/10 11:33:20  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.14  2002/04/15 08:48:14  robertj
@@ -472,8 +475,8 @@ BOOL OpalLineMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & length)
     }
   }
 
-  DWORD osError = line.GetDevice().GetErrorNumber();
-  PTRACE_IF(1, osError != 0, "Media\tDevice read frame error: " << line.GetDevice().GetErrorText());
+  PTRACE_IF(1, line.GetDevice().GetErrorNumber() != 0,
+            "Media\tDevice read frame error: " << line.GetDevice().GetErrorText());
 
   return FALSE;
 }
@@ -540,8 +543,8 @@ BOOL OpalLineMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX &
       return TRUE;
   }
 
-  DWORD osError = line.GetDevice().GetErrorNumber();
-  PTRACE_IF(1, osError != 0, "Media\tLID write frame error: " << line.GetDevice().GetErrorText());
+  PTRACE_IF(1, line.GetDevice().GetErrorNumber() != 0,
+            "Media\tLID write frame error: " << line.GetDevice().GetErrorText());
 
   return FALSE;
 }
