@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2014  2002/04/09 07:26:20  robertj
+ * Revision 1.2015  2002/04/10 03:14:35  robertj
+ * Moved code for handling media bypass address resolution into ancestor as
+ *   now done ths same way in both SIP and H.323.
+ * Major changes to RTP session management when initiating an INVITE.
+ * Improvements in error handling and transaction cancelling.
+ *
+ * Revision 2.13  2002/04/09 07:26:20  robertj
  * Added correct error return if get transport failure to remote endpoint.
  *
  * Revision 2.12  2002/04/09 01:19:41  robertj
@@ -175,10 +181,8 @@ BOOL SIPConnection::OnReleased()
 
     case ReleaseWithCANCEL :
       for (PINDEX i = 0; i < invitations.GetSize(); i++) {
-        if (invitations[i].IsInProgress()) {
-          invitations[i].SendCANCEL();
+        if (invitations[i].SendCANCEL())
           invitations[i].Wait();
-        }
       }
   }
 
@@ -350,7 +354,8 @@ OpalTransportAddress SIPConnection::GetLocalAddress(WORD port) const
 }
 
 
-RTP_Session * SIPConnection::UseSession(unsigned rtpSessionId)
+RTP_Session * SIPConnection::UseRTPSession(RTP_SessionManager & rtpSessions,
+                                           unsigned rtpSessionId)
 {
   // make sure this RTP session does not already exist
   RTP_Session * oldSession = rtpSessions.UseSession(rtpSessionId);
@@ -408,37 +413,18 @@ BOOL SIPConnection::IsMediaBypassPossible(unsigned sessionID) const
 }
 
 
-BOOL SIPConnection::GetMediaInformation(unsigned sessionID,
-                                        MediaInformation & info) const
-{
-  if (!mediaTransports.Contains(sessionID)) {
-    PTRACE(3, "SIP\tGetMediaInformation for session " << sessionID << " - no channel.");
-    return FALSE;
-  }
-
-  info.data = mediaTransports[sessionID];
-  PIPSocket::Address ip;
-  WORD port;
-  if (info.data.GetIpAndPort(ip, port))
-    info.control = OpalTransportAddress(ip, (WORD)(port+1));
-
-  info.rfc2833 = rfc2833Handler->GetPayloadType();
-  PTRACE(3, "SIP\tGetMediaInformation for session " << sessionID
-         << " data=" << info.data << " rfc2833=" << info.rfc2833);
-  return TRUE;
-}
-
-
 BOOL SIPConnection::WriteINVITE(OpalTransport & transport, PObject * param)
 {
   SIPConnection & connection = *(SIPConnection *)param;
 
   connection.SetLocalPartyAddress();
 
-  SIPTransaction * invite = new SIPTransaction(connection, transport, SIP_PDU::Method_INVITE);
-  connection.invitations.Append(invite);
+  SIPTransaction * invite = new SIPInvite(connection, transport);
+  if (invite->Start())
+    return connection.invitations.Append(invite);
 
-  return invite->Start();
+  PTRACE(2, "SIP\tDid not start INVITE transaction on " << transport);
+  return FALSE;
 }
 
 
@@ -487,16 +473,17 @@ void SIPConnection::InitiateCall(const SIPURL & destination)
 }
 
 
-SDPSessionDescription * SIPConnection::BuildSDP()
+SDPSessionDescription * SIPConnection::BuildSDP(RTP_SessionManager & rtpSessions,
+                                                unsigned rtpSessionId)
 {
   OpalTransportAddress localAddress;
   RTP_DataFrame::PayloadTypes ntePayloadCode = RTP_DataFrame::IllegalPayloadType;
 
-  if (ownerCall.IsMediaBypassPossible(*this, OpalMediaFormat::DefaultAudioSessionID)) {
+  if (ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
     OpalConnection * otherParty = GetCall().GetOtherPartyConnection(*this);
     if (otherParty != NULL) {
       MediaInformation info;
-      if (otherParty->GetMediaInformation(OpalMediaFormat::DefaultAudioSessionID, info)) {
+      if (otherParty->GetMediaInformation(rtpSessionId, info)) {
         localAddress = info.data;
         ntePayloadCode = info.rfc2833;
       }
@@ -505,7 +492,7 @@ SDPSessionDescription * SIPConnection::BuildSDP()
 
   if (localAddress.IsEmpty()) {
     // create the SDP definition for the audio channel
-    RTP_UDP * audioRTPSession = (RTP_UDP*)UseSession(OpalMediaFormat::DefaultAudioSessionID);
+    RTP_UDP * audioRTPSession = (RTP_UDP*)UseRTPSession(rtpSessions, rtpSessionId);
     localAddress = GetLocalAddress(audioRTPSession->GetLocalDataPort());
   }
 
@@ -600,6 +587,58 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
       if (transaction != NULL)
         transaction->OnReceivedResponse(pdu);
       break;
+  }
+}
+
+
+void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
+{
+  if (transaction.GetMethod() == SIP_PDU::Method_INVITE) {
+    // Have a response to the INVITE, so CANCEL al the other invitations sent.
+    for (PINDEX i = 0; i < invitations.GetSize(); i++) {
+      if (&invitations[i] != &transaction)
+        invitations[i].SendCANCEL();
+    }
+
+    // Save the sessions etc we are actually using
+    rtpSessions = ((SIPInvite &)transaction).GetSessionManager();
+    localPartyAddress = transaction.GetMIME().GetFrom();
+    remotePartyAddress = response.GetMIME().GetTo();
+
+    // Have a response to the INVITE, so end Connect mode on the transport
+    transaction.GetTransport().EndConnect(transaction.GetLocalAddress());
+  }
+
+  switch (response.GetStatusCode()) {
+    case SIP_PDU::Information_Session_Progress :
+      OnReceivedSessionProgress(response);
+      break;
+
+    case SIP_PDU::Failure_UnAuthorised :
+    case SIP_PDU::Failure_ProxyAuthenticationRequired :
+      OnReceivedAuthenticationRequired(transaction, response);
+      break;
+
+    case SIP_PDU::Redirection_MovedTemporarily :
+      OnReceivedRedirection(response);
+      break;
+
+    case SIP_PDU::Failure_BusyHere :
+      Release(EndedByRemoteBusy);
+      break;
+
+    default :
+      switch (response.GetStatusCode()/100) {
+        case 1 :
+          // Do nothing on 1xx
+          break;
+        case 2 :
+          OnReceivedOK(transaction, response);
+          break;
+        default :
+          // All other final responses cause a call end.
+          Release(EndedByRefusal);
+      }
   }
 }
 
@@ -714,8 +753,13 @@ void SIPConnection::OnReceivedRedirection(SIP_PDU & response)
   remotePartyAddress = newContact;
 
   // send a new INVITE
-  SIPTransaction request(*this, *transport, SIP_PDU::Method_INVITE);
-  request.Start();
+  SIPTransaction * invite = new SIPInvite(*this, *transport);
+  if (invite->Start())
+    invitations.Append(invite);
+  else {
+    delete invite;
+    PTRACE(1, "SIP\tCould not restart INVITE for Redirection");
+  }
 }
 
 
@@ -742,7 +786,7 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
   remotePartyAddress = originalDestination.AsString();
 
   // Restart the transaction with new authentication info
-  SIPTransaction * invite = new SIPTransaction(*this, *transport, SIP_PDU::Method_INVITE);
+  SIPTransaction * invite = new SIPInvite(*this, *transport);
   if (invite->Start())
     invitations.Append(invite);
   else {
@@ -754,18 +798,17 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
 
 void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 {
-  PINDEX index = invitations.GetObjectsIndex(&transaction);
-  if (index  == P_MAX_INDEX) {
-    PTRACE(3, "SIP\tIgnoring OK response");
+  if (transaction.GetMethod() != SIP_PDU::Method_INVITE) {
+    PTRACE(3, "SIP\tReceived OK response for non INVITE");
     return;
   }
 
   if (currentPhase == EstablishedPhase) {
-    PTRACE(2, "SIP\tIgnoring OK response");
+    PTRACE(2, "SIP\tIgnoring repeated INVITE OK response");
     return;
   }
 
-  PTRACE(2, "SIP\tReceived OK response");
+  PTRACE(2, "SIP\tReceived INVITE OK response");
 
   OnReceivedSDP(response);
 
@@ -777,55 +820,12 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
 }
 
 
-void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
-{
-  if (transaction.GetMethod() == SIP_PDU::Method_INVITE) {
-    // Stop all the other invitations that went out
-    for (PINDEX i = 0; i < invitations.GetSize(); i++) {
-      if (&transaction != &invitations[i])
-        invitations.RemoveAt(i--);
-    }
-    transaction.GetTransport().EndConnect(transaction.GetLocalAddress());
-  }
-
-  switch (response.GetStatusCode()) {
-    case SIP_PDU::Information_Session_Progress :
-      OnReceivedSessionProgress(response);
-      break;
-
-    case SIP_PDU::Failure_UnAuthorised :
-    case SIP_PDU::Failure_ProxyAuthenticationRequired :
-      OnReceivedAuthenticationRequired(transaction, response);
-      break;
-
-    case SIP_PDU::Redirection_MovedTemporarily :
-      OnReceivedRedirection(response);
-      break;
-
-    case SIP_PDU::Failure_BusyHere :
-      Release(EndedByRemoteBusy);
-      break;
-
-    default :
-      switch (response.GetStatusCode()/100) {
-        case 1 :
-          // Do nothing on 1xx
-          break;
-        case 2 :
-          OnReceivedOK(transaction, response);
-          break;
-        default :
-          // All other final responses cause a call end.
-          Release(EndedByRefusal);
-      }
-  }
-}
-
-
 void SIPConnection::OnReceivedSDP(SIP_PDU & pdu)
 {
   if (!pdu.HasSDP())
     return;
+
+  unsigned rtpSessionId = OpalMediaFormat::DefaultAudioSessionID;
 
   SDPSessionDescription & sdp = pdu.GetSDP();
 
@@ -836,14 +836,19 @@ void SIPConnection::OnReceivedSDP(SIP_PDU & pdu)
   }
 
   OpalTransportAddress address = mediaDescription->GetTransportAddress();
-  if (ownerCall.IsMediaBypassPossible(*this, OpalMediaFormat::DefaultAudioSessionID))
-    mediaTransports.SetAt(OpalMediaFormat::DefaultAudioSessionID, new OpalTransportAddress(address));
+  if (ownerCall.IsMediaBypassPossible(*this, rtpSessionId))
+    mediaTransportAddresses.SetAt(rtpSessionId, new OpalTransportAddress(address));
   else {
     PIPSocket::Address ip;
     WORD port;
     address.GetIpAndPort(ip, port);
 
-    RTP_UDP * rtpSession = (RTP_UDP *)UseSession(OpalMediaFormat::DefaultAudioSessionID);
+    RTP_UDP * rtpSession = (RTP_UDP *)UseSession(rtpSessionId);
+    if (rtpSession == NULL) {
+      PTRACE(1, "SIP\tSession in response that we never offered!");
+      return;
+    }
+
     if (!rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
       PTRACE(1, "SIP\tCould not set RTP remote socket");
       return;
@@ -853,7 +858,7 @@ void SIPConnection::OnReceivedSDP(SIP_PDU & pdu)
   remoteFormatList = mediaDescription->GetMediaFormats();
   remoteFormatList += OpalRFC2833;
 
-  if (!ownerCall.OpenSourceMediaStreams(remoteFormatList, OpalMediaFormat::DefaultAudioSessionID)) {
+  if (!ownerCall.OpenSourceMediaStreams(remoteFormatList, rtpSessionId)) {
     PTRACE(2, "SIP\tCould not open media streams for audio");
     return;
   }
