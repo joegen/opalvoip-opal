@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2011  2001/11/15 06:56:54  robertj
+ * Revision 1.2012  2002/01/22 05:12:12  robertj
+ * Revamp of user input API triggered by RFC2833 support
+ *
+ * Revision 2.10  2001/11/15 06:56:54  robertj
  * Added session ID to trace log in OenSourceMediaStreams
  *
  * Revision 2.9  2001/11/14 01:31:55  robertj
@@ -70,9 +73,11 @@
 
 #include <opal/connection.h>
 
+#include <opal/manager.h>
 #include <opal/endpoint.h>
 #include <opal/call.h>
 #include <opal/transcoders.h>
+#include <codec/rfc2833.h>
 
 
 #define new PNEW
@@ -136,7 +141,10 @@ OpalConnection::OpalConnection(OpalCall & call,
 
   callAnswered = FALSE;
   callEndReason = OpalNumCallEndReasons;
+  sendUserInputMode = endpoint.GetManager().GetSendUserInputModes();
   bandwidthAvailable = endpoint.GetInitialBandwidth();
+
+  rfc2833Handler = new OpalRFC2833(PCREATE_NOTIFIER(OnUserInputInlineRFC2833));
 
   mediaStreams.DisallowDeleteObjects();
 
@@ -148,6 +156,8 @@ OpalConnection::OpalConnection(OpalCall & call,
 
 OpalConnection::~OpalConnection()
 {
+  delete rfc2833Handler;
+
   PTRACE(3, "OpalCon\tConnection " << *this << " destroyed.");
 }
 
@@ -505,71 +515,82 @@ BOOL OpalConnection::SetBandwidthUsed(unsigned releasedBandwidth,
 }
 
 
-BOOL OpalConnection::SendUserIndicationString(const PString & value)
+void OpalConnection::SetSendUserInputMode(SendUserInputModes mode)
+{
+  PAssert(mode != SendUserInputAsSeparateRFC2833, PUnimplementedFunction);
+
+  sendUserInputMode = mode;
+}
+
+
+BOOL OpalConnection::SendUserInputString(const PString & value)
 {
   for (const char * c = value; *c != '\0'; c++) {
-    if (!SendUserIndicationTone(*c, 0))
+    if (!SendUserInputTone(*c, 0))
       return FALSE;
   }
   return TRUE;
 }
 
 
-BOOL OpalConnection::SendUserIndicationTone(char /*tone*/, int /*duration*/)
+BOOL OpalConnection::SendUserInputTone(char tone, int duration)
 {
+  if (sendUserInputMode == SendUserInputAsInlineRFC2833)
+    return rfc2833Handler->SendTone(tone, duration);
+
   return TRUE;
 }
 
 
-void OpalConnection::OnUserIndicationString(const PString & value)
+void OpalConnection::OnUserInputString(const PString & value)
 {
-  endpoint.OnUserIndicationString(*this, value);
+  endpoint.OnUserInputString(*this, value);
 }
 
 
-void OpalConnection::OnUserIndicationTone(char tone, int duration)
+void OpalConnection::OnUserInputTone(char tone, int duration)
 {
-  endpoint.OnUserIndicationTone(*this, tone, duration);
+  endpoint.OnUserInputTone(*this, tone, duration);
 }
 
 
-PString OpalConnection::GetUserIndication(unsigned timeout)
+PString OpalConnection::GetUserInput(unsigned timeout)
 {
   PString reply;
-  if (userIndicationAvailable.Wait(PTimeInterval(0, timeout))) {
-    userIndicationMutex.Wait();
-    reply = userIndicationString;
-    userIndicationString = PString();
-    userIndicationMutex.Signal();
+  if (userInputAvailable.Wait(PTimeInterval(0, timeout))) {
+    userInputMutex.Wait();
+    reply = userInputString;
+    userInputString = PString();
+    userInputMutex.Signal();
   }
   return reply;
 }
 
 
-void OpalConnection::SetUserIndication(const PString & input)
+void OpalConnection::SetUserInput(const PString & input)
 {
-  userIndicationMutex.Wait();
-  userIndicationString += input;
-  userIndicationMutex.Signal();
-  userIndicationAvailable.Signal();
+  userInputMutex.Wait();
+  userInputString += input;
+  userInputMutex.Signal();
+  userInputAvailable.Signal();
 }
 
 
-PString OpalConnection::ReadUserIndication(const char * terminators,
-                                           unsigned lastDigitTimeout,
-                                           unsigned firstDigitTimeout)
+PString OpalConnection::ReadUserInput(const char * terminators,
+                                      unsigned lastDigitTimeout,
+                                      unsigned firstDigitTimeout)
 {
-  PTRACE(3, "OpalCon\tReadUserIndication from " << *this);
+  PTRACE(3, "OpalCon\tReadUserInput from " << *this);
 
-  PromptUserIndication(TRUE);
-  PString input = GetUserIndication(firstDigitTimeout);
-  PromptUserIndication(FALSE);
+  PromptUserInput(TRUE);
+  PString input = GetUserInput(firstDigitTimeout);
+  PromptUserInput(FALSE);
 
   if (!input) {
     for (;;) {
-      PString next = GetUserIndication(lastDigitTimeout);
+      PString next = GetUserInput(lastDigitTimeout);
       if (next.IsEmpty()) {
-        PTRACE(3, "OpalCon\tReadUserIndication last character timeout on " << *this);
+        PTRACE(3, "OpalCon\tReadUserInput last character timeout on " << *this);
         break;
       }
       if (next.FindOneOf(terminators) != P_MAX_INDEX)
@@ -578,16 +599,23 @@ PString OpalConnection::ReadUserIndication(const char * terminators,
     }
   }
   else {
-    PTRACE(3, "OpalCon\tReadUserIndication first character timeout on " << *this);
+    PTRACE(3, "OpalCon\tReadUserInput first character timeout on " << *this);
   }
 
   return input;
 }
 
 
-BOOL OpalConnection::PromptUserIndication(BOOL /*play*/)
+BOOL OpalConnection::PromptUserInput(BOOL /*play*/)
 {
   return TRUE;
+}
+
+
+void OpalConnection::OnUserInputInlineRFC2833(OpalRFC2833Info & info, INT)
+{
+  if (!info.IsToneStart())
+    OnUserInputTone(info.GetTone(), info.GetDuration()/8);
 }
 
 
