@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2028  2003/12/15 11:56:17  rjongbloed
+ * Revision 1.2029  2003/12/20 12:21:18  rjongbloed
+ * Applied more enhancements, thank you very much Ted Szoczei
+ *
+ * Revision 2.27  2003/12/15 11:56:17  rjongbloed
  * Applied numerous bug fixes, thank you very much Ted Szoczei
  *
  * Revision 2.26  2003/03/17 10:27:00  robertj
@@ -129,6 +132,7 @@
 #include <opal/manager.h>
 #include <opal/call.h>
 #include <opal/patch.h>
+#include <ptclib/random.h>              // for local dialog tag
 
 
 typedef void (SIPConnection::* SIPMethodFunction)(SIP_PDU & pdu);
@@ -148,7 +152,8 @@ SIPConnection::SIPConnection(OpalCall & call,
     endpoint(ep),
     authentication(endpoint.GetRegistrationName(),
                    endpoint.GetRegistrationPassword()),
-    pduSemaphore(0, P_MAX_INDEX)
+    pduSemaphore(0, P_MAX_INDEX),
+    tag(OpalGloballyUniqueID().AsString())     // local dialog tag
 {
   localPartyName = endpoint.GetRegistrationName();
 
@@ -584,7 +589,8 @@ SDPSessionDescription * SIPConnection::BuildSDP(RTP_SessionManager & rtpSessions
 void SIPConnection::SetLocalPartyAddress()
 {
   SIPURL myAddress(GetLocalPartyName(), transport->GetLocalAddress(), endpoint.GetDefaultSignalPort());
-  SetLocalPartyAddress(myAddress.AsString());
+  // add displayname, <> and tag
+  SetLocalPartyAddress(myAddress.AsQuotedString() + ";tag=" + GetTag());
 }
 
 
@@ -716,7 +722,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   SIPMIMEInfo & mime = originalInvite->GetMIME();
   remotePartyAddress = mime.GetFrom();
-  localPartyAddress  = mime.GetTo() + ";tag=XXXXX";
+  localPartyAddress  = mime.GetTo() + ";tag=" + GetTag(); // put a real random 
   mime.SetTo(localPartyAddress);
 
   PString contact = mime.GetContact();
@@ -730,6 +736,9 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     transport->SetRemoteAddress(targetAddress.GetHostAddress());
   }
   targetAddress.AdjustForRequestURI();
+
+  // send trying with To: tag
+  SendResponseToINVITE(SIP_PDU::Information_Trying);
 
   // indicate the other is to start ringing
   if (!OnIncomingConnection()) {
