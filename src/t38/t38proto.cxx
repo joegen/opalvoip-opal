@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: t38proto.cxx,v $
- * Revision 1.2003  2002/01/14 06:35:59  robertj
+ * Revision 1.2004  2002/01/22 05:21:54  robertj
+ * Added RTP encoding name string to media format database.
+ * Changed time units to clock rate in Hz.
+ *
+ * Revision 2.2  2002/01/14 06:35:59  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.1  2001/08/01 05:05:26  robertj
@@ -80,7 +84,8 @@
 
 OpalMediaFormat const OpalT38Protocol::MediaFormat("T.38",
                                                    OpalMediaFormat::DefaultDataSessionID,
-                                                   RTP_DataFrame::MaxPayloadType,
+                                                   RTP_DataFrame::IllegalPayloadType,
+                                                   "t38",
                                                    FALSE, // No jitter for data
                                                    1440); // 100's bits/sec
 
