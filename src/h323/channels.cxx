@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2007  2001/10/05 00:22:13  robertj
+ * Revision 1.2008  2001/10/15 04:34:42  robertj
+ * Added delayed start of media patch threads.
+ *
+ * Revision 2.6  2001/10/05 00:22:13  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.5  2001/10/03 05:56:15  robertj
@@ -484,7 +487,7 @@ unsigned H323Channel::GetSessionID() const
 }
 
 
-void H323Channel::CleanUpOnTermination()
+void H323Channel::Close()
 {
   if (!opened || terminating)
     return;
@@ -495,12 +498,6 @@ void H323Channel::CleanUpOnTermination()
   connection.OnClosedLogicalChannel(*this);
 
   PTRACE(3, "LogChan\tCleaned up " << number);
-}
-
-
-BOOL H323Channel::IsRunning() const
-{
-  return opened && !paused;
 }
 
 
@@ -634,6 +631,11 @@ BOOL H323UnidirectionalChannel::Open()
     return FALSE;
   }
 
+  if (mediaStream->IsSource()) {
+    if (!connection.OnOpenMediaStream(*mediaStream))
+      return FALSE;
+  }
+
   return H323Channel::Open();
 }
 
@@ -643,17 +645,15 @@ BOOL H323UnidirectionalChannel::Start()
   if (!Open())
     return FALSE;
 
-  if (mediaStream->IsSource()) {
-    if (!connection.OnOpenMediaStream(*mediaStream))
-      return FALSE;
-  }
+  if (!mediaStream->Start())
+    return FALSE;
 
   paused = FALSE;
   return TRUE;
 }
 
 
-void H323UnidirectionalChannel::CleanUpOnTermination()
+void H323UnidirectionalChannel::Close()
 {
   if (terminating)
     return;
@@ -666,7 +666,7 @@ void H323UnidirectionalChannel::CleanUpOnTermination()
     delete mediaStream;
   }
 
-  H323Channel::CleanUpOnTermination();
+  H323Channel::Close();
 }
 
 
@@ -883,7 +883,7 @@ H323DataChannel::~H323DataChannel()
 }
 
 
-void H323DataChannel::CleanUpOnTermination()
+void H323DataChannel::Close()
 {
   if (terminating)
     return;
@@ -897,7 +897,7 @@ void H323DataChannel::CleanUpOnTermination()
   if (transport != NULL)
     transport->Close();
 
-  H323UnidirectionalChannel::CleanUpOnTermination();
+  H323UnidirectionalChannel::Close();
 }
 
 
