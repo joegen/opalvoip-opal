@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.h,v $
- * Revision 1.2014  2003/06/02 02:56:17  rjongbloed
+ * Revision 1.2015  2004/05/17 13:24:17  rjongbloed
+ * Added silence suppression.
+ *
+ * Revision 2.13  2003/06/02 02:56:17  rjongbloed
  * Moved LID specific media stream class to LID source file.
  *
  * Revision 2.12  2003/03/24 07:18:29  robertj
@@ -86,6 +89,7 @@
 
 #include <opal/endpoint.h>
 #include <lids/lid.h>
+#include <codec/silencedetect.h>
 
 
 class OpalLineConnection;
@@ -444,6 +448,22 @@ class OpalLineConnection : public OpalConnection
       BOOL isSource                        /// Is a source stream
     );
 
+    /**Call back when opening a media stream.
+       This function is called when a connection has created a new media
+       stream according to the logic of its underlying protocol.
+
+       The usual requirement is that media streams are created on all other
+       connections participating in the call and all of the media streams are
+       attached to an instance of an OpalMediaPatch object that will read from
+       one of the media streams passing data to the other media streams.
+
+       The default behaviour calls the ancestor and adds a LID silence
+       detector filter.
+      */
+    virtual BOOL OnOpenMediaStream(
+      OpalMediaStream & stream    /// New media stream being opened
+    );
+
     /**Send a user input indication to the remote endpoint.
        This sends an arbitrary string as a user indication. If DTMF tones in
        particular are required to be sent then the SendIndicationTone()
@@ -569,6 +589,39 @@ class OpalLineMediaStream : public OpalMediaStream
     BOOL       lastFrameWasSignal;
 };
 
+
+class OpalLineSilenceDetector : public OpalSilenceDetector
+{
+    PCLASSINFO(OpalLineSilenceDetector, OpalSilenceDetector);
+  public:
+  /**@name Construction */
+  //@{
+    /**Create a new silence detector for a LID.
+     */
+    OpalLineSilenceDetector(
+      OpalLine & line
+    );
+  //@}
+
+  /**@name Overrides from OpalSilenceDetector */
+  //@{
+    /**Get the average signal level in the stream.
+       This is called from within the silence detection algorithm to
+       calculate the average signal level of the last data frame read from
+       the stream.
+
+       The default behaviour returns UINT_MAX which indicates that the
+       average signal has no meaning for the stream.
+      */
+    virtual unsigned GetAverageSignalLevel(
+      const BYTE * buffer,  /// RTP payload being detected
+      PINDEX size           /// Size of payload buffer
+    );
+  //@}
+
+  protected:
+    OpalLine & line;
+};
 
 
 #endif // __LIDS_LIDEP_H
