@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2011  2002/02/11 09:32:13  robertj
+ * Revision 1.2012  2002/02/19 07:36:51  robertj
+ * Added OpalRFC2833 as a OpalMediaFormat variable.
+ *
+ * Revision 2.10  2002/02/11 09:32:13  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.9  2002/01/22 05:14:38  robertj
@@ -234,6 +237,19 @@ OpalMediaFormat const OpalGSM0610(
 );
 
 #endif // NO_H323_AUDIO_CODECS
+
+OpalMediaFormat const OpalRFC2833(
+  OPAL_RFC2833,
+  0,
+  RTP_DataFrame::DynamicBase,
+  "telephone-event",
+  TRUE,   // Needs jitter
+  32*(1000/50), // bits/sec  (32 bits every 50ms)
+  4,      // bytes/frame
+  150*8,  // 150 millisecond
+  OpalMediaFormat::AudioClockRate
+);
+
 
 
 /////////////////////////////////////////////////////////////////////////////
