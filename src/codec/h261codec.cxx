@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.cxx,v $
- * Revision 1.2016  2005/02/21 12:19:53  rjongbloed
+ * Revision 1.2017  2005/02/24 19:49:44  dsandras
+ * Applied patch from Hannes Friederich to fix quality problem in some circumstances.
+ *
+ * Revision 2.15  2005/02/21 12:19:53  rjongbloed
  * Added new "options list" to the OpalMediaFormat class.
  *
  * Revision 2.14  2004/04/07 08:21:00  rjongbloed
@@ -1014,11 +1017,12 @@ BOOL H323_H261Codec::Write(const BYTE * buffer,
 
   // determine video codec type
   if (videoDecoder == NULL) {
-    if ((*header & 2) && !(*header & 1)) // check value of I field in header
-      videoDecoder = new IntraP64Decoder();
-    else
-      videoDecoder = new FullP64Decoder();
-    videoDecoder->marks(rvts);
+	  // the old behaviour was to choose between IntraP64Decoder and FullP64Decoder,
+	  // depending on the header of the first packet.
+	  // This lead to bad video quality on some endpoints.
+	  // Therefore, we chose to only use the FullP64Decoder
+	  videoDecoder = new FullP64Decoder();
+	  videoDecoder->marks(rvts);
   }
 
   videoDecoder->mark(now);
