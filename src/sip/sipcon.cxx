@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2051  2005/01/15 19:42:33  csoutheren
+ * Revision 1.2052  2005/01/16 11:28:05  csoutheren
+ * Added GetIdentifier virtual function to OpalConnection, and changed H323
+ * and SIP descendants to use this function. This allows an application to
+ * obtain a GUID for any connection regardless of the protocol used
+ *
+ * Revision 2.50  2005/01/15 19:42:33  csoutheren
  * Added temporary workaround for deadlock that occurs with incoming calls
  *
  * Revision 2.49  2005/01/09 03:42:46  rjongbloed
@@ -229,7 +234,6 @@ SIPConnection::SIPConnection(OpalCall & call,
                              OpalTransport * inviteTransport)
   : OpalConnection(call, ep, token),
     endpoint(ep),
-    tag(OpalGloballyUniqueID().AsString()),    // local dialog tag
     pduSemaphore(0, P_MAX_INDEX)
 {
   targetAddress = destination;
@@ -255,7 +259,6 @@ SIPConnection::SIPConnection(OpalCall & call,
     authentication.SetPassword(proxy.GetPassword());
   }
   else { // If no proxy, then we use the REGISTER auth params
-    
     authentication.SetUsername (endpoint.GetAuthentication ().GetUsername ());
     authentication.SetPassword (endpoint.GetAuthentication ().GetPassword ());
   }

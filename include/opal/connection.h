@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2031  2004/12/12 12:29:02  dsandras
+ * Revision 1.2032  2005/01/16 11:28:05  csoutheren
+ * Added GetIdentifier virtual function to OpalConnection, and changed H323
+ * and SIP descendants to use this function. This allows an application to
+ * obtain a GUID for any connection regardless of the protocol used
+ *
+ * Revision 2.30  2004/12/12 12:29:02  dsandras
  * Moved GetRemoteApplication () to OpalConnection so that it is usable for all types of connection.
  *
  * Revision 2.29  2004/08/14 07:56:29  rjongbloed
@@ -138,6 +143,7 @@
 
 #include <opal/mediafmt.h>
 #include <opal/mediastrm.h>
+#include <opal/guid.h>
 #include <opal/transports.h>
 #include <ptclib/dtmf.h>
 #include <ptlib/safecoll.h>
@@ -887,6 +893,11 @@ class OpalConnection : public PSafeObject
     /**Get the silence detector activate on connection.
      */
     OpalSilenceDetector * GetSilenceDetector() const { return silenceDetector; }
+
+    /**Get the protocol-specific unique identifier for this connection.
+     */
+    virtual const OpalGloballyUniqueID & GetIdentifier() const
+    { return callIdentifier; }
   //@}
 
   protected:
@@ -895,23 +906,24 @@ class OpalConnection : public PSafeObject
     PDECLARE_NOTIFIER(PThread, OpalConnection, OnReleaseThreadMain);
 
   // Member variables
-    OpalCall          & ownerCall;
-    OpalEndPoint      & endpoint;
+    OpalCall             & ownerCall;
+    OpalEndPoint         & endpoint;
 
-    Phases              phase;
-    PString             callToken;
-    BOOL                originating;
-    PTime               setupTime;
-    PTime               alertingTime;
-    PTime               connectedTime;
-    PTime               callEndTime;
-    PString             localPartyName;
-    PString             displayName;
-    PString             remotePartyName;
-    PString             remoteApplication;
-    PString             remotePartyNumber;
-    PString             remotePartyAddress;
-    CallEndReason       callEndReason;
+    Phases               phase;
+    PString              callToken;
+    OpalGloballyUniqueID callIdentifier;
+    BOOL                 originating;
+    PTime                setupTime;
+    PTime                alertingTime;
+    PTime                connectedTime;
+    PTime                callEndTime;
+    PString              localPartyName;
+    PString              displayName;
+    PString              remotePartyName;
+    PString              remoteApplication;
+    PString              remotePartyNumber;
+    PString              remotePartyAddress;
+    CallEndReason        callEndReason;
 
     PString               userInputString;
     PMutex                userInputMutex;
