@@ -6555,7 +6555,9 @@ EXPORTS
     ??EH323ChannelNumber@@QAEAAV0@H@Z @5089 NONAME
     ??R?$PStringDictionary@VPCaselessString@@@@QBE?AVPString@@ABVPCaselessString@@PBD@Z @13452 NONAME
     ??R?$PStringDictionary@VPString@@@@QBE?AVPString@@ABV1@PBD@Z @13453 NONAME
+    ??YOpalMediaFormatList@@QAEAAV0@ABV0@@Z @30768 NONAME
     ??YOpalMediaFormatList@@QAEAAV0@ABVOpalMediaFormat@@@Z @12724 NONAME
+    ??ZOpalMediaFormatList@@QAEAAV0@ABV0@@Z @30769 NONAME
     ??ZOpalMediaFormatList@@QAEAAV0@ABVOpalMediaFormat@@@Z @12725 NONAME
     ??_7?$H235_ENCRYPTED@VH235_EncodedGeneralToken@@@@6B@ @5092 NONAME
     ??_7?$H235_ENCRYPTED@VH235_EncodedKeySyncMaterial@@@@6B@ @5093 NONAME
@@ -17783,8 +17785,8 @@ EXPORTS
     ?AddTransaction@SIPConnection@@QAEXPAVSIPTransaction@@@Z @13585 NONAME
     ?AddTransaction@SIPEndPoint@@QAEXPAVSIPTransaction@@@Z @27861 NONAME
     ?AddVideoMediaFormats@OpalConnection@@UBEXAAVOpalMediaFormatList@@@Z @27862 NONAME
-    ?AddVideoMediaFormats@OpalEndPoint@@UBEXABVOpalConnection@@AAVOpalMediaFormatList@@@Z @27863 NONAME
-    ?AddVideoMediaFormats@OpalManager@@UBEXABVOpalConnection@@AAVOpalMediaFormatList@@@Z @27864 NONAME
+    ?AddVideoMediaFormats@OpalEndPoint@@UBEXAAVOpalMediaFormatList@@PBVOpalConnection@@@Z @30770 NONAME
+    ?AddVideoMediaFormats@OpalManager@@UBEXAAVOpalMediaFormatList@@PBVOpalConnection@@@Z @30771 NONAME
     ?AdjustForRequestURI@SIPURL@@QAEXXZ @13587 NONAME
     ?AdjustMediaFormats@OpalConnection@@UBEXAAVOpalMediaFormatList@@@Z @13588 NONAME
     ?AdjustMediaFormats@OpalEndPoint@@UBEXABVOpalConnection@@AAVOpalMediaFormatList@@@Z @13589 NONAME
@@ -24190,14 +24192,19 @@ EXPORTS
     ?GetMediaFormat@SDPMediaFormat@@QBE?AVOpalMediaFormat@@XZ @13996 NONAME
     ?GetMediaFormats@H323Capabilities@@QBE?AVOpalMediaFormatList@@XZ @12772 NONAME
     ?GetMediaFormats@H323Connection@@UBE?AVOpalMediaFormatList@@XZ @12773 NONAME
+    ?GetMediaFormats@H323EndPoint@@UBE?AVOpalMediaFormatList@@XZ @30772 NONAME
     ?GetMediaFormats@OpalCall@@QAE?AVOpalMediaFormatList@@ABVOpalConnection@@H@Z @28940 NONAME
     ?GetMediaFormats@OpalIVRConnection@@UBE?AVOpalMediaFormatList@@XZ @28941 NONAME
+    ?GetMediaFormats@OpalIVREndPoint@@UBE?AVOpalMediaFormatList@@XZ @30773 NONAME
     ?GetMediaFormats@OpalIxJDevice@@UBE?AVOpalMediaFormatList@@XZ @12777 NONAME
+    ?GetMediaFormats@OpalLIDEndPoint@@UBE?AVOpalMediaFormatList@@XZ @30774 NONAME
     ?GetMediaFormats@OpalLineConnection@@UBE?AVOpalMediaFormatList@@XZ @12778 NONAME
     ?GetMediaFormats@OpalPCSSConnection@@UBE?AVOpalMediaFormatList@@XZ @12780 NONAME
+    ?GetMediaFormats@OpalPCSSEndPoint@@UBE?AVOpalMediaFormatList@@XZ @30775 NONAME
     ?GetMediaFormats@OpalVoipBlasterDevice@@UBE?AVOpalMediaFormatList@@XZ @13997 NONAME
     ?GetMediaFormats@SDPMediaDescription@@QBE?AVOpalMediaFormatList@@XZ @13998 NONAME
     ?GetMediaFormats@SIPConnection@@UBE?AVOpalMediaFormatList@@XZ @13999 NONAME
+    ?GetMediaFormats@SIPEndPoint@@UBE?AVOpalMediaFormatList@@XZ @30776 NONAME
     ?GetMediaFormatsList@OpalMediaFormat@@CAAAVOpalMediaFormatList@@XZ @12783 NONAME
     ?GetMediaFormatsListMutex@OpalMediaFormat@@CAAAVPMutex@@XZ @28942 NONAME
     ?GetMediaInformation@H323Connection@@UBEHIAAUMediaInformation@OpalConnection@@@Z @14000 NONAME
@@ -24243,6 +24250,7 @@ EXPORTS
     ?GetPlayVolume@OpalLineInterfaceDevice@@UAEHIAAI@Z @11340 NONAME
     ?GetPlayVolume@OpalVoipBlasterDevice@@UAEHIAAI@Z @14013 NONAME
     ?GetPosition@OpalWAVFile@@UBEJXZ @14014 NONAME
+    ?GetPossibleFormats@OpalTranscoder@@SA?AVOpalMediaFormatList@@ABV2@@Z @30777 NONAME
     ?GetPrefix@H323RegisteredEndPoint@@QBE?AVPString@@H@Z @14015 NONAME
     ?GetProgressIndicator@Q931@@QBEHAAIPAI1@Z @14016 NONAME
     ?GetProtocolList@H323PeerElementDescriptor@@SAIABVH501_ArrayOf_SupportedProtocols@@@Z @28994 NONAME
