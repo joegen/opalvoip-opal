@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.h,v $
- * Revision 1.2005  2003/03/19 02:30:45  robertj
+ * Revision 1.2006  2004/04/18 13:35:27  rjongbloed
+ * Fixed ability to make calls where both endpoints are specified a priori. In particular
+ *   fixing the VXML support for an outgoing sip/h323 call.
+ *
+ * Revision 2.4  2003/03/19 02:30:45  robertj
  * Added removal of IVR stuff if EXPAT is not installed on system.
  *
  * Revision 2.3  2003/03/17 10:26:59  robertj
@@ -198,14 +202,6 @@ class OpalIVRConnection : public OpalConnection
        The default behaviour does nothing.
       */
     virtual BOOL SetConnected();
-
-    /**Get the destination address of an incoming connection.
-       The default behaviour collects a DTMF number terminated with a '#' or
-       if no digits were entered for a time (default 3 seconds). If no digits
-       are entered within a longer time time (default 30 seconds), then an
-       empty string is returned.
-      */
-    virtual PString GetDestinationAddress();
 
     /**Get the data formats this connection is capable of operating.
        This provides a list of media data format names that an
