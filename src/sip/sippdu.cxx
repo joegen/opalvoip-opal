@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2028  2004/03/20 09:11:52  rjongbloed
+ * Revision 1.2029  2004/03/23 09:43:42  rjongbloed
+ * Fixed new C++ stream I/O compatibility, thanks Ted Szoczei
+ *
+ * Revision 2.27  2004/03/20 09:11:52  rjongbloed
  * Fixed probelm if inital read of stream fr SIP PDU fails. Should not then read again using
  *   >> operator as this then blocks the write due to the ios built in mutex.
  * Added timeout for "inter-packet" characters received. Waits forever for the first byte of
@@ -1067,13 +1070,11 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
   // Do this to force a Read() by the PChannelBuffer outside of the
   // ios::lock() mutex which would prevent simultaneous reads and writes.
   transport.SetReadTimeout(PMaxTimeInterval);
-  if (transport.rdbuf()->
-#if defined(__MWERKS__) || __GNUC__ >= 3
-                         pubseekoff(0, ios_base::cur)
+#if defined(__MWERKS__) || (__GNUC__ >= 3) || (_MSC_VER >= 1300)
+  if (transport.rdbuf()->pubseekoff(0, ios_base::cur) == streampos(_BADOFF))
 #else
-                         seekoff(0, ios::cur, ios::in)
-#endif
-                                                       == EOF)
+  if (transport.rdbuf()->seekoff(0, ios::cur, ios::in) == EOF)
+#endif                                                   
     transport.clear(ios::badbit);
 
   PString cmd;
