@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2002  2001/08/01 05:24:01  robertj
+ * Revision 1.2003  2001/08/01 06:23:55  robertj
+ * Changed to use separate mutex for LIDs structure to avoid Unix nested mutex problem.
+ *
+ * Revision 2.1  2001/08/01 05:24:01  robertj
  * Made OpalMediaFormatList class global to help with documentation.
  * Made the connections media format list to come from LID.
  *
@@ -99,7 +102,7 @@ OpalConnection * OpalLIDEndPoint::SetUpConnection(OpalCall & call,
   // Locate a line
   OpalLineConnection * connection = NULL;
 
-  inUseFlag.Wait();
+  linesMutex.Wait();
 
   for (PINDEX i = 0; i < lines.GetSize(); i++) {
     if ((lineName == "*"  || lines[i].GetDescription() == lineName) && lines[i].EnableAudio()) {
@@ -110,7 +113,7 @@ OpalConnection * OpalLIDEndPoint::SetUpConnection(OpalCall & call,
     }
   }
 
-  inUseFlag.Signal();
+  linesMutex.Signal();
 
   if (connection != NULL)
     connection->StartOutgoing(lineName);
@@ -155,9 +158,9 @@ BOOL OpalLIDEndPoint::AddLine(OpalLine * line)
 
   InitialiseLine(line);
 
-  inUseFlag.Wait();
+  linesMutex.Wait();
   lines.Append(line);
-  inUseFlag.Signal();
+  linesMutex.Signal();
 
   return TRUE;
 }
@@ -165,20 +168,20 @@ BOOL OpalLIDEndPoint::AddLine(OpalLine * line)
 
 void OpalLIDEndPoint::RemoveLine(OpalLine * line)
 {
-  inUseFlag.Wait();
+  linesMutex.Wait();
   lines.Remove(line);
-  inUseFlag.Signal();
+  linesMutex.Signal();
 }
 
 
 void OpalLIDEndPoint::RemoveLine(const PString & token)
 {
-  inUseFlag.Wait();
+  linesMutex.Wait();
   for (PINDEX i = 0; i < lines.GetSize(); i++) {
     if (lines[i].GetToken() *= token)
       lines.RemoveAt(i--);
   }
-  inUseFlag.Signal();
+  linesMutex.Signal();
 }
 
 
@@ -189,7 +192,7 @@ BOOL OpalLIDEndPoint::AddLinesFromDevice(OpalLineInterfaceDevice & device)
 
   BOOL atLeastOne = FALSE;
 
-  inUseFlag.Wait();
+  linesMutex.Wait();
 
   for (unsigned line = 0; line < device.GetLineCount(); line++) {
     if (device.IsLineTerminal(line) == HasAttribute(CanTerminateCall)) {
@@ -200,7 +203,7 @@ BOOL OpalLIDEndPoint::AddLinesFromDevice(OpalLineInterfaceDevice & device)
     }
   }
 
-  inUseFlag.Signal();
+  linesMutex.Signal();
 
   return atLeastOne;
 }
@@ -208,12 +211,12 @@ BOOL OpalLIDEndPoint::AddLinesFromDevice(OpalLineInterfaceDevice & device)
 
 void OpalLIDEndPoint::RemoveLinesFromDevice(OpalLineInterfaceDevice & device)
 {
-  inUseFlag.Wait();
+  linesMutex.Wait();
   for (PINDEX i = 0; i < lines.GetSize(); i++) {
     if (lines[i].GetToken().Find(device.GetName()) == 0)
       lines.RemoveAt(i--);
   }
-  inUseFlag.Signal();
+  linesMutex.Signal();
 }
 
 
@@ -222,10 +225,10 @@ void OpalLIDEndPoint::MonitorLines(PThread &, INT)
   PTRACE(3, "LID EP\tMonitor thread started for " << GetPrefixName());
 
   while (!exitFlag.Wait(100)) {
-    inUseFlag.Wait();
+    linesMutex.Wait();
     for (PINDEX i = 0; i < lines.GetSize(); i++)
       MonitorLine(lines[i]);
-    inUseFlag.Signal();
+    linesMutex.Signal();
   }
 
   PTRACE(3, "LID EP\tMonitor thread stopped for " << GetPrefixName());
