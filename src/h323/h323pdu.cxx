@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.cxx,v $
- * Revision 1.2006  2002/01/14 06:35:58  robertj
+ * Revision 1.2007  2002/01/22 05:27:29  robertj
+ * Update from OpenH323, rev 1.92
+ *
+ * Revision 2.5  2002/01/14 06:35:58  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.4  2001/11/02 10:45:19  robertj
@@ -35,6 +38,9 @@
  *
  * Revision 2.3  2001/10/05 00:22:14  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 1.92  2002/01/18 06:01:23  robertj
+ * Added some H323v4 functions (fastConnectRefused & TCS in SETUP)
  *
  * Revision 1.91  2001/12/15 07:10:59  robertj
  * Added functions to get E.164 address from alias address or addresses.
@@ -356,8 +362,8 @@
 
 #define new PNEW
 
-const char H225_ProtocolID[] = "0.0.8.2250.0.2";
-const char H245_ProtocolID[] = "0.0.8.245.0.3";
+const char H225_ProtocolID[] = "0.0.8.2250.0.4";
+const char H245_ProtocolID[] = "0.0.8.245.0.7";
 
 
 ///////////////////////////////////////////////////////////////////////////////
