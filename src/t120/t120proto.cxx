@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: t120proto.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2001/07/30 01:07:52  robertj
+ * Post first check in fix ups.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.1  2001/07/17 04:44:32  robertj
@@ -42,7 +45,7 @@
 
 #include <h323/transaddr.h>
 #include <t120/x224.h>
-#include <asn/mcspdu.h>
+#include <asn/mcs.h>
 
 
 #define new PNEW
