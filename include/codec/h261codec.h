@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.h,v $
- * Revision 1.2011  2003/03/17 10:26:59  robertj
+ * Revision 1.2012  2004/02/19 10:46:43  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.10  2003/03/17 10:26:59  robertj
  * Added video support.
  *
  * Revision 2.9  2003/01/07 04:39:52  robertj
@@ -62,6 +65,18 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.35  2004/01/02 00:31:42  dereksmithies
+ * Fix test on presence/absence of video.
+ *
+ * Revision 1.34  2003/12/14 10:42:29  rjongbloed
+ * Changes for compilability without video support.
+ *
+ * Revision 1.33  2003/10/02 23:37:56  dereksmithies
+ * Add fix for fast update problem in h261 codec. Thanks to Martin André for doing the initial legwork.
+ *
+ * Revision 1.32  2003/04/03 23:54:11  robertj
+ * Added fast update to H.261 codec, thanks Gustavo García Bernardo
  *
  * Revision 1.31  2002/12/16 09:11:15  robertj
  * Added new video bit rate control, thanks Walter H. Whitlock
@@ -177,6 +192,8 @@
 
 #include <codec/vidcodec.h>
 #include <h323/h323caps.h>
+
+#ifndef NO_H323_VIDEO
 
 
 class P64Decoder;
@@ -313,6 +330,7 @@ class H323_H261Capability : public H323VideoCapability
     unsigned qcifMPI;                   // 1..4 units 1/29.97 Hz
     unsigned cifMPI;                    // 1..4 units 1/29.97 Hz
     BOOL     temporalSpatialTradeOffCapability;
+
     unsigned maxBitRate;                // units of 100 bit/s
     BOOL     stillImageTransmission;    // Annex D of H.261
 };
@@ -373,6 +391,9 @@ class Opal_YUV420P_H261 : public OpalVideoTranscoder {
 
 
 #endif // __OPAL_H261CODEC_H
+
+
+#endif // NO_H323_VIDEO
 
 
 /////////////////////////////////////////////////////////////////////////////

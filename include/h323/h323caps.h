@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.h,v $
- * Revision 1.2012  2002/11/10 11:33:16  robertj
+ * Revision 1.2013  2004/02/19 10:46:43  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.11  2002/11/10 11:33:16  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.10  2002/09/16 02:52:33  robertj
@@ -64,6 +67,21 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.40  2003/10/27 06:03:39  csoutheren
+ * Added support for QoS
+ *   Thanks to Henry Harrison of AliceStreet
+ *
+ * Revision 1.39  2003/06/06 02:13:10  rjongbloed
+ * Changed non-standard capability semantics so can use C style strings as
+ *   the embedded data block (ie automatically call strlen)
+ *
+ * Revision 1.38  2003/04/28 07:00:00  robertj
+ * Fixed problem with compiler(s) not correctly initialising static globals
+ *
+ * Revision 1.37  2003/04/27 23:49:21  craigs
+ * Fixed some comments and made list of registered codecs
+ * available outside h323caps.cxx
  *
  * Revision 1.36  2002/11/09 04:24:01  robertj
  * Fixed minor documentation errors.
@@ -467,6 +485,9 @@ class H323Capability : public PObject
 
     /// Set the payload type for the capaibility
     void SetPayloadType(RTP_DataFrame::PayloadTypes pt) { rtpPayloadType = pt; }
+
+    /// Attach a QoS specification to this channel
+    virtual void AttachQoS(RTP_QOS *) { }
   //@}
 
 #if PTRACING
@@ -498,7 +519,7 @@ class H323NonStandardCapabilityInfo
     H323NonStandardCapabilityInfo(
       H323EndPoint & endpoint,        /// Endpoint to get t35 information
       const BYTE * dataBlock,         /// Non-Standard data for codec type
-      PINDEX dataSize,                /// Size of dataBlock
+      PINDEX dataSize,                /// Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
       PINDEX comparisonOffset = 0,    /// Offset into dataBlock to compare
       PINDEX comparisonLength = P_MAX_INDEX  /// Length of bytes to compare
     );
@@ -508,7 +529,7 @@ class H323NonStandardCapabilityInfo
     H323NonStandardCapabilityInfo(
       const PString & oid,
       const BYTE * dataBlock,         /// Non-Standard data for codec type
-      PINDEX dataSize,                /// Size of dataBlock
+      PINDEX dataSize,                /// Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
       PINDEX comparisonOffset = 0,
       PINDEX comparisonLength = P_MAX_INDEX
     );
@@ -520,7 +541,7 @@ class H323NonStandardCapabilityInfo
       BYTE extension,                /// t35 information
       WORD maufacturer,              /// t35 information
       const BYTE * dataBlock,         /// Non-Standard data for codec type
-      PINDEX dataSize,                /// Size of dataBlock
+      PINDEX dataSize,                /// Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
       PINDEX comparisonOffset = 0,    /// Offset into dataBlock to compare
       PINDEX comparisonLength = P_MAX_INDEX  /// Length of bytes to compare
     );
@@ -598,6 +619,14 @@ class H323RealTimeCapability : public H323Capability
       const H245_H2250LogicalChannelParameters * param
                                       /// Parameters for channel
     ) const;
+
+    H323RealTimeCapability();
+    H323RealTimeCapability(const H323RealTimeCapability &rtc);
+    virtual ~H323RealTimeCapability();
+    void AttachQoS(RTP_QOS * _rtpqos);
+
+  protected:
+    RTP_QOS * rtpqos;
   //@}
 };
 
@@ -618,8 +647,8 @@ class H323AudioCapability : public H323RealTimeCapability
     /**Create an audio based capability.
       */
     H323AudioCapability(
-      unsigned rxPacketSize, /// Maximum size of an audio packet in bytes
-      unsigned txPacketSize  /// Desired transmit size of an audio packet
+      unsigned rxPacketSize, /// Maximum size of an audio packet in frames
+      unsigned txPacketSize  /// Desired transmit size of an audio packet frames
     );
   //@}
 
@@ -800,11 +829,11 @@ class H323NonStandardAudioCapability : public H323AudioCapability,
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardAudioCapability(
-      unsigned maxPacketSize,         /// Maximum size of an audio packet in bytes
-      unsigned desiredPacketSize,     /// Desired transmit size of an audio packet
+      unsigned maxPacketSize,         /// Maximum size of an audio packet in frames
+      unsigned desiredPacketSize,     /// Desired transmit size of an audio packet in frames
       H323EndPoint & endpoint,        /// Endpoint to get t35 information
       const BYTE * dataBlock = NULL,  /// Non-Standard data for codec type
-      PINDEX dataSize = 0,            /// Size of dataBlock
+      PINDEX dataSize = 0,            /// Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
       PINDEX comparisonOffset = 0,    /// Offset into dataBlock to compare
       PINDEX comparisonLength = P_MAX_INDEX  /// Length of bytes to compare
      );
@@ -812,11 +841,11 @@ class H323NonStandardAudioCapability : public H323AudioCapability,
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardAudioCapability(
-      unsigned maxPacketSize,         /// Maximum size of an audio packet in bytes
-      unsigned desiredPacketSize,     /// Desired transmit size of an audio packet
+      unsigned maxPacketSize,         /// Maximum size of an audio packet in frames
+      unsigned desiredPacketSize,     /// Desired transmit size of an audio packet in frames
       const PString & oid,            /// OID for indentification of codec
       const BYTE * dataBlock = NULL,  /// Non-Standard data for codec type
-      PINDEX dataSize = 0,            /// Size of dataBlock
+      PINDEX dataSize = 0,            /// Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
       PINDEX comparisonOffset = 0,    /// Offset into dataBlock to compare
       PINDEX comparisonLength = P_MAX_INDEX  /// Length of bytes to compare
     );
@@ -824,13 +853,13 @@ class H323NonStandardAudioCapability : public H323AudioCapability,
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardAudioCapability(
-      unsigned maxPacketSize,         /// Maximum size of an audio packet in bytes
-      unsigned desiredPacketSize,     /// Desired transmit size of an audio packet
+      unsigned maxPacketSize,         /// Maximum size of an audio packet in frames
+      unsigned desiredPacketSize,     /// Desired transmit size of an audio packet in frames
       BYTE country,                   /// t35 information
       BYTE extension,                 /// t35 information
       WORD maufacturer,               /// t35 information
       const BYTE * dataBlock = NULL,  /// Non-Standard data for codec type
-      PINDEX dataSize = 0,            /// Size of dataBlock
+      PINDEX dataSize = 0,            /// Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
       PINDEX comparisonOffset = 0,    /// Offset into dataBlock to compare
       PINDEX comparisonLength = P_MAX_INDEX  /// Length of bytes to compare
     );
@@ -1055,7 +1084,7 @@ class H323NonStandardVideoCapability : public H323VideoCapability,
     H323NonStandardVideoCapability(
       H323EndPoint & endpoint,        /// Endpoint to get t35 information
       const BYTE * dataBlock = NULL,  /// Non-Standard data for codec type
-      PINDEX dataSize = 0,            /// Size of dataBlock
+      PINDEX dataSize = 0,            /// Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
       PINDEX comparisonOffset = 0,    /// Offset into dataBlock to compare
       PINDEX comparisonLength = P_MAX_INDEX  /// Length of bytes to compare
     );
@@ -1065,7 +1094,7 @@ class H323NonStandardVideoCapability : public H323VideoCapability,
     H323NonStandardVideoCapability(
       const PString & oid,            /// OID for indentification of codec
       const BYTE * dataBlock = NULL,  /// Non-Standard data for codec type
-      PINDEX dataSize = 0,            /// Size of dataBlock
+      PINDEX dataSize = 0,            /// Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
       PINDEX comparisonOffset = 0,    /// Offset into dataBlock to compare
       PINDEX comparisonLength = P_MAX_INDEX  /// Length of bytes to compare
     );
@@ -1077,7 +1106,7 @@ class H323NonStandardVideoCapability : public H323VideoCapability,
       BYTE extension,                 /// t35 information
       WORD maufacturer,               /// t35 information
       const BYTE * dataBlock = NULL,  /// Non-Standard data for codec type
-      PINDEX dataSize = 0,            /// Size of dataBlock
+      PINDEX dataSize = 0,            /// Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
       PINDEX comparisonOffset = 0,    /// Offset into dataBlock to compare
       PINDEX comparisonLength = P_MAX_INDEX  /// Length of bytes to compare
     );
@@ -1313,7 +1342,7 @@ class H323NonStandardDataCapability : public H323DataCapability,
       unsigned maxBitRate,            /// Maximum bit rate for data in 100's b/s
       H323EndPoint & endpoint,        /// Endpoint to get t35 information
       const BYTE * dataBlock = NULL,  /// Non-Standard data for codec type
-      PINDEX dataSize = 0,            /// Size of dataBlock
+      PINDEX dataSize = 0,            /// Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
       PINDEX comparisonOffset = 0,    /// Offset into dataBlock to compare
       PINDEX comparisonLength = P_MAX_INDEX  /// Length of bytes to compare
     );
@@ -1324,7 +1353,7 @@ class H323NonStandardDataCapability : public H323DataCapability,
       unsigned maxBitRate,            /// Maximum bit rate for data in 100's b/s
       const PString & oid,            /// OID for indentification of codec
       const BYTE * dataBlock = NULL,  /// Non-Standard data for codec type
-      PINDEX dataSize = 0,            /// Size of dataBlock
+      PINDEX dataSize = 0,            /// Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
       PINDEX comparisonOffset = 0,    /// Offset into dataBlock to compare
       PINDEX comparisonLength = P_MAX_INDEX  /// Length of bytes to compare
     );
@@ -1337,7 +1366,7 @@ class H323NonStandardDataCapability : public H323DataCapability,
       BYTE extension,                 /// t35 information
       WORD maufacturer,               /// t35 information
       const BYTE * dataBlock = NULL,  /// Non-Standard data for codec type
-      PINDEX dataSize = 0,            /// Size of dataBlock
+      PINDEX dataSize = 0,            /// Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
       PINDEX comparisonOffset = 0,    /// Offset into dataBlock to compare
       PINDEX comparisonLength = P_MAX_INDEX  /// Length of bytes to compare
     );
@@ -2199,11 +2228,19 @@ class H323CapabilityRegistration : public PCaselessString
       const char * name
     );
     virtual H323Capability * Create(H323EndPoint & ep) const = 0;
+
   protected:
+    static PMutex & GetMutex();
+    static H323CapabilityRegistration * registeredCapabilitiesListHead;
+
     H323CapabilityRegistration * link;
+
   friend class H323Capability;
   friend class H323Capabilities;
+  friend class OpalDynaCodecDLL;
 };
+
+
 
 
 #define H323_REGISTER_CAPABILITY_FUNCTION(cls, name, epvar) \

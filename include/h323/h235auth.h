@@ -24,7 +24,10 @@
  * Contributor(s): Fürbass Franz <franz.fuerbass@infonova.at>
  *
  * $Log: h235auth.h,v $
- * Revision 1.2008  2002/11/10 11:33:16  robertj
+ * Revision 1.2009  2004/02/19 10:46:43  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.7  2002/11/10 11:33:16  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.6  2002/09/16 02:52:33  robertj
@@ -45,6 +48,27 @@
  *
  * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 1.15  2003/04/30 00:28:50  robertj
+ * Redesigned the alternate credentials in ARQ system as old implementation
+ *   was fraught with concurrency issues, most importantly it can cause false
+ *   detection of replay attacks taking out an endpoint completely.
+ *
+ * Revision 1.14  2003/04/01 04:47:48  robertj
+ * Abstracted H.225 RAS transaction processing (RIP and secondary thread) in
+ *   server environment for use by H.501 peer elements.
+ *
+ * Revision 1.13  2003/02/25 06:48:14  robertj
+ * More work on PDU transaction abstraction.
+ *
+ * Revision 1.12  2003/02/11 04:43:22  robertj
+ * Fixed use of asymmetrical authentication schemes such as MD5.
+ *
+ * Revision 1.11  2003/02/01 13:31:14  robertj
+ * Changes to support CAT authentication in RAS.
+ *
+ * Revision 1.10  2003/01/08 04:40:31  robertj
+ * Added more debug tracing for H.235 authenticators.
  *
  * Revision 1.9  2002/09/16 01:14:15  robertj
  * Added #define so can select if #pragma interface/implementation is used on
@@ -89,13 +113,15 @@
 #endif
 
 
+class H323TransactionPDU;
 class H225_CryptoH323Token;
-class H225_ArrayOf_CryptoH323Token;
 class H225_ArrayOf_AuthenticationMechanism;
 class H225_ArrayOf_PASN_ObjectId;
+class H235_ClearToken;
 class H235_AuthenticationMechanism;
 class PASN_ObjectId;
 class PASN_Sequence;
+class PASN_Array;
 
 
 /** This abtract class embodies an H.235 authentication mechanism.
@@ -107,35 +133,48 @@ class H235Authenticator : public PObject
   public:
     H235Authenticator();
 
-    virtual BOOL Prepare(
-      H225_ArrayOf_CryptoH323Token & cryptoTokens
+    virtual void PrintOn(
+      ostream & strm
+    ) const;
+
+    virtual const char * GetName() const = 0;
+
+    virtual BOOL PrepareTokens(
+      PASN_Array & clearTokens,
+      PASN_Array & cryptoTokens
     );
 
-    virtual BOOL PrepareToken(
-      H225_CryptoH323Token & cryptoTokens
-    ) = 0;
+    virtual H235_ClearToken * CreateClearToken();
+    virtual H225_CryptoH323Token * CreateCryptoToken();
 
     virtual BOOL Finalise(
       PBYTEArray & rawPDU
-    ) = 0;
+    );
 
-    enum State {
-      e_OK = 0,    /// Security parameters and Msg are ok, no security attacks
-      e_Absent,    /// Security parameters are expected but absent
-      e_Error,     /// Security parameters are present but incorrect
-      e_Attacked,  /// Security parameters indicate an attack was made
-      e_Disabled   /// Security is disabled by local system
+    enum ValidationResult {
+      e_OK = 0,     /// Security parameters and Msg are ok, no security attacks
+      e_Absent,     /// Security parameters are expected but absent
+      e_Error,      /// Security parameters are present but incorrect
+      e_InvalidTime,/// Security parameters indicate peer has bad real time clock
+      e_BadPassword,/// Security parameters indicate bad password in token
+      e_ReplyAttack,/// Security parameters indicate an attack was made
+      e_Disabled    /// Security is disabled by local system
     };
 
-    virtual State Verify(
-      const H225_ArrayOf_CryptoH323Token & cryptoTokens,
+    virtual ValidationResult ValidateTokens(
+      const PASN_Array & clearTokens,
+      const PASN_Array & cryptoTokens,
       const PBYTEArray & rawPDU
     );
 
-    virtual State VerifyToken(
+    virtual ValidationResult ValidateClearToken(
+      const H235_ClearToken & clearToken
+    );
+
+    virtual ValidationResult ValidateCryptoToken(
       const H225_CryptoH323Token & cryptoToken,
       const PBYTEArray & rawPDU
-    ) = 0;
+    );
 
     virtual BOOL IsCapability(
       const H235_AuthenticationMechanism & mechansim,
@@ -148,6 +187,11 @@ class H235Authenticator : public PObject
     ) = 0;
 
     virtual BOOL UseGkAndEpIdentifiers() const;
+
+    virtual BOOL IsSecuredPDU(
+      unsigned rasPDU,
+      BOOL received
+    ) const;
 
     virtual BOOL IsActive() const;
 
@@ -181,25 +225,30 @@ class H235Authenticator : public PObject
     PString  password;      // shared secret
 
     unsigned sentRandomSequenceNumber;
+    unsigned lastRandomSequenceNumber;
+    unsigned lastTimestamp;
+    int      timestampGracePeriod;
+
+    PMutex mutex;
 };
 
 
 PDECLARE_LIST(H235Authenticators, H235Authenticator)
   public:
-    H235Authenticators Adjust(
-      const PString & remoteId,
-      const PString & localId,
-      const PString & password
-    ) const;
     void PreparePDU(
-      H225_ArrayOf_CryptoH323Token & cryptoTokens,
-      PASN_Sequence & pdu,
-      unsigned optionalField
+      H323TransactionPDU & pdu,
+      PASN_Array & clearTokens,
+      unsigned clearOptionalField,
+      PASN_Array & cryptoTokens,
+      unsigned cryptoOptionalField
     ) const;
-    BOOL ValidatePDU(
-      const H225_ArrayOf_CryptoH323Token & cryptoTokens,
-      const PASN_Sequence & pdu,
-      unsigned optionalField,
+
+    H235Authenticator::ValidationResult ValidatePDU(
+      const H323TransactionPDU & pdu,
+      const PASN_Array & clearTokens,
+      unsigned clearOptionalField,
+      const PASN_Array & cryptoTokens,
+      unsigned cryptoOptionalField,
       const PBYTEArray & rawPDU
     ) const;
 };
@@ -219,15 +268,11 @@ class H235AuthSimpleMD5 : public H235Authenticator
 
     PObject * Clone() const;
 
-    virtual BOOL PrepareToken(
-      H225_CryptoH323Token & cryptoTokens
-    );
+    virtual const char * GetName() const;
 
-     virtual BOOL Finalise(
-      PBYTEArray & rawPDU
-    );
+    virtual H225_CryptoH323Token * CreateCryptoToken();
 
-    virtual State VerifyToken(
+    virtual ValidationResult ValidateCryptoToken(
       const H225_CryptoH323Token & cryptoToken,
       const PBYTEArray & rawPDU
     );
@@ -242,7 +287,49 @@ class H235AuthSimpleMD5 : public H235Authenticator
       H225_ArrayOf_PASN_ObjectId & algorithmOIDs
     );
 
-    virtual BOOL IsActive() const;
+    virtual BOOL IsSecuredPDU(
+      unsigned rasPDU,
+      BOOL received
+    ) const;
+};
+
+
+/** This class embodies a RADIUS compatible based authentication (aka Cisco
+    Access Token or CAT).
+    The users password is concatenated with the 4 byte timestamp and 1 byte
+    random fields and an MD5 generated and sent/verified via the challenge
+    field.
+*/
+class H235AuthCAT : public H235Authenticator
+{
+    PCLASSINFO(H235AuthCAT, H235Authenticator);
+  public:
+    H235AuthCAT();
+
+    PObject * Clone() const;
+
+    virtual const char * GetName() const;
+
+    virtual H235_ClearToken * CreateClearToken();
+
+    virtual ValidationResult ValidateClearToken(
+      const H235_ClearToken & clearToken
+    );
+
+    virtual BOOL IsCapability(
+      const H235_AuthenticationMechanism & mechansim,
+      const PASN_ObjectId & algorithmOID
+    );
+
+    virtual BOOL SetCapability(
+      H225_ArrayOf_AuthenticationMechanism & mechansim,
+      H225_ArrayOf_PASN_ObjectId & algorithmOIDs
+    );
+
+    virtual BOOL IsSecuredPDU(
+      unsigned rasPDU,
+      BOOL received
+    ) const;
 };
 
 
@@ -258,15 +345,15 @@ class H235AuthProcedure1 : public H235Authenticator
 
     PObject * Clone() const;
 
-    virtual BOOL PrepareToken(
-      H225_CryptoH323Token & cryptoTokens
-    );
+    virtual const char * GetName() const;
+
+    virtual H225_CryptoH323Token * CreateCryptoToken();
 
     virtual BOOL Finalise(
       PBYTEArray & rawPDU
     );
 
-    virtual State VerifyToken(
+    virtual ValidationResult ValidateCryptoToken(
       const H225_CryptoH323Token & cryptoToken,
       const PBYTEArray & rawPDU
     );
@@ -282,10 +369,6 @@ class H235AuthProcedure1 : public H235Authenticator
     );
 
     virtual BOOL UseGkAndEpIdentifiers() const;
-
-  protected:
-    unsigned lastRandomSequenceNumber;
-    unsigned lastTimestamp;
 };
 
 #endif

@@ -23,7 +23,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: allcodecs.h,v $
- * Revision 1.2007  2004/02/17 08:48:57  csoutheren
+ * Revision 1.2008  2004/02/19 10:46:43  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.6  2004/02/17 08:48:57  csoutheren
  * Disabled VoiceAge G.729 codec on Linux
  *
  * Revision 2.5  2003/06/02 04:04:54  rjongbloed
@@ -68,6 +71,9 @@ OPAL_REGISTER_LPC10();
 
 #include <codec/speexcodec.h>
 OPAL_REGISTER_SPEEX();
+
+#include <codec/ilbccodec.h>
+OPAL_REGISTER_iLBC();
 
 
 #include <codec/vidcodec.h>
