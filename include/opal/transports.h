@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.h,v $
- * Revision 1.2005  2001/11/13 04:29:47  robertj
+ * Revision 1.2006  2002/04/09 00:12:10  robertj
+ * Added ability to set the local address on a transport, under some circumstances.
+ *
+ * Revision 2.4  2001/11/13 04:29:47  robertj
  * Changed OpalTransportAddress CreateTransport and CreateListsner functions
  *   to have extra parameter to control local binding of sockets.
  *
@@ -509,6 +512,14 @@ class OpalTransport : public PIndirectChannel
       */
     virtual OpalTransportAddress GetLocalAddress() const = 0;
 
+    /**Set local address to connect from.
+       Note that this may not work for all transport types or may work only
+       before Connect() has been called.
+      */
+    virtual BOOL SetLocalAddress(
+      const OpalTransportAddress & address
+    ) = 0;
+
     /**Get the transport dependent name of the remote endpoint.
       */
     virtual OpalTransportAddress GetRemoteAddress() const = 0;
@@ -642,6 +653,14 @@ class OpalTransportIP : public OpalTransport
     /**Get the transport dependent name of the local endpoint.
       */
     virtual OpalTransportAddress GetLocalAddress() const;
+
+    /**Set local address to connect from.
+       Note that this may not work for all transport types or may work only
+       before Connect() has been called.
+      */
+    virtual BOOL SetLocalAddress(
+      const OpalTransportAddress & address
+    );
 
     /**Get the transport dependent name of the remote endpoint.
       */
@@ -824,6 +843,14 @@ class OpalTransportUDP : public OpalTransportIP
       */
     virtual void EndConnect(
       const OpalTransportAddress & localAddress  /// Resultant local address
+    );
+
+    /**Set local address to connect from.
+       Note that this may not work for all transport types or may work only
+       before Connect() has been called.
+      */
+    virtual BOOL SetLocalAddress(
+      const OpalTransportAddress & address
     );
 
     /**Set remote address to connect to.
