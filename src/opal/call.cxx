@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2025  2004/05/01 10:00:52  rjongbloed
+ * Revision 1.2026  2004/05/02 05:18:45  rjongbloed
+ * More logging
+ *
+ * Revision 2.24  2004/05/01 10:00:52  rjongbloed
  * Fixed ClearCallSynchronous so now is actually signalled when call is destroyed.
  *
  * Revision 2.23  2004/04/25 02:53:29  rjongbloed
@@ -616,8 +619,9 @@ BOOL OpalCall::GarbageCollection()
 
   while (garbageConnections.GetSize() > 0) {
     OpalConnection * connection = (OpalConnection *)garbageConnections.RemoveAt(0);
-
     inUseFlag.Signal();
+
+    PTRACE(3, "Call\tReleasing connection " << *connection);
 
     // Now, outside the callsMutex, we can clean up calls
     if (connection->OnReleased())
