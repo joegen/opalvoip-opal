@@ -28440,7 +28440,7 @@ EXPORTS
     ?WriteFrame@OpalIxJDevice@@UAEHIPBXHAAH@Z @28000 NONAME
     ?WriteFrame@OpalLine@@UAEHPBXHAAH@Z @28001 NONAME
     ?WriteFrame@OpalVoipBlasterDevice@@UAEHIPBXHAAH@Z @28002 NONAME
-    ?WriteFrame@Sink@OpalMediaPatch@@QAEHAAVRTP_DataFrame@@@Z @28003 NONAME
+    ?WriteFrame@Sink@OpalMediaPatch@@QAE_NAAVRTP_DataFrame@@@Z @29306 NONAME
     ?WriteIndicator@OpalT38Protocol@@UAEHI@Z @28004 NONAME
     ?WriteINVITE@SIPConnection@@KAHAAVOpalTransport@@PAX@Z @28005 NONAME
     ?WriteMultipleData@OpalT38Protocol@@UAEHIHPAIPBVPBYTEArray@@@Z @28006 NONAME
