@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2036  2004/04/27 04:40:17  rjongbloed
+ * Revision 1.2037  2004/04/27 07:23:40  rjongbloed
+ * Fixed uninitialised variable getting ip without port
+ *
+ * Revision 2.35  2004/04/27 04:40:17  rjongbloed
  * Changed UDP listener IsOpen to indicae open only if all sockets on each
  *   interface are open.
  *
@@ -581,7 +584,7 @@ BOOL OpalTransportAddress::GetIpAddress(PIPSocket::Address & ip) const
   if (transport == NULL)
     return FALSE;
 
-  WORD dummy;
+  WORD dummy = 65535;
   return transport->GetIpAndPort(*this, ip, dummy);
 }
 
@@ -751,7 +754,7 @@ BOOL OpalInternalIPTransport::GetIpAndPort(const OpalTransportAddress & address,
     return FALSE;
 
   if (host.IsEmpty()) {
-    PTRACE(2, "Opal\tIllegal IP transport address: \"" << *this << '"');
+    PTRACE(2, "Opal\tIllegal IP transport address: \"" << address << '"');
     return FALSE;
   }
 
@@ -765,7 +768,7 @@ BOOL OpalInternalIPTransport::GetIpAndPort(const OpalTransportAddress & address,
       port = PIPSocket::GetPortByService(proto, service);
     }
     if (port == 0) {
-      PTRACE(2, "Opal\tIllegal IP transport port/service: \"" << *this << '"');
+      PTRACE(2, "Opal\tIllegal IP transport port/service: \"" << address << '"');
       return FALSE;
     }
   }
