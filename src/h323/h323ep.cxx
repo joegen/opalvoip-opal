@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2032  2004/06/05 14:32:32  rjongbloed
+ * Revision 1.2033  2004/07/11 12:42:12  rjongbloed
+ * Added function on endpoints to get the list of all media formats any
+ *   connection the endpoint may create can support.
+ *
+ * Revision 2.31  2004/06/05 14:32:32  rjongbloed
  * Added ability to have separate gatekeeper username to endpoint local alias name.
  *
  * Revision 2.30  2004/06/04 06:54:18  csoutheren
@@ -1110,6 +1114,12 @@ BOOL H323EndPoint::MakeConnection(OpalCall & call,
                           UINT_MAX,
                           remoteParty,
                           userData);
+}
+
+
+OpalMediaFormatList H323EndPoint::GetMediaFormats() const
+{
+  return OpalMediaFormat::GetAllRegisteredMediaFormats();
 }
 
 
