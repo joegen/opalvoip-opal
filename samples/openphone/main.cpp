@@ -1,7 +1,7 @@
 /*
  * main.cpp
  *
- * Open Phone Client application source file for OPAL
+ * An OPAL GUI phone application.
  *
  * Open Phone Abstraction Library (OPAL)
  * Formally known as the Open H323 project.
@@ -23,6 +23,11 @@
  * The Initial Developer of the Original Code is Post Increment
  *
  * Contributor(s): 
+ *
+ * $Log: main.cpp,v $
+ * Revision 1.8  2004/05/01 13:38:05  rjongbloed
+ * Some early implementation of wxWIndows based OPAL GUI client.
+ *
  */
 
 #ifdef __GNUG__
@@ -46,6 +51,34 @@
 #include <lids/lidep.h>
 
 
+class TextCtrlChannel : public PChannel
+{
+    PCLASSINFO(TextCtrlChannel, PChannel)
+  public:
+    TextCtrlChannel(wxTextCtrl * textCtrl = NULL)
+      : m_textCtrl(textCtrl)
+      { }
+
+    virtual BOOL Write(
+      const void * buf, /// Pointer to a block of memory to write.
+      PINDEX len        /// Number of bytes to write.
+    ) {
+      if (m_textCtrl == NULL)
+        return FALSE;
+      m_textCtrl->WriteText(wxString((const wxChar *)buf, (size_t)len));
+      return TRUE;
+    }
+
+    void SetTextCtrl(
+      wxTextCtrl * textCtrl
+    ) { m_textCtrl = textCtrl; }
+
+  protected:
+    wxTextCtrl * m_textCtrl;
+} LogWindow;
+
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 IMPLEMENT_APP(OpenPhoneApp)
@@ -66,9 +99,9 @@ void OpenPhoneApp::Main()
 bool OpenPhoneApp::OnInit()
 {
   // Create the main frame window
-  SetTopWindow(new MyFrame());
-
-  return true;
+  MyFrame * frame = new MyFrame();
+  SetTopWindow(frame);
+  return frame->Initialise();
 }
 
 
@@ -77,12 +110,13 @@ bool OpenPhoneApp::OnInit()
 BEGIN_EVENT_TABLE(MyFrame, wxFrame)
   EVT_SIZE(MyFrame::OnSize)
 
-  EVT_MENU(MENU_FILE_QUIT, MyFrame::OnQuit)
-  EVT_MENU(MENU_FILE_ABOUT, MyFrame::OnAbout)
+  EVT_MENU(MENU_FILE_QUIT,  MyFrame::OnMenuQuit)
+  EVT_MENU(MENU_FILE_ABOUT, MyFrame::OnMenuAbout)
+  EVT_MENU(MENU_FILE_CALL,  MyFrame::OnMenuCall)
 END_EVENT_TABLE()
 
 MyFrame::MyFrame()
-  : wxFrame((wxFrame *)NULL, -1, wxT("wxListCtrl Test"), wxPoint(50, 50), wxSize(450, 340)),
+  : wxFrame(NULL, -1, wxT("OpenPhone"), wxDefaultPosition, wxSize(640, 480)),
     m_panel(NULL),
     m_logWindow(NULL),
     pcssEP(NULL),
@@ -104,31 +138,23 @@ MyFrame::MyFrame()
   wxMenuBar *menubar = new wxMenuBar;
 
   wxMenu *menu = new wxMenu;
-  menu->Append(MENU_FILE_ABOUT, _T("&About"));
+  menu->Append(MENU_FILE_CALL, _T("&Call"));
   menu->AppendSeparator();
   menu->Append(MENU_FILE_QUIT, _T("E&xit\tAlt-X"));
   menubar->Append(menu, _T("&File"));
 
+  menu = new wxMenu;
+  menu->Append(MENU_FILE_ABOUT, _T("&About"));
+  menubar->Append(menu, _T("&Help"));
+
   SetMenuBar(menubar);
 
+  // Make the content of the main window, speed dial and log panes
   m_panel = new wxPanel(this, -1);
   m_logWindow = new wxTextCtrl(m_panel, -1, wxEmptyString,
-                                wxDefaultPosition, wxDefaultSize,
-                                wxTE_MULTILINE | wxSUNKEN_BORDER);
-
-#if OPAL_H323
-  h323EP = new H323EndPoint(*this);
-#endif
-
-#if OPAL_SIP
-  sipEP = new SIPEndPoint(*this);
-#endif
-
-#if P_EXPAT
-  ivrEP = new OpalIVREndPoint(*this);
-#endif
-
-  pcssEP = new MyPCSSEndPoint(*this);
+                               wxDefaultPosition, wxDefaultSize,
+                               wxTE_MULTILINE | wxSUNKEN_BORDER);
+  LogWindow.SetTextCtrl(m_logWindow);
 
   // Show the frame
   Show(TRUE);
@@ -137,9 +163,39 @@ MyFrame::MyFrame()
 
 MyFrame::~MyFrame()
 {
+  ClearAllCalls();
+
   // Must do this before we destroy the manager or a crash will result
   if (potsEP != NULL)
     potsEP->RemoveAllLines();
+
+  LogWindow.SetTextCtrl(NULL);
+}
+
+
+bool MyFrame::Initialise()
+{
+#if OPAL_H323
+  h323EP = new H323EndPoint(*this);
+
+  if (h323EP->StartListeners(PStringArray()))
+    LogWindow << "H.323 listening on " << setfill(',') << h323EP->GetListeners() << setfill(' ') << endl;
+#endif
+
+#if OPAL_SIP
+  sipEP = new SIPEndPoint(*this);
+
+  if (sipEP->StartListeners(PStringArray()))
+    LogWindow << "SIP listening on " << setfill(',') << sipEP->GetListeners() << setfill(' ') << endl;
+#endif
+
+#if P_EXPAT
+  ivrEP = new OpalIVREndPoint(*this);
+#endif
+
+  pcssEP = new MyPCSSEndPoint(*this);
+
+  return true;
 }
 
 
@@ -149,32 +205,47 @@ void MyFrame::OnSize(wxSizeEvent& event)
     return;
 
   wxSize size = GetClientSize();
+
   m_logWindow->SetSize(0, 0, size.x, size.y);
 
   event.Skip();
 }
 
 
-void MyFrame::OnQuit(wxCommandEvent& WXUNUSED(event))
+void MyFrame::OnMenuQuit(wxCommandEvent& WXUNUSED(event))
 {
     Close(TRUE);
 }
 
 
-void MyFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
+void MyFrame::OnMenuAbout(wxCommandEvent& WXUNUSED(event))
 {
-    wxMessageDialog dialog(this,
-                           _T("OpenPhone\nPost Increment (c) 2004"),
-                           _T("About list test"),
-                           wxOK|wxCANCEL);
-    dialog.ShowModal();
+  wxMessageDialog dialog(this,
+                         _T("OpenPhone\nPost Increment (c) 2004"),
+                         _T("About OpenPhone"),
+                         wxOK);
+  dialog.ShowModal();
+}
+
+
+void MyFrame::OnMenuCall(wxCommandEvent& WXUNUSED(event))
+{
+  CallDialog dlg(this);
+
+  if (dlg.ShowModal() == wxID_OK) {
+    LogWindow << "Calling \"" << dlg.m_Address << '"' << endl;
+    if (potsEP != NULL)
+      SetUpCall("pots:*", dlg.m_Address.c_str(), currentCallToken);
+    else
+      SetUpCall("pc:*", dlg.m_Address.c_str(), currentCallToken);
+  }
 }
 
 
 void MyFrame::OnEstablishedCall(OpalCall & call)
 {
   currentCallToken = call.GetToken();
-//  cout << "In call with " << call.GetPartyB() << " using " << call.GetPartyA() << endl;
+  LogWindow << "In call with " << call.GetPartyB() << " using " << call.GetPartyA() << endl;
 }
 
 
@@ -183,59 +254,57 @@ void MyFrame::OnClearedCall(OpalCall & call)
   if (currentCallToken == call.GetToken())
     currentCallToken = PString();
 
-#if 0
   PString remoteName = '"' + call.GetPartyB() + '"';
   switch (call.GetCallEndReason()) {
     case OpalConnection::EndedByRemoteUser :
-      cout << remoteName << " has cleared the call";
+      LogWindow << remoteName << " has cleared the call";
       break;
     case OpalConnection::EndedByCallerAbort :
-      cout << remoteName << " has stopped calling";
+      LogWindow << remoteName << " has stopped calling";
       break;
     case OpalConnection::EndedByRefusal :
-      cout << remoteName << " did not accept your call";
+      LogWindow << remoteName << " did not accept your call";
       break;
     case OpalConnection::EndedByNoAnswer :
-      cout << remoteName << " did not answer your call";
+      LogWindow << remoteName << " did not answer your call";
       break;
     case OpalConnection::EndedByTransportFail :
-      cout << "Call with " << remoteName << " ended abnormally";
+      LogWindow << "Call with " << remoteName << " ended abnormally";
       break;
     case OpalConnection::EndedByCapabilityExchange :
-      cout << "Could not find common codec with " << remoteName;
+      LogWindow << "Could not find common codec with " << remoteName;
       break;
     case OpalConnection::EndedByNoAccept :
-      cout << "Did not accept incoming call from " << remoteName;
+      LogWindow << "Did not accept incoming call from " << remoteName;
       break;
     case OpalConnection::EndedByAnswerDenied :
-      cout << "Refused incoming call from " << remoteName;
+      LogWindow << "Refused incoming call from " << remoteName;
       break;
     case OpalConnection::EndedByNoUser :
-      cout << "Gatekeeper could find user " << remoteName;
+      LogWindow << "Gatekeeper could find user " << remoteName;
       break;
     case OpalConnection::EndedByNoBandwidth :
-      cout << "Call to " << remoteName << " aborted, insufficient bandwidth.";
+      LogWindow << "Call to " << remoteName << " aborted, insufficient bandwidth.";
       break;
     case OpalConnection::EndedByUnreachable :
-      cout << remoteName << " could not be reached.";
+      LogWindow << remoteName << " could not be reached.";
       break;
     case OpalConnection::EndedByNoEndPoint :
-      cout << "No phone running for " << remoteName;
+      LogWindow << "No phone running for " << remoteName;
       break;
     case OpalConnection::EndedByHostOffline :
-      cout << remoteName << " is not online.";
+      LogWindow << remoteName << " is not online.";
       break;
     case OpalConnection::EndedByConnectFail :
-      cout << "Transport error calling " << remoteName;
+      LogWindow << "Transport error calling " << remoteName;
       break;
     default :
-      cout << "Call with " << remoteName << " completed";
+      LogWindow << "Call with " << remoteName << " completed";
   }
   PTime now;
-  cout << ", on " << now.AsString("w h:mma") << ". Duration "
-       << setprecision(0) << setw(5) << (now - call.GetStartTime())
-       << "s." << endl;
-#endif
+  LogWindow << ", on " << now.AsString("w h:mma") << ". Duration "
+            << setprecision(0) << setw(5) << (now - call.GetStartTime())
+            << "s." << endl;
 }
 
 
@@ -244,16 +313,14 @@ BOOL MyFrame::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & s
   if (!OpalManager::OnOpenMediaStream(connection, stream))
     return FALSE;
 
-#if 0
-  cout << connection.GetEndPoint().GetPrefixName() << " started ";
+  LogWindow << connection.GetEndPoint().GetPrefixName() << " started ";
 
   if (stream.IsSource())
-    cout << "sending ";
+    LogWindow << "sending ";
   else
-    cout << "receiving ";
+    LogWindow << "receiving ";
 
-  cout << stream.GetMediaFormat() << endl;  
-#endif
+  LogWindow << stream.GetMediaFormat() << endl;  
 
   return TRUE;
 }
@@ -261,7 +328,7 @@ BOOL MyFrame::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & s
 
 void MyFrame::OnUserInputString(OpalConnection & connection, const PString & value)
 {
-//  cout << "User input received: \"" << value << '"' << endl;
+  LogWindow << "User input received: \"" << value << '"' << endl;
   OpalManager::OnUserInputString(connection, value);
 }
 
@@ -291,9 +358,9 @@ void MyPCSSEndPoint::OnShowIncoming(const OpalPCSSConnection & connection)
     AcceptIncomingConnection(incomingConnectionToken);
   else {
     PTime now;
-//    cout << "\nCall on " << now.AsString("w h:mma")
-//         << " from " << connection.GetRemotePartyName()
-//         << ", answer (Y/N)? " << flush;
+    LogWindow << "\nCall on " << now.AsString("w h:mma")
+              << " from " << connection.GetRemotePartyName()
+              << ", answer (Y/N)? " << endl;
   }
 }
 
@@ -301,9 +368,64 @@ void MyPCSSEndPoint::OnShowIncoming(const OpalPCSSConnection & connection)
 BOOL MyPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection & connection)
 {
   PTime now;
-//  cout << connection.GetRemotePartyName() << " is ringing on "
-//       << now.AsString("w h:mma") << " ..." << endl;
+  LogWindow << connection.GetRemotePartyName() << " is ringing on "
+            << now.AsString("w h:mma") << " ..." << endl;
   return TRUE;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+enum {
+  CALL_DIALOG_ADDRESS = 10
+};
+
+BEGIN_EVENT_TABLE(CallDialog, wxDialog)
+  EVT_TEXT(CALL_DIALOG_ADDRESS, CallDialog::OnAddressChange)
+END_EVENT_TABLE()
+
+CallDialog::CallDialog(wxWindow *parent)
+  : wxDialog(parent, -1, wxString(_T("Call")),
+             wxDefaultPosition, wxDefaultSize,
+             wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
+{
+  wxStaticText * label = new wxStaticText(this, -1, "Address:",
+                                          wxDefaultPosition, wxDefaultSize,
+                                          wxALIGN_RIGHT);
+
+  m_AddressCtrl = new wxTextCtrl(this, CALL_DIALOG_ADDRESS, wxEmptyString,
+                                 wxDefaultPosition, wxSize(200, 24),
+                                 wxSUNKEN_BORDER,
+                                 wxTextValidator(wxFILTER_NONE, &m_Address));
+
+  m_ok = new wxButton(this, wxID_OK, _T("OK"));
+  wxButton * cancel = new wxButton(this, wxID_CANCEL, _T("Cancel"));
+
+  wxBoxSizer * sizerTop = new wxBoxSizer(wxHORIZONTAL);
+  sizerTop->Add(label,         0, wxALIGN_CENTER | wxTOP | wxBOTTOM | wxLEFT, 12);
+  sizerTop->Add(m_AddressCtrl, 1, wxALIGN_CENTER | wxTOP | wxBOTTOM | wxRIGHT, 12);
+
+  wxBoxSizer * sizerBottom = new wxBoxSizer(wxHORIZONTAL);
+  sizerBottom->Add(m_ok,   0, wxALIGN_CENTER | wxALL, 12);
+  sizerBottom->Add(cancel, 0, wxALIGN_CENTER | wxALL, 12);
+
+  wxBoxSizer *sizerAll = new wxBoxSizer(wxVERTICAL);
+  sizerAll->Add(sizerTop,    0, wxALIGN_CENTER | wxEXPAND);
+  sizerAll->Add(sizerBottom, 0, wxALIGN_CENTER);
+
+  SetAutoLayout(TRUE);
+  SetSizer(sizerAll);
+
+  sizerAll->SetSizeHints(this);
+  sizerAll->Fit(this);
+
+  m_ok->Disable();
+}
+
+
+void CallDialog::OnAddressChange(wxCommandEvent & WXUNUSED(event))
+{
+  m_ok->Enable(!m_AddressCtrl->GetValue().IsEmpty());
 }
 
 
