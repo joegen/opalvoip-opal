@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2002  2002/02/01 04:53:01  robertj
+ * Revision 1.2003  2002/02/11 07:35:35  robertj
+ * Changed SDP to use OpalTransport for hosts instead of IP addresses/ports
+ *
+ * Revision 2.1  2002/02/01 04:53:01  robertj
  * Added (very primitive!) SIP support.
  *
  */
@@ -41,11 +44,53 @@
 #include <opal/transports.h>
 
 
-#define SIP_DEFAULT_SESSION_NAME	"Opal SIP Session"
-#define	SDP_MEDIA_TRANSPORT		    "RTP/AVP"
+#define SIP_DEFAULT_SESSION_NAME  "Opal SIP Session"
+#define	SDP_MEDIA_TRANSPORT       "RTP/AVP"
 #define RFC2833_NTE_TYPE          "telephone-event"
 
+
 #define new PNEW
+
+
+/////////////////////////////////////////////////////////
+
+static OpalTransportAddress ParseConnectAddress(const PStringArray & tokens, PINDEX offset)
+{
+  if (tokens.GetSize() == offset+3) {
+    if (tokens[offset] *= "IN") {
+      if (tokens[offset+1] *= "IP4")
+        return tokens[offset+2];
+      else {
+        PTRACE(1, "SDP\tConnect address has invalid address type \"" << tokens[offset+1] << '"');
+      }
+    }
+    else {
+      PTRACE(1, "SDP\tConnect address has invalid network \"" << tokens[offset] << '"');
+    }
+  }
+  else {
+    PTRACE(1, "SDP\tConnect address has invalid (" << tokens.GetSize() << ") elements");
+  }
+
+  return OpalTransportAddress();
+}
+
+
+static OpalTransportAddress ParseConnectAddress(const PString & str)
+{
+  PStringArray tokens = str.Tokenise(' ');
+  return ParseConnectAddress(tokens, 0);
+}
+
+
+static PString GetConnectAddressString(const OpalTransportAddress & address)
+{
+  PIPSocket::Address ip;
+  if (address.GetIpAddress(ip))
+    return "IN IP4 " + ip.AsString();
+
+  return PString();
+}
 
 
 /////////////////////////////////////////////////////////
@@ -61,6 +106,7 @@ SDPMediaFormat::SDPMediaFormat(RTP_DataFrame::PayloadTypes pt,
 {
 }
 
+
 SDPMediaFormat::SDPMediaFormat(const PString & nteString, RTP_DataFrame::PayloadTypes pt)
 
   : payloadType(pt),
@@ -70,13 +116,13 @@ SDPMediaFormat::SDPMediaFormat(const PString & nteString, RTP_DataFrame::Payload
   AddNTEString(nteString);
 }
 
+
 void SDPMediaFormat::SetFMTP(const PString & str)
 {
   if (encodingName == RFC2833_NTE_TYPE) {
     nteSet.RemoveAll();
     AddNTEString(str);
   }
-
   else
     PTRACE(2, "SDP\tAttempt to set fmtp attributes for unknown meda type " << encodingName);
 }
@@ -89,6 +135,7 @@ PString SDPMediaFormat::GetFMTP() const
 
   return PString();
 }
+
 
 PString SDPMediaFormat::GetNTEString() const
 {
@@ -113,6 +160,7 @@ PString SDPMediaFormat::GetNTEString() const
   return str;
 }
 
+
 void SDPMediaFormat::AddNTEString(const PString & str)
 {
   PStringArray tokens = str.Tokenise(",", FALSE);
@@ -120,6 +168,7 @@ void SDPMediaFormat::AddNTEString(const PString & str)
   for (i = 0; i < tokens.GetSize(); i++)
     AddNTEToken(tokens[i]);
 }
+
 
 void SDPMediaFormat::AddNTEToken(const PString & ostr)
 {
@@ -139,6 +188,7 @@ void SDPMediaFormat::AddNTEToken(const PString & ostr)
   }
 }
 
+
 void SDPMediaFormat::PrintOn(ostream & strm) const
 {
   PAssert(!encodingName.IsEmpty(), "SDPAudioMediaFormat encoding name is empty");
@@ -154,6 +204,7 @@ void SDPMediaFormat::PrintOn(ostream & strm) const
     strm << "a=fmtp:" << (int)payloadType << ' ' << nteString << "\r\n";
 }
 
+
 OpalMediaFormat SDPMediaFormat::GetMediaFormat() const
 {
   OpalMediaFormat mediaFormat(encodingName);
@@ -164,49 +215,12 @@ OpalMediaFormat SDPMediaFormat::GetMediaFormat() const
   return mediaFormat;
 }
 
-/////////////////////////////////////////////////////////
 
-SDPMediaDescription::SDPMediaDescription(const PString & str)
-{
-  PStringArray tokens = str.Tokenise(" ");
+//////////////////////////////////////////////////////////////////////////////
 
-  if (tokens.GetSize() < 4) {
-    PTRACE(1, "SDP\tMedia session has only " << tokens.GetSize() << " elements");
-  } else {
-    media            = tokens[0];
-    if (media == "video")
-      mediaType = Video;
-    else if (media == "audio")
-      mediaType = Audio;
-    else {
-      PTRACE(1, "SDP\tUnknown media type " << media);
-      mediaType = Unknown;
-    }
-
-    PString portStr  = tokens[1];
-    transport        = tokens[2];
-
-    // parse the port and port count
-    PINDEX pos = portStr.Find('/');
-    if (pos == P_MAX_INDEX) 
-      portCount = 1;
-    else {
-      PTRACE(1, "SDP\tMedia header contains port count - " << portStr);
-      portCount = (WORD)portStr.Mid(pos+1).AsUnsigned();
-      portStr   = portStr.Left(pos);
-    }
-    port = (WORD)portStr.AsUnsigned();
-
-    // create the format list
-    PINDEX i;
-    for (i = 3; i < tokens.GetSize(); i++)
-      formats.Append(new SDPMediaFormat((RTP_DataFrame::PayloadTypes)tokens[i].AsUnsigned()));
-  }
-}
-
-
-SDPMediaDescription::SDPMediaDescription(MediaType _mediaType, WORD _port)
-  : mediaType(_mediaType)
+SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, MediaType _mediaType)
+  : mediaType(_mediaType),
+    transportAddress(address)
 {
   switch (mediaType) {
     case Audio:
@@ -216,11 +230,61 @@ SDPMediaDescription::SDPMediaDescription(MediaType _mediaType, WORD _port)
       media = "video";
       break;
     default:
-      media = "unknown";
       break;
   }
-  transport = SDP_MEDIA_TRANSPORT; 
-  port = _port;
+
+  transport = SDP_MEDIA_TRANSPORT;
+}
+
+
+BOOL SDPMediaDescription::Parse(const PString & str)
+{
+  PStringArray tokens = str.Tokenise(" ");
+
+  if (tokens.GetSize() < 4) {
+    PTRACE(1, "SDP\tMedia session has only " << tokens.GetSize() << " elements");
+    return FALSE;
+  }
+
+  media = tokens[0];
+  if (media == "video")
+    mediaType = Video;
+  else if (media == "audio")
+    mediaType = Audio;
+  else {
+    PTRACE(1, "SDP\tUnknown media type " << media);
+    mediaType = Unknown;
+  }
+
+  PString portStr  = tokens[1];
+  transport        = tokens[2];
+
+  // parse the port and port count
+  PINDEX pos = portStr.Find('/');
+  if (pos == P_MAX_INDEX) 
+    portCount = 1;
+  else {
+    PTRACE(1, "SDP\tMedia header contains port count - " << portStr);
+    portCount = (WORD)portStr.Mid(pos+1).AsUnsigned();
+    portStr   = portStr.Left(pos);
+  }
+  unsigned port = portStr.AsUnsigned();
+
+  if (transport != SDP_MEDIA_TRANSPORT) {
+    PTRACE(1, "SDP\tMedia session has only " << tokens.GetSize() << " elements");
+    return FALSE;
+  }
+
+  PIPSocket::Address ip;
+  transportAddress.GetIpAddress(ip);
+  transportAddress = OpalTransportAddress(ip, (WORD)port);
+
+  // create the format list
+  PINDEX i;
+  for (i = 3; i < tokens.GetSize(); i++)
+    formats.Append(new SDPMediaFormat((RTP_DataFrame::PayloadTypes)tokens[i].AsUnsigned()));
+
+  return TRUE;
 }
 
 
@@ -294,7 +358,7 @@ void SDPMediaDescription::PrintOn(ostream & str) const
   str << "m=" 
       << media << " "
       << port << " "
-	    << transport;
+      << transport;
 
   // output RTP payload types
   PINDEX i;
@@ -329,10 +393,12 @@ OpalMediaFormatList SDPMediaDescription::GetMediaFormats() const
   return list;
 }
 
+
 void SDPMediaDescription::AddSDPMediaFormat(SDPMediaFormat * sdpMediaFormat)
 {
   formats.Append(sdpMediaFormat);
 }
+
 
 void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
 {
@@ -352,40 +418,16 @@ void SDPMediaDescription::AddMediaFormats(const OpalMediaFormatList & mediaForma
 }
 
 
-/////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 
-SDPSessionDescription::SDPSessionDescription()
+SDPSessionDescription::SDPSessionDescription(const OpalTransportAddress & address)
+  : ownerAddress(address),
+    defaultConnectAddress(address),
+    sessionName(SIP_DEFAULT_SESSION_NAME),
+    ownerUsername('-')
 {
-  PIPSocket::Address addr;
-  Construct(addr);
-}
-
-
-SDPSessionDescription::SDPSessionDescription(const PString & str)
-{
-  Decode(str);
-}
-
-
-SDPSessionDescription::SDPSessionDescription(const PIPSocket::Address & ip)
-{
-  Construct(ip);
-}
-
-
-void SDPSessionDescription::Construct(const PIPSocket::Address & addr)
-{
-  PString timeStamp = PTime().GetTimeInSeconds();
-
   protocolVersion  = 0;
-  sessionName      = SIP_DEFAULT_SESSION_NAME;
-
-  ownerUsername    = "-";
-  ownerSessionId   = timeStamp;
-  ownerVersion     = timeStamp;
-  ownerNetworkType = connectNetworkType = "IN";
-  ownerAddressType = connectAddressType = "IP4";
-  ownerAddress     = connectAddress     = addr.AsString();
+  ownerSessionId  = ownerVersion = PTime().GetTimeInSeconds();
 }
 
 
@@ -396,14 +438,11 @@ void SDPSessionDescription::PrintOn(ostream & str) const
          "o=" << ownerUsername << ' '
 	      << ownerSessionId << ' '
 	      << ownerVersion << ' '
-	      << ownerNetworkType << ' '
-	      << ownerAddressType << ' '
-	      << ownerAddress << "\r\n"
+              << GetConnectAddressString(ownerAddress)
+              << "\r\n"
          "s=" << sessionName << "\r\n"
          "t=" << "0 0" << "\r\n"
-         "c=" << connectNetworkType << ' '
-              << connectAddressType << ' '
-	      << connectAddress << "\r\n";
+         "c=" << GetConnectAddressString(defaultConnectAddress) << "\r\n";
 
   // encode media session information
   PINDEX i;
@@ -438,72 +477,80 @@ void SDPSessionDescription::Decode(const PString & str)
 
       	// media name and transport address (mandatory)
         if (key[0] == 'm') {
-          currentMedia = new SDPMediaDescription(value);
-          mediaDescriptions.Append(currentMedia);
-          PTRACE(2, "SDP\tAdding media session with " << currentMedia->GetSDPMediaFormats().GetSize() << " formats");
-	      }
+          currentMedia = new SDPMediaDescription(defaultConnectAddress);
+          if (currentMedia->Parse(value)) {
+            mediaDescriptions.Append(currentMedia);
+            PTRACE(2, "SDP\tAdding media session with " << currentMedia->GetSDPMediaFormats().GetSize() << " formats");
+          }
+          else
+            delete currentMedia;
+        }
 	
-  	    /////////////////////////////////
-    	  //
+        /////////////////////////////////
+        //
         // Session description
-  	    //
-  	    /////////////////////////////////
+        //
+        /////////////////////////////////
 	  
-	      else if (currentMedia == NULL) {
+        else if (currentMedia == NULL) {
           switch (key[0]) {
-
             case 'v' : // protocol version (mandatory)
               protocolVersion = value.AsInteger();
-	            break;
-
-	          case 'o' : // owner/creator and session identifier (mandatory)
-	            ParseOwner(value);
-	            break;
-
-	          case 's' : // session name (mandatory)
-              sessionName = value;
-	            break;
-
-	          case 'c' : // connection information - not required if included in all media
-	            ParseConnect(value);
               break;
 
-	          case 't' : // time the session is active (mandatory)
-	          case 'i' : // session information
-	          case 'u' : // URI of description
-	          case 'e' : // email address
-	          case 'p' : // phone number
-	          case 'b' : // bandwidth information
-	          case 'z' : // time zone adjustments
-	          case 'k' : // encryption key
-	          case 'a' : // zero or more session attribute lines
-	          case 'r' : // zero or more repeat times
-	            break;
-            default:
-            PTRACE(1, "SDP\tUnknown session information key " << key[0]);
-	        }
-	      }
+            case 'o' : // owner/creator and session identifier (mandatory)
+              ParseOwner(value);
+              break;
 
-  	    /////////////////////////////////
-    	  //
+            case 's' : // session name (mandatory)
+              sessionName = value;
+              break;
+
+            case 'c' : // connection information - not required if included in all media
+              defaultConnectAddress = ParseConnectAddress(value);
+              break;
+
+            case 't' : // time the session is active (mandatory)
+            case 'i' : // session information
+            case 'u' : // URI of description
+            case 'e' : // email address
+            case 'p' : // phone number
+            case 'b' : // bandwidth information
+            case 'z' : // time zone adjustments
+            case 'k' : // encryption key
+            case 'a' : // zero or more session attribute lines
+            case 'r' : // zero or more repeat times
+              break;
+
+            default:
+              PTRACE(1, "SDP\tUnknown session information key " << key[0]);
+          }
+        }
+
+        /////////////////////////////////
+        //
         // media information
-  	    //
-  	    /////////////////////////////////
+        //
+        /////////////////////////////////
 	  
-	      else {
+        else {
           switch (key[0]) {
-	          case 'i' : // media title
-	          case 'c' : // connection information - optional if included at session-level
-	          case 'b' : // bandwidth information
-	          case 'k' : // encryption key
-	          case 'a' : // zero or more media attribute lines
+            case 'i' : // media title
+            case 'b' : // bandwidth information
+            case 'k' : // encryption key
+              break;
+
+            case 'c' : // connection information - optional if included at session-level
+              break;
+
+            case 'a' : // zero or more media attribute lines
               currentMedia->SetAttribute(value);
               break;
 
             default:
               PTRACE(1, "SDP\tUnknown mediainformation key " << key[0]);
-	        }
-	      }
+          }
+        }
       }
     }
   }
@@ -516,42 +563,13 @@ void SDPSessionDescription::ParseOwner(const PString & str)
 
   if (tokens.GetSize() != 6) {
     PTRACE(1, "SDP\tOrigin has " << tokens.GetSize() << " elements");
-  } else {
+  }
+  else {
     ownerUsername    = tokens[0];
-    ownerSessionId   = tokens[1];
-    ownerVersion     = tokens[2];
-    ownerNetworkType = connectNetworkType = tokens[3];
-    ownerAddressType = connectAddressType = tokens[4];
-    ownerAddress     = connectAddress     = tokens[5];
+    ownerSessionId   = tokens[1].AsUnsigned();
+    ownerVersion     = tokens[2].AsUnsigned();
+    ownerAddress = defaultConnectAddress = ParseConnectAddress(tokens, 3);
   }
-}
-
-
-void SDPSessionDescription::ParseConnect(const PString & str)
-{
-  PStringArray tokens = str.Tokenise(" ");
-
-  if (tokens.GetSize() != 3) {
-    PTRACE(1, "SDP\tConnect has " << tokens.GetSize() << " elements");
-  } else {
-    connectNetworkType = tokens[0];
-    connectAddressType = tokens[1];
-    connectAddress     = tokens[2];
-  }
-}
-
-
-BOOL SDPSessionDescription::SetConnectAddress(const OpalTransportAddress & address)
-{
-  PIPSocket::Address ip;
-  if (address.GetIpAddress(ip)) {
-    connectNetworkType = "IN";
-    connectAddressType = "IP4";
-    connectAddress     = ip.AsString();
-    return TRUE;
-  }
-
-  return FALSE;
 }
 
 
