@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mscodecs.h,v $
- * Revision 1.2006  2002/11/10 11:33:16  robertj
+ * Revision 1.2007  2002/11/10 23:22:06  robertj
+ * Cosmetic change
+ *
+ * Revision 2.5  2002/11/10 11:33:16  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.4  2002/09/16 02:52:33  robertj
@@ -151,14 +154,16 @@ class MicrosoftIMAAudioCapability : public MicrosoftNonStandardAudioCapability
     PString MicrosoftIMAAudioCapability::GetFormatName() const;
 };
 
-#define OPAL_REGISTER_MSCODECS_H323 \
-          H323_REGISTER_CAPABILITY(MicrosoftGSMAudioCapability, OPAL_MSGSM) \
-          H323_REGISTER_CAPABILITY(MicrosoftIMAAudioCapability, OPAL_MSIMA)
 
 #ifdef H323_STATIC_LIB
 H323_STATIC_LOAD_REGISTER_CAPABILITY(MicrosoftGSMAudioCapability);
 H323_STATIC_LOAD_REGISTER_CAPABILITY(MicrosoftIMAAudioCapability);
 #endif
+
+
+#define OPAL_REGISTER_MSCODECS_H323 \
+          H323_REGISTER_CAPABILITY(MicrosoftGSMAudioCapability, OPAL_MSGSM) \
+          H323_REGISTER_CAPABILITY(MicrosoftIMAAudioCapability, OPAL_MSIMA)
 
 
 #else // ifndef NO_H323
