@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transaddr.cxx,v $
- * Revision 1.2006  2002/11/10 11:33:19  robertj
+ * Revision 1.2007  2004/02/19 10:47:04  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.5  2002/11/10 11:33:19  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.4  2002/09/12 06:58:33  robertj
@@ -282,3 +285,83 @@ BOOL H323TransportAddress::SetPDU(H245_TransportAddress & pdu) const
 
 
 /////////////////////////////////////////////////////////////////////////////
+
+H323TransportAddressArray::H323TransportAddressArray(const H225_ArrayOf_TransportAddress & addresses)
+{
+  for (PINDEX i = 0; i < addresses.GetSize(); i++)
+    AppendAddress(H323TransportAddress(addresses[i]));
+}
+
+
+void H323TransportAddressArray::AppendString(const char * str)
+{
+  AppendAddress(H323TransportAddress(str));
+}
+
+
+void H323TransportAddressArray::AppendString(const PString & str)
+{
+  AppendAddress(H323TransportAddress(str));
+}
+
+
+void H323TransportAddressArray::AppendAddress(const H323TransportAddress & addr)
+{
+  if (!addr)
+    Append(new H323TransportAddress(addr));
+}
+
+
+void H323TransportAddressArray::AppendStringCollection(const PCollection & coll)
+{
+  for (PINDEX i = 0; i < coll.GetSize(); i++) {
+    PObject * obj = coll.GetAt(i);
+    if (obj != NULL && obj->IsDescendant(PString::Class()))
+      AppendAddress(H323TransportAddress(*(PString *)obj));
+  }
+}
+
+
+void H323SetTransportAddresses(const H323Transport & associatedTransport,
+                               const H323TransportAddressArray & addresses,
+                               H225_ArrayOf_TransportAddress & pdu)
+{
+  for (PINDEX i = 0; i < addresses.GetSize(); i++) {
+    H323TransportAddress addr = addresses[i];
+
+    PTRACE(4, "TCP\tAppending H.225 transport " << addr
+           << " using associated transport " << associatedTransport);
+
+    PIPSocket::Address ip;
+    WORD port;
+    if (addr.GetIpAndPort(ip, port)) {
+      PIPSocket::Address remoteIP;
+      if (associatedTransport.GetRemoteAddress().GetIpAddress(remoteIP)) {
+        associatedTransport.GetEndPoint().GetManager().TranslateIPAddress(ip, remoteIP);
+        addr = H323TransportAddress(ip, port);
+      }
+    }
+
+    H225_TransportAddress pduAddr;
+    addr.SetPDU(pduAddr);
+
+    PINDEX lastPos = pdu.GetSize();
+
+    // Check for already have had that address.
+    PINDEX j;
+    for (j = 0; j < lastPos; j++) {
+      if (pdu[j] == pduAddr)
+        break;
+    }
+
+    if (j >= lastPos) {
+      // Put new listener into array
+      pdu.SetSize(lastPos+1);
+      pdu[lastPos] = pduAddr;
+    }
+  }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+

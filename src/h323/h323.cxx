@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2043  2004/02/07 00:35:47  rjongbloed
+ * Revision 1.2044  2004/02/19 10:47:04  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.42  2004/02/07 00:35:47  rjongbloed
  * Fixed calls GetMediaFormats so no DOES return intersection of all connections formats.
  * Tidied some API elements to make usage more explicit.
  *
@@ -168,6 +171,69 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.322  2003/12/31 02:29:20  csoutheren
+ * Ensure that an ARJ with code securityDenial returns call end reason code EndedBySecurityDenial (for outgoing calls too)
+ *
+ * Revision 1.321  2003/12/31 02:24:12  csoutheren
+ * Ensure that an ARJ with code securityDenial returns call end reason code EndedBySecurityDenial
+ *
+ * Revision 1.320  2003/12/28 02:37:49  csoutheren
+ * Added H323EndPoint::OnOutgoingCall
+ *
+ * Revision 1.319  2003/12/17 10:25:41  csoutheren
+ * Removed misleading error message thanks to Hans Verbeek
+ *
+ * Revision 1.318  2003/10/27 06:03:39  csoutheren
+ * Added support for QoS
+ *   Thanks to Henry Harrison of AliceStreet
+ *
+ * Revision 1.317  2003/10/09 09:47:45  csoutheren
+ * Fixed problem with re-opening RTP half-channels under unusual
+ * circumstances. Thanks to Damien Sandras
+ *
+ * Revision 1.316  2003/07/18 10:03:54  csoutheren
+ * Fixed mistake in applying previous change where usage of SwapChannel
+ * accidentally used ReplaceChannel
+ *
+ * Revision 1.315  2003/07/16 10:43:13  csoutheren
+ * Added SwapChannel function to H323Codec to allow media hold channels
+ * to work better. Thanks to Federico Pinna
+ *
+ * Revision 1.314  2003/05/06 06:23:37  robertj
+ * Added continuous DTMF tone support (H.245 UserInputIndication - signalUpdate)
+ *   as per header documentation, thanks Auri Vizgaitis
+ *
+ * Revision 1.313  2003/04/30 00:28:55  robertj
+ * Redesigned the alternate credentials in ARQ system as old implementation
+ *   was fraught with concurrency issues, most importantly it can cause false
+ *   detection of replay attacks taking out an endpoint completely.
+ *
+ * Revision 1.312  2003/03/11 22:14:18  dereks
+ * Fix syntax error in previous commit.
+ *
+ * Revision 1.311  2003/03/11 22:12:39  dereks
+ * Fix so that pause stops video also; Thanks Damien Sandras.
+ *
+ * Revision 1.310  2003/02/12 23:59:25  robertj
+ * Fixed adding missing endpoint identifer in SETUP packet when gatekeeper
+ * routed, pointed out by Stefan Klein
+ * Also fixed correct rutrn of gk routing in IRR packet.
+ *
+ * Revision 1.309  2003/02/12 02:21:50  robertj
+ * Changed Q.931 release complete cause code to be error value, an impossible
+ *   value rather than just strange, until a possible value is received.
+ *
+ * Revision 1.308  2003/02/09 23:28:33  robertj
+ * Fixed problem with left over extension fields from previously received
+ *   H.225 PDUs, thanks Gustavo García
+ *
+ * Revision 1.307  2003/01/29 23:48:34  robertj
+ * Removed extraneous code, thanks Chih-Wei Huang
+ *
+ * Revision 1.306  2003/01/26 02:50:23  craigs
+ * Change so SETUP PDU uses conference and callIdentifier from H323Connection,
+ * rather than both doing seperately and then overwriting
  *
  * Revision 1.305  2002/12/18 06:56:09  robertj
  * Moved the RAS IRR on UUIE to after UUIE is processed. Means you get
@@ -1303,6 +1369,7 @@ H323Connection::H323Connection(OpalCall & call,
 
   mediaStreams.DisallowDeleteObjects();
 
+  gatekeeperRouted = FALSE;
   distinctiveRing = 0;
   callReference = 0;
   remoteCallWaiting = -1;
@@ -1339,7 +1406,7 @@ H323Connection::H323Connection(OpalCall & call,
   connectPDU = NULL;
 
   connectionState = NoConnectionActive;
-  q931Cause = 0;
+  q931Cause = Q931::ErrorInCauseIE;
 
   uuiesRequested = 0; // Empty set
   addAccessTokenToSetup = TRUE; // Automatic inclusion of ACF access token in SETUP
@@ -1425,6 +1492,7 @@ H323Connection::~H323Connection()
   delete controlChannel;
   delete alertingPDU;
   delete connectPDU;
+  delete holdMediaChannel;
 
   PTRACE(3, "H323\tConnection " << callToken << " deleted.");
 }
@@ -1597,8 +1665,8 @@ void H323Connection::HandleSignallingChannel()
 
   PTRACE(2, "H225\tReading PDUs: callRef=" << callReference);
 
-  H323SignalPDU pdu;
   while (signallingChannel->IsOpen()) {
+    H323SignalPDU pdu;
     if (pdu.Read(*signallingChannel)) {
       if (!HandleSignalPDU(pdu)) {
         Release(EndedByTransportFail);
@@ -2002,7 +2070,8 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
             Release(EndedByNoBandwidth);
             break;
           case H225_AdmissionRejectReason::e_invalidPermission :
-            Release(EndedBySecurityDenial);
+          case H225_AdmissionRejectReason::e_securityDenial :
+            ClearCall(EndedBySecurityDenial);
             break;
           case H225_AdmissionRejectReason::e_resourceUnavailable :
             Release(EndedByRemoteBusy);
@@ -2016,6 +2085,7 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
       if (destExtraCallInfoArray.GetSize() > 0)
         destExtraCallInfo = H323GetAliasAddressString(destExtraCallInfoArray[0]);
       mustSendDRQ = TRUE;
+      gatekeeperRouted = response.gatekeeperRouted;
     }
   }
 
@@ -2390,11 +2460,8 @@ void H323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
 
   endSessionReceived.Signal();
 
-  if (q931Cause == 0) {
+  if (q931Cause == Q931::ErrorInCauseIE)
     q931Cause = pdu.GetQ931().GetCause();
-    if (q931Cause == Q931::ErrorInCauseIE)
-      q931Cause = 0;
-  }
 
   switch (connectionState) {
     case EstablishedConnection :
@@ -2510,10 +2577,8 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
           if (connectionState == ShuttingDownConnection)
             break;
 
-          H225_Facility_UUIE & fac = *want245PDU.BuildFacility(*this, FALSE);
-          fac.m_reason.SetTag(H225_FacilityReason::e_transportedInformation);
-
           // Do early H.245 start
+          H225_Facility_UUIE & fac = *want245PDU.BuildFacility(*this, FALSE);
           fac.m_reason.SetTag(H225_FacilityReason::e_startH245);
           earlyStart = TRUE;
           if (!h245Tunneling && (controlChannel == NULL)) {
@@ -2630,6 +2695,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
         case H225_AdmissionRejectReason::e_requestDenied :
           return EndedByNoBandwidth;
         case H225_AdmissionRejectReason::e_invalidPermission :
+        case H225_AdmissionRejectReason::e_securityDenial :
           return EndedBySecurityDenial;
         case H225_AdmissionRejectReason::e_resourceUnavailable :
           return EndedByRemoteBusy;
@@ -2650,6 +2716,11 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
       }
     }
     mustSendDRQ = TRUE;
+    if (response.gatekeeperRouted) {
+      setup.IncludeOptionalField(H225_Setup_UUIE::e_endpointIdentifier);
+      setup.m_endpointIdentifier = gatekeeper->GetEndpointIdentifier();
+      gatekeeperRouted = TRUE;
+    }
   }
 
   // Update the field e_destinationAddress in the SETUP PDU to reflect the new 
@@ -2954,10 +3025,9 @@ void H323Connection::SendMoreDigits(const PString & digits)
 }
 
 
-BOOL H323Connection::OnOutgoingCall(const H323SignalPDU & /*connectPDU*/)
+BOOL H323Connection::OnOutgoingCall(const H323SignalPDU & connectPDU)
 {
-  PTRACE(1, "H225\tReceived connect PDU.");
-  return TRUE;
+  return endpoint.OnOutgoingCall(*this, connectPDU);
 }
 
 
@@ -3782,7 +3852,7 @@ PChannel * H323Connection::SwapHoldMediaChannels(PChannel * newChannel)
       return NULL;
 
     unsigned int session_id = channel->GetSessionID();
-    if (session_id == OpalMediaFormat::DefaultAudioSessionID) {
+    if (session_id == OpalMediaFormat::DefaultAudioSessionID || session_id == OpalMediaFormat::DefaultVideoSessionID) {
       const H323ChannelNumber & channelNumber = channel->GetNumber();
 
       H323_RTPChannel * chan2 = reinterpret_cast<H323_RTPChannel*>(channel);
@@ -3791,7 +3861,6 @@ PChannel * H323Connection::SwapHoldMediaChannels(PChannel * newChannel)
         if (IsMediaOnHold()) {
 //          H323Codec & codec = *channel->GetCodec();
 //          existingTransmitChannel = codec.GetRawDataChannel();
-//          codec.AttachChannel(newChannel, FALSE);   // Do not autodelete
         }
         else {
           // Enable/mute the transmit channel depending on whether the remote end is held
@@ -4457,7 +4526,7 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
   else if (channel->OnReceivedPDU(open, errorCode))
     return channel;
 
-  PTRACE(2, "H323\tCreateLogicalChannel - insufficient bandwidth");
+  PTRACE(2, "H323\tOnReceivedPDU gave error " << errorCode);
   delete channel;
   return NULL;
 }
@@ -4466,7 +4535,8 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
 H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability & capability,
                                                            H323Channel::Directions dir,
                                                            unsigned sessionID,
-                                        const H245_H2250LogicalChannelParameters * param)
+							   const H245_H2250LogicalChannelParameters * param,
+                                                           RTP_QOS * rtpqos)
 {
   if (ownerCall.IsMediaBypassPossible(*this, sessionID))
     return new H323_ExternalRTPChannel(*this, capability, dir, sessionID);
@@ -4482,14 +4552,15 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
     if (uaddr.GetTag() != H245_UnicastAddress::e_iPAddress)
       return NULL;
 
-    session = UseSession(param->m_sessionID);
+    session = UseSession(param->m_sessionID, rtpqos);
   }
   else
-    session = UseSession(sessionID);
+    session = UseSession(sessionID, rtpqos);
 
   if (session == NULL)
     return NULL;
 
+  ((RTP_UDP *) session)->Reopen(dir == H323Channel::IsReceiver);
   return new H323_RTPChannel(*this, capability, dir, *session);
 }
 
@@ -4814,10 +4885,19 @@ void H323Connection::OnUserInputIndication(const H245_UserInputIndication & ind)
       break;
 
     case H245_UserInputIndication::e_signal :
+    {
       const H245_UserInputIndication_signal & sig = ind;
       OnUserInputTone(sig.m_signalType[0],
                       sig.HasOptionalField(H245_UserInputIndication_signal::e_duration)
                                 ? (unsigned)sig.m_duration : 0);
+      break;
+    }
+    case H245_UserInputIndication::e_signalUpdate :
+    {
+      const H245_UserInputIndication_signalUpdate & sig = ind;
+      OnUserInputTone(' ', sig.m_duration);
+      break;
+    }
   }
 }
 
@@ -4841,15 +4921,14 @@ H323_RTP_Session * H323Connection::GetSessionCallbacks(unsigned sessionID) const
 }
 
 
-RTP_Session * H323Connection::UseSession(unsigned sessionID)
+RTP_Session * H323Connection::UseSession(unsigned sessionID, RTP_QOS * rtpqos)
 {
   RTP_Session * session = rtpSessions.UseSession(sessionID);
-  if (session != NULL) {
+  if (session != NULL)
     return session;
-  }
 
   RTP_UDP * udp_session = new RTP_UDP(sessionID);
-  udp_session->SetUserData(new H323_RTP_UDP(*this, *udp_session));
+  udp_session->SetUserData(new H323_RTP_UDP(*this, *udp_session, rtpqos));
   rtpSessions.AddSession(udp_session);
   return udp_session;
 }
@@ -5011,9 +5090,7 @@ BOOL H323Connection::RequestModeChangeT38(const char * capabilityNames)
 
 
 BOOL H323Connection::GetAdmissionRequestAuthentication(const H225_AdmissionRequest & /*arq*/,
-                                                       PString & /*remoteId*/,
-                                                       PString & /*localId*/,
-                                                       PString & /*password*/)
+                                                       H235Authenticators & /*authenticators*/)
 {
   return FALSE;
 }
