@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2047  2004/03/13 06:25:52  rjongbloed
+ * Revision 1.2048  2004/03/22 11:32:41  rjongbloed
+ * Added new codec type for 16 bit Linear PCM as must distinguish between the internal
+ *   format used by such things as the sound card and the RTP payload format which
+ *   is always big endian.
+ *
+ * Revision 2.46  2004/03/13 06:25:52  rjongbloed
  * Slight rearrangement of local party name and alias list to beter match common
  *   behaviour in ancestor.
  * Abstracted local party name for endpoint into ancestor from H.,323.
@@ -4056,7 +4061,7 @@ void H323Connection::OnSetLocalCapabilities()
 {
   OpalMediaFormatList formats = ownerCall.GetMediaFormats(*this, FALSE);
   if (formats.IsEmpty()) {
-    PTRACE(2, "H323\tSetLocalCapabilities - no formats from other party");
+    PTRACE(2, "H323\tSetLocalCapabilities - no formats from other connection(s) in call");
     return;
   }
 
@@ -4082,7 +4087,8 @@ void H323Connection::OnSetLocalCapabilities()
     simultaneous = P_MAX_INDEX;
     for (PINDEX i = 0; i < formats.GetSize(); i++) {
       OpalMediaFormat format = formats[i];
-      if (format.GetDefaultSessionID() == sessionOrder[s])
+      if (format.GetDefaultSessionID() == sessionOrder[s] &&
+          format.GetPayloadType() != RTP_DataFrame::IllegalPayloadType)
         simultaneous = localCapabilities.AddAllCapabilities(endpoint, 0, simultaneous, format);
     }
   }

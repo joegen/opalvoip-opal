@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2011  2004/03/11 06:54:27  csoutheren
+ * Revision 1.2012  2004/03/22 11:32:41  rjongbloed
+ * Added new codec type for 16 bit Linear PCM as must distinguish between the internal
+ *   format used by such things as the sound card and the RTP payload format which
+ *   is always big endian.
+ *
+ * Revision 2.10  2004/03/11 06:54:27  csoutheren
  * Added ability to disable SIP or H.323 stacks
  *
  * Revision 2.9  2004/02/17 08:47:38  csoutheren
@@ -431,6 +436,36 @@ class OpalStreamedTranscoder : public OpalTranscoder
     unsigned outputBitsPerSample;
     PINDEX   optimalSamples;
 };
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+class Opal_Linear16Mono_PCM : public OpalStreamedTranscoder {
+  public:
+    Opal_Linear16Mono_PCM(
+      const OpalTranscoderRegistration & registration /// Registration for transcoder
+    );
+    virtual int ConvertOne(int sample) const;
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+class Opal_PCM_Linear16Mono : public OpalStreamedTranscoder {
+  public:
+    Opal_PCM_Linear16Mono(
+      const OpalTranscoderRegistration & registration /// Registration for transcoder
+    );
+    virtual int ConvertOne(int sample) const;
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+#define OPAL_REGISTER_OPAL_L16_MONO() \
+  OPAL_REGISTER_TRANSCODER(Opal_Linear16Mono_PCM, OPAL_OPAL_L16_MONO, OPAL_PCM16); \
+  OPAL_REGISTER_TRANSCODER(Opal_PCM_Linear16Mono, OPAL_PCM16, OPAL_OPAL_L16_MONO)
+
 
 
 #endif // __OPAL_TRANSCODERS_H
