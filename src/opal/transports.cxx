@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2019  2002/07/01 08:43:44  robertj
+ * Revision 1.2020  2002/07/01 08:55:07  robertj
+ * Changed TCp/UDP port allocation to use new thread safe functions.
+ *
+ * Revision 2.18  2002/07/01 08:43:44  robertj
  * Fixed assert on every SIP packet.
  *
  * Revision 2.17  2002/07/01 04:56:33  robertj
@@ -1011,54 +1014,44 @@ BOOL OpalTransportTCP::Connect()
   PTCPSocket * socket = new PTCPSocket(remotePort);
   Open(socket);
 
-  WORD portBase, portMax;
-  if (localPort == 0) {
-    portBase = endpoint.GetManager().GetTCPPortBase();
-    portMax  = endpoint.GetManager().GetTCPPortMax();
-  }
-  else {
-    portBase = localPort;
-    portMax = localPort;
-  }
+  channelPointerMutex.StartRead();
 
-  if (portBase == 0) {
+  socket->SetReadTimeout(10000);
+
+  OpalManager & manager = endpoint.GetManager();
+  localPort = manager.GetNextTCPPort();
+  WORD firstPort = localPort;
+  for (;;) {
     PTRACE(4, "OpalTCP\tConnecting to "
-           << remoteAddress << ':' << remotePort << " (if=" << localAddress << ')');
-    if (!socket->Connect(localAddress, remoteAddress)) {
+           << remoteAddress << ':' << remotePort
+           << " (local port=" << localPort << ')');
+    if (socket->Connect(localPort, remoteAddress))
+      break;
+
+    int errnum = socket->GetErrorNumber();
+    if (localPort == 0 || (errnum != EADDRINUSE && errnum != EADDRNOTAVAIL)) {
       PTRACE(1, "OpalTCP\tCould not connect to "
-             << remoteAddress << ':' << remotePort << ' ' << socket->GetErrorText());
-      return SetErrorValues(socket->GetErrorCode(), socket->GetErrorNumber());
+                << remoteAddress << ':' << remotePort
+                << " (local port=" << localPort << ") - "
+                << socket->GetErrorText() << '(' << errnum << ')');
+      channelPointerMutex.EndRead();
+      return SetErrorValues(socket->GetErrorCode(), errnum);
     }
-  }
-  else {
-    for (;;) {
-      PTRACE(4, "OpalTCP\tConnecting to "
-             << remoteAddress << ':' << remotePort
-             << " (if=" << localAddress << ':' << portBase << ')');
-      if (socket->Connect(localAddress, portBase, remoteAddress))
-        break;
 
-      int code = socket->GetErrorNumber();
-      if (((code != EADDRINUSE) && (code != EADDRNOTAVAIL)) || (portBase > portMax)) {
-        PTRACE(1, "OpalTCP\tCould not connect to "
-                  << remoteAddress << ':' << remotePort
-                  << " (if=" << localAddress << ':' << portBase << ") "
-                  << socket->GetErrorText()
-                  << "(" << socket->GetErrorNumber() << ")");
-        return SetErrorValues(socket->GetErrorCode(), socket->GetErrorNumber());
-      }
-
-      portBase++;
+    localPort = manager.GetNextTCPPort();
+    if (localPort == firstPort) {
+      PTRACE(1, "OpalTCP\tCould not bind to any port in range " <<
+                manager.GetTCPPortBase() << " to " << manager.GetTCPPortMax());
+      channelPointerMutex.EndRead();
+      return SetErrorValues(socket->GetErrorCode(), errnum);
     }
   }
 
-  PTRACE(3, "OpalTCP\tStarting connection to "
-         << remoteAddress << ':' << remotePort);
+  socket->SetReadTimeout(PMaxTimeInterval);
 
-  if (!OnOpen())
-    return FALSE;
+  channelPointerMutex.EndRead();
 
-  return TRUE;
+  return OnOpen();
 }
 
 
@@ -1270,8 +1263,7 @@ BOOL OpalTransportUDP::Connect()
   PIndirectChannel::Close();
   readAutoDelete = writeAutoDelete = FALSE;
 
-  WORD portBase = endpoint.GetManager().GetUDPPortBase();
-  WORD portMax  = endpoint.GetManager().GetUDPPortMax();
+  OpalManager & manager = endpoint.GetManager();
 
   // See if prebound to interface, only use that if so
   PIPSocket::InterfaceTable interfaces;
@@ -1306,11 +1298,13 @@ BOOL OpalTransportUDP::Connect()
     PUDPSocket * socket = new PUDPSocket;
     connectSockets.Append(socket);
 
-    localPort = portBase;
+    localPort = manager.GetNextUDPPort();
+    WORD firstPort = localPort;
     while (!socket->Listen(interfaceAddress, 0, localPort)) {
-      localPort++;
-      if (localPort > portMax) {
-        PTRACE(2, "OpalUDP\tError on connect listen: " << socket->GetErrorText());
+      localPort = manager.GetNextUDPPort();
+      if (localPort == firstPort) {
+        PTRACE(1, "OpalUDP\tCould not bind to any port in range " <<
+                  manager.GetUDPPortBase() << " to " << manager.GetUDPPortMax());
         return FALSE;
       }
     }
