@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2022  2002/09/06 02:41:18  robertj
+ * Revision 1.2023  2002/09/12 06:57:56  robertj
+ * Removed protocol prefix strings as static members as has problems with
+ *   use in DLL environment.
+ * Added support for the + character in OpalTransportAddress decoding
+ *  to indicate exclusive listener.
+ *
+ * Revision 2.21  2002/09/06 02:41:18  robertj
  * Added ability to specify stream or datagram (TCP or UDP) transport is to
  * be created from a transport address regardless of the addresses mode.
  *
@@ -114,9 +120,8 @@
 
 
 static const char IpPrefix[] = "ip$"; // For backward compatibility with OpenH323
-
-const char * OpalTransportAddress::TcpPrefix = "tcp$";
-const char * OpalTransportAddress::UdpPrefix = "udp$";
+static const char TcpPrefix[] = "tcp$";
+static const char UdpPrefix[] = "udp$";
 
 
 ////////////////////////////////////////////////////////////////
@@ -389,21 +394,27 @@ BOOL OpalInternalIPTransport::GetIpAndPort(const OpalTransportAddress & address,
   if (dollar == P_MAX_INDEX)
     return FALSE;
   
+  PINDEX lastChar = address.GetLength()-1;
+  if (address[lastChar] == '+')
+    lastChar--;
+
   // parse host and port
-  PString host;
+  PString host, service;
   PINDEX colon = address.Find(':', dollar+1);
   if (colon == P_MAX_INDEX)
-    host = address.Mid(dollar+1);
+    host = address(dollar+1, lastChar);
   else {
-    host = address.Mid(dollar+1, colon-dollar-1);
-    PString tid = address.Left(dollar);
-    if (tid == IpPrefix)
-      port = PIPSocket::GetPortByService("tcp", address.Mid(colon+1));
+    host = address(dollar+1, colon-1);
+    service = address(colon+1, lastChar);
+    if (service == "*")
+      port = 0;
+    else if (address.Left(dollar) == IpPrefix)
+      port = PIPSocket::GetPortByService("tcp", service);
     else
-      port = PIPSocket::GetPortByService(address.Left(dollar-1), address.Mid(colon+1));
+      port = PIPSocket::GetPortByService(address.Left(dollar-1), service);
   }
 
-  if (host.IsEmpty() || port == 0) {
+  if (host.IsEmpty() || (port == 0 && service != "*")) {
     PTRACE(2, "Opal\tIllegal IP transport address: \"" << *this << '"');
     return FALSE;
   }
@@ -715,7 +726,7 @@ OpalTransport * OpalListenerTCP::Accept(const PTimeInterval & timeout)
 
 const char * OpalListenerTCP::GetProtoPrefix() const
 {
-  return OpalTransportAddress::TcpPrefix;
+  return TcpPrefix;
 }
 
 
@@ -834,7 +845,7 @@ OpalTransport * OpalListenerUDP::Accept(const PTimeInterval & timeout)
 
 const char * OpalListenerUDP::GetProtoPrefix() const
 {
-  return OpalTransportAddress::UdpPrefix;
+  return UdpPrefix;
 }
 
 
@@ -1014,7 +1025,7 @@ BOOL OpalTransportTCP::IsReliable() const
 
 BOOL OpalTransportTCP::IsCompatibleTransport(const OpalTransportAddress & address) const
 {
-  return address.Left(strlen(OpalTransportAddress::TcpPrefix)) == OpalTransportAddress::TcpPrefix ||
+  return address.Left(strlen(TcpPrefix)) == TcpPrefix ||
          address.Left(sizeof(IpPrefix)-1) == IpPrefix;
 }
 
@@ -1163,7 +1174,7 @@ BOOL OpalTransportTCP::OnOpen()
 
 const char * OpalTransportTCP::GetProtoPrefix() const
 {
-  return OpalTransportAddress::TcpPrefix;
+  return TcpPrefix;
 }
 
 
@@ -1254,7 +1265,7 @@ BOOL OpalTransportUDP::IsReliable() const
 
 BOOL OpalTransportUDP::IsCompatibleTransport(const OpalTransportAddress & address) const
 {
-  return address.Left(strlen(OpalTransportAddress::UdpPrefix)) == OpalTransportAddress::UdpPrefix ||
+  return address.Left(strlen(UdpPrefix)) == UdpPrefix ||
          address.Left(sizeof(IpPrefix)-1) == IpPrefix;
 }
 
@@ -1510,7 +1521,7 @@ BOOL OpalTransportUDP::WriteConnect(WriteConnectCallback function, PObject * dat
 
 const char * OpalTransportUDP::GetProtoPrefix() const
 {
-  return OpalTransportAddress::UdpPrefix;
+  return UdpPrefix;
 }
 
 
