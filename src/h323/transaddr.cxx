@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transaddr.cxx,v $
- * Revision 1.2009  2004/04/07 08:21:10  rjongbloed
+ * Revision 1.2010  2005/01/16 23:07:34  csoutheren
+ * Fixed problem with IPv6 INADDR_ANY
+ *
+ * Revision 2.8  2004/04/07 08:21:10  rjongbloed
  * Changes for new RTTI system.
  *
  * Revision 2.7  2004/02/24 11:37:02  rjongbloed
@@ -196,7 +199,7 @@ BOOL H323TransportAddress::SetPDU(H225_ArrayOf_TransportAddress & pdu,
   if (!GetIpAndPort(ip, port))
     return FALSE;
 
-  if (ip != INADDR_ANY) {
+  if (!ip.IsAny()) {
     AppendTransportAddress(manager, associatedTransport, ip, port, pdu);
     return TRUE;
   }
