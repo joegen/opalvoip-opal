@@ -22,8 +22,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalwavfile.cxx,v $
- * Revision 1.2002  2002/09/06 07:19:21  robertj
+ * Revision 1.2003  2004/02/19 10:53:04  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.1  2002/09/06 07:19:21  robertj
  * OPAL port.
+ *
+ * Revision 1.3  2003/12/28 00:07:56  csoutheren
+ * Added support for 8-bit PCM WAV files
  *
  * Revision 1.2  2002/08/05 10:03:48  robertj
  * Cosmetic changes to normalise the usage of pragma interface/implementation.
@@ -127,6 +133,28 @@ BOOL OpalWAVFile::Read(void * buf, PINDEX len)
       }
       return TRUE;
 
+    case fmt_PCM:
+      if (bitsPerSample != 8)
+        break;
+
+      {
+        // read the PCM data
+        PINDEX samples = (len / 2);
+        PBYTEArray pcm8;
+        if (!PWAVFile::Read(pcm8.GetPointer(samples), samples))
+          return FALSE;
+
+        // convert to PCM-16
+        PINDEX i;
+        short * pcmPtr = (short *)buf;
+        for (i = 0; i < samples; i++)
+          *pcmPtr++ = (unsigned short)((pcm8[i] << 8) - 0x8000);
+
+        // fake the lastReadCount
+        lastReadCount = len;
+      }
+      return TRUE;
+
     default:
       break;
   }
@@ -140,6 +168,11 @@ BOOL OpalWAVFile::Write(const void * buf, PINDEX len)
     case fmt_ALaw:
     case fmt_uLaw:
       return FALSE;
+
+    case fmt_PCM:
+      if (bitsPerSample != 16)
+        return FALSE;
+      break;
 
     default:
       break;
@@ -159,6 +192,11 @@ off_t OpalWAVFile::GetPosition() const
     case fmt_uLaw:
       return pos * 2;
 
+    case fmt_PCM:
+      if (bitsPerSample == 8)
+        return pos * 2;
+      break;
+
     default:
       break;
   }
@@ -176,6 +214,11 @@ BOOL OpalWAVFile::SetPosition(off_t pos, FilePositionOrigin origin)
       pos /= 2;
       break;
 
+    case fmt_PCM:
+      if (bitsPerSample == 8)
+        return pos /= 2;
+      break;
+
     default:
       break;
   }
@@ -191,6 +234,10 @@ unsigned OpalWAVFile::GetSampleSize() const
     case fmt_uLaw:
       return 16;
 
+    case fmt_PCM:
+      if (bitsPerSample == 8)
+        return 16;
+
     default:
       break;
   }
@@ -205,12 +252,17 @@ off_t OpalWAVFile::GetDataLength()
   // if format is not one we can convert, then return length
   off_t len = PWAVFile::GetDataLength();
 
-  // remember: the application thinks samples are 16 bits
-  // so the actual position must be doubled before returning it
   switch (format) {
     case fmt_ALaw:
     case fmt_uLaw:
+      // the application thinks samples are 16 bits
+      // so the actual length must be doubled before returning it
       return len * 2;
+
+    case fmt_PCM:
+      if (bitsPerSample == 8)
+        return len * 2;
+      break;
 
     default:
       break;
