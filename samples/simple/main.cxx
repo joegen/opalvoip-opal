@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2035  2004/03/13 06:32:17  rjongbloed
+ * Revision 1.2036  2004/03/14 06:15:36  rjongbloed
+ * Must set ports before stun as stun code uses those port numbers.
+ *
+ * Revision 2.34  2004/03/13 06:32:17  rjongbloed
  * Fixes for removal of SIP and H.323 subsystems.
  * More registration work.
  *
@@ -523,17 +526,7 @@ BOOL MyManager::Initialise(PArgList & args)
           "Silence supression is " << (silenceOn ? "on" : "off") << "\n"
           "Jitter buffer: "  << GetMinAudioJitterDelay() << '-' << GetMaxAudioJitterDelay() << " ms\n"
           "Codecs removed: " << setfill(',') << GetMediaFormatMask() << "\n"
-          "Codec order: " << setfill(',') << GetMediaFormatOrder() << setfill(' ') << "\n"
-          "STUN server: " << flush;
-
-  if (args.HasOption("stun"))
-    SetSTUNServer(args.GetOptionString("stun"));
-
-  if (stun != NULL)
-    cout << stun->GetServer() << " replies " << stun->GetNatTypeName();
-  else
-    cout << "None";
-  cout << '\n';
+          "Codec order: " << setfill(',') << GetMediaFormatOrder() << setfill(' ') << "\n";
 
   if (args.HasOption("translate")) {
     SetTranslationAddress(args.GetOptionString("translate"));
@@ -572,7 +565,17 @@ BOOL MyManager::Initialise(PArgList & args)
   cout << "TCP ports: " << GetTCPPortBase() << '-' << GetTCPPortMax() << "\n"
           "UDP ports: " << GetUDPPortBase() << '-' << GetUDPPortMax() << "\n"
           "RTP ports: " << GetRtpIpPortBase() << '-' << GetRtpIpPortMax() << "\n"
-          "RTP IP TOS: 0x" << hex << (unsigned)GetRtpIpTypeofService() << dec << endl;
+          "RTP IP TOS: 0x" << hex << (unsigned)GetRtpIpTypeofService() << dec << "\n"
+          "STUN server: " << flush;
+
+  if (args.HasOption("stun"))
+    SetSTUNServer(args.GetOptionString("stun"));
+
+  if (stun != NULL)
+    cout << stun->GetServer() << " replies " << stun->GetNatTypeName();
+  else
+    cout << "None";
+  cout << '\n';
 
 
   ///////////////////////////////////////
