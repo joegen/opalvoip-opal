@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2004  2001/08/22 03:51:31  robertj
+ * Revision 1.2005  2001/08/23 05:51:17  robertj
+ * Completed implementation of codec reordering.
+ *
+ * Revision 2.3  2001/08/22 03:51:31  robertj
  * Added functions to look up media format by payload type.
  *
  * Revision 2.2  2001/08/17 08:23:02  robertj
@@ -131,6 +134,14 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
     BOOL HasFormat(
       const PString & wildcard    /// Wildcard string name.
     ) const { return FindFormat(wildcard) != P_MAX_INDEX; }
+
+    /**Reorder the formats in the list.
+       The order variable is an array of wildcards and the list is reordered
+       according to the order in that array.
+      */
+    void Reorder(
+      const PStringArray & order
+    );
   //@}
 
   private:

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2007  2001/08/23 03:15:51  robertj
+ * Revision 1.2008  2001/08/23 05:51:17  robertj
+ * Completed implementation of codec reordering.
+ *
+ * Revision 2.6  2001/08/23 03:15:51  robertj
  * Added missing Lock() calls in SetUpConnection
  *
  * Revision 2.5  2001/08/22 10:20:09  robertj
@@ -405,7 +408,9 @@ BOOL OpalLineConnection::SetConnected()
 
 OpalMediaFormatList OpalLineConnection::GetMediaFormats() const
 {
-  return line.GetDevice().GetMediaFormats();
+  OpalMediaFormatList formats = line.GetDevice().GetMediaFormats();
+  endpoint.AdjustMediaFormats(*this, formats);
+  return formats;
 }
 
 

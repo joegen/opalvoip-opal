@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2003  2001/08/17 08:25:41  robertj
+ * Revision 1.2004  2001/08/23 05:51:17  robertj
+ * Completed implementation of codec reordering.
+ *
+ * Revision 2.2  2001/08/17 08:25:41  robertj
  * Added call end reason for whole call, not just connection.
  * Moved call end reasons enum from OpalConnection to global.
  *
@@ -373,12 +376,14 @@ BOOL OpalManager::OnReleased(OpalConnection & connection)
 }
 
 
-void OpalManager::AdjustMediaFormats(OpalConnection & /*connection*/,
+void OpalManager::AdjustMediaFormats(const OpalConnection & /*connection*/,
                                      OpalMediaFormatList & mediaFormats)
 {
   PINDEX i;
   for (i = 0; i < mediaFormatMask.GetSize(); i++)
     mediaFormats -= mediaFormatMask[i];
+
+  mediaFormats.Reorder(mediaFormatOrder);
 }
 
 

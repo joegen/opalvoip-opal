@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2004  2001/08/22 03:51:44  robertj
+ * Revision 1.2005  2001/08/23 05:51:17  robertj
+ * Completed implementation of codec reordering.
+ *
+ * Revision 2.3  2001/08/22 03:51:44  robertj
  * Added functions to look up media format by payload type.
  *
  * Revision 2.2  2001/08/01 06:22:07  robertj
@@ -373,6 +376,17 @@ PINDEX OpalMediaFormatList::FindFormat(const PString & search) const
   }
 
   return P_MAX_INDEX;
+}
+
+
+void OpalMediaFormatList::Reorder(const PStringArray & order)
+{
+  PINDEX nextPos = 0;
+  for (PINDEX i =0; i < order.GetSize(); i++) {
+    PINDEX findPos = FindFormat(order[i]);
+    if (findPos != P_MAX_INDEX)
+      OpalMediaFormatBaseList::InsertAt(nextPos++, RemoveAt(findPos));
+  }
 }
 
 

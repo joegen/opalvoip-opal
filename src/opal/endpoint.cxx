@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2006  2001/08/22 10:20:09  robertj
+ * Revision 1.2007  2001/08/23 05:51:17  robertj
+ * Completed implementation of codec reordering.
+ *
+ * Revision 2.5  2001/08/22 10:20:09  robertj
  * Changed connection locking to use double mutex to guarantee that
  *   no threads can ever deadlock or access deleted connection.
  *
@@ -266,7 +269,7 @@ void OpalEndPoint::ClearAllCalls(OpalCallEndReason reason, BOOL wait)
 }
 
 
-void OpalEndPoint::AdjustMediaFormats(OpalConnection & connection,
+void OpalEndPoint::AdjustMediaFormats(const OpalConnection & connection,
                                       OpalMediaFormatList & mediaFormats)
 {
   manager.AdjustMediaFormats(connection, mediaFormats);

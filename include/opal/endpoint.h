@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2005  2001/08/22 10:20:09  robertj
+ * Revision 1.2006  2001/08/23 05:51:17  robertj
+ * Completed implementation of codec reordering.
+ *
+ * Revision 2.4  2001/08/22 10:20:09  robertj
  * Changed connection locking to use double mutex to guarantee that
  *   no threads can ever deadlock or access deleted connection.
  *
@@ -379,7 +382,7 @@ class OpalEndPoint : public PObject
        The default behaviour calls the OpalManager function of the same name.
       */
     virtual void AdjustMediaFormats(
-      OpalConnection & connection,  /// Connection that is about to use formats
+      const OpalConnection & connection,  /// Connection that is about to use formats
       OpalMediaFormatList & mediaFormats  /// Media formats to use
     );
 
