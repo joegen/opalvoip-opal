@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2007  2003/03/24 04:32:11  robertj
+ * Revision 1.2008  2003/06/02 02:59:43  rjongbloed
+ * Changed transcoder search so uses destination list as preference order.
+ *
+ * Revision 2.6  2003/03/24 04:32:11  robertj
  * Fixed macro for transcoder with parameter (not used yet!)
  * Fixed so OPAL_NO_PARAM can be defined in other modules.
  *
@@ -226,9 +229,8 @@ class OpalTranscoder : public PObject
        allow two transcoders to be used to get data from the source format to
        the destination format.
 
-       The direction o fthe search parameter is FALSE for given a source
-       media format find a destination, and TRUE for diven a destination
-       media format find the possible source.
+       There could be many possible matches between the two lists, so
+       preference is given to the order of the destination formats.
 
        Returns FALSE if there is no registered media transcoder that can be used
        between the two named formats.
