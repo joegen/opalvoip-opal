@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.h,v $
- * Revision 1.2014  2004/09/01 12:21:27  rjongbloed
+ * Revision 1.2015  2005/02/21 12:19:45  rjongbloed
+ * Added new "options list" to the OpalMediaFormat class.
+ *
+ * Revision 2.13  2004/09/01 12:21:27  rjongbloed
  * Added initialisation of H323EndPoints capability table to be all codecs so can
  *   correctly build remote caps from fqast connect params. This had knock on effect
  *   with const keywords added in numerous places.
@@ -483,7 +486,7 @@ class H323Capability : public PObject
 
     /**Get media format of the media data this class represents.
       */
-    OpalMediaFormat GetMediaFormat() const { return GetFormatName(); }
+    const OpalMediaFormat & GetMediaFormat() const;
 
     /// Get the payload type for the capaibility
     RTP_DataFrame::PayloadTypes GetPayloadType() const { return rtpPayloadType; }
@@ -501,9 +504,14 @@ class H323Capability : public PObject
 #endif
 
   protected:
+    OpalMediaFormat & GetWritableMediaFormat();
+
     unsigned            assignedCapabilityNumber;  /// Unique ID assigned to capability
     CapabilityDirection capabilityDirection;
     RTP_DataFrame::PayloadTypes rtpPayloadType;
+
+  private:
+    OpalMediaFormat     mediaFormat;
 };
 
 
@@ -651,10 +659,7 @@ class H323AudioCapability : public H323RealTimeCapability
   //@{
     /**Create an audio based capability.
       */
-    H323AudioCapability(
-      unsigned rxPacketSize, /// Maximum size of an audio packet in frames
-      unsigned txPacketSize  /// Desired transmit size of an audio packet frames
-    );
+    H323AudioCapability();
   //@}
 
   /**@name Identification functions */
@@ -809,10 +814,6 @@ class H323AudioCapability : public H323RealTimeCapability
       unsigned & packetSize              /// Packet size to use in capability
     );
   //@}
-
-  protected:
-    unsigned rxFramesInPacket;
-    unsigned txFramesInPacket;
 };
 
 
@@ -834,8 +835,6 @@ class H323NonStandardAudioCapability : public H323AudioCapability,
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardAudioCapability(
-      unsigned maxPacketSize,         /// Maximum size of an audio packet in frames
-      unsigned desiredPacketSize,     /// Desired transmit size of an audio packet in frames
       const H323EndPoint & endpoint,  /// Endpoint to get t35 information
       const BYTE * dataBlock = NULL,  /// Non-Standard data for codec type
       PINDEX dataSize = 0,            /// Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
@@ -846,8 +845,6 @@ class H323NonStandardAudioCapability : public H323AudioCapability,
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardAudioCapability(
-      unsigned maxPacketSize,         /// Maximum size of an audio packet in frames
-      unsigned desiredPacketSize,     /// Desired transmit size of an audio packet in frames
       const PString & oid,            /// OID for indentification of codec
       const BYTE * dataBlock = NULL,  /// Non-Standard data for codec type
       PINDEX dataSize = 0,            /// Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
@@ -858,8 +855,6 @@ class H323NonStandardAudioCapability : public H323AudioCapability,
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardAudioCapability(
-      unsigned maxPacketSize,         /// Maximum size of an audio packet in frames
-      unsigned desiredPacketSize,     /// Desired transmit size of an audio packet in frames
       BYTE country,                   /// t35 information
       BYTE extension,                 /// t35 information
       WORD maufacturer,               /// t35 information

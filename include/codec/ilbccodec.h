@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ilbccodec.h,v $
- * Revision 1.2004  2004/09/01 12:21:26  rjongbloed
+ * Revision 1.2005  2005/02/21 12:19:45  rjongbloed
+ * Added new "options list" to the OpalMediaFormat class.
+ *
+ * Revision 2.3  2004/09/01 12:21:26  rjongbloed
  * Added initialisation of H323EndPoints capability table to be all codecs so can
  *   correctly build remote caps from fqast connect params. This had knock on effect
  *   with const keywords added in numerous places.
@@ -61,9 +64,6 @@ struct iLBC_Dec_Inst_t_;
 
 #define OPAL_ILBC_13k3 "iLBC-13k3"
 #define OPAL_ILBC_15k2 "iLBC-15k2"
-
-extern OpalMediaFormat const OpaliLBC_13k3;
-extern OpalMediaFormat const OpaliLBC_15k2;
 
 
 ///////////////////////////////////////////////////////////////////////////////

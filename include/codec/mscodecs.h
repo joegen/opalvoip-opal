@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mscodecs.h,v $
- * Revision 1.2008  2004/03/11 06:54:26  csoutheren
+ * Revision 1.2009  2005/02/21 12:19:45  rjongbloed
+ * Added new "options list" to the OpalMediaFormat class.
+ *
+ * Revision 2.7  2004/03/11 06:54:26  csoutheren
  * Added ability to disable SIP or H.323 stacks
  *
  * Revision 2.6  2002/11/10 23:22:06  robertj
@@ -108,12 +111,7 @@
 
 
 #define OPAL_MSGSM "MS-GSM"
-
-extern OpalMediaFormat const OpalMSGSM;
-
 #define OPAL_MSIMA "MS-IMA-ADPCM"
-
-extern OpalMediaFormat const OpalMSIMA;
 
 
 ///////////////////////////////////////////////////////////////////////////////
