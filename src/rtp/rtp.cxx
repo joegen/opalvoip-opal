@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2014  2004/02/19 10:47:06  rjongbloed
+ * Revision 1.2015  2004/03/02 09:57:54  rjongbloed
+ * Fixed problems with recent changes to RTP UseSession() function which broke it for H.323
+ *
+ * Revision 2.13  2004/02/19 10:47:06  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.12  2003/01/07 04:39:53  robertj
@@ -1420,10 +1423,10 @@ RTP_Session * RTP_SessionManager::UseSession(unsigned sessionID)
 
 void RTP_SessionManager::AddSession(RTP_Session * session)
 {
-  PAssertNULL(session);
-
-  PTRACE(2, "RTP\tAdding session " << *session);
-  sessions.SetAt(session->GetSessionID(), session);
+  if (session != NULL) {
+    PTRACE(2, "RTP\tAdding session " << *session);
+    sessions.SetAt(session->GetSessionID(), session);
+  }
 
   // The following is the mutex.Signal() that was not done in the UseSession()
   mutex.Signal();
