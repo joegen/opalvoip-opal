@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2007  2001/11/14 01:31:55  robertj
+ * Revision 1.2008  2001/12/07 08:56:43  robertj
+ * Renamed RTP to be more general UDP port base, and TCP to be IP.
+ *
+ * Revision 2.6  2001/11/14 01:31:55  robertj
  * Corrected placement of adjusting media format list.
  *
  * Revision 2.5  2001/11/13 06:25:56  robertj
@@ -93,11 +96,11 @@ OpalManager::OpalManager()
 {
   autoStartReceiveVideo = autoStartTransmitVideo = TRUE;
 
-  rtpIpPortBase = 5000;
-  rtpIpPortMax  = 6000;
+  udpPortBase = 5000;
+  udpPortMax  = 6000;
 
   // use dynamic port allocation by default
-  tcpPortBase   = tcpPortMax = 0;
+  tcpPortBase = tcpPortMax = 0;
 
 #ifdef _WIN32
   rtpIpTypeofService = IPTOS_PREC_CRITIC_ECP|IPTOS_LOWDELAY;
@@ -433,6 +436,13 @@ void OpalManager::OnUserIndicationTone(OpalConnection & connection,
                                        int /*duration*/)
 {
   connection.OnUserIndicationString(tone);
+}
+
+
+BOOL OpalManager::TranslateIPAddress(PIPSocket::Address & /*localAddr*/,
+                                     const PIPSocket::Address & /*remoteAddr */)
+{
+  return FALSE;
 }
 
 
