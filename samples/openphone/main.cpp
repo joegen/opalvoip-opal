@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cpp,v $
+ * Revision 1.13  2004/05/24 13:44:03  rjongbloed
+ * More implementation on OPAL OpenPhone.
+ *
  * Revision 1.12  2004/05/15 12:18:23  rjongbloed
  * More work on wxWindows based OpenPhone
  *
@@ -76,6 +79,14 @@
 #include <lids/alllids.h>
 #endif
 
+
+static const char ActiveViewKey[] = "ActiveView";
+static const char MainFrameXKey[] = "MainFrameX";
+static const char MainFrameYKey[] = "MainFrameY";
+static const char MainFrameWidthKey[] = "MainFrameWidth";
+static const char MainFrameHeightKey[] = "MainFrameHeight";
+
+///////////////////////////////////////////////////////////////////////////////
 
 class TextCtrlChannel : public PChannel
 {
@@ -141,9 +152,13 @@ bool OpenPhoneApp::OnInit()
 BEGIN_EVENT_TABLE(MyFrame, wxFrame)
   EVT_CLOSE(MyFrame::OnClose)
 
+  EVT_MENU_OPEN(MyFrame::OnAdjustMenus)
+
   EVT_MENU(XRCID("MenuQuit"),   MyFrame::OnMenuQuit)
   EVT_MENU(XRCID("MenuAbout"),  MyFrame::OnMenuAbout)
   EVT_MENU(XRCID("MenuCall"),   MyFrame::OnMenuCall)
+  EVT_MENU(XRCID("MenuAnswer"), MyFrame::OnMenuAnswer)
+  EVT_MENU(XRCID("MenuHangUp"), MyFrame::OnMenuHangUp)
   EVT_MENU(XRCID("ViewLarge"),  MyFrame::OnViewLarge)
   EVT_MENU(XRCID("ViewSmall"),  MyFrame::OnViewSmall)
   EVT_MENU(XRCID("ViewList"),   MyFrame::OnViewList)
@@ -169,11 +184,14 @@ MyFrame::MyFrame()
     ivrEP(NULL)
 #endif
 {
+  wxConfigBase * config = wxConfig::Get();
+
   // Give it an icon
   SetIcon( wxICON(OpenOphone) );
 
   // Make a menubar
-  SetMenuBar(wxXmlResource::Get()->LoadMenuBar("MenuBar"));
+  wxMenuBar * menubar = wxXmlResource::Get()->LoadMenuBar("MenuBar");
+  SetMenuBar(menubar);
 
   // Make the content of the main window, speed dial and log panes
   m_splitter = new wxSplitterWindow(this, -1, wxDefaultPosition, wxDefaultSize, wxSP_3D);
@@ -182,22 +200,31 @@ MyFrame::MyFrame()
                                wxDefaultPosition, wxDefaultSize,
                                wxTE_MULTILINE | wxSUNKEN_BORDER);
   LogWindow.SetTextCtrl(m_logWindow);
+  m_logWindow->SetForegroundColour(wxColour(0,255,0)); // Green
+  m_logWindow->SetBackgroundColour(wxColour(0,0,0)); // Black
 
-  RecreateSpeedDials(wxLC_LIST);
+  int i;
+  if (!config->Read(ActiveViewKey, &i) || i < 0 || i >= e_NumViews)
+  {
+    i = e_ViewList;
+  }
+  static const char * const ViewMenuNames[e_NumViews] = {
+    "ViewLarge", "ViewSmall", "ViewList", "ViewDetails"
+  };
+  menubar->Check(XRCID(ViewMenuNames[i]), true);
+  RecreateSpeedDials((SpeedDialViews)i);
 
   // Set up sizer to automatically resize the splitter to size of window
   wxBoxSizer * sizer = new wxBoxSizer(wxVERTICAL);
   sizer->Add(m_splitter, 1, wxGROW, 0);
   SetSizer(sizer);
 
-  wxConfigBase * config = wxConfig::Get();
-
   int x, y = 0;
-  if (config->Read("MainFrameX", &x) && config->Read("MainFrameY", &y))
+  if (config->Read(MainFrameXKey, &x) && config->Read(MainFrameYKey, &y))
     Move(x, y);
 
   int w, h = 0;
-  if (config->Read("MainFrameWidth", &w) && config->Read("MainFrameHeight", &h))
+  if (config->Read(MainFrameWidthKey, &w) && config->Read(MainFrameHeightKey, &h))
     SetSize(w, h);
 
   // Show the frame
@@ -225,30 +252,34 @@ MyFrame::~MyFrame()
 }
 
 
-void MyFrame::RecreateSpeedDials(long flags)
+void MyFrame::RecreateSpeedDials(SpeedDialViews view)
 {
+  static DWORD const ListCtrlStyle[e_NumViews] = {
+    wxLC_ICON, wxLC_SMALL_ICON, wxLC_LIST, wxLC_REPORT
+  };
+
   wxListCtrl * oldSpeedDials = m_speedDials;
 
   m_speedDials = new wxListCtrl(m_splitter, SpeedDialsID,
                                wxDefaultPosition, wxDefaultSize,
-                               flags | wxLC_EDIT_LABELS | wxSUNKEN_BORDER);
+                               ListCtrlStyle[view] | wxLC_EDIT_LABELS | wxSUNKEN_BORDER);
 
   m_speedDials->InsertColumn(0, _T("Name"));
   m_speedDials->InsertColumn(1, _T("Number"));
-  m_speedDials->InsertColumn(AddressColumn, _T("Address"));
+  m_speedDials->InsertColumn(e_AddressColumn, _T("Address"));
 
   // Test data ....
   int pos = m_speedDials->InsertItem(INT_MAX, _T("H.323 client"));
-  m_speedDials->SetItem(pos, NumberColumn, _T("1"));
-  m_speedDials->SetItem(pos, AddressColumn, _T("h323:10.0.1.1"));
+  m_speedDials->SetItem(pos, e_NumberColumn, _T("1"));
+  m_speedDials->SetItem(pos, e_AddressColumn, _T("h323:10.0.1.1"));
 
   pos = m_speedDials->InsertItem(INT_MAX, _T("SIP Client"));
-  m_speedDials->SetItem(pos, NumberColumn, _T("234"));
-  m_speedDials->SetItem(pos, AddressColumn, _T("sip:10.0.2.250"));
+  m_speedDials->SetItem(pos, e_NumberColumn, _T("234"));
+  m_speedDials->SetItem(pos, e_AddressColumn, _T("sip:10.0.2.250"));
 
   pos = m_speedDials->InsertItem(INT_MAX, _T("Vox Gratia"));
-  m_speedDials->SetItem(pos, NumberColumn, _T("24"));
-  m_speedDials->SetItem(pos, AddressColumn, _T("h323:h323.voxgratia.org"));
+  m_speedDials->SetItem(pos, e_NumberColumn, _T("24"));
+  m_speedDials->SetItem(pos, e_AddressColumn, _T("h323:h323.voxgratia.org"));
 
   // Now either replace the top half of the splitter or set it for the first time
   if (oldSpeedDials == NULL)
@@ -257,6 +288,8 @@ void MyFrame::RecreateSpeedDials(long flags)
     m_splitter->ReplaceWindow(oldSpeedDials, m_speedDials);
     delete oldSpeedDials;
   }
+
+  wxConfig::Get()->Write(ActiveViewKey, view);
 }
 
 
@@ -266,15 +299,25 @@ void MyFrame::OnClose(wxCloseEvent& event)
 
   int x, y;
   GetPosition(&x, &y);
-  config->Write("MainFrameX", x);
-  config->Write("MainFrameY", y);
+  config->Write(MainFrameXKey, x);
+  config->Write(MainFrameYKey, y);
 
   int w, h;
   GetSize(&w, &h);
-  config->Write("MainFrameWidth", w);
-  config->Write("MainFrameHeight", h);
+  config->Write(MainFrameWidthKey, w);
+  config->Write(MainFrameHeightKey, h);
 
   Destroy();
+}
+
+
+void MyFrame::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
+{
+  wxMenuBar * menubar = GetMenuBar();
+  bool inCall = !currentCallToken;
+  menubar->Enable(XRCID("MenuCall"),   !inCall);
+  menubar->Enable(XRCID("MenuAnswer"), !pcssEP->m_incomingConnectionToken);
+  menubar->Enable(XRCID("MenuHangUp"),  inCall);
 }
 
 
@@ -302,27 +345,46 @@ void MyFrame::OnMenuCall(wxCommandEvent& WXUNUSED(event))
 }
 
 
-void MyFrame::OnViewLarge(wxCommandEvent& WXUNUSED(event))
+void MyFrame::OnMenuAnswer(wxCommandEvent& WXUNUSED(event))
 {
-  RecreateSpeedDials(wxLC_ICON);
+  currentCallToken = pcssEP->m_incomingConnectionToken;
+  pcssEP->m_incomingConnectionToken.MakeEmpty();
+  pcssEP->AcceptIncomingConnection(currentCallToken);
 }
 
 
-void MyFrame::OnViewSmall(wxCommandEvent& WXUNUSED(event))
+void MyFrame::OnMenuHangUp(wxCommandEvent& WXUNUSED(event))
 {
-  RecreateSpeedDials(wxLC_SMALL_ICON);
+  if (!currentCallToken)
+    ClearCall(currentCallToken);
 }
 
 
-void MyFrame::OnViewList(wxCommandEvent& WXUNUSED(event))
+void MyFrame::OnViewLarge(wxCommandEvent& event)
 {
-  RecreateSpeedDials(wxLC_LIST);
+  GetMenuBar()->Check(event.GetId(), true);
+  RecreateSpeedDials(e_ViewLarge);
 }
 
 
-void MyFrame::OnViewDetails(wxCommandEvent& WXUNUSED(event))
+void MyFrame::OnViewSmall(wxCommandEvent& event)
 {
-  RecreateSpeedDials(wxLC_REPORT);
+  GetMenuBar()->Check(event.GetId(), true);
+  RecreateSpeedDials(e_ViewSmall);
+}
+
+
+void MyFrame::OnViewList(wxCommandEvent& event)
+{
+  GetMenuBar()->Check(event.GetId(), true);
+  RecreateSpeedDials(e_ViewList);
+}
+
+
+void MyFrame::OnViewDetails(wxCommandEvent& event)
+{
+  GetMenuBar()->Check(event.GetId(), true);
+  RecreateSpeedDials(e_ViewDetails);
 }
 
 
@@ -333,7 +395,7 @@ void MyFrame::OnSpeedDial(wxListEvent& event)
   if (item.m_itemId < 0)
     return;
 
-  item.m_col = AddressColumn;
+  item.m_col = e_AddressColumn;
   item.m_mask = wxLIST_MASK_TEXT;
   if (m_speedDials->GetItem(item))
     MakeCall(item.m_text);
@@ -584,9 +646,9 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
   INIT_FIELD(SoundBuffers, mainFrame.pcssEP->GetSoundChannelBufferDepth());
   INIT_FIELD(MinJitter, mainFrame.GetMinAudioJitterDelay());
   INIT_FIELD(MaxJitter, mainFrame.GetMaxAudioJitterDelay());
-  INIT_FIELD(SilenceSuppression, false);
-  INIT_FIELD(SignalDeadband, 100);
-  INIT_FIELD(SilenceDeadband, 500);
+  INIT_FIELD(SilenceSuppression, mainFrame.GetSilenceDetectParams().m_mode == OpalSilenceDetector::AdaptiveSilenceDetection);
+  INIT_FIELD(SignalDeadband, mainFrame.GetSilenceDetectParams().m_signalDeadband);
+  INIT_FIELD(SilenceDeadband, mainFrame.GetSilenceDetectParams().m_silenceDeadband);
 #if PTRACING
   INIT_FIELD(EnableTracing, mainFrame.m_TraceFile != NULL);
   INIT_FIELD(TraceLevelThreshold, PTrace::GetLevel());
@@ -647,6 +709,15 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD2(MinJitter, MaxJitter, mainFrame.SetAudioJitterDelay);
   SAVE_FIELD(TraceLevelThreshold, PTrace::SetLevel);
 
+  OpalSilenceDetector::Params silenceParams;
+  silenceParams.m_mode = m_SilenceSuppression ? OpalSilenceDetector::AdaptiveSilenceDetection
+                                              : OpalSilenceDetector::NoSilenceDetection;
+  config->Write("SignalDeadband", m_SignalDeadband);
+  SAVE_FIELD(SignalDeadband, silenceParams.m_signalDeadband=);
+  SAVE_FIELD(SilenceDeadband, silenceParams.m_silenceDeadband=);
+  mainFrame.SetSilenceDetectParams(silenceParams);
+
+#if PTRACING
   // Check for stopping tracing
   if (mainFrame.m_TraceFile != NULL &&
             (!m_EnableTracing || mainFrame.m_TraceFile->GetFilePath() != PFilePath((PString)m_TraceFileName))) {
@@ -695,6 +766,7 @@ bool OptionsDialog::TransferDataFromWindow()
   PTrace::SetOptions(newOptions);
   PTrace::ClearOptions(~newOptions);
   config->Write("TraceOptions", newOptions);
+#endif // PTRACING
 
   return true;
 }
