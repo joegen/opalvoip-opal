@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2021  2002/09/04 06:01:48  robertj
+ * Revision 1.2022  2002/09/06 02:40:27  robertj
+ * Added ability to specify stream or datagram (TCP or UDP) transport is to
+ * be created from a transport address regardless of the addresses mode.
+ *
+ * Revision 2.20  2002/09/04 06:01:48  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.19  2002/07/04 07:41:47  robertj
@@ -1027,7 +1031,7 @@ BOOL H323EndPoint::InternalMakeCall(OpalCall & call,
   OpalTransport * transport;
   if (gatekeeper != NULL)
     transport = gatekeeper->GetTransport().GetLocalAddress().CreateTransport(
-                                          *this, OpalTransportAddress::HostOnly);
+                                          *this, OpalTransportAddress::Streamed);
   else
     transport = address.CreateTransport(*this, OpalTransportAddress::NoBinding);
 
