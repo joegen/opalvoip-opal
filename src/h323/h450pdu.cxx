@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h450pdu.cxx,v $
- * Revision 1.2010  2002/09/04 06:01:49  robertj
+ * Revision 1.2011  2002/11/10 11:33:19  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.9  2002/09/04 06:01:49  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.8  2002/07/01 04:56:32  robertj
@@ -53,6 +56,12 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.18  2002/10/01 06:47:39  robertj
+ * Fixed GNU compiler warning
+ *
+ * Revision 1.17  2002/09/25 05:21:11  robertj
+ * Fixed warning on no trace version.
  *
  * Revision 1.16  2002/08/05 10:03:47  robertj
  * Cosmetic changes to normalise the usage of pragma interface/implementation.
@@ -1048,7 +1057,7 @@ void H4502Handler::OnReceivedCallTransferInitiate(int /*linkedId*/,
   H450ServiceAPDU::ParseEndpointAddress(ctInitiateArg.m_reroutingNumber, remoteParty);
 
   if (!endpoint.OnCallTransferInitiate(connection, remoteParty) ||
-      !endpoint.SetupTransfer(connection.GetToken(),
+      !endpoint.SetupTransfer(connection.GetCallToken(),
                               ctInitiateArg.m_callIdentity.GetValue(),
                               remoteParty))
     SendReturnError(H4502_CallTransferErrors::e_establishmentFailure);
@@ -1185,7 +1194,7 @@ void H4502Handler::OnReceivedSetupReturnResult()
   currentInvokeId = 0;
 
   // Clear the primary call
-  endpoint.ClearCall(transferringCallToken, EndedByCallForwarded);
+  endpoint.ClearCall(transferringCallToken, H323Connection::EndedByCallForwarded);
 }
 
 
@@ -1219,11 +1228,11 @@ void H4502Handler::OnReceivedIdentifyReturnResult(X880_ReturnResult &returnResul
     H323Connection* primaryConnection = endpoint.FindConnectionWithLock(CallToken);
 
     if (primaryConnection != NULL) {
-      primaryConnection->SetAssociatedCallToken(connection.GetToken());
+      primaryConnection->SetAssociatedCallToken(connection.GetCallToken());
 
       // Send a callTransferInitiate invoke APDU in a FACILITY message
       // to the transferred endpoint on the primary call
-      endpoint.TransferCall(primaryConnection->GetToken(), remoteParty, callIdentity);
+      endpoint.TransferCall(primaryConnection->GetCallToken(), remoteParty, callIdentity);
     }
   }
 }
@@ -1296,7 +1305,7 @@ void H4502Handler::OnReceivedSetupReturnError(int errorCode,
     PTRACE(3, "H4502\tTimer CT-T4 has expired on the Transferred Endpoint awaiting a response to a callTransferSetup APDU.");
 
     // Clear the transferred call.
-    endpoint.ClearCall(connection.GetToken());
+    endpoint.ClearCall(connection.GetCallToken());
   }
 
   // Send a facility message to the transferring endpoint
@@ -1404,7 +1413,7 @@ void H4502Handler::HandleConsultationTransfer(const PString & callIdentity,
         currentInvokeId = 0;
         ctState = e_ctIdle;
 
-        endpoint.ClearCall(connection.GetToken());
+        endpoint.ClearCall(connection.GetCallToken());
       }
       break;
 
@@ -2040,10 +2049,10 @@ BOOL H45011Handler::OnReceivedCallIntrusionForcedRelease(int /*linkedId*/,
         H323Connection* conn = endpoint.FindConnectionWithLock(tokens[i]);
         if (conn != NULL){
           if (conn->IsEstablished()){
-            if((conn->GetLocalCallIntrusionProtectionLevel() < (int)ciArg.m_ciCapabilityLevel)){
-              activeCallToken = conn->GetToken();
-              intrudingCallToken = connection.GetToken();
-              conn->GetRemoteCallIntrusionProtectionLevel(connection.GetToken (), (unsigned)ciArg.m_ciCapabilityLevel);
+            if((conn->GetLocalCallIntrusionProtectionLevel() < ciArg.m_ciCapabilityLevel)){
+              activeCallToken = conn->GetCallToken();
+              intrudingCallToken = connection.GetCallToken();
+              conn->GetRemoteCallIntrusionProtectionLevel(connection.GetCallToken(), (unsigned)ciArg.m_ciCapabilityLevel);
               result = TRUE;
               conn->Unlock ();
               break;
@@ -2063,7 +2072,7 @@ BOOL H45011Handler::OnReceivedCallIntrusionForcedRelease(int /*linkedId*/,
     else {
       ciSendState = e_ci_sAttachToReleseComplete;
       ciReturnState = e_ci_rNotAuthorized;
-      connection.ClearCall(EndedByLocalBusy);
+      connection.ClearCall(H323Connection::EndedByLocalBusy);
     }
   }
   else{
@@ -2306,9 +2315,16 @@ BOOL H45011Handler::OnReceivedInvokeReturnError(int errorCode, const bool timerE
 }
 
 
-BOOL H45011Handler::OnReceivedGetCIPLReturnError(int errorCode, const bool timerExpiry)
+#if PTRACING
+#define PTRACE_errorCode errorCode
+#else
+#define PTRACE_errorCode
+#endif
+
+BOOL H45011Handler::OnReceivedGetCIPLReturnError(int PTRACE_errorCode,
+                                                 const bool timerExpiry)
 {
-  PTRACE(4, "H450.11\tOnReceivedGetCIPLReturnError ErrorCode="<<errorCode);
+  PTRACE(4, "H450.11\tOnReceivedGetCIPLReturnError ErrorCode=" << PTRACE_errorCode);
   if(!timerExpiry){
     if (ciTimer.IsRunning()){
       ciTimer.Stop();
@@ -2437,7 +2453,7 @@ void H45011Handler::OnCallIntrudeTimeOut(PTimer &, INT)
         PTRACE(4, "H450.11\tOnCallIntrudeTimeOut Timer CI-T6 has expired");
         // Clear the active call (call with C)
        PSyncPoint sync;
-       endpoint.ClearCallSynchronous(activeCallToken, EndedByLocalUser, &sync);
+       endpoint.ClearCallSynchronous(activeCallToken, H323Connection::EndedByLocalUser, &sync);
         // Answer intruding call (call with A)
         PTRACE(4, "H450.11\tOnCallIntrudeTimeOut Trying to answer Call");
         if(endpoint.HasConnection(intrudingCallToken)){
@@ -2453,10 +2469,18 @@ void H45011Handler::OnCallIntrudeTimeOut(PTimer &, INT)
 }
 
 
-BOOL H45011Handler::OnReceivedReject(int problemType, int problemNumber)
+#if PTRACING
+#define PTRACE_problemType   problemType
+#define PTRACE_problemNumber problemNumber
+#else
+#define PTRACE_problemType
+#define PTRACE_problemNumber
+#endif
+
+BOOL H45011Handler::OnReceivedReject(int PTRACE_problemType, int PTRACE_problemNumber)
 {
   PTRACE(4, "H450.11\tH45011Handler::OnReceivedReject - problemType= "
-         << problemType << ", problemNumber= " << problemNumber);
+         << PTRACE_problemType << ", problemNumber= " << PTRACE_problemNumber);
 
   if (ciTimer.IsRunning()){
     ciTimer.Stop();

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2015  2002/09/06 02:42:03  robertj
+ * Revision 1.2016  2002/11/10 11:33:19  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.14  2002/09/06 02:42:03  robertj
  * Fixed bug where get endless wait if clearing calls and there aren't any.
  *
  * Revision 2.13  2002/07/04 07:41:47  robertj
@@ -275,7 +278,7 @@ BOOL OpalEndPoint::OnReleased(OpalConnection & connection)
 
 
 BOOL OpalEndPoint::ClearCall(const PString & token,
-                             OpalCallEndReason reason,
+                             OpalConnection::CallEndReason reason,
                              PSyncPoint * sync)
 {
   return manager.ClearCall(token, reason, sync);
@@ -283,7 +286,7 @@ BOOL OpalEndPoint::ClearCall(const PString & token,
 
 
 BOOL OpalEndPoint::ClearCallSynchronous(const PString & token,
-                                        OpalCallEndReason reason,
+                                        OpalConnection::CallEndReason reason,
                                         PSyncPoint * sync)
 {
   PSyncPoint syncPoint;
@@ -293,7 +296,7 @@ BOOL OpalEndPoint::ClearCallSynchronous(const PString & token,
 }
 
 
-void OpalEndPoint::ClearAllCalls(OpalCallEndReason reason, BOOL wait)
+void OpalEndPoint::ClearAllCalls(OpalConnection::CallEndReason reason, BOOL wait)
 {
   inUseFlag.Wait();
 

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.cxx,v $
- * Revision 1.2011  2002/09/04 06:01:48  robertj
+ * Revision 1.2012  2002/11/10 11:33:19  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.10  2002/09/04 06:01:48  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.9  2002/07/01 04:56:32  robertj
@@ -60,6 +63,16 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.113  2002/11/07 03:50:28  robertj
+ * Added extra "congested" Q.931 codes.
+ *
+ * Revision 1.112  2002/10/31 00:45:22  robertj
+ * Enhanced jitter buffer system so operates dynamically between minimum and
+ *   maximum values. Altered API to assure app writers note the change!
+ *
+ * Revision 1.111  2002/10/08 13:08:21  robertj
+ * Changed for IPv6 support, thanks Sébastien Josset.
  *
  * Revision 1.110  2002/08/14 01:07:22  robertj
  * Added translation of Q.931 unallocated number release complete code to
@@ -757,14 +770,8 @@ H225_Connect_UUIE & H323SignalPDU::BuildConnect(const H323Connection & connectio
   connect.IncludeOptionalField(H225_Connect_UUIE::e_h245Address);
 
   // convert IP address into the correct H245 type
-  connect.m_h245Address.SetTag(H225_TransportAddress::e_ipAddress);
-  H225_TransportAddress_ipAddress & ipAddress = connect.m_h245Address;
-  ipAddress.m_ip.SetSize(4);
-  ipAddress.m_ip[0] = h245Address.Byte1();
-  ipAddress.m_ip[1] = h245Address.Byte2();
-  ipAddress.m_ip[2] = h245Address.Byte3();
-  ipAddress.m_ip[3] = h245Address.Byte4();
-  ipAddress.m_port  = port;
+  H323TransportAddress transAddr(h245Address, port);
+  transAddr.SetPDU(connect.m_h245Address);
 
   return connect;
 }
@@ -801,54 +808,57 @@ H225_Information_UUIE & H323SignalPDU::BuildInformation(const H323Connection & c
 }
 
 
-OpalCallEndReason H323TranslateToCallEndReason(Q931::CauseValues cause,
+H323Connection::CallEndReason H323TranslateToCallEndReason(Q931::CauseValues cause,
                                                const H225_ReleaseCompleteReason & reason)
 {
   switch (cause) {
     case Q931::ErrorInCauseIE :
       switch (reason.GetTag()) {
         case H225_ReleaseCompleteReason::e_noBandwidth :
-          return EndedByNoBandwidth;
+          return H323Connection::EndedByNoBandwidth;
         case H225_ReleaseCompleteReason::e_gatekeeperResources :
         case H225_ReleaseCompleteReason::e_gatewayResources :
         case H225_ReleaseCompleteReason::e_adaptiveBusy :
-          return EndedByRemoteCongestion;
+          return H323Connection::EndedByRemoteCongestion;
         case H225_ReleaseCompleteReason::e_unreachableDestination :
-          return EndedByUnreachable;
+          return H323Connection::EndedByUnreachable;
         case H225_ReleaseCompleteReason::e_calledPartyNotRegistered :
-          return EndedByNoUser;
+          return H323Connection::EndedByNoUser;
         case H225_ReleaseCompleteReason::e_callerNotRegistered:
-          return EndedByGatekeeper;
+          return H323Connection::EndedByGatekeeper;
         case H225_ReleaseCompleteReason::e_securityDenied:
-          return EndedBySecurityDenial;
+          return H323Connection::EndedBySecurityDenial;
         case H225_ReleaseCompleteReason::e_newConnectionNeeded:
-          return EndedByTemporaryFailure;
+          return H323Connection::EndedByTemporaryFailure;
       }
-      return EndedByRefusal;
+      return H323Connection::EndedByRefusal;
     case Q931::NormalCallClearing :
-      return EndedByRemoteUser;
+      return H323Connection::EndedByRemoteUser;
     case Q931::UserBusy :
-      return EndedByRemoteBusy;
+      return H323Connection::EndedByRemoteBusy;
     case Q931::Congestion :
-      return EndedByRemoteCongestion;
+    case Q931::NoCircuitChannelAvailable :
+    case Q931::RequestedCircuitNotAvailable :
+    case Q931::ResourceUnavailable :
+      return H323Connection::EndedByRemoteCongestion;
     case Q931::NoResponse :
     case Q931::NoAnswer :
-      return EndedByNoAnswer;
+      return H323Connection::EndedByNoAnswer;
     case Q931::NoRouteToNetwork :
     case Q931::ChannelUnacceptable :
-      return EndedByUnreachable;
+      return H323Connection::EndedByUnreachable;
     case Q931::UnallocatedNumber :
     case Q931::NoRouteToDestination :
     case Q931::SubscriberAbsent :
-      return EndedByNoUser;
+      return H323Connection::EndedByNoUser;
     case Q931::Redirection :
-      return EndedByCallForwarded;
+      return H323Connection::EndedByCallForwarded;
     case Q931::DestinationOutOfOrder :
-      return EndedByConnectFail;
+      return H323Connection::EndedByConnectFail;
     case Q931::TemporaryFailure :
-      return EndedByTemporaryFailure;
+      return H323Connection::EndedByTemporaryFailure;
     default:
-      return EndedByRefusal;
+      return H323Connection::EndedByRefusal;
   }
 }
 
@@ -856,7 +866,7 @@ OpalCallEndReason H323TranslateToCallEndReason(Q931::CauseValues cause,
 Q931::CauseValues H323TranslateFromCallEndReason(const H323Connection & connection,
                                                  H225_ReleaseCompleteReason & reason)
 {
-  static int const ReasonCodes[OpalNumCallEndReasons] = {
+  static int const ReasonCodes[H323Connection::NumCallEndReasons] = {
     Q931::NormalCallClearing,                               /// EndedByLocalUser,         Local endpoint application cleared call
     Q931::UserBusy,                                         /// EndedByNoAccept,          Local endpoint did not accept call
     Q931::CallRejected,                                     /// EndedByAnswerDenied,      Local endpoint declined to answer call
@@ -1025,7 +1035,7 @@ void H323SignalPDU::PrintOn(ostream & strm) const
 }
 
 
-BOOL H323SignalPDU::Read(OpalTransport & transport)
+BOOL H323SignalPDU::Read(H323Transport & transport)
 {
   PBYTEArray rawData;
   if (!transport.ReadPDU(rawData)) {
@@ -1069,7 +1079,7 @@ BOOL H323SignalPDU::Read(OpalTransport & transport)
 }
 
 
-BOOL H323SignalPDU::Write(OpalTransport & transport)
+BOOL H323SignalPDU::Write(H323Transport & transport)
 {
   if (!q931pdu.HasIE(Q931::UserUserIE) && m_h323_uu_pdu.m_h323_message_body.IsValid())
     BuildQ931();
@@ -1090,7 +1100,7 @@ BOOL H323SignalPDU::Write(OpalTransport & transport)
 }
 
 
-PString H323SignalPDU::GetSourceAliases(const OpalTransport * transport) const
+PString H323SignalPDU::GetSourceAliases(const H323Transport * transport) const
 {
   PString remoteHostName;
   
@@ -1164,7 +1174,7 @@ PString H323SignalPDU::GetDestinationAlias(BOOL firstAliasOnly) const
     }
 
     if (setup.HasOptionalField(H225_Setup_UUIE::e_destCallSignalAddress)) {
-      if (aliases.IsEmpty())
+      if (!aliases.IsEmpty())
         aliases << '\t';
       aliases << H323TransportAddress(setup.m_destCallSignalAddress);
     }
@@ -1392,7 +1402,7 @@ H245_TerminalCapabilitySet &
   cap.IncludeOptionalField(H245_TerminalCapabilitySet::e_multiplexCapability);
   cap.m_multiplexCapability.SetTag(H245_MultiplexCapability::e_h2250Capability);
   H245_H2250Capability & h225_0 = cap.m_multiplexCapability;
-  h225_0.m_maximumAudioDelayJitter = connection.GetMaxAudioDelayJitter();
+  h225_0.m_maximumAudioDelayJitter = connection.GetMaxAudioJitterDelay();
   h225_0.m_receiveMultipointCapability.m_mediaDistributionCapability.SetSize(1);
   h225_0.m_transmitMultipointCapability.m_mediaDistributionCapability.SetSize(1);
   h225_0.m_receiveAndTransmitMultipointCapability.m_mediaDistributionCapability.SetSize(1);
@@ -2016,7 +2026,7 @@ unsigned H323RasPDU::GetSequenceNumber() const
 }
 
 
-BOOL H323RasPDU::Read(OpalTransport & transport)
+BOOL H323RasPDU::Read(H323Transport & transport)
 {
   if (!transport.ReadPDU(rawPDU)) {
     PTRACE(1, "H225RAS\tRead error ("
@@ -2039,7 +2049,7 @@ BOOL H323RasPDU::Read(OpalTransport & transport)
 }
 
 
-BOOL H323RasPDU::Write(OpalTransport & transport) const
+BOOL H323RasPDU::Write(H323Transport & transport)
 {
   PPER_Stream strm;
   Encode(strm);

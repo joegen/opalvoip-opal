@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2020  2002/07/01 04:56:33  robertj
+ * Revision 1.2021  2002/11/10 11:33:19  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.19  2002/07/01 04:56:33  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.18  2002/06/16 02:24:05  robertj
@@ -125,9 +128,9 @@ ostream & operator<<(ostream & out, OpalConnection::Phases phase)
 }
 
 
-ostream & operator<<(ostream & out, OpalCallEndReason reason)
+ostream & operator<<(ostream & out, OpalConnection::CallEndReason reason)
 {
-  const char * const names[OpalNumCallEndReasons] = {
+  const char * const names[OpalConnection::NumCallEndReasons] = {
     "EndedByLocalUser",         /// Local endpoint application cleared call
     "EndedByNoAccept",          /// Local endpoint did not accept call OnIncomingCall()=FALSE
     "EndedByAnswerDenied",      /// Local endpoint declined to answer call
@@ -169,8 +172,10 @@ OpalConnection::OpalConnection(OpalCall & call,
   PTRACE(3, "OpalCon\tCreated connection " << *this);
 
   originating = FALSE;
-  callEndReason = OpalNumCallEndReasons;
+  callEndReason = NumCallEndReasons;
   detectInBandDTMF = !endpoint.GetManager().DetectInBandDTMFDisabled();
+  minAudioJitterDelay = endpoint.GetManager().GetMinAudioJitterDelay();
+  maxAudioJitterDelay = endpoint.GetManager().GetMaxAudioJitterDelay();
   bandwidthAvailable = endpoint.GetInitialBandwidth();
 
   rfc2833Handler = new OpalRFC2833Proto(PCREATE_NOTIFIER(OnUserInputInlineRFC2833));
@@ -249,17 +254,17 @@ void OpalConnection::LockOnRelease()
 }
 
 
-void OpalConnection::SetCallEndReason(OpalCallEndReason reason)
+void OpalConnection::SetCallEndReason(CallEndReason reason, PSyncPoint *)
 {
   // Only set reason if not already set to something
-  if (callEndReason == OpalNumCallEndReasons) {
+  if (callEndReason == NumCallEndReasons) {
     PTRACE(3, "OpalCon\tCall end reason for " << GetToken() << " set to " << reason);
     callEndReason = reason;
   }
 }
 
 
-void OpalConnection::ClearCall(OpalCallEndReason reason)
+void OpalConnection::ClearCall(CallEndReason reason)
 {
   // Now set reason for the connection close
   SetCallEndReason(reason);
@@ -267,7 +272,7 @@ void OpalConnection::ClearCall(OpalCallEndReason reason)
 }
 
 
-void OpalConnection::ClearCallSynchronous(PSyncPoint * sync, OpalCallEndReason reason)
+void OpalConnection::ClearCallSynchronous(PSyncPoint * sync, CallEndReason reason)
 {
   // Now set reason for the connection close
   SetCallEndReason(reason);
@@ -275,7 +280,7 @@ void OpalConnection::ClearCallSynchronous(PSyncPoint * sync, OpalCallEndReason r
 }
 
 
-void OpalConnection::Release(OpalCallEndReason reason)
+void OpalConnection::Release(CallEndReason reason)
 {
   // Now set reason for the connection close
   SetCallEndReason(reason);
@@ -721,6 +726,20 @@ void OpalConnection::SetLocalPartyName(const PString & name)
     localAliasNames.RemoveAll();
     localAliasNames.AppendString(name);
   }
+}
+
+
+void OpalConnection::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
+{
+  PAssert(minDelay <= 1000 && maxDelay <= 1000, PInvalidParameter);
+
+  if (minDelay < 10)
+    minDelay = 10;
+  minAudioJitterDelay = minDelay;
+
+  if (maxDelay < minDelay)
+    maxDelay = minDelay;
+  maxAudioJitterDelay = maxDelay;
 }
 
 
