@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 1.2002  2001/07/30 07:22:25  robertj
+ * Abstracted listener management from H.323 to OpalEndPoint class.
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.12  2001/07/13 08:44:16  robertj
@@ -316,21 +319,19 @@ BOOL MyManager::Initialise(PArgList & args)
 
 
   // Start the listener thread for incoming calls.
-  if (args.GetOptionString('i').IsEmpty()) {
-    if (!h323->StartListener(NULL)) {
-      cerr <<  "Could not open H.323 listener port on "
-           << h323->GetDefaultSignalPort() << endl;
+  if (args.HasOption('i')) {
+    PStringArray listeners = args.GetOptionString('i').Lines();
+    if (!h323->StartListeners(listeners)) {
+      cerr <<  "Could not open any H.323 listener from "
+           << setfill(',') << listeners << endl;
       return FALSE;
     }
   }
   else {
-    PStringArray interfaces = args.GetOptionString('i').Lines();
-    for (PINDEX i = 0; i < interfaces.GetSize(); i++) {
-      OpalTransportAddress iface(interfaces[i], h323->GetDefaultSignalPort());
-      if (!h323->StartListener(iface)) {
-        cerr <<  "Could not open H.323 listener port on " << iface << endl;
-        return FALSE;
-      }
+    if (!h323->StartListener(NULL)) {
+      cerr <<  "Could not open H.323 listener on TCP port "
+           << h323->GetDefaultSignalPort() << endl;
+      return FALSE;
     }
   }
 
