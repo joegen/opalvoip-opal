@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.h,v $
- * Revision 1.2008  2002/07/01 04:56:31  robertj
+ * Revision 1.2009  2002/09/06 02:41:00  robertj
+ * Added ability to specify stream or datagram (TCP or UDP) transport is to
+ * be created from a transport address regardless of the addresses mode.
+ *
+ * Revision 2.7  2002/07/01 04:56:31  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.6  2002/06/16 23:07:47  robertj
@@ -125,6 +129,8 @@ class OpalTransportAddress : public PString
       NoBinding,
       HostOnly,
       FullTSAP,
+      Streamed,
+      Datagram,
       NumBindOptions
     };
 
@@ -141,6 +147,12 @@ class OpalTransportAddress : public PString
 
        With HostOnly it would be equivalent to translating the above example
        to "tcp$10.0.0.1:0" before using it.
+
+       Using Streamed or Datagram is similar to HostOnly as only the host part
+       of the address is used, but instead of using the protocol type specifed
+       by the address it guarentees the specifeid type. In the above example
+       Streamed would be identical to HostOnly and Datagram would translate
+       the address to udp$10.0.0.1:0 before using it.
 
        With NoBinding then a compatible listener is created and no local
        binding is made. This is equivalent to translating the address to
@@ -167,6 +179,12 @@ class OpalTransportAddress : public PString
 
        With HostOnly it would be equivalent to translating the above example
        to "tcp$10.0.0.1:0" before using it.
+
+       Using Streamed or Datagram is similar to HostOnly as only the host part
+       of the address is used, but instead of using the protocol type specifed
+       by the address it guarentees the specifeid type. In the above example
+       Streamed would be identical to HostOnly and Datagram would translate
+       the address to udp$10.0.0.1:0 before using it.
 
        With NoBinding then a compatible transport is created and no local
        binding is made. This is equivalent to translating the address to
