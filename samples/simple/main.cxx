@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2031  2004/02/21 02:41:10  rjongbloed
+ * Revision 1.2032  2004/02/24 11:37:01  rjongbloed
+ * More work on NAT support, manual external address translation and STUN
+ *
+ * Revision 2.30  2004/02/21 02:41:10  rjongbloed
  * Tidied up the translate address to utilise more of the library infrastructure.
  * Changed cmd line args port-base/port-max to portbase/portmax, same as OhPhone.
  *
@@ -422,7 +425,6 @@ void SimpleOpalProcess::Main()
 ///////////////////////////////////////////////////////////////
 
 MyManager::MyManager()
-  : externalAddress(0)
 {
   potsEP = NULL;
   pcssEP = NULL;
@@ -508,8 +510,8 @@ BOOL MyManager::Initialise(PArgList & args)
   cout << '\n';
 
   if (args.HasOption("translate")) {
-    externalAddress = PIPSocket::Address(args.GetOptionString("translate"));
-    cout << "External address set to " << externalAddress << "\n";
+    SetTranslationAddress(args.GetOptionString("translate"));
+    cout << "External address set to " << GetTranslationAddress() << "\n";
   }
 
   if (args.HasOption("portbase")) {
@@ -773,15 +775,6 @@ BOOL MyManager::Initialise(PArgList & args)
   return TRUE;
 }
 
-
-BOOL MyManager::TranslateIPAddress(PIPSocket::Address & localAddress, const PIPSocket::Address & remoteAddress)
-{
-  if (!externalAddress.IsValid() || IsLocalAddress(remoteAddress))
-    return FALSE;
-
-  localAddress = externalAddress;
-  return TRUE;
-}
 
 void MyManager::Main(PArgList & args)
 {

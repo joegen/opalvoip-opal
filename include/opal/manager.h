@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2020  2004/02/19 10:47:01  rjongbloed
+ * Revision 1.2021  2004/02/24 11:37:01  rjongbloed
+ * More work on NAT support, manual external address translation and STUN
+ *
+ * Revision 2.19  2004/02/19 10:47:01  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.18  2004/01/18 15:36:07  rjongbloed
@@ -699,12 +702,36 @@ class OpalManager : public PObject
      */
     BOOL CanAutoStartTransmitVideo() const { return autoStartTransmitVideo; }
 
+    /**Determine if the address is "local", ie does not need any address
+       translation (fixed or via STUN) to access.
+
+       The default behaviour checks for if remoteAddress is a RFC1918 private
+       IP address: 10.x.x.x, 172.16.x.x or 192.168.x.x.
+     */
+    virtual BOOL IsLocalAddress(
+      const PIPSocket::Address & remoteAddress
+    ) const;
+
     /**Provide address translation hook.
+       This will check to see that remoteAddress is NOT a local address by
+       using IsLocalAddress() and if not, set localAddress to the
+       translationAddress (if valid) which would normally be the router
+       address of a NAT system.
      */
     virtual BOOL TranslateIPAddress(
       PIPSocket::Address & localAddress,
       const PIPSocket::Address & remoteAddress
     );
+
+    /**Get the translation address to use for TranslateIPAddress().
+      */
+    const PIPSocket::Address & GetTranslationAddress() const { return translationAddress; }
+
+    /**Set the default ILS server to use for user lookup.
+      */
+    void SetTranslationAddress(
+      const PIPSocket::Address & address
+    ) { translationAddress = address; }
 
     /**Return the STUN server to use.
        Returns NULL if address is a local address as per IsLocalAddress().
@@ -716,16 +743,12 @@ class OpalManager : public PObject
     ) const;
 
     /**Set the STUN server address, is of the form host[:port]
+       Note that if the STUN server is found then the translationAddress
+       is automatically set to the router address as determined by STUN.
       */
     void SetSTUNServer(
       const PString & server
     );
-
-    /**Determine if the address is "local", ie does not need STUN
-     */
-    virtual BOOL IsLocalAddress(
-      const PIPSocket::Address & remoteAddress
-    ) const;
 
     /**Get the TCP port number base for H.245 channels
      */
@@ -907,7 +930,9 @@ class OpalManager : public PObject
       WORD   max;
       WORD   current;
     } tcpPorts, udpPorts, rtpIpPorts;
-    PSTUNClient * stun;
+
+    PIPSocket::Address translationAddress;
+    PSTUNClient      * stun;
 
     RouteTable routeTable;
     PMutex     routeTableMutex;
