@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2033  2004/02/15 03:12:10  rjongbloed
+ * Revision 1.2034  2004/02/24 11:33:47  rjongbloed
+ * Normalised RTP session management across protocols
+ * Added support for NAT (via STUN)
+ *
+ * Revision 2.32  2004/02/15 03:12:10  rjongbloed
  * More patches from Ted Szoczei, fixed shutting down of RTP session if INVITE fails. Added correct return if no meda formats can be matched.
  *
  * Revision 2.31  2004/02/14 22:52:51  csoutheren
@@ -367,7 +371,9 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   }
 
   // create an RTP session
-  RTP_UDP * rtpSession = (RTP_UDP *)UseRTPSession(rtpSessions, rtpSessionId);
+  RTP_UDP * rtpSession = (RTP_UDP *)UseSession(GetTransport(), rtpSessionId, NULL);
+  if (rtpSession == NULL)
+    return FALSE;
 
   // set the remote addresses
   PIPSocket::Address ip;
@@ -462,40 +468,6 @@ OpalTransportAddress SIPConnection::GetLocalAddress(WORD port) const
 }
 
 
-RTP_Session * SIPConnection::UseRTPSession(RTP_SessionManager & rtpSessions,
-                                           unsigned rtpSessionId)
-{
-  // make sure this RTP session does not already exist
-  RTP_Session * oldSession = rtpSessions.UseSession(rtpSessionId);
-  if (oldSession != NULL)
-    return oldSession;
-
-  // create an RTP session
-  RTP_UDP * rtpSession = new RTP_UDP(rtpSessionId);
-
-  // add the RTP session to the RTP session manager
-  rtpSessions.AddSession(rtpSession);
-
-  PIPSocket::Address ip;
-  transport->GetLocalAddress().GetIpAddress(ip);
-
-  // open an RTP session
-  OpalManager & mgr = endpoint.GetManager();
-  WORD firstPort = mgr.GetRtpIpPortPair();
-  WORD nextPort = firstPort;
-  while (!rtpSession->Open(ip, nextPort, nextPort, mgr.GetRtpIpTypeofService())) {
-    nextPort = mgr.GetRtpIpPortPair();
-    if (nextPort == firstPort) {
-      PTRACE(1, "SIP\tCould not open RTP session");
-      delete rtpSession;
-      return NULL;
-    }
-  }
- 
-  return rtpSession;
-}
-
-
 OpalMediaFormatList SIPConnection::GetMediaFormats() const
 {
   return remoteFormatList;
@@ -544,6 +516,18 @@ BOOL SIPConnection::WriteINVITE(OpalTransport & transport, PObject * param)
 }
 
 
+void SIPConnection::ReadThreadMain(PThread &, INT)
+{
+  PTRACE(2, "SIP\tRead thread started.");
+
+  do {
+    endpoint.HandlePDU(*transport);
+  } while (transport->IsOpen());
+
+  PTRACE(2, "SIP\tRead thread finished.");
+}
+
+
 BOOL SIPConnection::SetUpConnection()
 {
   PTRACE(2, "SIP\tSetUpConnection: " << remotePartyAddress);
@@ -565,6 +549,12 @@ BOOL SIPConnection::SetUpConnection()
     Release(EndedByTransportFail);
     return FALSE;
   }
+
+  if (!transport->IsReliable())
+    transport->AttachThread(PThread::Create(PCREATE_NOTIFIER(ReadThreadMain), 0,
+                                            PThread::NoAutoDeleteThread,
+                                            PThread::NormalPriority,
+                                            "SIP Transport:%x"));
 
   if (!transport->WriteConnect(WriteINVITE, this)) {
     PTRACE(1, "SIP\tCould not write to " << address << " - " << transport->GetErrorText());
@@ -595,9 +585,22 @@ SDPSessionDescription * SIPConnection::BuildSDP(RTP_SessionManager & rtpSessions
   }
 
   if (localAddress.IsEmpty()) {
-    // create the SDP definition for the audio channel
-    RTP_UDP * audioRTPSession = (RTP_UDP*)UseRTPSession(rtpSessions, rtpSessionId);
-    localAddress = GetLocalAddress(audioRTPSession->GetLocalDataPort());
+    /* We are not doing media bypass, so must have an RTP session.
+       Due to the possibility of several INVITEs going out, all with different
+       transport requirements, we actually need to use an rtSession dictionary
+       for each INVITE and not teh one for the connection. Once an INVITE is
+       accepted the rtpSessions for that INVITE is put into th connection. */
+    RTP_Session * rtpSession = rtpSessions.UseSession(rtpSessionId);
+    if (rtpSession == NULL) {
+      // Not already there, so create one
+      rtpSession = CreateSession(GetTransport(), rtpSessionId, NULL);
+      if (rtpSession == NULL)
+        return NULL;
+      // add the RTP session to the RTP session manager in INVITE
+      rtpSessions.AddSession(rtpSession);
+    }
+
+    localAddress = GetLocalAddress(((RTP_UDP *)rtpSession)->GetLocalDataPort());
   }
 
   SDPSessionDescription * sdp = new SDPSessionDescription(localAddress);
@@ -995,7 +998,7 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
     WORD port;
     address.GetIpAndPort(ip, port);
 
-    RTP_UDP * rtpSession = (RTP_UDP *)UseSession(rtpSessionId);
+    RTP_UDP * rtpSession = (RTP_UDP *)UseSession(GetTransport(), rtpSessionId, NULL);
     if (rtpSession == NULL) {
       PTRACE(1, "SIP\tSession in response that we never offered!");
       return FALSE;
