@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2017  2002/06/16 23:07:19  robertj
+ * Revision 1.2018  2002/07/01 04:56:33  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.16  2002/06/16 23:07:19  robertj
  * Fixed several memory leaks, thanks Ted Szoczei
  * Fixed error opening UDP listener for broadcast packets under Win32.
  *   Is not needed as it is under windows, thanks Ted Szoczei
@@ -234,6 +237,23 @@ PString OpalTransportAddress::GetHostName() const
   return transport->GetHostName(*this);
 }
   
+
+BOOL OpalTransportAddress::IsEquivalent(const OpalTransportAddress & address)
+{
+  if (*this == address)
+    return TRUE;
+
+  if (IsEmpty() || address.IsEmpty())
+    return FALSE;
+
+  PIPSocket::Address ip1, ip2;
+  WORD port1 = 65535, port2 = 65535;
+  return GetIpAndPort(ip1, port1) &&
+         address.GetIpAndPort(ip2, port2) &&
+         (ip1 == INADDR_ANY || ip2 == INADDR_ANY || ip1 == ip2) &&
+         (port1 == 65535 || port2 == 65535 || port1 == port2);
+}
+
 
 BOOL OpalTransportAddress::GetIpAddress(PIPSocket::Address & ip) const
 {

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t38.cxx,v $
- * Revision 1.2009  2002/03/22 06:57:50  robertj
+ * Revision 1.2010  2002/07/01 04:56:33  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.8  2002/03/22 06:57:50  robertj
  * Updated to OpenH323 version 1.8.2
  *
  * Revision 2.7  2002/02/11 09:32:13  robertj
@@ -50,6 +53,29 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.22  2002/05/21 06:37:55  robertj
+ * Fixed crash if CreateT38Handler returns NULL.
+ *
+ * Revision 1.21  2002/05/15 23:29:31  robertj
+ * Backed out delete of t38 handler, causes race conditions.
+ *
+ * Revision 1.20  2002/05/15 01:31:23  robertj
+ * Added missing delete of t38 handler, thanks thsuk@digitalsis.com.
+ * Changed to allow the T.35 information to be adjusted so it will work for
+ *    various vendors version of the non-standard capability.
+ *
+ * Revision 1.19  2002/05/14 08:41:31  robertj
+ * Fixed incorrect class type check for finding reverse T.38 channel and also
+ *   fixed possible race condition on channel close, thanks Vyacheslav Frolov
+ *
+ * Revision 1.18  2002/05/10 05:50:02  robertj
+ * Added the max bit rate field to the data channel capability class.
+ * Added session ID to the data logical channel class.
+ * Added capability for old pre-v3 non-standard T.38.
+ *
+ * Revision 1.17  2002/04/17 00:49:04  robertj
+ * Fixed problems with T.38 start up, thanks Vyacheslav Frolov.
  *
  * Revision 1.16  2002/02/13 07:41:45  robertj
  * Fixed missing setting of transport on second H323Channel, thanks Vyacheslav Frolov
@@ -127,9 +153,9 @@
 /////////////////////////////////////////////////////////////////////////////
 
 H323_T38Capability::H323_T38Capability(TransportMode m)
-  : H323DataCapability(OpalT38Protocol::MediaFormat)
+  : H323DataCapability(OpalT38Protocol::MediaFormat, FAX_BIT_RATE),
+    mode(m)
 {
-  mode = m;
 }
 
 
@@ -171,10 +197,7 @@ H323Channel * H323_T38Capability::CreateChannel(H323Connection & connection,
 {
   PTRACE(1, "H323T38\tCreateChannel, sessionID=" << sessionID << " direction=" << direction);
 
-  H323_T38Channel * chan = (H323_T38Channel *)connection.FindChannel(sessionID,
-                                                direction == H323Channel::IsTransmitter);
-  return new H323_T38Channel(connection, *this, direction,
-                             chan != NULL ? chan->GetHandler() : NULL);
+  return new H323_T38Channel(connection, *this, direction, sessionID, mode);
 }
 
 
@@ -250,29 +273,74 @@ BOOL H323_T38Capability::OnReceivedPDU(const H245_DataApplicationCapability & ca
 
 //////////////////////////////////////////////////////////////
 
+static const char T38NonStandardCapabilityName[] = "T38FaxUDP";
+
+H323_T38NonStandardCapability::H323_T38NonStandardCapability(BYTE country,
+                                                             BYTE extension,
+                                                             WORD manufacturer)
+  : H323NonStandardDataCapability(OpalT38Protocol::MediaFormat, FAX_BIT_RATE,
+                                  country, extension, manufacturer,
+                                  (const BYTE *)T38NonStandardCapabilityName,
+                                  sizeof(T38NonStandardCapabilityName)-1)
+{
+}
+
+
+PObject * H323_T38NonStandardCapability::Clone() const
+{
+  return new H323_T38NonStandardCapability(*this);
+}
+
+
+H323Channel * H323_T38NonStandardCapability::CreateChannel(H323Connection & connection,
+                                                H323Channel::Directions direction,
+                                                unsigned int sessionID,
+                             const H245_H2250LogicalChannelParameters * /*params*/) const
+{
+  PTRACE(1, "H323T38\tCreateChannel, sessionID=" << sessionID << " direction=" << direction);
+
+  return new H323_T38Channel(connection, *this, direction, sessionID, H323_T38Capability::e_UDP);
+}
+
+
+//////////////////////////////////////////////////////////////
+
 H323_T38Channel::H323_T38Channel(H323Connection & connection,
-                        const H323_T38Capability & capability,
-                        H323Channel::Directions dir,
-                        OpalT38Protocol * handler)
-        : H323DataChannel(connection, capability, dir)
+                                 const H323Capability & capability,
+                                 H323Channel::Directions dir,
+                                 unsigned sessionID,
+                                 H323_T38Capability::TransportMode mode)
+  : H323DataChannel(connection, capability, dir, sessionID)
 {
   PTRACE(3, "H323T38\tH323 channel created");
 
   // Transport will be owned by OpalT38Protocol
   autoDeleteTransport = FALSE;
 
-  separateReverseChannel = capability.GetTransportMode() != H323_T38Capability::e_SingleTCP;
-  usesTCP = capability.GetTransportMode() != H323_T38Capability::e_UDP;
+  separateReverseChannel = mode != H323_T38Capability::e_SingleTCP;
+  usesTCP = mode != H323_T38Capability::e_UDP;
 
-  if (handler != NULL) {
-    PTRACE(3, "H323T38\tConnected to existing T.38 handler");
-    t38handler = handler;
-    transport = t38handler->GetTransport();
+  t38handler = NULL;
+
+  H323Channel * chan = connection.FindChannel(sessionID, dir == H323Channel::IsTransmitter);
+  if (chan != NULL) {
+    if (chan->IsDescendant(H323_T38Channel::Class())) {
+      PTRACE(3, "H323T38\tConnected to existing T.38 handler");
+      t38handler = ((H323_T38Channel *)chan)->GetHandler();
+    }
+    else
+      PTRACE(1, "H323T38\tCreateChannel, channel " << *chan << " is not H323_T38Channel");
   }
-  else {
+
+  if (t38handler == NULL) {
     PTRACE(3, "H323T38\tCreating new T.38 handler");
     t38handler = connection.CreateT38ProtocolHandler();
-    if (!usesTCP && CreateTransport())
+  }
+
+  if (t38handler != NULL) {
+    transport = t38handler->GetTransport();
+
+    if (transport == NULL && !usesTCP && CreateTransport())
       t38handler->SetTransport(transport, TRUE);
   }
 }
@@ -338,7 +406,8 @@ void H323_T38Channel::Receive()
     PTRACE(1, "H323T38\tNo protocol handler, aborting thread.");
   }
 
-  connection.CloseLogicalChannelNumber(number);
+  if (!terminating)
+    connection.CloseLogicalChannelNumber(number);
 
   PTRACE(2, "H323T38\tReceive thread ended");
 }
@@ -357,7 +426,8 @@ void H323_T38Channel::Transmit()
     PTRACE(1, "H323T38\tTransmit no proto handler");
   }
 
-  connection.CloseLogicalChannelNumber(number);
+  if (!terminating)
+    connection.CloseLogicalChannelNumber(number);
 
   PTRACE(2, "H323T38\tTransmit thread terminating");
 }

@@ -239,6 +239,11 @@ SOURCE=..\codec\g726codec.cxx
 # End Source File
 # Begin Source File
 
+SOURCE=..\codec\g729codec.cxx
+# ADD CPP /I "$(VAG729DIR)\\" /D VOICE_AGE_G729A=0$(VAG729FLAG)
+# End Source File
+# Begin Source File
+
 SOURCE=..\codec\gsmcodec.cxx
 # End Source File
 # Begin Source File

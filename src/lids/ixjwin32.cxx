@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjwin32.cxx,v $
- * Revision 1.2007  2002/03/22 06:57:50  robertj
+ * Revision 1.2008  2002/07/01 04:56:33  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.6  2002/03/22 06:57:50  robertj
  * Updated to OpenH323 version 1.8.2
  *
  * Revision 2.5  2002/02/11 09:32:13  robertj
@@ -44,6 +47,16 @@
  *
  * Revision 2.1  2001/08/01 05:21:21  robertj
  * Made OpalMediaFormatList class global to help with documentation.
+ * Revision 1.110  2002/06/25 08:30:12  robertj
+ * Changes to differentiate between stright G.723.1 and G.723.1 Annex A using
+ *   the OLC dataType silenceSuppression field so does not send SID frames
+ *   to receiver codecs that do not understand them.
+ *
+ * Revision 1.109  2002/05/09 06:26:34  robertj
+ * Added fuction to get the current audio enable state for line in device.
+ * Changed IxJ EnableAudio() semantics so is exclusive, no direct switching
+ *   from PSTN to POTS and vice versa without disabling the old one first.
+ *
  * Revision 1.108  2002/03/21 02:37:33  robertj
  * Fixed G.723.1 5.3k mode so receiver (playback) still accepts 6.3k data.
  *
@@ -449,6 +462,7 @@ OpalIxJDevice::OpalIxJDevice()
   currentHookState = lastHookState = FALSE;
   inRawMode = FALSE;
   enabledAudioLine = UINT_MAX;
+  exclusiveAudioMode = TRUE;
   lastDTMFDigit = 0;
   hReadEvent = hWriteEvent = NULL;
 }
@@ -869,8 +883,12 @@ static const struct {
   { OPAL_G728,          2, 0, 0, 0,  20, RECORD_MODE_TRUESPEECH, RECORD_RATE_G728,    PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G728    },
   { OPAL_G729,          6, 1, 0, 0,  10, RECORD_MODE_TRUESPEECH, RECORD_RATE_G729,    PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G729    },
   { OPAL_G729AB,        6, 1, 0, 1,  10, RECORD_MODE_TRUESPEECH, RECORD_RATE_G729,    PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G729    },
-  { OPAL_G7231_6k3,     7, 0, 1, 1,  24, RECORD_MODE_TRUESPEECH, RECORD_RATE_G723_63, PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G723_63 },
-  { OPAL_G7231_5k3,     7, 0, 1, 1,  20, RECORD_MODE_TRUESPEECH, RECORD_RATE_G723_53, PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G723_63 },
+  { OPAL_G7231_6k3,     7, 0, 1, 0,  24, RECORD_MODE_TRUESPEECH, RECORD_RATE_G723_63, PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G723_63 },
+  { OPAL_G7231A_6k3,    7, 0, 1, 1,  24, RECORD_MODE_TRUESPEECH, RECORD_RATE_G723_63, PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G723_63 },
+#ifdef FIXED_G723_53
+  { OPAL_G7231_5k3,     7, 0, 1, 0,  20, RECORD_MODE_TRUESPEECH, RECORD_RATE_G723_53, PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G723_63 },
+  { OPAL_G7231A_5k3,    7, 0, 1, 1,  20, RECORD_MODE_TRUESPEECH, RECORD_RATE_G723_53, PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G723_63 },
+#endif
 };
 
 
@@ -1399,7 +1417,7 @@ BOOL OpalIxJDevice::EnableAudio(unsigned line, BOOL enable)
 
   if (enable) {
     if (enabledAudioLine != line) {
-      if (enabledAudioLine != UINT_MAX) {
+      if (enabledAudioLine != UINT_MAX && exclusiveAudioMode) {
         PTRACE(3, "xJack\tEnableAudio on port when already enabled other port.");
         return FALSE;
       }
@@ -1555,6 +1573,7 @@ BOOL OpalIxJDevice::GetVAD(unsigned)
 
 BOOL OpalIxJDevice::SetVAD(unsigned, BOOL enable)
 {
+  PTRACE(3, "xJack\tSet VAD " << (enable ? "on" : "off"));
   vadEnabled = enable;
   return IoControl(enable ? IOCTL_Record_EnableVAD : IOCTL_Record_DisableVAD);
 }

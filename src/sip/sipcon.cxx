@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2021  2002/06/16 02:26:37  robertj
+ * Revision 1.2022  2002/07/01 04:56:33  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.20  2002/06/16 02:26:37  robertj
  * Fixed creation of RTP session for incoming calls, thanks Ted Szoczei
  *
  * Revision 2.19  2002/04/17 07:22:54  robertj
@@ -126,8 +129,6 @@ SIPConnection::SIPConnection(OpalCall & call,
                    endpoint.GetRegistrationPassword()),
     pduSemaphore(0, P_MAX_INDEX)
 {
-  sendUserInputMode = SendUserInputAsInlineRFC2833;
-
   currentPhase = SetUpPhase;
 
   localPartyName = endpoint.GetRegistrationName();

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjunix.cxx,v $
- * Revision 1.2006  2002/02/11 09:32:13  robertj
+ * Revision 1.2007  2002/07/01 04:56:33  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.5  2002/02/11 09:32:13  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.4  2002/01/14 06:35:58  robertj
@@ -44,6 +47,19 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.125  2002/06/25 09:56:07  robertj
+ * Fixed GNU warnings
+ *
+ * Revision 1.124  2002/05/21 10:21:39  robertj
+ * Fixed FLASH_TIME being correctly set, PHONE_RING_START getting correct
+ *   argument, correct setting of ancestor variables when stopping codec,
+ *   odd packet error if playout time passed, all thanks Artis Kugevics
+ *
+ * Revision 1.123  2002/05/09 06:26:34  robertj
+ * Added fuction to get the current audio enable state for line in device.
+ * Changed IxJ EnableAudio() semantics so is exclusive, no direct switching
+ *   from PSTN to POTS and vice versa without disabling the old one first.
  *
  * Revision 1.122  2002/02/08 14:38:42  craigs
  * Changed codec table to use defines from mediafmt.h. Thanks to Roger Hardiman
@@ -699,6 +715,10 @@ OpalIxJDevice::OpalIxJDevice()
   readStopped = writeStopped = TRUE;
   readFrameSize = writeFrameSize = 480;  // 30 milliseconds of 16 bit PCM data
   readCodecType = writeCodecType = P_MAX_INDEX;
+  currentHookState = lastHookState = FALSE;
+  inRawMode = FALSE;
+  enabledAudioLine = UINT_MAX;
+  exclusiveAudioMode = TRUE;
   aecLevel = AECOff;
   tonePlaying = FALSE;
   removeDTMF = FALSE;
@@ -907,13 +927,21 @@ BOOL OpalIxJDevice::IsLineOffHook(unsigned line)
   PWaitAndSignal m(exceptionMutex);
   ExceptionInfo * info = GetException();
 
+#ifdef MANUAL_FLASH
   if (info->hookState != lastHookState) {
     lastHookState = info->hookState;
-    hookTimeout = FLASH_TIME;
+    if (lastHookState) {
+	currentHookState = lastHookState;
+    } else {
+	hookTimeout = FLASH_TIME;
+    }
   } else if (!hookTimeout.IsRunning() && (currentHookState != info->hookState)) 
     currentHookState = info->hookState;
 
   return currentHookState;
+#else
+  return info->hookState;
+#endif
 }
 
 BOOL OpalIxJDevice::HasHookFlash(unsigned line)
@@ -1002,7 +1030,7 @@ BOOL OpalIxJDevice::RingLine(unsigned line, DWORD cadence)
     SetCallerID(line, "");
   } else
 #endif
-    stat = IOCTL(os_handle, PHONE_RING_START);
+    stat = IOCTL2(os_handle, PHONE_RING_START, 0);
 
   return ConvertOSError(stat);
 }
@@ -1139,6 +1167,7 @@ BOOL OpalIxJDevice::SetReadFormat(unsigned line, const OpalMediaFormat & mediaFo
   if (!readStopped) {
     IOCTL(os_handle, PHONE_REC_STOP);
     readStopped = TRUE;
+    OpalLineInterfaceDevice::StopReadCodec(line);
   }
 
   readCodecType = FindCodec(mediaFormat);
@@ -1203,6 +1232,7 @@ BOOL OpalIxJDevice::SetWriteFormat(unsigned line, const OpalMediaFormat & mediaF
   if (!writeStopped) {
     IOCTL(os_handle, PHONE_PLAY_STOP);
     writeStopped = TRUE;
+    OpalLineInterfaceDevice::StopWriteCodec(line);
   }
 
 
@@ -1548,6 +1578,7 @@ BOOL OpalIxJDevice::WriteFrame(unsigned, const void * buffer, PINDEX count, PIND
 
   if (readStopped) {
     PThread::Current()->Sleep(30);
+    written = writeFrameSize;
     return TRUE;
   }
 
@@ -1656,7 +1687,7 @@ BOOL OpalIxJDevice::EnableAudio(unsigned line, BOOL enable)
 
   if (enable) {
     if (enabledAudioLine != line) {
-      if (enabledAudioLine != UINT_MAX) {
+      if (enabledAudioLine != UINT_MAX && exclusiveAudioMode) {
         PTRACE(3, "xJack\tEnableAudio on port when already enabled other port.");
         return FALSE;
       }
@@ -1842,9 +1873,9 @@ static void FormatCallerIdString(const PString & idString, PHONE_CID & callerIdI
   }
 
   // truncate name and number fields
-  if (name.GetLength() > sizeof(callerIdInfo.name))
+  if (name.GetLength() > (PINDEX)sizeof(callerIdInfo.name))
     name = name.Left(sizeof(callerIdInfo.name));
-  if (number.GetLength() > sizeof(callerIdInfo.number))
+  if (number.GetLength() > (PINDEX)sizeof(callerIdInfo.number))
     number = number.Left(sizeof(callerIdInfo.number));
 
   sprintf(callerIdInfo.month, "%02i", theTime.GetMonth());

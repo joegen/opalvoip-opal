@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t120.cxx,v $
- * Revision 1.2008  2002/02/11 09:32:13  robertj
+ * Revision 1.2009  2002/07/01 04:56:33  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.7  2002/02/11 09:32:13  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.6  2002/01/14 06:35:58  robertj
@@ -48,6 +51,13 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.9  2002/06/28 03:34:28  robertj
+ * Fixed issues with address translation on gatekeeper RAS channel.
+ *
+ * Revision 1.8  2002/05/10 05:48:13  robertj
+ * Added the max bit rate field to the data channel capability class.
+ * Added session ID to the data logical channel class.
  *
  * Revision 1.7  2002/02/01 01:47:18  robertj
  * Some more fixes for T.120 channel establishment, more to do!
@@ -89,11 +99,13 @@
 
 #define new PNEW
 
+#define T120_MAX_BIT_RATE 825000
+
 
 /////////////////////////////////////////////////////////////////////////////
 
 H323_T120Capability::H323_T120Capability()
-  : H323DataCapability(OpalT120Protocol::MediaFormat)
+  : H323DataCapability(OpalT120Protocol::MediaFormat, T120_MAX_BIT_RATE)
 {
   dynamicPortCapability = TRUE;
 }
@@ -119,16 +131,15 @@ PString H323_T120Capability::GetFormatName() const
 
 H323Channel * H323_T120Capability::CreateChannel(H323Connection & connection,
                                                  H323Channel::Directions direction,
-                                                 unsigned,
+                                                 unsigned sessionID,
                                 const H245_H2250LogicalChannelParameters *) const
 {
-  return new H323_T120Channel(connection, *this, direction);
+  return new H323_T120Channel(connection, *this, direction, sessionID);
 }
 
 
 BOOL H323_T120Capability::OnSendingPDU(H245_DataApplicationCapability & pdu) const
 {
-  pdu.m_maxBitRate = 825000;
   pdu.m_application.SetTag(H245_DataApplicationCapability_application::e_t120);
   return OnSendingPDU((H245_DataProtocolCapability &)pdu.m_application);
 }
@@ -163,8 +174,9 @@ BOOL H323_T120Capability::OnReceivedPDU(const H245_DataApplicationCapability & c
 
 H323_T120Channel::H323_T120Channel(H323Connection & connection,
                                    const H323Capability & capability,
-                                   Directions direction)
-  : H323DataChannel(connection, capability, direction)
+                                   Directions direction,
+                                   unsigned id)
+  : H323DataChannel(connection, capability, direction, id)
 {
   t120handler = NULL;
   PTRACE(3, "H323T120\tCreated logical channel for T.120");
