@@ -27666,6 +27666,7 @@ EXPORTS
     ?GetCallTransferT3@H323EndPoint@@QBEABVPTimeInterval@@XZ @29582 NONAME
     ?GetCallTransferT4@H323EndPoint@@QBEABVPTimeInterval@@XZ @29583 NONAME
     ?GetCanonicalName@RTP_Session@@QBE?AVPString@@XZ @33165 NONAME
+    ?GetCapabilities@H323EndPoint@@QBEABVH323Capabilities@@XZ @50619 NONAME
     ?GetCapability@H323Channel@@QBEABVH323Capability@@XZ @17540 NONAME
     ?GetCapabilityDirection@H323Capability@@QBE?AW4CapabilityDirection@1@XZ @29584 NONAME
     ?GetCapabilityExchangeTimeout@H323EndPoint@@QBEABVPTimeInterval@@XZ @29585 NONAME
