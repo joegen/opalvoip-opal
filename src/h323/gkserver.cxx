@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkserver.cxx,v $
- * Revision 1.2015  2004/04/25 02:53:29  rjongbloed
+ * Revision 1.2016  2004/06/04 06:54:18  csoutheren
+ * Migrated updates from OpenH323 1.14.1
+ *
+ * Revision 2.14  2004/04/25 02:53:29  rjongbloed
  * Fixed GNU 3.4 warnings
  *
  * Revision 2.13  2004/04/07 08:21:02  rjongbloed
@@ -2232,18 +2235,24 @@ H323GatekeeperRequest::Response H323RegisteredEndPoint::OnRegistration(H323Gatek
   // If have peer element, so add/update a descriptor for ep.
   H323PeerElement * peerElement = gatekeeper.GetPeerElement();
   if (peerElement != NULL) {
-    H501_ArrayOf_AddressTemplate addressTemplates;
-    addressTemplates.SetSize(1);
+
     H225_ArrayOf_AliasAddress transportAddresses;
     H323SetAliasAddresses(signalAddresses, transportAddresses);
-    H323PeerElementDescriptor::CopyToAddressTemplate(addressTemplates[0],
-                                                     info.rrq.m_terminalType,
-                                                     info.rcf.m_terminalAlias,
-                                                     transportAddresses);
-    peerElement->AddDescriptor(descriptorID,
-                               H323PeerElement::LocalServiceRelationshipOrdinal,
-                               addressTemplates,
-                               PTime());
+    H225_EndpointType terminalType    = info.rrq.m_terminalType;
+    H225_ArrayOf_AliasAddress aliases = info.rcf.m_terminalAlias;
+
+    if (OnSendDescriptorForEndpoint(aliases, terminalType, transportAddresses)) {
+      H501_ArrayOf_AddressTemplate addressTemplates;
+      addressTemplates.SetSize(1);
+      H323PeerElementDescriptor::CopyToAddressTemplate(addressTemplates[0],
+                                                       terminalType,        // info.rrq.m_terminalType,
+                                                       aliases,             // info.rcf.m_terminalAlias,
+                                                       transportAddresses);
+      peerElement->AddDescriptor(descriptorID,
+                                 H323PeerElement::LocalServiceRelationshipOrdinal,
+                                 addressTemplates,
+                                 PTime());
+    }
   }
 
   return H323GatekeeperRequest::Confirm;
@@ -2626,6 +2635,16 @@ BOOL H323RegisteredEndPoint::CanReceiveRIP() const
   // neither does NetMeeting, even though it says it is H225v2. 
   return (h225Version > 1) && (applicationInfo.Find("netmeeting") == P_MAX_INDEX);
 }
+
+BOOL H323RegisteredEndPoint::OnSendDescriptorForEndpoint(
+        H225_ArrayOf_AliasAddress & aliases,          // aliases for the enndpoint
+        H225_EndpointType & terminalType,             // terminal type
+        H225_ArrayOf_AliasAddress & transportAddresses  // transport addresses
+      )
+{ 
+  return gatekeeper.OnSendDescriptorForEndpoint(*this, aliases, terminalType, transportAddresses); 
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -3278,14 +3297,14 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnRegistration(H323Gatekee
     }
   }
 
-  if (!canHaveDuplicateAlias && info.rrq.HasOptionalField(H225_RegistrationRequest::e_terminalAlias)) {
+  if (info.rrq.HasOptionalField(H225_RegistrationRequest::e_terminalAlias) && !AllowDuplicateAlias(info.rrq.m_terminalAlias)) {
     H225_ArrayOf_AliasAddress duplicateAliases;
     for (i = 0; i < info.rrq.m_terminalAlias.GetSize(); i++) {
       PSafePtr<H323RegisteredEndPoint> ep2 = FindEndPointByAliasAddress(info.rrq.m_terminalAlias[i]);
       if (ep2 != NULL && ep2 != info.endpoint) {
         PINDEX sz = duplicateAliases.GetSize();
         duplicateAliases.SetSize(sz+1);
-	duplicateAliases[sz] = info.rrq.m_terminalAlias[i];
+        duplicateAliases[sz] = info.rrq.m_terminalAlias[i];
       }
     }
     if (duplicateAliases.GetSize() > 0) {
@@ -3763,7 +3782,13 @@ BOOL H323GatekeeperServer::GetAdmissionRequestAuthentication(H323GatekeeperARQ &
 
 
 BOOL H323GatekeeperServer::GetUsersPassword(const PString & alias,
-                                            PString & password) const
+                                                  PString & password,
+                                   H323RegisteredEndPoint & /*registerdEndpoint*/) const
+{
+  return GetUsersPassword(alias, password);
+}
+
+BOOL H323GatekeeperServer::GetUsersPassword(const PString & alias, PString & password) const
 {
   if (!passwords.Contains(alias))
     return FALSE;
@@ -3899,8 +3924,17 @@ BOOL H323GatekeeperServer::TranslateAliasAddress(const H225_AliasAddress & alias
                                                  H323TransportAddress & address)
 {
   if (!TranslateAliasAddressToSignalAddress(alias, address)) {
-    if (peerElement != NULL) {
-      return peerElement->AccessRequest(alias, aliases, address);
+    H225_AliasAddress transportAlias;
+    if ((peerElement != NULL) && (peerElement->AccessRequest(alias, aliases, transportAlias))) {
+      // if AccessRequest returns OK, but no aliases, then all of the aliases
+      // must have been wildcards. In this case, add the original aliase back into the list
+      if (aliases.GetSize() == 0) {
+        PTRACE(1, "RAS\tAdding original alias to the top of the alias list");
+        aliases.SetSize(1);
+        aliases[0] = alias;
+      }
+      address = H323GetAliasAddressString(transportAlias);
+      return TRUE;
     }
     return FALSE;
   }
