@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: t120proto.cxx,v $
- * Revision 1.2007  2002/11/10 11:33:20  robertj
+ * Revision 1.2008  2005/02/21 12:20:07  rjongbloed
+ * Added new "options list" to the OpalMediaFormat class.
+ *
+ * Revision 2.6  2002/11/10 11:33:20  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.5  2002/09/04 06:01:49  robertj
@@ -91,12 +94,16 @@ class T120ConnectPDU : public MCS_ConnectMCSPDU {
 };
 
 
-OpalMediaFormat const OpalT120Protocol::MediaFormat("T.120",
-                                                    OpalMediaFormat::DefaultDataSessionID,
-                                                    RTP_DataFrame::IllegalPayloadType,
-                                                    "t120",
-                                                    FALSE,   // No jitter for data
-                                                    825000); // 100's bits/sec
+const OpalMediaFormat OpalT120(
+  OPAL_T120,
+  OpalMediaFormat::DefaultDataSessionID,
+  RTP_DataFrame::IllegalPayloadType,
+  "t120",
+  FALSE,   // No jitter for data
+  825000, // 100's bits/sec
+  0,
+  0,
+  0);
 
 
 #define new PNEW
