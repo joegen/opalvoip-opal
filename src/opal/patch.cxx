@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2011  2004/08/15 10:10:28  rjongbloed
+ * Revision 1.2012  2004/08/16 09:53:48  rjongbloed
+ * Fixed possible deadlock in PTRACE output of media patch.
+ *
+ * Revision 2.10  2004/08/15 10:10:28  rjongbloed
  * Fixed possible deadlock when closing media patch
  *
  * Revision 2.9  2004/08/14 07:56:43  rjongbloed
@@ -102,22 +105,25 @@ void OpalMediaPatch::PrintOn(ostream & strm) const
 {
   strm << "Patch " << source;
 
-  inUse.Wait();
+  // Have timed mutex so avoid deadlocks in PTRACE(), it is nice to
+  // get all the sinks in the PrintOn, we don't HAVE to have it.
+  if (inUse.Wait(20)) {
 
-  if (sinks.GetSize() > 0) {
-    strm << " -> ";
-    if (sinks.GetSize() == 1)
-      strm << *sinks[0].stream;
-    else {
-      for (PINDEX i = 0; i < sinks.GetSize(); i++) {
-        if (i > 0)
-          strm << ", ";
-        strm << "sink[" << i << "]=" << *sinks[i].stream;
+    if (sinks.GetSize() > 0) {
+      strm << " -> ";
+      if (sinks.GetSize() == 1)
+        strm << *sinks[0].stream;
+      else {
+        for (PINDEX i = 0; i < sinks.GetSize(); i++) {
+          if (i > 0)
+            strm << ", ";
+          strm << "sink[" << i << "]=" << *sinks[i].stream;
+        }
       }
     }
-  }
 
-  inUse.Signal();
+    inUse.Signal();
+  }
 }
 
 
