@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.h,v $
- * Revision 1.2011  2003/03/06 03:57:46  robertj
+ * Revision 1.2012  2003/03/17 10:26:59  robertj
+ * Added video support.
+ *
+ * Revision 2.10  2003/03/06 03:57:46  robertj
  * IVR support (work in progress) requiring large changes everywhere.
  *
  * Revision 2.9  2002/09/16 02:52:34  robertj
@@ -407,8 +410,9 @@ class OpalLineConnection : public OpalConnection
        The default behaviour is pure.
      */
     virtual OpalMediaStream * CreateMediaStream(
-      BOOL isSource,      /// Is a source stream
-      unsigned sessionID  /// Session number for stream
+      const OpalMediaFormat & mediaFormat, /// Media format for stream
+      unsigned sessionID,                  /// Session number for stream
+      BOOL isSource                        /// Is a source stream
     );
 
     /**Send a user input indication to the remote endpoint.

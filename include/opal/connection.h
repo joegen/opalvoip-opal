@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2021  2003/03/06 03:57:47  robertj
+ * Revision 1.2022  2003/03/17 10:26:59  robertj
+ * Added video support.
+ *
+ * Revision 2.20  2003/03/06 03:57:47  robertj
  * IVR support (work in progress) requiring large changes everywhere.
  *
  * Revision 2.19  2003/01/07 04:39:53  robertj
@@ -493,9 +496,10 @@ class OpalConnection : public PObject
        The default behaviour is pure.
      */
     virtual OpalMediaStream * CreateMediaStream(
-      BOOL isSource,      /// Is a source stream
-      unsigned sessionID  /// Session number for stream
-    ) = 0;
+      const OpalMediaFormat & mediaFormat, /// Media format for stream
+      unsigned sessionID,                  /// Session number for stream
+      BOOL isSource                        /// Is a source stream
+    );
 
     /**Call back when opening a media stream.
        This function is called when a connection has created a new media
@@ -561,6 +565,22 @@ class OpalConnection : public PObject
       unsigned sessionID,     /// Session ID for media channel
       MediaInformation & info /// Information on media channel
     ) const;
+
+    /**Add video media formats available on a connection.
+
+       The default behaviour calls the OpalEndPoint function of the same name.
+      */
+    virtual void AddVideoMediaFormats(
+      OpalMediaFormatList & mediaFormats  /// Media formats to use
+    ) const;
+
+    /**Create an PVideoInputDevice for a source media stream.
+      */
+    virtual PVideoInputDevice * CreateVideoInputDevice();
+
+    /**Create an PVideoOutputDevice for a sink media stream.
+      */
+    virtual PVideoOutputDevice * CreateVideoOutputDevice();
   //@}
 
   /**@name RTP Session Management */

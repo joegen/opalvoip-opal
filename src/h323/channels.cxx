@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2023  2003/01/07 04:39:53  robertj
+ * Revision 1.2024  2003/03/17 10:26:59  robertj
+ * Added video support.
+ *
+ * Revision 2.22  2003/01/07 04:39:53  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.21  2002/11/10 11:33:18  robertj
@@ -824,14 +827,7 @@ BOOL H323UnidirectionalChannel::Open()
   if (PAssertNULL(mediaStream) == NULL)
     return FALSE;
 
-  OpalMediaFormat mediaFormat = capability->GetMediaFormat();
-  if (mediaFormat.IsEmpty()) {
-    PTRACE(1, "LogChan\t" << (GetDirection() == IsReceiver ? "Receive" : "Transmit")
-           << " open failed (Invalid OpalMediaFormat)");
-    return FALSE;
-  }
-
-  if (!mediaStream->Open(mediaFormat)) {
+  if (!mediaStream->Open()) {
     PTRACE(1, "LogChan\t" << (GetDirection() == IsReceiver ? "Receive" : "Transmit")
            << " open failed (OpalMediaStream::Open fail)");
     return FALSE;
@@ -1053,7 +1049,7 @@ H323_RTPChannel::H323_RTPChannel(H323Connection & conn,
     rtpSession(r),
     rtpCallbacks(*(H323_RTP_Session *)r.GetUserData())
 {
-  mediaStream = new OpalRTPMediaStream(receiver, rtpSession,
+  mediaStream = new OpalRTPMediaStream(capability->GetMediaFormat(), receiver, rtpSession,
                                        endpoint.GetManager().GetMinAudioJitterDelay(),
                                        endpoint.GetManager().GetMaxAudioJitterDelay());
   PTRACE(3, "H323RTP\t" << (receiver ? "Receiver" : "Transmitter")
@@ -1142,7 +1138,7 @@ H323_ExternalRTPChannel::H323_ExternalRTPChannel(H323Connection & connection,
 
 void H323_ExternalRTPChannel::Construct(unsigned id)
 {
-  mediaStream = new OpalNullMediaStream(receiver, id);
+  mediaStream = new OpalNullMediaStream(capability->GetMediaFormat(), id, receiver);
   sessionID = id;
 
   PTRACE(3, "H323RTP\tExternal " << (receiver ? "receiver" : "transmitter")

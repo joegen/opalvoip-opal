@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.h,v $
- * Revision 1.2010  2003/01/07 04:39:52  robertj
+ * Revision 1.2011  2003/03/17 10:26:59  robertj
+ * Added video support.
+ *
+ * Revision 2.9  2003/01/07 04:39:52  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.8  2002/11/10 23:21:26  robertj
@@ -172,7 +175,7 @@
 #endif
 
 
-#include <opal/transcoders.h>
+#include <codec/vidcodec.h>
 #include <h323/h323caps.h>
 
 
@@ -331,13 +334,14 @@ class H323_H261Capability : public H323VideoCapability
 
 ///////////////////////////////////////////////////////////////////////////////
 
-class Opal_H261_YUV411P : public OpalVideoTranscoder {
+class Opal_H261_YUV420P : public OpalVideoTranscoder {
   public:
-    Opal_H261_YUV411P(
+    Opal_H261_YUV420P(
       const OpalTranscoderRegistration & registration /// Registration fro transcoder
     );
-    ~Opal_H261_YUV411P();
-    virtual BOOL Convert(const RTP_DataFrame & src, RTP_DataFrame & dst);
+    ~Opal_H261_YUV420P();
+    virtual PINDEX GetOptimalDataFrameSize(BOOL input) const;
+    virtual BOOL ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dst);
   protected:
     P64Decoder * videoDecoder;
     BYTE * rvts;
@@ -347,13 +351,14 @@ class Opal_H261_YUV411P : public OpalVideoTranscoder {
 };
 
 
-class Opal_YUV411P_H261 : public OpalVideoTranscoder {
+class Opal_YUV420P_H261 : public OpalVideoTranscoder {
   public:
-    Opal_YUV411P_H261(
+    Opal_YUV420P_H261(
       const OpalTranscoderRegistration & registration /// Registration fro transcoder
     );
-    ~Opal_YUV411P_H261();
-    virtual BOOL Convert(const RTP_DataFrame & src, RTP_DataFrame & dst);
+    ~Opal_YUV420P_H261();
+    virtual PINDEX GetOptimalDataFrameSize(BOOL input) const;
+    virtual BOOL ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dst);
   protected:
     P64Encoder * videoEncoder;
 };
@@ -363,8 +368,8 @@ class Opal_YUV411P_H261 : public OpalVideoTranscoder {
 
 #define OPAL_REGISTER_H261() \
           OPAL_REGISTER_H261_H323 \
-          OPAL_REGISTER_TRANSCODER(Opal_H261_YUV411P, OPAL_H261, "YUV411P"); \
-          OPAL_REGISTER_TRANSCODER(Opal_YUV411P_H261, "YUV411P", OPAL_H261)
+          OPAL_REGISTER_TRANSCODER(Opal_H261_YUV420P, OPAL_H261, OPAL_YUV420P); \
+          OPAL_REGISTER_TRANSCODER(Opal_YUV420P_H261, OPAL_YUV420P, OPAL_H261)
 
 
 #endif // __OPAL_H261CODEC_H
