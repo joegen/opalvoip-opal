@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2055  2004/04/29 11:47:54  rjongbloed
+ * Revision 1.2056  2004/05/01 10:00:51  rjongbloed
+ * Fixed ClearCallSynchronous so now is actually signalled when call is destroyed.
+ *
+ * Revision 2.54  2004/04/29 11:47:54  rjongbloed
  * Fixed problem with trying to open channels already open for session.
  *
  * Revision 2.53  2004/04/26 05:39:27  rjongbloed
@@ -1533,9 +1536,9 @@ H323Connection::~H323Connection()
 }
 
 
-void H323Connection::SetCallEndReason(CallEndReason reason, PSyncPoint * sync)
+void H323Connection::SetCallEndReason(CallEndReason reason)
 {
-  OpalConnection::SetCallEndReason(reason, sync);
+  OpalConnection::SetCallEndReason(reason);
 
   if (!callEndTime.IsValid())
     callEndTime = PTime();
