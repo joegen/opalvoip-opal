@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2005  2001/08/23 05:51:17  robertj
+ * Revision 1.2006  2001/10/04 00:43:57  robertj
+ * Added function to remove wildcard from list.
+ * Added constructor to make a list with one format in it.
+ * Fixed wildcard matching so trailing * works.
+ * Optimised reorder so does not reorder if already in order.
+ *
+ * Revision 2.4  2001/08/23 05:51:17  robertj
  * Completed implementation of codec reordering.
  *
  * Revision 2.3  2001/08/22 03:51:44  robertj
@@ -290,9 +296,18 @@ OpalMediaFormatList & OpalMediaFormat::GetMediaFormatsList()
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+
 OpalMediaFormatList::OpalMediaFormatList()
 {
   DisallowDeleteObjects();
+}
+
+
+OpalMediaFormatList::OpalMediaFormatList(const OpalMediaFormat & format)
+{
+  DisallowDeleteObjects();
+  *this += format;
 }
 
 
@@ -317,6 +332,17 @@ OpalMediaFormatList & OpalMediaFormatList::operator-=(const OpalMediaFormat & fo
     RemoveAt(idx);
 
   return *this;
+}
+
+
+void OpalMediaFormatList::Remove(const PStringArray & mask)
+{
+  PINDEX i;
+  for (i = 0; i < mask.GetSize(); i++) {
+    PINDEX idx;
+    while ((idx = FindFormat(mask[i])) != P_MAX_INDEX)
+      RemoveAt(idx);
+  }
 }
 
 
@@ -366,11 +392,11 @@ PINDEX OpalMediaFormatList::FindFormat(const PString & search) const
         last = next + wildcard.GetLength();
 
         // Check for having * at end of search string
-        if (i == search.GetSize()-1 && !wildcard && last != str.GetLength())
+        if (i == wildcards.GetSize()-1 && !wildcard && last != str.GetLength())
           break;
       }
 
-      if (i >= search.GetSize())
+      if (i >= wildcards.GetSize())
         return idx;
     }
   }
@@ -384,8 +410,11 @@ void OpalMediaFormatList::Reorder(const PStringArray & order)
   PINDEX nextPos = 0;
   for (PINDEX i =0; i < order.GetSize(); i++) {
     PINDEX findPos = FindFormat(order[i]);
-    if (findPos != P_MAX_INDEX)
-      OpalMediaFormatBaseList::InsertAt(nextPos++, RemoveAt(findPos));
+    if (findPos != P_MAX_INDEX) {
+      if (nextPos != findPos)
+        OpalMediaFormatBaseList::InsertAt(nextPos, RemoveAt(findPos));
+      nextPos++;
+    }
   }
 }
 
