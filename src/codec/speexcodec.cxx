@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.cxx,v $
- * Revision 1.2004  2004/03/11 06:54:28  csoutheren
+ * Revision 1.2005  2005/02/21 12:19:54  rjongbloed
+ * Added new "options list" to the OpalMediaFormat class.
+ *
+ * Revision 2.3  2004/03/11 06:54:28  csoutheren
  * Added ability to disable SIP or H.323 stacks
  *
  * Revision 2.2  2004/02/19 10:47:02  rjongbloed
@@ -163,55 +166,45 @@ static int Speex_Bytes_Per_Frame(int mode) {
     return ((bits_per_frame+7)/8); // round up
 }
 
-OpalMediaFormat const OpalSpeexNarrow_5k95(OPAL_SPEEX_NARROW_5k95,
-                                           OpalMediaFormat::DefaultAudioSessionID,
-                                           RTP_DataFrame::DynamicBase,
-                                           OPAL_SPEEX_NARROW_5k95,
-                                           TRUE,  // Needs jitter
-                                           Speex_Bits_Per_Second(2),
-                                           Speex_Bytes_Per_Frame(2),
-                                           SAMPLES_PER_FRAME, // 20 milliseconds
-                                           OpalMediaFormat::AudioClockRate);
+static OpalAudioFormat OpalSpeexNarrow_5k95(
+  OPAL_SPEEX_NARROW_5k95,
+  RTP_DataFrame::DynamicBase,
+  OPAL_SPEEX_NARROW_5k95,
+  Speex_Bytes_Per_Frame(2),
+  SAMPLES_PER_FRAME, // 20 milliseconds
+  1, 1);
 
-OpalMediaFormat const OpalSpeexNarrow_8k(OPAL_SPEEX_NARROW_8k,
-                                           OpalMediaFormat::DefaultAudioSessionID,
-                                           RTP_DataFrame::DynamicBase,
-                                           OPAL_SPEEX_NARROW_8k,
-                                           TRUE,  // Needs jitter
-                                           Speex_Bits_Per_Second(3),
-                                           Speex_Bytes_Per_Frame(3),
-                                           SAMPLES_PER_FRAME, // 20 milliseconds
-                                           OpalMediaFormat::AudioClockRate);
+static OpalAudioFormat OpalSpeexNarrow_8k(
+  OPAL_SPEEX_NARROW_8k,
+  RTP_DataFrame::DynamicBase,
+  OPAL_SPEEX_NARROW_8k,
+  Speex_Bytes_Per_Frame(3),
+  SAMPLES_PER_FRAME, // 20 milliseconds
+  1, 1);
 
-OpalMediaFormat const OpalSpeexNarrow_11k(OPAL_SPEEX_NARROW_11k,
-                                           OpalMediaFormat::DefaultAudioSessionID,
-                                           RTP_DataFrame::DynamicBase,
-                                           OPAL_SPEEX_NARROW_11k,
-                                           TRUE,  // Needs jitter
-                                           Speex_Bits_Per_Second(4),
-                                           Speex_Bytes_Per_Frame(4),
-                                           SAMPLES_PER_FRAME, // 20 milliseconds
-                                           OpalMediaFormat::AudioClockRate);
+static OpalAudioFormat OpalSpeexNarrow_11k(
+  OPAL_SPEEX_NARROW_11k,
+  RTP_DataFrame::DynamicBase,
+  OPAL_SPEEX_NARROW_11k,
+  Speex_Bytes_Per_Frame(4),
+  SAMPLES_PER_FRAME, // 20 milliseconds
+  1, 1);
 
-OpalMediaFormat const OpalSpeexNarrow_15k(OPAL_SPEEX_NARROW_15k,
-                                           OpalMediaFormat::DefaultAudioSessionID,
-                                           RTP_DataFrame::DynamicBase,
-                                           OPAL_SPEEX_NARROW_15k,
-                                           TRUE,  // Needs jitter
-                                           Speex_Bits_Per_Second(5),
-                                           Speex_Bytes_Per_Frame(5),
-                                           SAMPLES_PER_FRAME, // 20 milliseconds
-                                           OpalMediaFormat::AudioClockRate);
+static OpalAudioFormat OpalSpeexNarrow_15k(
+  OPAL_SPEEX_NARROW_15k,
+  RTP_DataFrame::DynamicBase,
+  OPAL_SPEEX_NARROW_15k,
+  Speex_Bytes_Per_Frame(5),
+  SAMPLES_PER_FRAME, // 20 milliseconds
+  1, 1);
 
-OpalMediaFormat const OpalSpeexNarrow_18k2(OPAL_SPEEX_NARROW_18k2,
-                                           OpalMediaFormat::DefaultAudioSessionID,
-                                           RTP_DataFrame::DynamicBase,
-                                           OPAL_SPEEX_NARROW_18k2,
-                                           TRUE,  // Needs jitter
-                                           Speex_Bits_Per_Second(6),
-                                           Speex_Bytes_Per_Frame(6),
-                                           SAMPLES_PER_FRAME, // 20 milliseconds
-                                           OpalMediaFormat::AudioClockRate);
+static OpalAudioFormat OpalSpeexNarrow_18k2(
+  OPAL_SPEEX_NARROW_18k2,
+  RTP_DataFrame::DynamicBase,
+  OPAL_SPEEX_NARROW_18k2,
+  Speex_Bytes_Per_Frame(6),
+  SAMPLES_PER_FRAME, // 20 milliseconds
+  1, 1);
 
 
 /////////////////////////////////////////////////////////////////////////
@@ -219,8 +212,7 @@ OpalMediaFormat const OpalSpeexNarrow_18k2(OPAL_SPEEX_NARROW_18k2,
 #ifndef NO_H323
 
 SpeexNonStandardAudioCapability::SpeexNonStandardAudioCapability(int mode)
-  : H323NonStandardAudioCapability(1, 1,
-                                   EQUIVALENCE_COUNTRY_CODE,
+  : H323NonStandardAudioCapability(EQUIVALENCE_COUNTRY_CODE,
                                    EQUIVALENCE_T35EXTENSION,
                                    EQUIVALENCE_MANUFACTURER_CODE,
                                    NULL, 0, 0, P_MAX_INDEX)

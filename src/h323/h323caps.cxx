@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2023  2004/11/07 12:26:40  rjongbloed
+ * Revision 1.2024  2005/02/21 12:19:54  rjongbloed
+ * Added new "options list" to the OpalMediaFormat class.
+ *
+ * Revision 2.22  2004/11/07 12:26:40  rjongbloed
  * Fixed incorrect conditional in decoding non standard application data
  *   types in OLC, thanks Dmitriy
  *
@@ -549,6 +552,20 @@ BOOL H323Capability::IsUsable(const H323Connection &) const
 }
 
 
+const OpalMediaFormat & H323Capability::GetMediaFormat() const
+{
+  return PRemoveConst(H323Capability, this)->GetWritableMediaFormat();
+}
+
+
+OpalMediaFormat & H323Capability::GetWritableMediaFormat()
+{
+  if (mediaFormat.IsEmpty())
+    mediaFormat = GetFormatName();
+  return mediaFormat;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 H323RealTimeCapability::H323RealTimeCapability()
@@ -775,10 +792,8 @@ PObject::Comparison H323NonStandardCapabilityInfo::CompareData(const PBYTEArray 
 
 /////////////////////////////////////////////////////////////////////////////
 
-H323AudioCapability::H323AudioCapability(unsigned rx, unsigned tx)
+H323AudioCapability::H323AudioCapability()
 {
-  rxFramesInPacket = rx;
-  txFramesInPacket = tx;
 }
 
 
@@ -796,37 +811,33 @@ unsigned H323AudioCapability::GetDefaultSessionID() const
 
 void H323AudioCapability::SetTxFramesInPacket(unsigned frames)
 {
-  PAssert(frames > 0, PInvalidParameter);
-  if (frames > 256)
-    txFramesInPacket = 256;
-  else
-    txFramesInPacket = frames;
+  GetWritableMediaFormat().SetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption, frames);
 }
 
 
 unsigned H323AudioCapability::GetTxFramesInPacket() const
 {
-  return txFramesInPacket;
+  return GetMediaFormat().GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption, 1);
 }
 
 
 unsigned H323AudioCapability::GetRxFramesInPacket() const
 {
-  return rxFramesInPacket;
+  return GetMediaFormat().GetOptionInteger(OpalAudioFormat::RxFramesPerPacketOption, 1);
 }
 
 
 BOOL H323AudioCapability::OnSendingPDU(H245_Capability & cap) const
 {
   cap.SetTag(H245_Capability::e_receiveAudioCapability);
-  return OnSendingPDU((H245_AudioCapability &)cap, rxFramesInPacket);
+  return OnSendingPDU((H245_AudioCapability &)cap, GetRxFramesInPacket());
 }
 
 
 BOOL H323AudioCapability::OnSendingPDU(H245_DataType & dataType) const
 {
   dataType.SetTag(H245_DataType::e_audioData);
-  return OnSendingPDU((H245_AudioCapability &)dataType, txFramesInPacket);
+  return OnSendingPDU((H245_AudioCapability &)dataType, GetTxFramesInPacket());
 }
 
 
@@ -893,6 +904,7 @@ BOOL H323AudioCapability::OnReceivedPDU(const H245_Capability & cap)
       cap.GetTag() != H245_Capability::e_receiveAndTransmitAudioCapability)
     return FALSE;
 
+  unsigned txFramesInPacket = GetTxFramesInPacket();
   unsigned packetSize = txFramesInPacket;
   if (!OnReceivedPDU((const H245_AudioCapability &)cap, packetSize))
     return FALSE;
@@ -901,7 +913,7 @@ BOOL H323AudioCapability::OnReceivedPDU(const H245_Capability & cap)
   if (txFramesInPacket > packetSize) {
     PTRACE(4, "H323\tCapability tx frames reduced from "
            << txFramesInPacket << " to " << packetSize);
-    txFramesInPacket = packetSize;
+    SetTxFramesInPacket(packetSize);
   }
   else {
     PTRACE(4, "H323\tCapability tx frames left at "
@@ -917,7 +929,7 @@ BOOL H323AudioCapability::OnReceivedPDU(const H245_DataType & dataType, BOOL rec
   if (dataType.GetTag() != H245_DataType::e_audioData)
     return FALSE;
 
-  unsigned & xFramesInPacket = receiver ? rxFramesInPacket : txFramesInPacket;
+  unsigned xFramesInPacket = receiver ? GetRxFramesInPacket() : GetTxFramesInPacket();
   unsigned packetSize = xFramesInPacket;
   if (!OnReceivedPDU((const H245_AudioCapability &)dataType, packetSize))
     return FALSE;
@@ -926,7 +938,8 @@ BOOL H323AudioCapability::OnReceivedPDU(const H245_DataType & dataType, BOOL rec
   if (xFramesInPacket > packetSize) {
     PTRACE(4, "H323\tCapability " << (receiver ? 'r' : 't') << "x frames reduced from "
            << xFramesInPacket << " to " << packetSize);
-    xFramesInPacket = packetSize;
+    if (!receiver)
+      SetTxFramesInPacket(packetSize);
   }
   else {
     PTRACE(4, "H323\tCapability " << (receiver ? 'r' : 't') << "x frames left at "
@@ -953,43 +966,34 @@ BOOL H323AudioCapability::OnReceivedPDU(const H245_AudioCapability & pdu,
 
 /////////////////////////////////////////////////////////////////////////////
 
-H323NonStandardAudioCapability::H323NonStandardAudioCapability(unsigned max,
-                                                               unsigned desired,
-                                                               const H323EndPoint & endpoint,
+H323NonStandardAudioCapability::H323NonStandardAudioCapability(const H323EndPoint & endpoint,
                                                                const BYTE * fixedData,
                                                                PINDEX dataSize,
                                                                PINDEX offset,
                                                                PINDEX length)
-  : H323AudioCapability(max, desired),
-    H323NonStandardCapabilityInfo(endpoint, fixedData, dataSize, offset, length)
+  : H323NonStandardCapabilityInfo(endpoint, fixedData, dataSize, offset, length)
 {
 }
 
 
-H323NonStandardAudioCapability::H323NonStandardAudioCapability(unsigned max,
-                                                               unsigned desired,
-                                                               const PString & oid,
+H323NonStandardAudioCapability::H323NonStandardAudioCapability(const PString & oid,
                                                                const BYTE * fixedData,
                                                                PINDEX dataSize,
                                                                PINDEX offset,
                                                                PINDEX length)
-  : H323AudioCapability(max, desired),
-    H323NonStandardCapabilityInfo(oid, fixedData, dataSize, offset, length)
+  : H323NonStandardCapabilityInfo(oid, fixedData, dataSize, offset, length)
 {
 }
 
 
-H323NonStandardAudioCapability::H323NonStandardAudioCapability(unsigned max,
-                                                               unsigned desired,
-                                                               BYTE country,
+H323NonStandardAudioCapability::H323NonStandardAudioCapability(BYTE country,
                                                                BYTE extension,
                                                                WORD maufacturer,
                                                                const BYTE * fixedData,
                                                                PINDEX dataSize,
                                                                PINDEX offset,
                                                                PINDEX length)
-  : H323AudioCapability(max, desired),
-    H323NonStandardCapabilityInfo(country, extension, maufacturer, fixedData, dataSize, offset, length)
+  : H323NonStandardCapabilityInfo(country, extension, maufacturer, fixedData, dataSize, offset, length)
 {
 }
 
@@ -1318,7 +1322,6 @@ BOOL H323NonStandardDataCapability::IsNonStandardMatch(const H245_NonStandardPar
 /////////////////////////////////////////////////////////////////////////////
 
 H323_G711Capability::H323_G711Capability(Mode m, Speed s)
-  : H323AudioCapability(240, 30) // 240ms max, 30ms desired
 {
   mode = m;
   speed = s;
@@ -1354,7 +1357,6 @@ PString H323_G711Capability::GetFormatName() const
 /////////////////////////////////////////////////////////////////////////////
 
 H323_G728Capability::H323_G728Capability()
-  : H323AudioCapability(75, 15) // 300ms max, 60ms desired
 {
 }
 
@@ -1387,7 +1389,6 @@ static const char * const G729Name[4] = {
 };
 
 H323_G729Capability::H323_G729Capability(Mode m)
-  : H323AudioCapability(30,  8) // 300ms max, 80ms desired
 {
   mode = m;
 }
@@ -1420,7 +1421,6 @@ PString H323_G729Capability::GetFormatName() const
 /////////////////////////////////////////////////////////////////////////////
 
 H323_G7231Capability::H323_G7231Capability(BOOL sid)
-  : H323AudioCapability(10, 3) // 300ms max, 90ms desired
 {
   allowSIDFrames = sid;
 }
@@ -1471,7 +1471,6 @@ BOOL H323_G7231Capability::OnReceivedPDU(const H245_AudioCapability & pdu,
 ///////////////////////////////////////////////////////////////////////////////
 
 H323_GSM0610Capability::H323_GSM0610Capability()
-  : H323AudioCapability(7, 4) // 140ms max, 80ms desired
 {
 }
 
@@ -1496,10 +1495,7 @@ PString H323_GSM0610Capability::GetFormatName() const
 
 void H323_GSM0610Capability::SetTxFramesInPacket(unsigned frames)
 {
-  if (frames > 7)
-    txFramesInPacket = 7;
-  else
-    H323AudioCapability::SetTxFramesInPacket(frames);
+  H323AudioCapability::SetTxFramesInPacket(frames > 7 ? 7 : frames);
 }
 
 
@@ -1540,9 +1536,9 @@ const char * const H323_UserInputCapability::SubTypeNames[NumSubTypes] = {
 };
 
 #define DEFINE_USER_INPUT(type) \
-  static OpalMediaFormat const UserInput_##type( \
+  const OpalMediaFormat UserInput_##type( \
     H323_UserInputCapability::SubTypeNames[H323_UserInputCapability::type], \
-    0, RTP_DataFrame::IllegalPayloadType, NULL, FALSE, 1 \
+    0, RTP_DataFrame::IllegalPayloadType, NULL, FALSE, 1, 0, 0, 0 \
   ); \
   H323_REGISTER_CAPABILITY_FUNCTION( \
     H323_UserInputCapability_##type, \
