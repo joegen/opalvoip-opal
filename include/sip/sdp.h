@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2007  2002/09/16 02:52:35  robertj
+ * Revision 1.2008  2004/01/08 22:27:03  csoutheren
+ * Fixed problem with not using session ID when constructing SDP lists
+ *
+ * Revision 2.6  2002/09/16 02:52:35  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -159,7 +162,7 @@ class SDPMediaDescription : public PObject
     void AddSDPMediaFormat(SDPMediaFormat * sdpMediaFormat);
 
     void AddMediaFormat(const OpalMediaFormat & mediaFormat);
-    void AddMediaFormats(const OpalMediaFormatList & mediaFormats);
+    void AddMediaFormats(const OpalMediaFormatList & mediaFormats, unsigned session);
 
     void SetAttribute(const PString & attr);
 
