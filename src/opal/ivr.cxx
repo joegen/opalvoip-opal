@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.cxx,v $
- * Revision 1.2007  2004/07/11 12:42:13  rjongbloed
+ * Revision 1.2008  2004/07/15 12:19:24  rjongbloed
+ * Various enhancements to the VXML code
+ *
+ * Revision 2.6  2004/07/11 12:42:13  rjongbloed
  * Added function on endpoints to get the list of all media formats any
  *   connection the endpoint may create can support.
  *
@@ -310,18 +313,13 @@ BOOL OpalIVRMediaStream::Open()
     return TRUE;
 
   if (vxmlSession.IsOpen()) {
-    PVXMLChannel * vxmlChannel;
-    if (IsSource())
-      vxmlChannel = vxmlSession.GetOutgoingChannel();
-    else
-      vxmlChannel = vxmlSession.GetIncomingChannel();
-
+    PVXMLChannel * vxmlChannel = vxmlSession.GetVXMLChannel();
     if (vxmlChannel == NULL) {
       PTRACE(1, "IVR\tVXML engine not really open");
       return FALSE;
     }
 
-    if (mediaFormat != vxmlChannel->GetFormatName()) {
+    if (mediaFormat != vxmlChannel->GetMediaFormat()) {
       PTRACE(1, "IVR\tCannot use VXML engine: asymmetrical media format");
       return FALSE;
     }
@@ -329,21 +327,8 @@ BOOL OpalIVRMediaStream::Open()
     return OpalMediaStream::Open();
   }
 
-  if (mediaFormat == OpalPCM16) {
-    if (vxmlSession.Open(new PVXMLChannelPCM(vxmlSession, TRUE),
-                            new PVXMLChannelPCM(vxmlSession, FALSE)))
-      return OpalMediaStream::Open();
-  }
-  else if (mediaFormat == OpalG7231_6k3 || mediaFormat == OpalG7231_5k3) {
-    if (vxmlSession.Open(new PVXMLChannelG7231(vxmlSession, TRUE),
-                            new PVXMLChannelG7231(vxmlSession, FALSE)))
-      return OpalMediaStream::Open();
-  }
-  else if (mediaFormat == OpalG729A) {
-    if (vxmlSession.Open(new PVXMLChannelG729(vxmlSession, TRUE),
-                            new PVXMLChannelG729(vxmlSession, FALSE)))
-      return OpalMediaStream::Open();
-  }
+  if (vxmlSession.Open(mediaFormat))
+    return OpalMediaStream::Open();
 
   PTRACE(1, "IVR\tCannot open VXML engine: incompatible media format");
   return FALSE;
