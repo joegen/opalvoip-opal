@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2036  2004/11/08 10:17:51  rjongbloed
+ * Revision 1.2037  2004/11/29 06:53:25  csoutheren
+ * Prevent attempt to read infinite size
+ * buffer if no ContentLength specified in MIME
+ *
+ * Revision 2.35  2004/11/08 10:17:51  rjongbloed
  * Tidied some trace logs
  *
  * Revision 2.34  2004/10/25 23:28:28  csoutheren
@@ -371,7 +375,7 @@ PINDEX SIPMIMEInfo::GetContentLength() const
 {
   PString len = GetFullOrCompact("Content-Length", 'l');
   if (len.IsEmpty())
-    return P_MAX_INDEX;
+    return 0; //P_MAX_INDEX;
   return len.AsInteger();
 }
 
