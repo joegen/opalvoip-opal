@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2038  2004/08/18 13:03:23  rjongbloed
+ * Revision 1.2039  2004/10/03 15:16:04  rjongbloed
+ * Removed no trace warning
+ *
+ * Revision 2.37  2004/08/18 13:03:23  rjongbloed
  * Changed to make calling OPalManager::OnClearedCall() in override optional.
  *
  * Revision 2.36  2004/08/14 07:56:41  rjongbloed
@@ -418,7 +421,7 @@ void OpalManager::ClearAllCalls(OpalConnection::CallEndReason reason, BOOL wait)
 }
 
 
-void OpalManager::OnClearedCall(OpalCall & call)
+void OpalManager::OnClearedCall(OpalCall & PTRACE_PARAM(call))
 {
   PTRACE(3, "OpalMan\tOnClearedCall \"" << call.GetPartyA() << "\" to \"" << call.GetPartyB() << '"');
 }
