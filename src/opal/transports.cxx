@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2023  2002/09/12 06:57:56  robertj
+ * Revision 1.2024  2002/09/26 01:21:16  robertj
+ * Fixed error in trace output when get illegal transport address.
+ *
+ * Revision 2.22  2002/09/12 06:57:56  robertj
  * Removed protocol prefix strings as static members as has problems with
  *   use in DLL environment.
  * Added support for the + character in OpalTransportAddress decoding
@@ -415,7 +418,7 @@ BOOL OpalInternalIPTransport::GetIpAndPort(const OpalTransportAddress & address,
   }
 
   if (host.IsEmpty() || (port == 0 && service != "*")) {
-    PTRACE(2, "Opal\tIllegal IP transport address: \"" << *this << '"');
+    PTRACE(2, "Opal\tIllegal IP transport address: \"" << address << '"');
     return FALSE;
   }
 
