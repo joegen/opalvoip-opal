@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2009  2002/02/11 07:38:55  robertj
+ * Revision 1.2010  2002/02/19 07:42:50  robertj
+ * Restructured media bypass functions to fix problems with RFC2833.
+ *
+ * Revision 2.8  2002/02/11 07:38:55  robertj
  * Added media bypass for streams between compatible protocols.
  *
  * Revision 2.7  2002/01/22 05:04:58  robertj
@@ -438,7 +441,7 @@ class OpalManager : public PObject
 
     /**See if the media can bypass the local host.
      */
-    virtual BOOL CanDoMediaBypass(
+    virtual BOOL IsMediaBypassPossible(
       const OpalConnection & source,      /// Source connection
       const OpalConnection & destination, /// Destination connection
       unsigned sessionID                  /// Session ID for media channel
