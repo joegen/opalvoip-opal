@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2025  2004/10/23 11:42:38  ykiryanov
+ * Revision 1.2026  2004/10/24 10:46:41  rjongbloed
+ * Back out change of strcasecmp to strcmp for WinCE
+ *
+ * Revision 2.24  2004/10/23 11:42:38  ykiryanov
  * Added ifdef _WIN32_WCE for PocketPC 2003 SDK port
  *
  * Revision 2.23  2004/07/11 12:32:51  rjongbloed
@@ -598,11 +601,7 @@ PINDEX OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt, const cha
 
     if (name != NULL && *name != '\0') {
       const char * otherName = mediaFormat.GetEncodingName();
-#ifndef _WIN32_WCE
       if (otherName != NULL && strcasecmp(otherName, name) == 0)
-#else
-      if (otherName != NULL && strcmp(otherName, name) == 0)
-#endif
         return idx;
     }
   }
