@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2052  2005/01/16 11:28:05  csoutheren
+ * Revision 1.2053  2005/02/19 22:26:09  dsandras
+ * Ignore TO tag added by OPAL. Reported by Nick Noath.
+ *
+ * Revision 2.51  2005/01/16 11:28:05  csoutheren
  * Added GetIdentifier virtual function to OpalConnection, and changed H323
  * and SIP descendants to use this function. This allows an application to
  * obtain a GUID for any connection regardless of the protocol used
@@ -967,8 +970,19 @@ void SIPConnection::OnReceivedBYE(SIP_PDU & request)
 
 void SIPConnection::OnReceivedCANCEL(SIP_PDU & request)
 {
+  PString origTo;
+  PString origFrom;
+  
   // Currently only handle CANCEL requests for the original INVITE that
   // created this connection, all else ignored
+  // Ignore the tag added by OPAL
+  if (originalInvite != NULL) {
+
+    origTo = originalInvite->GetMIME().GetTo();
+    origFrom = originalInvite->GetMIME().GetFrom();
+    origTo.Replace (";tag=" + GetTag (), "");
+    origFrom.Replace (";tag=" + GetTag (), "");
+  }
   if (originalInvite == NULL ||
       request.GetMIME().GetTo() != originalInvite->GetMIME().GetTo() ||
       request.GetMIME().GetFrom() != originalInvite->GetMIME().GetFrom() ||
