@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2013  2002/09/04 06:01:47  robertj
+ * Revision 1.2014  2002/09/06 02:44:09  robertj
+ * Added routing table system to route calls by regular expressions.
+ *
+ * Revision 2.12  2002/09/04 06:01:47  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.11  2002/07/01 04:56:31  robertj
@@ -367,7 +370,8 @@ class OpalManager : public PObject
     /**Route a connection to another connection from an endpoint.
 
        The default behaviour gets the destination address from the connection
-       itself.
+       and translates it into an address by using the routeTable member
+       variable.
       */
     virtual PString OnRouteConnection(
       OpalConnection & connection  /// Connection being routed
@@ -569,6 +573,71 @@ class OpalManager : public PObject
     virtual OpalT38Protocol * CreateT38ProtocolHandler(
       const OpalConnection & connection  /// Connection for which T.38 handler created
     ) const;
+
+    class RouteEntry : public PObject
+    {
+        PCLASSINFO(RouteEntry, PObject);
+      public:
+        RouteEntry(const PString & pat, const PString dest);
+        PRegularExpression pattern;
+        PString            destination;
+    };
+    PLIST(RouteTable, RouteEntry);
+
+    /**Parse a route table specification list for the manager.
+       Add a route entry to the route table.
+
+       The specification string is of the form pattern=destination where
+       pattern is a regular expression matching the incoming calls
+       destination address and will translate it to the outgoing destination
+       address for making an outgoing call. For example, picking up a PhoneJACK
+       handset and dialling 2, 6 would result in an address of "pots:26"
+       which would then be matched against, say, a specification of
+       pots:26=h323:10.0.1.1, resulting in a call from the pots handset to
+       10.0.1.1 using H.323.
+
+       As the pattern field is a regular expression, you could have used in
+       the above .*:26=h323:10.0.1.1 to achieve the same result with the
+       addition that an incoming call from a SIP client would also be routed
+       to the H.323 client.
+
+       Note that the pattern has an implicit ^ and $ at the beginning and end
+       of the regular expression. So it must match the entire address.
+
+       If the specification is of the form @filename, then the file is read
+       with each line consisting of a pattern=destination route specification.
+       Lines without an equal sign or beginning with '#' are ignored.
+
+       Returns TRUE if an entry was added.
+      */
+    virtual BOOL AddRouteEntry(
+      const PString & spec  /// Specification string to add
+    );
+
+    /**Parse a route table specification list for the manager.
+       This removes the current routeTable and calls AddRouteEntry for every
+       string in the array.
+
+       Returns TRUE if at least one entry was added.
+      */
+    BOOL SetRouteTable(
+      const PStringArray & specs  /// Array of specification strings.
+    );
+
+    /**Set a route table for the manager.
+       Note that this will make a copy of the table and not maintain a
+       reference.
+      */
+    void SetRouteTable(
+      const RouteTable & table  /// New table to set for routing
+    );
+
+    /**Route the source address to a destination using the route table.
+      */
+    virtual PString ApplyRouteTable(
+      const PString & proto,
+      const PString & addr
+    );
   //@}
 
   /**@name Member variable access */
@@ -683,7 +752,6 @@ class OpalManager : public PObject
     // Configuration variables
     BOOL         autoStartReceiveVideo;
     BOOL         autoStartTransmitVideo;
-    PMutex       ipPortMutex;
     BYTE         rtpIpTypeofService;
     WORD         maxAudioDelayJitter;
     PStringArray mediaFormatOrder;
@@ -706,6 +774,9 @@ class OpalManager : public PObject
       WORD   max;
       WORD   current;
     } tcpPorts, udpPorts, rtpIpPorts;
+
+    RouteTable routeTable;
+    PMutex     routeTableMutex;
 
     // Dynamic variables
     PMutex inUseFlag;
