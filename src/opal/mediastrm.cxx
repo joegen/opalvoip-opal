@@ -24,7 +24,12 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2018  2003/03/17 10:27:00  robertj
+ * Revision 1.2019  2003/04/08 02:46:29  robertj
+ * Fixed incorrect returned buffer size on video read, thanks Guilhem Tardy.
+ * Fixed missing set of corrct colour format for video grabber/display when
+ *   starting vide media stream, thanks Guilhem Tardy.
+ *
+ * Revision 2.17  2003/03/17 10:27:00  robertj
  * Added video support.
  *
  * Revision 2.16  2003/01/07 06:00:43  robertj
@@ -804,11 +809,27 @@ BOOL OpalVideoMediaStream::Open()
   if (isOpen)
     return TRUE;
 
-  if (inputDevice != NULL && !inputDevice->Start())
-    return FALSE;
+  if (inputDevice != NULL) {
+    if (!inputDevice->SetColourFormatConverter(mediaFormat)) {
+      PTRACE(1, "Media\tCould not set colour format in grabber to " << mediaFormat);
+      return FALSE;
+    }
+    if (!inputDevice->Start()) {
+      PTRACE(1, "Media\tCould not start video grabber");
+      return FALSE;
+    }
+  }
 
-  if (outputDevice != NULL && !outputDevice->Start())
-    return FALSE;
+  if (outputDevice != NULL) {
+    if (!outputDevice->SetColourFormatConverter(mediaFormat)) {
+      PTRACE(1, "Media\tCould not set colour format in video display to " << mediaFormat);
+      return FALSE;
+    }
+    if (!outputDevice->Start()) {
+      PTRACE(1, "Media\tCould not start video display device");
+      return FALSE;
+    }
+  }
 
   return OpalMediaStream::Open();
 }
@@ -834,8 +855,12 @@ BOOL OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & length)
   OpalVideoTranscoder::FrameHeader * frame = (OpalVideoTranscoder::FrameHeader *)data;
   frame->x = frame->y = 0;
   inputDevice->GetFrameSize(frame->width, frame->height);
-  if (!inputDevice->GetFrameData(frame->data, &length))
+
+  PINDEX bytesReturned;
+  if (!inputDevice->GetFrameData(frame->data, &bytesReturned))
     return FALSE;
+
+  length = bytesReturned + sizeof(OpalVideoTranscoder::FrameHeader);
 
   if (outputDevice == NULL)
     return TRUE;
