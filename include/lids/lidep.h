@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.h,v $
- * Revision 1.2010  2002/09/16 02:52:34  robertj
+ * Revision 1.2011  2003/03/06 03:57:46  robertj
+ * IVR support (work in progress) requiring large changes everywhere.
+ *
+ * Revision 2.9  2002/09/16 02:52:34  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -104,7 +107,7 @@ class OpalLIDEndPoint : public OpalEndPoint
   /**@name Overrides from OpalEndPoint */
   //@{
     /**Set up a connection to a remote party.
-       This is called from the OpalManager::SetUpConnection() function once
+       This is called from the OpalManager::MakeConnection() function once
        it has determined that this is the endpoint for the protocol.
 
        The general form for this party parameter is:
@@ -132,7 +135,7 @@ class OpalLIDEndPoint : public OpalEndPoint
 
        The default behaviour is pure.
      */
-    virtual BOOL SetUpConnection(
+    virtual BOOL MakeConnection(
       OpalCall & call,        /// Owner of connection
       const PString & party,  /// Remote party to call
       void * userData = NULL  /// Arbitrary data to pass to connection
@@ -142,9 +145,10 @@ class OpalLIDEndPoint : public OpalEndPoint
   /**@name Connection management */
   //@{
     OpalLineConnection * CreateConnection(
-      OpalCall & call,   /// Call that owns the connection
-      OpalLine & line,   /// Line connection is to use
-      void * userData    /// Arbitrary user data from SetUpConnection
+      OpalCall & call,        /// Call that owns the connection
+      OpalLine & line,        /// Line connection is to use
+      void * userData,        /// Arbitrary user data from MakeConnection
+      const PString & number  /// Number to dial in outgoing call
     );
   //@}
 
@@ -312,19 +316,20 @@ class OpalLineConnection : public OpalConnection
     OpalLineConnection(
       OpalCall & call,              /// Owner calll for connection
       OpalLIDEndPoint & endpoint,   /// Endpoint for LID connection
-      OpalLine & line               /// Line to make connection on
+      OpalLine & line,              /// Line to make connection on
+      const PString & number        /// Number to call on line
     );
   //@}
 
   /**@name Overrides from OpalConnection */
   //@{
-    /**Get the phase of the connection.
-       This indicates the current phase of the connection sequence. Whether
-       all phases and the transitions between phases is protocol dependent.
+    /**Start an outgoing connection.
+       This function will initiate the connection to the remote entity, for
+       example in H.323 it sends a SETUP, in SIP it sends an INVITE etc.
 
-       The default bahaviour is pure.
+       The default behaviour does.
       */
-    virtual Phases GetPhase() const;
+    virtual BOOL SetUpConnection();
 
     /**Indicate to remote endpoint an alert is in progress.
        If this is an incoming connection and the AnswerCallResponse is in a
@@ -445,12 +450,6 @@ class OpalLineConnection : public OpalConnection
       */
     void StartIncoming();
 
-    /**Handle a new connection from the LID line.
-      */
-    BOOL StartOutgoing(
-      const PString & number
-    );
-
     /**Check for line hook state, DTMF tone for user indication etc.
       */
     void Monitor(
@@ -462,7 +461,6 @@ class OpalLineConnection : public OpalConnection
   protected:
     OpalLIDEndPoint & endpoint;
     OpalLine        & line;
-    Phases            phase;
     BOOL              wasOffHook;
     unsigned          answerRingCount;
     BOOL              requireTonesForDial;

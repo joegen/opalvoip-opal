@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2020  2003/01/07 04:39:52  robertj
+ * Revision 1.2021  2003/03/06 03:57:46  robertj
+ * IVR support (work in progress) requiring large changes everywhere.
+ *
+ * Revision 2.19  2003/01/07 04:39:52  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.18  2002/11/10 22:59:20  robertj
@@ -396,10 +399,12 @@ class H323Connection : public OpalConnection
     /**Create a new connection.
      */
     H323Connection(
-      OpalCall & call,                /// Call object connection belongs to
-      H323EndPoint & endpoint,        /// H323 End Point object
-      const PString & token,          /// Token for new connection
-      unsigned options = 0      /// Connection option bits
+      OpalCall & call,            /// Call object connection belongs to
+      H323EndPoint & endpoint,    /// H323 End Point object
+      const PString & token,      /// Token for new connection
+      const PString & alias,     /// Alias for outgoing call
+      const H323TransportAddress & address,   /// Address for outgoing call
+      unsigned options = 0        /// Connection option bits
     );
 
     /**Destroy the connection
@@ -409,14 +414,6 @@ class H323Connection : public OpalConnection
 
   /**@name Overrides from OpalConnection */
   //@{
-    /**Get the phase of the connection.
-       This indicates the current phase of the connection sequence. Whether
-       all phases and the transitions between phases is protocol dependent.
-
-       The default bahaviour is pure.
-      */
-    virtual Phases GetPhase() const;
-
     /**Set the call clearance reason.
        An application should have no cause to use this function. It is present
        for the H323EndPoint::ClearCall() function to set the clearance reason.
@@ -425,6 +422,14 @@ class H323Connection : public OpalConnection
       CallEndReason reason,       /// Reason for clearance of connection.
       PSyncPoint * sync = NULL    /// syncpoint to use for synchronous destruction
     );
+
+    /**Start an outgoing connection.
+       This function will initiate the connection to the remote entity, for
+       example in H.323 it sends a SETUP, in SIP it sends an INVITE etc.
+
+       The default behaviour is to send SETUP packet.
+      */
+    virtual BOOL SetUpConnection();
 
     /**Indicate to remote endpoint an alert is in progress.
        If this is an incoming connection and it is in the Alerting phase, then
@@ -1826,8 +1831,7 @@ class H323Connection : public OpalConnection
        connection.
       */
     virtual RTP_Session * UseSession(
-      unsigned sessionID,
-      const H245_TransportAddress & pdu
+      unsigned sessionID
     );
 
     /**Release the session. If the session ID is not being used any more any
@@ -2122,6 +2126,7 @@ class H323Connection : public OpalConnection
     BOOL InternalEndSessionCheck(PPER_Stream & strm);
     void SetRemoteVersions(const H225_ProtocolIdentifier & id);
     void MonitorCallStatus();
+    PDECLARE_NOTIFIER(PThread, H323Connection, StartOutgoing);
 
     H323EndPoint & endpoint;
 
