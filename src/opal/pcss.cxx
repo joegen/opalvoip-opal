@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2013  2003/03/17 10:13:18  robertj
+ * Revision 1.2014  2003/03/17 22:27:36  robertj
+ * Fixed multi-byte character that should have been string.
+ *
+ * Revision 2.12  2003/03/17 10:13:18  robertj
  * Added call back functions for creating sound channel.
  * Added video support.
  *
@@ -135,7 +138,7 @@ BOOL OpalPCSSEndPoint::MakeConnection(OpalCall & call,
 
   PString playDevice;
   PString recordDevice;
-  PINDEX separator = remoteParty.FindOneOf('\n\t\\', prefixLength);
+  PINDEX separator = remoteParty.FindOneOf("\n\t\\", prefixLength);
   if (separator == P_MAX_INDEX)
     playDevice = recordDevice = remoteParty.Mid(prefixLength);
   else {
