@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2009  2004/01/18 15:35:20  rjongbloed
+ * Revision 1.2010  2004/02/17 08:47:38  csoutheren
+ * Changed codec loading macros to work with Linux
+ *
+ * Revision 2.8  2004/01/18 15:35:20  rjongbloed
  * More work on video support
  *
  * Revision 2.7  2003/06/02 02:59:43  rjongbloed
@@ -123,12 +126,13 @@ class OpalTranscoderRegistration : public PCaselessString
 
 
 #define OPAL_REGISTER_TRANSCODER_FUNCTION(cls, src, dst, param) \
-static class cls##_Registration : public OpalTranscoderRegistration { \
+static class Transcoder_##cls##_Registration : public OpalTranscoderRegistration { \
   public: \
-    cls##_Registration() : OpalTranscoderRegistration(src, dst) { } \
+    Transcoder_##cls##_Registration() : OpalTranscoderRegistration(src, dst) { } \
     OpalTranscoder * Create(void * param) const; \
-} instance_##cls##_Registration; \
-OpalTranscoder * cls##_Registration::Create(void * param) const
+} Transcoder_##cls##_Registration_instance; \
+static Transcoder_##cls##_Registration * static_Transcoder_##cls##_Registration = &Transcoder_##cls##_Registration_instance; \
+OpalTranscoder * Transcoder_##cls##_Registration::Create(void * param) const 
 
 #ifndef OPAL_NO_PARAM
 #define OPAL_NO_PARAM
