@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2027  2004/05/09 13:19:00  rjongbloed
+ * Revision 1.2028  2004/07/11 12:43:17  rjongbloed
+ * Added function to get a list of all possible media formats that may be used given
+ *   a list of media and taking into account all of the registered transcoders.
+ *
+ * Revision 2.26  2004/05/09 13:19:00  rjongbloed
  * Fixed issues with non fast start and non-tunnelled connections
  *
  * Revision 2.25  2004/05/02 05:18:45  rjongbloed
@@ -390,21 +394,7 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection,
   for (PINDEX c = 0; c < activeConnections.GetSize(); c++) {
     OpalConnection & conn = activeConnections[c];
     if (includeSpecifiedConnection || &connection != &conn) {
-      OpalMediaFormatList possibleFormats;
-
-      // Run through the formats connection can do directly and calculate all of
-      // the possible formats, including ones via a transcoder
-      OpalMediaFormatList connectionFormats = conn.GetMediaFormats();
-      for (PINDEX f = 0; f < connectionFormats.GetSize(); f++) {
-        OpalMediaFormat format = connectionFormats[f];
-        possibleFormats += format;
-        OpalMediaFormatList srcFormats = OpalTranscoder::GetSourceFormats(format);
-        for (PINDEX i = 0; i < srcFormats.GetSize(); i++) {
-          if (OpalTranscoder::GetDestinationFormats(srcFormats[i]).GetSize() > 0)
-            possibleFormats += srcFormats[i];
-        }
-      }
-
+      OpalMediaFormatList possibleFormats = OpalTranscoder::GetPossibleFormats(conn.GetMediaFormats());
       if (first) {
         commonFormats = possibleFormats;
         first = FALSE;
