@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t38.cxx,v $
- * Revision 1.2011  2002/09/04 06:01:49  robertj
+ * Revision 1.2012  2002/11/10 11:33:20  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.10  2002/09/04 06:01:49  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.9  2002/07/01 04:56:33  robertj
@@ -163,7 +166,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 H323_T38Capability::H323_T38Capability(TransportMode m)
-  : H323DataCapability(OpalT38Protocol::MediaFormat, FAX_BIT_RATE),
+  : H323DataCapability(FAX_BIT_RATE),
     mode(m)
 {
 }
@@ -197,6 +200,15 @@ PObject * H323_T38Capability::Clone() const
 unsigned H323_T38Capability::GetSubType() const
 {
   return H245_DataApplicationCapability_application::e_t38fax;
+}
+
+
+PString H323_T38Capability::GetFormatName() const
+{
+  static const char * const modes[NumTransportModes] = {
+    "UDP", "TCP2", "TCP"
+  };
+  return OpalT38Protocol::MediaFormat + '{' + modes[mode] + '}';
 }
 
 
@@ -288,7 +300,7 @@ static const char T38NonStandardCapabilityName[] = "T38FaxUDP";
 H323_T38NonStandardCapability::H323_T38NonStandardCapability(BYTE country,
                                                              BYTE extension,
                                                              WORD manufacturer)
-  : H323NonStandardDataCapability(OpalT38Protocol::MediaFormat, FAX_BIT_RATE,
+  : H323NonStandardDataCapability(FAX_BIT_RATE,
                                   country, extension, manufacturer,
                                   (const BYTE *)T38NonStandardCapabilityName,
                                   sizeof(T38NonStandardCapabilityName)-1)
@@ -299,6 +311,12 @@ H323_T38NonStandardCapability::H323_T38NonStandardCapability(BYTE country,
 PObject * H323_T38NonStandardCapability::Clone() const
 {
   return new H323_T38NonStandardCapability(*this);
+}
+
+
+PString H323_T38NonStandardCapability::GetFormatName() const
+{
+  return OpalT38Protocol::MediaFormat + '{' + T38NonStandardCapabilityName + '}';
 }
 
 
@@ -457,7 +475,7 @@ BOOL H323_T38Channel::CreateTransport()
     PIPSocket::GetHostAddress(ip);
   }
 
-  transport = new OpalTransportUDP(connection.GetEndPoint(), ip);
+  transport = new H323TransportUDP(connection.GetEndPoint(), ip);
   PTRACE(3, "H323T38\tCreated transport: " << *transport);
   return TRUE;
 }

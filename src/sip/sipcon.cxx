@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2023  2002/09/12 06:58:34  robertj
+ * Revision 1.2024  2002/11/10 11:33:20  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.22  2002/09/12 06:58:34  robertj
  * Removed protocol prefix strings as static members as has problems with
  *   use in DLL environment.
  *
@@ -397,13 +400,15 @@ RTP_Session * SIPConnection::UseRTPSession(RTP_SessionManager & rtpSessions,
 
   // open an RTP session
   OpalManager & mgr = endpoint.GetManager();
-  if (!rtpSession->Open(ip,
-		        mgr.GetUDPPortBase(),
-                        mgr.GetUDPPortMax(),
-		        mgr.GetRtpIpTypeofService())) {
-    PTRACE(1, "SIP\tCould not open RTP session");
-    delete rtpSession;
-    return NULL;
+  WORD firstPort = mgr.GetRtpIpPortPair();
+  WORD nextPort = firstPort;
+  while (!rtpSession->Open(ip, nextPort, nextPort, mgr.GetRtpIpTypeofService())) {
+    nextPort = mgr.GetRtpIpPortPair();
+    if (nextPort == firstPort) {
+      PTRACE(1, "SIP\tCould not open RTP session");
+      delete rtpSession;
+      return NULL;
+    }
   }
  
   return rtpSession;
@@ -425,7 +430,8 @@ OpalMediaStream * SIPConnection::CreateMediaStream(BOOL isSource, unsigned sessi
     return NULL;
 
   return new OpalRTPMediaStream(isSource, *rtpSessions.GetSession(sessionID),
-                                endpoint.GetManager().GetMaxAudioDelayJitter());
+                                endpoint.GetManager().GetMinAudioJitterDelay(),
+                                endpoint.GetManager().GetMaxAudioJitterDelay());
 }
 
 

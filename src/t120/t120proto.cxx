@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: t120proto.cxx,v $
- * Revision 1.2006  2002/09/04 06:01:49  robertj
+ * Revision 1.2007  2002/11/10 11:33:20  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.5  2002/09/04 06:01:49  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.4  2002/02/11 09:32:13  robertj
@@ -73,16 +76,16 @@
 class T120_X224 : public X224 {
     PCLASSINFO(T120_X224, X224);
   public:
-    BOOL Read(OpalTransport & transport);
-    BOOL Write(OpalTransport & transport);
+    BOOL Read(H323Transport & transport);
+    BOOL Write(H323Transport & transport);
 };
 
 
 class T120ConnectPDU : public MCS_ConnectMCSPDU {
     PCLASSINFO(T120ConnectPDU, MCS_ConnectMCSPDU);
   public:
-    BOOL Read(OpalTransport & transport);
-    BOOL Write(OpalTransport & transport);
+    BOOL Read(H323Transport & transport);
+    BOOL Write(H323Transport & transport);
   protected:
     T120_X224 x224;
 };
@@ -101,7 +104,7 @@ OpalMediaFormat const OpalT120Protocol::MediaFormat("T.120",
 
 /////////////////////////////////////////////////////////////////////////////
 
-BOOL T120_X224::Read(OpalTransport & transport)
+BOOL T120_X224::Read(H323Transport & transport)
 {
   PBYTEArray rawData;
 
@@ -120,7 +123,7 @@ BOOL T120_X224::Read(OpalTransport & transport)
 }
 
 
-BOOL T120_X224::Write(OpalTransport & transport)
+BOOL T120_X224::Write(H323Transport & transport)
 {
   PBYTEArray rawData;
 
@@ -142,7 +145,7 @@ BOOL T120_X224::Write(OpalTransport & transport)
 
 /////////////////////////////////////////////////////////////////////////////
 
-BOOL T120ConnectPDU::Read(OpalTransport & transport)
+BOOL T120ConnectPDU::Read(H323Transport & transport)
 {
   if (!x224.Read(transport))
     return FALSE;
@@ -165,7 +168,7 @@ BOOL T120ConnectPDU::Read(OpalTransport & transport)
 }
 
 
-BOOL T120ConnectPDU::Write(OpalTransport & transport)
+BOOL T120ConnectPDU::Write(H323Transport & transport)
 {
   PTRACE(4, "T120\tSending MCS Connect PDU:\n  " << setprecision(2) << *this);
 
@@ -184,7 +187,7 @@ OpalT120Protocol::OpalT120Protocol()
 }
 
 
-BOOL OpalT120Protocol::Originate(OpalTransport & transport)
+BOOL OpalT120Protocol::Originate(H323Transport & transport)
 {
   PTRACE(3, "T120\tOriginate, sending X224 CONNECT-REQUEST");
 
@@ -212,7 +215,7 @@ BOOL OpalT120Protocol::Originate(OpalTransport & transport)
 }
 
 
-BOOL OpalT120Protocol::Answer(OpalTransport & transport)
+BOOL OpalT120Protocol::Answer(H323Transport & transport)
 {
   PTRACE(3, "T120\tAnswer, awaiting X224 CONNECT-REQUEST");
 
