@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2024  2004/03/13 06:32:18  rjongbloed
+ * Revision 1.2025  2004/03/14 08:34:10  csoutheren
+ * Added ability to set User-Agent string
+ *
+ * Revision 2.23  2004/03/13 06:32:18  rjongbloed
  * Fixes for removal of SIP and H.323 subsystems.
  * More registration work.
  *
@@ -674,9 +677,9 @@ PString SIPMIMEInfo::GetUserAgent() const
 }
 
 
-void SIPMIMEInfo::SetUserAgent(void)
+void SIPMIMEInfo::SetUserAgent(const SIPEndPoint & sipep)
 {
-  SetAt("User-Agent", "OPAL/2.0");      // no compact form
+  SetAt("User-Agent", sipep.GetUserAgent());      // no compact form
 }
 
 
@@ -1470,9 +1473,9 @@ void SIPTransaction::SetTerminated(States newState)
 SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport)
   : SIPTransaction(connection, transport, Method_INVITE)
 {
-  mime.SetDate() ;                    // now
-  mime.SetUserAgent();                // 'OPAL/2.0'
-  mime.SetMaxForwards(70);            // default
+  mime.SetDate() ;                             // now
+  mime.SetUserAgent(connection.GetEndPoint()); // normally 'OPAL/2.0'
+  mime.SetMaxForwards(70);                     // default
 
   sdp = connection.BuildSDP(rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
 }
