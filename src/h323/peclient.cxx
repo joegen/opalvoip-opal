@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: peclient.cxx,v $
- * Revision 1.2002  2004/02/19 10:47:05  rjongbloed
+ * Revision 1.2003  2004/06/04 06:54:18  csoutheren
+ * Migrated updates from OpenH323 1.14.1
+ *
+ * Revision 2.1  2004/02/19 10:47:05  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 1.39  2003/05/14 03:06:22  rjongbloed
@@ -568,10 +571,8 @@ BOOL H323PeerElement::RemoveServiceRelationship(const H323TransportAddress & pee
   // if no service relationship exists for this peer, then nothing to do
   {
     PWaitAndSignal m(remotePeerListMutex);
-    if (!remotePeerAddrToServiceID.Contains(peer)) {
-      remotePeerListMutex.Signal();
+    if (!remotePeerAddrToServiceID.Contains(peer))
       return FALSE;
-    }
     serviceID = remotePeerAddrToServiceID[peer];
   }
 
@@ -1670,7 +1671,7 @@ BOOL H323PeerElementDescriptor::CopyToAddressTemplate(H501_AddressTemplate & add
   for (i = 0; i < transportAddresses.GetSize(); i++) {
     H501_ContactInformation & contact = contacts[i];
     contact.m_transportAddress = transportAddresses[i];
-    contact.m_priority         = 0;
+    contact.m_priority         = H323PeerElementDescriptor::GetPriorityOption(options);
   }
 
   // add protocols
