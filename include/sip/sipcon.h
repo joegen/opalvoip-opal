@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2010  2002/04/09 01:02:14  robertj
+ * Revision 1.2011  2002/04/10 03:13:45  robertj
+ * Moved code for handling media bypass address resolution into ancestor as
+ *   now done ths same way in both SIP and H.323.
+ * Major changes to RTP session management when initiating an INVITE.
+ *
+ * Revision 2.9  2002/04/09 01:02:14  robertj
  * Fixed problems with restarting INVITE on  authentication required response.
  *
  * Revision 2.8  2002/04/08 02:40:13  robertj
@@ -155,15 +160,6 @@ class SIPConnection : public OpalConnection
       unsigned sessionID                  /// Session ID for media channel
     ) const;
 
-    /**Get information on the media channel for the connection.
-       The default behaviour returns TRUE and fills the info structure if
-       there is a media channel active for the sessionID.
-     */
-    virtual BOOL GetMediaInformation(
-      unsigned sessionID,     /// Session ID for media channel
-      MediaInformation & info /// Information on media channel
-    ) const;
-
     /**Clean up the termination of the connection.
        This function can do any internal cleaning up and waiting on background
        threads that may be using the connection object.
@@ -274,10 +270,13 @@ class SIPConnection : public OpalConnection
       const SIPURL & destination
     );
 
-    SDPSessionDescription * BuildSDP();
+    SDPSessionDescription * BuildSDP(
+      RTP_SessionManager & rtpSessions,
+      unsigned rtpSessionId
+    );
 
     OpalTransportAddress GetLocalAddress(WORD port = 0) const;
-    RTP_Session * UseSession(unsigned rtpSessionId);
+    RTP_Session * UseRTPSession(RTP_SessionManager & rtpSessions, unsigned rtpSessionId);
 
     OpalTransport & GetTransport() const { return *transport; }
 
@@ -329,10 +328,6 @@ class SIPConnection : public OpalConnection
     } releaseMethod;
 
     OpalMediaFormatList remoteFormatList;
-    RTP_SessionManager  rtpSessions;
-
-    PDICTIONARY(MediaTransportDict, POrdinalKey, OpalTransportAddress);
-    MediaTransportDict mediaTransports;
 };
 
 
