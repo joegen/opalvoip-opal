@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2002  2001/08/01 05:45:34  robertj
+ * Revision 1.2003  2001/08/01 06:22:07  robertj
+ * Fixed GNU warning.
+ *
+ * Revision 2.1  2001/08/01 05:45:34  robertj
  * Made OpalMediaFormatList class global to help with documentation.
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
@@ -314,8 +317,9 @@ PINDEX OpalMediaFormatList::FindFormat(const PString & search) const
     for (idx = 0; idx < GetSize(); idx++) {
       PCaselessString str = (*this)[idx];
 
+      PINDEX i;
       PINDEX last = 0;
-      for (PINDEX i = 0; i < wildcards.GetSize(); i++) {
+      for (i = 0; i < wildcards.GetSize(); i++) {
         PString wildcard = wildcards[i];
 
         PINDEX next;
