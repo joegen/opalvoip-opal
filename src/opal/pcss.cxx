@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2004  2001/08/21 01:13:22  robertj
+ * Revision 1.2005  2001/08/23 03:15:51  robertj
+ * Added missing Lock() calls in SetUpConnection
+ *
+ * Revision 2.3  2001/08/21 01:13:22  robertj
  * Fixed propagation of sound channel buffers through media stream.
  * Allowed setting of sound card by number using #1 etc.
  * Fixed calling OnAlerting when alerting.
@@ -129,6 +132,8 @@ OpalConnection * OpalPCSSEndPoint::SetUpConnection(OpalCall & call,
 
     connectionsActive.SetAt(connection->GetToken(), connection);
   }
+
+  connection->Lock();
 
   // See if we are initiating or answering call.
   OpalConnection & caller = call.GetConnection(0);
