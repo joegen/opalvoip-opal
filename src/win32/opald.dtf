@@ -3104,6 +3104,7 @@ EXPORTS
     ??0iterator@?$_Tree@IU?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@std@@U_Kfn@?$map@IPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@U?$less@I@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@4@@2@U?$less@I@2@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@2@@std@@QAE@XZ @50163 NONAME
     ??0iterator@?$_Tree@VPString@@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@3@@std@@QAE@PAU_Node@12@@Z @50075 NONAME
     ??0iterator@?$_Tree@VPString@@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@3@@std@@QAE@XZ @50076 NONAME
+    ??0LineState@OpalVpbDevice@@QAE@XZ @50620 NONAME
     ??0ListenerCallback_PNotifier@OpalEndPoint@@QAE@PAV1@@Z @27874 NONAME
     ??0ListenForConnections_PNotifier@OpalListener@@QAE@PAV1@@Z @2307 NONAME
     ??0MCS_ArrayOf_ChannelAttributes@@QAE@ABV0@@Z @2308 NONAME
@@ -3363,6 +3364,7 @@ EXPORTS
     ??0OpalVideoMediaStream@@QAE@ABVOpalMediaFormat@@IPAVPVideoInputDevice@@PAVPVideoOutputDevice@@H@Z @34268 NONAME
     ??0OpalVideoTranscoder@@QAE@ABVOpalTranscoderRegistration@@@Z @2525 NONAME
     ??0OpalVoipBlasterDevice@@QAE@XZ @28708 NONAME
+    ??0OpalVpbDevice@@QAE@XZ @50621 NONAME
     ??0OpalVXMLSession@@QAE@PAVOpalConnection@@PAVPTextToSpeech@@H@Z @30963 NONAME
     ??0OpalWAVFile@@QAE@ABVPFilePath@@W4OpenMode@PFile@@HI@Z @30652 NONAME
     ??0OpalWAVFile@@QAE@I@Z @30653 NONAME
@@ -3467,8 +3469,6 @@ EXPORTS
     ??0PortInfo@OpalManager@@QAE@XZ @28724 NONAME
     ??0PPER_Stream@@QAE@ABV0@@Z @28725 NONAME
     ??0Pre_Vid_Coder@@QAE@XZ @2567 NONAME
-    ??0PSafeLockReadOnly@@QAE@ABVPSafeObject@@@Z @50347 NONAME
-    ??0PSafeLockReadWrite@@QAE@ABVPSafeObject@@@Z @50348 NONAME
     ??0PSortedStringList@@QAE@XZ @34307 NONAME
     ??0PUInt32b@@QAE@K@Z @34308 NONAME
     ??0PUInt32l@@QAE@XZ @28088 NONAME
@@ -3584,6 +3584,7 @@ EXPORTS
     ??0T38_UDPTLPacket_primary_ifp_packet@@QAE@ABV0@@Z @2609 NONAME
     ??0T38_UDPTLPacket_primary_ifp_packet@@QAE@IW4TagClass@PASN_Object@@@Z @2610 NONAME
     ??0TickleMonitor_PNotifier@H323Gatekeeper@@QAE@PAV1@@Z @28763 NONAME
+    ??0ToneThread@@QAE@HUVPB_TONE@@@Z @50622 NONAME
     ??0TransmitEnded_PNotifier@OpalRFC2833Proto@@QAE@PAV1@@Z @28764 NONAME
     ??0TransmitPacket_PNotifier@OpalRFC2833Proto@@QAE@PAV1@@Z @28765 NONAME
     ??0Transmitter@@QAE@XZ @2611 NONAME
@@ -5165,6 +5166,7 @@ EXPORTS
     ??1HandleTransactions_PNotifier@H323Transactor@@UAE@XZ @34461 NONAME
     ??1Info@RTP_JitterBufferAnalyser@@QAE@XZ @3769 NONAME
     ??1IntraP64Decoder@@UAE@XZ @3770 NONAME
+    ??1LineState@OpalVpbDevice@@QAE@XZ @50623 NONAME
     ??1ListenerCallback_PNotifier@OpalEndPoint@@UAE@XZ @27875 NONAME
     ??1ListenForConnections_PNotifier@OpalListener@@UAE@XZ @3819 NONAME
     ??1MCS_ArrayOf_ChannelAttributes@@UAE@XZ @3820 NONAME
@@ -5319,6 +5321,7 @@ EXPORTS
     ??1OpalVideoMediaStream@@UAE@XZ @27860 NONAME
     ??1OpalVideoTranscoder@@UAE@XZ @3944 NONAME
     ??1OpalVoipBlasterDevice@@UAE@XZ @28831 NONAME
+    ??1OpalVpbDevice@@UAE@XZ @50624 NONAME
     ??1OpalVXMLSession@@UAE@XZ @30964 NONAME
     ??1OpalWAVFile@@UAE@XZ @30655 NONAME
     ??1Opal_G711_ALaw_PCM@@UAE@XZ @27940 NONAME
@@ -5429,8 +5432,6 @@ EXPORTS
     ??1PortInfo@OpalManager@@QAE@XZ @28846 NONAME
     ??1PPER_Stream@@UAE@XZ @3991 NONAME
     ??1Pre_Vid_Coder@@UAE@XZ @3992 NONAME
-    ??1PSafeLockReadOnly@@QAE@XZ @50368 NONAME
-    ??1PSafeLockReadWrite@@QAE@XZ @50369 NONAME
     ??1PURL@@UAE@XZ @28847 NONAME
     ??1PWAVFile@@UAE@XZ @30656 NONAME
     ??1Q931@@UAE@XZ @3994 NONAME
@@ -5499,6 +5500,7 @@ EXPORTS
     ??1T38_UDPTLPacket_error_recovery_secondary_ifp_packets_subtype@@UAE@XZ @4020 NONAME
     ??1T38_UDPTLPacket_primary_ifp_packet@@UAE@XZ @4021 NONAME
     ??1TickleMonitor_PNotifier@H323Gatekeeper@@UAE@XZ @28868 NONAME
+    ??1ToneThread@@UAE@XZ @50625 NONAME
     ??1TransmitEnded_PNotifier@OpalRFC2833Proto@@UAE@XZ @28869 NONAME
     ??1TransmitPacket_PNotifier@OpalRFC2833Proto@@UAE@XZ @28870 NONAME
     ??1Transmitter@@UAE@XZ @4022 NONAME
@@ -9500,6 +9502,7 @@ EXPORTS
     ??_7OpalVideoMediaStream@@6B@ @29173 NONAME
     ??_7OpalVideoTranscoder@@6B@ @10922 NONAME
     ??_7OpalVoipBlasterDevice@@6B@ @29174 NONAME
+    ??_7OpalVpbDevice@@6B@ @50626 NONAME
     ??_7OpalVXMLSession@@6B@ @50042 NONAME
     ??_7OpalVXMLSession@@6Biostream@@@ @48554 NONAME
     ??_7OpalVXMLSession@@6BPObject@@@ @30968 NONAME
@@ -9675,6 +9678,7 @@ EXPORTS
     ??_7T38_UDPTLPacket_error_recovery_secondary_ifp_packets_subtype@@6B@ @10988 NONAME
     ??_7T38_UDPTLPacket_primary_ifp_packet@@6B@ @10989 NONAME
     ??_7TickleMonitor_PNotifier@H323Gatekeeper@@6B@ @29210 NONAME
+    ??_7ToneThread@@6B@ @50627 NONAME
     ??_7TransmitEnded_PNotifier@OpalRFC2833Proto@@6B@ @29211 NONAME
     ??_7TransmitPacket_PNotifier@OpalRFC2833Proto@@6B@ @29212 NONAME
     ??_7Transmitter@@6B@ @10990 NONAME
@@ -11430,6 +11434,7 @@ EXPORTS
     ??_R0?AVOpalVideoMediaStream@@@8 @36640 NONAME
     ??_R0?AVOpalVideoTranscoder@@@8 @36641 NONAME
     ??_R0?AVOpalVoipBlasterDevice@@@8 @36642 NONAME
+    ??_R0?AVOpalVpbDevice@@@8 @50628 NONAME
     ??_R0?AVOpalVXMLSession@@@8 @36643 NONAME
     ??_R0?AVOpalWAVFile@@@8 @36644 NONAME
     ??_R0?AVOpal_G711_ALaw_PCM@@@8 @36645 NONAME
@@ -11580,6 +11585,7 @@ EXPORTS
     ??_R0?AVT38_UDPTLPacket_error_recovery_secondary_ifp_packets_subtype@@@8 @36782 NONAME
     ??_R0?AVT38_UDPTLPacket_primary_ifp_packet@@@8 @36783 NONAME
     ??_R0?AVTickleMonitor_PNotifier@H323Gatekeeper@@@8 @36784 NONAME
+    ??_R0?AVToneThread@@@8 @50629 NONAME
     ??_R0?AVTransmitEnded_PNotifier@OpalRFC2833Proto@@@8 @36785 NONAME
     ??_R0?AVTransmitPacket_PNotifier@OpalRFC2833Proto@@@8 @36786 NONAME
     ??_R0?AVTransmitter@@@8 @36787 NONAME
@@ -13290,6 +13296,7 @@ EXPORTS
     ??_R1A@?0A@A@OpalVideoMediaStream@@8 @38474 NONAME
     ??_R1A@?0A@A@OpalVideoTranscoder@@8 @38475 NONAME
     ??_R1A@?0A@A@OpalVoipBlasterDevice@@8 @38476 NONAME
+    ??_R1A@?0A@A@OpalVpbDevice@@8 @50630 NONAME
     ??_R1A@?0A@A@OpalVXMLSession@@8 @38477 NONAME
     ??_R1A@?0A@A@OpalWAVFile@@8 @38478 NONAME
     ??_R1A@?0A@A@Opal_G711_ALaw_PCM@@8 @38479 NONAME
@@ -13465,6 +13472,7 @@ EXPORTS
     ??_R1A@?0A@A@T38_UDPTLPacket_error_recovery_secondary_ifp_packets_subtype@@8 @38642 NONAME
     ??_R1A@?0A@A@T38_UDPTLPacket_primary_ifp_packet@@8 @38643 NONAME
     ??_R1A@?0A@A@TickleMonitor_PNotifier@H323Gatekeeper@@8 @38644 NONAME
+    ??_R1A@?0A@A@ToneThread@@8 @50631 NONAME
     ??_R1A@?0A@A@TransmitEnded_PNotifier@OpalRFC2833Proto@@8 @38645 NONAME
     ??_R1A@?0A@A@TransmitPacket_PNotifier@OpalRFC2833Proto@@8 @38646 NONAME
     ??_R1A@?0A@A@Transmitter@@8 @38647 NONAME
@@ -15179,6 +15187,7 @@ EXPORTS
     ??_R2OpalVideoMediaStream@@8 @40338 NONAME
     ??_R2OpalVideoTranscoder@@8 @40339 NONAME
     ??_R2OpalVoipBlasterDevice@@8 @40340 NONAME
+    ??_R2OpalVpbDevice@@8 @50632 NONAME
     ??_R2OpalVXMLSession@@8 @40341 NONAME
     ??_R2OpalWAVFile@@8 @40342 NONAME
     ??_R2Opal_G711_ALaw_PCM@@8 @40343 NONAME
@@ -15344,6 +15353,7 @@ EXPORTS
     ??_R2T38_UDPTLPacket_error_recovery_secondary_ifp_packets_subtype@@8 @40496 NONAME
     ??_R2T38_UDPTLPacket_primary_ifp_packet@@8 @40497 NONAME
     ??_R2TickleMonitor_PNotifier@H323Gatekeeper@@8 @40498 NONAME
+    ??_R2ToneThread@@8 @50633 NONAME
     ??_R2TransmitEnded_PNotifier@OpalRFC2833Proto@@8 @40499 NONAME
     ??_R2TransmitPacket_PNotifier@OpalRFC2833Proto@@8 @40500 NONAME
     ??_R2Transmitter@@8 @40501 NONAME
@@ -17053,6 +17063,7 @@ EXPORTS
     ??_R3OpalVideoMediaStream@@8 @42188 NONAME
     ??_R3OpalVideoTranscoder@@8 @42189 NONAME
     ??_R3OpalVoipBlasterDevice@@8 @42190 NONAME
+    ??_R3OpalVpbDevice@@8 @50634 NONAME
     ??_R3OpalVXMLSession@@8 @42191 NONAME
     ??_R3OpalWAVFile@@8 @42192 NONAME
     ??_R3Opal_G711_ALaw_PCM@@8 @42193 NONAME
@@ -17218,6 +17229,7 @@ EXPORTS
     ??_R3T38_UDPTLPacket_error_recovery_secondary_ifp_packets_subtype@@8 @42346 NONAME
     ??_R3T38_UDPTLPacket_primary_ifp_packet@@8 @42347 NONAME
     ??_R3TickleMonitor_PNotifier@H323Gatekeeper@@8 @42348 NONAME
+    ??_R3ToneThread@@8 @50635 NONAME
     ??_R3TransmitEnded_PNotifier@OpalRFC2833Proto@@8 @42349 NONAME
     ??_R3TransmitPacket_PNotifier@OpalRFC2833Proto@@8 @42350 NONAME
     ??_R3Transmitter@@8 @42351 NONAME
@@ -18944,6 +18956,7 @@ EXPORTS
     ??_R4OpalVideoMediaStream@@6B@ @44055 NONAME
     ??_R4OpalVideoTranscoder@@6B@ @44056 NONAME
     ??_R4OpalVoipBlasterDevice@@6B@ @44057 NONAME
+    ??_R4OpalVpbDevice@@6B@ @50636 NONAME
     ??_R4OpalVXMLSession@@6B@ @50045 NONAME
     ??_R4OpalVXMLSession@@6Biostream@@@ @48804 NONAME
     ??_R4OpalVXMLSession@@6BPObject@@@ @44059 NONAME
@@ -19119,6 +19132,7 @@ EXPORTS
     ??_R4T38_UDPTLPacket_error_recovery_secondary_ifp_packets_subtype@@6B@ @44222 NONAME
     ??_R4T38_UDPTLPacket_primary_ifp_packet@@6B@ @44223 NONAME
     ??_R4TickleMonitor_PNotifier@H323Gatekeeper@@6B@ @44224 NONAME
+    ??_R4ToneThread@@6B@ @50637 NONAME
     ??_R4TransmitEnded_PNotifier@OpalRFC2833Proto@@6B@ @44225 NONAME
     ??_R4TransmitPacket_PNotifier@OpalRFC2833Proto@@6B@ @44226 NONAME
     ??_R4Transmitter@@6B@ @44227 NONAME
@@ -21086,6 +21100,7 @@ EXPORTS
     ?Class@OpalVideoMediaStream@@SAPBDXZ @27867 NONAME
     ?Class@OpalVideoTranscoder@@SAPBDXZ @12483 NONAME
     ?Class@OpalVoipBlasterDevice@@SAPBDXZ @29335 NONAME
+    ?Class@OpalVpbDevice@@SAPBDXZ @50638 NONAME
     ?Class@OpalVXMLSession@@SAPBDXZ @30972 NONAME
     ?Class@OpalWAVFile@@SAPBDXZ @30667 NONAME
     ?Class@PASN_Array@@SAPBDXZ @12485 NONAME
@@ -22740,6 +22755,7 @@ EXPORTS
     ?Close@OpalTransport@@UAEHXZ @13784 NONAME
     ?Close@OpalTransportUDP@@UAEHXZ @29387 NONAME
     ?Close@OpalVoipBlasterDevice@@UAEHXZ @29388 NONAME
+    ?Close@OpalVpbDevice@@UAEHXZ @50639 NONAME
     ?Close@OpalVXMLSession@@UAEHXZ @30974 NONAME
     ?Close@RTP_UDP@@UAEXH@Z @13786 NONAME
     ?CloseAllLogicalChannels@H323Connection@@UAEXH@Z @29389 NONAME
@@ -25123,6 +25139,7 @@ EXPORTS
     ?CompareObjectMemoryDirect@OpalVideoMediaStream@@UBE?AW4Comparison@PObject@@ABV3@@Z @27868 NONAME
     ?CompareObjectMemoryDirect@OpalVideoTranscoder@@UBE?AW4Comparison@PObject@@ABV3@@Z @15665 NONAME
     ?CompareObjectMemoryDirect@OpalVoipBlasterDevice@@UBE?AW4Comparison@PObject@@ABV3@@Z @29438 NONAME
+    ?CompareObjectMemoryDirect@OpalVpbDevice@@UBE?AW4Comparison@PObject@@ABV3@@Z @50640 NONAME
     ?CompareObjectMemoryDirect@OpalVXMLSession@@UBE?AW4Comparison@PObject@@ABV3@@Z @30975 NONAME
     ?CompareObjectMemoryDirect@OpalWAVFile@@UBE?AW4Comparison@PObject@@ABV3@@Z @30669 NONAME
     ?CompareObjectMemoryDirect@PASN_Boolean@@UBE?AW4Comparison@PObject@@ABV3@@Z @15667 NONAME
@@ -25202,6 +25219,7 @@ EXPORTS
     ?CompareObjectMemoryDirect@T38_UDPTLPacket_error_recovery_secondary_ifp_packets@@UBE?AW4Comparison@PObject@@ABV3@@Z @15706 NONAME
     ?CompareObjectMemoryDirect@T38_UDPTLPacket_error_recovery_secondary_ifp_packets_subtype@@UBE?AW4Comparison@PObject@@ABV3@@Z @15707 NONAME
     ?CompareObjectMemoryDirect@T38_UDPTLPacket_primary_ifp_packet@@UBE?AW4Comparison@PObject@@ABV3@@Z @15708 NONAME
+    ?CompareObjectMemoryDirect@ToneThread@@UBE?AW4Comparison@PObject@@ABV3@@Z @50641 NONAME
     ?CompareObjectMemoryDirect@VoipBlasterInterface@@UBE?AW4Comparison@PObject@@ABV3@@Z @29459 NONAME
     ?CompareObjectMemoryDirect@X224@@UBE?AW4Comparison@PObject@@ABV3@@Z @15709 NONAME
     ?CompareObjectMemoryDirect@X880_Code@@UBE?AW4Comparison@PObject@@ABV3@@Z @15710 NONAME
@@ -27592,6 +27610,7 @@ EXPORTS
     ?GetAllDevices@OpalLineInterfaceDevice@@SA?AVPStringList@@XZ @45034 NONAME
     ?GetAllNames@OpalIxJDevice@@UBE?AVPStringArray@@XZ @45035 NONAME
     ?GetAllNames@OpalVoipBlasterDevice@@UBE?AVPStringArray@@XZ @45036 NONAME
+    ?GetAllNames@OpalVpbDevice@@UBE?AVPStringArray@@XZ @50642 NONAME
     ?GetAllow@SIPMIMEInfo@@QBE?AVPString@@XZ @45037 NONAME
     ?GetAllRegisteredMediaFormats@OpalMediaFormat@@SA?AVOpalMediaFormatList@@XZ @45038 NONAME
     ?GetAllRegisteredMediaFormats@OpalMediaFormat@@SAXAAVOpalMediaFormatList@@@Z @48231 NONAME
@@ -29306,6 +29325,7 @@ EXPORTS
     ?GetClass@OpalVideoMediaStream@@UBEPBDI@Z @27869 NONAME
     ?GetClass@OpalVideoTranscoder@@UBEPBDI@Z @18812 NONAME
     ?GetClass@OpalVoipBlasterDevice@@UBEPBDI@Z @29630 NONAME
+    ?GetClass@OpalVpbDevice@@UBEPBDI@Z @50643 NONAME
     ?GetClass@OpalVXMLSession@@UBEPBDI@Z @30977 NONAME
     ?GetClass@OpalWAVFile@@UBEPBDI@Z @30671 NONAME
     ?GetClass@PASN_Array@@UBEPBDI@Z @18814 NONAME
@@ -29393,6 +29413,7 @@ EXPORTS
     ?GetClass@T38_UDPTLPacket_error_recovery_secondary_ifp_packets@@UBEPBDI@Z @18860 NONAME
     ?GetClass@T38_UDPTLPacket_error_recovery_secondary_ifp_packets_subtype@@UBEPBDI@Z @18861 NONAME
     ?GetClass@T38_UDPTLPacket_primary_ifp_packet@@UBEPBDI@Z @18862 NONAME
+    ?GetClass@ToneThread@@UBEPBDI@Z @50644 NONAME
     ?GetClass@VoipBlasterInterface@@UBEPBDI@Z @29651 NONAME
     ?GetClass@X224@@UBEPBDI@Z @18863 NONAME
     ?GetClass@X880_Code@@UBEPBDI@Z @18864 NONAME
@@ -30213,7 +30234,10 @@ EXPORTS
     ?GetDefaultSignalPort@OpalEndPoint@@QBEGXZ @19514 NONAME
     ?GetDefaultUdpPort@H323GatekeeperServer@@UAEGXZ @45252 NONAME
     ?GetDefaultUserName@OpalManager@@QBEABVPString@@XZ @49119 NONAME
+    ?GetDescription@OpalIxJDevice@@UBE?AVPString@@XZ @50645 NONAME
     ?GetDescription@OpalLine@@QBE?AVPString@@XZ @19515 NONAME
+    ?GetDescription@OpalVoipBlasterDevice@@UBE?AVPString@@XZ @50646 NONAME
+    ?GetDescription@OpalVpbDevice@@UBE?AVPString@@XZ @50647 NONAME
     ?GetDescriptorID@H323RegisteredEndPoint@@QBEABVOpalGloballyUniqueID@@XZ @45253 NONAME
     ?GetDestinationAddress@H323Connection@@UAE?AVPString@@XZ @19516 NONAME
     ?GetDestinationAddress@H323GatekeeperCall@@QBE?AVPString@@XZ @29682 NONAME
@@ -30225,8 +30249,14 @@ EXPORTS
     ?GetDestinationE164@H323SignalPDU@@QBEHAAVPString@@@Z @19520 NONAME
     ?GetDestinationFormats@OpalTranscoder@@SA?AVOpalMediaFormatList@@ABVOpalMediaFormat@@@Z @28014 NONAME
     ?GetDevice@OpalLine@@QBEAAVOpalLineInterfaceDevice@@XZ @19521 NONAME
+    ?GetDeviceName@OpalIxJDevice@@UBE?AVPString@@XZ @50648 NONAME
+    ?GetDeviceName@OpalVoipBlasterDevice@@UBE?AVPString@@XZ @50649 NONAME
+    ?GetDeviceName@OpalVpbDevice@@UBE?AVPString@@XZ @50650 NONAME
     ?GetDeviceNames@OpalIxJDevice@@SA?AVPStringArray@@XZ @19522 NONAME
     ?GetDeviceNames@OpalVoipBlasterDevice@@SA?AVPStringArray@@XZ @29683 NONAME
+    ?GetDeviceType@OpalIxJDevice@@UBE?AVPString@@XZ @50651 NONAME
+    ?GetDeviceType@OpalVoipBlasterDevice@@UBE?AVPString@@XZ @50652 NONAME
+    ?GetDeviceType@OpalVpbDevice@@UBE?AVPString@@XZ @50653 NONAME
     ?GetDirection@H323BidirectionalChannel@@UBE?AW4Directions@H323Channel@@XZ @19523 NONAME
     ?GetDirection@H323UnidirectionalChannel@@UBE?AW4Directions@H323Channel@@XZ @19524 NONAME
     ?GetDisplayName@OpalConnection@@QBEABVPString@@XZ @50026 NONAME
@@ -30359,6 +30389,7 @@ EXPORTS
     ?GetLine@OpalLIDEndPoint@@QBEPAVOpalLine@@ABVPString@@H@Z @29734 NONAME
     ?GetLineCount@OpalIxJDevice@@UAEIXZ @19566 NONAME
     ?GetLineCount@OpalVoipBlasterDevice@@UAEIXZ @29735 NONAME
+    ?GetLineCount@OpalVpbDevice@@UAEIXZ @50654 NONAME
     ?GetLineNumber@OpalLine@@QBEIXZ @19568 NONAME
     ?GetListeners@OpalEndPoint@@QBEABV?$PList@VOpalListener@@@@XZ @27878 NONAME
     ?GetLocalAddress@OpalListenerIP@@UBE?AVOpalTransportAddress@@ABV2@@Z @29736 NONAME
@@ -30410,6 +30441,7 @@ EXPORTS
     ?GetMediaFormats@OpalPCSSConnection@@UBE?AVOpalMediaFormatList@@XZ @28024 NONAME
     ?GetMediaFormats@OpalPCSSEndPoint@@UBE?AVOpalMediaFormatList@@XZ @50148 NONAME
     ?GetMediaFormats@OpalVoipBlasterDevice@@UBE?AVOpalMediaFormatList@@XZ @30684 NONAME
+    ?GetMediaFormats@OpalVpbDevice@@UBE?AVOpalMediaFormatList@@XZ @50655 NONAME
     ?GetMediaFormats@SDPMediaDescription@@QBE?AVOpalMediaFormatList@@XZ @29748 NONAME
     ?GetMediaFormats@SIPConnection@@UBE?AVOpalMediaFormatList@@XZ @29749 NONAME
     ?GetMediaFormats@SIPEndPoint@@UBE?AVOpalMediaFormatList@@XZ @50149 NONAME
@@ -30445,8 +30477,6 @@ EXPORTS
     ?GetName@H501AccessRequest@@UBEPBDXZ @45287 NONAME
     ?GetName@H501DescriptorUpdate@@UBEPBDXZ @45288 NONAME
     ?GetName@H501ServiceRequest@@UBEPBDXZ @45289 NONAME
-    ?GetName@OpalIxJDevice@@UBE?AVPString@@XZ @19613 NONAME
-    ?GetName@OpalVoipBlasterDevice@@UBE?AVPString@@XZ @29766 NONAME
     ?GetNegLogicalChannelAt@H245NegLogicalChannels@@QAEAAVH245NegLogicalChannel@@H@Z @19615 NONAME
     ?GetNext@PortInfo@OpalManager@@QAEGI@Z @29767 NONAME
     ?GetNextCallIdentityValue@H4502Handler@@QBEIXZ @29768 NONAME
@@ -30469,6 +30499,7 @@ EXPORTS
     ?GetOptimalDataFrameSize@OpalUncompVideoTranscoder@@UBEHH@Z @45293 NONAME
     ?GetOptimalDataFrameSize@Opal_H261_YUV420P@@UBEHH@Z @45294 NONAME
     ?GetOptimalDataFrameSize@Opal_YUV420P_H261@@UBEHH@Z @45295 NONAME
+    ?GetOSHandle@OpalVpbDevice@@QAEHI@Z @50656 NONAME
     ?GetOtherPartyConnection@OpalCall@@QBE?AV?$PSafePtr@VOpalConnection@@@@ABVOpalConnection@@@Z @50577 NONAME
     ?GetOutputFormat@OpalTranscoder@@QBEABVOpalMediaFormat@@XZ @45297 NONAME
     ?GetOutputFormat@OpalTranscoderRegistration@@QBE?AVPString@@XZ @19626 NONAME
@@ -30530,9 +30561,11 @@ EXPORTS
     ?GetReadFormat@OpalIxJDevice@@UAE?AVOpalMediaFormat@@I@Z @19649 NONAME
     ?GetReadFormat@OpalLine@@UAE?AVOpalMediaFormat@@XZ @19650 NONAME
     ?GetReadFormat@OpalVoipBlasterDevice@@UAE?AVOpalMediaFormat@@I@Z @29804 NONAME
+    ?GetReadFormat@OpalVpbDevice@@UAE?AVOpalMediaFormat@@I@Z @50657 NONAME
     ?GetReadFrameSize@OpalIxJDevice@@UAEHI@Z @19652 NONAME
     ?GetReadFrameSize@OpalLine@@UAEHXZ @19653 NONAME
     ?GetReadFrameSize@OpalVoipBlasterDevice@@UAEHI@Z @29805 NONAME
+    ?GetReadFrameSize@OpalVpbDevice@@UAEHI@Z @50658 NONAME
     ?GetRealSendUserInputMode@H323Connection@@QBE?AW4SendUserInputModes@1@XZ @29806 NONAME
     ?GetReceiveHandler@OpalRFC2833Proto@@QBEABVPNotifier@@XZ @29807 NONAME
     ?GetReceiveHandler@OpalSilenceDetector@@QBEABVPNotifier@@XZ @49121 NONAME
@@ -30719,9 +30752,11 @@ EXPORTS
     ?GetWriteFormat@OpalIxJDevice@@UAE?AVOpalMediaFormat@@I@Z @19746 NONAME
     ?GetWriteFormat@OpalLine@@UAE?AVOpalMediaFormat@@XZ @19747 NONAME
     ?GetWriteFormat@OpalVoipBlasterDevice@@UAE?AVOpalMediaFormat@@I@Z @29883 NONAME
+    ?GetWriteFormat@OpalVpbDevice@@UAE?AVOpalMediaFormat@@I@Z @50659 NONAME
     ?GetWriteFrameSize@OpalIxJDevice@@UAEHI@Z @19749 NONAME
     ?GetWriteFrameSize@OpalLine@@UAEHXZ @19750 NONAME
     ?GetWriteFrameSize@OpalVoipBlasterDevice@@UAEHI@Z @29884 NONAME
+    ?GetWriteFrameSize@OpalVpbDevice@@UAEHI@Z @50660 NONAME
     ?GetWWWAuthenticate@SIPMIMEInfo@@QBE?AVPString@@XZ @45341 NONAME
     ?H323GetAliasAddressE164@@YA?AVPString@@ABVH225_AliasAddress@@@Z @29885 NONAME
     ?H323GetAliasAddressE164@@YA?AVPString@@ABVH225_ArrayOf_AliasAddress@@@Z @29886 NONAME
@@ -32491,6 +32526,7 @@ EXPORTS
     ?InternalIsDescendant@OpalVideoMediaStream@@UBEHPBD@Z @46977 NONAME
     ?InternalIsDescendant@OpalVideoTranscoder@@UBEHPBD@Z @46978 NONAME
     ?InternalIsDescendant@OpalVoipBlasterDevice@@UBEHPBD@Z @46979 NONAME
+    ?InternalIsDescendant@OpalVpbDevice@@UBEHPBD@Z @50661 NONAME
     ?InternalIsDescendant@OpalVXMLSession@@UBEHPBD@Z @46980 NONAME
     ?InternalIsDescendant@OpalWAVFile@@UBEHPBD@Z @46981 NONAME
     ?InternalIsDescendant@PASN_Array@@UBEHPBD@Z @46982 NONAME
@@ -32578,6 +32614,7 @@ EXPORTS
     ?InternalIsDescendant@T38_UDPTLPacket_error_recovery_secondary_ifp_packets@@UBEHPBD@Z @47063 NONAME
     ?InternalIsDescendant@T38_UDPTLPacket_error_recovery_secondary_ifp_packets_subtype@@UBEHPBD@Z @47064 NONAME
     ?InternalIsDescendant@T38_UDPTLPacket_primary_ifp_packet@@UBEHPBD@Z @47065 NONAME
+    ?InternalIsDescendant@ToneThread@@UBEHPBD@Z @50662 NONAME
     ?InternalIsDescendant@VoipBlasterInterface@@UBEHPBD@Z @47066 NONAME
     ?InternalIsDescendant@X224@@UBEHPBD@Z @47067 NONAME
     ?InternalIsDescendant@X880_Code@@UBEHPBD@Z @47068 NONAME
@@ -32652,14 +32689,18 @@ EXPORTS
     ?IsLineDisconnected@OpalIxJDevice@@UAEHIH@Z @22518 NONAME
     ?IsLineDisconnected@OpalLineInterfaceDevice@@UAEHIH@Z @22519 NONAME
     ?IsLineDisconnected@OpalVoipBlasterDevice@@UAEHIH@Z @30109 NONAME
+    ?IsLineDisconnected@OpalVpbDevice@@UAEHIH@Z @50663 NONAME
     ?IsLineOffHook@OpalIxJDevice@@UAEHI@Z @22520 NONAME
     ?IsLineOffHook@OpalVoipBlasterDevice@@UAEHI@Z @30110 NONAME
+    ?IsLineOffHook@OpalVpbDevice@@UAEHI@Z @50664 NONAME
     ?IsLinePresent@OpalIxJDevice@@UAEHIH@Z @22522 NONAME
     ?IsLinePresent@OpalLineInterfaceDevice@@UAEHIH@Z @22523 NONAME
     ?IsLinePresent@OpalVoipBlasterDevice@@UAEHIH@Z @30111 NONAME
+    ?IsLineRinging@LineState@OpalVpbDevice@@QAEHPAK@Z @50665 NONAME
     ?IsLineRinging@OpalIxJDevice@@UAEHIPAK@Z @22525 NONAME
     ?IsLineRinging@OpalLineInterfaceDevice@@UAEHIPAK@Z @22526 NONAME
     ?IsLineRinging@OpalVoipBlasterDevice@@UAEHIPAK@Z @30112 NONAME
+    ?IsLineRinging@OpalVpbDevice@@UAEHIPAK@Z @50666 NONAME
     ?IsLineTerminal@OpalIxJDevice@@UAEHI@Z @22528 NONAME
     ?IsLineTerminal@OpalLineInterfaceDevice@@UAEHI@Z @22529 NONAME
     ?IsLineTerminal@OpalVoipBlasterDevice@@UAEHI@Z @30113 NONAME
@@ -32721,6 +32762,7 @@ EXPORTS
     ?IsToneDetected@OpalLine@@UAEIXZ @22556 NONAME
     ?IsToneDetected@OpalLineInterfaceDevice@@UAEII@Z @22557 NONAME
     ?IsToneDetected@OpalVoipBlasterDevice@@UAEII@Z @30128 NONAME
+    ?IsToneDetected@OpalVpbDevice@@UAEII@Z @50667 NONAME
     ?IsTonePlaying@OpalIxJDevice@@UAEHI@Z @22559 NONAME
     ?IsTonePlaying@OpalLine@@UAEHXZ @22560 NONAME
     ?IsTonePlaying@OpalLineInterfaceDevice@@UAEHI@Z @22561 NONAME
@@ -32743,6 +32785,7 @@ EXPORTS
     ?lower_bound@?$_Tree@VPString@@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@3@@std@@QAE?AViterator@12@ABVPString@@@Z @50112 NONAME
     ?Main@OpalMediaPatch@@UAEXXZ @22572 NONAME
     ?Main@RTP_JitterBuffer@@MAEXXZ @22573 NONAME
+    ?Main@ToneThread@@UAEXXZ @50668 NONAME
     ?MakeConnection@H323EndPoint@@UAEHAAVOpalCall@@ABVPString@@PAX@Z @47102 NONAME
     ?MakeConnection@OpalIVREndPoint@@UAEHAAVOpalCall@@ABVPString@@PAX@Z @47103 NONAME
     ?MakeConnection@OpalLIDEndPoint@@UAEHAAVOpalCall@@ABVPString@@PAX@Z @47104 NONAME
@@ -33408,14 +33451,17 @@ EXPORTS
     ?Open@H245NegLogicalChannels@@UAEHABVH323Capability@@II@Z @30378 NONAME
     ?Open@H323Channel@@UAEHXZ @22905 NONAME
     ?Open@H323UnidirectionalChannel@@UAEHXZ @22906 NONAME
+    ?Open@LineState@OpalVpbDevice@@QAEHII@Z @50669 NONAME
     ?Open@OpalIVRMediaStream@@UAEHXZ @47228 NONAME
     ?Open@OpalIxJDevice@@UAEHABVPString@@@Z @22908 NONAME
     ?Open@OpalLineMediaStream@@UAEHXZ @47229 NONAME
     ?Open@OpalListenerTCP@@UAEHABVPNotifier@@H@Z @22910 NONAME
     ?Open@OpalListenerUDP@@UAEHABVPNotifier@@H@Z @30379 NONAME
     ?Open@OpalMediaStream@@UAEHXZ @47230 NONAME
+    ?Open@OpalRTPMediaStream@@UAEHXZ @50670 NONAME
     ?Open@OpalVideoMediaStream@@UAEHXZ @47231 NONAME
     ?Open@OpalVoipBlasterDevice@@UAEHABVPString@@@Z @30380 NONAME
+    ?Open@OpalVpbDevice@@UAEHABVPString@@@Z @50671 NONAME
     ?Open@RTP_UDP@@QAEHVAddress@PIPSocket@@GGEPAVPSTUNClient@@PAVRTP_QOS@@@Z @47232 NONAME
     ?OpenCommand@VoipBlasterInterface@@QAEHH@Z @30381 NONAME
     ?OpenData@VoipBlasterInterface@@QAEHXZ @30382 NONAME
@@ -33448,14 +33494,17 @@ EXPORTS
     ?PAssertCast@@YAPAVOpalConnection@@PAV1@PBDH@Z @50605 NONAME
     ?PatchMediaStreams@OpalCall@@UAEHABVOpalConnection@@AAVOpalMediaStream@@@Z @22933 NONAME
     ?PlayAudio@OpalLineInterfaceDevice@@UAEHIABVPString@@@Z @47238 NONAME
+    ?PlayAudio@OpalVpbDevice@@UAEHIABVPString@@@Z @50672 NONAME
     ?PlayDTMF@OpalIxJDevice@@UAEHIPBDKK@Z @22935 NONAME
     ?PlayDTMF@OpalLine@@UAEHPBDKK@Z @22936 NONAME
     ?PlayDTMF@OpalLineInterfaceDevice@@UAEHIPBDKK@Z @22937 NONAME
     ?PlayDTMF@OpalVoipBlasterDevice@@UAEHIPBDKK@Z @30392 NONAME
+    ?PlayDTMF@OpalVpbDevice@@UAEHIPBDKK@Z @50673 NONAME
     ?PlayTone@OpalIxJDevice@@UAEHIW4CallProgressTones@OpalLineInterfaceDevice@@@Z @22939 NONAME
     ?PlayTone@OpalLine@@UAEHW4CallProgressTones@OpalLineInterfaceDevice@@@Z @22940 NONAME
     ?PlayTone@OpalLineInterfaceDevice@@UAEHIW4CallProgressTones@1@@Z @22941 NONAME
     ?PlayTone@OpalVoipBlasterDevice@@UAEHIW4CallProgressTones@OpalLineInterfaceDevice@@@Z @30393 NONAME
+    ?PlayTone@OpalVpbDevice@@UAEHIW4CallProgressTones@OpalLineInterfaceDevice@@@Z @50674 NONAME
     ?Poll@Request@H323Transactor@@QAEHAAV2@@Z @47239 NONAME
     ?PreIncEncodeSetup@H261PixelEncoder@@QAEHPBVVideoFrame@@@Z @47240 NONAME
     ?Prepare@H323TransactionPDU@@QAEXAAVPASN_Array@@I0I@Z @47241 NONAME
@@ -34315,9 +34364,11 @@ EXPORTS
     ?ReadDTMF@OpalLine@@UAEDXZ @23599 NONAME
     ?ReadDTMF@OpalLineInterfaceDevice@@UAEDI@Z @23600 NONAME
     ?ReadDTMF@OpalVoipBlasterDevice@@UAEDI@Z @30417 NONAME
+    ?ReadDTMF@OpalVpbDevice@@UAEDI@Z @50675 NONAME
     ?ReadFrame@OpalIxJDevice@@UAEHIPAXAAH@Z @23602 NONAME
     ?ReadFrame@OpalLine@@UAEHPAXAAH@Z @23603 NONAME
     ?ReadFrame@OpalVoipBlasterDevice@@UAEHIPAXAAH@Z @30418 NONAME
+    ?ReadFrame@OpalVpbDevice@@UAEHIPAXAAH@Z @50676 NONAME
     ?ReadFrom@OpalGloballyUniqueID@@UAEXAAVistream@@@Z @49992 NONAME
     ?ReadFrom@PLDAPAttr_c@RTPerson@PILSSession@@UAEXAAVistream@@@Z @49993 NONAME
     ?ReadFrom@PLDAPAttr_cn@RTPerson@PILSSession@@UAEXAAVistream@@@Z @49994 NONAME
@@ -34429,7 +34480,7 @@ EXPORTS
     ?RemoveSink@OpalMediaPatch@@QAEXPAVOpalMediaStream@@@Z @23650 NONAME
     ?RemoveTransaction@SIPConnection@@QAEXPAVSIPTransaction@@@Z @30443 NONAME
     ?RemoveTransaction@SIPEndPoint@@QAEXPAVSIPTransaction@@@Z @50615 NONAME
-    ?Reopen@RTP_UDP@@QAEXH@Z @48096 NONAME
+    ?Reopen@RTP_UDP@@UAEXH@Z @50677 NONAME
     ?Reorder@H323Capabilities@@QAEXABVPStringArray@@@Z @23651 NONAME
     ?Reorder@OpalMediaFormatList@@QAEXABVPStringArray@@@Z @28586 NONAME
     ?ReorderCapabilities@H323EndPoint@@QAEXABVPStringArray@@@Z @23652 NONAME
@@ -34649,8 +34700,10 @@ EXPORTS
     ?SetJitterBufferSize@RTP_Session@@QAEXIIH@Z @30953 NONAME
     ?SetKeypad@Q931@@QAEXABVPString@@@Z @30531 NONAME
     ?SetLastReadCount@PWAVFile@@QAEXH@Z @50271 NONAME
+    ?SetLineOffHook@LineState@OpalVpbDevice@@QAEHH@Z @50678 NONAME
     ?SetLineOffHook@OpalIxJDevice@@UAEHIH@Z @23749 NONAME
     ?SetLineOffHook@OpalVoipBlasterDevice@@UAEHIH@Z @30532 NONAME
+    ?SetLineOffHook@OpalVpbDevice@@UAEHIH@Z @50679 NONAME
     ?SetLineOnHook@OpalLineInterfaceDevice@@UAEHI@Z @23751 NONAME
     ?SetLineToLineDirect@OpalIxJDevice@@UAEHIIH@Z @23752 NONAME
     ?SetLineToLineDirect@OpalLineInterfaceDevice@@UAEHIIH@Z @23753 NONAME
@@ -34698,6 +34751,7 @@ EXPORTS
     ?SetPlayVolume@OpalLine@@UAEHI@Z @23770 NONAME
     ?SetPlayVolume@OpalLineInterfaceDevice@@UAEHII@Z @23771 NONAME
     ?SetPlayVolume@OpalVoipBlasterDevice@@UAEHII@Z @30548 NONAME
+    ?SetPlayVolume@OpalVpbDevice@@UAEHII@Z @50680 NONAME
     ?SetPosition@PWAVFileConverterXLaw@@UAEHAAVPWAVFile@@JW4FilePositionOrigin@PFile@@@Z @50272 NONAME
     ?SetProgressIndicator@Q931@@QAEXIII@Z @23773 NONAME
     ?SetPromiscuous@OpalTransport@@UAEXW4PromisciousModes@1@@Z @33872 NONAME
@@ -34717,15 +34771,18 @@ EXPORTS
     ?SetReadFormat@OpalIxJDevice@@UAEHIABVOpalMediaFormat@@@Z @23783 NONAME
     ?SetReadFormat@OpalLine@@UAEHABVOpalMediaFormat@@@Z @23784 NONAME
     ?SetReadFormat@OpalVoipBlasterDevice@@UAEHIABVOpalMediaFormat@@@Z @30550 NONAME
+    ?SetReadFormat@OpalVpbDevice@@UAEHIABVOpalMediaFormat@@@Z @50681 NONAME
     ?SetReadFrameSize@OpalIxJDevice@@UAEHIH@Z @23786 NONAME
     ?SetReadFrameSize@OpalLine@@UAEHH@Z @23787 NONAME
     ?SetReadFrameSize@OpalLineInterfaceDevice@@UAEHIH@Z @23788 NONAME
     ?SetReadFrameSize@OpalVoipBlasterDevice@@UAEHIH@Z @30551 NONAME
+    ?SetReadFrameSize@OpalVpbDevice@@UAEHIH@Z @50682 NONAME
     ?SetRecordRoute@SIPMIMEInfo@@QAEXABVPStringList@@@Z @30552 NONAME
     ?SetRecordVolume@OpalIxJDevice@@UAEHII@Z @23792 NONAME
     ?SetRecordVolume@OpalLine@@UAEHI@Z @23793 NONAME
     ?SetRecordVolume@OpalLineInterfaceDevice@@UAEHII@Z @23794 NONAME
     ?SetRecordVolume@OpalVoipBlasterDevice@@UAEHII@Z @30553 NONAME
+    ?SetRecordVolume@OpalVpbDevice@@UAEHII@Z @50683 NONAME
     ?SetRedirectingNumber@Q931@@QAEXABVPString@@IIHHH@Z @30554 NONAME
     ?SetRejectReason@H323GatekeeperARQ@@UAEXI@Z @30555 NONAME
     ?SetRejectReason@H323GatekeeperBRQ@@UAEXI@Z @30556 NONAME
@@ -34835,10 +34892,12 @@ EXPORTS
     ?SetWriteFormat@OpalIxJDevice@@UAEHIABVOpalMediaFormat@@@Z @23854 NONAME
     ?SetWriteFormat@OpalLine@@UAEHABVOpalMediaFormat@@@Z @23855 NONAME
     ?SetWriteFormat@OpalVoipBlasterDevice@@UAEHIABVOpalMediaFormat@@@Z @30595 NONAME
+    ?SetWriteFormat@OpalVpbDevice@@UAEHIABVOpalMediaFormat@@@Z @50684 NONAME
     ?SetWriteFrameSize@OpalIxJDevice@@UAEHIH@Z @23857 NONAME
     ?SetWriteFrameSize@OpalLine@@UAEHH@Z @23858 NONAME
     ?SetWriteFrameSize@OpalLineInterfaceDevice@@UAEHIH@Z @23859 NONAME
     ?SetWriteFrameSize@OpalVoipBlasterDevice@@UAEHIH@Z @30596 NONAME
+    ?SetWriteFrameSize@OpalVpbDevice@@UAEHIH@Z @50685 NONAME
     ?SetWWWAuthenticate@SIPMIMEInfo@@QAEXABVPString@@@Z @48163 NONAME
     ?ShouldClearCallOnRoundTripFail@H323EndPoint@@QBEHXZ @23861 NONAME
     ?size@?$_Tree@IU?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@std@@U_Kfn@?$map@IPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@U?$less@I@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@4@@2@U?$less@I@2@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@2@@std@@QBEIXZ @50273 NONAME
@@ -34876,6 +34935,7 @@ EXPORTS
     ?Stop@H245NegMasterSlaveDetermination@@QAEXXZ @23885 NONAME
     ?Stop@H245NegTerminalCapabilitySet@@QAEXXZ @23886 NONAME
     ?StopAudio@OpalLineInterfaceDevice@@UAEHI@Z @48167 NONAME
+    ?StopAudio@OpalVpbDevice@@UAEHI@Z @50686 NONAME
     ?StopChannel@H323Transactor@@UAEXXZ @48168 NONAME
     ?StopciTimer@H45011Handler@@QAEXXZ @30607 NONAME
     ?StopctTimer@H4502Handler@@QAEXXZ @30608 NONAME
@@ -34887,14 +34947,17 @@ EXPORTS
     ?StopReadCodec@OpalLine@@UAEHXZ @23891 NONAME
     ?StopReadCodec@OpalLineInterfaceDevice@@UAEHI@Z @23892 NONAME
     ?StopReadCodec@OpalVoipBlasterDevice@@UAEHI@Z @30610 NONAME
+    ?StopReadCodec@OpalVpbDevice@@UAEHI@Z @50687 NONAME
     ?StopTone@OpalIxJDevice@@UAEHI@Z @23894 NONAME
     ?StopTone@OpalLine@@UAEHXZ @23895 NONAME
     ?StopTone@OpalLineInterfaceDevice@@UAEHI@Z @23896 NONAME
     ?StopTone@OpalVoipBlasterDevice@@UAEHI@Z @30611 NONAME
+    ?StopTone@OpalVpbDevice@@UAEHI@Z @50688 NONAME
     ?StopWriteCodec@OpalIxJDevice@@UAEHI@Z @23897 NONAME
     ?StopWriteCodec@OpalLine@@UAEHXZ @23898 NONAME
     ?StopWriteCodec@OpalLineInterfaceDevice@@UAEHI@Z @23899 NONAME
     ?StopWriteCodec@OpalVoipBlasterDevice@@UAEHI@Z @30612 NONAME
+    ?StopWriteCodec@OpalVpbDevice@@UAEHI@Z @50689 NONAME
     ?StoreOnePacket@Transmitter@@QAEXPAUpktbuf@1@@Z @23901 NONAME
     ?SubTypeNames@H323_UserInputCapability@@2QBQBDB @30613 NONAME
     ?suppress@Pre_Vid_Coder@@IAEXPBE@Z @23902 NONAME
@@ -34920,6 +34983,7 @@ EXPORTS
     ?TransportThreadMain@SIPEndPoint@@MAEXAAVPThread@@H@Z @48172 NONAME
     ?uLawConverter@@3V?$Worker@VPWAVFileConverterULaw@@@?$PFactory@VPWAVFileConverter@@I@@A @50274 NONAME
     ?Unregister@H323RegisteredEndPoint@@UAEHH@Z @30958 NONAME
+    ?Unregister@SIPEndPoint@@QAEHH@Z @50690 NONAME
     ?UnregistrationRequest@H323Gatekeeper@@QAEHH@Z @23914 NONAME
     ?UnregistrationRequest@H323GatekeeperListener@@QAEHABVH323RegisteredEndPoint@@I@Z @30959 NONAME
     ?UpdateAllDescriptors@H323PeerElement@@MAEXAAVPThread@@H@Z @48173 NONAME
@@ -34979,6 +35043,7 @@ EXPORTS
     ?WriteFrame@OpalIxJDevice@@UAEHIPBXHAAH@Z @23935 NONAME
     ?WriteFrame@OpalLine@@UAEHPBXHAAH@Z @23936 NONAME
     ?WriteFrame@OpalVoipBlasterDevice@@UAEHIPBXHAAH@Z @30644 NONAME
+    ?WriteFrame@OpalVpbDevice@@UAEHIPBXHAAH@Z @50691 NONAME
     ?WriteFrame@Sink@OpalMediaPatch@@QAE_NAAVRTP_DataFrame@@@Z @50618 NONAME
     ?WriteIndicator@OpalT38Protocol@@UAEHI@Z @33876 NONAME
     ?WriteINVITE@SIPConnection@@KAHAAVOpalTransport@@PAX@Z @48200 NONAME
