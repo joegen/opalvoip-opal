@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g726codec.cxx,v $
- * Revision 1.2006  2004/03/11 06:54:28  csoutheren
+ * Revision 1.2007  2004/09/01 12:21:27  rjongbloed
+ * Added initialisation of H323EndPoints capability table to be all codecs so can
+ *   correctly build remote caps from fqast connect params. This had knock on effect
+ *   with const keywords added in numerous places.
+ *
+ * Revision 2.5  2004/03/11 06:54:28  csoutheren
  * Added ability to disable SIP or H.323 stacks
  *
  * Revision 2.4  2004/02/19 10:47:02  rjongbloed
@@ -123,7 +128,7 @@ static G726_NonStandardInfo const G726_NonStandard[H323_G726_Capability::NumSpee
 };
 
 
-H323_G726_Capability::H323_G726_Capability(H323EndPoint & endpoint, Speeds s)
+H323_G726_Capability::H323_G726_Capability(const H323EndPoint & endpoint, Speeds s)
     : H323NonStandardAudioCapability(240, 10, endpoint,
                                      (const BYTE *)&G726_NonStandard[s],
                                      sizeof(G726_NonStandardInfo),

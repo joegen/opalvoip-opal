@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2027  2004/08/14 07:56:28  rjongbloed
+ * Revision 1.2028  2004/09/01 12:21:27  rjongbloed
+ * Added initialisation of H323EndPoints capability table to be all codecs so can
+ *   correctly build remote caps from fqast connect params. This had knock on effect
+ *   with const keywords added in numerous places.
+ *
+ * Revision 2.26  2004/08/14 07:56:28  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.25  2004/07/11 12:42:09  rjongbloed
@@ -1195,7 +1200,7 @@ class H323EndPoint : public OpalEndPoint
 
     /**Get the current capability table for this endpoint.
      */
-    const H323Capabilities & GetCapabilities() const { return capabilities; }
+    const H323Capabilities & GetCapabilities() const;
 
     /**Endpoint types.
      */
@@ -1543,7 +1548,7 @@ class H323EndPoint : public OpalEndPoint
     PTimeInterval callIntrusionT6;
 
     // Dynamic variables
-    H323Capabilities     capabilities;
+    mutable H323Capabilities capabilities;
     H323Gatekeeper *     gatekeeper;
     PString              gatekeeperUsername;
     PString              gatekeeperPassword;
