@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2007  2003/03/17 22:31:35  robertj
+ * Revision 1.2008  2003/12/15 11:56:17  rjongbloed
+ * Applied numerous bug fixes, thank you very much Ted Szoczei
+ *
+ * Revision 2.6  2003/03/17 22:31:35  robertj
  * Fixed warnings
  *
  * Revision 2.5  2002/06/16 02:22:49  robertj
@@ -467,8 +470,8 @@ void SDPSessionDescription::PrintOn(ostream & str) const
               << GetConnectAddressString(ownerAddress)
               << "\r\n"
          "s=" << sessionName << "\r\n"
-         "t=" << "0 0" << "\r\n"
-         "c=" << GetConnectAddressString(defaultConnectAddress) << "\r\n";
+         "c=" << GetConnectAddressString(defaultConnectAddress) << "\r\n"
+         "t=" << "0 0" << "\r\n";
 
   // encode media session information
   PINDEX i;

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2010  2002/09/16 02:52:35  robertj
+ * Revision 1.2011  2003/12/15 11:56:17  rjongbloed
+ * Applied numerous bug fixes, thank you very much Ted Szoczei
+ *
+ * Revision 2.9  2002/09/16 02:52:35  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -84,24 +87,61 @@ class SIPURL : public PURL
   PCLASSINFO(SIPURL, PURL);
   public:
     SIPURL();
+
+    /** str goes straight to Parse()
+      */
     SIPURL(
       const char * str
     );
+
+    /** str goes straight to Parse()
+      */
     SIPURL(
       const PString & str
     );
+
+    /** If name does not start with 'sip' then construct URI in the form
+          sip:name@host:port;transport=transport
+        where host comes from address,
+        port is listenerPort or port from address if that was 0
+        transport is udp unless address specified tcp
+        Send name starting with 'sip' or constructed URI to Parse()
+     */
     SIPURL(
       const PString & name,
       const OpalTransportAddress & address,
       WORD listenerPort = 0
     );
 
+    /** Parses name-addr, like:
+        "displayname"<scheme:user:password@host:port;transport=type>;tag=value
+        into:
+        displayname (quotes around name are optional, all before '<' is used)
+        scheme
+        username
+        password
+        hostname
+        port
+        pathStr
+        path
+        paramVars
+        queryVars
+        fragment
+
+        Note that tag parameter outside of <> will be lost,
+        but tag in URL without <> will be kept until AdjustForRequestURI
+     */
     void Parse(
       const char * cstr
     );
 
+    /** Returns complete SIPURL as one string, including displayname (in
+        quotes) and address in angle brackets.
+      */
     PString AsQuotedString() const;
 
+    /** Returns display name only
+      */
     PString GetDisplayName() const
       { return displayName; }
     
@@ -110,6 +150,9 @@ class SIPURL : public PURL
     
     OpalTransportAddress GetHostAddress() const;
 
+    /** Removes tag parm & query vars and recalculates urlString
+        (scheme, user, password, host, port & URI parms (like transport))
+      */
     void AdjustForRequestURI();
 
   protected:

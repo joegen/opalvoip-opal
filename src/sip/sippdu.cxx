@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2019  2003/03/19 00:47:06  robertj
+ * Revision 1.2020  2003/12/15 11:56:17  rjongbloed
+ * Applied numerous bug fixes, thank you very much Ted Szoczei
+ *
+ * Revision 2.18  2003/03/19 00:47:06  robertj
  * GNU 3.2 changes
  *
  * Revision 2.17  2002/09/12 06:58:34  robertj
@@ -225,6 +228,7 @@ void SIPURL::Parse(const char * cstr)
 
   PString str = cstr;
 
+  // see if URL is just a URI or it contains a display address as well
   PINDEX start = str.FindLast('<');
   PINDEX end = str.FindLast('>');
 
@@ -232,6 +236,7 @@ void SIPURL::Parse(const char * cstr)
   if (start == P_MAX_INDEX || end == P_MAX_INDEX)
     PURL::Parse(cstr);
   else {
+    // get the URI from between the angle brackets
     PURL::Parse(str(start+1, end-1));
 
     // extract the display address
@@ -254,6 +259,10 @@ void SIPURL::Parse(const char * cstr)
 
 //  if (!paramVars.Contains("transport"))
 //    SetParamVar("transport", "udp");
+
+  // ensure transport is always lower case for GetTransactionID
+  if (paramVars.Contains("transport"))
+    SetParamVar("transport", paramVars("transport").ToLower());
 
   Recalculate();
 }
@@ -977,7 +986,9 @@ BOOL SIP_PDU::Write(OpalTransport & transport)
 
 PString SIP_PDU::GetTransactionID() const
 {
-  return mime.GetFrom() + PString(mime.GetCSeqIndex());
+  // sometimes peers put <> around address, use GetHostAddress on GetFrom to handle all cases
+  SIPURL fromURL(mime.GetFrom());
+  return fromURL.GetHostAddress() + PString(mime.GetCSeqIndex());
 }
 
 
@@ -1155,9 +1166,9 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
       connection->OnReceivedResponse(*this, response);
 
     state = Completed;
-    finished.Signal();
     retryTimer.Stop();
     completionTimer = endpoint.GetPduCleanUpTimeout();
+    finished.Signal();  // keep this at the end to prevent deletion before actual completion
   }
 
   return TRUE;
