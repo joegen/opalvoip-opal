@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: dllmain.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2001/08/01 05:53:31  robertj
+ * Fixed loading of transcoders from static library.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.2  2000/05/02 04:32:26  robertj
@@ -37,7 +40,12 @@
 
 #pragma warning(disable:4201 4514)
 
-#include <windows.h>
+#include <ptlib.h>
+
+#include <codec/allcodecs.h>
+
+
+///////////////////////////////////////////////////////////////////////////////
 
 HINSTANCE PDllInstance;
 
@@ -48,3 +56,5 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID)
   return TRUE;
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
