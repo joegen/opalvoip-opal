@@ -5,7 +5,7 @@
 //
 
 #ifdef P_USE_PRAGMA
-#pragma implementation "gcc.h"
+#pragma implementation "gccpdu.h"
 #endif
 
 #include <ptlib.h>
@@ -459,7 +459,7 @@ void GCC_NonStandardParameter::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+6) << "key = " << setprecision(indent) << m_key << '\n';
   strm << setw(indent+7) << "data = " << setprecision(indent) << m_data << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -467,7 +467,7 @@ void GCC_NonStandardParameter::PrintOn(ostream & strm) const
 PObject::Comparison GCC_NonStandardParameter::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_NonStandardParameter), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_NonStandardParameter), PInvalidCast);
 #endif
   const GCC_NonStandardParameter & other = (const GCC_NonStandardParameter &)obj;
 
@@ -825,7 +825,7 @@ void GCC_Password::PrintOn(ostream & strm) const
   strm << setw(indent+10) << "numeric = " << setprecision(indent) << m_numeric << '\n';
   if (HasOptionalField(e_text))
     strm << setw(indent+7) << "text = " << setprecision(indent) << m_text << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -833,7 +833,7 @@ void GCC_Password::PrintOn(ostream & strm) const
 PObject::Comparison GCC_Password::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_Password), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_Password), PInvalidCast);
 #endif
   const GCC_Password & other = (const GCC_Password &)obj;
 
@@ -1140,7 +1140,7 @@ void GCC_ChallengeItem::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+20) << "responseAlgorithm = " << setprecision(indent) << m_responseAlgorithm << '\n';
   strm << setw(indent+16) << "challengeData = " << setprecision(indent) << m_challengeData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1148,7 +1148,7 @@ void GCC_ChallengeItem::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ChallengeItem::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ChallengeItem), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ChallengeItem), PInvalidCast);
 #endif
   const GCC_ChallengeItem & other = (const GCC_ChallengeItem &)obj;
 
@@ -1224,7 +1224,7 @@ void GCC_ChallengeResponse::PrintOn(ostream & strm) const
   strm << setw(indent+15) << "challengeTag = " << setprecision(indent) << m_challengeTag << '\n';
   strm << setw(indent+20) << "responseAlgorithm = " << setprecision(indent) << m_responseAlgorithm << '\n';
   strm << setw(indent+15) << "responseItem = " << setprecision(indent) << m_responseItem << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1232,7 +1232,7 @@ void GCC_ChallengeResponse::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ChallengeResponse::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ChallengeResponse), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ChallengeResponse), PInvalidCast);
 #endif
   const GCC_ChallengeResponse & other = (const GCC_ChallengeResponse &)obj;
 
@@ -1398,7 +1398,7 @@ void GCC_ConferenceName::PrintOn(ostream & strm) const
   strm << setw(indent+10) << "numeric = " << setprecision(indent) << m_numeric << '\n';
   if (HasOptionalField(e_text))
     strm << setw(indent+7) << "text = " << setprecision(indent) << m_text << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1406,7 +1406,7 @@ void GCC_ConferenceName::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConferenceName::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConferenceName), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConferenceName), PInvalidCast);
 #endif
   const GCC_ConferenceName & other = (const GCC_ConferenceName &)obj;
 
@@ -1724,7 +1724,7 @@ void GCC_ConferencePriority::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+11) << "priority = " << setprecision(indent) << m_priority << '\n';
   strm << setw(indent+9) << "scheme = " << setprecision(indent) << m_scheme << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1732,7 +1732,7 @@ void GCC_ConferencePriority::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConferencePriority::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConferencePriority), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConferencePriority), PInvalidCast);
 #endif
   const GCC_ConferencePriority & other = (const GCC_ConferencePriority &)obj;
 
@@ -1871,7 +1871,7 @@ void GCC_NodeProperties::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+19) << "managementDevice = " << setprecision(indent) << m_managementDevice << '\n';
   strm << setw(indent+19) << "peripheralDevice = " << setprecision(indent) << m_peripheralDevice << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1879,7 +1879,7 @@ void GCC_NodeProperties::PrintOn(ostream & strm) const
 PObject::Comparison GCC_NodeProperties::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_NodeProperties), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_NodeProperties), PInvalidCast);
 #endif
   const GCC_NodeProperties & other = (const GCC_NodeProperties &)obj;
 
@@ -2044,7 +2044,7 @@ void GCC_ConferenceDescriptor::PrintOn(ostream & strm) const
     strm << setw(indent+17) << "networkAddress = " << setprecision(indent) << m_networkAddress << '\n';
   if (HasOptionalField(e_defaultConferenceFlag))
     strm << setw(indent+24) << "defaultConferenceFlag = " << setprecision(indent) << m_defaultConferenceFlag << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2052,7 +2052,7 @@ void GCC_ConferenceDescriptor::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConferenceDescriptor::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConferenceDescriptor), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConferenceDescriptor), PInvalidCast);
 #endif
   const GCC_ConferenceDescriptor & other = (const GCC_ConferenceDescriptor &)obj;
 
@@ -2161,7 +2161,7 @@ void GCC_SessionKey::PrintOn(ostream & strm) const
   strm << setw(indent+25) << "applicationProtocolKey = " << setprecision(indent) << m_applicationProtocolKey << '\n';
   if (HasOptionalField(e_sessionID))
     strm << setw(indent+12) << "sessionID = " << setprecision(indent) << m_sessionID << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2169,7 +2169,7 @@ void GCC_SessionKey::PrintOn(ostream & strm) const
 PObject::Comparison GCC_SessionKey::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_SessionKey), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_SessionKey), PInvalidCast);
 #endif
   const GCC_SessionKey & other = (const GCC_SessionKey &)obj;
 
@@ -2423,7 +2423,7 @@ void GCC_RegistryKey::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+13) << "sessionKey = " << setprecision(indent) << m_sessionKey << '\n';
   strm << setw(indent+13) << "resourceID = " << setprecision(indent) << m_resourceID << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2431,7 +2431,7 @@ void GCC_RegistryKey::PrintOn(ostream & strm) const
 PObject::Comparison GCC_RegistryKey::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_RegistryKey), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_RegistryKey), PInvalidCast);
 #endif
   const GCC_RegistryKey & other = (const GCC_RegistryKey &)obj;
 
@@ -2692,7 +2692,7 @@ void GCC_UserIDIndication::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+6) << "tag = " << setprecision(indent) << m_tag << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2700,7 +2700,7 @@ void GCC_UserIDIndication::PrintOn(ostream & strm) const
 PObject::Comparison GCC_UserIDIndication::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_UserIDIndication), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_UserIDIndication), PInvalidCast);
 #endif
   const GCC_UserIDIndication & other = (const GCC_UserIDIndication &)obj;
 
@@ -2772,7 +2772,7 @@ void GCC_ConferenceQueryRequest::PrintOn(ostream & strm) const
     strm << setw(indent+21) << "asymmetryIndicator = " << setprecision(indent) << m_asymmetryIndicator << '\n';
   if (HasOptionalField(e_userData))
     strm << setw(indent+11) << "userData = " << setprecision(indent) << m_userData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2780,7 +2780,7 @@ void GCC_ConferenceQueryRequest::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConferenceQueryRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConferenceQueryRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConferenceQueryRequest), PInvalidCast);
 #endif
   const GCC_ConferenceQueryRequest & other = (const GCC_ConferenceQueryRequest &)obj;
 
@@ -2877,7 +2877,7 @@ void GCC_ConferenceJoinRequest::PrintOn(ostream & strm) const
     strm << setw(indent+19) << "callerIdentifier = " << setprecision(indent) << m_callerIdentifier << '\n';
   if (HasOptionalField(e_userData))
     strm << setw(indent+11) << "userData = " << setprecision(indent) << m_userData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2885,7 +2885,7 @@ void GCC_ConferenceJoinRequest::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConferenceJoinRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConferenceJoinRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConferenceJoinRequest), PInvalidCast);
 #endif
   const GCC_ConferenceJoinRequest & other = (const GCC_ConferenceJoinRequest &)obj;
 
@@ -3009,7 +3009,7 @@ void GCC_ConferenceAddRequest::PrintOn(ostream & strm) const
     strm << setw(indent+12) << "addingMCU = " << setprecision(indent) << m_addingMCU << '\n';
   if (HasOptionalField(e_userData))
     strm << setw(indent+11) << "userData = " << setprecision(indent) << m_userData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3017,7 +3017,7 @@ void GCC_ConferenceAddRequest::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConferenceAddRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConferenceAddRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConferenceAddRequest), PInvalidCast);
 #endif
   const GCC_ConferenceAddRequest & other = (const GCC_ConferenceAddRequest &)obj;
 
@@ -3112,7 +3112,7 @@ void GCC_ConferenceLockRequest::PrintOn(ostream & strm) const
 {
   int indent = strm.precision() + 2;
   strm << "{\n";
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3167,7 +3167,7 @@ void GCC_ConferenceLockIndication::PrintOn(ostream & strm) const
 {
   int indent = strm.precision() + 2;
   strm << "{\n";
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3222,7 +3222,7 @@ void GCC_ConferenceUnlockRequest::PrintOn(ostream & strm) const
 {
   int indent = strm.precision() + 2;
   strm << "{\n";
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3277,7 +3277,7 @@ void GCC_ConferenceUnlockIndication::PrintOn(ostream & strm) const
 {
   int indent = strm.precision() + 2;
   strm << "{\n";
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3335,7 +3335,7 @@ void GCC_RegistryRegisterChannelRequest::PrintOn(ostream & strm) const
   strm << setw(indent+11) << "entityID = " << setprecision(indent) << m_entityID << '\n';
   strm << setw(indent+6) << "key = " << setprecision(indent) << m_key << '\n';
   strm << setw(indent+12) << "channelID = " << setprecision(indent) << m_channelID << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3343,7 +3343,7 @@ void GCC_RegistryRegisterChannelRequest::PrintOn(ostream & strm) const
 PObject::Comparison GCC_RegistryRegisterChannelRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_RegistryRegisterChannelRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_RegistryRegisterChannelRequest), PInvalidCast);
 #endif
   const GCC_RegistryRegisterChannelRequest & other = (const GCC_RegistryRegisterChannelRequest &)obj;
 
@@ -3424,7 +3424,7 @@ void GCC_RegistryAssignTokenRequest::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+11) << "entityID = " << setprecision(indent) << m_entityID << '\n';
   strm << setw(indent+6) << "key = " << setprecision(indent) << m_key << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3432,7 +3432,7 @@ void GCC_RegistryAssignTokenRequest::PrintOn(ostream & strm) const
 PObject::Comparison GCC_RegistryAssignTokenRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_RegistryAssignTokenRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_RegistryAssignTokenRequest), PInvalidCast);
 #endif
   const GCC_RegistryAssignTokenRequest & other = (const GCC_RegistryAssignTokenRequest &)obj;
 
@@ -3511,7 +3511,7 @@ void GCC_RegistrySetParameterRequest::PrintOn(ostream & strm) const
   strm << setw(indent+12) << "parameter = " << setprecision(indent) << m_parameter << '\n';
   if (HasOptionalField(e_modificationRights))
     strm << setw(indent+21) << "modificationRights = " << setprecision(indent) << m_modificationRights << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3519,7 +3519,7 @@ void GCC_RegistrySetParameterRequest::PrintOn(ostream & strm) const
 PObject::Comparison GCC_RegistrySetParameterRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_RegistrySetParameterRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_RegistrySetParameterRequest), PInvalidCast);
 #endif
   const GCC_RegistrySetParameterRequest & other = (const GCC_RegistrySetParameterRequest &)obj;
 
@@ -3608,7 +3608,7 @@ void GCC_RegistryRetrieveEntryRequest::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+11) << "entityID = " << setprecision(indent) << m_entityID << '\n';
   strm << setw(indent+6) << "key = " << setprecision(indent) << m_key << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3616,7 +3616,7 @@ void GCC_RegistryRetrieveEntryRequest::PrintOn(ostream & strm) const
 PObject::Comparison GCC_RegistryRetrieveEntryRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_RegistryRetrieveEntryRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_RegistryRetrieveEntryRequest), PInvalidCast);
 #endif
   const GCC_RegistryRetrieveEntryRequest & other = (const GCC_RegistryRetrieveEntryRequest &)obj;
 
@@ -3691,7 +3691,7 @@ void GCC_RegistryDeleteEntryRequest::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+11) << "entityID = " << setprecision(indent) << m_entityID << '\n';
   strm << setw(indent+6) << "key = " << setprecision(indent) << m_key << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3699,7 +3699,7 @@ void GCC_RegistryDeleteEntryRequest::PrintOn(ostream & strm) const
 PObject::Comparison GCC_RegistryDeleteEntryRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_RegistryDeleteEntryRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_RegistryDeleteEntryRequest), PInvalidCast);
 #endif
   const GCC_RegistryDeleteEntryRequest & other = (const GCC_RegistryDeleteEntryRequest &)obj;
 
@@ -3774,7 +3774,7 @@ void GCC_RegistryMonitorEntryRequest::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+11) << "entityID = " << setprecision(indent) << m_entityID << '\n';
   strm << setw(indent+6) << "key = " << setprecision(indent) << m_key << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3782,7 +3782,7 @@ void GCC_RegistryMonitorEntryRequest::PrintOn(ostream & strm) const
 PObject::Comparison GCC_RegistryMonitorEntryRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_RegistryMonitorEntryRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_RegistryMonitorEntryRequest), PInvalidCast);
 #endif
   const GCC_RegistryMonitorEntryRequest & other = (const GCC_RegistryMonitorEntryRequest &)obj;
 
@@ -3860,7 +3860,7 @@ void GCC_RegistryMonitorEntryIndication::PrintOn(ostream & strm) const
   strm << setw(indent+8) << "owner = " << setprecision(indent) << m_owner << '\n';
   if (HasOptionalField(e_modificationRights))
     strm << setw(indent+21) << "modificationRights = " << setprecision(indent) << m_modificationRights << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3868,7 +3868,7 @@ void GCC_RegistryMonitorEntryIndication::PrintOn(ostream & strm) const
 PObject::Comparison GCC_RegistryMonitorEntryIndication::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_RegistryMonitorEntryIndication), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_RegistryMonitorEntryIndication), PInvalidCast);
 #endif
   const GCC_RegistryMonitorEntryIndication & other = (const GCC_RegistryMonitorEntryIndication &)obj;
 
@@ -3958,7 +3958,7 @@ void GCC_RegistryAllocateHandleRequest::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+11) << "entityID = " << setprecision(indent) << m_entityID << '\n';
   strm << setw(indent+18) << "numberOfHandles = " << setprecision(indent) << m_numberOfHandles << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3966,7 +3966,7 @@ void GCC_RegistryAllocateHandleRequest::PrintOn(ostream & strm) const
 PObject::Comparison GCC_RegistryAllocateHandleRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_RegistryAllocateHandleRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_RegistryAllocateHandleRequest), PInvalidCast);
 #endif
   const GCC_RegistryAllocateHandleRequest & other = (const GCC_RegistryAllocateHandleRequest &)obj;
 
@@ -4040,7 +4040,7 @@ void GCC_ConductorAssignIndication::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+17) << "conductingNode = " << setprecision(indent) << m_conductingNode << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4048,7 +4048,7 @@ void GCC_ConductorAssignIndication::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConductorAssignIndication::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConductorAssignIndication), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConductorAssignIndication), PInvalidCast);
 #endif
   const GCC_ConductorAssignIndication & other = (const GCC_ConductorAssignIndication &)obj;
 
@@ -4115,7 +4115,7 @@ void GCC_ConductorReleaseIndication::PrintOn(ostream & strm) const
 {
   int indent = strm.precision() + 2;
   strm << "{\n";
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4171,7 +4171,7 @@ void GCC_ConductorPermissionAskIndication::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+12) << "grantFlag = " << setprecision(indent) << m_grantFlag << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4179,7 +4179,7 @@ void GCC_ConductorPermissionAskIndication::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConductorPermissionAskIndication::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConductorPermissionAskIndication), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConductorPermissionAskIndication), PInvalidCast);
 #endif
   const GCC_ConductorPermissionAskIndication & other = (const GCC_ConductorPermissionAskIndication &)obj;
 
@@ -4249,7 +4249,7 @@ void GCC_ConferenceTimeRemainingIndication::PrintOn(ostream & strm) const
   strm << setw(indent+16) << "timeRemaining = " << setprecision(indent) << m_timeRemaining << '\n';
   if (HasOptionalField(e_nodeID))
     strm << setw(indent+9) << "nodeID = " << setprecision(indent) << m_nodeID << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4257,7 +4257,7 @@ void GCC_ConferenceTimeRemainingIndication::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConferenceTimeRemainingIndication::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConferenceTimeRemainingIndication), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConferenceTimeRemainingIndication), PInvalidCast);
 #endif
   const GCC_ConferenceTimeRemainingIndication & other = (const GCC_ConferenceTimeRemainingIndication &)obj;
 
@@ -4333,7 +4333,7 @@ void GCC_ConferenceTimeInquireIndication::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+23) << "nodeSpecificTimeFlag = " << setprecision(indent) << m_nodeSpecificTimeFlag << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4341,7 +4341,7 @@ void GCC_ConferenceTimeInquireIndication::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConferenceTimeInquireIndication::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConferenceTimeInquireIndication), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConferenceTimeInquireIndication), PInvalidCast);
 #endif
   const GCC_ConferenceTimeInquireIndication & other = (const GCC_ConferenceTimeInquireIndication &)obj;
 
@@ -4410,7 +4410,7 @@ void GCC_ConferenceTimeExtendIndication::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+15) << "timeToExtend = " << setprecision(indent) << m_timeToExtend << '\n';
   strm << setw(indent+23) << "nodeSpecificTimeFlag = " << setprecision(indent) << m_nodeSpecificTimeFlag << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4418,7 +4418,7 @@ void GCC_ConferenceTimeExtendIndication::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConferenceTimeExtendIndication::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConferenceTimeExtendIndication), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConferenceTimeExtendIndication), PInvalidCast);
 #endif
   const GCC_ConferenceTimeExtendIndication & other = (const GCC_ConferenceTimeExtendIndication &)obj;
 
@@ -4493,7 +4493,7 @@ void GCC_ConferenceAssistanceIndication::PrintOn(ostream & strm) const
   strm << "{\n";
   if (HasOptionalField(e_userData))
     strm << setw(indent+11) << "userData = " << setprecision(indent) << m_userData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4501,7 +4501,7 @@ void GCC_ConferenceAssistanceIndication::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConferenceAssistanceIndication::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConferenceAssistanceIndication), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConferenceAssistanceIndication), PInvalidCast);
 #endif
   const GCC_ConferenceAssistanceIndication & other = (const GCC_ConferenceAssistanceIndication &)obj;
 
@@ -4571,7 +4571,7 @@ void GCC_TextMessageIndication::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+10) << "message = " << setprecision(indent) << m_message << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4579,7 +4579,7 @@ void GCC_TextMessageIndication::PrintOn(ostream & strm) const
 PObject::Comparison GCC_TextMessageIndication::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_TextMessageIndication), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_TextMessageIndication), PInvalidCast);
 #endif
   const GCC_TextMessageIndication & other = (const GCC_TextMessageIndication &)obj;
 
@@ -4647,7 +4647,7 @@ void GCC_NonStandardPDU::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+7) << "data = " << setprecision(indent) << m_data << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4655,7 +4655,7 @@ void GCC_NonStandardPDU::PrintOn(ostream & strm) const
 PObject::Comparison GCC_NonStandardPDU::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_NonStandardPDU), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_NonStandardPDU), PInvalidCast);
 #endif
   const GCC_NonStandardPDU & other = (const GCC_NonStandardPDU &)obj;
 
@@ -4724,7 +4724,7 @@ void GCC_ConnectData::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+17) << "t124Identifier = " << setprecision(indent) << m_t124Identifier << '\n';
   strm << setw(indent+13) << "connectPDU = " << setprecision(indent) << m_connectPDU << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4732,7 +4732,7 @@ void GCC_ConnectData::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConnectData::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConnectData), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConnectData), PInvalidCast);
 #endif
   const GCC_ConnectData & other = (const GCC_ConnectData &)obj;
 
@@ -6424,7 +6424,7 @@ void GCC_UserData_subtype::PrintOn(ostream & strm) const
   strm << setw(indent+6) << "key = " << setprecision(indent) << m_key << '\n';
   if (HasOptionalField(e_value))
     strm << setw(indent+8) << "value = " << setprecision(indent) << m_value << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6432,7 +6432,7 @@ void GCC_UserData_subtype::PrintOn(ostream & strm) const
 PObject::Comparison GCC_UserData_subtype::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_UserData_subtype), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_UserData_subtype), PInvalidCast);
 #endif
   const GCC_UserData_subtype & other = (const GCC_UserData_subtype &)obj;
 
@@ -6743,7 +6743,7 @@ void GCC_RegistryEntryOwner_owned::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+9) << "nodeID = " << setprecision(indent) << m_nodeID << '\n';
   strm << setw(indent+11) << "entityID = " << setprecision(indent) << m_entityID << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6751,7 +6751,7 @@ void GCC_RegistryEntryOwner_owned::PrintOn(ostream & strm) const
 PObject::Comparison GCC_RegistryEntryOwner_owned::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_RegistryEntryOwner_owned), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_RegistryEntryOwner_owned), PInvalidCast);
 #endif
   const GCC_RegistryEntryOwner_owned & other = (const GCC_RegistryEntryOwner_owned &)obj;
 
@@ -7537,7 +7537,7 @@ void GCC_NetworkAddress_subtype_transportConnection::PrintOn(ostream & strm) con
   strm << setw(indent+14) << "nsapAddress = " << setprecision(indent) << m_nsapAddress << '\n';
   if (HasOptionalField(e_transportSelector))
     strm << setw(indent+20) << "transportSelector = " << setprecision(indent) << m_transportSelector << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7545,7 +7545,7 @@ void GCC_NetworkAddress_subtype_transportConnection::PrintOn(ostream & strm) con
 PObject::Comparison GCC_NetworkAddress_subtype_transportConnection::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_NetworkAddress_subtype_transportConnection), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_NetworkAddress_subtype_transportConnection), PInvalidCast);
 #endif
   const GCC_NetworkAddress_subtype_transportConnection & other = (const GCC_NetworkAddress_subtype_transportConnection &)obj;
 
@@ -7623,7 +7623,7 @@ void GCC_ApplicationRecord_nonCollapsingCapabilities_subtype::PrintOn(ostream & 
   strm << setw(indent+15) << "capabilityID = " << setprecision(indent) << m_capabilityID << '\n';
   if (HasOptionalField(e_applicationData))
     strm << setw(indent+18) << "applicationData = " << setprecision(indent) << m_applicationData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7631,7 +7631,7 @@ void GCC_ApplicationRecord_nonCollapsingCapabilities_subtype::PrintOn(ostream & 
 PObject::Comparison GCC_ApplicationRecord_nonCollapsingCapabilities_subtype::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ApplicationRecord_nonCollapsingCapabilities_subtype), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ApplicationRecord_nonCollapsingCapabilities_subtype), PInvalidCast);
 #endif
   const GCC_ApplicationRecord_nonCollapsingCapabilities_subtype & other = (const GCC_ApplicationRecord_nonCollapsingCapabilities_subtype &)obj;
 
@@ -7708,7 +7708,7 @@ void GCC_ApplicationInvokeSpecifier_expectedCapabilitySet_subtype::PrintOn(ostre
   strm << "{\n";
   strm << setw(indent+15) << "capabilityID = " << setprecision(indent) << m_capabilityID << '\n';
   strm << setw(indent+18) << "capabilityClass = " << setprecision(indent) << m_capabilityClass << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7716,7 +7716,7 @@ void GCC_ApplicationInvokeSpecifier_expectedCapabilitySet_subtype::PrintOn(ostre
 PObject::Comparison GCC_ApplicationInvokeSpecifier_expectedCapabilitySet_subtype::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ApplicationInvokeSpecifier_expectedCapabilitySet_subtype), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ApplicationInvokeSpecifier_expectedCapabilitySet_subtype), PInvalidCast);
 #endif
   const GCC_ApplicationInvokeSpecifier_expectedCapabilitySet_subtype & other = (const GCC_ApplicationInvokeSpecifier_expectedCapabilitySet_subtype &)obj;
 
@@ -7895,7 +7895,7 @@ void GCC_NetworkAddress_subtype_aggregatedChannel_transferModes::PrintOn(ostream
   strm << setw(indent+14) << "packet_mode = " << setprecision(indent) << m_packet_mode << '\n';
   strm << setw(indent+13) << "frame_mode = " << setprecision(indent) << m_frame_mode << '\n';
   strm << setw(indent+6) << "atm = " << setprecision(indent) << m_atm << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7903,7 +7903,7 @@ void GCC_NetworkAddress_subtype_aggregatedChannel_transferModes::PrintOn(ostream
 PObject::Comparison GCC_NetworkAddress_subtype_aggregatedChannel_transferModes::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_NetworkAddress_subtype_aggregatedChannel_transferModes), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_NetworkAddress_subtype_aggregatedChannel_transferModes), PInvalidCast);
 #endif
   const GCC_NetworkAddress_subtype_aggregatedChannel_transferModes & other = (const GCC_NetworkAddress_subtype_aggregatedChannel_transferModes &)obj;
 
@@ -8079,7 +8079,7 @@ void GCC_NetworkAddress_subtype_aggregatedChannel_highLayerCompatibility::PrintO
   strm << setw(indent+15) << "audiographic = " << setprecision(indent) << m_audiographic << '\n';
   strm << setw(indent+14) << "audiovisual = " << setprecision(indent) << m_audiovisual << '\n';
   strm << setw(indent+13) << "multimedia = " << setprecision(indent) << m_multimedia << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -8087,7 +8087,7 @@ void GCC_NetworkAddress_subtype_aggregatedChannel_highLayerCompatibility::PrintO
 PObject::Comparison GCC_NetworkAddress_subtype_aggregatedChannel_highLayerCompatibility::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_NetworkAddress_subtype_aggregatedChannel_highLayerCompatibility), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_NetworkAddress_subtype_aggregatedChannel_highLayerCompatibility), PInvalidCast);
 #endif
   const GCC_NetworkAddress_subtype_aggregatedChannel_highLayerCompatibility & other = (const GCC_NetworkAddress_subtype_aggregatedChannel_highLayerCompatibility &)obj;
 
@@ -8567,7 +8567,7 @@ void GCC_RosterUpdateIndication_applicationInformation_subtype_applicationCapabi
   strm << setw(indent+15) << "capabilityID = " << setprecision(indent) << m_capabilityID << '\n';
   strm << setw(indent+18) << "capabilityClass = " << setprecision(indent) << m_capabilityClass << '\n';
   strm << setw(indent+19) << "numberOfEntities = " << setprecision(indent) << m_numberOfEntities << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -8575,7 +8575,7 @@ void GCC_RosterUpdateIndication_applicationInformation_subtype_applicationCapabi
 PObject::Comparison GCC_RosterUpdateIndication_applicationInformation_subtype_applicationCapabilitiesList_refresh_subtype::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_RosterUpdateIndication_applicationInformation_subtype_applicationCapabilitiesList_refresh_subtype), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_RosterUpdateIndication_applicationInformation_subtype_applicationCapabilitiesList_refresh_subtype), PInvalidCast);
 #endif
   const GCC_RosterUpdateIndication_applicationInformation_subtype_applicationCapabilitiesList_refresh_subtype & other = (const GCC_RosterUpdateIndication_applicationInformation_subtype_applicationCapabilitiesList_refresh_subtype &)obj;
 
@@ -8720,7 +8720,7 @@ void GCC_ChallengeRequest::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+15) << "challengeTag = " << setprecision(indent) << m_challengeTag << '\n';
   strm << setw(indent+15) << "challengeSet = " << setprecision(indent) << m_challengeSet << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -8728,7 +8728,7 @@ void GCC_ChallengeRequest::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ChallengeRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ChallengeRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ChallengeRequest), PInvalidCast);
 #endif
   const GCC_ChallengeRequest & other = (const GCC_ChallengeRequest &)obj;
 
@@ -8817,7 +8817,7 @@ void GCC_NodeRecord::PrintOn(ostream & strm) const
     strm << setw(indent+20) << "alternativeNodeID = " << setprecision(indent) << m_alternativeNodeID << '\n';
   if (HasOptionalField(e_userData))
     strm << setw(indent+11) << "userData = " << setprecision(indent) << m_userData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -8825,7 +8825,7 @@ void GCC_NodeRecord::PrintOn(ostream & strm) const
 PObject::Comparison GCC_NodeRecord::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_NodeRecord), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_NodeRecord), PInvalidCast);
 #endif
   const GCC_NodeRecord & other = (const GCC_NodeRecord &)obj;
 
@@ -8962,7 +8962,7 @@ void GCC_ApplicationRecord::PrintOn(ostream & strm) const
     strm << setw(indent+20) << "applicationUserID = " << setprecision(indent) << m_applicationUserID << '\n';
   if (HasOptionalField(e_nonCollapsingCapabilities))
     strm << setw(indent+28) << "nonCollapsingCapabilities = " << setprecision(indent) << m_nonCollapsingCapabilities << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -8970,7 +8970,7 @@ void GCC_ApplicationRecord::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ApplicationRecord::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ApplicationRecord), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ApplicationRecord), PInvalidCast);
 #endif
   const GCC_ApplicationRecord & other = (const GCC_ApplicationRecord &)obj;
 
@@ -9073,7 +9073,7 @@ void GCC_ApplicationInvokeSpecifier::PrintOn(ostream & strm) const
   if (HasOptionalField(e_startupChannel))
     strm << setw(indent+17) << "startupChannel = " << setprecision(indent) << m_startupChannel << '\n';
   strm << setw(indent+16) << "mandatoryFlag = " << setprecision(indent) << m_mandatoryFlag << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9081,7 +9081,7 @@ void GCC_ApplicationInvokeSpecifier::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ApplicationInvokeSpecifier::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ApplicationInvokeSpecifier), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ApplicationInvokeSpecifier), PInvalidCast);
 #endif
   const GCC_ApplicationInvokeSpecifier & other = (const GCC_ApplicationInvokeSpecifier &)obj;
 
@@ -9193,7 +9193,7 @@ void GCC_ConferenceCreateRequest::PrintOn(ostream & strm) const
     strm << setw(indent+11) << "userData = " << setprecision(indent) << m_userData << '\n';
   if (HasOptionalField(e_conferencePriority))
     strm << setw(indent+21) << "conferencePriority = " << setprecision(indent) << m_conferencePriority << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9201,7 +9201,7 @@ void GCC_ConferenceCreateRequest::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConferenceCreateRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConferenceCreateRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConferenceCreateRequest), PInvalidCast);
 #endif
   const GCC_ConferenceCreateRequest & other = (const GCC_ConferenceCreateRequest &)obj;
 
@@ -9364,7 +9364,7 @@ void GCC_ConferenceCreateResponse::PrintOn(ostream & strm) const
   strm << setw(indent+9) << "result = " << setprecision(indent) << m_result << '\n';
   if (HasOptionalField(e_userData))
     strm << setw(indent+11) << "userData = " << setprecision(indent) << m_userData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9372,7 +9372,7 @@ void GCC_ConferenceCreateResponse::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConferenceCreateResponse::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConferenceCreateResponse), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConferenceCreateResponse), PInvalidCast);
 #endif
   const GCC_ConferenceCreateResponse & other = (const GCC_ConferenceCreateResponse &)obj;
 
@@ -9470,7 +9470,7 @@ void GCC_ConferenceQueryResponse::PrintOn(ostream & strm) const
     strm << setw(indent+24) << "waitForInvitationFlag = " << setprecision(indent) << m_waitForInvitationFlag << '\n';
   if (HasOptionalField(e_noUnlistedConferenceFlag))
     strm << setw(indent+27) << "noUnlistedConferenceFlag = " << setprecision(indent) << m_noUnlistedConferenceFlag << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9478,7 +9478,7 @@ void GCC_ConferenceQueryResponse::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConferenceQueryResponse::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConferenceQueryResponse), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConferenceQueryResponse), PInvalidCast);
 #endif
   const GCC_ConferenceQueryResponse & other = (const GCC_ConferenceQueryResponse &)obj;
 
@@ -9603,7 +9603,7 @@ void GCC_ConferenceJoinResponse::PrintOn(ostream & strm) const
   strm << setw(indent+9) << "result = " << setprecision(indent) << m_result << '\n';
   if (HasOptionalField(e_userData))
     strm << setw(indent+11) << "userData = " << setprecision(indent) << m_userData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9611,7 +9611,7 @@ void GCC_ConferenceJoinResponse::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConferenceJoinResponse::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConferenceJoinResponse), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConferenceJoinResponse), PInvalidCast);
 #endif
   const GCC_ConferenceJoinResponse & other = (const GCC_ConferenceJoinResponse &)obj;
 
@@ -9807,7 +9807,7 @@ void GCC_ConferenceInviteRequest::PrintOn(ostream & strm) const
     strm << setw(indent+11) << "userData = " << setprecision(indent) << m_userData << '\n';
   if (HasOptionalField(e_conferencePriority))
     strm << setw(indent+21) << "conferencePriority = " << setprecision(indent) << m_conferencePriority << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9815,7 +9815,7 @@ void GCC_ConferenceInviteRequest::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConferenceInviteRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConferenceInviteRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConferenceInviteRequest), PInvalidCast);
 #endif
   const GCC_ConferenceInviteRequest & other = (const GCC_ConferenceInviteRequest &)obj;
 
@@ -9984,7 +9984,7 @@ void GCC_ConferenceInviteResponse::PrintOn(ostream & strm) const
   strm << setw(indent+9) << "result = " << setprecision(indent) << m_result << '\n';
   if (HasOptionalField(e_userData))
     strm << setw(indent+11) << "userData = " << setprecision(indent) << m_userData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9992,7 +9992,7 @@ void GCC_ConferenceInviteResponse::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConferenceInviteResponse::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConferenceInviteResponse), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConferenceInviteResponse), PInvalidCast);
 #endif
   const GCC_ConferenceInviteResponse & other = (const GCC_ConferenceInviteResponse &)obj;
 
@@ -10071,7 +10071,7 @@ void GCC_ConferenceAddResponse::PrintOn(ostream & strm) const
   strm << setw(indent+9) << "result = " << setprecision(indent) << m_result << '\n';
   if (HasOptionalField(e_userData))
     strm << setw(indent+11) << "userData = " << setprecision(indent) << m_userData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -10079,7 +10079,7 @@ void GCC_ConferenceAddResponse::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConferenceAddResponse::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConferenceAddResponse), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConferenceAddResponse), PInvalidCast);
 #endif
   const GCC_ConferenceAddResponse & other = (const GCC_ConferenceAddResponse &)obj;
 
@@ -10161,7 +10161,7 @@ void GCC_ConferenceLockResponse::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+9) << "result = " << setprecision(indent) << m_result << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -10169,7 +10169,7 @@ void GCC_ConferenceLockResponse::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConferenceLockResponse::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConferenceLockResponse), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConferenceLockResponse), PInvalidCast);
 #endif
   const GCC_ConferenceLockResponse & other = (const GCC_ConferenceLockResponse &)obj;
 
@@ -10237,7 +10237,7 @@ void GCC_ConferenceUnlockResponse::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+9) << "result = " << setprecision(indent) << m_result << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -10245,7 +10245,7 @@ void GCC_ConferenceUnlockResponse::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConferenceUnlockResponse::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConferenceUnlockResponse), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConferenceUnlockResponse), PInvalidCast);
 #endif
   const GCC_ConferenceUnlockResponse & other = (const GCC_ConferenceUnlockResponse &)obj;
 
@@ -10313,7 +10313,7 @@ void GCC_ConferenceTerminateRequest::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+9) << "reason = " << setprecision(indent) << m_reason << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -10321,7 +10321,7 @@ void GCC_ConferenceTerminateRequest::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConferenceTerminateRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConferenceTerminateRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConferenceTerminateRequest), PInvalidCast);
 #endif
   const GCC_ConferenceTerminateRequest & other = (const GCC_ConferenceTerminateRequest &)obj;
 
@@ -10389,7 +10389,7 @@ void GCC_ConferenceTerminateResponse::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+9) << "result = " << setprecision(indent) << m_result << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -10397,7 +10397,7 @@ void GCC_ConferenceTerminateResponse::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConferenceTerminateResponse::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConferenceTerminateResponse), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConferenceTerminateResponse), PInvalidCast);
 #endif
   const GCC_ConferenceTerminateResponse & other = (const GCC_ConferenceTerminateResponse &)obj;
 
@@ -10465,7 +10465,7 @@ void GCC_ConferenceTerminateIndication::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+9) << "reason = " << setprecision(indent) << m_reason << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -10473,7 +10473,7 @@ void GCC_ConferenceTerminateIndication::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConferenceTerminateIndication::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConferenceTerminateIndication), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConferenceTerminateIndication), PInvalidCast);
 #endif
   const GCC_ConferenceTerminateIndication & other = (const GCC_ConferenceTerminateIndication &)obj;
 
@@ -10542,7 +10542,7 @@ void GCC_ConferenceEjectUserRequest::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+14) << "nodeToEject = " << setprecision(indent) << m_nodeToEject << '\n';
   strm << setw(indent+9) << "reason = " << setprecision(indent) << m_reason << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -10550,7 +10550,7 @@ void GCC_ConferenceEjectUserRequest::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConferenceEjectUserRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConferenceEjectUserRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConferenceEjectUserRequest), PInvalidCast);
 #endif
   const GCC_ConferenceEjectUserRequest & other = (const GCC_ConferenceEjectUserRequest &)obj;
 
@@ -10625,7 +10625,7 @@ void GCC_ConferenceEjectUserResponse::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+14) << "nodeToEject = " << setprecision(indent) << m_nodeToEject << '\n';
   strm << setw(indent+9) << "result = " << setprecision(indent) << m_result << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -10633,7 +10633,7 @@ void GCC_ConferenceEjectUserResponse::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConferenceEjectUserResponse::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConferenceEjectUserResponse), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConferenceEjectUserResponse), PInvalidCast);
 #endif
   const GCC_ConferenceEjectUserResponse & other = (const GCC_ConferenceEjectUserResponse &)obj;
 
@@ -10708,7 +10708,7 @@ void GCC_ConferenceEjectUserIndication::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+14) << "nodeToEject = " << setprecision(indent) << m_nodeToEject << '\n';
   strm << setw(indent+9) << "reason = " << setprecision(indent) << m_reason << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -10716,7 +10716,7 @@ void GCC_ConferenceEjectUserIndication::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConferenceEjectUserIndication::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConferenceEjectUserIndication), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConferenceEjectUserIndication), PInvalidCast);
 #endif
   const GCC_ConferenceEjectUserIndication & other = (const GCC_ConferenceEjectUserIndication &)obj;
 
@@ -10799,7 +10799,7 @@ void GCC_ConferenceTransferRequest::PrintOn(ostream & strm) const
     strm << setw(indent+20) << "transferringNodes = " << setprecision(indent) << m_transferringNodes << '\n';
   if (HasOptionalField(e_password))
     strm << setw(indent+11) << "password = " << setprecision(indent) << m_password << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -10807,7 +10807,7 @@ void GCC_ConferenceTransferRequest::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConferenceTransferRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConferenceTransferRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConferenceTransferRequest), PInvalidCast);
 #endif
   const GCC_ConferenceTransferRequest & other = (const GCC_ConferenceTransferRequest &)obj;
 
@@ -10913,7 +10913,7 @@ void GCC_ConferenceTransferResponse::PrintOn(ostream & strm) const
   if (HasOptionalField(e_transferringNodes))
     strm << setw(indent+20) << "transferringNodes = " << setprecision(indent) << m_transferringNodes << '\n';
   strm << setw(indent+9) << "result = " << setprecision(indent) << m_result << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -10921,7 +10921,7 @@ void GCC_ConferenceTransferResponse::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConferenceTransferResponse::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConferenceTransferResponse), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConferenceTransferResponse), PInvalidCast);
 #endif
   const GCC_ConferenceTransferResponse & other = (const GCC_ConferenceTransferResponse &)obj;
 
@@ -11020,7 +11020,7 @@ void GCC_ConferenceTransferIndication::PrintOn(ostream & strm) const
     strm << setw(indent+20) << "transferringNodes = " << setprecision(indent) << m_transferringNodes << '\n';
   if (HasOptionalField(e_password))
     strm << setw(indent+11) << "password = " << setprecision(indent) << m_password << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -11028,7 +11028,7 @@ void GCC_ConferenceTransferIndication::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConferenceTransferIndication::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConferenceTransferIndication), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConferenceTransferIndication), PInvalidCast);
 #endif
   const GCC_ConferenceTransferIndication & other = (const GCC_ConferenceTransferIndication &)obj;
 
@@ -11132,7 +11132,7 @@ void GCC_ApplicationInvokeIndication::PrintOn(ostream & strm) const
   strm << setw(indent+31) << "applicationProtocolEntiyList = " << setprecision(indent) << m_applicationProtocolEntiyList << '\n';
   if (HasOptionalField(e_destinationNodes))
     strm << setw(indent+19) << "destinationNodes = " << setprecision(indent) << m_destinationNodes << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -11140,7 +11140,7 @@ void GCC_ApplicationInvokeIndication::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ApplicationInvokeIndication::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ApplicationInvokeIndication), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ApplicationInvokeIndication), PInvalidCast);
 #endif
   const GCC_ApplicationInvokeIndication & other = (const GCC_ApplicationInvokeIndication &)obj;
 
@@ -11220,7 +11220,7 @@ void GCC_RegistryAllocateHandleResponse::PrintOn(ostream & strm) const
   strm << setw(indent+18) << "numberOfHandles = " << setprecision(indent) << m_numberOfHandles << '\n';
   strm << setw(indent+14) << "firstHandle = " << setprecision(indent) << m_firstHandle << '\n';
   strm << setw(indent+9) << "result = " << setprecision(indent) << m_result << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -11228,7 +11228,7 @@ void GCC_RegistryAllocateHandleResponse::PrintOn(ostream & strm) const
 PObject::Comparison GCC_RegistryAllocateHandleResponse::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_RegistryAllocateHandleResponse), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_RegistryAllocateHandleResponse), PInvalidCast);
 #endif
   const GCC_RegistryAllocateHandleResponse & other = (const GCC_RegistryAllocateHandleResponse &)obj;
 
@@ -11321,7 +11321,7 @@ void GCC_RegistryResponse::PrintOn(ostream & strm) const
   if (HasOptionalField(e_modificationRights))
     strm << setw(indent+21) << "modificationRights = " << setprecision(indent) << m_modificationRights << '\n';
   strm << setw(indent+9) << "result = " << setprecision(indent) << m_result << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -11329,7 +11329,7 @@ void GCC_RegistryResponse::PrintOn(ostream & strm) const
 PObject::Comparison GCC_RegistryResponse::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_RegistryResponse), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_RegistryResponse), PInvalidCast);
 #endif
   const GCC_RegistryResponse & other = (const GCC_RegistryResponse &)obj;
 
@@ -11439,7 +11439,7 @@ void GCC_ConductorPermissionGrantIndication::PrintOn(ostream & strm) const
   strm << setw(indent+17) << "permissionList = " << setprecision(indent) << m_permissionList << '\n';
   if (HasOptionalField(e_waitingList))
     strm << setw(indent+14) << "waitingList = " << setprecision(indent) << m_waitingList << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -11447,7 +11447,7 @@ void GCC_ConductorPermissionGrantIndication::PrintOn(ostream & strm) const
 PObject::Comparison GCC_ConductorPermissionGrantIndication::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_ConductorPermissionGrantIndication), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_ConductorPermissionGrantIndication), PInvalidCast);
 #endif
   const GCC_ConductorPermissionGrantIndication & other = (const GCC_ConductorPermissionGrantIndication &)obj;
 
@@ -11523,7 +11523,7 @@ void GCC_FunctionNotSupportedResponse::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+10) << "request = " << setprecision(indent) << m_request << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -11531,7 +11531,7 @@ void GCC_FunctionNotSupportedResponse::PrintOn(ostream & strm) const
 PObject::Comparison GCC_FunctionNotSupportedResponse::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_FunctionNotSupportedResponse), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_FunctionNotSupportedResponse), PInvalidCast);
 #endif
   const GCC_FunctionNotSupportedResponse & other = (const GCC_FunctionNotSupportedResponse &)obj;
 
@@ -11602,7 +11602,7 @@ void GCC_PasswordChallengeRequestResponse_challengeRequestResponse::PrintOn(ostr
     strm << setw(indent+19) << "challengeRequest = " << setprecision(indent) << m_challengeRequest << '\n';
   if (HasOptionalField(e_challengeResponse))
     strm << setw(indent+20) << "challengeResponse = " << setprecision(indent) << m_challengeResponse << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -11610,7 +11610,7 @@ void GCC_PasswordChallengeRequestResponse_challengeRequestResponse::PrintOn(ostr
 PObject::Comparison GCC_PasswordChallengeRequestResponse_challengeRequestResponse::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_PasswordChallengeRequestResponse_challengeRequestResponse), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_PasswordChallengeRequestResponse_challengeRequestResponse), PInvalidCast);
 #endif
   const GCC_PasswordChallengeRequestResponse_challengeRequestResponse & other = (const GCC_PasswordChallengeRequestResponse_challengeRequestResponse &)obj;
 
@@ -11692,7 +11692,7 @@ void GCC_RosterUpdateIndication_nodeInformation::PrintOn(ostream & strm) const
   strm << setw(indent+23) << "rosterInstanceNumber = " << setprecision(indent) << m_rosterInstanceNumber << '\n';
   strm << setw(indent+13) << "nodesAdded = " << setprecision(indent) << m_nodesAdded << '\n';
   strm << setw(indent+15) << "nodesRemoved = " << setprecision(indent) << m_nodesRemoved << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -11700,7 +11700,7 @@ void GCC_RosterUpdateIndication_nodeInformation::PrintOn(ostream & strm) const
 PObject::Comparison GCC_RosterUpdateIndication_nodeInformation::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_RosterUpdateIndication_nodeInformation), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_RosterUpdateIndication_nodeInformation), PInvalidCast);
 #endif
   const GCC_RosterUpdateIndication_nodeInformation & other = (const GCC_RosterUpdateIndication_nodeInformation &)obj;
 
@@ -11793,7 +11793,7 @@ void GCC_NetworkAddress_subtype_aggregatedChannel::PrintOn(ostream & strm) const
     strm << setw(indent+15) << "extraDialing = " << setprecision(indent) << m_extraDialing << '\n';
   if (HasOptionalField(e_highLayerCompatibility))
     strm << setw(indent+25) << "highLayerCompatibility = " << setprecision(indent) << m_highLayerCompatibility << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -11801,7 +11801,7 @@ void GCC_NetworkAddress_subtype_aggregatedChannel::PrintOn(ostream & strm) const
 PObject::Comparison GCC_NetworkAddress_subtype_aggregatedChannel::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_NetworkAddress_subtype_aggregatedChannel), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_NetworkAddress_subtype_aggregatedChannel), PInvalidCast);
 #endif
   const GCC_NetworkAddress_subtype_aggregatedChannel & other = (const GCC_NetworkAddress_subtype_aggregatedChannel &)obj;
 
@@ -11905,7 +11905,7 @@ void GCC_RosterUpdateIndication_applicationInformation_subtype::PrintOn(ostream 
   strm << setw(indent+23) << "rosterInstanceNumber = " << setprecision(indent) << m_rosterInstanceNumber << '\n';
   strm << setw(indent+20) << "peerEntitiesAdded = " << setprecision(indent) << m_peerEntitiesAdded << '\n';
   strm << setw(indent+22) << "peerEntitiesRemoved = " << setprecision(indent) << m_peerEntitiesRemoved << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -11913,7 +11913,7 @@ void GCC_RosterUpdateIndication_applicationInformation_subtype::PrintOn(ostream 
 PObject::Comparison GCC_RosterUpdateIndication_applicationInformation_subtype::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_RosterUpdateIndication_applicationInformation_subtype), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_RosterUpdateIndication_applicationInformation_subtype), PInvalidCast);
 #endif
   const GCC_RosterUpdateIndication_applicationInformation_subtype & other = (const GCC_RosterUpdateIndication_applicationInformation_subtype &)obj;
 
@@ -12012,7 +12012,7 @@ void GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_refresh_subtype::
   strm << "{\n";
   strm << setw(indent+9) << "nodeID = " << setprecision(indent) << m_nodeID << '\n';
   strm << setw(indent+13) << "nodeRecord = " << setprecision(indent) << m_nodeRecord << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -12020,7 +12020,7 @@ void GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_refresh_subtype::
 PObject::Comparison GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_refresh_subtype::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_refresh_subtype), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_refresh_subtype), PInvalidCast);
 #endif
   const GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_refresh_subtype & other = (const GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_refresh_subtype &)obj;
 
@@ -12095,7 +12095,7 @@ void GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_update_subtype::P
   strm << "{\n";
   strm << setw(indent+9) << "nodeID = " << setprecision(indent) << m_nodeID << '\n';
   strm << setw(indent+13) << "nodeUpdate = " << setprecision(indent) << m_nodeUpdate << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -12103,7 +12103,7 @@ void GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_update_subtype::P
 PObject::Comparison GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_update_subtype::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_update_subtype), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_update_subtype), PInvalidCast);
 #endif
   const GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_update_subtype & other = (const GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_update_subtype &)obj;
 
@@ -12179,7 +12179,7 @@ void GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecord
   strm << setw(indent+9) << "nodeID = " << setprecision(indent) << m_nodeID << '\n';
   strm << setw(indent+11) << "entityID = " << setprecision(indent) << m_entityID << '\n';
   strm << setw(indent+20) << "applicationRecord = " << setprecision(indent) << m_applicationRecord << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -12187,7 +12187,7 @@ void GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecord
 PObject::Comparison GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList_refresh_subtype::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList_refresh_subtype), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList_refresh_subtype), PInvalidCast);
 #endif
   const GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList_refresh_subtype & other = (const GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList_refresh_subtype &)obj;
 
@@ -12269,7 +12269,7 @@ void GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecord
   strm << setw(indent+9) << "nodeID = " << setprecision(indent) << m_nodeID << '\n';
   strm << setw(indent+11) << "entityID = " << setprecision(indent) << m_entityID << '\n';
   strm << setw(indent+20) << "applicationUpdate = " << setprecision(indent) << m_applicationUpdate << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -12277,7 +12277,7 @@ void GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecord
 PObject::Comparison GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList_update_subtype::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList_update_subtype), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList_update_subtype), PInvalidCast);
 #endif
   const GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList_update_subtype & other = (const GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList_update_subtype &)obj;
 
@@ -12359,7 +12359,7 @@ void GCC_RosterUpdateIndication::PrintOn(ostream & strm) const
   strm << setw(indent+14) << "fullRefresh = " << setprecision(indent) << m_fullRefresh << '\n';
   strm << setw(indent+18) << "nodeInformation = " << setprecision(indent) << m_nodeInformation << '\n';
   strm << setw(indent+25) << "applicationInformation = " << setprecision(indent) << m_applicationInformation << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -12367,7 +12367,7 @@ void GCC_RosterUpdateIndication::PrintOn(ostream & strm) const
 PObject::Comparison GCC_RosterUpdateIndication::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, GCC_RosterUpdateIndication), PInvalidCast);
+  PAssert(PIsDescendant(&obj, GCC_RosterUpdateIndication), PInvalidCast);
 #endif
   const GCC_RosterUpdateIndication & other = (const GCC_RosterUpdateIndication &)obj;
 
