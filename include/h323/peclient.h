@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: peclient.h,v $
- * Revision 1.2002  2004/02/19 10:46:44  rjongbloed
+ * Revision 1.2003  2004/06/04 06:54:17  csoutheren
+ * Migrated updates from OpenH323 1.14.1
+ *
+ * Revision 2.1  2004/02/19 10:46:44  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 1.28  2003/05/14 03:04:58  rjongbloed
@@ -259,7 +262,18 @@ class H323PeerElementDescriptor : public PSafeObject
       Option_WildCard          = 0x0004,
       Option_SendAccessRequest = 0x0008,
       Option_NotAvailable      = 0x0010,
+      Option_PrioritySet       = 0x0020,
+      Option_PriorityMask      = 0x1fc0,
     };
+
+    enum {
+      HighestPriority          = 0,
+      DefaultPriority          = 80,
+      LowestPriority           = 127
+    };
+
+    static inline unsigned SetPriorityOption(unsigned pri)     { return Option_PrioritySet | ((pri & 0x7f) << 6); }
+    static inline unsigned GetPriorityOption(unsigned options) { return (options & Option_PrioritySet) ? ((options >> 6) & 0x7f) : DefaultPriority; }
 
     void CopyTo(H501_Descriptor & descriptor);
     static BOOL CopyToAddressTemplate(H501_AddressTemplate & addressTemplates, 
