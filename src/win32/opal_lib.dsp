@@ -319,6 +319,26 @@ SOURCE=..\t38\h323t38.cxx
 SOURCE=..\t38\t38proto.cxx
 # End Source File
 # End Group
+# Begin Group "SIP Sources"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\sip\sdp.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\sip\sipcon.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\sip\sipep.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\sip\sippdu.cxx
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=.\precompile.cxx
@@ -530,6 +550,30 @@ SOURCE=..\..\include\t38\h323t38.h
 # Begin Source File
 
 SOURCE=..\..\include\t38\t38proto.h
+# End Source File
+# End Group
+# Begin Group "SIP Headers"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\include\sip\sdp.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\sip\sip.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\sip\sipcon.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\sip\sipep.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\sip\sippdu.h
 # End Source File
 # End Group
 # End Group
