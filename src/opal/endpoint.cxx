@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2024  2004/07/11 12:42:13  rjongbloed
+ * Revision 1.2025  2004/07/14 13:26:14  rjongbloed
+ * Fixed issues with the propagation of the "established" phase of a call. Now
+ *   calling an OnEstablished() chain like OnAlerting() and OnConnected() to
+ *   finally arrive at OnEstablishedCall() on OpalManager
+ *
+ * Revision 2.23  2004/07/11 12:42:13  rjongbloed
  * Added function on endpoints to get the list of all media formats any
  *   connection the endpoint may create can support.
  *
@@ -323,8 +328,9 @@ void OpalEndPoint::OnConnected(OpalConnection & connection)
 }
 
 
-void OpalEndPoint::OnEstablished(OpalConnection & /*connection*/)
+void OpalEndPoint::OnEstablished(OpalConnection & connection)
 {
+  manager.OnEstablished(connection);
 }
 
 

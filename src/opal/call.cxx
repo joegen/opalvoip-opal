@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2028  2004/07/11 12:43:17  rjongbloed
+ * Revision 1.2029  2004/07/14 13:26:14  rjongbloed
+ * Fixed issues with the propagation of the "established" phase of a call. Now
+ *   calling an OnEstablished() chain like OnAlerting() and OnConnected() to
+ *   finally arrive at OnEstablishedCall() on OpalManager
+ *
+ * Revision 2.27  2004/07/11 12:43:17  rjongbloed
  * Added function to get a list of all possible media formats that may be used given
  *   a list of media and taking into account all of the registered transcoders.
  *
@@ -181,32 +186,7 @@ void OpalCall::AddConnection(OpalConnection * connection)
 }
 
 
-void OpalCall::CheckEstablished()
-{
-  if (isEstablished)
-    return;
-
-  PINDEX idx = activeConnections.GetSize();
-  if (idx < 2)
-    return;
-
-  while (idx-- > 0) {
-    switch (activeConnections[idx].GetPhase()) {
-      case OpalConnection::EstablishedPhase :
-        break;
-      case OpalConnection::AlertingPhase :
-        activeConnections[idx].SetConnected();
-      default :
-        return;
-    }
-  }
-
-  isEstablished = TRUE;
-  OnEstablished();
-}
-
-
-void OpalCall::OnEstablished()
+void OpalCall::OnEstablishedCall()
 {
   manager.OnEstablishedCall(*this);
 }
@@ -359,6 +339,28 @@ BOOL OpalCall::OnConnected(OpalConnection & connection)
     inUseFlag.Signal();
   }
 
+  return TRUE;
+}
+
+
+BOOL OpalCall::OnEstablished(OpalConnection & connection)
+{
+  PTRACE(3, "Call\tOnEstablished " << connection);
+
+  if (isEstablished)
+    return FALSE;
+
+  PINDEX idx = activeConnections.GetSize();
+  if (idx < 2)
+    return FALSE;
+
+  while (idx-- > 0) {
+    if (activeConnections[idx].GetPhase() != OpalConnection::EstablishedPhase)
+      return FALSE;
+  }
+
+  isEstablished = TRUE;
+  OnEstablishedCall();
   return TRUE;
 }
 

@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2017  2004/05/01 10:00:50  rjongbloed
+ * Revision 1.2018  2004/07/14 13:26:14  rjongbloed
+ * Fixed issues with the propagation of the "established" phase of a call. Now
+ *   calling an OnEstablished() chain like OnAlerting() and OnConnected() to
+ *   finally arrive at OnEstablishedCall() on OpalManager
+ *
+ * Revision 2.16  2004/05/01 10:00:50  rjongbloed
  * Fixed ClearCallSynchronous so now is actually signalled when call is destroyed.
  *
  * Revision 2.15  2004/04/18 07:09:12  rjongbloed
@@ -156,18 +161,12 @@ class OpalCall : public PObject
       */
     BOOL IsEstablished() const { return isEstablished; }
 
-    /**Check that all connections in call are connected and media is going.
-       If all criteria are met, this calls OnEstablished() on every connection
-       and then OnEstablishedCall() on the manager.
-      */
-    virtual void CheckEstablished();
-
     /**Call back to indicate that the call has been established.
        At this point in time there are no connections left in the call.
 
        The default behaviour is to call OpalManager::OnEstablishedCall().
       */
-    virtual void OnEstablished();
+    virtual void OnEstablishedCall();
 
     /**Get the call clearand reason for this connection shutting down.
        Note that this function is only generally useful in the
@@ -258,6 +257,23 @@ class OpalCall : public PObject
        connections in the call.
       */
     virtual BOOL OnConnected(
+      OpalConnection & connection   /// Connection that indicates it is alerting
+    );
+
+    /**A call back function whenever a connection is "established".
+       This indicates that a connection to an endpoint was connected and that
+       media streams are opened. 
+
+       In the context of H.323 this means that the CONNECT pdu has been
+       received and either fast start was in operation or the subsequent Open
+       Logical Channels have occurred. For SIP it indicates the INVITE/OK/ACK
+       sequence is complete.
+
+       The default behaviour is to check that all connections in call are
+       established and if so, marks the call as established and calls
+       OnEstablishedCall().
+      */
+    virtual BOOL OnEstablished(
       OpalConnection & connection   /// Connection that indicates it is alerting
     );
 
