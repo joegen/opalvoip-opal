@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.cxx,v $
- * Revision 1.2003  2003/03/17 10:15:01  robertj
+ * Revision 1.2004  2003/03/19 02:30:45  robertj
+ * Added removal of IVR stuff if EXPAT is not installed on system.
+ *
+ * Revision 2.2  2003/03/17 10:15:01  robertj
  * Fixed IVR support using VXML.
  * Added video support.
  *
@@ -35,7 +38,7 @@
 
 #include <ptlib.h>
 
-#ifdef __GNUC__
+#ifdef P_USE_PRAGMA
 #pragma implementation "ivr.h"
 #endif
 
@@ -46,6 +49,8 @@
 
 #define new PNEW
 
+
+#if P_EXPAT
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -307,6 +312,9 @@ BOOL OpalIVRMediaStream::IsSynchronous() const
 {
   return FALSE;
 }
+
+
+#endif // P_EXPAT
 
 
 /////////////////////////////////////////////////////////////////////////////
