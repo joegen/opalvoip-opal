@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2007  2002/04/05 10:42:04  robertj
+ * Revision 1.2008  2002/04/09 01:02:14  robertj
+ * Fixed problems with restarting INVITE on  authentication required response.
+ *
+ * Revision 2.6  2002/04/05 10:42:04  robertj
  * Major changes to support transactions (UDP timeouts and retries).
  *
  * Revision 2.5  2002/03/18 08:09:31  robertj
@@ -139,15 +142,15 @@ SIPURL::SIPURL()
 }
 
 
-SIPURL::SIPURL(const char * str, BOOL special)
+SIPURL::SIPURL(const char * str)
 {
-  Parse(str, special);
+  Parse(str);
 }
 
 
-SIPURL::SIPURL(const PString & str, BOOL special)
+SIPURL::SIPURL(const PString & str)
 {
-  Parse(str, special);
+  Parse(str);
 }
 
 
@@ -178,7 +181,7 @@ SIPURL::SIPURL(const PString & name,
 }
 
 
-void SIPURL::Parse(const char * cstr, BOOL special)
+void SIPURL::Parse(const char * cstr)
 {
   displayAddress.Delete(0, P_MAX_INDEX);
 
@@ -211,16 +214,8 @@ void SIPURL::Parse(const char * cstr, BOOL special)
     return;
   }
 
-  if (special) {
-    PString userParam = paramVars("user", "udp");
-    paramVars.RemoveAll();
-    paramVars.SetAt("user", userParam);
-    fragment.Delete(0, P_MAX_INDEX);
-    queryVars.RemoveAll();
-  }
-
   if (!paramVars.Contains("transport"))
-    paramVars.SetAt("transport", "udp");
+    SetParamVar("transport", "udp");
 
   Recalculate();
 }
@@ -250,48 +245,70 @@ SIPMIMEInfo::SIPMIMEInfo(BOOL _compactForm)
 
 PINDEX SIPMIMEInfo::GetContentLength() const
 {
-  PString len = GetSIPString("Content-Length", "l");
+  PString len = GetSIPString("Content-Length", 'l');
   if (len.IsEmpty())
     return P_MAX_INDEX;
   return len.AsInteger();
 }
 
 
-PString SIPMIMEInfo::GetSIPString(const char * fullForm, const char * compactForm) const
+PString SIPMIMEInfo::GetContentType() const
 {
-  if (Contains(PCaselessString(fullForm)))
-    return (*this)[fullForm];
-  return (*this)(compactForm);
+  return GetSIPString("Content-Type", 'c');
 }
 
 
 void SIPMIMEInfo::SetContentType(const PString & v)
 {
-  this->SetAt(compactForm ? "c" : "Content-Type",  v);
+  SetAt(compactForm ? "c" : "Content-Type",  v);
+}
+
+
+PString SIPMIMEInfo::GetContentEncoding() const
+{
+  return GetSIPString("Content-Encoding", 'e');
 }
 
 
 void SIPMIMEInfo::SetContentEncoding(const PString & v)
 {
-  this->SetAt(compactForm ? "e" : "Content-Encoding",  v);
+  SetAt(compactForm ? "e" : "Content-Encoding",  v);
+}
+
+
+PString SIPMIMEInfo::GetFrom() const
+{
+  return GetSIPString("From", 'f');
 }
 
 
 void SIPMIMEInfo::SetFrom(const PString & v)
 {
-  this->SetAt(compactForm ? "f" : "From",  v);
+  SetAt(compactForm ? "f" : "From",  v);
+}
+
+
+PString SIPMIMEInfo::GetCallID() const
+{
+  return GetSIPString("Call-ID", 'i');
 }
 
 
 void SIPMIMEInfo::SetCallID(const PString & v)
 {
-  this->SetAt(compactForm ? "i" : "Call-ID",  v);
+  SetAt(compactForm ? "i" : "Call-ID",  v);
+}
+
+
+PString SIPMIMEInfo::GetContact() const
+{
+  return GetSIPString("Contact", 'm');
 }
 
 
 void SIPMIMEInfo::SetContact(const PString & v)
 {
-  this->SetAt(compactForm ? "m" : "Contact",  v);
+  SetAt(compactForm ? "m" : "Contact",  v);
 }
 
 
@@ -305,33 +322,77 @@ void SIPMIMEInfo::SetContact(const PURL & url, const char * name)
 }
 
 
+PString SIPMIMEInfo::GetSubject() const
+{
+  return GetSIPString("Subject", 's');
+}
+
+
 void SIPMIMEInfo::SetSubject(const PString & v)
 {
-  this->SetAt(compactForm ? "s" : "Subject",  v);
+  SetAt(compactForm ? "s" : "Subject",  v);
+}
+
+
+PString SIPMIMEInfo::GetTo() const
+{
+  return GetSIPString("To", 't');
 }
 
 
 void SIPMIMEInfo::SetTo(const PString & v)
 {
-  this->SetAt(compactForm ? "t" : "To",  v);
+  SetAt(compactForm ? "t" : "To",  v);
+}
+
+
+PString SIPMIMEInfo::GetVia() const
+{
+  return GetSIPString("Via", 'v');
 }
 
 
 void SIPMIMEInfo::SetVia(const PString & v)
 {
-  this->SetAt(compactForm ? "v" : "Via",  v);
+  SetAt(compactForm ? "v" : "Via",  v);
 }
 
 
 void SIPMIMEInfo::SetContentLength(PINDEX v)
 {
-  this->SetAt(compactForm ? "l" : "Content-Length", PString(PString::Unsigned, v));
+  SetAt(compactForm ? "l" : "Content-Length", PString(PString::Unsigned, v));
+}
+
+
+PString SIPMIMEInfo::GetCSeq() const
+{
+  return (*this)("CSeq");
 }
 
 
 void SIPMIMEInfo::SetCSeq(const PString & v)
 {
-  this->SetAt("CSeq",  v);
+  SetAt("CSeq",  v);
+}
+
+
+PString SIPMIMEInfo::GetRecordRoute() const
+{
+  return (*this)("Record-Route");
+}
+
+
+void SIPMIMEInfo::SetRecordRoute(const PString & v)
+{
+  SetAt("Record-Route",  v);
+}
+
+
+PString SIPMIMEInfo::GetSIPString(const char * fullForm, char compactForm) const
+{
+  if (Contains(PCaselessString(fullForm)))
+    return (*this)[fullForm];
+  return (*this)(PCaselessString(compactForm));
 }
 
 
@@ -376,14 +437,14 @@ static PString GetAuthParam(const PString & auth, const char * name)
 }
 
 
-BOOL SIPAuthentication::Parse(const PString & auth, BOOL proxy)
+BOOL SIPAuthentication::Parse(const PCaselessString & auth, BOOL proxy)
 {
   realm.Empty();
   nonce.Empty();
   algorithm = NumAlgorithms;
 
   if (auth.Find("digest") != 0) {
-    PTRACE(1, "SIP\tUnknown proxy authentication scheme");
+    PTRACE(1, "SIP\tUnknown authentication type");
     return FALSE;
   }
 
@@ -393,19 +454,19 @@ BOOL SIPAuthentication::Parse(const PString & auth, BOOL proxy)
   else if (str == "md5")
     algorithm = Algorithm_MD5;
   else {
-    PTRACE(1, "SIP\tUnknown proxy authentication algorithm");
+    PTRACE(1, "SIP\tUnknown authentication algorithm");
     return FALSE;
   }
 
   realm = GetAuthParam(auth, "realm");
   if (realm.IsEmpty()) {
-    PTRACE(1, "SIP\tNo realm in proxy authentication");
+    PTRACE(1, "SIP\tNo realm in authentication");
     return FALSE;
   }
 
   nonce = GetAuthParam(auth, "nonce");
   if (nonce.IsEmpty()) {
-    PTRACE(1, "SIP\tNo nonce in proxy authentication");
+    PTRACE(1, "SIP\tNo nonce in authentication");
     return FALSE;
   }
 
@@ -520,11 +581,13 @@ SIP_PDU::SIP_PDU(const SIP_PDU & request, StatusCodes code, const char * extra)
   sdp = NULL;
 
   // add mandatory fields to response (RFC 2543, 11.2)
-  mime.SetTo(request.GetMIME().GetTo());
-  mime.SetFrom(request.GetMIME().GetFrom());
-  mime.SetCallID(request.GetMIME().GetCallID());
-  mime.SetCSeq(request.GetMIME().GetCSeq());
-  mime.SetVia(request.GetMIME().GetVia());
+  const SIPMIMEInfo & requestMIME = request.GetMIME();
+  mime.SetTo(requestMIME.GetTo());
+  mime.SetFrom(requestMIME.GetFrom());
+  mime.SetCallID(requestMIME.GetCallID());
+  mime.SetCSeq(requestMIME.GetCSeq());
+  mime.SetVia(requestMIME.GetVia());
+  mime.SetRecordRoute(requestMIME.GetRecordRoute());
 
   // format response
   if (extra != NULL)
@@ -607,6 +670,8 @@ void SIP_PDU::Construct(Methods meth,
   Construct(meth);
 
   uri = to;
+  uri.SetParamVar("tag", PString::Empty());
+
   mime.RemoveAll();
   mime.SetTo(to);
   mime.SetFrom(from);
@@ -866,6 +931,11 @@ void SIPTransaction::BuildREGISTER(const SIPURL & name, const SIPURL & contact)
 
 BOOL SIPTransaction::Start()
 {
+  if (state != NotStarted) {
+    PAssertAlways(PLogicError);
+    return FALSE;
+  }
+
   if (connection != NULL) {
     connection->AddTransaction(this);
     connection->GetAuthentication().Authorise(*this);
@@ -926,15 +996,27 @@ void SIPTransaction::OnReceivedResponse(SIP_PDU & response)
 
   PString cseq = response.GetMIME().GetCSeq();
 
+  // If is the response to a CANCEl we sent, then just ignore it
   if (cseq.Find(MethodNames[Method_CANCEL]) != P_MAX_INDEX) {
     PTRACE(3, "SIP\tTransaction " << cseq << " acknowledged for " << *this);
     return;
   }
 
+  // Something wrong here, response is not for the request we made!
   if (cseq.Find(MethodNames[method]) == P_MAX_INDEX) {
     PTRACE(3, "SIP\tTransaction " << cseq << " response not for " << *this);
     return;
   }
+
+
+  // If response had a contact field then start using that address for all
+  // future communication with remote SIP endpoint
+  PString contact = response.GetMIME().GetContact();
+  if (!contact) {
+    SIPURL remote = contact;
+    transport.SetRemoteAddress(remote.GetHostAddress());
+  }
+
 
   /* Really need to check if response is actually meant for us. Have a
      temporary cheat in assuming that we are only sending a given CSeq to one
@@ -943,6 +1025,10 @@ void SIPTransaction::OnReceivedResponse(SIP_PDU & response)
      */
   if (response.GetStatusCode()/100 == 1) {
     PTRACE(3, "SIP\tTransaction " << cseq << " proceeding.");
+
+    if (connection != NULL)
+      connection->OnReceivedResponse(*this, response);
+
     state = Proceeding;
     retry = 0;
     if (method == Method_INVITE) {
@@ -956,12 +1042,8 @@ void SIPTransaction::OnReceivedResponse(SIP_PDU & response)
   }
   else {
     PTRACE(3, "SIP\tTransaction " << cseq << " completed.");
-    state = Completed;
-    retryTimer.Stop();
-    if (method != Method_INVITE || response.GetStatusCode()/100 != 2)
-      completionTimer = endpoint.GetPduCleanUpTimeout();
-    else {
-      completionTimer = endpoint.GetAckTimeout();
+
+    if (method == Method_INVITE) {
       mime.SetTo(response.GetMIME().GetTo()); // Adjust to get added tag
       SIP_PDU ack(Method_ACK,
                   mime.GetTo(),
@@ -969,14 +1051,20 @@ void SIPTransaction::OnReceivedResponse(SIP_PDU & response)
                   mime.GetCallID(),
                   mime.GetCSeqIndex(),
                   transport);
+      if (connection != NULL)
+        connection->GetAuthentication().Authorise(ack);
       ack.Write(transport);
     }
 
-    finished.Signal();
-  }
+    if (state < Completed && connection != NULL)
+      connection->OnReceivedResponse(*this, response);
 
-  if (connection != NULL)
-    connection->OnReceivedResponse(*this, response);
+    state = Completed;
+    finished.Signal();
+    retryTimer.Stop();
+    completionTimer = method == Method_INVITE ? endpoint.GetAckTimeout()
+                                              : endpoint.GetPduCleanUpTimeout();
+  }
 }
 
 
@@ -996,6 +1084,7 @@ void SIPTransaction::OnRetry(PTimer &, INT)
   if (state == Cancelling)
     SendCANCEL();
   else {
+    transport.SetLocalAddress(localAddress);
     if (!Write(transport)) {
       SetTerminated(Terminated_TransportError);
       return;

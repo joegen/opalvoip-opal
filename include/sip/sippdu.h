@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2004  2002/04/05 10:42:04  robertj
+ * Revision 1.2005  2002/04/09 01:02:14  robertj
+ * Fixed problems with restarting INVITE on  authentication required response.
+ *
+ * Revision 2.3  2002/04/05 10:42:04  robertj
  * Major changes to support transactions (UDP timeouts and retries).
  *
  * Revision 2.2  2002/03/08 06:28:19  craigs
@@ -65,12 +68,10 @@ class SIPURL : public PURL
   public:
     SIPURL();
     SIPURL(
-      const char * str,
-      BOOL special = FALSE
+      const char * str
     );
     SIPURL(
-      const PString & str,
-      BOOL special = FALSE
+      const PString & str
     );
     SIPURL(
       const PString & name,
@@ -79,8 +80,7 @@ class SIPURL : public PURL
     );
 
     void Parse(
-      const char * cstr,
-      BOOL special = FALSE
+      const char * cstr
     );
 
     PString GetDisplayAddress() const
@@ -106,44 +106,48 @@ class SIPMIMEInfo : public PMIMEInfo
   PCLASSINFO(SIPMIMEInfo, PMIMEInfo);
   public:
     SIPMIMEInfo(BOOL compactForm = FALSE);
-    PString GetSIPString(const char * fullForm, const char * compactForm) const;
 
     void SetForm(BOOL v) { compactForm = v; }
 
-    PString GetContentType() const         { return GetSIPString("Content-Type",     "c"); }
+    PString GetContentType() const;
     void SetContentType(const PString & v);
 
-    PString GetContentEncoding() const         { return GetSIPString("Content-Encoding", "e"); }
+    PString GetContentEncoding() const;
     void SetContentEncoding(const PString & v);
 
-    PString GetFrom() const            { return GetSIPString("From",             "f"); }
+    PString GetFrom() const;
     void SetFrom(const PString & v);
 
-    PString GetCallID() const          { return GetSIPString("Call-ID",          "i"); }
+    PString GetCallID() const;
     void SetCallID(const PString & v);
 
-    PString GetContact() const         { return GetSIPString("Contact",          "m"); }
+    PString GetContact() const;
     void SetContact(const PString & v);
     void SetContact(const PURL & url, const char * name = NULL);
 
-    PString GetSubject() const         { return GetSIPString("Subject",          "s"); }
+    PString GetSubject() const;
     void SetSubject(const PString & v);
 
-    PString GetTo() const              { return GetSIPString("To",               "t"); }
+    PString GetTo() const;
     void SetTo(const PString & v);
 
-    PString GetVia() const             { return GetSIPString("Via",              "v"); }
+    PString GetVia() const;
     void SetVia(const PString & v);
 
     PINDEX  GetContentLength() const;
     void SetContentLength(PINDEX v);
 
-    PString GetCSeq() const            { return (*this)("CSeq"); }
+    PString GetCSeq() const;
     void SetCSeq(const PString & v);
 
-    unsigned GetCSeqIndex() const      { return GetCSeq().AsUnsigned(); }
+    PString GetRecordRoute() const;
+    void SetRecordRoute(const PString & v);
+
+    unsigned GetCSeqIndex() const { return GetCSeq().AsUnsigned(); }
 
   protected:
+    PString GetSIPString(const char * fullForm, char compactForm) const;
+
     BOOL compactForm;
 };
 
@@ -160,7 +164,7 @@ class SIPAuthentication : public PObject
     );
 
     BOOL Parse(
-      const PString & auth,
+      const PCaselessString & auth,
       BOOL proxy
     );
 
@@ -372,7 +376,7 @@ class SIPTransaction : public SIP_PDU
     );
 
     BOOL Start();
-    BOOL IsInProgress() const { return state < Completed; }
+    BOOL IsInProgress() const { return state > NotStarted && state < Completed; }
     BOOL IsFailed() const { return state > Terminated_Success; }
     BOOL IsFinished()     { return finished.Wait(0); }
     void Wait();

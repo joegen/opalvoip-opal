@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2009  2002/04/08 02:40:13  robertj
+ * Revision 1.2010  2002/04/09 01:02:14  robertj
+ * Fixed problems with restarting INVITE on  authentication required response.
+ *
+ * Revision 2.8  2002/04/08 02:40:13  robertj
  * Fixed issues with using double originate call, eg from simple app command line.
  *
  * Revision 2.7  2002/04/05 10:42:04  robertj
@@ -234,7 +237,10 @@ class SIPConnection : public OpalConnection
   
     /**Handle an incoming Proxy Authentication Required response PDU
       */
-    virtual void OnReceivedAuthenticationRequired(SIP_PDU & pdu);
+    virtual void OnReceivedAuthenticationRequired(
+      SIPTransaction & transaction,
+      SIP_PDU & response
+    );
   
     /**Handle an incoming redirect response PDU
       */
