@@ -23,7 +23,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: allcodecs.h,v $
- * Revision 1.2006  2003/06/02 04:04:54  rjongbloed
+ * Revision 1.2007  2004/02/17 08:48:57  csoutheren
+ * Disabled VoiceAge G.729 codec on Linux
+ *
+ * Revision 2.5  2003/06/02 04:04:54  rjongbloed
  * Changed to use new autoconf system
  *
  * Revision 2.4  2003/03/17 10:26:59  robertj
@@ -49,8 +52,10 @@
 #include <codec/g711codec.h>
 OPAL_REGISTER_G711();
 
+#if VOICE_AGE_G729A
 #include <codec/g729codec.h>
 OPAL_REGISTER_G729();
+#endif
 
 #include <codec/gsmcodec.h>
 OPAL_REGISTER_GSM0610();
