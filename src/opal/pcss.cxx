@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2022  2004/12/12 13:36:22  dsandras
+ * Revision 1.2023  2005/02/19 22:44:41  dsandras
+ * Changed pointer to PSafeReadOnly to avoid deadlock on incoming calls.
+ *
+ * Revision 2.21  2004/12/12 13:36:22  dsandras
  * Propagate the remote application and remote party address to the PCSS endpoint.
  *
  * Revision 2.20  2004/08/14 07:56:43  rjongbloed
@@ -278,7 +281,7 @@ PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & 
 
 void OpalPCSSEndPoint::AcceptIncomingConnection(const PString & token)
 {
-  PSafePtr<OpalPCSSConnection> connection = GetPCSSConnectionWithLock(token);
+  PSafePtr<OpalPCSSConnection> connection = GetPCSSConnectionWithLock(token, PSafeReadOnly);
   if (connection != NULL)
     connection->AcceptIncoming();
 }
