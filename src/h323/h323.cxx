@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2034  2002/11/10 11:33:18  robertj
+ * Revision 1.2035  2002/11/10 22:59:49  robertj
+ * Fixed override of SetCallEndReason to have same parameters as base virtual.
+ *
+ * Revision 2.33  2002/11/10 11:33:18  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.32  2002/09/13 02:27:10  robertj
@@ -1377,9 +1380,9 @@ OpalConnection::Phases H323Connection::GetPhase() const
 }
 
 
-void H323Connection::SetCallEndReason(CallEndReason reason)
+void H323Connection::SetCallEndReason(CallEndReason reason, PSyncPoint * sync)
 {
-  OpalConnection::SetCallEndReason(reason);
+  OpalConnection::SetCallEndReason(reason, sync);
 
   if (!callEndTime.IsValid())
     callEndTime = PTime();
