@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2007  2001/08/23 05:51:17  robertj
+ * Revision 1.2008  2001/11/13 04:29:48  robertj
+ * Changed OpalTransportAddress CreateTransport and CreateListsner functions
+ *   to have extra parameter to control local binding of sockets.
+ *
+ * Revision 2.6  2001/08/23 05:51:17  robertj
  * Completed implementation of codec reordering.
  *
  * Revision 2.5  2001/08/22 10:20:09  robertj
@@ -117,7 +121,7 @@ BOOL OpalEndPoint::StartListener(const OpalTransportAddress & iface)
   if (iface.IsEmpty())
     listener = new OpalListenerTCP(*this, INADDR_ANY, defaultSignalPort);
   else {
-    listener = iface.CreateListener(*this);
+    listener = iface.CreateListener(*this, OpalTransportAddress::FullTSAP);
     if (listener == NULL) {
       PTRACE(1, "OpalEP\tCould not create listener: " << iface);
       return FALSE;
