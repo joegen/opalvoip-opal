@@ -22,7 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2019  2003/03/17 23:08:41  robertj
+# Revision 1.2020  2003/03/18 23:09:37  robertj
+# Fixed LD_LIBRARY_PATH issue with Solaris
+#
+# Revision 2.18  2003/03/17 23:08:41  robertj
 # Added IVR endpoint
 #
 # Revision 2.17  2003/03/17 22:36:38  robertj
@@ -457,10 +460,10 @@ endif
 
 # Set library path so asnparser will run
 
-ifndef LD_LIBRARY_PATH
-export LD_LIBRARY_PATH = $(HOSTPWLIBDIR)/lib
+ifdef LD_LIBRARY_PATH
+export LD_LIBRARY_PATH:=$(LD_LIBRARY_PATH):$(HOSTPWLIBDIR)/lib
 else
-export LD_LIBRARY_PATH += :$(HOSTPWLIBDIR)/lib
+export LD_LIBRARY_PATH:=$(HOSTPWLIBDIR)/lib
 endif
 
 
