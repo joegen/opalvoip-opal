@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2032  2005/01/16 11:28:04  csoutheren
+ * Revision 1.2033  2005/03/01 17:51:02  dsandras
+ * Removed erroneous definition of RTP_SessionManager preventing the get the RTP_Session from the connection when called on an OpalConnection object. The RTP_SessionManager is now part of OpalConnection.
+ *
+ * Revision 2.31  2005/01/16 11:28:04  csoutheren
  * Added GetIdentifier virtual function to OpalConnection, and changed H323
  * and SIP descendants to use this function. This allows an application to
  * obtain a GUID for any connection regardless of the protocol used
@@ -2241,8 +2244,6 @@ class H323Connection : public OpalConnection
     /** Call Intrusion flag and parameters */
     BOOL     isCallIntrusion;
     unsigned callIntrusionProtectionLevel;
-
-    RTP_SessionManager rtpSessions;
 
     enum FastStartStates {
       FastStartDisabled,
