@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cpp,v $
+ * Revision 1.11  2004/05/12 12:41:38  rjongbloed
+ * More work on wxWindows based OpenPhone
+ *
  * Revision 1.10  2004/05/09 13:24:25  rjongbloed
  * More work on wxWindows based OpenPhone
  *
@@ -276,9 +279,9 @@ void MyFrame::OnMenuCall(wxCommandEvent& WXUNUSED(event))
   if (dlg.ShowModal() == wxID_OK) {
     LogWindow << "Calling \"" << dlg.m_Address << '"' << endl;
     if (potsEP != NULL)
-      SetUpCall("pots:*", dlg.m_Address.c_str(), currentCallToken);
+      SetUpCall("pots:*", dlg.m_Address, currentCallToken);
     else
-      SetUpCall("pc:*", dlg.m_Address.c_str(), currentCallToken);
+      SetUpCall("pc:*", dlg.m_Address, currentCallToken);
   }
 }
 
@@ -311,7 +314,12 @@ void MyFrame::OnOptions(wxCommandEvent& event)
 {
   OptionsDialog dlg(this);
 
+  dlg.m_SoundPlayer = pcssEP->GetSoundChannelPlayDevice();
+  dlg.m_SoundRecorder = pcssEP->GetSoundChannelRecordDevice();
+
   if (dlg.ShowModal() == wxID_OK) {
+    pcssEP->SetSoundChannelPlayDevice(dlg.m_SoundPlayer);
+    pcssEP->SetSoundChannelRecordDevice(dlg.m_SoundRecorder);
   }
 }
 
@@ -483,7 +491,21 @@ END_EVENT_TABLE()
 
 OptionsDialog::OptionsDialog(wxWindow *parent)
 {
+  PINDEX i;
+
   wxXmlResource::Get()->LoadDialog(this, parent, "OptionsDialog");
+
+  wxComboBox * combo = (wxComboBox *)FindWindowByName("SoundPlayer");
+  combo->SetValidator(wxGenericValidator(&m_SoundPlayer));
+  PStringList devices = PSoundChannel::GetDeviceNames(PSoundChannel::Player);
+  for (i = 0; i < devices.GetSize(); i++)
+    combo->Append((const char *)devices[i]);
+
+  combo = (wxComboBox *)FindWindowByName("SoundRecorder");
+  combo->SetValidator(wxGenericValidator(&m_SoundRecorder));
+  devices = PSoundChannel::GetDeviceNames(PSoundChannel::Recorder);
+  for (i = 0; i < devices.GetSize(); i++)
+    combo->Append((const char *)devices[i]);
 }
 
 

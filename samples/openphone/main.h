@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.6  2004/05/12 12:41:38  rjongbloed
+ * More work on wxWindows based OpenPhone
+ *
  * Revision 1.5  2004/05/06 13:23:43  rjongbloed
  * Work on wxWindows based OpenPhone
  *
@@ -55,6 +58,21 @@ class wxSplitterWindow;
 class wxListCtrl;
 
 
+class PwxString : public wxString
+{
+  public:
+    PwxString() { }
+    PwxString(const wxString & str) : wxString(str) { }
+    PwxString(const PString & str) : wxString((const char *)str) { }
+    PwxString(const char * str) : wxString(str) { }
+
+    PwxString & operator=(const wxString & str) { wxString::operator=(str); return *this; }
+    PwxString & operator=(const PString & str) { wxString::operator=((const char *)str); return *this; }
+    PwxString & operator=(const char * str) { wxString::operator=(str); return *this; }
+
+    operator PString() const { return c_str(); }
+};
+
 class MyPCSSEndPoint : public OpalPCSSEndPoint
 {
   PCLASSINFO(MyPCSSEndPoint, OpalPCSSEndPoint);
@@ -79,7 +97,7 @@ class CallDialog : public wxDialog
   public:
     CallDialog(wxWindow *parent);
 
-    wxString m_Address;
+    PwxString m_Address;
 
   private:
     void OnAddressChange(wxCommandEvent & event);
@@ -95,6 +113,9 @@ class OptionsDialog : public wxDialog
 {
   public:
     OptionsDialog(wxWindow *parent);
+
+    PwxString m_SoundPlayer;
+    PwxString m_SoundRecorder;
 
   private:
     DECLARE_EVENT_TABLE()
