@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2002  2001/08/01 05:44:41  robertj
+ * Revision 1.2003  2001/08/17 08:25:41  robertj
+ * Added call end reason for whole call, not just connection.
+ * Moved call end reasons enum from OpalConnection to global.
+ *
+ * Revision 2.1  2001/08/01 05:44:41  robertj
  * Added function to get all media formats possible in a call.
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
@@ -54,12 +58,25 @@
 #endif
 
 
+static const char * const DefaultMediaFormatOrder[] = {
+  OPAL_G7231,
+  OPAL_G729B,
+  OPAL_G729AB,
+  OPAL_G729,
+  OPAL_G729A,
+  OPAL_GSM0610,
+  OPAL_G728,
+  OPAL_G711_ULAW_64K,
+  OPAL_G711_ALAW_64K
+};
+
 #define new PNEW
 
 
 /////////////////////////////////////////////////////////////////////////////
 
 OpalManager::OpalManager()
+  : mediaFormatOrder(PARRAYSIZE(DefaultMediaFormatOrder), DefaultMediaFormatOrder)
 {
   autoStartReceiveVideo = autoStartTransmitVideo = TRUE;
 
@@ -152,7 +169,7 @@ OpalCall * OpalManager::SetUpCall(const PString & partyA,
 }
 
 
-void OpalManager::OnEstablished(OpalCall & /*call*/)
+void OpalManager::OnEstablishedCall(OpalCall & /*call*/)
 {
 }
 
@@ -192,7 +209,7 @@ OpalCall * OpalManager::FindCallWithoutLocks(const PString & token)
 
 
 BOOL OpalManager::ClearCall(const PString & token,
-                            OpalConnection::CallEndReason reason,
+                            OpalCallEndReason reason,
                             PSyncPoint * sync)
 {
   /*The hugely multi-threaded nature of the OpalCall objects means that
@@ -219,7 +236,7 @@ BOOL OpalManager::ClearCall(const PString & token,
 }
 
 
-void OpalManager::ClearAllCalls(OpalConnection::CallEndReason reason, BOOL wait)
+void OpalManager::ClearAllCalls(OpalCallEndReason reason, BOOL wait)
 {
   /*The hugely multi-threaded nature of the OpalCall objects means that
     to avoid many forms of race condition, a call is cleared by moving it from
