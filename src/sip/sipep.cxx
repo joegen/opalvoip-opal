@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2037  2005/01/15 23:34:26  dsandras
+ * Revision 1.2038  2005/02/19 22:48:48  dsandras
+ * Added the possibility to register to several registrars and be able to do authenticated calls to each of them. Added SUBSCRIBE/NOTIFY support for Message Waiting Indications.
+ *
+ * Revision 2.36  2005/01/15 23:34:26  dsandras
  * Applied patch from Ted Szoczei to handle broken incoming connections.
  *
  * Revision 2.35  2005/01/09 03:42:46  rjongbloed
@@ -163,6 +166,123 @@
 
 #define new PNEW
 
+ 
+////////////////////////////////////////////////////////////////////////////
+
+SIPInfo::SIPInfo(SIPEndPoint &endpoint, const PString & adjustedUsername)
+:ep(endpoint)
+{
+  expire = 0;
+  registered = FALSE; 
+  registrarTransport = NULL;
+  registrationAddress.Parse(adjustedUsername);
+  registrations.DisallowDeleteObjects();
+  registrationID = 
+    OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
+}
+
+
+SIPInfo::~SIPInfo() 
+{
+  if (registrarTransport) 
+    delete registrarTransport;
+}
+
+
+BOOL SIPInfo::CreateTransport (OpalTransportAddress & registrarAddress)
+{
+  if (registrarTransport == NULL)
+    registrarTransport = ep.CreateTransport(registrarAddress);
+  if (registrarTransport == NULL)
+    return FALSE;
+
+  PTRACE (1, "SIP\tCreated Transport for Registrar " << *registrarTransport);
+
+  return TRUE;
+}
+
+
+void SIPInfo::Cancel (SIPTransaction & transaction)
+{
+  for (PINDEX i = 0; i < registrations.GetSize(); i++) {
+    if (&registrations[i] != &transaction) 
+      registrations[i].SendCANCEL();
+  }
+}
+
+
+SIPRegisterInfo::SIPRegisterInfo (SIPEndPoint & endpoint, const PString & name, const PString & pass)
+:SIPInfo(endpoint, name)
+{
+  expire = ep.GetRegistrarTimeToLive().GetSeconds();
+  password = pass;
+}
+
+
+SIPTransaction * SIPRegisterInfo::CreateTransaction (OpalTransport &t, BOOL unregister)
+{
+  authentication.SetUsername(registrationAddress.GetUserName());
+  authentication.SetPassword(password);
+  
+  if (unregister)
+    SetExpire (0);
+  else
+    SetExpire (ep.GetRegistrarTimeToLive().GetSeconds());
+
+  return new SIPRegister (ep, 
+			  t, 
+			  registrationAddress, 
+			  registrationID, 
+			  unregister ? 0:expire); 
+}
+
+void SIPRegisterInfo::OnSuccess ()
+{ 
+  ep.OnRegistered(registrationAddress.GetHostName(), 
+		  registrationAddress.GetUserName(),
+		  (expire > 0)); 
+  SetRegistered((expire == 0)?FALSE:TRUE);
+}
+
+void SIPRegisterInfo::OnFailed (FailureReasons r)
+{ 
+  ep.OnRegistrationFailed (registrationAddress.GetHostName(), 
+			   registrationAddress.GetUserName(),
+			   r,
+			   (expire > 0));
+  SetRegistered((expire == 0)?TRUE:FALSE);
+}
+
+SIPMWISubscribeInfo::SIPMWISubscribeInfo (SIPEndPoint & endpoint, const PString & name)
+:SIPInfo(endpoint, name)
+{
+  expire = ep.GetNotifierTimeToLive().GetSeconds();
+}
+
+
+SIPTransaction * SIPMWISubscribeInfo::CreateTransaction (OpalTransport &t, BOOL unregister)
+{ 
+  if (unregister)
+    SetExpire (0);
+  else
+    SetExpire (ep.GetRegistrarTimeToLive().GetSeconds());
+
+  return new SIPMWISubscribe (ep, 
+			      t, 
+			      registrationAddress, 
+			      registrationID, 
+			      unregister ? 0:expire); 
+}
+
+void SIPMWISubscribeInfo::OnSuccess ()
+{ 
+  SetRegistered((expire == 0)?FALSE:TRUE);
+}
+
+void SIPMWISubscribeInfo::OnFailed (FailureReasons r)
+{ 
+  SetRegistered((expire == 0)?TRUE:FALSE);
+}
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -174,7 +294,8 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
     pduCleanUpTimeout(0, 5),  // 5 seconds
     inviteTimeout(0, 32),     // 32 seconds
     ackTimeout(0, 32),        // 32 seconds
-    registrarTimeToLive(0, 0, 0, 1) // 1 hour
+    registrarTimeToLive(0, 0, 0, 1), // 1 hour
+    notifierTimeToLive(0, 0, 0, 1) // 1 hour
 {
   defaultSignalPort = 5060;
   mimeForm = FALSE;
@@ -184,10 +305,8 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
 
   transactions.DisallowDeleteObjects();
 
-  registrarTransport = NULL;
-  registrations.DisallowDeleteObjects();
-  registered = false;
   registrationTimer.SetNotifier(PCREATE_NOTIFIER(RegistrationRefresh));
+  registrationTimer.RunContinuous (PTimeInterval(0, 60));
 
   PTRACE(3, "SIP\tCreated endpoint.");
 }
@@ -195,10 +314,6 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
 
 SIPEndPoint::~SIPEndPoint()
 {
-  Unregister();
-
-  delete registrarTransport;
-
   listeners.RemoveAll();
 
   PTRACE(3, "SIP\tDeleted endpoint.");
@@ -361,8 +476,9 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
     case SIP_PDU::NumMethods :
       {
         SIPTransaction * transaction = transactions.GetAt(pdu->GetTransactionID());
-        if (transaction != NULL)
+        if (transaction != NULL) {
           transaction->OnReceivedResponse(*pdu);
+	}
       }
       break;
 
@@ -370,6 +486,7 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
       return OnReceivedINVITE(transport, pdu);
 
     case SIP_PDU::Method_REGISTER :
+    case SIP_PDU::Method_SUBSCRIBE :
       {
         SIP_PDU response(*pdu, SIP_PDU::Failure_MethodNotAllowed);
         response.GetMIME().SetAt("Allow", "INVITE");
@@ -377,6 +494,9 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
       }
       break;
 
+    case SIP_PDU::Method_NOTIFY :
+       return OnReceivedNOTIFY(transport, *pdu);
+   
     case SIP_PDU::Method_OPTIONS :
      {
        SIP_PDU response(*pdu, SIP_PDU::Successful_OK);
@@ -402,14 +522,24 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
 
 void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
 {
-  RegistrationFailReasons reason;
+  PSafePtr<SIPInfo> info = NULL; 
+  SIPInfo::FailureReasons reason;
   
-  if (transaction.GetMethod() == SIP_PDU::Method_REGISTER) {
-    // Have a response to the REGISTER, so CANCEL all the other registrations sent.
-    for (PINDEX i = 0; i < registrations.GetSize(); i++) {
-      if (&registrations[i] != &transaction)
-        registrations[i].SendCANCEL();
-    }
+  /* Only support responses to REGISTER and SUBSCRIBE requests */
+  if (transaction.GetMethod() == SIP_PDU::Method_REGISTER
+      || transaction.GetMethod() == SIP_PDU::Method_SUBSCRIBE) {
+    
+    PString callID = transaction.GetMIME().GetCallID ();
+
+    // Have a response to the REGISTER or to the SUBSCRIBE, 
+    // so CANCEL all the other REGISTER or SUBSCRIBE requests
+    // sent to that host.
+    info = activeRegistrations.FindSIPInfoByCallID (callID, PSafeReadOnly);
+
+    if (info != NULL) 
+      info->Cancel (transaction);
+    else
+      return;
 
     // Have a response to the INVITE, so end Connect mode on the transport
     transaction.GetTransport().EndConnect(transaction.GetLocalAddress());
@@ -422,30 +552,31 @@ void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & res
       switch (response.GetStatusCode()) {
 
       case SIP_PDU::Failure_BadRequest:
-	reason = BadRequest;
+	reason = SIPInfo::BadRequest;
 	break;
       case SIP_PDU::Failure_UnAuthorised:
       case SIP_PDU::Failure_Forbidden:
-	reason = Forbidden;
+	reason = SIPInfo::Forbidden;
 	break;
       case SIP_PDU::Failure_PaymentRequired:
-	reason = PaymentRequired;
+	reason = SIPInfo::PaymentRequired;
 	break;
       case SIP_PDU::Failure_RequestTimeout:
-	reason = Timeout;
+	reason = SIPInfo::Timeout;
 	break;
       case SIP_PDU::Failure_Conflict:
-	reason = Conflict;
+	reason = SIPInfo::Conflict;
 	break;
       case SIP_PDU::Failure_TemporarilyUnavailable:
-	reason = TemporarilyUnavailable;
+	reason = SIPInfo::TemporarilyUnavailable;
 	break;
 
       default:
-	reason = RegistrationFailed;
+	reason = SIPInfo::RegistrationFailed;
       }
 
-      OnRegistrationFailed (reason, TRUE);
+      // Trigger the callback 
+      info->OnFailed (reason);
     }
   }
 
@@ -504,7 +635,13 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
 
 void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction, SIP_PDU & response)
 {
-  BOOL isProxy = response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
+  PSafePtr<SIPInfo> realm_info = NULL;
+  PSafePtr<SIPInfo> callid_info = NULL;
+  SIPTransaction * request = NULL;
+  SIPAuthentication auth;
+  
+  BOOL isProxy = 
+    response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
   PString lastRealm;
   PString lastNonce;
   PString lastUsername;
@@ -512,131 +649,322 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
 #if PTRACING
   const char * proxyTrace = isProxy ? "Proxy " : "";
 #endif
-
-  if (authentication.IsValid()) {
-    
-    lastRealm = authentication.GetRealm ();
-    lastUsername = authentication.GetUsername ();
-    lastNonce = authentication.GetNonce ();
-  }
-
-  if (transaction.GetMethod() != SIP_PDU::Method_REGISTER) {
-    PTRACE(1, "SIP\tCannot do " << proxyTrace << "Authentication Required for non REGISTER");
-    return;
-  }
-
   PTRACE(2, "SIP\tReceived " << proxyTrace << "Authentication Required response");
-
-  if (!authentication.Parse(response.GetMIME()(isProxy ? "Proxy-Authenticate"
-                                                       : "WWW-Authenticate"),
-                                               isProxy)) {
+  
+  // Only support REGISTER and SUBSCRIBE for now
+  if (transaction.GetMethod() != SIP_PDU::Method_REGISTER
+      && transaction.GetMethod() != SIP_PDU::Method_SUBSCRIBE) {
+    PTRACE(1, "SIP\tCannot do " << proxyTrace << "Authentication Required for non REGISTER and non SUBSCRIBE");
     return;
   }
   
-  if (authentication.IsValid()
-      && lastRealm == authentication.GetRealm ()
-      && lastUsername == authentication.GetUsername ()
-      && lastNonce == authentication.GetNonce ()) {
+  // Received authentication required response, try to find authentication
+  // for the given realm
+  if (!auth.Parse(response.GetMIME()(isProxy 
+				     ? "Proxy-Authenticate"
+				     : "WWW-Authenticate"),
+		  isProxy)) {
+    return;
+  }
 
-    PTRACE(1, "SIP\tAlready done INVITE for " << proxyTrace << "Authentication Required");
-    OnRegistrationFailed (SIPEndPoint::Forbidden, TRUE);
+  // Try to find authentication information for the requested realm
+  realm_info = 
+    activeRegistrations.FindSIPInfoByRealm (auth.GetRealm(), PSafeReadWrite);
+  // Try to find authentication information for the given call ID
+  callid_info =
+    activeRegistrations.FindSIPInfoByCallID(response.GetMIME().GetCallID(), 
+					    PSafeReadWrite);
+  
+  // No authentication information for the realm yet, 
+  // use what we have for the given CallID
+  if (realm_info == NULL)
+    realm_info = callid_info;
+  
+  // No realm info, no call ID info, weird
+  if (realm_info == NULL || callid_info == NULL) {
+    
+    PTRACE(2, "SIP\tNo Authentication info found for that realm, authentication impossible");
+    return;
+  }
+  
+  if (realm_info->GetAuthentication ().IsValid()) {
+    
+    lastRealm = realm_info->GetAuthentication().GetRealm();
+    lastUsername = realm_info->GetAuthentication().GetUsername();
+    lastNonce = realm_info->GetAuthentication().GetNonce();
+  }
+
+  if (!realm_info->GetAuthentication().Parse(response.GetMIME()(isProxy 
+								? "Proxy-Authenticate"
+								: "WWW-Authenticate"),
+					     isProxy)) {
+    return;
+  }
+  
+  // Already sent info for that callID. Check if params are different
+  // from the ones found for the given realm
+  if (callid_info->GetAuthentication().IsValid()
+      && lastRealm == callid_info->GetAuthentication().GetRealm ()
+      && lastUsername == callid_info->GetAuthentication().GetUsername ()
+      && lastNonce == callid_info->GetAuthentication().GetNonce ()) {
+
+    PTRACE(1, "SIP\tAlready done REGISTER/SUBSCRIBE for " << proxyTrace << "Authentication Required");
+    callid_info->OnFailed(SIPInfo::Forbidden);
     return;
   }
 
   // Restart the transaction with new authentication info
-  SIPTransaction * request = new SIPRegister(*this,
-                                             transaction.GetTransport(),
-                                             registrationAddress,
-                                             registrationID,
-                                             registrarTimeToLive.GetSeconds());
-  if (request->Start())
-    registrations.Append(request);
+  request = callid_info->CreateTransaction(transaction.GetTransport(), 
+					   (callid_info->GetExpire () == 0)); 
+  realm_info->GetAuthentication().Authorise(*request);
+
+  if (request->Start()) 
+    callid_info->AppendTransaction(request);
   else {
     delete request;
-    PTRACE(1, "SIP\tCould not restart REGISTER for Authentication Required");
+    PTRACE(1, "SIP\tCould not restart REGISTER/SUBSCRIBE for Authentication Required");
   }
 }
 
 
 void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 {
-  if (transaction.GetMethod() != SIP_PDU::Method_REGISTER) {
-    PTRACE(3, "SIP\tReceived OK response for non REGISTER");
-    return;
-  }
+  PSafePtr<SIPInfo> info = NULL;
 
-  PTRACE(2, "SIP\tReceived REGISTER OK response");
-
-  /* We were registered */
-  if (registered) {
-    
-    registered = FALSE;
-    OnRegistered(FALSE);
+  if (transaction.GetMethod() != SIP_PDU::Method_REGISTER
+      && transaction.GetMethod() != SIP_PDU::Method_SUBSCRIBE) {
+    PTRACE(3, "SIP\tReceived OK response for non REGISTER and non SUBSCRIBE");
     return;
   }
   
-  /* We were not registered */
-  registered = true;
+  info = activeRegistrations.FindSIPInfoByCallID(response.GetMIME().GetCallID(), PSafeReadWrite);
+ 
+  if (info == NULL) 
+    return;
+  
+  // We were registering, update the expire field
+  if (info->GetExpire() > 0) {
 
-  SIPURL contact = response.GetMIME().GetContact();
-  registrationTimer.SetInterval(0, contact.GetParamVars()("expires", "3600").AsUnsigned()*9/10);
+    SIPURL contact = response.GetMIME().GetContact();
+    int sec = contact.GetParamVars()("expires", "3600").AsUnsigned()*9/10;  
+    info->SetExpire(sec);
+  }
 
-  OnRegistered(TRUE);
+  // Callback
+  info->OnSuccess();
 }
 
 
-void SIPEndPoint::OnRegistered(BOOL PTRACE_PARAM(wasRegistering))
+BOOL SIPEndPoint::OnReceivedNOTIFY (OpalTransport & transport, SIP_PDU & pdu)
 {
-  PTRACE(2, "SIP\t" << (wasRegistering ? "" : "(UN)") << "REGISTER succeded");
+  PSafePtr<SIPInfo> info = NULL;
+  
+  PTRACE(3, "SIP\tReceived NOTIFY");
+  
+  // Only support MWI Subscribe for now, other events are unrequested
+  if (!(pdu.GetMIME().GetEvent() *= "message-summary")) {
+
+    SIP_PDU response(pdu, SIP_PDU::Failure_BadEvent);
+    response.Write(transport);
+
+    return FALSE;
+  }
+  
+  SIPURL url (pdu.GetMIME().GetContact ());
+    
+  // A NOTIFY will have the same CallID than the SUBSCRIBE request
+  // it corresponds to
+  info = activeRegistrations.FindSIPInfoByCallID(pdu.GetMIME().GetCallID(), PSafeReadWrite);
+  if (info == NULL) {
+
+    // We should reject the NOTIFY here, but some proxies still use
+    // the old draft for NOTIFY and send unsollicited NOTIFY.
+    PTRACE(3, "SIP\tCould not find a SUBSCRIBE corresponding to the NOTIFY");
+  }
+  else {
+
+    PTRACE(3, "SIP\tFound a SUBSCRIBE corresponding to the NOTIFY");
+    // We received a NOTIFY corresponding to an active SUBSCRIBE
+    // for which we have just unSUBSCRIBEd. That is the final NOTIFY.
+    // We can remove the SUBSCRIBE from the list.
+    if (!info->IsRegistered() && info->GetExpire () == 0) {
+     
+      PTRACE(3, "SIP\tFinal NOTIFY received");
+      activeRegistrations.Remove (info);
+    }
+
+    // Check the susbscription state
+    if (pdu.GetMIME().GetSubscriptionState() *= "terminated") {
+
+      PTRACE(3, "SIP\tSubscription is terminated");
+      activeRegistrations.Remove (info);
+    }
+    else if ((pdu.GetMIME().GetSubscriptionState() *= "active")
+	     || (pdu.GetMIME().GetSubscriptionState() *= "pending")) {
+
+      PTRACE(3, "SIP\tSubscription is " << pdu.GetMIME().GetSubscriptionState());
+      if (pdu.GetMIME().GetExpires(0) != 0) {
+	int sec = pdu.GetMIME().GetExpires(0)*9/10;  
+	info->SetExpire(sec);
+      }
+    }
+  }
+
+  // We should compare the to and from tags and the call ID here
+  // but many proxies are still using the old way of "unsollicited"
+  // notifies for MWI, so we simply check if we requested the NOTIFY
+  // or not through a SUBSCRIBE and accept it in all cases.
+  SIP_PDU response(pdu, SIP_PDU::Successful_OK);
+  response.Write(transport);
+
+  PString msgs;
+  PString body = pdu.GetEntityBody();
+  // Extract the string describing the number of new messages
+  if (!body.IsEmpty ()) {
+
+    const char * validMessageClasses [] = 
+      {
+	"voice-message", 
+	"fax-message", 
+	"pager-message", 
+	"multimedia-message", 
+	"text-message", 
+	"none", 
+	NULL
+      };
+    PStringArray bodylines = body.Lines ();
+    SIPURL url (pdu.GetMIME().GetTo());
+    for (int z = 0 ; validMessageClasses [z] != NULL ; z++) {
+      
+      for (int i = 0 ; i <= bodylines.GetSize () ; i++) {
+
+	PCaselessString line = bodylines [i];
+	PINDEX j = line.FindLast(validMessageClasses [z]);
+	if (j != P_MAX_INDEX) {
+	  line.Replace (validMessageClasses[z], "");
+	  line.Replace (":", "");
+	  msgs = line.Trim ();
+	  OnMWIReceived (url.GetHostName(),
+			 url.GetUserName(), 
+			 (SIPMWISubscribe::MWIType) z, 
+			 msgs);
+	  return TRUE;
+	}
+      }
+    }
+  } 
+
+  return TRUE;
 }
 
 
-void SIPEndPoint::OnRegistrationFailed(RegistrationFailReasons PTRACE_PARAM(reason),
-                                       BOOL PTRACE_PARAM(wasRegistering))
+void SIPEndPoint::OnRegistrationFailed(const PString & domain, 
+				       const PString & userName,
+				       SIPInfo::FailureReasons reason, 
+				       BOOL wasRegistering)
 {
-  PTRACE(2, "SIP\t" << (wasRegistering ? "" : "(UN)") << "REGISTER failed, reason=" << reason);
+}
+    
+
+void SIPEndPoint::OnRegistered(const PString & domain, 
+			       const PString & userName,
+			       BOOL wasRegistering)
+{
+}
+
+
+BOOL SIPEndPoint::IsRegistered(const PString & domain) 
+{
+  PSafePtr<SIPInfo> info = activeRegistrations.FindSIPInfoByDomain(domain, SIP_PDU::Method_REGISTER, PSafeReadOnly);
+
+  if (info == NULL)
+    return FALSE;
+  
+  return info->IsRegistered ();
+}
+
+
+BOOL SIPEndPoint::IsSubscribed(const PString & domain, const PString & user) 
+{
+  // Adjusted user name
+  PString adjustedUsername = user;
+  if (adjustedUsername.IsEmpty())
+    adjustedUsername = GetDefaultLocalPartyName();
+
+  if (adjustedUsername.Find('@') == P_MAX_INDEX)
+    adjustedUsername += '@' + domain;
+
+  PSafePtr<SIPInfo> info = activeRegistrations.FindSIPInfoByUrl(adjustedUsername, SIP_PDU::Method_SUBSCRIBE, PSafeReadOnly);
+
+  if (info == NULL)
+    return FALSE;
+
+  return info->IsRegistered ();
 }
 
 
 void SIPEndPoint::RegistrationRefresh(PTimer &, INT)
 {
-  PTRACE(2, "SIP\tStarting REGISTER for binding refresh");
+  SIPTransaction *request = NULL;
 
   // Timer has elapsed
-  registered = FALSE;
+  for (PINDEX i = 0 ; i < activeRegistrations.GetSize () ; i++) {
+    
+    PSafePtr<SIPInfo> info = 
+      activeRegistrations.GetAt (i);
 
-  // Restart the transaction with new authentication info
-  SIPTransaction * request = new SIPRegister(*this,
-                                             *registrarTransport,
-                                             registrationAddress,
-                                             registrationID,
-                                             registrarTimeToLive.GetSeconds());
-  if (request->Start())
-    registrations.Append(request);
-  else {
-    delete request;
-    PTRACE(1, "SIP\tCould not start REGISTER for binding refresh");
+    if (info->GetExpire() == -1)
+      activeRegistrations.Remove(info); // Was invalid the last time,
+    					// delete it
+					
+    if (info->GetExpire() > 0 && !info->IsRegistered ())
+      info->SetExpire(-1); // Mark it as invalid, REGISTER/SUBSCRIBE
+    			   // not successful
+
+    // Need to refresh
+    if (info->GetExpire() > 0 
+	&& info->GetTransport() != NULL 
+	&& info->HasExpired()) {
+      PTRACE(2, "SIP\tStarting REGISTER/SUBSCRIBE for binding refresh");
+      info->SetRegistered(FALSE);
+      request = info->CreateTransaction(*info->GetTransport(), FALSE); 
+
+      if (request->Start()) 
+	info->AppendTransaction(request);
+      else {
+	delete request;
+	PTRACE(1, "SIP\tCould not start REGISTER/SUBSCRIBE for binding refresh");
+      }
+    }
   }
 }
 
 
-BOOL SIPEndPoint::WriteREGISTER(OpalTransport & transport, void * param)
+BOOL SIPEndPoint::WriteSIPINFO(OpalTransport & transport, void * param)
 {
-  SIPEndPoint & endpoint = *(SIPEndPoint *)param;
-  SIPTransaction * request = new SIPRegister(endpoint,
-                                             transport,
-                                             endpoint.registrationAddress,
-                                             endpoint.registrationID,
-                                             endpoint.registrarTimeToLive.GetSeconds());
+  SIPTransaction * request = NULL;
+  struct RegParam *p = (struct RegParam *) param;
+  
+  if (!param)
+    return FALSE;
+  
+  PSafePtr<SIPInfo> info = (SIPInfo *) p->info;
+  if (info == NULL)
+    return FALSE;
 
-  if (request->Start()) {
-    endpoint.registrations.Append(request);
-    request->Wait ();
-    return TRUE;
+  request = info->CreateTransaction (transport, FALSE);
+
+  if (!request->Start()) {
+
+    delete request;
+    request = NULL;
+    PTRACE(2, "SIP\tDid not start REGISTER/SUBSCRIBE transaction on " << transport);
+    return FALSE;
   }
 
-  PTRACE(2, "SIP\tDid not start REGISTER transaction on " << transport);
-  return FALSE;
+  info->AppendTransaction(request);
+
+  return TRUE;
 }
 
 
@@ -644,11 +972,43 @@ BOOL SIPEndPoint::Register(const PString & domain,
                            const PString & username,
                            const PString & password)
 {
+  return TransmitSIPRegistrationInfo (domain, 
+				      username, 
+				      password, 
+				      SIP_PDU::Method_REGISTER);
+}
+
+
+void SIPEndPoint::OnMWIReceived (const PString & remoteAddress,
+				 const PString & user,
+				 SIPMWISubscribe::MWIType type,
+				 const PString & msgs)
+{
+}
+
+
+BOOL SIPEndPoint::MWISubscribe(const PString & domain, 
+			       const PString & username)
+{
+  return TransmitSIPRegistrationInfo (domain, 
+				      username, 
+				      "",
+				      SIP_PDU::Method_SUBSCRIBE);
+}
+
+
+BOOL SIPEndPoint::TransmitSIPRegistrationInfo(const PString & domain,
+					      const PString & username,
+					      const PString & password,
+					      SIP_PDU::Methods m)
+{
+  PSafePtr<SIPInfo> info = NULL;
+  OpalTransport *transport = NULL;
+  
   if (listeners.IsEmpty() || domain.IsEmpty() || username.IsEmpty())
     return FALSE;
-
-  registered = false;
-
+  
+  // Adjusted user name
   PString adjustedUsername = username;
   if (adjustedUsername.IsEmpty())
     adjustedUsername = GetDefaultLocalPartyName();
@@ -656,8 +1016,7 @@ BOOL SIPEndPoint::Register(const PString & domain,
   if (adjustedUsername.Find('@') == P_MAX_INDEX)
     adjustedUsername += '@' + domain;
 
-  registrationAddress.Parse(adjustedUsername);
-
+  // If we have a proxy, use it
   PString hostname;
   WORD port;
 
@@ -673,20 +1032,42 @@ BOOL SIPEndPoint::Register(const PString & domain,
       port = defaultSignalPort;
   }
 
-  OpalTransportAddress registrarAddress(hostname, port, "udp");
+  OpalTransportAddress transportAddress(hostname, port, "udp");
 
-  delete registrarTransport;
-  registrarTransport = CreateTransport(registrarAddress);
-  if (registrarTransport == NULL)
+  // Create the SIPInfo structure
+  info = 
+    activeRegistrations.FindSIPInfoByUrl (adjustedUsername, m, PSafeReadWrite);
+  
+  if (info == NULL) {
+
+    if (m == SIP_PDU::Method_REGISTER)
+      info = new SIPRegisterInfo(*this, adjustedUsername, password);
+    else if (m == SIP_PDU::Method_SUBSCRIBE)
+      info = new SIPMWISubscribeInfo(*this, adjustedUsername);
+    activeRegistrations.Append(info);
+  }
+  else 
+    info->SetPassword (password); // Adjust the password if required 
+
+  if (info == NULL) {
     return FALSE;
+  }
 
-  authentication.SetUsername(registrationAddress.GetUserName());
-  authentication.SetPassword(password);
-
-  registrationID = OpalGloballyUniqueID().AsString();
-
-  if (!registrarTransport->WriteConnect(WriteREGISTER, this)) {
-    PTRACE(1, "SIP\tCould not write to " << registrarAddress << " - " << registrarTransport->GetErrorText());
+  if (!info->CreateTransport(transportAddress)) {
+    activeRegistrations.Remove (info);
+    return FALSE;
+  }
+  
+  transport = info->GetTransport ();
+    
+  struct RegParam p;
+  p.info = info;
+  p.ep = this;
+  
+  if (transport != NULL 
+      && !transport->WriteConnect(WriteSIPINFO, &p)) {
+    PTRACE(1, "SIP\tCould not write to " << transportAddress << " - " << transport->GetErrorText());
+    activeRegistrations.Remove (info);
     return FALSE;
   }
 
@@ -694,26 +1075,71 @@ BOOL SIPEndPoint::Register(const PString & domain,
 }
 
 
-BOOL SIPEndPoint::Unregister()
+BOOL SIPEndPoint::Unregister(const PString & domain,
+			     const PString & user)
 {
-  if (!registered || registrarTransport == NULL)
-    return FALSE;
+  return TransmitSIPUnregistrationInfo (domain, 
+					user, 
+					SIP_PDU::Method_REGISTER); 
+}
 
-  SIPRegister *unregister =
-    new SIPRegister (*this, *registrarTransport, registrationAddress, registrationID, 0);
 
-  if (!unregister->Start()) {
+BOOL SIPEndPoint::MWIUnsubscribe(const PString & domain,
+				 const PString & user)
+{
+  return TransmitSIPUnregistrationInfo (domain, 
+					user, 
+					SIP_PDU::Method_SUBSCRIBE); 
+}
 
-    PTRACE(1, "SIP\tCould not start UNREGISTER");
-    delete (unregister);
-    unregister = NULL;
-    
-    return FALSE;
-  }
 
-  registrations.Append(unregister);
-  unregister->Wait();
+BOOL SIPEndPoint::TransmitSIPUnregistrationInfo(const PString & domain,
+						const PString & username,
+						SIP_PDU::Methods method)
+{
+  SIPTransaction *request = NULL;
 
+  // Adjusted user name
+  PString adjustedUsername = username;
+  if (adjustedUsername.IsEmpty())
+    adjustedUsername = GetDefaultLocalPartyName();
+
+  if (adjustedUsername.Find('@') == P_MAX_INDEX)
+    adjustedUsername += '@' + domain;
+  
+    {
+      PSafePtr<SIPInfo> info = NULL;
+
+      info = 
+	activeRegistrations.FindSIPInfoByUrl (adjustedUsername, method, PSafeReadWrite);
+	
+      if (info == NULL) {
+
+	return FALSE;
+      }
+      
+      if (!info->IsRegistered() 
+	  || info->GetTransport() == NULL) {
+	activeRegistrations.Remove(info);
+	return FALSE;
+      }
+
+      request = info->CreateTransaction (*info->GetTransport(), TRUE);
+
+      if (!request->Start()) {
+
+	PTRACE(1, "SIP\tCould not start UNREGISTER/UNSUBSCRIBE transaction");
+	delete (request);
+	request = NULL;
+
+	return FALSE;
+      }
+
+      info->AppendTransaction(request);
+    }
+
+  // Do this synchronously
+  request->Wait ();
 
   return TRUE;
 }
@@ -743,6 +1169,32 @@ PString SIPEndPoint::GetUserAgent() const
   return userAgentString;
 }
 
+BOOL SIPEndPoint::GetAuthentication(const PString & realm, SIPAuthentication &auth) 
+{
+  PSafePtr<SIPInfo> info =
+    activeRegistrations.FindSIPInfoByRealm(realm, PSafeReadOnly);
+  if (info == NULL)
+    return FALSE;
+
+  auth = info->GetAuthentication();
+
+  return TRUE;
+}
+
+const SIPURL SIPEndPoint::GetRegisteredPartyName(const PString & domain)
+{
+  PString partyName;
+  PString contactDomain;
+  
+  PSafePtr<SIPInfo> info =
+    activeRegistrations.FindSIPInfoByDomain(domain, 
+					    SIP_PDU::Method_REGISTER, 
+					    PSafeReadOnly);
+  if (info == NULL)
+    return SIPURL();
+
+  return info->GetRegistrationAddress();
+}
 
 void SIPEndPoint::OnRTPStatistics(const SIPConnection & /*connection*/,
                                   const RTP_Session & /*session*/) const
