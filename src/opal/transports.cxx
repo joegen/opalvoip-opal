@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2011  2002/03/15 00:20:54  robertj
+ * Revision 1.2012  2002/03/27 05:37:39  robertj
+ * Fixed removal of writeChannel after wrinting to UDP transport in connect mode.
+ *
+ * Revision 2.10  2002/03/15 00:20:54  robertj
  * Fixed bug when closing UDP transport when in "connect" mode.
  *
  * Revision 2.9  2002/02/06 06:07:10  robertj
@@ -1388,6 +1391,7 @@ BOOL OpalTransportUDP::WriteConnect(WriteConnectCallback function, PObject * dat
     writeChannel = &socket;
     if (function(*this, data))
       ok = TRUE;
+    writeChannel = NULL;
   }
 
   return ok;
