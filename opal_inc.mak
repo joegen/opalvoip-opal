@@ -22,7 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: opal_inc.mak,v $
-# Revision 1.2002  2002/02/06 09:39:37  rogerh
+# Revision 1.2003  2002/03/15 10:51:53  robertj
+# Fixed problem with recursive inclusion on make files.
+#
+# Revision 2.1  2002/02/06 09:39:37  rogerh
 # Look for telephony.h in the place where the FreeBSD port puts it
 #
 # Revision 2.0  2001/07/27 15:48:24  robertj
@@ -34,14 +37,20 @@ ifndef PWLIBDIR
 PWLIBDIR=$(HOME)/pwlib
 endif
 
-ifdef OPAL_LIBRARY_MAKEFILE
-include $(PWLIBDIR)/make/unix.mak
-else
+
+LIBDIRS += $(OPALDIR)
+
+
+ifndef PWLIB_FILE
 ifdef NOTRACE
+ifndef OPAL_LIBRARY_MAKEFILE
 OBJDIR_SUFFIX := n
+endif
 endif
 include $(PWLIBDIR)/make/ptlib.mak
 endif
+
+
 
 
 OPAL_SRCDIR = $(OPALDIR)/src
