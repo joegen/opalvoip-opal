@@ -1,19 +1,24 @@
-/**@name OpenH323 Libaray
+/**@name OPAL  -  Open Phone Abstraction Library 
 
 	This is a Open Source class library for the development of applications
 	that wish to use the H.323 protocol for multi-media communications over
 	packet based networks.
 
-@memo	A Class Libarary implementing the H.323 Protocol.
+@memo	A Class Libarary implementing several Voice over IP Protocols.
 @version 1.1beta2
 @author	Equivalence Pty. Ltd.
 */
- 
+
+$ $Log: opal.dxx,v $
+$ Revision 1.2002  2002/02/11 02:17:21  dereks
+$ Adjust include file list.
+$
+
 //@{
 
 /**@name Introduction
 \begin{center}
- 	{\Large{\bf OpenH323 Class Library}}
+ 	{\Large{\bf Open Phone Abstraction Library}}
 \end{center}
 
 OpenH323
@@ -22,7 +27,7 @@ OpenH323
  
 /**@name Architecture
 \begin{center}
- 	{\Large{\bf OpenH323 Architecture}}
+ 	{\Large{\bf OPAL Architecture}}
 \end{center}
 
 The fundamental object of the ownership hierarchy is of the H323Endpoint 
@@ -72,8 +77,9 @@ H323Codec using the H323Capability that was passed during the protocol
 negotiations.
 
 */
- 
-/**@name	Using OpenH323
+
+
+/**@name	Using OPAL
 Detailed tutorials will be forthcoming.
 
 @memo	Brief examples.
@@ -84,29 +90,75 @@ Detailed tutorials will be forthcoming.
 @memo	Documentation on all classes.
   */
     //@{
-	//@Include: include/h323.h
-	//@Include: include/transports.h
-	//@Include: include/gkclient.h
-	//@Include: include/channels.h
-	//@Include: include/mediafmt.h
-	//@Include: include/h323caps.h
-	//@Include: include/codecs.h
-	//@Include: include/gsmcodec.h
-	//@Include: include/lpc10codec.h
-	//@Include: include/acmcodec.h
-	//@Include: include/mscodecs.h
-	//@Include: include/h261codec.h
-	//@Include: include/videoio.h
-	//@Include: include/lid.h
-	//@Include: include/ixjlid.h
-	//@Include: include/vpblid.h
-	//@Include: include/rtp.h
-	//@Include: include/jitter.h
-	//@Include: include/h323rtp.h
-	//@Include: include/h323pdu.h
-	//@Include: include/h323neg.h
-	//@Include: include/q931.h
-	//@Include: include/x224.h
+	//@Include: include/h323/h323.h
+	//@Include: include/h323/h323ep.h
+	//@Include: include/h323/h323con.h
+	//@Include: include/h323/channels.h
+	//@Include: include/h323/gkclient.h
+	//@Include: include/h323/gkserver.h
+	//@Include: include/h323/h225ras.h
+	//@Include: include/h323/h235auth.h
+	//@Include: include/h323/h323caps.h
+	//@Include: include/h323/h323neg.h
+	//@Include: include/h323/h323pdu.h
+	//@Include: include/h323/h323rtp.h
+	//@Include: include/h323/h450pdu.h
+	//@Include: include/h323/q931.h
+	//@Include: include/h323/transaddr.h
+	//@Include: include/codec/allcodecs.h
+	//@Include: include/codec/g711codec.h
+	//@Include: include/codec/gsmcodec.h
+	//@Include: include/codec/h261codec.h
+	//@Include: include/codec/lpc10codec.h
+	//@Include: include/codec/mscodecs.h
+	//@Include: include/codec/rfc2833.h
+	//@Include: include/lids/QTIoctl.h
+	//@Include: include/lids/ixjDefs.h
+	//@Include: include/lids/ixjlid.h
+	//@Include: include/lids/lid.h
+	//@Include: include/lids/lidep.h
+	//@Include: include/lids/vblasterlid.h
+	//@Include: include/lids/vpbapi.h
+	//@Include: include/lids/vpblid.h
+	//@Include: include/opal/connection.h
+	//@Include: include/opal/call.h
+	//@Include: include/opal/endpoint.h
+	//@Include: include/opal/guid.h
+	//@Include: include/opal/manager.h
+	//@Include: include/opal/mediafmt.h
+	//@Include: include/opal/mediastrm.h
+	//@Include: include/opal/patch.h
+	//@Include: include/opal/pcss.h
+	//@Include: include/opal/transcoders.h
+	//@Include: include/opal/transports.h
+	//@Include: include/rtp/jitter.h
+	//@Include: include/rtp/rtp.h
+	//@Include: include/t120/h323t120.h
+	//@Include: include/t120/t120proto.h
+	//@Include: include/t120/x224.h
+	//@Include: include/t38/h323t38.h
+	//@Include: include/t38/t38proto.h
+	//@Include: src/codec/gsm/inc/config.h
+	//@Include: src/codec/gsm/inc/gsm.h
+	//@Include: src/codec/gsm/inc/private.h
+	//@Include: src/codec/gsm/inc/proto.h
+	//@Include: src/codec/gsm/inc/unproto.h
+	//@Include: src/codec/vic/bsd-endian.h
+	//@Include: src/codec/vic/config.h
+	//@Include: src/codec/vic/crdef.h
+	//@Include: src/codec/vic/dct.h
+	//@Include: src/codec/vic/encoder-h261.h
+	//@Include: src/codec/vic/encoder.h
+	//@Include: src/codec/vic/grabber.h
+	//@Include: src/codec/vic/p64-huff.h
+	//@Include: src/codec/vic/p64.h
+	//@Include: src/codec/vic/p64encoder.h
+	//@Include: src/codec/vic/transmitter.h
+	//@Include: src/codec/vic/vid_coder.h
+	//@Include: src/codec/vic/videoframe.h
+	//@Include: src/codec/lpc10/src/f2c.h
+	//@Include: src/codec/lpc10/bitio.h
+	//@Include: src/codec/lpc10/lpc10.h
     //@}
 
 //@}
