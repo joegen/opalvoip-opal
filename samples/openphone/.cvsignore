@@ -1,0 +1,5 @@
+obj_*_*_d Debug
+obj_*_*_r Release
+NoTrace
+*.plg *.opt *.ncb *.Tags.WW
+openphone.xrc
