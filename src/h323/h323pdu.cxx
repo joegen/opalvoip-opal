@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.cxx,v $
- * Revision 1.2014  2004/02/19 10:47:04  rjongbloed
+ * Revision 1.2015  2004/04/07 08:21:03  rjongbloed
+ * Changes for new RTTI system.
+ *
+ * Revision 2.13  2004/02/19 10:47:04  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.12  2003/01/07 04:39:53  robertj
@@ -563,7 +566,7 @@ void H323TraceDumpPDU(const char * proto,
   else {
     trace << ' ' << tags.GetTagName();
     PASN_Object & next = tags.GetObject();
-    if (next.IsDescendant(PASN_Choice::Class()))
+    if (PIsDescendant(&next, PASN_Choice))
       trace << ' ' << ((PASN_Choice &)next).GetTagName();
     if (seqNum > 0)
       trace << ' ' << seqNum;
