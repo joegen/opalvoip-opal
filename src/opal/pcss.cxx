@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2008  2002/01/22 05:13:47  robertj
+ * Revision 1.2009  2002/06/16 02:19:55  robertj
+ * Fixed and clarified function for initiating call, thanks Ted Szoczei
+ *
+ * Revision 2.7  2002/01/22 05:13:47  robertj
  * Revamp of user input API triggered by RFC2833 support
  *
  * Revision 2.6  2001/11/13 06:25:56  robertj
@@ -148,7 +151,7 @@ BOOL OpalPCSSEndPoint::SetUpConnection(OpalCall & call,
   // See if we are initiating or answering call.
   OpalConnection & caller = call.GetConnection(0);
   if (connection == &caller)
-    connection->StartOutgoing();
+    connection->InitiateCall();
   else
     connection->StartIncoming(caller.GetRemotePartyName());
 
@@ -322,16 +325,16 @@ BOOL OpalPCSSConnection::SendUserInputString(const PString & value)
 }
 
 
-void OpalPCSSConnection::StartOutgoing()
+void OpalPCSSConnection::InitiateCall()
 {
-  phase = EstablishedPhase;
-  OnEstablished();
+  phase = SetUpPhase;
+  OnIncomingConnection();
 }
 
 
 void OpalPCSSConnection::StartIncoming(const PString & callerName)
 {
-  PTRACE(3, "PCSS\tStartIncomingCall(" << callerName << ')');
+  PTRACE(3, "PCSS\tStartIncoming(" << callerName << ')');
   phase = AlertingPhase;
   remotePartyName = callerName;
   endpoint.OnShowIncoming(*this);
