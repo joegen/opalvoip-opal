@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2008  2001/10/04 05:43:44  craigs
+ * Revision 1.2009  2001/10/15 04:32:14  robertj
+ * Added delayed start of media patch threads.
+ *
+ * Revision 2.7  2001/10/04 05:43:44  craigs
  * Changed to start media patch threads in Paused state
  *
  * Revision 2.6  2001/10/04 00:42:48  robertj
@@ -110,6 +113,14 @@ BOOL OpalMediaStream::Open(const OpalMediaFormat & format)
 
   mediaFormat = format;
   defaultDataSize = format.GetFrameSize();
+  return TRUE;
+}
+
+
+BOOL OpalMediaStream::Start()
+{
+  if (patchThread != NULL && patchThread->IsSuspended())
+    patchThread->Resume();
   return TRUE;
 }
 
@@ -209,13 +220,6 @@ void OpalMediaStream::SetPatch(OpalMediaPatch * patch)
 {
   patchThread = patch;
 }
-
-void OpalMediaStream::ResumePatch()
-{
-  if (patchThread != NULL) 
-    patchThread->Resume(); 
-}
-
 
 
 ///////////////////////////////////////////////////////////////////////////////
