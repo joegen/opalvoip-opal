@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2014  2002/04/09 00:18:39  robertj
+ * Revision 1.2015  2002/09/04 05:28:14  robertj
+ * Added ability to set default line name to be used when the destination
+ *   does not match any lines configured.
+ *
+ * Revision 2.13  2002/04/09 00:18:39  robertj
  * Added correct setting of originating flag when originating the connection.
  *
  * Revision 2.12  2002/01/22 05:16:59  robertj
@@ -90,7 +94,8 @@
 OpalLIDEndPoint::OpalLIDEndPoint(OpalManager & mgr,
                                  const PString & prefix,
                                  unsigned attributes)
-  : OpalEndPoint(mgr, prefix, attributes)
+  : OpalEndPoint(mgr, prefix, attributes),
+    defaultLine("*")
 {
   monitorThread = PThread::Create(PCREATE_NOTIFIER(MonitorLines), 0,
                                   PThread::NoAutoDeleteThread,
@@ -136,24 +141,17 @@ BOOL OpalLIDEndPoint::SetUpConnection(OpalCall & call,
     lineName = '*';
 
   // Locate a line
-  OpalLineConnection * connection = NULL;
-
-  linesMutex.Wait();
-
-  for (PINDEX i = 0; i < lines.GetSize(); i++) {
-    if ((lineName == "*"  || lines[i].GetDescription() == lineName) && lines[i].EnableAudio()) {
-      connection = CreateConnection(call, lines[i], userData);
-      inUseFlag.Wait();
-      connectionsActive.SetAt(connection->GetToken(), connection);
-      inUseFlag.Signal();
-      break;
-    }
-  }
-
-  linesMutex.Signal();
-
-  if (connection == NULL)
+  OpalLine * line = GetLine(lineName, TRUE);
+  if (line == NULL)
+    line = GetLine(defaultLine, TRUE);
+  if (line == NULL)
     return FALSE;
+
+  OpalLineConnection * connection = CreateConnection(call, *line, userData);
+
+  inUseFlag.Wait();
+  connectionsActive.SetAt(connection->GetToken(), connection);
+  inUseFlag.Signal();
 
   connection->Lock();
   connection->StartOutgoing(lineName);
@@ -287,6 +285,28 @@ void OpalLIDEndPoint::RemoveDevice(OpalLineInterfaceDevice * device)
   RemoveLinesFromDevice(*device);
   linesMutex.Wait();
   devices.Remove(device);
+  linesMutex.Signal();
+}
+
+
+OpalLine * OpalLIDEndPoint::GetLine(const PString & lineName, BOOL enableAudio) const
+{
+  PWaitAndSignal mutex(linesMutex);
+
+  for (PINDEX i = 0; i < lines.GetSize(); i++) {
+    if ((lineName == "*" || lines[i].GetDescription() == lineName) &&
+        (!enableAudio || lines[i].EnableAudio()))
+      return &lines[i];
+  }
+
+  return NULL;
+}
+
+
+void OpalLIDEndPoint::SetDefaultLine(const PString & lineName)
+{
+  linesMutex.Wait();
+  defaultLine = lineName;
   linesMutex.Signal();
 }
 
