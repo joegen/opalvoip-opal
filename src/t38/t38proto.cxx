@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: t38proto.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2001/08/01 05:05:26  robertj
+ * Major changes to H.323 capabilities, uses OpalMediaFormat for base name.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.1  2001/07/17 04:44:32  robertj
@@ -45,6 +48,13 @@
 
 
 #define new PNEW
+
+
+OpalMediaFormat const OpalT38Protocol::MediaFormat("T.38",
+                                                   OpalMediaFormat::DefaultDataSessionID,
+                                                   RTP_DataFrame::MaxPayloadType,
+                                                   FALSE, // No jitter for data
+                                                   1440); // 100's bits/sec
 
 
 /////////////////////////////////////////////////////////////////////////////
