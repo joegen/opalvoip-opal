@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2010  2003/03/19 02:30:45  robertj
+ * Revision 1.2011  2004/02/17 11:00:10  csoutheren
+ * Added --translate, --port-base and --port-max options
+ *
+ * Revision 2.9  2003/03/19 02:30:45  robertj
  * Added removal of IVR stuff if EXPAT is not installed on system.
  *
  * Revision 2.8  2003/03/06 03:57:47  robertj
@@ -131,6 +134,8 @@ class MyManager : public OpalManager
       const PString & value         /// String value of indication
     );
 
+    BOOL TranslateIPAddress(PIPSocket::Address & localAddress, const PIPSocket::Address & remoteAddress);
+
   protected:
     PString currentCallToken;
     BOOL silenceOn;
@@ -146,6 +151,9 @@ class MyManager : public OpalManager
 #if P_EXPAT
     OpalIVREndPoint  * ivrEP;
 #endif
+
+    BOOL haveExternalAddress;
+    PIPSocket::Address externalAddress;
 };
 
 
