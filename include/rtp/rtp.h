@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2008  2002/02/13 02:30:06  robertj
+ * Revision 1.2009  2002/04/10 03:10:13  robertj
+ * Added referential (container) copy functions to session manager class.
+ *
+ * Revision 2.7  2002/02/13 02:30:06  robertj
  * Added ability for media patch (and transcoders) to handle multiple RTP frames.
  *
  * Revision 2.6  2002/02/11 09:32:12  robertj
@@ -734,6 +737,8 @@ class RTP_SessionManager : public PObject
     /**Construct new session manager database.
       */
     RTP_SessionManager();
+    RTP_SessionManager(const RTP_SessionManager & sm);
+    RTP_SessionManager & operator=(const RTP_SessionManager & sm);
   //@}
 
 
