@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2017  2003/03/17 10:27:00  robertj
+ * Revision 1.2018  2003/03/24 04:36:53  robertj
+ * Changed StartListsners() so if have empty list, starts default.
+ *
+ * Revision 2.16  2003/03/17 10:27:00  robertj
  * Added video support.
  *
  * Revision 2.15  2002/11/10 11:33:19  robertj
@@ -130,6 +133,9 @@ void OpalEndPoint::PrintOn(ostream & strm) const
 
 BOOL OpalEndPoint::StartListeners(const PStringArray & interfaces)
 {
+  if (interfaces.IsEmpty())
+    return StartListener(OpalTransportAddress());
+
   BOOL startedOne = FALSE;
 
   for (PINDEX i = 0; i < interfaces.GetSize(); i++) {
