@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2017  2004/04/26 05:37:13  rjongbloed
+ * Revision 1.2018  2005/01/16 23:07:35  csoutheren
+ * Fixed problem with IPv6 INADDR_ANY
+ *
+ * Revision 2.16  2004/04/26 05:37:13  rjongbloed
  * Allowed for selectable auto deletion of RTP user data attached to an RTP session.
  *
  * Revision 2.15  2004/03/02 10:02:46  rjongbloed
@@ -1661,7 +1664,7 @@ void RTP_UDP::Close(BOOL reading)
       if (dataSocket != NULL && controlSocket != NULL) {
         PIPSocket::Address addr;
         controlSocket->GetLocalAddress(addr);
-        if (addr == INADDR_ANY)
+        if (addr.IsAny())
           PIPSocket::GetHostAddress(addr);
         dataSocket->WriteTo("", 1, addr, controlSocket->GetPort());
       }
