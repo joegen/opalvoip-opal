@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.14  2004/08/22 12:27:45  rjongbloed
+ * More work on SIP registration, time to live refresh and deregistration on exit.
+ *
  * Revision 1.13  2004/07/17 08:21:24  rjongbloed
  * Added ability to manipulate codec lists
  *
@@ -256,6 +259,7 @@ class OptionsDialog : public wxDialog
     PwxString m_RegistrarName;
     PwxString m_RegistrarUsername;
     PwxString m_RegistrarPassword;
+    int       m_RegistrarTimeToLive;
 
     ////////////////////////////////////////
     // Routing fields
@@ -403,8 +407,12 @@ class MyFrame : public wxFrame, public OpalManager
     void InitMediaInfo(const char * source, const OpalMediaFormatList & formats);
     void ApplyMediaInfo();
 
-    bool     m_enableTracing;
-    wxString m_traceFileName;
+    bool      m_enableTracing;
+    wxString  m_traceFileName;
+    PwxString m_registrarName;
+    PwxString m_registrarUser;
+    PwxString m_registrarPassword;
+
     PString  m_currentCallToken;
 
     DECLARE_EVENT_TABLE()

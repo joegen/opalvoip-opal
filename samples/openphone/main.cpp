@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cpp,v $
+ * Revision 1.21  2004/08/22 12:27:45  rjongbloed
+ * More work on SIP registration, time to live refresh and deregistration on exit.
+ *
  * Revision 1.20  2004/08/14 07:56:30  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
@@ -182,6 +185,7 @@ DEF_FIELD(SIPProxyPassword);
 DEF_FIELD(RegistrarName);
 DEF_FIELD(RegistrarUsername);
 DEF_FIELD(RegistrarPassword);
+DEF_FIELD(RegistrarTimeToLive);
 
 static const char RoutingGroup[] = "/Routes";
 
@@ -488,8 +492,11 @@ void MyFrame::OnMenuAnswer(wxCommandEvent& WXUNUSED(event))
 
 void MyFrame::OnMenuHangUp(wxCommandEvent& WXUNUSED(event))
 {
-  if (!m_currentCallToken.IsEmpty())
-    ClearCall(m_currentCallToken);
+  if (m_currentCallToken.IsEmpty())
+    return;
+
+  LogWindow << "Hanging up \"" << m_currentCallToken << '"' << endl;
+  ClearCall(m_currentCallToken);
 }
 
 
@@ -884,11 +891,13 @@ bool MyFrame::Initialise()
   config->Read(SIPProxyPasswordKey, &password, PwxString(proxy.GetPassword()));
   sipEP->SetProxy(hostname, username, password);
 
-  const SIPURL & registrationAddress = sipEP->GetRegistrationAddress();
-  config->Read(RegistrarNameKey, &hostname, PwxString(registrationAddress.GetHostName()));
-  config->Read(RegistrarUsernameKey, &username, PwxString(registrationAddress.GetUserName()));
-  config->Read(RegistrarPasswordKey, &password, PwxString(registrationAddress.GetPassword()));
-  sipEP->Register(hostname, username, password);
+  if (config->Read(RegistrarTimeToLiveKey, &value1))
+    sipEP->SetRegistrarTimeToLive(PTimeInterval(0, value1));
+
+  if (config->Read(RegistrarNameKey, &m_registrarName) &&
+      config->Read(RegistrarUsernameKey, &m_registrarUser) &&
+      config->Read(RegistrarPasswordKey, &m_registrarPassword))
+    sipEP->Register(m_registrarName, m_registrarUser, m_registrarPassword);
 
   ////////////////////////////////////////
   // Routing fields
@@ -1135,9 +1144,10 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
   INIT_FIELD(SIPProxy, mainFrame.sipEP->GetProxy().GetHostName());
   INIT_FIELD(SIPProxyUsername, mainFrame.sipEP->GetProxy().GetUserName());
   INIT_FIELD(SIPProxyPassword, mainFrame.sipEP->GetProxy().GetPassword());
-  INIT_FIELD(RegistrarName, mainFrame.sipEP->GetRegistrationAddress().GetHostName());
-  INIT_FIELD(RegistrarUsername, mainFrame.sipEP->GetRegistrationAddress().GetUserName());
-  INIT_FIELD(RegistrarPassword, mainFrame.sipEP->GetRegistrationAddress().GetPassword());
+  INIT_FIELD(RegistrarName, mainFrame.m_registrarName);
+  INIT_FIELD(RegistrarUsername, mainFrame.m_registrarUser);
+  INIT_FIELD(RegistrarPassword, mainFrame.m_registrarPassword);
+  INIT_FIELD(RegistrarTimeToLive, mainFrame.sipEP->GetRegistrarTimeToLive().GetSeconds());
 
   ////////////////////////////////////////
   // Routing fields
@@ -1212,12 +1222,6 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
   set(m_##name1, m_##name2); \
   config->Write(name1##Key, m_##name1); \
   config->Write(name2##Key, m_##name2)
-
-#define SAVE_FIELD3(name1, name2, name3, set) \
-  set(m_##name1, m_##name2, m_##name3); \
-  config->Write(name1##Key, m_##name1); \
-  config->Write(name2##Key, m_##name2); \
-  config->Write(name3##Key, m_##name3)
 
 bool OptionsDialog::TransferDataFromWindow()
 {
@@ -1326,8 +1330,18 @@ bool OptionsDialog::TransferDataFromWindow()
   ////////////////////////////////////////
   // SIP fields
   config->SetPath(SIPGroup);
-  SAVE_FIELD3(SIPProxy, SIPProxyUsername, SIPProxyPassword, mainFrame.sipEP->SetProxy);
-  SAVE_FIELD3(RegistrarName, RegistrarUsername, RegistrarPassword, mainFrame.sipEP->Register);
+  mainFrame.sipEP->SetProxy(m_SIPProxy, m_SIPProxyUsername, m_SIPProxyPassword);
+  config->Write(SIPProxyKey, m_SIPProxy);
+  config->Write(SIPProxyUsernameKey, m_SIPProxyUsername);
+  config->Write(SIPProxyPasswordKey, m_SIPProxyPassword);
+
+  config->Write(RegistrarTimeToLiveKey, m_RegistrarTimeToLive);
+  mainFrame.sipEP->SetRegistrarTimeToLive(PTimeInterval(0, m_RegistrarTimeToLive));
+
+  SAVE_FIELD(RegistrarName, mainFrame.m_registrarName =);
+  SAVE_FIELD(RegistrarUsername, mainFrame.m_registrarUser =);
+  SAVE_FIELD(RegistrarPassword, mainFrame.m_registrarPassword =);
+  mainFrame.sipEP->Register(m_RegistrarName, m_RegistrarUsername, m_RegistrarPassword);
 
   ////////////////////////////////////////
   // Routing fields
