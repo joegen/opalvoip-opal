@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2014  2002/01/14 06:35:58  robertj
+ * Revision 1.2015  2002/01/22 05:28:27  robertj
+ * Revamp of user input API triggered by RFC2833 support
+ * Update from OpenH323
+ *
+ * Revision 2.13  2002/01/14 06:35:58  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.12  2001/11/13 06:25:56  robertj
@@ -64,6 +68,9 @@
  *
  * Revision 2.3  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 1.115  2002/01/17 07:05:04  robertj
+ * Added support for RFC2833 embedded DTMF in the RTP stream.
  *
  * Revision 1.114  2002/01/14 00:00:04  robertj
  * Added CallTransfer timeouts to endpoint, hanks Ben Madsen of Norwood Systems.
@@ -1146,23 +1153,6 @@ void H323EndPoint::OnClosedLogicalChannel(H323Connection & /*connection*/,
 void H323EndPoint::OnRTPStatistics(const H323Connection & /*connection*/,
                                    const RTP_Session & /*session*/) const
 {
-}
-
-
-void H323EndPoint::OnUserInputString(H323Connection & connection,
-                                     const PString & value)
-{
-  connection.OnUserIndicationString(value);
-}
-
-
-void H323EndPoint::OnUserInputTone(H323Connection & connection,
-                                   char tone,
-                                   unsigned duration,
-                                   unsigned /*logicalChannel*/,
-                                   unsigned /*rtpTimestamp*/)
-{
-  connection.OnUserIndicationTone(tone, duration);
 }
 
 
