@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2024  2004/03/11 06:54:27  csoutheren
+ * Revision 1.2025  2004/03/13 06:25:50  rjongbloed
+ * Slight rearrangement of local party name and alias list to beter match common
+ *   behaviour in ancestor.
+ * Abstracted local party name for endpoint into ancestor from H.,323.
+ *
+ * Revision 2.23  2004/03/11 06:54:27  csoutheren
  * Added ability to disable SIP or H.323 stacks
  *
  * Revision 2.22  2004/02/24 11:28:45  rjongbloed
@@ -824,13 +829,17 @@ class OpalConnection : public PObject
       */
     const PString & GetLocalPartyName() const { return localPartyName; }
 
-    /**Get the local names/aliases.
-      */
-    const PStringList & GetLocalAliasNames() const { return localAliasNames; }
-
     /**Set the local name/alias.
       */
-    void SetLocalPartyName(const PString & name);
+    virtual void SetLocalPartyName(const PString & name);
+
+    /**Get the local display name.
+      */
+    const PString & GetDisplayName() const { return displayName; }
+
+    /**Set the local display name.
+      */
+    void SetDisplayName(const PString & name) { displayName = name; }
 
     /**Get the caller name/alias.
       */
@@ -884,7 +893,7 @@ class OpalConnection : public PObject
     BOOL                originating;
     PTime               connectionStartTime;
     PString             localPartyName;
-    PStringList         localAliasNames;
+    PString             displayName;
     PString             remotePartyName;
     PString             remotePartyNumber;
     PString             remotePartyAddress;
