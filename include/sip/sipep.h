@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2018  2004/08/22 12:27:44  rjongbloed
+ * Revision 1.2019  2004/10/02 04:30:10  rjongbloed
+ * Added unregister function for SIP registrar
+ *
+ * Revision 2.17  2004/08/22 12:27:44  rjongbloed
  * More work on SIP registration, time to live refresh and deregistration on exit.
  *
  * Revision 2.16  2004/08/14 07:56:30  rjongbloed
@@ -277,6 +280,7 @@ class SIPEndPoint : public OpalEndPoint
     );
     virtual void OnRegistered();
     bool IsRegistered() const { return registered; }
+    BOOL Unregister(BOOL wait = TRUE);
 
     void SetMIMEForm(BOOL v) { mimeForm = v; }
     BOOL GetMIMEForm() const { return mimeForm; }
