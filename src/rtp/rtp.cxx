@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2002  2001/10/05 00:22:14  robertj
+ * Revision 1.2003  2001/11/14 06:20:40  robertj
+ * Changed sending of control channel reports to be timer based.
+ *
+ * Revision 2.1  2001/10/05 00:22:14  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
@@ -493,6 +496,8 @@ void RTP_UserData::OnRxStatistics(const RTP_Session & /*session*/) const
 /////////////////////////////////////////////////////////////////////////////
 
 RTP_Session::RTP_Session(unsigned id, RTP_UserData * data)
+  : senderReportTimer(0, 10),   // Ten seconds between tx reports
+    receiverReportTimer(0, 10)  // Ten seconds between rx reports
 {
   PAssert(id > 0 && id < 256, PInvalidParameter);
   sessionID = (BYTE)id;
@@ -505,8 +510,6 @@ RTP_Session::RTP_Session(unsigned id, RTP_UserData * data)
   ignoreOutOfOrderPackets = TRUE;
   syncSourceOut = PRandom::Number();
   syncSourceIn = 0;
-  senderReportInterval = 100;  // Number of data packets between tx reports
-  receiverReportInterval = 100;  // Number of data packets between rx reports
   lastSentSequenceNumber = (WORD)PRandom::Number();
   expectedSequenceNumber = 0;
   lastRRSequenceNumber = 0;
@@ -593,9 +596,11 @@ BOOL RTP_Session::ReadBufferedData(DWORD timestamp, RTP_DataFrame & frame)
 }
 
 
-void RTP_Session::SetSenderReportInterval(unsigned packets)
+void RTP_Session::SetSenderReportTime(const PTimeInterval & time)
 {
-  senderReportInterval = PMAX(packets, 2);
+  PAssert(time > 100, PInvalidParameter);
+
+  senderReportTimer = time;
   senderReportCount = 0;
   averageSendTimeAccum = 0;
   maximumSendTimeAccum = 0;
@@ -603,9 +608,11 @@ void RTP_Session::SetSenderReportInterval(unsigned packets)
 }
 
 
-void RTP_Session::SetReceiverReportInterval(unsigned packets)
+void RTP_Session::SetReceiverReportTime(const PTimeInterval & time)
 {
-  receiverReportInterval = PMAX(packets, 2);
+  PAssert(time > 100, PInvalidParameter);
+
+  receiverReportTimer = time;
   receiverReportCount = 0;
   averageReceiveTimeAccum = 0;
   maximumReceiveTimeAccum = 0;
@@ -674,12 +681,10 @@ RTP_Session::SendReceiveStatus RTP_Session::OnSendData(RTP_DataFrame & frame)
   octetsSent += frame.GetPayloadSize();
   packetsSent++;
 
-  if (senderReportCount < senderReportInterval)
+  if (senderReportTimer.IsRunning())
     return e_ProcessPacket;
 
-  senderReportCount = 0;
-
-  averageSendTime = averageSendTimeAccum/senderReportInterval;
+  averageSendTime = averageSendTimeAccum/senderReportCount;
   maximumSendTime = maximumSendTimeAccum;
   minimumSendTime = minimumSendTimeAccum;
 
@@ -694,6 +699,9 @@ RTP_Session::SendReceiveStatus RTP_Session::OnSendData(RTP_DataFrame & frame)
             " maxTime=" << maximumSendTime <<
             " minTime=" << minimumSendTime
             );
+
+  senderReportTimer.Reset();
+  senderReportCount = 0;
 
   if (userData != NULL)
     userData->OnTxStatistics(*this);
@@ -821,12 +829,10 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(const RTP_DataFrame & 
   octetsReceived += frame.GetPayloadSize();
   packetsReceived++;
 
-  if (receiverReportCount < receiverReportInterval)
+  if (receiverReportTimer.IsRunning())
     return e_ProcessPacket;
 
-  receiverReportCount = 0;
-
-  averageReceiveTime = averageReceiveTimeAccum/receiverReportInterval;
+  averageReceiveTime = averageReceiveTimeAccum/receiverReportCount;
   maximumReceiveTime = maximumReceiveTimeAccum;
   minimumReceiveTime = minimumReceiveTimeAccum;
 
@@ -845,6 +851,9 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(const RTP_DataFrame & 
             " minTime=" << minimumReceiveTime <<
             " jitter=" << (jitterLevel >> 7)
             );
+
+  receiverReportTimer.Reset();
+  receiverReportCount = 0;
 
   if (userData != NULL)
     userData->OnRxStatistics(*this);
