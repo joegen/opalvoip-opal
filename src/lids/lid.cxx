@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.cxx,v $
- * Revision 1.2012  2003/03/24 07:18:29  robertj
+ * Revision 1.2013  2004/02/19 10:47:05  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.11  2003/03/24 07:18:29  robertj
  * Added registration system for LIDs so can work with various LID types by
  *   name instead of class instance.
  *
@@ -60,6 +63,30 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.98  2003/08/18 23:56:01  dereksmithies
+ * Fix typos in previous commit.
+ *
+ * Revision 1.97  2003/08/18 22:13:13  dereksmithies
+ * Add Singapore Ring Cadence. Thanks to Steve.
+ *
+ * Revision 1.96  2003/06/03 10:27:42  rjongbloed
+ * Added G.729 and G,729B detection from LID.
+ *
+ * Revision 1.95  2003/04/29 08:30:29  robertj
+ * Fixed return type of get wink function.
+ *
+ * Revision 1.94  2003/04/28 01:47:52  dereks
+ * Add ability to set/get wink duration for ixj device.
+ *
+ * Revision 1.93  2003/03/05 06:26:44  robertj
+ * Added function to play a WAV file to LID, thanks Pietro Ravasio
+ *
+ * Revision 1.92  2003/02/13 23:33:36  dereks
+ * Fix reporting of tonenames.
+ *
+ * Revision 1.91  2003/01/29 23:58:17  dereks
+ * Fix typo in United Kingdom tone definition.
  *
  * Revision 1.90  2002/12/02 03:06:26  robertj
  * Fixed over zealous removal of code when NO_AUDIO_CODECS set.
@@ -384,12 +411,12 @@ static const char * const CallProgressTonesNames[] = {
 
 ostream & operator<<(ostream & o, OpalLineInterfaceDevice::CallProgressTones t)
 {
-  PINDEX i = 0;
-  while ((1 << i) < t)
+  PINDEX i = 0;    
+  while ((1 << i) != t)
     i++;
 
   if (i < PARRAYSIZE(CallProgressTonesNames))
-    return o << CallProgressTonesNames[t];
+    return o << CallProgressTonesNames[i];
   else
     return o << "Unknown";
 }
@@ -702,6 +729,17 @@ BOOL OpalLineInterfaceDevice::SetAEC(unsigned, AECLevels)
   return FALSE;
 }
 
+unsigned OpalLineInterfaceDevice::GetWinkDuration(unsigned)
+{
+  return 0;
+}
+
+
+BOOL OpalLineInterfaceDevice::SetWinkDuration(unsigned, unsigned)
+{
+  return FALSE;
+}
+
 
 BOOL OpalLineInterfaceDevice::GetVAD(unsigned)
 {
@@ -884,6 +922,20 @@ BOOL OpalLineInterfaceDevice::StopTone(unsigned)
   return FALSE;
 }
 
+
+BOOL OpalLineInterfaceDevice::PlayAudio(unsigned /*line*/, const PString & /*filename*/)
+{
+  PTRACE(3, "LID\tBase Class PlayAudio method called, exiting with FALSE");
+  return FALSE;
+}
+
+
+BOOL OpalLineInterfaceDevice::StopAudio(unsigned /*line*/)
+{
+  PTRACE(3, "LID\tBase Class StopAudio method called, exiting with FALSE");
+  return FALSE;
+}
+	
 
 OpalLineInterfaceDevice::CallProgressTones
                 OpalLineInterfaceDevice::DialOut(unsigned line,
@@ -1112,7 +1164,7 @@ static struct {
   { "SN", 221,  OpalLineInterfaceDevice::Senegal,               "Senegal" },
   { "SC", 248,  OpalLineInterfaceDevice::Seychelles,            "Seychelles" },
   { "SL", 232,  OpalLineInterfaceDevice::SierraLeone,           "Sierra Leone" },
-  { "SG", 65,   OpalLineInterfaceDevice::Singapore,             "Singapore" },
+  { "SG", 65,   OpalLineInterfaceDevice::Singapore,             "Singapore",            "425:0.1", "425:0.4-0.2-0.4-2", "425:0.75-0.75"},
   { "SB", 677,  OpalLineInterfaceDevice::SolomonIslands,        "Solomon Islands" },
   { "SO", 252,  OpalLineInterfaceDevice::Somalia,               "Somalia" },
   { "ZA", 27,   OpalLineInterfaceDevice::SouthAfrica,           "South Africa" },
@@ -1136,7 +1188,7 @@ static struct {
   { "UG", 256,  OpalLineInterfaceDevice::Uganda,                "Uganda" },
   { "UA", 380,  OpalLineInterfaceDevice::Ukraine,               "Ukraine" },
   { "AE", 971,  OpalLineInterfaceDevice::UnitedArabEmirates,    "United Arab Emirates" },
-  { "GB", 44,   OpalLineInterfaceDevice::UnitedKingdom,         "United Kingdom"        "350-440:0.1", "400-450:0.4-0.2-0.4-2", "400:0.375-0.375" },
+  { "GB", 44,   OpalLineInterfaceDevice::UnitedKingdom,         "United Kingdom",       "350-440:0.1", "400-450:0.4-0.2-0.4-2", "400:0.375-0.375" },
   { "US", 1,    OpalLineInterfaceDevice::UnitedStates,          "United States",        "350-440:0.1", "440-480:2.0-4.0",       "480-620:0.5-0.5" },
   { "UY", 598,  OpalLineInterfaceDevice::Uruguay,               "Uruguay" },
   { "VU", 678,  OpalLineInterfaceDevice::Vanuatu,               "Vanuatu" },
