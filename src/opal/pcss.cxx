@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2021  2004/08/14 07:56:43  rjongbloed
+ * Revision 1.2022  2004/12/12 13:36:22  dsandras
+ * Propagate the remote application and remote party address to the PCSS endpoint.
+ *
+ * Revision 2.20  2004/08/14 07:56:43  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.19  2004/07/14 13:26:14  rjongbloed
@@ -333,6 +336,8 @@ OpalPCSSConnection::~OpalPCSSConnection()
 BOOL OpalPCSSConnection::SetUpConnection()
 {
   remotePartyName = ownerCall.GetOtherPartyConnection(*this)->GetRemotePartyName();
+  remotePartyAddress = ownerCall.GetOtherPartyConnection(*this)->GetRemotePartyAddress();
+  remoteApplication = ownerCall.GetOtherPartyConnection(*this)->GetRemoteApplication();
 
   PTRACE(3, "PCSS\tSetUpConnection(" << remotePartyName << ')');
   phase = AlertingPhase;
