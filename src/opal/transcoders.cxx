@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2007  2004/01/18 15:35:21  rjongbloed
+ * Revision 1.2008  2004/02/16 09:15:20  csoutheren
+ * Fixed problems with codecs on Unix systems
+ *
+ * Revision 2.6  2004/01/18 15:35:21  rjongbloed
  * More work on video support
  *
  * Revision 2.5  2003/12/15 11:56:17  rjongbloed
@@ -54,6 +57,10 @@
 
 #ifdef __GNUC__
 #pragma implementation "transcoders.h"
+#endif
+
+#ifndef _WIN32
+#include <codec/allcodecs.h>
 #endif
 
 #include <opal/transcoders.h>
