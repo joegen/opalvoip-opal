@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2043  2005/02/19 22:36:25  dsandras
+ * Revision 1.2044  2005/02/19 22:48:48  dsandras
+ * Added the possibility to register to several registrars and be able to do authenticated calls to each of them. Added SUBSCRIBE/NOTIFY support for Message Waiting Indications.
+ *
+ * Revision 2.42  2005/02/19 22:36:25  dsandras
  * Always send PDU's to the proxy when there is one.
  *
  * Revision 2.41  2005/01/16 11:28:06  csoutheren
@@ -203,6 +206,8 @@ static const char * const MethodNames[SIP_PDU::NumMethods] = {
   "BYE",
   "CANCEL",
   "REGISTER",
+  "SUBSCRIBE",
+  "NOTIFY"
 };
 
 static struct {
@@ -215,6 +220,7 @@ static struct {
   { SIP_PDU::Information_Queued,                  "Queued" },
 
   { SIP_PDU::Successful_OK,                       "OK" },
+  { SIP_PDU::Successful_Accepted,                 "Accepted" },
 
   { SIP_PDU::Redirection_MovedTemporarily,        "Moved Temporarily" },
 
@@ -242,6 +248,7 @@ static struct {
   { SIP_PDU::Failure_Ambiguous,                   "Ambiguous" },
   { SIP_PDU::Failure_BusyHere,                    "Busy Here" },
   { SIP_PDU::Failure_RequestTerminated,           "Request Terminated" },
+  { SIP_PDU::Failure_BadEvent,           	  "Bad Event" },
 
   { SIP_PDU::Failure_BadGateway,                  "Bad Gateway" },
 
@@ -783,6 +790,30 @@ void SIPMIMEInfo::SetUnsupported(const PString & v)
 }
 
 
+PString SIPMIMEInfo::GetEvent() const
+{
+  return GetFullOrCompact("Event", 'o');
+}
+
+
+void SIPMIMEInfo::SetEvent(const PString & v)
+{
+  SetAt(compactForm ? "o" : "Event",  v);
+}
+
+
+PString SIPMIMEInfo::GetSubscriptionState() const
+{
+  return (*this)(PCaselessString("Subscription-State"));       // no compact form
+}
+
+
+void SIPMIMEInfo::SetSubscriptionState(const PString & v)
+{
+  SetAt("Subscription-State",  v);     // no compact form
+}
+
+
 PString SIPMIMEInfo::GetUserAgent() const
 {
   return (*this)(PCaselessString("User-Agent"));        // no compact form
@@ -1013,8 +1044,6 @@ SIP_PDU::SIP_PDU(const SIP_PDU & request, StatusCodes code, const char * extra)
   mime.SetVia(requestMIME.GetVia());
   mime.SetRecordRoute(requestMIME.GetRecordRoute());
   for (PINDEX i = 0 ; i < SIP_PDU::NumMethods ; i++) {
-    // REGISTER is the only method we do not allow
-    if (PString (MethodNames [i]) != "REGISTER")
       methods = methods + MethodNames [i] + ", ";
   }
   mime.SetAllow(methods.Left(methods.GetLength () - 2));
@@ -1137,10 +1166,7 @@ void SIP_PDU::Construct(Methods meth,
 
   PString methods;
   for (PINDEX i = 0 ; i < SIP_PDU::NumMethods ; i++) {
-   
-    // REGISTER is the only method we do not allow
-    if (PString (MethodNames [i]) != "REGISTER")
-      methods = methods + MethodNames [i] + ", ";
+    methods = methods + MethodNames [i] + ", ";
   }
   mime.SetAllow(methods.Left(methods.GetLength () - 2));
 }
@@ -1399,11 +1425,11 @@ BOOL SIPTransaction::Start()
 
   if (connection != NULL) {
     connection->AddTransaction(this);
-    connection->GetAuthentication().Authorise(*this);
+    connection->GetAuthentication().Authorise(*this); 
   }
   else {
     endpoint.AddTransaction(this);
-    endpoint.GetAuthentication().Authorise(*this);
+    //We authorise the PDU when authentication is required
   }
 
   PWaitAndSignal m(mutex);
@@ -1449,12 +1475,12 @@ BOOL SIPTransaction::SendCANCEL()
 BOOL SIPTransaction::ResendCANCEL()
 {
   SIP_PDU cancel(Method_CANCEL,
-                 uri,
-                 mime.GetTo(),
-                 mime.GetFrom(),
-                 mime.GetCallID(),
-                 mime.GetCSeqIndex(),
-                 localAddress);
+		 uri,
+		 mime.GetTo(),
+		 mime.GetFrom(),
+		 mime.GetCallID(),
+		 mime.GetCSeqIndex(),
+		 localAddress);
 
   if (!transport.SetLocalAddress(localAddress) || !cancel.Write(transport)) {
     SetTerminated(Terminated_TransportError);
@@ -1539,7 +1565,7 @@ void SIPTransaction::OnRetry(PTimer &, INT)
      same time as the timeout. So, put a timeout on the mutex grab, if it
      fails then we had the deadlock condition, in which case the retry
      timeout can be safely ignored as the PDU states are already handled.
-   */
+     */
   if (!mutex.Wait(100)) {
     PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " timeout ignored.");
     return;
@@ -1629,11 +1655,15 @@ void SIPTransaction::SetTerminated(States newState)
 
   // REGISTER Failed, tell the endpoint
   if (GetMethod() == SIP_PDU::Method_REGISTER
-      && state != Terminated_Success) 
-    endpoint.OnRegistrationFailed(state == Terminated_Timeout 
-				  ? SIPEndPoint::Timeout 
-				  : SIPEndPoint::RegistrationFailed,
-				  !endpoint.IsRegistered ()); 
+      && state != Terminated_Success) {
+    
+    SIPURL url (GetMIME().GetFrom ());
+    
+    endpoint.OnRegistrationFailed(url.GetHostName(), 
+				  url.GetUserName(),
+				  SIPInfo::Timeout,
+				  (GetMIME().GetExpires(0) > 0));
+  }
 
   finished.Signal();
 }
@@ -1730,5 +1760,41 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
   mime.SetExpires(expires);
 }
 
+
+SIPMWISubscribe::SIPMWISubscribe(SIPEndPoint & ep,
+				 OpalTransport & trans,
+				 const SIPURL & address,
+				 const PString & id,
+				 unsigned expires)
+  : SIPTransaction(ep, trans)
+{
+  // translate contact address
+  OpalTransportAddress contactAddress = transport.GetLocalAddress();
+  WORD contactPort = endpoint.GetDefaultSignalPort();
+
+  PIPSocket::Address localIP;
+  if (transport.GetLocalAddress().GetIpAddress(localIP)) {
+    PIPSocket::Address remoteIP;
+    if (transport.GetRemoteAddress().GetIpAddress(remoteIP)) {
+      endpoint.GetManager().TranslateIPAddress(localIP, remoteIP);
+      contactAddress = OpalTransportAddress(localIP, contactPort, "udp");
+    }
+  }
+
+  PString addrStr = address.AsQuotedString();
+  SIP_PDU::Construct(Method_SUBSCRIBE,
+                     "sip:"+address.GetUserName()+"@"+address.GetHostName(),
+                     addrStr,
+                     addrStr,
+                     id,
+                     endpoint.GetNextCSeq(),
+                     transport.GetLocalAddress());
+
+  SIPURL contact(address.GetUserName(), contactAddress, contactPort);
+  mime.SetContact(contact);
+  mime.SetAccept("application/simple-message-summary");
+  mime.SetEvent("message-summary");
+  mime.SetExpires(expires);
+}
 
 // End of file ////////////////////////////////////////////////////////////////
