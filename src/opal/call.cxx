@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2013  2002/02/19 07:48:50  robertj
+ * Revision 1.2014  2002/04/05 10:38:35  robertj
+ * Rearranged OnRelease to remove the connection from endpoints connection
+ *   list at the end of the release phase rather than the beginning.
+ *
+ * Revision 2.12  2002/02/19 07:48:50  robertj
  * Restructured media bypass functions to fix problems with RFC2833.
  *
  * Revision 2.11  2002/02/11 07:41:37  robertj
@@ -457,7 +461,6 @@ void OpalCall::InternalReleaseConnection(PINDEX activeIndex, OpalCallEndReason r
 
   OpalConnection * connection = (OpalConnection *)activeConnections.RemoveAt(activeIndex);
   garbageConnections.Append(connection);
-  connection->GetEndPoint().RemoveConnection(connection);
   connection->SetCallEndReason(reason);
 }
 
