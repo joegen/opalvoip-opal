@@ -24,11 +24,18 @@
  * Contributor(s): Fürbass Franz <franz.fuerbass@infonova.at>
  *
  * $Log: h235auth.h,v $
- * Revision 1.2003  2001/10/05 00:22:13  robertj
+ * Revision 1.2004  2002/01/14 06:35:56  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.2  2001/10/05 00:22:13  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 1.4  2001/12/06 06:44:42  robertj
+ * Removed "Win32 SSL xxx" build configurations in favour of system
+ *   environment variables to select optional libraries.
  *
  * Revision 1.3  2001/09/14 00:13:37  robertj
  * Fixed problem with some athenticators needing extra conditions to be
@@ -160,7 +167,7 @@ class H235AuthSimpleMD5 : public H235Authenticator
 };
 
 
-#ifdef P_SSL
+#if P_SSL
 
 /** This class embodies the H.235 "base line Procedure 1" from Annex D.
 */
