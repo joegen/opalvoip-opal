@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2026  2005/01/16 11:28:05  csoutheren
+ * Revision 1.2027  2005/02/19 22:48:48  dsandras
+ * Added the possibility to register to several registrars and be able to do authenticated calls to each of them. Added SUBSCRIBE/NOTIFY support for Message Waiting Indications.
+ *
+ * Revision 2.25  2005/01/16 11:28:05  csoutheren
  * Added GetIdentifier virtual function to OpalConnection, and changed H323
  * and SIP descendants to use this function. This allows an application to
  * obtain a GUID for any connection regardless of the protocol used
@@ -393,7 +396,6 @@ class SIPConnection : public OpalConnection
     SIPEndPoint & GetEndPoint() const { return endpoint; }
     const SIPURL & GetTargetAddress() const { return targetAddress; }
     const PStringList & GetRouteSet() const { return routeSet; }
-
     const SIPAuthentication & GetAuthentication() const { return authentication; }
 
   protected:

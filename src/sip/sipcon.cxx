@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2053  2005/02/19 22:26:09  dsandras
+ * Revision 1.2054  2005/02/19 22:48:48  dsandras
+ * Added the possibility to register to several registrars and be able to do authenticated calls to each of them. Added SUBSCRIBE/NOTIFY support for Message Waiting Indications.
+ *
+ * Revision 2.52  2005/02/19 22:26:09  dsandras
  * Ignore TO tag added by OPAL. Reported by Nick Noath.
  *
  * Revision 2.51  2005/01/16 11:28:05  csoutheren
@@ -256,14 +259,12 @@ SIPConnection::SIPConnection(OpalCall & call,
   if (proxy.IsEmpty())
     proxy = endpoint.GetProxy();
 
+  // Proxy auth parameters. If there is no proxy, then we will
+  // use the realm to authenticate when authentication is required
   if (!proxy.IsEmpty()) {
     targetAddress = proxy.GetScheme() + ':' + proxy.GetHostName() + ':' + PString(proxy.GetPort());
     authentication.SetUsername(proxy.GetUserName());
     authentication.SetPassword(proxy.GetPassword());
-  }
-  else { // If no proxy, then we use the REGISTER auth params
-    authentication.SetUsername (endpoint.GetAuthentication ().GetUsername ());
-    authentication.SetPassword (endpoint.GetAuthentication ().GetPassword ());
   }
   
   if (inviteTransport == NULL)
@@ -726,14 +727,20 @@ void SIPConnection::SetLocalPartyAddress()
   PIPSocket::Address addr; 
   WORD port;
   taddr.GetIpAndPort(addr, port);
-  PString domain = endpoint.GetDomain();
   PString displayName = endpoint.GetDefaultDisplayName();
+  PString localName = endpoint.GetRegisteredPartyName(SIPURL(remotePartyAddress).GetHostName()).GetUserName(); 
+  PString domain = endpoint.GetRegisteredPartyName(SIPURL(remotePartyAddress).GetHostName()).GetHostName();
 
+  // If no domain, use the local domain as default
   if (domain.IsEmpty()) {
+
     domain = addr.AsString();
     if (port != endpoint.GetDefaultSignalPort())
       domain += psprintf(":%d", port);
   }
+
+  if (!localName.IsEmpty())
+    SetLocalPartyName (localName);
 
   SIPURL myAddress("\"" + displayName + "\" <" + GetLocalPartyName() + "@" + domain + ">"); 
 
@@ -779,6 +786,8 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
     case SIP_PDU::Method_OPTIONS :
       OnReceivedOPTIONS(pdu);
       break;
+    case SIP_PDU::Method_SUBSCRIBE :
+    case SIP_PDU::Method_NOTIFY :
     case SIP_PDU::Method_REGISTER :
       // Shouldn't have got this!
       break;
@@ -933,7 +942,6 @@ void SIPConnection::OnReceivedACK(SIP_PDU & /*response*/)
   if (phase != ConnectedPhase)
     return;
   
-  //StartMediaStreams();
   releaseMethod = ReleaseWithBYE;
   phase = EstablishedPhase;
   OnEstablished();
@@ -984,8 +992,8 @@ void SIPConnection::OnReceivedCANCEL(SIP_PDU & request)
     origFrom.Replace (";tag=" + GetTag (), "");
   }
   if (originalInvite == NULL ||
-      request.GetMIME().GetTo() != originalInvite->GetMIME().GetTo() ||
-      request.GetMIME().GetFrom() != originalInvite->GetMIME().GetFrom() ||
+      request.GetMIME().GetTo() != origTo ||
+      request.GetMIME().GetFrom() != origFrom ||
       request.GetMIME().GetCSeqIndex() != originalInvite->GetMIME().GetCSeqIndex()) {
     PTRACE(1, "SIP\tUnattached " << request << " received for " << *this);
     SIP_PDU response(request, SIP_PDU::Failure_TransactionDoesNotExist);
@@ -1059,18 +1067,15 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
                                                      SIP_PDU & response)
 {
   BOOL isProxy = response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
+  SIPAuthentication auth;
+  PString lastRealm;
+  PString lastUsername;
+  PString lastNonce;
 
 #if PTRACING
   const char * proxyTrace = isProxy ? "Proxy " : "";
 #endif
-
-  if (authentication.IsValid()) {
-
-    PTRACE(1, "SIP\tAlready done INVITE for " << proxyTrace << "Authentication Required, aborting call");
-    Release(EndedBySecurityDenial);
-    return;
-  }
-
+  
   if (transaction.GetMethod() != SIP_PDU::Method_INVITE) {
     PTRACE(1, "SIP\tCannot do " << proxyTrace << "Authentication Required for non INVITE");
     return;
@@ -1078,15 +1083,47 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
 
   PTRACE(2, "SIP\tReceived " << proxyTrace << "Authentication Required response");
 
-  if (!authentication.Parse(response.GetMIME()(isProxy ? "Proxy-Authenticate"
-                                                       : "WWW-Authenticate"),
-                                               isProxy)) {
+  // Received authentication required response, try to find authentication
+  // for the given realm if no proxy
+  if (!authentication.IsValid()) {
+    
+    if (!auth.Parse(response.GetMIME()(isProxy 
+				       ? "Proxy-Authenticate"
+				       : "WWW-Authenticate"),
+		    isProxy)) {
+      Release(EndedBySecurityDenial);
+      return;
+    }
+    if (!endpoint.GetAuthentication(auth.GetRealm(), authentication)) {
+      PTRACE (3, "SIP\tCouldn't find authentication information for realm " << auth.GetRealm() << ", will use SIP Outbound Proxy authentication settings, if any");
+    }
+  }
+  
+  // Save the username, realm and nonce
+  if (authentication.IsValid()) {
+    
+    lastRealm = authentication.GetRealm();
+    lastUsername = authentication.GetUsername();
+    lastNonce = authentication.GetNonce();
+  }
+
+  if (!authentication.Parse(response.GetMIME()(isProxy 
+					       ? "Proxy-Authenticate"
+					       : "WWW-Authenticate"),
+			    isProxy)) {
     Release(EndedBySecurityDenial);
     return;
   }
+  
+  if (authentication.IsValid()
+      && lastRealm == authentication.GetRealm ()
+      && lastUsername == authentication.GetUsername ()
+      && lastNonce == authentication.GetNonce ()) {
 
-  // make sure the To field is the same as the original
-  remotePartyAddress = targetAddress.AsQuotedString();
+    PTRACE(1, "SIP\tAlready done INVITE for " << proxyTrace << "Authentication Required");
+    Release(EndedBySecurityDenial);
+    return;
+  }
 
   // Restart the transaction with new authentication info
   SIPTransaction * invite = new SIPInvite(*this, *transport);

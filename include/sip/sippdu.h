@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2018  2004/12/12 12:31:03  dsandras
+ * Revision 1.2019  2005/02/19 22:48:48  dsandras
+ * Added the possibility to register to several registrars and be able to do authenticated calls to each of them. Added SUBSCRIBE/NOTIFY support for Message Waiting Indications.
+ *
+ * Revision 2.17  2004/12/12 12:31:03  dsandras
  * GetDisplayName now contains more complex code.
  *
  * Revision 2.16  2004/08/22 12:27:44  rjongbloed
@@ -270,7 +273,13 @@ class SIPMIMEInfo : public PMIMEInfo
 
     PString GetUnsupported() const;
     void SetUnsupported(const PString & v);
-
+    
+    PString GetEvent() const;
+    void SetEvent(const PString & v);
+    
+    PString GetSubscriptionState() const;
+    void SetSubscriptionState(const PString & v);
+    
     PString GetUserAgent() const;
     void SetUserAgent(const SIPEndPoint & sipep);        // normally "OPAL/2.0"
 
@@ -347,6 +356,8 @@ class SIP_PDU : public PObject
       Method_BYE,
       Method_CANCEL,
       Method_REGISTER,
+      Method_SUBSCRIBE,
+      Method_NOTIFY,
       NumMethods
     };
 
@@ -360,6 +371,7 @@ class SIP_PDU : public PObject
       Information_Session_Progress             = 183,
 
       Successful_OK                            = 200,
+      Successful_Accepted		       = 202,
 
       Redirection_MovedTemporarily             = 302,
 
@@ -387,6 +399,7 @@ class SIP_PDU : public PObject
       Failure_Ambiguous                   = 485,
       Failure_BusyHere                    = 486,
       Failure_RequestTerminated           = 487,
+      Failure_BadEvent			  = 489,
 
       Failure_BadGateway                  = 502,
 
@@ -592,6 +605,34 @@ class SIPRegister : public SIPTransaction
     PCLASSINFO(SIPRegister, SIPTransaction);
   public:
     SIPRegister(
+      SIPEndPoint   & endpoint,
+      OpalTransport & transport,
+      const SIPURL & address,
+      const PString & id,
+      unsigned expires
+    );
+};
+
+
+/////////////////////////////////////////////////////////////////////////
+
+class SIPMWISubscribe : public SIPTransaction
+{
+    PCLASSINFO(SIPMWISubscribe, SIPTransaction);
+  public:
+   /** Valid types for a MWI
+     */
+    enum MWIType { 
+      
+      VoiceMessage, 
+      FaxMessage, 
+      PagerMessage, 
+      MultimediaMessage, 
+      TextMessage, 
+      None 
+    };
+
+  SIPMWISubscribe(
       SIPEndPoint   & endpoint,
       OpalTransport & transport,
       const SIPURL & address,

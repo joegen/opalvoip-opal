@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2022  2004/12/17 12:06:52  dsandras
+ * Revision 1.2023  2005/02/19 22:48:48  dsandras
+ * Added the possibility to register to several registrars and be able to do authenticated calls to each of them. Added SUBSCRIBE/NOTIFY support for Message Waiting Indications.
+ *
+ * Revision 2.21  2004/12/17 12:06:52  dsandras
  * Added error code to OnRegistrationFailed. Made Register/Unregister wait until the transaction is over. Fixed Unregister so that the SIPRegister is used as a pointer or the object is deleted at the end of the function and make Opal crash when transactions are cleaned. Reverted part of the patch that was sending authentication again when it had already been done on a Register.
  *
  * Revision 2.20  2004/12/12 12:30:09  dsandras
@@ -111,6 +114,130 @@
 
 
 class SIPConnection;
+
+/////////////////////////////////////////////////////////////////////////
+
+/* Class to contain parameters about SIP registrations and subscribes.
+ */
+class SIPInfo : public PSafeObject {
+
+  PCLASSINFO (SIPInfo, PSafeObject);
+
+  public:
+  
+  /* Valid reasons returned when a registration/subscription fails */
+  enum FailureReasons {
+
+    BadRequest,
+    PaymentRequired,
+    Forbidden,
+    Timeout,
+    Conflict,
+    TemporarilyUnavailable,
+    RegistrationFailed,
+    NumFailureReasons
+  };
+  
+  SIPInfo (SIPEndPoint & ep, const PString & name);
+
+  ~SIPInfo ();
+  
+  virtual BOOL CreateTransport (OpalTransportAddress & addr);
+
+  virtual void Cancel (SIPTransaction & transaction);
+
+  virtual OpalTransport *GetTransport ()
+    { return registrarTransport; }
+
+  virtual SIPAuthentication & GetAuthentication ()
+    { return authentication; }
+
+  virtual const SIPURL & GetRegistrationAddress ()
+    { return registrationAddress; }
+  
+  virtual void AppendTransaction (SIPTransaction * transaction) 
+    { registrations.Append (transaction); }
+
+  virtual BOOL IsRegistered () 
+    { return registered; }
+
+  virtual void SetRegistered (BOOL r) 
+    { registered = r; if (r) registrationTime = PTime ();}
+
+  // An expire time of -1 corresponds to an invalid SIPInfo that 
+  // should be deleted.
+  virtual void SetExpire (int e)
+    { expire = e; }
+
+  virtual int GetExpire ()
+    { return expire; }
+
+  virtual PString GetRegistrationID ()
+    { return registrationID; }
+
+  virtual BOOL HasExpired ()
+    { return ((PTime () - registrationTime) >= PTimeInterval (0, expire)); }
+
+  virtual void SetPassword (PString p)
+    { password = p;}
+ 
+  virtual SIPTransaction * CreateTransaction (OpalTransport & t, BOOL unregister) = 0;
+
+  virtual SIP_PDU::Methods GetMethod () = 0;
+
+  virtual void OnSuccess () = 0;
+
+  virtual void OnFailed (FailureReasons) = 0;
+
+  protected:
+
+  SIPEndPoint      &     ep;
+  SIPAuthentication      authentication;
+  OpalTransport    *     registrarTransport;
+  SIPURL                 registrationAddress;
+  PString                registrationID;
+  SIPTransactionList     registrations;
+  PTime		         registrationTime;
+  BOOL                   registered;
+  int		         expire;
+  PString 		 password;
+};
+
+
+class SIPRegisterInfo : public SIPInfo
+{
+  PCLASSINFO(SIPRegisterInfo, SIPInfo);
+
+public:
+  SIPRegisterInfo (SIPEndPoint & ep, const PString & adjustedUsername, const PString & password);
+
+  virtual SIPTransaction * CreateTransaction (OpalTransport &, BOOL);
+
+  virtual SIP_PDU::Methods GetMethod ()
+    { return SIP_PDU::Method_REGISTER; }
+
+  virtual void OnSuccess ();
+
+  virtual void OnFailed (FailureReasons r);
+};
+
+
+class SIPMWISubscribeInfo : public SIPInfo
+{
+  PCLASSINFO(SIPMWISubscribeInfo, SIPInfo);
+
+public:
+  SIPMWISubscribeInfo (SIPEndPoint & ep, const PString & adjustedUsername);
+
+  virtual SIPTransaction * CreateTransaction (OpalTransport &, BOOL);
+  
+  virtual SIP_PDU::Methods GetMethod ()
+    { return SIP_PDU::Method_SUBSCRIBE; }
+
+  virtual void OnSuccess ();
+  
+  virtual void OnFailed (FailureReasons);
+};
 
 
 /////////////////////////////////////////////////////////////////////////
@@ -257,6 +384,13 @@ class SIPEndPoint : public OpalEndPoint
       SIPTransaction & transaction,
       SIP_PDU & response
     );
+    
+    /**Handle an incoming NOTIFY PDU.
+      */
+    virtual BOOL OnReceivedNOTIFY(
+      OpalTransport & transport,
+      SIP_PDU & response
+    );
 
     /**Callback from the RTP session for statistics monitoring.
        This is called every so many packets on the transmitter and receiver
@@ -284,53 +418,82 @@ class SIPEndPoint : public OpalEndPoint
     virtual BOOL IsAcceptedAddress(const SIPURL & toAddr);
 
 
-    /** Register to a registrar. This function is synchronous.
+    /** Register to a registrar. This function is asynchronous to permit
+     *  several registrations to occur at the same time.
      */
     BOOL Register(
-      const PString & hostname,
+      const PString & domain,
       const PString & username = PString::Empty(),
       const PString & password = PString::Empty()
     );
+    
 
-    
-    enum RegistrationFailReasons {
-
-      BadRequest,
-      PaymentRequired,
-      Forbidden,
-      Timeout,
-      Conflict,
-      TemporarilyUnavailable,
-      RegistrationFailed,
-      NumRegistrationFailReasons
-    };
-    
-    
-    /** Callback called when a registration or an unregistration fails.
-     *  The BOOL indicates if the operation that failed was a registration or
-     *  not.
+    /** Callback called when MWI is received
      */
-    virtual void OnRegistrationFailed(
-      RegistrationFailReasons reason,
-      BOOL wasRegistering);
+    virtual void OnMWIReceived (
+      const PString & domain,
+      const PString & user,
+      SIPMWISubscribe::MWIType type,
+      const PString & msgs);
+
+    
+    /** Subscribe to a notifier. This function is asynchronous to permit
+     *  several subscripttions to occur at the same time.
+     */
+    BOOL MWISubscribe(
+      const PString & hostname,
+      const PString & username
+    );
    
     
+    /** Callback called when a registration to a SIP registrars fails.
+     *  The BOOL indicates if the operation that failed was a REGISTER or 
+     *  an (UN)REGISTER.
+     */
+    virtual void OnRegistrationFailed(
+      const PString & domain,
+      const PString & userName,
+      SIPInfo::FailureReasons reason,
+      BOOL wasRegistering);
+    
+      
     /** Callback called when a registration or an unregistration is successful.
      *  The BOOL indicates if the operation that failed was a registration or
      *  not.
      */
-    virtual void OnRegistered(BOOL wasRegistering);
-    
+    virtual void OnRegistered(
+      const PString & domain,
+      const PString & userName,
+      BOOL wasRegistering);
 
-    /** Returns TRUE if registered to the current registrar.
+    
+    /** Returns TRUE if registered to the given domain.
+     *  The domain is the one used in the Register command.
      */
-    BOOL IsRegistered() const { return registered; }
+    BOOL IsRegistered(const PString & domain);
     
     
-    /** Unregister from the a registrar. This function
+    /** Returns TRUE if subscribed to the given domain for MWI.
+     */
+    BOOL IsSubscribed(
+      const PString & domain, 
+      const PString & user);
+ 
+    
+    /** Unregister from a registrar. This function
      *  is synchronous.
      */
-    BOOL Unregister ();
+    BOOL Unregister(const PString & domain,
+		    const PString & user);
+
+    
+    /** Unsubscribe from a notifier. This function
+     *  is synchronous.
+     */
+    BOOL MWIUnsubscribe(
+      const PString & domain,
+      const PString & user);
+    
 
     void SetMIMEForm(BOOL v) { mimeForm = v; }
     BOOL GetMIMEForm() const { return mimeForm; }
@@ -369,6 +532,11 @@ class SIPEndPoint : public OpalEndPoint
       const PTimeInterval & t
     ) { registrarTimeToLive = t; }
     const PTimeInterval & GetRegistrarTimeToLive() const { return registrarTimeToLive; }
+    
+    void SetNotifierTimeToLive(
+      const PTimeInterval & t
+    ) { notifierTimeToLive = t; }
+    const PTimeInterval & GetNotifierTimeToLive() const { return notifierTimeToLive; }
 
     void AddTransaction(
       SIPTransaction * transaction
@@ -379,8 +547,15 @@ class SIPEndPoint : public OpalEndPoint
     ) { transactions.SetAt(transaction->GetTransactionID(), NULL); }
 
     unsigned GetNextCSeq() { return ++lastSentCSeq; }
+    // to a remote host
 
-    const SIPAuthentication & GetAuthentication() const { return authentication; }
+    // Return the SIPAuthentication for a specific realm
+    BOOL GetAuthentication(const PString &, SIPAuthentication &); 
+
+    // Return the registration URL for the given domain
+    // That URL should be used in the FORM field. The host
+    // part can be different from the registration domain.
+    const SIPURL GetRegisteredPartyName(const PString &);
 
     const SIPURL & GetProxy() const { return proxy; }
     void SetProxy(const SIPURL & url) { proxy = url; }
@@ -390,24 +565,32 @@ class SIPEndPoint : public OpalEndPoint
       const PString & password
     );
 
-    void SetDomain(const PString & str)
-    { localDomain = str; }
-    PString GetDomain() const
-    { return localDomain; };
-
     virtual PString GetUserAgent() const;
     void SetUserAgent(const PString & str) { userAgentString = str; }
 
   protected:
+    struct RegParam {
+      SIPEndPoint * ep;
+      PSafePtr<SIPInfo> info;
+    };
     PDECLARE_NOTIFIER(PThread, SIPEndPoint, TransportThreadMain);
     PDECLARE_NOTIFIER(PTimer, SIPEndPoint, RegistrationRefresh);
-    static BOOL WriteREGISTER(OpalTransport & transport, void * param);
+    static BOOL WriteSIPINFO(
+      OpalTransport & transport, 
+      void * param);
+    BOOL TransmitSIPRegistrationInfo (
+      const PString & domain, 
+      const PString & username, 
+      const PString & password, 
+      SIP_PDU::Methods method);
+    BOOL TransmitSIPUnregistrationInfo (
+      const PString & domain, 
+      const PString & username, 
+      SIP_PDU::Methods method);
 
   protected:
     SIPURL            proxy;
     PString           userAgentString;
-    SIPAuthentication authentication;
-    PString           localDomain;
 
     BOOL          mimeForm;
     unsigned      maxRetries;
@@ -418,13 +601,50 @@ class SIPEndPoint : public OpalEndPoint
     PTimeInterval inviteTimeout;
     PTimeInterval ackTimeout;
     PTimeInterval registrarTimeToLive;
+    PTimeInterval notifierTimeToLive;
 
-    OpalTransport    * registrarTransport;
-    SIPURL             registrationAddress;
-    PString            registrationID;
-    SIPTransactionList registrations;
-    bool               registered;
-    PTimer             registrationTimer;
+    /* This dictionary is used both to contain the active and successful
+     * registrations, and subscriptions. Currently, only MWI subscriptions
+     * are supported.
+     */
+    class RegistrationDict : public PSafeList<SIPInfo>
+    {
+      public:
+
+	  SIPInfo *FindSIPInfoByCallID (const PString & callID, PSafetyMode m)
+	    {
+	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
+		if (callID == info->GetRegistrationID())
+		  return info;
+	      return NULL;
+	    }
+	  SIPInfo *FindSIPInfoByRealm (const PString & realm, PSafetyMode m)
+	    {
+	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
+		if (realm == info->GetAuthentication().GetRealm())
+		  return info;
+	      return NULL;
+	    }
+	  SIPInfo *FindSIPInfoByUrl (const PString & url, SIP_PDU::Methods meth, PSafetyMode m)
+	    {
+	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
+		if (SIPURL(url) == info->GetRegistrationAddress()
+		    && meth == info->GetMethod())
+		  return info;
+	      return NULL;
+	    }
+	  SIPInfo *FindSIPInfoByDomain (const PString & name, SIP_PDU::Methods meth, PSafetyMode m)
+	    {
+	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
+		if (name == info->GetRegistrationAddress().GetHostName()
+		    && meth == info->GetMethod())
+		  return info;
+	      return NULL;
+	    }
+
+    } activeRegistrations;
+    PTimer             registrationTimer; // Used to refresh the REGISTER
+    					  // and the SUBSCRIBE transactions.
 
     SIPTransactionDict transactions;
     unsigned           lastSentCSeq;
