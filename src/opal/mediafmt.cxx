@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2024  2004/07/11 12:32:51  rjongbloed
+ * Revision 1.2025  2004/10/23 11:42:38  ykiryanov
+ * Added ifdef _WIN32_WCE for PocketPC 2003 SDK port
+ *
+ * Revision 2.23  2004/07/11 12:32:51  rjongbloed
  * Added functions to add/subtract lists of media formats from a media format list
  *
  * Revision 2.22  2004/05/03 00:59:19  csoutheren
@@ -595,7 +598,11 @@ PINDEX OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt, const cha
 
     if (name != NULL && *name != '\0') {
       const char * otherName = mediaFormat.GetEncodingName();
+#ifndef _WIN32_WCE
       if (otherName != NULL && strcasecmp(otherName, name) == 0)
+#else
+      if (otherName != NULL && strcmp(otherName, name) == 0)
+#endif
         return idx;
     }
   }
