@@ -329,6 +329,10 @@ SOURCE=..\codec\g711.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\codec\g711codec.cxx
+# End Source File
+# Begin Source File
+
 SOURCE=..\codec\gsmcodec.cxx
 # End Source File
 # Begin Source File
@@ -347,10 +351,6 @@ SOURCE=..\codec\mscodecs.cxx
 # Begin Group "LID Sources"
 
 # PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\lids\h323lid.cxx
-# End Source File
 # Begin Source File
 
 SOURCE=..\lids\ixjwin32.cxx
@@ -534,6 +534,14 @@ SOURCE=..\..\include\h323\transaddr.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\include\codec\allcodecs.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\codec\g711codec.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\include\codec\gsmcodec.h
 # End Source File
 # Begin Source File
@@ -552,10 +560,6 @@ SOURCE=..\..\include\codec\mscodecs.h
 # Begin Group "LID Headers"
 
 # PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\include\lids\h323lid.h
-# End Source File
 # Begin Source File
 
 SOURCE=..\..\include\lids\ixjlid.h
