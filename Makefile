@@ -22,7 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2024  2003/04/08 06:09:19  robertj
+# Revision 1.2025  2003/04/08 11:46:35  robertj
+# Better portability for tr command when doing ASN parse.
+#
+# Revision 2.23  2003/04/08 06:09:19  robertj
 # Fixed ASN compilation so do not need -I on compile line for asn includes.
 #
 # Revision 2.22  2003/04/02 06:52:04  robertj
@@ -506,7 +509,7 @@ endif
 # Build rules for ASN files
 
 $(ASN_INCDIR)/%.h : $(ASN_SRCDIR)/%.asn .asnparser.version
-	$(ASNPARSER) -h asn/ -m $(shell echo $(notdir $(basename $<)) | tr a-z A-Z) -c $<
+	$(ASNPARSER) -h asn/ -m $(shell echo $(notdir $(basename $<)) | tr '[a-z]' '[A-Z]') -c $<
 	mv $(basename $<).h $@
 
 $(ASN_SRCDIR)/%.cxx : $(ASN_INCDIR)/%.h
