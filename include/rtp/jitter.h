@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.h,v $
- * Revision 1.2006  2002/11/10 11:33:17  robertj
+ * Revision 1.2007  2004/02/19 10:47:01  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.5  2002/11/10 11:33:17  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.4  2002/09/16 02:52:35  robertj
@@ -45,6 +48,12 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.13  2003/10/28 22:38:31  dereksmithies
+ * Rework of jitter buffer. Many thanks to Henry Harrison of Alice Street.
+ *
+ * Revision 1.12ACC1.0 6th October 2003 henryh
+ * Complete change to adaptive algorithm 
  *
  * Revision 1.12  2002/10/31 00:32:39  robertj
  * Enhanced jitter buffer system so operates dynamically between minimum and
@@ -125,6 +134,8 @@ class RTP_JitterBuffer : public PThread
       unsigned maxJitterDelay  /// Maximum delay in RTP timestamp units
     );
 
+    void UseImmediateReduction(BOOL state) { doJitterReductionImmediately = state; }
+
     /**Read a data frame from the RTP channel.
        Any control frames received are dispatched to callbacks and are not
        returned by this function. It will block until a data frame is
@@ -179,7 +190,14 @@ class RTP_JitterBuffer : public PThread
     unsigned bufferOverruns;
     unsigned consecutiveBufferOverruns;
     DWORD    consecutiveMarkerBits;
-    DWORD    consecutiveEarlyPacketStartTime;
+    PTimeInterval    consecutiveEarlyPacketStartTime;
+    DWORD    lastWriteTimestamp;
+    PTimeInterval lastWriteTick;
+    DWORD    jitterCalc;
+    DWORD    targetJitterTime;
+    unsigned jitterCalcPacketCount;
+    BOOL     doJitterReductionImmediately;
+    BOOL     doneFreeTrash;
 
     Entry * oldestFrame;
     Entry * newestFrame;
@@ -189,6 +207,7 @@ class RTP_JitterBuffer : public PThread
     PMutex bufferMutex;
     BOOL   shuttingDown;
     BOOL   preBuffering;
+    BOOL   doneFirstWrite;
 
     RTP_JitterBufferAnalyser * analyser;
 };
