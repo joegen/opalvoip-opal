@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.18  2004/10/03 14:16:34  rjongbloed
+ * Added panels for calling, answering and in call phases.
+ *
  * Revision 1.17  2004/09/29 12:47:39  rjongbloed
  * Added gatekeeper support
  *
@@ -121,6 +124,7 @@ class PwxString : public wxString
     friend ostream & operator<<(ostream & stream, const PwxString & string) { return stream << string.c_str(); }
 };
 
+
 class MyPCSSEndPoint : public OpalPCSSEndPoint
 {
   PCLASSINFO(MyPCSSEndPoint, OpalPCSSEndPoint);
@@ -128,20 +132,12 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
   public:
     MyPCSSEndPoint(MyFrame & frame);
 
-    bool GetAutoAnswer() const { return m_autoAnswer; }
-    void SetAutoAnswer(bool answer) { m_autoAnswer = answer; }
-
-    PString m_incomingConnectionToken;
-
   private:
     virtual PString OnGetDestination(const OpalPCSSConnection & connection);
     virtual void OnShowIncoming(const OpalPCSSConnection & connection);
     virtual BOOL OnShowOutgoing(const OpalPCSSConnection & connection);
 
-    PString m_destinationAddress;
-    bool    m_autoAnswer;
-
-    MyFrame & frame;
+    MyFrame & m_frame;
 };
 
 
@@ -150,8 +146,10 @@ class MyH323EndPoint : public H323EndPoint
 {
   public:
     MyH323EndPoint(MyFrame & f);
-    virtual void OnRegistrationConfirm();
+
   private:
+    virtual void OnRegistrationConfirm();
+
     MyFrame & frame;
 };
 #endif
@@ -162,8 +160,10 @@ class MySIPEndPoint : public SIPEndPoint
 {
   public:
     MySIPEndPoint(MyFrame & f);
-    virtual void OnRegistered();
+
   private:
+    virtual void OnRegistered();
+
     MyFrame & frame;
 };
 #endif
@@ -172,7 +172,7 @@ class MySIPEndPoint : public SIPEndPoint
 class CallDialog : public wxDialog
 {
   public:
-    CallDialog(wxWindow *parent);
+    CallDialog(MyFrame *parent);
 
     PwxString m_Address;
 
@@ -186,7 +186,61 @@ class CallDialog : public wxDialog
 };
 
 
-class MyFrame;
+class CallingPanel : public wxPanel
+{
+  public:
+    CallingPanel(MyFrame & frame, wxWindow * parent);
+
+  private:
+    void OnHangUp(wxCommandEvent & event);
+
+    MyFrame & m_frame;
+
+    DECLARE_EVENT_TABLE()
+};
+
+
+class AnswerPanel : public wxPanel
+{
+  public:
+    AnswerPanel(MyFrame & frame, wxWindow * parent);
+
+  private:
+    void OnAnswer(wxCommandEvent & event);
+    void OnReject(wxCommandEvent & event);
+
+    MyFrame & m_frame;
+
+    DECLARE_EVENT_TABLE()
+};
+
+
+class InCallPanel : public wxPanel
+{
+  public:
+    InCallPanel(MyFrame & frame, wxWindow * parent);
+
+  private:
+    void OnHangUp(wxCommandEvent & event);
+    void OnUserInput1(wxCommandEvent & event);
+    void OnUserInput2(wxCommandEvent & event);
+    void OnUserInput3(wxCommandEvent & event);
+    void OnUserInput4(wxCommandEvent & event);
+    void OnUserInput5(wxCommandEvent & event);
+    void OnUserInput6(wxCommandEvent & event);
+    void OnUserInput7(wxCommandEvent & event);
+    void OnUserInput8(wxCommandEvent & event);
+    void OnUserInput9(wxCommandEvent & event);
+    void OnUserInput0(wxCommandEvent & event);
+    void OnUserInputStar(wxCommandEvent & event);
+    void OnUserInputHash(wxCommandEvent & event);
+    void OnUserInputFlash(wxCommandEvent & event);
+
+    MyFrame & m_frame;
+
+    DECLARE_EVENT_TABLE()
+};
+
 
 class SpeedDialDialog : public wxDialog
 {
@@ -201,7 +255,7 @@ class SpeedDialDialog : public wxDialog
   private:
     void OnChange(wxCommandEvent & event);
 
-    MyFrame  & m_frame;
+    MyFrame & m_frame;
 
     wxButton     * m_ok;
     wxTextCtrl   * m_nameCtrl;
@@ -319,9 +373,11 @@ class OptionsDialog : public wxDialog
 
     ////////////////////////////////////////
     // SIP fields
+    bool      m_SIPProxyUsed;
     PwxString m_SIPProxy;
     PwxString m_SIPProxyUsername;
     PwxString m_SIPProxyPassword;
+    bool      m_RegistrarUsed;
     PwxString m_RegistrarName;
     PwxString m_RegistrarUsername;
     PwxString m_RegistrarPassword;
@@ -390,8 +446,18 @@ class MyFrame : public wxFrame, public OpalManager
     ~MyFrame();
 
     bool Initialise();
+
     bool HasSpeedDialName(const wxString & name) const;
     bool HasSpeedDialNumber(const char * number, const char * ignore) const;
+
+    void MakeCall(const PwxString & address);
+    void AnswerCall();
+    void RejectCall();
+    void HangUpCall();
+    void SendUserInput(char tone);
+    void OnRinging(const OpalPCSSConnection & connection);
+
+    PSafePtr<OpalCall> GetCall() { return FindCallWithLock(m_currentCallToken); }
 
   private:
     // Controls on main frame
@@ -420,8 +486,6 @@ class MyFrame : public wxFrame, public OpalManager
     void OnSpeedDialActivated(wxListEvent& event);
     void OnSpeedDialColumnResize(wxListEvent& event);
     void OnRightClick(wxListEvent& event);
-
-    void MakeCall(const PwxString & address);
 
     virtual void OnEstablishedCall(
       OpalCall & call   /// Call that was completed
@@ -461,9 +525,12 @@ class MyFrame : public wxFrame, public OpalManager
       e_NumColumns
     };
 
-    wxSplitterWindow         * m_splitter;
-    wxListCtrl               * m_speedDials;
-    wxTextCtrl               * m_logWindow;
+    wxSplitterWindow * m_splitter;
+    wxTextCtrl       * m_logWindow;
+    wxListCtrl       * m_speedDials;
+    wxPanel          * m_answerPanel;
+    wxPanel          * m_callingPanel;
+    wxPanel          * m_inCallPanel;
 
     MyPCSSEndPoint   * pcssEP;
     OpalPOTSEndPoint * potsEP;
@@ -478,6 +545,8 @@ class MyFrame : public wxFrame, public OpalManager
 
 #if OPAL_SIP
     MySIPEndPoint * sipEP;
+    bool            m_SIPProxyUsed;
+    bool            m_registrarUsed;
     PwxString       m_registrarName;
     PwxString       m_registrarUser;
     PwxString       m_registrarPassword;
@@ -488,6 +557,8 @@ class MyFrame : public wxFrame, public OpalManager
     OpalIVREndPoint  * ivrEP;
 #endif
 
+    bool m_autoAnswer;
+
     MyMediaList m_mediaInfo;
     void InitMediaInfo(const char * source, const OpalMediaFormatList & formats);
     void ApplyMediaInfo();
@@ -497,7 +568,17 @@ class MyFrame : public wxFrame, public OpalManager
     wxString  m_traceFileName;
 #endif
 
-    PString  m_currentCallToken;
+    enum CallState {
+      IdleState,
+      CallingState,
+      RingingState,
+      AnsweringState,
+      InCallState
+    } m_callState;
+    void SetState(CallState newState);
+
+    PString m_currentConnectionToken;
+    PString m_currentCallToken;
 
     DECLARE_EVENT_TABLE()
 
