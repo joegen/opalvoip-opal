@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2024  2004/05/15 12:53:03  rjongbloed
+ * Revision 1.2025  2004/05/24 13:40:12  rjongbloed
+ * Added default values for silence suppression parameters.
+ *
+ * Revision 2.23  2004/05/15 12:53:03  rjongbloed
  * Added default username and display name to manager, for all endpoints.
  *
  * Revision 2.22  2004/04/18 07:09:12  rjongbloed
@@ -115,6 +118,7 @@
 #include <opal/endpoint.h>
 #include <opal/connection.h>
 #include <opal/call.h>
+#include <codec/silencedetect.h>
 
 
 class OpalCall;
@@ -891,6 +895,16 @@ class OpalManager : public PObject
      */
     void SetMediaFormatMask(const PStringArray & mask) { mediaFormatMask = mask; }
 
+    /**Set the default parameters for the silence detector.
+     */
+    virtual void SetSilenceDetectParams(
+      const OpalSilenceDetector::Params & params
+    ) { silenceDetectParams = params; }
+
+    /**Get the default parameters for the silence detector.
+     */
+    const OpalSilenceDetector::Params & GetSilenceDetectParams() const { return silenceDetectParams; }
+
     /**Set the parameters for the video device to be used for input.
        If the name is not suitable for use with the PVideoInputDevice class
        then the function will return FALSE and not change the device.
@@ -964,6 +978,8 @@ class OpalManager : public PObject
     BOOL          disableDetectInBandDTMF;
     PTimeInterval noMediaTimeout;
     PString       ilsServer;
+
+    OpalSilenceDetector::Params silenceDetectParams;
 
     PVideoDevice::OpenArgs videoInputDevice;
     PVideoDevice::OpenArgs videoOutputDevice;
