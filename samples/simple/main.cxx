@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2028  2004/01/18 15:36:07  rjongbloed
+ * Revision 1.2029  2004/02/03 12:22:28  rjongbloed
+ * Added call command
+ *
+ * Revision 2.27  2004/01/18 15:36:07  rjongbloed
  * Added stun support
  *
  * Revision 2.26  2003/04/09 01:38:27  robertj
@@ -772,7 +775,8 @@ void MyManager::Main(PArgList & args)
     cout << "OPAL> " << flush;
     PCaselessString cmd;
     cin >> cmd;
-    if (cmd == "x")
+
+    if (cmd == "x" || cmd == "exit" || cmd == "q" || cmd == "quit")
       break;
 
     if (pcssEP != NULL && !pcssEP->incomingConnectionToken) {
@@ -783,6 +787,42 @@ void MyManager::Main(PArgList & args)
     }
 
     // Process commands
+    PStringArray params = cmd.Tokenise(" ", FALSE);
+    if (params.IsEmpty())
+      continue;
+
+    cmd = params[0];
+    if (cmd == "h" || cmd == "hangup") {
+      OpalCall * call = FindCallWithLock(currentCallToken);
+      if (call != NULL)
+        call->Clear();
+      else
+        cout << "Not in a call!\n";
+    }
+    else if (cmd == "c" || cmd == "call") {
+      if (!currentCallToken) {
+        cout << "Already in a call!\n";
+        continue;
+      }
+      switch (params.GetSize()) {
+        case 1 :
+          cout << "Call what?\n";
+          break;
+        case 2 :
+          cout << "Initiating call to \"" << params[1] << "\"\n";
+          if (potsEP != NULL)
+            SetUpCall("pots:*", params[1], currentCallToken);
+          else
+            SetUpCall("pc:*", params[1], currentCallToken);
+          break;
+        case 3 :
+          cout << "Initiating call from \"" << params[1] << "\"to \"" << params[2] << "\"\n";
+          SetUpCall(params[1], params[2], currentCallToken);
+          break;
+        default :
+          cout << "Usage: call address    or    call from-address to-address\n";
+      }
+    }
   }
 }
 
