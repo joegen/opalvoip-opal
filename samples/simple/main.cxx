@@ -22,7 +22,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2013  2002/03/27 04:36:46  robertj
+ * Revision 1.2014  2002/03/27 05:34:55  robertj
+ * Removed redundent busy forward field.
+ * Added ability to set tcp and udp port bases.
+ *
+ * Revision 2.12  2002/03/27 04:36:46  robertj
  * Changed to add all possible xJack cards to pots endpoint.
  *
  * Revision 2.11  2002/03/27 04:16:20  robertj
@@ -156,7 +160,6 @@ void SimpleOpalProcess::Main()
   args.Parse(
              "a-auto-answer."
              "b-bandwidth:"
-             "B-forward-busy:"
              "D-disable:"
              "e-silence."
              "f-fast-disable."
@@ -178,16 +181,21 @@ void SimpleOpalProcess::Main()
              "Q-no-quicknet."
              "R-require-gatekeeper."
              "r-register-sip:"
+             "-rtp_tos:"
              "s-sound:"
              "S-no-sound."
              "-sound-in:"
              "-sound-out:"
              "T-h245tunneldisable."
-	     "-use-long-mime."
 #if PTRACING
              "t-trace."
 #endif
+             "-tcp-base:"
+             "-tcp-max:"
              "u-user:"
+             "-udp-base:"
+             "-udp-max:"
+	     "-use-long-mime."
           , FALSE);
 
 
@@ -195,33 +203,52 @@ void SimpleOpalProcess::Main()
     cout << "Usage : " << GetName() << " [options] -l\n"
             "      : " << GetName() << " [options] [alias@]hostname   (no gatekeeper)\n"
             "      : " << GetName() << " [options] alias[@hostname]   (with gatekeeper)\n"
-            "Options:\n"
+            "General options:\n"
             "  -l --listen             : Listen for incoming calls.\n"
+            "  -a --auto-answer        : Automatically answer incoming calls.\n"
+            "  -u --user name          : Set local alias name(s) (defaults to login name).\n"
+            "  -p --password pwd       : Set password for user (gk or SIP authorisation).\n"
+            "\n"
+            "Audio options:\n"
+            "  -D --disable codec      : Disable the specified codec (may be used multiple times)\n"
+            "  -P --prefer codec       : Prefer the specified codec (may be used multiple times)\n"
+            "  -j --jitter delay       : Set jitter buffer to delay milliseconds.\n"
+            "  -e --silence            : Disable transmitter silence detection.\n"
+            "\n"
+            "SIP options:\n"
             "  -I --no-sip             : Disable SIP protocol.\n"
             "  -r --register-sip host  : Register with SIP server.\n"
+            "     --use-long-mime      : Use long MIME headers on outgoing SIP messages\n"
+            "\n"
+            "H.323 options:\n"
             "  -H --no-h323            : Disable H.323 protocol.\n"
             "  -g --gatekeeper host    : Specify gatekeeper host.\n"
             "  -n --no-gatekeeper      : Disable gatekeeper discovery.\n"
             "  -R --require-gatekeeper : Exit if gatekeeper discovery fails.\n"
             "  -G --gateway addr       : Use gateway/proxy\n"
-            "  -a --auto-answer        : Automatically answer incoming calls.\n"
-            "  -u --user name          : Set local alias name(s) (defaults to login name).\n"
             "  -b --bandwidth bps      : Limit bandwidth usage to bps bits/second.\n"
-            "  -j --jitter delay       : Set jitter buffer to delay milliseconds.\n"
-            "  -D --disable codec      : Disable the specified codec (may be used multiple times)\n"
-            "  -P --prefer codec       : Prefer the specified codec (may be used multiple times)\n"
-            "  -i --interface ipnum    : Select interface to bind to.\n"
-            "  -B --forward-busy party : Forward to remote party if busy.\n"
-            "  -e --silence            : Disable transmitter silence detection.\n"
             "  -f --fast-disable       : Disable fast start.\n"
             "  -T --h245tunneldisable  : Disable H245 tunnelling.\n"
-            "     --use-long-mime      : Use long MIME headers on outgoing SIP messages\n"
-            "  -q --quicknet device    : Select Quicknet xJACK device (default ALL).\n"
+            "\n"
+            "Quicknet options:\n"
             "  -Q --no-quicknet        : Do not use Quicknet xJACK device.\n"
-            "  -s --sound device       : Select sound input/output device.\n"
+            "  -q --quicknet device    : Select Quicknet xJACK device (default ALL).\n"
+            "\n"
+            "Sound card options:\n"
             "  -S --no-sound           : Do not use sound input/output device.\n"
+            "  -s --sound device       : Select sound input/output device.\n"
             "     --sound-in device    : Select sound input device.\n"
             "     --sound-out device   : Select sound output device.\n"
+            "\n"
+            "IP options:\n"
+            "  -i --interface ipnum    : Select interface to bind to.\n"
+            "     --tcp-base n         : Set TCP port base (default 0)\n"
+            "     --tcp-max n          : Set TCP port max (default base+99)\n"
+            "     --udp-base n         : Set UDP port base (default 5000)\n"
+            "     --udp-max n          : Set UDP port max (default base+999)"
+            "     --rtp-tos n          : Set RTP packet IP TOS bits to n\n"
+            "\n"
+            "Debug options:\n"
 #if PTRACING
             "  -t --trace              : Enable trace, use multiple times for more detail.\n"
             "  -o --output             : File for trace output, default is stderr.\n"
@@ -271,9 +298,8 @@ MyManager::~MyManager()
 BOOL MyManager::Initialise(PArgList & args)
 {
   // Set the various global options
-  autoAnswer           = args.HasOption('a');
-  silenceOn            = !args.HasOption('e');
-  busyForwardParty     = args.GetOptionString('B');
+  autoAnswer = args.HasOption('a');
+  silenceOn  = !args.HasOption('e');
 
   // get the protocols in use
   BOOL useSIP  = !args.HasOption("no-sip");
@@ -294,11 +320,59 @@ BOOL MyManager::Initialise(PArgList & args)
   if (args.HasOption('P'))
     SetMediaFormatOrder(args.GetOptionString('P').Lines());
 
+  if (args.HasOption("tcp-base")) {
+    unsigned base = args.GetOptionString("tcp-base").AsUnsigned();
+    if (base < 1024 || base > 65535) {
+      cerr << "TCP port base must be between 1024 and 65535." << endl;
+      return FALSE;
+    }
+    tcpPortBase = (WORD)base;
+    tcpPortMax = (WORD)(base+99);
+    if (args.HasOption("tcp-max")) {
+      unsigned max = args.GetOptionString("tcp-max").AsUnsigned();
+      if (max <= base || max > 65535) {
+        cerr << "TCP port base must be between base (" << base << ") and 65535." << endl;
+        return FALSE;
+      }
+      tcpPortMax = (WORD)max;
+    }
+  }
+
+  if (args.HasOption("udp-base")) {
+    unsigned base = args.GetOptionString("udp-base").AsUnsigned();
+    if (base < 1024 || base > 65535) {
+      cerr << "UDP port base must be between 1024 and 65535." << endl;
+      return FALSE;
+    }
+    udpPortBase = (WORD)base;
+    udpPortMax = (WORD)(base+999);
+    if (args.HasOption("udp-max")) {
+      unsigned max = args.GetOptionString("udp-max").AsUnsigned();
+      if (max <= base || max > 65535) {
+        cerr << "UDP port base must be between base (" << base << ") and 65535." << endl;
+        return FALSE;
+      }
+      udpPortMax = (WORD)max;
+    }
+  }
+
+  if (args.HasOption("rtp-tos")) {
+    unsigned tos = args.GetOptionString("rtp-tos").AsUnsigned();
+    if (tos > 255) {
+      cerr << "IP Type Of Service bits must be 0 to 255." << endl;
+      return FALSE;
+    }
+    SetRtpIpTypeofService(tos);
+  }
+
   cout << "Auto answer is " << (autoAnswer ? "on" : "off") << "\n"
           "Silence supression is " << (silenceOn ? "on" : "off") << "\n"
           "Jitter buffer: "  << GetMaxAudioDelayJitter() << " ms\n"
           "Codecs removed: " << setfill(',') << GetMediaFormatMask() << "\n"
-          "Codec order: " << setfill(',') << GetMediaFormatOrder() << setfill(' ') << endl;
+          "Codec order: " << setfill(',') << GetMediaFormatOrder() << setfill(' ') << "\n"
+          "TCP ports: " << GetTCPPortBase() << '-' << GetTCPPortMax() << "\n"
+          "UDP ports: " << GetUDPPortBase() << '-' << GetUDPPortMax() << "\n"
+          "RTP IP TOS: 0x" << hex << (unsigned)GetRtpIpTypeofService() << dec << endl;
 
 
   ///////////////////////////////////////
