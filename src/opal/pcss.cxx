@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2019  2004/07/11 12:42:13  rjongbloed
+ * Revision 1.2020  2004/07/14 13:26:14  rjongbloed
+ * Fixed issues with the propagation of the "established" phase of a call. Now
+ *   calling an OnEstablished() chain like OnAlerting() and OnConnected() to
+ *   finally arrive at OnEstablishedCall() on OpalManager
+ *
+ * Revision 2.18  2004/07/11 12:42:13  rjongbloed
  * Added function on endpoints to get the list of all media formats any
  *   connection the endpoint may create can support.
  *
@@ -353,7 +358,14 @@ BOOL OpalPCSSConnection::SetAlerting(const PString & calleeName, BOOL)
 BOOL OpalPCSSConnection::SetConnected()
 {
   PTRACE(3, "PCSS\tSetConnected()");
-  phase = ConnectedPhase;
+
+  if (mediaStreams.IsEmpty())
+    phase = ConnectedPhase;
+  else {
+    phase = EstablishedPhase;
+    OnEstablished();
+  }
+
   return TRUE;
 }
 
@@ -448,6 +460,10 @@ void OpalPCSSConnection::AcceptIncoming()
   if (phase == AlertingPhase) {
     phase = ConnectedPhase;
     OnConnected();
+    if (!mediaStreams.IsEmpty()) {
+      phase = EstablishedPhase;
+      OnEstablished();
+    }
   }
 
   Unlock();
