@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2021  2003/12/16 10:22:45  rjongbloed
+ * Revision 1.2022  2004/02/24 11:35:25  rjongbloed
+ * Bullet proofed reply parsing for if get a command we don't understand.
+ *
+ * Revision 2.20  2003/12/16 10:22:45  rjongbloed
  * Applied enhancements, thank you very much Ted Szoczei
  *
  * Revision 2.19  2003/12/15 11:56:17  rjongbloed
@@ -1080,8 +1083,13 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
     }
 
     int i = 0;
-    while (i < NumMethods && !(cmds[0] *= MethodNames[i]))
+    while (!(cmds[0] *= MethodNames[i])) {
       i++;
+      if (i >= NumMethods) {
+        PTRACE(1, "SIP\tUnknown method name " << cmds[0] << " received on " << transport);
+        return FALSE;
+      }
+    }
     method = (Methods)i;
 
     uri = cmds[1];
