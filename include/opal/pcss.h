@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.h,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 1.2002  2001/08/01 05:52:24  robertj
+ * Moved media formats list from endpoint to connection.
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  */
@@ -105,13 +108,6 @@ class OpalPCSSEndPoint : public OpalEndPoint
       const PString & party,  /// Remote party to call
       void * userData = NULL  /// Arbitrary data to pass to connection
     );
-
-    /**Get the data formats this endpoint is capable of operating in.
-       This provides a list of media data format names that an
-       OpalMediaStream may be created in within connections created by this
-       endpoint.
-      */
-    virtual OpalMediaFormat::List GetMediaFormats() const;
   //@}
 
   /**@name Customisation call backs */
@@ -241,6 +237,15 @@ class OpalPCSSConnection : public OpalConnection
        The default behaviour does nothing.
       */
     virtual BOOL SetConnected();
+
+    /**Get the data formats this connection is capable of operating.
+       This provides a list of media data format names that an
+       OpalMediaStream may be created in within this connection.
+
+       The default behaviour returns the formats the PSoundChannel can do,
+       typically only PCM-16.
+      */
+    virtual OpalMediaFormatList GetMediaFormats() const;
 
     /**Open a new media stream.
        This will create a media stream of an appropriate subclass as required
