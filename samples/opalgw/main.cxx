@@ -24,6 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.3  2004/03/13 06:52:30  rjongbloed
+ * Slight rearrangement of local party name and alias list to beter match common
+ *   behaviour in ancestor.
+ * Abstracted local party name for endpoint into ancestor from H.,323.
+ *
  * Revision 1.2  2004/03/11 06:54:27  csoutheren
  * Added ability to disable SIP or H.323 stacks
  *
@@ -411,11 +416,11 @@ BOOL MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
 #if OPAL_SIP
   // Add SIP parameters
-  sipEP->SetRegistrationName(cfg.GetString(SIPUsernameKey, sipEP->GetRegistrationName()));
-  rsrc->Add(new PHTTPStringField(SIPUsernameKey, 25, sipEP->GetRegistrationName()));
+  sipEP->SetDefaultLocalPartyName(cfg.GetString(SIPUsernameKey, sipEP->GetDefaultLocalPartyName()));
+  rsrc->Add(new PHTTPStringField(SIPUsernameKey, 25, sipEP->GetDefaultLocalPartyName()));
 
-  sipEP->SetRegistrationPassword(PHTTPPasswordField::Decrypt(cfg.GetString(SIPPasswordKey, sipEP->GetRegistrationPassword())));
-  rsrc->Add(new PHTTPStringField(SIPPasswordKey, 25, sipEP->GetRegistrationPassword()));
+  sipEP->SetProxyPassword(PHTTPPasswordField::Decrypt(cfg.GetString(SIPPasswordKey, sipEP->GetProxyPassword())));
+  rsrc->Add(new PHTTPStringField(SIPPasswordKey, 25, sipEP->GetProxyPassword()));
 
   PString registrar = cfg.GetString(SIPRegistrarKey);
   rsrc->Add(new PHTTPStringField(SIPRegistrarKey, 25, registrar));
