@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2022  2004/02/09 13:12:28  rjongbloed
+ * Revision 1.2023  2004/02/15 04:31:07  rjongbloed
+ * Added trace log to sound card stream for what read/write size and buffers are used.
+ *
+ * Revision 2.21  2004/02/09 13:12:28  rjongbloed
  * Fixed spin problem when closing channel, realted to not outputting silence
  *   frames to the sound card when nothing coming out of jitter buffer.
  *
@@ -614,6 +617,8 @@ OpalAudioMediaStream::OpalAudioMediaStream(const OpalMediaFormat & mediaFormat,
 
 BOOL OpalAudioMediaStream::SetDataSize(PINDEX dataSize)
 {
+  PTRACE(3, "Media\tAudio " << (IsSource() ? "source" : "sink") << " data size set to  "
+         << dataSize << " bytes and " << soundChannelBuffers << " buffers.");
   return OpalMediaStream::SetDataSize(dataSize) &&
          ((PSoundChannel *)channel)->SetBuffers(dataSize, soundChannelBuffers);
 }
