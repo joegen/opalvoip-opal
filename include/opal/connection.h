@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2027  2004/04/26 04:33:05  rjongbloed
+ * Revision 1.2028  2004/05/01 10:00:51  rjongbloed
+ * Fixed ClearCallSynchronous so now is actually signalled when call is destroyed.
+ *
+ * Revision 2.26  2004/04/26 04:33:05  rjongbloed
  * Move various call progress times from H.323 specific to general conenction.
  *
  * Revision 2.25  2004/04/18 13:31:28  rjongbloed
@@ -282,8 +285,7 @@ class OpalConnection : public PObject
        for the H323EndPoint::ClearCall() function to set the clearance reason.
       */
     virtual void SetCallEndReason(
-      CallEndReason reason,       /// Reason for clearance of connection.
-      PSyncPoint * sync = NULL    /// syncpoint to use for synchronous destruction
+      CallEndReason reason        /// Reason for clearance of connection.
     );
 
     /**Clear a current call.
