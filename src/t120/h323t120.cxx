@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t120.cxx,v $
- * Revision 1.2005  2001/11/12 05:32:12  robertj
+ * Revision 1.2006  2001/11/13 04:29:48  robertj
+ * Changed OpalTransportAddress CreateTransport and CreateListsner functions
+ *   to have extra parameter to control local binding of sockets.
+ *
+ * Revision 2.4  2001/11/12 05:32:12  robertj
  * Added OpalTransportAddress::GetIpAddress when don't need port number.
  *
  * Revision 2.3  2001/10/05 00:22:14  robertj
@@ -255,7 +259,7 @@ BOOL H323_T120Channel::OnReceivedPDU(const H245_OpenLogicalChannel & open,
 
   if (listen) {
     if (!address)
-      listener = address.CreateCompatibleListener(endpoint);
+      listener = address.CreateListener(endpoint, OpalTransportAddress::HostOnly);
     else {
       // No address specified, assume same IP as the transport and use default port
       PIPSocket::Address ip;
@@ -287,7 +291,7 @@ BOOL H323_T120Channel::OnReceivedPDU(const H245_OpenLogicalChannel & open,
       address = OpalTransportAddress(ip, OpalT120Protocol::DefaultTcpPort);
     }
 
-    transport = address.CreateTransport(endpoint);
+    transport = address.CreateTransport(endpoint, OpalTransportAddress::FullTSAP);
     if (transport == NULL) {
       PTRACE(1, "H323T120\tCould not create transport");
       errorCode = H245_OpenLogicalChannelReject_cause::e_separateStackEstablishmentFailed;
