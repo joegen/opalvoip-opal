@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2011  2002/02/11 07:37:43  robertj
+ * Revision 1.2012  2002/02/11 09:32:11  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.10  2002/02/11 07:37:43  robertj
  * Added media bypass for streams between compatible protocols.
  *
  * Revision 2.9  2002/01/22 04:59:04  robertj
@@ -61,6 +64,35 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.32  2002/02/11 04:20:48  robertj
+ * Fixed documentation errors, thanks Horacio J. Peña
+ *
+ * Revision 1.31  2002/02/11 04:16:37  robertj
+ * Fixed bug where could send DRQ if never received an ACF.
+ *
+ * Revision 1.30  2002/02/06 06:30:47  craigs
+ * Fixed problem whereby MSD/TCS was stalled if H245 was included in
+ * SETUP, but other end did not respond
+ *
+ * Revision 1.29  2002/02/04 07:17:52  robertj
+ * Added H.450.2 Consultation Transfer, thanks Norwood Systems.
+ *
+ * Revision 1.28  2002/01/25 05:20:05  robertj
+ * Moved static strings for enum printing to inside of function, could crash with DLL's
+ *
+ * Revision 1.27  2002/01/24 06:29:02  robertj
+ * Added option to disable H.245 negotiation in SETUP pdu, this required
+ *   API change so have a bit mask instead of a series of booleans.
+ *
+ * Revision 1.26  2002/01/23 12:45:37  rogerh
+ * Add the DTMF decoder. This identifies DTMF tones in an audio stream.
+ *
+ * Revision 1.25  2002/01/23 07:12:48  robertj
+ * Added hooks for in band DTMF detection. Now need the detector!
+ *
+ * Revision 1.24  2002/01/22 22:48:21  robertj
+ * Fixed RFC2833 support (transmitter) requiring large rewrite
  *
  * Revision 1.23  2002/01/18 06:02:08  robertj
  * Added some H323v4 functions (fastConnectRefused & TCS in SETUP)
@@ -218,25 +250,27 @@ class H323Connection : public OpalConnection
   public:
   /**@name Construction */
   //@{
+    enum Options {
+      FastStartOptionDisable      = 0x0001,
+      FastStartOptionEnable       = 0x0002,
+      FastStartOptionMask         = 0x0003,
+
+      H245TunnelingOptionDisable  = 0x0004,
+      H245TunnelingOptionEnable   = 0x0008,
+      H245TunnelingOptionMask     = 0x000c,
+
+      H245inSetupOptionDisable    = 0x0010,
+      H245inSetupOptionEnable     = 0x0020,
+      H245inSetupOptionMask       = 0x0030,
+    };
+
     /**Create a new connection.
      */
     H323Connection(
       OpalCall & call,                /// Call object connection belongs to
       H323EndPoint & endpoint,        /// H323 End Point object
-      const PString & token           /// Token for new connection
-    );
-    H323Connection(
-      OpalCall & call,                /// Call object connection belongs to
-      H323EndPoint & endpoint,        /// H323 End Point object
       const PString & token,          /// Token for new connection
-      BOOL disableFastStart     /// Flag to prevent fast start operation
-    );
-    H323Connection(
-      OpalCall & call,                /// Call object connection belongs to
-      H323EndPoint & endpoint,        /// H323 End Point object
-      const PString & token,          /// Token for new connection
-      BOOL disableFastStart,    /// Flag to prevent fast start operation
-      BOOL disableTunneling     /// Flag to prevent H.245 tunneling
+      unsigned options = 0      /// Connection option bits
     );
 
     /**Destroy the connection
@@ -412,17 +446,20 @@ class H323Connection : public OpalConnection
       H323SignalPDU & pdu       /// PDU to write.
     );
 
-    /* Handle reading PDU's from the signalling channel.
+    /**Handle reading PDU's from the signalling channel.
+       This is an internal function and is unlikely to be used by applications.
      */
     void HandleSignallingChannel();
 
-    /* Handle PDU from the signalling channel.
+    /**Handle PDU from the signalling channel.
+       This is an internal function and is unlikely to be used by applications.
      */
     virtual BOOL HandleSignalPDU(
       H323SignalPDU & pdu       /// PDU to handle.
     );
 
-    /* Handle Control PDU tunnelled in the signalling channel.
+    /**Handle Control PDU tunnelled in the signalling channel.
+       This is an internal function and is unlikely to be used by applications.
      */
     virtual void HandleTunnelPDU(
       H323SignalPDU * txPDU       /// PDU tunnel response into.
@@ -599,7 +636,28 @@ class H323Connection : public OpalConnection
        A-Party (transferring endpoint) to the B-Party (transferred endpoint).
      */
     void TransferCall(
-      const PString & remoteParty   /// Remote party to transfer the existing call to
+      const PString & remoteParty,   /// Remote party to transfer the existing call to
+      const PString & callIdentity   /// Call Identity of secondary call if present
+    );
+
+    /**Transfer the call through consultation so the remote party in the primary call is connected to
+       the called party in the second call using H.450.2.  This sends a Call Transfer Identify Invoke 
+       message from the A-Party (transferring endpoint) to the C-Party (transferred-to endpoint).
+     */
+    void ConsultationTransfer(
+      const PString & primaryCallToken  /// Primary call
+    );
+
+    /**Handle the reception of a callTransferSetupInvoke APDU whilst a secondary call exists.  This 
+       method checks whether the secondary call is still waiting for a callTransferSetupInvoke APDU and 
+       proceeds to clear the call if the call identies match.
+       This is an internal function and it is not expected the user will call
+       it directly.
+     */
+    void HandleConsultationTransfer(
+      const PString & callIdentity, /**Call Identity of secondary call 
+                                       received in SETUP Message. */
+      H323Connection & incoming     /// Connection upon which SETUP PDU was received.
     );
 
     /**Determine whether this connection is being transferred.
@@ -625,15 +683,37 @@ class H323Connection : public OpalConnection
       */
     int GetCallTransferInvokeId();
 
-   /**Handle the failure of a call transfer operation.
+    /**Handle the failure of a call transfer operation at the Transferred Endpoint.  This method is
+       used to handle the following transfer failure cases that can occur at the Transferred Endpoint. 
+       The cases are:
+       Reception of an Admission Reject
+       Reception of a callTransferSetup return error APDU.
+       Expiry of Call Transfer timer CT-T4.
      */
-   virtual void HandleCallTransferFailure(
-     int returnError    // failure eason
-   );
+    void HandleCallTransferFailure(
+      const int returnError    /// Failure reason code
+    );
 
-    /**Place the call on hold, suspending all media channels (H.450.4)
-    * NOTE: Only Local Hold is implemented so far. 
-    */
+    /**Store the passed token on the current connection's H4502Handler.
+       This is an internal function and it is not expected the user will call
+       it directly.
+     */
+    void SetAssociatedCallToken(
+      const PString & token  /// Associated token
+    );
+
+    /**Callback to indicate a successful transfer through consultation.  The paramter passed is a
+       reference to the existing connection between the Transferring endpoint and Transferred-to 
+       endpoint.
+     */
+    virtual void OnConsultationTransferSuccess(
+      H323Connection & secondaryCall  /// Secondary call for consultation
+    );
+
+    /**Place the call on hold, suspending all media channels (H.450.4).  Note it is the responsibility 
+       of the application layer to delete the MOH Channel if music on hold is provided to the remote
+       endpoint.  So far only Local Hold has been implemented. 
+     */
     void HoldCall(
       BOOL localHold   /// true for Local Hold, false for Remote Hold
     );
@@ -645,7 +725,7 @@ class H323Connection : public OpalConnection
     */
     void RetrieveCall();
 
-    /**Set the alternative media channel.  This channel can be used to provided
+    /**Set the alternative media channel.  This channel can be used to provide
        Media On Hold (MOH) for a near end call hold operation or to provide
        Recorded Voice Anouncements (RVAs).  If this method is not called before
        a call hold operation is attempted, no media on hold will be provided
@@ -671,10 +751,11 @@ class H323Connection : public OpalConnection
       */
     BOOL IsCallOnHold() const;
 
-    /**Send a Call Waiting indication message to the remote endpoint using H.450.6.  The second paramter
-       is used to indicate to the calling user how many additional users are "camped on" the called user.
-       A value of zero indicates to the calling user that he/she is the only user attempting to reach
-       the busy called user.
+    /**Send a Call Waiting indication message to the remote endpoint using
+       H.450.6.  The second paramter is used to indicate to the calling user
+       how many additional users are "camped on" the called user. A value of
+       zero indicates to the calling user that he/she is the only user
+       attempting to reach the busy called user.
      */
     void SendCallWaitingIndication(
       const unsigned nbOfAddWaitingCalls = 0   /// number of additional waiting calls at the served user
@@ -689,6 +770,9 @@ class H323Connection : public OpalConnection
       AnswerCallDeferredWithMedia, /// As for AnswerCallDeferred but starts media channels
       NumAnswerCallResponses
     };
+#if PTRACING
+    friend ostream & operator<<(ostream & o, AnswerCallResponse s);
+#endif
 
     /**Call back for answering an incoming call.
        This function is used for an application to control the answering of
@@ -1785,12 +1869,24 @@ class H323Connection : public OpalConnection
     void SetDestExtraCallInfo(
       const PString & info
     ) { destExtraCallInfo = info; }
+
+    /** Set the remote call waiting flag
+     */
+    void SetRemotCallWaiting(const unsigned value) { remoteCallWaiting = value; }
+
+    /**How many caller's are waiting on the remote endpoint?
+      -1 - None
+       0 - Just this connection
+       n - n plus this connection
+     */
+    const int GetRemoteCallWaiting() const { return remoteCallWaiting; }
   //@}
 
 
   protected:
     H323EndPoint & endpoint;
 
+    int                  remoteCallWaiting; // Number of call's waiting at the remote endpoint
     unsigned             distinctiveRing;
     unsigned             callReference;
     OpalGloballyUniqueID callIdentifier;
@@ -1835,6 +1931,9 @@ class H323Connection : public OpalConnection
     PTime         connectedTime;
     PTime         callEndTime;
 
+    BOOL doH245inSETUP;
+    BOOL lastPDUWasH245inSETUP;
+    BOOL mustSendDRQ;
     BOOL mediaWaitForConnect;
     BOOL transmitterSidePaused;
     BOOL earlyStart;
@@ -1844,6 +1943,7 @@ class H323Connection : public OpalConnection
 
     // Used as part of a local call hold operation involving MOH
     PChannel * holdMediaChannel;
+    BOOL       isConsultationTransfer;
 
     RTP_SessionManager rtpSessions;
 
@@ -1859,7 +1959,6 @@ class H323Connection : public OpalConnection
     OpalMediaStream      * fastStartedTransmitMediaStream;
 
 #if PTRACING
-    friend ostream & operator<<(ostream & out, AnswerCallResponse response);
     static const char * const ConnectionStatesNames[NumConnectionStates];
     friend ostream & operator<<(ostream & o, ConnectionStates s) { return o << ConnectionStatesNames[s]; }
     static const char * const FastStartStateNames[NumFastStartStates];
@@ -1881,9 +1980,11 @@ class H323Connection : public OpalConnection
     H4506Handler                     * h4506handler;
 
   private:
-    void Construct(BOOL disableFastStart, BOOL disableTunneling);
     PChannel * SwapHoldMediaChannels(PChannel * newChannel);
 };
+
+
+PDICTIONARY(H323CallIdentityDict, PString, H323Connection);
 
 
 #endif // __H323_H323CON_H
