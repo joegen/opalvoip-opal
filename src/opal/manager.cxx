@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2026  2004/01/18 15:36:07  rjongbloed
+ * Revision 1.2027  2004/02/19 10:47:06  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.25  2004/01/18 15:36:07  rjongbloed
  * Added stun support
  *
  * Revision 2.24  2003/12/15 11:43:07  rjongbloed
@@ -179,7 +182,8 @@ unsigned OpalGetBuildNumber()
 /////////////////////////////////////////////////////////////////////////////
 
 OpalManager::OpalManager()
-  : mediaFormatOrder(PARRAYSIZE(DefaultMediaFormatOrder), DefaultMediaFormatOrder)
+  : mediaFormatOrder(PARRAYSIZE(DefaultMediaFormatOrder), DefaultMediaFormatOrder),
+    noMediaTimeout(0, 0, 5)      // Minutes
 {
   autoStartReceiveVideo = autoStartTransmitVideo = TRUE;
 
@@ -971,6 +975,18 @@ BOOL OpalManager::SetVideoOutputDevice(const PVideoDevice::OpenArgs & args)
 {
   videoOutputDevice = args;
   return TRUE;
+}
+
+
+BOOL OpalManager::SetNoMediaTimeout(const PTimeInterval & newInterval) 
+{
+  if (newInterval < 10)
+    return FALSE;
+
+  PWaitAndSignal mutex(inUseFlag);
+
+  noMediaTimeout = newInterval; 
+  return TRUE; 
 }
 
 

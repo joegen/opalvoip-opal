@@ -25,8 +25,271 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2028  2003/01/07 06:01:07  robertj
+ * Revision 1.2029  2004/02/19 10:47:06  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.27  2003/01/07 06:01:07  robertj
  * Fixed MSVC warnings.
+ *
+ * Revision 1.135  2003/12/03 06:57:11  csoutheren
+ * Protected against dwarf Q.931 PDUs
+ *
+ * Revision 1.134  2003/04/10 09:45:34  robertj
+ * Added associated transport to new GetInterfaceAddresses() function so
+ *   interfaces can be ordered according to active transport links. Improves
+ *   interoperability.
+ * Replaced old listener GetTransportPDU() with GetInterfaceAddresses()
+ *   and H323SetTransportAddresses() functions.
+ *
+ * Revision 1.133  2003/04/10 00:58:54  craigs
+ * Added functions to access to lists of interfaces
+ *
+ * Revision 1.132  2003/03/26 06:14:31  robertj
+ * More IPv6 support (INADDR_ANY handling), thanks Sébastien Josset
+ *
+ * Revision 1.131  2003/03/21 05:24:54  robertj
+ * Added setting of remote port in UDP transport constructor.
+ *
+ * Revision 1.130  2003/03/20 01:51:12  robertj
+ * More abstraction of H.225 RAS and H.501 protocols transaction handling.
+ *
+ * Revision 1.129  2003/03/11 23:15:23  robertj
+ * Fixed possible double delete of socket (crash) on garbage input.
+ *
+ * Revision 1.128  2003/02/06 04:31:02  robertj
+ * Added more support for adding things to H323TransportAddressArrays
+ *
+ * Revision 1.127  2003/02/05 01:57:18  robertj
+ * Fixed STUN usage on gatekeeper discovery.
+ *
+ * Revision 1.126  2003/02/04 07:06:42  robertj
+ * Added STUN support.
+ *
+ * Revision 1.125  2003/01/23 02:36:32  robertj
+ * Increased (and made configurable) timeout for H.245 channel TCP connection.
+ *
+ * Revision 1.124  2002/12/23 22:46:06  robertj
+ * Changed gatekeeper discovery so an GRJ does not indicate "discovered".
+ *
+ * Revision 1.123  2002/11/21 06:40:00  robertj
+ * Changed promiscuous mode to be three way. Fixes race condition in gkserver
+ *   which can cause crashes or more PDUs to be sent to the wrong place.
+ *
+ * Revision 1.122  2002/11/12 03:14:18  robertj
+ * Fixed gatekeeper discovery so does IP address translation correctly for
+ *   hosts inside the firewall.
+ *
+ * Revision 1.121  2002/11/10 08:10:44  robertj
+ * Moved constants for "well known" ports to better place (OPAL change).
+ *
+ * Revision 1.120  2002/11/05 00:31:48  robertj
+ * Prevented a failure to start separate H.245 channel stopping the call until
+ *   after a CONNECT is received and have no audio. At that point no H.245
+ *   is a useless call and we disconnect.
+ *
+ * Revision 1.119  2002/11/01 03:38:18  robertj
+ * More IPv6 fixes, thanks Sébastien Josset.
+ *
+ * Revision 1.118  2002/10/29 08:30:32  robertj
+ * Fixed problem with simultaneous startH245 condition possibly shutting down
+ *   the call under some circumstances.
+ *
+ * Revision 1.117  2002/10/16 06:28:20  robertj
+ * More IPv6 support changes, especially in unambiguising v6 addresses colons
+ *   from the port fields colon, thanks Sebastien Josset
+ *
+ * Revision 1.116  2002/10/08 23:34:30  robertj
+ * Fixed ip v6 usage on H.245 pdu setting.
+ *
+ * Revision 1.115  2002/10/08 13:08:21  robertj
+ * Changed for IPv6 support, thanks Sébastien Josset.
+ *
+ * Revision 1.114  2002/08/05 10:03:48  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
+ *
+ * Revision 1.113  2002/08/05 05:17:41  robertj
+ * Fairly major modifications to support different authentication credentials
+ *   in ARQ to the logged in ones on RRQ. For both client and server.
+ * Various other H.235 authentication bugs and anomalies fixed on the way.
+ *
+ * Revision 1.112  2002/07/22 09:40:19  robertj
+ * Added ability to automatically convert string arrays, lists sorted lists
+ *   directly to H323TransportAddressArray.
+ *
+ * Revision 1.111  2002/07/18 08:25:47  robertj
+ * Fixed problem in decoding host when '+' was used without port in address.
+ *
+ * Revision 1.110  2002/07/10 01:23:33  robertj
+ * Added extra debugging output
+ *
+ * Revision 1.109  2002/07/02 10:02:32  robertj
+ * Added H323TransportAddress::GetIpAddress() so don't have to provide port
+ *   when you don't need it as in GetIpAndPort(),.
+ *
+ * Revision 1.108  2002/06/28 03:34:29  robertj
+ * Fixed issues with address translation on gatekeeper RAS channel.
+ *
+ * Revision 1.107  2002/06/24 07:35:23  robertj
+ * Fixed ability to do gk discovery on localhost, thanks Artis Kugevics
+ *
+ * Revision 1.106  2002/06/12 03:52:27  robertj
+ * Added function to compare two transport addresses in a more intelligent
+ *   way that strict string comparison. Takes into account wildcarding.
+ *
+ * Revision 1.105  2002/05/28 06:38:08  robertj
+ * Split UDP (for RAS) from RTP port bases.
+ * Added current port variable so cycles around the port range specified which
+ *   fixes some wierd problems on some platforms, thanks Federico Pinna
+ *
+ * Revision 1.104  2002/05/22 07:39:59  robertj
+ * Fixed double increment of port number when making outgoing TCP connection.
+ *
+ * Revision 1.103  2002/04/18 00:18:58  robertj
+ * Increased timeout for thread termination assert, on heavily loaded machines it can
+ *   take more than one second to complete.
+ *
+ * Revision 1.102  2002/04/17 05:36:38  robertj
+ * Fixed problems with using pre-bound inferface/port in gk discovery.
+ *
+ * Revision 1.101  2002/04/12 04:51:28  robertj
+ * Fixed small possibility crashes if open and close transport at same time.
+ *
+ * Revision 1.100  2002/03/08 01:22:30  robertj
+ * Fixed possible use of IsSuspended() on terminated thread causing assert.
+ *
+ * Revision 1.99  2002/03/05 04:49:41  robertj
+ * Fixed leak of thread (and file handles) if get incoming connection aborted
+ *   very early (before receiving a setup PDU), thanks Hans Bjurström
+ *
+ * Revision 1.98  2002/02/28 04:35:43  robertj
+ * Added trace output of the socket handle number when have new connection.
+ *
+ * Revision 1.97  2002/02/28 00:57:03  craigs
+ * Changed SetWriteTimeout to SetReadTimeout in connect, as Craig got it wrong!
+ *
+ * Revision 1.96  2002/02/25 10:55:33  robertj
+ * Added ability to speficy dynamically allocated port in transport address.
+ *
+ * Revision 1.95  2002/02/14 03:36:14  craigs
+ * Added default 10sec timeout on connect to IP addresses
+ * This prevents indefinite hangs when connecting to IP addresses
+ * that don't exist
+ *
+ * Revision 1.94  2002/02/05 23:29:09  robertj
+ * Changed default for H.323 listener to reuse addresses.
+ *
+ * Revision 1.93  2002/02/01 01:48:18  robertj
+ * Fixed ability to shut down a Listener, if it had never been started.
+ *
+ * Revision 1.92  2002/01/02 06:06:43  craigs
+ * Made T.38 UDP socket obey rules
+ *
+ * Revision 1.91  2001/12/22 01:48:40  robertj
+ * Added ability to use local and remote port from transport channel as well
+ *   as explicit port in H.245 address PDU setting routine.
+ * Added PrintOn() to listener and transport for tracing purposes.
+ *
+ * Revision 1.90  2001/12/15 07:12:22  robertj
+ * Added optimisation so if discovering a static gk on same machine as ep is
+ *   running on then uses that specific interface preventing multiple GRQs.
+ *
+ * Revision 1.89  2001/10/11 07:16:49  robertj
+ * Removed port check for gk's that change sockets in mid-stream.
+ *
+ * Revision 1.88  2001/10/09 12:41:20  robertj
+ * Set promiscuous flag back to FALSE after gatkeeper discovery.
+ *
+ * Revision 1.87  2001/09/10 03:06:29  robertj
+ * Major change to fix problem with error codes being corrupted in a
+ *   PChannel when have simultaneous reads and writes in threads.
+ *
+ * Revision 1.86  2001/08/10 11:03:52  robertj
+ * Major changes to H.235 support in RAS to support server.
+ *
+ * Revision 1.85  2001/08/07 02:57:52  robertj
+ * Improved tracing on closing transport.
+ *
+ * Revision 1.84  2001/08/06 03:08:57  robertj
+ * Fission of h323.h to h323ep.h & h323con.h, h323.h now just includes files.
+ *
+ * Revision 1.83  2001/07/17 04:44:32  robertj
+ * Partial implementation of T.120 and T.38 logical channels.
+ *
+ * Revision 1.82  2001/07/06 02:31:15  robertj
+ * Made sure a release complete is sent if no connection is created.
+ *
+ * Revision 1.81  2001/07/04 09:02:07  robertj
+ * Added more tracing
+ *
+ * Revision 1.80  2001/06/25 05:50:22  robertj
+ * Improved error logging on TCP listener.
+ *
+ * Revision 1.79  2001/06/25 02:28:34  robertj
+ * Allowed TCP listener socket to be opened in non-exclusive mode
+ *   (ie SO_REUSEADDR) to avoid daemon restart problems.
+ * Added trailing '+' on H323TransportAddress string to invoke above.
+ *
+ * Revision 1.78  2001/06/22 02:47:12  robertj
+ * Took one too many lines out in previous fix!
+ *
+ * Revision 1.77  2001/06/22 02:40:27  robertj
+ * Fixed discovery so uses new promiscuous mode.
+ * Also used the RAS GRQ address of server isntead of UDP return address
+ *   for address of gatekeeper for future packets.
+ *
+ * Revision 1.76  2001/06/22 01:54:47  robertj
+ * Removed initialisation of localAddress to hosts IP address, does not
+ *   work on multi-homed hosts.
+ *
+ * Revision 1.75  2001/06/22 00:14:46  robertj
+ * Added ConnectTo() function to conencto specific address.
+ * Added promiscuous mode for UDP channel.
+ *
+ * Revision 1.74  2001/06/14 23:18:06  robertj
+ * Change to allow for CreateConnection() to return NULL to abort call.
+ *
+ * Revision 1.73  2001/06/14 04:23:32  robertj
+ * Changed incoming call to pass setup pdu to endpoint so it can create
+ *   different connection subclasses depending on the pdu eg its alias
+ *
+ * Revision 1.72  2001/06/06 00:29:54  robertj
+ * Added trace for when doing TCP connect.
+ *
+ * Revision 1.71  2001/06/02 01:35:32  robertj
+ * Added thread names.
+ *
+ * Revision 1.70  2001/05/31 07:16:52  craigs
+ * Fixed remote address initialisation for incoming H245 channels
+ *
+ * Revision 1.69  2001/05/17 06:37:04  robertj
+ * Added multicast gatekeeper discovery support.
+ *
+ * Revision 1.68  2001/04/13 07:44:51  robertj
+ * Moved starting connection trace message to be on both Connect() and Accept()
+ *
+ * Revision 1.67  2001/04/10 01:21:02  robertj
+ * Added some more error messages into trace log.
+ *
+ * Revision 1.66  2001/04/09 08:44:19  robertj
+ * Added ability to get transport address for a listener.
+ * Added '*' to indicate INADDR_ANY ip address.
+ *
+ * Revision 1.65  2001/03/06 05:03:00  robertj
+ * Changed H.245 channel start failure so does not abort call if there were
+ *   some fast started media streams opened. Just lose user indications.
+ *
+ * Revision 1.64  2001/03/05 04:28:50  robertj
+ * Added net mask to interface info returned by GetInterfaceTable()
+ *
+ * Revision 1.63  2001/02/09 05:13:56  craigs
+ * Added pragma implementation to (hopefully) reduce the executable image size
+ * under Linux
+ *
+ * Revision 1.62  2001/02/08 22:29:39  robertj
+ * Fixed failure to reset fill character in trace log when output interface list.
+ *
+ * Revision 1.61  2001/01/29 06:43:32  robertj
+ * Added printing of entry of interface table.
  *
  * Revision 2.26  2003/01/07 04:39:53  robertj
  * Updated to OpenH323 v1.11.2
@@ -137,6 +400,8 @@
 static const char IpPrefix[] = "ip$"; // For backward compatibility with OpenH323
 static const char TcpPrefix[] = "tcp$";
 static const char UdpPrefix[] = "udp$";
+
+#include <ptclib/pstun.h>
 
 
 ////////////////////////////////////////////////////////////////
@@ -361,6 +626,37 @@ void OpalTransportAddress::SetInternalTransport(WORD port, const char * proto)
 
 /////////////////////////////////////////////////////////////////
 
+void OpalTransportAddressArray::AppendString(const char * str)
+{
+  AppendAddress(OpalTransportAddress(str));
+}
+
+
+void OpalTransportAddressArray::AppendString(const PString & str)
+{
+  AppendAddress(OpalTransportAddress(str));
+}
+
+
+void OpalTransportAddressArray::AppendAddress(const OpalTransportAddress & addr)
+{
+  if (!addr)
+    Append(new OpalTransportAddress(addr));
+}
+
+
+void OpalTransportAddressArray::AppendStringCollection(const PCollection & coll)
+{
+  for (PINDEX i = 0; i < coll.GetSize(); i++) {
+    PObject * obj = coll.GetAt(i);
+    if (obj != NULL && obj->IsDescendant(PString::Class()))
+      AppendAddress(OpalTransportAddress(*(PString *)obj));
+  }
+}
+
+
+/////////////////////////////////////////////////////////////////
+
 PString OpalInternalTransport::GetHostName(const OpalTransportAddress & address) const
 {
   // skip transport identifier
@@ -452,7 +748,7 @@ BOOL OpalInternalIPTransport::GetIpAndPort(const OpalTransportAddress & address,
   }
 
   if (host == "*") {
-    ip = INADDR_ANY;
+    ip = PIPSocket::GetDefaultIpAny();
     return TRUE;
   }
 
@@ -624,6 +920,69 @@ BOOL OpalListener::StartThread(const PNotifier & theAcceptHandler, BOOL isSingle
                            "Opal Listener:%x");
 
   return thread != NULL;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+
+OpalTransportAddressArray OpalGetInterfaceAddresses(const OpalListenerList & listeners,
+                                                    BOOL excludeLocalHost,
+                                                    OpalTransport * associatedTransport)
+{
+  OpalTransportAddressArray interfaceAddresses;
+
+  PINDEX i;
+  for (i = 0; i < listeners.GetSize(); i++) {
+    OpalTransportAddressArray newAddrs = OpalGetInterfaceAddresses(listeners[i].GetTransportAddress(), excludeLocalHost, associatedTransport);
+    PINDEX size  = interfaceAddresses.GetSize();
+    PINDEX nsize = newAddrs.GetSize();
+    interfaceAddresses.SetSize(size + nsize);
+    PINDEX j;
+    for (j = 0; j < nsize; j++)
+      interfaceAddresses.SetAt(size + j, new OpalTransportAddress(newAddrs[j]));
+  }
+
+  return interfaceAddresses;
+}
+
+
+OpalTransportAddressArray OpalGetInterfaceAddresses(const OpalTransportAddress & addr,
+                                                    BOOL excludeLocalHost,
+                                                    OpalTransport * associatedTransport)
+{
+  PIPSocket::Address ip;
+  WORD port;
+  if (!addr.GetIpAndPort(ip, port) || !ip.IsAny())
+    return addr;
+
+  PIPSocket::InterfaceTable interfaces;
+  if (!PIPSocket::GetInterfaceTable(interfaces))
+    return addr;
+
+  if (interfaces.GetSize() == 1)
+    return OpalTransportAddress(interfaces[0].GetAddress(), port);
+
+  PINDEX i;
+  OpalTransportAddressArray interfaceAddresses;
+  PIPSocket::Address firstAddress(0);
+
+  if (associatedTransport != NULL) {
+    if (associatedTransport->GetLocalAddress().GetIpAddress(firstAddress)) {
+      for (i = 0; i < interfaces.GetSize(); i++) {
+        PIPSocket::Address ip = interfaces[i].GetAddress();
+        if (ip == firstAddress)
+          interfaceAddresses.Append(new OpalTransportAddress(ip, port));
+      }
+    }
+  }
+
+  for (i = 0; i < interfaces.GetSize(); i++) {
+    PIPSocket::Address ip = interfaces[i].GetAddress();
+    if (ip != firstAddress && !(excludeLocalHost && ip.IsLoopback()))
+      interfaceAddresses.Append(new OpalTransportAddress(ip, port));
+  }
+
+  return interfaceAddresses;
 }
 
 
@@ -1143,8 +1502,14 @@ BOOL OpalTransportTCP::ReadPDU(PBYTEArray & pdu)
   BYTE header[3];
   BOOL ok = ReadBlock(header, sizeof(header));
   if (ok) {
-    PINDEX packetLength = ((header[1] << 8)|header[2]) - 4;
-    ok = ReadBlock(pdu.GetPointer(packetLength), packetLength);
+    PINDEX packetLength = ((header[1] << 8)|header[2]);
+    if (packetLength < 4) {
+      PTRACE(1, "H323TCP\tDwarf PDU received (length " << packetLength << ")");
+      ok = FALSE;
+    } else {
+      packetLength -= 4;
+      ok = ReadBlock(pdu.GetPointer(packetLength), packetLength);
+    }
   }
 
   SetReadTimeout(oldTimeout);
