@@ -22,7 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: opal_inc.mak,v $
-# Revision 1.2005  2002/09/11 05:55:40  robertj
+# Revision 1.2006  2004/03/11 06:54:25  csoutheren
+# Added ability to disable SIP or H.323 stacks
+#
+# Revision 2.4  2002/09/11 05:55:40  robertj
 # Fixed double inclusion of common.mak
 # Added more directories to search to find pwlib
 #
@@ -70,6 +73,9 @@ endif
 OPAL_SRCDIR = $(OPALDIR)/src
 OPAL_INCDIR = $(OPALDIR)/include
 OPAL_LIBDIR = $(OPALDIR)/lib
+
+OPAL_SIP    = 0
+OPAL_H323   = 1
 
 
 ifdef NOTRACE

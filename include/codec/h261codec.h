@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.h,v $
- * Revision 1.2012  2004/02/19 10:46:43  rjongbloed
+ * Revision 1.2013  2004/03/11 06:54:25  csoutheren
+ * Added ability to disable SIP or H.323 stacks
+ *
+ * Revision 2.11  2004/02/19 10:46:43  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.10  2003/03/17 10:26:59  robertj
@@ -189,12 +192,15 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
+
+#ifndef NO_OPAL_VIDEO
 
 #include <codec/vidcodec.h>
+
+#ifndef NO_H323
 #include <h323/h323caps.h>
-
-#ifndef NO_H323_VIDEO
-
+#endif
 
 class P64Decoder;
 class P64Encoder;
@@ -393,7 +399,7 @@ class Opal_YUV420P_H261 : public OpalVideoTranscoder {
 #endif // __OPAL_H261CODEC_H
 
 
-#endif // NO_H323_VIDEO
+#endif // NO_OPAL_VIDEO
 
 
 /////////////////////////////////////////////////////////////////////////////
