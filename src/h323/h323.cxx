@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2017  2002/01/14 06:35:57  robertj
+ * Revision 1.2018  2002/01/22 05:25:53  robertj
+ * Revamp of user input API triggered by RFC2833 support
+ * Update from OpenH323
+ *
+ * Revision 2.16  2002/01/14 06:35:57  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.15  2002/01/14 02:26:23  robertj
@@ -82,6 +86,12 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.230  2002/01/18 06:01:38  robertj
+ * Added some H323v4 functions (fastConnectRefused & TCS in SETUP)
+ *
+ * Revision 1.229  2002/01/17 07:05:03  robertj
+ * Added support for RFC2833 embedded DTMF in the RTP stream.
  *
  * Revision 1.228  2002/01/14 00:06:51  robertj
  * Added H.450.6, better H.450.2 error handling and  and Music On Hold.
@@ -843,7 +853,8 @@
 #include <h323/gkclient.h>
 #include <h323/h450pdu.h>
 #include <h323/transaddr.h>
-#include <asn/h4504.h>
+#include <opal/patch.h>
+#include <codec/rfc2833.h>
 
 
 #define new PNEW
@@ -1244,7 +1255,7 @@ BOOL H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
 
   if (ok) {
     // Process tunnelled H245 PDU, if present.
-    HandleTunnelPDU();
+    HandleTunnelPDU(NULL);
 
     // Check for establishment criteria met
     InternalEstablishedConnectionCheck();
@@ -1258,18 +1269,32 @@ BOOL H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
 }
 
 
-void H323Connection::HandleTunnelPDU()
+void H323Connection::HandleTunnelPDU(H323SignalPDU * txPDU)
 {
   if (!h245Tunneling || h245TunnelRxPDU == NULL)
     return;
+
+  H323SignalPDU localTunnelPDU;
+  if (txPDU != NULL)
+    h245TunnelTxPDU = txPDU;
+  else {
+    localTunnelPDU.BuildFacility(*this, TRUE);
+    h245TunnelTxPDU = &localTunnelPDU;
+  }
 
   for (PINDEX i = 0; i < h245TunnelRxPDU->m_h323_uu_pdu.m_h245Control.GetSize(); i++) {
     PPER_Stream strm = h245TunnelRxPDU->m_h323_uu_pdu.m_h245Control[i].GetValue();
     HandleControlData(strm);
   }
 
+  h245TunnelTxPDU = NULL;
+
   // Make sure does not get repeated, clear tunnelled H.245 PDU's
   h245TunnelRxPDU->m_h323_uu_pdu.m_h245Control.SetSize(0);
+
+  // If had replies, then send them off in their own packet
+  if (txPDU == NULL && localTunnelPDU.m_h323_uu_pdu.m_h245Control.GetSize() > 0)
+    WriteSignalPDU(localTunnelPDU);
 }
 
 
@@ -1380,8 +1405,14 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
   // Send back a H323 Call Proceeding PDU in case OnIncomingCall() takes a while
   PTRACE(3, "H225\tSending call proceeding PDU");
   H323SignalPDU callProceedingPDU;
-  callProceedingPDU.BuildCallProceeding(*this);
+  H225_CallProceeding_UUIE & callProceeding = callProceedingPDU.BuildCallProceeding(*this);
+
   if (OnSendCallProceeding(callProceedingPDU)) {
+    HandleTunnelPDU(&callProceedingPDU);
+
+    if (fastStartState == FastStartDisabled)
+      callProceeding.IncludeOptionalField(H225_CallProceeding_UUIE::e_fastConnectRefused);
+
     if (!WriteSignalPDU(callProceedingPDU))
       return FALSE;
   }
@@ -1806,8 +1837,10 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
             sendPDU = FALSE;
         }
 
-        if (sendPDU)
+        if (sendPDU) {
+          HandleTunnelPDU(&want245PDU);
           WriteSignalPDU(want245PDU);
+        }
       }
       break;
 
@@ -2011,14 +2044,14 @@ OpalCallEndReason H323Connection::SendSignalSetup(const PString & alias,
   if (h245Tunneling) {
     h245TunnelTxPDU = &setupPDU;
 
-    // Cannot do capability exchange if if fast starting though.
-    if (fastStartChannels.IsEmpty()) {
-      // Try and start the master/slave and capability exchange through the tunnel
-      if (!StartControlNegotiations())
-        return EndedByTransportFail;
-    }
+    // Try and start the master/slave and capability exchange through the tunnel
+    // Note: this used to be disallowed but is now allowed as of H323v4
+    BOOL ok = StartControlNegotiations();
 
     h245TunnelTxPDU = NULL;
+
+    if (!ok)
+      return EndedByTransportFail;
   }
 
   // Send the initial PDU
@@ -2084,14 +2117,13 @@ BOOL H323Connection::SetAlerting(const PString & /*calleeName*/, BOOL withMedia)
 
   alertingTime = PTime();
 
+  HandleTunnelPDU(alertingPDU);
+
+  h450dispatcher->AttachToAlerting(*alertingPDU);
+
   // send Q931 Alerting PDU
   PTRACE(3, "H225\tSending Alerting PDU");
-  h245TunnelTxPDU = alertingPDU;
-  HandleTunnelPDU();
-  h245TunnelTxPDU = NULL;
-  h450dispatcher->AttachToAlerting(*alertingPDU);
   return WriteSignalPDU(*alertingPDU);
-
 }
 
 
@@ -2116,13 +2148,15 @@ BOOL H323Connection::SetConnected()
   h450dispatcher->AttachToConnect(*connectPDU);
 
   if (h245Tunneling) {
+    HandleTunnelPDU(connectPDU);
+
     // If no channels selected (or never provided) do traditional H245 start
     if (fastStartState == FastStartDisabled) {
       h245TunnelTxPDU = connectPDU; // Piggy back H245 on this reply
-      if (!StartControlNegotiations()) 
-        return FALSE;
-      HandleTunnelPDU();
+      BOOL ok = StartControlNegotiations();
       h245TunnelTxPDU = NULL;
+      if (!ok)
+        return FALSE;
     }
   }
   else { // Start separate H.245 channel if not tunneling.
@@ -3113,6 +3147,23 @@ void H323Connection::InternalEstablishedConnectionCheck()
                         capabilityExchangeProcedure->HasSentCapabilities() &&
                         capabilityExchangeProcedure->HasReceivedCapabilities();
 
+  // Check for RFC2833 capability and set payload type
+  if (h245_available) {
+    const char * rfc2833 = H323_UserInputCapability::SubTypeNames[H323_UserInputCapability::SignalToneRFC2833];
+    H323Capability * capability = IsH245Master() ? localCapabilities.FindCapability(rfc2833)
+                                                 : remoteCapabilities.FindCapability(rfc2833);
+    if (capability != NULL)
+      rfc2833Handler->SetPayloadType(((H323_UserInputCapability*)capability)->GetPayloadType());
+    else {
+      // Remote cannot do this, disable that send mode if set
+      if (sendUserInputMode == SendUserInputAsInlineRFC2833)
+        sendUserInputMode = SendUserInputAsTone;
+    }
+
+    // Adjust the send mode according to capabilities
+    SetSendUserInputMode(sendUserInputMode);
+  }
+
   // Check for if all the 245 conditions are met so can start up logical
   // channels and complete the connection establishment.
   if (fastStartState != FastStartAcknowledged) {
@@ -3567,6 +3618,16 @@ BOOL H323Connection::OnCreateLogicalChannel(const H323Capability & capability,
 
 BOOL H323Connection::OnStartLogicalChannel(H323Channel & channel)
 {
+  if (channel.GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
+    OpalMediaPatch * patch = channel.GetMediaStream()->GetPatch();
+    if (patch != NULL) {
+      if (channel.GetNumber().IsFromRemote())
+        patch->AddFilter(rfc2833Handler->GetReceiveHandler());
+      else
+        patch->AddFilter(rfc2833Handler->GetTransmitHandler());
+    }
+  }
+
   return endpoint.OnStartLogicalChannel(*this, channel);
 }
 
@@ -3665,38 +3726,92 @@ BOOL H323Connection::SetBandwidthAvailable(unsigned newBandwidth, BOOL force)
 }
 
 
-void H323Connection::SendUserInputIndication(const H245_UserInputIndication & indication)
+void H323Connection::SetSendUserInputMode(SendUserInputModes mode)
 {
-  H323ControlPDU pdu;
-  H245_UserInputIndication & ind = pdu.Build(H245_IndicationMessage::e_userInput);
-  ind = indication;
-  WriteControlPDU(pdu);
+  OpalConnection::SetSendUserInputMode(mode);
+
+  // If have remote capabilities, then verify we can send selected mode,
+  // otherwise just return and accept it for future validation
+  if (!capabilityExchangeProcedure->HasReceivedCapabilities())
+    return;
+
+  static const H323_UserInputCapability::SubTypes types[NumSendUserInputModes] = {
+    H323_UserInputCapability::BasicString,
+    H323_UserInputCapability::SignalToneH245,
+    H323_UserInputCapability::SignalToneRFC2833
+  };
+
+  if (remoteCapabilities.FindCapability(H323_UserInputCapability::SubTypeNames[types[mode]]) != NULL)
+    return; // Can do the specified mode
+
+  // If no capability then fall back to simple string mode
+  sendUserInputMode = SendUserInputAsString;
 }
 
 
-void H323Connection::SendUserInput(const PString & value)
+BOOL H323Connection::SendUserInputString(const PString & value)
 {
-  PTRACE(2, "H323\tSendUserInput(\"" << value << "\")");
+  if (sendUserInputMode != SendUserInputAsString)
+    return OpalConnection::SendUserInputString(value);
+  else
+    return SendUserInputIndicationString(value);
+}
+
+
+BOOL H323Connection::SendUserInputTone(char tone, unsigned duration)
+{
+  PTRACE(2, "H323\tSendUserInputTone(" << tone << ',' << duration << ')');
+
+  switch (sendUserInputMode) {
+    case SendUserInputAsString :
+      return SendUserInputIndicationString(PString(tone));
+
+    case SendUserInputAsTone :
+      return SendUserInputIndicationTone(tone, duration);
+
+    default :
+      return OpalConnection::SendUserInputTone(tone, duration);
+  }
+}
+
+
+BOOL H323Connection::SendUserInputIndicationString(const PString & value)
+{
+  PTRACE(2, "H323\tSendUserInputIndicationString(\"" << value << "\")");
+
   H323ControlPDU pdu;
   PASN_GeneralString & str = pdu.BuildUserInputIndication(value);
   if (!str.GetValue())
-    WriteControlPDU(pdu);
+    return WriteControlPDU(pdu);
+
+  PTRACE(1, "H323\tInvalid characters for UserInputIndication");
+  return FALSE;
 }
 
 
-void H323Connection::SendUserInputTone(char tone,
-                                       unsigned duration,
-                                       unsigned logicalChannel,
-                                       unsigned rtpTimestamp)
+BOOL H323Connection::SendUserInputIndicationTone(char tone,
+                                                 unsigned duration,
+                                                 unsigned logicalChannel,
+                                                 unsigned rtpTimestamp)
 {
-  PTRACE(2, "H323\tSendUserInputTone("
+  PTRACE(2, "H323\tSendUserInputIndicationTone("
          << tone << ','
          << duration << ','
          << logicalChannel << ','
          << rtpTimestamp << ')');
+
   H323ControlPDU pdu;
   pdu.BuildUserInputIndication(tone, duration, logicalChannel, rtpTimestamp);
-  WriteControlPDU(pdu);
+  return WriteControlPDU(pdu);
+}
+
+
+BOOL H323Connection::SendUserInputIndication(const H245_UserInputIndication & indication)
+{
+  H323ControlPDU pdu;
+  H245_UserInputIndication & ind = pdu.Build(H245_IndicationMessage::e_userInput);
+  ind = indication;
+  return WriteControlPDU(pdu);
 }
 
 
@@ -3706,29 +3821,13 @@ void H323Connection::OnUserInputIndication(const H245_UserInputIndication & ind)
     case H245_UserInputIndication::e_alphanumeric :
       OnUserInputString((const PASN_GeneralString &)ind);
       break;
+
     case H245_UserInputIndication::e_signal :
       const H245_UserInputIndication_signal & sig = ind;
       OnUserInputTone(sig.m_signalType[0],
                       sig.HasOptionalField(H245_UserInputIndication_signal::e_duration)
-                                ? (unsigned)sig.m_duration : 0,
-                      sig.m_rtp.m_logicalChannelNumber,
-                      sig.m_rtp.m_timestamp);
+                                ? (unsigned)sig.m_duration : 0);
   }
-}
-
-
-void H323Connection::OnUserInputString(const PString & value)
-{
-  endpoint.OnUserInputString(*this, value);
-}
-
-
-void H323Connection::OnUserInputTone(char tone,
-                                     unsigned duration,
-                                     unsigned logicalChannel,
-                                     unsigned rtpTimestamp)
-{
-  endpoint.OnUserInputTone(*this, tone, duration, logicalChannel, rtpTimestamp);
 }
 
 
