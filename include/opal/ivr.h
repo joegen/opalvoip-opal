@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.h,v $
- * Revision 1.2002  2003/03/06 03:57:47  robertj
+ * Revision 1.2003  2003/03/07 05:49:54  robertj
+ * Use OpalVXMLSession so OnEndSession() to automatically closes connection.
+ *
+ * Revision 2.1  2003/03/06 03:57:47  robertj
  * IVR support (work in progress) requiring large changes everywhere.
  *
  */
@@ -38,7 +41,7 @@
 #endif
 
 
-#include <ptclib/vxml.h>
+#include <opal/opalvxml.h>
 #include <opal/endpoint.h>
 
 
@@ -242,7 +245,8 @@ class OpalIVRConnection : public OpalConnection
 
   protected:
     OpalIVREndPoint & endpoint;
-    PVXMLSession      vxmlSession;
+    PString           vxmlToLoad;
+    OpalVXMLSession   vxmlSession;
 };
 
 
