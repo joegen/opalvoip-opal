@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjwin32.cxx,v $
- * Revision 1.2011  2004/02/19 10:47:05  rjongbloed
+ * Revision 1.2012  2004/04/09 12:57:28  rjongbloed
+ * Fixed automatic loading of winmm.lib if this module included.
+ *
+ * Revision 2.10  2004/02/19 10:47:05  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.9  2003/03/24 07:18:29  robertj
@@ -446,6 +449,8 @@
 
 #include <lids/QTIoctl.h>
 #include <lids/ixjDefs.h>
+
+#pragma comment(lib, "winmm.lib")
 
 #define NEW_DRIVER_VERSION ((5<<24)|(5<<16)|141)
 
