@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q931.h,v $
- * Revision 1.2007  2002/07/01 04:56:30  robertj
+ * Revision 1.2008  2002/09/04 06:01:47  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.6  2002/07/01 04:56:30  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.5  2002/02/11 09:32:12  robertj
@@ -44,6 +47,16 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.47  2002/09/03 05:42:27  robertj
+ * Normalised the multi-include header prevention ifdef/define symbol.
+ * Removed redundent includes.
+ *
+ * Revision 1.46  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
+ *
+ * Revision 1.45  2002/07/05 03:13:35  robertj
+ * Added copy constructor for Q.931 so makes duplicate instead of reference to IE's.
  *
  * Revision 1.44  2002/05/22 23:12:01  robertj
  * Enhanced the display of Release-Complete cause codes.
@@ -187,8 +200,8 @@
  *
  */
 
-#ifndef __H323_Q931_H
-#define __H323_Q931_H
+#ifndef __OPAL_Q931_H
+#define __OPAL_Q931_H
 
 #ifdef __GNUC__
 #pragma interface
@@ -234,6 +247,7 @@ class Q931 : public PObject
     };
 
     Q931();
+    Q931(const Q931 & other);
     Q931 & operator=(const Q931 & other);
 
     void BuildFacility(int callRef, BOOL fromDest);
@@ -533,7 +547,7 @@ class Q931 : public PObject
 };
 
 
-#endif // __H323_Q931_H
+#endif // __OPAL_Q931_H
 
 
 /////////////////////////////////////////////////////////////////////////////

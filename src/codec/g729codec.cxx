@@ -27,8 +27,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g729codec.cxx,v $
- * Revision 1.2002  2002/07/01 04:56:31  robertj
+ * Revision 1.2003  2002/09/04 06:01:47  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.1  2002/07/01 04:56:31  robertj
  * Updated to OpenH323 v1.9.1
+ *
+ * Revision 1.5  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
  *
  * Revision 1.4  2002/06/27 03:13:11  robertj
  * Added G.729 capabilitity support even though is really G.729A.
@@ -48,7 +54,6 @@
  */
 
 #include <ptlib.h>
-
 
 #ifdef __GNUC__
 #pragma implementation "g729codec.h"

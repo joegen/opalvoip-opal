@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mscodecs.cxx,v $
- * Revision 1.2004  2002/01/22 05:19:42  robertj
+ * Revision 1.2005  2002/09/04 06:01:47  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.3  2002/01/22 05:19:42  robertj
  * Added RTP encoding name string to media format database.
  * Changed time units to clock rate in Hz.
  *
@@ -40,6 +43,15 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.14  2002/09/03 06:03:48  robertj
+ * Added globally accessible functions for media format name.
+ *
+ * Revision 1.13  2002/08/19 00:36:40  craigs
+ * Fixed Clone function
+ *
+ * Revision 1.12  2002/08/05 10:03:48  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
  *
  * Revision 1.11  2001/09/21 02:51:29  robertj
  * Added default session ID to media format description.
@@ -93,7 +105,6 @@
 extern "C" {
 #include "gsm/inc/gsm.h"
 };
-
 
 #define new PNEW
 
@@ -223,7 +234,7 @@ MicrosoftGSMAudioCapability::MicrosoftGSMAudioCapability()
 
 PObject * MicrosoftGSMAudioCapability::Clone() const
 {
-  return new MicrosoftGSMAudioCapability();
+  return new MicrosoftGSMAudioCapability(*this);
 }
 
 
@@ -285,7 +296,7 @@ MicrosoftIMAAudioCapability::MicrosoftIMAAudioCapability()
 
 PObject * MicrosoftIMAAudioCapability::Clone() const
 {
-  return new MicrosoftIMAAudioCapability();
+  return new MicrosoftIMAAudioCapability(*this);
 }
 
 

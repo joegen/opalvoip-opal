@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2012  2002/07/01 04:56:31  robertj
+ * Revision 1.2013  2002/09/04 06:01:47  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.11  2002/07/01 04:56:31  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.10  2002/04/10 08:15:31  robertj
@@ -585,15 +588,15 @@ class OpalManager : public PObject
       const PIPSocket::Address & remoteAddress
     );
 
-    /**Get the TCP port number base for signalling channels
+    /**Get the TCP port number base for H.245 channels
      */
-    WORD GetTCPPortBase() const { return tcpPortBase; }
+    WORD GetTCPPortBase() const { return tcpPorts.base; }
 
-    /**Get the TCP port number max for signalling channels.
+    /**Get the TCP port number base for H.245 channels.
      */
-    WORD GetTCPPortMax() const { return tcpPortMax; }
+    WORD GetTCPPortMax() const { return tcpPorts.max; }
 
-    /**Set the TCP port number base and max for signalling channels.
+    /**Set the TCP port number base and max for H.245 channels.
      */
     void SetTCPPorts(unsigned tcpBase, unsigned tcpMax);
 
@@ -601,15 +604,15 @@ class OpalManager : public PObject
      */
     WORD GetNextTCPPort();
 
-    /**Get the UDP port number base for media (eg RTP) channels.
+    /**Get the UDP port number base for RAS channels
      */
-    WORD GetUDPPortBase() const { return udpPortBase; }
+    WORD GetUDPPortBase() const { return udpPorts.base; }
 
-    /**Get the max UDP port number for media (eg RTP) channels.
+    /**Get the UDP port number base for RAS channels.
      */
-    WORD GetUDPPortMax() const { return udpPortMax; }
+    WORD GetUDPPortMax() const { return udpPorts.max; }
 
-    /**Set the base and max UDP port number for media (eg RTP) channels.
+    /**Set the TCP port number base and max for H.245 channels.
      */
     void SetUDPPorts(unsigned udpBase, unsigned udpMax);
 
@@ -619,11 +622,11 @@ class OpalManager : public PObject
 
     /**Get the UDP port number base for RTP channels.
      */
-    WORD GetRtpIpPortBase() const { return rtpIpPortBase; }
+    WORD GetRtpIpPortBase() const { return rtpIpPorts.base; }
 
     /**Get the max UDP port number for RTP channels.
      */
-    WORD GetRtpIpPortMax() const { return rtpIpPortMax; }
+    WORD GetRtpIpPortMax() const { return rtpIpPorts.max; }
 
     /**Set the UDP port number base and max for RTP channels.
      */
@@ -681,14 +684,28 @@ class OpalManager : public PObject
     BOOL         autoStartReceiveVideo;
     BOOL         autoStartTransmitVideo;
     PMutex       ipPortMutex;
-    WORD         udpPort, udpPortBase, udpPortMax;
-    WORD         tcpPort, tcpPortBase, tcpPortMax;
-    WORD         rtpIpPort, rtpIpPortBase, rtpIpPortMax;
     BYTE         rtpIpTypeofService;
     WORD         maxAudioDelayJitter;
     PStringArray mediaFormatOrder;
     PStringArray mediaFormatMask;
     BOOL         disableDetectInBandDTMF;
+
+    struct PortInfo {
+      void Set(
+        unsigned base,
+        unsigned max,
+        unsigned range,
+        unsigned dflt
+      );
+      WORD GetNext(
+        unsigned increment
+      );
+
+      PMutex mutex;
+      WORD   base;
+      WORD   max;
+      WORD   current;
+    } tcpPorts, udpPorts, rtpIpPorts;
 
     // Dynamic variables
     PMutex inUseFlag;

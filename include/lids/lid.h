@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.h,v $
- * Revision 1.2005  2002/07/01 04:56:30  robertj
+ * Revision 1.2006  2002/09/04 06:01:47  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.4  2002/07/01 04:56:30  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.3  2002/02/11 09:32:12  robertj
@@ -41,6 +44,12 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.50  2002/09/03 06:19:37  robertj
+ * Normalised the multi-include header prevention ifdef/define symbol.
+ *
+ * Revision 1.49  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
  *
  * Revision 1.48  2002/06/27 08:52:53  robertj
  * Fixed typo and naming convention for Cisco G.723.1 annex A capability.
@@ -206,8 +215,8 @@
  *
  */
 
-#ifndef __LIDS_LID_H
-#define __LIDS_LID_H
+#ifndef __OPAL_LID_H
+#define __OPAL_LID_H
 
 #ifdef __GNUC__
 #pragma interface
@@ -1442,7 +1451,7 @@ class OpalLine : public PObject
 PLIST(OpalLineList, OpalLine);
 
 
-#endif // __LIDS_LID_H
+#endif // __OPAL_LID_H
 
 
 // End of File ///////////////////////////////////////////////////////////////

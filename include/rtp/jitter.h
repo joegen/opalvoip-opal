@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.h,v $
- * Revision 1.2003  2002/04/15 08:50:14  robertj
+ * Revision 1.2004  2002/09/04 06:01:47  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.2  2002/04/15 08:50:14  robertj
  * Added buffer reset on excess buffer overruns.
  *
  * Revision 2.1  2001/10/05 00:22:13  robertj
@@ -35,6 +38,14 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.10  2002/09/03 05:40:18  robertj
+ * Normalised the multi-include header prevention ifdef/define symbol.
+ * Added buffer reset on excess buffer overruns.
+ * Added ability to get buffer overruns for statistics display.
+ *
+ * Revision 1.9  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
  *
  * Revision 1.8  2001/09/11 00:21:21  robertj
  * Fixed missing stack sizes in endpoint for cleaner thread and jitter thread.
@@ -62,8 +73,8 @@
  *
  */
 
-#ifndef __RTP_JITTER_H
-#define __RTP_JITTER_H
+#ifndef __OPAL_JITTER_H
+#define __OPAL_JITTER_H
 
 #ifdef __GNUC__
 #pragma interface
@@ -158,7 +169,7 @@ class RTP_JitterBuffer : public PThread
 };
 
 
-#endif // __RTP_JITTER_H
+#endif // __OPAL_JITTER_H
 
 
 /////////////////////////////////////////////////////////////////////////////
