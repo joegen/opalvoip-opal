@@ -272,7 +272,7 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="opal.dtf">
+			RelativePath="opal_2003.dtf">
 			<FileConfiguration
 				Name="No Trace|Win32"
 				ExcludedFromBuild="TRUE">
@@ -319,7 +319,7 @@ copy &quot;$(InputPath)&quot;+nul &quot;$(IntDir)\$(TargetName).def&quot;  &gt; 
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="opald.dtf">
+			RelativePath="opald_2003.dtf">
 			<FileConfiguration
 				Name="No Trace|Win32"
 				ExcludedFromBuild="TRUE">
@@ -366,7 +366,7 @@ copy &quot;$(InputPath)&quot;+nul &quot;$(IntDir)\$(TargetName).def&quot;  &gt; 
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="opaln.dtf">
+			RelativePath="opaln_2003.dtf">
 			<FileConfiguration
 				Name="No Trace|Win32">
 				<Tool
