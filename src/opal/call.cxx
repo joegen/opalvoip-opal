@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2011  2002/01/22 05:11:34  robertj
+ * Revision 1.2012  2002/02/11 07:41:37  robertj
+ * Added media bypass for streams between compatible protocols.
+ *
+ * Revision 2.10  2002/01/22 05:11:34  robertj
  * Revamp of user input API triggered by RFC2833 support
  *
  * Revision 2.9  2002/01/14 02:23:00  robertj
@@ -343,6 +346,8 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
   BOOL patchedOne = FALSE;
 
   OpalMediaPatch * patch = manager.CreateMediaPatch(source);
+  if (patch == NULL)
+    return FALSE;
 
   inUseFlag.Wait();
 
@@ -360,6 +365,45 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
   inUseFlag.Signal();
 
   return patchedOne;
+}
+
+
+BOOL OpalCall::CanDoMediaBypass(const OpalConnection & connection, unsigned sessionID)
+{
+  PTRACE(3, "Call\tCanDoMediaBypass " << connection << " session " << sessionID);
+
+  PWaitAndSignal mutex(inUseFlag);
+
+  if (activeConnections.GetSize() == 2) {
+    for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
+      OpalConnection & conn = activeConnections[i];
+      if (&connection != &conn)
+        return manager.CanDoMediaBypass(connection, conn, sessionID);
+    }
+  }
+
+  return FALSE;
+}
+
+
+BOOL OpalCall::GetMediaTransportAddress(const OpalConnection & connection,
+                                        unsigned sessionID,
+                                        OpalTransportAddress & data,
+                                        OpalTransportAddress & control)
+{
+  PTRACE(3, "Call\tGetMediaTransportAddress " << connection << " session " << sessionID);
+
+  PWaitAndSignal mutex(inUseFlag);
+
+  if (activeConnections.GetSize() == 2) {
+    for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
+      OpalConnection & conn = activeConnections[i];
+      if (&connection != &conn)
+        return conn.GetMediaTransportAddress(sessionID, data, control);
+    }
+  }
+
+  return FALSE;
 }
 
 
