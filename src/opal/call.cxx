@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2006  2001/10/15 04:33:17  robertj
+ * Revision 1.2007  2001/11/06 05:33:52  robertj
+ * Added fail safe starting of media streams on CONNECT
+ *
+ * Revision 2.5  2001/10/15 04:33:17  robertj
  * Removed answerCall signal and replaced with state based functions.
  *
  * Revision 2.4  2001/10/04 05:43:44  craigs
@@ -193,9 +196,20 @@ void OpalCall::OnConnected(OpalConnection & connection)
 
   inUseFlag.Signal();
 
-  OpenSourceMediaStreams(connection, connection.GetMediaFormats(), OpalMediaFormat::DefaultAudioSessionID);
-  if (manager.CanAutoStartTransmitVideo())
-    OpenSourceMediaStreams(connection, connection.GetMediaFormats(), OpalMediaFormat::DefaultVideoSessionID);
+  BOOL createdOne = OpenSourceMediaStreams(connection, connection.GetMediaFormats(), OpalMediaFormat::DefaultAudioSessionID);
+  if (manager.CanAutoStartTransmitVideo()) {
+    if (OpenSourceMediaStreams(connection, connection.GetMediaFormats(), OpalMediaFormat::DefaultVideoSessionID))
+      createdOne = TRUE;
+  }
+
+  if (createdOne) {
+    inUseFlag.Wait();
+
+    for (PINDEX i = 0; i < activeConnections.GetSize(); i++)
+      activeConnections[i].StartMediaStreams();
+
+    inUseFlag.Signal();
+  }
 }
 
 
@@ -325,10 +339,6 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
   }
 
   inUseFlag.Signal();
-
-  //%%%%%%%%%%%%%%%%
-  //if (patchedOne)
-  //  patch->Resume();
 
   return patchedOne;
 }
