@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2017  2002/03/22 06:57:49  robertj
+ * Revision 1.2018  2002/04/15 08:51:42  robertj
+ * Fixed correct setting of jitter buffer size in RTP media stream.
+ *
+ * Revision 2.16  2002/03/22 06:57:49  robertj
  * Updated to OpenH323 version 1.8.2
  *
  * Revision 2.15  2002/02/19 07:45:28  robertj
@@ -957,7 +960,8 @@ H323_RTPChannel::H323_RTPChannel(H323Connection & conn,
     rtpSession(r),
     rtpCallbacks(*(H323_RTP_Session *)r.GetUserData())
 {
-  mediaStream = new OpalRTPMediaStream(receiver, rtpSession);
+  mediaStream = new OpalRTPMediaStream(receiver, rtpSession,
+                                       endpoint.GetManager().GetMaxAudioDelayJitter());
   PTRACE(3, "H323RTP\t" << (receiver ? "Receiver" : "Transmitter")
          << " created using session " << GetSessionID());
 }
