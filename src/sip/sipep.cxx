@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2007  2002/07/04 07:41:47  robertj
+ * Revision 1.2008  2002/09/12 06:58:34  robertj
+ * Removed protocol prefix strings as static members as has problems with
+ *   use in DLL environment.
+ *
+ * Revision 2.6  2002/07/04 07:41:47  robertj
  * Fixed memory/thread leak of transports.
  *
  * Revision 2.5  2002/04/10 03:15:17  robertj
@@ -271,7 +275,7 @@ BOOL SIPEndPoint::Register(const PString & server)
   if (listeners.IsEmpty())
     return FALSE;
 
-  OpalTransportAddress address(server, defaultSignalPort, OpalTransportAddress::UdpPrefix);
+  OpalTransportAddress address(server, defaultSignalPort, "udp");
 
   OpalTransport * transport = address.CreateTransport(*this, OpalTransportAddress::NoBinding);
   transport->ConnectTo(address);
