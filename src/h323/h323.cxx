@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2026  2002/03/27 02:21:51  robertj
+ * Revision 1.2027  2002/04/09 00:17:59  robertj
+ * Changed "callAnswered" to better description of "originating".
+ *
+ * Revision 2.25  2002/03/27 02:21:51  robertj
  * Updated to OpenH323 v1.8.4
  *
  * Revision 2.24  2002/03/26 23:40:05  robertj
@@ -1033,7 +1036,6 @@ H323Connection::H323Connection(OpalCall & call,
     connectedTime(0),
     callEndTime(0)
 {
-  callAnswered = FALSE;
   distinctiveRing = 0;
   callReference = UINT_MAX;
   remoteCallWaiting = -1;
@@ -1235,7 +1237,7 @@ PString H323Connection::GetDestinationAddress()
 
 void H323Connection::AttachSignalChannel(OpalTransport * channel, BOOL answeringCall)
 {
-  callAnswered = answeringCall;
+  originating = !answeringCall;
 
   if (signallingChannel != NULL && signallingChannel->IsOpen()) {
     PAssertAlways(PLogicError);
@@ -3331,7 +3333,7 @@ static void SetRFC2833PayloadType(H323Connection & connection,
 void H323Connection::OnSendCapabilitySet(H245_TerminalCapabilitySet & /*pdu*/)
 {
   // If we originated call, then check for RFC2833 capability and set payload type
-  if (!callAnswered)
+  if (!HadAnsweredCall())
     SetRFC2833PayloadType(*this, localCapabilities, *rfc2833Handler);
 }
 
@@ -3381,7 +3383,7 @@ BOOL H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remoteCaps
         capabilityExchangeProcedure->Start(FALSE);
 
       // If we terminated call, then check for RFC2833 capability and set payload type
-      if (callAnswered)
+      if (HadAnsweredCall())
         SetRFC2833PayloadType(*this, remoteCapabilities, *rfc2833Handler);
       else
         SetSendUserInputMode(sendUserInputMode);
