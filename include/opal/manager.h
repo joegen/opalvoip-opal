@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2010  2002/02/19 07:42:50  robertj
+ * Revision 1.2011  2002/04/10 08:15:31  robertj
+ * Added functions to set ports.
+ *
+ * Revision 2.9  2002/02/19 07:42:50  robertj
  * Restructured media bypass functions to fix problems with RFC2833.
  *
  * Revision 2.8  2002/02/11 07:38:55  robertj
@@ -553,9 +556,13 @@ class OpalManager : public PObject
      */
     WORD GetTCPPortBase() const { return tcpPortBase; }
 
-    /**Get the TCP port number base for signalling channels.
+    /**Get the TCP port number max for signalling channels.
      */
     WORD GetTCPPortMax() const { return tcpPortMax; }
+
+    /**Set the TCP port number base and max for signalling channels.
+     */
+    void SetTCPPorts(unsigned tcpBase, unsigned tcpMax);
 
     /**Get the UDP port number base for media (eg RTP) channels.
      */
@@ -564,6 +571,10 @@ class OpalManager : public PObject
     /**Get the max UDP port number for media (eg RTP) channels.
      */
     WORD GetUDPPortMax() const { return udpPortMax; }
+
+    /**Set the base and max UDP port number for media (eg RTP) channels.
+     */
+    void SetUDPPorts(unsigned udpBase, unsigned udpMax);
 
     /**Provide address translation hook.
      */

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2013  2002/04/08 02:40:13  robertj
+ * Revision 1.2014  2002/04/10 08:15:31  robertj
+ * Added functions to set ports.
+ *
+ * Revision 2.12  2002/04/08 02:40:13  robertj
  * Fixed issues with using double originate call, eg from simple app command line.
  *
  * Revision 2.11  2002/02/19 07:49:47  robertj
@@ -465,6 +468,42 @@ void OpalManager::OnUserInputTone(OpalConnection & connection,
                                   int duration)
 {
   connection.GetCall().OnUserInputTone(connection, tone, duration);
+}
+
+
+static void LimitPorts(unsigned & pBase, unsigned & pMax, unsigned range)
+{
+  if (pBase < 1024)
+    pBase = 1024;
+  else if (pBase > 65500)
+    pBase = 65500;
+
+  if (pMax <= pBase)
+    pMax = pBase + range;
+  if (pMax > 65535)
+    pMax = 65535;
+}
+
+
+void OpalManager::SetTCPPorts(unsigned tcpBase, unsigned tcpMax)
+{
+  if (tcpBase == 0)
+    tcpPortBase = tcpPortMax = 0;
+  else {
+    LimitPorts(tcpBase, tcpMax, 99);
+
+    tcpPortBase = (WORD)tcpBase;
+    tcpPortMax = (WORD)tcpMax;
+  }
+}
+
+
+void OpalManager::SetUDPPorts(unsigned udpBase, unsigned udpMax)
+{
+  LimitPorts(udpBase, udpMax, 399);
+
+  udpPortBase = (WORD)udpBase;
+  udpPortMax  = (WORD)udpMax;
 }
 
 
