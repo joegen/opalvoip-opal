@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2006  2002/01/14 06:35:57  robertj
+ * Revision 1.2007  2002/01/22 05:29:12  robertj
+ * Revamp of user input API triggered by RFC2833 support
+ * Update from OpenH323
+ *
+ * Revision 2.5  2002/01/14 06:35:57  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.4  2002/01/14 02:22:03  robertj
@@ -45,6 +49,12 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.44  2002/01/17 07:05:03  robertj
+ * Added support for RFC2833 embedded DTMF in the RTP stream.
+ *
+ * Revision 1.43  2002/01/16 05:38:04  robertj
+ * Added missing mode change functions on non standard capabilities.
  *
  * Revision 1.42  2002/01/10 05:13:54  robertj
  * Added support for external RTP stacks, thanks NuMind Software Systems.
@@ -852,6 +862,12 @@ BOOL H323NonStandardAudioCapability::OnSendingPDU(H245_AudioCapability & pdu,
 }
 
 
+BOOL H323NonStandardAudioCapability::OnSendingPDU(H245_AudioMode & pdu) const
+{
+  return OnSendingNonStandardPDU(pdu, H245_AudioMode::e_nonStandard);
+}
+
+
 BOOL H323NonStandardAudioCapability::OnReceivedPDU(const H245_AudioCapability & pdu,
                                                    unsigned &)
 {
@@ -1002,6 +1018,12 @@ BOOL H323NonStandardVideoCapability::OnSendingPDU(H245_VideoCapability & pdu) co
 }
 
 
+BOOL H323NonStandardVideoCapability::OnSendingPDU(H245_VideoMode & pdu) const
+{
+  return OnSendingNonStandardPDU(pdu, H245_VideoMode::e_nonStandard);
+}
+
+
 BOOL H323NonStandardVideoCapability::OnReceivedPDU(const H245_VideoCapability & pdu)
 {
   return OnReceivedNonStandardPDU(pdu, H245_VideoCapability::e_nonStandard);
@@ -1142,6 +1164,12 @@ unsigned H323NonStandardDataCapability::GetSubType() const
 BOOL H323NonStandardDataCapability::OnSendingPDU(H245_DataApplicationCapability & pdu) const
 {
   return OnSendingNonStandardPDU(pdu.m_application, H245_DataApplicationCapability_application::e_nonStandard);
+}
+
+
+BOOL H323NonStandardDataCapability::OnSendingPDU(H245_DataMode & pdu) const
+{
+  return OnSendingNonStandardPDU(pdu.m_application, H245_DataMode_application::e_nonStandard);
 }
 
 
@@ -1343,34 +1371,58 @@ BOOL H323_GSM0610Capability::OnReceivedPDU(const H245_AudioCapability & cap,
 
 /////////////////////////////////////////////////////////////////////////////
 
-#define USERINPUT_BASICSTRING "UserInput/basicString"
-static OpalMediaFormat UserInput_basicString(USERINPUT_BASICSTRING, 0, RTP_DataFrame::MaxPayloadType, FALSE, 1);
-
-#define USERINPUT_IA5STRING "UserInput/iA5String"
-static OpalMediaFormat UserInput_iA5String(USERINPUT_IA5STRING, 0, RTP_DataFrame::MaxPayloadType, FALSE, 1);
-
-#define USERINPUT_GENERALSTRING "UserInput/generalString"
-static OpalMediaFormat UserInput_generalString(USERINPUT_GENERALSTRING, 0, RTP_DataFrame::MaxPayloadType, FALSE, 1);
-
-#define USERINPUT_DTMF "UserInput/dtmf"
-static OpalMediaFormat UserInput_dtmf(USERINPUT_DTMF, 0, RTP_DataFrame::MaxPayloadType, FALSE, 1);
-
-#define USERINPUT_HOOKFLASH "UserInput/hookflash"
-static OpalMediaFormat UserInput_hookflash(USERINPUT_HOOKFLASH, 0, RTP_DataFrame::MaxPayloadType, FALSE, 1);
-
-static const char * const UserInputName[6] = {
-  "",
-  USERINPUT_BASICSTRING,
-  USERINPUT_IA5STRING,
-  USERINPUT_GENERALSTRING,
-  USERINPUT_DTMF,
-  USERINPUT_HOOKFLASH
+const char * const H323_UserInputCapability::SubTypeNames[NumSubTypes] = {
+  "UserInput/basicString",
+  "UserInput/iA5String",
+  "UserInput/generalString",
+  "UserInput/dtmf",
+  "UserInput/hookflash",
+  "UserInput/RFC2833"
 };
 
-H323_UserInputCapability::H323_UserInputCapability(unsigned _subType)
-  : H323Capability(_subType < PARRAYSIZE(UserInputName) ? UserInputName[_subType] : "")
+static OpalMediaFormat const UserInput_basicString(
+  H323_UserInputCapability::SubTypeNames[H323_UserInputCapability::BasicString],
+  0, RTP_DataFrame::IllegalPayloadType, NULL, FALSE, 1
+);
+
+static OpalMediaFormat const UserInput_iA5String(
+  H323_UserInputCapability::SubTypeNames[H323_UserInputCapability::IA5String],
+  0, RTP_DataFrame::IllegalPayloadType, NULL, FALSE, 1
+);
+
+static OpalMediaFormat const UserInput_generalString(
+  H323_UserInputCapability::SubTypeNames[H323_UserInputCapability::GeneralString],
+  0, RTP_DataFrame::IllegalPayloadType, NULL, FALSE, 1
+);
+
+static OpalMediaFormat const UserInput_dtmf(
+  H323_UserInputCapability::SubTypeNames[H323_UserInputCapability::SignalToneH245],
+  0, RTP_DataFrame::IllegalPayloadType, NULL, FALSE, 1
+);
+
+static OpalMediaFormat const UserInput_hookflash(
+  H323_UserInputCapability::SubTypeNames[H323_UserInputCapability::HookFlashH245],
+  0, RTP_DataFrame::IllegalPayloadType, NULL, FALSE, 1
+);
+
+static OpalMediaFormat const UserInput_RFC2833(
+  H323_UserInputCapability::SubTypeNames[H323_UserInputCapability::SignalToneRFC2833],
+  OpalMediaFormat::DefaultAudioSessionID,
+  RTP_DataFrame::DynamicBase,
+  "telephone-event",
+  TRUE,   // Needs jitter
+  32*(1000/50), // bits/sec  (32 bits every 50ms)
+  4,      // bytes/frame
+  150*8,  // 150 millisecond
+  OpalMediaFormat::AudioClockRate
+);
+
+
+H323_UserInputCapability::H323_UserInputCapability(SubTypes _subType)
+  : H323Capability(H323_UserInputCapability::SubTypeNames[_subType])
 {
   subType = _subType;
+  rfc2833PayloadType = UserInput_RFC2833.GetPayloadType();
 }
 
 
@@ -1386,9 +1438,20 @@ H323Capability::MainTypes H323_UserInputCapability::GetMainType() const
 }
 
 
+#define SignalToneRFC2833_SubType 10000
+
+static unsigned UserInputCapabilitySubTypeCodes[] = {
+  H245_UserInputCapability::e_basicString,
+  H245_UserInputCapability::e_iA5String,
+  H245_UserInputCapability::e_generalString,
+  H245_UserInputCapability::e_dtmf,
+  H245_UserInputCapability::e_hookflash,
+  SignalToneRFC2833_SubType
+};
+
 unsigned  H323_UserInputCapability::GetSubType()  const
 {
-  return subType;
+  return UserInputCapabilitySubTypeCodes[subType];
 }
 
 
@@ -1404,9 +1467,17 @@ H323Channel * H323_UserInputCapability::CreateChannel(H323Connection &,
 
 BOOL H323_UserInputCapability::OnSendingPDU(H245_Capability & pdu) const
 {
-  pdu.SetTag(H245_Capability::e_receiveUserInputCapability);
-  H245_UserInputCapability & ui = pdu;
-  ui.SetTag(subType);
+  if (subType == SignalToneRFC2833) {
+    pdu.SetTag(H245_Capability::e_receiveRTPAudioTelephonyEventCapability);
+    H245_AudioTelephonyEventCapability & atec = pdu;
+    atec.m_dynamicRTPPayloadType = rfc2833PayloadType;
+    atec.m_audioTelephoneEvent = "0-16"; // Support DTMF 0-9,*,#,A-D & hookflash
+  }
+  else {
+    pdu.SetTag(H245_Capability::e_receiveUserInputCapability);
+    H245_UserInputCapability & ui = pdu;
+    ui.SetTag(UserInputCapabilitySubTypeCodes[subType]);
+  }
   return TRUE;
 }
 
@@ -1429,12 +1500,19 @@ BOOL H323_UserInputCapability::OnReceivedPDU(const H245_Capability & pdu)
 {
   H323Capability::OnReceivedPDU(pdu);
 
+  if (pdu.GetTag() == H245_Capability::e_receiveRTPAudioTelephonyEventCapability) {
+    subType = SignalToneRFC2833;
+    const H245_AudioTelephonyEventCapability & atec = pdu;
+    rfc2833PayloadType = (RTP_DataFrame::PayloadTypes)(int)atec.m_dynamicRTPPayloadType;
+    // Really should verify atec.m_audioTelephoneEvent here
+    return TRUE;
+  }
+
   if (pdu.GetTag() != H245_Capability::e_receiveUserInputCapability)
     return FALSE;
 
   const H245_UserInputCapability & ui = pdu;
-  subType = ui.GetTag();
-  return TRUE;
+  return ui.GetTag() == UserInputCapabilitySubTypeCodes[subType];
 }
 
 
@@ -1449,7 +1527,7 @@ void H323_UserInputCapability::AddAllCapabilities(H323Capabilities & capabilitie
                                                   PINDEX descriptorNum,
                                                   PINDEX simultaneous)
 {
-  PINDEX num = capabilities.SetCapability(descriptorNum, simultaneous, new H323_UserInputCapability(H245_UserInputCapability::e_hookflash));
+  PINDEX num = capabilities.SetCapability(descriptorNum, simultaneous, new H323_UserInputCapability(HookFlashH245));
   if (descriptorNum == P_MAX_INDEX) {
     descriptorNum = num;
     simultaneous = P_MAX_INDEX;
@@ -1457,11 +1535,12 @@ void H323_UserInputCapability::AddAllCapabilities(H323Capabilities & capabilitie
   else if (simultaneous == P_MAX_INDEX)
     simultaneous = num+1;
 
-  num = capabilities.SetCapability(descriptorNum, simultaneous, new H323_UserInputCapability(H245_UserInputCapability::e_basicString));
+  num = capabilities.SetCapability(descriptorNum, simultaneous, new H323_UserInputCapability(BasicString));
   if (simultaneous == P_MAX_INDEX)
     simultaneous = num;
 
-  capabilities.SetCapability(descriptorNum, simultaneous, new H323_UserInputCapability(H245_UserInputCapability::e_dtmf));
+  capabilities.SetCapability(descriptorNum, simultaneous, new H323_UserInputCapability(SignalToneH245));
+  capabilities.SetCapability(descriptorNum, simultaneous, new H323_UserInputCapability(SignalToneRFC2833));
 }
 
 
@@ -1856,6 +1935,9 @@ H323Capability * H323Capabilities::FindCapability(const H245_Capability & cap) c
       const H245_UserInputCapability & ui = cap;
       return FindCapability(H323Capability::e_UserInput, ui, H245_UserInputCapability::e_nonStandard);
     }
+
+    case H245_Capability::e_receiveRTPAudioTelephonyEventCapability :
+      return FindCapability(H323Capability::e_UserInput, SignalToneRFC2833_SubType);
 
     default :
       break;
