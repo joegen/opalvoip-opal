@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.h,v $
- * Revision 1.2007  2004/07/11 12:42:10  rjongbloed
+ * Revision 1.2008  2004/07/15 12:32:29  rjongbloed
+ * Various enhancements to the VXML code
+ *
+ * Revision 2.6  2004/07/11 12:42:10  rjongbloed
  * Added function on endpoints to get the list of all media formats any
  *   connection the endpoint may create can support.
  *
@@ -158,9 +161,14 @@ class OpalIVREndPoint : public OpalEndPoint
       const PString & vxml
     );
 
+    void SetDefaultMediaFormats(
+      const OpalMediaFormatList & formats
+    );
+
   protected:
-    unsigned nextTokenNumber;
-    PString  defaultVXML;
+    unsigned            nextTokenNumber;
+    PString             defaultVXML;
+    OpalMediaFormatList defaultMediaFormats;
 };
 
 
@@ -264,9 +272,10 @@ class OpalIVRConnection : public OpalConnection
     virtual void InitiateCall();
 
   protected:
-    OpalIVREndPoint & endpoint;
-    PString           vxmlToLoad;
-    OpalVXMLSession   vxmlSession;
+    OpalIVREndPoint   & endpoint;
+    PString             vxmlToLoad;
+    OpalMediaFormatList vxmlMediaFormats;
+    OpalVXMLSession     vxmlSession;
 };
 
 
