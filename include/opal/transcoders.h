@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 1.2002  2001/08/01 05:52:08  robertj
+ * Made OpalMediaFormatList class global to help with documentation.
+ * Added functions to aid in determining if a transcoder can be used to get
+ *   to another media format.
+ * Fixed problem with streamed transcoder used in G.711.
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  */
@@ -190,8 +196,8 @@ class OpalTranscoder : public PObject
       */
     static BOOL SelectFormats(
       unsigned sessionID,               /// Session ID for media formats
-      const OpalMediaFormat::List & srcFormats, /// Names of possible source formats
-      const OpalMediaFormat::List & dstFormats, /// Names of possible destination formats
+      const OpalMediaFormatList & srcFormats, /// Names of possible source formats
+      const OpalMediaFormatList & dstFormats, /// Names of possible destination formats
       OpalMediaFormat & srcFormat,      /// Selected source format to be used
       OpalMediaFormat & dstFormat       /// Selected destination format to be used
     );
@@ -208,6 +214,18 @@ class OpalTranscoder : public PObject
       const OpalMediaFormat & srcFormat,    /// Selected destination format to be used
       const OpalMediaFormat & dstFormat,    /// Selected destination format to be used
       OpalMediaFormat & intermediateFormat  /// Intermediate format that can be used
+    );
+
+    /**Get a list of possible destination media formats for the destination.
+      */
+    static OpalMediaFormatList GetDestinationFormats(
+      const OpalMediaFormat & srcFormat    /// Selected source format
+    );
+
+    /**Get a list of possible source media formats for the destination.
+      */
+    static OpalMediaFormatList GetSourceFormats(
+      const OpalMediaFormat & dstFormat    /// Selected destination format
     );
   //@}
 
@@ -296,12 +314,23 @@ class OpalStreamedTranscoder : public OpalTranscoder
     OpalStreamedTranscoder(
       const OpalTranscoderRegistration & registration, /// Registration fro transcoder
       unsigned inputBits,           /// Bits per sample in input data
-      unsigned outputBits           /// Bits per sample in output data
+      unsigned outputBits,          /// Bits per sample in output data
+      unsigned optimalSamples       /// Optimal number of samples for read
     );
   //@}
 
   /**@name Operations */
   //@{
+    /**Get the optimal size for data frames to be converted.
+       This function returns the size of frames that will be most efficient
+       in conversion. A RTP_DataFrame will attempt to provide or use data in
+       multiples of this size. Note that it may not do so, so the transcoder
+       must be able to handle any sized packets.
+      */
+    virtual unsigned GetOptimalDataFrameSize(
+      BOOL input      /// Flag for input or output data size
+    ) const;
+
     /**Convert the data from one format to another.
        This function takes the input data as a RTP_DataFrame and converts it
        to its output format, placing it into the RTP_DataFrame provided.
@@ -325,6 +354,7 @@ class OpalStreamedTranscoder : public OpalTranscoder
   protected:
     unsigned inputBitsPerSample;
     unsigned outputBitsPerSample;
+    unsigned optimalSamples;
 };
 
 
