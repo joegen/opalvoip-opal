@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323neg.h,v $
- * Revision 1.2003  2001/10/05 00:22:13  robertj
+ * Revision 1.2004  2002/01/14 06:35:57  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.2  2001/10/05 00:22:13  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.1  2001/08/13 05:10:39  robertj
@@ -35,6 +38,16 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.29  2002/01/09 00:21:36  robertj
+ * Changes to support outgoing H.245 RequstModeChange.
+ *
+ * Revision 1.28  2002/01/01 23:32:30  craigs
+ * Added HandleAck and StartRequest implementations for T.38
+ * thanks to Vyacheslav Frolov
+ *
+ * Revision 1.27  2002/01/01 23:21:30  craigs
+ * Added virtual keyword to many functions
  *
  * Revision 1.26  2001/09/12 01:54:45  robertj
  * Added virtual keyword to function in logical channel management.
@@ -349,12 +362,13 @@ class H245NegRequestMode : public H245Negotiator
   public:
     H245NegRequestMode(H323EndPoint & endpoint, H323Connection & connection);
 
-    BOOL StartRequest();
-    BOOL HandleRequest(const H245_RequestMode & pdu);
-    BOOL HandleAck(const H245_RequestModeAck & pdu);
-    BOOL HandleReject(const H245_RequestModeReject & pdu);
-    BOOL HandleRelease(const H245_RequestModeRelease & pdu);
-    void HandleTimeout(PTimer &, INT);
+    virtual BOOL StartRequest(const PString & newModes);
+    virtual BOOL StartRequest(const H245_ArrayOf_ModeDescription & newModes);
+    virtual BOOL HandleRequest(const H245_RequestMode & pdu);
+    virtual BOOL HandleAck(const H245_RequestModeAck & pdu);
+    virtual BOOL HandleReject(const H245_RequestModeReject & pdu);
+    virtual BOOL HandleRelease(const H245_RequestModeRelease & pdu);
+    virtual void HandleTimeout(PTimer &, INT);
 
   protected:
     BOOL awaitingResponse;

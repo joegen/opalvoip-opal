@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2005  2002/01/14 02:22:03  robertj
+ * Revision 1.2006  2002/01/14 06:35:57  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.4  2002/01/14 02:22:03  robertj
  * Fixed bug in wildcard name lookup.
  *
  * Revision 2.3  2001/10/05 00:22:14  robertj
@@ -42,6 +45,15 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.42  2002/01/10 05:13:54  robertj
+ * Added support for external RTP stacks, thanks NuMind Software Systems.
+ *
+ * Revision 1.41  2002/01/09 00:21:39  robertj
+ * Changes to support outgoing H.245 RequstModeChange.
+ *
+ * Revision 1.40  2001/12/22 01:44:30  robertj
+ * Added more support for H.245 RequestMode operation.
  *
  * Revision 1.39  2001/09/21 02:52:56  robertj
  * Added default implementation for PDU encode/decode for codecs
@@ -225,7 +237,16 @@ H323_REGISTER_CAPABILITY_FUNCTION(H323_G729CapabilityAB, OPAL_G729AB, H323_NO_EP
   return new H323_G729Capability(H323_G729Capability::e_AnnexA_AnnexB);
 }
 
-H323_REGISTER_CAPABILITY(H323_G7231Capability, OPAL_G7231);
+H323_REGISTER_CAPABILITY_FUNCTION(H323_G7231Capability_6k3, OPAL_G7231_6k3, H323_NO_EP_VAR)
+{
+  return new H323_G7231Capability();
+}
+
+H323_REGISTER_CAPABILITY_FUNCTION(H323_G7231Capability_5k3, OPAL_G7231_5k3, H323_NO_EP_VAR)
+{
+  return new H323_G7231Capability();
+}
+
 
 H323_REGISTER_CAPABILITY(H323_GSM0610Capability, OPAL_GSM0610);
 
@@ -387,23 +408,7 @@ H323Channel * H323RealTimeCapability::CreateChannel(H323Connection & connection,
                                                     unsigned sessionID,
                                  const H245_H2250LogicalChannelParameters * param) const
 {
-  RTP_Session * session;
-
-  if (param != NULL)
-    session = connection.UseSession(param->m_sessionID, param->m_mediaControlChannel);
-  else {
-    // Make a fake transmprt address from the connection so gets initialised with
-    // the transport type (IP, IPX, multicast etc).
-    H323TransportAddress h323Addr = connection.GetControlChannel().GetLocalAddress();
-    H245_TransportAddress h245Addr;
-    h323Addr.SetPDU(h245Addr);
-    session = connection.UseSession(sessionID, h245Addr);
-  }
-
-  if (session == NULL)
-    return NULL;
-
-  return new H323_RTPChannel(connection, *this, dir, *session);
+  return connection.CreateRealTimeLogicalChannel(*this, dir, sessionID, param);
 }
 
 
@@ -644,6 +649,13 @@ BOOL H323AudioCapability::OnSendingPDU(H245_DataType & dataType) const
 }
 
 
+BOOL H323AudioCapability::OnSendingPDU(H245_ModeElement & mode) const
+{
+  mode.m_type.SetTag(H245_ModeElement_type::e_audioMode);
+  return OnSendingPDU((H245_AudioMode &)mode);
+}
+
+
 BOOL H323AudioCapability::OnSendingPDU(H245_AudioCapability & pdu,
                                        unsigned packetSize) const
 {
@@ -652,6 +664,42 @@ BOOL H323AudioCapability::OnSendingPDU(H245_AudioCapability & pdu,
   // Set the maximum number of frames
   PASN_Integer & value = pdu;
   value = packetSize;
+  return TRUE;
+}
+
+
+BOOL H323AudioCapability::OnSendingPDU(H245_AudioMode & pdu) const
+{
+  static const H245_AudioMode::Choices AudioTable[] = {
+    H245_AudioMode::e_nonStandard,
+    H245_AudioMode::e_g711Alaw64k,
+    H245_AudioMode::e_g711Alaw56k,
+    H245_AudioMode::e_g711Ulaw64k,
+    H245_AudioMode::e_g711Ulaw56k,
+    H245_AudioMode::e_g722_64k,
+    H245_AudioMode::e_g722_56k,
+    H245_AudioMode::e_g722_48k,
+    H245_AudioMode::e_g7231,
+    H245_AudioMode::e_g728,
+    H245_AudioMode::e_g729,
+    H245_AudioMode::e_g729AnnexA,
+    H245_AudioMode::e_is11172AudioMode,
+    H245_AudioMode::e_is13818AudioMode,
+    H245_AudioMode::e_g729wAnnexB,
+    H245_AudioMode::e_g729AnnexAwAnnexB,
+    H245_AudioMode::e_g7231AnnexCMode,
+    H245_AudioMode::e_gsmFullRate,
+    H245_AudioMode::e_gsmHalfRate,
+    H245_AudioMode::e_gsmEnhancedFullRate,
+    H245_AudioMode::e_genericAudioMode,
+    H245_AudioMode::e_g729Extensions
+  };
+
+  unsigned subType = GetSubType();
+  if (subType >= PARRAYSIZE(AudioTable))
+    return FALSE;
+
+  pdu.SetTag(AudioTable[subType]);
   return TRUE;
 }
 
@@ -845,6 +893,13 @@ BOOL H323VideoCapability::OnSendingPDU(H245_DataType & dataType) const
 }
 
 
+BOOL H323VideoCapability::OnSendingPDU(H245_ModeElement & mode) const
+{
+  mode.m_type.SetTag(H245_ModeElement_type::e_videoMode);
+  return OnSendingPDU((H245_VideoMode &)mode.m_type);
+}
+
+
 BOOL H323VideoCapability::OnReceivedPDU(const H245_Capability & cap)
 {
   H323Capability::OnReceivedPDU(cap);
@@ -984,6 +1039,13 @@ BOOL H323DataCapability::OnSendingPDU(H245_DataType & dataType) const
 {
   dataType.SetTag(H245_DataType::e_data);
   return OnSendingPDU((H245_DataApplicationCapability &)dataType);
+}
+
+
+BOOL H323DataCapability::OnSendingPDU(H245_ModeElement & mode) const
+{
+  mode.m_type.SetTag(H245_ModeElement_type::e_dataMode);
+  return OnSendingPDU((H245_DataMode &)mode.m_type);
 }
 
 
@@ -1183,7 +1245,7 @@ unsigned H323_G729Capability::GetSubType() const
 /////////////////////////////////////////////////////////////////////////////
 
 H323_G7231Capability::H323_G7231Capability(BOOL sid)
-  : H323AudioCapability(OpalG7231, 10, 3) // 300ms max, 90ms desired
+  : H323AudioCapability(OpalG7231_6k3, 10, 3) // 300ms max, 90ms desired
 {
   allowSIDFrames = sid;
 }
@@ -1352,6 +1414,13 @@ BOOL H323_UserInputCapability::OnSendingPDU(H245_Capability & pdu) const
 BOOL H323_UserInputCapability::OnSendingPDU(H245_DataType &) const
 {
   PTRACE(1, "Codec\tCannot have UserInputCapability in DataType");
+  return FALSE;
+}
+
+
+BOOL H323_UserInputCapability::OnSendingPDU(H245_ModeElement &) const
+{
+  PTRACE(1, "Codec\tCannot have UserInputCapability in ModeElement");
   return FALSE;
 }
 
@@ -1816,6 +1885,37 @@ H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType
     case H245_DataType::e_data :
       {
         const H245_DataApplicationCapability & data = dataType;
+        return FindCapability(H323Capability::e_Data, data.m_application, H245_DataApplicationCapability_application::e_nonStandard);
+      }
+
+    default :
+      break;
+  }
+
+  return NULL;
+}
+
+
+H323Capability * H323Capabilities::FindCapability(const H245_ModeElement & modeElement) const
+{
+  PTRACE(4, "H323\tFindCapability: " << modeElement.m_type.GetTagName());
+
+  switch (modeElement.m_type.GetTag()) {
+    case H245_ModeElement_type::e_audioMode :
+      {
+        const H245_AudioMode & audio = modeElement.m_type;
+        return FindCapability(H323Capability::e_Audio, audio, H245_AudioCapability::e_nonStandard);
+      }
+
+    case H245_ModeElement_type::e_videoMode :
+      {
+        const H245_VideoMode & video = modeElement.m_type;
+        return FindCapability(H323Capability::e_Video, video, H245_VideoCapability::e_nonStandard);
+      }
+
+    case H245_ModeElement_type::e_dataMode :
+      {
+        const H245_DataMode & data = modeElement.m_type;
         return FindCapability(H323Capability::e_Data, data.m_application, H245_DataApplicationCapability_application::e_nonStandard);
       }
 

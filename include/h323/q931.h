@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q931.h,v $
- * Revision 1.2004  2001/10/05 00:22:13  robertj
+ * Revision 1.2005  2002/01/14 06:35:57  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.3  2001/10/05 00:22:13  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.2  2001/08/21 01:11:12  robertj
@@ -35,6 +38,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.37  2002/01/07 04:25:41  robertj
+ * Added support for Connected-Number Information Element, thanks Hans Verbeek
  *
  * Revision 1.36  2001/09/17 02:06:38  robertj
  * Added Redirecting Number IE to Q.931, thanks Frank Derks
@@ -238,6 +244,7 @@ class Q931 : public PObject
       CallStateIE          = 0x14,
       DisplayIE            = 0x28,
       SignalIE             = 0x34,
+      ConnectedNumberIE    = 0x4c,
       CallingPartyNumberIE = 0x6c,
       CalledPartyNumberIE  = 0x70,
       RedirectingNumberIE  = 0x74,
@@ -398,6 +405,26 @@ class Q931 : public PObject
       int reason = -1         // 0 = Unknown reason , -1 = no octet 3b
     );
     BOOL GetRedirectingNumber(
+      PString & number,               // Number string
+      unsigned * plan = NULL,         // ISDN/Telephony numbering system
+      unsigned * type = NULL,         // Number type
+      unsigned * presentation = NULL, // Presentation indicator
+      unsigned * screening = NULL,    // Screening indicator
+      unsigned * reason = NULL,       // Reason for redirection
+      unsigned defPresentation = 0,   // Default value if octet3a not present
+      unsigned defScreening = 0,      // Default value if octet3a not present
+      unsigned defReason =0           // Default value if octet 3b not present
+    ) const;
+
+    void SetConnectedNumber(
+      const PString & number, // Number string
+      unsigned plan = 1,      // 1 = ISDN/Telephony numbering system
+      unsigned type = 0,      // 0 = Unknown number type
+      int presentation = -1,  // 0 = presentation allowed, -1 = no octet3a
+      int screening = -1,     // 0 = user provided, not screened
+      int reason = -1         // 0 = Unknown reason , -1 = no octet 3b
+    );
+    BOOL GetConnectedNumber(
       PString & number,               // Number string
       unsigned * plan = NULL,         // ISDN/Telephony numbering system
       unsigned * type = NULL,         // Number type

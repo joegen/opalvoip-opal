@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.h,v $
- * Revision 1.2003  2001/08/17 08:20:26  robertj
+ * Revision 1.2004  2002/01/14 06:35:57  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.2  2001/08/17 08:20:26  robertj
  * Update from OpenH323
  *
  * Revision 2.1  2001/08/13 05:10:39  robertj
@@ -35,6 +38,16 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.44  2001/12/15 07:09:56  robertj
+ * Added functions to get E.164 address from alias address or addresses.
+ *
+ * Revision 1.43  2001/12/14 06:38:47  robertj
+ * Broke out conversion of Q.850 and H.225 release complete codes to
+ *   OpenH323 call end reasons enum.
+ *
+ * Revision 1.42  2001/12/13 10:56:04  robertj
+ * Added build of request in progress pdu.
  *
  * Revision 1.41  2001/08/16 07:49:16  robertj
  * Changed the H.450 support to be more extensible. Protocol handlers
@@ -181,6 +194,7 @@
 
 
 #include <ptlib/sockets.h>
+#include <opal/connection.h>
 #include <h323/q931.h>
 #include <asn/h225.h>
 #include <asn/h245.h>
@@ -526,6 +540,7 @@ class H323RasPDU : public H225_RasMessage
     H225_BandwidthReject       & BuildBandwidthReject(unsigned seqNum, unsigned reason = H225_BandRejectReason::e_undefinedReason);
     H225_InfoRequestResponse   & BuildInfoRequestResponse(unsigned seqNum);
     H225_UnknownMessageResponse& BuildUnknownMessageResponse(unsigned seqNum);
+    H225_RequestInProgress     & BuildRequestInProgress(unsigned seqNum, unsigned delay);
 
     BOOL Read(OpalTransport & transport);
     BOOL Write(OpalTransport & transport) const;
@@ -543,6 +558,17 @@ class H323RasPDU : public H225_RasMessage
 void H323SetAliasAddresses(const PStringList & name, H225_ArrayOf_AliasAddress & aliases);
 void H323SetAliasAddress(const PString & name, H225_AliasAddress & alias);
 PString H323GetAliasAddressString(const H225_AliasAddress & alias);
+PString H323GetAliasAddressE164(const H225_AliasAddress & alias);
+PString H323GetAliasAddressE164(const H225_ArrayOf_AliasAddress & aliases);
+
+OpalCallEndReason H323TranslateToCallEndReason(
+  Q931::CauseValues cause,
+  const H225_ReleaseCompleteReason & reason
+);
+Q931::CauseValues H323TranslateFromCallEndReason(
+  const H323Connection & connection,
+  H225_ReleaseCompleteReason & rcReason
+);
 
 
 #endif // __H323_H323PDU_H
