@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2004  2002/02/11 07:33:36  robertj
+ * Revision 1.2005  2002/02/13 04:55:44  craigs
+ * Fixed problem with endless loop if proxy keeps failing authentication with 407
+ *
+ * Revision 2.3  2002/02/11 07:33:36  robertj
  * Changed SDP to use OpalTransport for hosts instead of IP addresses/ports
  * Added media bypass for streams between compatible protocols.
  *
@@ -124,6 +127,7 @@ SIPConnection::SIPConnection(OpalCall & call,
 
   lastSentCseq = 1;
   sendBYE = TRUE;
+  inviteAuthenticateAlreadySent = FALSE;
 
   PTRACE(3, "SIP\tCreated connection.");
 }
@@ -720,6 +724,12 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIP_PDU & response)
   else
     auth = response.GetMIME()("WWW-Authenticate");
 
+  if (inviteAuthenticateAlreadySent) {
+    PTRACE(1, "SIP\tINVITE authentication failed");
+    Release(EndedBySecurityDenial);
+    return;
+  }
+
   if (auth.Find("digest") != 0) {
     PTRACE(1, "SIP\tUnknown proxy authentication scheme");
     Release(EndedBySecurityDenial);
@@ -753,6 +763,7 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIP_PDU & response)
   SIP_PDU request(*transport, this);
   request.BuildINVITE(realm, nonce, isProxy);
   request.Write();
+  inviteAuthenticateAlreadySent = TRUE;
 }
 
 
