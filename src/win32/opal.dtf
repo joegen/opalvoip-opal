@@ -2710,6 +2710,7 @@ EXPORTS
     ??1LDAP_UnbindRequest@@UAE@XZ @2707 NONAME ;public: virtual __thiscall LDAP_UnbindRequest::~LDAP_UnbindRequest(void)
     ??1LineState@OpalVpbDevice@@QAE@XZ @2708 NONAME ;public: __thiscall OpalVpbDevice::LineState::~LineState(void)
     ??1List@OpalMediaFormat@@UAE@XZ @2709 NONAME ;public: virtual __thiscall OpalMediaFormat::List::~List(void)
+    ??1ListenerCallback_PNotifier@OpalEndPoint@@UAE@XZ @18667 NONAME ;public: virtual __thiscall OpalEndPoint::ListenerCallback_PNotifier::~ListenerCallback_PNotifier(void)
     ??1ListenForConnections_PNotifier@OpalListener@@UAE@XZ @2710 NONAME ;public: virtual __thiscall OpalListener::ListenForConnections_PNotifier::~ListenForConnections_PNotifier(void)
     ??1MCS_ArrayOf_ChannelAttributes@@UAE@XZ @2711 NONAME ;public: virtual __thiscall MCS_ArrayOf_ChannelAttributes::~MCS_ArrayOf_ChannelAttributes(void)
     ??1MCS_ArrayOf_ChannelId@@UAE@XZ @2712 NONAME ;public: virtual __thiscall MCS_ArrayOf_ChannelId::~MCS_ArrayOf_ChannelId(void)
@@ -2796,7 +2797,6 @@ EXPORTS
     ??1MicrosoftIMAAudioCapability_Registration@@UAE@XZ @2793 NONAME ;public: virtual __thiscall MicrosoftIMAAudioCapability_Registration::~MicrosoftIMAAudioCapability_Registration(void)
     ??1MicrosoftNonStandardAudioCapability@@UAE@XZ @2794 NONAME ;public: virtual __thiscall MicrosoftNonStandardAudioCapability::~MicrosoftNonStandardAudioCapability(void)
     ??1MonitorLines_PNotifier@OpalLIDEndPoint@@UAE@XZ @2795 NONAME ;public: virtual __thiscall OpalLIDEndPoint::MonitorLines_PNotifier::~MonitorLines_PNotifier(void)
-    ??1NewIncomingConnection_PNotifier@H323EndPoint@@UAE@XZ @2796 NONAME ;public: virtual __thiscall H323EndPoint::NewIncomingConnection_PNotifier::~NewIncomingConnection_PNotifier(void)
     ??1NewIncomingControlChannel_PNotifier@H323Connection@@UAE@XZ @2797 NONAME ;public: virtual __thiscall H323Connection::NewIncomingControlChannel_PNotifier::~NewIncomingControlChannel_PNotifier(void)
     ??1OpalAudioMediaStream@@UAE@XZ @2798 NONAME ;public: virtual __thiscall OpalAudioMediaStream::~OpalAudioMediaStream(void)
     ??1OpalCall@@UAE@XZ @2799 NONAME ;public: virtual __thiscall OpalCall::~OpalCall(void)
@@ -6982,6 +6982,7 @@ EXPORTS
     ??_7LDAP_SubstringFilter_value_subtype@@6B@ @6978 NONAME ;const  LDAP_SubstringFilter_value_subtype::`vftable'
     ??_7LDAP_UnbindRequest@@6B@ @6979 NONAME ;const  LDAP_UnbindRequest::`vftable'
     ??_7List@OpalMediaFormat@@6B@ @6980 NONAME ;const  OpalMediaFormat::List::`vftable'
+    ??_7ListenerCallback_PNotifier@OpalEndPoint@@6B@ @18668 NONAME ;const  OpalEndPoint::ListenerCallback_PNotifier::`vftable'
     ??_7ListenForConnections_PNotifier@OpalListener@@6B@ @6981 NONAME ;const  OpalListener::ListenForConnections_PNotifier::`vftable'
     ??_7MCS_ArrayOf_ChannelAttributes@@6B@ @6982 NONAME ;const  MCS_ArrayOf_ChannelAttributes::`vftable'
     ??_7MCS_ArrayOf_ChannelId@@6B@ @6983 NONAME ;const  MCS_ArrayOf_ChannelId::`vftable'
@@ -7071,7 +7072,6 @@ EXPORTS
     ??_7MicrosoftNonStandardAudioCapability@@6BH323AudioCapability@@@ @7067 NONAME ;const  MicrosoftNonStandardAudioCapability::`vftable'{for `H323AudioCapability'}
     ??_7MicrosoftNonStandardAudioCapability@@6BH323NonStandardCapabilityInfo@@@ @7068 NONAME ;const  MicrosoftNonStandardAudioCapability::`vftable'{for `H323NonStandardCapabilityInfo'}
     ??_7MonitorLines_PNotifier@OpalLIDEndPoint@@6B@ @7069 NONAME ;const  OpalLIDEndPoint::MonitorLines_PNotifier::`vftable'
-    ??_7NewIncomingConnection_PNotifier@H323EndPoint@@6B@ @7070 NONAME ;const  H323EndPoint::NewIncomingConnection_PNotifier::`vftable'
     ??_7NewIncomingControlChannel_PNotifier@H323Connection@@6B@ @7071 NONAME ;const  H323Connection::NewIncomingControlChannel_PNotifier::`vftable'
     ??_7OpalAudioMediaStream@@6Biostream@@@ @7072 NONAME ;const  OpalAudioMediaStream::`vftable'{for `iostream'}
     ??_7OpalAudioMediaStream@@6BPObject@@@ @7073 NONAME ;const  OpalAudioMediaStream::`vftable'{for `PObject'}
@@ -7390,9 +7390,9 @@ EXPORTS
     ?Call@HandleIncoming_PNotifier@OpalLineConnection@@UBEXAAVPObject@@H@Z @7382 NONAME ;public: virtual void __thiscall OpalLineConnection::HandleIncoming_PNotifier::Call(class PObject &,int)const 
     ?Call@HandleRasChannel_PNotifier@H225_RAS@@UBEXAAVPObject@@H@Z @7383 NONAME ;public: virtual void __thiscall H225_RAS::HandleRasChannel_PNotifier::Call(class PObject &,int)const 
     ?Call@HandleTimeout_PNotifier@H245Negotiator@@UBEXAAVPObject@@H@Z @7384 NONAME ;public: virtual void __thiscall H245Negotiator::HandleTimeout_PNotifier::Call(class PObject &,int)const 
+    ?Call@ListenerCallback_PNotifier@OpalEndPoint@@UBEXAAVPObject@@H@Z @18669 NONAME ;public: virtual void __thiscall OpalEndPoint::ListenerCallback_PNotifier::Call(class PObject &,int)const 
     ?Call@ListenForConnections_PNotifier@OpalListener@@UBEXAAVPObject@@H@Z @7385 NONAME ;public: virtual void __thiscall OpalListener::ListenForConnections_PNotifier::Call(class PObject &,int)const 
     ?Call@MonitorLines_PNotifier@OpalLIDEndPoint@@UBEXAAVPObject@@H@Z @7386 NONAME ;public: virtual void __thiscall OpalLIDEndPoint::MonitorLines_PNotifier::Call(class PObject &,int)const 
-    ?Call@NewIncomingConnection_PNotifier@H323EndPoint@@UBEXAAVPObject@@H@Z @7387 NONAME ;public: virtual void __thiscall H323EndPoint::NewIncomingConnection_PNotifier::Call(class PObject &,int)const 
     ?Call@NewIncomingControlChannel_PNotifier@H323Connection@@UBEXAAVPObject@@H@Z @7388 NONAME ;public: virtual void __thiscall H323Connection::NewIncomingControlChannel_PNotifier::Call(class PObject &,int)const 
     ?Call@RegistrationTimeToLive_PNotifier@H323Gatekeeper@@UBEXAAVPObject@@H@Z @7389 NONAME ;public: virtual void __thiscall H323Gatekeeper::RegistrationTimeToLive_PNotifier::Call(class PObject &,int)const 
     ?CallEndReasonNames@OpalConnection@@1QBQBDB @7390 NONAME ;protected: static char const * const * const  OpalConnection::CallEndReasonNames
@@ -17261,6 +17261,7 @@ EXPORTS
     ?IsTonePlaying@OpalLine@@UAEHXZ @17249 NONAME ;public: virtual int __thiscall OpalLine::IsTonePlaying(void)
     ?IsTonePlaying@OpalLineInterfaceDevice@@UAEHI@Z @17250 NONAME ;public: virtual int __thiscall OpalLineInterfaceDevice::IsTonePlaying(unsigned int)
     ?IsValid@H323_LIDCapability@@QBEHXZ @17251 NONAME ;public: int __thiscall H323_LIDCapability::IsValid(void)const 
+    ?ListenerCallback@OpalEndPoint@@UAEXAAVPThread@@H@Z @18670 NONAME ;public: virtual void __thiscall OpalEndPoint::ListenerCallback(class PThread &,int)
     ?ListenForConnections@OpalListener@@MAEXAAVPThread@@H@Z @17252 NONAME ;protected: virtual void __thiscall OpalListener::ListenForConnections(class PThread &,int)
     ?LocateGatekeeper@H323EndPoint@@QAEHABVPString@@PAVOpalTransport@@@Z @17253 NONAME ;public: int __thiscall H323EndPoint::LocateGatekeeper(class PString const &,class OpalTransport *)
     ?LocationRequest@H323Gatekeeper@@QAEHABVPString@@AAVOpalTransportAddress@@@Z @17254 NONAME ;public: int __thiscall H323Gatekeeper::LocationRequest(class PString const &,class OpalTransportAddress &)
@@ -17280,7 +17281,8 @@ EXPORTS
     ?mtu@Transmitter@@UAEHXZ @17268 NONAME ;public: virtual int __thiscall Transmitter::mtu(void)
     ?mvblk@P64Decoder@@IAEXPAE0I@Z @17269 NONAME ;protected: void __thiscall P64Decoder::mvblk(unsigned char *,unsigned char *,unsigned int)
     ?mvblka@P64Decoder@@IAEXPAE0I@Z @17270 NONAME ;protected: void __thiscall P64Decoder::mvblka(unsigned char *,unsigned char *,unsigned int)
-    ?NewIncomingConnection@H323EndPoint@@UAEXAAVPThread@@H@Z @17271 NONAME ;public: virtual void __thiscall H323EndPoint::NewIncomingConnection(class PThread &,int)
+    ?NewIncomingConnection@H323EndPoint@@UAEXPAVOpalTransport@@@Z @18671 NONAME ;public: virtual void __thiscall H323EndPoint::NewIncomingConnection(class OpalTransport *)
+    ?NewIncomingConnection@OpalEndPoint@@UAEXPAVOpalTransport@@@Z @18672 NONAME ;public: virtual void __thiscall OpalEndPoint::NewIncomingConnection(class OpalTransport *)
     ?NewIncomingControlChannel@H323Connection@@UAEXAAVPThread@@H@Z @17272 NONAME ;public: virtual void __thiscall H323Connection::NewIncomingControlChannel(class PThread &,int)
     ?Next@RTP_SessionManager@@QAEPAVRTP_Session@@XZ @17273 NONAME ;public: class RTP_Session * __thiscall RTP_SessionManager::Next(void)
     ?NextEndPoint@H323GatekeeperServer@@QAEPAVH323RegisteredEndPoint@@XZ @17274 NONAME ;public: class H323RegisteredEndPoint * __thiscall H323GatekeeperServer::NextEndPoint(void)
@@ -18336,8 +18338,8 @@ EXPORTS
     ?RemoveLine@OpalLIDEndPoint@@QAEXABVPString@@@Z @18323 NONAME ;public: void __thiscall OpalLIDEndPoint::RemoveLine(class PString const &)
     ?RemoveLine@OpalLIDEndPoint@@QAEXPAVOpalLine@@@Z @18324 NONAME ;public: void __thiscall OpalLIDEndPoint::RemoveLine(class OpalLine *)
     ?RemoveLinesFromDevice@OpalLIDEndPoint@@QAEXAAVOpalLineInterfaceDevice@@@Z @18325 NONAME ;public: void __thiscall OpalLIDEndPoint::RemoveLinesFromDevice(class OpalLineInterfaceDevice &)
-    ?RemoveListener@H323EndPoint@@QAEHPAVOpalListener@@@Z @18326 NONAME ;public: int __thiscall H323EndPoint::RemoveListener(class OpalListener *)
     ?RemoveListener@H323GatekeeperServer@@QAEHPAVH323GatekeeperListener@@@Z @18327 NONAME ;public: int __thiscall H323GatekeeperServer::RemoveListener(class H323GatekeeperListener *)
+    ?RemoveListener@OpalEndPoint@@QAEHPAVOpalListener@@@Z @18673 NONAME ;public: int __thiscall OpalEndPoint::RemoveListener(class OpalListener *)
     ?RemoveSink@OpalMediaPatch@@QAEXPAVOpalMediaStream@@@Z @18328 NONAME ;public: void __thiscall OpalMediaPatch::RemoveSink(class OpalMediaStream *)
     ?Reorder@H323Capabilities@@QAEXABVPStringArray@@@Z @18329 NONAME ;public: void __thiscall H323Capabilities::Reorder(class PStringArray const &)
     ?ReorderCapabilities@H323EndPoint@@QAEXABVPStringArray@@@Z @18330 NONAME ;public: void __thiscall H323EndPoint::ReorderCapabilities(class PStringArray const &)
@@ -18529,8 +18531,9 @@ EXPORTS
     ?StartFastStartChannel@H323Connection@@UAEXIW4Directions@H323Channel@@@Z @18516 NONAME ;public: virtual void __thiscall H323Connection::StartFastStartChannel(unsigned int,enum H323Channel::Directions)
     ?StartIncoming@OpalLineConnection@@QAEXXZ @18517 NONAME ;public: void __thiscall OpalLineConnection::StartIncoming(void)
     ?StartIncomingCall@OpalPCSSConnection@@QAEXABVPString@@@Z @18518 NONAME ;public: void __thiscall OpalPCSSConnection::StartIncomingCall(class PString const &)
-    ?StartListener@H323EndPoint@@QAEHABVOpalTransportAddress@@@Z @18519 NONAME ;public: int __thiscall H323EndPoint::StartListener(class OpalTransportAddress const &)
-    ?StartListener@H323EndPoint@@QAEHPAVOpalListener@@@Z @18520 NONAME ;public: int __thiscall H323EndPoint::StartListener(class OpalListener *)
+    ?StartListener@OpalEndPoint@@QAEHABVOpalTransportAddress@@@Z @18674 NONAME ;public: int __thiscall OpalEndPoint::StartListener(class OpalTransportAddress const &)
+    ?StartListener@OpalEndPoint@@QAEHPAVOpalListener@@@Z @18675 NONAME ;public: int __thiscall OpalEndPoint::StartListener(class OpalListener *)
+    ?StartListeners@OpalEndPoint@@QAEHABVPStringArray@@@Z @18676 NONAME ;public: int __thiscall OpalEndPoint::StartListeners(class PStringArray const &)
     ?StartOutgoing@OpalLineConnection@@QAEHABVPString@@@Z @18521 NONAME ;public: int __thiscall OpalLineConnection::StartOutgoing(class PString const &)
     ?StartOutgoingCall@OpalPCSSConnection@@QAEXXZ @18522 NONAME ;public: void __thiscall OpalPCSSConnection::StartOutgoingCall(void)
     ?StartRasChannel@H225_RAS@@QAEHXZ @18523 NONAME ;public: int __thiscall H225_RAS::StartRasChannel(void)

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 1.2002  2001/07/30 07:22:25  robertj
+ * Abstracted listener management from H.323 to OpalEndPoint class.
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  */
@@ -40,12 +43,12 @@
 
 #include <opal/connection.h>
 #include <opal/mediafmt.h>
+#include <opal/transports.h>
 
 
 class OpalManager;
 class OpalCall;
 class OpalMediaStream;
-class OpalTransport;
 
 
 /**This class describes an endpoint base class.
@@ -100,6 +103,57 @@ class OpalEndPoint : public PObject
     void PrintOn(
       ostream & strm    /// Stream to output text representation
     ) const;
+  //@}
+
+  /**@name Listeners management */
+  //@{
+    /**Add a listener to the endoint.
+       This allows for the automatic creating of incoming call connections. An
+       application should use OnConnectionEstablished() to monitor when calls
+       have arrived and been successfully negotiated.
+      */
+    BOOL StartListeners(
+      const PStringArray & interfaces /// Address of interface to listen on.
+    );
+
+    /**Add a listener to the endoint.
+       This allows for the automatic creating of incoming call connections. An
+       application should use OnConnectionEstablished() to monitor when calls
+       have arrived and been successfully negotiated.
+      */
+    BOOL StartListener(
+      const OpalTransportAddress & iface /// Address of interface to listen on.
+    );
+
+    /**Add a listener to the endoint.
+       This allows for the automatic creating of incoming call connections. An
+       application should use OnConnectionEstablished() to monitor when calls
+       have arrived and been successfully negotiated.
+      */
+    BOOL StartListener(
+      OpalListener * listener /// Transport dependent listener.
+    );
+
+    /**Remove a listener from the endoint.
+       If the listener parameter is NULL then all listeners are removed.
+      */
+    BOOL RemoveListener(
+      OpalListener * listener /// Transport dependent listener.
+    );
+
+    /**Handle new incoming connection.
+       This will either create a new connection object or utilise a previously
+       created connection on the same transport address and reference number.
+      */
+    PDECLARE_NOTIFIER(PThread, OpalEndPoint, ListenerCallback);
+
+    /**Handle new incoming connection from listener.
+
+       The default behaviour does nothing.
+      */
+    virtual void NewIncomingConnection(
+      OpalTransport * transport  /// Transport connection came in on
+    );
   //@}
 
   /**@name Connection management */
@@ -383,6 +437,10 @@ class OpalEndPoint : public PObject
     /**Get the initial bandwidth parameter.
      */
     void SetInitialBandwidth(unsigned bandwidth) { initialBandwidth = bandwidth; }
+
+    /**Get the set of listeners (incoming call transports) for this endpoint.
+     */
+    const OpalListenerList & GetListeners() const { return listeners; }
   //@}
 
 
@@ -394,6 +452,7 @@ class OpalEndPoint : public PObject
 
     unsigned initialBandwidth;  // in 100s of bits/sev
 
+    OpalListenerList   listeners;
     OpalConnectionDict connectionsActive;
     PSyncPoint         allConnectionsCleared;
 

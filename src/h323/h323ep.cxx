@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2001/07/30 07:22:25  robertj
+ * Abstracted listener management from H.323 to OpalEndPoint class.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.91  2001/07/17 04:44:32  robertj
@@ -652,50 +655,6 @@ BOOL H323EndPoint::RemoveGatekeeper(int reason)
 }
 
 
-BOOL H323EndPoint::StartListener(const OpalTransportAddress & iface)
-{
-  OpalListener * listener;
-
-  if (iface.IsEmpty())
-    listener = new OpalListenerTCP(*this, INADDR_ANY, defaultSignalPort);
-  else
-    listener = iface.CreateListener(*this);
-
-  if (H323EndPoint::StartListener(listener))
-    return TRUE;
-
-  PTRACE(1, "H323\tCould not start listener: " << iface);
-  return FALSE;
-}
-
-
-BOOL H323EndPoint::StartListener(OpalListener * listener)
-{
-  // Use default if NULL specified
-  if (listener == NULL)
-    listener = new OpalListenerTCP(*this, INADDR_ANY, defaultSignalPort);
-
-  // as the listener is not open, this will have the effect of immediately
-  // stopping the listener thread. This is good - it means that the 
-  // listener Close function will appear to have stopped the thread
-  if (!listener->Open(PCREATE_NOTIFIER(NewIncomingConnection)))
-    return FALSE;
-
-  listeners.Append(listener);
-  return TRUE;
-}
-
-
-BOOL H323EndPoint::RemoveListener(OpalListener * listener)
-{
-  if (listener != NULL)
-    return listeners.Remove(listener);
-
-  listeners.RemoveAll();
-  return TRUE;
-}
-
-
 OpalConnection * H323EndPoint::SetUpConnection(OpalCall & call,
                                                const PString & remoteParty,
                                                void * userData)
@@ -744,14 +703,8 @@ OpalConnection * H323EndPoint::SetUpConnection(OpalCall & call,
 }
 
 
-void H323EndPoint::NewIncomingConnection(PThread &, INT param)
+void H323EndPoint::NewIncomingConnection(OpalTransport * transport)
 {
-  // Erro in accept, usually means listener thread stopped, so just exit
-  if (param == 0)
-    return;
-
-  OpalTransport * transport = (OpalTransport *)param;
-
   PTRACE(3, "H225\tAwaiting first PDU");
   transport->SetReadTimeout(15000); // Await 15 seconds after connect for first byte
   H323SignalPDU pdu;

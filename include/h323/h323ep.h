@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 1.2002  2001/07/30 07:22:25  robertj
+ * Abstracted listener management from H.323 to OpalEndPoint class.
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.121  2001/07/17 04:44:29  robertj
@@ -748,35 +751,10 @@ class H323EndPoint : public OpalEndPoint
 
   /**@name Connection management */
   //@{
-    /**Add a listener to the endoint.
-       This allows for the automatic creating of incoming call connections. An
-       application should use OnConnectionEstablished() to monitor when calls
-       have arrived and been successfully negotiated.
+    /**Handle new incoming connetion from listener.
       */
-    BOOL StartListener(
-      OpalListener * listener /// Transport dependent listener.
-    );
-
-    /**Add a listener to the endoint.
-       This allows for the automatic creating of incoming call connections. An
-       application should use OnConnectionEstablished() to monitor when calls
-       have arrived and been successfully negotiated.
-      */
-    BOOL StartListener(
-      const OpalTransportAddress & iface /// Address of interface to listen on.
-    );
-
-    /**Handle new incoming connection.
-       This will either create a new connection object or utilise a previously
-       created connection on the same transport address and reference number.
-      */
-    PDECLARE_NOTIFIER(PThread, H323EndPoint, NewIncomingConnection);
-
-    /**Remove a listener from the endoint.
-       If the listener parameter is NULL then all listeners are removed.
-      */
-    BOOL RemoveListener(
-      OpalListener * listener /// Transport dependent listener.
+    virtual void NewIncomingConnection(
+      OpalTransport * transport  /// Transport connection came in on
     );
 
     /**Create a connection that uses the specified call.
@@ -1141,10 +1119,6 @@ class H323EndPoint : public OpalEndPoint
      */
     BOOL CanAutoStartTransmitVideo() const { return manager.CanAutoStartTransmitVideo(); }
 
-    /**Get the set of listeners (incoming call transports) for this endpoint.
-     */
-    const OpalListenerList & GetListeners() const { return listeners; }
-
     /**Get the current capability table for this endpoint.
      */
     const H323Capabilities & GetCapabilities() const { return capabilities; }
@@ -1288,7 +1262,6 @@ class H323EndPoint : public OpalEndPoint
     PTimeInterval registrationTimeToLive;
 
     // Dynamic variables
-    OpalListenerList listeners;
     H323Capabilities capabilities;
     H323Gatekeeper * gatekeeper;
 
