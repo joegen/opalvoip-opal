@@ -1,0 +1,530 @@
+/*
+ * h323pdu.h
+ *
+ * H.323 protocol handler
+ *
+ * Open H323 Library
+ *
+ * Copyright (c) 1998-2001 Equivalence Pty. Ltd.
+ *
+ * The contents of this file are subject to the Mozilla Public License
+ * Version 1.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+ * the License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is Open H323 Library.
+ *
+ * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
+ *
+ * Portions of this code were written with the assisance of funding from
+ * Vovida Networks, Inc. http://www.vovida.com.
+ *
+ * Contributor(s): ______________________________________.
+ *
+ * $Log: h323pdu.h,v $
+ * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.37  2001/06/14 06:25:13  robertj
+ * Added further H.225 PDU build functions.
+ * Moved some functionality from connection to PDU class.
+ *
+ * Revision 1.36  2001/06/14 00:45:19  robertj
+ * Added extra parameters for Q.931 fields, thanks Rani Assaf
+ *
+ * Revision 1.35  2001/05/30 23:34:54  robertj
+ * Added functions to send TCS=0 for transmitter side pause.
+ *
+ * Revision 1.34  2001/04/11 03:01:27  robertj
+ * Added H.450.2 (call transfer), thanks a LOT to Graeme Reid & Norwood Systems
+ *
+ * Revision 1.33  2001/03/24 00:34:35  robertj
+ * Added read/write hook functions so don't have to duplicate code in
+ *    H323RasH235PDU descendant class of H323RasPDU.
+ *
+ * Revision 1.32  2001/03/21 04:52:40  robertj
+ * Added H.235 security to gatekeepers, thanks Fürbass Franz!
+ *
+ * Revision 1.31  2001/02/09 05:16:24  robertj
+ * Added #pragma interface for GNU C++.
+ *
+ * Revision 1.30  2001/01/19 01:20:38  robertj
+ * Added non-const function to get access to Q.931 PDU in H323SignalPDU.
+ *
+ * Revision 1.29  2000/10/04 05:59:09  robertj
+ * Minor reorganisation of the H.245 secondary channel start up to make it simpler
+ *    to override its behaviour.
+ *
+ * Revision 1.28  2000/09/25 06:47:54  robertj
+ * Removed use of alias if there is no alias present, ie only have transport address.
+ *
+ * Revision 1.27  2000/09/22 01:35:02  robertj
+ * Added support for handling LID's that only do symmetric codecs.
+ *
+ * Revision 1.26  2000/07/15 09:50:49  robertj
+ * Changed adding of Q.931 party numbers to only occur in SETUP.
+ *
+ * Revision 1.25  2000/06/21 08:07:39  robertj
+ * Added cause/reason to release complete PDU, where relevent.
+ *
+ * Revision 1.24  2000/05/23 11:32:27  robertj
+ * Rewrite of capability table to combine 2 structures into one and move functionality into that class
+ *    allowing some normalisation of usage across several applications.
+ * Changed H323Connection so gets a copy of capabilities instead of using endponts, allows adjustments
+ *    to be done depending on the remote client application.
+ *
+ * Revision 1.23  2000/05/08 14:07:26  robertj
+ * Improved the provision and detection of calling and caller numbers, aliases and hostnames.
+ *
+ * Revision 1.22  2000/05/08 05:05:43  robertj
+ * Fixed bug in H.245 close logical channel timeout, thanks XuPeili.
+ *
+ * Revision 1.21  2000/05/02 04:32:24  robertj
+ * Fixed copyright notice comment.
+ *
+ * Revision 1.20  2000/04/10 20:39:30  robertj
+ * Added support for more sophisticated DTMF and hook flash user indication.
+ * Added function to extract E164 address from Q.931/H.225 PDU.
+ *
+ * Revision 1.19  2000/03/25 02:00:39  robertj
+ * Added adjustable caller name on connection by connection basis.
+ *
+ * Revision 1.18  2000/03/21 01:22:01  robertj
+ * Fixed incorrect call reference code being used in originated call.
+ *
+ * Revision 1.17  1999/12/11 02:20:58  robertj
+ * Added ability to have multiple aliases on local endpoint.
+ *
+ * Revision 1.16  1999/09/10 03:36:48  robertj
+ * Added simple Q.931 Status response to Q.931 Status Enquiry
+ *
+ * Revision 1.15  1999/08/31 12:34:18  robertj
+ * Added gatekeeper support.
+ *
+ * Revision 1.14  1999/08/25 05:07:49  robertj
+ * File fission (critical mass reached).
+ *
+ * Revision 1.13  1999/07/16 06:15:59  robertj
+ * Corrected semantics for tunnelled master/slave determination in fast start.
+ *
+ * Revision 1.12  1999/07/16 02:15:30  robertj
+ * Fixed more tunneling problems.
+ *
+ * Revision 1.11  1999/07/15 14:45:35  robertj
+ * Added propagation of codec open error to shut down logical channel.
+ * Fixed control channel start up bug introduced with tunnelling.
+ *
+ * Revision 1.10  1999/07/10 02:51:53  robertj
+ * Added mutexing in H245 procedures.
+ *
+ * Revision 1.9  1999/07/09 06:09:49  robertj
+ * Major implementation. An ENORMOUS amount of stuff added everywhere.
+ *
+ * Revision 1.8  1999/06/25 10:25:35  robertj
+ * Added maintentance of callIdentifier variable in H.225 channel.
+ *
+ * Revision 1.7  1999/06/14 05:15:56  robertj
+ * Changes for using RTP sessions correctly in H323 Logical Channel context
+ *
+ * Revision 1.6  1999/06/13 12:41:14  robertj
+ * Implement logical channel transmitter.
+ * Fixed H245 connect on receiving call.
+ *
+ * Revision 1.5  1999/06/09 05:26:20  robertj
+ * Major restructuring of classes.
+ *
+ * Revision 1.4  1999/06/06 06:06:36  robertj
+ * Changes for new ASN compiler and v2 protocol ASN files.
+ *
+ * Revision 1.3  1999/04/26 06:14:47  craigs
+ * Initial implementation for RTP decoding and lots of stuff
+ * As a whole, these changes are called "First Noise"
+ *
+ * Revision 1.2  1999/01/16 02:35:04  robertj
+ * GNi compiler compatibility.
+ *
+ * Revision 1.1  1999/01/16 01:30:58  robertj
+ * Initial revision
+ *
+ */
+
+#ifndef __H323_H323PDU_H
+#define __H323_H323PDU_H
+
+#ifdef __GNUC__
+#pragma interface
+#endif
+
+
+#include <ptlib/sockets.h>
+#include <h323/q931.h>
+#include <asn/h225.h>
+#include <asn/h245.h>
+
+
+class H450ServiceAPDU;
+class H323Connection;
+
+class H323TransportAddress;
+class OpalTransport;
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+/**Wrapper class for the H323 signalling channel.
+ */
+class H323SignalPDU : public H225_H323_UserInformation
+{
+  PCLASSINFO(H323SignalPDU, H225_H323_UserInformation);
+
+  public:
+  /**@name Construction */
+  //@{
+    /**Create a new H.323 signalling channel (H.225/Q.931) PDU.
+     */
+    H323SignalPDU();
+
+    /**Build a SETUP message.
+      */
+    H225_Setup_UUIE & BuildSetup(
+      const H323Connection & connection,    /// Connection PDU is generated for
+      const H323TransportAddress & destAddr /// Destination address for packet
+    );
+
+    /**Build a CALL-PROCEEDING message.
+      */
+    H225_CallProceeding_UUIE & BuildCallProceeding(
+      const H323Connection & connection    /// Connection PDU is generated for
+    );
+
+    /**Build a CONNECT message.
+      */
+    H225_Connect_UUIE & BuildConnect(
+      const H323Connection & connection    /// Connection PDU is generated for
+    );
+
+    /**Build a CONNECT message with H.245 address.
+      */
+    H225_Connect_UUIE & BuildConnect(
+      const H323Connection & connection,    /// Connection PDU is generated for
+      const PIPSocket::Address & h245Address, /// H.245 IP address
+      WORD port                               /// H.245 TCP port
+    );
+
+    /**Build an ALERTING message.
+      */
+    H225_Alerting_UUIE & BuildAlerting(
+      const H323Connection & connection    /// Connection PDU is generated for
+    );
+
+    /**Build a INFORMATION message.
+      */
+    H225_Information_UUIE & BuildInformation(
+      const H323Connection & connection    /// Connection PDU is generated for
+    );
+
+    /**Build a RELEASE-COMPLETE message.
+      */
+    H225_ReleaseComplete_UUIE & BuildReleaseComplete(
+      const H323Connection & connection    /// Connection PDU is generated for
+    );
+
+    /**Build a FACILITY message.
+      */
+    H225_Facility_UUIE * BuildFacility(
+      const H323Connection & connection,  /// Connection PDU is generated for
+      BOOL empty                          /// Flag for empty facility message
+    );
+
+    /**Build a PROGRESS message.
+      */
+    H225_Progress_UUIE & BuildProgress(
+      const H323Connection & connection    /// Connection PDU is generated for
+    );
+
+    /**Build a STATUS message.
+      */
+    H225_Status_UUIE & BuildStatus(
+      const H323Connection & connection    /// Connection PDU is generated for
+    );
+
+    /**Build a STATUS-INQUIRY message.
+      */
+    H225_StatusInquiry_UUIE & BuildStatusInquiry(
+      const H323Connection & connection    /// Connection PDU is generated for
+    );
+
+    /**Build a SETUP-ACKNOWLEDGE message.
+      */
+    H225_SetupAcknowledge_UUIE & BuildSetupAcknowledge(
+      const H323Connection & connection    /// Connection PDU is generated for
+    );
+
+    /**Build a NOTIFY message.
+      */
+    H225_Notify_UUIE & BuildNotify(
+      const H323Connection & connection    /// Connection PDU is generated for
+    );
+  //@}
+
+
+  /**@name Operations */
+  //@{
+    /**Print PDU to stream.
+      */
+    void PrintOn(
+      ostream & strm
+    ) const;
+
+    /**Read PDU from the specified transport.
+      */
+    BOOL Read(
+      OpalTransport & transport   /// Transport to read from
+    );
+
+    /**Write the PDU to the transport.
+      */
+    BOOL Write(
+      OpalTransport & transport   /// Transport to write to
+    );
+
+    /**Attach a supplementary service APDU to the PDU.
+      */
+    void AttachSupplementaryServiceAPDU(
+      H450ServiceAPDU & serviceAPDU
+    );
+
+    /**Get the Q.931 wrapper PDU for H.225 signalling PDU.
+      */
+    const Q931 & GetQ931() const { return q931pdu; }
+
+    /**Get the Q.931 wrapper PDU for H.225 signalling PDU.
+      */
+    Q931 & GetQ931() { return q931pdu; }
+
+    /**Build the Q.931 wrapper PDU for H.225 signalling PDU.
+       This must be called after altering fields in the H.225 part of the PDU.
+       If it has never been done, then the Write() functions will do so.
+      */
+    void BuildQ931();
+
+    /**Get the source alias names for the remote endpoint.
+       This returns a human readable set of names that was provided by the
+       remote endpoint to identify it, eg phone number, display name etc etc
+      */
+    PString GetSourceAliases(
+      const OpalTransport * transport = NULL  /// Transport PDU was read from.
+    ) const;
+
+    /**Get the destination alias name(s) for the local endpoint.
+       The alias returned here can be used to determine the routing of an
+       incoming connection.
+      */
+    PString GetDestinationAlias(
+      BOOL firstAliasOnly = FALSE   /// Only return the first possible alias
+    ) const;
+
+    /**Get the source endpoints identification as a phone number.
+       This returns FALSE if the remote never provided any alias or Q.931
+       field that indicated a valid e.164 telephone number.
+      */
+    BOOL GetSourceE164(
+      PString & number    /// String to receive number
+    ) const;
+
+    /**Get the destiation  phone number.
+       This returns FALSE if the remote never provided any alias or Q.931
+       field that indicated a valid e.164 telephone number.
+      */
+    BOOL GetDestinationE164(
+      PString & number    /// String to receive number
+    ) const;
+
+    /**Get the distinctive ring code if present.
+       This returns zero if no distinctive ring information is provided.
+      */
+    unsigned GetDistinctiveRing() const;
+
+    /**Set the Q.931 fields in the PDU.
+       This sets the default values for various fields, eg caller party number
+       into the Q.931 from the supplied connection.
+      */
+    void SetQ931Fields(
+      const H323Connection & connection,
+      BOOL insertPartyNumbers = FALSE,
+      unsigned plan = 1,
+      unsigned type = 0,
+      int presentation = -1,
+      int screening = -1
+    );
+
+  protected:
+    // Even though we generally deal with the H323 protocol (H225) it is
+    // actually contained within a field of the Q931 protocol.
+    Q931 q931pdu;
+};
+
+
+/**Wrapper class for the H323 control channel.
+ */
+class H323ControlPDU : public H245_MultimediaSystemControlMessage
+{
+  PCLASSINFO(H323ControlPDU, H245_MultimediaSystemControlMessage);
+
+  public:
+    H245_RequestMessage    & Build(H245_RequestMessage   ::Choices request);
+    H245_ResponseMessage   & Build(H245_ResponseMessage  ::Choices response);
+    H245_CommandMessage    & Build(H245_CommandMessage   ::Choices command);
+    H245_IndicationMessage & Build(H245_IndicationMessage::Choices indication);
+
+    H245_MasterSlaveDetermination & BuildMasterSlaveDetermination(
+      unsigned terminalType,
+      unsigned statusDeterminationNumber
+    );
+    H245_MasterSlaveDeterminationAck & BuildMasterSlaveDeterminationAck(
+      BOOL isMaster
+    );
+    H245_MasterSlaveDeterminationReject & BuildMasterSlaveDeterminationReject(
+      unsigned cause
+    );
+
+    H245_TerminalCapabilitySet & BuildTerminalCapabilitySet(
+      const H323Connection & connection,
+      unsigned sequenceNumber,
+      BOOL empty
+    );
+    H245_TerminalCapabilitySetAck & BuildTerminalCapabilitySetAck(
+      unsigned sequenceNumber
+    );
+    H245_TerminalCapabilitySetReject & BuildTerminalCapabilitySetReject(
+      unsigned sequenceNumber,
+      unsigned cause
+    );
+
+    H245_OpenLogicalChannel & BuildOpenLogicalChannel(
+      unsigned forwardLogicalChannelNumber
+    );
+    H245_RequestChannelClose & BuildRequestChannelClose(
+      unsigned channelNumber,
+      unsigned reason
+    );
+    H245_CloseLogicalChannel & BuildCloseLogicalChannel(
+      unsigned channelNumber
+    );
+    H245_OpenLogicalChannelAck & BuildOpenLogicalChannelAck(
+      unsigned channelNumber
+    );
+    H245_OpenLogicalChannelReject & BuildOpenLogicalChannelReject(
+      unsigned channelNumber,
+      unsigned cause
+    );
+    H245_OpenLogicalChannelConfirm & BuildOpenLogicalChannelConfirm(
+      unsigned channelNumber
+    );
+    H245_CloseLogicalChannelAck & BuildCloseLogicalChannelAck(
+      unsigned channelNumber
+    );
+    H245_RequestChannelCloseAck & BuildRequestChannelCloseAck(
+      unsigned channelNumber
+    );
+    H245_RequestChannelCloseReject & BuildRequestChannelCloseReject(
+      unsigned channelNumber
+    );
+    H245_RequestChannelCloseRelease & BuildRequestChannelCloseRelease(
+      unsigned channelNumber
+    );
+
+    H245_RequestMode & BuildRequestMode(
+      unsigned sequenceNumber
+    );
+    H245_RequestModeAck & BuildRequestModeAck(
+      unsigned sequenceNumber,
+      unsigned response
+    );
+    H245_RequestModeReject & BuildRequestModeReject(
+      unsigned sequenceNumber,
+      unsigned cause
+    );
+
+    H245_RoundTripDelayRequest & BuildRoundTripDelayRequest(
+      unsigned sequenceNumber
+    );
+    H245_RoundTripDelayResponse & BuildRoundTripDelayResponse(
+      unsigned sequenceNumber
+    );
+
+    H245_UserInputIndication & BuildUserInputIndication(
+      const PString & value
+    );
+    H245_UserInputIndication & BuildUserInputIndication(
+      char tone,               /// DTMF tone code
+      unsigned duration,       /// Duration of tone in milliseconds
+      unsigned logicalChannel, /// Logical channel number for RTP sync.
+      unsigned rtpTimestamp    /// RTP timestamp in logical channel sync.
+    );
+
+    H245_FunctionNotUnderstood & BuildFunctionNotUnderstood(
+      const H323ControlPDU & pdu
+    );
+
+    H245_EndSessionCommand & BuildEndSessionCommand(
+      unsigned reason
+    );
+};
+
+
+class H323RasPDU : public H225_RasMessage
+{
+  PCLASSINFO(H323RasPDU, H225_RasMessage);
+
+  public:
+    virtual H225_GatekeeperRequest     & BuildGatekeeperRequest(unsigned seqNum);
+    virtual H225_GatekeeperConfirm     & BuildGatekeeperConfirm(unsigned seqNum);
+    virtual H225_GatekeeperReject      & BuildGatekeeperReject(unsigned seqNum, unsigned reason = H225_GatekeeperRejectReason::e_undefinedReason);
+    virtual H225_RegistrationRequest   & BuildRegistrationRequest(unsigned seqNum);
+    virtual H225_RegistrationConfirm   & BuildRegistrationConfirm(unsigned seqNum);
+    virtual H225_RegistrationReject    & BuildRegistrationReject(unsigned seqNum, unsigned reason = H225_RegistrationRejectReason::e_undefinedReason);
+    virtual H225_UnregistrationRequest & BuildUnregistrationRequest(unsigned seqNum);
+    virtual H225_UnregistrationConfirm & BuildUnregistrationConfirm(unsigned seqNum);
+    virtual H225_UnregistrationReject  & BuildUnregistrationReject(unsigned seqNum, unsigned reason = H225_UnregRejectReason::e_undefinedReason);
+    virtual H225_LocationRequest       & BuildLocationRequest(unsigned seqNum);
+    virtual H225_LocationConfirm       & BuildLocationConfirm(unsigned seqNum);
+    virtual H225_LocationReject        & BuildLocationReject(unsigned seqNum, unsigned reason = H225_LocationRejectReason::e_undefinedReason);
+    virtual H225_AdmissionRequest      & BuildAdmissionRequest(unsigned seqNum);
+    virtual H225_AdmissionConfirm      & BuildAdmissionConfirm(unsigned seqNum);
+    virtual H225_AdmissionReject       & BuildAdmissionReject(unsigned seqNum, unsigned reason = H225_AdmissionRejectReason::e_undefinedReason);
+    virtual H225_DisengageRequest      & BuildDisengageRequest(unsigned seqNum);
+    virtual H225_DisengageConfirm      & BuildDisengageConfirm(unsigned seqNum);
+    virtual H225_DisengageReject       & BuildDisengageReject(unsigned seqNum, unsigned reason = H225_DisengageRejectReason::e_securityDenial);
+    virtual H225_BandwidthRequest      & BuildBandwidthRequest(unsigned seqNum);
+    virtual H225_BandwidthConfirm      & BuildBandwidthConfirm(unsigned seqNum, unsigned bandwidth = 0);
+    virtual H225_BandwidthReject       & BuildBandwidthReject(unsigned seqNum, unsigned reason = H225_BandRejectReason::e_undefinedReason);
+    virtual H225_InfoRequestResponse   & BuildInfoRequestResponse(unsigned seqNum);
+    virtual H225_UnknownMessageResponse& BuildUnknownMessageResponse(unsigned seqNum);
+
+    virtual BOOL Read(OpalTransport & transport);
+    virtual BOOL Write(OpalTransport & transport) const;
+
+    virtual BOOL OnReadPDU(
+      PPER_Stream & strm
+    );
+    virtual BOOL OnWritePDU(
+      PPER_Stream & strm
+    ) const;
+};
+
+
+void H323SetAliasAddresses(const PStringList & name, H225_ArrayOf_AliasAddress & aliases);
+void H323SetAliasAddress(const PString & name, H225_AliasAddress & alias);
+PString H323GetAliasAddressString(const H225_AliasAddress & alias);
+
+
+#endif // __H323_H323PDU_H
+
+
+/////////////////////////////////////////////////////////////////////////////
