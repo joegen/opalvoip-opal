@@ -24,7 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2027  2004/03/16 12:06:11  rjongbloed
+ * Revision 1.2028  2004/03/20 09:11:52  rjongbloed
+ * Fixed probelm if inital read of stream fr SIP PDU fails. Should not then read again using
+ *   >> operator as this then blocks the write due to the ios built in mutex.
+ * Added timeout for "inter-packet" characters received. Waits forever for the first byte of
+ *   a SIP PDU, then only waits a short time for the rest. This helps with getting a deadlock
+ *   if a remote fails to send a full PDU.
+ *
+ * Revision 2.26  2004/03/16 12:06:11  rjongbloed
  * Changed SIP command URI to always be same as "to" address, not sure if this is correct though.
  *
  * Revision 2.25  2004/03/14 10:14:13  rjongbloed
@@ -1059,14 +1066,21 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
 {
   // Do this to force a Read() by the PChannelBuffer outside of the
   // ios::lock() mutex which would prevent simultaneous reads and writes.
+  transport.SetReadTimeout(PMaxTimeInterval);
+  if (transport.rdbuf()->
 #if defined(__MWERKS__) || __GNUC__ >= 3
-  transport.rdbuf()->pubseekoff(0, ios_base::cur);
+                         pubseekoff(0, ios_base::cur)
 #else
-  transport.rdbuf()->seekoff(0, ios::cur, ios::in);
+                         seekoff(0, ios::cur, ios::in)
 #endif
+                                                       == EOF)
+    transport.clear(ios::badbit);
 
   PString cmd;
-  transport >> cmd >> mime;
+  if (transport.good()) {
+    transport.SetReadTimeout(3000);
+    transport >> cmd >> mime;
+  }
 
   if (!transport.good()) {
     PTRACE_IF(1, transport.GetErrorCode(PChannel::LastReadError) != PChannel::NoError,
