@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2004  2001/08/21 01:12:10  robertj
+ * Revision 1.2005  2001/10/03 05:53:25  robertj
+ * Update to new PTLib channel error system.
+ *
+ * Revision 2.3  2001/08/21 01:12:10  robertj
  * Fixed propagation of sound channel buffers through media stream.
  *
  * Revision 2.2  2001/08/17 08:34:28  robertj
@@ -343,11 +346,8 @@ BOOL OpalLineMediaStream::Read(void * buffer, PINDEX length)
 {
   lastReadCount = 0;
 
-  if (IsSink()) {
-    lastError = Miscellaneous;
-    osError = EINVAL;
-    return FALSE;
-  }
+  if (IsSink())
+    return SetErrorValues(Miscellaneous, EINVAL);
 
   if (useDeblocking) {
     line.SetReadFrameSize(length);
@@ -380,13 +380,10 @@ BOOL OpalLineMediaStream::Read(void * buffer, PINDEX length)
     }
   }
 
-  osError = line.GetDevice().GetErrorNumber();
+  DWORD osError = line.GetDevice().GetErrorNumber();
   PTRACE_IF(1, osError != 0, "Media\tDevice read frame error: " << line.GetDevice().GetErrorText());
 
-  osError |= 0x40000000;
-  lastError = Miscellaneous;
-  lastReadCount = 0;
-  return FALSE;
+  return SetErrorValues(Miscellaneous, osError|PWIN32ErrorFlag, LastReadError);
 }
 
 
@@ -394,11 +391,8 @@ BOOL OpalLineMediaStream::Write(const void * buffer, PINDEX length)
 {
   lastWriteCount = 0;
 
-  if (IsSource()) {
-    lastError = Miscellaneous;
-    osError = EINVAL;
-    return FALSE;
-  }
+  if (IsSource())
+    return SetErrorValues(Miscellaneous, EINVAL);
 
   // Check for writing silence
   PBYTEArray silenceBuffer;
@@ -454,12 +448,10 @@ BOOL OpalLineMediaStream::Write(const void * buffer, PINDEX length)
       return TRUE;
   }
 
-  osError = line.GetDevice().GetErrorNumber();
+  DWORD osError = line.GetDevice().GetErrorNumber();
   PTRACE_IF(1, osError != 0, "Media\tLID write frame error: " << line.GetDevice().GetErrorText());
 
-  osError |= 0x40000000;
-  lastError = Miscellaneous;
-  return FALSE;
+  return SetErrorValues(Miscellaneous, osError|PWIN32ErrorFlag, LastWriteError);
 }
 
 

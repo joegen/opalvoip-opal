@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2001/10/03 05:53:25  robertj
+ * Update to new PTLib channel error system.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  */
@@ -708,9 +711,7 @@ BOOL OpalTransportTCP::Connect()
     if (!socket->Connect(remoteAddress)) {
       PTRACE(1, "OpalTCP\tCould not connect to "
              << remoteAddress << ':' << remotePort << ' ' << socket->GetErrorText());
-      osError = socket->GetErrorNumber();
-      lastError = socket->GetErrorCode();
-      return FALSE;
+      return SetErrorValues(socket->GetErrorCode(), socket->GetErrorNumber());
     }
   }
   else {
@@ -727,9 +728,7 @@ BOOL OpalTransportTCP::Connect()
                   << remoteAddress << ':' << remotePort
                   << ' ' << socket->GetErrorText()
                   << "(" << socket->GetErrorNumber() << ")");
-        osError = socket->GetErrorNumber();
-        lastError = socket->GetErrorCode();
-        return FALSE;
+        return SetErrorValues(socket->GetErrorCode(), socket->GetErrorNumber());
       }
 
       portBase++;
@@ -754,8 +753,7 @@ BOOL OpalTransportTCP::ReadPDU(PBYTEArray & pdu)
       break;
 
     default :  // Unknown version number
-      lastError = Miscellaneous;
-      osError = 0x10000;
+      SetErrorValues(ProtocolFailure, 0x80000000);
       // Do case for read error
 
     case -1 :
