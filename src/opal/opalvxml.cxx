@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalvxml.cxx,v $
- * Revision 1.2008  2004/04/18 13:36:15  rjongbloed
+ * Revision 1.2009  2004/06/22 06:27:58  csoutheren
+ * Updated for new abstract factory implementation
+ *
+ * Revision 2.7  2004/04/18 13:36:15  rjongbloed
  * Added autmatic inclusion of a text to speach converter, if available.
  *
  * Revision 2.6  2003/03/18 04:43:27  robertj
@@ -138,13 +141,14 @@ OpalVXMLSession::OpalVXMLSession(OpalConnection * _conn, PTextToSpeech * tts, BO
     conn(_conn)
 {
   if (tts == NULL) {
-    tts = new PTextToSpeech();
-    PStringArray engines = tts->GetEngines();
-    if (engines.IsEmpty())
-      delete tts;
-    else {
-      tts->SetEngine(engines[0]);
-      SetTextToSpeech(tts, TRUE);
+    PGenericFactory<PTextToSpeech>::KeyList_T engines = PGenericFactory<PTextToSpeech>::GetKeyList();
+    if (engines.size() != 0) {
+#ifdef _WIN32
+      PString name = "Microsoft SAPI";
+      if (std::find(engines.begin(), engines.end(), name) == engines.end())
+#endif
+        name = engines[0];
+      tts = PGenericFactory<PTextToSpeech>::CreateInstance(name);
     }
   }
 }
