@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lpc10codec.h,v $
- * Revision 1.2003  2001/11/02 10:45:19  robertj
+ * Revision 1.2004  2002/09/04 06:01:46  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.2  2001/11/02 10:45:19  robertj
  * Updated to OpenH323 v1.7.3
  *
  * Revision 2.1  2001/08/01 05:03:09  robertj
@@ -36,6 +39,16 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.8  2002/09/03 05:41:25  robertj
+ * Normalised the multi-include header prevention ifdef/define symbol.
+ * Added globally accessible functions for media format name.
+ *
+ * Revision 1.7  2002/08/14 19:35:08  rogerh
+ * fix typo
+ *
+ * Revision 1.6  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
  *
  * Revision 1.5  2001/10/24 01:20:34  robertj
  * Added code to help with static linking of H323Capability names database.
@@ -55,8 +68,8 @@
  *
  */
 
-#ifndef __CODEC_LPC10CODEC_H
-#define __CODEC_LPC10CODEC_H
+#ifndef __OPAL_LPC10CODEC_H
+#define __OPAL_LPC10CODEC_H
 
 #ifdef __GNUC__
 #pragma interface
@@ -150,8 +163,7 @@ H323_STATIC_LOAD_REGISTER_CAPABILITY(H323_LPC10Capability);
           OPAL_REGISTER_TRANSCODER(Opal_PCM_LPC10, OPAL_PCM16, OPAL_LPC10)
 
 
-#endif // __CODEC_LPC10CODEC_H
+#endif // __OPAL_LPC10CODEC_H
 
 
 /////////////////////////////////////////////////////////////////////////////
-

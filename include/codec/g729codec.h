@@ -27,8 +27,17 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g729codec.h,v $
- * Revision 1.2002  2002/07/01 04:56:29  robertj
+ * Revision 1.2003  2002/09/04 06:01:46  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.1  2002/07/01 04:56:29  robertj
  * Updated to OpenH323 v1.9.1
+ *
+ * Revision 1.4  2002/09/03 06:19:36  robertj
+ * Normalised the multi-include header prevention ifdef/define symbol.
+ *
+ * Revision 1.3  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
  *
  * Revision 1.2  2002/06/27 03:08:31  robertj
  * Added G.729 capabilitity support even though is really G.729A.
@@ -39,8 +48,8 @@
  *
  */
 
-#ifndef __CODEC_G729CODEC_H
-#define __CODEC_G729CODEC_H
+#ifndef __OPAL_G729CODEC_H
+#define __OPAL_G729CODEC_H
 
 #ifdef __GNUC__
 #pragma interface
@@ -86,8 +95,7 @@ typedef Opal_PCM_G729 Opal_PCM_G729A;
 
 
 
-#endif // __CODEC_G729CODEC_H
+#endif // __OPAL_G729CODEC_H
 
 
 /////////////////////////////////////////////////////////////////////////////
-

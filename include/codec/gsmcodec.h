@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gsmcodec.h,v $
- * Revision 1.2003  2001/11/02 10:45:19  robertj
+ * Revision 1.2004  2002/09/04 06:01:46  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.2  2001/11/02 10:45:19  robertj
  * Updated to OpenH323 v1.7.3
  *
  * Revision 2.1  2001/08/01 05:03:09  robertj
@@ -39,6 +42,12 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.13  2002/09/03 06:19:36  robertj
+ * Normalised the multi-include header prevention ifdef/define symbol.
+ *
+ * Revision 1.12  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
  *
  * Revision 1.11  2001/10/24 01:20:34  robertj
  * Added code to help with static linking of H323Capability names database.
@@ -76,8 +85,8 @@
  *
  */
 
-#ifndef __CODEC_GSMCODEC_H
-#define __CODEC_GSMCODEC_H
+#ifndef __OPAL_GSMCODEC_H
+#define __OPAL_GSMCODEC_H
 
 #ifdef __GNUC__
 #pragma interface
@@ -134,7 +143,7 @@ class Opal_PCM_GSM0610 : public Opal_GSM0610 {
 
 
 
-#endif // __CODEC_GSMCODEC_H
+#endif // __OPAL_GSMCODEC_H
 
 
 /////////////////////////////////////////////////////////////////////////////
