@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2005  2002/04/09 08:04:01  robertj
+ * Revision 1.2006  2002/04/10 03:15:17  robertj
+ * Fixed using incorrect field as default reply address on receiving a respons PDU.
+ *
+ * Revision 2.4  2002/04/09 08:04:01  robertj
  * Fixed typo in previous patch!
  *
  * Revision 2.3  2002/04/09 07:18:33  robertj
@@ -110,7 +113,7 @@ void SIPEndPoint::HandlePDU(OpalTransport & transport)
     if (!transport.IsReliable()) {
       // Calculate default return address
       if (pdu->GetMethod() != SIP_PDU::NumMethods) {
-        PString via = pdu->GetMIME().GetContact();
+        PString via = pdu->GetMIME().GetVia();
         transport.SetRemoteAddress(via.Mid(via.FindLast(' ')));
       }
     }
