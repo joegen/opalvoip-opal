@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.h,v $
- * Revision 1.2004  2001/11/02 10:45:19  robertj
+ * Revision 1.2005  2002/01/14 06:35:56  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.3  2001/11/02 10:45:19  robertj
  * Updated to OpenH323 v1.7.3
  *
  * Revision 2.2  2001/10/05 00:22:13  robertj
@@ -40,6 +43,15 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.27  2002/01/09 06:06:37  robertj
+ * Fixed setting of RTP timestamp values on video transmission.
+ *
+ * Revision 1.26  2002/01/09 00:21:36  robertj
+ * Changes to support outgoing H.245 RequstModeChange.
+ *
+ * Revision 1.25  2001/12/04 04:26:03  robertj
+ * Added code to allow change of video quality in H.261, thanks Damian Sandras
  *
  * Revision 1.24  2001/10/23 02:18:06  dereks
  * Initial release of CU30 video codec.
@@ -243,6 +255,17 @@ class H323_H261Capability : public H323VideoCapability
      */
     virtual BOOL OnSendingPDU(
       H245_VideoCapability & pdu  /// PDU to set information on
+    ) const;
+
+    /**This function is called whenever and outgoing RequestMode
+       PDU is being constructed for the control channel. It allows the
+       capability to set the PDU fields from information in members specific
+       to the class.
+
+       The default behaviour sets the resolution and bit rate.
+     */
+    virtual BOOL OnSendingPDU(
+      H245_VideoMode & pdu  /// PDU to set information on
     ) const;
 
     /**This function is called whenever and incoming TerminalCapabilitySet

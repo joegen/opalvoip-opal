@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2008  2001/11/02 10:45:19  robertj
+ * Revision 1.2009  2002/01/14 06:35:56  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.7  2001/11/02 10:45:19  robertj
  * Updated to OpenH323 v1.7.3
  *
  * Revision 2.6  2001/10/15 04:31:14  robertj
@@ -52,6 +55,32 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.21  2002/01/14 00:05:24  robertj
+ * Added H.450.6, better H.450.2 error handling and  and Music On Hold.
+ * Added destExtraCallInfo field for ARQ.
+ *   Thanks Ben Madsen of Norwood Systems
+ *
+ * Revision 1.20  2002/01/10 05:13:50  robertj
+ * Added support for external RTP stacks, thanks NuMind Software Systems.
+ *
+ * Revision 1.19  2002/01/09 00:21:36  robertj
+ * Changes to support outgoing H.245 RequstModeChange.
+ *
+ * Revision 1.18  2001/12/22 03:20:31  robertj
+ * Added create protocol function to H323Connection.
+ *
+ * Revision 1.17  2001/12/22 03:09:36  robertj
+ * Changed OnRequstModeChange to return ack, then actually do the change.
+ *
+ * Revision 1.16  2001/12/22 01:52:54  robertj
+ * Added more support for H.245 RequestMode operation.
+ *
+ * Revision 1.15  2001/12/15 08:09:54  robertj
+ * Added alerting, connect and end of call times to be sent to RAS server.
+ *
+ * Revision 1.14  2001/12/13 10:54:23  robertj
+ * Added ability to automatically add ACF access token to SETUP pdu.
  *
  * Revision 1.13  2001/11/01 06:11:54  robertj
  * Plugged very small mutex hole that could cause crashes.
@@ -132,6 +161,8 @@ class H245_UserInputIndication;
 class H245_RequestMode;
 class H245_RequestModeAck;
 class H245_RequestModeReject;
+class H245_ModeDescription;
+class H245_ArrayOf_ModeDescription;
 class H245_SendTerminalCapabilitySet;
 class H245_MultiplexCapability;
 class H245_FlowControlCommand;
@@ -153,8 +184,11 @@ class H245NegRoundTripDelay;
 class H450xDispatcher;
 class H4502Handler;
 class H4504Handler;
+class H4506Handler;
 
 class OpalCall;
+class OpalT120Protocol;
+class OpalT38Protocol;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -557,6 +591,12 @@ class H323Connection : public OpalConnection
       */
     int GetCallTransferInvokeId();
 
+   /**Handle the failure of a call transfer operation.
+     */
+   virtual void HandleCallTransferFailure(
+     int returnError    // failure eason
+   );
+
     /**Place the call on hold, suspending all media channels (H.450.4)
     * NOTE: Only Local Hold is implemented so far. 
     */
@@ -564,12 +604,26 @@ class H323Connection : public OpalConnection
       BOOL localHold   /// true for Local Hold, false for Remote Hold
     );
 
-    /**Retrieve the call from hold, activating all media channels (H.450.4)
-    * NOTE: Only Local Hold is implemented so far. 
+    /**Retrieve the call from hold, activating all media channels (H.450.4).
+       This method examines the call hold state and performs the necessary
+       actions required to retrieve a Near-end or Remote-end call on hold.
+       NOTE: Only Local Hold is implemented so far. 
     */
-    void RetrieveCall(
-      bool localHold						  /// true for Local Hold, false for Remote Hold
+    void RetrieveCall();
+
+    /**Set the alternative media channel.  This channel can be used to provided
+       Media On Hold (MOH) for a near end call hold operation or to provide
+       Recorded Voice Anouncements (RVAs).  If this method is not called before
+       a call hold operation is attempted, no media on hold will be provided
+       for the held endpoint.
+      */
+    void SetHoldMedia(
+      PChannel * audioChannel
     );
+
+    /**Determine if Meadia On Hold is enabled.
+      */
+    BOOL IsMediaOnHold() const;
 
     /**Determine if held.
       */
@@ -579,6 +633,18 @@ class H323Connection : public OpalConnection
       */
     BOOL IsRemoteHold() const;
 
+    /**Determine if the current call is held or in the process of being held.
+      */
+    BOOL IsCallOnHold() const;
+
+    /**Send a Call Waiting indication message to the remote endpoint using H.450.6.  The second paramter
+       is used to indicate to the calling user how many additional users are "camped on" the called user.
+       A value of zero indicates to the calling user that he/she is the only user attempting to reach
+       the busy called user.
+     */
+    void SendCallWaitingIndication(
+      const unsigned nbOfAddWaitingCalls = 0   /// number of additional waiting calls at the served user
+    );
 
     enum AnswerCallResponse {
       AnswerCallNow,               /// Answer the call continuing with the connection.
@@ -1137,6 +1203,48 @@ class H323Connection : public OpalConnection
       unsigned & errorCode                  /// Reason for create failure
     );
 
+    /**Create a new real time logical channel object.
+       This creates a logical channel for handling RTP data. It is primarily
+       used to allow an application to redirect the RTP media streams to other
+       hosts to the local one. In that case it would create an instance of
+       the H323_ExternalRTPChannel class with the appropriate address. eg:
+
+         H323Channel * MyConnection::CreateRealTimeLogicalChannel(
+                                        const H323Capability & capability,
+                                        H323Channel::Directions dir,
+                                        unsigned sessionID,
+                                        const H245_H2250LogicalChannelParameters * param)
+         {
+           return new H323_ExternalRTPChannel(*this, capability, dir, sessionID,
+                                              externalIpAddress, externalPort);
+         }
+
+       An application would typically also override the OnStartLogicalChannel()
+       function to obtain from the H323_ExternalRTPChannel instance the address
+       of the remote endpoints media server RTP addresses to complete the
+       setting up of the external RTP stack. eg:
+
+         BOOL OnStartLogicalChannel(H323Channel & channel)
+         {
+           H323_ExternalRTPChannel & external = (H323_ExternalRTPChannel &)channel;
+           external.GetRemoteAddress(remoteIpAddress, remotePort);
+         }
+
+       Note that the port in the above example is always the data port, the
+       control port is assumed to be data+1.
+
+       The default behaviour assures there is an RTP session for the session ID,
+       and if not creates one, then creates a H323_RTPChannel which will do RTP
+       media to the local host.
+      */
+    virtual H323Channel * CreateRealTimeLogicalChannel(
+      const H323Capability & capability, /// Capability creating channel
+      H323Channel::Directions dir,       /// Direction of channel
+      unsigned sessionID,                /// Session ID for RTP channel
+      const H245_H2250LogicalChannelParameters * param
+                                         /// Parameters for channel
+    );
+
     /**This function is called when the remote endpoint want's to create
        a new channel.
 
@@ -1172,6 +1280,12 @@ class H323Connection : public OpalConnection
       */
     virtual void CloseLogicalChannelNumber(
       const H323ChannelNumber & number    /// Channel number to close.
+    );
+
+    /**Close a logical channel.
+      */
+    virtual void CloseAllLogicalChannels(
+      BOOL fromRemote     /// Indicates close request of remote channel
     );
 
     /**This function is called when the remote endpoint has closed down
@@ -1351,14 +1465,14 @@ class H323Connection : public OpalConnection
     /**Get an RTP session for the specified ID.
        If there is no session of the specified ID, NULL is returned.
       */
-    RTP_Session * GetSession(
+    virtual RTP_Session * GetSession(
       unsigned sessionID
     ) const;
 
     /**Get an H323 RTP session for the specified ID.
        If there is no session of the specified ID, NULL is returned.
       */
-    H323_RTP_Session * GetSessionCallbacks(
+    virtual H323_RTP_Session * GetSessionCallbacks(
       unsigned sessionID
     ) const;
 
@@ -1371,7 +1485,7 @@ class H323Connection : public OpalConnection
        called or the session is never deleted for the lifetime of the H323
        connection.
       */
-    RTP_Session * UseSession(
+    virtual RTP_Session * UseSession(
       unsigned sessionID,
       const H245_TransportAddress & pdu
     );
@@ -1379,7 +1493,7 @@ class H323Connection : public OpalConnection
     /**Release the session. If the session ID is not being used any more any
        clients via the UseSession() function, then the session is deleted.
      */
-    void ReleaseSession(
+    virtual void ReleaseSession(
       unsigned sessionID
     );
 
@@ -1397,7 +1511,7 @@ class H323Connection : public OpalConnection
     /**Get the names of the codecs in use for the RTP session.
        If there is no session of the specified ID, an empty string is returned.
       */
-    PString GetSessionCodecNames(
+    virtual PString GetSessionCodecNames(
       unsigned sessionID
     ) const;
   //@}
@@ -1405,28 +1519,92 @@ class H323Connection : public OpalConnection
   /**@name Request Mode Changes */
   //@{
     /**Make a request to mode change to remote.
+       This asks the remote system to stop it transmitters and start sending
+       one of the combinations specifed.
+
+       The modes are separated in the string by \n characters, and all of the
+       channels (capabilities) are strings separated by \t characters. Thus a
+       very simple mode change would be "T.38" which requests that the remote
+       start sending T.38 data and nothing else. A more complicated example
+       would be "G.723\tH.261\nG.729\tH.261\nG.728" which indicates that the
+       remote should either start sending G.723 and H.261, G.729 and H.261 or
+       just G.728 on its own.
+
+       Returns FALSE if a mode change is currently in progress, only one mode
+       change may be done at a time.
       */
-    void RequestModeChange();
+    virtual BOOL RequestModeChange(
+      const PString & newModes  /// New modes to select
+    );
+
+    /**Make a request to mode change to remote.
+       This asks the remote system to stop it transmitters and start sending
+       one of the combinations specifed.
+
+       Returns FALSE if a mode change is currently in progress, only one mode
+       change may be done at a time.
+      */
+    virtual BOOL RequestModeChange(
+      const H245_ArrayOf_ModeDescription & newModes  /// New modes to select
+    );
 
     /**Received request for mode change from remote.
       */
-    BOOL OnRequestModeChange(
+    virtual BOOL OnRequestModeChange(
       const H245_RequestMode & pdu,     /// Received PDU
       H245_RequestModeAck & ack,        /// Ack PDU to send
-      H245_RequestModeReject & reject   /// Reject PDU to send
+      H245_RequestModeReject & reject,  /// Reject PDU to send
+      PINDEX & selectedMode           /// Which mode was selected
     );
 
-    /**Received acceptance of last mode change request from remote.
+    /**Completed request for mode change from remote.
+       This is a call back that accurs after the ack has been sent to the
+       remote as indicated by the OnRequestModeChange() return result. This
+       function is intended to actually implement the mode change after it
+       had been accepted.
       */
-    void OnAcceptModeChange(
+    virtual void OnModeChanged(
+      const H245_ModeDescription & newMode
+    );
+
+    /**Received acceptance of last mode change request.
+       This callback indicates that the RequestModeChange() was accepted by
+       the remote endpoint.
+      */
+    virtual void OnAcceptModeChange(
       const H245_RequestModeAck & pdu  /// Received PDU
     );
 
-    /**Received reject of last mode change request from remote.
+    /**Received reject of last mode change request.
+       This callback indicates that the RequestModeChange() was accepted by
+       the remote endpoint.
       */
-    void OnRefusedModeChange(
+    virtual void OnRefusedModeChange(
       const H245_RequestModeReject * pdu  /// Received PDU, if NULL is a timeout
     );
+  //@}
+
+  /**@name Other services */
+  //@{
+    /**Create an instance of the T.120 protocol handler.
+       This is called when the OpenLogicalChannel subsystem requires that
+       a T.120 channel be established.
+
+       The default behavour returns H323Endpoint::CreateT120ProtocolHandler().
+      */
+    virtual OpalT120Protocol * CreateT120ProtocolHandler() const;
+
+    /**Create an instance of the T.38 protocol handler.
+       This is called when the OpenLogicalChannel subsystem requires that
+       a T.38 fax channel be established.
+
+       The default behavour returns H323Endpoint::CreateT38ProtocolHandler().
+      */
+    virtual OpalT38Protocol * CreateT38ProtocolHandler() const;
+
+    /**Request a mode change to T.38 data.
+      */
+    virtual BOOL RequestModeChangeT38();
   //@}
 
   /**@name Member variable access */
@@ -1508,9 +1686,22 @@ class H323Connection : public OpalConnection
       */
     const OpalTransport & GetControlChannel() const;
 
-    /**Get the time at which the connection was established
+    /**Get the time at which the connection was begun
       */
-    PTime GetConnectionStartTime() const { return connectionStartTime; }
+    PTime GetSetupUpTime() const { return setupTime; }
+
+    /**Get the time at which the ALERTING was received
+      */
+    PTime GetAlertingTime() const { return alertingTime; }
+
+    /**Get the time at which the connection was connected. That is the point
+       at which charging is likely to have begun.
+      */
+    PTime GetConnectionStartTime() const { return connectedTime; }
+
+    /**Get the time at which the connection was cleared
+      */
+    PTime GetConnectionEndTime() const { return callEndTime; }
 
     /**Get the default maximum audio delay jitter parameter.
      */
@@ -1539,6 +1730,12 @@ class H323Connection : public OpalConnection
     /**Get the iNow Gatekeeper Access Token data.
      */
     const PBYTEArray & GetGkAccessTokenData() const { return gkAccessTokenData; }
+
+    /**Set the Destionation Extra Call Info memeber.
+     */
+    void SetDestExtraCallInfo(
+      const PString & info
+    ) { destExtraCallInfo = info; }
   //@}
 
 
@@ -1552,6 +1749,7 @@ class H323Connection : public OpalConnection
 
     PString            localDestinationAddress;
     H323Capabilities   localCapabilities; // Capabilities local system supports
+    PString            destExtraCallInfo;
     PString            remoteApplication;
     H323Capabilities   remoteCapabilities; // Capabilities remote system supports
     unsigned           remoteMaxAudioDelayJitter;
@@ -1560,6 +1758,7 @@ class H323Connection : public OpalConnection
     unsigned           uuiesRequested;
     PString            gkAccessTokenOID;
     PBYTEArray         gkAccessTokenData;
+    BOOL               addAccessTokenToSetup;
 
     OpalTransport * signallingChannel;
     OpalTransport * controlChannel;
@@ -1582,10 +1781,20 @@ class H323Connection : public OpalConnection
       NumConnectionStates
     } connectionState;
 
-    PSyncPoint    digitsWaitFlag;
+    PTime         setupTime;
+    PTime         alertingTime;
+    PTime         connectedTime;
+    PTime         callEndTime;
 
     BOOL mediaWaitForConnect;
     BOOL transmitterSidePaused;
+    BOOL earlyStart;
+    BOOL startT120;
+    BOOL t38ModeChange;
+    PSyncPoint digitsWaitFlag;
+
+    // Used as part of a local call hold operation involving MOH
+    PChannel * holdMediaChannel;
 
     RTP_SessionManager rtpSessions;
 
@@ -1599,9 +1808,6 @@ class H323Connection : public OpalConnection
     FastStartStates        fastStartState;
     H323LogicalChannelList fastStartChannels;
     OpalMediaStream      * fastStartedTransmitMediaStream;
-
-    BOOL earlyStart;
-    BOOL startT120;
 
 #if PTRACING
     friend ostream & operator<<(ostream & out, AnswerCallResponse response);
@@ -1623,9 +1829,11 @@ class H323Connection : public OpalConnection
     H450xDispatcher                  * h450dispatcher;
     H4502Handler                     * h4502handler;
     H4504Handler                     * h4504handler;
+    H4506Handler                     * h4506handler;
 
   private:
     void Construct(BOOL disableFastStart, BOOL disableTunneling);
+    PChannel * SwapHoldMediaChannels(PChannel * newChannel);
 };
 
 

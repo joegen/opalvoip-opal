@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.h,v $
- * Revision 1.2004  2001/11/02 10:45:19  robertj
+ * Revision 1.2005  2002/01/14 06:35:56  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.3  2001/11/02 10:45:19  robertj
  * Updated to OpenH323 v1.7.3
  *
  * Revision 2.2  2001/10/05 00:22:13  robertj
@@ -39,6 +42,12 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.27  2002/01/09 00:21:36  robertj
+ * Changes to support outgoing H.245 RequstModeChange.
+ *
+ * Revision 1.26  2001/12/22 01:44:05  robertj
+ * Added more support for H.245 RequestMode operation.
  *
  * Revision 1.25  2001/10/24 01:20:34  robertj
  * Added code to help with static linking of H323Capability names database.
@@ -143,11 +152,16 @@
    inclusion can be avoided.
  */
 class PASN_Choice;
-class H245_DataType;
 class H245_Capability;
+class H245_DataType;
+class H245_ModeElement;
 class H245_AudioCapability;
+class H245_AudioMode;
 class H245_VideoCapability;
+class H245_VideoMode;
 class H245_DataApplicationCapability;
+class H245_DataMode;
+class H245_DataProtocolCapability;
 class H245_H2250LogicalChannelParameters;
 class H245_TerminalCapabilitySet;
 class H245_NonStandardParameter;
@@ -304,6 +318,17 @@ class H323Capability : public PObject
      */
     virtual BOOL OnSendingPDU(
       H245_DataType & pdu  /// PDU to set information on
+    ) const = 0;
+
+    /**This function is called whenever and outgoing RequestMode
+       PDU is being constructed for the control channel. It allows the
+       capability to set the PDU fields from information in members specific
+       to the class.
+
+       The default behaviour is pure.
+     */
+    virtual BOOL OnSendingPDU(
+      H245_ModeElement & pdu  /// PDU to set information on
     ) const = 0;
 
     /**This function is called whenever and incoming TerminalCapabilitySet
@@ -610,6 +635,18 @@ class H323AudioCapability : public H323RealTimeCapability
       H245_DataType & pdu  /// PDU to set information on
     ) const;
 
+    /**This function is called whenever and outgoing RequestMode
+       PDU is being constructed for the control channel. It allows the
+       capability to set the PDU fields from information in members specific
+       to the class.
+
+       The default behaviour calls the OnSendingPDU() function with a more
+       specific PDU type.
+     */
+    virtual BOOL OnSendingPDU(
+      H245_ModeElement & pdu  /// PDU to set information on
+    ) const;
+
     /**This function is called whenever and outgoing TerminalCapabilitySet
        or OpenLogicalChannel PDU is being constructed for the control channel.
        It allows the capability to set the PDU fields from information in
@@ -621,6 +658,18 @@ class H323AudioCapability : public H323RealTimeCapability
     virtual BOOL OnSendingPDU(
       H245_AudioCapability & pdu,  /// PDU to set information on
       unsigned packetSize          /// Packet size to use in capability
+    ) const;
+
+    /**This function is called whenever and outgoing RequestMode
+       PDU is being constructed for the control channel. It allows the
+       capability to set the PDU fields from information in members specific
+       to the class.
+
+       The default behaviour sets the PDUs tag according to the GetSubType()
+       function (translated to different enum).
+     */
+    virtual BOOL OnSendingPDU(
+      H245_AudioMode & pdu  /// PDU to set information on
     ) const;
 
     /**This function is called whenever and incoming TerminalCapabilitySet
@@ -851,6 +900,18 @@ class H323VideoCapability : public H323RealTimeCapability
       H245_DataType & pdu  /// PDU to set information on
     ) const;
 
+    /**This function is called whenever and outgoing RequestMode
+       PDU is being constructed for the control channel. It allows the
+       capability to set the PDU fields from information in members specific
+       to the class.
+
+       The default behaviour calls the OnSendingPDU() function with a more
+       specific PDU type.
+     */
+    virtual BOOL OnSendingPDU(
+      H245_ModeElement & pdu  /// PDU to set information on
+    ) const;
+
     /**This function is called whenever and outgoing TerminalCapabilitySet
        or OpenLogicalChannel PDU is being constructed for the control channel.
        It allows the capability to set the PDU fields from information in
@@ -860,6 +921,18 @@ class H323VideoCapability : public H323RealTimeCapability
      */
     virtual BOOL OnSendingPDU(
       H245_VideoCapability & pdu  /// PDU to set information on
+    ) const = 0;
+
+    /**This function is called whenever and outgoing RequestMode
+       PDU is being constructed for the control channel. It allows the
+       capability to set the PDU fields from information in members specific
+       to the class.
+
+       The default behaviour sets the PDUs tag according to the GetSubType()
+       function (translated to different enum).
+     */
+    virtual BOOL OnSendingPDU(
+      H245_VideoMode & pdu  /// PDU to set information on
     ) const = 0;
 
     /**This function is called whenever and incoming TerminalCapabilitySet
@@ -1072,6 +1145,18 @@ class H323DataCapability : public H323Capability
       H245_DataType & pdu  /// PDU to set information on
     ) const;
 
+    /**This function is called whenever and outgoing RequestMode
+       PDU is being constructed for the control channel. It allows the
+       capability to set the PDU fields from information in members specific
+       to the class.
+
+       The default behaviour calls the OnSendingPDU() function with a more
+       specific PDU type.
+     */
+    virtual BOOL OnSendingPDU(
+      H245_ModeElement & pdu  /// PDU to set information on
+    ) const;
+
     /**This function is called whenever and outgoing TerminalCapabilitySet
        or OpenLogicalChannel PDU is being constructed for the control channel.
        It allows the capability to set the PDU fields from information in
@@ -1081,6 +1166,18 @@ class H323DataCapability : public H323Capability
      */
     virtual BOOL OnSendingPDU(
       H245_DataApplicationCapability & pdu  /// PDU to set information on
+    ) const = 0;
+
+    /**This function is called whenever and outgoing RequestMode
+       PDU is being constructed for the control channel. It allows the
+       capability to set the PDU fields from information in members specific
+       to the class.
+
+       The default behaviour sets the PDUs tag according to the GetSubType()
+       function (translated to different enum).
+     */
+    virtual BOOL OnSendingPDU(
+      H245_DataMode & pdu  /// PDU to set information on
     ) const = 0;
 
     /**This function is called whenever and incoming TerminalCapabilitySet
@@ -1579,6 +1676,18 @@ class H323_UserInputCapability : public H323Capability
       H245_DataType & pdu  /// PDU to set information on
     ) const;
 
+    /**This function is called whenever and outgoing RequestMode
+       PDU is being constructed for the control channel. It allows the
+       capability to set the PDU fields from information in members specific
+       to the class.
+
+       The default behaviour calls the OnSendingPDU() function with a more
+       specific PDU type.
+     */
+    virtual BOOL OnSendingPDU(
+      H245_ModeElement & pdu  /// PDU to set information on
+    ) const;
+
     /**This function is called whenever and incoming TerminalCapabilitySet
        PDU is received on the control channel, and a new H323Capability
        descendent was created. This completes reading fields from the PDU
@@ -1852,6 +1961,15 @@ class H323Capabilities : public PObject
       */
     H323Capability * FindCapability(
       const H245_DataType & dataType  /// H245 data type of codec
+    ) const;
+
+    /**Find the capability given the H.245 data type PDU.
+
+       Returns:
+       NULL if no capability meeting the criteria was found
+      */
+    H323Capability * FindCapability(
+      const H245_ModeElement & modeElement  /// H245 data type of codec
     ) const;
 
     /**Find the capability given the sub-type info.
