@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2017  2002/04/09 00:19:06  robertj
+ * Revision 1.2018  2002/04/10 03:09:01  robertj
+ * Moved code for handling media bypass address resolution into ancestor as
+ *   now done ths same way in both SIP and H.323.
+ *
+ * Revision 2.16  2002/04/09 00:19:06  robertj
  * Changed "callAnswered" to better description of "originating".
  *
  * Revision 2.15  2002/02/19 07:49:23  robertj
@@ -447,11 +451,32 @@ BOOL OpalConnection::IsMediaBypassPossible(unsigned /*sessionID*/) const
 }
 
 
-BOOL OpalConnection::GetMediaInformation(unsigned /*sessionID*/,
-                                         MediaInformation & /*info*/) const
+BOOL OpalConnection::GetMediaInformation(unsigned sessionID,
+                                         MediaInformation & info) const
 {
-  return FALSE;
+  if (!mediaTransportAddresses.Contains(sessionID)) {
+    PTRACE(3, "SIP\tGetMediaInformation for session " << sessionID << " - no channel.");
+    return FALSE;
+  }
+
+  OpalTransportAddress & address = mediaTransportAddresses[sessionID];
+
+  PIPSocket::Address ip;
+  WORD port;
+  if (address.GetIpAndPort(ip, port)) {
+    info.data    = OpalTransportAddress(ip, (WORD)(port&0xfffe));
+    info.control = OpalTransportAddress(ip, (WORD)(port|0x0001));
+  }
+  else
+    info.data = info.control = address;
+
+  info.rfc2833 = rfc2833Handler->GetPayloadType();
+  PTRACE(3, "SIP\tGetMediaInformation for session " << sessionID
+         << " data=" << info.data << " rfc2833=" << info.rfc2833);
+  return TRUE;
 }
+
+
 
 
 RTP_Session * OpalConnection::GetSession(unsigned sessionID) const
