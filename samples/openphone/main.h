@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.15  2004/09/28 23:00:18  rjongbloed
+ * Added ability to add and edit Speed DIals
+ *
  * Revision 1.14  2004/08/22 12:27:45  rjongbloed
  * More work on SIP registration, time to live refresh and deregistration on exit.
  *
@@ -71,13 +74,21 @@
 #include <opal/manager.h>
 #include <opal/pcss.h>
 
+#if OPAL_H323
+#include <h323/h323.h>
+#include <h323/gkclient.h>
+#endif
+
+#if OPAL_SIP
+#include <sip/sip.h>
+#endif
+
+
 #include <list>
 
 
 class MyFrame;
 
-class SIPEndPoint;
-class H323EndPoint;
 class OpalPOTSEndPoint;
 class OpalIVREndPoint;
 
@@ -128,6 +139,30 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
 };
 
 
+#if OPAL_H323
+class MyH323EndPoint : public H323EndPoint
+{
+  public:
+    MyH323EndPoint(MyFrame & f);
+    virtual void OnRegistrationConfirm();
+  private:
+    MyFrame & frame;
+};
+#endif
+
+
+#if OPAL_SIP
+class MySIPEndPoint : public SIPEndPoint
+{
+  public:
+    MySIPEndPoint(MyFrame & f);
+    virtual void OnRegistered();
+  private:
+    MyFrame & frame;
+};
+#endif
+
+
 class CallDialog : public wxDialog
 {
   public:
@@ -147,6 +182,31 @@ class CallDialog : public wxDialog
 
 class MyFrame;
 
+class SpeedDialDialog : public wxDialog
+{
+  public:
+    SpeedDialDialog(MyFrame *parent);
+
+    wxString m_Name;
+    wxString m_Number;
+    wxString m_Address;
+    wxString m_Description;
+
+  private:
+    void OnChange(wxCommandEvent & event);
+
+    MyFrame  & m_frame;
+
+    wxButton     * m_ok;
+    wxTextCtrl   * m_nameCtrl;
+    wxTextCtrl   * m_numberCtrl;
+    wxStaticText * m_inUse;
+    wxStaticText * m_ambiguous;
+
+    DECLARE_EVENT_TABLE()
+};
+
+
 class OptionsDialog : public wxDialog
 {
   public:
@@ -154,7 +214,7 @@ class OptionsDialog : public wxDialog
     virtual bool TransferDataFromWindow();
 
   private:
-    MyFrame & mainFrame;
+    MyFrame & m_frame;
 
     ////////////////////////////////////////
     // General fields
@@ -324,6 +384,8 @@ class MyFrame : public wxFrame, public OpalManager
     ~MyFrame();
 
     bool Initialise();
+    bool HasSpeedDialName(const wxString & name) const;
+    bool HasSpeedDialNumber(const wxString & number) const;
 
   private:
     // Controls on main frame
@@ -341,14 +403,17 @@ class MyFrame : public wxFrame, public OpalManager
     void OnMenuCall(wxCommandEvent& event);
     void OnMenuAnswer(wxCommandEvent& event);
     void OnMenuHangUp(wxCommandEvent& event);
+    void OnNewSpeedDial(wxCommandEvent& event);
     void OnViewLarge(wxCommandEvent& event);
     void OnViewSmall(wxCommandEvent& event);
     void OnViewList(wxCommandEvent& event);
     void OnViewDetails(wxCommandEvent& event);
+    void OnEditSpeedDial(wxCommandEvent& event);
     void OnOptions(wxCommandEvent& event);
     void OnSashPositioned(wxSplitterEvent& event);
     void OnSpeedDialActivated(wxListEvent& event);
     void OnSpeedDialColumnResize(wxListEvent& event);
+    void OnRightClick(wxListEvent& event);
 
     void MakeCall(const PwxString & address);
 
@@ -378,6 +443,9 @@ class MyFrame : public wxFrame, public OpalManager
     void RecreateSpeedDials(
       SpeedDialViews view
     );
+    void EditSpeedDial(
+      int index
+    );
 
     enum {
       e_NameColumn,
@@ -394,10 +462,10 @@ class MyFrame : public wxFrame, public OpalManager
     MyPCSSEndPoint   * pcssEP;
     OpalPOTSEndPoint * potsEP;
 #if OPAL_H323
-    H323EndPoint     * h323EP;
+    MyH323EndPoint   * h323EP;
 #endif
 #if OPAL_SIP
-    SIPEndPoint      * sipEP;
+    MySIPEndPoint    * sipEP;
 #endif
 #if P_EXPAT
     OpalIVREndPoint  * ivrEP;
