@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2021  2002/02/19 07:46:36  robertj
+ * Revision 1.2022  2002/03/15 00:24:33  robertj
+ * Assure capabilities are set to other connections media list (if not already)
+ *    before doing fast start accept in CONNECT response.
+ *
+ * Revision 2.20  2002/02/19 07:46:36  robertj
  * Restructured media bypass functions to fix problems with RFC2833.
  * Fixes to capability tables to make RFC2833 work properly.
  *
@@ -2320,6 +2324,10 @@ BOOL H323Connection::SetConnected()
   PTRACE(3, "H323\tSetConnected " << *this);
   if (connectPDU == NULL)
     return FALSE;
+
+  // Assure capabilities are set to other connections media list (if not already)
+  if (!capabilityExchangeProcedure->HasSentCapabilities())
+    OnSetLocalCapabilities();
 
   H225_Connect_UUIE & connect = connectPDU->m_h323_uu_pdu.m_h323_message_body;
   // Now ask the application to select which channels to start
