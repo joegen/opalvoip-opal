@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjwin32.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2001/08/01 05:21:21  robertj
+ * Made OpalMediaFormatList class global to help with documentation.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.100  2001/07/24 02:29:56  robertj
@@ -826,9 +829,9 @@ static const struct {
 };
 
 
-OpalMediaFormat::List OpalIxJDevice::GetMediaFormats() const
+OpalMediaFormatList OpalIxJDevice::GetMediaFormats() const
 {
-  OpalMediaFormat::List codecs;
+  OpalMediaFormatList codecs;
 
   OpalIxJDevice * unconstThis = (OpalIxJDevice *)this;
 
