@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2029  2004/02/24 11:30:11  rjongbloed
+ * Revision 1.2030  2004/03/02 09:57:54  rjongbloed
+ * Fixed problems with recent changes to RTP UseSession() function which broke it for H.323
+ *
+ * Revision 2.28  2004/02/24 11:30:11  rjongbloed
  * Normalised RTP session management across protocols
  *
  * Revision 2.27  2004/01/18 15:36:47  rjongbloed
@@ -596,8 +599,7 @@ RTP_Session * OpalConnection::UseSession(const OpalTransport & transport,
   RTP_Session * rtpSession = rtpSessions.UseSession(sessionID);
   if (rtpSession == NULL) {
     rtpSession = CreateSession(transport, sessionID, rtpqos);
-    if (rtpSession != NULL)
-      rtpSessions.AddSession(rtpSession);
+    rtpSessions.AddSession(rtpSession);
   }
 
   return rtpSession;
@@ -615,7 +617,7 @@ RTP_Session * OpalConnection::CreateSession(const OpalTransport & transport,
                                             RTP_QOS * rtpqos)
 {
   // We only support RTP over UDP at this point in time ...
-  if (!transport.IsCompatibleTransport("udp$127.0.0.1"))
+  if (!transport.IsCompatibleTransport("ip$127.0.0.1"))
     return NULL;
                                         
   PIPSocket::Address localAddress;
