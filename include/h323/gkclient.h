@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.h,v $
- * Revision 1.2008  2002/09/04 06:01:46  robertj
+ * Revision 1.2009  2002/09/16 02:52:33  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
+ *
+ * Revision 2.7  2002/09/04 06:01:46  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.6  2002/07/01 04:56:29  robertj
@@ -191,7 +195,7 @@
 #ifndef __OPAL_GKCLIENT_H
 #define __OPAL_GKCLIENT_H
 
-#ifdef __GNUC__
+#ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
