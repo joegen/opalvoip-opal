@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2023  2004/08/20 12:13:31  rjongbloed
+ * Revision 1.2024  2004/12/22 18:53:18  dsandras
+ * Added definition for ForwardCall.
+ *
+ * Revision 2.22  2004/08/20 12:13:31  rjongbloed
  * Added correct handling of SIP 180 response
  *
  * Revision 2.21  2004/08/14 07:56:30  rjongbloed
@@ -318,6 +321,21 @@ class SIPConnection : public OpalConnection
     ) const;
   //@}
 
+
+    /**Forward incoming connection to the specified address.
+       This would typically be called from within the OnIncomingConnection()
+       function when an application wishes to redirect an unwanted incoming
+       call.
+
+       The return value is TRUE if the call is to be forwarded, FALSE 
+       otherwise. Note that if the call is forwarded, the current connection
+       is cleared with the ended call code set to EndedByCallForwarded.
+      */
+    virtual BOOL ForwardCall(
+      const PString & forwardParty   /// Party to forward call to.
+    );
+    
+    
     void SendResponseToINVITE(SIP_PDU::StatusCodes code, const char * str = NULL);
 
     unsigned GetNextCSeq() { return ++lastSentCSeq; }
@@ -377,6 +395,7 @@ class SIPConnection : public OpalConnection
 
     PString           localPartyAddress;
     PString           tag;              // local dialog tag
+    PString	      forwardParty;
     SIP_PDU         * originalInvite;
     PStringList       routeSet;
     SIPURL            targetAddress;
