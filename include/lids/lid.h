@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.h,v $
- * Revision 1.2002  2001/08/01 05:18:51  robertj
+ * Revision 1.2003  2001/08/17 01:10:48  robertj
+ * Added ability to add whole LID's to LID endpoint.
+ *
+ * Revision 2.1  2001/08/01 05:18:51  robertj
  * Made OpalMediaFormatList class global to help with documentation.
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
@@ -921,6 +924,9 @@ class OpalLineInterfaceDevice : public PObject
     friend ostream & operator<<(ostream & o, CallProgressTones t);
 #endif
 };
+
+
+PLIST(OpalLIDList, OpalLineInterfaceDevice);
 
 
 
