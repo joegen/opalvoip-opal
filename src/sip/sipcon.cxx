@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2022  2002/07/01 04:56:33  robertj
+ * Revision 1.2023  2002/09/12 06:58:34  robertj
+ * Removed protocol prefix strings as static members as has problems with
+ *   use in DLL environment.
+ *
+ * Revision 2.21  2002/07/01 04:56:33  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.20  2002/06/16 02:26:37  robertj
@@ -370,7 +374,7 @@ OpalTransportAddress SIPConnection::GetLocalAddress(WORD port) const
   }
 
   endpoint.GetManager().TranslateIPAddress(localIP, remoteIP);
-  return OpalTransportAddress(localIP, port, OpalTransportAddress::UdpPrefix);
+  return OpalTransportAddress(localIP, port, "udp");
 }
 
 
