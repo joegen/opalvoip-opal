@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2015  2002/04/10 03:12:35  robertj
+ * Revision 1.2016  2002/04/16 07:52:51  robertj
+ * Change to allow SetRemoteAddress before UDP is connected.
+ *
+ * Revision 2.14  2002/04/10 03:12:35  robertj
  * Fixed SetLocalAddress to return FALSE if did not set the address to a
  *   different address to the current one. Altered UDP version to cope.
  *
@@ -1349,7 +1352,8 @@ BOOL OpalTransportUDP::SetRemoteAddress(const OpalTransportAddress & address)
     return FALSE;
 
   PUDPSocket * socket = (PUDPSocket *)GetReadChannel();
-  socket->SetSendAddress(remoteAddress, remotePort);
+  if (socket != NULL)
+    socket->SetSendAddress(remoteAddress, remotePort);
   return TRUE;
 }
 
