@@ -22,7 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: opal_inc.mak,v $
-# Revision 1.2001  2001/07/27 15:48:24  robertj
+# Revision 1.2002  2002/02/06 09:39:37  rogerh
+# Look for telephony.h in the place where the FreeBSD port puts it
+#
+# Revision 2.0  2001/07/27 15:48:24  robertj
 # Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
 #
 
@@ -72,6 +75,11 @@ endif
 ifneq (,$(wildcard /usr/include/sys/telephony.h))
 HAS_IXJ	    = 1
 STDCCFLAGS += -DHAS_IXJ
+endif
+
+ifneq (,$(wildcard /usr/local/include/sys/telephony.h))
+HAS_IXJ	    = 1
+STDCCFLAGS += -DHAS_IXJ -I/usr/local/include
 endif
 
 ifneq (,$(wildcard /usr/include/linux/soundcard.h))
