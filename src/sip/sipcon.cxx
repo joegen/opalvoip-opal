@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2006  2002/02/19 07:53:17  robertj
+ * Revision 1.2007  2002/03/08 06:28:03  craigs
+ * Changed to allow Authorisation to be included in other PDUs
+ *
+ * Revision 2.5  2002/02/19 07:53:17  robertj
  * Restructured media bypass functions to fix problems with RFC2833.
  *
  * Revision 2.4  2002/02/13 04:55:44  craigs
@@ -43,6 +46,7 @@
  */
 
 #include <ptlib.h>
+#include <ptclib/cypher.h>
 
 #ifdef __GNUC__
 #pragma implementation "sipcon.h"
@@ -118,19 +122,21 @@ SIPConnection::SIPConnection(OpalCall & call,
     if (invite->HasSDP())
       originalInvite->SetSDP(invite->GetSDP());
 
-    expectedCseq = invite->GetMIME().GetCSeqIndex();
+    inviteCSeq         = invite->GetMIME().GetCSeqIndex();
     remotePartyAddress = invite->GetMIME().GetFrom();
     localPartyAddress = invite->GetMIME().GetTo();
   }
   else {
     originalInvite = NULL;
     transport = NULL;
-    expectedCseq = 0;
+    //expectedCseq = 0;
   }
 
-  lastSentCseq = 1;
+  lastSentCseq = 1;               // initial CSeq for outgoing PDUs
+  haveLastReceivedCseq = FALSE;   // not yet received CSeq for incoming PDUs
+
   sendBYE = TRUE;
-  inviteAuthenticateAlreadySent = FALSE;
+  realm = nonce = PString();
 
   PTRACE(3, "SIP\tCreated connection.");
 }
@@ -172,6 +178,7 @@ BOOL SIPConnection::OnReleased()
       if (sendBYE) {
         SIP_PDU bye(*transport, this);
         bye.BuildBYE();
+        AddAuthorisation(bye);
         bye.Write();
       }
       break;
@@ -551,6 +558,8 @@ BOOL SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
   PString callId     = mime.GetCallID();
 
   PString method = pdu.GetMethod();
+
+  // if no method, must be response
   if (method.IsEmpty()) {
     PTRACE(4, "SIP\tChecking request CSeq " << mime.GetCSeqIndex() << " against expected CSeq " << lastSentCseq);
     if (mime.GetCSeqIndex() != (PINDEX)lastSentCseq)
@@ -574,22 +583,31 @@ BOOL SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
     return TRUE;
   }
 
+  // process other commands
   for (i = 0; i < PARRAYSIZE(sipMethods); i++) {
     if (method *= sipMethods[i].method) {
-      PINDEX cSeq        = GetExpectedCSeq();
+
+      PINDEX expectedCseq;
+      if (sipMethods[i].cseqSameAsInvite) 
+        expectedCseq = inviteCSeq;
+      else if (haveLastReceivedCseq)
+        expectedCseq = lastReceivedCseq + 1;
+      else {
+        expectedCseq = lastReceivedCseq = mime.GetCSeqIndex();
+        haveLastReceivedCseq = TRUE;
+      }
 
       // check the CSeq
-      PINDEX expectedCseq = cSeq + (sipMethods[i].cseqSameAsInvite ? 0 : 1);
-      PTRACE(4, "SIP\tChecking request CSeq " << mime.GetCSeqIndex() << " against expected CSeq " << expectedCseq);
       if (mime.GetCSeqIndex() != expectedCseq)
-        PTRACE(3, "SIP\tIgnoring " << method << " for " << callId << mime.GetCallID() << " with CSeq " << mime.GetCSeq());
+        PTRACE(3, "SIP\tIgnoring " << method << " for callId " << mime.GetCallID() << " with unexpected CSeq " << mime.GetCSeq());
       else {
-        originalInvite->GetMIME().SetCSeq(mime.GetCSeq());
+        PTRACE(3, "SIP\tAccepting " << method << " for callId " << mime.GetCallID() << " with CSeq " << expectedCseq);
 
         // process the command
         PTRACE(3, "SIP\tHandling " << method << " for callId " << mime.GetCallID());
         pdu.SetConnection(this);
         (this->*sipMethods[i].function)(pdu);
+        lastReceivedCseq++;
       }
       return TRUE;
     }
@@ -741,17 +759,17 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIP_PDU & response)
 
   lastSentCseq++;
 
-  BOOL isProxy = response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
+  isProxyAuthenticate = response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
 
-  PTRACE(2, "SIP\tReceived " << (isProxy ? "Proxy " : "") << "Authentication Required response");
+  PTRACE(2, "SIP\tReceived " << (isProxyAuthenticate ? "Proxy " : "") << "Authentication Required response");
 
   PCaselessString auth;
-  if (isProxy)
+  if (isProxyAuthenticate)
     auth = response.GetMIME()("Proxy-Authenticate");
   else
     auth = response.GetMIME()("WWW-Authenticate");
 
-  if (inviteAuthenticateAlreadySent) {
+  if (!realm.IsEmpty()) {
     PTRACE(1, "SIP\tINVITE authentication failed");
     Release(EndedBySecurityDenial);
     return;
@@ -770,14 +788,14 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIP_PDU & response)
     return;
   }
 
-  PString realm = GetAuthParam(auth, "realm");
+  realm = GetAuthParam(auth, "realm");
   if (realm.IsEmpty()) {
     PTRACE(1, "SIP\tNo realm in proxy authentication");
     Release(EndedBySecurityDenial);
     return;
   }
 
-  PString nonce = GetAuthParam(auth, "nonce");
+  nonce = GetAuthParam(auth, "nonce");
   if (nonce.IsEmpty()) {
     PTRACE(1, "SIP\tNo nonce in proxy authentication");
     Release(EndedBySecurityDenial);
@@ -787,10 +805,82 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIP_PDU & response)
   // make sure the To field is the same as the original
   remotePartyAddress = '<' + originalDestination.AsString() + '>';
 
+  // build the PDU and add authorisation
   SIP_PDU request(*transport, this);
-  request.BuildINVITE(realm, nonce, isProxy);
+
+  request.BuildINVITE();
+  AddAuthorisation(request);
   request.Write();
-  inviteAuthenticateAlreadySent = TRUE;
+}
+
+static PString AsHex(PMessageDigest5::Code & digest)
+{
+  PStringStream out;
+  out << hex << setfill('0');
+  for (PINDEX i = 0; i < 16; i++)
+    out << setw(2) << (unsigned)((BYTE *)&digest)[i];
+  return out;
+}
+
+void SIPConnection::AddAuthorisation(SIP_PDU & pdu)
+{ 
+  if (realm.IsEmpty()) {
+    PTRACE(1, "SIP\tNo authentication information available");
+    return;
+  }
+
+  PTRACE(1, "SIP\tAdding authentication information");
+
+  SIPMIMEInfo & mime = pdu.GetMIME();
+  PString method   = pdu.GetMethod();
+  PString username = GetLocalPartyName();
+  PString passwd   = GetEndPoint().GetRegistrationPassword();
+  SIPURL uri       = pdu.GetURI();
+
+  PMessageDigest5 digestor;
+  PMessageDigest5::Code a1, a2, response;
+
+  PStringStream uriText; uriText << uri;
+  PINDEX pos = uriText.Find(";");
+  if (pos != P_MAX_INDEX)
+    uriText = uriText.Left(pos);
+
+  digestor.Start();
+  digestor.Process(username);
+  digestor.Process(":");
+  digestor.Process(realm);
+  digestor.Process(":");
+  digestor.Process(passwd);
+  digestor.Complete(a1);
+
+  digestor.Start();
+  digestor.Process(method);
+  digestor.Process(":");
+  digestor.Process(uriText);
+  digestor.Complete(a2);
+
+  digestor.Start();
+  digestor.Process(AsHex(a1));
+  digestor.Process(":");
+  digestor.Process(nonce);
+  digestor.Process(":");
+  digestor.Process(AsHex(a2));
+  digestor.Complete(response);
+
+  PStringStream auth;
+  auth << "Digest "
+          "username=\"" << username << "\", "
+          "realm=\"" << realm << "\", "
+          "nonce=\"" << nonce << "\", "
+          "uri=\"" << uriText << "\", "
+          "response=\"" << AsHex(response) << "\", "
+          "algorithm=md5";
+
+  if (isProxyAuthenticate)
+    mime.SetAt("Proxy-Authorization", auth);
+
+  else
+    mime.SetAt("Authorization", auth);
 }
 
 
