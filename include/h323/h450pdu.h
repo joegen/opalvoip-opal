@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h450pdu.h,v $
- * Revision 1.2003  2002/01/14 06:35:57  robertj
+ * Revision 1.2004  2002/02/11 09:32:11  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.2  2002/01/14 06:35:57  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.1  2001/08/17 08:20:26  robertj
@@ -32,6 +35,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.4  2002/02/04 07:17:52  robertj
+ * Added H.450.2 Consultation Transfer, thanks Norwood Systems.
  *
  * Revision 1.3  2002/01/14 00:02:40  robertj
  * Added H.450.6
@@ -168,14 +174,14 @@ class H450xHandler : public PObject
       int absentErrorCode
     );
 
-    int GetInvokeId() const { return currentInvokeId; }
+    unsigned GetInvokeId() const { return currentInvokeId; }
 
 
   protected:
     H323EndPoint   & endpoint;
     H323Connection & connection;
     H450xDispatcher & dispatcher;
-    int              currentInvokeId;
+    unsigned          currentInvokeId;
 };
 
 PLIST(H450xHandlerList, H450xHandler);
@@ -260,13 +266,13 @@ class H450xDispatcher : public PObject
 
     /**Get the next available invoke Id for H450 operations
      */
-    int GetNextInvokeId() const { return nextInvokeId++; }
+    unsigned GetNextInvokeId() const { return nextInvokeId++; }
 
   protected:
     H323Connection & connection;
     H450xHandlerList  handlers;
     H450xHandlerDict  opcodeHandler;
-    mutable int      nextInvokeId;             // Next available invoke ID for H450 operations
+    mutable unsigned  nextInvokeId;             // Next available invoke ID for H450 operations
 };
 
 
@@ -360,9 +366,55 @@ class H4502Handler : public H450xHandler
       X880_ReturnResult & returnResult
     );
 
+    /**Handle the reception of a callTransferInitiate returnResult when we are in call transfer state 
+       e_ctAwaitInitiateResponse.  Note this is an internal function and it is not expected an 
+       application would use it. 
+     */
+    void OnReceivedInitiateReturnResult();
+    
+    /**Handle the reception of a callTransferSetup returnResult when we are in call transfer state 
+       e_ctAwaitSetupResponse.  This funtion exists to handle the case when the transferred-to
+       endpoint does not support H.450.2.  Note this is an internal function and it is not expected an 
+       application would use it.
+     */
+    void OnReceivedSetupReturnResult();
+
+    /**Handle the reception of a callTransferIdentify returnResult when we are in call transfer state 
+       e_ctAwaitIdentifyResponse.  Note this is an internal function and it is not expected an 
+       application would use it.
+     */
+    void OnReceivedIdentifyReturnResult(X880_ReturnResult &returnResult);
+
     virtual void OnReceivedReturnError(
       int errorCode,
       X880_ReturnError & returnError
+    );
+
+    /**Handle the reception of a callTransferInitiate returnError or expiry of Call Transfer Timer CT-T3 
+       when we are in call transfer state e_ctAwaitInitiateResponse.  Note this is an internal function 
+       and it is not expected an application would use it. 
+     */
+    void OnReceivedInitiateReturnError(
+      const bool timerExpiry = false /// Flag to indicate expiry
+    );
+
+    /**Handle the reception of a callTransferSetup returnError or expiry of Call Transfer Timer CT-T4 
+       when we are in call transfer state e_ctAwaitSetupResponse.  This funtion also additionally handles 
+       the case when the transferred-to endpoint does not support H.450.2 and has rejected the incoming 
+       call request.  Note this is an internal function and it is not expected an application would use 
+       it.
+     */
+    void OnReceivedSetupReturnError(
+      int errorCode,
+      const bool timerExpiry = false /// Flag to indicate expiry
+    );
+
+    /**Handle the reception of a callTransferIdentify returnError or expiry of Call Transfer Timer CT-T1
+       when we are in call transfer state e_ctAwaitIdentifyResponse.  Note this is an internal function and it is not expected an 
+       application would use it.
+     */
+    void OnReceivedIdentifyReturnError(
+      const bool timerExpiry = false /// Flag to indicate expiry
     );
 
     /**Initiate the transfer of an existing call (connection) to a new remote party
@@ -370,7 +422,23 @@ class H4502Handler : public H450xHandler
        A-Party (transferring endpoint) to the B-Party (transferred endpoint).
      */
     void TransferCall(
-      const PString & remoteParty   /// Remote party to transfer the existing call to
+      const PString & remoteParty,   /// Remote party to transfer the existing call to
+      const PString & callIdentity   /// Call Identity of secondary call if present  
+    );
+
+    /**Transfer the call through consultation so the remote party in the primary call is connected to
+       the called party in the second call using H.450.2.  This sends a Call Transfer Identify Invoke 
+       message from the A-Party (transferring endpoint) to the C-Party (transferred-to endpoint).
+     */
+    void ConsultationTransfer(
+      const PString & primaryCallToken   /// Primary call
+    );
+
+    /**Handle the reception of a callTransferSetupInvoke APDU whilst a secondary call exists.
+     */
+    void HandleConsultationTransfer(
+      const PString & callIdentity,  /// Call Identity of secondary call
+      H323Connection& incoming       /// New incoming connection
     );
 
     void AwaitSetupResponse(
@@ -406,7 +474,8 @@ class H4502Handler : public H450xHandler
 
     /**Handle the failure of a call transfer operation.
       */
-    void HandleCallTransferFailure(const int returnError    // failure reason
+    void HandleCallTransferFailure(
+      const int returnError    /// failure reason
     );
 
     /** Start the Call Transfer Timer using the specified time interval.
@@ -417,6 +486,10 @@ class H4502Handler : public H450xHandler
      */
     void StopctTimer();
 
+    /**Is the Call Transfer Timer running?
+     */
+    BOOL IsctTimerRunning() { return ctTimer.IsRunning(); }
+
     /**Callback mechanism for Call Transfer Timers CT-T1, CT-T2, CT-T3 & CT-T4
      */
     PDECLARE_NOTIFIER(PTimer, H4502Handler, OnCallTransferTimeOut);
@@ -425,9 +498,25 @@ class H4502Handler : public H450xHandler
      */
     const H323Connection& getAssociatedConnection() const { return connection; }
 
+    /**Set the associated callToken.
+     */
+    void SetAssociatedCallToken(const PString& token) { CallToken = token; }
+
     /**Get the transferringCallToken member
      */
     const PString& getTransferringCallToken() const { return transferringCallToken; }
+
+    /**Get the next available invoke Id for H450 operations
+     */
+    unsigned GetNextCallIdentityValue() const { return nextCallIdentity++; }
+
+    /**Set the 'consultationTransfer' member to TRUE (indicating a successful transfer)
+     */
+    void SetConsultationTransferSuccess() { consultationTransfer = TRUE; }
+
+    /**Was the transfer through consultation successful.
+     */
+    BOOL isConsultationTransferSuccess() { return consultationTransfer; }
 
   protected:
     PString transferringCallToken;    // Stores the call token for the transferring connection (if there is one)
@@ -435,6 +524,12 @@ class H4502Handler : public H450xHandler
     State   ctState;                  // Call Transfer state of the conneciton
     BOOL    ctResponseSent;           // Has a callTransferSetupReturnResult been sent?
     PTimer  ctTimer;                  // Call Transfer Timer - Handles all four timers CT-T1,
+    PString CallToken;                // Call Token of the associated connection 
+                                      // (used during a consultation transfer).
+    mutable unsigned nextCallIdentity;// Next available callIdentity for H450 Transfer operations
+                                      // via consultation.
+    BOOL consultationTransfer;        // Flag used to indicate whether an incoming call is involved in
+                                      // a transfer through consultation.
 };
 
 

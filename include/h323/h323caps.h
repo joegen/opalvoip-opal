@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.h,v $
- * Revision 1.2006  2002/01/22 04:59:04  robertj
+ * Revision 1.2007  2002/02/11 09:32:11  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.5  2002/01/22 04:59:04  robertj
  * Update from OpenH323, RFC2833 support
  *
  * Revision 2.4  2002/01/14 06:35:56  robertj
@@ -45,6 +48,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.30  2002/01/22 06:25:02  robertj
+ * Moved payload type to ancestor so any capability can adjust it on logical channel.
  *
  * Revision 1.29  2002/01/17 07:04:57  robertj
  * Added support for RFC2833 embedded DTMF in the RTP stream.
@@ -405,6 +411,9 @@ class H323Capability : public PObject
     /**Get media format of the media data this class represents.
       */
     OpalMediaFormat GetMediaFormat() const { return mediaFormat; }
+
+    /// Get the payload type for the capaibility
+    RTP_DataFrame::PayloadTypes GetPayloadType() const { return rtpPayloadType; }
   //@}
 
 #if PTRACING
@@ -416,6 +425,7 @@ class H323Capability : public PObject
     OpalMediaFormat     mediaFormat;
     unsigned            assignedCapabilityNumber;  /// Unique ID assigned to capability
     CapabilityDirection capabilityDirection;
+    RTP_DataFrame::PayloadTypes rtpPayloadType;
 };
 
 
@@ -1776,11 +1786,8 @@ class H323_UserInputCapability : public H323Capability
       PINDEX simultaneous     /// The member of the SimultaneousCapabilitySet to add
     );
 
-    RTP_DataFrame::PayloadTypes GetPayloadType() const { return rfc2833PayloadType; }
-
   protected:
     SubTypes subType;
-    RTP_DataFrame::PayloadTypes rfc2833PayloadType;
 };
 
 
