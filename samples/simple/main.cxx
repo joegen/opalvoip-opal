@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2020  2003/03/06 03:57:47  robertj
+ * Revision 1.2021  2003/03/07 05:56:47  robertj
+ * Changed so a # from whatever source routes to IVR.
+ *
+ * Revision 2.19  2003/03/06 03:57:47  robertj
  * IVR support (work in progress) requiring large changes everywhere.
  *
  * Revision 2.18  2002/11/11 06:52:01  robertj
@@ -334,6 +337,9 @@ void SimpleOpalProcess::Main()
 "    If POTS is not enabled and the PC sound system is enabled:\n"
 "      h323:.* = pcss:<da>\n"
 "      sip:.*  = pcss:<da>\n"
+"\n"
+"    If IVR is enabled then a # from any protocol will route it it, ie:\n"
+"      .*:#  = ivr:\n"
 "\n"
             << endl;
     return;
@@ -650,10 +656,8 @@ BOOL MyManager::Initialise(PArgList & args)
       AddRouteEntry("pcss:.*           = h323:<da>");
     }
 
-    if (ivrEP != NULL) {
-      AddRouteEntry("h323:# = ivr:");
-      AddRouteEntry("sip:#  = ivr:");
-    }
+    if (ivrEP != NULL)
+      AddRouteEntry(".*:#  = ivr:"); // A hash from anywhere goes to IVR
 
     if (potsEP != NULL) {
       AddRouteEntry("h323:.* = pots:<da>");
