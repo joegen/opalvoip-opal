@@ -25,6 +25,10 @@
  * Contributor(s): 
  *
  * $Log: main.cpp,v $
+ * Revision 1.17  2004/07/11 12:42:11  rjongbloed
+ * Added function on endpoints to get the list of all media formats any
+ *   connection the endpoint may create can support.
+ *
  * Revision 1.16  2004/07/04 12:53:09  rjongbloed
  * Added support for route editing.
  *
@@ -596,6 +600,7 @@ bool MyFrame::Initialise()
 {
   wxConfigBase * config = wxConfig::Get();
 
+#if PTRACING
   if (config->Read(EnableTracingKey, &m_enableTracing, false) && m_enableTracing &&
       config->Read(TraceFileNameKey, &m_traceFileName) && !m_traceFileName.empty()) {
     int traceLevelThreshold = 3;
@@ -604,6 +609,7 @@ bool MyFrame::Initialise()
     config->Read(TraceOptionsKey, &traceOptions);
     PTrace::Initialise(traceLevelThreshold, m_traceFileName, traceOptions);
   }
+#endif
 
 #if OPAL_H323
   h323EP = new H323EndPoint(*this);
@@ -801,6 +807,25 @@ END_EVENT_TABLE()
   m_##name = value; \
   FindWindowByName(name##Key)->SetValidator(wxGenericValidator(&m_##name))
 
+static void PopulateCodecList(const char * prefix,
+                              const OpalMediaFormatList & mediaFormats,
+                              wxListBox * listBox,
+                              OpalMediaFormatList * allMediaFormats)
+{
+  for (PINDEX i = 0; i < mediaFormats.GetSize(); i++) {
+    const OpalMediaFormat & mediaFormat = mediaFormats[i];
+
+    if (mediaFormat.GetPayloadType() != RTP_DataFrame::MaxPayloadType) {
+      wxString str = prefix;
+      str += (const char *)mediaFormat;
+      listBox->Append(str);
+    }
+
+    if (allMediaFormats != NULL)
+    *allMediaFormats += mediaFormat;
+  }
+}
+
 OptionsDialog::OptionsDialog(MyFrame *parent)
   : mainFrame(*parent)
 {
@@ -809,6 +834,8 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
   SetExtraStyle(GetExtraStyle() | wxWS_EX_VALIDATE_RECURSIVELY);
   wxXmlResource::Get()->LoadDialog(this, parent, "OptionsDialog");
 
+  ////////////////////////////////////////
+  // General fields
   INIT_FIELD(Username, mainFrame.GetDefaultUserName());
   INIT_FIELD(DisplayName, mainFrame.GetDefaultDisplayName());
   INIT_FIELD(RingSoundFileName, "");
@@ -817,6 +844,8 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
   INIT_FIELD(IVRScript, mainFrame.ivrEP->GetDefaultVXML());
 #endif
 
+  ////////////////////////////////////////
+  // Networking fields
   INIT_FIELD(Bandwidth, mainFrame.h323EP->GetInitialBandwidth());
   INIT_FIELD(TCPPortBase, mainFrame.GetTCPPortBase());
   INIT_FIELD(TCPPortMax, mainFrame.GetTCPPortMax());
@@ -828,6 +857,8 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
   INIT_FIELD(STUNServer, mainFrame.GetSTUN() != NULL ? mainFrame.GetSTUN()->GetServer() : PString());
   INIT_FIELD(NATRouter, mainFrame.GetTranslationAddress().AsString());
 
+  ////////////////////////////////////////
+  // Sound fields
   INIT_FIELD(SoundBuffers, mainFrame.pcssEP->GetSoundChannelBufferDepth());
   INIT_FIELD(MinJitter, mainFrame.GetMinAudioJitterDelay());
   INIT_FIELD(MaxJitter, mainFrame.GetMaxAudioJitterDelay());
@@ -835,44 +866,6 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
   INIT_FIELD(SilenceThreshold, mainFrame.GetSilenceDetectParams().m_threshold);
   INIT_FIELD(SignalDeadband, mainFrame.GetSilenceDetectParams().m_signalDeadband/8);
   INIT_FIELD(SilenceDeadband, mainFrame.GetSilenceDetectParams().m_silenceDeadband/8);
-
-  INIT_FIELD(VideoGrabber, mainFrame.GetVideoInputDevice().deviceName);
-  INIT_FIELD(VideoGrabFormat, mainFrame.GetVideoInputDevice().videoFormat);
-  INIT_FIELD(VideoGrabSource, mainFrame.GetVideoInputDevice().channelNumber);
-  INIT_FIELD(VideoGrabFrameRate, mainFrame.GetVideoInputDevice().rate);
-  INIT_FIELD(VideoFlipLocal, mainFrame.GetVideoInputDevice().flip != FALSE);
-//  INIT_FIELD(VideoEncodeQuality, mainFrame);
-//  INIT_FIELD(VideoEncodeMaxBitRate, mainFrame);
-//  INIT_FIELD(VideoGrabPreview, mainFrame);
-  INIT_FIELD(VideoAutoTransmit, mainFrame.CanAutoStartTransmitVideo() != FALSE);
-  INIT_FIELD(VideoAutoReceive, mainFrame.CanAutoStartReceiveVideo() != FALSE);
-  INIT_FIELD(VideoFlipRemote, mainFrame.GetVideoOutputDevice().flip != FALSE);
-
-  INIT_FIELD(DTMFSendMode, mainFrame.h323EP->GetSendUserInputMode());
-  INIT_FIELD(CallIntrusionProtectionLevel, mainFrame.h323EP->GetCallIntrusionProtectionLevel());
-  INIT_FIELD(DisableFastStart, mainFrame.h323EP->IsFastStartDisabled() != FALSE);
-  INIT_FIELD(DisableH245Tunneling, mainFrame.h323EP->IsH245TunnelingDisabled() != FALSE);
-  INIT_FIELD(DisableH245inSETUP, mainFrame.h323EP->IsH245inSetupDisabled() != FALSE);
-
-  INIT_FIELD(SIPProxy, mainFrame.sipEP->GetProxy().GetHostName());
-  INIT_FIELD(SIPProxyUsername, mainFrame.sipEP->GetProxy().GetUserName());
-  INIT_FIELD(SIPProxyPassword, mainFrame.sipEP->GetProxy().GetPassword());
-  INIT_FIELD(RegistrarName, mainFrame.sipEP->GetRegistrationAddress().GetHostName());
-  INIT_FIELD(RegistrarUsername, mainFrame.sipEP->GetRegistrationAddress().GetUserName());
-  INIT_FIELD(RegistrarPassword, mainFrame.sipEP->GetRegistrationAddress().GetPassword());
-
-#if PTRACING
-  INIT_FIELD(EnableTracing, mainFrame.m_enableTracing);
-  INIT_FIELD(TraceLevelThreshold, PTrace::GetLevel());
-  INIT_FIELD(TraceLevelNumber, (PTrace::GetOptions()&PTrace::TraceLevel) != 0);
-  INIT_FIELD(TraceFileLine, (PTrace::GetOptions()&PTrace::FileAndLine) != 0);
-  INIT_FIELD(TraceBlocks, (PTrace::GetOptions()&PTrace::Blocks) != 0);
-  INIT_FIELD(TraceDateTime, (PTrace::GetOptions()&PTrace::DateAndTime) != 0);
-  INIT_FIELD(TraceTimestamp, (PTrace::GetOptions()&PTrace::Timestamp) != 0);
-  INIT_FIELD(TraceThreadName, (PTrace::GetOptions()&PTrace::Thread) != 0);
-  INIT_FIELD(TraceThreadAddress, (PTrace::GetOptions()&PTrace::ThreadAddress) != 0);
-  INIT_FIELD(TraceFileName, mainFrame.m_traceFileName);
-#endif // PTRACING
 
   // Fill sound player combo box with available devices and set selection
   wxComboBox * combo = (wxComboBox *)FindWindowByName(SoundPlayerKey);
@@ -909,6 +902,61 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
     FindWindowByName(CountryKey)->Disable();
   }
 
+  ////////////////////////////////////////
+  // Video fields
+  INIT_FIELD(VideoGrabber, mainFrame.GetVideoInputDevice().deviceName);
+  INIT_FIELD(VideoGrabFormat, mainFrame.GetVideoInputDevice().videoFormat);
+  INIT_FIELD(VideoGrabSource, mainFrame.GetVideoInputDevice().channelNumber);
+  INIT_FIELD(VideoGrabFrameRate, mainFrame.GetVideoInputDevice().rate);
+  INIT_FIELD(VideoFlipLocal, mainFrame.GetVideoInputDevice().flip != FALSE);
+//  INIT_FIELD(VideoEncodeQuality, mainFrame);
+//  INIT_FIELD(VideoEncodeMaxBitRate, mainFrame);
+//  INIT_FIELD(VideoGrabPreview, mainFrame);
+  INIT_FIELD(VideoAutoTransmit, mainFrame.CanAutoStartTransmitVideo() != FALSE);
+  INIT_FIELD(VideoAutoReceive, mainFrame.CanAutoStartReceiveVideo() != FALSE);
+  INIT_FIELD(VideoFlipRemote, mainFrame.GetVideoOutputDevice().flip != FALSE);
+
+  ////////////////////////////////////////
+  // Codec fields
+  wxListBox * listBox = (wxListBox *)FindWindowByName("AllCodecs");
+  OpalMediaFormatList allMediaFormats;
+  PopulateCodecList("pc: ", mainFrame.pcssEP->GetMediaFormats(), listBox, &allMediaFormats);
+  PopulateCodecList("pots: ", mainFrame.potsEP->GetMediaFormats(), listBox, &allMediaFormats);
+#if P_EXPAT
+  PopulateCodecList("ivr: ", mainFrame.ivrEP->GetMediaFormats(), listBox, &allMediaFormats);
+#endif
+  PopulateCodecList("sw: ", OpalTranscoder::GetPossibleFormats(allMediaFormats), listBox, NULL);
+
+  ////////////////////////////////////////
+  // H.323 fields
+  INIT_FIELD(DTMFSendMode, mainFrame.h323EP->GetSendUserInputMode());
+  INIT_FIELD(CallIntrusionProtectionLevel, mainFrame.h323EP->GetCallIntrusionProtectionLevel());
+  INIT_FIELD(DisableFastStart, mainFrame.h323EP->IsFastStartDisabled() != FALSE);
+  INIT_FIELD(DisableH245Tunneling, mainFrame.h323EP->IsH245TunnelingDisabled() != FALSE);
+  INIT_FIELD(DisableH245inSETUP, mainFrame.h323EP->IsH245inSetupDisabled() != FALSE);
+
+  ////////////////////////////////////////
+  // SIP fields
+  INIT_FIELD(SIPProxy, mainFrame.sipEP->GetProxy().GetHostName());
+  INIT_FIELD(SIPProxyUsername, mainFrame.sipEP->GetProxy().GetUserName());
+  INIT_FIELD(SIPProxyPassword, mainFrame.sipEP->GetProxy().GetPassword());
+  INIT_FIELD(RegistrarName, mainFrame.sipEP->GetRegistrationAddress().GetHostName());
+  INIT_FIELD(RegistrarUsername, mainFrame.sipEP->GetRegistrationAddress().GetUserName());
+  INIT_FIELD(RegistrarPassword, mainFrame.sipEP->GetRegistrationAddress().GetPassword());
+
+  ////////////////////////////////////////
+  // Routing fields
+  m_SelectedRoute = INT_MAX;
+
+  m_RoutePattern = (wxTextCtrl *)FindWindowByName("RoutePattern");
+  m_RouteDestination = (wxTextCtrl *)FindWindowByName("RouteDestination");
+
+  m_AddRoute = (wxButton *)FindWindowByName("AddRoute");
+  m_AddRoute->Disable();
+
+  m_RemoveRoute = (wxButton *)FindWindowByName("RemoveRoute");
+  m_RemoveRoute->Disable();
+
   // Fill list box with active routes
   static char const AllSources[] = "<ALL>";
   m_Routes = (wxListCtrl *)FindWindowByName("Routes");
@@ -943,15 +991,21 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
     m_RouteSource->Append((const char *)endponts[i].GetPrefixName());
   m_RouteSource->SetSelection(0);
 
-  m_RoutePattern = (wxTextCtrl *)FindWindowByName("RoutePattern");
-  m_RouteDestination = (wxTextCtrl *)FindWindowByName("RouteDestination");
 
-  m_AddRoute = (wxButton *)FindWindowByName("AddRoute");
-  m_AddRoute->Disable();
-
-  m_RemoveRoute = (wxButton *)FindWindowByName("RemoveRoute");
-  m_RemoveRoute->Disable();
-  m_SelectedRoute = INT_MAX;
+#if PTRACING
+  ////////////////////////////////////////
+  // Tracing fields
+  INIT_FIELD(EnableTracing, mainFrame.m_enableTracing);
+  INIT_FIELD(TraceLevelThreshold, PTrace::GetLevel());
+  INIT_FIELD(TraceLevelNumber, (PTrace::GetOptions()&PTrace::TraceLevel) != 0);
+  INIT_FIELD(TraceFileLine, (PTrace::GetOptions()&PTrace::FileAndLine) != 0);
+  INIT_FIELD(TraceBlocks, (PTrace::GetOptions()&PTrace::Blocks) != 0);
+  INIT_FIELD(TraceDateTime, (PTrace::GetOptions()&PTrace::DateAndTime) != 0);
+  INIT_FIELD(TraceTimestamp, (PTrace::GetOptions()&PTrace::Timestamp) != 0);
+  INIT_FIELD(TraceThreadName, (PTrace::GetOptions()&PTrace::Thread) != 0);
+  INIT_FIELD(TraceThreadAddress, (PTrace::GetOptions()&PTrace::ThreadAddress) != 0);
+  INIT_FIELD(TraceFileName, mainFrame.m_traceFileName);
+#endif // PTRACING
 }
 
 
