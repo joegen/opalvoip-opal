@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323rtp.h,v $
- * Revision 1.2005  2004/02/19 10:46:44  rjongbloed
+ * Revision 1.2006  2004/02/24 11:28:45  rjongbloed
+ * Normalised RTP session management across protocols
+ *
+ * Revision 2.4  2004/02/19 10:46:44  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.3  2002/11/10 11:33:17  robertj
@@ -207,8 +210,7 @@ class H323_RTP_UDP : public H323_RTP_Session
      */
     H323_RTP_UDP(
       const H323Connection & connection, /// Owner of the RTP session
-      RTP_UDP & rtp,                     /// RTP session
-      RTP_QOS * rtpqos = NULL            /// QoS spec if available
+      RTP_UDP & rtp                      /// RTP session
     );
   //@}
 
