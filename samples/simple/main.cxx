@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2042  2004/04/26 06:33:18  rjongbloed
+ * Revision 1.2043  2004/04/26 07:06:07  rjongbloed
+ * Removed some ancient pieces of code and used new API's for them.
+ *
+ * Revision 2.41  2004/04/26 06:33:18  rjongbloed
  * Added ability to specify more than one defualt listener for an endpoint,
  *   required by SIP which listens on both UDP and TCP.
  *
@@ -506,10 +509,11 @@ MyManager::~MyManager()
 BOOL MyManager::Initialise(PArgList & args)
 {
   // Set the various global options
-  autoAnswer = args.HasOption('a');
-  silenceOn  = !args.HasOption('e');
   autoStartReceiveVideo = args.HasOption("rx-video");
   autoStartTransmitVideo = args.HasOption("tx-video");
+
+//  SetSilenceDetectionMode(args.HasOption('e') ? H323AudioCodec::NoSilenceDetection
+//                                              : H323AudioCodec::AdaptiveSilenceDetection);
 
   if (args.HasOption("grabber")) {
     PVideoDevice::OpenArgs video = GetVideoInputDevice();
@@ -548,9 +552,7 @@ BOOL MyManager::Initialise(PArgList & args)
   if (args.HasOption('P'))
     SetMediaFormatOrder(args.GetOptionString('P').Lines());
 
-  cout << "Auto answer is " << (autoAnswer ? "on" : "off") << "\n"
-          "Silence supression is " << (silenceOn ? "on" : "off") << "\n"
-          "Jitter buffer: "  << GetMinAudioJitterDelay() << '-' << GetMaxAudioJitterDelay() << " ms\n"
+  cout << "Jitter buffer: "  << GetMinAudioJitterDelay() << '-' << GetMaxAudioJitterDelay() << " ms\n"
           "Codecs removed: " << setfill(',') << GetMediaFormatMask() << "\n"
           "Codec order: " << setfill(',') << GetMediaFormatOrder() << setfill(' ') << "\n";
 
@@ -636,6 +638,9 @@ BOOL MyManager::Initialise(PArgList & args)
   if (!args.HasOption('S')) {
     pcssEP = new MyPCSSEndPoint(*this);
 
+    pcssEP->autoAnswer = args.HasOption('a');
+    cout << "Auto answer is " << (pcssEP->autoAnswer ? "on" : "off") << "\n";
+          
     if (!pcssEP->SetSoundDevice(args, "sound", PSoundChannel::Recorder))
       return FALSE;
     if (!pcssEP->SetSoundDevice(args, "sound", PSoundChannel::Player))
@@ -657,8 +662,8 @@ BOOL MyManager::Initialise(PArgList & args)
   if (!args.HasOption("no-h323")) {
     h323EP = new H323EndPoint(*this);
 
-    noFastStart      = args.HasOption('f');
-    noH245Tunnelling = args.HasOption('T');
+    h323EP->DisableFastStart(args.HasOption('f'));
+    h323EP->DisableH245Tunneling(args.HasOption('T'));
 
     // Get local username, multiple uses of -u indicates additional aliases
     if (args.HasOption('u')) {
@@ -680,8 +685,8 @@ BOOL MyManager::Initialise(PArgList & args)
     h323EP->SetGkAccessTokenOID(args.GetOptionString("gk-token"));
 
     cout << "H.323 Local username: " << h323EP->GetLocalUserName() << "\n"
-         << "H.323 FastConnect is " << !noFastStart << "\n"
-         << "H.323 H245Tunnelling is " << noH245Tunnelling << "\n"
+      << "H.323 FastConnect is " << (h323EP->IsFastStartDisabled() ? "off" : "on") << "\n"
+      << "H.323 H245Tunnelling is " << (h323EP->IsH245TunnelingDisabled() ? "off" : "on") << "\n"
          << "H.323 gk Token OID is " << h323EP->GetGkAccessTokenOID() << endl;
 
 
@@ -1054,12 +1059,16 @@ PString MyPCSSEndPoint::OnGetDestination(const OpalPCSSConnection & /*connection
 
 void MyPCSSEndPoint::OnShowIncoming(const OpalPCSSConnection & connection)
 {
-  PTime now;
-  cout << "\nCall on " << now.AsString("w h:mma")
-       << " from " << connection.GetRemotePartyName()
-       << ", answer (Y/N)? " << flush;
-
   incomingConnectionToken = connection.GetToken();
+
+  if (autoAnswer)
+    AcceptIncomingConnection(incomingConnectionToken);
+  else {
+    PTime now;
+    cout << "\nCall on " << now.AsString("w h:mma")
+         << " from " << connection.GetRemotePartyName()
+         << ", answer (Y/N)? " << flush;
+  }
 }
 
 
