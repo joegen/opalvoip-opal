@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2069  2005/01/15 21:33:56  dsandras
+ * Revision 1.2070  2005/01/15 22:35:14  dsandras
+ * Lock things before accessing/modifying them.
+ *
+ * Revision 2.68  2005/01/15 21:33:56  dsandras
  * Only start the H.245 channel if it doesn't exist yet.
  *
  * Revision 2.67  2004/11/07 12:29:05  rjongbloed
@@ -3485,10 +3488,16 @@ void H323Connection::HandleControlChannel()
   // If have started separate H.245 channel then don't tunnel any more
   h245Tunneling = FALSE;
 
-  // Start the TCS and MSD operations on new H.245 channel.
-  if (!StartControlNegotiations())
-    return;
+  if (LockReadWrite()) {
+    // Start the TCS and MSD operations on new H.245 channel.
+    if (!StartControlNegotiations()) {
+      UnlockReadWrite();
+      return;
+    }
+    UnlockReadWrite();
+  }
 
+  
   // Disable the signalling channels timeout for monitoring call status and
   // start up one in this thread instead. Then the Q.931 channel can be closed
   // without affecting the call.
