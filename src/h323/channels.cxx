@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2018  2002/04/15 08:51:42  robertj
+ * Revision 1.2019  2002/04/18 03:41:54  robertj
+ * Fixed logical channel so does not delete media stream too early.
+ *
+ * Revision 2.17  2002/04/15 08:51:42  robertj
  * Fixed correct setting of jitter buffer size in RTP media stream.
  *
  * Revision 2.16  2002/03/22 06:57:49  robertj
@@ -709,6 +712,12 @@ H323UnidirectionalChannel::H323UnidirectionalChannel(H323Connection & conn,
 }
 
 
+H323UnidirectionalChannel::~H323UnidirectionalChannel()
+{
+  delete mediaStream;
+}
+
+
 H323Channel::Directions H323UnidirectionalChannel::GetDirection() const
 {
   return receiver ? IsReceiver : IsTransmitter;
@@ -771,11 +780,9 @@ void H323UnidirectionalChannel::Close()
 
   PTRACE(3, "H323RTP\tCleaning up media stream on " << number);
 
-  // If we have source medai stream close it
-  if (mediaStream != NULL) {
+  // If we have source media stream close it
+  if (mediaStream != NULL)
     mediaStream->Close();
-    delete mediaStream;
-  }
 
   H323Channel::Close();
 }
