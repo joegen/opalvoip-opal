@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2019  2004/03/13 06:30:03  rjongbloed
+ * Revision 1.2020  2004/04/07 08:21:02  rjongbloed
+ * Changes for new RTTI system.
+ *
+ * Revision 2.18  2004/03/13 06:30:03  rjongbloed
  * Changed parameter in UDP write function to void * from PObject *.
  *
  * Revision 2.17  2004/02/19 10:47:03  rjongbloed
@@ -2294,7 +2297,7 @@ H323Gatekeeper::AlternateInfo::~AlternateInfo ()
 
 PObject::Comparison H323Gatekeeper::AlternateInfo::Compare(const PObject & obj)
 {
-  PAssert(obj.IsDescendant(Class()), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H323Gatekeeper), PInvalidCast);
   unsigned otherPriority = ((const AlternateInfo & )obj).priority;
   if (priority < otherPriority)
     return LessThan;

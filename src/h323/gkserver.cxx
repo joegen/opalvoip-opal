@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkserver.cxx,v $
- * Revision 1.2013  2004/02/19 10:47:03  rjongbloed
+ * Revision 1.2014  2004/04/07 08:21:02  rjongbloed
+ * Changes for new RTTI system.
+ *
+ * Revision 2.12  2004/02/19 10:47:03  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.11  2003/01/07 04:39:53  robertj
@@ -1389,7 +1392,7 @@ PObject::Comparison H323GatekeeperCall::Compare(const PObject & obj) const
   // Do not have to lock the object as these fields should never change for
   // life of the object
 
-  PAssert(obj.IsDescendant(H323GatekeeperCall::Class()), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H323GatekeeperCall), PInvalidCast);
   const H323GatekeeperCall & other = (const H323GatekeeperCall &)obj;
   Comparison result = callIdentifier.Compare(other.callIdentifier);
   if (result != EqualTo)
@@ -2040,7 +2043,7 @@ PObject::Comparison H323RegisteredEndPoint::Compare(const PObject & obj) const
   // Do not have to lock the object as these fields should never change for
   // life of the object
 
-  PAssert(obj.IsDescendant(H323RegisteredEndPoint::Class()), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H323RegisteredEndPoint), PInvalidCast);
   return identifier.Compare(((const H323RegisteredEndPoint &)obj).identifier);
 }
 
