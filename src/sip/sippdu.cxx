@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2040  2004/12/22 18:57:50  dsandras
+ * Revision 1.2041  2004/12/27 22:19:27  dsandras
+ * Added Allow field to PDUs.
+ *
+ * Revision 2.39  2004/12/22 18:57:50  dsandras
  * Added support for Call Forwarding via the "302 Moved Temporarily" SIP response.
  *
  * Revision 2.38  2004/12/17 12:06:53  dsandras
@@ -979,6 +982,7 @@ SIP_PDU::SIP_PDU(const SIP_PDU & request, StatusCodes code, const char * extra)
 {
   char *extraInfo = NULL;
  
+  PString methods;
   method       = NumMethods;
   statusCode   = code;
   versionMajor = request.GetVersionMajor();
@@ -995,6 +999,12 @@ SIP_PDU::SIP_PDU(const SIP_PDU & request, StatusCodes code, const char * extra)
   mime.SetCSeq(requestMIME.GetCSeq());
   mime.SetVia(requestMIME.GetVia());
   mime.SetRecordRoute(requestMIME.GetRecordRoute());
+  for (PINDEX i = 0 ; i < SIP_PDU::NumMethods ; i++) {
+    // REGISTER is the only method we do not allow
+    if (PString (MethodNames [i]) != "REGISTER")
+      methods = methods + MethodNames [i] + ", ";
+  }
+  mime.SetAllow(methods.Left(methods.GetLength () - 2));
 
   
   /* Use extra paramater as redirection URL in case of 302 */
@@ -1086,6 +1096,8 @@ void SIP_PDU::Construct(Methods meth,
                         unsigned cseq,
                         const OpalTransportAddress & via)
 {
+  PString allMethods;
+  
   Construct(meth);
 
   uri = dest;
@@ -1109,6 +1121,15 @@ void SIP_PDU::Construct(Methods meth,
     str << via.Mid(dollar+1);
 
   mime.SetVia(str);
+
+  PString methods;
+  for (PINDEX i = 0 ; i < SIP_PDU::NumMethods ; i++) {
+   
+    // REGISTER is the only method we do not allow
+    if (PString (MethodNames [i]) != "REGISTER")
+      methods = methods + MethodNames [i] + ", ";
+  }
+  mime.SetAllow(methods.Left(methods.GetLength () - 2));
 }
 
 
