@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2011  2002/02/11 07:42:17  robertj
+ * Revision 1.2012  2002/02/19 07:49:47  robertj
+ * Restructured media bypass functions to fix problems with RFC2833.
+ *
+ * Revision 2.10  2002/02/11 07:42:17  robertj
  * Added media bypass for streams between compatible protocols.
  *
  * Revision 2.9  2002/01/22 05:12:51  robertj
@@ -399,13 +402,14 @@ void OpalManager::AdjustMediaFormats(const OpalConnection & /*connection*/,
 }
 
 
-BOOL OpalManager::CanDoMediaBypass(const OpalConnection & source,
-                                   const OpalConnection & destination,
-                                   unsigned sessionID) const
+BOOL OpalManager::IsMediaBypassPossible(const OpalConnection & source,
+                                        const OpalConnection & destination,
+                                        unsigned sessionID) const
 {
-  PTRACE(3, "OpalMan\tCanDoMediaBypass: session " << sessionID);
+  PTRACE(3, "OpalMan\tIsMediaBypassPossible: session " << sessionID);
 
-  return source.CanDoMediaBypass(sessionID) && destination.CanDoMediaBypass(sessionID);
+  return source.IsMediaBypassPossible(sessionID) &&
+         destination.IsMediaBypassPossible(sessionID);
 }
 
 
