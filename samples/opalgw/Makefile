@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# Make file for opengw
+# Make file for opalgw
 #
 # Open Phone Abstraction Lebrary Project
 #
@@ -24,11 +24,14 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
+# Revision 1.2  2003/03/26 03:03:52  robertj
+# Set correct project name
+#
 # Revision 1.1  2003/03/26 02:49:00  robertj
 # Added service/daemon sample application.
 #
 
-PROG	= opengw
+PROG	= opalgw
 SOURCES	:= main.cxx custom.cxx
 
 ifndef OPALDIR
