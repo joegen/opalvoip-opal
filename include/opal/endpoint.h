@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2009  2002/01/22 05:04:40  robertj
+ * Revision 1.2010  2002/04/05 10:36:53  robertj
+ * Rearranged OnRelease to remove the connection from endpoints connection
+ *   list at the end of the release phase rather than the beginning.
+ *
+ * Revision 2.8  2002/01/22 05:04:40  robertj
  * Revamp of user input API triggered by RFC2833 support
  *
  * Revision 2.7  2001/11/14 01:31:55  robertj
@@ -365,13 +369,6 @@ class OpalEndPoint : public PObject
       */
     virtual BOOL HasConnection(
       const PString & token   /// Token for identifying connection
-    );
-
-    /**Remove connection deom internal database.
-       This stops GetConnectionWithLock() finding connection any more.
-      */
-    void RemoveConnection(
-      OpalConnection * connection /// Connection to add to database
     );
   //@}
 
