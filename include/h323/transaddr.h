@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transaddr.h,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 1.2002  2001/11/09 05:49:47  robertj
+ * Abstracted UDP connection algorithm
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  */
@@ -70,8 +73,14 @@ class H323TransportAddress : public OpalTransportAddress
     H323TransportAddress(PIPSocket::Address ip, WORD port, const char * proto = NULL)
       : OpalTransportAddress(ip, port, proto) { }
 
-    H323TransportAddress(const H225_TransportAddress &);
-    H323TransportAddress(const H245_TransportAddress &);
+    H323TransportAddress(
+      const H225_TransportAddress & pdu,
+      const char * proto = OpalTransportAddress::TcpPrefix
+    );
+    H323TransportAddress(
+      const H245_TransportAddress & pdu,
+      const char * proto = OpalTransportAddress::UdpPrefix
+    );
 
     BOOL SetPDU(
       H225_ArrayOf_TransportAddress & pdu,  /// List of transport addresses listening on

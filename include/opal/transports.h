@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.h,v $
- * Revision 1.2002  2001/11/06 05:40:13  robertj
+ * Revision 1.2003  2001/11/09 05:49:47  robertj
+ * Abstracted UDP connection algorithm
+ *
+ * Revision 2.1  2001/11/06 05:40:13  robertj
  * Added OpalListenerUDP class to do listener semantics on a UDP socket.
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
@@ -56,6 +59,9 @@ class OpalTransportAddress : public PString
 {
   PCLASSINFO(OpalTransportAddress, PString);
   public:
+    static const char * TcpPrefix;
+    static const char * UdpPrefix;
+
   /**@name Construction */
   //@{
     OpalTransportAddress();
@@ -415,9 +421,9 @@ class OpalListenerUDP : public OpalListenerIP
 
 ////////////////////////////////////////////////////////////////
 
-/**This class describes a I/O transport protocol..
-   A "transport" is an object that listens for incoming connections on the
-   particular transport.
+/**This class describes a I/O transport for a protocol.
+   A "transport" is an object that allows the transfer and processing of data
+   from one entity to another.
  */
 class OpalTransport : public PIndirectChannel
 {
@@ -467,6 +473,16 @@ class OpalTransport : public PIndirectChannel
       const OpalTransportAddress & address
     ) { return SetRemoteAddress(address) && Connect(); }
 
+    /**End a connection to the remote address.
+       This is requried in some circumstances where the connection to the
+       remote is not atomic.
+
+       The default behaviour does nothing.
+      */
+    virtual void EndConnect(
+      const OpalTransportAddress & localAddress  /// Resultant local address
+    );
+
     /**Close the channel.
       */
     virtual BOOL Close();
@@ -492,29 +508,52 @@ class OpalTransport : public PIndirectChannel
       BOOL promiscuous
     );
 
-    /**Read a protocol data unit from the transport.
+    /**Read a packet from the transport.
        This will read using the transports mechanism for PDU boundaries, for
        example UDP is a single Read() call, while for TCP there is a TPKT
        header that indicates the size of the PDU.
       */
     virtual BOOL ReadPDU(
-      PBYTEArray & pdu   /// PDU read from transport
+      PBYTEArray & packet   /// Packet read from transport
     ) = 0;
 
-    /**Write a protocol data unit from the transport.
+    /**Write a packet to the transport.
        This will write using the transports mechanism for PDU boundaries, for
        example UDP is a single Write() call, while for TCP there is a TPKT
        header that indicates the size of the PDU.
       */
     virtual BOOL WritePDU(
-      const PBYTEArray & pdu  /// PDU to write
+      const PBYTEArray & pdu     /// Packet to write
     ) = 0;
+
+    typedef BOOL (*WriteConnectCallback)(OpalTransport & transport, PObject * data);
+
+    /**Write the first packet to the transport, after a connect.
+       This will adjust the transport object and call the callback function,
+       possibly multiple times for some transport types.
+
+       It is expected that this is used just after a Connect() call where some
+       transports (eg UDP) cannot determine its local address which is
+       required in the PDU to be sent. This must be done fer each interface so
+       WriteConnect() calls WriteConnectCallback for each interface. The
+       subsequent ReadPDU() returns the answer from the first interface.
+
+       The default behaviour simply calls the WriteConnectCallback function.
+      */
+    virtual BOOL WriteConnect(
+      WriteConnectCallback function,  /// Function for writing data
+      PObject * data                  /// Data to write
+    );
 
     /**Attach a thread to the transport.
       */
-    void AttachThread(
+    virtual void AttachThread(
       PThread * thread
     );
+
+    /**Determine of the transport is running with a background thread.
+      */
+    virtual BOOL IsRunning() const;
   //@}
 
 
@@ -560,6 +599,10 @@ class OpalTransportIP : public OpalTransport
   //@}
 
   protected:
+    /**Get the prefix for this transports protocol type.
+      */
+    virtual const char * GetProtoPrefix() const = 0;
+
     PIPSocket::Address localAddress;  // Address of the local interface
     WORD               localPort;
     PIPSocket::Address remoteAddress; // Address of the remote host
@@ -604,27 +647,31 @@ class OpalTransportTCP : public OpalTransportIP
       */
     virtual BOOL Connect();
 
-    /**Read a protocol data unit from the transport.
+    /**Read a packet from the transport.
        This will read using the transports mechanism for PDU boundaries, for
        example UDP is a single Read() call, while for TCP there is a TPKT
        header that indicates the size of the PDU.
       */
     virtual BOOL ReadPDU(
-      PBYTEArray & pdu   /// PDU read from transport
+      PBYTEArray & pdu  /// PDU read from transport
     );
 
-    /**Write a protocol data unit from the transport.
+    /**Write a packet to the transport.
        This will write using the transports mechanism for PDU boundaries, for
        example UDP is a single Write() call, while for TCP there is a TPKT
        header that indicates the size of the PDU.
       */
     virtual BOOL WritePDU(
-      const PBYTEArray & pdu  /// PDU to write
+      const PBYTEArray & pdu     /// Packet to write
     );
   //@}
 
 
   protected:
+    /**Get the prefix for this transports protocol type.
+      */
+    virtual const char * GetProtoPrefix() const;
+
     /**This callback is executed when the Open() function is called with
        open channels. It may be used by descendent channels to do any
        handshaking required by the protocol that channel embodies.
@@ -665,7 +712,7 @@ class OpalTransportUDP : public OpalTransportIP
     OpalTransportUDP(
       OpalEndPoint & endpoint,          /// Endpoint object
       PIPSocket::Address localAddress,  /// Local interface to use
-      const PBYTEArray & preReadPDU,    /// PDu already read by OpalListenerUDP
+      const PBYTEArray & preReadPacket, /// Packet already read by OpalListenerUDP
       PIPSocket::Address remoteAddress, /// Remote address received PDU on
       WORD remotePort                   /// Remote port received PDU on
     );
@@ -674,7 +721,7 @@ class OpalTransportUDP : public OpalTransportIP
     ~OpalTransportUDP();
   //@}
 
-  /**@name Overides from class OpalTransport */
+  /**@name Overides from class PChannel */
   //@{
     virtual BOOL Read(
       void * buffer,
@@ -695,8 +742,24 @@ class OpalTransportUDP : public OpalTransportIP
     ) const;
 
     /**Connect to the remote party.
+       This will createa a socket for each interface on the system, then the
+       use of WriteConnect() will send out on every interface. ReadPDU() will
+       return the first interface that has data, then the user can select
+       which interface it wants by further calls to ReadPDU(). Once it has
+       selected one it calls EndConnect() to finalise the selection process.
       */
     virtual BOOL Connect();
+
+    /**End a connection to the remote address.
+       This is requried in some circumstances where the connection to the
+       remote is not atomic.
+
+       The default behaviour uses the socket defined by the localAddress
+       parameter.
+      */
+    virtual void EndConnect(
+      const OpalTransportAddress & localAddress  /// Resultant local address
+    );
 
     /**Set read to promiscuous mode.
        Normally only reads from the specifed remote address are accepted. This
@@ -709,29 +772,49 @@ class OpalTransportUDP : public OpalTransportIP
       BOOL promiscuous
     );
 
-    /**Read a protocol data unit from the transport.
+    /**Read a packet from the transport.
        This will read using the transports mechanism for PDU boundaries, for
        example UDP is a single Read() call, while for TCP there is a TPKT
        header that indicates the size of the PDU.
       */
     virtual BOOL ReadPDU(
-      PBYTEArray & pdu   /// PDU read from transport
+      PBYTEArray & packet   /// Packet read from transport
     );
 
-    /**Write a protocol data unit from the transport.
+    /**Write a packet to the transport.
        This will write using the transports mechanism for PDU boundaries, for
        example UDP is a single Write() call, while for TCP there is a TPKT
        header that indicates the size of the PDU.
       */
     virtual BOOL WritePDU(
-      const PBYTEArray & pdu  /// PDU to write
+      const PBYTEArray & pdu     /// Packet to write
+    );
+
+    /**Write the first packet to the transport, after a connect.
+       This will adjust the transport object and call the callback function,
+       possibly multiple times for some transport types.
+
+       It is expected that this is used just after a Connect() call where some
+       transports (eg UDP) cannot determine its local address which is
+       required in the PDU to be sent. This must be done fer each interface so
+       WriteConnect() calls WriteConnectCallback for each interface. The
+       subsequent ReadPDU() returns the answer from the first interface.
+      */
+    virtual BOOL WriteConnect(
+      WriteConnectCallback function,  /// Function for writing data
+      PObject * data                  /// Data to write
     );
   //@}
 
 
   protected:
-    BOOL promiscuousReads;
-    PBYTEArray preReadPDU;
+    /**Get the prefix for this transports protocol type.
+      */
+    virtual const char * GetProtoPrefix() const;
+
+    BOOL        promiscuousReads;
+    PBYTEArray  preReadPacket;
+    PSocketList connectSockets;
 };
 
 
