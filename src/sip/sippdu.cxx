@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2033  2004/08/22 12:27:46  rjongbloed
+ * Revision 1.2034  2004/09/27 12:51:20  rjongbloed
+ * Fixed deadlock in SIP transaction timeout
+ *
+ * Revision 2.32  2004/08/22 12:27:46  rjongbloed
  * More work on SIP registration, time to live refresh and deregistration on exit.
  *
  * Revision 2.31  2004/08/18 13:05:49  rjongbloed
@@ -1416,7 +1419,17 @@ BOOL SIPTransaction::OnCompleted(SIP_PDU & /*response*/)
 
 void SIPTransaction::OnRetry(PTimer &, INT)
 {
-  PWaitAndSignal m(mutex);
+  /* There is a potential deadlock if a reply packet comes in at the exact
+     same time as the timeout. So, put a timeout on the mutex grab, if it
+     fails then we had the deadlock condition, in which case the retry
+     timeout can be safely ignored as the PDU states are already handled.
+   */
+  if (!mutex.Wait(100)) {
+    PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " timeout ignored.");
+    return;
+  }
+
+  PWaitAndSignal m(mutex, false);
 
   retry++;
 
@@ -1446,9 +1459,15 @@ void SIPTransaction::OnRetry(PTimer &, INT)
 
 void SIPTransaction::OnTimeout(PTimer &, INT)
 {
-  mutex.Wait();
-  SetTerminated(state != Completed ? Terminated_Timeout : Terminated_Success);
-  mutex.Signal();
+  /* There is a potential deadlock if a reply packet comes in at the exact
+     same time as the timeout. So, put a timeout on the mutex grab, if it
+     fails then we had the deadlock condition, in which case the retry
+     timeout can be safely ignored as the PDU states are already handled.
+   */
+  if (mutex.Wait(100)) {
+    SetTerminated(state != Completed ? Terminated_Timeout : Terminated_Success);
+    mutex.Signal();
+  }
 }
 
 
