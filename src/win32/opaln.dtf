@@ -13576,7 +13576,7 @@ EXPORTS
     ?RegistrationTimeToLive@H323Gatekeeper@@IAEXXZ @14608 NONAME ;protected: void __thiscall H323Gatekeeper::RegistrationTimeToLive(void)
     ?Release@H245NegLogicalChannel@@MAEXXZ @12280 NONAME ;protected: virtual void __thiscall H245NegLogicalChannel::Release(void)
     ?Release@OpalCall@@QAEXPAVOpalConnection@@@Z @12281 NONAME ;public: void __thiscall OpalCall::Release(class OpalConnection *)
-    ?Release@OpalConnection@@QAEXW4OpalCallEndReason@@@Z @13110 NONAME ;public: void __thiscall OpalConnection::Release(enum OpalCallEndReason)
+    ?Release@OpalConnection@@UAEXW4OpalCallEndReason@@@Z @14811 NONAME ;public: virtual void __thiscall OpalConnection::Release(enum OpalCallEndReason)
     ?ReleaseOnePacket@Transmitter@@IAEXPAUpktbuf@1@@Z @12284 NONAME ;protected: void __thiscall Transmitter::ReleaseOnePacket(struct Transmitter::pktbuf *)
     ?ReleaseSession@H323Connection@@UAEXI@Z @12285 NONAME ;public: virtual void __thiscall H323Connection::ReleaseSession(unsigned int)
     ?ReleaseSession@OpalConnection@@UAEXI@Z @12286 NONAME ;public: virtual void __thiscall OpalConnection::ReleaseSession(unsigned int)
@@ -13969,7 +13969,6 @@ EXPORTS
     ?SwapHoldMediaChannels@H323Connection@@AAEPAVPChannel@@PAV2@@Z @14775 NONAME ;private: class PChannel * __thiscall H323Connection::SwapHoldMediaChannels(class PChannel *)
     ?sync@FullP64Decoder@@MAEXXZ @12533 NONAME ;protected: virtual void __thiscall FullP64Decoder::sync(void)
     ?sync@P64Decoder@@UAEXXZ @12534 NONAME ;public: virtual void __thiscall P64Decoder::sync(void)
-    ?TcpPrefix@OpalTransportAddress@@2PBDB @14776 NONAME ;public: static char const * const  OpalTransportAddress::TcpPrefix
     ?TickleMonitor@H323Gatekeeper@@MAEXAAVPTimer@@H@Z @14777 NONAME ;protected: virtual void __thiscall H323Gatekeeper::TickleMonitor(class PTimer &,int)
     ?TransferCall@H323Connection@@QAEXABVPString@@0@Z @14778 NONAME ;public: void __thiscall H323Connection::TransferCall(class PString const &,class PString const &)
     ?TransferCall@H323EndPoint@@QAEXABVPString@@00@Z @14779 NONAME ;public: void __thiscall H323EndPoint::TransferCall(class PString const &,class PString const &,class PString const &)
@@ -13982,7 +13981,6 @@ EXPORTS
     ?TransmitEnded@OpalRFC2833Proto@@MAEXAAVPTimer@@H@Z @14783 NONAME ;protected: virtual void __thiscall OpalRFC2833Proto::TransmitEnded(class PTimer &,int)
     ?TransmitPacket@OpalRFC2833Proto@@MAEXAAVRTP_DataFrame@@H@Z @14784 NONAME ;protected: virtual void __thiscall OpalRFC2833Proto::TransmitPacket(class RTP_DataFrame &,int)
     ?TryLock@OpalConnection@@QAEHXZ @14785 NONAME ;public: int __thiscall OpalConnection::TryLock(void)
-    ?UdpPrefix@OpalTransportAddress@@2PBDB @14786 NONAME ;public: static char const * const  OpalTransportAddress::UdpPrefix
     ?Unlock@OpalConnection@@QAEXXZ @13146 NONAME ;public: void __thiscall OpalConnection::Unlock(void)
     ?UnregistrationRequest@H323Gatekeeper@@QAEHH@Z @12542 NONAME ;public: int __thiscall H323Gatekeeper::UnregistrationRequest(int)
     ?UseGkAndEpIdentifiers@H235Authenticator@@UBEHXZ @14787 NONAME ;public: virtual int __thiscall H235Authenticator::UseGkAndEpIdentifiers(void)const 
