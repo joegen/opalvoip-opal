@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2023  2005/02/19 22:48:48  dsandras
+ * Revision 1.2024  2005/03/11 18:12:08  dsandras
+ * Added support to specify the realm when registering. That way softphones already know what authentication information to use when required. The realm/domain can also be used in the From field.
+ *
+ * Revision 2.22  2005/02/19 22:48:48  dsandras
  * Added the possibility to register to several registrars and be able to do authenticated calls to each of them. Added SUBSCRIBE/NOTIFY support for Message Waiting Indications.
  *
  * Revision 2.21  2004/12/17 12:06:52  dsandras
@@ -180,6 +183,9 @@ class SIPInfo : public PSafeObject {
 
   virtual void SetPassword (PString p)
     { password = p;}
+  
+  virtual void SetRealm (PString r)
+    { realm = r;}
  
   virtual SIPTransaction * CreateTransaction (OpalTransport & t, BOOL unregister) = 0;
 
@@ -201,6 +207,7 @@ class SIPInfo : public PSafeObject {
   BOOL                   registered;
   int		         expire;
   PString 		 password;
+  PString		 realm;
 };
 
 
@@ -209,7 +216,7 @@ class SIPRegisterInfo : public SIPInfo
   PCLASSINFO(SIPRegisterInfo, SIPInfo);
 
 public:
-  SIPRegisterInfo (SIPEndPoint & ep, const PString & adjustedUsername, const PString & password);
+  SIPRegisterInfo (SIPEndPoint & ep, const PString & adjustedUsername, const PString & password, const PString & realm);
 
   virtual SIPTransaction * CreateTransaction (OpalTransport &, BOOL);
 
@@ -418,80 +425,95 @@ class SIPEndPoint : public OpalEndPoint
     virtual BOOL IsAcceptedAddress(const SIPURL & toAddr);
 
 
-    /** Register to a registrar. This function is asynchronous to permit
-     *  several registrations to occur at the same time.
+    /**Register to a registrar. This function is asynchronous to permit
+     * several registrations to occur at the same time. It can be
+     * called several times for different hosts and users.
+     * 
+     * The realm/domain can be specified when registering, this will
+     * allow to find the correct authentication information when being
+     * requested. If no realm/domain is specified, authentication will
+     * occur with the "best guess" of authentication parameters.
+     *  
+     * Notice that the realm/domain will also be used in the from part
+     * of the PDU's.
+     *  
+     * For example, you could register 6001 to sip.seconix.com, with 
+     * a realm/domain of "seconix.com", which would result in calls
+     * coming from sip:6001@seconix.com, and not sip:6001@sip.seconix.com.
      */
     BOOL Register(
-      const PString & domain,
+      const PString & host,
       const PString & username = PString::Empty(),
-      const PString & password = PString::Empty()
+      const PString & password = PString::Empty(),
+      const PString & realm = PString::Empty()
     );
     
 
-    /** Callback called when MWI is received
+    /**Callback called when MWI is received
      */
     virtual void OnMWIReceived (
-      const PString & domain,
+      const PString & host,
       const PString & user,
       SIPMWISubscribe::MWIType type,
       const PString & msgs);
 
     
-    /** Subscribe to a notifier. This function is asynchronous to permit
-     *  several subscripttions to occur at the same time.
+    /**Subscribe to a notifier. This function is asynchronous to permit
+     * several subscripttions to occur at the same time.
      */
     BOOL MWISubscribe(
-      const PString & hostname,
+      const PString & host,
       const PString & username
     );
    
     
-    /** Callback called when a registration to a SIP registrars fails.
-     *  The BOOL indicates if the operation that failed was a REGISTER or 
-     *  an (UN)REGISTER.
+    /**Callback called when a registration to a SIP registrars fails.
+     * The BOOL indicates if the operation that failed was a REGISTER or 
+     * an (UN)REGISTER.
      */
     virtual void OnRegistrationFailed(
-      const PString & domain,
+      const PString & host,
       const PString & userName,
       SIPInfo::FailureReasons reason,
       BOOL wasRegistering);
     
       
-    /** Callback called when a registration or an unregistration is successful.
-     *  The BOOL indicates if the operation that failed was a registration or
-     *  not.
+    /**Callback called when a registration or an unregistration is successful.
+     * The BOOL indicates if the operation that failed was a registration or
+     * not.
      */
     virtual void OnRegistered(
-      const PString & domain,
+      const PString & host,
       const PString & userName,
       BOOL wasRegistering);
 
     
-    /** Returns TRUE if registered to the given domain.
-     *  The domain is the one used in the Register command.
+    /**Returns TRUE if registered to the given host.
+     * The hostname is the one used in the Register function,
+     * it can also be the realm/domain.
      */
-    BOOL IsRegistered(const PString & domain);
+    BOOL IsRegistered(const PString & host);
     
     
-    /** Returns TRUE if subscribed to the given domain for MWI.
+    /**Returns TRUE if subscribed to the given host for MWI.
      */
     BOOL IsSubscribed(
-      const PString & domain, 
+      const PString & host, 
       const PString & user);
  
     
-    /** Unregister from a registrar. This function
-     *  is synchronous.
+    /**Unregister from a registrar. This function
+     * is synchronous.
      */
-    BOOL Unregister(const PString & domain,
+    BOOL Unregister(const PString & host,
 		    const PString & user);
 
     
-    /** Unsubscribe from a notifier. This function
-     *  is synchronous.
+    /**Unsubscribe from a notifier. This function
+     * is synchronous.
      */
     BOOL MWIUnsubscribe(
-      const PString & domain,
+      const PString & host,
       const PString & user);
     
 
@@ -547,14 +569,24 @@ class SIPEndPoint : public OpalEndPoint
     ) { transactions.SetAt(transaction->GetTransactionID(), NULL); }
 
     unsigned GetNextCSeq() { return ++lastSentCSeq; }
-    // to a remote host
 
-    // Return the SIPAuthentication for a specific realm
-    BOOL GetAuthentication(const PString &, SIPAuthentication &); 
+    /**
+     * Return the SIPAuthentication for a specific realm/domain.
+     */
+    BOOL GetAuthentication(const PString & realm, SIPAuthentication &); 
 
-    // Return the registration URL for the given domain
-    // That URL should be used in the FORM field. The host
-    // part can be different from the registration domain.
+    /**
+     * Return the registered party name URL for the given host.
+     *
+     * That URL can be used in the FORM field of the PDU's. 
+     * The host part can be different from the registration domain.
+     * 
+     * For example, you could register 6001 to sip.seconix.com,
+     * with domain/realm seconix.com. 
+     * GetRegisteredPartyName("sip.seconix.com")
+     * and GetRegisteredPartyName("seconix.com")
+     * will return sip:6001@seconix.com as URL.
+     */
     const SIPURL GetRegisteredPartyName(const PString &);
 
     const SIPURL & GetProxy() const { return proxy; }
@@ -579,12 +611,13 @@ class SIPEndPoint : public OpalEndPoint
       OpalTransport & transport, 
       void * param);
     BOOL TransmitSIPRegistrationInfo (
-      const PString & domain, 
+      const PString & host, 
       const PString & username, 
       const PString & password, 
+      const PString & realm, 
       SIP_PDU::Methods method);
     BOOL TransmitSIPUnregistrationInfo (
-      const PString & domain, 
+      const PString & host, 
       const PString & username, 
       SIP_PDU::Methods method);
 
@@ -611,6 +644,7 @@ class SIPEndPoint : public OpalEndPoint
     {
       public:
 
+	  //Find the SIPInfo object with the specified callID
 	  SIPInfo *FindSIPInfoByCallID (const PString & callID, PSafetyMode m)
 	    {
 	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
@@ -618,6 +652,7 @@ class SIPEndPoint : public OpalEndPoint
 		  return info;
 	      return NULL;
 	    }
+	  //Find the SIPInfo object with the specified realm
 	  SIPInfo *FindSIPInfoByRealm (const PString & realm, PSafetyMode m)
 	    {
 	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
@@ -625,6 +660,9 @@ class SIPEndPoint : public OpalEndPoint
 		  return info;
 	      return NULL;
 	    }
+	  //Find the SIPInfo object with the specified URL. The url is
+	  //the registration address, for example, 6001@sip.seconix.com
+	  //when registering 6001 to sip.seconix.com with realm seconix.com
 	  SIPInfo *FindSIPInfoByUrl (const PString & url, SIP_PDU::Methods meth, PSafetyMode m)
 	    {
 	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
@@ -633,10 +671,14 @@ class SIPEndPoint : public OpalEndPoint
 		  return info;
 	      return NULL;
 	    }
+	  //Find the SIPInfo object with the specified registration host,
+	  //or realm. For example, in the above case, the name parameter
+	  //could be "sip.seconix.com" and "seconix.com"
 	  SIPInfo *FindSIPInfoByDomain (const PString & name, SIP_PDU::Methods meth, PSafetyMode m)
 	    {
 	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
-		if (name == info->GetRegistrationAddress().GetHostName()
+		if ((name == info->GetRegistrationAddress().GetHostName()
+		     || name == info->GetAuthentication().GetRealm())
 		    && meth == info->GetMethod())
 		  return info;
 	      return NULL;
