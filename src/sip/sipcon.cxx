@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2007  2002/03/08 06:28:03  craigs
+ * Revision 1.2008  2002/03/15 10:55:28  robertj
+ * Added ability to specify proxy username/password in URL.
+ *
+ * Revision 2.6  2002/03/08 06:28:03  craigs
  * Changed to allow Authorisation to be included in other PDUs
  *
  * Revision 2.5  2002/02/19 07:53:17  robertj
@@ -97,7 +100,8 @@ SIPConnection::SIPConnection(OpalCall & call,
                              const PString & token,
                              SIP_PDU * invite)
   : OpalConnection(call, ep, token),
-    endpoint(ep)
+    endpoint(ep),
+    password(endpoint.GetRegistrationPassword())
 {
   sendUserInputMode = SendUserInputAsInlineRFC2833;
 
@@ -136,7 +140,6 @@ SIPConnection::SIPConnection(OpalCall & call,
   haveLastReceivedCseq = FALSE;   // not yet received CSeq for incoming PDUs
 
   sendBYE = TRUE;
-  realm = nonce = PString();
 
   PTRACE(3, "SIP\tCreated connection.");
 }
@@ -416,6 +419,12 @@ BOOL SIPConnection::SendConnectionAlert(const PString & calleeName)
 
 void SIPConnection::InitiateCall(const SIPURL & destination)
 {
+  PStringToString & params = destination.GetParamVars();
+  if (params.Contains("proxyusername") && params.Contains("proxypassword")) {
+    localPartyName = params["proxyusername"];
+    password = params["proxypassword"];
+  }
+
   originalDestination = destination;
   remotePartyAddress = '<' + destination.AsString() + '>';
 
@@ -834,7 +843,6 @@ void SIPConnection::AddAuthorisation(SIP_PDU & pdu)
   SIPMIMEInfo & mime = pdu.GetMIME();
   PString method   = pdu.GetMethod();
   PString username = GetLocalPartyName();
-  PString passwd   = GetEndPoint().GetRegistrationPassword();
   SIPURL uri       = pdu.GetURI();
 
   PMessageDigest5 digestor;
@@ -850,7 +858,7 @@ void SIPConnection::AddAuthorisation(SIP_PDU & pdu)
   digestor.Process(":");
   digestor.Process(realm);
   digestor.Process(":");
-  digestor.Process(passwd);
+  digestor.Process(password);
   digestor.Complete(a1);
 
   digestor.Start();
