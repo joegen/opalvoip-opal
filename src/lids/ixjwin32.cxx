@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjwin32.cxx,v $
- * Revision 1.2010  2003/03/24 07:18:29  robertj
+ * Revision 1.2011  2004/02/19 10:47:05  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.9  2003/03/24 07:18:29  robertj
  * Added registration system for LIDs so can work with various LID types by
  *   name instead of class instance.
  *
@@ -54,6 +57,9 @@
  *
  * Revision 2.1  2001/08/01 05:21:21  robertj
  * Made OpalMediaFormatList class global to help with documentation.
+ *
+ * Revision 1.114  2003/04/29 08:32:59  robertj
+ * Added new wink functions for Windows IxJ lid.
  *
  * Revision 1.113  2002/11/05 04:33:21  robertj
  * Changed IsLineDisconnected() to work with POTSLine
@@ -1593,6 +1599,20 @@ OpalLineInterfaceDevice::AECLevels OpalIxJDevice::GetAEC(unsigned)
 BOOL OpalIxJDevice::SetAEC(unsigned, AECLevels level)
 {
   return IoControl(IOCTL_Speakerphone_SetAEC, level);
+}
+
+
+unsigned OpalIxJDevice::GetWinkDuration(unsigned)
+{
+  DWORD level = 0;
+  IoControl(IOCTL_DevCtrl_GetLineWinkDetTime, 0, &level);
+  return (unsigned)level;
+}
+
+
+BOOL OpalIxJDevice::SetWinkDuration(unsigned, unsigned winkDuration)
+{
+  return IoControl(IOCTL_DevCtrl_SetLineWinkDetTime, winkDuration);
 }
 
 

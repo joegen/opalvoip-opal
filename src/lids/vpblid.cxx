@@ -21,8 +21,15 @@
  *
  * Contributor(s): ______________________________________.
  *
+ * Patch: 2002/10/4 Peter Wintulich Peter@voicetronix.com.au
+ * IsLineDisconected was looking for any tone to signify hangup/busy.
+ * Changed so only BUSY tone reports line hangup/busy.
+ *
  * $Log: vpblid.cxx,v $
- * Revision 1.2008  2003/03/24 07:18:30  robertj
+ * Revision 1.2009  2004/02/19 10:47:05  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.7  2003/03/24 07:18:30  robertj
  * Added registration system for LIDs so can work with various LID types by
  *   name instead of class instance.
  *
@@ -46,6 +53,15 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.21  2003/08/13 22:02:03  dereksmithies
+ * Apply patch from Daniel Bichara to GetOSHandle() for VPB devices. Thanks.
+ *
+ * Revision 1.20  2003/03/12 00:15:40  dereks
+ * Fix compile error on RH8.0
+ *
+ * Revision 1.19  2003/03/05 06:26:44  robertj
+ * Added function to play a WAV file to LID, thanks Pietro Ravasio
  *
  * Revision 1.18  2002/09/03 06:22:26  robertj
  * Cosmetic change to formatting.
@@ -198,9 +214,9 @@ unsigned OpalVpbDevice::GetLineCount()
 BOOL OpalVpbDevice::IsLineDisconnected(unsigned line, BOOL /*checkForWink*/)
 {
   //  unsigned thisTone = IsToneDetected(line);
-  BOOL lineIsDisconnected = (IsToneDetected(line) != NoTone);
+  BOOL lineIsDisconnected = (IsToneDetected(line) == BusyTone);
 
-  PTRACE(3, "VPB\tLine is disconnected: " << (lineIsDisconnected ? " TRUE" : "FALSE"));
+  PTRACE(3, "VPB\tLine " << line << " is disconnected: " << (lineIsDisconnected ? " TRUE" : "FALSE"));
   return lineIsDisconnected;
 }
 
@@ -505,6 +521,33 @@ char OpalVpbDevice::ReadDTMF(unsigned line)
   return '\0';
 }
 
+/*
+BOOL OpalVpbDevice::PlayFile(unsigned line, const PString & fn, BOOL syncOff=FALSE)
+{
+	PTRACE(3, "VPB\tSono entrato in PlayFile per leggere il file " << fn << " sulla linea " <<line);
+	
+	char * filename;
+	strcpy(filename,fn);
+		
+	if(syncOff)
+	{
+		vpb_play_file_async(lineState[line].handle, filename, VPB_PLAYEND);
+	}
+	else
+	{
+		vpb_play_file_sync(lineState[line].handle, filename);
+	}
+	return TRUE;
+}
+*/
+
+/*
+// Ritorna il codice dell'evento sull'handle lineState[line].handle
+int OpalVpbDevice::GetVPBEvent(unsigned line)
+{
+	return vpb_get_event_mask(lineState[line].handle;
+}
+*/
 
 BOOL OpalVpbDevice::PlayDTMF(unsigned line, const char * digits, DWORD, DWORD)
 {
@@ -519,6 +562,11 @@ BOOL OpalVpbDevice::PlayDTMF(unsigned line, const char * digits, DWORD, DWORD)
 }
 
 
+int OpalVpbDevice::GetOSHandle(unsigned line)
+{
+  return lineState[line].handle;
+}
+
 unsigned OpalVpbDevice::IsToneDetected(unsigned line)
 {
   if (line >= MaxLineCount) {
@@ -528,7 +576,7 @@ unsigned OpalVpbDevice::IsToneDetected(unsigned line)
 
   VPB_EVENT event;
   if (vpb_get_event_ch_async(lineState[line].handle, &event) == VPB_NO_EVENTS) {
-    PTRACE(3, "VPB\tTone Detect no events in  tone detected");    
+    PTRACE(3, "VPB\tTone Detect no events on line " << line << " in  tone detected");    
     return NoTone;
   }
 
@@ -585,6 +633,7 @@ BOOL OpalVpbDevice::PlayTone(unsigned line, CallProgressTones tone)
 						  vpbtone
 						  );
     break;
+
   case BusyTone:
     vpbtone.freq1 = 425;
     vpbtone.freq2 = 0;
@@ -616,6 +665,31 @@ BOOL OpalVpbDevice::StopTone(unsigned line)
   PTRACE(3, "VPB\tStopTone FINSISHED");
   return TRUE;
 }
+
+BOOL OpalVpbDevice::PlayAudio(unsigned line, const PString & fn)
+{
+  PTRACE(3, "VPB\tPlayAudio starting a new Audio Thread on line " << line << " with file " << fn);
+  vpb_play_file_async(lineState[line].handle, (char *)&fn, VPB_PLAYEND);
+  /*
+  lineState[line].myAudioThread = new AudioThread(
+  */
+  return TRUE;
+}
+
+BOOL OpalVpbDevice::StopAudio(unsigned line)
+{
+  PTRACE(3, "VPB\tStopAudio STARTED");
+  /*
+  if (lineState[line].myAudioThread) {
+    delete lineState[line].myAudioThread;
+    lineState[line].myAudioThread = NULL;
+  }
+  */
+  vpb_play_terminate(lineState[line].handle);
+  PTRACE(3, "VPB\tStopAudio FINISHED");
+  return TRUE;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 
