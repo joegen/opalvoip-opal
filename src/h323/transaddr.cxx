@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transaddr.cxx,v $
- * Revision 1.2004  2002/07/01 04:56:32  robertj
+ * Revision 1.2005  2002/09/12 06:58:33  robertj
+ * Removed protocol prefix strings as static members as has problems with
+ *   use in DLL environment.
+ *
+ * Revision 2.3  2002/07/01 04:56:32  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.2  2001/11/12 05:32:12  robertj
@@ -62,9 +66,11 @@ H323TransportAddress::H323TransportAddress(const H225_TransportAddress & transpo
   switch (transport.GetTag()) {
     case H225_TransportAddress::e_ipAddress :
     {
+      PString::operator=(proto != NULL ? proto : "tcp$");
+      if (Find('$') == P_MAX_INDEX)
+        *this += '$';
       const H225_TransportAddress_ipAddress & ip = transport;
-      sprintf("%s%u.%u.%u.%u:%u",
-              proto,
+      sprintf("%u.%u.%u.%u:%u",
               ip.m_ip[0], ip.m_ip[1], ip.m_ip[2], ip.m_ip[3],
               (unsigned)ip.m_port);
       break;
@@ -85,9 +91,11 @@ H323TransportAddress::H323TransportAddress(const H245_TransportAddress & transpo
       switch (transport.GetTag()) {
         case H245_UnicastAddress::e_iPAddress :
         {
+          PString::operator=(proto != NULL ? proto : "udp$");
+          if (Find('$') == P_MAX_INDEX)
+            *this += '$';
           const H245_UnicastAddress_iPAddress & ip = unicast;
-          sprintf("%s%u.%u.%u.%u:%u",
-                  proto,
+          sprintf("%u.%u.%u.%u:%u",
                   ip.m_network[0], ip.m_network[1], ip.m_network[2], ip.m_network[3],
                   (unsigned)ip.m_tsapIdentifier);
           break;
