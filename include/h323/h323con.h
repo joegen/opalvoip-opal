@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2010  2002/01/22 04:59:04  robertj
+ * Revision 1.2011  2002/02/11 07:37:43  robertj
+ * Added media bypass for streams between compatible protocols.
+ *
+ * Revision 2.9  2002/01/22 04:59:04  robertj
  * Update from OpenH323, RFC2833 support
  *
  * Revision 2.8  2002/01/14 06:35:56  robertj
@@ -339,6 +342,26 @@ class H323Connection : public OpalConnection
       BOOL isSource,      /// Is a source stream
       unsigned sessionID  /// Session number for stream
     );
+
+    /**See if the media can bypass the local host.
+
+       The default behaviour returns TRUE if the session is audio or video.
+     */
+    virtual BOOL CanDoMediaBypass(
+      unsigned sessionID                  /// Session ID for media channel
+    ) const;
+
+    /**Get the media transport address for the connection.
+       This is primarily used to determine if media bypass is possible for the
+       call between two connections.
+
+       The default behaviour returns TRUE if the media format is RTP based.
+     */
+    virtual BOOL GetMediaTransportAddress(
+      unsigned sessionID,                 /// Session ID for media channel
+      OpalTransportAddress & data,        /// Data channel address
+      OpalTransportAddress & control      /// Control channel address
+    ) const;
   //@}
 
   /**@name Backward compatibility functions */
