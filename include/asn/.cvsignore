@@ -1,6 +1,7 @@
 h235.h
 h225.h
 h245.h
+h248.h
 mcs.h
 gcc.h
 ldap.h
