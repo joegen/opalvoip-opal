@@ -24,7 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lpc10codec.h,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 1.2002  2001/08/01 05:03:09  robertj
+ * Changes to allow control of linking software transcoders, use macros
+ *   to force linking.
+ * Allowed codecs to be used without H.,323 being linked by using the
+ *   new NO_H323 define.
+ * Major changes to H.323 capabilities, uses OpalMediaFormat for base name.
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.4  2001/02/09 05:16:24  robertj
@@ -51,11 +58,18 @@
 
 
 #include <opal/transcoders.h>
+
+#ifndef NO_H323
 #include <h323/h323caps.h>
+#endif
 
 
 struct lpc10_encoder_state;
 struct lpc10_decoder_state;
+
+#define OPAL_LPC10 "LPC-10"
+
+extern OpalMediaFormat const OpalLPC10;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -84,6 +98,8 @@ class Opal_PCM_LPC10 : public OpalFramedTranscoder {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#ifndef NO_H323
+
 /**This class describes the LPC-10 (FS-1015) codec capability.
  */
 class H323_LPC10Capability : public H323NonStandardAudioCapability
@@ -106,14 +122,21 @@ class H323_LPC10Capability : public H323NonStandardAudioCapability
       */
     virtual PObject * Clone() const;
   //@}
-
-  /**@name Identification functions */
-  //@{
-    /**Get the name of the media data format this class represents.
-     */
-    virtual PString GetFormatName() const;
-  //@}
 };
+
+#define OPAL_REGISTER_LPC10_H323 \
+          H323_REGISTER_CAPABILITY_EP(H323_LPC10Capability, OPAL_LPC10)
+
+#else // ifndef NO_H323
+
+#define OPAL_REGISTER_LPC10_H323
+
+#endif // ifndef NO_H323
+
+#define OPAL_REGISTER_LPC10() \
+          OPAL_REGISTER_LPC10_H323 \
+          OPAL_REGISTER_TRANSCODER(Opal_LPC10_PCM, OPAL_LPC10, OPAL_PCM16); \
+          OPAL_REGISTER_TRANSCODER(Opal_PCM_LPC10, OPAL_PCM16, OPAL_LPC10)
 
 
 #endif // __CODEC_LPC10CODEC_H

@@ -25,7 +25,14 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.h,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 1.2002  2001/08/01 05:03:09  robertj
+ * Changes to allow control of linking software transcoders, use macros
+ *   to force linking.
+ * Allowed codecs to be used without H.,323 being linked by using the
+ *   new NO_H323 define.
+ * Major changes to H.323 capabilities, uses OpalMediaFormat for base name.
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.22  2001/05/25 01:10:26  dereks
@@ -118,6 +125,20 @@
 class P64Decoder;
 class P64Encoder;
 
+#define OPAL_H261 "H.261"
+
+extern OpalMediaFormat const OpalH261;
+
+
+#define OPAL_H261_CIF "H.261-CIF"
+
+extern OpalMediaFormat const OpalH261_CIF;
+
+
+#define OPAL_H261_QCIF "H.261-QCIF"
+
+extern OpalMediaFormat const OpalH261_QCIF;
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -153,6 +174,8 @@ class Opal_YUV411P_H261 : public OpalVideoTranscoder {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#ifndef NO_H323
+
 /**This class is a H.261 video capability.
  */
 class H323_H261Capability : public H323VideoCapability
@@ -165,6 +188,7 @@ class H323_H261Capability : public H323VideoCapability
     /**Create a new H261 Capability
      */
     H323_H261Capability(
+      const OpalMediaFormat & mediaFormat,
       unsigned qcifMPI,
       unsigned cifMPI,
       BOOL temporalSpatialTradeOffCapability = TRUE,
@@ -178,11 +202,7 @@ class H323_H261Capability : public H323VideoCapability
     /**Create a copy of the object.
       */
     virtual PObject * Clone() const;
-  //@}
 
-  
-  /**@name Overrides from class PObject */
-  //@{
     /**Compare object
       */
    Comparison Compare(const PObject & obj) const;
@@ -197,10 +217,6 @@ class H323_H261Capability : public H323VideoCapability
        using the enum values of the protocol ASN H245_AudioCapability class.
      */
     virtual unsigned GetSubType() const;
-
-    /**Get the name of the media data format this class represents.
-     */
-    virtual PString GetFormatName() const;
   //@}
 
   /**@name Protocol manipulation */
@@ -261,6 +277,25 @@ class H323_H261Capability : public H323VideoCapability
     unsigned maxBitRate;                // units of 100 bit/s
     BOOL     stillImageTransmission;    // Annex D of H.261
 };
+
+#define OPAL_REGISTER_H261_H323 \
+H323_REGISTER_CAPABILITY_FUNCTION(H323_H261_QCIF_CIF, OPAL_H261, H323_NO_EP_VAR) \
+  { return new H323_H261Capability(OpalH261, 2, 4, FALSE, FALSE, 6217); } \
+H323_REGISTER_CAPABILITY_FUNCTION(H323_H261_CIF, OPAL_H261_CIF, H323_NO_EP_VAR) \
+  { return new H323_H261Capability(OpalH261_CIF, 0, 4, FALSE, FALSE, 6217); } \
+H323_REGISTER_CAPABILITY_FUNCTION(H323_H261_QCIF, OPAL_H261_QCIF, H323_NO_EP_VAR) \
+  { return new H323_H261Capability(OpalH261_QCIF, 2, 0, FALSE, FALSE, 6217); }
+
+#else // ifndef NO_H323
+
+#define OPAL_REGISTER_H261_H323
+
+#endif // ifndef NO_H323
+
+#define OPAL_REGISTER_H261() \
+          OPAL_REGISTER_H261_H323 \
+          OPAL_REGISTER_TRANSCODER(Opal_H261_YUV411P, OPAL_H261, "YUV411P"); \
+          OPAL_REGISTER_TRANSCODER(Opal_YUV411P_H261, "YUV411P", OPAL_H261)
 
 
 #endif // __CODEC_H261CODEC_H
