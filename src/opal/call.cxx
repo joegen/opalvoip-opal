@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2015  2002/04/08 02:40:13  robertj
+ * Revision 1.2016  2002/04/09 00:21:41  robertj
+ * Fixed media formats list not being sorted and sifted before use in opening streams.
+ *
+ * Revision 2.14  2002/04/08 02:40:13  robertj
  * Fixed issues with using double originate call, eg from simple app command line.
  *
  * Revision 2.13  2002/04/05 10:38:35  robertj
@@ -235,9 +238,11 @@ void OpalCall::OnConnected(OpalConnection & connection)
 
   inUseFlag.Signal();
 
-  BOOL createdOne = OpenSourceMediaStreams(connection.GetMediaFormats(), OpalMediaFormat::DefaultAudioSessionID);
+  OpalMediaFormatList formats = connection.GetMediaFormats();
+  connection.AdjustMediaFormats(formats);
+  BOOL createdOne = OpenSourceMediaStreams(formats, OpalMediaFormat::DefaultAudioSessionID);
   if (manager.CanAutoStartTransmitVideo()) {
-    if (OpenSourceMediaStreams(connection.GetMediaFormats(), OpalMediaFormat::DefaultVideoSessionID))
+    if (OpenSourceMediaStreams(formats, OpalMediaFormat::DefaultVideoSessionID))
       createdOne = TRUE;
   }
 
