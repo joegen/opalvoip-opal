@@ -23,7 +23,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: allcodecs.h,v $
- * Revision 1.2003  2002/07/01 04:56:29  robertj
+ * Revision 1.2004  2002/11/10 11:33:16  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.2  2002/07/01 04:56:29  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.1  2001/08/01 05:03:26  robertj
@@ -49,6 +52,9 @@ OPAL_REGISTER_MSCODECS();
 
 #include <codec/lpc10codec.h>
 OPAL_REGISTER_LPC10();
+
+#include <codec/speexcodec.h>
+OPAL_REGISTER_SPEEX();
 
 #include <codec/h261codec.h>
 OPAL_REGISTER_H261();

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.h,v $
- * Revision 1.2008  2002/09/16 02:52:34  robertj
+ * Revision 1.2009  2002/11/10 11:33:16  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.7  2002/09/16 02:52:34  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -51,6 +54,10 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.56  2002/09/16 01:14:15  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
  * Revision 1.55  2002/09/03 06:19:37  robertj
  * Normalised the multi-include header prevention ifdef/define symbol.
@@ -247,7 +254,8 @@
 
 
 #include <ptlib/sockets.h>
-#include <opal/connection.h>
+#include <h323/h323con.h>
+#include <h323/transaddr.h>
 #include <h323/q931.h>
 #include <asn/h225.h>
 #include <asn/h245.h>
@@ -257,7 +265,6 @@
 class H323Connection;
 class H323TransportAddress;
 class H225_RAS;
-class OpalTransport;
 class OpalGloballyUniqueID;
 
 
@@ -375,13 +382,13 @@ class H323SignalPDU : public H225_H323_UserInformation
     /**Read PDU from the specified transport.
       */
     BOOL Read(
-      OpalTransport & transport   /// Transport to read from
+      H323Transport & transport   /// Transport to read from
     );
 
     /**Write the PDU to the transport.
       */
     BOOL Write(
-      OpalTransport & transport   /// Transport to write to
+      H323Transport & transport   /// Transport to write to
     );
 
     /**Get the Q.931 wrapper PDU for H.225 signalling PDU.
@@ -403,7 +410,7 @@ class H323SignalPDU : public H225_H323_UserInformation
        remote endpoint to identify it, eg phone number, display name etc etc
       */
     PString GetSourceAliases(
-      const OpalTransport * transport = NULL  /// Transport PDU was read from.
+      const H323Transport * transport = NULL  /// Transport PDU was read from.
     ) const;
 
     /**Get the destination alias name(s) for the local endpoint.
@@ -607,10 +614,8 @@ class H323RasPDU : public H225_RasMessage
     H225_UnknownMessageResponse& BuildUnknownMessageResponse(unsigned seqNum);
     H225_RequestInProgress     & BuildRequestInProgress(unsigned seqNum, unsigned delay);
 
-    BOOL Read(OpalTransport & transport);
-    BOOL Write(OpalTransport & transport) const;
-
-    const PBYTEArray & GetLastReceivedRawPDU() const { return rawPDU; }
+    BOOL Read(H323Transport & transport);
+    BOOL Write(H323Transport & transport);
 
     unsigned GetSequenceNumber() const;
 
@@ -645,7 +650,7 @@ PString H323GetAliasAddressString(const H225_AliasAddress & alias);
 PString H323GetAliasAddressE164(const H225_AliasAddress & alias);
 PString H323GetAliasAddressE164(const H225_ArrayOf_AliasAddress & aliases);
 
-OpalCallEndReason H323TranslateToCallEndReason(
+H323Connection::CallEndReason H323TranslateToCallEndReason(
   Q931::CauseValues cause,
   const H225_ReleaseCompleteReason & reason
 );

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.h,v $
- * Revision 1.2011  2002/09/16 02:52:33  robertj
+ * Revision 1.2012  2002/11/10 11:33:16  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.10  2002/09/16 02:52:33  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -61,6 +64,13 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.36  2002/11/09 04:24:01  robertj
+ * Fixed minor documentation errors.
+ *
+ * Revision 1.35  2002/09/16 01:14:15  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
  * Revision 1.34  2002/09/03 06:19:36  robertj
  * Normalised the multi-include header prevention ifdef/define symbol.
@@ -210,6 +220,7 @@ class H323Connection;
 class H323Capabilities;
 
 
+
 ///////////////////////////////////////////////////////////////////////////////
 
 /**This class describes the interface to a capability of the endpoint, usually
@@ -234,9 +245,7 @@ class H323Capability : public PObject
   //@{
     /**Create a new capability specification.
      */
-    H323Capability(
-      const OpalMediaFormat & mediaFormat   /// Media format for capability
-    );
+    H323Capability();
   //@}
 
   /**@name Overrides from class PObject */
@@ -277,6 +286,10 @@ class H323Capability : public PObject
        main type of the capability.
      */
     virtual unsigned  GetSubType()  const = 0;
+
+    /**Get the name of the media data format this class represents.
+     */
+    virtual PString GetFormatName() const = 0;
   //@}
 
   /**@name Operations */
@@ -447,7 +460,7 @@ class H323Capability : public PObject
 
     /**Get media format of the media data this class represents.
       */
-    OpalMediaFormat GetMediaFormat() const { return mediaFormat; }
+    OpalMediaFormat GetMediaFormat() const { return GetFormatName(); }
 
     /// Get the payload type for the capaibility
     RTP_DataFrame::PayloadTypes GetPayloadType() const { return rtpPayloadType; }
@@ -462,7 +475,6 @@ class H323Capability : public PObject
 #endif
 
   protected:
-    OpalMediaFormat     mediaFormat;
     unsigned            assignedCapabilityNumber;  /// Unique ID assigned to capability
     CapabilityDirection capabilityDirection;
     RTP_DataFrame::PayloadTypes rtpPayloadType;
@@ -575,15 +587,6 @@ class H323RealTimeCapability : public H323Capability
   PCLASSINFO(H323RealTimeCapability, H323Capability);
 
   public:
-  /**@name Construction */
-  //@{
-    /**Create a new capability specification.
-     */
-    H323RealTimeCapability(
-      const OpalMediaFormat & mediaFormat   /// Media format for capability
-    );
-  //@}
-
   /**@name Operations */
   //@{
     /**Create the channel instance, allocating resources as required.
@@ -615,7 +618,6 @@ class H323AudioCapability : public H323RealTimeCapability
     /**Create an audio based capability.
       */
     H323AudioCapability(
-      const OpalMediaFormat & mediaFormat,  /// Media format for capability
       unsigned rxPacketSize, /// Maximum size of an audio packet in bytes
       unsigned txPacketSize  /// Desired transmit size of an audio packet
     );
@@ -798,7 +800,6 @@ class H323NonStandardAudioCapability : public H323AudioCapability,
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardAudioCapability(
-      const OpalMediaFormat & mediaFormat,  /// Media format for capability
       unsigned maxPacketSize,         /// Maximum size of an audio packet in bytes
       unsigned desiredPacketSize,     /// Desired transmit size of an audio packet
       H323EndPoint & endpoint,        /// Endpoint to get t35 information
@@ -811,7 +812,6 @@ class H323NonStandardAudioCapability : public H323AudioCapability,
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardAudioCapability(
-      const OpalMediaFormat & mediaFormat,  /// Media format for capability
       unsigned maxPacketSize,         /// Maximum size of an audio packet in bytes
       unsigned desiredPacketSize,     /// Desired transmit size of an audio packet
       const PString & oid,            /// OID for indentification of codec
@@ -824,7 +824,6 @@ class H323NonStandardAudioCapability : public H323AudioCapability,
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardAudioCapability(
-      const OpalMediaFormat & mediaFormat,  /// Media format for capability
       unsigned maxPacketSize,         /// Maximum size of an audio packet in bytes
       unsigned desiredPacketSize,     /// Desired transmit size of an audio packet
       BYTE country,                   /// t35 information
@@ -915,15 +914,6 @@ class H323VideoCapability : public H323RealTimeCapability
   PCLASSINFO(H323VideoCapability, H323RealTimeCapability);
 
   public:
-  /**@name Construction */
-  //@{
-    /**Create a new capability specification.
-     */
-    H323VideoCapability(
-      const OpalMediaFormat & mediaFormat   /// Media format for capability
-    );
-  //@}
-
   /**@name Identification functions */
   //@{
     /**Get the main type of the capability.
@@ -1063,7 +1053,6 @@ class H323NonStandardVideoCapability : public H323VideoCapability,
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardVideoCapability(
-      const OpalMediaFormat & mediaFormat,  /// Media format for capability
       H323EndPoint & endpoint,        /// Endpoint to get t35 information
       const BYTE * dataBlock = NULL,  /// Non-Standard data for codec type
       PINDEX dataSize = 0,            /// Size of dataBlock
@@ -1074,7 +1063,6 @@ class H323NonStandardVideoCapability : public H323VideoCapability,
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardVideoCapability(
-      const OpalMediaFormat & mediaFormat,  /// Media format for capability
       const PString & oid,            /// OID for indentification of codec
       const BYTE * dataBlock = NULL,  /// Non-Standard data for codec type
       PINDEX dataSize = 0,            /// Size of dataBlock
@@ -1085,7 +1073,6 @@ class H323NonStandardVideoCapability : public H323VideoCapability,
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardVideoCapability(
-      const OpalMediaFormat & mediaFormat,  /// Media format for capability
       BYTE country,                   /// t35 information
       BYTE extension,                 /// t35 information
       WORD maufacturer,               /// t35 information
@@ -1175,11 +1162,10 @@ class H323DataCapability : public H323Capability
   public:
   /**@name Construction */
   //@{
-    /**Create a new capability specification.
-     */
+    /**Create a new data capability.
+      */
     H323DataCapability(
-      const OpalMediaFormat & mediaFormat,   /// Media format for capability
-      unsigned maxBitRate = 0                /// Maximum bit rate for data in 100's b/s
+      unsigned maxBitRate = 0  /// Maximum bit rate for data in 100's b/s
     );
   //@}
 
@@ -1324,7 +1310,6 @@ class H323NonStandardDataCapability : public H323DataCapability,
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardDataCapability(
-      const OpalMediaFormat & mediaFormat,  /// Media format for capability
       unsigned maxBitRate,            /// Maximum bit rate for data in 100's b/s
       H323EndPoint & endpoint,        /// Endpoint to get t35 information
       const BYTE * dataBlock = NULL,  /// Non-Standard data for codec type
@@ -1336,7 +1321,6 @@ class H323NonStandardDataCapability : public H323DataCapability,
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardDataCapability(
-      const OpalMediaFormat & mediaFormat,  /// Media format for capability
       unsigned maxBitRate,            /// Maximum bit rate for data in 100's b/s
       const PString & oid,            /// OID for indentification of codec
       const BYTE * dataBlock = NULL,  /// Non-Standard data for codec type
@@ -1348,7 +1332,6 @@ class H323NonStandardDataCapability : public H323DataCapability,
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardDataCapability(
-      const OpalMediaFormat & mediaFormat,  /// Media format for capability
       unsigned maxBitRate,            /// Maximum bit rate for data in 100's b/s
       BYTE country,                   /// t35 information
       BYTE extension,                 /// t35 information
@@ -1477,6 +1460,10 @@ class H323_G711Capability : public H323AudioCapability
        using the enum values of the protocol ASN H245_AudioCapability class.
      */
     virtual unsigned GetSubType() const;
+
+    /**Get the name of the media data format this class represents.
+     */
+    virtual PString GetFormatName() const;
   //@}
 
   protected:
@@ -1512,6 +1499,10 @@ class H323_G728Capability : public H323AudioCapability
        main type of the capability.
      */
     virtual unsigned GetSubType() const;
+
+    /**Get the name of the media data format this class represents.
+     */
+    virtual PString GetFormatName() const;
   //@}
 };
 
@@ -1553,6 +1544,10 @@ class H323_G729Capability : public H323AudioCapability
        main type of the capability.
      */
     virtual unsigned GetSubType() const;
+
+    /**Get the name of the media data format this class represents.
+     */
+    virtual PString GetFormatName() const;
   //@}
 
   protected:
@@ -1589,6 +1584,10 @@ class H323_G7231Capability : public H323AudioCapability
        main type of the capability.
      */
     virtual unsigned GetSubType() const;
+
+    /**Get the name of the media data format this class represents.
+     */
+    virtual PString GetFormatName() const;
   //@}
 
   /**@name Protocol manipulation */
@@ -1653,6 +1652,10 @@ class H323_GSM0610Capability : public H323AudioCapability
        using the enum values of the protocol ASN H245_AudioCapability class.
      */
     virtual unsigned GetSubType() const;
+
+    /**Get the name of the media data format this class represents.
+     */
+    virtual PString GetFormatName() const;
 
     /**Set the maximum size (in frames) of data that will be transmitted in a
        single PDU.
@@ -1747,6 +1750,10 @@ class H323_UserInputCapability : public H323Capability
        main type of the capability.
      */
     virtual unsigned  GetSubType()  const;
+
+    /**Get the name of the media data format this class represents.
+     */
+    virtual PString GetFormatName() const;
   //@}
 
   /**@name Operations */

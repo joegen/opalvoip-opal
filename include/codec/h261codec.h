@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.h,v $
- * Revision 1.2007  2002/09/16 02:52:33  robertj
+ * Revision 1.2008  2002/11/10 11:33:16  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.6  2002/09/16 02:52:33  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -50,6 +53,10 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.30  2002/09/16 01:14:15  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
  * Revision 1.29  2002/09/03 06:19:36  robertj
  * Normalised the multi-include header prevention ifdef/define symbol.
@@ -180,38 +187,6 @@ extern OpalMediaFormat const OpalH261_QCIF;
 
 ///////////////////////////////////////////////////////////////////////////////
 
-class Opal_H261_YUV411P : public OpalVideoTranscoder {
-  public:
-    Opal_H261_YUV411P(
-      const OpalTranscoderRegistration & registration /// Registration fro transcoder
-    );
-    ~Opal_H261_YUV411P();
-    virtual BOOL Convert(const RTP_DataFrame & src, RTP_DataFrame & dst);
-  protected:
-    P64Decoder * videoDecoder;
-    BYTE * rvts;
-    int ndblk, nblk;
-    int now;    
-    BOOL packetReceived;
-};
-
-
-///////////////////////////////////////////////////////////////////////////////
-
-class Opal_YUV411P_H261 : public OpalVideoTranscoder {
-  public:
-    Opal_YUV411P_H261(
-      const OpalTranscoderRegistration & registration /// Registration fro transcoder
-    );
-    ~Opal_YUV411P_H261();
-    virtual BOOL Convert(const RTP_DataFrame & src, RTP_DataFrame & dst);
-  protected:
-    P64Encoder * videoEncoder;
-};
-
-
-///////////////////////////////////////////////////////////////////////////////
-
 #ifndef NO_H323
 
 /**This class is a H.261 video capability.
@@ -226,7 +201,6 @@ class H323_H261Capability : public H323VideoCapability
     /**Create a new H261 Capability
      */
     H323_H261Capability(
-      const OpalMediaFormat & mediaFormat,
       unsigned qcifMPI,
       unsigned cifMPI,
       BOOL temporalSpatialTradeOffCapability = TRUE,
@@ -255,6 +229,10 @@ class H323_H261Capability : public H323VideoCapability
        using the enum values of the protocol ASN H245_AudioCapability class.
      */
     virtual unsigned GetSubType() const;
+
+    /**Get the name of the media data format this class represents.
+     */
+    virtual PString GetFormatName() const;
   //@}
 
   /**@name Protocol manipulation */
@@ -346,6 +324,38 @@ H323_REGISTER_CAPABILITY_FUNCTION(H323_H261_QCIF, OPAL_H261_QCIF, H323_NO_EP_VAR
 #define OPAL_REGISTER_H261_H323
 
 #endif // ifndef NO_H323
+
+///////////////////////////////////////////////////////////////////////////////
+
+class Opal_H261_YUV411P : public OpalVideoTranscoder {
+  public:
+    Opal_H261_YUV411P(
+      const OpalTranscoderRegistration & registration /// Registration fro transcoder
+    );
+    ~Opal_H261_YUV411P();
+    virtual BOOL Convert(const RTP_DataFrame & src, RTP_DataFrame & dst);
+  protected:
+    P64Decoder * videoDecoder;
+    BYTE * rvts;
+    int ndblk, nblk;
+    int now;    
+    BOOL packetReceived;
+};
+
+
+class Opal_YUV411P_H261 : public OpalVideoTranscoder {
+  public:
+    Opal_YUV411P_H261(
+      const OpalTranscoderRegistration & registration /// Registration fro transcoder
+    );
+    ~Opal_YUV411P_H261();
+    virtual BOOL Convert(const RTP_DataFrame & src, RTP_DataFrame & dst);
+  protected:
+    P64Encoder * videoEncoder;
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
 
 #define OPAL_REGISTER_H261() \
           OPAL_REGISTER_H261_H323 \

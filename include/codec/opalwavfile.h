@@ -22,12 +22,22 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalwavfile.h,v $
- * Revision 1.2003  2002/09/16 02:52:33  robertj
+ * Revision 1.2004  2002/11/10 11:33:16  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.2  2002/09/16 02:52:33  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
  * Revision 2.1  2002/09/06 07:18:44  robertj
  * OPAL port.
+ *
+ * Revision 1.4  2002/09/06 06:20:37  robertj
+ * More cosmetic changes
+ *
+ * Revision 1.5  2002/09/16 01:14:15  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
  * Revision 1.4  2002/09/06 06:20:37  robertj
  * More cosmetic changes
