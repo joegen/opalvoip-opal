@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2008  2002/01/14 06:35:57  robertj
+ * Revision 1.2009  2002/01/22 05:06:30  robertj
+ * Added RTP encoding name string to media format database.
+ * Changed time units to clock rate in Hz.
+ *
+ * Revision 2.7  2002/01/14 06:35:57  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.6  2001/10/05 00:22:13  robertj
@@ -265,11 +269,12 @@ class OpalMediaFormat : public PCaselessString
       const char * fullName,  /// Full name of media format
       unsigned defaultSessionID,  /// Default session for codec type
       RTP_DataFrame::PayloadTypes rtpPayloadType, /// RTP payload type code
+      const char * encodingName, /// RTP encoding name
       BOOL     needsJitter,   /// Indicate format requires a jitter buffer
       unsigned bandwidth,     /// Bandwidth in bits/second
       PINDEX   frameSize = 0, /// Size of frame in bytes (if applicable)
       unsigned frameTime = 0, /// Time for frame in RTP units (if applicable)
-      unsigned timeUnits = 0  /// RTP units for frameTime (if applicable)
+      unsigned clockRate = 0  /// Clock rate for data (if applicable)
     );
 
     /**Search for the specified format type.
@@ -299,6 +304,10 @@ class OpalMediaFormat : public PCaselessString
        uniqueue amongst the registered media formats.
       */
     RTP_DataFrame::PayloadTypes GetPayloadType() const { return rtpPayloadType; }
+
+    /**Get the RTP encoding name that is to be used for this media format.
+      */
+    const char * GetEncodingName() const { return rtpEncodingName; }
 
     enum {
       DefaultAudioSessionID = 1,
@@ -332,12 +341,16 @@ class OpalMediaFormat : public PCaselessString
 
     /**Get the number of RTP timestamp units per millisecond.
       */
-    unsigned GetTimeUnits() const { return timeUnits; }
+    unsigned GetTimeUnits() const { return clockRate/1000; }
 
-    enum StandardTimeUnits {
-      AudioTimeUnits = 8,  // 8kHz sample rate
-      VideoTimeUnits = 90  // 90kHz sample rate
+    enum StandardClockRate {
+      AudioClockRate = 8000,  // 8kHz sample rate
+      VideoClockRate = 90000  // 90kHz sample rate
     };
+
+    /**Get the clock rate in Hz for this format.
+      */
+    unsigned GetClockRate() const { return clockRate; }
 
     /**Get the list of media formats that have been registered.
       */
@@ -346,12 +359,13 @@ class OpalMediaFormat : public PCaselessString
 
   protected:
     RTP_DataFrame::PayloadTypes rtpPayloadType;
+    const char * rtpEncodingName;
     unsigned defaultSessionID;
     BOOL     needsJitter;
     unsigned bandwidth;
     PINDEX   frameSize;
     unsigned frameTime;
-    unsigned timeUnits;
+    unsigned clockRate;
 
   private:
     static OpalMediaFormatList & GetMediaFormatsList();
