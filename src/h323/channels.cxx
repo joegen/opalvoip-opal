@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2004  2001/08/13 05:10:39  robertj
+ * Revision 1.2005  2001/08/17 08:32:17  robertj
+ * Update from OpenH323
+ *
+ * Revision 2.3  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
  *
  * Revision 2.2  2001/08/01 05:17:45  robertj
@@ -38,6 +41,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.96  2001/08/16 06:34:42  robertj
+ * Plugged memory leak if using trace level 5.
  *
  * Revision 1.95  2001/08/10 01:34:41  robertj
  * Fixed problem with incorrect timestamp if codec returns more than one
