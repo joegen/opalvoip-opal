@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.cxx,v $
- * Revision 1.2008  2002/09/04 06:01:49  robertj
+ * Revision 1.2009  2002/11/10 11:33:19  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.7  2002/09/04 06:01:49  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.6  2002/07/01 04:56:33  robertj
@@ -47,6 +50,12 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.89  2002/11/05 04:27:12  robertj
+ * Imported RingLine() by array from OPAL.
+ *
+ * Revision 1.88  2002/10/30 05:54:17  craigs
+ * Fixed compatibilty problems with G.723.1 6k3 and 5k3
  *
  * Revision 1.87  2002/08/05 10:03:48  robertj
  * Cosmetic changes to normalise the usage of pragma interface/implementation.

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2015  2002/09/04 06:01:49  robertj
+ * Revision 1.2016  2002/11/10 11:33:19  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.14  2002/09/04 06:01:49  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.13  2002/07/01 04:56:33  robertj
@@ -72,6 +75,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.9  2002/10/30 05:54:17  craigs
+ * Fixed compatibilty problems with G.723.1 6k3 and 5k3
  *
  * Revision 1.8  2002/08/05 10:03:48  robertj
  * Cosmetic changes to normalise the usage of pragma interface/implementation.
@@ -236,7 +242,7 @@ OpalMediaFormat const OpalG7231_5k3(
   "G723",
   TRUE, // Needs jitter
   5300, // bits/sec
-  20,   // bytes
+  24,   // bytes
   240,  // 30 milliseconds
   OpalMediaFormat::AudioClockRate
 );
@@ -260,7 +266,7 @@ OpalMediaFormat const OpalG7231A_5k3(
   "G723",
   TRUE, // Needs jitter
   5300, // bits/sec
-  20,   // bytes
+  24,   // bytes
   240,  // 30 milliseconds
   OpalMediaFormat::AudioClockRate
 );

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: guid.cxx,v $
- * Revision 1.2003  2002/09/04 06:01:49  robertj
+ * Revision 1.2004  2002/11/10 11:33:19  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.2  2002/09/04 06:01:49  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.1  2001/10/05 00:22:14  robertj
@@ -32,6 +35,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.14  2002/10/10 05:33:18  robertj
+ * VxWorks port, thanks Martijn Roest
  *
  * Revision 1.13  2002/08/05 10:03:47  robertj
  * Cosmetic changes to normalise the usage of pragma interface/implementation.
@@ -115,18 +121,25 @@ OpalGloballyUniqueID::OpalGloballyUniqueID()
   SYSTEMTIME SystemTime;
   GetSystemTime(&SystemTime);
   SystemTimeToFileTime(&SystemTime, (LPFILETIME)&timestamp);
-#endif
+#endif // _WIN32_WCE
 
   timestamp /= 100;
-#else
+#else // _WIN32
                              + (1970-1583)*365 // Days in years
                              + (1970-1583)/4   // Leap days
                              - 3);             // Allow for 1700, 1800, 1900 not leap years
 
+#ifdef P_VXWORKS
+  struct timespec ts;
+  clock_gettime(0,&ts);
+  timestamp = (ts.tv_sec*(PInt64)1000000 + ts.tv_nsec*1000)*10;
+#else
   struct timeval tv;
   gettimeofday(&tv, NULL);
   timestamp = (tv.tv_sec*(PInt64)1000000 + tv.tv_usec)*10;
-#endif
+#endif // P_VXWORKS
+#endif // _WIN32
+
   timestamp += deltaTime;
 
   theArray[0] = (BYTE)(timestamp&0xff);
