@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2012  2002/03/22 06:57:48  robertj
+ * Revision 1.2013  2002/07/01 04:56:29  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.11  2002/03/22 06:57:48  robertj
  * Updated to OpenH323 version 1.8.2
  *
  * Revision 2.10  2002/03/18 00:33:36  robertj
@@ -64,6 +67,52 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.31  2002/06/22 05:48:38  robertj
+ * Added partial implementation for H.450.11 Call Intrusion
+ *
+ * Revision 1.30  2002/06/13 06:15:19  robertj
+ * Allowed TransferCall() to be used on H323Connection as well as H323EndPoint.
+ *
+ * Revision 1.29  2002/06/12 03:55:21  robertj
+ * Added function to add/remove multiple listeners in one go comparing against
+ *   what is already running so does not interrupt unchanged listeners.
+ *
+ * Revision 1.28  2002/05/29 06:40:29  robertj
+ * Changed sending of endSession/ReleaseComplete PDU's to occur immediately
+ *   on call clearance and not wait for background thread to do it.
+ * Stricter compliance by waiting for reply endSession before closing down.
+ *
+ * Revision 1.27  2002/05/28 06:15:09  robertj
+ * Split UDP (for RAS) from RTP port bases.
+ * Added current port variable so cycles around the port range specified which
+ *   fixes some wierd problems on some platforms, thanks Federico Pinna
+ *
+ * Revision 1.26  2002/05/17 03:38:05  robertj
+ * Fixed problems with H.235 authentication on RAS for server and client.
+ *
+ * Revision 1.25  2002/05/16 00:03:05  robertj
+ * Added function to get the tokens for all active calls.
+ * Improved documentation for use of T.38 and T.120 functions.
+ *
+ * Revision 1.24  2002/05/15 08:59:18  rogerh
+ * Update comments
+ *
+ * Revision 1.23  2002/05/03 05:38:15  robertj
+ * Added Q.931 Keypad IE mechanism for user indications (DTMF).
+ *
+ * Revision 1.22  2002/05/02 07:56:24  robertj
+ * Added automatic clearing of call if no media (RTP data) is transferred in a
+ *   configurable (default 5 minutes) amount of time.
+ *
+ * Revision 1.21  2002/04/18 01:41:07  robertj
+ * Fixed bad variable name for disabling DTMF detection, very confusing.
+ *
+ * Revision 1.20  2002/04/17 00:49:56  robertj
+ * Added ability to disable the in band DTMF detection.
+ *
+ * Revision 1.19  2002/04/10 06:48:47  robertj
+ * Added functions to set port member variables.
  *
  * Revision 1.18  2002/03/14 03:49:38  dereks
  * Fix minor documentation error.
@@ -138,6 +187,7 @@
 #include <opal/transports.h>
 #include <h323/h323con.h>
 #include <h323/h323caps.h>
+#include <h323/h235auth.h>
 
 
 class H225_EndpointType;
@@ -148,9 +198,6 @@ class H235SecurityInfo;
 
 class H323Gatekeeper;
 class H323SignalPDU;
-
-class OpalT120Protocol;
-class OpalT38Protocol;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -430,6 +477,10 @@ class H323EndPoint : public OpalEndPoint
     void SetGatekeeperPassword(
       const PString & password
     );
+
+    /**Create a list of authenticators for gatekeeper.
+      */
+    virtual H235Authenticators CreateAuthenticators();
   //@}
 
   /**@name Connection management */
@@ -480,7 +531,7 @@ class H323EndPoint : public OpalEndPoint
     void TransferCall(
       const PString & token,        /// Existing connection to be transferred
       const PString & remoteParty,  /// Remote party to transfer the existing call to
-      const PString & callIdentity = PString()
+      const PString & callIdentity = PString::Empty()
                                     /// Call Identity of secondary call if present
     );
 
@@ -501,6 +552,15 @@ class H323EndPoint : public OpalEndPoint
     void HoldCall(
       const PString & token,        /// Existing connection to be transferred
       BOOL localHold   /// true for Local Hold, false for Remote Hold
+    );
+
+    /** Initiate Call intrusion
+        Designed similar to MakeCall function
+      */
+    BOOL IntrudeCall(
+      const PString & remoteParty,  /// Remote party to intrude call
+      unsigned capabilityLevel,     /// Capability level
+      void * userData = NULL        /// user data to pass to CreateConnection
     );
 
     /**Parse a party address into alias and transport components.
@@ -608,7 +668,9 @@ class H323EndPoint : public OpalEndPoint
        forwarded.
        Return TRUE if the call is being redirected.
 
-       The default behaviour simply returns FALSE.
+       The default behaviour simply returns FALSE and does not forward the
+       call. The H323 application needs to handle this call back so it can
+       call MakeCall() and know the token of the new H323 connection.
       */
     virtual BOOL OnConnectionForwarded(
       H323Connection & connection,    /// Connection to be forwarded
@@ -676,29 +738,6 @@ class H323EndPoint : public OpalEndPoint
     virtual void OnRTPStatistics(
       const H323Connection & connection,  /// Connection for the channel
       const RTP_Session & session         /// Session with statistics
-    ) const;
-  //@}
-
-  /**@name Other services */
-  //@{
-    /**Create an instance of the T.120 protocol handler.
-       This is called when the OpenLogicalChannel subsystem requires that
-       a T.120 channel be established.
-
-       The default behavour returns NULL.
-      */
-    virtual OpalT120Protocol * CreateT120ProtocolHandler(
-      const H323Connection & connection  /// Connection for which T.120 handler created
-    ) const;
-
-    /**Create an instance of the T.38 protocol handler.
-       This is called when the OpenLogicalChannel subsystem requires that
-       a T.38 fax channel be established.
-
-       The default behavour returns NULL.
-      */
-    virtual OpalT38Protocol * CreateT38ProtocolHandler(
-      const H323Connection & connection  /// Connection for which T.38 handler created
     ) const;
   //@}
 
@@ -778,6 +817,24 @@ class H323EndPoint : public OpalEndPoint
       BOOL mode /// New default mode
     ) { disableH245inSetup = mode; } 
 
+    /**Get Call Intrusion Protection Level of the end point.
+      */
+    unsigned GetCallIntrusionProtectionLevel() const { return callIntrusionProtectionLevel; }
+
+    /**Set Call Intrusion Protection Level of the end point.
+      */
+    void SetCallIntrusionProtectionLevel(
+      unsigned level  // New level from 0 to 3
+    ) { PAssert(level<=3, PInvalidParameter); callIntrusionProtectionLevel = level; }
+
+    /**Get the default mode for sending User Input Indications.
+      */
+    H323Connection::SendUserInputModes GetSendUserInputMode() const { return defaultSendUserInputMode; }
+
+    /**Set the default mode for sending User Input Indications.
+      */
+    void SetSendUserInputMode(H323Connection::SendUserInputModes mode) { defaultSendUserInputMode = mode; }
+
     /**See if should auto-start receive video channels on connection.
      */
     BOOL CanAutoStartReceiveVideo() const { return manager.CanAutoStartReceiveVideo(); }
@@ -840,11 +897,15 @@ class H323EndPoint : public OpalEndPoint
 
     /**Get the default timeout for calling another endpoint.
      */
-    PTimeInterval GetSignallingChannelCallTimeout() const { return signallingChannelCallTimeout; }
+    const PTimeInterval & GetSignallingChannelCallTimeout() const { return signallingChannelCallTimeout; }
+
+    /**Get the default timeout for waiting on an end session.
+     */
+    const PTimeInterval & GetEndSessionTimeout() const { return endSessionTimeout; }
 
     /**Get the default timeout for master slave negotiations.
      */
-    PTimeInterval GetMasterSlaveDeterminationTimeout() const { return masterSlaveDeterminationTimeout; }
+    const PTimeInterval & GetMasterSlaveDeterminationTimeout() const { return masterSlaveDeterminationTimeout; }
 
     /**Get the default retries for H245 master slave negotiations.
      */
@@ -852,47 +913,35 @@ class H323EndPoint : public OpalEndPoint
 
     /**Get the default timeout for H245 capability exchange negotiations.
      */
-    PTimeInterval GetCapabilityExchangeTimeout() const { return capabilityExchangeTimeout; }
+    const PTimeInterval & GetCapabilityExchangeTimeout() const { return capabilityExchangeTimeout; }
 
     /**Get the default timeout for H245 logical channel negotiations.
      */
-    PTimeInterval GetLogicalChannelTimeout() const { return logicalChannelTimeout; }
+    const PTimeInterval & GetLogicalChannelTimeout() const { return logicalChannelTimeout; }
 
     /**Get the default timeout for H245 request mode negotiations.
      */
-    PTimeInterval GetRequestModeTimeout() const { return logicalChannelTimeout; }
+    const PTimeInterval & GetRequestModeTimeout() const { return logicalChannelTimeout; }
 
     /**Get the default timeout for H245 round trip delay negotiations.
      */
-    PTimeInterval GetRoundTripDelayTimeout() const { return roundTripDelayTimeout; }
+    const PTimeInterval & GetRoundTripDelayTimeout() const { return roundTripDelayTimeout; }
 
     /**Get the default rate H245 round trip delay is calculated by connection.
      */
-    PTimeInterval GetRoundTripDelayRate() const { return roundTripDelayRate; }
+    const PTimeInterval & GetRoundTripDelayRate() const { return roundTripDelayRate; }
 
-    /**Get the default rate H245 round trip delay is calculated by connection.
+    /**Get the flag for clearing a call if the round trip delay calculation fails.
      */
     BOOL ShouldClearCallOnRoundTripFail() const { return clearCallOnRoundTripFail; }
 
-    /**Get the default timeout for Call Transfer Timer CT-T1.
+    /**Get the amount of time with no media that should cause call to clear
      */
-    PTimeInterval GetCallTransferT1() const { return callTransferT1; }
-
-    /**Get the default timeout for Call Transfer Timer CT-T2.
-     */
-    PTimeInterval GetCallTransferT2() const { return callTransferT2; }
-
-    /**Get the default timeout for Call Transfer Timer CT-T3.
-     */
-    PTimeInterval GetCallTransferT3() const { return callTransferT3; }
-
-    /**Get the default timeout for Call Transfer Timer CT-T4.
-     */
-    PTimeInterval GetCallTransferT4() const { return callTransferT4; }
+    const PTimeInterval & GetNoMediaTimeout() const { return noMediaTimeout; }
 
     /**Get the default timeout for GatekeeperRequest and Gatekeeper discovery.
      */
-    PTimeInterval GetGatekeeperRequestTimeout() const { return gatekeeperRequestTimeout; }
+    const PTimeInterval & GetGatekeeperRequestTimeout() const { return gatekeeperRequestTimeout; }
 
     /**Get the default retries for GatekeeperRequest and Gatekeeper discovery.
      */
@@ -900,7 +949,7 @@ class H323EndPoint : public OpalEndPoint
 
     /**Get the default timeout for RAS protocol transactions.
      */
-    PTimeInterval GetRasRequestTimeout() const { return rasRequestTimeout; }
+    const PTimeInterval & GetRasRequestTimeout() const { return rasRequestTimeout; }
 
     /**Get the default retries for RAS protocol transations.
      */
@@ -909,11 +958,35 @@ class H323EndPoint : public OpalEndPoint
     /**Get the default time for gatekeeper to reregister.
        A value of zero disables the keep alive facility.
      */
-    PTimeInterval GetGatekeeperTimeToLive() const { return registrationTimeToLive; }
+    const PTimeInterval & GetGatekeeperTimeToLive() const { return registrationTimeToLive; }
 
     /**Get the iNow Gatekeeper Access Token OID.
      */
     const PString GetGkAccessTokenOID() const { return gkAccessTokenOID; }
+
+    /**Get the default timeout for Call Transfer Timer CT-T1.
+     */
+    const PTimeInterval & GetCallTransferT1() const { return callTransferT1; }
+
+    /**Get the default timeout for Call Transfer Timer CT-T2.
+     */
+    const PTimeInterval & GetCallTransferT2() const { return callTransferT2; }
+
+    /**Get the default timeout for Call Transfer Timer CT-T3.
+     */
+    const PTimeInterval & GetCallTransferT3() const { return callTransferT3; }
+
+    /**Get the default timeout for Call Transfer Timer CT-T4.
+     */
+    const PTimeInterval & GetCallTransferT4() const { return callTransferT4; }
+
+    /** Get Call Intrusion timers timeout */
+    const PTimeInterval & GetCallIntrusionT1() const { return callIntrusionT1; }
+    const PTimeInterval & GetCallIntrusionT2() const { return callIntrusionT2; }
+    const PTimeInterval & GetCallIntrusionT3() const { return callIntrusionT3; }
+    const PTimeInterval & GetCallIntrusionT4() const { return callIntrusionT4; }
+    const PTimeInterval & GetCallIntrusionT5() const { return callIntrusionT5; }
+    const PTimeInterval & GetCallIntrusionT6() const { return callIntrusionT6; }
 
     /**Get the dictionary of <callIdentities, connections>
      */
@@ -929,6 +1002,7 @@ class H323EndPoint : public OpalEndPoint
       OpalCall & call,
       const PString & existingToken,/// Existing connection to be transferred
       const PString & callIdentity, /// Call identity of the secondary call (if it exists)
+      unsigned capabilityLevel,     /// Intrusion capability level
       const PString & remoteParty,  /// Remote party to call
       void * userData               /// user data to pass to CreateConnection
     );
@@ -941,6 +1015,8 @@ class H323EndPoint : public OpalEndPoint
     BOOL        disableFastStart;
     BOOL        disableH245Tunneling;
     BOOL        disableH245inSetup;
+    unsigned    callIntrusionProtectionLevel;
+    H323Connection::SendUserInputModes defaultSendUserInputMode;
 
     BYTE          t35CountryCode;
     BYTE          t35Extension;
@@ -951,6 +1027,7 @@ class H323EndPoint : public OpalEndPoint
 
     // Some more configuration variables, rarely changed.
     PTimeInterval signallingChannelCallTimeout;
+    PTimeInterval endSessionTimeout;
     PTimeInterval masterSlaveDeterminationTimeout;
     unsigned      masterSlaveDeterminationRetries;
     PTimeInterval capabilityExchangeTimeout;
@@ -958,6 +1035,7 @@ class H323EndPoint : public OpalEndPoint
     PTimeInterval requestModeTimeout;
     PTimeInterval roundTripDelayTimeout;
     PTimeInterval roundTripDelayRate;
+    PTimeInterval noMediaTimeout;
     PTimeInterval gatekeeperRequestTimeout;
     unsigned      gatekeeperRequestRetries;
     PTimeInterval rasRequestTimeout;
@@ -978,6 +1056,14 @@ class H323EndPoint : public OpalEndPoint
     /* May optionally operate - protects against absence of a response to the
        ctSetup request (Transferred Endpoint) */
     PTimeInterval callTransferT4;
+
+    /** Call Intrusion Timers */
+    PTimeInterval callIntrusionT1;
+    PTimeInterval callIntrusionT2;
+    PTimeInterval callIntrusionT3;
+    PTimeInterval callIntrusionT4;
+    PTimeInterval callIntrusionT5;
+    PTimeInterval callIntrusionT6;
 
     // Dynamic variables
     H323Capabilities     capabilities;

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.h,v $
- * Revision 1.2008  2002/02/19 07:44:13  robertj
+ * Revision 1.2009  2002/07/01 04:56:29  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.7  2002/02/19 07:44:13  robertj
  * Added function to set teh RTP payload type for the capability.
  *
  * Revision 2.6  2002/02/11 09:32:11  robertj
@@ -51,6 +54,13 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.32  2002/05/29 03:55:17  robertj
+ * Added protocol version number checking infrastructure, primarily to improve
+ *   interoperability with stacks that are unforgiving of new features.
+ *
+ * Revision 1.31  2002/05/10 05:44:50  robertj
+ * Added the max bit rate field to the data channel capability class.
  *
  * Revision 1.30  2002/01/22 06:25:02  robertj
  * Moved payload type to ancestor so any capability can adjust it on logical channel.
@@ -381,6 +391,17 @@ class H323Capability : public PObject
       */
     virtual BOOL IsNonStandardMatch(
       const H245_NonStandardParameter & param  /// Non standard field in PDU received
+    ) const;
+
+    /**Validate that the capability is usable given the connection.
+       This checks agains the negotiated protocol version number and remote
+       application to determine if this capability should be used in TCS or
+       OLC pdus.
+
+       The default behaviour returns TRUE.
+      */
+    virtual BOOL IsUsable(
+      const H323Connection & connection
     ) const;
   //@}
 
@@ -1144,8 +1165,9 @@ class H323DataCapability : public H323Capability
     /**Create a new capability specification.
      */
     H323DataCapability(
-      const OpalMediaFormat & mediaFormat   /// Media format for capability
-    ) : H323Capability(mediaFormat) { }
+      const OpalMediaFormat & mediaFormat,   /// Media format for capability
+      unsigned maxBitRate = 0                /// Maximum bit rate for data in 100's b/s
+    );
   //@}
 
   /**@name Identification functions */
@@ -1265,6 +1287,9 @@ class H323DataCapability : public H323Capability
       const H245_DataApplicationCapability & pdu  /// PDU to set information on
     ) = 0;
   //@}
+
+  protected:
+    unsigned maxBitRate;
 };
 
 
@@ -1287,6 +1312,7 @@ class H323NonStandardDataCapability : public H323DataCapability,
       */
     H323NonStandardDataCapability(
       const OpalMediaFormat & mediaFormat,  /// Media format for capability
+      unsigned maxBitRate,            /// Maximum bit rate for data in 100's b/s
       H323EndPoint & endpoint,        /// Endpoint to get t35 information
       const BYTE * dataBlock = NULL,  /// Non-Standard data for codec type
       PINDEX dataSize = 0,            /// Size of dataBlock
@@ -1298,6 +1324,7 @@ class H323NonStandardDataCapability : public H323DataCapability,
       */
     H323NonStandardDataCapability(
       const OpalMediaFormat & mediaFormat,  /// Media format for capability
+      unsigned maxBitRate,            /// Maximum bit rate for data in 100's b/s
       const PString & oid,            /// OID for indentification of codec
       const BYTE * dataBlock = NULL,  /// Non-Standard data for codec type
       PINDEX dataSize = 0,            /// Size of dataBlock
@@ -1309,6 +1336,7 @@ class H323NonStandardDataCapability : public H323DataCapability,
       */
     H323NonStandardDataCapability(
       const OpalMediaFormat & mediaFormat,  /// Media format for capability
+      unsigned maxBitRate,            /// Maximum bit rate for data in 100's b/s
       BYTE country,                   /// t35 information
       BYTE extension,                 /// t35 information
       WORD maufacturer,               /// t35 information
@@ -1784,6 +1812,18 @@ class H323_UserInputCapability : public H323Capability
       const H245_DataType & pdu,  /// PDU to get information from
       BOOL receiver               /// Is receiver OLC
     );
+
+    /**Validate that the capability is usable given the connection.
+       This checks agains the negotiated protocol version number and remote
+       application to determine if this capability should be used in TCS or
+       OLC pdus.
+
+       The default behaviour will check for early versions and return FALSE
+       for RFC2833 mode.
+      */
+    virtual BOOL IsUsable(
+      const H323Connection & connection
+    ) const;
   //@}
 
     static void AddAllCapabilities(
@@ -2068,7 +2108,8 @@ class H323Capabilities : public PObject
     /**Build a H.245 PDU from the information in the capability set.
       */
     void BuildPDU(
-      H245_TerminalCapabilitySet & pdu
+      const H323Connection & connection,  /// Connection building PDU for
+      H245_TerminalCapabilitySet & pdu    /// PDU to build
     ) const;
 
     /**Merge the capabilities into this set.

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.h,v $
- * Revision 1.2004  2001/11/02 10:45:19  robertj
+ * Revision 1.2005  2002/07/01 04:56:29  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.3  2001/11/02 10:45:19  robertj
  * Updated to OpenH323 v1.7.3
  *
  * Revision 2.2  2001/10/05 00:22:13  robertj
@@ -35,6 +38,9 @@
  *
  * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 1.126  2002/06/27 03:08:57  robertj
+ * Added code to include G.729 & G.726 codecs on static linking.
  *
  * Revision 1.125  2001/10/23 02:18:06  dereks
  * Initial release of CU30 video codec.
@@ -444,6 +450,8 @@
 #include <codec/gsmcodec.h>
 #include <codec/mscodecs.h>
 #include <codec/lpc10codec.h>
+#include <codec/g729codec.h>
+#include <codec/g726codec.h>
 #endif // NO_H323_AUDIO_CODECS
 #ifndef NO_H323_VIDEO
 #include <codec/h261codec.h>
