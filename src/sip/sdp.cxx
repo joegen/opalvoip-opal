@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2010  2004/01/08 22:23:23  csoutheren
+ * Revision 1.2011  2004/02/07 02:18:19  rjongbloed
+ * Improved searching for media format to use payload type AND the encoding name.
+ *
+ * Revision 2.9  2004/01/08 22:23:23  csoutheren
  * Fixed problem with not using session ID when constructing SDP lists
  *
  * Revision 2.8  2004/01/08 22:20:43  csoutheren
@@ -234,12 +237,7 @@ void SDPMediaFormat::PrintOn(ostream & strm) const
 
 OpalMediaFormat SDPMediaFormat::GetMediaFormat() const
 {
-  OpalMediaFormat mediaFormat(encodingName);
-
-  if (mediaFormat.IsEmpty())
-    mediaFormat = payloadType;
-
-  return mediaFormat;
+  return OpalMediaFormat(payloadType, encodingName);
 }
 
 
@@ -612,7 +610,7 @@ void SDPSessionDescription::ParseOwner(const PString & str)
 
 
 SDPMediaDescription * SDPSessionDescription::GetMediaDescription(
-                                    SDPMediaDescription::MediaType rtpMediaType)
+                                    SDPMediaDescription::MediaType rtpMediaType) const
 {
   // look for matching media type
   PINDEX i;

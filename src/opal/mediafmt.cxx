@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2018  2003/03/17 10:13:41  robertj
+ * Revision 1.2019  2004/02/07 02:18:19  rjongbloed
+ * Improved searching for media format to use payload type AND the encoding name.
+ *
+ * Revision 2.17  2003/03/17 10:13:41  robertj
  * Fixed mutex problem with media format database.
  *
  * Revision 2.16  2003/01/07 04:39:53  robertj
@@ -320,9 +323,16 @@ OpalMediaFormat::OpalMediaFormat()
 }
 
 
-OpalMediaFormat::OpalMediaFormat(RTP_DataFrame::PayloadTypes pt)
+OpalMediaFormat::OpalMediaFormat(RTP_DataFrame::PayloadTypes pt, const char * name)
 {
-  operator=(pt);
+  PWaitAndSignal mutex(GetMediaFormatsListMutex());
+  const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
+
+  PINDEX idx = registeredFormats.FindFormat(pt, name);
+  if (idx != P_MAX_INDEX)
+    *this = registeredFormats[idx];
+  else
+    *this = OpalMediaFormat();
 }
 
 
@@ -514,11 +524,19 @@ void OpalMediaFormatList::Remove(const PStringArray & mask)
 }
 
 
-PINDEX OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt) const
+PINDEX OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt, const char * name) const
 {
   for (PINDEX idx = 0; idx < GetSize(); idx++) {
-    if ((*this)[idx].GetPayloadType() == pt)
+    OpalMediaFormat & mediaFormat = (*this)[idx];
+
+    if (pt < RTP_DataFrame::DynamicBase && mediaFormat.GetPayloadType() == pt)
       return idx;
+
+    if (name != NULL && *name != '\0') {
+      const char * otherName = mediaFormat.GetEncodingName();
+      if (otherName != NULL && stricmp(otherName, name) == 0)
+        return idx;
+    }
   }
 
   return P_MAX_INDEX;
