@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalvxml.cxx,v $
- * Revision 1.2011  2004/06/30 12:48:23  rjongbloed
+ * Revision 1.2012  2004/07/17 09:45:06  rjongbloed
+ * Fixed problem if Close() is called before Open(), would shut down connection.
+ *
+ * Revision 2.10  2004/06/30 12:48:23  rjongbloed
  * Rewrite of plug in system to use single global variable for all factories to avoid all sorts
  *   of issues with startup orders and Windows DLL multiple instances.
  *
@@ -164,6 +167,9 @@ OpalVXMLSession::OpalVXMLSession(OpalConnection * _conn, PTextToSpeech * tts, BO
 
 BOOL OpalVXMLSession::Close()
 {
+  if (!IsOpen())
+    return TRUE;
+
   BOOL ok = PVXMLSession::Close();
   conn->Release();
   return ok;
