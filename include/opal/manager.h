@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 1.2002  2001/08/01 05:52:55  robertj
+ * Moved media formats list from endpoint to connection.
+ * Added function to adjust calls media formats list.
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  */
@@ -401,6 +405,20 @@ class OpalManager : public PObject
 
   /**@name Media Streams management */
   //@{
+    /**Adjust media formats available on a connection.
+       This is called by a connection after it has called
+       OpalCall::GetMediaFormats() to get all media formats that it can use so
+       that an application may remove or reorder the media formats before they
+       are used to open media streams.
+
+       The default behaviour uses the mediaFormatOrder and mediaFormatMask
+       member variables to adjust the mediaFormats list.
+      */
+    virtual void AdjustMediaFormats(
+      OpalConnection & connection,  /// Connection that is about to use formats
+      OpalMediaFormatList & mediaFormats  /// Media formats to use
+    );
+
     /**Call back when opening a media stream.
        This function is called when a connection has created a new media
        stream according to the logic of its underlying protocol.
@@ -529,17 +547,35 @@ class OpalManager : public PObject
     /**Set the default maximum audio delay jitter parameter.
      */
     void SetMaxAudioDelayJitter(unsigned jitter) { maxAudioDelayJitter = (WORD)jitter; }
+
+    /**Get the default media format order.
+     */
+    const PStringArray & GetMediaFormatOrder() const { return mediaFormatOrder; }
+
+    /**Set the default media format order.
+     */
+    void SetMediaFormatOrder(const PStringArray & order) { mediaFormatOrder = order; }
+
+    /**Get the default media format mask.
+     */
+    const PStringArray & GetMediaFormatMask() const { return mediaFormatMask; }
+
+    /**Set the default media format order.
+     */
+    void SetMediaFormatMask(const PStringArray & mask) { mediaFormatMask = mask; }
   //@}
 
 
   protected:
     // Configuration variables
-    BOOL     autoStartReceiveVideo;
-    BOOL     autoStartTransmitVideo;
-    WORD     rtpIpPortBase, rtpIpPortMax;
-    WORD     tcpPortBase, tcpPortMax;
-    BYTE     rtpIpTypeofService;
-    WORD     maxAudioDelayJitter;
+    BOOL         autoStartReceiveVideo;
+    BOOL         autoStartTransmitVideo;
+    WORD         rtpIpPortBase, rtpIpPortMax;
+    WORD         tcpPortBase, tcpPortMax;
+    BYTE         rtpIpTypeofService;
+    WORD         maxAudioDelayJitter;
+    PStringArray mediaFormatOrder;
+    PStringArray mediaFormatMask;
 
     // Dynamic variables
     PMutex inUseFlag;
