@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t120.cxx,v $
- * Revision 1.2006  2001/11/13 04:29:48  robertj
+ * Revision 1.2007  2002/01/14 06:35:58  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.5  2001/11/13 04:29:48  robertj
  * Changed OpalTransportAddress CreateTransport and CreateListsner functions
  *   to have extra parameter to control local binding of sockets.
  *
@@ -42,6 +45,12 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.6  2002/01/09 00:21:40  robertj
+ * Changes to support outgoing H.245 RequstModeChange.
+ *
+ * Revision 1.5  2001/12/22 03:22:29  robertj
+ * Added create protocol function to H323Connection.
  *
  * Revision 1.4  2001/09/12 07:48:05  robertj
  * Fixed various problems with tracing.
@@ -110,12 +119,24 @@ H323Channel * H323_T120Capability::CreateChannel(H323Connection & connection,
 }
 
 
-BOOL H323_T120Capability::OnSendingPDU(H245_DataApplicationCapability & cap) const
+BOOL H323_T120Capability::OnSendingPDU(H245_DataApplicationCapability & pdu) const
 {
-  cap.m_maxBitRate = 825000;
-  cap.m_application.SetTag(H245_DataApplicationCapability_application::e_t120);
-  H245_DataProtocolCapability & proto = cap.m_application;
-  proto.SetTag(H245_DataProtocolCapability::e_separateLANStack);
+  pdu.m_maxBitRate = 825000;
+  pdu.m_application.SetTag(H245_DataApplicationCapability_application::e_t120);
+  return OnSendingPDU((H245_DataProtocolCapability &)pdu.m_application);
+}
+
+
+BOOL H323_T120Capability::OnSendingPDU(H245_DataMode & pdu) const
+{
+  pdu.m_application.SetTag(H245_DataMode_application::e_t120);
+  return OnSendingPDU((H245_DataProtocolCapability &)pdu.m_application);
+}
+
+
+BOOL H323_T120Capability::OnSendingPDU(H245_DataProtocolCapability & pdu) const
+{
+  pdu.SetTag(H245_DataProtocolCapability::e_separateLANStack);
   return TRUE;
 }
 
@@ -239,7 +260,7 @@ BOOL H323_T120Channel::OnReceivedPDU(const H245_OpenLogicalChannel & open,
 
   H323EndPoint & endpoint = connection.GetEndPoint();
 
-  t120handler = endpoint.CreateT120ProtocolHandler();
+  t120handler = connection.CreateT120ProtocolHandler();
   if (t120handler == NULL) {
     PTRACE(1, "H323T120\tCould not create protocol handler");
     errorCode = H245_OpenLogicalChannelReject_cause::e_dataTypeNotAvailable;

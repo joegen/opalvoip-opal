@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjwin32.cxx,v $
- * Revision 1.2004  2001/10/05 00:22:14  robertj
+ * Revision 1.2005  2002/01/14 06:35:58  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.3  2001/10/05 00:22:14  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.2  2001/10/04 00:47:45  robertj
@@ -35,6 +38,14 @@
  *
  * Revision 2.1  2001/08/01 05:21:21  robertj
  * Made OpalMediaFormatList class global to help with documentation.
+ * Revision 1.106  2001/12/11 04:27:28  craigs
+ * Added support for 5.3kbps G723.1
+ *
+ * Revision 1.105  2001/12/03 00:40:43  robertj
+ * Fixed problem with false off hook detect with LineJACK and no PSTN active.
+ *
+ * Revision 1.104  2001/10/11 00:48:08  robertj
+ * Changed so if stopping read/write also stops fax and vice versa.
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
@@ -648,7 +659,8 @@ BOOL OpalIxJDevice::IsLineOffHook(unsigned line)
     return dwResult == 0;
   }
 
-  if (!IoControl(IsLineJACK() ? IOCTL_DevCtrl_GetLinePhoneOnHook
+  if (!IoControl(IsLineJACK() && IsLinePresent(PSTNLine)
+                              ? IOCTL_DevCtrl_GetLinePhoneOnHook
 			      : IOCTL_DevCtrl_GetOnHook, 0, &dwResult))
     return FALSE;
 
@@ -845,7 +857,8 @@ static const struct {
   { "G.728",          2, 0, 0, 0,  20, RECORD_MODE_TRUESPEECH, RECORD_RATE_G728,    PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G728    },
   { "G.729A",         6, 1, 0, 0,  10, RECORD_MODE_TRUESPEECH, RECORD_RATE_G729,    PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G729    },
   { "G.729A/B",       6, 1, 0, 1,  10, RECORD_MODE_TRUESPEECH, RECORD_RATE_G729,    PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G729    },
-  { "G.723.1",        7, 0, 1, 1,  24, RECORD_MODE_TRUESPEECH, RECORD_RATE_G723_63, PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G723_63 },
+  { "G.723.1(6.3k)",  7, 0, 1, 1,  24, RECORD_MODE_TRUESPEECH, RECORD_RATE_G723_63, PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G723_63 },
+  { "G.723.1(5.3k)",  7, 0, 1, 1,  20, RECORD_MODE_TRUESPEECH, RECORD_RATE_G723_53, PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G723_53 },
 };
 
 

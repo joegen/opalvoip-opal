@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323neg.cxx,v $
- * Revision 1.2005  2001/10/15 04:35:09  robertj
+ * Revision 1.2006  2002/01/14 06:35:58  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.4  2001/10/15 04:35:09  robertj
  * Added delayed start of media patch threads.
  *
  * Revision 2.3  2001/10/05 00:22:14  robertj
@@ -41,6 +44,41 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.63  2002/01/10 04:38:29  robertj
+ * Fixed problem with having incorrect constraint if getting array from caller on
+ *   setting up a requestMode.
+ *
+ * Revision 1.62  2002/01/10 04:02:08  robertj
+ * Fixed correct filling of modeRequest structure.
+ *
+ * Revision 1.61  2002/01/09 00:21:40  robertj
+ * Changes to support outgoing H.245 RequstModeChange.
+ *
+ * Revision 1.60  2002/01/08 01:26:32  robertj
+ * Removed PTRACE in FindChannelsBySession as it can get called a LOT.
+ *
+ * Revision 1.59  2002/01/01 23:24:04  craigs
+ * Removed reference to myPTRACE
+ *
+ * Revision 1.58  2002/01/01 23:20:22  craigs
+ * Added HandleAck and StartRequest implementations for T.38
+ * thanks to Vyacheslav Frolov
+ *
+ * Revision 1.57  2001/12/22 03:10:17  robertj
+ * Changed OnRequstModeChange to return ack, then actually do the change.
+ *
+ * Revision 1.56  2001/12/22 01:46:33  robertj
+ * Fixed bug in RequestMode negotiation, failure to set sequence number.
+ *
+ * Revision 1.55  2001/12/14 08:36:36  robertj
+ * More implementation of T.38, thanks Adam Lazur
+ *
+ * Revision 1.54  2001/11/11 23:07:52  robertj
+ * Some clean ups after T.38 commit, thanks Adam Lazur
+ *
+ * Revision 1.53  2001/11/09 05:39:54  craigs
+ * Added initial T.38 support thanks to Adam Lazur
  *
  * Revision 1.52  2001/09/13 04:18:57  robertj
  * Added support for "reopen" function when closing logical channel.
@@ -1112,6 +1150,7 @@ H245NegLogicalChannels::H245NegLogicalChannels(H323EndPoint & end,
 
 void H245NegLogicalChannels::Add(H323Channel & channel)
 {
+  PTRACE(1, "H245NegLogicalChannels::Add");
   mutex.Wait();
   channels.SetAt(channel.GetNumber(), new H245NegLogicalChannel(endpoint, connection, channel));
   mutex.Signal();
@@ -1337,7 +1376,8 @@ H323Channel * H245NegLogicalChannels::FindChannelBySession(unsigned rtpSessionId
   H323Channel::Directions desiredDirection = fromRemote ? H323Channel::IsReceiver : H323Channel::IsTransmitter;
   for (i = 0; i < GetSize(); i++) {
     H323Channel * channel = channels.GetDataAt(i).GetChannel();
-    if ((channel != NULL) && (channel->GetSessionID() == rtpSessionId) && (channel->GetDirection() == desiredDirection))
+    if (channel != NULL && channel->GetSessionID() == rtpSessionId &&
+                           channel->GetDirection() == desiredDirection)
       return channel;
   }
 
@@ -1373,10 +1413,52 @@ H245NegRequestMode::H245NegRequestMode(H323EndPoint & end, H323Connection & conn
 }
 
 
-BOOL H245NegRequestMode::StartRequest()
+BOOL H245NegRequestMode::StartRequest(const PString & newModes)
 {
-  PTRACE(3, "H245\tStarted request mode: outSeq=" << outSequenceNumber
+  PStringArray modes = newModes.Lines();
+  if (modes.IsEmpty())
+    return FALSE;
+
+  H245_ArrayOf_ModeDescription descriptions;
+  PINDEX modeCount = 0;
+
+  const H323Capabilities & localCapabilities = connection.GetLocalCapabilities();
+
+  for (PINDEX i = 0; i < modes.GetSize(); i++) {
+    H245_ModeDescription description;
+    PINDEX count = 0;
+
+    PStringArray caps = modes[i].Tokenise('\t');
+    for (PINDEX j = 0; j < caps.GetSize(); j++) {
+      H323Capability * capability = localCapabilities.FindCapability(caps[j]);
+      if (capability != NULL) {
+        description.SetSize(count+1);
+        capability->OnSendingPDU(description[count]);
+        count++;
+      }
+    }
+
+    if (count > 0) {
+      descriptions.SetSize(modeCount+1);
+      descriptions[modeCount] = description;
+      modeCount++;
+    }
+  }
+
+  if (modeCount == 0)
+    return FALSE;
+
+  return StartRequest(descriptions);
+}
+
+
+BOOL H245NegRequestMode::StartRequest(const H245_ArrayOf_ModeDescription & newModes)
+{
+  PTRACE(1, "Started request mode: outSeq=" << outSequenceNumber
          << (awaitingResponse ? " awaitingResponse" : " idle"));
+
+  if (awaitingResponse)
+    return FALSE;
 
   // Initiate a mode request
   outSequenceNumber = (outSequenceNumber+1)%256;
@@ -1384,29 +1466,40 @@ BOOL H245NegRequestMode::StartRequest()
   awaitingResponse = TRUE;
 
   H323ControlPDU pdu;
-  pdu.BuildRequestMode(outSequenceNumber);
-  // more here - actually set the modes
+  H245_RequestMode & requestMode = pdu.BuildRequestMode(outSequenceNumber);
+  requestMode.m_requestedModes = newModes;
+  requestMode.m_requestedModes.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
+
   return connection.WriteControlPDU(pdu);
 }
 
 
 BOOL H245NegRequestMode::HandleRequest(const H245_RequestMode & pdu)
 {
-  PTRACE(3, "H245\tReceived request mode: inSeq=" << inSequenceNumber
-         << (awaitingResponse ? " awaitingResponse" : " idle"));
+  inSequenceNumber = pdu.m_sequenceNumber;
+
+  PTRACE(3, "H245\tReceived request mode: inSeq=" << inSequenceNumber);
 
   H323ControlPDU reply_ack;
   H245_RequestModeAck & ack = reply_ack.BuildRequestModeAck(inSequenceNumber,
-              H245_RequestModeAck_response::e_willTransmitMostPreferredMode);
+                  H245_RequestModeAck_response::e_willTransmitMostPreferredMode);
 
   H323ControlPDU reply_reject;
   H245_RequestModeReject & reject = reply_reject.BuildRequestModeReject(inSequenceNumber,
                                         H245_RequestModeReject_cause::e_modeUnavailable);
 
-  if (connection.OnRequestModeChange(pdu, ack, reject))
-    return connection.WriteControlPDU(reply_ack);
-  else
+  PINDEX selectedMode = 0;
+  if (!connection.OnRequestModeChange(pdu, ack, reject, selectedMode))
     return connection.WriteControlPDU(reply_reject);
+
+  if (selectedMode != 0)
+    ack.m_response.SetTag(H245_RequestModeAck_response::e_willTransmitLessPreferredMode);
+
+  if (!connection.WriteControlPDU(reply_ack))
+    return FALSE;
+
+  connection.OnModeChanged(pdu.m_requestedModes[selectedMode]);
+  return TRUE;
 }
 
 
@@ -1423,7 +1516,6 @@ BOOL H245NegRequestMode::HandleAck(const H245_RequestModeAck & pdu)
 
   return TRUE;
 }
-
 
 BOOL H245NegRequestMode::HandleReject(const H245_RequestModeReject & pdu)
 {
@@ -1442,9 +1534,7 @@ BOOL H245NegRequestMode::HandleReject(const H245_RequestModeReject & pdu)
 
 BOOL H245NegRequestMode::HandleRelease(const H245_RequestModeRelease & /*pdu*/)
 {
-  PTRACE(3, "H245\tReceived release on request mode: inSeq=" << inSequenceNumber
-         << (awaitingResponse ? " awaitingResponse" : " idle"));
-
+  PTRACE(3, "H245\tReceived release on request mode: inSeq=" << inSequenceNumber);
   return TRUE;
 }
 

@@ -22,11 +22,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vpblid.cxx,v $
- * Revision 1.2003  2001/10/05 00:22:14  robertj
+ * Revision 1.2004  2002/01/14 06:35:58  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.2  2001/10/05 00:22:14  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.1  2001/08/01 05:21:21  robertj
  * Made OpalMediaFormatList class global to help with documentation.
+ * Revision 1.11  2001/11/19 06:35:41  robertj
+ * Added tone generation handling
+ *
+ * Revision 1.10  2001/10/05 03:51:21  robertj
+ * Added missing pragma implementation
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
@@ -111,6 +119,7 @@ BOOL OpalVpbDevice::LineState::Open(unsigned cardNumber, unsigned lineNumber)
   vpb_sethook_sync(handle, VPB_ONHOOK);
   vpb_set_ring(handle, 1, 5000);
   vpb_set_event_mask(handle, VPB_MRING|VPB_MTONEDETECT);
+  myToneThread = NULL;
 
   return TRUE;
 }
@@ -161,6 +170,10 @@ BOOL OpalVpbDevice::SetLineOffHook(unsigned line, BOOL newState)
 BOOL OpalVpbDevice::LineState::SetLineOffHook(BOOL newState)
 {
   currentHookState = newState;
+  if (newState == TRUE) {
+    // DR - clear DTMF buffer at start of each call
+    vpb_flush_digits(handle);   
+  }
   return vpb_sethook_sync(handle, newState ? VPB_OFFHOOK : VPB_ONHOOK) >= 0;
 }
 
@@ -182,7 +195,6 @@ BOOL OpalVpbDevice::LineState::IsLineRinging(DWORD * /*cadence*/)
 
   return ringTimeout.IsRunning();
 }
-
 
 static const struct {
   const char * mediaFormat;
@@ -246,6 +258,7 @@ BOOL OpalVpbDevice::SetWriteFormat(unsigned line, const OpalMediaFormat & mediaF
   lineState[line].writeFormat = FindCodec(mediaFormat);
   if (lineState[line].writeFormat == P_MAX_INDEX)
     return FALSE;
+  lineState[line].DTMFplaying = FALSE;
 
   if (vpb_play_buf_start(lineState[line].handle,
                          CodecInfo[lineState[line].writeFormat].mode) < 0)
@@ -277,13 +290,15 @@ BOOL OpalVpbDevice::StopReadCodec(unsigned line)
   if (line >= MaxLineCount)
     return FALSE;
 
-  PTRACE(3, "VPB\tStopping read codec");
+  PTRACE(3, "VPB\tStopReadCodec");
 
   if (lineState[line].readIdle)
     return FALSE;
 
+  vpb_record_terminate(lineState[line].handle);
+
   lineState[line].readIdle = TRUE;
-  return vpb_record_buf_finish(lineState[line].handle) >= 0;
+  return TRUE;
 }
 
 
@@ -292,13 +307,15 @@ BOOL OpalVpbDevice::StopWriteCodec(unsigned line)
   if (line >= MaxLineCount)
     return FALSE;
 
-  PTRACE(3, "xJack\tStopping write codec");
+  PTRACE(1, "VPB\tStopWriteCodec");
 
   if (lineState[line].writeIdle)
     return FALSE;
 
+  vpb_play_terminate(lineState[line].handle);
+
   lineState[line].writeIdle = TRUE;
-  return vpb_play_buf_finish(lineState[line].handle) >= 0;
+  return TRUE;
 }
 
 
@@ -346,18 +363,42 @@ BOOL OpalVpbDevice::ReadFrame(unsigned line, void * buf, PINDEX & count)
     return FALSE;
 
   count = lineState[line].readFrameSize;
-  return vpb_record_buf_sync(lineState[line].handle, (char *)buf, (WORD)count) >= 0;
+  int ret = vpb_record_buf_sync(lineState[line].handle, 
+				(char *)buf, (WORD)count);
+  if (ret == VPB_FINISH) {
+    // DR - this must in the same thread context as vpb_record_buf_sync
+    vpb_record_buf_finish(lineState[line].handle);
+    PTRACE(3, "VPB\tStopReadCodec STOPPED");
+  }
+
+  return ret == VPB_OK;
 }
 
 
 BOOL OpalVpbDevice::WriteFrame(unsigned line, const void * buf, PINDEX count, PINDEX & written)
 {
+  int ret;
+
   written = 0;
   if (line >= MaxLineCount)
     return FALSE;
 
-  if (vpb_play_buf_sync(lineState[line].handle, (char *)buf, (WORD)count) < 0)
+  lineState[line].DTMFmutex.Wait();
+  if (lineState[line].DTMFplaying) {
+    // during DTMF playing keep calling function happy without playing anything
+    ret = VPB_OK;
+  }
+  else {
+    ret = vpb_play_buf_sync(lineState[line].handle, (char *)buf,(WORD)count);
+  }
+  lineState[line].DTMFmutex.Signal();
+
+  if (ret == VPB_FINISH) {
+    // DR - this must in the same thread context as vpb_play_buf_sync
+    vpb_play_buf_finish(lineState[line].handle);
+    PTRACE(3, "VPB\tStopWriteCodec STOPPED");
     return FALSE;
+  }
 
   written = count;
   return TRUE;
@@ -395,8 +436,10 @@ char OpalVpbDevice::ReadDTMF(unsigned line)
 
   char buf[VPB_MAX_STR];
 
-  if (vpb_get_digits_sync(lineState[line].handle, &vd, buf) == 1)
+  if (vpb_get_digits_sync(lineState[line].handle, &vd, buf) == VPB_DIGIT_MAX) {
+    PTRACE(3, "VPB\tReadDTMF (digit)" << buf[0]);
     return buf[0];
+  }
 
   return '\0';
 }
@@ -407,7 +450,33 @@ BOOL OpalVpbDevice::PlayDTMF(unsigned line, const char * digits, DWORD, DWORD)
   if (line >= MaxLineCount)
     return FALSE;
 
-  return vpb_dial_sync(lineState[line].handle, (char *)digits) >= 0;
+  PTRACE(3, "VPB\tPlayDTMF: " << digits);
+
+  if (lineState[line].writeIdle) {
+	  vpb_dial_sync(lineState[line].handle, (char *)digits);
+  }
+  else {
+	  // DR - VPB cant play audio and DTMFs at the same time, so tell 
+	  // write audio thread to fake it while we play DTMFs
+
+	  lineState[line].DTMFmutex.Wait(); 
+	  lineState[line].DTMFplaying = TRUE;
+	  lineState[line].DTMFmutex.Signal();
+
+          // stop playing and generate DTMF
+	  vpb_play_terminate(lineState[line].handle);
+	  vpb_play_buf_finish(lineState[line].handle);
+	  vpb_dial_sync(lineState[line].handle, (char *)digits);
+
+	  // start playing again
+	  lineState[line].DTMFmutex.Wait();
+	  lineState[line].DTMFplaying = FALSE;
+	  vpb_play_buf_start(lineState[line].handle,
+			     CodecInfo[lineState[line].writeFormat].mode);
+	  lineState[line].DTMFmutex.Signal();
+  }
+
+  return TRUE;
 }
 
 
@@ -423,6 +492,7 @@ unsigned OpalVpbDevice::IsToneDetected(unsigned line)
   if (event.type != VPB_TONEDETECT)
     return NoTone;
 
+  PTRACE(3, "VPB\tTone Detect: " << event.data);
   switch (event.data) {
     case VPB_DIAL :
       return DialTone;
@@ -440,5 +510,84 @@ unsigned OpalVpbDevice::IsToneDetected(unsigned line)
   return NoTone;
 }
 
+BOOL OpalVpbDevice::PlayTone(unsigned line, CallProgressTones tone)
+{
+  VPB_TONE vpbtone;	
+	
+  PTRACE(3, "VPB\tPlayTone STARTED");
+
+  switch(tone) {
+  case DialTone:
+    PTRACE(3, "VPB\tPlayTone DialTone");
+    vpbtone.freq1 = 425;
+    vpbtone.freq2 = 450;
+    vpbtone.freq3 = 400;
+    vpbtone.level1 = -12;
+    vpbtone.level2 = -18;
+    vpbtone.level3 = -18;
+    vpbtone.ton = 30000;
+    vpbtone.toff = 10;
+    lineState[line].myToneThread = new ToneThread(
+						  lineState[line].handle,
+						  vpbtone
+						  );
+    break;
+  case BusyTone:
+    vpbtone.freq1 = 425;
+    vpbtone.freq2 = 0;
+    vpbtone.freq3 = 0;
+    vpbtone.level1 = -12;
+    vpbtone.level2 = -100;
+    vpbtone.level3 = -100;
+    vpbtone.ton = 325;
+    vpbtone.toff = 750;
+    lineState[line].myToneThread = new ToneThread(
+						  lineState[line].handle,
+						  vpbtone
+						  );
+    break;
+  default:
+    return FALSE;
+  }
+  
+  return TRUE;
+}
+
+BOOL OpalVpbDevice::StopTone(unsigned line)
+{
+  PTRACE(3, "VPB\tStopTone STARTED");
+  if (lineState[line].myToneThread)
+    delete lineState[line].myToneThread;
+  PTRACE(3, "VPB\tStopTone FINSISHED");
+  return TRUE;
+}
 
 /////////////////////////////////////////////////////////////////////////////
+
+ToneThread::ToneThread(int ahandle, VPB_TONE avpbtone) : PThread(10000, NoAutoDeleteThread) {
+  handle = ahandle;
+  vpbtone = avpbtone;
+  Resume();
+}
+
+ToneThread::~ToneThread() {
+  PTRACE(3, "VPB\tToneThread Destructor STARTED");
+  vpb_play_terminate(handle);
+  shutdown.Signal();
+  WaitForTermination();
+  PTRACE(3, "VPB\tToneThread Destructor FINISHED");
+}
+
+void ToneThread::Main() {
+  PTRACE(3, "VPB\tToneThread Main STARTED");
+  while (!shutdown.Wait(10)) {
+    vpb_playtone_sync(handle, &vpbtone);
+    PTRACE(3, "VPB\tvpl_playtone_sync returned");
+  }
+  PTRACE(3, "VPB\tToneThread Main FINISHED");
+}
+
+
+
+
+

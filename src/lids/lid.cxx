@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.cxx,v $
- * Revision 1.2004  2001/10/05 00:22:14  robertj
+ * Revision 1.2005  2002/01/14 06:35:58  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.3  2001/10/05 00:22:14  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.2  2001/08/13 05:10:40  robertj
@@ -35,6 +38,15 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.79  2002/01/13 23:57:04  robertj
+ * Added mutex so can change raw data channel while reading/writing from codec.
+ *
+ * Revision 1.78  2001/12/14 04:33:53  craigs
+ * Disabled 5.3k codec due to problems with Quicknet cards
+ *
+ * Revision 1.77  2001/12/11 04:27:28  craigs
+ * Added support for 5.3kbps G723.1
  *
  * Revision 1.76  2001/09/21 02:52:19  robertj
  * Implemented static object for all "known" media formats.
