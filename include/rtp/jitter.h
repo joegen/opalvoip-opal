@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.h,v $
- * Revision 1.2002  2001/10/05 00:22:13  robertj
+ * Revision 1.2003  2002/04/15 08:50:14  robertj
+ * Added buffer reset on excess buffer overruns.
+ *
+ * Revision 2.1  2001/10/05 00:22:13  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
@@ -108,6 +111,10 @@ class RTP_JitterBuffer : public PThread
       */
     DWORD GetPacketsTooLate() const { return packetsTooLate; }
 
+    /**Get total number received packets that overran the jitter buffer.
+      */
+    DWORD GetBufferOverruns() const { return bufferOverruns; }
+
     /**Get maximum consecutive marker bits before buffer starts to ignore them.
       */
     DWORD GetMaxConsecutiveMarkerBits() const { return maxConsecutiveMarkerBits; }
@@ -134,6 +141,8 @@ class RTP_JitterBuffer : public PThread
 
     unsigned currentDepth;
     DWORD    packetsTooLate;
+    unsigned bufferOverruns;
+    unsigned consecutiveBufferOverruns;
     DWORD    consecutiveMarkerBits;
 
     Entry * oldestFrame;
