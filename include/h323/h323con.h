@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2015  2002/07/01 04:56:29  robertj
+ * Revision 1.2016  2002/09/04 06:01:46  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.14  2002/07/01 04:56:29  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.13  2002/04/09 00:17:08  robertj
@@ -73,6 +76,23 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.51  2002/09/03 06:19:36  robertj
+ * Normalised the multi-include header prevention ifdef/define symbol.
+ *
+ * Revision 1.50  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
+ *
+ * Revision 1.49  2002/08/05 05:17:37  robertj
+ * Fairly major modifications to support different authentication credentials
+ *   in ARQ to the logged in ones on RRQ. For both client and server.
+ * Various other H.235 authentication bugs and anomalies fixed on the way.
+ *
+ * Revision 1.48  2002/07/05 02:22:56  robertj
+ * Added support for standard and non-standard T.38 mode change.
+ *
+ * Revision 1.47  2002/07/04 00:40:31  robertj
+ * More H.450.11 call intrusion implementation, thanks Aleksandar Todorovic
  *
  * Revision 1.46  2002/06/22 06:11:30  robertj
  * Fixed bug on sometimes missing received endSession causing 10 second
@@ -232,8 +252,8 @@
  * Fission of h323.h to h323ep.h & h323con.h, h323.h now just includes files.
  */
 
-#ifndef __H323_H323CON_H
-#define __H323_H323CON_H
+#ifndef __OPAL_H323CON_H
+#define __OPAL_H323CON_H
 
 #ifdef __GNUC__
 #pragma interface
@@ -257,6 +277,7 @@ class H225_EndpointType;
 class H225_TransportAddress;
 class H225_ArrayOf_PASN_OctetString;
 class H225_ProtocolIdentifier;
+class H225_AdmissionRequest;
 
 class H245_TerminalCapabilitySet;
 class H245_TerminalCapabilitySetReject;
@@ -846,9 +867,18 @@ class H323Connection : public OpalConnection
     unsigned GetLocalCallIntrusionProtectionLevel() { return callIntrusionProtectionLevel; }
 
     /**Get Call Intrusion Protection Level of other endpoints that we are in
-       connection with. Not yet implemented.
+       connection with.
       */
-    virtual unsigned GetRemoteCallIntrusionProtectionLevel();
+    virtual BOOL GetRemoteCallIntrusionProtectionLevel(
+      const PString & callToken,
+      unsigned callIntrusionProtectionLevel
+    );
+
+    virtual void SetIntrusionImpending();
+
+    virtual void SetForcedReleaseAccepted();
+
+    virtual void SetIntrusionNotAuthorized();
 
     /**Send a Call Waiting indication message to the remote endpoint using
        H.450.6.  The second paramter is used to indicate to the calling user
@@ -1854,7 +1884,23 @@ class H323Connection : public OpalConnection
     /**Request a mode change to T.38 data.
       */
     virtual BOOL RequestModeChangeT38(
-      const char * capabilityName = "T.38"
+      const char * capabilityNames = "T.38\nT38FaxUDP"
+    );
+
+    /**Get separate H.235 authentication for the connection.
+       This allows an individual ARQ to override the authentical credentials
+       used in H.235 based RAS for this particular connection.
+
+       A return value of FALSE indicates to use the default credentials of the
+       endpoint, while TRUE indicates that new credentials are to be used.
+
+       The default behavour does nothing and returns FALSE.
+      */
+    virtual BOOL GetAdmissionRequestAuthentication(
+      const H225_AdmissionRequest & arq,  /// ARQ being constructed
+      PString & remoteId,                 /// Remote ID to be modified
+      PString & localId,                  /// Local ID to be modified
+      PString & password                  /// Password to be modified
     );
   //@}
 
@@ -2081,7 +2127,7 @@ class H323Connection : public OpalConnection
     BOOL transmitterSidePaused;
     BOOL earlyStart;
     BOOL startT120;
-    BOOL t38ModeChange;
+    PString    t38ModeChangeCapabilities;
     PSyncPoint digitsWaitFlag;
     BOOL       endSessionNeeded;
     BOOL       endSessionSent;
@@ -2138,7 +2184,7 @@ class H323Connection : public OpalConnection
 PDICTIONARY(H323CallIdentityDict, PString, H323Connection);
 
 
-#endif // __H323_H323CON_H
+#endif // __OPAL_H323CON_H
 
 
 /////////////////////////////////////////////////////////////////////////////

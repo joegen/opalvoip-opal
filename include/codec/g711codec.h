@@ -23,7 +23,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g711codec.h,v $
- * Revision 1.2003  2002/03/15 03:07:25  robertj
+ * Revision 1.2004  2002/09/04 06:01:46  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.2  2002/03/15 03:07:25  robertj
  * Added static access to internal conversion functions.
  *
  * Revision 2.1  2001/08/01 05:03:26  robertj
@@ -32,8 +35,8 @@
  *
  */
 
-#ifndef __CODEC_G711CODEC_H
-#define __CODEC_G711CODEC_H
+#ifndef __OPAL_G711CODEC_H
+#define __OPAL_G711CODEC_H
 
 #ifdef __GNUC__
 #pragma interface
@@ -101,7 +104,7 @@ class Opal_PCM_G711_ALaw : public OpalStreamedTranscoder {
 
 
 
-#endif // __CODEC_G711CODEC_H
+#endif // __OPAL_G711CODEC_H
 
 
 /////////////////////////////////////////////////////////////////////////////

@@ -23,7 +23,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc2833.h,v $
- * Revision 1.2003  2002/02/19 07:34:44  robertj
+ * Revision 1.2004  2002/09/04 06:01:46  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.2  2002/02/19 07:34:44  robertj
  * Added OpalRFC2833 as a OpalMediaFormat variable.
  *
  * Revision 2.1  2002/01/22 05:35:28  robertj
@@ -31,8 +34,8 @@
  *
  */
 
-#ifndef __CODEC_RFC2833_H
-#define __CODEC_RFC2833_H
+#ifndef __OPAL_RFC2833_H
+#define __OPAL_RFC2833_H
 
 #ifdef __GNUC__
 #pragma interface
@@ -130,7 +133,7 @@ class OpalRFC2833Proto : public PObject {
 };
 
 
-#endif // __CODEC_RFC2833_H
+#endif // __OPAL_RFC2833_H
 
 
 /////////////////////////////////////////////////////////////////////////////

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.h,v $
- * Revision 1.2009  2002/07/01 04:56:29  robertj
+ * Revision 1.2010  2002/09/04 06:01:46  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.8  2002/07/01 04:56:29  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.7  2002/02/19 07:44:13  robertj
@@ -54,6 +57,12 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.34  2002/09/03 06:19:36  robertj
+ * Normalised the multi-include header prevention ifdef/define symbol.
+ *
+ * Revision 1.33  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
  *
  * Revision 1.32  2002/05/29 03:55:17  robertj
  * Added protocol version number checking infrastructure, primarily to improve
@@ -162,8 +171,8 @@
  *
  */
 
-#ifndef __H323_H323CAPS_H
-#define __H323_H323CAPS_H
+#ifndef __OPAL_H323CAPS_H
+#define __OPAL_H323CAPS_H
 
 #ifdef __GNUC__
 #pragma interface
@@ -2211,7 +2220,7 @@ H323Capability * cls##_Registration::Create(H323EndPoint & epvar) const
   static cls##_Registration * cls##_Registration_Static_Library_Loader = &cls##_Registration_Instance
 
 
-#endif // __H323_H323CAPS_H
+#endif // __OPAL_H323CAPS_H
 
 
 /////////////////////////////////////////////////////////////////////////////

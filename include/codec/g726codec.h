@@ -26,11 +26,14 @@
  *
  * Contributor(s): ______________________________________.
  *
+ * $Log: g726codec.h,v $
+ * Revision 1.2003  2002/09/04 06:01:46  robertj
+ * Updated to OpenH323 v1.9.6
  *
  */
 
-#ifndef __CODEC_G726CODEC_H
-#define __CODEC_G726CODEC_H
+#ifndef __OPAL_G726CODEC_H
+#define __OPAL_G726CODEC_H
 
 #ifdef __GNUC__
 #pragma interface
@@ -230,7 +233,7 @@ H323_STATIC_LOAD_REGISTER_CAPABILITY(H323_G726_16_Capability);
           OPAL_REGISTER_TRANSCODER(Opal_PCM_G726_16, OPAL_PCM16, OPAL_G726_16)
 
 
-#endif // __CODEC_G726CODEC_H
+#endif // __OPAL_G726CODEC_H
 
 
 /////////////////////////////////////////////////////////////////////////////
