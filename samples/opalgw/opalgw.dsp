@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_AFXDLL" /YX /FD /c
-# ADD CPP /nologo /MD /W4 /GX /O2 /D "NDEBUG" /D "HAS_IXJ" /D "OPAL_STATIC_LINK" /D P_EXPAT=0$(EXPATFLAG) /D P_SSL=0$(OPENSSLFLAG) /D P_HAS_IPV6=0$(IPV6FLAG) /D P_SAPI=0$(SAPIFLAG) /Yu"precompile.h" /FD /c
+# ADD CPP /nologo /MD /W4 /GX /O2 /D "NDEBUG" /D "HAS_IXJ" /D "OPAL_STATIC_LINK" /Yu"precompile.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0xc09 /d "NDEBUG" /d "_AFXDLL"
@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 /nologo /subsystem:windows /machine:I386
-# ADD LINK32 opal.lib ptclib.lib ptlib.lib $(VAG729LIB) $(OPENSSLLIBS) $(EXPATLIBS) winmm.lib comdlg32.lib winspool.lib wsock32.lib mpr.lib kernel32.lib user32.lib gdi32.lib shell32.lib advapi32.lib /nologo /subsystem:windows /machine:I386 /libpath:"$(OPENSSLDIR)/out32" /libpath:"$(EXPATDIR)/Release" /libpath:"$(VAG729DIR)\\"
+# ADD LINK32 opal.lib ptclib.lib ptlib.lib $(VAG729LIB) winmm.lib comdlg32.lib winspool.lib wsock32.lib mpr.lib kernel32.lib user32.lib gdi32.lib shell32.lib advapi32.lib /nologo /subsystem:windows /machine:I386 /libpath:"$(VAG729DIR)\\"
 
 !ELSEIF  "$(CFG)" == "opalgw - Win32 Debug"
 
@@ -69,7 +69,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_AFXDLL" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W4 /Gm /GX /ZI /Od /D "_DEBUG" /D "HAS_IXJ" /D "OPAL_STATIC_LINK" /D P_EXPAT=0$(EXPATFLAG) /D P_SSL=0$(OPENSSLFLAG) /D P_HAS_IPV6=0$(IPV6FLAG) /D P_SAPI=0$(SAPIFLAG) /Yu"precompile.h" /FD /GZ /c
+# ADD CPP /nologo /MDd /W4 /Gm /GX /ZI /Od /D "_DEBUG" /D "HAS_IXJ" /D "OPAL_STATIC_LINK" /Yu"precompile.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0xc09 /d "_DEBUG" /d "_AFXDLL"
@@ -79,7 +79,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 opalsd.lib ptclibd.lib ptlibd.lib $(VAG729LIB) $(OPENSSLLIBS) $(EXPATLIBS) winmm.lib comdlg32.lib winspool.lib wsock32.lib mpr.lib kernel32.lib user32.lib gdi32.lib shell32.lib advapi32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept /libpath:"$(OPENSSLDIR)/out32.dbg" /libpath:"$(EXPATDIR)/Debug" /libpath:"$(VAG729DIR)\\"
+# ADD LINK32 opalsd.lib ptclibd.lib ptlibd.lib $(VAG729LIB) winmm.lib comdlg32.lib winspool.lib wsock32.lib mpr.lib kernel32.lib user32.lib gdi32.lib shell32.lib advapi32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept /libpath:"$(VAG729DIR)\\"
 
 !ENDIF 
 
