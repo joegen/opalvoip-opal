@@ -22,7 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2003  2001/08/01 06:22:55  robertj
+# Revision 1.2004  2001/08/17 05:24:22  robertj
+# Updates from OpenH323 v1.6.0 release.
+#
+# Revision 2.2  2001/08/01 06:22:55  robertj
 # Major changes to H.323 capabilities, uses OpalMediaFormat for base name.
 # Added G.711 transcoder.
 #
@@ -132,10 +135,10 @@ SOURCES := $(ASN_CXX_FILES) \
            $(OPAL_SRCDIR)/h323/gkclient.cxx \
            $(OPAL_SRCDIR)/h323/gkserver.cxx \
            $(OPAL_SRCDIR)/h323/h225ras.cxx \
-           $(OPAL_SRCDIR)/h323/h235security.cxx \
+           $(OPAL_SRCDIR)/h323/h235auth.cxx \
 
 ifdef HAS_OPENSSL
-SOURCES += $(OPAL_SRCDIR)/h235ras.cxx
+SOURCES += $(OPAL_SRCDIR)/h235auth1.cxx
 endif
 
 SOURCES += $(OPAL_SRCDIR)/lids/lid.cxx \
