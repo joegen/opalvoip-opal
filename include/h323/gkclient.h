@@ -27,11 +27,17 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.h,v $
- * Revision 1.2002  2001/08/13 05:10:39  robertj
+ * Revision 1.2003  2001/08/17 08:20:26  robertj
+ * Update from OpenH323
+ *
+ * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.25  2001/08/14 04:26:46  robertj
+ * Completed the Cisco compatible MD5 authentications, thanks Wolfgang Platzer.
  *
  * Revision 1.24  2001/08/13 01:27:00  robertj
  * Changed GK admission so can return multiple aliases to be used in
@@ -290,9 +296,12 @@ class H323Gatekeeper : public H225_RAS
     PString GetName() const;
 
     /**Set the H.235 password in the gatekeeper.
+       If no username is present then it will default to the endpoint local
+       user name (ie first alias).
       */
     void SetPassword(
-      const PString & password
+      const PString & password,            /// New password
+      const PString & username = PString() /// Username for password
     );
   //@}
 
