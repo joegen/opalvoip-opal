@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ilbccodec.h,v $
- * Revision 1.2003  2004/04/25 09:27:33  rjongbloed
+ * Revision 1.2004  2004/09/01 12:21:26  rjongbloed
+ * Added initialisation of H323EndPoints capability table to be all codecs so can
+ *   correctly build remote caps from fqast connect params. This had knock on effect
+ *   with const keywords added in numerous places.
+ *
+ * Revision 2.2  2004/04/25 09:27:33  rjongbloed
  * Fixed correct H.323 capability definitions for iLBC codec variants
  *
  * Revision 2.1  2004/02/19 10:46:43  rjongbloed
@@ -82,7 +87,7 @@ class H323_iLBC_Capability : public H323NonStandardAudioCapability
     /**Create a new ILBC capability.
      */
     H323_iLBC_Capability(
-      H323EndPoint & endpoint,
+      const H323EndPoint & endpoint,
       Speed speed
     );
   //@}
