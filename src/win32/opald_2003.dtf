@@ -34427,6 +34427,7 @@ EXPORTS
     ?SetDate@SIPMIMEInfo@@QAEXABVPTime@@@Z @34198 NONAME
     ?SetDate@SIPMIMEInfo@@QAEXXZ @34199 NONAME
     ?SetDefaultLine@OpalLIDEndPoint@@QAEXABVPString@@@Z @34200 NONAME
+    ?SetDefaultMediaFormats@OpalIVREndPoint@@QAEXABVOpalMediaFormatList@@@Z @35793 NONAME
     ?SetDefaultVXML@OpalIVREndPoint@@QAEXABVPString@@@Z @34201 NONAME
     ?SetDelay@RTP_JitterBuffer@@QAEXII@Z @34202 NONAME
     ?SetDisplayName@Q931@@QAEXABVPString@@@Z @34203 NONAME
