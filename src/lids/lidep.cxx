@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2008  2001/08/23 05:51:17  robertj
+ * Revision 1.2009  2001/10/04 00:47:02  robertj
+ * Removed redundent parameter.
+ *
+ * Revision 2.7  2001/08/23 05:51:17  robertj
  * Completed implementation of codec reordering.
  *
  * Revision 2.6  2001/08/23 03:15:51  robertj
@@ -480,7 +483,7 @@ void OpalLineConnection::Monitor(BOOL offHook)
 }
 
 
-void OpalLineConnection::HandleIncoming(PThread & thread, INT)
+void OpalLineConnection::HandleIncoming(PThread &, INT)
 {
   PTRACE(3, "LID Con\tHandling incoming call on " << *this);
 
@@ -496,7 +499,7 @@ void OpalLineConnection::HandleIncoming(PThread & thread, INT)
         Release(EndedByCallerAbort);
         return;
       }
-      thread.Sleep(100);
+      PThread::Sleep(100);
     } while (count < answerRingCount);
 
     // Get caller ID
