@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2016  2004/10/23 11:43:05  ykiryanov
+ * Revision 1.2017  2004/10/24 10:45:19  rjongbloed
+ * Back out change of strcasecmp to strcmp for WinCE
+ *
+ * Revision 2.15  2004/10/23 11:43:05  ykiryanov
  * Added ifdef _WIN32_WCE for PocketPC 2003 SDK port
  *
  * Revision 2.14  2004/04/27 07:22:40  rjongbloed
@@ -474,11 +477,7 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
   PINDEX i;
   for (i = 0; i < formats.GetSize(); i++) {
     if (formats[i].GetPayloadType() == payloadType ||
-#ifndef _WIN32_WCE
         strcasecmp(formats[i].GetEncodingName(), encodingName) == 0)
-#else
-        strcmp(formats[i].GetEncodingName(), encodingName) == 0)
-#endif
       return;
   }
 
