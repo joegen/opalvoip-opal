@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2015  2004/03/02 09:57:54  rjongbloed
+ * Revision 1.2016  2004/03/02 10:02:46  rjongbloed
+ * Added check for unusual error in reading UDP socket, thanks Michael Smith
+ *
+ * Revision 2.14  2004/03/02 09:57:54  rjongbloed
  * Fixed problems with recent changes to RTP UseSession() function which broke it for H.323
  *
  * Revision 2.13  2004/02/19 10:47:06  rjongbloed
@@ -1803,6 +1806,10 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(PUDPSocket & socket
     case ECONNREFUSED :
       PTRACE(2, "RTP_UDP\tSession " << sessionID << ", "
              << channelName << " port on remote not ready.");
+      return RTP_Session::e_IgnorePacket;
+
+    case EAGAIN :
+      // Shouldn't happen, but it does.
       return RTP_Session::e_IgnorePacket;
 
     default:
