@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2033  2004/04/26 04:33:06  rjongbloed
+ * Revision 1.2034  2004/05/01 10:00:52  rjongbloed
+ * Fixed ClearCallSynchronous so now is actually signalled when call is destroyed.
+ *
+ * Revision 2.32  2004/04/26 04:33:06  rjongbloed
  * Move various call progress times from H.323 specific to general conenction.
  *
  * Revision 2.31  2004/04/18 13:31:28  rjongbloed
@@ -305,7 +308,7 @@ void OpalConnection::LockOnRelease()
 }
 
 
-void OpalConnection::SetCallEndReason(CallEndReason reason, PSyncPoint *)
+void OpalConnection::SetCallEndReason(CallEndReason reason)
 {
   // Only set reason if not already set to something
   if (callEndReason == NumCallEndReasons) {

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2024  2004/04/25 02:53:29  rjongbloed
+ * Revision 1.2025  2004/05/01 10:00:52  rjongbloed
+ * Fixed ClearCallSynchronous so now is actually signalled when call is destroyed.
+ *
+ * Revision 2.23  2004/04/25 02:53:29  rjongbloed
  * Fixed GNU 3.4 warnings
  *
  * Revision 2.22  2004/04/18 07:09:12  rjongbloed
@@ -131,6 +134,7 @@ OpalCall::OpalCall(OpalManager & mgr)
   manager.AttachCall(this);
 
   isEstablished = FALSE;
+  endCallSyncPoint = NULL;
 
   callEndReason = OpalConnection::NumCallEndReasons;
 
@@ -144,6 +148,9 @@ OpalCall::OpalCall(OpalManager & mgr)
 OpalCall::~OpalCall()
 {
   PTRACE(3, "Call\t" << *this << " destroyed.");
+
+  if (endCallSyncPoint != NULL)
+    endCallSyncPoint->Signal();
 }
 
 
@@ -211,6 +218,15 @@ void OpalCall::Clear(OpalConnection::CallEndReason reason, PSyncPoint * sync)
 
   SetCallEndReason(reason);
 
+  if (sync != NULL) {
+    // only set the sync point if it is NULL
+    if (endCallSyncPoint == NULL)
+      endCallSyncPoint = sync;
+    else {
+      PAssertAlways("Can only have one thread doing ClearCallSynchronous");
+    }
+  }
+
   while (activeConnections.GetSize() > 0)
     InternalReleaseConnection(0, reason);
 
@@ -218,9 +234,6 @@ void OpalCall::Clear(OpalConnection::CallEndReason reason, PSyncPoint * sync)
 
   // Signal the background threads that there is some stuff to process.
   manager.SignalGarbageCollector();
-
-  if (sync != NULL)
-    sync->Wait();
 }
 
 
