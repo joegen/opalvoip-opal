@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2012  2002/04/15 08:54:46  robertj
+ * Revision 1.2013  2002/04/16 07:53:15  robertj
+ * Changes to support calls through proxies.
+ *
+ * Revision 2.11  2002/04/15 08:54:46  robertj
  * Fixed setting correct local UDP port on cancelling INVITE.
  *
  * Revision 2.10  2002/04/12 12:22:45  robertj
@@ -196,7 +199,7 @@ SIPURL::SIPURL(const PString & name,
 
 void SIPURL::Parse(const char * cstr)
 {
-  displayAddress.Delete(0, P_MAX_INDEX);
+  displayName = PString::Empty();
 
   PString str = cstr;
 
@@ -213,12 +216,12 @@ void SIPURL::Parse(const char * cstr)
     end = str.FindLast('"', start);
     start = str.FindLast('"', end-1);
     if (start == P_MAX_INDEX && end == P_MAX_INDEX)
-      displayAddress = str.Left(start-1).Trim();
+      displayName = str.Left(start-1).Trim();
     else if (start != P_MAX_INDEX && end != P_MAX_INDEX) {
       // No trim quotes off
-      displayAddress = str(start+1, end-1);
-      while ((start = displayAddress.Find('\\')) != P_MAX_INDEX)
-        displayAddress.Delete(start, 1);
+      displayName = str(start+1, end-1);
+      while ((start = displayName.Find('\\')) != P_MAX_INDEX)
+        displayName.Delete(start, 1);
     }
   }
 
@@ -234,17 +237,44 @@ void SIPURL::Parse(const char * cstr)
 }
 
 
+PString SIPURL::AsQuotedString() const
+{
+  PStringStream s;
+
+  if (!displayName)
+    s << '"' << displayName << "\" ";
+  s << '<' << AsString() << '>';
+
+  return s;
+}
+
+
 OpalTransportAddress SIPURL::GetHostAddress() const
 {
   PString addr;
+
   if (paramVars("transport") == "tcp")
     addr = OpalTransportAddress::TcpPrefix;
   else
     addr = OpalTransportAddress::UdpPrefix;
 
-  addr += hostname;
-  addr.sprintf(":%u", port);
+  if (paramVars.Contains("maddr"))
+    addr += paramVars["maddr"];
+  else
+    addr += hostname;
+
+  if (port != 0)
+    addr.sprintf(":%u", port);
+
   return addr;
+}
+
+
+void SIPURL::AdjustForRequestURI()
+{
+  paramVars.RemoveAt("tag");
+  queryVars.RemoveAll();
+  Recalculate();
 }
 
 
@@ -258,7 +288,7 @@ SIPMIMEInfo::SIPMIMEInfo(BOOL _compactForm)
 
 PINDEX SIPMIMEInfo::GetContentLength() const
 {
-  PString len = GetSIPString("Content-Length", 'l');
+  PString len = GetFullOrCompact("Content-Length", 'l');
   if (len.IsEmpty())
     return P_MAX_INDEX;
   return len.AsInteger();
@@ -267,7 +297,7 @@ PINDEX SIPMIMEInfo::GetContentLength() const
 
 PString SIPMIMEInfo::GetContentType() const
 {
-  return GetSIPString("Content-Type", 'c');
+  return GetFullOrCompact("Content-Type", 'c');
 }
 
 
@@ -279,7 +309,7 @@ void SIPMIMEInfo::SetContentType(const PString & v)
 
 PString SIPMIMEInfo::GetContentEncoding() const
 {
-  return GetSIPString("Content-Encoding", 'e');
+  return GetFullOrCompact("Content-Encoding", 'e');
 }
 
 
@@ -291,7 +321,7 @@ void SIPMIMEInfo::SetContentEncoding(const PString & v)
 
 PString SIPMIMEInfo::GetFrom() const
 {
-  return GetSIPString("From", 'f');
+  return GetFullOrCompact("From", 'f');
 }
 
 
@@ -303,7 +333,7 @@ void SIPMIMEInfo::SetFrom(const PString & v)
 
 PString SIPMIMEInfo::GetCallID() const
 {
-  return GetSIPString("Call-ID", 'i');
+  return GetFullOrCompact("Call-ID", 'i');
 }
 
 
@@ -315,7 +345,7 @@ void SIPMIMEInfo::SetCallID(const PString & v)
 
 PString SIPMIMEInfo::GetContact() const
 {
-  return GetSIPString("Contact", 'm');
+  return GetFullOrCompact("Contact", 'm');
 }
 
 
@@ -325,19 +355,15 @@ void SIPMIMEInfo::SetContact(const PString & v)
 }
 
 
-void SIPMIMEInfo::SetContact(const PURL & url, const char * name)
+void SIPMIMEInfo::SetContact(const SIPURL & url)
 {
-  PStringStream s;
-  if (name != NULL && *name != '\0')
-    s << '"' << name << "\" ";
-  s << '<' << url << '>';
-  SetContact(s);
+  SetContact(url.AsQuotedString());
 }
 
 
 PString SIPMIMEInfo::GetSubject() const
 {
-  return GetSIPString("Subject", 's');
+  return GetFullOrCompact("Subject", 's');
 }
 
 
@@ -349,7 +375,7 @@ void SIPMIMEInfo::SetSubject(const PString & v)
 
 PString SIPMIMEInfo::GetTo() const
 {
-  return GetSIPString("To", 't');
+  return GetFullOrCompact("To", 't');
 }
 
 
@@ -361,7 +387,7 @@ void SIPMIMEInfo::SetTo(const PString & v)
 
 PString SIPMIMEInfo::GetVia() const
 {
-  return GetSIPString("Via", 'v');
+  return GetFullOrCompact("Via", 'v');
 }
 
 
@@ -389,19 +415,61 @@ void SIPMIMEInfo::SetCSeq(const PString & v)
 }
 
 
-PString SIPMIMEInfo::GetRecordRoute() const
+PStringList SIPMIMEInfo::GetRoute() const
 {
-  return (*this)("Record-Route");
+  return GetRouteList("Route");
 }
 
 
-void SIPMIMEInfo::SetRecordRoute(const PString & v)
+void SIPMIMEInfo::SetRoute(const PStringList & v)
 {
-  SetAt("Record-Route",  v);
+  SetRouteList("Route",  v);
 }
 
 
-PString SIPMIMEInfo::GetSIPString(const char * fullForm, char compactForm) const
+PStringList SIPMIMEInfo::GetRecordRoute() const
+{
+  return GetRouteList("Record-Route");
+}
+
+
+void SIPMIMEInfo::SetRecordRoute(const PStringList & v)
+{
+  SetRouteList("Record-Route",  v);
+}
+
+
+PStringList SIPMIMEInfo::GetRouteList(const char * name) const
+{
+  PStringList routeSet;
+
+  PString s = (*this)(name);
+  PINDEX left;
+  PINDEX right = 0;
+  while ((left = s.Find('<', right)) != P_MAX_INDEX &&
+         (right = s.Find('>', left)) != P_MAX_INDEX &&
+         (right - left) > 5)
+    routeSet.AppendString(s(left+1, right-1));
+
+  return routeSet;
+}
+
+
+void SIPMIMEInfo::SetRouteList(const char * name, const PStringList & v)
+{
+  PStringStream s;
+
+  for (PINDEX i = 0; i < v.GetSize(); i++) {
+    if (i > 0)
+      s << ',';
+    s << '<' << v[i] << '>';
+  }
+
+  SetAt(name,  s);
+}
+
+
+PString SIPMIMEInfo::GetFullOrCompact(const char * fullForm, char compactForm) const
 {
   if (Contains(PCaselessString(fullForm)))
     return (*this)[fullForm];
@@ -566,13 +634,14 @@ SIP_PDU::SIP_PDU()
 
 
 SIP_PDU::SIP_PDU(Methods method,
+                 const SIPURL & dest,
                  const PString & to,
                  const PString & from,
                  const PString & callID,
                  unsigned cseq,
                  const OpalTransportAddress & via)
 {
-  Construct(method, to, from, callID, cseq, via);
+  Construct(method, dest, to, from, callID, cseq, via);
 }
 
 
@@ -674,6 +743,7 @@ void SIP_PDU::Construct(Methods meth)
 
 
 void SIP_PDU::Construct(Methods meth,
+                        const SIPURL & dest,
                         const PString & to,
                         const PString & from,
                         const PString & callID,
@@ -682,8 +752,8 @@ void SIP_PDU::Construct(Methods meth,
 {
   Construct(meth);
 
-  uri = to;
-  uri.SetParamVar("tag", PString::Empty());
+  uri = dest;
+  uri.AdjustForRequestURI();
 
   mime.SetTo(to);
   mime.SetFrom(from);
@@ -722,11 +792,27 @@ void SIP_PDU::Construct(Methods meth,
   mime.SetContact(contact);
 
   Construct(meth,
+            connection.GetTargetAddress(),
             connection.GetRemotePartyAddress(),
             connection.GetLocalPartyAddress(),
             connection.GetToken(),
             connection.GetNextCSeq(),
             localAddress);
+
+  PStringList routeSet = connection.GetRouteSet();
+  if (!routeSet.IsEmpty()) {
+    SIPURL firstRoute = routeSet[0];
+    if (!firstRoute.GetParamVars().Contains("lr")) {
+      routeSet.MakeUnique();
+      routeSet.RemoveAt(0);
+// The spec says we should append the target URI onto the route list but if we
+// do, it doesn't work. What are we doing wrong?
+//      routeSet.AppendString(uri.AsString());
+      uri = firstRoute;
+      uri.AdjustForRequestURI();
+    }
+    mime.SetRoute(routeSet);
+  }
 }
 
 
@@ -922,7 +1008,7 @@ void SIPTransaction::BuildREGISTER(const SIPURL & name, const SIPURL & contact)
 {
   PString str = name.AsString();
   SIP_PDU::Construct(Method_REGISTER,
-                     str, str,
+                     str, str, str,
                      endpoint.GetRegistrationID(),
                      endpoint.GetNextCSeq(),
                      transport.GetLocalAddress());
@@ -951,7 +1037,8 @@ BOOL SIPTransaction::Start()
   retryTimer = endpoint.GetRetryTimeoutMin();
   completionTimer = endpoint.GetNonInviteTimeout();
   localAddress = transport.GetLocalAddress();
-  if (Write(transport))
+
+  if (transport.SetRemoteAddress(uri.GetHostAddress()) && Write(transport))
     return TRUE;
 
   SetTerminated(Terminated_TransportError);
@@ -982,6 +1069,7 @@ BOOL SIPTransaction::SendCANCEL()
 BOOL SIPTransaction::ResendCANCEL()
 {
   SIP_PDU cancel(Method_CANCEL,
+                 uri,
                  mime.GetTo(),
                  mime.GetFrom(),
                  mime.GetCallID(),
@@ -1020,18 +1108,6 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
     PTRACE(3, "SIP\tTransaction " << cseq << " response not for " << *this);
     return FALSE;
   }
-
-
-#if 0
-  // If response had a contact field then start using that address for all
-  // future communication with remote SIP endpoint
-  PString contact = response.GetMIME().GetContact();
-  if (!contact) {
-    SIPURL remote = contact;
-    transport.SetRemoteAddress(remote.GetHostAddress());
-  }
-#endif
-
 
   /* Really need to check if response is actually meant for us. Have a
      temporary cheat in assuming that we are only sending a given CSeq to one
@@ -1096,11 +1172,11 @@ void SIPTransaction::OnRetry(PTimer &, INT)
     return;
   }
 
-  PTimeInterval t = endpoint.GetRetryTimeoutMin()*(1<<retry);
-  if (t > endpoint.GetRetryTimeoutMax())
+  PTimeInterval timeout = endpoint.GetRetryTimeoutMin()*(1<<retry);
+  if (timeout > endpoint.GetRetryTimeoutMax())
     retryTimer = endpoint.GetRetryTimeoutMax();
   else
-    retryTimer = t;
+    retryTimer = timeout;
 }
 
 
@@ -1179,6 +1255,7 @@ BOOL SIPInvite::OnCompleted(SIP_PDU & response)
 
   // Build an ACK
   SIP_PDU ack(Method_ACK,
+              uri,
               mime.GetTo(),
               mime.GetFrom(),
               mime.GetCallID(),
