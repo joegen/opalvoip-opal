@@ -235,6 +235,10 @@ SOURCE=..\codec\g711codec.cxx
 # End Source File
 # Begin Source File
 
+SOURCE=..\codec\g726codec.cxx
+# End Source File
+# Begin Source File
+
 SOURCE=..\codec\gsmcodec.cxx
 # End Source File
 # Begin Source File
@@ -466,6 +470,18 @@ SOURCE=..\..\include\codec\allcodecs.h
 # Begin Source File
 
 SOURCE=..\..\include\codec\g711codec.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\codec\g7231codec.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\codec\g726codec.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\codec\g729codec.h
 # End Source File
 # Begin Source File
 
@@ -3103,6 +3119,98 @@ SOURCE=..\codec\lpc10\src\voicin.c
 SOURCE=..\codec\lpc10\src\vparms.c
 # ADD CPP /W1 /I "../codec/lpc10"
 # SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# End Group
+# Begin Group "G.726 Files"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\codec\g726\g726_16.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\g726\g726_24.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\g726\g726_32.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\g726\g726_40.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\g726\g72x.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\g726\g72x.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\g726\private.h
 # End Source File
 # End Group
 # End Target
