@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2024  2002/09/26 01:21:16  robertj
+ * Revision 1.2025  2002/10/09 04:26:57  robertj
+ * Fixed ability to call CloseWait() multiple times, thanks Ted Szoczei
+ *
+ * Revision 2.23  2002/09/26 01:21:16  robertj
  * Fixed error in trace output when get illegal transport address.
  *
  * Revision 2.22  2002/09/12 06:57:56  robertj
@@ -552,6 +555,7 @@ void OpalListener::CloseWait()
   if (thread != NULL) {
     PAssert(thread->WaitForTermination(1000), "Listener thread did not terminate");
     delete thread;
+    thread = NULL;
   }
 }
 
