@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalwavfile.h,v $
- * Revision 1.2004  2002/11/10 11:33:16  robertj
+ * Revision 1.2005  2004/07/15 12:19:22  rjongbloed
+ * Various enhancements to the VXML code
+ *
+ * Revision 2.3  2002/11/10 11:33:16  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.2  2002/09/16 02:52:33  robertj
@@ -32,8 +35,12 @@
  * Revision 2.1  2002/09/06 07:18:44  robertj
  * OPAL port.
  *
- * Revision 1.4  2002/09/06 06:20:37  robertj
- * More cosmetic changes
+ * Revision 1.6  2004/07/15 11:13:49  rjongbloed
+ * Migrated changes from crs_vxnml_devel branch into main trunk
+ *
+ * Revision 1.5.6.1  2004/07/07 07:10:11  csoutheren
+ * Changed to use new factory based PWAVFile
+ * Removed redundant blocking/unblocking when using G.723.1
  *
  * Revision 1.5  2002/09/16 01:14:15  robertj
  * Added #define so can select if #pragma interface/implementation is used on
@@ -114,29 +121,6 @@ class OpalWAVFile : public PWAVFile
       int opts = ModeDefault,     /// #OpenOptions enum# for open operation.
       unsigned format = fmt_PCM /// Type of WAV File to create
     );
-
-    /** All of the following functions are the same for their PWavFile equivalents,
-        but will automatically adjust if uLaw or ALaw format
-      */
-    unsigned GetFormat() const;
-
-    BOOL Read(void * buf, PINDEX len);
-
-    BOOL Write(const void * buf, PINDEX len);
-
-    off_t GetPosition() const;
-
-    BOOL SetPosition(off_t pos, FilePositionOrigin origin = Start);
-
-    unsigned GetSampleSize() const;
-
-    off_t GetDataLength();
-
-  protected:
-    void SetUnderlyingFormat(unsigned format);
-    BOOL IsFormatXLaw() const;
-    unsigned realFormat;
-    BOOL translate;
 };
 
 #endif // __OPALWAVFILE_H
