@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2013  2004/07/11 12:34:48  rjongbloed
+ * Revision 1.2014  2005/02/17 03:25:05  csoutheren
+ * Added support for audio codecs that consume and produce variable size
+ * frames, such as G.723.1
+ *
+ * Revision 2.12  2004/07/11 12:34:48  rjongbloed
  * Added function to get a list of all possible media formats that may be used given
  *   a list of media and taking into account all of the registered transcoders.
  *
@@ -375,14 +379,20 @@ class OpalFramedTranscoder : public OpalTranscoder
     virtual BOOL ConvertFrame(
       const BYTE * input,   /// Input data
       BYTE * output         /// Output data
-    ) = 0;
+    );
+    virtual BOOL ConvertFrame(
+      const BYTE * input,   /// Input data
+      PINDEX & consumed,    /// number of input bytes consumed
+      BYTE * output,        /// Output data
+      PINDEX & created      /// number of output bytes created  
+    );
   //@}
 
   protected:
     PINDEX     inputBytesPerFrame;
     PINDEX     outputBytesPerFrame;
-    PBYTEArray partialFrame;
-    PINDEX     partialBytes;
+    //PBYTEArray partialFrame;
+    //PINDEX     partialBytes;
 };
 
 

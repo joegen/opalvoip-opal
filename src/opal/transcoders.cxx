@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2011  2004/07/11 12:34:49  rjongbloed
+ * Revision 1.2012  2005/02/17 03:25:05  csoutheren
+ * Added support for audio codecs that consume and produce variable size
+ * frames, such as G.723.1
+ *
+ * Revision 2.10  2004/07/11 12:34:49  rjongbloed
  * Added function to get a list of all possible media formats that may be used given
  *   a list of media and taking into account all of the registered transcoders.
  *
@@ -295,12 +299,12 @@ OpalMediaFormatList OpalTranscoder::GetPossibleFormats(const OpalMediaFormatList
 
 OpalFramedTranscoder::OpalFramedTranscoder(const OpalTranscoderRegistration & registration,
                                            PINDEX inputBytes, PINDEX outputBytes)
-  : OpalTranscoder(registration),
-    partialFrame(inputBytes)
+  : OpalTranscoder(registration)
 {
   inputBytesPerFrame = inputBytes;
   outputBytesPerFrame = outputBytes;
-  partialBytes = 0;
+  //partialFrame = inputBytes;
+  //partialBytes = 0;
 }
 
 
@@ -318,46 +322,29 @@ BOOL OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFrame & 
   BYTE * outputPtr = output.GetPayloadPtr();
 
   while (inputLength > 0) {
-    // If have enough data and nothing in the reblocking buffer, just send it
-    // straight on to the device.
-    if (partialBytes == 0 && inputLength >= inputBytesPerFrame) {
-      if (!ConvertFrame(inputPtr, outputPtr))
-        return FALSE;
-      outputPtr += outputBytesPerFrame;
-      inputPtr += inputBytesPerFrame;
-      inputLength -= inputBytesPerFrame;
-    }
-    else {
-      BYTE * savedFramePtr = partialFrame.GetPointer(inputBytesPerFrame);
+    PINDEX consumed = inputBytesPerFrame;
+    PINDEX created  = outputBytesPerFrame;
 
-      // See if new chunk gives us enough for one frames worth
-      if ((partialBytes + inputLength) < inputBytesPerFrame) {
-        // Nope, just copy bytes into buffer and return
-        memcpy(savedFramePtr + partialBytes, inputPtr, inputLength);
-        partialBytes += inputLength;
-        return TRUE;
-      }
+    if (!ConvertFrame(inputPtr, consumed, outputPtr, created))
+      return FALSE;
 
-      /* Calculate bytes we want from the passed in buffer to fill a frame by
-         subtracting from full frame width the amount we have so far.
-       */
-      PINDEX left = inputBytesPerFrame - partialBytes;
-      memcpy(savedFramePtr + partialBytes, inputPtr, left);
-      partialBytes = 0;
-
-      // Convert the saved frame
-      if (!ConvertFrame(inputPtr, outputPtr))
-        return FALSE;
-
-      inputPtr += left;
-      inputLength -= left;
-      outputPtr += outputBytesPerFrame;
-    }
+    outputPtr   += created;
+    inputPtr    += consumed;
+    inputLength -= consumed;
   }
 
   return TRUE;
 }
 
+BOOL OpalFramedTranscoder::ConvertFrame(const BYTE * inputPtr, PINDEX & /*consumed*/, BYTE * outputPtr, PINDEX & /*created*/)
+{
+  return ConvertFrame(inputPtr, outputPtr);
+}
+
+BOOL OpalFramedTranscoder::ConvertFrame(const BYTE * /*inputPtr*/, BYTE * /*outputPtr*/)
+{
+  return FALSE;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 
