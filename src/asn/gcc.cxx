@@ -5,7 +5,7 @@
 //
 
 #ifdef P_USE_PRAGMA
-#pragma implementation "gccpdu.h"
+#pragma implementation "gcc.h"
 #endif
 
 #include <ptlib.h>
