@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.h,v $
- * Revision 1.2003  2001/08/17 08:33:38  robertj
+ * Revision 1.2004  2001/10/15 04:29:26  robertj
+ * Removed answerCall signal and replaced with state based functions.
+ *
+ * Revision 2.2  2001/08/17 08:33:38  robertj
  * More implementation.
  *
  * Revision 2.1  2001/08/01 05:52:24  robertj
@@ -262,7 +265,8 @@ class OpalPCSSConnection : public OpalConnection
        The default behaviour does nothing.
       */
     virtual BOOL SetAlerting(
-      const PString & calleeName    /// Name of endpoint being alerted.
+      const PString & calleeName,   /// Name of endpoint being alerted.
+      BOOL withMedia                /// Open media with alerting
     );
 
     /**Indicate to remote endpoint we are connected.
