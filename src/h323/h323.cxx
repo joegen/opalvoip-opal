@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2007  2001/10/03 05:56:15  robertj
+ * Revision 1.2008  2001/10/04 00:46:33  robertj
+ * Removed streams GetMediaFormats() function as is not useful.
+ *
+ * Revision 2.6  2001/10/03 05:56:15  robertj
  * Changes abndwidth management API.
  *
  * Revision 2.5  2001/08/22 10:20:09  robertj
@@ -1909,7 +1912,7 @@ BOOL H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_OctetStr
                     if (channelToStart.GetDirection() == H323Channel::IsTransmitter) {
                       if (channelToStart.Open()) {
                         fastStartedTransmitMediaStream = ((H323UnidirectionalChannel &)channelToStart).GetMediaStream();
-                        if (GetCall().OpenSourceMediaStreams(*this, fastStartedTransmitMediaStream->GetMediaFormats(), channelToStart.GetSessionID()))
+                        if (GetCall().OpenSourceMediaStreams(*this, fastStartedTransmitMediaStream->GetMediaFormat(), channelToStart.GetSessionID()))
                           channelToStart.Start();
                         else
                           fastStartedTransmitMediaStream = NULL;
@@ -2735,7 +2738,7 @@ void H323Connection::StartFastStartChannel(unsigned sessionID, H323Channel::Dire
       if (direction == H323Channel::IsTransmitter) {
         if (channel.Open()) {
           fastStartedTransmitMediaStream = ((H323UnidirectionalChannel &)channel).GetMediaStream();
-          if (GetCall().OpenSourceMediaStreams(*this, fastStartedTransmitMediaStream->GetMediaFormats(), channel.GetSessionID()))
+          if (GetCall().OpenSourceMediaStreams(*this, fastStartedTransmitMediaStream->GetMediaFormat(), channel.GetSessionID()))
             channel.Start();
           else
             fastStartedTransmitMediaStream = NULL;
