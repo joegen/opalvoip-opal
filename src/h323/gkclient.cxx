@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2003  2001/08/13 05:10:39  robertj
+ * Revision 1.2004  2001/08/17 08:30:21  robertj
+ * Update from OpenH323
+ * Moved call end reasons enum from OpalConnection to global.
+ *
+ * Revision 2.2  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
  *
  * Revision 2.1  2001/08/01 05:16:18  robertj
@@ -35,6 +39,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.64  2001/08/14 04:26:46  robertj
+ * Completed the Cisco compatible MD5 authentications, thanks Wolfgang Platzer.
  *
  * Revision 1.63  2001/08/13 01:27:03  robertj
  * Changed GK admission so can return multiple aliases to be used in
@@ -848,7 +855,7 @@ BOOL H323Gatekeeper::OnReceiveUnregistrationRequest(const H225_UnregistrationReq
     return FALSE;
 
   PTRACE(2, "RAS\tUnregistration received");
-  endpoint.ClearAllCalls(H323Connection::EndedByGatekeeper, FALSE);
+  endpoint.ClearAllCalls(EndedByGatekeeper, FALSE);
 
   PTRACE(3, "RAS\tUnregistered, calls cleared");
   isRegistered = FALSE;
@@ -1066,7 +1073,7 @@ BOOL H323Gatekeeper::OnReceiveDisengageRequest(const H225_DisengageRequest & drq
     id = drq.m_callIdentifier.m_guid;
   if (id == NULL)
     id = drq.m_conferenceID;
-  endpoint.ClearCall(id.AsString(), H323Connection::EndedByGatekeeper);
+  endpoint.ClearCall(id.AsString(), EndedByGatekeeper);
 
   H323RasPDU response(*this);
   response.BuildDisengageConfirm(drq.m_requestSeqNum);
@@ -1209,10 +1216,17 @@ H235Authenticators H323Gatekeeper::GetAuthenticators() const
 }
 
 
-void H323Gatekeeper::SetPassword(const PString & password)
+void H323Gatekeeper::SetPassword(const PString & password, 
+                                 const PString & username)
 {
-  for (PINDEX i = 0; i < authenticators.GetSize(); i++)
+  PString localId = username;
+  if (localId.IsEmpty())
+    localId = endpoint.GetLocalUserName();
+
+  for (PINDEX i = 0; i < authenticators.GetSize(); i++) {
+    authenticators[i].SetLocalId(localId);
     authenticators[i].SetPassword(password);
+  }
 }
 
 
