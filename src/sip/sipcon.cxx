@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2017  2002/04/15 08:53:58  robertj
+ * Revision 1.2018  2002/04/16 07:53:15  robertj
+ * Changes to support calls through proxies.
+ *
+ * Revision 2.16  2002/04/15 08:53:58  robertj
  * Fixed correct setting of jitter buffer size in RTP media stream.
  * Fixed starting incoming (not outgoing!) media on call progress.
  *
@@ -442,22 +445,22 @@ void SIPConnection::InitiateCall(const SIPURL & destination)
 {
   PTRACE(2, "SIP\tInitiating connection to " << destination);
 
-  originalDestination = destination;
+  targetAddress = destination;
   originating = TRUE;
 
-  PStringToString params = originalDestination.GetParamVars();
+  PStringToString params = targetAddress.GetParamVars();
   if (params.Contains("proxyusername") && params.Contains("proxypassword")) {
     localPartyName = params["proxyusername"];
     authentication.SetUsername(localPartyName);
-    originalDestination.SetParamVar("proxyusername", PString::Empty());
+    targetAddress.SetParamVar("proxyusername", PString::Empty());
     authentication.SetPassword(params["proxypassword"]);
-    originalDestination.SetParamVar("proxypassword", PString::Empty());
+    targetAddress.SetParamVar("proxypassword", PString::Empty());
     PTRACE(3, "SIP\tExtracted proxy authentication user=\"" << localPartyName << '"');
   }
 
-  remotePartyAddress = '<' + originalDestination.AsString() + '>';
+  remotePartyAddress = targetAddress.AsQuotedString();
 
-  OpalTransportAddress address = originalDestination.GetHostAddress();
+  OpalTransportAddress address = targetAddress.GetHostAddress();
 
   delete transport;
   transport = address.CreateTransport(endpoint, OpalTransportAddress::NoBinding);
@@ -603,9 +606,11 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
 
 void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
 {
+  PINDEX i;
+
   if (transaction.GetMethod() == SIP_PDU::Method_INVITE) {
     // Have a response to the INVITE, so CANCEL al the other invitations sent.
-    for (PINDEX i = 0; i < invitations.GetSize(); i++) {
+    for (i = 0; i < invitations.GetSize(); i++) {
       if (&invitations[i] != &transaction)
         invitations[i].SendCANCEL();
     }
@@ -617,17 +622,22 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
     // Have a response to the INVITE, so end Connect mode on the transport
     transaction.GetTransport().EndConnect(transaction.GetLocalAddress());
+
+    // Get teh route set from the Record-Route response field (in reverse order)
+    PStringList recordRoute = response.GetMIME().GetRecordRoute();
+    routeSet.RemoveAll();
+    for (i = recordRoute.GetSize(); i > 0; i--)
+      routeSet.AppendString(recordRoute[i-1]);
   }
 
-#if 0
-  // If response had a contact field then start using that address for all
+  // If current SIP dialog does not have a route set (via Record-Route) and 
+  // this response had a contact field then start using that address for all
   // future communication with remote SIP endpoint
-  PString contact = response.GetMIME().GetContact();
-  if (!contact) {
-    SIPURL remote = contact;
-    transport->SetRemoteAddress(remote.GetHostAddress());
+  if (routeSet.IsEmpty()) {
+    PString contact = response.GetMIME().GetContact();
+    if (!contact)
+      targetAddress = contact;
   }
-#endif
 
   switch (response.GetStatusCode()) {
     case SIP_PDU::Information_Session_Progress :
@@ -762,16 +772,10 @@ void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
 }
 
 
-void SIPConnection::OnReceivedRedirection(SIP_PDU & response)
+void SIPConnection::OnReceivedRedirection(SIP_PDU & /*response*/)
 {
-  // extract the contact field, and set that as the new Contact address
-  PString newContact = response.GetMIME()("Contact");
-  PTRACE(2, "SIP\tCall redirected to " << newContact);
-  SIPURL newURL(newContact);
-  transport->SetRemoteAddress(newURL.GetHostAddress());
-
-  // set the remote party address
-  remotePartyAddress = newContact;
+  // set the remote party address, targetAddress already set to Contact field
+  remotePartyAddress = targetAddress.AsQuotedString();
 
   // send a new INVITE
   SIPTransaction * invite = new SIPInvite(*this, *transport);
@@ -813,7 +817,7 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
   }
 
   // make sure the To field is the same as the original
-  remotePartyAddress = originalDestination.AsString();
+  remotePartyAddress = targetAddress.AsQuotedString();
 
   // Restart the transaction with new authentication info
   SIPTransaction * invite = new SIPInvite(*this, *transport);

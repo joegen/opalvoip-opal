@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2011  2002/04/10 03:13:45  robertj
+ * Revision 1.2012  2002/04/16 07:53:15  robertj
+ * Changes to support calls through proxies.
+ *
+ * Revision 2.10  2002/04/10 03:13:45  robertj
  * Moved code for handling media bypass address resolution into ancestor as
  *   now done ths same way in both SIP and H.323.
  * Major changes to RTP session management when initiating an INVITE.
@@ -275,8 +278,18 @@ class SIPConnection : public OpalConnection
       unsigned rtpSessionId
     );
 
+    void AddTransaction(
+      SIPTransaction * transaction
+    ) { transactions.SetAt(transaction->GetTransactionID(), transaction); }
+
+    void RemoveTransaction(
+      SIPTransaction * transaction
+    ) { transactions.SetAt(transaction->GetTransactionID(), NULL); }
+
+
     OpalTransportAddress GetLocalAddress(WORD port = 0) const;
     RTP_Session * UseRTPSession(RTP_SessionManager & rtpSessions, unsigned rtpSessionId);
+
 
     OpalTransport & GetTransport() const { return *transport; }
 
@@ -287,16 +300,10 @@ class SIPConnection : public OpalConnection
     ) { localPartyAddress = addr; }
 
     SIPEndPoint & GetEndPoint() const { return endpoint; }
+    const SIPURL & GetTargetAddress() const { return targetAddress; }
+    const PStringList & GetRouteSet() const { return routeSet; }
 
     const SIPAuthentication & GetAuthentication() const { return authentication; }
-
-    void AddTransaction(
-      SIPTransaction * transaction
-    ) { transactions.SetAt(transaction->GetTransactionID(), transaction); }
-
-    void RemoveTransaction(
-      SIPTransaction * transaction
-    ) { transactions.SetAt(transaction->GetTransactionID(), NULL); }
 
   protected:
     PDECLARE_NOTIFIER(PThread, SIPConnection, HandlePDUsThreadMain);
@@ -307,9 +314,10 @@ class SIPConnection : public OpalConnection
     Phases          currentPhase;
     OpalTransport * transport;
 
-    PString   localPartyAddress;
-    SIP_PDU * originalInvite;
-    SIPURL    originalDestination;
+    PString           localPartyAddress;
+    SIP_PDU         * originalInvite;
+    PStringList       routeSet;
+    SIPURL            targetAddress;
     SIPAuthentication authentication;
 
     SIP_PDU_Queue pduQueue;
