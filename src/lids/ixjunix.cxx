@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjunix.cxx,v $
- * Revision 1.2003  2001/08/13 05:10:40  robertj
+ * Revision 1.2004  2001/08/21 01:08:31  robertj
+ * Changed semantics of IsLineDisconnected() when on POTS line.
+ *
+ * Revision 2.2  2001/08/13 05:10:40  robertj
  * Updates from OpenH323 v1.6.0 release.
  *
  * Revision 2.1  2001/08/01 05:21:21  robertj
@@ -987,9 +990,11 @@ BOOL OpalIxJDevice::RingLine(unsigned line, PINDEX nCadence, unsigned * pattern)
 
 BOOL OpalIxJDevice::IsLineDisconnected(unsigned line, BOOL checkForWink)
 {
+  if (line >= GetLineCount())
+    return FALSE;
 
   if (line != PSTNLine)
-    return FALSE;
+    return !IsLineOffHook(line);
 
   if (checkForWink) {
 
