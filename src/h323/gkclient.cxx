@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2022  2005/01/16 23:07:33  csoutheren
+ * Revision 1.2023  2005/02/21 19:24:18  dsandras
+ * Fixed problem with GRQ timeout not being set.
+ *
+ * Revision 2.21  2005/01/16 23:07:33  csoutheren
  * Fixed problem with IPv6 INADDR_ANY
  *
  * Revision 2.20  2004/08/14 07:56:30  rjongbloed
@@ -741,6 +744,7 @@ BOOL H323Gatekeeper::StartDiscovery(const H323TransportAddress & initialAddress)
     }
 
     H323RasPDU response;
+    transport->SetReadTimeout(endpoint.GetGatekeeperRequestTimeout ());
     if (response.Read(*transport) && HandleTransaction(response) && discoveryComplete)
       break;
   }
@@ -2191,6 +2195,7 @@ void H323Gatekeeper::Connect(const H323TransportAddress & address,
 
   transport->SetRemoteAddress(address);
   transport->Connect();
+
   gatekeeperIdentifier = gkid;
 }
 
