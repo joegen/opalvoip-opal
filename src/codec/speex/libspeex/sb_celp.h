@@ -57,7 +57,7 @@ typedef struct SBEncState {
    float  gamma1;              /**< Perceptual weighting coef 1 */
    float  gamma2;              /**< Perceptual weighting coef 2 */
 
-   void  *stack;               /**< Temporary allocation stack */
+   char  *stack;               /**< Temporary allocation stack */
    float *x0d, *x1d; /**< QMF filter signals*/
    float *high;                /**< High-band signal (buffer) */
    float *y0, *y1;             /**< QMF synthesis signals */
@@ -121,7 +121,7 @@ typedef struct SBDecState {
    int    sampling_rate;
    int    lpc_enh_enabled;
 
-   void  *stack;
+   char  *stack;
    float *x0d, *x1d;
    float *high;
    float *y0, *y1;
@@ -160,8 +160,8 @@ void sb_decoder_destroy(void *state);
 /**Decodes one frame*/
 int sb_decode(void *state, SpeexBits *bits, float *out);
 
-void sb_encoder_ctl(void *state, int request, void *ptr);
+int sb_encoder_ctl(void *state, int request, void *ptr);
 
-void sb_decoder_ctl(void *state, int request, void *ptr);
+int sb_decoder_ctl(void *state, int request, void *ptr);
 
 #endif

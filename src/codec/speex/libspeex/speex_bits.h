@@ -45,20 +45,24 @@ extern "C" {
 
 /** Bit-packing data structure representing (part of) a bit-stream. */
 typedef struct SpeexBits {
-   char *bytes; /**< "raw" data */
-   int  nbBits; /**< Total number of bits stored in the stream*/
-   int  bytePtr; /**< Position of the byte "cursor" */
-   int  bitPtr;  /**< Position of the bit "cursor" within the current byte */
-   int  owner; /**< Does the struct "own" the "raw" buffer (member "bytes") */
+   char *bytes;   /**< "raw" data */
+   int   nbBits;  /**< Total number of bits stored in the stream*/
+   int   bytePtr; /**< Position of the byte "cursor" */
+   int   bitPtr;  /**< Position of the bit "cursor" within the current byte */
+   int   owner;   /**< Does the struct "own" the "raw" buffer (member "bytes") */
+   int   overflow;/**< Set to one if we try to read past the valid data */
+   int   buf_size;/**< Allocated size for buffer */
+   int   reserved1; /**< Reserved for future use */
+   void *reserved2; /**< Reserved for future use */
 } SpeexBits;
 
 /** Initializes and allocates resources for a SpeexBits struct */
 void speex_bits_init(SpeexBits *bits);
 
 /** Initializes SpeexBits struct using a pre-allocated buffer*/
-void speex_bits_init_buffer(SpeexBits *bits, void *buff);
+void speex_bits_init_buffer(SpeexBits *bits, void *buff, int buf_size);
 
-/** Frees all resources assiociated to a SpeexBits struct. Right now this does nothing since no resources are allocated, but this could change in the future.*/
+/** Frees all resources associated to a SpeexBits struct. Right now this does nothing since no resources are allocated, but this could change in the future.*/
 void speex_bits_destroy(SpeexBits *bits);
 
 /** Resets bits to initial value (just after initialization, erasing content)*/
@@ -127,8 +131,14 @@ int speex_bits_peek(SpeexBits *bits);
  *
  * @param bits Bit-stream to operate on
  * @param n Number of bits to advance
- * */
+ */
 void speex_bits_advance(SpeexBits *bits, int n);
+
+/** Returns the number of bits remaining to be read in a stream
+ *
+ * @param bits Bit-stream to operate on
+ */
+int speex_bits_remaining(SpeexBits *bits);
 
 #ifdef __cplusplus
 }

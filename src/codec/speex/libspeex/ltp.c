@@ -1,6 +1,6 @@
 /* Copyright (C) 2002 Jean-Marc Valin 
    File: ltp.c
-   Lont-Term Prediction functions
+   Long-Term Prediction functions
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
@@ -31,7 +31,6 @@
 */
 
 #include <math.h>
-#include <stdio.h>
 #include "ltp.h"
 #include "stack_alloc.h"
 #include "filters.h"
@@ -68,7 +67,7 @@ static float inner_prod(float *x, float *y, int len)
 */
 
 
-void open_loop_nbest_pitch(float *sw, int start, int end, int len, int *pitch, float *gain, int N, void *stack)
+void open_loop_nbest_pitch(float *sw, int start, int end, int len, int *pitch, float *gain, int N, char *stack)
 {
    int i,j,k;
    /*float corr=0;*/
@@ -152,7 +151,7 @@ int   pitch,                    /* Pitch value */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
-void *stack,
+char *stack,
 float *exc2,
 float *r,
 int  *cdbk_index
@@ -166,7 +165,7 @@ int  *cdbk_index
    float A[3][3];
    float gain[3];
    int   gain_cdbk_size;
-   float *gain_cdbk;
+   signed char *gain_cdbk;
    float err1,err2;
 
    ltp_params *params;
@@ -216,9 +215,8 @@ int  *cdbk_index
          A[i][j]=A[j][i]=inner_prod(x[i],x[j],nsf);
    
    {
-      int j;
       float C[9];
-      float *ptr=gain_cdbk;
+      signed char *ptr=gain_cdbk;
       int best_cdbk=0;
       float best_sum=0;
       C[0]=corr[2];
@@ -234,9 +232,23 @@ int  *cdbk_index
       for (i=0;i<gain_cdbk_size;i++)
       {
          float sum=0;
-         ptr = gain_cdbk+12*i;
-         for (j=0;j<9;j++)
-            sum+=C[j]*ptr[j+3];
+         float g0,g1,g2;
+         ptr = gain_cdbk+3*i;
+         g0=0.015625*ptr[0]+.5;
+         g1=0.015625*ptr[1]+.5;
+         g2=0.015625*ptr[2]+.5;
+
+         sum += C[0]*g0;
+         sum += C[1]*g1;
+         sum += C[2]*g2;
+         sum -= C[3]*g0*g1;
+         sum -= C[4]*g2*g1;
+         sum -= C[5]*g2*g0;
+         sum -= .5*C[6]*g0*g0;
+         sum -= .5*C[7]*g1*g1;
+         sum -= .5*C[8]*g2*g2;
+
+         /* If 1, force "safe" pitch values to handle packet loss better */
          if (0) {
             float tot = fabs(ptr[1]);
             if (ptr[0]>0)
@@ -246,76 +258,22 @@ int  *cdbk_index
             if (tot>1)
                continue;
          }
-         if (0) {
-            float tot=ptr[0]+ptr[1]+ptr[2];
-            if (tot < 1.1)
-               sum *= 1+.15*tot;
-         }
+
          if (sum>best_sum || i==0)
          {
             best_sum=sum;
             best_cdbk=i;
          }
       }
-      gain[0] = gain_cdbk[best_cdbk*12];
-      gain[1] = gain_cdbk[best_cdbk*12+1];
-      gain[2] = gain_cdbk[best_cdbk*12+2];
+      gain[0] = 0.015625*gain_cdbk[best_cdbk*3]  + .5;
+      gain[1] = 0.015625*gain_cdbk[best_cdbk*3+1]+ .5;
+      gain[2] = 0.015625*gain_cdbk[best_cdbk*3+2]+ .5;
 
       *cdbk_index=best_cdbk;
-   }
-   /* Calculate gains by matrix inversion... (unquantized) */
-   if (0) {
-      float tmp;
-      float B[3][3];
-      A[0][0]+=1;
-      A[1][1]+=1;
-      A[2][2]+=1;
-      
-      for (i=0;i<3;i++)
-         for (j=0;j<3;j++)
-            B[i][j]=A[i][j];
-
-
-      tmp=A[1][0]/A[0][0];
-      for (i=0;i<3;i++)
-         A[1][i] -= tmp*A[0][i];
-      corr[1] -= tmp*corr[0];
-
-      tmp=A[2][0]/A[0][0];
-      for (i=0;i<3;i++)
-         A[2][i] -= tmp*A[0][i];
-      corr[2] -= tmp*corr[0];
-      
-      tmp=A[2][1]/A[1][1];
-      A[2][2] -= tmp*A[1][2];
-      corr[2] -= tmp*corr[1];
-
-      corr[2] /= A[2][2];
-      corr[1] = (corr[1] - A[1][2]*corr[2])/A[1][1];
-      corr[0] = (corr[0] - A[0][2]*corr[2] - A[0][1]*corr[1])/A[0][0];
-      /*printf ("\n%f %f %f\n", best_corr[0], best_corr[1], best_corr[2]);*/
-
-   
-      /* Put gains in right order */
-      gain[0]=corr[2];gain[1]=corr[1];gain[2]=corr[0];
-
-      {
-         float gain_sum = gain[0]+gain[1]+gain[2];
-         if (fabs(gain_sum)>2.5)
-         {
-            float fact = 2.5/gain_sum;
-            for (i=0;i<3;i++)
-               gain[i]*=fact;
-         }
-      }
-      
    }
    
    for (i=0;i<nsf;i++)
       exc[i]=gain[0]*e[2][i]+gain[1]*e[1][i]+gain[2]*e[0][i];
-#ifdef DEBUG
-   printf ("3-tap pitch = %d, gains = [%f %f %f]\n",pitch, gain[0], gain[1], gain[2]);
-#endif
    
    err1=0;
    err2=0;
@@ -324,9 +282,6 @@ int  *cdbk_index
    for (i=0;i<nsf;i++)
       err2+=(target[i]-gain[2]*x[0][i]-gain[1]*x[1][i]-gain[0]*x[2][i])
       * (target[i]-gain[2]*x[0][i]-gain[1]*x[1][i]-gain[0]*x[2][i]);
-#ifdef DEBUG
-   printf ("prediction gain = %f\n",err1/(err2+1));
-#endif
 
    return err2;
 }
@@ -347,7 +302,7 @@ float pitch_coef,               /* Voicing (pitch) coefficient */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
-void *stack,
+char *stack,
 float *exc2,
 float *r,
 int complexity
@@ -422,7 +377,7 @@ int   nsf,                      /* Number of samples in subframe */
 int *pitch_val,
 float *gain_val,
 SpeexBits *bits,
-void *stack,
+char *stack,
 int count_lost,
 int subframe_offset,
 float last_pitch_gain)
@@ -431,7 +386,7 @@ float last_pitch_gain)
    int pitch;
    int gain_index;
    float gain[3];
-   float *gain_cdbk;
+   signed char *gain_cdbk;
    ltp_params *params;
    params = (ltp_params*) par;
    gain_cdbk=params->gain_cdbk;
@@ -440,9 +395,9 @@ float last_pitch_gain)
    pitch += start;
    gain_index = speex_bits_unpack_unsigned(bits, params->gain_bits);
    /*printf ("decode pitch: %d %d\n", pitch, gain_index);*/
-   gain[0] = gain_cdbk[gain_index*12];
-   gain[1] = gain_cdbk[gain_index*12+1];
-   gain[2] = gain_cdbk[gain_index*12+2];
+   gain[0] = 0.015625*gain_cdbk[gain_index*3]+.5;
+   gain[1] = 0.015625*gain_cdbk[gain_index*3+1]+.5;
+   gain[2] = 0.015625*gain_cdbk[gain_index*3+2]+.5;
 
    if (count_lost && pitch > subframe_offset)
    {
@@ -466,9 +421,6 @@ float last_pitch_gain)
 	    for (i=0;i<3;i++)
 	       gain[i]*=fact;
 
-#ifdef DEBUG
-	 printf ("recovered unquantized pitch: %d, gain: [%f %f %f] (fact=%f)\n", pitch, gain[0], gain[1], gain[2], fact);
-#endif
 	 }
 
       }
@@ -488,10 +440,6 @@ float last_pitch_gain)
    gain_val[0]=gain[0];
    gain_val[1]=gain[1];
    gain_val[2]=gain[2];
-
-#ifdef DEBUG
-   printf ("unquantized pitch: %d %f %f %f\n", pitch, gain[0], gain[1], gain[2]);
-#endif
 
    {
       float *e[3];
@@ -517,18 +465,18 @@ float last_pitch_gain)
          }
 #else
          {
-            int tmp1, tmp2;
+            int tmp1, tmp3;
             tmp1=nsf;
             if (tmp1>pp)
                tmp1=pp;
             for (j=0;j<tmp1;j++)
                e[i][j]=exc[j-pp];
-            tmp2=nsf;
-            if (tmp2>pp+pitch)
-               tmp2=pp+pitch;
-            for (j=tmp1;j<tmp2;j++)
+            tmp3=nsf;
+            if (tmp3>pp+pitch)
+               tmp3=pp+pitch;
+            for (j=tmp1;j<tmp3;j++)
                e[i][j]=exc[j-pp-pitch];
-            for (j=tmp2;j<nsf;j++)
+            for (j=tmp3;j<nsf;j++)
                e[i][j]=0;
          }
 #endif
@@ -554,15 +502,15 @@ float pitch_coef,               /* Voicing (pitch) coefficient */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
-void *stack,
+char *stack,
 float *exc2,
 float *r,
 int complexity
 )
 {
    int i;
-   if (pitch_coef>.9)
-      pitch_coef=.9;
+   if (pitch_coef>.99)
+      pitch_coef=.99;
    for (i=0;i<nsf;i++)
    {
       exc[i]=exc[i-start]*pitch_coef;
@@ -581,15 +529,15 @@ int   nsf,                      /* Number of samples in subframe */
 int *pitch_val,
 float *gain_val,
 SpeexBits *bits,
-void *stack,
+char *stack,
 int count_lost,
 int subframe_offset,
 float last_pitch_gain)
 {
    int i;
    /*pitch_coef=.9;*/
-   if (pitch_coef>.9)
-      pitch_coef=.9;
+   if (pitch_coef>.99)
+      pitch_coef=.99;
    for (i=0;i<nsf;i++)
    {
       exc[i]=exc[i-start]*pitch_coef;

@@ -44,7 +44,7 @@
 
 /**Structure representing the full state of the narrowband encoder*/
 typedef struct EncState {
-   SpeexMode *mode;       /**< Mode curresponding to the state */
+   SpeexMode *mode;       /**< Mode corresponding to the state */
    int    first;          /**< Is this the first frame? */
    int    frameSize;      /**< Size of frames */
    int    subframeSize;   /**< Size of sub-frames */
@@ -62,12 +62,12 @@ typedef struct EncState {
    int   *pitch;
    float  gamma1;         /**< Perceptual filter: A(z/gamma1) */
    float  gamma2;         /**< Perceptual filter: A(z/gamma2) */
-   float  lag_factor;     /**< Lag windowing gaussian width */
+   float  lag_factor;     /**< Lag windowing Gaussian width */
    float  lpc_floor;      /**< Noise floor multiplier for A[0] in LPC analysis*/
    float  preemph;        /**< Pre-emphasis: P(z) = 1 - a*z^-1*/
    float  pre_mem;        /**< 1-element memory for pre-emphasis */
    float  pre_mem2;       /**< 1-element memory for pre-emphasis */
-   void  *stack;          /**< Pseudo-stack allocation for temporary memory */
+   char  *stack;          /**< Pseudo-stack allocation for temporary memory */
    float *inBuf;          /**< Input buffer (original signal) */
    float *frame;          /**< Start of original frame */
    float *excBuf;         /**< Excitation buffer */
@@ -120,7 +120,7 @@ typedef struct EncState {
 
 /**Structure representing the full state of the narrowband decoder*/
 typedef struct DecState {
-   SpeexMode *mode;       /**< Mode curresponding to the state */
+   SpeexMode *mode;       /**< Mode corresponding to the state */
    int    first;          /**< Is this the first frame? */
    int    count_lost;     /**< Was the last frame lost? */
    int    frameSize;      /**< Size of frames */
@@ -132,14 +132,14 @@ typedef struct DecState {
    int    min_pitch;      /**< Minimum pitch value allowed */
    int    max_pitch;      /**< Maximum pitch value allowed */
    int    sampling_rate;
-   int    last_ol_gain;   /**< Open-loop gain for previous frame */
+   float  last_ol_gain;   /**< Open-loop gain for previous frame */
 
 
    float  gamma1;         /**< Perceptual filter: A(z/gamma1) */
    float  gamma2;         /**< Perceptual filter: A(z/gamma2) */
    float  preemph;        /**< Pre-emphasis: P(z) = 1 - a*z^-1*/
    float  pre_mem;        /**< 1-element memory for pre-emphasis */
-   void  *stack;          /**< Pseudo-stack allocation for temporary memory */
+   char  *stack;          /**< Pseudo-stack allocation for temporary memory */
    float *inBuf;          /**< Input buffer (original signal) */
    float *frame;          /**< Start of original frame */
    float *excBuf;         /**< Excitation buffer */
@@ -169,6 +169,8 @@ typedef struct DecState {
    float  voc_m2;
    float  voc_mean;
    int    voc_offset;
+
+   int    dtx_enabled;
 } DecState;
 
 /** Initializes encoder state*/
@@ -191,10 +193,10 @@ void nb_decoder_destroy(void *state);
 int nb_decode(void *state, SpeexBits *bits, float *out);
 
 /** ioctl-like function for controlling a narrowband encoder */
-void nb_encoder_ctl(void *state, int request, void *ptr);
+int nb_encoder_ctl(void *state, int request, void *ptr);
 
 /** ioctl-like function for controlling a narrowband decoder */
-void nb_decoder_ctl(void *state, int request, void *ptr);
+int nb_decoder_ctl(void *state, int request, void *ptr);
 
 
 #endif

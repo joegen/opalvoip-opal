@@ -38,7 +38,7 @@
 typedef struct split_cb_params {
    int     subvect_size;
    int     nb_subvect;
-   float  *shape_cb;
+   signed char  *shape_cb;
    int     shape_bits;
    int     have_sign;
 } split_cb_params;
@@ -55,7 +55,7 @@ int   nsf,                      /* number of samples in subframe */
 float *exc,
 float *r,
 SpeexBits *bits,
-void *stack,
+char *stack,
 int   complexity
 );
 
@@ -64,7 +64,7 @@ float *exc,
 void *par,                      /* non-overlapping codebook */
 int   nsf,                      /* number of samples in subframe */
 SpeexBits *bits,
-void *stack
+char *stack
 );
 
 
@@ -79,7 +79,7 @@ int   nsf,                      /* number of samples in subframe */
 float *exc,
 float *r,
 SpeexBits *bits,
-void *stack,
+char *stack,
 int   complexity
 );
 
@@ -89,7 +89,7 @@ float *exc,
 void *par,                      /* non-overlapping codebook */
 int   nsf,                      /* number of samples in subframe */
 SpeexBits *bits,
-void *stack
+char *stack
 );
 
 #endif
