@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.19  2004/10/06 13:08:19  rjongbloed
+ * Implemented partial support for LIDs
+ *
  * Revision 1.18  2004/10/03 14:16:34  rjongbloed
  * Added panels for calling, answering and in call phases.
  *
@@ -321,6 +324,11 @@ class OptionsDialog : public wxDialog
     int       m_SilenceThreshold;
     int       m_SignalDeadband;
     int       m_SilenceDeadband;
+
+    wxComboBox * m_selectedLID;
+    wxComboBox * m_selectedAEC;
+    wxTextCtrl * m_selectedCountry;
+    void SelectedLID(wxCommandEvent & event);
 
     ////////////////////////////////////////
     // Video fields
