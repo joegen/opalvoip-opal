@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2047  2004/12/22 18:55:08  dsandras
+ * Revision 1.2048  2004/12/23 20:43:27  dsandras
+ * Only start the media streams if we are in the phase connectedPhase.
+ *
+ * Revision 2.46  2004/12/22 18:55:08  dsandras
  * Added support for Call Forwarding the "302 Moved Temporarily" SIP response.
  *
  * Revision 2.45  2004/12/18 03:54:43  rjongbloed
@@ -894,10 +897,12 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
 void SIPConnection::OnReceivedACK(SIP_PDU & response)
 {
-  PTRACE(2, "SIP\tACK received");
+  PTRACE(2, "SIP\tACK received: " << phase);
 
-  
   // start all of the media threads for the connection
+  if (phase != ConnectedPhase)
+    return;
+  
   StartMediaStreams();
   releaseMethod = ReleaseWithBYE;
   phase = EstablishedPhase;
