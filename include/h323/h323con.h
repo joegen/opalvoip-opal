@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2023  2004/02/19 10:46:43  rjongbloed
+ * Revision 1.2024  2004/02/24 11:28:45  rjongbloed
+ * Normalised RTP session management across protocols
+ *
+ * Revision 2.22  2004/02/19 10:46:43  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.21  2003/03/17 10:26:59  robertj
@@ -1859,7 +1862,7 @@ class H323Connection : public OpalConnection
 
     /**Use an RTP session for the specified ID and for the given direction.
        If there is no session of the specified ID, a new one is created using
-       the information provided in the H245_TransportAddress PDU. If the system
+       the information provided in the tranport parameter. If the system
        does not support the specified transport, NULL is returned.
 
        If this function is used, then the ReleaseSession() function MUST be
@@ -1867,6 +1870,7 @@ class H323Connection : public OpalConnection
        connection.
       */
     virtual RTP_Session * UseSession(
+      const OpalTransport & transport,
       unsigned sessionID,
       RTP_QOS * rtpqos = NULL
     );
