@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2002/01/14 02:19:03  robertj
+ * Added ability to turn jitter buffer off in media stream to allow for patches
+ *   that do not require it.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  */
@@ -87,11 +91,22 @@ void OpalMediaPatch::Main()
 {
   PTRACE(3, "Patch\tThread started for " << *this);
 
+  PINDEX i;
+
+  inUse.Wait();
+  for (i = 0; i < sinks.GetSize(); i++) {
+    if (sinks[i].stream->IsSynchronous()) {
+      source.EnableJitterBuffer();
+      break;
+    }
+  }
+  inUse.Signal();
+
   RTP_DataFrame sourceFrame, intermediateFrame, finalFrame;
   while (source.ReadPacket(sourceFrame)) {
     inUse.Wait();
 
-    for (PINDEX i = 0; i < sinks.GetSize(); i++) {
+    for (i = 0; i < sinks.GetSize(); i++) {
       Sink & sink = sinks[i];
 
       RTP_DataFrame * sinkFrame;
