@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2001/08/01 05:45:34  robertj
+ * Made OpalMediaFormatList class global to help with documentation.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  */
@@ -87,7 +90,7 @@ BOOL OpalMediaStream::Open(const OpalMediaFormat & format)
   PTRACE(3, "Media\tOpening " << format
          << " as " << (IsSource() ? "source" : "sink"));
 
-  OpalMediaFormat::List mediaFormats = GetMediaFormats();
+  OpalMediaFormatList mediaFormats = GetMediaFormats();
   for (PINDEX i = 0; i < mediaFormats.GetSize(); i++) {
     if (mediaFormats[i] == format) {
       mediaFormat = format;
@@ -207,12 +210,12 @@ OpalRTPMediaStream::OpalRTPMediaStream(BOOL isSourceStream, RTP_Session & rtp)
 }
 
 
-OpalMediaFormat::List OpalRTPMediaStream::GetMediaFormats() const
+OpalMediaFormatList OpalRTPMediaStream::GetMediaFormats() const
 {
-  if (!mediaFormat.IsValid())
+  if (mediaFormat.IsEmpty())
     return OpalMediaFormat::GetRegisteredMediaFormats();
 
-  OpalMediaFormat::List selectedOnly;
+  OpalMediaFormatList selectedOnly;
   selectedOnly += mediaFormat;
   return selectedOnly;
 }
@@ -454,7 +457,7 @@ BOOL OpalLineMediaStream::Write(const void * buffer, PINDEX length)
 }
 
 
-OpalMediaFormat::List OpalLineMediaStream::GetMediaFormats() const
+OpalMediaFormatList OpalLineMediaStream::GetMediaFormats() const
 {
   return line.GetDevice().GetMediaFormats();
 }
@@ -575,7 +578,7 @@ OpalFileMediaStream::OpalFileMediaStream(BOOL isSourceStream,
 }
 
 
-OpalMediaFormat::List OpalFileMediaStream::GetMediaFormats() const
+OpalMediaFormatList OpalFileMediaStream::GetMediaFormats() const
 {
   // Files can be any known format
   return OpalMediaFormat::GetRegisteredMediaFormats();
@@ -613,10 +616,10 @@ OpalAudioMediaStream::OpalAudioMediaStream(BOOL isSourceStream,
 }
 
 
-OpalMediaFormat::List OpalAudioMediaStream::GetMediaFormats() const
+OpalMediaFormatList OpalAudioMediaStream::GetMediaFormats() const
 {
   // Sound channels can only be 16 bit PCM
-  OpalMediaFormat::List pcmOnly;
+  OpalMediaFormatList pcmOnly;
   pcmOnly += OpalPCM16;
   return pcmOnly;
 }
