@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2006  2003/12/15 11:56:17  rjongbloed
+ * Revision 1.2007  2004/01/18 15:35:21  rjongbloed
+ * More work on video support
+ *
+ * Revision 2.5  2003/12/15 11:56:17  rjongbloed
  * Applied numerous bug fixes, thank you very much Ted Szoczei
  *
  * Revision 2.4  2003/06/02 02:59:24  rjongbloed
@@ -102,7 +105,7 @@ OpalTranscoder::OpalTranscoder(const OpalTranscoderRegistration & reg)
     inputMediaFormat(reg.GetInputFormat()),
     outputMediaFormat(reg.GetOutputFormat())
 {
-  maxOutputPayloadSize = MaxEthernetPayloadSize;
+  maxOutputSize = RTP_DataFrame::MaxEthernetPayloadSize;
 }
 
 
