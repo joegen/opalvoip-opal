@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q931.h,v $
- * Revision 1.2009  2002/09/16 02:52:34  robertj
+ * Revision 1.2010  2002/11/10 11:33:17  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.8  2002/09/16 02:52:34  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -51,6 +54,13 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.49  2002/11/07 03:49:49  robertj
+ * Added extra "congested" Q.931 codes.
+ *
+ * Revision 1.48  2002/09/16 01:14:15  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
  * Revision 1.47  2002/09/03 05:42:27  robertj
  * Normalised the multi-include header prevention ifdef/define symbol.
@@ -354,6 +364,7 @@ class Q931 : public PObject
       NetworkOutOfOrder         = 38,
       TemporaryFailure          = 41,
       Congestion                = 42,
+      RequestedCircuitNotAvailable = 44,
       ResourceUnavailable       = 47,
       InvalidCallReference      = 81,
       IncompatibleDestination   = 88,

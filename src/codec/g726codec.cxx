@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g726codec.cxx,v $
- * Revision 1.2003  2002/09/04 06:01:47  robertj
+ * Revision 1.2004  2002/11/10 11:33:17  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.2  2002/09/04 06:01:47  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 1.4  2002/09/03 07:28:42  robertj
@@ -101,6 +104,56 @@ static G726_NonStandardInfo const G726_NonStandard[H323_G726_Capability::NumSpee
   { OPAL_G726_24 },
   { OPAL_G726_16 }
 };
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+#ifndef NO_H323
+
+H323_G726_Capability::H323_G726_Capability(H323EndPoint & endpoint, Speeds s)
+    : H323NonStandardAudioCapability(240, 10, endpoint,
+                                     (const BYTE *)&G726_NonStandard[s],
+                                     sizeof(G726_NonStandard),
+                                     0, sizeof(G726_NonStandard[s].name))
+{
+  speed = s;
+}
+
+
+PObject * H323_G726_Capability::Clone() const
+{
+  return new H323_G726_Capability(*this);
+}
+
+
+PString H323_G726_Capability::GetFormatName() const
+{
+  return G726_NonStandard[speed].name;
+}
+
+
+BOOL H323_G726_Capability::OnSendingPDU(H245_AudioCapability & pdu,
+                                        unsigned packetSize) const
+{
+  G726_NonStandardInfo * info = (G726_NonStandardInfo *)(const BYTE *)nonStandardData;
+  info->count = (BYTE)packetSize;
+  return H323NonStandardAudioCapability::OnSendingPDU(pdu, packetSize);
+}
+
+
+BOOL H323_G726_Capability::OnReceivedPDU(const H245_AudioCapability & pdu,
+                                         unsigned & packetSize)
+{
+  if (!H323NonStandardAudioCapability::OnReceivedPDU(pdu, packetSize))
+    return FALSE;
+
+  const G726_NonStandardInfo * info = (const G726_NonStandardInfo *)(const BYTE *)nonStandardData;
+  packetSize = info->count;
+  return TRUE;
+}
+
+
+#endif
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -215,51 +268,6 @@ int Opal_PCM_G726_16::ConvertOne(int sample) const
 {
   return g726_16_decoder(sample, AUDIO_ENCODING_LINEAR, g726);
 }
-
-
-/////////////////////////////////////////////////////////////////////////////
-
-#ifndef NO_H323
-
-H323_G726_Capability::H323_G726_Capability(H323EndPoint & endpoint, Speeds s)
-    : H323NonStandardAudioCapability(G726_NonStandard[s].name,
-                                     240, 10, endpoint,
-                                     (const BYTE *)&G726_NonStandard[s],
-                                     sizeof(G726_NonStandard),
-                                     0, sizeof(G726_NonStandard[s].name))
-{
-  speed = s;
-}
-
-
-PObject * H323_G726_Capability::Clone() const
-{
-  return new H323_G726_Capability(*this);
-}
-
-
-BOOL H323_G726_Capability::OnSendingPDU(H245_AudioCapability & pdu,
-                                        unsigned packetSize) const
-{
-  G726_NonStandardInfo * info = (G726_NonStandardInfo *)(const BYTE *)nonStandardData;
-  info->count = (BYTE)packetSize;
-  return H323NonStandardAudioCapability::OnSendingPDU(pdu, packetSize);
-}
-
-
-BOOL H323_G726_Capability::OnReceivedPDU(const H245_AudioCapability & pdu,
-                                         unsigned & packetSize)
-{
-  if (!H323NonStandardAudioCapability::OnReceivedPDU(pdu, packetSize))
-    return FALSE;
-
-  const G726_NonStandardInfo * info = (const G726_NonStandardInfo *)(const BYTE *)nonStandardData;
-  packetSize = info->count;
-  return TRUE;
-}
-
-
-#endif
 
 
 /////////////////////////////////////////////////////////////////////////////

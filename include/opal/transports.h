@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.h,v $
- * Revision 1.2011  2002/09/16 02:52:35  robertj
+ * Revision 1.2012  2002/11/10 11:33:17  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.10  2002/09/16 02:52:35  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -200,7 +203,7 @@ class OpalTransportAddress : public PString
       */
     virtual OpalTransport * CreateTransport(
       OpalEndPoint & endpoint,   /// Endpoint object for transport creation.
-      BindOptions option         /// Options for how to create transport
+      BindOptions option = HostOnly /// Options for how to create transport
     ) const;
   //@}
 
@@ -295,9 +298,19 @@ class OpalListener : public PObject
       const OpalTransportAddress & preferredAddress = OpalTransportAddress()
     ) const = 0;
 
+    /**Get the local transport address on which this listener may be accessed.
+       For backward compatibility with OpenH323, now deprecated.
+      */
+    OpalTransportAddress GetTransportAddress() const { return GetLocalAddress(); }
+
     /**Close channel and wait for associated thread to terminate.
       */
     void CloseWait();
+
+    /**Close channel and wait for associated thread to terminate.
+       For backward compatibility with OpenH323, now deprecated.
+      */
+    void CleanUpOnTermination() { CloseWait(); }
   //@}
 
 
@@ -595,6 +608,11 @@ class OpalTransport : public PIndirectChannel
     /**Close channel and wait for associated thread to terminate.
       */
     void CloseWait();
+
+    /**Close channel and wait for associated thread to terminate.
+       For backward compatibility with OpenH323, now deprecated.
+      */
+    void CleanUpOnTermination() { CloseWait(); }
 
     /**Check that the transport address is compatible with transport.
       */

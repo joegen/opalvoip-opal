@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vblasterlid.h,v $
- * Revision 1.2005  2002/09/16 02:52:34  robertj
+ * Revision 1.2006  2002/11/10 11:33:17  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.4  2002/09/16 02:52:34  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -36,6 +39,10 @@
  *
  * Revision 2.1  2002/01/22 06:28:43  robertj
  * Added voice blaster support
+ *
+ * Revision 1.5  2002/09/16 01:14:15  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
  * Revision 1.4  2002/09/03 06:19:37  robertj
  * Normalised the multi-include header prevention ifdef/define symbol.
