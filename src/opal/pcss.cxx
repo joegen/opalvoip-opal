@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2015  2004/02/03 12:21:30  rjongbloed
+ * Revision 1.2016  2004/04/18 13:35:28  rjongbloed
+ * Fixed ability to make calls where both endpoints are specified a priori. In particular
+ *   fixing the VXML support for an outgoing sip/h323 call.
+ *
+ * Revision 2.14  2004/02/03 12:21:30  rjongbloed
  * Fixed random destination alias from being interpreted as a sound card device name, unless it is a valid sound card device name.
  *
  * Revision 2.13  2003/03/17 22:27:36  robertj
@@ -328,10 +332,7 @@ BOOL OpalPCSSConnection::SetConnected()
 
 PString OpalPCSSConnection::GetDestinationAddress()
 {
-  PString dest = ownerCall.GetPartyB();
-  if (dest.IsEmpty())
-    dest = endpoint.OnGetDestination(*this);
-  return dest;
+  return endpoint.OnGetDestination(*this);
 }
 
 
@@ -382,14 +383,13 @@ void OpalPCSSConnection::InitiateCall()
     return;
 
   phase = SetUpPhase;
-  if (!OnIncomingConnection()) {
+  if (!OnIncomingConnection())
     Release(EndedByCallerAbort);
-    return;
+  else {
+    PTRACE(2, "PCSS\tOutgoing call routed to " << ownerCall.GetPartyB() << " for " << *this);
+    if (!ownerCall.OnSetUp(*this))
+      Release(EndedByNoAccept);
   }
-
-  PTRACE(2, "PCSS\tOutgoing call routed for " << *this);
-  if (!ownerCall.OnSetUp(*this))
-    Release(EndedByNoAccept);
 
   Unlock();
 }
