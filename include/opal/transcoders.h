@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2003  2002/01/22 05:07:02  robertj
+ * Revision 1.2004  2002/02/13 02:30:21  robertj
+ * Added ability for media patch (and transcoders) to handle multiple RTP frames.
+ *
+ * Revision 2.2  2002/01/22 05:07:02  robertj
  * Added ability to get input and output media format names from transcoder.
  *
  * Revision 2.1  2001/08/01 05:52:08  robertj
@@ -163,6 +166,21 @@ class OpalTranscoder : public PObject
     virtual unsigned GetOptimalDataFrameSize(
       BOOL input      /// Flag for input or output data size
     ) const = 0;
+
+    /**Convert the data from one format to another.
+       This function takes the input data as a RTP_DataFrame and converts it
+       to its output format, placing it (possibly) into multiple RTP_DataFrame
+       objects.
+
+       The default behaviour makes sure the output list has only one element
+       in it and calls the Convert() function.
+
+       Returns FALSE if the conversion fails.
+      */
+    virtual BOOL ConvertFrames(
+      const RTP_DataFrame & input,  /// Input data
+      RTP_DataFrameList & output        /// Output data
+    );
 
     /**Convert the data from one format to another.
        This function takes the input data as a RTP_DataFrame and converts it
