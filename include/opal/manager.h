@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2027  2004/07/04 12:50:50  rjongbloed
+ * Revision 1.2028  2004/07/11 12:42:10  rjongbloed
+ * Added function on endpoints to get the list of all media formats any
+ *   connection the endpoint may create can support.
+ *
+ * Revision 2.26  2004/07/04 12:50:50  rjongbloed
  * Added some access functions to manager lists
  *
  * Revision 2.25  2004/06/05 14:34:44  rjongbloed
@@ -568,8 +572,8 @@ class OpalManager : public PObject
        The default behaviour calls the OpalEndPoint function of the same name.
       */
     virtual void AddVideoMediaFormats(
-      const OpalConnection & connection,  /// Connection that is about to use formats
-      OpalMediaFormatList & mediaFormats  /// Media formats to use
+      OpalMediaFormatList & mediaFormats, /// Media formats to use
+      const OpalConnection * connection = NULL  /// Optional connection that is using formats
     ) const;
 
     /**Create an PVideoInputDevice for a source media stream.

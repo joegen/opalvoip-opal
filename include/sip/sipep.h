@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2015  2004/06/05 14:36:32  rjongbloed
+ * Revision 1.2016  2004/07/11 12:42:10  rjongbloed
+ * Added function on endpoints to get the list of all media formats any
+ *   connection the endpoint may create can support.
+ *
+ * Revision 2.14  2004/06/05 14:36:32  rjongbloed
  * Added functions to get registration URL.
  * Added ability to set proxy bu host/user/password strings.
  *
@@ -112,7 +116,7 @@ class SIPEndPoint : public OpalEndPoint
     ~SIPEndPoint();
   //@}
 
-  /**@name Overrides from OpalManager */
+  /**@name Overrides from OpalEndPoint */
   //@{
     /**Get the default listeners for the endpoint type.
        Overrides the default behaviour to return udp and tcp listeners.
@@ -161,6 +165,17 @@ class SIPEndPoint : public OpalEndPoint
       const PString & party,  /// Remote party to call
       void * userData = NULL  /// Arbitrary data to pass to connection
     );
+
+    /**Get the data formats this endpoint is capable of operating.
+       This provides a list of media data format names that may be used by an
+       OpalMediaStream may be created by a connection from this endpoint.
+
+       Note that a specific connection may not actually support all of the
+       media formats returned here, but should return no more.
+
+       The default behaviour is pure.
+      */
+    virtual OpalMediaFormatList GetMediaFormats() const;
   //@}
 
   /**@name Customisation call backs */
