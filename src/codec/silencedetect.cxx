@@ -23,6 +23,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: silencedetect.cxx,v $
+ * Revision 1.3  2005/03/06 15:00:26  dsandras
+ * Fixed silence detection, we are now working with time frames, not the number of frames.
+ *
  * Revision 1.2  2004/05/24 13:39:26  rjongbloed
  * Fixed setting marker bit when silence suppression transitions from
  *   silence to signal, thanks Ted Szoczei
@@ -187,12 +190,12 @@ void OpalSilenceDetector::ReceivedPacket(RTP_DataFrame & frame, INT)
   if (haveSignal) {
     if (level < signalMinimum)
       signalMinimum = level;
-    signalReceivedTime++;
+    signalReceivedTime=signalReceivedTime+timeSinceLastFrame;
   }
   else {
     if (level > silenceMaximum)
       silenceMaximum = level;
-    silenceReceivedTime++;
+    silenceReceivedTime=silenceReceivedTime+timeSinceLastFrame;
   }
 
   // See if we have had enough frames to look at proportions of silence/signal
