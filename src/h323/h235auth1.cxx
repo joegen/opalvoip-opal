@@ -24,7 +24,10 @@
  * Contributor(s): Fürbass Franz <franz.fuerbass@infonova.at>
  *
  * $Log: h235auth1.cxx,v $
- * Revision 1.2008  2002/09/04 06:01:48  robertj
+ * Revision 1.2009  2004/02/19 10:47:04  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.7  2002/09/04 06:01:48  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.6  2002/07/01 04:56:32  robertj
@@ -44,6 +47,18 @@
  *
  * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 1.14  2003/04/17 12:19:15  robertj
+ * Added windows automatic library inclusion for openssl.
+ *
+ * Revision 1.13  2003/02/01 13:31:22  robertj
+ * Changes to support CAT authentication in RAS.
+ *
+ * Revision 1.12  2003/01/27 23:15:44  robertj
+ * Added more trace logs
+ *
+ * Revision 1.11  2003/01/08 04:40:34  robertj
+ * Added more debug tracing for H.235 authenticators.
  *
  * Revision 1.10  2002/08/13 05:10:29  robertj
  * Fixed bug where incorrect PIN caused infinite loop.
@@ -91,8 +106,13 @@
 #include <h323/h323pdu.h>
 
 
+#ifdef _MSC_VER
+#pragma comment(lib, P_SSL_LIB1)
+#pragma comment(lib, P_SSL_LIB2)
+#endif
+
+
 #define REPLY_BUFFER_SIZE 1024
-#define TIMESTAMP_GRACE   (2*60*60+10)  // 2 hours 10 seconds to allow for DST adjustments
 
 
 static const char OID_A[] = "0.0.8.235.0.2.1";
@@ -206,8 +226,6 @@ static void hmac_sha (const unsigned char*    k,      /* secret key */
 
 H235AuthProcedure1::H235AuthProcedure1()
 {
-  lastRandomSequenceNumber = 0;
-  lastTimestamp = 0;
 }
 
 
@@ -223,14 +241,22 @@ PObject * H235AuthProcedure1::Clone() const
 }
 
 
-BOOL H235AuthProcedure1::PrepareToken(H225_CryptoH323Token & cryptoToken)
+const char * H235AuthProcedure1::GetName() const
+{
+  return "H235AnnexD_Procedure1";
+}
+
+
+H225_CryptoH323Token * H235AuthProcedure1::CreateCryptoToken()
 {
   if (!IsActive())
-    return FALSE;
+    return NULL;
+
+  H225_CryptoH323Token * cryptoToken = new H225_CryptoH323Token;
 
   // Create the H.225 crypto token in the H323 crypto token
-  cryptoToken.SetTag(H225_CryptoH323Token::e_nestedcryptoToken);
-  H235_CryptoToken & nestedCryptoToken = cryptoToken;
+  cryptoToken->SetTag(H225_CryptoH323Token::e_nestedcryptoToken);
+  H235_CryptoToken & nestedCryptoToken = *cryptoToken;
 
   // We are doing hashed password
   nestedCryptoToken.SetTag(H235_CryptoToken::e_cryptoHashedToken);
@@ -276,7 +302,7 @@ BOOL H235AuthProcedure1::PrepareToken(H225_CryptoH323Token & cryptoToken)
    */
 
   encodedToken.m_hash.SetData(HASH_SIZE*8, SearchPattern);
-  return TRUE;
+  return cryptoToken;
 }
 
 
@@ -322,7 +348,7 @@ BOOL H235AuthProcedure1::Finalise(PBYTEArray & rawPDU)
   
   memcpy(&rawPDU[foundat], key, HASH_SIZE);
   
-  PTRACE(4, "H235RAS\tH235AuthProcedure1 hashing completed.");
+  PTRACE(4, "H235RAS\tH235AuthProcedure1 hashing completed: \"" << password << '"');
   return TRUE;
 }
 
@@ -347,19 +373,23 @@ static BOOL CheckOID(const PASN_ObjectId & oid1, const PASN_ObjectId & oid2)
 }
 
 
-H235Authenticator::State H235AuthProcedure1::VerifyToken(
-                                      const H225_CryptoH323Token & cryptoToken,
-                                      const PBYTEArray & rawPDU)
+H235Authenticator::ValidationResult H235AuthProcedure1::ValidateCryptoToken(
+                                            const H225_CryptoH323Token & cryptoToken,
+                                            const PBYTEArray & rawPDU)
 {
   //verify the token is of correct type
-  if (cryptoToken.GetTag() != H225_CryptoH323Token::e_nestedcryptoToken)
+  if (cryptoToken.GetTag() != H225_CryptoH323Token::e_nestedcryptoToken) {
+    PTRACE(4, "H235\tNo nested crypto token!");
     return e_Absent;
+  }
   
   const H235_CryptoToken & crNested = cryptoToken;
-  if (crNested.GetTag() != H235_CryptoToken::e_cryptoHashedToken)
+  if (crNested.GetTag() != H235_CryptoToken::e_cryptoHashedToken) {
+    PTRACE(4, "H235\tNo crypto hash token!");
     return e_Absent;
+  }
   
-  const H235_CryptoToken_cryptoHashedToken &crHashed = crNested;
+  const H235_CryptoToken_cryptoHashedToken & crHashed = crNested;
   
   //verify the crypto OIDs
   
@@ -384,11 +414,11 @@ H235Authenticator::State H235AuthProcedure1::VerifyToken(
   //first verify the timestamp
   PTime now;
   int deltaTime = now.GetTimeInSeconds() - crHashed.m_hashedVals.m_timeStamp;
-  if (PABS(deltaTime) > TIMESTAMP_GRACE) {
+  if (PABS(deltaTime) > timestampGracePeriod) {
     PTRACE(1, "H235RAS\tInvalid timestamp ABS(" << now.GetTimeInSeconds() << '-' 
-           << (int)crHashed.m_hashedVals.m_timeStamp << ") > " << TIMESTAMP_GRACE);
+           << (int)crHashed.m_hashedVals.m_timeStamp << ") > " << timestampGracePeriod);
     //the time has elapsed
-    return e_Error;
+    return e_InvalidTime;
   }
   
   //verify the randomnumber
@@ -396,7 +426,7 @@ H235Authenticator::State H235AuthProcedure1::VerifyToken(
       lastRandomSequenceNumber == crHashed.m_hashedVals.m_random) {
     //a message with this timespamp and the same random number was already verified
     PTRACE(1, "H235RAS\tConsecutive messages with the same random and timestamp");
-    return e_Error;
+    return e_ReplyAttack;
   }
   
   // save the values for the next call
@@ -505,7 +535,7 @@ H235Authenticator::State H235AuthProcedure1::VerifyToken(
   }
 
   PTRACE(1, "H235RAS\tH235AuthProcedure1 hash does not match.");
-  return e_Attacked;
+  return e_BadPassword;
 }
 
 

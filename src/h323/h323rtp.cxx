@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323rtp.cxx,v $
- * Revision 1.2010  2003/01/07 04:39:53  robertj
+ * Revision 1.2011  2004/02/19 10:47:04  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.9  2003/01/07 04:39:53  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.8  2002/11/10 11:33:19  robertj
@@ -53,6 +56,22 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.27  2003/10/27 06:03:39  csoutheren
+ * Added support for QoS
+ *   Thanks to Henry Harrison of AliceStreet
+ *
+ * Revision 1.26  2003/02/07 00:28:24  robertj
+ * Changed function to virtual to help in using external multiicast RTP stacks.
+ *
+ * Revision 1.25  2003/02/05 06:32:10  robertj
+ * Fixed non-stun symmetric NAT support recently broken.
+ *
+ * Revision 1.24  2003/02/05 01:55:14  robertj
+ * Fixed setting of correct address in OLC's when STUN is used.
+ *
+ * Revision 1.23  2003/02/04 07:06:41  robertj
+ * Added STUN support.
  *
  * Revision 1.22  2002/11/19 01:47:26  robertj
  * Included canonical name in RTP statistics returned in IRR
@@ -170,7 +189,9 @@ void H323_RTP_Session::OnRxStatistics(const RTP_Session & session) const
 
 /////////////////////////////////////////////////////////////////////////////
 
-H323_RTP_UDP::H323_RTP_UDP(const H323Connection & conn, RTP_UDP & rtp_udp)
+H323_RTP_UDP::H323_RTP_UDP(const H323Connection & conn,
+                           RTP_UDP & rtp_udp,
+                           RTP_QOS * rtpQos)
   : H323_RTP_Session(conn),
     rtp(rtp_udp)
 {
@@ -179,13 +200,26 @@ H323_RTP_UDP::H323_RTP_UDP(const H323Connection & conn, RTP_UDP & rtp_udp)
   transport.GetLocalAddress().GetIpAddress(localAddress);
 
   OpalManager & manager = connection.GetEndPoint().GetManager();
+
+  PIPSocket::Address remoteAddress;
+  transport.GetRemoteAddress().GetIpAddress(remoteAddress);
+  PSTUNClient * stun = manager.GetSTUN(remoteAddress);
+
   WORD firstPort = manager.GetRtpIpPortPair();
   WORD nextPort = firstPort;
-  while (!rtp.Open(localAddress, nextPort, nextPort, manager.GetRtpIpTypeofService())) {
+  while (!rtp.Open(localAddress,
+                   nextPort, nextPort,
+                   manager.GetRtpIpTypeofService(),
+                   stun,
+                   rtpQos)) {
     nextPort = manager.GetRtpIpPortPair();
     if (nextPort == firstPort)
       break;
   }
+
+  localAddress = rtp.GetLocalAddress();
+  manager.TranslateIPAddress(localAddress, remoteAddress);
+  rtp.SetLocalAddress(localAddress);
 }
 
 
@@ -254,10 +288,9 @@ void H323_RTP_UDP::OnSendingAckPDU(const H323_RTPChannel & channel,
 }
 
 
-static BOOL ExtractTransport(const H245_TransportAddress & pdu,
-                             RTP_UDP & rtp,
-                             BOOL isDataPort,
-                             unsigned & errorCode)
+BOOL H323_RTP_UDP::ExtractTransport(const H245_TransportAddress & pdu,
+                                    BOOL isDataPort,
+                                    unsigned & errorCode)
 {
   if (pdu.GetTag() != H245_TransportAddress::e_unicastAddress) {
     PTRACE(1, "RTP_UDP\tOnly unicast supported at this time");
@@ -289,7 +322,7 @@ BOOL H323_RTP_UDP::OnReceivedPDU(H323_RTPChannel & channel,
   BOOL ok = FALSE;
 
   if (param.HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaControlChannel)) {
-    if (!ExtractTransport(param.m_mediaControlChannel, rtp, FALSE, errorCode)) {
+    if (!ExtractTransport(param.m_mediaControlChannel, FALSE, errorCode)) {
       PTRACE(1, "RTP_UDP\tFailed to extract mediaControl transport for " << channel);
       return FALSE;
     }
@@ -299,7 +332,7 @@ BOOL H323_RTP_UDP::OnReceivedPDU(H323_RTPChannel & channel,
   if (param.HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaChannel)) {
     if (ok && channel.GetDirection() == H323Channel::IsReceiver)
       PTRACE(3, "RTP_UDP\tIgnoring media transport for " << channel);
-    else if (!ExtractTransport(param.m_mediaChannel, rtp, TRUE, errorCode)) {
+    else if (!ExtractTransport(param.m_mediaChannel, TRUE, errorCode)) {
       PTRACE(1, "RTP_UDP\tFailed to extract media transport for " << channel);
       return FALSE;
     }
@@ -335,7 +368,7 @@ BOOL H323_RTP_UDP::OnReceivedAckPDU(H323_RTPChannel & channel,
   }
 
   unsigned errorCode;
-  if (!ExtractTransport(param.m_mediaControlChannel, rtp, FALSE, errorCode))
+  if (!ExtractTransport(param.m_mediaControlChannel, FALSE, errorCode))
     return FALSE;
 
   if (!param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaChannel)) {
@@ -343,7 +376,7 @@ BOOL H323_RTP_UDP::OnReceivedAckPDU(H323_RTPChannel & channel,
     return FALSE;
   }
 
-  if (!ExtractTransport(param.m_mediaChannel, rtp, TRUE, errorCode))
+  if (!ExtractTransport(param.m_mediaChannel, TRUE, errorCode))
     return FALSE;
 
   if (param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_dynamicRTPPayloadType))

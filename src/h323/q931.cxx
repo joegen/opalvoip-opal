@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q931.cxx,v $
- * Revision 1.2008  2003/01/07 04:39:53  robertj
+ * Revision 1.2009  2004/02/19 10:47:04  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.7  2003/01/07 04:39:53  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.6  2002/09/04 06:01:49  robertj
@@ -50,6 +53,20 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.59  2003/08/24 23:10:30  rjongbloed
+ * Fixed incorrect mask in bearer caps decoding, thanks Greg Adams
+ *
+ * Revision 1.58  2003/03/18 05:54:18  robertj
+ * Added ChannelIdentifier IE support, thanks Eize Slange
+ *
+ * Revision 1.57  2003/02/12 02:23:01  robertj
+ * Fixed printing of cause codes that are impossible as opposed to merely
+ *   unlikely or unallocated.
+ *
+ * Revision 1.56  2003/02/12 00:02:23  robertj
+ * Added more Q.931 cause codes.
+ * Added ability to trace text version of cause codes and IE codes.
  *
  * Revision 1.55  2002/11/19 06:19:25  robertj
  * Added extra "congested" Q.931 codes.
@@ -241,56 +258,84 @@
 #define new PNEW
 
 
-static POrdinalToString::Initialiser InformationElementNames[] = {
-  { Q931::BearerCapabilityIE,   "Bearer-Capability"     },
-  { Q931::CauseIE,              "Cause"                 },
-  { Q931::FacilityIE,           "Facility"              },
-  { Q931::ProgressIndicatorIE,  "Progress-Indicator"    },
-  { Q931::CallStateIE,          "Call-State"            },
-  { Q931::DisplayIE,            "Display"               },
-  { Q931::SignalIE,             "Signal"                },
-  { Q931::KeypadIE,             "Keypad"                },
-  { Q931::ConnectedNumberIE,    "Connected-Number"      },
-  { Q931::CallingPartyNumberIE, "Calling-Party-Number"  },
-  { Q931::CalledPartyNumberIE,  "Called-Party-Number"   },
-  { Q931::RedirectingNumberIE,  "Redirecting-Number"    },
-  { Q931::UserUserIE,           "User-User"             }
-};
+ostream & operator<<(ostream & strm, Q931::InformationElementCodes ie)
+{
+  static POrdinalToString::Initialiser IENamesInit[] = {
+    { Q931::BearerCapabilityIE,     "Bearer-Capability"     },
+    { Q931::CauseIE,                "Cause"                 },
+    { Q931::FacilityIE,             "Facility"              },
+    { Q931::ProgressIndicatorIE,    "Progress-Indicator"    },
+    { Q931::CallStateIE,            "Call-State"            },
+    { Q931::DisplayIE,              "Display"               },
+    { Q931::SignalIE,               "Signal"                },
+    { Q931::KeypadIE,               "Keypad"                },
+    { Q931::ConnectedNumberIE,      "Connected-Number"      },
+    { Q931::CallingPartyNumberIE,   "Calling-Party-Number"  },
+    { Q931::CalledPartyNumberIE,    "Called-Party-Number"   },
+    { Q931::RedirectingNumberIE,    "Redirecting-Number"    },
+    { Q931::ChannelIdentificationIE,"Channel-Identification"},
+    { Q931::UserUserIE,             "User-User"             } 
+  };
+  static const POrdinalToString IENames(PARRAYSIZE(IENamesInit), IENamesInit);
+
+  if (IENames.Contains((PINDEX)ie))
+    strm << IENames[ie];
+  else
+    strm << "0x" << hex << (unsigned)ie << dec << " (" << (unsigned)ie << ')';
+
+  return strm;
+}
 
 
-static POrdinalToString::Initialiser CauseNames[] = {
-  { Q931::UnallocatedNumber,         "Unallocated number"           },
-  { Q931::NoRouteToNetwork,          "No route to network"          },
-  { Q931::NoRouteToDestination,      "No route to destination"      },
-  { Q931::SendSpecialTone,           "Send special tone"            },
-  { Q931::MisdialledTrunkPrefix,     "Misdialled trunk prefix"      },
-  { Q931::ChannelUnacceptable,       "Channel unacceptable"         },
-  { Q931::NormalCallClearing,        "Normal call clearing"         },
-  { Q931::UserBusy,                  "User busy"                    },
-  { Q931::NoResponse,                "No response"                  },
-  { Q931::NoAnswer,                  "No answer"                    },
-  { Q931::SubscriberAbsent,          "Subscriber absent"            },
-  { Q931::CallRejected,              "Call rejected"                },
-  { Q931::NumberChanged,             "Number changed"               },
-  { Q931::Redirection,               "Redirection"                  },
-  { Q931::ExchangeRoutingError,      "Exchange routing error"       },
-  { Q931::NonSelectedUserClearing,   "Non selected user clearing"   },
-  { Q931::DestinationOutOfOrder,     "Destination out of order"     },
-  { Q931::InvalidNumberFormat,       "Invalid number format"        },
-  { Q931::FacilityRejected,          "Facility rejected"            },
-  { Q931::StatusEnquiryResponse,     "Status enquiry response"      },
-  { Q931::NormalUnspecified,         "Normal unspecified"           },
-  { Q931::NoCircuitChannelAvailable, "No circuit/channel available" },
-  { Q931::NetworkOutOfOrder,         "Network out of order"         },
-  { Q931::TemporaryFailure,          "Temporary failure"            },
-  { Q931::Congestion,                "Congestion"                   },
-  { Q931::RequestedCircuitNotAvailable,"RequestedCircuitNotAvailable" },
-  { Q931::ResourceUnavailable,       "Resource unavailable"         },
-  { Q931::InvalidCallReference,      "Invalid call reference"       },
-  { Q931::IncompatibleDestination,   "Incompatible destination"     },
-  { Q931::InterworkingUnspecified,   "Interworking, unspecified"    },
-  { Q931::NonStandardReason,         "Non standard reason"          }
-};
+ostream & operator<<(ostream & strm, Q931::CauseValues cause)
+{
+  static POrdinalToString::Initialiser CauseNamesInit[] = {
+    { Q931::UnallocatedNumber,           "Unallocated number"              },
+    { Q931::NoRouteToNetwork,            "No route to network"             },
+    { Q931::NoRouteToDestination,        "No route to destination"         },
+    { Q931::SendSpecialTone,             "Send special tone"               },
+    { Q931::MisdialledTrunkPrefix,       "Misdialled trunk prefix"         },
+    { Q931::ChannelUnacceptable,         "Channel unacceptable"            },
+    { Q931::NormalCallClearing,          "Normal call clearing"            },
+    { Q931::UserBusy,                    "User busy"                       },
+    { Q931::NoResponse,                  "No response"                     },
+    { Q931::NoAnswer,                    "No answer"                       },
+    { Q931::SubscriberAbsent,            "Subscriber absent"               },
+    { Q931::CallRejected,                "Call rejected"                   },
+    { Q931::NumberChanged,               "Number changed"                  },
+    { Q931::Redirection,                 "Redirection"                     },
+    { Q931::ExchangeRoutingError,        "Exchange routing error"          },
+    { Q931::NonSelectedUserClearing,     "Non selected user clearing"      },
+    { Q931::DestinationOutOfOrder,       "Destination out of order"        },
+    { Q931::InvalidNumberFormat,         "Invalid number format"           },
+    { Q931::FacilityRejected,            "Facility rejected"               },
+    { Q931::StatusEnquiryResponse,       "Status enquiry response"         },
+    { Q931::NormalUnspecified,           "Normal unspecified"              },
+    { Q931::NoCircuitChannelAvailable,   "No circuit/channel available"    },
+    { Q931::NetworkOutOfOrder,           "Network out of order"            },
+    { Q931::TemporaryFailure,            "Temporary failure"               },
+    { Q931::Congestion,                  "Congestion"                      },
+    { Q931::RequestedCircuitNotAvailable,"RequestedCircuitNotAvailable"    },
+    { Q931::ResourceUnavailable,         "Resource unavailable"            },
+    { Q931::ServiceOptionNotAvailable,   "Service or option not available" },
+    { Q931::InvalidCallReference,        "Invalid call reference"          },
+    { Q931::IncompatibleDestination,     "Incompatible destination"        },
+    { Q931::IENonExistantOrNotImplemented,"IE non-existent or not implemented" },
+    { Q931::TimerExpiry,                 "Recovery from timer expiry"      },
+    { Q931::ProtocolErrorUnspecified,    "Protocol error, unspecified"     },
+    { Q931::InterworkingUnspecified,     "Interworking, unspecified"       }
+  };
+  static const POrdinalToString CauseNames(PARRAYSIZE(CauseNamesInit), CauseNamesInit);
+
+  if (CauseNames.Contains((PINDEX)cause))
+    strm << CauseNames[cause];
+  else if (cause < Q931::ErrorInCauseIE)
+    strm << "0x" << hex << (unsigned)cause << dec << " (" << (unsigned)cause << ')';
+  else
+    strm << "N/A";
+
+  return strm;
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -583,20 +628,10 @@ void Q931::PrintOn(ostream & strm) const
 
   for (unsigned discriminator = 0; discriminator < 256; discriminator++) {
     if (informationElements.Contains(discriminator)) {
-      static const POrdinalToString ieName(PARRAYSIZE(InformationElementNames),
-                                                      InformationElementNames);
-      strm << setw(indent+4) << "IE: ";
-      if (ieName.Contains(discriminator))
-        strm << ieName[discriminator];
-      else
-        strm << "0x" << hex << discriminator << dec;
+      strm << setw(indent+4) << "IE: " << (InformationElementCodes)discriminator;
       if (discriminator == CauseIE) {
-        static const POrdinalToString causeName(PARRAYSIZE(CauseNames), CauseNames);
-        if (informationElements[discriminator].GetSize() > 1) {
-          PINDEX cause = informationElements[discriminator][1]&0x7f;
-          if (causeName.Contains(cause))
-            strm << " - " << causeName[cause];
-        }
+        if (informationElements[discriminator].GetSize() > 1)
+          strm << " - " << (CauseValues)(informationElements[discriminator][1]&0x7f);
       }
       strm << " = {\n"
            << hex << setfill('0') << resetiosflags(ios::floatfield)
@@ -805,7 +840,7 @@ BOOL Q931::GetBearerCapabilities(InformationTransferCapability & capability,
   }
 
   if (userInfoLayer1 != NULL && ((data[nextByte]>>5)&3) == 1)
-    *userInfoLayer1 = data[nextByte]&0x31;
+    *userInfoLayer1 = data[nextByte]&0x1f;
 
   return TRUE;
 }
@@ -1174,6 +1209,105 @@ void Q931::SetConnectedNumber(const PString & number,
 {
   SetIE(ConnectedNumberIE,
         SetNumberIE(number, plan, type, presentation, screening, reason));
+}
+
+
+void Q931::SetChannelIdentification(unsigned interfaceType,
+                                    unsigned preferredOrExclusive,
+                                    int      channelNumber)
+{
+  // Known limitations:
+  //  - the interface identifier cannot be specified
+  //  - channel in PRI can only be indicated by number and cannot be indicated by map
+  //  - one and only one channel can be indicated
+  //  - the coding standard is always ITU Q.931
+
+  PBYTEArray bytes;
+  bytes.SetSize(1);
+
+  PAssert(interfaceType < 2, PInvalidParameter);
+
+  if (interfaceType == 0) { // basic rate
+    if (channelNumber == -1) { // any channel
+      bytes[0] = 0x80 | 0x04 | 0x03;
+    }
+    if (channelNumber == 0) { // D channel
+      bytes[0] = 0x80;
+    }    
+    if (channelNumber > 0) { // B channel
+      bytes[0] = (BYTE)(0x80 | 0x04 | ((preferredOrExclusive & 0x01) << 3) | (channelNumber & 0x03));
+    }
+  }
+
+  if (interfaceType == 1) { // primary rate
+    if (channelNumber == -1) { // any channel
+      bytes[0] = 0x80 | 0x20 | 0x04 | 0x03;
+    }
+    if (channelNumber == 0) { // D channel
+      bytes[0] = 0x80 | 0x20;
+    }    
+    if (channelNumber > 0) { // B channel
+      bytes.SetSize(3);
+
+      bytes[0] = (BYTE)(0x80 | 0x20 | 0x04 | ((preferredOrExclusive & 0x01) << 3) | 0x01);
+      bytes[1] = 0x80 | 0x03;
+      bytes[2] = (BYTE)(0x80 | channelNumber);
+    }
+  }
+
+  SetIE(ChannelIdentificationIE, bytes);
+}
+
+
+BOOL Q931::GetChannelIdentification(unsigned * interfaceType,
+                                    unsigned * preferredOrExclusive,
+                                    int      * channelNumber) const
+{
+  if (!HasIE(ChannelIdentificationIE))
+    return FALSE;
+
+  PBYTEArray bytes = GetIE(ChannelIdentificationIE);
+  if (bytes.GetSize() < 1)
+    return FALSE;
+
+  *interfaceType        = (bytes[0]>>5) & 0x01;
+  *preferredOrExclusive = (bytes[0]>>3) & 0x01;
+
+  if (*interfaceType == 0) {  // basic rate
+    if ( (bytes[0] & 0x04) == 0 ) {  // D Channel
+      *channelNumber = 0;
+    }
+    else {
+      if ( (bytes[0] & 0x03) == 0x03 ) {  // any channel
+        *channelNumber = -1;
+      }
+      else { // B Channel
+        *channelNumber = (bytes[0] & 0x03);
+      }
+    }
+  }
+
+  if (*interfaceType == 1) {  // primary rate
+    if ( (bytes[0] & 0x04) == 0 ) {  // D Channel
+      *channelNumber = 0;
+    }
+    else {
+      if ( (bytes[0] & 0x03) == 0x03 ) {  // any channel
+        *channelNumber = -1;
+      }
+      else { // B Channel
+        if (bytes.GetSize() < 3)
+          return FALSE;
+
+        if (bytes[1] != 0x83)
+          return FALSE;
+
+        *channelNumber = bytes[2] & 0x7f;
+      }
+    }
+  }
+
+  return TRUE;
 }
 
 

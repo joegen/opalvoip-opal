@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.cxx,v $
- * Revision 1.2013  2003/01/07 04:39:53  robertj
+ * Revision 1.2014  2004/02/19 10:47:04  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.12  2003/01/07 04:39:53  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.11  2002/11/10 11:33:19  robertj
@@ -66,6 +69,46 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.130  2003/12/11 05:41:00  csoutheren
+ * Added storage of H.225 version in endpoint structure
+ * Disabled sending RIPs to endpoints that cannot handle them
+ *
+ * Revision 1.129  2003/05/29 09:19:52  rjongbloed
+ * Fixed minor problem with including DisplayName IE if localPartyName
+ *   is blank, now does not include it, thanks Auri Vizgaitis
+ *
+ * Revision 1.128  2003/05/06 06:24:16  robertj
+ * Added continuous DTMF tone support (H.245 UserInputIndication - signalUpdate)
+ *   as per header documentation, thanks Auri Vizgaitis
+ *
+ * Revision 1.127  2003/04/10 09:37:20  robertj
+ * Added some more functions for converting to alias addresses.
+ *
+ * Revision 1.126  2003/04/01 03:11:51  robertj
+ * Added function to get array of AliasAddress into PStringArray.
+ *
+ * Revision 1.125  2003/03/25 04:56:21  robertj
+ * Fixed issues to do with multiple inheritence in transaction reply cache.
+ *
+ * Revision 1.124  2003/03/20 01:51:12  robertj
+ * More abstraction of H.225 RAS and H.501 protocols transaction handling.
+ *
+ * Revision 1.123  2003/02/25 06:48:19  robertj
+ * More work on PDU transaction abstraction.
+ *
+ * Revision 1.122  2003/02/21 05:25:45  craigs
+ * Abstracted out underlying transports for use with peerelements
+ *
+ * Revision 1.121  2003/02/03 04:31:05  robertj
+ * Added special case for Cisco vendor field, they leave it rather incomplete,
+ *
+ * Revision 1.120  2003/01/26 02:57:58  craigs
+ * Fixed oops in last checkin
+ *
+ * Revision 1.119  2003/01/26 02:50:38  craigs
+ * Change so SETUP PDU uses conference and callIdentifier from H323Connection,
+ * rather than both doing seperately and then overwriting
  *
  * Revision 1.118  2002/11/28 04:41:48  robertj
  * Added support for RAS ServiceControlIndication command.
@@ -533,12 +576,31 @@ void H323TraceDumpPDU(const char * proto,
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void H323SetAliasAddresses(const PStringList & names,
-                           H225_ArrayOf_AliasAddress & aliases)
+void H323SetAliasAddresses(const H323TransportAddressArray & addresses, H225_ArrayOf_AliasAddress & aliases)
+{
+  aliases.SetSize(addresses.GetSize());
+  for (PINDEX i = 0; i < addresses.GetSize(); i++)
+    H323SetAliasAddress(addresses[i], aliases[i]);
+}
+
+
+void H323SetAliasAddresses(const PStringArray & names,
+                           H225_ArrayOf_AliasAddress & aliases,
+                           int tag)
 {
   aliases.SetSize(names.GetSize());
   for (PINDEX i = 0; i < names.GetSize(); i++)
-    H323SetAliasAddress(names[i], aliases[i]);
+    H323SetAliasAddress(names[i], aliases[i], tag);
+}
+
+
+void H323SetAliasAddresses(const PStringList & names,
+                           H225_ArrayOf_AliasAddress & aliases,
+                           int tag)
+{
+  aliases.SetSize(names.GetSize());
+  for (PINDEX i = 0; i < names.GetSize(); i++)
+    H323SetAliasAddress(names[i], aliases[i], tag);
 }
 
 
@@ -548,10 +610,43 @@ static BOOL IsE164(const PString & str)
 }
 
 
-void H323SetAliasAddress(const PString & name, H225_AliasAddress & alias, int tag)
+void H323SetAliasAddress(const H323TransportAddress & address, H225_AliasAddress & alias)
 {
-  // See if explicitly specified the alias type, otherwise guess it from
-  // the string, if all digits then assume an e164 address.
+  alias.SetTag(H225_AliasAddress::e_transportID);
+  address.SetPDU(alias);
+}
+
+static struct {
+  const char * name;
+  int tag;
+} aliasAddressTypes[5] = {
+  { "e164",  H225_AliasAddress::e_dialedDigits },
+  { "h323",  H225_AliasAddress::e_h323_ID },
+  { "url",   H225_AliasAddress::e_url_ID },
+  { "ip",    H225_AliasAddress::e_transportID },
+  { "email", H225_AliasAddress::e_email_ID },
+//  { "???",    H225_AliasAddresse_partyNumber },
+//  { "???",    H225_AliasAddresse_mobileUIM }
+};
+
+void H323SetAliasAddress(const PString & _name, H225_AliasAddress & alias, int tag)
+{
+  PString name = _name;
+  // See if alias type was explicitly specified
+  if (tag < 0) {
+    PINDEX colon = name.Find(':');
+    if (colon != P_MAX_INDEX && colon > 0) {
+      PString type = name.Left(colon);
+      for (PINDEX i = 0; tag < 0 && i < 5; i++) {
+        if (type == aliasAddressTypes[i].name) {
+          tag = aliasAddressTypes[i].tag;
+          name = name.Mid(colon+1);
+        }
+      }
+    }
+  }
+  
+  // otherwise guess it from the string: if all digits then assume an e164 address.
   if (tag < 0)
     tag = IsE164(name) ? H225_AliasAddress::e_dialedDigits : H225_AliasAddress::e_h323_ID;
 
@@ -607,6 +702,17 @@ void H323SetAliasAddress(const PString & name, H225_AliasAddress & alias, int ta
 
 
 /////////////////////////////////////////////////////////////////////////////
+
+PStringArray H323GetAliasAddressStrings(const H225_ArrayOf_AliasAddress & aliases)
+{
+  PStringArray strings(aliases.GetSize());
+
+  for (PINDEX i = 0; i < aliases.GetSize(); i++)
+    strings[i] = H323GetAliasAddressString(aliases[i]);
+
+  return strings;
+}
+
 
 PString H323GetAliasAddressString(const H225_AliasAddress & alias)
 {
@@ -686,9 +792,20 @@ PString H323GetApplicationInfo(const H225_VendorIdentifier & vendor)
 {
   PStringStream str;
 
-  str << vendor.m_productId.AsString() << '\t'
-      << vendor.m_versionId.AsString() << '\t'
-      << vendor.m_vendor.m_t35CountryCode;
+  PString product = vendor.m_productId.AsString();
+  PString version = vendor.m_versionId.AsString();
+
+  // Special case, Cisco IOS does not put in the product and version fields
+  if (vendor.m_vendor.m_t35CountryCode == 181 &&
+      vendor.m_vendor.m_t35Extension == 0 &&
+      vendor.m_vendor.m_manufacturerCode == 18) {
+    if (product.IsEmpty())
+      product = "Cisco IOS";
+    if (version.IsEmpty())
+      version = "12.2";
+  }
+
+  str << product << '\t' << version << '\t' << vendor.m_vendor.m_t35CountryCode;
   if (vendor.m_vendor.m_t35Extension != 0)
     str << '.' << vendor.m_vendor.m_t35Extension;
   str << '/' << vendor.m_vendor.m_manufacturerCode;
@@ -733,11 +850,11 @@ H225_Setup_UUIE & H323SignalPDU::BuildSetup(const H323Connection & connection,
   setup.IncludeOptionalField(H225_Setup_UUIE::e_sourceAddress);
   H323SetAliasAddresses(endpoint.GetAliasNames(), setup.m_sourceAddress);
 
-  setup.m_conferenceID = OpalGloballyUniqueID();
+  setup.m_conferenceID = connection.GetConferenceIdentifier();
   setup.m_conferenceGoal.SetTag(H225_Setup_UUIE_conferenceGoal::e_create);
   setup.m_callType.SetTag(H225_CallType::e_pointToPoint);
 
-  setup.m_callIdentifier.m_guid = OpalGloballyUniqueID();
+  setup.m_callIdentifier.m_guid = connection.GetCallIdentifier();
   setup.m_mediaWaitForConnect = FALSE;
   setup.m_canOverlapSend = FALSE;
 
@@ -1355,7 +1472,8 @@ void H323SignalPDU::SetQ931Fields(const H323Connection & connection,
     }
   }
   else {
-    q931pdu.SetDisplayName(localName);
+    if (!localName)
+      q931pdu.SetDisplayName(localName);
     for (i = 0; i < aliases.GetSize(); i++) {
       if (IsE164(aliases[i])) {
         number = aliases[i];
@@ -1671,20 +1789,32 @@ H245_UserInputIndication & H323ControlPDU::BuildUserInputIndication(char tone,
 {
   H245_UserInputIndication & ind = Build(H245_IndicationMessage::e_userInput);
 
-  ind.SetTag(H245_UserInputIndication::e_signal);
-  H245_UserInputIndication_signal & sig = ind;
+  if (tone != ' ') {
+    ind.SetTag(H245_UserInputIndication::e_signal);
+    H245_UserInputIndication_signal & sig = ind;
 
-  sig.m_signalType.SetValue(tone);
+    sig.m_signalType.SetValue(tone);
 
-  if (duration > 0) {
-    sig.IncludeOptionalField(H245_UserInputIndication_signal::e_duration);
-    sig.m_duration = duration;
+    if (duration > 0) {
+      sig.IncludeOptionalField(H245_UserInputIndication_signal::e_duration);
+      sig.m_duration = duration;
+    }
+
+    if (logicalChannel > 0) {
+      sig.IncludeOptionalField(H245_UserInputIndication_signal::e_rtp);
+      sig.m_rtp.m_logicalChannelNumber = logicalChannel;
+      sig.m_rtp.m_timestamp = rtpTimestamp;
+    }
   }
+  else {
+    ind.SetTag(H245_UserInputIndication::e_signalUpdate);
+    H245_UserInputIndication_signalUpdate & sig = ind;
 
-  if (logicalChannel > 0) {
-    sig.IncludeOptionalField(H245_UserInputIndication_signal::e_rtp);
-    sig.m_rtp.m_logicalChannelNumber = logicalChannel;
-    sig.m_rtp.m_timestamp = rtpTimestamp;
+    sig.m_duration = duration;
+    if (logicalChannel > 0) {
+      sig.IncludeOptionalField(H245_UserInputIndication_signalUpdate::e_rtp);
+      sig.m_rtp.m_logicalChannelNumber = logicalChannel;
+    }
   }
 
   return ind;
@@ -1733,8 +1863,172 @@ H323RasPDU::H323RasPDU()
 
 
 H323RasPDU::H323RasPDU(const H235Authenticators & auth)
-  : authenticators(auth)
+  : H323TransactionPDU(auth)
 {
+}
+
+
+PObject * H323RasPDU::Clone() const
+{
+  return new H323RasPDU(*this);
+}
+
+
+PASN_Object & H323RasPDU::GetPDU()
+{
+  return *this;
+}
+
+
+PASN_Choice & H323RasPDU::GetChoice()
+{
+  return *this;
+}
+
+
+const PASN_Object & H323RasPDU::GetPDU() const
+{
+  return *this;
+}
+
+
+const PASN_Choice & H323RasPDU::GetChoice() const
+{
+  return *this;
+}
+
+
+unsigned H323RasPDU::GetSequenceNumber() const
+{
+  switch (GetTag()) {
+    case H225_RasMessage::e_gatekeeperRequest :
+      return ((const H225_GatekeeperRequest &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_gatekeeperConfirm :
+      return ((const H225_GatekeeperConfirm &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_gatekeeperReject :
+      return ((const H225_GatekeeperReject &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_registrationRequest :
+      return ((const H225_RegistrationRequest &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_registrationConfirm :
+      return ((const H225_RegistrationConfirm &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_registrationReject :
+      return ((const H225_RegistrationReject &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_unregistrationRequest :
+      return ((const H225_UnregistrationRequest &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_unregistrationConfirm :
+      return ((const H225_UnregistrationConfirm &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_unregistrationReject :
+      return ((const H225_UnregistrationReject &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_admissionRequest :
+      return ((const H225_AdmissionRequest &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_admissionConfirm :
+      return ((const H225_AdmissionConfirm &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_admissionReject :
+      return ((const H225_AdmissionReject &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_bandwidthRequest :
+      return ((const H225_BandwidthRequest &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_bandwidthConfirm :
+      return ((const H225_BandwidthConfirm &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_bandwidthReject :
+      return ((const H225_BandwidthReject &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_disengageRequest :
+      return ((const H225_DisengageRequest &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_disengageConfirm :
+      return ((const H225_DisengageConfirm &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_disengageReject :
+      return ((const H225_DisengageReject &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_locationRequest :
+      return ((const H225_LocationRequest &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_locationConfirm :
+      return ((const H225_LocationConfirm &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_locationReject :
+      return ((const H225_LocationReject &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_infoRequest :
+      return ((const H225_InfoRequest &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_infoRequestResponse :
+      return ((const H225_InfoRequestResponse &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_nonStandardMessage :
+      return ((const H225_NonStandardMessage &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_unknownMessageResponse :
+      return ((const H225_UnknownMessageResponse &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_requestInProgress :
+      return ((const H225_RequestInProgress &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_resourcesAvailableIndicate :
+      return ((const H225_ResourcesAvailableIndicate &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_resourcesAvailableConfirm :
+      return ((const H225_ResourcesAvailableConfirm &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_infoRequestAck :
+      return ((const H225_InfoRequestAck &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_infoRequestNak :
+      return ((const H225_InfoRequestNak &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_serviceControlIndication :
+      return ((const H225_ServiceControlIndication &)*this).m_requestSeqNum;
+
+    case H225_RasMessage::e_serviceControlResponse :
+      return ((const H225_ServiceControlResponse &)*this).m_requestSeqNum;
+
+    default :
+      return 0;
+  }
+}
+
+
+unsigned H323RasPDU::GetRequestInProgressDelay() const
+{
+  if (GetTag() != H225_RasMessage::e_requestInProgress)
+    return 0;
+
+  return ((const H225_RequestInProgress &)*this).m_delay;
+}
+
+
+#if PTRACING
+const char * H323RasPDU::GetProtocolName() const
+{
+  return "H225RAS";
+}
+#endif
+
+
+H323TransactionPDU * H323RasPDU::ClonePDU() const
+{
+  return new H323RasPDU(*this);
+}
+
+
+void H323RasPDU::DeletePDU()
+{
+  delete this;
 }
 
 
@@ -2023,156 +2317,6 @@ H225_ServiceControlResponse & H323RasPDU::BuildServiceControlResponse(unsigned s
   H225_ServiceControlResponse & scr = *this;
   scr.m_requestSeqNum = seqNum;
   return scr;
-}
-
-
-unsigned H323RasPDU::GetSequenceNumber() const
-{
-  switch (GetTag()) {
-    case H225_RasMessage::e_gatekeeperRequest :
-      return ((const H225_GatekeeperRequest &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_gatekeeperConfirm :
-      return ((const H225_GatekeeperConfirm &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_gatekeeperReject :
-      return ((const H225_GatekeeperReject &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_registrationRequest :
-      return ((const H225_RegistrationRequest &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_registrationConfirm :
-      return ((const H225_RegistrationConfirm &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_registrationReject :
-      return ((const H225_RegistrationReject &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_unregistrationRequest :
-      return ((const H225_UnregistrationRequest &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_unregistrationConfirm :
-      return ((const H225_UnregistrationConfirm &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_unregistrationReject :
-      return ((const H225_UnregistrationReject &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_admissionRequest :
-      return ((const H225_AdmissionRequest &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_admissionConfirm :
-      return ((const H225_AdmissionConfirm &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_admissionReject :
-      return ((const H225_AdmissionReject &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_bandwidthRequest :
-      return ((const H225_BandwidthRequest &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_bandwidthConfirm :
-      return ((const H225_BandwidthConfirm &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_bandwidthReject :
-      return ((const H225_BandwidthReject &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_disengageRequest :
-      return ((const H225_DisengageRequest &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_disengageConfirm :
-      return ((const H225_DisengageConfirm &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_disengageReject :
-      return ((const H225_DisengageReject &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_locationRequest :
-      return ((const H225_LocationRequest &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_locationConfirm :
-      return ((const H225_LocationConfirm &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_locationReject :
-      return ((const H225_LocationReject &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_infoRequest :
-      return ((const H225_InfoRequest &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_infoRequestResponse :
-      return ((const H225_InfoRequestResponse &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_nonStandardMessage :
-      return ((const H225_NonStandardMessage &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_unknownMessageResponse :
-      return ((const H225_UnknownMessageResponse &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_requestInProgress :
-      return ((const H225_RequestInProgress &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_resourcesAvailableIndicate :
-      return ((const H225_ResourcesAvailableIndicate &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_resourcesAvailableConfirm :
-      return ((const H225_ResourcesAvailableConfirm &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_infoRequestAck :
-      return ((const H225_InfoRequestAck &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_infoRequestNak :
-      return ((const H225_InfoRequestNak &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_serviceControlIndication :
-      return ((const H225_ServiceControlIndication &)*this).m_requestSeqNum;
-
-    case H225_RasMessage::e_serviceControlResponse :
-      return ((const H225_ServiceControlResponse &)*this).m_requestSeqNum;
-
-    default :
-      return 0;
-  }
-}
-
-
-BOOL H323RasPDU::Read(H323Transport & transport)
-{
-  if (!transport.ReadPDU(rawPDU)) {
-    PTRACE(1, "H225RAS\tRead error ("
-           << transport.GetErrorNumber(PChannel::LastReadError)
-           << "): " << transport.GetErrorText(PChannel::LastReadError));
-    return FALSE;
-  }
-
-  rawPDU.ResetDecoder();
-  BOOL ok = Decode(rawPDU);
-  if (!ok) {
-    PTRACE(1, "H225RAS\tRead error: PER decode failure:\n  "
-           << setprecision(2) << rawPDU << "\n "  << setprecision(2) << *this);
-    SetTag(UINT_MAX);
-    return TRUE;
-  }
-
-  H323TraceDumpPDU("H225RAS", FALSE, rawPDU, *this, *this, GetSequenceNumber());
-  return TRUE;
-}
-
-
-BOOL H323RasPDU::Write(H323Transport & transport)
-{
-  PPER_Stream strm;
-  Encode(strm);
-  strm.CompleteEncoding();
-
-  // Finalise the security if present
-  for (PINDEX i = 0; i < authenticators.GetSize(); i++)
-    authenticators[i].Finalise(strm);
-
-  H323TraceDumpPDU("H225RAS", TRUE, strm, *this, *this, GetSequenceNumber());
-
-  if (transport.WritePDU(strm))
-    return TRUE;
-
-  PTRACE(1, "H225RAS\tWrite PDU failed ("
-         << transport.GetErrorNumber(PChannel::LastWriteError)
-         << "): " << transport.GetErrorText(PChannel::LastWriteError));
-  return FALSE;
 }
 
 

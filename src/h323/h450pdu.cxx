@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h450pdu.cxx,v $
- * Revision 1.2013  2004/02/17 09:59:27  csoutheren
+ * Revision 1.2014  2004/02/19 10:47:04  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.12  2004/02/17 09:59:27  csoutheren
  * Removed incorrect assignment of m_silentMonitoringPermitted to FALSE
  * See SourceForge bug 832371
  * Thanks to Vyacheslav E. Andrejev
@@ -64,6 +67,12 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.21  2004/02/07 03:35:56  rjongbloed
+ * Fixed missing unlocks in some H.240 operations, in particular consultation transfer never being cleaned up. Thanks Sébastien Annedouche
+ *
+ * Revision 1.20  2003/07/15 11:22:07  csoutheren
+ * Improved handling of alias addresses thanks to Federico Pinna
  *
  * Revision 1.19  2002/11/21 22:37:47  robertj
  * Fixed problems with unrecognized invoke APDU, thanks Andrea Bondavalli
@@ -427,6 +436,9 @@ void H450ServiceAPDU::ParseEndpointAddress(H4501_EndpointAddress& endpointAddres
 
   if (alias.IsEmpty()) {
     remoteParty = transportAddress;
+  }
+  else if (transportAddress.IsEmpty()) {
+    remoteParty = alias;
   }
   else {
     remoteParty = alias + '@' + transportAddress;
@@ -1243,13 +1255,14 @@ void H4502Handler::OnReceivedIdentifyReturnResult(X880_ReturnResult &returnResul
     // callTransferAbandon invoke APDU on the secondary call at a later stage if we 
     // get back a callTransferInitiateReturnError
     H323Connection* primaryConnection = endpoint.FindConnectionWithLock(CallToken);
-
     if (primaryConnection != NULL) {
       primaryConnection->SetAssociatedCallToken(connection.GetCallToken());
 
       // Send a callTransferInitiate invoke APDU in a FACILITY message
       // to the transferred endpoint on the primary call
       endpoint.TransferCall(primaryConnection->GetCallToken(), remoteParty, callIdentity);
+
+      primaryConnection->Unlock();
     }
   }
 }
@@ -2265,6 +2278,7 @@ void H45011Handler::OnReceivedCIGetCIPLResult(X880_ReturnResult & returnResult)
       // Clear Call with intruding (A)
       H323Connection* conn = endpoint.FindConnectionWithLock(intrudingCallToken);
       conn->SetIntrusionNotAuthorized();
+      conn->Unlock();
       endpoint.ClearCall (intrudingCallToken);
     }
   }

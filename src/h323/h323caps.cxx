@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2017  2003/04/08 02:44:04  robertj
+ * Revision 1.2018  2004/02/19 10:47:04  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.16  2003/04/08 02:44:04  robertj
  * Removed the {sw} from media format name, this is a hang over from
  *   OpenH323, thanks Guilhem Tardy for pointing this out.
  *
@@ -81,6 +84,30 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.68  2003/11/08 03:11:29  rjongbloed
+ * Fixed failure to call ancestor in copy ctor, thanks  Victor Ivashin.
+ *
+ * Revision 1.67  2003/10/27 06:03:39  csoutheren
+ * Added support for QoS
+ *   Thanks to Henry Harrison of AliceStreet
+ *
+ * Revision 1.66  2003/06/06 02:13:48  rjongbloed
+ * Changed non-standard capability semantics so can use C style strings as
+ *   the embedded data block (ie automatically call strlen)
+ *
+ * Revision 1.65  2003/05/16 07:30:20  rjongbloed
+ * Fixed correct matching of OLC data types to capabilities, for example CIF
+ *   and QCIF video are different and should match exactly.
+ *
+ * Revision 1.64  2003/04/28 07:00:09  robertj
+ * Fixed problem with compiler(s) not correctly initialising static globals
+ *
+ * Revision 1.63  2003/04/27 23:50:38  craigs
+ * Made list of registered codecs available outside h323caps.cxx
+ *
+ * Revision 1.62  2003/03/18 05:11:22  robertj
+ * Fixed OID based non-standard capabilities, thanks Philippe Massicotte
  *
  * Revision 1.61  2002/12/05 12:29:31  rogerh
  * Add non standard codec identifier for Xiph.org
@@ -353,7 +380,7 @@ H323_REGISTER_CAPABILITY_FUNCTION(H323_G7231Capability_5k3, OPAL_G7231_5k3, H323
 H323_REGISTER_CAPABILITY(H323_GSM0610Capability, OPAL_GSM0610);
 
 
-static H323CapabilityRegistration * RegisteredCapabilitiesListHead;
+H323CapabilityRegistration * H323CapabilityRegistration::registeredCapabilitiesListHead = NULL;
 
 
 #define new PNEW
@@ -421,7 +448,8 @@ void H323Capability::PrintOn(ostream & strm) const
 
 H323Capability * H323Capability::Create(H323EndPoint & ep, const PString & name)
 {
-  H323CapabilityRegistration * find = RegisteredCapabilitiesListHead;
+  PWaitAndSignal mutex(H323CapabilityRegistration::GetMutex());
+  H323CapabilityRegistration * find = H323CapabilityRegistration::registeredCapabilitiesListHead;
   while (find != NULL) {
     if (*find == name)
       return find->Create(ep);
@@ -505,12 +533,42 @@ BOOL H323Capability::IsUsable(const H323Connection &) const
 
 /////////////////////////////////////////////////////////////////////////////
 
+H323RealTimeCapability::H323RealTimeCapability()
+{
+    rtpqos = NULL;
+}
+
+H323RealTimeCapability::H323RealTimeCapability(const H323RealTimeCapability & rtc)
+  : H323Capability(rtc)
+{
+  if (rtc.rtpqos == NULL) 
+    rtpqos = NULL;
+  else {
+    rtpqos  = new RTP_QOS();
+    *rtpqos = *rtc.rtpqos;
+  }
+}
+
+H323RealTimeCapability::~H323RealTimeCapability()
+{
+  if (rtpqos != NULL)
+    delete rtpqos;
+}
+
+void H323RealTimeCapability::AttachQoS(RTP_QOS * _rtpqos)
+{
+  if (rtpqos != NULL)
+    delete rtpqos;
+    
+  rtpqos = _rtpqos;
+}
+
 H323Channel * H323RealTimeCapability::CreateChannel(H323Connection & connection,
                                                     H323Channel::Directions dir,
                                                     unsigned sessionID,
                                  const H245_H2250LogicalChannelParameters * param) const
 {
-  return connection.CreateRealTimeLogicalChannel(*this, dir, sessionID, param);
+  return connection.CreateRealTimeLogicalChannel(*this, dir, sessionID, param, rtpqos);
 }
 
 
@@ -521,7 +579,8 @@ H323NonStandardCapabilityInfo::H323NonStandardCapabilityInfo(H323EndPoint & endp
                                                              PINDEX dataSize,
                                                              PINDEX _offset,
                                                              PINDEX _len)
-  : nonStandardData(dataPtr, dataSize),
+  : nonStandardData(dataPtr, dataSize == 0 && dataPtr != NULL
+                                 ? strlen((const char *)dataPtr) : dataSize),
     comparisonOffset(_offset),
     comparisonLength(_len)
 {
@@ -539,7 +598,8 @@ H323NonStandardCapabilityInfo::H323NonStandardCapabilityInfo(const PString & _oi
                                                              PINDEX _offset,
                                                              PINDEX _len)
   : oid(_oid),
-    nonStandardData(dataPtr, dataSize),
+    nonStandardData(dataPtr, dataSize == 0 && dataPtr != NULL
+                                 ? strlen((const char *)dataPtr) : dataSize),
     comparisonOffset(_offset),
     comparisonLength(_len)
 {
@@ -556,7 +616,8 @@ H323NonStandardCapabilityInfo::H323NonStandardCapabilityInfo(BYTE country,
   : t35CountryCode(country),
     t35Extension(extension),
     manufacturerCode(maufacturer),
-    nonStandardData(dataPtr, dataSize),
+    nonStandardData(dataPtr, dataSize == 0 && dataPtr != NULL
+                                 ? strlen((const char *)dataPtr) : dataSize),
     comparisonOffset(_offset),
     comparisonLength(_len)
 {
@@ -597,7 +658,8 @@ BOOL H323NonStandardCapabilityInfo::OnSendingNonStandardPDU(PASN_Choice & pdu,
 
   if (!oid) {
     param.m_nonStandardIdentifier.SetTag(H245_NonStandardIdentifier::e_object);
-    ((PASN_ObjectId &)param) = oid;
+    PASN_ObjectId & nonStandardIdentifier = param.m_nonStandardIdentifier;
+    nonStandardIdentifier = oid;
   }
   else {
     param.m_nonStandardIdentifier.SetTag(H245_NonStandardIdentifier::e_h221NonStandard);
@@ -633,7 +695,8 @@ PObject::Comparison H323NonStandardCapabilityInfo::CompareParam(const H245_NonSt
     if (param.m_nonStandardIdentifier.GetTag() != H245_NonStandardIdentifier::e_object)
       return PObject::LessThan;
 
-    return oid.Compare((PASN_ObjectId &)param);
+    const PASN_ObjectId & nonStandardIdentifier = param.m_nonStandardIdentifier;
+    return oid.Compare(nonStandardIdentifier.AsString());
   }
 
   if (param.m_nonStandardIdentifier.GetTag() != H245_NonStandardIdentifier::e_h221NonStandard)
@@ -1819,7 +1882,8 @@ PINDEX H323Capabilities::AddAllCapabilities(H323EndPoint & ep,
 
   PStringArray wildcard = name.Tokenise('*', FALSE);
 
-  H323CapabilityRegistration * reg = RegisteredCapabilitiesListHead;
+  PWaitAndSignal mutex(H323CapabilityRegistration::GetMutex());
+  H323CapabilityRegistration * reg = H323CapabilityRegistration::registeredCapabilitiesListHead;
   while (reg != NULL) {
     if (MatchWildcard(*reg, wildcard) && FindCapability(*reg) == NULL) {
       PINDEX num = SetCapability(descriptorNum, simultaneous, reg->Create(ep));
@@ -1892,6 +1956,8 @@ void H323Capabilities::Remove(H323Capability * capability)
 {
   if (capability == NULL)
     return;
+
+  PTRACE(3, "H323\tRemoving capability: " << *capability);
 
   unsigned capabilityNumber = capability->GetCapabilityNumber();
 
@@ -2057,27 +2123,56 @@ H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType
 {
   PTRACE(4, "H323\tFindCapability: " << dataType.GetTagName());
 
-  switch (dataType.GetTag()) {
-    case H245_DataType::e_audioData :
+  for (PINDEX i = 0; i < table.GetSize(); i++) {
+    H323Capability & capability = table[i];
+    BOOL checkExact;
+    switch (dataType.GetTag()) {
+      case H245_DataType::e_audioData :
       {
         const H245_AudioCapability & audio = dataType;
-        return FindCapability(H323Capability::e_Audio, audio, H245_AudioCapability::e_nonStandard);
+        checkExact = capability.GetMainType() == H323Capability::e_Audio &&
+                    (capability.GetSubType() == audio.GetTag() ||
+                     capability.GetSubType() == H245_AudioCapability::e_nonStandard &&
+                     audio.GetTag() == H245_AudioCapability::e_nonStandard &&
+                     capability.IsNonStandardMatch((const H245_NonStandardParameter &)audio));
+        break;
       }
 
-    case H245_DataType::e_videoData :
+      case H245_DataType::e_videoData :
       {
         const H245_VideoCapability & video = dataType;
-        return FindCapability(H323Capability::e_Video, video, H245_VideoCapability::e_nonStandard);
+        checkExact = capability.GetMainType() == H323Capability::e_Video &&
+                    (capability.GetSubType() == video.GetTag() ||
+                     capability.GetSubType() == H245_VideoCapability::e_nonStandard &&
+                     video.GetTag() == H245_VideoCapability::e_nonStandard &&
+                     capability.IsNonStandardMatch((const H245_NonStandardParameter &)video));
+        break;
       }
 
-    case H245_DataType::e_data :
+      case H245_DataType::e_data :
       {
         const H245_DataApplicationCapability & data = dataType;
-        return FindCapability(H323Capability::e_Data, data.m_application, H245_DataApplicationCapability_application::e_nonStandard);
+        checkExact = capability.GetMainType() == H323Capability::e_Data &&
+                    (capability.GetSubType() == data.m_application.GetTag() ||
+                     capability.GetSubType() == H245_DataApplicationCapability_application::e_nonStandard &&
+                     data.m_application.GetTag() == H245_DataApplicationCapability_application::e_nonStandard &&
+                     capability.IsNonStandardMatch((const H245_NonStandardParameter &)data.m_application));
+        break;
       }
 
-    default :
-      break;
+      default :
+        checkExact = FALSE;
+    }
+
+    if (checkExact) {
+      H323Capability * compare = (H323Capability *)capability.Clone();
+      if (compare->OnReceivedPDU(dataType, FALSE) && *compare == capability) {
+        delete compare;
+        PTRACE(3, "H323\tFound capability: " << capability);
+        return &capability;
+      }
+      delete compare;
+    }
   }
 
   return NULL;
@@ -2366,15 +2461,23 @@ OpalMediaFormatList H323Capabilities::GetMediaFormats() const
 H323CapabilityRegistration::H323CapabilityRegistration(const char * name)
   : PCaselessString(name)
 {
-  H323CapabilityRegistration * test = RegisteredCapabilitiesListHead;
+  PWaitAndSignal mutex(GetMutex());
+  H323CapabilityRegistration * test = registeredCapabilitiesListHead;
   while (test != NULL) {
     if (*test == *this)
       return;
     test = test->link;
   }
 
-  link = RegisteredCapabilitiesListHead;
-  RegisteredCapabilitiesListHead = this;
+  link = registeredCapabilitiesListHead;
+  registeredCapabilitiesListHead = this;
+}
+
+
+PMutex & H323CapabilityRegistration::GetMutex()
+{
+  static PMutex mutex;
+  return mutex;
 }
 
 
@@ -2404,7 +2507,9 @@ void H245_AudioCapability::PrintOn(ostream & strm) const
 {
   strm << GetTagName();
 
+  // tag 0 is nonstandard
   if (tag == 0) {
+
     H245_NonStandardParameter & param = (H245_NonStandardParameter &)GetObject();
     const PBYTEArray & data = param.m_data;
 
