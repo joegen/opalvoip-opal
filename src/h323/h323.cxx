@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2020  2002/02/11 09:32:12  robertj
+ * Revision 1.2021  2002/02/19 07:46:36  robertj
+ * Restructured media bypass functions to fix problems with RFC2833.
+ * Fixes to capability tables to make RFC2833 work properly.
+ *
+ * Revision 2.19  2002/02/11 09:32:12  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.18  2002/02/11 07:40:46  robertj
@@ -966,7 +970,6 @@ H323Connection::H323Connection(OpalCall & call,
                                unsigned options)
   : OpalConnection(call, ep, token),
     endpoint(ep),
-    localCapabilities(ep.GetCapabilities()),
     gkAccessTokenOID(ep.GetGkAccessTokenOID()),
     alertingTime(0),
     connectedTime(0),
@@ -1466,13 +1469,29 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
   localDestinationAddress = setupPDU.GetDestinationAlias(TRUE);
   mediaWaitForConnect = setup.m_mediaWaitForConnect;
 
+  // Send back a H323 Call Proceeding PDU in case OnIncomingCall() takes a while
+  PTRACE(3, "H225\tSending call proceeding PDU");
+  H323SignalPDU callProceedingPDU;
+  H225_CallProceeding_UUIE & callProceeding = callProceedingPDU.BuildCallProceeding(*this);
+
+  if (!isConsultationTransfer) {
+    if (OnSendCallProceeding(callProceedingPDU)) {
+      HandleTunnelPDU(&callProceedingPDU);
+
+      if (fastStartState == FastStartDisabled)
+        callProceeding.IncludeOptionalField(H225_CallProceeding_UUIE::e_fastConnectRefused);
+
+      if (!WriteSignalPDU(callProceedingPDU))
+        return FALSE;
+    }
+  }
+
   // See if remote endpoint wants to start fast
   H245_OpenLogicalChannel_List olcList;
   if ((fastStartState != FastStartDisabled) && setup.HasOptionalField(H225_Setup_UUIE::e_fastStart)) {
     // The first time through just collects OLC structures and builds the
     // possible capability tables from them.
 
-    remoteCapabilities.RemoveAll();
     PTRACE(3, "H225\tFast start detected");
 
     H323Capabilities allCapabilities;
@@ -1496,10 +1515,14 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
         if (capability != NULL) {
           if (capability->OnReceivedPDU(*dataType, !isTransmitter)) {
             unsigned id = capability->GetDefaultSessionID()-1;
-            if (isTransmitter)
-              remoteCapabilities.SetCapability(0, id, remoteCapabilities.Copy(*capability));
-            else
-              localCapabilities.SetCapability(0, id, localCapabilities.Copy(*capability));
+            if (isTransmitter) {
+              if (remoteCapabilities.FindCapability(*capability) == NULL)
+                remoteCapabilities.SetCapability(0, id, remoteCapabilities.Copy(*capability));
+            }
+            else {
+              if (localCapabilities.FindCapability(*capability) == NULL)
+                localCapabilities.SetCapability(0, id, localCapabilities.Copy(*capability));
+            }
             olcList.Append(olc);
           }
           else {
@@ -1519,22 +1542,7 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
     }
   }
 
-  // Send back a H323 Call Proceeding PDU in case OnIncomingCall() takes a while
-  PTRACE(3, "H225\tSending call proceeding PDU");
-  H323SignalPDU callProceedingPDU;
-  H225_CallProceeding_UUIE & callProceeding = callProceedingPDU.BuildCallProceeding(*this);
-
   if (!isConsultationTransfer) {
-    if (OnSendCallProceeding(callProceedingPDU)) {
-      HandleTunnelPDU(&callProceedingPDU);
-
-      if (fastStartState == FastStartDisabled)
-        callProceeding.IncludeOptionalField(H225_CallProceeding_UUIE::e_fastConnectRefused);
-
-      if (!WriteSignalPDU(callProceedingPDU))
-        return FALSE;
-    }
-
     // if the application indicates not to contine, then send a Q931 Release Complete PDU
     alertingPDU = new H323SignalPDU;
     alertingPDU->BuildAlerting(*this);
@@ -2675,6 +2683,9 @@ BOOL H323Connection::StartControlNegotiations()
   if (GetRemoteApplication().Find("NetMeeting") != P_MAX_INDEX)
     localCapabilities.Remove(H323_UserInputCapability::SubTypeNames[H323_UserInputCapability::SignalToneRFC2833]);
 
+  // Get the local capabilities before fast start is handled
+  OnSetLocalCapabilities();
+
   // Begin the capability exchange procedure
   if (!capabilityExchangeProcedure->Start(FALSE)) {
     PTRACE(1, "H245\tStart of Capability Exchange failed");
@@ -3260,8 +3271,11 @@ BOOL H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remoteCaps
     }
     transmitterSidePaused = TRUE;
   }
-  else { // Received non-empty TCS
-    if (transmitterSidePaused)
+  else {
+    /* Received non-empty TCS, if was in paused state or this is the first TCS
+       received so we should kill the fake table created by fast start kill
+       the remote capabilities table so Merge() becomes a simple assignment */
+    if (transmitterSidePaused || !capabilityExchangeProcedure->HasReceivedCapabilities())
       remoteCapabilities.RemoveAll();
 
     if (!remoteCapabilities.Merge(remoteCaps))
@@ -3273,8 +3287,10 @@ BOOL H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remoteCaps
       capabilityExchangeProcedure->Start(TRUE);
       masterSlaveDeterminationProcedure->Start(TRUE);
     }
-    else
-      capabilityExchangeProcedure->Start(FALSE);
+    else {
+      if (localCapabilities.GetSize() > 0)
+        capabilityExchangeProcedure->Start(FALSE);
+    }
   }
 
   return TRUE;
@@ -3290,27 +3306,48 @@ void H323Connection::SendCapabilitySet(BOOL empty)
 void H323Connection::OnSetLocalCapabilities()
 {
   OpalMediaFormatList formats = ownerCall.GetMediaFormats(*this);
-
-  PINDEX simultaneous = P_MAX_INDEX;
-
-  PINDEX i;
-  for (i = 0; i < formats.GetSize(); i++) {
-    if (formats[i].GetDefaultSessionID() == OpalMediaFormat::DefaultAudioSessionID)
-      simultaneous = localCapabilities.AddAllCapabilities(endpoint, 0, simultaneous, formats[i]);
+  if (formats.IsEmpty()) {
+    PTRACE(2, "H323\tSetLocalCapabilities - no formats from other party");
+    return;
   }
 
-  simultaneous = P_MAX_INDEX;
-
-  for (i = 0; i < formats.GetSize(); i++) {
-    if (formats[i].GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID)
-      simultaneous = localCapabilities.AddAllCapabilities(endpoint, 0, simultaneous, formats[i]);
+  // Remove those things not in the other parties media format list
+  for (PINDEX c = 0; c < localCapabilities.GetSize(); c++) {
+    H323Capability & capability = localCapabilities[c];
+    if (formats.FindFormat(capability.GetMediaFormat()) == P_MAX_INDEX) {
+      localCapabilities.Remove(&capability);
+      c--;
+    }
   }
 
-  simultaneous = P_MAX_INDEX;
+  // Add those things that are in the other parties media format list
+  static unsigned sessionOrder[] = {
+    OpalMediaFormat::DefaultAudioSessionID,
+    OpalMediaFormat::DefaultVideoSessionID,
+    OpalMediaFormat::DefaultDataSessionID,
+    0
+  };
+  PINDEX simultaneous;
 
-  for (i = 0; i < formats.GetSize(); i++) {
-    if (formats[i].GetDefaultSessionID() == OpalMediaFormat::DefaultDataSessionID)
-      simultaneous = localCapabilities.AddAllCapabilities(endpoint, 0, simultaneous, formats[i]);
+  for (PINDEX s = 0; s < PARRAYSIZE(sessionOrder); s++) {
+    simultaneous = P_MAX_INDEX;
+    for (PINDEX i = 0; i < formats.GetSize(); i++) {
+      OpalMediaFormat format = formats[i];
+      if (format.GetDefaultSessionID() == sessionOrder[s])
+        simultaneous = localCapabilities.AddAllCapabilities(endpoint, 0, simultaneous, format);
+    }
+  }
+
+  // Special test for the RFC2833 capability to get teh correct dynamic payload type
+  H323Capability * capability = localCapabilities.FindCapability(OpalRFC2833);
+  if (capability != NULL) {
+    MediaInformation info;
+    OpalConnection * otherParty = GetCall().GetOtherPartyConnection(*this);
+    if (otherParty != NULL &&
+        otherParty->GetMediaInformation(OpalMediaFormat::DefaultAudioSessionID, info))
+      capability->SetPayloadType(info.rfc2833);
+    else
+      localCapabilities.Remove(capability);
   }
 
   PTRACE(2, "H323\tSetLocalCapabilities:\n" << setprecision(2) << localCapabilities);
@@ -3435,7 +3472,7 @@ BOOL H323Connection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForm
 OpalMediaStream * H323Connection::CreateMediaStream(BOOL isSource, unsigned sessionID)
 {
   if (isSource || fastStartedTransmitMediaStream == NULL) {
-    if (ownerCall.CanDoMediaBypass(*this, sessionID))
+    if (ownerCall.IsMediaBypassPossible(*this, sessionID))
       return new OpalNullMediaStream(isSource, sessionID);
     return new OpalRTPMediaStream(isSource, *GetSession(sessionID));
   }
@@ -3446,27 +3483,33 @@ OpalMediaStream * H323Connection::CreateMediaStream(BOOL isSource, unsigned sess
 }
 
 
-BOOL H323Connection::CanDoMediaBypass(unsigned sessionID) const
+BOOL H323Connection::IsMediaBypassPossible(unsigned sessionID) const
 {
-  PTRACE(3, "H323\tCanDoMediaBypass: session " << sessionID);
+  PTRACE(3, "H323\tIsMediaBypassPossible: session " << sessionID);
 
   return sessionID == OpalMediaFormat::DefaultAudioSessionID ||
          sessionID == OpalMediaFormat::DefaultVideoSessionID;
 }
 
 
-BOOL H323Connection::GetMediaTransportAddress(unsigned sessionID,
-                                              OpalTransportAddress & data,
-                                              OpalTransportAddress & control) const
+BOOL H323Connection::GetMediaInformation(unsigned sessionID,
+                                         MediaInformation & info) const
 {
-  PTRACE(3, "H323\tGetMediaTransportAddress for session " << sessionID);
-
   for (PINDEX i = 0; i < fastStartChannels.GetSize(); i++) {
     H323Channel & channel = fastStartChannels[i];
-    if (channel.GetSessionID() == sessionID)
-      return channel.GetMediaTransportAddress(data, control);
+    if (channel.GetSessionID() == sessionID &&
+        channel.GetMediaTransportAddress(info.data, info.control)) {
+      H323Capability * capability = remoteCapabilities.FindCapability(OpalRFC2833);
+      if (capability != NULL)
+        info.rfc2833 = capability->GetPayloadType();
+
+      PTRACE(3, "H323\tGetMediaInformation for session " << sessionID
+             << " data=" << info.data << " rfc2833=" << info.rfc2833);
+      return TRUE;
+    }
   }
 
+  PTRACE(3, "H323\tGetMediaInformation for session " << sessionID << " - no channel.");
   return FALSE;
 }
 
@@ -3768,7 +3811,7 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
                                                            unsigned sessionID,
                                         const H245_H2250LogicalChannelParameters * param)
 {
-  if (ownerCall.CanDoMediaBypass(*this, sessionID))
+  if (ownerCall.IsMediaBypassPossible(*this, sessionID))
     return new H323_ExternalRTPChannel(*this, capability, dir, sessionID);
 
   RTP_Session * session;
