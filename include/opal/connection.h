@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2030  2004/08/14 07:56:29  rjongbloed
+ * Revision 1.2031  2004/12/12 12:29:02  dsandras
+ * Moved GetRemoteApplication () to OpalConnection so that it is usable for all types of connection.
+ *
+ * Revision 2.29  2004/08/14 07:56:29  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.28  2004/05/17 13:24:18  rjongbloed
@@ -846,6 +849,10 @@ class OpalConnection : public PSafeObject
       */
     const PString & GetRemotePartyName() const { return remotePartyName; }
 
+    /**Get the remote application.
+      */
+    const PString & GetRemoteApplication() const { return remoteApplication; }
+    
     /**Get the remote party number, if there was one one.
        If the remote party has indicated an e164 number as one of its aliases
        or as a field in the Q.931 PDU, then this function will return it.
@@ -901,6 +908,7 @@ class OpalConnection : public PSafeObject
     PString             localPartyName;
     PString             displayName;
     PString             remotePartyName;
+    PString             remoteApplication;
     PString             remotePartyNumber;
     PString             remotePartyAddress;
     CallEndReason       callEndReason;
