@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2054  2005/02/19 22:48:48  dsandras
+ * Revision 1.2055  2005/03/11 18:12:09  dsandras
+ * Added support to specify the realm when registering. That way softphones already know what authentication information to use when required. The realm/domain can also be used in the From field.
+ *
+ * Revision 2.53  2005/02/19 22:48:48  dsandras
  * Added the possibility to register to several registrars and be able to do authenticated calls to each of them. Added SUBSCRIBE/NOTIFY support for Message Waiting Indications.
  *
  * Revision 2.52  2005/02/19 22:26:09  dsandras
@@ -259,12 +262,9 @@ SIPConnection::SIPConnection(OpalCall & call,
   if (proxy.IsEmpty())
     proxy = endpoint.GetProxy();
 
-  // Proxy auth parameters. If there is no proxy, then we will
-  // use the realm to authenticate when authentication is required
+  // Proxy parameters. 
   if (!proxy.IsEmpty()) {
     targetAddress = proxy.GetScheme() + ':' + proxy.GetHostName() + ':' + PString(proxy.GetPort());
-    authentication.SetUsername(proxy.GetUserName());
-    authentication.SetPassword(proxy.GetPassword());
   }
   
   if (inviteTransport == NULL)
@@ -1085,17 +1085,21 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
 
   // Received authentication required response, try to find authentication
   // for the given realm if no proxy
-  if (!authentication.IsValid()) {
-    
-    if (!auth.Parse(response.GetMIME()(isProxy 
-				       ? "Proxy-Authenticate"
-				       : "WWW-Authenticate"),
-		    isProxy)) {
-      Release(EndedBySecurityDenial);
-      return;
-    }
-    if (!endpoint.GetAuthentication(auth.GetRealm(), authentication)) {
-      PTRACE (3, "SIP\tCouldn't find authentication information for realm " << auth.GetRealm() << ", will use SIP Outbound Proxy authentication settings, if any");
+  if (!auth.Parse(response.GetMIME()(isProxy 
+				     ? "Proxy-Authenticate"
+				     : "WWW-Authenticate"),
+		  isProxy)) {
+    Release(EndedBySecurityDenial);
+    return;
+  }
+
+  // Try to find authentication parameters for the given realm,
+  // if not, use the proxy authentication parameters (if any)
+  if (!endpoint.GetAuthentication(auth.GetRealm(), authentication)) {
+    PTRACE (3, "SIP\tCouldn't find authentication information for realm " << auth.GetRealm() << ", will use SIP Outbound Proxy authentication settings, if any");
+    if (!endpoint.GetProxy().IsEmpty()) {
+      authentication.SetUsername(endpoint.GetProxy().GetUserName());
+      authentication.SetPassword(endpoint.GetProxy().GetPassword());
     }
   }
   

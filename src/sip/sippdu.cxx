@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2044  2005/02/19 22:48:48  dsandras
+ * Revision 1.2045  2005/03/11 18:12:09  dsandras
+ * Added support to specify the realm when registering. That way softphones already know what authentication information to use when required. The realm/domain can also be used in the From field.
+ *
+ * Revision 2.43  2005/02/19 22:48:48  dsandras
  * Added the possibility to register to several registrars and be able to do authenticated calls to each of them. Added SUBSCRIBE/NOTIFY support for Message Waiting Indications.
  *
  * Revision 2.42  2005/02/19 22:36:25  dsandras
@@ -1746,7 +1749,11 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
     }
   }
 
-  PString addrStr = address.AsQuotedString();
+  // Find the correct From/To fields
+  PString addrStr = 
+    ep.GetRegisteredPartyName(address.GetHostName()).AsQuotedString();
+  if (addrStr.IsEmpty())
+    addrStr = address.AsQuotedString();
   SIP_PDU::Construct(Method_REGISTER,
                      "sip:"+address.GetHostName(),
                      addrStr,
@@ -1781,7 +1788,11 @@ SIPMWISubscribe::SIPMWISubscribe(SIPEndPoint & ep,
     }
   }
 
-  PString addrStr = address.AsQuotedString();
+  // Find the correct From/To fields
+  PString addrStr = 
+    ep.GetRegisteredPartyName(address.GetHostName()).AsQuotedString();
+  if (addrStr.IsEmpty())
+    addrStr = address.AsQuotedString();
   SIP_PDU::Construct(Method_SUBSCRIBE,
                      "sip:"+address.GetUserName()+"@"+address.GetHostName(),
                      addrStr,

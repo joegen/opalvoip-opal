@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2039  2005/02/21 12:20:05  rjongbloed
+ * Revision 1.2040  2005/03/11 18:12:09  dsandras
+ * Added support to specify the realm when registering. That way softphones already know what authentication information to use when required. The realm/domain can also be used in the From field.
+ *
+ * Revision 2.38  2005/02/21 12:20:05  rjongbloed
  * Added new "options list" to the OpalMediaFormat class.
  *
  * Revision 2.37  2005/02/19 22:48:48  dsandras
@@ -214,11 +217,12 @@ void SIPInfo::Cancel (SIPTransaction & transaction)
 }
 
 
-SIPRegisterInfo::SIPRegisterInfo (SIPEndPoint & endpoint, const PString & name, const PString & pass)
+SIPRegisterInfo::SIPRegisterInfo (SIPEndPoint & endpoint, const PString & name, const PString & pass, const PString & r)
 :SIPInfo(endpoint, name)
 {
   expire = ep.GetRegistrarTimeToLive().GetSeconds();
   password = pass;
+  realm = r;
 }
 
 
@@ -226,6 +230,7 @@ SIPTransaction * SIPRegisterInfo::CreateTransaction (OpalTransport &t, BOOL unre
 {
   authentication.SetUsername(registrationAddress.GetUserName());
   authentication.SetPassword(password);
+  authentication.SetRealm(realm);
   
   if (unregister)
     SetExpire (0);
@@ -671,6 +676,7 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
   }
 
   // Try to find authentication information for the requested realm
+  // That realm is specified when registering
   realm_info = 
     activeRegistrations.FindSIPInfoByRealm (auth.GetRealm(), PSafeReadWrite);
   // Try to find authentication information for the given call ID
@@ -678,14 +684,13 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
     activeRegistrations.FindSIPInfoByCallID(response.GetMIME().GetCallID(), 
 					    PSafeReadWrite);
   
-  // No authentication information for the realm yet, 
+  // No authentication information found for the realm, 
   // use what we have for the given CallID
   if (realm_info == NULL)
     realm_info = callid_info;
   
   // No realm info, no call ID info, weird
   if (realm_info == NULL || callid_info == NULL) {
-    
     PTRACE(2, "SIP\tNo Authentication info found for that realm, authentication impossible");
     return;
   }
@@ -861,7 +866,7 @@ BOOL SIPEndPoint::OnReceivedNOTIFY (OpalTransport & transport, SIP_PDU & pdu)
 }
 
 
-void SIPEndPoint::OnRegistrationFailed(const PString & /*domain*/, 
+void SIPEndPoint::OnRegistrationFailed(const PString & /*host*/, 
 				       const PString & /*userName*/,
 				       SIPInfo::FailureReasons /*reason*/, 
 				       BOOL /*wasRegistering*/)
@@ -869,16 +874,16 @@ void SIPEndPoint::OnRegistrationFailed(const PString & /*domain*/,
 }
     
 
-void SIPEndPoint::OnRegistered(const PString & /*domain*/, 
+void SIPEndPoint::OnRegistered(const PString & /*host*/, 
 			       const PString & /*userName*/,
 			       BOOL /*wasRegistering*/)
 {
 }
 
 
-BOOL SIPEndPoint::IsRegistered(const PString & domain) 
+BOOL SIPEndPoint::IsRegistered(const PString & host) 
 {
-  PSafePtr<SIPInfo> info = activeRegistrations.FindSIPInfoByDomain(domain, SIP_PDU::Method_REGISTER, PSafeReadOnly);
+  PSafePtr<SIPInfo> info = activeRegistrations.FindSIPInfoByDomain(host, SIP_PDU::Method_REGISTER, PSafeReadOnly);
 
   if (info == NULL)
     return FALSE;
@@ -887,7 +892,7 @@ BOOL SIPEndPoint::IsRegistered(const PString & domain)
 }
 
 
-BOOL SIPEndPoint::IsSubscribed(const PString & domain, const PString & user) 
+BOOL SIPEndPoint::IsSubscribed(const PString & host, const PString & user) 
 {
   // Adjusted user name
   PString adjustedUsername = user;
@@ -895,7 +900,7 @@ BOOL SIPEndPoint::IsSubscribed(const PString & domain, const PString & user)
     adjustedUsername = GetDefaultLocalPartyName();
 
   if (adjustedUsername.Find('@') == P_MAX_INDEX)
-    adjustedUsername += '@' + domain;
+    adjustedUsername += '@' + host;
 
   PSafePtr<SIPInfo> info = activeRegistrations.FindSIPInfoByUrl(adjustedUsername, SIP_PDU::Method_SUBSCRIBE, PSafeReadOnly);
 
@@ -971,13 +976,15 @@ BOOL SIPEndPoint::WriteSIPINFO(OpalTransport & transport, void * param)
 }
 
 
-BOOL SIPEndPoint::Register(const PString & domain,
+BOOL SIPEndPoint::Register(const PString & host,
                            const PString & username,
-                           const PString & password)
+                           const PString & password,
+			   const PString & realm)
 {
-  return TransmitSIPRegistrationInfo (domain, 
+  return TransmitSIPRegistrationInfo (host, 
 				      username, 
 				      password, 
+				      realm,
 				      SIP_PDU::Method_REGISTER);
 }
 
@@ -990,25 +997,27 @@ void SIPEndPoint::OnMWIReceived (const PString & /*remoteAddress*/,
 }
 
 
-BOOL SIPEndPoint::MWISubscribe(const PString & domain, 
+BOOL SIPEndPoint::MWISubscribe(const PString & host, 
 			       const PString & username)
 {
-  return TransmitSIPRegistrationInfo (domain, 
+  return TransmitSIPRegistrationInfo (host, 
 				      username, 
+				      "",
 				      "",
 				      SIP_PDU::Method_SUBSCRIBE);
 }
 
 
-BOOL SIPEndPoint::TransmitSIPRegistrationInfo(const PString & domain,
+BOOL SIPEndPoint::TransmitSIPRegistrationInfo(const PString & host,
 					      const PString & username,
 					      const PString & password,
+					      const PString & realm,
 					      SIP_PDU::Methods m)
 {
   PSafePtr<SIPInfo> info = NULL;
   OpalTransport *transport = NULL;
   
-  if (listeners.IsEmpty() || domain.IsEmpty() || username.IsEmpty())
+  if (listeners.IsEmpty() || host.IsEmpty() || username.IsEmpty())
     return FALSE;
   
   // Adjusted user name
@@ -1017,7 +1026,7 @@ BOOL SIPEndPoint::TransmitSIPRegistrationInfo(const PString & domain,
     adjustedUsername = GetDefaultLocalPartyName();
 
   if (adjustedUsername.Find('@') == P_MAX_INDEX)
-    adjustedUsername += '@' + domain;
+    adjustedUsername += '@' + host;
 
   // If we have a proxy, use it
   PString hostname;
@@ -1025,7 +1034,7 @@ BOOL SIPEndPoint::TransmitSIPRegistrationInfo(const PString & domain,
 
   if (proxy.IsEmpty()) {
     // Should do DNS SRV record lookup to get registrar address
-    hostname = domain;
+    hostname = host;
     port = defaultSignalPort;
   }
   else {
@@ -1044,14 +1053,16 @@ BOOL SIPEndPoint::TransmitSIPRegistrationInfo(const PString & domain,
   if (info == NULL) {
 
     if (m == SIP_PDU::Method_REGISTER)
-      info = new SIPRegisterInfo(*this, adjustedUsername, password);
+      info = new SIPRegisterInfo(*this, adjustedUsername, password, realm);
     else if (m == SIP_PDU::Method_SUBSCRIBE)
       info = new SIPMWISubscribeInfo(*this, adjustedUsername);
     activeRegistrations.Append(info);
   }
-  else 
+  else { 
     info->SetPassword (password); // Adjust the password if required 
-
+    info->SetRealm (realm); // Adjust the realm if required 
+  }
+  
   if (info == NULL) {
     return FALSE;
   }
@@ -1078,25 +1089,25 @@ BOOL SIPEndPoint::TransmitSIPRegistrationInfo(const PString & domain,
 }
 
 
-BOOL SIPEndPoint::Unregister(const PString & domain,
+BOOL SIPEndPoint::Unregister(const PString & host,
 			     const PString & user)
 {
-  return TransmitSIPUnregistrationInfo (domain, 
+  return TransmitSIPUnregistrationInfo (host, 
 					user, 
 					SIP_PDU::Method_REGISTER); 
 }
 
 
-BOOL SIPEndPoint::MWIUnsubscribe(const PString & domain,
+BOOL SIPEndPoint::MWIUnsubscribe(const PString & host,
 				 const PString & user)
 {
-  return TransmitSIPUnregistrationInfo (domain, 
+  return TransmitSIPUnregistrationInfo (host, 
 					user, 
 					SIP_PDU::Method_SUBSCRIBE); 
 }
 
 
-BOOL SIPEndPoint::TransmitSIPUnregistrationInfo(const PString & domain,
+BOOL SIPEndPoint::TransmitSIPUnregistrationInfo(const PString & host,
 						const PString & username,
 						SIP_PDU::Methods method)
 {
@@ -1108,7 +1119,7 @@ BOOL SIPEndPoint::TransmitSIPUnregistrationInfo(const PString & domain,
     adjustedUsername = GetDefaultLocalPartyName();
 
   if (adjustedUsername.Find('@') == P_MAX_INDEX)
-    adjustedUsername += '@' + domain;
+    adjustedUsername += '@' + host;
   
     {
       PSafePtr<SIPInfo> info = NULL;
@@ -1184,19 +1195,28 @@ BOOL SIPEndPoint::GetAuthentication(const PString & realm, SIPAuthentication &au
   return TRUE;
 }
 
-const SIPURL SIPEndPoint::GetRegisteredPartyName(const PString & domain)
+const SIPURL SIPEndPoint::GetRegisteredPartyName(const PString & host)
 {
   PString partyName;
   PString contactDomain;
+  PString realm;
   
   PSafePtr<SIPInfo> info =
-    activeRegistrations.FindSIPInfoByDomain(domain, 
+    activeRegistrations.FindSIPInfoByDomain(host, 
 					    SIP_PDU::Method_REGISTER, 
 					    PSafeReadOnly);
   if (info == NULL)
     return SIPURL();
 
-  return info->GetRegistrationAddress();
+  realm = info->GetAuthentication().GetRealm();
+  if (!realm.IsEmpty ()) {
+    partyName = info->GetRegistrationAddress().GetUserName();
+    contactDomain = realm;
+    return SIPURL(partyName+"@"+contactDomain);
+  }
+  else {
+    return info->GetRegistrationAddress();
+  }
 }
 
 void SIPEndPoint::OnRTPStatistics(const SIPConnection & /*connection*/,
