@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2050  2004/04/07 08:21:03  rjongbloed
+ * Revision 1.2051  2004/04/18 13:38:01  rjongbloed
+ * Fixed using correct H.323 port if not specified in address
+ *
+ * Revision 2.49  2004/04/07 08:21:03  rjongbloed
  * Changes for new RTTI system.
  *
  * Revision 2.48  2004/03/25 11:48:37  rjongbloed
@@ -2673,7 +2676,8 @@ void H323Connection::StartOutgoing(PThread &, INT)
     address = remotePartyAddress.Mid(at+1);
   }
 
-  CallEndReason reason = SendSignalSetup(alias, address);
+  H323TransportAddress h323addr(address, endpoint.GetDefaultSignalPort());
+  CallEndReason reason = SendSignalSetup(alias, h323addr);
 
   // Special case, if we aborted the call then already will be unlocked
   if (reason != EndedByCallerAbort)
