@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2004  2001/08/17 01:11:17  robertj
+ * Revision 1.2005  2001/08/17 08:36:48  robertj
+ * Moved call end reasons enum from OpalConnection to global.
+ * Fixed missing mutex on connections structure..
+ *
+ * Revision 2.3  2001/08/17 01:11:17  robertj
  * Added ability to add whole LID's to LID endpoint.
  *
  * Revision 2.2  2001/08/01 06:23:55  robertj
@@ -111,7 +115,9 @@ OpalConnection * OpalLIDEndPoint::SetUpConnection(OpalCall & call,
     if ((lineName == "*"  || lines[i].GetDescription() == lineName) && lines[i].EnableAudio()) {
       connection = CreateConnection(call, lines[i], userData);
       PAssertNULL(connection);
+      inUseFlag.Wait();
       connectionsActive.SetAt(connection->GetToken(), connection);
+      inUseFlag.Signal();
       break;
     }
   }
@@ -463,7 +469,7 @@ void OpalLineConnection::Monitor(BOOL offHook)
   }
   else if (wasOffHook) {
     PTRACE(3, "LID Con\tConnection " << callToken << " on hook: phase=" << phase);
-    Release(OpalConnection::EndedByRemoteUser);
+    Release(EndedByRemoteUser);
     wasOffHook = FALSE;
   }
 }
@@ -482,7 +488,7 @@ void OpalLineConnection::HandleIncoming(PThread & thread, INT)
       count = line.GetRingCount();
       if (count == 0) {
         PTRACE(2, "LID Con\tIncoming PSTN call stopped.");
-        Release(OpalConnection::EndedByCallerAbort);
+        Release(EndedByCallerAbort);
         return;
       }
       thread.Sleep(100);
