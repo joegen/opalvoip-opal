@@ -22,7 +22,11 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2007  2002/02/01 04:58:23  craigs
+# Revision 1.2008  2002/02/01 10:29:35  rogerh
+# Use the right version.h file. (the other one had comments which confused
+# pwlib's lib.mak)
+#
+# Revision 2.6  2002/02/01 04:58:23  craigs
 # Added sip directory to VPATH
 #
 # Revision 2.5  2002/02/01 04:53:01  robertj
@@ -71,7 +75,7 @@ endif
 OBJDIR	=	$(OPAL_OBJDIR)
 LIBDIR	=	$(OPAL_LIBDIR)
 TARGET	=	$(LIBDIR)/$(OPAL_FILE)
-VERSION_FILE = samples/simple/version.h
+VERSION_FILE =  version.h
 
 
 ifdef NOTRACE
