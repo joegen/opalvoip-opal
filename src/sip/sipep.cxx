@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2016  2004/03/13 06:51:32  rjongbloed
+ * Revision 1.2017  2004/03/14 08:34:10  csoutheren
+ * Added ability to set User-Agent string
+ *
+ * Revision 2.15  2004/03/13 06:51:32  rjongbloed
  * Alllowed for empty "username" in registration
  *
  * Revision 2.14  2004/03/13 06:32:18  rjongbloed
@@ -106,6 +109,7 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   mimeForm = FALSE;
   maxRetries = 10;
   lastSentCSeq = 0;
+  userAgentString = "OPAL/2.0";
 
   PTRACE(3, "SIP\tCreated endpoint.");
 }
@@ -359,5 +363,10 @@ BOOL SIPEndPoint::Register(const PString & hostname,
   return response.GetStatusCode() == SIP_PDU::Successful_OK;
 }
 
+
+PString SIPEndPoint::GetUserAgent() const 
+{ 
+  return userAgentString;
+}
 
 // End of file ////////////////////////////////////////////////////////////////
