@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2034  2004/02/24 11:33:47  rjongbloed
+ * Revision 1.2035  2004/03/13 06:29:27  rjongbloed
+ * Slight rearrangement of local party name and alias list to beter match common
+ *   behaviour in ancestor.
+ * Abstracted local party name for endpoint into ancestor from H.,323.
+ * Changed parameter in UDP write function to void * from PObject *.
+ *
+ * Revision 2.33  2004/02/24 11:33:47  rjongbloed
  * Normalised RTP session management across protocols
  * Added support for NAT (via STUN)
  *
@@ -169,12 +175,9 @@ SIPConnection::SIPConnection(OpalCall & call,
   : OpalConnection(call, ep, token),
     endpoint(ep),
     tag(OpalGloballyUniqueID().AsString()),    // local dialog tag
-    authentication(endpoint.GetRegistrationName(),
-                   endpoint.GetRegistrationPassword()),
+    authentication(localPartyName, endpoint.GetProxyPassword()),
     pduSemaphore(0, P_MAX_INDEX)
 {
-  localPartyName = endpoint.GetRegistrationName();
-
   targetAddress = destination;
 
   PStringToString params = targetAddress.GetParamVars();
@@ -499,7 +502,7 @@ BOOL SIPConnection::IsMediaBypassPossible(unsigned sessionID) const
 }
 
 
-BOOL SIPConnection::WriteINVITE(OpalTransport & transport, PObject * param)
+BOOL SIPConnection::WriteINVITE(OpalTransport & transport, void * param)
 {
   SIPConnection & connection = *(SIPConnection *)param;
 
