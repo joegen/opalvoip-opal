@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2007  2002/03/27 05:34:15  robertj
+ * Revision 1.2008  2002/09/06 02:44:52  robertj
+ * Added routing table system to route calls by regular expressions.
+ *
+ * Revision 2.6  2002/03/27 05:34:15  robertj
  * Removed redundent busy forward field
  *
  * Revision 2.5  2002/02/01 04:53:01  robertj
@@ -106,9 +109,6 @@ class MyManager : public OpalManager
     BOOL Initialise(PArgList & args);
     void Main(PArgList & args);
 
-    virtual PString OnRouteConnection(
-      OpalConnection & connection  /// Connection being routed
-    );
     virtual void OnEstablishedCall(
       OpalCall & call   /// Call that was completed
     );
