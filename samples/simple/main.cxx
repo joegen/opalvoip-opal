@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2012  2002/03/27 04:16:20  robertj
+ * Revision 1.2013  2002/03/27 04:36:46  robertj
+ * Changed to add all possible xJack cards to pots endpoint.
+ *
+ * Revision 2.11  2002/03/27 04:16:20  robertj
  * Restructured default router for sample to allow more options.
  *
  * Revision 2.10  2002/02/13 08:17:31  robertj
@@ -303,28 +306,20 @@ BOOL MyManager::Initialise(PArgList & args)
 
 #ifdef HAS_IXJ
   if (!args.HasOption('Q')) {
-    PString device = args.GetOptionString('q');
-    if (device.IsEmpty() || device == "ALL") {
-      PStringArray devices = OpalIxJDevice::GetDeviceNames();
-      if (devices.GetSize() > 0)
-        device = devices[0];
-      else
-        device = PString();
-    }
-    if (!device) {
+    PStringArray devices = args.GetOptionString('q').Lines();
+    if (devices.IsEmpty() || devices[0] == "ALL")
+      devices = OpalIxJDevice::GetDeviceNames();
+    for (PINDEX d = 0; d < devices.GetSize(); d++) {
       OpalIxJDevice * ixj = new OpalIxJDevice;
-      if (ixj->Open(device)) {
+      if (ixj->Open(devices[d])) {
         // Create LID protocol handler, automatically adds to manager
-        potsEP = new OpalPOTSEndPoint(*this);
+        if (potsEP == NULL)
+          potsEP = new OpalPOTSEndPoint(*this);
         if (potsEP->AddDevice(ixj))
-          cout << "Quicknet device is " << device << endl;
-        else {
-          RemoveEndPoint(potsEP);
-          potsEP = NULL;
-        }
+          cout << "Quicknet device \"" << devices[d] << "\" added." << endl;
       }
       else {
-        cerr << "Could not open device \"" << device << '"' << endl;
+        cerr << "Could not open device \"" << devices[d] << '"' << endl;
         delete ixj;
       }
     }
