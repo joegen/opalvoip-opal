@@ -26,7 +26,13 @@
  * Changed so only BUSY tone reports line hangup/busy.
  *
  * $Log: vpblid.cxx,v $
- * Revision 1.2009  2004/02/19 10:47:05  rjongbloed
+ * Revision 1.2010  2004/10/06 13:03:42  rjongbloed
+ * Added "configure" support for known LIDs
+ * Changed LID GetName() function to be normalised against the GetAllNames()
+ *   return values and fixed the pre-factory registration system.
+ * Added a GetDescription() function to do what the previous GetName() did.
+ *
+ * Revision 2.8  2004/02/19 10:47:05  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.7  2003/03/24 07:18:30  robertj
@@ -131,10 +137,13 @@
 
 #include <lids/vpblid.h>
 
-#include <lids/vpbapi.h>
-
+#if HAS_VPB
 
 #define new PNEW
+
+#ifdef _MSC_VER
+#pragma comment(lib, VPB_LIBRARY)
+#endif
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -190,11 +199,15 @@ BOOL OpalVpbDevice::Close()
 }
 
 
-PString OpalVpbDevice::GetName() const
+PString OpalVpbDevice::GetDeviceType() const
 {
-  char buf[100];
-  vpb_get_model(buf);
-  return psprintf("%s/%u", buf, cardNumber);
+  return OPAL_VPB_TYPE_NAME;
+}
+
+
+PString OpalVpbDevice::GetDeviceName() const
+{
+  return psprintf("%u", cardNumber);
 }
 
 
@@ -203,6 +216,14 @@ PStringArray OpalVpbDevice::GetAllNames() const
   PStringArray devices(1);
   devices[0] = "0";
   return devices;
+}
+
+
+PString OpalVpbDevice::GetDescription() const
+{
+  char buf[100];
+  vpb_get_model(buf);
+  return psprintf("VoiceTronics %s (%u)", buf, cardNumber);
 }
 
 
@@ -715,6 +736,9 @@ void ToneThread::Main() {
   }
   PTRACE(3, "VPB\tToneThread Main FINISHED");
 }
+
+
+#endif // HAS_VPB
 
 
 /////////////////////////////////////////////////////////////////////////////
