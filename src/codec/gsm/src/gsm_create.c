@@ -1,10 +1,11 @@
 /*
+ * gsm_create.c
+ *
  * Copyright 1992 by Jutta Degener and Carsten Bormann, Technische
  * Universitaet Berlin.  See the accompanying file "COPYRIGHT" for
  * details.  THERE IS ABSOLUTELY NO WARRANTY FOR THIS SOFTWARE.
  */
 
-static char const	ident[] = "$Header: /home/svnmigrate/clean_cvs/opal/src/codec/gsm/src/Attic/gsm_create.c,v 1.2001 2001/07/27 15:48:24 robertj Exp $";
 
 #include	"config.h"
 

@@ -1,10 +1,11 @@
 /*
+ * preprocess.c
+ *
  * Copyright 1992 by Jutta Degener and Carsten Bormann, Technische
  * Universitaet Berlin.  See the accompanying file "COPYRIGHT" for
  * details.  THERE IS ABSOLUTELY NO WARRANTY FOR THIS SOFTWARE.
  */
 
-/* $Header: /home/svnmigrate/clean_cvs/opal/src/codec/gsm/src/Attic/preprocess.c,v 1.2001 2001/07/27 15:48:24 robertj Exp $ */
 
 #include	<stdio.h>
 #include	<assert.h>
@@ -89,7 +90,7 @@ void Gsm_Preprocess P3((S, s, so),
 		 */
 
 		msp = SASR( L_z2, 15 );
-		lsp = L_z2-((longword)msp<<15); /* gsm_L_sub(L_z2,(msp<<15)); */
+		lsp = (word) (L_z2-((longword)msp<<15)); /* gsm_L_sub(L_z2,(msp<<15)); */
 
 		L_s2  += GSM_MULT_R( lsp, 32735 );
 		L_temp = (longword)msp * 32735; /* GSM_L_MULT(msp,32735) >> 1;*/
@@ -104,7 +105,7 @@ void Gsm_Preprocess P3((S, s, so),
 
 		msp   = GSM_MULT_R( mp, -28180 );
 		mp    = SASR( L_temp, 15 );
-		*so++ = GSM_ADD( mp, msp );
+		*so++ = (word) GSM_ADD( mp, msp );
 	}
 
 	S->z1   = z1;

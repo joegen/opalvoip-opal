@@ -1,10 +1,11 @@
 /*
+ * code.c
+ *
  * Copyright 1992 by Jutta Degener and Carsten Bormann, Technische
  * Universitaet Berlin.  See the accompanying file "COPYRIGHT" for
  * details.  THERE IS ABSOLUTELY NO WARRANTY FOR THIS SOFTWARE.
  */
 
-/* $Header: /home/svnmigrate/clean_cvs/opal/src/codec/gsm/src/Attic/code.c,v 1.2001 2001/07/27 15:48:24 robertj Exp $ */
 
 #include	"config.h"
 
@@ -88,7 +89,7 @@ void Gsm_Coder P8((S,s,LARc,Nc,bc,Mc,xmaxc,xMc),
 		{ register int i;
 		  register longword ltmp;
 		  for (i = 0; i <= 39; i++)
-			dp[ i ] = GSM_ADD( e[5 + i], dpp[i] );
+			dp[ i ] = (word) GSM_ADD( e[5 + i], dpp[i] );
 		}
 		dp  += 40;
 		dpp += 40;

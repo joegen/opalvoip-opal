@@ -1,10 +1,11 @@
 /*
+ * gsm_lpc.c
+ *
  * Copyright 1992 by Jutta Degener and Carsten Bormann, Technische
  * Universitaet Berlin.  See the accompanying file "COPYRIGHT" for
  * details.  THERE IS ABSOLUTELY NO WARRANTY FOR THIS SOFTWARE.
  */
 
-/* $Header: /home/svnmigrate/clean_cvs/opal/src/codec/gsm/src/Attic/gsm_lpc.c,v 1.1 2002/11/10 11:33:18 robertj Exp $ */
 
 #include <stdio.h>
 #include <assert.h>
@@ -229,14 +230,14 @@ static void Reflection_coefficients P2( (L_ACF, r),
 		/*  Schur recursion
 		 */
 		temp = GSM_MULT_R( P[1], *r );
-		P[0] = GSM_ADD( P[0], temp );
+		P[0] = (word) GSM_ADD( P[0], temp );
 
 		for (m = 1; m <= 8 - n; m++) {
 			temp     = GSM_MULT_R( K[ m   ],    *r );
-			P[m]     = GSM_ADD(    P[ m+1 ],  temp );
+			P[m]     = (word) GSM_ADD(    P[ m+1 ],  temp );
 
 			temp     = GSM_MULT_R( P[ m+1 ],    *r );
-			K[m]     = GSM_ADD(    K[ m   ],  temp );
+			K[m]     = (word) GSM_ADD(    K[ m   ],  temp );
 		}
 	}
 }
@@ -304,8 +305,8 @@ static void Quantization_and_coding P1((LAR),
 #	undef STEP
 #	define	STEP( A, B, MAC, MIC )		\
 		temp = GSM_MULT( A,   *LAR );	\
-		temp = GSM_ADD(  temp,   B );	\
-		temp = GSM_ADD(  temp, 256 );	\
+		temp = (word) GSM_ADD(  temp,   B );	\
+		temp = (word) GSM_ADD(  temp, 256 );	\
 		temp = SASR(     temp,   9 );	\
 		*LAR  =  temp>MAC ? MAC - MIC : (temp<MIC ? 0 : temp - MIC); \
 		LAR++;
