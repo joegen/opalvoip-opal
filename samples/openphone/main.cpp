@@ -581,10 +581,13 @@ void MyManager::OnClearedCall(OpalCall & /*call*/)
 {
 }
 
-BOOL MyManager::OnOpenMediaStream(OpalConnection & /*connection*/,  /// Connection that owns the media stream
-                                  OpalMediaStream & /*stream*/)    /// New media stream being opened
+BOOL MyManager::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream)
 {
-  return FALSE;
+  if (!OpalManager::OnOpenMediaStream(connection, stream))
+    return FALSE;
+
+  // Display opened media stream
+  return TRUE;
 }
 
 void MyManager::OnUserInputString(OpalConnection & /*connection*/,  /// Connection input has come from
