@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2011  2002/07/01 04:56:30  robertj
+ * Revision 1.2012  2002/07/04 07:41:47  robertj
+ * Fixed memory/thread leak of transports.
+ *
+ * Revision 2.10  2002/07/01 04:56:30  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.9  2002/04/05 10:36:53  robertj
@@ -179,9 +182,13 @@ class OpalEndPoint : public PObject
 
     /**Handle new incoming connection from listener.
 
-       The default behaviour does nothing.
+       A return value of TRUE indicates that the transport object should be
+       deleted by the caller. FALSE indicates that something else (eg the
+       connection) has taken over responsibility for deleting the transport.
+
+       The default behaviour just returns TRUE.
       */
-    virtual void NewIncomingConnection(
+    virtual BOOL NewIncomingConnection(
       OpalTransport * transport  /// Transport connection came in on
     );
   //@}

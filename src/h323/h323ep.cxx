@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2019  2002/07/01 04:56:32  robertj
+ * Revision 1.2020  2002/07/04 07:41:47  robertj
+ * Fixed memory/thread leak of transports.
+ *
+ * Revision 2.18  2002/07/01 04:56:32  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.17  2002/03/27 04:02:01  robertj
@@ -907,14 +910,14 @@ BOOL H323EndPoint::SetUpConnection(OpalCall & call,
 }
 
 
-void H323EndPoint::NewIncomingConnection(OpalTransport * transport)
+BOOL H323EndPoint::NewIncomingConnection(OpalTransport * transport)
 {
   PTRACE(3, "H225\tAwaiting first PDU");
   transport->SetReadTimeout(15000); // Await 15 seconds after connect for first byte
   H323SignalPDU pdu;
   if (!pdu.Read(*transport)) {
     PTRACE(1, "H225\tFailed to get initial Q.931 PDU, connection not started.");
-    return;
+    return TRUE;
   }
 
   unsigned callReference = pdu.GetQ931().GetCallReference();
@@ -945,21 +948,23 @@ void H323EndPoint::NewIncomingConnection(OpalTransport * transport)
     PBYTEArray rawData;
     reply.Encode(rawData);
     transport->WritePDU(rawData);
+    return TRUE;
+  }
+
+  PTRACE(3, "H323\tCreated new connection: " << token);
+  connection->AttachSignalChannel(transport, TRUE);
+
+  if (connection->HandleSignalPDU(pdu)) {
+    // All subsequent PDU's should wait forever
+    transport->SetReadTimeout(PMaxTimeInterval);
+    connection->HandleSignallingChannel();
   }
   else {
-    PTRACE(3, "H323\tCreated new connection: " << token);
-    connection->AttachSignalChannel(transport, TRUE);
-
-    if (connection->HandleSignalPDU(pdu)) {
-      // All subsequent PDU's should wait forever
-      transport->SetReadTimeout(PMaxTimeInterval);
-      connection->HandleSignallingChannel();
-    }
-    else {
-      connection->ClearCall(EndedByTransportFail);
-      PTRACE(1, "H225\tSignal channel stopped on first PDU.");
-    }
+    connection->ClearCall(EndedByTransportFail);
+    PTRACE(1, "H225\tSignal channel stopped on first PDU.");
   }
+
+  return FALSE;
 }
 
 

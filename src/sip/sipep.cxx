@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2006  2002/04/10 03:15:17  robertj
+ * Revision 1.2007  2002/07/04 07:41:47  robertj
+ * Fixed memory/thread leak of transports.
+ *
+ * Revision 2.5  2002/04/10 03:15:17  robertj
  * Fixed using incorrect field as default reply address on receiving a respons PDU.
  *
  * Revision 2.4  2002/04/09 08:04:01  robertj
@@ -89,7 +92,7 @@ SIPEndPoint::~SIPEndPoint()
 }
 
 
-void SIPEndPoint::NewIncomingConnection(OpalTransport * transport)
+BOOL SIPEndPoint::NewIncomingConnection(OpalTransport * transport)
 {
   PTRACE_IF(2, transport->IsReliable(), "SIP\tListening thread started.");
 
@@ -100,6 +103,8 @@ void SIPEndPoint::NewIncomingConnection(OpalTransport * transport)
   } while (transport->IsOpen() && transport->IsReliable());
 
   PTRACE_IF(2, transport->IsReliable(), "SIP\tListening thread finished.");
+
+  return TRUE;
 }
 
 

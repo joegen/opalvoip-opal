@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2020  2002/07/01 08:55:07  robertj
+ * Revision 1.2021  2002/07/04 07:41:47  robertj
+ * Fixed memory/thread leak of transports.
+ *
+ * Revision 2.19  2002/07/01 08:55:07  robertj
  * Changed TCp/UDP port allocation to use new thread safe functions.
  *
  * Revision 2.18  2002/07/01 08:43:44  robertj
@@ -542,7 +545,6 @@ void OpalListener::ListenForConnections(PThread & thread, INT)
       if (singleThread) {
         transport->AttachThread(&thread);
         acceptHandler(*this, (INT)transport);
-        delete transport;
       }
       else {
         transport->AttachThread(PThread::Create(acceptHandler,
@@ -551,6 +553,7 @@ void OpalListener::ListenForConnections(PThread & thread, INT)
                                                 PThread::NormalPriority,
                                                 "Opal Answer:%x"));
       }
+      // Note: acceptHandler is responsible for deletion of the transport
     }
   }
 }
