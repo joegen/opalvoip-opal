@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.h,v $
- * Revision 1.2004  2002/01/14 06:35:56  robertj
+ * Revision 1.2005  2002/01/22 04:56:55  robertj
+ * Update from OpenH323, rev 1.26 to 1.28
+ *
+ * Revision 2.3  2002/01/14 06:35:56  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.2  2001/11/02 10:45:19  robertj
@@ -38,6 +41,15 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.28  2002/01/17 07:04:57  robertj
+ * Added support for RFC2833 embedded DTMF in the RTP stream.
+ *
+ * Revision 1.27  2002/01/17 00:10:37  robertj
+ * Fixed double copy of rtpPayloadType in RTP channel, caused much confusion.
+ *
+ * Revision 1.26  2002/01/14 05:18:16  robertj
+ * Fixed typo on external RTP channel constructor.
  *
  * Revision 1.25  2002/01/10 05:13:50  robertj
  * Added support for external RTP stacks, thanks NuMind Software Systems.
@@ -615,9 +627,11 @@ class H323_RealTimeChannel : public H323UnidirectionalChannel
 
     /**Set the dynamic payload type used by this channel.
       */
-    BOOL SetDynamicRTPPayloadType(
+    virtual BOOL SetDynamicRTPPayloadType(
       int newType  /// New RTP payload type number
     );
+
+    RTP_DataFrame::PayloadTypes GetDynamicRTPPayloadType() const { return rtpPayloadType; }
   //@}
 
   protected:
@@ -695,13 +709,9 @@ class H323_RTPChannel : public H323_RealTimeChannel
     );
   //@}
 
-    BOOL SetDynamicRTPPayloadType(int newType);
-    RTP_DataFrame::PayloadTypes GetDynamicRTPPayloadType() const { return rtpPayloadType; }
-
   protected:
     RTP_Session      & rtpSession;
     H323_RTP_Session & rtpCallbacks;
-    RTP_DataFrame::PayloadTypes rtpPayloadType;
 };
 
 
