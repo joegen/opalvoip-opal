@@ -54,8 +54,18 @@
 /************ Change log
  *
  * $Log: p64.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/15 23:43:00  robertj
+ * Update to OpenH323 v1.11.7
+ *
+ * Revision 1.12  2003/03/14 07:25:55  robertj
+ * Removed $header keyword so is not different on alternate repositories
+ *
+ * Revision 1.11  2002/10/10 05:40:29  robertj
+ * VxWorks port, thanks Martijn Roest
+ *
+ * Revision 1.10  2002/04/26 04:57:41  dereks
+ * Add Walter Whitlocks fixes, based on Victor Ivashim's suggestions to
+ * improve the quality with Netmeeting. Thanks guys!!!!
  *
  * Revision 1.9  2001/05/10 05:25:44  robertj
  * Removed need for VIC code to use ptlib.
@@ -81,11 +91,6 @@
  ********/
 
 
-#ifndef lint
-//static char rcsid[] =
-//    "@(#) $Header: /home/svnmigrate/clean_cvs/opal/src/codec/vic/Attic/p64.cxx,v 1.2001 2001/07/27 15:48:25 robertj Exp $ (LBL)";
-#endif
-
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -95,7 +100,6 @@
 #if defined(WIN32) || defined(_WIN32_WCE)
 #include <winsock.h>
 #else
-#include <sys/param.h>
 #include <sys/file.h>
 #endif
 #include <sys/stat.h>
@@ -1085,10 +1089,33 @@ int P64Decoder::decode_mb()
  * with a buffer that has a picture header that's not
  * at the front).
  */
-int P64Decoder::decode(const u_char* bp, int cc, int sbit, int ebit,
-		       int mba, int gob, int mq, int mvdh, int mvdv)
+BOOL P64Decoder::decode(const unsigned char *hdrPtr, int buffLen,
+         BOOL lostPreviousPacket)
 {
-	ps_ = (u_short*)bp;
+  const u_char *bp;
+  int cc, sbit, ebit, gob;
+  h261hdr_t h261hdr;
+
+  // get 32 bit H261 header
+  h261hdr = ntohl(*(u_int*)hdrPtr);
+  // decode values we need from the RTP H261 header
+  sbit  = (h261hdr >> 29) & 0x07;
+  ebit  = (h261hdr >> 26) & 0x07;
+  gob   = (h261hdr >> 20) & 0xf;
+  // get remaining values from H261 header only when previous packet was lost
+  if (lostPreviousPacket) {
+    PTRACE(3, "H261\tLost or out of order packet, using values from H261 header");
+    mba_ = (h261hdr >> 15) & 0x1f;
+    int quant = (h261hdr >> 10) & 0x1f;
+    qt_ = &quant_[quant << 8];
+    mvdh_ = (h261hdr >> 5) & 0x1f; // sometimes NetMeeting sends bad values for these fields
+    mvdv_ = h261hdr & 0x1f; // use them only when the previous packet was lost
+  }
+
+  // adjust for length of H.261 header
+  bp = hdrPtr + sizeof(h261hdr_t);
+  ps_ = (u_short*)bp; // this does not seem to be used anywhere
+  cc = buffLen - sizeof(h261hdr_t);
 	/*
 	 * If cc is odd, ignore 8 extra bits in last short.
 	 */
@@ -1111,18 +1138,17 @@ int P64Decoder::decode(const u_char* bp, int cc, int sbit, int ebit,
 		nbb_ = 16 - sbit;
 	}
 
-	mba_ = mba;
-	qt_ = &quant_[mq << 8];
-	mvdh_ = mvdh;
-	mvdv_ = mvdv;
-	/*XXX don't rely on this*/
-	if (gob != 0) {
-		gob -= 1;
-		if (fmt_ == IT_QCIF)
-			gob >>= 1;
+  if (gob > 12) {
+    //count(STAT_BAD_HEADER);
+    return FALSE; // bad header value, what to do?
+  }
+  /*XXX don't rely on this*/
+  if (gob != 0) {
+    gob -= 1;
+    if (fmt_ == IT_QCIF) gob >>= 1;
 	}
 
-	while (bs_ < es_ || (bs_ == es_ && nbb_ > ebit)) {
+  while (bs_ < es_ || (bs_ == es_ && nbb_ > ebit)) {
 		mbst_ = &mb_state_[gob << 6];
 		coord_ = &base_[gob << 6];
 
@@ -1134,16 +1160,16 @@ int P64Decoder::decode(const u_char* bp, int cc, int sbit, int ebit,
 		if (v != SYM_STARTCODE) {
 			err("expected GOB startcode");
 			++bad_bits_;
-			return (0);
+			return (FALSE);
 		}
 		gob = parse_gob_hdr(ebit);
 		if (gob < 0) {
 			/*XXX*/
 			++bad_bits_;
-			return (0);
+			return (FALSE);
 		}
 	}
-	return (1);
+	return (TRUE);
 }
 
 FullP64Decoder::FullP64Decoder()

@@ -12,8 +12,23 @@
 /************ Change log
  *
  * $Log: p64encoder.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/15 23:43:00  robertj
+ * Update to OpenH323 v1.11.7
+ *
+ * Revision 1.14  2003/02/10 00:32:15  robertj
+ * Changed delete of array pointer (use of []) to avoid complaints.
+ * Removed code for redundent class and constructor.
+ *
+ * Revision 1.13  2002/04/05 00:53:19  dereks
+ * Modify video frame encoding so that frame is encoded on an incremental basis.
+ * Thanks to Walter Whitlock - good work.
+ *
+ * Revision 1.12  2001/12/04 04:26:06  robertj
+ * Added code to allow change of video quality in H.261, thanks Damian Sandras
+ *
+ * Revision 1.11  2001/09/25 03:14:48  dereks
+ * Add constant bitrate control for the h261 video codec.
+ * Thanks Tiziano Morganti for the code to set bit rate. Good work!
  *
  * Revision 1.10  2000/12/19 22:22:34  dereks
  * Remove connection to grabber-OS.cxx files. grabber-OS.cxx files no longer used.
@@ -36,6 +51,7 @@
 
 
 #include "p64encoder.h"
+
 P64Encoder::P64Encoder(int quant_level,int fillLevel)
 {
   trans       = new Transmitter();
@@ -45,50 +61,54 @@ P64Encoder::P64Encoder(int quant_level,int fillLevel)
   vid_frame   = new VideoFrame(WIDTH,HEIGHT);
   pre_vid     = new Pre_Vid_Coder();
   pre_vid->SetBackgroundFill(fillLevel);
+  //vid_frame2  = new VideoFrame(WIDTH,HEIGHT); //testing
+  //pre_vid2    = new Pre_Vid_Coder(); //testing
+  //pre_vid2->SetBackgroundFill(fillLevel); //testing
 }
 
 
 
 P64Encoder::~P64Encoder(){
-  delete pre_vid;  
+  delete pre_vid;
   delete vid_frame;
   delete h261_edr; 
-  delete trans;    
+  delete trans;
+  //delete pre_vid2; //testing
+  //delete vid_frame2; //testing
 }
 
+void P64Encoder::SetQualityLevel(int qLevel)
+{
+  h261_edr->setq(qLevel);
+}
+
+void P64Encoder::SetBackgroundFill(int idle)
+{
+  pre_vid->SetBackgroundFill(idle);
+  //pre_vid2->SetBackgroundFill(idle); //testing
+}
 
 void P64Encoder::SetSize(int width,int height) {
   vid_frame->SetSize(width,height);
+  //vid_frame2->SetSize(width,height); //testing
 }
 
-#if 0
-void P64Encoder::GrabOneFrame() {
-  /**Ensure we send out frames at a rate < 10 per/sercond.
-     There are problems with the timer functions, but this provides
-     some measure of control over the frame rate. 
-     Suppose the grabber was called three times in a period of 9ms. We cannot
-     assume that the system will prevent the grabber from returning the same
-     frame twice. 
-     Ideally, frame rate is controlled by PDUs received from the remote terminal.*/
-     PTimeInterval EndTick= LastTick + frameSepn;
-     PTimeInterval delay  = EndTick - PTimer::Tick();
-
-     if(delay>1)
-         PThread::Current()->Sleep(delay);
-       else
-	 EndTick = PTimer::Tick();
-     LastTick = EndTick;
-
-     if (useHardwareGrabber)
-        video_grab->Grab(vid_frame);   
-}
-#endif
-
-void P64Encoder::ProcessOneFrame(){
+void P64Encoder::ProcessOneFrame() {
   pre_vid->ProcessFrame(vid_frame);
   h261_edr->consume(vid_frame);
 } 
 
+void P64Encoder::PreProcessOneFrame() {
+  pre_vid->ProcessFrame(vid_frame);
+  h261_edr->PreIncEncodeSetup(vid_frame);
+} 
+
+void P64Encoder::IncEncodeAndGetPacket(
+  u_char * buffer,    // returns buffer of encoded data
+  unsigned & length ) // returns actual length of encoded data buffer
+{
+  h261_edr->IncEncodeAndGetPacket(buffer, length);
+}
 
 void P64Encoder::ReadOnePacket(
       u_char * buffer,    /// Buffer of encoded data
@@ -100,7 +120,7 @@ void P64Encoder::ReadOnePacket(
 
  unsigned len_head,len_buff;
 
- trans->GetNextPacket(&h_ptr,&b_ptr, len_head,len_buff);
+ trans->GetNextPacket(&h_ptr, &b_ptr, len_head, len_buff);
  length=len_head+len_buff;
  if(length!=0) {                          //Check to see if a packet was read.
     long int h261_hdr=*(long int *)h_ptr;   
@@ -111,22 +131,13 @@ void P64Encoder::ReadOnePacket(
 
 u_char* P64Encoder::GetFramePtr()
 {
-           if(vid_frame)
-                return vid_frame->frameptr;
-           return NULL; 
+  if (vid_frame)
+    return vid_frame->frameptr;
+  return NULL; 
 }
 
 /////////////////////////////////////////////////////////////////////////////
 //VideoFrame
-
-VideoFrame::VideoFrame(u_char *frame, u_char *cr, int newWidth, int newHeight)
-{
-  crvec = cr;
-  frameptr = frame;
-  width = newWidth;
-  height = newHeight;  
-  SetSize(newWidth,newHeight);
-}
 
 VideoFrame::VideoFrame(u_char *cr, int newWidth, int newHeight)
 {
@@ -149,7 +160,7 @@ void VideoFrame::SetSize(int newWidth, int newHeight)
     width = newWidth;
     height = newHeight;
     if (frameptr)
-      delete frameptr;
+      delete [] frameptr;
     frameptr= new BYTE[(width*height*3)>>1];
   }
 }
@@ -157,6 +168,8 @@ void VideoFrame::SetSize(int newWidth, int newHeight)
 VideoFrame::~VideoFrame()
 {
   if (frameptr) 
-    delete frameptr;
+    delete [] frameptr;
 }
+
+
 /////////////////////////////////////////////////////////////////////////////
