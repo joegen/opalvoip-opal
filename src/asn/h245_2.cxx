@@ -45,7 +45,7 @@ void H245_RefPictureSelection_additionalPictureMemory::PrintOn(ostream & strm) c
     strm << setw(indent+31) << "cif16AdditionalPictureMemory = " << setprecision(indent) << m_cif16AdditionalPictureMemory << '\n';
   if (HasOptionalField(e_bigCpfAdditionalPictureMemory))
     strm << setw(indent+32) << "bigCpfAdditionalPictureMemory = " << setprecision(indent) << m_bigCpfAdditionalPictureMemory << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -53,7 +53,7 @@ void H245_RefPictureSelection_additionalPictureMemory::PrintOn(ostream & strm) c
 PObject::Comparison H245_RefPictureSelection_additionalPictureMemory::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_RefPictureSelection_additionalPictureMemory), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_RefPictureSelection_additionalPictureMemory), PInvalidCast);
 #endif
   const H245_RefPictureSelection_additionalPictureMemory & other = (const H245_RefPictureSelection_additionalPictureMemory &)obj;
 
@@ -318,7 +318,7 @@ void H245_AudioCapability_g7231::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+23) << "maxAl_sduAudioFrames = " << setprecision(indent) << m_maxAl_sduAudioFrames << '\n';
   strm << setw(indent+21) << "silenceSuppression = " << setprecision(indent) << m_silenceSuppression << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -326,7 +326,7 @@ void H245_AudioCapability_g7231::PrintOn(ostream & strm) const
 PObject::Comparison H245_AudioCapability_g7231::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_AudioCapability_g7231), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_AudioCapability_g7231), PInvalidCast);
 #endif
   const H245_AudioCapability_g7231 & other = (const H245_AudioCapability_g7231 &)obj;
 
@@ -411,7 +411,7 @@ void H245_G7231AnnexCCapability_g723AnnexCAudioMode::PrintOn(ostream & strm) con
   strm << setw(indent+15) << "lowRateMode1 = " << setprecision(indent) << m_lowRateMode1 << '\n';
   strm << setw(indent+11) << "sidMode0 = " << setprecision(indent) << m_sidMode0 << '\n';
   strm << setw(indent+11) << "sidMode1 = " << setprecision(indent) << m_sidMode1 << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -419,7 +419,7 @@ void H245_G7231AnnexCCapability_g723AnnexCAudioMode::PrintOn(ostream & strm) con
 PObject::Comparison H245_G7231AnnexCCapability_g723AnnexCAudioMode::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_G7231AnnexCCapability_g723AnnexCAudioMode), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_G7231AnnexCCapability_g723AnnexCAudioMode), PInvalidCast);
 #endif
   const H245_G7231AnnexCCapability_g723AnnexCAudioMode & other = (const H245_G7231AnnexCCapability_g723AnnexCAudioMode &)obj;
 
@@ -803,7 +803,7 @@ void H245_T84Profile_t84Restricted::PrintOn(ostream & strm) const
   strm << setw(indent+18) << "digPhotoMedProg = " << setprecision(indent) << m_digPhotoMedProg << '\n';
   strm << setw(indent+18) << "digPhotoHighSeq = " << setprecision(indent) << m_digPhotoHighSeq << '\n';
   strm << setw(indent+19) << "digPhotoHighProg = " << setprecision(indent) << m_digPhotoHighProg << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -811,7 +811,7 @@ void H245_T84Profile_t84Restricted::PrintOn(ostream & strm) const
 PObject::Comparison H245_T84Profile_t84Restricted::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_T84Profile_t84Restricted), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_T84Profile_t84Restricted), PInvalidCast);
 #endif
   const H245_T84Profile_t84Restricted & other = (const H245_T84Profile_t84Restricted &)obj;
 
@@ -2316,7 +2316,7 @@ void H245_UnicastAddress_iPAddress::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+10) << "network = " << setprecision(indent) << m_network << '\n';
   strm << setw(indent+17) << "tsapIdentifier = " << setprecision(indent) << m_tsapIdentifier << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2324,7 +2324,7 @@ void H245_UnicastAddress_iPAddress::PrintOn(ostream & strm) const
 PObject::Comparison H245_UnicastAddress_iPAddress::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_UnicastAddress_iPAddress), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_UnicastAddress_iPAddress), PInvalidCast);
 #endif
   const H245_UnicastAddress_iPAddress & other = (const H245_UnicastAddress_iPAddress &)obj;
 
@@ -2403,7 +2403,7 @@ void H245_UnicastAddress_iPXAddress::PrintOn(ostream & strm) const
   strm << setw(indent+7) << "node = " << setprecision(indent) << m_node << '\n';
   strm << setw(indent+9) << "netnum = " << setprecision(indent) << m_netnum << '\n';
   strm << setw(indent+17) << "tsapIdentifier = " << setprecision(indent) << m_tsapIdentifier << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2411,7 +2411,7 @@ void H245_UnicastAddress_iPXAddress::PrintOn(ostream & strm) const
 PObject::Comparison H245_UnicastAddress_iPXAddress::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_UnicastAddress_iPXAddress), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_UnicastAddress_iPXAddress), PInvalidCast);
 #endif
   const H245_UnicastAddress_iPXAddress & other = (const H245_UnicastAddress_iPXAddress &)obj;
 
@@ -2494,7 +2494,7 @@ void H245_UnicastAddress_iP6Address::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+10) << "network = " << setprecision(indent) << m_network << '\n';
   strm << setw(indent+17) << "tsapIdentifier = " << setprecision(indent) << m_tsapIdentifier << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2502,7 +2502,7 @@ void H245_UnicastAddress_iP6Address::PrintOn(ostream & strm) const
 PObject::Comparison H245_UnicastAddress_iP6Address::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_UnicastAddress_iP6Address), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_UnicastAddress_iP6Address), PInvalidCast);
 #endif
   const H245_UnicastAddress_iP6Address & other = (const H245_UnicastAddress_iP6Address &)obj;
 
@@ -2579,7 +2579,7 @@ void H245_MulticastAddress_iPAddress::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+10) << "network = " << setprecision(indent) << m_network << '\n';
   strm << setw(indent+17) << "tsapIdentifier = " << setprecision(indent) << m_tsapIdentifier << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2587,7 +2587,7 @@ void H245_MulticastAddress_iPAddress::PrintOn(ostream & strm) const
 PObject::Comparison H245_MulticastAddress_iPAddress::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_MulticastAddress_iPAddress), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_MulticastAddress_iPAddress), PInvalidCast);
 #endif
   const H245_MulticastAddress_iPAddress & other = (const H245_MulticastAddress_iPAddress &)obj;
 
@@ -2664,7 +2664,7 @@ void H245_MulticastAddress_iP6Address::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+10) << "network = " << setprecision(indent) << m_network << '\n';
   strm << setw(indent+17) << "tsapIdentifier = " << setprecision(indent) << m_tsapIdentifier << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2672,7 +2672,7 @@ void H245_MulticastAddress_iP6Address::PrintOn(ostream & strm) const
 PObject::Comparison H245_MulticastAddress_iP6Address::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_MulticastAddress_iP6Address), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_MulticastAddress_iP6Address), PInvalidCast);
 #endif
   const H245_MulticastAddress_iP6Address & other = (const H245_MulticastAddress_iP6Address &)obj;
 
@@ -4413,7 +4413,7 @@ void H245_G7231AnnexCMode_g723AnnexCAudioMode::PrintOn(ostream & strm) const
   strm << setw(indent+15) << "lowRateMode1 = " << setprecision(indent) << m_lowRateMode1 << '\n';
   strm << setw(indent+11) << "sidMode0 = " << setprecision(indent) << m_sidMode0 << '\n';
   strm << setw(indent+11) << "sidMode1 = " << setprecision(indent) << m_sidMode1 << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4421,7 +4421,7 @@ void H245_G7231AnnexCMode_g723AnnexCAudioMode::PrintOn(ostream & strm) const
 PObject::Comparison H245_G7231AnnexCMode_g723AnnexCAudioMode::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_G7231AnnexCMode_g723AnnexCAudioMode), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_G7231AnnexCMode_g723AnnexCAudioMode), PInvalidCast);
 #endif
   const H245_G7231AnnexCMode_g723AnnexCAudioMode & other = (const H245_G7231AnnexCMode_g723AnnexCAudioMode &)obj;
 
@@ -5126,7 +5126,7 @@ void H245_ConferenceResponse_extensionAddressResponse::PrintOn(ostream & strm) c
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+19) << "extensionAddress = " << setprecision(indent) << m_extensionAddress << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5134,7 +5134,7 @@ void H245_ConferenceResponse_extensionAddressResponse::PrintOn(ostream & strm) c
 PObject::Comparison H245_ConferenceResponse_extensionAddressResponse::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_ConferenceResponse_extensionAddressResponse), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_ConferenceResponse_extensionAddressResponse), PInvalidCast);
 #endif
   const H245_ConferenceResponse_extensionAddressResponse & other = (const H245_ConferenceResponse_extensionAddressResponse &)obj;
 
@@ -5358,7 +5358,7 @@ void H245_MultilinkRequest_callInformation::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+35) << "maxNumberOfAdditionalConnections = " << setprecision(indent) << m_maxNumberOfAdditionalConnections << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5366,7 +5366,7 @@ void H245_MultilinkRequest_callInformation::PrintOn(ostream & strm) const
 PObject::Comparison H245_MultilinkRequest_callInformation::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_MultilinkRequest_callInformation), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_MultilinkRequest_callInformation), PInvalidCast);
 #endif
   const H245_MultilinkRequest_callInformation & other = (const H245_MultilinkRequest_callInformation &)obj;
 
@@ -5435,7 +5435,7 @@ void H245_MultilinkRequest_addConnection::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+17) << "sequenceNumber = " << setprecision(indent) << m_sequenceNumber << '\n';
   strm << setw(indent+21) << "dialingInformation = " << setprecision(indent) << m_dialingInformation << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5443,7 +5443,7 @@ void H245_MultilinkRequest_addConnection::PrintOn(ostream & strm) const
 PObject::Comparison H245_MultilinkRequest_addConnection::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_MultilinkRequest_addConnection), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_MultilinkRequest_addConnection), PInvalidCast);
 #endif
   const H245_MultilinkRequest_addConnection & other = (const H245_MultilinkRequest_addConnection &)obj;
 
@@ -5517,7 +5517,7 @@ void H245_MultilinkRequest_removeConnection::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+23) << "connectionIdentifier = " << setprecision(indent) << m_connectionIdentifier << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5525,7 +5525,7 @@ void H245_MultilinkRequest_removeConnection::PrintOn(ostream & strm) const
 PObject::Comparison H245_MultilinkRequest_removeConnection::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_MultilinkRequest_removeConnection), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_MultilinkRequest_removeConnection), PInvalidCast);
 #endif
   const H245_MultilinkRequest_removeConnection & other = (const H245_MultilinkRequest_removeConnection &)obj;
 
@@ -5595,7 +5595,7 @@ void H245_MultilinkResponse_callInformation::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+21) << "dialingInformation = " << setprecision(indent) << m_dialingInformation << '\n';
   strm << setw(indent+24) << "callAssociationNumber = " << setprecision(indent) << m_callAssociationNumber << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5603,7 +5603,7 @@ void H245_MultilinkResponse_callInformation::PrintOn(ostream & strm) const
 PObject::Comparison H245_MultilinkResponse_callInformation::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_MultilinkResponse_callInformation), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_MultilinkResponse_callInformation), PInvalidCast);
 #endif
   const H245_MultilinkResponse_callInformation & other = (const H245_MultilinkResponse_callInformation &)obj;
 
@@ -5677,7 +5677,7 @@ void H245_MultilinkResponse_removeConnection::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+23) << "connectionIdentifier = " << setprecision(indent) << m_connectionIdentifier << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5685,7 +5685,7 @@ void H245_MultilinkResponse_removeConnection::PrintOn(ostream & strm) const
 PObject::Comparison H245_MultilinkResponse_removeConnection::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_MultilinkResponse_removeConnection), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_MultilinkResponse_removeConnection), PInvalidCast);
 #endif
   const H245_MultilinkResponse_removeConnection & other = (const H245_MultilinkResponse_removeConnection &)obj;
 
@@ -5754,7 +5754,7 @@ void H245_MultilinkResponse_maximumHeaderInterval::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+18) << "currentInterval = " << setprecision(indent) << m_currentInterval << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5762,7 +5762,7 @@ void H245_MultilinkResponse_maximumHeaderInterval::PrintOn(ostream & strm) const
 PObject::Comparison H245_MultilinkResponse_maximumHeaderInterval::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_MultilinkResponse_maximumHeaderInterval), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_MultilinkResponse_maximumHeaderInterval), PInvalidCast);
 #endif
   const H245_MultilinkResponse_maximumHeaderInterval & other = (const H245_MultilinkResponse_maximumHeaderInterval &)obj;
 
@@ -5829,7 +5829,7 @@ void H245_MultilinkIndication_crcDesired::PrintOn(ostream & strm) const
 {
   int indent = strm.precision() + 2;
   strm << "{\n";
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5885,7 +5885,7 @@ void H245_MultilinkIndication_excessiveError::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+23) << "connectionIdentifier = " << setprecision(indent) << m_connectionIdentifier << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5893,7 +5893,7 @@ void H245_MultilinkIndication_excessiveError::PrintOn(ostream & strm) const
 PObject::Comparison H245_MultilinkIndication_excessiveError::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_MultilinkIndication_excessiveError), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_MultilinkIndication_excessiveError), PInvalidCast);
 #endif
   const H245_MultilinkIndication_excessiveError & other = (const H245_MultilinkIndication_excessiveError &)obj;
 
@@ -7078,7 +7078,7 @@ void H245_UserInputIndication_extendedAlphanumeric::PrintOn(ostream & strm) cons
   strm << setw(indent+15) << "alphanumeric = " << setprecision(indent) << m_alphanumeric << '\n';
   if (HasOptionalField(e_rtpPayloadIndication))
     strm << setw(indent+23) << "rtpPayloadIndication = " << setprecision(indent) << m_rtpPayloadIndication << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7086,7 +7086,7 @@ void H245_UserInputIndication_extendedAlphanumeric::PrintOn(ostream & strm) cons
 PObject::Comparison H245_UserInputIndication_extendedAlphanumeric::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_UserInputIndication_extendedAlphanumeric), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_UserInputIndication_extendedAlphanumeric), PInvalidCast);
 #endif
   const H245_UserInputIndication_extendedAlphanumeric & other = (const H245_UserInputIndication_extendedAlphanumeric &)obj;
 
@@ -7431,7 +7431,7 @@ void H245_H223Capability_h223MultiplexTableCapability_enhanced::PrintOn(ostream 
   strm << setw(indent+22) << "maximumNestingDepth = " << setprecision(indent) << m_maximumNestingDepth << '\n';
   strm << setw(indent+25) << "maximumElementListSize = " << setprecision(indent) << m_maximumElementListSize << '\n';
   strm << setw(indent+28) << "maximumSubElementListSize = " << setprecision(indent) << m_maximumSubElementListSize << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7439,7 +7439,7 @@ void H245_H223Capability_h223MultiplexTableCapability_enhanced::PrintOn(ostream 
 PObject::Comparison H245_H223Capability_h223MultiplexTableCapability_enhanced::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_H223Capability_h223MultiplexTableCapability_enhanced), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_H223Capability_h223MultiplexTableCapability_enhanced), PInvalidCast);
 #endif
   const H245_H223Capability_h223MultiplexTableCapability_enhanced & other = (const H245_H223Capability_h223MultiplexTableCapability_enhanced &)obj;
 
@@ -7555,7 +7555,7 @@ void H245_RefPictureSelection_enhancedReferencePicSelect_subPictureRemovalParame
   strm << setw(indent+14) << "mpuHorizMBs = " << setprecision(indent) << m_mpuHorizMBs << '\n';
   strm << setw(indent+13) << "mpuVertMBs = " << setprecision(indent) << m_mpuVertMBs << '\n';
   strm << setw(indent+17) << "mpuTotalNumber = " << setprecision(indent) << m_mpuTotalNumber << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7563,7 +7563,7 @@ void H245_RefPictureSelection_enhancedReferencePicSelect_subPictureRemovalParame
 PObject::Comparison H245_RefPictureSelection_enhancedReferencePicSelect_subPictureRemovalParameters::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_RefPictureSelection_enhancedReferencePicSelect_subPictureRemovalParameters), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_RefPictureSelection_enhancedReferencePicSelect_subPictureRemovalParameters), PInvalidCast);
 #endif
   const H245_RefPictureSelection_enhancedReferencePicSelect_subPictureRemovalParameters & other = (const H245_RefPictureSelection_enhancedReferencePicSelect_subPictureRemovalParameters &)obj;
 
@@ -7742,7 +7742,7 @@ void H245_DataApplicationCapability_application_t84::PrintOn(ostream & strm) con
   strm << "{\n";
   strm << setw(indent+14) << "t84Protocol = " << setprecision(indent) << m_t84Protocol << '\n';
   strm << setw(indent+13) << "t84Profile = " << setprecision(indent) << m_t84Profile << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7750,7 +7750,7 @@ void H245_DataApplicationCapability_application_t84::PrintOn(ostream & strm) con
 PObject::Comparison H245_DataApplicationCapability_application_t84::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_DataApplicationCapability_application_t84), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_DataApplicationCapability_application_t84), PInvalidCast);
 #endif
   const H245_DataApplicationCapability_application_t84 & other = (const H245_DataApplicationCapability_application_t84 &)obj;
 
@@ -7825,7 +7825,7 @@ void H245_DataApplicationCapability_application_nlpid::PrintOn(ostream & strm) c
   strm << "{\n";
   strm << setw(indent+16) << "nlpidProtocol = " << setprecision(indent) << m_nlpidProtocol << '\n';
   strm << setw(indent+12) << "nlpidData = " << setprecision(indent) << m_nlpidData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7833,7 +7833,7 @@ void H245_DataApplicationCapability_application_nlpid::PrintOn(ostream & strm) c
 PObject::Comparison H245_DataApplicationCapability_application_nlpid::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_DataApplicationCapability_application_nlpid), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_DataApplicationCapability_application_nlpid), PInvalidCast);
 #endif
   const H245_DataApplicationCapability_application_nlpid & other = (const H245_DataApplicationCapability_application_nlpid &)obj;
 
@@ -7908,7 +7908,7 @@ void H245_FECCapability_rfc2733_separateStream::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+15) << "separatePort = " << setprecision(indent) << m_separatePort << '\n';
   strm << setw(indent+11) << "samePort = " << setprecision(indent) << m_samePort << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7916,7 +7916,7 @@ void H245_FECCapability_rfc2733_separateStream::PrintOn(ostream & strm) const
 PObject::Comparison H245_FECCapability_rfc2733_separateStream::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_FECCapability_rfc2733_separateStream), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_FECCapability_rfc2733_separateStream), PInvalidCast);
 #endif
   const H245_FECCapability_rfc2733_separateStream & other = (const H245_FECCapability_rfc2733_separateStream &)obj;
 
@@ -8243,7 +8243,7 @@ void H245_H223LogicalChannelParameters_adaptationLayerType_al3::PrintOn(ostream 
   strm << "{\n";
   strm << setw(indent+21) << "controlFieldOctets = " << setprecision(indent) << m_controlFieldOctets << '\n';
   strm << setw(indent+17) << "sendBufferSize = " << setprecision(indent) << m_sendBufferSize << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -8251,7 +8251,7 @@ void H245_H223LogicalChannelParameters_adaptationLayerType_al3::PrintOn(ostream 
 PObject::Comparison H245_H223LogicalChannelParameters_adaptationLayerType_al3::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_H223LogicalChannelParameters_adaptationLayerType_al3), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_H223LogicalChannelParameters_adaptationLayerType_al3), PInvalidCast);
 #endif
   const H245_H223LogicalChannelParameters_adaptationLayerType_al3 & other = (const H245_H223LogicalChannelParameters_adaptationLayerType_al3 &)obj;
 
@@ -8631,7 +8631,7 @@ void H245_H223ModeParameters_adaptationLayerType_al3::PrintOn(ostream & strm) co
   strm << "{\n";
   strm << setw(indent+21) << "controlFieldOctets = " << setprecision(indent) << m_controlFieldOctets << '\n';
   strm << setw(indent+17) << "sendBufferSize = " << setprecision(indent) << m_sendBufferSize << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -8639,7 +8639,7 @@ void H245_H223ModeParameters_adaptationLayerType_al3::PrintOn(ostream & strm) co
 PObject::Comparison H245_H223ModeParameters_adaptationLayerType_al3::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_H223ModeParameters_adaptationLayerType_al3), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_H223ModeParameters_adaptationLayerType_al3), PInvalidCast);
 #endif
   const H245_H223ModeParameters_adaptationLayerType_al3 & other = (const H245_H223ModeParameters_adaptationLayerType_al3 &)obj;
 
@@ -8714,7 +8714,7 @@ void H245_DataMode_application_nlpid::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+16) << "nlpidProtocol = " << setprecision(indent) << m_nlpidProtocol << '\n';
   strm << setw(indent+12) << "nlpidData = " << setprecision(indent) << m_nlpidData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -8722,7 +8722,7 @@ void H245_DataMode_application_nlpid::PrintOn(ostream & strm) const
 PObject::Comparison H245_DataMode_application_nlpid::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_DataMode_application_nlpid), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_DataMode_application_nlpid), PInvalidCast);
 #endif
   const H245_DataMode_application_nlpid & other = (const H245_DataMode_application_nlpid &)obj;
 
@@ -8933,7 +8933,7 @@ void H245_MiscellaneousCommand_type_videoFastUpdateGOB::PrintOn(ostream & strm) 
   strm << "{\n";
   strm << setw(indent+11) << "firstGOB = " << setprecision(indent) << m_firstGOB << '\n';
   strm << setw(indent+15) << "numberOfGOBs = " << setprecision(indent) << m_numberOfGOBs << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -8941,7 +8941,7 @@ void H245_MiscellaneousCommand_type_videoFastUpdateGOB::PrintOn(ostream & strm) 
 PObject::Comparison H245_MiscellaneousCommand_type_videoFastUpdateGOB::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_MiscellaneousCommand_type_videoFastUpdateGOB), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_MiscellaneousCommand_type_videoFastUpdateGOB), PInvalidCast);
 #endif
   const H245_MiscellaneousCommand_type_videoFastUpdateGOB & other = (const H245_MiscellaneousCommand_type_videoFastUpdateGOB &)obj;
 
@@ -9022,7 +9022,7 @@ void H245_MiscellaneousCommand_type_videoFastUpdateMB::PrintOn(ostream & strm) c
   if (HasOptionalField(e_firstMB))
     strm << setw(indent+10) << "firstMB = " << setprecision(indent) << m_firstMB << '\n';
   strm << setw(indent+14) << "numberOfMBs = " << setprecision(indent) << m_numberOfMBs << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9030,7 +9030,7 @@ void H245_MiscellaneousCommand_type_videoFastUpdateMB::PrintOn(ostream & strm) c
 PObject::Comparison H245_MiscellaneousCommand_type_videoFastUpdateMB::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_MiscellaneousCommand_type_videoFastUpdateMB), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_MiscellaneousCommand_type_videoFastUpdateMB), PInvalidCast);
 #endif
   const H245_MiscellaneousCommand_type_videoFastUpdateMB & other = (const H245_MiscellaneousCommand_type_videoFastUpdateMB &)obj;
 
@@ -9119,7 +9119,7 @@ void H245_MiscellaneousCommand_type_videoBadMBs::PrintOn(ostream & strm) const
   strm << setw(indent+10) << "firstMB = " << setprecision(indent) << m_firstMB << '\n';
   strm << setw(indent+14) << "numberOfMBs = " << setprecision(indent) << m_numberOfMBs << '\n';
   strm << setw(indent+20) << "temporalReference = " << setprecision(indent) << m_temporalReference << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9127,7 +9127,7 @@ void H245_MiscellaneousCommand_type_videoBadMBs::PrintOn(ostream & strm) const
 PObject::Comparison H245_MiscellaneousCommand_type_videoBadMBs::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_MiscellaneousCommand_type_videoBadMBs), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_MiscellaneousCommand_type_videoBadMBs), PInvalidCast);
 #endif
   const H245_MiscellaneousCommand_type_videoBadMBs & other = (const H245_MiscellaneousCommand_type_videoBadMBs &)obj;
 
@@ -9242,7 +9242,7 @@ void H245_MiscellaneousCommand_type_lostPartialPicture::PrintOn(ostream & strm) 
   strm << setw(indent+19) << "pictureReference = " << setprecision(indent) << m_pictureReference << '\n';
   strm << setw(indent+10) << "firstMB = " << setprecision(indent) << m_firstMB << '\n';
   strm << setw(indent+14) << "numberOfMBs = " << setprecision(indent) << m_numberOfMBs << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9250,7 +9250,7 @@ void H245_MiscellaneousCommand_type_lostPartialPicture::PrintOn(ostream & strm) 
 PObject::Comparison H245_MiscellaneousCommand_type_lostPartialPicture::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_MiscellaneousCommand_type_lostPartialPicture), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_MiscellaneousCommand_type_lostPartialPicture), PInvalidCast);
 #endif
   const H245_MiscellaneousCommand_type_lostPartialPicture & other = (const H245_MiscellaneousCommand_type_lostPartialPicture &)obj;
 
@@ -9333,7 +9333,7 @@ void H245_NewATMVCCommand_aal_aal5::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+24) << "forwardMaximumSDUSize = " << setprecision(indent) << m_forwardMaximumSDUSize << '\n';
   strm << setw(indent+25) << "backwardMaximumSDUSize = " << setprecision(indent) << m_backwardMaximumSDUSize << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9341,7 +9341,7 @@ void H245_NewATMVCCommand_aal_aal5::PrintOn(ostream & strm) const
 PObject::Comparison H245_NewATMVCCommand_aal_aal5::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_NewATMVCCommand_aal_aal5), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_NewATMVCCommand_aal_aal5), PInvalidCast);
 #endif
   const H245_NewATMVCCommand_aal_aal5 & other = (const H245_NewATMVCCommand_aal_aal5 &)obj;
 
@@ -9452,7 +9452,7 @@ void H245_MiscellaneousIndication_type_videoNotDecodedMBs::PrintOn(ostream & str
   strm << setw(indent+10) << "firstMB = " << setprecision(indent) << m_firstMB << '\n';
   strm << setw(indent+14) << "numberOfMBs = " << setprecision(indent) << m_numberOfMBs << '\n';
   strm << setw(indent+20) << "temporalReference = " << setprecision(indent) << m_temporalReference << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9460,7 +9460,7 @@ void H245_MiscellaneousIndication_type_videoNotDecodedMBs::PrintOn(ostream & str
 PObject::Comparison H245_MiscellaneousIndication_type_videoNotDecodedMBs::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_MiscellaneousIndication_type_videoNotDecodedMBs), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_MiscellaneousIndication_type_videoNotDecodedMBs), PInvalidCast);
 #endif
   const H245_MiscellaneousIndication_type_videoNotDecodedMBs & other = (const H245_MiscellaneousIndication_type_videoNotDecodedMBs &)obj;
 
@@ -9543,7 +9543,7 @@ void H245_NewATMVCIndication_aal_aal5::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+24) << "forwardMaximumSDUSize = " << setprecision(indent) << m_forwardMaximumSDUSize << '\n';
   strm << setw(indent+25) << "backwardMaximumSDUSize = " << setprecision(indent) << m_backwardMaximumSDUSize << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9551,7 +9551,7 @@ void H245_NewATMVCIndication_aal_aal5::PrintOn(ostream & strm) const
 PObject::Comparison H245_NewATMVCIndication_aal_aal5::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_NewATMVCIndication_aal_aal5), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_NewATMVCIndication_aal_aal5), PInvalidCast);
 #endif
   const H245_NewATMVCIndication_aal_aal5 & other = (const H245_NewATMVCIndication_aal_aal5 &)obj;
 
@@ -9663,7 +9663,7 @@ void H245_UserInputIndication_signal_rtp::PrintOn(ostream & strm) const
   if (HasOptionalField(e_expirationTime))
     strm << setw(indent+17) << "expirationTime = " << setprecision(indent) << m_expirationTime << '\n';
   strm << setw(indent+23) << "logicalChannelNumber = " << setprecision(indent) << m_logicalChannelNumber << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9671,7 +9671,7 @@ void H245_UserInputIndication_signal_rtp::PrintOn(ostream & strm) const
 PObject::Comparison H245_UserInputIndication_signal_rtp::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_UserInputIndication_signal_rtp), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_UserInputIndication_signal_rtp), PInvalidCast);
 #endif
   const H245_UserInputIndication_signal_rtp & other = (const H245_UserInputIndication_signal_rtp &)obj;
 
@@ -9755,7 +9755,7 @@ void H245_UserInputIndication_signalUpdate_rtp::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+23) << "logicalChannelNumber = " << setprecision(indent) << m_logicalChannelNumber << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9763,7 +9763,7 @@ void H245_UserInputIndication_signalUpdate_rtp::PrintOn(ostream & strm) const
 PObject::Comparison H245_UserInputIndication_signalUpdate_rtp::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_UserInputIndication_signalUpdate_rtp), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_UserInputIndication_signalUpdate_rtp), PInvalidCast);
 #endif
   const H245_UserInputIndication_signalUpdate_rtp & other = (const H245_UserInputIndication_signalUpdate_rtp &)obj;
 
@@ -9834,7 +9834,7 @@ void H245_VCCapability_availableBitRates_type_rangeOfBitRates::PrintOn(ostream &
   strm << "{\n";
   strm << setw(indent+15) << "lowerBitRate = " << setprecision(indent) << m_lowerBitRate << '\n';
   strm << setw(indent+16) << "higherBitRate = " << setprecision(indent) << m_higherBitRate << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9842,7 +9842,7 @@ void H245_VCCapability_availableBitRates_type_rangeOfBitRates::PrintOn(ostream &
 PObject::Comparison H245_VCCapability_availableBitRates_type_rangeOfBitRates::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_VCCapability_availableBitRates_type_rangeOfBitRates), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_VCCapability_availableBitRates_type_rangeOfBitRates), PInvalidCast);
 #endif
   const H245_VCCapability_availableBitRates_type_rangeOfBitRates & other = (const H245_VCCapability_availableBitRates_type_rangeOfBitRates &)obj;
 
@@ -9921,7 +9921,7 @@ void H245_CustomPictureFormat_mPI_customPCF_subtype::PrintOn(ostream & strm) con
   strm << setw(indent+22) << "clockConversionCode = " << setprecision(indent) << m_clockConversionCode << '\n';
   strm << setw(indent+15) << "clockDivisor = " << setprecision(indent) << m_clockDivisor << '\n';
   strm << setw(indent+12) << "customMPI = " << setprecision(indent) << m_customMPI << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9929,7 +9929,7 @@ void H245_CustomPictureFormat_mPI_customPCF_subtype::PrintOn(ostream & strm) con
 PObject::Comparison H245_CustomPictureFormat_mPI_customPCF_subtype::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_CustomPictureFormat_mPI_customPCF_subtype), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_CustomPictureFormat_mPI_customPCF_subtype), PInvalidCast);
 #endif
   const H245_CustomPictureFormat_mPI_customPCF_subtype & other = (const H245_CustomPictureFormat_mPI_customPCF_subtype &)obj;
 
@@ -10012,7 +10012,7 @@ void H245_CustomPictureFormat_pixelAspectInformation_extendedPAR_subtype::PrintO
   strm << "{\n";
   strm << setw(indent+8) << "width = " << setprecision(indent) << m_width << '\n';
   strm << setw(indent+9) << "height = " << setprecision(indent) << m_height << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -10020,7 +10020,7 @@ void H245_CustomPictureFormat_pixelAspectInformation_extendedPAR_subtype::PrintO
 PObject::Comparison H245_CustomPictureFormat_pixelAspectInformation_extendedPAR_subtype::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H245_CustomPictureFormat_pixelAspectInformation_extendedPAR_subtype), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_CustomPictureFormat_pixelAspectInformation_extendedPAR_subtype), PInvalidCast);
 #endif
   const H245_CustomPictureFormat_pixelAspectInformation_extendedPAR_subtype & other = (const H245_CustomPictureFormat_pixelAspectInformation_extendedPAR_subtype &)obj;
 

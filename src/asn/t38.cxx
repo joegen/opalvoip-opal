@@ -483,7 +483,7 @@ void T38_IFPPacket::PrintOn(ostream & strm) const
   strm << setw(indent+14) << "type_of_msg = " << setprecision(indent) << m_type_of_msg << '\n';
   if (HasOptionalField(e_data_field))
     strm << setw(indent+13) << "data_field = " << setprecision(indent) << m_data_field << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -491,7 +491,7 @@ void T38_IFPPacket::PrintOn(ostream & strm) const
 PObject::Comparison T38_IFPPacket::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, T38_IFPPacket), PInvalidCast);
+  PAssert(PIsDescendant(&obj, T38_IFPPacket), PInvalidCast);
 #endif
   const T38_IFPPacket & other = (const T38_IFPPacket &)obj;
 
@@ -569,7 +569,7 @@ void T38_PreCorrigendum_IFPPacket::PrintOn(ostream & strm) const
   strm << setw(indent+14) << "type_of_msg = " << setprecision(indent) << m_type_of_msg << '\n';
   if (HasOptionalField(e_data_field))
     strm << setw(indent+13) << "data_field = " << setprecision(indent) << m_data_field << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -577,7 +577,7 @@ void T38_PreCorrigendum_IFPPacket::PrintOn(ostream & strm) const
 PObject::Comparison T38_PreCorrigendum_IFPPacket::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, T38_PreCorrigendum_IFPPacket), PInvalidCast);
+  PAssert(PIsDescendant(&obj, T38_PreCorrigendum_IFPPacket), PInvalidCast);
 #endif
   const T38_PreCorrigendum_IFPPacket & other = (const T38_PreCorrigendum_IFPPacket &)obj;
 
@@ -656,7 +656,7 @@ void T38_Data_Field_subtype::PrintOn(ostream & strm) const
   strm << setw(indent+13) << "field_type = " << setprecision(indent) << m_field_type << '\n';
   if (HasOptionalField(e_field_data))
     strm << setw(indent+13) << "field_data = " << setprecision(indent) << m_field_data << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -664,7 +664,7 @@ void T38_Data_Field_subtype::PrintOn(ostream & strm) const
 PObject::Comparison T38_Data_Field_subtype::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, T38_Data_Field_subtype), PInvalidCast);
+  PAssert(PIsDescendant(&obj, T38_Data_Field_subtype), PInvalidCast);
 #endif
   const T38_Data_Field_subtype & other = (const T38_Data_Field_subtype &)obj;
 
@@ -743,7 +743,7 @@ void T38_PreCorrigendum_Data_Field_subtype::PrintOn(ostream & strm) const
   strm << setw(indent+13) << "field_type = " << setprecision(indent) << m_field_type << '\n';
   if (HasOptionalField(e_field_data))
     strm << setw(indent+13) << "field_data = " << setprecision(indent) << m_field_data << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -751,7 +751,7 @@ void T38_PreCorrigendum_Data_Field_subtype::PrintOn(ostream & strm) const
 PObject::Comparison T38_PreCorrigendum_Data_Field_subtype::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, T38_PreCorrigendum_Data_Field_subtype), PInvalidCast);
+  PAssert(PIsDescendant(&obj, T38_PreCorrigendum_Data_Field_subtype), PInvalidCast);
 #endif
   const T38_PreCorrigendum_Data_Field_subtype & other = (const T38_PreCorrigendum_Data_Field_subtype &)obj;
 
@@ -847,7 +847,7 @@ void T38_UDPTLPacket_error_recovery_fec_info::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+15) << "fec_npackets = " << setprecision(indent) << m_fec_npackets << '\n';
   strm << setw(indent+11) << "fec_data = " << setprecision(indent) << m_fec_data << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -855,7 +855,7 @@ void T38_UDPTLPacket_error_recovery_fec_info::PrintOn(ostream & strm) const
 PObject::Comparison T38_UDPTLPacket_error_recovery_fec_info::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, T38_UDPTLPacket_error_recovery_fec_info), PInvalidCast);
+  PAssert(PIsDescendant(&obj, T38_UDPTLPacket_error_recovery_fec_info), PInvalidCast);
 #endif
   const T38_UDPTLPacket_error_recovery_fec_info & other = (const T38_UDPTLPacket_error_recovery_fec_info &)obj;
 
@@ -951,7 +951,7 @@ void T38_UDPTLPacket::PrintOn(ostream & strm) const
   strm << setw(indent+13) << "seq_number = " << setprecision(indent) << m_seq_number << '\n';
   strm << setw(indent+21) << "primary_ifp_packet = " << setprecision(indent) << m_primary_ifp_packet << '\n';
   strm << setw(indent+17) << "error_recovery = " << setprecision(indent) << m_error_recovery << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -959,7 +959,7 @@ void T38_UDPTLPacket::PrintOn(ostream & strm) const
 PObject::Comparison T38_UDPTLPacket::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, T38_UDPTLPacket), PInvalidCast);
+  PAssert(PIsDescendant(&obj, T38_UDPTLPacket), PInvalidCast);
 #endif
   const T38_UDPTLPacket & other = (const T38_UDPTLPacket &)obj;
 

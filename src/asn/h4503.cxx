@@ -397,7 +397,7 @@ void H4503_IntResult::PrintOn(ostream & strm) const
 PObject::Comparison H4503_IntResult::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4503_IntResult), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4503_IntResult), PInvalidCast);
 #endif
   const H4503_IntResult & other = (const H4503_IntResult &)obj;
 
