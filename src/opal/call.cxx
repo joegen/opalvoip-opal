@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2004  2001/08/22 10:20:09  robertj
+ * Revision 1.2005  2001/10/04 05:43:44  craigs
+ * Changed to start media patch threads in Paused state
+ *
+ * Revision 2.3  2001/08/22 10:20:09  robertj
  * Changed connection locking to use double mutex to guarantee that
  *   no threads can ever deadlock or access deleted connection.
  *
@@ -320,8 +323,9 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
 
   inUseFlag.Signal();
 
-  if (patchedOne)
-    patch->Resume();
+  //%%%%%%%%%%%%%%%%
+  //if (patchedOne)
+  //  patch->Resume();
 
   return patchedOne;
 }
