@@ -22,7 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: opal_inc.mak,v $
-# Revision 1.2003  2002/03/15 10:51:53  robertj
+# Revision 1.2004  2002/04/19 01:24:30  robertj
+# Changed /usr/include to SYSINCDIR helps with X-compiling, thanks Bob Lindell
+#
+# Revision 2.2  2002/03/15 10:51:53  robertj
 # Fixed problem with recursive inclusion on make files.
 #
 # Revision 2.1  2002/02/06 09:39:37  rogerh
@@ -76,12 +79,12 @@ LDLIBS	    := -l$(OPAL_BASE)$(LIB_TYPE) $(LDLIBS)
 
 STDCCFLAGS  += -I$(OPAL_INCDIR)
 
-ifneq (,$(wildcard /usr/include/linux/telephony.h))
+ifneq (,$(wildcard $(SYSINCDIR)/linux/telephony.h))
 HAS_IXJ	    = 1
 STDCCFLAGS += -DHAS_IXJ
 endif
 
-ifneq (,$(wildcard /usr/include/sys/telephony.h))
+ifneq (,$(wildcard $(SYSINCDIR)/sys/telephony.h))
 HAS_IXJ	    = 1
 STDCCFLAGS += -DHAS_IXJ
 endif
@@ -91,7 +94,7 @@ HAS_IXJ	    = 1
 STDCCFLAGS += -DHAS_IXJ -I/usr/local/include
 endif
 
-ifneq (,$(wildcard /usr/include/linux/soundcard.h))
+ifneq (,$(wildcard $(SYSINCDIR)/linux/soundcard.h))
 HAS_OSS	    = 1
 STDCCFLAGS += -DHAS_OSS
 endif
