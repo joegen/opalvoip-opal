@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2074  2005/02/24 19:58:26  dsandras
+ * Revision 1.2075  2005/03/01 18:43:15  dsandras
+ * Removed call to OnEstablished() as it is already called via H323UnidirectionalChannel::Open().
+ *
+ * Revision 2.73  2005/02/24 19:58:26  dsandras
  * Fixed problem with transmit channel not started on connect thanks to DDV.
  *
  * Revision 2.72  2005/02/19 22:42:55  dsandras
@@ -4337,7 +4340,6 @@ void H323Connection::InternalEstablishedConnectionCheck()
 
       connectionState = EstablishedConnection;
       phase = EstablishedPhase;
-      OnEstablished();
       break;
 
     case EstablishedPhase :
