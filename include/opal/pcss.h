@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.h,v $
- * Revision 1.2009  2003/03/06 03:57:47  robertj
+ * Revision 1.2010  2003/03/17 10:11:05  robertj
+ * Added call back functions for creating sound channel.
+ * Added video support.
+ *
+ * Revision 2.8  2003/03/06 03:57:47  robertj
  * IVR support (work in progress) requiring large changes everywhere.
  *
  * Revision 2.7  2002/09/16 02:52:35  robertj
@@ -138,6 +142,13 @@ class OpalPCSSEndPoint : public OpalEndPoint
       const PString & playDevice, /// Sound channel play device
       const PString & recordDevice, /// Sound channel record device
       void * userData     /// Arbitrary data to pass to connection
+    );
+
+    /**Create an PSoundChannel based media stream.
+      */
+    virtual PSoundChannel * CreateSoundChannel(
+      const OpalPCSSConnection & connection, /// Connection needing created sound channel
+      BOOL isSource                          // Direction for channel
     );
   //@}
 
@@ -322,8 +333,9 @@ class OpalPCSSConnection : public OpalConnection
        The default behaviour is pure.
      */
     virtual OpalMediaStream * CreateMediaStream(
-      BOOL isSource,      /// Is a source stream
-      unsigned sessionID  /// Session number for stream
+      const OpalMediaFormat & mediaFormat, /// Media format for stream
+      unsigned sessionID,                  /// Session number for stream
+      BOOL isSource                        /// Is a source stream
     );
 
     /**Send a user input indication to the remote endpoint.
@@ -338,6 +350,8 @@ class OpalPCSSConnection : public OpalConnection
     );
   //@}
 
+  /**@name New operations */
+  //@{
     /**Call is initiated as the A-Party.
       */
     virtual void InitiateCall();
@@ -346,11 +360,38 @@ class OpalPCSSConnection : public OpalConnection
       */
     virtual void AcceptIncoming();
 
+    /**Create an PSoundChannel based media stream.
+      */
+    virtual PSoundChannel * CreateSoundChannel(
+      BOOL isSource // Direction for channel
+    );
+  //@}
+
+  /**@name Member variable access */
+  //@{
+    /**Get the name for the sound channel to be used for output.
+       This defaults to the value of the PSoundChannel::GetDefaultDevice()
+       function.
+     */
+    const PString & GetSoundChannelPlayDevice() const { return soundChannelPlayDevice; }
+
+    /**Get the name for the sound channel to be used for input.
+       This defaults to the value of the PSoundChannel::GetDefaultDevice()
+       function.
+     */
+    const PString & GetSoundChannelRecordDevice() const { return soundChannelRecordDevice; }
+
+    /**Get default the sound channel buffer depth.
+      */
+    unsigned GetSoundChannelBufferDepth() const { return soundChannelBuffers; }
+  //@}
+
 
   protected:
     OpalPCSSEndPoint & endpoint;
     PString            soundChannelPlayDevice;
     PString            soundChannelRecordDevice;
+    unsigned           soundChannelBuffers;
 };
 
 
