@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mscodecs.h,v $
- * Revision 1.2007  2002/11/10 23:22:06  robertj
+ * Revision 1.2008  2004/03/11 06:54:26  csoutheren
+ * Added ability to disable SIP or H.323 stacks
+ *
+ * Revision 2.6  2002/11/10 23:22:06  robertj
  * Cosmetic change
  *
  * Revision 2.5  2002/11/10 11:33:16  robertj
@@ -96,9 +99,12 @@
 #pragma interface
 #endif
 
-
+#include <opal/buildopts.h>
 #include <codec/gsmcodec.h>
+
+#ifndef NO_H323
 #include <h323/h323caps.h>
+#endif
 
 
 #define OPAL_MSGSM "MS-GSM"

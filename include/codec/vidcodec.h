@@ -24,7 +24,10 @@
  * Contributor(s): 
  *
  * $Log: vidcodec.h,v $
- * Revision 1.2003  2004/01/18 15:35:20  rjongbloed
+ * Revision 1.2004  2004/03/11 06:54:26  csoutheren
+ * Added ability to disable SIP or H.323 stacks
+ *
+ * Revision 2.2  2004/01/18 15:35:20  rjongbloed
  * More work on video support
  *
  * Revision 2.1  2003/03/17 10:26:59  robertj
@@ -41,7 +44,10 @@
 
 
 #include <opal/transcoders.h>
+
+#ifndef NO_H323
 #include <h323/h323caps.h>
+#endif
 
 
 ///////////////////////////////////////////////////////////////////////////////
