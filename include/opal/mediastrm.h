@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2011  2002/02/13 02:33:29  robertj
+ * Revision 1.2012  2002/04/15 08:47:42  robertj
+ * Fixed problem with mismatched payload type being propagated.
+ * Fixed correct setting of jitter buffer size in RTP media stream.
+ *
+ * Revision 2.10  2002/02/13 02:33:29  robertj
  * Added ability for media patch (and transcoders) to handle multiple RTP frames.
  * Removed media stream being descended from PChannel, not really useful.
  *
@@ -274,6 +278,7 @@ class OpalMediaStream : public PObject
     unsigned        defaultDataSize;
     unsigned        timestamp;
     BOOL            marker;
+    unsigned        mismatchedPayloadTypes;
 
     OpalMediaPatch * patchThread;
 };
@@ -343,7 +348,8 @@ class OpalRTPMediaStream : public OpalMediaStream
       */
     OpalRTPMediaStream(
       BOOL isSourceStream,         /// Direction of I/O for stream
-      RTP_Session & rtpSession     /// RTP session to stream to/from
+      RTP_Session & rtpSession,    /// RTP session to stream to/from
+      unsigned jitterBufferSize    /// Jitter buffer size (if applicable)
     );
   //@}
 
@@ -383,6 +389,7 @@ class OpalRTPMediaStream : public OpalMediaStream
 
   protected:
     RTP_Session & rtpSession;
+    unsigned      jitterBufferSize;
 };
 
 
