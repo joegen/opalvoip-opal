@@ -1,7 +1,10 @@
 /*
 
 $Log: f2clib.c,v $
-Revision 1.2002  2003/03/14 09:53:27  robertj
+Revision 1.2003  2004/02/17 09:20:44  csoutheren
+Patch as per GM bug report 134591
+
+Revision 2.1  2003/03/14 09:53:27  robertj
 Updated to openH323 v1.11.7
 
 Revision 1.2  2002/02/15 03:57:55  yurik
@@ -81,5 +84,5 @@ integer i_nint(real *x)
 #endif
 {
 return (integer)( (*x)>=0 ?
-	floor(*x + .5) : -floor(.5 - *x) );
+	floor(*x + .5) : -(floor(.5 - *x)) );
 }
