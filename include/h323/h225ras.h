@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h225ras.h,v $
- * Revision 1.2007  2002/11/10 11:33:16  robertj
+ * Revision 1.2008  2003/01/07 04:39:52  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.6  2002/11/10 11:33:16  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.5  2002/09/16 02:52:33  robertj
@@ -48,6 +51,27 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.29  2002/11/28 04:41:44  robertj
+ * Added support for RAS ServiceControlIndication command.
+ *
+ * Revision 1.28  2002/11/27 06:54:52  robertj
+ * Added Service Control Session management as per Annex K/H.323 via RAS
+ *   only at this stage.
+ * Added H.248 ASN and very primitive infrastructure for linking into the
+ *   Service Control Session management system.
+ * Added basic infrastructure for Annex K/H.323 HTTP transport system.
+ * Added Call Credit Service Control to display account balances.
+ *
+ * Revision 1.27  2002/11/21 22:26:09  robertj
+ * Changed promiscuous mode to be three way. Fixes race condition in gkserver
+ *   which can cause crashes or more PDUs to be sent to the wrong place.
+ *
+ * Revision 1.26  2002/11/21 07:21:46  robertj
+ * Improvements to alternate gatekeeper client code, thanks Kevin Bouchard
+ *
+ * Revision 1.25  2002/11/11 07:20:08  robertj
+ * Minor clean up of API for doing RAS requests suing authentication.
  *
  * Revision 1.24  2002/11/04 11:52:08  robertj
  * Fixed comment
@@ -181,9 +205,319 @@ class H225_ResourcesAvailableConfirm;
 class H225_InfoRequestAck;
 class H225_InfoRequestNak;
 class H225_ArrayOf_CryptoH323Token;
+class H225_ServiceControlDescriptor;
+class H225_ServiceControlIndication;
+class H225_ServiceControlResponse;
+
+class H248_SignalsDescriptor;
+class H248_SignalRequest;
 
 class H323EndPoint;
+class H323Connection;
 class H323RasPDU;
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+/**This is a base class for H.323 Service Control Session handling.
+   This implements the service class session management as per Annex K/H.323.
+  */
+class H323ServiceControlSession : public PObject
+{
+    PCLASSINFO(H323ServiceControlSession, PObject);
+  public:
+  /**@name Construction */
+  //@{
+    /**Create a new handler for a Service Control.
+     */
+    H323ServiceControlSession();
+  //@}
+
+  /**@name Operations */
+  //@{
+    /**Determine of the session is valid.
+       That is has all of the data it needs to correctly encode a PDU.
+
+       Default behaviour is pure.
+      */
+    virtual BOOL IsValid() const = 0;
+
+    /**Get identification name for the Control Service.
+       This function separates the dynamic data from the fundamental type of
+       the control service which will cause a new session ID to be generated
+       by the gatekeeper server.
+
+       Default behaviour returns the class name.
+      */
+    virtual PString GetServiceControlType() const;
+
+    /**Handle a received PDU.
+       Update in the internal state from the received PDU.
+
+       Returns FALSE is PDU is not sutiable for the class type.
+
+       Default behaviour is pure.
+      */
+    virtual BOOL OnReceivedPDU(
+      const H225_ServiceControlDescriptor & descriptor
+    ) = 0;
+
+    /**Handle a sent PDU.
+       Set the PDU fields from in the internal state.
+
+       Returns FALSE is PDU cannot be created.
+
+       Default behaviour is pure.
+      */
+    virtual BOOL OnSendingPDU(
+      H225_ServiceControlDescriptor & descriptor
+    ) const = 0;
+
+    enum ChangeType {
+      OpenSession,    // H225_ServiceControlSession_reason::e_open
+      RefreshSession, // H225_ServiceControlSession_reason::e_refresh
+      CloseSession    // H225_ServiceControlSession_reason::e_close
+    };
+
+    /**Handle a change of the state of the Service Control Session.
+
+       Default behaviour is pure.
+      */
+    virtual void OnChange(
+      unsigned type,
+      unsigned sessionId,
+      H323EndPoint & endpoint,
+      H323Connection * connection
+    ) const = 0;
+  //@}
+};
+
+
+/**This class is for H.323 Service Control Session handling for HTTP.
+   This implements the HTTP channel management as per Annex K/H.323.
+  */
+class H323HTTPServiceControl : public H323ServiceControlSession
+{
+    PCLASSINFO(H323HTTPServiceControl, H323ServiceControlSession);
+  public:
+  /**@name Construction */
+  //@{
+    /**Create a new handler for a Service Control.
+     */
+    H323HTTPServiceControl(
+      const PString & url
+    );
+
+    /**Create a new handler for a Service Control, initialise to PDU.
+     */
+    H323HTTPServiceControl(
+      const H225_ServiceControlDescriptor & contents
+    );
+  //@}
+
+  /**@name Operations */
+  //@{
+    /**Determine of the session is valid.
+       That is has all of the data it needs to correctly encode a PDU.
+
+       Default behaviour returns TRUE if url is not an empty string.
+      */
+    virtual BOOL IsValid() const;
+
+    /**Get identification name for the Control Service.
+       This function separates the dynamic data from the fundamental type of
+       the control service which will cause a new session ID to be generated
+       by the gatekeeper server.
+
+       Default behaviour returns the class name.
+      */
+    virtual PString GetServiceControlType() const;
+
+    /**Handle a received PDU.
+       Update in the internal state from the received PDU.
+
+       Default behaviour gets the contents for an e_url.
+      */
+    virtual BOOL OnReceivedPDU(
+      const H225_ServiceControlDescriptor & contents
+    );
+
+    /**Handle a sent PDU.
+       Set the PDU fields from in the internal state.
+
+       Default behaviour sets the contents to an e_url.
+      */
+    virtual BOOL OnSendingPDU(
+      H225_ServiceControlDescriptor & contents
+    ) const;
+
+    /**Handle a change of the state of the Service Control Session.
+
+       Default behaviour calls endpoint.OnHTTPServiceControl().
+      */
+    virtual void OnChange(
+      unsigned type,
+      unsigned sessionId,
+      H323EndPoint & endpoint,
+      H323Connection * connection
+    ) const;
+  //@}
+
+  protected:
+    PString url;
+};
+
+
+/**This is a base class for H.323 Service Control Session handling for H.248.
+  */
+class H323H248ServiceControl : public H323ServiceControlSession
+{
+    PCLASSINFO(H323H248ServiceControl, H323ServiceControlSession);
+  public:
+  /**@name Construction */
+  //@{
+    /**Create a new handler for a Service Control.
+     */
+    H323H248ServiceControl();
+
+    /**Create a new handler for a Service Control, initialise to PDU.
+     */
+    H323H248ServiceControl(
+      const H225_ServiceControlDescriptor & contents
+    );
+  //@}
+
+  /**@name Operations */
+  //@{
+    /**Handle a received PDU.
+       Update in the internal state from the received PDU.
+
+       Default behaviour converts to pdu to H248_SignalsDescriptor and calls
+       that version of OnReceivedPDU().
+      */
+    virtual BOOL OnReceivedPDU(
+      const H225_ServiceControlDescriptor & contents
+    );
+
+    /**Handle a sent PDU.
+       Set the PDU fields from in the internal state.
+
+       Default behaviour calls the H248_SignalsDescriptor version of
+       OnSendingPDU() and converts that to the contents pdu.
+      */
+    virtual BOOL OnSendingPDU(
+      H225_ServiceControlDescriptor & contents
+    ) const;
+
+    /**Handle a received PDU.
+       Update in the internal state from the received PDU.
+
+       Default behaviour calls the H248_SignalRequest version of
+       OnReceivedPDU() for every element in H248_SignalsDescriptor.
+      */
+    virtual BOOL OnReceivedPDU(
+      const H248_SignalsDescriptor & descriptor
+    );
+
+    /**Handle a sent PDU.
+       Set the PDU fields from in the internal state.
+
+       Default behaviour calls the H248_SignalRequest version of
+       OnSendingPDU() and appends it to the H248_SignalsDescriptor.
+      */
+    virtual BOOL OnSendingPDU(
+      H248_SignalsDescriptor & descriptor
+    ) const;
+
+    /**Handle a received PDU.
+       Update in the internal state from the received PDU.
+
+       Default behaviour is pure.
+      */
+    virtual BOOL OnReceivedPDU(
+      const H248_SignalRequest & request
+    ) = 0;
+
+    /**Handle a sent PDU.
+       Set the PDU fields from in the internal state.
+
+       Default behaviour is pure.
+      */
+    virtual BOOL OnSendingPDU(
+      H248_SignalRequest & request
+    ) const = 0;
+  //@}
+};
+
+
+/**This class is for H.323 Service Control Session handling for call credit.
+  */
+class H323CallCreditServiceControl : public H323ServiceControlSession
+{
+    PCLASSINFO(H323CallCreditServiceControl, H323ServiceControlSession);
+  public:
+  /**@name Construction */
+  //@{
+    /**Create a new handler for a Service Control.
+     */
+    H323CallCreditServiceControl(
+      const PString & amount,
+      BOOL mode,
+      unsigned duration = 0
+    );
+
+    /**Create a new handler for a Service Control, initialise to PDU.
+     */
+    H323CallCreditServiceControl(
+      const H225_ServiceControlDescriptor & contents
+    );
+  //@}
+
+  /**@name Operations */
+  //@{
+    /**Determine of the session is valid.
+       That is has all of the data it needs to correctly encode a PDU.
+
+       Default behaviour returns TRUE if amount or duration is set.
+      */
+    virtual BOOL IsValid() const;
+
+    /**Handle a received PDU.
+       Update in the internal state from the received PDU.
+
+       Default behaviour gets the contents for an e_callCreditServiceControl.
+      */
+    virtual BOOL OnReceivedPDU(
+      const H225_ServiceControlDescriptor & contents
+    );
+
+    /**Handle a sent PDU.
+       Set the PDU fields from in the internal state.
+
+       Default behaviour sets the contents to an e_callCreditServiceControl.
+      */
+    virtual BOOL OnSendingPDU(
+      H225_ServiceControlDescriptor & contents
+    ) const;
+
+    /**Handle a change of the state of the Service Control Session.
+
+       Default behaviour calls endpoint.OnCallCreditServiceControl() and
+       optionally connection->SetEnforceDurationLimit().
+      */
+    virtual void OnChange(
+      unsigned type,
+      unsigned sessionId,
+      H323EndPoint & endpoint,
+      H323Connection * connection
+    ) const;
+  //@}
+
+  protected:
+    PString  amount;
+    BOOL     mode;
+    unsigned durationLimit;
+};
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -368,6 +702,15 @@ class H225_RAS : public PObject
     virtual BOOL OnReceiveResourcesAvailableIndicate(const H225_ResourcesAvailableIndicate &);
     virtual BOOL OnReceiveResourcesAvailableConfirm(const H225_ResourcesAvailableConfirm &);
 
+    virtual void OnSendServiceControlIndication(H323RasPDU &, H225_ServiceControlIndication &);
+    virtual void OnSendServiceControlResponse(H323RasPDU &, H225_ServiceControlResponse &);
+    virtual void OnSendServiceControlIndication(H225_ServiceControlIndication &);
+    virtual void OnSendServiceControlResponse(H225_ServiceControlResponse &);
+    virtual BOOL OnReceiveServiceControlIndication(const H323RasPDU &, const H225_ServiceControlIndication &);
+    virtual BOOL OnReceiveServiceControlResponse(const H323RasPDU &, const H225_ServiceControlResponse &);
+    virtual BOOL OnReceiveServiceControlIndication(const H225_ServiceControlIndication &);
+    virtual BOOL OnReceiveServiceControlResponse(const H225_ServiceControlResponse &);
+
     virtual void OnSendNonStandardMessage(H323RasPDU &, H225_NonStandardMessage &);
     virtual void OnSendNonStandardMessage(H225_NonStandardMessage &);
     virtual BOOL OnReceiveNonStandardMessage(const H323RasPDU &, const H225_NonStandardMessage &);
@@ -436,7 +779,7 @@ class H225_RAS : public PObject
   protected:
     //Background thread handler.
     PDECLARE_NOTIFIER(PThread, H225_RAS, HandleRasChannel);
-
+	
     unsigned GetNextSequenceNumber();
     BOOL SetUpCallSignalAddresses(
       H225_ArrayOf_TransportAddress & addresses
@@ -446,7 +789,15 @@ class H225_RAS : public PObject
     {
         PCLASSINFO(Request, PObject);
       public:
-        Request(unsigned seqNum, H323RasPDU  & pdu);
+        Request(
+          unsigned seqNum,
+          H323RasPDU & pdu
+        );
+        Request(
+          unsigned seqNum,
+          H323RasPDU & pdu,
+          const H323TransportAddressArray & addresses
+        );
 
         BOOL Poll(H225_RAS &);
         void CheckResponse(unsigned, const PASN_Choice *);
@@ -467,6 +818,7 @@ class H225_RAS : public PObject
           AwaitingResponse,
           ConfirmReceived,
           RejectReceived,
+          TryAlternate,
           BadCryptoTokens,
           RequestInProgress,
           NoResponseReceived
@@ -489,8 +841,6 @@ class H225_RAS : public PObject
     BOOL    checkResponseCryptoTokens;
 
     // Inter-thread synchronisation variables
-    H323TransportAddress lastReceivedFrom;
-
     unsigned      nextSequenceNumber;
     PMutex        nextSequenceNumberMutex;
 

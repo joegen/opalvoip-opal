@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.h,v $
- * Revision 1.2010  2002/11/10 11:33:16  robertj
+ * Revision 1.2011  2003/01/07 04:39:52  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.9  2002/11/10 11:33:16  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.8  2002/09/16 02:52:33  robertj
@@ -57,6 +60,27 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.48  2003/01/06 07:09:28  robertj
+ * Further fixes for alternate gatekeeper, thanks Kevin Bouchard
+ *
+ * Revision 1.47  2002/12/23 22:46:38  robertj
+ * Changed gatekeeper discovery so an GRJ does not indicate "discovered".
+ * Added trace output of alternate gatekeepers list.
+ *
+ * Revision 1.46  2002/11/28 04:41:44  robertj
+ * Added support for RAS ServiceControlIndication command.
+ *
+ * Revision 1.45  2002/11/27 06:54:52  robertj
+ * Added Service Control Session management as per Annex K/H.323 via RAS
+ *   only at this stage.
+ * Added H.248 ASN and very primitive infrastructure for linking into the
+ *   Service Control Session management system.
+ * Added basic infrastructure for Annex K/H.323 HTTP transport system.
+ * Added Call Credit Service Control to display account balances.
+ *
+ * Revision 1.44  2002/11/21 07:21:46  robertj
+ * Improvements to alternate gatekeeper client code, thanks Kevin Bouchard
  *
  * Revision 1.43  2002/09/18 06:58:29  robertj
  * Fixed setting of IRR frequency, an RCF could reset timer so it did not time
@@ -220,6 +244,7 @@ class H225_ArrayOf_AliasAddress;
 class H225_H323_UU_PDU;
 class H225_AlternateGK;
 class H225_ArrayOf_AlternateGK;
+class H225_ArrayOf_ServiceControlSession;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -263,10 +288,12 @@ class H323Gatekeeper : public H225_RAS
     BOOL OnReceiveUnregistrationConfirm(const H225_UnregistrationConfirm & ucf);
     BOOL OnReceiveUnregistrationReject(const H225_UnregistrationReject & urj);
     BOOL OnReceiveAdmissionConfirm(const H225_AdmissionConfirm & acf);
+    BOOL OnReceiveAdmissionReject(const H225_AdmissionReject & arj);
     BOOL OnReceiveDisengageRequest(const H225_DisengageRequest & drq);
     BOOL OnReceiveBandwidthConfirm(const H225_BandwidthConfirm & bcf);
     BOOL OnReceiveBandwidthRequest(const H225_BandwidthRequest & brq);
     BOOL OnReceiveInfoRequest(const H225_InfoRequest & irq);
+    BOOL OnReceiveServiceControlIndication(const H225_ServiceControlIndication &);
     void OnSendGatekeeperRequest(H225_GatekeeperRequest & grq);
     void OnSendAdmissionRequest(H225_AdmissionRequest & arq);
   //@}
@@ -379,10 +406,21 @@ class H323Gatekeeper : public H225_RAS
       const H225_H323_UU_PDU & pdu,       /// PDU that was sent or received
       BOOL sent                           /// Flag for PDU was sent or received
     );
+
+    /**Handle incoming service control session information.
+     */
+    virtual void OnServiceControlSessions(
+      const H225_ArrayOf_ServiceControlSession & serviceControl,
+      H323Connection * connection
+    );
   //@}
 
   /**@name Member variable access */
   //@{
+    /**Determine if the endpoint has discovered the gatekeeper.
+      */
+    BOOL IsDiscoveryComplete() const { return discoveryComplete; }
+
     /**Determine if the endpoint is registered with the gatekeeper.
       */
     BOOL IsRegistered() const { return isRegistered; }
@@ -416,7 +454,8 @@ class H323Gatekeeper : public H225_RAS
     BOOL StartDiscovery(const H323TransportAddress & address);
     BOOL DiscoverGatekeeper(H323RasPDU & request, const H323TransportAddress & address);
     unsigned SetupGatekeeperRequest(H323RasPDU & request);
-
+	
+    void Connect(const H323TransportAddress & address, const PString & gatekeeperIdentifier);
     PDECLARE_NOTIFIER(PThread, H323Gatekeeper, MonitorMain);
     PDECLARE_NOTIFIER(PTimer, H323Gatekeeper, TickleMonitor);
     void RegistrationTimeToLive();
@@ -438,7 +477,6 @@ class H323Gatekeeper : public H225_RAS
       const H225_ArrayOf_AlternateGK & alts,
       BOOL permanent
     );
-    void RegisterToAlternatesGK();
 
     virtual BOOL MakeRequest(
       Request & request
@@ -460,11 +498,11 @@ class H323Gatekeeper : public H225_RAS
         AlternateInfo(H225_AlternateGK & alt);
 	~AlternateInfo();
         Comparison Compare(const PObject & obj);
+        void PrintOn(ostream & strm) const;
 
         H323TransportAddress rasAddress;
         PString              gatekeeperIdentifier;
         unsigned             priority;
-	H323Gatekeeper     * registeredGK;
         enum {
           NoRegistrationNeeded,
           NeedToRegister,
@@ -478,12 +516,9 @@ class H323Gatekeeper : public H225_RAS
         AlternateInfo(const AlternateInfo &) { }
         AlternateInfo & operator=(const AlternateInfo &) { return *this; }
     };
-    PSORTED_LIST(AlternateList, AlternateInfo);
-    AlternateList alternates;
-    BOOL          alternatePermanent;
-    BOOL          isOnAlternate;
-    BOOL          registeredToAltGKs;
-
+    PSortedList<AlternateInfo> alternates;
+    BOOL               alternatePermanent;
+    PSemaphore         requestMutex;
     H235Authenticators authenticators;
 
     enum {
@@ -504,8 +539,7 @@ class H323Gatekeeper : public H225_RAS
     BOOL       monitorStop;
     PSyncPoint monitorTickle;
 
-
-	
+    PDictionary<POrdinalKey, H323ServiceControlSession> serviceControlSessions;
 };
 
 

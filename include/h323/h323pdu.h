@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.h,v $
- * Revision 1.2009  2002/11/10 11:33:16  robertj
+ * Revision 1.2010  2003/01/07 04:39:52  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.8  2002/11/10 11:33:16  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.7  2002/09/16 02:52:34  robertj
@@ -54,6 +57,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.57  2002/11/28 04:41:44  robertj
+ * Added support for RAS ServiceControlIndication command.
  *
  * Revision 1.56  2002/09/16 01:14:15  robertj
  * Added #define so can select if #pragma interface/implementation is used on
@@ -586,33 +592,35 @@ class H323RasPDU : public H225_RasMessage
       const H235Authenticators & authenticators
     );
 
-    H225_GatekeeperRequest     & BuildGatekeeperRequest(unsigned seqNum);
-    H225_GatekeeperConfirm     & BuildGatekeeperConfirm(unsigned seqNum);
-    H225_GatekeeperReject      & BuildGatekeeperReject(unsigned seqNum, unsigned reason = H225_GatekeeperRejectReason::e_undefinedReason);
-    H225_RegistrationRequest   & BuildRegistrationRequest(unsigned seqNum);
-    H225_RegistrationConfirm   & BuildRegistrationConfirm(unsigned seqNum);
-    H225_RegistrationReject    & BuildRegistrationReject(unsigned seqNum, unsigned reason = H225_RegistrationRejectReason::e_undefinedReason);
-    H225_UnregistrationRequest & BuildUnregistrationRequest(unsigned seqNum);
-    H225_UnregistrationConfirm & BuildUnregistrationConfirm(unsigned seqNum);
-    H225_UnregistrationReject  & BuildUnregistrationReject(unsigned seqNum, unsigned reason = H225_UnregRejectReason::e_undefinedReason);
-    H225_LocationRequest       & BuildLocationRequest(unsigned seqNum);
-    H225_LocationConfirm       & BuildLocationConfirm(unsigned seqNum);
-    H225_LocationReject        & BuildLocationReject(unsigned seqNum, unsigned reason = H225_LocationRejectReason::e_undefinedReason);
-    H225_AdmissionRequest      & BuildAdmissionRequest(unsigned seqNum);
-    H225_AdmissionConfirm      & BuildAdmissionConfirm(unsigned seqNum);
-    H225_AdmissionReject       & BuildAdmissionReject(unsigned seqNum, unsigned reason = H225_AdmissionRejectReason::e_undefinedReason);
-    H225_DisengageRequest      & BuildDisengageRequest(unsigned seqNum);
-    H225_DisengageConfirm      & BuildDisengageConfirm(unsigned seqNum);
-    H225_DisengageReject       & BuildDisengageReject(unsigned seqNum, unsigned reason = H225_DisengageRejectReason::e_securityDenial);
-    H225_BandwidthRequest      & BuildBandwidthRequest(unsigned seqNum);
-    H225_BandwidthConfirm      & BuildBandwidthConfirm(unsigned seqNum, unsigned bandwidth = 0);
-    H225_BandwidthReject       & BuildBandwidthReject(unsigned seqNum, unsigned reason = H225_BandRejectReason::e_undefinedReason);
-    H225_InfoRequest           & BuildInfoRequest(unsigned seqNum, unsigned callRef = 0, const OpalGloballyUniqueID * id = 0);
-    H225_InfoRequestResponse   & BuildInfoRequestResponse(unsigned seqNum);
-    H225_InfoRequestAck        & BuildInfoRequestAck(unsigned seqNum);
-    H225_InfoRequestNak        & BuildInfoRequestNak(unsigned seqNum, unsigned reason = H225_InfoRequestNakReason::e_undefinedReason);
-    H225_UnknownMessageResponse& BuildUnknownMessageResponse(unsigned seqNum);
-    H225_RequestInProgress     & BuildRequestInProgress(unsigned seqNum, unsigned delay);
+    H225_GatekeeperRequest       & BuildGatekeeperRequest(unsigned seqNum);
+    H225_GatekeeperConfirm       & BuildGatekeeperConfirm(unsigned seqNum);
+    H225_GatekeeperReject        & BuildGatekeeperReject(unsigned seqNum, unsigned reason = H225_GatekeeperRejectReason::e_undefinedReason);
+    H225_RegistrationRequest     & BuildRegistrationRequest(unsigned seqNum);
+    H225_RegistrationConfirm     & BuildRegistrationConfirm(unsigned seqNum);
+    H225_RegistrationReject      & BuildRegistrationReject(unsigned seqNum, unsigned reason = H225_RegistrationRejectReason::e_undefinedReason);
+    H225_UnregistrationRequest   & BuildUnregistrationRequest(unsigned seqNum);
+    H225_UnregistrationConfirm   & BuildUnregistrationConfirm(unsigned seqNum);
+    H225_UnregistrationReject    & BuildUnregistrationReject(unsigned seqNum, unsigned reason = H225_UnregRejectReason::e_undefinedReason);
+    H225_LocationRequest         & BuildLocationRequest(unsigned seqNum);
+    H225_LocationConfirm         & BuildLocationConfirm(unsigned seqNum);
+    H225_LocationReject          & BuildLocationReject(unsigned seqNum, unsigned reason = H225_LocationRejectReason::e_undefinedReason);
+    H225_AdmissionRequest        & BuildAdmissionRequest(unsigned seqNum);
+    H225_AdmissionConfirm        & BuildAdmissionConfirm(unsigned seqNum);
+    H225_AdmissionReject         & BuildAdmissionReject(unsigned seqNum, unsigned reason = H225_AdmissionRejectReason::e_undefinedReason);
+    H225_DisengageRequest        & BuildDisengageRequest(unsigned seqNum);
+    H225_DisengageConfirm        & BuildDisengageConfirm(unsigned seqNum);
+    H225_DisengageReject         & BuildDisengageReject(unsigned seqNum, unsigned reason = H225_DisengageRejectReason::e_securityDenial);
+    H225_BandwidthRequest        & BuildBandwidthRequest(unsigned seqNum);
+    H225_BandwidthConfirm        & BuildBandwidthConfirm(unsigned seqNum, unsigned bandwidth = 0);
+    H225_BandwidthReject         & BuildBandwidthReject(unsigned seqNum, unsigned reason = H225_BandRejectReason::e_undefinedReason);
+    H225_InfoRequest             & BuildInfoRequest(unsigned seqNum, unsigned callRef = 0, const OpalGloballyUniqueID * id = NULL);
+    H225_InfoRequestResponse     & BuildInfoRequestResponse(unsigned seqNum);
+    H225_InfoRequestAck          & BuildInfoRequestAck(unsigned seqNum);
+    H225_InfoRequestNak          & BuildInfoRequestNak(unsigned seqNum, unsigned reason = H225_InfoRequestNakReason::e_undefinedReason);
+    H225_ServiceControlIndication& BuildServiceControlIndication(unsigned seqNum, const OpalGloballyUniqueID * id = NULL);
+    H225_ServiceControlResponse  & BuildServiceControlResponse(unsigned seqNum);
+    H225_UnknownMessageResponse  & BuildUnknownMessageResponse(unsigned seqNum);
+    H225_RequestInProgress       & BuildRequestInProgress(unsigned seqNum, unsigned delay);
 
     BOOL Read(H323Transport & transport);
     BOOL Write(H323Transport & transport);
