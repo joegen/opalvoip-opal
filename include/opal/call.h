@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2005  2001/11/15 07:02:12  robertj
+ * Revision 1.2006  2002/01/22 05:03:47  robertj
+ * Revamp of user input API triggered by RFC2833 support
+ *
+ * Revision 2.4  2001/11/15 07:02:12  robertj
  * Changed OpalCall::OpenSourceMediaStreams so the connection to not open
  *   a media stream on is optional.
  *
@@ -261,6 +264,33 @@ class OpalCall : public PObject
     virtual BOOL PatchMediaStreams(
       const OpalConnection & connection, /// Source connection
       OpalMediaStream & source           /// Source media stream to patch
+    );
+  //@}
+
+  /**@name User indications */
+  //@{
+    /**Call back for remote endpoint has sent user input as a string.
+
+       The default behaviour call OpalConnection::SetUserInput() which
+       saves the value so the GetUserInput() function can return it.
+      */
+    virtual void OnUserInputString(
+      OpalConnection & connection,  /// Connection input has come from
+      const PString & value         /// String value of indication
+    );
+
+    /**Call back for remote enpoint has sent user input as tones.
+       If duration is zero then this indicates the beginning of the tone. If
+       duration is non-zero then it indicates the end of the tone output.
+
+       The default behaviour calls connection.OnUserInputString(tone) if there
+       are no other connections in the call, otherwise it calls
+       SendUserInputTone() for each of the other connections in the call.
+      */
+    virtual void OnUserInputTone(
+      OpalConnection & connection,  /// Connection input has come from
+      char tone,                    /// Tone received
+      int duration                  /// Duration of tone in milliseconds
     );
   //@}
 
