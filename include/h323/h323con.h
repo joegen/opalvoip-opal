@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2013  2002/02/19 07:43:40  robertj
+ * Revision 1.2014  2002/04/09 00:17:08  robertj
+ * Changed "callAnswered" to better description of "originating".
+ *
+ * Revision 2.12  2002/02/19 07:43:40  robertj
  * Restructured media bypass functions to fix problems with RFC2833.
  *
  * Revision 2.11  2002/02/11 09:32:11  robertj
@@ -1748,7 +1751,7 @@ class H323Connection : public OpalConnection
 
     /**Get the call direction for this connection.
      */
-    BOOL HadAnsweredCall() const { return callAnswered; }
+    BOOL HadAnsweredCall() const { return !originating; }
 
     /**Get the distinctive ring code for incoming call.
        This returns an integer from 0 to 7 that may indicate to an application
