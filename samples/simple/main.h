@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2006  2002/02/01 04:53:01  robertj
+ * Revision 1.2007  2002/03/27 05:34:15  robertj
+ * Removed redundent busy forward field
+ *
+ * Revision 2.5  2002/02/01 04:53:01  robertj
  * Added (very primitive!) SIP support.
  *
  * Revision 2.4  2002/01/22 05:34:58  robertj
@@ -127,7 +130,6 @@ class MyManager : public OpalManager
     BOOL autoAnswer;
     BOOL noFastStart;
     BOOL noH245Tunnelling;
-    PString busyForwardParty;
     PString gateway;
 
     OpalPOTSEndPoint * potsEP;
