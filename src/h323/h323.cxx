@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2011  2001/11/02 10:45:19  robertj
+ * Revision 1.2012  2001/11/06 05:40:13  robertj
+ * Added OpalListenerUDP class to do listener semantics on a UDP socket.
+ *
+ * Revision 2.10  2001/11/02 10:45:19  robertj
  * Updated to OpenH323 v1.7.3
  *
  * Revision 2.9  2001/10/15 04:36:37  robertj
@@ -2253,8 +2256,10 @@ BOOL H323Connection::CreateIncomingControlChannel(H225_TransportAddress & h245Ad
 }
 
 
-void H323Connection::NewIncomingControlChannel(PThread &, INT param)
+void H323Connection::NewIncomingControlChannel(PThread & listener, INT param)
 {
+  ((OpalListener&)listener).Close();
+
   // If H.245 channel failed to connect and have no media (no fast start)
   // then clear the call as it is useless.
   if (param == 0 &&
