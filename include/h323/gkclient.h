@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.h,v $
- * Revision 1.2007  2002/07/01 04:56:29  robertj
+ * Revision 1.2008  2002/09/04 06:01:46  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.6  2002/07/01 04:56:29  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.5  2002/03/22 06:57:48  robertj
@@ -47,6 +50,28 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.41  2002/09/03 06:19:36  robertj
+ * Normalised the multi-include header prevention ifdef/define symbol.
+ *
+ * Revision 1.40  2002/08/15 04:13:21  robertj
+ * Fixed correct status of isRegistered flag on various reject/errors.
+ *
+ * Revision 1.39  2002/08/12 05:38:20  robertj
+ * Changes to the RAS subsystem to support ability to make requests to client
+ *   from gkserver without causing bottlenecks and race conditions.
+ *
+ * Revision 1.38  2002/08/05 05:17:36  robertj
+ * Fairly major modifications to support different authentication credentials
+ *   in ARQ to the logged in ones on RRQ. For both client and server.
+ * Various other H.235 authentication bugs and anomalies fixed on the way.
+ *
+ * Revision 1.37  2002/07/18 03:03:38  robertj
+ * Fixed bug with continually doing lightweight RRQ if no timeToLive present
+ *   and it should not be doing it at all, ditto for unsolicited IRR.
+ *
+ * Revision 1.36  2002/07/16 11:06:21  robertj
+ * Added more alternate gatekeeper implementation, thanks Kevin Bouchard
  *
  * Revision 1.35  2002/06/26 03:47:45  robertj
  * Added support for alternate gatekeepers.
@@ -163,8 +188,8 @@
  *
  */
 
-#ifndef __H323_GKCLIENT_H
-#define __H323_GKCLIENT_H
+#ifndef __OPAL_GKCLIENT_H
+#define __OPAL_GKCLIENT_H
 
 #ifdef __GNUC__
 #pragma interface
@@ -188,7 +213,7 @@ class H225_ArrayOf_AlternateGK;
   */
 class H323Gatekeeper : public H225_RAS
 {
-  PCLASSINFO(H323Gatekeeper, H225_RAS);
+    PCLASSINFO(H323Gatekeeper, H225_RAS);
   public:
   /**@name Construction */
   //@{
@@ -227,6 +252,7 @@ class H323Gatekeeper : public H225_RAS
     BOOL OnReceiveBandwidthConfirm(const H225_BandwidthConfirm & bcf);
     BOOL OnReceiveBandwidthRequest(const H225_BandwidthRequest & brq);
     BOOL OnReceiveInfoRequest(const H225_InfoRequest & irq);
+    void OnSendGatekeeperRequest(H225_GatekeeperRequest & grq);
     void OnSendAdmissionRequest(H225_AdmissionRequest & arq);
   //@}
 
@@ -307,15 +333,6 @@ class H323Gatekeeper : public H225_RAS
       BOOL ignorePreGrantedARQ = FALSE  /// Flag to force ARQ to be sent
     );
 
-    /**Get separate authentication credentials for ARQ.
-      */
-    virtual BOOL GetAdmissionReqestAuthentication(
-      const H225_AdmissionRequest & arq,
-      PString & remoteId,
-      PString & localId,
-      PString & password
-    );
-
     /**Disengage request to gatekeeper.
      */
     BOOL DisengageRequest(
@@ -347,10 +364,6 @@ class H323Gatekeeper : public H225_RAS
       const H225_H323_UU_PDU & pdu,       /// PDU that was sent or received
       BOOL sent                           /// Flag for PDU was sent or received
     );
-
-    /**Get the security context for this RAS connection.
-      */
-    virtual H235Authenticators GetAuthenticators() const;
   //@}
 
   /**@name Member variable access */
@@ -369,6 +382,10 @@ class H323Gatekeeper : public H225_RAS
       */
     PString GetName() const;
 
+    /** Get the endpoint identifier
+      */
+    const PString & GetEndpointIdentifier() const { return endpointIdentifier; }
+
     /**Set the H.235 password in the gatekeeper.
        If no username is present then it will default to the endpoint local
        user name (ie first alias).
@@ -377,26 +394,18 @@ class H323Gatekeeper : public H225_RAS
       const PString & password,            /// New password
       const PString & username = PString() /// Username for password
     );
-
-    /**Get the flag to use the destination alias as remote ID and password in
-       H.235 authentication during ARQ.
-     */
-    BOOL GetSeparateAuthenticationInARQ() const { return useSeparateAuthenticationInARQ; }
-
-    /**Set the flag to use the destination alias as remote ID and password in
-       H.235 authentication during ARQ.
-     */
-    void SetSeparateAuthenticationInARQ(BOOL b) { useSeparateAuthenticationInARQ = b; }
   //@}
 
 
   protected:
     BOOL StartDiscovery(const OpalTransportAddress & address);
     BOOL DiscoverGatekeeper(H323RasPDU & request, const OpalTransportAddress & address);
+    unsigned SetupGatekeeperRequest(H323RasPDU & request);
+
     PDECLARE_NOTIFIER(PThread, H323Gatekeeper, MonitorMain);
     PDECLARE_NOTIFIER(PTimer, H323Gatekeeper, TickleMonitor);
-    unsigned SetupGatekeeperRequest(H323RasPDU & request);
     void RegistrationTimeToLive();
+
     H225_InfoRequestResponse & BuildInfoRequestResponse(
       H323RasPDU & response,
       unsigned seqNum
@@ -405,15 +414,21 @@ class H323Gatekeeper : public H225_RAS
       H225_InfoRequestResponse & irr,
       H323RasPDU & response
     );
+
     void SetAlternates(
       const H225_ArrayOf_AlternateGK & alts,
       BOOL permanent
     );
-    virtual BOOL MakeRequest(Request & request);
+    void RegisterToAlternatesGK();
 
+    virtual BOOL MakeRequest(
+      Request & request
+    );
+    BOOL MakeRequestWithReregister(
+      Request & request,
+      unsigned unregisteredTag
+    );
 
-    // Option variables
-    BOOL useSeparateAuthenticationInARQ;
 
     // Gatekeeper registration state variables
     BOOL    discoveryComplete;
@@ -424,12 +439,13 @@ class H323Gatekeeper : public H225_RAS
         PCLASSINFO(AlternateInfo, PObject);
       public:
         AlternateInfo(H225_AlternateGK & alt);
-
+	~AlternateInfo();
         Comparison Compare(const PObject & obj);
 
         H323TransportAddress rasAddress;
         PString              gatekeeperIdentifier;
         unsigned             priority;
+	H323Gatekeeper     * registeredGK;
         enum {
           NoRegistrationNeeded,
           NeedToRegister,
@@ -437,10 +453,17 @@ class H323Gatekeeper : public H225_RAS
           IsRegistered,
           RegistrationFailed
         } registrationState;
+
+      private:
+        // Disable copy constructor and assignment
+        AlternateInfo(const AlternateInfo &) { }
+        AlternateInfo & operator=(const AlternateInfo &) { return *this; }
     };
     PSORTED_LIST(AlternateList, AlternateInfo);
     AlternateList alternates;
     BOOL          alternatePermanent;
+    BOOL          isOnAlternate;
+    BOOL          registeredToAltGKs;
 
     H235Authenticators authenticators;
 
@@ -453,21 +476,24 @@ class H323Gatekeeper : public H225_RAS
 
     // Gatekeeper operation variables
     BOOL       autoReregister;
+    BOOL       reregisterNow;
     PTimer     timeToLive;
     BOOL       requiresDiscovery;
-    PMutex     mutexForSeparateAuthenticationInARQ;
     PTimer     infoRequestRate;
     BOOL       willRespondToIRR;
     PThread  * monitor;
     BOOL       monitorStop;
     PSyncPoint monitorTickle;
+
+
+	
 };
 
 
 PLIST(H323GatekeeperList, H323Gatekeeper);
 
 
-#endif // __H323_GKCLIENT_H
+#endif // __OPAL_GKCLIENT_H
 
 
 /////////////////////////////////////////////////////////////////////////////

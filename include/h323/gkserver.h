@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkserver.h,v $
- * Revision 1.2006  2002/07/01 04:56:29  robertj
+ * Revision 1.2007  2002/09/04 06:01:46  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.5  2002/07/01 04:56:29  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.4  2002/03/22 06:57:48  robertj
@@ -44,6 +47,41 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.35  2002/09/03 06:19:36  robertj
+ * Normalised the multi-include header prevention ifdef/define symbol.
+ *
+ * Revision 1.34  2002/08/29 07:57:08  robertj
+ * Added some statistics to gatekeeper server.
+ *
+ * Revision 1.33  2002/08/29 06:54:52  robertj
+ * Removed redundent thread member variable from request info.
+ *
+ * Revision 1.32  2002/08/12 08:12:45  robertj
+ * Added extra hint to help with ARQ using separate credentials from RRQ.
+ *
+ * Revision 1.31  2002/08/12 05:38:20  robertj
+ * Changes to the RAS subsystem to support ability to make requests to client
+ *   from gkserver without causing bottlenecks and race conditions.
+ *
+ * Revision 1.30  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
+ *
+ * Revision 1.29  2002/08/05 05:17:37  robertj
+ * Fairly major modifications to support different authentication credentials
+ *   in ARQ to the logged in ones on RRQ. For both client and server.
+ * Various other H.235 authentication bugs and anomalies fixed on the way.
+ *
+ * Revision 1.28  2002/07/16 13:49:22  robertj
+ * Added missing lock when removing call from endpoint.
+ *
+ * Revision 1.27  2002/07/11 09:33:56  robertj
+ * Added access functions to various call statistics member variables.
+ *
+ * Revision 1.26  2002/07/11 07:01:37  robertj
+ * Added Disengage() function to force call drop from gk server.
+ * Added InfoRequest() function to force client to send an IRR.
+ * Added ability to automatically clear calls if do not get IRR for it.
  *
  * Revision 1.25  2002/06/21 02:52:44  robertj
  * Fixed problem with double checking H.235 hashing, this causes failure as
@@ -135,8 +173,8 @@
  *
  */
 
-#ifndef __H323_GKSERVER_H
-#define __H323_GKSERVER_H
+#ifndef __OPAL_GKSERVER_H
+#define __OPAL_GKSERVER_H
 
 #ifdef __GNUC__
 #pragma interface
@@ -178,7 +216,7 @@ class H323GatekeeperRequest : public PObject
      */
     H323GatekeeperRequest(
       H323GatekeeperListener & rasChannel,
-      unsigned requestSequenceNumber
+      const H323RasPDU & pdu
     );
   //@}
 
@@ -189,26 +227,36 @@ class H323GatekeeperRequest : public PObject
     };
     inline static Response InProgress(unsigned time) { return (Response)(time&0xffff); }
 
-    BOOL IsFastResponseRequired() const { return fastResponseRequired; }
-
-    H323TransportAddress GetReplyAddress() const { return replyAddress; }
-
     BOOL HandlePDU();
     BOOL WritePDU(
       H323RasPDU & pdu
     );
 
+    BOOL CheckGatekeeperIdentifier();
+    BOOL GetRegisteredEndPoint();
+    BOOL CheckCryptoTokens();
     BOOL CheckCryptoTokens(
-      unsigned optionalField
+      const H235Authenticators & authenticators
     );
 
+#if PTRACING
+    virtual const char * GetName() const = 0;
+#endif
     virtual const PASN_Sequence & GetRawPDU() const = 0;
     virtual PString GetGatekeeperIdentifier() const = 0;
+    virtual unsigned GetGatekeeperRejectTag() const = 0;
     virtual PString GetEndpointIdentifier() const = 0;
+    virtual unsigned GetRegisteredEndPointRejectTag() const = 0;
     virtual const H225_ArrayOf_CryptoH323Token & GetCryptoTokens() const = 0;
+    virtual unsigned GetCryptoTokensField() const = 0;
+    virtual unsigned GetSecurityRejectTag() const = 0;
     virtual void SetRejectReason(
       unsigned reasonCode
     ) = 0;
+
+    BOOL IsFastResponseRequired() const { return fastResponseRequired; }
+    H323TransportAddress GetReplyAddress() const { return replyAddress; }
+    H323GatekeeperListener & GetRasChannel() const { return rasChannel; }
 
     PSafePtr<H323RegisteredEndPoint> endpoint;
 
@@ -219,10 +267,10 @@ class H323GatekeeperRequest : public PObject
     H323GatekeeperListener & rasChannel;
     unsigned                 requestSequenceNumber;
     H323TransportAddress     replyAddress;
+    H323RasPDU               request;
     H323RasPDU               confirm;
     H323RasPDU               reject;
     BOOL                     fastResponseRequired;
-    PThread                * thread;
 
     enum {
       UnknownAuthentication,
@@ -238,18 +286,25 @@ class H323GatekeeperGRQ : public H323GatekeeperRequest
   public:
     H323GatekeeperGRQ(
       H323GatekeeperListener & listener,
-      const H225_GatekeeperRequest & grq
+      const H323RasPDU & pdu
     );
 
+#if PTRACING
+    virtual const char * GetName() const;
+#endif
     virtual const PASN_Sequence & GetRawPDU() const;
     virtual PString GetGatekeeperIdentifier() const;
+    virtual unsigned GetGatekeeperRejectTag() const;
     virtual PString GetEndpointIdentifier() const;
+    virtual unsigned GetRegisteredEndPointRejectTag() const;
     virtual const H225_ArrayOf_CryptoH323Token & GetCryptoTokens() const;
+    virtual unsigned GetCryptoTokensField() const;
+    virtual unsigned GetSecurityRejectTag() const;
     virtual void SetRejectReason(
       unsigned reasonCode
     );
 
-    H225_GatekeeperRequest   grq;
+    H225_GatekeeperRequest & grq;
     H225_GatekeeperConfirm & gcf;
     H225_GatekeeperReject  & grj;
 
@@ -264,18 +319,25 @@ class H323GatekeeperRRQ : public H323GatekeeperRequest
   public:
     H323GatekeeperRRQ(
       H323GatekeeperListener & listener,
-      const H225_RegistrationRequest & rrq
+      const H323RasPDU & pdu
     );
 
+#if PTRACING
+    virtual const char * GetName() const;
+#endif
     virtual const PASN_Sequence & GetRawPDU() const;
     virtual PString GetGatekeeperIdentifier() const;
+    virtual unsigned GetGatekeeperRejectTag() const;
     virtual PString GetEndpointIdentifier() const;
+    virtual unsigned GetRegisteredEndPointRejectTag() const;
     virtual const H225_ArrayOf_CryptoH323Token & GetCryptoTokens() const;
+    virtual unsigned GetCryptoTokensField() const;
+    virtual unsigned GetSecurityRejectTag() const;
     virtual void SetRejectReason(
       unsigned reasonCode
     );
 
-    H225_RegistrationRequest   rrq;
+    H225_RegistrationRequest & rrq;
     H225_RegistrationConfirm & rcf;
     H225_RegistrationReject  & rrj;
 
@@ -290,18 +352,25 @@ class H323GatekeeperURQ : public H323GatekeeperRequest
   public:
     H323GatekeeperURQ(
       H323GatekeeperListener & listener,
-      const H225_UnregistrationRequest & urq
+      const H323RasPDU & pdu
     );
 
+#if PTRACING
+    virtual const char * GetName() const;
+#endif
     virtual const PASN_Sequence & GetRawPDU() const;
     virtual PString GetGatekeeperIdentifier() const;
+    virtual unsigned GetGatekeeperRejectTag() const;
     virtual PString GetEndpointIdentifier() const;
+    virtual unsigned GetRegisteredEndPointRejectTag() const;
     virtual const H225_ArrayOf_CryptoH323Token & GetCryptoTokens() const;
+    virtual unsigned GetCryptoTokensField() const;
+    virtual unsigned GetSecurityRejectTag() const;
     virtual void SetRejectReason(
       unsigned reasonCode
     );
 
-    H225_UnregistrationRequest   urq;
+    H225_UnregistrationRequest & urq;
     H225_UnregistrationConfirm & ucf;
     H225_UnregistrationReject  & urj;
 
@@ -316,20 +385,29 @@ class H323GatekeeperARQ : public H323GatekeeperRequest
   public:
     H323GatekeeperARQ(
       H323GatekeeperListener & listener,
-      const H225_AdmissionRequest & arq
+      const H323RasPDU & pdu
     );
 
+#if PTRACING
+    virtual const char * GetName() const;
+#endif
     virtual const PASN_Sequence & GetRawPDU() const;
     virtual PString GetGatekeeperIdentifier() const;
+    virtual unsigned GetGatekeeperRejectTag() const;
     virtual PString GetEndpointIdentifier() const;
+    virtual unsigned GetRegisteredEndPointRejectTag() const;
     virtual const H225_ArrayOf_CryptoH323Token & GetCryptoTokens() const;
+    virtual unsigned GetCryptoTokensField() const;
+    virtual unsigned GetSecurityRejectTag() const;
     virtual void SetRejectReason(
       unsigned reasonCode
     );
 
-    H225_AdmissionRequest   arq;
+    H225_AdmissionRequest & arq;
     H225_AdmissionConfirm & acf;
     H225_AdmissionReject  & arj;
+
+    PString alternateSecurityID;
 
   protected:
     virtual Response OnHandlePDU();
@@ -342,18 +420,25 @@ class H323GatekeeperDRQ : public H323GatekeeperRequest
   public:
     H323GatekeeperDRQ(
       H323GatekeeperListener & listener,
-      const H225_DisengageRequest & drq
+      const H323RasPDU & pdu
     );
 
+#if PTRACING
+    virtual const char * GetName() const;
+#endif
     virtual const PASN_Sequence & GetRawPDU() const;
     virtual PString GetGatekeeperIdentifier() const;
+    virtual unsigned GetGatekeeperRejectTag() const;
     virtual PString GetEndpointIdentifier() const;
+    virtual unsigned GetRegisteredEndPointRejectTag() const;
     virtual const H225_ArrayOf_CryptoH323Token & GetCryptoTokens() const;
+    virtual unsigned GetCryptoTokensField() const;
+    virtual unsigned GetSecurityRejectTag() const;
     virtual void SetRejectReason(
       unsigned reasonCode
     );
 
-    H225_DisengageRequest   drq;
+    H225_DisengageRequest & drq;
     H225_DisengageConfirm & dcf;
     H225_DisengageReject  & drj;
 
@@ -368,18 +453,25 @@ class H323GatekeeperBRQ : public H323GatekeeperRequest
   public:
     H323GatekeeperBRQ(
       H323GatekeeperListener & listener,
-      const H225_BandwidthRequest & brq
+      const H323RasPDU & pdu
     );
 
+#if PTRACING
+    virtual const char * GetName() const;
+#endif
     virtual const PASN_Sequence & GetRawPDU() const;
     virtual PString GetGatekeeperIdentifier() const;
+    virtual unsigned GetGatekeeperRejectTag() const;
     virtual PString GetEndpointIdentifier() const;
+    virtual unsigned GetRegisteredEndPointRejectTag() const;
     virtual const H225_ArrayOf_CryptoH323Token & GetCryptoTokens() const;
+    virtual unsigned GetCryptoTokensField() const;
+    virtual unsigned GetSecurityRejectTag() const;
     virtual void SetRejectReason(
       unsigned reasonCode
     );
 
-    H225_BandwidthRequest   brq;
+    H225_BandwidthRequest & brq;
     H225_BandwidthConfirm & bcf;
     H225_BandwidthReject  & brj;
 
@@ -394,18 +486,25 @@ class H323GatekeeperLRQ : public H323GatekeeperRequest
   public:
     H323GatekeeperLRQ(
       H323GatekeeperListener & listener,
-      const H225_LocationRequest & lrq
+      const H323RasPDU & pdu
     );
 
+#if PTRACING
+    virtual const char * GetName() const;
+#endif
     virtual const PASN_Sequence & GetRawPDU() const;
     virtual PString GetGatekeeperIdentifier() const;
+    virtual unsigned GetGatekeeperRejectTag() const;
     virtual PString GetEndpointIdentifier() const;
+    virtual unsigned GetRegisteredEndPointRejectTag() const;
     virtual const H225_ArrayOf_CryptoH323Token & GetCryptoTokens() const;
+    virtual unsigned GetCryptoTokensField() const;
+    virtual unsigned GetSecurityRejectTag() const;
     virtual void SetRejectReason(
       unsigned reasonCode
     );
 
-    H225_LocationRequest   lrq;
+    H225_LocationRequest & lrq;
     H225_LocationConfirm & lcf;
     H225_LocationReject  & lrj;
 
@@ -420,20 +519,27 @@ class H323GatekeeperIRR : public H323GatekeeperRequest
   public:
     H323GatekeeperIRR(
       H323GatekeeperListener & listener,
-      const H225_InfoRequestResponse & irr
+      const H323RasPDU & pdu
     );
 
+#if PTRACING
+    virtual const char * GetName() const;
+#endif
     virtual const PASN_Sequence & GetRawPDU() const;
     virtual PString GetGatekeeperIdentifier() const;
+    virtual unsigned GetGatekeeperRejectTag() const;
     virtual PString GetEndpointIdentifier() const;
+    virtual unsigned GetRegisteredEndPointRejectTag() const;
     virtual const H225_ArrayOf_CryptoH323Token & GetCryptoTokens() const;
+    virtual unsigned GetCryptoTokensField() const;
+    virtual unsigned GetSecurityRejectTag() const;
     virtual void SetRejectReason(
       unsigned reasonCode
     );
 
-    H225_InfoRequestResponse irr;
-    H225_InfoRequestAck    & iack;
-    H225_InfoRequestNak    & inak;
+    H225_InfoRequestResponse & irr;
+    H225_InfoRequestAck      & iack;
+    H225_InfoRequestNak      & inak;
 
   protected:
     virtual Response OnHandlePDU();
@@ -527,7 +633,8 @@ class H323GatekeeperCall : public PSafeObject
        A return value of FALSE indicates the call is to be closed for some
        reason.
 
-       Default behaviour does an IRQ to see if the call (and endpoint!) is
+       Default behaviour checks the time since the last received IRR and if
+       it has been too long does an IRQ to see if the call (and endpoint!) is
        still there and running. If the IRQ fails, FALSE is returned.
       */
     virtual BOOL OnHeartbeat();
@@ -551,11 +658,17 @@ class H323GatekeeperCall : public PSafeObject
     PString GetDestinationAddress() const;
     unsigned GetBandwidthUsed() const { return bandwidthUsed; }
     void SetBandwidthUsed(unsigned bandwidth) { bandwidthUsed = bandwidth; }
+    const PTime & GetLastInfoResponseTime() const { return lastInfoResponse; }
+    const PTime & GetAlertingTime() const { return alertingTime; }
+    const PTime & GetConnectedTime() const { return connectedTime; }
+    const PTime & GetCallEndTime() const { return callEndTime; }
+    OpalCallEndReason GetCallEndReason() const { return callEndReason; }
   //@}
 
   protected:
     H323GatekeeperServer   & gatekeeper;
     H323RegisteredEndPoint * endpoint;
+    H323GatekeeperListener * rasChannel;
 
     Direction            direction;
     unsigned             callReference;
@@ -630,7 +743,7 @@ class H323RegisteredEndPoint : public PSafeObject
       */
     BOOL RemoveCall(
       H323GatekeeperCall * call
-    ) { return activeCalls.Remove(call); }
+    );
 
     /**Get the count of active calls on this endpoint.
       */
@@ -817,6 +930,23 @@ class H323GatekeeperListener : public H225_RAS
     ~H323GatekeeperListener();
   //@}
 
+  /**@name Operations */
+  //@{
+    /**Send a DisengageRequest (DRQ) to endpoint.
+      */
+    BOOL DisengageRequest(
+      const H323GatekeeperCall & call,
+      unsigned reason
+    );
+
+    /**Send an InfoRequest (IRQ) to endpoint.
+      */
+    virtual BOOL InfoRequest(
+      H323RegisteredEndPoint & ep,
+      H323GatekeeperCall * call = NULL
+    );
+  //@}
+
   /**@name Operation callbacks */
   //@{
     /**Handle a discovery GRQ PDU.
@@ -886,50 +1016,31 @@ class H323GatekeeperListener : public H225_RAS
 
   /**@name Low level protocol callbacks */
   //@{
-    virtual BOOL OnReceiveGatekeeperRequest(const H225_GatekeeperRequest &);
-    virtual BOOL OnReceiveRegistrationRequest(const H225_RegistrationRequest &);
-    virtual BOOL OnReceiveUnregistrationRequest(const H225_UnregistrationRequest &);
+    virtual BOOL OnReceiveGatekeeperRequest(const H323RasPDU &, const H225_GatekeeperRequest &);
+    virtual BOOL OnReceiveRegistrationRequest(const H323RasPDU &, const H225_RegistrationRequest &);
+    virtual BOOL OnReceiveUnregistrationRequest(const H323RasPDU &, const H225_UnregistrationRequest &);
     virtual BOOL OnReceiveUnregistrationConfirm(const H225_UnregistrationConfirm &);
     virtual BOOL OnReceiveUnregistrationReject(const H225_UnregistrationReject &);
-    virtual BOOL OnReceiveAdmissionRequest(const H225_AdmissionRequest &);
-    virtual BOOL OnReceiveBandwidthRequest(const H225_BandwidthRequest &);
+    virtual BOOL OnReceiveAdmissionRequest(const H323RasPDU &, const H225_AdmissionRequest &);
+    virtual BOOL OnReceiveBandwidthRequest(const H323RasPDU &, const H225_BandwidthRequest &);
     virtual BOOL OnReceiveBandwidthConfirm(const H225_BandwidthConfirm &);
     virtual BOOL OnReceiveBandwidthReject(const H225_BandwidthReject &);
-    virtual BOOL OnReceiveDisengageRequest(const H225_DisengageRequest &);
+    virtual BOOL OnReceiveDisengageRequest(const H323RasPDU &, const H225_DisengageRequest &);
     virtual BOOL OnReceiveDisengageConfirm(const H225_DisengageConfirm &);
     virtual BOOL OnReceiveDisengageReject(const H225_DisengageReject &);
-    virtual BOOL OnReceiveLocationRequest(const H225_LocationRequest &);
-    virtual BOOL OnReceiveInfoRequestResponse(const H225_InfoRequestResponse &);
+    virtual BOOL OnReceiveLocationRequest(const H323RasPDU &, const H225_LocationRequest &);
+    virtual BOOL OnReceiveInfoRequestResponse(const H323RasPDU &, const H225_InfoRequestResponse &);
     virtual BOOL OnReceiveResourcesAvailableConfirm(const H225_ResourcesAvailableConfirm &);
-
-    /**Get the security context for this RAS connection.
-      */
-    virtual H235Authenticators GetAuthenticators() const;
   //@}
 
-    void AttachCurrentEP(
-      H323RegisteredEndPoint * ep
-    );
-    void DetachCurrentEP();
+  /**@name Member access */
+  //@{
+    H323GatekeeperServer & GetGatekeeper() const { return gatekeeper; }
+  //@}
+
 
   protected:
-    BOOL CheckGatekeeperIdentifier(
-      H323GatekeeperRequest & info,
-      unsigned optionalField,
-      unsigned rejectTag
-    );
-    BOOL GetRegisteredEndPoint(
-      H323GatekeeperRequest & info,
-      unsigned rejectTag,
-      unsigned securityRejectTag,
-      unsigned securityField
-    );
-
     H323GatekeeperServer & gatekeeper;
-
-  private:
-    H323RegisteredEndPoint * currentEP;
-    PMutex                   epMutex;
 };
 
 
@@ -1332,6 +1443,22 @@ class H323GatekeeperServer : public PObject
       */
     virtual H235Authenticators CreateAuthenticators() const;
 
+    /**Get separate H.235 authentication for the connection.
+       This allows an individual ARQ to override the authentical credentials
+       used in H.235 based RAS for this particular connection.
+
+       A return value of FALSE indicates to use the default credentials of the
+       endpoint, while TRUE indicates that new credentials are to be used.
+
+       The default behavour does nothing and returns FALSE.
+      */
+    virtual BOOL GetAdmissionRequestAuthentication(
+      H323GatekeeperARQ & info,  /// ARQ being constructed
+      PString & remoteId,        /// Remote ID to be modified
+      PString & localId,         /// Local ID to be modified
+      PString & password         /// Password to be modified
+    );
+
     /**Get password for user if H.235 security active.
        Returns FALSE if security active and user not found. Returns TRUE if
        security active and user is found. Also returns TRUE if security
@@ -1394,6 +1521,30 @@ class H323GatekeeperServer : public PObject
     /**Get flag for if H.235 authentication is required.
       */
     BOOL IsRequiredH235() const { return requireH235; }
+
+    /**Get the currently active registration count.
+      */
+    unsigned GetActiveRegistrations() const { return byIdentifier.GetSize(); }
+
+    /**Get the peak registration count.
+      */
+    unsigned GetPeakRegistrations() const { return peakRegistrations; }
+
+    /**Get the total registrations since start up.
+      */
+    unsigned GetTotalRegistrations() const { return totalRegistrations; }
+
+    /**Get the currently active call count.
+      */
+    unsigned GetActiveCalls() const { return activeCalls.GetSize(); }
+
+    /**Get the peak calls count.
+      */
+    unsigned GetPeakCalls() const { return peakCalls; }
+
+    /**Get the total calls since start up.
+      */
+    unsigned GetTotalCalls() const { return totalCalls; }
   //@}
 
   protected:
@@ -1414,6 +1565,7 @@ class H323GatekeeperServer : public PObject
     BOOL     isGatekeeperRouted;
     BOOL     aliasCanBeHostName;
     BOOL     requireH235;
+    BOOL     disengageOnHearbeatFail;
 
     PStringToString passwords;
 
@@ -1435,10 +1587,15 @@ class H323GatekeeperServer : public PObject
     PStringToString byVoicePrefix;
 
     PSafeList<H323GatekeeperCallList, H323GatekeeperCall> activeCalls;
+
+    PINDEX peakRegistrations;
+    PINDEX totalRegistrations;
+    PINDEX peakCalls;
+    PINDEX totalCalls;
 };
 
 
-#endif // __H323_GKSERVER_H
+#endif // __OPAL_GKSERVER_H
 
 
 /////////////////////////////////////////////////////////////////////////////

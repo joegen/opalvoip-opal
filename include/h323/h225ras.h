@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h225ras.h,v $
- * Revision 1.2004  2002/07/01 04:56:29  robertj
+ * Revision 1.2005  2002/09/04 06:01:46  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.3  2002/07/01 04:56:29  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.2  2001/10/05 00:22:13  robertj
@@ -38,6 +41,29 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.19  2002/09/03 05:37:17  robertj
+ * Normalised the multi-include header prevention ifdef/define symbol.
+ * Added RAS port constants to RAS clas name space.
+ *
+ * Revision 1.18  2002/08/12 06:29:55  robertj
+ * Fixed problem with cached responses being aged before the RIP time which
+ *   made retries by client appear as "new" requests when they were not.
+ *
+ * Revision 1.17  2002/08/12 05:38:20  robertj
+ * Changes to the RAS subsystem to support ability to make requests to client
+ *   from gkserver without causing bottlenecks and race conditions.
+ *
+ * Revision 1.16  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
+ *
+ * Revision 1.15  2002/08/05 05:17:37  robertj
+ * Fairly major modifications to support different authentication credentials
+ *   in ARQ to the logged in ones on RRQ. For both client and server.
+ * Various other H.235 authentication bugs and anomalies fixed on the way.
+ *
+ * Revision 1.14  2002/07/29 11:36:08  robertj
+ * Fixed race condition if RIP is followed very quickly by actual response.
  *
  * Revision 1.13  2002/06/26 03:47:45  robertj
  * Added support for alternate gatekeepers.
@@ -85,8 +111,8 @@
  *
  */
 
-#ifndef __H323_H225RAS_H
-#define __H323_H225RAS_H
+#ifndef __OPAL_H225RAS_H
+#define __OPAL_H225RAS_H
 
 #ifdef __GNUC__
 #pragma interface
@@ -196,76 +222,136 @@ class H225_RAS : public PObject
 
   /**@name Protocol callbacks */
   //@{
+    virtual void OnSendGatekeeperRequest(H323RasPDU &, H225_GatekeeperRequest &);
+    virtual void OnSendGatekeeperConfirm(H323RasPDU &, H225_GatekeeperConfirm &);
+    virtual void OnSendGatekeeperReject(H323RasPDU &, H225_GatekeeperReject &);
     virtual void OnSendGatekeeperRequest(H225_GatekeeperRequest &);
     virtual void OnSendGatekeeperConfirm(H225_GatekeeperConfirm &);
     virtual void OnSendGatekeeperReject(H225_GatekeeperReject &);
+    virtual BOOL OnReceiveGatekeeperRequest(const H323RasPDU &, const H225_GatekeeperRequest &);
+    virtual BOOL OnReceiveGatekeeperConfirm(const H323RasPDU &, const H225_GatekeeperConfirm &);
+    virtual BOOL OnReceiveGatekeeperReject(const H323RasPDU &, const H225_GatekeeperReject &);
     virtual BOOL OnReceiveGatekeeperRequest(const H225_GatekeeperRequest &);
     virtual BOOL OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm &);
     virtual BOOL OnReceiveGatekeeperReject(const H225_GatekeeperReject &);
 
+    virtual void OnSendRegistrationRequest(H323RasPDU &, H225_RegistrationRequest &);
+    virtual void OnSendRegistrationConfirm(H323RasPDU &, H225_RegistrationConfirm &);
+    virtual void OnSendRegistrationReject(H323RasPDU &, H225_RegistrationReject &);
     virtual void OnSendRegistrationRequest(H225_RegistrationRequest &);
     virtual void OnSendRegistrationConfirm(H225_RegistrationConfirm &);
     virtual void OnSendRegistrationReject(H225_RegistrationReject &);
+    virtual BOOL OnReceiveRegistrationRequest(const H323RasPDU &, const H225_RegistrationRequest &);
+    virtual BOOL OnReceiveRegistrationConfirm(const H323RasPDU &, const H225_RegistrationConfirm &);
+    virtual BOOL OnReceiveRegistrationReject(const H323RasPDU &, const H225_RegistrationReject &);
     virtual BOOL OnReceiveRegistrationRequest(const H225_RegistrationRequest &);
     virtual BOOL OnReceiveRegistrationConfirm(const H225_RegistrationConfirm &);
     virtual BOOL OnReceiveRegistrationReject(const H225_RegistrationReject &);
 
+    virtual void OnSendUnregistrationRequest(H323RasPDU &, H225_UnregistrationRequest &);
+    virtual void OnSendUnregistrationConfirm(H323RasPDU &, H225_UnregistrationConfirm &);
+    virtual void OnSendUnregistrationReject(H323RasPDU &, H225_UnregistrationReject &);
     virtual void OnSendUnregistrationRequest(H225_UnregistrationRequest &);
     virtual void OnSendUnregistrationConfirm(H225_UnregistrationConfirm &);
     virtual void OnSendUnregistrationReject(H225_UnregistrationReject &);
+    virtual BOOL OnReceiveUnregistrationRequest(const H323RasPDU &, const H225_UnregistrationRequest &);
+    virtual BOOL OnReceiveUnregistrationConfirm(const H323RasPDU &, const H225_UnregistrationConfirm &);
+    virtual BOOL OnReceiveUnregistrationReject(const H323RasPDU &, const H225_UnregistrationReject &);
     virtual BOOL OnReceiveUnregistrationRequest(const H225_UnregistrationRequest &);
     virtual BOOL OnReceiveUnregistrationConfirm(const H225_UnregistrationConfirm &);
     virtual BOOL OnReceiveUnregistrationReject(const H225_UnregistrationReject &);
 
+    virtual void OnSendAdmissionRequest(H323RasPDU &, H225_AdmissionRequest &);
+    virtual void OnSendAdmissionConfirm(H323RasPDU &, H225_AdmissionConfirm &);
+    virtual void OnSendAdmissionReject(H323RasPDU &, H225_AdmissionReject &);
     virtual void OnSendAdmissionRequest(H225_AdmissionRequest &);
     virtual void OnSendAdmissionConfirm(H225_AdmissionConfirm &);
     virtual void OnSendAdmissionReject(H225_AdmissionReject &);
+    virtual BOOL OnReceiveAdmissionRequest(const H323RasPDU &, const H225_AdmissionRequest &);
+    virtual BOOL OnReceiveAdmissionConfirm(const H323RasPDU &, const H225_AdmissionConfirm &);
+    virtual BOOL OnReceiveAdmissionReject(const H323RasPDU &, const H225_AdmissionReject &);
     virtual BOOL OnReceiveAdmissionRequest(const H225_AdmissionRequest &);
     virtual BOOL OnReceiveAdmissionConfirm(const H225_AdmissionConfirm &);
     virtual BOOL OnReceiveAdmissionReject(const H225_AdmissionReject &);
 
+    virtual void OnSendBandwidthRequest(H323RasPDU &, H225_BandwidthRequest &);
+    virtual void OnSendBandwidthConfirm(H323RasPDU &, H225_BandwidthConfirm &);
+    virtual void OnSendBandwidthReject(H323RasPDU &, H225_BandwidthReject &);
     virtual void OnSendBandwidthRequest(H225_BandwidthRequest &);
     virtual void OnSendBandwidthConfirm(H225_BandwidthConfirm &);
     virtual void OnSendBandwidthReject(H225_BandwidthReject &);
+    virtual BOOL OnReceiveBandwidthRequest(const H323RasPDU &, const H225_BandwidthRequest &);
+    virtual BOOL OnReceiveBandwidthConfirm(const H323RasPDU &, const H225_BandwidthConfirm &);
+    virtual BOOL OnReceiveBandwidthReject(const H323RasPDU &, const H225_BandwidthReject &);
     virtual BOOL OnReceiveBandwidthRequest(const H225_BandwidthRequest &);
     virtual BOOL OnReceiveBandwidthConfirm(const H225_BandwidthConfirm &);
     virtual BOOL OnReceiveBandwidthReject(const H225_BandwidthReject &);
 
+    virtual void OnSendDisengageRequest(H323RasPDU &, H225_DisengageRequest &);
+    virtual void OnSendDisengageConfirm(H323RasPDU &, H225_DisengageConfirm &);
+    virtual void OnSendDisengageReject(H323RasPDU &, H225_DisengageReject &);
     virtual void OnSendDisengageRequest(H225_DisengageRequest &);
     virtual void OnSendDisengageConfirm(H225_DisengageConfirm &);
     virtual void OnSendDisengageReject(H225_DisengageReject &);
+    virtual BOOL OnReceiveDisengageRequest(const H323RasPDU &, const H225_DisengageRequest &);
+    virtual BOOL OnReceiveDisengageConfirm(const H323RasPDU &, const H225_DisengageConfirm &);
+    virtual BOOL OnReceiveDisengageReject(const H323RasPDU &, const H225_DisengageReject &);
     virtual BOOL OnReceiveDisengageRequest(const H225_DisengageRequest &);
     virtual BOOL OnReceiveDisengageConfirm(const H225_DisengageConfirm &);
     virtual BOOL OnReceiveDisengageReject(const H225_DisengageReject &);
 
+    virtual void OnSendLocationRequest(H323RasPDU &, H225_LocationRequest &);
+    virtual void OnSendLocationConfirm(H323RasPDU &, H225_LocationConfirm &);
+    virtual void OnSendLocationReject(H323RasPDU &, H225_LocationReject &);
     virtual void OnSendLocationRequest(H225_LocationRequest &);
     virtual void OnSendLocationConfirm(H225_LocationConfirm &);
     virtual void OnSendLocationReject(H225_LocationReject &);
+    virtual BOOL OnReceiveLocationRequest(const H323RasPDU &, const H225_LocationRequest &);
+    virtual BOOL OnReceiveLocationConfirm(const H323RasPDU &, const H225_LocationConfirm &);
+    virtual BOOL OnReceiveLocationReject(const H323RasPDU &, const H225_LocationReject &);
     virtual BOOL OnReceiveLocationRequest(const H225_LocationRequest &);
     virtual BOOL OnReceiveLocationConfirm(const H225_LocationConfirm &);
     virtual BOOL OnReceiveLocationReject(const H225_LocationReject &);
 
+    virtual void OnSendInfoRequest(H323RasPDU &, H225_InfoRequest &);
+    virtual void OnSendInfoRequestAck(H323RasPDU &, H225_InfoRequestAck &);
+    virtual void OnSendInfoRequestNak(H323RasPDU &, H225_InfoRequestNak &);
+    virtual void OnSendInfoRequestResponse(H323RasPDU &, H225_InfoRequestResponse &);
     virtual void OnSendInfoRequest(H225_InfoRequest &);
     virtual void OnSendInfoRequestAck(H225_InfoRequestAck &);
     virtual void OnSendInfoRequestNak(H225_InfoRequestNak &);
     virtual void OnSendInfoRequestResponse(H225_InfoRequestResponse &);
+    virtual BOOL OnReceiveInfoRequest(const H323RasPDU &, const H225_InfoRequest &);
+    virtual BOOL OnReceiveInfoRequestAck(const H323RasPDU &, const H225_InfoRequestAck &);
+    virtual BOOL OnReceiveInfoRequestNak(const H323RasPDU &, const H225_InfoRequestNak &);
+    virtual BOOL OnReceiveInfoRequestResponse(const H323RasPDU &, const H225_InfoRequestResponse &);
     virtual BOOL OnReceiveInfoRequest(const H225_InfoRequest &);
     virtual BOOL OnReceiveInfoRequestAck(const H225_InfoRequestAck &);
     virtual BOOL OnReceiveInfoRequestNak(const H225_InfoRequestNak &);
     virtual BOOL OnReceiveInfoRequestResponse(const H225_InfoRequestResponse &);
 
+    virtual void OnSendResourcesAvailableIndicate(H323RasPDU &, H225_ResourcesAvailableIndicate &);
+    virtual void OnSendResourcesAvailableConfirm(H323RasPDU &, H225_ResourcesAvailableConfirm &);
     virtual void OnSendResourcesAvailableIndicate(H225_ResourcesAvailableIndicate &);
     virtual void OnSendResourcesAvailableConfirm(H225_ResourcesAvailableConfirm &);
+    virtual BOOL OnReceiveResourcesAvailableIndicate(const H323RasPDU &, const H225_ResourcesAvailableIndicate &);
+    virtual BOOL OnReceiveResourcesAvailableConfirm(const H323RasPDU &, const H225_ResourcesAvailableConfirm &);
     virtual BOOL OnReceiveResourcesAvailableIndicate(const H225_ResourcesAvailableIndicate &);
     virtual BOOL OnReceiveResourcesAvailableConfirm(const H225_ResourcesAvailableConfirm &);
 
+    virtual void OnSendNonStandardMessage(H323RasPDU &, H225_NonStandardMessage &);
     virtual void OnSendNonStandardMessage(H225_NonStandardMessage &);
+    virtual BOOL OnReceiveNonStandardMessage(const H323RasPDU &, const H225_NonStandardMessage &);
     virtual BOOL OnReceiveNonStandardMessage(const H225_NonStandardMessage &);
 
+    virtual void OnSendUnknownMessageResponse(H323RasPDU &, H225_UnknownMessageResponse &);
     virtual void OnSendUnknownMessageResponse(H225_UnknownMessageResponse &);
+    virtual BOOL OnReceiveUnknownMessageResponse(const H323RasPDU &, const H225_UnknownMessageResponse &);
     virtual BOOL OnReceiveUnknownMessageResponse(const H225_UnknownMessageResponse &);
 
+    virtual void OnSendRequestInProgress(H323RasPDU &, H225_RequestInProgress &);
     virtual void OnSendRequestInProgress(H225_RequestInProgress &);
+    virtual BOOL OnReceiveRequestInProgress(const H323RasPDU &, const H225_RequestInProgress &);
     virtual BOOL OnReceiveRequestInProgress(const H225_RequestInProgress &);
 
 
@@ -274,10 +360,6 @@ class H225_RAS : public PObject
     virtual BOOL OnReceiveUnkown(
       const H323RasPDU & pdu  /// PDU that was not handled.
     );
-
-    /**Get the security context for this RAS connection.
-      */
-    virtual H235Authenticators GetAuthenticators() const = 0;
   //@}
 
   /**@name Member variable access */
@@ -311,8 +393,8 @@ class H225_RAS : public PObject
     /**Check all crypto tokens on responses for the PDU.
       */
     BOOL CheckCryptoTokens(
+      const H323RasPDU & pdu,
       const H225_ArrayOf_CryptoH323Token & cryptoTokens,
-      const PASN_Sequence & pdu,
       unsigned optionalField
     );
   //@}
@@ -345,10 +427,12 @@ class H225_RAS : public PObject
         H323RasPDU  & requestPDU;
         PTimeInterval whenResponseExpected;
         PSyncPoint    responseHandled;
+        PMutex        responseMutex;
         enum {
           AwaitingResponse,
           ConfirmReceived,
           RejectReceived,
+          BadCryptoTokens,
           RequestInProgress,
           NoResponseReceived
         } responseResult;
@@ -356,12 +440,6 @@ class H225_RAS : public PObject
 
     virtual BOOL MakeRequest(Request & request);
     BOOL CheckForResponse(unsigned, unsigned, const PASN_Choice * = NULL);
-
-    void SetCryptoTokens(
-      H225_ArrayOf_CryptoH323Token & cryptoTokens,
-      PASN_Sequence & pdu,
-      unsigned optionalField
-    );
 
     void AgeResponses();
     BOOL SendCachedResponse(const H323RasPDU & pdu);
@@ -376,7 +454,6 @@ class H225_RAS : public PObject
     BOOL    checkResponseCryptoTokens;
 
     // Inter-thread synchronisation variables
-    const H323RasPDU   * lastReceivedPDU;
     H323TransportAddress lastReceivedFrom;
 
     unsigned      nextSequenceNumber;
@@ -397,15 +474,16 @@ class H225_RAS : public PObject
         void SetPDU(const H323RasPDU & pdu);
         BOOL SendCachedResponse(OpalTransport & transport);
 
-        PTime lastUsedTime;
-        H323RasPDU * replyPDU;
+        PTime         lastUsedTime;
+        PTimeInterval retirementAge;
+        H323RasPDU  * replyPDU;
     };
     PSORTED_LIST(ResponseDict, Response);
     ResponseDict responses;
 };
 
 
-#endif // __H323_H225RAS_H
+#endif // __OPAL_H225RAS_H
 
 
 /////////////////////////////////////////////////////////////////////////////

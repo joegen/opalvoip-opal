@@ -24,7 +24,10 @@
  * Contributor(s): Fürbass Franz <franz.fuerbass@infonova.at>
  *
  * $Log: h235auth.h,v $
- * Revision 1.2005  2002/07/01 04:56:29  robertj
+ * Revision 1.2006  2002/09/04 06:01:46  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.4  2002/07/01 04:56:29  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.3  2002/01/14 06:35:56  robertj
@@ -35,6 +38,17 @@
  *
  * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 1.8  2002/09/03 06:19:36  robertj
+ * Normalised the multi-include header prevention ifdef/define symbol.
+ *
+ * Revision 1.7  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
+ *
+ * Revision 1.6  2002/08/05 05:17:37  robertj
+ * Fairly major modifications to support different authentication credentials
+ *   in ARQ to the logged in ones on RRQ. For both client and server.
+ * Various other H.235 authentication bugs and anomalies fixed on the way.
  *
  * Revision 1.5  2002/05/17 03:39:28  robertj
  * Fixed problems with H.235 authentication on RAS for server and client.
@@ -56,8 +70,12 @@
  *
  */
 
-#ifndef __H235AUTH_H
-#define __H235AUTH_H
+#ifndef __OPAL_H235AUTH_H
+#define __OPAL_H235AUTH_H
+
+#ifdef __GNUC__
+#pragma interface
+#endif
 
 
 class H225_CryptoH323Token;
@@ -66,9 +84,11 @@ class H225_ArrayOf_AuthenticationMechanism;
 class H225_ArrayOf_PASN_ObjectId;
 class H235_AuthenticationMechanism;
 class PASN_ObjectId;
+class PASN_Sequence;
 
 
 /** This abtract class embodies an H.235 authentication mechanism.
+    NOTE: descendants must have a Clone() function for correct operation.
 */
 class H235Authenticator : public PObject
 {
@@ -134,6 +154,7 @@ class H235Authenticator : public PObject
     const PString & GetPassword() const { return password; }
     void SetPassword(const PString & pw) { password = pw; }
 
+
   protected:
     BOOL AddCapability(
       unsigned mechanism,
@@ -152,7 +173,27 @@ class H235Authenticator : public PObject
 };
 
 
-PLIST(H235Authenticators, H235Authenticator);
+PDECLARE_LIST(H235Authenticators, H235Authenticator)
+  public:
+    H235Authenticators Adjust(
+      const PString & remoteId,
+      const PString & localId,
+      const PString & password
+    ) const;
+    void PreparePDU(
+      H225_ArrayOf_CryptoH323Token & cryptoTokens,
+      PASN_Sequence & pdu,
+      unsigned optionalField
+    ) const;
+    BOOL ValidatePDU(
+      const H225_ArrayOf_CryptoH323Token & cryptoTokens,
+      const PASN_Sequence & pdu,
+      unsigned optionalField,
+      const PBYTEArray & rawPDU
+    ) const;
+};
+
+
 
 
 /** This class embodies a simple MD5 based authentication.
@@ -164,6 +205,8 @@ class H235AuthSimpleMD5 : public H235Authenticator
     PCLASSINFO(H235AuthSimpleMD5, H235Authenticator);
   public:
     H235AuthSimpleMD5();
+
+    PObject * Clone() const;
 
     virtual BOOL PrepareToken(
       H225_CryptoH323Token & cryptoTokens
@@ -202,6 +245,8 @@ class H235AuthProcedure1 : public H235Authenticator
   public:
     H235AuthProcedure1();
 
+    PObject * Clone() const;
+
     virtual BOOL PrepareToken(
       H225_CryptoH323Token & cryptoTokens
     );
@@ -235,7 +280,7 @@ class H235AuthProcedure1 : public H235Authenticator
 #endif
 
 
-#endif //__H235AUTH_H
+#endif //__OPAL_H235AUTH_H
 
 
 /////////////////////////////////////////////////////////////////////////////

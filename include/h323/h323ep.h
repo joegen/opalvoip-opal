@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2014  2002/07/04 07:41:46  robertj
+ * Revision 1.2015  2002/09/04 06:01:46  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.13  2002/07/04 07:41:46  robertj
  * Fixed memory/thread leak of transports.
  *
  * Revision 2.12  2002/07/01 04:56:29  robertj
@@ -70,6 +73,15 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.34  2002/09/03 06:19:36  robertj
+ * Normalised the multi-include header prevention ifdef/define symbol.
+ *
+ * Revision 1.33  2002/07/19 03:39:19  robertj
+ * Bullet proofed setting of RTP IP port base, can't be zero!
+ *
+ * Revision 1.32  2002/07/18 01:50:10  robertj
+ * Changed port secltion code to force apps to use function interface.
  *
  * Revision 1.31  2002/06/22 05:48:38  robertj
  * Added partial implementation for H.450.11 Call Intrusion
@@ -177,8 +189,8 @@
  * Fission of h323.h to h323ep.h & h323con.h, h323.h now just includes files.
  */
 
-#ifndef __H323_H323EP_H
-#define __H323_H323EP_H
+#ifndef __OPAL_H323EP_H
+#define __OPAL_H323EP_H
 
 #ifdef __GNUC__
 #pragma interface
@@ -1010,7 +1022,6 @@ class H323EndPoint : public OpalEndPoint
       void * userData               /// user data to pass to CreateConnection
     );
 
-
     // Configuration variables, commonly changed
     PStringList localAliasNames;
     BOOL        autoStartReceiveFax;
@@ -1076,7 +1087,7 @@ class H323EndPoint : public OpalEndPoint
 };
 
 
-#endif // __H323_H323EP_H
+#endif // __OPAL_H323EP_H
 
 
 /////////////////////////////////////////////////////////////////////////////

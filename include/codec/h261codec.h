@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.h,v $
- * Revision 1.2005  2002/01/14 06:35:56  robertj
+ * Revision 1.2006  2002/09/04 06:01:46  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.4  2002/01/14 06:35:56  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.3  2001/11/02 10:45:19  robertj
@@ -43,6 +46,12 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.29  2002/09/03 06:19:36  robertj
+ * Normalised the multi-include header prevention ifdef/define symbol.
+ *
+ * Revision 1.28  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
  *
  * Revision 1.27  2002/01/09 06:06:37  robertj
  * Fixed setting of RTP timestamp values on video transmission.
@@ -135,8 +144,8 @@
  *
  */
 
-#ifndef __CODEC_H261CODEC_H
-#define __CODEC_H261CODEC_H
+#ifndef __OPAL_H261CODEC_H
+#define __OPAL_H261CODEC_H
 
 #ifdef __GNUC__
 #pragma interface
@@ -340,8 +349,7 @@ H323_REGISTER_CAPABILITY_FUNCTION(H323_H261_QCIF, OPAL_H261_QCIF, H323_NO_EP_VAR
           OPAL_REGISTER_TRANSCODER(Opal_YUV411P_H261, "YUV411P", OPAL_H261)
 
 
-#endif // __CODEC_H261CODEC_H
+#endif // __OPAL_H261CODEC_H
 
 
 /////////////////////////////////////////////////////////////////////////////
-
