@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2017  2002/09/10 07:42:40  robertj
+ * Revision 1.2018  2002/09/16 02:52:33  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
+ *
+ * Revision 2.16  2002/09/10 07:42:40  robertj
  * Added function to get gatekeeper password.
  *
  * Revision 2.15  2002/09/06 02:39:27  robertj
@@ -198,7 +202,7 @@
 #ifndef __OPAL_H323EP_H
 #define __OPAL_H323EP_H
 
-#ifdef __GNUC__
+#ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 

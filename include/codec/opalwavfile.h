@@ -22,7 +22,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalwavfile.h,v $
- * Revision 1.2002  2002/09/06 07:18:44  robertj
+ * Revision 1.2003  2002/09/16 02:52:33  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
+ *
+ * Revision 2.1  2002/09/06 07:18:44  robertj
  * OPAL port.
  *
  * Revision 1.4  2002/09/06 06:20:37  robertj
@@ -42,7 +46,7 @@
 #ifndef __OPALWAVFILE_H
 #define __OPALWAVFILE_H
 
-#ifdef __GNUC__
+#ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 

@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lpc10codec.h,v $
- * Revision 1.2004  2002/09/04 06:01:46  robertj
+ * Revision 1.2005  2002/09/16 02:52:33  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
+ *
+ * Revision 2.3  2002/09/04 06:01:46  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.2  2001/11/02 10:45:19  robertj
@@ -71,7 +75,7 @@
 #ifndef __OPAL_LPC10CODEC_H
 #define __OPAL_LPC10CODEC_H
 
-#ifdef __GNUC__
+#ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
