@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2025  2004/12/25 20:43:41  dsandras
+ * Revision 1.2026  2005/01/16 11:28:05  csoutheren
+ * Added GetIdentifier virtual function to OpalConnection, and changed H323
+ * and SIP descendants to use this function. This allows an application to
+ * obtain a GUID for any connection regardless of the protocol used
+ *
+ * Revision 2.24  2004/12/25 20:43:41  dsandras
  * Attach the RFC2833 handlers when we are in connected state to ensure
  * OpalMediaPatch exist. Fixes problem for DTMF sending.
  *
@@ -384,7 +389,7 @@ class SIPConnection : public OpalConnection
       const PString & addr
     ) { localPartyAddress = addr; }
 
-    const PString & GetTag() const { return tag; }
+    PString GetTag() const { return GetIdentifier().AsString(); }
     SIPEndPoint & GetEndPoint() const { return endpoint; }
     const SIPURL & GetTargetAddress() const { return targetAddress; }
     const PStringList & GetRouteSet() const { return routeSet; }
@@ -411,8 +416,7 @@ class SIPConnection : public OpalConnection
     OpalTransport * transport;
 
     PString           localPartyAddress;
-    PString           tag;              // local dialog tag
-    PString	      forwardParty;
+    PString	          forwardParty;
     SIP_PDU         * originalInvite;
     PStringList       routeSet;
     SIPURL            targetAddress;
