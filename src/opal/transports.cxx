@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2018  2002/07/01 04:56:33  robertj
+ * Revision 1.2019  2002/07/01 08:43:44  robertj
+ * Fixed assert on every SIP packet.
+ *
+ * Revision 2.17  2002/07/01 04:56:33  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.16  2002/06/16 23:07:19  robertj
@@ -1232,6 +1235,7 @@ BOOL OpalTransportUDP::Close()
     return OpalTransport::Close();
 
   readChannel = writeChannel = NULL;
+  thread = NULL;
   return TRUE;
 }
 
