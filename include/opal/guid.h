@@ -24,8 +24,20 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: guid.h,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 1.2002  2002/09/04 06:01:47  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.3  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
+ *
+ * Revision 1.2  2001/03/19 05:51:35  robertj
+ * Added ! operator to do !IsNULL(), so cannot use it accidentally.
+ *
+ * Revision 1.1  2001/03/02 06:59:57  robertj
+ * Enhanced the globally unique identifier class.
  *
  */
 

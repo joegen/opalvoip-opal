@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: t120proto.h,v $
- * Revision 1.2004  2002/03/15 03:10:27  robertj
+ * Revision 1.2005  2002/09/04 06:01:47  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.3  2002/03/15 03:10:27  robertj
  * Removed unused function
  *
  * Revision 2.2  2002/02/11 09:32:12  robertj
@@ -36,6 +39,11 @@
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
+ * Revision 1.3  2002/09/03 05:44:46  robertj
+ * Normalised the multi-include header prevention ifdef/define symbol.
+ * Added globally accessible functions for media format name.
+ * Added standard TCP port constant.
+ *
  * Revision 1.2  2002/02/01 01:47:02  robertj
  * Some more fixes for T.120 channel establishment, more to do!
  *
@@ -44,8 +52,8 @@
  *
  */
 
-#ifndef __T120_T120PROTO_H
-#define __T120_T120PROTO_H
+#ifndef __OPAL_T120PROTO_H
+#define __OPAL_T120PROTO_H
 
 #ifdef __GNUC__
 #pragma interface
@@ -117,7 +125,7 @@ class OpalT120Protocol : public PObject
 };
 
 
-#endif // __T120_T120PROTO_H
+#endif // __OPAL_T120PROTO_H
 
 
 /////////////////////////////////////////////////////////////////////////////

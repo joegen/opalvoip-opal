@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.cxx,v $
- * Revision 1.2007  2002/07/01 04:56:31  robertj
+ * Revision 1.2008  2002/09/04 06:01:47  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.6  2002/07/01 04:56:31  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.5  2002/01/22 05:18:59  robertj
@@ -50,6 +53,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.49  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
  *
  * Revision 1.48  2002/05/19 22:03:45  dereks
  * Add fix from Sean Miceli, so correct P64Decoder is picked in calls with Netmeeting.

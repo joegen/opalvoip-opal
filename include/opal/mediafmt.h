@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2013  2002/07/01 04:56:31  robertj
+ * Revision 1.2014  2002/09/04 06:01:47  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.12  2002/07/01 04:56:31  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.11  2002/03/22 06:57:49  robertj
@@ -65,6 +68,12 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.11  2002/09/03 06:19:37  robertj
+ * Normalised the multi-include header prevention ifdef/define symbol.
+ *
+ * Revision 1.10  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
  *
  * Revision 1.9  2002/06/25 08:30:08  robertj
  * Changes to differentiate between stright G.723.1 and G.723.1 Annex A using

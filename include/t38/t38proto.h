@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: t38proto.h,v $
- * Revision 1.2004  2002/02/11 09:32:12  robertj
+ * Revision 1.2005  2002/09/04 06:01:47  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.3  2002/02/11 09:32:12  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.2  2002/01/14 06:35:57  robertj
@@ -35,6 +38,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.6  2002/09/03 06:19:37  robertj
+ * Normalised the multi-include header prevention ifdef/define symbol.
  *
  * Revision 1.5  2002/02/09 04:39:01  robertj
  * Changes to allow T.38 logical channels to use single transport which is
@@ -55,8 +61,8 @@
  *
  */
 
-#ifndef __T38_T38PROTO_H
-#define __T38_T38PROTO_H
+#ifndef __OPAL_T38PROTO_H
+#define __OPAL_T38PROTO_H
 
 #ifdef __GNUC__
 #pragma interface
@@ -143,7 +149,7 @@ class OpalT38Protocol : public PObject
 };
 
 
-#endif // __T38_T38PROTO_H
+#endif // __OPAL_T38PROTO_H
 
 
 /////////////////////////////////////////////////////////////////////////////

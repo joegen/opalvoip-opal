@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h450pdu.h,v $
- * Revision 1.2005  2002/07/01 04:56:30  robertj
+ * Revision 1.2006  2002/09/04 06:01:47  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.4  2002/07/01 04:56:30  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.3  2002/02/11 09:32:11  robertj
@@ -38,6 +41,15 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.8  2002/09/03 06:19:37  robertj
+ * Normalised the multi-include header prevention ifdef/define symbol.
+ *
+ * Revision 1.7  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
+ *
+ * Revision 1.6  2002/07/04 00:40:31  robertj
+ * More H.450.11 call intrusion implementation, thanks Aleksandar Todorovic
  *
  * Revision 1.5  2002/06/22 05:48:38  robertj
  * Added partial implementation for H.450.11 Call Intrusion
@@ -60,8 +72,8 @@
  *
  */
 
-#ifndef __H323_H450PDU_H
-#define __H323_H450PDU_H
+#ifndef __OPAL_H450PDU_H
+#define __OPAL_H450PDU_H
 
 #ifdef __GNUC__
 #pragma interface
@@ -77,6 +89,7 @@ class H323EndPoint;
 class H323Connection;
 class H323TransportAddress;
 class H323SignalPDU;
+
 class H4501_EndpointAddress;
 
 
@@ -105,10 +118,11 @@ class H450ServiceAPDU : public X880_ROS
     void BuildCallWaiting(int invokeId, int numCallsWaiting);
     
     void BuildCallIntrusionForcedRelease(int invokeId, int CICL);
-
-    void BuildCallIntrusionForcedReleaseResult();
-
+    X880_ReturnResult& BuildCallIntrusionForcedReleaseResult(int invokeId);
     void BuildCallIntrusionForcedReleaseError();
+    void BuildCallIntrusionGetCIPL(int invokeId);
+    void BuildCallIntrusionImpending(int invokeId);
+    void BuildCallIntrusionForceRelesed(int invokeId);
 
     void AttachSupplementaryServiceAPDU(H323SignalPDU & pdu);
     BOOL WriteFacilityPDU(
@@ -783,11 +797,36 @@ class H45011Handler : public H450xHandler
       const bool timerExpiry = false /// Flag to indicate expiry
     );
 
+    void OnReceivedCIGetCIPLResult(
+      X880_ReturnResult & returnResult
+    );
+
+    BOOL OnReceivedGetCIPLReturnError(
+      int errorCode,
+      const bool timerExpiry = false /// Flag to indicate expiry
+    );
+
     void IntrudeCall(int CICL );
 
     void AwaitSetupResponse(
       const PString & token,
       const PString & identity
+    );
+
+    BOOL GetRemoteCallIntrusionProtectionLevel(
+      const PString & intrusionCallToken,
+      unsigned intrusionCICL
+    );
+
+    void SetIntrusionImpending();
+
+    void SetForcedReleaseAccepted();
+
+    void SetIntrusionNotAuthorized();
+
+    virtual BOOL OnReceivedReject(
+      int problemType,
+      int problemNumber
     );
 
     /**Sub-state for call intrusion.
@@ -867,14 +906,16 @@ class H45011Handler : public H450xHandler
     PTimer      ciTimer;               // Call Intrusion Timer - Handles all six timers CI-T1 to CI-T6,
     PString     intrudingCallToken;
     PString     intrudingCallIdentity;
+    PString     activeCallToken;
     ReturnState ciReturnState;
     SendState   ciSendState;
     Generate    ciGenerateState;
     int         ciCICL;
+    unsigned    intrudingCallCICL;
 };
 
 
-#endif // __H323_H450PDU_H
+#endif // __OPAL_H450PDU_H
 
 
 /////////////////////////////////////////////////////////////////////////////

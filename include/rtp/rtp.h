@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2010  2002/07/01 04:56:31  robertj
+ * Revision 1.2011  2002/09/04 06:01:47  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.9  2002/07/01 04:56:31  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.8  2002/04/10 03:10:13  robertj
@@ -56,6 +59,13 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.38  2002/09/03 05:47:02  robertj
+ * Normalised the multi-include header prevention ifdef/define symbol.
+ * Added copy constructor/operator for session manager.
+ *
+ * Revision 1.37  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
  *
  * Revision 1.36  2002/05/28 02:37:37  robertj
  * Fixed reading data out of RTCP compound statements.
@@ -176,8 +186,8 @@
  *
  */
 
-#ifndef __RTP_RTP_H
-#define __RTP_RTP_H
+#ifndef __OPAL_RTP_H
+#define __OPAL_RTP_H
 
 #ifdef __GNUC__
 #pragma interface
@@ -999,7 +1009,7 @@ class RTP_UDP : public RTP_Session
 };
 
 
-#endif // __RTP_RTP_H
+#endif // __OPAL_RTP_H
 
 
 /////////////////////////////////////////////////////////////////////////////
