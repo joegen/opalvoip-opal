@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2012  2002/02/11 09:32:11  robertj
+ * Revision 1.2013  2002/02/19 07:43:40  robertj
+ * Restructured media bypass functions to fix problems with RFC2833.
+ *
+ * Revision 2.11  2002/02/11 09:32:11  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.10  2002/02/11 07:37:43  robertj
@@ -381,20 +384,17 @@ class H323Connection : public OpalConnection
 
        The default behaviour returns TRUE if the session is audio or video.
      */
-    virtual BOOL CanDoMediaBypass(
+    virtual BOOL IsMediaBypassPossible(
       unsigned sessionID                  /// Session ID for media channel
     ) const;
 
-    /**Get the media transport address for the connection.
-       This is primarily used to determine if media bypass is possible for the
-       call between two connections.
-
-       The default behaviour returns TRUE if the media format is RTP based.
+    /**Get information on the media channel for the connection.
+       The default behaviour returns TRUE and fills the info structure if
+       there is a media channel active for the sessionID.
      */
-    virtual BOOL GetMediaTransportAddress(
-      unsigned sessionID,                 /// Session ID for media channel
-      OpalTransportAddress & data,        /// Data channel address
-      OpalTransportAddress & control      /// Control channel address
+    virtual BOOL GetMediaInformation(
+      unsigned sessionID,     /// Session ID for media channel
+      MediaInformation & info /// Information on media channel
     ) const;
   //@}
 
