@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2020  2004/03/13 06:25:54  rjongbloed
+ * Revision 1.2021  2004/04/25 02:53:29  rjongbloed
+ * Fixed GNU 3.4 warnings
+ *
+ * Revision 2.19  2004/03/13 06:25:54  rjongbloed
  * Slight rearrangement of local party name and alias list to beter match common
  *   behaviour in ancestor.
  * Abstracted local party name for endpoint into ancestor from H.,323.
@@ -114,8 +117,8 @@ OpalEndPoint::OpalEndPoint(OpalManager & mgr,
                            unsigned attributes)
   : manager(mgr),
     prefixName(prefix),
-    defaultLocalPartyName(PProcess::Current().GetUserName()),
-    attributeBits(attributes)
+    attributeBits(attributes),
+    defaultLocalPartyName(PProcess::Current().GetUserName())
 {
   manager.AttachEndPoint(this);
 

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2007  2004/02/15 04:34:08  rjongbloed
+ * Revision 1.2008  2004/04/25 02:53:29  rjongbloed
+ * Fixed GNU 3.4 warnings
+ *
+ * Revision 2.6  2004/02/15 04:34:08  rjongbloed
  * Fixed correct setting of write data size on sick stream. Important for current
  *   output of silence frames and adjustment of sound card buffers.
  * Fixed correct propagation of timestamp values from source to sink media
@@ -158,7 +161,9 @@ void OpalMediaPatch::Close()
 
 BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream)
 {
-  PAssertNULL(stream);
+  if (PAssertNULL(stream) == NULL)
+    return FALSE;
+
   PAssert(stream->IsSink(), "Attempt to set source stream as sink!");
 
   PWaitAndSignal mutex(inUse);
@@ -216,7 +221,9 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream)
 
 void OpalMediaPatch::RemoveSink(OpalMediaStream * stream)
 {
-  PAssertNULL(stream);
+  if (PAssertNULL(stream) == NULL)
+    return;
+
   PTRACE(3, "Patch\tRemoving media stream sink " << *stream);
 
   PWaitAndSignal mutex(inUse);

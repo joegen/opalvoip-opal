@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkserver.cxx,v $
- * Revision 1.2014  2004/04/07 08:21:02  rjongbloed
+ * Revision 1.2015  2004/04/25 02:53:29  rjongbloed
+ * Fixed GNU 3.4 warnings
+ *
+ * Revision 2.13  2004/04/07 08:21:02  rjongbloed
  * Changes for new RTTI system.
  *
  * Revision 2.12  2004/02/19 10:47:03  rjongbloed
@@ -3799,7 +3802,8 @@ unsigned H323GatekeeperServer::AllocateBandwidth(unsigned newBandwidth,
 
 void H323GatekeeperServer::RemoveCall(H323GatekeeperCall * call)
 {
-  PAssertNULL(call);
+  if (PAssertNULL(call) == NULL)
+    return;
 
   call->SetBandwidthUsed(0);
   PAssert(call->GetEndPoint().RemoveCall(call), PLogicError);

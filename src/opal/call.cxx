@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2023  2004/04/18 07:09:12  rjongbloed
+ * Revision 1.2024  2004/04/25 02:53:29  rjongbloed
+ * Fixed GNU 3.4 warnings
+ *
+ * Revision 2.22  2004/04/18 07:09:12  rjongbloed
  * Added a couple more API functions to bring OPAL into line with similar functions in OpenH323.
  *
  * Revision 2.21  2004/02/07 00:35:47  rjongbloed
@@ -152,7 +155,8 @@ void OpalCall::PrintOn(ostream & strm) const
 
 void OpalCall::AddConnection(OpalConnection * connection)
 {
-  PAssertNULL(connection);
+  if (PAssertNULL(connection) == NULL)
+    return;
 
   inUseFlag.Wait();
   activeConnections.Append(connection);
@@ -568,7 +572,8 @@ void OpalCall::OnReleased(OpalConnection & connection)
 
 void OpalCall::Release(OpalConnection * connection)
 {
-  PAssertNULL(connection);
+  if (PAssertNULL(connection) == NULL)
+    return;
 
   PTRACE(3, "Call\tReleasing connection " << *connection);
 
