@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2009  2002/06/16 02:19:55  robertj
+ * Revision 1.2010  2002/07/04 07:54:53  robertj
+ * Fixed GNU warning
+ *
+ * Revision 2.8  2002/06/16 02:19:55  robertj
  * Fixed and clarified function for initiating call, thanks Ted Szoczei
  *
  * Revision 2.7  2002/01/22 05:13:47  robertj
@@ -137,7 +140,7 @@ BOOL OpalPCSSEndPoint::SetUpConnection(OpalCall & call,
     PWaitAndSignal mutex(inUseFlag);
 
     if (connectionsActive.Contains(MakeToken(playDevice, recordDevice)))
-      return NULL;
+      return FALSE;
 
     connection = CreateConnection(call, playDevice, recordDevice, userData);
     if (connection == NULL)
