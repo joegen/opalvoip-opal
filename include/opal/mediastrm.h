@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2003  2001/08/21 01:10:35  robertj
+ * Revision 1.2004  2001/10/04 00:41:20  robertj
+ * Removed GetMediaFormats() function as is not useful.
+ *
+ * Revision 2.2  2001/08/21 01:10:35  robertj
  * Fixed propagation of sound channel buffers through media stream.
  *
  * Revision 2.1  2001/08/01 05:51:47  robertj
@@ -91,10 +94,6 @@ class OpalMediaStream : public PChannel
 
   /**@name Operations */
   //@{
-    /**Get the available media formats the stream is capable of handling.
-      */
-    virtual OpalMediaFormatList GetMediaFormats() const = 0;
-
     /**Get the currently selected media format.
        The media data format is a string representation of the format being
        transferred by the media channel. It is typically a value as provided
@@ -107,7 +106,7 @@ class OpalMediaStream : public PChannel
     /**Open the media stream using the media format.
 
        The default behaviour simply sets the member variable "mediaFormat"
-       provided it is in the set returned by GetMediaFormats().
+       and "defaultDataSize".
       */
     virtual BOOL Open(
       const OpalMediaFormat & format /// Media format to select
@@ -226,9 +225,6 @@ class OpalRTPMediaStream : public OpalMediaStream
   /**@name Overrides of PChannel class */
   //@{
     /**Open the media stream using the media format.
-
-       The default behaviour simply sets the member variable "mediaFormat"
-       provided it is in the set returned by GetMediaFormats().
       */
     virtual BOOL Open(
       const OpalMediaFormat & format /// Media format to select
@@ -267,10 +263,6 @@ class OpalRTPMediaStream : public OpalMediaStream
 
   /**@name Overrides of OpalMediaStream class */
   //@{
-    /**Get the available media formats the stream is capable of handling.
-      */
-    virtual OpalMediaFormatList GetMediaFormats() const;
-
     /**Read an RTP frame of data from the source media stream.
        The new behaviour simply calls RTP_Session::ReadData().
       */
@@ -342,10 +334,6 @@ class OpalLineMediaStream : public OpalMediaStream
 
   /**@name Overrides of OpalMediaStream class */
   //@{
-    /**Get the available media formats the stream is capable of handling.
-      */
-    virtual OpalMediaFormatList GetMediaFormats() const;
-
     /**Select the data format this channel is to operate.
 
        The default behaviour simply sets the member variable "mediaFormat".
@@ -461,10 +449,6 @@ class OpalFileMediaStream : public OpalRawMediaStream
 
   /**@name Overrides of OpalMediaStream class */
   //@{
-    /**Get the available media formats the stream is capable of handling.
-      */
-    virtual OpalMediaFormatList GetMediaFormats() const;
-
     /**Indicate if the media stream is synchronous.
        Returns TRUE for LID streams.
       */
@@ -507,10 +491,6 @@ class OpalAudioMediaStream : public OpalRawMediaStream
 
   /**@name Overrides of OpalMediaStream class */
   //@{
-    /**Get the available media formats the stream is capable of handling.
-      */
-    virtual OpalMediaFormatList GetMediaFormats() const;
-
     /**Set the data size in bytes that is expected to be used. Some media
        streams can make use of this information to perform optimisations.
 
