@@ -204,6 +204,10 @@ SOURCE=..\h323\h323.cxx
 # End Source File
 # Begin Source File
 
+SOURCE=..\h323\h323annexg.cxx
+# End Source File
+# Begin Source File
+
 SOURCE=..\h323\h323caps.cxx
 # End Source File
 # Begin Source File
@@ -224,11 +228,27 @@ SOURCE=..\h323\h323rtp.cxx
 # End Source File
 # Begin Source File
 
+SOURCE=..\h323\h323trans.cxx
+# End Source File
+# Begin Source File
+
 SOURCE=..\h323\h450pdu.cxx
 # End Source File
 # Begin Source File
 
+SOURCE=..\h323\h501pdu.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\h323\peclient.cxx
+# End Source File
+# Begin Source File
+
 SOURCE=..\h323\q931.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\h323\svcctrl.cxx
 # End Source File
 # Begin Source File
 
@@ -266,6 +286,10 @@ SOURCE=..\codec\h261codec.cxx
 # End Source File
 # Begin Source File
 
+SOURCE=..\codec\ilbccodec.cxx
+# End Source File
+# Begin Source File
+
 SOURCE=..\codec\lpc10codec.cxx
 # End Source File
 # Begin Source File
@@ -283,10 +307,6 @@ SOURCE=..\codec\speexcodec.cxx
 # Begin Source File
 
 SOURCE=..\codec\vidcodec.cxx
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\include\codec\vidcodec.h
 # End Source File
 # End Group
 # Begin Group "LID Sources"
@@ -464,6 +484,10 @@ SOURCE=..\..\include\h323\h235auth.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\include\h323\h323annexg.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\include\h323\h323caps.h
 # End Source File
 # Begin Source File
@@ -488,11 +512,27 @@ SOURCE=..\..\include\h323\h323rtp.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\include\h323\h323trans.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\include\h323\h450pdu.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\include\h323\h501pdu.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\h323\peclient.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\include\h323\q931.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\h323\svcctrl.h
 # End Source File
 # Begin Source File
 
@@ -532,6 +572,10 @@ SOURCE=..\..\include\codec\h261codec.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\include\codec\ilbccodec.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\include\codec\lpc10codec.h
 # End Source File
 # Begin Source File
@@ -549,6 +593,10 @@ SOURCE=..\..\include\codec\rfc2833.h
 # Begin Source File
 
 SOURCE=..\..\include\codec\speexcodec.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\codec\vidcodec.h
 # End Source File
 # End Group
 # Begin Group "LID Headers"
@@ -651,7 +699,7 @@ SOURCE=..\..\include\opal\buildopts.h.in
 
 USERDEP__BUILD="..\..\configure.in"	"..\..\configure.exe"	
 # Begin Custom Build - Configuring Build Options
-InputDir=\opal\include\opal
+InputDir=\Work\opal\include\opal
 InputPath=..\..\include\opal\buildopts.h.in
 
 "$(InputDir)\buildopts.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
@@ -664,7 +712,7 @@ InputPath=..\..\include\opal\buildopts.h.in
 
 USERDEP__BUILD="..\..\configure.in"	"..\..\configure.exe"	
 # Begin Custom Build - Configuring Build Options
-InputDir=\opal\include\opal
+InputDir=\Work\opal\include\opal
 InputPath=..\..\include\opal\buildopts.h.in
 
 "$(InputDir)\buildopts.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
@@ -677,7 +725,7 @@ InputPath=..\..\include\opal\buildopts.h.in
 
 USERDEP__BUILD="..\..\configure.in"	"..\..\configure.exe"	
 # Begin Custom Build - Configuring Build Options
-InputDir=\opal\include\opal
+InputDir=\Work\opal\include\opal
 InputPath=..\..\include\opal\buildopts.h.in
 
 "$(InputDir)\buildopts.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
@@ -759,6 +807,10 @@ SOURCE=..\..\include\asn\h4508.h
 # Begin Source File
 
 SOURCE=..\..\include\asn\h4509.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\asn\h501.h
 # End Source File
 # Begin Source File
 
@@ -1090,6 +1142,10 @@ SOURCE=..\asn\h4509.cxx
 # End Source File
 # Begin Source File
 
+SOURCE=..\asn\h501.cxx
+# End Source File
+# Begin Source File
+
 SOURCE=..\asn\ldap.cxx
 
 !IF  "$(CFG)" == "OPAL_lib - Win32 Release"
@@ -1173,7 +1229,7 @@ SOURCE=..\asn\gcc.asn
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling GCC ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\gcc.asn
 InputName=gcc
@@ -1194,7 +1250,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling GCC ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\gcc.asn
 InputName=gcc
@@ -1215,7 +1271,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling GCC ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\gcc.asn
 InputName=gcc
@@ -1244,7 +1300,7 @@ SOURCE=..\asn\h225.asn
 # PROP Intermediate_Dir "..\..\include\asn"
 USERDEP__H225_="$(IntDir)\h235.h"	
 # Begin Custom Build - Compiling H.225 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h225.asn
 InputName=h225
@@ -1266,7 +1322,7 @@ BuildCmds= \
 # PROP Intermediate_Dir "..\..\include\asn"
 USERDEP__H225_="$(IntDir)\h235.h"	
 # Begin Custom Build - Compiling H.225 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h225.asn
 InputName=h225
@@ -1288,7 +1344,7 @@ BuildCmds= \
 # PROP Intermediate_Dir "..\..\include\asn"
 USERDEP__H225_="$(IntDir)\h235.h"	
 # Begin Custom Build - Compiling H.225 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h225.asn
 InputName=h225
@@ -1316,7 +1372,7 @@ SOURCE=..\asn\h235.asn
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.235 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h235.asn
 InputName=h235
@@ -1337,7 +1393,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.235 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h235.asn
 InputName=h235
@@ -1358,7 +1414,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.235 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h235.asn
 InputName=h235
@@ -1386,7 +1442,7 @@ SOURCE=..\asn\h245.asn
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.245 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h245.asn
 InputName=h245
@@ -1410,7 +1466,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.245 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h245.asn
 InputName=h245
@@ -1434,7 +1490,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.245 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h245.asn
 InputName=h245
@@ -1465,7 +1521,7 @@ SOURCE=..\asn\h248.asn
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.248 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h248.asn
 InputName=h248
@@ -1486,7 +1542,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.248 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h248.asn
 InputName=h248
@@ -1507,7 +1563,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.248 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h248.asn
 InputName=h248
@@ -1535,7 +1591,7 @@ SOURCE=..\asn\h4501.asn
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.1 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h4501.asn
 InputName=h4501
@@ -1556,7 +1612,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.1 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h4501.asn
 InputName=h4501
@@ -1577,7 +1633,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.1 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h4501.asn
 InputName=h4501
@@ -1605,7 +1661,7 @@ SOURCE=..\asn\h45010.asn
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.10 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h45010.asn
 InputName=h45010
@@ -1626,7 +1682,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.10 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h45010.asn
 InputName=h45010
@@ -1647,7 +1703,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.10 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h45010.asn
 InputName=h45010
@@ -1675,7 +1731,7 @@ SOURCE=..\asn\h45011.asn
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.11 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h45011.asn
 InputName=h45011
@@ -1696,7 +1752,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.11 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h45011.asn
 InputName=h45011
@@ -1717,7 +1773,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.11 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h45011.asn
 InputName=h45011
@@ -1745,7 +1801,7 @@ SOURCE=..\asn\h4502.asn
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.2 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h4502.asn
 InputName=h4502
@@ -1766,7 +1822,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.2 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h4502.asn
 InputName=h4502
@@ -1787,7 +1843,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.2 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h4502.asn
 InputName=h4502
@@ -1815,7 +1871,7 @@ SOURCE=..\asn\h4503.asn
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.3 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h4503.asn
 InputName=h4503
@@ -1836,7 +1892,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.3 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h4503.asn
 InputName=h4503
@@ -1857,7 +1913,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.3 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h4503.asn
 InputName=h4503
@@ -1885,7 +1941,7 @@ SOURCE=..\asn\h4504.asn
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.4 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h4504.asn
 InputName=h4504
@@ -1906,7 +1962,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.4 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h4504.asn
 InputName=h4504
@@ -1927,7 +1983,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.4 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h4504.asn
 InputName=h4504
@@ -1955,7 +2011,7 @@ SOURCE=..\asn\h4505.asn
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.5 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h4505.asn
 InputName=h4505
@@ -1976,7 +2032,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.5 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h4505.asn
 InputName=h4505
@@ -1997,7 +2053,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.5 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h4505.asn
 InputName=h4505
@@ -2025,7 +2081,7 @@ SOURCE=..\asn\h4506.asn
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.6 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h4506.asn
 InputName=h4506
@@ -2046,7 +2102,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.6 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h4506.asn
 InputName=h4506
@@ -2067,7 +2123,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.6 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h4506.asn
 InputName=h4506
@@ -2095,7 +2151,7 @@ SOURCE=..\asn\h4507.asn
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.7 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h4507.asn
 InputName=h4507
@@ -2116,7 +2172,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.7 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h4507.asn
 InputName=h4507
@@ -2137,7 +2193,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.7 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h4507.asn
 InputName=h4507
@@ -2165,7 +2221,7 @@ SOURCE=..\asn\h4508.asn
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.8 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h4508.asn
 InputName=h4508
@@ -2186,7 +2242,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.8 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h4508.asn
 InputName=h4508
@@ -2207,7 +2263,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.8 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h4508.asn
 InputName=h4508
@@ -2235,7 +2291,7 @@ SOURCE=..\asn\h4509.asn
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.9 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h4509.asn
 InputName=h4509
@@ -2256,7 +2312,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.9 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h4509.asn
 InputName=h4509
@@ -2277,7 +2333,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling H.450.9 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h4509.asn
 InputName=h4509
@@ -2299,13 +2355,83 @@ BuildCmds= \
 # End Source File
 # Begin Source File
 
+SOURCE=..\asn\h501.asn
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+# PROP Intermediate_Dir "..\..\include\asn"
+# Begin Custom Build - Compiling H.501 ASN File
+InputDir=\Work\opal\src\asn
+IntDir=.\..\..\include\asn
+InputPath=..\asn\h501.asn
+InputName=h501
+
+BuildCmds= \
+	asnparser  -h asn/ -m H501 -c $(InputPath) \
+	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
+	
+
+"$(InputDir)\$(InputName).cxx" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   $(BuildCmds)
+
+"$(IntDir)\$(InputName).h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   $(BuildCmds)
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# PROP Intermediate_Dir "..\..\include\asn"
+# Begin Custom Build - Compiling H.501 ASN File
+InputDir=\Work\opal\src\asn
+IntDir=.\..\..\include\asn
+InputPath=..\asn\h501.asn
+InputName=h501
+
+BuildCmds= \
+	asnparser  -h asn/ -m H501 -c $(InputPath) \
+	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
+	
+
+"$(InputDir)\$(InputName).cxx" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   $(BuildCmds)
+
+"$(IntDir)\$(InputName).h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   $(BuildCmds)
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# PROP Intermediate_Dir "..\..\include\asn"
+# Begin Custom Build - Compiling H.501 ASN File
+InputDir=\Work\opal\src\asn
+IntDir=.\..\..\include\asn
+InputPath=..\asn\h501.asn
+InputName=h501
+
+BuildCmds= \
+	asnparser  -h asn/ -m H501 -c $(InputPath) \
+	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
+	
+
+"$(InputDir)\$(InputName).cxx" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   $(BuildCmds)
+
+"$(IntDir)\$(InputName).h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   $(BuildCmds)
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
 SOURCE=..\asn\ldap.asn
 
 !IF  "$(CFG)" == "OPAL_lib - Win32 Release"
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling LDAP ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\ldap.asn
 InputName=ldap
@@ -2326,7 +2452,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling LDAP ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\ldap.asn
 InputName=ldap
@@ -2347,7 +2473,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling LDAP ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\ldap.asn
 InputName=ldap
@@ -2375,7 +2501,7 @@ SOURCE=..\asn\mcs.asn
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling MCS ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\mcs.asn
 InputName=mcs
@@ -2396,7 +2522,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling MCS ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\mcs.asn
 InputName=mcs
@@ -2417,7 +2543,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling MCS ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\mcs.asn
 InputName=mcs
@@ -2445,7 +2571,7 @@ SOURCE=..\asn\t38.asn
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling T.38 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\t38.asn
 InputName=t38
@@ -2466,7 +2592,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling T.38 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\t38.asn
 InputName=t38
@@ -2487,7 +2613,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling T.38 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\t38.asn
 InputName=t38
@@ -2515,7 +2641,7 @@ SOURCE=..\asn\x880.asn
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling X.880 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\x880.asn
 InputName=x880
@@ -2536,7 +2662,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling X.880 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\x880.asn
 InputName=x880
@@ -2557,7 +2683,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 # Begin Custom Build - Compiling X.880 ASN File
-InputDir=\opal\src\asn
+InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\x880.asn
 InputName=x880
@@ -4034,6 +4160,252 @@ SOURCE=..\codec\speex\libspeex\vq.c
 
 !ENDIF 
 
+# End Source File
+# End Group
+# End Group
+# Begin Group "iLBC Files"
+
+# PROP Default_Filter ""
+# Begin Group "iLBC Headers"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\codec\iLBC\anaFilter.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\constants.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\createCB.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\doCPLC.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\enhancer.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\filter.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\FrameClassify.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\gainquant.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\getCBvec.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\helpfun.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\hpInput.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\hpOutput.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\iCBConstruct.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\iCBSearch.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\iLBC_decode.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\iLBC_define.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\iLBC_encode.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\LPCdecode.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\LPCencode.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\lsf.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\packing.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\StateConstructW.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\StateSearchW.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\syntFilter.h
+# End Source File
+# End Group
+# Begin Group "iLBC Sources"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\codec\iLBC\anaFilter.c
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\constants.c
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\createCB.c
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\doCPLC.c
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\enhancer.c
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\filter.c
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\FrameClassify.c
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\gainquant.c
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\getCBvec.c
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\helpfun.c
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\hpInput.c
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\hpOutput.c
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\iCBConstruct.c
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\iCBSearch.c
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\iLBC_decode.c
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\iLBC_encode.c
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\LPCdecode.c
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\LPCencode.c
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\lsf.c
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\packing.c
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\StateConstructW.c
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\StateSearchW.c
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\iLBC\syntFilter.c
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
 # End Source File
 # End Group
 # End Group
