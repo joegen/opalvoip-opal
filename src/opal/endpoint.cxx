@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2022  2004/04/26 06:30:34  rjongbloed
+ * Revision 1.2023  2004/05/15 12:53:03  rjongbloed
+ * Added default username and display name to manager, for all endpoints.
+ *
+ * Revision 2.21  2004/04/26 06:30:34  rjongbloed
  * Added ability to specify more than one defualt listener for an endpoint,
  *   required by SIP which listens on both UDP and TCP.
  *
@@ -122,7 +125,8 @@ OpalEndPoint::OpalEndPoint(OpalManager & mgr,
   : manager(mgr),
     prefixName(prefix),
     attributeBits(attributes),
-    defaultLocalPartyName(PProcess::Current().GetUserName())
+    defaultLocalPartyName(manager.GetDefaultUserName()),
+    defaultDisplayName(manager.GetDefaultDisplayName())
 {
   manager.AttachEndPoint(this);
 
