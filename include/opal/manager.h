@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2016  2002/11/10 11:33:17  robertj
+ * Revision 1.2017  2003/03/06 03:57:47  robertj
+ * IVR support (work in progress) requiring large changes everywhere.
+ *
+ * Revision 2.15  2002/11/10 11:33:17  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.14  2002/09/16 02:52:35  robertj
@@ -148,6 +151,12 @@ class OpalManager : public PObject
     void RemoveEndPoint(
       OpalEndPoint * endpoint
     );
+
+    /**Find an endpoint instance that is using teh specified prefix.
+      */
+    OpalEndPoint * FindEndPoint(
+      const PString & prefix
+    );
   //@}
 
   /**@name Call management */
@@ -159,7 +168,7 @@ class OpalManager : public PObject
        The A party and B party strings indicate the protocol and address of
        the party to call in the style of a URL. The A party is the initiator
        of the call and the B party is the remote system being called. See the
-       SetUpConnection() function for more details on the format of these
+       MakeConnection() function for more details on the format of these
        strings.
 
        The token returned is a unique identifier for the call that allows an
@@ -240,7 +249,7 @@ class OpalManager : public PObject
 
        Note that there is not a one to one relationship with the
        OnEstablishedCall() function. This function may be called without that
-       function being called. For example if SetUpConnection() was used but
+       function being called. For example if MakeConnection() was used but
        the call never completed.
 
        The default behaviour does nothing.
@@ -339,7 +348,7 @@ class OpalManager : public PObject
 
        The default behaviour is pure.
      */
-    virtual BOOL SetUpConnection(
+    virtual BOOL MakeConnection(
       OpalCall & call,        /// Owner of connection
       const PString & party   /// Party to call
     );
@@ -387,7 +396,7 @@ class OpalManager : public PObject
     /**Call back for remote party being alerted on outgoing call.
        This function is called after the connection is informed that the
        remote endpoint is "ringing". Generally some time after the
-       SetUpConnection() function was called, this is function is called.
+       MakeConnection() function was called, this is function is called.
 
        If FALSE is returned the connection is aborted.
 
@@ -586,8 +595,10 @@ class OpalManager : public PObject
         PCLASSINFO(RouteEntry, PObject);
       public:
         RouteEntry(const PString & pat, const PString dest);
-        PRegularExpression pattern;
+        void PrintOn(ostream & strm) const;
+        PString            pattern;
         PString            destination;
+        PRegularExpression regex;
     };
     PLIST(RouteTable, RouteEntry);
 

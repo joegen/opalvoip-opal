@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2036  2003/01/07 04:39:53  robertj
+ * Revision 1.2037  2003/03/06 03:57:47  robertj
+ * IVR support (work in progress) requiring large changes everywhere.
+ *
+ * Revision 2.35  2003/01/07 04:39:53  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.34  2002/11/10 22:59:49  robertj
@@ -1184,8 +1187,6 @@
 #include <codec/rfc2833.h>
 
 
-PLIST(H245_OpenLogicalChannel_List, H245_OpenLogicalChannel);
-
 const PTimeInterval MonitorCallStatusTime(0, 10); // Seconds
 
 #define new PNEW
@@ -1262,6 +1263,8 @@ const char * const H323Connection::FastStartStateNames[NumFastStartStates] = {
 H323Connection::H323Connection(OpalCall & call,
                                H323EndPoint & ep,
                                const PString & token,
+                               const PString & alias,
+                               const H323TransportAddress & address,
                                unsigned options)
   : OpalConnection(call, ep, token),
     endpoint(ep),
@@ -1270,6 +1273,13 @@ H323Connection::H323Connection(OpalCall & call,
     connectedTime(0),
     callEndTime(0)
 {
+  if (alias.IsEmpty())
+    remotePartyName = remotePartyAddress = address;
+  else {
+    remotePartyName = alias;
+    remotePartyAddress = alias + '@' + address;
+  }
+
   mediaStreams.DisallowDeleteObjects();
 
   distinctiveRing = 0;
@@ -1399,21 +1409,6 @@ H323Connection::~H323Connection()
 }
 
 
-OpalConnection::Phases H323Connection::GetPhase() const
-{
-  static Phases mapping[] = {
-    SetUpPhase,
-    SetUpPhase,
-    SetUpPhase,
-    AlertingPhase,
-    ConnectedPhase,
-    EstablishedPhase,
-    ReleasedPhase
-  };
-  return mapping[connectionState];
-}
-
-
 void H323Connection::SetCallEndReason(CallEndReason reason, PSyncPoint * sync)
 {
   OpalConnection::SetCallEndReason(reason, sync);
@@ -1465,6 +1460,7 @@ void H323Connection::CleanUpOnCallEnd()
   LockOnRelease();
 
   connectionState = ShuttingDownConnection;
+  phase = ReleasedPhase;
 
   // Unblock sync points
   digitsWaitFlag.Signal();
@@ -1925,10 +1921,10 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
 
   // Anything else we need from setup PDU
   localDestinationAddress = setupPDU.GetDestinationAlias(TRUE);
-  mediaWaitForConnect = setup.m_mediaWaitForConnect;
+  if (signallingChannel->GetLocalAddress().IsEquivalent(localDestinationAddress))
+    localDestinationAddress = '*';
 
-  // Get the local capabilities before fast start or tunnelled TCS is handled
-  OnSetLocalCapabilities();
+  mediaWaitForConnect = setup.m_mediaWaitForConnect;
 
   // Send back a H323 Call Proceeding PDU in case OnIncomingCall() takes a while
   PTRACE(3, "H225\tSending call proceeding PDU");
@@ -1943,74 +1939,7 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
       if (!WriteSignalPDU(callProceedingPDU))
         return FALSE;
     }
-  }
 
-  // See if remote endpoint wants to start fast
-  H245_OpenLogicalChannel_List olcList;
-  if ((fastStartState != FastStartDisabled) && setup.HasOptionalField(H225_Setup_UUIE::e_fastStart)) {
-    // The first time through just collects OLC structures and builds the
-    // possible capability tables from them.
-
-    PTRACE(3, "H225\tFast start detected");
-
-    H323Capabilities allCapabilities;
-    allCapabilities.AddAllCapabilities(endpoint, 0, 0, "*");
-
-    // Extract capabilities from the fast start OpenLogicalChannel structures
-    for (i = 0; i < setup.m_fastStart.GetSize(); i++) {
-      H245_OpenLogicalChannel * olc = new H245_OpenLogicalChannel;
-      if (setup.m_fastStart[i].DecodeSubType(*olc)) {
-        PTRACE(4, "H225\tFast start open:\n  " << setprecision(2) << *olc);
-
-        // Add to capability list, if we know of the data type
-        const H245_DataType * dataType;
-        const H245_H2250LogicalChannelParameters * param;
-        BOOL isTransmitter = olc->HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters);
-        if (isTransmitter) {
-          dataType = &olc->m_reverseLogicalChannelParameters.m_dataType;
-          param = &(H245_H2250LogicalChannelParameters &)
-                            olc->m_reverseLogicalChannelParameters.m_multiplexParameters;
-        }
-        else {
-          dataType = &olc->m_forwardLogicalChannelParameters.m_dataType;
-          param = &(H245_H2250LogicalChannelParameters &)
-                            olc->m_forwardLogicalChannelParameters.m_multiplexParameters;
-        }
-
-        H323Capability * capability = allCapabilities.FindCapability(*dataType);
-        if (capability != NULL) {
-          if (capability->OnReceivedPDU(*dataType, !isTransmitter)) {
-            unsigned id = capability->GetDefaultSessionID()-1;
-            if (isTransmitter) {
-              if (remoteCapabilities.FindCapability(*capability) == NULL)
-                remoteCapabilities.SetCapability(0, id, remoteCapabilities.Copy(*capability));
-            }
-            else {
-              if (localCapabilities.FindCapability(*capability) == NULL)
-                localCapabilities.SetCapability(0, id, localCapabilities.Copy(*capability));
-            }
-            mediaTransportAddresses.SetAt((unsigned)param->m_sessionID,
-                                          new H323TransportAddress(param->m_mediaControlChannel));
-            olcList.Append(olc);
-          }
-          else {
-            PTRACE(1, "H225\tUnsupported data type in fast start PDU.");
-            delete olc;
-          }
-        }
-        else {
-          PTRACE(1, "H225\tUnknown data type in fast start PDU.");
-          delete olc;
-        }
-      }
-      else {
-        PTRACE(1, "H225\tInvalid fast start PDU decode:\n  " << *olc);
-        delete olc;
-      }
-    }
-  }
-
-  if (!isConsultationTransfer) {
     /** Here is a spot where we should wait in case of Call Intrusion
 	for CIPL from other endpoints 
 	if (isCallIntrusion) return TRUE;
@@ -2066,27 +1995,47 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
     }
   }
 
+  // Get the local capabilities before fast start or tunnelled TCS is handled
+  OnSetLocalCapabilities();
+
   // Check that it has the H.245 channel connection info
   if (setup.HasOptionalField(H225_Setup_UUIE::e_h245Address))
     if (!CreateOutgoingControlChannel(setup.m_h245Address))
       return FALSE;
 
-  // Create channels from the fast start OpenLogicalChannel structures
-  for (i = 0; i < olcList.GetSize(); i++) {
-    unsigned error;
-    H323Channel * channel = CreateLogicalChannel(olcList[i], TRUE, error);
-    if (channel != NULL) {
-      if (channel->GetDirection() == H323Channel::IsTransmitter)
-        channel->SetNumber(logicalChannels->GetNextChannelNumber());
-      fastStartChannels.Append(channel);
+  // See if remote endpoint wants to start fast
+  if ((fastStartState != FastStartDisabled) && setup.HasOptionalField(H225_Setup_UUIE::e_fastStart)) {
+    if (!capabilityExchangeProcedure->HasReceivedCapabilities())
+      remoteCapabilities.RemoveAll();
+    PTRACE(3, "H225\tFast start detected");
+
+    // Extract capabilities from the fast start OpenLogicalChannel structures
+    for (i = 0; i < setup.m_fastStart.GetSize(); i++) {
+      H245_OpenLogicalChannel open;
+      if (setup.m_fastStart[i].DecodeSubType(open)) {
+        PTRACE(4, "H225\tFast start open:\n  " << setprecision(2) << open);
+        unsigned error;
+        H323Channel * channel = CreateLogicalChannel(open, TRUE, error);
+        if (channel != NULL) {
+          if (channel->GetDirection() == H323Channel::IsTransmitter)
+            channel->SetNumber(logicalChannels->GetNextChannelNumber());
+          fastStartChannels.Append(channel);
+        }
+      }
+      else {
+        PTRACE(1, "H225\tInvalid fast start PDU decode:\n  " << open);
+      }
     }
+
+    PTRACE(3, "H225\tOpened " << fastStartChannels.GetSize() << " fast start channels");
+
+    // If we are incapable of ANY of the fast start channels, don't do fast start
+    if (!fastStartChannels.IsEmpty())
+      fastStartState = FastStartResponse;
   }
 
-  PTRACE(3, "H225\tOpened " << fastStartChannels.GetSize() << " fast start channels");
-
-  // If we are incapable of ANY of the fast start channels, don't do fast start
-  if (!fastStartChannels.IsEmpty())
-    fastStartState = FastStartResponse;
+  // OK are now ready to send SETUP to remote protocol
+  ownerCall.OnSetUp(*this);
 
   // Build the reply with the channels we are actually using
   connectPDU = new H323SignalPDU;
@@ -2100,8 +2049,9 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
     if (!isConsultationTransfer) {
       // call the application callback to determine if to answer the call or not
       connectionState = AwaitingLocalAnswer;
+      phase = AlertingPhase;
       AnsweringCall(OnAnswerCall(remotePartyName, setupPDU, *connectPDU));
-	}
+    }
     else
       AnsweringCall(AnswerCallNow);
   }
@@ -2223,6 +2173,7 @@ BOOL H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   if (connectionState == ShuttingDownConnection)
     return FALSE;
   connectionState = HasExecutedSignalConnect;
+  phase = ConnectedPhase;
 
   if (pdu.m_h323_uu_pdu.m_h323_message_body.GetTag() != H225_H323_UU_PDU_h323_message_body::e_connect)
     return FALSE;
@@ -2573,19 +2524,52 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
 }
 
 
+BOOL H323Connection::SetUpConnection()
+{
+  signallingChannel->AttachThread(PThread::Create(PCREATE_NOTIFIER(StartOutgoing), 0,
+                                  PThread::NoAutoDeleteThread,
+                                  PThread::NormalPriority,
+                                  "H225 Caller:%x"));
+  return TRUE;
+}
+
+
+void H323Connection::StartOutgoing(PThread &, INT)
+{
+  PTRACE(3, "H225\tStarted call thread");
+
+  if (!Lock())
+    return;
+
+  PString alias, address;
+  PINDEX at = remotePartyAddress.Find('@');
+  if (at == P_MAX_INDEX)
+    address = remotePartyAddress;
+  else {
+    alias = remotePartyAddress.Left(at);
+    address = remotePartyAddress.Mid(at+1);
+  }
+
+  CallEndReason reason = SendSignalSetup(alias, address);
+
+  // Special case, if we aborted the call then already will be unlocked
+  if (reason != EndedByCallerAbort)
+    Unlock();
+
+  // Check if had an error, clear call if so
+  if (reason != NumCallEndReasons)
+    Release(reason);
+  else
+    HandleSignallingChannel();
+}
+
+
 OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & alias,
-                                                  const H323TransportAddress & address)
+                                                              const H323TransportAddress & address)
 {
   // Start the call, first state is asking gatekeeper
   connectionState = AwaitingGatekeeperAdmission;
-
-  // Indicate the direction of call.
-  if (alias.IsEmpty())
-    remotePartyName = remotePartyAddress = address;
-  else {
-    remotePartyName = alias;
-    remotePartyAddress = alias + '@' + address;
-  }
+  phase = SetUpPhase;
 
   // Start building the setup PDU to get various ID's
   H323SignalPDU setupPDU;
@@ -2683,6 +2667,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
 
   // Do the transport connect
   connectionState = AwaitingTransportConnect;
+  phase = SetUpPhase;
 
   // Release the mutex as can deadlock trying to clear call during connect.
   Unlock();
@@ -2696,6 +2681,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   // See if transport connect failed, abort if so.
   if (connectFailed) {
     connectionState = NoConnectionActive;
+    phase = UninitialisedPhase;
     switch (signallingChannel->GetErrorNumber()) {
       case ENETUNREACH :
         return EndedByUnreachable;
@@ -2794,6 +2780,9 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   // Set timeout for remote party to answer the call
   signallingChannel->SetReadTimeout(endpoint.GetSignallingChannelCallTimeout());
 
+  connectionState = AwaitingSignalConnect;
+  phase = AlertingPhase;
+
   return NumCallEndReasons;
 }
 
@@ -2881,6 +2870,7 @@ BOOL H323Connection::SetConnected()
 
   // Set flag that we are up to CONNECT stage
   connectionState = HasExecutedSignalConnect;
+  phase = ConnectedPhase;
 
   h450dispatcher->AttachToConnect(*connectPDU);
 
@@ -3923,6 +3913,7 @@ BOOL H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remoteCaps
     if (transmitterSidePaused) {
       transmitterSidePaused = FALSE;
       connectionState = HasExecutedSignalConnect;
+      phase = ConnectedPhase;
       capabilityExchangeProcedure->Start(TRUE);
     }
     else {
@@ -4068,6 +4059,7 @@ void H323Connection::InternalEstablishedConnectionCheck()
     OnSelectLogicalChannels();
 
   connectionState = EstablishedConnection;
+  phase = EstablishedPhase;
   OnEstablished();
 }
 
@@ -4098,17 +4090,18 @@ BOOL H323Connection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForm
 
 OpalMediaStream * H323Connection::CreateMediaStream(BOOL isSource, unsigned sessionID)
 {
-  if (isSource || fastStartedTransmitMediaStream == NULL) {
-    if (ownerCall.IsMediaBypassPossible(*this, sessionID))
-      return new OpalNullMediaStream(isSource, sessionID);
-    return new OpalRTPMediaStream(isSource, *GetSession(sessionID),
-                                  endpoint.GetManager().GetMinAudioJitterDelay(),
-                                  endpoint.GetManager().GetMaxAudioJitterDelay());
+  if (!isSource && fastStartedTransmitMediaStream != NULL) {
+    OpalMediaStream * stream = fastStartedTransmitMediaStream;
+    fastStartedTransmitMediaStream = NULL;
+    return stream;
   }
 
-  OpalMediaStream * stream = fastStartedTransmitMediaStream;
-  fastStartedTransmitMediaStream = NULL;
-  return stream;
+  if (ownerCall.IsMediaBypassPossible(*this, sessionID))
+    return new OpalNullMediaStream(isSource, sessionID);
+
+  return new OpalRTPMediaStream(isSource, *GetSession(sessionID),
+                                endpoint.GetManager().GetMinAudioJitterDelay(),
+                                endpoint.GetManager().GetMaxAudioJitterDelay());
 }
 
 
@@ -4366,7 +4359,6 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
   const H245_H2250LogicalChannelParameters * param;
   const H245_DataType * dataType;
   H323Channel::Directions direction;
-  H323Capability * capability;
 
   if (startingFast && open.HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters)) {
     if (open.m_reverseLogicalChannelParameters.m_multiplexParameters.GetTag() !=
@@ -4382,7 +4374,6 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
     param = &(const H245_H2250LogicalChannelParameters &)
                       open.m_reverseLogicalChannelParameters.m_multiplexParameters;
     direction = H323Channel::IsTransmitter;
-    capability = remoteCapabilities.FindCapability(*dataType);
   }
   else {
     if (open.m_forwardLogicalChannelParameters.m_multiplexParameters.GetTag() !=
@@ -4398,10 +4389,10 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
     param = &(const H245_H2250LogicalChannelParameters &)
                       open.m_forwardLogicalChannelParameters.m_multiplexParameters;
     direction = H323Channel::IsReceiver;
-    capability = localCapabilities.FindCapability(*dataType);
   }
 
   // See if datatype is supported
+  H323Capability * capability = localCapabilities.FindCapability(*dataType);
   if (capability == NULL) {
     errorCode = H245_OpenLogicalChannelReject_cause::e_unknownDataType;
     PTRACE(2, "H323\tCreateLogicalChannel - unknown data type");
@@ -4455,16 +4446,19 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
 
   RTP_Session * session;
 
-  if (param != NULL)
-    session = UseSession(param->m_sessionID, param->m_mediaControlChannel);
-  else {
-    // Make a fake transmprt address from the connection so gets initialised with
-    // the transport type (IP, IPX, multicast etc).
-    H323TransportAddress h323Addr = GetControlChannel().GetLocalAddress();
-    H245_TransportAddress h245Addr;
-    h323Addr.SetPDU(h245Addr);
-    session = UseSession(sessionID, h245Addr);
+  if (param != NULL) {
+    // We only support unicast IP at this time.
+    if (param->m_mediaControlChannel.GetTag() != H245_TransportAddress::e_unicastAddress)
+      return NULL;
+
+    const H245_UnicastAddress & uaddr = param->m_mediaControlChannel;
+    if (uaddr.GetTag() != H245_UnicastAddress::e_iPAddress)
+      return NULL;
+
+    session = UseSession(param->m_sessionID);
   }
+  else
+    session = UseSession(sessionID);
 
   if (session == NULL)
     return NULL;
@@ -4820,23 +4814,8 @@ H323_RTP_Session * H323Connection::GetSessionCallbacks(unsigned sessionID) const
 }
 
 
-RTP_Session * H323Connection::UseSession(unsigned sessionID,
-                                         const H245_TransportAddress & taddr)
+RTP_Session * H323Connection::UseSession(unsigned sessionID)
 {
-  // We only support unicast IP at this time.
-  if (taddr.GetTag() != H245_TransportAddress::e_unicastAddress) {
-    return NULL;
-  }
-
-  const H245_UnicastAddress & uaddr = taddr;
-  if (uaddr.GetTag() != H245_UnicastAddress::e_iPAddress
-#if P_HAS_IPV6
-        && uaddr.GetTag() != H245_UnicastAddress::e_iP6Address
-#endif
-     ) {
-    return NULL;
-  }
-
   RTP_Session * session = rtpSessions.UseSession(sessionID);
   if (session != NULL) {
     return session;

@@ -1,7 +1,7 @@
 /*
- * pcss.h
+ * ivr.h
  *
- * PC Sound System support.
+ * Interactive Voice Response support.
  *
  * Open Phone Abstraction Library (OPAL)
  * Formally known as the Open H323 project.
@@ -24,70 +24,45 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: pcss.h,v $
- * Revision 1.2009  2003/03/06 03:57:47  robertj
+ * $Log: ivr.h,v $
+ * Revision 1.2002  2003/03/06 03:57:47  robertj
  * IVR support (work in progress) requiring large changes everywhere.
- *
- * Revision 2.7  2002/09/16 02:52:35  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 2.6  2002/06/16 02:19:31  robertj
- * Fixed and clarified function for initiating call, thanks Ted Szoczei
- *
- * Revision 2.5  2002/01/22 05:05:16  robertj
- * Revamp of user input API triggered by RFC2833 support
- *
- * Revision 2.4  2001/11/13 06:25:56  robertj
- * Changed SetUpConnection() so returns BOOL as returning
- *   pointer to connection is not useful.
- *
- * Revision 2.3  2001/10/15 04:29:26  robertj
- * Removed answerCall signal and replaced with state based functions.
- *
- * Revision 2.2  2001/08/17 08:33:38  robertj
- * More implementation.
- *
- * Revision 2.1  2001/08/01 05:52:24  robertj
- * Moved media formats list from endpoint to connection.
- *
- * Revision 2.0  2001/07/27 15:48:24  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  */
 
-#ifndef __OPAL_PCSS_H
-#define __OPAL_PCSS_H
+#ifndef __OPAL_IVR_H
+#define __OPAL_IVR_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
 
+#include <ptclib/vxml.h>
 #include <opal/endpoint.h>
 
 
-class OpalPCSSConnection;
+class OpalIVRConnection;
 
 
-/**PC Sound System endpoint.
+/**Interactive Voice Response endpoint.
  */
-class OpalPCSSEndPoint : public OpalEndPoint
+class OpalIVREndPoint : public OpalEndPoint
 {
-    PCLASSINFO(OpalPCSSEndPoint, OpalEndPoint);
+    PCLASSINFO(OpalIVREndPoint, OpalEndPoint);
   public:
   /**@name Construction */
   //@{
     /**Create a new endpoint.
      */
-    OpalPCSSEndPoint(
+    OpalIVREndPoint(
       OpalManager & manager,  /// Manager of all endpoints.
-      const char * prefix = "pc" /// Prefix for URL style address strings
+      const char * prefix = "ivr" /// Prefix for URL style address strings
     );
 
     /**Destroy endpoint.
      */
-    ~OpalPCSSEndPoint();
+    ~OpalIVREndPoint();
   //@}
 
   /**@name Overrides from OpalManager */
@@ -133,130 +108,53 @@ class OpalPCSSEndPoint : public OpalEndPoint
     /**Create a connection for the PCSS endpoint.
        The default implementation is to create a OpalPCSSConnection.
       */
-    virtual OpalPCSSConnection * CreateConnection(
-      OpalCall & call,    /// Owner of connection
-      const PString & playDevice, /// Sound channel play device
-      const PString & recordDevice, /// Sound channel record device
-      void * userData     /// Arbitrary data to pass to connection
+    virtual OpalIVRConnection * CreateConnection(
+      OpalCall & call,        /// Owner of connection
+      const PString & token,  /// Call token for new connection
+      void * userData,        /// Arbitrary data to pass to connection
+      const PString & vxml    /// vxml to execute
     );
   //@}
 
-  /**@name User Interface operations */
+  /**@name Customisation call backs */
   //@{
-    /**Call back to get the destination for outgoing call.
-       If FALSE is returned the call is aborted.
-
-       The default implementation is pure.
+    /**Create a unique token for a new conection.
       */
-    virtual PString OnGetDestination(
-      const OpalPCSSConnection & connection /// Connection having event
-    ) = 0;
-
-    /**Call back to indicate that remote is ringing.
-       If FALSE is returned the call is aborted.
-
-       The default implementation is pure.
-      */
-    virtual void OnShowIncoming(
-      const OpalPCSSConnection & connection /// Connection having event
-    ) = 0;
-
-    /**Accept the incoming connection.
-      */
-    virtual void AcceptIncomingConnection(
-      const PString & connectionToken /// Token of connection to accept call
-    );
-
-    /**Call back to indicate that remote is ringing.
-       If FALSE is returned the call is aborted.
-
-       The default implementation is pure.
-      */
-    virtual BOOL OnShowOutgoing(
-      const OpalPCSSConnection & connection /// Connection having event
-    ) = 0;
-
-    /**Call back to indicate that the remote user has indicated something.
-       If FALSE is returned the call is aborted.
-
-       The default implementation does nothing.
-      */
-    virtual BOOL OnShowUserInput(
-      const OpalPCSSConnection & connection, /// Connection having event
-      const PString & indication
-    );
+    virtual PString CreateConnectionToken();
   //@}
 
-  /**@name Member variable access */
-  //@{
-    /**Set the name for the sound channel to be used for output.
-       If the name is not suitable for use with the PSoundChannel class then
-       the function will return FALSE and not change the device.
-
-       This defaults to the value of the PSoundChannel::GetDefaultDevice()
-       function.
-     */
-    virtual BOOL SetSoundChannelPlayDevice(const PString & name);
-
-    /**Get the name for the sound channel to be used for output.
-       This defaults to the value of the PSoundChannel::GetDefaultDevice()
-       function.
-     */
-    const PString & GetSoundChannelPlayDevice() const { return soundChannelPlayDevice; }
-
-    /**Set the name for the sound channel to be used for input.
-       If the name is not suitable for use with the PSoundChannel class then
-       the function will return FALSE and not change the device.
-
-       This defaults to the value of the PSoundChannel::GetDefaultDevice()
-       function.
-     */
-    virtual BOOL SetSoundChannelRecordDevice(const PString & name);
-
-    /**Get the name for the sound channel to be used for input.
-       This defaults to the value of the PSoundChannel::GetDefaultDevice()
-       function.
-     */
-    const PString & GetSoundChannelRecordDevice() const { return soundChannelRecordDevice; }
-
-    /**Get default the sound channel buffer depth.
-      */
-    unsigned GetSoundChannelBufferDepth() const { return soundChannelBuffers; }
-
-    /**Set the default sound channel buffer depth.
-      */
-    void SetSoundChannelBufferDepth(
-      unsigned depth    // New depth
+    const PString & GetDefaultVXML() const { return defaultVXML; }
+    void SetDefaultVXML(
+      const PString & vxml
     );
-  //@}
 
   protected:
-    PString  soundChannelPlayDevice;
-    PString  soundChannelRecordDevice;
-    unsigned soundChannelBuffers;
+    unsigned nextTokenNumber;
+    PString  defaultVXML;
 };
 
 
-/**PC Sound System connection.
+/**Interactive Voice Response connection.
  */
-class OpalPCSSConnection : public OpalConnection
+class OpalIVRConnection : public OpalConnection
 {
-    PCLASSINFO(OpalPCSSConnection, OpalConnection);
+    PCLASSINFO(OpalIVRConnection, OpalConnection);
   public:
   /**@name Construction */
   //@{
     /**Create a new endpoint.
      */
-    OpalPCSSConnection(
-      OpalCall & call,              /// Owner calll for connection
-      OpalPCSSEndPoint & endpoint,  /// Owner endpoint for connection
-      const PString & playDevice,   /// Sound channel play device
-      const PString & recordDevice  /// Sound channel record device
+    OpalIVRConnection(
+      OpalCall & call,            /// Owner calll for connection
+      OpalIVREndPoint & endpoint, /// Owner endpoint for connection
+      const PString & token,      /// Token for connection
+      void * userData,            /// Arbitrary data to pass to connection
+      const PString & vxml        /// vxml to execute
     );
 
     /**Destroy endpoint.
      */
-    ~OpalPCSSConnection();
+    ~OpalIVRConnection();
   //@}
 
   /**@name Overrides from OpalConnection */
@@ -342,19 +240,53 @@ class OpalPCSSConnection : public OpalConnection
       */
     virtual void InitiateCall();
 
-    /**Accept the incoming connection.
-      */
-    virtual void AcceptIncoming();
-
-
   protected:
-    OpalPCSSEndPoint & endpoint;
-    PString            soundChannelPlayDevice;
-    PString            soundChannelRecordDevice;
+    OpalIVREndPoint & endpoint;
+    PVXMLSession      vxmlSession;
 };
 
 
-#endif // __OPAL_PCSS_H
+/**This class describes a media stream that transfers data to/from an IVR
+   vxml session.
+  */
+class OpalIVRMediaStream : public OpalRawMediaStream
+{
+    PCLASSINFO(OpalIVRMediaStream, OpalRawMediaStream);
+  public:
+  /**@name Construction */
+  //@{
+    /**Construct a new media stream for IVR session.
+      */
+    OpalIVRMediaStream(
+      BOOL isSourceStream,    /// Direction of I/O for stream
+      unsigned sessionID,     /// Session ID for media stream
+      PVXMLSession & vxml     /// vxml session to use
+    );
+  //@}
+
+  /**@name Overrides of OpalMediaStream class */
+  //@{
+    /**Open the media stream using the media format.
+
+       The default behaviour simply sets the member variable "mediaFormat"
+       and "defaultDataSize".
+      */
+    virtual BOOL Open(
+      const OpalMediaFormat & format /// Media format to select
+    );
+
+    /**Indicate if the media stream is synchronous.
+       Returns FALSE for IVR streams.
+      */
+    virtual BOOL IsSynchronous() const;
+  //@}
+
+  protected:
+    PVXMLSession & vxmlSession;
+};
+
+
+#endif // __OPAL_IVR_H
 
 
 // End of File ///////////////////////////////////////////////////////////////

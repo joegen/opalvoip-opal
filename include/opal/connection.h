@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2020  2003/01/07 04:39:53  robertj
+ * Revision 1.2021  2003/03/06 03:57:47  robertj
+ * IVR support (work in progress) requiring large changes everywhere.
+ *
+ * Revision 2.19  2003/01/07 04:39:53  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.18  2002/11/10 11:33:17  robertj
@@ -227,6 +230,7 @@ class OpalConnection : public PObject
     void Unlock();
 
     enum Phases {
+      UninitialisedPhase,
       SetUpPhase,
       AlertingPhase,
       ConnectedPhase,
@@ -238,10 +242,8 @@ class OpalConnection : public PObject
     /**Get the phase of the connection.
        This indicates the current phase of the connection sequence. Whether
        all phases and the transitions between phases is protocol dependent.
-
-       The default bahaviour is pure.
       */
-    virtual Phases GetPhase() const = 0;
+    Phases GetPhase() const { return phase; }
 
     /**Get the call clearand reason for this connection shutting down.
        Note that this function is only generally useful in the
@@ -305,6 +307,14 @@ class OpalConnection : public PObject
        The default behaviour calls the OpalManager function of the same name.
      */
     virtual BOOL OnIncomingConnection();
+
+    /**Start an outgoing connection.
+       This function will initiate the connection to the remote entity, for
+       example in H.323 it sends a SETUP, in SIP it sends an INVITE etc.
+
+       The default behaviour is pure.
+      */
+    virtual BOOL SetUpConnection() = 0;
 
     /**Call back for remote party being alerted.
        This function is called after the connection is informed that the
@@ -827,6 +837,7 @@ class OpalConnection : public PObject
     OpalCall          & ownerCall;
     OpalEndPoint      & endpoint;
 
+    Phases              phase;
     PString             callToken;
     BOOL                originating;
     PTime               connectionStartTime;

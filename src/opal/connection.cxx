@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2022  2003/01/07 04:39:53  robertj
+ * Revision 1.2023  2003/03/06 03:57:47  robertj
+ * IVR support (work in progress) requiring large changes everywhere.
+ *
+ * Revision 2.21  2003/01/07 04:39:53  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.20  2002/11/10 11:33:19  robertj
@@ -120,7 +123,8 @@
 #if PTRACING
 ostream & operator<<(ostream & out, OpalConnection::Phases phase)
 {
-  const char * const names[OpalConnection::NumPhases] = {
+  static const char * const names[OpalConnection::NumPhases] = {
+    "UninitialisedPhase",
     "SetUpPhase",
     "AlertingPhase",
     "ConnectedPhase",
@@ -172,10 +176,12 @@ OpalConnection::OpalConnection(OpalCall & call,
                                const PString & token)
   : ownerCall(call),
     endpoint(ep),
-    callToken(token)
+    callToken(token),
+    remotePartyName(token)
 {
   PTRACE(3, "OpalCon\tCreated connection " << *this);
 
+  phase = UninitialisedPhase;
   originating = FALSE;
   callEndReason = NumCallEndReasons;
   detectInBandDTMF = !endpoint.GetManager().DetectInBandDTMFDisabled();

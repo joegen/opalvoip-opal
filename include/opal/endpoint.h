@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2014  2002/11/10 11:33:17  robertj
+ * Revision 1.2015  2003/03/06 03:57:47  robertj
+ * IVR support (work in progress) requiring large changes everywhere.
+ *
+ * Revision 2.13  2002/11/10 11:33:17  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.12  2002/09/16 02:52:35  robertj
@@ -203,7 +206,7 @@ class OpalEndPoint : public PObject
   /**@name Connection management */
   //@{
     /**Set up a connection to a remote party.
-       This is called from the OpalManager::SetUpConnection() function once
+       This is called from the OpalManager::MakeConnection() function once
        it has determined that this is the endpoint for the protocol.
 
        The general form for this party parameter is:
@@ -231,7 +234,7 @@ class OpalEndPoint : public PObject
 
        The default behaviour is pure.
      */
-    virtual BOOL SetUpConnection(
+    virtual BOOL MakeConnection(
       OpalCall & call,        /// Owner of connection
       const PString & party,  /// Remote party to call
       void * userData         /// Arbitrary data to pass to connection
@@ -265,7 +268,7 @@ class OpalEndPoint : public PObject
     /**Call back for remote party being alerted.
        This function is called after the connection is informed that the
        remote endpoint is "ringing". Generally some time after the
-       SetUpConnection() function was called, this is function is called.
+       MakeConnection() function was called, this is function is called.
 
        If FALSE is returned the connection is aborted.
 
@@ -316,7 +319,7 @@ class OpalEndPoint : public PObject
 
        Note that there is not a one to one relationship with the
        OnEstablishedConnection() function. This function may be called without
-       that function being called. For example if SetUpConnection() was used
+       that function being called. For example if MakeConnection() was used
        but the call never completed.
 
        The return value indicates if the connection object is to be deleted. A
@@ -372,7 +375,7 @@ class OpalEndPoint : public PObject
 
     /**Find a connection that uses the specified token.
        This searches the endpoint for the connection that contains the token
-       as provided by functions such as SetUpConnection().
+       as provided by functions such as MakeConnection().
 
        Note the caller of this function MUSt call the OpalConnection::Unlock()
        function if this function returns a non-NULL pointer. If it does not

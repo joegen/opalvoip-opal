@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2019  2002/11/11 06:52:01  robertj
+ * Revision 1.2020  2003/03/06 03:57:47  robertj
+ * IVR support (work in progress) requiring large changes everywhere.
+ *
+ * Revision 2.18  2002/11/11 06:52:01  robertj
  * Added correct flag for including static global variables.
  *
  * Revision 2.17  2002/11/10 11:33:17  robertj
@@ -219,6 +222,8 @@ void SimpleOpalProcess::Main()
              "-udp-base:"
              "-udp-max:"
 	     "-use-long-mime."
+             "V-no-ivr."
+             "x-vxml:"
           , FALSE);
 
 
@@ -269,6 +274,10 @@ void SimpleOpalProcess::Main()
             "  -s --sound device       : Select sound input/output device.\n"
             "     --sound-in device    : Select sound input device.\n"
             "     --sound-out device   : Select sound output device.\n"
+            "\n"
+            "IVR options:\n"
+            "  -V --no-ivr             : Disable IVR.\n"
+            "  -x --vxml file          : Set vxml file to use for IVR.\n"
             "\n"
             "IP options:\n"
             "     --tcp-base n         : Set TCP port base (default 0)\n"
@@ -356,6 +365,7 @@ MyManager::MyManager()
   pcssEP = NULL;
   h323EP = NULL;
   sipEP  = NULL;
+  ivrEP  = NULL;
 }
 
 
@@ -607,6 +617,20 @@ BOOL MyManager::Initialise(PArgList & args)
       sipEP->Register(args.GetOptionString('r'));
   }
 
+
+  ///////////////////////////////////////
+  // Create IVR protocol handler
+
+  if (!args.HasOption('V')) {
+    ivrEP = new OpalIVREndPoint(*this);
+    if (args.HasOption('x'))
+      ivrEP->SetDefaultVXML(args.GetOptionString('x'));
+  }
+
+
+  ///////////////////////////////////////
+  // Set the dial peers
+
   if (args.HasOption('d')) {
     if (!SetRouteTable(args.GetOptionString('d').Lines())) {
       cerr <<  "No legal entries in dial peer!" << endl;
@@ -624,6 +648,11 @@ BOOL MyManager::Initialise(PArgList & args)
       AddRouteEntry("pots:.*\\*.*\\*.* = h323:<dn2ip>");
       AddRouteEntry("pots:.*           = h323:<da>");
       AddRouteEntry("pcss:.*           = h323:<da>");
+    }
+
+    if (ivrEP != NULL) {
+      AddRouteEntry("h323:# = ivr:");
+      AddRouteEntry("sip:#  = ivr:");
     }
 
     if (potsEP != NULL) {
