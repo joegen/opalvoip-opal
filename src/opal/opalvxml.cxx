@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalvxml.cxx,v $
- * Revision 1.2009  2004/06/22 06:27:58  csoutheren
+ * Revision 1.2010  2004/06/22 11:01:16  csoutheren
+ * Fixed to compile on Linux
+ *
+ * Revision 2.8  2004/06/22 06:27:58  csoutheren
  * Updated for new abstract factory implementation
  *
  * Revision 2.7  2004/04/18 13:36:15  rjongbloed
@@ -143,8 +146,9 @@ OpalVXMLSession::OpalVXMLSession(OpalConnection * _conn, PTextToSpeech * tts, BO
   if (tts == NULL) {
     PGenericFactory<PTextToSpeech>::KeyList_T engines = PGenericFactory<PTextToSpeech>::GetKeyList();
     if (engines.size() != 0) {
+    PString name;
 #ifdef _WIN32
-      PString name = "Microsoft SAPI";
+      name = "Microsoft SAPI";
       if (std::find(engines.begin(), engines.end(), name) == engines.end())
 #endif
         name = engines[0];
