@@ -1,4 +1,4 @@
-*.opt *.plg *.ncb *.Tags.WW
+*.suo *.opt *.plg *.ncb *.Tags.WW
 lib html
 .asnparser.version
 config.log config.status
