@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2011  2002/03/27 02:21:51  robertj
+ * Revision 1.2012  2002/07/01 04:56:32  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.10  2002/03/27 02:21:51  robertj
  * Updated to OpenH323 v1.8.4
  *
  * Revision 2.9  2002/03/22 06:57:49  robertj
@@ -62,6 +65,20 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.54  2002/06/04 07:16:14  robertj
+ * Fixed user indications (DTMF) not working on some endpoints which indicated
+ *   receiveAndTransmitUserInputCapability in TCS.
+ *
+ * Revision 1.53  2002/05/29 03:55:21  robertj
+ * Added protocol version number checking infrastructure, primarily to improve
+ *   interoperability with stacks that are unforgiving of new features.
+ *
+ * Revision 1.52  2002/05/14 23:20:03  robertj
+ * Fixed incorrect comparison in non-standard capability, tnanks Vyacheslav Frolov
+ *
+ * Revision 1.51  2002/05/10 05:45:41  robertj
+ * Added the max bit rate field to the data channel capability class.
  *
  * Revision 1.50  2002/03/26 05:51:12  robertj
  * Forced RFC2833 to payload type 101 as some IOS's go nuts otherwise.
@@ -443,6 +460,12 @@ BOOL H323Capability::OnReceivedPDU(const H245_Capability & cap)
 }
 
 
+BOOL H323Capability::IsUsable(const H323Connection &) const
+{
+  return TRUE;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 H323RealTimeCapability::H323RealTimeCapability(const OpalMediaFormat & fmt)
@@ -599,7 +622,7 @@ PObject::Comparison H323NonStandardCapabilityInfo::CompareParam(const H245_NonSt
 
   if (h221.m_manufacturerCode < (unsigned)manufacturerCode)
     return PObject::LessThan;
-  if (h221.m_manufacturerCode < (unsigned)manufacturerCode)
+  if (h221.m_manufacturerCode > (unsigned)manufacturerCode)
     return PObject::GreaterThan;
 
 
@@ -757,7 +780,7 @@ BOOL H323AudioCapability::OnReceivedPDU(const H245_Capability & cap)
   H323Capability::OnReceivedPDU(cap);
 
   if (cap.GetTag() != H245_Capability::e_receiveAudioCapability &&
-    cap.GetTag() != H245_Capability::e_receiveAndTransmitAudioCapability)
+      cap.GetTag() != H245_Capability::e_receiveAndTransmitAudioCapability)
     return FALSE;
 
   unsigned packetSize = txFramesInPacket;
@@ -1076,6 +1099,13 @@ BOOL H323NonStandardVideoCapability::IsNonStandardMatch(const H245_NonStandardPa
 
 /////////////////////////////////////////////////////////////////////////////
 
+H323DataCapability::H323DataCapability(const OpalMediaFormat & fmt, unsigned rate)
+  : H323Capability(fmt),
+    maxBitRate(rate)
+{
+}
+
+
 H323Capability::MainTypes H323DataCapability::GetMainType() const
 {
   return e_Data;
@@ -1091,21 +1121,27 @@ unsigned H323DataCapability::GetDefaultSessionID() const
 BOOL H323DataCapability::OnSendingPDU(H245_Capability & cap) const
 {
   cap.SetTag(H245_Capability::e_receiveAndTransmitDataApplicationCapability);
-  return OnSendingPDU((H245_DataApplicationCapability &)cap);
+  H245_DataApplicationCapability & app = cap;
+  app.m_maxBitRate = maxBitRate;
+  return OnSendingPDU(app);
 }
 
 
 BOOL H323DataCapability::OnSendingPDU(H245_DataType & dataType) const
 {
   dataType.SetTag(H245_DataType::e_data);
-  return OnSendingPDU((H245_DataApplicationCapability &)dataType);
+  H245_DataApplicationCapability & app = dataType;
+  app.m_maxBitRate = maxBitRate;
+  return OnSendingPDU(app);
 }
 
 
 BOOL H323DataCapability::OnSendingPDU(H245_ModeElement & mode) const
 {
   mode.m_type.SetTag(H245_ModeElement_type::e_dataMode);
-  return OnSendingPDU((H245_DataMode &)mode.m_type);
+  H245_DataMode & type = mode.m_type;
+  type.m_bitRate = maxBitRate;
+  return OnSendingPDU(type);
 }
 
 
@@ -1117,7 +1153,9 @@ BOOL H323DataCapability::OnReceivedPDU(const H245_Capability & cap)
       cap.GetTag() != H245_Capability::e_receiveAndTransmitDataApplicationCapability)
     return FALSE;
 
-  return OnReceivedPDU((const H245_DataApplicationCapability &)cap);
+  const H245_DataApplicationCapability & app = cap;
+  maxBitRate = app.m_maxBitRate;
+  return OnReceivedPDU(app);
 }
 
 
@@ -1126,19 +1164,22 @@ BOOL H323DataCapability::OnReceivedPDU(const H245_DataType & dataType, BOOL)
   if (dataType.GetTag() != H245_DataType::e_data)
     return FALSE;
 
-  return OnReceivedPDU((const H245_DataApplicationCapability &)dataType);
+  const H245_DataApplicationCapability & app = dataType;
+  maxBitRate = app.m_maxBitRate;
+  return OnReceivedPDU(app);
 }
 
 
 /////////////////////////////////////////////////////////////////////////////
 
 H323NonStandardDataCapability::H323NonStandardDataCapability(const OpalMediaFormat & fmt,
+                                                             unsigned maxBitRate,
                                                              H323EndPoint & endpoint,
                                                              const BYTE * fixedData,
                                                              PINDEX dataSize,
                                                              PINDEX offset,
                                                              PINDEX length)
-  : H323DataCapability(fmt),
+  : H323DataCapability(fmt, maxBitRate),
     H323NonStandardCapabilityInfo(endpoint,
                                   fixedData != NULL ? fixedData : (const BYTE *)(const char *)fmt,
                                   fixedData != NULL ? dataSize : fmt.GetLength(),
@@ -1149,12 +1190,13 @@ H323NonStandardDataCapability::H323NonStandardDataCapability(const OpalMediaForm
 
 
 H323NonStandardDataCapability::H323NonStandardDataCapability(const OpalMediaFormat & fmt,
+                                                             unsigned maxBitRate,
                                                              const PString & oid,
                                                              const BYTE * fixedData,
                                                              PINDEX dataSize,
                                                              PINDEX offset,
                                                              PINDEX length)
-  : H323DataCapability(fmt),
+  : H323DataCapability(fmt, maxBitRate),
     H323NonStandardCapabilityInfo(oid,
                                   fixedData != NULL ? fixedData : (const BYTE *)(const char *)fmt,
                                   fixedData != NULL ? dataSize : fmt.GetLength(),
@@ -1165,6 +1207,7 @@ H323NonStandardDataCapability::H323NonStandardDataCapability(const OpalMediaForm
 
 
 H323NonStandardDataCapability::H323NonStandardDataCapability(const OpalMediaFormat & fmt,
+                                                             unsigned maxBitRate,
                                                              BYTE country,
                                                              BYTE extension,
                                                              WORD maufacturer,
@@ -1172,7 +1215,7 @@ H323NonStandardDataCapability::H323NonStandardDataCapability(const OpalMediaForm
                                                              PINDEX dataSize,
                                                              PINDEX offset,
                                                              PINDEX length)
-  : H323DataCapability(fmt),
+  : H323DataCapability(fmt, maxBitRate),
     H323NonStandardCapabilityInfo(country,
                                   extension,
                                   maufacturer,
@@ -1535,7 +1578,8 @@ BOOL H323_UserInputCapability::OnReceivedPDU(const H245_Capability & pdu)
     return TRUE;
   }
 
-  if (pdu.GetTag() != H245_Capability::e_receiveUserInputCapability)
+  if (pdu.GetTag() != H245_Capability::e_receiveUserInputCapability &&
+      pdu.GetTag() != H245_Capability::e_receiveAndTransmitUserInputCapability)
     return FALSE;
 
   const H245_UserInputCapability & ui = pdu;
@@ -1547,6 +1591,18 @@ BOOL H323_UserInputCapability::OnReceivedPDU(const H245_DataType &, BOOL)
 {
   PTRACE(1, "Codec\tCannot have UserInputCapability in DataType");
   return FALSE;
+}
+
+
+BOOL H323_UserInputCapability::IsUsable(const H323Connection & connection) const
+{
+  if (connection.GetControlVersion() >= 7)
+    return TRUE;
+
+  if (connection.GetRemoteApplication().Find("AltiServ-ITG") != P_MAX_INDEX)
+    return FALSE;
+
+  return subType != SignalToneRFC2833;
 }
 
 
@@ -2098,7 +2154,8 @@ H323Capability * H323Capabilities::FindCapability(H323Capability::MainTypes main
 }
 
 
-void H323Capabilities::BuildPDU(H245_TerminalCapabilitySet & pdu) const
+void H323Capabilities::BuildPDU(const H323Connection & connection,
+                                H245_TerminalCapabilitySet & pdu) const
 {
   PINDEX tableSize = table.GetSize();
   PINDEX setSize = set.GetSize();
@@ -2109,11 +2166,16 @@ void H323Capabilities::BuildPDU(H245_TerminalCapabilitySet & pdu) const
   // Set the table of capabilities
   pdu.IncludeOptionalField(H245_TerminalCapabilitySet::e_capabilityTable);
 
-  pdu.m_capabilityTable.SetSize(tableSize);
+  PINDEX count = 0;
   for (PINDEX i = 0; i < tableSize; i++) {
-    pdu.m_capabilityTable[i].m_capabilityTableEntryNumber = table[i].GetCapabilityNumber();
-    pdu.m_capabilityTable[i].IncludeOptionalField(H245_CapabilityTableEntry::e_capability);
-    table[i].OnSendingPDU(pdu.m_capabilityTable[i].m_capability);
+    H323Capability & capability = table[i];
+    if (capability.IsUsable(connection)) {
+      pdu.m_capabilityTable.SetSize(count+1);
+      H245_CapabilityTableEntry & entry = pdu.m_capabilityTable[count++];
+      entry.m_capabilityTableEntryNumber = capability.GetCapabilityNumber();
+      entry.IncludeOptionalField(H245_CapabilityTableEntry::e_capability);
+      capability.OnSendingPDU(entry.m_capability);
+    }
   }
 
   // Set the sets of compatible capabilities
@@ -2130,8 +2192,14 @@ void H323Capabilities::BuildPDU(H245_TerminalCapabilitySet & pdu) const
       H245_AlternativeCapabilitySet & alt = desc.m_simultaneousCapabilities[middle];
       PINDEX innerSize = set[outer][middle].GetSize();
       alt.SetSize(innerSize);
-      for (PINDEX inner = 0; inner < innerSize; inner++)
-        alt[inner] = set[outer][middle][inner].GetCapabilityNumber();
+      count = 0;
+      for (PINDEX inner = 0; inner < innerSize; inner++) {
+        H323Capability & capability = set[outer][middle][inner];
+        if (capability.IsUsable(connection)) {
+          alt.SetSize(count+1);
+          alt[count++] = capability.GetCapabilityNumber();
+        }
+      }
     }
   }
 }

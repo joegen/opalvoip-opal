@@ -24,7 +24,10 @@
  * Contributor(s): __________________________________
  *
  * $Log: h235auth.cxx,v $
- * Revision 1.2005  2001/10/05 00:22:13  robertj
+ * Revision 1.2006  2002/07/01 04:56:32  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.4  2001/10/05 00:22:13  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.3  2001/08/17 08:31:54  robertj
@@ -35,6 +38,12 @@
  *
  * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 1.9  2002/06/24 00:11:21  robertj
+ * Clarified error message during GRQ authentication.
+ *
+ * Revision 1.8  2002/05/17 03:40:09  robertj
+ * Fixed problems with H.235 authentication on RAS for server and client.
  *
  * Revision 1.7  2001/09/21 04:55:27  robertj
  * Removed redundant code, thanks Chih-Wei Huang
@@ -81,7 +90,7 @@
 H235Authenticator::H235Authenticator()
 {
   enabled = TRUE;
-  sentRandomSequenceNumber = PRandom::Number();
+  sentRandomSequenceNumber = PRandom::Number()&INT_MAX;
 }
 
 
@@ -114,13 +123,6 @@ H235Authenticator::State H235Authenticator::Verify(
 }
 
 
-BOOL H235Authenticator::SetCapability(H225_ArrayOf_AuthenticationMechanism &,
-                                      H225_ArrayOf_PASN_ObjectId &)
-{
-  return FALSE;
-}
-
-
 BOOL H235Authenticator::UseGkAndEpIdentifiers() const
 {
   return FALSE;
@@ -130,6 +132,42 @@ BOOL H235Authenticator::UseGkAndEpIdentifiers() const
 BOOL H235Authenticator::IsActive() const
 {
   return enabled && !password;
+}
+
+
+BOOL H235Authenticator::AddCapability(unsigned mechanism,
+                                      const PString & oid,
+                                      H225_ArrayOf_AuthenticationMechanism & mechanisms,
+                                      H225_ArrayOf_PASN_ObjectId & algorithmOIDs)
+{
+  if (!IsActive()) {
+    PTRACE(2, "RAS\tAuthenticator " << *this
+            << " not active during GRQ SetCapability negotiation");
+    return FALSE;
+  }
+
+  PINDEX i;
+  PINDEX size = mechanisms.GetSize();
+  for (i = 0; i < size; i++) {
+    if (mechanisms[i].GetTag() == mechanism)
+      break;
+  }
+  if (i >= size) {
+    mechanisms.SetSize(size+1);
+    mechanisms[size].SetTag(mechanism);
+  }
+
+  size = algorithmOIDs.GetSize();
+  for (i = 0; i < size; i++) {
+    if (algorithmOIDs[i] == oid)
+      break;
+  }
+  if (i >= size) {
+    algorithmOIDs.SetSize(size+1);
+    algorithmOIDs[size] = oid;
+  }
+
+  return TRUE;
 }
 
 
@@ -246,21 +284,18 @@ H235Authenticator::State H235AuthSimpleMD5::VerifyToken(
 }
 
 
-BOOL H235AuthSimpleMD5::SetCapability(
-                      H225_ArrayOf_AuthenticationMechanism & authenticationCapabilities,
-                      H225_ArrayOf_PASN_ObjectId & algorithmOIDs)
+BOOL H235AuthSimpleMD5::IsCapability(const H235_AuthenticationMechanism & mechansim,
+                                     const PASN_ObjectId & algorithmOID)
 {
-  if (!IsActive())
-    return FALSE;
+  return mechansim.GetTag() == H235_AuthenticationMechanism::e_pwdHash &&
+         algorithmOID.AsString() == OID_MD5;
+}
 
-  PINDEX size = authenticationCapabilities.GetSize();
-  authenticationCapabilities.SetSize(size+1);
-  authenticationCapabilities[size].SetTag(H235_AuthenticationMechanism::e_pwdHash);
 
-  size = algorithmOIDs.GetSize();
-  algorithmOIDs.SetSize(size+1);
-  algorithmOIDs[size] = OID_MD5;
-  return TRUE;
+BOOL H235AuthSimpleMD5::SetCapability(H225_ArrayOf_AuthenticationMechanism & mechanisms,
+                                      H225_ArrayOf_PASN_ObjectId & algorithmOIDs)
+{
+  return AddCapability(H235_AuthenticationMechanism::e_pwdHash, OID_MD5, mechanisms, algorithmOIDs);
 }
 
 
