@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2021  2003/03/07 05:56:47  robertj
+ * Revision 1.2022  2003/03/07 08:18:47  robertj
+ * Fixed naming convention of PC sound system in routing table.
+ *
+ * Revision 2.20  2003/03/07 05:56:47  robertj
  * Changed so a # from whatever source routes to IVR.
  *
  * Revision 2.19  2003/03/06 03:57:47  robertj
@@ -323,20 +326,20 @@ void SimpleOpalProcess::Main()
 "    If SIP is enabled:\n"
 "      pots:.*\\*.*\\*.* = sip:<dn2ip>\n"
 "      pots:.*         = sip:<da>\n"
-"      pcss:.*         = sip:<da>\n"
+"      pc:.*           = sip:<da>\n"
 "\n"
 "    If SIP is not enabled and H.323 is enabled:\n"
 "      pots:.*\\*.*\\*.* = h323:<dn2ip>\n"
 "      pots:.*         = h323:<da>\n"
-"      pcss:.*         = h323:<da>\n"
+"      pc:.*           = h323:<da>\n"
 "\n"
 "    If POTS is enabled:\n"
 "      h323:.* = pots:<da>\n"
 "      sip:.*  = pots:<da>\n"
 "\n"
 "    If POTS is not enabled and the PC sound system is enabled:\n"
-"      h323:.* = pcss:<da>\n"
-"      sip:.*  = pcss:<da>\n"
+"      h323:.* = pc:<da>\n"
+"      sip:.*  = pc:<da>\n"
 "\n"
 "    If IVR is enabled then a # from any protocol will route it it, ie:\n"
 "      .*:#  = ivr:\n"
@@ -648,12 +651,12 @@ BOOL MyManager::Initialise(PArgList & args)
     if (sipEP != NULL) {
       AddRouteEntry("pots:.*\\*.*\\*.* = sip:<dn2ip>");
       AddRouteEntry("pots:.*           = sip:<da>");
-      AddRouteEntry("pcss:.*           = sip:<da>");
+      AddRouteEntry("pc:.*             = sip:<da>");
     }
     else if (h323EP != NULL) {
       AddRouteEntry("pots:.*\\*.*\\*.* = h323:<dn2ip>");
       AddRouteEntry("pots:.*           = h323:<da>");
-      AddRouteEntry("pcss:.*           = h323:<da>");
+      AddRouteEntry("pc:.*             = h323:<da>");
     }
 
     if (ivrEP != NULL)
@@ -664,8 +667,8 @@ BOOL MyManager::Initialise(PArgList & args)
       AddRouteEntry("sip:.*  = pots:<da>");
     }
     else if (pcssEP != NULL) {
-      AddRouteEntry("h323:.* = pcss:<da>");
-      AddRouteEntry("sip:.*  = pcss:<da>");
+      AddRouteEntry("h323:.* = pc:<da>");
+      AddRouteEntry("sip:.*  = pc:<da>");
     }
   }
 
