@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lpc10codec.cxx,v $
- * Revision 1.2003  2001/10/05 00:22:13  robertj
+ * Revision 1.2004  2002/01/22 05:19:27  robertj
+ * Added RTP encoding name string to media format database.
+ * Changed time units to clock rate in Hz.
+ *
+ * Revision 2.2  2001/10/05 00:22:13  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.1  2001/08/01 05:04:28  robertj
@@ -95,11 +99,12 @@ OpalMediaFormat const OpalLPC10(
   OPAL_LPC10,
   OpalMediaFormat::DefaultAudioSessionID,
   RTP_DataFrame::LPC,
+  "LPC",
   TRUE,  // Needs jitter
   2400,  // bits/sec
   BytesPerFrame,
   SamplesPerFrame,
-  OpalMediaFormat::AudioTimeUnits
+  OpalMediaFormat::AudioClockRate
 );
 
 
