@@ -148,6 +148,14 @@ SOURCE=..\opal\mediastrm.cxx
 # End Source File
 # Begin Source File
 
+SOURCE=..\opal\opalvxml.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\opalwavfile.cxx
+# End Source File
+# Begin Source File
+
 SOURCE=..\opal\patch.cxx
 # End Source File
 # Begin Source File
@@ -264,14 +272,6 @@ SOURCE=..\codec\lpc10codec.cxx
 # Begin Source File
 
 SOURCE=..\codec\mscodecs.cxx
-# End Source File
-# Begin Source File
-
-SOURCE=..\opal\opalvxml.cxx
-# End Source File
-# Begin Source File
-
-SOURCE=..\codec\opalwavfile.cxx
 # End Source File
 # Begin Source File
 
@@ -413,6 +413,10 @@ SOURCE=..\..\include\opal\mediastrm.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\include\opal\opalvxml.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\include\opal\patch.h
 # End Source File
 # Begin Source File
@@ -526,10 +530,6 @@ SOURCE=..\..\include\codec\lpc10codec.h
 # Begin Source File
 
 SOURCE=..\..\include\codec\mscodecs.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\include\opal\opalvxml.h
 # End Source File
 # Begin Source File
 
