@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cpp,v $
+ * Revision 1.25  2004/10/03 14:16:34  rjongbloed
+ * Added panels for calling, answering and in call phases.
+ *
  * Revision 1.24  2004/09/29 12:47:39  rjongbloed
  * Added gatekeeper support
  *
@@ -93,6 +96,8 @@
 #include <wx/listctrl.h>
 #include <wx/image.h>
 #include <wx/valgen.h>
+#include <wx/filesys.h>
+#include <wx/fs_zip.h>
 
 #undef LoadMenu // Bizarre but necessary before the xml code
 #include <wx/xrc/xmlres.h>
@@ -181,9 +186,11 @@ DEF_FIELD(DisableH245Tunneling);
 DEF_FIELD(DisableH245inSETUP);
 
 static const char SIPGroup[] = "/SIP";
+DEF_FIELD(SIPProxyUsed);
 DEF_FIELD(SIPProxy);
 DEF_FIELD(SIPProxyUsername);
 DEF_FIELD(SIPProxyPassword);
+DEF_FIELD(RegistrarUsed);
 DEF_FIELD(RegistrarName);
 DEF_FIELD(RegistrarUsername);
 DEF_FIELD(RegistrarPassword);
@@ -263,8 +270,10 @@ void OpenPhoneApp::Main()
 bool OpenPhoneApp::OnInit()
 {
   wxImage::AddHandler(new wxGIFHandler);
+  wxFileSystem::AddHandler(new wxZipFSHandler);
   wxXmlResource::Get()->InitAllHandlers();
-  wxXmlResource::Get()->Load("openphone.xrc");
+  if (!wxXmlResource::Get()->Load("openphone.xrc"))
+    return false;
 
   // Create the main frame window
   MyFrame * frame = new MyFrame();
@@ -311,8 +320,9 @@ MyFrame::MyFrame()
     sipEP(NULL),
 #endif
 #if P_EXPAT
-    ivrEP(NULL)
+    ivrEP(NULL),
 #endif
+    m_callState(IdleState)
 {
   wxConfigBase * config = wxConfig::Get();
   config->SetPath(AppearanceGroup);
@@ -352,6 +362,15 @@ MyFrame::MyFrame()
   };
   menubar->Check(XRCID(ViewMenuNames[i]), true);
   RecreateSpeedDials((SpeedDialViews)i);
+
+  m_answerPanel = new AnswerPanel(*this, m_splitter);
+  m_answerPanel->Show(false);
+
+  m_callingPanel = new CallingPanel(*this, m_splitter);
+  m_callingPanel->Show(false);
+
+  m_inCallPanel = new InCallPanel(*this, m_splitter);
+  m_inCallPanel->Show(false);
 
   // Set up sizer to automatically resize the splitter to size of window
   wxBoxSizer * sizer = new wxBoxSizer(wxVERTICAL);
@@ -456,10 +475,9 @@ void MyFrame::OnClose(wxCloseEvent& event)
 void MyFrame::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
 {
   wxMenuBar * menubar = GetMenuBar();
-  bool inCall = !m_currentCallToken.IsEmpty();
-  menubar->Enable(XRCID("MenuCall"),   !inCall);
-  menubar->Enable(XRCID("MenuAnswer"), !pcssEP->m_incomingConnectionToken);
-  menubar->Enable(XRCID("MenuHangUp"),  inCall);
+  menubar->Enable(XRCID("MenuCall"),    m_callState == IdleState);
+  menubar->Enable(XRCID("MenuAnswer"),  m_callState == RingingState);
+  menubar->Enable(XRCID("MenuHangUp"),  m_callState == InCallState);
 }
 
 
@@ -489,19 +507,13 @@ void MyFrame::OnMenuCall(wxCommandEvent& WXUNUSED(event))
 
 void MyFrame::OnMenuAnswer(wxCommandEvent& WXUNUSED(event))
 {
-  m_currentCallToken = pcssEP->m_incomingConnectionToken;
-  pcssEP->m_incomingConnectionToken.MakeEmpty();
-  pcssEP->AcceptIncomingConnection(m_currentCallToken);
+  AnswerCall();
 }
 
 
 void MyFrame::OnMenuHangUp(wxCommandEvent& WXUNUSED(event))
 {
-  if (m_currentCallToken.IsEmpty())
-    return;
-
-  LogWindow << "Hanging up \"" << m_currentCallToken << '"' << endl;
-  ClearCall(m_currentCallToken);
+  HangUpCall();
 }
 
 
@@ -644,7 +656,7 @@ void MyFrame::EditSpeedDial(int index)
 
     item.m_col = e_AddressColumn;
     item.m_text = dlg.m_Address;
-    m_speedDials->GetItem(item);
+    m_speedDials->SetItem(item);
 
     item.m_col = e_DescriptionColumn;
     item.m_text = dlg.m_Description;
@@ -689,6 +701,8 @@ void MyFrame::MakeCall(const PwxString & address)
   if (address.IsEmpty())
     return;
 
+  SetState(CallingState);
+
   LogWindow << "Calling \"" << address << '"' << endl;
 
   if (potsEP != NULL && potsEP->GetLine("*") != NULL)
@@ -698,18 +712,63 @@ void MyFrame::MakeCall(const PwxString & address)
 }
 
 
+void MyFrame::AnswerCall()
+{
+  if (m_callState != RingingState)
+    return;
+
+  SetState(AnsweringState);
+  pcssEP->AcceptIncomingConnection(m_currentConnectionToken);
+}
+
+
+void MyFrame::RejectCall()
+{
+  if (m_callState != RingingState)
+    return;
+
+  ClearCall(m_currentCallToken);
+  SetState(IdleState);
+}
+
+
+void MyFrame::HangUpCall()
+{
+  if (m_callState == IdleState)
+    return;
+
+  LogWindow << "Hanging up \"" << m_currentCallToken << '"' << endl;
+  ClearCall(m_currentCallToken);
+  SetState(IdleState);
+}
+
+
+void MyFrame::OnRinging(const OpalPCSSConnection & connection)
+{
+  m_currentConnectionToken = connection.GetToken();
+  m_currentCallToken = connection.GetCall().GetToken();
+
+  if (m_autoAnswer)
+    AnswerCall();
+  else {
+    PTime now;
+    LogWindow << "\nIncoming call at " << now.AsString("w h:mma")
+              << " from " << connection.GetRemotePartyName() << endl;
+    SetState(RingingState);
+  }
+}
+
+
 void MyFrame::OnEstablishedCall(OpalCall & call)
 {
   m_currentCallToken = call.GetToken();
-  LogWindow << "In call with " << call.GetPartyB() << " using " << call.GetPartyA() << endl;
+  LogWindow << "Established call with " << call.GetPartyB() << " using " << call.GetPartyA() << endl;
+  SetState(InCallState);
 }
 
 
 void MyFrame::OnClearedCall(OpalCall & call)
 {
-  if (m_currentCallToken == call.GetToken())
-    m_currentCallToken.MakeEmpty();
-
   PString remoteName = '"' + call.GetPartyB() + '"';
   switch (call.GetCallEndReason()) {
     case OpalConnection::EndedByRemoteUser :
@@ -761,6 +820,8 @@ void MyFrame::OnClearedCall(OpalCall & call)
   LogWindow << ", on " << now.AsString("w h:mma") << ". Duration "
             << setprecision(0) << setw(5) << (now - call.GetStartTime())
             << "s." << endl;
+
+  SetState(IdleState);
 }
 
 
@@ -793,10 +854,54 @@ BOOL MyFrame::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & s
 }
 
 
+void MyFrame::SendUserInput(char tone)
+{
+  PSafePtr<OpalCall> call = GetCall();
+  if (call != NULL) {
+    PSafePtr<OpalConnection> connection = call->GetConnection(1);
+    if (connection != NULL) {
+      if (!PIsDescendant(&(*connection), OpalPCSSConnection))
+        connection = call->GetConnection(0);
+      connection->OnUserInputTone(tone, 100);
+    }
+  }
+}
+
 void MyFrame::OnUserInputString(OpalConnection & connection, const PString & value)
 {
   LogWindow << "User input received: \"" << value << '"' << endl;
   OpalManager::OnUserInputString(connection, value);
+}
+
+
+void MyFrame::SetState(CallState newState)
+{
+  m_callState = newState;
+
+  m_speedDials->Show(newState == IdleState);
+  m_answerPanel->Show(newState == RingingState);
+  m_callingPanel->Show(newState == CallingState);
+  m_inCallPanel->Show(newState == InCallState);
+
+  wxWindow * newWindow;
+  switch (newState) {
+    case RingingState :
+      newWindow = m_answerPanel;
+      break;
+
+    case InCallState :
+      newWindow = m_inCallPanel;
+      break;
+
+    case CallingState :
+      newWindow = m_callingPanel;
+      break;
+
+    default :
+      newWindow = m_speedDials;
+  }
+
+  m_splitter->ReplaceWindow(m_splitter->GetWindow1(), newWindow);
 }
 
 
@@ -864,7 +969,7 @@ bool MyFrame::Initialise()
   config->SetPath(GeneralGroup);
   LOAD_FIELD_STR(Username, SetDefaultUserName);
   LOAD_FIELD_STR(DisplayName, SetDefaultDisplayName);
-  LOAD_FIELD_BOOL(AutoAnswer, pcssEP->SetAutoAnswer);
+  LOAD_FIELD_BOOL(AutoAnswer, m_autoAnswer=);
 #if P_EXPAT
   LOAD_FIELD_STR(IVRScript, ivrEP->SetDefaultVXML);
 #endif
@@ -1006,15 +1111,18 @@ bool MyFrame::Initialise()
   config->SetPath(SIPGroup);
   const SIPURL & proxy = sipEP->GetProxy();
   PwxString hostname;
+  config->Read(SIPProxyUsedKey, &m_SIPProxyUsed, false);
   config->Read(SIPProxyKey, &hostname, PwxString(proxy.GetHostName()));
   config->Read(SIPProxyUsernameKey, &username, PwxString(proxy.GetUserName()));
   config->Read(SIPProxyPasswordKey, &password, PwxString(proxy.GetPassword()));
-  sipEP->SetProxy(hostname, username, password);
+  if (m_SIPProxyUsed)
+    sipEP->SetProxy(hostname, username, password);
 
   if (config->Read(RegistrarTimeToLiveKey, &value1))
     sipEP->SetRegistrarTimeToLive(PTimeInterval(0, value1));
 
-  if (config->Read(RegistrarNameKey, &m_registrarName) &&
+  if (config->Read(RegistrarUsedKey, &m_registrarUsed, false) &&
+      config->Read(RegistrarNameKey, &m_registrarName) &&
       config->Read(RegistrarUsernameKey, &m_registrarUser) &&
       config->Read(RegistrarPasswordKey, &m_registrarPassword))
     StartRegistrar();
@@ -1070,14 +1178,18 @@ bool MyFrame::Initialise()
 
 bool MyFrame::StartGatekeeper()
 {
-  LogWindow << "H.323 registration started for " << m_gatekeeperIdentifier;
-  if (!m_gatekeeperIdentifier.IsEmpty() || !m_gatekeeperAddress.IsEmpty())
-    LogWindow << '@';
-  LogWindow << m_gatekeeperAddress << endl;
+  if (m_gatekeeperMode == 0)
+    h323EP->RemoveGatekeeper();
+  else {
+    LogWindow << "H.323 registration started for " << m_gatekeeperIdentifier;
+    if (!m_gatekeeperIdentifier.IsEmpty() || !m_gatekeeperAddress.IsEmpty())
+      LogWindow << '@';
+    LogWindow << m_gatekeeperAddress << endl;
 
-  if (h323EP->UseGatekeeper(m_gatekeeperAddress, m_gatekeeperIdentifier)) {
-    LogWindow << "H.323 registration successful to " << *h323EP->GetGatekeeper() << endl;
-    return true;
+    if (h323EP->UseGatekeeper(m_gatekeeperAddress, m_gatekeeperIdentifier)) {
+      LogWindow << "H.323 registration successful to " << *h323EP->GetGatekeeper() << endl;
+      return true;
+    }
   }
 
   return m_gatekeeperMode < 2;
@@ -1086,10 +1198,18 @@ bool MyFrame::StartGatekeeper()
 
 bool MyFrame::StartRegistrar()
 {
-  if (!sipEP->Register(m_registrarName, m_registrarUser, m_registrarPassword))
-    return false;
+  if (m_registrarUsed) {
+    if (!sipEP->Register(m_registrarName, m_registrarUser, m_registrarPassword))
+      return false;
 
-  LogWindow << "SIP registration started for " << m_registrarUser << '@' << m_registrarName << endl;
+    LogWindow << "SIP registration started for " << m_registrarUser << '@' << m_registrarName << endl;
+  }
+  else {
+    if (sipEP->IsRegistered()) {
+      LogWindow << "SIP registration ended for " << m_registrarUser << '@' << m_registrarName << endl;
+      sipEP->Unregister();
+    }
+  }
   return true;
 }
 
@@ -1171,7 +1291,7 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
   INIT_FIELD(Username, m_frame.GetDefaultUserName());
   INIT_FIELD(DisplayName, m_frame.GetDefaultDisplayName());
   INIT_FIELD(RingSoundFileName, "");
-  INIT_FIELD(AutoAnswer, m_frame.pcssEP->GetAutoAnswer());
+  INIT_FIELD(AutoAnswer, m_frame.m_autoAnswer);
 #if P_EXPAT
   INIT_FIELD(IVRScript, m_frame.ivrEP->GetDefaultVXML());
 #endif
@@ -1293,9 +1413,11 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
 
   ////////////////////////////////////////
   // SIP fields
+  INIT_FIELD(SIPProxyUsed, m_frame.m_SIPProxyUsed);
   INIT_FIELD(SIPProxy, m_frame.sipEP->GetProxy().GetHostName());
   INIT_FIELD(SIPProxyUsername, m_frame.sipEP->GetProxy().GetUserName());
   INIT_FIELD(SIPProxyPassword, m_frame.sipEP->GetProxy().GetPassword());
+  INIT_FIELD(RegistrarUsed, m_frame.m_registrarUsed);
   INIT_FIELD(RegistrarName, m_frame.m_registrarName);
   INIT_FIELD(RegistrarUsername, m_frame.m_registrarUser);
   INIT_FIELD(RegistrarPassword, m_frame.m_registrarPassword);
@@ -1387,7 +1509,7 @@ bool OptionsDialog::TransferDataFromWindow()
   config->SetPath(GeneralGroup);
   SAVE_FIELD(Username, m_frame.SetDefaultUserName);
   SAVE_FIELD(DisplayName, m_frame.SetDefaultDisplayName);
-  SAVE_FIELD(AutoAnswer, m_frame.pcssEP->SetAutoAnswer);
+  SAVE_FIELD(AutoAnswer, m_frame.m_autoAnswer = );
 #if P_EXPAT
   SAVE_FIELD(IVRScript, m_frame.ivrEP->SetDefaultVXML);
 #endif
@@ -1499,6 +1621,7 @@ bool OptionsDialog::TransferDataFromWindow()
   ////////////////////////////////////////
   // SIP fields
   config->SetPath(SIPGroup);
+  SAVE_FIELD(SIPProxyUsed, m_frame.m_SIPProxyUsed =);
   m_frame.sipEP->SetProxy(m_SIPProxy, m_SIPProxyUsername, m_SIPProxyPassword);
   config->Write(SIPProxyKey, m_SIPProxy);
   config->Write(SIPProxyUsernameKey, m_SIPProxyUsername);
@@ -1507,9 +1630,11 @@ bool OptionsDialog::TransferDataFromWindow()
   config->Write(RegistrarTimeToLiveKey, m_RegistrarTimeToLive);
   m_frame.sipEP->SetRegistrarTimeToLive(PTimeInterval(0, m_RegistrarTimeToLive));
 
-  if (m_frame.m_registrarName != m_RegistrarName ||
+  if (m_frame.m_registrarUsed != m_RegistrarUsed ||
+      m_frame.m_registrarName != m_RegistrarName ||
       m_frame.m_registrarUser != m_RegistrarUsername ||
       m_frame.m_registrarPassword != m_RegistrarPassword) {
+    SAVE_FIELD(RegistrarUsed, m_frame.m_registrarUsed =);
     SAVE_FIELD(RegistrarName, m_frame.m_registrarName =);
     SAVE_FIELD(RegistrarUsername, m_frame.m_registrarUser =);
     SAVE_FIELD(RegistrarPassword, m_frame.m_registrarPassword =);
@@ -1745,7 +1870,7 @@ BEGIN_EVENT_TABLE(CallDialog, wxDialog)
   EVT_TEXT(XRCID("Address"), CallDialog::OnAddressChange)
 END_EVENT_TABLE()
 
-CallDialog::CallDialog(wxWindow *parent)
+CallDialog::CallDialog(MyFrame *parent)
 {
   wxXmlResource::Get()->LoadDialog(this, parent, "CallDialog");
 
@@ -1765,6 +1890,101 @@ void CallDialog::OnAddressChange(wxCommandEvent & WXUNUSED(event))
 {
   m_ok->Enable(!m_AddressCtrl->GetValue().IsEmpty());
 }
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+BEGIN_EVENT_TABLE(AnswerPanel, wxPanel)
+  EVT_BUTTON(XRCID("AnswerCall"), AnswerPanel::OnAnswer)
+  EVT_BUTTON(XRCID("RejectCall"), AnswerPanel::OnReject)
+END_EVENT_TABLE()
+
+AnswerPanel::AnswerPanel(MyFrame & frame, wxWindow * parent)
+  : m_frame(frame)
+{
+  wxXmlResource::Get()->LoadPanel(this, parent, "AnswerPanel");
+}
+
+
+void AnswerPanel::OnAnswer(wxCommandEvent & event)
+{
+  m_frame.AnswerCall();
+}
+
+
+void AnswerPanel::OnReject(wxCommandEvent & event)
+{
+  m_frame.RejectCall();
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+BEGIN_EVENT_TABLE(CallingPanel, wxPanel)
+  EVT_BUTTON(XRCID("HangUpCall"), CallingPanel::OnHangUp)
+END_EVENT_TABLE()
+
+CallingPanel::CallingPanel(MyFrame & frame, wxWindow * parent)
+  : m_frame(frame)
+{
+  wxXmlResource::Get()->LoadPanel(this, parent, "CallingPanel");
+}
+
+
+void CallingPanel::OnHangUp(wxCommandEvent & event)
+{
+  m_frame.HangUpCall();
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+BEGIN_EVENT_TABLE(InCallPanel, wxPanel)
+  EVT_BUTTON(XRCID("HangUp"), InCallPanel::OnHangUp)
+  EVT_BUTTON(XRCID("Input1"), InCallPanel::OnUserInput1)
+  EVT_BUTTON(XRCID("Input2"), InCallPanel::OnUserInput2)
+  EVT_BUTTON(XRCID("Input3"), InCallPanel::OnUserInput3)
+  EVT_BUTTON(XRCID("Input4"), InCallPanel::OnUserInput4)
+  EVT_BUTTON(XRCID("Input5"), InCallPanel::OnUserInput5)
+  EVT_BUTTON(XRCID("Input6"), InCallPanel::OnUserInput6)
+  EVT_BUTTON(XRCID("Input7"), InCallPanel::OnUserInput7)
+  EVT_BUTTON(XRCID("Input8"), InCallPanel::OnUserInput8)
+  EVT_BUTTON(XRCID("Input9"), InCallPanel::OnUserInput9)
+  EVT_BUTTON(XRCID("Input0"), InCallPanel::OnUserInput0)
+  EVT_BUTTON(XRCID("InputStar"), InCallPanel::OnUserInputStar)
+  EVT_BUTTON(XRCID("InputHash"), InCallPanel::OnUserInputHash)
+  EVT_BUTTON(XRCID("InputFlash"), InCallPanel::OnUserInputFlash)
+END_EVENT_TABLE()
+
+InCallPanel::InCallPanel(MyFrame & frame, wxWindow * parent)
+  : m_frame(frame)
+{
+  wxXmlResource::Get()->LoadPanel(this, parent, "InCallPanel");
+}
+
+
+void InCallPanel::OnHangUp(wxCommandEvent & event)
+{
+  m_frame.HangUpCall();
+}
+
+#define ON_USER_INPUT_HANDLER(i,c) \
+  void InCallPanel::OnUserInput##i(wxCommandEvent &) \
+  { m_frame.SendUserInput(c); }
+
+ON_USER_INPUT_HANDLER(1,'1')
+ON_USER_INPUT_HANDLER(2,'2')
+ON_USER_INPUT_HANDLER(3,'3')
+ON_USER_INPUT_HANDLER(4,'4')
+ON_USER_INPUT_HANDLER(5,'5')
+ON_USER_INPUT_HANDLER(6,'6')
+ON_USER_INPUT_HANDLER(7,'7')
+ON_USER_INPUT_HANDLER(8,'8')
+ON_USER_INPUT_HANDLER(9,'9')
+ON_USER_INPUT_HANDLER(0,'0')
+ON_USER_INPUT_HANDLER(Star,'*')
+ON_USER_INPUT_HANDLER(Hash,'#')
+ON_USER_INPUT_HANDLER(Flash,'!')
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1811,9 +2031,8 @@ void SpeedDialDialog::OnChange(wxCommandEvent & WXUNUSED(event))
 
 MyPCSSEndPoint::MyPCSSEndPoint(MyFrame & ep)
   : OpalPCSSEndPoint(ep),
-    frame(ep)
+    m_frame(ep)
 {
-  m_autoAnswer = false;
 }
 
 
@@ -1826,16 +2045,8 @@ PString MyPCSSEndPoint::OnGetDestination(const OpalPCSSConnection & /*connection
 
 void MyPCSSEndPoint::OnShowIncoming(const OpalPCSSConnection & connection)
 {
-  m_incomingConnectionToken = connection.GetToken();
+  m_frame.OnRinging(connection);
 
-  if (m_autoAnswer)
-    AcceptIncomingConnection(m_incomingConnectionToken);
-  else {
-    PTime now;
-    LogWindow << "\nCall on " << now.AsString("w h:mma")
-              << " from " << connection.GetRemotePartyName()
-              << ", answer (Y/N)? " << endl;
-  }
 }
 
 
