@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2006  2001/11/09 05:49:47  robertj
+ * Revision 1.2007  2001/11/18 23:10:42  craigs
+ * Added cast to allow compilation under Linux
+ *
+ * Revision 2.5  2001/11/09 05:49:47  robertj
  * Abstracted UDP connection algorithm
  *
  * Revision 2.4  2001/10/05 00:22:13  robertj
@@ -469,7 +472,7 @@ BOOL H323Gatekeeper::OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm & g
     discoveryComplete = TRUE;
   }
   else {
-    PCaselessString gkid = gcf.m_gatekeeperIdentifier;
+    PCaselessString gkid = (PString)gcf.m_gatekeeperIdentifier;
     if (gkid != gatekeeperIdentifier) {
       PTRACE(2, "RAS\tReceived a GCF from " << gkid
              << " but wanted it from " << gatekeeperIdentifier);
