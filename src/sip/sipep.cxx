@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2035  2004/12/27 22:20:17  dsandras
+ * Revision 1.2036  2005/01/09 03:42:46  rjongbloed
+ * Fixed warning about unused parameter
+ *
+ * Revision 2.34  2004/12/27 22:20:17  dsandras
  * Added preliminary support for OPTIONS requests sent outside of a connection.
  *
  * Revision 2.33  2004/12/25 20:45:12  dsandras
@@ -579,15 +582,16 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 }
 
 
-void SIPEndPoint::OnRegistered(BOOL wasRegistering)
+void SIPEndPoint::OnRegistered(BOOL PTRACE_PARAM(wasRegistering))
 {
-  PTRACE(2, "SIP\tREGISTER success");
+  PTRACE(2, "SIP\t" << (wasRegistering ? "" : "(UN)") << "REGISTER succeded");
 }
 
 
-void SIPEndPoint::OnRegistrationFailed(RegistrationFailReasons reason, BOOL wasRegistering)
+void SIPEndPoint::OnRegistrationFailed(RegistrationFailReasons PTRACE_PARAM(reason),
+                                       BOOL PTRACE_PARAM(wasRegistering))
 {
-  PTRACE(2, "SIP\tREGISTER failed");
+  PTRACE(2, "SIP\t" << (wasRegistering ? "" : "(UN)") << "REGISTER failed, reason=" << reason);
 }
 
 

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2049  2004/12/25 20:43:42  dsandras
+ * Revision 1.2050  2005/01/09 03:42:46  rjongbloed
+ * Fixed warning about unused parameter
+ *
+ * Revision 2.48  2004/12/25 20:43:42  dsandras
  * Attach the RFC2833 handlers when we are in connected state to ensure
  * OpalMediaPatch exist. Fixes problem for DTMF sending.
  *
@@ -913,7 +916,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 }
 
 
-void SIPConnection::OnReceivedACK(SIP_PDU & response)
+void SIPConnection::OnReceivedACK(SIP_PDU & /*response*/)
 {
   PTRACE(2, "SIP\tACK received: " << phase);
 
