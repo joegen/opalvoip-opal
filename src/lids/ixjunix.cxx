@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjunix.cxx,v $
- * Revision 1.2005  2002/01/14 06:35:58  robertj
+ * Revision 1.2006  2002/02/11 09:32:13  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.4  2002/01/14 06:35:58  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.3  2001/08/21 01:08:31  robertj
@@ -41,6 +44,15 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.122  2002/02/08 14:38:42  craigs
+ * Changed codec table to use defines from mediafmt.h. Thanks to Roger Hardiman
+ *
+ * Revision 1.121  2002/02/06 06:51:17  rogerh
+ * Correct a comment. There are 240 samples in PCM16 audio (not 250)
+ *
+ * Revision 1.120  2002/01/23 19:09:45  rogerh
+ * Return PCM as a supported format type
  *
  * Revision 1.119  2001/12/19 07:42:52  craigs
  * Fixed problem with opening devices as returned by GetDeviceName
@@ -1072,14 +1084,14 @@ static const struct {
   int mode;
   int frameTime;
 } CodecInfo[] = {
-  { OPAL_PCM16,       480, LINEAR16, 30 },   // 480 bytes = 250 samples = 30ms
-  { "G.711-uLaw-64k", 240, ULAW,     30 },   // 240 bytes = 240 samples = 30ms
-  { "G.711-ALaw-64k", 240, ALAW,     30 },   // 240 bytes = 240 samples = 30ms
-  { "G.728",           60, G728,     30 },   // 60 bytes  = 12 frames   = 30ms
-  { "G.729A",          10, G729,     10 },   // 10 bytes = 1 frame = 10 ms
-  { "G.729A/B",        10, G729B,    10 },   // 10 bytes = 1 frame = 10 ms
-  { "G.723.1(6.3k)",   24, G723_63,  30 },   // 24 bytes = 1 frame = 30 ms
-  { "G.723.1(5.3k)",   20, G723_53,  30 }    // 20 bytes = 1 frame = 30 ms
+  { OPAL_PCM16,         480, LINEAR16, 30 },   // 480 bytes = 240 samples = 30ms
+  { OPAL_G711_ULAW_64K, 240, ULAW,     30 },   // 240 bytes = 240 samples = 30ms
+  { OPAL_G711_ALAW_64K, 240, ALAW,     30 },   // 240 bytes = 240 samples = 30ms
+  { OPAL_G728,           60, G728,     30 },   // 60 bytes  = 12 frames   = 30ms
+  { OPAL_G729A,          10, G729,     10 },   // 10 bytes = 1 frame = 10 ms
+  { OPAL_G729AB,         10, G729B,    10 },   // 10 bytes = 1 frame = 10 ms
+  { OPAL_G7231_6k3,      24, G723_63,  30 },   // 24 bytes = 1 frame = 30 ms
+  { OPAL_G7231_5k3 ,     20, G723_53,  30 }    // 20 bytes = 1 frame = 30 ms
 };
 
 
@@ -1089,7 +1101,7 @@ OpalMediaFormatList OpalIxJDevice::GetMediaFormats() const
   OpalMediaFormatList codecs;
 
   PINDEX idx = PARRAYSIZE(CodecInfo);
-  while (idx-- > 1) { // Stop before we get to PCM
+  while (idx-- > 0) {
     phone_capability cap;
     cap.captype = codec;
     cap.cap = CodecInfo[idx].mode;

@@ -24,8 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vblasterlid.cxx,v $
- * Revision 1.2002  2002/01/22 06:28:43  robertj
+ * Revision 1.2003  2002/02/11 09:32:13  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.1  2002/01/22 06:28:43  robertj
  * Added voice blaster support
+ *
+ * Revision 1.4  2002/02/05 06:19:47  craigs
+ * Changed to use OPAL define rather than strings
  *
  * Revision 1.3  2002/01/15 07:23:10  craigs
  * Added IsDevicePresent command
@@ -430,8 +436,8 @@ static const struct {
   const char * mediaFormat;
   PINDEX frameSize;
 } CodecInfo[] = {
-  { "G.723.1(6.3k)",  24 },
-  { "G.723.1(5.3k)",  20 },
+  { OPAL_G7231_6k3,  24 },
+  { OPAL_G7231_5k3,  20 },
 };
 
 

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2015  2002/01/22 05:28:27  robertj
+ * Revision 1.2016  2002/02/11 09:32:13  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.14  2002/01/22 05:28:27  robertj
  * Revamp of user input API triggered by RFC2833 support
  * Update from OpenH323
  *
@@ -68,6 +71,13 @@
  *
  * Revision 2.3  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 1.117  2002/02/04 07:17:56  robertj
+ * Added H.450.2 Consultation Transfer, thanks Norwood Systems.
+ *
+ * Revision 1.116  2002/01/24 06:29:06  robertj
+ * Added option to disable H.245 negotiation in SETUP pdu, this required
+ *   API change so have a bit mask instead of a series of booleans.
  *
  * Revision 1.115  2002/01/17 07:05:04  robertj
  * Added support for RFC2833 embedded DTMF in the RTP stream.
@@ -560,6 +570,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
 
   disableFastStart = FALSE;
   disableH245Tunneling = FALSE;
+  disableH245inSetup = FALSE;
 
   terminalType = e_TerminalOnly;
   initialBandwidth = 100000; // Standard 10base LAN in 100's of bits/sec
@@ -926,12 +937,31 @@ BOOL H323EndPoint::InternalMakeCall(OpalCall & call,
 }
 
 
-void H323EndPoint::TransferCall(const PString & token, const PString & remoteParty)
+void H323EndPoint::TransferCall(const PString & token, 
+                                const PString & remoteParty,
+                                const PString & callIdentity)
 {
   H323Connection * connection = FindConnectionWithLock(token);
   if (connection != NULL) {
-    connection->TransferCall(remoteParty);
+
+    // According to H.450.4, if prior to consultation the primary call has been put on hold, the 
+    // transferring endpoint shall first retrieve the call before Call Transfer is invoked.
+    if (!callIdentity.IsEmpty() && connection->IsLocalHold()) {
+      connection->RetrieveCall();
+    }
+    connection->TransferCall(remoteParty, callIdentity);
     connection->Unlock();
+  }
+}
+
+
+void H323EndPoint::ConsultationTransfer(const PString & primaryCallToken,   
+                                        const PString & secondaryCallToken)
+{
+  H323Connection * secondaryCall = FindConnectionWithLock(secondaryCallToken);
+  if (secondaryCall != NULL) {
+    secondaryCall->ConsultationTransfer(primaryCallToken);
+    secondaryCall->Unlock();
   }
 }
 
@@ -1049,6 +1079,12 @@ BOOL H323EndPoint::OnIncomingCall(H323Connection & connection,
 
 BOOL H323EndPoint::OnCallTransferInitiate(H323Connection & /*connection*/,
                                           const PString & /*remoteParty*/)
+{
+  return TRUE;
+}
+
+
+BOOL H323EndPoint::OnCallTransferIdentify(H323Connection & /*connection*/)
 {
   return TRUE;
 }

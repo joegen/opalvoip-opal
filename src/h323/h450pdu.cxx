@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h450pdu.cxx,v $
- * Revision 1.2006  2002/01/14 06:35:58  robertj
+ * Revision 1.2007  2002/02/11 09:32:13  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.5  2002/01/14 06:35:58  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.4  2001/10/05 00:22:14  robertj
@@ -41,6 +44,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.11  2002/02/04 07:17:56  robertj
+ * Added H.450.2 Consultation Transfer, thanks Norwood Systems.
  *
  * Revision 1.10  2002/01/14 00:03:01  robertj
  * Added H.450.6
@@ -426,7 +432,7 @@ void H450xDispatcher::OnReceivedInvoke(X880_Invoke & invoke)
 
 void H450xDispatcher::OnReceivedReturnResult(X880_ReturnResult & returnResult)
 {
-  int invokeId = returnResult.m_invokeId.GetValue();
+  unsigned invokeId = returnResult.m_invokeId.GetValue();
 
   for (PINDEX i = 0; i < handlers.GetSize(); i++) {
     if (handlers[i].GetInvokeId() == invokeId) {
@@ -439,7 +445,7 @@ void H450xDispatcher::OnReceivedReturnResult(X880_ReturnResult & returnResult)
 
 void H450xDispatcher::OnReceivedReturnError(X880_ReturnError & returnError)
 {
-  int invokeId = returnError.m_invokeId.GetValue();
+  unsigned invokeId = returnError.m_invokeId.GetValue();
   int errorCode = 0;
 
   if (returnError.m_errorCode.GetTag() == X880_Code::e_local)
@@ -492,7 +498,7 @@ void H450xDispatcher::OnReceivedReject(X880_Reject & reject)
   }
 
 
-  int invokeId = reject.m_invokeId;
+  unsigned invokeId = reject.m_invokeId;
   for (PINDEX i = 0; i < handlers.GetSize(); i++) {
     if (handlers[i].GetInvokeId() == invokeId) {
       handlers[i].OnReceivedReject(reject.m_problem.GetTag(), problem);
@@ -571,7 +577,7 @@ H450xHandler::H450xHandler(H323Connection & conn, H450xDispatcher & disp)
     connection(conn),
     dispatcher(disp)
 {
-  currentInvokeId = -1;
+  currentInvokeId = 0;
 }
 
 
@@ -615,35 +621,35 @@ void H450xHandler::OnReceivedReject(int /*problemType*/,
 void H450xHandler::SendReturnError(int returnError)
 {
   dispatcher.SendReturnError(currentInvokeId, returnError);
-  currentInvokeId = -1;
+  currentInvokeId = 0;
 }
 
 
 void H450xHandler::SendGeneralReject(int problem)
 {
   dispatcher.SendGeneralReject(currentInvokeId, problem);
-  currentInvokeId = -1;
+  currentInvokeId = 0;
 }
 
 
 void H450xHandler::SendInvokeReject(int problem)
 {
   dispatcher.SendInvokeReject(currentInvokeId, problem);
-  currentInvokeId = -1;
+  currentInvokeId = 0;
 }
 
 
 void H450xHandler::SendReturnResultReject(int problem)
 {
   dispatcher.SendReturnResultReject(currentInvokeId, problem);
-  currentInvokeId = -1;
+  currentInvokeId = 0;
 }
 
 
 void H450xHandler::SendReturnErrorReject(int problem)
 {
   dispatcher.SendReturnErrorReject(currentInvokeId, problem);
-  currentInvokeId = -1;
+  currentInvokeId = 0;
 }
 
 
@@ -687,6 +693,9 @@ H4502Handler::H4502Handler(H323Connection & conn, H450xDispatcher & disp)
   transferringCallToken = "";
   ctState = e_ctIdle;
   ctResponseSent = FALSE;
+  CallToken = PString();
+  nextCallIdentity = 0;
+  consultationTransfer = FALSE;
 
   ctTimer.SetNotifier(PCREATE_NOTIFIER(OnCallTransferTimeOut));
 }
@@ -713,33 +722,35 @@ void H4502Handler::AttachToSetup(H323SignalPDU & pdu)
 void H4502Handler::AttachToAlerting(H323SignalPDU & pdu)
 {
   // Do we need to send a callTransferSetup return result APDU?
-  if (currentInvokeId == -1 || ctResponseSent)
+  if (currentInvokeId == 0 || ctResponseSent)
     return;
 
   H450ServiceAPDU serviceAPDU;
   serviceAPDU.BuildReturnResult(currentInvokeId);
   serviceAPDU.AttachSupplementaryServiceAPDU(pdu);
   ctResponseSent = TRUE;
+  currentInvokeId = 0;
 }
 
 
 void H4502Handler::AttachToConnect(H323SignalPDU & pdu)
 {
   // Do we need to include a ctInitiateReturnResult APDU in our Release Complete Message?
-  if (currentInvokeId == -1 || ctResponseSent)
+  if (currentInvokeId == 0 || ctResponseSent)
     return;
 
   H450ServiceAPDU serviceAPDU;
   serviceAPDU.BuildReturnResult(currentInvokeId);
   serviceAPDU.AttachSupplementaryServiceAPDU(pdu);
   ctResponseSent = TRUE;
+  currentInvokeId = 0;
 }
 
 
 void H4502Handler::AttachToReleaseComplete(H323SignalPDU & pdu)
 {
   // Do we need to include a ctInitiateReturnResult APDU in our Release Complete Message?
-  if (currentInvokeId == -1)
+  if (currentInvokeId == 0)
     return;
 
   // If the SETUP message we received from the other end had a callTransferSetup APDU
@@ -748,11 +759,15 @@ void H4502Handler::AttachToReleaseComplete(H323SignalPDU & pdu)
   // Else normal call - clear it down
   H450ServiceAPDU serviceAPDU;
 
-  if (ctResponseSent)
+  if (ctResponseSent) {
     serviceAPDU.BuildReturnResult(currentInvokeId);
+    ctResponseSent = FALSE;
+    currentInvokeId = 0;
+  }
   else {
     serviceAPDU.BuildReturnError(currentInvokeId, H4501_GeneralErrorList::e_notAvailable);
     ctResponseSent = TRUE;
+    currentInvokeId = 0;
   }
 
   serviceAPDU.AttachSupplementaryServiceAPDU(pdu);
@@ -800,7 +815,7 @@ BOOL H4502Handler::OnReceivedInvoke(int opcode,
       break;
 
     default:
-      currentInvokeId = -1;
+      currentInvokeId = 0;
       return FALSE;
   }
 
@@ -810,11 +825,79 @@ BOOL H4502Handler::OnReceivedInvoke(int opcode,
 
 void H4502Handler::OnReceivedCallTransferIdentify(int /*linkedId*/)
 {
+  if (!endpoint.OnCallTransferIdentify(connection))
+    SendReturnError(H4501_GeneralErrorList::e_notAvailable);
+  
+  // Send a FACILITY message with a callTransferIdentify return result
+  // Supplementary Service PDU to the transferring endpoint.
+  H450ServiceAPDU serviceAPDU;
+
+  X880_ReturnResult& result = serviceAPDU.BuildReturnResult(currentInvokeId);
+  result.IncludeOptionalField(X880_ReturnResult::e_result);
+  result.m_result.m_opcode.SetTag(X880_Code::e_local);
+  PASN_Integer& operation = (PASN_Integer&) result.m_result.m_opcode;
+  operation.SetValue(H4502_CallTransferOperation::e_callTransferIdentify);
+
+  H4502_CTIdentifyRes ctIdentifyResult;
+
+  // Restrict the generated value to 4 digits (13 bits)
+  unsigned int id = GetNextCallIdentityValue() & 0x1FFF;
+  PString pstrId(PString::Unsigned, id);
+  ctIdentifyResult.m_callIdentity = pstrId;
+
+  // Store the callIdentity of this connection in the dictionary
+  endpoint.GetCallIdentityDictionary().SetAt(pstrId, &connection);
+
+  H4501_ArrayOf_AliasAddress& aliasAddress = ctIdentifyResult.m_reroutingNumber.m_destinationAddress;
+
+  PString localName = connection.GetLocalPartyName();
+  if (localName.IsEmpty()) 
+    aliasAddress.SetSize(1);
+  else {
+    aliasAddress.SetSize(2);
+    aliasAddress[1].SetTag(H225_AliasAddress::e_dialedDigits);
+    H323SetAliasAddress(localName, aliasAddress[1]);  // Will encode as h323-Id if not E.164
+  }
+
+  H323TransportAddress address;
+  address = connection.GetSignallingChannel()->GetLocalAddress();
+
+  aliasAddress[0].SetTag(H225_AliasAddress::e_transportID);
+  H225_TransportAddress& cPartyTransport = (H225_TransportAddress&) aliasAddress[0];
+  address.SetPDU(cPartyTransport);
+
+  PPER_Stream resultStream;
+  ctIdentifyResult.Encode(resultStream);
+  resultStream.CompleteEncoding();
+  result.m_result.m_result.SetValue(resultStream);
+
+  serviceAPDU.WriteFacilityPDU(connection);
+
+  ctState = e_ctAwaitSetup;
+
+  // start timer CT-T2
+  PTRACE(4, "H450.2\tStarting timer CT-T2");
+  StartctTimer(endpoint.GetCallTransferT2());
 }
 
 
 void H4502Handler::OnReceivedCallTransferAbandon(int /*linkedId*/)
 {
+  switch (ctState) {
+    case e_ctAwaitSetup:
+      {
+        // Stop Timer CT-T2 and enter state e_ctIdle
+        StopctTimer();
+        PTRACE(4, "H4502\tStopping timer CT-T2");
+
+        currentInvokeId = 0;
+        ctState = e_ctIdle;
+      }
+      break;
+
+    default:
+      break;
+  }
 }
 
 
@@ -828,6 +911,8 @@ void H4502Handler::OnReceivedCallTransferInitiate(int /*linkedId*/,
   if (!DecodeArguments(argument, ctInitiateArg,
                        H4502_CallTransferErrors::e_invalidReroutingNumber))
     return;
+
+  ctResponseSent = TRUE;
 
   PString remoteParty;
   H450ServiceAPDU::ParseEndpointAddress(ctInitiateArg.m_reroutingNumber, remoteParty);
@@ -848,29 +933,39 @@ void H4502Handler::OnReceivedCallTransferSetup(int /*linkedId*/,
                        H4502_CallTransferErrors::e_unrecognizedCallIdentity))
     return;
 
+  // Get the Transferring User's details if present
+  PString transferringParty;
+  if (ctSetupArg.HasOptionalField(H4502_CTSetupArg::e_transferringNumber)) {
+    H450ServiceAPDU::ParseEndpointAddress(ctSetupArg.m_transferringNumber, transferringParty);
+  }
+
   PString callIdentity;
-  switch (ctState) {
-    case e_ctIdle:
-      callIdentity = ctSetupArg.m_callIdentity;
-      if (callIdentity.IsEmpty())
-        ctState = e_ctAwaitSetupResponse;
-      else
-        SendReturnError(H4502_CallTransferErrors::e_unrecognizedCallIdentity);
-      break;
+  callIdentity = ctSetupArg.m_callIdentity;
 
-    case e_ctAwaitSetup:
-      // stop timer CT-T2
-      // Need to check that the call identity and destination address match
-      // those in the Identify message; for now we just check for empty.
-      callIdentity = ctSetupArg.m_callIdentity;
-      if (callIdentity.IsEmpty())
-        SendReturnError(H4502_CallTransferErrors::e_unrecognizedCallIdentity);
-      else
+  if (callIdentity.IsEmpty()) { // Blind Transfer
+    switch (ctState) {
+      case e_ctIdle:
         ctState = e_ctAwaitSetupResponse;
-      break;
+        break;
 
-    default :
-      break;
+      // Wrong State
+      default :
+        break;
+    }
+  }
+  else { // Transfer through Consultation
+    
+    // We need to check that the call identity and destination address information match those in the 
+    // second call.  For the time being we just check that the call identities match as there does not 
+    // appear to be an elegant solution to compare the destination address information.
+
+    // Get this callIdentity from our dictionary (if present)
+    H323Connection *secondaryCall = endpoint.GetCallIdentityDictionary().GetAt(callIdentity);
+  
+    if (secondaryCall != NULL)
+      secondaryCall->HandleConsultationTransfer(callIdentity, connection);
+    else  // Mismatched callIdentity
+      SendReturnError(H4502_CallTransferErrors::e_unrecognizedCallIdentity);
   }
 }
 
@@ -915,73 +1010,203 @@ void H4502Handler::OnReceivedCallTransferActive(int /*linkedId*/,
 }
 
 
-void H4502Handler::OnReceivedReturnResult(X880_ReturnResult &)
+void H4502Handler::OnReceivedReturnResult(X880_ReturnResult & returnResult)
 {
-  switch (ctState) {
-    case e_ctAwaitInitiateResponse:
-      // stop timer CT-T3
-      StopctTimer();
-      PTRACE(4, "H4502\tStopping timer CT-T3");
+  if (currentInvokeId == returnResult.m_invokeId.GetValue()) {
+    switch (ctState) {
+      case e_ctAwaitInitiateResponse:
+        OnReceivedInitiateReturnResult(); 
+        break;
 
-      // clear the primary call, if it exists
-      ctState = e_ctIdle;
-      break;
+      case e_ctAwaitSetupResponse:
+        OnReceivedSetupReturnResult();
+        break;
 
-    case e_ctAwaitSetupResponse:
-      // stop timer CT-T4
-      StopctTimer();
-      PTRACE(4, "H4502\tStopping timer CT-T4");
-      ctState = e_ctIdle;
+      case e_ctAwaitIdentifyResponse:
+        OnReceivedIdentifyReturnResult(returnResult);
+        break;
 
-      // Clear the call
-      endpoint.ClearCall(transferringCallToken, EndedByCallForwarded);
-      break;
-
-    default :
-      break;
+      default :
+        break;
+    }
   }
 }
 
 
-void H4502Handler::OnReceivedReturnError(int errorCode, X880_ReturnError &)
+void H4502Handler::OnReceivedInitiateReturnResult()
 {
-  switch (ctState) {
-    case e_ctAwaitInitiateResponse:
-      // stop timer CT-T3
-      StopctTimer();
-      PTRACE(4, "H4502\tStopping timer CT-T3");
+  // stop timer CT-T3
+  StopctTimer();
+  PTRACE(4, "H4502\tStopping timer CT-T3");
+  ctState = e_ctIdle;
+  currentInvokeId = 0;
 
-      /* Send a callTransferAbandon invoke APDU in a FACILITY message on the
-         secondary call (if it exists) and enter state CT-Idle. */
-      ctState = e_ctIdle;
-      break;
+  // clear the primary and secondary call if not already cleared,
+}
 
-    case e_ctAwaitSetupResponse:
-      {
-        // stop timer CT-T4 if it is running
-        StopctTimer();
-        PTRACE(4, "H4502\tStopping timer CT-T4");
 
-        // Send a facility to the transferring endpoint
-        // containing a call transfer initiate return error
-        H323Connection* existingConnection = endpoint.FindConnectionWithLock(transferringCallToken);
+void H4502Handler::OnReceivedSetupReturnResult()
+{
+  // stop timer CT-T4
+  StopctTimer();
+  PTRACE(4, "H4502\tStopping timer CT-T4");
+  ctState = e_ctIdle;
+  currentInvokeId = 0;
 
-        if (existingConnection != NULL) {
-          existingConnection->HandleCallTransferFailure(errorCode);
-          existingConnection->Unlock();
-        }
+  // Clear the primary call
+  endpoint.ClearCall(transferringCallToken, EndedByCallForwarded);
+}
 
-        ctState = e_ctIdle;
-      }
-      break;
 
-    default :
-      break;
+void H4502Handler::OnReceivedIdentifyReturnResult(X880_ReturnResult &returnResult)
+{
+  // stop timer CT-T1
+  StopctTimer();
+  PTRACE(4, "H4502\tStopping timer CT-T1");
+
+  // Have received response.
+  ctState = e_ctIdle;
+
+  // Get the return result if present
+  PASN_OctetString * result = NULL;
+  if (returnResult.HasOptionalField(X880_ReturnResult::e_result)) {
+    result = &returnResult.m_result.m_result;
+
+    // Extract the C Party Details
+    H4502_CTIdentifyRes ctIdentifyResult;
+
+    PPER_Stream resultStream(*result);
+    ctIdentifyResult.Decode(resultStream);
+    PString callIdentity = ctIdentifyResult.m_callIdentity.GetValue();
+
+    PString remoteParty;
+    H450ServiceAPDU::ParseEndpointAddress(ctIdentifyResult.m_reroutingNumber, remoteParty);
+
+    // Store the secondary call token on the primary connection so we can send a 
+    // callTransferAbandon invoke APDU on the secondary call at a later stage if we 
+    // get back a callTransferInitiateReturnError
+    H323Connection* primaryConnection = endpoint.FindConnectionWithLock(CallToken);
+
+    if (primaryConnection != NULL) {
+      primaryConnection->SetAssociatedCallToken(connection.GetToken());
+
+      // Send a callTransferInitiate invoke APDU in a FACILITY message
+      // to the transferred endpoint on the primary call
+      endpoint.TransferCall(primaryConnection->GetToken(), remoteParty, callIdentity);
+    }
   }
 }
 
 
-void H4502Handler::TransferCall(const PString & remoteParty)
+void H4502Handler::OnReceivedReturnError(int errorCode, X880_ReturnError &returnError)
+{
+  if (currentInvokeId == returnError.m_invokeId.GetValue()) {
+    switch (ctState) {
+      case e_ctAwaitInitiateResponse:
+        OnReceivedInitiateReturnError();
+        break;
+
+      case e_ctAwaitSetupResponse:
+        OnReceivedSetupReturnError(errorCode);
+        break;
+
+      case e_ctAwaitIdentifyResponse:
+        OnReceivedIdentifyReturnError();
+        break;
+
+      default :
+        break;
+    }
+  }
+}
+
+
+void H4502Handler::OnReceivedInitiateReturnError(const bool timerExpiry)
+{ 
+  if (!timerExpiry) {
+    // stop timer CT-T3
+    StopctTimer();
+    PTRACE(4, "H4502\tStopping timer CT-T3");
+  }
+  else
+    PTRACE(4, "H4502\tTimer CT-T3 has expired on the Transferring Endpoint awaiting a response to a callTransferInitiate APDU.");
+
+  currentInvokeId = 0;
+  ctState = e_ctIdle;
+
+
+  // Send a callTransferAbandon invoke APDU in a FACILITY message on the secondary call
+  // (if it exists) and enter state CT-Idle.
+  H323Connection* secondaryConnection = endpoint.FindConnectionWithLock(CallToken);
+
+  if (secondaryConnection != NULL) {
+    H450ServiceAPDU serviceAPDU;
+
+    serviceAPDU.BuildCallTransferAbandon(dispatcher.GetNextInvokeId());
+    serviceAPDU.WriteFacilityPDU(*secondaryConnection);
+    secondaryConnection->Unlock();
+  }
+}
+
+
+void H4502Handler::OnReceivedSetupReturnError(int errorCode,
+                                              const bool timerExpiry)
+{
+  ctState = e_ctIdle;
+  currentInvokeId = 0;
+  
+  if (!timerExpiry) {
+    // stop timer CT-T4 if it is running
+    StopctTimer();
+    PTRACE(4, "H4502\tStopping timer CT-T4");  
+  }
+  else {
+    PTRACE(3, "H4502\tTimer CT-T4 has expired on the Transferred Endpoint awaiting a response to a callTransferSetup APDU.");
+
+    // Clear the transferred call.
+    endpoint.ClearCall(connection.GetToken());
+  }
+
+  // Send a facility message to the transferring endpoint
+  // containing a call transfer initiate return error
+  H323Connection* primaryConnection = endpoint.FindConnectionWithLock(transferringCallToken);
+
+  if (primaryConnection != NULL) {
+    primaryConnection->HandleCallTransferFailure(errorCode);
+    primaryConnection->Unlock();
+  }
+}
+
+
+void H4502Handler::OnReceivedIdentifyReturnError(const bool timerExpiry)
+{
+  // The transferred-to user cannot participate in our transfer request
+  ctState = e_ctIdle;
+  currentInvokeId = 0;
+
+  if (!timerExpiry) {
+    // stop timer CT-T1
+    StopctTimer();
+    PTRACE(4, "H4502\tStopping timer CT-T1");
+  }
+  else {
+    PTRACE(4, "H4502\tTimer CT-T1 has expired on the Transferring Endpoint awaiting a response to a callTransferIdentify APDU.");
+
+    // send a callTransferAbandon invoke APDU in a FACILITY message on the secondary call
+    // and enter state CT-Idle.
+    connection.Lock();
+
+    H450ServiceAPDU serviceAPDU;
+
+    serviceAPDU.BuildCallTransferAbandon(dispatcher.GetNextInvokeId());
+    serviceAPDU.WriteFacilityPDU(connection);
+
+    connection.Unlock();
+  }
+}
+
+void H4502Handler::TransferCall(const PString & remoteParty,
+                                const PString & callIdentity)
 {
   currentInvokeId = dispatcher.GetNextInvokeId();
 
@@ -993,7 +1218,6 @@ void H4502Handler::TransferCall(const PString & remoteParty)
   H323TransportAddress address;
   endpoint.ParsePartyName(remoteParty, alias, address);
 
-  PString callIdentity;
   serviceAPDU.BuildCallTransferInitiate(currentInvokeId, callIdentity, alias, address);
   serviceAPDU.WriteFacilityPDU(connection);
 
@@ -1002,6 +1226,61 @@ void H4502Handler::TransferCall(const PString & remoteParty)
   // start timer CT-T3
   PTRACE(4, "H4502\tStarting timer CT-T3");
   StartctTimer(connection.GetEndPoint().GetCallTransferT3());
+}
+
+
+void H4502Handler::ConsultationTransfer(const PString & primaryCallToken)
+{
+  currentInvokeId = dispatcher.GetNextInvokeId();
+
+  // Store the call token of the primary call on the secondary call.
+  SetAssociatedCallToken(primaryCallToken);
+
+  // Send a FACILITY message with a callTransferIdentify Invoke
+  // Supplementary Service PDU to the transferred-to endpoint.
+  H450ServiceAPDU serviceAPDU;
+
+  serviceAPDU.BuildCallTransferIdentify(currentInvokeId);
+  serviceAPDU.WriteFacilityPDU(connection);
+
+  ctState = e_ctAwaitIdentifyResponse;
+
+  // start timer CT-T1
+  PTRACE(4, "H4502\tStarting timer CT-T1");
+  StartctTimer(endpoint.GetCallTransferT1());
+}
+
+
+void H4502Handler::HandleConsultationTransfer(const PString & callIdentity,
+                                              H323Connection& incoming)
+{
+  switch (ctState) {
+    case e_ctAwaitSetup:
+      {
+        // Remove this callIdentity, connection pair from our dictionary as we no longer need it
+        endpoint.GetCallIdentityDictionary().DisallowDeleteObjects();
+        endpoint.GetCallIdentityDictionary().RemoveAt(callIdentity);
+
+        // Stop timer CT-T2
+        StopctTimer();
+        PTRACE(4, "H4502\tStopping timer CT-T2");
+
+        PTRACE(4, "H450.2\tConsultation Transfer successful, clearing secondary call");
+
+        incoming.OnConsultationTransferSuccess(connection);
+
+        currentInvokeId = 0;
+        ctState = e_ctIdle;
+
+        endpoint.ClearCall(connection.GetToken());
+      }
+      break;
+
+    // Wrong Call Transfer State
+    default :
+      break;
+
+  }
 }
 
 
@@ -1054,44 +1333,34 @@ void H4502Handler::StopctTimer()
 
 void H4502Handler::OnCallTransferTimeOut(PTimer &, INT)
 {
-  switch (ctState)
-  {
-    case e_ctIdle:
-    case e_ctAwaitConnect:
-      break;
-
+  switch (ctState) {
     // CT-T3 Timeout
     case e_ctAwaitInitiateResponse:
-      // Send a callTransferAbandon invoke APDU in a FACILITY message on thesecondary call
-      // (if it exists) and enter state CT-Idle.
-
-      ctState = e_ctIdle;
-      PTRACE(3, "H4502\tTimer CT-T3 has expired on the Transferring Endpointawaiting a response to a callTransferInitiate APDU.");
+      OnReceivedInitiateReturnError(true);
       break;
 
-   // CT-T1 Timeout
-   case e_ctAwaitIdentifyResponse:
-     break;
+    // CT-T1 Timeout
+    case e_ctAwaitIdentifyResponse:
+      OnReceivedIdentifyReturnError(true);
+      break;
 
-   // CT-T2 Timeout
-   case e_ctAwaitSetup:
-     break;
+    // CT-T2 Timeout
+    case e_ctAwaitSetup:
+      {
+        // Abort the call transfer
+        ctState = e_ctIdle;
+        currentInvokeId = 0;
+        PTRACE(4, "H450.2\tTimer CT-T2 has expired on the Transferred-to endpoint awaiting a callTransferSetup APDU.");  
+      }
+      break;
 
-   // CT-T4 Timeout
-   case e_ctAwaitSetupResponse:
-     // Send a facility message to the transferring endpoint
-     // containing a call transfer initiate return error
-     PTRACE(3, "H4502\tTimer CT-T4 has expired on the Transferred Endpoint awaiting a response to a callTransferSetup APDU.");
+    // CT-T4 Timeout
+    case e_ctAwaitSetupResponse:
+      OnReceivedSetupReturnError(H4502_CallTransferErrors::e_establishmentFailure, true);
+      break;
 
-     H323Connection* primaryConnection = endpoint.FindConnectionWithLock(transferringCallToken);
-
-     if (primaryConnection != NULL)
-     {
-       primaryConnection->HandleCallTransferFailure(H4502_CallTransferErrors::e_establishmentFailure);
-       primaryConnection->Unlock();
-     }
-     ctState = e_ctIdle;
-     break;
+    default:
+      break;
   }
 }
 
@@ -1135,7 +1404,7 @@ BOOL H4504Handler::OnReceivedInvoke(int opcode,
       break;
 
     default:
-      currentInvokeId = -1;
+      currentInvokeId = 0;
       return FALSE;
   }
 
@@ -1145,12 +1414,14 @@ BOOL H4504Handler::OnReceivedInvoke(int opcode,
 
 void H4504Handler::OnReceivedLocalCallHold(int /*linkedId*/)
 {
+  PTRACE(4, "H4504\tReceived a holdNotific Invoke APDU from the remote endpoint.");  
   // Optionally close our transmit channel.
 }
 
 
 void H4504Handler::OnReceivedLocalCallRetrieve(int /*linkedId*/)
 {
+  PTRACE(4, "H4504\tReceived a retrieveNotific Invoke APDU from the remote endpoint.");
   // Re-open our transmit channel if we previously closed it.
 }
 
@@ -1176,6 +1447,8 @@ void H4504Handler::HoldCall(BOOL localHold)
   
   // Send a FACILITY message with a callNotific Invoke
   // Supplementary Service PDU to the held endpoint.
+  PTRACE(4, "H4504\tTransmitting a holdNotific Invoke APDU to the remote endpoint.");
+
   H450ServiceAPDU serviceAPDU;
 
   currentInvokeId = dispatcher.GetNextInvokeId();
@@ -1193,9 +1466,11 @@ void H4504Handler::RetrieveCall()
 
   // Send a FACILITY message with a retrieveNotific Invoke
   // Supplementary Service PDU to the held endpoint.
-  currentInvokeId = dispatcher.GetNextInvokeId();
+  PTRACE(4, "H4504\tTransmitting a retrieveNotific Invoke APDU to the remote endpoint.");
+
   H450ServiceAPDU serviceAPDU;
-  
+
+  currentInvokeId = dispatcher.GetNextInvokeId();
   serviceAPDU.BuildInvoke(currentInvokeId, H4504_CallHoldOperation::e_retrieveNotific);
   serviceAPDU.WriteFacilityPDU(connection);
   
@@ -1228,7 +1503,7 @@ BOOL H4506Handler::OnReceivedInvoke(int opcode,
       break;
 
     default:
-      currentInvokeId = -1;
+      currentInvokeId = 0;
       return FALSE;
   }
 
@@ -1244,13 +1519,16 @@ void H4506Handler::OnReceivedCallWaitingIndication(int /*linkedId*/,
   if(!DecodeArguments(argument, cwArg, -1))
     return;
 
-//  unsigned noOfAddWaitingCalls = cwArg.m_nbOfAddWaitingCalls.GetValue();
+  connection.SetRemotCallWaiting(cwArg.m_nbOfAddWaitingCalls.GetValue());
+  return;
 }
 
 
 void H4506Handler::AttachToAlerting(H323SignalPDU & pdu,
                                     unsigned numberOfCallsWaiting)
 {
+  PTRACE(4, "H450.6\tAttaching a Call Waiting Invoke PDU to this Alerting message.");
+  
   H450ServiceAPDU serviceAPDU;
 
   // Store the call waiting invokeID associated with this connection
