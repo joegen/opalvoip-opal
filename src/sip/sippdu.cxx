@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2004  2002/02/13 02:32:00  robertj
+ * Revision 1.2005  2002/03/08 06:28:03  craigs
+ * Changed to allow Authorisation to be included in other PDUs
+ *
+ * Revision 2.3  2002/02/13 02:32:00  robertj
  * Fixed use of correct Decode function and error detection on parsing SDP.
  *
  * Revision 2.2  2002/02/11 07:36:23  robertj
@@ -50,7 +53,6 @@
 #include <opal/call.h>
 #include <opal/connection.h>
 #include <opal/transports.h>
-#include <ptclib/cypher.h>
 
 
 #define	SIP_VER_MAJOR	2
@@ -546,64 +548,6 @@ void SIP_PDU::BuildINVITE()
   mime.SetAt("User-Agent", "OPAL/2.0");
   mime.SetContentType("application/sdp");
   sdp = connection->BuildSDP();
-}
-
-
-static PString AsHex(PMessageDigest5::Code & digest)
-{
-  PStringStream out;
-  out << hex << setfill('0');
-  for (PINDEX i = 0; i < 16; i++)
-    out << setw(2) << (unsigned)((BYTE *)&digest)[i];
-  return out;
-}
-
-
-void SIP_PDU::BuildINVITE(const PString & realm, const PString & nonce, BOOL isProxy)
-{
-  BuildINVITE();
-
-  PString username = connection->GetLocalPartyName();
-  PString passwd = connection->GetEndPoint().GetRegistrationPassword();
-
-  PMessageDigest5 digestor;
-  PMessageDigest5::Code a1, a2, response;
-
-  digestor.Start();
-  digestor.Process(username);
-  digestor.Process(":");
-  digestor.Process(realm);
-  digestor.Process(":");
-  digestor.Process(passwd);
-  digestor.Complete(a1);
-
-  digestor.Start();
-  digestor.Process(method);
-  digestor.Process(":");
-  digestor.Process(uri.AsString());
-  digestor.Complete(a2);
-
-  digestor.Start();
-  digestor.Process(AsHex(a1));
-  digestor.Process(":");
-  digestor.Process(nonce);
-  digestor.Process(":");
-  digestor.Process(AsHex(a2));
-  digestor.Complete(response);
-
-  PStringStream auth;
-  auth << "Digest "
-          "username=\"" << username << "\", "
-          "realm=\"" << realm << "\", "
-          "nonce=\"" << nonce << "\", "
-          "uri=\"" << uri << "\", "
-          "response=\"" << AsHex(response) << "\", "
-          "algorithm=md5";
-
-  if (isProxy)
-    mime.SetAt("Proxy-Authorization", auth);
-  else
-    mime.SetAt("Authorization", auth);
 }
 
 
