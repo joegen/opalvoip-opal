@@ -44,8 +44,6 @@ Modified by Jean-Marc Valin
 */
 
 #include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include "lsp.h"
 #include "stack_alloc.h"
 
@@ -54,6 +52,9 @@ Modified by Jean-Marc Valin
 #define M_PI           3.14159265358979323846  /* pi */
 #endif
 
+#ifndef NULL
+#define NULL 0
+#endif
 
 /*---------------------------------------------------------------------------*\
 
@@ -62,13 +63,13 @@ Modified by Jean-Marc Valin
 	AUTHOR......: David Rowe
 	DATE CREATED: 24/2/93
 
-    This function evalutes a series of chebyshev polynomials
+    This function evaluates a series of Chebyshev polynomials
 
 \*---------------------------------------------------------------------------*/
 
 
 
-static float cheb_poly_eva(float *coef,float x,int m,void *stack)
+static float cheb_poly_eva(float *coef,float x,int m,char *stack)
 /*  float coef[]  	coefficients of the polynomial to be evaluated 	*/
 /*  float x   		the point where polynomial is to be evaluated 	*/
 /*  int m 		order of the polynomial 			*/
@@ -77,14 +78,14 @@ static float cheb_poly_eva(float *coef,float x,int m,void *stack)
     float *T,sum;
     int m2=m>>1;
 
-    /* Allocate memory for chebyshev series formulation */
+    /* Allocate memory for Chebyshev series formulation */
     T=PUSH(stack, m2+1, float);
 
     /* Initialise values */
     T[0]=1;
     T[1]=x;
 
-    /* Evaluate chebyshev series formulation using iterative approach 	*/
+    /* Evaluate Chebyshev series formulation using iterative approach  */
     /* Evaluate polynomial and return value also free memory space */
     sum = coef[m2] + coef[m2-1]*x;
     x *= 2;
@@ -111,7 +112,7 @@ static float cheb_poly_eva(float *coef,float x,int m,void *stack)
 \*---------------------------------------------------------------------------*/
 
 
-int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta, void *stack)
+int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta, char *stack)
 /*  float *a 		     	lpc coefficients			*/
 /*  int lpcrdr			order of LPC coefficients (10) 		*/
 /*  float *freq 	      	LSP frequencies in the x domain       	*/
@@ -135,7 +136,7 @@ int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta, void *stack)
     int roots=0;              	/* DR 8/2/94: number of roots found 	*/
     flag = 1;                	/*  program is searching for a root when,
 				1 else has found one 			*/
-    m = lpcrdr/2;            	/* order of P'(z) & Q'(z) polynimials 	*/
+    m = lpcrdr/2;            	/* order of P'(z) & Q'(z) polynomials 	*/
 
 
     /* Allocate memory space for polynomials */
@@ -145,7 +146,7 @@ int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta, void *stack)
     /* determine P'(z)'s and Q'(z)'s coefficients where
       P'(z) = P(z)/(1 + z^(-1)) and Q'(z) = Q(z)/(1-z^(-1)) */
 
-    px = P;                      /* initilaise ptrs 			*/
+    px = P;                      /* initialise ptrs 			*/
     qx = Q;
     p = px;
     q = qx;
@@ -247,7 +248,7 @@ int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta, void *stack)
 \*---------------------------------------------------------------------------*/
 
 
-void lsp_to_lpc(float *freq,float *ak,int lpcrdr, void *stack)
+void lsp_to_lpc(float *freq,float *ak,int lpcrdr, char *stack)
 /*  float *freq 	array of LSP frequencies in the x domain	*/
 /*  float *ak 		array of LPC coefficients 			*/
 /*  int lpcrdr  	order of LPC coefficients 			*/

@@ -31,8 +31,11 @@
 */
 
 #include <math.h>
+#include "math_approx.h"
 
-float cos_sin[202] = {
+#ifdef SLOW_TRIG
+
+float cos_sin[102] = {
    1.00000000, 0.00000000,
    0.99804751, 0.06245932,
    0.99219767, 0.12467473,
@@ -97,3 +100,6 @@ float speex_cos(float x)
                                   .5*delta*(cos_sin[ind] - 
                                             .3333333*delta*cos_sin[ind+1]));
 }
+
+#endif
+

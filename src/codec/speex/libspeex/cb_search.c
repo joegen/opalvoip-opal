@@ -30,12 +30,11 @@
 */
 
 
-#include <stdlib.h>
 #include "cb_search.h"
 #include "filters.h"
 #include "stack_alloc.h"
 #include "vq.h"
-
+#include "misc.h"
 
 void split_cb_search_shape_sign(
 float target[],			/* target vector */
@@ -48,7 +47,7 @@ int   nsf,                      /* number of samples in subframe */
 float *exc,
 float *r,
 SpeexBits *bits,
-void *stack,
+char *stack,
 int   complexity
 )
 {
@@ -61,7 +60,7 @@ int   complexity
    float **ot, **nt;
    int **nind, **oind;
    int *ind;
-   float *shape_cb;
+   signed char *shape_cb;
    int shape_cb_size, subvect_size, nb_subvect;
    split_cb_params *params;
    int N=2;
@@ -127,7 +126,7 @@ int   complexity
    for (i=0;i<shape_cb_size;i++)
    {
       float *res;
-      float *shape;
+      signed char *shape;
 
       res = resp+i*subvect_size;
       shape = shape_cb+i*subvect_size;
@@ -137,7 +136,7 @@ int   complexity
       {
          res[j]=0;
          for (k=0;k<=j;k++)
-            res[j] += shape[k]*r[j-k];
+            res[j] += 0.03125*shape[k]*r[j-k];
       }
       
       /* Compute codeword energy */
@@ -221,7 +220,7 @@ int   complexity
                      rind-=shape_cb_size;
                   }
 
-                  g=sign*shape_cb[rind*subvect_size+m];
+                  g=sign*0.03125*shape_cb[rind*subvect_size+m];
                   q=subvect_size-m;
                   for (n=subvect_size*(i+1);n<nsf;n++,q++)
                      t[n] -= g*r[q];
@@ -258,10 +257,10 @@ int   complexity
       /*update old-new data*/
       /* just swap pointers instead of a long copy */
       {
-         float **tmp;
-         tmp=ot;
+         float **tmp2;
+         tmp2=ot;
          ot=nt;
-         nt=tmp;
+         nt=tmp2;
       }
       for (j=0;j<N;j++)
          for (m=0;m<nb_subvect;m++)
@@ -290,7 +289,7 @@ int   complexity
       }
 
       for (j=0;j<subvect_size;j++)
-         e[subvect_size*i+j]=sign*shape_cb[rind*subvect_size+j];
+         e[subvect_size*i+j]=sign*0.03125*shape_cb[rind*subvect_size+j];
    }   
    /* Update excitation */
    for (j=0;j<nsf;j++)
@@ -309,12 +308,12 @@ float *exc,
 void *par,                      /* non-overlapping codebook */
 int   nsf,                      /* number of samples in subframe */
 SpeexBits *bits,
-void *stack
+char *stack
 )
 {
    int i,j;
    int *ind, *signs;
-   float *shape_cb;
+   signed char *shape_cb;
    int shape_cb_size, subvect_size, nb_subvect;
    split_cb_params *params;
    int have_sign;
@@ -345,7 +344,7 @@ void *stack
       if (signs[i])
          s=-1;
       for (j=0;j<subvect_size;j++)
-         exc[subvect_size*i+j]+=s*shape_cb[ind[i]*subvect_size+j];
+         exc[subvect_size*i+j]+=s*0.03125*shape_cb[ind[i]*subvect_size+j];
    }
 }
 
@@ -360,7 +359,7 @@ int   nsf,                      /* number of samples in subframe */
 float *exc,
 float *r,
 SpeexBits *bits,
-void *stack,
+char *stack,
 int   complexity
 )
 {
@@ -381,11 +380,8 @@ float *exc,
 void *par,                      /* non-overlapping codebook */
 int   nsf,                      /* number of samples in subframe */
 SpeexBits *bits,
-void *stack
+char *stack
 )
 {
-   int i;
-
-   for (i=0;i<nsf;i++)
-      exc[i]+=3*((((float)rand())/RAND_MAX)-.5);
+   speex_rand_vec(1, exc, nsf);
 }

@@ -32,8 +32,6 @@
 
 */
 
-#include <stdlib.h>
-#include <stdio.h>
 #include "modes.h"
 #include "ltp.h"
 #include "quant_lsp.h"
@@ -41,22 +39,28 @@
 #include "sb_celp.h"
 #include "nb_celp.h"
 #include "vbr.h"
+#include "misc.h"
+
+#ifndef NULL
+#define NULL 0
+#endif
 
 SpeexMode *speex_mode_list[SPEEX_NB_MODES] = {&speex_nb_mode, &speex_wb_mode, &speex_uwb_mode};
 
 /* Extern declarations for all codebooks we use here */
-extern float gain_cdbk_nb[];
-extern float gain_cdbk_lbr[];
-extern float hexc_table[];
-extern float exc_5_256_table[];
-extern float exc_5_64_table[];
-extern float exc_8_128_table[];
-extern float exc_10_32_table[];
-extern float exc_10_16_table[];
-extern float hexc_10_32_table[];
+extern signed char gain_cdbk_nb[];
+extern signed char gain_cdbk_lbr[];
+extern signed char hexc_table[];
+extern signed char exc_5_256_table[];
+extern signed char exc_5_64_table[];
+extern signed char exc_8_128_table[];
+extern signed char exc_10_32_table[];
+extern signed char exc_10_16_table[];
+extern signed char exc_20_32_table[];
+extern signed char hexc_10_32_table[];
 
-static void nb_mode_query(void *mode, int request, void *ptr);
-static void wb_mode_query(void *mode, int request, void *ptr);
+static int nb_mode_query(void *mode, int request, void *ptr);
+static int wb_mode_query(void *mode, int request, void *ptr);
 
 /* Parameters for Long-Term Prediction (LTP)*/
 static ltp_params ltp_params_nb = {
@@ -92,6 +96,15 @@ static split_cb_params split_cb_nb_vlbr = {
    4,               /*nb_subvect*/
    exc_10_16_table, /*shape_cb*/
    4,               /*shape_bits*/
+   0,
+};
+
+/* Split-VQ innovation parameters for very low bit-rate narrowband */
+static split_cb_params split_cb_nb_ulbr = {
+   20,               /*subvect_size*/
+   2,               /*nb_subvect*/
+   exc_20_32_table, /*shape_cb*/
+   5,               /*shape_bits*/
    0,
 };
 
@@ -155,7 +168,7 @@ static split_cb_params split_cb_high_lbr = {
 static SpeexSubmode nb_submode1 = {
    0,
    1,
-   1,
+   0,
    0,
    /* LSP quantization */
    lsp_quant_lbr,
@@ -170,6 +183,28 @@ static SpeexSubmode nb_submode1 = {
    NULL,
    .7, .7, -1,
    43
+};
+
+/* 3.95 kbps very low bit-rate mode */
+static SpeexSubmode nb_submode8 = {
+   0,
+   1,
+   0,
+   0,
+   /*LSP quantization*/
+   lsp_quant_lbr,
+   lsp_unquant_lbr,
+   /*No pitch quantization*/
+   forced_pitch_quant,
+   forced_pitch_unquant,
+   NULL,
+   /*Innovation quantization*/
+   split_cb_search_shape_sign,
+   split_cb_shape_sign_unquant,
+   &split_cb_nb_ulbr,
+
+   0.7, 0.5, .65,
+   79
 };
 
 /* 5.95 kbps very low bit-rate mode */
@@ -319,9 +354,9 @@ static SpeexNBMode nb_mode = {
    1.0001, /*lpc_floor*/
    0.0,    /*preemph*/
    {NULL, &nb_submode1, &nb_submode2, &nb_submode3, &nb_submode4, &nb_submode5, &nb_submode6, &nb_submode7,
-   NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
+   &nb_submode8, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
    5,
-   {1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7}
+   {1, 8, 2, 3, 3, 4, 4, 5, 5, 6, 7}
 };
 
 
@@ -444,10 +479,11 @@ static SpeexSBMode sb_wb_mode = {
    .002,   /*lag_factor*/
    1.0001, /*lpc_floor*/
    0.0,    /*preemph*/
+   0.9,
    {NULL, &wb_submode1, &wb_submode2, &wb_submode3, &wb_submode4, NULL, NULL, NULL},
    3,
-   {1, 1, 2, 3, 4, 5, 5, 6, 6, 7, 7},
-   {0, 1, 1, 1, 1, 1, 2, 2, 3, 3, 4},
+   {1, 8, 2, 3, 4, 5, 5, 6, 6, 7, 7},
+   {1, 1, 1, 1, 1, 1, 2, 2, 3, 3, 4},
    vbr_hb_thresh,
    5
 };
@@ -487,6 +523,7 @@ static SpeexSBMode sb_uwb_mode = {
    .002,   /*lag_factor*/
    1.0001, /*lpc_floor*/
    0.0,    /*preemph*/
+   0.7,
    {NULL, &wb_submode1, NULL, NULL, NULL, NULL, NULL, NULL},
    1,
    {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
@@ -546,19 +583,19 @@ int speex_decode(void *state, SpeexBits *bits, float *out)
 }
 
 
-void speex_encoder_ctl(void *state, int request, void *ptr)
+int speex_encoder_ctl(void *state, int request, void *ptr)
 {
-   (*((SpeexMode**)state))->enc_ctl(state, request, ptr);
+   return (*((SpeexMode**)state))->enc_ctl(state, request, ptr);
 }
 
-void speex_decoder_ctl(void *state, int request, void *ptr)
+int speex_decoder_ctl(void *state, int request, void *ptr)
 {
-   (*((SpeexMode**)state))->dec_ctl(state, request, ptr);
+   return (*((SpeexMode**)state))->dec_ctl(state, request, ptr);
 }
 
 
 
-static void nb_mode_query(void *mode, int request, void *ptr)
+static int nb_mode_query(void *mode, int request, void *ptr)
 {
    SpeexNBMode *m = (SpeexNBMode*)mode;
    
@@ -568,15 +605,21 @@ static void nb_mode_query(void *mode, int request, void *ptr)
       *((int*)ptr)=m->frameSize;
       break;
    case SPEEX_SUBMODE_BITS_PER_FRAME:
-      *((int*)ptr) = m->submodes[*((int*)ptr)]->bits_per_frame;
+      if (*((int*)ptr)==0)
+         *((int*)ptr) = NB_SUBMODE_BITS+1;
+      else if (m->submodes[*((int*)ptr)]==NULL)
+         *((int*)ptr) = -1;
+      else
+         *((int*)ptr) = m->submodes[*((int*)ptr)]->bits_per_frame;
       break;
    default:
-      fprintf(stderr, "Unknown wb_mode_query request: %d\n", request);
+      speex_warning_int("Unknown nb_mode_query request: ", request);
+      return -1;
    }
-
+   return 0;
 }
 
-static void wb_mode_query(void *mode, int request, void *ptr)
+static int wb_mode_query(void *mode, int request, void *ptr)
 {
    SpeexSBMode *m = (SpeexSBMode*)mode;
 
@@ -586,15 +629,22 @@ static void wb_mode_query(void *mode, int request, void *ptr)
       *((int*)ptr)=m->frameSize;
       break;
    case SPEEX_SUBMODE_BITS_PER_FRAME:
-      *((int*)ptr) = m->submodes[*((int*)ptr)]->bits_per_frame;
+      if (*((int*)ptr)==0)
+         *((int*)ptr) = SB_SUBMODE_BITS+1;
+      else if (m->submodes[*((int*)ptr)]==NULL)
+         *((int*)ptr) = -1;
+      else
+         *((int*)ptr) = m->submodes[*((int*)ptr)]->bits_per_frame;
       break;
    default:
-      fprintf(stderr, "Unknown wb_mode_query request: %d\n", request);
+      speex_warning_int("Unknown wb_mode_query request: ", request);
+      return -1;
    }
+   return 0;
 }
 
 
-void speex_mode_query(SpeexMode *mode, int request, void *ptr)
+int speex_mode_query(SpeexMode *mode, int request, void *ptr)
 {
-   mode->query(mode->mode, request, ptr);
+   return mode->query(mode->mode, request, ptr);
 }
