@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2023  2004/07/11 12:32:51  rjongbloed
+ * Revision 1.2024  2005/02/21 12:19:47  rjongbloed
+ * Added new "options list" to the OpalMediaFormat class.
+ *
+ * Revision 2.22  2004/07/11 12:32:51  rjongbloed
  * Added functions to add/subtract lists of media formats from a media format list
  *
  * Revision 2.21  2004/05/03 00:59:18  csoutheren
@@ -280,6 +283,164 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
 
 ///////////////////////////////////////////////////////////////////////////////
 
+/**Base class for options attached to an OpalMediaFormat.
+  */
+class OpalMediaOption : public PObject
+{
+    PCLASSINFO(OpalMediaOption, PObject);
+  public:
+    enum MergeType {
+      NoMerge,
+      MinMerge,
+      MaxMerge,
+      EqualMerge,
+      NotEqualMerge,
+
+      // Synonyms
+      AndMerge = MaxMerge,
+      OrMerge  = MinMerge,
+      XorMerge = NotEqualMerge,
+      NotXorMerge = EqualMerge
+    };
+
+  protected:
+    OpalMediaOption(
+      const char * name,
+      bool readOnly,
+      MergeType merge
+    );
+
+  public:
+    virtual Comparison Compare(const PObject & obj) const;
+
+    bool Merge(
+      const OpalMediaOption & option
+    );
+    virtual void Assign(
+      const OpalMediaOption & option
+    ) = 0;
+
+    PString AsString() const;
+    bool FromString(const PString & value);
+
+    const PString & GetName() const { return m_name; }
+
+    bool IsReadOnly() const { return m_readOnly; }
+
+    MergeType GetMerge() const { return m_merge; }
+    void SetMerge(MergeType merge) { m_merge = merge; }
+
+  protected:
+    PString   m_name;
+    bool      m_readOnly;
+    MergeType m_merge;
+};
+
+
+template <typename T>
+class OpalMediaOptionValue : public OpalMediaOption
+{
+    PCLASSINFO(OpalMediaOptionValue, OpalMediaOption);
+  public:
+    OpalMediaOptionValue(
+      const char * name,
+      bool readOnly,
+      MergeType merge = MinMerge,
+      T value = 0
+    ) : OpalMediaOption(name, readOnly, merge),
+        m_value(value)
+    { }
+
+    virtual PObject * Clone() const { return new OpalMediaOptionValue(*this); }
+
+    virtual void PrintOn(ostream & strm) const { strm << m_value; }
+    virtual void ReadFrom(istream & strm) { strm >> m_value; }
+
+    virtual void Assign(
+      const OpalMediaOption & option
+    ) {
+      const OpalMediaOptionValue * otherOption = PDownCast(const OpalMediaOptionValue, &option);
+      if (otherOption != NULL)
+        m_value = otherOption->m_value;
+    }
+
+    T GetValue() const { return m_value; }
+    void SetValue(T value) { m_value = value; }
+
+  protected:
+    T m_value;
+};
+
+
+typedef OpalMediaOptionValue<bool>   OpalMediaOptionBoolean;
+typedef OpalMediaOptionValue<int>    OpalMediaOptionInteger;
+typedef OpalMediaOptionValue<double> OpalMediaOptionReal;
+
+
+class OpalMediaOptionEnum : public OpalMediaOption
+{
+    PCLASSINFO(OpalMediaOptionEnum, OpalMediaOption);
+  public:
+    OpalMediaOptionEnum(
+      const char * name,
+      bool readOnly,
+      const char * const * enumerations,
+      PINDEX count,
+      MergeType merge = EqualMerge,
+      PINDEX value = 0
+    );
+
+    virtual PObject * Clone() const;
+    virtual Comparison Compare(const PObject & obj) const;
+    virtual void PrintOn(ostream & strm) const;
+    virtual void ReadFrom(istream & strm);
+
+    virtual void Assign(
+      const OpalMediaOption & option
+    );
+
+    PINDEX GetValue() const { return m_value; }
+    void SetValue(PINDEX value);
+
+  protected:
+    PStringArray m_enumerations;
+    PINDEX       m_value;
+};
+
+
+class OpalMediaOptionString : public OpalMediaOption
+{
+    PCLASSINFO(OpalMediaOptionString, OpalMediaOption);
+  public:
+    OpalMediaOptionString(
+      const char * name,
+      bool readOnly
+    );
+    OpalMediaOptionString(
+      const char * name,
+      bool readOnly,
+      const PString & value
+    );
+
+    virtual PObject * Clone() const;
+    virtual Comparison Compare(const PObject & obj) const;
+    virtual void PrintOn(ostream & strm) const;
+    virtual void ReadFrom(istream & strm);
+
+    virtual void Assign(
+      const OpalMediaOption & option
+    );
+
+    const PString & GetValue() const { return m_value; }
+    void SetValue(const PString & value);
+
+  protected:
+    PString m_value;
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
+
 /**This class describes a media format as used in the OPAL system. A media
    format is the type of any media data that is trasferred between OPAL
    entities. For example an audio codec such as G.723.1 is a media format, a
@@ -295,6 +456,31 @@ class OpalMediaFormat : public PCaselessString
     /**Default constructor creates a PCM-16 media format.
       */
     OpalMediaFormat();
+
+    /**This form of the constructor will register the full details of the
+       media format into an internal database. This would typically be used
+       as a static global. In fact it would be very dangerous for an instance
+       to use this constructor in any other way, especially local variables.
+
+       If the rtpPayloadType is RTP_DataFrame::DynamicBase, then the RTP
+       payload type is actually set to teh first unused dynamic RTP payload
+       type that is in the registers set of media formats.
+
+       The frameSize parameter indicates that the media format has a maximum
+       size for each data frame, eg G.723.1 frames are no more than 24 bytes
+       long. If zero then there is no intrinsic maximum, eg G.711.
+      */
+    OpalMediaFormat(
+      const char * fullName,  /// Full name of media format
+      unsigned defaultSessionID,  /// Default session for codec type
+      RTP_DataFrame::PayloadTypes rtpPayloadType, /// RTP payload type code
+      const char * encodingName, /// RTP encoding name
+      BOOL     needsJitter,   /// Indicate format requires a jitter buffer
+      unsigned bandwidth,     /// Bandwidth in bits/second
+      PINDEX   frameSize, /// Size of frame in bytes (if applicable)
+      unsigned frameTime, /// Time for frame in RTP units (if applicable)
+      unsigned clockRate  /// Clock rate for data (if applicable)
+    );
 
     /**Construct a media format, searching database for information.
        This constructor will search through the RegisteredMediaFormats list
@@ -344,31 +530,6 @@ class OpalMediaFormat : public PCaselessString
       const PString & wildcard  /// Wildcard name to search for
     );
 
-    /**This form of the constructor will register the full details of the
-       media format into an internal database. This would typically be used
-       as a static global. In fact it would be very dangerous for an instance
-       to use this constructor in any other way, especially local variables.
-
-       If the rtpPayloadType is RTP_DataFrame::DynamicBase, then the RTP
-       payload type is actually set to teh first unused dynamic RTP payload
-       type that is in the registers set of media formats.
-
-       The frameSize parameter indicates that the media format has a maximum
-       size for each data frame, eg G.723.1 frames are no more than 24 bytes
-       long. If zero then there is no intrinsic maximum, eg G.711.
-      */
-    OpalMediaFormat(
-      const char * fullName,  /// Full name of media format
-      unsigned defaultSessionID,  /// Default session for codec type
-      RTP_DataFrame::PayloadTypes rtpPayloadType, /// RTP payload type code
-      const char * encodingName, /// RTP encoding name
-      BOOL     needsJitter,   /// Indicate format requires a jitter buffer
-      unsigned bandwidth,     /// Bandwidth in bits/second
-      PINDEX   frameSize = 0, /// Size of frame in bytes (if applicable)
-      unsigned frameTime = 0, /// Time for frame in RTP units (if applicable)
-      unsigned clockRate = 0  /// Clock rate for data (if applicable)
-    );
-
     /**Search for the specified format type.
        This is equivalent to going fmt = OpalMediaFormat(rtpPayloadType);
       */
@@ -414,26 +575,30 @@ class OpalMediaFormat : public PCaselessString
     /**Determine if the media format requires a jitter buffer. As a rule an
        audio codec needs a jitter buffer and all others do not.
       */
-    BOOL NeedsJitterBuffer() const { return needsJitter; }
+    bool NeedsJitterBuffer() const { return GetOptionBoolean(NeedsJitterOption); }
+    static const char * const NeedsJitterOption;
 
     /**Get the average bandwidth used in bits/second.
       */
-    unsigned GetBandwidth() const { return bandwidth; }
+    unsigned GetBandwidth() const { return GetOptionInteger(MaxBitRateOption); }
+    static const char * const MaxBitRateOption;
 
     /**Get the maximum frame size in bytes. If this returns zero then the
        media format has no intrinsic maximum frame size, eg G.711 would 
        return zero but G.723.1 whoud return 24.
       */
-    PINDEX GetFrameSize() const { return frameSize; }
+    PINDEX GetFrameSize() const { return GetOptionInteger(MaxFrameSizeOption); }
+    static const char * const MaxFrameSizeOption;
 
     /**Get the frame rate in RTP timestamp units. If this returns zero then
        the media format is not real time and has no intrinsic timing eg
       */
-    unsigned GetFrameTime() const { return frameTime; }
+    unsigned GetFrameTime() const { return GetOptionInteger(FrameTimeOption); }
+    static const char * const FrameTimeOption;
 
     /**Get the number of RTP timestamp units per millisecond.
       */
-    unsigned GetTimeUnits() const { return clockRate/1000; }
+    unsigned GetTimeUnits() const { return GetClockRate()/1000; }
 
     enum StandardClockRate {
       AudioClockRate = 8000,  // 8kHz sample rate
@@ -442,7 +607,135 @@ class OpalMediaFormat : public PCaselessString
 
     /**Get the clock rate in Hz for this format.
       */
-    unsigned GetClockRate() const { return clockRate; }
+    unsigned GetClockRate() const { return GetOptionInteger(ClockRateOption); }
+    static const char * const ClockRateOption;
+
+    /**Get the number of options this media format has.
+      */
+    PINDEX GetOptionCount() const { return options.GetSize(); }
+
+    /**Get the option instance at the specified index. This contains the
+       description and value for the option.
+      */
+    const OpalMediaOption & GetOption(
+      PINDEX index
+    ) { return options[index]; }
+
+    /**Get the option value of the specified name as a string.
+
+       Returns false of the option is not present.
+      */
+    bool GetOptionValue(
+      const PString & name,
+      PString & value
+    ) const;
+
+    /**Set the option value of the specified name as a string.
+       Note the option will not be added if it does not exist, the option
+       must be explicitly added using AddOption().
+
+       Returns false of the option is not present.
+      */
+    bool SetOptionValue(
+      const PString & name,
+      const PString & value
+    );
+
+    /**Get the option value of the specified name as a boolean. The default
+       value is returned if the option is not present.
+      */
+    bool GetOptionBoolean(
+      const PString & name,
+      bool dflt = FALSE
+    ) const;
+
+    /**Set the option value of the specified name as a boolean.
+       Note the option will not be added if it does not exist, the option
+       must be explicitly added using AddOption().
+
+       Returns false of the option is not present or is not of the same type.
+      */
+    bool SetOptionBoolean(
+      const PString & name,
+      bool value
+    );
+
+    /**Get the option value of the specified name as an integer. The default
+       value is returned if the option is not present.
+      */
+    int GetOptionInteger(
+      const PString & name,
+      int dflt = 0
+    ) const;
+
+    /**Set the option value of the specified name as an integer.
+       Note the option will not be added if it does not exist, the option
+       must be explicitly added using AddOption().
+
+       Returns false of the option is not present or is not of the same type.
+      */
+    bool SetOptionInteger(
+      const PString & name,
+      int value
+    );
+
+    /**Get the option value of the specified name as a real. The default
+       value is returned if the option is not present.
+      */
+    double GetOptionReal(
+      const PString & name,
+      double dflt = 0
+    ) const;
+
+    /**Set the option value of the specified name as a real.
+       Note the option will not be added if it does not exist, the option
+       must be explicitly added using AddOption().
+
+       Returns false of the option is not present or is not of the same type.
+      */
+    bool SetOptionReal(
+      const PString & name,
+      double value
+    );
+
+    /**Get the option value of the specified name as an index into an
+       enumeration list. The default value is returned if the option is not
+       present.
+      */
+    PINDEX GetOptionEnum(
+      const PString & name,
+      PINDEX dflt = 0
+    ) const;
+
+    /**Set the option value of the specified name as an index into an enumeration.
+       Note the option will not be added if it does not exist, the option
+       must be explicitly added using AddOption().
+
+       Returns false of the option is not present or is not of the same type.
+      */
+    bool SetOptionEnum(
+      const PString & name,
+      PINDEX value
+    );
+
+    /**Get the option value of the specified name as a string. The default
+       value is returned if the option is not present.
+      */
+    PString GetOptionString(
+      const PString & name,
+      const PString & dflt = PString::Empty()
+    ) const;
+
+    /**Set the option value of the specified name as a string.
+       Note the option will not be added if it does not exist, the option
+       must be explicitly added using AddOption().
+
+       Returns false of the option is not present or is not of the same type.
+      */
+    bool SetOptionString(
+      const PString & name,
+      const PString & value
+    );
 
     /**Get a copy of the list of media formats that have been registered.
       */
@@ -450,20 +743,55 @@ class OpalMediaFormat : public PCaselessString
     static void GetAllRegisteredMediaFormats(OpalMediaFormatList & copy);
 
   protected:
-    RTP_DataFrame::PayloadTypes rtpPayloadType;
-    const char * rtpEncodingName;
-    unsigned defaultSessionID;
-    BOOL     needsJitter;
-    unsigned bandwidth;
-    PINDEX   frameSize;
-    unsigned frameTime;
-    unsigned clockRate;
+    bool AddOption(
+      OpalMediaOption * option
+    );
+
+    OpalMediaOption * FindOption(
+      const PString & name
+    ) const;
+
+    RTP_DataFrame::PayloadTypes  rtpPayloadType;
+    const char *                 rtpEncodingName;
+    unsigned                     defaultSessionID;
+    PSortedList<OpalMediaOption> options;
 
   private:
     static OpalMediaFormatList & GetMediaFormatsList();
     static PMutex & GetMediaFormatsListMutex();
 
   friend class OpalMediaFormatList;
+};
+
+
+// A pair of macros to simplify cration of OpalMediFormat instances.
+
+#define OPAL_MEDIA_FORMAT(name, fullName, defaultSessionID, rtpPayloadType, encodingName, needsJitter, bandwidth, frameSize, frameTime, timeUnits) \
+const class name##_Class : public OpalMediaFormat \
+{ \
+  public: \
+    name##_Class(); \
+} name; \
+name##_Class::name##_Class() \
+      : OpalMediaFormat(fullName, defaultSessionID, rtpPayloadType, encodingName, needsJitter, bandwidth, frameSize, frameTime, timeUnits) \
+
+
+class OpalAudioFormat : public OpalMediaFormat
+{
+    PCLASSINFO(OpalAudioFormat, OpalMediaFormat);
+  public:
+    OpalAudioFormat(
+      const char * fullName,  /// Full name of media format
+      RTP_DataFrame::PayloadTypes rtpPayloadType, /// RTP payload type code
+      const char * encodingName, /// RTP encoding name
+      PINDEX   frameSize, /// Size of frame in bytes (if applicable)
+      unsigned frameTime, /// Time for frame in RTP units (if applicable)
+      unsigned rxFrames,  /// Maximum number of frames per packet we can receive
+      unsigned txFrames   /// Desired number of frames per packet we transmit
+    );
+
+    static const char * const RxFramesPerPacketOption;
+    static const char * const TxFramesPerPacketOption;
 };
 
 
@@ -487,24 +815,22 @@ class OpalMediaFormat : public PCaselessString
 #define OPAL_GSM0610        "GSM-06.10"
 #define OPAL_RFC2833        "UserInput/RFC2833"
 
-extern OpalMediaFormat const OpalPCM16;
-extern OpalMediaFormat const OpalL16Mono8kHz;
-extern OpalMediaFormat const OpalL16Mono16kHz;
-
-extern OpalMediaFormat const OpalG711uLaw;
-extern OpalMediaFormat const OpalG711ALaw;
-extern OpalMediaFormat const OpalG728;
-extern OpalMediaFormat const OpalG729;
-extern OpalMediaFormat const OpalG729A;
-extern OpalMediaFormat const OpalG729B;
-extern OpalMediaFormat const OpalG729AB;
-#define OpalG7231 OpalG7231_6k3
-extern OpalMediaFormat const OpalG7231_6k3;
-extern OpalMediaFormat const OpalG7231_5k3;
-extern OpalMediaFormat const OpalG7231A_6k3;
-extern OpalMediaFormat const OpalG7231A_5k3;
-extern OpalMediaFormat const OpalGSM0610;
-extern OpalMediaFormat const OpalRFC2833;
+extern const OpalAudioFormat OpalPCM16;
+extern const OpalAudioFormat OpalL16Mono8kHz;
+extern const OpalAudioFormat OpalL16Mono16kHz;
+extern const OpalAudioFormat OpalG711uLaw;
+extern const OpalAudioFormat OpalG711ALaw;
+extern const OpalAudioFormat OpalG728;
+extern const OpalAudioFormat OpalG729;
+extern const OpalAudioFormat OpalG729A;
+extern const OpalAudioFormat OpalG729B;
+extern const OpalAudioFormat OpalG729AB;
+extern const OpalAudioFormat OpalG7231_6k3;
+extern const OpalAudioFormat OpalG7231_5k3;
+extern const OpalAudioFormat OpalG7231A_6k3;
+extern const OpalAudioFormat OpalG7231A_5k3;
+extern const OpalAudioFormat OpalGSM0610;
+extern const OpalMediaFormat OpalRFC2833;
 
 
 #endif  // __OPAL_MEDIAFMT_H
