@@ -24,7 +24,11 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2024  2004/03/22 11:32:42  rjongbloed
+ * Revision 1.2025  2004/03/25 11:53:42  rjongbloed
+ * Fixed size of RTP data frame buffer when reading from RTP, needs to be big
+ *   enough for anything that can be received. Pointed out by Ted Szoczei
+ *
+ * Revision 2.23  2004/03/22 11:32:42  rjongbloed
  * Added new codec type for 16 bit Linear PCM as must distinguish between the internal
  *   format used by such things as the sound card and the RTP payload format which
  *   is always big endian.
@@ -426,7 +430,11 @@ OpalRTPMediaStream::OpalRTPMediaStream(const OpalMediaFormat & mediaFormat,
     minAudioJitterDelay(minJitter),
     maxAudioJitterDelay(maxJitter)
 {
-  if (defaultDataSize > RTP_DataFrame::MaxEthernetPayloadSize)
+  /* If we are a source then we should set our buffer size to the max
+     practical UDP packet size. This means we have a buffer that can accept
+     whatever the RTP sender throws at us. For sink, we just clamp it to that
+     maximum size. */
+  if (isSource || defaultDataSize > RTP_DataFrame::MaxEthernetPayloadSize)
     defaultDataSize = RTP_DataFrame::MaxEthernetPayloadSize;
 }
 
