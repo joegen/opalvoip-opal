@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2022  2004/02/07 00:35:47  rjongbloed
+ * Revision 1.2023  2004/04/18 07:09:12  rjongbloed
+ * Added a couple more API functions to bring OPAL into line with similar functions in OpenH323.
+ *
+ * Revision 2.21  2004/02/07 00:35:47  rjongbloed
  * Fixed calls GetMediaFormats so no DOES return intersection of all connections formats.
  * Tidied some API elements to make usage more explicit.
  *
@@ -124,6 +127,8 @@ OpalCall::OpalCall(OpalManager & mgr)
 {
   manager.AttachCall(this);
 
+  isEstablished = FALSE;
+
   callEndReason = OpalConnection::NumCallEndReasons;
 
   activeConnections.DisallowDeleteObjects();
@@ -157,6 +162,9 @@ void OpalCall::AddConnection(OpalConnection * connection)
 
 void OpalCall::CheckEstablished()
 {
+  if (isEstablished)
+    return;
+
   PINDEX idx = activeConnections.GetSize();
   if (idx < 2)
     return;
@@ -172,6 +180,7 @@ void OpalCall::CheckEstablished()
     }
   }
 
+  isEstablished = TRUE;
   OnEstablished();
 }
 

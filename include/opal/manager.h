@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2022  2004/03/11 06:54:27  csoutheren
+ * Revision 1.2023  2004/04/18 07:09:12  rjongbloed
+ * Added a couple more API functions to bring OPAL into line with similar functions in OpenH323.
+ *
+ * Revision 2.21  2004/03/11 06:54:27  csoutheren
  * Added ability to disable SIP or H.323 stacks
  *
  * Revision 2.20  2004/02/24 11:37:01  rjongbloed
@@ -224,6 +227,16 @@ class OpalManager : public PObject
       const PString & token  /// Token for identifying call
     );
 
+    /**Determine if a call is established.
+       Return TRUE if there is an active call with the specified token and
+       that call has at least two parties with media flowing between them.
+       Note that the call could clear any time (even milliseconds) after this
+       function returns TRUE.
+      */
+    virtual BOOL IsCallEstablished(
+      const PString & token  /// Token for identifying call
+    );
+
     /**Find a call with the specified token.
        This searches the manager database for the call that contains the token
        as provided by functions such as SetUpCall().
@@ -247,6 +260,18 @@ class OpalManager : public PObject
       const PString & token,    /// Token for identifying connection
       OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser, /// Reason for call clearing
       PSyncPoint * sync = NULL  /// Sync point to wait on.
+    );
+
+    /**Clear a call.
+       This finds the call by using the token then calls the OpalCall::Clear()
+       function on it. All connections are released, and the conenctions and
+       call disposed of. Note that this function waits untile th call has been
+       cleared and all responses timeouts etc completed. Care must be used as
+       to when it is called as deadlocks may result.
+      */
+    virtual BOOL ClearCallSynchronous(
+      const PString & token,    /// Token for identifying connection
+      OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser /// Reason for call clearing
     );
 
     /**Clear all current calls.

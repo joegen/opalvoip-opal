@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2015  2004/03/11 06:54:27  csoutheren
+ * Revision 1.2016  2004/04/18 07:09:12  rjongbloed
+ * Added a couple more API functions to bring OPAL into line with similar functions in OpenH323.
+ *
+ * Revision 2.14  2004/03/11 06:54:27  csoutheren
  * Added ability to disable SIP or H.323 stacks
  *
  * Revision 2.13  2004/02/07 00:35:46  rjongbloed
@@ -145,6 +148,10 @@ class OpalCall : public PObject
        subsequently be closed and disposed of.
      */
     void Unlock() { inUseFlag.Signal(); }
+
+    /**Indicate tha all connections in call are connected and media is going.
+      */
+    BOOL IsEstablished() const { return isEstablished; }
 
     /**Check that all connections in call are connected and media is going.
        If all criteria are met, this calls OnEstablished() on every connection
@@ -404,6 +411,7 @@ class OpalCall : public PObject
     PString partyA;
     PString partyB;
     PTime   startTime;
+    BOOL    isEstablished;
 
     OpalConnection::CallEndReason callEndReason;
 
