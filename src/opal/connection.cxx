@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2012  2002/01/22 05:12:12  robertj
+ * Revision 1.2013  2002/02/11 07:41:58  robertj
+ * Added media bypass for streams between compatible protocols.
+ *
+ * Revision 2.11  2002/01/22 05:12:12  robertj
  * Revamp of user input API triggered by RFC2833 support
  *
  * Revision 2.10  2001/11/15 06:56:54  robertj
@@ -421,6 +424,20 @@ OpalMediaStream * OpalConnection::GetMediaStream(unsigned sessionId, BOOL source
   }
 
   return NULL;
+}
+
+
+BOOL OpalConnection::CanDoMediaBypass(unsigned /*sessionID*/) const
+{
+  return FALSE;
+}
+
+
+BOOL OpalConnection::GetMediaTransportAddress(unsigned /*sessionID*/,
+                                              OpalTransportAddress & /*data*/,
+                                              OpalTransportAddress & /*control*/) const
+{
+  return FALSE;
 }
 
 
