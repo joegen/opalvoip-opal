@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2048  2004/03/22 11:32:41  rjongbloed
+ * Revision 1.2049  2004/03/25 11:48:37  rjongbloed
+ * Changed PCM-16 from IllegalPayloadType to MaxPayloadType to avoid problems
+ *   in other parts of the code.
+ *
+ * Revision 2.47  2004/03/22 11:32:41  rjongbloed
  * Added new codec type for 16 bit Linear PCM as must distinguish between the internal
  *   format used by such things as the sound card and the RTP payload format which
  *   is always big endian.
@@ -4088,7 +4092,7 @@ void H323Connection::OnSetLocalCapabilities()
     for (PINDEX i = 0; i < formats.GetSize(); i++) {
       OpalMediaFormat format = formats[i];
       if (format.GetDefaultSessionID() == sessionOrder[s] &&
-          format.GetPayloadType() != RTP_DataFrame::IllegalPayloadType)
+          format.GetPayloadType() < RTP_DataFrame::MaxPayloadType)
         simultaneous = localCapabilities.AddAllCapabilities(endpoint, 0, simultaneous, format);
     }
   }
