@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2017  2003/01/07 04:39:53  robertj
+ * Revision 1.2018  2003/03/17 10:13:41  robertj
+ * Fixed mutex problem with media format database.
+ *
+ * Revision 2.16  2003/01/07 04:39:53  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.15  2002/11/10 11:33:19  robertj
@@ -356,6 +359,7 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
   clockRate = cr;
 
   PINDEX i;
+  PWaitAndSignal mutex(GetMediaFormatsListMutex());
   OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
 
   if ((i = registeredFormats.GetValuesIndex(*this)) != P_MAX_INDEX) {
@@ -398,7 +402,9 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
 
 OpalMediaFormat & OpalMediaFormat::operator=(RTP_DataFrame::PayloadTypes pt)
 {
-  const OpalMediaFormatList & registeredFormats = GetRegisteredMediaFormats();
+  PWaitAndSignal mutex(GetMediaFormatsListMutex());
+  const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
+
   PINDEX idx = registeredFormats.FindFormat(pt);
   if (idx != P_MAX_INDEX)
     *this = registeredFormats[idx];
@@ -416,7 +422,9 @@ OpalMediaFormat & OpalMediaFormat::operator=(const char * wildcard)
 
 OpalMediaFormat & OpalMediaFormat::operator=(const PString & wildcard)
 {
-  const OpalMediaFormatList & registeredFormats = GetRegisteredMediaFormats();
+  PWaitAndSignal mutex(GetMediaFormatsListMutex());
+  const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
+
   PINDEX idx = registeredFormats.FindFormat(wildcard);
   if (idx != P_MAX_INDEX)
     *this = registeredFormats[idx];
@@ -427,10 +435,31 @@ OpalMediaFormat & OpalMediaFormat::operator=(const PString & wildcard)
 }
 
 
+OpalMediaFormatList OpalMediaFormat::GetAllRegisteredMediaFormats()
+{
+  OpalMediaFormatList copy;
+
+  PWaitAndSignal mutex(GetMediaFormatsListMutex());
+  const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
+
+  for (PINDEX i = 0; i < registeredFormats.GetSize(); i++)
+    copy.OpalMediaFormatBaseList::Append(&registeredFormats[i]);
+
+  return copy;
+}
+
+
 OpalMediaFormatList & OpalMediaFormat::GetMediaFormatsList()
 {
   static OpalMediaFormatList registeredFormats;
   return registeredFormats;
+}
+
+
+PMutex & OpalMediaFormat::GetMediaFormatsListMutex()
+{
+  static PMutex mutex;
+  return mutex;
 }
 
 
@@ -453,7 +482,8 @@ OpalMediaFormatList & OpalMediaFormatList::operator+=(const OpalMediaFormat & fo
 {
   if (!format) {
     if (!HasFormat(format)) {
-      const OpalMediaFormatList & registeredFormats = OpalMediaFormat::GetRegisteredMediaFormats();
+      PWaitAndSignal mutex(OpalMediaFormat::GetMediaFormatsListMutex());
+      const OpalMediaFormatList & registeredFormats = OpalMediaFormat::GetMediaFormatsList();
       PINDEX idx = registeredFormats.FindFormat(format);
       if (idx != P_MAX_INDEX)
         OpalMediaFormatBaseList::Append(&registeredFormats[idx]);
