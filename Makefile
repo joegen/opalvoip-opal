@@ -22,7 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2015  2002/11/11 07:43:32  robertj
+# Revision 1.2016  2002/11/12 12:06:34  robertj
+# Fixed Solaris compatibility
+#
+# Revision 2.14  2002/11/11 07:43:32  robertj
 # Added speex codec files
 #
 # Revision 2.13  2002/09/11 05:56:16  robertj
@@ -463,9 +466,11 @@ endif
 .asnparser.version: $(ASNPARSER)
 	$(MAKE) -C $(ASNPARSE_DIR) opt
 	$(ASNPARSER) --version | awk '{print $$1,$$2,$$3}' > .asnparser.version.new
-	if test -e .asnparser.version && diff -q .asnparser.version.new .asnparser.version ; then rm .asnparser.version.new ; else mv .asnparser.version.new .asnparser.version ; fi
+	if test -f .asnparser.version && diff .asnparser.version.new .asnparser.version >/dev/null 2>&1 ; \
+                then rm .asnparser.version.new ; \
+                else mv .asnparser.version.new .asnparser.version ; \
+        fi
 
-$(ASNPARSER):
 
 
 # Build rules for ASN files
