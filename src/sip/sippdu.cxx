@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2005  2002/03/08 06:28:03  craigs
+ * Revision 1.2006  2002/03/18 08:09:31  robertj
+ * Changed to use new SetXXX functions in PURL in normalisation.
+ *
+ * Revision 2.4  2002/03/08 06:28:03  craigs
  * Changed to allow Authorisation to be included in other PDUs
  *
  * Revision 2.3  2002/02/13 02:32:00  robertj
@@ -190,18 +193,14 @@ void SIPURL::Parse(const char * cstr, BOOL special)
     PString userParam = paramVars("user", "udp");
     paramVars.RemoveAll();
     paramVars.SetAt("user", userParam);
-    parameters = "user=" + userParam;
     fragment.Delete(0, P_MAX_INDEX);
-    queryStr.Delete(0, P_MAX_INDEX);
     queryVars.RemoveAll();
   }
 
-  if (!paramVars.Contains("transport")) {
+  if (!paramVars.Contains("transport"))
     paramVars.SetAt("transport", "udp");
-    if (!parameters)
-      parameters += ';';
-    parameters += "transport=udp";
-  }
+
+  Recalculate();
 }
 
 
