@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.h,v $
- * Revision 1.2004  2004/02/15 03:12:51  rjongbloed
+ * Revision 1.2005  2004/02/19 10:46:43  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.3  2004/02/15 03:12:51  rjongbloed
  * Fixed typo in symbol for Speex codec, thanks Ted Szoczei
  *
  * Revision 2.2  2002/11/10 23:20:52  robertj
@@ -32,6 +35,13 @@
  *
  * Revision 2.1  2002/11/10 11:33:16  robertj
  * Updated to OpenH323 v1.10.3
+ *
+ * Revision 1.16  2004/01/30 00:55:40  csoutheren
+ * Removed the Xiph capability variants per Roger Hardiman as these
+ * were development-only code that should not have made it into a release
+ *
+ * Revision 1.15  2002/12/08 22:59:41  rogerh
+ * Add XiphSpeex codec. Not yet finished.
  *
  * Revision 1.11  2002/10/24 05:32:57  robertj
  * MSVC compatibility
