@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2018  2004/02/19 10:47:03  rjongbloed
+ * Revision 1.2019  2004/03/13 06:30:03  rjongbloed
+ * Changed parameter in UDP write function to void * from PObject *.
+ *
+ * Revision 2.17  2004/02/19 10:47:03  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.16  2003/01/07 04:39:53  robertj
@@ -690,9 +693,9 @@ BOOL H323Gatekeeper::DiscoverByNameAndAddress(const PString & identifier,
 }
 
 
-static BOOL WriteGRQ(H323Transport & transport, PObject * data)
+static BOOL WriteGRQ(H323Transport & transport, void * param)
 {
-  H323RasPDU & pdu = *(H323RasPDU *)data;
+  H323RasPDU & pdu = *(H323RasPDU *)param;
   H225_GatekeeperRequest & grq = pdu;
   H323TransportAddress localAddress = transport.GetLocalAddress();
   localAddress.SetPDU(grq.m_rasAddress);

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2030  2004/02/24 11:37:02  rjongbloed
+ * Revision 1.2031  2004/03/13 06:30:03  rjongbloed
+ * Changed parameter in UDP write function to void * from PObject *.
+ *
+ * Revision 2.29  2004/02/24 11:37:02  rjongbloed
  * More work on NAT support, manual external address translation and STUN
  *
  * Revision 2.28  2004/02/19 10:47:06  rjongbloed
@@ -954,7 +957,7 @@ OpalTransportAddressArray OpalGetInterfaceAddresses(const OpalTransportAddress &
                                                     OpalTransport * associatedTransport)
 {
   PIPSocket::Address ip;
-  WORD port;
+  WORD port = 0;
   if (!addr.GetIpAndPort(ip, port) || !ip.IsAny())
     return addr;
 
@@ -1315,9 +1318,9 @@ OpalTransportAddress OpalTransport::GetLastReceivedAddress() const
 }
 
 
-BOOL OpalTransport::WriteConnect(WriteConnectCallback function, PObject * data)
+BOOL OpalTransport::WriteConnect(WriteConnectCallback function, void * userData)
 {
-  return function(*this, data);
+  return function(*this, userData);
 }
 
 
@@ -1939,10 +1942,10 @@ BOOL OpalTransportUDP::WritePDU(const PBYTEArray & packet)
 }
 
 
-BOOL OpalTransportUDP::WriteConnect(WriteConnectCallback function, PObject * data)
+BOOL OpalTransportUDP::WriteConnect(WriteConnectCallback function, void * userData)
 {
   if (connectSockets.IsEmpty())
-    return OpalTransport::WriteConnect(function, data);
+    return OpalTransport::WriteConnect(function, userData);
 
   BOOL ok = FALSE;
 
@@ -1951,7 +1954,7 @@ BOOL OpalTransportUDP::WriteConnect(WriteConnectCallback function, PObject * dat
     PUDPSocket & socket = (PUDPSocket &)connectSockets[i];
     socket.GetLocalAddress(localAddress, localPort);
     writeChannel = &socket;
-    if (function(*this, data))
+    if (function(*this, userData))
       ok = TRUE;
   }
 

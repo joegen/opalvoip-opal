@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2018  2004/02/24 11:33:46  rjongbloed
+ * Revision 1.2019  2004/03/13 06:30:03  rjongbloed
+ * Changed parameter in UDP write function to void * from PObject *.
+ *
+ * Revision 2.17  2004/02/24 11:33:46  rjongbloed
  * Normalised RTP session management across protocols
  * Added support for NAT (via STUN)
  *
@@ -344,7 +347,7 @@ class SIPConnection : public OpalConnection
       unsigned sessionId,
       SDPSessionDescription & sdpOut
     );
-    static BOOL WriteINVITE(OpalTransport & transport, PObject * param);
+    static BOOL WriteINVITE(OpalTransport & transport, void * param);
 
     SIPEndPoint   & endpoint;
     OpalTransport * transport;
