@@ -111,7 +111,7 @@ BEGIN
       returnError-mistypedParameter (34)
    }
 
-   InvokeId ::= INTEGER (0..65535)
+   InvokeId ::= INTEGER
 
    Code ::= CHOICE -- from X.880
    {
