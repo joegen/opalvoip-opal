@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vblasterlid.cxx,v $
- * Revision 1.2007  2004/02/19 10:47:05  rjongbloed
+ * Revision 1.2008  2004/10/06 13:03:42  rjongbloed
+ * Added "configure" support for known LIDs
+ * Changed LID GetName() function to be normalised against the GetAllNames()
+ *   return values and fixed the pre-factory registration system.
+ * Added a GetDescription() function to do what the previous GetName() did.
+ *
+ * Revision 2.6  2004/02/19 10:47:05  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.5  2003/03/24 07:18:30  robertj
@@ -79,6 +85,8 @@
 #endif
 
 #include <lids/vblasterlid.h>
+
+#if HAS_VBLASTER
 
 #define   STARTUP_TIMEOUT   500
 /*
@@ -359,7 +367,13 @@ BOOL OpalVoipBlasterDevice::Close()
 }
 
 
-PString OpalVoipBlasterDevice::GetName() const
+PString OpalVoipBlasterDevice::GetDeviceType() const
+{
+  return OPAL_VBLASTER_TYPE_NAME;
+}
+
+
+PString OpalVoipBlasterDevice::GetDeviceName() const
 {
   return deviceName;
 }
@@ -368,6 +382,12 @@ PString OpalVoipBlasterDevice::GetName() const
 PStringArray OpalVoipBlasterDevice::GetAllNames() const
 {
   return GetDeviceNames();
+}
+
+
+PString OpalVoipBlasterDevice::GetDescription() const
+{
+  return "Createive Labs VoIP Blaster (" + deviceName + ')';
 }
 
 
@@ -1361,5 +1381,6 @@ int VoipBlasterInterface::ReadPipe(HANDLE handle, void *bp, DWORD len, const PTi
 
 #endif // _WIN32
 
+#endif // HAS_VBLASTER
 
 /////////////////////////////////////////////////////////////////////////////

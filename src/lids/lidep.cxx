@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2025  2004/08/14 07:56:31  rjongbloed
+ * Revision 1.2026  2004/10/06 13:03:42  rjongbloed
+ * Added "configure" support for known LIDs
+ * Changed LID GetName() function to be normalised against the GetAllNames()
+ *   return values and fixed the pre-factory registration system.
+ * Added a GetDescription() function to do what the previous GetName() did.
+ *
+ * Revision 2.24  2004/08/14 07:56:31  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.23  2004/07/11 12:42:12  rjongbloed
@@ -315,7 +321,7 @@ void OpalLIDEndPoint::RemoveLinesFromDevice(OpalLineInterfaceDevice & device)
 {
   linesMutex.Wait();
   for (PINDEX i = 0; i < lines.GetSize(); i++) {
-    if (lines[i].GetToken().Find(device.GetName()) == 0)
+    if (lines[i].GetToken().Find(device.GetDeviceName()) == 0)
       lines.RemoveAt(i--);
   }
   linesMutex.Signal();
@@ -347,7 +353,7 @@ BOOL OpalLIDEndPoint::AddDeviceName(const PString & descriptor)
   // Make sure not already there.
   linesMutex.Wait();
   for (PINDEX i = 0; i < devices.GetSize(); i++) {
-    if (devices[i].GetName().Find(deviceName) != P_MAX_INDEX) {
+    if (devices[i].GetDeviceType() == deviceType && devices[i].GetDeviceName() == deviceName) {
       linesMutex.Signal();
       return TRUE;
     }
