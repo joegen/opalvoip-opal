@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2029  2004/03/23 09:43:42  rjongbloed
+ * Revision 1.2030  2004/04/25 09:32:15  rjongbloed
+ * Fixed incorrect read of zero length SIP body, thanks Nick Hoath
+ *
+ * Revision 2.28  2004/03/23 09:43:42  rjongbloed
  * Fixed new C++ stream I/O compatibility, thanks Ted Szoczei
  *
  * Revision 2.27  2004/03/20 09:11:52  rjongbloed
@@ -1137,7 +1140,8 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
   }
 
   PINDEX contentLength = mime.GetContentLength();
-  transport.read(entityBody.GetPointer(contentLength+1), contentLength);
+  if (contentLength > 0)
+    transport.read(entityBody.GetPointer(contentLength+1), contentLength);
   entityBody[contentLength] = '\0';
 
   BOOL removeSDP = TRUE;
