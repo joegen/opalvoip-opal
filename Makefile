@@ -22,7 +22,11 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2002  2001/07/30 03:41:20  robertj
+# Revision 1.2003  2001/08/01 06:22:55  robertj
+# Major changes to H.323 capabilities, uses OpalMediaFormat for base name.
+# Added G.711 transcoder.
+#
+# Revision 2.1  2001/07/30 03:41:20  robertj
 # Added build of subdirectories for samples.
 # Hid the asnparser.version file.
 # Changed default OPALDIR variable to be current directory.
@@ -136,7 +140,6 @@ endif
 
 SOURCES += $(OPAL_SRCDIR)/lids/lid.cxx \
            $(OPAL_SRCDIR)/lids/lidep.cxx \
-           $(OPAL_SRCDIR)/lids/h323lid.cxx \
 
 ifdef HAS_IXJ
 SOURCES += $(OPAL_SRCDIR)/lids/ixjunix.cxx
@@ -149,7 +152,8 @@ endif
 
 # Software codecs
 
-SOURCES += $(OPAL_SRCDIR)/codec/g711.c
+SOURCES += $(OPAL_SRCDIR)/codec/g711codec.cxx \
+           $(OPAL_SRCDIR)/codec/g711.c
 
 GSM_DIR 	= $(OPAL_SRCDIR)/codec/gsm
 GSM_SRCDIR	= $(GSM_DIR)/src
