@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2008  2002/04/12 12:23:03  robertj
+ * Revision 1.2009  2002/04/16 07:53:15  robertj
+ * Changes to support calls through proxies.
+ *
+ * Revision 2.7  2002/04/12 12:23:03  robertj
  * Allowed for endpoint listener that is not on port 5060.
  *
  * Revision 2.6  2002/04/10 08:12:17  robertj
@@ -93,16 +96,20 @@ class SIPURL : public PURL
       const char * cstr
     );
 
-    PString GetDisplayAddress() const
-      { return displayAddress; }
+    PString AsQuotedString() const;
+
+    PString GetDisplayName() const
+      { return displayName; }
     
-    void SetDisplayAddress(const PString & str) 
-      { displayAddress = str; }
+    void SetDisplayName(const PString & str) 
+      { displayName = str; }
     
     OpalTransportAddress GetHostAddress() const;
 
+    void AdjustForRequestURI();
+
   protected:
-    PString displayAddress;
+    PString displayName;
 };
 
 
@@ -133,7 +140,7 @@ class SIPMIMEInfo : public PMIMEInfo
 
     PString GetContact() const;
     void SetContact(const PString & v);
-    void SetContact(const PURL & url, const char * name = NULL);
+    void SetContact(const SIPURL & url);
 
     PString GetSubject() const;
     void SetSubject(const PString & v);
@@ -150,14 +157,20 @@ class SIPMIMEInfo : public PMIMEInfo
     PString GetCSeq() const;
     void SetCSeq(const PString & v);
 
-    PString GetRecordRoute() const;
-    void SetRecordRoute(const PString & v);
+    PStringList GetRoute() const;
+    void SetRoute(const PStringList & v);
+
+    PStringList GetRecordRoute() const;
+    void SetRecordRoute(const PStringList & v);
 
     unsigned GetCSeqIndex() const { return GetCSeq().AsUnsigned(); }
 
   protected:
-    PString GetSIPString(const char * fullForm, char compactForm) const;
+    PStringList GetRouteList(const char * name) const;
+    void SetRouteList(const char * name, const PStringList & v);
+    PString GetFullOrCompact(const char * fullForm, char compactForm) const;
 
+    /// Encode using compact form
     BOOL compactForm;
 };
 
@@ -277,6 +290,7 @@ class SIP_PDU : public PObject
     SIP_PDU();
     SIP_PDU(
       Methods method,
+      const SIPURL & dest,
       const PString & to,
       const PString & from,
       const PString & callID,
@@ -306,6 +320,7 @@ class SIP_PDU : public PObject
     );
     void Construct(
       Methods method,
+      const SIPURL & dest,
       const PString & to,
       const PString & from,
       const PString & callID,
