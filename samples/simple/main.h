@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2004  2001/08/21 11:18:55  robertj
+ * Revision 1.2005  2002/01/22 05:34:58  robertj
+ * Revamp of user input API triggered by RFC2833 support
+ *
+ * Revision 2.3  2001/08/21 11:18:55  robertj
  * Added conditional compile for xJack code.
  *
  * Revision 2.2  2001/08/17 08:35:41  robertj
@@ -109,7 +112,7 @@ class MyManager : public OpalManager
       OpalConnection & connection,  /// Connection that owns the media stream
       OpalMediaStream & stream    /// New media stream being opened
     );
-    virtual void OnUserIndicationString(
+    virtual void OnUserInputString(
       OpalConnection & connection,  /// Connection input has come from
       const PString & value         /// String value of indication
     );
