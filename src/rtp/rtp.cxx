@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2013  2003/01/07 04:39:53  robertj
+ * Revision 1.2014  2004/02/19 10:47:06  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.12  2003/01/07 04:39:53  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.11  2002/11/10 11:33:20  robertj
@@ -65,6 +68,38 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.92  2004/02/09 11:17:50  rjongbloed
+ * Improved check for compound RTCP packets so does not possibly acess
+ *   memory beyond that allocated in packet. Pointed out by Paul Slootman
+ *
+ * Revision 1.91  2003/10/28 22:35:21  dereksmithies
+ * Fix warning about possible use of unitialized variable.
+ *
+ * Revision 1.90  2003/10/27 06:03:39  csoutheren
+ * Added support for QoS
+ *   Thanks to Henry Harrison of AliceStreet
+ *
+ * Revision 1.89  2003/10/09 09:47:45  csoutheren
+ * Fixed problem with re-opening RTP half-channels under unusual
+ * circumstances. Thanks to Damien Sandras
+ *
+ * Revision 1.88  2003/05/02 04:57:47  robertj
+ * Added header extension support to RTP data frame class.
+ *
+ * Revision 1.87  2003/02/07 00:30:21  robertj
+ * Changes for bizarre usage of RTP code outside of scope of H.323 specs.
+ *
+ * Revision 1.86  2003/02/04 23:50:06  robertj
+ * Changed trace log for RTP session creation to show local address.
+ *
+ * Revision 1.85  2003/02/04 07:06:42  robertj
+ * Added STUN support.
+ *
+ * Revision 1.84  2003/01/07 06:32:22  robertj
+ * Fixed faint possibility of getting an error on UDP write caused by ICMP
+ *   unreachable being received when no UDP read is active on the socket. Then
+ *   the UDP write gets the error stopping transmission.
  *
  * Revision 1.83  2002/11/19 01:48:00  robertj
  * Allowed get/set of canonical anme and tool name.
@@ -345,8 +380,9 @@
 
 #include <rtp/rtp.h>
 
-#include <ptclib/random.h>
 #include <rtp/jitter.h>
+#include <ptclib/random.h>
+#include <ptclib/pstun.h>
 
 
 #define new PNEW
@@ -362,7 +398,6 @@
 #define PTRACE_type
 #define PTRACE_subtype
 #define PTRACE_size
-#define PTRACE_name
 #define PTRACE_port
 #endif
 
@@ -371,11 +406,13 @@ const unsigned SecondsFrom1900to1970 = (70*365+17)*24*60*60U;
 
 #define UDP_BUFFER_SIZE 32768
 
+#define MIN_HEADER_SIZE 12
+
 
 /////////////////////////////////////////////////////////////////////////////
 
 RTP_DataFrame::RTP_DataFrame(PINDEX sz)
-  : PBYTEArray(12+sz)
+  : PBYTEArray(MIN_HEADER_SIZE+sz)
 {
   payloadSize = sz;
   theArray[0] = '\x80';
@@ -412,7 +449,7 @@ void RTP_DataFrame::SetPayloadType(PayloadTypes t)
 DWORD RTP_DataFrame::GetContribSource(PINDEX idx) const
 {
   PAssert(idx < GetContribSrcCount(), PInvalidParameter);
-  return ((PUInt32b *)&theArray[12])[idx];
+  return ((PUInt32b *)&theArray[MIN_HEADER_SIZE])[idx];
 }
 
 
@@ -428,7 +465,68 @@ void RTP_DataFrame::SetContribSource(PINDEX idx, DWORD src)
     memmove(GetPayloadPtr(), oldPayload, payloadSize);
   }
 
-  ((PUInt32b *)&theArray[12])[idx] = src;
+  ((PUInt32b *)&theArray[MIN_HEADER_SIZE])[idx] = src;
+}
+
+
+PINDEX RTP_DataFrame::GetHeaderSize() const
+{
+  PINDEX sz = MIN_HEADER_SIZE + 4*GetContribSrcCount();
+
+  if (GetExtension())
+    sz += 4 + GetExtensionSize();
+
+  return sz;
+}
+
+
+int RTP_DataFrame::GetExtensionType() const
+{
+  if (GetExtension())
+    return *(PUInt16b *)&theArray[MIN_HEADER_SIZE + 4*GetContribSrcCount()];
+
+  return -1;
+}
+
+
+void RTP_DataFrame::SetExtensionType(int type)
+{
+  if (type < 0)
+    SetExtension(FALSE);
+  else {
+    if (!GetExtension())
+      SetExtensionSize(0);
+    *(PUInt16b *)&theArray[MIN_HEADER_SIZE + 4*GetContribSrcCount()] = (WORD)type;
+  }
+}
+
+
+PINDEX RTP_DataFrame::GetExtensionSize() const
+{
+  if (GetExtension())
+    return *(PUInt16b *)&theArray[MIN_HEADER_SIZE + 4*GetContribSrcCount() + 2];
+
+  return 0;
+}
+
+
+BOOL RTP_DataFrame::SetExtensionSize(PINDEX sz)
+{
+  if (!SetMinSize(MIN_HEADER_SIZE + 4*GetContribSrcCount() + 4+4*sz + payloadSize))
+    return FALSE;
+
+  SetExtension(TRUE);
+  *(PUInt16b *)&theArray[MIN_HEADER_SIZE + 4*GetContribSrcCount() + 2] = (WORD)sz;
+  return TRUE;
+}
+
+
+BYTE * RTP_DataFrame::GetExtensionPtr() const
+{
+  if (GetExtension())
+    return (BYTE *)&theArray[MIN_HEADER_SIZE + 4*GetContribSrcCount() + 4];
+
+  return NULL;
 }
 
 
@@ -523,6 +621,8 @@ void RTP_ControlFrame::SetPayloadSize(PINDEX sz)
 BOOL RTP_ControlFrame::ReadNextCompound()
 {
   compoundOffset += GetPayloadSize()+4;
+  if (compoundOffset+4 > GetSize())
+    return FALSE;
   return compoundOffset+GetPayloadSize()+4 <= GetSize();
 }
 
@@ -1410,6 +1510,9 @@ RTP_UDP::RTP_UDP(unsigned id)
   remoteControlPort = 0;
   shutdownRead = FALSE;
   shutdownWrite = FALSE;
+  dataSocket = NULL;
+  controlSocket = NULL;
+  appliedQOS = FALSE;
 }
 
 
@@ -1417,10 +1520,44 @@ RTP_UDP::~RTP_UDP()
 {
   Close(TRUE);
   Close(FALSE);
+
+  delete dataSocket;
+  delete controlSocket;
 }
 
 
-BOOL RTP_UDP::Open(PIPSocket::Address _localAddress, WORD portBase, WORD portMax, BYTE tos)
+void RTP_UDP::ApplyQOS(const PIPSocket::Address & addr)
+{
+  if (controlSocket != NULL)
+    controlSocket->SetSendAddress(addr,GetRemoteControlPort());
+  if (dataSocket != NULL)
+    dataSocket->SetSendAddress(addr,GetRemoteDataPort());
+  appliedQOS = TRUE;
+}
+
+
+BOOL RTP_UDP::ModifyQOS(RTP_QOS * rtpqos)
+{
+  BOOL retval = FALSE;
+
+  if (rtpqos == NULL)
+    return retval;
+
+  if (controlSocket != NULL)
+    retval = controlSocket->ModifyQoSSpec(&(rtpqos->ctrlQoS));
+    
+  if (dataSocket != NULL)
+    retval &= dataSocket->ModifyQoSSpec(&(rtpqos->dataQoS));
+
+  appliedQOS = FALSE;
+  return retval;
+}
+
+BOOL RTP_UDP::Open(PIPSocket::Address _localAddress,
+                   WORD portBase, WORD portMax,
+                   BYTE tos,
+                   PSTUNClient * stun,
+                   RTP_QOS * rtpQos)
 {
   // save local address 
   localAddress = _localAddress;
@@ -1428,29 +1565,54 @@ BOOL RTP_UDP::Open(PIPSocket::Address _localAddress, WORD portBase, WORD portMax
   localDataPort    = (WORD)(portBase&0xfffe);
   localControlPort = (WORD)(localDataPort + 1);
 
-  while (!dataSocket.Listen(localAddress,    1, localDataPort) ||
-         !controlSocket.Listen(localAddress, 1, localControlPort)) {
-    dataSocket.Close();
-    controlSocket.Close();
-    if ((localDataPort > portMax) || (localDataPort > 0xfffd))
-      return FALSE; // If it ever gets to here the OS has some SERIOUS problems!
-    localDataPort    += 2;
-    localControlPort += 2;
+  delete dataSocket;
+  delete controlSocket;
+  dataSocket = NULL;
+  controlSocket = NULL;
+
+  PQoS * dataQos = NULL;
+  PQoS * ctrlQos = NULL;
+  if (rtpQos != NULL) {
+    dataQos = &(rtpQos->dataQoS);
+    ctrlQos = &(rtpQos->ctrlQoS);
+  }
+
+  if (stun != NULL) {
+    if (stun->CreateSocketPair(dataSocket, controlSocket)) {
+      dataSocket->GetLocalAddress(localAddress, localDataPort);
+      controlSocket->GetLocalAddress(localAddress, localControlPort);
+    }
+    else
+      PTRACE(1, "RTP\tSTUN could not create socket pair!");
+  }
+
+  if (dataSocket == NULL || controlSocket == NULL) {
+    dataSocket = new PUDPSocket(dataQos);
+    controlSocket = new PUDPSocket(ctrlQos);
+    while (!dataSocket->Listen(localAddress,    1, localDataPort) ||
+           !controlSocket->Listen(localAddress, 1, localControlPort)) {
+      dataSocket->Close();
+      controlSocket->Close();
+      if ((localDataPort > portMax) || (localDataPort > 0xfffd))
+        return FALSE; // If it ever gets to here the OS has some SERIOUS problems!
+      localDataPort    += 2;
+      localControlPort += 2;
+    }
   }
 
 #ifndef __BEOS__
 
   // Set the IP Type Of Service field for prioritisation of media UDP packets
   // through some Cisco routers and Linux boxes
-  if (!dataSocket.SetOption(IP_TOS, tos, IPPROTO_IP)) {
-    PTRACE(1, "RTP_UDP\tCould not set TOS field in IP header: " << dataSocket.GetErrorText());
+  if (!dataSocket->SetOption(IP_TOS, tos, IPPROTO_IP)) {
+    PTRACE(1, "RTP_UDP\tCould not set TOS field in IP header: " << dataSocket->GetErrorText());
   }
 
   // Increase internal buffer size on media UDP sockets
-  SetMinBufferSize(dataSocket,    SO_RCVBUF);
-  SetMinBufferSize(dataSocket,    SO_SNDBUF);
-  SetMinBufferSize(controlSocket, SO_RCVBUF);
-  SetMinBufferSize(controlSocket, SO_SNDBUF);
+  SetMinBufferSize(*dataSocket,    SO_RCVBUF);
+  SetMinBufferSize(*dataSocket,    SO_SNDBUF);
+  SetMinBufferSize(*controlSocket, SO_RCVBUF);
+  SetMinBufferSize(*controlSocket, SO_SNDBUF);
 #endif
 
   shutdownRead = FALSE;
@@ -1459,11 +1621,20 @@ BOOL RTP_UDP::Open(PIPSocket::Address _localAddress, WORD portBase, WORD portMax
   if (canonicalName.Find('@') == P_MAX_INDEX)
     canonicalName += '@' + GetLocalHostName();
 
-  PTRACE(2, "RTP_UDP\tSession " << sessionID
-         << " created: data=" << dataSocket.GetPort()
-         << " control=" << controlSocket.GetPort()
+  PTRACE(2, "RTP_UDP\tSession " << sessionID << " created: "
+         << localAddress << ':' << localDataPort << '-' << localControlPort
          << " ssrc=" << syncSourceOut);
+  
   return TRUE;
+}
+
+
+void RTP_UDP::Reopen(BOOL reading)
+{
+  if (reading)
+    shutdownRead = FALSE;
+  else
+    shutdownWrite = FALSE;
 }
 
 
@@ -1474,11 +1645,13 @@ void RTP_UDP::Close(BOOL reading)
       PTRACE(3, "RTP_UDP\tSession " << sessionID << ", Shutting down read.");
       syncSourceIn = 0;
       shutdownRead = TRUE;
-      PIPSocket::Address addr;
-      controlSocket.GetLocalAddress(addr);
-      if (addr == INADDR_ANY)
-        PIPSocket::GetHostAddress(addr);
-      dataSocket.WriteTo("", 1, addr, controlSocket.GetPort());
+      if (dataSocket != NULL && controlSocket != NULL) {
+        PIPSocket::Address addr;
+        controlSocket->GetLocalAddress(addr);
+        if (addr == INADDR_ANY)
+          PIPSocket::GetHostAddress(addr);
+        dataSocket->WriteTo("", 1, addr, controlSocket->GetPort());
+      }
     }
   }
   else {
@@ -1518,6 +1691,9 @@ BOOL RTP_UDP::SetRemoteSocketInfo(PIPSocket::Address address, WORD port, BOOL is
       remoteDataPort = (WORD)(port - 1);
   }
 
+  if (!appliedQOS)
+      ApplyQOS(remoteAddress);
+
   return remoteAddress != 0 && port != 0;
 }
 
@@ -1525,7 +1701,7 @@ BOOL RTP_UDP::SetRemoteSocketInfo(PIPSocket::Address address, WORD port, BOOL is
 BOOL RTP_UDP::ReadData(RTP_DataFrame & frame)
 {
   for (;;) {
-    int selectStatus = PSocket::Select(dataSocket, controlSocket, reportTimer);
+    int selectStatus = PSocket::Select(*dataSocket, *controlSocket, reportTimer);
 
     if (shutdownRead) {
       PTRACE(3, "RTP_UDP\tSession " << sessionID << ", Read shutdown.");
@@ -1557,7 +1733,7 @@ BOOL RTP_UDP::ReadData(RTP_DataFrame & frame)
         break;
 
       case 0 :
-        PTRACE(4, "RTP_UDP\tSession " << sessionID << ", Read timeout.");
+        PTRACE(5, "RTP_UDP\tSession " << sessionID << ", check for sending report.");
         if (!SendReport())
           return FALSE;
         break;
@@ -1577,22 +1753,44 @@ BOOL RTP_UDP::ReadData(RTP_DataFrame & frame)
 
 RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(PUDPSocket & socket,
                                                              PBYTEArray & frame,
-                                                             const char * PTRACE_name)
+                                                             BOOL fromDataChannel)
 {
+#if PTRACING
+  const char * channelName = fromDataChannel ? "Data" : "Control";
+#endif
   PIPSocket::Address addr;
   WORD port;
 
   if (socket.ReadFrom(frame.GetPointer(), frame.GetSize(), addr, port)) {
     if (ignoreOtherSources) {
-      if (remoteTransmitAddress == 0)
+      // If remote address never set from higher levels, then try and figure
+      // it out from the first packet received.
+      if (!remoteAddress.IsValid()) {
+        remoteAddress = addr;
+        PTRACE(4, "RTP\tSet remote address from first " << channelName
+               << " PDU from " << addr << ':' << port);
+      }
+      if (fromDataChannel) {
+        if (remoteDataPort == 0)
+          remoteDataPort = port;
+      }
+      else {
+        if (remoteControlPort == 0)
+          remoteControlPort = port;
+      }
+
+      if (!remoteTransmitAddress.IsValid())
         remoteTransmitAddress = addr;
       else if (remoteTransmitAddress != addr) {
         PTRACE(1, "RTP_UDP\tSession " << sessionID << ", "
-               << PTRACE_name << " PDU from incorrect host, "
+               << channelName << " PDU from incorrect host, "
                   " is " << addr << " should be " << remoteTransmitAddress);
         return RTP_Session::e_IgnorePacket;
       }
     }
+
+    if (remoteAddress.IsValid() && !appliedQOS) 
+      ApplyQOS(remoteAddress);
 
     return RTP_Session::e_ProcessPacket;
   }
@@ -1601,11 +1799,11 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(PUDPSocket & socket
     case ECONNRESET :
     case ECONNREFUSED :
       PTRACE(2, "RTP_UDP\tSession " << sessionID << ", "
-             << PTRACE_name << " port on remote not ready.");
+             << channelName << " port on remote not ready.");
       return RTP_Session::e_IgnorePacket;
 
     default:
-      PTRACE(1, "RTP_UDP\t" << PTRACE_name << " read error ("
+      PTRACE(1, "RTP_UDP\t" << channelName << " read error ("
              << socket.GetErrorNumber(PChannel::LastReadError) << "): "
              << socket.GetErrorText(PChannel::LastReadError));
       return RTP_Session::e_AbortTransport;
@@ -1615,12 +1813,12 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(PUDPSocket & socket
 
 RTP_Session::SendReceiveStatus RTP_UDP::ReadDataPDU(RTP_DataFrame & frame)
 {
-  SendReceiveStatus status = ReadDataOrControlPDU(dataSocket, frame, "Data");
+  SendReceiveStatus status = ReadDataOrControlPDU(*dataSocket, frame, TRUE);
   if (status != e_ProcessPacket)
     return status;
 
   // Check received PDU is big enough
-  PINDEX pduSize = dataSocket.GetLastReadCount();
+  PINDEX pduSize = dataSocket->GetLastReadCount();
   if (pduSize < RTP_DataFrame::MinHeaderSize || pduSize < frame.GetHeaderSize()) {
     PTRACE(2, "RTP_UDP\tSession " << sessionID
            << ", Received data packet too small: " << pduSize << " bytes");
@@ -1636,11 +1834,11 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadControlPDU()
 {
   RTP_ControlFrame frame(2048);
 
-  SendReceiveStatus status = ReadDataOrControlPDU(controlSocket, frame, "Control");
+  SendReceiveStatus status = ReadDataOrControlPDU(*controlSocket, frame, FALSE);
   if (status != e_ProcessPacket)
     return status;
 
-  PINDEX pduSize = controlSocket.GetLastReadCount();
+  PINDEX pduSize = controlSocket->GetLastReadCount();
   if (pduSize < 4 || pduSize < 4+frame.GetPayloadSize()) {
     PTRACE(2, "RTP_UDP\tSession " << sessionID
            << ", Received control packet too small: " << pduSize << " bytes");
@@ -1660,6 +1858,10 @@ BOOL RTP_UDP::WriteData(RTP_DataFrame & frame)
     return FALSE;
   }
 
+  // Trying to send a PDU before we are set up!
+  if (!remoteAddress.IsValid() || remoteDataPort == 0)
+    return TRUE;
+
   switch (OnSendData(frame)) {
     case e_ProcessPacket :
       break;
@@ -1669,30 +1871,51 @@ BOOL RTP_UDP::WriteData(RTP_DataFrame & frame)
       return FALSE;
   }
 
-  if (dataSocket.WriteTo(frame.GetPointer(),
-                         frame.GetHeaderSize()+frame.GetPayloadSize(),
-                         remoteAddress, remoteDataPort))
-    return TRUE;
+  while (!dataSocket->WriteTo(frame.GetPointer(),
+                             frame.GetHeaderSize()+frame.GetPayloadSize(),
+                             remoteAddress, remoteDataPort)) {
+    switch (dataSocket->GetErrorNumber()) {
+      case ECONNRESET :
+      case ECONNREFUSED :
+        PTRACE(2, "RTP_UDP\tSession " << sessionID << ", data port on remote not ready.");
+        break;
 
-  PTRACE(1, "RTP_UDP\tSession " << sessionID
-         << ", Write error on data port ("
-         << dataSocket.GetErrorNumber(PChannel::LastWriteError) << "): "
-         << dataSocket.GetErrorText(PChannel::LastWriteError));
-  return FALSE;
+      default:
+        PTRACE(1, "RTP_UDP\tSession " << sessionID
+               << ", Write error on data port ("
+               << dataSocket->GetErrorNumber(PChannel::LastWriteError) << "): "
+               << dataSocket->GetErrorText(PChannel::LastWriteError));
+        return FALSE;
+    }
+  }
+
+  return TRUE;
 }
 
 
 BOOL RTP_UDP::WriteControl(RTP_ControlFrame & frame)
 {
-  if (controlSocket.WriteTo(frame.GetPointer(), frame.GetCompoundSize(),
-                            remoteAddress, remoteControlPort))
+  // Trying to send a PDU before we are set up!
+  if (!remoteAddress.IsValid() || remoteControlPort == 0)
     return TRUE;
 
-  PTRACE(1, "RTP_UDP\tSession " << sessionID
-         << ", Write error on control port ("
-         << controlSocket.GetErrorNumber(PChannel::LastWriteError) << "): "
-         << controlSocket.GetErrorText(PChannel::LastWriteError));
-  return FALSE;
+  while (!controlSocket->WriteTo(frame.GetPointer(), frame.GetCompoundSize(),
+                                remoteAddress, remoteControlPort)) {
+    switch (controlSocket->GetErrorNumber()) {
+      case ECONNRESET :
+      case ECONNREFUSED :
+        PTRACE(2, "RTP_UDP\tSession " << sessionID << ", control port on remote not ready.");
+        break;
+
+      default:
+        PTRACE(1, "RTP_UDP\tSession " << sessionID
+               << ", Write error on control port ("
+               << controlSocket->GetErrorNumber(PChannel::LastWriteError) << "): "
+               << controlSocket->GetErrorText(PChannel::LastWriteError));
+    }
+  }
+
+  return TRUE;
 }
 
 
