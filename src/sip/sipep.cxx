@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2018  2004/03/14 10:13:04  rjongbloed
+ * Revision 1.2019  2004/03/14 11:32:20  rjongbloed
+ * Changes to better support SIP proxies.
+ *
+ * Revision 2.17  2004/03/14 10:13:04  rjongbloed
  * Moved transport on SIP top be constructed by endpoint as any transport created on
  *   an endpoint can receive data for any connection.
  * Changes to REGISTER to support authentication
@@ -450,8 +453,10 @@ BOOL SIPEndPoint::Register(const PString & hostname,
 
   registrationAddress.Parse(adjustedUsername);
 
-  OpalTransportAddress registrarAddress(hostname, defaultSignalPort, "udp");
-  // Should do DNS SRV record loolup to get regisrar address
+  // Should do DNS SRV record lookup to get registrar address
+
+  OpalTransportAddress registrarAddress(proxy.IsEmpty() ? hostname : proxy.GetHostName(),
+                                        defaultSignalPort, "udp");
 
   delete registrarTransport;
   registrarTransport = CreateTransport(registrarAddress);
