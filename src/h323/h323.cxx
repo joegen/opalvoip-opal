@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2029  2002/04/15 08:51:23  robertj
+ * Revision 1.2030  2002/06/16 02:23:43  robertj
+ * Fixed memory leak of media streams in non H323 protocols, thanks Ted Szoczei
+ *
+ * Revision 2.28  2002/04/15 08:51:23  robertj
  * Fixed correct setting of jitter buffer size in RTP media stream.
  *
  * Revision 2.27  2002/04/10 03:11:29  robertj
@@ -1043,6 +1046,8 @@ H323Connection::H323Connection(OpalCall & call,
     connectedTime(0),
     callEndTime(0)
 {
+  mediaStreams.DisallowDeleteObjects();
+
   distinctiveRing = 0;
   callReference = UINT_MAX;
   remoteCallWaiting = -1;
