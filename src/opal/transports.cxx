@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2009  2002/01/14 00:19:33  craigs
+ * Revision 1.2010  2002/02/06 06:07:10  robertj
+ * Fixed shutting down UDP listener thread
+ *
+ * Revision 2.8  2002/01/14 00:19:33  craigs
  * Fixed problems with remote address used instead of local address
  *
  * Revision 2.7  2001/12/07 08:55:32  robertj
@@ -465,6 +468,9 @@ void OpalListener::PrintOn(ostream & strm) const
 
 void OpalListener::CloseWait()
 {
+  PTRACE(3, "Listen\tStopping listening thread on " << GetLocalAddress());
+  Close();
+
   PAssert(PThread::Current() != thread, PLogicError);
   if (thread != NULL)
     PAssert(thread->WaitForTermination(1000), "Listener thread did not terminate");
@@ -709,14 +715,17 @@ BOOL OpalListenerUDP::Open(const PNotifier & theAcceptHandler, BOOL /*isSingleTh
 
 BOOL OpalListenerUDP::IsOpen()
 {
-  return listeners.GetSize() > 0;
+  for (PINDEX i = 0; i < listeners.GetSize(); i++) {
+    if (listeners[i].IsOpen())
+      return TRUE;
+  }
+  return FALSE;
 }
 
 
 void OpalListenerUDP::Close()
 {
-  PINDEX i;
-  for (i = 0; i < listeners.GetSize(); i++)
+  for (PINDEX i = 0; i < listeners.GetSize(); i++)
     listeners[i].Close();
 }
 
