@@ -23,7 +23,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc2833.cxx,v $
- * Revision 1.2002  2002/01/22 05:35:28  robertj
+ * Revision 1.2003  2002/02/19 07:35:08  robertj
+ * Added OpalRFC2833 as a OpalMediaFormat variable.
+ *
+ * Revision 2.1  2002/01/22 05:35:28  robertj
  * Added RFC2833 support
  *
  */
@@ -55,7 +58,7 @@ OpalRFC2833Info::OpalRFC2833Info(char t, unsigned d, unsigned ts)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalRFC2833::OpalRFC2833(const PNotifier & rx)
+OpalRFC2833Proto::OpalRFC2833Proto(const PNotifier & rx)
   : receiveNotifier(rx),
 #ifdef _MSC_VER
 #pragma warning(disable:4355)
@@ -79,7 +82,7 @@ OpalRFC2833::OpalRFC2833(const PNotifier & rx)
 }
 
 
-BOOL OpalRFC2833::SendTone(char tone, unsigned duration)
+BOOL OpalRFC2833Proto::SendTone(char tone, unsigned duration)
 {
   if (!BeginTransmit(tone))
     return FALSE;
@@ -89,7 +92,7 @@ BOOL OpalRFC2833::SendTone(char tone, unsigned duration)
 }
 
 
-BOOL OpalRFC2833::BeginTransmit(char tone)
+BOOL OpalRFC2833Proto::BeginTransmit(char tone)
 {
   PWaitAndSignal m(mutex);
 
@@ -111,7 +114,7 @@ BOOL OpalRFC2833::BeginTransmit(char tone)
 }
 
 
-BOOL OpalRFC2833::EndTransmit()
+BOOL OpalRFC2833Proto::EndTransmit()
 {
   PWaitAndSignal m(mutex);
 
@@ -125,21 +128,21 @@ BOOL OpalRFC2833::EndTransmit()
 }
 
 
-void OpalRFC2833::OnStartReceive(char tone)
+void OpalRFC2833Proto::OnStartReceive(char tone)
 {
   OpalRFC2833Info info(tone);
   receiveNotifier(info, 0);
 }
 
 
-void OpalRFC2833::OnEndReceive(char tone, unsigned duration, unsigned timestamp)
+void OpalRFC2833Proto::OnEndReceive(char tone, unsigned duration, unsigned timestamp)
 {
   OpalRFC2833Info info(tone, duration, timestamp);
   receiveNotifier(info, 0);
 }
 
 
-void OpalRFC2833::ReceivedPacket(RTP_DataFrame & frame, INT)
+void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, INT)
 {
   if (frame.GetPayloadType() != payloadType)
     return;
@@ -191,7 +194,7 @@ void OpalRFC2833::ReceivedPacket(RTP_DataFrame & frame, INT)
 }
 
 
-void OpalRFC2833::ReceiveTimeout(PTimer &, INT)
+void OpalRFC2833Proto::ReceiveTimeout(PTimer &, INT)
 {
   PWaitAndSignal m(mutex);
 
@@ -204,7 +207,7 @@ void OpalRFC2833::ReceiveTimeout(PTimer &, INT)
 }
 
 
-void OpalRFC2833::TransmitPacket(RTP_DataFrame & frame, INT)
+void OpalRFC2833Proto::TransmitPacket(RTP_DataFrame & frame, INT)
 {
   if (transmitState == TransmitIdle)
     return;
@@ -234,7 +237,7 @@ void OpalRFC2833::TransmitPacket(RTP_DataFrame & frame, INT)
 }
 
 
-void OpalRFC2833::TransmitEnded(PTimer &, INT)
+void OpalRFC2833Proto::TransmitEnded(PTimer &, INT)
 {
   EndTransmit();
 }
