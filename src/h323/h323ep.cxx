@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2009  2001/10/15 04:35:44  robertj
+ * Revision 1.2010  2001/11/02 10:45:19  robertj
+ * Updated to OpenH323 v1.7.3
+ *
+ * Revision 2.8  2001/10/15 04:35:44  robertj
  * Removed answerCall signal and replaced with state based functions.
  * Maintained H.323 answerCall API for backward compatibility.
  *
@@ -47,6 +50,22 @@
  *
  * Revision 2.3  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 1.109  2001/11/01 06:11:57  robertj
+ * Plugged very small mutex hole that could cause crashes.
+ *
+ * Revision 1.108  2001/11/01 00:59:07  robertj
+ * Added auto setting of silence detect mode when using PSoundChannel codec.
+ *
+ * Revision 1.107  2001/11/01 00:27:35  robertj
+ * Added default Fast Start disabled and H.245 tunneling disable flags
+ *   to the endpoint instance.
+ *
+ * Revision 1.106  2001/10/30 07:34:33  robertj
+ * Added trace for when cleaner thread start, stops and runs
+ *
+ * Revision 1.105  2001/10/24 07:25:59  robertj
+ * Fixed possible deadlocks during destruction of H323Connection object.
  *
  * Revision 1.104  2001/09/26 06:20:59  robertj
  * Fixed properly nesting connection locking and unlocking requiring a quite
@@ -496,6 +515,9 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
     username = PProcess::Current().GetName() & "User";
   localAliasNames.AppendString(username);
 
+  disableFastStart = FALSE;
+  disableH245Tunneling = FALSE;
+
   terminalType = e_TerminalOnly;
   initialBandwidth = 100000; // Standard 10base LAN in 100's of bits/sec
   clearCallOnRoundTripFail = FALSE;
@@ -914,12 +936,32 @@ void H323EndPoint::ParsePartyName(const PString & remoteParty,
 
 H323Connection * H323EndPoint::FindConnectionWithLock(const PString & token)
 {
-  inUseFlag.Wait();
-  H323Connection * connection = FindConnectionWithoutLocks(token);
-  inUseFlag.Signal();
+  PWaitAndSignal mutex(inUseFlag);
 
-  if (connection != NULL && connection->Lock())
-    return connection;
+  /*We have a very yucky polling loop here as a semi permanant measure.
+    Why? We cannot call Lock() inside the inUseFlag critical section as
+    it will cause a deadlock with something like a RELEASE-COMPLETE coming in
+    on separate thread. But if we put it outside there is a small window where
+    the connection could get deleted before the Lock() test is done.
+    The solution is to attempt to get the mutex while inside the
+    inUseFlag but not block. That means a polling loop. There is
+    probably a way to do this properly with mutexes but I don't have time to
+    figure it out.
+   */
+  H323Connection * connection;
+  while ((connection = FindConnectionWithoutLocks(token)) != NULL) {
+    switch (connection->TryLock()) {
+      case 0 :
+        return NULL;
+      case 1 :
+        return connection;
+    }
+    // Could not get connection lock, unlock the endpoint lists so a thread
+    // that has the connection lock gets a chance at the endpoint lists.
+    inUseFlag.Signal();
+    PThread::Yield();
+    inUseFlag.Wait();
+  }
 
   return NULL;
 }

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lpc10codec.h,v $
- * Revision 1.2002  2001/08/01 05:03:09  robertj
+ * Revision 1.2003  2001/11/02 10:45:19  robertj
+ * Updated to OpenH323 v1.7.3
+ *
+ * Revision 2.1  2001/08/01 05:03:09  robertj
  * Changes to allow control of linking software transcoders, use macros
  *   to force linking.
  * Allowed codecs to be used without H.,323 being linked by using the
@@ -33,6 +36,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.5  2001/10/24 01:20:34  robertj
+ * Added code to help with static linking of H323Capability names database.
  *
  * Revision 1.4  2001/02/09 05:16:24  robertj
  * Added #pragma interface for GNU C++.
@@ -126,6 +132,11 @@ class H323_LPC10Capability : public H323NonStandardAudioCapability
 
 #define OPAL_REGISTER_LPC10_H323 \
           H323_REGISTER_CAPABILITY_EP(H323_LPC10Capability, OPAL_LPC10)
+
+#ifdef H323_STATIC_LIB
+H323_STATIC_LOAD_REGISTER_CAPABILITY(H323_LPC10Capability);
+#endif
+
 
 #else // ifndef NO_H323
 

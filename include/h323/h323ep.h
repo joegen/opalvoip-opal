@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2005  2001/10/05 00:22:13  robertj
+ * Revision 1.2006  2001/11/02 10:45:19  robertj
+ * Updated to OpenH323 v1.7.3
+ *
+ * Revision 2.4  2001/10/05 00:22:13  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.3  2001/08/17 08:21:15  robertj
@@ -42,6 +45,10 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.9  2001/11/01 00:27:33  robertj
+ * Added default Fast Start disabled and H.245 tunneling disable flags
+ *   to the endpoint instance.
  *
  * Revision 1.8  2001/09/11 01:24:36  robertj
  * Added conditional compilation to remove video and/or audio codecs.
@@ -698,6 +705,28 @@ class H323EndPoint : public OpalEndPoint
      */
     const PStringList & GetAliasNames() const { return localAliasNames; }
 
+    /**Get the default fast start mode.
+      */
+    BOOL IsFastStartDisabled() const
+      { return disableFastStart; }
+
+    /**Set the default fast start mode.
+      */
+    void DisableFastStart(
+      BOOL mode /// New default mode
+    ) { disableFastStart = mode; } 
+
+    /**Get the default H.245 tunneling mode.
+      */
+    BOOL IsH245TunnelingDisabled() const
+      { return disableH245Tunneling; }
+
+    /**Set the default H.245 tunneling mode.
+      */
+    void DisableH245Tunneling(
+      BOOL mode /// New default mode
+    ) { disableH245Tunneling = mode; } 
+
     /**See if should auto-start receive video channels on connection.
      */
     BOOL CanAutoStartReceiveVideo() const { return manager.CanAutoStartReceiveVideo(); }
@@ -832,6 +861,8 @@ class H323EndPoint : public OpalEndPoint
 
     // Configuration variables, commonly changed
     PStringList localAliasNames;
+    BOOL        disableFastStart;
+    BOOL        disableH245Tunneling;
 
     BYTE          t35CountryCode;
     BYTE          t35Extension;

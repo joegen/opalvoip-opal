@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.cxx,v $
- * Revision 1.2003  2001/10/05 00:22:13  robertj
+ * Revision 1.2004  2001/11/02 10:45:19  robertj
+ * Updated to OpenH323 v1.7.3
+ *
+ * Revision 2.2  2001/10/05 00:22:13  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.1  2001/08/01 05:04:28  robertj
@@ -37,6 +40,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.37  2001/10/23 02:17:16  dereks
+ * Initial release of cu30 video codec.
  *
  * Revision 1.36  2001/09/26 01:59:31  robertj
  * Fixed MSVC warning.
@@ -799,8 +805,15 @@ BOOL H323_H261Codec::Write(const BYTE * buffer,
 {
   PWaitAndSignal mutex1(videoHandlerActive);  
 
-  if( rawDataChannel == NULL ) {//Some other task has killed our videohandler. Exit.
+  if( rawDataChannel == NULL ) {
+    //Some other task has killed our videohandler. Exit.
     return FALSE;
+  }
+
+  if( (++lastSequenceNumber) != frame.GetSequenceNumber() ) {
+    PTRACE(3,"H261\t Detected loss of one video packet. Will recover.");
+    lastSequenceNumber = frame.GetSequenceNumber();
+    SendMiscCommand(H245_MiscellaneousCommand_type::e_lostPartialPicture);
   }
 
   // always indicate we have written the entire packet
@@ -947,6 +960,17 @@ void H323_H261Codec::SetTxQualityLevel(int qLevel)
   lowLimit = PMIN(10, qLevel - 2);
   highLimit = qLevel + 12;
 }
+
+void H323_H261Codec::OnLostPartialPicture()
+{
+  PTRACE(3,"H261Codec\t lost partial picture message ignored, not implemented");
+}
+
+void H323_H261Codec::OnLostPicture()
+{
+  PTRACE(3,"H261Codec\t lost picture message ignored, not implemented");
+}
+
 #endif
 
 

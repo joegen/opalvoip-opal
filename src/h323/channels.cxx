@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2008  2001/10/15 04:34:42  robertj
+ * Revision 1.2009  2001/11/02 10:45:19  robertj
+ * Updated to OpenH323 v1.7.3
+ *
+ * Revision 2.7  2001/10/15 04:34:42  robertj
  * Added delayed start of media patch threads.
  *
  * Revision 2.6  2001/10/05 00:22:13  robertj
@@ -50,6 +53,12 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.101  2001/10/24 00:55:49  robertj
+ * Made cosmetic changes to H.245 miscellaneous command function.
+ *
+ * Revision 1.100  2001/10/23 02:17:16  dereks
+ * Initial release of cu30 video codec.
  *
  * Revision 1.99  2001/09/13 08:20:27  robertj
  * Fixed broken back out of rev 1.95, thanks Santiago Garcia Mantinan
@@ -583,6 +592,12 @@ BOOL H323Channel::Open()
 
   opened = TRUE;
   return TRUE;
+}
+
+
+void H323Channel::SendMiscCommand(unsigned command)
+{ 
+  connection.SendLogicalChannelMiscCommand(*this, command); 
 }
 
 
