@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2012  2003/12/16 10:22:45  rjongbloed
+ * Revision 1.2013  2004/03/09 12:09:55  rjongbloed
+ * More work on SIP register.
+ *
+ * Revision 2.11  2003/12/16 10:22:45  rjongbloed
  * Applied enhancements, thank you very much Ted Szoczei
  *
  * Revision 2.10  2003/12/15 11:56:17  rjongbloed
@@ -487,7 +490,7 @@ class SIPTransaction : public SIP_PDU
     ~SIPTransaction();
 
     void BuildREGISTER(
-      const SIPURL & name,
+      const PString & name,
       const SIPURL & contact
     );
 
