@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2002  2002/02/01 04:53:01  robertj
+ * Revision 1.2003  2002/03/08 06:28:19  craigs
+ * Changed to allow Authorisation to be included in other PDUs
+ *
+ * Revision 2.1  2002/02/01 04:53:01  robertj
  * Added (very primitive!) SIP support.
  *
  */
@@ -219,11 +222,6 @@ class SIP_PDU : public PObject
     void BuildVia();
     void BuildCommon();
     void BuildINVITE();
-    void BuildINVITE(
-      const PString & realm,
-      const PString & nonce,
-      BOOL isProxy
-    );
     void BuildBYE();
     void BuildACK();
     void BuildREGISTER(
