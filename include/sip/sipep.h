@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2008  2004/03/13 06:32:17  rjongbloed
+ * Revision 1.2009  2004/03/13 06:51:31  rjongbloed
+ * Alllowed for empty "username" in registration
+ *
+ * Revision 2.7  2004/03/13 06:32:17  rjongbloed
  * Fixes for removal of SIP and H.323 subsystems.
  * More registration work.
  *
@@ -181,7 +184,7 @@ class SIPEndPoint : public OpalEndPoint
 
     BOOL Register(
       const PString & hostname,
-      const PString & username,
+      const PString & username = PString::Empty(),
       const PString & password = PString::Empty()
     );
 
