@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2013  2002/03/27 05:36:44  robertj
+ * Revision 1.2014  2002/07/01 04:56:33  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.12  2002/03/27 05:36:44  robertj
  * Set RFC2833 payload type to be 101 for Cisco compatibility
  *
  * Revision 2.11  2002/02/19 07:36:51  robertj
@@ -66,6 +69,11 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.7  2002/06/25 08:30:13  robertj
+ * Changes to differentiate between stright G.723.1 and G.723.1 Annex A using
+ *   the OLC dataType silenceSuppression field so does not send SID frames
+ *   to receiver codecs that do not understand them.
  *
  * Revision 1.6  2002/01/22 07:08:26  robertj
  * Added IllegalPayloadType enum as need marker for none set
@@ -217,6 +225,30 @@ OpalMediaFormat const OpalG7231_6k3(
 
 OpalMediaFormat const OpalG7231_5k3(
   OPAL_G7231_5k3,
+  OpalMediaFormat::DefaultAudioSessionID,
+  RTP_DataFrame::G7231,
+  "G723",
+  TRUE, // Needs jitter
+  5300, // bits/sec
+  20,   // bytes
+  240,  // 30 milliseconds
+  OpalMediaFormat::AudioClockRate
+);
+
+OpalMediaFormat const OpalG7231A_6k3(
+  OPAL_G7231A_6k3,
+  OpalMediaFormat::DefaultAudioSessionID,
+  RTP_DataFrame::G7231,
+  "G723",
+  TRUE, // Needs jitter
+  6400, // bits/sec
+  24,   // bytes
+  240,  // 30 milliseconds
+  OpalMediaFormat::AudioClockRate
+);
+
+OpalMediaFormat const OpalG7231A_5k3(
+  OPAL_G7231A_5k3,
   OpalMediaFormat::DefaultAudioSessionID,
   RTP_DataFrame::G7231,
   "G723",

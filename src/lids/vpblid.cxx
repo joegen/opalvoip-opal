@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vpblid.cxx,v $
- * Revision 1.2005  2002/03/22 06:57:50  robertj
+ * Revision 1.2006  2002/07/01 04:56:33  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.4  2002/03/22 06:57:50  robertj
  * Updated to OpenH323 version 1.8.2
  *
  * Revision 2.3  2002/01/14 06:35:58  robertj
@@ -33,12 +36,17 @@
  *
  * Revision 2.1  2001/08/01 05:21:21  robertj
  * Made OpalMediaFormatList class global to help with documentation.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
+ * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.13  2002/05/21 09:16:31  robertj
+ * Fixed segmentation fault, if OpalVPBDevice::StopTone() is called more than
+ *   once, thanks Artis Kugevics
+ *
  * Revision 1.12  2002/03/20 06:05:04  robertj
  * Improved multithreading support, thanks David Rowe
  *   NOTE: only works with VPB driver version 2.5.5
- *
- * Revision 1.1  2002/03/11 02:42:56  david
- * Initial revision
  *
  * Revision 1.11  2001/11/19 06:35:41  robertj
  * Added tone generation handling
@@ -46,8 +54,8 @@
  * Revision 1.10  2001/10/05 03:51:21  robertj
  * Added missing pragma implementation
  *
- * Revision 2.0  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.9  2001/10/05 03:33:06  robertj
+ * Fixed compatibility with latest VPB drivers
  *
  * Revision 1.8  2001/09/13 05:27:46  robertj
  * Fixed incorrect return type in virtual function, thanks Vjacheslav Andrejev
@@ -536,8 +544,10 @@ BOOL OpalVpbDevice::PlayTone(unsigned line, CallProgressTones tone)
 BOOL OpalVpbDevice::StopTone(unsigned line)
 {
   PTRACE(3, "VPB\tStopTone STARTED");
-  if (lineState[line].myToneThread)
+  if (lineState[line].myToneThread) {
     delete lineState[line].myToneThread;
+    lineState[line].myToneThread = NULL;
+  }
   PTRACE(3, "VPB\tStopTone FINSISHED");
   return TRUE;
 }
