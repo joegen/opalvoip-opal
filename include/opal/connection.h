@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 1.2002  2001/08/01 05:26:35  robertj
+ * Moved media formats list from endpoint to connection.
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  */
@@ -365,18 +368,17 @@ class OpalConnection : public PObject
   /**@name Media Stream Management */
   //@{
     /**Get the data formats this connection is capable of operating.
-       This provides a list of media data format names that an
+       This provides a list of media data format names that a
        OpalMediaStream may be created in within this connection.
 
-       The default behaviour simply returns media data format names supported
-       by the owning endpoint.
+       The default behaviour is pure.
       */
-    virtual OpalMediaFormat::List GetMediaFormats() const;
+    virtual OpalMediaFormatList GetMediaFormats() const = 0;
 
     /**Open source transmitter media stream for session.
       */
     virtual BOOL OpenSourceMediaStream(
-      const OpalMediaFormat::List & mediaFormats, /// Optional media format to open
+      const OpalMediaFormatList & mediaFormats, /// Optional media format to open
       unsigned sessionID                   /// Session to start stream on
     );
 

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2002  2001/07/30 07:22:25  robertj
+ * Revision 1.2003  2001/08/01 05:26:35  robertj
+ * Moved media formats list from endpoint to connection.
+ *
+ * Revision 2.1  2001/07/30 07:22:25  robertj
  * Abstracted listener management from H.323 to OpalEndPoint class.
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
@@ -356,14 +359,18 @@ class OpalEndPoint : public PObject
 
   /**@name Media Streams management */
   //@{
-    /**Get the data formats this endpoint is capable of operating in.
-       This provides a list of media data format names that an
-       OpalMediaStream may be created in within connections created by this
-       endpoint.
+    /**Adjust media formats available on a connection.
+       This is called by a connection after it has called
+       OpalCall::GetMediaFormats() to get all media formats that it can use so
+       that an application may remove or reorder the media formats before they
+       are used to open media streams.
 
-       The default behaviour is pure.
+       The default behaviour calls the OpalManager function of the same name.
       */
-    virtual OpalMediaFormat::List GetMediaFormats() const = 0;
+    virtual void AdjustMediaFormats(
+      OpalConnection & connection,  /// Connection that is about to use formats
+      OpalMediaFormatList & mediaFormats  /// Media formats to use
+    );
 
     /**Call back when opening a media stream.
        This function is called when a connection has created a new media
