@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2003  2001/08/01 06:22:07  robertj
+ * Revision 1.2004  2001/08/22 03:51:44  robertj
+ * Added functions to look up media format by payload type.
+ *
+ * Revision 2.2  2001/08/01 06:22:07  robertj
  * Fixed GNU warning.
  *
  * Revision 2.1  2001/08/01 05:45:34  robertj
@@ -185,6 +188,12 @@ OpalMediaFormat::OpalMediaFormat()
 }
 
 
+OpalMediaFormat::OpalMediaFormat(RTP_DataFrame::PayloadTypes pt)
+{
+  operator=(pt);
+}
+
+
 OpalMediaFormat::OpalMediaFormat(const char * wildcard)
 {
   operator=(PString(wildcard));
@@ -239,6 +248,19 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
 }
 
 
+OpalMediaFormat & OpalMediaFormat::operator=(RTP_DataFrame::PayloadTypes pt)
+{
+  const OpalMediaFormatList & registeredFormats = GetRegisteredMediaFormats();
+  PINDEX idx = registeredFormats.FindFormat(pt);
+  if (idx != P_MAX_INDEX)
+    *this = registeredFormats[idx];
+  else
+    *this = OpalMediaFormat();
+
+  return *this;
+}
+
+
 OpalMediaFormat & OpalMediaFormat::operator=(const char * wildcard)
 {
   return operator=(PString(wildcard));
@@ -251,16 +273,8 @@ OpalMediaFormat & OpalMediaFormat::operator=(const PString & wildcard)
   PINDEX idx = registeredFormats.FindFormat(wildcard);
   if (idx != P_MAX_INDEX)
     *this = registeredFormats[idx];
-  else {
-    PCaselessString::operator=(PString());
-
-    rtpPayloadType = RTP_DataFrame::MaxPayloadType;
-    needsJitter = FALSE;
-    bandwidth = 0;
-    frameSize = 0;
-    frameTime = 0;
-    timeUnits = 0;
-  }
+  else
+    *this = OpalMediaFormat();
 
   return *this;
 }
@@ -300,6 +314,17 @@ OpalMediaFormatList & OpalMediaFormatList::operator-=(const OpalMediaFormat & fo
     RemoveAt(idx);
 
   return *this;
+}
+
+
+PINDEX OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt) const
+{
+  for (PINDEX idx = 0; idx < GetSize(); idx++) {
+    if ((*this)[idx].GetPayloadType() == pt)
+      return idx;
+  }
+
+  return P_MAX_INDEX;
 }
 
 
