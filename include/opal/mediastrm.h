@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2006  2001/10/15 04:28:35  robertj
+ * Revision 1.2007  2002/01/14 02:27:32  robertj
+ * Added ability to turn jitter buffer off in media stream to allow for patches
+ *   that do not require it.
+ *
+ * Revision 2.5  2001/10/15 04:28:35  robertj
  * Added delayed start of media patch threads.
  *
  * Revision 2.4  2001/10/04 05:44:00  craigs
@@ -165,6 +169,12 @@ class OpalMediaStream : public PChannel
        take 30 milliseconds to complete.
       */
     virtual BOOL IsSynchronous() const = 0;
+
+    /**Enable jitter buffer for the media stream.
+
+       The default behaviour does nothing.
+      */
+    virtual void EnableJitterBuffer() const;
   //@}
 
   /**@name Member variable access */
@@ -295,6 +305,12 @@ class OpalRTPMediaStream : public OpalMediaStream
        Returns FALSE for RTP streams.
       */
     virtual BOOL IsSynchronous() const;
+
+    /**Enable jitter buffer for the media stream.
+
+       The default behaviour does nothing.
+      */
+    virtual void EnableJitterBuffer() const;
   //@}
 
   protected:
