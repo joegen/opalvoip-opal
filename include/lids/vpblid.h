@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vpblid.h,v $
- * Revision 1.2008  2003/03/24 07:18:29  robertj
+ * Revision 1.2009  2004/02/19 10:46:44  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.7  2003/03/24 07:18:29  robertj
  * Added registration system for LIDs so can work with various LID types by
  *   name instead of class instance.
  *
@@ -47,6 +50,12 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.16  2003/08/13 22:02:03  dereksmithies
+ * Apply patch from Daniel Bichara to GetOSHandle() for VPB devices. Thanks.
+ *
+ * Revision 1.15  2003/03/05 06:26:41  robertj
+ * Added function to play a WAV file to LID, thanks Pietro Ravasio
  *
  * Revision 1.14  2002/09/16 01:14:15  robertj
  * Added #define so can select if #pragma interface/implementation is used on
@@ -310,6 +319,11 @@ class OpalVpbDevice : public OpalLineInterfaceDevice
       unsigned volume   /// Volume level from 0 to 100%
     );
 
+    /**Return line handle
+      */
+    int GetOSHandle(
+      unsigned line     /// Number of line
+    );
 
     /**Read a DTMF digit detected.
        This may be characters from the set 0-9, A-D, * or #. A null ('\0')
@@ -344,6 +358,15 @@ class OpalVpbDevice : public OpalLineInterfaceDevice
 
     virtual BOOL StopTone(
       unsigned line   /// Number of line
+    );
+	
+    virtual BOOL PlayAudio(
+      unsigned line,            /// Number of line
+      const PString & filename  /// File Name
+    );
+    
+    virtual BOOL StopAudio(
+      unsigned line   ///Number of line
     );
 
   protected:

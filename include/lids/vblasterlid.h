@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vblasterlid.h,v $
- * Revision 1.2007  2003/03/24 07:18:29  robertj
+ * Revision 1.2008  2004/02/19 10:46:44  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.6  2003/03/24 07:18:29  robertj
  * Added registration system for LIDs so can work with various LID types by
  *   name instead of class instance.
  *
@@ -43,6 +46,12 @@
  *
  * Revision 2.1  2002/01/22 06:28:43  robertj
  * Added voice blaster support
+ *
+ * Revision 1.7  2003/12/03 06:58:30  csoutheren
+ * More vblaster implementation
+ *
+ * Revision 1.6  2003/11/10 12:37:46  csoutheren
+ * Additional fixes for Fobbit Windows driver
  *
  * Revision 1.5  2002/09/16 01:14:15  robertj
  * Added #define so can select if #pragma interface/implementation is used on
@@ -96,8 +105,8 @@ class VoipBlasterInterface : public PObject
       Command_UNKNOWN_1  = 0x09, // Unknown (TESTSTART)
       Command_UNKNOWN_2  = 0x0a, // Unknown (TESTSTOP)
       Command_UNKNOWN_3  = 0x0b, // Unknown (SENDFAXTONE)
-      Command_0x0c       = 0x0c, // Go offhook for headset
-      Command_0x0d       = 0x0d, // Go onhook for headset
+      Command_HS_OFFHOOK = 0x0c, // Go offhook for headset
+      Command_HS_ONHOOK  = 0x0d, // Go onhook for headset
       Command_SETUP_MODE = 0x0e, // Unknown(goto setup mode)
       Command_VOUT_DONE  = 0x0f, // voice in/out off, report output drained
       Command_0x10       = 0x10, // Unknown (used in file output, seems ok without)
@@ -114,7 +123,7 @@ class VoipBlasterInterface : public PObject
     };
 
     enum Status {
-      Status_NONE        = 0x00, // No status
+      //Status_NONE        = 0x00, // No status
       Status_HOOK_OFF    = 0x01, // Offhook
       Status_HOOK_ON     = 0x02, // Onhook
       //Status_DEBUG       = 0x03, // Not used (DEBUG)
@@ -134,13 +143,13 @@ class VoipBlasterInterface : public PObject
 
     BOOL OpenCommand(PINDEX deviceIndex);
     BOOL WriteCommand(Command cmd);
-    Status ReadStatus();
+    Status ReadStatus(const PTimeInterval dur = 0);
     BOOL CloseCommand();
 
     BOOL OpenData();
     BOOL WriteData(const void * data, PINDEX len);
-    int  ReadData (void * data,       PINDEX len);
-    void FlushData(PTimeInterval wait = 100);
+    int  ReadData (void * data,       PINDEX len, const PTimeInterval dur = 0);
+    void Flush(const PTimeInterval wait = 500);
     BOOL CloseData();
 
     PDECLARE_NOTIFIER(PTimer, VoipBlasterInterface, CloseTimeout);
@@ -162,15 +171,9 @@ class VoipBlasterInterface : public PObject
       NumPipes
     };
 
-    enum ReadBufferIndex {
-      VoiceReadBuffer  = 0,
-      StatusReadBuffer = 1,
-      NumReadBuffers
-    };
-
   protected:
     int WritePipe(HANDLE fd, const void *bp, DWORD len);
-    int ReadPipe (HANDLE fd, void *bp,       DWORD len);
+    int ReadPipe (HANDLE fd, void *bp,       DWORD len, const PTimeInterval dur = 0);
     BOOL OpenVOIPPipe(Pipe pipeIndex);
 
     HANDLE pipes[4];
@@ -619,6 +622,8 @@ class OpalVoipBlasterDevice : public OpalLineInterfaceDevice
     PDECLARE_NOTIFIER(PThread, OpalVoipBlasterDevice, StatusHandler);
 
   protected:
+    void HandleStatus(int status);
+
     PThread * statusThread;
     BOOL statusRunning;
     BOOL hookState;

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q931.h,v $
- * Revision 1.2011  2003/01/07 04:39:53  robertj
+ * Revision 1.2012  2004/02/19 10:46:44  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.10  2003/01/07 04:39:53  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.9  2002/11/10 11:33:17  robertj
@@ -57,6 +60,13 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.52  2003/03/18 05:54:14  robertj
+ * Added ChannelIdentifier IE support, thanks Eize Slange
+ *
+ * Revision 1.51  2003/02/12 00:02:06  robertj
+ * Added more Q.931 cause codes.
+ * Added ability to trace text version of cause codes and IE codes.
  *
  * Revision 1.50  2002/11/25 22:40:00  robertj
  * Added another Q.850 code
@@ -301,20 +311,23 @@ class Q931 : public PObject
     MsgTypes GetMessageType() const { return messageType; }
 
     enum InformationElementCodes {
-      BearerCapabilityIE   = 0x04,
-      CauseIE              = 0x08,
-      FacilityIE           = 0x1c,
-      ProgressIndicatorIE  = 0x1e,
-      CallStateIE          = 0x14,
-      DisplayIE            = 0x28,
-      KeypadIE             = 0x2c,
-      SignalIE             = 0x34,
-      ConnectedNumberIE    = 0x4c,
-      CallingPartyNumberIE = 0x6c,
-      CalledPartyNumberIE  = 0x70,
-      RedirectingNumberIE  = 0x74,
-      UserUserIE           = 0x7e
+      BearerCapabilityIE      = 0x04,
+      CauseIE                 = 0x08,
+      ChannelIdentificationIE = 0x18,
+      FacilityIE              = 0x1c,
+      ProgressIndicatorIE     = 0x1e,
+      CallStateIE             = 0x14,
+      DisplayIE               = 0x28,
+      KeypadIE                = 0x2c,
+      SignalIE                = 0x34,
+      ConnectedNumberIE       = 0x4c,
+      CallingPartyNumberIE    = 0x6c,
+      CalledPartyNumberIE     = 0x70,
+      RedirectingNumberIE     = 0x74,
+      UserUserIE              = 0x7e
     };
+    friend ostream & operator<<(ostream & strm, InformationElementCodes ie);
+
     BOOL HasIE(InformationElementCodes ie) const;
     PBYTEArray GetIE(InformationElementCodes ie) const;
     void SetIE(InformationElementCodes ie, const PBYTEArray & userData);
@@ -344,7 +357,7 @@ class Q931 : public PObject
     );
 
     enum CauseValues {
-      UnknownCauseIE,
+      UnknownCauseIE               =  0,
       UnallocatedNumber            =  1,
       NoRouteToNetwork             =  2,
       NoRouteToDestination         =  3,
@@ -372,13 +385,18 @@ class Q931 : public PObject
       Congestion                   = 42,
       RequestedCircuitNotAvailable = 44,
       ResourceUnavailable          = 47,
+      ServiceOptionNotAvailable    = 63,
       InvalidCallReference         = 81,
       ClearedRequestedCallIdentity = 86,
       IncompatibleDestination      = 88,
-      InterworkingUnspecified      = 111,
-      NonStandardReason            = 127,
+      IENonExistantOrNotImplemented= 99,
+      TimerExpiry                  = 102,
+      ProtocolErrorUnspecified     = 111,
+      InterworkingUnspecified      = 127,
       ErrorInCauseIE               = 0x100
     };
+    friend ostream & operator<<(ostream & strm, CauseValues cause);
+
     void SetCause(
       CauseValues value,
       unsigned standard = 0,  // 0 = ITU-T standardized coding
@@ -556,6 +574,26 @@ class Q931 : public PObject
       unsigned defPresentation = 0,   // Default value if octet3a not present
       unsigned defScreening = 0,      // Default value if octet3a not present
       unsigned defReason =0           // Default value if octet 3b not present
+    ) const;
+
+    /**Set the limitations to ChannelIdentification.
+        - the interface identifier cannot be specified
+        - channel in PRI can only be indicated by number and cannot be indicated by map
+        - one and only one channel can be indicated
+        - the coding standard is always ITU Q.931
+      */
+    void SetChannelIdentification(
+      unsigned interfaceType = 0,        //  0 = basic,     1 = other (e.g. primary)
+      unsigned preferredOrExclusive = 0, //  0 = preferred, 1 = exclusive
+      int      channelNumber = 1         // -1 = any,       0 = none/D, 1 = channel 1/B1, etc. 1-15,17-31
+    );
+
+    /**Get the limitations to ChannelIdentification.
+      */
+    BOOL GetChannelIdentification(
+      unsigned * interfaceType = NULL,        // Interface type
+      unsigned * preferredOrExclusive = NULL, // Channel negotiation preference
+      int      * channelNumber = NULL         // Channel number
     ) const;
 
   protected:

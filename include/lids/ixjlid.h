@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjlid.h,v $
- * Revision 1.2008  2003/03/24 07:18:29  robertj
+ * Revision 1.2009  2004/02/19 10:46:44  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.7  2003/03/24 07:18:29  robertj
  * Added registration system for LIDs so can work with various LID types by
  *   name instead of class instance.
  *
@@ -52,6 +55,18 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.65  2004/01/31 13:13:22  csoutheren
+ * Fixed problem with HAS_IXJ being tested but not included
+ *
+ * Revision 1.64  2003/10/27 20:27:37  dereksmithies
+ * Add log scale methods for audio.
+ *
+ * Revision 1.63  2003/04/29 08:27:47  robertj
+ * Cleaned up documentation for new wink duration functions.
+ *
+ * Revision 1.62  2003/04/28 01:47:53  dereks
+ * Add ability to set/get wink duration for ixj device.
  *
  * Revision 1.61  2002/11/06 04:03:38  dereks
  * Improve docs for  SetToneFilterParameters().
@@ -263,6 +278,7 @@
 #endif
 
 
+#include <opal/buildopts.h>
 #include <lids/lid.h>
 
 
@@ -575,8 +591,7 @@ class OpalIxJDevice : public OpalLineInterfaceDevice
       unsigned & volume   /// Volume level from 0 to 100%
     );
 
-
-    /**Set acoustic echo cancellation.
+    /**Get acoustic echo cancellation.
       */
     AECLevels GetAEC(
       unsigned line    /// Number of line
@@ -586,9 +601,23 @@ class OpalIxJDevice : public OpalLineInterfaceDevice
       */
     BOOL SetAEC(
       unsigned line,    /// Number of line
-      AECLevels level  /// AEC level
+      AECLevels level   /// AEC level
     );
 
+    /**Get wink detect minimum duration.
+       This is the signal used by telcos to end PSTN call.
+      */
+    unsigned GetWinkDuration(
+      unsigned line    /// Number of line
+    );
+
+    /**Set wink detect minimum duration.
+       This is the signal used by telcos to end PSTN call.
+      */
+    BOOL SetWinkDuration(
+      unsigned line,        /// Number of line
+      unsigned winkDuration /// New minimum duration
+    );
 
     /**Get voice activity detection.
        Note, not all devices, or selected codecs, may support this function.
@@ -748,7 +777,8 @@ class OpalIxJDevice : public OpalLineInterfaceDevice
       LineJACK = 3,
       PhoneJACK_Lite,
       PhoneJACK_PCI,
-      PhoneCARD
+      PhoneCARD,
+      PhoneJACK_PCI_TJ
     };
 
     /**Get the serial number for the xJACK card.
@@ -762,6 +792,9 @@ class OpalIxJDevice : public OpalLineInterfaceDevice
 
 
   protected:
+
+    PINDEX    LogScaleVolume(unsigned line, PINDEX volume, BOOL isPlay);
+
     PString   deviceName;
     DWORD     dwCardType;
     PMutex    readMutex, writeMutex;
