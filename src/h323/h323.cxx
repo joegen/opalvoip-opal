@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2065  2004/10/02 12:30:22  rjongbloed
+ * Revision 1.2066  2004/10/03 14:18:47  rjongbloed
+ * Fixed missing check for established after connecting.
+ *
+ * Revision 2.64  2004/10/02 12:30:22  rjongbloed
  * Fixed keeping H.323 and OPAL state variables in sync around "established" connections.
  *
  * Revision 2.63  2004/09/01 12:21:28  rjongbloed
@@ -3111,6 +3114,7 @@ BOOL H323Connection::SetConnected()
 
   connectedTime = PTime();
 
+  InternalEstablishedConnectionCheck();
   return TRUE;
 }
 
