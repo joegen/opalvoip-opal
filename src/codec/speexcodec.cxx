@@ -24,8 +24,42 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.cxx,v $
- * Revision 1.2002  2002/11/10 11:33:18  robertj
+ * Revision 1.2003  2004/02/19 10:47:02  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.1  2002/11/10 11:33:18  robertj
  * Updated to OpenH323 v1.10.3
+ *
+ * Revision 1.23  2004/01/30 00:55:41  csoutheren
+ * Removed the Xiph capability variants per Roger Hardiman as these
+ * were development-only code that should not have made it into a release
+ *
+ * Revision 1.22  2004/01/02 01:23:12  csoutheren
+ * More changes to allow correct autodetection of local Speex libraries
+ *
+ * Revision 1.21  2003/12/29 12:13:26  csoutheren
+ * configure now checks for libspeex in system libraries and compares
+ * version against version in local sources. Also use --enable-localspeex to
+ * force use of local Speex or system Speex
+ *
+ * Revision 1.20  2002/12/08 22:59:41  rogerh
+ * Add XiphSpeex codec. Not yet finished.
+ *
+ * Revision 1.19  2002/12/06 10:11:54  rogerh
+ * Back out the Xiph Speex changes on a tempoary basis while the Speex
+ * spec is being redrafted.
+ *
+ * Revision 1.18  2002/12/06 03:27:47  robertj
+ * Fixed MSVC warnings
+ *
+ * Revision 1.17  2002/12/05 12:57:17  rogerh
+ * Speex now uses the manufacturer ID assigned to Xiph.Org.
+ * To support existing applications using Speex, applications can use the
+ * EquivalenceSpeex capabilities.
+ *
+ * Revision 1.16  2002/11/25 10:24:50  craigs
+ * Fixed problem with Speex codec names causing mismatched capabilities
+ * Reported by Ben Lear
  *
  * Revision 1.15  2002/11/09 07:08:20  robertj
  * Hide speex library from OPenH323 library users.
@@ -89,15 +123,19 @@
 #include <codec/speexcodec.h>
 
 extern "C" {
+#if H323_SYSTEM_SPEEX
+#include <speex.h>
+#else
 #include "speex/libspeex/speex.h"
+#endif
 };
 
 
 #define new PNEW
 
-#define SPEEX_COUNTRY_CODE       9  // Country code for Australia
-#define SPEEX_T35EXTENSION       0
-#define SPEEX_MANUFACTURER_CODE  61 // Allocated by Australian Communications Authority, Oct 2000
+#define EQUIVALENCE_COUNTRY_CODE       9  // Country code for Australia
+#define EQUIVALENCE_T35EXTENSION       0
+#define EQUIVALENCE_MANUFACTURER_CODE  61 // Allocated by Australian Communications Authority, Oct 2000
 
 #define SAMPLES_PER_FRAME        160
 
@@ -177,9 +215,9 @@ OpalMediaFormat const OpalSpeexNarrow_18k2(OPAL_SPEEX_NARROW_18k2,
 
 SpeexNonStandardAudioCapability::SpeexNonStandardAudioCapability(int mode)
   : H323NonStandardAudioCapability(1, 1,
-                                   SPEEX_COUNTRY_CODE,
-                                   SPEEX_T35EXTENSION,
-                                   SPEEX_MANUFACTURER_CODE,
+                                   EQUIVALENCE_COUNTRY_CODE,
+                                   EQUIVALENCE_T35EXTENSION,
+                                   EQUIVALENCE_MANUFACTURER_CODE,
                                    NULL, 0, 0, P_MAX_INDEX)
 {
   PStringStream s;
