@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2015  2003/03/17 10:26:59  robertj
+ * Revision 1.2016  2003/12/20 12:21:18  rjongbloed
+ * Applied more enhancements, thank you very much Ted Szoczei
+ *
+ * Revision 2.14  2003/03/17 10:26:59  robertj
  * Added video support.
  *
  * Revision 2.13  2003/03/06 03:57:47  robertj
@@ -306,11 +309,15 @@ class SIPConnection : public OpalConnection
     OpalTransport & GetTransport() const { return *transport; }
 
     PString GetLocalPartyAddress() const { return localPartyAddress; }
+
+    /** Create full SIPURI - with display name, URL in <> and tag, suitable for From:
+      */
     void SetLocalPartyAddress();
     void SetLocalPartyAddress(
       const PString & addr
     ) { localPartyAddress = addr; }
 
+    const PString & GetTag() const { return tag; }
     SIPEndPoint & GetEndPoint() const { return endpoint; }
     const SIPURL & GetTargetAddress() const { return targetAddress; }
     const PStringList & GetRouteSet() const { return routeSet; }
@@ -326,6 +333,7 @@ class SIPConnection : public OpalConnection
     OpalTransport * transport;
 
     PString           localPartyAddress;
+    PString           tag;              // local dialog tag
     SIP_PDU         * originalInvite;
     PStringList       routeSet;
     SIPURL            targetAddress;
