@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2004  2002/02/13 02:27:50  robertj
+ * Revision 1.2005  2002/03/15 07:08:24  robertj
+ * Removed redundent return value on SetXXX function.
+ *
+ * Revision 2.3  2002/02/13 02:27:50  robertj
  * Normalised some function names.
  * Fixed incorrect port number usage stopping audio in one direction.
  *
@@ -201,7 +204,7 @@ class SDPSessionDescription : public PObject
     void AddMediaDescription(SDPMediaDescription * md) { mediaDescriptions.Append(md); }
 
     const OpalTransportAddress & GetDefaultConnectAddress() const { return defaultConnectAddress; }
-    BOOL SetDefaultConnectAddress(
+    void SetDefaultConnectAddress(
       const OpalTransportAddress & address
     ) { defaultConnectAddress = address; }
 
