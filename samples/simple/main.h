@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2005  2002/01/22 05:34:58  robertj
+ * Revision 1.2006  2002/02/01 04:53:01  robertj
+ * Added (very primitive!) SIP support.
+ *
+ * Revision 2.4  2002/01/22 05:34:58  robertj
  * Revamp of user input API triggered by RFC2833 support
  *
  * Revision 2.3  2001/08/21 11:18:55  robertj
@@ -61,12 +64,13 @@
 #ifndef _SimpleOpal_MAIN_H
 #define _SimpleOpal_MAIN_H
 
+#include <ptclib/ipacl.h>
 #include <opal/manager.h>
 #include <opal/pcss.h>
 
 
 class MyManager;
-class OpalPOTSEndPoint;
+class SIPEndPoint;
 class H323EndPoint;
 
 
@@ -124,10 +128,12 @@ class MyManager : public OpalManager
     BOOL noFastStart;
     BOOL noH245Tunnelling;
     PString busyForwardParty;
+    PString gateway;
 
     OpalPOTSEndPoint * potsEP;
     MyPCSSEndPoint   * pcssEP;
     H323EndPoint     * h323EP;
+    SIPEndPoint      * sipEP;
 };
 
 

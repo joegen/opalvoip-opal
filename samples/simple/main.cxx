@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2007  2002/01/22 05:34:58  robertj
+ * Revision 1.2008  2002/02/01 04:53:01  robertj
+ * Added (very primitive!) SIP support.
+ *
+ * Revision 2.6  2002/01/22 05:34:58  robertj
  * Revamp of user input API triggered by RFC2833 support
  *
  * Revision 2.5  2001/08/21 11:18:55  robertj
@@ -92,17 +95,18 @@
 
 #include <ptlib.h>
 
-#include "main.h"
-#include "version.h"
-
-#include <h323/h323ep.h>
+#include <sip/sip.h>
+#include <h323/h323.h>
 #include <h323/gkclient.h>
 #include <lids/lidep.h>
-
 
 #ifdef HAS_IXJ
 #include <lids/ixjlid.h>
 #endif
+
+#include "main.h"
+#include "version.h"
+
 
 #ifdef OPAL_STATIC_LINK
 #include <codec/allcodecs.h>
@@ -118,7 +122,7 @@ PCREATE_PROCESS(SimpleOpalProcess);
 ///////////////////////////////////////////////////////////////
 
 SimpleOpalProcess::SimpleOpalProcess()
-  : PProcess("Open Phone Abstraction Library", "SimpleOpal",
+  : PProcess("Open Phone Abstraction Library", "SimpleOPAL",
              MAJOR_VERSION, MINOR_VERSION, BUILD_TYPE, BUILD_NUMBER)
 {
 }
@@ -142,9 +146,11 @@ void SimpleOpalProcess::Main()
              "e-silence."
              "f-fast-disable."
              "g-gatekeeper:"
+             "G-gateway:" 
              "h-help."
              "H-no-h323."
              "i-interface:"
+             "I-no-sip."
              "j-jitter:"
              "l-listen."
              "n-no-gatekeeper."
@@ -153,16 +159,16 @@ void SimpleOpalProcess::Main()
 #endif
              "P-prefer:"
              "p-password:"
-#ifdef HAS_IXJ
              "q-quicknet:"
-             "Q-no-quicknet:"
-#endif
-             "r-require-gatekeeper."
+             "Q-no-quicknet."
+             "R-require-gatekeeper."
+             "r-register-sip:"
              "s-sound:"
-             "S-no-sound:"
+             "S-no-sound."
              "-sound-in:"
              "-sound-out:"
              "T-h245tunneldisable."
+	     "-use-long-mime."
 #if PTRACING
              "t-trace."
 #endif
@@ -176,9 +182,13 @@ void SimpleOpalProcess::Main()
             "      : " << GetName() << " [options] alias[@hostname]   (with gatekeeper)\n"
             "Options:\n"
             "  -l --listen             : Listen for incoming calls.\n"
+            "  -I --no-sip             : Disable SIP protocol.\n"
+            "  -r --register-sip host  : Register with SIP server.\n"
+            "  -H --no-h323            : Disable H.323 protocol.\n"
             "  -g --gatekeeper host    : Specify gatekeeper host.\n"
             "  -n --no-gatekeeper      : Disable gatekeeper discovery.\n"
-            "  -r --require-gatekeeper : Exit if gatekeeper discovery fails.\n"
+            "  -R --require-gatekeeper : Exit if gatekeeper discovery fails.\n"
+            "  -G --gateway addr       : Use gateway/proxy\n"
             "  -a --auto-answer        : Automatically answer incoming calls.\n"
             "  -u --user name          : Set local alias name(s) (defaults to login name).\n"
             "  -b --bandwidth bps      : Limit bandwidth usage to bps bits/second.\n"
@@ -190,10 +200,9 @@ void SimpleOpalProcess::Main()
             "  -e --silence            : Disable transmitter silence detection.\n"
             "  -f --fast-disable       : Disable fast start.\n"
             "  -T --h245tunneldisable  : Disable H245 tunnelling.\n"
-#ifdef HAS_IXJ
+            "     --use-long-mime      : Use long MIME headers on outgoing SIP messages\n"
             "  -q --quicknet device    : Select Quicknet xJACK device (default ALL).\n"
             "  -Q --no-quicknet        : Do not use Quicknet xJACK device.\n"
-#endif
             "  -s --sound device       : Select sound input/output device.\n"
             "  -S --no-sound           : Do not use sound input/output device.\n"
             "     --sound-in device    : Select sound input device.\n"
@@ -209,7 +218,8 @@ void SimpleOpalProcess::Main()
 
 #if PTRACING
   PTrace::Initialise(args.GetOptionCount('t'),
-                     args.HasOption('o') ? (const char *)args.GetOptionString('o') : NULL);
+                     args.HasOption('o') ? (const char *)args.GetOptionString('o') : NULL,
+                     PTrace::Timestamp|PTrace::Thread|PTrace::FileAndLine);
 #endif
 
   // Create the Opal Manager and initialise it
@@ -231,6 +241,7 @@ MyManager::MyManager()
   potsEP = NULL;
   pcssEP = NULL;
   h323EP = NULL;
+  sipEP  = NULL;
 }
 
 
@@ -248,6 +259,10 @@ BOOL MyManager::Initialise(PArgList & args)
   autoAnswer           = args.HasOption('a');
   silenceOn            = !args.HasOption('e');
   busyForwardParty     = args.GetOptionString('B');
+
+  // get the protocols in use
+  BOOL useSIP  = !args.HasOption("no-sip");
+  BOOL useH323 = !args.HasOption("no-h323");
 
   if (args.HasOption('j')) {
     unsigned jitter = args.GetOptionString('j').AsUnsigned();
@@ -328,80 +343,123 @@ BOOL MyManager::Initialise(PArgList & args)
   ///////////////////////////////////////
   // Create H.323 protocol handler
 
-  h323EP = new H323EndPoint(*this);
+  if (useH323) {
+    h323EP = new H323EndPoint(*this);
 
-  noFastStart      = args.HasOption('f');
-  noH245Tunnelling = args.HasOption('h');
+    noFastStart      = args.HasOption('f');
+    noH245Tunnelling = args.HasOption('h');
 
-  // Get local username, multiple uses of -u indicates additional aliases
-  if (args.HasOption('u')) {
-    PStringArray aliases = args.GetOptionString('u').Lines();
-    h323EP->SetLocalUserName(aliases[0]);
-    for (PINDEX i = 1; i < aliases.GetSize(); i++)
-      h323EP->AddAliasName(aliases[i]);
-  }
-
-  if (args.HasOption('b')) {
-    unsigned initialBandwidth = args.GetOptionString('b').AsUnsigned()*100;
-    if (initialBandwidth == 0) {
-      cerr << "Illegal bandwidth specified." << endl;
-      return FALSE;
+    // Get local username, multiple uses of -u indicates additional aliases
+    if (args.HasOption('u')) {
+      PStringArray aliases = args.GetOptionString('u').Lines();
+      h323EP->SetLocalUserName(aliases[0]);
+      for (PINDEX i = 1; i < aliases.GetSize(); i++)
+        h323EP->AddAliasName(aliases[i]);
     }
-    h323EP->SetInitialBandwidth(initialBandwidth);
-  }
 
-  // .
-  cout << "H.323 Local username: " << h323EP->GetLocalUserName() << "\n"
-       << "H.323 FastConnect is " << !noFastStart << "\n"
-       << "H.323 H245Tunnelling is " << noH245Tunnelling << endl;
-
-
-  // Start the listener thread for incoming calls.
-  if (args.HasOption('i')) {
-    PStringArray listeners = args.GetOptionString('i').Lines();
-    if (!h323EP->StartListeners(listeners)) {
-      cerr <<  "Could not open any H.323 listener from "
-           << setfill(',') << listeners << endl;
-      return FALSE;
-    }
-  }
-  else {
-    if (!h323EP->StartListener(NULL)) {
-      cerr <<  "Could not open H.323 listener on TCP port "
-           << h323EP->GetDefaultSignalPort() << endl;
-      return FALSE;
-    }
-  }
-
-
-  // Establish link with gatekeeper if required.
-  if (args.HasOption('g')) {
-    PString gkName = args.GetOptionString('g');
-    OpalTransportUDP * rasChannel;
-    if (args.GetOptionString('i').IsEmpty())
-      rasChannel  = new OpalTransportUDP(*h323EP);
-    else {
-      PIPSocket::Address interfaceAddress(args.GetOptionString('i'));
-      rasChannel  = new OpalTransportUDP(*h323EP, interfaceAddress);
-    }
-    if (h323EP->SetGatekeeper(gkName, rasChannel))
-      cout << "Gatekeeper set: " << *h323EP->GetGatekeeper() << endl;
-    else {
-      cerr << "Error registering with gatekeeper at \"" << gkName << '"' << endl;
-      return FALSE;
-    }
-  }
-  else if (!args.HasOption('n') || args.HasOption('r')) {
-    cout << "Searching for gatekeeper..." << flush;
-    if (h323EP->DiscoverGatekeeper(new OpalTransportUDP(*h323EP)))
-      cout << "\nGatekeeper found: " << *h323EP->GetGatekeeper() << endl;
-    else {
-      cerr << "\nNo gatekeeper found." << endl;
-      if (args.HasOption("require-gatekeeper")) 
+    if (args.HasOption('b')) {
+      unsigned initialBandwidth = args.GetOptionString('b').AsUnsigned()*100;
+      if (initialBandwidth == 0) {
+        cerr << "Illegal bandwidth specified." << endl;
         return FALSE;
+      }
+      h323EP->SetInitialBandwidth(initialBandwidth);
+    }
+
+    cout << "H.323 Local username: " << h323EP->GetLocalUserName() << "\n"
+         << "H.323 FastConnect is " << !noFastStart << "\n"
+         << "H.323 H245Tunnelling is " << noH245Tunnelling << endl;
+
+
+    // Start the listener thread for incoming calls.
+    if (args.HasOption('i')) {
+      PStringArray listeners = args.GetOptionString('i').Lines();
+      if (!h323EP->StartListeners(listeners)) {
+        cerr <<  "Could not open any H.323 listener from "
+             << setfill(',') << listeners << endl;
+        return FALSE;
+      }
+    }
+    else {
+      if (!h323EP->StartListener(NULL)) {
+        cerr <<  "Could not open H.323 listener on TCP port "
+             << h323EP->GetDefaultSignalPort() << endl;
+        return FALSE;
+      }
+    }
+
+
+    // Establish link with gatekeeper if required.
+    if (args.HasOption('g')) {
+      PString gkName = args.GetOptionString('g');
+      OpalTransportUDP * rasChannel;
+      if (args.GetOptionString('i').IsEmpty())
+        rasChannel  = new OpalTransportUDP(*h323EP);
+      else {
+        PIPSocket::Address interfaceAddress(args.GetOptionString('i'));
+        rasChannel  = new OpalTransportUDP(*h323EP, interfaceAddress);
+      }
+      if (h323EP->SetGatekeeper(gkName, rasChannel))
+        cout << "Gatekeeper set: " << *h323EP->GetGatekeeper() << endl;
+      else {
+        cerr << "Error registering with gatekeeper at \"" << gkName << '"' << endl;
+        return FALSE;
+      }
+    }
+    else if (!args.HasOption('n') || args.HasOption('R')) {
+      cout << "Searching for gatekeeper..." << flush;
+      if (h323EP->DiscoverGatekeeper(new OpalTransportUDP(*h323EP)))
+        cout << "\nGatekeeper found: " << *h323EP->GetGatekeeper() << endl;
+      else {
+        cerr << "\nNo gatekeeper found." << endl;
+        if (args.HasOption("require-gatekeeper")) 
+          return FALSE;
+      }
     }
   }
 
+  ///////////////////////////////////////
+  // Create SIP protocol handler
+
+  if (useSIP) {
+    sipEP = new SIPEndPoint(*this);
+
+    // set MIME format
+    sipEP->SetMIMEForm(args.HasOption("use-long-mime"));
+
+    // Get local username, multiple uses of -u indicates additional aliases
+    if (args.HasOption('u')) {
+      PStringArray aliases = args.GetOptionString('u').Lines();
+      sipEP->SetRegistrationName(aliases[0]);
+    }
+    if (args.HasOption('p'))
+      sipEP->SetRegistrationPassword(args.GetOptionString('p'));
+
+    // Start the listener thread for incoming calls.
+    if (args.HasOption('i')) {
+      PStringArray listeners = args.GetOptionString('i').Lines();
+      if (!sipEP->StartListeners(listeners)) {
+        cerr <<  "Could not open any SIP listener from "
+             << setfill(',') << listeners << endl;
+        return FALSE;
+      }
+    }
+    else {
+      if (!sipEP->StartListener("udp$*")) {
+        cerr <<  "Could not open SIP listener on UDP port "
+             << sipEP->GetDefaultSignalPort() << endl;
+        return FALSE;
+      }
+      if (!sipEP->StartListener("tcp$*")) {
+        cerr <<  "Could not open SIP listener on TCP port "
+             << sipEP->GetDefaultSignalPort() << endl;
+        return FALSE;
+      }
+    }
+
+    if (args.HasOption('r'))
+      sipEP->Register(args.GetOptionString('r'));
+  }
   return TRUE;
 }
 
@@ -411,13 +469,23 @@ void MyManager::Main(PArgList & args)
   // See if making a call or just listening.
   if (args.HasOption('l'))
     cout << "Waiting for incoming calls\n";
-  else {
+  else if (args.GetCount() == 1) {
     cout << "Initiating call to \"" << args[0] << "\"\n";
     if (potsEP != NULL)
       SetUpCall("pots:*", args[0], currentCallToken);
     else
       SetUpCall("pc:*", args[0], currentCallToken);
   }
+  else {
+    cout << "Initiating call from \"" << args[0] << "\"to \"" << args[1] << "\"\n";
+    SetUpCall(args[0], args[1], currentCallToken);
+  }
+
+  // see if a proxy/gateway has been specified
+  if (args.HasOption('G')) {
+    gateway = args.GetOptionString('G');
+  }
+
   cout << "Press X to exit." << endl;
 
   // Simplest possible user interface
@@ -450,58 +518,75 @@ PString MyManager::OnRouteConnection(OpalConnection & connection)
   if (addr.Find(':') != P_MAX_INDEX)
     return addr;
 
-  // Default to H323 if loaded, or not come from the H.323 endpoint
-  if (h323EP != NULL && connection.GetEndPoint().GetPrefixName() != "h323") {
-    addr.Replace("*", ".", TRUE);
-    return "h323:" + addr;
+  PString sourceProtocol = connection.GetEndPoint().GetPrefixName();
+  if (sourceProtocol == "pots" || sourceProtocol == "pstn") {
+    PStringStream route;
+
+    if (sipEP != NULL)
+      route << "sip:";
+    else if (h323EP != NULL)
+      route << "h323:";
+    else
+      return PString();
+
+    if (!gateway.IsEmpty())
+      return route + addr + '@' + gateway;
+
+    PStringArray stars = addr.Tokenise('*');
+    switch (stars.GetSize()) {
+      case 0 :
+      case 1 :
+      case 2 :
+      case 3 :
+        route << addr << '@';
+        break;
+
+      case 4 :
+        route << stars[0] << '.' << stars[1] << '.'<< stars[2] << '.'<< stars[3];
+        break;
+
+      case 5 :
+        route << stars[0] << '@'
+              << stars[1] << '.' << stars[2] << '.'<< stars[3] << '.'<< stars[4];
+        break;
+
+      default :
+        route << stars[0] << '@'
+              << stars[1] << '.' << stars[2] << '.'<< stars[3] << '.'<< stars[4]
+              << ':' << stars[5];
+        break;
+    }
+
+    return route;
   }
 
-  // Default to local phone, if loaded
+  // Route to local phone, if loaded
   if (potsEP != NULL)
     return "pots:" + addr;
 
-  // Finally route it to the PC
-  return "pc:" + addr;
-}
+  // Route it to the PC, if loaded
+  if (pcssEP != NULL)
+    return "pc:" + addr;
 
-
-#if 0
-BOOL MyManager::OnIncomingConnection(OpalConnection & connection)
-{
-  if (currentCallToken.IsEmpty()) {
-    currentCallToken = connection.GetToken();
-
-    if (autoAnswer) {
-      cout << "Automatically accepting call." << endl;
-      return OpalConnection::AnswerCallNow;
-    }
-
-    cout << "Incoming call from \""
-         << connection.GetRemotePartyName()
-         << "\", answer call (Y/n)? "
-         << flush;
-
-    return OpalConnection::AnswerCallPending;
+  // H.323 -> SIP gateway
+  if (sourceProtocol == "h323" && sipEP != NULL) {
+    if (!gateway.IsEmpty())
+      return "sip:" + addr + '@' + gateway;
+    else
+      return "sip:" + addr;
   }
 
-  if (busyForwardParty.IsEmpty()) {
-    cout << "Incoming call from \"" << connection.GetRemotePartyName() << "\" rejected, line busy!" << endl;
-    return OpalConnection::AnswerCallDenied;
+  // SIP -> H.323 gateway
+  if (sourceProtocol == "sip" && h323EP != NULL) {
+    if (!gateway.IsEmpty())
+      return "h323:" + addr + '@' + gateway;
+      else
+    return "h323:" + addr;
   }
 
-  cout << "Forwarding call to \"" << busyForwardParty << "\"." << endl;
-  if (connection.ForwardCall(busyForwardParty))
-    connection.ClearCall(OpalConnection::EndedByCallForwarded);
-
-  return OpalConnection::AnswerCallDenied;
+  // Cannot route call
+  return PString();
 }
-BOOL MyManager::OnConnectionForwarded(OpalConnection & /*connection*/,
-                                      const PString & forwardParty)
-{
-  cout << "Call is being forwarded to host " << forwardParty << endl;
-  return TRUE;
-}
-#endif
 
 
 void MyManager::OnEstablishedCall(OpalCall & call)
