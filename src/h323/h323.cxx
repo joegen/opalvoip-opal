@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2027  2002/04/09 00:17:59  robertj
+ * Revision 1.2028  2002/04/10 03:11:29  robertj
+ * Moved code for handling media bypass address resolution into ancestor as
+ *   now done ths same way in both SIP and H.323.
+ *
+ * Revision 2.26  2002/04/09 00:17:59  robertj
  * Changed "callAnswered" to better description of "originating".
  *
  * Revision 2.25  2002/03/27 02:21:51  robertj
@@ -1564,11 +1568,18 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
 
         // Add to capability list, if we know of the data type
         const H245_DataType * dataType;
+        const H245_H2250LogicalChannelParameters * param;
         BOOL isTransmitter = olc->HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters);
-        if (isTransmitter)
+        if (isTransmitter) {
           dataType = &olc->m_reverseLogicalChannelParameters.m_dataType;
-        else
+          param = &(const H245_H2250LogicalChannelParameters &)
+                            olc->m_reverseLogicalChannelParameters.m_multiplexParameters;
+        }
+        else {
           dataType = &olc->m_forwardLogicalChannelParameters.m_dataType;
+          param = &(const H245_H2250LogicalChannelParameters &)
+                            olc->m_forwardLogicalChannelParameters.m_multiplexParameters;
+        }
 
         H323Capability * capability = allCapabilities.FindCapability(*dataType);
         if (capability != NULL) {
@@ -1582,6 +1593,8 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
               if (localCapabilities.FindCapability(*capability) == NULL)
                 localCapabilities.SetCapability(0, id, localCapabilities.Copy(*capability));
             }
+            mediaTransportAddresses.SetAt((unsigned)param->m_sessionID,
+                                          new H323TransportAddress(param->m_mediaControlChannel));
             olcList.Append(olc);
           }
           else {
@@ -1652,7 +1665,7 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
   // Get the local capabilities before fast start is handled
   OnSetLocalCapabilities();
 
-  // Extract capabilities from the fast start OpenLogicalChannel structures
+  // Create channels from the fast start OpenLogicalChannel structures
   for (i = 0; i < olcList.GetSize(); i++) {
     unsigned error;
     H323Channel * channel = CreateLogicalChannel(olcList[i], TRUE, error);
@@ -3575,22 +3588,16 @@ BOOL H323Connection::IsMediaBypassPossible(unsigned sessionID) const
 BOOL H323Connection::GetMediaInformation(unsigned sessionID,
                                          MediaInformation & info) const
 {
-  for (PINDEX i = 0; i < fastStartChannels.GetSize(); i++) {
-    H323Channel & channel = fastStartChannels[i];
-    if (channel.GetSessionID() == sessionID &&
-        channel.GetMediaTransportAddress(info.data, info.control)) {
-      H323Capability * capability = remoteCapabilities.FindCapability(OpalRFC2833);
-      if (capability != NULL)
-        info.rfc2833 = capability->GetPayloadType();
+  if (!OpalConnection::GetMediaInformation(sessionID, info))
+    return FALSE;
 
-      PTRACE(3, "H323\tGetMediaInformation for session " << sessionID
-             << " data=" << info.data << " rfc2833=" << info.rfc2833);
-      return TRUE;
-    }
-  }
+  H323Capability * capability = remoteCapabilities.FindCapability(OpalRFC2833);
+  if (capability != NULL)
+    info.rfc2833 = capability->GetPayloadType();
 
-  PTRACE(3, "H323\tGetMediaInformation for session " << sessionID << " - no channel.");
-  return FALSE;
+  PTRACE(3, "H323\tGetMediaInformation for session " << sessionID
+         << " data=" << info.data << " rfc2833=" << info.rfc2833);
+  return TRUE;
 }
 
 
