@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2013  2002/09/04 06:01:48  robertj
+ * Revision 1.2014  2002/09/06 02:43:03  robertj
+ * Fixed function to add capabilities to return correct table entry index.
+ *
+ * Revision 2.12  2002/09/04 06:01:48  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.11  2002/07/01 04:56:32  robertj
@@ -1822,7 +1825,7 @@ PINDEX H323Capabilities::AddAllCapabilities(H323EndPoint & ep,
                                             PINDEX simultaneous,
                                             const PString & name)
 {
-  PINDEX reply = P_MAX_INDEX;
+  PINDEX reply = descriptorNum == P_MAX_INDEX ? P_MAX_INDEX : simultaneous;
 
   PStringArray wildcard = name.Tokenise('*', FALSE);
 
@@ -1836,7 +1839,7 @@ PINDEX H323Capabilities::AddAllCapabilities(H323EndPoint & ep,
         simultaneous = P_MAX_INDEX;
       }
       else if (simultaneous == P_MAX_INDEX) {
-        if (reply != P_MAX_INDEX)
+        if (reply == P_MAX_INDEX)
           reply = num;
         simultaneous = num;
       }
