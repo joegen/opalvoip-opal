@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2060  2004/07/11 12:46:45  rjongbloed
+ * Revision 1.2061  2004/07/17 09:48:26  rjongbloed
+ * Allowed for case where OnSetUp() goes all the way to connected/established in
+ *   one go, eg on an auto answer IVR system.
+ *
+ * Revision 2.59  2004/07/11 12:46:45  rjongbloed
  * Added function on endpoints to get the list of all media formats any
  *   connection the endpoint may create can support.
  * Fixed multple calls of OnSetLocalCapabilities changing caps after having sent to remote.
@@ -2228,19 +2232,21 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
   // OK are now ready to send SETUP to remote protocol
   ownerCall.OnSetUp(*this);
 
-  /** If Call Intrusion is allowed we must answer the call*/
-  if (IsCallIntrusion()) {
-    AnsweringCall(AnswerCallDeferred);
-  }
-  else {
-    if (!isConsultationTransfer) {
-      // call the application callback to determine if to answer the call or not
-      connectionState = AwaitingLocalAnswer;
-      phase = AlertingPhase;
-      AnsweringCall(OnAnswerCall(remotePartyName, setupPDU, *connectPDU));
+  if (connectionState == NoConnectionActive) {
+    /** If Call Intrusion is allowed we must answer the call*/
+    if (IsCallIntrusion()) {
+      AnsweringCall(AnswerCallDeferred);
     }
-    else
-      AnsweringCall(AnswerCallNow);
+    else {
+      if (isConsultationTransfer)
+        AnsweringCall(AnswerCallNow);
+      else {
+        // call the application callback to determine if to answer the call or not
+        connectionState = AwaitingLocalAnswer;
+        phase = AlertingPhase;
+        AnsweringCall(OnAnswerCall(remotePartyName, setupPDU, *connectPDU));
+      }
+    }
   }
 
   return connectionState != ShuttingDownConnection;
