@@ -28,61 +28,58 @@ AC_SUBST(OPAL_VERSION)
 
 echo "OPAL version is ${OPAL_VERSION}"
 
+
 dnl ########################################################################
-dnl look for ptlib
+dnl look for ptlib, use a preference order of explicit PWLIBDIR, directory
+dnl at same level, home directory, /usr/local or /usr.
 
-PLATFORM_PTLIB="ptlib_${OSTYPE}_${MACHTYPE}_r"
-
-CPPFLAGS_save="$CPPFLAGS"
-CPPFLAGS="-I/usr/include/ptlib/unix/ -I/usr/include/ptclib/ -I/usr/local/include/ptlib/unix/ -I/usr/local/include/ptclib/ $CPPFLAGS"
-AC_LANG([C++])
-AC_CHECK_HEADERS(ptlib.h, HAS_PTLIB=1)
-CPPFLAGS="$CPPFLAGS_save"
-
-if test "${HAS_PTLIB:-unset}" != "unset" ; then
-dnl  AC_CHECK_LIB(${PLATFORM_PTLIB}, ldap_open, HAS_PTLIB=1, HAS_PTLIB=)
-  AC_PATH_PROG(PTLIB_CONFIG, ptlib-config)
-else
-  dnl find include files
-  AC_CHECK_FILE(${PWLIBDIR}/include/ptlib, HAS_PTLIB=1)
+if test "${PWLIBDIR:-unset}" != "unset" ; then
+  AC_CHECK_FILE(${PWLIBDIR}/version.h, HAS_PTLIB=1)
+fi
+if test "${HAS_PTLIB:-unset}" = "unset" ; then
+  AC_CHECK_FILE(${OPENH323DIR}/../pwlib/version.h, HAS_PTLIB=1)
   if test "${HAS_PTLIB:-unset}" != "unset" ; then
-    AC_PATH_PROG(PTLIB_CONFIG, ptlib-config, , ${PWLIBDIR}/make/)
+    PWLIBDIR="${OPENH323DIR}/../pwlib"
   else
-    AC_CHECK_FILE(/usr/local/include/ptlib.h, HAS_PTLIB=1)
+    AC_CHECK_FILE(${HOME}/pwlib/include/ptlib.h, HAS_PTLIB=1)
     if test "${HAS_PTLIB:-unset}" != "unset" ; then
-      AC_PATH_PROG(PTLIB_CONFIG, ptlib-config, , /usr/local/bin)
+      PWLIBDIR="${HOME}/pwlib"
     else
-      AC_CHECK_FILE(${HOME}/pwlib/include/ptlib.h, HAS_PTLIB=1)
+      AC_CHECK_FILE(/usr/local/include/ptlib.h, HAS_PTLIB=1)
       if test "${HAS_PTLIB:-unset}" != "unset" ; then
-        AC_CHECK_FILE(${HOME}/pwlib/make/ptlib-config, PTLIB_CONFIG=${HOME}/pwlib/make/ptlib-config)
-        PWLIBDIR="${HOME}/pwlib"
+        AC_PATH_PROG(PTLIB_CONFIG, ptlib-config, , /usr/local/bin)
+      else
+        AC_CHECK_FILE(/usr/include/ptlib.h, HAS_PTLIB=1)
+        if test "${HAS_PTLIB:-unset}" != "unset" ; then
+          AC_PATH_PROG(PTLIB_CONFIG, ptlib-config, , /usr/share/pwlib/make/)
+        fi
       fi
     fi
   fi
 fi
 
 if test "${HAS_PTLIB:-unset}" = "unset" ; then
-  echo "Cannot find ptlib - please install and try again"
+  echo "Cannot find pwlib - please install or set PWLIBDIR and try again"
   exit
 fi
 
-if test "${PTLIB_CONFIG:-unset}" = "unset" ; then
-  echo "Cannot find ptlib-config - please install and try again"
-  exit
-fi
-
-dnl ########################################################################
-dnl get pwlib directory
 if test "${PWLIBDIR:-unset}" = "unset" ; then
-  PWLIBDIR=`ptlib-config --prefix`
+  if test "${PTLIB_CONFIG:-unset}" = "unset" ; then
+    echo "Cannot find ptlib-config - please install and try again"
+    exit
+  fi
+  PWLIBDIR=`$PTLIB_CONFIG --prefix`
 fi
+
 if test "x$PWLIBDIR" = "x/usr" -o "x$PWLIBDIR" = "x/usr/"; then
   PWLIBDIR="/usr/share/pwlib/"
 fi
-if test "xPWLIBDIR" = "x/usr/local" -o "x$PWLIBDIR" = "x/usr/"; then
+if test "x$PWLIBDIR" = "x/usr/local" -o "x$PWLIBDIR" = "x/usr/"; then
   PWLIBDIR="/usr/local/share/pwlib/"
 fi
+
 echo "PWLib prefix set to.... $PWLIBDIR"
+
 AC_SUBST(PWLIBDIR)
 
 

@@ -22,7 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2029  2004/04/25 02:53:28  rjongbloed
+# Revision 1.2030  2004/06/04 05:29:28  csoutheren
+# Updated for ASN file changes and added silencedetect.cxx
+#
+# Revision 2.28  2004/04/25 02:53:28  rjongbloed
 # Fixed GNU 3.4 warnings
 #
 # Revision 2.27  2004/03/11 06:54:25  csoutheren
@@ -152,6 +155,7 @@ VPATH_CXX := $(OPAL_SRCDIR)/opal \
 	     $(OPAL_SRCDIR)/t120 \
 	     $(OPAL_SRCDIR)/t38 \
 	     $(OPAL_SRCDIR)/sip \
+	     $(OPAL_SRCDIR)/asn
 
 VPATH_C := $(OPAL_SRCDIR)/codec
 
@@ -183,7 +187,7 @@ ASN_SRCDIR := $(OPAL_SRCDIR)/asn
 ASN_INCDIR := $(OPAL_INCDIR)/asn
 
 H450_ASN_FILES := h4501 h4502 h4503 h4504 h4505 h4506 h4507 h4508 h4509 h45010 h45011
-SIMPLE_ASN_FILES := x880 $(H450_ASN_FILES) mcs gcc t38 ldap
+SIMPLE_ASN_FILES := x880 $(H450_ASN_FILES) mcs gcc t38 
 
 ASN_H_FILES   := $(addprefix $(ASN_INCDIR)/,$(addsuffix .h,  $(SIMPLE_ASN_FILES)))
 ASN_CXX_FILES := $(addprefix $(ASN_SRCDIR)/,$(addsuffix .cxx,$(SIMPLE_ASN_FILES)))
@@ -275,7 +279,8 @@ SOURCES += $(OPAL_SRCDIR)/codec/g711codec.cxx \
            $(OPAL_SRCDIR)/codec/g711.c \
            $(OPAL_SRCDIR)/codec/rfc2833.cxx \
            $(OPAL_SRCDIR)/codec/vidcodec.cxx \
-           $(OPAL_SRCDIR)/codec/opalwavfile.cxx
+           $(OPAL_SRCDIR)/codec/opalwavfile.cxx \
+	   $(OPAL_SRCDIR)/codec/silencedetect.cxx
 
 
 # G.726
@@ -480,7 +485,7 @@ SOURCES += $(OPAL_SRCDIR)/codec/h261codec.c \
 # Files to be cleande during make clean
 #
 
-CLEAN_FILES = $(OPAL_LIB) $(ASN_CXX_FILES) $(ASN_H_FILES)
+CLEAN_FILES = $(OPAL_LIB) 
 
 
 ####################################################
@@ -565,119 +570,6 @@ $(DEPDIR)/%.dep : $(LPC10_SRCDIR)/%.c
 	$(CC) -I$(LPC10_INCDIR) $(CFLAGS) -M $< >> $@
 
 
-ifeq ($(OPAL_H323),1)
-
-# Make sure the asnparser is built and if new version force recompiles
-
-# Use a different variable here to support cross compiling
-ifndef HOSTPWLIBDIR
-HOSTPWLIBDIR=$(PWLIBDIR)
-endif
-
-ifndef HOST_PLATFORM_TYPE
-HOST_PLATFORM_TYPE=$(PLATFORM_TYPE)
-endif
-
-
-# Set library path so asnparser will run
-
-ifdef LD_LIBRARY_PATH
-export LD_LIBRARY_PATH:=$(LD_LIBRARY_PATH):$(HOSTPWLIBDIR)/lib
-else
-export LD_LIBRARY_PATH:=$(HOSTPWLIBDIR)/lib
-endif
-
-
-# If we're cross compiling, we want the host's asnparser
-# otherwise use the one for the current platform
-ASNPARSE_DIR = $(HOSTPWLIBDIR)/tools/asnparser
-ASNPARSER = $(ASNPARSE_DIR)/obj_$(HOST_PLATFORM_TYPE)_r/asnparser
-
-
-# If not cross compiling then make sure asnparser is built
-ifeq ($(PLATFORM_TYPE),$(HOST_PLATFORM_TYPE))
-$(ASNPARSER):
-	$(MAKE) -C $(ASNPARSE_DIR) opt
-endif
-
-
-.asnparser.version: $(ASNPARSER)
-	$(MAKE) -C $(ASNPARSE_DIR) opt
-	$(ASNPARSER) --version | awk '{print $$1,$$2,$$3}' > .asnparser.version.new
-	if test -f .asnparser.version && diff .asnparser.version.new .asnparser.version >/dev/null 2>&1 ; \
-                then rm .asnparser.version.new ; \
-                else mv .asnparser.version.new .asnparser.version ; \
-        fi
-
-
-
-# Build rules for ASN files
-
-$(ASN_INCDIR)/%.h : $(ASN_SRCDIR)/%.asn .asnparser.version
-	$(ASNPARSER) -h asn/ -m $(shell echo $(notdir $(basename $<)) | tr '[a-z]' '[A-Z]') -c $<
-	mv $(basename $<).h $@
-
-$(ASN_SRCDIR)/%.cxx : $(ASN_INCDIR)/%.h
-	@true
-
-$(OBJDIR)/%.o : $(ASN_SRCDIR)/%.cxx
-	@if [ ! -d $(OBJDIR) ] ; then mkdir -p $(OBJDIR) ; fi
-	$(CPLUS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
-
-$(DEPDIR)/%.dep : $(ASN_SRCDIR)/%.cxx
-	@if [ ! -d $(DEPDIR) ] ; then mkdir -p $(DEPDIR) ; fi
-	@printf %s $(OBJDIR)/ > $@
-	$(CPLUS) $(STDCCFLAGS) -M $< >> $@
-
-
-
-#### h225
-
-$(ASN_SRCDIR)/h225_1.cxx \
-$(ASN_SRCDIR)/h225_1.dep \
-$(ASN_SRCDIR)/h225_2.cxx \
-$(ASN_SRCDIR)/h225_2.dep : $(ASN_INCDIR)/h225.h $(ASN_SRCDIR)/h235_t.cxx
-
-$(ASN_INCDIR)/h225.h: $(ASN_SRCDIR)/h225.asn $(ASN_INCDIR)/h235.h $(ASN_INCDIR)/h245.h .asnparser.version
-	$(ASNPARSER) -s2 -h asn/ -m H225 -r MULTIMEDIA-SYSTEM-CONTROL=H245 -c $<
-	mv $(basename $<).h $@
-
-
-#### h245
-
-$(ASN_SRCDIR)/h245_1.cxx \
-$(ASN_SRCDIR)/h245_1.dep \
-$(ASN_SRCDIR)/h245_2.cxx \
-$(ASN_SRCDIR)/h245_2.dep \
-$(ASN_SRCDIR)/h245_3.cxx \
-$(ASN_SRCDIR)/h245_3.dep : $(ASN_INCDIR)/h245.h
-
-
-$(ASN_INCDIR)/h245.h: $(ASN_SRCDIR)/h245.asn .asnparser.version
-	$(ASNPARSER) -s3 -h asn/ -m H245 --classheader "H245_AudioCapability=#ifndef PASN_NOPRINTON\nvoid PrintOn(ostream & strm) const;\n#endif" -c $<
-	mv $(basename $<).h $@
-
-
-#### Various dependencies
-
-$(ASN_SRCDIR)/h235.cxx $(ASN_SRCDIR)/h235_t.cxx : $(ASN_INCDIR)/h235.h
-
-$(addprefix $(ASN_SRCDIR)/,$(addsuffix .cxx,$(H450_ASN_FILES))) : \
-                                $(ASN_INCDIR)/x880.h \
-                                $(ASN_INCDIR)/h4501.h \
-                                $(ASN_INCDIR)/h225.h
-
-$(ASN_SRCDIR)/h4506.cxx : $(ASN_INCDIR)/h4504.h
-$(ASN_SRCDIR)/h4507.cxx : $(ASN_INCDIR)/h4504.h
-$(ASN_SRCDIR)/h4508.cxx : $(ASN_INCDIR)/h4505.h
-$(ASN_SRCDIR)/h4509.cxx : $(ASN_INCDIR)/h4504.h $(ASN_INCDIR)/h4507.h
-$(ASN_SRCDIR)/h45010.cxx: $(ASN_INCDIR)/h4506.h
-$(ASN_SRCDIR)/h45011.cxx: $(ASN_INCDIR)/h4504.h $(ASN_INCDIR)/h4506.h $(ASN_INCDIR)/h45010.h
-
-endif  # OPAL_H323
-
-
-
 ###############################################################################
 #### Subdirectories
 
@@ -685,6 +577,7 @@ $(STANDARD_TARGETS) ::
 	set -e; $(foreach dir,$(SUBDIRS),$(MAKE) -C $(dir) $@;)
 
 
-
+test:
+	@echo $(ASN_CXX_FILES)
 # End of file #################################################################
 
