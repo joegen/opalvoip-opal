@@ -22,7 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2018  2003/03/17 22:36:38  robertj
+# Revision 1.2019  2003/03/17 23:08:41  robertj
+# Added IVR endpoint
+#
+# Revision 2.17  2003/03/17 22:36:38  robertj
 # Added video support.
 #
 # Revision 2.16  2003/01/15 00:08:18  robertj
@@ -166,6 +169,7 @@ SOURCES := $(ASN_CXX_FILES) \
            $(OPAL_SRCDIR)/opal/transports.cxx \
            $(OPAL_SRCDIR)/opal/guid.cxx \
            $(OPAL_SRCDIR)/opal/pcss.cxx \
+           $(OPAL_SRCDIR)/opal/ivr.cxx \
            $(OPAL_SRCDIR)/rtp/rtp.cxx \
            $(OPAL_SRCDIR)/rtp/jitter.cxx \
            $(OPAL_SRCDIR)/h323/h323ep.cxx \
