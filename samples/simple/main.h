@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2012  2004/02/21 02:40:09  rjongbloed
+ * Revision 1.2013  2004/02/24 11:37:01  rjongbloed
+ * More work on NAT support, manual external address translation and STUN
+ *
+ * Revision 2.11  2004/02/21 02:40:09  rjongbloed
  * Tidied up the translate address to utilise more of the library infrastructure.
  *
  * Revision 2.10  2004/02/17 11:00:10  csoutheren
@@ -137,8 +140,6 @@ class MyManager : public OpalManager
       const PString & value         /// String value of indication
     );
 
-    BOOL TranslateIPAddress(PIPSocket::Address & localAddress, const PIPSocket::Address & remoteAddress);
-
   protected:
     PString currentCallToken;
     BOOL silenceOn;
@@ -154,8 +155,6 @@ class MyManager : public OpalManager
 #if P_EXPAT
     OpalIVREndPoint  * ivrEP;
 #endif
-
-    PIPSocket::Address externalAddress;
 };
 
 
