@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2006  2001/10/04 00:42:12  robertj
+ * Revision 1.2007  2001/10/05 00:22:13  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.5  2001/10/04 00:42:12  robertj
  * Added function to remove wildcard from list.
  * Added constructor to make a list with one format in it.
  *
@@ -43,6 +46,10 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.4  2001/09/21 02:49:44  robertj
+ * Implemented static object for all "known" media formats.
+ * Added default session ID to media format description.
  *
  * Revision 1.3  2001/05/11 04:43:41  robertj
  * Added variable names for standard PCM-16 media format name.
@@ -359,6 +366,9 @@ class OpalMediaFormat : public PCaselessString
 #define OPAL_GSM0610       "GSM-06.10"
 
 extern OpalMediaFormat const OpalPCM16;
+
+#if !defined(NO_H323_AUDIO_CODECS) && !defined(NO_OPAL_AUDIO_CODECS)
+
 extern OpalMediaFormat const OpalG711uLaw;
 extern OpalMediaFormat const OpalG711ALaw;
 extern OpalMediaFormat const OpalG728;
@@ -369,6 +379,7 @@ extern OpalMediaFormat const OpalG729AB;
 extern OpalMediaFormat const OpalG7231;
 extern OpalMediaFormat const OpalGSM0610;
 
+#endif
 
 #endif  // __OPAL_MEDIAFMT_H
 

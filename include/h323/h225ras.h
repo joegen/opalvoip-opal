@@ -27,11 +27,22 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h225ras.h,v $
- * Revision 1.2002  2001/08/13 05:10:39  robertj
+ * Revision 1.2003  2001/10/05 00:22:13  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.8  2001/09/18 10:36:54  robertj
+ * Allowed multiple overlapping requests in RAS channel.
+ *
+ * Revision 1.7  2001/09/12 03:12:36  robertj
+ * Added ability to disable the checking of RAS responses against
+ *   security authenticators.
+ * Fixed bug in having multiple authentications if have a retry.
  *
  * Revision 1.6  2001/08/10 11:03:49  robertj
  * Major changes to H.235 support in RAS to support server.
@@ -259,9 +270,15 @@ class H225_RAS : public PObject
       */
     void SetIdentifier(const PString & id) { gatekeeperIdentifier = id; }
 
-    /**Get reject reason code for xxxRequest() function.
+    /**Set flag to check all crypto tokens on responses.
       */
-    unsigned GetRejectReason() const { return rejectReason; }
+    void SetCheckResponseCryptoTokens(
+      BOOL value    /// New value for checking crypto tokens.
+    ) { checkResponseCryptoTokens = value; }
+
+    /**Get flag to check all crypto tokens on responses.
+      */
+    BOOL GetCheckResponseCryptoTokens() { return checkResponseCryptoTokens; }
   //@}
 
 
@@ -270,14 +287,39 @@ class H225_RAS : public PObject
     PDECLARE_NOTIFIER(PThread, H225_RAS, HandleRasChannel);
 
     unsigned GetNextSequenceNumber();
-
-    BOOL MakeRequest(H323RasPDU & request);
-    BOOL CheckForResponse(unsigned, unsigned);
-    BOOL CheckForRejectResponse(unsigned, unsigned, const char *, const PASN_Choice &);
-
     BOOL SetUpCallSignalAddresses(
       H225_ArrayOf_TransportAddress & addresses
     );
+
+    class Request : public PObject
+    {
+        PCLASSINFO(Request, PObject);
+      public:
+        Request(unsigned seqNum, H323RasPDU  & pdu);
+
+        BOOL Poll(H323EndPoint &, OpalTransport &);
+        void CheckResponse(unsigned, const PASN_Choice *);
+        void OnReceiveRIP(const H225_RequestInProgress & rip);
+
+        // Inter-thread transfer variables
+        unsigned rejectReason;
+        void   * responseInfo;
+
+        unsigned      sequenceNumber;
+        H323RasPDU  & requestPDU;
+        PTimeInterval whenResponseExpected;
+        PSyncPoint    responseHandled;
+        enum {
+          AwaitingResponse,
+          ConfirmReceived,
+          RejectReceived,
+          RequestInProgress
+        } responseResult;
+    };
+
+    BOOL MakeRequest(Request & request);
+    BOOL CheckForResponse(unsigned, unsigned, const PASN_Choice * = NULL);
+
     void SetCryptoTokens(
       H225_ArrayOf_CryptoH323Token & cryptoTokens,
       PASN_Sequence & pdu,
@@ -296,24 +338,18 @@ class H225_RAS : public PObject
 
     // Option variables
     PString gatekeeperIdentifier;
+    BOOL    checkResponseCryptoTokens;
 
     // Inter-thread synchronisation variables
     H323RasPDU *  lastReceivedPDU;
-    PMutex        makeRequestMutex;
-    unsigned      lastSequenceNumber;
-    unsigned      requestTag;
-    PTimeInterval whenResponseExpected;
-    PSyncPoint    responseHandled;
-    enum {
-      AwaitingResponse,
-      ConfirmReceived,
-      RejectReceived,
-      RequestInProgress
-    } responseResult;
 
-    // Inter-thread transfer variables
-    H323TransportAddress locatedAddress;
-    unsigned             rejectReason;
+    unsigned      nextSequenceNumber;
+    PMutex        nextSequenceNumberMutex;
+
+    PDICTIONARY(RequestDict, POrdinalKey, Request);
+    RequestDict requests;
+    PMutex      requestsMutex;
+    Request   * lastRequest;
 };
 
 

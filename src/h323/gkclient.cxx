@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2004  2001/08/17 08:30:21  robertj
+ * Revision 1.2005  2001/10/05 00:22:13  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.3  2001/08/17 08:30:21  robertj
  * Update from OpenH323
  * Moved call end reasons enum from OpalConnection to global.
  *
@@ -39,6 +42,34 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.73  2001/09/26 07:03:08  robertj
+ * Added needed mutex for SeparateAuthenticationInARQ mode, thanks Nick Hoath
+ *
+ * Revision 1.72  2001/09/18 10:36:57  robertj
+ * Allowed multiple overlapping requests in RAS channel.
+ *
+ * Revision 1.71  2001/09/13 03:21:16  robertj
+ * Added ability to override authentication credentials for ARQ, thanks Nick Hoath
+ *
+ * Revision 1.70  2001/09/13 01:15:20  robertj
+ * Added flag to H235Authenticator to determine if gkid and epid is to be
+ *   automatically set as the crypto token remote id and local id.
+ *
+ * Revision 1.69  2001/09/13 00:32:24  robertj
+ * Added missing gkid in ARQ, thanks Nick Hoath
+ *
+ * Revision 1.68  2001/09/12 07:48:05  robertj
+ * Fixed various problems with tracing.
+ *
+ * Revision 1.67  2001/09/12 06:58:00  robertj
+ * Added support for iNow Access Token from gk, thanks Nick Hoath
+ *
+ * Revision 1.66  2001/09/12 06:04:38  robertj
+ * Added support for sending UUIE's to gk on request, thanks Nick Hoath
+ *
+ * Revision 1.65  2001/09/05 01:16:32  robertj
+ * Added overloaded AdmissionRequest for backward compatibility.
  *
  * Revision 1.64  2001/08/14 04:26:46  robertj
  * Completed the Cisco compatible MD5 authentications, thanks Wolfgang Platzer.
@@ -346,26 +377,29 @@ BOOL H323Gatekeeper::DiscoverByNameAndAddress(const PString & identifier,
 
 BOOL H323Gatekeeper::StartDiscovery(const OpalTransportAddress & address)
 {
-  PWaitAndSignal mutex(makeRequestMutex);
+  H323RasPDU pdu(*this);
+  Request request(SetupGatekeeperRequest(pdu), pdu);
 
-  H323RasPDU request(*this);
-  SetupGatekeeperRequest(request);
-
-  requestTag = request.GetTag();
+  requestsMutex.Wait();
+  requests.SetAt(request.sequenceNumber, &request);
+  requestsMutex.Signal();
 
   unsigned retries = endpoint.GetGatekeeperRequestRetries();
-  while (!DiscoverGatekeeper(request, address)) {
+  while (!DiscoverGatekeeper(pdu, address)) {
     if (--retries == 0)
-      return FALSE;
+      break;
   }
 
-  if (!discoveryComplete)
-    return FALSE;
+  requestsMutex.Wait();
+  requests.SetAt(request.sequenceNumber, NULL);
+  requestsMutex.Signal();
 
-  if (transport->Connect())
-    StartRasChannel();
+  if (discoveryComplete) {
+    if (transport->Connect())
+      StartRasChannel();
+  }
 
-  return TRUE;
+  return discoveryComplete;
 }
 
 
@@ -560,7 +594,7 @@ BOOL H323Gatekeeper::DiscoverGatekeeper(H323RasPDU & request,
 }
 
 
-void H323Gatekeeper::SetupGatekeeperRequest(H323RasPDU & request)
+unsigned H323Gatekeeper::SetupGatekeeperRequest(H323RasPDU & request)
 {
   H225_GatekeeperRequest & grq = request.BuildGatekeeperRequest(GetNextSequenceNumber());
 
@@ -580,6 +614,8 @@ void H323Gatekeeper::SetupGatekeeperRequest(H323RasPDU & request)
   OnSendGatekeeperRequest(grq);
 
   discoveryComplete = FALSE;
+
+  return grq.m_requestSeqNum;
 }
 
 
@@ -588,7 +624,7 @@ BOOL H323Gatekeeper::OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm & g
   if (!H225_RAS::OnReceiveGatekeeperConfirm(gcf))
     return FALSE;
 
-  locatedAddress = gcf.m_rasAddress;
+  H323TransportAddress locatedAddress = gcf.m_rasAddress;
   PTRACE(2, "RAS\tGatekeeper discovery found " << locatedAddress);
 
   if (!transport->SetRemoteAddress(locatedAddress)) {
@@ -601,6 +637,10 @@ BOOL H323Gatekeeper::OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm & g
       gatekeeperIdentifier = gkid;
       discoveryComplete = TRUE;
     }
+    else {
+      PTRACE(2, "RAS\tReceived a GCF from " << gkid
+             << " but wanted it from " << gatekeeperIdentifier);
+    }
   }
   else {
     gatekeeperIdentifier = gcf.m_gatekeeperIdentifier;
@@ -608,8 +648,11 @@ BOOL H323Gatekeeper::OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm & g
   }
 
   if (discoveryComplete) {
-    for (PINDEX i = 0; i < authenticators.GetSize(); i++)
-      authenticators[i].SetRemoteId(gatekeeperIdentifier);
+    for (PINDEX i = 0; i < authenticators.GetSize(); i++) {
+      H235Authenticator & authenticator = authenticators[i];
+      if (authenticator.UseGkAndEpIdentifiers())
+        authenticator.SetRemoteId(gatekeeperIdentifier);
+    }
   }
 
   return discoveryComplete;
@@ -618,12 +661,10 @@ BOOL H323Gatekeeper::OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm & g
 
 BOOL H323Gatekeeper::RegistrationRequest(BOOL autoReg)
 {
-  PWaitAndSignal mutex(makeRequestMutex);
-
   autoReregister = autoReg;
 
-  H323RasPDU request(*this);
-  H225_RegistrationRequest & rrq = request.BuildRegistrationRequest(GetNextSequenceNumber());
+  H323RasPDU pdu(*this);
+  H225_RegistrationRequest & rrq = pdu.BuildRegistrationRequest(GetNextSequenceNumber());
 
   // If discoveryComplete flag is FALSE then do lightweight reregister
   rrq.m_discoveryComplete = discoveryComplete;
@@ -649,6 +690,8 @@ BOOL H323Gatekeeper::RegistrationRequest(BOOL autoReg)
   rrq.IncludeOptionalField(H225_RegistrationRequest::e_terminalAlias);
   H323SetAliasAddresses(endpoint.GetAliasNames(), rrq.m_terminalAlias);
 
+  rrq.m_willSupplyUUIEs = TRUE;
+
   if (!gatekeeperIdentifier) {
     rrq.IncludeOptionalField(H225_RegistrationRequest::e_gatekeeperIdentifier);
     rrq.m_gatekeeperIdentifier = gatekeeperIdentifier;
@@ -673,6 +716,7 @@ BOOL H323Gatekeeper::RegistrationRequest(BOOL autoReg)
   // After doing full register, do lightweight reregisters from now on
   discoveryComplete = FALSE;
 
+  Request request(rrq.m_requestSeqNum, pdu);
   return MakeRequest(request);
 }
 
@@ -687,8 +731,11 @@ BOOL H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationConfirm
   endpointIdentifier = rcf.m_endpointIdentifier;
 
   PINDEX i;
-  for (i = 0; i < authenticators.GetSize(); i++)
-    authenticators[i].SetLocalId(rcf.m_endpointIdentifier);
+  for (i = 0; i < authenticators.GetSize(); i++) {
+    H235Authenticator & authenticator = authenticators[i];
+    if (authenticator.UseGkAndEpIdentifiers())
+      authenticator.SetLocalId(rcf.m_endpointIdentifier);
+  }
 
   if (rcf.HasOptionalField(H225_RegistrationConfirm::e_timeToLive)) {
     int seconds = rcf.m_timeToLive;
@@ -762,7 +809,7 @@ BOOL H323Gatekeeper::OnReceiveRegistrationReject(const H225_RegistrationReject &
   if (!H225_RAS::OnReceiveRegistrationReject(rrj))
     return FALSE;
 
-  if (rejectReason == H225_RegistrationRejectReason::e_discoveryRequired) {
+  if (lastRequest->rejectReason == H225_RegistrationRejectReason::e_discoveryRequired) {
     // If have been told by GK that we need to discover it again, set flag
     // for next register done by timeToLive handler to do discovery
     requiresDiscovery = TRUE;
@@ -781,9 +828,8 @@ void H323Gatekeeper::RegistrationTimeToLive(PTimer &, INT)
   if (requiresDiscovery) {
     PTRACE(2, "RAS\tRepeating discovery on gatekeepers request.");
 
-    PWaitAndSignal mutex(makeRequestMutex);
-    H323RasPDU request(*this);
-    SetupGatekeeperRequest(request);
+    H323RasPDU pdu(*this);
+    Request request(SetupGatekeeperRequest(pdu), pdu);
     if (!MakeRequest(request) || !discoveryComplete) {
       PTRACE(2, "RAS\tRediscovery failed, retrying in 1 minute.");
       timeToLive = PTimeInterval(0, 0, 1);
@@ -802,10 +848,8 @@ void H323Gatekeeper::RegistrationTimeToLive(PTimer &, INT)
 
 BOOL H323Gatekeeper::UnregistrationRequest(int reason)
 {
-  PWaitAndSignal mutex(makeRequestMutex);
-
-  H323RasPDU request(*this);
-  H225_UnregistrationRequest & urq = request.BuildUnregistrationRequest(GetNextSequenceNumber());
+  H323RasPDU pdu(*this);
+  H225_UnregistrationRequest & urq = pdu.BuildUnregistrationRequest(GetNextSequenceNumber());
 
   H323TransportAddress rasAddress = transport->GetLocalAddress();
 
@@ -833,6 +877,7 @@ BOOL H323Gatekeeper::UnregistrationRequest(int reason)
     urq.m_reason = reason;
   }
 
+  Request request(urq.m_requestSeqNum, pdu);
   return MakeRequest(request);
 }
 
@@ -879,7 +924,7 @@ BOOL H323Gatekeeper::OnReceiveUnregistrationReject(const H225_UnregistrationReje
   if (!H225_RAS::OnReceiveUnregistrationReject(urj))
     return FALSE;
 
-  if (rejectReason == H225_UnregRejectReason::e_notCurrentlyRegistered) {
+  if (lastRequest->rejectReason == H225_UnregRejectReason::e_notCurrentlyRegistered) {
     isRegistered = FALSE;
     timeToLive.Stop();
   }
@@ -900,10 +945,8 @@ BOOL H323Gatekeeper::LocationRequest(const PString & alias,
 BOOL H323Gatekeeper::LocationRequest(const PStringList & aliases,
                                      OpalTransportAddress & address)
 {
-  PWaitAndSignal mutex(makeRequestMutex);
-
-  H323RasPDU request(*this);
-  H225_LocationRequest & lrq = request.BuildLocationRequest(GetNextSequenceNumber());
+  H323RasPDU pdu(*this);
+  H225_LocationRequest & lrq = pdu.BuildLocationRequest(GetNextSequenceNumber());
 
   H323SetAliasAddresses(aliases, lrq.m_destinationInfo);
 
@@ -923,30 +966,35 @@ BOOL H323Gatekeeper::LocationRequest(const PStringList & aliases,
     lrq.m_gatekeeperIdentifier = gatekeeperIdentifier;
   }
 
-  if (!MakeRequest(request))
-    return FALSE;
-
-  address = locatedAddress;
-
-  return TRUE;
+  Request request(lrq.m_requestSeqNum, pdu);
+  request.responseInfo = &address;
+  return MakeRequest(request);
 }
 
 
-BOOL H323Gatekeeper::AdmissionRequest(H323Connection & connection)
+H323Gatekeeper::AdmissionResponse::AdmissionResponse()
 {
-  H323TransportAddress address;
-  H225_ArrayOf_AliasAddress alias;
-  return AdmissionRequest(connection, address, alias);
+  rejectReason = UINT_MAX;
+  transportAddress = NULL;
+  aliasAddresses = NULL;
+  accessTokenData = NULL;
 }
+
+
+struct AdmissionRequestResponseInfo {
+  unsigned allocatedBandwidth;
+  unsigned uuiesRequested;
+  H323TransportAddress * transportAddress;
+  H225_ArrayOf_AliasAddress * aliasAddresses;
+  PString      accessTokenOID;
+  PBYTEArray * accessTokenData;
+};
 
 
 BOOL H323Gatekeeper::AdmissionRequest(H323Connection & connection,
-                                      H323TransportAddress & address,
-                                      H225_ArrayOf_AliasAddress  & newDestinationAlias,
+                                      AdmissionResponse & response,
                                       BOOL ignorePreGrantedARQ)
 {
-  PWaitAndSignal mutex(makeRequestMutex);
-
   BOOL answeringCall = connection.HadAnsweredCall();
 
   if (!ignorePreGrantedARQ) {
@@ -958,19 +1006,26 @@ BOOL H323Gatekeeper::AdmissionRequest(H323Connection & connection,
       case PreGkRoutedARQ :
         if (gkRouteAddress.IsEmpty())
           return FALSE;
-        address = gkRouteAddress;
+        if (response.transportAddress != NULL)
+          *response.transportAddress = gkRouteAddress;
         return TRUE;
     }
   }
 
-  H323RasPDU request(*this);
-  H225_AdmissionRequest & arq = request.BuildAdmissionRequest(GetNextSequenceNumber());
+  H323RasPDU pdu(*this);
+  H225_AdmissionRequest & arq = pdu.BuildAdmissionRequest(GetNextSequenceNumber());
 
   arq.m_callType.SetTag(H225_CallType::e_pointToPoint);
   arq.m_endpointIdentifier = endpointIdentifier;
   arq.m_answerCall = answeringCall;
   arq.m_canMapAlias = TRUE; // Stack supports receiving a different number in the ACF 
                             // to the one sent in the ARQ
+  arq.m_willSupplyUUIEs = TRUE;
+
+  if (!gatekeeperIdentifier) {
+    arq.IncludeOptionalField(H225_AdmissionRequest::e_gatekeeperIdentifier);
+    arq.m_gatekeeperIdentifier = gatekeeperIdentifier;
+  }
 
   PString destInfo = connection.GetRemotePartyName();
   arq.m_srcInfo.SetSize(1);
@@ -978,10 +1033,10 @@ BOOL H323Gatekeeper::AdmissionRequest(H323Connection & connection,
     H323SetAliasAddress(destInfo, arq.m_srcInfo[0]);
   else {
     H323SetAliasAddresses(endpoint.GetAliasNames(), arq.m_srcInfo);
-    if (destInfo != address) {
+    if (response.transportAddress == NULL || destInfo != *response.transportAddress) {
       arq.IncludeOptionalField(H225_AdmissionRequest::e_destinationInfo);
       arq.m_destinationInfo.SetSize(1);
-      H323SetAliasAddress(connection.GetRemotePartyName(), arq.m_destinationInfo[0]);
+      H323SetAliasAddress(destInfo, arq.m_destinationInfo[0]);
     }
   }
 
@@ -997,9 +1052,9 @@ BOOL H323Gatekeeper::AdmissionRequest(H323Connection & connection,
   else {
     H323TransportAddress signalAddress = signallingChannel->GetLocalAddress();
     signalAddress.SetPDU(arq.m_srcCallSignalAddress);
-    if (!address) {
+    if (response.transportAddress != NULL && !response.transportAddress->IsEmpty()) {
       arq.IncludeOptionalField(H225_AdmissionRequest::e_destCallSignalAddress);
-      address.SetPDU(arq.m_destCallSignalAddress);
+      response.transportAddress->SetPDU(arq.m_destCallSignalAddress);
     }
   }
 
@@ -1008,17 +1063,134 @@ BOOL H323Gatekeeper::AdmissionRequest(H323Connection & connection,
   arq.m_conferenceID = connection.GetConferenceIdentifier();
   arq.m_callIdentifier.m_guid = connection.GetCallIdentifier();
 
-  locatedAddress = H323TransportAddress();
-  newAliasAddresses = &newDestinationAlias;
+  AdmissionRequestResponseInfo info;
+  info.transportAddress = response.transportAddress;
+  info.aliasAddresses   = response.aliasAddresses;
+  info.accessTokenOID   = connection.GetGkAccessTokenOID();
+  info.accessTokenData  = response.accessTokenData;
 
-  if (!MakeRequest(request))
+  Request request(arq.m_requestSeqNum, pdu);
+  request.responseInfo = &info;
+
+  if (!MakeRequest(request)) {
+    response.rejectReason = request.rejectReason;
     return FALSE;
+  }
 
-  connection.SetBandwidthAvailable(allocatedBandwidth);
-  address = locatedAddress;
+  connection.SetBandwidthAvailable(info.allocatedBandwidth);
+  connection.SetUUIEsRequested(info.uuiesRequested);
 
   return TRUE;
 }
+
+
+void H323Gatekeeper::OnSendAdmissionRequest(H225_AdmissionRequest & arq)
+{
+  if (authenticators.IsEmpty() || !GetSeparateAuthenticationInARQ()) {
+    H225_RAS::OnSendAdmissionRequest(arq);
+    return;
+  }
+
+  PString remoteId;
+  PString localId;
+  PString password;
+  if (!GetAdmissionReqestAuthentication(arq, remoteId, localId, password)) {
+    PTRACE(2, "RAS\tNo alias to replace authenticators credentials during ARQ");
+    H225_RAS::OnSendAdmissionRequest(arq);
+    return;
+  }
+
+  PTRACE(3, "RAS\tAuthenticators credentials replaced with "
+         << remoteId << " during ARQ");
+
+  mutexForSeparateAuthenticationInARQ.Wait();
+
+  PStringList remoteIds, localIds, passwords;
+  PINDEX i;
+  for (i = 0; i < authenticators.GetSize(); i++) {
+    H235Authenticator & authenticator = authenticators[i];
+
+    remoteIds.AppendString(authenticator.GetRemoteId());
+    authenticator.SetRemoteId(remoteId);
+
+    localIds.AppendString(authenticator.GetLocalId());
+    authenticator.SetLocalId(localId);
+
+    passwords.AppendString(authenticator.GetPassword());
+    authenticator.SetPassword(password);
+  }
+
+  // Call ancestor to set the crypto tokens
+  H225_RAS::OnSendAdmissionRequest(arq);
+
+  // Put all the credentials back again
+  for (i = 0; i < authenticators.GetSize(); i++) {
+    H235Authenticator & authenticator = authenticators[i];
+    authenticator.SetRemoteId(remoteIds[i]);
+    authenticator.SetLocalId(localIds[i]);
+    authenticator.SetPassword(passwords[i]);
+  }
+
+  mutexForSeparateAuthenticationInARQ.Signal();
+}
+
+
+BOOL H323Gatekeeper::GetAdmissionReqestAuthentication(const H225_AdmissionRequest & arq,
+                                                      PString & remoteId,
+                                                      PString & localId,
+                                                      PString & password)
+{
+  if (arq.m_answerCall)
+    remoteId = H323GetAliasAddressString(arq.m_srcInfo[0]);
+  else {
+    if (arq.HasOptionalField(H225_AdmissionRequest::e_destinationInfo) &&
+        arq.m_destinationInfo.GetSize() > 0)
+      remoteId = H323GetAliasAddressString(arq.m_destinationInfo[0]);
+    else
+      return FALSE;
+  }
+
+  localId = PString();
+  password = remoteId;
+  return TRUE;
+}
+
+
+static unsigned GetUUIEsRequested(const H225_UUIEsRequested & pdu)
+{
+  unsigned uuiesRequested = 0;
+
+  if ((BOOL)pdu.m_setup)
+    uuiesRequested |= (1<<H225_H323_UU_PDU_h323_message_body::e_setup);
+  if ((BOOL)pdu.m_callProceeding)
+    uuiesRequested |= (1<<H225_H323_UU_PDU_h323_message_body::e_callProceeding);
+  if ((BOOL)pdu.m_connect)
+    uuiesRequested |= (1<<H225_H323_UU_PDU_h323_message_body::e_connect);
+  if ((BOOL)pdu.m_alerting)
+    uuiesRequested |= (1<<H225_H323_UU_PDU_h323_message_body::e_alerting);
+  if ((BOOL)pdu.m_information)
+    uuiesRequested |= (1<<H225_H323_UU_PDU_h323_message_body::e_information);
+  if ((BOOL)pdu.m_releaseComplete)
+    uuiesRequested |= (1<<H225_H323_UU_PDU_h323_message_body::e_releaseComplete);
+  if ((BOOL)pdu.m_facility)
+    uuiesRequested |= (1<<H225_H323_UU_PDU_h323_message_body::e_facility);
+  if ((BOOL)pdu.m_progress)
+    uuiesRequested |= (1<<H225_H323_UU_PDU_h323_message_body::e_progress);
+  if ((BOOL)pdu.m_empty)
+    uuiesRequested |= (1<<H225_H323_UU_PDU_h323_message_body::e_empty);
+
+  if (pdu.HasOptionalField(H225_UUIEsRequested::e_status) && (BOOL)pdu.m_status)
+    uuiesRequested |= (1<<H225_H323_UU_PDU_h323_message_body::e_status);
+  if (pdu.HasOptionalField(H225_UUIEsRequested::e_statusInquiry) && (BOOL)pdu.m_statusInquiry)
+    uuiesRequested |= (1<<H225_H323_UU_PDU_h323_message_body::e_statusInquiry);
+  if (pdu.HasOptionalField(H225_UUIEsRequested::e_setupAcknowledge) && (BOOL)pdu.m_setupAcknowledge)
+    uuiesRequested |= (1<<H225_H323_UU_PDU_h323_message_body::e_setupAcknowledge);
+  if (pdu.HasOptionalField(H225_UUIEsRequested::e_notify) && (BOOL)pdu.m_notify)
+    uuiesRequested |= (1<<H225_H323_UU_PDU_h323_message_body::e_notify);
+
+  return uuiesRequested;
+}
+
 
 
 BOOL H323Gatekeeper::OnReceiveAdmissionConfirm(const H225_AdmissionConfirm & acf)
@@ -1026,14 +1198,32 @@ BOOL H323Gatekeeper::OnReceiveAdmissionConfirm(const H225_AdmissionConfirm & acf
   if (!H225_RAS::OnReceiveAdmissionConfirm(acf))
     return FALSE;
 
-  locatedAddress = acf.m_destCallSignalAddress;
-  allocatedBandwidth = acf.m_bandWidth;
+  AdmissionRequestResponseInfo & info = *(AdmissionRequestResponseInfo *)lastRequest->responseInfo;
+  info.allocatedBandwidth = acf.m_bandWidth;
+  if (info.transportAddress != NULL)
+    *info.transportAddress = acf.m_destCallSignalAddress;
 
   // Remove the endpoint aliases that the gatekeeper did not like and add the
   // ones that it really wants us to be.
-  if (acf.HasOptionalField(H225_AdmissionConfirm::e_destinationInfo)) {
+  if (info.aliasAddresses != NULL &&
+      acf.HasOptionalField(H225_AdmissionConfirm::e_destinationInfo)) {
     PTRACE(3, "RAS\tGatekeeper specified " << acf.m_destinationInfo.GetSize() << " aliases in ACF");
-    *newAliasAddresses = acf.m_destinationInfo;
+    *info.aliasAddresses = acf.m_destinationInfo;
+  }
+
+  if (acf.HasOptionalField(H225_AdmissionConfirm::e_uuiesRequested))
+    info.uuiesRequested = GetUUIEsRequested(acf.m_uuiesRequested);
+
+  if (info.accessTokenData != NULL && !info.accessTokenOID &&
+      acf.HasOptionalField(H225_AdmissionConfirm::e_tokens)) {
+    PTRACE(4, "Looking for OID " << info.accessTokenOID << " in ACF to copy.");
+    for (PINDEX i = 0; i < acf.m_tokens.GetSize(); i++) {
+      if (info.accessTokenOID == acf.m_tokens[i].m_tokenOID) {
+        PTRACE(4, "Copying ACF nonStandard OctetString.");
+        *info.accessTokenData = acf.m_tokens[i].m_nonStandard.m_data;
+        break;
+      }
+    }
   }
 
   return TRUE;
@@ -1042,10 +1232,8 @@ BOOL H323Gatekeeper::OnReceiveAdmissionConfirm(const H225_AdmissionConfirm & acf
 
 BOOL H323Gatekeeper::DisengageRequest(const H323Connection & connection, unsigned reason)
 {
-  PWaitAndSignal mutex(makeRequestMutex);
-
-  H323RasPDU request(*this);
-  H225_DisengageRequest & drq = request.BuildDisengageRequest(GetNextSequenceNumber());
+  H323RasPDU pdu(*this);
+  H225_DisengageRequest & drq = pdu.BuildDisengageRequest(GetNextSequenceNumber());
 
   drq.m_endpointIdentifier = endpointIdentifier;
   drq.m_conferenceID = connection.GetConferenceIdentifier();
@@ -1059,6 +1247,7 @@ BOOL H323Gatekeeper::DisengageRequest(const H323Connection & connection, unsigne
     drq.m_gatekeeperIdentifier = gatekeeperIdentifier;
   }
 
+  Request request(drq.m_requestSeqNum, pdu);
   return MakeRequest(request);
 }
 
@@ -1084,16 +1273,19 @@ BOOL H323Gatekeeper::OnReceiveDisengageRequest(const H225_DisengageRequest & drq
 BOOL H323Gatekeeper::BandwidthRequest(H323Connection & connection,
                                       unsigned requestedBandwidth)
 {
-  PWaitAndSignal mutex(makeRequestMutex);
-
-  H323RasPDU request(*this);
-  H225_BandwidthRequest & brq = request.BuildBandwidthRequest(GetNextSequenceNumber());
+  H323RasPDU pdu(*this);
+  H225_BandwidthRequest & brq = pdu.BuildBandwidthRequest(GetNextSequenceNumber());
 
   brq.m_endpointIdentifier = endpointIdentifier;
   brq.m_conferenceID = connection.GetConferenceIdentifier();
   brq.m_callReferenceValue = connection.GetCallReference();
   brq.m_callIdentifier.m_guid = connection.GetCallIdentifier();
   brq.m_bandWidth = requestedBandwidth;
+
+  Request request(brq.m_requestSeqNum, pdu);
+  
+  unsigned allocatedBandwidth;
+  request.responseInfo = &allocatedBandwidth;
 
   if (!MakeRequest(request))
     return FALSE;
@@ -1109,7 +1301,8 @@ BOOL H323Gatekeeper::OnReceiveBandwidthConfirm(const H225_BandwidthConfirm & bcf
   if (!H225_RAS::OnReceiveBandwidthConfirm(bcf))
     return FALSE;
 
-  allocatedBandwidth = bcf.m_bandWidth;
+  if (lastRequest->responseInfo != NULL)
+    *(unsigned *)lastRequest->responseInfo = bcf.m_bandWidth;
 
   return TRUE;
 }
@@ -1146,9 +1339,48 @@ void H323Gatekeeper::InfoRequestResponse(const H323Connection * connection,
   H323RasPDU response(*this);
   H225_InfoRequestResponse & irr = response.BuildInfoRequestResponse(seqNum);
 
+  BuildInfoRequestResponse(irr, connection);
+
+  WritePDU(response);
+}
+
+
+void H323Gatekeeper::InfoRequestResponse(const H323Connection & connection,
+                                         const H225_H323_UU_PDU & pdu,
+                                         BOOL sent)
+{
+  // Are unknown Q.931 PDU
+  if (pdu.m_h323_message_body.GetTag() == P_MAX_INDEX)
+    return;
+
+  // Check mask of things to report on
+  if ((connection.GetUUIEsRequested() & (1<<pdu.m_h323_message_body.GetTag())) == 0)
+    return;
+
+  // Report the PDU
+  H323RasPDU response(*this);
+
+  H225_InfoRequestResponse & irr = response.BuildInfoRequestResponse(GetNextSequenceNumber());
+  BuildInfoRequestResponse(irr, &connection);
+
+  PINDEX index = irr.m_perCallInfo.GetSize();
+  irr.m_perCallInfo.SetSize(index+1);
+  irr.m_perCallInfo[index].IncludeOptionalField(H225_InfoRequestResponse_perCallInfo_subtype::e_pdu);
+
+  PINDEX index2 = irr.m_perCallInfo[index].m_pdu.GetSize();
+  irr.m_perCallInfo[index].m_pdu.SetSize(index2+1);
+  irr.m_perCallInfo[index].m_pdu[index2].m_sent = sent;
+  irr.m_perCallInfo[index].m_pdu[index2].m_h323pdu = pdu;
+
+  WritePDU(response);
+}
+
+
+void H323Gatekeeper::BuildInfoRequestResponse(H225_InfoRequestResponse & irr,
+                                              const H323Connection * connection)
+{
   endpoint.SetEndpointTypeInfo(irr.m_endpointType);
   irr.m_endpointIdentifier = endpointIdentifier;
-
   H323TransportAddress rasAddress = transport->GetLocalAddress();
   rasAddress.SetPDU(irr.m_rasAddress);
 
@@ -1189,8 +1421,6 @@ void H323Gatekeeper::InfoRequestResponse(const H323Connection * connection,
     info.m_bandWidth = connection->GetBandwidthUsed();
     info.m_callModel.SetTag(H225_CallModel::e_direct);
   }
-
-  WritePDU(response);
 }
 
 
@@ -1202,7 +1432,11 @@ BOOL H323Gatekeeper::OnReceiveInfoRequest(const H225_InfoRequest & irq)
   OpalGloballyUniqueID id = irq.m_callIdentifier.m_guid;
   H323Connection * connection = endpoint.FindConnectionWithLock(id.AsString());
 
+  if (connection != NULL && irq.HasOptionalField(H225_InfoRequest::e_uuiesRequested))
+    connection->SetUUIEsRequested(::GetUUIEsRequested(irq.m_uuiesRequested));
+
   InfoRequestResponse(connection, irq.m_requestSeqNum);
+
   if (connection != NULL)
     connection->Unlock();
 

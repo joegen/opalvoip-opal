@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2005  2001/10/03 05:56:15  robertj
+ * Revision 1.2006  2001/10/05 00:22:13  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.4  2001/10/03 05:56:15  robertj
  * Changes abndwidth management API.
  *
  * Revision 2.3  2001/08/22 09:42:14  robertj
@@ -42,6 +45,31 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.9  2001/09/26 06:20:56  robertj
+ * Fixed properly nesting connection locking and unlocking requiring a quite
+ *   large change to teh implementation of how calls are answered.
+ *
+ * Revision 1.8  2001/09/19 03:30:53  robertj
+ * Added some support for overlapped dialing, thanks Chris Purvis & Nick Hoath.
+ *
+ * Revision 1.7  2001/09/13 06:48:13  robertj
+ * Added call back functions for remaining Q.931/H.225 messages.
+ * Added call back to allow modification of Release Complete,thanks Nick Hoath
+ *
+ * Revision 1.6  2001/09/12 06:57:58  robertj
+ * Added support for iNow Access Token from gk, thanks Nick Hoath
+ *
+ * Revision 1.5  2001/09/12 06:04:36  robertj
+ * Added support for sending UUIE's to gk on request, thanks Nick Hoath
+ *
+ * Revision 1.4  2001/09/11 01:24:36  robertj
+ * Added conditional compilation to remove video and/or audio codecs.
+ *
+ * Revision 1.3  2001/08/22 06:54:50  robertj
+ * Changed connection locking to use double mutex to guarantee that
+ *   no threads can ever deadlock or access deleted connection.
+ *
  * Revision 1.2  2001/08/16 07:49:16  robertj
  * Changed the H.450 support to be more extensible. Protocol handlers
  *   are now in separate classes instead of all in H323Connection.
@@ -299,10 +327,7 @@ class H323Connection : public OpalConnection
 
     /* Handle Control PDU tunnelled in the signalling channel.
      */
-    virtual void HandleTunnelPDU(
-      const H323SignalPDU & pdu,    /// PDU to handle.
-      H323SignalPDU * reply         /// Optional PDU to piggy back replies
-    );
+    virtual void HandleTunnelPDU();
 
     /**Handle an incoming Q931 setup PDU.
        The default behaviour is to do the handshaking operation calling a few
@@ -312,6 +337,26 @@ class H323Connection : public OpalConnection
        PDU is sent.
      */
     virtual BOOL OnReceivedSignalSetup(
+      const H323SignalPDU & pdu   /// Received setup PDU
+    );
+
+    /**Handle an incoming Q931 setup acknowledge PDU.
+       If FALSE is returned the connection is aborted and a Release Complete
+       PDU is sent.
+
+       The default behaviour does nothing.
+     */
+    virtual BOOL OnReceivedSignalSetupAck(
+      const H323SignalPDU & pdu   /// Received setup PDU
+    );
+
+    /**Handle an incoming Q931 information PDU.
+       If FALSE is returned the connection is aborted and a Release Complete
+       PDU is sent.
+
+       The default behaviour does nothing.
+     */
+    virtual BOOL OnReceivedSignalInformation(
       const H323SignalPDU & pdu   /// Received setup PDU
     );
 
@@ -370,6 +415,26 @@ class H323Connection : public OpalConnection
        returns TRUE.
      */
     virtual BOOL OnReceivedFacility(
+      const H323SignalPDU & pdu   /// Received connect PDU
+    );
+
+    /**Handle an incoming Q931 Notify PDU.
+       If FALSE is returned the connection is aborted and a Release Complete
+       PDU is sent.
+
+       The default behaviour simply returns TRUE.
+     */
+    virtual BOOL OnReceivedSignalNotify(
+      const H323SignalPDU & pdu   /// Received connect PDU
+    );
+
+    /**Handle an incoming Q931 Status PDU.
+       If FALSE is returned the connection is aborted and a Release Complete
+       PDU is sent.
+
+       The default behaviour simply returns TRUE.
+     */
+    virtual BOOL OnReceivedSignalStatus(
       const H323SignalPDU & pdu   /// Received connect PDU
     );
 
@@ -572,6 +637,21 @@ class H323Connection : public OpalConnection
       H323SignalPDU & callProceedingPDU   /// Call Proceeding PDU to send
     );
 
+    /**Call back for Release Complete being sent.
+       This allows an application to add things to the release complete before
+       it is sent to the remote endpoint.
+
+       Returning FALSE will prevent the release complete from being sent. Note
+       that this would be very unusual as this is called when the connection
+       is being cleaned up. There will be no second chance to send the PDU and
+       it must be sent.
+
+       The default behaviour simply returns TRUE.
+      */
+    virtual BOOL OnSendReleaseComplete(
+      H323SignalPDU & releaseCompletePDU /// Release Complete PDU to send
+    );
+
     /**Call back for remote party being alerted.
        This function is called from the SendSignalSetup() function after it
        receives the optional Alerting PDU from the remote endpoint. That is
@@ -585,6 +665,38 @@ class H323Connection : public OpalConnection
     virtual BOOL OnAlerting(
       const H323SignalPDU & alertingPDU,  /// Received Alerting PDU
       const PString & user                /// Username of remote endpoint
+    );
+
+    /**This function is called when insufficient digits have been entered.
+       This supports overlapped dialling so that a call can begin when it is
+       not known how many more digits are to be entered in a phone number.
+
+       It is expected that the application will override this function. It
+       should be noted that the application should not block in the function
+       but only indicate to whatever other thread is gathering digits that
+       more are required and that thread should call SendMoreDigits().
+
+       If FALSE is returned the connection is aborted and a Release Complete
+       PDU is sent.
+
+       The default behaviour simply returns FALSE.
+     */
+    virtual BOOL OnInsufficientDigits();
+
+    /**This function is called when sufficient digits have been entered.
+       This supports overlapped dialling so that a call can begin when it is
+       not known how many more digits are to be entered in a phone number.
+
+       The digits parameter is appended to the existing remoteNumber member
+       variable and the call is retried.
+
+       If FALSE is returned the connection is aborted and a Release Complete
+       PDU is sent.
+
+       The default behaviour simply returns TRUE.
+     */
+    virtual void SendMoreDigits(
+      const PString & digits    /// Extra digits
     );
 
     /**This function is called from the SendSignalSetup() function after it
@@ -1359,6 +1471,26 @@ class H323Connection : public OpalConnection
     /**Set the default maximum audio delay jitter parameter.
      */
     void SetMaxAudioDelayJitter(unsigned jitter) { maxAudioDelayJitter = (WORD)jitter; }
+
+    /**Get the UUIE PDU monitor bit mask.
+     */
+    unsigned GetUUIEsRequested() const { return uuiesRequested; }
+
+    /**Set the UUIE PDU monitor bit mask.
+     */
+    void SetUUIEsRequested(unsigned mask) { uuiesRequested = mask; }
+
+    /**Get the iNow Gatekeeper Access Token OID.
+     */
+    const PString GetGkAccessTokenOID() const { return gkAccessTokenOID; }
+
+    /**Set the iNow Gatekeeper Access Token OID.
+     */
+    void SetGkAccessTokenOID(const PString & oid) { gkAccessTokenOID = oid; }
+
+    /**Get the iNow Gatekeeper Access Token data.
+     */
+    const PBYTEArray & GetGkAccessTokenData() const { return gkAccessTokenData; }
   //@}
 
 
@@ -1377,24 +1509,34 @@ class H323Connection : public OpalConnection
     unsigned           remoteMaxAudioDelayJitter;
     PTimer             roundTripDelayTimer;
     WORD               maxAudioDelayJitter;
+    unsigned           uuiesRequested;
+    PString            gkAccessTokenOID;
+    PBYTEArray         gkAccessTokenData;
 
     OpalTransport * signallingChannel;
     OpalTransport * controlChannel;
     OpalListener  * controlListener;
     BOOL            h245Tunneling;
-    H323SignalPDU * h245TunnelPDU;
+    H323SignalPDU * h245TunnelRxPDU;
+    H323SignalPDU * h245TunnelTxPDU;
+    H323SignalPDU * alertingPDU;
+    H323SignalPDU * connectPDU;
 
     enum ConnectionStates {
       NoConnectionActive,
       AwaitingGatekeeperAdmission,
       AwaitingTransportConnect,
       AwaitingSignalConnect,
+      AwaitingLocalAnswer,
       HasExecutedSignalConnect,
       EstablishedConnection,
       ShuttingDownConnection,
       NumConnectionStates
     } connectionState;
 
+    PSyncPoint    digitsWaitFlag;
+
+    BOOL mediaWaitForConnect;
     BOOL transmitterSidePaused;
 
     RTP_SessionManager rtpSessions;

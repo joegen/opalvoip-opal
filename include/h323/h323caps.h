@@ -27,12 +27,22 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.h,v $
- * Revision 1.2002  2001/08/01 05:12:04  robertj
+ * Revision 1.2003  2001/10/05 00:22:13  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.1  2001/08/01 05:12:04  robertj
  * Major changes to H.323 capabilities, uses OpalMediaFormat for base name.
  * Added "known" codecs capability clases.
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.24  2001/09/21 02:48:51  robertj
+ * Added default implementation for PDU encode/decode for codecs
+ *   that have simple integer as frames per packet.
+ *
+ * Revision 1.23  2001/09/11 10:21:40  robertj
+ * Added direction field to capabilities, thanks Nick Hoath.
  *
  * Revision 1.22  2001/07/19 09:50:40  robertj
  * Added code for default session ID on data channel being three.
@@ -296,12 +306,15 @@ class H323Capability : public PObject
        into the classes members.
 
        If the function returns FALSE then the received PDU codec description
-       is not supported, so will be ignored. The default behaviour simply
-       returns TRUE.
+       is not supported, so will be ignored.
+       
+         The default behaviour sets the capabilityDirection member variable
+         from the PDU and then returns TRUE. Note that this means it is very
+         important to call the ancestor function when overriding.
      */
     virtual BOOL OnReceivedPDU(
       const H245_Capability & pdu /// PDU to get information from
-    ) = 0;
+    );
 
     /**This function is called whenever and incoming OpenLogicalChannel
        PDU has been used to construct the control channel. It allows the
@@ -324,6 +337,25 @@ class H323Capability : public PObject
 
   /**@name Member variable access */
   //@{
+    enum CapabilityDirection {
+      e_Unknown,
+      e_Receive,
+      e_Transmit,
+      e_ReceiveAndTransmit,
+      e_NoDirection,
+      NumCapabilityDirections
+    };
+
+    /**Get the direction for this capability.
+      */ 
+    CapabilityDirection GetCapabilityDirection() const { return capabilityDirection; }
+
+    /**Set the direction for this capability.
+      */
+    void SetCapabilityDirection(
+      CapabilityDirection dir   /// New direction code
+    ) { capabilityDirection = dir; }
+
     /// Get unique capability number.
     unsigned GetCapabilityNumber() const { return assignedCapabilityNumber; }
 
@@ -336,13 +368,14 @@ class H323Capability : public PObject
   //@}
 
 #if PTRACING
-    static const char * const MainTypesNames[e_NumMainTypes];
-    friend ostream & operator<<(ostream & o , MainTypes t) { return o << MainTypesNames[t]; }
+    friend ostream & operator<<(ostream & o , MainTypes t);
+    friend ostream & operator<<(ostream & o , CapabilityDirection d);
 #endif
 
   protected:
-    OpalMediaFormat mediaFormat;
-    unsigned        assignedCapabilityNumber;  /// Unique ID assigned to capability
+    OpalMediaFormat     mediaFormat;
+    unsigned            assignedCapabilityNumber;  /// Unique ID assigned to capability
+    CapabilityDirection capabilityDirection;
 };
 
 
@@ -576,8 +609,8 @@ class H323AudioCapability : public H323RealTimeCapability
        It allows the capability to set the PDU fields from information in
        members specific to the class.
 
-       The default behaviour assumes that the pdu is an integer number of
-       frames in the packet.
+       The default behaviour assumes the pdu is an integer number of frames
+       per packet.
      */
     virtual BOOL OnSendingPDU(
       H245_AudioCapability & pdu,  /// PDU to set information on
@@ -590,8 +623,10 @@ class H323AudioCapability : public H323RealTimeCapability
        into the classes members.
 
        If the function returns FALSE then the received PDU codec description
-       is not supported, so will be ignored. The default behaviour simply
-       returns TRUE.
+       is not supported, so will be ignored.
+       
+       The default behaviour calls the OnReceivedPDU() that takes a
+       H245_AudioCapability and clamps the txFramesInPacket.
      */
     virtual BOOL OnReceivedPDU(
       const H245_Capability & pdu  /// PDU to get information from
@@ -601,8 +636,10 @@ class H323AudioCapability : public H323RealTimeCapability
        PDU has been used to construct the control channel. It allows the
        capability to set from the PDU fields, information in members specific
        to the class.
-
-       The default behaviour is pure.
+       
+       The default behaviour calls the OnReceivedPDU() that takes a
+       H245_AudioCapability and clamps the txFramesInPacket or
+       rxFramesInPacket.
      */
     virtual BOOL OnReceivedPDU(
       const H245_DataType & pdu,  /// PDU to get information from
@@ -614,7 +651,8 @@ class H323AudioCapability : public H323RealTimeCapability
        channel. It allows the capability to set from the PDU fields,
        information in members specific to the class.
 
-       The default behaviour is pure.
+       The default behaviour assumes the pdu is an integer number of frames
+       per packet.
      */
     virtual BOOL OnReceivedPDU(
       const H245_AudioCapability & pdu,  /// PDU to get information from
@@ -1754,17 +1792,31 @@ class H323Capabilities : public PObject
     /**Find the capability given the capability format name string. This does
        a partial match for the supplied argument. If the argument matches a
        substring of the actual capabilities name, then it is returned. For
-       example "GSM" or "0610" will match "GSM 0610".
+       example "GSM" or "0610" will match "GSM 0610". Note case is not
+       significant.
 
        The user should be carefull of using short strings such as "G"!
 
-       Note case is not significant.
+       The direction parameter can further refine the search for specific
+       receive or transmit capabilities. The default value of e_Unknown will
+       wildcard that field.
 
        Returns:
        NULL if no capability meeting the criteria was found
       */
     H323Capability * FindCapability(
-      const PString & formatName
+      const PString & formatName, /// Wildcard format name to search for
+      H323Capability::CapabilityDirection direction = H323Capability::e_Unknown
+            /// Optional direction to include into search criteria
+    ) const;
+
+    /**Find the first capability in the table of the specified direction.
+
+       Returns:
+       NULL if no capability meeting the criteria was found
+      */
+    H323Capability * FindCapability(
+      H323Capability::CapabilityDirection direction /// Direction to search for
     ) const;
 
     /**Find the capability given the capability. This does a value compare of
@@ -1775,7 +1827,7 @@ class H323Capabilities : public PObject
        NULL if no capability meeting the criteria was found
       */
     H323Capability * FindCapability(
-      const H323Capability & capability
+      const H323Capability & capability /// Capability to search for
     ) const;
 
     /**Find the capability given the H.245 capability PDU.

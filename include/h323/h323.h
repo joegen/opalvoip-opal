@@ -27,8 +27,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.h,v $
- * Revision 1.2002  2001/08/13 05:10:39  robertj
+ * Revision 1.2003  2001/10/05 00:22:13  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 1.124  2001/09/11 01:24:36  robertj
+ * Added conditional compilation to remove video and/or audio codecs.
  *
  * Revision 1.123  2001/08/06 03:08:11  robertj
  * Fission of h323.h to h323ep.h & h323con.h, h323.h now just includes files.
@@ -428,10 +434,14 @@
 #include <h323/h323ep.h>
 #include <h323/h323con.h>
 #include <h323/gkclient.h>
+#ifndef NO_H323_AUDIO_CODECS
 #include <codec/gsmcodec.h>
 #include <codec/mscodecs.h>
 #include <codec/lpc10codec.h>
+#endif // NO_H323_AUDIO_CODECS
+#ifndef NO_H323_VIDEO
 #include <codec/h261codec.h>
+#endif // NO_H323_VIDEO
 
 
 /////////////////////////////////////////////////////////////////////////////

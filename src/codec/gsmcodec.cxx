@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gsmcodec.cxx,v $
- * Revision 1.2002  2001/08/01 05:04:28  robertj
+ * Revision 1.2003  2001/10/05 00:22:13  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.1  2001/08/01 05:04:28  robertj
  * Changes to allow control of linking software transcoders, use macros
  *   to force linking.
  * Allowed codecs to be used without H.,323 being linked by using the
@@ -36,6 +39,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.20  2001/09/21 02:51:06  robertj
+ * Implemented static object for all "known" media formats.
  *
  * Revision 1.19  2001/05/14 05:56:28  robertj
  * Added H323 capability registration system so can add capabilities by

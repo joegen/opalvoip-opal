@@ -27,11 +27,17 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjlid.h,v $
- * Revision 1.2002  2001/08/01 05:18:51  robertj
+ * Revision 1.2003  2001/10/05 00:22:13  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.1  2001/08/01 05:18:51  robertj
  * Made OpalMediaFormatList class global to help with documentation.
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.55  2001/09/24 12:31:35  robertj
+ * Added backward compatibility with old drivers.
  *
  * Revision 1.54  2001/07/19 05:54:27  robertj
  * Updated interface to xJACK drivers to utilise cadence and filter functions
@@ -740,6 +746,7 @@ class OpalIxJDevice : public OpalLineInterfaceDevice
                    PWin32Overlapped * overlap = NULL);
 
     HANDLE        hDriver;
+    DWORD         driverVersion;
     PTimer        ringTimeout;
     DWORD         lastDTMFDigit;
     DWORD         lastFlashState;

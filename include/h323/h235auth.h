@@ -24,8 +24,19 @@
  * Contributor(s): Fürbass Franz <franz.fuerbass@infonova.at>
  *
  * $Log: h235auth.h,v $
- * Revision 1.2002  2001/08/13 05:10:39  robertj
+ * Revision 1.2003  2001/10/05 00:22:13  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 1.3  2001/09/14 00:13:37  robertj
+ * Fixed problem with some athenticators needing extra conditions to be
+ *   "active", so make IsActive() virtual and add localId to H235AuthSimpleMD5
+ *
+ * Revision 1.2  2001/09/13 01:15:18  robertj
+ * Added flag to H235Authenticator to determine if gkid and epid is to be
+ *   automatically set as the crypto token remote id and local id.
  *
  * Revision 1.1  2001/08/10 11:03:49  robertj
  * Major changes to H.235 support in RAS to support server.
@@ -85,7 +96,9 @@ class H235Authenticator : public PObject
       H225_ArrayOf_PASN_ObjectId & algorithmOIDs
     );
 
-    BOOL IsActive() const { return enabled && !password; }
+    virtual BOOL UseGkAndEpIdentifiers() const;
+
+    virtual BOOL IsActive() const;
 
     void Enable(
       BOOL enab = TRUE
@@ -142,6 +155,8 @@ class H235AuthSimpleMD5 : public H235Authenticator
       H225_ArrayOf_AuthenticationMechanism & authenticationCapabilities,
       H225_ArrayOf_PASN_ObjectId & algorithmOIDs
     );
+
+    virtual BOOL IsActive() const;
 };
 
 
@@ -167,6 +182,8 @@ class H235AuthProcedure1 : public H235Authenticator
       const H225_CryptoH323Token & cryptoToken,
       const PBYTEArray & rawPDU
     );
+
+    virtual BOOL UseGkAndEpIdentifiers() const;
 
   protected:
     unsigned   lastRandomSequenceNumber;
