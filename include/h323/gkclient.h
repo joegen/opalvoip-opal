@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.h,v $
- * Revision 1.2004  2001/10/05 00:22:13  robertj
+ * Revision 1.2005  2001/11/09 05:49:47  robertj
+ * Abstracted UDP connection algorithm
+ *
+ * Revision 2.3  2001/10/05 00:22:13  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.2  2001/08/17 08:20:26  robertj
@@ -223,7 +226,7 @@ class H323Gatekeeper : public H225_RAS
        to a broadcast is used.
      */
     BOOL DiscoverByAddress(
-      const OpalTransportAddress & address /// Address of gatekeeper.
+      const PString & address /// Address of gatekeeper.
     );
 
     /**Discover a gatekeeper on the local network.
@@ -231,7 +234,7 @@ class H323Gatekeeper : public H225_RAS
      */
     BOOL DiscoverByNameAndAddress(
       const PString & identifier,
-      const OpalTransportAddress & address
+      const PString & address
     );
 
     /**Register with gatekeeper.

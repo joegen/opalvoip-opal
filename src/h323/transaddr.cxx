@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transaddr.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2001/11/09 05:49:47  robertj
+ * Abstracted UDP connection algorithm
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  */
@@ -47,13 +50,15 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
-H323TransportAddress::H323TransportAddress(const H225_TransportAddress & transport)
+H323TransportAddress::H323TransportAddress(const H225_TransportAddress & transport,
+                                           const char * proto)
 {
   switch (transport.GetTag()) {
     case H225_TransportAddress::e_ipAddress :
     {
       const H225_TransportAddress_ipAddress & ip = transport;
-      sprintf("tcp$%u.%u.%u.%u:%u",
+      sprintf("%s%u.%u.%u.%u:%u",
+              proto,
               ip.m_ip[0], ip.m_ip[1], ip.m_ip[2], ip.m_ip[3],
               (unsigned)ip.m_port);
       break;
@@ -64,7 +69,8 @@ H323TransportAddress::H323TransportAddress(const H225_TransportAddress & transpo
 }
 
 
-H323TransportAddress::H323TransportAddress(const H245_TransportAddress & transport)
+H323TransportAddress::H323TransportAddress(const H245_TransportAddress & transport,
+                                           const char * proto)
 {
   switch (transport.GetTag()) {
     case H245_TransportAddress::e_unicastAddress :
@@ -74,7 +80,8 @@ H323TransportAddress::H323TransportAddress(const H245_TransportAddress & transpo
         case H245_UnicastAddress::e_iPAddress :
         {
           const H245_UnicastAddress_iPAddress & ip = unicast;
-          sprintf("tcp$%u.%u.%u.%u:%u",
+          sprintf("%s%u.%u.%u.%u:%u",
+                  proto,
                   ip.m_network[0], ip.m_network[1], ip.m_network[2], ip.m_network[3],
                   (unsigned)ip.m_tsapIdentifier);
           break;

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2005  2001/10/05 00:22:13  robertj
+ * Revision 1.2006  2001/11/09 05:49:47  robertj
+ * Abstracted UDP connection algorithm
+ *
+ * Revision 2.4  2001/10/05 00:22:13  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.3  2001/08/17 08:30:21  robertj
@@ -361,22 +364,41 @@ BOOL H323Gatekeeper::DiscoverByName(const PString & identifier)
 }
 
 
-BOOL H323Gatekeeper::DiscoverByAddress(const OpalTransportAddress & address)
+BOOL H323Gatekeeper::DiscoverByAddress(const PString & address)
 {
   gatekeeperIdentifier = PString();
-  return StartDiscovery(address);
+  OpalTransportAddress fullAddress(address,
+                                   H225_RAS::DefaultRasUdpPort,
+                                   OpalTransportAddress::UdpPrefix);
+  return StartDiscovery(fullAddress);
 }
 
 
 BOOL H323Gatekeeper::DiscoverByNameAndAddress(const PString & identifier,
-                                              const OpalTransportAddress & address)
+                                              const PString & address)
 {
   gatekeeperIdentifier = identifier;
   return StartDiscovery(address);
 }
 
+
+static BOOL WriteGRQ(OpalTransport & transport, PObject * data)
+{
+  H323RasPDU & pdu = *(H323RasPDU *)data;
+  H225_GatekeeperRequest & grq = pdu;
+  H323TransportAddress localAddress = transport.GetLocalAddress();
+  localAddress.SetPDU(grq.m_rasAddress);
+  return pdu.Write(transport);
+}
+
+
 BOOL H323Gatekeeper::StartDiscovery(const OpalTransportAddress & address)
 {
+  PAssert(!transport->IsRunning(), "Cannot do discovery on running RAS channel");
+
+  if (!transport->ConnectTo(address))
+    return FALSE;
+
   H323RasPDU pdu(*this);
   Request request(SetupGatekeeperRequest(pdu), pdu);
 
@@ -384,213 +406,31 @@ BOOL H323Gatekeeper::StartDiscovery(const OpalTransportAddress & address)
   requests.SetAt(request.sequenceNumber, &request);
   requestsMutex.Signal();
 
-  unsigned retries = endpoint.GetGatekeeperRequestRetries();
-  while (!DiscoverGatekeeper(pdu, address)) {
-    if (--retries == 0)
+  for (unsigned retry = 0; retry < endpoint.GetGatekeeperRequestRetries(); retry++) {
+    if (!transport->WriteConnect(WriteGRQ, &pdu)) {
+      PTRACE(1, "RAS\tError writing discovery PDU: " << transport->GetErrorText());
       break;
+    }
+
+    H323RasPDU response(*this);
+    if (response.Read(*transport) && HandleRasPDU(response))
+      break;
+  }
+
+  transport->EndConnect(transport->GetLocalAddress());
+
+  if (discoveryComplete) {
+    PTRACE(2, "RAS\tGatekeeper discovered at: "
+           << transport->GetRemoteAddress()
+           << " (if=" << transport->GetLocalAddress() << ')');
+    StartRasChannel();
   }
 
   requestsMutex.Wait();
   requests.SetAt(request.sequenceNumber, NULL);
   requestsMutex.Signal();
 
-  if (discoveryComplete) {
-    if (transport->Connect())
-      StartRasChannel();
-  }
-
   return discoveryComplete;
-}
-
-
-BOOL H323Gatekeeper::DiscoverGatekeeper(H323RasPDU & request,
-                                        const OpalTransportAddress & address)
-{
-  if (!transport->IsDescendant(OpalTransportUDP::Class())) {
-    PTRACE(1, "H225\tOnly UDP supported for Gatekeeper discovery");
-    return FALSE;
-  }
-
-  PTRACE(3, "H225\tStarted gatekeeper discovery of \"" << address << '"');
-
-  PIPSocket::Address destAddr = INADDR_BROADCAST;
-  WORD destPort = DefaultRasUdpPort;
-  if (!address) {
-    if (!address.GetIpAndPort(destAddr, destPort)) {
-      PTRACE(2, "RAS\tError decoding address");
-      return FALSE;
-    }
-  }
-
-  PIPSocket::Address originalLocalAddress;
-  WORD originalLocalPort;
-  transport->GetLocalAddress().GetIpAndPort(originalLocalAddress, originalLocalPort);
-
-  // Skip over the H323Transport::Close to make sure PUDPSocket is deleted.
-  transport->PIndirectChannel::Close();
-
-  PIPSocket::InterfaceTable interfaces;
-
-  // See if prebound to interface, only use that if so
-  if (originalLocalAddress != INADDR_ANY) {
-    PTRACE(3, "RAS\tGatekeeper discovery on pre-bound interface: " << originalLocalAddress);
-    interfaces.Append(new PIPSocket::InterfaceEntry("", originalLocalAddress, PIPSocket::Address(0xffffffff), ""));
-  }
-  else if (!PIPSocket::GetInterfaceTable(interfaces)) {
-    PTRACE(1, "RAS\tNo interfaces on system!");
-    interfaces.Append(new PIPSocket::InterfaceEntry("", originalLocalAddress, PIPSocket::Address(0xffffffff), ""));
-  }
-  else {
-    PTRACE(4, "RAS\tSearching interfaces:\n" << setfill('\n') << interfaces << setfill(' '));
-  }
-
-  PSocketList sockets;
-  PSocket::SelectList selection;
-  H225_GatekeeperRequest & grq = request;
-
-  PINDEX i;
-  for (i = 0; i < interfaces.GetSize(); i++) {
-    PIPSocket::Address interfaceAddress = interfaces[i].GetAddress();
-    if (interfaceAddress == 0 || interfaceAddress == PIPSocket::Address())
-      continue;
-
-    // Check for already have had that IP address.
-    PINDEX j;
-    for (j = 0; j < i; j++) {
-      if (interfaceAddress == interfaces[j].GetAddress())
-        break;
-    }
-    if (j < i)
-      continue;
-
-    PUDPSocket * socket;
-
-    static PIPSocket::Address MulticastRasAddress(224, 0, 1, 41);
-    if (destAddr != MulticastRasAddress) {
-
-      // Not explicitly multicast
-      socket = new PUDPSocket;
-      sockets.Append(socket);
-
-      if (!socket->Listen(interfaceAddress)) {
-        PTRACE(2, "RAS\tError on discover request listen: " << socket->GetErrorText());
-        return FALSE;
-      }
-
-//      localPort = socket->GetPort();
-
-#ifndef __BEOS__
-      if (destAddr == INADDR_BROADCAST) {
-        if (!socket->SetOption(SO_BROADCAST, 1)) {
-          PTRACE(2, "RAS\tError allowing broadcast: " << socket->GetErrorText());
-          return FALSE;
-        }
-      }
-#else
-      PTRACE(2, "RAS\tBroadcast option under BeOS is not implemented yet");
-#endif
-
-      // Adjust the PDU to reflect the interface we are writing to.
-      H323TransportAddress newLocalAddress(interfaceAddress, socket->GetPort(), "udp");
-      newLocalAddress.SetPDU(grq.m_rasAddress);
-
-      PTRACE(3, "RAS\tGatekeeper discovery on interface: " << newLocalAddress);
-
-      socket->SetSendAddress(destAddr, destPort);
-      transport->SetWriteChannel(socket, FALSE);
-      if (request.Write(*transport))
-        selection.Append(socket);
-      else
-        PTRACE(2, "RAS\tError writing discovery PDU: " << socket->GetErrorText());
-
-#ifndef __BEOS__
-      if (destAddr == INADDR_BROADCAST)
-        socket->SetOption(SO_BROADCAST, 0);
-#endif
-    }
-
-
-#ifdef IP_ADD_MEMBERSHIP
-    // Now do it again for Multicast
-    if (destAddr == INADDR_BROADCAST || destAddr == MulticastRasAddress) {
-      socket = new PUDPSocket;
-      sockets.Append(socket);
-
-      if (!socket->Listen(interfaceAddress)) {
-        PTRACE(2, "RAS\tError on discover request listen: " << socket->GetErrorText());
-        return FALSE;
-      }
-
-      struct ip_mreq mreq;
-      mreq.imr_multiaddr = MulticastRasAddress;
-      mreq.imr_interface = interfaceAddress;    // ip address of host
-      if (socket->SetOption(IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq), IPPROTO_IP)) {
-        // Adjust the PDU to reflect the interface we are writing to.
-        H323TransportAddress newLocalMulticastAddress(interfaceAddress, socket->GetPort(), "udp");
-        newLocalMulticastAddress.SetPDU(grq.m_rasAddress);
-
-        socket->SetOption(SO_BROADCAST, 1);
-
-        socket->SetSendAddress(INADDR_BROADCAST, DefaultRasMulticastPort);
-        transport->SetWriteChannel(socket, FALSE);
-        if (request.Write(*transport))
-          selection.Append(socket);
-        else
-          PTRACE(2, "RAS\tError writing discovery PDU: " << socket->GetErrorText());
-
-        socket->SetOption(SO_BROADCAST, 0);
-      }
-      else
-        PTRACE(2, "RAS\tError allowing multicast: " << socket->GetErrorText());
-    }
-#endif
-
-    transport->SetWriteChannel(NULL);
-  }
-
-  if (sockets.IsEmpty()) {
-    PTRACE(1, "RAS\tNo suitable interfaces for discovery!");
-    return FALSE;
-  }
-
-  if (PSocket::Select(selection, endpoint.GetGatekeeperRequestTimeout()) != PChannel::NoError) {
-    PTRACE(3, "RAS\tError on discover request select");
-    return FALSE;
-  }
-
-  transport->SetReadTimeout(0);
-
-  for (i = 0; i < selection.GetSize(); i++) {
-    transport->SetReadChannel(&selection[i], FALSE);
-    transport->SetPromiscuous(TRUE);
-
-    H323RasPDU response(*this);
-    if (!response.Read(*transport)) {
-      PTRACE(3, "RAS\tError on discover request read: " << transport->GetErrorText());
-      break;
-    }
-
-    do {
-      if (HandleRasPDU(response)) {
-        PUDPSocket * socket = (PUDPSocket *)transport->GetReadChannel();
-        transport->SetReadChannel(NULL);
-        if (transport->Open(socket)) {
-          sockets.DisallowDeleteObjects();
-          sockets.Remove(socket);
-          sockets.AllowDeleteObjects();
-
-          PTRACE(2, "RAS\tGatekeeper discovered at: "
-                 << transport->GetRemoteAddress()
-                 << " (if=" << transport->GetLocalAddress() << ')');
-          return TRUE;
-        }
-      }
-    } while (response.Read(*transport));
-  }
-
-  PTRACE(2, "RAS\tGatekeeper discovery failed");
-  transport->PIndirectChannel::Close();
-  return FALSE;
 }
 
 
@@ -624,35 +464,35 @@ BOOL H323Gatekeeper::OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm & g
   if (!H225_RAS::OnReceiveGatekeeperConfirm(gcf))
     return FALSE;
 
-  H323TransportAddress locatedAddress = gcf.m_rasAddress;
+  if (gatekeeperIdentifier.IsEmpty()) {
+    gatekeeperIdentifier = gcf.m_gatekeeperIdentifier;
+    discoveryComplete = TRUE;
+  }
+  else {
+    PCaselessString gkid = gcf.m_gatekeeperIdentifier;
+    if (gkid != gatekeeperIdentifier) {
+      PTRACE(2, "RAS\tReceived a GCF from " << gkid
+             << " but wanted it from " << gatekeeperIdentifier);
+      return FALSE;
+    }
+
+    gatekeeperIdentifier = gkid;
+    discoveryComplete = TRUE;
+  }
+
+  H323TransportAddress locatedAddress(gcf.m_rasAddress, OpalTransportAddress::UdpPrefix);
   PTRACE(2, "RAS\tGatekeeper discovery found " << locatedAddress);
 
   if (!transport->SetRemoteAddress(locatedAddress)) {
     PTRACE(2, "RAS\tInvalid gatekeeper discovery address: \"" << locatedAddress << '"');
+    discoveryComplete = FALSE;
+    return FALSE;
   }
 
-  if (!gatekeeperIdentifier) {
-    PString gkid = gcf.m_gatekeeperIdentifier;
-    if (gatekeeperIdentifier *= gkid) {
-      gatekeeperIdentifier = gkid;
-      discoveryComplete = TRUE;
-    }
-    else {
-      PTRACE(2, "RAS\tReceived a GCF from " << gkid
-             << " but wanted it from " << gatekeeperIdentifier);
-    }
-  }
-  else {
-    gatekeeperIdentifier = gcf.m_gatekeeperIdentifier;
-    discoveryComplete = TRUE;
-  }
-
-  if (discoveryComplete) {
-    for (PINDEX i = 0; i < authenticators.GetSize(); i++) {
-      H235Authenticator & authenticator = authenticators[i];
-      if (authenticator.UseGkAndEpIdentifiers())
-        authenticator.SetRemoteId(gatekeeperIdentifier);
-    }
+  for (PINDEX i = 0; i < authenticators.GetSize(); i++) {
+    H235Authenticator & authenticator = authenticators[i];
+    if (authenticator.UseGkAndEpIdentifiers())
+      authenticator.SetRemoteId(gatekeeperIdentifier);
   }
 
   return discoveryComplete;
