@@ -1,8 +1,8 @@
 /*
 
 $Log: synths.c,v $
-Revision 1.2001  2001/07/27 15:48:25  robertj
-Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+Revision 1.2002  2003/03/14 09:53:27  robertj
+Updated to openH323 v1.11.7
 
 Revision 1.1  2000/06/05 04:45:12  robertj
 Added LPC-10 2400bps codec
@@ -58,8 +58,8 @@ static real c_b2 = .7f;
 /* 	SYNTHS Version 54 */
 
 /* $Log: synths.c,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/14 09:53:27  robertj
+ * Updated to openH323 v1.11.7
  *
 /* Revision 1.1  2000/06/05 04:45:12  robertj
 /* Added LPC-10 2400bps codec
@@ -178,8 +178,8 @@ static real c_b2 = .7f;
     real rci[160]	/* was [10][16] */;
 
 /* $Log: synths.c,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/14 09:53:27  robertj
+ * Updated to openH323 v1.11.7
  *
 /* Revision 1.1  2000/06/05 04:45:12  robertj
 /* Added LPC-10 2400bps codec
@@ -209,8 +209,8 @@ static real c_b2 = .7f;
 /* Frame size, Prediction order, Pitch period */
 /*       Arguments */
 /* $Log: synths.c,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/14 09:53:27  robertj
+ * Updated to openH323 v1.11.7
  *
 /* Revision 1.1  2000/06/05 04:45:12  robertj
 /* Added LPC-10 2400bps codec

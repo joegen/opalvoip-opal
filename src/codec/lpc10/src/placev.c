@@ -1,8 +1,11 @@
 /*
 
 $Log: placev.c,v $
-Revision 1.2001  2001/07/27 15:48:25  robertj
-Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+Revision 1.2002  2003/03/14 09:53:27  robertj
+Updated to openH323 v1.11.7
+
+Revision 1.2  2001/10/16 21:21:14  yurik
+Removed warnings on Windows CE. Submitted by Jehan Bing, jehan@bravobrava.com
 
 Revision 1.1  2000/06/05 04:45:12  robertj
 Added LPC-10 2400bps codec
@@ -29,9 +32,12 @@ extern int placev_(integer *osbuf, integer *osptr, integer *oslen, integer *obou
 /* 	PLACEV Version 48 */
 
 /* $Log: placev.c,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/14 09:53:27  robertj
+ * Updated to openH323 v1.11.7
  *
+/* Revision 1.2  2001/10/16 21:21:14  yurik
+/* Removed warnings on Windows CE. Submitted by Jehan Bing, jehan@bravobrava.com
+/*
 /* Revision 1.1  2000/06/05 04:45:12  robertj
 /* Added LPC-10 2400bps codec
 /*
@@ -181,7 +187,7 @@ t*/
 
     /* Function Body */
 /* Computing MAX */
-    i__1 = vwin[(*af - 1 << 1) + 2] + 1, i__2 = (*af - 2) * *lframe + 1;
+    i__1 = vwin[((*af - 1) << 1) + 2] + 1, i__2 = (*af - 2) * *lframe + 1;
     lrange = max(i__1,i__2);
     hrange = *af * *lframe;
 /* Compute OSPTR1, so the following code only looks at relevant onsets. */
@@ -195,7 +201,7 @@ L90:
 /* Check for case 1 first (fast case): */
     if (osptr1 <= 1 || osbuf[osptr1 - 1] < lrange) {
 /* Computing MAX */
-	i__1 = vwin[(*af - 1 << 1) + 2] + 1;
+	i__1 = vwin[((*af - 1) << 1) + 2] + 1;
 	vwin[(*af << 1) + 1] = max(i__1,*dvwinl);
 	vwin[(*af << 1) + 2] = vwin[(*af << 1) + 1] + *maxwin - 1;
 	*obound = 0;

@@ -1,8 +1,11 @@
 /*
 
 $Log: ivfilt.c,v $
-Revision 1.2001  2001/07/27 15:48:24  robertj
-Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+Revision 1.2002  2003/03/14 09:53:27  robertj
+Updated to openH323 v1.11.7
+
+Revision 1.2  2002/02/15 03:57:55  yurik
+Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
 
 Revision 1.1  2000/06/05 04:45:12  robertj
 Added LPC-10 2400bps codec
@@ -29,9 +32,12 @@ extern int ivfilt_(real *lpbuf, real *ivbuf, integer *len, integer *nsamp, real 
 /* 	IVFILT Version 48 */
 
 /* $Log: ivfilt.c,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/14 09:53:27  robertj
+ * Updated to openH323 v1.11.7
  *
+/* Revision 1.2  2002/02/15 03:57:55  yurik
+/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+/*
 /* Revision 1.1  2000/06/05 04:45:12  robertj
 /* Added LPC-10 2400bps codec
 /*
@@ -91,7 +97,7 @@ extern int ivfilt_(real *lpbuf, real *ivbuf, integer *len, integer *nsamp, real 
     /* Function Body */
     for (i__ = 1; i__ <= 3; ++i__) {
 	r__[i__ - 1] = 0.f;
-	k = i__ - 1 << 2;
+	k = i__ - (1 << 2);
 	i__1 = *len;
 	for (j = (i__ << 2) + *len - *nsamp; j <= i__1; j += 2) {
 	    r__[i__ - 1] += lpbuf[j] * lpbuf[j - k];

@@ -1,8 +1,11 @@
 /*
 
 $Log: onset.c,v $
-Revision 1.2001  2001/07/27 15:48:25  robertj
-Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+Revision 1.2002  2003/03/14 09:53:27  robertj
+Updated to openH323 v1.11.7
+
+Revision 1.2  2002/02/15 03:57:55  yurik
+Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
 
 Revision 1.1  2000/06/05 04:45:12  robertj
 Added LPC-10 2400bps codec
@@ -41,9 +44,12 @@ static real c_b2 = 1.f;
 /* 	ONSET Version 49 */
 
 /* $Log: onset.c,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/14 09:53:27  robertj
+ * Updated to openH323 v1.11.7
  *
+/* Revision 1.2  2002/02/15 03:57:55  yurik
+/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+/*
 /* Revision 1.1  2000/06/05 04:45:12  robertj
 /* Added LPC-10 2400bps codec
 /*
@@ -143,9 +149,12 @@ static real c_b2 = 1.f;
 
 /*       Arguments */
 /* $Log: onset.c,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/14 09:53:27  robertj
+ * Updated to openH323 v1.11.7
  *
+/* Revision 1.2  2002/02/15 03:57:55  yurik
+/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+/*
 /* Revision 1.1  2000/06/05 04:45:12  robertj
 /* Added LPC-10 2400bps codec
 /*
@@ -254,7 +263,7 @@ static real c_b2 = 1.f;
 	*d__ = (r__1 * r__1 + (*d__) * 63.f) / 64.f;
 	if ((*d__) != 0.f) {
 	    if (abs(*n) > (*d__)) {
-		*fpc = r_sign(&c_b2, n);
+		*fpc = (real)r_sign(&c_b2, n);
 	    } else {
 		*fpc = (*n) / (*d__);
 	    }
