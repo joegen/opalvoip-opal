@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g726codec.h,v $
- * Revision 1.2007  2004/05/15 12:53:40  rjongbloed
+ * Revision 1.2008  2004/09/01 12:21:26  rjongbloed
+ * Added initialisation of H323EndPoints capability table to be all codecs so can
+ *   correctly build remote caps from fqast connect params. This had knock on effect
+ *   with const keywords added in numerous places.
+ *
+ * Revision 2.6  2004/05/15 12:53:40  rjongbloed
  * Fixed incorrect laoding of H.323 capability for G.726
  *
  * Revision 2.5  2002/11/10 23:21:49  robertj
@@ -95,7 +100,7 @@ class H323_G726_Capability : public H323NonStandardAudioCapability
     /**Create a new G.726 capability.
      */
     H323_G726_Capability(
-      H323EndPoint & endpoint,  /// Endpoint to get NonStandardInfo from.
+      const H323EndPoint & endpoint,  /// Endpoint to get NonStandardInfo from.
       Speeds speed              /// Speed of encoding
     );
   //@}
