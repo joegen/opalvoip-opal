@@ -9,7 +9,7 @@
 #endif
 
 #include <ptlib.h>
-#include "asn/h4507.h"
+#include "h4507.h"
 
 #define new PNEW
 
@@ -368,7 +368,7 @@ void H4507_MWIActivateArg::PrintOn(ostream & strm) const
     strm << setw(indent+11) << "priority = " << setprecision(indent) << m_priority << '\n';
   if (HasOptionalField(e_extensionArg))
     strm << setw(indent+15) << "extensionArg = " << setprecision(indent) << m_extensionArg << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -376,7 +376,7 @@ void H4507_MWIActivateArg::PrintOn(ostream & strm) const
 PObject::Comparison H4507_MWIActivateArg::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4507_MWIActivateArg), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4507_MWIActivateArg), PInvalidCast);
 #endif
   const H4507_MWIActivateArg & other = (const H4507_MWIActivateArg &)obj;
 
@@ -506,7 +506,7 @@ void H4507_MWIDeactivateArg::PrintOn(ostream & strm) const
     strm << setw(indent+14) << "callbackReq = " << setprecision(indent) << m_callbackReq << '\n';
   if (HasOptionalField(e_extensionArg))
     strm << setw(indent+15) << "extensionArg = " << setprecision(indent) << m_extensionArg << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -514,7 +514,7 @@ void H4507_MWIDeactivateArg::PrintOn(ostream & strm) const
 PObject::Comparison H4507_MWIDeactivateArg::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4507_MWIDeactivateArg), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4507_MWIDeactivateArg), PInvalidCast);
 #endif
   const H4507_MWIDeactivateArg & other = (const H4507_MWIDeactivateArg &)obj;
 
@@ -620,7 +620,7 @@ void H4507_MWIInterrogateArg::PrintOn(ostream & strm) const
     strm << setw(indent+14) << "callbackReq = " << setprecision(indent) << m_callbackReq << '\n';
   if (HasOptionalField(e_extensionArg))
     strm << setw(indent+15) << "extensionArg = " << setprecision(indent) << m_extensionArg << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -628,7 +628,7 @@ void H4507_MWIInterrogateArg::PrintOn(ostream & strm) const
 PObject::Comparison H4507_MWIInterrogateArg::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4507_MWIInterrogateArg), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4507_MWIInterrogateArg), PInvalidCast);
 #endif
   const H4507_MWIInterrogateArg & other = (const H4507_MWIInterrogateArg &)obj;
 
@@ -740,7 +740,7 @@ void H4507_MWIInterrogateResElt::PrintOn(ostream & strm) const
     strm << setw(indent+11) << "priority = " << setprecision(indent) << m_priority << '\n';
   if (HasOptionalField(e_extensionArg))
     strm << setw(indent+15) << "extensionArg = " << setprecision(indent) << m_extensionArg << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -748,7 +748,7 @@ void H4507_MWIInterrogateResElt::PrintOn(ostream & strm) const
 PObject::Comparison H4507_MWIInterrogateResElt::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4507_MWIInterrogateResElt), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4507_MWIInterrogateResElt), PInvalidCast);
 #endif
   const H4507_MWIInterrogateResElt & other = (const H4507_MWIInterrogateResElt &)obj;
 

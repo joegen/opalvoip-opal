@@ -228,7 +228,7 @@ void H4509_CcRequestArg::PrintOn(ostream & strm) const
     strm << setw(indent+24) << "retain_sig_connection = " << setprecision(indent) << m_retain_sig_connection << '\n';
   if (HasOptionalField(e_extension))
     strm << setw(indent+12) << "extension = " << setprecision(indent) << m_extension << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -236,7 +236,7 @@ void H4509_CcRequestArg::PrintOn(ostream & strm) const
 PObject::Comparison H4509_CcRequestArg::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4509_CcRequestArg), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4509_CcRequestArg), PInvalidCast);
 #endif
   const H4509_CcRequestArg & other = (const H4509_CcRequestArg &)obj;
 
@@ -349,7 +349,7 @@ void H4509_CcRequestRes::PrintOn(ostream & strm) const
   strm << setw(indent+17) << "retain_service = " << setprecision(indent) << m_retain_service << '\n';
   if (HasOptionalField(e_extension))
     strm << setw(indent+12) << "extension = " << setprecision(indent) << m_extension << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -357,7 +357,7 @@ void H4509_CcRequestRes::PrintOn(ostream & strm) const
 PObject::Comparison H4509_CcRequestRes::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4509_CcRequestRes), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4509_CcRequestRes), PInvalidCast);
 #endif
   const H4509_CcRequestRes & other = (const H4509_CcRequestRes &)obj;
 
@@ -437,7 +437,7 @@ void H4509_CcShortArg::PrintOn(ostream & strm) const
     strm << setw(indent+15) << "ccIdentifier = " << setprecision(indent) << m_ccIdentifier << '\n';
   if (HasOptionalField(e_extension))
     strm << setw(indent+12) << "extension = " << setprecision(indent) << m_extension << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -445,7 +445,7 @@ void H4509_CcShortArg::PrintOn(ostream & strm) const
 PObject::Comparison H4509_CcShortArg::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4509_CcShortArg), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4509_CcShortArg), PInvalidCast);
 #endif
   const H4509_CcShortArg & other = (const H4509_CcShortArg &)obj;
 
@@ -533,7 +533,7 @@ void H4509_CcLongArg::PrintOn(ostream & strm) const
     strm << setw(indent+10) << "service = " << setprecision(indent) << m_service << '\n';
   if (HasOptionalField(e_extension))
     strm << setw(indent+12) << "extension = " << setprecision(indent) << m_extension << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -541,7 +541,7 @@ void H4509_CcLongArg::PrintOn(ostream & strm) const
 PObject::Comparison H4509_CcLongArg::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4509_CcLongArg), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4509_CcLongArg), PInvalidCast);
 #endif
   const H4509_CcLongArg & other = (const H4509_CcLongArg &)obj;
 

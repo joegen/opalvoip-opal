@@ -5,7 +5,7 @@
 //
 
 #ifdef P_USE_PRAGMA
-#pragma implementation "mcs.h"
+#pragma implementation "mcspdu.h"
 #endif
 
 #include <ptlib.h>
@@ -372,7 +372,7 @@ void MCS_DomainParameters::PrintOn(ostream & strm) const
   strm << setw(indent+12) << "maxHeight = " << setprecision(indent) << m_maxHeight << '\n';
   strm << setw(indent+16) << "maxMCSPDUsize = " << setprecision(indent) << m_maxMCSPDUsize << '\n';
   strm << setw(indent+18) << "protocolVersion = " << setprecision(indent) << m_protocolVersion << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -380,7 +380,7 @@ void MCS_DomainParameters::PrintOn(ostream & strm) const
 PObject::Comparison MCS_DomainParameters::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_DomainParameters), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_DomainParameters), PInvalidCast);
 #endif
   const MCS_DomainParameters & other = (const MCS_DomainParameters &)obj;
 
@@ -496,7 +496,7 @@ void MCS_Connect_Initial::PrintOn(ostream & strm) const
   strm << setw(indent+20) << "minimumParameters = " << setprecision(indent) << m_minimumParameters << '\n';
   strm << setw(indent+20) << "maximumParameters = " << setprecision(indent) << m_maximumParameters << '\n';
   strm << setw(indent+11) << "userData = " << setprecision(indent) << m_userData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -504,7 +504,7 @@ void MCS_Connect_Initial::PrintOn(ostream & strm) const
 PObject::Comparison MCS_Connect_Initial::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_Connect_Initial), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_Connect_Initial), PInvalidCast);
 #endif
   const MCS_Connect_Initial & other = (const MCS_Connect_Initial &)obj;
 
@@ -610,7 +610,7 @@ void MCS_Connect_Additional::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+18) << "calledConnectId = " << setprecision(indent) << m_calledConnectId << '\n';
   strm << setw(indent+15) << "dataPriority = " << setprecision(indent) << m_dataPriority << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -618,7 +618,7 @@ void MCS_Connect_Additional::PrintOn(ostream & strm) const
 PObject::Comparison MCS_Connect_Additional::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_Connect_Additional), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_Connect_Additional), PInvalidCast);
 #endif
   const MCS_Connect_Additional & other = (const MCS_Connect_Additional &)obj;
 
@@ -693,7 +693,7 @@ void MCS_PDin::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+14) << "heightLimit = " << setprecision(indent) << m_heightLimit << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -701,7 +701,7 @@ void MCS_PDin::PrintOn(ostream & strm) const
 PObject::Comparison MCS_PDin::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_PDin), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_PDin), PInvalidCast);
 #endif
   const MCS_PDin & other = (const MCS_PDin &)obj;
 
@@ -772,7 +772,7 @@ void MCS_EDrq::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+12) << "subHeight = " << setprecision(indent) << m_subHeight << '\n';
   strm << setw(indent+14) << "subInterval = " << setprecision(indent) << m_subInterval << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -780,7 +780,7 @@ void MCS_EDrq::PrintOn(ostream & strm) const
 PObject::Comparison MCS_EDrq::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_EDrq), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_EDrq), PInvalidCast);
 #endif
   const MCS_EDrq & other = (const MCS_EDrq &)obj;
 
@@ -1151,7 +1151,7 @@ void MCS_AUrq::PrintOn(ostream & strm) const
 {
   int indent = strm.precision() + 2;
   strm << "{\n";
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1208,7 +1208,7 @@ void MCS_CJrq::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+12) << "initiator = " << setprecision(indent) << m_initiator << '\n';
   strm << setw(indent+12) << "channelId = " << setprecision(indent) << m_channelId << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1216,7 +1216,7 @@ void MCS_CJrq::PrintOn(ostream & strm) const
 PObject::Comparison MCS_CJrq::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_CJrq), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_CJrq), PInvalidCast);
 #endif
   const MCS_CJrq & other = (const MCS_CJrq &)obj;
 
@@ -1290,7 +1290,7 @@ void MCS_CCrq::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+12) << "initiator = " << setprecision(indent) << m_initiator << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1298,7 +1298,7 @@ void MCS_CCrq::PrintOn(ostream & strm) const
 PObject::Comparison MCS_CCrq::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_CCrq), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_CCrq), PInvalidCast);
 #endif
   const MCS_CCrq & other = (const MCS_CCrq &)obj;
 
@@ -1367,7 +1367,7 @@ void MCS_CDrq::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+12) << "initiator = " << setprecision(indent) << m_initiator << '\n';
   strm << setw(indent+12) << "channelId = " << setprecision(indent) << m_channelId << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1375,7 +1375,7 @@ void MCS_CDrq::PrintOn(ostream & strm) const
 PObject::Comparison MCS_CDrq::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_CDrq), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_CDrq), PInvalidCast);
 #endif
   const MCS_CDrq & other = (const MCS_CDrq &)obj;
 
@@ -1449,7 +1449,7 @@ void MCS_CDin::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+12) << "channelId = " << setprecision(indent) << m_channelId << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1457,7 +1457,7 @@ void MCS_CDin::PrintOn(ostream & strm) const
 PObject::Comparison MCS_CDin::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_CDin), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_CDin), PInvalidCast);
 #endif
   const MCS_CDin & other = (const MCS_CDin &)obj;
 
@@ -1529,7 +1529,7 @@ void MCS_SDrq::PrintOn(ostream & strm) const
   strm << setw(indent+15) << "dataPriority = " << setprecision(indent) << m_dataPriority << '\n';
   strm << setw(indent+15) << "segmentation = " << setprecision(indent) << m_segmentation << '\n';
   strm << setw(indent+11) << "userData = " << setprecision(indent) << m_userData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1537,7 +1537,7 @@ void MCS_SDrq::PrintOn(ostream & strm) const
 PObject::Comparison MCS_SDrq::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_SDrq), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_SDrq), PInvalidCast);
 #endif
   const MCS_SDrq & other = (const MCS_SDrq &)obj;
 
@@ -1633,7 +1633,7 @@ void MCS_SDin::PrintOn(ostream & strm) const
   strm << setw(indent+15) << "dataPriority = " << setprecision(indent) << m_dataPriority << '\n';
   strm << setw(indent+15) << "segmentation = " << setprecision(indent) << m_segmentation << '\n';
   strm << setw(indent+11) << "userData = " << setprecision(indent) << m_userData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1641,7 +1641,7 @@ void MCS_SDin::PrintOn(ostream & strm) const
 PObject::Comparison MCS_SDin::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_SDin), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_SDin), PInvalidCast);
 #endif
   const MCS_SDin & other = (const MCS_SDin &)obj;
 
@@ -1737,7 +1737,7 @@ void MCS_USrq::PrintOn(ostream & strm) const
   strm << setw(indent+15) << "dataPriority = " << setprecision(indent) << m_dataPriority << '\n';
   strm << setw(indent+15) << "segmentation = " << setprecision(indent) << m_segmentation << '\n';
   strm << setw(indent+11) << "userData = " << setprecision(indent) << m_userData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1745,7 +1745,7 @@ void MCS_USrq::PrintOn(ostream & strm) const
 PObject::Comparison MCS_USrq::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_USrq), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_USrq), PInvalidCast);
 #endif
   const MCS_USrq & other = (const MCS_USrq &)obj;
 
@@ -1841,7 +1841,7 @@ void MCS_USin::PrintOn(ostream & strm) const
   strm << setw(indent+15) << "dataPriority = " << setprecision(indent) << m_dataPriority << '\n';
   strm << setw(indent+15) << "segmentation = " << setprecision(indent) << m_segmentation << '\n';
   strm << setw(indent+11) << "userData = " << setprecision(indent) << m_userData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1849,7 +1849,7 @@ void MCS_USin::PrintOn(ostream & strm) const
 PObject::Comparison MCS_USin::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_USin), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_USin), PInvalidCast);
 #endif
   const MCS_USin & other = (const MCS_USin &)obj;
 
@@ -1942,7 +1942,7 @@ void MCS_TGrq::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+12) << "initiator = " << setprecision(indent) << m_initiator << '\n';
   strm << setw(indent+10) << "tokenId = " << setprecision(indent) << m_tokenId << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1950,7 +1950,7 @@ void MCS_TGrq::PrintOn(ostream & strm) const
 PObject::Comparison MCS_TGrq::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_TGrq), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_TGrq), PInvalidCast);
 #endif
   const MCS_TGrq & other = (const MCS_TGrq &)obj;
 
@@ -2025,7 +2025,7 @@ void MCS_TIrq::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+12) << "initiator = " << setprecision(indent) << m_initiator << '\n';
   strm << setw(indent+10) << "tokenId = " << setprecision(indent) << m_tokenId << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2033,7 +2033,7 @@ void MCS_TIrq::PrintOn(ostream & strm) const
 PObject::Comparison MCS_TIrq::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_TIrq), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_TIrq), PInvalidCast);
 #endif
   const MCS_TIrq & other = (const MCS_TIrq &)obj;
 
@@ -2109,7 +2109,7 @@ void MCS_TVrq::PrintOn(ostream & strm) const
   strm << setw(indent+12) << "initiator = " << setprecision(indent) << m_initiator << '\n';
   strm << setw(indent+10) << "tokenId = " << setprecision(indent) << m_tokenId << '\n';
   strm << setw(indent+12) << "recipient = " << setprecision(indent) << m_recipient << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2117,7 +2117,7 @@ void MCS_TVrq::PrintOn(ostream & strm) const
 PObject::Comparison MCS_TVrq::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_TVrq), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_TVrq), PInvalidCast);
 #endif
   const MCS_TVrq & other = (const MCS_TVrq &)obj;
 
@@ -2199,7 +2199,7 @@ void MCS_TVin::PrintOn(ostream & strm) const
   strm << setw(indent+12) << "initiator = " << setprecision(indent) << m_initiator << '\n';
   strm << setw(indent+10) << "tokenId = " << setprecision(indent) << m_tokenId << '\n';
   strm << setw(indent+12) << "recipient = " << setprecision(indent) << m_recipient << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2207,7 +2207,7 @@ void MCS_TVin::PrintOn(ostream & strm) const
 PObject::Comparison MCS_TVin::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_TVin), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_TVin), PInvalidCast);
 #endif
   const MCS_TVin & other = (const MCS_TVin &)obj;
 
@@ -2288,7 +2288,7 @@ void MCS_TPrq::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+12) << "initiator = " << setprecision(indent) << m_initiator << '\n';
   strm << setw(indent+10) << "tokenId = " << setprecision(indent) << m_tokenId << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2296,7 +2296,7 @@ void MCS_TPrq::PrintOn(ostream & strm) const
 PObject::Comparison MCS_TPrq::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_TPrq), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_TPrq), PInvalidCast);
 #endif
   const MCS_TPrq & other = (const MCS_TPrq &)obj;
 
@@ -2371,7 +2371,7 @@ void MCS_TPin::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+12) << "initiator = " << setprecision(indent) << m_initiator << '\n';
   strm << setw(indent+10) << "tokenId = " << setprecision(indent) << m_tokenId << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2379,7 +2379,7 @@ void MCS_TPin::PrintOn(ostream & strm) const
 PObject::Comparison MCS_TPin::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_TPin), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_TPin), PInvalidCast);
 #endif
   const MCS_TPin & other = (const MCS_TPin &)obj;
 
@@ -2454,7 +2454,7 @@ void MCS_TRrq::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+12) << "initiator = " << setprecision(indent) << m_initiator << '\n';
   strm << setw(indent+10) << "tokenId = " << setprecision(indent) << m_tokenId << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2462,7 +2462,7 @@ void MCS_TRrq::PrintOn(ostream & strm) const
 PObject::Comparison MCS_TRrq::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_TRrq), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_TRrq), PInvalidCast);
 #endif
   const MCS_TRrq & other = (const MCS_TRrq &)obj;
 
@@ -2537,7 +2537,7 @@ void MCS_TTrq::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+12) << "initiator = " << setprecision(indent) << m_initiator << '\n';
   strm << setw(indent+10) << "tokenId = " << setprecision(indent) << m_tokenId << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2545,7 +2545,7 @@ void MCS_TTrq::PrintOn(ostream & strm) const
 PObject::Comparison MCS_TTrq::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_TTrq), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_TTrq), PInvalidCast);
 #endif
   const MCS_TTrq & other = (const MCS_TTrq &)obj;
 
@@ -2621,7 +2621,7 @@ void MCS_TTcf::PrintOn(ostream & strm) const
   strm << setw(indent+12) << "initiator = " << setprecision(indent) << m_initiator << '\n';
   strm << setw(indent+10) << "tokenId = " << setprecision(indent) << m_tokenId << '\n';
   strm << setw(indent+14) << "tokenStatus = " << setprecision(indent) << m_tokenStatus << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2629,7 +2629,7 @@ void MCS_TTcf::PrintOn(ostream & strm) const
 PObject::Comparison MCS_TTcf::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_TTcf), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_TTcf), PInvalidCast);
 #endif
   const MCS_TTcf & other = (const MCS_TTcf &)obj;
 
@@ -4117,7 +4117,7 @@ void MCS_ChannelAttributes_static::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+12) << "channelId = " << setprecision(indent) << m_channelId << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4125,7 +4125,7 @@ void MCS_ChannelAttributes_static::PrintOn(ostream & strm) const
 PObject::Comparison MCS_ChannelAttributes_static::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_ChannelAttributes_static), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_ChannelAttributes_static), PInvalidCast);
 #endif
   const MCS_ChannelAttributes_static & other = (const MCS_ChannelAttributes_static &)obj;
 
@@ -4194,7 +4194,7 @@ void MCS_ChannelAttributes_userId::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+9) << "joined = " << setprecision(indent) << m_joined << '\n';
   strm << setw(indent+9) << "userId = " << setprecision(indent) << m_userId << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4202,7 +4202,7 @@ void MCS_ChannelAttributes_userId::PrintOn(ostream & strm) const
 PObject::Comparison MCS_ChannelAttributes_userId::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_ChannelAttributes_userId), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_ChannelAttributes_userId), PInvalidCast);
 #endif
   const MCS_ChannelAttributes_userId & other = (const MCS_ChannelAttributes_userId &)obj;
 
@@ -4276,7 +4276,7 @@ void MCS_ChannelAttributes_assigned::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+12) << "channelId = " << setprecision(indent) << m_channelId << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4284,7 +4284,7 @@ void MCS_ChannelAttributes_assigned::PrintOn(ostream & strm) const
 PObject::Comparison MCS_ChannelAttributes_assigned::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_ChannelAttributes_assigned), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_ChannelAttributes_assigned), PInvalidCast);
 #endif
   const MCS_ChannelAttributes_assigned & other = (const MCS_ChannelAttributes_assigned &)obj;
 
@@ -4446,7 +4446,7 @@ void MCS_TokenAttributes_grabbed::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+10) << "tokenId = " << setprecision(indent) << m_tokenId << '\n';
   strm << setw(indent+10) << "grabber = " << setprecision(indent) << m_grabber << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4454,7 +4454,7 @@ void MCS_TokenAttributes_grabbed::PrintOn(ostream & strm) const
 PObject::Comparison MCS_TokenAttributes_grabbed::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_TokenAttributes_grabbed), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_TokenAttributes_grabbed), PInvalidCast);
 #endif
   const MCS_TokenAttributes_grabbed & other = (const MCS_TokenAttributes_grabbed &)obj;
 
@@ -4529,7 +4529,7 @@ void MCS_TokenAttributes_inhibited::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+10) << "tokenId = " << setprecision(indent) << m_tokenId << '\n';
   strm << setw(indent+13) << "inhibitors = " << setprecision(indent) << m_inhibitors << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4537,7 +4537,7 @@ void MCS_TokenAttributes_inhibited::PrintOn(ostream & strm) const
 PObject::Comparison MCS_TokenAttributes_inhibited::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_TokenAttributes_inhibited), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_TokenAttributes_inhibited), PInvalidCast);
 #endif
   const MCS_TokenAttributes_inhibited & other = (const MCS_TokenAttributes_inhibited &)obj;
 
@@ -4613,7 +4613,7 @@ void MCS_TokenAttributes_giving::PrintOn(ostream & strm) const
   strm << setw(indent+10) << "tokenId = " << setprecision(indent) << m_tokenId << '\n';
   strm << setw(indent+10) << "grabber = " << setprecision(indent) << m_grabber << '\n';
   strm << setw(indent+12) << "recipient = " << setprecision(indent) << m_recipient << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4621,7 +4621,7 @@ void MCS_TokenAttributes_giving::PrintOn(ostream & strm) const
 PObject::Comparison MCS_TokenAttributes_giving::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_TokenAttributes_giving), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_TokenAttributes_giving), PInvalidCast);
 #endif
   const MCS_TokenAttributes_giving & other = (const MCS_TokenAttributes_giving &)obj;
 
@@ -4702,7 +4702,7 @@ void MCS_TokenAttributes_ungivable::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+10) << "tokenId = " << setprecision(indent) << m_tokenId << '\n';
   strm << setw(indent+10) << "grabber = " << setprecision(indent) << m_grabber << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4710,7 +4710,7 @@ void MCS_TokenAttributes_ungivable::PrintOn(ostream & strm) const
 PObject::Comparison MCS_TokenAttributes_ungivable::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_TokenAttributes_ungivable), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_TokenAttributes_ungivable), PInvalidCast);
 #endif
   const MCS_TokenAttributes_ungivable & other = (const MCS_TokenAttributes_ungivable &)obj;
 
@@ -4785,7 +4785,7 @@ void MCS_TokenAttributes_given::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+10) << "tokenId = " << setprecision(indent) << m_tokenId << '\n';
   strm << setw(indent+12) << "recipient = " << setprecision(indent) << m_recipient << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4793,7 +4793,7 @@ void MCS_TokenAttributes_given::PrintOn(ostream & strm) const
 PObject::Comparison MCS_TokenAttributes_given::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_TokenAttributes_given), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_TokenAttributes_given), PInvalidCast);
 #endif
   const MCS_TokenAttributes_given & other = (const MCS_TokenAttributes_given &)obj;
 
@@ -4933,7 +4933,7 @@ void MCS_Connect_Response::PrintOn(ostream & strm) const
   strm << setw(indent+18) << "calledConnectId = " << setprecision(indent) << m_calledConnectId << '\n';
   strm << setw(indent+19) << "domainParameters = " << setprecision(indent) << m_domainParameters << '\n';
   strm << setw(indent+11) << "userData = " << setprecision(indent) << m_userData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4941,7 +4941,7 @@ void MCS_Connect_Response::PrintOn(ostream & strm) const
 PObject::Comparison MCS_Connect_Response::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_Connect_Response), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_Connect_Response), PInvalidCast);
 #endif
   const MCS_Connect_Response & other = (const MCS_Connect_Response &)obj;
 
@@ -5027,7 +5027,7 @@ void MCS_Connect_Result::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+9) << "result = " << setprecision(indent) << m_result << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5035,7 +5035,7 @@ void MCS_Connect_Result::PrintOn(ostream & strm) const
 PObject::Comparison MCS_Connect_Result::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_Connect_Result), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_Connect_Result), PInvalidCast);
 #endif
   const MCS_Connect_Result & other = (const MCS_Connect_Result &)obj;
 
@@ -5104,7 +5104,7 @@ void MCS_MCrq::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+16) << "mergeChannels = " << setprecision(indent) << m_mergeChannels << '\n';
   strm << setw(indent+18) << "purgeChannelIds = " << setprecision(indent) << m_purgeChannelIds << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5112,7 +5112,7 @@ void MCS_MCrq::PrintOn(ostream & strm) const
 PObject::Comparison MCS_MCrq::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_MCrq), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_MCrq), PInvalidCast);
 #endif
   const MCS_MCrq & other = (const MCS_MCrq &)obj;
 
@@ -5187,7 +5187,7 @@ void MCS_MCcf::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+16) << "mergeChannels = " << setprecision(indent) << m_mergeChannels << '\n';
   strm << setw(indent+18) << "purgeChannelIds = " << setprecision(indent) << m_purgeChannelIds << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5195,7 +5195,7 @@ void MCS_MCcf::PrintOn(ostream & strm) const
 PObject::Comparison MCS_MCcf::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_MCcf), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_MCcf), PInvalidCast);
 #endif
   const MCS_MCcf & other = (const MCS_MCcf &)obj;
 
@@ -5270,7 +5270,7 @@ void MCS_PCin::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+16) << "detachUserIds = " << setprecision(indent) << m_detachUserIds << '\n';
   strm << setw(indent+18) << "purgeChannelIds = " << setprecision(indent) << m_purgeChannelIds << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5278,7 +5278,7 @@ void MCS_PCin::PrintOn(ostream & strm) const
 PObject::Comparison MCS_PCin::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_PCin), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_PCin), PInvalidCast);
 #endif
   const MCS_PCin & other = (const MCS_PCin &)obj;
 
@@ -5353,7 +5353,7 @@ void MCS_MTrq::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+14) << "mergeTokens = " << setprecision(indent) << m_mergeTokens << '\n';
   strm << setw(indent+16) << "purgeTokenIds = " << setprecision(indent) << m_purgeTokenIds << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5361,7 +5361,7 @@ void MCS_MTrq::PrintOn(ostream & strm) const
 PObject::Comparison MCS_MTrq::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_MTrq), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_MTrq), PInvalidCast);
 #endif
   const MCS_MTrq & other = (const MCS_MTrq &)obj;
 
@@ -5436,7 +5436,7 @@ void MCS_MTcf::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+14) << "mergeTokens = " << setprecision(indent) << m_mergeTokens << '\n';
   strm << setw(indent+16) << "purgeTokenIds = " << setprecision(indent) << m_purgeTokenIds << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5444,7 +5444,7 @@ void MCS_MTcf::PrintOn(ostream & strm) const
 PObject::Comparison MCS_MTcf::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_MTcf), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_MTcf), PInvalidCast);
 #endif
   const MCS_MTcf & other = (const MCS_MTcf &)obj;
 
@@ -5518,7 +5518,7 @@ void MCS_PTin::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+16) << "purgeTokenIds = " << setprecision(indent) << m_purgeTokenIds << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5526,7 +5526,7 @@ void MCS_PTin::PrintOn(ostream & strm) const
 PObject::Comparison MCS_PTin::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_PTin), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_PTin), PInvalidCast);
 #endif
   const MCS_PTin & other = (const MCS_PTin &)obj;
 
@@ -5594,7 +5594,7 @@ void MCS_DPum::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+9) << "reason = " << setprecision(indent) << m_reason << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5602,7 +5602,7 @@ void MCS_DPum::PrintOn(ostream & strm) const
 PObject::Comparison MCS_DPum::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_DPum), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_DPum), PInvalidCast);
 #endif
   const MCS_DPum & other = (const MCS_DPum &)obj;
 
@@ -5671,7 +5671,7 @@ void MCS_RJum::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+13) << "diagnostic = " << setprecision(indent) << m_diagnostic << '\n';
   strm << setw(indent+16) << "initialOctets = " << setprecision(indent) << m_initialOctets << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5679,7 +5679,7 @@ void MCS_RJum::PrintOn(ostream & strm) const
 PObject::Comparison MCS_RJum::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_RJum), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_RJum), PInvalidCast);
 #endif
   const MCS_RJum & other = (const MCS_RJum &)obj;
 
@@ -5755,7 +5755,7 @@ void MCS_AUcf::PrintOn(ostream & strm) const
   strm << setw(indent+9) << "result = " << setprecision(indent) << m_result << '\n';
   if (HasOptionalField(e_initiator))
     strm << setw(indent+12) << "initiator = " << setprecision(indent) << m_initiator << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5763,7 +5763,7 @@ void MCS_AUcf::PrintOn(ostream & strm) const
 PObject::Comparison MCS_AUcf::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_AUcf), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_AUcf), PInvalidCast);
 #endif
   const MCS_AUcf & other = (const MCS_AUcf &)obj;
 
@@ -5840,7 +5840,7 @@ void MCS_DUrq::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+9) << "reason = " << setprecision(indent) << m_reason << '\n';
   strm << setw(indent+10) << "userIds = " << setprecision(indent) << m_userIds << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5848,7 +5848,7 @@ void MCS_DUrq::PrintOn(ostream & strm) const
 PObject::Comparison MCS_DUrq::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_DUrq), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_DUrq), PInvalidCast);
 #endif
   const MCS_DUrq & other = (const MCS_DUrq &)obj;
 
@@ -5923,7 +5923,7 @@ void MCS_DUin::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+9) << "reason = " << setprecision(indent) << m_reason << '\n';
   strm << setw(indent+10) << "userIds = " << setprecision(indent) << m_userIds << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5931,7 +5931,7 @@ void MCS_DUin::PrintOn(ostream & strm) const
 PObject::Comparison MCS_DUin::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_DUin), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_DUin), PInvalidCast);
 #endif
   const MCS_DUin & other = (const MCS_DUin &)obj;
 
@@ -6009,7 +6009,7 @@ void MCS_CJcf::PrintOn(ostream & strm) const
   strm << setw(indent+12) << "requested = " << setprecision(indent) << m_requested << '\n';
   if (HasOptionalField(e_channelId))
     strm << setw(indent+12) << "channelId = " << setprecision(indent) << m_channelId << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6017,7 +6017,7 @@ void MCS_CJcf::PrintOn(ostream & strm) const
 PObject::Comparison MCS_CJcf::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_CJcf), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_CJcf), PInvalidCast);
 #endif
   const MCS_CJcf & other = (const MCS_CJcf &)obj;
 
@@ -6105,7 +6105,7 @@ void MCS_CLrq::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+13) << "channelIds = " << setprecision(indent) << m_channelIds << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6113,7 +6113,7 @@ void MCS_CLrq::PrintOn(ostream & strm) const
 PObject::Comparison MCS_CLrq::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_CLrq), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_CLrq), PInvalidCast);
 #endif
   const MCS_CLrq & other = (const MCS_CLrq &)obj;
 
@@ -6184,7 +6184,7 @@ void MCS_CCcf::PrintOn(ostream & strm) const
   strm << setw(indent+12) << "initiator = " << setprecision(indent) << m_initiator << '\n';
   if (HasOptionalField(e_channelId))
     strm << setw(indent+12) << "channelId = " << setprecision(indent) << m_channelId << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6192,7 +6192,7 @@ void MCS_CCcf::PrintOn(ostream & strm) const
 PObject::Comparison MCS_CCcf::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_CCcf), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_CCcf), PInvalidCast);
 #endif
   const MCS_CCcf & other = (const MCS_CCcf &)obj;
 
@@ -6276,7 +6276,7 @@ void MCS_CArq::PrintOn(ostream & strm) const
   strm << setw(indent+12) << "initiator = " << setprecision(indent) << m_initiator << '\n';
   strm << setw(indent+12) << "channelId = " << setprecision(indent) << m_channelId << '\n';
   strm << setw(indent+10) << "userIds = " << setprecision(indent) << m_userIds << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6284,7 +6284,7 @@ void MCS_CArq::PrintOn(ostream & strm) const
 PObject::Comparison MCS_CArq::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_CArq), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_CArq), PInvalidCast);
 #endif
   const MCS_CArq & other = (const MCS_CArq &)obj;
 
@@ -6366,7 +6366,7 @@ void MCS_CAin::PrintOn(ostream & strm) const
   strm << setw(indent+12) << "initiator = " << setprecision(indent) << m_initiator << '\n';
   strm << setw(indent+12) << "channelId = " << setprecision(indent) << m_channelId << '\n';
   strm << setw(indent+10) << "userIds = " << setprecision(indent) << m_userIds << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6374,7 +6374,7 @@ void MCS_CAin::PrintOn(ostream & strm) const
 PObject::Comparison MCS_CAin::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_CAin), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_CAin), PInvalidCast);
 #endif
   const MCS_CAin & other = (const MCS_CAin &)obj;
 
@@ -6456,7 +6456,7 @@ void MCS_CErq::PrintOn(ostream & strm) const
   strm << setw(indent+12) << "initiator = " << setprecision(indent) << m_initiator << '\n';
   strm << setw(indent+12) << "channelId = " << setprecision(indent) << m_channelId << '\n';
   strm << setw(indent+10) << "userIds = " << setprecision(indent) << m_userIds << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6464,7 +6464,7 @@ void MCS_CErq::PrintOn(ostream & strm) const
 PObject::Comparison MCS_CErq::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_CErq), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_CErq), PInvalidCast);
 #endif
   const MCS_CErq & other = (const MCS_CErq &)obj;
 
@@ -6545,7 +6545,7 @@ void MCS_CEin::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+12) << "channelId = " << setprecision(indent) << m_channelId << '\n';
   strm << setw(indent+10) << "userIds = " << setprecision(indent) << m_userIds << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6553,7 +6553,7 @@ void MCS_CEin::PrintOn(ostream & strm) const
 PObject::Comparison MCS_CEin::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_CEin), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_CEin), PInvalidCast);
 #endif
   const MCS_CEin & other = (const MCS_CEin &)obj;
 
@@ -6630,7 +6630,7 @@ void MCS_TGcf::PrintOn(ostream & strm) const
   strm << setw(indent+12) << "initiator = " << setprecision(indent) << m_initiator << '\n';
   strm << setw(indent+10) << "tokenId = " << setprecision(indent) << m_tokenId << '\n';
   strm << setw(indent+14) << "tokenStatus = " << setprecision(indent) << m_tokenStatus << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6638,7 +6638,7 @@ void MCS_TGcf::PrintOn(ostream & strm) const
 PObject::Comparison MCS_TGcf::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_TGcf), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_TGcf), PInvalidCast);
 #endif
   const MCS_TGcf & other = (const MCS_TGcf &)obj;
 
@@ -6727,7 +6727,7 @@ void MCS_TIcf::PrintOn(ostream & strm) const
   strm << setw(indent+12) << "initiator = " << setprecision(indent) << m_initiator << '\n';
   strm << setw(indent+10) << "tokenId = " << setprecision(indent) << m_tokenId << '\n';
   strm << setw(indent+14) << "tokenStatus = " << setprecision(indent) << m_tokenStatus << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6735,7 +6735,7 @@ void MCS_TIcf::PrintOn(ostream & strm) const
 PObject::Comparison MCS_TIcf::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_TIcf), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_TIcf), PInvalidCast);
 #endif
   const MCS_TIcf & other = (const MCS_TIcf &)obj;
 
@@ -6823,7 +6823,7 @@ void MCS_TVrs::PrintOn(ostream & strm) const
   strm << setw(indent+9) << "result = " << setprecision(indent) << m_result << '\n';
   strm << setw(indent+12) << "recipient = " << setprecision(indent) << m_recipient << '\n';
   strm << setw(indent+10) << "tokenId = " << setprecision(indent) << m_tokenId << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6831,7 +6831,7 @@ void MCS_TVrs::PrintOn(ostream & strm) const
 PObject::Comparison MCS_TVrs::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_TVrs), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_TVrs), PInvalidCast);
 #endif
   const MCS_TVrs & other = (const MCS_TVrs &)obj;
 
@@ -6914,7 +6914,7 @@ void MCS_TVcf::PrintOn(ostream & strm) const
   strm << setw(indent+12) << "initiator = " << setprecision(indent) << m_initiator << '\n';
   strm << setw(indent+10) << "tokenId = " << setprecision(indent) << m_tokenId << '\n';
   strm << setw(indent+14) << "tokenStatus = " << setprecision(indent) << m_tokenStatus << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6922,7 +6922,7 @@ void MCS_TVcf::PrintOn(ostream & strm) const
 PObject::Comparison MCS_TVcf::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_TVcf), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_TVcf), PInvalidCast);
 #endif
   const MCS_TVcf & other = (const MCS_TVcf &)obj;
 
@@ -7011,7 +7011,7 @@ void MCS_TRcf::PrintOn(ostream & strm) const
   strm << setw(indent+12) << "initiator = " << setprecision(indent) << m_initiator << '\n';
   strm << setw(indent+10) << "tokenId = " << setprecision(indent) << m_tokenId << '\n';
   strm << setw(indent+14) << "tokenStatus = " << setprecision(indent) << m_tokenStatus << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7019,7 +7019,7 @@ void MCS_TRcf::PrintOn(ostream & strm) const
 PObject::Comparison MCS_TRcf::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_TRcf), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_TRcf), PInvalidCast);
 #endif
   const MCS_TRcf & other = (const MCS_TRcf &)obj;
 
@@ -7108,7 +7108,7 @@ void MCS_ChannelAttributes_private::PrintOn(ostream & strm) const
   strm << setw(indent+12) << "channelId = " << setprecision(indent) << m_channelId << '\n';
   strm << setw(indent+10) << "manager = " << setprecision(indent) << m_manager << '\n';
   strm << setw(indent+11) << "admitted = " << setprecision(indent) << m_admitted << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7116,7 +7116,7 @@ void MCS_ChannelAttributes_private::PrintOn(ostream & strm) const
 PObject::Comparison MCS_ChannelAttributes_private::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, MCS_ChannelAttributes_private), PInvalidCast);
+  PAssert(PIsDescendant(&obj, MCS_ChannelAttributes_private), PInvalidCast);
 #endif
   const MCS_ChannelAttributes_private & other = (const MCS_ChannelAttributes_private &)obj;
 

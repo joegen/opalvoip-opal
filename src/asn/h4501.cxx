@@ -868,7 +868,7 @@ void H4501_Extension::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+14) << "extensionId = " << setprecision(indent) << m_extensionId << '\n';
   strm << setw(indent+20) << "extensionArgument = " << setprecision(indent) << m_extensionArgument << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -876,7 +876,7 @@ void H4501_Extension::PrintOn(ostream & strm) const
 PObject::Comparison H4501_Extension::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4501_Extension), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4501_Extension), PInvalidCast);
 #endif
   const H4501_Extension & other = (const H4501_Extension &)obj;
 
@@ -1017,7 +1017,7 @@ void H4501_NetworkFacilityExtension::PrintOn(ostream & strm) const
   strm << setw(indent+20) << "destinationEntity = " << setprecision(indent) << m_destinationEntity << '\n';
   if (HasOptionalField(e_destinationEntityAddress))
     strm << setw(indent+27) << "destinationEntityAddress = " << setprecision(indent) << m_destinationEntityAddress << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1025,7 +1025,7 @@ void H4501_NetworkFacilityExtension::PrintOn(ostream & strm) const
 PObject::Comparison H4501_NetworkFacilityExtension::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4501_NetworkFacilityExtension), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4501_NetworkFacilityExtension), PInvalidCast);
 #endif
   const H4501_NetworkFacilityExtension & other = (const H4501_NetworkFacilityExtension &)obj;
 
@@ -1118,7 +1118,7 @@ void H4501_AddressScreened::PrintOn(ostream & strm) const
   strm << setw(indent+21) << "screeningIndicator = " << setprecision(indent) << m_screeningIndicator << '\n';
   if (HasOptionalField(e_partySubaddress))
     strm << setw(indent+18) << "partySubaddress = " << setprecision(indent) << m_partySubaddress << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1126,7 +1126,7 @@ void H4501_AddressScreened::PrintOn(ostream & strm) const
 PObject::Comparison H4501_AddressScreened::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4501_AddressScreened), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4501_AddressScreened), PInvalidCast);
 #endif
   const H4501_AddressScreened & other = (const H4501_AddressScreened &)obj;
 
@@ -1209,7 +1209,7 @@ void H4501_NumberScreened::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+14) << "partyNumber = " << setprecision(indent) << m_partyNumber << '\n';
   strm << setw(indent+21) << "screeningIndicator = " << setprecision(indent) << m_screeningIndicator << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1217,7 +1217,7 @@ void H4501_NumberScreened::PrintOn(ostream & strm) const
 PObject::Comparison H4501_NumberScreened::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4501_NumberScreened), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4501_NumberScreened), PInvalidCast);
 #endif
   const H4501_NumberScreened & other = (const H4501_NumberScreened &)obj;
 
@@ -1293,7 +1293,7 @@ void H4501_Address::PrintOn(ostream & strm) const
   strm << setw(indent+14) << "partyNumber = " << setprecision(indent) << m_partyNumber << '\n';
   if (HasOptionalField(e_partySubaddress))
     strm << setw(indent+18) << "partySubaddress = " << setprecision(indent) << m_partySubaddress << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1301,7 +1301,7 @@ void H4501_Address::PrintOn(ostream & strm) const
 PObject::Comparison H4501_Address::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4501_Address), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4501_Address), PInvalidCast);
 #endif
   const H4501_Address & other = (const H4501_Address &)obj;
 
@@ -1379,7 +1379,7 @@ void H4501_EndpointAddress::PrintOn(ostream & strm) const
   strm << setw(indent+21) << "destinationAddress = " << setprecision(indent) << m_destinationAddress << '\n';
   if (HasOptionalField(e_remoteExtensionAddress))
     strm << setw(indent+25) << "remoteExtensionAddress = " << setprecision(indent) << m_remoteExtensionAddress << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1387,7 +1387,7 @@ void H4501_EndpointAddress::PrintOn(ostream & strm) const
 PObject::Comparison H4501_EndpointAddress::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4501_EndpointAddress), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4501_EndpointAddress), PInvalidCast);
 #endif
   const H4501_EndpointAddress & other = (const H4501_EndpointAddress &)obj;
 
@@ -1465,7 +1465,7 @@ void H4501_UserSpecifiedSubaddress::PrintOn(ostream & strm) const
   strm << setw(indent+24) << "subaddressInformation = " << setprecision(indent) << m_subaddressInformation << '\n';
   if (HasOptionalField(e_oddCountIndicator))
     strm << setw(indent+20) << "oddCountIndicator = " << setprecision(indent) << m_oddCountIndicator << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1473,7 +1473,7 @@ void H4501_UserSpecifiedSubaddress::PrintOn(ostream & strm) const
 PObject::Comparison H4501_UserSpecifiedSubaddress::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4501_UserSpecifiedSubaddress), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4501_UserSpecifiedSubaddress), PInvalidCast);
 #endif
   const H4501_UserSpecifiedSubaddress & other = (const H4501_UserSpecifiedSubaddress &)obj;
 
@@ -1553,7 +1553,7 @@ void H4501_SupplementaryService::PrintOn(ostream & strm) const
   if (HasOptionalField(e_interpretationApdu))
     strm << setw(indent+21) << "interpretationApdu = " << setprecision(indent) << m_interpretationApdu << '\n';
   strm << setw(indent+14) << "serviceApdu = " << setprecision(indent) << m_serviceApdu << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1561,7 +1561,7 @@ void H4501_SupplementaryService::PrintOn(ostream & strm) const
 PObject::Comparison H4501_SupplementaryService::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4501_SupplementaryService), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4501_SupplementaryService), PInvalidCast);
 #endif
   const H4501_SupplementaryService & other = (const H4501_SupplementaryService &)obj;
 
