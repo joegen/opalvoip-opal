@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.h,v $
- * Revision 1.2017  2004/03/22 11:39:44  rjongbloed
+ * Revision 1.2018  2005/01/16 23:07:33  csoutheren
+ * Fixed problem with IPv6 INADDR_ANY
+ *
+ * Revision 2.16  2004/03/22 11:39:44  rjongbloed
  * Fixed problems with correctly terminating the OpalTransportUDP that is generated from
  *   an OpalListenerUDP, this should not close the socket or stop the thread.
  *
@@ -442,7 +445,7 @@ class OpalListenerIP : public OpalListener
      */
     OpalListenerIP(
       OpalEndPoint & endpoint,                 /// Endpoint listener is used for
-      PIPSocket::Address binding = INADDR_ANY, /// Local interface to listen on
+      PIPSocket::Address binding = PIPSocket::GetDefaultIpAny(), /// Local interface to listen on
       WORD port = 0,                           /// TCP port to listen for connections
       BOOL exclusive = TRUE
     );
@@ -482,7 +485,7 @@ class OpalListenerTCP : public OpalListenerIP
      */
     OpalListenerTCP(
       OpalEndPoint & endpoint,                 /// Endpoint listener is used for
-      PIPSocket::Address binding = INADDR_ANY, /// Local interface to listen on
+      PIPSocket::Address binding = PIPSocket::GetDefaultIpAny(), /// Local interface to listen on
       WORD port = 0,                           /// TCP port to listen for connections
       BOOL exclusive = TRUE
     );
@@ -552,7 +555,7 @@ class OpalListenerUDP : public OpalListenerIP
      */
     OpalListenerUDP(
       OpalEndPoint & endpoint,                 /// Endpoint listener is used for
-      PIPSocket::Address binding = INADDR_ANY, /// Local interface to listen on
+      PIPSocket::Address binding = PIPSocket::GetDefaultIpAny(), /// Local interface to listen on
       WORD port = 0,                           /// TCP port to listen for connections
       BOOL exclusive = TRUE
     );
@@ -943,7 +946,7 @@ class OpalTransportUDP : public OpalTransportIP
      */
     OpalTransportUDP(
       OpalEndPoint & endpoint,    /// Endpoint object
-      PIPSocket::Address binding = INADDR_ANY, /// Local interface to use
+      PIPSocket::Address binding = PIPSocket::GetDefaultIpAny(), /// Local interface to use
       WORD port = 0,                           /// Local port to use
       BOOL reuseAddr = FALSE      /// Flag for binding to already bound interface
     );
