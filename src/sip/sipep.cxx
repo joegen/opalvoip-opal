@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2028  2004/08/20 12:54:48  rjongbloed
+ * Revision 1.2029  2004/08/22 12:27:46  rjongbloed
+ * More work on SIP registration, time to live refresh and deregistration on exit.
+ *
+ * Revision 2.27  2004/08/20 12:54:48  rjongbloed
  * Fixed crash caused by double delete of registration transactions
  *
  * Revision 2.26  2004/08/18 13:04:56  rjongbloed
@@ -142,16 +145,21 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
     nonInviteTimeout(0, 16),  // 16 seconds
     pduCleanUpTimeout(0, 5),  // 5 seconds
     inviteTimeout(0, 32),     // 32 seconds
-    ackTimeout(0, 32)         // 32 seconds
+    ackTimeout(0, 32),        // 32 seconds
+    registrarTimeToLive(0, 0, 0, 1) // 1 hour
 {
   defaultSignalPort = 5060;
   mimeForm = FALSE;
   maxRetries = 10;
   lastSentCSeq = 0;
   userAgentString = "OPAL/2.0";
-  registrarTransport = NULL;
 
+  transactions.DisallowDeleteObjects();
+
+  registrarTransport = NULL;
   registrations.DisallowDeleteObjects();
+  registered = false;
+  registrationTimer.SetNotifier(PCREATE_NOTIFIER(RegistrationRefresh));
 
   PTRACE(3, "SIP\tCreated endpoint.");
 }
@@ -159,10 +167,14 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
 
 SIPEndPoint::~SIPEndPoint()
 {
-  // Shut down the listeners as soon as possible to avoid race conditions
-  listeners.RemoveAll();
+  if (registered && registrarTransport != NULL) {
+    SIPRegister unregister(*this, *registrarTransport, registrationAddress, registrationID, 0);
+    unregister.Wait();
+  }
 
   delete registrarTransport;
+
+  listeners.RemoveAll();
 
   PTRACE(3, "SIP\tDeleted endpoint.");
 }
@@ -417,8 +429,7 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
 }
 
 
-void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
-                                                     SIP_PDU & response)
+void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction, SIP_PDU & response)
 {
   BOOL isProxy = response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
 #if PTRACING
@@ -444,7 +455,11 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
   }
 
   // Restart the transaction with new authentication info
-  SIPTransaction * request = new SIPRegister(*this, transaction.GetTransport(), registrationAddress, registrationID);
+  SIPTransaction * request = new SIPRegister(*this,
+                                             transaction.GetTransport(),
+                                             registrationAddress,
+                                             registrationID,
+                                             registrarTimeToLive.GetSeconds());
   if (request->Start())
     registrations.Append(request);
   else {
@@ -454,7 +469,7 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
 }
 
 
-void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & /*response*/)
+void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 {
   if (transaction.GetMethod() != SIP_PDU::Method_REGISTER) {
     PTRACE(3, "SIP\tReceived OK response for non REGISTER");
@@ -462,13 +477,48 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & /*respons
   }
 
   PTRACE(2, "SIP\tReceived REGISTER OK response");
+
+  registered = true;
+
+  SIPURL contact = response.GetMIME().GetContact();
+  registrationTimer.SetInterval(0, contact.GetParamVars()("expires", "3600").AsUnsigned()*9/10);
+
+  OnRegistered();
+}
+
+
+void SIPEndPoint::OnRegistered()
+{
+}
+
+
+void SIPEndPoint::RegistrationRefresh(PTimer &, INT)
+{
+  PTRACE(2, "SIP\tStarting REGISTER for binding refresh");
+
+  // Restart the transaction with new authentication info
+  SIPTransaction * request = new SIPRegister(*this,
+                                             *registrarTransport,
+                                             registrationAddress,
+                                             registrationID,
+                                             registrarTimeToLive.GetSeconds());
+  if (request->Start())
+    registrations.Append(request);
+  else {
+    delete request;
+    PTRACE(1, "SIP\tCould not start REGISTER for binding refresh");
+  }
 }
 
 
 BOOL SIPEndPoint::WriteREGISTER(OpalTransport & transport, void * param)
 {
   SIPEndPoint & endpoint = *(SIPEndPoint *)param;
-  SIPTransaction * request = new SIPRegister(endpoint, transport, endpoint.registrationAddress, endpoint.registrationID);
+  SIPTransaction * request = new SIPRegister(endpoint,
+                                             transport,
+                                             endpoint.registrationAddress,
+                                             endpoint.registrationID,
+                                             endpoint.registrarTimeToLive.GetSeconds());
 
   if (request->Start()) {
     endpoint.registrations.Append(request);
