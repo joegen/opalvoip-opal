@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2023  2004/03/09 12:09:56  rjongbloed
+ * Revision 1.2024  2004/03/13 06:32:18  rjongbloed
+ * Fixes for removal of SIP and H.323 subsystems.
+ * More registration work.
+ *
+ * Revision 2.22  2004/03/09 12:09:56  rjongbloed
  * More work on SIP register.
  *
  * Revision 2.21  2004/02/24 11:35:25  rjongbloed
@@ -192,15 +196,15 @@ SIPURL::SIPURL()
 }
 
 
-SIPURL::SIPURL(const char * str)
+SIPURL::SIPURL(const char * str, const char * defaultScheme)
 {
-  Parse(str);
+  Parse(str, defaultScheme);
 }
 
 
-SIPURL::SIPURL(const PString & str)
+SIPURL::SIPURL(const PString & str, const char * defaultScheme)
 {
-  Parse(str);
+  Parse(str, defaultScheme);
 }
 
 
@@ -231,8 +235,11 @@ SIPURL::SIPURL(const PString & name,
 }
 
 
-void SIPURL::Parse(const char * cstr)
+BOOL SIPURL::InternalParse(const char * cstr, const char * defaultScheme)
 {
+  if (defaultScheme == NULL)
+    defaultScheme = "sip";
+
   displayName = PString::Empty();
 
   PString str = cstr;
@@ -242,11 +249,14 @@ void SIPURL::Parse(const char * cstr)
   PINDEX end = str.FindLast('>');
 
   // see if URL is just a URI or it contains a display address as well
-  if (start == P_MAX_INDEX || end == P_MAX_INDEX)
-    PURL::Parse(cstr);
+  if (start == P_MAX_INDEX || end == P_MAX_INDEX) {
+    if (!PURL::InternalParse(cstr, defaultScheme))
+      return FALSE;
+  }
   else {
     // get the URI from between the angle brackets
-    PURL::Parse(str(start+1, end-1));
+    if (!PURL::InternalParse(str(start+1, end-1), defaultScheme))
+      return FALSE;
 
     // extract the display address
     end = str.FindLast('"', start);
@@ -261,10 +271,8 @@ void SIPURL::Parse(const char * cstr)
     }
   }
 
-  if (!(scheme *= "sip")) {
-    PURL::Parse("");
-    return;
-  }
+  if (!(scheme *= defaultScheme))
+    return PURL::Parse("");
 
 //  if (!paramVars.Contains("transport"))
 //    SetParamVar("transport", "udp");
@@ -274,6 +282,7 @@ void SIPURL::Parse(const char * cstr)
     SetParamVar("transport", paramVars("transport").ToLower());
 
   Recalculate();
+  return !IsEmpty();
 }
 
 
@@ -1227,14 +1236,14 @@ SIPTransaction::~SIPTransaction()
 }
 
 
-void SIPTransaction::BuildREGISTER(const PString & name,
+void SIPTransaction::BuildREGISTER(const SIPURL & address,
                                    const SIPURL & contact)
 {
-  PString strName = "<sip:"+name+";user=phone>";
+  PString addrStr = address.AsQuotedString();
   SIP_PDU::Construct(Method_REGISTER,
-                     "sip:"+name.Mid(name.Find('@')+1),
-                     strName,
-                     strName,
+                     "sip:"+address.GetHostName(),
+                     addrStr,
+                     addrStr,
                      endpoint.GetRegistrationID(),
                      endpoint.GetNextCSeq(),
                      transport.GetLocalAddress());

@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2014  2004/03/09 12:09:56  rjongbloed
+ * Revision 1.2015  2004/03/13 06:32:18  rjongbloed
+ * Fixes for removal of SIP and H.323 subsystems.
+ * More registration work.
+ *
+ * Revision 2.13  2004/03/09 12:09:56  rjongbloed
  * More work on SIP register.
  *
  * Revision 2.12  2004/02/17 12:41:54  csoutheren
@@ -88,7 +92,6 @@
 SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   : OpalEndPoint(mgr, "sip", CanTerminateCall),
     registrationID(OpalGloballyUniqueID().AsString()),
-    registrationName(PProcess::Current().GetUserName()),
     retryTimeoutMin(500),     // 0.5 seconds
     retryTimeoutMax(0, 4),    // 4 seconds
     nonInviteTimeout(0, 16),  // 16 seconds
@@ -272,9 +275,16 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
 }
 
 
-static BOOL WriteREGISTER(OpalTransport & transport, PObject * param)
+struct WriteRegisterParam
 {
-  SIPEndPoint & endpoint = *(SIPEndPoint *)param;
+  SIPEndPoint  * endpoint;
+  const SIPURL * address;
+};
+
+static BOOL WriteREGISTER(OpalTransport & transport, void * param)
+{
+  SIPEndPoint & endpoint = *((WriteRegisterParam *)param)->endpoint;
+  const SIPURL & address = *((WriteRegisterParam *)param)->address;
 
   SIPTransaction request(endpoint, transport);
 
@@ -291,28 +301,39 @@ static BOOL WriteREGISTER(OpalTransport & transport, PObject * param)
     }
   }
 
-  PString name = endpoint.GetRegistrationName();
-  SIPURL contact(name.Left(name.Find('@')), contactAddress, contactPort);
-  request.BuildREGISTER(name, contact);
+  SIPURL contact(address.GetUserName(), contactAddress, contactPort);
+  request.BuildREGISTER(address, contact);
 
   return request.Start();
 }
 
 
-BOOL SIPEndPoint::Register(const PString & hostname)
+BOOL SIPEndPoint::Register(const PString & hostname,
+                           const PString & username,
+                           const PString & password)
 {
   if (listeners.IsEmpty())
     return FALSE;
 
-  OpalTransportAddress address(hostname, defaultSignalPort, "udp");
+  SIPURL registrationAddress;
+  if (username.Find('@') == P_MAX_INDEX)
+    registrationAddress.Parse(username + '@' + hostname);
+  else
+    registrationAddress.Parse(username);
 
-  OpalTransport * transport = address.CreateTransport(*this, OpalTransportAddress::NoBinding);
-  transport->ConnectTo(address);
+  OpalTransportAddress registrarAddress(hostname, defaultSignalPort, "udp");
+  // Should do DNS SRV record loolup to get regisrar address
 
-  transport->WriteConnect(WriteREGISTER, this);
+  OpalTransport * transport = registrarAddress.CreateTransport(*this, OpalTransportAddress::NoBinding);
+  transport->ConnectTo(registrarAddress);
+
+  WriteRegisterParam params;
+  params.endpoint = this;
+  params.address = &registrationAddress;
+  transport->WriteConnect(WriteREGISTER, &params);
 
   SIP_PDU response;
-  transport->SetReadTimeout(10000);
+  transport->SetReadTimeout(30000);
   if (!response.Read(*transport)) {
     delete transport;
     return FALSE;
