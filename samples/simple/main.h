@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2014  2004/03/11 06:54:28  csoutheren
+ * Revision 1.2015  2004/03/22 10:20:34  rjongbloed
+ * Changed to use UseGatekeeper() function so can select by gk-id as well as host.
+ *
+ * Revision 2.13  2004/03/11 06:54:28  csoutheren
  * Added ability to disable SIP or H.323 stacks
  *
  * Revision 2.12  2004/02/24 11:37:01  rjongbloed
@@ -149,7 +152,6 @@ class MyManager : public OpalManager
     BOOL autoAnswer;
     BOOL noFastStart;
     BOOL noH245Tunnelling;
-    PString gateway;
 
     OpalPOTSEndPoint * potsEP;
     MyPCSSEndPoint   * pcssEP;
