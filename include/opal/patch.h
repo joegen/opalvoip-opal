@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.h,v $
- * Revision 1.2006  2004/08/14 07:56:29  rjongbloed
+ * Revision 1.2007  2004/08/15 10:10:27  rjongbloed
+ * Fixed possible deadlock when closing media patch
+ *
+ * Revision 2.5  2004/08/14 07:56:29  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.4  2004/03/11 06:54:27  csoutheren
@@ -167,7 +170,7 @@ class OpalMediaPatch : public PThread
       public:
         Sink(OpalMediaPatch & p, OpalMediaStream * s);
         ~Sink();
-        BOOL WriteFrame(RTP_DataFrame & sourceFrame);
+        bool WriteFrame(RTP_DataFrame & sourceFrame);
 
         OpalMediaPatch  & patch;
         OpalMediaStream * stream;
@@ -175,6 +178,7 @@ class OpalMediaPatch : public PThread
         OpalTranscoder  * secondaryCodec;
         RTP_DataFrameList intermediateFrames;
         RTP_DataFrameList finalFrames;
+        bool              writeSuccessful;
     };
     PList<Sink> sinks;
 
