@@ -22,7 +22,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2041  2004/04/25 09:32:48  rjongbloed
+ * Revision 1.2042  2004/04/26 06:33:18  rjongbloed
+ * Added ability to specify more than one defualt listener for an endpoint,
+ *   required by SIP which listens on both UDP and TCP.
+ *
+ * Revision 2.40  2004/04/25 09:32:48  rjongbloed
  * Fixed correct usage of HAS_IXJ
  *
  * Revision 2.39  2004/03/29 10:53:23  rjongbloed
@@ -682,20 +686,11 @@ BOOL MyManager::Initialise(PArgList & args)
 
 
     // Start the listener thread for incoming calls.
-    if (args.HasOption("h323-listen")) {
-      PStringArray listeners = args.GetOptionString("h323-listen").Lines();
-      if (!h323EP->StartListeners(listeners)) {
-        cerr <<  "Could not open any H.323 listener from "
-             << setfill(',') << listeners << endl;
-        return FALSE;
-      }
-    }
-    else {
-      if (!h323EP->StartListener("*")) {
-        cerr <<  "Could not open H.323 listener on TCP port "
-             << h323EP->GetDefaultSignalPort() << endl;
-        return FALSE;
-      }
+    PStringArray listeners = args.GetOptionString("h323-listen").Lines();
+    if (!h323EP->StartListeners(listeners)) {
+      cerr <<  "Could not open any H.323 listener from "
+            << setfill(',') << listeners << endl;
+      return FALSE;
     }
 
 
@@ -770,25 +765,11 @@ BOOL MyManager::Initialise(PArgList & args)
     }
 
     // Start the listener thread for incoming calls.
-    if (args.HasOption("sip-listen")) {
-      PStringArray listeners = args.GetOptionString("sip-listen").Lines();
-      if (!sipEP->StartListeners(listeners)) {
-        cerr <<  "Could not open any SIP listener from "
-             << setfill(',') << listeners << endl;
-        return FALSE;
-      }
-    }
-    else {
-      if (!sipEP->StartListener("udp$*")) {
-        cerr <<  "Could not open SIP listener on UDP port "
-             << sipEP->GetDefaultSignalPort() << endl;
-        return FALSE;
-      }
-      if (!sipEP->StartListener("tcp$*")) {
-        cerr <<  "Could not open SIP listener on TCP port "
-             << sipEP->GetDefaultSignalPort() << endl;
-        return FALSE;
-      }
+    PStringArray listeners = args.GetOptionString("sip-listen").Lines();
+    if (!sipEP->StartListeners(listeners)) {
+      cerr <<  "Could not open any SIP listener from "
+            << setfill(',') << listeners << endl;
+      return FALSE;
     }
 
     if (args.HasOption('r')) {
