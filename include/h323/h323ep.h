@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2025  2004/06/05 14:31:32  rjongbloed
+ * Revision 1.2026  2004/07/11 12:42:09  rjongbloed
+ * Added function on endpoints to get the list of all media formats any
+ *   connection the endpoint may create can support.
+ *
+ * Revision 2.24  2004/06/05 14:31:32  rjongbloed
  * Added function to set gatekeeper registration time to live.
  * Added ability to have separate gatekeeper username to endpoint local alias name.
  *
@@ -403,6 +407,17 @@ class H323EndPoint : public OpalEndPoint
       const PString & party,  /// Remote party to call
       void * userData = NULL  /// Arbitrary data to pass to connection
     );
+
+    /**Get the data formats this endpoint is capable of operating.
+       This provides a list of media data format names that may be used by an
+       OpalMediaStream may be created by a connection from this endpoint.
+
+       Note that a specific connection may not actually support all of the
+       media formats returned here, but should return no more.
+
+       The default behaviour is pure.
+      */
+    virtual OpalMediaFormatList GetMediaFormats() const;
   //@}
 
   /**@name Set up functions */
