@@ -79,7 +79,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 opalsd.lib ptclibd.lib ptlibd.lib winmm.lib comdlg32.lib winspool.lib wsock32.lib mpr.lib kernel32.lib user32.lib gdi32.lib shell32.lib advapi32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
+# ADD LINK32 opald.lib ptclibd.lib ptlibd.lib winmm.lib comdlg32.lib winspool.lib wsock32.lib mpr.lib kernel32.lib user32.lib gdi32.lib shell32.lib advapi32.lib  gdi32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
 
 !ENDIF 
 
