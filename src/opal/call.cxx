@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2031  2004/08/18 13:03:57  rjongbloed
+ * Revision 1.2032  2004/11/30 00:15:07  csoutheren
+ * Don' t convert userIndication::signalUpdate messages into UserInputString messages
+ *
+ * Revision 2.30  2004/08/18 13:03:57  rjongbloed
  * Changed to make calling OPalManager::OnClearedCall() in override optional.
  * Added setting of party A and B fields in call for display purposes.
  * Fixed warning.
@@ -498,7 +501,7 @@ void OpalCall::OnUserInputTone(OpalConnection & connection,
     if (conn != &connection)
       conn->SendUserInputTone(tone, duration);
     else {
-      if (duration > 0)
+      if (duration > 0 && tone != ' ')
         connection.OnUserInputString(tone);
     }
   }
