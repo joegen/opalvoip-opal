@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2002  2001/08/01 05:51:39  robertj
+ * Revision 1.2003  2001/08/17 08:23:02  robertj
+ * Put in missing dots in G.729 media formats.
+ *
+ * Revision 2.1  2001/08/01 05:51:39  robertj
  * Made OpalMediaFormatList class global to help with documentation.
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
@@ -284,8 +287,8 @@ class OpalMediaFormat : public PCaselessString
 #define OPAL_G728          "G.728"
 #define OPAL_G729          "G.729"
 #define OPAL_G729A         "G.729A"
-#define OPAL_G729B         "G 729B"
-#define OPAL_G729AB        "G 729A/B"
+#define OPAL_G729B         "G.729B"
+#define OPAL_G729AB        "G.729A/B"
 #define OPAL_G7231         "G.723.1"
 #define OPAL_GSM0610       "GSM-06.10"
 
