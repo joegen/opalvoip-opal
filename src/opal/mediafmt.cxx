@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2021  2004/03/22 11:32:42  rjongbloed
+ * Revision 1.2022  2004/03/25 11:48:48  rjongbloed
+ * Changed PCM-16 from IllegalPayloadType to MaxPayloadType to avoid problems
+ *   in other parts of the code.
+ *
+ * Revision 2.20  2004/03/22 11:32:42  rjongbloed
  * Added new codec type for 16 bit Linear PCM as must distinguish between the internal
  *   format used by such things as the sound card and the RTP payload format which
  *   is always big endian.
@@ -151,7 +155,7 @@
 OpalMediaFormat const OpalPCM16(
   OPAL_PCM16,
   OpalMediaFormat::DefaultAudioSessionID,
-  RTP_DataFrame::IllegalPayloadType,
+  RTP_DataFrame::MaxPayloadType,
   "",
   TRUE,   // Needs jitter
   128000, // bits/sec
