@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2006  2001/10/03 06:42:32  craigs
+ * Revision 1.2007  2001/10/04 00:42:48  robertj
+ * Removed GetMediaFormats() function as is not useful.
+ *
+ * Revision 2.5  2001/10/03 06:42:32  craigs
  * Changed to remove WIN32isms from error return values
  *
  * Revision 2.4  2001/10/03 05:53:25  robertj
@@ -102,16 +105,9 @@ BOOL OpalMediaStream::Open(const OpalMediaFormat & format)
   PTRACE(3, "Media\tOpening " << format
          << " as " << (IsSource() ? "source" : "sink"));
 
-  OpalMediaFormatList mediaFormats = GetMediaFormats();
-  for (PINDEX i = 0; i < mediaFormats.GetSize(); i++) {
-    if (mediaFormats[i] == format) {
-      mediaFormat = format;
-      defaultDataSize = format.GetFrameSize();
-      return TRUE;
-    }
-  }
-
-  return FALSE;
+  mediaFormat = format;
+  defaultDataSize = format.GetFrameSize();
+  return TRUE;
 }
 
 
@@ -219,17 +215,6 @@ OpalRTPMediaStream::OpalRTPMediaStream(BOOL isSourceStream, RTP_Session & rtp)
     rtpSession(rtp)
 {
   os_handle = 1; // RTP session is always open
-}
-
-
-OpalMediaFormatList OpalRTPMediaStream::GetMediaFormats() const
-{
-  if (mediaFormat.IsEmpty())
-    return OpalMediaFormat::GetRegisteredMediaFormats();
-
-  OpalMediaFormatList selectedOnly;
-  selectedOnly += mediaFormat;
-  return selectedOnly;
 }
 
 
@@ -458,12 +443,6 @@ BOOL OpalLineMediaStream::Write(const void * buffer, PINDEX length)
 }
 
 
-OpalMediaFormatList OpalLineMediaStream::GetMediaFormats() const
-{
-  return line.GetDevice().GetMediaFormats();
-}
-
-
 BOOL OpalLineMediaStream::Open(const OpalMediaFormat & format)
 {
   if (!OpalMediaStream::Open(format))
@@ -593,13 +572,6 @@ OpalFileMediaStream::OpalFileMediaStream(BOOL isSourceStream,
 }
 
 
-OpalMediaFormatList OpalFileMediaStream::GetMediaFormats() const
-{
-  // Files can be any known format
-  return OpalMediaFormat::GetRegisteredMediaFormats();
-}
-
-
 BOOL OpalFileMediaStream::IsSynchronous() const
 {
   return FALSE;
@@ -632,15 +604,6 @@ OpalAudioMediaStream::OpalAudioMediaStream(BOOL isSourceStream,
                        FALSE)
 {
   soundChannelBuffers = buffers;
-}
-
-
-OpalMediaFormatList OpalAudioMediaStream::GetMediaFormats() const
-{
-  // Sound channels can only be 16 bit PCM
-  OpalMediaFormatList pcmOnly;
-  pcmOnly += OpalPCM16;
-  return pcmOnly;
 }
 
 
