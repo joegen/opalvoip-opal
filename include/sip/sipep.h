@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2007  2003/03/06 03:57:47  robertj
+ * Revision 1.2008  2004/03/13 06:32:17  rjongbloed
+ * Fixes for removal of SIP and H.323 subsystems.
+ * More registration work.
+ *
+ * Revision 2.6  2003/03/06 03:57:47  robertj
  * IVR support (work in progress) requiring large changes everywhere.
  *
  * Revision 2.5  2002/09/16 02:52:35  robertj
@@ -176,7 +180,9 @@ class SIPEndPoint : public OpalEndPoint
     virtual BOOL IsAcceptedAddress(const SIPURL & toAddr);
 
     BOOL Register(
-      const PString & server
+      const PString & hostname,
+      const PString & username,
+      const PString & password = PString::Empty()
     );
 
     void SetMIMEForm(BOOL v) { mimeForm = v; }
@@ -214,21 +220,14 @@ class SIPEndPoint : public OpalEndPoint
 
     unsigned GetNextCSeq() { return ++lastSentCSeq; }
 
-    const PString & GetRegistrationID() const { return registrationID; }
-    const PString & GetRegistrationName() const { return registrationName; }
-    void SetRegistrationName(
-      const PString & name
-    ) { registrationName = name; }
+    const PString & GetProxyPassword() const { return proxyPassword; }
+    void SetProxyPassword(const PString & pwd) { proxyPassword = pwd; }
 
-    const PString & GetRegistrationPassword() const { return registrationPassword; }
-    void SetRegistrationPassword(
-      const PString & name
-    ) { registrationPassword = name; }
+    const PString & GetRegistrationID() const { return registrationID; }
 
   protected:
+    PString  proxyPassword;
     PString  registrationID;
-    PString  registrationName;
-    PString  registrationPassword;
 
     BOOL          mimeForm;
     unsigned      maxRetries;

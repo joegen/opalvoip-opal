@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2013  2004/03/09 12:09:55  rjongbloed
+ * Revision 1.2014  2004/03/13 06:32:17  rjongbloed
+ * Fixes for removal of SIP and H.323 subsystems.
+ * More registration work.
+ *
+ * Revision 2.12  2004/03/09 12:09:55  rjongbloed
  * More work on SIP register.
  *
  * Revision 2.11  2003/12/16 10:22:45  rjongbloed
@@ -97,13 +101,15 @@ class SIPURL : public PURL
     /** str goes straight to Parse()
       */
     SIPURL(
-      const char * str
+      const char * cstr,    /// C string representation of the URL.
+      const char * defaultScheme = NULL /// Default scheme for URL
     );
 
     /** str goes straight to Parse()
       */
     SIPURL(
-      const PString & str
+      const PString & str,  /// String representation of the URL.
+      const char * defaultScheme = NULL /// Default scheme for URL
     );
 
     /** If name does not start with 'sip' then construct URI in the form
@@ -117,28 +123,6 @@ class SIPURL : public PURL
       const PString & name,
       const OpalTransportAddress & address,
       WORD listenerPort = 0
-    );
-
-    /** Parses name-addr, like:
-        "displayname"<scheme:user:password@host:port;transport=type>;tag=value
-        into:
-        displayname (quotes around name are optional, all before '<' is used)
-        scheme
-        username
-        password
-        hostname
-        port
-        pathStr
-        path
-        paramVars
-        queryVars
-        fragment
-
-        Note that tag parameter outside of <> will be lost,
-        but tag in URL without <> will be kept until AdjustForRequestURI
-     */
-    void Parse(
-      const char * cstr
     );
 
     /** Returns complete SIPURL as one string, including displayname (in
@@ -162,6 +146,29 @@ class SIPURL : public PURL
     void AdjustForRequestURI();
 
   protected:
+    /** Parses name-addr, like:
+        "displayname"<scheme:user:password@host:port;transport=type>;tag=value
+        into:
+        displayname (quotes around name are optional, all before '<' is used)
+        scheme
+        username
+        password
+        hostname
+        port
+        pathStr
+        path
+        paramVars
+        queryVars
+        fragment
+
+        Note that tag parameter outside of <> will be lost,
+        but tag in URL without <> will be kept until AdjustForRequestURI
+     */
+    virtual BOOL InternalParse(
+      const char * cstr,
+      const char * defaultScheme
+    );
+
     PString displayName;
 };
 
@@ -490,7 +497,7 @@ class SIPTransaction : public SIP_PDU
     ~SIPTransaction();
 
     void BuildREGISTER(
-      const PString & name,
+      const SIPURL & address,
       const SIPURL & contact
     );
 
