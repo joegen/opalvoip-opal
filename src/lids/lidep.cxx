@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2001/08/01 05:24:01  robertj
+ * Made OpalMediaFormatList class global to help with documentation.
+ * Made the connections media format list to come from LID.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  */
@@ -112,22 +116,6 @@ OpalConnection * OpalLIDEndPoint::SetUpConnection(OpalCall & call,
     connection->StartOutgoing(lineName);
 
   return connection;
-}
-
-
-OpalMediaFormat::List OpalLIDEndPoint::GetMediaFormats() const
-{
-  OpalMediaFormat::List formats;
-
-  PWaitAndSignal wait(((OpalLIDEndPoint*)this)->inUseFlag);
-
-  for (PINDEX i = 0; i < lines.GetSize(); i++) {
-    OpalMediaFormat::List devFormats = lines[i].GetDevice().GetMediaFormats();
-    for (PINDEX f = 0; f < devFormats.GetSize(); f++)
-      formats += devFormats[f];
-  }
-
-  return formats;
 }
 
 
@@ -371,6 +359,12 @@ BOOL OpalLineConnection::SetConnected()
   PTRACE(3, "LID Con\tSetConnected " << *this);
 
   return line.StopTone();
+}
+
+
+OpalMediaFormatList OpalLineConnection::GetMediaFormats() const
+{
+  return line.GetDevice().GetMediaFormats();
 }
 
 
