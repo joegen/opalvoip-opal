@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2035  2004/04/07 08:21:10  rjongbloed
+ * Revision 1.2036  2004/04/27 04:40:17  rjongbloed
+ * Changed UDP listener IsOpen to indicae open only if all sockets on each
+ *   interface are open.
+ *
+ * Revision 2.34  2004/04/07 08:21:10  rjongbloed
  * Changes for new RTTI system.
  *
  * Revision 2.33  2004/03/29 11:04:19  rjongbloed
@@ -1206,10 +1210,10 @@ BOOL OpalListenerUDP::Open(const PNotifier & theAcceptHandler, BOOL /*isSingleTh
 BOOL OpalListenerUDP::IsOpen()
 {
   for (PINDEX i = 0; i < listeners.GetSize(); i++) {
-    if (listeners[i].IsOpen())
-      return TRUE;
+    if (!listeners[i].IsOpen())
+      return FALSE;
   }
-  return FALSE;
+  return TRUE;
 }
 
 
