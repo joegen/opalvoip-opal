@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2009  2002/04/10 03:16:23  robertj
+ * Revision 1.2010  2002/04/10 08:12:52  robertj
+ * Added call back for when transaction completed, used for invite descendant.
+ *
+ * Revision 2.8  2002/04/10 03:16:23  robertj
  * Major changes to RTP session management when initiating an INVITE.
  * Improvements in error handling and transaction cancelling.
  *
@@ -1046,6 +1049,9 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
   else {
     PTRACE(3, "SIP\tTransaction " << cseq << " completed.");
 
+    if (!OnCompleted(response))
+      return FALSE;
+
     if (state < Completed && connection != NULL)
       connection->OnReceivedResponse(*this, response);
 
@@ -1055,6 +1061,12 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
     completionTimer = endpoint.GetPduCleanUpTimeout();
   }
 
+  return TRUE;
+}
+
+
+BOOL SIPTransaction::OnCompleted(SIP_PDU & /*response*/)
+{
   return TRUE;
 }
 
@@ -1151,23 +1163,37 @@ BOOL SIPInvite::OnReceivedResponse(SIP_PDU & response)
     retryTimer.Stop();
     completionTimer = PTimeInterval(0, mime.GetInteger("Expires", 180));
   }
-  else {
+  else
     completionTimer = endpoint.GetAckTimeout();
 
-    mime.SetTo(response.GetMIME().GetTo()); // Adjust to get added tag
-    SIP_PDU ack(Method_ACK,
-                mime.GetTo(),
-                mime.GetFrom(),
-                mime.GetCallID(),
-                mime.GetCSeqIndex(),
-                transport);
-    if (connection != NULL && 
-            (mime.Contains("Proxy-Authorization") || mime.Contains("Authorization")))
-      connection->GetAuthentication().Authorise(ack);
-    ack.Write(transport);
-  }
-
   return TRUE;
+}
+
+
+BOOL SIPInvite::OnCompleted(SIP_PDU & response)
+{
+  // Adjust "to" field for possible added tag in response
+  mime.SetTo(response.GetMIME().GetTo());
+
+  // Build an ACK
+  SIP_PDU ack(Method_ACK,
+              mime.GetTo(),
+              mime.GetFrom(),
+              mime.GetCallID(),
+              mime.GetCSeqIndex(),
+              transport);
+
+  // Add authentication if had any on INVITE
+  if (connection != NULL && 
+          (mime.Contains("Proxy-Authorization") || mime.Contains("Authorization")))
+    connection->GetAuthentication().Authorise(ack);
+
+  // Send the ACK
+  if (ack.Write(transport))
+    return TRUE;
+
+  SetTerminated(Terminated_TransportError);
+  return FALSE;
 }
 
 
