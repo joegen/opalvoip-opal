@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2019  2004/10/02 04:30:10  rjongbloed
+ * Revision 1.2020  2004/11/29 08:18:31  csoutheren
+ * Added support for setting the SIP authentication domain/realm as needed for many service
+ *  providers
+ *
+ * Revision 2.18  2004/10/02 04:30:10  rjongbloed
  * Added unregister function for SIP registrar
  *
  * Revision 2.17  2004/08/22 12:27:44  rjongbloed
@@ -340,6 +344,11 @@ class SIPEndPoint : public OpalEndPoint
       const PString & password
     );
 
+    void SetDomain(const PString & str)
+    { localDomain = str; }
+    PString GetDomain() const
+    { return localDomain; };
+
     virtual PString GetUserAgent() const;
     void SetUserAgent(const PString & str) { userAgentString = str; }
 
@@ -352,6 +361,7 @@ class SIPEndPoint : public OpalEndPoint
     SIPURL            proxy;
     PString           userAgentString;
     SIPAuthentication authentication;
+    PString           localDomain;
 
     BOOL          mimeForm;
     unsigned      maxRetries;
