@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2019  2002/04/16 09:04:18  robertj
+ * Revision 1.2020  2002/04/17 07:22:54  robertj
+ * Added identifier for conenction in OnReleased trace message.
+ *
+ * Revision 2.18  2002/04/16 09:04:18  robertj
  * Fixed setting of target URI from Contact regardless of route set
  *
  * Revision 2.17  2002/04/16 07:53:15  robertj
@@ -163,7 +166,7 @@ OpalConnection::Phases SIPConnection::GetPhase() const
 
 BOOL SIPConnection::OnReleased()
 {
-  PTRACE(3, "SIP\tOnReleased");
+  PTRACE(3, "SIP\tOnReleased: " << *this);
 
   switch (releaseMethod) {
     case ReleaseWithNothing :
