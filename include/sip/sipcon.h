@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2014  2003/03/06 03:57:47  robertj
+ * Revision 1.2015  2003/03/17 10:26:59  robertj
+ * Added video support.
+ *
+ * Revision 2.13  2003/03/06 03:57:47  robertj
  * IVR support (work in progress) requiring large changes everywhere.
  *
  * Revision 2.12  2002/09/16 02:52:35  robertj
@@ -162,8 +165,9 @@ class SIPConnection : public OpalConnection
        The default behaviour is pure.
      */
     virtual OpalMediaStream * CreateMediaStream(
-      BOOL isSource,      /// Is a source stream
-      unsigned sessionID  /// Session number for stream
+      const OpalMediaFormat & mediaFormat, /// Media format for stream
+      unsigned sessionID,                  /// Session number for stream
+      BOOL isSource                        /// Is a source stream
     );
 
     /**See if the media can bypass the local host.

@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.cxx,v $
- * Revision 1.2010  2003/01/07 04:39:53  robertj
+ * Revision 1.2011  2003/03/17 10:26:59  robertj
+ * Added video support.
+ *
+ * Revision 2.9  2003/01/07 04:39:53  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.8  2002/11/10 11:33:18  robertj
@@ -258,7 +261,7 @@ OpalMediaFormat const OpalH261(
   "H261",
   FALSE,  // No jitter for video
   240000, // bits/sec
-  2000,   // Not sure of this value!
+  0,      // Not sure of this value!
   0,      // No intrinsic time per frame
   OpalMediaFormat::VideoClockRate
 );
@@ -271,7 +274,7 @@ OpalMediaFormat const OpalH261_CIF(
   "H261",
   FALSE,  // No jitter for video
   240000, // bits/sec
-  2000,   // Not sure of this value!
+  0,      // Not sure of this value!
   0,      // No intrinsic time per frame
   OpalMediaFormat::VideoClockRate
 );
@@ -284,7 +287,7 @@ OpalMediaFormat const OpalH261_QCIF(
   "H261",
   FALSE,  // No jitter for video
   240000, // bits/sec
-  2000,   // Not sure of this value!
+  0,      // Not sure of this value!
   0,      // No intrinsic time per frame
   OpalMediaFormat::VideoClockRate
 );
@@ -399,7 +402,7 @@ BOOL H323_H261Capability::OnReceivedPDU(const H245_VideoCapability & cap)
 
 //////////////////////////////////////////////////////////////////////////////
 
-Opal_H261_YUV411P::Opal_H261_YUV411P(const OpalTranscoderRegistration & registration)
+Opal_H261_YUV420P::Opal_H261_YUV420P(const OpalTranscoderRegistration & registration)
   : OpalVideoTranscoder(registration)
 {
   videoDecoder = NULL;
@@ -412,7 +415,7 @@ Opal_H261_YUV411P::Opal_H261_YUV411P(const OpalTranscoderRegistration & registra
 }
 
 
-Opal_H261_YUV411P::~Opal_H261_YUV411P()
+Opal_H261_YUV420P::~Opal_H261_YUV420P()
 {
   if (rvts)
     delete rvts;
@@ -420,109 +423,87 @@ Opal_H261_YUV411P::~Opal_H261_YUV411P()
 }
 
 
-BOOL Opal_H261_YUV411P::Convert(const RTP_DataFrame & src, RTP_DataFrame & dst)
+PINDEX Opal_H261_YUV420P::GetOptimalDataFrameSize(BOOL input) const
 {
+  return input ? maxOutputPayloadSize : ((frameWidth * frameHeight * 12) / 8);
+}
+
+
+BOOL Opal_H261_YUV420P::ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dst)
+{
+  dst.RemoveAll();
+
   // assume buffer is start of H.261 header
   const BYTE * payload = src.GetPayloadPtr();
   PINDEX length = src.GetPayloadSize();
 
-  const BYTE * header = payload;
+  const BYTE * rtpHeader = payload;
   // see if any contributing source
   PINDEX cnt = src.GetContribSrcCount();
   if (cnt > 0) {
-    header += cnt * 4;
+    rtpHeader += cnt * 4;
     length -= cnt * 4;
   }
 
-  // rh = RTP header -> header
-  // bp = payload
-  // cc = payload length
-
   // determine video codec type
   if (videoDecoder == NULL) {
-    if ( (*(payload+1)) & 2)
+    if ((*rtpHeader & 2) && !(*rtpHeader & 1)) // check value of I field in header
       videoDecoder = new IntraP64Decoder();
     else
       videoDecoder = new FullP64Decoder();
     videoDecoder->marks(rvts);
   }
 
-  // decode values from the RTP H261 header
-  u_int v = ntohl(*(u_int*)header);
-  int sbit  = (v >> 29) & 0x07;
-  int ebit  = (v >> 26) & 0x07;
-  int gob   = (v >> 20) & 0xf;
-  int mba   = (v >> 15) & 0x1f;
-  int quant = (v >> 10) & 0x1f;
-  int mvdh  = (v >>  5) & 0x1f;
-  int mvdv  =  v & 0x1f;
-
-
-  //if (gob > 12) {
-  //  h261_rtp_bug_ = 1;
-  //  mba = (v >> 19) & 0x1f;
-  //  gob = (v >> 15) & 0xf;
- // }
-
-  if (gob > 12) {
-    //count(STAT_BAD_HEADER);
-    return FALSE;
+  videoDecoder->mark(now);
+  if (!videoDecoder->decode(rtpHeader, length, 0)) {
+    PTRACE (3, "H261\t Could not decode frame, continuing in hope.");
+    return TRUE;
   }
 
-  // leave 4 bytes for H.261 header
-  const BYTE * h261data = header + 4;
-  length = length - 4;
+  //Check for a resize is carried out one two level -.
+  // a) size change in the receive video stream.
+  if (frameWidth  != (unsigned)videoDecoder->width() ||
+      frameHeight != (unsigned)videoDecoder->height()) {
+    frameWidth = videoDecoder->width();
+    frameHeight = videoDecoder->height();
 
-  videoDecoder->mark(now);
-  (void)videoDecoder->decode(h261data, length, sbit, ebit, mba, gob, quant, mvdh, mvdv);
-
-  BOOL ok = TRUE;
-
-  // If the incoming video stream changes size, resize the rendering device.
-  if ((unsigned)videoDecoder->width() != frameWidth) {
-    packetReceived = TRUE;
-//    ok = Resize(videoDecoder->width(), videoDecoder->height());
+    nblk = (frameWidth * frameHeight) / 64;
+    delete rvts;
+    rvts = new BYTE[nblk];
+    memset(rvts, 0, nblk);
     videoDecoder->marks(rvts);
   }
 
-  if (ok && src.GetMarker()) {
-    videoDecoder->sync();
-    ndblk = videoDecoder->ndblk();
-    if (!packetReceived) {
-      packetReceived = TRUE;
-//      ok = Resize(videoDecoder->width(), videoDecoder->height());
-      videoDecoder->marks(rvts);
-    } else {
-      int wraptime = now ^ 0x80;
-      BYTE * ts = rvts;
-      int k;
-      for (k = nblk; --k >= 0; ++ts) {
-        if (*ts == wraptime)
-          *ts = (BYTE)now;
-      }
+  if (!src.GetMarker()) // Have not built an entire frame yet
+    return TRUE;
 
-      ok = TRUE;
-      if (packetReceived) {
-        DWORD * yuvHeader = (DWORD *)dst.GetPayloadPtr();
-        yuvHeader[0] = videoDecoder->width();
-        yuvHeader[1] = videoDecoder->height();
-
-        memcpy(&yuvHeader[2], videoDecoder->GetFramePtr(), 1);
-      }
-
-      now = (now + 1) & 0xff;
-    }
-
-    videoDecoder->resetndblk();
+  int wraptime = now ^ 0x80;
+  BYTE * ts = rvts;
+  int k;
+  for (k = nblk; --k >= 0; ++ts) {
+    if (*ts == wraptime)
+      *ts = (BYTE)now;
   }
 
-  return ok;
+  now = (now + 1) & 0xff;
+
+  PINDEX frameBytes = (frameWidth * frameHeight * 12) / 8;
+  RTP_DataFrame * pkt = new RTP_DataFrame(sizeof(FrameHeader)+frameBytes);
+  FrameHeader * frameHeader = (FrameHeader *)pkt->GetPayloadPtr();
+  frameHeader->x = frameHeader->y = 0;
+  frameHeader->width = frameWidth;
+  frameHeader->height = frameHeight;
+  memcpy(frameHeader->data, videoDecoder->GetFramePtr(), frameBytes);
+
+  dst.Append(pkt);
+
+  return TRUE;
 }
 
 
 //////////////////////////////////////////////////////////////////////////////
 
-Opal_YUV411P_H261::Opal_YUV411P_H261(const OpalTranscoderRegistration & registration)
+Opal_YUV420P_H261::Opal_YUV420P_H261(const OpalTranscoderRegistration & registration)
   : OpalVideoTranscoder(registration)
 {
   videoEncoder = NULL;
@@ -530,36 +511,57 @@ Opal_YUV411P_H261::Opal_YUV411P_H261(const OpalTranscoderRegistration & registra
 }
 
 
-Opal_YUV411P_H261::~Opal_YUV411P_H261()
+Opal_YUV420P_H261::~Opal_YUV420P_H261()
 {
   delete videoEncoder;
 }
 
 
-BOOL Opal_YUV411P_H261::Convert(const RTP_DataFrame & src, RTP_DataFrame & dst)
+PINDEX Opal_YUV420P_H261::GetOptimalDataFrameSize(BOOL input) const
 {
-  DWORD * yuvHeader = (DWORD *)src.GetPayloadPtr();
-  int frameWidth  = yuvHeader[0];
-  int frameHeight = yuvHeader[1];
+  return input ? ((frameWidth * frameHeight * 12) / 8) : maxOutputPayloadSize;
+}
 
-  if( frameWidth == 0) {
-    PTRACE(3,"H261\t Video grab width is 0 x 0, Close down video transmission thread.");
+
+BOOL Opal_YUV420P_H261::ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dst)
+{
+  dst.RemoveAll();
+
+  if (src.GetPayloadSize() < sizeof(FrameHeader)) {
+    PTRACE(1,"H261\t Video grab too small, Close down video transmission thread.");
     return FALSE;
   } 
  
-  videoEncoder->SetSize(frameWidth, frameHeight); 
+  FrameHeader * header = (FrameHeader *)src.GetPayloadPtr();
 
-  PINDEX bytesInFrame = 0;
-  if(!videoEncoder->PacketsOutStanding()) {
-    //NO data is waiting to be read. Go and get some with the read call.
-    memcpy(videoEncoder->GetFramePtr(), &yuvHeader[2], bytesInFrame);
-    videoEncoder->ProcessOneFrame();        //Generate H261 packets.
+  if (header->x != 0 && header->y != 0) {
+    PTRACE(1,"H261\tVideo grab of partial frame unsupported, Close down video transmission thread.");
+    return FALSE;
   }
-  
-  unsigned length;
-  videoEncoder->ReadOnePacket(dst.GetPayloadPtr(), length); //get next packet on list
-  if (length != 0)                         
-    dst.SetMarker(!videoEncoder->PacketsOutStanding()); //packet read, so process it.
+
+  if (videoEncoder == NULL)
+    videoEncoder = new P64Encoder(videoQuality, fillLevel);
+
+  if (frameWidth != header->width || frameHeight != header->height) {
+    frameWidth = header->width;
+    frameHeight = header->height;
+    videoEncoder->SetSize(header->width, header->height);
+  }
+
+  // "grab" the frame
+  memcpy(videoEncoder->GetFramePtr(), header->data, frameWidth*frameHeight*12/8);
+  videoEncoder->ProcessOneFrame();        //Generate H261 packets.
+
+  while (videoEncoder->PacketsOutStanding()) {
+    RTP_DataFrame pkt(2048);
+    unsigned length;
+    videoEncoder->ReadOnePacket(pkt.GetPayloadPtr(), length); //get next packet on list
+    if (length == 0)
+      return TRUE;
+    dst.Append(new RTP_DataFrame(pkt));
+  }
+
+  dst[dst.GetSize()-1].SetMarker(TRUE);
   return TRUE;
 }
 

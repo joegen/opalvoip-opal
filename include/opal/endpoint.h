@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2015  2003/03/06 03:57:47  robertj
+ * Revision 1.2016  2003/03/17 10:26:59  robertj
+ * Added video support.
+ *
+ * Revision 2.14  2003/03/06 03:57:47  robertj
  * IVR support (work in progress) requiring large changes everywhere.
  *
  * Revision 2.13  2002/11/10 11:33:17  robertj
@@ -433,6 +436,27 @@ class OpalEndPoint : public PObject
       */
     virtual void OnClosedMediaStream(
       const OpalMediaStream & stream     /// Media stream being closed
+    );
+
+    /**Add video media formats available on a connection.
+
+       The default behaviour calls the OpalEndPoint function of the same name.
+      */
+    virtual void AddVideoMediaFormats(
+      const OpalConnection & connection,  /// Connection that is about to use formats
+      OpalMediaFormatList & mediaFormats  /// Media formats to use
+    ) const;
+
+    /**Create an PVideoInputDevice for a source media stream.
+      */
+    virtual PVideoInputDevice * CreateVideoInputDevice(
+      const OpalConnection & connection /// Connection needing created video device
+    );
+
+    /**Create an PVideoOutputDevice for a sink media stream.
+      */
+    virtual PVideoOutputDevice * CreateVideoOutputDevice(
+      const OpalConnection & connection /// Connection needing created video device
     );
   //@}
 

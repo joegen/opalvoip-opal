@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2005  2002/09/16 02:52:35  robertj
+ * Revision 1.2006  2003/03/17 10:26:59  robertj
+ * Added video support.
+ *
+ * Revision 2.4  2002/09/16 02:52:35  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -139,6 +142,11 @@ class OpalTranscoder : public PObject
 {
     PCLASSINFO(OpalTranscoder, PObject);
   public:
+    enum {
+      // Max Ethernet packet (1518 bytes) minus 802.3/CRC, 802.3, IP, UDP an RTP headers
+      MaxEthernetPayloadSize = (1518-14-4-8-20-16-12)
+    };
+
   /**@name Construction */
   //@{
     /** Create a new transcoder implementation.
@@ -167,7 +175,7 @@ class OpalTranscoder : public PObject
        multiples of this size. Note that it may not do so, so the transcoder
        must be able to handle any sized packets.
       */
-    virtual unsigned GetOptimalDataFrameSize(
+    virtual PINDEX GetOptimalDataFrameSize(
       BOOL input      /// Flag for input or output data size
     ) const = 0;
 
@@ -183,7 +191,7 @@ class OpalTranscoder : public PObject
       */
     virtual BOOL ConvertFrames(
       const RTP_DataFrame & input,  /// Input data
-      RTP_DataFrameList & output        /// Output data
+      RTP_DataFrameList & output    /// Output data
     );
 
     /**Convert the data from one format to another.
@@ -262,15 +270,18 @@ class OpalTranscoder : public PObject
 
     /**Get the names of the input or output formats.
       */
-    PString GetInputFormat() const { return registration.GetInputFormat(); }
+    const OpalMediaFormat & GetInputFormat() const { return inputMediaFormat; }
 
     /**Get the names of the input or output formats.
       */
-    PString GetOutputFormat() const { return registration.GetOutputFormat(); }
+    const OpalMediaFormat & GetOutputFormat() const { return outputMediaFormat; }
   //@}
 
   protected:
     const OpalTranscoderRegistration & registration;
+    OpalMediaFormat                    inputMediaFormat;
+    OpalMediaFormat                    outputMediaFormat;
+    PINDEX                             maxOutputPayloadSize;
 };
 
 
@@ -291,8 +302,8 @@ class OpalFramedTranscoder : public OpalTranscoder
       */
     OpalFramedTranscoder(
       const OpalTranscoderRegistration & registration, /// Registration fro transcoder
-      unsigned inputBytesPerFrame,  /// Number of bytes in an input frame
-      unsigned outputBytesPerFrame  /// Number of bytes in an output frame
+      PINDEX inputBytesPerFrame,  /// Number of bytes in an input frame
+      PINDEX outputBytesPerFrame  /// Number of bytes in an output frame
     );
   //@}
 
@@ -304,7 +315,7 @@ class OpalFramedTranscoder : public OpalTranscoder
        multiples of this size. Note that it may not do so, so the transcoder
        must be able to handle any sized packets.
       */
-    virtual unsigned GetOptimalDataFrameSize(
+    virtual PINDEX GetOptimalDataFrameSize(
       BOOL input      /// Flag for input or output data size
     ) const;
 
@@ -329,10 +340,10 @@ class OpalFramedTranscoder : public OpalTranscoder
   //@}
 
   protected:
-    unsigned   inputBytesPerFrame;
-    unsigned   outputBytesPerFrame;
+    PINDEX     inputBytesPerFrame;
+    PINDEX     outputBytesPerFrame;
     PBYTEArray partialFrame;
-    unsigned   partialBytes;
+    PINDEX     partialBytes;
 };
 
 
@@ -355,7 +366,7 @@ class OpalStreamedTranscoder : public OpalTranscoder
       const OpalTranscoderRegistration & registration, /// Registration fro transcoder
       unsigned inputBits,           /// Bits per sample in input data
       unsigned outputBits,          /// Bits per sample in output data
-      unsigned optimalSamples       /// Optimal number of samples for read
+      PINDEX   optimalSamples       /// Optimal number of samples for read
     );
   //@}
 
@@ -367,7 +378,7 @@ class OpalStreamedTranscoder : public OpalTranscoder
        multiples of this size. Note that it may not do so, so the transcoder
        must be able to handle any sized packets.
       */
-    virtual unsigned GetOptimalDataFrameSize(
+    virtual PINDEX GetOptimalDataFrameSize(
       BOOL input      /// Flag for input or output data size
     ) const;
 
@@ -394,45 +405,7 @@ class OpalStreamedTranscoder : public OpalTranscoder
   protected:
     unsigned inputBitsPerSample;
     unsigned outputBitsPerSample;
-    unsigned optimalSamples;
-};
-
-
-/**This class defines a transcoder implementation class that will
-   encode/decode video.
-
-   An application may create a descendent off this class and override
-   functions as required for descibing a specific transcoder.
- */
-class OpalVideoTranscoder : public OpalTranscoder
-{
-    PCLASSINFO(OpalVideoTranscoder, OpalTranscoder);
-  public:
-  /**@name Construction */
-  //@{
-    /** Create a new video transcoder implementation.
-      */
-    OpalVideoTranscoder(
-      const OpalTranscoderRegistration & registration /// Registration fro transcoder
-    );
-  //@}
-
-  /**@name Operations */
-  //@{
-    /**Get the optimal size for data frames to be converted.
-       This function returns the size of frames that will be most efficient
-       in conversion. A RTP_DataFrame will attempt to provide or use data in
-       multiples of this size. Note that it may not do so, so the transcoder
-       must be able to handle any sized packets.
-      */
-    virtual unsigned GetOptimalDataFrameSize(
-      BOOL input      /// Flag for input or output data size
-    ) const;
-  //@}
-
-  protected:
-    unsigned frameWidth;
-    unsigned frameHeight;
+    PINDEX   optimalSamples;
 };
 
 

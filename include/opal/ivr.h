@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.h,v $
- * Revision 1.2003  2003/03/07 05:49:54  robertj
+ * Revision 1.2004  2003/03/17 10:26:59  robertj
+ * Added video support.
+ *
+ * Revision 2.2  2003/03/07 05:49:54  robertj
  * Use OpalVXMLSession so OnEndSession() to automatically closes connection.
  *
  * Revision 2.1  2003/03/06 03:57:47  robertj
@@ -223,8 +226,9 @@ class OpalIVRConnection : public OpalConnection
        The default behaviour is pure.
      */
     virtual OpalMediaStream * CreateMediaStream(
-      BOOL isSource,      /// Is a source stream
-      unsigned sessionID  /// Session number for stream
+      const OpalMediaFormat & mediaFormat, /// Media format for stream
+      unsigned sessionID,                  /// Session number for stream
+      BOOL isSource                        /// Is a source stream
     );
 
     /**Send a user input indication to the remote endpoint.
@@ -262,9 +266,10 @@ class OpalIVRMediaStream : public OpalRawMediaStream
     /**Construct a new media stream for IVR session.
       */
     OpalIVRMediaStream(
-      BOOL isSourceStream,    /// Direction of I/O for stream
-      unsigned sessionID,     /// Session ID for media stream
-      PVXMLSession & vxml     /// vxml session to use
+      const OpalMediaFormat & mediaFormat, /// Media format for stream
+      unsigned sessionID,                  /// Session number for stream
+      BOOL isSource,                       /// Is a source stream
+      PVXMLSession & vxml                  /// vxml session to use
     );
   //@}
 
@@ -275,9 +280,7 @@ class OpalIVRMediaStream : public OpalRawMediaStream
        The default behaviour simply sets the member variable "mediaFormat"
        and "defaultDataSize".
       */
-    virtual BOOL Open(
-      const OpalMediaFormat & format /// Media format to select
-    );
+    virtual BOOL Open();
 
     /**Indicate if the media stream is synchronous.
        Returns FALSE for IVR streams.

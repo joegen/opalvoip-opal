@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2016  2003/03/06 03:57:47  robertj
+ * Revision 1.2017  2003/03/17 10:26:59  robertj
+ * Added video support.
+ *
+ * Revision 2.15  2003/03/06 03:57:47  robertj
  * IVR support (work in progress) requiring large changes everywhere.
  *
  * Revision 2.14  2002/09/04 05:28:14  robertj
@@ -451,13 +454,20 @@ BOOL OpalLineConnection::SetConnected()
 
 OpalMediaFormatList OpalLineConnection::GetMediaFormats() const
 {
-  return line.GetDevice().GetMediaFormats();
+  OpalMediaFormatList formats = line.GetDevice().GetMediaFormats();
+  AddVideoMediaFormats(formats);
+  return formats;
 }
 
 
-OpalMediaStream * OpalLineConnection::CreateMediaStream(BOOL isSource, unsigned sessionID)
+OpalMediaStream * OpalLineConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
+                                                        unsigned sessionID,
+                                                        BOOL isSource)
 {
-  return new OpalLineMediaStream(isSource, sessionID, line);
+  if (sessionID != OpalMediaFormat::DefaultAudioSessionID)
+    return OpalConnection::CreateMediaStream(mediaFormat, sessionID, isSource);
+
+  return new OpalLineMediaStream(mediaFormat, sessionID, isSource, line);
 }
 
 

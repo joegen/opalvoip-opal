@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.h,v $
- * Revision 1.2003  2002/09/16 02:52:35  robertj
+ * Revision 1.2004  2003/03/17 10:26:59  robertj
+ * Added video support.
+ *
+ * Revision 2.2  2002/09/16 02:52:35  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -140,24 +143,31 @@ class OpalMediaPatch : public PThread
       const PNotifier & filter,
       const OpalMediaFormat & stage = OpalMediaFormat()
     );
-  //@}
 
-  protected:
+    /**Filter a frame. Calls all filter functions.
+      */
     virtual void FilterFrame(
       RTP_DataFrame & frame,
       const OpalMediaFormat & mediaFormat
     );
+  //@}
 
+  protected:
     OpalMediaStream & source;
 
     class Sink : public PObject {
         PCLASSINFO(Sink, PObject);
       public:
-        Sink(OpalMediaStream * s);
+        Sink(OpalMediaPatch & p, OpalMediaStream * s);
         ~Sink();
+        BOOL WriteFrame(RTP_DataFrame & sourceFrame);
+
+        OpalMediaPatch  & patch;
         OpalMediaStream * stream;
         OpalTranscoder  * primaryCodec;
         OpalTranscoder  * secondaryCodec;
+        RTP_DataFrameList intermediateFrames;
+        RTP_DataFrameList finalFrames;
     };
     PARRAY(SinkArray, Sink);
     SinkArray sinks;

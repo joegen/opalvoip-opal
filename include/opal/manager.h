@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2017  2003/03/06 03:57:47  robertj
+ * Revision 1.2018  2003/03/17 10:26:59  robertj
+ * Added video support.
+ *
+ * Revision 2.16  2003/03/06 03:57:47  robertj
  * IVR support (work in progress) requiring large changes everywhere.
  *
  * Revision 2.15  2002/11/10 11:33:17  robertj
@@ -504,6 +507,27 @@ class OpalManager : public PObject
       const OpalMediaStream & stream     /// Stream being closed
     );
 
+    /**Add video media formats available on a connection.
+
+       The default behaviour calls the OpalEndPoint function of the same name.
+      */
+    virtual void AddVideoMediaFormats(
+      const OpalConnection & connection,  /// Connection that is about to use formats
+      OpalMediaFormatList & mediaFormats  /// Media formats to use
+    ) const;
+
+    /**Create an PVideoInputDevice for a source media stream.
+      */
+    virtual PVideoInputDevice * CreateVideoInputDevice(
+      const OpalConnection & connection /// Connection needing created video device
+    );
+
+    /**Create an PVideoOutputDevice for a sink media stream.
+      */
+    virtual PVideoOutputDevice * CreateVideoOutputDevice(
+      const OpalConnection & connection /// Connection needing created video device
+    );
+
     /**Create a OpalMediaPatch instance.
        This function allows an application to have the system create descendant
        class versions of the OpalMediPatch class. The application could use
@@ -764,6 +788,34 @@ class OpalManager : public PObject
      */
     void SetMediaFormatMask(const PStringArray & mask) { mediaFormatMask = mask; }
 
+    /**Set the parameters for the video device to be used for input.
+       If the name is not suitable for use with the PVideoInputDevice class
+       then the function will return FALSE and not change the device.
+
+       This defaults to the value of the PVideoInputDevice::GetInputDeviceNames()
+       function.
+     */
+    virtual BOOL SetVideoInputDevice(const PVideoDevice::OpenArgs & name);
+
+    /**Get the parameters for the video device to be used for input.
+       This defaults to the value of the PSoundChannel::GetInputDeviceNames()[0].
+     */
+    const PVideoDevice::OpenArgs & GetVideoInputDevice() const { return videoInputDevice; }
+
+    /**Set the parameters for the video device to be used for output.
+       If the name is not suitable for use with the PVideoOutputDevice class
+       then the function will return FALSE and not change the device.
+
+       This defaults to the value of the PVideoInputDevice::GetOutputDeviceNames()
+       function.
+     */
+    virtual BOOL SetVideoOutputDevice(const PVideoDevice::OpenArgs & name);
+
+    /**Get the parameters for the video device to be used for input.
+       This defaults to the value of the PSoundChannel::GetOutputDeviceNames()[0].
+     */
+    const PVideoDevice::OpenArgs & GetVideoOutputDevice() const { return videoOutputDevice; }
+
     BOOL DetectInBandDTMFDisabled() const
       { return disableDetectInBandDTMF; }
 
@@ -784,6 +836,8 @@ class OpalManager : public PObject
     unsigned     maxAudioJitterDelay;
     PStringArray mediaFormatOrder;
     PStringArray mediaFormatMask;
+    PVideoDevice::OpenArgs videoInputDevice;
+    PVideoDevice::OpenArgs videoOutputDevice;
     BOOL         disableDetectInBandDTMF;
 
     struct PortInfo {
