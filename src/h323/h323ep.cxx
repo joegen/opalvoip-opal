@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2012  2001/11/13 04:29:48  robertj
+ * Revision 1.2013  2001/11/13 06:25:56  robertj
+ * Changed SetUpConnection() so returns BOOL as returning
+ *   pointer to connection is not useful.
+ *
+ * Revision 2.11  2001/11/13 04:29:48  robertj
  * Changed OpalTransportAddress CreateTransport and CreateListsner functions
  *   to have extra parameter to control local binding of sockets.
  *
@@ -753,9 +757,9 @@ BOOL H323EndPoint::RemoveGatekeeper(int reason)
 }
 
 
-OpalConnection * H323EndPoint::SetUpConnection(OpalCall & call,
-                                               const PString & remoteParty,
-                                               void * userData)
+BOOL H323EndPoint::SetUpConnection(OpalCall & call,
+                                   const PString & remoteParty,
+                                   void * userData)
 {
   PTRACE(2, "H323\tMaking call to: " << remoteParty);
   return InternalMakeCall(call, remoteParty, PString(), PString(), userData);
@@ -828,20 +832,20 @@ H323Connection * H323EndPoint::CreateConnection(OpalCall & call,
 }
 
 
-H323Connection * H323EndPoint::SetupTransfer(const PString & oldToken,
-                                             const PString & callIdentity,
-                                             const PString & remoteParty)
+BOOL H323EndPoint::SetupTransfer(const PString & oldToken,
+                                 const PString & callIdentity,
+                                 const PString & remoteParty)
 {
   PTRACE(2, "H323\tTransferring call to: " << remoteParty);
   return InternalMakeCall(*manager.CreateCall(), oldToken, callIdentity, remoteParty, NULL);
 }
 
 
-H323Connection * H323EndPoint::InternalMakeCall(OpalCall & call,
-                                                const PString & existingToken,
-                                                const PString & callIdentity,
-                                                const PString & remoteParty,
-                                                void * userData)
+BOOL H323EndPoint::InternalMakeCall(OpalCall & call,
+                                    const PString & existingToken,
+                                    const PString & callIdentity,
+                                    const PString & remoteParty,
+                                    void * userData)
 {
   PString alias;
   OpalTransportAddress address;
@@ -858,7 +862,7 @@ H323Connection * H323EndPoint::InternalMakeCall(OpalCall & call,
 
   if (transport == NULL) {
     PTRACE(1, "H323\tInvalid transport in \"" << remoteParty << '"');
-    return NULL;
+    return FALSE;
   }
 
   inUseFlag.Wait();
@@ -873,7 +877,7 @@ H323Connection * H323EndPoint::InternalMakeCall(OpalCall & call,
 
   if (connection == NULL) {
     PTRACE(1, "H225\tEndpoint could not create connection, aborting setup.");
-    return NULL;
+    return FALSE;
   }
 
   connection->Lock();
@@ -883,7 +887,9 @@ H323Connection * H323EndPoint::InternalMakeCall(OpalCall & call,
   PTRACE(3, "H323\tCreated new connection: " << newToken);
 
   new H225CallThread(*connection, *transport, alias, address);
-  return connection;
+
+  connection->Unlock();
+  return TRUE;
 }
 
 

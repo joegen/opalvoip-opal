@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2006  2001/11/02 10:45:19  robertj
+ * Revision 1.2007  2001/11/13 06:25:56  robertj
+ * Changed SetUpConnection() so returns BOOL as returning
+ *   pointer to connection is not useful.
+ *
+ * Revision 2.5  2001/11/02 10:45:19  robertj
  * Updated to OpenH323 v1.7.3
  *
  * Revision 2.4  2001/10/05 00:22:13  robertj
@@ -158,26 +162,20 @@ class H323EndPoint : public OpalEndPoint
 
        The proto field is optional when passed to a specific endpoint. If it
        is present, however, it must agree with the endpoints protocol name or
-       NULL is returned.
+       FALSE is returned.
 
-       This function returns almost immediately with the connection continuing
-       to occur in a new background thread.
+       This function usually returns almost immediately with the connection
+       continuing to occur in a new background thread.
 
-       If NULL is returned then the connection could not be established. For
+       If FALSE is returned then the connection could not be established. For
        example if a PSTN endpoint is used and the assiciated line is engaged
        then it may return immediately. Returning a non-NULL value does not
        mean that the connection will succeed, only that an attempt is being
        made.
 
-       Note, the returned pointer to the connection is not locked and may be
-       deleted at any time. This is extremely unlikely immediately after the
-       function is called, but you should not keep this pointer beyond that
-       brief time. The the FindCallWithLock() function for future references
-       to the connection object.
-
        The default behaviour is pure.
      */
-    virtual OpalConnection * SetUpConnection(
+    virtual BOOL SetUpConnection(
       OpalCall & call,        /// Owner of connection
       const PString & party,  /// Remote party to call
       void * userData = NULL  /// Arbitrary data to pass to connection
@@ -419,16 +417,10 @@ class H323EndPoint : public OpalEndPoint
        This function returns almost immediately with the transfer occurring in a
        new background thread.
 
-       Note, the returned pointer to the connection is not locked and may be
-       deleted at any time. This is extremely unlikely immediately after the
-       function is called, but you should not keep this pointer beyond that
-       brief time. The the FindConnectionWithLock() function for future
-       references to the connection object.
-
        This function is declared virtual to allow an application to override
        the function and get the new call token of the forwarded call.
      */
-    virtual H323Connection * SetupTransfer(
+    virtual BOOL SetupTransfer(
       const PString & token,        /// Existing connection to be transferred
       const PString & callIdentity, /// Call identity of the secondary call (if it exists)
       const PString & remoteParty   /// Remote party to transfer the existing call to
@@ -850,7 +842,7 @@ class H323EndPoint : public OpalEndPoint
     H323Gatekeeper * InternalCreateGatekeeper(OpalTransport * transport);
     BOOL InternalRegisterGatekeeper(H323Gatekeeper * gk, BOOL discovered);
     H323Connection * FindConnectionWithoutLocks(const PString & token);
-    H323Connection * InternalMakeCall(
+    BOOL InternalMakeCall(
       OpalCall & call,
       const PString & existingToken,/// Existing connection to be transferred
       const PString & callIdentity, /// Call identity of the secondary call (if it exists)

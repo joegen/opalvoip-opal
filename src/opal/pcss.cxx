@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2006  2001/10/15 04:33:17  robertj
+ * Revision 1.2007  2001/11/13 06:25:56  robertj
+ * Changed SetUpConnection() so returns BOOL as returning
+ *   pointer to connection is not useful.
+ *
+ * Revision 2.5  2001/10/15 04:33:17  robertj
  * Removed answerCall signal and replaced with state based functions.
  *
  * Revision 2.4  2001/08/23 03:15:51  robertj
@@ -98,9 +102,9 @@ OpalPCSSEndPoint::~OpalPCSSEndPoint()
 }
 
 
-OpalConnection * OpalPCSSEndPoint::SetUpConnection(OpalCall & call,
-                                                   const PString & remoteParty,
-                                                   void * userData)
+BOOL OpalPCSSEndPoint::SetUpConnection(OpalCall & call,
+                                       const PString & remoteParty,
+                                       void * userData)
 {
   // First strip of the prefix if present
   PINDEX prefixLength = 0;
@@ -131,7 +135,7 @@ OpalConnection * OpalPCSSEndPoint::SetUpConnection(OpalCall & call,
 
     connection = CreateConnection(call, playDevice, recordDevice, userData);
     if (connection == NULL)
-      return NULL;
+      return FALSE;
 
     connectionsActive.SetAt(connection->GetToken(), connection);
   }
@@ -145,7 +149,9 @@ OpalConnection * OpalPCSSEndPoint::SetUpConnection(OpalCall & call,
   else
     connection->StartIncoming(caller.GetRemotePartyName());
 
-  return connection;
+  connection->Unlock();
+
+  return TRUE;
 }
 
 
