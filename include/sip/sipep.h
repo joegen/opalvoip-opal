@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2004  2002/04/16 08:06:35  robertj
+ * Revision 1.2005  2002/07/04 07:41:47  robertj
+ * Fixed memory/thread leak of transports.
+ *
+ * Revision 2.3  2002/04/16 08:06:35  robertj
  * Fixed GNU warnings.
  *
  * Revision 2.2  2002/04/05 10:42:04  robertj
@@ -81,7 +84,7 @@ class SIPEndPoint : public OpalEndPoint
 
        The default behaviour does nothing.
       */
-    virtual void NewIncomingConnection(
+    virtual BOOL NewIncomingConnection(
       OpalTransport * transport  /// Transport connection came in on
     );
 
