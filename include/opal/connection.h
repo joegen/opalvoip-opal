@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2017  2002/09/12 06:54:06  robertj
+ * Revision 1.2018  2002/09/16 02:52:35  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
+ *
+ * Revision 2.16  2002/09/12 06:54:06  robertj
  * Added missing virtual to Release() function so can be overridden.
  *
  * Revision 2.15  2002/07/01 04:56:30  robertj
@@ -85,7 +89,7 @@
 #ifndef __OPAL_CONNECTION_H
 #define __OPAL_CONNECTION_H
 
-#ifdef __GNUC__
+#ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 

@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2012  2002/04/16 07:53:15  robertj
+ * Revision 1.2013  2002/09/16 02:52:35  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
+ *
+ * Revision 2.11  2002/04/16 07:53:15  robertj
  * Changes to support calls through proxies.
  *
  * Revision 2.10  2002/04/10 03:13:45  robertj
@@ -66,7 +70,7 @@
 #ifndef __OPAL_SIPCON_H
 #define __OPAL_SIPCON_H
 
-#ifdef __GNUC__
+#ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
