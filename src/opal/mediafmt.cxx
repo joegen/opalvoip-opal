@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2028  2005/02/21 20:27:18  dsandras
+ * Revision 1.2029  2005/03/12 00:33:28  csoutheren
+ * Fixed problems with STL compatibility on MSVC 6
+ * Fixed problems with video streams
+ * Thanks to Adrian Sietsma
+ *
+ * Revision 2.27  2005/02/21 20:27:18  dsandras
  * Fixed compilation with gcc.
  *
  * Revision 2.26  2005/02/21 12:20:05  rjongbloed
@@ -330,7 +335,12 @@ void OpalMediaOptionEnum::ReadFrom(istream & strm)
   }
 
   m_value = m_enumerations.GetSize();
-  strm.setstate(ios::badbit);
+
+#if __USE_STL__
+   strm.setstate(ios::badbit);
+#else
+   strm.setf(ios::badbit , ios::badbit);
+#endif
 }
 
 
