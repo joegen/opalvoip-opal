@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.h,v $
- * Revision 1.2008  2002/01/22 05:00:54  robertj
+ * Revision 1.2009  2002/09/04 05:27:55  robertj
+ * Added ability to set default line name to be used when the destination
+ *   does not match any lines configured.
+ *
+ * Revision 2.7  2002/01/22 05:00:54  robertj
  * Revamp of user input API triggered by RFC2833 support
  *
  * Revision 2.6  2001/11/13 06:25:56  robertj
@@ -216,10 +220,23 @@ class OpalLIDEndPoint : public OpalEndPoint
     );
 
     /**Get the line by name.
+       The lineName parameter may be "*" to matche the first line.
+
+       If the enableAudio flag is TRUE then the EnableAudio() function is
+       called on the line and it is returns only if successful. This
+       effectively locks the line for exclusive use of the caller.
       */
     OpalLine * GetLine(
-      const PString & name
+      const PString & lineName,  /// Name of line to get.
+      BOOL enableAudio = FALSE   /// Flag to enable audio on the line.
     ) const;
+
+    /**Set the default line to be used on call.
+       If the lineName is "*" then the first available line is used.
+      */
+    void SetDefaultLine(
+      const PString & lineName  /// Name of line to set to default.
+    );
   //@}
 
   protected:
@@ -228,6 +245,7 @@ class OpalLIDEndPoint : public OpalEndPoint
 
     OpalLIDList  devices;
     OpalLineList lines;
+    PString      defaultLine;
     PMutex       linesMutex;
     PThread    * monitorThread;
     PSyncPoint   exitFlag;
