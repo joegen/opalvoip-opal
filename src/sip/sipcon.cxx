@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2029  2003/12/20 12:21:18  rjongbloed
+ * Revision 1.2030  2004/01/08 22:23:23  csoutheren
+ * Fixed problem with not using session ID when constructing SDP lists
+ *
+ * Revision 2.28  2003/12/20 12:21:18  rjongbloed
  * Applied more enhancements, thank you very much Ted Szoczei
  *
  * Revision 2.27  2003/12/15 11:56:17  rjongbloed
@@ -577,7 +580,7 @@ SDPSessionDescription * SIPConnection::BuildSDP(RTP_SessionManager & rtpSessions
 
   // add the audio formats
   OpalMediaFormatList formats = ownerCall.GetMediaFormats(*this);
-  localMedia->AddMediaFormats(formats);
+  localMedia->AddMediaFormats(formats, rtpSessionId);
 
   // add in SDP records
   sdp->AddMediaDescription(localMedia);
