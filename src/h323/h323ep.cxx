@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2013  2001/11/13 06:25:56  robertj
+ * Revision 1.2014  2002/01/14 06:35:58  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.12  2001/11/13 06:25:56  robertj
  * Changed SetUpConnection() so returns BOOL as returning
  *   pointer to connection is not useful.
  *
@@ -61,6 +64,22 @@
  *
  * Revision 2.3  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 1.114  2002/01/14 00:00:04  robertj
+ * Added CallTransfer timeouts to endpoint, hanks Ben Madsen of Norwood Systems.
+ *
+ * Revision 1.113  2002/01/08 04:45:04  robertj
+ * Added MakeCallLocked() so can start a call with the H323Connection instance
+ *   initally locked so can do things to it before the call really starts.
+ *
+ * Revision 1.112  2001/12/22 03:20:05  robertj
+ * Added create protocol function to H323Connection.
+ *
+ * Revision 1.111  2001/12/14 08:36:36  robertj
+ * More implementation of T.38, thanks Adam Lazur
+ *
+ * Revision 1.110  2001/12/13 11:01:37  robertj
+ * Fixed missing initialisation of auto fax start variables.
  *
  * Revision 1.109  2001/11/01 06:11:57  robertj
  * Plugged very small mutex hole that could cause crashes.
@@ -516,7 +535,11 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
     roundTripDelayTimeout(0, 10),           // Seconds
     roundTripDelayRate(0, 0, 1),            // Minutes
     gatekeeperRequestTimeout(0, 5),         // Seconds
-    rasRequestTimeout(0, 3)                 // Seconds
+    rasRequestTimeout(0, 3),                // Seconds
+    callTransferT1(0,10),                   // Seconds
+    callTransferT2(0,10),                   // Seconds
+    callTransferT3(0,10),                   // Seconds
+    callTransferT4(0,10)                    // Seconds
 {
   // Set port in OpalEndPoint class
   defaultSignalPort = DefaultSignalTcpPort;
@@ -525,6 +548,8 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   if (username.IsEmpty())
     username = PProcess::Current().GetName() & "User";
   localAliasNames.AppendString(username);
+
+  autoStartReceiveFax = autoStartTransmitFax = FALSE;
 
   disableFastStart = FALSE;
   disableH245Tunneling = FALSE;
@@ -834,10 +859,11 @@ H323Connection * H323EndPoint::CreateConnection(OpalCall & call,
 
 BOOL H323EndPoint::SetupTransfer(const PString & oldToken,
                                  const PString & callIdentity,
-                                 const PString & remoteParty)
+                                 const PString & remoteParty,
+                                 void * userData)
 {
   PTRACE(2, "H323\tTransferring call to: " << remoteParty);
-  return InternalMakeCall(*manager.CreateCall(), oldToken, callIdentity, remoteParty, NULL);
+  return InternalMakeCall(*manager.CreateCall(), oldToken, callIdentity, remoteParty, userData);
 }
 
 
@@ -1140,13 +1166,13 @@ void H323EndPoint::OnUserInputTone(H323Connection & connection,
 }
 
 
-OpalT120Protocol * H323EndPoint::CreateT120ProtocolHandler() const
+OpalT120Protocol * H323EndPoint::CreateT120ProtocolHandler(const H323Connection &) const
 {
   return NULL;
 }
 
 
-OpalT38Protocol * H323EndPoint::CreateT38ProtocolHandler() const
+OpalT38Protocol * H323EndPoint::CreateT38ProtocolHandler(const H323Connection &) const
 {
   return NULL;
 }

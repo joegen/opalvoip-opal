@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2008  2001/12/07 08:56:43  robertj
+ * Revision 1.2009  2002/01/14 06:35:58  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.7  2001/12/07 08:56:43  robertj
  * Renamed RTP to be more general UDP port base, and TCP to be IP.
  *
  * Revision 2.6  2001/11/14 01:31:55  robertj
@@ -75,7 +78,7 @@
 
 
 static const char * const DefaultMediaFormatOrder[] = {
-  OPAL_G7231,
+  OPAL_G7231_6k3,
   OPAL_G729B,
   OPAL_G729AB,
   OPAL_G729,

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q931.cxx,v $
- * Revision 1.2004  2001/10/05 00:22:14  robertj
+ * Revision 1.2005  2002/01/14 06:35:58  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.3  2001/10/05 00:22:14  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.2  2001/08/21 01:11:31  robertj
@@ -38,6 +41,12 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.42  2002/01/07 04:25:21  robertj
+ * Added support for Connected-Number Information Element, thanks Hans Verbeek
+ *
+ * Revision 1.41  2002/01/06 05:28:41  robertj
+ * Fixed crash if given bad data in number field, thanks Chih-Wei Huang.
  *
  * Revision 1.40  2001/09/17 02:06:40  robertj
  * Added Redirecting Number IE to Q.931, thanks Frank Derks
@@ -475,6 +484,8 @@ static PString Q931IENameString(int number)
       return "Display";
     case Q931::SignalIE :
       return "Signal";
+    case Q931::ConnectedNumberIE :
+      return "Connected-Number";
     case Q931::CallingPartyNumberIE :
       return "Calling-Party-Number";
     case Q931::CalledPartyNumberIE :
@@ -867,6 +878,9 @@ static BOOL GetNumberIE(const PBYTEArray & bytes,
     offset = 1;
   }
   else {
+    if (bytes.GetSize() < 2)
+      return FALSE;
+
     if (presentation != NULL)
       *presentation = (bytes[1]>>5)&3;
 
@@ -880,6 +894,9 @@ static BOOL GetNumberIE(const PBYTEArray & bytes,
       offset = 2;
     }
     else {
+      if (bytes.GetSize() < 3)
+        return FALSE;
+
       if (reason != NULL)
         *reason = bytes[2]&15;
 
@@ -887,8 +904,13 @@ static BOOL GetNumberIE(const PBYTEArray & bytes,
     }
   }
 
+  if (bytes.GetSize() < offset)
+    return FALSE;
+
   PINDEX len = bytes.GetSize()-offset;
-  memcpy(number.GetPointer(len+1), ((const BYTE *)bytes)+offset, len);
+
+  if (len > 0)
+    memcpy(number.GetPointer(len+1), ((const BYTE *)bytes)+offset, len);
 
   return !number;
 }
@@ -958,6 +980,34 @@ BOOL Q931::GetRedirectingNumber(PString  & number,
   return GetNumberIE(GetIE(RedirectingNumberIE),
                      number, plan, type, presentation, screening, reason,
                      defPresentation, defScreening, defReason);
+}
+
+
+BOOL Q931::GetConnectedNumber(PString  & number,
+                              unsigned * plan,
+                              unsigned * type,
+                              unsigned * presentation,
+                              unsigned * screening,
+                              unsigned * reason,
+                              unsigned   defPresentation,
+                              unsigned   defScreening,
+                              unsigned   defReason) const
+{
+  return GetNumberIE(GetIE(ConnectedNumberIE), number,
+                     plan, type, presentation, screening, reason,
+                     defPresentation, defScreening, defReason);
+}
+
+
+void Q931::SetConnectedNumber(const PString & number,
+                              unsigned plan,
+                              unsigned type,
+                              int presentation,
+                              int screening,
+                              int reason)
+{
+  SetIE(ConnectedNumberIE,
+        SetNumberIE(number, plan, type, presentation, screening, reason));
 }
 
 

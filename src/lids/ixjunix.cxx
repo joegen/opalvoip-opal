@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjunix.cxx,v $
- * Revision 1.2004  2001/08/21 01:08:31  robertj
+ * Revision 1.2005  2002/01/14 06:35:58  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.3  2001/08/21 01:08:31  robertj
  * Changed semantics of IsLineDisconnected() when on POTS line.
  *
  * Revision 2.2  2001/08/13 05:10:40  robertj
@@ -38,6 +41,18 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.119  2001/12/19 07:42:52  craigs
+ * Fixed problem with opening devices as returned by GetDeviceName
+ *
+ * Revision 1.118  2001/12/12 21:54:33  craigs
+ * Changed for changes for G723.1 5k3
+ *
+ * Revision 1.117  2001/11/22 02:55:13  robertj
+ * Fixed bug from previous fix, caused only /dev/phone0 to work!
+ *
+ * Revision 1.116  2001/11/09 07:48:01  craigs
+ * Changed to allow Open to accept string returned by GetName
  *
  * Revision 1.115  2001/08/08 15:55:56  rogerh
  * Support the new ixj FreeBSD driver which can return values from the ioctl.
@@ -696,10 +711,15 @@ BOOL OpalIxJDevice::Open(const PString & device)
     }
   }
 
-  if (!isdigit(device[0])) 
-    deviceName = device;
-  else  
+  if (isdigit(device[0])) 
     deviceName = psprintf("/dev/phone%u", device.AsUnsigned());
+  else {
+    PINDEX pos = device.FindLast(' ');
+    if (pos == P_MAX_INDEX)
+      deviceName = device;
+    else
+      deviceName = device.Mid(pos+1).Trim();
+  }
 
   int new_handle = os_handle = ::open(deviceName, O_RDWR);
   if (!ConvertOSError(new_handle))
@@ -1058,7 +1078,8 @@ static const struct {
   { "G.728",           60, G728,     30 },   // 60 bytes  = 12 frames   = 30ms
   { "G.729A",          10, G729,     10 },   // 10 bytes = 1 frame = 10 ms
   { "G.729A/B",        10, G729B,    10 },   // 10 bytes = 1 frame = 10 ms
-  { "G.723.1",         24, G723_63,  30 }    // 24 bytes = 1 frame = 30 ms
+  { "G.723.1(6.3k)",   24, G723_63,  30 },   // 24 bytes = 1 frame = 30 ms
+  { "G.723.1(5.3k)",   20, G723_53,  30 }    // 20 bytes = 1 frame = 30 ms
 };
 
 
