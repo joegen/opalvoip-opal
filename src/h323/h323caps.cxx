@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2021  2004/06/08 13:47:58  rjongbloed
+ * Revision 1.2022  2004/09/01 12:21:28  rjongbloed
+ * Added initialisation of H323EndPoints capability table to be all codecs so can
+ *   correctly build remote caps from fqast connect params. This had knock on effect
+ *   with const keywords added in numerous places.
+ *
+ * Revision 2.20  2004/06/08 13:47:58  rjongbloed
  * Fixed (pre)condition for checking and matching capabilities, thanks Guilhem Tardy
  *
  * Revision 2.19  2004/06/04 04:09:59  csoutheren
@@ -455,7 +460,7 @@ void H323Capability::PrintOn(ostream & strm) const
 }
 
 
-H323Capability * H323Capability::Create(H323EndPoint & ep, const PString & name)
+H323Capability * H323Capability::Create(const H323EndPoint & ep, const PString & name)
 {
   PWaitAndSignal mutex(H323CapabilityRegistration::GetMutex());
   H323CapabilityRegistration * find = H323CapabilityRegistration::registeredCapabilitiesListHead;
@@ -583,7 +588,7 @@ H323Channel * H323RealTimeCapability::CreateChannel(H323Connection & connection,
 
 /////////////////////////////////////////////////////////////////////////////
 
-H323NonStandardCapabilityInfo::H323NonStandardCapabilityInfo(H323EndPoint & endpoint,
+H323NonStandardCapabilityInfo::H323NonStandardCapabilityInfo(const H323EndPoint & endpoint,
                                                              const BYTE * dataPtr,
                                                              PINDEX dataSize,
                                                              PINDEX _offset,
@@ -946,7 +951,7 @@ BOOL H323AudioCapability::OnReceivedPDU(const H245_AudioCapability & pdu,
 
 H323NonStandardAudioCapability::H323NonStandardAudioCapability(unsigned max,
                                                                unsigned desired,
-                                                               H323EndPoint & endpoint,
+                                                               const H323EndPoint & endpoint,
                                                                const BYTE * fixedData,
                                                                PINDEX dataSize,
                                                                PINDEX offset,
@@ -1084,7 +1089,7 @@ unsigned H323VideoCapability::GetDefaultSessionID() const
 
 /////////////////////////////////////////////////////////////////////////////
 
-H323NonStandardVideoCapability::H323NonStandardVideoCapability(H323EndPoint & endpoint,
+H323NonStandardVideoCapability::H323NonStandardVideoCapability(const H323EndPoint & endpoint,
                                                                const BYTE * fixedData,
                                                                PINDEX dataSize,
                                                                PINDEX offset,
@@ -1230,7 +1235,7 @@ BOOL H323DataCapability::OnReceivedPDU(const H245_DataType & dataType, BOOL)
 /////////////////////////////////////////////////////////////////////////////
 
 H323NonStandardDataCapability::H323NonStandardDataCapability(unsigned maxBitRate,
-                                                             H323EndPoint & endpoint,
+                                                             const H323EndPoint & endpoint,
                                                              const BYTE * fixedData,
                                                              PINDEX dataSize,
                                                              PINDEX offset,
@@ -1882,7 +1887,7 @@ static BOOL MatchWildcard(const PCaselessString & str, const PStringArray & wild
 }
 
 
-PINDEX H323Capabilities::AddAllCapabilities(H323EndPoint & ep,
+PINDEX H323Capabilities::AddAllCapabilities(const H323EndPoint & ep,
                                             PINDEX descriptorNum,
                                             PINDEX simultaneous,
                                             const PString & name)
