@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2020  2004/08/14 07:56:29  rjongbloed
+ * Revision 1.2021  2004/10/02 11:50:54  rjongbloed
+ * Fixed RTP media stream so assures RTP session is open before starting.
+ *
+ * Revision 2.19  2004/08/14 07:56:29  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.18  2004/05/17 13:24:18  rjongbloed
@@ -389,6 +392,12 @@ class OpalRTPMediaStream : public OpalMediaStream
 
   /**@name Overrides of OpalMediaStream class */
   //@{
+    /**Open the media stream using the media format.
+
+       The default behaviour simply sets the isOpen variable to TRUE.
+      */
+    virtual BOOL Open();
+
     /**Close the media stream.
 
        The default does nothing.
