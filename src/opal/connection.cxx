@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2015  2002/02/13 02:31:13  robertj
+ * Revision 1.2016  2002/02/19 07:49:23  robertj
+ * Added OpalRFC2833 as a OpalMediaFormat variable.
+ * Restructured media bypass functions to fix problems with RFC2833.
+ *
+ * Revision 2.14  2002/02/13 02:31:13  robertj
  * Added trace for default CanDoMediaBypass
  *
  * Revision 2.13  2002/02/11 09:32:13  robertj
@@ -153,7 +157,7 @@ OpalConnection::OpalConnection(OpalCall & call,
   sendUserInputMode = endpoint.GetManager().GetSendUserInputModes();
   bandwidthAvailable = endpoint.GetInitialBandwidth();
 
-  rfc2833Handler = new OpalRFC2833(PCREATE_NOTIFIER(OnUserInputInlineRFC2833));
+  rfc2833Handler = new OpalRFC2833Proto(PCREATE_NOTIFIER(OnUserInputInlineRFC2833));
 
   mediaStreams.DisallowDeleteObjects();
 
@@ -433,16 +437,15 @@ OpalMediaStream * OpalConnection::GetMediaStream(unsigned sessionId, BOOL source
 }
 
 
-BOOL OpalConnection::CanDoMediaBypass(unsigned /*sessionID*/) const
+BOOL OpalConnection::IsMediaBypassPossible(unsigned /*sessionID*/) const
 {
-  PTRACE(3, "OpalCon\tCanDoMediaBypass: default returns FALSE");
+  PTRACE(3, "OpalCon\tIsMediaBypassPossible: default returns FALSE");
   return FALSE;
 }
 
 
-BOOL OpalConnection::GetMediaTransportAddress(unsigned /*sessionID*/,
-                                              OpalTransportAddress & /*data*/,
-                                              OpalTransportAddress & /*control*/) const
+BOOL OpalConnection::GetMediaInformation(unsigned /*sessionID*/,
+                                         MediaInformation & /*info*/) const
 {
   return FALSE;
 }
