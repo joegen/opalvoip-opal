@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.2  2004/12/05 18:14:20  dsandras
+# Cleanups.
+#
 # Revision 1.1  2004/12/04 18:37:58  dsandras
 # Ported the "make install" / "make uninstall" system from OpenH323 to OPAL.
 #
@@ -138,7 +141,6 @@ include $(OPALDIR)/opal_inc.mak
 
 PREFIX=@INSTALLPREFIX@/
 exec_prefix = ${PREFIX}
-LIBDIR=@LIBDIR@
 
 ifndef PREFIX
 PREFIX=/usr/local
@@ -152,7 +154,7 @@ endif
 
 OBJDIR	=	$(OPAL_OBJDIR)
 LIBDIR  =	$(OPAL_LIBDIR)
-TARGET	=	$(LIBDIR)/$(OPAL_FILE)
+TARGET	=	$(OPAL_LIBDIR)/$(OPAL_FILE)
 
 ifdef NOTRACE
 STDCCFLAGS += -DPASN_NOPRINTON
@@ -595,20 +597,18 @@ test:
 
 ###############################################################################
 #### Install targets
-LIBDIR=@LIBDIR@
-
 install:
-	mkdir -p $(DESTDIR)$(LIBDIR)
-	rm -f $(DESTDIR)$(LIBDIR)/libopal_*_r.so*
-	$(INSTALL) -m 444 lib/*_r.so $(DESTDIR)$(LIBDIR)
+	mkdir -p $(DESTDIR)@LIBDIR@
+	rm -f $(DESTDIR)@LIBDIR@/libopal_*_r.so*
+	$(INSTALL) -m 444 lib/*_r.so $(DESTDIR)@LIBDIR@
 	(for fn in lib/*_r.so.* ; do \
-		cd $(DESTDIR)$(LIBDIR) ; \
+		cd $(DESTDIR)@LIBDIR@ ; \
 		rm -f `basename $$fn` ; \
 		ln -s libopal_*_r.so `basename $$fn` ; \
 	done)
-	$(INSTALL) -m 444 lib/$(OPAL_FILE) $(DESTDIR)$(LIBDIR)
-	( cd $(DESTDIR)$(LIBDIR); rm libopal.so ; ln -s $(OPAL_FILE) libopal.so)
-	( for dir in $(DESTDIR)$(LIBDIR) \
+	$(INSTALL) -m 444 lib/$(OPAL_FILE) $(DESTDIR)@LIBDIR@
+	( cd $(DESTDIR)@LIBDIR@; rm libopal.so ; ln -s $(OPAL_FILE) libopal.so)
+	( for dir in $(DESTDIR)@LIBDIR@ \
 		     $(DESTDIR)$(PREFIX)/include/opal/asn \
 		     $(DESTDIR)$(PREFIX)/include/opal/codec \
 		     $(DESTDIR)$(PREFIX)/include/opal/h323 \
@@ -653,8 +653,8 @@ install:
 uninstall:
 	rm -rf $(DESTDIR)$(PREFIX)/include/opal \
 	       $(DESTDIR)$(PREFIX)/share/opal
-	rm -f $(DESTDIR)$(LIBDIR)/$(OPAL_FILE) \
-	      $(DESTDIR)$(LIBDIR)/libopal.so
+	rm -f $(DESTDIR)@LIBDIR@/$(OPAL_FILE) \
+	      $(DESTDIR)@LIBDIR@/libopal.so
 
 # End of file #################################################################
 
