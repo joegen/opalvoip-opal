@@ -260,6 +260,10 @@ SOURCE=..\codec\mscodecs.cxx
 # End Source File
 # Begin Source File
 
+SOURCE=..\codec\opalwavfile.cxx
+# End Source File
+# Begin Source File
+
 SOURCE=..\codec\rfc2833.cxx
 # End Source File
 # End Group
@@ -503,6 +507,10 @@ SOURCE=..\..\include\codec\lpc10codec.h
 # Begin Source File
 
 SOURCE=..\..\include\codec\mscodecs.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\codec\opalwavfile.h
 # End Source File
 # Begin Source File
 
