@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2023  2004/05/15 12:53:03  rjongbloed
+ * Revision 1.2024  2004/07/11 12:42:13  rjongbloed
+ * Added function on endpoints to get the list of all media formats any
+ *   connection the endpoint may create can support.
+ *
+ * Revision 2.22  2004/05/15 12:53:03  rjongbloed
  * Added default username and display name to manager, for all endpoints.
  *
  * Revision 2.21  2004/04/26 06:30:34  rjongbloed
@@ -393,10 +397,10 @@ void OpalEndPoint::OnClosedMediaStream(const OpalMediaStream & stream)
 }
 
 
-void OpalEndPoint::AddVideoMediaFormats(const OpalConnection & connection,
-                                      OpalMediaFormatList & mediaFormats) const
+void OpalEndPoint::AddVideoMediaFormats(OpalMediaFormatList & mediaFormats,
+                                        const OpalConnection * connection) const
 {
-  manager.AddVideoMediaFormats(connection, mediaFormats);
+  manager.AddVideoMediaFormats(mediaFormats, connection);
 }
 
 

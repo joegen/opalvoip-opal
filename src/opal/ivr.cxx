@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.cxx,v $
- * Revision 1.2006  2004/04/18 13:35:28  rjongbloed
+ * Revision 1.2007  2004/07/11 12:42:13  rjongbloed
+ * Added function on endpoints to get the list of all media formats any
+ *   connection the endpoint may create can support.
+ *
+ * Revision 2.5  2004/04/18 13:35:28  rjongbloed
  * Fixed ability to make calls where both endpoints are specified a priori. In particular
  *   fixing the VXML support for an outgoing sip/h323 call.
  *
@@ -112,6 +116,19 @@ BOOL OpalIVREndPoint::MakeConnection(OpalCall & call,
     connection->InitiateCall();
 
   return TRUE;
+}
+
+
+OpalMediaFormatList OpalIVREndPoint::GetMediaFormats() const
+{
+ 
+  OpalMediaFormatList formats;
+
+  formats += OpalPCM16; // Sound card can only do 16 bit PCM
+
+  AddVideoMediaFormats(formats);
+
+  return formats;
 }
 
 
