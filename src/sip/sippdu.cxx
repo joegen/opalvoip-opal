@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2016  2002/04/18 02:49:20  robertj
+ * Revision 1.2017  2002/07/08 12:48:54  craigs
+ * Do not set Record-Route if it is empty.
+ *    Thanks to "Babara" <openh323@objectcrafts.org>
+ *
+ * Revision 2.15  2002/04/18 02:49:20  robertj
  * Fixed checking the correct state when overwriting terminated transactions.
  *
  * Revision 2.14  2002/04/17 07:24:12  robertj
@@ -446,7 +450,8 @@ PStringList SIPMIMEInfo::GetRecordRoute() const
 
 void SIPMIMEInfo::SetRecordRoute(const PStringList & v)
 {
-  SetRouteList("Record-Route",  v);
+  if (!v.IsEmpty())
+    SetRouteList("Record-Route",  v);
 }
 
 
