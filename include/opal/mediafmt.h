@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2024  2005/02/21 12:19:47  rjongbloed
+ * Revision 1.2025  2005/03/12 00:33:26  csoutheren
+ * Fixed problems with STL compatibility on MSVC 6
+ * Fixed problems with video streams
+ * Thanks to Adrian Sietsma
+ *
+ * Revision 2.23  2005/02/21 12:19:47  rjongbloed
  * Added new "options list" to the OpalMediaFormat class.
  *
  * Revision 2.22  2004/07/11 12:32:51  rjongbloed
@@ -354,7 +359,7 @@ class OpalMediaOptionValue : public OpalMediaOption
     virtual PObject * Clone() const { return new OpalMediaOptionValue(*this); }
 
     virtual void PrintOn(ostream & strm) const { strm << m_value; }
-    virtual void ReadFrom(istream & strm) { strm >> m_value; }
+    virtual void ReadFrom(istream & strm) { int i; strm >> i; m_value = (i != 0); }
 
     virtual void Assign(
       const OpalMediaOption & option
