@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2050  2005/01/09 03:42:46  rjongbloed
+ * Revision 1.2051  2005/01/15 19:42:33  csoutheren
+ * Added temporary workaround for deadlock that occurs with incoming calls
+ *
+ * Revision 2.49  2005/01/09 03:42:46  rjongbloed
  * Fixed warning about unused parameter
  *
  * Revision 2.48  2004/12/25 20:43:42  dsandras
@@ -924,10 +927,15 @@ void SIPConnection::OnReceivedACK(SIP_PDU & /*response*/)
   if (phase != ConnectedPhase)
     return;
   
-  StartMediaStreams();
+  //StartMediaStreams();
   releaseMethod = ReleaseWithBYE;
   phase = EstablishedPhase;
   OnEstablished();
+
+  // HACK HACK HACK: this is a work-around for a deadlock that can occur
+  // during incoming calls. What is needed is a proper resequencing that
+  // avoids this problem
+  StartMediaStreams();
 }
 
 
