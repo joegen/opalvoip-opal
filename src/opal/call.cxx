@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2029  2004/07/14 13:26:14  rjongbloed
+ * Revision 1.2030  2004/08/14 07:56:32  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.28  2004/07/14 13:26:14  rjongbloed
  * Fixed issues with the propagation of the "established" phase of a call. Now
  *   calling an OnEstablished() chain like OnAlerting() and OnConnected() to
  *   finally arrive at OnEstablishedCall() on OpalManager
@@ -142,22 +145,29 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
+#ifdef _MSC_VER
+#pragma warning(disable:4355)
+#endif
+
 OpalCall::OpalCall(OpalManager & mgr)
   : manager(mgr),
     myToken(manager.GetNextCallToken())
 {
-  manager.AttachCall(this);
+  manager.activeCalls.SetAt(myToken, this);
 
   isEstablished = FALSE;
   endCallSyncPoint = NULL;
 
   callEndReason = OpalConnection::NumCallEndReasons;
 
-  activeConnections.DisallowDeleteObjects();
-  garbageConnections.DisallowDeleteObjects();
+  connectionsActive.DisallowDeleteObjects();
 
   PTRACE(3, "Call\tCreated " << *this);
 }
+
+#ifdef _MSC_VER
+#pragma warning(default:4355)
+#endif
 
 
 OpalCall::~OpalCall()
@@ -172,17 +182,6 @@ OpalCall::~OpalCall()
 void OpalCall::PrintOn(ostream & strm) const
 {
   strm << "Call[" << myToken << ']';
-}
-
-
-void OpalCall::AddConnection(OpalConnection * connection)
-{
-  if (PAssertNULL(connection) == NULL)
-    return;
-
-  inUseFlag.Wait();
-  activeConnections.Append(connection);
-  inUseFlag.Signal();
 }
 
 
@@ -204,7 +203,8 @@ void OpalCall::Clear(OpalConnection::CallEndReason reason, PSyncPoint * sync)
 {
   PTRACE(3, "Call\tClearing " << *this << " reason=" << reason);
 
-  inUseFlag.Wait();
+  if (!LockReadWrite())
+    return;
 
   SetCallEndReason(reason);
 
@@ -217,13 +217,10 @@ void OpalCall::Clear(OpalConnection::CallEndReason reason, PSyncPoint * sync)
     }
   }
 
-  while (activeConnections.GetSize() > 0)
-    InternalReleaseConnection(0, reason);
+  UnlockReadWrite();
 
-  inUseFlag.Signal();
-
-  // Signal the background threads that there is some stuff to process.
-  manager.SignalGarbageCollector();
+  for (PSafePtr<OpalConnection> connection = connectionsActive; connection != NULL; ++connection)
+    connection->Release(reason);
 }
 
 
@@ -239,18 +236,12 @@ BOOL OpalCall::OnSetUp(OpalConnection & connection)
 
   BOOL ok = FALSE;
 
-  inUseFlag.Wait();
-
-  for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
-    OpalConnection & conn = activeConnections[i];
-    if (&connection != &conn && conn.Lock()) {
-      if (conn.SetUpConnection())
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+    if (conn != &connection) {
+      if (conn->SetUpConnection())
         ok = TRUE;
-      conn.Unlock();
     }
   }
-
-  inUseFlag.Signal();
 
   return ok;
 }
@@ -264,18 +255,12 @@ BOOL OpalCall::OnAlerting(OpalConnection & connection)
 
   BOOL hasMedia = connection.GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, TRUE) != NULL;
 
-  inUseFlag.Wait();
-
-  for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
-    OpalConnection & conn = activeConnections[i];
-    if (&connection != &conn && conn.Lock()) {
-      if (conn.SetAlerting(connection.GetRemotePartyName(), hasMedia))
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+    if (conn != &connection) {
+      if (conn->SetAlerting(connection.GetRemotePartyName(), hasMedia))
         ok = TRUE;
-      conn.Unlock();
     }
   }
-
-  inUseFlag.Signal();
 
   return ok;
 }
@@ -285,61 +270,42 @@ BOOL OpalCall::OnConnected(OpalConnection & connection)
 {
   PTRACE(3, "Call\tOnConnected " << connection);
 
-  inUseFlag.Wait();
+  if (!LockReadOnly())
+    return FALSE;
 
-  if (activeConnections.GetSize() == 1 && !partyB.IsEmpty()) {
-    inUseFlag.Signal();
+  BOOL ok = connectionsActive.GetSize() == 1 && !partyB.IsEmpty();
+
+  UnlockReadOnly();
+
+  if (ok) {
     if (!manager.MakeConnection(*this, partyB))
       connection.Release(OpalConnection::EndedByNoUser);
     return OnSetUp(connection);
   }
 
-  BOOL ok = FALSE;
   BOOL createdOne = FALSE;
 
-  for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
-    OpalConnection & conn = activeConnections[i];
-    if (&connection != &conn) {
-      if (conn.Lock()) {
-        if (conn.SetConnected())
-          ok = TRUE;
-        conn.Unlock();
-      }
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+    if (conn != &connection) {
+      if (conn->SetConnected())
+        ok = TRUE;
     }
-    else if (i == 0)
-      partyA = connection.GetRemotePartyAddress();
-    else
-      partyB = connection.GetRemotePartyAddress();
 
-    OpalMediaFormatList formats = GetMediaFormats(conn, TRUE);
-    if (OpenSourceMediaStreams(conn, formats, OpalMediaFormat::DefaultAudioSessionID))
+    OpalMediaFormatList formats = GetMediaFormats(*conn, TRUE);
+    if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultAudioSessionID))
       createdOne = TRUE;
     if (manager.CanAutoStartTransmitVideo()) {
-      if (OpenSourceMediaStreams(conn, formats, OpalMediaFormat::DefaultVideoSessionID))
+      if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultVideoSessionID))
         createdOne = TRUE;
     }
   }
 
-  inUseFlag.Signal();
-
-  if (!ok)
-    return FALSE;
-
-  if (createdOne) {
-    inUseFlag.Wait();
-
-    for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
-      OpalConnection & conn = activeConnections[i];
-      if (conn.Lock()) {
-        activeConnections[i].StartMediaStreams();
-        conn.Unlock();
-      }
-    }
-
-    inUseFlag.Signal();
+  if (ok && createdOne) {
+    for (PSafePtr<OpalConnection> conn = connectionsActive; conn != NULL; ++conn)
+      conn->StartMediaStreams();
   }
 
-  return TRUE;
+  return ok;
 }
 
 
@@ -347,37 +313,35 @@ BOOL OpalCall::OnEstablished(OpalConnection & connection)
 {
   PTRACE(3, "Call\tOnEstablished " << connection);
 
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return FALSE;
+
   if (isEstablished)
+    return TRUE;
+
+  if (connectionsActive.GetSize() < 2)
     return FALSE;
 
-  PINDEX idx = activeConnections.GetSize();
-  if (idx < 2)
-    return FALSE;
-
-  while (idx-- > 0) {
-    if (activeConnections[idx].GetPhase() != OpalConnection::EstablishedPhase)
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+    if (conn->GetPhase() != OpalConnection::EstablishedPhase)
       return FALSE;
   }
 
   isEstablished = TRUE;
   OnEstablishedCall();
+
   return TRUE;
 }
 
 
-OpalConnection * OpalCall::GetOtherPartyConnection(const OpalConnection & connection) const
+PSafePtr<OpalConnection> OpalCall::GetOtherPartyConnection(const OpalConnection & connection) const
 {
   PTRACE(3, "Call\tGetOtherPartyConnection " << connection);
 
-  PWaitAndSignal mutex(inUseFlag);
-
-  if (activeConnections.GetSize() != 2)
-    return NULL;
-
-  for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
-    OpalConnection & conn = activeConnections[i];
-    if (&connection != &conn)
-      return &conn;
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+    if (conn != &connection)
+      return conn;
   }
 
   return NULL;
@@ -389,14 +353,11 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection,
 {
   OpalMediaFormatList commonFormats;
 
-  inUseFlag.Wait();
-
   BOOL first = TRUE;
 
-  for (PINDEX c = 0; c < activeConnections.GetSize(); c++) {
-    OpalConnection & conn = activeConnections[c];
-    if (includeSpecifiedConnection || &connection != &conn) {
-      OpalMediaFormatList possibleFormats = OpalTranscoder::GetPossibleFormats(conn.GetMediaFormats());
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+    if (includeSpecifiedConnection || conn != &connection) {
+      OpalMediaFormatList possibleFormats = OpalTranscoder::GetPossibleFormats(conn->GetMediaFormats());
       if (first) {
         commonFormats = possibleFormats;
         first = FALSE;
@@ -410,8 +371,6 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection,
       }
     }
   }
-
-  inUseFlag.Signal();
 
   connection.AdjustMediaFormats(commonFormats);
 
@@ -433,16 +392,13 @@ BOOL OpalCall::OpenSourceMediaStreams(const OpalConnection & connection,
 
   OpalMediaFormatList adjustableMediaFormats = mediaFormats;
 
-  inUseFlag.Wait();
-
-  for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
-    OpalConnection & conn = activeConnections[i];
-    if (&connection != &conn) {
-      if (conn.OpenSourceMediaStream(adjustableMediaFormats, sessionID)) {
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+    if (conn != &connection) {
+      if (conn->OpenSourceMediaStream(adjustableMediaFormats, sessionID)) {
         startedOne = TRUE;
         // If opened the source stream, then reorder the media formats so we
         // have a preference for symmetric codecs on subsequent connection(s)
-        OpalMediaStream * otherStream = conn.GetMediaStream(sessionID, TRUE);
+        OpalMediaStream * otherStream = conn->GetMediaStream(sessionID, TRUE);
         if (otherStream != NULL && adjustableMediaFormats[0] != otherStream->GetMediaFormat()) {
           adjustableMediaFormats.Reorder(otherStream->GetMediaFormat());
           PTRACE(4, "Call\tOpenSourceMediaStreams for session " << sessionID
@@ -451,8 +407,6 @@ BOOL OpalCall::OpenSourceMediaStreams(const OpalConnection & connection,
       }
     }
   }
-
-  inUseFlag.Signal();
 
   return startedOne;
 }
@@ -463,15 +417,15 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
 {
   PTRACE(3, "Call\tPatchMediaStreams " << connection);
 
-  PWaitAndSignal mutex(inUseFlag);
+  PSafeLockReadOnly lock(*this);
+  if (!lock.IsLocked())
+    return FALSE;
 
   OpalMediaPatch * patch = NULL;
 
-  for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
-    OpalConnection & conn = activeConnections[i];
-    if (&connection != &conn && conn.Lock()) {
-      OpalMediaStream * sink = conn.OpenSinkMediaStream(source);
-      conn.Unlock();
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+    if (conn != &connection) {
+      OpalMediaStream * sink = conn->OpenSinkMediaStream(source);
 
       if (sink != NULL) {
         if (patch == NULL) {
@@ -493,38 +447,27 @@ BOOL OpalCall::IsMediaBypassPossible(const OpalConnection & connection,
 {
   PTRACE(3, "Call\tCanDoMediaBypass " << connection << " session " << sessionID);
 
-  PWaitAndSignal mutex(inUseFlag);
+  BOOL ok = FALSE;
 
-  if (activeConnections.GetSize() == 2) {
-    for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
-      OpalConnection & conn = activeConnections[i];
-      if (&connection != &conn)
-        return manager.IsMediaBypassPossible(connection, conn, sessionID);
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+    if (conn != &connection) {
+      ok = manager.IsMediaBypassPossible(connection, *conn, sessionID);
+      break;
     }
   }
 
-  return FALSE;
+  return ok;
 }
 
 
-void OpalCall::OnUserInputString(OpalConnection & connection,
-                                    const PString & value)
+void OpalCall::OnUserInputString(OpalConnection & connection, const PString & value)
 {
-  inUseFlag.Wait();
-
-  if (activeConnections.GetSize() == 1)
-    connection.SetUserInput(value);
-  else {
-    for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
-      OpalConnection & conn = activeConnections[i];
-      if (&connection != &conn && conn.Lock()) {
-        conn.SendUserInputString(value);
-        conn.Unlock();
-      }
-    }
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+    if (conn != &connection)
+      conn->SendUserInputString(value);
+    else
+      connection.SetUserInput(value);
   }
-
-  inUseFlag.Signal();
 }
 
 
@@ -532,23 +475,14 @@ void OpalCall::OnUserInputTone(OpalConnection & connection,
                                char tone,
                                int duration)
 {
-  inUseFlag.Wait();
-
-  if (activeConnections.GetSize() == 1) {
-    if (duration > 0)
-      connection.OnUserInputString(tone);
-  }
-  else {
-    for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
-      OpalConnection & conn = activeConnections[i];
-      if (&connection != &conn && conn.Lock()) {
-        conn.SendUserInputTone(tone, duration);
-        conn.Unlock();
-      }
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+    if (conn != &connection)
+      conn->SendUserInputTone(tone, duration);
+    else {
+      if (duration > 0)
+        connection.OnUserInputString(tone);
     }
   }
-
-  inUseFlag.Signal();
 }
 
 
@@ -556,70 +490,18 @@ void OpalCall::OnReleased(OpalConnection & connection)
 {
   PTRACE(3, "Call\tOnReleased " << connection);
 
-  inUseFlag.Wait();
-
   SetCallEndReason(connection.GetCallEndReason());
+
+  connectionsActive.Remove(&connection);
 
   // A call will evaporate when one connection left, at some point this is
   // to be changes so can have "parked" connections.
-  if (activeConnections.GetSize() == 1)
-    InternalReleaseConnection(0, connection.GetCallEndReason());
+  PSafePtr<OpalConnection> last = connectionsActive.GetAt(0, PSafeReference);
+  if (last != NULL && connectionsActive.GetSize() == 1)
+    last->Release(connection.GetCallEndReason());
 
-  inUseFlag.Signal();
-
-  // Signal the background threads that there is some stuff to process.
-  manager.SignalGarbageCollector();
-}
-
-
-void OpalCall::Release(OpalConnection * connection)
-{
-  if (PAssertNULL(connection) == NULL)
-    return;
-
-  PTRACE(3, "Call\tReleasing connection " << *connection);
-
-  inUseFlag.Wait();
-  InternalReleaseConnection(activeConnections.GetObjectsIndex(connection), OpalConnection::EndedByLocalUser);
-  inUseFlag.Signal();
-
-  // Signal the background threads that there is some stuff to process.
-  manager.SignalGarbageCollector();
-}
-
-
-void OpalCall::InternalReleaseConnection(PINDEX activeIndex, OpalConnection::CallEndReason reason)
-{
-  if (activeIndex >= activeConnections.GetSize())
-    return;
-
-  OpalConnection * connection = (OpalConnection *)activeConnections.RemoveAt(activeIndex);
-  garbageConnections.Append(connection);
-  connection->SetCallEndReason(reason);
-}
-
-
-BOOL OpalCall::GarbageCollection()
-{
-  inUseFlag.Wait();
-
-  while (garbageConnections.GetSize() > 0) {
-    OpalConnection * connection = (OpalConnection *)garbageConnections.RemoveAt(0);
-    inUseFlag.Signal();
-
-    PTRACE(3, "Call\tReleasing connection " << *connection);
-
-    // Now, outside the callsMutex, we can clean up calls
-    if (connection->OnReleased())
-      delete connection;
-
-    inUseFlag.Wait();
-  }
-
-  inUseFlag.Signal();
-
-  // Going out of scope does the delete of all the calls
-  return activeConnections.IsEmpty();
+  if (connectionsActive.IsEmpty())
+    OnCleared();
 }
 
 
