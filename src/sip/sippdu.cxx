@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2003  2002/02/11 07:36:23  robertj
+ * Revision 1.2004  2002/02/13 02:32:00  robertj
+ * Fixed use of correct Decode function and error detection on parsing SDP.
+ *
+ * Revision 2.2  2002/02/11 07:36:23  robertj
  * Changed SDP to use OpalTransport for hosts instead of IP addresses/ports
  * Added media bypass for streams between compatible protocols.
  *
@@ -427,9 +430,14 @@ BOOL SIP_PDU::Read()
   transport.read(entityBody.GetPointer(contentLength+1), contentLength);
   entityBody[contentLength] = '\0';
 
-  if (mime.GetContentType() == "application/sdp")
-    sdp = new SDPSessionDescription(entityBody);
-  else {
+  BOOL removeSDP = TRUE;
+
+  if (mime.GetContentType() == "application/sdp") {
+    sdp = new SDPSessionDescription();
+    removeSDP = !sdp->Decode(entityBody);
+  }
+
+  if (removeSDP) {
     delete sdp;
     sdp = NULL;
   }
