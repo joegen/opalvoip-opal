@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2031  2004/03/13 06:30:03  rjongbloed
+ * Revision 1.2032  2004/03/16 12:01:37  rjongbloed
+ * Temporary fix for closing UDP transport
+ *
+ * Revision 2.30  2004/03/13 06:30:03  rjongbloed
  * Changed parameter in UDP write function to void * from PObject *.
  *
  * Revision 2.29  2004/02/24 11:37:02  rjongbloed
@@ -1658,12 +1661,12 @@ OpalTransportUDP::~OpalTransportUDP()
 
 BOOL OpalTransportUDP::Close()
 {
-  if (readAutoDelete)
+//  if (readAutoDelete)
     return OpalTransport::Close();
 
-  readChannel = writeChannel = NULL;
-  thread = NULL;
-  return TRUE;
+//  readChannel = writeChannel = NULL;
+//  thread = NULL;
+//  return TRUE;
 }
 
 
