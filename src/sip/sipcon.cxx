@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2048  2004/12/23 20:43:27  dsandras
+ * Revision 1.2049  2004/12/25 20:43:42  dsandras
+ * Attach the RFC2833 handlers when we are in connected state to ensure
+ * OpalMediaPatch exist. Fixes problem for DTMF sending.
+ *
+ * Revision 2.47  2004/12/23 20:43:27  dsandras
  * Only start the media streams if we are in the phase connectedPhase.
  *
  * Revision 2.46  2004/12/22 18:55:08  dsandras
@@ -500,19 +504,6 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   // Add in the RFC2833 handler, if used
   if (hasTelephoneEvent) {
     localMedia->AddSDPMediaFormat(new SDPMediaFormat("0-15", rfc2833Handler->GetPayloadType()));
-
-    for (i = 0; i < mediaStreams.GetSize(); i++) {
-      OpalMediaStream & mediaStream = mediaStreams[i];
-      if (mediaStream.GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
-        OpalMediaPatch * patch = mediaStream.GetPatch();
-        if (patch != NULL) {
-          if (mediaStream.IsSource())
-            patch->AddFilter(rfc2833Handler->GetReceiveHandler(), mediaStream.GetMediaFormat());
-          else
-            patch->AddFilter(rfc2833Handler->GetTransmitHandler());
-        }
-      }
-    }
   }
 
   sdpOut.AddMediaDescription(localMedia);
@@ -556,10 +547,37 @@ OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & media
     return NULL;
 
   return new OpalRTPMediaStream(mediaFormat, isSource, *rtpSessions.GetSession(sessionID),
-                                endpoint.GetManager().GetMinAudioJitterDelay(),
-                                endpoint.GetManager().GetMaxAudioJitterDelay());
+				endpoint.GetManager().GetMinAudioJitterDelay(),
+				endpoint.GetManager().GetMaxAudioJitterDelay());
 }
 
+
+void SIPConnection::OnConnected ()
+{
+  if (rfc2833Handler != NULL) {
+
+    for (int i = 0; i < mediaStreams.GetSize(); i++) {
+
+      OpalMediaStream & mediaStream = mediaStreams[i];
+
+      if (mediaStream.GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
+	OpalMediaPatch * patch = mediaStream.GetPatch();
+
+	if (patch != NULL) {
+	  if (mediaStream.IsSource()) {
+	    patch->AddFilter(rfc2833Handler->GetReceiveHandler(), mediaStream.GetMediaFormat());
+	  }
+	  else {
+	    patch->AddFilter(rfc2833Handler->GetTransmitHandler());
+	  }
+	}
+      }
+    }
+  }
+
+  OpalConnection::OnConnected ();
+}
+	
 
 BOOL SIPConnection::IsMediaBypassPossible(unsigned sessionID) const
 {
@@ -1013,11 +1031,13 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
                                                      SIP_PDU & response)
 {
   BOOL isProxy = response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
+
 #if PTRACING
   const char * proxyTrace = isProxy ? "Proxy " : "";
 #endif
 
   if (authentication.IsValid()) {
+
     PTRACE(1, "SIP\tAlready done INVITE for " << proxyTrace << "Authentication Required, aborting call");
     Release(EndedBySecurityDenial);
     return;
