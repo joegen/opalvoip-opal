@@ -22453,8 +22453,8 @@ EXPORTS
     ?Copy@PLDAPAttr_timestamp@RTPerson@PILSSession@@UAEXABVPLDAPAttributeBase@@@Z @22144 NONAME
     ?CopyTo@H323PeerElementDescriptor@@QAEXAAVH501_Descriptor@@@Z @22145 NONAME
     ?CopyToAddressTemplate@H323PeerElementDescriptor@@SAHAAVH501_AddressTemplate@@ABVH225_EndpointType@@ABVH225_ArrayOf_AliasAddress@@2I@Z @22146 NONAME
-    ?Create@?$Worker@VPWAVFileConverterALaw@@@?$PFactory@VPWAVFileConverter@@I@@MBEPAVPWAVFileConverter@@XZ @28978 NONAME
-    ?Create@?$Worker@VPWAVFileConverterULaw@@@?$PFactory@VPWAVFileConverter@@I@@MBEPAVPWAVFileConverter@@XZ @28979 NONAME
+    ?Create@?$Worker@VPWAVFileConverterALaw@@@?$PFactory@VPWAVFileConverter@@I@@MBEPAVPWAVFileConverter@@ABI@Z @29307 NONAME
+    ?Create@?$Worker@VPWAVFileConverterULaw@@@?$PFactory@VPWAVFileConverter@@I@@MBEPAVPWAVFileConverter@@ABI@Z @29308 NONAME
     ?Create@H323Capability@@SAPAV1@AAVH323EndPoint@@ABVPString@@@Z @22147 NONAME
     ?Create@H323_G711ALaw64Capability_Registration@@UBEPAVH323Capability@@AAVH323EndPoint@@@Z @22148 NONAME
     ?Create@H323_G711uLaw64Capability_Registration@@UBEPAVH323Capability@@AAVH323EndPoint@@@Z @22149 NONAME
@@ -22474,7 +22474,7 @@ EXPORTS
     ?Create@H323_UserInputCapability_SignalToneH245_Registration@@UBEPAVH323Capability@@AAVH323EndPoint@@@Z @22163 NONAME
     ?Create@OpalLineInterfaceDevice@@SAPAV1@ABVPString@@PAX@Z @22164 NONAME
     ?Create@OpalTranscoder@@SAPAV1@ABVOpalMediaFormat@@0PAX@Z @22165 NONAME
-    ?Create@WorkerBase@?$PFactory@VPWAVFileConverter@@I@@MBEPAVPWAVFileConverter@@XZ @28980 NONAME
+    ?Create@WorkerBase@?$PFactory@VPWAVFileConverter@@I@@MBEPAVPWAVFileConverter@@ABI@Z @29309 NONAME
     ?CreateAliasKey@H323PeerElement@@MAEPAVAliasKey@1@ABVH225_AliasAddress@@ABVOpalGloballyUniqueID@@HH@Z @22166 NONAME
     ?CreateAuthenticators@H323EndPoint@@UAE?AVH235Authenticators@@XZ @22167 NONAME
     ?CreateCall@H323GatekeeperServer@@UAEPAVH323GatekeeperCall@@ABVOpalGloballyUniqueID@@W4Direction@2@@Z @22168 NONAME
@@ -22500,7 +22500,7 @@ EXPORTS
     ?CreateGatekeeper@H323EndPoint@@UAEPAVH323Gatekeeper@@PAVOpalTransport@@@Z @22188 NONAME
     ?CreateIncomingControlChannel@H323Connection@@UAEHAAVH225_TransportAddress@@@Z @22189 NONAME
     ?CreateInstance@?$PFactory@VPTextToSpeech@@VPString@@@@SAPAVPTextToSpeech@@ABVPString@@@Z @28823 NONAME
-    ?CreateInstance@WorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@IAEPAVPTextToSpeech@@XZ @28824 NONAME
+    ?CreateInstance@WorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@IAEPAVPTextToSpeech@@ABVPString@@@Z @29310 NONAME
     ?CreateInstance_Internal@?$PFactory@VPTextToSpeech@@VPString@@@@IAEPAVPTextToSpeech@@ABVPString@@@Z @28825 NONAME
     ?CreateListener@H323DataChannel@@UAEHXZ @22190 NONAME
     ?CreateListener@H323GatekeeperServer@@UAEPAVH323Transactor@@PAVOpalTransport@@@Z @22191 NONAME
