@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2017  2004/05/17 13:24:18  rjongbloed
+ * Revision 1.2018  2004/05/24 13:52:38  rjongbloed
+ * Added a separate structure for the silence suppression paramters to make
+ *   it easier to set from global defaults in the manager class.
+ *
+ * Revision 2.16  2004/05/17 13:24:18  rjongbloed
  * Added silence suppression.
  *
  * Revision 2.15  2004/04/18 13:35:28  rjongbloed
@@ -99,6 +103,7 @@
 #include <codec/vidcodec.h>
 #include <opal/call.h>
 #include <opal/patch.h>
+#include <opal/manager.h>
 
 
 #define new PNEW
@@ -378,8 +383,10 @@ BOOL OpalPCSSConnection::OnOpenMediaStream(OpalMediaStream & mediaStream)
 
   if (mediaStream.IsSource()) {
     OpalMediaPatch * patch = mediaStream.GetPatch();
-    if (patch != NULL)
+    if (patch != NULL) {
+      silenceDetector->SetParameters(endpoint.GetManager().GetSilenceDetectParams());
       patch->AddFilter(silenceDetector->GetReceiveHandler(), OpalPCM16);
+    }
   }
 
   return TRUE;
