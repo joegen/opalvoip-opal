@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2020  2004/04/18 13:35:27  rjongbloed
+ * Revision 1.2021  2004/04/25 08:34:08  rjongbloed
+ * Fixed various GCC 3.4 warnings
+ *
+ * Revision 2.19  2004/04/18 13:35:27  rjongbloed
  * Fixed ability to make calls where both endpoints are specified a priori. In particular
  *   fixing the VXML support for an outgoing sip/h323 call.
  *
@@ -336,7 +339,9 @@ BOOL OpalLIDEndPoint::AddDeviceName(const PString & descriptor)
 
 BOOL OpalLIDEndPoint::AddDevice(OpalLineInterfaceDevice * device)
 {
-  PAssertNULL(device);
+  if (PAssertNULL(device) == NULL)
+    return FALSE;
+
   linesMutex.Wait();
   devices.Append(device);
   linesMutex.Signal();
@@ -346,7 +351,9 @@ BOOL OpalLIDEndPoint::AddDevice(OpalLineInterfaceDevice * device)
 
 void OpalLIDEndPoint::RemoveDevice(OpalLineInterfaceDevice * device)
 {
-  PAssertNULL(device);
+  if (PAssertNULL(device) == NULL)
+    return;
+
   RemoveLinesFromDevice(*device);
   linesMutex.Wait();
   devices.Remove(device);

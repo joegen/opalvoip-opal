@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2039  2004/03/16 12:03:33  rjongbloed
+ * Revision 1.2040  2004/04/25 08:34:08  rjongbloed
+ * Fixed various GCC 3.4 warnings
+ *
+ * Revision 2.38  2004/03/16 12:03:33  rjongbloed
  * Fixed poropagating port of proxy to connection target address.
  *
  * Revision 2.37  2004/03/15 12:33:48  rjongbloed
@@ -1025,7 +1028,8 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
 
 void SIPConnection::QueuePDU(SIP_PDU * pdu)
 {
-  PAssertNULL(pdu);
+  if (PAssertNULL(pdu) == NULL)
+    return;
 
   PTRACE(4, "SIP\tQueueing PDU: " << *pdu);
   pduQueue.Enqueue(pdu);

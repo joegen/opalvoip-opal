@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mscodecs.cxx,v $
- * Revision 1.2007  2004/03/11 06:54:28  csoutheren
+ * Revision 1.2008  2004/04/25 08:34:08  rjongbloed
+ * Fixed various GCC 3.4 warnings
+ *
+ * Revision 2.6  2004/03/11 06:54:28  csoutheren
  * Added ability to disable SIP or H.323 stacks
  *
  * Revision 2.5  2002/11/10 11:33:18  robertj
@@ -382,7 +385,7 @@ static void adpcm_coder(short indata[], char outdata[], int len, struct adpcm_st
 
     len--;
 
-    step = stepsizeTable[index];
+    step = stepsizeTable[(int)index];
 
     bufferstep = 1;
 
@@ -440,7 +443,7 @@ static void adpcm_coder(short indata[], char outdata[], int len, struct adpcm_st
         index = (char)(index + indexTable[delta]);
         if ( index < 0 ) index = 0;
         if ( index > 88 ) index = 88;
-        step = stepsizeTable[index];
+        step = stepsizeTable[(int)index];
 
         /* Step 6 - Output value */
         if ( bufferstep ) {
