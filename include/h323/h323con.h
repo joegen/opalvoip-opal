@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2028  2004/05/09 13:12:37  rjongbloed
+ * Revision 1.2029  2004/06/04 06:54:17  csoutheren
+ * Migrated updates from OpenH323 1.14.1
+ *
+ * Revision 2.27  2004/05/09 13:12:37  rjongbloed
  * Fixed issues with non fast start and non-tunnelled connections
  *
  * Revision 2.26  2004/05/01 10:00:41  rjongbloed
@@ -1910,6 +1913,11 @@ class H323Connection : public OpalConnection
     virtual PString GetSessionCodecNames(
       unsigned sessionID
     ) const;
+
+    /** Return TRUE if the remote appears to be behind a NAT firewall
+    */
+    BOOL IsBehindNAT() const
+    { return remoteIsNAT; }
   //@}
 
   /**@name Request Mode Changes */
@@ -2283,6 +2291,9 @@ class H323Connection : public OpalConnection
     H4504Handler                     * h4504handler;
     H4506Handler                     * h4506handler;
     H45011Handler                    * h45011handler;
+
+    // used to detect remote NAT endpoints
+    BOOL remoteIsNAT;
 
   private:
     PChannel * SwapHoldMediaChannels(PChannel * newChannel);
