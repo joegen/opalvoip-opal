@@ -1,0 +1,175 @@
+/**@name OPAL  -  Open Phone Abstraction Library 
+
+	This is a Open Source class library for the development of applications
+	that wish to use the H.323 protocol for multi-media communications over
+	packet based networks.
+
+@memo	A Class Libarary implementing several Voice over IP Protocols.
+@version 1.1beta2
+@author	Equivalence Pty. Ltd.
+*/
+
+// $Log: opal.dxx,v $
+// Revision 1.2004  2002/02/11 03:24:17  dereks
+// Add SIP to list of include files.
+//
+// Revision 2.2  2002/02/11 02:27:54  dereks
+// Adjust format of CVS logging command.
+//
+// Revision 2.1  2002/02/11 02:17:21  dereks
+// Adjust include file list.
+//
+
+//@{
+
+/**@name Introduction
+\begin{center}
+ 	{\Large{\bf Open Phone Abstraction Library}}
+\end{center}
+
+OpenH323
+
+*/
+ 
+/**@name Architecture
+\begin{center}
+ 	{\Large{\bf OPAL Architecture}}
+\end{center}
+
+The fundamental object of the ownership hierarchy is of the H323Endpoint 
+class. An application would typically have one instance of a descendant of 
+this class. The application defined descendant would set up defaults for 
+various H323 parameters (timeouts etc), the most important of which is the 
+capability table which defines the codecs and channel types the application 
+is capable of handling.
+
+Also created by the application in the H323Endpoint would be instances of one 
+or more descendants of the H323Listener class. There is a descendant of this 
+class for each protocol that is supported. For example H323ListenerIP would 
+be for Internet use. Each listener spawns a thread that monitors its protocol 
+and when a new incoming call is detected, creates an instance of a 
+H323Transport class descendent. As for the H323Listener class, there is a 
+descendent for each protocol supported, eg H323TransportIP.
+
+When the first PDU arrives on a H323Transport using the Q.931 and H.225 
+protocols, there is a call reference that identifies the connection that has 
+been made. These connections are embodied by the H323Connection class, which 
+contains all of the state information for a connection between H323 endpoints. 
+The H323Endpoint instance keeps track of these active connections. If there 
+is no connection for the call reference number already, a new one is created 
+and H323 signalling negotiations begun.
+
+An application would often have the system create an instance of a descendant 
+of the H323Connection class, rather than that class itself. This is so that 
+any of a large number of virtual methods may be overridden. These virtual 
+methods are "callback" functions by the library to allow the application to 
+either obtain information or modify the behaviour at various phases of the 
+protocol negotiations. For example, there is a callback for when an incoming 
+call is in progress and the application user should be "alerted". This is 
+highly application specific being anything from a simple audible beep to 
+displaying a pop up window with bells and whistles.
+
+The H323Negotiator classes are used to maintain the state and functionality 
+of each command or variable defined by the H.245 protocol. Their main reason 
+for existence is actually to reduce the scope of the h225.h and h245.h files, 
+which define many hundreds of classes. A user of the H323Connection class 
+thus does not have to include all of these classes on every compilation unit.
+
+During some of the H.245 negotiations, logical channels may be created, both 
+by the remote endpoint and by the local application. The H323Channel class 
+descendants represents this. A typical use of one of these classes is to open 
+a stream of encoded audio data. The H323Channel class would create a 
+H323Codec using the H323Capability that was passed during the protocol 
+negotiations.
+
+*/
+
+
+/**@name	Using OPAL
+Detailed tutorials will be forthcoming.
+
+@memo	Brief examples.
+*/
+
+/**@name	Class Reference
+
+@memo	Documentation on all classes.
+  */
+    //@{
+	//@Include: include/h323/h323.h
+	//@Include: include/h323/h323ep.h
+	//@Include: include/h323/h323con.h
+	//@Include: include/h323/channels.h
+	//@Include: include/h323/gkclient.h
+	//@Include: include/h323/gkserver.h
+	//@Include: include/h323/h225ras.h
+	//@Include: include/h323/h235auth.h
+	//@Include: include/h323/h323caps.h
+	//@Include: include/h323/h323neg.h
+	//@Include: include/h323/h323pdu.h
+	//@Include: include/h323/h323rtp.h
+	//@Include: include/h323/h450pdu.h
+	//@Include: include/h323/q931.h
+	//@Include: include/h323/transaddr.h
+	//@Include: include/codec/allcodecs.h
+	//@Include: include/codec/g711codec.h
+	//@Include: include/codec/gsmcodec.h
+	//@Include: include/codec/h261codec.h
+	//@Include: include/codec/lpc10codec.h
+	//@Include: include/codec/mscodecs.h
+	//@Include: include/codec/rfc2833.h
+	//@Include: include/lids/QTIoctl.h
+	//@Include: include/lids/ixjDefs.h
+	//@Include: include/lids/ixjlid.h
+	//@Include: include/lids/lid.h
+	//@Include: include/lids/lidep.h
+	//@Include: include/lids/vblasterlid.h
+	//@Include: include/lids/vpbapi.h
+	//@Include: include/lids/vpblid.h
+	//@Include: include/opal/connection.h
+	//@Include: include/opal/call.h
+	//@Include: include/opal/endpoint.h
+	//@Include: include/opal/guid.h
+	//@Include: include/opal/manager.h
+	//@Include: include/opal/mediafmt.h
+	//@Include: include/opal/mediastrm.h
+	//@Include: include/opal/patch.h
+	//@Include: include/opal/pcss.h
+	//@Include: include/opal/transcoders.h
+	//@Include: include/opal/transports.h
+	//@Include: include/rtp/jitter.h
+	//@Include: include/rtp/rtp.h
+	//@Include: include/t120/h323t120.h
+	//@Include: include/t120/t120proto.h
+	//@Include: include/t120/x224.h
+	//@Include: include/t38/h323t38.h
+	//@Include: include/t38/t38proto.h
+	//@Include: src/codec/gsm/inc/config.h
+	//@Include: src/codec/gsm/inc/gsm.h
+	//@Include: src/codec/gsm/inc/private.h
+	//@Include: src/codec/gsm/inc/proto.h
+	//@Include: src/codec/gsm/inc/unproto.h
+	//@Include: src/codec/vic/bsd-endian.h
+	//@Include: src/codec/vic/config.h
+	//@Include: src/codec/vic/crdef.h
+	//@Include: src/codec/vic/dct.h
+	//@Include: src/codec/vic/encoder-h261.h
+	//@Include: src/codec/vic/encoder.h
+	//@Include: src/codec/vic/grabber.h
+	//@Include: src/codec/vic/p64-huff.h
+	//@Include: src/codec/vic/p64.h
+	//@Include: src/codec/vic/p64encoder.h
+	//@Include: src/codec/vic/transmitter.h
+	//@Include: src/codec/vic/vid_coder.h
+	//@Include: src/codec/vic/videoframe.h
+	//@Include: src/codec/lpc10/src/f2c.h
+	//@Include: src/codec/lpc10/bitio.h
+	//@Include: src/codec/lpc10/lpc10.h
+	//@Include: include/sip/sdp.h
+	//@Include: include/sip/sip.h
+	//@Include: include/sip/sipcon.h
+	//@Include: include/sip/sipep.h
+	//@Include: include/sip/sippdu.h
+    //@}
+
+//@}
