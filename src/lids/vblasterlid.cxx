@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vblasterlid.cxx,v $
- * Revision 1.2004  2002/09/04 06:01:49  robertj
+ * Revision 1.2005  2002/09/06 07:20:31  robertj
+ * Fixed previous update, did not port properly.
+ *
+ * Revision 2.3  2002/09/04 06:01:49  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.2  2002/02/11 09:32:13  robertj
@@ -62,7 +65,7 @@
 #pragma implementation "vblasterlid.h"
 #endif
 
-#include "vblasterlid.h"
+#include <lids/vblasterlid.h>
 
 
 /*
@@ -457,11 +460,11 @@ static const struct {
 };
 
 
-OpalMediaFormat::List OpalVoipBlasterDevice::GetMediaFormats() const
+OpalMediaFormatList OpalVoipBlasterDevice::GetMediaFormats() const
 {
-  OpalMediaFormat::List codecs;
+  OpalMediaFormatList codecs;
 
-  codecs.Append(new OpalMediaFormat(CodecInfo[0].mediaFormat));
+  codecs += CodecInfo[0].mediaFormat;
 
   return codecs;
 }
