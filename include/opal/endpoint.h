@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2019  2004/03/13 06:25:52  rjongbloed
+ * Revision 1.2020  2004/04/26 06:30:32  rjongbloed
+ * Added ability to specify more than one defualt listener for an endpoint,
+ *   required by SIP which listens on both UDP and TCP.
+ *
+ * Revision 2.18  2004/03/13 06:25:52  rjongbloed
  * Slight rearrangement of local party name and alias list to beter match common
  *   behaviour in ancestor.
  * Abstracted local party name for endpoint into ancestor from H.,323.
@@ -165,10 +169,12 @@ class OpalEndPoint : public PObject
 
   /**@name Listeners management */
   //@{
-    /**Add a listener to the endoint.
+    /**Add a set of listeners to the endoint.
        This allows for the automatic creating of incoming call connections. An
        application should use OnConnectionEstablished() to monitor when calls
        have arrived and been successfully negotiated.
+
+       If the list is empty then GetDefaultListeners() is used.
       */
     BOOL StartListeners(
       const PStringArray & interfaces /// Address of interface to listen on.
@@ -178,6 +184,8 @@ class OpalEndPoint : public PObject
        This allows for the automatic creating of incoming call connections. An
        application should use OnConnectionEstablished() to monitor when calls
        have arrived and been successfully negotiated.
+
+       If the address is empty then the first entry of GetDefaultListeners() is used.
       */
     BOOL StartListener(
       const OpalTransportAddress & iface /// Address of interface to listen on.
@@ -191,6 +199,12 @@ class OpalEndPoint : public PObject
     BOOL StartListener(
       OpalListener * listener /// Transport dependent listener.
     );
+
+    /**Get the default listeners for the endpoint type.
+       Default behaviour returns empty list if defaultSignalPort is zero, else
+       one entry using tcp and INADDR_ANY, eg tcp$*:1720
+      */
+    virtual PStringArray GetDefaultListeners() const;
 
     /**Remove a listener from the endoint.
        If the listener parameter is NULL then all listeners are removed.
