@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2004  2001/08/17 08:22:23  robertj
+ * Revision 1.2005  2001/08/22 10:20:09  robertj
+ * Changed connection locking to use double mutex to guarantee that
+ *   no threads can ever deadlock or access deleted connection.
+ *
+ * Revision 2.3  2001/08/17 08:22:23  robertj
  * Moved call end reasons enum from OpalConnection to global.
  *
  * Revision 2.2  2001/08/13 05:10:39  robertj
@@ -149,7 +153,7 @@ class OpalConnection : public PObject
 
     /**Unlock connection.
      */
-    void Unlock() { inUseFlag.Signal(); }
+    void Unlock();
 
     enum Phases {
       SetUpPhase,
@@ -632,6 +636,10 @@ class OpalConnection : public PObject
   //@}
 
   protected:
+    /**Lock the connection at start of OnReleased() function.
+      */
+    void LockOnRelease();
+
   // Member variables
     OpalCall          & ownerCall;
     OpalEndPoint      & endpoint;
@@ -653,7 +661,10 @@ class OpalConnection : public PObject
     RTP_SessionManager  rtpSessions;
     unsigned            bandwidthAvailable;
 
-    PMutex              inUseFlag;
+  private:
+    PMutex innerMutex;
+    PMutex outerMutex;
+    BOOL   isBeingReleased;
 
 
 #if PTRACING

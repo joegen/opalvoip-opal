@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2004  2001/08/17 08:26:26  robertj
+ * Revision 1.2005  2001/08/22 10:20:09  robertj
+ * Changed connection locking to use double mutex to guarantee that
+ *   no threads can ever deadlock or access deleted connection.
+ *
+ * Revision 2.3  2001/08/17 08:26:26  robertj
  * Moved call end reasons enum from OpalConnection to global.
  *
  * Revision 2.2  2001/08/13 05:10:40  robertj
@@ -133,6 +137,8 @@ OpalConnection::OpalConnection(OpalCall & call,
   mediaStreams.DisallowDeleteObjects();
 
   ownerCall.AddConnection(this);
+
+  isBeingReleased = FALSE;
 }
 
 
@@ -150,19 +156,36 @@ void OpalConnection::PrintOn(ostream & strm) const
 
 BOOL OpalConnection::Lock()
 {
-  // If shutting down don't try and lock, just return failed. If not then lock
-  // it but do second test for shut down to avoid a possible race condition.
+  outerMutex.Wait();
 
-  if (GetPhase() == ReleasedPhase)
+  if (isBeingReleased) {
+    outerMutex.Signal();
     return FALSE;
+  }
 
-  inUseFlag.Wait();
+  innerMutex.Wait();
+  return TRUE;
+}
 
-  if (GetPhase() != ReleasedPhase)
-    return TRUE;
 
-  inUseFlag.Signal();
-  return FALSE;
+void OpalConnection::Unlock()
+{
+  innerMutex.Signal();
+  outerMutex.Signal();
+}
+
+
+void OpalConnection::LockOnRelease()
+{
+  outerMutex.Wait();
+  if (isBeingReleased) {
+    outerMutex.Signal();
+    return;
+  }
+
+  isBeingReleased = TRUE;
+  outerMutex.Signal();
+  innerMutex.Wait();
 }
 
 
@@ -200,6 +223,8 @@ void OpalConnection::Release(OpalCallEndReason reason)
 
 BOOL OpalConnection::OnReleased()
 {
+  LockOnRelease();
+
   for (PINDEX i = 0; i < mediaStreams.GetSize(); i++)
     mediaStreams[i].Close();
 

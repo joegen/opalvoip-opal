@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2004  2001/08/17 08:22:23  robertj
+ * Revision 1.2005  2001/08/22 10:20:09  robertj
+ * Changed connection locking to use double mutex to guarantee that
+ *   no threads can ever deadlock or access deleted connection.
+ *
+ * Revision 2.3  2001/08/17 08:22:23  robertj
  * Moved call end reasons enum from OpalConnection to global.
  *
  * Revision 2.2  2001/08/01 05:26:35  robertj
@@ -354,6 +358,13 @@ class OpalEndPoint : public PObject
       */
     virtual BOOL HasConnection(
       const PString & token   /// Token for identifying connection
+    );
+
+    /**Remove connection deom internal database.
+       This stops GetConnectionWithLock() finding connection any more.
+      */
+    void RemoveConnection(
+      OpalConnection * connection /// Connection to add to database
     );
   //@}
 
