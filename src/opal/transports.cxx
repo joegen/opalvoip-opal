@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2004  2001/11/09 05:49:47  robertj
+ * Revision 1.2005  2001/11/12 05:31:36  robertj
+ * Changed CreateTransport() on an OpalTransportAddress to bind to local address.
+ * Added OpalTransportAddress::GetIpAddress when don't need port number.
+ *
+ * Revision 2.3  2001/11/09 05:49:47  robertj
  * Abstracted UDP connection algorithm
  *
  * Revision 2.2  2001/11/06 05:40:13  robertj
@@ -86,6 +90,7 @@ class OpalInternalTransport : public PObject
     ) const  = 0;
 
     virtual OpalTransport * CreateTransport(
+      const OpalTransportAddress & address,
       OpalEndPoint & endpoint   /// Endpoint object for transport creation.
     ) const = 0;
 };
@@ -123,6 +128,7 @@ static class OpalInternalTCPTransport : public OpalInternalIPTransport
       OpalEndPoint & endpoint   /// Endpoint object for transport creation.
     ) const;
     virtual OpalTransport * CreateTransport(
+      const OpalTransportAddress & address,
       OpalEndPoint & endpoint   /// Endpoint object for transport creation.
     ) const;
 } internalTCPTransport;
@@ -143,6 +149,7 @@ static class OpalInternalUDPTransport : public OpalInternalIPTransport
       OpalEndPoint & endpoint   /// Endpoint object for transport creation.
     ) const;
     virtual OpalTransport * CreateTransport(
+      const OpalTransportAddress & address,
       OpalEndPoint & endpoint   /// Endpoint object for transport creation.
     ) const;
 } internalUDPTransport;
@@ -195,6 +202,16 @@ PString OpalTransportAddress::GetHostName() const
 }
   
 
+BOOL OpalTransportAddress::GetIpAddress(PIPSocket::Address & ip) const
+{
+  if (transport == NULL)
+    return FALSE;
+
+  WORD dummy;
+  return transport->GetIpAndPort(*this, ip, dummy);
+}
+
+
 BOOL OpalTransportAddress::GetIpAndPort(PIPSocket::Address & ip, WORD & port) const
 {
   if (transport == NULL)
@@ -227,7 +244,7 @@ OpalTransport * OpalTransportAddress::CreateTransport(OpalEndPoint & endpoint) c
   if (transport == NULL)
     return NULL;
 
-  return transport->CreateTransport(endpoint);
+  return transport->CreateTransport(*this, endpoint);
 }
 
 
@@ -363,17 +380,21 @@ OpalListener * OpalInternalTCPTransport::CreateCompatibleListener(
                                             OpalEndPoint & endpoint) const
 {
   PIPSocket::Address ip;
-  WORD dummy;
-  if (address.GetIpAndPort(ip, dummy))
+  if (address.GetIpAddress(ip))
     return new OpalListenerTCP(endpoint, ip, 0, address[address.GetLength()-1] != '+');
 
   return NULL;
 }
 
 
-OpalTransport * OpalInternalTCPTransport::CreateTransport(OpalEndPoint & endpoint) const
+OpalTransport * OpalInternalTCPTransport::CreateTransport(const OpalTransportAddress & address,
+                                                          OpalEndPoint & endpoint) const
 {
-  return new OpalTransportTCP(endpoint);
+  PIPSocket::Address ip;
+  if (address.GetIpAddress(ip))
+    return new OpalTransportTCP(endpoint, ip);
+
+  return NULL;
 }
 
 
@@ -395,17 +416,21 @@ OpalListener * OpalInternalUDPTransport::CreateCompatibleListener(
                                               OpalEndPoint & endpoint) const
 {
   PIPSocket::Address ip;
-  WORD dummy;
-  if (address.GetIpAndPort(ip, dummy))
-    return new OpalListenerTCP(endpoint, ip, 0);
+  if (address.GetIpAddress(ip))
+    return new OpalListenerUDP(endpoint, ip, 0);
 
   return NULL;
 }
 
 
-OpalTransport * OpalInternalUDPTransport::CreateTransport(OpalEndPoint & endpoint) const
+OpalTransport * OpalInternalUDPTransport::CreateTransport(const OpalTransportAddress & address,
+                                                          OpalEndPoint & endpoint) const
 {
-  return new OpalTransportUDP(endpoint);
+  PIPSocket::Address ip;
+  if (address.GetIpAddress(ip))
+    return new OpalTransportUDP(endpoint, ip);
+
+  return NULL;
 }
 
 
@@ -493,8 +518,7 @@ OpalTransportAddress OpalListenerIP::GetLocalAddress(const OpalTransportAddress 
     addr = "*";
 
     PIPSocket::Address ip;
-    WORD dummy;
-    if (preferredAddress.GetIpAndPort(ip, dummy)) {
+    if (preferredAddress.GetIpAddress(ip)) {
       // Verify preferred address is actually an interface in this machine!
       PIPSocket::InterfaceTable interfaces;
       if (PIPSocket::GetInterfaceTable(interfaces)) {
