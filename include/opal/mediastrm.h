@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2022  2004/12/04 16:35:50  dsandras
+ * Revision 1.2023  2005/03/12 00:33:27  csoutheren
+ * Fixed problems with STL compatibility on MSVC 6
+ * Fixed problems with video streams
+ * Thanks to Adrian Sietsma
+ *
+ * Revision 2.21  2004/12/04 16:35:50  dsandras
  * Added a function to get the PChannel back from the OpalMediaStream.
  *
  * Revision 2.20  2004/10/02 11:50:54  rjongbloed
@@ -657,6 +662,13 @@ class OpalVideoMediaStream : public OpalMediaStream
        Returns TRUE for LID streams.
       */
     virtual BOOL IsSynchronous() const;
+
+    /** Override size of frame header is included
+      */
+    virtual BOOL SetDataSize(
+     PINDEX dataSize  /// New data size
+    );
+
   //@}
 
   protected:
