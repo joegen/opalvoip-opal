@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2026  2004/07/11 12:42:09  rjongbloed
+ * Revision 1.2027  2004/08/14 07:56:28  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.25  2004/07/11 12:42:09  rjongbloed
  * Added function on endpoints to get the list of all media formats any
  *   connection the endpoint may create can support.
  *
@@ -315,6 +318,7 @@
 
 #include <opal/endpoint.h>
 #include <opal/manager.h>
+#include <opal/call.h>
 #include <opal/transports.h>
 #include <h323/h323con.h>
 #include <h323/h323caps.h>
@@ -785,8 +789,9 @@ class H323EndPoint : public OpalEndPoint
        function if this function returns a non-NULL pointer. If it does not
        then a deadlock can occur.
       */
-    H323Connection * FindConnectionWithLock(
-      const PString & token     /// Token to identify connection
+    PSafePtr<H323Connection> FindConnectionWithLock(
+      const PString & token,     /// Token to identify connection
+      PSafetyMode mode = PSafeReadWrite
     );
 
     /**Call back for incoming call.
@@ -1468,7 +1473,6 @@ class H323EndPoint : public OpalEndPoint
   protected:
     H323Gatekeeper * InternalCreateGatekeeper(H323Transport * transport);
     BOOL InternalRegisterGatekeeper(H323Gatekeeper * gk, BOOL discovered);
-    H323Connection * FindConnectionWithoutLocks(const PString & token);
     BOOL InternalMakeCall(
       OpalCall & call,
       const PString & existingToken,/// Existing connection to be transferred
