@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2008  2001/11/14 01:31:55  robertj
+ * Revision 1.2009  2002/01/22 05:04:40  robertj
+ * Revamp of user input API triggered by RFC2833 support
+ *
+ * Revision 2.7  2001/11/14 01:31:55  robertj
  * Corrected placement of adjusting media format list.
  *
  * Revision 2.6  2001/11/13 06:25:56  robertj
@@ -418,16 +421,18 @@ class OpalEndPoint : public PObject
 
        The default behaviour calls the OpalManager function of the same name.
       */
-    virtual void OnUserIndicationString(
+    virtual void OnUserInputString(
       OpalConnection & connection,  /// Connection input has come from
       const PString & value   /// String value of indication
     );
 
     /**Call back for remote enpoint has sent user input.
+       If duration is zero then this indicates the beginning of the tone. If
+       duration is non-zero then it indicates the end of the tone output.
 
        The default behaviour calls the OpalManager function of the same name.
       */
-    virtual void OnUserIndicationTone(
+    virtual void OnUserInputTone(
       OpalConnection & connection,  /// Connection input has come from
       char tone,                    /// Tone received
       int duration                  /// Duration of tone
