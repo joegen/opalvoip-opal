@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2012  2002/02/19 07:36:51  robertj
+ * Revision 1.2013  2002/03/27 05:36:44  robertj
+ * Set RFC2833 payload type to be 101 for Cisco compatibility
+ *
+ * Revision 2.11  2002/02/19 07:36:51  robertj
  * Added OpalRFC2833 as a OpalMediaFormat variable.
  *
  * Revision 2.10  2002/02/11 09:32:13  robertj
@@ -241,7 +244,7 @@ OpalMediaFormat const OpalGSM0610(
 OpalMediaFormat const OpalRFC2833(
   OPAL_RFC2833,
   0,
-  RTP_DataFrame::DynamicBase,
+  (RTP_DataFrame::PayloadTypes)101,  // Set to this for Cisco compatibility
   "telephone-event",
   TRUE,   // Needs jitter
   32*(1000/50), // bits/sec  (32 bits every 50ms)
