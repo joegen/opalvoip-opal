@@ -10,7 +10,7 @@
 # even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 # PARTICULAR PURPOSE.
 
-# $Id: Makefile.in,v 1.1 2003/03/15 23:51:01 robertj Exp $
+# $Id: Makefile.in,v 1.2 2004/02/16 09:04:45 csoutheren Exp $
 
 # Disable automatic dependency tracking if using other tools than gcc and gmake
 #AUTOMAKE_OPTIONS = no-dependencies
@@ -69,13 +69,8 @@ CC = @CC@
 DLLTOOL = @DLLTOOL@
 ECHO = @ECHO@
 EXEEXT = @EXEEXT@
-LIBOGG = @LIBOGG@
 LIBTOOL = @LIBTOOL@
 LN_S = @LN_S@
-LT_AGE = @LT_AGE@
-LT_CURRENT = @LT_CURRENT@
-LT_RELEASE = @LT_RELEASE@
-LT_REVISION = @LT_REVISION@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
 OBJDUMP = @OBJDUMP@
@@ -85,10 +80,11 @@ OGG_LDFLAGS = @OGG_LDFLAGS@
 OGG_LIBS = @OGG_LIBS@
 PACKAGE = @PACKAGE@
 RANLIB = @RANLIB@
+SPEEX_LT_AGE = @SPEEX_LT_AGE@
+SPEEX_LT_CURRENT = @SPEEX_LT_CURRENT@
+SPEEX_LT_REVISION = @SPEEX_LT_REVISION@
 STRIP = @STRIP@
 VERSION = @VERSION@
-ogg_includes = @ogg_includes@
-ogg_libraries = @ogg_libraries@
 src = @src@
 
 lib_LTLIBRARIES = libspeex.la
@@ -116,6 +112,7 @@ libspeex_la_SOURCES = nb_celp.c \
 	exc_8_128_table.c \
 	exc_10_32_table.c \
 	exc_10_16_table.c \
+	exc_20_32_table.c \
 	hexc_10_32_table.c \
 	misc.c \
 	speex_header.c \
@@ -149,7 +146,7 @@ noinst_HEADERS = lsp.h \
 	math_approx.h
 
 
-libspeex_la_LDFLAGS = -release $(LT_RELEASE)
+libspeex_la_LDFLAGS = -version-info @SPEEX_LT_CURRENT@:@SPEEX_LT_REVISION@:@SPEEX_LT_AGE@
 
 noinst_PROGRAMS = testenc testenc_wb testenc_uwb
 
@@ -176,8 +173,8 @@ quant_lsp.lo lsp_tables_nb.lo gain_table.lo gain_table_lbr.lo \
 cb_search.lo filters.lo bits.lo modes.lo vq.lo high_lsp_tables.lo \
 vbr.lo hexc_table.lo exc_5_256_table.lo exc_5_64_table.lo \
 exc_8_128_table.lo exc_10_32_table.lo exc_10_16_table.lo \
-hexc_10_32_table.lo misc.lo speex_header.lo speex_callbacks.lo \
-math_approx.lo stereo.lo
+exc_20_32_table.lo hexc_10_32_table.lo misc.lo speex_header.lo \
+speex_callbacks.lo math_approx.lo stereo.lo
 noinst_PROGRAMS =  testenc$(EXEEXT) testenc_wb$(EXEEXT) \
 testenc_uwb$(EXEEXT)
 PROGRAMS =  $(noinst_PROGRAMS)
@@ -373,13 +370,15 @@ distdir: $(DISTFILES)
 	done
 bits.lo bits.o : bits.c speex_bits.h misc.h
 cb_search.lo cb_search.o : cb_search.c cb_search.h speex_bits.h \
-	filters.h stack_alloc.h vq.h
+	filters.h stack_alloc.h vq.h misc.h
 exc_10_16_table.lo exc_10_16_table.o : exc_10_16_table.c
 exc_10_32_table.lo exc_10_32_table.o : exc_10_32_table.c
+exc_20_32_table.lo exc_20_32_table.o : exc_20_32_table.c
 exc_5_256_table.lo exc_5_256_table.o : exc_5_256_table.c
 exc_5_64_table.lo exc_5_64_table.o : exc_5_64_table.c
 exc_8_128_table.lo exc_8_128_table.o : exc_8_128_table.c
-filters.lo filters.o : filters.c filters.h stack_alloc.h
+fft.lo fft.o : fft.c fft.h
+filters.lo filters.o : filters.c filters.h stack_alloc.h filters_sse.h
 gain_table.lo gain_table.o : gain_table.c
 gain_table_lbr.lo gain_table_lbr.o : gain_table_lbr.c
 hexc_10_32_table.lo hexc_10_32_table.o : hexc_10_32_table.c
@@ -388,12 +387,14 @@ high_lsp_tables.lo high_lsp_tables.o : high_lsp_tables.c
 lpc.lo lpc.o : lpc.c lpc.h
 lsp.lo lsp.o : lsp.c lsp.h stack_alloc.h
 lsp_tables_nb.lo lsp_tables_nb.o : lsp_tables_nb.c
-ltp.lo ltp.o : ltp.c ltp.h speex_bits.h stack_alloc.h filters.h
-math_approx.lo math_approx.o : math_approx.c
+ltp.lo ltp.o : ltp.c ltp.h speex_bits.h stack_alloc.h filters.h \
+	ltp_sse.h
+math_approx.lo math_approx.o : math_approx.c math_approx.h
+matrix.lo matrix.o : matrix.c
 misc.lo misc.o : misc.c misc.h
 modes.lo modes.o : modes.c modes.h speex.h speex_bits.h ltp.h \
 	quant_lsp.h cb_search.h sb_celp.h nb_celp.h speex_callbacks.h \
-	vbr.h filters.h
+	vbr.h filters.h misc.h
 nb_celp.lo nb_celp.o : nb_celp.c nb_celp.h modes.h speex.h speex_bits.h \
 	speex_callbacks.h vbr.h filters.h lpc.h lsp.h ltp.h quant_lsp.h \
 	cb_search.h stack_alloc.h vq.h misc.h
@@ -402,14 +403,18 @@ sb_celp.lo sb_celp.o : sb_celp.c sb_celp.h modes.h speex.h speex_bits.h \
 	nb_celp.h speex_callbacks.h vbr.h filters.h lpc.h lsp.h \
 	stack_alloc.h cb_search.h quant_lsp.h vq.h ltp.h misc.h
 speex_callbacks.lo speex_callbacks.o : speex_callbacks.c \
-	speex_callbacks.h speex.h speex_bits.h
+	speex_callbacks.h speex.h speex_bits.h misc.h
 speex_header.lo speex_header.o : speex_header.c speex_header.h misc.h \
 	speex.h speex_bits.h
 stereo.lo stereo.o : stereo.c speex_stereo.h speex_bits.h \
 	speex_callbacks.h speex.h vq.h
+tcx_encode.lo tcx_encode.o : tcx_encode.c nb_celp.h modes.h speex.h \
+	speex_bits.h speex_callbacks.h vbr.h filters.h lpc.h lsp.h \
+	ltp.h quant_lsp.h cb_search.h stack_alloc.h vq.h misc.h fft.h
 testenc.o: testenc.c speex.h speex_bits.h speex_callbacks.h
 testenc_uwb.o: testenc_uwb.c speex.h speex_bits.h
 testenc_wb.o: testenc_wb.c speex.h speex_bits.h
+train_cb.lo train_cb.o : train_cb.c
 vbr.lo vbr.o : vbr.c vbr.h
 vq.lo vq.o : vq.c vq.h
 

@@ -99,27 +99,43 @@ extern "C" {
 /**Define a handler function for in-band user-defined request*/
 #define SPEEX_SET_USER_HANDLER 22
 
+/** Set sampling rate used in bit-rate computation */
 #define SPEEX_SET_SAMPLING_RATE 24
+/** Get sampling rate used in bit-rate computation */
 #define SPEEX_GET_SAMPLING_RATE 25
 
+/** Reset the encoder/decoder memories to zero*/
 #define SPEEX_RESET_STATE 26
 
+/** Get VBR info (mostly used internally) */
 #define SPEEX_GET_RELATIVE_QUALITY 29
 
+/** Set VAD status (1 for on, 0 for off) */
 #define SPEEX_SET_VAD 30
+
+/** Get VAD status (1 for on, 0 for off) */
 #define SPEEX_GET_VAD 31
 
+/** Set Average Bit-Rate (ABR) to n bits per seconds */
 #define SPEEX_SET_ABR 32
+/** Get Average Bit-Rate (ABR) setting (in bps) */
 #define SPEEX_GET_ABR 33
 
+/** Set DTX status (1 for on, 0 for off) */
 #define SPEEX_SET_DTX 34
+/** Get DTX status (1 for on, 0 for off) */
 #define SPEEX_GET_DTX 35
 
 
-   /* Used internally, not to be used in applications */
+/* Used internally, not to be used in applications */
+/** Used internally*/
 #define SPEEX_GET_PI_GAIN 100
+/** Used internally*/
 #define SPEEX_GET_EXC     101
+/** Used internally*/
 #define SPEEX_GET_INNOV   102
+/** Used internally*/
+#define SPEEX_GET_DTX_STATUS   103
 
 
 /* Preserving compatibility:*/
@@ -155,7 +171,7 @@ typedef void (*encoder_destroy_func)(void *st);
 typedef int (*encode_func)(void *state, float *in, SpeexBits *bits);
 
 /** Function for controlling the encoder options */
-typedef void (*encoder_ctl_func)(void *state, int request, void *ptr);
+typedef int (*encoder_ctl_func)(void *state, int request, void *ptr);
 
 /** Decoder state initialization function */
 typedef void *(*decoder_init_func)(struct SpeexMode *mode);
@@ -167,11 +183,11 @@ typedef void (*decoder_destroy_func)(void *st);
 typedef int  (*decode_func)(void *state, SpeexBits *bits, float *out);
 
 /** Function for controlling the decoder options */
-typedef void (*decoder_ctl_func)(void *state, int request, void *ptr);
+typedef int (*decoder_ctl_func)(void *state, int request, void *ptr);
 
 
 /** Query function for a mode */
-typedef void (*mode_query_func)(void *mode, int request, void *ptr);
+typedef int (*mode_query_func)(void *mode, int request, void *ptr);
 
 /** Struct defining a Speex mode */ 
 typedef struct SpeexMode {
@@ -219,7 +235,7 @@ typedef struct SpeexMode {
 
 /**
  * Returns a handle to a newly created Speex encoder state structure. For now, 
- * the "mode" arguent can be &nb_mode or &wb_mode . In the future, more modes 
+ * the "mode" argument can be &nb_mode or &wb_mode . In the future, more modes 
  * may be added. Note that for now if you have more than one channels to 
  * encode, you need one state per channel.
  *
@@ -245,12 +261,13 @@ int speex_encode(void *state, float *in, SpeexBits *bits);
  * @param state Encoder state
  * @param request ioctl-type request (one of the SPEEX_* macros)
  * @param ptr Data exchanged to-from function
+ * @return 0 if frame needs not be transmitted (DTX only), 1 otherwise
  */
-void speex_encoder_ctl(void *state, int request, void *ptr);
+int speex_encoder_ctl(void *state, int request, void *ptr);
 
 
 /** Returns a handle to a newly created decoder state structure. For now, 
- * the mode arguent can be &nb_mode or &wb_mode . In the future, more modes
+ * the mode argument can be &nb_mode or &wb_mode . In the future, more modes
  * may be added.  Note that for now if you have more than one channels to
  * decode, you need one state per channel.
  *
@@ -280,8 +297,9 @@ int speex_decode(void *state, SpeexBits *bits, float *out);
  * @param state Decoder state
  * @param request ioctl-type request (one of the SPEEX_* macros)
  * @param ptr Data exchanged to-from function
+ * @return 0 for no error, 1 if a terminator is reached, 2 for another error
  */
-void speex_decoder_ctl(void *state, int request, void *ptr);
+int speex_decoder_ctl(void *state, int request, void *ptr);
 
 
 /** Query function for mode information
@@ -290,7 +308,7 @@ void speex_decoder_ctl(void *state, int request, void *ptr);
  * @param request ioctl-type request (one of the SPEEX_* macros)
  * @param ptr Data exchanged to-from function
  */
-void speex_mode_query(SpeexMode *mode, int request, void *ptr);
+int speex_mode_query(SpeexMode *mode, int request, void *ptr);
 
 
 /** Default narrowband mode */
@@ -302,7 +320,7 @@ extern SpeexMode speex_wb_mode;
 /** Default "ultra-wideband" mode */
 extern SpeexMode speex_uwb_mode;
 
-/** List of all modes availavle */
+/** List of all modes available */
 extern SpeexMode *speex_mode_list[SPEEX_NB_MODES];
 
 #ifdef __cplusplus
