@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2008  2002/02/11 09:32:12  robertj
+ * Revision 1.2009  2002/02/19 07:47:29  robertj
+ * Added OpalRFC2833 as a OpalMediaFormat variable.
+ * Fixes to capability tables to make RFC2833 work properly.
+ *
+ * Revision 2.7  2002/02/11 09:32:12  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.6  2002/01/22 05:29:12  robertj
@@ -1388,52 +1392,41 @@ const char * const H323_UserInputCapability::SubTypeNames[NumSubTypes] = {
   "UserInput/generalString",
   "UserInput/dtmf",
   "UserInput/hookflash",
-  "UserInput/RFC2833"
+  OPAL_RFC2833
 };
 
-static OpalMediaFormat const UserInput_basicString(
-  H323_UserInputCapability::SubTypeNames[H323_UserInputCapability::BasicString],
-  0, RTP_DataFrame::IllegalPayloadType, NULL, FALSE, 1
-);
+#define DEFINE_USER_INPUT(type) \
+  static OpalMediaFormat const UserInput_##type( \
+    H323_UserInputCapability::SubTypeNames[H323_UserInputCapability::type], \
+    0, RTP_DataFrame::IllegalPayloadType, NULL, FALSE, 1 \
+  ); \
+  H323_REGISTER_CAPABILITY_FUNCTION( \
+    H323_UserInputCapability_##type, \
+    H323_UserInputCapability::SubTypeNames[H323_UserInputCapability::type], \
+    H323_NO_EP_VAR) \
+  { \
+    return new H323_UserInputCapability(H323_UserInputCapability::type); \
+  }
 
-static OpalMediaFormat const UserInput_iA5String(
-  H323_UserInputCapability::SubTypeNames[H323_UserInputCapability::IA5String],
-  0, RTP_DataFrame::IllegalPayloadType, NULL, FALSE, 1
-);
+DEFINE_USER_INPUT(BasicString);
+DEFINE_USER_INPUT(IA5String);
+DEFINE_USER_INPUT(GeneralString);
+DEFINE_USER_INPUT(SignalToneH245);
+DEFINE_USER_INPUT(HookFlashH245);
 
-static OpalMediaFormat const UserInput_generalString(
-  H323_UserInputCapability::SubTypeNames[H323_UserInputCapability::GeneralString],
-  0, RTP_DataFrame::IllegalPayloadType, NULL, FALSE, 1
-);
-
-static OpalMediaFormat const UserInput_dtmf(
-  H323_UserInputCapability::SubTypeNames[H323_UserInputCapability::SignalToneH245],
-  0, RTP_DataFrame::IllegalPayloadType, NULL, FALSE, 1
-);
-
-static OpalMediaFormat const UserInput_hookflash(
-  H323_UserInputCapability::SubTypeNames[H323_UserInputCapability::HookFlashH245],
-  0, RTP_DataFrame::IllegalPayloadType, NULL, FALSE, 1
-);
-
-static OpalMediaFormat const UserInput_RFC2833(
-  H323_UserInputCapability::SubTypeNames[H323_UserInputCapability::SignalToneRFC2833],
-  OpalMediaFormat::DefaultAudioSessionID,
-  RTP_DataFrame::DynamicBase,
-  "telephone-event",
-  TRUE,   // Needs jitter
-  32*(1000/50), // bits/sec  (32 bits every 50ms)
-  4,      // bytes/frame
-  150*8,  // 150 millisecond
-  OpalMediaFormat::AudioClockRate
-);
+H323_REGISTER_CAPABILITY_FUNCTION(H323_UserInputCapability_RFC2833,
+    H323_UserInputCapability::SubTypeNames[H323_UserInputCapability::SignalToneRFC2833],
+    H323_NO_EP_VAR)
+{
+  return new H323_UserInputCapability(H323_UserInputCapability::SignalToneRFC2833);
+}
 
 
 H323_UserInputCapability::H323_UserInputCapability(SubTypes _subType)
   : H323Capability(H323_UserInputCapability::SubTypeNames[_subType])
 {
   subType = _subType;
-  rtpPayloadType = UserInput_RFC2833.GetPayloadType();
+  rtpPayloadType = OpalRFC2833.GetPayloadType();
 }
 
 
@@ -1597,11 +1590,15 @@ H323Capabilities::H323Capabilities()
 H323Capabilities::H323Capabilities(const H323Connection & connection,
                                    const H245_TerminalCapabilitySet & pdu)
 {
+  H323Capabilities allCapabilities;
+  allCapabilities.AddAllCapabilities(connection.GetEndPoint(), 0, 0, "*");
+  H323_UserInputCapability::AddAllCapabilities(allCapabilities, P_MAX_INDEX, P_MAX_INDEX);
+
   // Decode out of the PDU, the list of known codecs.
   if (pdu.HasOptionalField(H245_TerminalCapabilitySet::e_capabilityTable)) {
     for (PINDEX i = 0; i < pdu.m_capabilityTable.GetSize(); i++) {
       if (pdu.m_capabilityTable[i].HasOptionalField(H245_CapabilityTableEntry::e_capability)) {
-        H323Capability * capability = connection.GetLocalCapabilities().FindCapability(pdu.m_capabilityTable[i].m_capability);
+        H323Capability * capability = allCapabilities.FindCapability(pdu.m_capabilityTable[i].m_capability);
         if (capability != NULL) {
           H323Capability * copy = (H323Capability *)capability->Clone();
           copy->SetCapabilityNumber(pdu.m_capabilityTable[i].m_capabilityTableEntryNumber);
@@ -1666,8 +1663,19 @@ H323Capabilities & H323Capabilities::operator=(const H323Capabilities & original
 void H323Capabilities::PrintOn(ostream & strm) const
 {
   int indent = strm.precision()-1;
+  strm << setw(indent) << " " << "Table:\n";
   for (PINDEX i = 0; i < table.GetSize(); i++)
-    strm << setw(indent) << " " << table[i] << '\n';
+    strm << setw(indent+2) << " " << table[i] << '\n';
+
+  strm << setw(indent) << " " << "Set:\n";
+  for (PINDEX outer = 0; outer < set.GetSize(); outer++) {
+    strm << setw(indent+2) << " " << outer << ":\n";
+    for (PINDEX middle = 0; middle < set[outer].GetSize(); middle++) {
+      strm << setw(indent+4) << " " << middle << ":\n";
+      for (PINDEX inner = 0; inner < set[outer][middle].GetSize(); inner++)
+        strm << setw(indent+6) << " " << set[outer][middle][inner] << '\n';
+    }
+  }
 }
 
 
@@ -1726,7 +1734,7 @@ PINDEX H323Capabilities::AddAllCapabilities(H323EndPoint & ep,
 
   H323CapabilityRegistration * reg = RegisteredCapabilitiesListHead;
   while (reg != NULL) {
-    if (MatchWildcard(*reg, wildcard)) {
+    if (MatchWildcard(*reg, wildcard) && FindCapability(*reg) == NULL) {
       PINDEX num = SetCapability(descriptorNum, simultaneous, reg->Create(ep));
       if (descriptorNum == P_MAX_INDEX) {
         reply = num;
@@ -2102,16 +2110,35 @@ void H323Capabilities::BuildPDU(H245_TerminalCapabilitySet & pdu) const
 
 BOOL H323Capabilities::Merge(const H323Capabilities & newCaps)
 {
-  // Add any new capabilities not already in set.
+  PTRACE_IF(4, !table.IsEmpty(), "H245\tCapability merge of:\n" << newCaps
+            << "\nInto:\n" << *this);
+
+  // Add any new capabilities.
   PINDEX i;
   for (i = 0; i < newCaps.GetSize(); i++) {
-    if (!FindCapability(newCaps[i]))
+    // Only add if not already in
+    if (FindCapability(newCaps[i].GetCapabilityNumber()) == NULL)
       Copy(newCaps[i]);
   }
 
   // This should merge instead of just replacing the set.
-  set = newCaps.set;
+  PINDEX outerSize = newCaps.set.GetSize();
+  PINDEX outerBase = set.GetSize();
+  set.SetSize(outerBase+outerSize);
+  for (PINDEX outer = 0; outer < outerSize; outer++) {
+    PINDEX middleSize = newCaps.set[outer].GetSize();
+    set[outerBase+outer].SetSize(middleSize);
+    for (PINDEX middle = 0; middle < middleSize; middle++) {
+      PINDEX innerSize = newCaps.set[outer][middle].GetSize();
+      for (PINDEX inner = 0; inner < innerSize; inner++) {
+        H323Capability * cap = FindCapability(newCaps.set[outer][middle][inner].GetCapabilityNumber());
+        if (cap != NULL)
+          set[outerBase+outer][middle].Append(cap);
+      }
+    }
+  }
 
+  PTRACE(4, "H245\tCapability merge result:\n" << *this);
   PTRACE(3, "H245\tReceived capability set, is "
                  << (table.IsEmpty() ? "rejected" : "accepted"));
   return !table.IsEmpty();
