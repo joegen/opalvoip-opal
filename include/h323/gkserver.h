@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkserver.h,v $
- * Revision 1.2012  2004/04/25 02:53:29  rjongbloed
+ * Revision 1.2013  2004/06/04 06:54:02  csoutheren
+ * Migrated updates from OpenH323 1.14.1
+ *
+ * Revision 2.11  2004/04/25 02:53:29  rjongbloed
  * Fixed GNU 3.4 warnings
  *
  * Revision 2.10  2004/02/19 10:46:43  rjongbloed
@@ -1175,6 +1178,23 @@ class H323RegisteredEndPoint : public PSafeObject
     BOOL GetH225Version() const { return h225Version; }
   //@}
 
+  /**@name H.501 access functions */
+  //@{
+    /**
+      * Function called when gatekeeper sends a descriptor for this endpoint.
+      * This allows the gatekeeper to alter the descriptor information before
+      * it is sent.
+      *
+      * If returns FALSE then the desriptor is not sent
+      */
+      virtual BOOL OnSendDescriptorForEndpoint(
+        H225_ArrayOf_AliasAddress & aliases,          // aliases for the enndpoint
+        H225_EndpointType & terminalType,             // terminal type
+        H225_ArrayOf_AliasAddress & transportAddresses  // transport addresses
+      );
+  //@}
+
+
   protected:
     H323GatekeeperServer    & gatekeeper;
     H323GatekeeperListener  * rasChannel;
@@ -1758,6 +1778,11 @@ class H323GatekeeperServer : public H323TransactionServer
       */
     virtual BOOL GetUsersPassword(
       const PString & alias,
+      PString & password,
+      H323RegisteredEndPoint & registeredEndpoint
+    ) const;
+    virtual BOOL GetUsersPassword(
+      const PString & alias,
       PString & password
     ) const;
   //@}
@@ -1890,6 +1915,18 @@ class H323GatekeeperServer : public H323TransactionServer
       H323RegisteredEndPoint & ep,
       const PString & alias
     );
+
+    // called when an endpoint needs to send a descriptor to the H.501 peer element
+    virtual BOOL OnSendDescriptorForEndpoint(
+      H323RegisteredEndPoint & /*ep*/,                    // endpoint
+      H225_ArrayOf_AliasAddress & /*aliases*/,            // aliases for the enndpoint
+      H225_EndpointType & /*terminalType*/,               // terminal type
+      H225_ArrayOf_AliasAddress & /*transportAddresses*/  // transport addresses
+    )
+    { return TRUE; } 
+
+    virtual BOOL AllowDuplicateAlias(const H225_ArrayOf_AliasAddress & /*aliases*/)
+    { return canHaveDuplicateAlias; }
 
   protected:
 
