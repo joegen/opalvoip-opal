@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.cxx,v $
- * Revision 1.2002  2003/03/06 03:57:47  robertj
+ * Revision 1.2003  2003/03/17 10:15:01  robertj
+ * Fixed IVR support using VXML.
+ * Added video support.
+ *
+ * Revision 2.1  2003/03/06 03:57:47  robertj
  * IVR support (work in progress) requiring large changes everywhere.
  *
  */
@@ -89,8 +93,6 @@ BOOL OpalIVREndPoint::MakeConnection(OpalCall & call,
   if (connection == NULL)
     return FALSE;
 
-  connection->Lock();
-
   // If we are the A-party then need to initiate a call now in this thread and
   // go through the routing engine via OnIncomingConnection. If we are the
   // B-Party then SetUpConnection() gets called in the context of the A-party
@@ -136,10 +138,17 @@ OpalIVRConnection::OpalIVRConnection(OpalCall & call,
                                      void * /*userData*/,
                                      const PString & vxml)
   : OpalConnection(call, ep, token),
-    endpoint(ep)
+    endpoint(ep),
+    vxmlToLoad(vxml),
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable:4355)
+#endif
+    vxmlSession(this)
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 {
-  vxmlSession.Load(vxml);
-
   phase = SetUpPhase;
 
   PTRACE(3, "IVR\tCreated connection.");
@@ -158,16 +167,17 @@ BOOL OpalIVRConnection::SetUpConnection()
 
   PTRACE(3, "IVR\tSetUpConnection(" << remotePartyName << ')');
 
-  if (!vxmlSession.IsOpen()) {
-    PTRACE(1, "IVR\tVXML session not open, aborting.");
+  phase = AlertingPhase;
+  OnAlerting();
+
+  phase = ConnectedPhase;
+  OnConnected();
+
+  if (!vxmlSession.Load(vxmlToLoad)) {
+    PTRACE(1, "IVR\tVXML session not loaded, aborting.");
     Release(EndedByNoAccept);
     return FALSE;
   }
-
-  phase = AlertingPhase;
-  OnAlerting();
-  phase = ConnectedPhase;
-  OnConnected();
 
   return TRUE;
 }
@@ -202,14 +212,16 @@ OpalMediaFormatList OpalIVRConnection::GetMediaFormats() const
   OpalMediaFormatList formatNames;
   formatNames += OpalPCM16;
   formatNames += OpalG7231_6k3;
-  formatNames += OpalG7231_5k3;
+  formatNames += OpalG729;
   return formatNames;
 }
 
 
-OpalMediaStream * OpalIVRConnection::CreateMediaStream(BOOL isSource, unsigned sessionID)
+OpalMediaStream * OpalIVRConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
+                                                       unsigned sessionID,
+                                                       BOOL isSource)
 {
-  return new OpalIVRMediaStream(isSource, sessionID, vxmlSession);
+  return new OpalIVRMediaStream(mediaFormat, sessionID, isSource, vxmlSession);
 }
 
 
@@ -238,22 +250,53 @@ void OpalIVRConnection::InitiateCall()
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalIVRMediaStream::OpalIVRMediaStream(BOOL isSourceStream,
+OpalIVRMediaStream::OpalIVRMediaStream(const OpalMediaFormat & mediaFormat,
                                        unsigned sessionID,
+                                       BOOL isSourceStream,
                                        PVXMLSession & vxml)
-  : OpalRawMediaStream(isSourceStream, sessionID, &vxml, FALSE),
+  : OpalRawMediaStream(mediaFormat, sessionID, isSourceStream, &vxml, FALSE),
     vxmlSession(vxml)
 {
 }
 
 
-BOOL OpalIVRMediaStream::Open(const OpalMediaFormat & format)
+BOOL OpalIVRMediaStream::Open()
 {
-  if (format == OpalPCM16)
-    return OpalMediaStream::Open(format) && vxmlSession.Open(TRUE);
+  if (vxmlSession.IsOpen()) {
+    PVXMLChannel * vxmlChannel;
+    if (IsSource())
+      vxmlChannel = vxmlSession.GetOutgoingChannel();
+    else
+      vxmlChannel = vxmlSession.GetIncomingChannel();
 
-  if (format == OpalG7231_6k3 || format == OpalG7231_5k3)
-    return OpalMediaStream::Open(format) && vxmlSession.Open(FALSE);
+    if (vxmlChannel == NULL) {
+      PTRACE(1, "IVR\tVXML engine not really open");
+      return FALSE;
+    }
+
+    if (mediaFormat != vxmlChannel->GetFormatName()) {
+      PTRACE(1, "IVR\tCannot use VXML engine: asymmetrical media format");
+      return FALSE;
+    }
+
+    return OpalMediaStream::Open();
+  }
+
+  if (mediaFormat == OpalPCM16) {
+    if (vxmlSession.Open(new PVXMLChannelPCM(vxmlSession, TRUE),
+                            new PVXMLChannelPCM(vxmlSession, FALSE)))
+      return OpalMediaStream::Open();
+  }
+  else if (mediaFormat == OpalG7231_6k3 || mediaFormat == OpalG7231_5k3) {
+    if (vxmlSession.Open(new PVXMLChannelG7231(vxmlSession, TRUE),
+                            new PVXMLChannelG7231(vxmlSession, FALSE)))
+      return OpalMediaStream::Open();
+  }
+  else if (mediaFormat == OpalG729A) {
+    if (vxmlSession.Open(new PVXMLChannelG729(vxmlSession, TRUE),
+                            new PVXMLChannelG729(vxmlSession, FALSE)))
+      return OpalMediaStream::Open();
+  }
 
   PTRACE(1, "IVR\tCannot open VXML engine: incompatible media format");
   return FALSE;
