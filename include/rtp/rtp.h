@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2007  2002/02/11 09:32:12  robertj
+ * Revision 1.2008  2002/02/13 02:30:06  robertj
+ * Added ability for media patch (and transcoders) to handle multiple RTP frames.
+ *
+ * Revision 2.6  2002/02/11 09:32:12  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.5  2002/01/22 05:58:55  robertj
@@ -263,6 +266,8 @@ class RTP_DataFrame : public PBYTEArray
     friend ostream & operator<<(ostream & o, PayloadTypes t);
 #endif
 };
+
+PLIST(RTP_DataFrameList, RTP_DataFrame);
 
 
 /**An RTP control frame encapsulation.
