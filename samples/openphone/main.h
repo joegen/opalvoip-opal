@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.13  2004/07/17 08:21:24  rjongbloed
+ * Added ability to manipulate codec lists
+ *
  * Revision 1.12  2004/07/14 13:17:42  rjongbloed
  * Added saving of the width of columns in the speed dial list.
  * Fixed router display in options dialog so is empty if IP address invalid.
@@ -65,6 +68,8 @@
 #include <opal/manager.h>
 #include <opal/pcss.h>
 
+#include <list>
+
 
 class MyFrame;
 
@@ -74,6 +79,7 @@ class OpalPOTSEndPoint;
 class OpalIVREndPoint;
 
 class wxSplitterWindow;
+class wxSplitterEvent;
 class wxListCtrl;
 class wxListEvent;
 
@@ -145,29 +151,10 @@ class OptionsDialog : public wxDialog
     virtual bool TransferDataFromWindow();
 
   private:
-    void BrowseSoundFile(wxCommandEvent & event);
-    void PlaySoundFile(wxCommandEvent & event);
-    void BandwidthClass(wxCommandEvent & event);
-    void SelectedLocalInterface(wxCommandEvent & event);
-    void AddInterface(wxCommandEvent & event);
-    void RemoveInterface(wxCommandEvent & event);
-    void SelectedCodecToAdd(wxCommandEvent & event);
-    void AddCodec(wxCommandEvent & event);
-    void RemoveCodec(wxCommandEvent & event);
-    void MoveUpCodec(wxCommandEvent & event);
-    void MoveDownCodec(wxCommandEvent & event);
-    void ConfigureCodec(wxCommandEvent & event);
-    void SelectedCodec(wxCommandEvent & event);
-    void AddAlias(wxCommandEvent & event);
-    void RemoveAlias(wxCommandEvent & event);
-    void AddRoute(wxCommandEvent & event);
-    void RemoveRoute(wxCommandEvent & event);
-    void SelectedRoute(wxListEvent & event);
-    void DeselectedRoute(wxListEvent & event);
-    void ChangedRouteInfo(wxCommandEvent & event);
-
     MyFrame & mainFrame;
 
+    ////////////////////////////////////////
+    // General fields
     PwxString m_Username;
     PwxString m_DisplayName;
     PwxString m_RingSoundFileName;
@@ -176,6 +163,11 @@ class OptionsDialog : public wxDialog
     PwxString m_IVRScript;
 #endif
 
+    void BrowseSoundFile(wxCommandEvent & event);
+    void PlaySoundFile(wxCommandEvent & event);
+
+    ////////////////////////////////////////
+    // Networking fields
     int       m_Bandwidth;
     int       m_TCPPortBase;
     int       m_TCPPortMax;
@@ -187,7 +179,13 @@ class OptionsDialog : public wxDialog
     PwxString m_STUNServer;
     PwxString m_NATRouter;
     PwxString m_InterfaceToAdd;
+    void BandwidthClass(wxCommandEvent & event);
+    void SelectedLocalInterface(wxCommandEvent & event);
+    void AddInterface(wxCommandEvent & event);
+    void RemoveInterface(wxCommandEvent & event);
 
+    ////////////////////////////////////////
+    // Sound fields
     PwxString m_SoundPlayer;
     PwxString m_SoundRecorder;
     int       m_SoundBuffers;
@@ -201,6 +199,8 @@ class OptionsDialog : public wxDialog
     int       m_SignalDeadband;
     int       m_SilenceDeadband;
 
+    ////////////////////////////////////////
+    // Video fields
     PwxString m_VideoGrabber;
     int       m_VideoGrabFormat;
     int       m_VideoGrabSource;
@@ -213,7 +213,26 @@ class OptionsDialog : public wxDialog
     bool      m_VideoAutoReceive;
     bool      m_VideoFlipRemote;
 
-    PwxString m_NewAlias;
+    ////////////////////////////////////////
+    // Codec fields
+    wxButton  * m_AddCodec;
+    wxButton  * m_RemoveCodec;
+    wxButton  * m_MoveUpCodec;
+    wxButton  * m_MoveDownCodec;
+    wxButton  * m_ConfigureCodec;
+    wxListBox * m_allCodecs;
+    wxListBox * m_selectedCodecs;
+
+    void AddCodec(wxCommandEvent & event);
+    void RemoveCodec(wxCommandEvent & event);
+    void MoveUpCodec(wxCommandEvent & event);
+    void MoveDownCodec(wxCommandEvent & event);
+    void ConfigureCodec(wxCommandEvent & event);
+    void SelectedCodecToAdd(wxCommandEvent & event);
+    void SelectedCodec(wxCommandEvent & event);
+
+    ////////////////////////////////////////
+    // H.323 fields
     int       m_GatekeeperMode;
     PwxString m_GatekeeperAddress;
     PwxString m_GatekeeperIdentifier;
@@ -226,6 +245,11 @@ class OptionsDialog : public wxDialog
     bool      m_DisableH245Tunneling;
     bool      m_DisableH245inSETUP;
 
+    void AddAlias(wxCommandEvent & event);
+    void RemoveAlias(wxCommandEvent & event);
+
+    ////////////////////////////////////////
+    // SIP fields
     PwxString m_SIPProxy;
     PwxString m_SIPProxyUsername;
     PwxString m_SIPProxyPassword;
@@ -233,6 +257,25 @@ class OptionsDialog : public wxDialog
     PwxString m_RegistrarUsername;
     PwxString m_RegistrarPassword;
 
+    ////////////////////////////////////////
+    // Routing fields
+    wxListCtrl * m_Routes;
+    int          m_SelectedRoute;
+    wxComboBox * m_RouteSource;
+    wxTextCtrl * m_RoutePattern;
+    wxTextCtrl * m_RouteDestination;
+    wxButton   * m_AddRoute;
+    wxButton   * m_RemoveRoute;
+
+    void AddRoute(wxCommandEvent & event);
+    void RemoveRoute(wxCommandEvent & event);
+    void SelectedRoute(wxListEvent & event);
+    void DeselectedRoute(wxListEvent & event);
+    void ChangedRouteInfo(wxCommandEvent & event);
+
+#if PTRACING
+    ////////////////////////////////////////
+    // Tracing fields
     bool      m_EnableTracing;
     int       m_TraceLevelThreshold;
     bool      m_TraceLevelNumber;
@@ -243,17 +286,31 @@ class OptionsDialog : public wxDialog
     bool      m_TraceThreadName;
     bool      m_TraceThreadAddress;
     PwxString m_TraceFileName;
-
-    wxListCtrl * m_Routes;
-    int          m_SelectedRoute;
-    wxComboBox * m_RouteSource;
-    wxTextCtrl * m_RoutePattern;
-    wxTextCtrl * m_RouteDestination;
-    wxButton   * m_AddRoute;
-    wxButton   * m_RemoveRoute;
+#endif
 
     DECLARE_EVENT_TABLE()
 };
+
+
+class MyMedia
+{
+public:
+  MyMedia(
+    const char * source,
+    const PString & format
+  ) : sourceProtocol(source),
+      mediaFormat(format),
+      preferenceOrder(-1) // -1 indicates disabled
+  { }
+
+  bool operator<(const MyMedia & other) { return preferenceOrder < other.preferenceOrder; }
+
+  const char    * sourceProtocol;
+  OpalMediaFormat mediaFormat;
+  int             preferenceOrder;
+};
+
+typedef std::list<MyMedia> MyMediaList;
 
 
 class MyFrame : public wxFrame, public OpalManager
@@ -265,6 +322,12 @@ class MyFrame : public wxFrame, public OpalManager
     bool Initialise();
 
   private:
+    // Controls on main frame
+    enum {
+      SplitterID = 100,
+      SpeedDialsID
+    };
+
     void OnClose(wxCloseEvent& event);
 
     void OnAdjustMenus(wxMenuEvent& event);
@@ -279,6 +342,7 @@ class MyFrame : public wxFrame, public OpalManager
     void OnViewList(wxCommandEvent& event);
     void OnViewDetails(wxCommandEvent& event);
     void OnOptions(wxCommandEvent& event);
+    void OnSashPositioned(wxSplitterEvent& event);
     void OnSpeedDialActivated(wxListEvent& event);
     void OnSpeedDialColumnResize(wxListEvent& event);
 
@@ -299,7 +363,6 @@ class MyFrame : public wxFrame, public OpalManager
       const PString & value         /// String value of indication
     );
 
-    enum { SpeedDialsID = 100 };
     enum SpeedDialViews {
       e_ViewLarge,
       e_ViewSmall,
@@ -307,11 +370,18 @@ class MyFrame : public wxFrame, public OpalManager
       e_ViewDetails,
       e_NumViews
     };
+
     void RecreateSpeedDials(
       SpeedDialViews view
     );
 
-    enum { e_NameColumn, e_NumberColumn, e_AddressColumn };
+    enum {
+      e_NameColumn,
+      e_NumberColumn,
+      e_AddressColumn,
+      e_DescriptionColumn,
+      e_NumColumns
+    };
 
     wxSplitterWindow         * m_splitter;
     wxListCtrl               * m_speedDials;
@@ -328,6 +398,10 @@ class MyFrame : public wxFrame, public OpalManager
 #if P_EXPAT
     OpalIVREndPoint  * ivrEP;
 #endif
+
+    MyMediaList m_mediaInfo;
+    void InitMediaInfo(const char * source, const OpalMediaFormatList & formats);
+    void ApplyMediaInfo();
 
     bool     m_enableTracing;
     wxString m_traceFileName;
