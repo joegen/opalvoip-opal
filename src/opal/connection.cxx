@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2016  2002/02/19 07:49:23  robertj
+ * Revision 1.2017  2002/04/09 00:19:06  robertj
+ * Changed "callAnswered" to better description of "originating".
+ *
+ * Revision 2.15  2002/02/19 07:49:23  robertj
  * Added OpalRFC2833 as a OpalMediaFormat variable.
  * Restructured media bypass functions to fix problems with RFC2833.
  *
@@ -152,7 +155,7 @@ OpalConnection::OpalConnection(OpalCall & call,
 {
   PTRACE(3, "OpalCon\tCreated connection " << *this);
 
-  callAnswered = FALSE;
+  originating = FALSE;
   callEndReason = OpalNumCallEndReasons;
   sendUserInputMode = endpoint.GetManager().GetSendUserInputModes();
   bandwidthAvailable = endpoint.GetInitialBandwidth();
