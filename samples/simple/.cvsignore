@@ -3,3 +3,5 @@ obj_*_*_r Release
 NoTrace
 *.plg *.opt *.ncb *.Tags.WW
 trace.txt
+welcome.wav
+SpeedDials.txt
