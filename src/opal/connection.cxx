@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2038  2004/07/14 13:26:14  rjongbloed
+ * Revision 1.2039  2004/08/14 07:56:35  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.37  2004/07/14 13:26:14  rjongbloed
  * Fixed issues with the propagation of the "established" phase of a call. Now
  *   calling an OnEstablished() chain like OnAlerting() and OnConnected() to
  *   finally arrive at OnEstablishedCall() on OpalManager
@@ -241,6 +244,9 @@ OpalConnection::OpalConnection(OpalCall & call,
 {
   PTRACE(3, "OpalCon\tCreated connection " << *this);
 
+  PAssert(ownerCall.SafeReference(), PLogicError);
+  ownerCall.connectionsActive.Append(this);
+
   phase = UninitialisedPhase;
   originating = FALSE;
   callEndReason = NumCallEndReasons;
@@ -252,9 +258,6 @@ OpalConnection::OpalConnection(OpalCall & call,
   silenceDetector = NULL;
   rfc2833Handler = new OpalRFC2833Proto(PCREATE_NOTIFIER(OnUserInputInlineRFC2833));
 
-  ownerCall.AddConnection(this);
-
-  isBeingReleased = FALSE;
   t120handler = NULL;
   t38handler = NULL;
 }
@@ -267,6 +270,8 @@ OpalConnection::~OpalConnection()
   delete t120handler;
   delete t38handler;
 
+  ownerCall.SafeDereference();
+
   PTRACE(3, "OpalCon\tConnection " << *this << " destroyed.");
 }
 
@@ -274,56 +279,6 @@ OpalConnection::~OpalConnection()
 void OpalConnection::PrintOn(ostream & strm) const
 {
   strm << ownerCall << '-'<< endpoint << '[' << callToken << ']';
-}
-
-
-BOOL OpalConnection::Lock()
-{
-  outerMutex.Wait();
-
-  if (isBeingReleased) {
-    outerMutex.Signal();
-    return FALSE;
-  }
-
-  innerMutex.Wait();
-  return TRUE;
-}
-
-
-int OpalConnection::TryLock()
-{
-  if (!outerMutex.Wait(0))
-    return -1;
-
-  if (isBeingReleased) {
-    outerMutex.Signal();
-    return 0;
-  }
-
-  innerMutex.Wait();
-  return 1;
-}
-
-
-void OpalConnection::Unlock()
-{
-  innerMutex.Signal();
-  outerMutex.Signal();
-}
-
-
-void OpalConnection::LockOnRelease()
-{
-  outerMutex.Wait();
-  if (isBeingReleased) {
-    outerMutex.Signal();
-    return;
-  }
-
-  isBeingReleased = TRUE;
-  outerMutex.Signal();
-  innerMutex.Wait();
 }
 
 
@@ -355,20 +310,46 @@ void OpalConnection::ClearCallSynchronous(PSyncPoint * sync, CallEndReason reaso
 
 void OpalConnection::Release(CallEndReason reason)
 {
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked() || phase >= ReleasingPhase) {
+    PTRACE(3, "OpalCon\tAlready released " << *this);
+    return;
+  }
+
+  PTRACE(3, "OpalCon\tReleasing " << *this);
+
   // Now set reason for the connection close
   SetCallEndReason(reason);
-  ownerCall.Release(this);
+  phase = ReleasingPhase;
+
+  // Add a reference for the thread we are about to start
+  SafeReference();
+  PThread::Create(PCREATE_NOTIFIER(OnReleaseThreadMain), 0,
+                  PThread::AutoDeleteThread,
+                  PThread::NormalPriority,
+                  "OnRelease:%x");
 }
 
 
-BOOL OpalConnection::OnReleased()
+void OpalConnection::OnReleaseThreadMain(PThread &, INT)
 {
-  LockOnRelease();
+  OnReleased();
+
+  PTRACE(3, "OpalCon\tOnRelease thread completed for " << GetToken());
+
+  // Dereference on the way out of the thread
+  SafeDereference();
+}
+
+
+void OpalConnection::OnReleased()
+{
+  PTRACE(3, "OpalCon\tOnReleased " << *this);
 
   for (PINDEX i = 0; i < mediaStreams.GetSize(); i++)
     mediaStreams[i].Close();
 
-  return endpoint.OnReleased(*this);
+  endpoint.OnReleased(*this);
 }
 
 
