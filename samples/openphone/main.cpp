@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cpp,v $
+ * Revision 1.19  2004/07/17 08:21:24  rjongbloed
+ * Added ability to manipulate codec lists
+ *
  * Revision 1.18  2004/07/14 13:17:42  rjongbloed
  * Added saving of the width of columns in the speed dial list.
  * Fixed router display in options dialog so is empty if IP address invalid.
@@ -98,18 +101,23 @@
 
 
 #define DEF_FIELD(name) static const char name##Key[] = #name;
+
+static const char AppearanceGroup[] = "/Appearance";
 DEF_FIELD(MainFrameX);
 DEF_FIELD(MainFrameY);
 DEF_FIELD(MainFrameWidth);
 DEF_FIELD(MainFrameHeight);
-
+DEF_FIELD(SashPosition);
 DEF_FIELD(ActiveView);
 
+static const char GeneralGroup[] = "/General";
 DEF_FIELD(Username);
 DEF_FIELD(DisplayName);
 DEF_FIELD(RingSoundFileName);
 DEF_FIELD(AutoAnswer);
 DEF_FIELD(IVRScript);
+
+static const char NetworkingGroup[] = "/Networking";
 DEF_FIELD(Bandwidth);
 DEF_FIELD(TCPPortBase);
 DEF_FIELD(TCPPortMax);
@@ -120,6 +128,8 @@ DEF_FIELD(RTPPortMax);
 DEF_FIELD(RTPTOS);
 DEF_FIELD(STUNServer);
 DEF_FIELD(NATRouter);
+
+static const char AudioGroup[] = "/Audio";
 DEF_FIELD(SoundPlayer);
 DEF_FIELD(SoundRecorder);
 DEF_FIELD(SoundBuffers);
@@ -132,6 +142,8 @@ DEF_FIELD(SilenceSuppression);
 DEF_FIELD(SilenceThreshold);
 DEF_FIELD(SignalDeadband);
 DEF_FIELD(SilenceDeadband);
+
+static const char VideoGroup[] = "/Video";
 DEF_FIELD(VideoGrabber);
 DEF_FIELD(VideoGrabFormat);
 DEF_FIELD(VideoGrabSource);
@@ -143,7 +155,11 @@ DEF_FIELD(VideoFlipLocal);
 DEF_FIELD(VideoAutoTransmit);
 DEF_FIELD(VideoAutoReceive);
 DEF_FIELD(VideoFlipRemote);
-DEF_FIELD(NewAlias);
+
+static const char CodecsGroup[] = "/Codecs";
+static const char CodecNameKey[] = "Name";
+
+static const char H323Group[] = "/H.323";
 DEF_FIELD(GatekeeperMode);
 DEF_FIELD(GatekeeperAddress);
 DEF_FIELD(GatekeeperIdentifier);
@@ -155,16 +171,19 @@ DEF_FIELD(CallIntrusionProtectionLevel);
 DEF_FIELD(DisableFastStart);
 DEF_FIELD(DisableH245Tunneling);
 DEF_FIELD(DisableH245inSETUP);
+
+static const char SIPGroup[] = "/SIP";
 DEF_FIELD(SIPProxy);
 DEF_FIELD(SIPProxyUsername);
 DEF_FIELD(SIPProxyPassword);
 DEF_FIELD(RegistrarName);
 DEF_FIELD(RegistrarUsername);
 DEF_FIELD(RegistrarPassword);
-DEF_FIELD(RouteSource);
-DEF_FIELD(RoutePattern);
-DEF_FIELD(RouteDestination);
+
+static const char RoutingGroup[] = "/Routes";
+
 #if PTRACING
+static const char TracingGroup[] = "/Tracing";
 DEF_FIELD(EnableTracing);
 DEF_FIELD(TraceLevelThreshold);
 DEF_FIELD(TraceLevelNumber);
@@ -177,6 +196,12 @@ DEF_FIELD(TraceThreadAddress);
 DEF_FIELD(TraceFileName);
 DEF_FIELD(TraceOptions);
 #endif
+
+static const char SpeedDialsGroup[] = "/Speed Dials";
+static const char SpeedDialAddressKey[] = "Address";
+static const char SpeedDialNumberKey[] = "Number";
+static const char SpeedDialDescriptionKey[] = "Description";
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -257,6 +282,7 @@ BEGIN_EVENT_TABLE(MyFrame, wxFrame)
   EVT_MENU(XRCID("ViewDetails"),MyFrame::OnViewDetails)
   EVT_MENU(XRCID("MenuOptions"),MyFrame::OnOptions)
 
+  EVT_SPLITTER_SASH_POS_CHANGED(SplitterID, MyFrame::OnSashPositioned)
   EVT_LIST_ITEM_ACTIVATED(SpeedDialsID, MyFrame::OnSpeedDialActivated)
   EVT_LIST_COL_END_DRAG(SpeedDialsID, MyFrame::OnSpeedDialColumnResize)
 END_EVENT_TABLE()
@@ -277,6 +303,7 @@ MyFrame::MyFrame()
 #endif
 {
   wxConfigBase * config = wxConfig::Get();
+  config->SetPath(AppearanceGroup);
 
   // Give it an icon
   SetIcon( wxICON(OpenOphone) );
@@ -285,8 +312,16 @@ MyFrame::MyFrame()
   wxMenuBar * menubar = wxXmlResource::Get()->LoadMenuBar("MenuBar");
   SetMenuBar(menubar);
 
+  int x, y = 0;
+  if (config->Read(MainFrameXKey, &x) && config->Read(MainFrameYKey, &y))
+    Move(x, y);
+
+  int w, h = 0;
+  if (config->Read(MainFrameWidthKey, &w) && config->Read(MainFrameHeightKey, &h))
+    SetSize(w, h);
+
   // Make the content of the main window, speed dial and log panes
-  m_splitter = new wxSplitterWindow(this, -1, wxDefaultPosition, wxDefaultSize, wxSP_3D);
+  m_splitter = new wxSplitterWindow(this, SplitterID, wxDefaultPosition, wxDefaultSize, wxSP_3D);
 
   m_logWindow = new wxTextCtrl(m_splitter, -1, wxEmptyString,
                                wxDefaultPosition, wxDefaultSize,
@@ -311,14 +346,6 @@ MyFrame::MyFrame()
   sizer->Add(m_splitter, 1, wxGROW, 0);
   SetSizer(sizer);
 
-  int x, y = 0;
-  if (config->Read(MainFrameXKey, &x) && config->Read(MainFrameYKey, &y))
-    Move(x, y);
-
-  int w, h = 0;
-  if (config->Read(MainFrameWidthKey, &w) && config->Read(MainFrameHeightKey, &h))
-    SetSize(w, h);
-
   // Show the frame
   Show(TRUE);
 }
@@ -339,6 +366,9 @@ MyFrame::~MyFrame()
 void MyFrame::RecreateSpeedDials(SpeedDialViews view)
 {
   wxConfigBase * config = wxConfig::Get();
+  config->SetPath(AppearanceGroup);
+
+  config->Write(ActiveViewKey, view);
 
   wxListCtrl * oldSpeedDials = m_speedDials;
 
@@ -351,31 +381,15 @@ void MyFrame::RecreateSpeedDials(SpeedDialViews view)
                                ListCtrlStyle[view] | wxLC_EDIT_LABELS | wxSUNKEN_BORDER);
 
   int width;
+  static const char * const titles[e_NumColumns] = { "Name", "Number", "Address", "Description" };
 
-  m_speedDials->InsertColumn(0, _T("Name"));
-  if (config->Read("ColumnWidth0", &width))
-    m_speedDials->SetColumnWidth(0, width);
-
-  m_speedDials->InsertColumn(1, _T("Number"));
-  if (config->Read("ColumnWidth1", &width))
-    m_speedDials->SetColumnWidth(1, width);
-
-  m_speedDials->InsertColumn(2, _T("Address"));
-  if (config->Read("ColumnWidth2", &width))
-    m_speedDials->SetColumnWidth(2, width);
-
-  // Test data ....
-  int pos = m_speedDials->InsertItem(INT_MAX, _T("H.323 client"));
-  m_speedDials->SetItem(pos, e_NumberColumn, _T("1"));
-  m_speedDials->SetItem(pos, e_AddressColumn, _T("h323:10.0.1.1"));
-
-  pos = m_speedDials->InsertItem(INT_MAX, _T("SIP Client"));
-  m_speedDials->SetItem(pos, e_NumberColumn, _T("81"));
-  m_speedDials->SetItem(pos, e_AddressColumn, _T("sip:81@10.0.2.250"));
-
-  pos = m_speedDials->InsertItem(INT_MAX, _T("Vox Gratia"));
-  m_speedDials->SetItem(pos, e_NumberColumn, _T("2468"));
-  m_speedDials->SetItem(pos, e_AddressColumn, _T("h323:h323.voxgratia.org"));
+  for (int i = 0; i < e_NumColumns; i++) {
+    m_speedDials->InsertColumn(i, titles[i]);
+    wxString key;
+    key.sprintf("ColumnWidth%u", i);
+    if (config->Read(key, &width))
+      m_speedDials->SetColumnWidth(i, width);
+  }
 
   // Now either replace the top half of the splitter or set it for the first time
   if (oldSpeedDials == NULL)
@@ -385,13 +399,33 @@ void MyFrame::RecreateSpeedDials(SpeedDialViews view)
     delete oldSpeedDials;
   }
 
-  config->Write(ActiveViewKey, view);
+  if (config->Read(SashPositionKey, &width))
+    m_splitter->SetSashPosition(width);
+
+  // Read the speed dials from the configuration
+  config->SetPath(SpeedDialsGroup);
+  wxString groupName;
+  long groupIndex;
+  if (config->GetFirstGroup(groupName, groupIndex)) {
+    do {
+      config->SetPath(groupName);
+      wxString number, address, description;
+      if (config->Read(SpeedDialAddressKey, &address) && !address.empty()) {
+        int pos = m_speedDials->InsertItem(INT_MAX, groupName);
+        m_speedDials->SetItem(pos, e_NumberColumn, config->Read(SpeedDialNumberKey, ""));
+        m_speedDials->SetItem(pos, e_AddressColumn, address);
+        m_speedDials->SetItem(pos, e_DescriptionColumn, config->Read(SpeedDialDescriptionKey, ""));
+      }
+      config->SetPath("..");
+    } while (config->GetNextGroup(groupName, groupIndex));
+  }
 }
 
 
 void MyFrame::OnClose(wxCloseEvent& event)
 {
   wxConfigBase * config = wxConfig::Get();
+  config->SetPath(AppearanceGroup);
 
   int x, y;
   GetPosition(&x, &y);
@@ -484,6 +518,14 @@ void MyFrame::OnViewDetails(wxCommandEvent& event)
 }
 
 
+void MyFrame::OnSashPositioned(wxSplitterEvent& event)
+{
+  wxConfigBase * config = wxConfig::Get();
+  config->SetPath(AppearanceGroup);
+  config->Write(SashPositionKey, event.GetSashPosition());
+}
+
+
 void MyFrame::OnSpeedDialActivated(wxListEvent& event)
 {
   wxListItem item;
@@ -501,6 +543,7 @@ void MyFrame::OnSpeedDialActivated(wxListEvent& event)
 void MyFrame::OnSpeedDialColumnResize(wxListEvent& event)
 {
   wxConfigBase * config = wxConfig::Get();
+  config->SetPath(AppearanceGroup);
   wxString key;
   key.sprintf("ColumnWidth%u", event.GetColumn());
   config->Write(key, m_speedDials->GetColumnWidth(event.GetColumn()));
@@ -628,6 +671,9 @@ bool MyFrame::Initialise()
   wxConfigBase * config = wxConfig::Get();
 
 #if PTRACING
+  ////////////////////////////////////////
+  // Tracing fields
+  config->SetPath(TracingGroup);
   if (config->Read(EnableTracingKey, &m_enableTracing, false) && m_enableTracing &&
       config->Read(TraceFileNameKey, &m_traceFileName) && !m_traceFileName.empty()) {
     int traceLevelThreshold = 3;
@@ -638,6 +684,8 @@ bool MyFrame::Initialise()
   }
 #endif
 
+  ////////////////////////////////////////
+  // Creating the endpoints
 #if OPAL_H323
   h323EP = new H323EndPoint(*this);
 
@@ -677,18 +725,29 @@ bool MyFrame::Initialise()
 #define LOAD_FIELD_ENUM(name, set, type) \
   if (config->Read(name##Key, &value1)) set((type)value1)
 
+  ////////////////////////////////////////
+  // General fields
+  config->SetPath(GeneralGroup);
   LOAD_FIELD_STR(Username, SetDefaultUserName);
   LOAD_FIELD_STR(DisplayName, SetDefaultDisplayName);
   LOAD_FIELD_BOOL(AutoAnswer, pcssEP->SetAutoAnswer);
 #if P_EXPAT
   LOAD_FIELD_STR(IVRScript, ivrEP->SetDefaultVXML);
 #endif
+
+  ////////////////////////////////////////
+  // Networking fields
+  config->SetPath(NetworkingGroup);
   LOAD_FIELD_INT2(TCPPortBase, TCPPortBase, SetTCPPorts);
   LOAD_FIELD_INT2(UDPPortBase, UDPPortBase, SetUDPPorts);
   LOAD_FIELD_INT2(RTPPortBase, RTPPortBase, SetRtpIpPorts);
   LOAD_FIELD_INT(RTPTOS, SetRtpIpTypeofService);
   LOAD_FIELD_STR(NATRouter, SetTranslationAddress);
   LOAD_FIELD_STR(STUNServer, SetSTUNServer);
+
+  ////////////////////////////////////////
+  // Sound fields
+  config->SetPath(AudioGroup);
   LOAD_FIELD_STR(SoundPlayer, pcssEP->SetSoundChannelPlayDevice);
   LOAD_FIELD_STR(SoundRecorder, pcssEP->SetSoundChannelRecordDevice);
   LOAD_FIELD_INT(SoundBuffers, pcssEP->SetSoundChannelBufferDepth);
@@ -709,6 +768,9 @@ bool MyFrame::Initialise()
   LOAD_FIELD_INT(SilenceDeadband, silenceParams.m_silenceDeadband = 8*);
   SetSilenceDetectParams(silenceParams);
 
+  ////////////////////////////////////////
+  // Video fields
+  config->SetPath(VideoGroup);
   PVideoDevice::OpenArgs videoArgs = GetVideoInputDevice();
   LOAD_FIELD_STR(VideoGrabber, videoArgs.deviceName = (PString));
   LOAD_FIELD_INT(VideoGrabFormat, videoArgs.videoFormat = (PVideoDevice::VideoFormat));
@@ -727,6 +789,62 @@ bool MyFrame::Initialise()
   LOAD_FIELD_BOOL(VideoFlipRemote, videoArgs.flip = );
   SetVideoOutputDevice(videoArgs);
 
+  ////////////////////////////////////////
+  // Codec fields
+  InitMediaInfo(pcssEP->GetPrefixName(), pcssEP->GetMediaFormats());
+  InitMediaInfo(potsEP->GetPrefixName(), potsEP->GetMediaFormats());
+#if P_EXPAT
+  InitMediaInfo(ivrEP->GetPrefixName(), ivrEP->GetMediaFormats());
+#endif
+
+  OpalMediaFormatList mediaFormats;
+  mediaFormats += pcssEP->GetMediaFormats();
+  mediaFormats += potsEP->GetMediaFormats();
+#if P_EXPAT
+  mediaFormats += ivrEP->GetMediaFormats();
+#endif
+  InitMediaInfo("sw", OpalTranscoder::GetPossibleFormats(mediaFormats));
+
+  config->SetPath(CodecsGroup);
+  int codecIndex = 0;
+  for (;;) {
+    wxString groupName;
+    groupName.sprintf("%04u", codecIndex);
+    if (!config->HasGroup(groupName))
+      break;
+
+    config->SetPath(groupName);
+    PwxString codecName;
+    if (config->Read(CodecNameKey, &codecName) && !codecName.empty()) {
+      for (MyMediaList::iterator mm = m_mediaInfo.begin(); mm != m_mediaInfo.end(); ++mm) {
+        if (codecName == mm->mediaFormat)
+          mm->preferenceOrder = codecIndex;
+      }
+    }
+    config->SetPath("..");
+    codecIndex++;
+  }
+
+  if (codecIndex > 0)
+    ApplyMediaInfo();
+  else {
+    PStringArray mediaFormatOrder = GetMediaFormatOrder();
+    for (PINDEX i = 0; i < mediaFormatOrder.GetSize(); i++) {
+      for (MyMediaList::iterator mm = m_mediaInfo.begin(); mm != m_mediaInfo.end(); ++mm) {
+        if (mm->mediaFormat == mediaFormatOrder[i])
+          mm->preferenceOrder = codecIndex++;
+      }
+    }
+    for (MyMediaList::iterator mm = m_mediaInfo.begin(); mm != m_mediaInfo.end(); ++mm) {
+      if (mm->preferenceOrder < 0)
+        mm->preferenceOrder = codecIndex++;
+    }
+    m_mediaInfo.sort();
+  }
+
+  ////////////////////////////////////////
+  // H.323 fields
+  config->SetPath(H323Group);
   LOAD_FIELD_ENUM(DTMFSendMode, h323EP->SetSendUserInputMode, H323Connection::SendUserInputModes);
   LOAD_FIELD_INT(CallIntrusionProtectionLevel, h323EP->SetCallIntrusionProtectionLevel);
   LOAD_FIELD_BOOL(DisableFastStart, h323EP->DisableFastStart);
@@ -734,18 +852,6 @@ bool MyFrame::Initialise()
   LOAD_FIELD_BOOL(DisableH245inSETUP, h323EP->DisableH245inSetup);
 
   PwxString hostname, username, password;
-  const SIPURL & proxy = sipEP->GetProxy();
-  config->Read(SIPProxyKey, &hostname, PwxString(proxy.GetHostName()));
-  config->Read(SIPProxyUsernameKey, &username, PwxString(proxy.GetUserName()));
-  config->Read(SIPProxyPasswordKey, &password, PwxString(proxy.GetPassword()));
-  sipEP->SetProxy(hostname, username, password);
-
-  const SIPURL & registrationAddress = sipEP->GetRegistrationAddress();
-  config->Read(RegistrarNameKey, &hostname, PwxString(registrationAddress.GetHostName()));
-  config->Read(RegistrarUsernameKey, &username, PwxString(registrationAddress.GetUserName()));
-  config->Read(RegistrarPasswordKey, &password, PwxString(registrationAddress.GetPassword()));
-  sipEP->Register(hostname, username, password);
-
   int mode;
   config->Read(GatekeeperModeKey, &mode, 0);
   if (mode > 0) {
@@ -766,6 +872,23 @@ bool MyFrame::Initialise()
     }
   }
 
+  ////////////////////////////////////////
+  // SIP fields
+  config->SetPath(SIPGroup);
+  const SIPURL & proxy = sipEP->GetProxy();
+  config->Read(SIPProxyKey, &hostname, PwxString(proxy.GetHostName()));
+  config->Read(SIPProxyUsernameKey, &username, PwxString(proxy.GetUserName()));
+  config->Read(SIPProxyPasswordKey, &password, PwxString(proxy.GetPassword()));
+  sipEP->SetProxy(hostname, username, password);
+
+  const SIPURL & registrationAddress = sipEP->GetRegistrationAddress();
+  config->Read(RegistrarNameKey, &hostname, PwxString(registrationAddress.GetHostName()));
+  config->Read(RegistrarUsernameKey, &username, PwxString(registrationAddress.GetUserName()));
+  config->Read(RegistrarPasswordKey, &password, PwxString(registrationAddress.GetPassword()));
+  sipEP->Register(hostname, username, password);
+
+  ////////////////////////////////////////
+  // Routing fields
   {
 #if OPAL_SIP
     if (sipEP != NULL) {
@@ -813,6 +936,36 @@ bool MyFrame::Initialise()
 }
 
 
+void MyFrame::InitMediaInfo(const char * source, const OpalMediaFormatList & mediaFormats)
+{
+  for (PINDEX i = 0; i < mediaFormats.GetSize(); i++) {
+    const OpalMediaFormat & mediaFormat = mediaFormats[i];
+    if (mediaFormat.GetPayloadType() != RTP_DataFrame::MaxPayloadType)
+      m_mediaInfo.push_back(MyMedia(source, mediaFormat));
+  }
+}
+
+
+void MyFrame::ApplyMediaInfo()
+{
+  PStringList mediaFormatOrder, mediaFormatMask;
+
+  m_mediaInfo.sort();
+
+  for (MyMediaList::iterator mm = m_mediaInfo.begin(); mm != m_mediaInfo.end(); ++mm) {
+    if (mm->preferenceOrder < 0)
+      mediaFormatMask.AppendString(mm->mediaFormat);
+    else
+      mediaFormatOrder.AppendString(mm->mediaFormat);
+  }
+
+  if (!mediaFormatOrder.IsEmpty()) {
+    SetMediaFormatOrder(mediaFormatOrder);
+    SetMediaFormatMask(mediaFormatMask);
+  }
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 void MyFrame::OnOptions(wxCommandEvent& event)
@@ -822,6 +975,18 @@ void MyFrame::OnOptions(wxCommandEvent& event)
 }
 
 BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
+  ////////////////////////////////////////
+  // Codec fields
+  EVT_BUTTON(XRCID("AddCodec"), OptionsDialog::AddCodec)
+  EVT_BUTTON(XRCID("RemoveCodec"), OptionsDialog::RemoveCodec)
+  EVT_BUTTON(XRCID("MoveUpCodec"), OptionsDialog::MoveUpCodec)
+  EVT_BUTTON(XRCID("MoveDownCodec"), OptionsDialog::MoveDownCodec)
+  EVT_BUTTON(XRCID("ConfigureCodec"), OptionsDialog::ConfigureCodec)
+  EVT_LISTBOX(XRCID("AllCodecs"), OptionsDialog::SelectedCodecToAdd)
+  EVT_LISTBOX(XRCID("SelectedCodecs"), OptionsDialog::SelectedCodec)
+
+  ////////////////////////////////////////
+  // Routing fields
   EVT_BUTTON(XRCID("AddRoute"), OptionsDialog::AddRoute)
   EVT_BUTTON(XRCID("RemoveRoute"), OptionsDialog::RemoveRoute)
   EVT_LIST_ITEM_SELECTED(XRCID("Routes"), OptionsDialog::SelectedRoute)
@@ -830,28 +995,10 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   EVT_TEXT(XRCID("RouteDestination"), OptionsDialog::ChangedRouteInfo)
 END_EVENT_TABLE()
 
+
 #define INIT_FIELD(name, value) \
   m_##name = value; \
   FindWindowByName(name##Key)->SetValidator(wxGenericValidator(&m_##name))
-
-static void PopulateCodecList(const char * prefix,
-                              const OpalMediaFormatList & mediaFormats,
-                              wxListBox * listBox,
-                              OpalMediaFormatList * allMediaFormats)
-{
-  for (PINDEX i = 0; i < mediaFormats.GetSize(); i++) {
-    const OpalMediaFormat & mediaFormat = mediaFormats[i];
-
-    if (mediaFormat.GetPayloadType() != RTP_DataFrame::MaxPayloadType) {
-      wxString str = prefix;
-      str += (const char *)mediaFormat;
-      listBox->Append(str);
-    }
-
-    if (allMediaFormats != NULL)
-    *allMediaFormats += mediaFormat;
-  }
-}
 
 OptionsDialog::OptionsDialog(MyFrame *parent)
   : mainFrame(*parent)
@@ -948,14 +1095,29 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
 
   ////////////////////////////////////////
   // Codec fields
-  wxListBox * listBox = (wxListBox *)FindWindowByName("AllCodecs");
-  OpalMediaFormatList allMediaFormats;
-  PopulateCodecList("pc: ", mainFrame.pcssEP->GetMediaFormats(), listBox, &allMediaFormats);
-  PopulateCodecList("pots: ", mainFrame.potsEP->GetMediaFormats(), listBox, &allMediaFormats);
-#if P_EXPAT
-  PopulateCodecList("ivr: ", mainFrame.ivrEP->GetMediaFormats(), listBox, &allMediaFormats);
-#endif
-  PopulateCodecList("sw: ", OpalTranscoder::GetPossibleFormats(allMediaFormats), listBox, NULL);
+  m_AddCodec = (wxButton *)FindWindowByName("AddCodec");
+  m_AddCodec->Disable();
+  m_RemoveCodec = (wxButton *)FindWindowByName("RemoveCodec");
+  m_RemoveCodec->Disable();
+  m_MoveUpCodec = (wxButton *)FindWindowByName("MoveUpCodec");
+  m_MoveUpCodec->Disable();
+  m_MoveDownCodec = (wxButton *)FindWindowByName("MoveDownCodec");
+  m_MoveDownCodec ->Disable();
+  m_ConfigureCodec = (wxButton *)FindWindowByName("ConfigureCodec");
+  m_ConfigureCodec->Disable();
+
+  m_allCodecs = (wxListBox *)FindWindowByName("AllCodecs");
+  m_selectedCodecs = (wxListBox *)FindWindowByName("SelectedCodecs");
+  for (MyMediaList::iterator mm = mainFrame.m_mediaInfo.begin(); mm != mainFrame.m_mediaInfo.end(); ++mm) {
+    wxString str = mm->sourceProtocol;
+    str += ": ";
+    str += (const char *)mm->mediaFormat;
+    m_allCodecs->Append(str);
+
+    str = (const char *)mm->mediaFormat;
+    if (mm->preferenceOrder >= 0 && m_selectedCodecs->FindString(str) < 0)
+      m_selectedCodecs->Append(str);
+  }
 
   ////////////////////////////////////////
   // H.323 fields
@@ -1061,6 +1223,9 @@ bool OptionsDialog::TransferDataFromWindow()
 
   wxConfigBase * config = wxConfig::Get();
 
+  ////////////////////////////////////////
+  // General fields
+  config->SetPath(GeneralGroup);
   SAVE_FIELD(Username, mainFrame.SetDefaultUserName);
   SAVE_FIELD(DisplayName, mainFrame.SetDefaultDisplayName);
   SAVE_FIELD(AutoAnswer, mainFrame.pcssEP->SetAutoAnswer);
@@ -1068,6 +1233,9 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(IVRScript, mainFrame.ivrEP->SetDefaultVXML);
 #endif
 
+  ////////////////////////////////////////
+  // Networking fields
+  config->SetPath(NetworkingGroup);
   SAVE_FIELD(Bandwidth, mainFrame.h323EP->SetInitialBandwidth);
   SAVE_FIELD2(TCPPortBase, TCPPortMax, mainFrame.SetTCPPorts);
   SAVE_FIELD2(UDPPortBase, UDPPortMax, mainFrame.SetUDPPorts);
@@ -1076,6 +1244,9 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(STUNServer, mainFrame.SetSTUNServer);
   SAVE_FIELD(NATRouter, mainFrame.SetTranslationAddress);
 
+  ////////////////////////////////////////
+  // Sound fields
+  config->SetPath(AudioGroup);
   SAVE_FIELD(SoundPlayer, mainFrame.pcssEP->SetSoundChannelPlayDevice);
   SAVE_FIELD(SoundRecorder, mainFrame.pcssEP->SetSoundChannelRecordDevice);
   SAVE_FIELD(SoundBuffers, mainFrame.pcssEP->SetSoundChannelBufferDepth);
@@ -1091,6 +1262,9 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(SilenceDeadband, silenceParams.m_silenceDeadband=8*);
   mainFrame.SetSilenceDetectParams(silenceParams);
 
+  ////////////////////////////////////////
+  // Video fields
+  config->SetPath(VideoGroup);
   PVideoDevice::OpenArgs grabber = mainFrame.GetVideoInputDevice();
   SAVE_FIELD(VideoGrabber, grabber.deviceName = (PString));
   SAVE_FIELD(VideoGrabFormat, grabber.videoFormat = (PVideoDevice::VideoFormat));
@@ -1105,19 +1279,61 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(VideoAutoReceive, mainFrame.SetAutoStartReceiveVideo);
 //  SAVE_FIELD(VideoFlipRemote, );
 
-  SAVE_FIELD2(GatekeeperPassword, GatekeeperLogin, mainFrame.h323EP->SetGatekeeperPassword);
+  ////////////////////////////////////////
+  // Codec fields
+  MyMediaList::iterator mm;
+  for (mm = mainFrame.m_mediaInfo.begin(); mm != mainFrame.m_mediaInfo.end(); ++mm)
+    mm->preferenceOrder = -1;
 
+  int codecIndex;
+  for (codecIndex = 0; codecIndex < m_selectedCodecs->GetCount(); codecIndex++) {
+    PwxString selectedFormat = m_selectedCodecs->GetString(codecIndex);
+    for (mm = mainFrame.m_mediaInfo.begin(); mm != mainFrame.m_mediaInfo.end(); ++mm) {
+      if (selectedFormat == mm->mediaFormat) {
+        mm->preferenceOrder = codecIndex;
+        break;
+      }
+    }
+  }
+
+  mainFrame.ApplyMediaInfo();
+
+  config->DeleteGroup(CodecsGroup);
+  for (mm = mainFrame.m_mediaInfo.begin(); mm != mainFrame.m_mediaInfo.end(); ++mm) {
+    if (mm->preferenceOrder >= 0) {
+      wxString groupName;
+      groupName.sprintf("%s/%04u", CodecsGroup, mm->preferenceOrder);
+      config->SetPath(groupName);
+      config->Write(CodecNameKey, mm->mediaFormat);
+    }
+  }
+
+
+  ////////////////////////////////////////
+  // H.323 fields
+  config->SetPath(H323Group);
   mainFrame.h323EP->SetSendUserInputMode((H323Connection::SendUserInputModes)m_DTMFSendMode);
   config->Write(DTMFSendModeKey, m_DTMFSendMode);
   SAVE_FIELD(CallIntrusionProtectionLevel, mainFrame.h323EP->SetCallIntrusionProtectionLevel);
   SAVE_FIELD(DisableFastStart, mainFrame.h323EP->DisableFastStart);
   SAVE_FIELD(DisableH245Tunneling, mainFrame.h323EP->DisableH245Tunneling);
   SAVE_FIELD(DisableH245inSETUP, mainFrame.h323EP->DisableH245inSetup);
+  SAVE_FIELD2(GatekeeperPassword, GatekeeperLogin, mainFrame.h323EP->SetGatekeeperPassword);
 
+  ////////////////////////////////////////
+  // SIP fields
+  config->SetPath(SIPGroup);
   SAVE_FIELD3(SIPProxy, SIPProxyUsername, SIPProxyPassword, mainFrame.sipEP->SetProxy);
   SAVE_FIELD3(RegistrarName, RegistrarUsername, RegistrarPassword, mainFrame.sipEP->Register);
 
+  ////////////////////////////////////////
+  // Routing fields
+
+
 #if PTRACING
+  ////////////////////////////////////////
+  // Tracing fields
+  config->SetPath(TracingGroup);
   int traceOptions = 0;
   if (m_TraceLevelNumber)
     traceOptions |= PTrace::TraceLevel;
@@ -1158,6 +1374,9 @@ bool OptionsDialog::TransferDataFromWindow()
 }
 
 
+////////////////////////////////////////
+// General fields
+
 void OptionsDialog::BrowseSoundFile(wxCommandEvent & event)
 {
 }
@@ -1167,6 +1386,9 @@ void OptionsDialog::PlaySoundFile(wxCommandEvent & event)
 {
 }
 
+
+////////////////////////////////////////
+// Networking fields
 
 void OptionsDialog::BandwidthClass(wxCommandEvent & event)
 {
@@ -1188,28 +1410,69 @@ void OptionsDialog::RemoveInterface(wxCommandEvent & event)
 }
 
 
-void OptionsDialog::SelectedCodecToAdd(wxCommandEvent & event)
-{
-}
-
+////////////////////////////////////////
+// Codec fields
 
 void OptionsDialog::AddCodec(wxCommandEvent & event)
 {
+  int insertionPoint = -1;
+  wxArrayInt destinationSelections;
+  if (m_selectedCodecs->GetSelections(destinationSelections) > 0)
+    insertionPoint = destinationSelections[0];
+
+  wxArrayInt sourceSelections;
+  m_allCodecs->GetSelections(sourceSelections);
+  for (size_t i = 0; i < sourceSelections.GetCount(); i++) {
+    wxString value = m_allCodecs->GetString(sourceSelections[i]);
+    value.Remove(0, value.Find(':')+2);
+    if (m_selectedCodecs->FindString(value) < 0) {
+      if (insertionPoint < 0)
+        m_selectedCodecs->Append(value);
+      else
+        m_selectedCodecs->InsertItems(1, &value, insertionPoint);
+    }
+    m_allCodecs->Deselect(sourceSelections[i]);
+  }
+
+  m_AddCodec->Enable(false);
 }
 
 
 void OptionsDialog::RemoveCodec(wxCommandEvent & event)
 {
+  wxArrayInt selections;
+  m_selectedCodecs->GetSelections(selections);
+  for (int i = selections.GetCount()-1; i >= 0; i--)
+    m_selectedCodecs->Delete(selections[i]);
+  m_RemoveCodec->Enable(false);
+  m_MoveUpCodec->Enable(false);
+  m_MoveDownCodec->Enable(false);
 }
 
 
 void OptionsDialog::MoveUpCodec(wxCommandEvent & event)
 {
+  wxArrayInt selections;
+  m_selectedCodecs->GetSelections(selections);
+  wxString value = m_selectedCodecs->GetString(selections[0]);
+  m_selectedCodecs->Delete(selections[0]);
+  m_selectedCodecs->InsertItems(1, &value, selections[0]-1);
+  m_selectedCodecs->SetSelection(selections[0]-1);
+  m_MoveUpCodec->Enable(selections[0] > 1);
+  m_MoveDownCodec->Enable(true);
 }
 
 
 void OptionsDialog::MoveDownCodec(wxCommandEvent & event)
 {
+  wxArrayInt selections;
+  m_selectedCodecs->GetSelections(selections);
+  wxString value = m_selectedCodecs->GetString(selections[0]);
+  m_selectedCodecs->Delete(selections[0]);
+  m_selectedCodecs->InsertItems(1, &value, selections[0]+1);
+  m_selectedCodecs->SetSelection(selections[0]+1);
+  m_MoveUpCodec->Enable(true);
+  m_MoveDownCodec->Enable(selections[0] < m_selectedCodecs->GetCount()-2);
 }
 
 
@@ -1218,10 +1481,26 @@ void OptionsDialog::ConfigureCodec(wxCommandEvent & event)
 }
 
 
-void OptionsDialog::SelectedCodec(wxCommandEvent & event)
+void OptionsDialog::SelectedCodecToAdd(wxCommandEvent & /*event*/)
 {
+  wxArrayInt selections;
+  m_AddCodec->Enable(m_allCodecs->GetSelections(selections) > 0);
 }
 
+
+void OptionsDialog::SelectedCodec(wxCommandEvent & /*event*/)
+{
+  wxArrayInt selections;
+  int count = m_selectedCodecs->GetSelections(selections);
+  m_RemoveCodec->Enable(count > 0);
+  m_MoveUpCodec->Enable(count == 1 && selections[0] > 0);
+  m_MoveDownCodec->Enable(count == 1 && selections[0] < m_selectedCodecs->GetCount()-1);
+  m_ConfigureCodec->Enable(count == 1);
+}
+
+
+////////////////////////////////////////
+// H.323 fields
 
 void OptionsDialog::AddAlias(wxCommandEvent & event)
 {
@@ -1232,6 +1511,9 @@ void OptionsDialog::RemoveAlias(wxCommandEvent & event)
 {
 }
 
+
+////////////////////////////////////////
+// Routing fields
 
 void OptionsDialog::AddRoute(wxCommandEvent & )
 {
