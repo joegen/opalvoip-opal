@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2064  2004/09/01 12:21:28  rjongbloed
+ * Revision 1.2065  2004/10/02 12:30:22  rjongbloed
+ * Fixed keeping H.323 and OPAL state variables in sync around "established" connections.
+ *
+ * Revision 2.63  2004/09/01 12:21:28  rjongbloed
  * Added initialisation of H323EndPoints capability table to be all codecs so can
  *   correctly build remote caps from fqast connect params. This had knock on effect
  *   with const keywords added in numerous places.
@@ -2420,6 +2423,7 @@ BOOL H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
 
   connectedTime = PTime();
   OnConnected();
+  InternalEstablishedConnectionCheck();
 
   // If we have a H.245 channel available, bring it up. We either have media
   // and this is just so user indications work, or we don't have media and
@@ -4284,16 +4288,24 @@ void H323Connection::InternalEstablishedConnectionCheck()
     startT120 = FALSE;
   }
 
-  if (phase != ConnectedPhase)
-    return;
+  switch (phase) {
+    case ConnectedPhase :
+      // Check if we have already got a transmitter running, select one if not
+      if (FindChannel(OpalMediaFormat::DefaultAudioSessionID, FALSE) == NULL)
+        OnSelectLogicalChannels();
 
-  // Check if we have already got a transmitter running, select one if not
-  if (FindChannel(OpalMediaFormat::DefaultAudioSessionID, FALSE) == NULL)
-    OnSelectLogicalChannels();
+      connectionState = EstablishedConnection;
+      phase = EstablishedPhase;
+      OnEstablished();
+      break;
 
-  connectionState = EstablishedConnection;
-  phase = EstablishedPhase;
-  OnEstablished();
+    case EstablishedPhase :
+      connectionState = EstablishedConnection; // Keep in sync
+      break;
+
+    default :
+      break;
+  }
 }
 
 
