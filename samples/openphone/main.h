@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.20  2005/02/21 12:19:50  rjongbloed
+ * Added new "options list" to the OpalMediaFormat class.
+ *
  * Revision 1.19  2004/10/06 13:08:19  rjongbloed
  * Implemented partial support for LIDs
  *
@@ -108,6 +111,7 @@ class wxSplitterWindow;
 class wxSplitterEvent;
 class wxListCtrl;
 class wxListEvent;
+class wxGrid;
 
 
 class PwxString : public wxString
@@ -346,21 +350,24 @@ class OptionsDialog : public wxDialog
 
     ////////////////////////////////////////
     // Codec fields
-    wxButton  * m_AddCodec;
-    wxButton  * m_RemoveCodec;
-    wxButton  * m_MoveUpCodec;
-    wxButton  * m_MoveDownCodec;
-    wxButton  * m_ConfigureCodec;
-    wxListBox * m_allCodecs;
-    wxListBox * m_selectedCodecs;
+    wxButton   * m_AddCodec;
+    wxButton   * m_RemoveCodec;
+    wxButton   * m_MoveUpCodec;
+    wxButton   * m_MoveDownCodec;
+    wxListBox  * m_allCodecs;
+    wxListBox  * m_selectedCodecs;
+    wxListCtrl * m_codecOptions;
+    wxTextCtrl * m_codecOptionValue;
 
     void AddCodec(wxCommandEvent & event);
     void RemoveCodec(wxCommandEvent & event);
     void MoveUpCodec(wxCommandEvent & event);
     void MoveDownCodec(wxCommandEvent & event);
-    void ConfigureCodec(wxCommandEvent & event);
     void SelectedCodecToAdd(wxCommandEvent & event);
     void SelectedCodec(wxCommandEvent & event);
+    void SelectedCodecOption(wxCommandEvent & event);
+    void DeselectedCodecOption(wxCommandEvent & event);
+    void ChangedCodecOptionValue(wxCommandEvent & event);
 
     ////////////////////////////////////////
     // H.323 fields
