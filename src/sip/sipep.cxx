@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2033  2004/12/22 18:56:39  dsandras
+ * Revision 1.2034  2004/12/25 20:45:12  dsandras
+ * Only fail a REGISTER when proxy authentication is required and has already
+ * been done if the credentials are identical. Fixes registration refresh problem
+ * where some registrars request authentication with a new nonce.
+ *
+ * Revision 2.32  2004/12/22 18:56:39  dsandras
  * Ignore ACK's received outside the context of a connection (e.g. when sending a non-2XX answer to an INVITE).
  *
  * Revision 2.31  2004/12/17 12:06:52  dsandras
@@ -486,13 +491,19 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
 void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction, SIP_PDU & response)
 {
   BOOL isProxy = response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
+  PString lastRealm;
+  PString lastNonce;
+  PString lastUsername;
+  
 #if PTRACING
   const char * proxyTrace = isProxy ? "Proxy " : "";
 #endif
 
   if (authentication.IsValid()) {
-    PTRACE(1, "SIP\tAlready done INVITE for " << proxyTrace << "Authentication Required");
-    return;
+    
+    lastRealm = authentication.GetRealm ();
+    lastUsername = authentication.GetUsername ();
+    lastNonce = authentication.GetNonce ();
   }
 
   if (transaction.GetMethod() != SIP_PDU::Method_REGISTER) {
@@ -505,6 +516,16 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
   if (!authentication.Parse(response.GetMIME()(isProxy ? "Proxy-Authenticate"
                                                        : "WWW-Authenticate"),
                                                isProxy)) {
+    return;
+  }
+  
+  if (authentication.IsValid()
+      && lastRealm == authentication.GetRealm ()
+      && lastUsername == authentication.GetUsername ()
+      && lastNonce == authentication.GetNonce ()) {
+
+    PTRACE(1, "SIP\tAlready done INVITE for " << proxyTrace << "Authentication Required");
+    OnRegistrationFailed (SIPEndPoint::Forbidden, TRUE);
     return;
   }
 
@@ -565,6 +586,9 @@ void SIPEndPoint::OnRegistrationFailed(RegistrationFailReasons reason, BOOL wasR
 void SIPEndPoint::RegistrationRefresh(PTimer &, INT)
 {
   PTRACE(2, "SIP\tStarting REGISTER for binding refresh");
+
+  // Timer has elapsed
+  registered = FALSE;
 
   // Restart the transaction with new authentication info
   SIPTransaction * request = new SIPRegister(*this,
