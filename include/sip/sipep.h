@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2013  2004/04/26 05:40:38  rjongbloed
+ * Revision 1.2014  2004/04/26 06:30:33  rjongbloed
+ * Added ability to specify more than one defualt listener for an endpoint,
+ *   required by SIP which listens on both UDP and TCP.
+ *
+ * Revision 2.12  2004/04/26 05:40:38  rjongbloed
  * Added RTP statistics callback to SIP
  *
  * Revision 2.11  2004/03/14 11:32:19  rjongbloed
@@ -106,6 +110,11 @@ class SIPEndPoint : public OpalEndPoint
 
   /**@name Overrides from OpalManager */
   //@{
+    /**Get the default listeners for the endpoint type.
+       Overrides the default behaviour to return udp and tcp listeners.
+      */
+    virtual PStringArray GetDefaultListeners() const;
+
     /**Handle new incoming connection from listener.
 
        The default behaviour does nothing.
