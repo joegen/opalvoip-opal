@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2018  2004/02/19 10:47:04  rjongbloed
+ * Revision 1.2019  2004/04/07 08:21:03  rjongbloed
+ * Changes for new RTTI system.
+ *
+ * Revision 2.17  2004/02/19 10:47:04  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.16  2003/04/08 02:44:04  robertj
@@ -417,7 +420,7 @@ H323Capability::H323Capability()
 
 PObject::Comparison H323Capability::Compare(const PObject & obj) const
 {
-  PAssert(obj.IsDescendant(H323Capability::Class()), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H323Capability), PInvalidCast);
   const H323Capability & other = (const H323Capability &)obj;
 
   int mt = GetMainType();
@@ -978,7 +981,7 @@ H323NonStandardAudioCapability::H323NonStandardAudioCapability(unsigned max,
 
 PObject::Comparison H323NonStandardAudioCapability::Compare(const PObject & obj) const
 {
-  if (!obj.IsDescendant(H323NonStandardAudioCapability::Class()))
+  if (!PIsDescendant(&obj, H323NonStandardAudioCapability))
     return PObject::LessThan;
 
   return CompareInfo((const H323NonStandardAudioCapability &)obj);
@@ -1109,7 +1112,7 @@ H323NonStandardVideoCapability::H323NonStandardVideoCapability(BYTE country,
 
 PObject::Comparison H323NonStandardVideoCapability::Compare(const PObject & obj) const
 {
-  if (!obj.IsDescendant(H323NonStandardVideoCapability::Class()))
+  if (!PIsDescendant(&obj, H323NonStandardVideoCapability))
     return PObject::LessThan;
 
   return CompareInfo((const H323NonStandardVideoCapability &)obj);
@@ -1260,7 +1263,7 @@ H323NonStandardDataCapability::H323NonStandardDataCapability(unsigned maxBitRate
 
 PObject::Comparison H323NonStandardDataCapability::Compare(const PObject & obj) const
 {
-  if (!obj.IsDescendant(H323NonStandardDataCapability::Class()))
+  if (!PIsDescendant(&obj, H323NonStandardDataCapability))
     return PObject::LessThan;
 
   return CompareInfo((const H323NonStandardDataCapability &)obj);

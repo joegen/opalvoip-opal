@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2049  2004/03/25 11:48:37  rjongbloed
+ * Revision 1.2050  2004/04/07 08:21:03  rjongbloed
+ * Changes for new RTTI system.
+ *
+ * Revision 2.48  2004/03/25 11:48:37  rjongbloed
  * Changed PCM-16 from IllegalPayloadType to MaxPayloadType to avoid problems
  *   in other parts of the code.
  *
@@ -2853,8 +2856,8 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   // Search the capability set and see if we have video capability
   BOOL hasVideoOrData = FALSE;
   for (PINDEX i = 0; i < localCapabilities.GetSize(); i++) {
-    if (!localCapabilities[i].IsDescendant(H323AudioCapability::Class()) &&
-        !localCapabilities[i].IsDescendant(H323_UserInputCapability::Class())) {
+    if (!PIsDescendant(&localCapabilities[i], H323AudioCapability) &&
+        !PIsDescendant(&localCapabilities[i], H323_UserInputCapability)) {
       hasVideoOrData = TRUE;
       break;
     }
@@ -4650,7 +4653,7 @@ BOOL H323Connection::OnCreateLogicalChannel(const H323Capability & capability,
 BOOL H323Connection::OnStartLogicalChannel(H323Channel & channel)
 {
   if (channel.GetSessionID() == OpalMediaFormat::DefaultAudioSessionID &&
-      channel.IsDescendant(H323_RTPChannel::Class())) {
+      PIsDescendant(&channel, H323_RTPChannel)) {
     OpalMediaPatch * patch = channel.GetMediaStream()->GetPatch();
     if (patch != NULL) {
       if (channel.GetNumber().IsFromRemote()) {
@@ -4947,7 +4950,7 @@ H323_RTP_Session * H323Connection::GetSessionCallbacks(unsigned sessionID) const
 
   PTRACE(3, "RTP\tFound existing session " << sessionID);
   PObject * data = session->GetUserData();
-  PAssert(data->IsDescendant(H323_RTP_Session::Class()), PInvalidCast);
+  PAssert(PIsDescendant(data, H323_RTP_Session), PInvalidCast);
   return (H323_RTP_Session *)data;
 }
 

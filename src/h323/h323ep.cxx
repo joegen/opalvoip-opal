@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2029  2004/03/13 06:25:54  rjongbloed
+ * Revision 1.2030  2004/04/07 08:21:03  rjongbloed
+ * Changes for new RTTI system.
+ *
+ * Revision 2.28  2004/03/13 06:25:54  rjongbloed
  * Slight rearrangement of local party name and alias list to beter match common
  *   behaviour in ancestor.
  * Abstracted local party name for endpoint into ancestor from H.,323.
@@ -1512,7 +1515,7 @@ H323Connection * H323EndPoint::FindConnectionWithoutLocks(const PString & token)
   PWaitAndSignal wait(inUseFlag);
 
   OpalConnection * conn_ptr = connectionsActive.GetAt(token);
-  if (conn_ptr != NULL && conn_ptr->IsDescendant(H323Connection::Class()))
+  if (conn_ptr != NULL && PIsDescendant(conn_ptr, H323Connection))
     return (H323Connection *)conn_ptr;
 
   PINDEX i;
