@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2009  2002/01/14 06:35:56  robertj
+ * Revision 1.2010  2002/01/22 04:59:04  robertj
+ * Update from OpenH323, RFC2833 support
+ *
+ * Revision 2.8  2002/01/14 06:35:56  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.7  2001/11/02 10:45:19  robertj
@@ -55,6 +58,12 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.23  2002/01/18 06:02:08  robertj
+ * Added some H323v4 functions (fastConnectRefused & TCS in SETUP)
+ *
+ * Revision 1.22  2002/01/17 07:04:58  robertj
+ * Added support for RFC2833 embedded DTMF in the RTP stream.
  *
  * Revision 1.21  2002/01/14 00:05:24  robertj
  * Added H.450.6, better H.450.2 error handling and  and Music On Hold.
@@ -392,7 +401,9 @@ class H323Connection : public OpalConnection
 
     /* Handle Control PDU tunnelled in the signalling channel.
      */
-    virtual void HandleTunnelPDU();
+    virtual void HandleTunnelPDU(
+      H323SignalPDU * txPDU       /// PDU tunnel response into.
+    );
 
     /**Handle an incoming Q931 setup PDU.
        The default behaviour is to do the handshaking operation calling a few
@@ -1383,24 +1394,24 @@ class H323Connection : public OpalConnection
 
   /**@name Indications */
   //@{
-    /**Send a user input indication to the remote endpoint.
-       The two forms are for basic user input of a simple string using the
-       SendUserInput() function or a full DTMF emulation user input using the
-       SendUserInputTone() function.
-
-       An application could do more sophisticated usage by filling in the 
-       H245_UserInputIndication structure directly ans using this function.
+    /**Set the user input indication transmission mode.
       */
-    virtual void SendUserInputIndication(
-      const H245_UserInputIndication & pdu    /// Full user indication PDU
-    );
+    virtual void SetSendUserInputMode(SendUserInputModes mode);
 
     /**Send a user input indication to the remote endpoint.
-       This is for sending arbitrary strings as user indications. Simple DTMF
-       tones can be sent this way with the tone value being a single
-       character string.
+       This is for sending arbitrary strings as user indications.
+
+       The user indication is sent according to the sendUserInputMode member
+       variable. If SendUserInputAsString then this uses an H.245 "string"
+       UserInputIndication pdu sending the entire string in one go. If
+       SendUserInputAsTone then a separate H.245 "signal" UserInputIndication
+       pdu is sent for each character. If SendUserInputAsInlineRFC2833 then
+       the indication is inserted into the outgoing audio stream as an RFC2833
+       RTP data pdu.
+
+       SendUserInputAsSeparateRFC2833 is not yet supported.
       */
-    virtual void SendUserInput(
+    virtual BOOL SendUserInputString(
       const PString & value                   /// String value of indication
     );
 
@@ -1417,8 +1428,37 @@ class H323Connection : public OpalConnection
        indicates a hook flash. If tone is a ' ' character then a
        signalUpdate PDU is sent that updates the last tone indication
        sent. See the H.245 specifcation for more details on this.
+
+       The user indication is sent according to the sendUserInputMode member
+       variable. If SendUserInputAsString then this uses an H.245 "string"
+       UserInputIndication pdu sending the entire string in one go. If
+       SendUserInputAsTone then a separate H.245 "signal" UserInputIndication
+       pdu is sent for each character. If SendUserInputAsInlineRFC2833 then
+       the indication is inserted into the outgoing audio stream as an RFC2833
+       RTP data pdu.
+
+       SendUserInputAsSeparateRFC2833 is not yet supported.
       */
-    virtual void SendUserInputTone(
+    virtual BOOL SendUserInputTone(
+      char tone,             /// DTMF tone code
+      unsigned duration = 0  /// Duration of tone in milliseconds
+    );
+
+    /**Send a user input indication to the remote endpoint.
+       This is for sending arbitrary strings as user indications.
+
+       This always uses an H.245 "string" UserInputIndication pdu sending the
+       entire string in one go.
+      */
+    virtual BOOL SendUserInputIndicationString(
+      const PString & value                   /// String value of indication
+    );
+
+    /**Send a user input indication to the remote endpoint.
+       This sends DTMF emulation user input.This uses an H.245 "signal"
+       UserInputIndication pdu.
+      */
+    virtual BOOL SendUserInputIndicationTone(
       char tone,                   /// DTMF tone code
       unsigned duration = 0,       /// Duration of tone in milliseconds
       unsigned logicalChannel = 0, /// Logical channel number for RTP sync.
@@ -1426,11 +1466,16 @@ class H323Connection : public OpalConnection
     );
 
     /**Send a user input indication to the remote endpoint.
-       This sends a Hook Flash emulation user input.
+       The two forms are for basic user input of a simple string using the
+       SendUserInput() function or a full DTMF emulation user input using the
+       SendUserInputTone() function.
+
+       An application could do more sophisticated usage by filling in the 
+       H245_UserInputIndication structure directly ans using this function.
       */
-    void SendUserInputHookFlash(
-      int duration = 500  /// Duration of tone in milliseconds
-    ) { SendUserInputTone('!', duration); }
+    virtual BOOL SendUserInputIndication(
+      const H245_UserInputIndication & pdu    /// Full user indication PDU
+    );
 
     /**Call back for remote enpoint has sent user input.
        The default behaviour calls OnUserInputString() if the PDU is of the
@@ -1438,25 +1483,6 @@ class H323Connection : public OpalConnection
       */
     virtual void OnUserInputIndication(
       const H245_UserInputIndication & pdu  /// Full user indication PDU
-    );
-
-    /**Call back for remote enpoint has sent user input as a string.
-
-       The default behaviour calls the endpoint function of the same name.
-      */
-    virtual void OnUserInputString(
-      const PString & value   /// String value of indication
-    );
-
-    /**Call back for remote enpoint has sent user input.
-
-       The default behaviour calls the endpoint function of the same name.
-      */
-    virtual void OnUserInputTone(
-      char tone,               /// DTMF tone code
-      unsigned duration,       /// Duration of tone in milliseconds
-      unsigned logicalChannel, /// Logical channel number for RTP sync.
-      unsigned rtpTimestamp    /// RTP timestamp in logical channel sync.
     );
   //@}
 
