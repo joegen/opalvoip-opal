@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2004  2001/08/01 05:44:40  robertj
+ * Revision 1.2005  2001/08/17 08:26:26  robertj
+ * Moved call end reasons enum from OpalConnection to global.
+ *
+ * Revision 2.3  2001/08/01 05:44:40  robertj
  * Added function to get all media formats possible in a call.
  *
  * Revision 2.2  2001/07/30 07:22:25  robertj
@@ -220,7 +223,7 @@ BOOL OpalEndPoint::OnReleased(OpalConnection & connection)
 
 
 BOOL OpalEndPoint::ClearCall(const PString & token,
-                             OpalConnection::CallEndReason reason,
+                             OpalCallEndReason reason,
                              PSyncPoint * sync)
 {
   return manager.ClearCall(token, reason, sync);
@@ -228,7 +231,7 @@ BOOL OpalEndPoint::ClearCall(const PString & token,
 
 
 BOOL OpalEndPoint::ClearCallSynchronous(const PString & token,
-                                        OpalConnection::CallEndReason reason,
+                                        OpalCallEndReason reason,
                                         PSyncPoint * sync)
 {
   PSyncPoint syncPoint;
@@ -238,8 +241,7 @@ BOOL OpalEndPoint::ClearCallSynchronous(const PString & token,
 }
 
 
-void OpalEndPoint::ClearAllCalls(OpalConnection::CallEndReason reason,
-                                 BOOL wait)
+void OpalEndPoint::ClearAllCalls(OpalCallEndReason reason, BOOL wait)
 {
   inUseFlag.Wait();
 
