@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2018  2002/11/10 11:33:16  robertj
+ * Revision 1.2019  2002/11/10 22:59:20  robertj
+ * Fixed override of SetCallEndReason to have same parameters as base virtual.
+ *
+ * Revision 2.17  2002/11/10 11:33:16  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.16  2002/09/16 02:52:33  robertj
@@ -400,7 +403,8 @@ class H323Connection : public OpalConnection
        for the H323EndPoint::ClearCall() function to set the clearance reason.
       */
     virtual void SetCallEndReason(
-      CallEndReason reason   /// Reason for clearance of connection.
+      CallEndReason reason,       /// Reason for clearance of connection.
+      PSyncPoint * sync = NULL    /// syncpoint to use for synchronous destruction
     );
 
     /**Indicate to remote endpoint an alert is in progress.
