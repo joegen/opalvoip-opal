@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2015  2002/09/04 06:01:46  robertj
+ * Revision 1.2016  2002/09/06 02:39:27  robertj
+ * Added function to set gatekeeper access token OID.
+ *
+ * Revision 2.14  2002/09/04 06:01:46  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.13  2002/07/04 07:41:46  robertj
@@ -977,7 +980,11 @@ class H323EndPoint : public OpalEndPoint
 
     /**Get the iNow Gatekeeper Access Token OID.
      */
-    const PString GetGkAccessTokenOID() const { return gkAccessTokenOID; }
+    const PString & GetGkAccessTokenOID() const { return gkAccessTokenOID; }
+
+    /**Set the iNow Gatekeeper Access Token OID.
+     */
+    void SetGkAccessTokenOID(const PString & token) { gkAccessTokenOID = token; }
 
     /**Get the default timeout for Call Transfer Timer CT-T1.
      */
