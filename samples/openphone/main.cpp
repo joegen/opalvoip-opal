@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cpp,v $
+ * Revision 1.9  2004/05/06 13:23:43  rjongbloed
+ * Work on wxWindows based OpenPhone
+ *
  * Revision 1.8  2004/05/01 13:38:05  rjongbloed
  * Some early implementation of wxWIndows based OPAL GUI client.
  *
@@ -37,6 +40,11 @@
 
 #include "main.h"
 #include "version.h"
+
+#include <wx/splitter.h>
+#include <wx/listctrl.h>
+#include <wx/image.h>
+#include <wx/xrc/xmlres.h>
 
 #if OPAL_SIP
 #include <sip/sip.h>
@@ -98,6 +106,10 @@ void OpenPhoneApp::Main()
 
 bool OpenPhoneApp::OnInit()
 {
+  wxImage::AddHandler(new wxGIFHandler);
+  wxXmlResource::Get()->InitAllHandlers();
+  wxXmlResource::Get()->Load("openphone.xrc");
+
   // Create the main frame window
   MyFrame * frame = new MyFrame();
   SetTopWindow(frame);
@@ -108,17 +120,19 @@ bool OpenPhoneApp::OnInit()
 ///////////////////////////////////////////////////////////////////////////////
 
 BEGIN_EVENT_TABLE(MyFrame, wxFrame)
-  EVT_SIZE(MyFrame::OnSize)
-
-  EVT_MENU(MENU_FILE_QUIT,  MyFrame::OnMenuQuit)
-  EVT_MENU(MENU_FILE_ABOUT, MyFrame::OnMenuAbout)
-  EVT_MENU(MENU_FILE_CALL,  MyFrame::OnMenuCall)
+  EVT_MENU(XRCID("MenuQuit"),   MyFrame::OnMenuQuit)
+  EVT_MENU(XRCID("MenuAbout"),  MyFrame::OnMenuAbout)
+  EVT_MENU(XRCID("MenuCall"),   MyFrame::OnMenuCall)
+  EVT_MENU(XRCID("ViewLarge"),  MyFrame::OnViewLarge)
+  EVT_MENU(XRCID("ViewSmall"),  MyFrame::OnViewSmall)
+  EVT_MENU(XRCID("ViewList"),   MyFrame::OnViewList)
+  EVT_MENU(XRCID("ViewDetails"),MyFrame::OnViewDetails)
+  EVT_MENU(XRCID("MenuOptions"),MyFrame::OnOptions)
 END_EVENT_TABLE()
 
 MyFrame::MyFrame()
   : wxFrame(NULL, -1, wxT("OpenPhone"), wxDefaultPosition, wxSize(640, 480)),
-    m_panel(NULL),
-    m_logWindow(NULL),
+    m_speedDials(NULL),
     pcssEP(NULL),
     potsEP(NULL),
 #if OPAL_H323
@@ -135,26 +149,22 @@ MyFrame::MyFrame()
   SetIcon( wxICON(OpenOphone) );
 
   // Make a menubar
-  wxMenuBar *menubar = new wxMenuBar;
-
-  wxMenu *menu = new wxMenu;
-  menu->Append(MENU_FILE_CALL, _T("&Call"));
-  menu->AppendSeparator();
-  menu->Append(MENU_FILE_QUIT, _T("E&xit\tAlt-X"));
-  menubar->Append(menu, _T("&File"));
-
-  menu = new wxMenu;
-  menu->Append(MENU_FILE_ABOUT, _T("&About"));
-  menubar->Append(menu, _T("&Help"));
-
-  SetMenuBar(menubar);
+  SetMenuBar(wxXmlResource::Get()->LoadMenuBar("MenuBar"));
 
   // Make the content of the main window, speed dial and log panes
-  m_panel = new wxPanel(this, -1);
-  m_logWindow = new wxTextCtrl(m_panel, -1, wxEmptyString,
+  m_splitter = new wxSplitterWindow(this, -1, wxDefaultPosition, wxDefaultSize, wxSP_3D);
+
+  m_logWindow = new wxTextCtrl(m_splitter, -1, wxEmptyString,
                                wxDefaultPosition, wxDefaultSize,
                                wxTE_MULTILINE | wxSUNKEN_BORDER);
   LogWindow.SetTextCtrl(m_logWindow);
+
+  RecreateSpeedDials(wxLC_LIST);
+
+  // Set up sizer to automatically resize the splitter to size of window
+  wxBoxSizer * sizer = new wxBoxSizer(wxVERTICAL);
+  sizer->Add(m_splitter, 1, wxGROW, 0);
+  SetSizer(sizer);
 
   // Show the frame
   Show(TRUE);
@@ -199,16 +209,34 @@ bool MyFrame::Initialise()
 }
 
 
-void MyFrame::OnSize(wxSizeEvent& event)
+void MyFrame::RecreateSpeedDials(long flags)
 {
-  if (m_logWindow == NULL)
-    return;
+  wxListCtrl * oldSpeedDials = m_speedDials;
 
-  wxSize size = GetClientSize();
+  m_speedDials = new wxListCtrl(m_splitter, -1,
+                               wxDefaultPosition, wxDefaultSize,
+                               flags | wxLC_EDIT_LABELS | wxSUNKEN_BORDER);
 
-  m_logWindow->SetSize(0, 0, size.x, size.y);
+  m_speedDials->InsertColumn(0, _T("Name"));
+  m_speedDials->InsertColumn(1, _T("Number"));
+  m_speedDials->InsertColumn(2, _T("Address"));
 
-  event.Skip();
+  // Test data ....
+  m_speedDials->InsertItem(0, _T("SpeedDialOne"));
+  m_speedDials->SetItem(0, 1, _T("1"));
+  m_speedDials->SetItem(0, 2, _T("h323:h323.voxgratia.org"));
+
+  m_speedDials->InsertItem(1, _T("SpeedDialTwo"));
+  m_speedDials->SetItem(1, 1, _T("234"));
+  m_speedDials->SetItem(1, 2, _T("sip:gw.voxgratia.org"));
+
+  // Now either replace the top half of the splitter or set it for the first time
+  if (oldSpeedDials == NULL)
+    m_splitter->SplitHorizontally(m_speedDials, m_logWindow);
+  else {
+    m_splitter->ReplaceWindow(oldSpeedDials, m_speedDials);
+    delete oldSpeedDials;
+  }
 }
 
 
@@ -239,6 +267,35 @@ void MyFrame::OnMenuCall(wxCommandEvent& WXUNUSED(event))
     else
       SetUpCall("pc:*", dlg.m_Address.c_str(), currentCallToken);
   }
+}
+
+
+void MyFrame::OnViewLarge(wxCommandEvent& WXUNUSED(event))
+{
+  RecreateSpeedDials(wxLC_ICON);
+}
+
+
+void MyFrame::OnViewSmall(wxCommandEvent& WXUNUSED(event))
+{
+  RecreateSpeedDials(wxLC_SMALL_ICON);
+}
+
+
+void MyFrame::OnViewList(wxCommandEvent& WXUNUSED(event))
+{
+  RecreateSpeedDials(wxLC_LIST);
+}
+
+
+void MyFrame::OnViewDetails(wxCommandEvent& WXUNUSED(event))
+{
+  RecreateSpeedDials(wxLC_REPORT);
+}
+
+
+void MyFrame::OnOptions(wxCommandEvent& event)
+{
 }
 
 
@@ -376,49 +433,17 @@ BOOL MyPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection & connection)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-enum {
-  CALL_DIALOG_ADDRESS = 10
-};
-
 BEGIN_EVENT_TABLE(CallDialog, wxDialog)
-  EVT_TEXT(CALL_DIALOG_ADDRESS, CallDialog::OnAddressChange)
+  EVT_TEXT(XRCID("Address"), CallDialog::OnAddressChange)
 END_EVENT_TABLE()
 
 CallDialog::CallDialog(wxWindow *parent)
-  : wxDialog(parent, -1, wxString(_T("Call")),
-             wxDefaultPosition, wxDefaultSize,
-             wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
 {
-  wxStaticText * label = new wxStaticText(this, -1, "Address:",
-                                          wxDefaultPosition, wxDefaultSize,
-                                          wxALIGN_RIGHT);
+  wxXmlResource::Get()->LoadDialog(this, parent, "CallDialog");
 
-  m_AddressCtrl = new wxTextCtrl(this, CALL_DIALOG_ADDRESS, wxEmptyString,
-                                 wxDefaultPosition, wxSize(200, 24),
-                                 wxSUNKEN_BORDER,
-                                 wxTextValidator(wxFILTER_NONE, &m_Address));
-
-  m_ok = new wxButton(this, wxID_OK, _T("OK"));
-  wxButton * cancel = new wxButton(this, wxID_CANCEL, _T("Cancel"));
-
-  wxBoxSizer * sizerTop = new wxBoxSizer(wxHORIZONTAL);
-  sizerTop->Add(label,         0, wxALIGN_CENTER | wxTOP | wxBOTTOM | wxLEFT, 12);
-  sizerTop->Add(m_AddressCtrl, 1, wxALIGN_CENTER | wxTOP | wxBOTTOM | wxRIGHT, 12);
-
-  wxBoxSizer * sizerBottom = new wxBoxSizer(wxHORIZONTAL);
-  sizerBottom->Add(m_ok,   0, wxALIGN_CENTER | wxALL, 12);
-  sizerBottom->Add(cancel, 0, wxALIGN_CENTER | wxALL, 12);
-
-  wxBoxSizer *sizerAll = new wxBoxSizer(wxVERTICAL);
-  sizerAll->Add(sizerTop,    0, wxALIGN_CENTER | wxEXPAND);
-  sizerAll->Add(sizerBottom, 0, wxALIGN_CENTER);
-
-  SetAutoLayout(TRUE);
-  SetSizer(sizerAll);
-
-  sizerAll->SetSizeHints(this);
-  sizerAll->Fit(this);
-
+  m_AddressCtrl = (wxComboBox *)FindWindowByName("Address");
+  m_AddressCtrl->SetValidator(wxTextValidator(wxFILTER_ASCII, &m_Address));
+  m_ok = (wxButton *)FindWindowByName("CallOK", this);
   m_ok->Disable();
 }
 
@@ -426,6 +451,17 @@ CallDialog::CallDialog(wxWindow *parent)
 void CallDialog::OnAddressChange(wxCommandEvent & WXUNUSED(event))
 {
   m_ok->Enable(!m_AddressCtrl->GetValue().IsEmpty());
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
+END_EVENT_TABLE()
+
+OptionsDialog::OptionsDialog(wxWindow *parent)
+{
+  wxXmlResource::Get()->LoadDialog(this, parent, "OptionsDialog");
 }
 
 
