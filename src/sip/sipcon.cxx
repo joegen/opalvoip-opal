@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2043  2004/08/20 12:13:32  rjongbloed
+ * Revision 1.2044  2004/11/29 08:18:32  csoutheren
+ * Added support for setting the SIP authentication domain/realm as needed for many service
+ *  providers
+ *
+ * Revision 2.42  2004/08/20 12:13:32  rjongbloed
  * Added correct handling of SIP 180 response
  *
  * Revision 2.41  2004/08/14 07:56:43  rjongbloed
@@ -658,7 +662,20 @@ SDPSessionDescription * SIPConnection::BuildSDP(RTP_SessionManager & rtpSessions
 
 void SIPConnection::SetLocalPartyAddress()
 {
-  SIPURL myAddress(GetLocalPartyName(), transport->GetLocalAddress(), endpoint.GetDefaultSignalPort());
+  OpalTransportAddress taddr = transport->GetLocalAddress();
+  PIPSocket::Address addr; 
+  WORD port;
+  taddr.GetIpAndPort(addr, port);
+  PString domain = endpoint.GetDomain();
+
+  if (domain.IsEmpty()) {
+    domain = addr.AsString();
+    if (port != endpoint.GetDefaultSignalPort())
+      domain += psprintf(":%d", port);
+  }
+
+  SIPURL myAddress(GetLocalPartyName() + "@" + domain); 
+
   // add displayname, <> and tag
   SetLocalPartyAddress(myAddress.AsQuotedString() + ";tag=" + GetTag());
 }
