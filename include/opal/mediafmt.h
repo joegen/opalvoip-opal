@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2017  2003/01/07 04:39:53  robertj
+ * Revision 1.2018  2003/03/17 10:12:02  robertj
+ * Fixed mutex problem with media format database.
+ *
+ * Revision 2.16  2003/01/07 04:39:53  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.15  2002/11/10 11:33:17  robertj
@@ -406,9 +409,9 @@ class OpalMediaFormat : public PCaselessString
       */
     unsigned GetClockRate() const { return clockRate; }
 
-    /**Get the list of media formats that have been registered.
+    /**Get a copy of the list of media formats that have been registered.
       */
-    inline static const OpalMediaFormatList & GetRegisteredMediaFormats() { return GetMediaFormatsList(); }
+    static OpalMediaFormatList GetAllRegisteredMediaFormats();
 
 
   protected:
@@ -423,6 +426,9 @@ class OpalMediaFormat : public PCaselessString
 
   private:
     static OpalMediaFormatList & GetMediaFormatsList();
+    static PMutex & GetMediaFormatsListMutex();
+
+  friend class OpalMediaFormatList;
 };
 
 
