@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2001/08/01 05:29:19  robertj
+ * Added function to get all media formats possible in a call.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  */
@@ -40,6 +43,7 @@
 
 #include <opal/manager.h>
 #include <opal/patch.h>
+#include <opal/transcoders.h>
 
 
 #define new PNEW
@@ -166,9 +170,9 @@ void OpalCall::OnConnected(OpalConnection & connection)
 
   inUseFlag.Signal();
 
-  OpenSourceMediaStreams(connection, connection.GetMediaFormats(), RTP_Session::DefaultAudioSessionID);
+  OpenSourceMediaStreams(connection, connection.GetMediaFormats(), OpalMediaFormat::DefaultAudioSessionID);
   if (manager.CanAutoStartTransmitVideo())
-    OpenSourceMediaStreams(connection, connection.GetMediaFormats(), RTP_Session::DefaultVideoSessionID);
+    OpenSourceMediaStreams(connection, connection.GetMediaFormats(), OpalMediaFormat::DefaultVideoSessionID);
 }
 
 
@@ -204,8 +208,52 @@ void OpalCall::Release(OpalConnection * connection)
 }
 
 
+OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection)
+{
+  PINDEX i;
+  OpalMediaFormatList formats;
+
+  inUseFlag.Wait();
+
+  BOOL first = TRUE;
+
+  for (i = 0; i < activeConnections.GetSize(); i++) {
+    OpalConnection & conn = activeConnections[i];
+    if (&connection != &conn) {
+      OpalMediaFormatList list = conn.GetMediaFormats();
+      if (first) {
+        formats = list;
+        first = FALSE;
+      }
+      else {
+        formats.MakeUnique();
+        for (PINDEX j = 0; j < formats.GetSize(); j++) {
+          if (list.GetValuesIndex(formats[j]) == P_MAX_INDEX)
+            formats.RemoveAt(j--);
+        }
+      }
+    }
+  }
+
+  inUseFlag.Signal();
+
+  for (i = 0; i < formats.GetSize(); i++) {
+    OpalMediaFormatList srcFormats = OpalTranscoder::GetSourceFormats(formats[i]);
+    for (PINDEX j = 0; j < srcFormats.GetSize(); j++) {
+      if (OpalTranscoder::GetDestinationFormats(srcFormats[j]).GetSize() > 0)
+        formats += srcFormats[j];
+    }
+  }
+
+  PTRACE(3, "Call\tGetMediaFormats " << connection << '\n'
+         << setfill('\n') << formats << setfill(' '));
+
+  return formats;
+}
+
+
 BOOL OpalCall::OpenSourceMediaStreams(const OpalConnection & connection,
-                                      const OpalMediaFormat::List & mediaFormats,
+                                      const OpalMediaFormatList & mediaFormats,
                                       unsigned sessionID)
 {
   PTRACE(3, "Call\tOpenSourceMediaStreams " << connection);
