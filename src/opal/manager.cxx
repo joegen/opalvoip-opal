@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2010  2002/01/22 05:12:51  robertj
+ * Revision 1.2011  2002/02/11 07:42:17  robertj
+ * Added media bypass for streams between compatible protocols.
+ *
+ * Revision 2.9  2002/01/22 05:12:51  robertj
  * Revamp of user input API triggered by RFC2833 support
  *
  * Revision 2.8  2002/01/14 06:35:58  robertj
@@ -396,12 +399,22 @@ void OpalManager::AdjustMediaFormats(const OpalConnection & /*connection*/,
 }
 
 
+BOOL OpalManager::CanDoMediaBypass(const OpalConnection & source,
+                                   const OpalConnection & destination,
+                                   unsigned sessionID) const
+{
+  PTRACE(3, "OpalMan\tCanDoMediaBypass: session " << sessionID);
+
+  return source.CanDoMediaBypass(sessionID) && destination.CanDoMediaBypass(sessionID);
+}
+
+
 BOOL OpalManager::OnOpenMediaStream(OpalConnection & connection,
                                     OpalMediaStream & stream)
 {
   PTRACE(3, "OpalMan\tOnOpenMediaStream " << connection << ',' << stream);
 
-  if (stream.IsSource())
+  if (stream.IsSource() && stream.RequiresPatchThread())
     return connection.GetCall().PatchMediaStreams(connection, stream);
 
   return TRUE;
