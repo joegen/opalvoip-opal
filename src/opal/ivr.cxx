@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.cxx,v $
- * Revision 1.2009  2004/07/15 12:32:29  rjongbloed
+ * Revision 1.2010  2004/07/17 09:45:58  rjongbloed
+ * Fixed issues with the propagation of the "established" phase of a call. Now
+ *   calling an OnEstablished() chain like OnAlerting() and OnConnected() to
+ *   finally arrive at OnEstablishedCall() on OpalManager
+ *
+ * Revision 2.8  2004/07/15 12:32:29  rjongbloed
  * Various enhancements to the VXML code
  *
  * Revision 2.7  2004/07/15 12:19:24  rjongbloed
@@ -218,6 +223,11 @@ BOOL OpalIVRConnection::SetUpConnection()
     return FALSE;
   }
 
+  if (!mediaStreams.IsEmpty()) {
+    phase = EstablishedPhase;
+    OnEstablished();
+  }
+
   return TRUE;
 }
 
@@ -240,6 +250,11 @@ BOOL OpalIVRConnection::SetConnected()
     PTRACE(1, "IVR\tVXML session not loaded, aborting.");
     Release(EndedByLocalUser);
     return FALSE;
+  }
+
+  if (!mediaStreams.IsEmpty()) {
+    phase = EstablishedPhase;
+    OnEstablished();
   }
 
   return TRUE;
