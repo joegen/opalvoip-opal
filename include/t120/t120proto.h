@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: t120proto.h,v $
- * Revision 1.2003  2002/02/11 09:32:12  robertj
+ * Revision 1.2004  2002/03/15 03:10:27  robertj
+ * Removed unused function
+ *
+ * Revision 2.2  2002/02/11 09:32:12  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.1  2001/08/01 05:06:10  robertj
@@ -93,14 +96,6 @@ class OpalT120Protocol : public PObject
       */
     virtual BOOL Answer(
       OpalTransport & transport
-    );
-
-    /**Handle incoming T.120 connection.
-
-       If returns FALSE, then the reading loop should be terminated.
-      */
-    virtual BOOL HandlePacket(
-      const X224 & pdu
     );
 
     /**Handle incoming T.120 connection.
