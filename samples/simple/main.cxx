@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2046  2004/11/29 08:20:04  csoutheren
+ * Revision 1.2047  2005/02/19 22:46:19  dsandras
+ * Temporarily removed support for SetDomain.
+ *
+ * Revision 2.45  2004/11/29 08:20:04  csoutheren
  * Added support for setting SIP authentication domain
  *
  * Revision 2.44  2004/08/18 07:14:00  csoutheren
@@ -771,8 +774,8 @@ BOOL MyManager::Initialise(PArgList & args)
     if (args.HasOption("sip-proxy"))
       sipEP->SetProxy(args.GetOptionString("sip-proxy"));
 
-    if (args.HasOption("sip-domain"))
-      sipEP->SetDomain(args.GetOptionString("sip-domain"));
+    //if (args.HasOption("sip-domain"))
+      //sipEP->SetDomain(args.GetOptionString("sip-domain"));
 
     // set MIME format
     sipEP->SetMIMEForm(args.HasOption("use-long-mime"));
