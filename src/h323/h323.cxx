@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2070  2005/01/15 22:35:14  dsandras
+ * Revision 1.2071  2005/01/15 23:27:31  dsandras
+ * Only start channels if H.245 Master.
+ *
+ * Revision 2.69  2005/01/15 22:35:14  dsandras
  * Lock things before accessing/modifying them.
  *
  * Revision 2.68  2005/01/15 21:33:56  dsandras
@@ -4302,7 +4305,7 @@ void H323Connection::InternalEstablishedConnectionCheck()
 
     // If we are early starting, start channels as soon as possible instead of
     // waiting for connect PDU
-    if (earlyStart && FindChannel(OpalMediaFormat::DefaultAudioSessionID, FALSE) == NULL)
+    if (earlyStart && IsH245Master() && FindChannel(OpalMediaFormat::DefaultAudioSessionID, FALSE) == NULL)
       OnSelectLogicalChannels();
   }
 
