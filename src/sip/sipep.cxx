@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2012  2003/12/20 12:21:18  rjongbloed
+ * Revision 1.2013  2004/02/17 12:41:54  csoutheren
+ * Use correct Contact field when behind NAT
+ *
+ * Revision 2.11  2003/12/20 12:21:18  rjongbloed
  * Applied more enhancements, thank you very much Ted Szoczei
  *
  * Revision 2.10  2003/03/24 04:32:58  robertj
@@ -274,9 +277,23 @@ static BOOL WriteREGISTER(OpalTransport & transport, PObject * param)
   SIPURL name(endpoint.GetRegistrationName(),
               transport.GetLocalAddress(),
               endpoint.GetDefaultSignalPort());
+
+  // translate contact address
+  OpalTransportAddress contactAddress = transport.GetLocalAddress();
+  WORD contactPort = endpoint.GetDefaultSignalPort();
+
+  PIPSocket::Address localIP;
+  if (transport.GetLocalAddress().GetIpAddress(localIP)) {
+    PIPSocket::Address remoteIP;
+    if (transport.GetRemoteAddress().GetIpAddress(remoteIP)) {
+      endpoint.GetManager().TranslateIPAddress(localIP, remoteIP);
+      contactAddress = OpalTransportAddress(localIP, contactPort, "udp");
+    }
+  }
+
   SIPURL contact(name.GetUserName(),
-                 transport.GetLocalAddress(),
-                 endpoint.GetDefaultSignalPort());
+                 contactAddress,
+                 contactPort);
   request.BuildREGISTER(name, contact);
 
   return request.Start();
