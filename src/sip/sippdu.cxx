@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2020  2003/12/15 11:56:17  rjongbloed
+ * Revision 1.2021  2003/12/16 10:22:45  rjongbloed
+ * Applied enhancements, thank you very much Ted Szoczei
+ *
+ * Revision 2.19  2003/12/15 11:56:17  rjongbloed
  * Applied numerous bug fixes, thank you very much Ted Szoczei
  *
  * Revision 2.18  2003/03/19 00:47:06  robertj
@@ -493,6 +496,184 @@ void SIPMIMEInfo::SetRouteList(const char * name, const PStringList & v)
   }
 
   SetAt(name,  s);
+}
+
+
+PString SIPMIMEInfo::GetAccept() const
+{
+  return (*this)(PCaselessString("Accept"));    // no compact form
+}
+
+
+void SIPMIMEInfo::SetAccept(const PString & v)
+{
+  SetAt("Accept", v);  // no compact form
+}
+
+
+PString SIPMIMEInfo::GetAcceptEncoding() const
+{
+  return (*this)(PCaselessString("Accept-Encoding"));   // no compact form
+}
+
+
+void SIPMIMEInfo::SetAcceptEncoding(const PString & v)
+{
+  SetAt("Accept-Encoding", v); // no compact form
+}
+
+
+PString SIPMIMEInfo::GetAcceptLanguage() const
+{
+  return (*this)(PCaselessString("Accept-Language"));   // no compact form
+}
+
+
+void SIPMIMEInfo::SetAcceptLanguage(const PString & v)
+{
+  SetAt("Accept-Language", v); // no compact form
+}
+
+
+PString SIPMIMEInfo::GetAllow() const
+{
+  return (*this)(PCaselessString("Allow"));     // no compact form
+}
+
+
+void SIPMIMEInfo::SetAllow(const PString & v)
+{
+  SetAt("Allow", v);   // no compact form
+}
+
+
+
+PString SIPMIMEInfo::GetDate() const
+{
+  return (*this)(PCaselessString("Date"));      // no compact form
+}
+
+
+void SIPMIMEInfo::SetDate(const PString & v)
+{
+  SetAt("Date", v);    // no compact form
+}
+
+
+void SIPMIMEInfo::SetDate(const PTime & t)
+{
+  SetDate(t.AsString(PTime::RFC1123, PTime::GMT)) ;
+}
+
+
+void SIPMIMEInfo::SetDate(void) // set to current date
+{
+  SetDate(PTime()) ;
+}
+
+        
+unsigned SIPMIMEInfo::GetExpires(unsigned dflt) const
+{
+  PString v = (*this)(PCaselessString("Expires"));      // no compact form
+  if (v.IsEmpty())
+    return dflt;
+
+  return v.AsUnsigned();
+}
+
+
+void SIPMIMEInfo::SetExpires(unsigned v)
+{
+  SetAt("Expires", PString(PString::Unsigned, v));      // no compact form
+}
+
+
+PINDEX SIPMIMEInfo::GetMaxForwards() const
+{
+  PString len = (*this)(PCaselessString("Max-Forwards"));       // no compact form
+  if (len.IsEmpty())
+    return P_MAX_INDEX;
+  return len.AsInteger();
+}
+
+
+void SIPMIMEInfo::SetMaxForwards(PINDEX v)
+{
+  SetAt("Max-Forwards", PString(PString::Unsigned, v)); // no compact form
+}
+
+
+PINDEX SIPMIMEInfo::GetMinExpires() const
+{
+  PString len = (*this)(PCaselessString("Min-Expires"));        // no compact form
+  if (len.IsEmpty())
+    return P_MAX_INDEX;
+  return len.AsInteger();
+}
+
+
+void SIPMIMEInfo::SetMinExpires(PINDEX v)
+{
+  SetAt("Min-Expires",  PString(PString::Unsigned, v)); // no compact form
+}
+
+
+PString SIPMIMEInfo::GetProxyAuthenticate() const
+{
+  return (*this)(PCaselessString("Proxy-Authenticate"));        // no compact form
+}
+
+
+void SIPMIMEInfo::SetProxyAuthenticate(const PString & v)
+{
+  SetAt("Proxy-Authenticate",  v);      // no compact form
+}
+
+
+PString SIPMIMEInfo::GetSupported() const
+{
+  return GetFullOrCompact("Supported", 'k');
+}
+
+void SIPMIMEInfo::SetSupported(const PString & v)
+{
+  SetAt(compactForm ? "k" : "Supported",  v);
+}
+
+
+PString SIPMIMEInfo::GetUnsupported() const
+{
+  return (*this)(PCaselessString("Unsupported"));       // no compact form
+}
+
+
+void SIPMIMEInfo::SetUnsupported(const PString & v)
+{
+  SetAt("Unsupported",  v);     // no compact form
+}
+
+
+PString SIPMIMEInfo::GetUserAgent() const
+{
+  return (*this)(PCaselessString("User-Agent"));        // no compact form
+}
+
+
+void SIPMIMEInfo::SetUserAgent(void)
+{
+  SetAt("User-Agent", "OPAL/2.0");      // no compact form
+}
+
+
+PString SIPMIMEInfo::GetWWWAuthenticate() const
+{
+  return (*this)(PCaselessString("WWW-Authenticate"));  // no compact form
+}
+
+
+void SIPMIMEInfo::SetWWWAuthenticate(const PString & v)
+{
+  SetAt("WWW-Authenticate",  v);        // no compact form
 }
 
 
@@ -1045,7 +1226,7 @@ void SIPTransaction::BuildREGISTER(const SIPURL & name, const SIPURL & contact)
                      transport.GetLocalAddress());
 
   mime.SetContact(contact);
-  mime.SetAt("Expires", "60");
+  mime.SetExpires(60);
 }
 
 
@@ -1264,8 +1445,9 @@ void SIPTransaction::SetTerminated(States newState)
 SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport)
   : SIPTransaction(connection, transport, Method_INVITE)
 {
-  mime.SetAt("Date", PTime().AsString());
-  mime.SetAt("User-Agent", "OPAL/2.0");
+  mime.SetDate() ;                    // now
+  mime.SetUserAgent();                // 'OPAL/2.0'
+  mime.SetMaxForwards(70);            // default
 
   sdp = connection.BuildSDP(rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
 }
@@ -1278,7 +1460,7 @@ BOOL SIPInvite::OnReceivedResponse(SIP_PDU & response)
 
   if (response.GetStatusCode()/100 == 1) {
     retryTimer.Stop();
-    completionTimer = PTimeInterval(0, mime.GetInteger("Expires", 180));
+    completionTimer = PTimeInterval(0, mime.GetExpires(180));
   }
   else
     completionTimer = endpoint.GetAckTimeout();
