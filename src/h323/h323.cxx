@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2044  2004/02/19 10:47:04  rjongbloed
+ * Revision 1.2045  2004/02/24 11:28:46  rjongbloed
+ * Normalised RTP session management across protocols
+ *
+ * Revision 2.43  2004/02/19 10:47:04  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.42  2004/02/07 00:35:47  rjongbloed
@@ -4552,11 +4555,10 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
     if (uaddr.GetTag() != H245_UnicastAddress::e_iPAddress)
       return NULL;
 
-    session = UseSession(param->m_sessionID, rtpqos);
+    sessionID = param->m_sessionID;
   }
-  else
-    session = UseSession(sessionID, rtpqos);
 
+  session = UseSession(GetControlChannel(), sessionID, rtpqos);
   if (session == NULL)
     return NULL;
 
@@ -4921,14 +4923,15 @@ H323_RTP_Session * H323Connection::GetSessionCallbacks(unsigned sessionID) const
 }
 
 
-RTP_Session * H323Connection::UseSession(unsigned sessionID, RTP_QOS * rtpqos)
+RTP_Session * H323Connection::UseSession(const OpalTransport & transport,
+                                         unsigned sessionID,
+                                         RTP_QOS * rtpqos)
 {
-  RTP_Session * session = rtpSessions.UseSession(sessionID);
-  if (session != NULL)
-    return session;
+  RTP_UDP * udp_session = (RTP_UDP *)OpalConnection::UseSession(transport, sessionID, rtpqos);
+  if (udp_session == NULL)
+    return NULL;
 
-  RTP_UDP * udp_session = new RTP_UDP(sessionID);
-  udp_session->SetUserData(new H323_RTP_UDP(*this, *udp_session, rtpqos));
+  udp_session->SetUserData(new H323_RTP_UDP(*this, *udp_session));
   rtpSessions.AddSession(udp_session);
   return udp_session;
 }
