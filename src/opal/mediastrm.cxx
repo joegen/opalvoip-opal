@@ -24,7 +24,12 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2023  2004/02/15 04:31:07  rjongbloed
+ * Revision 1.2024  2004/03/22 11:32:42  rjongbloed
+ * Added new codec type for 16 bit Linear PCM as must distinguish between the internal
+ *   format used by such things as the sound card and the RTP payload format which
+ *   is always big endian.
+ *
+ * Revision 2.22  2004/02/15 04:31:07  rjongbloed
  * Added trace log to sound card stream for what read/write size and buffers are used.
  *
  * Revision 2.21  2004/02/09 13:12:28  rjongbloed
@@ -608,7 +613,7 @@ OpalAudioMediaStream::OpalAudioMediaStream(const OpalMediaFormat & mediaFormat,
                        new PSoundChannel(deviceName,
                                          isSource ? PSoundChannel::Recorder
                                                   : PSoundChannel::Player,
-                                         1, 8000, 16),
+                                         1, mediaFormat.GetClockRate(), 16),
                        TRUE)
 {
   soundChannelBuffers = buffers;
