@@ -24,6 +24,7 @@ EXPORTS
     ??0?$PArray@VOpalTransportAddress@@@@QAE@H@Z @16527 NONAME
     ??0?$PBaseArray@E@@QAE@ABV0@@Z @29887 NONAME
     ??0?$PBaseArray@E@@QAE@PBEHH@Z @29888 NONAME
+    ??0?$PFactory@VPTextToSpeech@@VPString@@@@IAE@XZ @30743 NONAME
     ??0?$PQueue@VSIP_PDU@@@@IAE@HPBV0@@Z @13155 NONAME
     ??0?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@QAE@XZ @14813 NONAME
     ??0?$PSafeColl@V?$PSortedList@VH323PeerElementDescriptor@@@@VH323PeerElementDescriptor@@@@QAE@XZ @16611 NONAME
@@ -2639,6 +2640,8 @@ EXPORTS
     ??1?$H235_SIGNED@VH235_EncodedKeySignedMaterial@@@@UAE@XZ @1967 NONAME
     ??1?$H235_SIGNED@VH235_EncodedPwdCertToken@@@@UAE@XZ @1968 NONAME
     ??1?$H235_SIGNED@VH235_EncodedReturnSig@@@@UAE@XZ @1969 NONAME
+    ??1?$map@VPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@5@@std@@QAE@XZ @30744 NONAME
+    ??1?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@std@@QAE@XZ @30745 NONAME
     ??1?$PArray@V?$PList@VH323Capability@@@@@@UAE@XZ @1970 NONAME
     ??1?$PArray@VH323SimultaneousCapabilities@@@@UAE@XZ @1971 NONAME
     ??1?$PArray@VH323TransportAddress@@@@UAE@XZ @14856 NONAME
@@ -2660,6 +2663,7 @@ EXPORTS
     ??1?$PDictionary@VPString@@VOpalConnection@@@@UAE@XZ @1983 NONAME
     ??1?$PDictionary@VPString@@VPOrdinalKey@@@@UAE@XZ @17821 NONAME
     ??1?$PDictionary@VPString@@VSIPTransaction@@@@UAE@XZ @13281 NONAME
+    ??1?$PFactory@VPTextToSpeech@@VPString@@@@MAE@XZ @30746 NONAME
     ??1?$PList@VFilter@OpalMediaPatch@@@@UAE@XZ @13282 NONAME
     ??1?$PList@VH323Capability@@@@UAE@XZ @1984 NONAME
     ??1?$PList@VH323Channel@@@@UAE@XZ @1985 NONAME
@@ -2701,6 +2705,7 @@ EXPORTS
     ??1?$PSortedList@VH323PeerElementDescriptor@@@@UAE@XZ @17832 NONAME
     ??1?$PSortedList@VH323PeerElementServiceRelationship@@@@UAE@XZ @17833 NONAME
     ??1?$PSortedList@VResponse@H323Transactor@@@@UAE@XZ @17834 NONAME
+    ??1?$_Tree@VPString@@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@3@@std@@QAE@XZ @30747 NONAME
     ??1AdmissionRequestResponseInfo@@QAE@XZ @13296 NONAME
     ??1AliasKey@H323PeerElement@@UAE@XZ @17836 NONAME
     ??1AlternateInfo@H323Gatekeeper@@UAE@XZ @13297 NONAME
@@ -6582,6 +6587,7 @@ EXPORTS
     ??_7?$PDictionary@VPString@@VOpalConnection@@@@6B@ @5114 NONAME
     ??_7?$PDictionary@VPString@@VPOrdinalKey@@@@6B@ @18319 NONAME
     ??_7?$PDictionary@VPString@@VSIPTransaction@@@@6B@ @13457 NONAME
+    ??_7?$PFactory@VPTextToSpeech@@VPString@@@@6B@ @30748 NONAME
     ??_7?$PList@VFilter@OpalMediaPatch@@@@6B@ @13458 NONAME
     ??_7?$PList@VH323Capability@@@@6B@ @5115 NONAME
     ??_7?$PList@VH323Channel@@@@6B@ @5116 NONAME
@@ -8493,6 +8499,7 @@ EXPORTS
     ??_R0?AV?$PDictionary@VPString@@VOpalConnection@@@@@8 @18599 NONAME
     ??_R0?AV?$PDictionary@VPString@@VPOrdinalKey@@@@@8 @18600 NONAME
     ??_R0?AV?$PDictionary@VPString@@VSIPTransaction@@@@@8 @18601 NONAME
+    ??_R0?AV?$PFactory@VPTextToSpeech@@VPString@@@@@8 @30749 NONAME
     ??_R0?AV?$PList@VFilter@OpalMediaPatch@@@@@8 @18602 NONAME
     ??_R0?AV?$PList@VH235Authenticator@@@@@8 @18603 NONAME
     ??_R0?AV?$PList@VH323Capability@@@@@8 @18604 NONAME
@@ -10327,6 +10334,7 @@ EXPORTS
     ??_R1A@?0A@A@?$PDictionary@VPString@@VOpalConnection@@@@8 @20432 NONAME
     ??_R1A@?0A@A@?$PDictionary@VPString@@VPOrdinalKey@@@@8 @20433 NONAME
     ??_R1A@?0A@A@?$PDictionary@VPString@@VSIPTransaction@@@@8 @20434 NONAME
+    ??_R1A@?0A@A@?$PFactory@VPTextToSpeech@@VPString@@@@8 @30750 NONAME
     ??_R1A@?0A@A@?$PList@VFilter@OpalMediaPatch@@@@8 @20435 NONAME
     ??_R1A@?0A@A@?$PList@VH235Authenticator@@@@8 @20436 NONAME
     ??_R1A@?0A@A@?$PList@VH323Capability@@@@8 @20437 NONAME
@@ -12191,6 +12199,7 @@ EXPORTS
     ??_R2?$PDictionary@VPString@@VOpalConnection@@@@8 @22295 NONAME
     ??_R2?$PDictionary@VPString@@VPOrdinalKey@@@@8 @22296 NONAME
     ??_R2?$PDictionary@VPString@@VSIPTransaction@@@@8 @22297 NONAME
+    ??_R2?$PFactory@VPTextToSpeech@@VPString@@@@8 @30751 NONAME
     ??_R2?$PList@VFilter@OpalMediaPatch@@@@8 @22298 NONAME
     ??_R2?$PList@VH323Capability@@@@8 @22300 NONAME
     ??_R2?$PList@VH323Channel@@@@8 @22301 NONAME
@@ -14034,6 +14043,7 @@ EXPORTS
     ??_R3?$PDictionary@VPString@@VOpalConnection@@@@8 @24144 NONAME
     ??_R3?$PDictionary@VPString@@VPOrdinalKey@@@@8 @24145 NONAME
     ??_R3?$PDictionary@VPString@@VSIPTransaction@@@@8 @24146 NONAME
+    ??_R3?$PFactory@VPTextToSpeech@@VPString@@@@8 @30752 NONAME
     ??_R3?$PList@VFilter@OpalMediaPatch@@@@8 @24147 NONAME
     ??_R3?$PList@VH323Capability@@@@8 @24149 NONAME
     ??_R3?$PList@VH323Channel@@@@8 @24150 NONAME
@@ -15877,6 +15887,7 @@ EXPORTS
     ??_R4?$PDictionary@VPString@@VOpalConnection@@@@6B@ @25993 NONAME
     ??_R4?$PDictionary@VPString@@VPOrdinalKey@@@@6B@ @25994 NONAME
     ??_R4?$PDictionary@VPString@@VSIPTransaction@@@@6B@ @25995 NONAME
+    ??_R4?$PFactory@VPTextToSpeech@@VPString@@@@6B@ @30753 NONAME
     ??_R4?$PList@VFilter@OpalMediaPatch@@@@6B@ @25996 NONAME
     ??_R4?$PList@VH323Capability@@@@6B@ @25998 NONAME
     ??_R4?$PList@VH323Channel@@@@6B@ @25999 NONAME
@@ -20738,7 +20749,8 @@ EXPORTS
     ?CreateEndPointIdentifier@H323GatekeeperServer@@UAE?AVPString@@XZ @8741 NONAME
     ?CreateGatekeeper@H323EndPoint@@UAEPAVH323Gatekeeper@@PAVOpalTransport@@@Z @8742 NONAME
     ?CreateIncomingControlChannel@H323Connection@@UAEHAAVH225_TransportAddress@@@Z @8743 NONAME
-    ?CreateInstance@?$PGenericFactory@VPTextToSpeech@@VPString@@@@SAPAVPTextToSpeech@@ABVPString@@@Z @30737 NONAME
+    ?CreateInstance@WorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@IAEPAVPTextToSpeech@@XZ @30754 NONAME
+    ?CreateInstance_Internal@?$PFactory@VPTextToSpeech@@VPString@@@@IAEPAVPTextToSpeech@@ABVPString@@@Z @30755 NONAME
     ?CreateListener@H323DataChannel@@UAEHXZ @8744 NONAME
     ?CreateListener@H323GatekeeperServer@@UAEPAVH323Transactor@@PAVOpalTransport@@@Z @28501 NONAME
     ?CreateListener@H323_T38Channel@@UAEHXZ @8746 NONAME
@@ -22848,6 +22860,8 @@ EXPORTS
     ?EndTransmit@OpalRFC2833Proto@@UAEHXZ @13817 NONAME
     ?Enqueue@?$PQueue@VSIP_PDU@@@@UAEXPAVSIP_PDU@@@Z @13818 NONAME
     ?Enqueue@ByteQueue@OpalVoipBlasterDevice@@QAEHE@Z @13819 NONAME
+    ?erase@?$_Tree@VPString@@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@3@@std@@QAE?AViterator@12@V312@0@Z @30756 NONAME
+    ?erase@?$_Tree@VPString@@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@3@@std@@QAE?AViterator@12@V312@@Z @30757 NONAME
     ?err@P64Decoder@@MBAXPBDZZ @10414 NONAME
     ?Exit@RTP_SessionManager@@QAEXXZ @10415 NONAME
     ?ExtractTransport@H323_RTP_UDP@@MAEHABVH245_TransportAddress@@HAAI@Z @28688 NONAME
@@ -22857,7 +22871,7 @@ EXPORTS
     ?FilterFrame@OpalMediaPatch@@UAEXAAVRTP_DataFrame@@ABVOpalMediaFormat@@@Z @28689 NONAME
     ?Finalise@H235Authenticator@@UAEHAAVPBYTEArray@@@Z @28690 NONAME
     ?Finalise@H235AuthProcedure1@@UAEHAAVPBYTEArray@@@Z @14968 NONAME
-    ?find@?$_Tree@VPString@@U?$pair@$$CBVPString@@VAbstractInfo@?$PGenericFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@VAbstractInfo@?$PGenericFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@VAbstractInfo@?$PGenericFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@VAbstractInfo@?$PGenericFactory@VPTextToSpeech@@VPString@@@@@3@@std@@QAE?AViterator@12@ABVPString@@@Z @30738 NONAME
+    ?find@?$_Tree@VPString@@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@3@@std@@QAE?AViterator@12@ABVPString@@@Z @30758 NONAME
     ?FindCall@H323GatekeeperServer@@UAE?AV?$PSafePtr@VH323GatekeeperCall@@@@ABVOpalGloballyUniqueID@@HW4PSafetyMode@@@Z @13821 NONAME
     ?FindCall@H323GatekeeperServer@@UAE?AV?$PSafePtr@VH323GatekeeperCall@@@@ABVOpalGloballyUniqueID@@W4Direction@H323GatekeeperCall@@W4PSafetyMode@@@Z @13822 NONAME
     ?FindCall@H323GatekeeperServer@@UAE?AV?$PSafePtr@VH323GatekeeperCall@@@@ABVPString@@W4PSafetyMode@@@Z @14969 NONAME
@@ -24137,6 +24151,7 @@ EXPORTS
     ?GetIE@Q931@@QBE?AVPBYTEArray@@W4InformationElementCodes@1@@Z @11285 NONAME
     ?GetInitialiser@PLDAPStructBase@@SAAAV1@XZ @28910 NONAME
     ?GetInputFormat@OpalTranscoderRegistration@@QBE?AVPString@@XZ @11286 NONAME
+    ?GetInstance@?$PFactory@VPTextToSpeech@@VPString@@@@KAAAV1@XZ @30759 NONAME
     ?GetInterfaceAddresses@H323Transactor@@QAE?AVH323TransportAddressArray@@HPAVOpalTransport@@@Z @28912 NONAME
     ?GetInterfaceAddresses@OpalEndPoint@@QAE?AVOpalTransportAddressArray@@HPAVOpalTransport@@@Z @28913 NONAME
     ?GetIpAddress@OpalTransportAddress@@QBEHAAVAddress@PIPSocket@@@Z @13987 NONAME
@@ -24145,7 +24160,8 @@ EXPORTS
     ?GetIpAndPort@OpalTransportAddress@@QBEHAAVAddress@PIPSocket@@AAG@Z @11289 NONAME
     ?GetJitterBufferSize@RTP_Session@@QBEIXZ @15002 NONAME
     ?GetKeyAt@?$PSet@VPOrdinalKey@@@@UBEABVPOrdinalKey@@H@Z @13988 NONAME
-    ?GetKeyList@?$PGenericFactory@VPTextToSpeech@@VPString@@@@SA?AV?$vector@VPString@@V?$allocator@VPString@@@std@@@std@@XZ @30739 NONAME
+    ?GetKeyList@?$PFactory@VPTextToSpeech@@VPString@@@@SA?AV?$vector@VPString@@V?$allocator@VPString@@@std@@@std@@XZ @30760 NONAME
+    ?GetKeyList_Internal@?$PFactory@VPTextToSpeech@@VPString@@@@IAE?AV?$vector@VPString@@V?$allocator@VPString@@@std@@@std@@XZ @30761 NONAME
     ?GetKeypad@Q931@@QBE?AVPString@@XZ @13989 NONAME
     ?GetLastReceivedAddress@OpalTransport@@UBE?AVOpalTransportAddress@@XZ @16440 NONAME
     ?GetLastReceivedAddress@OpalTransportUDP@@UBE?AVOpalTransportAddress@@XZ @16441 NONAME
@@ -26315,7 +26331,10 @@ EXPORTS
     ?WriteREGISTER@SIPEndPoint@@KAHAAVOpalTransport@@PAX@Z @29848 NONAME
     ?WriteSignalPDU@H323Connection@@QAEHAAVH323SignalPDU@@@Z @12570 NONAME
     ?WriteTo@H323Transactor@@UAEHAAVH323TransactionPDU@@ABVH323TransportAddressArray@@H@Z @29849 NONAME
-    ?_Inc@const_iterator@?$_Tree@VPString@@U?$pair@$$CBVPString@@VAbstractInfo@?$PGenericFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@VAbstractInfo@?$PGenericFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@VAbstractInfo@?$PGenericFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@VAbstractInfo@?$PGenericFactory@VPTextToSpeech@@VPString@@@@@3@@std@@QAEXXZ @30740 NONAME
-    ?_Lbound@?$_Tree@VPString@@U?$pair@$$CBVPString@@VAbstractInfo@?$PGenericFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@VAbstractInfo@?$PGenericFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@VAbstractInfo@?$PGenericFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@VAbstractInfo@?$PGenericFactory@VPTextToSpeech@@VPString@@@@@3@@std@@IBEPAU_Node@12@ABVPString@@@Z @30741 NONAME
-    ?_Nil@?$_Tree@VPString@@U?$pair@$$CBVPString@@VAbstractInfo@?$PGenericFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@VAbstractInfo@?$PGenericFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@VAbstractInfo@?$PGenericFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@VAbstractInfo@?$PGenericFactory@VPTextToSpeech@@VPString@@@@@3@@std@@1PAU_Node@12@A @30742 NONAME
+    ?_Erase@?$_Tree@VPString@@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@3@@std@@IAEXPAU_Node@12@@Z @30762 NONAME
+    ?_Inc@iterator@?$_Tree@VPString@@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@3@@std@@QAEXXZ @30763 NONAME
+    ?_Init@?$_Tree@VPString@@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@3@@std@@IAEXXZ @30764 NONAME
+    ?_Lbound@?$_Tree@VPString@@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@3@@std@@IBEPAU_Node@12@ABVPString@@@Z @30765 NONAME
+    ?_Lrotate@?$_Tree@VPString@@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@3@@std@@IAEXPAU_Node@12@@Z @30766 NONAME
+    ?_Rrotate@?$_Tree@VPString@@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@3@@std@@IAEXPAU_Node@12@@Z @30767 NONAME
     ?__resetiosflags@@YAAAVios@@AAV1@J@Z @30732 NONAME
