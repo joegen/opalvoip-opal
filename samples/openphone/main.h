@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.8  2004/05/24 13:44:04  rjongbloed
+ * More implementation on OPAL OpenPhone.
+ *
  * Revision 1.7  2004/05/15 12:18:23  rjongbloed
  * More work on wxWindows based OpenPhone
  *
@@ -89,13 +92,14 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
     bool GetAutoAnswer() const { return m_autoAnswer; }
     void SetAutoAnswer(bool answer) { m_autoAnswer = answer; }
 
+    PString m_incomingConnectionToken;
+
   private:
     virtual PString OnGetDestination(const OpalPCSSConnection & connection);
     virtual void OnShowIncoming(const OpalPCSSConnection & connection);
     virtual BOOL OnShowOutgoing(const OpalPCSSConnection & connection);
 
     PString m_destinationAddress;
-    PString m_incomingConnectionToken;
     bool    m_autoAnswer;
 
     MyFrame & frame;
@@ -181,9 +185,13 @@ class MyFrame : public wxFrame, public OpalManager
   private:
     void OnClose(wxCloseEvent& event);
 
+    void OnAdjustMenus(wxMenuEvent& event);
+
     void OnMenuQuit(wxCommandEvent& event);
     void OnMenuAbout(wxCommandEvent& event);
     void OnMenuCall(wxCommandEvent& event);
+    void OnMenuAnswer(wxCommandEvent& event);
+    void OnMenuHangUp(wxCommandEvent& event);
     void OnViewLarge(wxCommandEvent& event);
     void OnViewSmall(wxCommandEvent& event);
     void OnViewList(wxCommandEvent& event);
@@ -208,12 +216,19 @@ class MyFrame : public wxFrame, public OpalManager
       const PString & value         /// String value of indication
     );
 
+    enum { SpeedDialsID = 100 };
+    enum SpeedDialViews {
+      e_ViewLarge,
+      e_ViewSmall,
+      e_ViewList,
+      e_ViewDetails,
+      e_NumViews
+    };
     void RecreateSpeedDials(
-      long flags
+      SpeedDialViews view
     );
 
-    enum { SpeedDialsID = 100 };
-    enum { NameColumn, NumberColumn, AddressColumn };
+    enum { e_NameColumn, e_NumberColumn, e_AddressColumn };
 
     wxSplitterWindow         * m_splitter;
     wxListCtrl               * m_speedDials;
