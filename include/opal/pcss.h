@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.h,v $
- * Revision 1.2002  2001/08/01 05:52:24  robertj
+ * Revision 1.2003  2001/08/17 08:33:38  robertj
+ * More implementation.
+ *
+ * Revision 2.1  2001/08/01 05:52:24  robertj
  * Moved media formats list from endpoint to connection.
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
@@ -58,7 +61,8 @@ class OpalPCSSEndPoint : public OpalEndPoint
     /**Create a new endpoint.
      */
     OpalPCSSEndPoint(
-      OpalManager & manager
+      OpalManager & manager,  /// Manager of all endpoints.
+      const char * prefix = "pc" /// Prefix for URL style address strings
     );
 
     /**Destroy endpoint.
@@ -117,19 +121,21 @@ class OpalPCSSEndPoint : public OpalEndPoint
       */
     virtual OpalPCSSConnection * CreateConnection(
       OpalCall & call,    /// Owner of connection
+      const PString & playDevice, /// Sound channel play device
+      const PString & recordDevice, /// Sound channel record device
       void * userData     /// Arbitrary data to pass to connection
     );
   //@}
 
   /**@name User Interface operations */
   //@{
-    /**Call back to indicate that remote is ringing.
+    /**Call back to get the destination for outgoing call.
        If FALSE is returned the call is aborted.
 
        The default implementation is pure.
       */
-    virtual void OnShowRinging(
-      const PString & callerName    /// Name of endpoint that is calling.
+    virtual PString OnGetDestination(
+      const OpalPCSSConnection & connection /// Connection having event
     ) = 0;
 
     /**Call back to indicate that remote is ringing.
@@ -137,9 +143,34 @@ class OpalPCSSEndPoint : public OpalEndPoint
 
        The default implementation is pure.
       */
-    virtual BOOL OnShowAlerting(
-      const PString & calleeName    /// Name of endpoint being alerted.
+    virtual void OnShowIncoming(
+      const OpalPCSSConnection & connection /// Connection having event
     ) = 0;
+
+    /**Accept the incoming connection.
+      */
+    virtual void AcceptIncomingConnection(
+      const PString & connectionToken /// Token of connection to accept call
+    );
+
+    /**Call back to indicate that remote is ringing.
+       If FALSE is returned the call is aborted.
+
+       The default implementation is pure.
+      */
+    virtual BOOL OnShowOutgoing(
+      const OpalPCSSConnection & connection /// Connection having event
+    ) = 0;
+
+    /**Call back to indicate that the remote user has indicated something.
+       If FALSE is returned the call is aborted.
+
+       The default implementation does nothing.
+      */
+    virtual BOOL OnShowUserIndication(
+      const OpalPCSSConnection & connection, /// Connection having event
+      const PString & indication
+    );
   //@}
 
   /**@name Member variable access */
@@ -204,6 +235,8 @@ class OpalPCSSConnection : public OpalConnection
      */
     OpalPCSSConnection(
       OpalCall & call,            /// Owner calll for connection
+      const PString & playDevice, /// Sound channel play device
+      const PString & recordDevice, /// Sound channel record device
       OpalPCSSEndPoint & endpoint /// Owner endpoint for connection
     );
 
@@ -238,6 +271,14 @@ class OpalPCSSConnection : public OpalConnection
       */
     virtual BOOL SetConnected();
 
+    /**Get the destination address of an incoming connection.
+       The default behaviour collects a DTMF number terminated with a '#' or
+       if no digits were entered for a time (default 3 seconds). If no digits
+       are entered within a longer time time (default 30 seconds), then an
+       empty string is returned.
+      */
+    virtual PString GetDestinationAddress();
+
     /**Get the data formats this connection is capable of operating.
        This provides a list of media data format names that an
        OpalMediaStream may be created in within this connection.
@@ -265,41 +306,32 @@ class OpalPCSSConnection : public OpalConnection
       BOOL isSource,      /// Is a source stream
       unsigned sessionID  /// Session number for stream
     );
-  //@}
 
-  /**@name Call progress functions */
-  //@{
-    /**Indicate the result of answering an incoming call.
-       This should only be called if the OnAnswerCall() callback function has
-       returned a AnswerCallPending or AnswerCallDeferred response.
+    /**Send a user input indication to the remote endpoint.
+       This sends an arbitrary string as a user indication. If DTMF tones in
+       particular are required to be sent then the SendIndicationTone()
+       function should be used.
 
-       Note sending further AnswerCallPending responses via this function will
-       have the result of an Alerting PDU being sent to the remote endpoint.
-       In this way multiple Alerting PDUs may be sent.
-
-       Sending a AnswerCallDeferred response would have no effect.
+       The default behaviour plays the DTMF tones on the line.
       */
-    virtual void AnsweringCall(
-      AnswerCallResponse response /// Answer response to incoming call
-    );
-
-    /**Indicate in some manner that a call is alerting.
-       If FALSE is returned the call is aborted.
-
-       The default implementation calls OpalPCSSEndPoint::OnShowAlerting().
-      */
-    virtual BOOL SendConnectionAlert(
-      const PString & calleeName    /// Name of endpoint being alerted.
+    virtual BOOL SendUserIndicationString(
+      const PString & value                   /// String value of indication
     );
   //@}
 
-    void StartOutgoingCall();
-    void StartIncomingCall(const PString & callerName);
+    void StartOutgoing();
+    void StartIncoming(const PString & callerName);
+
+    /**Accept the incoming connection.
+      */
+    void AcceptIncoming();
 
 
   protected:
     OpalPCSSEndPoint & endpoint;
-    Phases             currentPhase;
+    Phases             phase;
+    PString            soundChannelPlayDevice;
+    PString            soundChannelRecordDevice;
 };
 
 
