@@ -24,11 +24,18 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q931.h,v $
- * Revision 1.2002  2001/08/13 05:10:39  robertj
+ * Revision 1.2003  2001/08/21 01:11:12  robertj
+ * Update from OpenH323
+ *
+ * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.33  2001/08/20 06:48:26  robertj
+ * Added Q.931 function for setting bearer capabilities, allowing
+ *    applications to set the data rate as they require.
  *
  * Revision 1.32  2001/08/03 14:12:07  robertj
  * Fixed value for Call State Information Element
@@ -227,6 +234,29 @@ class Q931 : public PObject
     PBYTEArray GetIE(InformationElementCodes ie) const;
     void SetIE(InformationElementCodes ie, const PBYTEArray & userData);
     void RemoveIE(InformationElementCodes ie);
+
+    enum InformationTransferCapability {
+      TransferSpeech,
+      TransferUnrestrictedDigital = 8,
+      TransferRestrictedDigital = 9,
+      Transfer3_1kHzAudio = 16,
+      TrasnferUnrestrictedDigitalWithTones = 17,
+      TransferVideo = 24
+    };
+
+    void SetBearerCapabilities(
+      InformationTransferCapability capability,
+      unsigned transferRate,        // Number of 64k B channels
+      unsigned codingStandard = 0,  // 0 = ITU-T standardized coding
+      unsigned userInfoLayer1 = 5   // 5 = Recommendations H.221 and H.242
+    );
+
+    BOOL GetBearerCapabilities(
+      InformationTransferCapability & capability,
+      unsigned & transferRate,        // Number of 64k B channels
+      unsigned * codingStandard = NULL,
+      unsigned * userInfoLayer1 = NULL
+    );
 
     enum CauseValues {
       NoRouteToNetwork      = 0x02,
