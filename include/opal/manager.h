@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2006  2001/11/14 01:31:55  robertj
+ * Revision 1.2007  2001/12/07 08:56:19  robertj
+ * Renamed RTP to be more general UDP port base, and TCP to be IP.
+ *
+ * Revision 2.5  2001/11/14 01:31:55  robertj
  * Corrected placement of adjusting media format list.
  *
  * Revision 2.4  2001/11/13 06:25:56  robertj
@@ -528,17 +531,20 @@ class OpalManager : public PObject
      */
     WORD GetTCPPortMax() const { return tcpPortMax; }
 
-    /**Provide TCP address translation hook
-     */
-    virtual void TranslateTCPAddress(PIPSocket::Address & /*localAddr*/, const PIPSocket::Address & /*remoteAddr */) { }
-
     /**Get the UDP port number base for media (eg RTP) channels.
      */
-    WORD GetRtpIpPortBase() const { return rtpIpPortBase; }
+    WORD GetUDPPortBase() const { return udpPortBase; }
 
     /**Get the max UDP port number for media (eg RTP) channels.
      */
-    WORD GetRtpIpPortMax() const { return rtpIpPortMax; }
+    WORD GetUDPPortMax() const { return udpPortMax; }
+
+    /**Provide address translation hook.
+     */
+    virtual BOOL TranslateIPAddress(
+      PIPSocket::Address & localAddress,
+      const PIPSocket::Address & remoteAddress
+    );
 
     /**Get the IP Type Of Service byte for media (eg RTP) channels.
      */
@@ -578,7 +584,7 @@ class OpalManager : public PObject
     // Configuration variables
     BOOL         autoStartReceiveVideo;
     BOOL         autoStartTransmitVideo;
-    WORD         rtpIpPortBase, rtpIpPortMax;
+    WORD         udpPortBase, udpPortMax;
     WORD         tcpPortBase, tcpPortMax;
     BYTE         rtpIpTypeofService;
     WORD         maxAudioDelayJitter;
