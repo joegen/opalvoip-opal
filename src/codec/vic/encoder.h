@@ -42,7 +42,11 @@
 /************ Change log
  *
  * $Log: encoder.h,v $
- * Revision 1.2002  2003/03/15 23:42:59  robertj
+ * Revision 1.2003  2005/03/19 04:08:10  csoutheren
+ * Fixed warnings with gcc snapshot 4.1-20050313
+ * Updated to configure 2.59
+ *
+ * Revision 2.1  2003/03/15 23:42:59  robertj
  * Update to OpenH323 v1.11.7
  *
  * Revision 1.5  2003/03/14 07:25:55  robertj
@@ -69,6 +73,7 @@ class Transmitter;
 
 class Encoder {
     public:
+        virtual ~Encoder() {}
 	virtual int consume(const VideoFrame*)
            {return 0; };
 

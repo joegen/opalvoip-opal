@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2014  2005/02/17 03:25:05  csoutheren
+ * Revision 1.2015  2005/03/19 04:08:10  csoutheren
+ * Fixed warnings with gcc snapshot 4.1-20050313
+ * Updated to configure 2.59
+ *
+ * Revision 2.13  2005/02/17 03:25:05  csoutheren
  * Added support for audio codecs that consume and produce variable size
  * frames, such as G.723.1
  *
@@ -116,6 +120,7 @@ class OpalTranscoderRegistration : public PCaselessString
       const char * inputFormat,  /// Input format name
       const char * outputFormat  /// Output format name
     );
+    virtual ~OpalTranscoderRegistration() { }
   //@}
 
   /**@name Operations */
