@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2017  2004/04/26 05:37:13  rjongbloed
+ * Revision 1.2018  2004/10/02 11:50:54  rjongbloed
+ * Fixed RTP media stream so assures RTP session is open before starting.
+ *
+ * Revision 2.16  2004/04/26 05:37:13  rjongbloed
  * Allowed for selectable auto deletion of RTP user data attached to an RTP session.
  *
  * Revision 2.15  2004/02/19 10:47:01  rjongbloed
@@ -605,6 +608,12 @@ class RTP_Session : public PObject
       BOOL reading    /// Closing the read side of the session
     ) = 0;
 
+   /**Reopens an existing session in the given direction.
+      */
+    virtual void Reopen(
+      BOOL isReading
+    ) = 0;
+
     /**Get the local host name as used in SDES packes.
       */
     virtual PString GetLocalHostName() = 0;
@@ -1073,7 +1082,7 @@ class RTP_UDP : public RTP_Session
 
    /**Reopens an existing session in the given direction.
       */
-    void Reopen(BOOL isReading);
+    virtual void Reopen(BOOL isReading);
   //@}
 
   /**@name Member variable access */
