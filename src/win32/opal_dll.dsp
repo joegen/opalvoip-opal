@@ -54,7 +54,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib /nologo /subsystem:windows /dll /machine:I386
-# ADD LINK32 ptclib.lib ptlib.lib $(VAG729LIB) $(EXPATLIBS) $(OPENSSLLIBS) setupapi.lib Delayimp.lib winmm.lib msacm32.lib wsock32.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:windows /dll /pdb:none /debug /debugtype:both /machine:I386 /def:"..\..\lib\Release\opal.def" /out:"..\..\lib\opal.dll" /libpath:"$(OPENSSLDIR)/out32" /libpath:"lib" /libpath:"$(VAG729DIR)\\" /libpath:"$(EXPATDIR)\Release" /delayload:setupapi.dll
+# ADD LINK32 ptclib.lib ptlib.lib $(VAG729LIB) setupapi.lib Delayimp.lib winmm.lib msacm32.lib wsock32.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:windows /dll /pdb:none /debug /debugtype:both /machine:I386 /def:"..\..\lib\Release\opal.def" /out:"..\..\lib\opal.dll" /libpath:"$(VAG729DIR)\\" /delayload:setupapi.dll
 # Begin Custom Build - Extracting debug symbols
 OutDir=.\..\..\lib
 TargetName=opal
@@ -90,7 +90,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib /nologo /subsystem:windows /dll /debug /machine:I386
-# ADD LINK32 ptclibd.lib ptlibd.lib mpr.lib $(VAG729LIB) $(EXPATLIBS) $(OPENSSLLIBS) setupapi.lib Delayimp.lib winmm.lib msacm32.lib wsock32.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:windows /dll /debug /machine:I386 /def:"..\..\lib\Debug\opald.def" /out:"..\..\lib\opald.dll" /libpath:"$(OPENSSLDIR)/out32.dbg" /libpath:"lib" /libpath:"$(VAG729DIR)\\" /libpath:"$(EXPATDIR)\Debug" /delayload:setupapi.dll
+# ADD LINK32 ptclibd.lib ptlibd.lib mpr.lib $(VAG729LIB) setupapi.lib Delayimp.lib winmm.lib msacm32.lib wsock32.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:windows /dll /debug /machine:I386 /def:"..\..\lib\Debug\opald.def" /out:"..\..\lib\opald.dll" /libpath:"$(VAG729DIR)\\" /delayload:setupapi.dll
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "OPAL_dll - Win32 No Trace"
@@ -118,7 +118,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 lib/opals.lib winmm.lib mpr.lib snmpapi.lib wsock32.lib netapi32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib /nologo /subsystem:windows /dll /debug /debugtype:both /machine:I386 /out:"lib/opal.dll" /libpath:"lib"
-# ADD LINK32 ptclib.lib ptlib.lib $(VAG729LIB) $(EXPATLIBS) $(OPENSSLLIBS) setupapi.lib Delayimp.lib winmm.lib msacm32.lib wsock32.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:windows /dll /machine:I386 /def:"..\..\lib\NoTrace\opaln.def" /out:"..\..\lib\opaln.dll" /libpath:"$(OPENSSLDIR)/out32" /libpath:"lib" /libpath:"$(VAG729DIR)\\" /libpath:"$(EXPATDIR)\Release" /delayload:setupapi.dll
+# ADD LINK32 ptclib.lib ptlib.lib $(VAG729LIB) setupapi.lib Delayimp.lib winmm.lib msacm32.lib wsock32.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:windows /dll /machine:I386 /def:"..\..\lib\NoTrace\opaln.def" /out:"..\..\lib\opaln.dll" /libpath:"$(VAG729DIR)\\" /delayload:setupapi.dll
 # SUBTRACT LINK32 /pdb:none
 # Begin Custom Build - Extracting debug symbols
 OutDir=.\..\..\lib
