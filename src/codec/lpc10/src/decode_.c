@@ -1,8 +1,11 @@
 /*
 
 $Log: decode_.c,v $
-Revision 1.2001  2001/07/27 15:48:24  robertj
-Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+Revision 1.2002  2003/03/14 09:53:26  robertj
+Updated to openH323 v1.11.7
+
+Revision 1.2  2002/02/15 03:57:55  yurik
+Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
 
 Revision 1.1  2000/06/05 04:45:12  robertj
 Added LPC-10 2400bps codec
@@ -53,9 +56,12 @@ static integer c__2 = 2;
 /* 	DECODE Version 54 */
 
 /* $Log: decode_.c,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/14 09:53:26  robertj
+ * Updated to openH323 v1.11.7
  *
+/* Revision 1.2  2002/02/15 03:57:55  yurik
+/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+/*
 /* Revision 1.1  2000/06/05 04:45:12  robertj
 /* Added LPC-10 2400bps codec
 /*
@@ -188,9 +194,12 @@ static integer c__2 = 2;
     integer ishift, errcnt, lsb;
 
 /* $Log: decode_.c,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/14 09:53:26  robertj
+ * Updated to openH323 v1.11.7
  *
+/* Revision 1.2  2002/02/15 03:57:55  yurik
+/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+/*
 /* Revision 1.1  2000/06/05 04:45:12  robertj
 /* Added LPC-10 2400bps codec
 /*
@@ -219,9 +228,12 @@ static integer c__2 = 2;
 /* Frame size, Prediction order, Pitch period */
 /*       Arguments */
 /* $Log: decode_.c,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/14 09:53:26  robertj
+ * Updated to openH323 v1.11.7
  *
+/* Revision 1.2  2002/02/15 03:57:55  yurik
+/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+/*
 /* Revision 1.1  2000/06/05 04:45:12  robertj
 /* Added LPC-10 2400bps codec
 /*
@@ -482,7 +494,7 @@ static integer c__2 = 2;
 	    drc[(5 - i__) * 3 - 2] = iout;
 	}
 /*  Determine error rate */
-	*erate = *erate * .96875f + errcnt * 102;
+	*erate = (integer)(*erate * .96875f + errcnt * 102);
     }
 /*  Get unsmoothed RMS, RC's, and PITCH */
     *irms = drms[1];
@@ -506,9 +518,9 @@ static integer c__2 = 2;
 	}
 	for (i__ = 1; i__ <= 6; ++i__) {
 	    if ((i__1 = drc[i__ * 3 - 2] - drc[i__ * 3 - 3], (real) abs(i__1))
-		     >= corth[ixcor + (i__ + 2 << 2) - 5] && (i__2 = drc[i__ *
+		     >= corth[ixcor + (i__ + (2 << 2)) - 5] && (i__2 = drc[i__ *
 		     3 - 2] - drc[i__ * 3 - 1], (real) abs(i__2)) >= corth[
-		    ixcor + (i__ + 2 << 2) - 5]) {
+		    ixcor + (i__ + (2 << 2)) - 5]) {
 		irc[i__] = median_(&drc[i__ * 3 - 1], &drc[i__ * 3 - 2], &drc[
 			i__ * 3 - 3]);
 	    }
@@ -575,7 +587,7 @@ L900:
 	ishift = 15 - nbit[i__ - 1];
 	i2 *= pow_ii(&c__2, &ishift);
 	i2 += qb[i__ - 3];
-	irc[i__] = i2 * descl[i__ - 3] + deadd[i__ - 3];
+	irc[i__] = (integer)(i2 * descl[i__ - 3] + deadd[i__ - 3]);
     }
 /* 	IF (LISTL.GE.3) WRITE(FDEBUG,811) IRMS, (IRC(I),I=1,ORDER) */
 /* 811	FORMAT(1X,'<<DECODE OUT>>',T45,I4,1X,10I8) */
