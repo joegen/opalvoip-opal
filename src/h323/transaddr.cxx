@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transaddr.cxx,v $
- * Revision 1.2008  2004/02/24 11:37:02  rjongbloed
+ * Revision 1.2009  2004/04/07 08:21:10  rjongbloed
+ * Changes for new RTTI system.
+ *
+ * Revision 2.7  2004/02/24 11:37:02  rjongbloed
  * More work on NAT support, manual external address translation and STUN
  *
  * Revision 2.6  2004/02/19 10:47:04  rjongbloed
@@ -319,7 +322,7 @@ void H323TransportAddressArray::AppendStringCollection(const PCollection & coll)
 {
   for (PINDEX i = 0; i < coll.GetSize(); i++) {
     PObject * obj = coll.GetAt(i);
-    if (obj != NULL && obj->IsDescendant(PString::Class()))
+    if (obj != NULL && PIsDescendant(obj, PString))
       AppendAddress(H323TransportAddress(*(PString *)obj));
   }
 }
