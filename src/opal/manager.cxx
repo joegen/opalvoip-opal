@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2024  2003/03/17 10:27:00  robertj
+ * Revision 1.2025  2003/12/15 11:43:07  rjongbloed
+ * Updated to new API due to plug-ins
+ *
+ * Revision 2.23  2003/03/17 10:27:00  robertj
  * Added video support.
  *
  * Revision 2.22  2003/03/07 08:13:42  robertj
@@ -193,9 +196,12 @@ OpalManager::OpalManager()
   minAudioJitterDelay = 50;  // milliseconds
   maxAudioJitterDelay = 250; // milliseconds
 
-  PStringList grabbers = PVideoInputDevice::GetInputDeviceNames();
-  if (grabbers.GetSize() > 0)
-    videoInputDevice.deviceName = grabbers[0];
+  PStringList drivers = PVideoInputDevice::GetDriverNames();
+  if (drivers.GetSize() > 0) {
+    PStringList devices = PVideoInputDevice::GetDriversDeviceNames(drivers[0]);
+    if (devices.GetSize() > 0)
+      videoInputDevice.deviceName = devices[0];
+  }
 
   lastCallTokenID = 1;
 
@@ -548,7 +554,14 @@ void OpalManager::AddVideoMediaFormats(const OpalConnection & /*connection*/,
 
 PVideoInputDevice * OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection*/)
 {
-  PVideoInputDevice * videoDevice = new PVideoInputDevice();
+  PStringList drivers = PVideoInputDevice::GetDriverNames();
+  if (drivers.IsEmpty())
+    return NULL;
+
+  PVideoInputDevice * videoDevice = PVideoInputDevice::CreateDevice(drivers[0]);
+  if (videoDevice == NULL)
+    return NULL;
+
   if (videoDevice->OpenFull(videoInputDevice, FALSE))
     return videoDevice;
 
@@ -562,7 +575,7 @@ PVideoOutputDevice * OpalManager::CreateVideoOutputDevice(const OpalConnection &
   PVideoOutputDevice * videoDevice = NULL;
 
   if (videoOutputDevice.deviceName.IsEmpty() || videoOutputDevice.deviceName == "NULL") {
-    videoDevice = new PVideoOutputDeviceNULL();
+    videoDevice = PVideoOutputDevice::CreateDevice("null");
     if (videoDevice->OpenFull(videoOutputDevice))
       return videoDevice;
   }
@@ -869,22 +882,26 @@ void OpalManager::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
 
 BOOL OpalManager::SetVideoInputDevice(const PVideoDevice::OpenArgs & args)
 {
-  PStringList grabbers = PVideoInputDevice::GetInputDeviceNames();
-
-  if (args.deviceName[0] == '#') {
-    PINDEX id = args.deviceName.Mid(1).AsUnsigned();
-    if (id == 0 || id > grabbers.GetSize())
-      return FALSE;
-    videoInputDevice = args;
-    videoInputDevice.deviceName = grabbers[id-1];
+  PStringList drivers = PVideoInputDevice::GetDriverNames();
+  for (PINDEX i = 0; i < drivers.GetSize(); i++) {
+    PStringList devices = PVideoInputDevice::GetDriversDeviceNames(drivers[i]);
+    if (args.deviceName[0] == '#') {
+      PINDEX id = args.deviceName.Mid(1).AsUnsigned();
+      if (id > 0 && id <= devices.GetSize()) {
+        videoInputDevice = args;
+        videoInputDevice.deviceName = devices[id-1];
+        return TRUE;
+      }
+    }
+    else {
+      if (devices.GetValuesIndex(args.deviceName) != P_MAX_INDEX) {
+        videoInputDevice = args;
+        return TRUE;
+      }
+    }
   }
-  else {
-    if (grabbers.GetValuesIndex(args.deviceName) == P_MAX_INDEX)
-      return FALSE;
-    videoInputDevice = args;
-  }
 
-  return TRUE;
+  return FALSE;
 }
 
 
