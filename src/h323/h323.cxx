@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2004  2001/08/17 08:27:44  robertj
+ * Revision 1.2005  2001/08/21 11:05:06  robertj
+ * Fixed GNU warning.
+ *
+ * Revision 2.3  2001/08/17 08:27:44  robertj
  * Update from OpenH323
  * Moved call end reasons enum from OpalConnection to global.
  *
@@ -1248,6 +1251,10 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
 
           answerResponse = AnswerCallDeferred;
         }
+        break;
+
+      default :
+        break;
     }
 
     // Wait for answer from application, but check for call being cleared in
