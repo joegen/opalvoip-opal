@@ -9,7 +9,7 @@
 #endif
 
 #include <ptlib.h>
-#include "asn/h4506.h"
+#include "h4506.h"
 
 #define new PNEW
 
@@ -100,7 +100,7 @@ void H4506_CallWaitingArg::PrintOn(ostream & strm) const
     strm << setw(indent+22) << "nbOfAddWaitingCalls = " << setprecision(indent) << m_nbOfAddWaitingCalls << '\n';
   if (HasOptionalField(e_extensionArg))
     strm << setw(indent+15) << "extensionArg = " << setprecision(indent) << m_extensionArg << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -108,7 +108,7 @@ void H4506_CallWaitingArg::PrintOn(ostream & strm) const
 PObject::Comparison H4506_CallWaitingArg::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4506_CallWaitingArg), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4506_CallWaitingArg), PInvalidCast);
 #endif
   const H4506_CallWaitingArg & other = (const H4506_CallWaitingArg &)obj;
 

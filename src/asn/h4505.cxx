@@ -9,7 +9,7 @@
 #endif
 
 #include <ptlib.h>
-#include "asn/h4505.h"
+#include "h4505.h"
 
 #define new PNEW
 
@@ -240,7 +240,7 @@ void H4505_CpRequestArg::PrintOn(ostream & strm) const
     strm << setw(indent+19) << "parkedToPosition = " << setprecision(indent) << m_parkedToPosition << '\n';
   if (HasOptionalField(e_extensionArg))
     strm << setw(indent+15) << "extensionArg = " << setprecision(indent) << m_extensionArg << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -248,7 +248,7 @@ void H4505_CpRequestArg::PrintOn(ostream & strm) const
 PObject::Comparison H4505_CpRequestArg::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4505_CpRequestArg), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4505_CpRequestArg), PInvalidCast);
 #endif
   const H4505_CpRequestArg & other = (const H4505_CpRequestArg &)obj;
 
@@ -350,7 +350,7 @@ void H4505_CpRequestRes::PrintOn(ostream & strm) const
   strm << setw(indent+16) << "parkCondition = " << setprecision(indent) << m_parkCondition << '\n';
   if (HasOptionalField(e_extensionRes))
     strm << setw(indent+15) << "extensionRes = " << setprecision(indent) << m_extensionRes << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -358,7 +358,7 @@ void H4505_CpRequestRes::PrintOn(ostream & strm) const
 PObject::Comparison H4505_CpRequestRes::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4505_CpRequestRes), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4505_CpRequestRes), PInvalidCast);
 #endif
   const H4505_CpRequestRes & other = (const H4505_CpRequestRes &)obj;
 
@@ -455,7 +455,7 @@ void H4505_CpSetupArg::PrintOn(ostream & strm) const
     strm << setw(indent+19) << "parkedToPosition = " << setprecision(indent) << m_parkedToPosition << '\n';
   if (HasOptionalField(e_extensionArg))
     strm << setw(indent+15) << "extensionArg = " << setprecision(indent) << m_extensionArg << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -463,7 +463,7 @@ void H4505_CpSetupArg::PrintOn(ostream & strm) const
 PObject::Comparison H4505_CpSetupArg::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4505_CpSetupArg), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4505_CpSetupArg), PInvalidCast);
 #endif
   const H4505_CpSetupArg & other = (const H4505_CpSetupArg &)obj;
 
@@ -565,7 +565,7 @@ void H4505_CpSetupRes::PrintOn(ostream & strm) const
   strm << setw(indent+16) << "parkCondition = " << setprecision(indent) << m_parkCondition << '\n';
   if (HasOptionalField(e_extensionRes))
     strm << setw(indent+15) << "extensionRes = " << setprecision(indent) << m_extensionRes << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -573,7 +573,7 @@ void H4505_CpSetupRes::PrintOn(ostream & strm) const
 PObject::Comparison H4505_CpSetupRes::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4505_CpSetupRes), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4505_CpSetupRes), PInvalidCast);
 #endif
   const H4505_CpSetupRes & other = (const H4505_CpSetupRes &)obj;
 
@@ -672,7 +672,7 @@ void H4505_GroupIndicationOnArg::PrintOn(ostream & strm) const
     strm << setw(indent+15) << "parkPosition = " << setprecision(indent) << m_parkPosition << '\n';
   if (HasOptionalField(e_extensionArg))
     strm << setw(indent+15) << "extensionArg = " << setprecision(indent) << m_extensionArg << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -680,7 +680,7 @@ void H4505_GroupIndicationOnArg::PrintOn(ostream & strm) const
 PObject::Comparison H4505_GroupIndicationOnArg::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4505_GroupIndicationOnArg), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4505_GroupIndicationOnArg), PInvalidCast);
 #endif
   const H4505_GroupIndicationOnArg & other = (const H4505_GroupIndicationOnArg &)obj;
 
@@ -790,7 +790,7 @@ void H4505_GroupIndicationOnRes::PrintOn(ostream & strm) const
   strm << "{\n";
   if (HasOptionalField(e_extensionRes))
     strm << setw(indent+15) << "extensionRes = " << setprecision(indent) << m_extensionRes << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -798,7 +798,7 @@ void H4505_GroupIndicationOnRes::PrintOn(ostream & strm) const
 PObject::Comparison H4505_GroupIndicationOnRes::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4505_GroupIndicationOnRes), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4505_GroupIndicationOnRes), PInvalidCast);
 #endif
   const H4505_GroupIndicationOnRes & other = (const H4505_GroupIndicationOnRes &)obj;
 
@@ -872,7 +872,7 @@ void H4505_GroupIndicationOffArg::PrintOn(ostream & strm) const
   strm << setw(indent+20) << "groupMemberUserNr = " << setprecision(indent) << m_groupMemberUserNr << '\n';
   if (HasOptionalField(e_extensionArg))
     strm << setw(indent+15) << "extensionArg = " << setprecision(indent) << m_extensionArg << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -880,7 +880,7 @@ void H4505_GroupIndicationOffArg::PrintOn(ostream & strm) const
 PObject::Comparison H4505_GroupIndicationOffArg::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4505_GroupIndicationOffArg), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4505_GroupIndicationOffArg), PInvalidCast);
 #endif
   const H4505_GroupIndicationOffArg & other = (const H4505_GroupIndicationOffArg &)obj;
 
@@ -964,7 +964,7 @@ void H4505_GroupIndicationOffRes::PrintOn(ostream & strm) const
   strm << "{\n";
   if (HasOptionalField(e_extensionRes))
     strm << setw(indent+15) << "extensionRes = " << setprecision(indent) << m_extensionRes << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -972,7 +972,7 @@ void H4505_GroupIndicationOffRes::PrintOn(ostream & strm) const
 PObject::Comparison H4505_GroupIndicationOffRes::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4505_GroupIndicationOffRes), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4505_GroupIndicationOffRes), PInvalidCast);
 #endif
   const H4505_GroupIndicationOffRes & other = (const H4505_GroupIndicationOffRes &)obj;
 
@@ -1052,7 +1052,7 @@ void H4505_PickrequArg::PrintOn(ostream & strm) const
     strm << setw(indent+15) << "parkPosition = " << setprecision(indent) << m_parkPosition << '\n';
   if (HasOptionalField(e_extensionArg))
     strm << setw(indent+15) << "extensionArg = " << setprecision(indent) << m_extensionArg << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1060,7 +1060,7 @@ void H4505_PickrequArg::PrintOn(ostream & strm) const
 PObject::Comparison H4505_PickrequArg::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4505_PickrequArg), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4505_PickrequArg), PInvalidCast);
 #endif
   const H4505_PickrequArg & other = (const H4505_PickrequArg &)obj;
 
@@ -1169,7 +1169,7 @@ void H4505_PickrequRes::PrintOn(ostream & strm) const
   strm << setw(indent+15) << "callPickupId = " << setprecision(indent) << m_callPickupId << '\n';
   if (HasOptionalField(e_extensionRes))
     strm << setw(indent+15) << "extensionRes = " << setprecision(indent) << m_extensionRes << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1177,7 +1177,7 @@ void H4505_PickrequRes::PrintOn(ostream & strm) const
 PObject::Comparison H4505_PickrequRes::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4505_PickrequRes), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4505_PickrequRes), PInvalidCast);
 #endif
   const H4505_PickrequRes & other = (const H4505_PickrequRes &)obj;
 
@@ -1257,7 +1257,7 @@ void H4505_PickupArg::PrintOn(ostream & strm) const
   strm << setw(indent+19) << "picking_upNumber = " << setprecision(indent) << m_picking_upNumber << '\n';
   if (HasOptionalField(e_extensionArg))
     strm << setw(indent+15) << "extensionArg = " << setprecision(indent) << m_extensionArg << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1265,7 +1265,7 @@ void H4505_PickupArg::PrintOn(ostream & strm) const
 PObject::Comparison H4505_PickupArg::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4505_PickupArg), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4505_PickupArg), PInvalidCast);
 #endif
   const H4505_PickupArg & other = (const H4505_PickupArg &)obj;
 
@@ -1349,7 +1349,7 @@ void H4505_PickupRes::PrintOn(ostream & strm) const
   strm << "{\n";
   if (HasOptionalField(e_extensionRes))
     strm << setw(indent+15) << "extensionRes = " << setprecision(indent) << m_extensionRes << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1357,7 +1357,7 @@ void H4505_PickupRes::PrintOn(ostream & strm) const
 PObject::Comparison H4505_PickupRes::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4505_PickupRes), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4505_PickupRes), PInvalidCast);
 #endif
   const H4505_PickupRes & other = (const H4505_PickupRes &)obj;
 
@@ -1432,7 +1432,7 @@ void H4505_PickExeArg::PrintOn(ostream & strm) const
   strm << setw(indent+18) << "partyToRetrieve = " << setprecision(indent) << m_partyToRetrieve << '\n';
   if (HasOptionalField(e_extensionArg))
     strm << setw(indent+15) << "extensionArg = " << setprecision(indent) << m_extensionArg << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1440,7 +1440,7 @@ void H4505_PickExeArg::PrintOn(ostream & strm) const
 PObject::Comparison H4505_PickExeArg::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4505_PickExeArg), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4505_PickExeArg), PInvalidCast);
 #endif
   const H4505_PickExeArg & other = (const H4505_PickExeArg &)obj;
 
@@ -1530,7 +1530,7 @@ void H4505_PickExeRes::PrintOn(ostream & strm) const
   strm << "{\n";
   if (HasOptionalField(e_extensionRes))
     strm << setw(indent+15) << "extensionRes = " << setprecision(indent) << m_extensionRes << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1538,7 +1538,7 @@ void H4505_PickExeRes::PrintOn(ostream & strm) const
 PObject::Comparison H4505_PickExeRes::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4505_PickExeRes), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4505_PickExeRes), PInvalidCast);
 #endif
   const H4505_PickExeRes & other = (const H4505_PickExeRes &)obj;
 
@@ -1612,7 +1612,7 @@ void H4505_CpNotifyArg::PrintOn(ostream & strm) const
     strm << setw(indent+16) << "parkingNumber = " << setprecision(indent) << m_parkingNumber << '\n';
   if (HasOptionalField(e_extensionArg))
     strm << setw(indent+15) << "extensionArg = " << setprecision(indent) << m_extensionArg << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1620,7 +1620,7 @@ void H4505_CpNotifyArg::PrintOn(ostream & strm) const
 PObject::Comparison H4505_CpNotifyArg::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4505_CpNotifyArg), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4505_CpNotifyArg), PInvalidCast);
 #endif
   const H4505_CpNotifyArg & other = (const H4505_CpNotifyArg &)obj;
 
@@ -1702,7 +1702,7 @@ void H4505_CpickupNotifyArg::PrintOn(ostream & strm) const
     strm << setw(indent+19) << "picking_upNumber = " << setprecision(indent) << m_picking_upNumber << '\n';
   if (HasOptionalField(e_extensionArg))
     strm << setw(indent+15) << "extensionArg = " << setprecision(indent) << m_extensionArg << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1710,7 +1710,7 @@ void H4505_CpickupNotifyArg::PrintOn(ostream & strm) const
 PObject::Comparison H4505_CpickupNotifyArg::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4505_CpickupNotifyArg), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4505_CpickupNotifyArg), PInvalidCast);
 #endif
   const H4505_CpickupNotifyArg & other = (const H4505_CpickupNotifyArg &)obj;
 

@@ -353,7 +353,7 @@ void H248_DomainName::PrintOn(ostream & strm) const
   strm << setw(indent+7) << "name = " << setprecision(indent) << m_name << '\n';
   if (HasOptionalField(e_portNumber))
     strm << setw(indent+13) << "portNumber = " << setprecision(indent) << m_portNumber << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -361,7 +361,7 @@ void H248_DomainName::PrintOn(ostream & strm) const
 PObject::Comparison H248_DomainName::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_DomainName), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_DomainName), PInvalidCast);
 #endif
   const H248_DomainName & other = (const H248_DomainName &)obj;
 
@@ -441,7 +441,7 @@ void H248_IP4Address::PrintOn(ostream & strm) const
   strm << setw(indent+10) << "address = " << setprecision(indent) << m_address << '\n';
   if (HasOptionalField(e_portNumber))
     strm << setw(indent+13) << "portNumber = " << setprecision(indent) << m_portNumber << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -449,7 +449,7 @@ void H248_IP4Address::PrintOn(ostream & strm) const
 PObject::Comparison H248_IP4Address::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_IP4Address), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_IP4Address), PInvalidCast);
 #endif
   const H248_IP4Address & other = (const H248_IP4Address &)obj;
 
@@ -529,7 +529,7 @@ void H248_IP6Address::PrintOn(ostream & strm) const
   strm << setw(indent+10) << "address = " << setprecision(indent) << m_address << '\n';
   if (HasOptionalField(e_portNumber))
     strm << setw(indent+13) << "portNumber = " << setprecision(indent) << m_portNumber << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -537,7 +537,7 @@ void H248_IP6Address::PrintOn(ostream & strm) const
 PObject::Comparison H248_IP6Address::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_IP6Address), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_IP6Address), PInvalidCast);
 #endif
   const H248_IP6Address & other = (const H248_IP6Address &)obj;
 
@@ -817,7 +817,7 @@ void H248_TransactionPending::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+16) << "transactionId = " << setprecision(indent) << m_transactionId << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -825,7 +825,7 @@ void H248_TransactionPending::PrintOn(ostream & strm) const
 PObject::Comparison H248_TransactionPending::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_TransactionPending), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_TransactionPending), PInvalidCast);
 #endif
   const H248_TransactionPending & other = (const H248_TransactionPending &)obj;
 
@@ -926,7 +926,7 @@ void H248_TransactionAck::PrintOn(ostream & strm) const
   strm << setw(indent+11) << "firstAck = " << setprecision(indent) << m_firstAck << '\n';
   if (HasOptionalField(e_lastAck))
     strm << setw(indent+10) << "lastAck = " << setprecision(indent) << m_lastAck << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -934,7 +934,7 @@ void H248_TransactionAck::PrintOn(ostream & strm) const
 PObject::Comparison H248_TransactionAck::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_TransactionAck), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_TransactionAck), PInvalidCast);
 #endif
   const H248_TransactionAck & other = (const H248_TransactionAck &)obj;
 
@@ -1116,7 +1116,7 @@ void H248_ContextAttrAuditRequest::PrintOn(ostream & strm) const
     strm << setw(indent+12) << "emergency = " << setprecision(indent) << m_emergency << '\n';
   if (HasOptionalField(e_priority))
     strm << setw(indent+11) << "priority = " << setprecision(indent) << m_priority << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1124,7 +1124,7 @@ void H248_ContextAttrAuditRequest::PrintOn(ostream & strm) const
 PObject::Comparison H248_ContextAttrAuditRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_ContextAttrAuditRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_ContextAttrAuditRequest), PInvalidCast);
 #endif
   const H248_ContextAttrAuditRequest & other = (const H248_ContextAttrAuditRequest &)obj;
 
@@ -3577,7 +3577,7 @@ void H248_DigitMapValue::PrintOn(ostream & strm) const
   strm << setw(indent+15) << "digitMapBody = " << setprecision(indent) << m_digitMapBody << '\n';
   if (HasOptionalField(e_durationTimer))
     strm << setw(indent+16) << "durationTimer = " << setprecision(indent) << m_durationTimer << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3585,7 +3585,7 @@ void H248_DigitMapValue::PrintOn(ostream & strm) const
 PObject::Comparison H248_DigitMapValue::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_DigitMapValue), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_DigitMapValue), PInvalidCast);
 #endif
   const H248_DigitMapValue & other = (const H248_DigitMapValue &)obj;
 
@@ -3862,7 +3862,7 @@ void H248_ServiceChangeProfile::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+14) << "profileName = " << setprecision(indent) << m_profileName << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3870,7 +3870,7 @@ void H248_ServiceChangeProfile::PrintOn(ostream & strm) const
 PObject::Comparison H248_ServiceChangeProfile::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_ServiceChangeProfile), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_ServiceChangeProfile), PInvalidCast);
 #endif
   const H248_ServiceChangeProfile & other = (const H248_ServiceChangeProfile &)obj;
 
@@ -3971,7 +3971,7 @@ void H248_PackagesItem::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+14) << "packageName = " << setprecision(indent) << m_packageName << '\n';
   strm << setw(indent+17) << "packageVersion = " << setprecision(indent) << m_packageVersion << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3979,7 +3979,7 @@ void H248_PackagesItem::PrintOn(ostream & strm) const
 PObject::Comparison H248_PackagesItem::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_PackagesItem), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_PackagesItem), PInvalidCast);
 #endif
   const H248_PackagesItem & other = (const H248_PackagesItem &)obj;
 
@@ -4158,7 +4158,7 @@ void H248_H221NonStandard::PrintOn(ostream & strm) const
   strm << setw(indent+18) << "t35CountryCode2 = " << setprecision(indent) << m_t35CountryCode2 << '\n';
   strm << setw(indent+15) << "t35Extension = " << setprecision(indent) << m_t35Extension << '\n';
   strm << setw(indent+19) << "manufacturerCode = " << setprecision(indent) << m_manufacturerCode << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4166,7 +4166,7 @@ void H248_H221NonStandard::PrintOn(ostream & strm) const
 PObject::Comparison H248_H221NonStandard::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_H221NonStandard), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_H221NonStandard), PInvalidCast);
 #endif
   const H248_H221NonStandard & other = (const H248_H221NonStandard &)obj;
 
@@ -4255,7 +4255,7 @@ void H248_TimeNotation::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+7) << "date = " << setprecision(indent) << m_date << '\n';
   strm << setw(indent+7) << "time = " << setprecision(indent) << m_time << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4263,7 +4263,7 @@ void H248_TimeNotation::PrintOn(ostream & strm) const
 PObject::Comparison H248_TimeNotation::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_TimeNotation), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_TimeNotation), PInvalidCast);
 #endif
   const H248_TimeNotation & other = (const H248_TimeNotation &)obj;
 
@@ -5643,7 +5643,7 @@ void H248_AuthenticationHeader::PrintOn(ostream & strm) const
   strm << setw(indent+15) << "secParmIndex = " << setprecision(indent) << m_secParmIndex << '\n';
   strm << setw(indent+9) << "seqNum = " << setprecision(indent) << m_seqNum << '\n';
   strm << setw(indent+5) << "ad = " << setprecision(indent) << m_ad << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5651,7 +5651,7 @@ void H248_AuthenticationHeader::PrintOn(ostream & strm) const
 PObject::Comparison H248_AuthenticationHeader::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_AuthenticationHeader), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_AuthenticationHeader), PInvalidCast);
 #endif
   const H248_AuthenticationHeader & other = (const H248_AuthenticationHeader &)obj;
 
@@ -5734,7 +5734,7 @@ void H248_Message::PrintOn(ostream & strm) const
   strm << setw(indent+10) << "version = " << setprecision(indent) << m_version << '\n';
   strm << setw(indent+6) << "mId = " << setprecision(indent) << m_mId << '\n';
   strm << setw(indent+14) << "messageBody = " << setprecision(indent) << m_messageBody << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5742,7 +5742,7 @@ void H248_Message::PrintOn(ostream & strm) const
 PObject::Comparison H248_Message::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_Message), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_Message), PInvalidCast);
 #endif
   const H248_Message & other = (const H248_Message &)obj;
 
@@ -5823,7 +5823,7 @@ void H248_TransactionRequest::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+16) << "transactionId = " << setprecision(indent) << m_transactionId << '\n';
   strm << setw(indent+10) << "actions = " << setprecision(indent) << m_actions << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5831,7 +5831,7 @@ void H248_TransactionRequest::PrintOn(ostream & strm) const
 PObject::Comparison H248_TransactionRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_TransactionRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_TransactionRequest), PInvalidCast);
 #endif
   const H248_TransactionRequest & other = (const H248_TransactionRequest &)obj;
 
@@ -5908,7 +5908,7 @@ void H248_TransactionReply::PrintOn(ostream & strm) const
   if (HasOptionalField(e_immAckRequired))
     strm << setw(indent+17) << "immAckRequired = " << setprecision(indent) << m_immAckRequired << '\n';
   strm << setw(indent+20) << "transactionResult = " << setprecision(indent) << m_transactionResult << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5916,7 +5916,7 @@ void H248_TransactionReply::PrintOn(ostream & strm) const
 PObject::Comparison H248_TransactionReply::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_TransactionReply), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_TransactionReply), PInvalidCast);
 #endif
   const H248_TransactionReply & other = (const H248_TransactionReply &)obj;
 
@@ -6000,7 +6000,7 @@ void H248_ErrorDescriptor::PrintOn(ostream & strm) const
   strm << setw(indent+12) << "errorCode = " << setprecision(indent) << m_errorCode << '\n';
   if (HasOptionalField(e_errorText))
     strm << setw(indent+12) << "errorText = " << setprecision(indent) << m_errorText << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6008,7 +6008,7 @@ void H248_ErrorDescriptor::PrintOn(ostream & strm) const
 PObject::Comparison H248_ErrorDescriptor::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_ErrorDescriptor), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_ErrorDescriptor), PInvalidCast);
 #endif
   const H248_ErrorDescriptor & other = (const H248_ErrorDescriptor &)obj;
 
@@ -6090,7 +6090,7 @@ void H248_ContextRequest::PrintOn(ostream & strm) const
     strm << setw(indent+12) << "emergency = " << setprecision(indent) << m_emergency << '\n';
   if (HasOptionalField(e_topologyReq))
     strm << setw(indent+14) << "topologyReq = " << setprecision(indent) << m_topologyReq << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6098,7 +6098,7 @@ void H248_ContextRequest::PrintOn(ostream & strm) const
 PObject::Comparison H248_ContextRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_ContextRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_ContextRequest), PInvalidCast);
 #endif
   const H248_ContextRequest & other = (const H248_ContextRequest &)obj;
 
@@ -6188,7 +6188,7 @@ void H248_CommandRequest::PrintOn(ostream & strm) const
     strm << setw(indent+11) << "optional = " << setprecision(indent) << m_optional << '\n';
   if (HasOptionalField(e_wildcardReturn))
     strm << setw(indent+17) << "wildcardReturn = " << setprecision(indent) << m_wildcardReturn << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6196,7 +6196,7 @@ void H248_CommandRequest::PrintOn(ostream & strm) const
 PObject::Comparison H248_CommandRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_CommandRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_CommandRequest), PInvalidCast);
 #endif
   const H248_CommandRequest & other = (const H248_CommandRequest &)obj;
 
@@ -6281,7 +6281,7 @@ void H248_AmmRequest::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+16) << "terminationID = " << setprecision(indent) << m_terminationID << '\n';
   strm << setw(indent+14) << "descriptors = " << setprecision(indent) << m_descriptors << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6289,7 +6289,7 @@ void H248_AmmRequest::PrintOn(ostream & strm) const
 PObject::Comparison H248_AmmRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_AmmRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_AmmRequest), PInvalidCast);
 #endif
   const H248_AmmRequest & other = (const H248_AmmRequest &)obj;
 
@@ -6365,7 +6365,7 @@ void H248_AmmsReply::PrintOn(ostream & strm) const
   strm << setw(indent+16) << "terminationID = " << setprecision(indent) << m_terminationID << '\n';
   if (HasOptionalField(e_terminationAudit))
     strm << setw(indent+19) << "terminationAudit = " << setprecision(indent) << m_terminationAudit << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6373,7 +6373,7 @@ void H248_AmmsReply::PrintOn(ostream & strm) const
 PObject::Comparison H248_AmmsReply::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_AmmsReply), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_AmmsReply), PInvalidCast);
 #endif
   const H248_AmmsReply & other = (const H248_AmmsReply &)obj;
 
@@ -6452,7 +6452,7 @@ void H248_AuditDescriptor::PrintOn(ostream & strm) const
     strm << setw(indent+13) << "auditToken = " << setprecision(indent) << m_auditToken << '\n';
   if (HasOptionalField(e_auditPropertyToken))
     strm << setw(indent+21) << "auditPropertyToken = " << setprecision(indent) << m_auditPropertyToken << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6460,7 +6460,7 @@ void H248_AuditDescriptor::PrintOn(ostream & strm) const
 PObject::Comparison H248_AuditDescriptor::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_AuditDescriptor), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_AuditDescriptor), PInvalidCast);
 #endif
   const H248_AuditDescriptor & other = (const H248_AuditDescriptor &)obj;
 
@@ -6540,7 +6540,7 @@ void H248_IndAudLocalControlDescriptor::PrintOn(ostream & strm) const
     strm << setw(indent+15) << "reserveGroup = " << setprecision(indent) << m_reserveGroup << '\n';
   if (HasOptionalField(e_propertyParms))
     strm << setw(indent+16) << "propertyParms = " << setprecision(indent) << m_propertyParms << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6548,7 +6548,7 @@ void H248_IndAudLocalControlDescriptor::PrintOn(ostream & strm) const
 PObject::Comparison H248_IndAudLocalControlDescriptor::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_IndAudLocalControlDescriptor), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_IndAudLocalControlDescriptor), PInvalidCast);
 #endif
   const H248_IndAudLocalControlDescriptor & other = (const H248_IndAudLocalControlDescriptor &)obj;
 
@@ -6642,7 +6642,7 @@ void H248_IndAudPropertyParm::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+7) << "name = " << setprecision(indent) << m_name << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6650,7 +6650,7 @@ void H248_IndAudPropertyParm::PrintOn(ostream & strm) const
 PObject::Comparison H248_IndAudPropertyParm::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_IndAudPropertyParm), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_IndAudPropertyParm), PInvalidCast);
 #endif
   const H248_IndAudPropertyParm & other = (const H248_IndAudPropertyParm &)obj;
 
@@ -6721,7 +6721,7 @@ void H248_IndAudLocalRemoteDescriptor::PrintOn(ostream & strm) const
   if (HasOptionalField(e_propGroupID))
     strm << setw(indent+14) << "propGroupID = " << setprecision(indent) << m_propGroupID << '\n';
   strm << setw(indent+11) << "propGrps = " << setprecision(indent) << m_propGrps << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6729,7 +6729,7 @@ void H248_IndAudLocalRemoteDescriptor::PrintOn(ostream & strm) const
 PObject::Comparison H248_IndAudLocalRemoteDescriptor::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_IndAudLocalRemoteDescriptor), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_IndAudLocalRemoteDescriptor), PInvalidCast);
 #endif
   const H248_IndAudLocalRemoteDescriptor & other = (const H248_IndAudLocalRemoteDescriptor &)obj;
 
@@ -6809,7 +6809,7 @@ void H248_IndAudTerminationStateDescriptor::PrintOn(ostream & strm) const
     strm << setw(indent+21) << "eventBufferControl = " << setprecision(indent) << m_eventBufferControl << '\n';
   if (HasOptionalField(e_serviceState))
     strm << setw(indent+15) << "serviceState = " << setprecision(indent) << m_serviceState << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6817,7 +6817,7 @@ void H248_IndAudTerminationStateDescriptor::PrintOn(ostream & strm) const
 PObject::Comparison H248_IndAudTerminationStateDescriptor::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_IndAudTerminationStateDescriptor), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_IndAudTerminationStateDescriptor), PInvalidCast);
 #endif
   const H248_IndAudTerminationStateDescriptor & other = (const H248_IndAudTerminationStateDescriptor &)obj;
 
@@ -6905,7 +6905,7 @@ void H248_IndAudEventsDescriptor::PrintOn(ostream & strm) const
   strm << setw(indent+11) << "pkgdName = " << setprecision(indent) << m_pkgdName << '\n';
   if (HasOptionalField(e_streamID))
     strm << setw(indent+11) << "streamID = " << setprecision(indent) << m_streamID << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6913,7 +6913,7 @@ void H248_IndAudEventsDescriptor::PrintOn(ostream & strm) const
 PObject::Comparison H248_IndAudEventsDescriptor::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_IndAudEventsDescriptor), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_IndAudEventsDescriptor), PInvalidCast);
 #endif
   const H248_IndAudEventsDescriptor & other = (const H248_IndAudEventsDescriptor &)obj;
 
@@ -6999,7 +6999,7 @@ void H248_IndAudEventBufferDescriptor::PrintOn(ostream & strm) const
   strm << setw(indent+12) << "eventName = " << setprecision(indent) << m_eventName << '\n';
   if (HasOptionalField(e_streamID))
     strm << setw(indent+11) << "streamID = " << setprecision(indent) << m_streamID << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7007,7 +7007,7 @@ void H248_IndAudEventBufferDescriptor::PrintOn(ostream & strm) const
 PObject::Comparison H248_IndAudEventBufferDescriptor::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_IndAudEventBufferDescriptor), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_IndAudEventBufferDescriptor), PInvalidCast);
 #endif
   const H248_IndAudEventBufferDescriptor & other = (const H248_IndAudEventBufferDescriptor &)obj;
 
@@ -7085,7 +7085,7 @@ void H248_IndAudSignal::PrintOn(ostream & strm) const
   strm << setw(indent+13) << "signalName = " << setprecision(indent) << m_signalName << '\n';
   if (HasOptionalField(e_streamID))
     strm << setw(indent+11) << "streamID = " << setprecision(indent) << m_streamID << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7093,7 +7093,7 @@ void H248_IndAudSignal::PrintOn(ostream & strm) const
 PObject::Comparison H248_IndAudSignal::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_IndAudSignal), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_IndAudSignal), PInvalidCast);
 #endif
   const H248_IndAudSignal & other = (const H248_IndAudSignal &)obj;
 
@@ -7170,7 +7170,7 @@ void H248_IndAudDigitMapDescriptor::PrintOn(ostream & strm) const
   strm << "{\n";
   if (HasOptionalField(e_digitMapName))
     strm << setw(indent+15) << "digitMapName = " << setprecision(indent) << m_digitMapName << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7178,7 +7178,7 @@ void H248_IndAudDigitMapDescriptor::PrintOn(ostream & strm) const
 PObject::Comparison H248_IndAudDigitMapDescriptor::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_IndAudDigitMapDescriptor), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_IndAudDigitMapDescriptor), PInvalidCast);
 #endif
   const H248_IndAudDigitMapDescriptor & other = (const H248_IndAudDigitMapDescriptor &)obj;
 
@@ -7248,7 +7248,7 @@ void H248_IndAudStatisticsDescriptor::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+11) << "statName = " << setprecision(indent) << m_statName << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7256,7 +7256,7 @@ void H248_IndAudStatisticsDescriptor::PrintOn(ostream & strm) const
 PObject::Comparison H248_IndAudStatisticsDescriptor::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_IndAudStatisticsDescriptor), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_IndAudStatisticsDescriptor), PInvalidCast);
 #endif
   const H248_IndAudStatisticsDescriptor & other = (const H248_IndAudStatisticsDescriptor &)obj;
 
@@ -7326,7 +7326,7 @@ void H248_IndAudPackagesDescriptor::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+14) << "packageName = " << setprecision(indent) << m_packageName << '\n';
   strm << setw(indent+17) << "packageVersion = " << setprecision(indent) << m_packageVersion << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7334,7 +7334,7 @@ void H248_IndAudPackagesDescriptor::PrintOn(ostream & strm) const
 PObject::Comparison H248_IndAudPackagesDescriptor::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_IndAudPackagesDescriptor), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_IndAudPackagesDescriptor), PInvalidCast);
 #endif
   const H248_IndAudPackagesDescriptor & other = (const H248_IndAudPackagesDescriptor &)obj;
 
@@ -7410,7 +7410,7 @@ void H248_NotifyReply::PrintOn(ostream & strm) const
   strm << setw(indent+16) << "terminationID = " << setprecision(indent) << m_terminationID << '\n';
   if (HasOptionalField(e_errorDescriptor))
     strm << setw(indent+18) << "errorDescriptor = " << setprecision(indent) << m_errorDescriptor << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7418,7 +7418,7 @@ void H248_NotifyReply::PrintOn(ostream & strm) const
 PObject::Comparison H248_NotifyReply::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_NotifyReply), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_NotifyReply), PInvalidCast);
 #endif
   const H248_NotifyReply & other = (const H248_NotifyReply &)obj;
 
@@ -7495,7 +7495,7 @@ void H248_ObservedEventsDescriptor::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+12) << "requestId = " << setprecision(indent) << m_requestId << '\n';
   strm << setw(indent+19) << "observedEventLst = " << setprecision(indent) << m_observedEventLst << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7503,7 +7503,7 @@ void H248_ObservedEventsDescriptor::PrintOn(ostream & strm) const
 PObject::Comparison H248_ObservedEventsDescriptor::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_ObservedEventsDescriptor), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_ObservedEventsDescriptor), PInvalidCast);
 #endif
   const H248_ObservedEventsDescriptor & other = (const H248_ObservedEventsDescriptor &)obj;
 
@@ -7638,7 +7638,7 @@ void H248_EventParameter::PrintOn(ostream & strm) const
   strm << setw(indent+8) << "value = " << setprecision(indent) << m_value << '\n';
   if (HasOptionalField(e_extraInfo))
     strm << setw(indent+12) << "extraInfo = " << setprecision(indent) << m_extraInfo << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7646,7 +7646,7 @@ void H248_EventParameter::PrintOn(ostream & strm) const
 PObject::Comparison H248_EventParameter::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_EventParameter), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_EventParameter), PInvalidCast);
 #endif
   const H248_EventParameter & other = (const H248_EventParameter &)obj;
 
@@ -7729,7 +7729,7 @@ void H248_ServiceChangeReply::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+16) << "terminationID = " << setprecision(indent) << m_terminationID << '\n';
   strm << setw(indent+22) << "serviceChangeResult = " << setprecision(indent) << m_serviceChangeResult << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7737,7 +7737,7 @@ void H248_ServiceChangeReply::PrintOn(ostream & strm) const
 PObject::Comparison H248_ServiceChangeReply::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_ServiceChangeReply), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_ServiceChangeReply), PInvalidCast);
 #endif
   const H248_ServiceChangeReply & other = (const H248_ServiceChangeReply &)obj;
 
@@ -7813,7 +7813,7 @@ void H248_TerminationID::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+11) << "wildcard = " << setprecision(indent) << m_wildcard << '\n';
   strm << setw(indent+5) << "id = " << setprecision(indent) << m_id << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7821,7 +7821,7 @@ void H248_TerminationID::PrintOn(ostream & strm) const
 PObject::Comparison H248_TerminationID::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_TerminationID), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_TerminationID), PInvalidCast);
 #endif
   const H248_TerminationID & other = (const H248_TerminationID &)obj;
 
@@ -7901,7 +7901,7 @@ void H248_LocalControlDescriptor::PrintOn(ostream & strm) const
   if (HasOptionalField(e_reserveGroup))
     strm << setw(indent+15) << "reserveGroup = " << setprecision(indent) << m_reserveGroup << '\n';
   strm << setw(indent+16) << "propertyParms = " << setprecision(indent) << m_propertyParms << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7909,7 +7909,7 @@ void H248_LocalControlDescriptor::PrintOn(ostream & strm) const
 PObject::Comparison H248_LocalControlDescriptor::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_LocalControlDescriptor), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_LocalControlDescriptor), PInvalidCast);
 #endif
   const H248_LocalControlDescriptor & other = (const H248_LocalControlDescriptor &)obj;
 
@@ -8004,7 +8004,7 @@ void H248_PropertyParm::PrintOn(ostream & strm) const
   strm << setw(indent+8) << "value = " << setprecision(indent) << m_value << '\n';
   if (HasOptionalField(e_extraInfo))
     strm << setw(indent+12) << "extraInfo = " << setprecision(indent) << m_extraInfo << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -8012,7 +8012,7 @@ void H248_PropertyParm::PrintOn(ostream & strm) const
 PObject::Comparison H248_PropertyParm::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_PropertyParm), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_PropertyParm), PInvalidCast);
 #endif
   const H248_PropertyParm & other = (const H248_PropertyParm &)obj;
 
@@ -8094,7 +8094,7 @@ void H248_LocalRemoteDescriptor::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+11) << "propGrps = " << setprecision(indent) << m_propGrps << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -8102,7 +8102,7 @@ void H248_LocalRemoteDescriptor::PrintOn(ostream & strm) const
 PObject::Comparison H248_LocalRemoteDescriptor::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_LocalRemoteDescriptor), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_LocalRemoteDescriptor), PInvalidCast);
 #endif
   const H248_LocalRemoteDescriptor & other = (const H248_LocalRemoteDescriptor &)obj;
 
@@ -8174,7 +8174,7 @@ void H248_TerminationStateDescriptor::PrintOn(ostream & strm) const
     strm << setw(indent+21) << "eventBufferControl = " << setprecision(indent) << m_eventBufferControl << '\n';
   if (HasOptionalField(e_serviceState))
     strm << setw(indent+15) << "serviceState = " << setprecision(indent) << m_serviceState << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -8182,7 +8182,7 @@ void H248_TerminationStateDescriptor::PrintOn(ostream & strm) const
 PObject::Comparison H248_TerminationStateDescriptor::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_TerminationStateDescriptor), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_TerminationStateDescriptor), PInvalidCast);
 #endif
   const H248_TerminationStateDescriptor & other = (const H248_TerminationStateDescriptor &)obj;
 
@@ -8268,7 +8268,7 @@ void H248_EventsDescriptor::PrintOn(ostream & strm) const
   if (HasOptionalField(e_requestID))
     strm << setw(indent+12) << "requestID = " << setprecision(indent) << m_requestID << '\n';
   strm << setw(indent+12) << "eventList = " << setprecision(indent) << m_eventList << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -8276,7 +8276,7 @@ void H248_EventsDescriptor::PrintOn(ostream & strm) const
 PObject::Comparison H248_EventsDescriptor::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_EventsDescriptor), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_EventsDescriptor), PInvalidCast);
 #endif
   const H248_EventsDescriptor & other = (const H248_EventsDescriptor &)obj;
 
@@ -8354,7 +8354,7 @@ void H248_SecondEventsDescriptor::PrintOn(ostream & strm) const
   if (HasOptionalField(e_requestID))
     strm << setw(indent+12) << "requestID = " << setprecision(indent) << m_requestID << '\n';
   strm << setw(indent+12) << "eventList = " << setprecision(indent) << m_eventList << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -8362,7 +8362,7 @@ void H248_SecondEventsDescriptor::PrintOn(ostream & strm) const
 PObject::Comparison H248_SecondEventsDescriptor::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_SecondEventsDescriptor), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_SecondEventsDescriptor), PInvalidCast);
 #endif
   const H248_SecondEventsDescriptor & other = (const H248_SecondEventsDescriptor &)obj;
 
@@ -8443,7 +8443,7 @@ void H248_SecondRequestedActions::PrintOn(ostream & strm) const
     strm << setw(indent+10) << "eventDM = " << setprecision(indent) << m_eventDM << '\n';
   if (HasOptionalField(e_signalsDescriptor))
     strm << setw(indent+20) << "signalsDescriptor = " << setprecision(indent) << m_signalsDescriptor << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -8451,7 +8451,7 @@ void H248_SecondRequestedActions::PrintOn(ostream & strm) const
 PObject::Comparison H248_SecondRequestedActions::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_SecondRequestedActions), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_SecondRequestedActions), PInvalidCast);
 #endif
   const H248_SecondRequestedActions & other = (const H248_SecondRequestedActions &)obj;
 
@@ -8540,7 +8540,7 @@ void H248_EventSpec::PrintOn(ostream & strm) const
   if (HasOptionalField(e_streamID))
     strm << setw(indent+11) << "streamID = " << setprecision(indent) << m_streamID << '\n';
   strm << setw(indent+15) << "eventParList = " << setprecision(indent) << m_eventParList << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -8548,7 +8548,7 @@ void H248_EventSpec::PrintOn(ostream & strm) const
 PObject::Comparison H248_EventSpec::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_EventSpec), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_EventSpec), PInvalidCast);
 #endif
   const H248_EventSpec & other = (const H248_EventSpec &)obj;
 
@@ -8632,7 +8632,7 @@ void H248_SeqSigList::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+5) << "id = " << setprecision(indent) << m_id << '\n';
   strm << setw(indent+13) << "signalList = " << setprecision(indent) << m_signalList << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -8640,7 +8640,7 @@ void H248_SeqSigList::PrintOn(ostream & strm) const
 PObject::Comparison H248_SeqSigList::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_SeqSigList), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_SeqSigList), PInvalidCast);
 #endif
   const H248_SeqSigList & other = (const H248_SeqSigList &)obj;
 
@@ -8726,7 +8726,7 @@ void H248_Signal::PrintOn(ostream & strm) const
   if (HasOptionalField(e_keepActive))
     strm << setw(indent+13) << "keepActive = " << setprecision(indent) << m_keepActive << '\n';
   strm << setw(indent+13) << "sigParList = " << setprecision(indent) << m_sigParList << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -8734,7 +8734,7 @@ void H248_Signal::PrintOn(ostream & strm) const
 PObject::Comparison H248_Signal::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_Signal), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_Signal), PInvalidCast);
 #endif
   const H248_Signal & other = (const H248_Signal &)obj;
 
@@ -8851,7 +8851,7 @@ void H248_SigParameter::PrintOn(ostream & strm) const
   strm << setw(indent+8) << "value = " << setprecision(indent) << m_value << '\n';
   if (HasOptionalField(e_extraInfo))
     strm << setw(indent+12) << "extraInfo = " << setprecision(indent) << m_extraInfo << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -8859,7 +8859,7 @@ void H248_SigParameter::PrintOn(ostream & strm) const
 PObject::Comparison H248_SigParameter::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_SigParameter), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_SigParameter), PInvalidCast);
 #endif
   const H248_SigParameter & other = (const H248_SigParameter &)obj;
 
@@ -8944,7 +8944,7 @@ void H248_DigitMapDescriptor::PrintOn(ostream & strm) const
     strm << setw(indent+15) << "digitMapName = " << setprecision(indent) << m_digitMapName << '\n';
   if (HasOptionalField(e_digitMapValue))
     strm << setw(indent+16) << "digitMapValue = " << setprecision(indent) << m_digitMapValue << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -8952,7 +8952,7 @@ void H248_DigitMapDescriptor::PrintOn(ostream & strm) const
 PObject::Comparison H248_DigitMapDescriptor::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_DigitMapDescriptor), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_DigitMapDescriptor), PInvalidCast);
 #endif
   const H248_DigitMapDescriptor & other = (const H248_DigitMapDescriptor &)obj;
 
@@ -9040,7 +9040,7 @@ void H248_ServiceChangeResParm::PrintOn(ostream & strm) const
     strm << setw(indent+23) << "serviceChangeProfile = " << setprecision(indent) << m_serviceChangeProfile << '\n';
   if (HasOptionalField(e_timestamp))
     strm << setw(indent+12) << "timestamp = " << setprecision(indent) << m_timestamp << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9048,7 +9048,7 @@ void H248_ServiceChangeResParm::PrintOn(ostream & strm) const
 PObject::Comparison H248_ServiceChangeResParm::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_ServiceChangeResParm), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_ServiceChangeResParm), PInvalidCast);
 #endif
   const H248_ServiceChangeResParm & other = (const H248_ServiceChangeResParm &)obj;
 
@@ -9152,7 +9152,7 @@ void H248_StatisticsParameter::PrintOn(ostream & strm) const
   strm << setw(indent+11) << "statName = " << setprecision(indent) << m_statName << '\n';
   if (HasOptionalField(e_statValue))
     strm << setw(indent+12) << "statValue = " << setprecision(indent) << m_statValue << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9160,7 +9160,7 @@ void H248_StatisticsParameter::PrintOn(ostream & strm) const
 PObject::Comparison H248_StatisticsParameter::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_StatisticsParameter), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_StatisticsParameter), PInvalidCast);
 #endif
   const H248_StatisticsParameter & other = (const H248_StatisticsParameter &)obj;
 
@@ -9237,7 +9237,7 @@ void H248_NonStandardData::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+24) << "nonStandardIdentifier = " << setprecision(indent) << m_nonStandardIdentifier << '\n';
   strm << setw(indent+7) << "data = " << setprecision(indent) << m_data << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9245,7 +9245,7 @@ void H248_NonStandardData::PrintOn(ostream & strm) const
 PObject::Comparison H248_NonStandardData::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_NonStandardData), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_NonStandardData), PInvalidCast);
 #endif
   const H248_NonStandardData & other = (const H248_NonStandardData &)obj;
 
@@ -9321,7 +9321,7 @@ void H248_MegacoMessage::PrintOn(ostream & strm) const
   if (HasOptionalField(e_authHeader))
     strm << setw(indent+13) << "authHeader = " << setprecision(indent) << m_authHeader << '\n';
   strm << setw(indent+7) << "mess = " << setprecision(indent) << m_mess << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9329,7 +9329,7 @@ void H248_MegacoMessage::PrintOn(ostream & strm) const
 PObject::Comparison H248_MegacoMessage::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_MegacoMessage), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_MegacoMessage), PInvalidCast);
 #endif
   const H248_MegacoMessage & other = (const H248_MegacoMessage &)obj;
 
@@ -9410,7 +9410,7 @@ void H248_ActionRequest::PrintOn(ostream & strm) const
   if (HasOptionalField(e_contextAttrAuditReq))
     strm << setw(indent+22) << "contextAttrAuditReq = " << setprecision(indent) << m_contextAttrAuditReq << '\n';
   strm << setw(indent+18) << "commandRequests = " << setprecision(indent) << m_commandRequests << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9418,7 +9418,7 @@ void H248_ActionRequest::PrintOn(ostream & strm) const
 PObject::Comparison H248_ActionRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_ActionRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_ActionRequest), PInvalidCast);
 #endif
   const H248_ActionRequest & other = (const H248_ActionRequest &)obj;
 
@@ -9513,7 +9513,7 @@ void H248_ActionReply::PrintOn(ostream & strm) const
   if (HasOptionalField(e_contextReply))
     strm << setw(indent+15) << "contextReply = " << setprecision(indent) << m_contextReply << '\n';
   strm << setw(indent+15) << "commandReply = " << setprecision(indent) << m_commandReply << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9521,7 +9521,7 @@ void H248_ActionReply::PrintOn(ostream & strm) const
 PObject::Comparison H248_ActionReply::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_ActionReply), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_ActionReply), PInvalidCast);
 #endif
   const H248_ActionReply & other = (const H248_ActionReply &)obj;
 
@@ -9615,7 +9615,7 @@ void H248_TopologyRequest::PrintOn(ostream & strm) const
   strm << setw(indent+20) << "topologyDirection = " << setprecision(indent) << m_topologyDirection << '\n';
   if (HasOptionalField(e_streamID))
     strm << setw(indent+11) << "streamID = " << setprecision(indent) << m_streamID << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9623,7 +9623,7 @@ void H248_TopologyRequest::PrintOn(ostream & strm) const
 PObject::Comparison H248_TopologyRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_TopologyRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_TopologyRequest), PInvalidCast);
 #endif
   const H248_TopologyRequest & other = (const H248_TopologyRequest &)obj;
 
@@ -9708,7 +9708,7 @@ void H248_SubtractRequest::PrintOn(ostream & strm) const
   strm << setw(indent+16) << "terminationID = " << setprecision(indent) << m_terminationID << '\n';
   if (HasOptionalField(e_auditDescriptor))
     strm << setw(indent+18) << "auditDescriptor = " << setprecision(indent) << m_auditDescriptor << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9716,7 +9716,7 @@ void H248_SubtractRequest::PrintOn(ostream & strm) const
 PObject::Comparison H248_SubtractRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_SubtractRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_SubtractRequest), PInvalidCast);
 #endif
   const H248_SubtractRequest & other = (const H248_SubtractRequest &)obj;
 
@@ -9793,7 +9793,7 @@ void H248_AuditRequest::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+16) << "terminationID = " << setprecision(indent) << m_terminationID << '\n';
   strm << setw(indent+18) << "auditDescriptor = " << setprecision(indent) << m_auditDescriptor << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9801,7 +9801,7 @@ void H248_AuditRequest::PrintOn(ostream & strm) const
 PObject::Comparison H248_AuditRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_AuditRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_AuditRequest), PInvalidCast);
 #endif
   const H248_AuditRequest & other = (const H248_AuditRequest &)obj;
 
@@ -9876,7 +9876,7 @@ void H248_AuditResult::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+16) << "terminationID = " << setprecision(indent) << m_terminationID << '\n';
   strm << setw(indent+25) << "terminationAuditResult = " << setprecision(indent) << m_terminationAuditResult << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9884,7 +9884,7 @@ void H248_AuditResult::PrintOn(ostream & strm) const
 PObject::Comparison H248_AuditResult::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_AuditResult), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_AuditResult), PInvalidCast);
 #endif
   const H248_AuditResult & other = (const H248_AuditResult &)obj;
 
@@ -9961,7 +9961,7 @@ void H248_IndAudMediaDescriptor::PrintOn(ostream & strm) const
     strm << setw(indent+17) << "termStateDescr = " << setprecision(indent) << m_termStateDescr << '\n';
   if (HasOptionalField(e_streams))
     strm << setw(indent+10) << "streams = " << setprecision(indent) << m_streams << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -9969,7 +9969,7 @@ void H248_IndAudMediaDescriptor::PrintOn(ostream & strm) const
 PObject::Comparison H248_IndAudMediaDescriptor::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_IndAudMediaDescriptor), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_IndAudMediaDescriptor), PInvalidCast);
 #endif
   const H248_IndAudMediaDescriptor & other = (const H248_IndAudMediaDescriptor &)obj;
 
@@ -10052,7 +10052,7 @@ void H248_IndAudStreamParms::PrintOn(ostream & strm) const
     strm << setw(indent+18) << "localDescriptor = " << setprecision(indent) << m_localDescriptor << '\n';
   if (HasOptionalField(e_remoteDescriptor))
     strm << setw(indent+19) << "remoteDescriptor = " << setprecision(indent) << m_remoteDescriptor << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -10060,7 +10060,7 @@ void H248_IndAudStreamParms::PrintOn(ostream & strm) const
 PObject::Comparison H248_IndAudStreamParms::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_IndAudStreamParms), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_IndAudStreamParms), PInvalidCast);
 #endif
   const H248_IndAudStreamParms & other = (const H248_IndAudStreamParms &)obj;
 
@@ -10149,7 +10149,7 @@ void H248_IndAudSeqSigList::PrintOn(ostream & strm) const
   strm << setw(indent+5) << "id = " << setprecision(indent) << m_id << '\n';
   if (HasOptionalField(e_signalList))
     strm << setw(indent+13) << "signalList = " << setprecision(indent) << m_signalList << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -10157,7 +10157,7 @@ void H248_IndAudSeqSigList::PrintOn(ostream & strm) const
 PObject::Comparison H248_IndAudSeqSigList::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_IndAudSeqSigList), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_IndAudSeqSigList), PInvalidCast);
 #endif
   const H248_IndAudSeqSigList & other = (const H248_IndAudSeqSigList &)obj;
 
@@ -10236,7 +10236,7 @@ void H248_NotifyRequest::PrintOn(ostream & strm) const
   strm << setw(indent+27) << "observedEventsDescriptor = " << setprecision(indent) << m_observedEventsDescriptor << '\n';
   if (HasOptionalField(e_errorDescriptor))
     strm << setw(indent+18) << "errorDescriptor = " << setprecision(indent) << m_errorDescriptor << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -10244,7 +10244,7 @@ void H248_NotifyRequest::PrintOn(ostream & strm) const
 PObject::Comparison H248_NotifyRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_NotifyRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_NotifyRequest), PInvalidCast);
 #endif
   const H248_NotifyRequest & other = (const H248_NotifyRequest &)obj;
 
@@ -10331,7 +10331,7 @@ void H248_ObservedEvent::PrintOn(ostream & strm) const
   strm << setw(indent+15) << "eventParList = " << setprecision(indent) << m_eventParList << '\n';
   if (HasOptionalField(e_timeNotation))
     strm << setw(indent+15) << "timeNotation = " << setprecision(indent) << m_timeNotation << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -10339,7 +10339,7 @@ void H248_ObservedEvent::PrintOn(ostream & strm) const
 PObject::Comparison H248_ObservedEvent::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_ObservedEvent), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_ObservedEvent), PInvalidCast);
 #endif
   const H248_ObservedEvent & other = (const H248_ObservedEvent &)obj;
 
@@ -10432,7 +10432,7 @@ void H248_MediaDescriptor::PrintOn(ostream & strm) const
     strm << setw(indent+17) << "termStateDescr = " << setprecision(indent) << m_termStateDescr << '\n';
   if (HasOptionalField(e_streams))
     strm << setw(indent+10) << "streams = " << setprecision(indent) << m_streams << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -10440,7 +10440,7 @@ void H248_MediaDescriptor::PrintOn(ostream & strm) const
 PObject::Comparison H248_MediaDescriptor::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_MediaDescriptor), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_MediaDescriptor), PInvalidCast);
 #endif
   const H248_MediaDescriptor & other = (const H248_MediaDescriptor &)obj;
 
@@ -10523,7 +10523,7 @@ void H248_StreamParms::PrintOn(ostream & strm) const
     strm << setw(indent+18) << "localDescriptor = " << setprecision(indent) << m_localDescriptor << '\n';
   if (HasOptionalField(e_remoteDescriptor))
     strm << setw(indent+19) << "remoteDescriptor = " << setprecision(indent) << m_remoteDescriptor << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -10531,7 +10531,7 @@ void H248_StreamParms::PrintOn(ostream & strm) const
 PObject::Comparison H248_StreamParms::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_StreamParms), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_StreamParms), PInvalidCast);
 #endif
   const H248_StreamParms & other = (const H248_StreamParms &)obj;
 
@@ -10620,7 +10620,7 @@ void H248_MuxDescriptor::PrintOn(ostream & strm) const
   strm << setw(indent+11) << "termList = " << setprecision(indent) << m_termList << '\n';
   if (HasOptionalField(e_nonStandardData))
     strm << setw(indent+18) << "nonStandardData = " << setprecision(indent) << m_nonStandardData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -10628,7 +10628,7 @@ void H248_MuxDescriptor::PrintOn(ostream & strm) const
 PObject::Comparison H248_MuxDescriptor::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_MuxDescriptor), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_MuxDescriptor), PInvalidCast);
 #endif
   const H248_MuxDescriptor & other = (const H248_MuxDescriptor &)obj;
 
@@ -10717,7 +10717,7 @@ void H248_RequestedActions::PrintOn(ostream & strm) const
     strm << setw(indent+14) << "secondEvent = " << setprecision(indent) << m_secondEvent << '\n';
   if (HasOptionalField(e_signalsDescriptor))
     strm << setw(indent+20) << "signalsDescriptor = " << setprecision(indent) << m_signalsDescriptor << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -10725,7 +10725,7 @@ void H248_RequestedActions::PrintOn(ostream & strm) const
 PObject::Comparison H248_RequestedActions::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_RequestedActions), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_RequestedActions), PInvalidCast);
 #endif
   const H248_RequestedActions & other = (const H248_RequestedActions &)obj;
 
@@ -10824,7 +10824,7 @@ void H248_SecondRequestedEvent::PrintOn(ostream & strm) const
   if (HasOptionalField(e_eventAction))
     strm << setw(indent+14) << "eventAction = " << setprecision(indent) << m_eventAction << '\n';
   strm << setw(indent+12) << "evParList = " << setprecision(indent) << m_evParList << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -10832,7 +10832,7 @@ void H248_SecondRequestedEvent::PrintOn(ostream & strm) const
 PObject::Comparison H248_SecondRequestedEvent::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_SecondRequestedEvent), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_SecondRequestedEvent), PInvalidCast);
 #endif
   const H248_SecondRequestedEvent & other = (const H248_SecondRequestedEvent &)obj;
 
@@ -10925,7 +10925,7 @@ void H248_ModemDescriptor::PrintOn(ostream & strm) const
   strm << setw(indent+6) << "mpl = " << setprecision(indent) << m_mpl << '\n';
   if (HasOptionalField(e_nonStandardData))
     strm << setw(indent+18) << "nonStandardData = " << setprecision(indent) << m_nonStandardData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -10933,7 +10933,7 @@ void H248_ModemDescriptor::PrintOn(ostream & strm) const
 PObject::Comparison H248_ModemDescriptor::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_ModemDescriptor), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_ModemDescriptor), PInvalidCast);
 #endif
   const H248_ModemDescriptor & other = (const H248_ModemDescriptor &)obj;
 
@@ -11034,7 +11034,7 @@ void H248_ServiceChangeParm::PrintOn(ostream & strm) const
     strm << setw(indent+18) << "nonStandardData = " << setprecision(indent) << m_nonStandardData << '\n';
   if (HasOptionalField(e_serviceChangeInfo))
     strm << setw(indent+20) << "serviceChangeInfo = " << setprecision(indent) << m_serviceChangeInfo << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -11042,7 +11042,7 @@ void H248_ServiceChangeParm::PrintOn(ostream & strm) const
 PObject::Comparison H248_ServiceChangeParm::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_ServiceChangeParm), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_ServiceChangeParm), PInvalidCast);
 #endif
   const H248_ServiceChangeParm & other = (const H248_ServiceChangeParm &)obj;
 
@@ -11176,7 +11176,7 @@ void H248_IndAudStreamDescriptor::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+11) << "streamID = " << setprecision(indent) << m_streamID << '\n';
   strm << setw(indent+14) << "streamParms = " << setprecision(indent) << m_streamParms << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -11184,7 +11184,7 @@ void H248_IndAudStreamDescriptor::PrintOn(ostream & strm) const
 PObject::Comparison H248_IndAudStreamDescriptor::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_IndAudStreamDescriptor), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_IndAudStreamDescriptor), PInvalidCast);
 #endif
   const H248_IndAudStreamDescriptor & other = (const H248_IndAudStreamDescriptor &)obj;
 
@@ -11259,7 +11259,7 @@ void H248_ServiceChangeRequest::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+16) << "terminationID = " << setprecision(indent) << m_terminationID << '\n';
   strm << setw(indent+21) << "serviceChangeParms = " << setprecision(indent) << m_serviceChangeParms << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -11267,7 +11267,7 @@ void H248_ServiceChangeRequest::PrintOn(ostream & strm) const
 PObject::Comparison H248_ServiceChangeRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_ServiceChangeRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_ServiceChangeRequest), PInvalidCast);
 #endif
   const H248_ServiceChangeRequest & other = (const H248_ServiceChangeRequest &)obj;
 
@@ -11342,7 +11342,7 @@ void H248_StreamDescriptor::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+11) << "streamID = " << setprecision(indent) << m_streamID << '\n';
   strm << setw(indent+14) << "streamParms = " << setprecision(indent) << m_streamParms << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -11350,7 +11350,7 @@ void H248_StreamDescriptor::PrintOn(ostream & strm) const
 PObject::Comparison H248_StreamDescriptor::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_StreamDescriptor), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_StreamDescriptor), PInvalidCast);
 #endif
   const H248_StreamDescriptor & other = (const H248_StreamDescriptor &)obj;
 
@@ -11429,7 +11429,7 @@ void H248_RequestedEvent::PrintOn(ostream & strm) const
   if (HasOptionalField(e_eventAction))
     strm << setw(indent+14) << "eventAction = " << setprecision(indent) << m_eventAction << '\n';
   strm << setw(indent+12) << "evParList = " << setprecision(indent) << m_evParList << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -11437,7 +11437,7 @@ void H248_RequestedEvent::PrintOn(ostream & strm) const
 PObject::Comparison H248_RequestedEvent::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H248_RequestedEvent), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H248_RequestedEvent), PInvalidCast);
 #endif
   const H248_RequestedEvent & other = (const H248_RequestedEvent &)obj;
 

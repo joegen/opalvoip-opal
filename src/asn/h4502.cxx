@@ -990,7 +990,7 @@ void H4502_CTInitiateArg::PrintOn(ostream & strm) const
   strm << setw(indent+18) << "reroutingNumber = " << setprecision(indent) << m_reroutingNumber << '\n';
   if (HasOptionalField(e_argumentExtension))
     strm << setw(indent+20) << "argumentExtension = " << setprecision(indent) << m_argumentExtension << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -998,7 +998,7 @@ void H4502_CTInitiateArg::PrintOn(ostream & strm) const
 PObject::Comparison H4502_CTInitiateArg::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4502_CTInitiateArg), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4502_CTInitiateArg), PInvalidCast);
 #endif
   const H4502_CTInitiateArg & other = (const H4502_CTInitiateArg &)obj;
 
@@ -1084,7 +1084,7 @@ void H4502_CTSetupArg::PrintOn(ostream & strm) const
     strm << setw(indent+21) << "transferringNumber = " << setprecision(indent) << m_transferringNumber << '\n';
   if (HasOptionalField(e_argumentExtension))
     strm << setw(indent+20) << "argumentExtension = " << setprecision(indent) << m_argumentExtension << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1092,7 +1092,7 @@ void H4502_CTSetupArg::PrintOn(ostream & strm) const
 PObject::Comparison H4502_CTSetupArg::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4502_CTSetupArg), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4502_CTSetupArg), PInvalidCast);
 #endif
   const H4502_CTSetupArg & other = (const H4502_CTSetupArg &)obj;
 
@@ -1179,7 +1179,7 @@ void H4502_CTIdentifyRes::PrintOn(ostream & strm) const
   strm << setw(indent+18) << "reroutingNumber = " << setprecision(indent) << m_reroutingNumber << '\n';
   if (HasOptionalField(e_resultExtension))
     strm << setw(indent+18) << "resultExtension = " << setprecision(indent) << m_resultExtension << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1187,7 +1187,7 @@ void H4502_CTIdentifyRes::PrintOn(ostream & strm) const
 PObject::Comparison H4502_CTIdentifyRes::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4502_CTIdentifyRes), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4502_CTIdentifyRes), PInvalidCast);
 #endif
   const H4502_CTIdentifyRes & other = (const H4502_CTIdentifyRes &)obj;
 
@@ -1276,7 +1276,7 @@ void H4502_CTUpdateArg::PrintOn(ostream & strm) const
     strm << setw(indent+24) << "basicCallInfoElements = " << setprecision(indent) << m_basicCallInfoElements << '\n';
   if (HasOptionalField(e_argumentExtension))
     strm << setw(indent+20) << "argumentExtension = " << setprecision(indent) << m_argumentExtension << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1284,7 +1284,7 @@ void H4502_CTUpdateArg::PrintOn(ostream & strm) const
 PObject::Comparison H4502_CTUpdateArg::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4502_CTUpdateArg), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4502_CTUpdateArg), PInvalidCast);
 #endif
   const H4502_CTUpdateArg & other = (const H4502_CTUpdateArg &)obj;
 
@@ -1378,7 +1378,7 @@ void H4502_SubaddressTransferArg::PrintOn(ostream & strm) const
   strm << setw(indent+24) << "redirectionSubaddress = " << setprecision(indent) << m_redirectionSubaddress << '\n';
   if (HasOptionalField(e_argumentExtension))
     strm << setw(indent+20) << "argumentExtension = " << setprecision(indent) << m_argumentExtension << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1386,7 +1386,7 @@ void H4502_SubaddressTransferArg::PrintOn(ostream & strm) const
 PObject::Comparison H4502_SubaddressTransferArg::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4502_SubaddressTransferArg), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4502_SubaddressTransferArg), PInvalidCast);
 #endif
   const H4502_SubaddressTransferArg & other = (const H4502_SubaddressTransferArg &)obj;
 
@@ -1471,7 +1471,7 @@ void H4502_CTCompleteArg::PrintOn(ostream & strm) const
   strm << setw(indent+13) << "callStatus = " << setprecision(indent) << m_callStatus << '\n';
   if (HasOptionalField(e_argumentExtension))
     strm << setw(indent+20) << "argumentExtension = " << setprecision(indent) << m_argumentExtension << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1479,7 +1479,7 @@ void H4502_CTCompleteArg::PrintOn(ostream & strm) const
 PObject::Comparison H4502_CTCompleteArg::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4502_CTCompleteArg), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4502_CTCompleteArg), PInvalidCast);
 #endif
   const H4502_CTCompleteArg & other = (const H4502_CTCompleteArg &)obj;
 
@@ -1590,7 +1590,7 @@ void H4502_CTActiveArg::PrintOn(ostream & strm) const
     strm << setw(indent+16) << "connectedInfo = " << setprecision(indent) << m_connectedInfo << '\n';
   if (HasOptionalField(e_argumentExtension))
     strm << setw(indent+20) << "argumentExtension = " << setprecision(indent) << m_argumentExtension << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1598,7 +1598,7 @@ void H4502_CTActiveArg::PrintOn(ostream & strm) const
 PObject::Comparison H4502_CTActiveArg::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4502_CTActiveArg), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4502_CTActiveArg), PInvalidCast);
 #endif
   const H4502_CTActiveArg & other = (const H4502_CTActiveArg &)obj;
 

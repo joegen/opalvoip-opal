@@ -1008,7 +1008,7 @@ void H501_DescriptorIDRequest::PrintOn(ostream & strm) const
 {
   int indent = strm.precision() + 2;
   strm << "{\n";
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1100,7 +1100,7 @@ void H501_DescriptorUpdateAck::PrintOn(ostream & strm) const
 {
   int indent = strm.precision() + 2;
   strm << "{\n";
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1201,7 +1201,7 @@ void H501_UsageConfirmation::PrintOn(ostream & strm) const
 {
   int indent = strm.precision() + 2;
   strm << "{\n";
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1258,7 +1258,7 @@ void H501_UsageField::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+5) << "id = " << setprecision(indent) << m_id << '\n';
   strm << setw(indent+8) << "value = " << setprecision(indent) << m_value << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1266,7 +1266,7 @@ void H501_UsageField::PrintOn(ostream & strm) const
 PObject::Comparison H501_UsageField::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_UsageField), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_UsageField), PInvalidCast);
 #endif
   const H501_UsageField & other = (const H501_UsageField &)obj;
 
@@ -1376,7 +1376,7 @@ void H501_UsageIndicationConfirmation::PrintOn(ostream & strm) const
 {
   int indent = strm.precision() + 2;
   strm << "{\n";
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1507,7 +1507,7 @@ void H501_NonStandardRequest::PrintOn(ostream & strm) const
 {
   int indent = strm.precision() + 2;
   strm << "{\n";
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1562,7 +1562,7 @@ void H501_NonStandardConfirmation::PrintOn(ostream & strm) const
 {
   int indent = strm.precision() + 2;
   strm << "{\n";
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -1741,7 +1741,7 @@ void H501_AuthenticationConfirmation::PrintOn(ostream & strm) const
 {
   int indent = strm.precision() + 2;
   strm << "{\n";
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2038,7 +2038,7 @@ void H501_CallInformation::PrintOn(ostream & strm) const
   strm << setw(indent+15) << "conferenceID = " << setprecision(indent) << m_conferenceID << '\n';
   if (HasOptionalField(e_circuitID))
     strm << setw(indent+12) << "circuitID = " << setprecision(indent) << m_circuitID << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2046,7 +2046,7 @@ void H501_CallInformation::PrintOn(ostream & strm) const
 PObject::Comparison H501_CallInformation::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_CallInformation), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_CallInformation), PInvalidCast);
 #endif
   const H501_CallInformation & other = (const H501_CallInformation &)obj;
 
@@ -2259,7 +2259,7 @@ void H501_TerminationCause::PrintOn(ostream & strm) const
     strm << setw(indent+10) << "causeIE = " << setprecision(indent) << m_causeIE << '\n';
   if (HasOptionalField(e_nonStandardData))
     strm << setw(indent+18) << "nonStandardData = " << setprecision(indent) << m_nonStandardData << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -2267,7 +2267,7 @@ void H501_TerminationCause::PrintOn(ostream & strm) const
 PObject::Comparison H501_TerminationCause::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_TerminationCause), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_TerminationCause), PInvalidCast);
 #endif
   const H501_TerminationCause & other = (const H501_TerminationCause &)obj;
 
@@ -3127,7 +3127,7 @@ void H501_Pattern_range::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+15) << "startOfRange = " << setprecision(indent) << m_startOfRange << '\n';
   strm << setw(indent+13) << "endOfRange = " << setprecision(indent) << m_endOfRange << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3135,7 +3135,7 @@ void H501_Pattern_range::PrintOn(ostream & strm) const
 PObject::Comparison H501_Pattern_range::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_Pattern_range), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_Pattern_range), PInvalidCast);
 #endif
   const H501_Pattern_range & other = (const H501_Pattern_range &)obj;
 
@@ -3441,7 +3441,7 @@ void H501_UsageSpecification_when::PrintOn(ostream & strm) const
     strm << setw(indent+9) << "period = " << setprecision(indent) << m_period << '\n';
   if (HasOptionalField(e_failures))
     strm << setw(indent+11) << "failures = " << setprecision(indent) << m_failures << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3449,7 +3449,7 @@ void H501_UsageSpecification_when::PrintOn(ostream & strm) const
 PObject::Comparison H501_UsageSpecification_when::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_UsageSpecification_when), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_UsageSpecification_when), PInvalidCast);
 #endif
   const H501_UsageSpecification_when & other = (const H501_UsageSpecification_when &)obj;
 
@@ -3605,7 +3605,7 @@ void H501_MessageCommonInfo::PrintOn(ostream & strm) const
     strm << setw(indent+13) << "featureSet = " << setprecision(indent) << m_featureSet << '\n';
   if (HasOptionalField(e_version))
     strm << setw(indent+10) << "version = " << setprecision(indent) << m_version << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3613,7 +3613,7 @@ void H501_MessageCommonInfo::PrintOn(ostream & strm) const
 PObject::Comparison H501_MessageCommonInfo::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_MessageCommonInfo), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_MessageCommonInfo), PInvalidCast);
 #endif
   const H501_MessageCommonInfo & other = (const H501_MessageCommonInfo &)obj;
 
@@ -3750,7 +3750,7 @@ void H501_SecurityMode::PrintOn(ostream & strm) const
     strm << setw(indent+12) << "integrity = " << setprecision(indent) << m_integrity << '\n';
   if (HasOptionalField(e_algorithmOIDs))
     strm << setw(indent+16) << "algorithmOIDs = " << setprecision(indent) << m_algorithmOIDs << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3758,7 +3758,7 @@ void H501_SecurityMode::PrintOn(ostream & strm) const
 PObject::Comparison H501_SecurityMode::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_SecurityMode), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_SecurityMode), PInvalidCast);
 #endif
   const H501_SecurityMode & other = (const H501_SecurityMode &)obj;
 
@@ -3844,7 +3844,7 @@ void H501_DescriptorRequest::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+15) << "descriptorID = " << setprecision(indent) << m_descriptorID << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3852,7 +3852,7 @@ void H501_DescriptorRequest::PrintOn(ostream & strm) const
 PObject::Comparison H501_DescriptorRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_DescriptorRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_DescriptorRequest), PInvalidCast);
 #endif
   const H501_DescriptorRequest & other = (const H501_DescriptorRequest &)obj;
 
@@ -3920,7 +3920,7 @@ void H501_DescriptorConfirmation::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+13) << "descriptor = " << setprecision(indent) << m_descriptor << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -3928,7 +3928,7 @@ void H501_DescriptorConfirmation::PrintOn(ostream & strm) const
 PObject::Comparison H501_DescriptorConfirmation::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_DescriptorConfirmation), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_DescriptorConfirmation), PInvalidCast);
 #endif
   const H501_DescriptorConfirmation & other = (const H501_DescriptorConfirmation &)obj;
 
@@ -3998,7 +3998,7 @@ void H501_DescriptorRejection::PrintOn(ostream & strm) const
   strm << setw(indent+9) << "reason = " << setprecision(indent) << m_reason << '\n';
   if (HasOptionalField(e_descriptorID))
     strm << setw(indent+15) << "descriptorID = " << setprecision(indent) << m_descriptorID << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4006,7 +4006,7 @@ void H501_DescriptorRejection::PrintOn(ostream & strm) const
 PObject::Comparison H501_DescriptorRejection::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_DescriptorRejection), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_DescriptorRejection), PInvalidCast);
 #endif
   const H501_DescriptorRejection & other = (const H501_DescriptorRejection &)obj;
 
@@ -4082,7 +4082,7 @@ void H501_DescriptorIDConfirmation::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+17) << "descriptorInfo = " << setprecision(indent) << m_descriptorInfo << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4090,7 +4090,7 @@ void H501_DescriptorIDConfirmation::PrintOn(ostream & strm) const
 PObject::Comparison H501_DescriptorIDConfirmation::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_DescriptorIDConfirmation), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_DescriptorIDConfirmation), PInvalidCast);
 #endif
   const H501_DescriptorIDConfirmation & other = (const H501_DescriptorIDConfirmation &)obj;
 
@@ -4158,7 +4158,7 @@ void H501_DescriptorIDRejection::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+9) << "reason = " << setprecision(indent) << m_reason << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4166,7 +4166,7 @@ void H501_DescriptorIDRejection::PrintOn(ostream & strm) const
 PObject::Comparison H501_DescriptorIDRejection::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_DescriptorIDRejection), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_DescriptorIDRejection), PInvalidCast);
 #endif
   const H501_DescriptorIDRejection & other = (const H501_DescriptorIDRejection &)obj;
 
@@ -4235,7 +4235,7 @@ void H501_DescriptorUpdate::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+9) << "sender = " << setprecision(indent) << m_sender << '\n';
   strm << setw(indent+13) << "updateInfo = " << setprecision(indent) << m_updateInfo << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4243,7 +4243,7 @@ void H501_DescriptorUpdate::PrintOn(ostream & strm) const
 PObject::Comparison H501_DescriptorUpdate::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_DescriptorUpdate), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_DescriptorUpdate), PInvalidCast);
 #endif
   const H501_DescriptorUpdate & other = (const H501_DescriptorUpdate &)obj;
 
@@ -4318,7 +4318,7 @@ void H501_UpdateInformation::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+17) << "descriptorInfo = " << setprecision(indent) << m_descriptorInfo << '\n';
   strm << setw(indent+13) << "updateType = " << setprecision(indent) << m_updateType << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4326,7 +4326,7 @@ void H501_UpdateInformation::PrintOn(ostream & strm) const
 PObject::Comparison H501_UpdateInformation::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_UpdateInformation), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_UpdateInformation), PInvalidCast);
 #endif
   const H501_UpdateInformation & other = (const H501_UpdateInformation &)obj;
 
@@ -4405,7 +4405,7 @@ void H501_AccessConfirmation::PrintOn(ostream & strm) const
     strm << setw(indent+21) << "supportedProtocols = " << setprecision(indent) << m_supportedProtocols << '\n';
   if (HasOptionalField(e_serviceControl))
     strm << setw(indent+17) << "serviceControl = " << setprecision(indent) << m_serviceControl << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4413,7 +4413,7 @@ void H501_AccessConfirmation::PrintOn(ostream & strm) const
 PObject::Comparison H501_AccessConfirmation::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_AccessConfirmation), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_AccessConfirmation), PInvalidCast);
 #endif
   const H501_AccessConfirmation & other = (const H501_AccessConfirmation &)obj;
 
@@ -4495,7 +4495,7 @@ void H501_AccessRejection::PrintOn(ostream & strm) const
   strm << setw(indent+9) << "reason = " << setprecision(indent) << m_reason << '\n';
   if (HasOptionalField(e_serviceControl))
     strm << setw(indent+17) << "serviceControl = " << setprecision(indent) << m_serviceControl << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4503,7 +4503,7 @@ void H501_AccessRejection::PrintOn(ostream & strm) const
 PObject::Comparison H501_AccessRejection::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_AccessRejection), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_AccessRejection), PInvalidCast);
 #endif
   const H501_AccessRejection & other = (const H501_AccessRejection &)obj;
 
@@ -4574,7 +4574,7 @@ void H501_UsageRejection::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+9) << "reason = " << setprecision(indent) << m_reason << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4582,7 +4582,7 @@ void H501_UsageRejection::PrintOn(ostream & strm) const
 PObject::Comparison H501_UsageRejection::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_UsageRejection), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_UsageRejection), PInvalidCast);
 #endif
   const H501_UsageRejection & other = (const H501_UsageRejection &)obj;
 
@@ -4650,7 +4650,7 @@ void H501_UsageIndicationRejection::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+9) << "reason = " << setprecision(indent) << m_reason << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4658,7 +4658,7 @@ void H501_UsageIndicationRejection::PrintOn(ostream & strm) const
 PObject::Comparison H501_UsageIndicationRejection::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_UsageIndicationRejection), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_UsageIndicationRejection), PInvalidCast);
 #endif
   const H501_UsageIndicationRejection & other = (const H501_UsageIndicationRejection &)obj;
 
@@ -4726,7 +4726,7 @@ void H501_ValidationRejection::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+9) << "reason = " << setprecision(indent) << m_reason << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4734,7 +4734,7 @@ void H501_ValidationRejection::PrintOn(ostream & strm) const
 PObject::Comparison H501_ValidationRejection::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_ValidationRejection), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_ValidationRejection), PInvalidCast);
 #endif
   const H501_ValidationRejection & other = (const H501_ValidationRejection &)obj;
 
@@ -4805,7 +4805,7 @@ void H501_RequestInProgress::PrintOn(ostream & strm) const
   strm << setw(indent+8) << "delay = " << setprecision(indent) << m_delay << '\n';
   if (HasOptionalField(e_serviceControl))
     strm << setw(indent+17) << "serviceControl = " << setprecision(indent) << m_serviceControl << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4813,7 +4813,7 @@ void H501_RequestInProgress::PrintOn(ostream & strm) const
 PObject::Comparison H501_RequestInProgress::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_RequestInProgress), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_RequestInProgress), PInvalidCast);
 #endif
   const H501_RequestInProgress & other = (const H501_RequestInProgress &)obj;
 
@@ -4884,7 +4884,7 @@ void H501_NonStandardRejection::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+9) << "reason = " << setprecision(indent) << m_reason << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4892,7 +4892,7 @@ void H501_NonStandardRejection::PrintOn(ostream & strm) const
 PObject::Comparison H501_NonStandardRejection::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_NonStandardRejection), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_NonStandardRejection), PInvalidCast);
 #endif
   const H501_NonStandardRejection & other = (const H501_NonStandardRejection &)obj;
 
@@ -4961,7 +4961,7 @@ void H501_UnknownMessageResponse::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+17) << "unknownMessage = " << setprecision(indent) << m_unknownMessage << '\n';
   strm << setw(indent+9) << "reason = " << setprecision(indent) << m_reason << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -4969,7 +4969,7 @@ void H501_UnknownMessageResponse::PrintOn(ostream & strm) const
 PObject::Comparison H501_UnknownMessageResponse::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_UnknownMessageResponse), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_UnknownMessageResponse), PInvalidCast);
 #endif
   const H501_UnknownMessageResponse & other = (const H501_UnknownMessageResponse &)obj;
 
@@ -5043,7 +5043,7 @@ void H501_AuthenticationRequest::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+21) << "applicationMessage = " << setprecision(indent) << m_applicationMessage << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5051,7 +5051,7 @@ void H501_AuthenticationRequest::PrintOn(ostream & strm) const
 PObject::Comparison H501_AuthenticationRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_AuthenticationRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_AuthenticationRequest), PInvalidCast);
 #endif
   const H501_AuthenticationRequest & other = (const H501_AuthenticationRequest &)obj;
 
@@ -5119,7 +5119,7 @@ void H501_AuthenticationRejection::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+9) << "reason = " << setprecision(indent) << m_reason << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5127,7 +5127,7 @@ void H501_AuthenticationRejection::PrintOn(ostream & strm) const
 PObject::Comparison H501_AuthenticationRejection::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_AuthenticationRejection), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_AuthenticationRejection), PInvalidCast);
 #endif
   const H501_AuthenticationRejection & other = (const H501_AuthenticationRejection &)obj;
 
@@ -5202,7 +5202,7 @@ void H501_AddressTemplate::PrintOn(ostream & strm) const
     strm << setw(indent+21) << "supportedProtocols = " << setprecision(indent) << m_supportedProtocols << '\n';
   if (HasOptionalField(e_featureSet))
     strm << setw(indent+13) << "featureSet = " << setprecision(indent) << m_featureSet << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5210,7 +5210,7 @@ void H501_AddressTemplate::PrintOn(ostream & strm) const
 PObject::Comparison H501_AddressTemplate::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_AddressTemplate), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_AddressTemplate), PInvalidCast);
 #endif
   const H501_AddressTemplate & other = (const H501_AddressTemplate &)obj;
 
@@ -5312,7 +5312,7 @@ void H501_ContactInformation::PrintOn(ostream & strm) const
     strm << setw(indent+12) << "circuitID = " << setprecision(indent) << m_circuitID << '\n';
   if (HasOptionalField(e_supportedCircuits))
     strm << setw(indent+20) << "supportedCircuits = " << setprecision(indent) << m_supportedCircuits << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5320,7 +5320,7 @@ void H501_ContactInformation::PrintOn(ostream & strm) const
 PObject::Comparison H501_ContactInformation::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_ContactInformation), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_ContactInformation), PInvalidCast);
 #endif
   const H501_ContactInformation & other = (const H501_ContactInformation &)obj;
 
@@ -5448,7 +5448,7 @@ void H501_PriceInfoSpec::PrintOn(ostream & strm) const
     strm << setw(indent+15) << "priceElement = " << setprecision(indent) << m_priceElement << '\n';
   if (HasOptionalField(e_priceFormula))
     strm << setw(indent+15) << "priceFormula = " << setprecision(indent) << m_priceFormula << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5456,7 +5456,7 @@ void H501_PriceInfoSpec::PrintOn(ostream & strm) const
 PObject::Comparison H501_PriceInfoSpec::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_PriceInfoSpec), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_PriceInfoSpec), PInvalidCast);
 #endif
   const H501_PriceInfoSpec & other = (const H501_PriceInfoSpec &)obj;
 
@@ -5582,7 +5582,7 @@ void H501_PriceElement::PrintOn(ostream & strm) const
   strm << setw(indent+9) << "amount = " << setprecision(indent) << m_amount << '\n';
   strm << setw(indent+10) << "quantum = " << setprecision(indent) << m_quantum << '\n';
   strm << setw(indent+8) << "units = " << setprecision(indent) << m_units << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5590,7 +5590,7 @@ void H501_PriceElement::PrintOn(ostream & strm) const
 PObject::Comparison H501_PriceElement::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_PriceElement), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_PriceElement), PInvalidCast);
 #endif
   const H501_PriceElement & other = (const H501_PriceElement &)obj;
 
@@ -5671,7 +5671,7 @@ void H501_DescriptorInfo::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+15) << "descriptorID = " << setprecision(indent) << m_descriptorID << '\n';
   strm << setw(indent+14) << "lastChanged = " << setprecision(indent) << m_lastChanged << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5679,7 +5679,7 @@ void H501_DescriptorInfo::PrintOn(ostream & strm) const
 PObject::Comparison H501_DescriptorInfo::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_DescriptorInfo), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_DescriptorInfo), PInvalidCast);
 #endif
   const H501_DescriptorInfo & other = (const H501_DescriptorInfo &)obj;
 
@@ -5754,7 +5754,7 @@ void H501_AlternatePEInfo::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+14) << "alternatePE = " << setprecision(indent) << m_alternatePE << '\n';
   strm << setw(indent+23) << "alternateIsPermanent = " << setprecision(indent) << m_alternateIsPermanent << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5762,7 +5762,7 @@ void H501_AlternatePEInfo::PrintOn(ostream & strm) const
 PObject::Comparison H501_AlternatePEInfo::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_AlternatePEInfo), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_AlternatePEInfo), PInvalidCast);
 #endif
   const H501_AlternatePEInfo & other = (const H501_AlternatePEInfo &)obj;
 
@@ -5840,7 +5840,7 @@ void H501_AlternatePE::PrintOn(ostream & strm) const
   strm << setw(indent+11) << "priority = " << setprecision(indent) << m_priority << '\n';
   if (HasOptionalField(e_elementIdentifier))
     strm << setw(indent+20) << "elementIdentifier = " << setprecision(indent) << m_elementIdentifier << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5848,7 +5848,7 @@ void H501_AlternatePE::PrintOn(ostream & strm) const
 PObject::Comparison H501_AlternatePE::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_AlternatePE), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_AlternatePE), PInvalidCast);
 #endif
   const H501_AlternatePE & other = (const H501_AlternatePE &)obj;
 
@@ -5932,7 +5932,7 @@ void H501_UserInformation::PrintOn(ostream & strm) const
   strm << setw(indent+17) << "userIdentifier = " << setprecision(indent) << m_userIdentifier << '\n';
   if (HasOptionalField(e_userAuthenticator))
     strm << setw(indent+20) << "userAuthenticator = " << setprecision(indent) << m_userAuthenticator << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -5940,7 +5940,7 @@ void H501_UserInformation::PrintOn(ostream & strm) const
 PObject::Comparison H501_UserInformation::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_UserInformation), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_UserInformation), PInvalidCast);
 #endif
   const H501_UserInformation & other = (const H501_UserInformation &)obj;
 
@@ -6021,7 +6021,7 @@ void H501_UsageSpecification::PrintOn(ostream & strm) const
   strm << setw(indent+12) << "preferred = " << setprecision(indent) << m_preferred << '\n';
   if (HasOptionalField(e_sendToPEAddress))
     strm << setw(indent+18) << "sendToPEAddress = " << setprecision(indent) << m_sendToPEAddress << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6029,7 +6029,7 @@ void H501_UsageSpecification::PrintOn(ostream & strm) const
 PObject::Comparison H501_UsageSpecification::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_UsageSpecification), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_UsageSpecification), PInvalidCast);
 #endif
   const H501_UsageSpecification & other = (const H501_UsageSpecification &)obj;
 
@@ -6128,7 +6128,7 @@ void H501_PartyInformation::PrintOn(ostream & strm) const
     strm << setw(indent+11) << "userInfo = " << setprecision(indent) << m_userInfo << '\n';
   if (HasOptionalField(e_timeZone))
     strm << setw(indent+11) << "timeZone = " << setprecision(indent) << m_timeZone << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6136,7 +6136,7 @@ void H501_PartyInformation::PrintOn(ostream & strm) const
 PObject::Comparison H501_PartyInformation::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_PartyInformation), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_PartyInformation), PInvalidCast);
 #endif
   const H501_PartyInformation & other = (const H501_PartyInformation &)obj;
 
@@ -6245,7 +6245,7 @@ void H501_Message::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+7) << "body = " << setprecision(indent) << m_body << '\n';
   strm << setw(indent+9) << "common = " << setprecision(indent) << m_common << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6253,7 +6253,7 @@ void H501_Message::PrintOn(ostream & strm) const
 PObject::Comparison H501_Message::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_Message), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_Message), PInvalidCast);
 #endif
   const H501_Message & other = (const H501_Message &)obj;
 
@@ -6337,7 +6337,7 @@ void H501_ServiceRequest::PrintOn(ostream & strm) const
     strm << setw(indent+13) << "timeToLive = " << setprecision(indent) << m_timeToLive << '\n';
   if (HasOptionalField(e_usageSpec))
     strm << setw(indent+12) << "usageSpec = " << setprecision(indent) << m_usageSpec << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6345,7 +6345,7 @@ void H501_ServiceRequest::PrintOn(ostream & strm) const
 PObject::Comparison H501_ServiceRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_ServiceRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_ServiceRequest), PInvalidCast);
 #endif
   const H501_ServiceRequest & other = (const H501_ServiceRequest &)obj;
 
@@ -6452,7 +6452,7 @@ void H501_ServiceConfirmation::PrintOn(ostream & strm) const
     strm << setw(indent+13) << "timeToLive = " << setprecision(indent) << m_timeToLive << '\n';
   if (HasOptionalField(e_usageSpec))
     strm << setw(indent+12) << "usageSpec = " << setprecision(indent) << m_usageSpec << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6460,7 +6460,7 @@ void H501_ServiceConfirmation::PrintOn(ostream & strm) const
 PObject::Comparison H501_ServiceConfirmation::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_ServiceConfirmation), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_ServiceConfirmation), PInvalidCast);
 #endif
   const H501_ServiceConfirmation & other = (const H501_ServiceConfirmation &)obj;
 
@@ -6563,7 +6563,7 @@ void H501_ServiceRejection::PrintOn(ostream & strm) const
   strm << setw(indent+9) << "reason = " << setprecision(indent) << m_reason << '\n';
   if (HasOptionalField(e_alternates))
     strm << setw(indent+13) << "alternates = " << setprecision(indent) << m_alternates << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6571,7 +6571,7 @@ void H501_ServiceRejection::PrintOn(ostream & strm) const
 PObject::Comparison H501_ServiceRejection::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_ServiceRejection), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_ServiceRejection), PInvalidCast);
 #endif
   const H501_ServiceRejection & other = (const H501_ServiceRejection &)obj;
 
@@ -6649,7 +6649,7 @@ void H501_ServiceRelease::PrintOn(ostream & strm) const
   strm << setw(indent+9) << "reason = " << setprecision(indent) << m_reason << '\n';
   if (HasOptionalField(e_alternates))
     strm << setw(indent+13) << "alternates = " << setprecision(indent) << m_alternates << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6657,7 +6657,7 @@ void H501_ServiceRelease::PrintOn(ostream & strm) const
 PObject::Comparison H501_ServiceRelease::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_ServiceRelease), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_ServiceRelease), PInvalidCast);
 #endif
   const H501_ServiceRelease & other = (const H501_ServiceRelease &)obj;
 
@@ -6741,7 +6741,7 @@ void H501_AccessRequest::PrintOn(ostream & strm) const
     strm << setw(indent+12) << "usageSpec = " << setprecision(indent) << m_usageSpec << '\n';
   if (HasOptionalField(e_desiredProtocols))
     strm << setw(indent+19) << "desiredProtocols = " << setprecision(indent) << m_desiredProtocols << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6749,7 +6749,7 @@ void H501_AccessRequest::PrintOn(ostream & strm) const
 PObject::Comparison H501_AccessRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_AccessRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_AccessRequest), PInvalidCast);
 #endif
   const H501_AccessRequest & other = (const H501_AccessRequest &)obj;
 
@@ -6845,7 +6845,7 @@ void H501_UsageRequest::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+11) << "callInfo = " << setprecision(indent) << m_callInfo << '\n';
   strm << setw(indent+12) << "usageSpec = " << setprecision(indent) << m_usageSpec << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6853,7 +6853,7 @@ void H501_UsageRequest::PrintOn(ostream & strm) const
 PObject::Comparison H501_UsageRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_UsageRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_UsageRequest), PInvalidCast);
 #endif
   const H501_UsageRequest & other = (const H501_UsageRequest &)obj;
 
@@ -6941,7 +6941,7 @@ void H501_UsageIndication::PrintOn(ostream & strm) const
   if (HasOptionalField(e_terminationCause))
     strm << setw(indent+19) << "terminationCause = " << setprecision(indent) << m_terminationCause << '\n';
   strm << setw(indent+14) << "usageFields = " << setprecision(indent) << m_usageFields << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -6949,7 +6949,7 @@ void H501_UsageIndication::PrintOn(ostream & strm) const
 PObject::Comparison H501_UsageIndication::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_UsageIndication), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_UsageIndication), PInvalidCast);
 #endif
   const H501_UsageIndication & other = (const H501_UsageIndication &)obj;
 
@@ -7089,7 +7089,7 @@ void H501_ValidationRequest::PrintOn(ostream & strm) const
   strm << setw(indent+11) << "callInfo = " << setprecision(indent) << m_callInfo << '\n';
   if (HasOptionalField(e_usageSpec))
     strm << setw(indent+12) << "usageSpec = " << setprecision(indent) << m_usageSpec << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7097,7 +7097,7 @@ void H501_ValidationRequest::PrintOn(ostream & strm) const
 PObject::Comparison H501_ValidationRequest::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_ValidationRequest), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_ValidationRequest), PInvalidCast);
 #endif
   const H501_ValidationRequest & other = (const H501_ValidationRequest &)obj;
 
@@ -7200,7 +7200,7 @@ void H501_ValidationConfirmation::PrintOn(ostream & strm) const
     strm << setw(indent+18) << "destinationInfo = " << setprecision(indent) << m_destinationInfo << '\n';
   if (HasOptionalField(e_usageSpec))
     strm << setw(indent+12) << "usageSpec = " << setprecision(indent) << m_usageSpec << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7208,7 +7208,7 @@ void H501_ValidationConfirmation::PrintOn(ostream & strm) const
 PObject::Comparison H501_ValidationConfirmation::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_ValidationConfirmation), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_ValidationConfirmation), PInvalidCast);
 #endif
   const H501_ValidationConfirmation & other = (const H501_ValidationConfirmation &)obj;
 
@@ -7300,7 +7300,7 @@ void H501_RouteInformation::PrintOn(ostream & strm) const
     strm << setw(indent+12) << "circuitID = " << setprecision(indent) << m_circuitID << '\n';
   if (HasOptionalField(e_supportedCircuits))
     strm << setw(indent+20) << "supportedCircuits = " << setprecision(indent) << m_supportedCircuits << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7308,7 +7308,7 @@ void H501_RouteInformation::PrintOn(ostream & strm) const
 PObject::Comparison H501_RouteInformation::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_RouteInformation), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_RouteInformation), PInvalidCast);
 #endif
   const H501_RouteInformation & other = (const H501_RouteInformation &)obj;
 
@@ -7424,7 +7424,7 @@ void H501_Descriptor::PrintOn(ostream & strm) const
   strm << setw(indent+12) << "templates = " << setprecision(indent) << m_templates << '\n';
   if (HasOptionalField(e_gatekeeperID))
     strm << setw(indent+15) << "gatekeeperID = " << setprecision(indent) << m_gatekeeperID << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -7432,7 +7432,7 @@ void H501_Descriptor::PrintOn(ostream & strm) const
 PObject::Comparison H501_Descriptor::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H501_Descriptor), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H501_Descriptor), PInvalidCast);
 #endif
   const H501_Descriptor & other = (const H501_Descriptor &)obj;
 

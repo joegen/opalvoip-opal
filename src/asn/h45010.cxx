@@ -99,7 +99,7 @@ void H45010_CoReqOptArg::PrintOn(ostream & strm) const
   strm << "{\n";
   if (HasOptionalField(e_extension))
     strm << setw(indent+12) << "extension = " << setprecision(indent) << m_extension << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -107,7 +107,7 @@ void H45010_CoReqOptArg::PrintOn(ostream & strm) const
 PObject::Comparison H45010_CoReqOptArg::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H45010_CoReqOptArg), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H45010_CoReqOptArg), PInvalidCast);
 #endif
   const H45010_CoReqOptArg & other = (const H45010_CoReqOptArg &)obj;
 
@@ -179,7 +179,7 @@ void H45010_RUAlertOptArg::PrintOn(ostream & strm) const
   strm << "{\n";
   if (HasOptionalField(e_extension))
     strm << setw(indent+12) << "extension = " << setprecision(indent) << m_extension << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -187,7 +187,7 @@ void H45010_RUAlertOptArg::PrintOn(ostream & strm) const
 PObject::Comparison H45010_RUAlertOptArg::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H45010_RUAlertOptArg), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H45010_RUAlertOptArg), PInvalidCast);
 #endif
   const H45010_RUAlertOptArg & other = (const H45010_RUAlertOptArg &)obj;
 
@@ -259,7 +259,7 @@ void H45010_CfbOvrOptArg::PrintOn(ostream & strm) const
   strm << "{\n";
   if (HasOptionalField(e_extension))
     strm << setw(indent+12) << "extension = " << setprecision(indent) << m_extension << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -267,7 +267,7 @@ void H45010_CfbOvrOptArg::PrintOn(ostream & strm) const
 PObject::Comparison H45010_CfbOvrOptArg::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H45010_CfbOvrOptArg), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H45010_CfbOvrOptArg), PInvalidCast);
 #endif
   const H45010_CfbOvrOptArg & other = (const H45010_CfbOvrOptArg &)obj;
 

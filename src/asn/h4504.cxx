@@ -9,7 +9,7 @@
 #endif
 
 #include <ptlib.h>
-#include "asn/h4504.h"
+#include "h4504.h"
 
 #define new PNEW
 
@@ -152,7 +152,7 @@ void H4504_Extension::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+14) << "extensionId = " << setprecision(indent) << m_extensionId << '\n';
   strm << setw(indent+11) << "argument = " << setprecision(indent) << m_argument << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -160,7 +160,7 @@ void H4504_Extension::PrintOn(ostream & strm) const
 PObject::Comparison H4504_Extension::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4504_Extension), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4504_Extension), PInvalidCast);
 #endif
   const H4504_Extension & other = (const H4504_Extension &)obj;
 
@@ -267,7 +267,7 @@ void H4504_HoldNotificArg::PrintOn(ostream & strm) const
   strm << "{\n";
   if (HasOptionalField(e_extensionArg))
     strm << setw(indent+15) << "extensionArg = " << setprecision(indent) << m_extensionArg << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -275,7 +275,7 @@ void H4504_HoldNotificArg::PrintOn(ostream & strm) const
 PObject::Comparison H4504_HoldNotificArg::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4504_HoldNotificArg), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4504_HoldNotificArg), PInvalidCast);
 #endif
   const H4504_HoldNotificArg & other = (const H4504_HoldNotificArg &)obj;
 
@@ -347,7 +347,7 @@ void H4504_RetrieveNotificArg::PrintOn(ostream & strm) const
   strm << "{\n";
   if (HasOptionalField(e_extensionArg))
     strm << setw(indent+15) << "extensionArg = " << setprecision(indent) << m_extensionArg << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -355,7 +355,7 @@ void H4504_RetrieveNotificArg::PrintOn(ostream & strm) const
 PObject::Comparison H4504_RetrieveNotificArg::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4504_RetrieveNotificArg), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4504_RetrieveNotificArg), PInvalidCast);
 #endif
   const H4504_RetrieveNotificArg & other = (const H4504_RetrieveNotificArg &)obj;
 
@@ -427,7 +427,7 @@ void H4504_RemoteHoldArg::PrintOn(ostream & strm) const
   strm << "{\n";
   if (HasOptionalField(e_extensionArg))
     strm << setw(indent+15) << "extensionArg = " << setprecision(indent) << m_extensionArg << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -435,7 +435,7 @@ void H4504_RemoteHoldArg::PrintOn(ostream & strm) const
 PObject::Comparison H4504_RemoteHoldArg::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4504_RemoteHoldArg), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4504_RemoteHoldArg), PInvalidCast);
 #endif
   const H4504_RemoteHoldArg & other = (const H4504_RemoteHoldArg &)obj;
 
@@ -507,7 +507,7 @@ void H4504_RemoteHoldRes::PrintOn(ostream & strm) const
   strm << "{\n";
   if (HasOptionalField(e_extensionRes))
     strm << setw(indent+15) << "extensionRes = " << setprecision(indent) << m_extensionRes << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -515,7 +515,7 @@ void H4504_RemoteHoldRes::PrintOn(ostream & strm) const
 PObject::Comparison H4504_RemoteHoldRes::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4504_RemoteHoldRes), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4504_RemoteHoldRes), PInvalidCast);
 #endif
   const H4504_RemoteHoldRes & other = (const H4504_RemoteHoldRes &)obj;
 
@@ -587,7 +587,7 @@ void H4504_RemoteRetrieveArg::PrintOn(ostream & strm) const
   strm << "{\n";
   if (HasOptionalField(e_extensionArg))
     strm << setw(indent+15) << "extensionArg = " << setprecision(indent) << m_extensionArg << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -595,7 +595,7 @@ void H4504_RemoteRetrieveArg::PrintOn(ostream & strm) const
 PObject::Comparison H4504_RemoteRetrieveArg::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4504_RemoteRetrieveArg), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4504_RemoteRetrieveArg), PInvalidCast);
 #endif
   const H4504_RemoteRetrieveArg & other = (const H4504_RemoteRetrieveArg &)obj;
 
@@ -667,7 +667,7 @@ void H4504_RemoteRetrieveRes::PrintOn(ostream & strm) const
   strm << "{\n";
   if (HasOptionalField(e_extensionRes))
     strm << setw(indent+15) << "extensionRes = " << setprecision(indent) << m_extensionRes << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
@@ -675,7 +675,7 @@ void H4504_RemoteRetrieveRes::PrintOn(ostream & strm) const
 PObject::Comparison H4504_RemoteRetrieveRes::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(this, H4504_RemoteRetrieveRes), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H4504_RemoteRetrieveRes), PInvalidCast);
 #endif
   const H4504_RemoteRetrieveRes & other = (const H4504_RemoteRetrieveRes &)obj;
 
