@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t38.cxx,v $
- * Revision 1.2008  2002/02/11 09:32:13  robertj
+ * Revision 1.2009  2002/03/22 06:57:50  robertj
+ * Updated to OpenH323 version 1.8.2
+ *
+ * Revision 2.7  2002/02/11 09:32:13  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.6  2002/01/14 06:35:59  robertj
@@ -47,6 +50,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.16  2002/02/13 07:41:45  robertj
+ * Fixed missing setting of transport on second H323Channel, thanks Vyacheslav Frolov
  *
  * Revision 1.15  2002/02/09 04:39:05  robertj
  * Changes to allow T.38 logical channels to use single transport which is
@@ -261,6 +267,7 @@ H323_T38Channel::H323_T38Channel(H323Connection & connection,
   if (handler != NULL) {
     PTRACE(3, "H323T38\tConnected to existing T.38 handler");
     t38handler = handler;
+    transport = t38handler->GetTransport();
   }
   else {
     PTRACE(3, "H323T38\tCreating new T.38 handler");
