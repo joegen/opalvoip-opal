@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.h,v $
- * Revision 1.2006  2002/04/09 00:12:10  robertj
+ * Revision 1.2007  2002/06/16 23:07:47  robertj
+ * Fixed several memory leaks, thanks Ted Szoczei
+ *
+ * Revision 2.5  2002/04/09 00:12:10  robertj
  * Added ability to set the local address on a transport, under some circumstances.
  *
  * Revision 2.4  2001/11/13 04:29:47  robertj
@@ -811,6 +814,10 @@ class OpalTransportUDP : public OpalTransportIP
       void * buffer,
       PINDEX length
     );
+
+    /**Conditionally close the sockets.
+     */
+    virtual BOOL Close();
   //@}
 
   /**@name Overides from class OpalTransport */
