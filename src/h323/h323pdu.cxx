@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.cxx,v $
- * Revision 1.2008  2002/02/11 09:32:13  robertj
+ * Revision 1.2009  2002/03/22 06:57:50  robertj
+ * Updated to OpenH323 version 1.8.2
+ *
+ * Revision 2.7  2002/02/11 09:32:13  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.6  2002/01/22 05:27:29  robertj
@@ -41,6 +44,13 @@
  *
  * Revision 2.3  2001/10/05 00:22:14  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 1.95  2002/03/14 07:56:48  robertj
+ * Added ability to specify alias type in H323SetAliasAddress, if not specified
+ *   then defaults to previous behaviour, thanks Nils Bokerman.
+ *
+ * Revision 1.94  2002/02/13 07:52:30  robertj
+ * Fixed missing parameters on Q.931 calling number, thanks Markus Rydh
  *
  * Revision 1.93  2002/02/01 01:48:45  robertj
  * Some more fixes for T.120 channel establishment, more to do!
@@ -371,6 +381,12 @@
 const char H225_ProtocolID[] = "0.0.8.2250.0.4";
 const char H245_ProtocolID[] = "0.0.8.245.0.7";
 
+static const char E164NumberPrefix[] = "E164:";
+static const char PrivatePartyPrefix[] = "Private:";
+static const char DataPartyPrefix[] = "Data:";
+static const char TelexPartyPrefix[] = "Telex:";
+static const char NSPNumberPrefix[] = "NSP:";
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -389,16 +405,60 @@ static BOOL IsE164(const PString & str)
 }
 
 
-void H323SetAliasAddress(const PString & name, H225_AliasAddress & alias)
+void H323SetAliasAddress(const PString & name, H225_AliasAddress & alias, int tag)
 {
-  if (IsE164(name)) {
-    alias.SetTag(H225_AliasAddress::e_dialedDigits);
-    (PASN_IA5String &)alias = name;
-  }
-  else {
-    // Could not encode it as a phone number, so do it as a full string.
-    alias.SetTag(H225_AliasAddress::e_h323_ID);
-    (PASN_BMPString &)alias = name;
+  // See if explicitly specified the alias type, otherwise guess it from
+  // the string, if all digits then assume an e164 address.
+  if (tag < 0)
+    tag = IsE164(name) ? H225_AliasAddress::e_dialedDigits : H225_AliasAddress::e_h323_ID;
+
+  alias.SetTag(tag);
+  switch (alias.GetTag()) {
+    case H225_AliasAddress::e_dialedDigits :
+    case H225_AliasAddress::e_url_ID :
+    case H225_AliasAddress::e_email_ID :
+      (PASN_IA5String &)alias = name;
+      break;
+
+    case H225_AliasAddress::e_h323_ID :
+      (PASN_BMPString &)alias = name;
+      break;
+
+    case H225_AliasAddress::e_transportID :
+    {
+      H323TransportAddress addr = name;
+      addr.SetPDU(alias);
+      break;
+    }
+    case H225_AliasAddress::e_partyNumber :
+    {
+      H225_PartyNumber & party = alias;
+      if (strncmp(name, E164NumberPrefix, sizeof(E164NumberPrefix)-1) == 0) {
+        party.SetTag(H225_PartyNumber::e_e164Number);
+        H225_PublicPartyNumber & number = party;
+        number.m_publicNumberDigits = name.Mid(sizeof(E164NumberPrefix)-1);
+      }
+      else if (strncmp(name, PrivatePartyPrefix, sizeof(PrivatePartyPrefix)-1) == 0) {
+        party.SetTag(H225_PartyNumber::e_privateNumber);
+        H225_PrivatePartyNumber & number = party;
+        number.m_privateNumberDigits = name.Mid(sizeof(PrivatePartyPrefix)-1);
+      }
+      else if (strncmp(name, DataPartyPrefix, sizeof(DataPartyPrefix)-1) == 0) {
+        party.SetTag(H225_PartyNumber::e_dataPartyNumber);
+        (H225_NumberDigits &)party = name.Mid(sizeof(DataPartyPrefix)-1);
+      }
+      else if (strncmp(name, TelexPartyPrefix, sizeof(TelexPartyPrefix)-1) == 0) {
+        party.SetTag(H225_PartyNumber::e_telexPartyNumber);
+        (H225_NumberDigits &)party = name.Mid(sizeof(TelexPartyPrefix)-1);
+      }
+      else if (strncmp(name, NSPNumberPrefix, sizeof(NSPNumberPrefix)-1) == 0) {
+        party.SetTag(H225_PartyNumber::e_nationalStandardPartyNumber);
+        (H225_NumberDigits &)party = name.Mid(sizeof(NSPNumberPrefix)-1);
+      }
+    }
+
+    default :
+      break;
   }
 }
 
@@ -426,19 +486,23 @@ PString H323GetAliasAddressString(const H225_AliasAddress & alias)
         case H225_PartyNumber::e_e164Number :
         {
           const H225_PublicPartyNumber & number = party;
-          return "PublicParty:" + (PString)number.m_publicNumberDigits;
+          return E164NumberPrefix + (PString)number.m_publicNumberDigits;
         }
 
         case H225_PartyNumber::e_privateNumber :
         {
           const H225_PrivatePartyNumber & number = party;
-          return "PrivateParty:" + (PString)number.m_privateNumberDigits;
+          return PrivatePartyPrefix + (PString)number.m_privateNumberDigits;
         }
 
         case H225_PartyNumber::e_dataPartyNumber :
+          return DataPartyPrefix + (PString)(const H225_NumberDigits &)party;
+
         case H225_PartyNumber::e_telexPartyNumber :
+          return TelexPartyPrefix + (PString)(const H225_NumberDigits &)party;
+
         case H225_PartyNumber::e_nationalStandardPartyNumber :
-          return (const H225_NumberDigits &)party;
+          return NSPNumberPrefix + (PString)(const H225_NumberDigits &)party;
       }
       break;
     }
@@ -1110,11 +1174,11 @@ void H323SignalPDU::SetQ931Fields(const H323Connection & connection,
       if (!number)
         q931pdu.SetCalledPartyNumber(number, plan, type);
       if (!otherNumber)
-        q931pdu.SetCallingPartyNumber(otherNumber, presentation, screening);
+        q931pdu.SetCallingPartyNumber(otherNumber, plan, type, presentation, screening);
     }
     else {
       if (!number)
-        q931pdu.SetCallingPartyNumber(number, presentation, screening);
+        q931pdu.SetCallingPartyNumber(number, plan, type, presentation, screening);
       if (!otherNumber)
         q931pdu.SetCalledPartyNumber(otherNumber, plan, type);
     }
