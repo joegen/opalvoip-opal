@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2003  2001/08/01 06:23:55  robertj
+ * Revision 1.2004  2001/08/17 01:11:17  robertj
+ * Added ability to add whole LID's to LID endpoint.
+ *
+ * Revision 2.2  2001/08/01 06:23:55  robertj
  * Changed to use separate mutex for LIDs structure to avoid Unix nested mutex problem.
  *
  * Revision 2.1  2001/08/01 05:24:01  robertj
@@ -185,6 +188,15 @@ void OpalLIDEndPoint::RemoveLine(const PString & token)
 }
 
 
+void OpalLIDEndPoint::RemoveAllLines()
+{
+  linesMutex.Wait();
+  lines.RemoveAll();
+  devices.RemoveAll();
+  linesMutex.Signal();
+}
+
+
 BOOL OpalLIDEndPoint::AddLinesFromDevice(OpalLineInterfaceDevice & device)
 {
   if (!device.IsOpen())
@@ -216,6 +228,26 @@ void OpalLIDEndPoint::RemoveLinesFromDevice(OpalLineInterfaceDevice & device)
     if (lines[i].GetToken().Find(device.GetName()) == 0)
       lines.RemoveAt(i--);
   }
+  linesMutex.Signal();
+}
+
+
+BOOL OpalLIDEndPoint::AddDevice(OpalLineInterfaceDevice * device)
+{
+  PAssertNULL(device);
+  linesMutex.Wait();
+  devices.Append(device);
+  linesMutex.Signal();
+  return AddLinesFromDevice(*device);
+}
+
+
+void OpalLIDEndPoint::RemoveDevice(OpalLineInterfaceDevice * device)
+{
+  PAssertNULL(device);
+  RemoveLinesFromDevice(*device);
+  linesMutex.Wait();
+  devices.Remove(device);
   linesMutex.Signal();
 }
 
