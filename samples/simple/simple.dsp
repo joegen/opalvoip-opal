@@ -54,7 +54,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 /nologo /subsystem:windows /machine:I386
-# ADD LINK32 opalsn.lib ptclib.lib ptlib.lib $(OPENSSLLIBS) winmm.lib comdlg32.lib winspool.lib wsock32.lib mpr.lib kernel32.lib user32.lib gdi32.lib shell32.lib advapi32.lib /nologo /subsystem:console /machine:I386 /libpath:"$(OPENSSLDIR)/out32"
+# ADD LINK32 opalsn.lib ptclib.lib ptlib.lib $(VAG729LIB) $(OPENSSLLIBS) $(EXPATLIBS) winmm.lib comdlg32.lib winspool.lib wsock32.lib mpr.lib kernel32.lib user32.lib gdi32.lib shell32.lib advapi32.lib /nologo /subsystem:console /machine:I386 /libpath:"$(VAG729DIR)\\" /libpath:"$(OPENSSLDIR)/out32" /libpath:"$(EXPATDIR)\Release"
 
 !ELSEIF  "$(CFG)" == "SimpleOPAL - Win32 Debug"
 
@@ -80,7 +80,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 opalsd.lib ptclibd.lib ptlibd.lib $(OPENSSLLIBS) winmm.lib comdlg32.lib winspool.lib wsock32.lib mpr.lib kernel32.lib user32.lib gdi32.lib shell32.lib advapi32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept /libpath:"$(OPENSSLDIR)/out32.dbg"
+# ADD LINK32 opalsd.lib ptclibd.lib ptlibd.lib $(VAG729LIB) $(EXPATLIBS) $(OPENSSLLIBS) winmm.lib comdlg32.lib winspool.lib wsock32.lib mpr.lib kernel32.lib user32.lib gdi32.lib shell32.lib advapi32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept /libpath:"$(VAG729DIR)\\" /libpath:"$(OPENSSLDIR)/out32.dbg" /libpath:"$(EXPATDIR)\Debug"
 
 !ELSEIF  "$(CFG)" == "SimpleOPAL - Win32 No Trace"
 
@@ -106,7 +106,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 ptclib.lib ptlib.lib comdlg32.lib winspool.lib wsock32.lib mpr.lib kernel32.lib user32.lib gdi32.lib shell32.lib advapi32.lib /nologo /subsystem:console /machine:I386
-# ADD LINK32 opalsn.lib ptclib.lib ptlib.lib $(OPENSSLLIBS) winmm.lib comdlg32.lib winspool.lib wsock32.lib mpr.lib kernel32.lib user32.lib gdi32.lib shell32.lib advapi32.lib /nologo /subsystem:console /machine:I386 /libpath:"$(OPENSSLDIR)/out32"
+# ADD LINK32 opalsn.lib ptclib.lib ptlib.lib $(VAG729LIB) $(OPENSSLLIBS) $(EXPATLIBS) winmm.lib comdlg32.lib winspool.lib wsock32.lib mpr.lib kernel32.lib user32.lib gdi32.lib shell32.lib advapi32.lib /nologo /subsystem:console /machine:I386 /libpath:"$(VAG729DIR)\\" /libpath:"$(OPENSSLDIR)/out32" /libpath:"$(EXPATDIR)\Release"
 
 !ENDIF 
 
