@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2008  2002/04/05 10:42:04  robertj
+ * Revision 1.2009  2002/04/08 02:40:13  robertj
+ * Fixed issues with using double originate call, eg from simple app command line.
+ *
+ * Revision 2.7  2002/04/05 10:42:04  robertj
  * Major changes to support transactions (UDP timeouts and retries).
  *
  * Revision 2.6  2002/03/15 10:55:28  robertj
@@ -182,18 +185,6 @@ class SIPConnection : public OpalConnection
     virtual BOOL OnReleased();
   //@}
 
-  /**@name Call progress functions */
-  //@{
-    /**Indicate in some manner that a call is alerting.
-       If FALSE is returned the call is aborted.
-
-       The default implementation calls OpalSIPEndPoint::OnShowAlerting().
-      */
-    virtual BOOL SendConnectionAlert(
-      const PString & calleeName    /// Name of endpoint being alerted.
-    );
-  //@}
-
   /**@name Protocol handling functions */
   //@{
     /**Handle the fail of a transaction we initiated.
@@ -269,7 +260,7 @@ class SIPConnection : public OpalConnection
     );
   //@}
 
-    void SendResponse(SIP_PDU::StatusCodes code, const char * str = NULL);
+    void SendResponseToINVITE(SIP_PDU::StatusCodes code, const char * str = NULL);
 
     unsigned GetNextCSeq() { return ++lastSentCSeq; }
 
