@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkserver.h,v $
- * Revision 1.2011  2004/02/19 10:46:43  rjongbloed
+ * Revision 1.2012  2004/04/25 02:53:29  rjongbloed
+ * Fixed GNU 3.4 warnings
+ *
+ * Revision 2.10  2004/02/19 10:46:43  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.9  2003/01/07 04:39:52  robertj
@@ -1948,8 +1951,8 @@ class H323GatekeeperServer : public H323TransactionServer
     PINDEX totalCalls;
     PINDEX rejectedCalls;
 
-  friend H323GatekeeperRequest::Response H323GatekeeperRRQ::OnHandlePDU();
-  friend H323GatekeeperRequest::Response H323GatekeeperARQ::OnHandlePDU();
+  friend class H323GatekeeperRRQ;
+  friend class H323GatekeeperARQ;
 };
 
 

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2051  2004/04/18 13:38:01  rjongbloed
+ * Revision 1.2052  2004/04/25 02:53:29  rjongbloed
+ * Fixed GNU 3.4 warnings
+ *
+ * Revision 2.50  2004/04/18 13:38:01  rjongbloed
  * Fixed using correct H.323 port if not specified in address
  *
  * Revision 2.49  2004/04/07 08:21:03  rjongbloed
@@ -3877,8 +3880,10 @@ BOOL H323Connection::IsMediaOnHold() const
 
 PChannel * H323Connection::SwapHoldMediaChannels(PChannel * newChannel)
 {
-  if (IsMediaOnHold())
-    PAssertNULL(newChannel);
+  if (IsMediaOnHold()) {
+    if (PAssertNULL(newChannel) == NULL)
+      return NULL;
+  }
 
   PChannel * existingTransmitChannel = NULL;
 
@@ -5057,11 +5062,12 @@ void H323Connection::OnModeChanged(const H245_ModeDescription & newMode)
   // Start up the new ones
   for (PINDEX i = 0; i < newMode.GetSize(); i++) {
     H323Capability * capability = localCapabilities.FindCapability(newMode[i]);
-    PAssertNULL(capability); // Should not occur as OnRequestModeChange checks them
-    if (!OpenLogicalChannel(*capability,
-                            capability->GetDefaultSessionID(),
-                            H323Channel::IsTransmitter)) {
-      PTRACE(1, "H245\tCould not open channel after mode change: " << *capability);
+    if (PAssertNULL(capability) != NULL) { // Should not occur as OnRequestModeChange checks them
+      if (!OpenLogicalChannel(*capability,
+                              capability->GetDefaultSessionID(),
+                              H323Channel::IsTransmitter)) {
+        PTRACE(1, "H245\tCould not open channel after mode change: " << *capability);
+      }
     }
   }
 }
