@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2005  2002/04/09 01:02:14  robertj
+ * Revision 1.2006  2002/04/10 03:16:02  robertj
+ * Major changes to RTP session management when initiating an INVITE.
+ * Improvements in error handling and transaction cancelling.
+ *
+ * Revision 2.4  2002/04/09 01:02:14  robertj
  * Fixed problems with restarting INVITE on  authentication required response.
  *
  * Revision 2.3  2002/04/05 10:42:04  robertj
@@ -376,13 +380,13 @@ class SIPTransaction : public SIP_PDU
     );
 
     BOOL Start();
-    BOOL IsInProgress() const { return state > NotStarted && state < Completed; }
+    BOOL IsInProgress() const { return state == Trying && state == Proceeding; }
     BOOL IsFailed() const { return state > Terminated_Success; }
     BOOL IsFinished()     { return finished.Wait(0); }
     void Wait();
-    void SendCANCEL();
+    BOOL SendCANCEL();
 
-    virtual void OnReceivedResponse(SIP_PDU & response);
+    virtual BOOL OnReceivedResponse(SIP_PDU & response);
 
     OpalTransport & GetTransport() const  { return transport; }
     SIPConnection * GetConnection() const { return connection; }
@@ -391,6 +395,7 @@ class SIPTransaction : public SIP_PDU
 
   protected:
     void Construct();
+    BOOL ResendCANCEL();
 
     PDECLARE_NOTIFIER(PTimer, SIPTransaction, OnRetry);
     PDECLARE_NOTIFIER(PTimer, SIPTransaction, OnTimeout);
@@ -405,7 +410,8 @@ class SIPTransaction : public SIP_PDU
       Terminated_Timeout,
       Terminated_RetriesExceeded,
       Terminated_TransportError,
-      Terminated_Cancelled
+      Terminated_Cancelled,
+      NumStates
     };
     void SetTerminated(States newState);
 
@@ -427,6 +433,26 @@ class SIPTransaction : public SIP_PDU
 
 PLIST(SIPTransactionList, SIPTransaction);
 PDICTIONARY(SIPTransactionDict, PString, SIPTransaction);
+
+
+/////////////////////////////////////////////////////////////////////////
+
+class SIPInvite : public SIPTransaction
+{
+    PCLASSINFO(SIPInvite, SIPTransaction);
+  public:
+    SIPInvite(
+      SIPConnection & connection,
+      OpalTransport & transport
+    );
+
+    virtual BOOL OnReceivedResponse(SIP_PDU & response);
+
+    RTP_SessionManager & GetSessionManager() { return rtpSessions; }
+
+  protected:
+    RTP_SessionManager rtpSessions;
+};
 
 
 #endif // __OPAL_SIPPDU_H
