@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2003  2001/08/17 08:23:02  robertj
+ * Revision 1.2004  2001/08/22 03:51:31  robertj
+ * Added functions to look up media format by payload type.
+ *
+ * Revision 2.2  2001/08/17 08:23:02  robertj
  * Put in missing dots in G.729 media formats.
  *
  * Revision 2.1  2001/08/01 05:51:39  robertj
@@ -95,7 +98,15 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
       const OpalMediaFormat & format    /// Format to remove
     );
 
-    /**Get a format position matching the wildcard is in the list.
+    /**Get a format position in the list matching the payload type.
+
+       Returns P_MAX_INDEX if not in list.
+      */
+    PINDEX FindFormat(
+      RTP_DataFrame::PayloadTypes rtpPayloadType /// RTP payload type code
+    ) const;
+
+    /**Get a format position in the list matching the wildcard.
        The wildcard string is a simple substring match using the '*'
        character. For example: "G.711*" would match "G.711-uLaw-64k" and
        "G.711-ALaw-64k".
@@ -105,6 +116,12 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
     PINDEX FindFormat(
       const PString & wildcard    /// Wildcard string name.
     ) const;
+
+    /**Determine if a format matching the payload type is in the list.
+      */
+    BOOL HasFormat(
+      RTP_DataFrame::PayloadTypes rtpPayloadType /// RTP payload type code
+    ) const { return FindFormat(rtpPayloadType) != P_MAX_INDEX; }
 
     /**Determine if a format matching the wildcard is in the list.
        The wildcard string is a simple substring match using the '*'
@@ -141,6 +158,19 @@ class OpalMediaFormat : public PCaselessString
     /**Default constructor creates a PCM-16 media format.
       */
     OpalMediaFormat();
+
+    /**Construct a media format, searching database for information.
+       This constructor will search through the RegisteredMediaFormats list
+       for the match of the payload type, if found the other information
+       fields are set from the database. If not found then the ancestor
+       string is set to the empty string.
+
+       Note it is impossible to determine the order of registration so this
+       should not be relied on.
+      */
+    OpalMediaFormat(
+      RTP_DataFrame::PayloadTypes rtpPayloadType /// RTP payload type code
+    );
 
     /**Construct a media format, searching database for information.
        This constructor will search through the RegisteredMediaFormats list
@@ -198,6 +228,13 @@ class OpalMediaFormat : public PCaselessString
       PINDEX   frameSize = 0, /// Size of frame in bytes (if applicable)
       unsigned frameTime = 0, /// Time for frame in RTP units (if applicable)
       unsigned timeUnits = 0  /// RTP units for frameTime (if applicable)
+    );
+
+    /**Search for the specified format type.
+       This is equivalent to going fmt = OpalMediaFormat(rtpPayloadType);
+      */
+    OpalMediaFormat & operator=(
+      RTP_DataFrame::PayloadTypes rtpPayloadType /// RTP payload type code
     );
 
     /**Search for the specified format name.
