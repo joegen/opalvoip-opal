@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2029  2004/02/03 12:22:28  rjongbloed
+ * Revision 1.2030  2004/02/17 11:00:06  csoutheren
+ * Added --translate, --port-base and --port-max options
+ *
+ * Revision 2.28  2004/02/03 12:22:28  rjongbloed
  * Added call command
  *
  * Revision 2.27  2004/01/18 15:36:07  rjongbloed
@@ -227,6 +230,8 @@ void SimpleOpalProcess::Main()
 #endif
              "P-prefer:"
              "p-password:"
+             "-port-base:"
+             "-port-max:"
              "q-quicknet:"
              "Q-no-quicknet."
              "R-require-gatekeeper."
@@ -239,8 +244,10 @@ void SimpleOpalProcess::Main()
              "-sound-in:"
              "-sound-out:"
              "-sip-listen:"
-			 "-stun:"
+			       "-stun:"
              "T-h245tunneldisable."
+             "-translate:"
+
 #if PTRACING
              "t-trace."
 #endif
@@ -322,6 +329,9 @@ void SimpleOpalProcess::Main()
             "\n"
 #endif
             "IP options:\n"
+            "     --translate ip       : Set external IP address if masqueraded\n"
+            "     --port-base n        : Set TCP/UDP/RTP port base\n"
+            "     --port-max n         : Set TCP/UDP/RTP port max\n"
             "     --tcp-base n         : Set TCP port base (default 0)\n"
             "     --tcp-max n          : Set TCP port max (default base+99)\n"
             "     --udp-base n         : Set UDP port base (default 6000)\n"
@@ -329,7 +339,7 @@ void SimpleOpalProcess::Main()
             "     --rtp-base n         : Set RTP port base (default 5000)\n"
             "     --rtp-max n          : Set RTP port max (default base+199)"
             "     --rtp-tos n          : Set RTP packet IP TOS bits to n\n"
-			"     --stun server        : Set STUN server\n"
+			      "     --stun server        : Set STUN server\n"
             "\n"
             "Debug options:\n"
 #if PTRACING
@@ -409,6 +419,7 @@ void SimpleOpalProcess::Main()
 
 MyManager::MyManager()
 {
+  haveExternalAddress = FALSE;
   potsEP = NULL;
   pcssEP = NULL;
   h323EP = NULL;
@@ -492,17 +503,31 @@ BOOL MyManager::Initialise(PArgList & args)
     cout << "None";
   cout << '\n';
 
-  if (args.HasOption("tcp-base"))
-    SetTCPPorts(args.GetOptionString("tcp-base").AsUnsigned(),
-                args.GetOptionString("tcp-max").AsUnsigned());
+  if (args.HasOption("translate")) {
+    haveExternalAddress = TRUE;
+    externalAddress = PIPSocket::Address(args.GetOptionString("translate"));
+    cout << "External address set to " << externalAddress << "\n";
+  }
 
-  if (args.HasOption("udp-base"))
-    SetUDPPorts(args.GetOptionString("udp-base").AsUnsigned(),
-                args.GetOptionString("udp-max").AsUnsigned());
+  if (args.HasOption("port-base")) {
+    unsigned portbase = args.GetOptionString("port-base").AsUnsigned();
+    unsigned portmax  = args.GetOptionString("port-max").AsUnsigned();
+    SetTCPPorts  (portbase, portmax);
+    SetUDPPorts  (portbase, portmax);
+    SetRtpIpPorts(portbase, portmax);
+  } else {
+    if (args.HasOption("tcp-base"))
+      SetTCPPorts(args.GetOptionString("tcp-base").AsUnsigned(),
+                  args.GetOptionString("tcp-max").AsUnsigned());
 
-  if (args.HasOption("rtp-base"))
-    SetRtpIpPorts(args.GetOptionString("rtp-base").AsUnsigned(),
-                  args.GetOptionString("rtp-max").AsUnsigned());
+    if (args.HasOption("udp-base"))
+      SetUDPPorts(args.GetOptionString("udp-base").AsUnsigned(),
+                  args.GetOptionString("udp-max").AsUnsigned());
+
+    if (args.HasOption("rtp-base"))
+      SetRtpIpPorts(args.GetOptionString("rtp-base").AsUnsigned(),
+                    args.GetOptionString("rtp-max").AsUnsigned());
+  }
 
   if (args.HasOption("rtp-tos")) {
     unsigned tos = args.GetOptionString("rtp-tos").AsUnsigned();
@@ -745,6 +770,22 @@ BOOL MyManager::Initialise(PArgList & args)
   return TRUE;
 }
 
+
+BOOL MyManager::TranslateIPAddress(PIPSocket::Address & localAddress, const PIPSocket::Address & remoteAddress)
+{
+  if (!haveExternalAddress)
+    return FALSE;
+
+  DWORD a = remoteAddress;
+  BOOL remoteIsPrivate = (a & 0x000000ff) == ( 10U << 0) ||
+                         (a & 0x00000fff) == (172U << 0 | 16U << 8) || 
+                         (a & 0x0000ffff) == (192U << 0 | 168U << 8);
+  if (remoteIsPrivate)
+    return FALSE;
+
+  localAddress = externalAddress;
+  return TRUE;
+}
 
 void MyManager::Main(PArgList & args)
 {
