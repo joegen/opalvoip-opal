@@ -19,6 +19,12 @@ fi
 AC_SUBST(INSTALLPREFIX)
 
 dnl ########################################################################
+dnl set LIBDIR accordingly
+LIBDIR="${libdir}"
+
+AC_SUBST(LIBDIR)
+
+dnl ########################################################################
 dnl extract the OPAL version
 MAJOR_VERSION=`cat ${OPALDIR}/version.h | grep MAJOR_VERSION | cut -f3 -d' '`
 MINOR_VERSION=`cat ${OPALDIR}/version.h | grep MINOR_VERSION | cut -f3 -d' '`
@@ -37,9 +43,9 @@ if test "${PWLIBDIR:-unset}" != "unset" ; then
   AC_CHECK_FILE(${PWLIBDIR}/version.h, HAS_PTLIB=1)
 fi
 if test "${HAS_PTLIB:-unset}" = "unset" ; then
-  AC_CHECK_FILE(${OPENH323DIR}/../pwlib/version.h, HAS_PTLIB=1)
+  AC_CHECK_FILE(${OPALDIR}/../pwlib/version.h, HAS_PTLIB=1)
   if test "${HAS_PTLIB:-unset}" != "unset" ; then
-    PWLIBDIR="${OPENH323DIR}/../pwlib"
+    PWLIBDIR="${OPALDIR}/../pwlib"
   else
     AC_CHECK_FILE(${HOME}/pwlib/include/ptlib.h, HAS_PTLIB=1)
     if test "${HAS_PTLIB:-unset}" != "unset" ; then
@@ -254,12 +260,13 @@ dnl output make directives
 AC_SUBST(STDCCFLAGS)
 AC_SUBST(LDFLAGS)
 AC_SUBST(ENDLDLIBS)
+AC_PROG_INSTALL
 
 dnl ########################################################################
 dnl output header file
 
-dnl AC_CONFIG_FILES(Makefile)
 AC_CONFIG_FILES(opal_inc.mak)
+AC_CONFIG_FILES(Makefile)
 AC_CONFIG_HEADERS(include/opal/buildopts.h)
 
 AC_OUTPUT()
