@@ -73,13 +73,13 @@ fi
 
 dnl ########################################################################
 dnl get pwlib directory
-if test "${PWLIBDIR:-unset}" == "unset" ; then
+if test "${PWLIBDIR:-unset}" = "unset" ; then
   PWLIBDIR=`ptlib-config --prefix`
 fi
-if test "x$PWLIBDIR" == "x/usr" -o "x$PWLIBDIR" == "x/usr/"; then
+if test "x$PWLIBDIR" = "x/usr" -o "x$PWLIBDIR" = "x/usr/"; then
   PWLIBDIR="/usr/share/pwlib/"
 fi
-if test "xPWLIBDIR" == "x/usr/local" -o "x$PWLIBDIR" == "x/usr/"; then
+if test "xPWLIBDIR" = "x/usr/local" -o "x$PWLIBDIR" = "x/usr/"; then
   PWLIBDIR="/usr/local/share/pwlib/"
 fi
 echo "PWLib prefix set to.... $PWLIBDIR"
