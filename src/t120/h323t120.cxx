@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t120.cxx,v $
- * Revision 1.2004  2001/10/05 00:22:14  robertj
+ * Revision 1.2005  2001/11/12 05:32:12  robertj
+ * Added OpalTransportAddress::GetIpAddress when don't need port number.
+ *
+ * Revision 2.3  2001/10/05 00:22:14  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.2  2001/08/13 05:10:40  robertj
@@ -256,8 +259,7 @@ BOOL H323_T120Channel::OnReceivedPDU(const H245_OpenLogicalChannel & open,
     else {
       // No address specified, assume same IP as the transport and use default port
       PIPSocket::Address ip;
-      WORD port;
-      if (!connection.GetControlChannel().GetLocalAddress().GetIpAndPort(ip, port)) {
+      if (!connection.GetControlChannel().GetLocalAddress().GetIpAddress(ip)) {
         PTRACE(1, "H323T120\tOnly IPv4 supported");
         errorCode = H245_OpenLogicalChannelReject_cause::e_separateStackEstablishmentFailed;
         return FALSE;
@@ -277,8 +279,7 @@ BOOL H323_T120Channel::OnReceivedPDU(const H245_OpenLogicalChannel & open,
     if (address.IsEmpty()) {
       // No address specified, assume same IP as the transport and use default port
       PIPSocket::Address ip;
-      WORD port;
-      if (!connection.GetControlChannel().GetRemoteAddress().GetIpAndPort(ip, port)) {
+      if (!connection.GetControlChannel().GetRemoteAddress().GetIpAddress(ip)) {
         PTRACE(1, "H323T120\tOnly IPv4 supported");
         errorCode = H245_OpenLogicalChannelReject_cause::e_separateStackEstablishmentFailed;
         return FALSE;
