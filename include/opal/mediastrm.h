@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2021  2004/10/02 11:50:54  rjongbloed
+ * Revision 1.2022  2004/12/04 16:35:50  dsandras
+ * Added a function to get the PChannel back from the OpalMediaStream.
+ *
+ * Revision 2.20  2004/10/02 11:50:54  rjongbloed
  * Fixed RTP media stream so assures RTP session is open before starting.
  *
  * Revision 2.19  2004/08/14 07:56:29  rjongbloed
@@ -481,6 +484,11 @@ class OpalRawMediaStream : public OpalMediaStream
       PINDEX length,       /// Length of data to read.
       PINDEX & written     /// Length of data actually written
     );
+
+    /**Return the associated PChannel 
+     */
+    PChannel * GetChannel() { return channel; }
+    
 
     /**Close the media stream.
 
