@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2003  2002/02/01 05:47:55  craigs
+ * Revision 1.2004  2002/02/11 07:33:36  robertj
+ * Changed SDP to use OpalTransport for hosts instead of IP addresses/ports
+ * Added media bypass for streams between compatible protocols.
+ *
+ * Revision 2.2  2002/02/01 05:47:55  craigs
  * Removed :: from in front of isspace that confused gcc 2.96
  *
  * Revision 2.1  2002/02/01 04:53:01  robertj
@@ -231,8 +235,10 @@ BOOL SIPConnection::SetConnected()
   RTP_UDP * rtpSession = (RTP_UDP *)UseSession(rtpSessionId);
 
   // set the remote addresses
-  if (!rtpSession->SetRemoteSocketInfo(sdpIn.GetConnectAddress(),
-                                       incomingMedia->GetPort(), TRUE)) {
+  PIPSocket::Address ip;
+  WORD port;
+  incomingMedia->GetTransportAddress().GetIpAndPort(ip, port);
+  if (!rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
     PTRACE(1, "SIP\tCannot set remote ports on RTP session");
     delete rtpSession;
     return NULL;
@@ -252,9 +258,11 @@ BOOL SIPConnection::SetConnected()
     return FALSE;
   }
 
+  SDPSessionDescription sdpOut(GetLocalAddress());
+
   // construct a new media session list with the selected format
   SDPMediaDescription * localMedia =
-            new SDPMediaDescription(rtpMediaType, rtpSession->GetLocalDataPort());
+            new SDPMediaDescription(sdpOut.GetDefaultConnectAddress(), rtpMediaType);
   
   for (i = 0; i < mediaStreams.GetSize(); i++) {
     OpalMediaStream & mediaStream = mediaStreams[i];
@@ -271,13 +279,8 @@ BOOL SIPConnection::SetConnected()
   }
 
   if (hasTelephoneEvent)
-    localMedia->AddSDPMediaFormat(new SDPMediaFormat("0-15", GetRFC2833PayloadType()));
+    localMedia->AddSDPMediaFormat(new SDPMediaFormat("0-15", rfc2833Handler->GetPayloadType()));
 
-  PIPSocket::Address ip;
-  if (!GetLocalIPAddress(ip))
-    return FALSE;
-
-  SDPSessionDescription sdpOut(ip);
   sdpOut.AddMediaDescription(localMedia);
 
   // send the response
@@ -290,21 +293,22 @@ BOOL SIPConnection::SetConnected()
 }
 
 
-BOOL SIPConnection::GetLocalIPAddress(PIPSocket::Address & localIP) const
+OpalTransportAddress SIPConnection::GetLocalAddress(WORD port) const
 {
+  PIPSocket::Address localIP;
   if (!transport->GetLocalAddress().GetIpAddress(localIP)) {
     PTRACE(1, "SIP\tNot using IP transport");
-    return FALSE;
+    return OpalTransportAddress();
   }
 
   PIPSocket::Address remoteIP;
   if (!transport->GetRemoteAddress().GetIpAddress(remoteIP)) {
     PTRACE(1, "SIP\tNot using IP transport");
-    return FALSE;
+    return OpalTransportAddress();
   }
 
   endpoint.GetManager().TranslateIPAddress(localIP, remoteIP);
-  return localIP;
+  return OpalTransportAddress(localIP, port);
 }
 
 
@@ -347,10 +351,40 @@ OpalMediaFormatList SIPConnection::GetMediaFormats() const
 
 OpalMediaStream * SIPConnection::CreateMediaStream(BOOL isSource, unsigned sessionID)
 {
+  if (ownerCall.CanDoMediaBypass(*this, sessionID))
+    return new OpalNullMediaStream(isSource, sessionID);
+
   if (rtpSessions.GetSession(sessionID) == NULL)
     return NULL;
 
   return new OpalRTPMediaStream(isSource, *rtpSessions.GetSession(sessionID));
+}
+
+
+BOOL SIPConnection::CanDoMediaBypass(unsigned sessionID) const
+{
+  PTRACE(3, "SIP\tCanDoMediaBypass: session " << sessionID);
+
+  return sessionID == OpalMediaFormat::DefaultAudioSessionID ||
+         sessionID == OpalMediaFormat::DefaultVideoSessionID;
+}
+
+
+BOOL SIPConnection::GetMediaTransportAddress(unsigned sessionID,
+                                             OpalTransportAddress & data,
+                                             OpalTransportAddress & control) const
+{
+  PTRACE(3, "SIP\tGetMediaTransportAddress for session " << sessionID);
+  if (!mediaTransports.Contains(sessionID))
+    return FALSE;
+
+  data = mediaTransports[sessionID];
+  PIPSocket::Address ip;
+  WORD port;
+  if (data.GetIpAndPort(ip, port))
+    control = OpalTransportAddress(ip, (WORD)(port+1));
+
+  return TRUE;
 }
 
 
@@ -416,6 +450,48 @@ void SIPConnection::InitiateCallThreadMain(PThread &, INT)
 
   while (transport->IsOpen())
     endpoint.HandlePDU(*transport);
+}
+
+
+SDPSessionDescription * SIPConnection::BuildSDP()
+{
+  OpalTransportAddress localAddress;
+
+  if (ownerCall.CanDoMediaBypass(*this, OpalMediaFormat::DefaultAudioSessionID)) {
+    OpalTransportAddress dummy;
+    ownerCall.GetMediaTransportAddress(*this, OpalMediaFormat::DefaultAudioSessionID, localAddress, dummy);
+  }
+
+  if (localAddress.IsEmpty()) {
+    // create the SDP definition for the audio channel
+    RTP_UDP * audioRTPSession = (RTP_UDP*)UseSession(OpalMediaFormat::DefaultAudioSessionID);
+    localAddress = GetLocalAddress(audioRTPSession->GetLocalDataPort());
+  }
+
+  SDPSessionDescription * sdp = new SDPSessionDescription(localAddress);
+
+  SDPMediaDescription * localMedia = new SDPMediaDescription(localAddress, SDPMediaDescription::Audio);
+
+  OpalMediaFormatList formats = ownerCall.GetMediaFormats(*this);
+
+  // add the audio formats
+  localMedia->AddMediaFormats(formats);
+
+  // only continue if we have an RTP type
+  RTP_DataFrame::PayloadTypes ntePayloadCode = rfc2833Handler->GetPayloadType();
+  if (ntePayloadCode < RTP_DataFrame::IllegalPayloadType) {
+    PTRACE(3, "SIP\tUsing RTP payload " << ntePayloadCode << " for NTE");
+
+    // create and add the NTE media format
+    localMedia->AddSDPMediaFormat(new SDPMediaFormat("0-15", ntePayloadCode));
+  } else {
+    PTRACE(2, "SIP\tCould not allocate dynamic RTP payload for NTE");
+  }
+
+  // add in SDP records
+  sdp->AddMediaDescription(localMedia);
+
+  return sdp;
 }
 
 
@@ -734,10 +810,15 @@ void SIPConnection::OnReceivedSDP(SIP_PDU & pdu)
     return;
   }
 
+  OpalTransportAddress address = mediaDescription->GetTransportAddress();
+  mediaTransports.SetAt(OpalMediaFormat::DefaultAudioSessionID, new OpalTransportAddress(address));
+
+  PIPSocket::Address ip;
+  WORD port;
+  address.GetIpAndPort(ip, port);
+
   RTP_UDP * rtpSession = (RTP_UDP *)UseSession(OpalMediaFormat::DefaultAudioSessionID);
-  if (!rtpSession->SetRemoteSocketInfo(sdp.GetConnectAddress(),
-                                       mediaDescription->GetPort(),
-                                       TRUE)) {
+  if (!rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
     PTRACE(1, "SIP\tCould not set RTP remote socket");
     return;
   }
@@ -755,12 +836,6 @@ void SIPConnection::SendResponse(SIP_PDU::StatusCodes code, const char * extra)
 {
   if (originalInvite != NULL)
     originalInvite->SendResponse(code, extra);
-}
-
-
-RTP_DataFrame::PayloadTypes SIPConnection::GetRFC2833PayloadType() const
-{
-  return rfc2833Handler->GetPayloadType();
 }
 
 
