@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2024  2004/12/22 18:53:18  dsandras
+ * Revision 1.2025  2004/12/25 20:43:41  dsandras
+ * Attach the RFC2833 handlers when we are in connected state to ensure
+ * OpalMediaPatch exist. Fixes problem for DTMF sending.
+ *
+ * Revision 2.23  2004/12/22 18:53:18  dsandras
  * Added definition for ForwardCall.
  *
  * Revision 2.22  2004/08/20 12:13:31  rjongbloed
@@ -198,6 +202,19 @@ class SIPConnection : public OpalConnection
       unsigned sessionID,                  /// Session number for stream
       BOOL isSource                        /// Is a source stream
     );
+
+    /**A call back function whenever a connection is "connected".
+       This indicates that a connection to an endpoint was connected. That
+       is the endpoint received acknowledgement via whatever protocol it uses
+       that the connection may now start media streams.
+
+       In the context of H.323 this means that the CONNECT pdu has been
+       received.
+
+       The default behaviour calls the OpalConnection function of the same 
+       name after having connected the RFC2833 handler to the OpalPatch.
+      */
+    virtual void OnConnected();
 
     /**See if the media can bypass the local host.
 
