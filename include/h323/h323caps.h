@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.h,v $
- * Revision 1.2005  2002/01/14 06:35:56  robertj
+ * Revision 1.2006  2002/01/22 04:59:04  robertj
+ * Update from OpenH323, RFC2833 support
+ *
+ * Revision 2.4  2002/01/14 06:35:56  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.3  2001/11/02 10:45:19  robertj
@@ -42,6 +45,12 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.29  2002/01/17 07:04:57  robertj
+ * Added support for RFC2833 embedded DTMF in the RTP stream.
+ *
+ * Revision 1.28  2002/01/16 05:37:41  robertj
+ * Added missing mode change functions on non standard capabilities.
  *
  * Revision 1.27  2002/01/09 00:21:36  robertj
  * Changes to support outgoing H.245 RequstModeChange.
@@ -811,6 +820,18 @@ class H323NonStandardAudioCapability : public H323AudioCapability,
       unsigned packetSize          /// Packet size to use in capability
     ) const;
 
+    /**This function is called whenever and outgoing RequestMode
+       PDU is being constructed for the control channel. It allows the
+       capability to set the PDU fields from information in members specific
+       to the class.
+
+       The default behaviour calls H323NonStandardCapabilityinfo::OnSendingPDU()
+       to handle the PDU.
+     */
+    virtual BOOL OnSendingPDU(
+      H245_AudioMode & pdu  /// PDU to set information on
+    ) const;
+
     /**This function is called whenever and incoming TerminalCapabilitySet
        or OpenLogicalChannel PDU has been used to construct the control
        channel. It allows the capability to set from the PDU fields,
@@ -1058,6 +1079,18 @@ class H323NonStandardVideoCapability : public H323VideoCapability,
       H245_VideoCapability & pdu  /// PDU to set information on
     ) const;
 
+    /**This function is called whenever and outgoing RequestMode
+       PDU is being constructed for the control channel. It allows the
+       capability to set the PDU fields from information in members specific
+       to the class.
+
+       The default behaviour calls H323NonStandardCapabilityinfo::OnSendingPDU()
+       to handle the PDU.
+     */
+    virtual BOOL OnSendingPDU(
+      H245_VideoMode & pdu  /// PDU to set information on
+    ) const;
+
     /**This function is called whenever and incoming TerminalCapabilitySet
        or OpenLogicalChannel PDU has been used to construct the control
        channel. It allows the capability to set from the PDU fields,
@@ -1301,6 +1334,18 @@ class H323NonStandardDataCapability : public H323DataCapability,
      */
     virtual BOOL OnSendingPDU(
       H245_DataApplicationCapability & pdu  /// PDU to set information on
+    ) const;
+
+    /**This function is called whenever and outgoing RequestMode
+       PDU is being constructed for the control channel. It allows the
+       capability to set the PDU fields from information in members specific
+       to the class.
+
+       The default behaviour calls H323NonStandardCapabilityinfo::OnSendingPDU()
+       to handle the PDU.
+     */
+    virtual BOOL OnSendingPDU(
+      H245_DataMode & pdu  /// PDU to set information on
     ) const;
 
     /**This function is called whenever and incoming TerminalCapabilitySet
@@ -1605,12 +1650,23 @@ class H323_UserInputCapability : public H323Capability
   public:
   /**@name Construction */
   //@{
+    enum SubTypes {
+      BasicString,
+      IA5String,
+      GeneralString,
+      SignalToneH245,
+      HookFlashH245,
+      SignalToneRFC2833,
+      NumSubTypes
+    };
+    static const char * const SubTypeNames[NumSubTypes];
+
     /**Create the capability for User Input.
        The subType parameter is a value from the enum
        H245_UserInputCapability::Choices.
       */
     H323_UserInputCapability(
-      unsigned subType = 1
+      SubTypes subType
     );
   //@}
 
@@ -1720,8 +1776,11 @@ class H323_UserInputCapability : public H323Capability
       PINDEX simultaneous     /// The member of the SimultaneousCapabilitySet to add
     );
 
+    RTP_DataFrame::PayloadTypes GetPayloadType() const { return rfc2833PayloadType; }
+
   protected:
-    unsigned subType;
+    SubTypes subType;
+    RTP_DataFrame::PayloadTypes rfc2833PayloadType;
 };
 
 

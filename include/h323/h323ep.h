@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2008  2002/01/14 06:35:57  robertj
+ * Revision 1.2009  2002/01/22 04:59:04  robertj
+ * Update from OpenH323, RFC2833 support
+ *
+ * Revision 2.7  2002/01/14 06:35:57  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.6  2001/11/13 06:25:56  robertj
@@ -52,6 +55,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.15  2002/01/17 07:04:58  robertj
+ * Added support for RFC2833 embedded DTMF in the RTP stream.
  *
  * Revision 1.14  2002/01/13 23:59:43  robertj
  * Added CallTransfer timeouts to endpoint, hanks Ben Madsen of Norwood Systems.
@@ -630,30 +636,6 @@ class H323EndPoint : public OpalEndPoint
       const H323Connection & connection,  /// Connection for the channel
       const RTP_Session & session         /// Session with statistics
     ) const;
-  //@}
-
-  /**@name Indications */
-  //@{
-    /**Call back for remote enpoint has sent user input as a string.
-
-       The default behaviour does nothing.
-      */
-    virtual void OnUserInputString(
-      H323Connection & connection,  /// Connection for the input
-      const PString & value         /// String value of indication
-    );
-
-    /**Call back for remote enpoint has sent user input.
-
-       The default behaviour calls H323Connection::OnUserInputTone().
-      */
-    virtual void OnUserInputTone(
-      H323Connection & connection,  /// Connection for the input
-      char tone,                    /// DTMF tone code
-      unsigned duration,            /// Duration of tone in milliseconds
-      unsigned logicalChannel,      /// Logical channel number for RTP sync.
-      unsigned rtpTimestamp         /// RTP timestamp in logical channel sync.
-    );
   //@}
 
   /**@name Other services */
