@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2018  2002/11/10 11:33:17  robertj
+ * Revision 1.2019  2002/11/11 06:52:01  robertj
+ * Added correct flag for including static global variables.
+ *
+ * Revision 2.17  2002/11/10 11:33:17  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.16  2002/09/06 02:46:00  robertj
@@ -141,6 +144,7 @@
 
 
 #ifdef OPAL_STATIC_LINK
+#define H323_STATIC_LIB
 #include <codec/allcodecs.h>
 #endif
 
