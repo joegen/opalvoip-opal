@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h450pdu.cxx,v $
- * Revision 1.2003  2001/08/17 08:29:27  robertj
+ * Revision 1.2004  2001/08/23 03:14:30  robertj
+ * Fixed GNU warnings
+ *
+ * Revision 2.2  2001/08/17 08:29:27  robertj
  * Update from OpenH323
  *
  * Revision 2.1  2001/08/13 05:10:40  robertj
@@ -794,6 +797,9 @@ void H4502Handler::OnReceivedCallTransferSetup(int /*linkedId*/,
       // those in the Identify message; for now we just check for empty.
       callIdentity = ctSetupArg.m_callIdentity;
       break;
+
+    default :
+      break;
   }
 
   if (callIdentity.IsEmpty())
@@ -859,6 +865,9 @@ void H4502Handler::OnReceivedReturnResult(X880_ReturnResult &)
       ctState = e_ctIdle;
       endpoint.ClearCall(transferringCallToken, EndedByCallForwarded);
       break;
+
+    default :
+      break;
   }
 }
 
@@ -875,18 +884,23 @@ void H4502Handler::OnReceivedReturnError(int errorCode, X880_ReturnError &)
     case e_ctAwaitSetupResponse:
       // stop timer CT-T4
 
-      // Send a facility to the transferring endpoint
-      // containing a call transfer initiate return error
-      H323Connection* existingConnection = endpoint.FindConnectionWithLock(transferringCallToken);
+      {
+        // Send a facility to the transferring endpoint
+        // containing a call transfer initiate return error
+        H323Connection* existingConnection = endpoint.FindConnectionWithLock(transferringCallToken);
 
-      if (existingConnection != NULL) {
-        H450ServiceAPDU serviceAPDU;
-        serviceAPDU.BuildReturnError(existingConnection->GetCallTransferInvokeId(), errorCode);
-        serviceAPDU.WriteFacilityPDU(*existingConnection);
-        existingConnection->Unlock();
+        if (existingConnection != NULL) {
+          H450ServiceAPDU serviceAPDU;
+          serviceAPDU.BuildReturnError(existingConnection->GetCallTransferInvokeId(), errorCode);
+          serviceAPDU.WriteFacilityPDU(*existingConnection);
+          existingConnection->Unlock();
+        }
+
+        ctState = e_ctIdle;
       }
+      break;
 
-      ctState = e_ctIdle;
+    default :
       break;
   }
 }
