@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2032  2004/12/17 12:06:52  dsandras
+ * Revision 1.2033  2004/12/22 18:56:39  dsandras
+ * Ignore ACK's received outside the context of a connection (e.g. when sending a non-2XX answer to an INVITE).
+ *
+ * Revision 2.31  2004/12/17 12:06:52  dsandras
  * Added error code to OnRegistrationFailed. Made Register/Unregister wait until the transaction is over. Fixed Unregister so that the SIPRegister is used as a pointer or the object is deleted at the end of the function and make Opal crash when transactions are cleaned. Reverted part of the patch that was sending authentication again when it had already been done on a Register.
  *
  * Revision 2.30  2004/12/12 13:42:31  dsandras
@@ -357,6 +360,13 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
         SIP_PDU response(*pdu, SIP_PDU::Failure_MethodNotAllowed);
         response.GetMIME().SetAt("Allow", "INVITE");
         response.Write(transport);
+      }
+      break;
+
+    case SIP_PDU::Method_ACK :
+      {
+	// If we receive an ACK outside of the context of a connection,
+	// ignore it.
       }
       break;
 
