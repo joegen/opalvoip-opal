@@ -19223,7 +19223,6 @@ EXPORTS
     ?CheckCryptoTokens@H323GatekeeperRequest@@QAEHXZ @19199 NONAME
     ?CheckCryptoTokens@H323Transaction@@QAEHABVH235Authenticators@@@Z @19200 NONAME
     ?CheckCryptoTokens@H323Transactor@@IAEHABVH323TransactionPDU@@ABVPASN_Array@@I1I@Z @19201 NONAME
-    ?CheckEstablished@OpalCall@@UAEXXZ @19202 NONAME
     ?CheckForResponse@H323Transactor@@IAEHIIPBVPASN_Choice@@@Z @19203 NONAME
     ?CheckGatekeeperIdentifier@H323GatekeeperRequest@@QAEHXZ @19204 NONAME
     ?CheckResponse@Request@H323Transactor@@QAEXIPBVPASN_Choice@@@Z @19205 NONAME
@@ -32552,9 +32551,11 @@ EXPORTS
     ?OnEndReceive@OpalRFC2833Proto@@UAEXDII@Z @32464 NONAME
     ?OnEndSession@OpalVXMLSession@@UAEXXZ @32465 NONAME
     ?OnEstablished@H323Connection@@UAEXXZ @32466 NONAME
-    ?OnEstablished@OpalCall@@UAEXXZ @32467 NONAME
+    ?OnEstablished@OpalCall@@UAEHAAVOpalConnection@@@Z @35628 NONAME
     ?OnEstablished@OpalConnection@@UAEXXZ @32468 NONAME
     ?OnEstablished@OpalEndPoint@@UAEXAAVOpalConnection@@@Z @32469 NONAME
+    ?OnEstablished@OpalManager@@UAEXAAVOpalConnection@@@Z @35629 NONAME
+    ?OnEstablishedCall@OpalCall@@UAEXXZ @35630 NONAME
     ?OnEstablishedCall@OpalManager@@UAEXAAVOpalCall@@@Z @32470 NONAME
     ?OnFlowControl@H323Channel@@UAEXJ@Z @32471 NONAME
     ?OnFullRegistration@H323RegisteredEndPoint@@UAE?AW4Response@H323Transaction@@AAVH323GatekeeperRRQ@@@Z @32472 NONAME
