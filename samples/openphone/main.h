@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.7  2004/05/15 12:18:23  rjongbloed
+ * More work on wxWindows based OpenPhone
+ *
  * Revision 1.6  2004/05/12 12:41:38  rjongbloed
  * More work on wxWindows based OpenPhone
  *
@@ -56,6 +59,7 @@ class OpalIVREndPoint;
 
 class wxSplitterWindow;
 class wxListCtrl;
+class wxListEvent;
 
 
 class PwxString : public wxString
@@ -71,6 +75,8 @@ class PwxString : public wxString
     PwxString & operator=(const char * str) { wxString::operator=(str); return *this; }
 
     operator PString() const { return c_str(); }
+    operator PIPSocket::Address() const { return PIPSocket::Address(PString(c_str())); }
+    friend ostream & operator<<(ostream & stream, const PwxString & string) { return stream << string.c_str(); }
 };
 
 class MyPCSSEndPoint : public OpalPCSSEndPoint
@@ -80,13 +86,17 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
   public:
     MyPCSSEndPoint(MyFrame & frame);
 
+    bool GetAutoAnswer() const { return m_autoAnswer; }
+    void SetAutoAnswer(bool answer) { m_autoAnswer = answer; }
+
+  private:
     virtual PString OnGetDestination(const OpalPCSSConnection & connection);
     virtual void OnShowIncoming(const OpalPCSSConnection & connection);
     virtual BOOL OnShowOutgoing(const OpalPCSSConnection & connection);
 
-    PString destinationAddress;
-    PString incomingConnectionToken;
-    BOOL    autoAnswer;
+    PString m_destinationAddress;
+    PString m_incomingConnectionToken;
+    bool    m_autoAnswer;
 
     MyFrame & frame;
 };
@@ -109,15 +119,53 @@ class CallDialog : public wxDialog
 };
 
 
+class MyFrame;
+
 class OptionsDialog : public wxDialog
 {
   public:
-    OptionsDialog(wxWindow *parent);
+    OptionsDialog(MyFrame *parent);
+    virtual bool TransferDataFromWindow();
+
+  private:
+    MyFrame & mainFrame;
+
+    PwxString m_Username;
+    PwxString m_DisplayName;
+    PwxString m_RingSoundFileName;
+    bool      m_AutoAnswer;
+
+    int       m_Bandwidth;
+    int       m_TCPPortBase;
+    int       m_TCPPortMax;
+    int       m_UDPPortBase;
+    int       m_UDPPortMax;
+    int       m_RTPPortBase;
+    int       m_RTPPortMax;
+    int       m_RTPTOS;
+    PwxString m_STUNServer;
+    PwxString m_NATRouter;
 
     PwxString m_SoundPlayer;
     PwxString m_SoundRecorder;
+    int       m_SoundBuffers;
+    int       m_MinJitter;
+    int       m_MaxJitter;
+    bool      m_SilenceSuppression;
+    int       m_SignalDeadband;
+    int       m_SilenceDeadband;
 
-  private:
+    bool      m_EnableTracing;
+    int       m_TraceLevelThreshold;
+    bool      m_TraceLevelNumber;
+    bool      m_TraceFileLine;
+    bool      m_TraceBlocks;
+    bool      m_TraceDateTime;
+    bool      m_TraceTimestamp;
+    bool      m_TraceThreadName;
+    bool      m_TraceThreadAddress;
+    PwxString m_TraceFileName;
+
     DECLARE_EVENT_TABLE()
 };
 
@@ -131,6 +179,8 @@ class MyFrame : public wxFrame, public OpalManager
     bool Initialise();
 
   private:
+    void OnClose(wxCloseEvent& event);
+
     void OnMenuQuit(wxCommandEvent& event);
     void OnMenuAbout(wxCommandEvent& event);
     void OnMenuCall(wxCommandEvent& event);
@@ -139,6 +189,9 @@ class MyFrame : public wxFrame, public OpalManager
     void OnViewList(wxCommandEvent& event);
     void OnViewDetails(wxCommandEvent& event);
     void OnOptions(wxCommandEvent& event);
+    void OnSpeedDial(wxListEvent& event);
+
+    void MakeCall(const PwxString & address);
 
     virtual void OnEstablishedCall(
       OpalCall & call   /// Call that was completed
@@ -159,10 +212,14 @@ class MyFrame : public wxFrame, public OpalManager
       long flags
     );
 
+    enum { SpeedDialsID = 100 };
+    enum { NameColumn, NumberColumn, AddressColumn };
+
     wxSplitterWindow         * m_splitter;
     wxListCtrl               * m_speedDials;
     wxTextCtrl               * m_logWindow;
 
+    PTextFile        * m_TraceFile;
     MyPCSSEndPoint   * pcssEP;
     OpalPOTSEndPoint * potsEP;
 #if OPAL_H323
@@ -178,6 +235,8 @@ class MyFrame : public wxFrame, public OpalManager
     PString currentCallToken;
 
     DECLARE_EVENT_TABLE()
+
+  friend class OptionsDialog;
 };
 
 

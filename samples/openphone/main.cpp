@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cpp,v $
+ * Revision 1.12  2004/05/15 12:18:23  rjongbloed
+ * More work on wxWindows based OpenPhone
+ *
  * Revision 1.11  2004/05/12 12:41:38  rjongbloed
  * More work on wxWindows based OpenPhone
  *
@@ -47,6 +50,7 @@
 #include "main.h"
 #include "version.h"
 
+#include <wx/config.h>
 #include <wx/splitter.h>
 #include <wx/listctrl.h>
 #include <wx/image.h>
@@ -64,6 +68,7 @@
 
 #include <opal/ivr.h>
 #include <lids/lidep.h>
+#include <ptclib/pstun.h>
 
 #ifdef OPAL_STATIC_LINK
 #define H323_STATIC_LIB
@@ -108,6 +113,7 @@ OpenPhoneApp::OpenPhoneApp()
   : PProcess("Equivalence", "OpenPhone",
               MAJOR_VERSION, MINOR_VERSION, BUILD_TYPE, BUILD_NUMBER)
 {
+  wxConfig::Set(new wxConfig((const char *)GetName(), (const char *)GetManufacturer()));
 }
 
 
@@ -133,6 +139,8 @@ bool OpenPhoneApp::OnInit()
 ///////////////////////////////////////////////////////////////////////////////
 
 BEGIN_EVENT_TABLE(MyFrame, wxFrame)
+  EVT_CLOSE(MyFrame::OnClose)
+
   EVT_MENU(XRCID("MenuQuit"),   MyFrame::OnMenuQuit)
   EVT_MENU(XRCID("MenuAbout"),  MyFrame::OnMenuAbout)
   EVT_MENU(XRCID("MenuCall"),   MyFrame::OnMenuCall)
@@ -141,11 +149,14 @@ BEGIN_EVENT_TABLE(MyFrame, wxFrame)
   EVT_MENU(XRCID("ViewList"),   MyFrame::OnViewList)
   EVT_MENU(XRCID("ViewDetails"),MyFrame::OnViewDetails)
   EVT_MENU(XRCID("MenuOptions"),MyFrame::OnOptions)
+
+  EVT_LIST_ITEM_ACTIVATED(SpeedDialsID, MyFrame::OnSpeedDial)
 END_EVENT_TABLE()
 
 MyFrame::MyFrame()
   : wxFrame(NULL, -1, wxT("OpenPhone"), wxDefaultPosition, wxSize(640, 480)),
     m_speedDials(NULL),
+    m_TraceFile(NULL),
     pcssEP(NULL),
     potsEP(NULL),
 #if OPAL_H323
@@ -179,6 +190,16 @@ MyFrame::MyFrame()
   sizer->Add(m_splitter, 1, wxGROW, 0);
   SetSizer(sizer);
 
+  wxConfigBase * config = wxConfig::Get();
+
+  int x, y = 0;
+  if (config->Read("MainFrameX", &x) && config->Read("MainFrameY", &y))
+    Move(x, y);
+
+  int w, h = 0;
+  if (config->Read("MainFrameWidth", &w) && config->Read("MainFrameHeight", &h))
+    SetSize(w, h);
+
   // Show the frame
   Show(TRUE);
 }
@@ -193,35 +214,14 @@ MyFrame::~MyFrame()
     potsEP->RemoveAllLines();
 
   LogWindow.SetTextCtrl(NULL);
-}
 
-
-bool MyFrame::Initialise()
-{
-  PTrace::Initialise(4, "trace.log", PTrace::DateAndTime|PTrace::Thread|PTrace::FileAndLine);
-  PTrace::SetLevel(4);
-
-#if OPAL_H323
-  h323EP = new H323EndPoint(*this);
-
-  if (h323EP->StartListeners(PStringArray()))
-    LogWindow << "H.323 listening on " << setfill(',') << h323EP->GetListeners() << setfill(' ') << endl;
+#if PTRACING
+  if (m_TraceFile != NULL) {
+    PTrace::SetStream(NULL);
+    m_TraceFile->Close();
+    delete m_TraceFile;
+  }
 #endif
-
-#if OPAL_SIP
-  sipEP = new SIPEndPoint(*this);
-
-  if (sipEP->StartListeners(PStringArray()))
-    LogWindow << "SIP listening on " << setfill(',') << sipEP->GetListeners() << setfill(' ') << endl;
-#endif
-
-#if P_EXPAT
-  ivrEP = new OpalIVREndPoint(*this);
-#endif
-
-  pcssEP = new MyPCSSEndPoint(*this);
-
-  return true;
 }
 
 
@@ -229,22 +229,26 @@ void MyFrame::RecreateSpeedDials(long flags)
 {
   wxListCtrl * oldSpeedDials = m_speedDials;
 
-  m_speedDials = new wxListCtrl(m_splitter, -1,
+  m_speedDials = new wxListCtrl(m_splitter, SpeedDialsID,
                                wxDefaultPosition, wxDefaultSize,
                                flags | wxLC_EDIT_LABELS | wxSUNKEN_BORDER);
 
   m_speedDials->InsertColumn(0, _T("Name"));
   m_speedDials->InsertColumn(1, _T("Number"));
-  m_speedDials->InsertColumn(2, _T("Address"));
+  m_speedDials->InsertColumn(AddressColumn, _T("Address"));
 
   // Test data ....
-  m_speedDials->InsertItem(0, _T("SpeedDialOne"));
-  m_speedDials->SetItem(0, 1, _T("1"));
-  m_speedDials->SetItem(0, 2, _T("h323:h323.voxgratia.org"));
+  int pos = m_speedDials->InsertItem(INT_MAX, _T("H.323 client"));
+  m_speedDials->SetItem(pos, NumberColumn, _T("1"));
+  m_speedDials->SetItem(pos, AddressColumn, _T("h323:10.0.1.1"));
 
-  m_speedDials->InsertItem(1, _T("SpeedDialTwo"));
-  m_speedDials->SetItem(1, 1, _T("234"));
-  m_speedDials->SetItem(1, 2, _T("sip:gw.voxgratia.org"));
+  pos = m_speedDials->InsertItem(INT_MAX, _T("SIP Client"));
+  m_speedDials->SetItem(pos, NumberColumn, _T("234"));
+  m_speedDials->SetItem(pos, AddressColumn, _T("sip:10.0.2.250"));
+
+  pos = m_speedDials->InsertItem(INT_MAX, _T("Vox Gratia"));
+  m_speedDials->SetItem(pos, NumberColumn, _T("24"));
+  m_speedDials->SetItem(pos, AddressColumn, _T("h323:h323.voxgratia.org"));
 
   // Now either replace the top half of the splitter or set it for the first time
   if (oldSpeedDials == NULL)
@@ -253,6 +257,24 @@ void MyFrame::RecreateSpeedDials(long flags)
     m_splitter->ReplaceWindow(oldSpeedDials, m_speedDials);
     delete oldSpeedDials;
   }
+}
+
+
+void MyFrame::OnClose(wxCloseEvent& event)
+{
+  wxConfigBase * config = wxConfig::Get();
+
+  int x, y;
+  GetPosition(&x, &y);
+  config->Write("MainFrameX", x);
+  config->Write("MainFrameY", y);
+
+  int w, h;
+  GetSize(&w, &h);
+  config->Write("MainFrameWidth", w);
+  config->Write("MainFrameHeight", h);
+
+  Destroy();
 }
 
 
@@ -275,14 +297,8 @@ void MyFrame::OnMenuAbout(wxCommandEvent& WXUNUSED(event))
 void MyFrame::OnMenuCall(wxCommandEvent& WXUNUSED(event))
 {
   CallDialog dlg(this);
-
-  if (dlg.ShowModal() == wxID_OK) {
-    LogWindow << "Calling \"" << dlg.m_Address << '"' << endl;
-    if (potsEP != NULL)
-      SetUpCall("pots:*", dlg.m_Address, currentCallToken);
-    else
-      SetUpCall("pc:*", dlg.m_Address, currentCallToken);
-  }
+  if (dlg.ShowModal() == wxID_OK)
+    MakeCall(dlg.m_Address);
 }
 
 
@@ -310,17 +326,31 @@ void MyFrame::OnViewDetails(wxCommandEvent& WXUNUSED(event))
 }
 
 
-void MyFrame::OnOptions(wxCommandEvent& event)
+void MyFrame::OnSpeedDial(wxListEvent& event)
 {
-  OptionsDialog dlg(this);
+  wxListItem item;
+  item.m_itemId = event.GetIndex();
+  if (item.m_itemId < 0)
+    return;
 
-  dlg.m_SoundPlayer = pcssEP->GetSoundChannelPlayDevice();
-  dlg.m_SoundRecorder = pcssEP->GetSoundChannelRecordDevice();
+  item.m_col = AddressColumn;
+  item.m_mask = wxLIST_MASK_TEXT;
+  if (m_speedDials->GetItem(item))
+    MakeCall(item.m_text);
+}
 
-  if (dlg.ShowModal() == wxID_OK) {
-    pcssEP->SetSoundChannelPlayDevice(dlg.m_SoundPlayer);
-    pcssEP->SetSoundChannelRecordDevice(dlg.m_SoundRecorder);
-  }
+
+void MyFrame::MakeCall(const PwxString & address)
+{
+  if (address.IsEmpty())
+    return;
+
+  LogWindow << "Calling \"" << address << '"' << endl;
+
+  if (potsEP != NULL)
+    SetUpCall("pots:*", address, currentCallToken);
+  else
+    SetUpCall("pc:*", address, currentCallToken);
 }
 
 
@@ -395,14 +425,25 @@ BOOL MyFrame::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & s
   if (!OpalManager::OnOpenMediaStream(connection, stream))
     return FALSE;
 
-  LogWindow << connection.GetEndPoint().GetPrefixName() << " started ";
+  PString prefix = connection.GetEndPoint().GetPrefixName();
+  if (prefix == pcssEP->GetPrefixName())
+    return TRUE;
+
+  LogWindow << "Started ";
 
   if (stream.IsSource())
-    LogWindow << "sending ";
-  else
     LogWindow << "receiving ";
+  else
+    LogWindow << "sending ";
 
-  LogWindow << stream.GetMediaFormat() << endl;  
+  LogWindow << stream.GetMediaFormat();
+
+  if (stream.IsSource())
+    LogWindow << " from ";
+  else
+    LogWindow << " to ";
+
+  LogWindow << connection.GetEndPoint().GetPrefixName() << " endpoint" << endl;
 
   return TRUE;
 }
@@ -415,44 +456,247 @@ void MyFrame::OnUserInputString(OpalConnection & connection, const PString & val
 }
 
 
+bool MyFrame::Initialise()
+{
+  wxConfigBase * config = wxConfig::Get();
+
+  wxString traceFileName;
+  if (config->Read("TraceFileName", &traceFileName) && !traceFileName.IsEmpty()) {
+    int traceLevelThreshold = 3;
+    config->Read("TraceLevelThreshold", &traceLevelThreshold);
+    int traceOptions = PTrace::DateAndTime|PTrace::Thread|PTrace::FileAndLine;
+    config->Read("TraceOptions", &traceOptions);
+    PTrace::Initialise(traceLevelThreshold, traceFileName, traceOptions);
+  }
+
+#if OPAL_H323
+  h323EP = new H323EndPoint(*this);
+
+  if (h323EP->StartListeners(PStringArray()))
+    LogWindow << "H.323 listening on " << setfill(',') << h323EP->GetListeners() << setfill(' ') << endl;
+#endif
+
+#if OPAL_SIP
+  sipEP = new SIPEndPoint(*this);
+
+  if (sipEP->StartListeners(PStringArray()))
+    LogWindow << "SIP listening on " << setfill(',') << sipEP->GetListeners() << setfill(' ') << endl;
+#endif
+
+#if P_EXPAT
+  ivrEP = new OpalIVREndPoint(*this);
+#endif
+
+  pcssEP = new MyPCSSEndPoint(*this);
+
+  PwxString str;
+  if (config->Read("Username", &str))
+    SetDefaultUserName(str);
+
+  if (config->Read("DisplayName", &str))
+    SetDefaultDisplayName(str);
+
+  bool on;
+  if (config->Read("AutoAnswer", &on))
+    pcssEP->SetAutoAnswer(on);
+
+  int i, i2;
+
+  if (config->Read("TCPPortBase", &i)) {
+    config->Read("TCPPortBase", &i2, 0);
+    SetTCPPorts(i, i2);
+  }
+
+  if (config->Read("UDPPortBase", &i)) {
+    config->Read("UDPPortBase", &i2, 0);
+    SetUDPPorts(i, i2);
+  }
+
+  if (config->Read("RTPPortBase", &i)) {
+    config->Read("RTPPortBase", &i2, 0);
+    SetRtpIpPorts(i, i2);
+  }
+
+  if (config->Read("RTPTOS", &i))
+    SetRtpIpTypeofService(i);
+
+  if (config->Read("NATRouter", &str))
+    SetTranslationAddress(str);
+
+  if (config->Read("STUNServer", &str))
+    SetSTUNServer(str);
+
+  if (config->Read("SoundPlayer", &str))
+    pcssEP->SetSoundChannelPlayDevice(str);
+
+  if (config->Read("SoundRecorder", &str))
+    pcssEP->SetSoundChannelRecordDevice(str);
+
+  if (config->Read("SoundBuffers", &i))
+    pcssEP->SetSoundChannelBufferDepth(i);
+
+  if (config->Read("MinJitter", &i)) {
+    config->Read("MaxJitter", &i2, i);
+    SetAudioJitterDelay(i, i2);
+  }
+
+  return true;
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
-MyPCSSEndPoint::MyPCSSEndPoint(MyFrame & ep)
-  : OpalPCSSEndPoint(ep),
-    frame(ep)
+void MyFrame::OnOptions(wxCommandEvent& event)
 {
-  autoAnswer = FALSE;
+  OptionsDialog dlg(this);
+  dlg.ShowModal();
+}
+
+BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
+END_EVENT_TABLE()
+
+#define INIT_FIELD(name, value) \
+  m_##name = value; \
+  FindWindowByName(#name)->SetValidator(wxGenericValidator(&m_##name))
+
+OptionsDialog::OptionsDialog(MyFrame *parent)
+  : mainFrame(*parent)
+{
+  PINDEX i;
+
+  SetExtraStyle(GetExtraStyle() | wxWS_EX_VALIDATE_RECURSIVELY);
+  wxXmlResource::Get()->LoadDialog(this, parent, "OptionsDialog");
+
+  INIT_FIELD(Username, mainFrame.GetDefaultUserName());
+  INIT_FIELD(DisplayName, mainFrame.GetDefaultDisplayName());
+  INIT_FIELD(RingSoundFileName, "");
+  INIT_FIELD(AutoAnswer, mainFrame.pcssEP->GetAutoAnswer());
+  INIT_FIELD(Bandwidth, INT_MAX);
+  INIT_FIELD(TCPPortBase, mainFrame.GetTCPPortBase());
+  INIT_FIELD(TCPPortMax, mainFrame.GetTCPPortMax());
+  INIT_FIELD(UDPPortBase, mainFrame.GetUDPPortBase());
+  INIT_FIELD(UDPPortMax, mainFrame.GetUDPPortMax());
+  INIT_FIELD(RTPPortBase, mainFrame.GetRtpIpPortBase());
+  INIT_FIELD(RTPPortMax, mainFrame.GetRtpIpPortMax());
+  INIT_FIELD(RTPTOS, mainFrame.GetRtpIpTypeofService());
+  INIT_FIELD(STUNServer, mainFrame.GetSTUN() != NULL ? mainFrame.GetSTUN()->GetServer() : PString());
+  INIT_FIELD(NATRouter, mainFrame.GetTranslationAddress().AsString());
+  INIT_FIELD(SoundBuffers, mainFrame.pcssEP->GetSoundChannelBufferDepth());
+  INIT_FIELD(MinJitter, mainFrame.GetMinAudioJitterDelay());
+  INIT_FIELD(MaxJitter, mainFrame.GetMaxAudioJitterDelay());
+  INIT_FIELD(SilenceSuppression, false);
+  INIT_FIELD(SignalDeadband, 100);
+  INIT_FIELD(SilenceDeadband, 500);
+#if PTRACING
+  INIT_FIELD(EnableTracing, mainFrame.m_TraceFile != NULL);
+  INIT_FIELD(TraceLevelThreshold, PTrace::GetLevel());
+  INIT_FIELD(TraceLevelNumber, (PTrace::GetOptions()&PTrace::TraceLevel) != 0);
+  INIT_FIELD(TraceFileLine, (PTrace::GetOptions()&PTrace::FileAndLine) != 0);
+  INIT_FIELD(TraceBlocks, (PTrace::GetOptions()&PTrace::Blocks) != 0);
+  INIT_FIELD(TraceDateTime, (PTrace::GetOptions()&PTrace::DateAndTime) != 0);
+  INIT_FIELD(TraceTimestamp, (PTrace::GetOptions()&PTrace::Timestamp) != 0);
+  INIT_FIELD(TraceThreadName, (PTrace::GetOptions()&PTrace::Thread) != 0);
+  INIT_FIELD(TraceThreadAddress, (PTrace::GetOptions()&PTrace::ThreadAddress) != 0);
+  INIT_FIELD(TraceFileName, m_EnableTracing ? mainFrame.m_TraceFile->GetFilePath() : "");
+#endif // PTRACING
+
+  wxComboBox * combo = (wxComboBox *)FindWindowByName("SoundPlayer");
+  PStringList devices = PSoundChannel::GetDeviceNames(PSoundChannel::Player);
+  for (i = 0; i < devices.GetSize(); i++)
+    combo->Append((const char *)devices[i]);
+  m_SoundPlayer = mainFrame.pcssEP->GetSoundChannelPlayDevice();
+  combo->SetValidator(wxGenericValidator(&m_SoundPlayer));
+
+  combo = (wxComboBox *)FindWindowByName("SoundRecorder");
+  devices = PSoundChannel::GetDeviceNames(PSoundChannel::Recorder);
+  for (i = 0; i < devices.GetSize(); i++)
+    combo->Append((const char *)devices[i]);
+  m_SoundRecorder = mainFrame.pcssEP->GetSoundChannelRecordDevice();
+  combo->SetValidator(wxGenericValidator(&m_SoundRecorder));
 }
 
 
-PString MyPCSSEndPoint::OnGetDestination(const OpalPCSSConnection & /*connection*/)
+#define SAVE_FIELD(name, set) \
+  set(m_##name); \
+  config->Write(#name, m_##name)
+
+#define SAVE_FIELD2(name1, name2, set) \
+  set(m_##name1, m_##name2); \
+  config->Write(#name1, m_##name1); \
+  config->Write(#name2, m_##name2)
+
+bool OptionsDialog::TransferDataFromWindow()
 {
-  // Dialog to prompt for address
-  return PString();
-}
+  if (!wxDialog::TransferDataFromWindow())
+    return false;
 
+  wxConfigBase * config = wxConfig::Get();
 
-void MyPCSSEndPoint::OnShowIncoming(const OpalPCSSConnection & connection)
-{
-  incomingConnectionToken = connection.GetToken();
+  SAVE_FIELD(Username, mainFrame.SetDefaultUserName);
+  SAVE_FIELD(DisplayName, mainFrame.SetDefaultDisplayName);
+  SAVE_FIELD(AutoAnswer, mainFrame.pcssEP->SetAutoAnswer);
+  SAVE_FIELD2(TCPPortBase, TCPPortMax, mainFrame.SetTCPPorts);
+  SAVE_FIELD2(UDPPortBase, UDPPortMax, mainFrame.SetUDPPorts);
+  SAVE_FIELD2(RTPPortBase, RTPPortMax, mainFrame.SetRtpIpPorts);
+  SAVE_FIELD(RTPTOS, mainFrame.SetRtpIpTypeofService);
+  SAVE_FIELD(STUNServer, mainFrame.SetSTUNServer);
+  SAVE_FIELD(NATRouter, mainFrame.SetTranslationAddress);
+  SAVE_FIELD(SoundPlayer, mainFrame.pcssEP->SetSoundChannelPlayDevice);
+  SAVE_FIELD(SoundRecorder, mainFrame.pcssEP->SetSoundChannelRecordDevice);
+  SAVE_FIELD(SoundBuffers, mainFrame.pcssEP->SetSoundChannelBufferDepth);
+  SAVE_FIELD2(MinJitter, MaxJitter, mainFrame.SetAudioJitterDelay);
+  SAVE_FIELD(TraceLevelThreshold, PTrace::SetLevel);
 
-  if (autoAnswer)
-    AcceptIncomingConnection(incomingConnectionToken);
-  else {
-    PTime now;
-    LogWindow << "\nCall on " << now.AsString("w h:mma")
-              << " from " << connection.GetRemotePartyName()
-              << ", answer (Y/N)? " << endl;
+  // Check for stopping tracing
+  if (mainFrame.m_TraceFile != NULL &&
+            (!m_EnableTracing || mainFrame.m_TraceFile->GetFilePath() != PFilePath((PString)m_TraceFileName))) {
+    PTrace::SetStream(NULL);
+    delete mainFrame.m_TraceFile;
+    config->DeleteEntry("TraceFileName");
   }
-}
 
+  if (m_EnableTracing && !m_TraceFileName.IsEmpty() && mainFrame.m_TraceFile == NULL) {
+    PTextFile * traceFile = new PTextFile;
+    if (traceFile->Open(m_TraceFileName.c_str(), PFile::WriteOnly)) {
+      mainFrame.m_TraceFile = traceFile;
+      PTrace::SetStream(traceFile);
+      PProcess & process = PProcess::Current();
+      PTRACE(0, process.GetName()
+            << " Version " << process.GetVersion(TRUE)
+            << " by " << process.GetManufacturer()
+            << " on " << process.GetOSClass() << ' ' << process.GetOSName()
+            << " (" << process.GetOSVersion() << '-' << process.GetOSHardware() << ')');
+      config->Write("TraceFileName", traceFile->GetFilePath());
+    }
+    else {
+      wxString msg;
+      msg << "Could not open trace log file \"" << m_TraceFileName << '"';
+      wxMessageDialog messageBox(this, msg, _T("OpenPhone Error"), wxOK|wxICON_EXCLAMATION);
+      messageBox.ShowModal();
+      delete traceFile;
+    }
+  }
 
-BOOL MyPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection & connection)
-{
-  PTime now;
-  LogWindow << connection.GetRemotePartyName() << " is ringing on "
-            << now.AsString("w h:mma") << " ..." << endl;
-  return TRUE;
+  int newOptions = 0;
+  if (m_TraceLevelNumber)
+    newOptions |= PTrace::TraceLevel;
+  if (m_TraceFileLine)
+    newOptions |= PTrace::FileAndLine;
+  if (m_TraceBlocks)
+    newOptions |= PTrace::Blocks;
+  if (m_TraceDateTime)
+    newOptions |= PTrace::DateAndTime;
+  if (m_TraceTimestamp)
+    newOptions |= PTrace::Timestamp;
+  if (m_TraceThreadName)
+    newOptions |= PTrace::Thread;
+  if (m_TraceThreadAddress)
+    newOptions |= PTrace::ThreadAddress;
+  PTrace::SetOptions(newOptions);
+  PTrace::ClearOptions(~newOptions);
+  config->Write("TraceOptions", newOptions);
+
+  return true;
 }
 
 
@@ -486,26 +730,42 @@ void CallDialog::OnAddressChange(wxCommandEvent & WXUNUSED(event))
 
 ///////////////////////////////////////////////////////////////////////////////
 
-BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
-END_EVENT_TABLE()
-
-OptionsDialog::OptionsDialog(wxWindow *parent)
+MyPCSSEndPoint::MyPCSSEndPoint(MyFrame & ep)
+  : OpalPCSSEndPoint(ep),
+    frame(ep)
 {
-  PINDEX i;
+  m_autoAnswer = false;
+}
 
-  wxXmlResource::Get()->LoadDialog(this, parent, "OptionsDialog");
 
-  wxComboBox * combo = (wxComboBox *)FindWindowByName("SoundPlayer");
-  combo->SetValidator(wxGenericValidator(&m_SoundPlayer));
-  PStringList devices = PSoundChannel::GetDeviceNames(PSoundChannel::Player);
-  for (i = 0; i < devices.GetSize(); i++)
-    combo->Append((const char *)devices[i]);
+PString MyPCSSEndPoint::OnGetDestination(const OpalPCSSConnection & /*connection*/)
+{
+  // Dialog to prompt for address
+  return PString();
+}
 
-  combo = (wxComboBox *)FindWindowByName("SoundRecorder");
-  combo->SetValidator(wxGenericValidator(&m_SoundRecorder));
-  devices = PSoundChannel::GetDeviceNames(PSoundChannel::Recorder);
-  for (i = 0; i < devices.GetSize(); i++)
-    combo->Append((const char *)devices[i]);
+
+void MyPCSSEndPoint::OnShowIncoming(const OpalPCSSConnection & connection)
+{
+  m_incomingConnectionToken = connection.GetToken();
+
+  if (m_autoAnswer)
+    AcceptIncomingConnection(m_incomingConnectionToken);
+  else {
+    PTime now;
+    LogWindow << "\nCall on " << now.AsString("w h:mma")
+              << " from " << connection.GetRemotePartyName()
+              << ", answer (Y/N)? " << endl;
+  }
+}
+
+
+BOOL MyPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection & connection)
+{
+  PTime now;
+  LogWindow << connection.GetRemotePartyName() << " is ringing on "
+            << now.AsString("w h:mma") << " ..." << endl;
+  return TRUE;
 }
 
 
