@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lpc10codec.h,v $
- * Revision 1.2006  2002/11/10 11:33:16  robertj
+ * Revision 1.2007  2002/11/10 23:22:17  robertj
+ * Cosmetic change
+ *
+ * Revision 2.5  2002/11/10 11:33:16  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.4  2002/09/16 02:52:33  robertj
@@ -137,12 +140,14 @@ class H323_LPC10Capability : public H323NonStandardAudioCapability
   //@}
 };
 
-#define OPAL_REGISTER_LPC10_H323 \
-          H323_REGISTER_CAPABILITY_EP(H323_LPC10Capability, OPAL_LPC10)
 
 #ifdef H323_STATIC_LIB
 H323_STATIC_LOAD_REGISTER_CAPABILITY(H323_LPC10Capability);
 #endif
+
+
+#define OPAL_REGISTER_LPC10_H323 \
+          H323_REGISTER_CAPABILITY_EP(H323_LPC10Capability, OPAL_LPC10)
 
 
 #else // ifndef NO_H323
