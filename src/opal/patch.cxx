@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2006  2004/01/18 15:35:21  rjongbloed
+ * Revision 1.2007  2004/02/15 04:34:08  rjongbloed
+ * Fixed correct setting of write data size on sick stream. Important for current
+ *   output of silence frames and adjustment of sound card buffers.
+ * Fixed correct propagation of timestamp values from source to sink media
+ *   stream and back from sink to source stream.
+ *
+ * Revision 2.5  2004/01/18 15:35:21  rjongbloed
  * More work on video support
  *
  * Revision 2.4  2003/03/17 10:27:00  robertj
@@ -173,7 +179,7 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream)
 
   sink->primaryCodec = OpalTranscoder::Create(sourceFormat, destinationFormat);
   if (sink->primaryCodec != NULL) {
-    if (sink->primaryCodec->GetOptimalDataFrameSize(FALSE) > stream->GetDataSize()) {
+    if (!stream->SetDataSize(sink->primaryCodec->GetOptimalDataFrameSize(FALSE))) {
       PTRACE(2, "Patch\tSink stream " << *stream << " cannot support data size "
               << sink->primaryCodec->GetOptimalDataFrameSize(FALSE));
       return FALSE;
@@ -192,7 +198,7 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream)
 
     sink->primaryCodec = OpalTranscoder::Create(sourceFormat, intermediateFormat);
     sink->secondaryCodec = OpalTranscoder::Create(intermediateFormat, destinationFormat);
-    if (sink->secondaryCodec->GetOptimalDataFrameSize(FALSE) > stream->GetDataSize()) {
+    if (!stream->SetDataSize(sink->secondaryCodec->GetOptimalDataFrameSize(FALSE))) {
       PTRACE(2, "Patch\tSink stream " << *stream << " cannot support data size "
               << sink->secondaryCodec->GetOptimalDataFrameSize(FALSE));
       return FALSE;
@@ -286,21 +292,25 @@ BOOL OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
   }
 
   for (PINDEX i = 0; i < intermediateFrames.GetSize(); i++) {
-    patch.FilterFrame(intermediateFrames[i], primaryCodec->GetOutputFormat());
+    RTP_DataFrame & intermediateFrame = intermediateFrames[i];
+    patch.FilterFrame(intermediateFrame, primaryCodec->GetOutputFormat());
     if (secondaryCodec == NULL) {
-      if (!stream->WritePacket(intermediateFrames[i]))
+      if (!stream->WritePacket(intermediateFrame))
         return FALSE;
+      sourceFrame.SetTimestamp(intermediateFrame.GetTimestamp());
     }
     else {
-      if (!secondaryCodec->ConvertFrames(intermediateFrames[i], finalFrames)) {
+      if (!secondaryCodec->ConvertFrames(intermediateFrame, finalFrames)) {
         PTRACE(1, "Patch\tMedia conversion (secondary) failed");
         return FALSE;
       }
 
       for (PINDEX f = 0; f < finalFrames.GetSize(); f++) {
-        patch.FilterFrame(finalFrames[f], secondaryCodec->GetOutputFormat());
-        if (!stream->WritePacket(finalFrames[f]))
+        RTP_DataFrame & finalFrame = finalFrames[f];
+        patch.FilterFrame(finalFrame, secondaryCodec->GetOutputFormat());
+        if (!stream->WritePacket(finalFrame))
           return FALSE;
+        sourceFrame.SetTimestamp(finalFrame.GetTimestamp());
       }
     }
   }
