@@ -24,11 +24,17 @@
  * Contributor(s): Fürbass Franz <franz.fuerbass@infonova.at>
  *
  * $Log: h235auth1.cxx,v $
- * Revision 1.2003  2001/08/17 05:24:53  robertj
+ * Revision 1.2004  2001/08/17 08:31:54  robertj
+ * Update from OpenH323
+ *
+ * Revision 2.2  2001/08/17 05:24:53  robertj
  * Fixed missing subdirectories in includes
  *
  * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 1.2  2001/08/14 05:24:41  robertj
+ * Added support for H.235v1 and H.235v2 specifications.
  *
  * Revision 1.1  2001/08/10 11:03:52  robertj
  * Major changes to H.235 support in RAS to support server.
@@ -46,15 +52,16 @@
 #define TIMESPAN_FOR_VERIFY  10000
 
 
-static const char OID_A[] = "0.0.8.235.0.1.1";
-static const char OID_T[] = "0.0.8.235.0.1.5";
-static const char OID_U[] = "0.0.8.235.0.1.6";
+static const char OID_A[] = "0.0.8.235.0.2.1";
+static const char OID_T[] = "0.0.8.235.0.2.5";
+static const char OID_U[] = "0.0.8.235.0.2.6";
 
+#define OID_VERSION_OFFSET 5
 
 #define HASH_SIZE 12
 
 static const BYTE SearchPattern[HASH_SIZE] = { // Must be 12 bytes
-  't', 'w', 'e', 'l', 'v', 'e', '~', 'b', 'y', 't', 'e', 's'
+  't', 'W', 'e', 'l', 'V', 'e', '~', 'b', 'y', 't', 'e', 'S'
 };
 
 #ifndef SHA_DIGESTSIZE
@@ -265,6 +272,26 @@ BOOL H235AuthProcedure1::Finalise(PBYTEArray & rawPDU)
 }
 
 
+static BOOL CheckOID(const PASN_ObjectId & oid1, const PASN_ObjectId & oid2)
+{
+  if (oid1.GetSize() != oid2.GetSize())
+    return FALSE;
+
+  PINDEX i;
+  for (i = 0; i < OID_VERSION_OFFSET; i++) {
+    if (oid1[i] != oid2[i])
+      return FALSE;
+  }
+
+  for (i++; i < oid1.GetSize(); i++) {
+    if (oid1[i] != oid2[i])
+      return FALSE;
+  }
+
+  return TRUE;
+}
+
+
 H235Authenticator::State H235AuthProcedure1::VerifyToken(
                                       const H225_CryptoH323Token & cryptoToken,
                                       const PBYTEArray & rawPDU)
@@ -282,20 +309,20 @@ H235Authenticator::State H235AuthProcedure1::VerifyToken(
   //verify the crypto OIDs
   
   // "A" indicates that the whole messages is used for authentication.
-  if (crHashed.m_tokenOID != OID_A) {
+  if (!CheckOID(crHashed.m_tokenOID, OID_A)) {
     PTRACE(2, "H235RAS\tRequire all fields are hashed, got tokenIOD " << crHashed.m_tokenOID);
     return e_Absent;
   }
   
   // "T" indicates that the hashed token of the CryptoToken is used for authentication.
-  if (crHashed.m_hashedVals.m_tokenOID != OID_T) {
+  if (!CheckOID(crHashed.m_hashedVals.m_tokenOID, OID_T)) {
     PTRACE(2, "H235RAS\tRequire ClearToken for hash, got tokenIOD " << crHashed.m_hashedVals.m_tokenOID);
     return e_Absent;
   }
   
   // "U" indicates that the HMAC-SHA1-96 alorigthm is used.
   
-  if (crHashed.m_token.m_algorithmOID != OID_U) {
+  if (!CheckOID(crHashed.m_token.m_algorithmOID, OID_U)) {
     PTRACE(2, "H235RAS\tRequire HMAC-SHA1-96 was not used");
     return e_Absent;
   }
@@ -320,7 +347,7 @@ H235Authenticator::State H235AuthProcedure1::VerifyToken(
   lastTimestamp = crHashed.m_hashedVals.m_timeStamp;
   
   //verify the username
-  if (!localId) {
+  if (!localId && crHashed.m_tokenOID[OID_VERSION_OFFSET] > 1) {
     if (!crHashed.m_hashedVals.HasOptionalField(H235_ClearToken::e_generalID)) {
       PTRACE(1, "H235RAS\tRequired destination ID missing.");
       return e_Error;

@@ -24,11 +24,20 @@
  * Contributor(s): __________________________________
  *
  * $Log: h235auth.cxx,v $
- * Revision 1.2003  2001/08/17 05:24:53  robertj
+ * Revision 1.2004  2001/08/17 08:31:54  robertj
+ * Update from OpenH323
+ *
+ * Revision 2.2  2001/08/17 05:24:53  robertj
  * Fixed missing subdirectories in includes
  *
  * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 1.4  2001/08/14 04:26:46  robertj
+ * Completed the Cisco compatible MD5 authentications, thanks Wolfgang Platzer.
+ *
+ * Revision 1.3  2001/08/13 10:03:54  robertj
+ * Fixed problem if do not have a localId when doing MD5 authentication.
  *
  * Revision 1.2  2001/08/10 13:49:35  robertj
  * Fixed alpha Linux warning.
@@ -106,17 +115,24 @@ H235AuthSimpleMD5::H235AuthSimpleMD5()
 {
 }
 
-
 BOOL H235AuthSimpleMD5::PrepareToken(H225_CryptoH323Token & cryptoToken)
 {
   if (!IsActive())
     return FALSE;
 
-  // Build the clear token
+  // Cisco compatible hash calculation
   H235_ClearToken clearToken;
-  clearToken.m_tokenOID = OID_MD5;
-  clearToken.m_generalID = localId;
-  clearToken.m_password = password;
+
+  // fill the PwdCertToken to calculate the hash
+  clearToken.m_tokenOID = "0.0";
+
+  clearToken.IncludeOptionalField(H235_ClearToken::e_generalID);
+  clearToken.m_generalID = localId + "&#0;"; // Need a terminating null character
+
+  clearToken.IncludeOptionalField(H235_ClearToken::e_password);
+  clearToken.m_password = password + "&#0;"; // Need a terminating null character 
+
+  clearToken.IncludeOptionalField(H235_ClearToken::e_timeStamp);
   clearToken.m_timeStamp = (int)time(NULL);
 
   // Encode it into PER
@@ -135,7 +151,9 @@ BOOL H235AuthSimpleMD5::PrepareToken(H225_CryptoH323Token & cryptoToken)
   H225_CryptoH323Token_cryptoEPPwdHash & cryptoEPPwdHash = cryptoToken;
 
   // Set the token data that actually goes over the wire
-  H323SetAliasAddress(localId, cryptoEPPwdHash.m_alias);
+  if (!localId)
+    H323SetAliasAddress(localId, cryptoEPPwdHash.m_alias);
+
   cryptoEPPwdHash.m_timeStamp = clearToken.m_timeStamp;
   cryptoEPPwdHash.m_token.m_algorithmOID = OID_MD5;
   cryptoEPPwdHash.m_token.m_hash.SetData(sizeof(digest)*8, (const BYTE *)&digest);
@@ -172,9 +190,18 @@ H235Authenticator::State H235AuthSimpleMD5::VerifyToken(
 
   // Build the clear token
   H235_ClearToken clearToken;
-  clearToken.m_tokenOID = OID_MD5;
-  clearToken.m_generalID = alias;
-  clearToken.m_password = password;
+  clearToken.m_tokenOID = "0.0";
+
+  clearToken.IncludeOptionalField(H235_ClearToken::e_generalID);
+  clearToken.m_generalID = alias + "&#0;"; // Need a terminating null character
+
+  clearToken.IncludeOptionalField(H235_ClearToken::e_password);
+  clearToken.m_password = password + "&#0;"; // Need a terminating null character 
+
+  clearToken.IncludeOptionalField(H235_ClearToken::e_timeStamp);
+  clearToken.m_timeStamp = (int)time(NULL);
+
+  clearToken.IncludeOptionalField(H235_ClearToken::e_timeStamp);
   clearToken.m_timeStamp = cryptoEPPwdHash.m_timeStamp;
 
   // Encode it into PER
