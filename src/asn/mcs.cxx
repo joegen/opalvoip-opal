@@ -5,7 +5,7 @@
 //
 
 #ifdef P_USE_PRAGMA
-#pragma implementation "mcspdu.h"
+#pragma implementation "mcs.h"
 #endif
 
 #include <ptlib.h>
