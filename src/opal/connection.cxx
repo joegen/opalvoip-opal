@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2010  2001/11/14 01:31:55  robertj
+ * Revision 1.2011  2001/11/15 06:56:54  robertj
+ * Added session ID to trace log in OenSourceMediaStreams
+ *
+ * Revision 2.9  2001/11/14 01:31:55  robertj
  * Corrected placement of adjusting media format list.
  *
  * Revision 2.8  2001/11/02 10:45:19  robertj
@@ -293,15 +296,19 @@ void OpalConnection::AdjustMediaFormats(OpalMediaFormatList & mediaFormats) cons
 BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats,
                                            unsigned sessionID)
 {
-  PTRACE(3, "OpalCon\tOpenSourceMediaStream " << *this);
-
   // See if already opened
-  if (GetMediaStream(sessionID, TRUE) != NULL)
+  if (GetMediaStream(sessionID, TRUE) != NULL) {
+    PTRACE(3, "OpalCon\tOpenSourceMediaStream (already opened) for session "
+           << sessionID << " on " << *this);
     return TRUE;
+  }
+
+  PTRACE(3, "OpalCon\tOpenSourceMediaStream for session " << sessionID << " on " << *this);
 
   OpalMediaStream * stream = CreateMediaStream(TRUE, sessionID);
   if (stream == NULL) {
-    PTRACE(1, "OpalCon\tCreateMediaStream " << *this << " returned NULL");
+    PTRACE(1, "OpalCon\tCreateMediaStream returned NULL for session "
+           << sessionID << " on " << *this);
     return FALSE;
   }
 
@@ -311,7 +318,7 @@ BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForm
                                     mediaFormats,
                                     sourceFormat,
                                     destinationFormat)) {
-    PTRACE(3, "OpalCon\tOpenSourceMediaStream, selected "
+    PTRACE(3, "OpalCon\tSelected media stream "
            << sourceFormat << " -> " << destinationFormat);
     if (stream->Open(sourceFormat)) {
       if (OnOpenMediaStream(*stream)) {
@@ -324,7 +331,8 @@ BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForm
     }
   }
   else {
-    PTRACE(2, "OpalCon\tOpenSourceMediaStream, could not find compatible media format:\n"
+    PTRACE(2, "OpalCon\tOpenSourceMediaStream session " << sessionID
+           << ", could not find compatible media format:\n"
               "  source formats=" << setfill(',') << GetMediaFormats() << "\n"
               "   sink  formats=" << mediaFormats << setfill(' '));
   }
