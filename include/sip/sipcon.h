@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2019  2004/03/13 06:30:03  rjongbloed
+ * Revision 1.2020  2004/03/14 10:09:53  rjongbloed
+ * Moved transport on SIP top be constructed by endpoint as any transport created on
+ *   an endpoint can receive data for any connection.
+ *
+ * Revision 2.18  2004/03/13 06:30:03  rjongbloed
  * Changed parameter in UDP write function to void * from PObject *.
  *
  * Revision 2.17  2004/02/24 11:33:46  rjongbloed
@@ -333,7 +337,6 @@ class SIPConnection : public OpalConnection
     const SIPAuthentication & GetAuthentication() const { return authentication; }
 
   protected:
-    PDECLARE_NOTIFIER(PThread, SIPConnection, ReadThreadMain);
     PDECLARE_NOTIFIER(PThread, SIPConnection, HandlePDUsThreadMain);
     virtual void OnReceivedSDP(SIP_PDU & pdu);
     virtual BOOL OnReceivedSDPMediaDescription(
