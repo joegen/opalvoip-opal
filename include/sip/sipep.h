@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2017  2004/08/14 07:56:30  rjongbloed
+ * Revision 1.2018  2004/08/22 12:27:44  rjongbloed
+ * More work on SIP registration, time to live refresh and deregistration on exit.
+ *
+ * Revision 2.16  2004/08/14 07:56:30  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.15  2004/07/11 12:42:10  rjongbloed
@@ -272,7 +275,8 @@ class SIPEndPoint : public OpalEndPoint
       const PString & username = PString::Empty(),
       const PString & password = PString::Empty()
     );
-    const SIPURL & GetRegistrationAddress() const { return registrationAddress; }
+    virtual void OnRegistered();
+    bool IsRegistered() const { return registered; }
 
     void SetMIMEForm(BOOL v) { mimeForm = v; }
     BOOL GetMIMEForm() const { return mimeForm; }
@@ -307,6 +311,11 @@ class SIPEndPoint : public OpalEndPoint
     ) { ackTimeout = t; }
     const PTimeInterval & GetAckTimeout() const { return ackTimeout; }
 
+    void SetRegistrarTimeToLive(
+      const PTimeInterval & t
+    ) { registrarTimeToLive = t; }
+    const PTimeInterval & GetRegistrarTimeToLive() const { return registrarTimeToLive; }
+
     void AddTransaction(
       SIPTransaction * transaction
     ) { transactions.SetAt(transaction->GetTransactionID(), transaction); }
@@ -332,6 +341,7 @@ class SIPEndPoint : public OpalEndPoint
 
   protected:
     PDECLARE_NOTIFIER(PThread, SIPEndPoint, TransportThreadMain);
+    PDECLARE_NOTIFIER(PTimer, SIPEndPoint, RegistrationRefresh);
     static BOOL WriteREGISTER(OpalTransport & transport, void * param);
 
   protected:
@@ -347,11 +357,15 @@ class SIPEndPoint : public OpalEndPoint
     PTimeInterval pduCleanUpTimeout; // T4
     PTimeInterval inviteTimeout;
     PTimeInterval ackTimeout;
+    PTimeInterval registrarTimeToLive;
 
     OpalTransport    * registrarTransport;
     SIPURL             registrationAddress;
     PString            registrationID;
     SIPTransactionList registrations;
+    bool               registered;
+    PTimer             registrationTimer;
+
     SIPTransactionDict transactions;
     unsigned           lastSentCSeq;
 };
