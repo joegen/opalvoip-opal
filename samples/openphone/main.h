@@ -25,6 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.12  2004/07/14 13:17:42  rjongbloed
+ * Added saving of the width of columns in the speed dial list.
+ * Fixed router display in options dialog so is empty if IP address invalid.
+ *
  * Revision 1.11  2004/07/04 12:53:09  rjongbloed
  * Added support for route editing.
  *
@@ -275,7 +279,8 @@ class MyFrame : public wxFrame, public OpalManager
     void OnViewList(wxCommandEvent& event);
     void OnViewDetails(wxCommandEvent& event);
     void OnOptions(wxCommandEvent& event);
-    void OnSpeedDial(wxListEvent& event);
+    void OnSpeedDialActivated(wxListEvent& event);
+    void OnSpeedDialColumnResize(wxListEvent& event);
 
     void MakeCall(const PwxString & address);
 

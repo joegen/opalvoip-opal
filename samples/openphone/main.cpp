@@ -25,6 +25,10 @@
  * Contributor(s): 
  *
  * $Log: main.cpp,v $
+ * Revision 1.18  2004/07/14 13:17:42  rjongbloed
+ * Added saving of the width of columns in the speed dial list.
+ * Fixed router display in options dialog so is empty if IP address invalid.
+ *
  * Revision 1.17  2004/07/11 12:42:11  rjongbloed
  * Added function on endpoints to get the list of all media formats any
  *   connection the endpoint may create can support.
@@ -94,11 +98,12 @@
 
 
 #define DEF_FIELD(name) static const char name##Key[] = #name;
-DEF_FIELD(ActiveView);
 DEF_FIELD(MainFrameX);
 DEF_FIELD(MainFrameY);
 DEF_FIELD(MainFrameWidth);
 DEF_FIELD(MainFrameHeight);
+
+DEF_FIELD(ActiveView);
 
 DEF_FIELD(Username);
 DEF_FIELD(DisplayName);
@@ -252,7 +257,8 @@ BEGIN_EVENT_TABLE(MyFrame, wxFrame)
   EVT_MENU(XRCID("ViewDetails"),MyFrame::OnViewDetails)
   EVT_MENU(XRCID("MenuOptions"),MyFrame::OnOptions)
 
-  EVT_LIST_ITEM_ACTIVATED(SpeedDialsID, MyFrame::OnSpeedDial)
+  EVT_LIST_ITEM_ACTIVATED(SpeedDialsID, MyFrame::OnSpeedDialActivated)
+  EVT_LIST_COL_END_DRAG(SpeedDialsID, MyFrame::OnSpeedDialColumnResize)
 END_EVENT_TABLE()
 
 MyFrame::MyFrame()
@@ -332,19 +338,31 @@ MyFrame::~MyFrame()
 
 void MyFrame::RecreateSpeedDials(SpeedDialViews view)
 {
+  wxConfigBase * config = wxConfig::Get();
+
+  wxListCtrl * oldSpeedDials = m_speedDials;
+
   static DWORD const ListCtrlStyle[e_NumViews] = {
     wxLC_ICON, wxLC_SMALL_ICON, wxLC_LIST, wxLC_REPORT
   };
-
-  wxListCtrl * oldSpeedDials = m_speedDials;
 
   m_speedDials = new wxListCtrl(m_splitter, SpeedDialsID,
                                wxDefaultPosition, wxDefaultSize,
                                ListCtrlStyle[view] | wxLC_EDIT_LABELS | wxSUNKEN_BORDER);
 
+  int width;
+
   m_speedDials->InsertColumn(0, _T("Name"));
+  if (config->Read("ColumnWidth0", &width))
+    m_speedDials->SetColumnWidth(0, width);
+
   m_speedDials->InsertColumn(1, _T("Number"));
-  m_speedDials->InsertColumn(e_AddressColumn, _T("Address"));
+  if (config->Read("ColumnWidth1", &width))
+    m_speedDials->SetColumnWidth(1, width);
+
+  m_speedDials->InsertColumn(2, _T("Address"));
+  if (config->Read("ColumnWidth2", &width))
+    m_speedDials->SetColumnWidth(2, width);
 
   // Test data ....
   int pos = m_speedDials->InsertItem(INT_MAX, _T("H.323 client"));
@@ -352,11 +370,11 @@ void MyFrame::RecreateSpeedDials(SpeedDialViews view)
   m_speedDials->SetItem(pos, e_AddressColumn, _T("h323:10.0.1.1"));
 
   pos = m_speedDials->InsertItem(INT_MAX, _T("SIP Client"));
-  m_speedDials->SetItem(pos, e_NumberColumn, _T("234"));
-  m_speedDials->SetItem(pos, e_AddressColumn, _T("sip:10.0.2.250"));
+  m_speedDials->SetItem(pos, e_NumberColumn, _T("81"));
+  m_speedDials->SetItem(pos, e_AddressColumn, _T("sip:81@10.0.2.250"));
 
   pos = m_speedDials->InsertItem(INT_MAX, _T("Vox Gratia"));
-  m_speedDials->SetItem(pos, e_NumberColumn, _T("24"));
+  m_speedDials->SetItem(pos, e_NumberColumn, _T("2468"));
   m_speedDials->SetItem(pos, e_AddressColumn, _T("h323:h323.voxgratia.org"));
 
   // Now either replace the top half of the splitter or set it for the first time
@@ -367,7 +385,7 @@ void MyFrame::RecreateSpeedDials(SpeedDialViews view)
     delete oldSpeedDials;
   }
 
-  wxConfig::Get()->Write(ActiveViewKey, view);
+  config->Write(ActiveViewKey, view);
 }
 
 
@@ -466,7 +484,7 @@ void MyFrame::OnViewDetails(wxCommandEvent& event)
 }
 
 
-void MyFrame::OnSpeedDial(wxListEvent& event)
+void MyFrame::OnSpeedDialActivated(wxListEvent& event)
 {
   wxListItem item;
   item.m_itemId = event.GetIndex();
@@ -477,6 +495,15 @@ void MyFrame::OnSpeedDial(wxListEvent& event)
   item.m_mask = wxLIST_MASK_TEXT;
   if (m_speedDials->GetItem(item))
     MakeCall(item.m_text);
+}
+
+
+void MyFrame::OnSpeedDialColumnResize(wxListEvent& event)
+{
+  wxConfigBase * config = wxConfig::Get();
+  wxString key;
+  key.sprintf("ColumnWidth%u", event.GetColumn());
+  config->Write(key, m_speedDials->GetColumnWidth(event.GetColumn()));
 }
 
 
@@ -855,7 +882,10 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
   INIT_FIELD(RTPPortMax, mainFrame.GetRtpIpPortMax());
   INIT_FIELD(RTPTOS, mainFrame.GetRtpIpTypeofService());
   INIT_FIELD(STUNServer, mainFrame.GetSTUN() != NULL ? mainFrame.GetSTUN()->GetServer() : PString());
-  INIT_FIELD(NATRouter, mainFrame.GetTranslationAddress().AsString());
+  PwxString natRouter;
+  if (mainFrame.GetTranslationAddress().IsValid())
+    natRouter = mainFrame.GetTranslationAddress().AsString();
+  INIT_FIELD(NATRouter, natRouter);
 
   ////////////////////////////////////////
   // Sound fields
