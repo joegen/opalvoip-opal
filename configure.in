@@ -228,10 +228,13 @@ dnl
 dnl MSWIN_DISPLAY ixj,Quicknet Internet xJACK cards
 dnl MSWIN_DEFINE  ixj,HAS_IXJ
 
+HAS_IXJ=
 AC_CHECK_HEADERS(linux/telephony.h sys/telephony.h /usr/local/include/sys/telephony.h, HAS_IXJ=1)
 if test "x$HAS_IXJ" != "x" ; then
   AC_DEFINE(HAS_IXJ, 1)
+  HAS_IXJ=1
 fi
+AC_SUBST(HAS_IXJ)
 
 
 dnl ########################################################################
