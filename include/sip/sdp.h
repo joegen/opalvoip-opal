@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2003  2002/02/11 07:34:58  robertj
+ * Revision 1.2004  2002/02/13 02:27:50  robertj
+ * Normalised some function names.
+ * Fixed incorrect port number usage stopping audio in one direction.
+ *
+ * Revision 2.2  2002/02/11 07:34:58  robertj
  * Changed SDP to use OpalTransport for hosts instead of IP addresses/ports
  *
  * Revision 2.1  2002/02/01 04:53:01  robertj
@@ -135,7 +139,7 @@ class SDPMediaDescription : public PObject
     );
 
     void PrintOn(ostream & strm) const;
-    BOOL Parse(const PString & str);
+    BOOL Decode(const PString & str);
 
     MediaType GetMediaType() const { return mediaType; }
 
@@ -158,7 +162,6 @@ class SDPMediaDescription : public PObject
 
   protected:
     MediaType mediaType;
-    WORD port;
     WORD portCount;
     PCaselessString media;
     PCaselessString transport;
@@ -182,7 +185,7 @@ class SDPSessionDescription : public PObject
 
     void PrintOn(ostream & strm) const;
     PString Encode() const;
-    void Decode(const PString & str);
+    BOOL Decode(const PString & str);
 
     void SetSessionName(const PString & v) { sessionName = v; }
     PString GetSessionName() const         { return sessionName; }
