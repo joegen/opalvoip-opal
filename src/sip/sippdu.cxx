@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2002  2002/02/01 04:53:01  robertj
+ * Revision 1.2003  2002/02/11 07:36:23  robertj
+ * Changed SDP to use OpalTransport for hosts instead of IP addresses/ports
+ * Added media bypass for streams between compatible protocols.
+ *
+ * Revision 2.1  2002/02/01 04:53:01  robertj
  * Added (very primitive!) SIP support.
  *
  */
@@ -514,9 +518,9 @@ void SIP_PDU::BuildCommon()
   WORD port;
   transport.GetLocalAddress().GetIpAndPort(ip, port);
 
-  if (connection->GetLocalIPAddress(ip)) {
-    OpalTransportAddress addr(ip, port, OpalTransportAddress::UdpPrefix);
-    SIPURL contact(connection->GetLocalPartyName(), addr);
+  OpalTransportAddress localAddress = connection->GetLocalAddress(port);
+  if (!localAddress) {
+    SIPURL contact(connection->GetLocalPartyName(), localAddress);
     mime.SetContact(contact.AsString());
   }
   else
@@ -532,37 +536,8 @@ void SIP_PDU::BuildINVITE()
   BuildCommon();
 
   mime.SetAt("User-Agent", "OPAL/2.0");
-
-  PIPSocket::Address ip;
-  connection->GetLocalIPAddress(ip);
-  sdp = new SDPSessionDescription(ip);
   mime.SetContentType("application/sdp");
-
-  // create the SDP definition for the audio channel
-  RTP_UDP * audioRTPSession = (RTP_UDP*)connection->UseSession(OpalMediaFormat::DefaultAudioSessionID);
-
-
-  SDPMediaDescription * localMedia = new SDPMediaDescription(SDPMediaDescription::Audio,
-                                                             audioRTPSession->GetLocalDataPort());
-
-  OpalMediaFormatList formats = connection->GetCall().GetMediaFormats(*connection);
-
-  // add the audio formats
-  localMedia->AddMediaFormats(formats);
-
-  // only continue if we have an RTP type
-  RTP_DataFrame::PayloadTypes ntePayloadCode = connection->GetRFC2833PayloadType();
-  if (ntePayloadCode < RTP_DataFrame::IllegalPayloadType) {
-    PTRACE(3, "SIP\tUsing RTP payload " << ntePayloadCode << " for NTE");
-
-    // create and add the NTE media format
-    localMedia->AddSDPMediaFormat(new SDPMediaFormat("0-15", ntePayloadCode));
-  } else {
-    PTRACE(2, "SIP\tCould not allocate dynamic RTP payload for NTE");
-  }
-
-  // add in SDP records
-  sdp->AddMediaDescription(localMedia);
+  sdp = connection->BuildSDP();
 }
 
 
