@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.h,v $
- * Revision 1.2005  2004/02/19 10:46:43  rjongbloed
+ * Revision 1.2006  2005/02/21 12:19:45  rjongbloed
+ * Added new "options list" to the OpalMediaFormat class.
+ *
+ * Revision 2.4  2004/02/19 10:46:43  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.3  2004/02/15 03:12:51  rjongbloed
@@ -99,12 +102,6 @@
 #define OPAL_SPEEX_NARROW_11k  "SpeexNarrow-11k"
 #define OPAL_SPEEX_NARROW_15k  "SpeexNarrow-15k"
 #define OPAL_SPEEX_NARROW_18k2 "SpeexNarrow-18.2k"
-
-extern OpalMediaFormat const OpalSpeexNarrow_5k95;
-extern OpalMediaFormat const OpalSpeexNarrow_8k;
-extern OpalMediaFormat const OpalSpeexNarrow_11k;
-extern OpalMediaFormat const OpalSpeexNarrow_15k;
-extern OpalMediaFormat const OpalSpeexNarrow_18k2;
 
 
 struct SpeexBits;
@@ -187,11 +184,11 @@ H323_STATIC_LOAD_REGISTER_CAPABILITY(SpeexNarrow6AudioCapability);
 
 
 #define OPAL_REGISTER_SPEEX_H323 \
-          H323_REGISTER_CAPABILITY(SpeexNarrow2AudioCapability, OpalSpeexNarrow_5k95) \
-          H323_REGISTER_CAPABILITY(SpeexNarrow3AudioCapability, OpalSpeexNarrow_8k) \
-          H323_REGISTER_CAPABILITY(SpeexNarrow4AudioCapability, OpalSpeexNarrow_11k) \
-          H323_REGISTER_CAPABILITY(SpeexNarrow5AudioCapability, OpalSpeexNarrow_15k) \
-          H323_REGISTER_CAPABILITY(SpeexNarrow6AudioCapability, OpalSpeexNarrow_18k2)
+          H323_REGISTER_CAPABILITY(SpeexNarrow2AudioCapability, OPAL_SPEEX_NARROW_5k95) \
+          H323_REGISTER_CAPABILITY(SpeexNarrow3AudioCapability, OPAL_SPEEX_NARROW_8k) \
+          H323_REGISTER_CAPABILITY(SpeexNarrow4AudioCapability, OPAL_SPEEX_NARROW_11k) \
+          H323_REGISTER_CAPABILITY(SpeexNarrow5AudioCapability, OPAL_SPEEX_NARROW_15k) \
+          H323_REGISTER_CAPABILITY(SpeexNarrow6AudioCapability, OPAL_SPEEX_NARROW_18k2)
 
 
 #else // ifndef NO_H323

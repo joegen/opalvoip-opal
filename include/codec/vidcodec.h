@@ -24,7 +24,10 @@
  * Contributor(s): 
  *
  * $Log: vidcodec.h,v $
- * Revision 1.2005  2004/09/01 12:21:27  rjongbloed
+ * Revision 1.2006  2005/02/21 12:19:45  rjongbloed
+ * Added new "options list" to the OpalMediaFormat class.
+ *
+ * Revision 2.4  2004/09/01 12:21:27  rjongbloed
  * Added initialisation of H323EndPoints capability table to be all codecs so can
  *   correctly build remote caps from fqast connect params. This had knock on effect
  *   with const keywords added in numerous places.
@@ -272,13 +275,9 @@ class Opal_RGB32_YUV420P : public OpalUncompVideoTranscoder {
           OPAL_REGISTER_TRANSCODER(Opal_RGB32_YUV420P, OPAL_RGB32,   OPAL_YUV420P)
 
 
-#define OPAL_RGB24         "RGB24"
-#define OPAL_RGB32         "RGB32"
-#define OPAL_YUV420P       "YUV420P"
-
-extern OpalMediaFormat const OpalRGB24;
-extern OpalMediaFormat const OpalRGB32;
-extern OpalMediaFormat const OpalYUV420P;
+#define OPAL_RGB24   "RGB24"
+#define OPAL_RGB32   "RGB32"
+#define OPAL_YUV420P "YUV420P"
 
 
 #endif // __OPAL_VIDCODEC_H
