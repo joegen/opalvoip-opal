@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2001/08/01 05:15:22  robertj
+ * Moved default session ID's to OpalMediaFormat class.
+ * Added setting of connections capabilities from other connections in
+ *   calls media format list.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.185  2001/07/19 09:29:47  robertj
@@ -2502,8 +2507,8 @@ void H323Connection::NewIncomingControlChannel(PThread &, INT param)
   // If H.245 channel failed to connect and have no media (no fast start)
   // then clear the call as it is useless.
   if (param == 0 &&
-      FindChannel(RTP_Session::DefaultAudioSessionID, TRUE) == NULL ||
-      FindChannel(RTP_Session::DefaultAudioSessionID, FALSE) == NULL) {
+      FindChannel(OpalMediaFormat::DefaultAudioSessionID, TRUE) == NULL ||
+      FindChannel(OpalMediaFormat::DefaultAudioSessionID, FALSE) == NULL) {
     ClearCall(EndedByTransportFail);
     return;
   }
@@ -3086,6 +3091,32 @@ void H323Connection::SendCapabilitySet(BOOL empty)
 
 void H323Connection::OnSetLocalCapabilities()
 {
+  OpalMediaFormatList formats = ownerCall.GetMediaFormats(*this);
+  endpoint.AdjustMediaFormats(*this, formats);
+
+  PINDEX simultaneous = P_MAX_INDEX;
+
+  PINDEX i;
+  for (i = 0; i < formats.GetSize(); i++) {
+    if (formats[i].GetDefaultSessionID() == OpalMediaFormat::DefaultAudioSessionID)
+      simultaneous = localCapabilities.AddAllCapabilities(endpoint, 0, simultaneous, formats[i]);
+  }
+
+  simultaneous = P_MAX_INDEX;
+
+  for (i = 0; i < formats.GetSize(); i++) {
+    if (formats[i].GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID)
+      simultaneous = localCapabilities.AddAllCapabilities(endpoint, 0, simultaneous, formats[i]);
+  }
+
+  simultaneous = P_MAX_INDEX;
+
+  for (i = 0; i < formats.GetSize(); i++) {
+    if (formats[i].GetDefaultSessionID() == OpalMediaFormat::DefaultDataSessionID)
+      simultaneous = localCapabilities.AddAllCapabilities(endpoint, 0, simultaneous, formats[i]);
+  }
+
+  PTRACE(2, "H323\tSetLocalCapabilities:\n" << setprecision(2) << localCapabilities);
 }
 
 
@@ -3138,7 +3169,7 @@ void H323Connection::InternalEstablishedConnectionCheck()
 
     // If we are early starting, start channels as soon as possible instead of
     // waiting for connect PDU
-    if (earlyStart && FindChannel(RTP_Session::DefaultAudioSessionID, FALSE) == NULL)
+    if (earlyStart && FindChannel(OpalMediaFormat::DefaultAudioSessionID, FALSE) == NULL)
       OnSelectLogicalChannels();
   }
 
@@ -3155,7 +3186,7 @@ void H323Connection::InternalEstablishedConnectionCheck()
     return;
 
   // Check if we have already got a transmitter running, select one if not
-  if (FindChannel(RTP_Session::DefaultAudioSessionID, FALSE) == NULL)
+  if (FindChannel(OpalMediaFormat::DefaultAudioSessionID, FALSE) == NULL)
     OnSelectLogicalChannels();
 
   connectionState = EstablishedConnection;
@@ -3164,13 +3195,13 @@ void H323Connection::InternalEstablishedConnectionCheck()
 }
 
 
-OpalMediaFormat::List H323Connection::GetMediaFormats() const
+OpalMediaFormatList H323Connection::GetMediaFormats() const
 {
   return remoteCapabilities.GetMediaFormats();
 }
 
 
-BOOL H323Connection::OpenSourceMediaStream(const OpalMediaFormat::List & mediaFormats,
+BOOL H323Connection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats,
                                            unsigned sessionID)
 {
   // Check if we have already got a transmitter running, select one if not
@@ -3226,25 +3257,25 @@ void H323Connection::OnSelectLogicalChannels()
   // Select the first codec that uses the "standard" audio session.
   switch (fastStartState) {
     default : //FastStartDisabled :
-      SelectDefaultLogicalChannel(RTP_Session::DefaultAudioSessionID);
+      SelectDefaultLogicalChannel(OpalMediaFormat::DefaultAudioSessionID);
       if (endpoint.CanAutoStartTransmitVideo())
-        SelectDefaultLogicalChannel(RTP_Session::DefaultVideoSessionID);
+        SelectDefaultLogicalChannel(OpalMediaFormat::DefaultVideoSessionID);
       break;
 
     case FastStartInitiate :
-      SelectFastStartChannels(RTP_Session::DefaultAudioSessionID, TRUE, TRUE);
-      SelectFastStartChannels(RTP_Session::DefaultVideoSessionID,
+      SelectFastStartChannels(OpalMediaFormat::DefaultAudioSessionID, TRUE, TRUE);
+      SelectFastStartChannels(OpalMediaFormat::DefaultVideoSessionID,
                               endpoint.CanAutoStartTransmitVideo(),
                               endpoint.CanAutoStartReceiveVideo());
       break;
 
     case FastStartResponse :
-      StartFastStartChannel(RTP_Session::DefaultAudioSessionID, H323Channel::IsTransmitter);
-      StartFastStartChannel(RTP_Session::DefaultAudioSessionID, H323Channel::IsReceiver);
+      StartFastStartChannel(OpalMediaFormat::DefaultAudioSessionID, H323Channel::IsTransmitter);
+      StartFastStartChannel(OpalMediaFormat::DefaultAudioSessionID, H323Channel::IsReceiver);
       if (endpoint.CanAutoStartTransmitVideo())
-        StartFastStartChannel(RTP_Session::DefaultVideoSessionID, H323Channel::IsTransmitter);
+        StartFastStartChannel(OpalMediaFormat::DefaultVideoSessionID, H323Channel::IsTransmitter);
       if (endpoint.CanAutoStartReceiveVideo())
-        StartFastStartChannel(RTP_Session::DefaultVideoSessionID, H323Channel::IsReceiver);
+        StartFastStartChannel(OpalMediaFormat::DefaultVideoSessionID, H323Channel::IsReceiver);
       break;
   }
 }
