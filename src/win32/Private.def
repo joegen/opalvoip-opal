@@ -1,4 +1,4 @@
-LIBRARY OpenH323
+LIBRARY Opal
 EXPORTS
 ;Must tell MergeSym that these symbols are not to be exported
     _alaw2linear @12522 NONAME ;_alaw2linear
@@ -104,3 +104,21 @@ EXPORTS
     _vparms_ @17330 NONAME ;_vparms_
     __a2u @17332 NONAME ;__a2u
     __u2a @17342 NONAME ;__u2a
+    _g726_16_decoder @30652 NONAME ;_g726_16_decoder
+    _g726_16_encoder @30653 NONAME ;_g726_16_encoder
+    _g726_24_decoder @30654 NONAME ;_g726_24_decoder
+    _g726_24_encoder @30655 NONAME ;_g726_24_encoder
+    _g726_32_decoder @30656 NONAME ;_g726_32_decoder
+    _g726_32_encoder @30657 NONAME ;_g726_32_encoder
+    _g726_40_decoder @30658 NONAME ;_g726_40_decoder
+    _g726_40_encoder @30659 NONAME ;_g726_40_encoder
+    _g726_init_state @30660 NONAME ;_g726_init_state
+    _GUID_CLASS_VOIP_BLASTER @30661 NONAME ;_GUID_CLASS_VOIP_BLASTER
+    _predictor_pole @30662 NONAME ;_predictor_pole
+    _predictor_zero @30663 NONAME ;_predictor_zero
+    _quantize @30664 NONAME ;_quantize
+    _reconstruct @30665 NONAME ;_reconstruct
+    _step_size @30666 NONAME ;_step_size
+    _tandem_adjust_alaw @30667 NONAME ;_tandem_adjust_alaw
+    _tandem_adjust_ulaw @30668 NONAME ;_tandem_adjust_ulaw
+    _update @30669 NONAME ;_update
