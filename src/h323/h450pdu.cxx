@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h450pdu.cxx,v $
- * Revision 1.2012  2003/01/07 04:39:53  robertj
+ * Revision 1.2013  2004/02/17 09:59:27  csoutheren
+ * Removed incorrect assignment of m_silentMonitoringPermitted to FALSE
+ * See SourceForge bug 832371
+ * Thanks to Vyacheslav E. Andrejev
+ *
+ * Revision 2.11  2003/01/07 04:39:53  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.10  2002/11/10 11:33:19  robertj
@@ -2011,7 +2016,6 @@ void H45011Handler::OnReceivedCallIntrusionGetCIPL(int /*linkedId*/,
 
   ciCIPLRes.m_ciProtectionLevel = endpoint.GetCallIntrusionProtectionLevel();
   ciCIPLRes.IncludeOptionalField(H45011_CIGetCIPLRes::e_silentMonitoringPermitted);
-  ciCIPLRes.m_silentMonitoringPermitted = FALSE;
 
   PPER_Stream resultStream;
   ciCIPLRes.Encode(resultStream);
