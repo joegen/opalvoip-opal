@@ -22,7 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2014  2002/09/11 05:56:16  robertj
+# Revision 1.2015  2002/11/11 07:43:32  robertj
+# Added speex codec files
+#
+# Revision 2.13  2002/09/11 05:56:16  robertj
 # Fixed double inclusion of common.mak
 # Added opalwavfile.cxx module
 #
@@ -195,6 +198,8 @@ SOURCES += $(OPAL_SRCDIR)/codec/g711codec.cxx \
            $(OPAL_SRCDIR)/codec/rfc2833.cxx \
            $(OPAL_SRCDIR)/codec/opalwavfile.cxx
 
+
+
 G726_DIR = g726
 
 SOURCES  += $(OPAL_SRCDIR)/codec/g726codec.cxx \
@@ -203,6 +208,7 @@ SOURCES  += $(OPAL_SRCDIR)/codec/g726codec.cxx \
             $(G726_DIR)/g726_24.c \
             $(G726_DIR)/g726_32.c \
             $(G726_DIR)/g726_40.c
+
 
 
 GSM_DIR 	= $(OPAL_SRCDIR)/codec/gsm
@@ -218,12 +224,14 @@ SOURCES += $(OPAL_SRCDIR)/codec/gsmcodec.cxx \
            $(GSM_SRCDIR)/code.c \
            $(GSM_SRCDIR)/decode.c \
            $(GSM_SRCDIR)/add.c \
-           $(GSM_SRCDIR)/lpc.c \
+           $(GSM_SRCDIR)/gsm_lpc.c \
            $(GSM_SRCDIR)/rpe.c \
            $(GSM_SRCDIR)/preprocess.c \
            $(GSM_SRCDIR)/long_term.c \
            $(GSM_SRCDIR)/short_term.c \
            $(GSM_SRCDIR)/table.c
+
+
 
 LPC10_DIR 	= $(OPAL_SRCDIR)/codec/lpc10
 LPC10_INCDIR	= $(LPC10_DIR)
@@ -264,6 +272,49 @@ SOURCES += $(OPAL_SRCDIR)/codec/lpc10codec.cxx \
            $(LPC10_SRCDIR)/tbdm.c \
            $(LPC10_SRCDIR)/voicin.c \
            $(LPC10_SRCDIR)/vparms.c \
+
+
+
+SPEEX_DIR       = $(OPAL_SRCDIR)/codec/speex
+SPEEX_INCDIR    = $(SPEEX_DIR)/libspeex
+SPEEX_SRCDIR    = $(SPEEX_DIR)/libspeex
+
+HEADER_FILES    += $(OH323_INCDIR)/speexcodec.h \
+		   $(SPEEX_INCDIR)/speex.h \
+                   $(SPEEX_INCDIR)/speex_bits.h \
+                   $(SPEEX_INCDIR)/speex_header.h \
+                   $(SPEEX_INCDIR)/speex_callbacks.h
+
+
+COMMON_SOURCES  += $(OH323_SRCDIR)/speexcodec.cxx \
+		   $(SPEEX_SRCDIR)/nb_celp.c \
+                   $(SPEEX_SRCDIR)/sb_celp.c \
+                   $(SPEEX_SRCDIR)/lpc.c \
+                   $(SPEEX_SRCDIR)/ltp.c \
+                   $(SPEEX_SRCDIR)/lsp.c \
+                   $(SPEEX_SRCDIR)/quant_lsp.c \
+                   $(SPEEX_SRCDIR)/lsp_tables_nb.c \
+                   $(SPEEX_SRCDIR)/gain_table.c \
+                   $(SPEEX_SRCDIR)/gain_table_lbr.c \
+                   $(SPEEX_SRCDIR)/cb_search.c \
+                   $(SPEEX_SRCDIR)/filters.c \
+                   $(SPEEX_SRCDIR)/bits.c \
+                   $(SPEEX_SRCDIR)/modes.c \
+                   $(SPEEX_SRCDIR)/vq.c \
+                   $(SPEEX_SRCDIR)/high_lsp_tables.c \
+                   $(SPEEX_SRCDIR)/vbr.c \
+                   $(SPEEX_SRCDIR)/hexc_table.c \
+                   $(SPEEX_SRCDIR)/exc_5_256_table.c \
+                   $(SPEEX_SRCDIR)/exc_5_64_table.c \
+                   $(SPEEX_SRCDIR)/exc_8_128_table.c \
+                   $(SPEEX_SRCDIR)/exc_10_32_table.c \
+                   $(SPEEX_SRCDIR)/exc_10_16_table.c \
+                   $(SPEEX_SRCDIR)/hexc_10_32_table.c \
+                   $(SPEEX_SRCDIR)/misc.c \
+                   $(SPEEX_SRCDIR)/speex_header.c \
+                   $(SPEEX_SRCDIR)/speex_callbacks.c
+
+
 
 VIC_DIR = $(OPAL_SRCDIR)/codec/vic
 
