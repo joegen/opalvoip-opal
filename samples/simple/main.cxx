@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2026  2003/03/26 03:51:46  robertj
+ * Revision 1.2027  2003/04/09 01:38:27  robertj
+ * Changed default to not send/receive video and added options to turn it on.
+ *
+ * Revision 2.25  2003/03/26 03:51:46  robertj
  * Fixed failure to compile if not statically linked.
  *
  * Revision 2.24  2003/03/24 07:18:29  robertj
@@ -239,6 +242,9 @@ void SimpleOpalProcess::Main()
              "-udp-base:"
              "-udp-max:"
 	     "-use-long-mime."
+             "-rx-video."
+             "-tx-video."
+             "-grabber:"
 #if P_EXPAT
              "V-no-ivr."
              "x-vxml:"
@@ -257,12 +263,17 @@ void SimpleOpalProcess::Main()
             "  -a --auto-answer        : Automatically answer incoming calls.\n"
             "  -u --user name          : Set local alias name(s) (defaults to login name).\n"
             "  -p --password pwd       : Set password for user (gk or SIP authorisation).\n"
+            "  -D --disable media      : Disable the specified codec (may be used multiple times)\n"
+            "  -P --prefer media       : Prefer the specified codec (may be used multiple times)\n"
             "\n"
             "Audio options:\n"
-            "  -D --disable codec      : Disable the specified codec (may be used multiple times)\n"
-            "  -P --prefer codec       : Prefer the specified codec (may be used multiple times)\n"
             "  -j --jitter [min-]max   : Set minimum (optional) and maximum jitter buffer (in milliseconds).\n"
             "  -e --silence            : Disable transmitter silence detection.\n"
+            "\n"
+            "Video options:\n"
+            "     --rx-video           : Start receiving video immediately.\n"
+            "     --tx-video           : Start transmitting video immediately.\n"
+            "     --grabber dev        : Set the video grabber device.\n"
             "\n"
             "SIP options:\n"
             "  -I --no-sip             : Disable SIP protocol.\n"
@@ -410,6 +421,14 @@ BOOL MyManager::Initialise(PArgList & args)
   // Set the various global options
   autoAnswer = args.HasOption('a');
   silenceOn  = !args.HasOption('e');
+  autoStartReceiveVideo = args.HasOption("rx-video");
+  autoStartTransmitVideo = args.HasOption("tx-video");
+
+  if (args.HasOption("grabber")) {
+    PVideoDevice::OpenArgs video = GetVideoInputDevice();
+    video.deviceName = args.GetOptionString("grabber");
+    SetVideoInputDevice(video);
+  }
 
   // get the protocols in use
   BOOL useSIP  = !args.HasOption("no-sip");
