@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2022  2003/03/07 08:18:47  robertj
+ * Revision 1.2023  2003/03/17 08:12:08  robertj
+ * Added protocol name to media stream open output.
+ *
+ * Revision 2.21  2003/03/07 08:18:47  robertj
  * Fixed naming convention of PC sound system in routing table.
  *
  * Revision 2.20  2003/03/07 05:56:47  robertj
@@ -792,7 +795,7 @@ BOOL MyManager::OnOpenMediaStream(OpalConnection & connection,
   if (!OpalManager::OnOpenMediaStream(connection, stream))
     return FALSE;
 
-  cout << "Started ";
+  cout << connection.GetEndPoint().GetPrefixName() << " started ";
 
   if (stream.IsSource())
     cout << "sending ";
