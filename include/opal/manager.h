@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2003  2001/08/17 08:23:59  robertj
+ * Revision 1.2004  2001/08/23 05:51:17  robertj
+ * Completed implementation of codec reordering.
+ *
+ * Revision 2.2  2001/08/17 08:23:59  robertj
  * Changed OnEstablished() to OnEstablishedCall() to be consistent.
  * Moved call end reasons enum from OpalConnection to global.
  *
@@ -417,7 +420,7 @@ class OpalManager : public PObject
        member variables to adjust the mediaFormats list.
       */
     virtual void AdjustMediaFormats(
-      OpalConnection & connection,  /// Connection that is about to use formats
+      const OpalConnection & connection,  /// Connection that is about to use formats
       OpalMediaFormatList & mediaFormats  /// Media formats to use
     );
 
