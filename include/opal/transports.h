@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.h,v $
- * Revision 1.2007  2002/06/16 23:07:47  robertj
+ * Revision 1.2008  2002/07/01 04:56:31  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.6  2002/06/16 23:07:47  robertj
  * Fixed several memory leaks, thanks Ted Szoczei
  *
  * Revision 2.5  2002/04/09 00:12:10  robertj
@@ -97,6 +100,12 @@ class OpalTransportAddress : public PString
 
   /**@name Operations */
   //@{
+    /**Determine if the two transport addresses are equivalent.
+      */
+    BOOL IsEquivalent(
+      const OpalTransportAddress & address
+    );
+
     /**Extract the ip address from transport address.
        Returns FALSE, if the address is not an IP transport address.
       */
@@ -629,6 +638,7 @@ class OpalTransport : public PIndirectChannel
     virtual BOOL IsRunning() const;
   //@}
 
+    OpalEndPoint & GetEndPoint() const { return endpoint; }
 
   protected:
     OpalEndPoint & endpoint;

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2012  2002/03/22 06:57:49  robertj
+ * Revision 1.2013  2002/07/01 04:56:31  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.11  2002/03/22 06:57:49  robertj
  * Updated to OpenH323 version 1.8.2
  *
  * Revision 2.10  2002/02/19 07:36:28  robertj
@@ -62,6 +65,11 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.9  2002/06/25 08:30:08  robertj
+ * Changes to differentiate between stright G.723.1 and G.723.1 Annex A using
+ *   the OLC dataType silenceSuppression field so does not send SID frames
+ *   to receiver codecs that do not understand them.
  *
  * Revision 1.8  2002/03/21 02:39:15  robertj
  * Added backward compatibility define
@@ -405,6 +413,8 @@ class OpalMediaFormat : public PCaselessString
 #define OPAL_G7231         "G.723.1"
 #define OPAL_G7231_6k3     OPAL_G7231
 #define OPAL_G7231_5k3     "G.723.1(5.3k)"
+#define OPAL_G7231A_6k3    "G.723.1A(6.3k)"
+#define OPAL_G7231A_5k3    "G.723.1A(5.3k)"
 #define OPAL_GSM0610       "GSM-06.10"
 #define OPAL_RFC2833       "UserInput/RFC2833"
 
@@ -422,6 +432,8 @@ extern OpalMediaFormat const OpalG729AB;
 #define OpalG7231 OpalG7231_6k3
 extern OpalMediaFormat const OpalG7231_6k3;
 extern OpalMediaFormat const OpalG7231_5k3;
+extern OpalMediaFormat const OpalG7231A_6k3;
+extern OpalMediaFormat const OpalG7231A_5k3;
 extern OpalMediaFormat const OpalGSM0610;
 extern OpalMediaFormat const OpalRFC2833;
 
