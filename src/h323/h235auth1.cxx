@@ -24,7 +24,10 @@
  * Contributor(s): Fürbass Franz <franz.fuerbass@infonova.at>
  *
  * $Log: h235auth1.cxx,v $
- * Revision 1.2004  2001/08/17 08:31:54  robertj
+ * Revision 1.2005  2001/10/05 00:22:14  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.3  2001/08/17 08:31:54  robertj
  * Update from OpenH323
  *
  * Revision 2.2  2001/08/17 05:24:53  robertj
@@ -32,6 +35,10 @@
  *
  * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 1.3  2001/09/13 01:15:20  robertj
+ * Added flag to H235Authenticator to determine if gkid and epid is to be
+ *   automatically set as the crypto token remote id and local id.
  *
  * Revision 1.2  2001/08/14 05:24:41  robertj
  * Added support for H.235v1 and H.235v2 specifications.
@@ -428,6 +435,12 @@ H235Authenticator::State H235AuthProcedure1::VerifyToken(
   }
   
   return e_Attacked;
+}
+
+
+BOOL H235AuthProcedure1::UseGkAndEpIdentifiers() const
+{
+  return TRUE;
 }
 
 

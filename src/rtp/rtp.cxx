@@ -27,8 +27,21 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2001/10/05 00:22:14  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.69  2001/09/12 07:48:05  robertj
+ * Fixed various problems with tracing.
+ *
+ * Revision 1.68  2001/09/11 00:21:24  robertj
+ * Fixed missing stack sizes in endpoint for cleaner thread and jitter thread.
+ *
+ * Revision 1.67  2001/09/10 08:24:04  robertj
+ * Fixed setting of destination RTP address so works with endpoints that
+ *   do not get the OLC packets quite right.
  *
  * Revision 1.66  2001/07/11 03:23:54  robertj
  * Bug fixed where every 65536 PDUs the session thinks it is the first PDU again.
@@ -556,7 +569,7 @@ void RTP_Session::SetUserData(RTP_UserData * data)
 }
 
 
-void RTP_Session::SetJitterBufferSize(unsigned jitterDelay)
+void RTP_Session::SetJitterBufferSize(unsigned jitterDelay, PINDEX stackSize)
 {
   if (jitterDelay == 0) {
     delete jitter;
@@ -566,7 +579,7 @@ void RTP_Session::SetJitterBufferSize(unsigned jitterDelay)
     jitter->SetDelay(jitterDelay);
   else {
     SetIgnoreOutOfOrderPackets(FALSE);
-    jitter = new RTP_JitterBuffer(*this, jitterDelay);
+    jitter = new RTP_JitterBuffer(*this, jitterDelay, stackSize);
   }
 }
 
@@ -884,9 +897,7 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveControl(const RTP_ControlFr
 
   switch (frame.GetPayloadType()) {
     case RTP_ControlFrame::e_SenderReport :
-      if (size < sizeof(RTP_ControlFrame::SenderReport))
-        PTRACE(2, "RTP\tSenderReport packet truncated");
-      else {
+      if (size >= sizeof(RTP_ControlFrame::SenderReport)) {
         SenderReport sender;
         const RTP_ControlFrame::SenderReport & sr = *(const RTP_ControlFrame::SenderReport *)payload;
         sender.sourceIdentifier = sr.ssrc;
@@ -897,20 +908,22 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveControl(const RTP_ControlFr
         OnRxSenderReport(sender,
               BuildReceiverReportArray(frame, sizeof(RTP_ControlFrame::SenderReport)));
       }
+      else {
+        PTRACE(2, "RTP\tSenderReport packet truncated");
+      }
       break;
 
     case RTP_ControlFrame::e_ReceiverReport :
-      if (size < 4)
-        PTRACE(2, "RTP\tReceiverReport packet truncated");
-      else
+      if (size >= 4)
         OnRxReceiverReport(*(const PUInt32b *)payload,
                                     BuildReceiverReportArray(frame, sizeof(PUInt32b)));
+      else {
+        PTRACE(2, "RTP\tReceiverReport packet truncated");
+      }
       break;
 
     case RTP_ControlFrame::e_SourceDescription :
-      if (size < frame.GetCount()*sizeof(RTP_ControlFrame::SourceDescription))
-        PTRACE(2, "RTP\tSourceDescription packet truncated");
-      else {
+      if (size >= frame.GetCount()*sizeof(RTP_ControlFrame::SourceDescription)) {
         SourceDescriptionArray descriptions;
         const RTP_ControlFrame::SourceDescription * sdes = (const RTP_ControlFrame::SourceDescription *)payload;
         for (PINDEX srcIdx = 0; srcIdx < (PINDEX)frame.GetCount(); srcIdx++) {
@@ -924,12 +937,13 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveControl(const RTP_ControlFr
         }
         OnRxSourceDescription(descriptions);
       }
+      else {
+        PTRACE(2, "RTP\tSourceDescription packet truncated");
+      }
       break;
 
     case RTP_ControlFrame::e_Goodbye :
-      if (size < 4)
-        PTRACE(2, "RTP\tGoodbye packet truncated");
-      else {
+      if (size >= 4) {
         PString str;
         unsigned count = frame.GetCount()*4;
         if (size > count)
@@ -939,15 +953,19 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveControl(const RTP_ControlFr
           sources[i] = ((const PUInt32b *)payload)[i];
         OnRxGoodbye(sources, str);
       }
+      else {
+        PTRACE(2, "RTP\tGoodbye packet truncated");
+      }
       break;
 
     case RTP_ControlFrame::e_ApplDefined :
-      if (size < 4)
-        PTRACE(2, "RTP\tApplDefined packet truncated");
-      else {
+      if (size >= 4) {
         PString str((const char *)(payload+4), 4);
         OnRxApplDefined(str, frame.GetCount(), *(const PUInt32b *)payload,
                         payload+8, frame.GetPayloadSize()-8);
+      }
+      else {
+        PTRACE(2, "RTP\tApplDefined packet truncated");
       }
       break;
 
@@ -1257,19 +1275,20 @@ BOOL RTP_UDP::SetRemoteSocketInfo(PIPSocket::Address address, WORD port, BOOL is
             "local=" << localAddress << ':' << localDataPort << '-' << localControlPort << ", "
             "remote=" << remoteAddress << ':' << remoteDataPort << '-' << remoteControlPort);
 
-  if (remoteAddress == 0)
-    remoteAddress = address;
+  if (localAddress == address && (isDataPort ? localDataPort : localControlPort) == port)
+    return TRUE;
 
-  if (address == remoteAddress) {
-    if (isDataPort) {
-      remoteDataPort = port;
-      if (remoteControlPort == 0)
-        remoteControlPort = (WORD)(port + 1);
-    } else {
-      remoteControlPort = port;
-      if (remoteDataPort == 0)
-        remoteDataPort = (WORD)(port - 1);
-    }
+  remoteAddress = address;
+
+  if (isDataPort) {
+    remoteDataPort = port;
+    if (remoteControlPort == 0)
+      remoteControlPort = (WORD)(port + 1);
+  }
+  else {
+    remoteControlPort = port;
+    if (remoteDataPort == 0)
+      remoteDataPort = (WORD)(port - 1);
   }
 
   return remoteAddress != 0 && port != 0;
@@ -1351,7 +1370,9 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(PUDPSocket & socket
       return RTP_Session::e_IgnorePacket;
 
     default:
-      PTRACE(1, "RTP_UDP\t" << PTRACE_name << " read error: " << socket.GetErrorText());
+      PTRACE(1, "RTP_UDP\t" << PTRACE_name << " read error ("
+             << socket.GetErrorNumber(PChannel::LastReadError) << "): "
+             << socket.GetErrorText(PChannel::LastReadError));
       return RTP_Session::e_AbortTransport;
   }
 }
@@ -1418,7 +1439,9 @@ BOOL RTP_UDP::WriteData(RTP_DataFrame & frame)
     return TRUE;
 
   PTRACE(1, "RTP_UDP\tSession " << sessionID
-         << ", Write error on data port: " << dataSocket.GetErrorText());
+         << ", Write error on data port ("
+         << dataSocket.GetErrorNumber(PChannel::LastWriteError) << "): "
+         << dataSocket.GetErrorText(PChannel::LastWriteError));
   return FALSE;
 }
 
@@ -1430,7 +1453,9 @@ BOOL RTP_UDP::WriteControl(RTP_ControlFrame & frame)
     return TRUE;
 
   PTRACE(1, "RTP_UDP\tSession " << sessionID
-         << ", Write error on control port: " << controlSocket.GetErrorText());
+         << ", Write error on control port ("
+         << controlSocket.GetErrorNumber(PChannel::LastWriteError) << "): "
+         << controlSocket.GetErrorText(PChannel::LastWriteError));
   return FALSE;
 }
 

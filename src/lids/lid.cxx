@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.cxx,v $
- * Revision 1.2003  2001/08/13 05:10:40  robertj
+ * Revision 1.2004  2001/10/05 00:22:14  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.2  2001/08/13 05:10:40  robertj
  * Updates from OpenH323 v1.6.0 release.
  *
  * Revision 2.1  2001/08/01 05:21:21  robertj
@@ -32,6 +35,16 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.76  2001/09/21 02:52:19  robertj
+ * Implemented static object for all "known" media formats.
+ *
+ * Revision 1.75  2001/09/11 01:24:36  robertj
+ * Added conditional compilation to remove video and/or audio codecs.
+ *
+ * Revision 1.74  2001/09/10 03:06:29  robertj
+ * Major change to fix problem with error codes being corrupted in a
+ *   PChannel when have simultaneous reads and writes in threads.
  *
  * Revision 1.73  2001/08/06 03:08:57  robertj
  * Fission of h323.h to h323ep.h & h323con.h, h323.h now just includes files.

@@ -24,11 +24,20 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323rtp.cxx,v $
- * Revision 1.2002  2001/08/13 05:10:40  robertj
+ * Revision 1.2003  2001/10/05 00:22:14  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.1  2001/08/13 05:10:40  robertj
  * Updates from OpenH323 v1.6.0 release.
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.16  2001/10/02 02:06:23  robertj
+ * Fixed CIsco IOS compatibility, yet again!.
+ *
+ * Revision 1.15  2001/10/02 01:53:53  robertj
+ * Fixed CIsco IOS compatibility, again.
  *
  * Revision 1.14  2001/08/06 03:08:57  robertj
  * Fission of h323.h to h323ep.h & h323con.h, h323.h now just includes files.
@@ -233,7 +242,7 @@ BOOL H323_RTP_UDP::OnReceivedPDU(H323_RTPChannel & channel,
                                  unsigned & errorCode)
 {
   if (param.m_sessionID != rtp.GetSessionID()) {
-    PTRACE(1, "RTP_UDP\tOpen for invalid session: " << param.m_sessionID);
+    PTRACE(1, "RTP_UDP\tOpen of " << channel << " with invalid session: " << param.m_sessionID);
     errorCode = H245_OpenLogicalChannelReject_cause::e_invalidSessionID;
     return FALSE;
   }
@@ -242,15 +251,17 @@ BOOL H323_RTP_UDP::OnReceivedPDU(H323_RTPChannel & channel,
 
   if (param.HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaControlChannel)) {
     if (!ExtractTransport(param.m_mediaControlChannel, rtp, FALSE, errorCode)) {
-      PTRACE(1, "RTP_UDP\tFailed to extract mediaControl transport");
+      PTRACE(1, "RTP_UDP\tFailed to extract mediaControl transport for " << channel);
       return FALSE;
     }
     ok = TRUE;
   }
 
   if (param.HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaChannel)) {
-    if (!ExtractTransport(param.m_mediaChannel, rtp, TRUE, errorCode)) {
-      PTRACE(1, "RTP_UDP\tFailed to extract media transport");
+    if (ok && channel.GetDirection() == H323Channel::IsReceiver)
+      PTRACE(3, "RTP_UDP\tIgnoring media transport for " << channel);
+    else if (!ExtractTransport(param.m_mediaChannel, rtp, TRUE, errorCode)) {
+      PTRACE(1, "RTP_UDP\tFailed to extract media transport for " << channel);
       return FALSE;
     }
     ok = TRUE;
@@ -262,7 +273,7 @@ BOOL H323_RTP_UDP::OnReceivedPDU(H323_RTPChannel & channel,
   if (ok)
     return TRUE;
 
-  PTRACE(1, "RTP_UDP\tNo mediaChannel or mediaControlChannel specified");
+  PTRACE(1, "RTP_UDP\tNo mediaChannel or mediaControlChannel specified for " << channel);
   errorCode = H245_OpenLogicalChannelReject_cause::e_unspecified;
   return FALSE;
 }

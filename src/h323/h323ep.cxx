@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2007  2001/08/23 03:15:51  robertj
+ * Revision 1.2008  2001/10/05 00:22:14  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.6  2001/08/23 03:15:51  robertj
  * Added missing Lock() calls in SetUpConnection
  *
  * Revision 2.5  2001/08/22 10:20:09  robertj
@@ -40,6 +43,33 @@
  *
  * Revision 2.3  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 1.104  2001/09/26 06:20:59  robertj
+ * Fixed properly nesting connection locking and unlocking requiring a quite
+ *   large change to teh implementation of how calls are answered.
+ *
+ * Revision 1.103  2001/09/13 02:41:21  robertj
+ * Fixed call reference generation to use full range and common code.
+ *
+ * Revision 1.102  2001/09/11 01:24:36  robertj
+ * Added conditional compilation to remove video and/or audio codecs.
+ *
+ * Revision 1.101  2001/09/11 00:21:23  robertj
+ * Fixed missing stack sizes in endpoint for cleaner thread and jitter thread.
+ *
+ * Revision 1.100  2001/08/24 13:38:25  rogerh
+ * Free the locally declared listener.
+ *
+ * Revision 1.99  2001/08/24 13:23:59  rogerh
+ * Undo a recent memory leak fix. The listener object has to be deleted in the
+ * user application as they use the listener when StartListener() fails.
+ * Add a Resume() if StartListener() fails so user applications can delete
+ * the suspended thread.
+ *
+ * Revision 1.98  2001/08/22 06:54:51  robertj
+ * Changed connection locking to use double mutex to guarantee that
+ *   no threads can ever deadlock or access deleted connection.
+ *
  * Revision 1.97  2001/08/16 07:49:19  robertj
  * Changed the H.450 support to be more extensible. Protocol handlers
  *   are now in separate classes instead of all in H323Connection.
@@ -426,7 +456,12 @@ void H225CallThread::Main()
 
   if (connection.Lock()) {
     OpalCallEndReason reason = connection.SendSignalSetup(alias, address);
-    connection.Unlock();
+
+    // Special case, if we aborted the call then already will be unlocked
+    if (reason != EndedByCallerAbort)
+      connection.Unlock();
+
+    // Check if had an error, clear call if so
     if (reason != OpalNumCallEndReasons)
       connection.ClearCall(reason);
     else
@@ -470,8 +505,6 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   rasRequestRetries = 2;
 
   gatekeeper = NULL;
-
-  lastCallReference = PRandom::Number()&0x3fff;
 
   PTRACE(3, "H323\tCreated endpoint.");
 }
@@ -797,7 +830,7 @@ H323Connection * H323EndPoint::InternalMakeCall(OpalCall & call,
   inUseFlag.Wait();
 
   PString newToken;
-  newToken.sprintf("localhost/%u", lastCallReference++);
+  newToken.sprintf("localhost/%u", Q931::GenerateCallReference());
 
   H323Connection * connection = CreateConnection(call, newToken, userData, transport, NULL);
   connectionsActive.SetAt(newToken, connection);
