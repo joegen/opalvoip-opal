@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2012  2002/07/01 04:56:32  robertj
+ * Revision 1.2013  2002/09/04 06:01:48  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.11  2002/07/01 04:56:32  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.10  2002/03/27 02:21:51  robertj
@@ -65,6 +68,12 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.56  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
+ *
+ * Revision 1.55  2002/07/18 08:28:52  robertj
+ * Adjusted some trace log levels
  *
  * Revision 1.54  2002/06/04 07:16:14  robertj
  * Fixed user indications (DTMF) not working on some endpoints which indicated
@@ -1871,7 +1880,7 @@ void H323Capabilities::Add(H323Capability * capability)
   capability->SetCapabilityNumber(MergeCapabilityNumber(table, 1));
   table.Append(capability);
 
-  PTRACE(2, "H323\tAdded capability: " << *capability);
+  PTRACE(3, "H323\tAdded capability: " << *capability);
 }
 
 
@@ -1881,7 +1890,7 @@ H323Capability * H323Capabilities::Copy(const H323Capability & capability)
   newCapability->SetCapabilityNumber(MergeCapabilityNumber(table, capability.GetCapabilityNumber()));
   table.Append(newCapability);
 
-  PTRACE(2, "H323\tAdded capability: " << *newCapability);
+  PTRACE(3, "H323\tAdded capability: " << *newCapability);
   return newCapability;
 }
 
@@ -1938,11 +1947,11 @@ void H323Capabilities::RemoveAll()
 
 H323Capability * H323Capabilities::FindCapability(unsigned capabilityNumber) const
 {
-  PTRACE(3, "H323\tFindCapability: " << capabilityNumber);
+  PTRACE(4, "H323\tFindCapability: " << capabilityNumber);
 
   for (PINDEX i = 0; i < table.GetSize(); i++) {
     if (table[i].GetCapabilityNumber() == capabilityNumber) {
-      PTRACE(2, "H323\tFound capability: " << table[i]);
+      PTRACE(3, "H323\tFound capability: " << table[i]);
       return &table[i];
     }
   }
@@ -1954,7 +1963,7 @@ H323Capability * H323Capabilities::FindCapability(unsigned capabilityNumber) con
 H323Capability * H323Capabilities::FindCapability(const PString & formatName,
                               H323Capability::CapabilityDirection direction) const
 {
-  PTRACE(3, "H323\tFindCapability: \"" << formatName << '"');
+  PTRACE(4, "H323\tFindCapability: \"" << formatName << '"');
 
   PStringArray wildcard = formatName.Tokenise('*', FALSE);
 
@@ -1963,7 +1972,7 @@ H323Capability * H323Capabilities::FindCapability(const PString & formatName,
     if (MatchWildcard(str, wildcard) &&
           (direction == H323Capability::e_Unknown ||
            table[i].GetCapabilityDirection() == direction)) {
-      PTRACE(2, "H323\tFound capability: " << table[i]);
+      PTRACE(3, "H323\tFound capability: " << table[i]);
       return &table[i];
     }
   }
@@ -1975,11 +1984,11 @@ H323Capability * H323Capabilities::FindCapability(const PString & formatName,
 H323Capability * H323Capabilities::FindCapability(
                               H323Capability::CapabilityDirection direction) const
 {
-  PTRACE(1, "H323\tFindCapability: \"" << direction << '"');
+  PTRACE(4, "H323\tFindCapability: \"" << direction << '"');
 
   for (PINDEX i = 0; i < table.GetSize(); i++) {
     if (table[i].GetCapabilityDirection() == direction) {
-      PTRACE(1, "H323\tFound capability: " << table[i]);
+      PTRACE(3, "H323\tFound capability: " << table[i]);
       return &table[i];
     }
   }
@@ -1990,11 +1999,11 @@ H323Capability * H323Capabilities::FindCapability(
 
 H323Capability * H323Capabilities::FindCapability(const H323Capability & capability) const
 {
-  PTRACE(3, "H323\tFindCapability: " << capability);
+  PTRACE(4, "H323\tFindCapability: " << capability);
 
   for (PINDEX i = 0; i < table.GetSize(); i++) {
     if (table[i] == capability) {
-      PTRACE(2, "H323\tFound capability: " << table[i]);
+      PTRACE(3, "H323\tFound capability: " << table[i]);
       return &table[i];
     }
   }
@@ -2120,14 +2129,14 @@ H323Capability * H323Capabilities::FindCapability(H323Capability::MainTypes main
   if (subTypePDU.GetTag() != nonStandardTag)
     return FindCapability(mainType, subTypePDU.GetTag());
 
-  PTRACE(3, "H323\tFindCapability: " << mainType << " nonStandard");
+  PTRACE(4, "H323\tFindCapability: " << mainType << " nonStandard");
 
   for (PINDEX i = 0; i < table.GetSize(); i++) {
     H323Capability & capability = table[i];
     if (capability.GetMainType() == mainType &&
         capability.GetSubType() == nonStandardTag &&
         capability.IsNonStandardMatch((const H245_NonStandardParameter &)subTypePDU.GetObject())) {
-      PTRACE(2, "H323\tFound capability: " << capability);
+      PTRACE(3, "H323\tFound capability: " << capability);
       return &capability;
     }
   }
@@ -2139,13 +2148,13 @@ H323Capability * H323Capabilities::FindCapability(H323Capability::MainTypes main
 H323Capability * H323Capabilities::FindCapability(H323Capability::MainTypes mainType,
                                                   unsigned subType) const
 {
-  PTRACE(3, "H323\tFindCapability: " << mainType << " subtype=" << subType);
+  PTRACE(4, "H323\tFindCapability: " << mainType << " subtype=" << subType);
 
   for (PINDEX i = 0; i < table.GetSize(); i++) {
     H323Capability & capability = table[i];
     if (capability.GetMainType() == mainType &&
                         (subType == UINT_MAX || capability.GetSubType() == subType)) {
-      PTRACE(2, "H323\tFound capability: " << capability);
+      PTRACE(3, "H323\tFound capability: " << capability);
       return &capability;
     }
   }
