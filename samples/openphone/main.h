@@ -22,6 +22,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.2  2004/04/25 13:12:22  rjongbloed
+ * Converted OpenPhone v2 to use wxWindows
+ *
  * Revision 1.1  2003/03/07 06:33:28  craigs
  * More implementation
  *
@@ -30,6 +33,8 @@
 #ifndef _OpenPhone_MAIN_H
 #define _OpenPhone_MAIN_H
 
+#include <wx/wx.h>
+
 #include <ptlib.h>
 
 #include <opal/manager.h>
@@ -37,128 +42,47 @@
 #include <sip/sipep.h>
 #include <opal/pcss.h>
 
-#include "version.h"
-#include "mainwindow.h"
-#include "trace.h"
 
-class MyOptions : public PObject
+class OpenPhoneApp : public wxApp, public PProcess
 {
-  PCLASSINFO(MyOptions, PObject);
-  public:
-    MyOptions();
-    BOOL Save();
-    BOOL Load();
+    PCLASSINFO(OpenPhoneApp, PProcess);
 
-    // general
-    BOOL autoAnswer;
-    BOOL enableH323;
-    BOOL enableSIP;
+public:
+  OpenPhoneApp();
 
-    // audio device
-    enum AudioDevice {
-      SoundCard,
-      Quicknet,
-      VOIPBlaster
-    } audioDevice;
-    PString soundcardRecordDevice;
-    PString soundcardPlaybackDevice;
+  void Main(); // Dummy function
 
-    // audio codec
-    unsigned minJitter;
-    unsigned maxJitter;
-    BOOL silenceDetection;
-
-    // trace
-    BOOL traceEnabled;
-    unsigned traceLevel;
-    PFilePath traceFilename;
-    unsigned traceOptions;
+    // FUnction from wxWindows
+  virtual bool OnInit();
 };
 
-class MyManager;
 
-class MyPCSSEndPoint : public OpalPCSSEndPoint
+class MainWindow : public wxFrame
 {
-  PCLASSINFO(MyPCSSEndPoint, OpalPCSSEndPoint);
-
-  public:
-    MyPCSSEndPoint(MyManager & manager);
-
-    virtual PString OnGetDestination(const OpalPCSSConnection & connection);
-    virtual void OnShowIncoming(const OpalPCSSConnection & connection);
-    virtual BOOL OnShowOutgoing(const OpalPCSSConnection & connection);
-
-    BOOL SetSoundDevice(const PString & name, PSoundChannel::Directions dir);
-
-    PString destinationAddress;
-    PString incomingConnectionToken;
-};
-
-class MyManager : public OpalManager
-{
-  PCLASSINFO(MyManager, OpalManager);
-
-  public:
-    MyManager();
-    ~MyManager();
-
-    BOOL Initialise(const MyOptions & options);
-
-    virtual void OnEstablishedCall(
-      OpalCall & call   /// Call that was completed
-    );
-    virtual void OnClearedCall(
-      OpalCall & call   /// Connection that was established
-    );
-    virtual BOOL OnOpenMediaStream(
-      OpalConnection & connection,  /// Connection that owns the media stream
-      OpalMediaStream & stream    /// New media stream being opened
-    );
-    virtual void OnUserInputString(
-      OpalConnection & connection,  /// Connection input has come from
-      const PString & value         /// String value of indication
-    );
-
-    BOOL MakeCall(const PString & dest, PString & token);
-
-  protected:
-    //OpalPOTSEndPoint * potsEP;
-    MyPCSSEndPoint   * pcssEP;
-    H323EndPoint     * h323EP;
-    SIPEndPoint      * sipEP;
-};
-
-class MainWindow : public MainWindowBase
-{
-  public:
+public:
     MainWindow();
     ~MainWindow();
 
-    void OnMakeCall();
-    void OnViewOptions();
-    void UpdateCallStatus();
+protected:
+    void OnSize(wxSizeEvent& event);
 
-  protected:
-    MyOptions options;
-    MyManager * opal;
-    PString currentCallToken;
+    void OnQuit(wxCommandEvent& event);
+    void OnAbout(wxCommandEvent& event);
 
-#if PTRACING
-    BOOL OpenTraceFile(const MyOptions & config);
-    PTextFile * myTraceFile;
-#endif
+private:
+    wxPanel    * m_panel;
+    wxTextCtrl * m_logWindow;
+
+    DECLARE_EVENT_TABLE()
 };
 
-class OpenPhoneApp : public PProcess
-{
-  PCLASSINFO(OpenPhoneApp, PProcess);
-  OpenPhoneApp()
-    : PProcess("Equivalence", "OpenPhone",
-               MAJOR_VERSION, MINOR_VERSION, BUILD_TYPE, BUILD_NUMBER)
-    { }
 
-  void Main()
-    { } // Dummy function
+enum {
+  MENU_FILE_QUIT,
+  MENU_FILE_ABOUT
 };
 
 #endif
+
+
+// End of File ///////////////////////////////////////////////////////////////
