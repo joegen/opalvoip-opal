@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2019  2004/03/14 11:32:20  rjongbloed
+ * Revision 1.2020  2004/03/29 10:56:31  rjongbloed
+ * Made sure SIP UDP socket is "promiscuous", ie the host/port being sent to may not
+ *   be where packets come from.
+ *
+ * Revision 2.18  2004/03/14 11:32:20  rjongbloed
  * Changes to better support SIP proxies.
  *
  * Revision 2.17  2004/03/14 10:13:04  rjongbloed
@@ -178,6 +182,8 @@ OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & addres
     delete transport;
     return NULL;
   }
+
+  transport->SetPromiscuous(OpalTransport::AcceptFromAny);
 
   if (!transport->IsReliable())
     transport->AttachThread(PThread::Create(PCREATE_NOTIFIER(TransportThreadMain),
