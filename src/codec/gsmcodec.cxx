@@ -27,7 +27,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gsmcodec.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 1.2002  2001/08/01 05:04:28  robertj
+ * Changes to allow control of linking software transcoders, use macros
+ *   to force linking.
+ * Allowed codecs to be used without H.,323 being linked by using the
+ *   new NO_H323 define.
+ * Major changes to H.323 capabilities, uses OpalMediaFormat for base name.
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.19  2001/05/14 05:56:28  robertj
@@ -112,36 +119,19 @@ extern "C" {
 #define GSM_BYTES_PER_FRAME   33
 #define GSM_SAMPLES_PER_FRAME 160
 
-#define GSM_BASE_NAME  "GSM-06.10"
-#define GSM_H323_NAME  GSM_BASE_NAME "{sw}"
-
-
-OpalMediaFormat const OpalMediaFormat_GSM(GSM_BASE_NAME,
-                                          RTP_Session::DefaultAudioSessionID,
-                                          RTP_DataFrame::GSM,
-                                          TRUE,  // Needs jitter
-                                          13200, // bits/sec
-                                          GSM_BYTES_PER_FRAME,
-                                          GSM_SAMPLES_PER_FRAME, // 20 milliseconds
-                                          OpalMediaFormat::AudioTimeUnits);
-
-OPAL_REGISTER_TRANSCODER(Opal_GSM_PCM, GSM_BASE_NAME, OPAL_PCM16);
-OPAL_REGISTER_TRANSCODER(Opal_PCM_GSM, OPAL_PCM16, GSM_BASE_NAME);
-H323_REGISTER_CAPABILITY(H323_GSM0610Capability, GSM_H323_NAME);
-
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Opal_GSM::Opal_GSM(const OpalTranscoderRegistration & registration,
-                   unsigned inputBytesPerFrame,
-                   unsigned outputBytesPerFrame)
+Opal_GSM0610::Opal_GSM0610(const OpalTranscoderRegistration & registration,
+                           unsigned inputBytesPerFrame,
+                           unsigned outputBytesPerFrame)
   : OpalFramedTranscoder(registration, inputBytesPerFrame, outputBytesPerFrame)
 {
   gsm = gsm_create();
 }
 
 
-Opal_GSM::~Opal_GSM()
+Opal_GSM0610::~Opal_GSM0610()
 {
   gsm_destroy(gsm);
 }
@@ -149,14 +139,14 @@ Opal_GSM::~Opal_GSM()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Opal_GSM_PCM::Opal_GSM_PCM(const OpalTranscoderRegistration & registration)
-  : Opal_GSM(registration, GSM_BYTES_PER_FRAME, GSM_SAMPLES_PER_FRAME*2)
+Opal_GSM0610_PCM::Opal_GSM0610_PCM(const OpalTranscoderRegistration & registration)
+  : Opal_GSM0610(registration, GSM_BYTES_PER_FRAME, GSM_SAMPLES_PER_FRAME*2)
 {
-  PTRACE(3, "Codec\tGSM decoder created");
+  PTRACE(3, "Codec\tGSM0610 decoder created");
 }
 
 
-BOOL Opal_GSM_PCM::ConvertFrame(const BYTE * src, BYTE * dst)
+BOOL Opal_GSM0610_PCM::ConvertFrame(const BYTE * src, BYTE * dst)
 {
   gsm_decode(gsm, (gsm_byte *)src, (gsm_signal *)dst);
   return TRUE;
@@ -165,76 +155,16 @@ BOOL Opal_GSM_PCM::ConvertFrame(const BYTE * src, BYTE * dst)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Opal_PCM_GSM::Opal_PCM_GSM(const OpalTranscoderRegistration & registration)
-  : Opal_GSM(registration, GSM_SAMPLES_PER_FRAME*2, GSM_BYTES_PER_FRAME)
+Opal_PCM_GSM0610::Opal_PCM_GSM0610(const OpalTranscoderRegistration & registration)
+  : Opal_GSM0610(registration, GSM_SAMPLES_PER_FRAME*2, GSM_BYTES_PER_FRAME)
 {
-  PTRACE(3, "Codec\tGSM encoder created");
+  PTRACE(3, "Codec\tGSM0610 encoder created");
 }
 
 
-BOOL Opal_PCM_GSM::ConvertFrame(const BYTE * src, BYTE * dst)
+BOOL Opal_PCM_GSM0610::ConvertFrame(const BYTE * src, BYTE * dst)
 {
   gsm_encode(gsm, (gsm_signal *)src, (gsm_byte *)dst);
-  return TRUE;
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-
-H323_GSM0610Capability::H323_GSM0610Capability()
-  : H323AudioCapability(7, 4)
-{
-}
-
-
-PObject * H323_GSM0610Capability::Clone() const
-{
-  return new H323_GSM0610Capability(*this);
-}
-
-
-PString H323_GSM0610Capability::GetFormatName() const
-{
-  return GSM_H323_NAME;
-}
-
-
-unsigned H323_GSM0610Capability::GetSubType() const
-{
-  return H245_AudioCapability::e_gsmFullRate;
-}
-
-
-void H323_GSM0610Capability::SetTxFramesInPacket(unsigned frames)
-{
-  if (frames > 7)
-    txFramesInPacket = 7;
-  else
-    H323AudioCapability::SetTxFramesInPacket(frames);
-}
-
-
-BOOL H323_GSM0610Capability::OnSendingPDU(H245_AudioCapability & cap,
-                                          unsigned packetSize) const
-{
-  cap.SetTag(H245_AudioCapability::e_gsmFullRate);
-
-  H245_GSMAudioCapability & gsm = cap;
-  gsm.m_audioUnitSize = packetSize*GSM_BYTES_PER_FRAME;
-  return TRUE;
-}
-
-
-BOOL H323_GSM0610Capability::OnReceivedPDU(const H245_AudioCapability & cap,
-                                           unsigned & packetSize)
-{
-  if (cap.GetTag() != H245_AudioCapability::e_gsmFullRate)
-    return FALSE;
-
-  const H245_GSMAudioCapability & gsm = cap;
-  packetSize = gsm.m_audioUnitSize / GSM_BYTES_PER_FRAME;
-  if (packetSize == 0)
-    packetSize = 1;
   return TRUE;
 }
 

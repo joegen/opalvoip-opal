@@ -25,7 +25,14 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 1.2002  2001/08/01 05:04:28  robertj
+ * Changes to allow control of linking software transcoders, use macros
+ *   to force linking.
+ * Allowed codecs to be used without H.,323 being linked by using the
+ *   new NO_H323 define.
+ * Major changes to H.323 capabilities, uses OpalMediaFormat for base name.
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.32  2001/07/09 07:19:40  rogerh
@@ -154,49 +161,51 @@
 #define new PNEW
 
 
-#define H261_BASE_NAME  "H.261"
+OpalMediaFormat const OpalH261(
+  OPAL_H261,
+  OpalMediaFormat::DefaultVideoSessionID,
+  RTP_DataFrame::H261,
+  FALSE,  // No jitter for video
+  240000, // bits/sec
+  2000,   // Not sure of this value!
+  0,      // No intrinsic time per frame
+  OpalMediaFormat::VideoTimeUnits
+);
 
-static OpalMediaFormat const H261_MediaFormat(H261_BASE_NAME,
-                                              RTP_Session::DefaultVideoSessionID,
-                                              RTP_DataFrame::H261,
-                                              FALSE,  // No jitter for video
-                                              240000, // bits/sec
-                                              2000,   // Not sure of this value!
-                                              0,      // No intrinsic time per frame
-                                              OpalMediaFormat::VideoTimeUnits);
+
+OpalMediaFormat const OpalH261_CIF(
+  OPAL_H261_CIF,
+  OpalMediaFormat::DefaultVideoSessionID,
+  RTP_DataFrame::H261,
+  FALSE,  // No jitter for video
+  240000, // bits/sec
+  2000,   // Not sure of this value!
+  0,      // No intrinsic time per frame
+  OpalMediaFormat::VideoTimeUnits
+);
 
 
-OPAL_REGISTER_TRANSCODER(Opal_H261_YUV411P, H261_BASE_NAME, "YUV411P");
-OPAL_REGISTER_TRANSCODER(Opal_YUV411P_H261, "YUV411P", H261_BASE_NAME);
+OpalMediaFormat const OpalH261_QCIF(
+  OPAL_H261_QCIF,
+  OpalMediaFormat::DefaultVideoSessionID,
+  RTP_DataFrame::H261,
+  FALSE,  // No jitter for video
+  240000, // bits/sec
+  2000,   // Not sure of this value!
+  0,      // No intrinsic time per frame
+  OpalMediaFormat::VideoTimeUnits
+);
 
 
 ///////////////////////////////////////////////////////////////////////////////
 
-H323_REGISTER_CAPABILITY_FUNCTION(H323_H261_QCIF_CIF, "H.261-(Q)CIF", H323_NO_EP_VAR)
-{
-  return new H323_H261Capability(2, 4, FALSE, FALSE, 6217);
-}
-
-
-H323_REGISTER_CAPABILITY_FUNCTION(H323_H261_QCIF, "H.261-QCIF", H323_NO_EP_VAR)
-{
-  return new H323_H261Capability(2, 0, FALSE, FALSE, 6217);
-}
-
-
-H323_REGISTER_CAPABILITY_FUNCTION(H323_H261_CIF, "H.261-CIF", H323_NO_EP_VAR)
-{
-  return new H323_H261Capability(0, 4, FALSE, FALSE, 6217);
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-
-H323_H261Capability::H323_H261Capability(unsigned _qcifMPI,
+H323_H261Capability::H323_H261Capability(const OpalMediaFormat & fmt,
+                                         unsigned _qcifMPI,
                                          unsigned _cifMPI,
                                          BOOL _temporalSpatialTradeOffCapability,
                                          BOOL _stillImageTransmission,
                                          unsigned _maxBitRate)
+  : H323VideoCapability(fmt)
 {
   qcifMPI = _qcifMPI;
   cifMPI = _cifMPI;
@@ -229,21 +238,6 @@ PObject::Comparison H323_H261Capability::Compare(const PObject & obj) const
     return LessThan;
 
   return GreaterThan;
-}
-
-
-PString H323_H261Capability::GetFormatName() const
-{
-  if (qcifMPI > 0 && cifMPI > 0)
-    return "H.261-(Q)CIF";
-
-  if (qcifMPI > 0)
-    return "H.261-QCIF";
-
-  if (cifMPI > 0)
-    return "H.261-CIF";
-
-  return "H.261";
 }
 
 

@@ -24,7 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lpc10codec.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 1.2002  2001/08/01 05:04:28  robertj
+ * Changes to allow control of linking software transcoders, use macros
+ *   to force linking.
+ * Allowed codecs to be used without H.,323 being linked by using the
+ *   new NO_H323 define.
+ * Major changes to H.323 capabilities, uses OpalMediaFormat for base name.
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.6  2001/05/14 05:56:28  robertj
@@ -77,24 +84,17 @@ const real MaxSampleValue = 32767.0;
 const real MinSampleValue = -32767.0;
 
 
-#define LPC10_BASE_NAME "LPC-10"
-#define LPC10_H323_NAME LPC10_BASE_NAME "{sw}"
 
-
-H323_REGISTER_CAPABILITY_EP(H323_LPC10Capability, LPC10_H323_NAME);
-
-static OpalMediaFormat const LPC10_MediaFormat(LPC10_BASE_NAME,
-                                               RTP_Session::DefaultAudioSessionID,
-                                               RTP_DataFrame::LPC,
-                                               TRUE,  // Needs jitter
-                                               2400,  // bits/sec
-                                               BytesPerFrame,
-                                               SamplesPerFrame,
-                                               OpalMediaFormat::AudioTimeUnits);
-
-
-OPAL_REGISTER_TRANSCODER(Opal_LPC10_PCM, LPC10_BASE_NAME, OPAL_PCM16);
-OPAL_REGISTER_TRANSCODER(Opal_PCM_LPC10, OPAL_PCM16, LPC10_BASE_NAME);
+OpalMediaFormat const OpalLPC10(
+  OPAL_LPC10,
+  OpalMediaFormat::DefaultAudioSessionID,
+  RTP_DataFrame::LPC,
+  TRUE,  // Needs jitter
+  2400,  // bits/sec
+  BytesPerFrame,
+  SamplesPerFrame,
+  OpalMediaFormat::AudioTimeUnits
+);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -181,7 +181,7 @@ BOOL Opal_PCM_LPC10::ConvertFrame(const BYTE * src, BYTE * dst)
 ///////////////////////////////////////////////////////////////////////////////
 
 H323_LPC10Capability::H323_LPC10Capability(H323EndPoint & endpoint)
-  : H323NonStandardAudioCapability(7, 4, endpoint, (const BYTE *)"LPC-10", 6)
+  : H323NonStandardAudioCapability(OpalLPC10, 7, 4, endpoint)
 {
 }
 
@@ -189,12 +189,6 @@ H323_LPC10Capability::H323_LPC10Capability(H323EndPoint & endpoint)
 PObject * H323_LPC10Capability::Clone() const
 {
   return new H323_LPC10Capability(*this);
-}
-
-
-PString H323_LPC10Capability::GetFormatName() const
-{
-  return LPC10_H323_NAME;
 }
 
 

@@ -24,7 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mscodecs.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 1.2002  2001/08/01 05:04:28  robertj
+ * Changes to allow control of linking software transcoders, use macros
+ *   to force linking.
+ * Allowed codecs to be used without H.,323 being linked by using the
+ *   new NO_H323 define.
+ * Major changes to H.323 capabilities, uses OpalMediaFormat for base name.
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.10  2001/05/14 05:56:28  robertj
@@ -88,12 +95,13 @@ extern "C" {
 #define	MICROSOFT_MANUFACTURER	21324
 
 MicrosoftNonStandardAudioCapability::MicrosoftNonStandardAudioCapability(
+            const OpalMediaFormat & fmt,
             const BYTE * header,
             PINDEX headerSize,
             PINDEX offset,
             PINDEX len)
 
-  : H323NonStandardAudioCapability(1, 1,
+  : H323NonStandardAudioCapability(fmt, 1, 1,
                                    MICROSOFT_COUNTRY_CODE,
                                    MICROSOFT_T35EXTENSION,
                                    MICROSOFT_MANUFACTURER,
@@ -107,29 +115,22 @@ MicrosoftNonStandardAudioCapability::MicrosoftNonStandardAudioCapability(
 #define	GSM_BYTES_PER_FRAME 65
 #define GSM_SAMPLES_PER_FRAME 320
 
-#define GSM_BASE_NAME  "MS-GSM"
-#define GSM_H323_NAME  GSM_BASE_NAME "{sw}"
-
-
-H323_REGISTER_CAPABILITY(MicrosoftGSMAudioCapability, GSM_H323_NAME);
-
-static OpalMediaFormat const MSGSM_MediaFormat(GSM_BASE_NAME,
-                                               RTP_Session::DefaultAudioSessionID,
-                                               RTP_DataFrame::DynamicBase,
-                                               TRUE,  // Needs jitter
-                                               13200, // bits/sec
-                                               GSM_BYTES_PER_FRAME,
-                                               GSM_SAMPLES_PER_FRAME, // 40 milliseconds
-                                               OpalMediaFormat::AudioTimeUnits);
-
-OPAL_REGISTER_TRANSCODER(Opal_MSGSM_PCM, GSM_BASE_NAME, OPAL_PCM16);
-OPAL_REGISTER_TRANSCODER(Opal_PCM_MSGSM, OPAL_PCM16, GSM_BASE_NAME);
+OpalMediaFormat const OpalMSGSM(
+  OPAL_MSGSM,
+  OpalMediaFormat::DefaultAudioSessionID,
+  RTP_DataFrame::DynamicBase,
+  TRUE,  // Needs jitter
+  13200, // bits/sec
+  GSM_BYTES_PER_FRAME,
+  GSM_SAMPLES_PER_FRAME, // 40 milliseconds
+  OpalMediaFormat::AudioTimeUnits
+);
 
 
 ///////////////////////////////////////////////////////////////////////////////
 
 Opal_MSGSM_PCM::Opal_MSGSM_PCM(const OpalTranscoderRegistration & registration)
-  : Opal_GSM(registration, GSM_BYTES_PER_FRAME, GSM_SAMPLES_PER_FRAME*2)
+  : Opal_GSM0610(registration, GSM_BYTES_PER_FRAME, GSM_SAMPLES_PER_FRAME*2)
 {
   int opt = 1;
   gsm_option(gsm, GSM_OPT_WAV49, &opt);
@@ -151,7 +152,7 @@ BOOL Opal_MSGSM_PCM::ConvertFrame(const BYTE * src, BYTE * dst)
 ///////////////////////////////////////////////////////////////////////////////
 
 Opal_PCM_MSGSM::Opal_PCM_MSGSM(const OpalTranscoderRegistration & registration)
-  : Opal_GSM(registration, GSM_SAMPLES_PER_FRAME*2, GSM_BYTES_PER_FRAME)
+  : Opal_GSM0610(registration, GSM_SAMPLES_PER_FRAME*2, GSM_BYTES_PER_FRAME)
 {
   int opt = 1;
   gsm_option(gsm, GSM_OPT_WAV49, &opt);
@@ -202,7 +203,9 @@ static const BYTE msGSMHeader[] = {
 };
 
 MicrosoftGSMAudioCapability::MicrosoftGSMAudioCapability()
-  : MicrosoftNonStandardAudioCapability(msGSMHeader, sizeof(msGSMHeader), GSM_FIXED_START, GSM_FIXED_LEN)
+  : MicrosoftNonStandardAudioCapability(OpalMSGSM,
+                                        msGSMHeader, sizeof(msGSMHeader),
+                                        GSM_FIXED_START, GSM_FIXED_LEN)
 {
 }
 
@@ -213,36 +216,22 @@ PObject * MicrosoftGSMAudioCapability::Clone() const
 }
 
 
-PString MicrosoftGSMAudioCapability::GetFormatName() const
-{
-  return GSM_H323_NAME;
-}
-
-
 /////////////////////////////////////////////////////////////////////////
 
 //By LH, Microsoft IMA ADPCM CODEC Capability
 #define IMA_SAMPLES_PER_FRAME		505
 #define IMA_BYTES_PER_FRAME		256
 
-#define IMA_BASE_NAME "MS-IMA-ADPCM"
-#define IMA_H323_NAME IMA_BASE_NAME "{sw}"
-
-
-H323_REGISTER_CAPABILITY(MicrosoftIMAAudioCapability, IMA_H323_NAME);
-
-static OpalMediaFormat const MSIMA_MediaFormat(IMA_BASE_NAME,
-                                               RTP_Session::DefaultAudioSessionID,
-                                               RTP_DataFrame::DynamicBase,
-                                               TRUE,  // Needs jitter
-                                               32443, // bits/sec
-                                               IMA_BYTES_PER_FRAME,
-                                               IMA_SAMPLES_PER_FRAME, // 63.1 milliseconds
-                                               OpalMediaFormat::AudioTimeUnits);
-
-
-OPAL_REGISTER_TRANSCODER(Opal_MSIMA_PCM, IMA_BASE_NAME, OPAL_PCM16);
-OPAL_REGISTER_TRANSCODER(Opal_PCM_MSIMA, OPAL_PCM16, IMA_BASE_NAME);
+OpalMediaFormat const OpalMSIMA(
+  OPAL_MSIMA,
+  OpalMediaFormat::DefaultAudioSessionID,
+  RTP_DataFrame::DynamicBase,
+  TRUE,  // Needs jitter
+  32443, // bits/sec
+  IMA_BYTES_PER_FRAME,
+  IMA_SAMPLES_PER_FRAME, // 63.1 milliseconds
+  OpalMediaFormat::AudioTimeUnits
+);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -276,7 +265,8 @@ static const BYTE msIMAHeader[] = {
 };
 
 MicrosoftIMAAudioCapability::MicrosoftIMAAudioCapability()
-  : MicrosoftNonStandardAudioCapability(msIMAHeader, sizeof(msIMAHeader),
+  : MicrosoftNonStandardAudioCapability(OpalMSIMA,
+                                        msIMAHeader, sizeof(msIMAHeader),
                                         IMA_FIXED_START, IMA_FIXED_LEN)
 {
 }
@@ -284,12 +274,6 @@ MicrosoftIMAAudioCapability::MicrosoftIMAAudioCapability()
 PObject * MicrosoftIMAAudioCapability::Clone() const
 {
   return new MicrosoftIMAAudioCapability();
-}
-
-
-PString MicrosoftIMAAudioCapability::GetFormatName() const
-{
-  return IMA_H323_NAME;
 }
 
 
