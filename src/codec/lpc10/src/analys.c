@@ -1,8 +1,11 @@
 /*
 
 $Log: analys.c,v $
-Revision 1.2001  2001/07/27 15:48:24  robertj
-Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+Revision 1.2002  2003/03/14 09:53:26  robertj
+Updated to openH323 v1.11.7
+
+Revision 1.2  2002/02/15 03:57:55  yurik
+Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
 
 Revision 1.1  2000/06/05 04:45:12  robertj
 Added LPC-10 2400bps codec
@@ -79,9 +82,12 @@ static integer c__1 = 1;
 /* 	ANALYS Version 55 */
 
 /* $Log: analys.c,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/14 09:53:26  robertj
+ * Updated to openH323 v1.11.7
  *
+/* Revision 1.2  2002/02/15 03:57:55  yurik
+/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+/*
 /* Revision 1.1  2000/06/05 04:45:12  robertj
 /* Added LPC-10 2400bps codec
 /*
@@ -246,9 +252,12 @@ static integer c__1 = 1;
     real phi[100]	/* was [10][10] */, psi[10];
 
 /* $Log: analys.c,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/14 09:53:26  robertj
+ * Updated to openH323 v1.11.7
  *
+/* Revision 1.2  2002/02/15 03:57:55  yurik
+/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+/*
 /* Revision 1.1  2000/06/05 04:45:12  robertj
 /* Added LPC-10 2400bps codec
 /*
@@ -277,9 +286,12 @@ static integer c__1 = 1;
 /* Frame size, Prediction order, Pitch period */
 /*       Arguments to ANALYS */
 /* $Log: analys.c,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/14 09:53:26  robertj
+ * Updated to openH323 v1.11.7
  *
+/* Revision 1.2  2002/02/15 03:57:55  yurik
+/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+/*
 /* Revision 1.1  2000/06/05 04:45:12  robertj
 /* Added LPC-10 2400bps codec
 /*
@@ -476,10 +488,10 @@ static integer c__1 = 1;
     voibuf[0] = voibuf[2];
     voibuf[1] = voibuf[3];
     for (i__ = 1; i__ <= 2; ++i__) {
-	vwin[(i__ << 1) - 2] = vwin[(i__ + 1 << 1) - 2] - contrl_1.lframe;
-	vwin[(i__ << 1) - 1] = vwin[(i__ + 1 << 1) - 1] - contrl_1.lframe;
-	awin[(i__ << 1) - 2] = awin[(i__ + 1 << 1) - 2] - contrl_1.lframe;
-	awin[(i__ << 1) - 1] = awin[(i__ + 1 << 1) - 1] - contrl_1.lframe;
+	vwin[(i__ << 1) - 2] = vwin[(i__ + (1 << 1)) - 2] - contrl_1.lframe;
+	vwin[(i__ << 1) - 1] = vwin[(i__ + (1 << 1)) - 1] - contrl_1.lframe;
+	awin[(i__ << 1) - 2] = awin[(i__ + (1 << 1)) - 2] - contrl_1.lframe;
+	awin[(i__ << 1) - 1] = awin[(i__ + (1 << 1)) - 1] - contrl_1.lframe;
 /*       EWIN(*,J) is unused for J .NE. AF, so the following shift is 
 */
 /*       unnecessary.  It also causes error messages when the C versio
@@ -492,7 +504,7 @@ n */
 /* 	   EWIN(2,I) = EWIN(2,I+1) - LFRAME */
 	obound[i__ - 1] = obound[i__];
 	voibuf[i__ * 2] = voibuf[(i__ + 1) * 2];
-	voibuf[(i__ << 1) + 1] = voibuf[(i__ + 1 << 1) + 1];
+	voibuf[(i__ << 1) + 1] = voibuf[(i__ + (1 << 1)) + 1];
 	rmsbuf[i__ - 1] = rmsbuf[i__];
 	i__1 = contrl_1.order;
 	for (j = 1; j <= i__1; ++j) {
