@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cpp,v $
+ * Revision 1.23  2004/09/29 12:02:40  rjongbloed
+ * Added popup menu to edit Speed DIals
+ *
  * Revision 1.22  2004/09/28 23:00:17  rjongbloed
  * Added ability to add and edit Speed DIals
  *
@@ -87,6 +90,8 @@
 #include <wx/listctrl.h>
 #include <wx/image.h>
 #include <wx/valgen.h>
+
+#undef LoadMenu // Bizarre but necessary before the xml code
 #include <wx/xrc/xmlres.h>
 
 #include <opal/ivr.h>
@@ -501,8 +506,9 @@ void MyFrame::OnNewSpeedDial(wxCommandEvent& WXUNUSED(event))
 {
   wxString groupName = "New Speed Dial";
   unsigned tieBreaker = 0;
+  int count = m_speedDials->GetItemCount();
   int i = 0;
-  while (i < m_speedDials->GetItemCount()) {
+  while (i < count) {
     if (m_speedDials->GetItemText(i) != groupName)
       i++;
     else {
@@ -588,7 +594,9 @@ void MyFrame::OnSpeedDialColumnResize(wxListEvent& event)
 
 void MyFrame::OnRightClick(wxListEvent& event)
 {
-  EditSpeedDial(event.GetIndex());
+  wxMenuBar * menuBar = wxXmlResource::Get()->LoadMenuBar("PopUpMenu");
+  PopupMenu(menuBar->GetMenu(0), event.GetPoint());
+  delete menuBar;
 }
 
 
@@ -656,15 +664,18 @@ bool MyFrame::HasSpeedDialName(const wxString & name) const
 }
 
 
-bool MyFrame::HasSpeedDialNumber(const wxString & number) const
+bool MyFrame::HasSpeedDialNumber(const char * number, const char * ignore) const
 {
+  int count = m_speedDials->GetItemCount();
   wxListItem item;
   item.m_mask = wxLIST_MASK_TEXT;
   item.m_col = e_NumberColumn;
-  for (item.m_itemId = 0; m_speedDials->GetItem(item); item.m_itemId++) {
-    int len = item.m_text.Length();
-    if (len > 0 && strncmp(number, item.m_text, len) == 0)
-      return true;
+  for (item.m_itemId = 0; item.m_itemId < count; item.m_itemId++) {
+    if (m_speedDials->GetItem(item)) {
+      int len = item.m_text.Length();
+      if (len > 0 && (ignore == NULL || strcmp(ignore, item.m_text) != 0) && strncmp(number, item.m_text, len) == 0)
+        return true;
+    }
   }
   return false;
 }
@@ -1735,12 +1746,7 @@ SpeedDialDialog::SpeedDialDialog(MyFrame * parent)
   FindWindowByName("SpeedDialDescription")->SetValidator(wxGenericValidator(&m_Description));
 
   m_inUse = (wxStaticText *)FindWindowByName("SpeedDialInUse");
-  m_inUse->Show(false);
-
   m_ambiguous = (wxStaticText *)FindWindowByName("SpeedDialAmbiguous");
-  m_ambiguous->Show(false);
-
-  m_ok->Enable(true);
 }
 
 
@@ -1750,11 +1756,9 @@ void SpeedDialDialog::OnChange(wxCommandEvent & WXUNUSED(event))
   bool inUse = newName != m_Name && m_frame.HasSpeedDialName(newName);
   m_inUse->Show(inUse);
 
-  wxString newNumber = m_numberCtrl->GetValue();
-  bool ambiguous = newNumber != m_Number && m_frame.HasSpeedDialNumber(newNumber);
-  m_ambiguous->Show(ambiguous);
-
   m_ok->Enable(!newName.IsEmpty() && !inUse);
+
+  m_ambiguous->Show(m_frame.HasSpeedDialNumber(m_numberCtrl->GetValue(), m_Number));
 }
 
 

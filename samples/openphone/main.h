@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.16  2004/09/29 12:02:40  rjongbloed
+ * Added popup menu to edit Speed DIals
+ *
  * Revision 1.15  2004/09/28 23:00:18  rjongbloed
  * Added ability to add and edit Speed DIals
  *
@@ -385,7 +388,7 @@ class MyFrame : public wxFrame, public OpalManager
 
     bool Initialise();
     bool HasSpeedDialName(const wxString & name) const;
-    bool HasSpeedDialNumber(const wxString & number) const;
+    bool HasSpeedDialNumber(const char * number, const char * ignore) const;
 
   private:
     // Controls on main frame
