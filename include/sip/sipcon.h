@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2022  2004/08/14 07:56:30  rjongbloed
+ * Revision 1.2023  2004/08/20 12:13:31  rjongbloed
+ * Added correct handling of SIP 180 response
+ *
+ * Revision 2.21  2004/08/14 07:56:30  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.20  2004/04/26 05:40:38  rjongbloed
@@ -264,6 +267,10 @@ class SIPConnection : public OpalConnection
     /**Handle an incoming Trying response PDU
       */
     virtual void OnReceivedTrying(SIP_PDU & pdu);
+  
+    /**Handle an incoming Ringing response PDU
+      */
+    virtual void OnReceivedRinging(SIP_PDU & pdu);
   
     /**Handle an incoming Session Progress response PDU
       */
