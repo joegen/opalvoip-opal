@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2026  2004/08/14 07:56:43  rjongbloed
+ * Revision 1.2027  2004/08/18 13:04:56  rjongbloed
+ * Fixed trying to start regitration if have empty string for domain/user
+ *
+ * Revision 2.25  2004/08/14 07:56:43  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.24  2004/07/11 12:42:13  rjongbloed
@@ -203,7 +206,7 @@ OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & addres
 {
   OpalTransport * transport = address.CreateTransport(*this, OpalTransportAddress::NoBinding);
   if (transport == NULL) {
-    PTRACE(1, "SIP\tCould not create transport from " << address);
+    PTRACE(1, "SIP\tCould not create transport from \"" << address << '"');
     return NULL;
   }
 
@@ -476,7 +479,7 @@ BOOL SIPEndPoint::Register(const PString & domain,
                            const PString & username,
                            const PString & password)
 {
-  if (listeners.IsEmpty())
+  if (listeners.IsEmpty() || domain.IsEmpty() || username.IsEmpty())
     return FALSE;
 
   PString adjustedUsername = username;
