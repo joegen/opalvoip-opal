@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2007  2001/11/13 06:25:56  robertj
+ * Revision 1.2008  2002/01/22 05:13:47  robertj
+ * Revamp of user input API triggered by RFC2833 support
+ *
+ * Revision 2.6  2001/11/13 06:25:56  robertj
  * Changed SetUpConnection() so returns BOOL as returning
  *   pointer to connection is not useful.
  *
@@ -174,7 +177,7 @@ void OpalPCSSEndPoint::AcceptIncomingConnection(const PString & token)
 }
 
 
-BOOL OpalPCSSEndPoint::OnShowUserIndication(const OpalPCSSConnection &, const PString &)
+BOOL OpalPCSSEndPoint::OnShowUserInput(const OpalPCSSConnection &, const PString &)
 {
   return TRUE;
 }
@@ -312,10 +315,10 @@ OpalMediaStream * OpalPCSSConnection::CreateMediaStream(BOOL isSource, unsigned 
 }
 
 
-BOOL OpalPCSSConnection::SendUserIndicationString(const PString & value)
+BOOL OpalPCSSConnection::SendUserInputString(const PString & value)
 {
-  PTRACE(3, "PCSS\tSendUserIndicationString(" << value << ')');
-  return endpoint.OnShowUserIndication(*this, value);
+  PTRACE(3, "PCSS\tSendUserInputString(" << value << ')');
+  return endpoint.OnShowUserInput(*this, value);
 }
 
 
