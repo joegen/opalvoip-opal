@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2027  2003/03/17 10:27:00  robertj
+ * Revision 1.2028  2003/12/15 11:56:17  rjongbloed
+ * Applied numerous bug fixes, thank you very much Ted Szoczei
+ *
+ * Revision 2.26  2003/03/17 10:27:00  robertj
  * Added video support.
  *
  * Revision 2.25  2003/03/07 05:52:35  robertj
@@ -195,6 +198,7 @@ BOOL SIPConnection::OnReleased()
 {
   PTRACE(3, "SIP\tOnReleased: " << *this);
 
+  SIPTransaction * bye = NULL; // potential dynamic transaction
   switch (releaseMethod) {
     case ReleaseWithNothing :
       break;
@@ -216,10 +220,10 @@ BOOL SIPConnection::OnReleased()
       break;
 
     case ReleaseWithBYE :
-      {
-        SIPTransaction bye(*this, *transport, SIP_PDU::Method_BYE);
-        bye.Wait();
-      }
+      // create BYE now & delete it later to prevent memory access errors
+      bye = new SIPTransaction (*this, *transport, SIP_PDU::Method_BYE);
+      if (bye != NULL)
+        bye->Wait();
       break;
 
     case ReleaseWithCANCEL :
@@ -234,18 +238,24 @@ BOOL SIPConnection::OnReleased()
   // send the appropriate form 
   PTRACE(2, "SIP\tReceived OnReleased in phase " << phase);
 
+  // close media ASAP
+  BOOL result = OpalConnection::OnReleased();
+
   invitations.RemoveAll();
+
+  delete bye; // delete dynamic bye
 
   if (pduHandler != NULL) {
     pduSemaphore.Signal();
     pduHandler->WaitForTermination();
     delete pduHandler;
+    pduHandler = NULL;  // clear pointer to deleted object
   }
 
   if (transport != NULL)
     transport->CloseWait();
 
-  return OpalConnection::OnReleased();
+  return result;
 }
 
 

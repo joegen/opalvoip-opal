@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2005  2003/06/02 02:59:24  rjongbloed
+ * Revision 1.2006  2003/12/15 11:56:17  rjongbloed
+ * Applied numerous bug fixes, thank you very much Ted Szoczei
+ *
+ * Revision 2.4  2003/06/02 02:59:24  rjongbloed
  * Changed transcoder search so uses destination list as preference order.
  *
  * Revision 2.3  2003/03/17 10:27:00  robertj
@@ -343,24 +346,25 @@ BOOL OpalStreamedTranscoder::Convert(const RTP_DataFrame & input,
   BYTE * outputBytes = output.GetPayloadPtr();
   short * outputWords = (short *)outputBytes;
 
-  PINDEX outputSize = input.GetPayloadSize()*outputBitsPerSample/inputBitsPerSample;
+  PINDEX samples = input.GetPayloadSize()*8/inputBitsPerSample;
+  PINDEX outputSize = samples*outputBitsPerSample/8;
   output.SetPayloadSize(outputSize);
 
   switch (inputBitsPerSample) {
     case 16 :
       switch (outputBitsPerSample) {
         case 16 :
-          for (i = 0; i < outputSize; i++)
+          for (i = 0; i < samples; i++)
             *outputWords++ = (short)ConvertOne(*inputWords++);
           break;
 
         case 8 :
-          for (i = 0; i < outputSize; i++)
+          for (i = 0; i < samples; i++)
             *outputBytes++ = (BYTE)ConvertOne(*inputWords++);
           break;
 
         case 4 :
-          for (i = 0; i < outputSize; i++) {
+          for (i = 0; i < samples; i++) {
             if ((i&1) == 0)
               *outputBytes = (BYTE)ConvertOne(*inputWords++);
             else
@@ -377,17 +381,17 @@ BOOL OpalStreamedTranscoder::Convert(const RTP_DataFrame & input,
     case 8 :
       switch (outputBitsPerSample) {
         case 16 :
-          for (i = 0; i < outputSize; i++)
+          for (i = 0; i < samples; i++)
             *outputWords++ = (short)ConvertOne(*inputBytes++);
           break;
 
         case 8 :
-          for (i = 0; i < outputSize; i++)
+          for (i = 0; i < samples; i++)
             *outputBytes++ = (BYTE)ConvertOne(*inputBytes++);
           break;
 
         case 4 :
-          for (i = 0; i < outputSize; i++) {
+          for (i = 0; i < samples; i++) {
             if ((i&1) == 0)
               *outputBytes = (BYTE)ConvertOne(*inputBytes++);
             else
@@ -404,7 +408,7 @@ BOOL OpalStreamedTranscoder::Convert(const RTP_DataFrame & input,
     case 4 :
       switch (outputBitsPerSample) {
         case 16 :
-          for (i = 0; i < outputSize; i++)
+          for (i = 0; i < samples; i++)
             if ((i&1) == 0)
               *outputWords++ = (short)ConvertOne(*inputBytes & 15);
             else
@@ -412,7 +416,7 @@ BOOL OpalStreamedTranscoder::Convert(const RTP_DataFrame & input,
           break;
 
         case 8 :
-          for (i = 0; i < outputSize; i++)
+          for (i = 0; i < samples; i++)
             if ((i&1) == 0)
               *outputBytes++ = (BYTE)ConvertOne(*inputBytes & 15);
             else
@@ -420,7 +424,7 @@ BOOL OpalStreamedTranscoder::Convert(const RTP_DataFrame & input,
           break;
 
         case 4 :
-          for (i = 0; i < outputSize; i++) {
+          for (i = 0; i < samples; i++) {
             if ((i&1) == 0)
               *outputBytes = (BYTE)ConvertOne(*inputBytes & 15);
             else
