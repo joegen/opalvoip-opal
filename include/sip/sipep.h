@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2012  2004/03/14 11:32:19  rjongbloed
+ * Revision 1.2013  2004/04/26 05:40:38  rjongbloed
+ * Added RTP statistics callback to SIP
+ *
+ * Revision 2.11  2004/03/14 11:32:19  rjongbloed
  * Changes to better support SIP proxies.
  *
  * Revision 2.10  2004/03/14 10:13:03  rjongbloed
@@ -207,6 +210,18 @@ class SIPEndPoint : public OpalEndPoint
       SIPTransaction & transaction,
       SIP_PDU & response
     );
+
+    /**Callback from the RTP session for statistics monitoring.
+       This is called every so many packets on the transmitter and receiver
+       threads of the RTP session indicating that the statistics have been
+       updated.
+
+       The default behaviour does nothing.
+      */
+    virtual void OnRTPStatistics(
+      const SIPConnection & connection,  /// Connection for the channel
+      const RTP_Session & session         /// Session with statistics
+    ) const;
   //@}
  
 
