@@ -2074,21 +2074,17 @@
 					Name="Release|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling GCC ASN File"
-						CommandLine="asnparser  -h asn/ -m GCC -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="No Trace|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling GCC ASN File"
-						CommandLine="asnparser  -h asn/ -m GCC -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -2106,23 +2102,19 @@ move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName)
 					Name="Release|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.225 ASN File"
-						CommandLine="asnparser  -h asn/ -s2 -m H225 -r MULTIMEDIA-SYSTEM-CONTROL=H245 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						AdditionalDependencies="..\..\include\asn\h235.h;"
-						Outputs="$(InputDir)\$(InputName)_1.cxx;$(InputDir)\$(InputName)_2.cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						AdditionalDependencies=""
+						Outputs=""/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="No Trace|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.225 ASN File"
-						CommandLine="asnparser  -h asn/ -s2 -m H225 -r MULTIMEDIA-SYSTEM-CONTROL=H245 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						AdditionalDependencies="..\..\include\asn\h235.h;"
-						Outputs="$(InputDir)\$(InputName)_1.cxx;$(InputDir)\$(InputName)_2.cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						AdditionalDependencies=""
+						Outputs=""/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -2139,21 +2131,17 @@ move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName)
 					Name="Release|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.235 ASN File"
-						CommandLine="asnparser  -h asn/ -m H235 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)\$(InputName).cxx;$(InputDir)\$(InputName)_t.cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="No Trace|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.235 ASN File"
-						CommandLine="asnparser  -h asn/ -m H235 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)\$(InputName).cxx;$(InputDir)\$(InputName)_t.cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -2170,21 +2158,17 @@ move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName)
 					Name="Release|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.245 ASN File"
-						CommandLine="asnparser  -h asn/ -s3 -m H245 --classheader &quot;H245_AudioCapability=#ifndef PASN_NOPRINTON\nvoid PrintOn(ostream &amp; strm) const;\n#endif&quot; -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName)_1.cxx;$(InputDir)$(InputName)_2.cxx;$(InputDir)$(InputName)_3.cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="No Trace|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.245 ASN File"
-						CommandLine="asnparser  -h asn/ -s3 -m H245 --classheader &quot;H245_AudioCapability=#ifndef PASN_NOPRINTON\nvoid PrintOn(ostream &amp; strm) const;\n#endif&quot; -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName)_1.cxx;$(InputDir)$(InputName)_2.cxx;$(InputDir)$(InputName)_3.cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -2201,21 +2185,17 @@ move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName)
 					Name="Release|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.248 ASN File"
-						CommandLine="asnparser  -h asn/ -m H248 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="No Trace|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.248 ASN File"
-						CommandLine="asnparser  -h asn/ -m H248 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -2232,21 +2212,17 @@ move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName)
 					Name="Release|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.450.1 ASN File"
-						CommandLine="asnparser  -h asn/ -m H4501 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="No Trace|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.450.1 ASN File"
-						CommandLine="asnparser  -h asn/ -m H4501 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -2263,21 +2239,17 @@ move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName)
 					Name="Release|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.450.10 ASN File"
-						CommandLine="asnparser  -h asn/ -m H45010 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="No Trace|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.450.10 ASN File"
-						CommandLine="asnparser  -h asn/ -m H45010 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -2294,21 +2266,17 @@ move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName)
 					Name="Release|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.450.11 ASN File"
-						CommandLine="asnparser  -h asn/ -m H45011 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="No Trace|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.450.11 ASN File"
-						CommandLine="asnparser  -h asn/ -m H45011 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -2325,21 +2293,17 @@ move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName)
 					Name="Release|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.450.2 ASN File"
-						CommandLine="asnparser  -h asn/ -m H4502 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="No Trace|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.450.2 ASN File"
-						CommandLine="asnparser  -h asn/ -m H4502 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -2356,21 +2320,17 @@ move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName)
 					Name="Release|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.450.3 ASN File"
-						CommandLine="asnparser  -h asn/ -m H4503 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="No Trace|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.450.3 ASN File"
-						CommandLine="asnparser  -h asn/ -m H4503 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -2387,21 +2347,17 @@ move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName)
 					Name="Release|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.450.4 ASN File"
-						CommandLine="asnparser  -h asn/ -m H4504 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="No Trace|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.450.4 ASN File"
-						CommandLine="asnparser  -h asn/ -m H4504 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -2418,21 +2374,17 @@ move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName)
 					Name="Release|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.450.5 ASN File"
-						CommandLine="asnparser  -h asn/ -m H4505 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="No Trace|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.450.5 ASN File"
-						CommandLine="asnparser  -h asn/ -m H4505 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -2449,21 +2401,17 @@ move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName)
 					Name="Release|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.450.6 ASN File"
-						CommandLine="asnparser  -h asn/ -m H4506 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="No Trace|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.450.6 ASN File"
-						CommandLine="asnparser  -h asn/ -m H4506 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -2480,21 +2428,17 @@ move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName)
 					Name="Release|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.450.7 ASN File"
-						CommandLine="asnparser  -h asn/ -m H4507 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="No Trace|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.450.7 ASN File"
-						CommandLine="asnparser  -h asn/ -m H4507 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -2511,21 +2455,17 @@ move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName)
 					Name="Release|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.450.8 ASN File"
-						CommandLine="asnparser  -h asn/ -m H4508 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="No Trace|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.450.8 ASN File"
-						CommandLine="asnparser  -h asn/ -m H4508 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -2542,21 +2482,17 @@ move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName)
 					Name="Release|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.450.9 ASN File"
-						CommandLine="asnparser  -h asn/ -m H4509 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="No Trace|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.450.9 ASN File"
-						CommandLine="asnparser  -h asn/ -m H4509 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -2573,21 +2509,17 @@ move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName)
 					Name="Release|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.501 ASN File"
-						CommandLine="asnparser  -h asn/ -m H501 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="No Trace|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling H.501 ASN File"
-						CommandLine="asnparser  -h asn/ -m H501 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -2604,21 +2536,17 @@ move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName)
 					Name="Release|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling LDAP ASN File"
-						CommandLine="asnparser  -h asn/ -m LDAP -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="No Trace|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling LDAP ASN File"
-						CommandLine="asnparser  -h asn/ -m LDAP -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -2635,21 +2563,17 @@ move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName)
 					Name="Release|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling MCS ASN File"
-						CommandLine="asnparser  -h asn/ -m MCS -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="No Trace|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling MCS ASN File"
-						CommandLine="asnparser  -h asn/ -m MCS -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -2666,21 +2590,17 @@ move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName)
 					Name="Release|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling T.38 ASN File"
-						CommandLine="asnparser  -h asn/ -m T38 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="No Trace|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling T.38 ASN File"
-						CommandLine="asnparser  -h asn/ -m T38 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -2697,21 +2617,17 @@ move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName)
 					Name="Release|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling X.880 ASN File"
-						CommandLine="asnparser  -h asn/ -m X880 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="No Trace|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Compiling X.880 ASN File"
-						CommandLine="asnparser  -h asn/ -m X880 -c &quot;$(InputPath)&quot;
-move &quot;$(InputDir)\$(InputName).h&quot; &quot;..\..\include\asn\$(InputName).h&quot;
-"
-						Outputs="$(InputDir)$(InputName).cxx;..\..\include\asn\$(InputName).h"/>
+						Description=""
+						CommandLine=""
+						Outputs=""/>
 				</FileConfiguration>
 			</File>
 			<Filter
