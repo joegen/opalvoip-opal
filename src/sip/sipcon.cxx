@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2016  2002/04/10 06:58:31  robertj
+ * Revision 1.2017  2002/04/15 08:53:58  robertj
+ * Fixed correct setting of jitter buffer size in RTP media stream.
+ * Fixed starting incoming (not outgoing!) media on call progress.
+ *
+ * Revision 2.15  2002/04/10 06:58:31  robertj
  * Fixed incorrect return value when starting INVITE transactions.
  *
  * Revision 2.14  2002/04/10 03:14:35  robertj
@@ -403,7 +407,8 @@ OpalMediaStream * SIPConnection::CreateMediaStream(BOOL isSource, unsigned sessi
   if (rtpSessions.GetSession(sessionID) == NULL)
     return NULL;
 
-  return new OpalRTPMediaStream(isSource, *rtpSessions.GetSession(sessionID));
+  return new OpalRTPMediaStream(isSource, *rtpSessions.GetSession(sessionID),
+                                endpoint.GetManager().GetMaxAudioDelayJitter());
 }
 
 
@@ -614,6 +619,16 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     transaction.GetTransport().EndConnect(transaction.GetLocalAddress());
   }
 
+#if 0
+  // If response had a contact field then start using that address for all
+  // future communication with remote SIP endpoint
+  PString contact = response.GetMIME().GetContact();
+  if (!contact) {
+    SIPURL remote = contact;
+    transport->SetRemoteAddress(remote.GetHostAddress());
+  }
+#endif
+
   switch (response.GetStatusCode()) {
     case SIP_PDU::Information_Session_Progress :
       OnReceivedSessionProgress(response);
@@ -739,8 +754,9 @@ void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
   OnAlerting();
   currentPhase = AlertingPhase;
 
+  PTRACE(3, "SIP\tStarting receive media to annunciate remote progress tones");
   for (PINDEX i = 0; i < mediaStreams.GetSize(); i++) {
-    if (mediaStreams[i].IsSink())
+    if (mediaStreams[i].IsSource())
       mediaStreams[i].Start();
   }
 }
@@ -772,13 +788,22 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
                                                      SIP_PDU & response)
 {
   BOOL isProxy = response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
+#if PTRACING
+  const char * proxyTrace = isProxy ? "Proxy " : "";
+#endif
 
-  if (transaction.GetMethod() != SIP_PDU::Method_INVITE) {
-    PTRACE(1, "SIP\tCannot do " << (isProxy ? "Proxy " : "") << "Authentication Required for non INVITE");
+  if (authentication.IsValid()) {
+    PTRACE(1, "SIP\tAlready done INVITE for " << proxyTrace << "Authentication Required, aborting call");
+    Release(EndedBySecurityDenial);
     return;
   }
 
-  PTRACE(2, "SIP\tReceived " << (isProxy ? "Proxy " : "") << "Authentication Required response");
+  if (transaction.GetMethod() != SIP_PDU::Method_INVITE) {
+    PTRACE(1, "SIP\tCannot do " << proxyTrace << "Authentication Required for non INVITE");
+    return;
+  }
+
+  PTRACE(2, "SIP\tReceived " << proxyTrace << "Authentication Required response");
 
   if (!authentication.Parse(response.GetMIME()(isProxy ? "Proxy-Authenticate"
                                                        : "WWW-Authenticate"),
@@ -796,7 +821,7 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
     invitations.Append(invite);
   else {
     delete invite;
-    PTRACE(1, "SIP\tCould not restart INVITE for " << (isProxy ? "Proxy " : "") << "Authentication Required");
+    PTRACE(1, "SIP\tCould not restart INVITE for " << proxyTrace << "Authentication Required");
   }
 }
 
