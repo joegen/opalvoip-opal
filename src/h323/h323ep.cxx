@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2022  2002/09/06 02:40:27  robertj
+ * Revision 1.2023  2002/11/10 11:33:19  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.21  2002/09/06 02:40:27  robertj
  * Added ability to specify stream or datagram (TCP or UDP) transport is to
  * be created from a transport address regardless of the addresses mode.
  *
@@ -100,6 +103,27 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.143  2002/11/10 08:10:43  robertj
+ * Moved constants for "well known" ports to better place (OPAL change).
+ *
+ * Revision 1.142  2002/10/31 00:42:41  robertj
+ * Enhanced jitter buffer system so operates dynamically between minimum and
+ *   maximum values. Altered API to assure app writers note the change!
+ *
+ * Revision 1.141  2002/10/24 07:18:24  robertj
+ * Changed gatekeeper call so if can do local DNS lookup or using IP address
+ *   then uses destCallSignalAddress for ARQ instead of destinationInfo.
+ *
+ * Revision 1.140  2002/10/23 06:06:13  robertj
+ * Added function to be smarter in using a gatekeeper for use by endpoint.
+ *
+ * Revision 1.139  2002/10/01 06:38:36  robertj
+ * Removed GNU compiler warning
+ *
+ * Revision 1.138  2002/10/01 03:07:15  robertj
+ * Added version number functions for OpenH323 library itself, plus included
+ *   library version in the default vendor information.
  *
  * Revision 1.137  2002/08/15 04:56:56  robertj
  * Fixed operation of ports system assuring RTP is even numbers.
@@ -247,6 +271,12 @@
  * Fixed problem with setting gk password before have a gk variable.
  * Fixed memory leak if listener fails to open.
  * Fixed problem with being able to specify an alias with an @ in it.
+ *
+ * Revision 1.94  2001/08/06 07:44:55  robertj
+ * Fixed problems with building without SSL
+ *
+ * Revision 1.93  2001/08/06 03:08:56  robertj
+ * Fission of h323.h to h323ep.h & h323con.h, h323.h now just includes files.
  *
  * Revision 1.92  2001/08/02 04:31:48  robertj
  * Changed to still maintain gatekeeper link if GRQ succeeded but RRQ
@@ -611,14 +641,14 @@ void H225CallThread::Main()
   PTRACE(3, "H225\tStarted call thread");
 
   if (connection.Lock()) {
-    OpalCallEndReason reason = connection.SendSignalSetup(alias, address);
+    H323Connection::CallEndReason reason = connection.SendSignalSetup(alias, address);
 
     // Special case, if we aborted the call then already will be unlocked
-    if (reason != EndedByCallerAbort)
+    if (reason != H323Connection::EndedByCallerAbort)
       connection.Unlock();
 
     // Check if had an error, clear call if so
-    if (reason != OpalNumCallEndReasons)
+    if (reason != H323Connection::NumCallEndReasons)
       connection.ClearCall(reason);
     else
       connection.HandleSignallingChannel();
@@ -653,7 +683,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
     callIntrusionT6(0,10)                   // Seconds
 {
   // Set port in OpalEndPoint class
-  defaultSignalPort = DefaultSignalTcpPort;
+  defaultSignalPort = DefaultTcpPort;
 
   PString username = PProcess::Current().GetUserName();
   if (username.IsEmpty())
@@ -739,7 +769,7 @@ void H323EndPoint::SetVendorIdentifierInfo(H225_VendorIdentifier & info) const
   info.m_productId.SetSize(info.m_productId.GetSize()+2);
 
   info.IncludeOptionalField(H225_VendorIdentifier::e_versionId);
-  info.m_versionId = PProcess::Current().GetVersion(TRUE);
+  info.m_versionId = PProcess::Current().GetVersion(TRUE) + " (OPAL v" + OpalGetVersion() + ')';
   info.m_versionId.SetSize(info.m_versionId.GetSize()+2);
 }
 
@@ -812,7 +842,44 @@ void H323EndPoint::ReorderCapabilities(const PStringArray & preferenceOrder)
 }
 
 
-BOOL H323EndPoint::SetGatekeeper(const PString & address, OpalTransport * transport)
+BOOL H323EndPoint::UseGatekeeper(const PString & address,
+                                 const PString & identifier,
+                                 const PString & localAddress)
+{
+  if (gatekeeper != NULL) {
+    BOOL same = TRUE;
+
+    if (!address)
+      same = gatekeeper->GetTransport().GetRemoteAddress().IsEquivalent(address);
+
+    if (!same && !identifier)
+      same = gatekeeper->GetIdentifier() == identifier;
+
+    if (!same && !localAddress)
+      same = gatekeeper->GetTransport().GetLocalAddress().IsEquivalent(localAddress);
+
+    if (same) {
+      PTRACE(2, "H323\tUsing existing gatekeeper " << *gatekeeper);
+      return TRUE;
+    }
+  }
+
+  if (address.IsEmpty()) {
+    if (identifier.IsEmpty())
+      return DiscoverGatekeeper();
+    else
+      return LocateGatekeeper(identifier);
+  }
+  else {
+    if (identifier.IsEmpty())
+      return SetGatekeeper(address);
+    else
+      return SetGatekeeperZone(address, identifier);
+  }
+}
+
+
+BOOL H323EndPoint::SetGatekeeper(const PString & address, H323Transport * transport)
 {
   H323Gatekeeper * gk = InternalCreateGatekeeper(transport);
   return InternalRegisterGatekeeper(gk, gk->DiscoverByAddress(address));
@@ -821,33 +888,33 @@ BOOL H323EndPoint::SetGatekeeper(const PString & address, OpalTransport * transp
 
 BOOL H323EndPoint::SetGatekeeperZone(const PString & address,
                                      const PString & identifier,
-                                     OpalTransport * transport)
+                                     H323Transport * transport)
 {
   H323Gatekeeper * gk = InternalCreateGatekeeper(transport);
   return InternalRegisterGatekeeper(gk, gk->DiscoverByNameAndAddress(identifier, address));
 }
 
 
-BOOL H323EndPoint::LocateGatekeeper(const PString & identifier, OpalTransport * transport)
+BOOL H323EndPoint::LocateGatekeeper(const PString & identifier, H323Transport * transport)
 {
   H323Gatekeeper * gk = InternalCreateGatekeeper(transport);
   return InternalRegisterGatekeeper(gk, gk->DiscoverByName(identifier));
 }
 
 
-BOOL H323EndPoint::DiscoverGatekeeper(OpalTransport * transport)
+BOOL H323EndPoint::DiscoverGatekeeper(H323Transport * transport)
 {
   H323Gatekeeper * gk = InternalCreateGatekeeper(transport);
   return InternalRegisterGatekeeper(gk, gk->DiscoverAny());
 }
 
 
-H323Gatekeeper * H323EndPoint::InternalCreateGatekeeper(OpalTransport * transport)
+H323Gatekeeper * H323EndPoint::InternalCreateGatekeeper(H323Transport * transport)
 {
   RemoveGatekeeper(H225_UnregRequestReason::e_reregistrationRequired);
 
   if (transport == NULL)
-    transport = new OpalTransportUDP(*this);
+    transport = new H323TransportUDP(*this);
 
 
   H323Gatekeeper * gk = CreateGatekeeper(transport);
@@ -876,7 +943,7 @@ BOOL H323EndPoint::InternalRegisterGatekeeper(H323Gatekeeper * gk, BOOL discover
 }
 
 
-H323Gatekeeper * H323EndPoint::CreateGatekeeper(OpalTransport * transport)
+H323Gatekeeper * H323EndPoint::CreateGatekeeper(H323Transport * transport)
 {
   return new H323Gatekeeper(*this, transport);
 }
@@ -986,7 +1053,7 @@ BOOL H323EndPoint::NewIncomingConnection(OpalTransport * transport)
     connection->HandleSignallingChannel();
   }
   else {
-    connection->ClearCall(EndedByTransportFail);
+    connection->ClearCall(H323Connection::EndedByTransportFail);
     PTRACE(1, "H225\tSignal channel stopped on first PDU.");
   }
 
@@ -1023,12 +1090,12 @@ BOOL H323EndPoint::InternalMakeCall(OpalCall & call,
                                     void * userData)
 {
   PString alias;
-  OpalTransportAddress address;
+  H323TransportAddress address;
   ParsePartyName(remoteParty, alias, address);
 
   // Restriction: the call must be made on the same transport as the one
   // that the gatekeeper is using.
-  OpalTransport * transport;
+  H323Transport * transport;
   if (gatekeeper != NULL)
     transport = gatekeeper->GetTransport().GetLocalAddress().CreateTransport(
                                           *this, OpalTransportAddress::Streamed);
@@ -1118,7 +1185,7 @@ BOOL H323EndPoint::IntrudeCall(const PString & remoteParty,
 
 void H323EndPoint::ParsePartyName(const PString & remoteParty,
                                   PString & alias,
-                                  OpalTransportAddress & address) const
+                                  H323TransportAddress & address) const
 {
   /*Determine the alias part and the address part of the remote party name
     string. This depends on if there is an '@' to separate the alias from the
@@ -1145,9 +1212,9 @@ void H323EndPoint::ParsePartyName(const PString & remoteParty,
   }
 
   if (gateway.IsEmpty())
-    address = OpalTransportAddress();
+    address = H323TransportAddress();
   else
-    address = OpalTransportAddress(gateway, DefaultSignalTcpPort);
+    address = H323TransportAddress(gateway, defaultSignalPort);
 }
 
 
@@ -1425,6 +1492,13 @@ BOOL H323EndPoint::IsMCU() const
     default :
       return FALSE;
   }
+}
+
+
+void H323EndPoint::TranslateTCPAddress(PIPSocket::Address & localAddr,
+                                       const PIPSocket::Address & remoteAddr)
+{
+  manager.TranslateIPAddress(localAddr, remoteAddr);
 }
 
 

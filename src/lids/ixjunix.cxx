@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjunix.cxx,v $
- * Revision 1.2008  2002/09/04 06:01:49  robertj
+ * Revision 1.2009  2002/11/10 11:33:19  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.7  2002/09/04 06:01:49  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.6  2002/07/01 04:56:33  robertj
@@ -50,6 +53,21 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.134  2002/11/05 04:44:20  robertj
+ * Fixed typo
+ *
+ * Revision 1.133  2002/11/05 04:38:07  robertj
+ * Changed IsLineDisconnected() to work with POTSLine
+ *
+ * Revision 1.132  2002/11/05 04:27:34  robertj
+ * Imported RingLine() by array from OPAL.
+ *
+ * Revision 1.131  2002/10/24 21:06:28  dereks
+ * Add additional PTRACE statements to aid in debugging.
+ *
+ * Revision 1.130  2002/10/01 06:43:01  robertj
+ * Removed GNU compiler warning
  *
  * Revision 1.129  2002/08/30 08:20:22  craigs
  * Added G.723.1A based codecs
@@ -1029,7 +1047,7 @@ BOOL OpalIxJDevice::IsLineRinging(unsigned line, DWORD * /*cadence*/)
 
 BOOL OpalIxJDevice::RingLine(unsigned line, DWORD cadence)
 {
-  if (line != 0)
+  if (line != POTSLine)
     return FALSE;
 
   if (cadence == 0)
@@ -1061,7 +1079,7 @@ BOOL OpalIxJDevice::RingLine(unsigned line, PINDEX nCadence, unsigned * pattern)
   if (line != POTSLine)
     return FALSE;
 
-  return FALSE;
+  return RingLine(line, nCadence != 0 ? 0xaaa : 0);
 }
 
 
@@ -1363,6 +1381,7 @@ BOOL OpalIxJDevice::SetRawCodec(unsigned line)
 
   if (!SetReadFormat (line, CodecInfo[0].mediaFormat) ||
       !SetWriteFormat(line, CodecInfo[0].mediaFormat)) {
+    PTRACE(1, "IXJ\t Failed to set raw codec");
     StopReadCodec(line);
     StopWriteCodec(line);
     return FALSE;
@@ -1459,8 +1478,10 @@ BOOL OpalIxJDevice::ReadFrame(unsigned, void * buffer, PINDEX & count)
 
   count = 0;
 
-  if (readStopped) 
-    return FALSE;
+  if (readStopped) {
+      PTRACE(1, "IXJ\tRead stopped, so ReadFrame returns false");    
+      return FALSE;
+  }
 
   if (writeStopped) {
     PThread::Current()->Sleep(30);
@@ -2290,9 +2311,9 @@ BOOL OpalIxJDevice::SetCountryCode(T35CountryCodes country)
   }
 
   if (country == UnknownCountry) {
-    PTRACE(4, "IXJ\tRequest to set DAA country to unknown country code " << country);
+    PTRACE(4, "IXJ\tRequest to set DAA country to unknown country code");
   } else {
-    PTRACE(4, "IXJ\tSetting DAA country code to " << country);
+    PTRACE(4, "IXJ\tSetting DAA country code to " << (int)country);
     static int ixjCountry[NumCountryCodes] = {
       DAA_JAPAN, 0, 0, 0, DAA_GERMANY, 0, 0, 0, 0, DAA_AUSTRALIA, 0, 0, 0, 0,
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

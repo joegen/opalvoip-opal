@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2016  2002/04/09 00:21:41  robertj
+ * Revision 1.2017  2002/11/10 11:33:19  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.15  2002/04/09 00:21:41  robertj
  * Fixed media formats list not being sorted and sifted before use in opening streams.
  *
  * Revision 2.14  2002/04/08 02:40:13  robertj
@@ -102,7 +105,7 @@ OpalCall::OpalCall(OpalManager & mgr)
 {
   manager.AttachCall(this);
 
-  callEndReason = OpalNumCallEndReasons;
+  callEndReason = OpalConnection::NumCallEndReasons;
 
   activeConnections.DisallowDeleteObjects();
   garbageConnections.DisallowDeleteObjects();
@@ -160,15 +163,15 @@ void OpalCall::OnEstablished()
 }
 
 
-void OpalCall::SetCallEndReason(OpalCallEndReason reason)
+void OpalCall::SetCallEndReason(OpalConnection::CallEndReason reason)
 {
   // Only set reason if not already set to something
-  if (callEndReason == OpalNumCallEndReasons)
+  if (callEndReason == OpalConnection::NumCallEndReasons)
     callEndReason = reason;
 }
 
 
-void OpalCall::Clear(OpalCallEndReason reason, PSyncPoint * sync)
+void OpalCall::Clear(OpalConnection::CallEndReason reason, PSyncPoint * sync)
 {
   PTRACE(3, "Call\tClearing " << *this << " reason=" << reason);
 
@@ -222,7 +225,7 @@ void OpalCall::OnConnected(OpalConnection & connection)
   if (activeConnections.GetSize() == 1 && !partyB.IsEmpty()) {
     inUseFlag.Signal();
     if (!manager.SetUpConnection(*this, partyB))
-      connection.Release(EndedByNoUser);
+      connection.Release(OpalConnection::EndedByNoUser);
     return;
   }
 
@@ -284,7 +287,7 @@ void OpalCall::Release(OpalConnection * connection)
   PTRACE(3, "Call\tReleasing connection " << *connection);
 
   inUseFlag.Wait();
-  InternalReleaseConnection(activeConnections.GetObjectsIndex(connection), EndedByLocalUser);
+  InternalReleaseConnection(activeConnections.GetObjectsIndex(connection), OpalConnection::EndedByLocalUser);
   inUseFlag.Signal();
 
   // Signal the background threads that there is some stuff to process.
@@ -473,7 +476,7 @@ void OpalCall::OnUserInputTone(OpalConnection & connection,
 }
 
 
-void OpalCall::InternalReleaseConnection(PINDEX activeIndex, OpalCallEndReason reason)
+void OpalCall::InternalReleaseConnection(PINDEX activeIndex, OpalConnection::CallEndReason reason)
 {
   if (activeIndex >= activeConnections.GetSize())
     return;

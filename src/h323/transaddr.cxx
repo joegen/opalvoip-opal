@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transaddr.cxx,v $
- * Revision 1.2005  2002/09/12 06:58:33  robertj
+ * Revision 1.2006  2002/11/10 11:33:19  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.4  2002/09/12 06:58:33  robertj
  * Removed protocol prefix strings as static members as has problems with
  *   use in DLL environment.
  *
@@ -58,6 +61,35 @@
 
 
 
+static PString BuildIP(const PIPSocket::Address & ip, unsigned port, const char * proto)
+{
+  PStringStream str;
+
+  if (proto == NULL)
+    str << "ip$"; // Compatible with both tcp$ and udp$
+  else {
+    str << proto;
+    if (str.Find('$') == P_MAX_INDEX)
+      str << '$';
+  }
+
+  if (!ip.IsValid())
+    str << '*';
+  else
+#if P_HAS_IPV6
+  if (ip.GetVersion() == 6)
+    str << '[' << ip << ']';
+  else
+#endif
+    str << ip;
+
+  if (port != 0)
+    str << ':' << port;
+
+  return str;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 H323TransportAddress::H323TransportAddress(const H225_TransportAddress & transport,
@@ -66,15 +98,18 @@ H323TransportAddress::H323TransportAddress(const H225_TransportAddress & transpo
   switch (transport.GetTag()) {
     case H225_TransportAddress::e_ipAddress :
     {
-      PString::operator=(proto != NULL ? proto : "tcp$");
-      if (Find('$') == P_MAX_INDEX)
-        *this += '$';
       const H225_TransportAddress_ipAddress & ip = transport;
-      sprintf("%u.%u.%u.%u:%u",
-              ip.m_ip[0], ip.m_ip[1], ip.m_ip[2], ip.m_ip[3],
-              (unsigned)ip.m_port);
+      *this = BuildIP(PIPSocket::Address(ip.m_ip.GetSize(), ip.m_ip.GetValue()), ip.m_port, proto);
       break;
     }
+#if P_HAS_IPV6
+    case H225_TransportAddress::e_ip6Address :
+    {
+      const H225_TransportAddress_ip6Address & ip = transport;
+      *this = BuildIP(PIPSocket::Address(ip.m_ip.GetSize(), ip.m_ip.GetValue()), ip.m_port, proto);
+      break;
+    }
+#endif
   }
 
   SetInternalTransport(0, NULL);
@@ -88,18 +123,21 @@ H323TransportAddress::H323TransportAddress(const H245_TransportAddress & transpo
     case H245_TransportAddress::e_unicastAddress :
     {
       const H245_UnicastAddress & unicast = transport;
-      switch (transport.GetTag()) {
+      switch (unicast.GetTag()) {
         case H245_UnicastAddress::e_iPAddress :
         {
-          PString::operator=(proto != NULL ? proto : "udp$");
-          if (Find('$') == P_MAX_INDEX)
-            *this += '$';
           const H245_UnicastAddress_iPAddress & ip = unicast;
-          sprintf("%u.%u.%u.%u:%u",
-                  ip.m_network[0], ip.m_network[1], ip.m_network[2], ip.m_network[3],
-                  (unsigned)ip.m_tsapIdentifier);
+          *this = BuildIP(PIPSocket::Address(ip.m_network.GetSize(), ip.m_network.GetValue()), ip.m_tsapIdentifier, proto);
           break;
         }
+#if P_HAS_IPV6
+        case H245_UnicastAddress::e_iP6Address :
+        {
+          const H245_UnicastAddress_iP6Address & ip = unicast;
+          *this = BuildIP(PIPSocket::Address(ip.m_network.GetSize(), ip.m_network.GetValue()), ip.m_tsapIdentifier, proto);
+          break;
+        }
+#endif
       }
       break;
     }
@@ -114,35 +152,28 @@ static void AppendTransportAddress(OpalManager & manager,
                                    PIPSocket::Address addr, WORD port,
                                    H225_ArrayOf_TransportAddress & pdu)
 {
+  PTRACE(4, "TCP\tAppending H.225 transport " << addr << ':' << port
+         << " using associated transport " << associatedTransport);
+
   PIPSocket::Address remoteIP;
-  WORD dummy;
-  if (associatedTransport.GetRemoteAddress().GetIpAndPort(remoteIP, dummy))
+  if (associatedTransport.GetRemoteAddress().GetIpAddress(remoteIP))
     manager.TranslateIPAddress(addr, remoteIP);
 
-  H225_TransportAddress_ipAddress pduAddr;
-  PINDEX i;
-  for (i = 0; i < 4; i++)
-    pduAddr.m_ip[i] = addr[i];
-  pduAddr.m_port = port;
+  H323TransportAddress transAddr(addr, port);
+  H225_TransportAddress pduAddr;
+  transAddr.SetPDU(pduAddr);
 
   PINDEX lastPos = pdu.GetSize();
 
-  // Check for already have had that IP address.
-  for (i = 0; i < lastPos; i++) {
-    H225_TransportAddress & taddr = pdu[i];
-    if (taddr.GetTag() == H225_TransportAddress::e_ipAddress) {
-      H225_TransportAddress_ipAddress & ipAddr = taddr;
-      if (ipAddr == pduAddr)
-        return;
-    }
+  // Check for already have had that address.
+  for (PINDEX i = 0; i < lastPos; i++) {
+    if (pdu[i] == pduAddr)
+      return;
   }
 
   // Put new listener into array
   pdu.SetSize(lastPos+1);
-  H225_TransportAddress & taddr = pdu[lastPos];
-
-  taddr.SetTag(H225_TransportAddress::e_ipAddress);
-  (H225_TransportAddress_ipAddress &)taddr = pduAddr;
+  pdu[lastPos] = pduAddr;
 }
 
 
@@ -152,7 +183,7 @@ BOOL H323TransportAddress::SetPDU(H225_ArrayOf_TransportAddress & pdu,
   OpalManager & manager = associatedTransport.GetEndPoint().GetManager();
 
   PIPSocket::Address ip;
-  WORD port = H323EndPoint::DefaultSignalTcpPort;
+  WORD port = H323EndPoint::DefaultTcpPort;
   if (!GetIpAndPort(ip, port))
     return FALSE;
 
@@ -193,8 +224,19 @@ BOOL H323TransportAddress::SetPDU(H225_ArrayOf_TransportAddress & pdu,
 BOOL H323TransportAddress::SetPDU(H225_TransportAddress & pdu) const
 {
   PIPSocket::Address ip;
-  WORD port = H323EndPoint::DefaultSignalTcpPort;
+  WORD port = H323EndPoint::DefaultTcpPort;
   if (GetIpAndPort(ip, port)) {
+#if P_HAS_IPV6
+    if (ip.GetVersion() == 6) {
+      pdu.SetTag(H225_TransportAddress::e_ip6Address);
+      H225_TransportAddress_ip6Address & addr = pdu;
+      for (PINDEX i = 0; i < ip.GetSize(); i++)
+        addr.m_ip[i] = ip[i];
+      addr.m_port = port;
+      return TRUE;
+    }
+#endif
+
     pdu.SetTag(H225_TransportAddress::e_ipAddress);
     H225_TransportAddress_ipAddress & addr = pdu;
     for (PINDEX i = 0; i < 4; i++)
@@ -215,8 +257,19 @@ BOOL H323TransportAddress::SetPDU(H245_TransportAddress & pdu) const
     pdu.SetTag(H245_TransportAddress::e_unicastAddress);
 
     H245_UnicastAddress & unicast = pdu;
-    unicast.SetTag(H245_UnicastAddress::e_iPAddress);
 
+#if P_HAS_IPV6
+    if (ip.GetVersion() == 6) {
+      unicast.SetTag(H245_UnicastAddress::e_iP6Address);
+      H245_UnicastAddress_iP6Address & addr = unicast;
+      for (PINDEX i = 0; i < ip.GetSize(); i++)
+        addr.m_network[i] = ip[i];
+      addr.m_tsapIdentifier = port;
+      return TRUE;
+    }
+#endif
+
+    unicast.SetTag(H245_UnicastAddress::e_iPAddress);
     H245_UnicastAddress_iPAddress & addr = unicast;
     for (PINDEX i = 0; i < 4; i++)
       addr.m_network[i] = ip[i];

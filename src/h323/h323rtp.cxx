@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323rtp.cxx,v $
- * Revision 1.2008  2002/09/04 06:01:49  robertj
+ * Revision 1.2009  2002/11/10 11:33:19  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.7  2002/09/04 06:01:49  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.6  2002/07/01 04:56:32  robertj
@@ -47,6 +50,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.21  2002/10/08 13:08:21  robertj
+ * Changed for IPv6 support, thanks Sébastien Josset.
  *
  * Revision 1.20  2002/08/05 10:03:47  robertj
  * Cosmetic changes to normalise the usage of pragma interface/implementation.
@@ -162,7 +168,7 @@ H323_RTP_UDP::H323_RTP_UDP(const H323Connection & conn, RTP_UDP & rtp_udp)
   : H323_RTP_Session(conn),
     rtp(rtp_udp)
 {
-  const OpalTransport & transport = connection.GetControlChannel();
+  const H323Transport & transport = connection.GetControlChannel();
   PIPSocket::Address localAddress;
   transport.GetLocalAddress().GetIpAddress(localAddress);
 
@@ -253,23 +259,14 @@ static BOOL ExtractTransport(const H245_TransportAddress & pdu,
     return FALSE;
   }
 
-  const H245_UnicastAddress & unicast = pdu;
-  if (unicast.GetTag() != H245_UnicastAddress::e_iPAddress) {
-    PTRACE(1, "RTP_UDP\tLogic error, UDP must be IP unicast");
-    errorCode = H245_OpenLogicalChannelReject_cause::e_unspecified;
-    return FALSE;
-  }
+  H323TransportAddress transAddr = pdu;
 
-  const H245_UnicastAddress_iPAddress & addr = unicast;
+  PIPSocket::Address ip;
+  WORD port;
+  if (transAddr.GetIpAndPort(ip, port))
+    return rtp.SetRemoteSocketInfo(ip, port, isDataPort);
 
-  PIPSocket::Address ipnum(addr.m_network[0],
-                           addr.m_network[1],
-                           addr.m_network[2],
-                           addr.m_network[3]);
-
-  return rtp.SetRemoteSocketInfo(ipnum,
-                                 (WORD)(unsigned)addr.m_tsapIdentifier,
-                                 isDataPort);
+  return FALSE;
 }
 
 

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2019  2002/09/06 02:44:30  robertj
+ * Revision 1.2020  2002/11/10 11:33:19  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.18  2002/09/06 02:44:30  robertj
  * Added routing table system to route calls by regular expressions.
  *
  * Revision 2.17  2002/09/04 06:01:49  robertj
@@ -96,6 +99,7 @@
 
 #include <opal/patch.h>
 #include <opal/mediastrm.h>
+#include "../../version.h"
 
 
 #ifndef IPTOS_PREC_CRITIC_ECP
@@ -124,6 +128,35 @@ static const char * const DefaultMediaFormatOrder[] = {
 
 /////////////////////////////////////////////////////////////////////////////
 
+PString OpalGetVersion()
+{
+#define AlphaCode   "alpha"
+#define BetaCode    "beta"
+#define ReleaseCode "."
+
+  return psprintf("%u.%u%s%u", MAJOR_VERSION, MINOR_VERSION, BUILD_TYPE, BUILD_NUMBER);
+}
+
+
+unsigned OpalGetMajorVersion()
+{
+  return MAJOR_VERSION;
+}
+
+unsigned OpalGetMinorVersion()
+{
+  return MINOR_VERSION;
+}
+
+unsigned OpalGetBuildNumber()
+{
+  return BUILD_NUMBER;
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+
 OpalManager::OpalManager()
   : mediaFormatOrder(PARRAYSIZE(DefaultMediaFormatOrder), DefaultMediaFormatOrder)
 {
@@ -143,7 +176,8 @@ OpalManager::OpalManager()
   rtpIpTypeofService = IPTOS_LOWDELAY;
 #endif
 
-  maxAudioDelayJitter = 60;
+  minAudioJitterDelay = 50;  // milliseconds
+  maxAudioJitterDelay = 250; // milliseconds
 
   lastCallTokenID = 1;
 
@@ -262,7 +296,7 @@ OpalCall * OpalManager::FindCallWithoutLocks(const PString & token)
 
 
 BOOL OpalManager::ClearCall(const PString & token,
-                            OpalCallEndReason reason,
+                            OpalConnection::CallEndReason reason,
                             PSyncPoint * sync)
 {
   /*The hugely multi-threaded nature of the OpalCall objects means that
@@ -289,7 +323,7 @@ BOOL OpalManager::ClearCall(const PString & token,
 }
 
 
-void OpalManager::ClearAllCalls(OpalCallEndReason reason, BOOL wait)
+void OpalManager::ClearAllCalls(OpalConnection::CallEndReason reason, BOOL wait)
 {
   /*The hugely multi-threaded nature of the OpalCall objects means that
     to avoid many forms of race condition, a call is cleared by moving it from
@@ -646,6 +680,20 @@ PString OpalManager::ApplyRouteTable(const PString & proto, const PString & addr
   }
 
   return destination;
+}
+
+
+void OpalManager::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
+{
+  PAssert(minDelay <= 1000 && maxDelay <= 1000, PInvalidParameter);
+
+  if (minDelay < 10)
+    minDelay = 10;
+  minAudioJitterDelay = minDelay;
+
+  if (maxDelay < minDelay)
+    maxDelay = minDelay;
+  maxAudioJitterDelay = maxDelay;
 }
 
 

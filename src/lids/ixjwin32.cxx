@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjwin32.cxx,v $
- * Revision 1.2008  2002/07/01 04:56:33  robertj
+ * Revision 1.2009  2002/11/10 11:33:19  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.7  2002/07/01 04:56:33  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.6  2002/03/22 06:57:50  robertj
@@ -47,6 +50,16 @@
  *
  * Revision 2.1  2001/08/01 05:21:21  robertj
  * Made OpalMediaFormatList class global to help with documentation.
+ *
+ * Revision 1.113  2002/11/05 04:33:21  robertj
+ * Changed IsLineDisconnected() to work with POTSLine
+ *
+ * Revision 1.112  2002/11/05 04:27:58  robertj
+ * Imported RingLine() by array from OPAL.
+ *
+ * Revision 1.111  2002/10/30 05:54:17  craigs
+ * Fixed compatibilty problems with G.723.1 6k3 and 5k3
+ *
  * Revision 1.110  2002/06/25 08:30:12  robertj
  * Changes to differentiate between stright G.723.1 and G.723.1 Annex A using
  *   the OLC dataType silenceSuppression field so does not send SID frames
@@ -883,12 +896,14 @@ static const struct {
   { OPAL_G728,          2, 0, 0, 0,  20, RECORD_MODE_TRUESPEECH, RECORD_RATE_G728,    PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G728    },
   { OPAL_G729,          6, 1, 0, 0,  10, RECORD_MODE_TRUESPEECH, RECORD_RATE_G729,    PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G729    },
   { OPAL_G729AB,        6, 1, 0, 1,  10, RECORD_MODE_TRUESPEECH, RECORD_RATE_G729,    PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G729    },
+
+  // these two lines should be for the 5k3 codec, but this does not work properly in the driver so we lie
+  { OPAL_G7231_5k3,     7, 0, 1, 0,  24, RECORD_MODE_TRUESPEECH, RECORD_RATE_G723_63, PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G723_63 },
+  { OPAL_G7231A_5k3,    7, 0, 1, 1,  24, RECORD_MODE_TRUESPEECH, RECORD_RATE_G723_63, PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G723_63 },
+
   { OPAL_G7231_6k3,     7, 0, 1, 0,  24, RECORD_MODE_TRUESPEECH, RECORD_RATE_G723_63, PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G723_63 },
   { OPAL_G7231A_6k3,    7, 0, 1, 1,  24, RECORD_MODE_TRUESPEECH, RECORD_RATE_G723_63, PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G723_63 },
-#ifdef FIXED_G723_53
-  { OPAL_G7231_5k3,     7, 0, 1, 0,  20, RECORD_MODE_TRUESPEECH, RECORD_RATE_G723_53, PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G723_63 },
-  { OPAL_G7231A_5k3,    7, 0, 1, 1,  20, RECORD_MODE_TRUESPEECH, RECORD_RATE_G723_53, PLAYBACK_MODE_TRUESPEECH, PLAYBACK_RATE_G723_63 },
-#endif
+
 };
 
 
@@ -933,6 +948,8 @@ BOOL OpalIxJDevice::SetReadFormat(unsigned line, const OpalMediaFormat & mediaFo
   StopReadCodec(line);
 
   PWaitAndSignal mutex(readMutex);
+
+  IoControl(IOCTL_Record_Stop);
 
   readCodecType = FindCodec(mediaFormat);
   if (readCodecType == P_MAX_INDEX) {
@@ -1005,6 +1022,8 @@ BOOL OpalIxJDevice::SetWriteFormat(unsigned line, const OpalMediaFormat & mediaF
   StopWriteCodec(line);
 
   PWaitAndSignal mutex(writeMutex);
+
+  IoControl(IOCTL_Playback_Stop);
 
   writeCodecType = FindCodec(mediaFormat);
   if (writeCodecType == P_MAX_INDEX) {
@@ -1145,7 +1164,7 @@ BOOL OpalIxJDevice::SetRawCodec(unsigned)
 BOOL OpalIxJDevice::StopReadCodec(unsigned line)
 {
   if (inRawMode)
-    return FALSE;
+    return StopRawCodec(line);
 
   PTRACE(3, "xJack\tStopping read codec");
 
@@ -1163,7 +1182,7 @@ BOOL OpalIxJDevice::StopReadCodec(unsigned line)
 BOOL OpalIxJDevice::StopWriteCodec(unsigned line)
 {
   if (inRawMode)
-    return FALSE;
+    return StopRawCodec(line);
 
   PTRACE(3, "xJack\tStopping write codec");
 
@@ -1180,8 +1199,10 @@ BOOL OpalIxJDevice::StopWriteCodec(unsigned line)
 
 BOOL OpalIxJDevice::StopRawCodec(unsigned line)
 {
-  if (!inRawMode)
-    return FALSE;
+  if (!inRawMode) {
+    BOOL ok = StopReadCodec(line);
+    return StopWriteCodec(line) && ok;
+  }
 
   PTRACE(3, "xJack\tStopping raw codec");
 
