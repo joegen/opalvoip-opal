@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2012  2002/02/11 07:41:37  robertj
+ * Revision 1.2013  2002/02/19 07:48:50  robertj
+ * Restructured media bypass functions to fix problems with RFC2833.
+ *
+ * Revision 2.11  2002/02/11 07:41:37  robertj
  * Added media bypass for streams between compatible protocols.
  *
  * Revision 2.10  2002/01/22 05:11:34  robertj
@@ -266,6 +269,25 @@ void OpalCall::Release(OpalConnection * connection)
 }
 
 
+OpalConnection * OpalCall::GetOtherPartyConnection(const OpalConnection & connection) const
+{
+  PTRACE(3, "Call\tGetOtherPartyConnection " << connection);
+
+  PWaitAndSignal mutex(inUseFlag);
+
+  if (activeConnections.GetSize() != 2)
+    return NULL;
+
+  for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
+    OpalConnection & conn = activeConnections[i];
+    if (&connection != &conn)
+      return &conn;
+  }
+
+  return NULL;
+}
+
+
 OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection)
 {
   PINDEX i;
@@ -368,7 +390,8 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
 }
 
 
-BOOL OpalCall::CanDoMediaBypass(const OpalConnection & connection, unsigned sessionID)
+BOOL OpalCall::IsMediaBypassPossible(const OpalConnection & connection,
+                                     unsigned sessionID) const
 {
   PTRACE(3, "Call\tCanDoMediaBypass " << connection << " session " << sessionID);
 
@@ -378,28 +401,7 @@ BOOL OpalCall::CanDoMediaBypass(const OpalConnection & connection, unsigned sess
     for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
       OpalConnection & conn = activeConnections[i];
       if (&connection != &conn)
-        return manager.CanDoMediaBypass(connection, conn, sessionID);
-    }
-  }
-
-  return FALSE;
-}
-
-
-BOOL OpalCall::GetMediaTransportAddress(const OpalConnection & connection,
-                                        unsigned sessionID,
-                                        OpalTransportAddress & data,
-                                        OpalTransportAddress & control)
-{
-  PTRACE(3, "Call\tGetMediaTransportAddress " << connection << " session " << sessionID);
-
-  PWaitAndSignal mutex(inUseFlag);
-
-  if (activeConnections.GetSize() == 2) {
-    for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
-      OpalConnection & conn = activeConnections[i];
-      if (&connection != &conn)
-        return conn.GetMediaTransportAddress(sessionID, data, control);
+        return manager.IsMediaBypassPossible(connection, conn, sessionID);
     }
   }
 
