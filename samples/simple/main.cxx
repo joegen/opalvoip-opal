@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2044  2004/08/14 07:56:30  rjongbloed
+ * Revision 1.2045  2004/08/18 07:14:00  csoutheren
+ * Called ancestor OnClearedCall
+ *
+ * Revision 2.43  2004/08/14 07:56:30  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.42  2004/04/26 07:06:07  rjongbloed
@@ -1004,6 +1007,8 @@ void MyManager::OnClearedCall(OpalCall & call)
   cout << ", on " << now.AsString("w h:mma") << ". Duration "
        << setprecision(0) << setw(5) << (now - call.GetStartTime())
        << "s." << endl;
+
+  OpalManager::OnClearedCall(call);
 }
 
 
