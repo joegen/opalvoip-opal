@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2006  2002/04/10 03:16:02  robertj
+ * Revision 1.2007  2002/04/10 08:12:17  robertj
+ * Added call back for when transaction completed, used for invite descendant.
+ *
+ * Revision 2.5  2002/04/10 03:16:02  robertj
  * Major changes to RTP session management when initiating an INVITE.
  * Improvements in error handling and transaction cancelling.
  *
@@ -387,6 +390,7 @@ class SIPTransaction : public SIP_PDU
     BOOL SendCANCEL();
 
     virtual BOOL OnReceivedResponse(SIP_PDU & response);
+    virtual BOOL OnCompleted(SIP_PDU & response);
 
     OpalTransport & GetTransport() const  { return transport; }
     SIPConnection * GetConnection() const { return connection; }
@@ -447,6 +451,7 @@ class SIPInvite : public SIPTransaction
     );
 
     virtual BOOL OnReceivedResponse(SIP_PDU & response);
+    virtual BOOL OnCompleted(SIP_PDU & response);
 
     RTP_SessionManager & GetSessionManager() { return rtpSessions; }
 
