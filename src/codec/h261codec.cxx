@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.cxx,v $
- * Revision 1.2015  2004/04/07 08:21:00  rjongbloed
+ * Revision 1.2016  2005/02/21 12:19:53  rjongbloed
+ * Added new "options list" to the OpalMediaFormat class.
+ *
+ * Revision 2.14  2004/04/07 08:21:00  rjongbloed
  * Changes for new RTTI system.
  *
  * Revision 2.13  2004/03/11 06:54:28  csoutheren
@@ -290,43 +293,21 @@
 #define INC_ENCODE 1
 
 
-OpalMediaFormat const OpalH261(
-  OPAL_H261,
-  OpalMediaFormat::DefaultVideoSessionID,
-  RTP_DataFrame::H261,
-  "H261",
-  FALSE,  // No jitter for video
-  240000, // bits/sec
-  0,      // Not sure of this value!
-  0,      // No intrinsic time per frame
-  OpalMediaFormat::VideoClockRate
-);
-
-
-OpalMediaFormat const OpalH261_CIF(
-  OPAL_H261_CIF,
-  OpalMediaFormat::DefaultVideoSessionID,
-  RTP_DataFrame::H261,
-  "H261",
-  FALSE,  // No jitter for video
-  240000, // bits/sec
-  0,      // Not sure of this value!
-  0,      // No intrinsic time per frame
-  OpalMediaFormat::VideoClockRate
-);
-
-
-OpalMediaFormat const OpalH261_QCIF(
-  OPAL_H261_QCIF,
-  OpalMediaFormat::DefaultVideoSessionID,
-  RTP_DataFrame::H261,
-  "H261",
-  FALSE,  // No jitter for video
-  240000, // bits/sec
-  0,      // Not sure of this value!
-  0,      // No intrinsic time per frame
-  OpalMediaFormat::VideoClockRate
-);
+OPAL_MEDIA_FORMAT(OpalH261,
+                  OPAL_H261,
+                  OpalMediaFormat::DefaultVideoSessionID,
+                  RTP_DataFrame::H261,
+                  "H261",
+                  FALSE,  // No jitter for video
+                  128000, // bits/sec
+                  0,      // Not sure of this value!
+                  1000/15, // Time per frame for 15 frames/second
+                  OpalMediaFormat::VideoClockRate
+                )
+  {
+    AddOption(new OpalMediaOptionInteger("FrameWidth", false, OpalMediaOption::EqualMerge, 176));
+    AddOption(new OpalMediaOptionInteger("FrameHeight", false, OpalMediaOption::EqualMerge, 144));
+  }
 
 
 ///////////////////////////////////////////////////////////////////////////////
