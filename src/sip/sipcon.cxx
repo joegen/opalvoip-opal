@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2020  2002/04/17 07:22:54  robertj
+ * Revision 1.2021  2002/06/16 02:26:37  robertj
+ * Fixed creation of RTP session for incoming calls, thanks Ted Szoczei
+ *
+ * Revision 2.19  2002/04/17 07:22:54  robertj
  * Added identifier for conenction in OnReleased trace message.
  *
  * Revision 2.18  2002/04/16 09:04:18  robertj
@@ -292,7 +295,7 @@ BOOL SIPConnection::SetConnected()
   }
 
   // create an RTP session
-  RTP_UDP * rtpSession = (RTP_UDP *)UseSession(rtpSessionId);
+  RTP_UDP * rtpSession = (RTP_UDP *)UseRTPSession(rtpSessions, rtpSessionId);
 
   // set the remote addresses
   PIPSocket::Address ip;
