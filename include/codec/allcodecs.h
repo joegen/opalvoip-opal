@@ -23,7 +23,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: allcodecs.h,v $
- * Revision 1.2008  2004/02/19 10:46:43  rjongbloed
+ * Revision 1.2009  2004/05/15 12:53:40  rjongbloed
+ * Fixed incorrect laoding of H.323 capability for G.726
+ *
+ * Revision 2.7  2004/02/19 10:46:43  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.6  2004/02/17 08:48:57  csoutheren
@@ -62,6 +65,9 @@ OPAL_REGISTER_G729();
 
 #include <codec/gsmcodec.h>
 OPAL_REGISTER_GSM0610();
+
+#include <codec/g726codec.h>
+OPAL_REGISTER_G726();
 
 #include <codec/mscodecs.h>
 OPAL_REGISTER_MSCODECS();
