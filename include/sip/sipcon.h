@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2017  2004/02/07 02:20:32  rjongbloed
+ * Revision 1.2018  2004/02/24 11:33:46  rjongbloed
+ * Normalised RTP session management across protocols
+ * Added support for NAT (via STUN)
+ *
+ * Revision 2.16  2004/02/07 02:20:32  rjongbloed
  * Changed to allow opening of more than just audio streams.
  *
  * Revision 2.15  2003/12/20 12:21:18  rjongbloed
@@ -306,8 +310,6 @@ class SIPConnection : public OpalConnection
 
 
     OpalTransportAddress GetLocalAddress(WORD port = 0) const;
-    RTP_Session * UseRTPSession(RTP_SessionManager & rtpSessions, unsigned rtpSessionId);
-
 
     OpalTransport & GetTransport() const { return *transport; }
 
@@ -328,6 +330,7 @@ class SIPConnection : public OpalConnection
     const SIPAuthentication & GetAuthentication() const { return authentication; }
 
   protected:
+    PDECLARE_NOTIFIER(PThread, SIPConnection, ReadThreadMain);
     PDECLARE_NOTIFIER(PThread, SIPConnection, HandlePDUsThreadMain);
     virtual void OnReceivedSDP(SIP_PDU & pdu);
     virtual BOOL OnReceivedSDPMediaDescription(
