@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2001/08/01 05:45:01  robertj
+ * Moved media formats list from endpoint to connection.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  */
@@ -229,13 +232,7 @@ void OpalConnection::OnEstablished()
 }
 
 
-OpalMediaFormat::List OpalConnection::GetMediaFormats() const
-{
-  return endpoint.GetMediaFormats();
-}
-
-
-BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormat::List & mediaFormats,
+BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats,
                                            unsigned sessionID)
 {
   PTRACE(3, "OpalCon\tOpenSourceMediaStream " << *this);
