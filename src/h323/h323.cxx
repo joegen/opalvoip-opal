@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2067  2004/10/04 12:57:06  rjongbloed
+ * Revision 1.2068  2004/11/07 12:29:05  rjongbloed
+ * Fixed missing initialisation of call reference value.
+ * Added change so that a DNS lookup is not made if an e164 calling party number
+ *   is present in SETUP, for Dmitriy
+ *
+ * Revision 2.66  2004/10/04 12:57:06  rjongbloed
  * Fixed temporary unlocking of read/write mutex so if cannot relock does not
  *   get an unbalanced unlock error.
  *
@@ -1447,7 +1452,7 @@ H323Connection::H323Connection(OpalCall & call,
 
   gatekeeperRouted = FALSE;
   distinctiveRing = 0;
-  callReference = 0;
+  callReference = token.Mid(token.Find('/')+1).AsUnsigned();
   remoteCallWaiting = -1;
 
   h225version = H225_PROTOCOL_VERSION;
@@ -2109,9 +2114,11 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
 
   // Anything else we need from setup PDU
   mediaWaitForConnect = setup.m_mediaWaitForConnect;
-  localDestinationAddress = setupPDU.GetDestinationAlias(TRUE);
-  if (signallingChannel->GetLocalAddress().IsEquivalent(localDestinationAddress))
-    localDestinationAddress = '*';
+  if (!setupPDU.GetQ931().GetCalledPartyNumber(localDestinationAddress)) {
+    localDestinationAddress = setupPDU.GetDestinationAlias(TRUE);
+    if (signallingChannel->GetLocalAddress().IsEquivalent(localDestinationAddress))
+      localDestinationAddress = '*';
+  }
 
   // Send back a H323 Call Proceeding PDU in case OnIncomingCall() takes a while
   PTRACE(3, "H225\tSending call proceeding PDU");
