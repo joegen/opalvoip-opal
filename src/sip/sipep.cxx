@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2015  2004/03/13 06:32:18  rjongbloed
+ * Revision 1.2016  2004/03/13 06:51:32  rjongbloed
+ * Alllowed for empty "username" in registration
+ *
+ * Revision 2.14  2004/03/13 06:32:18  rjongbloed
  * Fixes for removal of SIP and H.323 subsystems.
  * More registration work.
  *
@@ -315,11 +318,14 @@ BOOL SIPEndPoint::Register(const PString & hostname,
   if (listeners.IsEmpty())
     return FALSE;
 
-  SIPURL registrationAddress;
-  if (username.Find('@') == P_MAX_INDEX)
-    registrationAddress.Parse(username + '@' + hostname);
-  else
-    registrationAddress.Parse(username);
+  PString adjustedUsername = username;
+  if (adjustedUsername.IsEmpty())
+    adjustedUsername = GetDefaultLocalPartyName();
+
+  if (adjustedUsername.Find('@') == P_MAX_INDEX)
+    adjustedUsername += '@' + hostname;
+
+  SIPURL registrationAddress = adjustedUsername;
 
   OpalTransportAddress registrarAddress(hostname, defaultSignalPort, "udp");
   // Should do DNS SRV record loolup to get regisrar address
