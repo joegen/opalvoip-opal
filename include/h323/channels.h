@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.h,v $
- * Revision 1.2003  2001/11/02 10:45:19  robertj
+ * Revision 1.2004  2002/01/14 06:35:56  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.2  2001/11/02 10:45:19  robertj
  * Updated to OpenH323 v1.7.3
  *
  * Revision 2.1  2001/10/15 04:30:09  robertj
@@ -35,6 +38,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.25  2002/01/10 05:13:50  robertj
+ * Added support for external RTP stacks, thanks NuMind Software Systems.
  *
  * Revision 1.24  2001/10/23 02:18:06  dereks
  * Initial release of CU30 video codec.
@@ -122,6 +128,7 @@
 
 
 #include <rtp/rtp.h>
+#include <h323/transaddr.h>
 
 
 class OpalMediaStream;
@@ -130,6 +137,8 @@ class H245_OpenLogicalChannel;
 class H245_OpenLogicalChannelAck;
 class H245_OpenLogicalChannel_forwardLogicalChannelParameters;
 class H245_OpenLogicalChannel_reverseLogicalChannelParameters;
+class H245_H2250LogicalChannelParameters;
+class H245_H2250LogicalChannelAckParameters;
 class H245_MiscellaneousCommand_type;
 class H245_MiscellaneousIndication_type;
 
@@ -235,8 +244,10 @@ class H323Channel : public PObject
     virtual BOOL SetInitialBandwidth() = 0;
 
     /**Open the channel.
+       The default behaviour just calls connection.OnStartLogicalChannel() and
+       if successful sets the opened member variable.
       */
-    virtual BOOL Open() = 0;
+    virtual BOOL Open();
 
     /**This is called when the channel can start transferring data.
      */
@@ -510,34 +521,24 @@ class H323BidirectionalChannel : public H323Channel
 
 /**This class is for encpsulating the IETF Real Time Protocol interface.
  */
-class H323_RTPChannel : public H323UnidirectionalChannel
+class H323_RealTimeChannel : public H323UnidirectionalChannel
 {
-  PCLASSINFO(H323_RTPChannel, H323UnidirectionalChannel);
+  PCLASSINFO(H323_RealTimeChannel, H323UnidirectionalChannel);
 
   public:
   /**@name Construction */
   //@{
     /**Create a new channel.
      */
-    H323_RTPChannel(
+    H323_RealTimeChannel(
       H323Connection & connection,        /// Connection to endpoint for channel
       const H323Capability & capability,  /// Capability channel is using
-      Directions direction,               /// Direction of channel
-      RTP_Session & rtp                   /// RTP session for channel
+      Directions direction                /// Direction of channel
     );
-
-    /// Destroy the channel
-    ~H323_RTPChannel();
   //@}
 
   /**@name Overrides from class H323Channel */
   //@{
-    /**Indicate the session number of the channel.
-       Return session for channel. This returns the session ID of the
-       RTP_Session member variable.
-     */
-    virtual unsigned GetSessionID() const;
-
     /**Fill out the OpenLogicalChannel PDU for the particular channel type.
      */
     virtual BOOL OnSendingPDU(
@@ -576,19 +577,248 @@ class H323_RTPChannel : public H323UnidirectionalChannel
     );
   //@}
 
-  /**@name Member variable access */
+  /**@name Operations */
   //@{
-    /// Get the dynamic RTP payload type for channels media.
-    RTP_DataFrame::PayloadTypes GetDynamicRTPPayloadType() const { return rtpPayloadType; }
+    /**Fill out the OpenLogicalChannel PDU for the particular channel type.
+     */
+    virtual BOOL OnSendingPDU(
+      H245_H2250LogicalChannelParameters & param  /// Open PDU to send.
+    ) const = 0;
 
-    /// Set the dynamic RTP payload type for channels media.
-    BOOL SetDynamicRTPPayloadType(int newType);
+    /**This is called when request to create a channel is received from a
+       remote machine and is about to be acknowledged.
+     */
+    virtual void OnSendOpenAck(
+      H245_H2250LogicalChannelAckParameters & param /// Acknowledgement PDU
+    ) const = 0;
+
+    /**This is called after a request to create a channel occurs from the
+       local machine via the H245LogicalChannelDict::Open() function, and
+       the request has been acknowledged by the remote endpoint.
+
+       The default behaviour sets the remote ports to send UDP packets to.
+     */
+    virtual BOOL OnReceivedPDU(
+      const H245_H2250LogicalChannelParameters & param, /// Acknowledgement PDU
+      unsigned & errorCode                              /// Error on failure
+    ) = 0;
+
+    /**This is called after a request to create a channel occurs from the
+       local machine via the H245LogicalChannelDict::Open() function, and
+       the request has been acknowledged by the remote endpoint.
+
+       The default behaviour sets the remote ports to send UDP packets to.
+     */
+    virtual BOOL OnReceivedAckPDU(
+      const H245_H2250LogicalChannelAckParameters & param /// Acknowledgement PDU
+    ) = 0;
+
+    /**Set the dynamic payload type used by this channel.
+      */
+    BOOL SetDynamicRTPPayloadType(
+      int newType  /// New RTP payload type number
+    );
   //@}
+
+  protected:
+    RTP_DataFrame::PayloadTypes rtpPayloadType;
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+/**This class is for encpsulating the IETF Real Time Protocol interface.
+ */
+class H323_RTPChannel : public H323_RealTimeChannel
+{
+  PCLASSINFO(H323_RTPChannel, H323_RealTimeChannel);
+
+  public:
+  /**@name Construction */
+  //@{
+    /**Create a new channel.
+     */
+    H323_RTPChannel(
+      H323Connection & connection,        /// Connection to endpoint for channel
+      const H323Capability & capability,  /// Capability channel is using
+      Directions direction,               /// Direction of channel
+      RTP_Session & rtp                   /// RTP session for channel
+    );
+
+    /// Destroy the channel
+    ~H323_RTPChannel();
+  //@}
+
+  /**@name Overrides from class H323Channel */
+  //@{
+    /**Indicate the session number of the channel.
+       Return session for channel. This returns the session ID of the
+       RTP_Session member variable.
+     */
+    virtual unsigned GetSessionID() const;
+  //@}
+
+  /**@name Overrides from class H323_RealTimeChannel */
+  //@{
+    /**Fill out the OpenLogicalChannel PDU for the particular channel type.
+     */
+    virtual BOOL OnSendingPDU(
+      H245_H2250LogicalChannelParameters & param  /// Open PDU to send.
+    ) const;
+
+    /**This is called when request to create a channel is received from a
+       remote machine and is about to be acknowledged.
+     */
+    virtual void OnSendOpenAck(
+      H245_H2250LogicalChannelAckParameters & param /// Acknowledgement PDU
+    ) const;
+
+    /**This is called after a request to create a channel occurs from the
+       local machine via the H245LogicalChannelDict::Open() function, and
+       the request has been acknowledged by the remote endpoint.
+
+       The default behaviour sets the remote ports to send UDP packets to.
+     */
+    virtual BOOL OnReceivedPDU(
+      const H245_H2250LogicalChannelParameters & param, /// Acknowledgement PDU
+      unsigned & errorCode                              /// Error on failure
+    );
+
+    /**This is called after a request to create a channel occurs from the
+       local machine via the H245LogicalChannelDict::Open() function, and
+       the request has been acknowledged by the remote endpoint.
+
+       The default behaviour sets the remote ports to send UDP packets to.
+     */
+    virtual BOOL OnReceivedAckPDU(
+      const H245_H2250LogicalChannelAckParameters & param /// Acknowledgement PDU
+    );
+  //@}
+
+    BOOL SetDynamicRTPPayloadType(int newType);
+    RTP_DataFrame::PayloadTypes GetDynamicRTPPayloadType() const { return rtpPayloadType; }
 
   protected:
     RTP_Session      & rtpSession;
     H323_RTP_Session & rtpCallbacks;
     RTP_DataFrame::PayloadTypes rtpPayloadType;
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+/**This class is for encpsulating the IETF Real Time Protocol interface as used
+by a remote host.
+ */
+class H323_ExternalRTPChannel : public H323_RealTimeChannel
+{
+  PCLASSINFO(H323_ExternalRTPChannel, H323_RealTimeChannel);
+
+  public:
+  /**@name Construction */
+  //@{
+    /**Create a new channel.
+     */
+    H323_ExternalRTPChannel(
+      H323Connection & connection,        /// Connection to endpoint for channel
+      const H323Capability & capability,  /// Capability channel is using
+      Directions direction,               /// Direction of channel
+      unsigned sessionID,                 /// Session ID for channel
+      H323TransportAddress & data,        /// Data address
+      H323TransportAddress & control      /// Control address
+    );
+    /**Create a new channel.
+     */
+    H323_ExternalRTPChannel(
+      H323Connection & connection,        /// Connection to endpoint for channel
+      const H323Capability & capability,  /// Capability channel is using
+      Directions direction,               /// Direction of channel
+      unsigned sessionID,                 /// Session ID for channel
+      const PIPSocket::Address & ip,      /// IP address of media server
+      WORD dataPort                       /// Data port (control is dataPort+1)
+    );
+  //@}
+
+  /**@name Overrides from class H323Channel */
+  //@{
+    /**Indicate the session number of the channel.
+       Return session for channel. This returns the session ID of the
+       RTP_Session member variable.
+     */
+    virtual unsigned GetSessionID() const;
+
+    /**Start the channel.
+      */
+    virtual BOOL Start();
+
+    /**Handle channel data reception.
+
+       This is called by the thread started by the Start() function and is
+       typically a loop writing to the codec and reading from the transport
+       (eg RTP_session).
+      */
+    virtual void Receive();
+
+    /**Handle channel data transmission.
+
+       This is called by the thread started by the Start() function and is
+       typically a loop reading from the codec and writing to the transport
+       (eg an RTP_session).
+      */
+    virtual void Transmit();
+  //@}
+
+  /**@name Overrides from class H323_RealTimeChannel */
+  //@{
+    /**Fill out the OpenLogicalChannel PDU for the particular channel type.
+     */
+    virtual BOOL OnSendingPDU(
+      H245_H2250LogicalChannelParameters & param  /// Open PDU to send.
+    ) const;
+
+    /**This is called when request to create a channel is received from a
+       remote machine and is about to be acknowledged.
+     */
+    virtual void OnSendOpenAck(
+      H245_H2250LogicalChannelAckParameters & param /// Acknowledgement PDU
+    ) const;
+
+    /**This is called after a request to create a channel occurs from the
+       local machine via the H245LogicalChannelDict::Open() function, and
+       the request has been acknowledged by the remote endpoint.
+
+       The default behaviour sets the remote ports to send UDP packets to.
+     */
+    virtual BOOL OnReceivedPDU(
+      const H245_H2250LogicalChannelParameters & param, /// Acknowledgement PDU
+      unsigned & errorCode                              /// Error on failure
+    );
+
+    /**This is called after a request to create a channel occurs from the
+       local machine via the H245LogicalChannelDict::Open() function, and
+       the request has been acknowledged by the remote endpoint.
+
+       The default behaviour sets the remote ports to send UDP packets to.
+     */
+    virtual BOOL OnReceivedAckPDU(
+      const H245_H2250LogicalChannelAckParameters & param /// Acknowledgement PDU
+    );
+  //@}
+
+    const H323TransportAddress & GetRemoteMediaAddress()        const { return remoteMediaAddress; }
+    const H323TransportAddress & GetRemoteMediaControlAddress() const { return remoteMediaControlAddress; }
+
+    BOOL GetRemoteAddress(
+      PIPSocket::Address & ip,
+      WORD & dataPort
+    ) const;
+
+  protected:
+    unsigned             sessionID;
+    H323TransportAddress externalMediaAddress;
+    H323TransportAddress externalMediaControlAddress;
+    H323TransportAddress remoteMediaAddress;
+    H323TransportAddress remoteMediaControlAddress;
 };
 
 
