@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.h,v $
- * Revision 1.2006  2001/10/15 04:29:35  robertj
+ * Revision 1.2007  2001/11/13 06:25:56  robertj
+ * Changed SetUpConnection() so returns BOOL as returning
+ *   pointer to connection is not useful.
+ *
+ * Revision 2.5  2001/10/15 04:29:35  robertj
  * Removed answerCall signal and replaced with state based functions.
  *
  * Revision 2.4  2001/10/03 05:56:15  robertj
@@ -104,26 +108,20 @@ class OpalLIDEndPoint : public OpalEndPoint
 
        The proto field is optional when passed to a specific endpoint. If it
        is present, however, it must agree with the endpoints protocol name or
-       NULL is returned.
+       FALSE is returned.
 
-       This function returns almost immediately with the connection continuing
-       to occur in a new background thread.
+       This function usually returns almost immediately with the connection
+       continuing to occur in a new background thread.
 
-       If NULL is returned then the connection could not be established. For
+       If FALSE is returned then the connection could not be established. For
        example if a PSTN endpoint is used and the assiciated line is engaged
        then it may return immediately. Returning a non-NULL value does not
        mean that the connection will succeed, only that an attempt is being
        made.
 
-       Note, the returned pointer to the connection is not locked and may be
-       deleted at any time. This is extremely unlikely immediately after the
-       function is called, but you should not keep this pointer beyond that
-       brief time. The the FindCallWithLock() function for future references
-       to the connection object.
-
        The default behaviour is pure.
      */
-    virtual OpalConnection * SetUpConnection(
+    virtual BOOL SetUpConnection(
       OpalCall & call,        /// Owner of connection
       const PString & party,  /// Remote party to call
       void * userData = NULL  /// Arbitrary data to pass to connection

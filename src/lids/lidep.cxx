@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2010  2001/10/15 04:31:56  robertj
+ * Revision 1.2011  2001/11/13 06:25:56  robertj
+ * Changed SetUpConnection() so returns BOOL as returning
+ *   pointer to connection is not useful.
+ *
+ * Revision 2.9  2001/10/15 04:31:56  robertj
  * Removed answerCall signal and replaced with state based functions.
  *
  * Revision 2.8  2001/10/04 00:47:02  robertj
@@ -96,9 +100,9 @@ OpalLIDEndPoint::~OpalLIDEndPoint()
 }
 
 
-OpalConnection * OpalLIDEndPoint::SetUpConnection(OpalCall & call,
-                                                  const PString & remoteParty,
-                                                  void * userData)
+BOOL OpalLIDEndPoint::SetUpConnection(OpalCall & call,
+                                      const PString & remoteParty,
+                                      void * userData)
 {
   // First strip of the prefix if present
   PINDEX prefixLength = 0;
@@ -139,12 +143,14 @@ OpalConnection * OpalLIDEndPoint::SetUpConnection(OpalCall & call,
 
   linesMutex.Signal();
 
-  if (connection != NULL) {
-    connection->Lock();
-    connection->StartOutgoing(lineName);
-  }
+  if (connection == NULL)
+    return FALSE;
 
-  return connection;
+  connection->Lock();
+  connection->StartOutgoing(lineName);
+  connection->Unlock();
+
+  return TRUE;
 }
 
 
@@ -158,6 +164,7 @@ OpalLineConnection * OpalLIDEndPoint::CreateConnection(OpalCall & call,
 
 static void InitialiseLine(OpalLine * line)
 {
+  line->Ring(0);
   line->StopTone();
   line->StopRawCodec();
   line->StopReadCodec();
