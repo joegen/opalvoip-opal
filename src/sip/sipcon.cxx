@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2015  2002/04/10 03:14:35  robertj
+ * Revision 1.2016  2002/04/10 06:58:31  robertj
+ * Fixed incorrect return value when starting INVITE transactions.
+ *
+ * Revision 2.14  2002/04/10 03:14:35  robertj
  * Moved code for handling media bypass address resolution into ancestor as
  *   now done ths same way in both SIP and H.323.
  * Major changes to RTP session management when initiating an INVITE.
@@ -420,8 +423,10 @@ BOOL SIPConnection::WriteINVITE(OpalTransport & transport, PObject * param)
   connection.SetLocalPartyAddress();
 
   SIPTransaction * invite = new SIPInvite(connection, transport);
-  if (invite->Start())
-    return connection.invitations.Append(invite);
+  if (invite->Start()) {
+    connection.invitations.Append(invite);
+    return TRUE;
+  }
 
   PTRACE(2, "SIP\tDid not start INVITE transaction on " << transport);
   return FALSE;
