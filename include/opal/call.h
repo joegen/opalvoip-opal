@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2006  2002/01/22 05:03:47  robertj
+ * Revision 1.2007  2002/02/11 07:38:01  robertj
+ * Added media bypass for streams between compatible protocols.
+ *
+ * Revision 2.5  2002/01/22 05:03:47  robertj
  * Revamp of user input API triggered by RFC2833 support
  *
  * Revision 2.4  2001/11/15 07:02:12  robertj
@@ -264,6 +267,24 @@ class OpalCall : public PObject
     virtual BOOL PatchMediaStreams(
       const OpalConnection & connection, /// Source connection
       OpalMediaStream & source           /// Source media stream to patch
+    );
+
+    /**See if the media can bypass the local host.
+     */
+    virtual BOOL CanDoMediaBypass(
+      const OpalConnection & connection,  /// Source connection
+      unsigned sessionID                  /// Session ID for media channel
+    );
+
+    /**Get the media transport address for the connection.
+       This is primarily used to determine if media bypass is possible for the
+       call between two connections.
+     */
+    virtual BOOL GetMediaTransportAddress(
+      const OpalConnection & connection,  /// Source connection
+      unsigned sessionID,                 /// Session ID for media channel
+      OpalTransportAddress & data,        /// Data channel address
+      OpalTransportAddress & control      /// Control channel address
     );
   //@}
 
