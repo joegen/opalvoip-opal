@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2006  2001/08/22 10:20:09  robertj
+ * Revision 1.2007  2001/08/23 03:15:51  robertj
+ * Added missing Lock() calls in SetUpConnection
+ *
+ * Revision 2.5  2001/08/22 10:20:09  robertj
  * Changed connection locking to use double mutex to guarantee that
  *   no threads can ever deadlock or access deleted connection.
  *
@@ -118,7 +121,6 @@ OpalConnection * OpalLIDEndPoint::SetUpConnection(OpalCall & call,
   for (PINDEX i = 0; i < lines.GetSize(); i++) {
     if ((lineName == "*"  || lines[i].GetDescription() == lineName) && lines[i].EnableAudio()) {
       connection = CreateConnection(call, lines[i], userData);
-      PAssertNULL(connection);
       inUseFlag.Wait();
       connectionsActive.SetAt(connection->GetToken(), connection);
       inUseFlag.Signal();
@@ -128,8 +130,10 @@ OpalConnection * OpalLIDEndPoint::SetUpConnection(OpalCall & call,
 
   linesMutex.Signal();
 
-  if (connection != NULL)
+  if (connection != NULL) {
+    connection->Lock();
     connection->StartOutgoing(lineName);
+  }
 
   return connection;
 }
