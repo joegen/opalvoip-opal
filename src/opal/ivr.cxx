@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.cxx,v $
- * Revision 1.2005  2003/06/02 03:15:34  rjongbloed
+ * Revision 1.2006  2004/04/18 13:35:28  rjongbloed
+ * Fixed ability to make calls where both endpoints are specified a priori. In particular
+ *   fixing the VXML support for an outgoing sip/h323 call.
+ *
+ * Revision 2.4  2003/06/02 03:15:34  rjongbloed
  * Changed default VXML to be simple "answering machine".
  * Added additional media format names.
  * Allowed for Open() to be called multiple times.
@@ -182,7 +186,7 @@ BOOL OpalIVRConnection::SetUpConnection()
 
   if (!vxmlSession.Load(vxmlToLoad)) {
     PTRACE(1, "IVR\tVXML session not loaded, aborting.");
-    Release(EndedByNoAccept);
+    Release(EndedByLocalUser);
     return FALSE;
   }
 
@@ -203,13 +207,14 @@ BOOL OpalIVRConnection::SetConnected()
 {
   PTRACE(3, "IVR\tSetConnected()");
   phase = ConnectedPhase;
+
+  if (!vxmlSession.Load(vxmlToLoad)) {
+    PTRACE(1, "IVR\tVXML session not loaded, aborting.");
+    Release(EndedByLocalUser);
+    return FALSE;
+  }
+
   return TRUE;
-}
-
-
-PString OpalIVRConnection::GetDestinationAddress()
-{
-  return PString::Empty();
 }
 
 
@@ -217,11 +222,18 @@ OpalMediaFormatList OpalIVRConnection::GetMediaFormats() const
 {
   // Sound card can only do 16 bit PCM
   OpalMediaFormatList formatNames;
+
   formatNames += OpalPCM16;
+
+#if 0
+  /* This is removed until some code is added to add them it it detects that
+     there is a directory containing G.723.1 and/or G.729 wav files. */
   formatNames += OpalG7231A_6k3;
   formatNames += OpalG7231_6k3;
   formatNames += OpalG729;
   formatNames += OpalG729A;
+#endif
+
   return formatNames;
 }
 
@@ -251,7 +263,13 @@ void OpalIVRConnection::InitiateCall()
     return;
 
   phase = SetUpPhase;
-  OnIncomingConnection();
+  if (!OnIncomingConnection())
+    Release(EndedByCallerAbort);
+  else {
+    PTRACE(2, "IVR\tOutgoing call routed to " << ownerCall.GetPartyB() << " for " << *this);
+    if (!ownerCall.OnSetUp(*this))
+      Release(EndedByNoAccept);
+  }
 
   Unlock();
 }
