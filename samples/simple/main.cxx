@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2047  2005/02/19 22:46:19  dsandras
+ * Revision 1.2048  2005/03/11 18:12:09  dsandras
+ * Added support to specify the realm when registering. That way softphones already know what authentication information to use when required. The realm/domain can also be used in the From field.
+ *
+ * Revision 2.46  2005/02/19 22:46:19  dsandras
  * Temporarily removed support for SetDomain.
  *
  * Revision 2.45  2004/11/29 08:20:04  csoutheren
@@ -774,9 +777,6 @@ BOOL MyManager::Initialise(PArgList & args)
     if (args.HasOption("sip-proxy"))
       sipEP->SetProxy(args.GetOptionString("sip-proxy"));
 
-    //if (args.HasOption("sip-domain"))
-      //sipEP->SetDomain(args.GetOptionString("sip-domain"));
-
     // set MIME format
     sipEP->SetMIMEForm(args.HasOption("use-long-mime"));
 
@@ -799,7 +799,7 @@ BOOL MyManager::Initialise(PArgList & args)
     if (args.HasOption('r')) {
       PString registrar = args.GetOptionString('r');
       cout << "Using SIP registrar " << registrar << " ... " << flush;
-      if (sipEP->Register(registrar, args.GetOptionString('u'), args.GetOptionString('p')))
+      if (sipEP->Register(registrar, args.GetOptionString('u'), args.GetOptionString('p'), args.GetOptionString("sip-domain")))
         cout << "done.";
       else
         cout << "failed!";
