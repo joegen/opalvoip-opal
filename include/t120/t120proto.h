@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: t120proto.h,v $
- * Revision 1.2007  2002/11/10 11:33:17  robertj
+ * Revision 1.2008  2005/02/21 12:19:47  rjongbloed
+ * Added new "options list" to the OpalMediaFormat class.
+ *
+ * Revision 2.6  2002/11/10 11:33:17  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.5  2002/09/16 02:52:35  robertj
@@ -81,6 +84,9 @@ class MCS_ConnectMCSPDU;
 class MCS_DomainMCSPDU;
 
 
+#define OPAL_T120 "T.120"
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 /**This class describes the T.120 protocol handler.
@@ -92,9 +98,6 @@ class OpalT120Protocol : public PObject
     enum {
       DefaultTcpPort = 1503
     };
-
-    static OpalMediaFormat const MediaFormat;
-
 
   /**@name Construction */
   //@{
