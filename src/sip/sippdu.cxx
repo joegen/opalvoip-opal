@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2015  2002/04/17 07:24:12  robertj
+ * Revision 1.2016  2002/04/18 02:49:20  robertj
+ * Fixed checking the correct state when overwriting terminated transactions.
+ *
+ * Revision 2.14  2002/04/17 07:24:12  robertj
  * Stopped complteion timer if transaction terminated.
  * Fixed multiple terminations so only the first version is used.
  *
@@ -1214,7 +1217,7 @@ void SIPTransaction::SetTerminated(States newState)
   };
 #endif
 
-  if (newState >= Terminated_Success) {
+  if (state >= Terminated_Success) {
     PTRACE(3, "SIP\tTried to set " << StateNames[newState] << " for " << mime.GetCSeq()
            << " but already terminated ( " << StateNames[state] << ')');
     return;
