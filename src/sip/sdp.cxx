@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2003  2002/02/11 07:35:35  robertj
+ * Revision 1.2004  2002/02/13 02:28:59  robertj
+ * Normalised some function names.
+ * Fixed incorrect port number usage stopping audio in one direction.
+ * Added code to put individual c lines in each media description.
+ *
+ * Revision 2.2  2002/02/11 07:35:35  robertj
  * Changed SDP to use OpalTransport for hosts instead of IP addresses/ports
  *
  * Revision 2.1  2002/02/01 04:53:01  robertj
@@ -237,7 +242,7 @@ SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, M
 }
 
 
-BOOL SDPMediaDescription::Parse(const PString & str)
+BOOL SDPMediaDescription::Decode(const PString & str)
 {
   PStringArray tokens = str.Tokenise(" ");
 
@@ -352,7 +357,9 @@ void SDPMediaDescription::SetAttribute(const PString & ostr)
 
 void SDPMediaDescription::PrintOn(ostream & str) const
 {
-  PAssert(port != 0, "SDPMediaDescription has no port defined");
+  PIPSocket::Address ip;
+  WORD port;
+  transportAddress.GetIpAndPort(ip, port);
 
   // output media header
   str << "m=" 
@@ -364,7 +371,8 @@ void SDPMediaDescription::PrintOn(ostream & str) const
   PINDEX i;
   for (i = 0; i < formats.GetSize(); i++) 
     str << ' ' << (int)formats[i].GetPayloadType();
-  str << "\r\n";
+  str << "\r\n"
+      << GetConnectAddressString(transportAddress) << "\r\n";
 
   // output attributes for each payload type
   for (i = 0; i < formats.GetSize(); i++) {
@@ -459,7 +467,7 @@ PString SDPSessionDescription::Encode() const
 }
 
 
-void SDPSessionDescription::Decode(const PString & str)
+BOOL SDPSessionDescription::Decode(const PString & str)
 {
   // break string into lines
   PStringArray lines = str.Lines();
@@ -478,7 +486,7 @@ void SDPSessionDescription::Decode(const PString & str)
       	// media name and transport address (mandatory)
         if (key[0] == 'm') {
           currentMedia = new SDPMediaDescription(defaultConnectAddress);
-          if (currentMedia->Parse(value)) {
+          if (currentMedia->Decode(value)) {
             mediaDescriptions.Append(currentMedia);
             PTRACE(2, "SDP\tAdding media session with " << currentMedia->GetSDPMediaFormats().GetSize() << " formats");
           }
@@ -554,6 +562,8 @@ void SDPSessionDescription::Decode(const PString & str)
       }
     }
   }
+
+  return TRUE;
 }
 
 
