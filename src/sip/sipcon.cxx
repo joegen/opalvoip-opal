@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2035  2004/03/13 06:29:27  rjongbloed
+ * Revision 1.2036  2004/03/14 10:09:54  rjongbloed
+ * Moved transport on SIP top be constructed by endpoint as any transport created on
+ *   an endpoint can receive data for any connection.
+ *
+ * Revision 2.34  2004/03/13 06:29:27  rjongbloed
  * Slight rearrangement of local party name and alias list to beter match common
  *   behaviour in ancestor.
  * Abstracted local party name for endpoint into ancestor from H.,323.
@@ -519,48 +523,21 @@ BOOL SIPConnection::WriteINVITE(OpalTransport & transport, void * param)
 }
 
 
-void SIPConnection::ReadThreadMain(PThread &, INT)
-{
-  PTRACE(2, "SIP\tRead thread started.");
-
-  do {
-    endpoint.HandlePDU(*transport);
-  } while (transport->IsOpen());
-
-  PTRACE(2, "SIP\tRead thread finished.");
-}
-
-
 BOOL SIPConnection::SetUpConnection()
 {
   PTRACE(2, "SIP\tSetUpConnection: " << remotePartyAddress);
 
   originating = TRUE;
 
-  OpalTransportAddress address = targetAddress.GetHostAddress();
-
   delete transport;
-  transport = address.CreateTransport(endpoint, OpalTransportAddress::NoBinding);
+  transport = endpoint.CreateTransport(targetAddress.GetHostAddress());
   if (transport == NULL) {
-    PTRACE(1, "SIP\tCould not create transport from " << address);
-    return FALSE;
-  }
-
-  transport->SetBufferSize(SIP_PDU::MaxSize);
-  if (!transport->ConnectTo(address)) {
-    PTRACE(1, "SIP\tCould not connect to " << address << " - " << transport->GetErrorText());
     Release(EndedByTransportFail);
     return FALSE;
   }
 
-  if (!transport->IsReliable())
-    transport->AttachThread(PThread::Create(PCREATE_NOTIFIER(ReadThreadMain), 0,
-                                            PThread::NoAutoDeleteThread,
-                                            PThread::NormalPriority,
-                                            "SIP Transport:%x"));
-
   if (!transport->WriteConnect(WriteINVITE, this)) {
-    PTRACE(1, "SIP\tCould not write to " << address << " - " << transport->GetErrorText());
+    PTRACE(1, "SIP\tCould not write to " << targetAddress << " - " << transport->GetErrorText());
     Release(EndedByTransportFail);
     return FALSE;
   }
@@ -707,7 +684,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
   PINDEX i;
 
   if (transaction.GetMethod() == SIP_PDU::Method_INVITE) {
-    // Have a response to the INVITE, so CANCEL al the other invitations sent.
+    // Have a response to the INVITE, so CANCEL all the other invitations sent.
     for (i = 0; i < invitations.GetSize(); i++) {
       if (&invitations[i] != &transaction)
         invitations[i].SendCANCEL();
