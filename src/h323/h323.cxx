@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2073  2005/02/19 22:42:55  dsandras
+ * Revision 1.2074  2005/02/24 19:58:26  dsandras
+ * Fixed problem with transmit channel not started on connect thanks to DDV.
+ *
+ * Revision 2.72  2005/02/19 22:42:55  dsandras
  * Removed unuseful assertion.
  *
  * Revision 2.71  2005/01/15 23:32:41  csoutheren
@@ -3089,6 +3092,8 @@ BOOL H323Connection::SetAlerting(const PString & /*calleeName*/, BOOL withMedia)
 
 BOOL H323Connection::SetConnected()
 {
+  mediaWaitForConnect = FALSE;
+
   PTRACE(3, "H323\tSetConnected " << *this);
   if (connectPDU == NULL)
     return FALSE;
