@@ -25,6 +25,7 @@ EXPORTS
     ??0?$PBaseArray@E@@QAE@ABV0@@Z @29887 NONAME
     ??0?$PBaseArray@E@@QAE@PBEHH@Z @29888 NONAME
     ??0?$PFactory@VPTextToSpeech@@VPString@@@@IAE@XZ @30743 NONAME
+    ??0?$PFactory@VPWAVFileConverter@@I@@IAE@XZ @30778 NONAME
     ??0?$PQueue@VSIP_PDU@@@@IAE@HPBV0@@Z @13155 NONAME
     ??0?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@QAE@XZ @14813 NONAME
     ??0?$PSafeColl@V?$PSortedList@VH323PeerElementDescriptor@@@@VH323PeerElementDescriptor@@@@QAE@XZ @16611 NONAME
@@ -32,6 +33,8 @@ EXPORTS
     ??0?$PSafeDictionaryBase@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@QAE@XZ @14814 NONAME
     ??0?$PSet@VPOrdinalKey@@@@IAE@HPBV0@@Z @16628 NONAME
     ??0?$PStringDictionary@VPString@@@@QAE@ABV0@@Z @29889 NONAME
+    ??0?$Worker@VPWAVFileConverterALaw@@@?$PFactory@VPWAVFileConverter@@I@@QAE@ABI_N@Z @30779 NONAME
+    ??0?$Worker@VPWAVFileConverterULaw@@@?$PFactory@VPWAVFileConverter@@I@@QAE@ABI_N@Z @30780 NONAME
     ??0AdmissionResponse@H323Gatekeeper@@QAE@XZ @13161 NONAME
     ??0AliasKey@H323PeerElement@@QAE@ABVH225_AliasAddress@@ABVOpalGloballyUniqueID@@HH@Z @16646 NONAME
     ??0AlternateInfo@H323Gatekeeper@@QAE@AAVH225_AlternateGK@@@Z @13162 NONAME
@@ -2640,6 +2643,7 @@ EXPORTS
     ??1?$H235_SIGNED@VH235_EncodedKeySignedMaterial@@@@UAE@XZ @1967 NONAME
     ??1?$H235_SIGNED@VH235_EncodedPwdCertToken@@@@UAE@XZ @1968 NONAME
     ??1?$H235_SIGNED@VH235_EncodedReturnSig@@@@UAE@XZ @1969 NONAME
+    ??1?$map@IPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@U?$less@I@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@4@@std@@QAE@XZ @30781 NONAME
     ??1?$map@VPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@5@@std@@QAE@XZ @30744 NONAME
     ??1?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@std@@QAE@XZ @30745 NONAME
     ??1?$PArray@V?$PList@VH323Capability@@@@@@UAE@XZ @1970 NONAME
@@ -2664,6 +2668,7 @@ EXPORTS
     ??1?$PDictionary@VPString@@VPOrdinalKey@@@@UAE@XZ @17821 NONAME
     ??1?$PDictionary@VPString@@VSIPTransaction@@@@UAE@XZ @13281 NONAME
     ??1?$PFactory@VPTextToSpeech@@VPString@@@@MAE@XZ @30746 NONAME
+    ??1?$PFactory@VPWAVFileConverter@@I@@MAE@XZ @30782 NONAME
     ??1?$PList@VFilter@OpalMediaPatch@@@@UAE@XZ @13282 NONAME
     ??1?$PList@VH323Capability@@@@UAE@XZ @1984 NONAME
     ??1?$PList@VH323Channel@@@@UAE@XZ @1985 NONAME
@@ -2705,6 +2710,9 @@ EXPORTS
     ??1?$PSortedList@VH323PeerElementDescriptor@@@@UAE@XZ @17832 NONAME
     ??1?$PSortedList@VH323PeerElementServiceRelationship@@@@UAE@XZ @17833 NONAME
     ??1?$PSortedList@VResponse@H323Transactor@@@@UAE@XZ @17834 NONAME
+    ??1?$Worker@VPWAVFileConverterALaw@@@?$PFactory@VPWAVFileConverter@@I@@UAE@XZ @30783 NONAME
+    ??1?$Worker@VPWAVFileConverterULaw@@@?$PFactory@VPWAVFileConverter@@I@@UAE@XZ @30784 NONAME
+    ??1?$_Tree@IU?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@std@@U_Kfn@?$map@IPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@U?$less@I@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@4@@2@U?$less@I@2@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@2@@std@@QAE@XZ @30785 NONAME
     ??1?$_Tree@VPString@@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@3@@std@@QAE@XZ @30747 NONAME
     ??1AdmissionRequestResponseInfo@@QAE@XZ @13296 NONAME
     ??1AliasKey@H323PeerElement@@UAE@XZ @17836 NONAME
@@ -4481,6 +4489,7 @@ EXPORTS
     ??1UpdateAllDescriptors_PNotifier@H323PeerElement@@UAE@XZ @18018 NONAME
     ??1VideoFrame@@QAE@XZ @3333 NONAME
     ??1VoipBlasterInterface@@UAE@XZ @13383 NONAME
+    ??1WorkerBase@?$PFactory@VPWAVFileConverter@@I@@MAE@XZ @30786 NONAME
     ??1X224@@UAE@XZ @3334 NONAME
     ??1X880_Code@@UAE@XZ @3335 NONAME
     ??1X880_GeneralProblem@@UAE@XZ @3336 NONAME
@@ -4835,6 +4844,7 @@ EXPORTS
     ??6@YAAAVostream@@AAV0@ABVH323TransactionPDU@@@Z @30009 NONAME
     ??6@YAAAVostream@@AAV0@W4CauseValues@Q931@@@Z @30010 NONAME
     ??6@YAAAVostream@@AAV0@W4InformationElementCodes@Q931@@@Z @30011 NONAME
+    ??A?$map@IPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@U?$less@I@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@4@@std@@QAEAAPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@ABI@Z @30787 NONAME
     ??A?$PArray@V?$PList@VH323Capability@@@@@@QBEAAV?$PList@VH323Capability@@@@H@Z @3695 NONAME
     ??A?$PArray@VH323SimultaneousCapabilities@@@@QBEAAVH323SimultaneousCapabilities@@H@Z @3696 NONAME
     ??A?$PArray@VH323TransportAddress@@@@QBEAAVH323TransportAddress@@H@Z @14892 NONAME
@@ -6590,6 +6600,7 @@ EXPORTS
     ??_7?$PDictionary@VPString@@VPOrdinalKey@@@@6B@ @18319 NONAME
     ??_7?$PDictionary@VPString@@VSIPTransaction@@@@6B@ @13457 NONAME
     ??_7?$PFactory@VPTextToSpeech@@VPString@@@@6B@ @30748 NONAME
+    ??_7?$PFactory@VPWAVFileConverter@@I@@6B@ @30788 NONAME
     ??_7?$PList@VFilter@OpalMediaPatch@@@@6B@ @13458 NONAME
     ??_7?$PList@VH323Capability@@@@6B@ @5115 NONAME
     ??_7?$PList@VH323Channel@@@@6B@ @5116 NONAME
@@ -6633,6 +6644,8 @@ EXPORTS
     ??_7?$PSortedList@VH323PeerElementServiceRelationship@@@@6B@ @18331 NONAME
     ??_7?$PSortedList@VResponse@H323Transactor@@@@6B@ @18332 NONAME
     ??_7?$PStringDictionary@VPString@@@@6B@ @30119 NONAME
+    ??_7?$Worker@VPWAVFileConverterALaw@@@?$PFactory@VPWAVFileConverter@@I@@6B@ @30789 NONAME
+    ??_7?$Worker@VPWAVFileConverterULaw@@@?$PFactory@VPWAVFileConverter@@I@@6B@ @30790 NONAME
     ??_7AliasKey@H323PeerElement@@6B@ @18334 NONAME
     ??_7AlternateInfo@H323Gatekeeper@@6B@ @13473 NONAME
     ??_7ByteQueue@OpalVoipBlasterDevice@@6B@ @13474 NONAME
@@ -8340,6 +8353,8 @@ EXPORTS
     ??_7PURL@@6B@ @13541 NONAME
     ??_7PWAVFile@@6Biostream@@@ @30171 NONAME
     ??_7PWAVFile@@6BPObject@@@ @13543 NONAME
+    ??_7PWAVFileConverterALaw@@6B@ @30791 NONAME
+    ??_7PWAVFileConverterULaw@@6B@ @30792 NONAME
     ??_7Q931@@6B@ @6442 NONAME
     ??_7ReceivedPacket_PNotifier@OpalRFC2833Proto@@6B@ @13544 NONAME
     ??_7ReceivedPacket_PNotifier@OpalSilenceDetector@@6B@ @30172 NONAME
@@ -8415,6 +8430,7 @@ EXPORTS
     ??_7TransportThreadMain_PNotifier@SIPEndPoint@@6B@ @18524 NONAME
     ??_7UpdateAllDescriptors_PNotifier@H323PeerElement@@6B@ @18525 NONAME
     ??_7VoipBlasterInterface@@6B@ @13567 NONAME
+    ??_7WorkerBase@?$PFactory@VPWAVFileConverter@@I@@6B@ @30793 NONAME
     ??_7X224@@6B@ @6469 NONAME
     ??_7X880_Code@@6B@ @6470 NONAME
     ??_7X880_GeneralProblem@@6B@ @6471 NONAME
@@ -8502,6 +8518,7 @@ EXPORTS
     ??_R0?AV?$PDictionary@VPString@@VPOrdinalKey@@@@@8 @18600 NONAME
     ??_R0?AV?$PDictionary@VPString@@VSIPTransaction@@@@@8 @18601 NONAME
     ??_R0?AV?$PFactory@VPTextToSpeech@@VPString@@@@@8 @30749 NONAME
+    ??_R0?AV?$PFactory@VPWAVFileConverter@@I@@@8 @30794 NONAME
     ??_R0?AV?$PList@VFilter@OpalMediaPatch@@@@@8 @18602 NONAME
     ??_R0?AV?$PList@VH235Authenticator@@@@@8 @18603 NONAME
     ??_R0?AV?$PList@VH323Capability@@@@@8 @18604 NONAME
@@ -8545,6 +8562,8 @@ EXPORTS
     ??_R0?AV?$PSortedList@VH323PeerElementServiceRelationship@@@@@8 @18642 NONAME
     ??_R0?AV?$PSortedList@VResponse@H323Transactor@@@@@8 @18643 NONAME
     ??_R0?AV?$PStringDictionary@VPCaselessString@@@@@8 @18644 NONAME
+    ??_R0?AV?$Worker@VPWAVFileConverterALaw@@@?$PFactory@VPWAVFileConverter@@I@@@8 @30795 NONAME
+    ??_R0?AV?$Worker@VPWAVFileConverterULaw@@@?$PFactory@VPWAVFileConverter@@I@@@8 @30796 NONAME
     ??_R0?AVAliasKey@H323PeerElement@@@8 @18645 NONAME
     ??_R0?AVAlternateInfo@H323Gatekeeper@@@8 @18646 NONAME
     ??_R0?AVByteQueue@OpalVoipBlasterDevice@@@8 @18647 NONAME
@@ -10221,6 +10240,10 @@ EXPORTS
     ??_R0?AVPVXMLChannelInterface@@@8 @30734 NONAME
     ??_R0?AVPVXMLSession@@@8 @20320 NONAME
     ??_R0?AVPWAVFile@@@8 @20321 NONAME
+    ??_R0?AVPWAVFileConverter@@@8 @30797 NONAME
+    ??_R0?AVPWAVFileConverterALaw@@@8 @30798 NONAME
+    ??_R0?AVPWAVFileConverterULaw@@@8 @30799 NONAME
+    ??_R0?AVPWAVFileConverterXLaw@@@8 @30800 NONAME
     ??_R0?AVQ931@@@8 @20322 NONAME
     ??_R0?AVReceivedPacket_PNotifier@OpalRFC2833Proto@@@8 @20323 NONAME
     ??_R0?AVReceivedPacket_PNotifier@OpalSilenceDetector@@@8 @30233 NONAME
@@ -10291,6 +10314,7 @@ EXPORTS
     ??_R0?AVTransportThreadMain_PNotifier@SIPEndPoint@@@8 @20387 NONAME
     ??_R0?AVUpdateAllDescriptors_PNotifier@H323PeerElement@@@8 @20388 NONAME
     ??_R0?AVVoipBlasterInterface@@@8 @20389 NONAME
+    ??_R0?AVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@8 @30801 NONAME
     ??_R0?AVX224@@@8 @20390 NONAME
     ??_R0?AVX880_Code@@@8 @20391 NONAME
     ??_R0?AVX880_GeneralProblem@@@8 @20392 NONAME
@@ -10306,6 +10330,7 @@ EXPORTS
     ??_R0?AVX880_ReturnResultProblem@@@8 @20402 NONAME
     ??_R0?AVX880_ReturnResult_result@@@8 @20403 NONAME
     ??_R0?AVX880_ROS@@@8 @20404 NONAME
+    ??_R1A@?0A@8WorkerBase@?$PFactory@VPWAVFileConverter@@I@@8 @30802 NONAME
     ??_R1A@?0A@A@?$H235_ENCRYPTED@VH235_EncodedGeneralToken@@@@8 @20405 NONAME
     ??_R1A@?0A@A@?$H235_ENCRYPTED@VH235_EncodedKeySyncMaterial@@@@8 @20406 NONAME
     ??_R1A@?0A@A@?$H235_ENCRYPTED@VH235_EncodedPwdCertToken@@@@8 @20407 NONAME
@@ -10337,6 +10362,7 @@ EXPORTS
     ??_R1A@?0A@A@?$PDictionary@VPString@@VPOrdinalKey@@@@8 @20433 NONAME
     ??_R1A@?0A@A@?$PDictionary@VPString@@VSIPTransaction@@@@8 @20434 NONAME
     ??_R1A@?0A@A@?$PFactory@VPTextToSpeech@@VPString@@@@8 @30750 NONAME
+    ??_R1A@?0A@A@?$PFactory@VPWAVFileConverter@@I@@8 @30803 NONAME
     ??_R1A@?0A@A@?$PList@VFilter@OpalMediaPatch@@@@8 @20435 NONAME
     ??_R1A@?0A@A@?$PList@VH235Authenticator@@@@8 @20436 NONAME
     ??_R1A@?0A@A@?$PList@VH323Capability@@@@8 @20437 NONAME
@@ -10380,6 +10406,8 @@ EXPORTS
     ??_R1A@?0A@A@?$PSortedList@VH323PeerElementServiceRelationship@@@@8 @20475 NONAME
     ??_R1A@?0A@A@?$PSortedList@VResponse@H323Transactor@@@@8 @20476 NONAME
     ??_R1A@?0A@A@?$PStringDictionary@VPCaselessString@@@@8 @20477 NONAME
+    ??_R1A@?0A@A@?$Worker@VPWAVFileConverterALaw@@@?$PFactory@VPWAVFileConverter@@I@@8 @30804 NONAME
+    ??_R1A@?0A@A@?$Worker@VPWAVFileConverterULaw@@@?$PFactory@VPWAVFileConverter@@I@@8 @30805 NONAME
     ??_R1A@?0A@A@AliasKey@H323PeerElement@@8 @20478 NONAME
     ??_R1A@?0A@A@AlternateInfo@H323Gatekeeper@@8 @20479 NONAME
     ??_R1A@?0A@A@ByteQueue@OpalVoipBlasterDevice@@8 @20480 NONAME
@@ -12081,6 +12109,10 @@ EXPORTS
     ??_R1A@?0A@A@PURL@@8 @22178 NONAME
     ??_R1A@?0A@A@PVXMLSession@@8 @22179 NONAME
     ??_R1A@?0A@A@PWAVFile@@8 @22180 NONAME
+    ??_R1A@?0A@A@PWAVFileConverter@@8 @30806 NONAME
+    ??_R1A@?0A@A@PWAVFileConverterALaw@@8 @30807 NONAME
+    ??_R1A@?0A@A@PWAVFileConverterULaw@@8 @30808 NONAME
+    ??_R1A@?0A@A@PWAVFileConverterXLaw@@8 @30809 NONAME
     ??_R1A@?0A@A@Q931@@8 @22181 NONAME
     ??_R1A@?0A@A@ReceivedPacket_PNotifier@OpalRFC2833Proto@@8 @22182 NONAME
     ??_R1A@?0A@A@ReceivedPacket_PNotifier@OpalSilenceDetector@@8 @30279 NONAME
@@ -12151,6 +12183,7 @@ EXPORTS
     ??_R1A@?0A@A@TransportThreadMain_PNotifier@SIPEndPoint@@8 @22246 NONAME
     ??_R1A@?0A@A@UpdateAllDescriptors_PNotifier@H323PeerElement@@8 @22247 NONAME
     ??_R1A@?0A@A@VoipBlasterInterface@@8 @22248 NONAME
+    ??_R1A@?0A@A@WorkerBase@?$PFactory@VPWAVFileConverter@@I@@8 @30810 NONAME
     ??_R1A@?0A@A@X224@@8 @22249 NONAME
     ??_R1A@?0A@A@X880_Code@@8 @22250 NONAME
     ??_R1A@?0A@A@X880_GeneralProblem@@8 @22251 NONAME
@@ -12202,6 +12235,7 @@ EXPORTS
     ??_R2?$PDictionary@VPString@@VPOrdinalKey@@@@8 @22296 NONAME
     ??_R2?$PDictionary@VPString@@VSIPTransaction@@@@8 @22297 NONAME
     ??_R2?$PFactory@VPTextToSpeech@@VPString@@@@8 @30751 NONAME
+    ??_R2?$PFactory@VPWAVFileConverter@@I@@8 @30811 NONAME
     ??_R2?$PList@VFilter@OpalMediaPatch@@@@8 @22298 NONAME
     ??_R2?$PList@VH323Capability@@@@8 @22300 NONAME
     ??_R2?$PList@VH323Channel@@@@8 @22301 NONAME
@@ -12245,6 +12279,8 @@ EXPORTS
     ??_R2?$PSortedList@VH323PeerElementServiceRelationship@@@@8 @22338 NONAME
     ??_R2?$PSortedList@VResponse@H323Transactor@@@@8 @22339 NONAME
     ??_R2?$PStringDictionary@VPString@@@@8 @30281 NONAME
+    ??_R2?$Worker@VPWAVFileConverterALaw@@@?$PFactory@VPWAVFileConverter@@I@@8 @30812 NONAME
+    ??_R2?$Worker@VPWAVFileConverterULaw@@@?$PFactory@VPWAVFileConverter@@I@@8 @30813 NONAME
     ??_R2AliasKey@H323PeerElement@@8 @22341 NONAME
     ??_R2AlternateInfo@H323Gatekeeper@@8 @22342 NONAME
     ??_R2ByteQueue@OpalVoipBlasterDevice@@8 @22343 NONAME
@@ -13931,6 +13967,8 @@ EXPORTS
     ??_R2Pre_Vid_Coder@@8 @24031 NONAME
     ??_R2PURL@@8 @24032 NONAME
     ??_R2PWAVFile@@8 @24033 NONAME
+    ??_R2PWAVFileConverterALaw@@8 @30814 NONAME
+    ??_R2PWAVFileConverterULaw@@8 @30815 NONAME
     ??_R2Q931@@8 @24034 NONAME
     ??_R2ReceivedPacket_PNotifier@OpalRFC2833Proto@@8 @24035 NONAME
     ??_R2ReceivedPacket_PNotifier@OpalSilenceDetector@@8 @30327 NONAME
@@ -14000,6 +14038,7 @@ EXPORTS
     ??_R2TransportThreadMain_PNotifier@SIPEndPoint@@8 @24099 NONAME
     ??_R2UpdateAllDescriptors_PNotifier@H323PeerElement@@8 @24100 NONAME
     ??_R2VoipBlasterInterface@@8 @24101 NONAME
+    ??_R2WorkerBase@?$PFactory@VPWAVFileConverter@@I@@8 @30816 NONAME
     ??_R2X224@@8 @24102 NONAME
     ??_R2X880_Code@@8 @24103 NONAME
     ??_R2X880_GeneralProblem@@8 @24104 NONAME
@@ -14046,6 +14085,7 @@ EXPORTS
     ??_R3?$PDictionary@VPString@@VPOrdinalKey@@@@8 @24145 NONAME
     ??_R3?$PDictionary@VPString@@VSIPTransaction@@@@8 @24146 NONAME
     ??_R3?$PFactory@VPTextToSpeech@@VPString@@@@8 @30752 NONAME
+    ??_R3?$PFactory@VPWAVFileConverter@@I@@8 @30817 NONAME
     ??_R3?$PList@VFilter@OpalMediaPatch@@@@8 @24147 NONAME
     ??_R3?$PList@VH323Capability@@@@8 @24149 NONAME
     ??_R3?$PList@VH323Channel@@@@8 @24150 NONAME
@@ -14089,6 +14129,8 @@ EXPORTS
     ??_R3?$PSortedList@VH323PeerElementServiceRelationship@@@@8 @24187 NONAME
     ??_R3?$PSortedList@VResponse@H323Transactor@@@@8 @24188 NONAME
     ??_R3?$PStringDictionary@VPString@@@@8 @30329 NONAME
+    ??_R3?$Worker@VPWAVFileConverterALaw@@@?$PFactory@VPWAVFileConverter@@I@@8 @30818 NONAME
+    ??_R3?$Worker@VPWAVFileConverterULaw@@@?$PFactory@VPWAVFileConverter@@I@@8 @30819 NONAME
     ??_R3AliasKey@H323PeerElement@@8 @24190 NONAME
     ??_R3AlternateInfo@H323Gatekeeper@@8 @24191 NONAME
     ??_R3ByteQueue@OpalVoipBlasterDevice@@8 @24192 NONAME
@@ -15775,6 +15817,8 @@ EXPORTS
     ??_R3Pre_Vid_Coder@@8 @25880 NONAME
     ??_R3PURL@@8 @25881 NONAME
     ??_R3PWAVFile@@8 @25882 NONAME
+    ??_R3PWAVFileConverterALaw@@8 @30820 NONAME
+    ??_R3PWAVFileConverterULaw@@8 @30821 NONAME
     ??_R3Q931@@8 @25883 NONAME
     ??_R3ReceivedPacket_PNotifier@OpalRFC2833Proto@@8 @25884 NONAME
     ??_R3ReceivedPacket_PNotifier@OpalSilenceDetector@@8 @30375 NONAME
@@ -15844,6 +15888,7 @@ EXPORTS
     ??_R3TransportThreadMain_PNotifier@SIPEndPoint@@8 @25948 NONAME
     ??_R3UpdateAllDescriptors_PNotifier@H323PeerElement@@8 @25949 NONAME
     ??_R3VoipBlasterInterface@@8 @25950 NONAME
+    ??_R3WorkerBase@?$PFactory@VPWAVFileConverter@@I@@8 @30822 NONAME
     ??_R3X224@@8 @25951 NONAME
     ??_R3X880_Code@@8 @25952 NONAME
     ??_R3X880_GeneralProblem@@8 @25953 NONAME
@@ -15890,6 +15935,7 @@ EXPORTS
     ??_R4?$PDictionary@VPString@@VPOrdinalKey@@@@6B@ @25994 NONAME
     ??_R4?$PDictionary@VPString@@VSIPTransaction@@@@6B@ @25995 NONAME
     ??_R4?$PFactory@VPTextToSpeech@@VPString@@@@6B@ @30753 NONAME
+    ??_R4?$PFactory@VPWAVFileConverter@@I@@6B@ @30823 NONAME
     ??_R4?$PList@VFilter@OpalMediaPatch@@@@6B@ @25996 NONAME
     ??_R4?$PList@VH323Capability@@@@6B@ @25998 NONAME
     ??_R4?$PList@VH323Channel@@@@6B@ @25999 NONAME
@@ -15933,6 +15979,8 @@ EXPORTS
     ??_R4?$PSortedList@VH323PeerElementServiceRelationship@@@@6B@ @26036 NONAME
     ??_R4?$PSortedList@VResponse@H323Transactor@@@@6B@ @26037 NONAME
     ??_R4?$PStringDictionary@VPString@@@@6B@ @30377 NONAME
+    ??_R4?$Worker@VPWAVFileConverterALaw@@@?$PFactory@VPWAVFileConverter@@I@@6B@ @30824 NONAME
+    ??_R4?$Worker@VPWAVFileConverterULaw@@@?$PFactory@VPWAVFileConverter@@I@@6B@ @30825 NONAME
     ??_R4AliasKey@H323PeerElement@@6B@ @26039 NONAME
     ??_R4AlternateInfo@H323Gatekeeper@@6B@ @26040 NONAME
     ??_R4ByteQueue@OpalVoipBlasterDevice@@6B@ @26041 NONAME
@@ -17640,6 +17688,8 @@ EXPORTS
     ??_R4PURL@@6B@ @27749 NONAME
     ??_R4PWAVFile@@6Biostream@@@ @30429 NONAME
     ??_R4PWAVFile@@6BPObject@@@ @27751 NONAME
+    ??_R4PWAVFileConverterALaw@@6B@ @30826 NONAME
+    ??_R4PWAVFileConverterULaw@@6B@ @30827 NONAME
     ??_R4Q931@@6B@ @27752 NONAME
     ??_R4ReceivedPacket_PNotifier@OpalRFC2833Proto@@6B@ @27753 NONAME
     ??_R4ReceivedPacket_PNotifier@OpalSilenceDetector@@6B@ @30430 NONAME
@@ -17715,6 +17765,7 @@ EXPORTS
     ??_R4TransportThreadMain_PNotifier@SIPEndPoint@@6B@ @27823 NONAME
     ??_R4UpdateAllDescriptors_PNotifier@H323PeerElement@@6B@ @27824 NONAME
     ??_R4VoipBlasterInterface@@6B@ @27825 NONAME
+    ??_R4WorkerBase@?$PFactory@VPWAVFileConverter@@I@@6B@ @30828 NONAME
     ??_R4X224@@6B@ @27826 NONAME
     ??_R4X880_Code@@6B@ @27827 NONAME
     ??_R4X880_GeneralProblem@@6B@ @27828 NONAME
@@ -17794,6 +17845,7 @@ EXPORTS
     ?AdmissionRequest@H323Gatekeeper@@QAEHAAVH323Connection@@AAUAdmissionResponse@1@H@Z @13591 NONAME
     ?AgeResponses@H323Transactor@@IAEXXZ @27865 NONAME
     ?age_blocks@Pre_Vid_Coder@@IAEXXZ @6532 NONAME
+    ?ALawConverter@@3V?$Worker@VPWAVFileConverterALaw@@@?$PFactory@VPWAVFileConverter@@I@@A @30829 NONAME
     ?alloc@Transmitter@@QAEPAUpktbuf@1@XZ @6533 NONAME
     ?allocate@FullP64Decoder@@MAEXXZ @6534 NONAME
     ?allocate@IntraP64Decoder@@MAEXXZ @6535 NONAME
@@ -18027,7 +18079,6 @@ EXPORTS
     ?CheckCryptoTokens@H323GatekeeperRequest@@QAEHXZ @13643 NONAME
     ?CheckCryptoTokens@H323Transaction@@QAEHABVH235Authenticators@@@Z @27932 NONAME
     ?CheckCryptoTokens@H323Transactor@@IAEHABVH323TransactionPDU@@ABVPASN_Array@@I1I@Z @27933 NONAME
-    ?CheckEstablished@OpalCall@@UAEXXZ @6675 NONAME
     ?CheckForResponse@H323Transactor@@IAEHIIPBVPASN_Choice@@@Z @27934 NONAME
     ?CheckGatekeeperIdentifier@H323GatekeeperRequest@@QAEHXZ @13645 NONAME
     ?CheckResponse@Request@H323Transactor@@QAEXIPBVPASN_Choice@@@Z @27935 NONAME
@@ -20708,6 +20759,8 @@ EXPORTS
     ?Copy@PLDAPAttr_timestamp@RTPerson@PILSSession@@UAEXABVPLDAPAttributeBase@@@Z @28485 NONAME
     ?CopyTo@H323PeerElementDescriptor@@QAEXAAVH501_Descriptor@@@Z @28486 NONAME
     ?CopyToAddressTemplate@H323PeerElementDescriptor@@SAHAAVH501_AddressTemplate@@ABVH225_EndpointType@@ABVH225_ArrayOf_AliasAddress@@2I@Z @28487 NONAME
+    ?Create@?$Worker@VPWAVFileConverterALaw@@@?$PFactory@VPWAVFileConverter@@I@@MBEPAVPWAVFileConverter@@XZ @30830 NONAME
+    ?Create@?$Worker@VPWAVFileConverterULaw@@@?$PFactory@VPWAVFileConverter@@I@@MBEPAVPWAVFileConverter@@XZ @30831 NONAME
     ?Create@H323Capability@@SAPAV1@AAVH323EndPoint@@ABVPString@@@Z @8702 NONAME
     ?Create@H323_G711ALaw64Capability_Registration@@UBEPAVH323Capability@@AAVH323EndPoint@@@Z @8703 NONAME
     ?Create@H323_G711uLaw64Capability_Registration@@UBEPAVH323Capability@@AAVH323EndPoint@@@Z @8704 NONAME
@@ -20727,6 +20780,7 @@ EXPORTS
     ?Create@H323_UserInputCapability_SignalToneH245_Registration@@UBEPAVH323Capability@@AAVH323EndPoint@@@Z @13782 NONAME
     ?Create@OpalLineInterfaceDevice@@SAPAV1@ABVPString@@PAX@Z @28488 NONAME
     ?Create@OpalTranscoder@@SAPAV1@ABVOpalMediaFormat@@0PAX@Z @8718 NONAME
+    ?Create@WorkerBase@?$PFactory@VPWAVFileConverter@@I@@MBEPAVPWAVFileConverter@@XZ @30832 NONAME
     ?CreateAliasKey@H323PeerElement@@MAEPAVAliasKey@1@ABVH225_AliasAddress@@ABVOpalGloballyUniqueID@@HH@Z @28489 NONAME
     ?CreateAuthenticators@H323EndPoint@@UAE?AVH235Authenticators@@XZ @13783 NONAME
     ?CreateCall@H323GatekeeperServer@@UAEPAVH323GatekeeperCall@@ABVOpalGloballyUniqueID@@W4Direction@2@@Z @13785 NONAME
@@ -22066,6 +22120,8 @@ EXPORTS
     ?Decode@X880_ReturnResult@@UAEHAAVPASN_Stream@@@Z @9780 NONAME
     ?Decode@X880_ReturnResult_result@@UAEHAAVPASN_Stream@@@Z @9781 NONAME
     ?DecodeArguments@H450xHandler@@QAEHPAVPASN_OctetString@@AAVPASN_Object@@H@Z @13045 NONAME
+    ?DecodeSample@PWAVFileConverterALaw@@UAEFH@Z @30833 NONAME
+    ?DecodeSample@PWAVFileConverterULaw@@UAEFH@Z @30834 NONAME
     ?decode_block@P64Decoder@@IAEXIIIIPAE0H@Z @9782 NONAME
     ?decode_mb@P64Decoder@@IAEHXZ @9783 NONAME
     ?defaultManufacturerCode@H323EndPoint@@2GA @30551 NONAME
@@ -22862,6 +22918,8 @@ EXPORTS
     ?EndTransmit@OpalRFC2833Proto@@UAEHXZ @13817 NONAME
     ?Enqueue@?$PQueue@VSIP_PDU@@@@UAEXPAVSIP_PDU@@@Z @13818 NONAME
     ?Enqueue@ByteQueue@OpalVoipBlasterDevice@@QAEHE@Z @13819 NONAME
+    ?erase@?$_Tree@IU?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@std@@U_Kfn@?$map@IPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@U?$less@I@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@4@@2@U?$less@I@2@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@2@@std@@QAE?AViterator@12@V312@0@Z @30835 NONAME
+    ?erase@?$_Tree@IU?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@std@@U_Kfn@?$map@IPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@U?$less@I@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@4@@2@U?$less@I@2@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@2@@std@@QAE?AViterator@12@V312@@Z @30836 NONAME
     ?erase@?$_Tree@VPString@@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@3@@std@@QAE?AViterator@12@V312@0@Z @30756 NONAME
     ?erase@?$_Tree@VPString@@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@3@@std@@QAE?AViterator@12@V312@@Z @30757 NONAME
     ?err@P64Decoder@@MBAXPBDZZ @10414 NONAME
@@ -22873,6 +22931,7 @@ EXPORTS
     ?FilterFrame@OpalMediaPatch@@UAEXAAVRTP_DataFrame@@ABVOpalMediaFormat@@@Z @28689 NONAME
     ?Finalise@H235Authenticator@@UAEHAAVPBYTEArray@@@Z @28690 NONAME
     ?Finalise@H235AuthProcedure1@@UAEHAAVPBYTEArray@@@Z @14968 NONAME
+    ?find@?$_Tree@IU?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@std@@U_Kfn@?$map@IPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@U?$less@I@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@4@@2@U?$less@I@2@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@2@@std@@QAE?AViterator@12@ABI@Z @30837 NONAME
     ?find@?$_Tree@VPString@@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@3@@std@@QAE?AViterator@12@ABVPString@@@Z @30758 NONAME
     ?FindCall@H323GatekeeperServer@@UAE?AV?$PSafePtr@VH323GatekeeperCall@@@@ABVOpalGloballyUniqueID@@HW4PSafetyMode@@@Z @13821 NONAME
     ?FindCall@H323GatekeeperServer@@UAE?AV?$PSafePtr@VH323GatekeeperCall@@@@ABVOpalGloballyUniqueID@@W4Direction@H323GatekeeperCall@@W4PSafetyMode@@@Z @13822 NONAME
@@ -24042,7 +24101,7 @@ EXPORTS
     ?GetDataLength@MCS_TVrs@@UBEHXZ @11240 NONAME
     ?GetDataLength@MCS_USin@@UBEHXZ @11241 NONAME
     ?GetDataLength@MCS_USrq@@UBEHXZ @11242 NONAME
-    ?GetDataLength@OpalWAVFile@@UAEJXZ @13950 NONAME
+    ?GetDataLength@PWAVFileConverterXLaw@@UAEJAAVPWAVFile@@@Z @30838 NONAME
     ?GetDataLength@T38_Data_Field_subtype@@UBEHXZ @11243 NONAME
     ?GetDataLength@T38_IFPPacket@@UBEHXZ @11244 NONAME
     ?GetDataLength@T38_PreCorrigendum_Data_Field_subtype@@UBEHXZ @16436 NONAME
@@ -24101,7 +24160,8 @@ EXPORTS
     ?GetFirstLocalServiceRelationship@H323PeerElement@@QAE?AV?$PSafePtr@VH323PeerElementServiceRelationship@@@@W4PSafetyMode@@@Z @28889 NONAME
     ?GetFirstRemoteServiceRelationship@H323PeerElement@@QAE?AV?$PSafePtr@VH323PeerElementServiceRelationship@@@@W4PSafetyMode@@@Z @28890 NONAME
     ?GetFMTP@SDPMediaFormat@@QBE?AVPString@@XZ @13965 NONAME
-    ?GetFormat@OpalWAVFile@@UBEIXZ @13966 NONAME
+    ?GetFormat@PWAVFileConverterALaw@@UBEIABVPWAVFile@@@Z @30839 NONAME
+    ?GetFormat@PWAVFileConverterULaw@@UBEIABVPWAVFile@@@Z @30840 NONAME
     ?GetFormatName@H323_G711Capability@@UBE?AVPString@@XZ @14984 NONAME
     ?GetFormatName@H323_G7231Capability@@UBE?AVPString@@XZ @14985 NONAME
     ?GetFormatName@H323_G726_Capability@@UBE?AVPString@@XZ @14986 NONAME
@@ -24154,6 +24214,7 @@ EXPORTS
     ?GetInitialiser@PLDAPStructBase@@SAAAV1@XZ @28910 NONAME
     ?GetInputFormat@OpalTranscoderRegistration@@QBE?AVPString@@XZ @11286 NONAME
     ?GetInstance@?$PFactory@VPTextToSpeech@@VPString@@@@KAAAV1@XZ @30759 NONAME
+    ?GetInstance@?$PFactory@VPWAVFileConverter@@I@@KAAAV1@XZ @30841 NONAME
     ?GetInterfaceAddresses@H323Transactor@@QAE?AVH323TransportAddressArray@@HPAVOpalTransport@@@Z @28912 NONAME
     ?GetInterfaceAddresses@OpalEndPoint@@QAE?AVOpalTransportAddressArray@@HPAVOpalTransport@@@Z @28913 NONAME
     ?GetIpAddress@OpalTransportAddress@@QBEHAAVAddress@PIPSocket@@@Z @13987 NONAME
@@ -24249,7 +24310,7 @@ EXPORTS
     ?GetPlayVolume@OpalLine@@UAEHAAI@Z @11339 NONAME
     ?GetPlayVolume@OpalLineInterfaceDevice@@UAEHIAAI@Z @11340 NONAME
     ?GetPlayVolume@OpalVoipBlasterDevice@@UAEHIAAI@Z @14013 NONAME
-    ?GetPosition@OpalWAVFile@@UBEJXZ @14014 NONAME
+    ?GetPosition@PWAVFileConverterXLaw@@UBEJABVPWAVFile@@@Z @30842 NONAME
     ?GetPossibleFormats@OpalTranscoder@@SA?AVOpalMediaFormatList@@ABV2@@Z @30777 NONAME
     ?GetPrefix@H323RegisteredEndPoint@@QBE?AVPString@@H@Z @14015 NONAME
     ?GetProgressIndicator@Q931@@QBEHAAIPAI1@Z @14016 NONAME
@@ -24304,7 +24365,7 @@ EXPORTS
     ?GetRtpIpTypeofService@OpalManager@@QBEEXZ @29023 NONAME
     ?GetRxFramesInPacket@H323AudioCapability@@UBEIXZ @11365 NONAME
     ?GetRxFramesInPacket@H323Capability@@UBEIXZ @11366 NONAME
-    ?GetSampleSize@OpalWAVFile@@UBEIXZ @14052 NONAME
+    ?GetSampleSize@PWAVFileConverterXLaw@@UBEIABVPWAVFile@@@Z @30843 NONAME
     ?GetSDP@SIP_PDU@@QBEAAVSDPSessionDescription@@XZ @14053 NONAME
     ?GetSecurityRejectTag@H323GatekeeperARQ@@UBEIXZ @14054 NONAME
     ?GetSecurityRejectTag@H323GatekeeperBRQ@@UBEIXZ @14055 NONAME
@@ -24508,6 +24569,7 @@ EXPORTS
     ?InitiateCall@OpalIVRConnection@@UAEXXZ @29115 NONAME
     ?InitiateCall@OpalPCSSConnection@@UAEXXZ @29116 NONAME
     ?initquant@P64Decoder@@IAEXXZ @11480 NONAME
+    ?insert@?$_Tree@IU?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@std@@U_Kfn@?$map@IPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@U?$less@I@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@4@@2@U?$less@I@2@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@2@@std@@QAE?AU?$pair@Viterator@?$_Tree@IU?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@std@@U_Kfn@?$map@IPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@U?$less@I@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@4@@2@U?$less@I@2@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@2@@std@@_N@2@ABU?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@2@@Z @30844 NONAME
     ?Insert@OpalMediaFormatList@@EAEHABVPObject@@PAV2@@Z @12789 NONAME
     ?InsertAt@OpalMediaFormatList@@EAEHHPAVPObject@@@Z @12790 NONAME
     ?InternalCreateGatekeeper@H323EndPoint@@IAEPAVH323Gatekeeper@@PAVOpalTransport@@@Z @11481 NONAME
@@ -25015,9 +25077,11 @@ EXPORTS
     ?OnEndReceive@OpalRFC2833Proto@@UAEXDII@Z @14344 NONAME
     ?OnEndSession@OpalVXMLSession@@UAEXXZ @29473 NONAME
     ?OnEstablished@H323Connection@@UAEXXZ @11913 NONAME
-    ?OnEstablished@OpalCall@@UAEXXZ @11914 NONAME
+    ?OnEstablished@OpalCall@@UAEHAAVOpalConnection@@@Z @30845 NONAME
     ?OnEstablished@OpalConnection@@UAEXXZ @11915 NONAME
     ?OnEstablished@OpalEndPoint@@UAEXAAVOpalConnection@@@Z @11916 NONAME
+    ?OnEstablished@OpalManager@@UAEXAAVOpalConnection@@@Z @30846 NONAME
+    ?OnEstablishedCall@OpalCall@@UAEXXZ @30847 NONAME
     ?OnEstablishedCall@OpalManager@@UAEXAAVOpalCall@@@Z @13085 NONAME
     ?OnFlowControl@H323Channel@@UAEXJ@Z @11918 NONAME
     ?OnFullRegistration@H323RegisteredEndPoint@@UAE?AW4Response@H323Transaction@@AAVH323GatekeeperRRQ@@@Z @29474 NONAME
@@ -25697,7 +25761,7 @@ EXPORTS
     ?Read@H323SignalPDU@@QAEHAAVOpalTransport@@@Z @12250 NONAME
     ?Read@H323TransactionPDU@@UAEHAAVOpalTransport@@@Z @29647 NONAME
     ?Read@OpalTransportUDP@@UAEHPAXH@Z @14587 NONAME
-    ?Read@OpalWAVFile@@UAEHPAXH@Z @14588 NONAME
+    ?Read@PWAVFileConverterXLaw@@UAEHAAVPWAVFile@@PAXH@Z @30848 NONAME
     ?Read@SIP_PDU@@QAEHAAVOpalTransport@@@Z @14589 NONAME
     ?Read@T120ConnectPDU@@QAEHAAVOpalTransport@@@Z @14590 NONAME
     ?Read@T120_X224@@QAEHAAVOpalTransport@@@Z @14591 NONAME
@@ -25766,6 +25830,7 @@ EXPORTS
     ?ReceiveTimeout@OpalRFC2833Proto@@MAEXAAVPTimer@@H@Z @14605 NONAME
     ?Register@SIPEndPoint@@QAEHABVPString@@00@Z @29680 NONAME
     ?registeredCapabilitiesListHead@H323CapabilityRegistration@@1PAV1@A @29681 NONAME
+    ?Register_Internal@?$PFactory@VPWAVFileConverter@@I@@IAEXABIPAVWorkerBase@1@@Z @30849 NONAME
     ?RegistrationRequest@H323Gatekeeper@@QAEHH@Z @12278 NONAME
     ?RegistrationTimeToLive@H323Gatekeeper@@IAEXXZ @14608 NONAME
     ?Release@H245NegLogicalChannel@@MAEXXZ @12280 NONAME
@@ -25994,6 +26059,7 @@ EXPORTS
     ?SetDate@SIPMIMEInfo@@QAEXABVPTime@@@Z @29733 NONAME
     ?SetDate@SIPMIMEInfo@@QAEXXZ @29734 NONAME
     ?SetDefaultLine@OpalLIDEndPoint@@QAEXABVPString@@@Z @14687 NONAME
+    ?SetDefaultMediaFormats@OpalIVREndPoint@@QAEXABVOpalMediaFormatList@@@Z @30850 NONAME
     ?SetDefaultVXML@OpalIVREndPoint@@QAEXABVPString@@@Z @29735 NONAME
     ?SetDelay@RTP_JitterBuffer@@QAEXII@Z @15066 NONAME
     ?SetDisplayName@Q931@@QAEXABVPString@@@Z @12388 NONAME
@@ -26064,7 +26130,7 @@ EXPORTS
     ?SetPlayVolume@OpalLine@@UAEHI@Z @12420 NONAME
     ?SetPlayVolume@OpalLineInterfaceDevice@@UAEHII@Z @12421 NONAME
     ?SetPlayVolume@OpalVoipBlasterDevice@@UAEHII@Z @14711 NONAME
-    ?SetPosition@OpalWAVFile@@UAEHJW4FilePositionOrigin@PFile@@@Z @14712 NONAME
+    ?SetPosition@PWAVFileConverterXLaw@@UAEHAAVPWAVFile@@JW4FilePositionOrigin@PFile@@@Z @30851 NONAME
     ?SetProgressIndicator@Q931@@QAEXIII@Z @12423 NONAME
     ?SetPromiscuous@OpalTransport@@UAEXW4PromisciousModes@1@@Z @16511 NONAME
     ?SetPromiscuous@OpalTransportUDP@@UAEXW4PromisciousModes@OpalTransport@@@Z @16512 NONAME
@@ -26262,6 +26328,7 @@ EXPORTS
     ?TransmitPacket@OpalRFC2833Proto@@MAEXAAVRTP_DataFrame@@H@Z @14784 NONAME
     ?TransportThreadMain@SIPEndPoint@@MAEXAAVPThread@@H@Z @29815 NONAME
     ?TryLock@OpalConnection@@QAEHXZ @14785 NONAME
+    ?uLawConverter@@3V?$Worker@VPWAVFileConverterULaw@@@?$PFactory@VPWAVFileConverter@@I@@A @30852 NONAME
     ?Unlock@OpalConnection@@QAEXXZ @13146 NONAME
     ?Unregister@H323RegisteredEndPoint@@UAEHH@Z @15073 NONAME
     ?UnregistrationRequest@H323Gatekeeper@@QAEHH@Z @12542 NONAME
@@ -26298,7 +26365,7 @@ EXPORTS
     ?WaitForToneDetect@OpalLineInterfaceDevice@@UAEIII@Z @12551 NONAME
     ?Write@H323SignalPDU@@QAEHAAVOpalTransport@@@Z @12553 NONAME
     ?Write@H323TransactionPDU@@UAEHAAVOpalTransport@@@Z @29839 NONAME
-    ?Write@OpalWAVFile@@UAEHPBXH@Z @14792 NONAME
+    ?Write@PWAVFileConverterXLaw@@UAEHAAVPWAVFile@@PBXH@Z @30853 NONAME
     ?Write@SIP_PDU@@QAEHAAVOpalTransport@@@Z @14793 NONAME
     ?Write@T120ConnectPDU@@QAEHAAVOpalTransport@@@Z @14794 NONAME
     ?Write@T120_X224@@QAEHAAVOpalTransport@@@Z @14795 NONAME
@@ -26339,10 +26406,19 @@ EXPORTS
     ?WriteREGISTER@SIPEndPoint@@KAHAAVOpalTransport@@PAX@Z @29848 NONAME
     ?WriteSignalPDU@H323Connection@@QAEHAAVH323SignalPDU@@@Z @12570 NONAME
     ?WriteTo@H323Transactor@@UAEHAAVH323TransactionPDU@@ABVH323TransportAddressArray@@H@Z @29849 NONAME
+    ?_Construct@std@@YAXPAU?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@1@ABU21@@Z @30854 NONAME
+    ?_Dec@iterator@?$_Tree@IU?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@std@@U_Kfn@?$map@IPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@U?$less@I@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@4@@2@U?$less@I@2@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@2@@std@@QAEXXZ @30855 NONAME
+    ?_Erase@?$_Tree@IU?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@std@@U_Kfn@?$map@IPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@U?$less@I@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@4@@2@U?$less@I@2@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@2@@std@@IAEXPAU_Node@12@@Z @30856 NONAME
     ?_Erase@?$_Tree@VPString@@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@3@@std@@IAEXPAU_Node@12@@Z @30762 NONAME
+    ?_Inc@iterator@?$_Tree@IU?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@std@@U_Kfn@?$map@IPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@U?$less@I@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@4@@2@U?$less@I@2@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@2@@std@@QAEXXZ @30857 NONAME
     ?_Inc@iterator@?$_Tree@VPString@@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@3@@std@@QAEXXZ @30763 NONAME
+    ?_Init@?$_Tree@IU?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@std@@U_Kfn@?$map@IPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@U?$less@I@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@4@@2@U?$less@I@2@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@2@@std@@IAEXXZ @30858 NONAME
     ?_Init@?$_Tree@VPString@@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@3@@std@@IAEXXZ @30764 NONAME
+    ?_Insert@?$_Tree@IU?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@std@@U_Kfn@?$map@IPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@U?$less@I@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@4@@2@U?$less@I@2@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@2@@std@@IAE?AViterator@12@PAU_Node@12@0ABU?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@2@@Z @30859 NONAME
+    ?_Lbound@?$_Tree@IU?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@std@@U_Kfn@?$map@IPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@U?$less@I@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@4@@2@U?$less@I@2@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@2@@std@@IBEPAU_Node@12@ABI@Z @30860 NONAME
     ?_Lbound@?$_Tree@VPString@@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@3@@std@@IBEPAU_Node@12@ABVPString@@@Z @30765 NONAME
+    ?_Lrotate@?$_Tree@IU?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@std@@U_Kfn@?$map@IPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@U?$less@I@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@4@@2@U?$less@I@2@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@2@@std@@IAEXPAU_Node@12@@Z @30861 NONAME
     ?_Lrotate@?$_Tree@VPString@@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@3@@std@@IAEXPAU_Node@12@@Z @30766 NONAME
+    ?_Rrotate@?$_Tree@IU?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@std@@U_Kfn@?$map@IPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@U?$less@I@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@4@@2@U?$less@I@2@V?$allocator@PAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@2@@std@@IAEXPAU_Node@12@@Z @30862 NONAME
     ?_Rrotate@?$_Tree@VPString@@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@3@@std@@IAEXPAU_Node@12@@Z @30767 NONAME
     ?__resetiosflags@@YAAAVios@@AAV1@J@Z @30732 NONAME
