@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2016  2003/12/20 12:21:18  rjongbloed
+ * Revision 1.2017  2004/02/07 02:20:32  rjongbloed
+ * Changed to allow opening of more than just audio streams.
+ *
+ * Revision 2.15  2003/12/20 12:21:18  rjongbloed
  * Applied more enhancements, thank you very much Ted Szoczei
  *
  * Revision 2.14  2003/03/17 10:26:59  robertj
@@ -327,6 +330,17 @@ class SIPConnection : public OpalConnection
   protected:
     PDECLARE_NOTIFIER(PThread, SIPConnection, HandlePDUsThreadMain);
     virtual void OnReceivedSDP(SIP_PDU & pdu);
+    virtual BOOL OnReceivedSDPMediaDescription(
+      SDPSessionDescription & sdp,
+      SDPMediaDescription::MediaType mediaType,
+      unsigned sessionId
+    );
+    virtual BOOL OnSendSDPMediaDescription(
+      const SDPSessionDescription & sdpIn,
+      SDPMediaDescription::MediaType mediaType,
+      unsigned sessionId,
+      SDPSessionDescription & sdpOut
+    );
     static BOOL WriteINVITE(OpalTransport & transport, PObject * param);
 
     SIPEndPoint   & endpoint;
