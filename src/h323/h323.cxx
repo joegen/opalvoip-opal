@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2032  2002/09/04 06:01:48  robertj
+ * Revision 1.2033  2002/09/13 02:27:10  robertj
+ * Fixed GNU warning.
+ * Fixed accidentally lost function call to set up H.245 in call proceeding.
+ *
+ * Revision 2.31  2002/09/04 06:01:48  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.30  2002/07/01 04:56:32  robertj
@@ -1904,12 +1908,12 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
         BOOL isTransmitter = olc->HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters);
         if (isTransmitter) {
           dataType = &olc->m_reverseLogicalChannelParameters.m_dataType;
-          param = &(const H245_H2250LogicalChannelParameters &)
+          param = &(H245_H2250LogicalChannelParameters &)
                             olc->m_reverseLogicalChannelParameters.m_multiplexParameters;
         }
         else {
           dataType = &olc->m_forwardLogicalChannelParameters.m_dataType;
-          param = &(const H245_H2250LogicalChannelParameters &)
+          param = &(H245_H2250LogicalChannelParameters &)
                             olc->m_forwardLogicalChannelParameters.m_multiplexParameters;
         }
 
@@ -2102,7 +2106,7 @@ BOOL H323Connection::OnReceivedCallProceeding(const H323SignalPDU & pdu)
 
   // Check that it has the H.245 channel connection info
   if (call.HasOptionalField(H225_CallProceeding_UUIE::e_h245Address))
-    (call.m_h245Address);
+    CreateOutgoingControlChannel(call.m_h245Address);
 
   return TRUE;
 }
