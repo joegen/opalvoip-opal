@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2028  2004/02/24 11:37:02  rjongbloed
+ * Revision 1.2029  2004/04/18 07:09:12  rjongbloed
+ * Added a couple more API functions to bring OPAL into line with similar functions in OpenH323.
+ *
+ * Revision 2.27  2004/02/24 11:37:02  rjongbloed
  * More work on NAT support, manual external address translation and STUN
  *
  * Revision 2.26  2004/02/19 10:47:06  rjongbloed
@@ -322,6 +325,18 @@ BOOL OpalManager::HasCall(const PString & token)
 }
 
 
+BOOL OpalManager::IsCallEstablished(const PString & token)
+{
+  PWaitAndSignal wait(callsMutex);
+
+  OpalCall * call = FindCallWithoutLocks(token);
+  if (call == NULL)
+    return FALSE;
+
+  return call->IsEstablished();
+}
+
+
 OpalCall * OpalManager::FindCallWithLock(const PString & token)
 {
   PWaitAndSignal wait(callsMutex);
@@ -373,6 +388,14 @@ BOOL OpalManager::ClearCall(const PString & token,
     sync->Wait();
 
   return TRUE;
+}
+
+
+BOOL OpalManager::ClearCallSynchronous(const PString & token,
+                                       OpalConnection::CallEndReason reason)
+{
+  PSyncPoint wait;
+  return ClearCall(token, reason, &wait);
 }
 
 
