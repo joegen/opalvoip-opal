@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2023  2004/04/26 06:30:35  rjongbloed
+ * Revision 1.2024  2004/06/05 14:36:32  rjongbloed
+ * Added functions to get registration URL.
+ * Added ability to set proxy bu host/user/password strings.
+ *
+ * Revision 2.22  2004/04/26 06:30:35  rjongbloed
  * Added ability to specify more than one defualt listener for an endpoint,
  *   required by SIP which listens on both UDP and TCP.
  *
@@ -511,6 +515,25 @@ BOOL SIPEndPoint::Register(const PString & domain,
   }
 
   return TRUE;
+}
+
+
+void SIPEndPoint::SetProxy(const PString & hostname,
+                           const PString & username,
+                           const PString & password)
+{
+  PStringStream str;
+  if (!hostname) {
+    str << "sip:";
+    if (!username) {
+      str << username;
+      if (!password)
+        str << ':' << password;
+      str << '@';
+    }
+    str << hostname;
+  }
+  proxy = str;
 }
 
 
