@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2042  2005/01/16 11:28:06  csoutheren
+ * Revision 1.2043  2005/02/19 22:36:25  dsandras
+ * Always send PDU's to the proxy when there is one.
+ *
+ * Revision 2.41  2005/01/16 11:28:06  csoutheren
  * Added GetIdentifier virtual function to OpalConnection, and changed H323
  * and SIP descendants to use this function. This allows an application to
  * obtain a GUID for any connection regardless of the protocol used
@@ -1411,7 +1414,9 @@ BOOL SIPTransaction::Start()
   completionTimer = endpoint.GetNonInviteTimeout();
   localAddress = transport.GetLocalAddress();
 
-  if (method == Method_REGISTER || transport.SetRemoteAddress(uri.GetHostAddress())) {
+  if (method == Method_REGISTER 
+      || !endpoint.GetProxy().IsEmpty()
+      || transport.SetRemoteAddress(uri.GetHostAddress())) {
     if (Write(transport))
       return TRUE;
   }
