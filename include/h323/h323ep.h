@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2023  2004/02/24 09:40:27  rjongbloed
+ * Revision 1.2024  2004/06/04 06:54:17  csoutheren
+ * Migrated updates from OpenH323 1.14.1
+ *
+ * Revision 2.22  2004/02/24 09:40:27  rjongbloed
  * Fixed missing return in GetSTUN()
  *
  * Revision 2.21  2004/02/19 10:46:44  rjongbloed
@@ -985,6 +988,36 @@ class H323EndPoint : public OpalEndPoint
     );
   //@}
 
+  /**@name Additional call services */
+  //@{
+    /** Called when an endpoint receives a SETUP PDU with a
+        conference goal of "invite"
+      
+        The default behaviour is to return FALSE, which will close the connection
+     */
+    virtual BOOL OnConferenceInvite(
+      const H323SignalPDU & setupPDU
+    );
+
+    /** Called when an endpoint receives a SETUP PDU with a
+        conference goal of "callIndependentSupplementaryService"
+      
+        The default behaviour is to return FALSE, which will close the connection
+     */
+    virtual BOOL OnCallIndependentSupplementaryService(
+      const H323SignalPDU & setupPDU
+    );
+
+    /** Called when an endpoint receives a SETUP PDU with a
+        conference goal of "capability_negotiation"
+      
+        The default behaviour is to return FALSE, which will close the connection
+     */
+    virtual BOOL OnNegotiateConferenceCapabilities(
+      const H323SignalPDU & setupPDU
+    );
+  //@}
+
   /**@name Member variable access */
   //@{
     /**Set the user name to be used for the local end of any connections. This
@@ -1396,6 +1429,12 @@ class H323EndPoint : public OpalEndPoint
     H323CallIdentityDict& GetCallIdentityDictionary() { return secondaryConenctionsActive; }
   //@}
 
+    /**
+     * default settings H.221 settings
+     */
+    static BYTE defaultT35CountryCode;
+    static BYTE defaultT35Extension;
+    static WORD defaultManufacturerCode;
 
   protected:
     H323Gatekeeper * InternalCreateGatekeeper(H323Transport * transport);
