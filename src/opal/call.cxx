@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2002  2001/08/01 05:29:19  robertj
+ * Revision 1.2003  2001/08/17 08:26:59  robertj
+ * Added call end reason for whole call, not just connection.
+ *
+ * Revision 2.1  2001/08/01 05:29:19  robertj
  * Added function to get all media formats possible in a call.
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
@@ -56,6 +59,8 @@ OpalCall::OpalCall(OpalManager & mgr)
     myToken(manager.GetNextCallToken())
 {
   manager.AttachCall(this);
+
+  callEndReason = OpalNumCallEndReasons;
 
   activeConnections.DisallowDeleteObjects();
   garbageConnections.DisallowDeleteObjects();
@@ -109,15 +114,25 @@ void OpalCall::CheckEstablished()
 
 void OpalCall::OnEstablished()
 {
-  manager.OnEstablished(*this);
+  manager.OnEstablishedCall(*this);
 }
 
 
-void OpalCall::Clear(OpalConnection::CallEndReason reason, PSyncPoint * sync)
+void OpalCall::SetCallEndReason(OpalCallEndReason reason)
+{
+  // Only set reason if not already set to something
+  if (callEndReason == OpalNumCallEndReasons)
+    callEndReason = reason;
+}
+
+
+void OpalCall::Clear(OpalCallEndReason reason, PSyncPoint * sync)
 {
   PTRACE(3, "Call\tClearing " << *this << " reason=" << reason);
 
   inUseFlag.Wait();
+
+  SetCallEndReason(reason);
 
   while (activeConnections.GetSize() > 0) {
     activeConnections[0].SetCallEndReason(reason);
@@ -181,6 +196,7 @@ void OpalCall::OnReleased(OpalConnection & connection)
   PTRACE(3, "Call\tOnReleased " << connection);
 
   inUseFlag.Wait();
+  SetCallEndReason(connection.GetCallEndReason());
   if (activeConnections.GetSize() == 1) {
     activeConnections[0].SetCallEndReason(connection.GetCallEndReason());
     garbageConnections.Append(activeConnections.RemoveAt(0));
