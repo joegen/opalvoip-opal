@@ -57,8 +57,8 @@ typedef struct SBEncState {
    float  gamma1;              /**< Perceptual weighting coef 1 */
    float  gamma2;              /**< Perceptual weighting coef 2 */
 
-   float *stack;               /**< Temporary allocation stack */
-   float *x0, *x0d, *x1, *x1d; /**< QMF filter signals*/
+   void  *stack;               /**< Temporary allocation stack */
+   float *x0d, *x1d; /**< QMF filter signals*/
    float *high;                /**< High-band signal (buffer) */
    float *y0, *y1;             /**< QMF synthesis signals */
    float *h0_mem, *h1_mem, *g0_mem, *g1_mem; /**< QMF memories */
@@ -88,10 +88,22 @@ typedef struct SBEncState {
    float *mem_sp;              /**< Synthesis signal memory */
    float *mem_sp2;
    float *mem_sw;              /**< Perceptual signal memory */
+   float *pi_gain;
+
+   float  vbr_quality;         /**< Quality setting for VBR encoding */
+   int    vbr_enabled;         /**< 1 for enabling VBR, 0 otherwise */
+   int    abr_enabled;         /**< ABR setting (in bps), 0 if off */
+   float  abr_drift;
+   float  abr_drift2;
+   float  abr_count;
+   int    vad_enabled;         /**< 1 for enabling VAD, 0 otherwise */
+   float  relative_quality;
 
    SpeexSubmode **submodes;
    int    submodeID;
+   int    submodeSelect;
    int    complexity;
+   int    sampling_rate;
 
 } SBEncState;
 
@@ -106,9 +118,11 @@ typedef struct SBDecState {
    int    nbSubframes;
    int    lpcSize;
    int    first;
+   int    sampling_rate;
+   int    lpc_enh_enabled;
 
-   float *stack;
-   float *x0, *x0d, *x1, *x1d;
+   void  *stack;
+   float *x0d, *x1d;
    float *high;
    float *y0, *y1;
    float *h0_mem, *h1_mem, *g0_mem, *g1_mem;
@@ -120,6 +134,7 @@ typedef struct SBDecState {
    float *interp_qlpc;
 
    float *mem_sp;
+   float *pi_gain;
 
    SpeexSubmode **submodes;
    int    submodeID;
@@ -133,7 +148,7 @@ void *sb_encoder_init(SpeexMode *m);
 void sb_encoder_destroy(void *state);
 
 /**Encodes one frame*/
-void sb_encode(void *state, float *in, SpeexBits *bits);
+int sb_encode(void *state, float *in, SpeexBits *bits);
 
 
 /**Initializes decoder state*/
