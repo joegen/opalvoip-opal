@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2009  2002/01/22 05:10:58  robertj
+ * Revision 1.2010  2002/02/11 07:39:15  robertj
+ * Added media bypass for streams between compatible protocols.
+ *
+ * Revision 2.8  2002/01/22 05:10:58  robertj
  * Removed redundant code
  *
  * Revision 2.7  2002/01/22 05:09:00  robertj
@@ -177,6 +180,11 @@ class OpalMediaStream : public PChannel
       */
     virtual BOOL IsSynchronous() const = 0;
 
+    /**Indicate if the media stream requires a OpalMediaPatch thread.
+       The default behaviour returns TRUE.
+      */
+    virtual BOOL RequiresPatchThread() const;
+
     /**Enable jitter buffer for the media stream.
 
        The default behaviour does nothing.
@@ -237,6 +245,37 @@ class OpalMediaStream : public PChannel
 };
 
 PLIST(OpalMediaStreamList, OpalMediaStream);
+
+
+/**This class describes a media stream that is used for media bypass.
+  */
+class OpalNullMediaStream : public OpalMediaStream
+{
+    PCLASSINFO(OpalNullMediaStream, OpalMediaStream);
+  public:
+  /**@name Construction */
+  //@{
+    /**Construct a new media stream for RTP sessions.
+      */
+    OpalNullMediaStream(
+      BOOL isSourceStream,  /// Direction of I/O for stream
+      unsigned sessionID    /// Session ID for media stream
+    );
+  //@}
+
+  /**@name Overrides of OpalMediaStream class */
+  //@{
+    /**Indicate if the media stream requires a OpalMediaPatch thread.
+       The default behaviour returns FALSE.
+      */
+    virtual BOOL RequiresPatchThread() const;
+
+    /**Indicate if the media stream is synchronous.
+       Returns FALSE.
+      */
+    virtual BOOL IsSynchronous() const;
+  //@}
+};
 
 
 /**This class describes a media stream that transfers data to/from a RTP
