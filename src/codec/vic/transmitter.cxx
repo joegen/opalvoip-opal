@@ -40,8 +40,17 @@
 /************ Change log
  *
  * $Log: transmitter.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/15 23:43:00  robertj
+ * Update to OpenH323 v1.11.7
+ *
+ * Revision 1.8  2003/03/14 07:25:55  robertj
+ * Removed $header keyword so is not different on alternate repositories
+ *
+ * Revision 1.7  2002/01/04 02:48:05  dereks
+ * Fix previous commit so it compiles OK.
+ *
+ * Revision 1.6  2002/01/03 23:05:50  dereks
+ * Add methods to count number of H261 packets waiting to be sent.
  *
  * Revision 1.5  2001/05/10 05:25:44  robertj
  * Removed need for VIC code to use ptlib.
@@ -57,8 +66,6 @@
  *
  ********/
 
-//static const char rcsid[] =
-  //  "@(#) $Header: /home/svnmigrate/clean_cvs/opal/src/codec/vic/Attic/transmitter.cxx,v 1.2001 2001/07/27 15:48:25 robertj Exp $ (LBL)";
 #if 0
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -115,27 +122,27 @@ void Transmitter::PurgeBufferQueue(pktbuf *queue)
 
 Transmitter::pktbuf* Transmitter::alloch()
 {
-	pktbuf* pb = freehdrs_;
-	if (pb == 0) 
-		pb = new pktbuf;
+  pktbuf* pb = freehdrs_;
+  if (pb == 0) 
+    pb = new pktbuf;
   else
-		freehdrs_ = pb->next;		
-	pb->buf = 0;
-
-	return (pb);
+    freehdrs_ = pb->next;		
+  pb->buf = 0;
+  
+  return (pb);
 }
 
 Transmitter::pktbuf* Transmitter::alloc()
 {
-	pktbuf* pb = alloch();
-	buffer* p = freebufs_;
-	if (p == 0) 
-		p = new buffer;
+  pktbuf* pb = alloch();
+  buffer* p = freebufs_;
+  if (p == 0) 
+    p = new buffer;
   else
-		freebufs_ = p->next;
-
-	pb->buf = p;
-	return (pb);
+    freebufs_ = p->next;
+  
+  pb->buf = p;
+  return (pb);
 }
 
 
@@ -143,13 +150,13 @@ void Transmitter::ReleaseOnePacket(pktbuf* pb)
 {
   head_=head_->next;
 
-	pb->next = freehdrs_;
-	freehdrs_ = pb;
-	buffer* p = pb->buf;
-	if (p != 0) {
-		p->next = freebufs_;
-		freebufs_ = p;
-	}
+  pb->next = freehdrs_;
+  freehdrs_ = pb;
+  buffer* p = pb->buf;
+  if (p != 0) {
+    p->next = freebufs_;
+    freebufs_ = p;
+  }
 }
 
 
@@ -167,6 +174,19 @@ void Transmitter::StoreOnePacket(pktbuf* pb)
 int Transmitter::PacketsOutStanding()
 {
   return(head_!=NULL);
+}
+
+int Transmitter::GetCountPacketsOutStanding()
+{
+  pktbuf *pkt_ptr = head_;
+  int    count = 0;
+
+  while(pkt_ptr != NULL) {
+    pkt_ptr = pkt_ptr->next;
+    count++;
+  }
+  
+  return count;
 }
 
 void Transmitter::GetNextPacket(u_char ** hptr,u_char ** bptr, u_int & hlen, u_int & blen)

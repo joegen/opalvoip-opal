@@ -30,14 +30,20 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Header: /home/svnmigrate/clean_cvs/opal/src/codec/vic/Attic/p64.h,v 1.2001 2001/07/27 15:48:25 robertj Exp $ (LBL)
  */
 
 /************ Change log
  *
  * $Log: p64.h,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/15 23:43:00  robertj
+ * Update to OpenH323 v1.11.7
+ *
+ * Revision 1.6  2003/03/14 07:25:55  robertj
+ * Removed $header keyword so is not different on alternate repositories
+ *
+ * Revision 1.5  2002/04/26 04:57:41  dereks
+ * Add Walter Whitlocks fixes, based on Victor Ivashim's suggestions to
+ * improve the quality with Netmeeting. Thanks guys!!!!
  *
  * Revision 1.4  2000/12/19 22:22:34  dereks
  * Remove connection to grabber-OS.cxx files. grabber-OS.cxx files no longer used.
@@ -56,9 +62,25 @@
 
 #include <sys/types.h>
 
-struct huffcode;
+/*
+ * H.261 encapsulation.in payload of h261 packet.
+ * See Internet draft.
+ *
+ *  0                   1                   2                   3
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |SBIT |EBIT |I|V| GOBN  |  MBAP   |  QUANT  |  HMVD   |  VMVD   |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ */
+
+// define H261 header related values
+// (currently these are defined in both p64.h and encoder-h261.h for use
+//  in decode and encode.  Should there be one common include file?)
+typedef unsigned h261hdr_t;
 
 #define MBPERGOB 33
+
+struct huffcode;
 
 class P64Decoder{
     public:
@@ -68,9 +90,14 @@ class P64Decoder{
 	inline void resetndblk() { ndblk_ = 0; }
 	inline int width() const { return (width_); }
 	inline int height() const { return (height_); }
-	virtual int decode(const u_char* bp, int cc,
-			   int sbit, int ebit, int mba, int gob,
-			   int quant, int mvdh, int mvdv);
+  /** Decode a packet of RTP H261 video data.
+   *  Use the value of lostPreviousPacket to determine how best to use
+   *  H261 information in the RTP H261 header.
+   */
+	virtual BOOL decode(
+    const unsigned char *hdrPtr, // points to RTP H261 header at start of packet
+    int buffLen, // length of RTP H261 packet to decode, including header
+    BOOL lostPreviousPacket); // TRUE if previous packet lost or out of order
 	virtual void sync();
 	inline void bb(int& x, int& y, int& w, int& h) {
 		x = bbx_; y = bby_; w = bbw_; h = bbh_;
