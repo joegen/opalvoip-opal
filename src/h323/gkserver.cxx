@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkserver.cxx,v $
- * Revision 1.2006  2002/02/11 09:32:12  robertj
+ * Revision 1.2007  2002/03/22 06:57:49  robertj
+ * Updated to OpenH323 version 1.8.2
+ *
+ * Revision 2.5  2002/02/11 09:32:12  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.4  2002/01/14 06:35:57  robertj
@@ -45,6 +48,41 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.28  2002/03/06 02:51:31  robertj
+ * Fixed race condition when starting slow server response thread.
+ *
+ * Revision 1.27  2002/03/06 02:01:26  craigs
+ * Add log message when SlowHandler thread started
+ *
+ * Revision 1.26  2002/03/05 03:42:40  robertj
+ * Fixed calling of endpoints OnUnregister() function, thanks Francisco Olarte Sanz
+ *
+ * Revision 1.25  2002/03/04 07:57:57  craigs
+ * Changed log level of ageing message
+ * Fixed assert caused by accessing byIdentifier with integer
+ *
+ * Revision 1.24  2002/03/03 21:34:54  robertj
+ * Added gatekeeper monitor thread.
+ *
+ * Revision 1.23  2002/03/02 05:59:01  robertj
+ * Fixed possible bandwidth leak (thanks Francisco Olarte Sanz) and in
+ *   the process added OnBandwidth function to H323GatekeeperCall class.
+ *
+ * Revision 1.22  2002/03/01 04:09:35  robertj
+ * Fixed problems with keeping track of calls. Calls are now indexed by call-id
+ *   alone and maintain both endpoints of call in its structure. Fixes problem
+ *   with calls form an endpoint to itself, and having two objects being tracked
+ *   where there is really only one call.
+ *
+ * Revision 1.21  2002/02/25 10:26:39  robertj
+ * Added ARQ with zero bandwidth as a request for a default, thanks Federico Pinna
+ *
+ * Revision 1.20  2002/02/25 10:16:21  robertj
+ * Fixed bad mistake in getting new aliases from ARQ, thanks HoraPe
+ *
+ * Revision 1.19  2002/02/25 09:49:02  robertj
+ * Fixed possible "bandwidth leak" on ARQ, thanks Francisco Olarte Sanz
  *
  * Revision 1.18  2002/02/11 05:19:21  robertj
  * Allowed for multiple ARQ requests for same call ID. Reuses existing call
@@ -135,6 +173,7 @@ H323GatekeeperRequest::H323GatekeeperRequest(H323GatekeeperListener & ras, unsig
   requestSequenceNumber = seqNum;
   endpoint = NULL;
   deleteEndpoint = FALSE;
+  fastResponseRequired = TRUE;
   thread = NULL;
 }
 
@@ -164,13 +203,15 @@ BOOL H323GatekeeperRequest::HandlePDU()
   if (!WritePDU(pdu))
     return FALSE;
 
-  if (thread != NULL)
-    return TRUE;
+  if (fastResponseRequired) {
+    fastResponseRequired = FALSE;
+    PTRACE(2, "RAS\tStarting SlowHandler thread");
+    thread = PThread::Create(PCREATE_NOTIFIER(SlowHandler), 0,
+                             PThread::AutoDeleteThread,
+                             PThread::NormalPriority,
+                             "GkSrvr:%x");
+  }
 
-  thread = PThread::Create(PCREATE_NOTIFIER(SlowHandler), 0,
-                           PThread::AutoDeleteThread,
-                           PThread::NormalPriority,
-                           "GkSrvr:%x");
   return TRUE;
 }
 
@@ -340,9 +381,9 @@ H323GatekeeperRequest::Response H323GatekeeperLRQ::OnHandlePDU()
 
 /////////////////////////////////////////////////////////////////////////////
 
-H323GatekeeperCall::H323GatekeeperCall(H323RegisteredEndPoint & ep,
+H323GatekeeperCall::H323GatekeeperCall(H323GatekeeperServer & svr,
                                        const OpalGloballyUniqueID & id)
-  : endpoint(ep),
+  : server(svr),
     callIdentifier(id),
     conferenceIdentifier(NULL),
     alertingTime(0),
@@ -351,6 +392,7 @@ H323GatekeeperCall::H323GatekeeperCall(H323RegisteredEndPoint & ep,
 
 {
   callEndReason = OpalNumCallEndReasons;
+  sourceEndpoint = destinationEndpoint = NULL;
 }
 
 
@@ -362,19 +404,13 @@ H323GatekeeperCall::~H323GatekeeperCall()
 PObject::Comparison H323GatekeeperCall::Compare(const PObject & obj) const
 {
   PAssert(obj.IsDescendant(H323GatekeeperCall::Class()), PInvalidCast);
-  const H323GatekeeperCall & other = (const H323GatekeeperCall &)obj;
-
-  Comparison result = callIdentifier.Compare(other.callIdentifier);
-  if (result != EqualTo)
-    return result;
-
-  return endpoint.Compare(other.endpoint);
+  return callIdentifier.Compare(((const H323GatekeeperCall &)obj).callIdentifier);
 }
 
 
 void H323GatekeeperCall::PrintOn(ostream & strm) const
 {
-  strm << callIdentifier << '@' << endpoint;
+  strm << callIdentifier;
 }
 
 
@@ -397,9 +433,18 @@ H323GatekeeperRequest::Response H323GatekeeperCall::OnAdmission(H323GatekeeperAR
     srcHost = info.arq.m_srcCallSignalAddress;
 
   if (info.arq.m_answerCall) {
+    if (destinationEndpoint == NULL)
+      destinationEndpoint = info.endpoint;
+    if (destinationEndpoint != info.endpoint) {
+      info.arj.m_rejectReason.SetTag(H225_AdmissionRejectReason::e_invalidEndpointIdentifier);
+      PTRACE(2, "RAS\tARQ rejected, destination endpoint is different for call ID");
+      return H323GatekeeperRequest::Reject;
+    }
+    destinationEndpoint->AddCall(this);
+
     if (info.arq.HasOptionalField(H225_AdmissionRequest::e_destinationInfo)) {
-      PString alias = H323GetAliasAddressString(info.arq.m_destinationInfo[i]);
       for (i = 0; i < info.arq.m_destinationInfo.GetSize(); i++) {
+        PString alias = H323GetAliasAddressString(info.arq.m_destinationInfo[i]);
         if (dstAliases.GetValuesIndex(alias) == P_MAX_INDEX)
           dstAliases += alias;
       }
@@ -411,9 +456,18 @@ H323GatekeeperRequest::Response H323GatekeeperCall::OnAdmission(H323GatekeeperAR
       dstHost = info.arq.m_destCallSignalAddress;
   }
   else {
+    if (sourceEndpoint == NULL)
+      sourceEndpoint = info.endpoint;
+    if (sourceEndpoint != info.endpoint) {
+      info.arj.m_rejectReason.SetTag(H225_AdmissionRejectReason::e_invalidEndpointIdentifier);
+      PTRACE(2, "RAS\tARQ rejected, source endpoint is different for call ID");
+      return H323GatekeeperRequest::Reject;
+    }
+    sourceEndpoint->AddCall(this);
+
     if (info.acf.HasOptionalField(H225_AdmissionConfirm::e_destinationInfo)) {
-      PString alias = H323GetAliasAddressString(info.acf.m_destinationInfo[i]);
       for (i = 0; i < info.acf.m_destinationInfo.GetSize(); i++) {
+        PString alias = H323GetAliasAddressString(info.acf.m_destinationInfo[i]);
         if (dstAliases.GetValuesIndex(alias) == P_MAX_INDEX)
           dstAliases += alias;
       }
@@ -453,7 +507,37 @@ H323GatekeeperRequest::Response H323GatekeeperCall::OnDisengage(H323GatekeeperDR
     }
   }
 
+  RemoveFromEndpoint(info.endpoint);
+
   return H323GatekeeperRequest::Confirm;
+}
+
+
+H323GatekeeperRequest::Response H323GatekeeperCall::OnBandwidth(H323GatekeeperBRQ & info)
+{
+  unsigned newBandwidth = server.AllocateBandwidth(info.brq.m_bandWidth, bandwidthUsed);
+  if (newBandwidth == 0) {
+    info.brj.m_rejectReason.SetTag(H225_BandRejectReason::e_insufficientResources);
+    PTRACE(2, "RAS\tBRQ rejected, no bandwidth");
+    return H323GatekeeperRequest::Reject;
+  }
+
+  info.bcf.m_bandWidth = bandwidthUsed = newBandwidth;
+  return H323GatekeeperRequest::Confirm;
+}
+
+
+void H323GatekeeperCall::RemoveFromEndpoint(H323RegisteredEndPoint * ep)
+{
+  if (ep == sourceEndpoint) {
+    PAssert(sourceEndpoint->RemoveCall(this), PLogicError);
+    sourceEndpoint = NULL;
+  }
+
+  if (ep == destinationEndpoint) {
+    PAssert(destinationEndpoint->RemoveCall(this), PLogicError);
+    destinationEndpoint = NULL;
+  }
 }
 
 
@@ -634,10 +718,12 @@ H323GatekeeperRequest::Response H323RegisteredEndPoint::OnRegistration(H323Gatek
 }
 
 
-H323GatekeeperRequest::Response H323RegisteredEndPoint::OnUnregistration(H323GatekeeperURQ & /*info*/)
+H323GatekeeperRequest::Response H323RegisteredEndPoint::OnUnregistration(H323GatekeeperURQ & info)
 {
-  while (activeCalls.GetSize() > 0)
-    gatekeeper.RemoveCall(&activeCalls[0]);
+  if (info.deleteEndpoint) {
+    while (activeCalls.GetSize() > 0)
+      gatekeeper.RemoveCall(this, &activeCalls[0]);
+  }
 
   return H323GatekeeperRequest::Confirm;
 }
@@ -1112,6 +1198,19 @@ H323GatekeeperServer::H323GatekeeperServer(H323EndPoint & ep)
   byVoicePrefix.DisallowDeleteObjects();
 
   enumerationIndex = P_MAX_INDEX;
+
+  monitorThread = PThread::Create(PCREATE_NOTIFIER(MonitorMain), 0,
+                                  PThread::NoAutoDeleteThread,
+                                  PThread::NormalPriority,
+                                  "GkSrv Monitor");
+}
+
+
+H323GatekeeperServer::~H323GatekeeperServer()
+{
+  monitorExit.Signal();
+  PAssert(monitorThread->WaitForTermination(10000), "Gatekeeper monitor thread did not terminate!");
+  delete monitorThread;
 }
 
 
@@ -1324,7 +1423,7 @@ H323GatekeeperRequest::Response
     info.deleteEndpoint = TRUE;
   }
 
-  return H323GatekeeperRequest::Confirm;
+  return info.endpoint->OnUnregistration(info);
 }
 
 
@@ -1482,19 +1581,6 @@ void H323GatekeeperServer::AbortEnumeration()
 }
 
 
-void H323GatekeeperServer::AgeEndPoints()
-{
-  PTRACE(2, "RAS\tAging registered endpoints");
-
-  PWaitAndSignal wait(mutex);
-
-  for (PINDEX i = 0; i < byIdentifier.GetSize(); i++) {
-    if (byIdentifier[i].HasExceededTimeToLive())
-      RemoveEndPoint(&byIdentifier[i--], TRUE, FALSE);
-  }
-}
-
-
 H323RegisteredEndPoint * H323GatekeeperServer::FindEndPointByIdentifier(const PString & identifier)
 {
   if (identifier.IsEmpty())
@@ -1558,22 +1644,6 @@ H323GatekeeperRequest::Response
      H323GatekeeperServer::OnAdmission(H323GatekeeperARQ & info)
 {
   PINDEX i;
-
-  // See if already have call, 
-  H323GatekeeperCall * call = FindCall(*info.endpoint, info.arq.m_callIdentifier.m_guid);
-  if (call != NULL)
-    return call->OnAdmission(info);
-
-
-  // See if have bandwidth
-  unsigned bandwidthAllocated = AllocateBandwidth(info.arq.m_bandWidth);
-  if (bandwidthAllocated == 0) {
-    info.arj.m_rejectReason.SetTag(H225_AdmissionRejectReason::e_requestDenied);
-    PTRACE(2, "RAS\tARQ rejected, not enough bandwidth");
-    return H323GatekeeperRequest::Reject;
-  }
-  info.acf.m_bandWidth = bandwidthAllocated;
-
 
   if (info.arq.m_answerCall) {
     // Incoming call
@@ -1665,12 +1735,33 @@ H323GatekeeperRequest::Response
       info.acf.m_callModel.SetTag(H225_CallModel::e_gatekeeperRouted);
   }
 
-  call = CreateCall(*info.endpoint, info.arq.m_callIdentifier.m_guid);
-  H323GatekeeperRequest::Response response = call->OnAdmission(info);
-  if (response == H323GatekeeperRequest::Confirm)
-    AddCall(call);
-  else
-    delete call;
+  // See if have bandwidth
+  unsigned requestedBandwidth = info.arq.m_bandWidth;
+  if (requestedBandwidth == 0)
+    requestedBandwidth = defaultBandwidth;
+  unsigned bandwidthAllocated = AllocateBandwidth(info.arq.m_bandWidth);
+  if (bandwidthAllocated == 0) {
+    info.arj.m_rejectReason.SetTag(H225_AdmissionRejectReason::e_requestDenied);
+    PTRACE(2, "RAS\tARQ rejected, not enough bandwidth");
+    return H323GatekeeperRequest::Reject;
+  }
+  info.acf.m_bandWidth = bandwidthAllocated;
+
+  H323GatekeeperCall * call = FindCall(info.arq.m_callIdentifier.m_guid);
+  if (call == NULL) {
+    call = CreateCall(info.arq.m_callIdentifier.m_guid);
+    mutex.Wait();
+    activeCalls.Append(call);
+    PTRACE(2, "RAS\tAdded new call (total=" << activeCalls.GetSize() << ") " << *call);
+    mutex.Signal();
+  }
+  else {
+    PTRACE(2, "RAS\tFound existing call for ARQ " << *call);
+  }
+
+  H323GatekeeperRequest::Response  response = call->OnAdmission(info);
+  if (response != H323GatekeeperRequest::Confirm)
+    RemoveCall(info.endpoint, call);
 
   return response;
 }
@@ -1680,7 +1771,7 @@ H323GatekeeperRequest::Response
      H323GatekeeperServer::OnDisengage(H323GatekeeperDRQ & info)
 {
   OpalGloballyUniqueID callIdentifier = info.drq.m_callIdentifier.m_guid;
-  H323GatekeeperCall * call = FindCall(*info.endpoint, callIdentifier);
+  H323GatekeeperCall * call = FindCall(callIdentifier);
   if (call == NULL) {
     info.drj.m_rejectReason.SetTag(H225_DisengageRejectReason::e_requestToDropOther);
     PTRACE(2, "RAS\tDRQ rejected, no call with ID " << callIdentifier);
@@ -1691,7 +1782,7 @@ H323GatekeeperRequest::Response
   if (response != H323GatekeeperRequest::Confirm)
     return response;
 
-  RemoveCall(call);
+  RemoveCall(info.endpoint, call);
   return H323GatekeeperRequest::Confirm;
 }
 
@@ -1699,14 +1790,15 @@ H323GatekeeperRequest::Response
 H323GatekeeperRequest::Response
      H323GatekeeperServer::OnBandwidth(H323GatekeeperBRQ & info)
 {
-  H323GatekeeperCall * call = FindCall(*info.endpoint, info.brq.m_callIdentifier.m_guid);
+  H323GatekeeperCall * call = FindCall(info.brq.m_callIdentifier.m_guid);
   if (call == NULL) {
     info.brj.m_rejectReason.SetTag(H225_BandRejectReason::e_invalidConferenceID);
     PTRACE(2, "RAS\tBRQ rejected, no call with ID");
     return H323GatekeeperRequest::Reject;
   }
 
-  if (&call->GetEndPoint() != info.endpoint) {
+  if (call->GetSourceEndPoint() != info.endpoint &&
+      call->GetDestinationEndPoint() != info.endpoint) {
     info.brj.m_rejectReason.SetTag(H225_BandRejectReason::e_invalidPermission);
     PTRACE(2, "RAS\tBRQ rejected, call is not owned by endpoint");
     return H323GatekeeperRequest::Reject;
@@ -1719,8 +1811,7 @@ H323GatekeeperRequest::Response
     return H323GatekeeperRequest::Reject;
   }
 
-  info.bcf.m_bandWidth = newBandwidth;
-  return H323GatekeeperRequest::Confirm;
+  return call->OnBandwidth(info);
 }
 
 
@@ -1764,42 +1855,41 @@ unsigned H323GatekeeperServer::AllocateBandwidth(unsigned newBandwidth,
 }
 
 
-void H323GatekeeperServer::AddCall(H323GatekeeperCall * call)
+void H323GatekeeperServer::RemoveCall(H323RegisteredEndPoint * ep,
+                                      H323GatekeeperCall * call)
 {
+  PAssertNULL(ep);
   PAssertNULL(call);
-  mutex.Wait();
-  activeCalls.Append(call);
-  call->GetEndPoint().AddCall(call);
-  PTRACE(2, "RAS\tAdded new call (total=" << activeCalls.GetSize() << ") " << *call);
-  mutex.Signal();
-}
 
-
-void H323GatekeeperServer::RemoveCall(H323GatekeeperCall * call)
-{
-  PAssertNULL(call);
   mutex.Wait();
-  PTRACE(2, "RAS\tRemoved call (total=" << (activeCalls.GetSize()-1) << ") " << *call);
+
   AllocateBandwidth(0, call->GetBandwidthUsed());
-  PAssert(call->GetEndPoint().RemoveCall(call), PLogicError);
-  PAssert(activeCalls.Remove(call), PLogicError);
+  call->RemoveFromEndpoint(ep);
+
+  if (call->GetSourceEndPoint() == NULL && call->GetDestinationEndPoint() == NULL) {
+    PTRACE(2, "RAS\tRemoved call (total=" << (activeCalls.GetSize()-1) << ")"
+              " ep=" << *ep << " id=" << *call);
+    PAssert(activeCalls.Remove(call), PLogicError);
+  }
+  else {
+    PTRACE(2, "RAS\tRemoved secondary call ep=" << *ep << " id=" << *call);
+  }
+
   mutex.Signal();
 }
 
 
-H323GatekeeperCall * H323GatekeeperServer::CreateCall(H323RegisteredEndPoint & endpoint,
-                                            const OpalGloballyUniqueID & callIdentifier)
+H323GatekeeperCall * H323GatekeeperServer::CreateCall(const OpalGloballyUniqueID & callIdentifier)
 {
-  return new H323GatekeeperCall(endpoint, callIdentifier);
+  return new H323GatekeeperCall(*this, callIdentifier);
 }
 
 
-H323GatekeeperCall * H323GatekeeperServer::FindCall(H323RegisteredEndPoint & endpoint,
-                                                    const OpalGloballyUniqueID & callIdentifier)
+H323GatekeeperCall * H323GatekeeperServer::FindCall(const OpalGloballyUniqueID & callIdentifier)
 {
   PWaitAndSignal wait(mutex);
 
-  PINDEX idx = activeCalls.GetValuesIndex(H323GatekeeperCall(endpoint, callIdentifier));
+  PINDEX idx = activeCalls.GetValuesIndex(H323GatekeeperCall(*this, callIdentifier));
   if (idx == P_MAX_INDEX)
     return NULL;
 
@@ -1911,6 +2001,27 @@ void H323GatekeeperServer::SetGatekeeperIdentifier(const PString & id,
   }
 
   mutex.Signal();
+}
+
+
+void H323GatekeeperServer::MonitorMain(PThread &, INT)
+{
+  while (!monitorExit.Wait(1000)) {
+    PTRACE(6, "RAS\tAging registered endpoints");
+
+    mutex.Wait();
+
+    for (PINDEX i = 0; i < byIdentifier.GetSize(); i++) {
+      H323RegisteredEndPoint & ep = byIdentifier.GetDataAt(i);
+      if (ep.HasExceededTimeToLive()) {
+        PTRACE(2, "RAS\tRemoving expired endpoint");
+        RemoveEndPoint(&ep, TRUE, FALSE);
+        i--;
+      }
+    }
+
+    mutex.Signal();
+  }
 }
 
 

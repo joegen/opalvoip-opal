@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2016  2002/02/19 07:45:28  robertj
+ * Revision 1.2017  2002/03/22 06:57:49  robertj
+ * Updated to OpenH323 version 1.8.2
+ *
+ * Revision 2.15  2002/02/19 07:45:28  robertj
  * Restructured media bypass functions to fix problems with RFC2833.
  *
  * Revision 2.14  2002/02/13 04:17:53  robertj
@@ -76,6 +79,13 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.119  2002/02/25 08:42:26  robertj
+ * Fixed comments on the real time requirements of the codec.
+ *
+ * Revision 1.118  2002/02/19 06:15:20  robertj
+ * Allowed for RTP filter functions to force output of packet, or prevent it
+ *   from being sent overriding the n frames per packet algorithm.
  *
  * Revision 1.117  2002/02/09 04:39:05  robertj
  * Changes to allow T.38 logical channels to use single transport which is

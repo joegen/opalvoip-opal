@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h225ras.cxx,v $
- * Revision 1.2004  2002/02/11 09:32:12  robertj
+ * Revision 1.2005  2002/03/22 06:57:49  robertj
+ * Updated to OpenH323 version 1.8.2
+ *
+ * Revision 2.3  2002/02/11 09:32:12  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.2  2001/10/05 00:22:13  robertj
@@ -38,6 +41,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.16  2002/03/10 19:34:13  robertj
+ * Added random starting point for sequence numbers, thanks Chris Purvis
+ *
  * Revision 1.15  2002/01/29 02:38:31  robertj
  * Fixed nasty race condition when getting RIP, end up with wrong timeout.
  * Improved tracing (included sequence numbers)
@@ -100,6 +106,8 @@
 #include <h323/h323pdu.h>
 #include <h323/h235auth.h>
 
+#include <ptclib/random.h>
+
 
 #define new PNEW
 
@@ -116,7 +124,7 @@ H225_RAS::H225_RAS(H323EndPoint & ep, OpalTransport * trans)
 
   lastRequest = NULL;
   lastReceivedPDU = NULL;
-  nextSequenceNumber = 0;
+  nextSequenceNumber = PRandom::Number()%65536;
   requests.DisallowDeleteObjects();
 }
 
@@ -148,6 +156,7 @@ void H225_RAS::HandleRasChannel(PThread &, INT)
   lastReceivedPDU = &response;
 
   for (;;) {
+    PTRACE(5, "RAS\tReading PDU");
     if (response.Read(*transport)) {
       if (HandleRasPDU(response))
         lastRequest->responseHandled.Signal();
