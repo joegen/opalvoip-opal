@@ -22,16 +22,18 @@ EXPORTS
     ??0?$H235_SIGNED@VH235_EncodedReturnSig@@@@QAE@IW4TagClass@PASN_Object@@@Z @20 NONAME ;public: __thiscall H235_SIGNED<class H235_EncodedReturnSig>::H235_SIGNED<class H235_EncodedReturnSig>(unsigned int,enum PASN_Object::TagClass)
     ??0?$PBaseArray@E@@QAE@ABV0@@Z @13152 NONAME ;public: __thiscall PBaseArray<unsigned char>::PBaseArray<unsigned char>(class PBaseArray<unsigned char> const &)
     ??0?$PBaseArray@E@@QAE@PBEHH@Z @13153 NONAME ;public: __thiscall PBaseArray<unsigned char>::PBaseArray<unsigned char>(unsigned char const *,int,int)
+    ??0?$PList@VPSocket@@@@QAE@XZ @14812 NONAME ;public: __thiscall PList<class PSocket>::PList<class PSocket>(void)
     ??0?$PList@VPString@@@@QAE@ABV0@@Z @13154 NONAME ;public: __thiscall PList<class PString>::PList<class PString>(class PList<class PString> const &)
     ??0?$PQueue@VSIP_PDU@@@@IAE@HPBV0@@Z @13155 NONAME ;protected: __thiscall PQueue<class SIP_PDU>::PQueue<class SIP_PDU>(int,class PQueue<class SIP_PDU> const *)
-    ??0?$PSafeDictionary@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@QAE@XZ @13156 NONAME ;public: __thiscall PSafeDictionary<class PDictionary<class PString,class H323RegisteredEndPoint>,class PString,class H323RegisteredEndPoint>::PSafeDictionary<class PDictionary<class PString,class H323RegisteredEndPoint>,class PString,class H323RegisteredEndPoint>(void)
-    ??0?$PSafeList@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@QAE@XZ @13157 NONAME ;public: __thiscall PSafeList<class PSortedList<class H323GatekeeperCall>,class H323GatekeeperCall>::PSafeList<class PSortedList<class H323GatekeeperCall>,class H323GatekeeperCall>(void)
+    ??0?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@QAE@XZ @14813 NONAME ;public: __thiscall PSafeColl<class PSortedList<class H323GatekeeperCall>,class H323GatekeeperCall>::PSafeColl<class PSortedList<class H323GatekeeperCall>,class H323GatekeeperCall>(void)
+    ??0?$PSafeDictionaryBase@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@QAE@XZ @14814 NONAME ;public: __thiscall PSafeDictionaryBase<class PDictionary<class PString,class H323RegisteredEndPoint>,class PString,class H323RegisteredEndPoint>::PSafeDictionaryBase<class PDictionary<class PString,class H323RegisteredEndPoint>,class PString,class H323RegisteredEndPoint>(void)
     ??0?$PSet@VPOrdinalKey@@@@QAE@H@Z @13158 NONAME ;public: __thiscall PSet<class POrdinalKey>::PSet<class POrdinalKey>(int)
     ??0?$PStringDictionary@VPString@@@@QAE@ABV0@@Z @13159 NONAME ;public: __thiscall PStringDictionary<class PString>::PStringDictionary<class PString>(class PStringDictionary<class PString> const &)
     ??0AdmissionRequestResponseInfo@@QAE@XZ @13160 NONAME ;public: __thiscall AdmissionRequestResponseInfo::AdmissionRequestResponseInfo(void)
     ??0AdmissionResponse@H323Gatekeeper@@QAE@XZ @13161 NONAME ;public: __thiscall H323Gatekeeper::AdmissionResponse::AdmissionResponse(void)
     ??0AlternateInfo@H323Gatekeeper@@QAE@AAVH225_AlternateGK@@@Z @13162 NONAME ;public: __thiscall H323Gatekeeper::AlternateInfo::AlternateInfo(class H225_AlternateGK &)
     ??0ByteQueue@OpalVoipBlasterDevice@@QAE@H@Z @13163 NONAME ;public: __thiscall OpalVoipBlasterDevice::ByteQueue::ByteQueue(int)
+    ??0Entry@RTP_JitterBuffer@@QAE@XZ @14815 NONAME ;public: __thiscall RTP_JitterBuffer::Entry::Entry(void)
     ??0FullP64Decoder@@QAE@XZ @22 NONAME ;public: __thiscall FullP64Decoder::FullP64Decoder(void)
     ??0GCC_AlternativeNodeID@@QAE@IW4TagClass@PASN_Object@@@Z @23 NONAME ;public: __thiscall GCC_AlternativeNodeID::GCC_AlternativeNodeID(unsigned int,enum PASN_Object::TagClass)
     ??0GCC_ApplicationInvokeIndication@@QAE@ABV0@@Z @24 NONAME ;public: __thiscall GCC_ApplicationInvokeIndication::GCC_ApplicationInvokeIndication(class GCC_ApplicationInvokeIndication const &)
@@ -633,6 +635,7 @@ EXPORTS
     ??0H225_VoiceCaps@@QAE@IW4TagClass@PASN_Object@@@Z @620 NONAME ;public: __thiscall H225_VoiceCaps::H225_VoiceCaps(unsigned int,enum PASN_Object::TagClass)
     ??0H235Authenticator@@QAE@ABV0@@Z @13164 NONAME ;public: __thiscall H235Authenticator::H235Authenticator(class H235Authenticator const &)
     ??0H235Authenticator@@QAE@XZ @12820 NONAME ;public: __thiscall H235Authenticator::H235Authenticator(void)
+    ??0H235AuthProcedure1@@QAE@XZ @14816 NONAME ;public: __thiscall H235AuthProcedure1::H235AuthProcedure1(void)
     ??0H235AuthSimpleMD5@@QAE@XZ @12822 NONAME ;public: __thiscall H235AuthSimpleMD5::H235AuthSimpleMD5(void)
     ??0H235_AuthenticationBES@@QAE@IW4TagClass@PASN_Object@@@Z @12931 NONAME ;public: __thiscall H235_AuthenticationBES::H235_AuthenticationBES(unsigned int,enum PASN_Object::TagClass)
     ??0H235_AuthenticationMechanism@@QAE@IW4TagClass@PASN_Object@@@Z @622 NONAME ;public: __thiscall H235_AuthenticationMechanism::H235_AuthenticationMechanism(unsigned int,enum PASN_Object::TagClass)
@@ -1365,18 +1368,18 @@ EXPORTS
     ??0H261DCTEncoder@@QAE@PAVTransmitter@@@Z @1341 NONAME ;public: __thiscall H261DCTEncoder::H261DCTEncoder(class Transmitter *)
     ??0H261Encoder@@IAE@PAVTransmitter@@@Z @1342 NONAME ;protected: __thiscall H261Encoder::H261Encoder(class Transmitter *)
     ??0H261PixelEncoder@@QAE@PAVTransmitter@@@Z @1343 NONAME ;public: __thiscall H261PixelEncoder::H261PixelEncoder(class Transmitter *)
-    ??0H323AudioCapability@@QAE@ABVOpalMediaFormat@@II@Z @12660 NONAME ;public: __thiscall H323AudioCapability::H323AudioCapability(class OpalMediaFormat const &,unsigned int,unsigned int)
+    ??0H323AudioCapability@@QAE@ABV0@@Z @14817 NONAME ;public: __thiscall H323AudioCapability::H323AudioCapability(class H323AudioCapability const &)
+    ??0H323AudioCapability@@QAE@II@Z @14818 NONAME ;public: __thiscall H323AudioCapability::H323AudioCapability(unsigned int,unsigned int)
     ??0H323BidirectionalChannel@@QAE@AAVH323Connection@@ABVH323Capability@@@Z @1345 NONAME ;public: __thiscall H323BidirectionalChannel::H323BidirectionalChannel(class H323Connection &,class H323Capability const &)
     ??0H323Capabilities@@QAE@ABV0@@Z @1346 NONAME ;public: __thiscall H323Capabilities::H323Capabilities(class H323Capabilities const &)
     ??0H323Capabilities@@QAE@ABVH323Connection@@ABVH245_TerminalCapabilitySet@@@Z @1347 NONAME ;public: __thiscall H323Capabilities::H323Capabilities(class H323Connection const &,class H245_TerminalCapabilitySet const &)
     ??0H323Capabilities@@QAE@XZ @1348 NONAME ;public: __thiscall H323Capabilities::H323Capabilities(void)
-    ??0H323Capability@@QAE@ABV0@@Z @13165 NONAME ;public: __thiscall H323Capability::H323Capability(class H323Capability const &)
-    ??0H323Capability@@QAE@ABVOpalMediaFormat@@@Z @12661 NONAME ;public: __thiscall H323Capability::H323Capability(class OpalMediaFormat const &)
+    ??0H323Capability@@QAE@XZ @14819 NONAME ;public: __thiscall H323Capability::H323Capability(void)
     ??0H323CapabilityRegistration@@QAE@PBD@Z @1350 NONAME ;public: __thiscall H323CapabilityRegistration::H323CapabilityRegistration(char const *)
     ??0H323Channel@@QAE@AAVH323Connection@@ABVH323Capability@@@Z @1351 NONAME ;public: __thiscall H323Channel::H323Channel(class H323Connection &,class H323Capability const &)
     ??0H323ChannelNumber@@QAE@IH@Z @1352 NONAME ;public: __thiscall H323ChannelNumber::H323ChannelNumber(unsigned int,int)
     ??0H323Connection@@QAE@AAVOpalCall@@AAVH323EndPoint@@ABVPString@@I@Z @13166 NONAME ;public: __thiscall H323Connection::H323Connection(class OpalCall &,class H323EndPoint &,class PString const &,unsigned int)
-    ??0H323DataCapability@@QAE@ABVOpalMediaFormat@@I@Z @13167 NONAME ;public: __thiscall H323DataCapability::H323DataCapability(class OpalMediaFormat const &,unsigned int)
+    ??0H323DataCapability@@QAE@I@Z @14820 NONAME ;public: __thiscall H323DataCapability::H323DataCapability(unsigned int)
     ??0H323DataChannel@@QAE@AAVH323Connection@@ABVH323Capability@@W4Directions@H323Channel@@I@Z @13168 NONAME ;public: __thiscall H323DataChannel::H323DataChannel(class H323Connection &,class H323Capability const &,enum H323Channel::Directions,unsigned int)
     ??0H323EndPoint@@QAE@AAVOpalManager@@@Z @1355 NONAME ;public: __thiscall H323EndPoint::H323EndPoint(class OpalManager &)
     ??0H323Gatekeeper@@QAE@AAVH323EndPoint@@PAVOpalTransport@@@Z @1356 NONAME ;public: __thiscall H323Gatekeeper::H323Gatekeeper(class H323EndPoint &,class OpalTransport *)
@@ -1393,64 +1396,59 @@ EXPORTS
     ??0H323GatekeeperServer@@QAE@AAVH323EndPoint@@@Z @1359 NONAME ;public: __thiscall H323GatekeeperServer::H323GatekeeperServer(class H323EndPoint &)
     ??0H323GatekeeperURQ@@QAE@AAVH323GatekeeperListener@@ABVH323RasPDU@@@Z @13178 NONAME ;public: __thiscall H323GatekeeperURQ::H323GatekeeperURQ(class H323GatekeeperListener &,class H323RasPDU const &)
     ??0H323NonStandardAudioCapability@@QAE@ABV0@@Z @1360 NONAME ;public: __thiscall H323NonStandardAudioCapability::H323NonStandardAudioCapability(class H323NonStandardAudioCapability const &)
-    ??0H323NonStandardAudioCapability@@QAE@ABVOpalMediaFormat@@IIAAVH323EndPoint@@PBEHHH@Z @12662 NONAME ;public: __thiscall H323NonStandardAudioCapability::H323NonStandardAudioCapability(class OpalMediaFormat const &,unsigned int,unsigned int,class H323EndPoint &,unsigned char const *,int,int,int)
-    ??0H323NonStandardAudioCapability@@QAE@ABVOpalMediaFormat@@IIABVPString@@PBEHHH@Z @12663 NONAME ;public: __thiscall H323NonStandardAudioCapability::H323NonStandardAudioCapability(class OpalMediaFormat const &,unsigned int,unsigned int,class PString const &,unsigned char const *,int,int,int)
-    ??0H323NonStandardAudioCapability@@QAE@ABVOpalMediaFormat@@IIEEGPBEHHH@Z @12664 NONAME ;public: __thiscall H323NonStandardAudioCapability::H323NonStandardAudioCapability(class OpalMediaFormat const &,unsigned int,unsigned int,unsigned char,unsigned char,unsigned short,unsigned char const *,int,int,int)
+    ??0H323NonStandardAudioCapability@@QAE@IIAAVH323EndPoint@@PBEHHH@Z @14821 NONAME ;public: __thiscall H323NonStandardAudioCapability::H323NonStandardAudioCapability(unsigned int,unsigned int,class H323EndPoint &,unsigned char const *,int,int,int)
+    ??0H323NonStandardAudioCapability@@QAE@IIABVPString@@PBEHHH@Z @14822 NONAME ;public: __thiscall H323NonStandardAudioCapability::H323NonStandardAudioCapability(unsigned int,unsigned int,class PString const &,unsigned char const *,int,int,int)
+    ??0H323NonStandardAudioCapability@@QAE@IIEEGPBEHHH@Z @14823 NONAME ;public: __thiscall H323NonStandardAudioCapability::H323NonStandardAudioCapability(unsigned int,unsigned int,unsigned char,unsigned char,unsigned short,unsigned char const *,int,int,int)
     ??0H323NonStandardCapabilityInfo@@QAE@AAVH323EndPoint@@PBEHHH@Z @1364 NONAME ;public: __thiscall H323NonStandardCapabilityInfo::H323NonStandardCapabilityInfo(class H323EndPoint &,unsigned char const *,int,int,int)
     ??0H323NonStandardCapabilityInfo@@QAE@ABV0@@Z @1365 NONAME ;public: __thiscall H323NonStandardCapabilityInfo::H323NonStandardCapabilityInfo(class H323NonStandardCapabilityInfo const &)
     ??0H323NonStandardCapabilityInfo@@QAE@ABVPString@@PBEHHH@Z @1366 NONAME ;public: __thiscall H323NonStandardCapabilityInfo::H323NonStandardCapabilityInfo(class PString const &,unsigned char const *,int,int,int)
     ??0H323NonStandardCapabilityInfo@@QAE@EEGPBEHHH@Z @1367 NONAME ;public: __thiscall H323NonStandardCapabilityInfo::H323NonStandardCapabilityInfo(unsigned char,unsigned char,unsigned short,unsigned char const *,int,int,int)
     ??0H323NonStandardDataCapability@@QAE@ABV0@@Z @13179 NONAME ;public: __thiscall H323NonStandardDataCapability::H323NonStandardDataCapability(class H323NonStandardDataCapability const &)
-    ??0H323NonStandardDataCapability@@QAE@ABVOpalMediaFormat@@IAAVH323EndPoint@@PBEHHH@Z @13180 NONAME ;public: __thiscall H323NonStandardDataCapability::H323NonStandardDataCapability(class OpalMediaFormat const &,unsigned int,class H323EndPoint &,unsigned char const *,int,int,int)
-    ??0H323NonStandardDataCapability@@QAE@ABVOpalMediaFormat@@IABVPString@@PBEHHH@Z @13181 NONAME ;public: __thiscall H323NonStandardDataCapability::H323NonStandardDataCapability(class OpalMediaFormat const &,unsigned int,class PString const &,unsigned char const *,int,int,int)
-    ??0H323NonStandardDataCapability@@QAE@ABVOpalMediaFormat@@IEEGPBEHHH@Z @13182 NONAME ;public: __thiscall H323NonStandardDataCapability::H323NonStandardDataCapability(class OpalMediaFormat const &,unsigned int,unsigned char,unsigned char,unsigned short,unsigned char const *,int,int,int)
-    ??0H323NonStandardVideoCapability@@QAE@ABVOpalMediaFormat@@AAVH323EndPoint@@PBEHHH@Z @12668 NONAME ;public: __thiscall H323NonStandardVideoCapability::H323NonStandardVideoCapability(class OpalMediaFormat const &,class H323EndPoint &,unsigned char const *,int,int,int)
-    ??0H323NonStandardVideoCapability@@QAE@ABVOpalMediaFormat@@ABVPString@@PBEHHH@Z @12669 NONAME ;public: __thiscall H323NonStandardVideoCapability::H323NonStandardVideoCapability(class OpalMediaFormat const &,class PString const &,unsigned char const *,int,int,int)
-    ??0H323NonStandardVideoCapability@@QAE@ABVOpalMediaFormat@@EEGPBEHHH@Z @12670 NONAME ;public: __thiscall H323NonStandardVideoCapability::H323NonStandardVideoCapability(class OpalMediaFormat const &,unsigned char,unsigned char,unsigned short,unsigned char const *,int,int,int)
+    ??0H323NonStandardDataCapability@@QAE@IAAVH323EndPoint@@PBEHHH@Z @14824 NONAME ;public: __thiscall H323NonStandardDataCapability::H323NonStandardDataCapability(unsigned int,class H323EndPoint &,unsigned char const *,int,int,int)
+    ??0H323NonStandardDataCapability@@QAE@IABVPString@@PBEHHH@Z @14825 NONAME ;public: __thiscall H323NonStandardDataCapability::H323NonStandardDataCapability(unsigned int,class PString const &,unsigned char const *,int,int,int)
+    ??0H323NonStandardDataCapability@@QAE@IEEGPBEHHH@Z @14826 NONAME ;public: __thiscall H323NonStandardDataCapability::H323NonStandardDataCapability(unsigned int,unsigned char,unsigned char,unsigned short,unsigned char const *,int,int,int)
+    ??0H323NonStandardVideoCapability@@QAE@AAVH323EndPoint@@PBEHHH@Z @14827 NONAME ;public: __thiscall H323NonStandardVideoCapability::H323NonStandardVideoCapability(class H323EndPoint &,unsigned char const *,int,int,int)
+    ??0H323NonStandardVideoCapability@@QAE@ABVPString@@PBEHHH@Z @14828 NONAME ;public: __thiscall H323NonStandardVideoCapability::H323NonStandardVideoCapability(class PString const &,unsigned char const *,int,int,int)
+    ??0H323NonStandardVideoCapability@@QAE@EEGPBEHHH@Z @14829 NONAME ;public: __thiscall H323NonStandardVideoCapability::H323NonStandardVideoCapability(unsigned char,unsigned char,unsigned short,unsigned char const *,int,int,int)
     ??0H323RasPDU@@QAE@ABV0@@Z @13183 NONAME ;public: __thiscall H323RasPDU::H323RasPDU(class H323RasPDU const &)
     ??0H323RasPDU@@QAE@ABVH235Authenticators@@@Z @13184 NONAME ;public: __thiscall H323RasPDU::H323RasPDU(class H235Authenticators const &)
     ??0H323RasPDU@@QAE@XZ @13185 NONAME ;public: __thiscall H323RasPDU::H323RasPDU(void)
-    ??0H323RealTimeCapability@@QAE@ABVOpalMediaFormat@@@Z @12671 NONAME ;public: __thiscall H323RealTimeCapability::H323RealTimeCapability(class OpalMediaFormat const &)
     ??0H323RegisteredEndPoint@@QAE@AAVH323GatekeeperServer@@ABVPString@@@Z @13186 NONAME ;public: __thiscall H323RegisteredEndPoint::H323RegisteredEndPoint(class H323GatekeeperServer &,class PString const &)
     ??0H323SignalPDU@@QAE@XZ @1376 NONAME ;public: __thiscall H323SignalPDU::H323SignalPDU(void)
     ??0H323TransportAddress@@QAE@ABVH225_TransportAddress@@PBD@Z @13187 NONAME ;public: __thiscall H323TransportAddress::H323TransportAddress(class H225_TransportAddress const &,char const *)
     ??0H323TransportAddress@@QAE@ABVH245_TransportAddress@@PBD@Z @13188 NONAME ;public: __thiscall H323TransportAddress::H323TransportAddress(class H245_TransportAddress const &,char const *)
     ??0H323TransportAddress@@QAE@VAddress@PIPSocket@@GPBD@Z @1379 NONAME ;public: __thiscall H323TransportAddress::H323TransportAddress(class PIPSocket::Address,unsigned short,char const *)
     ??0H323UnidirectionalChannel@@QAE@AAVH323Connection@@ABVH323Capability@@W4Directions@H323Channel@@@Z @1380 NONAME ;public: __thiscall H323UnidirectionalChannel::H323UnidirectionalChannel(class H323Connection &,class H323Capability const &,enum H323Channel::Directions)
-    ??0H323VideoCapability@@QAE@ABVOpalMediaFormat@@@Z @12673 NONAME ;public: __thiscall H323VideoCapability::H323VideoCapability(class OpalMediaFormat const &)
     ??0H323_ExternalRTPChannel@@QAE@AAVH323Connection@@ABVH323Capability@@W4Directions@H323Channel@@I@Z @13189 NONAME ;public: __thiscall H323_ExternalRTPChannel::H323_ExternalRTPChannel(class H323Connection &,class H323Capability const &,enum H323Channel::Directions,unsigned int)
     ??0H323_ExternalRTPChannel@@QAE@AAVH323Connection@@ABVH323Capability@@W4Directions@H323Channel@@IABVAddress@PIPSocket@@G@Z @13190 NONAME ;public: __thiscall H323_ExternalRTPChannel::H323_ExternalRTPChannel(class H323Connection &,class H323Capability const &,enum H323Channel::Directions,unsigned int,class PIPSocket::Address const &,unsigned short)
     ??0H323_ExternalRTPChannel@@QAE@AAVH323Connection@@ABVH323Capability@@W4Directions@H323Channel@@IABVH323TransportAddress@@3@Z @13191 NONAME ;public: __thiscall H323_ExternalRTPChannel::H323_ExternalRTPChannel(class H323Connection &,class H323Capability const &,enum H323Channel::Directions,unsigned int,class H323TransportAddress const &,class H323TransportAddress const &)
     ??0H323_G711ALaw64Capability_Registration@@QAE@XZ @1381 NONAME ;public: __thiscall H323_G711ALaw64Capability_Registration::H323_G711ALaw64Capability_Registration(void)
-    ??0H323_G711Capability@@QAE@ABV0@@Z @13192 NONAME ;public: __thiscall H323_G711Capability::H323_G711Capability(class H323_G711Capability const &)
     ??0H323_G711Capability@@QAE@W4Mode@0@W4Speed@0@@Z @1383 NONAME ;public: __thiscall H323_G711Capability::H323_G711Capability(enum H323_G711Capability::Mode,enum H323_G711Capability::Speed)
     ??0H323_G711uLaw64Capability_Registration@@QAE@XZ @1384 NONAME ;public: __thiscall H323_G711uLaw64Capability_Registration::H323_G711uLaw64Capability_Registration(void)
-    ??0H323_G7231Capability@@QAE@ABV0@@Z @13193 NONAME ;public: __thiscall H323_G7231Capability::H323_G7231Capability(class H323_G7231Capability const &)
     ??0H323_G7231Capability@@QAE@H@Z @12674 NONAME ;public: __thiscall H323_G7231Capability::H323_G7231Capability(int)
     ??0H323_G7231Capability_5k3_Registration@@QAE@XZ @13194 NONAME ;public: __thiscall H323_G7231Capability_5k3_Registration::H323_G7231Capability_5k3_Registration(void)
     ??0H323_G7231Capability_6k3_Registration@@QAE@XZ @13195 NONAME ;public: __thiscall H323_G7231Capability_6k3_Registration::H323_G7231Capability_6k3_Registration(void)
     ??0H323_G726_Capability@@QAE@AAVH323EndPoint@@W4Speeds@0@@Z @13196 NONAME ;public: __thiscall H323_G726_Capability::H323_G726_Capability(class H323EndPoint &,enum H323_G726_Capability::Speeds)
-    ??0H323_G728Capability@@QAE@ABV0@@Z @13197 NONAME ;public: __thiscall H323_G728Capability::H323_G728Capability(class H323_G728Capability const &)
     ??0H323_G728Capability@@QAE@XZ @12676 NONAME ;public: __thiscall H323_G728Capability::H323_G728Capability(void)
     ??0H323_G728Capability_Registration@@QAE@XZ @12677 NONAME ;public: __thiscall H323_G728Capability_Registration::H323_G728Capability_Registration(void)
-    ??0H323_G729Capability@@QAE@ABV0@@Z @13198 NONAME ;public: __thiscall H323_G729Capability::H323_G729Capability(class H323_G729Capability const &)
     ??0H323_G729Capability@@QAE@W4Mode@0@@Z @12678 NONAME ;public: __thiscall H323_G729Capability::H323_G729Capability(enum H323_G729Capability::Mode)
     ??0H323_G729CapabilityAB_Registration@@QAE@XZ @12679 NONAME ;public: __thiscall H323_G729CapabilityAB_Registration::H323_G729CapabilityAB_Registration(void)
     ??0H323_G729CapabilityA_Registration@@QAE@XZ @12680 NONAME ;public: __thiscall H323_G729CapabilityA_Registration::H323_G729CapabilityA_Registration(void)
     ??0H323_G729CapabilityB_Registration@@QAE@XZ @12681 NONAME ;public: __thiscall H323_G729CapabilityB_Registration::H323_G729CapabilityB_Registration(void)
     ??0H323_G729Capability_Registration@@QAE@XZ @12682 NONAME ;public: __thiscall H323_G729Capability_Registration::H323_G729Capability_Registration(void)
-    ??0H323_GSM0610Capability@@QAE@ABV0@@Z @13199 NONAME ;public: __thiscall H323_GSM0610Capability::H323_GSM0610Capability(class H323_GSM0610Capability const &)
     ??0H323_GSM0610Capability@@QAE@XZ @1385 NONAME ;public: __thiscall H323_GSM0610Capability::H323_GSM0610Capability(void)
     ??0H323_GSM0610Capability_Registration@@QAE@XZ @1386 NONAME ;public: __thiscall H323_GSM0610Capability_Registration::H323_GSM0610Capability_Registration(void)
     ??0H323_H261Capability@@QAE@ABV0@@Z @1387 NONAME ;public: __thiscall H323_H261Capability::H323_H261Capability(class H323_H261Capability const &)
-    ??0H323_H261Capability@@QAE@ABVOpalMediaFormat@@IIHHI@Z @12683 NONAME ;public: __thiscall H323_H261Capability::H323_H261Capability(class OpalMediaFormat const &,unsigned int,unsigned int,int,int,unsigned int)
+    ??0H323_H261Capability@@QAE@IIHHI@Z @14830 NONAME ;public: __thiscall H323_H261Capability::H323_H261Capability(unsigned int,unsigned int,int,int,unsigned int)
     ??0H323_LPC10Capability@@QAE@AAVH323EndPoint@@@Z @1400 NONAME ;public: __thiscall H323_LPC10Capability::H323_LPC10Capability(class H323EndPoint &)
     ??0H323_RealTimeChannel@@QAE@AAVH323Connection@@ABVH323Capability@@W4Directions@H323Channel@@@Z @13200 NONAME ;public: __thiscall H323_RealTimeChannel::H323_RealTimeChannel(class H323Connection &,class H323Capability const &,enum H323Channel::Directions)
     ??0H323_RTPChannel@@QAE@AAVH323Connection@@ABVH323Capability@@W4Directions@H323Channel@@AAVRTP_Session@@@Z @1402 NONAME ;public: __thiscall H323_RTPChannel::H323_RTPChannel(class H323Connection &,class H323Capability const &,enum H323Channel::Directions,class RTP_Session &)
     ??0H323_RTP_Session@@IAE@ABVH323Connection@@@Z @1403 NONAME ;protected: __thiscall H323_RTP_Session::H323_RTP_Session(class H323Connection const &)
     ??0H323_RTP_UDP@@QAE@ABVH323Connection@@AAVRTP_UDP@@@Z @1404 NONAME ;public: __thiscall H323_RTP_UDP::H323_RTP_UDP(class H323Connection const &,class RTP_UDP &)
+    ??0H323_T120Capability@@QAE@ABV0@@Z @14831 NONAME ;public: __thiscall H323_T120Capability::H323_T120Capability(class H323_T120Capability const &)
     ??0H323_T120Capability@@QAE@XZ @12685 NONAME ;public: __thiscall H323_T120Capability::H323_T120Capability(void)
     ??0H323_T120Channel@@QAE@AAVH323Connection@@ABVH323Capability@@W4Directions@H323Channel@@I@Z @13201 NONAME ;public: __thiscall H323_T120Channel::H323_T120Channel(class H323Connection &,class H323Capability const &,enum H323Channel::Directions,unsigned int)
+    ??0H323_T38Capability@@QAE@ABV0@@Z @14832 NONAME ;public: __thiscall H323_T38Capability::H323_T38Capability(class H323_T38Capability const &)
     ??0H323_T38Capability@@QAE@W4TransportMode@0@@Z @1406 NONAME ;public: __thiscall H323_T38Capability::H323_T38Capability(enum H323_T38Capability::TransportMode)
     ??0H323_T38Channel@@QAE@AAVH323Connection@@ABVH323Capability@@W4Directions@H323Channel@@IW4TransportMode@H323_T38Capability@@@Z @13202 NONAME ;public: __thiscall H323_T38Channel::H323_T38Channel(class H323Connection &,class H323Capability const &,enum H323Channel::Directions,unsigned int,enum H323_T38Capability::TransportMode)
     ??0H323_T38NonStandardCapability@@QAE@EEG@Z @13203 NONAME ;public: __thiscall H323_T38NonStandardCapability::H323_T38NonStandardCapability(unsigned char,unsigned char,unsigned short)
@@ -1875,7 +1873,7 @@ EXPORTS
     ??0MCS_USrq@@QAE@IW4TagClass@PASN_Object@@@Z @1816 NONAME ;public: __thiscall MCS_USrq::MCS_USrq(unsigned int,enum PASN_Object::TagClass)
     ??0MicrosoftGSMAudioCapability@@QAE@XZ @1817 NONAME ;public: __thiscall MicrosoftGSMAudioCapability::MicrosoftGSMAudioCapability(void)
     ??0MicrosoftIMAAudioCapability@@QAE@XZ @1819 NONAME ;public: __thiscall MicrosoftIMAAudioCapability::MicrosoftIMAAudioCapability(void)
-    ??0MicrosoftNonStandardAudioCapability@@QAE@ABVOpalMediaFormat@@PBEHHH@Z @12688 NONAME ;public: __thiscall MicrosoftNonStandardAudioCapability::MicrosoftNonStandardAudioCapability(class OpalMediaFormat const &,unsigned char const *,int,int,int)
+    ??0MicrosoftNonStandardAudioCapability@@QAE@PBEHHH@Z @14833 NONAME ;public: __thiscall MicrosoftNonStandardAudioCapability::MicrosoftNonStandardAudioCapability(unsigned char const *,int,int,int)
     ??0OpalAudioMediaStream@@QAE@HIHABVPString@@@Z @13138 NONAME ;public: __thiscall OpalAudioMediaStream::OpalAudioMediaStream(int,unsigned int,int,class PString const &)
     ??0OpalAudioMediaStream@@QAE@HIHPAVPSoundChannel@@H@Z @13139 NONAME ;public: __thiscall OpalAudioMediaStream::OpalAudioMediaStream(int,unsigned int,int,class PSoundChannel *,int)
     ??0OpalCall@@QAE@AAVOpalManager@@@Z @1824 NONAME ;public: __thiscall OpalCall::OpalCall(class OpalManager &)
@@ -1917,7 +1915,7 @@ EXPORTS
     ??0OpalRawMediaStream@@IAE@HIPAVPChannel@@H@Z @1853 NONAME ;protected: __thiscall OpalRawMediaStream::OpalRawMediaStream(int,unsigned int,class PChannel *,int)
     ??0OpalRFC2833Info@@QAE@DII@Z @13218 NONAME ;public: __thiscall OpalRFC2833Info::OpalRFC2833Info(char,unsigned int,unsigned int)
     ??0OpalRFC2833Proto@@QAE@ABVPNotifier@@@Z @13219 NONAME ;public: __thiscall OpalRFC2833Proto::OpalRFC2833Proto(class PNotifier const &)
-    ??0OpalRTPMediaStream@@QAE@HAAVRTP_Session@@I@Z @13220 NONAME ;public: __thiscall OpalRTPMediaStream::OpalRTPMediaStream(int,class RTP_Session &,unsigned int)
+    ??0OpalRTPMediaStream@@QAE@HAAVRTP_Session@@II@Z @14834 NONAME ;public: __thiscall OpalRTPMediaStream::OpalRTPMediaStream(int,class RTP_Session &,unsigned int,unsigned int)
     ??0OpalStreamedTranscoder@@QAE@ABVOpalTranscoderRegistration@@III@Z @12692 NONAME ;public: __thiscall OpalStreamedTranscoder::OpalStreamedTranscoder(class OpalTranscoderRegistration const &,unsigned int,unsigned int,unsigned int)
     ??0OpalT120Protocol@@QAE@XZ @1856 NONAME ;public: __thiscall OpalT120Protocol::OpalT120Protocol(void)
     ??0OpalT38Protocol@@QAE@XZ @1857 NONAME ;public: __thiscall OpalT38Protocol::OpalT38Protocol(void)
@@ -1938,6 +1936,7 @@ EXPORTS
     ??0OpalVideoMediaStream@@IAE@HIAAVPVideoDevice@@@Z @12637 NONAME ;protected: __thiscall OpalVideoMediaStream::OpalVideoMediaStream(int,unsigned int,class PVideoDevice &)
     ??0OpalVideoTranscoder@@QAE@ABVOpalTranscoderRegistration@@@Z @1870 NONAME ;public: __thiscall OpalVideoTranscoder::OpalVideoTranscoder(class OpalTranscoderRegistration const &)
     ??0OpalVoipBlasterDevice@@QAE@XZ @13224 NONAME ;public: __thiscall OpalVoipBlasterDevice::OpalVoipBlasterDevice(void)
+    ??0OpalVXMLSession@@QAE@PAVOpalConnection@@PAVPTextToSpeech@@H@Z @14835 NONAME ;public: __thiscall OpalVXMLSession::OpalVXMLSession(class OpalConnection *,class PTextToSpeech *,int)
     ??0OpalWAVFile@@QAE@ABVPFilePath@@W4OpenMode@PFile@@HI@Z @13225 NONAME ;public: __thiscall OpalWAVFile::OpalWAVFile(class PFilePath const &,enum PFile::OpenMode,int,unsigned int)
     ??0OpalWAVFile@@QAE@I@Z @13226 NONAME ;public: __thiscall OpalWAVFile::OpalWAVFile(unsigned int)
     ??0OpalWAVFile@@QAE@W4OpenMode@PFile@@HI@Z @13227 NONAME ;public: __thiscall OpalWAVFile::OpalWAVFile(enum PFile::OpenMode,int,unsigned int)
@@ -1966,6 +1965,19 @@ EXPORTS
     ??0Opal_PCM_LPC10@@QAE@ABVOpalTranscoderRegistration@@@Z @1885 NONAME ;public: __thiscall Opal_PCM_LPC10::Opal_PCM_LPC10(class OpalTranscoderRegistration const &)
     ??0Opal_PCM_MSGSM@@QAE@ABVOpalTranscoderRegistration@@@Z @1887 NONAME ;public: __thiscall Opal_PCM_MSGSM::Opal_PCM_MSGSM(class OpalTranscoderRegistration const &)
     ??0Opal_PCM_MSIMA@@QAE@ABVOpalTranscoderRegistration@@@Z @1889 NONAME ;public: __thiscall Opal_PCM_MSIMA::Opal_PCM_MSIMA(class OpalTranscoderRegistration const &)
+    ??0Opal_PCM_Speex_11k@@QAE@ABVOpalTranscoderRegistration@@@Z @14836 NONAME ;public: __thiscall Opal_PCM_Speex_11k::Opal_PCM_Speex_11k(class OpalTranscoderRegistration const &)
+    ??0Opal_PCM_Speex_15k@@QAE@ABVOpalTranscoderRegistration@@@Z @14837 NONAME ;public: __thiscall Opal_PCM_Speex_15k::Opal_PCM_Speex_15k(class OpalTranscoderRegistration const &)
+    ??0Opal_PCM_Speex_18k2@@QAE@ABVOpalTranscoderRegistration@@@Z @14838 NONAME ;public: __thiscall Opal_PCM_Speex_18k2::Opal_PCM_Speex_18k2(class OpalTranscoderRegistration const &)
+    ??0Opal_PCM_Speex_5k95@@QAE@ABVOpalTranscoderRegistration@@@Z @14839 NONAME ;public: __thiscall Opal_PCM_Speex_5k95::Opal_PCM_Speex_5k95(class OpalTranscoderRegistration const &)
+    ??0Opal_PCM_Speex_8k@@QAE@ABVOpalTranscoderRegistration@@@Z @14840 NONAME ;public: __thiscall Opal_PCM_Speex_8k::Opal_PCM_Speex_8k(class OpalTranscoderRegistration const &)
+    ??0Opal_Speex_11k_PCM@@QAE@ABVOpalTranscoderRegistration@@@Z @14841 NONAME ;public: __thiscall Opal_Speex_11k_PCM::Opal_Speex_11k_PCM(class OpalTranscoderRegistration const &)
+    ??0Opal_Speex_15k_PCM@@QAE@ABVOpalTranscoderRegistration@@@Z @14842 NONAME ;public: __thiscall Opal_Speex_15k_PCM::Opal_Speex_15k_PCM(class OpalTranscoderRegistration const &)
+    ??0Opal_Speex_18k2_PCM@@QAE@ABVOpalTranscoderRegistration@@@Z @14843 NONAME ;public: __thiscall Opal_Speex_18k2_PCM::Opal_Speex_18k2_PCM(class OpalTranscoderRegistration const &)
+    ??0Opal_Speex_5k95_PCM@@QAE@ABVOpalTranscoderRegistration@@@Z @14844 NONAME ;public: __thiscall Opal_Speex_5k95_PCM::Opal_Speex_5k95_PCM(class OpalTranscoderRegistration const &)
+    ??0Opal_Speex_8k_PCM@@QAE@ABVOpalTranscoderRegistration@@@Z @14845 NONAME ;public: __thiscall Opal_Speex_8k_PCM::Opal_Speex_8k_PCM(class OpalTranscoderRegistration const &)
+    ??0Opal_Speex_Decoder@@QAE@ABVOpalTranscoderRegistration@@H@Z @14846 NONAME ;public: __thiscall Opal_Speex_Decoder::Opal_Speex_Decoder(class OpalTranscoderRegistration const &,int)
+    ??0Opal_Speex_Encoder@@QAE@ABVOpalTranscoderRegistration@@H@Z @14847 NONAME ;public: __thiscall Opal_Speex_Encoder::Opal_Speex_Encoder(class OpalTranscoderRegistration const &,int)
+    ??0Opal_Speex_Transcoder@@QAE@ABVOpalTranscoderRegistration@@II@Z @14848 NONAME ;public: __thiscall Opal_Speex_Transcoder::Opal_Speex_Transcoder(class OpalTranscoderRegistration const &,unsigned int,unsigned int)
     ??0Opal_YUV411P_H261@@QAE@ABVOpalTranscoderRegistration@@@Z @1891 NONAME ;public: __thiscall Opal_YUV411P_H261::Opal_YUV411P_H261(class OpalTranscoderRegistration const &)
     ??0P64Decoder@@IAE@XZ @1893 NONAME ;protected: __thiscall P64Decoder::P64Decoder(void)
     ??0P64Encoder@@QAE@HH@Z @1894 NONAME ;public: __thiscall P64Encoder::P64Encoder(int,int)
@@ -1999,7 +2011,7 @@ EXPORTS
     ??0RouteEntry@OpalManager@@QAE@ABVPString@@V2@@Z @13251 NONAME ;public: __thiscall OpalManager::RouteEntry::RouteEntry(class PString const &,class OpalManager)
     ??0RTP_ControlFrame@@QAE@H@Z @1911 NONAME ;public: __thiscall RTP_ControlFrame::RTP_ControlFrame(int)
     ??0RTP_DataFrame@@QAE@H@Z @1912 NONAME ;public: __thiscall RTP_DataFrame::RTP_DataFrame(int)
-    ??0RTP_JitterBuffer@@QAE@AAVRTP_Session@@IH@Z @13252 NONAME ;public: __thiscall RTP_JitterBuffer::RTP_JitterBuffer(class RTP_Session &,unsigned int,int)
+    ??0RTP_JitterBuffer@@QAE@AAVRTP_Session@@IIH@Z @14849 NONAME ;public: __thiscall RTP_JitterBuffer::RTP_JitterBuffer(class RTP_Session &,unsigned int,unsigned int,int)
     ??0RTP_Session@@QAE@IPAVRTP_UserData@@@Z @1914 NONAME ;public: __thiscall RTP_Session::RTP_Session(unsigned int,class RTP_UserData *)
     ??0RTP_SessionManager@@QAE@ABV0@@Z @13253 NONAME ;public: __thiscall RTP_SessionManager::RTP_SessionManager(class RTP_SessionManager const &)
     ??0RTP_SessionManager@@QAE@XZ @1915 NONAME ;public: __thiscall RTP_SessionManager::RTP_SessionManager(void)
@@ -2027,6 +2039,12 @@ EXPORTS
     ??0SIP_PDU@@QAE@W4Methods@0@AAVSIPConnection@@ABVOpalTransport@@@Z @13273 NONAME ;public: __thiscall SIP_PDU::SIP_PDU(enum SIP_PDU::Methods,class SIPConnection &,class OpalTransport const &)
     ??0SIP_PDU@@QAE@W4Methods@0@ABVSIPURL@@ABVPString@@22IABVOpalTransportAddress@@@Z @13274 NONAME ;public: __thiscall SIP_PDU::SIP_PDU(enum SIP_PDU::Methods,class SIPURL const &,class PString const &,class PString const &,class PString const &,unsigned int,class OpalTransportAddress const &)
     ??0SIP_PDU@@QAE@XZ @13275 NONAME ;public: __thiscall SIP_PDU::SIP_PDU(void)
+    ??0SpeexNarrow2AudioCapability@@QAE@XZ @14850 NONAME ;public: __thiscall SpeexNarrow2AudioCapability::SpeexNarrow2AudioCapability(void)
+    ??0SpeexNarrow3AudioCapability@@QAE@XZ @14851 NONAME ;public: __thiscall SpeexNarrow3AudioCapability::SpeexNarrow3AudioCapability(void)
+    ??0SpeexNarrow4AudioCapability@@QAE@XZ @14852 NONAME ;public: __thiscall SpeexNarrow4AudioCapability::SpeexNarrow4AudioCapability(void)
+    ??0SpeexNarrow5AudioCapability@@QAE@XZ @14853 NONAME ;public: __thiscall SpeexNarrow5AudioCapability::SpeexNarrow5AudioCapability(void)
+    ??0SpeexNarrow6AudioCapability@@QAE@XZ @14854 NONAME ;public: __thiscall SpeexNarrow6AudioCapability::SpeexNarrow6AudioCapability(void)
+    ??0SpeexNonStandardAudioCapability@@QAE@H@Z @14855 NONAME ;public: __thiscall SpeexNonStandardAudioCapability::SpeexNonStandardAudioCapability(int)
     ??0T120ConnectPDU@@QAE@XZ @13276 NONAME ;public: __thiscall T120ConnectPDU::T120ConnectPDU(void)
     ??0T38_ArrayOf_PASN_OctetString@@QAE@IW4TagClass@PASN_Object@@@Z @1918 NONAME ;public: __thiscall T38_ArrayOf_PASN_OctetString::T38_ArrayOf_PASN_OctetString(unsigned int,enum PASN_Object::TagClass)
     ??0T38_Data_Field@@QAE@IW4TagClass@PASN_Object@@@Z @1919 NONAME ;public: __thiscall T38_Data_Field::T38_Data_Field(unsigned int,enum PASN_Object::TagClass)
@@ -2083,7 +2101,7 @@ EXPORTS
     ??1?$H235_SIGNED@VH235_EncodedReturnSig@@@@UAE@XZ @1969 NONAME ;public: virtual __thiscall H235_SIGNED<class H235_EncodedReturnSig>::~H235_SIGNED<class H235_EncodedReturnSig>(void)
     ??1?$PArray@V?$PList@VH323Capability@@@@@@UAE@XZ @1970 NONAME ;public: virtual __thiscall PArray<class PList<class H323Capability> >::~PArray<class PList<class H323Capability> >(void)
     ??1?$PArray@VH323SimultaneousCapabilities@@@@UAE@XZ @1971 NONAME ;public: virtual __thiscall PArray<class H323SimultaneousCapabilities>::~PArray<class H323SimultaneousCapabilities>(void)
-    ??1?$PArray@VOpalTransportAddress@@@@UAE@XZ @1972 NONAME ;public: virtual __thiscall PArray<class OpalTransportAddress>::~PArray<class OpalTransportAddress>(void)
+    ??1?$PArray@VH323TransportAddress@@@@UAE@XZ @14856 NONAME ;public: virtual __thiscall PArray<class H323TransportAddress>::~PArray<class H323TransportAddress>(void)
     ??1?$PArray@VPASN_Object@@@@UAE@XZ @1973 NONAME ;public: virtual __thiscall PArray<class PASN_Object>::~PArray<class PASN_Object>(void)
     ??1?$PArray@VReceiverReport@RTP_Session@@@@UAE@XZ @1974 NONAME ;public: virtual __thiscall PArray<class RTP_Session::ReceiverReport>::~PArray<class RTP_Session::ReceiverReport>(void)
     ??1?$PArray@VSink@OpalMediaPatch@@@@UAE@XZ @1975 NONAME ;public: virtual __thiscall PArray<class OpalMediaPatch::Sink>::~PArray<class OpalMediaPatch::Sink>(void)
@@ -2119,10 +2137,12 @@ EXPORTS
     ??1?$PList@VSDPMediaFormat@@@@UAE@XZ @13286 NONAME ;public: virtual __thiscall PList<class SDPMediaFormat>::~PList<class SDPMediaFormat>(void)
     ??1?$PList@VSIPTransaction@@@@UAE@XZ @13287 NONAME ;public: virtual __thiscall PList<class SIPTransaction>::~PList<class SIPTransaction>(void)
     ??1?$PQueue@VSIP_PDU@@@@UAE@XZ @13288 NONAME ;public: virtual __thiscall PQueue<class SIP_PDU>::~PQueue<class SIP_PDU>(void)
-    ??1?$PSafeDictionary@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@UAE@XZ @13289 NONAME ;public: virtual __thiscall PSafeDictionary<class PDictionary<class PString,class H323RegisteredEndPoint>,class PString,class H323RegisteredEndPoint>::~PSafeDictionary<class PDictionary<class PString,class H323RegisteredEndPoint>,class PString,class H323RegisteredEndPoint>(void)
-    ??1?$PSafeList@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@UAE@XZ @13290 NONAME ;public: virtual __thiscall PSafeList<class PSortedList<class H323GatekeeperCall>,class H323GatekeeperCall>::~PSafeList<class PSortedList<class H323GatekeeperCall>,class H323GatekeeperCall>(void)
+    ??1?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@UAE@XZ @14857 NONAME ;public: virtual __thiscall PSafeColl<class PSortedList<class H323GatekeeperCall>,class H323GatekeeperCall>::~PSafeColl<class PSortedList<class H323GatekeeperCall>,class H323GatekeeperCall>(void)
+    ??1?$PSafeDictionary@VPString@@VH323RegisteredEndPoint@@@@UAE@XZ @14858 NONAME ;public: virtual __thiscall PSafeDictionary<class PString,class H323RegisteredEndPoint>::~PSafeDictionary<class PString,class H323RegisteredEndPoint>(void)
+    ??1?$PSafeDictionaryBase@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@UAE@XZ @14859 NONAME ;public: virtual __thiscall PSafeDictionaryBase<class PDictionary<class PString,class H323RegisteredEndPoint>,class PString,class H323RegisteredEndPoint>::~PSafeDictionaryBase<class PDictionary<class PString,class H323RegisteredEndPoint>,class PString,class H323RegisteredEndPoint>(void)
     ??1?$PSafePtr@VH323GatekeeperCall@@@@UAE@XZ @13291 NONAME ;public: virtual __thiscall PSafePtr<class H323GatekeeperCall>::~PSafePtr<class H323GatekeeperCall>(void)
     ??1?$PSafePtr@VH323RegisteredEndPoint@@@@UAE@XZ @13292 NONAME ;public: virtual __thiscall PSafePtr<class H323RegisteredEndPoint>::~PSafePtr<class H323RegisteredEndPoint>(void)
+    ??1?$PSafeSortedList@VH323GatekeeperCall@@@@UAE@XZ @14860 NONAME ;public: virtual __thiscall PSafeSortedList<class H323GatekeeperCall>::~PSafeSortedList<class H323GatekeeperCall>(void)
     ??1?$PSet@VPOrdinalKey@@@@UAE@XZ @13293 NONAME ;public: virtual __thiscall PSet<class POrdinalKey>::~PSet<class POrdinalKey>(void)
     ??1?$PSortedList@VAlternateInfo@H323Gatekeeper@@@@UAE@XZ @13294 NONAME ;public: virtual __thiscall PSortedList<class H323Gatekeeper::AlternateInfo>::~PSortedList<class H323Gatekeeper::AlternateInfo>(void)
     ??1?$PSortedList@VH323GatekeeperCall@@@@UAE@XZ @1995 NONAME ;public: virtual __thiscall PSortedList<class H323GatekeeperCall>::~PSortedList<class H323GatekeeperCall>(void)
@@ -2531,6 +2551,7 @@ EXPORTS
     ??1H225_VoiceCaps@@UAE@XZ @2393 NONAME ;public: virtual __thiscall H225_VoiceCaps::~H225_VoiceCaps(void)
     ??1H235Authenticator@@UAE@XZ @12826 NONAME ;public: virtual __thiscall H235Authenticator::~H235Authenticator(void)
     ??1H235Authenticators@@UAE@XZ @13301 NONAME ;public: virtual __thiscall H235Authenticators::~H235Authenticators(void)
+    ??1H235AuthProcedure1@@UAE@XZ @14861 NONAME ;public: virtual __thiscall H235AuthProcedure1::~H235AuthProcedure1(void)
     ??1H235AuthSimpleMD5@@UAE@XZ @12828 NONAME ;public: virtual __thiscall H235AuthSimpleMD5::~H235AuthSimpleMD5(void)
     ??1H235_AuthenticationBES@@UAE@XZ @12949 NONAME ;public: virtual __thiscall H235_AuthenticationBES::~H235_AuthenticationBES(void)
     ??1H235_AuthenticationMechanism@@UAE@XZ @2395 NONAME ;public: virtual __thiscall H235_AuthenticationMechanism::~H235_AuthenticationMechanism(void)
@@ -3439,6 +3460,7 @@ EXPORTS
     ??1OpalVideoMediaStream@@UAE@XZ @12638 NONAME ;public: virtual __thiscall OpalVideoMediaStream::~OpalVideoMediaStream(void)
     ??1OpalVideoTranscoder@@UAE@XZ @3258 NONAME ;public: virtual __thiscall OpalVideoTranscoder::~OpalVideoTranscoder(void)
     ??1OpalVoipBlasterDevice@@UAE@XZ @13340 NONAME ;public: virtual __thiscall OpalVoipBlasterDevice::~OpalVoipBlasterDevice(void)
+    ??1OpalVXMLSession@@UAE@XZ @14862 NONAME ;public: virtual __thiscall OpalVXMLSession::~OpalVXMLSession(void)
     ??1OpalWAVFile@@UAE@XZ @13341 NONAME ;public: virtual __thiscall OpalWAVFile::~OpalWAVFile(void)
     ??1Opal_G711_ALaw_PCM@@UAE@XZ @12710 NONAME ;public: virtual __thiscall Opal_G711_ALaw_PCM::~Opal_G711_ALaw_PCM(void)
     ??1Opal_G711_uLaw_PCM@@UAE@XZ @12711 NONAME ;public: virtual __thiscall Opal_G711_uLaw_PCM::~Opal_G711_uLaw_PCM(void)
@@ -3465,6 +3487,19 @@ EXPORTS
     ??1Opal_PCM_LPC10@@UAE@XZ @3273 NONAME ;public: virtual __thiscall Opal_PCM_LPC10::~Opal_PCM_LPC10(void)
     ??1Opal_PCM_MSGSM@@UAE@XZ @3275 NONAME ;public: virtual __thiscall Opal_PCM_MSGSM::~Opal_PCM_MSGSM(void)
     ??1Opal_PCM_MSIMA@@UAE@XZ @3277 NONAME ;public: virtual __thiscall Opal_PCM_MSIMA::~Opal_PCM_MSIMA(void)
+    ??1Opal_PCM_Speex_11k@@UAE@XZ @14863 NONAME ;public: virtual __thiscall Opal_PCM_Speex_11k::~Opal_PCM_Speex_11k(void)
+    ??1Opal_PCM_Speex_15k@@UAE@XZ @14864 NONAME ;public: virtual __thiscall Opal_PCM_Speex_15k::~Opal_PCM_Speex_15k(void)
+    ??1Opal_PCM_Speex_18k2@@UAE@XZ @14865 NONAME ;public: virtual __thiscall Opal_PCM_Speex_18k2::~Opal_PCM_Speex_18k2(void)
+    ??1Opal_PCM_Speex_5k95@@UAE@XZ @14866 NONAME ;public: virtual __thiscall Opal_PCM_Speex_5k95::~Opal_PCM_Speex_5k95(void)
+    ??1Opal_PCM_Speex_8k@@UAE@XZ @14867 NONAME ;public: virtual __thiscall Opal_PCM_Speex_8k::~Opal_PCM_Speex_8k(void)
+    ??1Opal_Speex_11k_PCM@@UAE@XZ @14868 NONAME ;public: virtual __thiscall Opal_Speex_11k_PCM::~Opal_Speex_11k_PCM(void)
+    ??1Opal_Speex_15k_PCM@@UAE@XZ @14869 NONAME ;public: virtual __thiscall Opal_Speex_15k_PCM::~Opal_Speex_15k_PCM(void)
+    ??1Opal_Speex_18k2_PCM@@UAE@XZ @14870 NONAME ;public: virtual __thiscall Opal_Speex_18k2_PCM::~Opal_Speex_18k2_PCM(void)
+    ??1Opal_Speex_5k95_PCM@@UAE@XZ @14871 NONAME ;public: virtual __thiscall Opal_Speex_5k95_PCM::~Opal_Speex_5k95_PCM(void)
+    ??1Opal_Speex_8k_PCM@@UAE@XZ @14872 NONAME ;public: virtual __thiscall Opal_Speex_8k_PCM::~Opal_Speex_8k_PCM(void)
+    ??1Opal_Speex_Decoder@@UAE@XZ @14873 NONAME ;public: virtual __thiscall Opal_Speex_Decoder::~Opal_Speex_Decoder(void)
+    ??1Opal_Speex_Encoder@@UAE@XZ @14874 NONAME ;public: virtual __thiscall Opal_Speex_Encoder::~Opal_Speex_Encoder(void)
+    ??1Opal_Speex_Transcoder@@UAE@XZ @14875 NONAME ;public: virtual __thiscall Opal_Speex_Transcoder::~Opal_Speex_Transcoder(void)
     ??1Opal_YUV411P_H261@@UAE@XZ @3279 NONAME ;public: virtual __thiscall Opal_YUV411P_H261::~Opal_YUV411P_H261(void)
     ??1P64Decoder@@UAE@XZ @3281 NONAME ;public: virtual __thiscall P64Decoder::~P64Decoder(void)
     ??1P64Encoder@@QAE@XZ @3282 NONAME ;public: __thiscall P64Encoder::~P64Encoder(void)
@@ -3525,6 +3560,12 @@ EXPORTS
     ??1SIP_PDU@@UAE@XZ @13375 NONAME ;public: virtual __thiscall SIP_PDU::~SIP_PDU(void)
     ??1SlowHandler_PNotifier@H323GatekeeperRequest@@UAE@XZ @13376 NONAME ;public: virtual __thiscall H323GatekeeperRequest::SlowHandler_PNotifier::~SlowHandler_PNotifier(void)
     ??1SourceDescription@RTP_Session@@UAE@XZ @3317 NONAME ;public: virtual __thiscall RTP_Session::SourceDescription::~SourceDescription(void)
+    ??1SpeexNarrow2AudioCapability@@UAE@XZ @14876 NONAME ;public: virtual __thiscall SpeexNarrow2AudioCapability::~SpeexNarrow2AudioCapability(void)
+    ??1SpeexNarrow3AudioCapability@@UAE@XZ @14877 NONAME ;public: virtual __thiscall SpeexNarrow3AudioCapability::~SpeexNarrow3AudioCapability(void)
+    ??1SpeexNarrow4AudioCapability@@UAE@XZ @14878 NONAME ;public: virtual __thiscall SpeexNarrow4AudioCapability::~SpeexNarrow4AudioCapability(void)
+    ??1SpeexNarrow5AudioCapability@@UAE@XZ @14879 NONAME ;public: virtual __thiscall SpeexNarrow5AudioCapability::~SpeexNarrow5AudioCapability(void)
+    ??1SpeexNarrow6AudioCapability@@UAE@XZ @14880 NONAME ;public: virtual __thiscall SpeexNarrow6AudioCapability::~SpeexNarrow6AudioCapability(void)
+    ??1SpeexNonStandardAudioCapability@@UAE@XZ @14881 NONAME ;public: virtual __thiscall SpeexNonStandardAudioCapability::~SpeexNonStandardAudioCapability(void)
     ??1StatusHandler_PNotifier@OpalVoipBlasterDevice@@UAE@XZ @13377 NONAME ;public: virtual __thiscall OpalVoipBlasterDevice::StatusHandler_PNotifier::~StatusHandler_PNotifier(void)
     ??1T120ConnectPDU@@UAE@XZ @13378 NONAME ;public: virtual __thiscall T120ConnectPDU::~T120ConnectPDU(void)
     ??1T120_X224@@UAE@XZ @13379 NONAME ;public: virtual __thiscall T120_X224::~T120_X224(void)
@@ -3565,7 +3606,7 @@ EXPORTS
     ??1X880_ROS@@UAE@XZ @3348 NONAME ;public: virtual __thiscall X880_ROS::~X880_ROS(void)
     ??3?$PArray@V?$PList@VH323Capability@@@@@@SAXPAX@Z @3349 NONAME ;public: static void __cdecl PArray<class PList<class H323Capability> >::operator delete(void *)
     ??3?$PArray@VH323SimultaneousCapabilities@@@@SAXPAX@Z @3350 NONAME ;public: static void __cdecl PArray<class H323SimultaneousCapabilities>::operator delete(void *)
-    ??3?$PArray@VOpalTransportAddress@@@@SAXPAX@Z @3351 NONAME ;public: static void __cdecl PArray<class OpalTransportAddress>::operator delete(void *)
+    ??3?$PArray@VH323TransportAddress@@@@SAXPAX@Z @14882 NONAME ;public: static void __cdecl PArray<class H323TransportAddress>::operator delete(void *)
     ??3?$PArray@VReceiverReport@RTP_Session@@@@SAXPAX@Z @3352 NONAME ;public: static void __cdecl PArray<class RTP_Session::ReceiverReport>::operator delete(void *)
     ??3?$PArray@VSink@OpalMediaPatch@@@@SAXPAX@Z @3353 NONAME ;public: static void __cdecl PArray<class OpalMediaPatch::Sink>::operator delete(void *)
     ??3?$PArray@VSourceDescription@RTP_Session@@@@SAXPAX@Z @3354 NONAME ;public: static void __cdecl PArray<class RTP_Session::SourceDescription>::operator delete(void *)
@@ -3609,6 +3650,7 @@ EXPORTS
     ??3Filter@OpalMediaPatch@@SAXPAX@Z @13400 NONAME ;public: static void __cdecl OpalMediaPatch::Filter::operator delete(void *)
     ??3H225CallThread@@SAXPAX@Z @3375 NONAME ;public: static void __cdecl H225CallThread::operator delete(void *)
     ??3H235Authenticators@@SAXPAX@Z @13401 NONAME ;public: static void __cdecl H235Authenticators::operator delete(void *)
+    ??3H235AuthProcedure1@@SAXPAX@Z @14883 NONAME ;public: static void __cdecl H235AuthProcedure1::operator delete(void *)
     ??3H235AuthSimpleMD5@@SAXPAX@Z @12833 NONAME ;public: static void __cdecl H235AuthSimpleMD5::operator delete(void *)
     ??3H245NegLogicalChannel@@SAXPAX@Z @3376 NONAME ;public: static void __cdecl H245NegLogicalChannel::operator delete(void *)
     ??3H245NegLogicalChannels@@SAXPAX@Z @3377 NONAME ;public: static void __cdecl H245NegLogicalChannels::operator delete(void *)
@@ -3636,11 +3678,7 @@ EXPORTS
     ??3H323TransportAddress@@SAXPAX@Z @3389 NONAME ;public: static void __cdecl H323TransportAddress::operator delete(void *)
     ??3H323_ExternalRTPChannel@@SAXPAX@Z @13412 NONAME ;public: static void __cdecl H323_ExternalRTPChannel::operator delete(void *)
     ??3H323_G711Capability@@SAXPAX@Z @3390 NONAME ;public: static void __cdecl H323_G711Capability::operator delete(void *)
-    ??3H323_G7231Capability@@SAXPAX@Z @12717 NONAME ;public: static void __cdecl H323_G7231Capability::operator delete(void *)
     ??3H323_G726_Capability@@SAXPAX@Z @13413 NONAME ;public: static void __cdecl H323_G726_Capability::operator delete(void *)
-    ??3H323_G728Capability@@SAXPAX@Z @12718 NONAME ;public: static void __cdecl H323_G728Capability::operator delete(void *)
-    ??3H323_G729Capability@@SAXPAX@Z @12719 NONAME ;public: static void __cdecl H323_G729Capability::operator delete(void *)
-    ??3H323_GSM0610Capability@@SAXPAX@Z @3391 NONAME ;public: static void __cdecl H323_GSM0610Capability::operator delete(void *)
     ??3H323_H261Capability@@SAXPAX@Z @3392 NONAME ;public: static void __cdecl H323_H261Capability::operator delete(void *)
     ??3H323_LPC10Capability@@SAXPAX@Z @3394 NONAME ;public: static void __cdecl H323_LPC10Capability::operator delete(void *)
     ??3H323_RTPChannel@@SAXPAX@Z @3395 NONAME ;public: static void __cdecl H323_RTPChannel::operator delete(void *)
@@ -3650,7 +3688,6 @@ EXPORTS
     ??3H323_T38Capability@@SAXPAX@Z @12721 NONAME ;public: static void __cdecl H323_T38Capability::operator delete(void *)
     ??3H323_T38Channel@@SAXPAX@Z @3398 NONAME ;public: static void __cdecl H323_T38Channel::operator delete(void *)
     ??3H323_T38NonStandardCapability@@SAXPAX@Z @13414 NONAME ;public: static void __cdecl H323_T38NonStandardCapability::operator delete(void *)
-    ??3H323_UserInputCapability@@SAXPAX@Z @12722 NONAME ;public: static void __cdecl H323_UserInputCapability::operator delete(void *)
     ??3H45011Handler@@SAXPAX@Z @13415 NONAME ;public: static void __cdecl H45011Handler::operator delete(void *)
     ??3H4502Handler@@SAXPAX@Z @12961 NONAME ;public: static void __cdecl H4502Handler::operator delete(void *)
     ??3H4504Handler@@SAXPAX@Z @12962 NONAME ;public: static void __cdecl H4504Handler::operator delete(void *)
@@ -3674,6 +3711,7 @@ EXPORTS
     ??3OpalTransportAddress@@SAXPAX@Z @3413 NONAME ;public: static void __cdecl OpalTransportAddress::operator delete(void *)
     ??3OpalTransportTCP@@SAXPAX@Z @3414 NONAME ;public: static void __cdecl OpalTransportTCP::operator delete(void *)
     ??3OpalTransportUDP@@SAXPAX@Z @3415 NONAME ;public: static void __cdecl OpalTransportUDP::operator delete(void *)
+    ??3OpalWAVFile@@SAXPAX@Z @14884 NONAME ;public: static void __cdecl OpalWAVFile::operator delete(void *)
     ??3PASN_Array@@SAXPAX@Z @3417 NONAME ;public: static void __cdecl PASN_Array::operator delete(void *)
     ??3PASN_BitString@@SAXPAX@Z @3418 NONAME ;public: static void __cdecl PASN_BitString::operator delete(void *)
     ??3PASN_BMPString@@SAXPAX@Z @3419 NONAME ;public: static void __cdecl PASN_BMPString::operator delete(void *)
@@ -3707,6 +3745,11 @@ EXPORTS
     ??3SIPInvite@@SAXPAX@Z @13428 NONAME ;public: static void __cdecl SIPInvite::operator delete(void *)
     ??3SIP_PDU@@SAXPAX@Z @13429 NONAME ;public: static void __cdecl SIP_PDU::operator delete(void *)
     ??3SourceDescription@RTP_Session@@SAXPAX@Z @3440 NONAME ;public: static void __cdecl RTP_Session::SourceDescription::operator delete(void *)
+    ??3SpeexNarrow2AudioCapability@@SAXPAX@Z @14885 NONAME ;public: static void __cdecl SpeexNarrow2AudioCapability::operator delete(void *)
+    ??3SpeexNarrow3AudioCapability@@SAXPAX@Z @14886 NONAME ;public: static void __cdecl SpeexNarrow3AudioCapability::operator delete(void *)
+    ??3SpeexNarrow4AudioCapability@@SAXPAX@Z @14887 NONAME ;public: static void __cdecl SpeexNarrow4AudioCapability::operator delete(void *)
+    ??3SpeexNarrow5AudioCapability@@SAXPAX@Z @14888 NONAME ;public: static void __cdecl SpeexNarrow5AudioCapability::operator delete(void *)
+    ??3SpeexNarrow6AudioCapability@@SAXPAX@Z @14889 NONAME ;public: static void __cdecl SpeexNarrow6AudioCapability::operator delete(void *)
     ??4?$PList@VH235Authenticator@@@@QAEAAV0@ABV0@@Z @13430 NONAME ;public: class PList<class H235Authenticator> & __thiscall PList<class H235Authenticator>::operator=(class PList<class H235Authenticator> const &)
     ??4GCC_ChannelID@@QAEAAV0@H@Z @3441 NONAME ;public: class GCC_ChannelID & __thiscall GCC_ChannelID::operator=(int)
     ??4GCC_ChannelID@@QAEAAV0@I@Z @3442 NONAME ;public: class GCC_ChannelID & __thiscall GCC_ChannelID::operator=(unsigned int)
@@ -3811,7 +3854,6 @@ EXPORTS
     ??4H225_TBCD_STRING@@QAEAAV0@PBD@Z @3526 NONAME ;public: class H225_TBCD_STRING & __thiscall H225_TBCD_STRING::operator=(char const *)
     ??4H225_TimeToLive@@QAEAAV0@H@Z @3527 NONAME ;public: class H225_TimeToLive & __thiscall H225_TimeToLive::operator=(int)
     ??4H225_TimeToLive@@QAEAAV0@I@Z @3528 NONAME ;public: class H225_TimeToLive & __thiscall H225_TimeToLive::operator=(unsigned int)
-    ??4H225_TransportAddress_ipAddress@@QAEAAV0@ABV0@@Z @3529 NONAME ;public: class H225_TransportAddress_ipAddress & __thiscall H225_TransportAddress_ipAddress::operator=(class H225_TransportAddress_ipAddress const &)
     ??4H225_TunnelledProtocol@@QAEAAV0@ABV0@@Z @13442 NONAME ;public: class H225_TunnelledProtocol & __thiscall H225_TunnelledProtocol::operator=(class H225_TunnelledProtocol const &)
     ??4H235_ChallengeString@@QAEAAV0@ABVPBYTEArray@@@Z @3530 NONAME ;public: class H235_ChallengeString & __thiscall H235_ChallengeString::operator=(class PBYTEArray const &)
     ??4H235_ChallengeString@@QAEAAV0@ABVPString@@@Z @3531 NONAME ;public: class H235_ChallengeString & __thiscall H235_ChallengeString::operator=(class PString const &)
@@ -3968,9 +4010,10 @@ EXPORTS
     ??4OpalMediaFormat@@QAEAAV0@PBD@Z @3673 NONAME ;public: class OpalMediaFormat & __thiscall OpalMediaFormat::operator=(char const *)
     ??4OpalMediaFormat@@QAEAAV0@W4PayloadTypes@RTP_DataFrame@@@Z @13143 NONAME ;public: class OpalMediaFormat & __thiscall OpalMediaFormat::operator=(enum RTP_DataFrame::PayloadTypes)
     ??4OpalTransportAddress@@QAEAAV0@ABV0@@Z @3674 NONAME ;public: class OpalTransportAddress & __thiscall OpalTransportAddress::operator=(class OpalTransportAddress const &)
+    ??4PASN_BMPString@@QAEAAV0@ABVPString@@@Z @14890 NONAME ;public: class PASN_BMPString & __thiscall PASN_BMPString::operator=(class PString const &)
+    ??4PASN_BMPString@@QAEAAV0@PBD@Z @14891 NONAME ;public: class PASN_BMPString & __thiscall PASN_BMPString::operator=(char const *)
     ??4PASN_ConstrainedObject@@QAEAAV0@ABV0@@Z @3675 NONAME ;public: class PASN_ConstrainedObject & __thiscall PASN_ConstrainedObject::operator=(class PASN_ConstrainedObject const &)
     ??4PASN_ConstrainedString@@QAEAAV0@ABV0@@Z @13445 NONAME ;public: class PASN_ConstrainedString & __thiscall PASN_ConstrainedString::operator=(class PASN_ConstrainedString const &)
-    ??4PASN_Integer@@QAEAAV0@ABV0@@Z @12834 NONAME ;public: class PASN_Integer & __thiscall PASN_Integer::operator=(class PASN_Integer const &)
     ??4PBYTEArray@@QAEAAV0@ABV0@@Z @3676 NONAME ;public: class PBYTEArray & __thiscall PBYTEArray::operator=(class PBYTEArray const &)
     ??4PCaselessString@@QAEAAV0@PBD@Z @13446 NONAME ;public: class PCaselessString & __thiscall PCaselessString::operator=(char const *)
     ??4PURL@@QAEAAV0@ABV0@@Z @13447 NONAME ;public: class PURL & __thiscall PURL::operator=(class PURL const &)
@@ -3994,7 +4037,7 @@ EXPORTS
     ??4X880_ReturnResultProblem@@QAEAAV0@I@Z @3694 NONAME ;public: class X880_ReturnResultProblem & __thiscall X880_ReturnResultProblem::operator=(unsigned int)
     ??A?$PArray@V?$PList@VH323Capability@@@@@@QBEAAV?$PList@VH323Capability@@@@H@Z @3695 NONAME ;public: class PList<class H323Capability> & __thiscall PArray<class PList<class H323Capability> >::operator[](int)const 
     ??A?$PArray@VH323SimultaneousCapabilities@@@@QBEAAVH323SimultaneousCapabilities@@H@Z @3696 NONAME ;public: class H323SimultaneousCapabilities & __thiscall PArray<class H323SimultaneousCapabilities>::operator[](int)const 
-    ??A?$PArray@VOpalTransportAddress@@@@QBEAAVOpalTransportAddress@@H@Z @3697 NONAME ;public: class OpalTransportAddress & __thiscall PArray<class OpalTransportAddress>::operator[](int)const 
+    ??A?$PArray@VH323TransportAddress@@@@QBEAAVH323TransportAddress@@H@Z @14892 NONAME ;public: class H323TransportAddress & __thiscall PArray<class H323TransportAddress>::operator[](int)const 
     ??A?$PArray@VPASN_Object@@@@QBEAAVPASN_Object@@H@Z @3698 NONAME ;public: class PASN_Object & __thiscall PArray<class PASN_Object>::operator[](int)const 
     ??A?$PArray@VPString@@@@QBEAAVPString@@H@Z @3699 NONAME ;public: class PString & __thiscall PArray<class PString>::operator[](int)const 
     ??A?$PArray@VSink@OpalMediaPatch@@@@QBEAAVSink@OpalMediaPatch@@H@Z @3700 NONAME ;public: class OpalMediaPatch::Sink & __thiscall PArray<class OpalMediaPatch::Sink>::operator[](int)const 
@@ -5391,6 +5434,8 @@ EXPORTS
     ??BX880_ROS@@QBEABVX880_Reject@@XZ @5086 NONAME ;public: __thiscall X880_ROS::operator class X880_Reject const &(void)const 
     ??BX880_ROS@@QBEABVX880_ReturnError@@XZ @5087 NONAME ;public: __thiscall X880_ROS::operator class X880_ReturnError const &(void)const 
     ??BX880_ROS@@QBEABVX880_ReturnResult@@XZ @5088 NONAME ;public: __thiscall X880_ROS::operator class X880_ReturnResult const &(void)const 
+    ??C?$PSafePtr@VH323GatekeeperCall@@@@QBEPAVH323GatekeeperCall@@XZ @14893 NONAME ;public: class H323GatekeeperCall * __thiscall PSafePtr<class H323GatekeeperCall>::operator->(void)const 
+    ??C?$PSafePtr@VH323RegisteredEndPoint@@@@QBEPAVH323RegisteredEndPoint@@XZ @14894 NONAME ;public: class H323RegisteredEndPoint * __thiscall PSafePtr<class H323RegisteredEndPoint>::operator->(void)const 
     ??DPTimeInterval@@QBE?AV0@H@Z @13450 NONAME ;public: class PTimeInterval  __thiscall PTimeInterval::operator*(int)const 
     ??EH323ChannelNumber@@QAEAAV0@H@Z @5089 NONAME ;public: class H323ChannelNumber & __thiscall H323ChannelNumber::operator++(int)
     ??HPTimeInterval@@QBE?AV0@ABV0@@Z @13451 NONAME ;public: class PTimeInterval  __thiscall PTimeInterval::operator+(class PTimeInterval const &)const 
@@ -5410,7 +5455,7 @@ EXPORTS
     ??_7?$H235_SIGNED@VH235_EncodedReturnSig@@@@6B@ @5101 NONAME ;const  H235_SIGNED<class H235_EncodedReturnSig>::`vftable'
     ??_7?$PArray@V?$PList@VH323Capability@@@@@@6B@ @5102 NONAME ;const  PArray<class PList<class H323Capability> >::`vftable'
     ??_7?$PArray@VH323SimultaneousCapabilities@@@@6B@ @5103 NONAME ;const  PArray<class H323SimultaneousCapabilities>::`vftable'
-    ??_7?$PArray@VOpalTransportAddress@@@@6B@ @5104 NONAME ;const  PArray<class OpalTransportAddress>::`vftable'
+    ??_7?$PArray@VH323TransportAddress@@@@6B@ @14895 NONAME ;const  PArray<class H323TransportAddress>::`vftable'
     ??_7?$PArray@VReceiverReport@RTP_Session@@@@6B@ @5105 NONAME ;const  PArray<class RTP_Session::ReceiverReport>::`vftable'
     ??_7?$PArray@VSink@OpalMediaPatch@@@@6B@ @5106 NONAME ;const  PArray<class OpalMediaPatch::Sink>::`vftable'
     ??_7?$PArray@VSourceDescription@RTP_Session@@@@6B@ @5107 NONAME ;const  PArray<class RTP_Session::SourceDescription>::`vftable'
@@ -5445,10 +5490,12 @@ EXPORTS
     ??_7?$PList@VSDPMediaFormat@@@@6B@ @13462 NONAME ;const  PList<class SDPMediaFormat>::`vftable'
     ??_7?$PList@VSIPTransaction@@@@6B@ @13463 NONAME ;const  PList<class SIPTransaction>::`vftable'
     ??_7?$PQueue@VSIP_PDU@@@@6B@ @13464 NONAME ;const  PQueue<class SIP_PDU>::`vftable'
-    ??_7?$PSafeDictionary@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@6B@ @13465 NONAME ;const  PSafeDictionary<class PDictionary<class PString,class H323RegisteredEndPoint>,class PString,class H323RegisteredEndPoint>::`vftable'
-    ??_7?$PSafeList@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@6B@ @13466 NONAME ;const  PSafeList<class PSortedList<class H323GatekeeperCall>,class H323GatekeeperCall>::`vftable'
+    ??_7?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@6B@ @14896 NONAME ;const  PSafeColl<class PSortedList<class H323GatekeeperCall>,class H323GatekeeperCall>::`vftable'
+    ??_7?$PSafeDictionary@VPString@@VH323RegisteredEndPoint@@@@6B@ @14897 NONAME ;const  PSafeDictionary<class PString,class H323RegisteredEndPoint>::`vftable'
+    ??_7?$PSafeDictionaryBase@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@6B@ @14898 NONAME ;const  PSafeDictionaryBase<class PDictionary<class PString,class H323RegisteredEndPoint>,class PString,class H323RegisteredEndPoint>::`vftable'
     ??_7?$PSafePtr@VH323GatekeeperCall@@@@6B@ @13467 NONAME ;const  PSafePtr<class H323GatekeeperCall>::`vftable'
     ??_7?$PSafePtr@VH323RegisteredEndPoint@@@@6B@ @13468 NONAME ;const  PSafePtr<class H323RegisteredEndPoint>::`vftable'
+    ??_7?$PSafeSortedList@VH323GatekeeperCall@@@@6B@ @14899 NONAME ;const  PSafeSortedList<class H323GatekeeperCall>::`vftable'
     ??_7?$PSet@VPOrdinalKey@@@@6B@ @13469 NONAME ;const  PSet<class POrdinalKey>::`vftable'
     ??_7?$PSortedList@VAlternateInfo@H323Gatekeeper@@@@6B@ @13470 NONAME ;const  PSortedList<class H323Gatekeeper::AlternateInfo>::`vftable'
     ??_7?$PSortedList@VH323GatekeeperCall@@@@6B@ @5126 NONAME ;const  PSortedList<class H323GatekeeperCall>::`vftable'
@@ -5857,6 +5904,7 @@ EXPORTS
     ??_7H225_VoiceCaps@@6B@ @5524 NONAME ;const  H225_VoiceCaps::`vftable'
     ??_7H235Authenticator@@6B@ @12836 NONAME ;const  H235Authenticator::`vftable'
     ??_7H235Authenticators@@6B@ @13477 NONAME ;const  H235Authenticators::`vftable'
+    ??_7H235AuthProcedure1@@6B@ @14900 NONAME ;const  H235AuthProcedure1::`vftable'
     ??_7H235AuthSimpleMD5@@6B@ @12838 NONAME ;const  H235AuthSimpleMD5::`vftable'
     ??_7H235_AuthenticationBES@@6B@ @12984 NONAME ;const  H235_AuthenticationBES::`vftable'
     ??_7H235_AuthenticationMechanism@@6B@ @5526 NONAME ;const  H235_AuthenticationMechanism::`vftable'
@@ -6777,6 +6825,8 @@ EXPORTS
     ??_7OpalVideoMediaStream@@6B@ @13523 NONAME ;const  OpalVideoMediaStream::`vftable'
     ??_7OpalVideoTranscoder@@6B@ @6405 NONAME ;const  OpalVideoTranscoder::`vftable'
     ??_7OpalVoipBlasterDevice@@6B@ @13524 NONAME ;const  OpalVoipBlasterDevice::`vftable'
+    ??_7OpalVXMLSession@@6Biostream@@@ @14901 NONAME ;const  OpalVXMLSession::`vftable'{for `iostream'}
+    ??_7OpalVXMLSession@@6BPObject@@@ @14902 NONAME ;const  OpalVXMLSession::`vftable'{for `PObject'}
     ??_7OpalWAVFile@@6Biostream@@@ @13525 NONAME ;const  OpalWAVFile::`vftable'{for `iostream'}
     ??_7OpalWAVFile@@6BPObject@@@ @13526 NONAME ;const  OpalWAVFile::`vftable'{for `PObject'}
     ??_7Opal_G711_ALaw_PCM@@6B@ @12736 NONAME ;const  Opal_G711_ALaw_PCM::`vftable'
@@ -6804,6 +6854,19 @@ EXPORTS
     ??_7Opal_PCM_LPC10@@6B@ @6420 NONAME ;const  Opal_PCM_LPC10::`vftable'
     ??_7Opal_PCM_MSGSM@@6B@ @6422 NONAME ;const  Opal_PCM_MSGSM::`vftable'
     ??_7Opal_PCM_MSIMA@@6B@ @6424 NONAME ;const  Opal_PCM_MSIMA::`vftable'
+    ??_7Opal_PCM_Speex_11k@@6B@ @14903 NONAME ;const  Opal_PCM_Speex_11k::`vftable'
+    ??_7Opal_PCM_Speex_15k@@6B@ @14904 NONAME ;const  Opal_PCM_Speex_15k::`vftable'
+    ??_7Opal_PCM_Speex_18k2@@6B@ @14905 NONAME ;const  Opal_PCM_Speex_18k2::`vftable'
+    ??_7Opal_PCM_Speex_5k95@@6B@ @14906 NONAME ;const  Opal_PCM_Speex_5k95::`vftable'
+    ??_7Opal_PCM_Speex_8k@@6B@ @14907 NONAME ;const  Opal_PCM_Speex_8k::`vftable'
+    ??_7Opal_Speex_11k_PCM@@6B@ @14908 NONAME ;const  Opal_Speex_11k_PCM::`vftable'
+    ??_7Opal_Speex_15k_PCM@@6B@ @14909 NONAME ;const  Opal_Speex_15k_PCM::`vftable'
+    ??_7Opal_Speex_18k2_PCM@@6B@ @14910 NONAME ;const  Opal_Speex_18k2_PCM::`vftable'
+    ??_7Opal_Speex_5k95_PCM@@6B@ @14911 NONAME ;const  Opal_Speex_5k95_PCM::`vftable'
+    ??_7Opal_Speex_8k_PCM@@6B@ @14912 NONAME ;const  Opal_Speex_8k_PCM::`vftable'
+    ??_7Opal_Speex_Decoder@@6B@ @14913 NONAME ;const  Opal_Speex_Decoder::`vftable'
+    ??_7Opal_Speex_Encoder@@6B@ @14914 NONAME ;const  Opal_Speex_Encoder::`vftable'
+    ??_7Opal_Speex_Transcoder@@6B@ @14915 NONAME ;const  Opal_Speex_Transcoder::`vftable'
     ??_7Opal_YUV411P_H261@@6B@ @6426 NONAME ;const  Opal_YUV411P_H261::`vftable'
     ??_7P64Decoder@@6B@ @6428 NONAME ;const  P64Decoder::`vftable'
     ??_7PASN_Boolean@@6B@ @6429 NONAME ;const  PASN_Boolean::`vftable'
@@ -6852,6 +6915,18 @@ EXPORTS
     ??_7SIP_PDU@@6B@ @13559 NONAME ;const  SIP_PDU::`vftable'
     ??_7SlowHandler_PNotifier@H323GatekeeperRequest@@6B@ @13560 NONAME ;const  H323GatekeeperRequest::SlowHandler_PNotifier::`vftable'
     ??_7SourceDescription@RTP_Session@@6B@ @6453 NONAME ;const  RTP_Session::SourceDescription::`vftable'
+    ??_7SpeexNarrow2AudioCapability@@6BH323AudioCapability@@@ @14916 NONAME ;const  SpeexNarrow2AudioCapability::`vftable'{for `H323AudioCapability'}
+    ??_7SpeexNarrow2AudioCapability@@6BH323NonStandardCapabilityInfo@@@ @14917 NONAME ;const  SpeexNarrow2AudioCapability::`vftable'{for `H323NonStandardCapabilityInfo'}
+    ??_7SpeexNarrow3AudioCapability@@6BH323AudioCapability@@@ @14918 NONAME ;const  SpeexNarrow3AudioCapability::`vftable'{for `H323AudioCapability'}
+    ??_7SpeexNarrow3AudioCapability@@6BH323NonStandardCapabilityInfo@@@ @14919 NONAME ;const  SpeexNarrow3AudioCapability::`vftable'{for `H323NonStandardCapabilityInfo'}
+    ??_7SpeexNarrow4AudioCapability@@6BH323AudioCapability@@@ @14920 NONAME ;const  SpeexNarrow4AudioCapability::`vftable'{for `H323AudioCapability'}
+    ??_7SpeexNarrow4AudioCapability@@6BH323NonStandardCapabilityInfo@@@ @14921 NONAME ;const  SpeexNarrow4AudioCapability::`vftable'{for `H323NonStandardCapabilityInfo'}
+    ??_7SpeexNarrow5AudioCapability@@6BH323AudioCapability@@@ @14922 NONAME ;const  SpeexNarrow5AudioCapability::`vftable'{for `H323AudioCapability'}
+    ??_7SpeexNarrow5AudioCapability@@6BH323NonStandardCapabilityInfo@@@ @14923 NONAME ;const  SpeexNarrow5AudioCapability::`vftable'{for `H323NonStandardCapabilityInfo'}
+    ??_7SpeexNarrow6AudioCapability@@6BH323AudioCapability@@@ @14924 NONAME ;const  SpeexNarrow6AudioCapability::`vftable'{for `H323AudioCapability'}
+    ??_7SpeexNarrow6AudioCapability@@6BH323NonStandardCapabilityInfo@@@ @14925 NONAME ;const  SpeexNarrow6AudioCapability::`vftable'{for `H323NonStandardCapabilityInfo'}
+    ??_7SpeexNonStandardAudioCapability@@6BH323AudioCapability@@@ @14926 NONAME ;const  SpeexNonStandardAudioCapability::`vftable'{for `H323AudioCapability'}
+    ??_7SpeexNonStandardAudioCapability@@6BH323NonStandardCapabilityInfo@@@ @14927 NONAME ;const  SpeexNonStandardAudioCapability::`vftable'{for `H323NonStandardCapabilityInfo'}
     ??_7StatusHandler_PNotifier@OpalVoipBlasterDevice@@6B@ @13561 NONAME ;const  OpalVoipBlasterDevice::StatusHandler_PNotifier::`vftable'
     ??_7T120ConnectPDU@@6B@ @13562 NONAME ;const  T120ConnectPDU::`vftable'
     ??_7T120_X224@@6B@ @13563 NONAME ;const  T120_X224::`vftable'
@@ -6897,6 +6972,8 @@ EXPORTS
     ??_8OpalTransportTCP@@7Bostream@@@ @6501 NONAME ;const  OpalTransportTCP::`vbtable'{for `ostream'}
     ??_8OpalTransportUDP@@7Bistream@@@ @6502 NONAME ;const  OpalTransportUDP::`vbtable'{for `istream'}
     ??_8OpalTransportUDP@@7Bostream@@@ @6503 NONAME ;const  OpalTransportUDP::`vbtable'{for `ostream'}
+    ??_8OpalVXMLSession@@7Bistream@@@ @14928 NONAME ;const  OpalVXMLSession::`vbtable'{for `istream'}
+    ??_8OpalVXMLSession@@7Bostream@@@ @14929 NONAME ;const  OpalVXMLSession::`vbtable'{for `ostream'}
     ??_8OpalWAVFile@@7Bistream@@@ @13568 NONAME ;const  OpalWAVFile::`vbtable'{for `istream'}
     ??_8OpalWAVFile@@7Bostream@@@ @13569 NONAME ;const  OpalWAVFile::`vbtable'{for `ostream'}
     ??_DPTCPSocket@@QAEXXZ @6504 NONAME ;public: void __thiscall PTCPSocket::`vbase destructor'(void)
@@ -6923,10 +7000,10 @@ EXPORTS
     ?AddFilter@OpalMediaPatch@@QAEXABVPNotifier@@ABVOpalMediaFormat@@@Z @13575 NONAME ;public: void __thiscall OpalMediaPatch::AddFilter(class PNotifier const &,class OpalMediaFormat const &)
     ?AddLine@OpalLIDEndPoint@@QAEHPAVOpalLine@@@Z @6520 NONAME ;public: int __thiscall OpalLIDEndPoint::AddLine(class OpalLine *)
     ?AddLinesFromDevice@OpalLIDEndPoint@@QAEHAAVOpalLineInterfaceDevice@@@Z @6521 NONAME ;public: int __thiscall OpalLIDEndPoint::AddLinesFromDevice(class OpalLineInterfaceDevice &)
-    ?AddListener@H323GatekeeperServer@@QAEHABVOpalTransportAddress@@@Z @6522 NONAME ;public: int __thiscall H323GatekeeperServer::AddListener(class OpalTransportAddress const &)
+    ?AddListener@H323GatekeeperServer@@QAEHABVH323TransportAddress@@@Z @14930 NONAME ;public: int __thiscall H323GatekeeperServer::AddListener(class H323TransportAddress const &)
     ?AddListener@H323GatekeeperServer@@QAEHPAVH323GatekeeperListener@@@Z @6523 NONAME ;public: int __thiscall H323GatekeeperServer::AddListener(class H323GatekeeperListener *)
     ?AddListener@H323GatekeeperServer@@QAEHPAVOpalTransport@@@Z @6524 NONAME ;public: int __thiscall H323GatekeeperServer::AddListener(class OpalTransport *)
-    ?AddListeners@H323GatekeeperServer@@QAEHABV?$PArray@VOpalTransportAddress@@@@@Z @13576 NONAME ;public: int __thiscall H323GatekeeperServer::AddListeners(class PArray<class OpalTransportAddress> const &)
+    ?AddListeners@H323GatekeeperServer@@QAEHABV?$PArray@VH323TransportAddress@@@@@Z @14931 NONAME ;public: int __thiscall H323GatekeeperServer::AddListeners(class PArray<class H323TransportAddress> const &)
     ?AddMediaFormat@SDPMediaDescription@@QAEXABVOpalMediaFormat@@@Z @13577 NONAME ;public: void __thiscall SDPMediaDescription::AddMediaFormat(class OpalMediaFormat const &)
     ?AddMediaFormats@SDPMediaDescription@@QAEXABVOpalMediaFormatList@@@Z @13578 NONAME ;public: void __thiscall SDPMediaDescription::AddMediaFormats(class OpalMediaFormatList const &)
     ?AddNewConnection@SIPEndPoint@@QAEXPAVSIPConnection@@@Z @13579 NONAME ;public: void __thiscall SIPEndPoint::AddNewConnection(class SIPConnection *)
@@ -6958,7 +7035,7 @@ EXPORTS
     ?Answer@OpalT120Protocol@@UAEHAAVOpalTransport@@@Z @6539 NONAME ;public: virtual int __thiscall OpalT120Protocol::Answer(class OpalTransport &)
     ?Answer@OpalT38Protocol@@UAEHXZ @13593 NONAME ;public: virtual int __thiscall OpalT38Protocol::Answer(void)
     ?AnsweringCall@H323Connection@@QAEXW4AnswerCallResponse@1@@Z @13594 NONAME ;public: void __thiscall H323Connection::AnsweringCall(enum H323Connection::AnswerCallResponse)
-    ?Append@?$PSafeList@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@UAEHPAVH323GatekeeperCall@@@Z @13595 NONAME ;public: virtual int __thiscall PSafeList<class PSortedList<class H323GatekeeperCall>,class H323GatekeeperCall>::Append(class H323GatekeeperCall *)
+    ?Append@?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@UAE?AV?$PSafePtr@VH323GatekeeperCall@@@@PAVH323GatekeeperCall@@W4PSafetyMode@@@Z @14932 NONAME ;public: virtual class PSafePtr<class H323GatekeeperCall>  __thiscall PSafeColl<class PSortedList<class H323GatekeeperCall>,class H323GatekeeperCall>::Append(class H323GatekeeperCall *,enum PSafetyMode)
     ?Append@OpalMediaFormatList@@EAEHPAVPObject@@@Z @12745 NONAME ;private: virtual int __thiscall OpalMediaFormatList::Append(class PObject *)
     ?ApplyRouteTable@OpalManager@@UAE?AVPString@@ABV2@0@Z @13596 NONAME ;public: virtual class PString  __thiscall OpalManager::ApplyRouteTable(class PString const &,class PString const &)
     ?AsQuotedString@SIPURL@@QBE?AVPString@@XZ @13597 NONAME ;public: class PString  __thiscall SIPURL::AsQuotedString(void)const 
@@ -7131,16 +7208,17 @@ EXPORTS
     ?CheckForResponse@H225_RAS@@IAEHIIPBVPASN_Choice@@@Z @13644 NONAME ;protected: int __thiscall H225_RAS::CheckForResponse(unsigned int,unsigned int,class PASN_Choice const *)
     ?CheckGatekeeperIdentifier@H323GatekeeperRequest@@QAEHXZ @13645 NONAME ;public: int __thiscall H323GatekeeperRequest::CheckGatekeeperIdentifier(void)
     ?CheckResponse@Request@H225_RAS@@QAEXIPBVPASN_Choice@@@Z @13646 NONAME ;public: void __thiscall H225_RAS::Request::CheckResponse(unsigned int,class PASN_Choice const *)
-    ?CheckSignalAddressPolicy@H323GatekeeperServer@@UAEHABVH323RegisteredEndPoint@@ABVH225_AdmissionRequest@@ABVOpalTransportAddress@@@Z @6679 NONAME ;public: virtual int __thiscall H323GatekeeperServer::CheckSignalAddressPolicy(class H323RegisteredEndPoint const &,class H225_AdmissionRequest const &,class OpalTransportAddress const &)
+    ?CheckSignalAddressPolicy@H323GatekeeperServer@@UAEHABVH323RegisteredEndPoint@@ABVH225_AdmissionRequest@@ABVH323TransportAddress@@@Z @14933 NONAME ;public: virtual int __thiscall H323GatekeeperServer::CheckSignalAddressPolicy(class H323RegisteredEndPoint const &,class H225_AdmissionRequest const &,class H323TransportAddress const &)
     ?CleanUpOnCallEnd@H323Connection@@UAEXXZ @6680 NONAME ;public: virtual void __thiscall H323Connection::CleanUpOnCallEnd(void)
-    ?Clear@OpalCall@@QAEXW4OpalCallEndReason@@PAVPSyncPoint@@@Z @13012 NONAME ;public: void __thiscall OpalCall::Clear(enum OpalCallEndReason,class PSyncPoint *)
-    ?ClearAllCalls@OpalEndPoint@@UAEXW4OpalCallEndReason@@H@Z @13013 NONAME ;public: virtual void __thiscall OpalEndPoint::ClearAllCalls(enum OpalCallEndReason,int)
-    ?ClearAllCalls@OpalManager@@UAEXW4OpalCallEndReason@@H@Z @13014 NONAME ;public: virtual void __thiscall OpalManager::ClearAllCalls(enum OpalCallEndReason,int)
-    ?ClearCall@OpalConnection@@QAEXW4OpalCallEndReason@@@Z @13015 NONAME ;public: void __thiscall OpalConnection::ClearCall(enum OpalCallEndReason)
-    ?ClearCall@OpalEndPoint@@UAEHABVPString@@W4OpalCallEndReason@@PAVPSyncPoint@@@Z @13016 NONAME ;public: virtual int __thiscall OpalEndPoint::ClearCall(class PString const &,enum OpalCallEndReason,class PSyncPoint *)
-    ?ClearCall@OpalManager@@UAEHABVPString@@W4OpalCallEndReason@@PAVPSyncPoint@@@Z @13017 NONAME ;public: virtual int __thiscall OpalManager::ClearCall(class PString const &,enum OpalCallEndReason,class PSyncPoint *)
-    ?ClearCallSynchronous@OpalConnection@@UAEXPAVPSyncPoint@@W4OpalCallEndReason@@@Z @13018 NONAME ;public: virtual void __thiscall OpalConnection::ClearCallSynchronous(class PSyncPoint *,enum OpalCallEndReason)
-    ?ClearCallSynchronous@OpalEndPoint@@UAEHABVPString@@W4OpalCallEndReason@@PAVPSyncPoint@@@Z @13019 NONAME ;public: virtual int __thiscall OpalEndPoint::ClearCallSynchronous(class PString const &,enum OpalCallEndReason,class PSyncPoint *)
+    ?Clear@OpalCall@@QAEXW4CallEndReason@OpalConnection@@PAVPSyncPoint@@@Z @14934 NONAME ;public: void __thiscall OpalCall::Clear(enum OpalConnection::CallEndReason,class PSyncPoint *)
+    ?ClearAllCalls@OpalEndPoint@@UAEXW4CallEndReason@OpalConnection@@H@Z @14935 NONAME ;public: virtual void __thiscall OpalEndPoint::ClearAllCalls(enum OpalConnection::CallEndReason,int)
+    ?ClearAllCalls@OpalManager@@UAEXW4CallEndReason@OpalConnection@@H@Z @14936 NONAME ;public: virtual void __thiscall OpalManager::ClearAllCalls(enum OpalConnection::CallEndReason,int)
+    ?ClearCall@OpalConnection@@QAEXW4CallEndReason@1@@Z @14937 NONAME ;public: void __thiscall OpalConnection::ClearCall(enum OpalConnection::CallEndReason)
+    ?ClearCall@OpalEndPoint@@UAEHABVPString@@W4CallEndReason@OpalConnection@@PAVPSyncPoint@@@Z @14938 NONAME ;public: virtual int __thiscall OpalEndPoint::ClearCall(class PString const &,enum OpalConnection::CallEndReason,class PSyncPoint *)
+    ?ClearCall@OpalManager@@UAEHABVPString@@W4CallEndReason@OpalConnection@@PAVPSyncPoint@@@Z @14939 NONAME ;public: virtual int __thiscall OpalManager::ClearCall(class PString const &,enum OpalConnection::CallEndReason,class PSyncPoint *)
+    ?ClearCallSynchronous@OpalConnection@@UAEXPAVPSyncPoint@@W4CallEndReason@1@@Z @14940 NONAME ;public: virtual void __thiscall OpalConnection::ClearCallSynchronous(class PSyncPoint *,enum OpalConnection::CallEndReason)
+    ?ClearCallSynchronous@OpalEndPoint@@UAEHABVPString@@W4CallEndReason@OpalConnection@@PAVPSyncPoint@@@Z @14941 NONAME ;public: virtual int __thiscall OpalEndPoint::ClearCallSynchronous(class PString const &,enum OpalConnection::CallEndReason,class PSyncPoint *)
+    ?ClearInfoRequestRate@H323Gatekeeper@@IAEXXZ @14942 NONAME ;protected: void __thiscall H323Gatekeeper::ClearInfoRequestRate(void)
     ?Clone@?$H235_ENCRYPTED@VH235_EncodedGeneralToken@@@@UBEPAVPObject@@XZ @6692 NONAME ;public: virtual class PObject * __thiscall H235_ENCRYPTED<class H235_EncodedGeneralToken>::Clone(void)const 
     ?Clone@?$H235_ENCRYPTED@VH235_EncodedKeySyncMaterial@@@@UBEPAVPObject@@XZ @6693 NONAME ;public: virtual class PObject * __thiscall H235_ENCRYPTED<class H235_EncodedKeySyncMaterial>::Clone(void)const 
     ?Clone@?$H235_ENCRYPTED@VH235_EncodedPwdCertToken@@@@UBEPAVPObject@@XZ @6694 NONAME ;public: virtual class PObject * __thiscall H235_ENCRYPTED<class H235_EncodedPwdCertToken>::Clone(void)const 
@@ -7153,7 +7231,7 @@ EXPORTS
     ?Clone@?$H235_SIGNED@VH235_EncodedReturnSig@@@@UBEPAVPObject@@XZ @6701 NONAME ;public: virtual class PObject * __thiscall H235_SIGNED<class H235_EncodedReturnSig>::Clone(void)const 
     ?Clone@?$PArray@V?$PList@VH323Capability@@@@@@UBEPAVPObject@@XZ @6702 NONAME ;public: virtual class PObject * __thiscall PArray<class PList<class H323Capability> >::Clone(void)const 
     ?Clone@?$PArray@VH323SimultaneousCapabilities@@@@UBEPAVPObject@@XZ @6703 NONAME ;public: virtual class PObject * __thiscall PArray<class H323SimultaneousCapabilities>::Clone(void)const 
-    ?Clone@?$PArray@VOpalTransportAddress@@@@UBEPAVPObject@@XZ @6704 NONAME ;public: virtual class PObject * __thiscall PArray<class OpalTransportAddress>::Clone(void)const 
+    ?Clone@?$PArray@VH323TransportAddress@@@@UBEPAVPObject@@XZ @14943 NONAME ;public: virtual class PObject * __thiscall PArray<class H323TransportAddress>::Clone(void)const 
     ?Clone@?$PArray@VReceiverReport@RTP_Session@@@@UBEPAVPObject@@XZ @6705 NONAME ;public: virtual class PObject * __thiscall PArray<class RTP_Session::ReceiverReport>::Clone(void)const 
     ?Clone@?$PArray@VSink@OpalMediaPatch@@@@UBEPAVPObject@@XZ @6706 NONAME ;public: virtual class PObject * __thiscall PArray<class OpalMediaPatch::Sink>::Clone(void)const 
     ?Clone@?$PArray@VSourceDescription@RTP_Session@@@@UBEPAVPObject@@XZ @6707 NONAME ;public: virtual class PObject * __thiscall PArray<class RTP_Session::SourceDescription>::Clone(void)const 
@@ -7586,6 +7664,7 @@ EXPORTS
     ?Clone@H225_VendorIdentifier@@UBEPAVPObject@@XZ @7118 NONAME ;public: virtual class PObject * __thiscall H225_VendorIdentifier::Clone(void)const 
     ?Clone@H225_VoiceCaps@@UBEPAVPObject@@XZ @7119 NONAME ;public: virtual class PObject * __thiscall H225_VoiceCaps::Clone(void)const 
     ?Clone@H235Authenticators@@UBEPAVPObject@@XZ @13662 NONAME ;public: virtual class PObject * __thiscall H235Authenticators::Clone(void)const 
+    ?Clone@H235AuthProcedure1@@UBEPAVPObject@@XZ @14944 NONAME ;public: virtual class PObject * __thiscall H235AuthProcedure1::Clone(void)const 
     ?Clone@H235AuthSimpleMD5@@UBEPAVPObject@@XZ @13663 NONAME ;public: virtual class PObject * __thiscall H235AuthSimpleMD5::Clone(void)const 
     ?Clone@H235_AuthenticationBES@@UBEPAVPObject@@XZ @13023 NONAME ;public: virtual class PObject * __thiscall H235_AuthenticationBES::Clone(void)const 
     ?Clone@H235_AuthenticationMechanism@@UBEPAVPObject@@XZ @7120 NONAME ;public: virtual class PObject * __thiscall H235_AuthenticationMechanism::Clone(void)const 
@@ -8356,6 +8435,11 @@ EXPORTS
     ?Clone@MicrosoftIMAAudioCapability@@UBEPAVPObject@@XZ @7876 NONAME ;public: virtual class PObject * __thiscall MicrosoftIMAAudioCapability::Clone(void)const 
     ?Clone@OpalGloballyUniqueID@@UBEPAVPObject@@XZ @7877 NONAME ;public: virtual class PObject * __thiscall OpalGloballyUniqueID::Clone(void)const 
     ?Clone@PMIMEInfo@@UBEPAVPObject@@XZ @13666 NONAME ;public: virtual class PObject * __thiscall PMIMEInfo::Clone(void)const 
+    ?Clone@SpeexNarrow2AudioCapability@@UBEPAVPObject@@XZ @14945 NONAME ;public: virtual class PObject * __thiscall SpeexNarrow2AudioCapability::Clone(void)const 
+    ?Clone@SpeexNarrow3AudioCapability@@UBEPAVPObject@@XZ @14946 NONAME ;public: virtual class PObject * __thiscall SpeexNarrow3AudioCapability::Clone(void)const 
+    ?Clone@SpeexNarrow4AudioCapability@@UBEPAVPObject@@XZ @14947 NONAME ;public: virtual class PObject * __thiscall SpeexNarrow4AudioCapability::Clone(void)const 
+    ?Clone@SpeexNarrow5AudioCapability@@UBEPAVPObject@@XZ @14948 NONAME ;public: virtual class PObject * __thiscall SpeexNarrow5AudioCapability::Clone(void)const 
+    ?Clone@SpeexNarrow6AudioCapability@@UBEPAVPObject@@XZ @14949 NONAME ;public: virtual class PObject * __thiscall SpeexNarrow6AudioCapability::Clone(void)const 
     ?Clone@T38_ArrayOf_PASN_OctetString@@UBEPAVPObject@@XZ @7878 NONAME ;public: virtual class PObject * __thiscall T38_ArrayOf_PASN_OctetString::Clone(void)const 
     ?Clone@T38_Data_Field@@UBEPAVPObject@@XZ @7879 NONAME ;public: virtual class PObject * __thiscall T38_Data_Field::Clone(void)const 
     ?Clone@T38_Data_Field_subtype@@UBEPAVPObject@@XZ @7880 NONAME ;public: virtual class PObject * __thiscall T38_Data_Field_subtype::Clone(void)const 
@@ -8403,6 +8487,7 @@ EXPORTS
     ?Close@OpalTransport@@UAEHXZ @7916 NONAME ;public: virtual int __thiscall OpalTransport::Close(void)
     ?Close@OpalTransportUDP@@UAEHXZ @13676 NONAME ;public: virtual int __thiscall OpalTransportUDP::Close(void)
     ?Close@OpalVoipBlasterDevice@@UAEHXZ @13677 NONAME ;public: virtual int __thiscall OpalVoipBlasterDevice::Close(void)
+    ?Close@OpalVXMLSession@@UAEHXZ @14950 NONAME ;public: virtual int __thiscall OpalVXMLSession::Close(void)
     ?Close@RTP_UDP@@UAEXH@Z @7918 NONAME ;public: virtual void __thiscall RTP_UDP::Close(int)
     ?CloseAllLogicalChannels@H323Connection@@UAEXH@Z @13678 NONAME ;public: virtual void __thiscall H323Connection::CloseAllLogicalChannels(int)
     ?CloseCommand@VoipBlasterInterface@@QAEHXZ @13679 NONAME ;public: int __thiscall VoipBlasterInterface::CloseCommand(void)
@@ -9027,7 +9112,7 @@ EXPORTS
     ?CompareInfo@H323NonStandardCapabilityInfo@@IBE?AW4Comparison@PObject@@ABV1@@Z @8530 NONAME ;protected: enum PObject::Comparison  __thiscall H323NonStandardCapabilityInfo::CompareInfo(class H323NonStandardCapabilityInfo const &)const 
     ?CompareObjectMemoryDirect@?$PArray@V?$PList@VH323Capability@@@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @8531 NONAME ;public: virtual enum PObject::Comparison  __thiscall PArray<class PList<class H323Capability> >::CompareObjectMemoryDirect(class PObject const &)const 
     ?CompareObjectMemoryDirect@?$PArray@VH323SimultaneousCapabilities@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @8532 NONAME ;public: virtual enum PObject::Comparison  __thiscall PArray<class H323SimultaneousCapabilities>::CompareObjectMemoryDirect(class PObject const &)const 
-    ?CompareObjectMemoryDirect@?$PArray@VOpalTransportAddress@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @8533 NONAME ;public: virtual enum PObject::Comparison  __thiscall PArray<class OpalTransportAddress>::CompareObjectMemoryDirect(class PObject const &)const 
+    ?CompareObjectMemoryDirect@?$PArray@VH323TransportAddress@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @14951 NONAME ;public: virtual enum PObject::Comparison  __thiscall PArray<class H323TransportAddress>::CompareObjectMemoryDirect(class PObject const &)const 
     ?CompareObjectMemoryDirect@?$PArray@VReceiverReport@RTP_Session@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @8534 NONAME ;public: virtual enum PObject::Comparison  __thiscall PArray<class RTP_Session::ReceiverReport>::CompareObjectMemoryDirect(class PObject const &)const 
     ?CompareObjectMemoryDirect@?$PArray@VSink@OpalMediaPatch@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @8535 NONAME ;public: virtual enum PObject::Comparison  __thiscall PArray<class OpalMediaPatch::Sink>::CompareObjectMemoryDirect(class PObject const &)const 
     ?CompareObjectMemoryDirect@?$PArray@VSourceDescription@RTP_Session@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @8536 NONAME ;public: virtual enum PObject::Comparison  __thiscall PArray<class RTP_Session::SourceDescription>::CompareObjectMemoryDirect(class PObject const &)const 
@@ -9062,8 +9147,8 @@ EXPORTS
     ?CompareObjectMemoryDirect@?$PList@VSDPMediaFormat@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @13692 NONAME ;public: virtual enum PObject::Comparison  __thiscall PList<class SDPMediaFormat>::CompareObjectMemoryDirect(class PObject const &)const 
     ?CompareObjectMemoryDirect@?$PList@VSIPTransaction@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @13693 NONAME ;public: virtual enum PObject::Comparison  __thiscall PList<class SIPTransaction>::CompareObjectMemoryDirect(class PObject const &)const 
     ?CompareObjectMemoryDirect@?$PQueue@VSIP_PDU@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @13694 NONAME ;public: virtual enum PObject::Comparison  __thiscall PQueue<class SIP_PDU>::CompareObjectMemoryDirect(class PObject const &)const 
-    ?CompareObjectMemoryDirect@?$PSafeDictionary@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @13695 NONAME ;public: virtual enum PObject::Comparison  __thiscall PSafeDictionary<class PDictionary<class PString,class H323RegisteredEndPoint>,class PString,class H323RegisteredEndPoint>::CompareObjectMemoryDirect(class PObject const &)const 
-    ?CompareObjectMemoryDirect@?$PSafeList@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @13696 NONAME ;public: virtual enum PObject::Comparison  __thiscall PSafeList<class PSortedList<class H323GatekeeperCall>,class H323GatekeeperCall>::CompareObjectMemoryDirect(class PObject const &)const 
+    ?CompareObjectMemoryDirect@?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @14952 NONAME ;public: virtual enum PObject::Comparison  __thiscall PSafeColl<class PSortedList<class H323GatekeeperCall>,class H323GatekeeperCall>::CompareObjectMemoryDirect(class PObject const &)const 
+    ?CompareObjectMemoryDirect@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @14953 NONAME ;public: virtual enum PObject::Comparison  __thiscall PSafeDictionaryBase<class PDictionary<class PString,class H323RegisteredEndPoint>,class PString,class H323RegisteredEndPoint>::CompareObjectMemoryDirect(class PObject const &)const 
     ?CompareObjectMemoryDirect@?$PSafePtr@VH323GatekeeperCall@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @13697 NONAME ;public: virtual enum PObject::Comparison  __thiscall PSafePtr<class H323GatekeeperCall>::CompareObjectMemoryDirect(class PObject const &)const 
     ?CompareObjectMemoryDirect@?$PSafePtr@VH323RegisteredEndPoint@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @13698 NONAME ;public: virtual enum PObject::Comparison  __thiscall PSafePtr<class H323RegisteredEndPoint>::CompareObjectMemoryDirect(class PObject const &)const 
     ?CompareObjectMemoryDirect@?$PSet@VPOrdinalKey@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @13699 NONAME ;public: virtual enum PObject::Comparison  __thiscall PSet<class POrdinalKey>::CompareObjectMemoryDirect(class PObject const &)const 
@@ -9078,6 +9163,7 @@ EXPORTS
     ?CompareObjectMemoryDirect@H225_RAS@@UBE?AW4Comparison@PObject@@ABV3@@Z @8558 NONAME ;public: virtual enum PObject::Comparison  __thiscall H225_RAS::CompareObjectMemoryDirect(class PObject const &)const 
     ?CompareObjectMemoryDirect@H235Authenticator@@UBE?AW4Comparison@PObject@@ABV3@@Z @12868 NONAME ;public: virtual enum PObject::Comparison  __thiscall H235Authenticator::CompareObjectMemoryDirect(class PObject const &)const 
     ?CompareObjectMemoryDirect@H235Authenticators@@UBE?AW4Comparison@PObject@@ABV3@@Z @13706 NONAME ;public: virtual enum PObject::Comparison  __thiscall H235Authenticators::CompareObjectMemoryDirect(class PObject const &)const 
+    ?CompareObjectMemoryDirect@H235AuthProcedure1@@UBE?AW4Comparison@PObject@@ABV3@@Z @14954 NONAME ;public: virtual enum PObject::Comparison  __thiscall H235AuthProcedure1::CompareObjectMemoryDirect(class PObject const &)const 
     ?CompareObjectMemoryDirect@H235AuthSimpleMD5@@UBE?AW4Comparison@PObject@@ABV3@@Z @12870 NONAME ;public: virtual enum PObject::Comparison  __thiscall H235AuthSimpleMD5::CompareObjectMemoryDirect(class PObject const &)const 
     ?CompareObjectMemoryDirect@H245NegLogicalChannel@@UBE?AW4Comparison@PObject@@ABV3@@Z @8560 NONAME ;public: virtual enum PObject::Comparison  __thiscall H245NegLogicalChannel::CompareObjectMemoryDirect(class PObject const &)const 
     ?CompareObjectMemoryDirect@H245NegLogicalChannels@@UBE?AW4Comparison@PObject@@ABV3@@Z @8561 NONAME ;public: virtual enum PObject::Comparison  __thiscall H245NegLogicalChannels::CompareObjectMemoryDirect(class PObject const &)const 
@@ -9195,6 +9281,7 @@ EXPORTS
     ?CompareObjectMemoryDirect@OpalVideoMediaStream@@UBE?AW4Comparison@PObject@@ABV3@@Z @12643 NONAME ;public: virtual enum PObject::Comparison  __thiscall OpalVideoMediaStream::CompareObjectMemoryDirect(class PObject const &)const 
     ?CompareObjectMemoryDirect@OpalVideoTranscoder@@UBE?AW4Comparison@PObject@@ABV3@@Z @8648 NONAME ;public: virtual enum PObject::Comparison  __thiscall OpalVideoTranscoder::CompareObjectMemoryDirect(class PObject const &)const 
     ?CompareObjectMemoryDirect@OpalVoipBlasterDevice@@UBE?AW4Comparison@PObject@@ABV3@@Z @13727 NONAME ;public: virtual enum PObject::Comparison  __thiscall OpalVoipBlasterDevice::CompareObjectMemoryDirect(class PObject const &)const 
+    ?CompareObjectMemoryDirect@OpalVXMLSession@@UBE?AW4Comparison@PObject@@ABV3@@Z @14955 NONAME ;public: virtual enum PObject::Comparison  __thiscall OpalVXMLSession::CompareObjectMemoryDirect(class PObject const &)const 
     ?CompareObjectMemoryDirect@OpalWAVFile@@UBE?AW4Comparison@PObject@@ABV3@@Z @13728 NONAME ;public: virtual enum PObject::Comparison  __thiscall OpalWAVFile::CompareObjectMemoryDirect(class PObject const &)const 
     ?CompareObjectMemoryDirect@PASN_Array@@UBE?AW4Comparison@PObject@@ABV3@@Z @8650 NONAME ;public: virtual enum PObject::Comparison  __thiscall PASN_Array::CompareObjectMemoryDirect(class PObject const &)const 
     ?CompareObjectMemoryDirect@PASN_BitString@@UBE?AW4Comparison@PObject@@ABV3@@Z @8651 NONAME ;public: virtual enum PObject::Comparison  __thiscall PASN_BitString::CompareObjectMemoryDirect(class PObject const &)const 
@@ -9245,6 +9332,12 @@ EXPORTS
     ?CompareObjectMemoryDirect@SIPURL@@UBE?AW4Comparison@PObject@@ABV3@@Z @13746 NONAME ;public: virtual enum PObject::Comparison  __thiscall SIPURL::CompareObjectMemoryDirect(class PObject const &)const 
     ?CompareObjectMemoryDirect@SIP_PDU@@UBE?AW4Comparison@PObject@@ABV3@@Z @13747 NONAME ;public: virtual enum PObject::Comparison  __thiscall SIP_PDU::CompareObjectMemoryDirect(class PObject const &)const 
     ?CompareObjectMemoryDirect@SourceDescription@RTP_Session@@UBE?AW4Comparison@PObject@@ABV4@@Z @8680 NONAME ;public: virtual enum PObject::Comparison  __thiscall RTP_Session::SourceDescription::CompareObjectMemoryDirect(class PObject const &)const 
+    ?CompareObjectMemoryDirect@SpeexNarrow2AudioCapability@@UBE?AW4Comparison@PObject@@ABV3@@Z @14956 NONAME ;public: virtual enum PObject::Comparison  __thiscall SpeexNarrow2AudioCapability::CompareObjectMemoryDirect(class PObject const &)const 
+    ?CompareObjectMemoryDirect@SpeexNarrow3AudioCapability@@UBE?AW4Comparison@PObject@@ABV3@@Z @14957 NONAME ;public: virtual enum PObject::Comparison  __thiscall SpeexNarrow3AudioCapability::CompareObjectMemoryDirect(class PObject const &)const 
+    ?CompareObjectMemoryDirect@SpeexNarrow4AudioCapability@@UBE?AW4Comparison@PObject@@ABV3@@Z @14958 NONAME ;public: virtual enum PObject::Comparison  __thiscall SpeexNarrow4AudioCapability::CompareObjectMemoryDirect(class PObject const &)const 
+    ?CompareObjectMemoryDirect@SpeexNarrow5AudioCapability@@UBE?AW4Comparison@PObject@@ABV3@@Z @14959 NONAME ;public: virtual enum PObject::Comparison  __thiscall SpeexNarrow5AudioCapability::CompareObjectMemoryDirect(class PObject const &)const 
+    ?CompareObjectMemoryDirect@SpeexNarrow6AudioCapability@@UBE?AW4Comparison@PObject@@ABV3@@Z @14960 NONAME ;public: virtual enum PObject::Comparison  __thiscall SpeexNarrow6AudioCapability::CompareObjectMemoryDirect(class PObject const &)const 
+    ?CompareObjectMemoryDirect@SpeexNonStandardAudioCapability@@UBE?AW4Comparison@PObject@@ABV3@@Z @14961 NONAME ;public: virtual enum PObject::Comparison  __thiscall SpeexNonStandardAudioCapability::CompareObjectMemoryDirect(class PObject const &)const 
     ?CompareObjectMemoryDirect@T120ConnectPDU@@UBE?AW4Comparison@PObject@@ABV3@@Z @13748 NONAME ;public: virtual enum PObject::Comparison  __thiscall T120ConnectPDU::CompareObjectMemoryDirect(class PObject const &)const 
     ?CompareObjectMemoryDirect@T120_X224@@UBE?AW4Comparison@PObject@@ABV3@@Z @13749 NONAME ;public: virtual enum PObject::Comparison  __thiscall T120_X224::CompareObjectMemoryDirect(class PObject const &)const 
     ?CompareObjectMemoryDirect@VoipBlasterInterface@@UBE?AW4Comparison@PObject@@ABV3@@Z @13750 NONAME ;public: virtual enum PObject::Comparison  __thiscall VoipBlasterInterface::CompareObjectMemoryDirect(class PObject const &)const 
@@ -9279,6 +9372,8 @@ EXPORTS
     ?ConvertFrame@Opal_PCM_LPC10@@UAEHPBEPAE@Z @8698 NONAME ;public: virtual int __thiscall Opal_PCM_LPC10::ConvertFrame(unsigned char const *,unsigned char *)
     ?ConvertFrame@Opal_PCM_MSGSM@@UAEHPBEPAE@Z @8699 NONAME ;public: virtual int __thiscall Opal_PCM_MSGSM::ConvertFrame(unsigned char const *,unsigned char *)
     ?ConvertFrame@Opal_PCM_MSIMA@@UAEHPBEPAE@Z @8700 NONAME ;public: virtual int __thiscall Opal_PCM_MSIMA::ConvertFrame(unsigned char const *,unsigned char *)
+    ?ConvertFrame@Opal_Speex_Decoder@@UAEHPBEPAE@Z @14962 NONAME ;public: virtual int __thiscall Opal_Speex_Decoder::ConvertFrame(unsigned char const *,unsigned char *)
+    ?ConvertFrame@Opal_Speex_Encoder@@UAEHPBEPAE@Z @14963 NONAME ;public: virtual int __thiscall Opal_Speex_Encoder::ConvertFrame(unsigned char const *,unsigned char *)
     ?ConvertFrames@OpalTranscoder@@UAEHABVRTP_DataFrame@@AAV?$PList@VRTP_DataFrame@@@@@Z @13762 NONAME ;public: virtual int __thiscall OpalTranscoder::ConvertFrames(class RTP_DataFrame const &,class PList<class RTP_DataFrame> &)
     ?ConvertOne@Opal_G711_ALaw_PCM@@UBEHH@Z @12755 NONAME ;public: virtual int __thiscall Opal_G711_ALaw_PCM::ConvertOne(int)const 
     ?ConvertOne@Opal_G711_uLaw_PCM@@UBEHH@Z @12756 NONAME ;public: virtual int __thiscall Opal_G711_uLaw_PCM::ConvertOne(int)const 
@@ -9760,6 +9855,7 @@ EXPORTS
     ?CreateTransport@OpalInternalTCPTransport@@UBEPAVOpalTransport@@ABVOpalTransportAddress@@AAVOpalEndPoint@@W4BindOptions@3@@Z @13800 NONAME ;public: virtual class OpalTransport * __thiscall OpalInternalTCPTransport::CreateTransport(class OpalTransportAddress const &,class OpalEndPoint &,enum OpalTransportAddress::BindOptions)const 
     ?CreateTransport@OpalInternalUDPTransport@@UBEPAVOpalTransport@@ABVOpalTransportAddress@@AAVOpalEndPoint@@W4BindOptions@3@@Z @13801 NONAME ;public: virtual class OpalTransport * __thiscall OpalInternalUDPTransport::CreateTransport(class OpalTransportAddress const &,class OpalEndPoint &,enum OpalTransportAddress::BindOptions)const 
     ?CreateTransport@OpalTransportAddress@@UBEPAVOpalTransport@@AAVOpalEndPoint@@W4BindOptions@1@@Z @13802 NONAME ;public: virtual class OpalTransport * __thiscall OpalTransportAddress::CreateTransport(class OpalEndPoint &,enum OpalTransportAddress::BindOptions)const 
+    ?CreateWAVFile@OpalVXMLSession@@UAEPAVPWAVFile@@ABVPFilePath@@W4OpenMode@PFile@@HI@Z @14964 NONAME ;public: virtual class PWAVFile * __thiscall OpalVXMLSession::CreateWAVFile(class PFilePath const &,enum PFile::OpenMode,int,unsigned int)
     ?crinit@Pre_Vid_Coder@@IAEXXZ @9165 NONAME ;protected: void __thiscall Pre_Vid_Coder::crinit(void)
     ?dcfill@@YAXHPAEH@Z @9166 NONAME ;void __cdecl dcfill(int,unsigned char *,int)
     ?dcsum2@@YAXHPAE0H@Z @9167 NONAME ;void __cdecl dcsum2(int,unsigned char *,unsigned char *,int)
@@ -10392,11 +10488,11 @@ EXPORTS
     ?DialOut@OpalLine@@UAE?AW4CallProgressTones@OpalLineInterfaceDevice@@ABVPString@@H@Z @9786 NONAME ;public: virtual enum OpalLineInterfaceDevice::CallProgressTones  __thiscall OpalLine::DialOut(class PString const &,int)
     ?DialOut@OpalLineInterfaceDevice@@UAE?AW4CallProgressTones@1@IABVPString@@H@Z @9787 NONAME ;public: virtual enum OpalLineInterfaceDevice::CallProgressTones  __thiscall OpalLineInterfaceDevice::DialOut(unsigned int,class PString const &,int)
     ?DiscoverAny@H323Gatekeeper@@QAEHXZ @9788 NONAME ;public: int __thiscall H323Gatekeeper::DiscoverAny(void)
-    ?DiscoverByAddress@H323Gatekeeper@@QAEHABVPString@@@Z @13807 NONAME ;public: int __thiscall H323Gatekeeper::DiscoverByAddress(class PString const &)
+    ?DiscoverByAddress@H323Gatekeeper@@QAEHABVH323TransportAddress@@@Z @14965 NONAME ;public: int __thiscall H323Gatekeeper::DiscoverByAddress(class H323TransportAddress const &)
     ?DiscoverByName@H323Gatekeeper@@QAEHABVPString@@@Z @9790 NONAME ;public: int __thiscall H323Gatekeeper::DiscoverByName(class PString const &)
-    ?DiscoverByNameAndAddress@H323Gatekeeper@@QAEHABVPString@@0@Z @13808 NONAME ;public: int __thiscall H323Gatekeeper::DiscoverByNameAndAddress(class PString const &,class PString const &)
+    ?DiscoverByNameAndAddress@H323Gatekeeper@@QAEHABVPString@@ABVH323TransportAddress@@@Z @14966 NONAME ;public: int __thiscall H323Gatekeeper::DiscoverByNameAndAddress(class PString const &,class H323TransportAddress const &)
     ?DiscoverGatekeeper@H323EndPoint@@QAEHPAVOpalTransport@@@Z @9792 NONAME ;public: int __thiscall H323EndPoint::DiscoverGatekeeper(class OpalTransport *)
-    ?Disengage@H323GatekeeperCall@@UAEHXZ @13809 NONAME ;public: virtual int __thiscall H323GatekeeperCall::Disengage(void)
+    ?Disengage@H323GatekeeperCall@@UAEHH@Z @14967 NONAME ;public: virtual int __thiscall H323GatekeeperCall::Disengage(int)
     ?DisengageRequest@H323Gatekeeper@@QAEHABVH323Connection@@I@Z @9794 NONAME ;public: int __thiscall H323Gatekeeper::DisengageRequest(class H323Connection const &,unsigned int)
     ?DisengageRequest@H323GatekeeperListener@@QAEHABVH323GatekeeperCall@@I@Z @13810 NONAME ;public: int __thiscall H323GatekeeperListener::DisengageRequest(class H323GatekeeperCall const &,unsigned int)
     ?EnableAudio@OpalIxJDevice@@UAEHIH@Z @9795 NONAME ;public: virtual int __thiscall OpalIxJDevice::EnableAudio(unsigned int,int)
@@ -11036,9 +11132,11 @@ EXPORTS
     ?fdct_fold_q@@YAXPBHPAM@Z @10417 NONAME ;void __cdecl fdct_fold_q(int const *,float *)
     ?filter@P64Decoder@@IAEXPAE0I@Z @10418 NONAME ;protected: void __thiscall P64Decoder::filter(unsigned char *,unsigned char *,unsigned int)
     ?FilterFrame@OpalMediaPatch@@MAEXAAVRTP_DataFrame@@ABVOpalMediaFormat@@@Z @13820 NONAME ;protected: virtual void __thiscall OpalMediaPatch::FilterFrame(class RTP_DataFrame &,class OpalMediaFormat const &)
+    ?Finalise@H235AuthProcedure1@@UAEHAAVPBYTEArray@@@Z @14968 NONAME ;public: virtual int __thiscall H235AuthProcedure1::Finalise(class PBYTEArray &)
     ?Finalise@H235AuthSimpleMD5@@UAEHAAVPBYTEArray@@@Z @12872 NONAME ;public: virtual int __thiscall H235AuthSimpleMD5::Finalise(class PBYTEArray &)
     ?FindCall@H323GatekeeperServer@@UAE?AV?$PSafePtr@VH323GatekeeperCall@@@@ABVOpalGloballyUniqueID@@HW4PSafetyMode@@@Z @13821 NONAME ;public: virtual class PSafePtr<class H323GatekeeperCall>  __thiscall H323GatekeeperServer::FindCall(class OpalGloballyUniqueID const &,int,enum PSafetyMode)
     ?FindCall@H323GatekeeperServer@@UAE?AV?$PSafePtr@VH323GatekeeperCall@@@@ABVOpalGloballyUniqueID@@W4Direction@H323GatekeeperCall@@W4PSafetyMode@@@Z @13822 NONAME ;public: virtual class PSafePtr<class H323GatekeeperCall>  __thiscall H323GatekeeperServer::FindCall(class OpalGloballyUniqueID const &,enum H323GatekeeperCall::Direction,enum PSafetyMode)
+    ?FindCall@H323GatekeeperServer@@UAE?AV?$PSafePtr@VH323GatekeeperCall@@@@ABVPString@@W4PSafetyMode@@@Z @14969 NONAME ;public: virtual class PSafePtr<class H323GatekeeperCall>  __thiscall H323GatekeeperServer::FindCall(class PString const &,enum PSafetyMode)
     ?FindCallWithLock@OpalManager@@QAEPAVOpalCall@@ABVPString@@@Z @10420 NONAME ;public: class OpalCall * __thiscall OpalManager::FindCallWithLock(class PString const &)
     ?FindCallWithoutLocks@OpalManager@@AAEPAVOpalCall@@ABVPString@@@Z @10421 NONAME ;private: class OpalCall * __thiscall OpalManager::FindCallWithoutLocks(class PString const &)
     ?FindCapability@H323Capabilities@@QBEPAVH323Capability@@ABV2@@Z @10422 NONAME ;public: class H323Capability * __thiscall H323Capabilities::FindCapability(class H323Capability const &)const 
@@ -11068,8 +11166,8 @@ EXPORTS
     ?FindIntermediateFormat@OpalTranscoder@@SAHABVOpalMediaFormat@@0AAV2@@Z @10442 NONAME ;public: static int __cdecl OpalTranscoder::FindIntermediateFormat(class OpalMediaFormat const &,class OpalMediaFormat const &,class OpalMediaFormat &)
     ?FindMediaFormat@@YA?AVOpalMediaFormat@@W4PayloadTypes@RTP_DataFrame@@@Z @10443 NONAME ;class OpalMediaFormat  __cdecl FindMediaFormat(enum RTP_DataFrame::PayloadTypes)
     ?FindNegLogicalChannel@H245NegLogicalChannels@@QAEPAVH245NegLogicalChannel@@IH@Z @13831 NONAME ;public: class H245NegLogicalChannel * __thiscall H245NegLogicalChannels::FindNegLogicalChannel(unsigned int,int)
-    ?FindWithLock@?$PSafeDictionary@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@UAE?AV?$PSafePtr@VH323RegisteredEndPoint@@@@ABVPString@@W4PSafetyMode@@@Z @13832 NONAME ;public: virtual class PSafePtr<class H323RegisteredEndPoint>  __thiscall PSafeDictionary<class PDictionary<class PString,class H323RegisteredEndPoint>,class PString,class H323RegisteredEndPoint>::FindWithLock(class PString const &,enum PSafetyMode)
-    ?FindWithLock@?$PSafeList@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@UAE?AV?$PSafePtr@VH323GatekeeperCall@@@@ABVH323GatekeeperCall@@W4PSafetyMode@@@Z @13833 NONAME ;public: virtual class PSafePtr<class H323GatekeeperCall>  __thiscall PSafeList<class PSortedList<class H323GatekeeperCall>,class H323GatekeeperCall>::FindWithLock(class H323GatekeeperCall const &,enum PSafetyMode)
+    ?FindWithLock@?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@UAE?AV?$PSafePtr@VH323GatekeeperCall@@@@ABVH323GatekeeperCall@@W4PSafetyMode@@@Z @14970 NONAME ;public: virtual class PSafePtr<class H323GatekeeperCall>  __thiscall PSafeColl<class PSortedList<class H323GatekeeperCall>,class H323GatekeeperCall>::FindWithLock(class H323GatekeeperCall const &,enum PSafetyMode)
+    ?FindWithLock@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@UAE?AV?$PSafePtr@VH323RegisteredEndPoint@@@@ABVPString@@W4PSafetyMode@@@Z @14971 NONAME ;public: virtual class PSafePtr<class H323RegisteredEndPoint>  __thiscall PSafeDictionaryBase<class PDictionary<class PString,class H323RegisteredEndPoint>,class PString,class H323RegisteredEndPoint>::FindWithLock(class PString const &,enum PSafetyMod
     ?First@RTP_SessionManager@@QAEPAVRTP_Session@@XZ @10445 NONAME ;public: class RTP_Session * __thiscall RTP_SessionManager::First(void)
     ?flush@H261Encoder@@IAEHPAUpktbuf@Transmitter@@H0@Z @10447 NONAME ;protected: int __thiscall H261Encoder::flush(struct Transmitter::pktbuf *,int,struct Transmitter::pktbuf *)
     ?FlushData@VoipBlasterInterface@@QAEXVPTimeInterval@@@Z @13834 NONAME ;public: void __thiscall VoipBlasterInterface::FlushData(class PTimeInterval)
@@ -11080,6 +11178,7 @@ EXPORTS
     ?GarbageCollection@OpalManager@@QAEXXZ @10452 NONAME ;public: void __thiscall OpalManager::GarbageCollection(void)
     ?GarbageMain@OpalManager@@MAEXAAVPThread@@H@Z @10453 NONAME ;protected: virtual void __thiscall OpalManager::GarbageMain(class PThread &,int)
     ?GenerateCallReference@Q931@@SAIXZ @13835 NONAME ;public: static unsigned int __cdecl Q931::GenerateCallReference(void)
+    ?GetAddress@InterfaceEntry@PIPSocket@@QBE?AVAddress@2@XZ @14972 NONAME ;public: class PIPSocket::Address  __thiscall PIPSocket::InterfaceEntry::GetAddress(void)const 
     ?GetAdmissionRequestAuthentication@H323Connection@@UAEHABVH225_AdmissionRequest@@AAVPString@@11@Z @13836 NONAME ;public: virtual int __thiscall H323Connection::GetAdmissionRequestAuthentication(class H225_AdmissionRequest const &,class PString &,class PString &,class PString &)
     ?GetAdmissionRequestAuthentication@H323GatekeeperServer@@UAEHAAVH323GatekeeperARQ@@AAVPString@@11@Z @13837 NONAME ;public: virtual int __thiscall H323GatekeeperServer::GetAdmissionRequestAuthentication(class H323GatekeeperARQ &,class PString &,class PString &,class PString &)
     ?GetAEC@OpalIxJDevice@@UAE?AW4AECLevels@OpalLineInterfaceDevice@@I@Z @10455 NONAME ;public: virtual enum OpalLineInterfaceDevice::AECLevels  __thiscall OpalIxJDevice::GetAEC(unsigned int)
@@ -11131,7 +11230,7 @@ EXPORTS
     ?GetChannelAt@H245NegLogicalChannels@@QAEPAVH323Channel@@H@Z @10479 NONAME ;public: class H323Channel * __thiscall H245NegLogicalChannels::GetChannelAt(int)
     ?GetClass@?$PArray@V?$PList@VH323Capability@@@@@@UBEPBDI@Z @10480 NONAME ;public: virtual char const * __thiscall PArray<class PList<class H323Capability> >::GetClass(unsigned int)const 
     ?GetClass@?$PArray@VH323SimultaneousCapabilities@@@@UBEPBDI@Z @10481 NONAME ;public: virtual char const * __thiscall PArray<class H323SimultaneousCapabilities>::GetClass(unsigned int)const 
-    ?GetClass@?$PArray@VOpalTransportAddress@@@@UBEPBDI@Z @10482 NONAME ;public: virtual char const * __thiscall PArray<class OpalTransportAddress>::GetClass(unsigned int)const 
+    ?GetClass@?$PArray@VH323TransportAddress@@@@UBEPBDI@Z @14973 NONAME ;public: virtual char const * __thiscall PArray<class H323TransportAddress>::GetClass(unsigned int)const 
     ?GetClass@?$PArray@VReceiverReport@RTP_Session@@@@UBEPBDI@Z @10483 NONAME ;public: virtual char const * __thiscall PArray<class RTP_Session::ReceiverReport>::GetClass(unsigned int)const 
     ?GetClass@?$PArray@VSink@OpalMediaPatch@@@@UBEPBDI@Z @10484 NONAME ;public: virtual char const * __thiscall PArray<class OpalMediaPatch::Sink>::GetClass(unsigned int)const 
     ?GetClass@?$PArray@VSourceDescription@RTP_Session@@@@UBEPBDI@Z @10485 NONAME ;public: virtual char const * __thiscall PArray<class RTP_Session::SourceDescription>::GetClass(unsigned int)const 
@@ -11167,8 +11266,8 @@ EXPORTS
     ?GetClass@?$PList@VSDPMediaFormat@@@@UBEPBDI@Z @13866 NONAME ;public: virtual char const * __thiscall PList<class SDPMediaFormat>::GetClass(unsigned int)const 
     ?GetClass@?$PList@VSIPTransaction@@@@UBEPBDI@Z @13867 NONAME ;public: virtual char const * __thiscall PList<class SIPTransaction>::GetClass(unsigned int)const 
     ?GetClass@?$PQueue@VSIP_PDU@@@@UBEPBDI@Z @13868 NONAME ;public: virtual char const * __thiscall PQueue<class SIP_PDU>::GetClass(unsigned int)const 
-    ?GetClass@?$PSafeDictionary@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@UBEPBDI@Z @13869 NONAME ;public: virtual char const * __thiscall PSafeDictionary<class PDictionary<class PString,class H323RegisteredEndPoint>,class PString,class H323RegisteredEndPoint>::GetClass(unsigned int)const 
-    ?GetClass@?$PSafeList@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@UBEPBDI@Z @13870 NONAME ;public: virtual char const * __thiscall PSafeList<class PSortedList<class H323GatekeeperCall>,class H323GatekeeperCall>::GetClass(unsigned int)const 
+    ?GetClass@?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@UBEPBDI@Z @14974 NONAME ;public: virtual char const * __thiscall PSafeColl<class PSortedList<class H323GatekeeperCall>,class H323GatekeeperCall>::GetClass(unsigned int)const 
+    ?GetClass@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@UBEPBDI@Z @14975 NONAME ;public: virtual char const * __thiscall PSafeDictionaryBase<class PDictionary<class PString,class H323RegisteredEndPoint>,class PString,class H323RegisteredEndPoint>::GetClass(unsigned int)const 
     ?GetClass@?$PSafePtr@VH323GatekeeperCall@@@@UBEPBDI@Z @13871 NONAME ;public: virtual char const * __thiscall PSafePtr<class H323GatekeeperCall>::GetClass(unsigned int)const 
     ?GetClass@?$PSafePtr@VH323RegisteredEndPoint@@@@UBEPBDI@Z @13872 NONAME ;public: virtual char const * __thiscall PSafePtr<class H323RegisteredEndPoint>::GetClass(unsigned int)const 
     ?GetClass@?$PSet@VPOrdinalKey@@@@UBEPBDI@Z @13873 NONAME ;public: virtual char const * __thiscall PSet<class POrdinalKey>::GetClass(unsigned int)const 
@@ -11185,6 +11284,7 @@ EXPORTS
     ?GetClass@H225_RAS@@UBEPBDI@Z @10508 NONAME ;public: virtual char const * __thiscall H225_RAS::GetClass(unsigned int)const 
     ?GetClass@H235Authenticator@@UBEPBDI@Z @12878 NONAME ;public: virtual char const * __thiscall H235Authenticator::GetClass(unsigned int)const 
     ?GetClass@H235Authenticators@@UBEPBDI@Z @13880 NONAME ;public: virtual char const * __thiscall H235Authenticators::GetClass(unsigned int)const 
+    ?GetClass@H235AuthProcedure1@@UBEPBDI@Z @14976 NONAME ;public: virtual char const * __thiscall H235AuthProcedure1::GetClass(unsigned int)const 
     ?GetClass@H235AuthSimpleMD5@@UBEPBDI@Z @12880 NONAME ;public: virtual char const * __thiscall H235AuthSimpleMD5::GetClass(unsigned int)const 
     ?GetClass@H245NegLogicalChannel@@UBEPBDI@Z @10510 NONAME ;public: virtual char const * __thiscall H245NegLogicalChannel::GetClass(unsigned int)const 
     ?GetClass@H245NegLogicalChannels@@UBEPBDI@Z @10511 NONAME ;public: virtual char const * __thiscall H245NegLogicalChannels::GetClass(unsigned int)const 
@@ -11303,6 +11403,7 @@ EXPORTS
     ?GetClass@OpalVideoMediaStream@@UBEPBDI@Z @12644 NONAME ;public: virtual char const * __thiscall OpalVideoMediaStream::GetClass(unsigned int)const 
     ?GetClass@OpalVideoTranscoder@@UBEPBDI@Z @10599 NONAME ;public: virtual char const * __thiscall OpalVideoTranscoder::GetClass(unsigned int)const 
     ?GetClass@OpalVoipBlasterDevice@@UBEPBDI@Z @13901 NONAME ;public: virtual char const * __thiscall OpalVoipBlasterDevice::GetClass(unsigned int)const 
+    ?GetClass@OpalVXMLSession@@UBEPBDI@Z @14977 NONAME ;public: virtual char const * __thiscall OpalVXMLSession::GetClass(unsigned int)const 
     ?GetClass@OpalWAVFile@@UBEPBDI@Z @13902 NONAME ;public: virtual char const * __thiscall OpalWAVFile::GetClass(unsigned int)const 
     ?GetClass@PASN_Array@@UBEPBDI@Z @10601 NONAME ;public: virtual char const * __thiscall PASN_Array::GetClass(unsigned int)const 
     ?GetClass@PASN_BitString@@UBEPBDI@Z @10602 NONAME ;public: virtual char const * __thiscall PASN_BitString::GetClass(unsigned int)const 
@@ -11354,6 +11455,12 @@ EXPORTS
     ?GetClass@SIPURL@@UBEPBDI@Z @13920 NONAME ;public: virtual char const * __thiscall SIPURL::GetClass(unsigned int)const 
     ?GetClass@SIP_PDU@@UBEPBDI@Z @13921 NONAME ;public: virtual char const * __thiscall SIP_PDU::GetClass(unsigned int)const 
     ?GetClass@SourceDescription@RTP_Session@@UBEPBDI@Z @10632 NONAME ;public: virtual char const * __thiscall RTP_Session::SourceDescription::GetClass(unsigned int)const 
+    ?GetClass@SpeexNarrow2AudioCapability@@UBEPBDI@Z @14978 NONAME ;public: virtual char const * __thiscall SpeexNarrow2AudioCapability::GetClass(unsigned int)const 
+    ?GetClass@SpeexNarrow3AudioCapability@@UBEPBDI@Z @14979 NONAME ;public: virtual char const * __thiscall SpeexNarrow3AudioCapability::GetClass(unsigned int)const 
+    ?GetClass@SpeexNarrow4AudioCapability@@UBEPBDI@Z @14980 NONAME ;public: virtual char const * __thiscall SpeexNarrow4AudioCapability::GetClass(unsigned int)const 
+    ?GetClass@SpeexNarrow5AudioCapability@@UBEPBDI@Z @14981 NONAME ;public: virtual char const * __thiscall SpeexNarrow5AudioCapability::GetClass(unsigned int)const 
+    ?GetClass@SpeexNarrow6AudioCapability@@UBEPBDI@Z @14982 NONAME ;public: virtual char const * __thiscall SpeexNarrow6AudioCapability::GetClass(unsigned int)const 
+    ?GetClass@SpeexNonStandardAudioCapability@@UBEPBDI@Z @14983 NONAME ;public: virtual char const * __thiscall SpeexNonStandardAudioCapability::GetClass(unsigned int)const 
     ?GetClass@T120ConnectPDU@@UBEPBDI@Z @13922 NONAME ;public: virtual char const * __thiscall T120ConnectPDU::GetClass(unsigned int)const 
     ?GetClass@T120_X224@@UBEPBDI@Z @13923 NONAME ;public: virtual char const * __thiscall T120_X224::GetClass(unsigned int)const 
     ?GetClass@VoipBlasterInterface@@UBEPBDI@Z @13924 NONAME ;public: virtual char const * __thiscall VoipBlasterInterface::GetClass(unsigned int)const 
@@ -12038,7 +12145,25 @@ EXPORTS
     ?GetFirstEndPoint@H323GatekeeperServer@@QAE?AV?$PSafePtr@VH323RegisteredEndPoint@@@@W4PSafetyMode@@@Z @13964 NONAME ;public: class PSafePtr<class H323RegisteredEndPoint>  __thiscall H323GatekeeperServer::GetFirstEndPoint(enum PSafetyMode)
     ?GetFMTP@SDPMediaFormat@@QBE?AVPString@@XZ @13965 NONAME ;public: class PString  __thiscall SDPMediaFormat::GetFMTP(void)const 
     ?GetFormat@OpalWAVFile@@UBEIXZ @13966 NONAME ;public: virtual unsigned int __thiscall OpalWAVFile::GetFormat(void)const 
+    ?GetFormatName@H323_G711Capability@@UBE?AVPString@@XZ @14984 NONAME ;public: virtual class PString  __thiscall H323_G711Capability::GetFormatName(void)const 
+    ?GetFormatName@H323_G7231Capability@@UBE?AVPString@@XZ @14985 NONAME ;public: virtual class PString  __thiscall H323_G7231Capability::GetFormatName(void)const 
+    ?GetFormatName@H323_G726_Capability@@UBE?AVPString@@XZ @14986 NONAME ;public: virtual class PString  __thiscall H323_G726_Capability::GetFormatName(void)const 
+    ?GetFormatName@H323_G728Capability@@UBE?AVPString@@XZ @14987 NONAME ;public: virtual class PString  __thiscall H323_G728Capability::GetFormatName(void)const 
+    ?GetFormatName@H323_G729Capability@@UBE?AVPString@@XZ @14988 NONAME ;public: virtual class PString  __thiscall H323_G729Capability::GetFormatName(void)const 
+    ?GetFormatName@H323_GSM0610Capability@@UBE?AVPString@@XZ @14989 NONAME ;public: virtual class PString  __thiscall H323_GSM0610Capability::GetFormatName(void)const 
+    ?GetFormatName@H323_H261Capability@@UBE?AVPString@@XZ @14990 NONAME ;public: virtual class PString  __thiscall H323_H261Capability::GetFormatName(void)const 
+    ?GetFormatName@H323_LPC10Capability@@UBE?AVPString@@XZ @14991 NONAME ;public: virtual class PString  __thiscall H323_LPC10Capability::GetFormatName(void)const 
     ?GetFormatName@H323_T120Capability@@UBE?AVPString@@XZ @11274 NONAME ;public: virtual class PString  __thiscall H323_T120Capability::GetFormatName(void)const 
+    ?GetFormatName@H323_T38Capability@@UBE?AVPString@@XZ @14992 NONAME ;public: virtual class PString  __thiscall H323_T38Capability::GetFormatName(void)const 
+    ?GetFormatName@H323_T38NonStandardCapability@@UBE?AVPString@@XZ @14993 NONAME ;public: virtual class PString  __thiscall H323_T38NonStandardCapability::GetFormatName(void)const 
+    ?GetFormatName@H323_UserInputCapability@@UBE?AVPString@@XZ @14994 NONAME ;public: virtual class PString  __thiscall H323_UserInputCapability::GetFormatName(void)const 
+    ?GetFormatName@MicrosoftGSMAudioCapability@@UBE?AVPString@@XZ @14995 NONAME ;public: virtual class PString  __thiscall MicrosoftGSMAudioCapability::GetFormatName(void)const 
+    ?GetFormatName@MicrosoftIMAAudioCapability@@UBE?AVPString@@XZ @14996 NONAME ;public: virtual class PString  __thiscall MicrosoftIMAAudioCapability::GetFormatName(void)const 
+    ?GetFormatName@SpeexNarrow2AudioCapability@@UBE?AVPString@@XZ @14997 NONAME ;public: virtual class PString  __thiscall SpeexNarrow2AudioCapability::GetFormatName(void)const 
+    ?GetFormatName@SpeexNarrow3AudioCapability@@UBE?AVPString@@XZ @14998 NONAME ;public: virtual class PString  __thiscall SpeexNarrow3AudioCapability::GetFormatName(void)const 
+    ?GetFormatName@SpeexNarrow4AudioCapability@@UBE?AVPString@@XZ @14999 NONAME ;public: virtual class PString  __thiscall SpeexNarrow4AudioCapability::GetFormatName(void)const 
+    ?GetFormatName@SpeexNarrow5AudioCapability@@UBE?AVPString@@XZ @15000 NONAME ;public: virtual class PString  __thiscall SpeexNarrow5AudioCapability::GetFormatName(void)const 
+    ?GetFormatName@SpeexNarrow6AudioCapability@@UBE?AVPString@@XZ @15001 NONAME ;public: virtual class PString  __thiscall SpeexNarrow6AudioCapability::GetFormatName(void)const 
     ?GetFramePtr@P64Encoder@@QAEPAEXZ @11279 NONAME ;public: unsigned char * __thiscall P64Encoder::GetFramePtr(void)
     ?GetFrom@SIPMIMEInfo@@QBE?AVPString@@XZ @13967 NONAME ;public: class PString  __thiscall SIPMIMEInfo::GetFrom(void)const 
     ?GetFullOrCompact@SIPMIMEInfo@@IBE?AVPString@@PBDD@Z @13968 NONAME ;protected: class PString  __thiscall SIPMIMEInfo::GetFullOrCompact(char const *,char)const 
@@ -12069,6 +12194,7 @@ EXPORTS
     ?GetIpAndPort@OpalInternalIPTransport@@UBEHABVOpalTransportAddress@@AAVAddress@PIPSocket@@AAG@Z @11287 NONAME ;public: virtual int __thiscall OpalInternalIPTransport::GetIpAndPort(class OpalTransportAddress const &,class PIPSocket::Address &,unsigned short &)const 
     ?GetIpAndPort@OpalInternalTransport@@UBEHABVOpalTransportAddress@@AAVAddress@PIPSocket@@AAG@Z @11288 NONAME ;public: virtual int __thiscall OpalInternalTransport::GetIpAndPort(class OpalTransportAddress const &,class PIPSocket::Address &,unsigned short &)const 
     ?GetIpAndPort@OpalTransportAddress@@QBEHAAVAddress@PIPSocket@@AAG@Z @11289 NONAME ;public: int __thiscall OpalTransportAddress::GetIpAndPort(class PIPSocket::Address &,unsigned short &)const 
+    ?GetJitterBufferSize@RTP_Session@@QBEIXZ @15002 NONAME ;public: unsigned int __thiscall RTP_Session::GetJitterBufferSize(void)const 
     ?GetKeyAt@?$PSet@VPOrdinalKey@@@@UBEABVPOrdinalKey@@H@Z @13988 NONAME ;public: virtual class POrdinalKey const & __thiscall PSet<class POrdinalKey>::GetKeyAt(int)const 
     ?GetKeypad@Q931@@QBE?AVPString@@XZ @13989 NONAME ;public: class PString  __thiscall Q931::GetKeypad(void)const 
     ?GetLine@OpalLIDEndPoint@@QBEPAVOpalLine@@ABVPString@@H@Z @13990 NONAME ;public: class OpalLine * __thiscall OpalLIDEndPoint::GetLine(class PString const &,int)const 
@@ -12078,6 +12204,8 @@ EXPORTS
     ?GetLocalAddress@OpalTransportIP@@UBE?AVOpalTransportAddress@@XZ @11293 NONAME ;public: virtual class OpalTransportAddress  __thiscall OpalTransportIP::GetLocalAddress(void)const 
     ?GetLocalAddress@RTP_UDP@@QBE?AVAddress@PIPSocket@@XZ @11294 NONAME ;public: class PIPSocket::Address  __thiscall RTP_UDP::GetLocalAddress(void)const 
     ?GetLocalAddress@SIPConnection@@QBE?AVOpalTransportAddress@@G@Z @13993 NONAME ;public: class OpalTransportAddress  __thiscall SIPConnection::GetLocalAddress(unsigned short)const 
+    ?GetLocalControlPort@RTP_UDP@@QBEGXZ @15003 NONAME ;public: unsigned short __thiscall RTP_UDP::GetLocalControlPort(void)const 
+    ?GetLocalDataPort@RTP_UDP@@QBEGXZ @15004 NONAME ;public: unsigned short __thiscall RTP_UDP::GetLocalDataPort(void)const 
     ?GetLocalHostName@RTP_UDP@@UAE?AVPString@@XZ @11295 NONAME ;public: virtual class PString  __thiscall RTP_UDP::GetLocalHostName(void)
     ?GetLocalPartyAddress@SIPConnection@@QBE?AVPString@@XZ @13994 NONAME ;public: class PString  __thiscall SIPConnection::GetLocalPartyAddress(void)const 
     ?GetLogicalChannel@H323Connection@@QBEPAVH323Channel@@IH@Z @11297 NONAME ;public: class H323Channel * __thiscall H323Connection::GetLogicalChannel(unsigned int,int)const 
@@ -12142,7 +12270,7 @@ EXPORTS
     ?GetProtoPrefix@OpalListenerUDP@@MBEPBDXZ @14018 NONAME ;protected: virtual char const * __thiscall OpalListenerUDP::GetProtoPrefix(void)const 
     ?GetProtoPrefix@OpalTransportTCP@@MBEPBDXZ @14019 NONAME ;protected: virtual char const * __thiscall OpalTransportTCP::GetProtoPrefix(void)const 
     ?GetProtoPrefix@OpalTransportUDP@@MBEPBDXZ @14020 NONAME ;protected: virtual char const * __thiscall OpalTransportUDP::GetProtoPrefix(void)const 
-    ?GetRASAddress@H323RegisteredEndPoint@@QBE?AVOpalTransportAddress@@H@Z @11342 NONAME ;public: class OpalTransportAddress  __thiscall H323RegisteredEndPoint::GetRASAddress(int)const 
+    ?GetRASAddress@H323RegisteredEndPoint@@QBE?AVH323TransportAddress@@H@Z @15005 NONAME ;public: class H323TransportAddress  __thiscall H323RegisteredEndPoint::GetRASAddress(int)const 
     ?GetRawPDU@H323GatekeeperARQ@@UBEABVPASN_Sequence@@XZ @14021 NONAME ;public: virtual class PASN_Sequence const & __thiscall H323GatekeeperARQ::GetRawPDU(void)const 
     ?GetRawPDU@H323GatekeeperBRQ@@UBEABVPASN_Sequence@@XZ @14022 NONAME ;public: virtual class PASN_Sequence const & __thiscall H323GatekeeperBRQ::GetRawPDU(void)const 
     ?GetRawPDU@H323GatekeeperDRQ@@UBEABVPASN_Sequence@@XZ @14023 NONAME ;public: virtual class PASN_Sequence const & __thiscall H323GatekeeperDRQ::GetRawPDU(void)const 
@@ -12178,6 +12306,7 @@ EXPORTS
     ?GetRemoteAddress@RTP_UDP@@QBE?AVAddress@PIPSocket@@XZ @11355 NONAME ;public: class PIPSocket::Address  __thiscall RTP_UDP::GetRemoteAddress(void)const 
     ?GetRemoteCallIntrusionProtectionLevel@H323Connection@@UAEHABVPString@@I@Z @14045 NONAME ;public: virtual int __thiscall H323Connection::GetRemoteCallIntrusionProtectionLevel(class PString const &,unsigned int)
     ?GetRemoteCallIntrusionProtectionLevel@H45011Handler@@QAEHABVPString@@I@Z @14046 NONAME ;public: int __thiscall H45011Handler::GetRemoteCallIntrusionProtectionLevel(class PString const &,unsigned int)
+    ?GetRemoteDataPort@RTP_UDP@@QBEGXZ @15006 NONAME ;public: unsigned short __thiscall RTP_UDP::GetRemoteDataPort(void)const 
     ?GetRemoveDTMF@OpalIxJDevice@@UAEHI@Z @11356 NONAME ;public: virtual int __thiscall OpalIxJDevice::GetRemoveDTMF(unsigned int)
     ?GetRemoveDTMF@OpalLine@@UAEHXZ @11357 NONAME ;public: virtual int __thiscall OpalLine::GetRemoveDTMF(void)
     ?GetRemoveDTMF@OpalLineInterfaceDevice@@UAEHI@Z @11358 NONAME ;public: virtual int __thiscall OpalLineInterfaceDevice::GetRemoveDTMF(unsigned int)
@@ -12213,7 +12342,7 @@ EXPORTS
     ?GetSessionID@H323DataChannel@@UBEIXZ @14066 NONAME ;public: virtual unsigned int __thiscall H323DataChannel::GetSessionID(void)const 
     ?GetSessionID@H323_ExternalRTPChannel@@UBEIXZ @14067 NONAME ;public: virtual unsigned int __thiscall H323_ExternalRTPChannel::GetSessionID(void)const 
     ?GetSessionID@H323_RTPChannel@@UBEIXZ @11375 NONAME ;public: virtual unsigned int __thiscall H323_RTPChannel::GetSessionID(void)const 
-    ?GetSignalAddress@H323RegisteredEndPoint@@QBE?AVOpalTransportAddress@@H@Z @11376 NONAME ;public: class OpalTransportAddress  __thiscall H323RegisteredEndPoint::GetSignalAddress(int)const 
+    ?GetSignalAddress@H323RegisteredEndPoint@@QBE?AVH323TransportAddress@@H@Z @15007 NONAME ;public: class H323TransportAddress  __thiscall H323RegisteredEndPoint::GetSignalAddress(int)const 
     ?GetSignalInfo@Q931@@QBE?AW4SignalInfo@1@XZ @11377 NONAME ;public: enum Q931::SignalInfo  __thiscall Q931::GetSignalInfo(void)const 
     ?GetSourceAddress@H323GatekeeperCall@@QBE?AVPString@@XZ @14068 NONAME ;public: class PString  __thiscall H323GatekeeperCall::GetSourceAddress(void)const 
     ?GetSourceAliases@H323SignalPDU@@QBE?AVPString@@PBVOpalTransport@@@Z @11379 NONAME ;public: class PString  __thiscall H323SignalPDU::GetSourceAliases(class OpalTransport const *)const 
@@ -12236,6 +12365,7 @@ EXPORTS
     ?GetTo@SIPMIMEInfo@@QBE?AVPString@@XZ @14070 NONAME ;public: class PString  __thiscall SIPMIMEInfo::GetTo(void)const 
     ?GetToken@OpalLine@@QBE?AVPString@@XZ @11392 NONAME ;public: class PString  __thiscall OpalLine::GetToken(void)const 
     ?GetTransactionID@SIP_PDU@@QBE?AVPString@@XZ @14071 NONAME ;public: class PString  __thiscall SIP_PDU::GetTransactionID(void)const 
+    ?GetTransportAddress@OpalListener@@QBE?AVOpalTransportAddress@@XZ @15008 NONAME ;public: class OpalTransportAddress  __thiscall OpalListener::GetTransportAddress(void)const 
     ?GetTxFramesInPacket@H323AudioCapability@@UBEIXZ @11393 NONAME ;public: virtual unsigned int __thiscall H323AudioCapability::GetTxFramesInPacket(void)const 
     ?GetTxFramesInPacket@H323Capability@@UBEIXZ @11394 NONAME ;public: virtual unsigned int __thiscall H323Capability::GetTxFramesInPacket(void)const 
     ?GetUserInput@OpalConnection@@UAE?AVPString@@I@Z @14072 NONAME ;public: virtual class PString  __thiscall OpalConnection::GetUserInput(unsigned int)
@@ -12244,9 +12374,10 @@ EXPORTS
     ?GetVAD@OpalLine@@UAEHXZ @11397 NONAME ;public: virtual int __thiscall OpalLine::GetVAD(void)
     ?GetVAD@OpalLineInterfaceDevice@@UAEHI@Z @11398 NONAME ;public: virtual int __thiscall OpalLineInterfaceDevice::GetVAD(unsigned int)
     ?GetVAD@OpalVoipBlasterDevice@@UAEHI@Z @14073 NONAME ;public: virtual int __thiscall OpalVoipBlasterDevice::GetVAD(unsigned int)
+    ?GetValue@PASN_BMPString@@QBE?AVPString@@XZ @15009 NONAME ;public: class PString  __thiscall PASN_BMPString::GetValue(void)const 
     ?GetVia@SIPMIMEInfo@@QBE?AVPString@@XZ @14074 NONAME ;public: class PString  __thiscall SIPMIMEInfo::GetVia(void)const 
-    ?GetWithLock@?$PSafeDictionary@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@UAE?AV?$PSafePtr@VH323RegisteredEndPoint@@@@HW4PSafetyMode@@@Z @14075 NONAME ;public: virtual class PSafePtr<class H323RegisteredEndPoint>  __thiscall PSafeDictionary<class PDictionary<class PString,class H323RegisteredEndPoint>,class PString,class H323RegisteredEndPoint>::GetWithLock(int,enum PSafetyMode)
-    ?GetWithLock@?$PSafeList@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@UAE?AV?$PSafePtr@VH323GatekeeperCall@@@@HW4PSafetyMode@@@Z @14076 NONAME ;public: virtual class PSafePtr<class H323GatekeeperCall>  __thiscall PSafeList<class PSortedList<class H323GatekeeperCall>,class H323GatekeeperCall>::GetWithLock(int,enum PSafetyMode)
+    ?GetWithLock@?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@UAE?AV?$PSafePtr@VH323GatekeeperCall@@@@HW4PSafetyMode@@@Z @15010 NONAME ;public: virtual class PSafePtr<class H323GatekeeperCall>  __thiscall PSafeColl<class PSortedList<class H323GatekeeperCall>,class H323GatekeeperCall>::GetWithLock(int,enum PSafetyMode)
+    ?GetWithLock@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@UAE?AV?$PSafePtr@VH323RegisteredEndPoint@@@@HW4PSafetyMode@@@Z @15011 NONAME ;public: virtual class PSafePtr<class H323RegisteredEndPoint>  __thiscall PSafeDictionaryBase<class PDictionary<class PString,class H323RegisteredEndPoint>,class PString,class H323RegisteredEndPoint>::GetWithLock(int,enum PSafetyMode)
     ?GetWriteFormat@OpalIxJDevice@@UAE?AVOpalMediaFormat@@I@Z @11399 NONAME ;public: virtual class OpalMediaFormat  __thiscall OpalIxJDevice::GetWriteFormat(unsigned int)
     ?GetWriteFormat@OpalLine@@UAE?AVOpalMediaFormat@@XZ @11400 NONAME ;public: virtual class OpalMediaFormat  __thiscall OpalLine::GetWriteFormat(void)
     ?GetWriteFormat@OpalVoipBlasterDevice@@UAE?AVOpalMediaFormat@@I@Z @14077 NONAME ;public: virtual class OpalMediaFormat  __thiscall OpalVoipBlasterDevice::GetWriteFormat(unsigned int)
@@ -12260,7 +12391,7 @@ EXPORTS
     ?H323SetAliasAddress@@YAXABVPString@@AAVH225_AliasAddress@@H@Z @14082 NONAME ;void __cdecl H323SetAliasAddress(class PString const &,class H225_AliasAddress &,int)
     ?H323SetAliasAddresses@@YAXABVPStringList@@AAVH225_ArrayOf_AliasAddress@@@Z @11407 NONAME ;void __cdecl H323SetAliasAddresses(class PStringList const &,class H225_ArrayOf_AliasAddress &)
     ?H323TranslateFromCallEndReason@@YA?AW4CauseValues@Q931@@ABVH323Connection@@AAVH225_ReleaseCompleteReason@@@Z @14083 NONAME ;enum Q931::CauseValues  __cdecl H323TranslateFromCallEndReason(class H323Connection const &,class H225_ReleaseCompleteReason &)
-    ?H323TranslateToCallEndReason@@YA?AW4OpalCallEndReason@@W4CauseValues@Q931@@ABVH225_ReleaseCompleteReason@@@Z @14084 NONAME ;enum OpalCallEndReason  __cdecl H323TranslateToCallEndReason(enum Q931::CauseValues,class H225_ReleaseCompleteReason const &)
+    ?H323TranslateToCallEndReason@@YA?AW4CallEndReason@OpalConnection@@W4CauseValues@Q931@@ABVH225_ReleaseCompleteReason@@@Z @15012 NONAME ;enum OpalConnection::CallEndReason  __cdecl H323TranslateToCallEndReason(enum Q931::CauseValues,class H225_ReleaseCompleteReason const &)
     ?H323_G711ALaw64Capability_Registration_Instance@@3VH323_G711ALaw64Capability_Registration@@A @14085 NONAME ;class H323_G711ALaw64Capability_Registration  H323_G711ALaw64Capability_Registration_Instance
     ?H323_G711uLaw64Capability_Registration_Instance@@3VH323_G711uLaw64Capability_Registration@@A @14086 NONAME ;class H323_G711uLaw64Capability_Registration  H323_G711uLaw64Capability_Registration_Instance
     ?H323_G7231Capability_5k3_Registration_Instance@@3VH323_G7231Capability_5k3_Registration@@A @14087 NONAME ;class H323_G7231Capability_5k3_Registration  H323_G7231Capability_5k3_Registration_Instance
@@ -12344,7 +12475,6 @@ EXPORTS
     ?HandleTunnelPDU@H323Connection@@UAEXPAVH323SignalPDU@@@Z @14138 NONAME ;public: virtual void __thiscall H323Connection::HandleTunnelPDU(class H323SignalPDU *)
     ?HasCall@OpalManager@@UAEHABVPString@@@Z @11463 NONAME ;public: virtual int __thiscall OpalManager::HasCall(class PString const &)
     ?HasConnection@OpalEndPoint@@UAEHABVPString@@@Z @11464 NONAME ;public: virtual int __thiscall OpalEndPoint::HasConnection(class PString const &)
-    ?HasExceededTimeToLive@H323RegisteredEndPoint@@QBEHXZ @11465 NONAME ;public: int __thiscall H323RegisteredEndPoint::HasExceededTimeToLive(void)const 
     ?HashFunction@H323ChannelNumber@@UBEHXZ @11466 NONAME ;public: virtual int __thiscall H323ChannelNumber::HashFunction(void)const 
     ?HashFunction@OpalGloballyUniqueID@@UBEHXZ @11467 NONAME ;public: virtual int __thiscall OpalGloballyUniqueID::HashFunction(void)const 
     ?HasHookFlash@OpalIxJDevice@@UAEHI@Z @11468 NONAME ;public: virtual int __thiscall OpalIxJDevice::HasHookFlash(unsigned int)
@@ -12374,7 +12504,7 @@ EXPORTS
     ?InternalMakeCall@H323EndPoint@@IAEHAAVOpalCall@@ABVPString@@1I1PAX@Z @14148 NONAME ;protected: int __thiscall H323EndPoint::InternalMakeCall(class OpalCall &,class PString const &,class PString const &,unsigned int,class PString const &,void *)
     ?InternalPlayTone@OpalIxJDevice@@IAEHIKKKH@Z @11483 NONAME ;protected: int __thiscall OpalIxJDevice::InternalPlayTone(unsigned int,unsigned long,unsigned long,unsigned long,int)
     ?InternalRegisterGatekeeper@H323EndPoint@@IAEHPAVH323Gatekeeper@@H@Z @11484 NONAME ;protected: int __thiscall H323EndPoint::InternalRegisterGatekeeper(class H323Gatekeeper *,int)
-    ?InternalReleaseConnection@OpalCall@@IAEXHW4OpalCallEndReason@@@Z @13147 NONAME ;protected: void __thiscall OpalCall::InternalReleaseConnection(int,enum OpalCallEndReason)
+    ?InternalReleaseConnection@OpalCall@@IAEXHW4CallEndReason@OpalConnection@@@Z @15013 NONAME ;protected: void __thiscall OpalCall::InternalReleaseConnection(int,enum OpalConnection::CallEndReason)
     ?InternalSetVolume@OpalIxJDevice@@IAEHHIHH@Z @11485 NONAME ;protected: int __thiscall OpalIxJDevice::InternalSetVolume(int,unsigned int,int,int)
     ?IntrudeCall@H323Connection@@UAEXI@Z @14149 NONAME ;public: virtual void __thiscall H323Connection::IntrudeCall(unsigned int)
     ?IntrudeCall@H323EndPoint@@QAEHABVPString@@IPAX@Z @14150 NONAME ;public: int __thiscall H323EndPoint::IntrudeCall(class PString const &,unsigned int,void *)
@@ -12392,10 +12522,11 @@ EXPORTS
     ?IsAudioEnabled@OpalLine@@UAEHXZ @11493 NONAME ;public: virtual int __thiscall OpalLine::IsAudioEnabled(void)
     ?IsAudioEnabled@OpalLineInterfaceDevice@@UAEHI@Z @11494 NONAME ;public: virtual int __thiscall OpalLineInterfaceDevice::IsAudioEnabled(unsigned int)
     ?IsCallOnHold@H323Connection@@QBEHXZ @14155 NONAME ;public: int __thiscall H323Connection::IsCallOnHold(void)const 
+    ?IsCapability@H235AuthProcedure1@@UAEHABVH235_AuthenticationMechanism@@ABVPASN_ObjectId@@@Z @15014 NONAME ;public: virtual int __thiscall H235AuthProcedure1::IsCapability(class H235_AuthenticationMechanism const &,class PASN_ObjectId const &)
     ?IsCapability@H235AuthSimpleMD5@@UAEHABVH235_AuthenticationMechanism@@ABVPASN_ObjectId@@@Z @14156 NONAME ;public: virtual int __thiscall H235AuthSimpleMD5::IsCapability(class H235_AuthenticationMechanism const &,class PASN_ObjectId const &)
     ?IsClass@?$PArray@V?$PList@VH323Capability@@@@@@UBEHPBD@Z @11495 NONAME ;public: virtual int __thiscall PArray<class PList<class H323Capability> >::IsClass(char const *)const 
     ?IsClass@?$PArray@VH323SimultaneousCapabilities@@@@UBEHPBD@Z @11496 NONAME ;public: virtual int __thiscall PArray<class H323SimultaneousCapabilities>::IsClass(char const *)const 
-    ?IsClass@?$PArray@VOpalTransportAddress@@@@UBEHPBD@Z @11497 NONAME ;public: virtual int __thiscall PArray<class OpalTransportAddress>::IsClass(char const *)const 
+    ?IsClass@?$PArray@VH323TransportAddress@@@@UBEHPBD@Z @15015 NONAME ;public: virtual int __thiscall PArray<class H323TransportAddress>::IsClass(char const *)const 
     ?IsClass@?$PArray@VReceiverReport@RTP_Session@@@@UBEHPBD@Z @11498 NONAME ;public: virtual int __thiscall PArray<class RTP_Session::ReceiverReport>::IsClass(char const *)const 
     ?IsClass@?$PArray@VSink@OpalMediaPatch@@@@UBEHPBD@Z @11499 NONAME ;public: virtual int __thiscall PArray<class OpalMediaPatch::Sink>::IsClass(char const *)const 
     ?IsClass@?$PArray@VSourceDescription@RTP_Session@@@@UBEHPBD@Z @11500 NONAME ;public: virtual int __thiscall PArray<class RTP_Session::SourceDescription>::IsClass(char const *)const 
@@ -12430,8 +12561,8 @@ EXPORTS
     ?IsClass@?$PList@VSDPMediaFormat@@@@UBEHPBD@Z @14165 NONAME ;public: virtual int __thiscall PList<class SDPMediaFormat>::IsClass(char const *)const 
     ?IsClass@?$PList@VSIPTransaction@@@@UBEHPBD@Z @14166 NONAME ;public: virtual int __thiscall PList<class SIPTransaction>::IsClass(char const *)const 
     ?IsClass@?$PQueue@VSIP_PDU@@@@UBEHPBD@Z @14167 NONAME ;public: virtual int __thiscall PQueue<class SIP_PDU>::IsClass(char const *)const 
-    ?IsClass@?$PSafeDictionary@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@UBEHPBD@Z @14168 NONAME ;public: virtual int __thiscall PSafeDictionary<class PDictionary<class PString,class H323RegisteredEndPoint>,class PString,class H323RegisteredEndPoint>::IsClass(char const *)const 
-    ?IsClass@?$PSafeList@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@UBEHPBD@Z @14169 NONAME ;public: virtual int __thiscall PSafeList<class PSortedList<class H323GatekeeperCall>,class H323GatekeeperCall>::IsClass(char const *)const 
+    ?IsClass@?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@UBEHPBD@Z @15016 NONAME ;public: virtual int __thiscall PSafeColl<class PSortedList<class H323GatekeeperCall>,class H323GatekeeperCall>::IsClass(char const *)const 
+    ?IsClass@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@UBEHPBD@Z @15017 NONAME ;public: virtual int __thiscall PSafeDictionaryBase<class PDictionary<class PString,class H323RegisteredEndPoint>,class PString,class H323RegisteredEndPoint>::IsClass(char const *)const 
     ?IsClass@?$PSafePtr@VH323GatekeeperCall@@@@UBEHPBD@Z @14170 NONAME ;public: virtual int __thiscall PSafePtr<class H323GatekeeperCall>::IsClass(char const *)const 
     ?IsClass@?$PSafePtr@VH323RegisteredEndPoint@@@@UBEHPBD@Z @14171 NONAME ;public: virtual int __thiscall PSafePtr<class H323RegisteredEndPoint>::IsClass(char const *)const 
     ?IsClass@?$PSet@VPOrdinalKey@@@@UBEHPBD@Z @14172 NONAME ;public: virtual int __thiscall PSet<class POrdinalKey>::IsClass(char const *)const 
@@ -12446,6 +12577,7 @@ EXPORTS
     ?IsClass@H225_RAS@@UBEHPBD@Z @11522 NONAME ;public: virtual int __thiscall H225_RAS::IsClass(char const *)const 
     ?IsClass@H235Authenticator@@UBEHPBD@Z @12886 NONAME ;public: virtual int __thiscall H235Authenticator::IsClass(char const *)const 
     ?IsClass@H235Authenticators@@UBEHPBD@Z @14179 NONAME ;public: virtual int __thiscall H235Authenticators::IsClass(char const *)const 
+    ?IsClass@H235AuthProcedure1@@UBEHPBD@Z @15018 NONAME ;public: virtual int __thiscall H235AuthProcedure1::IsClass(char const *)const 
     ?IsClass@H235AuthSimpleMD5@@UBEHPBD@Z @12888 NONAME ;public: virtual int __thiscall H235AuthSimpleMD5::IsClass(char const *)const 
     ?IsClass@H245NegLogicalChannel@@UBEHPBD@Z @11524 NONAME ;public: virtual int __thiscall H245NegLogicalChannel::IsClass(char const *)const 
     ?IsClass@H245NegLogicalChannels@@UBEHPBD@Z @11525 NONAME ;public: virtual int __thiscall H245NegLogicalChannels::IsClass(char const *)const 
@@ -12563,6 +12695,7 @@ EXPORTS
     ?IsClass@OpalVideoMediaStream@@UBEHPBD@Z @12645 NONAME ;public: virtual int __thiscall OpalVideoMediaStream::IsClass(char const *)const 
     ?IsClass@OpalVideoTranscoder@@UBEHPBD@Z @11612 NONAME ;public: virtual int __thiscall OpalVideoTranscoder::IsClass(char const *)const 
     ?IsClass@OpalVoipBlasterDevice@@UBEHPBD@Z @14200 NONAME ;public: virtual int __thiscall OpalVoipBlasterDevice::IsClass(char const *)const 
+    ?IsClass@OpalVXMLSession@@UBEHPBD@Z @15019 NONAME ;public: virtual int __thiscall OpalVXMLSession::IsClass(char const *)const 
     ?IsClass@OpalWAVFile@@UBEHPBD@Z @14201 NONAME ;public: virtual int __thiscall OpalWAVFile::IsClass(char const *)const 
     ?IsClass@PASN_Array@@UBEHPBD@Z @11614 NONAME ;public: virtual int __thiscall PASN_Array::IsClass(char const *)const 
     ?IsClass@PASN_BitString@@UBEHPBD@Z @11615 NONAME ;public: virtual int __thiscall PASN_BitString::IsClass(char const *)const 
@@ -12613,6 +12746,12 @@ EXPORTS
     ?IsClass@SIPURL@@UBEHPBD@Z @14219 NONAME ;public: virtual int __thiscall SIPURL::IsClass(char const *)const 
     ?IsClass@SIP_PDU@@UBEHPBD@Z @14220 NONAME ;public: virtual int __thiscall SIP_PDU::IsClass(char const *)const 
     ?IsClass@SourceDescription@RTP_Session@@UBEHPBD@Z @11644 NONAME ;public: virtual int __thiscall RTP_Session::SourceDescription::IsClass(char const *)const 
+    ?IsClass@SpeexNarrow2AudioCapability@@UBEHPBD@Z @15020 NONAME ;public: virtual int __thiscall SpeexNarrow2AudioCapability::IsClass(char const *)const 
+    ?IsClass@SpeexNarrow3AudioCapability@@UBEHPBD@Z @15021 NONAME ;public: virtual int __thiscall SpeexNarrow3AudioCapability::IsClass(char const *)const 
+    ?IsClass@SpeexNarrow4AudioCapability@@UBEHPBD@Z @15022 NONAME ;public: virtual int __thiscall SpeexNarrow4AudioCapability::IsClass(char const *)const 
+    ?IsClass@SpeexNarrow5AudioCapability@@UBEHPBD@Z @15023 NONAME ;public: virtual int __thiscall SpeexNarrow5AudioCapability::IsClass(char const *)const 
+    ?IsClass@SpeexNarrow6AudioCapability@@UBEHPBD@Z @15024 NONAME ;public: virtual int __thiscall SpeexNarrow6AudioCapability::IsClass(char const *)const 
+    ?IsClass@SpeexNonStandardAudioCapability@@UBEHPBD@Z @15025 NONAME ;public: virtual int __thiscall SpeexNonStandardAudioCapability::IsClass(char const *)const 
     ?IsClass@T120ConnectPDU@@UBEHPBD@Z @14221 NONAME ;public: virtual int __thiscall T120ConnectPDU::IsClass(char const *)const 
     ?IsClass@T120_X224@@UBEHPBD@Z @14222 NONAME ;public: virtual int __thiscall T120_X224::IsClass(char const *)const 
     ?IsClass@VoipBlasterInterface@@UBEHPBD@Z @14223 NONAME ;public: virtual int __thiscall VoipBlasterInterface::IsClass(char const *)const 
@@ -12623,7 +12762,7 @@ EXPORTS
     ?IsConnectionEstablished@H323EndPoint@@UAEHABVPString@@@Z @11649 NONAME ;public: virtual int __thiscall H323EndPoint::IsConnectionEstablished(class PString const &)
     ?IsDescendant@?$PArray@V?$PList@VH323Capability@@@@@@UBEHPBD@Z @11650 NONAME ;public: virtual int __thiscall PArray<class PList<class H323Capability> >::IsDescendant(char const *)const 
     ?IsDescendant@?$PArray@VH323SimultaneousCapabilities@@@@UBEHPBD@Z @11651 NONAME ;public: virtual int __thiscall PArray<class H323SimultaneousCapabilities>::IsDescendant(char const *)const 
-    ?IsDescendant@?$PArray@VOpalTransportAddress@@@@UBEHPBD@Z @11652 NONAME ;public: virtual int __thiscall PArray<class OpalTransportAddress>::IsDescendant(char const *)const 
+    ?IsDescendant@?$PArray@VH323TransportAddress@@@@UBEHPBD@Z @15026 NONAME ;public: virtual int __thiscall PArray<class H323TransportAddress>::IsDescendant(char const *)const 
     ?IsDescendant@?$PArray@VReceiverReport@RTP_Session@@@@UBEHPBD@Z @11653 NONAME ;public: virtual int __thiscall PArray<class RTP_Session::ReceiverReport>::IsDescendant(char const *)const 
     ?IsDescendant@?$PArray@VSink@OpalMediaPatch@@@@UBEHPBD@Z @11654 NONAME ;public: virtual int __thiscall PArray<class OpalMediaPatch::Sink>::IsDescendant(char const *)const 
     ?IsDescendant@?$PArray@VSourceDescription@RTP_Session@@@@UBEHPBD@Z @11655 NONAME ;public: virtual int __thiscall PArray<class RTP_Session::SourceDescription>::IsDescendant(char const *)const 
@@ -12659,8 +12798,8 @@ EXPORTS
     ?IsDescendant@?$PList@VSDPMediaFormat@@@@UBEHPBD@Z @14232 NONAME ;public: virtual int __thiscall PList<class SDPMediaFormat>::IsDescendant(char const *)const 
     ?IsDescendant@?$PList@VSIPTransaction@@@@UBEHPBD@Z @14233 NONAME ;public: virtual int __thiscall PList<class SIPTransaction>::IsDescendant(char const *)const 
     ?IsDescendant@?$PQueue@VSIP_PDU@@@@UBEHPBD@Z @14234 NONAME ;public: virtual int __thiscall PQueue<class SIP_PDU>::IsDescendant(char const *)const 
-    ?IsDescendant@?$PSafeDictionary@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@UBEHPBD@Z @14235 NONAME ;public: virtual int __thiscall PSafeDictionary<class PDictionary<class PString,class H323RegisteredEndPoint>,class PString,class H323RegisteredEndPoint>::IsDescendant(char const *)const 
-    ?IsDescendant@?$PSafeList@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@UBEHPBD@Z @14236 NONAME ;public: virtual int __thiscall PSafeList<class PSortedList<class H323GatekeeperCall>,class H323GatekeeperCall>::IsDescendant(char const *)const 
+    ?IsDescendant@?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@UBEHPBD@Z @15027 NONAME ;public: virtual int __thiscall PSafeColl<class PSortedList<class H323GatekeeperCall>,class H323GatekeeperCall>::IsDescendant(char const *)const 
+    ?IsDescendant@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@UBEHPBD@Z @15028 NONAME ;public: virtual int __thiscall PSafeDictionaryBase<class PDictionary<class PString,class H323RegisteredEndPoint>,class PString,class H323RegisteredEndPoint>::IsDescendant(char const *)const 
     ?IsDescendant@?$PSafePtr@VH323GatekeeperCall@@@@UBEHPBD@Z @14237 NONAME ;public: virtual int __thiscall PSafePtr<class H323GatekeeperCall>::IsDescendant(char const *)const 
     ?IsDescendant@?$PSafePtr@VH323RegisteredEndPoint@@@@UBEHPBD@Z @14238 NONAME ;public: virtual int __thiscall PSafePtr<class H323RegisteredEndPoint>::IsDescendant(char const *)const 
     ?IsDescendant@?$PSet@VPOrdinalKey@@@@UBEHPBD@Z @14239 NONAME ;public: virtual int __thiscall PSet<class POrdinalKey>::IsDescendant(char const *)const 
@@ -12675,6 +12814,7 @@ EXPORTS
     ?IsDescendant@H225_RAS@@UBEHPBD@Z @11677 NONAME ;public: virtual int __thiscall H225_RAS::IsDescendant(char const *)const 
     ?IsDescendant@H235Authenticator@@UBEHPBD@Z @12890 NONAME ;public: virtual int __thiscall H235Authenticator::IsDescendant(char const *)const 
     ?IsDescendant@H235Authenticators@@UBEHPBD@Z @14246 NONAME ;public: virtual int __thiscall H235Authenticators::IsDescendant(char const *)const 
+    ?IsDescendant@H235AuthProcedure1@@UBEHPBD@Z @15029 NONAME ;public: virtual int __thiscall H235AuthProcedure1::IsDescendant(char const *)const 
     ?IsDescendant@H235AuthSimpleMD5@@UBEHPBD@Z @12892 NONAME ;public: virtual int __thiscall H235AuthSimpleMD5::IsDescendant(char const *)const 
     ?IsDescendant@H245NegLogicalChannel@@UBEHPBD@Z @11679 NONAME ;public: virtual int __thiscall H245NegLogicalChannel::IsDescendant(char const *)const 
     ?IsDescendant@H245NegLogicalChannels@@UBEHPBD@Z @11680 NONAME ;public: virtual int __thiscall H245NegLogicalChannels::IsDescendant(char const *)const 
@@ -12793,6 +12933,7 @@ EXPORTS
     ?IsDescendant@OpalVideoMediaStream@@UBEHPBD@Z @12646 NONAME ;public: virtual int __thiscall OpalVideoMediaStream::IsDescendant(char const *)const 
     ?IsDescendant@OpalVideoTranscoder@@UBEHPBD@Z @11768 NONAME ;public: virtual int __thiscall OpalVideoTranscoder::IsDescendant(char const *)const 
     ?IsDescendant@OpalVoipBlasterDevice@@UBEHPBD@Z @14267 NONAME ;public: virtual int __thiscall OpalVoipBlasterDevice::IsDescendant(char const *)const 
+    ?IsDescendant@OpalVXMLSession@@UBEHPBD@Z @15030 NONAME ;public: virtual int __thiscall OpalVXMLSession::IsDescendant(char const *)const 
     ?IsDescendant@OpalWAVFile@@UBEHPBD@Z @14268 NONAME ;public: virtual int __thiscall OpalWAVFile::IsDescendant(char const *)const 
     ?IsDescendant@PASN_Array@@UBEHPBD@Z @11770 NONAME ;public: virtual int __thiscall PASN_Array::IsDescendant(char const *)const 
     ?IsDescendant@PASN_BitString@@UBEHPBD@Z @11771 NONAME ;public: virtual int __thiscall PASN_BitString::IsDescendant(char const *)const 
@@ -12844,6 +12985,12 @@ EXPORTS
     ?IsDescendant@SIPURL@@UBEHPBD@Z @14286 NONAME ;public: virtual int __thiscall SIPURL::IsDescendant(char const *)const 
     ?IsDescendant@SIP_PDU@@UBEHPBD@Z @14287 NONAME ;public: virtual int __thiscall SIP_PDU::IsDescendant(char const *)const 
     ?IsDescendant@SourceDescription@RTP_Session@@UBEHPBD@Z @11801 NONAME ;public: virtual int __thiscall RTP_Session::SourceDescription::IsDescendant(char const *)const 
+    ?IsDescendant@SpeexNarrow2AudioCapability@@UBEHPBD@Z @15031 NONAME ;public: virtual int __thiscall SpeexNarrow2AudioCapability::IsDescendant(char const *)const 
+    ?IsDescendant@SpeexNarrow3AudioCapability@@UBEHPBD@Z @15032 NONAME ;public: virtual int __thiscall SpeexNarrow3AudioCapability::IsDescendant(char const *)const 
+    ?IsDescendant@SpeexNarrow4AudioCapability@@UBEHPBD@Z @15033 NONAME ;public: virtual int __thiscall SpeexNarrow4AudioCapability::IsDescendant(char const *)const 
+    ?IsDescendant@SpeexNarrow5AudioCapability@@UBEHPBD@Z @15034 NONAME ;public: virtual int __thiscall SpeexNarrow5AudioCapability::IsDescendant(char const *)const 
+    ?IsDescendant@SpeexNarrow6AudioCapability@@UBEHPBD@Z @15035 NONAME ;public: virtual int __thiscall SpeexNarrow6AudioCapability::IsDescendant(char const *)const 
+    ?IsDescendant@SpeexNonStandardAudioCapability@@UBEHPBD@Z @15036 NONAME ;public: virtual int __thiscall SpeexNonStandardAudioCapability::IsDescendant(char const *)const 
     ?IsDescendant@T120ConnectPDU@@UBEHPBD@Z @14288 NONAME ;public: virtual int __thiscall T120ConnectPDU::IsDescendant(char const *)const 
     ?IsDescendant@T120_X224@@UBEHPBD@Z @14289 NONAME ;public: virtual int __thiscall T120_X224::IsDescendant(char const *)const 
     ?IsDescendant@VoipBlasterInterface@@UBEHPBD@Z @14290 NONAME ;public: virtual int __thiscall VoipBlasterInterface::IsDescendant(char const *)const 
@@ -12918,8 +13065,8 @@ EXPORTS
     ?ListenerCallback@OpalEndPoint@@UAEXAAVPThread@@H@Z @12652 NONAME ;public: virtual void __thiscall OpalEndPoint::ListenerCallback(class PThread &,int)
     ?ListenForConnections@OpalListener@@MAEXAAVPThread@@H@Z @11848 NONAME ;protected: virtual void __thiscall OpalListener::ListenForConnections(class PThread &,int)
     ?LocateGatekeeper@H323EndPoint@@QAEHABVPString@@PAVOpalTransport@@@Z @11849 NONAME ;public: int __thiscall H323EndPoint::LocateGatekeeper(class PString const &,class OpalTransport *)
-    ?LocationRequest@H323Gatekeeper@@QAEHABVPString@@AAVOpalTransportAddress@@@Z @11850 NONAME ;public: int __thiscall H323Gatekeeper::LocationRequest(class PString const &,class OpalTransportAddress &)
-    ?LocationRequest@H323Gatekeeper@@QAEHABVPStringList@@AAVOpalTransportAddress@@@Z @11851 NONAME ;public: int __thiscall H323Gatekeeper::LocationRequest(class PStringList const &,class OpalTransportAddress &)
+    ?LocationRequest@H323Gatekeeper@@QAEHABVPString@@AAVH323TransportAddress@@@Z @15037 NONAME ;public: int __thiscall H323Gatekeeper::LocationRequest(class PString const &,class H323TransportAddress &)
+    ?LocationRequest@H323Gatekeeper@@QAEHABVPStringList@@AAVH323TransportAddress@@@Z @15038 NONAME ;public: int __thiscall H323Gatekeeper::LocationRequest(class PStringList const &,class H323TransportAddress &)
     ?Lock@OpalConnection@@UAEHXZ @11852 NONAME ;public: virtual int __thiscall OpalConnection::Lock(void)
     ?LockOnRelease@OpalConnection@@IAEXXZ @13140 NONAME ;protected: void __thiscall OpalConnection::LockOnRelease(void)
     ?Main@H225CallThread@@MAEXXZ @11853 NONAME ;protected: virtual void __thiscall H225CallThread::Main(void)
@@ -12993,7 +13140,9 @@ EXPORTS
     ?OnDisengage@H323GatekeeperCall@@UAE?AW4Response@H323GatekeeperRequest@@AAVH323GatekeeperDRQ@@@Z @14341 NONAME ;public: virtual enum H323GatekeeperRequest::Response  __thiscall H323GatekeeperCall::OnDisengage(class H323GatekeeperDRQ &)
     ?OnDisengage@H323GatekeeperListener@@UAE?AW4Response@H323GatekeeperRequest@@AAVH323GatekeeperDRQ@@@Z @14342 NONAME ;public: virtual enum H323GatekeeperRequest::Response  __thiscall H323GatekeeperListener::OnDisengage(class H323GatekeeperDRQ &)
     ?OnDisengage@H323GatekeeperServer@@UAE?AW4Response@H323GatekeeperRequest@@AAVH323GatekeeperDRQ@@@Z @14343 NONAME ;public: virtual enum H323GatekeeperRequest::Response  __thiscall H323GatekeeperServer::OnDisengage(class H323GatekeeperDRQ &)
+    ?OnEmptyAction@PVXMLSession@@UAEHXZ @15039 NONAME ;public: virtual int __thiscall PVXMLSession::OnEmptyAction(void)
     ?OnEndReceive@OpalRFC2833Proto@@UAEXDII@Z @14344 NONAME ;public: virtual void __thiscall OpalRFC2833Proto::OnEndReceive(char,unsigned int,unsigned int)
+    ?OnEndSession@PVXMLSession@@UAEXXZ @15040 NONAME ;public: virtual void __thiscall PVXMLSession::OnEndSession(void)
     ?OnEstablished@H323Connection@@UAEXXZ @11913 NONAME ;public: virtual void __thiscall H323Connection::OnEstablished(void)
     ?OnEstablished@OpalCall@@UAEXXZ @11914 NONAME ;public: virtual void __thiscall OpalCall::OnEstablished(void)
     ?OnEstablished@OpalConnection@@UAEXXZ @11915 NONAME ;public: virtual void __thiscall OpalConnection::OnEstablished(void)
@@ -13397,6 +13546,7 @@ EXPORTS
     ?OnStartMediaPatch@OpalManager@@UAEHABVOpalMediaPatch@@@Z @12152 NONAME ;public: virtual int __thiscall OpalManager::OnStartMediaPatch(class OpalMediaPatch const &)
     ?OnStartReceive@OpalRFC2833Proto@@UAEXD@Z @14533 NONAME ;public: virtual void __thiscall OpalRFC2833Proto::OnStartReceive(char)
     ?OnTimeout@SIPTransaction@@MAEXAAVPTimer@@H@Z @14534 NONAME ;protected: virtual void __thiscall SIPTransaction::OnTimeout(class PTimer &,int)
+    ?OnTimeToLive@H323RegisteredEndPoint@@UAEHXZ @15041 NONAME ;public: virtual int __thiscall H323RegisteredEndPoint::OnTimeToLive(void)
     ?OnTransactionFailed@SIPConnection@@UAEXAAVSIPTransaction@@@Z @14535 NONAME ;public: virtual void __thiscall SIPConnection::OnTransactionFailed(class SIPTransaction &)
     ?OnTxStatistics@H323_RTP_Session@@UBEXABVRTP_Session@@@Z @12153 NONAME ;public: virtual void __thiscall H323_RTP_Session::OnTxStatistics(class RTP_Session const &)const 
     ?OnTxStatistics@RTP_UserData@@UBEXABVRTP_Session@@@Z @12154 NONAME ;public: virtual void __thiscall RTP_UserData::OnTxStatistics(class RTP_Session const &)const 
@@ -13431,6 +13581,10 @@ EXPORTS
     ?OpalG729A@@3VOpalMediaFormat@@B @12176 NONAME ;class OpalMediaFormat const  OpalG729A
     ?OpalG729AB@@3VOpalMediaFormat@@B @12177 NONAME ;class OpalMediaFormat const  OpalG729AB
     ?OpalG729B@@3VOpalMediaFormat@@B @12806 NONAME ;class OpalMediaFormat const  OpalG729B
+    ?OpalGetBuildNumber@@YAIXZ @15042 NONAME ;unsigned int __cdecl OpalGetBuildNumber(void)
+    ?OpalGetMajorVersion@@YAIXZ @15043 NONAME ;unsigned int __cdecl OpalGetMajorVersion(void)
+    ?OpalGetMinorVersion@@YAIXZ @15044 NONAME ;unsigned int __cdecl OpalGetMinorVersion(void)
+    ?OpalGetVersion@@YA?AVPString@@XZ @15045 NONAME ;class PString  __cdecl OpalGetVersion(void)
     ?OpalGSM0610@@3VOpalMediaFormat@@B @12807 NONAME ;class OpalMediaFormat const  OpalGSM0610
     ?OpalH261@@3VOpalMediaFormat@@B @12808 NONAME ;class OpalMediaFormat const  OpalH261
     ?OpalH261_CIF@@3VOpalMediaFormat@@B @12809 NONAME ;class OpalMediaFormat const  OpalH261_CIF
@@ -13440,6 +13594,11 @@ EXPORTS
     ?OpalMSIMA@@3VOpalMediaFormat@@B @12813 NONAME ;class OpalMediaFormat const  OpalMSIMA
     ?OpalPCM16@@3VOpalMediaFormat@@B @12179 NONAME ;class OpalMediaFormat const  OpalPCM16
     ?OpalRFC2833@@3VOpalMediaFormat@@B @14557 NONAME ;class OpalMediaFormat const  OpalRFC2833
+    ?OpalSpeexNarrow_11k@@3VOpalMediaFormat@@B @15046 NONAME ;class OpalMediaFormat const  OpalSpeexNarrow_11k
+    ?OpalSpeexNarrow_15k@@3VOpalMediaFormat@@B @15047 NONAME ;class OpalMediaFormat const  OpalSpeexNarrow_15k
+    ?OpalSpeexNarrow_18k2@@3VOpalMediaFormat@@B @15048 NONAME ;class OpalMediaFormat const  OpalSpeexNarrow_18k2
+    ?OpalSpeexNarrow_5k95@@3VOpalMediaFormat@@B @15049 NONAME ;class OpalMediaFormat const  OpalSpeexNarrow_5k95
+    ?OpalSpeexNarrow_8k@@3VOpalMediaFormat@@B @15050 NONAME ;class OpalMediaFormat const  OpalSpeexNarrow_8k
     ?Open@H245NegLogicalChannel@@UAEHABVH323Capability@@II@Z @14558 NONAME ;public: virtual int __thiscall H245NegLogicalChannel::Open(class H323Capability const &,unsigned int,unsigned int)
     ?Open@H245NegLogicalChannels@@UAEHABVH323Capability@@II@Z @14559 NONAME ;public: virtual int __thiscall H245NegLogicalChannels::Open(class H323Capability const &,unsigned int,unsigned int)
     ?Open@H323Channel@@UAEHXZ @12182 NONAME ;public: virtual int __thiscall H323Channel::Open(void)
@@ -13468,7 +13627,7 @@ EXPORTS
     ?Parse@SIPURL@@QAEXPBD@Z @14570 NONAME ;public: void __thiscall SIPURL::Parse(char const *)
     ?ParseEndpointAddress@H450ServiceAPDU@@SAXAAVH4501_EndpointAddress@@AAVPString@@@Z @12201 NONAME ;public: static void __cdecl H450ServiceAPDU::ParseEndpointAddress(class H4501_EndpointAddress &,class PString &)
     ?ParseOwner@SDPSessionDescription@@IAEXABVPString@@@Z @14571 NONAME ;protected: void __thiscall SDPSessionDescription::ParseOwner(class PString const &)
-    ?ParsePartyName@H323EndPoint@@QBEXABVPString@@AAV2@AAVOpalTransportAddress@@@Z @12202 NONAME ;public: void __thiscall H323EndPoint::ParsePartyName(class PString const &,class PString &,class OpalTransportAddress &)const 
+    ?ParsePartyName@H323EndPoint@@QBEXABVPString@@AAV2@AAVH323TransportAddress@@@Z @15051 NONAME ;public: void __thiscall H323EndPoint::ParsePartyName(class PString const &,class PString &,class H323TransportAddress &)const 
     ?parse_block@P64Decoder@@IAEHPAFPAI@Z @12203 NONAME ;protected: int __thiscall P64Decoder::parse_block(short *,unsigned int *)
     ?parse_gob_hdr@P64Decoder@@IAEHH@Z @12204 NONAME ;protected: int __thiscall P64Decoder::parse_gob_hdr(int)
     ?parse_mb_hdr@P64Decoder@@IAEHAAI@Z @12205 NONAME ;protected: int __thiscall P64Decoder::parse_mb_hdr(unsigned int &)
@@ -13483,10 +13642,11 @@ EXPORTS
     ?PlayTone@OpalLine@@UAEHW4CallProgressTones@OpalLineInterfaceDevice@@@Z @12214 NONAME ;public: virtual int __thiscall OpalLine::PlayTone(enum OpalLineInterfaceDevice::CallProgressTones)
     ?PlayTone@OpalLineInterfaceDevice@@UAEHIW4CallProgressTones@1@@Z @12215 NONAME ;public: virtual int __thiscall OpalLineInterfaceDevice::PlayTone(unsigned int,enum OpalLineInterfaceDevice::CallProgressTones)
     ?PlayTone@OpalVoipBlasterDevice@@UAEHIW4CallProgressTones@OpalLineInterfaceDevice@@@Z @14573 NONAME ;public: virtual int __thiscall OpalVoipBlasterDevice::PlayTone(unsigned int,enum OpalLineInterfaceDevice::CallProgressTones)
-    ?Poll@Request@H225_RAS@@QAEHAAVH323EndPoint@@AAVOpalTransport@@@Z @14574 NONAME ;public: int __thiscall H225_RAS::Request::Poll(class H323EndPoint &,class OpalTransport &)
+    ?Poll@Request@H225_RAS@@QAEHAAV2@@Z @15052 NONAME ;public: int __thiscall H225_RAS::Request::Poll(class H225_RAS &)
     ?Prepare@H235Authenticator@@UAEHAAVH225_ArrayOf_CryptoH323Token@@@Z @12917 NONAME ;public: virtual int __thiscall H235Authenticator::Prepare(class H225_ArrayOf_CryptoH323Token &)
     ?PreparePacket@OpalT38Protocol@@UAEHAAVT38_IFPPacket@@@Z @14575 NONAME ;public: virtual int __thiscall OpalT38Protocol::PreparePacket(class T38_IFPPacket &)
     ?PreparePDU@H235Authenticators@@QBEXAAVH225_ArrayOf_CryptoH323Token@@AAVPASN_Sequence@@I@Z @14576 NONAME ;public: void __thiscall H235Authenticators::PreparePDU(class H225_ArrayOf_CryptoH323Token &,class PASN_Sequence &,unsigned int)const 
+    ?PrepareToken@H235AuthProcedure1@@UAEHAAVH225_CryptoH323Token@@@Z @15053 NONAME ;public: virtual int __thiscall H235AuthProcedure1::PrepareToken(class H225_CryptoH323Token &)
     ?PrepareToken@H235AuthSimpleMD5@@UAEHAAVH225_CryptoH323Token@@@Z @12919 NONAME ;public: virtual int __thiscall H235AuthSimpleMD5::PrepareToken(class H225_CryptoH323Token &)
     ?PrintOn@H225_RAS@@UBEXAAVostream@@@Z @14577 NONAME ;public: virtual void __thiscall H225_RAS::PrintOn(class ostream &)const 
     ?PrintOn@H323Capabilities@@UBEXAAVostream@@@Z @12217 NONAME ;public: virtual void __thiscall H323Capabilities::PrintOn(class ostream &)const 
@@ -13576,12 +13736,12 @@ EXPORTS
     ?RegistrationTimeToLive@H323Gatekeeper@@IAEXXZ @14608 NONAME ;protected: void __thiscall H323Gatekeeper::RegistrationTimeToLive(void)
     ?Release@H245NegLogicalChannel@@MAEXXZ @12280 NONAME ;protected: virtual void __thiscall H245NegLogicalChannel::Release(void)
     ?Release@OpalCall@@QAEXPAVOpalConnection@@@Z @12281 NONAME ;public: void __thiscall OpalCall::Release(class OpalConnection *)
-    ?Release@OpalConnection@@UAEXW4OpalCallEndReason@@@Z @14811 NONAME ;public: virtual void __thiscall OpalConnection::Release(enum OpalCallEndReason)
+    ?Release@OpalConnection@@UAEXW4CallEndReason@1@@Z @15054 NONAME ;public: virtual void __thiscall OpalConnection::Release(enum OpalConnection::CallEndReason)
     ?ReleaseOnePacket@Transmitter@@IAEXPAUpktbuf@1@@Z @12284 NONAME ;protected: void __thiscall Transmitter::ReleaseOnePacket(struct Transmitter::pktbuf *)
     ?ReleaseSession@H323Connection@@UAEXI@Z @12285 NONAME ;public: virtual void __thiscall H323Connection::ReleaseSession(unsigned int)
     ?ReleaseSession@OpalConnection@@UAEXI@Z @12286 NONAME ;public: virtual void __thiscall OpalConnection::ReleaseSession(unsigned int)
     ?ReleaseSession@RTP_SessionManager@@QAEXI@Z @12287 NONAME ;public: void __thiscall RTP_SessionManager::ReleaseSession(unsigned int)
-    ?Remove@?$PSafeList@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@UAEHPAVH323GatekeeperCall@@@Z @14609 NONAME ;public: virtual int __thiscall PSafeList<class PSortedList<class H323GatekeeperCall>,class H323GatekeeperCall>::Remove(class H323GatekeeperCall *)
+    ?Remove@?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@UAEHPAVH323GatekeeperCall@@@Z @15055 NONAME ;public: virtual int __thiscall PSafeColl<class PSortedList<class H323GatekeeperCall>,class H323GatekeeperCall>::Remove(class H323GatekeeperCall *)
     ?Remove@H323Capabilities@@QAEXABVPString@@@Z @12288 NONAME ;public: void __thiscall H323Capabilities::Remove(class PString const &)
     ?Remove@H323Capabilities@@QAEXABVPStringArray@@@Z @12289 NONAME ;public: void __thiscall H323Capabilities::Remove(class PStringArray const &)
     ?Remove@H323Capabilities@@QAEXPAVH323Capability@@@Z @12290 NONAME ;public: void __thiscall H323Capabilities::Remove(class H323Capability *)
@@ -13603,8 +13763,8 @@ EXPORTS
     ?RemoveAt@?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@UAEPAVH323RegisteredEndPoint@@ABVPString@@@Z @12300 NONAME ;public: virtual class H323RegisteredEndPoint * __thiscall PDictionary<class PString,class H323RegisteredEndPoint>::RemoveAt(class PString const &)
     ?RemoveAt@?$PDictionary@VPString@@VOpalConnection@@@@UAEPAVOpalConnection@@ABVPString@@@Z @12301 NONAME ;public: virtual class OpalConnection * __thiscall PDictionary<class PString,class OpalConnection>::RemoveAt(class PString const &)
     ?RemoveAt@?$PDictionary@VPString@@VSIPTransaction@@@@UAEPAVSIPTransaction@@ABVPString@@@Z @14615 NONAME ;public: virtual class SIPTransaction * __thiscall PDictionary<class PString,class SIPTransaction>::RemoveAt(class PString const &)
-    ?RemoveAt@?$PSafeDictionary@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@UAEHABVPString@@@Z @14616 NONAME ;public: virtual int __thiscall PSafeDictionary<class PDictionary<class PString,class H323RegisteredEndPoint>,class PString,class H323RegisteredEndPoint>::RemoveAt(class PString const &)
-    ?RemoveAt@?$PSafeList@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@UAEPAVH323GatekeeperCall@@H@Z @14617 NONAME ;public: virtual class H323GatekeeperCall * __thiscall PSafeList<class PSortedList<class H323GatekeeperCall>,class H323GatekeeperCall>::RemoveAt(int)
+    ?RemoveAt@?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@UAEHH@Z @15056 NONAME ;public: virtual int __thiscall PSafeColl<class PSortedList<class H323GatekeeperCall>,class H323GatekeeperCall>::RemoveAt(int)
+    ?RemoveAt@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@UAEHABVPString@@@Z @15057 NONAME ;public: virtual int __thiscall PSafeDictionaryBase<class PDictionary<class PString,class H323RegisteredEndPoint>,class PString,class H323RegisteredEndPoint>::RemoveAt(class PString const &)
     ?RemoveAt@?$PStringDictionary@VPCaselessString@@@@UAEPAVPString@@ABVPCaselessString@@@Z @14618 NONAME ;public: virtual class PString * __thiscall PStringDictionary<class PCaselessString>::RemoveAt(class PCaselessString const &)
     ?RemoveCall@H323GatekeeperServer@@UAEXPAVH323GatekeeperCall@@@Z @12302 NONAME ;public: virtual void __thiscall H323GatekeeperServer::RemoveCall(class H323GatekeeperCall *)
     ?RemoveCall@H323RegisteredEndPoint@@QAEHPAVH323GatekeeperCall@@@Z @14619 NONAME ;public: int __thiscall H323RegisteredEndPoint::RemoveCall(class H323GatekeeperCall *)
@@ -13671,7 +13831,7 @@ EXPORTS
     ?SendReturnErrorReject@H450xHandler@@QAEXH@Z @13122 NONAME ;public: void __thiscall H450xHandler::SendReturnErrorReject(int)
     ?SendReturnResultReject@H450xDispatcher@@QAEXHH@Z @13123 NONAME ;public: void __thiscall H450xDispatcher::SendReturnResultReject(int,int)
     ?SendReturnResultReject@H450xHandler@@QAEXH@Z @13124 NONAME ;public: void __thiscall H450xHandler::SendReturnResultReject(int)
-    ?SendSignalSetup@H323Connection@@UAE?AW4OpalCallEndReason@@ABVPString@@ABVH323TransportAddress@@@Z @13125 NONAME ;public: virtual enum OpalCallEndReason  __thiscall H323Connection::SendSignalSetup(class PString const &,class H323TransportAddress const &)
+    ?SendSignalSetup@H323Connection@@UAE?AW4CallEndReason@OpalConnection@@ABVPString@@ABVH323TransportAddress@@@Z @15058 NONAME ;public: virtual enum OpalConnection::CallEndReason  __thiscall H323Connection::SendSignalSetup(class PString const &,class H323TransportAddress const &)
     ?SendTone@OpalRFC2833Proto@@UAEHDI@Z @14642 NONAME ;public: virtual int __thiscall OpalRFC2833Proto::SendTone(char,unsigned int)
     ?SendUnsolicitedIRR@H323Gatekeeper@@IAEHAAVH225_InfoRequestResponse@@AAVH323RasPDU@@@Z @14643 NONAME ;protected: int __thiscall H323Gatekeeper::SendUnsolicitedIRR(class H225_InfoRequestResponse &,class H323RasPDU &)
     ?SendUserInputIndication@H323Connection@@UAEHABVH245_UserInputIndication@@@Z @14644 NONAME ;public: virtual int __thiscall H323Connection::SendUserInputIndication(class H245_UserInputIndication const &)
@@ -13711,20 +13871,22 @@ EXPORTS
     ?SetAt@?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@UAEHABVPString@@PAVH323RegisteredEndPoint@@@Z @12364 NONAME ;public: virtual int __thiscall PDictionary<class PString,class H323RegisteredEndPoint>::SetAt(class PString const &,class H323RegisteredEndPoint *)
     ?SetAt@?$PDictionary@VPString@@VOpalConnection@@@@UAEHABVPString@@PAVOpalConnection@@@Z @12365 NONAME ;public: virtual int __thiscall PDictionary<class PString,class OpalConnection>::SetAt(class PString const &,class OpalConnection *)
     ?SetAt@?$PDictionary@VPString@@VSIPTransaction@@@@UAEHABVPString@@PAVSIPTransaction@@@Z @14667 NONAME ;public: virtual int __thiscall PDictionary<class PString,class SIPTransaction>::SetAt(class PString const &,class SIPTransaction *)
-    ?SetAt@?$PSafeDictionary@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@UAEXABVPString@@PAVH323RegisteredEndPoint@@@Z @14668 NONAME ;public: virtual void __thiscall PSafeDictionary<class PDictionary<class PString,class H323RegisteredEndPoint>,class PString,class H323RegisteredEndPoint>::SetAt(class PString const &,class H323RegisteredEndPoint *)
+    ?SetAt@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@UAEXABVPString@@PAVH323RegisteredEndPoint@@@Z @15059 NONAME ;public: virtual void __thiscall PSafeDictionaryBase<class PDictionary<class PString,class H323RegisteredEndPoint>,class PString,class H323RegisteredEndPoint>::SetAt(class PString const &,class H323RegisteredEndPoint *)
     ?SetAt@?$PStringDictionary@VPCaselessString@@@@UAEHABVPCaselessString@@ABVPString@@@Z @14669 NONAME ;public: virtual int __thiscall PStringDictionary<class PCaselessString>::SetAt(class PCaselessString const &,class PString const &)
     ?SetAt@OpalMediaFormatList@@EAEHHPAVPObject@@@Z @12818 NONAME ;private: virtual int __thiscall OpalMediaFormatList::SetAt(int,class PObject *)
     ?SetAt@PMIMEInfo@@QAEHPBDVPString@@@Z @14670 NONAME ;public: int __thiscall PMIMEInfo::SetAt(char const *,class PString)
     ?SetAttribute@SDPMediaDescription@@QAEXABVPString@@@Z @14671 NONAME ;public: void __thiscall SDPMediaDescription::SetAttribute(class PString const &)
+    ?SetAudioJitterDelay@OpalConnection@@QAEXII@Z @15060 NONAME ;public: void __thiscall OpalConnection::SetAudioJitterDelay(unsigned int,unsigned int)
+    ?SetAudioJitterDelay@OpalManager@@QAEXII@Z @15061 NONAME ;public: void __thiscall OpalManager::SetAudioJitterDelay(unsigned int,unsigned int)
     ?SetBandwidthAvailable@H323Connection@@UAEHIH@Z @12366 NONAME ;public: virtual int __thiscall H323Connection::SetBandwidthAvailable(unsigned int,int)
     ?SetBandwidthAvailable@OpalConnection@@UAEHIH@Z @12367 NONAME ;public: virtual int __thiscall OpalConnection::SetBandwidthAvailable(unsigned int,int)
     ?SetBandwidthUsed@H323Channel@@QAEHI@Z @12368 NONAME ;public: int __thiscall H323Channel::SetBandwidthUsed(unsigned int)
     ?SetBandwidthUsed@OpalConnection@@UAEHII@Z @13148 NONAME ;public: virtual int __thiscall OpalConnection::SetBandwidthUsed(unsigned int,unsigned int)
     ?SetBearerCapabilities@Q931@@QAEXW4InformationTransferCapability@1@III@Z @13137 NONAME ;public: void __thiscall Q931::SetBearerCapabilities(enum Q931::InformationTransferCapability,unsigned int,unsigned int,unsigned int)
     ?SetCalledPartyNumber@Q931@@QAEXABVPString@@II@Z @12369 NONAME ;public: void __thiscall Q931::SetCalledPartyNumber(class PString const &,unsigned int,unsigned int)
-    ?SetCallEndReason@H323Connection@@UAEXW4OpalCallEndReason@@@Z @14672 NONAME ;public: virtual void __thiscall H323Connection::SetCallEndReason(enum OpalCallEndReason)
-    ?SetCallEndReason@OpalCall@@QAEXW4OpalCallEndReason@@@Z @13128 NONAME ;public: void __thiscall OpalCall::SetCallEndReason(enum OpalCallEndReason)
-    ?SetCallEndReason@OpalConnection@@UAEXW4OpalCallEndReason@@@Z @14673 NONAME ;public: virtual void __thiscall OpalConnection::SetCallEndReason(enum OpalCallEndReason)
+    ?SetCallEndReason@H323Connection@@UAEXW4CallEndReason@OpalConnection@@PAVPSyncPoint@@@Z @15062 NONAME ;public: virtual void __thiscall H323Connection::SetCallEndReason(enum OpalConnection::CallEndReason,class PSyncPoint *)
+    ?SetCallEndReason@OpalCall@@QAEXW4CallEndReason@OpalConnection@@@Z @15063 NONAME ;public: void __thiscall OpalCall::SetCallEndReason(enum OpalConnection::CallEndReason)
+    ?SetCallEndReason@OpalConnection@@UAEXW4CallEndReason@1@PAVPSyncPoint@@@Z @15064 NONAME ;public: virtual void __thiscall OpalConnection::SetCallEndReason(enum OpalConnection::CallEndReason,class PSyncPoint *)
     ?SetCallerID@OpalIxJDevice@@UAEHIABVPString@@@Z @12371 NONAME ;public: virtual int __thiscall OpalIxJDevice::SetCallerID(unsigned int,class PString const &)
     ?SetCallerID@OpalLine@@UAEHABVPString@@@Z @12372 NONAME ;public: virtual int __thiscall OpalLine::SetCallerID(class PString const &)
     ?SetCallerID@OpalLineInterfaceDevice@@UAEHIABVPString@@@Z @12373 NONAME ;public: virtual int __thiscall OpalLineInterfaceDevice::SetCallerID(unsigned int,class PString const &)
@@ -13732,6 +13894,7 @@ EXPORTS
     ?SetCallID@SIPMIMEInfo@@QAEXABVPString@@@Z @14675 NONAME ;public: void __thiscall SIPMIMEInfo::SetCallID(class PString const &)
     ?SetCallingPartyNumber@Q931@@QAEXABVPString@@IIHH@Z @12374 NONAME ;public: void __thiscall Q931::SetCallingPartyNumber(class PString const &,unsigned int,unsigned int,int,int)
     ?SetCallState@Q931@@QAEXW4CallStates@1@I@Z @14676 NONAME ;public: void __thiscall Q931::SetCallState(enum Q931::CallStates,unsigned int)
+    ?SetCapability@H235AuthProcedure1@@UAEHAAVH225_ArrayOf_AuthenticationMechanism@@AAVH225_ArrayOf_PASN_ObjectId@@@Z @15065 NONAME ;public: virtual int __thiscall H235AuthProcedure1::SetCapability(class H225_ArrayOf_AuthenticationMechanism &,class H225_ArrayOf_PASN_ObjectId &)
     ?SetCapability@H235AuthSimpleMD5@@UAEHAAVH225_ArrayOf_AuthenticationMechanism@@AAVH225_ArrayOf_PASN_ObjectId@@@Z @12924 NONAME ;public: virtual int __thiscall H235AuthSimpleMD5::SetCapability(class H225_ArrayOf_AuthenticationMechanism &,class H225_ArrayOf_PASN_ObjectId &)
     ?SetCapability@H323Capabilities@@QAEHHHPAVH323Capability@@@Z @12375 NONAME ;public: int __thiscall H323Capabilities::SetCapability(int,int,class H323Capability *)
     ?SetCapability@H323EndPoint@@QAEHHHPAVH323Capability@@@Z @12376 NONAME ;public: int __thiscall H323EndPoint::SetCapability(int,int,class H323Capability *)
@@ -13757,7 +13920,7 @@ EXPORTS
     ?SetDataSize@OpalAudioMediaStream@@UAEHH@Z @13141 NONAME ;public: virtual int __thiscall OpalAudioMediaStream::SetDataSize(int)
     ?SetDataSize@OpalMediaStream@@UAEHH@Z @12386 NONAME ;public: virtual int __thiscall OpalMediaStream::SetDataSize(int)
     ?SetDefaultLine@OpalLIDEndPoint@@QAEXABVPString@@@Z @14687 NONAME ;public: void __thiscall OpalLIDEndPoint::SetDefaultLine(class PString const &)
-    ?SetDelay@RTP_JitterBuffer@@QAEXI@Z @12387 NONAME ;public: void __thiscall RTP_JitterBuffer::SetDelay(unsigned int)
+    ?SetDelay@RTP_JitterBuffer@@QAEXII@Z @15066 NONAME ;public: void __thiscall RTP_JitterBuffer::SetDelay(unsigned int,unsigned int)
     ?SetDisplayName@Q931@@QAEXABVPString@@@Z @12388 NONAME ;public: void __thiscall Q931::SetDisplayName(class PString const &)
     ?SetDynamicRTPPayloadType@H323_RealTimeChannel@@UAEHH@Z @14688 NONAME ;public: virtual int __thiscall H323_RealTimeChannel::SetDynamicRTPPayloadType(int)
     ?SetEndpointTypeInfo@H323EndPoint@@UBEXAAVH225_EndpointType@@@Z @12390 NONAME ;public: virtual void __thiscall H323EndPoint::SetEndpointTypeInfo(class H225_EndpointType &)const 
@@ -13774,13 +13937,14 @@ EXPORTS
     ?SetH221NonStandardInfo@H323EndPoint@@UBEXAAVH225_H221NonStandard@@@Z @12395 NONAME ;public: virtual void __thiscall H323EndPoint::SetH221NonStandardInfo(class H225_H221NonStandard &)const 
     ?SetHoldMedia@H323Connection@@QAEXPAVPChannel@@@Z @14695 NONAME ;public: void __thiscall H323Connection::SetHoldMedia(class PChannel *)
     ?SetIE@Q931@@QAEXW4InformationElementCodes@1@ABVPBYTEArray@@@Z @12396 NONAME ;public: void __thiscall Q931::SetIE(enum Q931::InformationElementCodes,class PBYTEArray const &)
+    ?SetInfoRequestRate@H323Gatekeeper@@IAEXABVPTimeInterval@@@Z @15067 NONAME ;protected: void __thiscall H323Gatekeeper::SetInfoRequestRate(class PTimeInterval const &)
     ?SetInitialBandwidth@H323UnidirectionalChannel@@UAEHXZ @12397 NONAME ;public: virtual int __thiscall H323UnidirectionalChannel::SetInitialBandwidth(void)
     ?SetInternalTransport@OpalTransportAddress@@IAEXGPBD@Z @12398 NONAME ;protected: void __thiscall OpalTransportAddress::SetInternalTransport(unsigned short,char const *)
     ?SetIntrusionImpending@H323Connection@@UAEXXZ @14696 NONAME ;public: virtual void __thiscall H323Connection::SetIntrusionImpending(void)
     ?SetIntrusionImpending@H45011Handler@@QAEXXZ @14697 NONAME ;public: void __thiscall H45011Handler::SetIntrusionImpending(void)
     ?SetIntrusionNotAuthorized@H323Connection@@UAEXXZ @14698 NONAME ;public: virtual void __thiscall H323Connection::SetIntrusionNotAuthorized(void)
     ?SetIntrusionNotAuthorized@H45011Handler@@QAEXXZ @14699 NONAME ;public: void __thiscall H45011Handler::SetIntrusionNotAuthorized(void)
-    ?SetJitterBufferSize@RTP_Session@@QAEXIH@Z @14700 NONAME ;public: void __thiscall RTP_Session::SetJitterBufferSize(unsigned int,int)
+    ?SetJitterBufferSize@RTP_Session@@QAEXIIH@Z @15068 NONAME ;public: void __thiscall RTP_Session::SetJitterBufferSize(unsigned int,unsigned int,int)
     ?SetKeypad@Q931@@QAEXABVPString@@@Z @14701 NONAME ;public: void __thiscall Q931::SetKeypad(class PString const &)
     ?SetLineOffHook@OpalIxJDevice@@UAEHIH@Z @12401 NONAME ;public: virtual int __thiscall OpalIxJDevice::SetLineOffHook(unsigned int,int)
     ?SetLineOffHook@OpalVoipBlasterDevice@@UAEHIH@Z @14702 NONAME ;public: virtual int __thiscall OpalVoipBlasterDevice::SetLineOffHook(unsigned int,int)
@@ -13887,6 +14051,7 @@ EXPORTS
     ?SetTxFramesInPacket@H323AudioCapability@@UAEXI@Z @12470 NONAME ;public: virtual void __thiscall H323AudioCapability::SetTxFramesInPacket(unsigned int)
     ?SetTxFramesInPacket@H323Capability@@UAEXI@Z @12471 NONAME ;public: virtual void __thiscall H323Capability::SetTxFramesInPacket(unsigned int)
     ?SetTxFramesInPacket@H323_GSM0610Capability@@UAEXI@Z @12472 NONAME ;public: virtual void __thiscall H323_GSM0610Capability::SetTxFramesInPacket(unsigned int)
+    ?SetTxFramesInPacket@MicrosoftGSMAudioCapability@@UAEXI@Z @15069 NONAME ;public: virtual void __thiscall MicrosoftGSMAudioCapability::SetTxFramesInPacket(unsigned int)
     ?SetTxStatisticsInterval@RTP_Session@@QAEXI@Z @14743 NONAME ;public: void __thiscall RTP_Session::SetTxStatisticsInterval(unsigned int)
     ?SetUDPPorts@OpalManager@@QAEXII@Z @14744 NONAME ;public: void __thiscall OpalManager::SetUDPPorts(unsigned int,unsigned int)
     ?SetUpCall@OpalManager@@UAEHABVPString@@0AAV2@@Z @14745 NONAME ;public: virtual int __thiscall OpalManager::SetUpCall(class PString const &,class PString const &,class PString &)
@@ -13898,6 +14063,7 @@ EXPORTS
     ?SetUpConnection@SIPEndPoint@@UAEHAAVOpalCall@@ABVPString@@PAX@Z @14750 NONAME ;public: virtual int __thiscall SIPEndPoint::SetUpConnection(class OpalCall &,class PString const &,void *)
     ?SetupGatekeeperRequest@H323Gatekeeper@@IAEIAAVH323RasPDU@@@Z @14751 NONAME ;protected: unsigned int __thiscall H323Gatekeeper::SetupGatekeeperRequest(class H323RasPDU &)
     ?SetupTransfer@H323EndPoint@@UAEHABVPString@@00PAX@Z @14752 NONAME ;public: virtual int __thiscall H323EndPoint::SetupTransfer(class PString const &,class PString const &,class PString const &,void *)
+    ?SetUsageInfo@H323GatekeeperCall@@IAEXABVH225_RasUsageInformation@@@Z @15070 NONAME ;protected: void __thiscall H323GatekeeperCall::SetUsageInfo(class H225_RasUsageInformation const &)
     ?SetUserData@RTP_Session@@QAEXPAVRTP_UserData@@@Z @12481 NONAME ;public: void __thiscall RTP_Session::SetUserData(class RTP_UserData *)
     ?SetUserInput@OpalConnection@@UAEXABVPString@@@Z @14753 NONAME ;public: virtual void __thiscall OpalConnection::SetUserInput(class PString const &)
     ?SetVAD@OpalIxJDevice@@UAEHIH@Z @12483 NONAME ;public: virtual int __thiscall OpalIxJDevice::SetVAD(unsigned int,int)
@@ -13926,7 +14092,7 @@ EXPORTS
     ?StartciTimer@H45011Handler@@QAEXVPTimeInterval@@@Z @14762 NONAME ;public: void __thiscall H45011Handler::StartciTimer(class PTimeInterval)
     ?StartControlNegotiations@H323Connection@@QAEHXZ @12500 NONAME ;public: int __thiscall H323Connection::StartControlNegotiations(void)
     ?StartctTimer@H4502Handler@@QAEXVPTimeInterval@@@Z @14763 NONAME ;public: void __thiscall H4502Handler::StartctTimer(class PTimeInterval)
-    ?StartDiscovery@H323Gatekeeper@@IAEHABVOpalTransportAddress@@@Z @12501 NONAME ;protected: int __thiscall H323Gatekeeper::StartDiscovery(class OpalTransportAddress const &)
+    ?StartDiscovery@H323Gatekeeper@@IAEHABVH323TransportAddress@@@Z @15071 NONAME ;protected: int __thiscall H323Gatekeeper::StartDiscovery(class H323TransportAddress const &)
     ?StartFastStartChannel@H323Connection@@UAEXIW4Directions@H323Channel@@@Z @12502 NONAME ;public: virtual void __thiscall H323Connection::StartFastStartChannel(unsigned int,enum H323Channel::Directions)
     ?StartIncoming@OpalLineConnection@@QAEXXZ @12503 NONAME ;public: void __thiscall OpalLineConnection::StartIncoming(void)
     ?StartIncoming@OpalPCSSConnection@@QAEXABVPString@@@Z @13132 NONAME ;public: void __thiscall OpalPCSSConnection::StartIncoming(class PString const &)
@@ -13975,6 +14141,7 @@ EXPORTS
     ?TransferCall@H4502Handler@@QAEXABVPString@@0@Z @14780 NONAME ;public: void __thiscall H4502Handler::TransferCall(class PString const &,class PString const &)
     ?TranslateAliasAddressToSignalAddress@H323GatekeeperServer@@UAEHABVH225_AliasAddress@@AAVH323TransportAddress@@@Z @12537 NONAME ;public: virtual int __thiscall H323GatekeeperServer::TranslateAliasAddressToSignalAddress(class H225_AliasAddress const &,class H323TransportAddress &)
     ?TranslateIPAddress@OpalManager@@UAEHAAVAddress@PIPSocket@@ABV23@@Z @14781 NONAME ;public: virtual int __thiscall OpalManager::TranslateIPAddress(class PIPSocket::Address &,class PIPSocket::Address const &)
+    ?TranslateTCPAddress@H323EndPoint@@UAEXAAVAddress@PIPSocket@@ABV23@@Z @15072 NONAME ;public: virtual void __thiscall H323EndPoint::TranslateTCPAddress(class PIPSocket::Address &,class PIPSocket::Address const &)
     ?Transmit@H323_ExternalRTPChannel@@UAEXXZ @14782 NONAME ;public: virtual void __thiscall H323_ExternalRTPChannel::Transmit(void)
     ?Transmit@H323_T120Channel@@UAEXXZ @12539 NONAME ;public: virtual void __thiscall H323_T120Channel::Transmit(void)
     ?Transmit@H323_T38Channel@@UAEXXZ @12540 NONAME ;public: virtual void __thiscall H323_T38Channel::Transmit(void)
@@ -13982,21 +14149,26 @@ EXPORTS
     ?TransmitPacket@OpalRFC2833Proto@@MAEXAAVRTP_DataFrame@@H@Z @14784 NONAME ;protected: virtual void __thiscall OpalRFC2833Proto::TransmitPacket(class RTP_DataFrame &,int)
     ?TryLock@OpalConnection@@QAEHXZ @14785 NONAME ;public: int __thiscall OpalConnection::TryLock(void)
     ?Unlock@OpalConnection@@QAEXXZ @13146 NONAME ;public: void __thiscall OpalConnection::Unlock(void)
+    ?Unregister@H323RegisteredEndPoint@@UAEHH@Z @15073 NONAME ;public: virtual int __thiscall H323RegisteredEndPoint::Unregister(int)
     ?UnregistrationRequest@H323Gatekeeper@@QAEHH@Z @12542 NONAME ;public: int __thiscall H323Gatekeeper::UnregistrationRequest(int)
+    ?UnregistrationRequest@H323GatekeeperListener@@QAEHABVH323RegisteredEndPoint@@I@Z @15074 NONAME ;public: int __thiscall H323GatekeeperListener::UnregistrationRequest(class H323RegisteredEndPoint const &,unsigned int)
+    ?UseGatekeeper@H323EndPoint@@QAEHABVPString@@00@Z @15075 NONAME ;public: int __thiscall H323EndPoint::UseGatekeeper(class PString const &,class PString const &,class PString const &)
     ?UseGkAndEpIdentifiers@H235Authenticator@@UBEHXZ @14787 NONAME ;public: virtual int __thiscall H235Authenticator::UseGkAndEpIdentifiers(void)const 
+    ?UseGkAndEpIdentifiers@H235AuthProcedure1@@UBEHXZ @15076 NONAME ;public: virtual int __thiscall H235AuthProcedure1::UseGkAndEpIdentifiers(void)const 
     ?UseRTPSession@SIPConnection@@QAEPAVRTP_Session@@AAVRTP_SessionManager@@I@Z @14788 NONAME ;public: class RTP_Session * __thiscall SIPConnection::UseRTPSession(class RTP_SessionManager &,unsigned int)
     ?UseSession@H323Connection@@UAEPAVRTP_Session@@IABVH245_TransportAddress@@@Z @14789 NONAME ;public: virtual class RTP_Session * __thiscall H323Connection::UseSession(unsigned int,class H245_TransportAddress const &)
     ?UseSession@OpalConnection@@UAEPAVRTP_Session@@I@Z @12545 NONAME ;public: virtual class RTP_Session * __thiscall OpalConnection::UseSession(unsigned int)
     ?UseSession@RTP_SessionManager@@QAEPAVRTP_Session@@I@Z @12546 NONAME ;public: class RTP_Session * __thiscall RTP_SessionManager::UseSession(unsigned int)
     ?ValidatePDU@H235Authenticators@@QBEHABVH225_ArrayOf_CryptoH323Token@@ABVPASN_Sequence@@IABVPBYTEArray@@@Z @14790 NONAME ;public: int __thiscall H235Authenticators::ValidatePDU(class H225_ArrayOf_CryptoH323Token const &,class PASN_Sequence const &,unsigned int,class PBYTEArray const &)const 
     ?Verify@H235Authenticator@@UAE?AW4State@1@ABVH225_ArrayOf_CryptoH323Token@@ABVPBYTEArray@@@Z @12927 NONAME ;public: virtual enum H235Authenticator::State  __thiscall H235Authenticator::Verify(class H225_ArrayOf_CryptoH323Token const &,class PBYTEArray const &)
+    ?VerifyToken@H235AuthProcedure1@@UAE?AW4State@H235Authenticator@@ABVH225_CryptoH323Token@@ABVPBYTEArray@@@Z @15077 NONAME ;public: virtual enum H235Authenticator::State  __thiscall H235AuthProcedure1::VerifyToken(class H225_CryptoH323Token const &,class PBYTEArray const &)
     ?VerifyToken@H235AuthSimpleMD5@@UAE?AW4State@H235Authenticator@@ABVH225_CryptoH323Token@@ABVPBYTEArray@@@Z @12929 NONAME ;public: virtual enum H235Authenticator::State  __thiscall H235AuthSimpleMD5::VerifyToken(class H225_CryptoH323Token const &,class PBYTEArray const &)
     ?Wait@SIPTransaction@@QAEXXZ @14791 NONAME ;public: void __thiscall SIPTransaction::Wait(void)
     ?WaitForTone@OpalLine@@UAEHW4CallProgressTones@OpalLineInterfaceDevice@@I@Z @12548 NONAME ;public: virtual int __thiscall OpalLine::WaitForTone(enum OpalLineInterfaceDevice::CallProgressTones,unsigned int)
     ?WaitForTone@OpalLineInterfaceDevice@@UAEHIW4CallProgressTones@1@I@Z @12549 NONAME ;public: virtual int __thiscall OpalLineInterfaceDevice::WaitForTone(unsigned int,enum OpalLineInterfaceDevice::CallProgressTones,unsigned int)
     ?WaitForToneDetect@OpalLine@@UAEII@Z @12550 NONAME ;public: virtual unsigned int __thiscall OpalLine::WaitForToneDetect(unsigned int)
     ?WaitForToneDetect@OpalLineInterfaceDevice@@UAEIII@Z @12551 NONAME ;public: virtual unsigned int __thiscall OpalLineInterfaceDevice::WaitForToneDetect(unsigned int,unsigned int)
-    ?Write@H323RasPDU@@QBEHAAVOpalTransport@@@Z @12930 NONAME ;public: int __thiscall H323RasPDU::Write(class OpalTransport &)const 
+    ?Write@H323RasPDU@@QAEHAAVOpalTransport@@@Z @15078 NONAME ;public: int __thiscall H323RasPDU::Write(class OpalTransport &)
     ?Write@H323SignalPDU@@QAEHAAVOpalTransport@@@Z @12553 NONAME ;public: int __thiscall H323SignalPDU::Write(class OpalTransport &)
     ?Write@OpalVideoMediaStream@@UAEHPBXH@Z @12648 NONAME ;public: virtual int __thiscall OpalVideoMediaStream::Write(void const *,int)
     ?Write@OpalWAVFile@@UAEHPBXH@Z @14792 NONAME ;public: virtual int __thiscall OpalWAVFile::Write(void const *,int)
@@ -14031,4 +14203,4 @@ EXPORTS
     ?WritePDU@OpalTransportUDP@@UAEHABVPBYTEArray@@@Z @12569 NONAME ;public: virtual int __thiscall OpalTransportUDP::WritePDU(class PBYTEArray const &)
     ?WritePipe@VoipBlasterInterface@@IAEHPAXPBXK@Z @14809 NONAME ;protected: int __thiscall VoipBlasterInterface::WritePipe(void *,void const *,unsigned long)
     ?WriteSignalPDU@H323Connection@@QAEHAAVH323SignalPDU@@@Z @12570 NONAME ;public: int __thiscall H323Connection::WriteSignalPDU(class H323SignalPDU &)
-    ?__resetiosflags@@YAAAVios@@AAV1@J@Z @14810 NONAME ;class ios & __cdecl __resetiosflags(class ios &,long)
+    ?WriteTo@H225_RAS@@UAEHAAVH323RasPDU@@ABV?$PArray@VH323TransportAddress@@@@H@Z @15079 NONAME ;public: virtual int __thiscall H225_RAS::WriteTo(class H323RasPDU &,class PArray<class H323TransportAddress> const &,int)
