@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2019  2004/02/07 02:18:19  rjongbloed
+ * Revision 1.2020  2004/02/13 22:15:35  csoutheren
+ * Changed stricmp to strcascmp thanks to Diana Cionoiu
+ *
+ * Revision 2.18  2004/02/07 02:18:19  rjongbloed
  * Improved searching for media format to use payload type AND the encoding name.
  *
  * Revision 2.17  2003/03/17 10:13:41  robertj
@@ -534,7 +537,7 @@ PINDEX OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt, const cha
 
     if (name != NULL && *name != '\0') {
       const char * otherName = mediaFormat.GetEncodingName();
-      if (otherName != NULL && stricmp(otherName, name) == 0)
+      if (otherName != NULL && strcasecmp(otherName, name) == 0)
         return idx;
     }
   }
