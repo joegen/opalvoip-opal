@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2017  2002/03/18 00:33:36  robertj
+ * Revision 1.2018  2002/03/27 04:02:01  robertj
+ * Fixed correct pasing of arguments for starting outgoing call.
+ *
+ * Revision 2.16  2002/03/18 00:33:36  robertj
  * Removed duplicate initialBandwidth variable in H.323 class, moved to ancestor.
  *
  * Revision 2.15  2002/02/11 09:32:13  robertj
@@ -807,7 +810,7 @@ BOOL H323EndPoint::SetUpConnection(OpalCall & call,
                                    void * userData)
 {
   PTRACE(2, "H323\tMaking call to: " << remoteParty);
-  return InternalMakeCall(call, remoteParty, PString(), PString(), userData);
+  return InternalMakeCall(call, PString(), PString(), remoteParty, userData);
 }
 
 
