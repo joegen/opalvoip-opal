@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.cxx,v $
- * Revision 1.2012  2004/01/18 15:35:20  rjongbloed
+ * Revision 1.2013  2004/02/19 10:47:02  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.11  2004/01/18 15:35:20  rjongbloed
  * More work on video support
  *
  * Revision 2.10  2003/03/17 10:26:59  robertj
@@ -65,6 +68,28 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.59  2004/01/02 00:31:42  dereksmithies
+ * Fix test on presence/absence of video.
+ *
+ * Revision 1.58  2003/12/14 10:42:29  rjongbloed
+ * Changes for compilability without video support.
+ *
+ * Revision 1.57  2003/10/02 23:37:56  dereksmithies
+ * Add fix for fast update problem in h261 codec. Thanks to Martin André for doing the initial legwork.
+ *
+ * Revision 1.56  2003/04/03 23:54:15  robertj
+ * Added fast update to H.261 codec, thanks Gustavo García Bernardo
+ *
+ * Revision 1.55  2003/03/20 23:45:46  dereks
+ * Make formatting more consistant with the openh323.org standard.
+ *
+ * Revision 1.54  2003/03/17 08:05:02  robertj
+ * Removed videoio classes in openh323 as now has versions in pwlib.
+ *
+ * Revision 1.53  2003/03/11 22:05:00  dereks
+ * Video receive will not terminate in abnormal situations
+ * Thanks to Damien Sandras.
  *
  * Revision 1.52  2002/12/29 22:35:34  dereks
  * Fix so video with Windows XP works. Thanks Damien Sandras.
@@ -247,6 +272,8 @@
 #endif
 
 #include <codec/h261codec.h>
+
+#ifndef NO_H323_VIDEO
 
 #include <asn/h245.h>
 #include "vic/p64.h"
@@ -674,6 +701,7 @@ H323_H261Codec::H323_H261Codec(Direction dir, BOOL isqCIF)
   now = 1;
   rvts = NULL;
   nblk = ndblk = 0;
+  doFastUpdate = FALSE;
 
   // initial size of the window is CIF
   if (dir == Encoder) {
@@ -735,6 +763,11 @@ BOOL H323_H261Codec::Read(BYTE * buffer,
                           unsigned & length,
                           RTP_DataFrame & frame)
 {
+  fastUpdateMutex.Wait();
+  if ((videoEncoder != NULL) && doFastUpdate)
+    videoEncoder->FastUpdatePicture();
+  fastUpdateMutex.Signal();
+
   PWaitAndSignal mutex1(videoHandlerActive);
   PTRACE(6,"H261\tAcquire next packet from h261 encoder.\n");
 
@@ -755,6 +788,7 @@ BOOL H323_H261Codec::Read(BYTE * buffer,
 
   frameWidth  = ((PVideoChannel *)rawDataChannel)->GetGrabWidth();
   frameHeight = ((PVideoChannel *)rawDataChannel)->GetGrabHeight();
+  PTRACE(6, "H261\tVideo grab size is " << frameWidth << "x" << frameHeight);
 
   if( frameWidth == 0 ) {
     PTRACE(1,"H261\tVideo grab width is 0 x 0, close down video transmission thread.");
@@ -765,7 +799,7 @@ BOOL H323_H261Codec::Read(BYTE * buffer,
   videoEncoder->SetSize(frameWidth, frameHeight);
 
   PINDEX bytesInFrame = 0;
-  BOOL ok=TRUE;
+  BOOL ok = TRUE;
 
 #define NUMAVG 8
 
@@ -864,8 +898,8 @@ BOOL H323_H261Codec::Read(BYTE * buffer,
         << (PTimer::Tick() - grabStartTime).GetMilliSeconds() << " ms.");
       packetNum = 0; // reset packet counter
       // If there is a Renderer attached, display the grabbed video.
-      if( ((PVideoChannel *)rawDataChannel)->IsRenderOpen() ) {
-        ok=RenderFrame(); //use data from grab process.
+      if (((PVideoChannel *)rawDataChannel)->IsRenderOpen() ) {
+        ok = RenderFrame(); //use data from grab process.
       }
 #ifdef INC_ENCODE
       videoEncoder->PreProcessOneFrame(); //Prepare to generate H261 packets
@@ -1024,7 +1058,7 @@ BOOL H323_H261Codec::Resize(int _width, int _height)
   //Check for a resize is carried out one two level -.
   // a) size change in the receive video stream.
 
-  if( (frameWidth!=_width) || (frameHeight!=_height) ) {
+  if ((frameWidth != _width) || (frameHeight != _height) ) {
       frameWidth  = _width;
       frameHeight = _height;
 
@@ -1032,8 +1066,10 @@ BOOL H323_H261Codec::Resize(int _width, int _height)
       delete rvts;
       rvts = new BYTE[nblk];
       memset(rvts, 0, nblk);
-      if(videoDecoder!=NULL)
-  videoDecoder->marks(rvts);
+      if (videoDecoder != NULL) 
+	videoDecoder->marks(rvts);
+      if (rawDataChannel != NULL)
+	((PVideoChannel *)rawDataChannel)->SetRenderFrameSize(_width, _height);
   }
 
   return TRUE;
@@ -1070,7 +1106,9 @@ BOOL H323_H261Codec::RenderFrame()
 
     //Now display local image.
     ((PVideoChannel *)rawDataChannel)->SetRenderFrameSize(frameWidth, frameHeight);
-    PTRACE(6, "H261\tSize of video rendering frame set to " << frameWidth << "x" << frameHeight);
+    PTRACE(6, "H261\tSize of video rendering frame set to " << 
+	   frameWidth << "x" << frameHeight << 
+	   " for channel:" << ((direction == Encoder) ? "encoding" : "decoding"));
 
     if (direction == Encoder)
         ok = rawDataChannel->Write((const void *)videoEncoder->GetFramePtr(),0);
@@ -1119,6 +1157,15 @@ void H323_H261Codec::SetBackgroundFill(int idle)
 }
 
 
+void H323_H261Codec::OnFastUpdatePicture()
+{
+  PTRACE(3,"H261\tFastUpdatePicture received");
+  PWaitAndSignal mutex1(fastUpdateMutex);
+
+  doFastUpdate = TRUE;
+}
+
+
 void H323_H261Codec::OnLostPartialPicture()
 {
   PTRACE(3,"H261\tLost partial picture message ignored, not implemented");
@@ -1131,6 +1178,9 @@ void H323_H261Codec::OnLostPicture()
 }
 
 #endif
+
+
+#endif // NO_H323_VIDEO
 
 
 /////////////////////////////////////////////////////////////////////////////

@@ -24,11 +24,20 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g726codec.cxx,v $
- * Revision 1.2004  2002/11/10 11:33:17  robertj
+ * Revision 1.2005  2004/02/19 10:47:02  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.3  2002/11/10 11:33:17  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.2  2002/09/04 06:01:47  robertj
  * Updated to OpenH323 v1.9.6
+ * Revision 1.6  2003/11/08 03:10:48  rjongbloed
+ * Fixed incorrect size passed in for non-standard G.726 capability, thanks  Victor Ivashin.
+ *
+ * Revision 1.5  2002/11/09 07:07:10  robertj
+ * Made public the media format names.
+ * Other cosmetic changes.
  *
  * Revision 1.4  2002/09/03 07:28:42  robertj
  * Cosmetic change to formatting.
@@ -113,7 +122,7 @@ static G726_NonStandardInfo const G726_NonStandard[H323_G726_Capability::NumSpee
 H323_G726_Capability::H323_G726_Capability(H323EndPoint & endpoint, Speeds s)
     : H323NonStandardAudioCapability(240, 10, endpoint,
                                      (const BYTE *)&G726_NonStandard[s],
-                                     sizeof(G726_NonStandard),
+                                     sizeof(G726_NonStandardInfo),
                                      0, sizeof(G726_NonStandard[s].name))
 {
   speed = s;
