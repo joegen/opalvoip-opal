@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2018  2002/04/10 03:09:01  robertj
+ * Revision 1.2019  2002/06/16 02:24:05  robertj
+ * Fixed memory leak of media streams in non H323 protocols, thanks Ted Szoczei
+ *
+ * Revision 2.17  2002/04/10 03:09:01  robertj
  * Moved code for handling media bypass address resolution into ancestor as
  *   now done ths same way in both SIP and H.323.
  *
@@ -165,8 +168,6 @@ OpalConnection::OpalConnection(OpalCall & call,
   bandwidthAvailable = endpoint.GetInitialBandwidth();
 
   rfc2833Handler = new OpalRFC2833Proto(PCREATE_NOTIFIER(OnUserInputInlineRFC2833));
-
-  mediaStreams.DisallowDeleteObjects();
 
   ownerCall.AddConnection(this);
 
