@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2007  2001/10/04 00:42:48  robertj
+ * Revision 1.2008  2001/10/04 05:43:44  craigs
+ * Changed to start media patch threads in Paused state
+ *
+ * Revision 2.6  2001/10/04 00:42:48  robertj
  * Removed GetMediaFormats() function as is not useful.
  *
  * Revision 2.5  2001/10/03 06:42:32  craigs
@@ -206,6 +209,13 @@ void OpalMediaStream::SetPatch(OpalMediaPatch * patch)
 {
   patchThread = patch;
 }
+
+void OpalMediaStream::ResumePatch()
+{
+  if (patchThread != NULL) 
+    patchThread->Resume(); 
+}
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
