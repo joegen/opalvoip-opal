@@ -165,7 +165,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="opalsd.lib ptclibd.lib ptlibd.lib wsock32.lib"
+				AdditionalDependencies="opalsd.lib ptclibd.lib ptlibsd.lib wsock32.lib"
 				OutputFile="Debug/simpleOPAL.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
