@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2015  2004/03/14 08:34:09  csoutheren
+ * Revision 1.2016  2004/03/14 10:14:13  rjongbloed
+ * Changes to REGISTER to support authentication
+ *
+ * Revision 2.14  2004/03/14 08:34:09  csoutheren
  * Added ability to set User-Agent string
  *
  * Revision 2.13  2004/03/13 06:32:17  rjongbloed
@@ -286,8 +289,8 @@ class SIPAuthentication : public PObject
     PCLASSINFO(SIPAuthentication, PObject);
   public:
     SIPAuthentication(
-      const PString & username,
-      const PString & password
+      const PString & username = PString::Empty(),
+      const PString & password = PString::Empty()
     );
 
     BOOL Parse(
@@ -499,11 +502,6 @@ class SIPTransaction : public SIP_PDU
     );
     ~SIPTransaction();
 
-    void BuildREGISTER(
-      const SIPURL & address,
-      const SIPURL & contact
-    );
-
     BOOL Start();
     BOOL IsInProgress() const { return state == Trying && state == Proceeding; }
     BOOL IsFailed() const { return state > Terminated_Success; }
@@ -579,6 +577,21 @@ class SIPInvite : public SIPTransaction
 
   protected:
     RTP_SessionManager rtpSessions;
+};
+
+
+/////////////////////////////////////////////////////////////////////////
+
+class SIPRegister : public SIPTransaction
+{
+    PCLASSINFO(SIPRegister, SIPTransaction);
+  public:
+    SIPRegister(
+      SIPEndPoint   & endpoint,
+      OpalTransport & transport,
+      const SIPURL & address,
+      const PString & id
+    );
 };
 
 
