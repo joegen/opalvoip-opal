@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g726codec.h,v $
- * Revision 1.2006  2002/11/10 23:21:49  robertj
+ * Revision 1.2007  2004/05/15 12:53:40  rjongbloed
+ * Fixed incorrect laoding of H.323 capability for G.726
+ *
+ * Revision 2.5  2002/11/10 23:21:49  robertj
  * Cosmetic change
  *
  * Revision 2.4  2002/11/10 11:33:16  robertj
@@ -152,13 +155,13 @@ H323_STATIC_LOAD_REGISTER_CAPABILITY(H323_G726_16_Capability);
 
 
 #define OPAL_REGISTER_G726_H323 \
-  H323_REGISTER_CAPABILITY_FUNCTION(H323_G726_40_Capability, G726_40, ep) \
+  H323_REGISTER_CAPABILITY_FUNCTION(H323_G726_40_Capability, OPAL_G726_40, ep) \
     { return new H323_G726_Capability(ep, H323_G726_Capability::e_40k); } \
-  H323_REGISTER_CAPABILITY_FUNCTION(H323_G726_32_Capability, G726_32, ep) \
+  H323_REGISTER_CAPABILITY_FUNCTION(H323_G726_32_Capability, OPAL_G726_32, ep) \
     { return new H323_G726_Capability(ep, H323_G726_Capability::e_32k); } \
-  H323_REGISTER_CAPABILITY_FUNCTION(H323_G726_24_Capability, G726_24, ep) \
+  H323_REGISTER_CAPABILITY_FUNCTION(H323_G726_24_Capability, OPAL_G726_24, ep) \
     { return new H323_G726_Capability(ep, H323_G726_Capability::e_24k); } \
-  H323_REGISTER_CAPABILITY_FUNCTION(H323_G726_16_Capability, G726_16, ep) \
+  H323_REGISTER_CAPABILITY_FUNCTION(H323_G726_16_Capability, OPAL_G726_16, ep) \
     { return new H323_G726_Capability(ep, H323_G726_Capability::e_16k); }
 
 #else // ifndef NO_H323
