@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2038  2004/03/14 11:32:20  rjongbloed
+ * Revision 1.2039  2004/03/22 10:20:34  rjongbloed
+ * Changed to use UseGatekeeper() function so can select by gk-id as well as host.
+ *
+ * Revision 2.37  2004/03/14 11:32:20  rjongbloed
  * Changes to better support SIP proxies.
  *
  * Revision 2.36  2004/03/14 08:34:09  csoutheren
@@ -249,7 +252,7 @@ void SimpleOpalProcess::Main()
              "e-silence."
              "f-fast-disable."
              "g-gatekeeper:"
-             "G-gateway:"
+             "G-gk-id:"
              "-gk-token:"
              "h-help."
              "H-no-h323."
@@ -279,7 +282,7 @@ void SimpleOpalProcess::Main()
              "-sound-out:"
              "-sip-listen:"
              "-sip-proxy:"
-             "-sip-useragent:"
+             "-sip-user-agent:"
              "-stun:"
              "T-h245tunneldisable."
              "-translate:"
@@ -337,6 +340,7 @@ void SimpleOpalProcess::Main()
             "                          : or full URL eg sip:user:pwd@host\n"
             "     --sip-listen iface   : Interface/port(s) to listen for SIP requests\n"
             "                          : '*' is all interfaces, (default udp$:*:5060)\n"
+            "     --sip-user-agent name: SIP UserAgent name to use.\n"
             "     --use-long-mime      : Use long MIME headers on outgoing SIP messages\n"
             "\n"
 #endif
@@ -345,10 +349,10 @@ void SimpleOpalProcess::Main()
             "H.323 options:\n"
             "  -H --no-h323            : Disable H.323 protocol.\n"
             "  -g --gatekeeper host    : Specify gatekeeper host.\n"
+            "  -G --gk-id name         : Specify gatekeeper identifier.\n"
             "  -n --no-gatekeeper      : Disable gatekeeper discovery.\n"
             "  -R --require-gatekeeper : Exit if gatekeeper discovery fails.\n"
             "     --gk-token str       : Set gatekeeper security token OID.\n"
-            "  -G --gateway addr       : Use gateway/proxy\n"
             "  -b --bandwidth bps      : Limit bandwidth usage to bps bits/second.\n"
             "  -f --fast-disable       : Disable fast start.\n"
             "  -T --h245tunneldisable  : Disable H245 tunnelling.\n"
@@ -691,28 +695,41 @@ BOOL MyManager::Initialise(PArgList & args)
       h323EP->SetGatekeeperPassword(args.GetOptionString('p'));
 
     // Establish link with gatekeeper if required.
-    if (args.HasOption('g')) {
-      PString gkName = args.GetOptionString('g');
-      OpalTransportUDP * rasChannel;
-      if (args.GetOptionString("h323-listen").IsEmpty())
-        rasChannel  = new OpalTransportUDP(*h323EP);
+    if (!args.HasOption('n')) {
+      PString gkHost      = args.GetOptionString('g');
+      PString gkIdentifer = args.GetOptionString('G');
+      PString gkInterface = args.GetOptionString("h323-listen");
+      cout << "Gatekeeper: " << flush;
+      if (h323EP->UseGatekeeper(gkHost, gkIdentifer, gkInterface))
+        cout << *h323EP->GetGatekeeper() << endl;
       else {
-        PIPSocket::Address interfaceAddress(args.GetOptionString("h323-listen"));
-        rasChannel  = new OpalTransportUDP(*h323EP, interfaceAddress);
-      }
-      if (h323EP->SetGatekeeper(gkName, rasChannel))
-        cout << "Gatekeeper set: " << *h323EP->GetGatekeeper() << endl;
-      else {
-        cerr << "Error registering with gatekeeper at \"" << gkName << '"' << endl;
-        return FALSE;
-      }
-    }
-    else if (!args.HasOption('n') || args.HasOption('R')) {
-      cout << "Searching for gatekeeper..." << flush;
-      if (h323EP->DiscoverGatekeeper(new OpalTransportUDP(*h323EP)))
-        cout << "\nGatekeeper found: " << *h323EP->GetGatekeeper() << endl;
-      else {
-        cerr << "\nNo gatekeeper found." << endl;
+        cout << "none." << endl;
+        cerr << "Could not register with gatekeeper";
+        if (!gkIdentifer)
+          cerr << " id \"" << gkIdentifer << '"';
+        if (!gkHost)
+          cerr << " at \"" << gkHost << '"';
+        if (!gkInterface)
+          cerr << " on interface \"" << gkInterface << '"';
+        if (h323EP->GetGatekeeper() != NULL) {
+          switch (h323EP->GetGatekeeper()->GetRegistrationFailReason()) {
+            case H323Gatekeeper::InvalidListener :
+              cerr << " - Invalid listener";
+              break;
+            case H323Gatekeeper::DuplicateAlias :
+              cerr << " - Duplicate alias";
+              break;
+            case H323Gatekeeper::SecurityDenied :
+              cerr << " - Security denied";
+              break;
+            case H323Gatekeeper::TransportError :
+              cerr << " - Transport error";
+              break;
+            default :
+              cerr << " - Error code " << h323EP->GetGatekeeper()->GetRegistrationFailReason();
+          }
+        }
+        cerr << '.' << endl;
         if (args.HasOption("require-gatekeeper")) 
           return FALSE;
       }
@@ -729,8 +746,8 @@ BOOL MyManager::Initialise(PArgList & args)
   if (!args.HasOption("no-sip")) {
     sipEP = new SIPEndPoint(*this);
 
-    if (args.HasOption("sip-useragent"))
-      sipEP->SetUserAgent(args.GetOptionString("sip-useragent"));
+    if (args.HasOption("sip-user-agent"))
+      sipEP->SetUserAgent(args.GetOptionString("sip-user-agent"));
 
     if (args.HasOption("sip-proxy"))
       sipEP->SetProxy(args.GetOptionString("sip-proxy"));
@@ -864,11 +881,6 @@ void MyManager::Main(PArgList & args)
   else {
     cout << "Initiating call from \"" << args[0] << "\"to \"" << args[1] << "\"\n";
     SetUpCall(args[0], args[1], currentCallToken);
-  }
-
-  // see if a proxy/gateway has been specified
-  if (args.HasOption('G')) {
-    gateway = args.GetOptionString('G');
   }
 
   cout << "Press X to exit." << endl;
