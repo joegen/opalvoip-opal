@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.cxx,v $
- * Revision 1.2010  2002/07/01 04:56:32  robertj
+ * Revision 1.2011  2002/09/04 06:01:48  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.9  2002/07/01 04:56:32  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.8  2002/03/22 06:57:50  robertj
@@ -57,6 +60,32 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.110  2002/08/14 01:07:22  robertj
+ * Added translation of Q.931 unallocated number release complete code to
+ *   OpenH323 EndedByNoUser which is the nearest match.
+ *
+ * Revision 1.109  2002/08/12 05:38:24  robertj
+ * Changes to the RAS subsystem to support ability to make requests to client
+ *   from gkserver without causing bottlenecks and race conditions.
+ *
+ * Revision 1.108  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
+ *
+ * Revision 1.107  2002/08/05 05:17:41  robertj
+ * Fairly major modifications to support different authentication credentials
+ *   in ARQ to the logged in ones on RRQ. For both client and server.
+ * Various other H.235 authentication bugs and anomalies fixed on the way.
+ *
+ * Revision 1.106  2002/07/31 02:25:04  robertj
+ * Fixed translation of some call end reasons for to Q.931 codes.
+ *
+ * Revision 1.105  2002/07/25 10:55:44  robertj
+ * Changes to allow more granularity in PDU dumps, hex output increasing
+ *   with increasing trace level.
+ *
+ * Revision 1.104  2002/07/11 07:04:12  robertj
+ * Added build InfoRequest pdu type to RAS.
  *
  * Revision 1.103  2002/06/13 03:59:56  craigs
  * Added codes to progress messages to allow inband audio before connect
@@ -421,6 +450,52 @@ static const char NSPNumberPrefix[] = "NSP:";
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#if PTRACING
+void H323TraceDumpPDU(const char * proto,
+                      BOOL writing,
+                      const PBYTEArray & rawData,
+                      const PASN_Object & pdu,
+                      const PASN_Choice & tags,
+                      unsigned seqNum)
+{
+  if (!PTrace::CanTrace(3))
+    return;
+
+  ostream & trace = PTrace::Begin(3, __FILE__, __LINE__);
+  trace << proto << '\t' << (writing ? "Send" : "Receiv") << "ing PDU:";
+
+  if (PTrace::CanTrace(4)) {
+    trace << "\n  "
+          << resetiosflags(ios::floatfield);
+
+    if (!PTrace::CanTrace(5))
+      trace << setiosflags(ios::fixed); // Will truncate hex dumps to 32 bytes
+
+    trace << setprecision(2) << pdu
+          << resetiosflags(ios::floatfield);
+
+    if (PTrace::CanTrace(6))
+      trace << "\nRaw PDU:\n"
+            << hex << setfill('0')
+            << setprecision(2) << rawData
+            << dec << setfill(' ');
+  }
+  else {
+    trace << ' ' << tags.GetTagName();
+    PASN_Object & next = tags.GetObject();
+    if (next.IsDescendant(PASN_Choice::Class()))
+      trace << ' ' << ((PASN_Choice &)next).GetTagName();
+    if (seqNum > 0)
+      trace << ' ' << seqNum;
+  }
+
+  trace << PTrace::End;
+}
+#endif
+
+
+///////////////////////////////////////////////////////////////////////////////
+
 void H323SetAliasAddresses(const PStringList & names,
                            H225_ArrayOf_AliasAddress & aliases)
 {
@@ -762,6 +837,7 @@ OpalCallEndReason H323TranslateToCallEndReason(Q931::CauseValues cause,
     case Q931::NoRouteToNetwork :
     case Q931::ChannelUnacceptable :
       return EndedByUnreachable;
+    case Q931::UnallocatedNumber :
     case Q931::NoRouteToDestination :
     case Q931::SubscriberAbsent :
       return EndedByNoUser;
@@ -786,7 +862,7 @@ Q931::CauseValues H323TranslateFromCallEndReason(const H323Connection & connecti
     Q931::CallRejected,                                     /// EndedByAnswerDenied,      Local endpoint declined to answer call
     Q931::NormalCallClearing,                               /// EndedByRemoteUser,        Remote endpoint application cleared call
     -H225_ReleaseCompleteReason::e_destinationRejection,    /// EndedByRefusal,           Remote endpoint refused call
-    Q931::NormalCallClearing,                               /// EndedByNoAnswer,          Remote endpoint did not answer in required time
+    Q931::NoAnswer,                                         /// EndedByNoAnswer,          Remote endpoint did not answer in required time
     Q931::NormalCallClearing,                               /// EndedByCallerAbort,       Remote endpoint stopped calling
     -H225_ReleaseCompleteReason::e_undefinedReason,         /// EndedByTransportFail,     Transport error cleared call
     -H225_ReleaseCompleteReason::e_unreachableDestination,  /// EndedByConnectFail,       Transport connection failed to establish call
@@ -798,8 +874,8 @@ Q931::CauseValues H323TranslateFromCallEndReason(const H323Connection & connecti
     -H225_ReleaseCompleteReason::e_securityDenied,          /// EndedBySecurityDenial,    Call failed a security check and was ended
     Q931::UserBusy,                                         /// EndedByLocalBusy,         Local endpoint busy
     Q931::Congestion,                                       /// EndedByLocalCongestion,   Local endpoint congested
-    Q931::NormalCallClearing,                               /// EndedByRemoteBusy,        Remote endpoint busy
-    Q931::NormalCallClearing,                               /// EndedByRemoteCongestion,  Remote endpoint congested
+    Q931::UserBusy,                                         /// EndedByRemoteBusy,        Remote endpoint busy
+    Q931::Congestion,                                       /// EndedByRemoteCongestion,  Remote endpoint congested
     Q931::NoRouteToDestination,                             /// EndedByUnreachable,       Could not reach the remote party
     Q931::InvalidCallReference,                             /// EndedByNoEndPoint,        The remote party is not running an endpoint
     Q931::DestinationOutOfOrder,                            /// EndedByHostOffline,       The remote party host off line
@@ -959,38 +1035,36 @@ BOOL H323SignalPDU::Read(OpalTransport & transport)
     return FALSE;
   }
 
-  PTRACE(4, "H225\tReceived raw data:\n" << hex << setfill('0')
-                                         << setprecision(2) << rawData
-                                         << dec << setfill(' '));
-
   if (!q931pdu.Decode(rawData)) {
-    PTRACE(1, "H225\tParse error of Q931 PDU");
+    PTRACE(1, "H225\tParse error of Q931 PDU:\n" << hex << setfill('0')
+                                                 << setprecision(2) << rawData
+                                                 << dec << setfill(' '));
     return FALSE;
   }
 
   if (!q931pdu.HasIE(Q931::UserUserIE)) {
     m_h323_uu_pdu.m_h323_message_body.SetTag(H225_H323_UU_PDU_h323_message_body::e_empty);
-    PTRACE(1, "H225\tNo Q931 User-User Information Element, "
-              "Q.931 PDU:\n  " << setprecision(2) << q931pdu);
+    PTRACE(1, "H225\tNo Q931 User-User Information Element,"
+              "\nRaw PDU:\n" << hex << setfill('0')
+                             << setprecision(2) << rawData
+                             << dec << setfill(' ') <<
+              "\nQ.931 PDU:\n  " << setprecision(2) << q931pdu);
     return TRUE;
   }
 
   PPER_Stream strm = q931pdu.GetIE(Q931::UserUserIE);
   if (!Decode(strm)) {
-    PTRACE(1, "H225\tRead error: PER decode failure in Q.931 User-User Information Element, "
-              "Partial PDU:\n  " << setprecision(2) << *this);
+    PTRACE(1, "H225\tRead error: PER decode failure in Q.931 User-User Information Element,"
+              "\nRaw PDU:\n" << hex << setfill('0')
+                             << setprecision(2) << rawData
+                             << dec << setfill(' ') <<
+              "\nQ.931 PDU:\n  " << setprecision(2) << q931pdu <<
+              "\nPartial PDU:\n  " << setprecision(2) << *this);
     m_h323_uu_pdu.m_h323_message_body.SetTag(H225_H323_UU_PDU_h323_message_body::e_empty);
     return TRUE;
   }
 
-#if PTRACING
-  if (PTrace::CanTrace(4)) {
-    PTRACE(4, "H225\tReceived PDU:\n  " << setprecision(2) << *this);
-  }
-  else {
-    PTRACE(3, "H225\tReceived PDU: " << m_h323_uu_pdu.m_h323_message_body.GetTagName());
-  }
-#endif
+  H323TraceDumpPDU("H225", FALSE, rawData, *this, m_h323_uu_pdu.m_h323_message_body, 0);
   return TRUE;
 }
 
@@ -1003,18 +1077,8 @@ BOOL H323SignalPDU::Write(OpalTransport & transport)
   PBYTEArray rawData;
   if (!q931pdu.Encode(rawData))
     return FALSE;
-  
-#if PTRACING
-  if (PTrace::CanTrace(4)) {
-    PTRACE(4, "H225\tSending PDU:\n  " << setprecision(2) << *this << '\n'
-                                       << hex << setfill('0')
-                                       << setprecision(2) << rawData
-                                       << dec << setfill(' '));
-  }
-  else {
-    PTRACE(3, "H225\tSending PDU: " << m_h323_uu_pdu.m_h323_message_body.GetTagName());
-  }
-#endif
+
+  H323TraceDumpPDU("H225", TRUE, rawData, *this, m_h323_uu_pdu.m_h323_message_body, 0);
 
   if (transport.WritePDU(rawData))
     return TRUE;
@@ -1578,8 +1642,13 @@ H245_EndSessionCommand & H323ControlPDU::BuildEndSessionCommand(unsigned reason)
 
 /////////////////////////////////////////////////////////////////////////////
 
-H323RasPDU::H323RasPDU(H225_RAS & ras)
-  : rasChannel(ras)
+H323RasPDU::H323RasPDU()
+{
+}
+
+
+H323RasPDU::H323RasPDU(const H235Authenticators & auth)
+  : authenticators(auth)
 {
 }
 
@@ -1787,6 +1856,20 @@ H225_BandwidthReject & H323RasPDU::BuildBandwidthReject(unsigned seqNum, unsigne
 }
 
 
+H225_InfoRequest & H323RasPDU::BuildInfoRequest(unsigned seqNum,
+                                                unsigned callRef,
+                                                const OpalGloballyUniqueID * id)
+{
+  SetTag(e_infoRequest);
+  H225_InfoRequest & irq = *this;
+  irq.m_requestSeqNum = seqNum;
+  irq.m_callReferenceValue = callRef;
+  if (callRef != 0 && id != NULL)
+    irq.m_callIdentifier.m_guid = *id;
+  return irq;
+}
+
+
 H225_InfoRequestResponse & H323RasPDU::BuildInfoRequestResponse(unsigned seqNum)
 {
   SetTag(e_infoRequestResponse);
@@ -1951,16 +2034,7 @@ BOOL H323RasPDU::Read(OpalTransport & transport)
     return TRUE;
   }
 
-#if PTRACING
-  if (PTrace::CanTrace(4)) {
-    PTRACE(4, "H225RAS\tReceived PDU:\n  " << setprecision(2) << rawPDU
-                                 << "\n "  << setprecision(2) << *this);
-  }
-  else {
-    PTRACE(3, "H225RAS\tReceived PDU: " << GetTagName() << ' ' << GetSequenceNumber());
-  }
-#endif
-
+  H323TraceDumpPDU("H225RAS", FALSE, rawPDU, *this, *this, GetSequenceNumber());
   return TRUE;
 }
 
@@ -1972,24 +2046,15 @@ BOOL H323RasPDU::Write(OpalTransport & transport) const
   strm.CompleteEncoding();
 
   // Finalise the security if present
-  H235Authenticators authenticators = rasChannel.GetAuthenticators();
   for (PINDEX i = 0; i < authenticators.GetSize(); i++)
     authenticators[i].Finalise(strm);
 
-#if PTRACING
-  if (PTrace::CanTrace(4)) {
-    PTRACE(4, "H225RAS\tSending PDU:\n  " << setprecision(2) << *this
-                                << "\n "  << setprecision(2) << strm);
-  }
-  else {
-    PTRACE(3, "H225\tSending PDU: " << GetTagName() << ' ' << GetSequenceNumber());
-  }
-#endif
+  H323TraceDumpPDU("H225RAS", TRUE, strm, *this, *this, GetSequenceNumber());
 
   if (transport.WritePDU(strm))
     return TRUE;
 
-  PTRACE(1, "H225\tWrite PDU failed ("
+  PTRACE(1, "H225RAS\tWrite PDU failed ("
          << transport.GetErrorNumber(PChannel::LastWriteError)
          << "): " << transport.GetErrorText(PChannel::LastWriteError));
   return FALSE;

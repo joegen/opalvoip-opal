@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2020  2002/07/04 07:41:47  robertj
+ * Revision 1.2021  2002/09/04 06:01:48  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.19  2002/07/04 07:41:47  robertj
  * Fixed memory/thread leak of transports.
  *
  * Revision 2.18  2002/07/01 04:56:32  robertj
@@ -93,6 +96,24 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.137  2002/08/15 04:56:56  robertj
+ * Fixed operation of ports system assuring RTP is even numbers.
+ *
+ * Revision 1.136  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
+ *
+ * Revision 1.135  2002/07/19 11:25:10  robertj
+ * Added extra trace on attempt to clear non existent call.
+ *
+ * Revision 1.134  2002/07/19 03:39:22  robertj
+ * Bullet proofed setting of RTP IP port base, can't be zero!
+ *
+ * Revision 1.133  2002/07/18 01:50:14  robertj
+ * Changed port secltion code to force apps to use function interface.
+ *
+ * Revision 1.132  2002/07/04 00:11:25  robertj
+ * Fixed setting of gk password when password changed in endpoint.
  *
  * Revision 1.131  2002/06/22 05:48:42  robertj
  * Added partial implementation for H.450.11 Call Intrusion
@@ -881,6 +902,7 @@ void H323EndPoint::SetGatekeeperPassword(const PString & password)
   gatekeeperPassword = password;
 
   if (gatekeeper != NULL) {
+    gatekeeper->SetPassword(gatekeeperPassword);
     if (gatekeeper->IsRegistered()) // If we are registered send a URQ
       gatekeeper->UnregistrationRequest(H225_UnregRequestReason::e_reregistrationRequired);
     InternalRegisterGatekeeper(gatekeeper, TRUE);

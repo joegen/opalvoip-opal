@@ -24,7 +24,10 @@
  * Contributor(s): __________________________________
  *
  * $Log: h235auth.cxx,v $
- * Revision 1.2006  2002/07/01 04:56:32  robertj
+ * Revision 1.2007  2002/09/04 06:01:48  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.5  2002/07/01 04:56:32  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.4  2001/10/05 00:22:13  robertj
@@ -38,6 +41,17 @@
  *
  * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 1.12  2002/08/13 05:11:03  robertj
+ * Removed redundent code.
+ *
+ * Revision 1.11  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
+ *
+ * Revision 1.10  2002/08/05 05:17:41  robertj
+ * Fairly major modifications to support different authentication credentials
+ *   in ARQ to the logged in ones on RRQ. For both client and server.
+ * Various other H.235 authentication bugs and anomalies fixed on the way.
  *
  * Revision 1.9  2002/06/24 00:11:21  robertj
  * Clarified error message during GRQ authentication.
@@ -69,6 +83,8 @@
  * Major changes to H.235 support in RAS to support server.
  *
  */
+
+#include <ptlib.h>
 
 #ifdef __GNUC__
 #pragma implementation "h235auth.h"
@@ -173,11 +189,114 @@ BOOL H235Authenticator::AddCapability(unsigned mechanism,
 
 ///////////////////////////////////////////////////////////////////////////////
 
+H235Authenticators H235Authenticators::Adjust(const PString & remoteId,
+                                              const PString & localId,
+                                              const PString & password) const
+{
+  H235Authenticators adjustedAuthenticators;
+
+  PINDEX i;
+  for (i = 0; i < GetSize(); i++) {
+    H235Authenticator & authenticator = (*this)[i];
+    if (authenticator.IsActive()) {
+      H235Authenticator * adjustedAuthenticator = (H235Authenticator *)authenticator.Clone();
+      adjustedAuthenticators.Append(adjustedAuthenticator);
+
+      if (!remoteId)
+        adjustedAuthenticator->SetRemoteId(remoteId);
+      if (!localId)
+        adjustedAuthenticator->SetLocalId(localId);
+      adjustedAuthenticator->SetPassword(password);
+    }
+  }
+
+  return adjustedAuthenticators;
+}
+
+
+void H235Authenticators::PreparePDU(H225_ArrayOf_CryptoH323Token & cryptoTokens,
+                                    PASN_Sequence & pdu,
+                                    unsigned optionalField) const
+{
+  // Clean out any crypto tokens in case this is a retry message
+  // and we are regenerating the tokens due to possible timestamp
+  // issues.
+  cryptoTokens.RemoveAll();
+
+  for (PINDEX i = 0; i < GetSize(); i++) {
+    H235Authenticator & authenticator = (*this)[i];
+    if (authenticator.Prepare(cryptoTokens)) {
+      PTRACE(4, "H235RAS\tPrepared PDU with authenticator " << authenticator);
+      pdu.IncludeOptionalField(optionalField);
+    }
+  }
+}
+
+
+BOOL H235Authenticators::ValidatePDU(const H225_ArrayOf_CryptoH323Token & cryptoTokens,
+                                     const PASN_Sequence & pdu,
+                                     unsigned optionalField,
+                                     const PBYTEArray & rawPDU) const
+{
+  BOOL noneActive = TRUE;
+  PINDEX i;
+  for (i = 0; i < GetSize(); i++) {
+    if ((*this)[i].IsActive()) {
+      noneActive = FALSE;
+      break;
+    }
+  }
+
+  if (noneActive)
+    return TRUE;
+
+  //do not accept non secure RAS Messages
+  if (!pdu.HasOptionalField(optionalField)) {
+    PTRACE(2, "H235RAS\tReceived unsecured RAS message (not crypto tokens)");
+    return FALSE;
+  }
+
+  BOOL ok = FALSE;
+  for (i = 0; i < GetSize(); i++) {
+    H235Authenticator & authenticator = (*this)[i];
+    switch (authenticator.Verify(cryptoTokens, rawPDU)) {
+      case H235Authenticator::e_OK :
+        PTRACE(4, "H235RAS\tAuthenticator " << authenticator << " OK");
+        ok = TRUE;
+        break;
+
+      case H235Authenticator::e_Absent :
+        PTRACE(4, "H235RAS\tAuthenticator " << authenticator << " absent from GK");
+        authenticator.Disable();
+        break;
+
+      case H235Authenticator::e_Disabled :
+        PTRACE(4, "H235RAS\tAuthenticator " << authenticator << " disabled");
+        break;
+
+      default : // e_Error, e_Attacked
+        break;
+    }
+  }
+
+  return ok;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
 static const char OID_MD5[] = "1.2.840.113549.2.5";
 
 H235AuthSimpleMD5::H235AuthSimpleMD5()
 {
 }
+
+
+PObject * H235AuthSimpleMD5::Clone() const
+{
+  return new H235AuthSimpleMD5(*this);
+}
+
 
 BOOL H235AuthSimpleMD5::PrepareToken(H225_CryptoH323Token & cryptoToken)
 {
@@ -247,7 +366,8 @@ H235Authenticator::State H235AuthSimpleMD5::VerifyToken(
 
   PString alias = H323GetAliasAddressString(cryptoEPPwdHash.m_alias);
   if (!remoteId && alias != remoteId) {
-    PTRACE(1, "H235RAS\tWrong alias.");
+    PTRACE(1, "H235RAS\tH235AuthSimpleMD5 alias is \"" << alias
+           << "\", should be \"" << remoteId << '"');
     return e_Error;
   }
 
@@ -279,8 +399,8 @@ H235Authenticator::State H235AuthSimpleMD5::VerifyToken(
       memcmp(cryptoEPPwdHash.m_token.m_hash.GetDataPointer(), &digest, sizeof(digest)) == 0)
     return e_OK;
 
-  PTRACE(1, "H235RAS\tMD5 digest does not match.");
-  return e_Error;
+  PTRACE(1, "H235RAS\tH235AuthSimpleMD5 digest does not match.");
+  return e_Attacked;
 }
 
 

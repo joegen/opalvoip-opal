@@ -24,7 +24,10 @@
  * Contributor(s): Fürbass Franz <franz.fuerbass@infonova.at>
  *
  * $Log: h235auth1.cxx,v $
- * Revision 1.2007  2002/07/01 04:56:32  robertj
+ * Revision 1.2008  2002/09/04 06:01:48  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.6  2002/07/01 04:56:32  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.5  2002/01/14 06:35:57  robertj
@@ -41,6 +44,23 @@
  *
  * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 1.10  2002/08/13 05:10:29  robertj
+ * Fixed bug where incorrect PIN caused infinite loop.
+ *
+ * Revision 1.9  2002/08/05 05:17:41  robertj
+ * Fairly major modifications to support different authentication credentials
+ *   in ARQ to the logged in ones on RRQ. For both client and server.
+ * Various other H.235 authentication bugs and anomalies fixed on the way.
+ *
+ * Revision 1.8  2002/07/25 00:56:23  robertj
+ * Added logging of timestamps used if authorisation declined for that reason.
+ *
+ * Revision 1.7  2002/07/24 06:38:57  robertj
+ * Fixed GNU compatibility
+ *
+ * Revision 1.6  2002/07/24 06:35:53  robertj
+ * Fixed timestamp check in PDU to assure use of UTC and banded grace time.
  *
  * Revision 1.5  2002/05/17 03:40:25  robertj
  * Fixed problems with H.235 authentication on RAS for server and client.
@@ -71,8 +91,8 @@
 #include <h323/h323pdu.h>
 
 
-#define REPLY_BUFFER_SIZE    1024
-#define TIMESPAN_FOR_VERIFY  10000
+#define REPLY_BUFFER_SIZE 1024
+#define TIMESTAMP_GRACE   (2*60*60+10)  // 2 hours 10 seconds to allow for DST adjustments
 
 
 static const char OID_A[] = "0.0.8.235.0.2.1";
@@ -191,6 +211,18 @@ H235AuthProcedure1::H235AuthProcedure1()
 }
 
 
+PObject * H235AuthProcedure1::Clone() const
+{
+  H235AuthProcedure1 * auth = new H235AuthProcedure1(*this);
+
+  // We do NOT copy these fields in Clone()
+  auth->lastRandomSequenceNumber = 0;
+  auth->lastTimestamp = 0;
+
+  return auth;
+}
+
+
 BOOL H235AuthProcedure1::PrepareToken(H225_CryptoH323Token & cryptoToken)
 {
   if (!IsActive())
@@ -224,7 +256,7 @@ BOOL H235AuthProcedure1::PrepareToken(H225_CryptoH323Token & cryptoToken)
   }
   
   clearToken.IncludeOptionalField(H235_ClearToken::e_timeStamp);
-  clearToken.m_timeStamp = (unsigned)time(NULL);
+  clearToken.m_timeStamp = (int)PTime().GetTimeInSeconds();
 
   clearToken.IncludeOptionalField(H235_ClearToken::e_random);
   clearToken.m_random = ++sentRandomSequenceNumber;
@@ -265,7 +297,7 @@ BOOL H235AuthProcedure1::Finalise(PBYTEArray & rawPDU)
   
   if (foundat == -1) {
     //Can't find the search pattern in the ASN1 packet.
-    PTRACE(1, "H235RAS\tCould not do H.235 hashing!");
+    PTRACE(2, "H235RAS\tPDU not prepared for H235AuthProcedure1");
     return FALSE;
   }
   
@@ -290,7 +322,7 @@ BOOL H235AuthProcedure1::Finalise(PBYTEArray & rawPDU)
   
   memcpy(&rawPDU[foundat], key, HASH_SIZE);
   
-  PTRACE(3, "H235RAS\tHashing succeeded.");
+  PTRACE(4, "H235RAS\tH235AuthProcedure1 hashing completed.");
   return TRUE;
 }
 
@@ -333,26 +365,28 @@ H235Authenticator::State H235AuthProcedure1::VerifyToken(
   
   // "A" indicates that the whole messages is used for authentication.
   if (!CheckOID(crHashed.m_tokenOID, OID_A)) {
-    PTRACE(2, "H235RAS\tRequire all fields are hashed, got tokenIOD " << crHashed.m_tokenOID);
+    PTRACE(2, "H235RAS\tH235AuthProcedure1 requires all fields are hashed, got OID " << crHashed.m_tokenOID);
     return e_Absent;
   }
   
   // "T" indicates that the hashed token of the CryptoToken is used for authentication.
   if (!CheckOID(crHashed.m_hashedVals.m_tokenOID, OID_T)) {
-    PTRACE(2, "H235RAS\tRequire ClearToken for hash, got tokenIOD " << crHashed.m_hashedVals.m_tokenOID);
+    PTRACE(2, "H235RAS\tH235AuthProcedure1 requires ClearToken, got OID " << crHashed.m_hashedVals.m_tokenOID);
     return e_Absent;
   }
   
   // "U" indicates that the HMAC-SHA1-96 alorigthm is used.
-  
   if (!CheckOID(crHashed.m_token.m_algorithmOID, OID_U)) {
-    PTRACE(2, "H235RAS\tRequire HMAC-SHA1-96 was not used");
+    PTRACE(2, "H235RAS\tH235AuthProcedure1 requires HMAC-SHA1-96, got OID " << crHashed.m_token.m_algorithmOID);
     return e_Absent;
   }
   
   //first verify the timestamp
-  if (crHashed.m_hashedVals.m_timeStamp > (unsigned int)time(NULL) + TIMESPAN_FOR_VERIFY) {
-    PTRACE(1, "H235RAS\tInvalid timestamp (out of bounds)");
+  PTime now;
+  int deltaTime = now.GetTimeInSeconds() - crHashed.m_hashedVals.m_timeStamp;
+  if (PABS(deltaTime) > TIMESTAMP_GRACE) {
+    PTRACE(1, "H235RAS\tInvalid timestamp ABS(" << now.GetTimeInSeconds() << '-' 
+           << (int)crHashed.m_hashedVals.m_timeStamp << ") > " << TIMESTAMP_GRACE);
     //the time has elapsed
     return e_Error;
   }
@@ -372,12 +406,26 @@ H235Authenticator::State H235AuthProcedure1::VerifyToken(
   //verify the username
   if (!localId && crHashed.m_tokenOID[OID_VERSION_OFFSET] > 1) {
     if (!crHashed.m_hashedVals.HasOptionalField(H235_ClearToken::e_generalID)) {
-      PTRACE(1, "H235RAS\tRequired destination ID missing.");
+      PTRACE(1, "H235RAS\tH235AuthProcedure1 requires general ID.");
       return e_Error;
     }
   
     if (crHashed.m_hashedVals.m_generalID.GetValue() != localId) {
-      PTRACE(1, "H235RAS\tWrong destination.");
+      PTRACE(1, "H235RAS\tGeneral ID is \"" << crHashed.m_hashedVals.m_generalID.GetValue()
+             << "\", should be \"" << localId << '"');
+      return e_Error;
+    }
+  }
+
+  if (!remoteId) {
+    if (!crHashed.m_hashedVals.HasOptionalField(H235_ClearToken::e_sendersID)) {
+      PTRACE(1, "H235RAS\tH235AuthProcedure1 requires senders ID.");
+      return e_Error;
+    }
+  
+    if (crHashed.m_hashedVals.m_sendersID.GetValue() != remoteId) {
+      PTRACE(1, "H235RAS\tSenders ID is \"" << crHashed.m_hashedVals.m_sendersID.GetValue()
+             << "\", should be \"" << remoteId << '"');
       return e_Error;
     }
   }
@@ -390,8 +438,10 @@ H235Authenticator::State H235AuthProcedure1::VerifyToken(
   */
   BYTE RV[HASH_SIZE];
   
-  if (crHashed.m_token.m_hash.GetSize() != HASH_SIZE*8)
+  if (crHashed.m_token.m_hash.GetSize() != HASH_SIZE*8) {
+    PTRACE(2, "H235RAS\tH235AuthProcedure1 requires a hash!");
     return e_Error;
+  }
   
   const unsigned char *data = crHashed.m_token.m_hash.GetDataPointer();
   memcpy(RV, data, HASH_SIZE);
@@ -419,13 +469,13 @@ H235Authenticator::State H235AuthProcedure1::VerifyToken(
       }
     }
     
-    if (!found && foundat != 0) {
-      //have tryed but does not match
-      return e_Attacked;
-    }
+    if (!found) {
+      if (foundat != 0)
+        break;
 
-    if (!found)
+      PTRACE(2, "H235RAS\tH235AuthProcedure1 could not locate embedded hash!");
       return e_Error;
+    }
     
     found = false;
     
@@ -448,8 +498,13 @@ H235Authenticator::State H235AuthProcedure1::VerifyToken(
     */
     if(memcmp(key, RV, HASH_SIZE) == 0) // Keys are the same !! Ok
       return e_OK;
+
+    // Put it back and look for another
+    memcpy((BYTE *)asnPtr+foundat, data, HASH_SIZE);
+    foundat++;
   }
-  
+
+  PTRACE(1, "H235RAS\tH235AuthProcedure1 hash does not match.");
   return e_Attacked;
 }
 
