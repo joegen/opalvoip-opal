@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.h,v $
- * Revision 1.2005  2002/07/01 04:56:29  robertj
+ * Revision 1.2006  2002/11/10 11:33:16  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.4  2002/07/01 04:56:29  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.3  2001/11/02 10:45:19  robertj
@@ -38,6 +41,19 @@
  *
  * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 1.130  2002/11/05 02:18:03  robertj
+ * Changed default for speex codec to be included.
+ *
+ * Revision 1.129  2002/11/04 02:57:24  dereks
+ * Put test around include of speexcodec.h    SPEEX is now an optional codec.
+ *
+ * Revision 1.128  2002/10/24 05:34:03  robertj
+ * Added speex codec
+ *
+ * Revision 1.127  2002/10/01 03:07:12  robertj
+ * Added version number functions for OpenH323 library itself, plus included
+ *   library version in the default vendor information.
  *
  * Revision 1.126  2002/06/27 03:08:57  robertj
  * Added code to include G.729 & G.726 codecs on static linking.
@@ -452,6 +468,7 @@
 #include <codec/lpc10codec.h>
 #include <codec/g729codec.h>
 #include <codec/g726codec.h>
+#include <codec/speexcodec.h>
 #endif // NO_H323_AUDIO_CODECS
 #ifndef NO_H323_VIDEO
 #include <codec/h261codec.h>
@@ -459,6 +476,12 @@
 #include <codec/cu30codec.h>
 #endif
 #endif // NO_H323_VIDEO
+
+
+PString  OpalGetVersion();
+unsigned OpalGetMajorVersion();
+unsigned OpalGetMinorVersion();
+unsigned OpalGetBuildNumber();
 
 
 /////////////////////////////////////////////////////////////////////////////

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2017  2002/09/16 02:52:33  robertj
+ * Revision 1.2018  2002/11/10 11:33:16  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.16  2002/09/16 02:52:33  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -80,6 +83,20 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.55  2002/11/10 06:17:26  robertj
+ * Fixed minor documentation errors.
+ *
+ * Revision 1.54  2002/11/05 00:24:09  robertj
+ * Added function to determine if Q.931 CONNECT sent/received.
+ *
+ * Revision 1.53  2002/10/31 00:31:47  robertj
+ * Enhanced jitter buffer system so operates dynamically between minimum and
+ *   maximum values. Altered API to assure app writers note the change!
+ *
+ * Revision 1.52  2002/09/16 01:14:15  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
  * Revision 1.51  2002/09/03 06:19:36  robertj
  * Normalised the multi-include header prevention ifdef/define symbol.
@@ -383,7 +400,7 @@ class H323Connection : public OpalConnection
        for the H323EndPoint::ClearCall() function to set the clearance reason.
       */
     virtual void SetCallEndReason(
-      OpalCallEndReason reason   /// Reason for clearance of connection.
+      CallEndReason reason   /// Reason for clearance of connection.
     );
 
     /**Indicate to remote endpoint an alert is in progress.
@@ -524,7 +541,7 @@ class H323Connection : public OpalConnection
     /**Attach a transport to this connection as the signalling channel.
       */
     void AttachSignalChannel(
-      OpalTransport * channel,  /// Transport for the PDU's
+      H323Transport * channel,  /// Transport for the PDU's
       BOOL answeringCall        /// Flag for if incoming/outgoing call.
     );
 
@@ -713,7 +730,7 @@ class H323Connection : public OpalConnection
 
        The return value is TRUE if the call is to be forwarded, FALSE
        otherwise. Note that if the call is forwarded the current connection is
-       cleared with teh ended call code of EndedByCallForwarded.
+       cleared with the ended call code of EndedByCallForwarded.
       */
     virtual BOOL ForwardCall(
       const PString & forwardParty   /// Party to forward call to.
@@ -963,7 +980,7 @@ class H323Connection : public OpalConnection
        Returns the error code for the call failure reason or NumCallEndReasons
        if the call was successful to that point in the protocol.
      */
-    virtual OpalCallEndReason SendSignalSetup(
+    virtual CallEndReason SendSignalSetup(
       const PString & alias,                /// Name of remote party
       const H323TransportAddress & address  /// Address of destination
     );
@@ -1111,7 +1128,7 @@ class H323Connection : public OpalConnection
        PDU is sent.
 
        The default behaviour checks to see if it is a known transport and
-       creates a corresponding OpalTransport decendent for the control
+       creates a corresponding H323Transport decendent for the control
        channel.
      */
     virtual BOOL CreateOutgoingControlChannel(
@@ -1932,6 +1949,11 @@ class H323Connection : public OpalConnection
       */
     void SetDistinctiveRing(unsigned pattern) { distinctiveRing = pattern&7; }
 
+    /**Get the internal OpenH323 call token for this connection.
+       Deprecated, only used for backward compatibility.
+     */
+    const PString & GetCallToken() const { return GetToken(); }
+
     /**Get the call reference for this connection.
      */
     unsigned GetCallReference() const { return callReference; }
@@ -1983,7 +2005,7 @@ class H323Connection : public OpalConnection
 
     /**Get the signalling channel being used.
       */
-    const OpalTransport * GetSignallingChannel() const { return signallingChannel; }
+    const H323Transport * GetSignallingChannel() const { return signallingChannel; }
 
     /**Get the signalling channel protocol version number.
       */
@@ -1991,7 +2013,7 @@ class H323Connection : public OpalConnection
 
     /**Get the control channel being used (may return signalling channel).
       */
-    const OpalTransport & GetControlChannel() const;
+    const H323Transport & GetControlChannel() const;
 
     /**Get the control channel protocol version number.
       */
@@ -2013,14 +2035,6 @@ class H323Connection : public OpalConnection
     /**Get the time at which the connection was cleared
       */
     PTime GetConnectionEndTime() const { return callEndTime; }
-
-    /**Get the default maximum audio delay jitter parameter.
-     */
-    WORD GetMaxAudioDelayJitter() const { return maxAudioDelayJitter; }
-
-    /**Set the default maximum audio delay jitter parameter.
-     */
-    void SetMaxAudioDelayJitter(unsigned jitter) { maxAudioDelayJitter = (WORD)jitter; }
 
     /**Get the UUIE PDU monitor bit mask.
      */
@@ -2094,8 +2108,8 @@ class H323Connection : public OpalConnection
     BOOL               addAccessTokenToSetup;
     SendUserInputModes sendUserInputMode;
 
-    OpalTransport * signallingChannel;
-    OpalTransport * controlChannel;
+    H323Transport * signallingChannel;
+    H323Transport * controlChannel;
     OpalListener  * controlListener;
     BOOL            h245Tunneling;
     H323SignalPDU * h245TunnelRxPDU;
