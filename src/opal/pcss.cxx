@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2011  2003/03/06 03:57:47  robertj
+ * Revision 1.2012  2003/03/07 08:14:50  robertj
+ * Fixed support of dual address SetUpCall()
+ * Fixed use of new call set up sequence, calling OnSetUp() in outgoing call.
+ *
+ * Revision 2.10  2003/03/06 03:57:47  robertj
  * IVR support (work in progress) requiring large changes everywhere.
  *
  * Revision 2.9  2002/07/04 07:54:53  robertj
@@ -282,7 +286,10 @@ BOOL OpalPCSSConnection::SetConnected()
 
 PString OpalPCSSConnection::GetDestinationAddress()
 {
-  return endpoint.OnGetDestination(*this);
+  PString dest = ownerCall.GetPartyB();
+  if (dest.IsEmpty())
+    dest = endpoint.OnGetDestination(*this);
+  return dest;
 }
 
 
@@ -339,7 +346,14 @@ void OpalPCSSConnection::InitiateCall()
     return;
 
   phase = SetUpPhase;
-  OnIncomingConnection();
+  if (!OnIncomingConnection()) {
+    Release(EndedByCallerAbort);
+    return;
+  }
+
+  PTRACE(2, "PCSS\tOutgoing call routed for " << *this);
+  if (!ownerCall.OnSetUp(*this))
+    Release(EndedByNoAccept);
 
   Unlock();
 }
