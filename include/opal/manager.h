@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2026  2004/06/05 14:34:44  rjongbloed
+ * Revision 1.2027  2004/07/04 12:50:50  rjongbloed
+ * Added some access functions to manager lists
+ *
+ * Revision 2.25  2004/06/05 14:34:44  rjongbloed
  * Added functions to set the auto start video tx/rx flags.
  *
  * Revision 2.24  2004/05/24 13:40:12  rjongbloed
@@ -187,6 +190,10 @@ class OpalManager : public PObject
     OpalEndPoint * FindEndPoint(
       const PString & prefix
     );
+
+    /**Get the endpoints attached to this manager.
+      */
+    const OpalEndPointList & GetEndPoints() const { return endpoints; }
   //@}
 
   /**@name Call management */
@@ -722,6 +729,10 @@ class OpalManager : public PObject
     void SetRouteTable(
       const RouteTable & table  /// New table to set for routing
     );
+
+    /**Get the active route table for the manager.
+      */
+    const RouteTable & GetRouteTable() const { return routeTable; }
 
     /**Route the source address to a destination using the route table.
       */
