@@ -22,7 +22,11 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2004  2001/08/17 05:24:22  robertj
+# Revision 1.2005  2002/02/01 00:19:20  robertj
+# Updated to latest pwlilb.
+# Added rfc2833 module
+#
+# Revision 2.3  2001/08/17 05:24:22  robertj
 # Updates from OpenH323 v1.6.0 release.
 #
 # Revision 2.2  2001/08/01 06:22:55  robertj
@@ -156,7 +160,8 @@ endif
 # Software codecs
 
 SOURCES += $(OPAL_SRCDIR)/codec/g711codec.cxx \
-           $(OPAL_SRCDIR)/codec/g711.c
+           $(OPAL_SRCDIR)/codec/g711.c \
+           $(OPAL_SRCDIR)/codec/rfc2833.cxx
 
 GSM_DIR 	= $(OPAL_SRCDIR)/codec/gsm
 GSM_SRCDIR	= $(GSM_DIR)/src
@@ -258,7 +263,9 @@ ifeq ($(OSTYPE),beos)
 SYSLIBS        += -L$(PW_LIBDIR) -l$(PTLIB_BASE)$(LIB_TYPE)
 endif
 
-LIB_BASENAME	=	$(OPAL_FILE)
+LIB_BASENAME=$(OPAL_BASE)
+LIB_FILENAME=$(OPAL_FILE)
+
 
 include $(PWLIBDIR)/make/lib.mak
 
