@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2002  2002/02/01 04:53:01  robertj
+ * Revision 1.2003  2002/02/11 07:34:06  robertj
+ * Changed SDP to use OpalTransport for hosts instead of IP addresses/ports
+ * Added media bypass for streams between compatible protocols.
+ *
+ * Revision 2.1  2002/02/01 04:53:01  robertj
  * Added (very primitive!) SIP support.
  *
  */
@@ -120,6 +124,27 @@ class SIPConnection : public OpalConnection
       BOOL isSource,      /// Is a source stream
       unsigned sessionID  /// Session number for stream
     );
+
+    /**See if the media can bypass the local host.
+
+       The default behaviour returns FALSE indicating that media bypass is not
+       possible.
+     */
+    virtual BOOL CanDoMediaBypass(
+      unsigned sessionID                  /// Session ID for media channel
+    ) const;
+
+    /**Get the media transport address for the connection.
+       This is primarily used to determine if media bypass is possible for the
+       call between two connections.
+
+       The default behaviour returns TRUE if the media format is RTP based.
+     */
+    virtual BOOL GetMediaTransportAddress(
+      unsigned sessionID,                 /// Session ID for media channel
+      OpalTransportAddress & data,        /// Data channel address
+      OpalTransportAddress & control      /// Control channel address
+    ) const;
 
     /**Clean up the termination of the connection.
        This function can do any internal cleaning up and waiting on background
@@ -220,8 +245,9 @@ class SIPConnection : public OpalConnection
     void InitiateCall(
       const SIPURL & destination
     );
+    SDPSessionDescription * BuildSDP();
 
-    BOOL GetLocalIPAddress(PIPSocket::Address & localIP) const;
+    OpalTransportAddress GetLocalAddress(WORD port = 0) const;
     RTP_Session * UseSession(unsigned rtpSessionId);
 
     PString GetLocalPartyAddress() const { return localPartyAddress; }
@@ -231,8 +257,6 @@ class SIPConnection : public OpalConnection
     ) { localPartyAddress = addr; }
 
     SIPEndPoint & GetEndPoint() const { return endpoint; }
-
-    RTP_DataFrame::PayloadTypes GetRFC2833PayloadType() const;
 
   protected:
     PDECLARE_NOTIFIER(PThread, SIPConnection, InitiateCallThreadMain);
@@ -253,6 +277,9 @@ class SIPConnection : public OpalConnection
 
     OpalMediaFormatList remoteFormatList;
     RTP_SessionManager  rtpSessions;
+
+    PDICTIONARY(MediaTransportDict, POrdinalKey, OpalTransportAddress);
+    MediaTransportDict mediaTransports;
 };
 
 
