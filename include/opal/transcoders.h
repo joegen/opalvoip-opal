@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2002  2001/08/01 05:52:08  robertj
+ * Revision 1.2003  2002/01/22 05:07:02  robertj
+ * Added ability to get input and output media format names from transcoder.
+ *
+ * Revision 2.1  2001/08/01 05:52:08  robertj
  * Made OpalMediaFormatList class global to help with documentation.
  * Added functions to aid in determining if a transcoder can be used to get
  *   to another media format.
@@ -227,6 +230,21 @@ class OpalTranscoder : public PObject
     static OpalMediaFormatList GetSourceFormats(
       const OpalMediaFormat & dstFormat    /// Selected destination format
     );
+  //@}
+
+  /**@name Operations */
+  //@{
+    /**Get the transcoder registration that created this transcoder.
+     */
+    const OpalTranscoderRegistration & GetRegistration() const { return registration; }
+
+    /**Get the names of the input or output formats.
+      */
+    PString GetInputFormat() const { return registration.GetInputFormat(); }
+
+    /**Get the names of the input or output formats.
+      */
+    PString GetOutputFormat() const { return registration.GetOutputFormat(); }
   //@}
 
   protected:
