@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2011  2003/12/15 11:56:17  rjongbloed
+ * Revision 1.2012  2003/12/16 10:22:45  rjongbloed
+ * Applied enhancements, thank you very much Ted Szoczei
+ *
+ * Revision 2.10  2003/12/15 11:56:17  rjongbloed
  * Applied numerous bug fixes, thank you very much Ted Szoczei
  *
  * Revision 2.9  2002/09/16 02:52:35  robertj
@@ -182,6 +185,18 @@ class SIPMIMEInfo : public PMIMEInfo
     PString GetFrom() const;
     void SetFrom(const PString & v);
 
+    PString GetAccept() const;
+    void SetAccept(const PString & v);
+
+    PString GetAcceptEncoding() const;
+    void SetAcceptEncoding(const PString & v);
+
+    PString GetAcceptLanguage() const;
+    void SetAcceptLanguage(const PString & v);
+
+    PString GetAllow() const;
+    void SetAllow(const PString & v);
+
     PString GetCallID() const;
     void SetCallID(const PString & v);
 
@@ -204,6 +219,23 @@ class SIPMIMEInfo : public PMIMEInfo
     PString GetCSeq() const;
     void SetCSeq(const PString & v);
 
+    PString GetDate() const;
+    void SetDate(const PString & v);
+    void SetDate(const PTime & t);
+    void SetDate(void); // set to current date
+
+    unsigned GetExpires(unsigned dflt = UINT_MAX) const;// returns default value if not found
+    void SetExpires(unsigned v);
+
+    PINDEX GetMaxForwards() const;
+    void SetMaxForwards(PINDEX v);
+
+    PINDEX GetMinExpires() const;
+    void SetMinExpires(PINDEX v);
+
+    PString GetProxyAuthenticate() const;
+    void SetProxyAuthenticate(const PString & v);
+
     PStringList GetRoute() const;
     void SetRoute(const PStringList & v);
 
@@ -211,6 +243,18 @@ class SIPMIMEInfo : public PMIMEInfo
     void SetRecordRoute(const PStringList & v);
 
     unsigned GetCSeqIndex() const { return GetCSeq().AsUnsigned(); }
+
+    PString GetSupported() const;
+    void SetSupported(const PString & v);
+
+    PString GetUnsupported() const;
+    void SetUnsupported(const PString & v);
+
+    PString GetUserAgent() const;
+    void SetUserAgent();        // "OPAL/2.0"
+
+    PString GetWWWAuthenticate() const;
+    void SetWWWAuthenticate(const PString & v);
 
   protected:
     PStringList GetRouteList(const char * name) const;
