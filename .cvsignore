@@ -1,0 +1,3 @@
+*.opt *.plg *.ncb *.Tags.WW
+lib html
+.asnparser.version
