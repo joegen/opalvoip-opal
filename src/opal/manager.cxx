@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2025  2003/12/15 11:43:07  rjongbloed
+ * Revision 1.2026  2004/01/18 15:36:07  rjongbloed
+ * Added stun support
+ *
+ * Revision 2.24  2003/12/15 11:43:07  rjongbloed
  * Updated to new API due to plug-ins
  *
  * Revision 2.23  2003/03/17 10:27:00  robertj
@@ -115,6 +118,7 @@
 #include <opal/patch.h>
 #include <opal/mediastrm.h>
 #include <codec/vidcodec.h>
+#include <ptclib/pstun.h>
 
 #include "../../version.h"
 
@@ -186,6 +190,8 @@ OpalManager::OpalManager()
   tcpPorts.current = tcpPorts.base = tcpPorts.max = 0;
   udpPorts.current = udpPorts.base = udpPorts.max = 0;
 
+  stun = NULL;
+
 #ifdef _WIN32
   rtpIpTypeofService = IPTOS_PREC_CRITIC_ECP|IPTOS_LOWDELAY;
 #else
@@ -235,6 +241,8 @@ OpalManager::~OpalManager()
   // Kill off the endpoints, could wait till compiler generated destructor but
   // prefer to keep the PTRACE's in sequence.
   endpoints.RemoveAll();
+
+  delete stun;
 
   PTRACE(3, "OpalMan\tDeleted manager.");
 }
@@ -555,32 +563,31 @@ void OpalManager::AddVideoMediaFormats(const OpalConnection & /*connection*/,
 PVideoInputDevice * OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection*/)
 {
   PStringList drivers = PVideoInputDevice::GetDriverNames();
-  if (drivers.IsEmpty())
-    return NULL;
+  for (PINDEX i = 0; i < drivers.GetSize(); i++) {
+    PVideoInputDevice * videoDevice = PVideoInputDevice::CreateDevice(drivers[i]);
+    if (videoDevice != NULL) {
+      if (videoDevice->OpenFull(videoInputDevice, FALSE))
+        return videoDevice;
+      delete videoDevice;
+    }
+  }
 
-  PVideoInputDevice * videoDevice = PVideoInputDevice::CreateDevice(drivers[0]);
-  if (videoDevice == NULL)
-    return NULL;
-
-  if (videoDevice->OpenFull(videoInputDevice, FALSE))
-    return videoDevice;
-
-  delete videoDevice;
   return NULL;
 }
 
 
 PVideoOutputDevice * OpalManager::CreateVideoOutputDevice(const OpalConnection & /*connection*/)
 {
-  PVideoOutputDevice * videoDevice = NULL;
-
-  if (videoOutputDevice.deviceName.IsEmpty() || videoOutputDevice.deviceName == "NULL") {
-    videoDevice = PVideoOutputDevice::CreateDevice("null");
-    if (videoDevice->OpenFull(videoOutputDevice))
-      return videoDevice;
+  PStringList drivers = PVideoOutputDevice::GetDriverNames();
+  for (PINDEX i = 0; i < drivers.GetSize(); i++) {
+    PVideoOutputDevice * videoDevice = PVideoOutputDevice::CreateDevice(drivers[i]);
+    if (videoDevice != NULL) {
+      if (videoDevice->OpenFull(videoOutputDevice, FALSE))
+        return videoDevice;
+      delete videoDevice;
+    }
   }
 
-  delete videoDevice;
   return NULL;
 }
 
@@ -782,6 +789,55 @@ BOOL OpalManager::TranslateIPAddress(PIPSocket::Address & /*localAddr*/,
 }
 
 
+PSTUNClient * OpalManager::GetSTUN(const PIPSocket::Address & ip) const
+{
+  if (ip.IsValid() && IsLocalAddress(ip))
+    return NULL;
+
+  return stun;
+}
+
+
+void OpalManager::SetSTUNServer(const PString & server)
+{
+  delete stun;
+
+  if (server.IsEmpty())
+    stun = NULL;
+  else {
+    stun = new PSTUNClient(server,
+                           GetUDPPortBase(), GetUDPPortMax(),
+                           GetRtpIpPortBase(), GetRtpIpPortMax());
+    PTRACE(2, "OPAL\tSTUN server \"" << server << "\" replies " << stun->GetNatTypeName());
+  }
+}
+
+
+BOOL OpalManager::IsLocalAddress(const PIPSocket::Address & ip) const
+{
+  /* Check if the remote address is a private IP address.
+   * RFC 1918 specifies the following private IP addresses
+   * 10.0.0.0    - 10.255.255.255.255
+   * 172.16.0.0  - 172.31.255.255
+   * 192.168.0.0 - 192.168.255.255
+   */
+
+  return (ip.Byte1() == 10)
+         ||
+         (
+           (ip.Byte1() == 172)
+           &&
+           (ip.Byte2() >= 16) && (ip.Byte2() <= 31)
+         )
+         ||
+         (
+           (ip.Byte1() == 192) 
+           &&
+           (ip.Byte2() == 168)
+         );
+}
+
+
 void OpalManager::PortInfo::Set(unsigned newBase,
                                 unsigned newMax,
                                 unsigned range,
@@ -845,6 +901,9 @@ WORD OpalManager::GetNextTCPPort()
 void OpalManager::SetUDPPorts(unsigned udpBase, unsigned udpMax)
 {
   udpPorts.Set(udpBase, udpMax, 99, 0);
+
+  if (stun != NULL)
+    stun->SetPortRanges(GetUDPPortBase(), GetUDPPortMax(), GetRtpIpPortBase(), GetRtpIpPortMax());
 }
 
 
@@ -857,6 +916,9 @@ WORD OpalManager::GetNextUDPPort()
 void OpalManager::SetRtpIpPorts(unsigned rtpIpBase, unsigned rtpIpMax)
 {
   rtpIpPorts.Set((rtpIpBase+1)&0xfffe, rtpIpMax&0xfffe, 199, 5000);
+
+  if (stun != NULL)
+    stun->SetPortRanges(GetUDPPortBase(), GetUDPPortMax(), GetRtpIpPortBase(), GetRtpIpPortMax());
 }
 
 
