@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2004  2001/10/05 00:22:14  robertj
+ * Revision 1.2005  2002/01/14 02:22:03  robertj
+ * Fixed bug in wildcard name lookup.
+ *
+ * Revision 2.3  2001/10/05 00:22:14  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.2  2001/08/13 05:10:39  robertj
@@ -1539,10 +1542,14 @@ static BOOL MatchWildcard(const PCaselessString & str, const PStringArray & wild
 {
   PINDEX last = 0;
   for (PINDEX i = 0; i < wildcard.GetSize(); i++) {
-    PINDEX next = str.Find(wildcard[i], last);
-    if (next == P_MAX_INDEX)
-      return FALSE;
-    last = next + wildcard[i].GetLength();
+    if (wildcard[i].IsEmpty())
+      last = str.GetLength();
+    else {
+      PINDEX next = str.Find(wildcard[i], last);
+      if (next == P_MAX_INDEX)
+        return FALSE;
+      last = next + wildcard[i].GetLength();
+    }
   }
 
   return TRUE;
