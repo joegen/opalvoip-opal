@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2013  2002/04/16 07:53:15  robertj
+ * Revision 1.2014  2002/04/16 09:05:39  robertj
+ * Fixed correct Route field setting depending on target URI.
+ * Fixed some GNU warnings.
+ *
+ * Revision 2.12  2002/04/16 07:53:15  robertj
  * Changes to support calls through proxies.
  *
  * Revision 2.11  2002/04/15 08:54:46  robertj
@@ -230,8 +234,8 @@ void SIPURL::Parse(const char * cstr)
     return;
   }
 
-  if (!paramVars.Contains("transport"))
-    SetParamVar("transport", "udp");
+//  if (!paramVars.Contains("transport"))
+//    SetParamVar("transport", "udp");
 
   Recalculate();
 }
@@ -805,9 +809,7 @@ void SIP_PDU::Construct(Methods meth,
     if (!firstRoute.GetParamVars().Contains("lr")) {
       routeSet.MakeUnique();
       routeSet.RemoveAt(0);
-// The spec says we should append the target URI onto the route list but if we
-// do, it doesn't work. What are we doing wrong?
-//      routeSet.AppendString(uri.AsString());
+      routeSet.AppendString(uri.AsString());
       uri = firstRoute;
       uri.AdjustForRequestURI();
     }
@@ -932,7 +934,7 @@ BOOL SIP_PDU::Write(OpalTransport & transport)
   str << "SIP/" << versionMajor << '.' << versionMinor;
 
   if (method == NumMethods)
-    str << ' ' << statusCode << ' ' << info;
+    str << ' ' << (unsigned)statusCode << ' ' << info;
 
   str << "\r\n"
       << setfill('\r') << mime << setfill(' ')
@@ -942,9 +944,9 @@ BOOL SIP_PDU::Write(OpalTransport & transport)
   if (PTrace::CanTrace(4))
     PTRACE(4, "Sending SIP PDU on " << transport << '\n' << str);
   else if (!method)
-    PTRACE(3, "Sending SIP PDU: " << method << ' ' << uri << " on " << transport);
+    PTRACE(3, "Sending SIP PDU: " << MethodNames[method] << ' ' << uri << " on " << transport);
   else
-    PTRACE(3, "Sending SIP PDU: " << statusCode << ' ' << info << " on " << transport);
+    PTRACE(3, "Sending SIP PDU: " << (unsigned)statusCode << ' ' << info << " on " << transport);
 #endif
 
   if (transport.WriteString(str))
