@@ -27,8 +27,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q931.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2001/08/13 05:10:40  robertj
+ * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.36  2001/08/07 02:57:09  robertj
+ * Fixed incorrect Q.931 bearer capability, thanks Carlo Kielstra.
  *
  * Revision 1.35  2001/07/24 23:40:15  craigs
  * Added ability to remove Q931 IE
@@ -251,7 +257,7 @@ void Q931::BuildAlerting(int callRef)
 }
 
 
-static const BYTE BearerCapabilityData[3] = { 0x88, 0xc0, 0xa5 };
+static const BYTE BearerCapabilityData[3] = { 0x88, 0x80, 0xa5 };
 
 void Q931::BuildSetup(int callRef)
 {

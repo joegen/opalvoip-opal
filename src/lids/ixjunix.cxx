@@ -27,11 +27,21 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjunix.cxx,v $
- * Revision 1.2002  2001/08/01 05:21:21  robertj
+ * Revision 1.2003  2001/08/13 05:10:40  robertj
+ * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 2.1  2001/08/01 05:21:21  robertj
  * Made OpalMediaFormatList class global to help with documentation.
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.115  2001/08/08 15:55:56  rogerh
+ * Support the new ixj FreeBSD driver which can return values from the ioctl.
+ * This also fixes the capabilities problem.
+ *
+ * Revision 1.114  2001/08/08 11:00:25  rogerh
+ * Fix the ioctl wrappers to we can use the FreeBSD port of the IXJ driver
  *
  * Revision 1.113  2001/07/20 06:27:30  craigs
  * Bulletproofed caller id routines
@@ -443,11 +453,13 @@ static int traced_ioctl(const char * str, int fd, int code , unsigned long arg)
 
 #define	IOCTL(fd,code)		traced_ioctl(#code, fd, code)
 #define	IOCTL2(fd,code,arg)	traced_ioctl(#code, fd, code, (unsigned long)(arg))
+#define	IOCTLP(fd,code,arg)	::ioctl(fd,code,arg)
 
 #else
 
 #define	IOCTL(fd,code)		::ioctl(fd,code)
 #define	IOCTL2(fd,code,arg)	::ioctl(fd,code,arg)
+#define	IOCTLP(fd,code,arg)	::ioctl(fd,code,arg)
 
 #endif
 #endif  // P_LINUX
@@ -471,12 +483,12 @@ static int traced_bsd_ioctl(const char * str, int fd, int code , unsigned long a
   PTRACE(6,"IXJ\tIOCTL(" << fd << ", " << str << ", " << (void *)arg << ")");
   ret = ::ioctl(fd,code, &arg);
   PTRACE(6,"IXJ\tIOCTL value = " << val);
-  if (ret < 0) return ret;
-  else         return val;
+  return ret;
 }
 
 #define	IOCTL(fd,code)		traced_bsd_ioctl(#code, fd, code)
 #define	IOCTL2(fd,code,arg)	traced_bsd_ioctl(#code, fd, code, (unsigned long)(arg))
+#define	IOCTLP(fd,code,arg)	::ioctl(fd,code,arg)
 
 #else
 
@@ -485,12 +497,12 @@ static int bsd_ioctl(int fd, int code , unsigned long arg = 0)
   int val = arg;
   int ret;
   ret = ::ioctl(fd,code, &val);
-  if (ret < 0) return ret;
-  else         return val;
+  return ret;
 }
 
 #define	IOCTL(fd,code)		bsd_ioctl(fd,code,0)
 #define	IOCTL2(fd,code,arg)	bsd_ioctl(fd,code,(unsigned long)(arg))
+#define	IOCTLP(fd,code,arg)	::ioctl(fd,code,arg)
 
 #endif
 #endif  // P_FREEBSD
@@ -557,11 +569,11 @@ void OpalIxJDevice::SignalHandler(int sig)
         ExceptionInfo & info = exceptionInfo[i];
         int fd                     = info.fd;
         telephony_exception & data = info.data;
-        data.bytes = ioctl(fd, PHONE_EXCEPTION);
+        data.bytes = IOCTL(fd, PHONE_EXCEPTION);
 
         if (data.bits.dtmf_ready) {
           //printf("dtmf\n");
-          char ch = ioctl(fd, PHONE_GET_DTMF_ASCII);
+          char ch = IOCTL(fd, PHONE_GET_DTMF_ASCII);
           int p = info.dtmfIn;
           info.dtmf[p] = ch;
           p = (p + 1) % 16;
@@ -573,7 +585,7 @@ void OpalIxJDevice::SignalHandler(int sig)
           info.hasRing = TRUE;
 
         if (data.bits.hookstate) {
-          BOOL newHookState = (::ioctl(fd, PHONE_HOOKSTATE) & 1) != 0;
+          BOOL newHookState = (IOCTL(fd, PHONE_HOOKSTATE) & 1) != 0;
 #ifdef MANUAL_FLASH
           if (newHookState != info.hookState) {
             timeval now;
@@ -722,28 +734,28 @@ BOOL OpalIxJDevice::Open(const PString & device)
     IXJ_SIGDEF sigdef;
 
     sigdef.signal = SIGIO;
-    sigdef.event = SIG_DTMF_READY; IOCTL2(os_handle, IXJCTL_SIGCTL, &sigdef);
-    sigdef.event = SIG_HOOKSTATE;  IOCTL2(os_handle, IXJCTL_SIGCTL, &sigdef);
-    sigdef.event = SIG_PSTN_RING;  IOCTL2(os_handle, IXJCTL_SIGCTL, &sigdef);
-    sigdef.event = SIG_CALLER_ID;  IOCTL2(os_handle, IXJCTL_SIGCTL, &sigdef);
-    sigdef.event = SIG_PSTN_WINK;  IOCTL2(os_handle, IXJCTL_SIGCTL, &sigdef);
-    sigdef.event = SIG_F0;         IOCTL2(os_handle, IXJCTL_SIGCTL, &sigdef);
-    sigdef.event = SIG_F1;         IOCTL2(os_handle, IXJCTL_SIGCTL, &sigdef);
-    sigdef.event = SIG_F2;         IOCTL2(os_handle, IXJCTL_SIGCTL, &sigdef);
-    sigdef.event = SIG_F3;         IOCTL2(os_handle, IXJCTL_SIGCTL, &sigdef);
-    sigdef.event = SIG_FC0;        IOCTL2(os_handle, IXJCTL_SIGCTL, &sigdef);
-    sigdef.event = SIG_FC1;        IOCTL2(os_handle, IXJCTL_SIGCTL, &sigdef);
-    sigdef.event = SIG_FC2;        IOCTL2(os_handle, IXJCTL_SIGCTL, &sigdef);
-    sigdef.event = SIG_FC3;        IOCTL2(os_handle, IXJCTL_SIGCTL, &sigdef);
+    sigdef.event = SIG_DTMF_READY; IOCTLP(os_handle, IXJCTL_SIGCTL, &sigdef);
+    sigdef.event = SIG_HOOKSTATE;  IOCTLP(os_handle, IXJCTL_SIGCTL, &sigdef);
+    sigdef.event = SIG_PSTN_RING;  IOCTLP(os_handle, IXJCTL_SIGCTL, &sigdef);
+    sigdef.event = SIG_CALLER_ID;  IOCTLP(os_handle, IXJCTL_SIGCTL, &sigdef);
+    sigdef.event = SIG_PSTN_WINK;  IOCTLP(os_handle, IXJCTL_SIGCTL, &sigdef);
+    sigdef.event = SIG_F0;         IOCTLP(os_handle, IXJCTL_SIGCTL, &sigdef);
+    sigdef.event = SIG_F1;         IOCTLP(os_handle, IXJCTL_SIGCTL, &sigdef);
+    sigdef.event = SIG_F2;         IOCTLP(os_handle, IXJCTL_SIGCTL, &sigdef);
+    sigdef.event = SIG_F3;         IOCTLP(os_handle, IXJCTL_SIGCTL, &sigdef);
+    sigdef.event = SIG_FC0;        IOCTLP(os_handle, IXJCTL_SIGCTL, &sigdef);
+    sigdef.event = SIG_FC1;        IOCTLP(os_handle, IXJCTL_SIGCTL, &sigdef);
+    sigdef.event = SIG_FC2;        IOCTLP(os_handle, IXJCTL_SIGCTL, &sigdef);
+    sigdef.event = SIG_FC3;        IOCTLP(os_handle, IXJCTL_SIGCTL, &sigdef);
 #ifndef MANUAL_FLASH
-    sigdef.event = SIG_FLASH;       IOCTL2(os_handle, IXJCTL_SIGCTL, &sigdef);
+    sigdef.event = SIG_FLASH;       IOCTLP(os_handle, IXJCTL_SIGCTL, &sigdef);
 #endif
 
     sigdef.signal = 0;
-    sigdef.event  = SIG_READ_READY;  IOCTL2(os_handle, IXJCTL_SIGCTL, &sigdef);
-    sigdef.event  = SIG_WRITE_READY; IOCTL2(os_handle, IXJCTL_SIGCTL, &sigdef);
+    sigdef.event  = SIG_READ_READY;  IOCTLP(os_handle, IXJCTL_SIGCTL, &sigdef);
+    sigdef.event  = SIG_WRITE_READY; IOCTLP(os_handle, IXJCTL_SIGCTL, &sigdef);
 #ifdef MANUAL_FLASH
-    sigdef.event = SIG_FLASH;       IOCTL2(os_handle, IXJCTL_SIGCTL, &sigdef);
+    sigdef.event = SIG_FLASH;       IOCTLP(os_handle, IXJCTL_SIGCTL, &sigdef);
 #endif
 #endif
 
@@ -951,7 +963,7 @@ BOOL OpalIxJDevice::RingLine(unsigned line, DWORD cadence)
   // Need to add something to set caller ID here
 #if TELEPHONY_VERSION >= 3000
   if (callerIdInfo.name[0] != '\0') {
-    stat = IOCTL2(os_handle, PHONE_RING_START, &callerIdInfo);
+    stat = IOCTLP(os_handle, PHONE_RING_START, &callerIdInfo);
     SetCallerID(line, "");
   } else
 #endif
@@ -1055,7 +1067,7 @@ OpalMediaFormatList OpalIxJDevice::GetMediaFormats() const
     phone_capability cap;
     cap.captype = codec;
     cap.cap = CodecInfo[idx].mode;
-    if (IOCTL2(os_handle, PHONE_CAPABILITIES_CHECK, &cap))
+    if (IOCTLP(os_handle, PHONE_CAPABILITIES_CHECK, &cap))
       codecs += CodecInfo[idx].mediaFormat;
   }
 
@@ -1118,8 +1130,10 @@ BOOL OpalIxJDevice::SetReadFormat(unsigned line, const OpalMediaFormat & mediaFo
   if (stat != 0) {
     PTRACE(1, "IXJ\tSecond try on set record codec");
     stat = IOCTL2(os_handle, PHONE_REC_CODEC, CodecInfo[readCodecType].mode);
-    if (stat != 0)
+    if (stat != 0) {
+      PTRACE(1, "IXJ\tFailed second try on set record codec");
       return FALSE;
+    }
   }
 
   // PHONE_REC_DEPTH does not set return value
@@ -1830,7 +1844,7 @@ BOOL OpalIxJDevice::SendCallerIDOnCallWaiting(unsigned line, const PString & idS
 
   PHONE_CID callerInfo;
   FormatCallerIdString(idString, callerInfo);
-  IOCTL2(os_handle, IXJCTL_CIDCW, &callerInfo);
+  IOCTLP(os_handle, IXJCTL_CIDCW, &callerInfo);
   return TRUE;
 #endif
 }
