@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.h,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 1.2002  2001/10/15 04:30:09  robertj
+ * Added delayed start of media patch threads.
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.23  2001/07/24 02:26:53  robertj
@@ -235,11 +238,11 @@ class H323Channel : public PObject
 
     /**This is called to clean up any threads on connection termination.
      */
-    virtual void CleanUpOnTermination();
+    virtual void Close();
 
-    /**Indicate if background thread(s) are running.
+    /**Indicate if has been opened.
      */
-    BOOL IsRunning() const;
+    BOOL IsOpen() const { return opened && !terminating; }
 
     /**Get the media stream associated with this logical channel.
        The default behaviour returns NULL.
@@ -439,7 +442,7 @@ class H323UnidirectionalChannel : public H323Channel
 
     /**This is called to clean up any threads on connection termination.
      */
-    virtual void CleanUpOnTermination();
+    virtual void Close();
 
     /**Get the media stream associated with this logical channel.
        The default behaviour returns NULL.
@@ -609,7 +612,7 @@ class H323DataChannel : public H323UnidirectionalChannel
   //@{
     /**This is called to clean up any threads on connection termination.
      */
-    virtual void CleanUpOnTermination();
+    virtual void Close();
 
     /**Fill out the OpenLogicalChannel PDU for the particular channel type.
      */
