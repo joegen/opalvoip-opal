@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2062  2004/08/14 07:56:31  rjongbloed
+ * Revision 1.2063  2004/08/23 12:21:01  rjongbloed
+ * Fixed double call to OnEstablished()
+ *
+ * Revision 2.61  2004/08/14 07:56:31  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.60  2004/07/17 09:48:26  rjongbloed
@@ -4278,7 +4281,7 @@ void H323Connection::InternalEstablishedConnectionCheck()
     startT120 = FALSE;
   }
 
-  if (connectionState != HasExecutedSignalConnect)
+  if (phase != ConnectedPhase)
     return;
 
   // Check if we have already got a transmitter running, select one if not
