@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjwin32.cxx,v $
- * Revision 1.2002  2001/08/01 05:21:21  robertj
+ * Revision 1.2003  2001/10/04 00:47:45  robertj
+ * Added flag bit for WIN32 error rather than C run time error.
+ *
+ * Revision 2.1  2001/08/01 05:21:21  robertj
  * Made OpalMediaFormatList class global to help with documentation.
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
@@ -461,7 +464,7 @@ BOOL OpalIxJDevice::Open(const PString & device)
                        FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
                        NULL);
   if (hDriver == INVALID_HANDLE_VALUE) {
-    osError = ::GetLastError();
+    osError = ::GetLastError()|PWIN32ErrorFlag;
     return FALSE;
   }
 
@@ -1179,7 +1182,7 @@ BOOL OpalIxJDevice::ReadFrame(unsigned, void * buffer, PINDEX & count)
   DWORD dwBytesReturned = 0;
   if (inRawMode) {
     if (WaitForSingleObjectEx(hReadEvent, 1000, TRUE) != WAIT_OBJECT_0) {
-      osError = ERROR_TIMEOUT;
+      osError = ETIMEDOUT;
       PTRACE(1, "xJack\tRead Timeout!");
       return FALSE;
     }
@@ -1243,7 +1246,7 @@ BOOL OpalIxJDevice::WriteFrame(unsigned, const void * buffer, PINDEX count, PIND
   if (inRawMode) {
     for (written = 0; written < count; written += dwResult) {
       if (WaitForSingleObjectEx(hWriteEvent, 1000, TRUE) != WAIT_OBJECT_0) {
-        osError = ERROR_TIMEOUT;
+        osError = ETIMEDOUT;
         PTRACE(1, "xJack\tWrite Timeout!");
         return FALSE;
       }
@@ -2181,7 +2184,7 @@ BOOL OpalIxJDevice::IoControl(DWORD dwIoControlCode,
   PTRACE_IF(1, newError != ERROR_SUCCESS,
             "xJack\tError in DeviceIoControl, device=\"" << deviceName << "\", code=" << newError);
 
-  osError = newError;
+  osError = newError|PWIN32ErrorFlag;
   return newError == ERROR_SUCCESS;
 }
 
