@@ -27,7 +27,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjlid.h,v $
- * Revision 1.2009  2004/02/19 10:46:44  rjongbloed
+ * Revision 1.2010  2004/10/06 13:03:41  rjongbloed
+ * Added "configure" support for known LIDs
+ * Changed LID GetName() function to be normalised against the GetAllNames()
+ *   return values and fixed the pre-factory registration system.
+ * Added a GetDescription() function to do what the previous GetName() did.
+ *
+ * Revision 2.8  2004/02/19 10:46:44  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.7  2003/03/24 07:18:29  robertj
@@ -279,10 +285,11 @@
 
 
 #include <opal/buildopts.h>
-#include <lids/lid.h>
-
 
 #ifdef HAS_IXJ
+
+#include <lids/lid.h>
+
 #ifdef P_LINUX
 #include <linux/telephony.h>
 #include <linux/ixjuser.h>
@@ -290,7 +297,6 @@
 #ifdef P_FREEBSD
 #include <sys/telephony.h>
 #include <sys/ixjuser.h>
-#endif
 #endif
 
 
@@ -324,13 +330,22 @@ class OpalIxJDevice : public OpalLineInterfaceDevice
       */
     virtual BOOL Close();
 
-    /**Get the device name.
+    /**Get the device type identifier.
+       This is as is used in the factory registration.
       */
-    virtual PString GetName() const;
+    virtual PString GetDeviceType() const;
+
+    /**Get the device name, as used to open the device
+      */
+    virtual PString GetDeviceName() const;
 
     /**Get all the possible devices that can be opened.
       */
     virtual PStringArray GetAllNames() const;
+
+    /**Get the description of the line interface device.
+      */
+    virtual PString GetDescription() const;
 
 
     enum {
@@ -888,8 +903,14 @@ class OpalIxJDevice : public OpalLineInterfaceDevice
 };
 
 
-#define OPAL_REGISTER_IXJ() OPAL_REGISTER_LID(OpalIxJDevice, "Quicknet")
+#define OPAL_IXJ_TYPE_NAME  "Quicknet"
+#define OPAL_REGISTER_IXJ() OPAL_REGISTER_LID(OpalIxJDevice, OPAL_IXJ_TYPE_NAME)
 
+#else // HAS_IXJ
+
+#define OPAL_REGISTER_IXJ()
+
+#endif // HAS_IXJ
 
 #endif // __OPAL_IXJLID_H
 

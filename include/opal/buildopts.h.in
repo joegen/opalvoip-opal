@@ -24,6 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: buildopts.h.in,v $
+ * Revision 1.5  2004/10/06 13:03:41  rjongbloed
+ * Added "configure" support for known LIDs
+ * Changed LID GetName() function to be normalised against the GetAllNames()
+ *   return values and fixed the pre-factory registration system.
+ * Added a GetDescription() function to do what the previous GetName() did.
+ *
  * Revision 1.4  2004/10/03 15:16:49  rjongbloed
  * Added IxJ symbol to include LID
  *
@@ -62,14 +68,14 @@
 
 #undef VOICE_AGE_G729A 
 
+#if VOICE_AGE_G729A
 #if defined(_MSC_VER)
 
-#if VOICE_AGE_G729A
 #pragma include_alias("va_g729a.h", "@VOICE_AGE_DIR@/va_g729a.h")
-#endif
 
 #define VOICE_AGE_G729_LIBRARY "@VOICE_AGE_DIR@/va_g729a.lib"
 
+#endif
 #endif
 
 /////////////////////////////////////////////////
@@ -86,11 +92,11 @@
 
 #undef H323_AVCODEC
 
+#if H323_AVCODEC
+
 #if defined(_MSC_VER)
 
-#if H323_AVCODEC
 #pragma include_alias(<avcodec.h>, <@H323_AVCODEC_DIR@/avcodec.h>)
-#endif
 
 #define H323_AVCODEC_DIR     "@H323_AVCODEC_DIR@/"
 
@@ -103,11 +109,32 @@
 #define H323_AVCODEC_LIBRARY H323_AVCODEC_LIBDIR "/libavcodec.lib"
 
 #endif
+#endif
 
 
 /////////////////////////////////////////////////
+//
+// VoiceTronic VPB Support
+//
+
+#undef HAS_VPB
+
+#if HAS_VPB
+#if defined(_MSC_VER)
+
+#pragma include_alias(<vpbapi.h>, <@VPB_DIR@/src/vpbapi.h>)
+
+#define VPB_LIBRARY "@VPB_DIR@/win32/libvpb/Debug/libvpb.lib"
+
+#endif
+#endif
+
+
+/////////////////////////////////////////////////
+// Various other Line Interface Devices
 
 #undef	HAS_IXJ
+#undef  HAS_VBLASTER
 
 
 #endif // _OPAL_BUILDOPTS_H
