@@ -25,7 +25,11 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.cxx,v $
- * Revision 1.2005  2002/01/14 06:35:57  robertj
+ * Revision 1.2006  2002/01/22 05:18:59  robertj
+ * Added RTP encoding name string to media format database.
+ * Changed time units to clock rate in Hz.
+ *
+ * Revision 2.4  2002/01/14 06:35:57  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.3  2001/11/02 10:45:19  robertj
@@ -214,11 +218,12 @@ OpalMediaFormat const OpalH261(
   OPAL_H261,
   OpalMediaFormat::DefaultVideoSessionID,
   RTP_DataFrame::H261,
+  "H261",
   FALSE,  // No jitter for video
   240000, // bits/sec
   2000,   // Not sure of this value!
   0,      // No intrinsic time per frame
-  OpalMediaFormat::VideoTimeUnits
+  OpalMediaFormat::VideoClockRate
 );
 
 
@@ -226,11 +231,12 @@ OpalMediaFormat const OpalH261_CIF(
   OPAL_H261_CIF,
   OpalMediaFormat::DefaultVideoSessionID,
   RTP_DataFrame::H261,
+  "H261",
   FALSE,  // No jitter for video
   240000, // bits/sec
   2000,   // Not sure of this value!
   0,      // No intrinsic time per frame
-  OpalMediaFormat::VideoTimeUnits
+  OpalMediaFormat::VideoClockRate
 );
 
 
@@ -238,11 +244,12 @@ OpalMediaFormat const OpalH261_QCIF(
   OPAL_H261_QCIF,
   OpalMediaFormat::DefaultVideoSessionID,
   RTP_DataFrame::H261,
+  "H261",
   FALSE,  // No jitter for video
   240000, // bits/sec
   2000,   // Not sure of this value!
   0,      // No intrinsic time per frame
-  OpalMediaFormat::VideoTimeUnits
+  OpalMediaFormat::VideoClockRate
 );
 
 
