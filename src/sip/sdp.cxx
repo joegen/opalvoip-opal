@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2004  2002/02/13 02:28:59  robertj
+ * Revision 1.2005  2002/02/19 07:51:37  robertj
+ * Added OpalRFC2833 as a OpalMediaFormat variable.
+ * Fixed encoding name being used correctly in SDP media list.
+ *
+ * Revision 2.3  2002/02/13 02:28:59  robertj
  * Normalised some function names.
  * Fixed incorrect port number usage stopping audio in one direction.
  * Added code to put individual c lines in each media description.
@@ -51,7 +55,6 @@
 
 #define SIP_DEFAULT_SESSION_NAME  "Opal SIP Session"
 #define	SDP_MEDIA_TRANSPORT       "RTP/AVP"
-#define RFC2833_NTE_TYPE          "telephone-event"
 
 
 #define new PNEW
@@ -106,16 +109,18 @@ SDPMediaFormat::SDPMediaFormat(RTP_DataFrame::PayloadTypes pt,
                                const char * _parms)
   : payloadType(pt),
     encodingName(_name),
-    clockRate(_clockRate), 
+    clockRate(_clockRate),
     parameters(_parms)
 {
+  if (encodingName == OpalRFC2833.GetEncodingName())
+    AddNTEString("0-15");
 }
 
 
 SDPMediaFormat::SDPMediaFormat(const PString & nteString, RTP_DataFrame::PayloadTypes pt)
 
   : payloadType(pt),
-    encodingName(RFC2833_NTE_TYPE),
+    encodingName(OpalRFC2833.GetEncodingName()),
     clockRate(8000)
 {
   AddNTEString(nteString);
@@ -124,7 +129,7 @@ SDPMediaFormat::SDPMediaFormat(const PString & nteString, RTP_DataFrame::Payload
 
 void SDPMediaFormat::SetFMTP(const PString & str)
 {
-  if (encodingName == RFC2833_NTE_TYPE) {
+  if (encodingName == OpalRFC2833.GetEncodingName()) {
     nteSet.RemoveAll();
     AddNTEString(str);
   }
@@ -135,7 +140,7 @@ void SDPMediaFormat::SetFMTP(const PString & str)
 
 PString SDPMediaFormat::GetFMTP() const
 {
-  if (encodingName == RFC2833_NTE_TYPE)
+  if (encodingName == OpalRFC2833.GetEncodingName())
     return GetNTEString();
 
   return PString();
@@ -372,7 +377,7 @@ void SDPMediaDescription::PrintOn(ostream & str) const
   for (i = 0; i < formats.GetSize(); i++) 
     str << ' ' << (int)formats[i].GetPayloadType();
   str << "\r\n"
-      << GetConnectAddressString(transportAddress) << "\r\n";
+         "c=" << GetConnectAddressString(transportAddress) << "\r\n";
 
   // output attributes for each payload type
   for (i = 0; i < formats.GetSize(); i++) {
@@ -410,12 +415,17 @@ void SDPMediaDescription::AddSDPMediaFormat(SDPMediaFormat * sdpMediaFormat)
 
 void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
 {
-  PINDEX i;
-  for (i = 0; i < formats.GetSize(); i++)
-    if (formats[i].GetPayloadType() == mediaFormat.GetPayloadType())
-      return;
+  if (mediaFormat.GetPayloadType() == RTP_DataFrame::IllegalPayloadType)
+    return;
 
-  AddSDPMediaFormat(new SDPMediaFormat(mediaFormat.GetPayloadType(), mediaFormat));
+  PINDEX i;
+  for (i = 0; i < formats.GetSize(); i++) {
+    if (formats[i].GetPayloadType() == mediaFormat.GetPayloadType() ||
+        formats[i].GetEncodingName() == mediaFormat.GetEncodingName())
+      return;
+  }
+
+  AddSDPMediaFormat(new SDPMediaFormat(mediaFormat.GetPayloadType(), mediaFormat.GetEncodingName()));
 }
 
 
