@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h450pdu.cxx,v $
- * Revision 1.2014  2004/02/19 10:47:04  rjongbloed
+ * Revision 1.2015  2004/04/25 08:59:50  rjongbloed
+ * Fixed GCC 3.4 warning
+ *
+ * Revision 2.13  2004/02/19 10:47:04  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.12  2004/02/17 09:59:27  csoutheren
@@ -459,7 +462,9 @@ H450xDispatcher::H450xDispatcher(H323Connection & conn)
 
 void H450xDispatcher::AddOpCode(unsigned opcode, H450xHandler * handler)
 {
-  PAssertNULL(handler);
+  if (PAssertNULL(handler) == NULL)
+    return;
+
   if (handlers.GetObjectsIndex(handler) == P_MAX_INDEX)
     handlers.Append(handler);
 
