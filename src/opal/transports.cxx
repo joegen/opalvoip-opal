@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2014  2002/04/09 04:44:36  robertj
+ * Revision 1.2015  2002/04/10 03:12:35  robertj
+ * Fixed SetLocalAddress to return FALSE if did not set the address to a
+ *   different address to the current one. Altered UDP version to cope.
+ *
+ * Revision 2.13  2002/04/09 04:44:36  robertj
  * Fixed bug where crahses if close channel while in UDP connect mode.
  *
  * Revision 2.12  2002/04/09 00:22:16  robertj
@@ -893,12 +897,20 @@ OpalTransportAddress OpalTransportIP::GetLocalAddress() const
 }
 
 
-BOOL OpalTransportIP::SetLocalAddress(const OpalTransportAddress & address)
+BOOL OpalTransportIP::SetLocalAddress(const OpalTransportAddress & newLocalAddress)
 {
-  if (IsCompatibleTransport(address))
-    return address.GetIpAndPort(localAddress, localPort);
+  if (!IsCompatibleTransport(newLocalAddress))
+    return FALSE;
 
-  return FALSE;
+  if (!IsOpen())
+    return newLocalAddress.GetIpAndPort(localAddress, localPort);
+
+  PIPSocket::Address address;
+  WORD port;
+  if (!newLocalAddress.GetIpAndPort(address, port))
+    return FALSE;
+
+  return localAddress == address && localPort == port;
 }
 
 
@@ -1306,19 +1318,22 @@ void OpalTransportUDP::EndConnect(const OpalTransportAddress & theLocalAddress)
 }
 
 
-BOOL OpalTransportUDP::SetLocalAddress(const OpalTransportAddress & address)
+BOOL OpalTransportUDP::SetLocalAddress(const OpalTransportAddress & newLocalAddress)
 {
-  if (!OpalTransportIP::SetLocalAddress(address))
+  if (connectSockets.IsEmpty())
+    return OpalTransportIP::SetLocalAddress(newLocalAddress);
+
+  if (!IsCompatibleTransport(newLocalAddress))
     return FALSE;
 
-  if (connectSockets.IsEmpty())
-    return !IsOpen();
+  if (!newLocalAddress.GetIpAndPort(localAddress, localPort))
+    return FALSE;
 
   for (PINDEX i = 0; i < connectSockets.GetSize(); i++) {
     PUDPSocket * socket = (PUDPSocket *)connectSockets.GetAt(i);
-    PIPSocket::Address addr;
+    PIPSocket::Address ip;
     WORD port;
-    if (socket->GetLocalAddress(addr, port) && addr == localAddress && port == localPort) {
+    if (socket->GetLocalAddress(ip, port) && ip == localAddress && port == localPort) {
       writeChannel = &connectSockets[i];
       return TRUE;
     }
