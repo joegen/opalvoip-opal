@@ -28395,6 +28395,7 @@ EXPORTS
     ?TransportThreadMain@SIPEndPoint@@MAEXAAVPThread@@H@Z @27940 NONAME
     ?uLawConverter@@3V?$Worker@VPWAVFileConverterULaw@@@?$PFactory@VPWAVFileConverter@@I@@A @29009 NONAME
     ?Unregister@H323RegisteredEndPoint@@UAEHH@Z @27943 NONAME
+    ?Unregister@SIPEndPoint@@QAEHH@Z @29353 NONAME
     ?UnregistrationRequest@H323Gatekeeper@@QAEHH@Z @27944 NONAME
     ?UnregistrationRequest@H323GatekeeperListener@@QAEHABVH323RegisteredEndPoint@@I@Z @27945 NONAME
     ?UpdateAllDescriptors@H323PeerElement@@MAEXAAVPThread@@H@Z @27946 NONAME
