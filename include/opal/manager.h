@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2008  2002/01/22 05:04:58  robertj
+ * Revision 1.2009  2002/02/11 07:38:55  robertj
+ * Added media bypass for streams between compatible protocols.
+ *
+ * Revision 2.7  2002/01/22 05:04:58  robertj
  * Revamp of user input API triggered by RFC2833 support
  *
  * Revision 2.6  2001/12/07 08:56:19  robertj
@@ -431,6 +434,14 @@ class OpalManager : public PObject
     virtual void AdjustMediaFormats(
       const OpalConnection & connection,  /// Connection that is about to use formats
       OpalMediaFormatList & mediaFormats  /// Media formats to use
+    ) const;
+
+    /**See if the media can bypass the local host.
+     */
+    virtual BOOL CanDoMediaBypass(
+      const OpalConnection & source,      /// Source connection
+      const OpalConnection & destination, /// Destination connection
+      unsigned sessionID                  /// Session ID for media channel
     ) const;
 
     /**Call back when opening a media stream.
