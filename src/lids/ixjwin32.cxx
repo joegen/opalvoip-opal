@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjwin32.cxx,v $
- * Revision 1.2003  2001/10/04 00:47:45  robertj
+ * Revision 1.2004  2001/10/05 00:22:14  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.2  2001/10/04 00:47:45  robertj
  * Added flag bit for WIN32 error rather than C run time error.
  *
  * Revision 2.1  2001/08/01 05:21:21  robertj
@@ -35,6 +38,15 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.103  2001/09/25 01:12:06  robertj
+ * Changed check to v 5.5.141
+ *
+ * Revision 1.102  2001/09/24 12:31:35  robertj
+ * Added backward compatibility with old drivers.
+ *
+ * Revision 1.101  2001/09/10 08:22:16  robertj
+ * Fixed minor problems with error codes.
  *
  * Revision 1.100  2001/07/24 02:29:56  robertj
  * Added setting of xJack filter coefficients for some frequencies,
@@ -376,6 +388,7 @@
 #include <lids/QTIoctl.h>
 #include <lids/ixjDefs.h>
 
+#define NEW_DRIVER_VERSION ((5<<24)|(5<<16)|141)
 
 #define new PNEW
 
@@ -406,6 +419,7 @@ static enum {
 OpalIxJDevice::OpalIxJDevice()
 {
   hDriver = INVALID_HANDLE_VALUE;
+  driverVersion = 0;
   readStopped = writeStopped = TRUE;
   readFrameSize = writeFrameSize = 480;  // 30 milliseconds of 16 bit PCM data
   readCodecType = writeCodecType = P_MAX_INDEX;
@@ -503,9 +517,12 @@ BOOL OpalIxJDevice::Open(const PString & device)
 
   DWORD ver = 0;
   IoControl(IOCTL_VxD_GetVersion, 0, &ver);
+  driverVersion = ((ver&0xff)<<24)|((ver&0xff00)<<8)|((ver>>16)&0xffff);
 
   PTRACE(2, "xJack\tOpened IxJ device \"" << GetName() << "\" version "
-         << (ver&0xff) << '.' << ((ver>>8)&0xff) << '.' << ((ver>>16)&0xff));
+         << ((driverVersion>>24)&0xff  ) << '.'
+         << ((driverVersion>>16)&0xff  ) << '.'
+         << ( driverVersion     &0xffff));
 
   os_handle = 1;
 
@@ -930,7 +947,8 @@ BOOL OpalIxJDevice::SetReadFormat(unsigned line, const OpalMediaFormat & mediaFo
 
   SetVAD(line, CodecInfo[readCodecType].vad);
 
-  if (!IoControl(IOCTL_Record_Start))
+  if (!IoControl(driverVersion >= NEW_DRIVER_VERSION ? IOCTL_Record_Start
+                                                     : IOCTL_Record_Start_Old))
     return FALSE;
 
   readStopped = FALSE;
@@ -1001,7 +1019,8 @@ BOOL OpalIxJDevice::SetWriteFormat(unsigned line, const OpalMediaFormat & mediaF
 
   SetVAD(line, CodecInfo[writeCodecType].vad);
 
-  if (!IoControl(IOCTL_Playback_Start))
+  if (!IoControl(driverVersion >= NEW_DRIVER_VERSION ? IOCTL_Playback_Start
+                                                     : IOCTL_Playback_Start_Old))
     return FALSE;
 
   writeStopped = FALSE;
@@ -1182,7 +1201,7 @@ BOOL OpalIxJDevice::ReadFrame(unsigned, void * buffer, PINDEX & count)
   DWORD dwBytesReturned = 0;
   if (inRawMode) {
     if (WaitForSingleObjectEx(hReadEvent, 1000, TRUE) != WAIT_OBJECT_0) {
-      osError = ETIMEDOUT;
+      osError = EAGAIN;
       PTRACE(1, "xJack\tRead Timeout!");
       return FALSE;
     }
@@ -1246,7 +1265,7 @@ BOOL OpalIxJDevice::WriteFrame(unsigned, const void * buffer, PINDEX count, PIND
   if (inRawMode) {
     for (written = 0; written < count; written += dwResult) {
       if (WaitForSingleObjectEx(hWriteEvent, 1000, TRUE) != WAIT_OBJECT_0) {
-        osError = ETIMEDOUT;
+        osError = EAGAIN;
         PTRACE(1, "xJack\tWrite Timeout!");
         return FALSE;
       }

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2008  2001/10/04 00:46:33  robertj
+ * Revision 1.2009  2001/10/05 00:22:14  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.7  2001/10/04 00:46:33  robertj
  * Removed streams GetMediaFormats() function as is not useful.
  *
  * Revision 2.6  2001/10/03 05:56:15  robertj
@@ -51,6 +54,53 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.205  2001/10/04 06:40:55  robertj
+ * Fixed GNU warning
+ *
+ * Revision 1.204  2001/09/26 07:20:42  robertj
+ * Fixed correct sending of new digits in overlap dialing, and stopped
+ *   sending redundent ARQ's if dialing occurs quickly thanks Chris Purvis.
+ *
+ * Revision 1.203  2001/09/26 06:20:59  robertj
+ * Fixed properly nesting connection locking and unlocking requiring a quite
+ *   large change to teh implementation of how calls are answered.
+ *
+ * Revision 1.202  2001/09/22 01:51:57  robertj
+ * Fixed SendMoreDigits() using Info Q.931 PDU to only send new digits.
+ *
+ * Revision 1.201  2001/09/19 03:30:55  robertj
+ * Added some support for overlapped dialing, thanks Chris Purvis & Nick Hoath.
+ *
+ * Revision 1.200  2001/09/18 10:36:57  robertj
+ * Allowed multiple overlapping requests in RAS channel.
+ *
+ * Revision 1.199  2001/09/13 06:48:15  robertj
+ * Added call back functions for remaining Q.931/H.225 messages.
+ * Added call back to allow modification of Release Complete,thanks Nick Hoath
+ *
+ * Revision 1.198  2001/09/12 07:48:05  robertj
+ * Fixed various problems with tracing.
+ *
+ * Revision 1.197  2001/09/12 06:58:00  robertj
+ * Added support for iNow Access Token from gk, thanks Nick Hoath
+ *
+ * Revision 1.196  2001/09/12 06:04:38  robertj
+ * Added support for sending UUIE's to gk on request, thanks Nick Hoath
+ *
+ * Revision 1.195  2001/09/11 01:24:36  robertj
+ * Added conditional compilation to remove video and/or audio codecs.
+ *
+ * Revision 1.194  2001/09/06 01:29:34  robertj
+ * Fixed passing of 0 duration to OnUserInputTone if not present in PDU.
+ *
+ * Revision 1.193  2001/08/27 03:45:59  robertj
+ * Added automatic setting of bearer capability transfer mode from H.323
+ *    capabilities on connection at time of SETUP PDU.
+ *
+ * Revision 1.192  2001/08/22 06:54:51  robertj
+ * Changed connection locking to use double mutex to guarantee that
+ *   no threads can ever deadlock or access deleted connection.
  *
  * Revision 1.191  2001/08/16 07:49:19  robertj
  * Changed the H.450 support to be more extensible. Protocol handlers
@@ -707,6 +757,7 @@ const char * const H323Connection::ConnectionStatesNames[NumConnectionStates] = 
   "AwaitingGatekeeperAdmission",
   "AwaitingTransportConnect",
   "AwaitingSignalConnect",
+  "AwaitingLocalAnswer",
   "HasExecutedSignalConnect",
   "EstablishedConnection",
   "ShuttingDownConnection"
@@ -738,12 +789,18 @@ H323Connection::H323Connection(OpalCall & call,
   controlChannel = NULL;
   controlListener = NULL;
   h245Tunneling = !disableTunneling;
-  h245TunnelPDU = NULL;
+  h245TunnelTxPDU = NULL;
+  h245TunnelRxPDU = NULL;
+  alertingPDU = NULL;
+  connectPDU = NULL;
 
   connectionState = NoConnectionActive;
 
   bandwidthAvailable = endpoint.GetInitialBandwidth();
 
+  uuiesRequested = 0; // Empty set
+
+  mediaWaitForConnect = FALSE;
   transmitterSidePaused = FALSE;
 
   fastStartState = disableFastStart ? FastStartDisabled : FastStartInitiate;
@@ -776,6 +833,8 @@ H323Connection::~H323Connection()
   delete h450dispatcher;
   delete signallingChannel;
   delete controlChannel;
+  delete alertingPDU;
+  delete connectPDU;
 
   PTRACE(3, "H323\tConnection " << callToken << " deleted.");
 }
@@ -811,6 +870,9 @@ void H323Connection::CleanUpOnCallEnd()
 
   connectionState = ShuttingDownConnection;
 
+  // Unblock sync points
+  digitsWaitFlag.Signal();
+
   // Clean up any fast start "pending" channels we may have running.
   PINDEX i;
   for (i = 0; i < fastStartChannels.GetSize(); i++)
@@ -838,7 +900,8 @@ void H323Connection::CleanUpOnCallEnd()
       H323SignalPDU replyPDU;
       replyPDU.BuildReleaseComplete(*this);
       h450dispatcher->AttachToReleaseComplete(replyPDU);
-      replyPDU.Write(*signallingChannel);
+      if (OnSendReleaseComplete(replyPDU))
+        replyPDU.Write(*signallingChannel);
     }
     signallingChannel->CloseWait();
   }
@@ -884,15 +947,19 @@ void H323Connection::AttachSignalChannel(OpalTransport * channel, BOOL answering
 BOOL H323Connection::WriteSignalPDU(H323SignalPDU & pdu)
 {
   PAssert(signallingChannel != NULL, PLogicError);
-  if (signallingChannel == NULL)
-    return FALSE;
+  if (signallingChannel != NULL && signallingChannel->IsOpen()) {
+    pdu.m_h323_uu_pdu.m_h245Tunneling = h245Tunneling;
 
-  if (!signallingChannel->IsOpen())
-    return FALSE;
+    H323Gatekeeper * gk = endpoint.GetGatekeeper();
+    if (gk != NULL)
+      gk->InfoRequestResponse(*this, pdu.m_h323_uu_pdu, TRUE);
 
-  pdu.m_h323_uu_pdu.m_h245Tunneling = h245Tunneling;
+    if (pdu.Write(*signallingChannel))
+      return TRUE;
+  }
 
-  return pdu.Write(*signallingChannel);
+  Release(EndedByTransportFail);
+  return FALSE;
 }
 
 
@@ -938,6 +1005,10 @@ BOOL H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
   PTRACE(3, "H225\tHandling PDU: " << q931.GetMessageTypeName()
                     << " callRef=" << q931.GetCallReference());
 
+  H323Gatekeeper * gk = endpoint.GetGatekeeper();
+  if (gk != NULL)
+    gk->InfoRequestResponse(*this, pdu.m_h323_uu_pdu, FALSE);
+
   // If remote does not do tunneling, so we don't either. Note that if it
   // gets turned off once, it stays off for good.
   if (h245Tunneling && !pdu.m_h323_uu_pdu.m_h245Tunneling) {
@@ -945,7 +1016,9 @@ BOOL H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
     capabilityExchangeProcedure->Stop();
     h245Tunneling = FALSE;
   }
-  
+
+  h245TunnelRxPDU = &pdu;
+
   // Check for presence of supplementary services
   if (pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_h4501SupplementaryService))
     h450dispatcher->HandlePDU(pdu); // Process H4501SupplementaryService APDU
@@ -976,6 +1049,22 @@ BOOL H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
       ok = OnReceivedFacility(pdu);
       break;
 
+    case Q931::SetupAckMsg :
+      ok = OnReceivedSignalSetupAck(pdu);
+      break;
+
+    case Q931::InformationMsg :
+      ok = OnReceivedSignalInformation(pdu);
+      break;
+
+    case Q931::NotifyMsg :
+      ok = OnReceivedSignalNotify(pdu);
+      break;
+
+    case Q931::StatusMsg :
+      ok = OnReceivedSignalStatus(pdu);
+      break;
+
     case Q931::StatusEnquiryMsg :
       ok = OnReceivedStatusEnquiry(pdu);
       break;
@@ -991,11 +1080,13 @@ BOOL H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
 
   if (ok) {
     // Process tunnelled H245 PDU, if present.
-    HandleTunnelPDU(pdu, NULL);
+    HandleTunnelPDU();
 
     // Check for establishment criteria met
     InternalEstablishedConnectionCheck();
   }
+
+  h245TunnelRxPDU = NULL;
 
   Unlock();
 
@@ -1003,22 +1094,18 @@ BOOL H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
 }
 
 
-void H323Connection::HandleTunnelPDU(const H323SignalPDU & pdu, H323SignalPDU * reply)
+void H323Connection::HandleTunnelPDU()
 {
-  if (!h245Tunneling)
+  if (!h245Tunneling || h245TunnelRxPDU == NULL)
     return;
 
-  h245TunnelPDU = reply;
-
-  for (PINDEX i = 0; i < pdu.m_h323_uu_pdu.m_h245Control.GetSize(); i++) {
-    PPER_Stream strm = pdu.m_h323_uu_pdu.m_h245Control[i].GetValue();
+  for (PINDEX i = 0; i < h245TunnelRxPDU->m_h323_uu_pdu.m_h245Control.GetSize(); i++) {
+    PPER_Stream strm = h245TunnelRxPDU->m_h323_uu_pdu.m_h245Control[i].GetValue();
     HandleControlData(strm);
   }
 
-  h245TunnelPDU = NULL;
-
-  // Make sure does not get repeated, break const and clear tunnelled H.245 PDU's
-  ((H323SignalPDU &)pdu).m_h323_uu_pdu.m_h245Control.SetSize(0);
+  // Make sure does not get repeated, clear tunnelled H.245 PDU's
+  h245TunnelRxPDU->m_h323_uu_pdu.m_h245Control.SetSize(0);
 }
 
 
@@ -1092,6 +1179,9 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
   else
     remotePartyAddress = signallingChannel->GetRemoteAddress();
 
+  // ANything else we need from setup PDU
+  mediaWaitForConnect = setup.m_mediaWaitForConnect;
+
   // Send back a H323 Call Proceeding PDU in case OnIncomingCall() takes a while
   PTRACE(3, "H225\tSending call proceeding PDU");
   H323SignalPDU callProceedingPDU;
@@ -1102,10 +1192,10 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
   }
 
   // if the application indicates not to contine, then send a Q931 Release Complete PDU
-  H323SignalPDU alertingPDU;
-  H225_Alerting_UUIE & alerting = alertingPDU.BuildAlerting(*this);
+  alertingPDU = new H323SignalPDU;
+  alertingPDU->BuildAlerting(*this);
 
-  if (!OnIncomingCall(setupPDU, alertingPDU)) {
+  if (!OnIncomingCall(setupPDU, *alertingPDU)) {
     Release(EndedByNoAccept);
     PTRACE(1, "H225\tApplication not accepting calls");
     return FALSE;
@@ -1117,11 +1207,11 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
   // Check for gatekeeper and do admission check if have one
   H323Gatekeeper * gatekeeper = endpoint.GetGatekeeper();
   if (gatekeeper != NULL) {
-    if (!gatekeeper->AdmissionRequest(*this)) {
-      unsigned reason = gatekeeper->GetRejectReason();
+    H323Gatekeeper::AdmissionResponse response;
+    if (!gatekeeper->AdmissionRequest(*this, response)) {
       PTRACE(1, "H225\tGatekeeper refused admission: "
-             << H225_AdmissionRejectReason(reason).GetTagName());
-      switch (reason) {
+             << H225_AdmissionRejectReason(response.rejectReason).GetTagName());
+      switch (response.rejectReason) {
         case H225_AdmissionRejectReason::e_calledPartyNotRegistered :
           Release(EndedByNoUser);
         case H225_AdmissionRejectReason::e_requestDenied :
@@ -1167,169 +1257,13 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
   }
 
   // Build the reply with the channels we are actually using
-  H323SignalPDU connectPDU;
-  H225_Connect_UUIE & connect = connectPDU.BuildConnect(*this);
+  connectPDU = new H323SignalPDU;
+  connectPDU->BuildConnect(*this);
 
   // call the application callback to determine if to answer the call or not
-  AnswerCallResponse response = OnAnswerCall(remotePartyName, setupPDU, connectPDU);
-  if (response != NumAnswerCallResponses)
-    answerResponse = response;
-
-  PTRACE(3, "H225\tAnswer call response: " << answerResponse);
-
-  // If pending response wait
-  while ((answerResponse != AnswerCallNow) && (answerResponse != AnswerCallDenied)) {
-
-    // send alerting PDU if required
-    switch (answerResponse) {
-      case AnswerCallPending:
-      case AnswerCallAlertWithMedia :
-        // send Q931 Alerting PDU
-        PTRACE(3, "H225\tSending Alerting PDU");
-        HandleTunnelPDU(setupPDU, &alertingPDU);
-
-        if (!setup.m_mediaWaitForConnect && answerResponse == AnswerCallAlertWithMedia) {
-          if (SendFastStartAcknowledge(alerting.m_fastStart))
-            alerting.IncludeOptionalField(H225_Alerting_UUIE::e_fastStart);
-          else {
-            // Do early H.245 start
-            earlyStart = TRUE;
-            if (!h245Tunneling && controlChannel == NULL) {
-              if (!CreateIncomingControlChannel(alerting.m_h245Address))
-                return FALSE;
-
-              alerting.IncludeOptionalField(H225_Alerting_UUIE::e_h245Address);
-            }
-          }
-        }
-
-        h450dispatcher->AttachToAlerting(alertingPDU);
-        if (!WriteSignalPDU(alertingPDU))
-          return FALSE;
-
-        answerResponse = AnswerCallDeferred;
-        break;
-
-      case AnswerCallDeferredWithMedia :
-        if (!setup.m_mediaWaitForConnect) {
-          H323SignalPDU want245PDU;
-          H225_Progress_UUIE & prog = want245PDU.BuildProgress(*this);
-
-          BOOL sendPDU = TRUE;
-
-          if (SendFastStartAcknowledge(prog.m_fastStart))
-            prog.IncludeOptionalField(H225_Progress_UUIE::e_fastStart);
-          else {
-            // Do early H.245 start
-            H225_Facility_UUIE & fac = *want245PDU.BuildFacility(*this, FALSE);
-            fac.m_reason.SetTag(H225_FacilityReason::e_startH245);
-            earlyStart = TRUE;
-            if (!h245Tunneling && (controlChannel == NULL)) {
-              if (!CreateIncomingControlChannel(fac.m_h245Address))
-                return FALSE;
-
-              fac.IncludeOptionalField(H225_Facility_UUIE::e_h245Address);
-            } else
-              sendPDU = FALSE;
-          }
-
-          if (sendPDU) {
-
-            h450dispatcher->AttachToAlerting(alertingPDU);
-            if (!WriteSignalPDU(want245PDU))
-              return FALSE;
-          }
-
-          answerResponse = AnswerCallDeferred;
-        }
-        break;
-
-      default :
-        break;
-    }
-
-    // Wait for answer from application, but check for call being cleared in
-    // the mean time. Need to unlock ourselves here as can deadlock waiting
-    // for application to do a FindConnectionWithLock() to set the answer
-    // call state variable in AnswerCall().
-    Unlock();
-
-    // Wait for answer
-    BOOL answerWaitTimedOut = !answerWaitFlag.Wait(500);
-
-    // Lock while checking for shutting down.
-    if (!Lock())
-      return FALSE;
-
-    // Need to check the TCP connection ever now and then to see if the caller
-    // has aborted the call or simply disconnected the TCP link (ie crashed).
-    if (answerWaitTimedOut) {
-      PTimeInterval oldTimeout = signallingChannel->GetReadTimeout();
-      signallingChannel->SetReadTimeout(0);
-
-      H323SignalPDU pdu;
-      if (pdu.Read(*signallingChannel)) {
-        Unlock(); // Prevent recursive locking in HandleSignalPDE()
-        if (!HandleSignalPDU(pdu))
-          return FALSE;
-        if (!Lock())
-          return FALSE;
-      }
-      else {
-        if (signallingChannel->GetErrorCode() != PChannel::Timeout)
-          return FALSE;
-      }
-
-      signallingChannel->SetReadTimeout(oldTimeout);
-    }
-  }
-  PTRACE(3, "H225\tAnswer call response: " << answerResponse);
-
-  // If response is denied, abort the call
-  if (answerResponse == AnswerCallDenied) {
-    PTRACE(1, "H225\tApplication has declined to answer incoming call");
-    ClearCall(EndedByAnswerDenied);
-    return FALSE;
-  }
-
-  // Now ask the application to select which channels to start
-  if (SendFastStartAcknowledge(connect.m_fastStart))
-    connect.IncludeOptionalField(H225_Connect_UUIE::e_fastStart);
-
-  // Set flag that we are up to CONNECT stage
-  if (connectionState == ShuttingDownConnection)
-    return FALSE;
-  connectionState = HasExecutedSignalConnect;
-
-  h450dispatcher->AttachToConnect(connectPDU);
-
-  // Start separate H.245 channel if not tunneling.
-  if (!h245Tunneling && controlChannel == NULL) {
-    if (!CreateIncomingControlChannel(connect.m_h245Address))
-      return FALSE;
-
-    connect.IncludeOptionalField(H225_Connect_UUIE::e_h245Address);
-  }
-
-  h450dispatcher->AttachToConnect(connectPDU);
- 
-  if (h245Tunneling) {
-    // If no channels selected (or never provided) do traditional H245 start
-    if (fastStartState == FastStartDisabled) {
-      h245TunnelPDU = &connectPDU; // Piggy back H245 on this reply
-      if (!StartControlNegotiations())
-        return FALSE;
-      HandleTunnelPDU(setupPDU, &connectPDU);
-    }
-  }
-  else if (controlChannel == NULL) { // Start separate H.245 channel if not tunneling.
-    if (!CreateIncomingControlChannel(connect.m_h245Address))
-      return FALSE;
-
-    connect.IncludeOptionalField(H225_Connect_UUIE::e_h245Address);
-  }
-
-  return WriteSignalPDU(connectPDU); // Send H323 Connect PDU
+  connectionState = AwaitingLocalAnswer;
+  AnsweringCall(OnAnswerCall(remotePartyName, setupPDU, *connectPDU));
+  return connectionState != ShuttingDownConnection;
 }
 
 
@@ -1372,6 +1306,18 @@ void H323Connection::SetRemoteApplication(const H225_EndpointType & pdu)
     while ((cap = localCapabilities.FindCapability(H323Capability::e_UserInput, UINT_MAX)) != NULL)
       localCapabilities.Remove(cap);
   }
+}
+
+
+BOOL H323Connection::OnReceivedSignalSetupAck(const H323SignalPDU & /*setupackPDU*/)
+{
+  OnInsufficientDigits();
+  return TRUE;
+}
+
+BOOL H323Connection::OnReceivedSignalInformation(const H323SignalPDU & /*infoPDU*/)
+{
+  return TRUE;
 }
 
 
@@ -1493,7 +1439,6 @@ BOOL H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
 
   H323SignalPDU want245PDU;
   H225_Facility_UUIE * fac = want245PDU.BuildFacility(*this, FALSE);
-
   fac->m_reason.SetTag(H225_FacilityReason::e_startH245);
   fac->IncludeOptionalField(H225_Facility_UUIE::e_h245Address);
 
@@ -1544,6 +1489,18 @@ BOOL H323Connection::OnReceivedFacility(const H323SignalPDU & pdu)
 }
 
 
+BOOL H323Connection::OnReceivedSignalNotify(const H323SignalPDU & /*pdu*/)
+{
+  return TRUE;
+}
+
+
+BOOL H323Connection::OnReceivedSignalStatus(const H323SignalPDU & /*pdu*/)
+{
+  return TRUE;
+}
+
+
 BOOL H323Connection::OnReceivedStatusEnquiry(const H323SignalPDU & /*pdu*/)
 {
   H323SignalPDU reply;
@@ -1554,33 +1511,38 @@ BOOL H323Connection::OnReceivedStatusEnquiry(const H323SignalPDU & /*pdu*/)
 
 void H323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
 {
-  if (connectionState == EstablishedConnection)
-    Release(EndedByRemoteUser);
-  else if (answerResponse == AnswerCallDeferred)
-    Release(EndedByCallerAbort);
-  else {
-    if (callEndReason == EndedByRefusal)
-      callEndReason = OpalNumCallEndReasons;
-    switch (pdu.GetQ931().GetCause()) {
-      case Q931::UserBusy :
-        Release(EndedByRemoteBusy);
-        break;
-      case Q931::Congestion :
-        Release(EndedByRemoteCongestion);
-        break;
-      case Q931::NoRouteToDestination :
-        Release(EndedByNoUser);
-        break;
-      case Q931::Redirection :
-        Release(EndedByCallForwarded);
-        break;
-      case Q931::NoResponse :
-      case Q931::NoAnswer :
-        Release(EndedByNoAnswer);
-        break;
-      default :
-        Release(EndedByRefusal);
-    }
+  switch (connectionState) {
+    case EstablishedConnection :
+      Release(EndedByRemoteUser);
+      break;
+
+    case AwaitingLocalAnswer :
+      Release(EndedByCallerAbort);
+      break;
+
+    default :
+      if (callEndReason == EndedByRefusal)
+        callEndReason = OpalNumCallEndReasons;
+      switch (pdu.GetQ931().GetCause()) {
+        case Q931::UserBusy :
+          Release(EndedByRemoteBusy);
+          break;
+        case Q931::Congestion :
+          Release(EndedByRemoteCongestion);
+          break;
+        case Q931::NoRouteToDestination :
+          Release(EndedByNoUser);
+          break;
+        case Q931::Redirection :
+          Release(EndedByCallForwarded);
+          break;
+        case Q931::NoResponse :
+        case Q931::NoAnswer :
+          Release(EndedByNoAnswer);
+          break;
+        default :
+          Release(EndedByRefusal);
+      }
   }
 }
 
@@ -1635,7 +1597,132 @@ H323Connection::AnswerCallResponse
 
 void H323Connection::AnsweringCall(AnswerCallResponse response)
 {
-  SetAnswerResponse(response);
+  switch (response) {
+    default : // AnswerCallDeferred
+      break;
+
+    case AnswerCallPending :
+      if (alertingPDU != NULL) {
+        // send Q931 Alerting PDU
+        PTRACE(3, "H225\tSending Alerting PDU");
+        h245TunnelTxPDU = alertingPDU;
+        HandleTunnelPDU();
+        h245TunnelTxPDU = NULL;
+        h450dispatcher->AttachToAlerting(*alertingPDU);
+        WriteSignalPDU(*alertingPDU);
+      }
+      break;
+
+    case AnswerCallAlertWithMedia :
+      if (alertingPDU != NULL && !mediaWaitForConnect) {
+        H225_Alerting_UUIE & alerting = alertingPDU->m_h323_uu_pdu.m_h323_message_body;
+        BOOL sendPDU = TRUE;
+        if (SendFastStartAcknowledge(alerting.m_fastStart))
+          alerting.IncludeOptionalField(H225_Alerting_UUIE::e_fastStart);
+        else {
+          // See if aborted call
+          if (connectionState == ShuttingDownConnection)
+            break;
+
+          // Do early H.245 start
+          earlyStart = TRUE;
+          if (!h245Tunneling && (controlChannel == NULL)) {
+            if (!CreateIncomingControlChannel(alerting.m_h245Address))
+              break;
+            alerting.IncludeOptionalField(H225_Alerting_UUIE::e_h245Address);
+          }
+          else
+            sendPDU = FALSE;
+        }
+
+        if (sendPDU) {
+          h450dispatcher->AttachToAlerting(*alertingPDU);
+          WriteSignalPDU(*alertingPDU);
+        }
+      }
+      break;
+
+    case AnswerCallDeferredWithMedia :
+      if (!mediaWaitForConnect) {
+        // create a new facility PDU if doing AnswerDeferredWithMedia
+        H323SignalPDU want245PDU;
+        H225_Progress_UUIE & prog = want245PDU.BuildProgress(*this);
+
+        BOOL sendPDU = TRUE;
+
+        if (SendFastStartAcknowledge(prog.m_fastStart))
+          prog.IncludeOptionalField(H225_Progress_UUIE::e_fastStart);
+        else {
+          // See if aborted call
+          if (connectionState == ShuttingDownConnection)
+            break;
+
+          H225_Facility_UUIE & fac = *want245PDU.BuildFacility(*this, FALSE);
+          fac.m_reason.SetTag(H225_FacilityReason::e_transportedInformation);
+
+          // Do early H.245 start
+          fac.m_reason.SetTag(H225_FacilityReason::e_startH245);
+          earlyStart = TRUE;
+          if (!h245Tunneling && (controlChannel == NULL)) {
+            if (!CreateIncomingControlChannel(fac.m_h245Address))
+              break;
+
+            fac.IncludeOptionalField(H225_Facility_UUIE::e_h245Address);
+          } 
+          else
+            sendPDU = FALSE;
+        }
+
+        if (sendPDU)
+          WriteSignalPDU(want245PDU);
+      }
+      break;
+
+    case AnswerCallDenied :
+      // If response is denied, abort the call
+      PTRACE(1, "H225\tApplication has declined to answer incoming call");
+      Release(EndedByAnswerDenied);
+      break;
+
+    case AnswerCallNow :
+      if (connectPDU != NULL) {
+        H225_Connect_UUIE & connect = connectPDU->m_h323_uu_pdu.m_h323_message_body;
+        // Now ask the application to select which channels to start
+        if (SendFastStartAcknowledge(connect.m_fastStart))
+          connect.IncludeOptionalField(H225_Connect_UUIE::e_fastStart);
+
+        // See if aborted call
+        if (connectionState == ShuttingDownConnection)
+          break;
+
+        // Set flag that we are up to CONNECT stage
+        connectionState = HasExecutedSignalConnect;
+
+        h450dispatcher->AttachToConnect(*connectPDU);
+ 
+        if (h245Tunneling) {
+          // If no channels selected (or never provided) do traditional H245 start
+          if (fastStartState == FastStartDisabled) {
+            h245TunnelTxPDU = connectPDU; // Piggy back H245 on this reply
+            if (!StartControlNegotiations()) 
+              break;
+            HandleTunnelPDU();
+            h245TunnelTxPDU = NULL;
+          }
+        }
+        else { // Start separate H.245 channel if not tunneling.
+          if (!CreateIncomingControlChannel(connect.m_h245Address))
+            break;
+          connect.IncludeOptionalField(H225_Connect_UUIE::e_h245Address);
+        }
+
+        WriteSignalPDU(*connectPDU); // Send H323 Connect PDU
+        delete connectPDU;
+        connectPDU = NULL;
+        delete alertingPDU;
+        alertingPDU = NULL;
+      }
+  }
 }
 
 
@@ -1667,27 +1754,42 @@ OpalCallEndReason H323Connection::SendSignalSetup(const PString & alias,
 
   // Check for gatekeeper and do admission check if have one
   H323Gatekeeper * gatekeeper = endpoint.GetGatekeeper();
-  H225_ArrayOf_AliasAddress newAliasAddress;
+  H225_ArrayOf_AliasAddress newAliasAddresses;
   if (gatekeeper != NULL) {
-    if (!gatekeeper->AdmissionRequest(*this, gatekeeperRoute, newAliasAddress, alias.IsEmpty())) {
-      unsigned reason = gatekeeper->GetRejectReason();
+    H323Gatekeeper::AdmissionResponse response;
+    response.transportAddress = &gatekeeperRoute;
+    response.aliasAddresses = &newAliasAddresses;
+    while (!gatekeeper->AdmissionRequest(*this, response, alias.IsEmpty())) {
       PTRACE(1, "H225\tGatekeeper refused admission: "
-             << H225_AdmissionRejectReason(reason).GetTagName());
-      switch (reason) {
+             << H225_AdmissionRejectReason(response.rejectReason).GetTagName());
+      switch (response.rejectReason) {
         case H225_AdmissionRejectReason::e_calledPartyNotRegistered :
           return EndedByNoUser;
         case H225_AdmissionRejectReason::e_requestDenied :
           return EndedByNoBandwidth;
+        case H225_AdmissionRejectReason::e_incompleteAddress :
+          if (OnInsufficientDigits())
+            break;
+          // Then default case
+        default :
+          return EndedByGatekeeper;
       }
-      return EndedByGatekeeper;
+
+      PString lastRemotePartyName = remotePartyName;
+      while (lastRemotePartyName == remotePartyName) {
+        Unlock(); // Release the mutex as can deadlock trying to clear call during connect.
+        digitsWaitFlag.Wait();
+        if (!Lock()) // Lock while checking for shutting down.
+          return EndedByCallerAbort;
+      }
     }
   }
 
   // Update the field e_destinationAddress in the SETUP PDU to reflect the new 
   // alias received in the ACF (m_destinationInfo).
-  if (newAliasAddress.GetSize() > 0) {
+  if (newAliasAddresses.GetSize() > 0) {
     setup.IncludeOptionalField(H225_Setup_UUIE::e_destinationAddress);
-    setup.m_destinationAddress = newAliasAddress;
+    setup.m_destinationAddress = newAliasAddresses;
   }
 
   if (!signallingChannel->SetRemoteAddress(gatekeeperRoute)) {
@@ -1708,7 +1810,7 @@ OpalCallEndReason H323Connection::SendSignalSetup(const PString & alias,
 
     // Lock while checking for shutting down.
   if (!Lock())
-    return EndedByConnectFail;
+    return EndedByCallerAbort;
 
   // See if transport connect failed, abort if so.
   if (connectFailed) {
@@ -1754,9 +1856,20 @@ OpalCallEndReason H323Connection::SendSignalSetup(const PString & alias,
       setup.IncludeOptionalField(H225_Setup_UUIE::e_fastStart);
   }
 
-  if (!OnSendSignalSetup(setupPDU)) {
-    return EndedByNoAccept;
+  // Search the capability set and see if we have video capability
+  BOOL hasVideoOrData = FALSE;
+  for (PINDEX i = 0; i < localCapabilities.GetSize(); i++) {
+    if (!localCapabilities[i].IsDescendant(H323AudioCapability::Class()) &&
+        !localCapabilities[i].IsDescendant(H323_UserInputCapability::Class())) {
+      hasVideoOrData = TRUE;
+      break;
+    }
   }
+  if (hasVideoOrData)
+    setupPDU.GetQ931().SetBearerCapabilities(Q931::TransferUnrestrictedDigital, 6);
+
+  if (!OnSendSignalSetup(setupPDU))
+    return EndedByNoAccept;
 
   // Do this again (was done when PDU was constructed) in case
   // OnSendSignalSetup() changed something.
@@ -1766,7 +1879,7 @@ OpalCallEndReason H323Connection::SendSignalSetup(const PString & alias,
   fastStartState = FastStartDisabled;
 
   if (h245Tunneling) {
-    h245TunnelPDU = &setupPDU;
+    h245TunnelTxPDU = &setupPDU;
 
     // Cannot do capability exchange if if fast starting though.
     if (fastStartChannels.IsEmpty()) {
@@ -1775,7 +1888,7 @@ OpalCallEndReason H323Connection::SendSignalSetup(const PString & alias,
         return EndedByTransportFail;
     }
 
-    h245TunnelPDU = NULL;
+    h245TunnelTxPDU = NULL;
   }
 
   // Send the initial PDU
@@ -1796,6 +1909,12 @@ BOOL H323Connection::OnSendSignalSetup(H323SignalPDU & /*setupPDU*/)
 
 
 BOOL H323Connection::OnSendCallProceeding(H323SignalPDU & /*callProceedingPDU*/)
+{
+  return TRUE;
+}
+
+
+BOOL H323Connection::OnSendReleaseComplete(H323SignalPDU & /*releaseCompletePDU*/)
 {
   return TRUE;
 }
@@ -1824,6 +1943,28 @@ BOOL H323Connection::SetConnected()
 }
 
 
+BOOL H323Connection::OnInsufficientDigits()
+{
+  return FALSE;
+}
+
+
+void H323Connection::SendMoreDigits(const PString & digits)
+{
+  remotePartyNumber += digits;
+  remotePartyName = remotePartyNumber;
+  if (connectionState == AwaitingGatekeeperAdmission)
+    digitsWaitFlag.Signal();
+  else {
+    H323SignalPDU infoPDU;
+    infoPDU.BuildInformation(*this);
+    infoPDU.GetQ931().SetCalledPartyNumber(digits);
+    if (!WriteSignalPDU(infoPDU))
+      Release(EndedByTransportFail);
+  }
+}
+
+
 BOOL H323Connection::OnOutgoingCall(const H323SignalPDU & /*connectPDU*/)
 {
   PTRACE(1, "H225\tReceived connect PDU.");
@@ -1835,6 +1976,11 @@ BOOL H323Connection::SendFastStartAcknowledge(H225_ArrayOf_PASN_OctetString & ar
 {
   PINDEX i;
 
+  // See if we have already added the fast start OLC's
+  if (array.GetSize() > 0)
+    return TRUE;
+
+  // See if we need to select our fast start channels
   if (fastStartState == FastStartResponse)
     OnSelectLogicalChannels();
 
@@ -2031,7 +2177,7 @@ void H323Connection::NewIncomingControlChannel(PThread &, INT param)
   if (param == 0 &&
       FindChannel(OpalMediaFormat::DefaultAudioSessionID, TRUE) == NULL ||
       FindChannel(OpalMediaFormat::DefaultAudioSessionID, FALSE) == NULL) {
-    ClearCall(EndedByTransportFail);
+    Release(EndedByTransportFail);
     return;
   }
 
@@ -2047,12 +2193,14 @@ BOOL H323Connection::WriteControlPDU(const H323ControlPDU & pdu)
   strm.CompleteEncoding();
 
 #if PTRACING
-  if (PTrace::CanTrace(4))
+  if (PTrace::CanTrace(4)) {
     PTRACE(4, "H245\tSending PDU\n  " << setprecision(2) << pdu
                             << "\n "  << setprecision(2) << strm);
-  else
+  }
+  else {
     PTRACE(3, "H245\tSending PDU: " << pdu.GetTagName()
            << ' ' << ((PASN_Choice &)pdu.GetObject()).GetTagName());
+  }
 #endif
 
   if (!h245Tunneling) {
@@ -2064,15 +2212,15 @@ BOOL H323Connection::WriteControlPDU(const H323ControlPDU & pdu)
     if (controlChannel->IsOpen() && controlChannel->WritePDU(strm))
       return TRUE;
 
-    PTRACE(1, "H245\tWrite PDU fail: " << controlChannel->GetErrorText());
+    PTRACE(1, "H245\tWrite PDU fail: " << controlChannel->GetErrorText(PChannel::LastWriteError));
     return FALSE;
   }
 
   // If have a pending signalling PDU, use it rather than separate write
   H323SignalPDU localTunnelPDU;
   H323SignalPDU * tunnelPDU;
-  if (h245TunnelPDU != NULL)
-    tunnelPDU = h245TunnelPDU;
+  if (h245TunnelTxPDU != NULL)
+    tunnelPDU = h245TunnelTxPDU;
   else {
     localTunnelPDU.BuildFacility(*this, TRUE);
     tunnelPDU = &localTunnelPDU;
@@ -2083,7 +2231,7 @@ BOOL H323Connection::WriteControlPDU(const H323ControlPDU & pdu)
   tunnelPDU->m_h323_uu_pdu.m_h245Control.SetSize(last+1);
   tunnelPDU->m_h323_uu_pdu.m_h245Control[last] = strm;
 
-  if (h245TunnelPDU != NULL)
+  if (h245TunnelTxPDU != NULL)
     return TRUE;
 
   return WriteSignalPDU(localTunnelPDU);
@@ -2140,7 +2288,7 @@ void H323Connection::HandleControlChannel()
     }
     else if (connectionState != EstablishedConnection ||
              controlChannel->GetErrorCode() != PChannel::Timeout) {
-      PTRACE(1, "H245\tRead error: " << controlChannel->GetErrorText());
+      PTRACE(1, "H245\tRead error: " << controlChannel->GetErrorText(PChannel::LastReadError));
       Release(EndedByTransportFail);
       ok = FALSE;
     }
@@ -2174,12 +2322,14 @@ BOOL H323Connection::HandleControlData(PPER_Stream & strm)
 BOOL H323Connection::HandleControlPDU(const H323ControlPDU & pdu)
 {
 #if PTRACING
-  if (PTrace::CanTrace(4))
+  if (PTrace::CanTrace(4)) {
     PTRACE(4, "H245\tReceived PDU (connectionState=" << connectionState
            << "):\n  " << setprecision(2) << pdu);
-  else
+  }
+  else {
     PTRACE(3, "H245\tReceived PDU: " << pdu.GetTagName()
            << ' ' << ((PASN_Choice &)pdu.GetObject()).GetTagName());
+  }
 #endif
 
   switch (pdu.GetTag()) {
@@ -2302,12 +2452,16 @@ BOOL H323Connection::OnH245Command(const H323ControlPDU & pdu)
       return OnH245_MiscellaneousCommand(command);
 
     case H245_CommandMessage::e_endSessionCommand :
-      if (connectionState == EstablishedConnection)
-        Release(EndedByRemoteUser);
-      else if (answerResponse == AnswerCallDeferred)
-        Release(EndedByCallerAbort);
-      else
-        Release(EndedByRefusal);
+      switch (connectionState) {
+        case EstablishedConnection :
+          Release(EndedByRemoteUser);
+          break;
+        case AnswerCallDeferred :
+          Release(EndedByCallerAbort);
+          break;
+        default :
+          Release(EndedByRefusal);
+      }
       return FALSE;
   }
 
@@ -2637,7 +2791,7 @@ void H323Connection::StartRoundTripDelay()
       if (roundTripDelayProcedure->IsRemoteOffline()) {
         PTRACE(2, "H245\tRemote failed to respond to PDU.");
         if (endpoint.ShouldClearCallOnRoundTripFail())
-          ClearCall(EndedByTransportFail);
+          Release(EndedByTransportFail);
       }
       else
         roundTripDelayProcedure->StartRequest();
@@ -3193,7 +3347,8 @@ void H323Connection::OnUserInputIndication(const H245_UserInputIndication & ind)
     case H245_UserInputIndication::e_signal :
       const H245_UserInputIndication_signal & sig = ind;
       OnUserInputTone(sig.m_signalType[0],
-                      sig.m_duration,
+                      sig.HasOptionalField(H245_UserInputIndication_signal::e_duration)
+                                ? (unsigned)sig.m_duration : 0,
                       sig.m_rtp.m_logicalChannelNumber,
                       sig.m_rtp.m_timestamp);
   }

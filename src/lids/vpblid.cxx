@@ -22,11 +22,17 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vpblid.cxx,v $
- * Revision 1.2002  2001/08/01 05:21:21  robertj
+ * Revision 1.2003  2001/10/05 00:22:14  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.1  2001/08/01 05:21:21  robertj
  * Made OpalMediaFormatList class global to help with documentation.
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.8  2001/09/13 05:27:46  robertj
+ * Fixed incorrect return type in virtual function, thanks Vjacheslav Andrejev
  *
  * Revision 1.7  2001/05/11 04:43:43  robertj
  * Added variable names for standard PCM-16 media format name.
@@ -306,7 +312,7 @@ BOOL OpalVpbDevice::SetReadFrameSize(unsigned line, PINDEX size)
 }
 
 
-PINDEX OpalVpbDevice::SetWriteFrameSize(unsigned line, PINDEX size)
+BOOL OpalVpbDevice::SetWriteFrameSize(unsigned line, PINDEX size)
 {
   if (line >= MaxLineCount)
     return FALSE;

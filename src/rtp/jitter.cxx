@@ -27,8 +27,17 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2001/10/05 00:22:14  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.26  2001/09/11 00:21:23  robertj
+ * Fixed missing stack sizes in endpoint for cleaner thread and jitter thread.
+ *
+ * Revision 1.25  2001/09/10 08:18:11  robertj
+ * Added define to remove jitter buffer analyser, thanks Nick Hoath.
  *
  * Revision 1.24  2001/07/05 05:55:17  robertj
  * Added thread name.
@@ -116,7 +125,7 @@
 #include <rtp/jitter.h>
 
 
-#if PTRACING
+#if PTRACING && !defined(NO_ANALYSER)
 
 class RTP_JitterBufferAnalyser : public PObject
 {
@@ -146,8 +155,9 @@ class RTP_JitterBufferAnalyser : public PObject
 /////////////////////////////////////////////////////////////////////////////
 
 RTP_JitterBuffer::RTP_JitterBuffer(RTP_Session & sess,
-                                   unsigned jitterDelay)
-  : PThread(30000, NoAutoDeleteThread, HighestPriority, "RTP Jitter:%x"),
+                                   unsigned jitterDelay,
+                                   PINDEX stackSize)
+  : PThread(stackSize, NoAutoDeleteThread, HighestPriority, "RTP Jitter:%x"),
     session(sess)
 {
   // Jitter buffer is a queue of frames waiting for playback, a list of
@@ -187,7 +197,7 @@ RTP_JitterBuffer::RTP_JitterBuffer(RTP_Session & sess,
             " size=" << bufferSize <<
             " delay=" << maxJitterTime);
 
-#if PTRACING
+#if PTRACING && !defined(NO_ANALYSER)
   analyser = new RTP_JitterBufferAnalyser;
 #else
   analyser = NULL;
@@ -224,7 +234,7 @@ RTP_JitterBuffer::~RTP_JitterBuffer()
 
   bufferMutex.Signal();
 
-#if PTRACING
+#if PTRACING && !defined(NO_ANALYSER)
   PTRACE(5, "Jitter buffer analysis: size=" << bufferSize
          << " time=" << maxJitterTime << '\n' << *analyser);
   delete analyser;
@@ -322,7 +332,7 @@ void RTP_JitterBuffer::Main()
     else
       consecutiveMarkerBits = 0;
 
-#if PTRACING
+#if PTRACING && !defined(NO_ANALYSER)
     analyser->In(currentReadFrame->GetTimestamp(), currentDepth, preBuffering ? "PreBuf" : "");
 #endif
 
@@ -401,7 +411,7 @@ BOOL RTP_JitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
      */
     preBuffering = TRUE;
 
-#if PTRACING
+#if PTRACING && !defined(NO_ANALYSER)
     analyser->Out(0, currentDepth, "Empty");
 #endif
     return TRUE;
@@ -425,7 +435,7 @@ BOOL RTP_JitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
 
   if (preBuffering) {
     // Are filling the buffer, don't return anything yet
-#if PTRACING
+#if PTRACING && !defined(NO_ANALYSER)
     analyser->Out(oldestTimestamp, currentDepth, "PreBuf");
 #endif
     return TRUE;
@@ -433,7 +443,7 @@ BOOL RTP_JitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
 
   if (timestamp < oldestTimestamp && timestamp > (newestTimestamp - maxJitterTime)) {
     // It is not yet time for something in the buffer
-#if PTRACING
+#if PTRACING && !defined(NO_ANALYSER)
     analyser->Out(oldestTimestamp, currentDepth, "Wait");
 #endif
     return TRUE;
@@ -441,7 +451,7 @@ BOOL RTP_JitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
 
   // Detatch oldest packet from the list, put into parking space
   currentDepth--;
-#if PTRACING
+#if PTRACING && !defined(NO_ANALYSER)
   analyser->Out(oldestTimestamp, currentDepth, timestamp >= oldestTimestamp ? "" : "Late");
 #endif
   currentWriteFrame = oldestFrame;
@@ -479,7 +489,7 @@ BOOL RTP_JitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
 }
 
 
-#if PTRACING
+#if PTRACING && !defined(NO_ANALYSER)
 
 RTP_JitterBufferAnalyser::RTP_JitterBufferAnalyser()
 {

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t120.cxx,v $
- * Revision 1.2003  2001/08/13 05:10:40  robertj
+ * Revision 1.2004  2001/10/05 00:22:14  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.2  2001/08/13 05:10:40  robertj
  * Updates from OpenH323 v1.6.0 release.
  *
  * Revision 2.1  2001/08/01 05:05:49  robertj
@@ -32,6 +35,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.4  2001/09/12 07:48:05  robertj
+ * Fixed various problems with tracing.
  *
  * Revision 1.3  2001/08/06 03:08:57  robertj
  * Fission of h323.h to h323ep.h & h323con.h, h323.h now just includes files.
@@ -134,14 +140,21 @@ void H323_T120Channel::Receive()
 {
   PTRACE(2, "H323T120\tReceive thread started.");
 
-  if (t120handler == NULL)
+  if (t120handler != NULL) {
+    if (listener != NULL) {
+      if ((transport = listener->Accept(30000)) != NULL)  // 30 second wait for connect back
+        t120handler->Answer(*transport);
+      else {
+        PTRACE(1, "H323T120\tAccept failed, aborting thread.");
+      }
+    }
+    else {
+      PTRACE(1, "H323T120\tNo listener, aborting thread.");
+    }
+  }
+  else {
     PTRACE(1, "H323T120\tNo protocol handler, aborting thread.");
-  else if (listener == NULL)
-    PTRACE(1, "H323T120\tNo listener, aborting thread.");
-  else if ((transport = listener->Accept(30000)) == NULL)  // 30 second wait for connect back
-    PTRACE(1, "H323T120\tAccept failed, aborting thread.");
-  else
-    t120handler->Answer(*transport);
+  }
 
   connection.CloseLogicalChannelNumber(number);
 

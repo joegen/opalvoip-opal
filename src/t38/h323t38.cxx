@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t38.cxx,v $
- * Revision 1.2004  2001/08/13 05:10:40  robertj
+ * Revision 1.2005  2001/10/05 00:22:14  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.3  2001/08/13 05:10:40  robertj
  * Updates from OpenH323 v1.6.0 release.
  *
  * Revision 2.2  2001/08/01 05:07:52  robertj
@@ -35,6 +38,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.5  2001/09/12 07:48:05  robertj
+ * Fixed various problems with tracing.
  *
  * Revision 1.4  2001/08/06 03:08:57  robertj
  * Fission of h323.h to h323ep.h & h323con.h, h323.h now just includes files.
@@ -177,16 +183,18 @@ void H323_T38Channel::Receive()
 {
   PTRACE(2, "H323T38\tReceive thread started.");
 
-  if (t38handler == NULL)
-    PTRACE(1, "H323T38\tNo protocol handler, aborting thread.");
-  else {
+  if (t38handler != NULL) {
     if (listener != NULL)
       transport = listener->Accept(30000);  // 30 second wait for connect back
 
-    if (transport == NULL)
-      PTRACE(1, "H323T38\tNo transport, aborting thread.");
-    else
+    if (transport != NULL)
       t38handler->Answer(*transport);
+    else {
+      PTRACE(1, "H323T38\tNo transport, aborting thread.");
+    }
+  }
+  else {
+    PTRACE(1, "H323T38\tNo protocol handler, aborting thread.");
   }
 
   connection.CloseLogicalChannelNumber(number);
@@ -199,12 +207,16 @@ void H323_T38Channel::Transmit()
 {
   PTRACE(2, "H323T38\tTransmit thread started.");
 
-  if (t38handler == NULL)
+  if (t38handler != NULL) {
+    if (transport != NULL)
+      t38handler->Originate(*transport);
+    else {
+      PTRACE(1, "H323T38\tNo transport, aborting thread.");
+    }
+  }
+  else {
     PTRACE(1, "H323T38\tNo protocol handler, aborting thread.");
-  else if (transport == NULL)
-    PTRACE(1, "H323T38\tNo transport, aborting thread.");
-  else
-    t38handler->Originate(*transport);
+  }
 
   connection.CloseLogicalChannelNumber(number);
 
