@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2013  2002/02/19 07:42:07  robertj
+ * Revision 1.2014  2002/04/09 00:16:46  robertj
+ * Changed "callAnswered" to better description of "originating".
+ *
+ * Revision 2.12  2002/02/19 07:42:07  robertj
  * Added OpalRFC2833 as a OpalMediaFormat variable.
  * Restructured media bypass functions to fix problems with RFC2833.
  *
@@ -736,7 +739,7 @@ class OpalConnection : public PObject
 
     /**Get the call direction for this connection.
      */
-    BOOL HadAnsweredCall() const { return callAnswered; }
+    BOOL IsOriginating() const { return originating; }
 
     /**Get the time at which the connection was established
       */
@@ -781,7 +784,7 @@ class OpalConnection : public PObject
     OpalEndPoint      & endpoint;
 
     PString             callToken;
-    BOOL                callAnswered;
+    BOOL                originating;
     PTime               connectionStartTime;
     PString             localPartyName;
     PString             remotePartyName;
