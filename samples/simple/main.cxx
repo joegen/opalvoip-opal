@@ -22,7 +22,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2004  2001/08/01 06:19:00  robertj
+ * Revision 1.2005  2001/08/17 08:35:41  robertj
+ * Changed OnEstablished() to OnEstablishedCall() to be consistent.
+ * Moved call end reasons enum from OpalConnection to global.
+ * Used LID management in lid EP.
+ * More implementation.
+ *
+ * Revision 2.3  2001/08/01 06:19:00  robertj
  * Added flags for disabling H.323 or Quicknet endpoints.
  *
  * Revision 2.2  2001/08/01 05:48:30  robertj
@@ -80,9 +86,10 @@
 
 #include <ptlib.h>
 
-#include <lids/lidep.h>
 #include <h323/h323ep.h>
 #include <h323/gkclient.h>
+#include <lids/lidep.h>
+#include <lids/ixjlid.h>
 
 #include "main.h"
 #include "version.h"
@@ -218,9 +225,9 @@ MyManager::MyManager()
 
 MyManager::~MyManager()
 {
-  // Must do this before we destroy the xJack or a crash will result
+  // Must do this before we destroy the manager or a crash will result
   if (potsEP != NULL)
-    potsEP->RemoveLinesFromDevice(xJack);
+    potsEP->RemoveAllLines();
 }
 
 
@@ -241,8 +248,10 @@ BOOL MyManager::Initialise(PArgList & args)
     }
   }
 
-  SetMediaFormatMask(args.GetOptionString('D').Lines());
-  SetMediaFormatOrder(args.GetOptionString('P').Lines());
+  if (args.HasOption('D'))
+    SetMediaFormatMask(args.GetOptionString('D').Lines());
+  if (args.HasOption('P'))
+    SetMediaFormatOrder(args.GetOptionString('P').Lines());
 
   cout << "Auto answer is " << (autoAnswer ? "on" : "off") << "\n"
           "Silence supression is " << (silenceOn ? "on" : "off") << "\n"
@@ -264,18 +273,21 @@ BOOL MyManager::Initialise(PArgList & args)
         device = PString();
     }
     if (!device) {
-      if (xJack.Open(device)) {
+      OpalIxJDevice * ixj = new OpalIxJDevice;
+      if (ixj->Open(device)) {
         // Create LID protocol handler, automatically adds to manager
         potsEP = new OpalPOTSEndPoint(*this);
-        if (potsEP->AddLinesFromDevice(xJack))
+        if (potsEP->AddDevice(ixj))
           cout << "Quicknet device is " << device << endl;
         else {
           RemoveEndPoint(potsEP);
           potsEP = NULL;
         }
       }
-      else
+      else {
         cerr << "Could not open device \"" << device << '"' << endl;
+        delete ixj;
+      }
     }
   }
 
@@ -388,7 +400,10 @@ void MyManager::Main(PArgList & args)
     cout << "Waiting for incoming calls\n";
   else {
     cout << "Initiating call to \"" << args[0] << "\"\n";
-    SetUpCall("line:*", args[0], currentCallToken);
+    if (potsEP != NULL)
+      SetUpCall("pots:*", args[0], currentCallToken);
+    else
+      SetUpCall("pc:*", args[0], currentCallToken);
   }
   cout << "Press X to exit." << endl;
 
@@ -397,8 +412,15 @@ void MyManager::Main(PArgList & args)
     cout << "OPAL> " << flush;
     PCaselessString cmd;
     cin >> cmd;
-    if (cmd == "X")
+    if (cmd == "x")
       break;
+
+    if (pcssEP != NULL && !pcssEP->incomingConnectionToken) {
+      if (cmd == "n")
+        pcssEP->ClearCall(pcssEP->incomingConnectionToken, EndedByRefusal);
+      else if (cmd == "y")
+        pcssEP->AcceptIncomingConnection(pcssEP->incomingConnectionToken);
+    }
 
     // Process commands
   }
@@ -460,86 +482,85 @@ BOOL MyManager::OnIncomingConnection(OpalConnection & connection)
 
   return OpalConnection::AnswerCallDenied;
 }
-#endif
-
-
 BOOL MyManager::OnConnectionForwarded(OpalConnection & /*connection*/,
                                       const PString & forwardParty)
 {
   cout << "Call is being forwarded to host " << forwardParty << endl;
   return TRUE;
 }
+#endif
 
 
-void MyManager::OnEstablishedConnection(OpalConnection & connection)
+void MyManager::OnEstablishedCall(OpalCall & call)
 {
-  currentCallToken = connection.GetToken();
-  cout << "In call with " << connection.GetRemotePartyName() << endl;
+  currentCallToken = call.GetToken();
+  cout << "In call with " << call.GetPartyB() << " using " << call.GetPartyA() << endl;
 }
 
 
-void MyManager::OnReleasedConnection(OpalConnection & connection)
+void MyManager::OnClearedCall(OpalCall & call)
 {
-  if (currentCallToken == connection.GetToken())
+  if (currentCallToken == call.GetToken())
     currentCallToken = PString();
 
-  PString remoteName = '"' + connection.GetRemotePartyName() + '"';
-  switch (connection.GetCallEndReason()) {
-    case OpalConnection::EndedByRemoteUser :
+  PString remoteName = '"' + call.GetPartyB() + '"';
+  switch (call.GetCallEndReason()) {
+    case EndedByRemoteUser :
       cout << remoteName << " has cleared the call";
       break;
-    case OpalConnection::EndedByCallerAbort :
+    case EndedByCallerAbort :
       cout << remoteName << " has stopped calling";
       break;
-    case OpalConnection::EndedByRefusal :
+    case EndedByRefusal :
       cout << remoteName << " did not accept your call";
       break;
-    case OpalConnection::EndedByNoAnswer :
+    case EndedByNoAnswer :
       cout << remoteName << " did not answer your call";
       break;
-    case OpalConnection::EndedByTransportFail :
+    case EndedByTransportFail :
       cout << "Call with " << remoteName << " ended abnormally";
       break;
-    case OpalConnection::EndedByCapabilityExchange :
+    case EndedByCapabilityExchange :
       cout << "Could not find common codec with " << remoteName;
       break;
-    case OpalConnection::EndedByNoAccept :
+    case EndedByNoAccept :
       cout << "Did not accept incoming call from " << remoteName;
       break;
-    case OpalConnection::EndedByAnswerDenied :
+    case EndedByAnswerDenied :
       cout << "Refused incoming call from " << remoteName;
       break;
-    case OpalConnection::EndedByNoUser :
+    case EndedByNoUser :
       cout << "Gatekeeper could find user " << remoteName;
       break;
-    case OpalConnection::EndedByNoBandwidth :
+    case EndedByNoBandwidth :
       cout << "Call to " << remoteName << " aborted, insufficient bandwidth.";
       break;
-    case OpalConnection::EndedByUnreachable :
+    case EndedByUnreachable :
       cout << remoteName << " could not be reached.";
       break;
-    case OpalConnection::EndedByNoEndPoint :
+    case EndedByNoEndPoint :
       cout << "No phone running for " << remoteName;
       break;
-    case OpalConnection::EndedByHostOffline :
+    case EndedByHostOffline :
       cout << remoteName << " is not online.";
       break;
-    case OpalConnection::EndedByConnectFail :
+    case EndedByConnectFail :
       cout << "Transport error calling " << remoteName;
       break;
     default :
       cout << "Call with " << remoteName << " completed";
   }
-  cout << ", duration "
-       << setprecision(0) << setw(5)
-       << (PTime() - connection.GetConnectionStartTime())
-       << endl;
+  PTime now;
+  cout << ", on " << now.AsString("w h:mma") << ". Duration "
+       << setprecision(0) << setw(5) << (now - call.GetStartTime())
+       << "s." << endl;
 }
 
 
-BOOL MyManager::OnOpenMediaStream(OpalMediaStream & stream)
+BOOL MyManager::OnOpenMediaStream(OpalConnection & connection,
+                                  OpalMediaStream & stream)
 {
-  if (!MyManager::OnOpenMediaStream(stream))
+  if (!OpalManager::OnOpenMediaStream(connection, stream))
     return FALSE;
 
   cout << "Started ";
@@ -572,15 +593,39 @@ MyPCSSEndPoint::MyPCSSEndPoint(MyManager & mgr)
 }
 
 
-void MyPCSSEndPoint::OnShowRinging(const PString & callerName)
+PString MyPCSSEndPoint::OnGetDestination(const OpalPCSSConnection & /*connection*/)
 {
-  cout << "Call from " << callerName << ", answer? " << flush;
+  PString destination;
+
+  if (destinationAddress.IsEmpty()) {
+    cout << "Enter destination address? " << flush;
+    cin >> destination;
+  }
+  else {
+    destination = destinationAddress;
+    destinationAddress = PString();
+  }
+
+  return destination;
 }
 
 
-BOOL MyPCSSEndPoint::OnShowAlerting(const PString & calleeName)
+void MyPCSSEndPoint::OnShowIncoming(const OpalPCSSConnection & connection)
 {
-  cout << calleeName << " is ringing ..." << endl;
+  PTime now;
+  cout << "\nCall on " << now.AsString("w h:mma")
+       << " from " << connection.GetRemotePartyName()
+       << ", answer (Y/N)? " << flush;
+
+  incomingConnectionToken = connection.GetToken();
+}
+
+
+BOOL MyPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection & connection)
+{
+  PTime now;
+  cout << connection.GetRemotePartyName() << " is ringing on "
+       << now.AsString("w h:mma") << " ..." << endl;
   return TRUE;
 }
 

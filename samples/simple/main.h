@@ -22,7 +22,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2002  2001/08/01 06:19:00  robertj
+ * Revision 1.2003  2001/08/17 08:35:41  robertj
+ * Changed OnEstablished() to OnEstablishedCall() to be consistent.
+ * Moved call end reasons enum from OpalConnection to global.
+ * Used LID management in lid EP.
+ * More implementation.
+ *
+ * Revision 2.1  2001/08/01 06:19:00  robertj
  * Added flags for disabling H.323 or Quicknet endpoints.
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
@@ -51,7 +57,6 @@
 
 #include <opal/manager.h>
 #include <opal/pcss.h>
-#include <lids/ixjlid.h>
 
 
 class MyManager;
@@ -64,10 +69,14 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
   public:
     MyPCSSEndPoint(MyManager & manager);
 
-    void OnShowRinging(const PString & callerName);
-    BOOL OnShowAlerting(const PString & calleeName);
+    virtual PString OnGetDestination(const OpalPCSSConnection & connection);
+    virtual void OnShowIncoming(const OpalPCSSConnection & connection);
+    virtual BOOL OnShowOutgoing(const OpalPCSSConnection & connection);
 
     BOOL SetSoundDevice(PArgList & args, const char * optionName, PSoundChannel::Directions dir);
+
+    PString destinationAddress;
+    PString incomingConnectionToken;
 };
 
 
@@ -82,12 +91,23 @@ class MyManager : public OpalManager
     BOOL Initialise(PArgList & args);
     void Main(PArgList & args);
 
-    PString OnRouteConnection(OpalConnection & connection);
-    BOOL OnConnectionForwarded(OpalConnection & connection, const PString & forwardParty);
-    void OnEstablishedConnection(OpalConnection & connection);
-    void OnReleasedConnection(OpalConnection & connection);
-    BOOL OnOpenMediaStream(OpalMediaStream & stream);
-    void OnUserIndicationString(OpalConnection & connection, const PString & value);
+    virtual PString OnRouteConnection(
+      OpalConnection & connection  /// Connection being routed
+    );
+    virtual void OnEstablishedCall(
+      OpalCall & call   /// Call that was completed
+    );
+    virtual void OnClearedCall(
+      OpalCall & call   /// Connection that was established
+    );
+    virtual BOOL OnOpenMediaStream(
+      OpalConnection & connection,  /// Connection that owns the media stream
+      OpalMediaStream & stream    /// New media stream being opened
+    );
+    virtual void OnUserIndicationString(
+      OpalConnection & connection,  /// Connection input has come from
+      const PString & value         /// String value of indication
+    );
 
   protected:
     PString currentCallToken;
@@ -97,10 +117,9 @@ class MyManager : public OpalManager
     BOOL noH245Tunnelling;
     PString busyForwardParty;
 
-    OpalIxJDevice xJack;
     OpalPOTSEndPoint * potsEP;
-    MyPCSSEndPoint * pcssEP;
-    H323EndPoint * h323EP;
+    MyPCSSEndPoint   * pcssEP;
+    H323EndPoint     * h323EP;
 };
 
 
