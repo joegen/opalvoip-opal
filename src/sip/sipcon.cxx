@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2018  2002/04/16 07:53:15  robertj
+ * Revision 1.2019  2002/04/16 09:04:18  robertj
+ * Fixed setting of target URI from Contact regardless of route set
+ *
+ * Revision 2.17  2002/04/16 07:53:15  robertj
  * Changes to support calls through proxies.
  *
  * Revision 2.16  2002/04/15 08:53:58  robertj
@@ -633,11 +636,9 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
   // If current SIP dialog does not have a route set (via Record-Route) and 
   // this response had a contact field then start using that address for all
   // future communication with remote SIP endpoint
-  if (routeSet.IsEmpty()) {
-    PString contact = response.GetMIME().GetContact();
-    if (!contact)
-      targetAddress = contact;
-  }
+  PString contact = response.GetMIME().GetContact();
+  if (!contact)
+    targetAddress = contact;
 
   switch (response.GetStatusCode()) {
     case SIP_PDU::Information_Session_Progress :
