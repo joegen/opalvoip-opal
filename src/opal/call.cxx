@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2009  2001/11/15 07:01:55  robertj
+ * Revision 1.2010  2002/01/14 02:23:00  robertj
+ * Fixed problem in not getting fast started medai in Alerting
+ *
+ * Revision 2.8  2001/11/15 07:01:55  robertj
  * Changed OpalCall::OpenSourceMediaStreams so the connection to not open
  *   a media stream on is optional.
  *
@@ -177,12 +180,14 @@ void OpalCall::OnAlerting(OpalConnection & connection)
 {
   PTRACE(3, "Call\tOnAlerting " << connection);
 
+  BOOL hasMedia = connection.GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, TRUE) != NULL;
+
   inUseFlag.Wait();
 
   for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
     OpalConnection & conn = activeConnections[i];
     if (&connection != &conn)
-      conn.SetAlerting(connection.GetRemotePartyName(), FALSE);
+      conn.SetAlerting(connection.GetRemotePartyName(), hasMedia);
   }
 
   inUseFlag.Signal();
