@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t38.cxx,v $
- * Revision 1.2002  2001/08/01 05:05:26  robertj
+ * Revision 1.2003  2001/08/01 05:07:52  robertj
+ * Major changes to H.323 capabilities, uses OpalMediaFormat for base name.
+ *
+ * Revision 2.1  2001/08/01 05:05:26  robertj
  * Major changes to H.323 capabilities, uses OpalMediaFormat for base name.
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
@@ -96,15 +99,6 @@ PObject * H323_T38Capability::Clone() const
 unsigned H323_T38Capability::GetSubType() const
 {
   return H245_DataApplicationCapability_application::e_t38fax;
-}
-
-
-PString H323_T38Capability::GetFormatName() const
-{
-  static const char * const modes[NumTransportModes] = {
-    "UDP", "TCP2", "TCP"
-  };
-  return PString("T.38-") + modes[mode];
 }
 
 
