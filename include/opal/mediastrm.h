@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2002  2001/08/01 05:51:47  robertj
+ * Revision 1.2003  2001/08/21 01:10:35  robertj
+ * Fixed propagation of sound channel buffers through media stream.
+ *
+ * Revision 2.1  2001/08/01 05:51:47  robertj
  * Made OpalMediaFormatList class global to help with documentation.
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
@@ -487,6 +490,7 @@ class OpalAudioMediaStream : public OpalRawMediaStream
     OpalAudioMediaStream(
       BOOL isSourceStream,      /// Direction of I/O for stream
       unsigned sessionID,       /// Session ID for media stream
+      PINDEX buffers,           /// Number of buffers on sound channel
       PSoundChannel * channel,  /// Audio device to stream to/from
       BOOL autoDelete = TRUE    /// Automatically delete PSoundChannel
     );
@@ -495,7 +499,8 @@ class OpalAudioMediaStream : public OpalRawMediaStream
       */
     OpalAudioMediaStream(
       BOOL isSourceStream,        /// Direction of I/O for stream
-      unsigned sessionID,     /// Session ID for media stream
+      unsigned sessionID,         /// Session ID for media stream
+      PINDEX buffers,             /// Number of buffers on sound channel
       const PString & deviceName  /// Name of audio device to stream to/from
     );
   //@}
@@ -506,11 +511,23 @@ class OpalAudioMediaStream : public OpalRawMediaStream
       */
     virtual OpalMediaFormatList GetMediaFormats() const;
 
+    /**Set the data size in bytes that is expected to be used. Some media
+       streams can make use of this information to perform optimisations.
+
+       The defafault behaviour does nothing.
+      */
+    virtual BOOL SetDataSize(
+      PINDEX dataSize  /// New data size
+    );
+
     /**Indicate if the media stream is synchronous.
        Returns TRUE for LID streams.
       */
     virtual BOOL IsSynchronous() const;
   //@}
+
+  protected:
+    PINDEX soundChannelBuffers;
 };
 
 
