@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2021  2004/04/25 02:53:29  rjongbloed
+ * Revision 1.2022  2004/04/26 06:30:34  rjongbloed
+ * Added ability to specify more than one defualt listener for an endpoint,
+ *   required by SIP which listens on both UDP and TCP.
+ *
+ * Revision 2.20  2004/04/25 02:53:29  rjongbloed
  * Fixed GNU 3.4 warnings
  *
  * Revision 2.19  2004/03/13 06:25:54  rjongbloed
@@ -146,10 +150,14 @@ void OpalEndPoint::PrintOn(ostream & strm) const
 }
 
 
-BOOL OpalEndPoint::StartListeners(const PStringArray & interfaces)
+BOOL OpalEndPoint::StartListeners(const PStringArray & listenerAddresses)
 {
-  if (interfaces.IsEmpty())
-    return StartListener(OpalTransportAddress());
+  PStringArray interfaces = listenerAddresses;
+  if (interfaces.IsEmpty()) {
+    interfaces = GetDefaultListeners();
+    if (interfaces.IsEmpty())
+      return FALSE;
+  }
 
   BOOL startedOne = FALSE;
 
@@ -163,18 +171,23 @@ BOOL OpalEndPoint::StartListeners(const PStringArray & interfaces)
 }
 
 
-BOOL OpalEndPoint::StartListener(const OpalTransportAddress & iface)
+BOOL OpalEndPoint::StartListener(const OpalTransportAddress & listenerAddress)
 {
   OpalListener * listener;
 
-  if (iface.IsEmpty())
-    listener = new OpalListenerTCP(*this, INADDR_ANY, defaultSignalPort);
-  else {
-    listener = iface.CreateListener(*this, OpalTransportAddress::FullTSAP);
-    if (listener == NULL) {
-      PTRACE(1, "OpalEP\tCould not create listener: " << iface);
+  OpalTransportAddress iface = listenerAddress;
+
+  if (iface.IsEmpty()) {
+    PStringArray interfaces = GetDefaultListeners();
+    if (interfaces.IsEmpty())
       return FALSE;
-    }
+    iface = OpalTransportAddress(interfaces[0], defaultSignalPort);
+  }
+
+  listener = iface.CreateListener(*this, OpalTransportAddress::FullTSAP);
+  if (listener == NULL) {
+    PTRACE(1, "OpalEP\tCould not create listener: " << iface);
+    return FALSE;
   }
 
   if (StartListener(listener))
@@ -200,6 +213,15 @@ BOOL OpalEndPoint::StartListener(OpalListener * listener)
 
   listeners.Append(listener);
   return TRUE;
+}
+
+
+PStringArray OpalEndPoint::GetDefaultListeners() const
+{
+  PStringArray listenerAddresses;
+  if (defaultSignalPort != 0)
+    listenerAddresses.AppendString(psprintf("tcp$*:%u", defaultSignalPort));
+  return listenerAddresses;
 }
 
 
