@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lpc10codec.cxx,v $
- * Revision 1.2007  2004/02/19 10:47:02  rjongbloed
+ * Revision 1.2008  2004/09/01 12:21:27  rjongbloed
+ * Added initialisation of H323EndPoints capability table to be all codecs so can
+ *   correctly build remote caps from fqast connect params. This had knock on effect
+ *   with const keywords added in numerous places.
+ *
+ * Revision 2.6  2004/02/19 10:47:02  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.5  2002/11/10 11:33:18  robertj
@@ -133,7 +138,7 @@ OpalMediaFormat const OpalLPC10(
 
 #ifndef NO_H323
 
-H323_LPC10Capability::H323_LPC10Capability(H323EndPoint & endpoint)
+H323_LPC10Capability::H323_LPC10Capability(const H323EndPoint & endpoint)
   : H323NonStandardAudioCapability(7, 4, endpoint,
                                    (const BYTE *)(const char *)OpalLPC10,
                                    OpalLPC10.GetLength())

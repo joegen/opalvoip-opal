@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.h,v $
- * Revision 1.2013  2004/02/19 10:46:43  rjongbloed
+ * Revision 1.2014  2004/09/01 12:21:27  rjongbloed
+ * Added initialisation of H323EndPoints capability table to be all codecs so can
+ *   correctly build remote caps from fqast connect params. This had knock on effect
+ *   with const keywords added in numerous places.
+ *
+ * Revision 2.12  2004/02/19 10:46:43  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.11  2002/11/10 11:33:16  robertj
@@ -316,8 +321,8 @@ class H323Capability : public PObject
        This uses the registration system to create the capability.
       */
     static H323Capability * Create(
-      H323EndPoint & ep,      /// EndPoint capability is created for.
-      const PString & name    /// Name of capability
+      const H323EndPoint & ep, /// EndPoint capability is created for.
+      const PString & name     /// Name of capability
     );
 
     /**Get the default RTP session.
@@ -517,7 +522,7 @@ class H323NonStandardCapabilityInfo
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardCapabilityInfo(
-      H323EndPoint & endpoint,        /// Endpoint to get t35 information
+      const H323EndPoint & endpoint,  /// Endpoint to get t35 information
       const BYTE * dataBlock,         /// Non-Standard data for codec type
       PINDEX dataSize,                /// Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
       PINDEX comparisonOffset = 0,    /// Offset into dataBlock to compare
@@ -831,7 +836,7 @@ class H323NonStandardAudioCapability : public H323AudioCapability,
     H323NonStandardAudioCapability(
       unsigned maxPacketSize,         /// Maximum size of an audio packet in frames
       unsigned desiredPacketSize,     /// Desired transmit size of an audio packet in frames
-      H323EndPoint & endpoint,        /// Endpoint to get t35 information
+      const H323EndPoint & endpoint,  /// Endpoint to get t35 information
       const BYTE * dataBlock = NULL,  /// Non-Standard data for codec type
       PINDEX dataSize = 0,            /// Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
       PINDEX comparisonOffset = 0,    /// Offset into dataBlock to compare
@@ -1082,7 +1087,7 @@ class H323NonStandardVideoCapability : public H323VideoCapability,
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardVideoCapability(
-      H323EndPoint & endpoint,        /// Endpoint to get t35 information
+      const H323EndPoint & endpoint,  /// Endpoint to get t35 information
       const BYTE * dataBlock = NULL,  /// Non-Standard data for codec type
       PINDEX dataSize = 0,            /// Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
       PINDEX comparisonOffset = 0,    /// Offset into dataBlock to compare
@@ -1340,7 +1345,7 @@ class H323NonStandardDataCapability : public H323DataCapability,
       */
     H323NonStandardDataCapability(
       unsigned maxBitRate,            /// Maximum bit rate for data in 100's b/s
-      H323EndPoint & endpoint,        /// Endpoint to get t35 information
+      const H323EndPoint & endpoint,  /// Endpoint to get t35 information
       const BYTE * dataBlock = NULL,  /// Non-Standard data for codec type
       PINDEX dataSize = 0,            /// Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
       PINDEX comparisonOffset = 0,    /// Offset into dataBlock to compare
@@ -1999,10 +2004,10 @@ class H323Capabilities : public PObject
        form of the SetCapability() function.
       */
     PINDEX AddAllCapabilities(
-      H323EndPoint & ep,    /// The endpoint adding the capabilities.
-      PINDEX descriptorNum, /// The member of the capabilityDescriptor to add
-      PINDEX simultaneous,  /// The member of the SimultaneousCapabilitySet to add
-      const PString & name  /// New capabilities name, if using "known" one.
+      const H323EndPoint & ep, /// The endpoint adding the capabilities.
+      PINDEX descriptorNum,    /// The member of the capabilityDescriptor to add
+      PINDEX simultaneous,     /// The member of the SimultaneousCapabilitySet to add
+      const PString & name     /// New capabilities name, if using "known" one.
     );
 
     /**Add a codec to the capabilities table. This will assure that the
@@ -2227,7 +2232,7 @@ class H323CapabilityRegistration : public PCaselessString
     H323CapabilityRegistration(
       const char * name
     );
-    virtual H323Capability * Create(H323EndPoint & ep) const = 0;
+    virtual H323Capability * Create(const H323EndPoint & ep) const = 0;
 
   protected:
     static PMutex & GetMutex();
@@ -2247,9 +2252,9 @@ class H323CapabilityRegistration : public PCaselessString
 class cls##_Registration : public H323CapabilityRegistration { \
   public: \
     cls##_Registration() : H323CapabilityRegistration(name) { } \
-    H323Capability * Create(H323EndPoint & ep) const; \
+    H323Capability * Create(const H323EndPoint & ep) const; \
 } cls##_Registration_Instance; \
-H323Capability * cls##_Registration::Create(H323EndPoint & epvar) const
+H323Capability * cls##_Registration::Create(const H323EndPoint & epvar) const
 
 #define H323_NO_EP_VAR
 

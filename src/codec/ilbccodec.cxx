@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ilbccodec.cxx,v $
- * Revision 1.2003  2004/03/11 06:54:28  csoutheren
+ * Revision 1.2004  2004/09/01 12:21:27  rjongbloed
+ * Added initialisation of H323EndPoints capability table to be all codecs so can
+ *   correctly build remote caps from fqast connect params. This had knock on effect
+ *   with const keywords added in numerous places.
+ *
+ * Revision 2.2  2004/03/11 06:54:28  csoutheren
  * Added ability to disable SIP or H.323 stacks
  *
  * Revision 2.1  2004/02/19 10:47:02  rjongbloed
@@ -81,7 +86,7 @@ OpalMediaFormat const OpaliLBC_15k2(OPAL_ILBC_15k2,
 
 #ifndef NO_H323
 
-H323_iLBC_Capability::H323_iLBC_Capability(H323EndPoint & endpoint, Speed s)
+H323_iLBC_Capability::H323_iLBC_Capability(const H323EndPoint & endpoint, Speed s)
   : H323NonStandardAudioCapability(7, s == e_13k3 ? 3 : 4, endpoint,
                                    (const BYTE *)(s == e_13k3 ? OPAL_ILBC_13k3 : OPAL_ILBC_15k2))
 {

@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lpc10codec.h,v $
- * Revision 1.2007  2002/11/10 23:22:17  robertj
+ * Revision 1.2008  2004/09/01 12:21:27  rjongbloed
+ * Added initialisation of H323EndPoints capability table to be all codecs so can
+ *   correctly build remote caps from fqast connect params. This had knock on effect
+ *   with const keywords added in numerous places.
+ *
+ * Revision 2.6  2002/11/10 23:22:17  robertj
  * Cosmetic change
  *
  * Revision 2.5  2002/11/10 11:33:16  robertj
@@ -121,7 +126,7 @@ class H323_LPC10Capability : public H323NonStandardAudioCapability
     /**Create a new LPC-10 capability.
      */
     H323_LPC10Capability(
-      H323EndPoint & endpoint   // Endpoint to get NonStandardInfo from.
+      const H323EndPoint & endpoint   // Endpoint to get NonStandardInfo from.
     );
   //@}
 
