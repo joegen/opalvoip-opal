@@ -1,2 +1,3 @@
 *.opt *.plg *.ncb
 lib html
+.asnparser.version
