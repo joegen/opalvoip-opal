@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lpc10codec.h,v $
- * Revision 1.2008  2004/09/01 12:21:27  rjongbloed
+ * Revision 1.2009  2005/02/21 12:19:45  rjongbloed
+ * Added new "options list" to the OpalMediaFormat class.
+ *
+ * Revision 2.7  2004/09/01 12:21:27  rjongbloed
  * Added initialisation of H323EndPoints capability table to be all codecs so can
  *   correctly build remote caps from fqast connect params. This had knock on effect
  *   with const keywords added in numerous places.
@@ -106,8 +109,6 @@ struct lpc10_encoder_state;
 struct lpc10_decoder_state;
 
 #define OPAL_LPC10 "LPC-10"
-
-extern OpalMediaFormat const OpalLPC10;
 
 
 ///////////////////////////////////////////////////////////////////////////////

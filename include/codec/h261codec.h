@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.h,v $
- * Revision 1.2013  2004/03/11 06:54:25  csoutheren
+ * Revision 1.2014  2005/02/21 12:19:45  rjongbloed
+ * Added new "options list" to the OpalMediaFormat class.
+ *
+ * Revision 2.12  2004/03/11 06:54:25  csoutheren
  * Added ability to disable SIP or H.323 stacks
  *
  * Revision 2.11  2004/02/19 10:46:43  rjongbloed
@@ -205,13 +208,7 @@
 class P64Decoder;
 class P64Encoder;
 
-#define OPAL_H261      "H.261"
-#define OPAL_H261_CIF  "H.261-CIF"
-#define OPAL_H261_QCIF "H.261-QCIF"
-
-extern OpalMediaFormat const OpalH261;
-extern OpalMediaFormat const OpalH261_CIF;
-extern OpalMediaFormat const OpalH261_QCIF;
+#define OPAL_H261 "H.261"
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -344,9 +341,9 @@ class H323_H261Capability : public H323VideoCapability
 #define OPAL_REGISTER_H261_H323 \
   H323_REGISTER_CAPABILITY_FUNCTION(H323_H261_QCIF_CIF, OPAL_H261, H323_NO_EP_VAR) \
     { return new H323_H261Capability(2, 4, FALSE, FALSE, 6217); } \
-  H323_REGISTER_CAPABILITY_FUNCTION(H323_H261_CIF, OPAL_H261_CIF, H323_NO_EP_VAR) \
+  H323_REGISTER_CAPABILITY_FUNCTION(H323_H261_CIF, OPAL_H261, H323_NO_EP_VAR) \
     { return new H323_H261Capability(0, 4, FALSE, FALSE, 6217); } \
-  H323_REGISTER_CAPABILITY_FUNCTION(H323_H261_QCIF, OPAL_H261_QCIF, H323_NO_EP_VAR) \
+  H323_REGISTER_CAPABILITY_FUNCTION(H323_H261_QCIF, OPAL_H261, H323_NO_EP_VAR) \
     { return new H323_H261Capability(2, 0, FALSE, FALSE, 6217); }
 
 #else // ifndef NO_H323
