@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: guid.cxx,v $
- * Revision 1.2004  2002/11/10 11:33:19  robertj
+ * Revision 1.2005  2004/02/19 10:47:06  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.3  2002/11/10 11:33:19  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.2  2002/09/04 06:01:49  robertj
@@ -35,6 +38,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.15  2003/04/15 03:04:08  robertj
+ * Fixed string constructor being able to build non null GUID.
  *
  * Revision 1.14  2002/10/10 05:33:18  robertj
  * VxWorks port, thanks Martijn Roest
@@ -195,7 +201,7 @@ OpalGloballyUniqueID::OpalGloballyUniqueID()
 OpalGloballyUniqueID::OpalGloballyUniqueID(const char * cstr)
   : PBYTEArray(GUID_SIZE)
 {
-  if (cstr != NULL && *cstr == '\0') {
+  if (cstr != NULL && *cstr != '\0') {
     PStringStream strm(cstr);
     ReadFrom(strm);
   }
