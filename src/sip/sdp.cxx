@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2012  2004/02/09 13:13:02  rjongbloed
+ * Revision 1.2013  2004/03/22 11:32:42  rjongbloed
+ * Added new codec type for 16 bit Linear PCM as must distinguish between the internal
+ *   format used by such things as the sound card and the RTP payload format which
+ *   is always big endian.
+ *
+ * Revision 2.11  2004/02/09 13:13:02  rjongbloed
  * Added debug string output for media type enum.
  *
  * Revision 2.10  2004/02/07 02:18:19  rjongbloed
@@ -465,9 +470,12 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
 
 void SDPMediaDescription::AddMediaFormats(const OpalMediaFormatList & mediaFormats, unsigned session)
 {
-  for (PINDEX i = 0; i < mediaFormats.GetSize(); i++)
-    if (mediaFormats[i].GetDefaultSessionID() == session)
-    AddMediaFormat(mediaFormats[i]);
+  for (PINDEX i = 0; i < mediaFormats.GetSize(); i++) {
+    OpalMediaFormat mediaFormat = mediaFormats[i];
+    if (mediaFormat.GetDefaultSessionID() == session &&
+        mediaFormat.GetPayloadType() != RTP_DataFrame::IllegalPayloadType)
+      AddMediaFormat(mediaFormat);
+  }
 }
 
 
