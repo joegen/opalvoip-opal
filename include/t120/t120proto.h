@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: t120proto.h,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 1.2002  2001/08/01 05:06:10  robertj
+ * Major changes to H.323 capabilities, uses OpalMediaFormat for base name.
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.1  2001/07/17 04:44:29  robertj
@@ -38,6 +41,9 @@
 #ifdef __GNUC__
 #pragma interface
 #endif
+
+
+#include <opal/mediafmt.h>
 
 
 class OpalTransport;
@@ -58,6 +64,9 @@ class OpalT120Protocol : public PObject
     enum {
       DefaultTcpPort = 1503
     };
+
+    static OpalMediaFormat const MediaFormat;
+
 
   /**@name Construction */
   //@{
