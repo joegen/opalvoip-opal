@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.h,v $
- * Revision 1.2009  2003/03/24 07:18:29  robertj
+ * Revision 1.2010  2004/02/19 10:46:44  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.8  2003/03/24 07:18:29  robertj
  * Added registration system for LIDs so can work with various LID types by
  *   name instead of class instance.
  *
@@ -55,6 +58,15 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.56  2003/04/29 08:29:13  robertj
+ * Cleaned up documentation for new wink duration functions.
+ *
+ * Revision 1.55  2003/04/28 01:47:52  dereks
+ * Add ability to set/get wink duration for ixj device.
+ *
+ * Revision 1.54  2003/03/05 06:26:40  robertj
+ * Added function to play a WAV file to LID, thanks Pietro Ravasio
  *
  * Revision 1.53  2002/11/05 04:26:48  robertj
  * Imported RingLine() by array from OPAL.
@@ -670,9 +682,23 @@ class OpalLineInterfaceDevice : public PObject
       */
     virtual BOOL SetAEC(
       unsigned line,    /// Number of line
-      AECLevels level  /// AEC level
+      AECLevels level   /// AEC level
     );
 
+    /**Get wink detect minimum duration.
+       This is the signal used by telcos to end PSTN call.
+      */
+    virtual unsigned GetWinkDuration(
+      unsigned line    /// Number of line
+    );
+
+    /**Set wink detect minimum duration.
+       This is the signal used by telcos to end PSTN call.
+      */
+    virtual BOOL SetWinkDuration(
+      unsigned line,        /// Number of line
+      unsigned winkDuration /// New minimum duration
+    );
 
     /**Get voice activity detection.
        Note, not all devices, or selected codecs, may support this function.
@@ -868,6 +894,18 @@ class OpalLineInterfaceDevice : public PObject
       unsigned line   /// Number of line
     );
 
+    /**Play a wav file
+      */
+    virtual BOOL PlayAudio(
+      unsigned line,            /// Number of line
+      const PString & filename  /// File Name
+    );
+    
+    /**Stop playing the Wave File
+      */
+    virtual BOOL StopAudio(
+      unsigned line   ///Number of line
+    );
 
 
     /**Dial a number on network line.

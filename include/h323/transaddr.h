@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transaddr.h,v $
- * Revision 1.2006  2002/11/10 11:33:17  robertj
+ * Revision 1.2007  2004/02/19 10:46:44  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.5  2002/11/10 11:33:17  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.4  2002/09/16 02:52:34  robertj
@@ -111,7 +114,54 @@ class H323TransportAddress : public OpalTransportAddress
 };
 
 
-typedef PArray<H323TransportAddress> H323TransportAddressArray;
+PDECLARE_ARRAY(H323TransportAddressArray, H323TransportAddress)
+  public:
+    H323TransportAddressArray(
+      const OpalTransportAddress & address
+    ) { AppendAddress(address); }
+    H323TransportAddressArray(
+      const H323TransportAddress & address
+    ) { AppendAddress(address); }
+    H323TransportAddressArray(
+      const H225_ArrayOf_TransportAddress & addresses
+    );
+    H323TransportAddressArray(
+      const OpalTransportAddressArray & array
+    ) { AppendStringCollection(array); }
+    H323TransportAddressArray(
+      const PStringArray & array
+    ) { AppendStringCollection(array); }
+    H323TransportAddressArray(
+      const PStringList & list
+    ) { AppendStringCollection(list); }
+    H323TransportAddressArray(
+      const PSortedStringList & list
+    ) { AppendStringCollection(list); }
+
+    void AppendString(
+      const char * address
+    );
+    void AppendString(
+      const PString & address
+    );
+    void AppendAddress(
+      const H323TransportAddress & address
+    );
+
+  protected:
+    void AppendStringCollection(
+      const PCollection & coll
+    );
+};
+
+
+/**Set the PDU field for the list of transport addresses
+  */
+void H323SetTransportAddresses(
+  const H323Transport & associatedTransport,   /// Transport for NAT address translation
+  const H323TransportAddressArray & addresses, /// Addresses to set
+  H225_ArrayOf_TransportAddress & pdu          /// List of PDU transport addresses
+);
 
 
 #endif // __H323_TRANSADDR_H

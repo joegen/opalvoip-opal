@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2016  2003/03/17 10:26:59  robertj
+ * Revision 1.2017  2004/02/19 10:46:44  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.15  2003/03/17 10:26:59  robertj
  * Added video support.
  *
  * Revision 2.14  2003/03/06 03:57:47  robertj
@@ -185,6 +188,14 @@ class OpalEndPoint : public PObject
       */
     BOOL RemoveListener(
       OpalListener * listener /// Transport dependent listener.
+    );
+
+    /**Return a list of the transport addresses for all listeners on this endpoint
+      */
+    OpalTransportAddressArray GetInterfaceAddresses(
+      BOOL excludeLocalHost = TRUE,       /// Flag to exclude 127.0.0.1
+      OpalTransport * associatedTransport = NULL
+                          /// Associated transport for precedence and translation
     );
 
     /**Handle new incoming connection.

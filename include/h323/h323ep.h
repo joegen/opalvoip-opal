@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2021  2003/03/06 03:57:46  robertj
+ * Revision 1.2022  2004/02/19 10:46:44  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.20  2003/03/06 03:57:46  robertj
  * IVR support (work in progress) requiring large changes everywhere.
  *
  * Revision 2.19  2003/01/07 04:39:52  robertj
@@ -92,6 +95,50 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.56  2003/12/29 04:58:55  csoutheren
+ * Added callbacks on H323EndPoint when gatekeeper discovery succeeds or fails
+ *
+ * Revision 1.55  2003/12/28 02:52:15  csoutheren
+ * Added virtual to a few functions
+ *
+ * Revision 1.54  2003/12/28 02:38:14  csoutheren
+ * Added H323EndPoint::OnOutgoingCall
+ *
+ * Revision 1.53  2003/12/28 00:07:10  csoutheren
+ * Added callbacks on H323EndPoint when gatekeeper registration succeeds or fails
+ *
+ * Revision 1.52  2003/04/24 01:49:33  dereks
+ * Add ability to set no media timeout interval
+ *
+ * Revision 1.51  2003/04/10 09:39:48  robertj
+ * Added associated transport to new GetInterfaceAddresses() function so
+ *   interfaces can be ordered according to active transport links. Improves
+ *   interoperability.
+ *
+ * Revision 1.50  2003/04/10 01:05:11  craigs
+ * Added functions to access to lists of interfaces
+ *
+ * Revision 1.49  2003/04/07 13:09:25  robertj
+ * Added ILS support to callto URL parsing in MakeCall(), ie can now call hosts
+ *   registered with an ILS directory.
+ *
+ * Revision 1.48  2003/02/13 00:11:31  robertj
+ * Added missing virtual for controlling call transfer, thanks Andrey Pinaev
+ *
+ * Revision 1.47  2003/02/09 00:48:06  robertj
+ * Added function to return if registered with gatekeeper.
+ *
+ * Revision 1.46  2003/02/04 07:06:41  robertj
+ * Added STUN support.
+ *
+ * Revision 1.45  2003/01/26 05:57:58  robertj
+ * Changed ParsePartyName so will accept addresses of the form
+ *   alias@gk:address which will do an LRQ call to "address" using "alias"
+ *   to determine the IP address to connect to.
+ *
+ * Revision 1.44  2003/01/23 02:36:30  robertj
+ * Increased (and made configurable) timeout for H.245 channel TCP connection.
  *
  * Revision 1.43  2002/11/28 01:19:55  craigs
  * Added virtual to several functions
@@ -270,6 +317,8 @@ class H235SecurityInfo;
 class H323Gatekeeper;
 class H323SignalPDU;
 class H323ServiceControlSession;
+
+class PSTUNClient;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -558,6 +607,10 @@ class H323EndPoint : public OpalEndPoint
      */
     H323Gatekeeper * GetGatekeeper() const { return gatekeeper; }
 
+    /**Return if endpoint is registered with gatekeeper.
+      */
+    BOOL IsRegisteredWithGatekeeper() const;
+
     /**Unregister and delete the gatekeeper we are registered with.
        The return value indicates FALSE if there was an error during the
        unregistration. However the gatekeeper is still removed and its
@@ -580,6 +633,22 @@ class H323EndPoint : public OpalEndPoint
     /**Create a list of authenticators for gatekeeper.
       */
     virtual H235Authenticators CreateAuthenticators();
+
+    /**Called when the gatekeeper sends a GatekeeperConfirm
+      */
+    virtual void  OnGatekeeperConfirm();
+
+    /**Called when the gatekeeper sends a GatekeeperReject
+      */
+    virtual void  OnGatekeeperReject();
+
+    /**Called when the gatekeeper sends a RegistrationConfirm
+      */
+    virtual void OnRegistrationConfirm();
+
+    /**Called when the gatekeeper sends a RegistrationReject
+      */
+    virtual void  OnRegistrationReject();
   //@}
 
   /**@name Connection management */
@@ -670,11 +739,11 @@ class H323EndPoint : public OpalEndPoint
        where the default alias is the same as the host, the default transport
        is "ip" and the default port is 1720.
       */
-    void ParsePartyName(
+    BOOL ParsePartyName(
       const PString & party,          /// Party name string.
       PString & alias,                /// Parsed alias name
       H323TransportAddress & address  /// Parsed transport address
-    ) const;
+    );
 
     /**Find a connection that uses the specified token.
        This searches the endpoint for the connection that contains the token
@@ -707,11 +776,22 @@ class H323EndPoint : public OpalEndPoint
       H323SignalPDU & alertingPDU       /// Alerting PDU to send
     );
 
+    /**Called when an outgoing call connects
+       If FALSE is returned the connection is aborted and a Release Complete
+       PDU is sent.
+
+       The default behaviour simply returns TRUE.
+      */
+    virtual BOOL OnOutgoingCall(
+        H323Connection & conn, 
+        const H323SignalPDU & connectPDU
+    );
+
     /**Handle a connection transfer.
        This gives the application an opportunity to abort the transfer.
        The default behaviour just returns TRUE.
       */
-    BOOL OnCallTransferInitiate(
+    virtual BOOL OnCallTransferInitiate(
       H323Connection & connection,    /// Connection to transfer
       const PString & remoteParty     /// Party transferring to.
     );
@@ -945,6 +1025,16 @@ class H323EndPoint : public OpalEndPoint
      */
     const PStringList & GetAliasNames() const { return localAliasNames; }
 
+    /**Get the default ILS server to use for user lookup.
+      */
+    const PString & GetDefaultILSServer() const { return manager.GetDefaultILSServer(); }
+
+    /**Set the default ILS server to use for user lookup.
+      */
+    void SetDefaultILSServer(
+      const PString & server
+    ) { manager.SetDefaultILSServer(server); }
+
     /**Get the default fast start mode.
       */
     BOOL IsFastStartDisabled() const
@@ -1082,6 +1172,52 @@ class H323EndPoint : public OpalEndPoint
      */
     BOOL IsMCU() const;
 
+    /**Get the default maximum audio jitter delay parameter.
+       Defaults to 50ms
+     */
+    unsigned GetMinAudioJitterDelay() const { return manager.GetMinAudioJitterDelay(); }
+
+    /**Get the default maximum audio delay jitter parameter.
+       Defaults to 250ms.
+     */
+    unsigned GetMaxAudioJitterDelay() const { return manager.GetMaxAudioJitterDelay(); }
+
+    /**Set the maximum audio delay jitter parameter.
+     */
+    void SetAudioJitterDelay(
+      unsigned minDelay,   // New minimum jitter buffer delay in milliseconds
+      unsigned maxDelay    // New maximum jitter buffer delay in milliseconds
+    ) { manager.SetAudioJitterDelay(minDelay, maxDelay); }
+
+    /**Get the initial bandwidth parameter.
+     */
+    unsigned GetInitialBandwidth() const { return initialBandwidth; }
+
+    /**Get the initial bandwidth parameter.
+     */
+    void SetInitialBandwidth(unsigned bandwidth) { initialBandwidth = bandwidth; }
+
+    /**Return the STUN server to use.
+       Returns NULL if address is a local address as per IsLocalAddress().
+       Always returns the STUN server if address is zero.
+       Note, the pointer is NOT to be deleted by the user.
+      */
+    PSTUNClient * GetSTUN(
+      const PIPSocket::Address & address = 0
+    ) const { manager.GetSTUN(address); }
+
+    /**Set the STUN server address, is of the form host[:port]
+      */
+    void SetSTUNServer(
+      const PString & server
+    ) { manager.SetSTUNServer(server); }
+
+    /**Determine if the address is "local", ie does not need STUN
+     */
+    virtual BOOL IsLocalAddress(
+      const PIPSocket::Address & remoteAddress
+    ) const { return manager.IsLocalAddress(remoteAddress); }
+
     /**Provide TCP address translation hook
      */
     virtual void TranslateTCPAddress(
@@ -1089,9 +1225,69 @@ class H323EndPoint : public OpalEndPoint
       const PIPSocket::Address & remoteAddr
     );
 
+    /**Get the TCP port number base for H.245 channels
+     */
+    WORD GetTCPPortBase() const { return manager.GetTCPPortBase(); }
+
+    /**Get the TCP port number base for H.245 channels.
+     */
+    WORD GetTCPPortMax() const { return manager.GetTCPPortMax(); }
+
+    /**Set the TCP port number base and max for H.245 channels.
+     */
+    void SetTCPPorts(unsigned tcpBase, unsigned tcpMax) { manager.SetTCPPorts(tcpBase, tcpMax); }
+
+    /**Get the next TCP port number for H.245 channels
+     */
+    WORD GetNextTCPPort() { return manager.GetNextTCPPort(); }
+
+    /**Get the UDP port number base for RAS channels
+     */
+    WORD GetUDPPortBase() const { return manager.GetUDPPortBase(); }
+
+    /**Get the UDP port number base for RAS channels.
+     */
+    WORD GetUDPPortMax() const { return manager.GetUDPPortMax(); }
+
+    /**Set the TCP port number base and max for H.245 channels.
+     */
+    void SetUDPPorts(unsigned udpBase, unsigned udpMax) { manager.SetUDPPorts(udpBase, udpMax); }
+
+    /**Get the next UDP port number for RAS channels
+     */
+    WORD GetNextUDPPort() { return manager.GetNextUDPPort(); }
+
+    /**Get the UDP port number base for RTP channels.
+     */
+    WORD GetRtpIpPortBase() const { return manager.GetRtpIpPortBase(); }
+
+    /**Get the max UDP port number for RTP channels.
+     */
+    WORD GetRtpIpPortMax() const { return manager.GetRtpIpPortMax(); }
+
+    /**Set the UDP port number base and max for RTP channels.
+     */
+    void SetRtpIpPorts(unsigned udpBase, unsigned udpMax) { manager.SetRtpIpPorts(udpBase, udpMax); }
+
+    /**Get the UDP port number pair for RTP channels.
+     */
+    WORD GetRtpIpPortPair() { return manager.GetRtpIpPortPair(); }
+
+    /**Get the IP Type Of Service byte for RTP channels.
+     */
+    BYTE GetRtpIpTypeofService() const { return manager.GetRtpIpTypeofService(); }
+
+    /**Set the IP Type Of Service byte for RTP channels.
+     */
+    void SetRtpIpTypeofService(unsigned tos) { manager.SetRtpIpTypeofService(tos); }
+
     /**Get the default timeout for calling another endpoint.
      */
     const PTimeInterval & GetSignallingChannelCallTimeout() const { return signallingChannelCallTimeout; }
+
+    /**Get the default timeout for incoming H.245 connection.
+     */
+    const PTimeInterval & GetControlChannelStartTimeout() const { return controlChannelStartTimeout; }
 
     /**Get the default timeout for waiting on an end session.
      */
@@ -1131,7 +1327,13 @@ class H323EndPoint : public OpalEndPoint
 
     /**Get the amount of time with no media that should cause call to clear
      */
-    const PTimeInterval & GetNoMediaTimeout() const { return noMediaTimeout; }
+    const PTimeInterval & GetNoMediaTimeout() const { return manager.GetNoMediaTimeout(); }
+
+    /**Set the amount of time with no media that should cause call to clear
+     */
+    BOOL SetNoMediaTimeout(
+      const PTimeInterval & newInterval  /// New timeout for media
+    ) { return manager.SetNoMediaTimeout(newInterval); }
 
     /**Get the default timeout for GatekeeperRequest and Gatekeeper discovery.
      */
@@ -1223,10 +1425,11 @@ class H323EndPoint : public OpalEndPoint
     WORD          manufacturerCode;
     TerminalTypes terminalType;
 
-    BOOL     clearCallOnRoundTripFail;
+    BOOL          clearCallOnRoundTripFail;
 
     // Some more configuration variables, rarely changed.
     PTimeInterval signallingChannelCallTimeout;
+    PTimeInterval controlChannelStartTimeout;
     PTimeInterval endSessionTimeout;
     PTimeInterval masterSlaveDeterminationTimeout;
     unsigned      masterSlaveDeterminationRetries;
@@ -1235,7 +1438,6 @@ class H323EndPoint : public OpalEndPoint
     PTimeInterval requestModeTimeout;
     PTimeInterval roundTripDelayTimeout;
     PTimeInterval roundTripDelayRate;
-    PTimeInterval noMediaTimeout;
     PTimeInterval gatekeeperRequestTimeout;
     unsigned      gatekeeperRequestRetries;
     PTimeInterval rasRequestTimeout;
