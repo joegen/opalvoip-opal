@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2028  2002/04/10 03:11:29  robertj
+ * Revision 1.2029  2002/04/15 08:51:23  robertj
+ * Fixed correct setting of jitter buffer size in RTP media stream.
+ *
+ * Revision 2.27  2002/04/10 03:11:29  robertj
  * Moved code for handling media bypass address resolution into ancestor as
  *   now done ths same way in both SIP and H.323.
  *
@@ -3567,7 +3570,8 @@ OpalMediaStream * H323Connection::CreateMediaStream(BOOL isSource, unsigned sess
   if (isSource || fastStartedTransmitMediaStream == NULL) {
     if (ownerCall.IsMediaBypassPossible(*this, sessionID))
       return new OpalNullMediaStream(isSource, sessionID);
-    return new OpalRTPMediaStream(isSource, *GetSession(sessionID));
+    return new OpalRTPMediaStream(isSource, *GetSession(sessionID),
+                                  endpoint.GetManager().GetMaxAudioDelayJitter());
   }
 
   OpalMediaStream * stream = fastStartedTransmitMediaStream;
