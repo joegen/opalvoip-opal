@@ -1,5 +1,5 @@
 <!DOCTYPE UI><UI version="3.0" stdsetdef="1">
-<class>MainWindow</class>
+<class>MainWindowBase</class>
 <widget class="QMainWindow">
     <property name="name">
         <cstring>MainWindow</cstring>
@@ -8,8 +8,8 @@
         <rect>
             <x>0</x>
             <y>0</y>
-            <width>579</width>
-            <height>327</height>
+            <width>707</width>
+            <height>549</height>
         </rect>
     </property>
     <property name="caption">
@@ -24,94 +24,34 @@
     <property name="opaqueMoving">
         <bool>true</bool>
     </property>
-    <widget class="QListView">
-        <column>
-            <property name="text">
-                <string>Number</string>
-            </property>
-            <property name="clickable">
-                <bool>true</bool>
-            </property>
-            <property name="resizeable">
-                <bool>true</bool>
-            </property>
-        </column>
-        <column>
-            <property name="text">
-                <string>Address</string>
-            </property>
-            <property name="clickable">
-                <bool>true</bool>
-            </property>
-            <property name="resizeable">
-                <bool>true</bool>
-            </property>
-        </column>
-        <column>
-            <property name="text">
-                <string>Comment</string>
-            </property>
-            <property name="clickable">
-                <bool>true</bool>
-            </property>
-            <property name="resizeable">
-                <bool>true</bool>
-            </property>
-        </column>
-    <item>
-        <property name="text">
-            <string>New Speed Dial</string>
-        </property>
-        <property name="text">
-            <string></string>
-        </property>
-        <property name="text">
-            <string></string>
-        </property>
-        <property name="pixmap">
-            <pixmap></pixmap>
-        </property>
-        <property name="pixmap">
-            <pixmap></pixmap>
-        </property>
-        <property name="pixmap">
-            <pixmap></pixmap>
-        </property>
-    </item>
-        <property name="name">
-            <cstring>SpeedDials</cstring>
-        </property>
-        <property name="geometry">
-            <rect>
-                <x>0</x>
-                <y>-1</y>
-                <width>571</width>
-                <height>210</height>
-            </rect>
-        </property>
-        <property name="sizePolicy">
-            <sizepolicy>
-                <hsizetype>4</hsizetype>
-                <vsizetype>4</vsizetype>
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-            </sizepolicy>
-        </property>
-        <property name="resizePolicy">
-            <enum>AutoOneFit</enum>
-        </property>
-    </widget>
 </widget>
 <menubar>
     <property name="name">
         <cstring>menubar</cstring>
     </property>
-    <item text="&amp;Call" name="fileMenu">
-        <action name="makeCall"/>
-        <action name="optionsAction"/>
+    <item text="Call" name="PopupMenu_2">
         <separator/>
+        <action name="callMakeCallAction"/>
         <separator/>
-        <action name="fileExitAction"/>
+        <action name="callAcceptCallAction"/>
+        <action name="callRefuseCallAction"/>
+        <separator/>
+        <action name="callSendIndicationAction"/>
+        <action name="callShowStatisticsAction"/>
+        <separator/>
+        <action name="callMuteMicrophoneAction"/>
+        <action name="callMuteSpeakerAction"/>
+        <separator/>
+        <action name="callRecordMedia"/>
+        <separator/>
+        <action name="callExitAction"/>
+    </item>
+    <item text="View" name="PopupMenu_3">
+        <action name="viewOptionsAction"/>
+        <separator/>
+        <action name="viewSpeeddialsAction"/>
+        <action name="viewLocalVideoAction"/>
+        <action name="viewRemoteVideoAction"/>
     </item>
     <item text="&amp;Help" name="helpMenu">
         <action name="helpContentsAction"/>
@@ -121,28 +61,11 @@
     </item>
 </menubar>
 <toolbars>
-    <toolbar dock="2">
-        <property name="name">
-            <cstring>toolBar</cstring>
-        </property>
-        <property name="resizeEnabled">
-            <bool>false</bool>
-        </property>
-        <property name="verticallyStretchable">
-            <bool>false</bool>
-        </property>
-        <property name="label">
-            <string>Tools</string>
-        </property>
-        <action name="makeCall"/>
-        <action name="optionsAction"/>
-        <action name="fileExitAction"/>
-    </toolbar>
 </toolbars>
 <actions>
     <action>
         <property name="name">
-            <cstring>fileExitAction</cstring>
+            <cstring>callExitAction</cstring>
         </property>
         <property name="text">
             <string>Exit</string>
@@ -212,42 +135,148 @@
     </action>
     <action>
         <property name="name">
-            <cstring>makeCall</cstring>
+            <cstring>callMakeCallAction</cstring>
         </property>
         <property name="text">
-            <string>Call</string>
+            <string>Action</string>
         </property>
         <property name="menuText">
-            <string>Make &amp;Call...</string>
+            <string>Make Call</string>
+        </property>
+        <property name="toolTip">
+            <string>Make Call</string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>callAcceptCallAction</cstring>
+        </property>
+        <property name="text">
+            <string>Accept Call</string>
+        </property>
+        <property name="menuText">
+            <string>Accept Call</string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>callRefuseCallAction</cstring>
+        </property>
+        <property name="text">
+            <string>Refuse Call</string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>callSendIndicationAction</cstring>
+        </property>
+        <property name="text">
+            <string>Send Indication</string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>callShowStatisticsAction</cstring>
+        </property>
+        <property name="text">
+            <string>Show Statstics</string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>callMuteMicrophoneAction</cstring>
+        </property>
+        <property name="text">
+            <string>Mute Microphone</string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>callMuteSpeakerAction</cstring>
+        </property>
+        <property name="text">
+            <string>Mute Speaker</string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>callRecordMedia</cstring>
+        </property>
+        <property name="toggleAction">
+            <bool>true</bool>
+        </property>
+        <property name="text">
+            <string>Record Media</string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>viewOptionsAction</cstring>
+        </property>
+        <property name="text">
+            <string>Options</string>
+        </property>
+        <property name="menuText">
+            <string>Options...</string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>viewLocalVideoAction</cstring>
+        </property>
+        <property name="text">
+            <string>Local Video</string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>viewRemoteVideoAction</cstring>
+        </property>
+        <property name="text">
+            <string>Remote Video</string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>viewSpeeddialsAction</cstring>
+        </property>
+        <property name="text">
+            <string>Speed Dials</string>
         </property>
     </action>
 </actions>
 <connections>
     <connection>
-        <sender>helpAboutAction</sender>
+        <sender>viewSpeeddialsAction</sender>
         <signal>activated()</signal>
         <receiver>MainWindow</receiver>
-        <slot>helpAbout()</slot>
+        <slot>OnViewOptions()</slot>
     </connection>
     <connection>
-        <sender>optionsAction</sender>
+        <sender>viewOptionsAction</sender>
         <signal>activated()</signal>
         <receiver>MainWindow</receiver>
-        <slot>optionsConfiguration()</slot>
+        <slot>OnViewOptions()</slot>
     </connection>
     <connection>
-        <sender>fileExitAction</sender>
+        <sender>callExitAction</sender>
         <signal>activated()</signal>
         <receiver>MainWindow</receiver>
         <slot>close()</slot>
+    </connection>
+    <connection>
+        <sender>callMakeCallAction</sender>
+        <signal>activated()</signal>
+        <receiver>MainWindow</receiver>
+        <slot>OnMakeCall()</slot>
     </connection>
 </connections>
 <includes>
     <include location="local" impldecl="in implementation">mainwindow.ui.h</include>
 </includes>
 <slots>
-    <slot>optionsConfiguration()</slot>
-    <slot>helpAbout()</slot>
+    <slot>OnMakeCall()</slot>
+    <slot>OnViewOptions()</slot>
 </slots>
 <pixmapinproject/>
 <layoutdefaults spacing="6" margin="11"/>
