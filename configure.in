@@ -85,39 +85,17 @@ fi
 echo "PWLib prefix set to.... $PWLIBDIR"
 AC_SUBST(PWLIBDIR)
 
-dnl ########################################################################
-dnl look for avcodec
-
-dnl MSWIN ffmpeg AVCODEC Library,avcodec,OPAL_AVCODEC,1,@OPAL_AVCODEC_DIR@,avcodec.h,,..\ffmpeg\libavcodec\,..\external\ffmpeg\libavcodec\,\ffmpeg\libavcodec\,c:\ffmpeg\libavcodec\
-
-AC_CHECK_HEADERS(avcodec.h, OPAL_AVCODEC=1)
-if test "${OPAL_AVCODEC:-unset}" != "unset" ; then
-  AC_CHECK_LIB(avcodec, ldap_open, OPAL_AVCODEC=1, OPAL_AVCODEC=)
-else
-  AC_CHECK_FILE(/usr/local/include/ffmpeg/avcodec.h, OPAL_AVCODEC=1)
-  if test "${OPAL_AVCODEC:-unset}" != "unset" ; then
-    AVCODECINCLUDEDIR=/usr/local/include/ffmpeg
-    AVCODECLIBDIR=/usr/local/lib
-  fi
-fi
-
-if test "${OPAL_AVCODEC:-unset}" != "unset" ; then
-  AC_SUBST(OPAL_AVCODEC, 1)
-  AC_DEFINE(OPAL_AVCODEC, 1, "ffmpeg AVCodec found")
-  if test ${AVCODECINCLUDEDIR:-unset} != "unset" ; then
-    STDCCFLAGS="$STDCCFLAGS -I${AVCODECINCLUDEDIR}"
-  fi
-  if test ${AVCODECLIBDIR:-unset} != "unset" ; then
-    LDFLAGS="$LDFLAGS -L${AVCODECLIBDIR}"
-  fi
-  ENDLDLIBS="$ENDLDLIBS -lavcodec"
-fi
-AC_SUBST(OPAL_AVCODEC)
 
 dnl ########################################################################
 dnl Look for G.729 codec
 
-dnl MSWIN Voice Age G.729A,vag729,VOICE_AGE_G729A,1,@VOICE_AGE_DIR@,va_g729a.h,,..\va_g729\,..\external\va_g729,\va_g729,c:\va_g729
+dnl MSWIN_DISPLAY     vag729,Voice Age G.729A
+dnl MSWIN_CHECK_FILE  vag729,va_g729a.h,VOICE_AGE_G729A=1
+dnl MSWIN_DIR_SYMBOL  vag729,VOICE_AGE_DIR
+dnl MSWIN_CHECK_DIR   vag729,..\va_g729\
+dnl MSWIN_CHECK_DIR   vag729,..\external\va_g729
+dnl MSWIN_CHECK_DIR   vag729,\va_g729
+dnl MSWIN_CHECK_DIR   vag729,c:\va_g729
 
 
 dnl ########################################################################
