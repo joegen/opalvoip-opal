@@ -23,7 +23,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g711codec.cxx,v $
- * Revision 1.2003  2002/03/15 03:07:25  robertj
+ * Revision 1.2004  2002/11/20 04:53:16  robertj
+ * Included optimisations for G.711 and G.726 codecs, thanks Ted Szoczei
+ *
+ * Revision 2.2  2002/03/15 03:07:25  robertj
  * Added static access to internal conversion functions.
  *
  * Revision 2.1  2001/08/01 05:04:14  robertj
@@ -45,10 +48,10 @@
 
 
 extern "C" {
-  short ulaw2linear(unsigned char u_val);
-  unsigned char linear2ulaw(short pcm_val);
-  short alaw2linear(unsigned char u_val);
-  unsigned char linear2alaw(short pcm_val);
+  int ulaw2linear(int u_val);
+  int linear2ulaw(int pcm_val);
+  int alaw2linear(int u_val);
+  int linear2alaw(int pcm_val);
 };
 
 
@@ -64,13 +67,13 @@ Opal_G711_uLaw_PCM::Opal_G711_uLaw_PCM(const OpalTranscoderRegistration & regist
 
 int Opal_G711_uLaw_PCM::ConvertOne(int sample) const
 {
-  return ulaw2linear((unsigned char)sample);
+  return ulaw2linear(sample);
 }
 
 
 int Opal_G711_uLaw_PCM::ConvertSample(int sample)
 {
-  return ulaw2linear((unsigned char)sample);
+  return ulaw2linear(sample);
 }
 
 
@@ -85,13 +88,13 @@ Opal_PCM_G711_uLaw::Opal_PCM_G711_uLaw(const OpalTranscoderRegistration & regist
 
 int Opal_PCM_G711_uLaw::ConvertOne(int sample) const
 {
-  return linear2ulaw((unsigned short)sample);
+  return linear2ulaw(sample);
 }
 
 
 int Opal_PCM_G711_uLaw::ConvertSample(int sample)
 {
-  return linear2ulaw((unsigned short)sample);
+  return linear2ulaw(sample);
 }
 
 
@@ -106,13 +109,13 @@ Opal_G711_ALaw_PCM::Opal_G711_ALaw_PCM(const OpalTranscoderRegistration & regist
 
 int Opal_G711_ALaw_PCM::ConvertOne(int sample) const
 {
-  return alaw2linear((unsigned char)sample);
+  return alaw2linear(sample);
 }
 
 
 int Opal_G711_ALaw_PCM::ConvertSample(int sample)
 {
-  return alaw2linear((unsigned char)sample);
+  return alaw2linear(sample);
 }
 
 
@@ -127,13 +130,13 @@ Opal_PCM_G711_ALaw::Opal_PCM_G711_ALaw(const OpalTranscoderRegistration & regist
 
 int Opal_PCM_G711_ALaw::ConvertOne(int sample) const
 {
-  return linear2alaw((unsigned short)sample);
+  return linear2alaw(sample);
 }
 
 
 int Opal_PCM_G711_ALaw::ConvertSample(int sample)
 {
-  return linear2alaw((unsigned short)sample);
+  return linear2alaw(sample);
 }
 
 
