@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2019  2004/02/07 02:18:18  rjongbloed
+ * Revision 1.2020  2004/03/11 06:54:27  csoutheren
+ * Added ability to disable SIP or H.323 stacks
+ *
+ * Revision 2.18  2004/02/07 02:18:18  rjongbloed
  * Improved searching for media format to use payload type AND the encoding name.
  *
  * Revision 2.17  2003/03/17 10:12:02  robertj
@@ -140,6 +143,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <rtp/rtp.h>
 

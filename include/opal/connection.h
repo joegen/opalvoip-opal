@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2023  2004/02/24 11:28:45  rjongbloed
+ * Revision 1.2024  2004/03/11 06:54:27  csoutheren
+ * Added ability to disable SIP or H.323 stacks
+ *
+ * Revision 2.22  2004/02/24 11:28:45  rjongbloed
  * Normalised RTP session management across protocols
  *
  * Revision 2.21  2003/03/17 10:26:59  robertj
@@ -108,6 +111,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #include <opal/mediafmt.h>
 #include <opal/mediastrm.h>
