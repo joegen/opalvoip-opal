@@ -22,7 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2017  2003/01/15 00:08:18  robertj
+# Revision 1.2018  2003/03/17 22:36:38  robertj
+# Added video support.
+#
+# Revision 2.16  2003/01/15 00:08:18  robertj
 # Updated to OpenH323 v1.10.3
 #
 # Revision 2.15  2002/11/12 12:06:34  robertj
@@ -205,6 +208,7 @@ endif
 SOURCES += $(OPAL_SRCDIR)/codec/g711codec.cxx \
            $(OPAL_SRCDIR)/codec/g711.c \
            $(OPAL_SRCDIR)/codec/rfc2833.cxx \
+           $(OPAL_SRCDIR)/codec/vidcodec.cxx \
            $(OPAL_SRCDIR)/codec/opalwavfile.cxx
 
 
