@@ -42,8 +42,15 @@
 /************ Change log
  *
  * $Log: vid_coder.h,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/15 23:43:00  robertj
+ * Update to OpenH323 v1.11.7
+ *
+ * Revision 1.9  2002/04/26 04:57:41  dereks
+ * Add Walter Whitlocks fixes, based on Victor Ivashim's suggestions to
+ * improve the quality with Netmeeting. Thanks guys!!!!
+ *
+ * Revision 1.8  2001/10/16 21:20:07  yurik
+ * Removed warnings on Windows CE. Submitted by Jehan Bing, jehan@bravobrava.com
  *
  * Revision 1.7  2001/05/10 05:25:44  robertj
  * Removed need for VIC code to use ptlib.
@@ -113,14 +120,14 @@ extern "C" int gettimeofday(struct timeval*, struct timezone*);
 #if BYTE_ORDER == LITTLE_ENDIAN
 #if NBIT == 64
 #define STORE_BITS(bb, bc) \
-	bc[0] = bb >> 56; \
-	bc[1] = bb >> 48; \
-	bc[2] = bb >> 40; \
-	bc[3] = bb >> 32; \
-	bc[4] = bb >> 24; \
-	bc[5] = bb >> 16; \
-	bc[6] = bb >> 8; \
-	bc[7] = bb;
+	bc[0] = (u_char)(bb >> 56); \
+	bc[1] = (u_char)(bb >> 48); \
+	bc[2] = (u_char)(bb >> 40); \
+	bc[3] = (u_char)(bb >> 32); \
+	bc[4] = (u_char)(bb >> 24); \
+	bc[5] = (u_char)(bb >> 16); \
+	bc[6] = (u_char)(bb >> 8); \
+	bc[7] = (u_char)(bb);
 #define LOAD_BITS(bc) \
 	((BB_INT)bc[0] << 56 | \
 	 (BB_INT)bc[1] << 48 | \
@@ -132,10 +139,10 @@ extern "C" int gettimeofday(struct timeval*, struct timezone*);
 	 (BB_INT)bc[7])
 #else
 #define STORE_BITS(bb, bc) \
-	bc[0] = bb >> 24; \
-	bc[1] = bb >> 16; \
-	bc[2] = bb >> 8; \
-	bc[3] = bb;
+	bc[0] = (u_char)(bb >> 24); \
+	bc[1] = (u_char)(bb >> 16); \
+	bc[2] = (u_char)(bb >> 8); \
+	bc[3] = (u_char)(bb);
 #define LOAD_BITS(bc) (ntohl(*(BB_INT*)(bc)))
 #endif
 #else
@@ -151,10 +158,10 @@ extern "C" int gettimeofday(struct timeval*, struct timezone*);
 		bb |= (BB_INT)(bits) >> extra; \
 		STORE_BITS(bb, bc) \
 		bc += sizeof(BB_INT); \
-		bb = (BB_INT)(bits) << NBIT - extra; \
+		bb = (BB_INT)(bits) << (NBIT - extra); \
 		nbb = extra; \
 	} else \
-		bb |= (BB_INT)(bits) << NBIT - (nbb); \
+		bb |= (BB_INT)(bits) << (NBIT - (nbb)); \
 }
 
 

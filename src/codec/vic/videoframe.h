@@ -4,8 +4,11 @@
 /************ Change log
  *
  * $Log: videoframe.h,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/15 23:43:00  robertj
+ * Update to OpenH323 v1.11.7
+ *
+ * Revision 1.8  2003/02/10 00:32:34  robertj
+ * Removed code for redundent class and constructor.
  *
  * Revision 1.7  2001/05/10 05:25:44  robertj
  * Removed need for VIC code to use ptlib.
@@ -24,7 +27,6 @@
 
 class VideoFrame {
  public:
-     VideoFrame(u_char *frame, u_char *cr, int w, int h);
      VideoFrame(u_char *cr, int w, int h);
      VideoFrame(int w, int h) ;
      ~VideoFrame();
