@@ -12,6 +12,12 @@
 #include "options.h"
 #include "makecall.h"
 
+#ifdef OPAL_STATIC_LINK
+#define H323_STATIC_LIB
+#include <codec/allcodecs.h>
+#endif
+
+
 const char AutoAnswerConfigKey[]              = "Auto Answer";
 const char EnableH323ConfigKey[]              = "Enable H323"; 
 const char EnableSIPConfigKey[]               = "Enable SIP";
