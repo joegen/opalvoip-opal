@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2012  2002/06/16 02:24:43  robertj
+ * Revision 1.2013  2002/07/01 04:56:33  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.11  2002/06/16 02:24:43  robertj
  * Fixed memory leak of failed listeners, thanks Ted Szoczei
  *
  * Revision 2.10  2002/04/05 10:37:46  robertj
@@ -207,6 +210,21 @@ OpalConnection * OpalEndPoint::GetConnectionWithLock(const PString & token)
 }
 
 
+PStringList OpalEndPoint::GetAllConnections()
+{
+  PStringList tokens;
+
+  inUseFlag.Wait();
+
+  for (PINDEX i = 0; i < connectionsActive.GetSize(); i++)
+    tokens.AppendString(connectionsActive.GetKeyAt(i));
+
+  inUseFlag.Signal();
+
+  return tokens;
+}
+
+
 BOOL OpalEndPoint::HasConnection(const PString & token)
 {
   PWaitAndSignal wait(inUseFlag);
@@ -314,6 +332,18 @@ void OpalEndPoint::OnUserInputTone(OpalConnection & connection,
                                    int duration)
 {
   manager.OnUserInputTone(connection, tone, duration);
+}
+
+
+OpalT120Protocol * OpalEndPoint::CreateT120ProtocolHandler(const OpalConnection & connection) const
+{
+  return manager.CreateT120ProtocolHandler(connection);
+}
+
+
+OpalT38Protocol * OpalEndPoint::CreateT38ProtocolHandler(const OpalConnection & connection) const
+{
+  return manager.CreateT38ProtocolHandler(connection);
 }
 
 

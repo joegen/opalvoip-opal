@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2016  2002/06/16 02:25:11  robertj
+ * Revision 1.2017  2002/07/01 04:56:33  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.15  2002/06/16 02:25:11  robertj
  * Fixed memory leak of garbage collector, thanks Ted Szoczei
  *
  * Revision 2.14  2002/04/17 07:19:38  robertj
@@ -120,11 +123,16 @@ OpalManager::OpalManager()
 {
   autoStartReceiveVideo = autoStartTransmitVideo = TRUE;
 
-  udpPortBase = 5000;
-  udpPortMax  = 6000;
+  // Ports for UDP use, eg SIP or RAS
+  udpPortBase = 6000;
+  udpPortMax  = 6049;
 
   // use dynamic port allocation by default
   tcpPortBase = tcpPortMax = 0;
+
+  // RTP port range
+  rtpIpPortBase = 5000;
+  rtpIpPortMax  = 5199;
 
 #ifdef _WIN32
   rtpIpTypeofService = IPTOS_PREC_CRITIC_ECP|IPTOS_LOWDELAY;
@@ -134,7 +142,6 @@ OpalManager::OpalManager()
 #endif
 
   maxAudioDelayJitter = 60;
-  defaultSendUserInputMode = OpalConnection::SendUserInputAsString;
 
   lastCallTokenID = 1;
 
@@ -479,6 +486,25 @@ void OpalManager::OnUserInputTone(OpalConnection & connection,
 }
 
 
+OpalT120Protocol * OpalManager::CreateT120ProtocolHandler(const OpalConnection & ) const
+{
+  return NULL;
+}
+
+
+OpalT38Protocol * OpalManager::CreateT38ProtocolHandler(const OpalConnection & ) const
+{
+  return NULL;
+}
+
+
+BOOL OpalManager::TranslateIPAddress(PIPSocket::Address & /*localAddr*/,
+                                     const PIPSocket::Address & /*remoteAddr */)
+{
+  return FALSE;
+}
+
+
 static void LimitPorts(unsigned & pBase, unsigned & pMax, unsigned range)
 {
   if (pBase < 1024)
@@ -495,12 +521,14 @@ static void LimitPorts(unsigned & pBase, unsigned & pMax, unsigned range)
 
 void OpalManager::SetTCPPorts(unsigned tcpBase, unsigned tcpMax)
 {
+  PWaitAndSignal mutex(ipPortMutex);
+
   if (tcpBase == 0)
-    tcpPortBase = tcpPortMax = 0;
+    tcpPort = tcpPortBase = tcpPortMax = 0;
   else {
     LimitPorts(tcpBase, tcpMax, 99);
 
-    tcpPortBase = (WORD)tcpBase;
+    tcpPort = tcpPortBase = (WORD)tcpBase;
     tcpPortMax = (WORD)tcpMax;
   }
 }
@@ -508,17 +536,64 @@ void OpalManager::SetTCPPorts(unsigned tcpBase, unsigned tcpMax)
 
 void OpalManager::SetUDPPorts(unsigned udpBase, unsigned udpMax)
 {
-  LimitPorts(udpBase, udpMax, 399);
+  PWaitAndSignal mutex(ipPortMutex);
 
-  udpPortBase = (WORD)udpBase;
+  LimitPorts(udpBase, udpMax, 49);
+
+  udpPort = udpPortBase = (WORD)udpBase;
   udpPortMax  = (WORD)udpMax;
 }
 
 
-BOOL OpalManager::TranslateIPAddress(PIPSocket::Address & /*localAddr*/,
-                                     const PIPSocket::Address & /*remoteAddr */)
+void OpalManager::SetRtpIpPorts(unsigned udpBase, unsigned udpMax)
 {
-  return FALSE;
+  PWaitAndSignal mutex(ipPortMutex);
+
+  LimitPorts(udpBase, udpMax, 199);
+
+  rtpIpPort = rtpIpPortBase = (WORD)udpBase;
+  rtpIpPortMax  = (WORD)udpMax;
+}
+
+
+static WORD GetNextPort(WORD base, WORD max, WORD & port, WORD inc)
+{
+  if (port < base || port > max)
+    port = base;
+
+  if (port == 0)
+    return 0;
+
+  WORD p = port;
+
+  if (port != 0) {
+    port = (WORD)(port + inc);
+    if (port > max)
+      port = base;
+  }
+
+  return p;
+}
+
+
+WORD OpalManager::GetNextTCPPort()
+{
+  PWaitAndSignal mutex(ipPortMutex);
+  return GetNextPort(tcpPortBase, tcpPortMax, tcpPort, 1);
+}
+
+
+WORD OpalManager::GetNextUDPPort()
+{
+  PWaitAndSignal mutex(ipPortMutex);
+  return GetNextPort(udpPortBase, udpPortMax, udpPort, 1);
+}
+
+
+WORD OpalManager::GetRtpIpPortPair()
+{
+  PWaitAndSignal mutex(ipPortMutex);
+  return GetNextPort(rtpIpPortBase, rtpIpPortMax, rtpIpPort, 2);
 }
 
 

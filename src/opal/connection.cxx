@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2019  2002/06/16 02:24:05  robertj
+ * Revision 1.2020  2002/07/01 04:56:33  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.18  2002/06/16 02:24:05  robertj
  * Fixed memory leak of media streams in non H323 protocols, thanks Ted Szoczei
  *
  * Revision 2.17  2002/04/10 03:09:01  robertj
@@ -101,6 +104,8 @@
 #include <opal/call.h>
 #include <opal/transcoders.h>
 #include <codec/rfc2833.h>
+#include <t120/t120proto.h>
+#include <t38/t38proto.h>
 
 
 #define new PNEW
@@ -145,7 +150,8 @@ ostream & operator<<(ostream & out, OpalCallEndReason reason)
     "EndedByUnreachable",       /// Could not reach the remote party
     "EndedByNoEndPoint",        /// The remote party is not running an endpoint
     "EndedByOffline",           /// The remote party is off line
-  };
+    "EndedByTemporaryFailure",  /// The remote failed temporarily app may retry
+ };
   return out << names[reason];
 }
 #endif
@@ -164,7 +170,7 @@ OpalConnection::OpalConnection(OpalCall & call,
 
   originating = FALSE;
   callEndReason = OpalNumCallEndReasons;
-  sendUserInputMode = endpoint.GetManager().GetSendUserInputModes();
+  detectInBandDTMF = !endpoint.GetManager().DetectInBandDTMFDisabled();
   bandwidthAvailable = endpoint.GetInitialBandwidth();
 
   rfc2833Handler = new OpalRFC2833Proto(PCREATE_NOTIFIER(OnUserInputInlineRFC2833));
@@ -172,12 +178,16 @@ OpalConnection::OpalConnection(OpalCall & call,
   ownerCall.AddConnection(this);
 
   isBeingReleased = FALSE;
+  t120handler = NULL;
+  t38handler = NULL;
 }
 
 
 OpalConnection::~OpalConnection()
 {
   delete rfc2833Handler;
+  delete t120handler;
+  delete t38handler;
 
   PTRACE(3, "OpalCon\tConnection " << *this << " destroyed.");
 }
@@ -242,8 +252,10 @@ void OpalConnection::LockOnRelease()
 void OpalConnection::SetCallEndReason(OpalCallEndReason reason)
 {
   // Only set reason if not already set to something
-  if (callEndReason == OpalNumCallEndReasons)
+  if (callEndReason == OpalNumCallEndReasons) {
+    PTRACE(3, "OpalCon\tCall end reason for " << GetToken() << " set to " << reason);
     callEndReason = reason;
+  }
 }
 
 
@@ -571,14 +583,6 @@ BOOL OpalConnection::SetBandwidthUsed(unsigned releasedBandwidth,
 }
 
 
-void OpalConnection::SetSendUserInputMode(SendUserInputModes mode)
-{
-  PAssert(mode != SendUserInputAsSeparateRFC2833, PUnimplementedFunction);
-
-  sendUserInputMode = mode;
-}
-
-
 BOOL OpalConnection::SendUserInputString(const PString & value)
 {
   for (const char * c = value; *c != '\0'; c++) {
@@ -589,12 +593,12 @@ BOOL OpalConnection::SendUserInputString(const PString & value)
 }
 
 
-BOOL OpalConnection::SendUserInputTone(char tone, int duration)
+BOOL OpalConnection::SendUserInputTone(char tone, unsigned duration)
 {
-  if (sendUserInputMode == SendUserInputAsInlineRFC2833)
-    return rfc2833Handler->SendTone(tone, duration);
+  if (duration == 0)
+    duration = 180;
 
-  return TRUE;
+  return rfc2833Handler->SendTone(tone, duration);
 }
 
 
@@ -604,7 +608,7 @@ void OpalConnection::OnUserInputString(const PString & value)
 }
 
 
-void OpalConnection::OnUserInputTone(char tone, int duration)
+void OpalConnection::OnUserInputTone(char tone, unsigned duration)
 {
   endpoint.OnUserInputTone(*this, tone, duration);
 }
@@ -689,6 +693,33 @@ void OpalConnection::OnUserInputInBandDTMF(RTP_DataFrame & frame, INT)
     for (i = 0; i < tones.GetLength(); i++) {
       OnUserInputTone(tones[i], 0);
     }
+  }
+}
+
+
+OpalT120Protocol * OpalConnection::CreateT120ProtocolHandler()
+{
+  if (t120handler == NULL)
+    t120handler = endpoint.CreateT120ProtocolHandler(*this);
+  return t120handler;
+}
+
+
+OpalT38Protocol * OpalConnection::CreateT38ProtocolHandler()
+{
+  if (t38handler == NULL)
+    t38handler = endpoint.CreateT38ProtocolHandler(*this);
+  return t38handler;
+}
+
+
+void OpalConnection::SetLocalPartyName(const PString & name)
+{
+  localPartyName = name;
+
+  if (!name.IsEmpty()) {
+    localAliasNames.RemoveAll();
+    localAliasNames.AppendString(name);
   }
 }
 

@@ -24,8 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: x224.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2002/07/01 04:56:33  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.10  2002/06/27 03:11:12  robertj
+ * Fixed encoding bugs, thanks Greg Adams
  *
  * Revision 1.9  2001/02/09 05:13:56  craigs
  * Added pragma implementation to (hopefully) reduce the executable image size
@@ -148,12 +154,16 @@ BOOL X224::Decode(const PBYTEArray & rawData)
 BOOL X224::Encode(PBYTEArray & rawData) const
 {
   PINDEX headerLength = header.GetSize();
-  if (!rawData.SetSize(headerLength + data.GetSize()))
+  PINDEX dataLength = data.GetSize();
+
+  if (!rawData.SetSize(headerLength + dataLength + 1))
     return FALSE;
 
-  memcpy(rawData.GetPointer(), header, headerLength);
-  rawData[headerLength] = (BYTE)headerLength;
-  memcpy(rawData.GetPointer()+headerLength+1, data, data.GetSize());
+  rawData[0] = (BYTE)headerLength;
+  memcpy(rawData.GetPointer() + 1, header, headerLength);
+
+  if (dataLength > 0)
+    memcpy(rawData.GetPointer()+headerLength+1, data, dataLength);
 
   return TRUE;
 }

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.cxx,v $
- * Revision 1.2006  2002/02/11 09:32:13  robertj
+ * Revision 1.2007  2002/07/01 04:56:33  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.5  2002/02/11 09:32:13  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.4  2002/01/14 06:35:58  robertj
@@ -41,6 +44,23 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.85  2002/06/27 08:52:57  robertj
+ * Fixed typo and naming convention for Cisco G.723.1 annex A capability.
+ *
+ * Revision 1.84  2002/06/26 05:45:45  robertj
+ * Added capability for Cisco IOS non-standard name for G.723.1 Annex A so
+ *   can now utilise SID frames with Cisco gateways.
+ *
+ * Revision 1.83  2002/06/25 08:30:13  robertj
+ * Changes to differentiate between stright G.723.1 and G.723.1 Annex A using
+ *   the OLC dataType silenceSuppression field so does not send SID frames
+ *   to receiver codecs that do not understand them.
+ *
+ * Revision 1.82  2002/05/09 06:26:34  robertj
+ * Added fuction to get the current audio enable state for line in device.
+ * Changed IxJ EnableAudio() semantics so is exclusive, no direct switching
+ *   from PSTN to POTS and vice versa without disabling the old one first.
  *
  * Revision 1.81  2002/01/23 06:13:56  robertj
  * Added filter function hooks to codec raw data channel.
@@ -615,15 +635,15 @@ unsigned OpalLineInterfaceDevice::GetAverageSignalLevel(unsigned, BOOL)
 }
 
 
-BOOL OpalLineInterfaceDevice::EnableAudio(unsigned, BOOL)
+BOOL OpalLineInterfaceDevice::EnableAudio(unsigned line, BOOL enabled)
 {
-  return TRUE;
+  return line < GetLineCount() && enabled;
 }
 
 
-BOOL OpalLineInterfaceDevice::IsAudioEnabled(unsigned)
+BOOL OpalLineInterfaceDevice::IsAudioEnabled(unsigned line)
 {
-  return TRUE;
+  return line < GetLineCount();
 }
 
 
