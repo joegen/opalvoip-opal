@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2005  2001/10/04 00:44:26  robertj
+ * Revision 1.2006  2001/11/13 06:25:56  robertj
+ * Changed SetUpConnection() so returns BOOL as returning
+ *   pointer to connection is not useful.
+ *
+ * Revision 2.4  2001/10/04 00:44:26  robertj
  * Added function to remove wildcard from list.
  *
  * Revision 2.3  2001/08/23 05:51:17  robertj
@@ -157,21 +161,20 @@ void OpalManager::RemoveEndPoint(OpalEndPoint * endpoint)
 }
 
 
-OpalCall * OpalManager::SetUpCall(const PString & partyA,
-                                  const PString & partyB,
-                                  PString & token)
+BOOL OpalManager::SetUpCall(const PString & partyA,
+                            const PString & partyB,
+                            PString & token)
 {
   PTRACE(3, "OpalMan\tSet up call from " << partyA << " to " << partyB);
 
   OpalCall * call = CreateCall();
   token = call->GetToken();
 
-  if (SetUpConnection(*call, partyA) != NULL &&
-      SetUpConnection(*call, partyB) != NULL)
-    return call;
+  if (SetUpConnection(*call, partyA) && SetUpConnection(*call, partyB))
+    return TRUE;
 
   call->Clear();
-  return NULL;
+  return FALSE;
 }
 
 
@@ -303,13 +306,12 @@ void OpalManager::AttachCall(OpalCall * call)
 }
 
 
-OpalConnection * OpalManager::SetUpConnection(OpalCall & call,
-                                              const PString & remoteParty)
+BOOL OpalManager::SetUpConnection(OpalCall & call, const PString & remoteParty)
 {
   PTRACE(3, "OpalMan\tSet up connection to \"" << remoteParty << '"');
 
   if (endpoints.IsEmpty())
-    return NULL;
+    return FALSE;
 
   PCaselessString epname = remoteParty.Left(remoteParty.Find(':'));
   if (epname.IsEmpty())
@@ -317,13 +319,12 @@ OpalConnection * OpalManager::SetUpConnection(OpalCall & call,
 
   for (PINDEX i = 0; i < endpoints.GetSize(); i++) {
     if (epname == endpoints[i].GetPrefixName()) {
-      OpalConnection * connection = endpoints[i].SetUpConnection(call, remoteParty, NULL);
-      if (connection != NULL)
-        return connection;
+      if (endpoints[i].SetUpConnection(call, remoteParty, NULL))
+        return TRUE;
     }
   }
 
-  return NULL;
+  return FALSE;
 }
 
 
@@ -336,15 +337,10 @@ BOOL OpalManager::OnIncomingConnection(OpalConnection & connection)
     return TRUE;
 
   PString destinationAddress = OnRouteConnection(connection);
-  if (!destinationAddress) {
-    OpalConnection * outgoingConnection = SetUpConnection(call, destinationAddress);
-    if (outgoingConnection != NULL) {
-      outgoingConnection->Unlock();
-      return TRUE;
-    }
-  }
+  if (destinationAddress.IsEmpty())
+    return FALSE;
 
-  return FALSE;
+  return SetUpConnection(call, destinationAddress);
 }
 
 

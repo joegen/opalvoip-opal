@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2004  2001/08/23 05:51:17  robertj
+ * Revision 1.2005  2001/11/13 06:25:56  robertj
+ * Changed SetUpConnection() so returns BOOL as returning
+ *   pointer to connection is not useful.
+ *
+ * Revision 2.3  2001/08/23 05:51:17  robertj
  * Completed implementation of codec reordering.
  *
  * Revision 2.2  2001/08/17 08:23:59  robertj
@@ -126,17 +130,17 @@ class OpalManager : public PObject
 
        The token returned is a unique identifier for the call that allows an
        application to gain access to the call at later time. This is necesary
-       as the pointer being returned could become invalid (due to being
+       as any pointer being returned could become invalid (due to being
        deleted) at any time due to the multithreaded nature of the OPAL
        system. While this function does return a pointer it is only safe to
        use immediately after the function returns. At any other time the
        FindCallWithLock() function should be used to gain a locked pointer
        to the call.
      */
-    virtual OpalCall * SetUpCall(
+    virtual BOOL SetUpCall(
       const PString & partyA,       /// The A party of call
       const PString & partyB,       /// The B party of call
-      PString & token               /// Token for connection
+      PString & token               /// Token for call
     );
 
     /**A call back function whenever a call is completed.
@@ -290,22 +294,18 @@ class OpalManager : public PObject
        endpoint attached to the manager. Other fields default to values on an
        endpoint basis.
 
-       This function returns almost immediately with the connection continuing
-       to occur in a new background thread.
-       
-       If NULL is returned then the connection could not be established. For
+       This function usually returns almost immediately with the connection
+       continuing to occur in a new background thread.
+
+       If FALSE is returned then the connection could not be established. For
        example if a PSTN endpoint is used and the assiciated line is engaged
        then it may return immediately. Returning a non-NULL value does not
        mean that the connection will succeed, only that an attempt is being
        made.
 
-       Note, the returned pointer to the connection is not locked and may be
-       deleted at any time. This is extremely unlikely immediately after the
-       function is called, but you should not keep this pointer beyond that
-       brief time. The the FindCallWithLock() function for future references
-       to the connection object.
+       The default behaviour is pure.
      */
-    virtual OpalConnection * SetUpConnection(
+    virtual BOOL SetUpConnection(
       OpalCall & call,        /// Owner of connection
       const PString & party   /// Party to call
     );
