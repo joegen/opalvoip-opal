@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2009  2001/11/02 10:45:19  robertj
+ * Revision 1.2010  2001/11/14 01:31:55  robertj
+ * Corrected placement of adjusting media format list.
+ *
+ * Revision 2.8  2001/11/02 10:45:19  robertj
  * Updated to OpenH323 v1.7.3
  *
  * Revision 2.7  2001/10/15 04:34:02  robertj
@@ -278,6 +281,12 @@ void OpalConnection::OnConnected()
 void OpalConnection::OnEstablished()
 {
   endpoint.OnEstablished(*this);
+}
+
+
+void OpalConnection::AdjustMediaFormats(OpalMediaFormatList & mediaFormats) const
+{
+  endpoint.AdjustMediaFormats(*this, mediaFormats);
 }
 
 

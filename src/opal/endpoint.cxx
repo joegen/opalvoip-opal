@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2008  2001/11/13 04:29:48  robertj
+ * Revision 1.2009  2001/11/14 01:31:55  robertj
+ * Corrected placement of adjusting media format list.
+ *
+ * Revision 2.7  2001/11/13 04:29:48  robertj
  * Changed OpalTransportAddress CreateTransport and CreateListsner functions
  *   to have extra parameter to control local binding of sockets.
  *
@@ -274,7 +277,7 @@ void OpalEndPoint::ClearAllCalls(OpalCallEndReason reason, BOOL wait)
 
 
 void OpalEndPoint::AdjustMediaFormats(const OpalConnection & connection,
-                                      OpalMediaFormatList & mediaFormats)
+                                      OpalMediaFormatList & mediaFormats) const
 {
   manager.AdjustMediaFormats(connection, mediaFormats);
 }

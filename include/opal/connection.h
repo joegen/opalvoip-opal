@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2008  2001/11/02 10:45:19  robertj
+ * Revision 1.2009  2001/11/14 01:31:55  robertj
+ * Corrected placement of adjusting media format list.
+ *
+ * Revision 2.7  2001/11/02 10:45:19  robertj
  * Updated to OpenH323 v1.7.3
  *
  * Revision 2.6  2001/10/15 04:29:14  robertj
@@ -389,6 +392,18 @@ class OpalConnection : public PObject
        The default behaviour is pure.
       */
     virtual OpalMediaFormatList GetMediaFormats() const = 0;
+
+    /**Adjust media formats available on a connection.
+       This is called by a connection after it has called
+       OpalCall::GetMediaFormats() to get all media formats that it can use so
+       that an application may remove or reorder the media formats before they
+       are used to open media streams.
+
+       The default behaviour calls the OpalEndPoint function of the same name.
+      */
+    virtual void AdjustMediaFormats(
+      OpalMediaFormatList & mediaFormats  /// Media formats to use
+    ) const;
 
     /**Open source transmitter media stream for session.
       */
