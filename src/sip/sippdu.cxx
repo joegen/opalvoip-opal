@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2014  2002/04/16 09:05:39  robertj
+ * Revision 1.2015  2002/04/17 07:24:12  robertj
+ * Stopped complteion timer if transaction terminated.
+ * Fixed multiple terminations so only the first version is used.
+ *
+ * Revision 2.13  2002/04/16 09:05:39  robertj
  * Fixed correct Route field setting depending on target URI.
  * Fixed some GNU warnings.
  *
@@ -1193,7 +1197,7 @@ void SIPTransaction::OnTimeout(PTimer &, INT)
 void SIPTransaction::SetTerminated(States newState)
 {
   retryTimer.Stop();
-  state = newState;
+  completionTimer.Stop();
 
 #if PTRACING
   static const char * const StateNames[NumStates] = {
@@ -1209,7 +1213,15 @@ void SIPTransaction::SetTerminated(States newState)
     "Terminated_Cancelled"
   };
 #endif
-  PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " terminated: " << StateNames[state]);
+
+  if (newState >= Terminated_Success) {
+    PTRACE(3, "SIP\tTried to set " << StateNames[newState] << " for " << mime.GetCSeq()
+           << " but already terminated ( " << StateNames[state] << ')');
+    return;
+  }
+
+  state = newState;
+  PTRACE(3, "SIP\tSet " << StateNames[newState] << " for " << mime.GetCSeq());
 
   if (connection != NULL) {
     if (state != Terminated_Success)
