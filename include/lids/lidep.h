@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.h,v $
- * Revision 1.2009  2002/09/04 05:27:55  robertj
+ * Revision 1.2010  2002/09/16 02:52:34  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
+ *
+ * Revision 2.8  2002/09/04 05:27:55  robertj
  * Added ability to set default line name to be used when the destination
  *   does not match any lines configured.
  *
@@ -62,7 +66,7 @@
 #ifndef __LIDS_LIDEP_H
 #define __LIDS_LIDEP_H
 
-#ifdef __GNUC__
+#ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 

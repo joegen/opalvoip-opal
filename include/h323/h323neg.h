@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323neg.h,v $
- * Revision 1.2006  2002/09/04 06:01:47  robertj
+ * Revision 1.2007  2002/09/16 02:52:34  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
+ *
+ * Revision 2.5  2002/09/04 06:01:47  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.4  2002/07/01 04:56:30  robertj
@@ -153,7 +157,7 @@
 #ifndef __OPAL_H323NEG_H
 #define __OPAL_H323NEG_H
 
-#ifdef __GNUC__
+#ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 

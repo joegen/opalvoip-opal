@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323rtp.h,v $
- * Revision 1.2002  2002/09/04 06:01:47  robertj
+ * Revision 1.2003  2002/09/16 02:52:34  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
+ *
+ * Revision 2.1  2002/09/04 06:01:47  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
@@ -62,7 +66,7 @@
 #ifndef __OPAL_H323RTP_H
 #define __OPAL_H323RTP_H
 
-#ifdef __GNUC__
+#ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
