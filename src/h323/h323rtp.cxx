@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323rtp.cxx,v $
- * Revision 1.2003  2001/10/05 00:22:14  robertj
+ * Revision 1.2004  2001/11/12 05:32:12  robertj
+ * Added OpalTransportAddress::GetIpAddress when don't need port number.
+ *
+ * Revision 2.2  2001/10/05 00:22:14  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.1  2001/08/13 05:10:40  robertj
@@ -133,8 +136,7 @@ H323_RTP_UDP::H323_RTP_UDP(const H323Connection & conn, RTP_UDP & rtp_udp)
 {
   const OpalTransport & transport = connection.GetControlChannel();
   PIPSocket::Address localAddress;
-  WORD dummy;
-  transport.GetLocalAddress().GetIpAndPort(localAddress, dummy);
+  transport.GetLocalAddress().GetIpAddress(localAddress);
 
   const H323EndPoint & endpoint = connection.GetEndPoint();
   rtp.Open(localAddress,

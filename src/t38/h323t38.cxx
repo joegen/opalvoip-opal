@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t38.cxx,v $
- * Revision 1.2005  2001/10/05 00:22:14  robertj
+ * Revision 1.2006  2001/11/12 05:32:12  robertj
+ * Added OpalTransportAddress::GetIpAddress when don't need port number.
+ *
+ * Revision 2.4  2001/10/05 00:22:14  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.3  2001/08/13 05:10:40  robertj
@@ -244,8 +247,7 @@ BOOL H323_T38Channel::CreateTransport()
     return H323DataChannel::CreateTransport();
 
   PIPSocket::Address ip;
-  WORD port;
-  if (!connection.GetControlChannel().GetLocalAddress().GetIpAndPort(ip, port)) {
+  if (!connection.GetControlChannel().GetLocalAddress().GetIpAddress(ip)) {
     PTRACE(2, "H323T38\tTrying to use UDP when base transport is not TCP/IP");
     PIPSocket::GetHostAddress(ip);
   }
