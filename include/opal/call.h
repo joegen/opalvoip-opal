@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2016  2004/04/18 07:09:12  rjongbloed
+ * Revision 1.2017  2004/05/01 10:00:50  rjongbloed
+ * Fixed ClearCallSynchronous so now is actually signalled when call is destroyed.
+ *
+ * Revision 2.15  2004/04/18 07:09:12  rjongbloed
  * Added a couple more API functions to bring OPAL into line with similar functions in OpenH323.
  *
  * Revision 2.14  2004/03/11 06:54:27  csoutheren
@@ -188,10 +191,13 @@ class OpalCall : public PObject
        This releases all connections currently attached to the call. Note that
        this function will return quickly as the release and disposal of the
        connections is done by another thread.
+
+       The sync parameter is a PSyncPoint that will be signalled during the
+       destructor for the OpalCall. Note only one thread may do this at a time.
      */
     void Clear(
       OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser, /// Reason for call clearing
-      PSyncPoint * sync = NULL
+      PSyncPoint * sync = NULL                                                 /// Sync point to signal on call destruction
     );
 
     /**Call back to indicate that the call has been cleared.
@@ -418,6 +424,7 @@ class OpalCall : public PObject
     OpalConnectionList activeConnections;
     OpalConnectionList garbageConnections;
     PMutex             inUseFlag;
+    PSyncPoint       * endCallSyncPoint;
 };
 
 
