@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.h,v $
- * Revision 1.2009  2002/11/10 23:21:26  robertj
+ * Revision 1.2010  2003/01/07 04:39:52  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.8  2002/11/10 23:21:26  robertj
  * Fixed capability class usage in static variable macros.
  *
  * Revision 2.7  2002/11/10 11:33:16  robertj
@@ -56,6 +59,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.31  2002/12/16 09:11:15  robertj
+ * Added new video bit rate control, thanks Walter H. Whitlock
  *
  * Revision 1.30  2002/09/16 01:14:15  robertj
  * Added #define so can select if #pragma interface/implementation is used on

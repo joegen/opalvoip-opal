@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2019  2002/11/10 11:33:16  robertj
+ * Revision 1.2020  2003/01/07 04:39:52  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.18  2002/11/10 11:33:16  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.17  2002/09/16 02:52:33  robertj
@@ -86,6 +89,22 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.43  2002/11/28 01:19:55  craigs
+ * Added virtual to several functions
+ *
+ * Revision 1.42  2002/11/27 06:54:52  robertj
+ * Added Service Control Session management as per Annex K/H.323 via RAS
+ *   only at this stage.
+ * Added H.248 ASN and very primitive infrastructure for linking into the
+ *   Service Control Session management system.
+ * Added basic infrastructure for Annex K/H.323 HTTP transport system.
+ * Added Call Credit Service Control to display account balances.
+ *
+ * Revision 1.41  2002/11/15 05:17:22  robertj
+ * Added facility redirect support without changing the call token for access
+ *   to the call. If it gets redirected a new H323Connection object is
+ *   created but it looks like the same thing to an application.
  *
  * Revision 1.40  2002/11/10 08:10:43  robertj
  * Moved constants for "well known" ports to better place (OPAL change).
@@ -241,11 +260,13 @@
 class H225_EndpointType;
 class H225_VendorIdentifier;
 class H225_H221NonStandard;
+class H225_ServiceControlDescriptor;
 
 class H235SecurityInfo;
 
 class H323Gatekeeper;
 class H323SignalPDU;
+class H323ServiceControlSession;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -545,13 +566,13 @@ class H323EndPoint : public OpalEndPoint
 
     /**Set the H.235 password for the gatekeeper.
       */
-    void SetGatekeeperPassword(
+    virtual void SetGatekeeperPassword(
       const PString & password
     );
 
     /**Get the H.235 password for the gatekeeper.
       */
-    const PString & GetGatekeeperPassword() const { return gatekeeperPassword; }
+    virtual const PString & GetGatekeeperPassword() const { return gatekeeperPassword; }
 
     /**Create a list of authenticators for gatekeeper.
       */
@@ -739,15 +760,29 @@ class H323EndPoint : public OpalEndPoint
       const PString & user                /// Username of remote endpoint
     );
 
-    /**A call back function whenever connection indicates it should be
-       forwarded.
-       Return TRUE if the call is being redirected.
+    /**A call back function when a connection indicates it is to be forwarded.
+       An H323 application may handle this call back so it can make
+       complicated decisions on if the call forward ius to take place. If it
+       decides to do so it must call MakeCall() and return TRUE.
 
-       The default behaviour simply returns FALSE and does not forward the
-       call. The H323 application needs to handle this call back so it can
-       call MakeCall() and know the token of the new H323 connection.
+       The default behaviour simply returns FALSE and that the automatic
+       call forwarding should take place. See ForwardConnection()
       */
     virtual BOOL OnConnectionForwarded(
+      H323Connection & connection,    /// Connection to be forwarded
+      const PString & forwardParty,   /// Remote party to forward to
+      const H323SignalPDU & pdu       /// Full PDU initiating forwarding
+    );
+
+    /**Forward the call using the same token as the specified connection.
+       Return TRUE if the call is being redirected.
+
+       The default behaviour will replace the current call in the endpoints
+       call list using the same token as the call being redirected. Not that
+       even though the same token is being used the actual object is
+       completely mad anew.
+      */
+    virtual BOOL ForwardConnection(
       H323Connection & connection,    /// Connection to be forwarded
       const PString & forwardParty,   /// Remote party to forward to
       const H323SignalPDU & pdu       /// Full PDU initiating forwarding
@@ -816,6 +851,52 @@ class H323EndPoint : public OpalEndPoint
     ) const;
   //@}
 
+  /**@name Service Control */
+  //@{
+    /**Call back for HTTP based Service Control.
+       An application may override this to use an HTTP based channel using a
+       resource designated by the session ID. For example the session ID can
+       correspond to a browser window and the 
+
+       The default behaviour does nothing.
+      */
+    virtual void OnHTTPServiceControl(
+      unsigned operation,  /// Control operation
+      unsigned sessionId,  /// Session ID for HTTP page
+      const PString & url  /// URL to use.
+    );
+
+    /**Call back for call credit information.
+       An application may override this to display call credit information
+       on registration, or when a call is started.
+
+       The canDisplayAmountString member variable must also be set to TRUE
+       for this to operate.
+
+       The default behaviour does nothing.
+      */
+    virtual void OnCallCreditServiceControl(
+      const PString & amount,  /// UTF-8 string for amount, including currency.
+      BOOL mode          /// Flag indicating that calls will debit the account.
+    );
+
+    /**Handle incoming service control session information.
+       Default behaviour calls session.OnChange()
+     */
+    virtual void OnServiceControlSession(
+      unsigned type,
+      unsigned sessionid,
+      const H323ServiceControlSession & session,
+      H323Connection * connection
+    );
+
+    /**Create the service control session object.
+     */
+    virtual H323ServiceControlSession * CreateServiceControlSession(
+      const H225_ServiceControlDescriptor & contents
+    );
+  //@}
+
   /**@name Member variable access */
   //@{
     /**Set the user name to be used for the local end of any connections. This
@@ -826,7 +907,7 @@ class H323EndPoint : public OpalEndPoint
        Additional aliases may be added by the use of the AddAliasName()
        function, however that list will be cleared when this function is used.
      */
-    void SetLocalUserName(
+    virtual void SetLocalUserName(
       const PString & name  /// Local name of endpoint (prime alias)
     );
 
@@ -834,7 +915,7 @@ class H323EndPoint : public OpalEndPoint
        defaults to the logged in user as obtained from the
        PProcess::GetUserName() function.
      */
-    const PString & GetLocalUserName() const { return localAliasNames[0]; }
+    virtual const PString & GetLocalUserName() const { return localAliasNames[0]; }
 
     /**Add an alias name to be used for the local end of any connections. If
        the alias name already exists in the list then is is not added again.
@@ -892,6 +973,28 @@ class H323EndPoint : public OpalEndPoint
       BOOL mode /// New default mode
     ) { disableH245inSetup = mode; } 
 
+    /**Get the flag indicating the endpoint can display an amount string.
+      */
+    BOOL CanDisplayAmountString() const
+      { return canDisplayAmountString; }
+
+    /**Set the flag indicating the endpoint can display an amount string.
+      */
+    void SetCanDisplayAmountString(
+      BOOL mode /// New default mode
+    ) { canDisplayAmountString = mode; } 
+
+    /**Get the flag indicating the call will automatically clear after a time.
+      */
+    BOOL CanEnforceDurationLimit() const
+      { return canEnforceDurationLimit; }
+
+    /**Set the flag indicating the call will automatically clear after a time.
+      */
+    void SetCanEnforceDurationLimit(
+      BOOL mode /// New default mode
+    ) { canEnforceDurationLimit = mode; } 
+
     /**Get Call Intrusion Protection Level of the end point.
       */
     unsigned GetCallIntrusionProtectionLevel() const { return callIntrusionProtectionLevel; }
@@ -925,6 +1028,10 @@ class H323EndPoint : public OpalEndPoint
     /**See if should auto-start transmit fax channels on connection.
      */
     BOOL CanAutoStartTransmitFax() const { return autoStartTransmitFax; }
+
+    /**See if should automatically do call forward of connection.
+     */
+    BOOL CanAutoCallForward() const { return autoCallForward; }
 
     /**Get the current capability table for this endpoint.
      */
@@ -1097,9 +1204,12 @@ class H323EndPoint : public OpalEndPoint
     PStringList localAliasNames;
     BOOL        autoStartReceiveFax;
     BOOL        autoStartTransmitFax;
+    BOOL        autoCallForward;
     BOOL        disableFastStart;
     BOOL        disableH245Tunneling;
     BOOL        disableH245inSetup;
+    BOOL        canDisplayAmountString;
+    BOOL        canEnforceDurationLimit;
     unsigned    callIntrusionProtectionLevel;
     H323Connection::SendUserInputModes defaultSendUserInputMode;
 

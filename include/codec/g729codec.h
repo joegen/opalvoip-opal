@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g729codec.h,v $
- * Revision 1.2005  2002/11/10 11:33:16  robertj
+ * Revision 1.2006  2003/01/07 04:39:52  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.4  2002/11/10 11:33:16  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.3  2002/09/16 02:52:33  robertj
@@ -39,6 +42,11 @@
  *
  * Revision 2.1  2002/07/01 04:56:29  robertj
  * Updated to OpenH323 v1.9.1
+ *
+ * Revision 1.6  2002/11/12 00:06:10  robertj
+ * Added check for Voice Age G.729 only being able to do a single instance
+ *   of the encoder and decoder. Now fails the second isntance isntead of
+ *   interfering with the first one.
  *
  * Revision 1.5  2002/09/16 01:14:15  robertj
  * Added #define so can select if #pragma interface/implementation is used on
@@ -77,6 +85,7 @@ class Opal_G729_PCM : public OpalFramedTranscoder {
     Opal_G729_PCM(
       const OpalTranscoderRegistration & registration /// Registration for transcoder
     );
+    ~Opal_G729_PCM();
     virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
 };
 
@@ -90,6 +99,7 @@ class Opal_PCM_G729 : public OpalFramedTranscoder {
     Opal_PCM_G729(
       const OpalTranscoderRegistration & registration /// Registration for transcoder
     );
+    ~Opal_PCM_G729();
     virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
 };
 

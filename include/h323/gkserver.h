@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkserver.h,v $
- * Revision 1.2009  2002/11/10 11:33:16  robertj
+ * Revision 1.2010  2003/01/07 04:39:52  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.8  2002/11/10 11:33:16  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.7  2002/09/16 02:52:33  robertj
@@ -54,6 +57,34 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.52  2002/12/17 01:25:23  robertj
+ * Added call backs on gk server when ep indicates alerting or connect.
+ *
+ * Revision 1.51  2002/11/28 05:45:46  robertj
+ * Fixed bug so can set total bandwidth while calls are in progress.
+ *
+ * Revision 1.50  2002/11/28 04:41:44  robertj
+ * Added support for RAS ServiceControlIndication command.
+ *
+ * Revision 1.49  2002/11/27 06:54:52  robertj
+ * Added Service Control Session management as per Annex K/H.323 via RAS
+ *   only at this stage.
+ * Added H.248 ASN and very primitive infrastructure for linking into the
+ *   Service Control Session management system.
+ * Added basic infrastructure for Annex K/H.323 HTTP transport system.
+ * Added Call Credit Service Control to display account balances.
+ *
+ * Revision 1.48  2002/11/22 00:11:29  robertj
+ * Added call start time.
+ *
+ * Revision 1.47  2002/11/18 23:40:45  robertj
+ * Changed to use the H323EndPoint::CreateAuthenticators() function, we
+ *   should use only one.
+ *
+ * Revision 1.46  2002/11/12 11:36:03  robertj
+ * Added function to find endpoint by partial alias.
+ * Optimised endpoint "indexes" to use sorted lists instead of dictionaries.
  *
  * Revision 1.45  2002/11/06 23:23:48  robertj
  * Fixed minor error in parameter, should be reference not value
@@ -675,6 +706,14 @@ class H323GatekeeperCall : public PSafeObject
       H225_InfoRequestResponse_perCallInfo_subtype & call
     );
 
+    /**Call back when an info response detects an Alerting.
+      */
+    virtual void OnAlerting();
+
+    /**Call back when an info response detects an Connected.
+      */
+    virtual void OnConnected();
+
     /**Function called to do heartbeat check of the call.
        Monitor the state of the call and make sure everything is OK.
 
@@ -686,6 +725,51 @@ class H323GatekeeperCall : public PSafeObject
        still there and running. If the IRQ fails, FALSE is returned.
       */
     virtual BOOL OnHeartbeat();
+
+    /**Get the current credit for this call.
+       This function is only called if the client indicates that it can use
+       the information provided.
+
+       The default behaviour calls the same function on the endpoint.
+      */
+    virtual PString GetCallCreditAmount() const;
+
+    /**Get the call credit billing mode for this endpoint.
+       This function is only called if the client indicates that it can use
+       the information provided.
+
+       The default behaviour calls the same function on the endpoint.
+      */
+    virtual BOOL GetCallCreditMode() const;
+
+    /**Get the duration limit for this call.
+       This function is only called if the client indicates that it can use
+       the information provided.
+
+       The default behaviour returns zero which indicates there is no
+       duration limit applicable.
+      */
+    virtual unsigned GetDurationLimit() const;
+
+    /**Send the call credit service control PDU.
+       This will send an SCI pdu to the endpoint with the control service
+       session information for the current call credit, if enabled.
+      */
+    virtual BOOL SendCallCreditServiceControl();
+
+    /**Add call credit and duration information to PDU.
+      */
+    BOOL AddCallCreditServiceControl(
+      H225_ArrayOf_ServiceControlSession & serviceControl
+    ) const;
+
+    /**Send the service control session for the PDU.
+       This will send an SCI pdu to the endpoint with the control service
+       session information provided.
+      */
+    virtual BOOL SendServiceControlSession(
+      const H323ServiceControlSession & session
+    );
   //@}
 
   /**@name Access functions */
@@ -707,6 +791,7 @@ class H323GatekeeperCall : public PSafeObject
     unsigned GetBandwidthUsed() const { return bandwidthUsed; }
     void SetBandwidthUsed(unsigned bandwidth) { bandwidthUsed = bandwidth; }
     const PTime & GetLastInfoResponseTime() const { return lastInfoResponse; }
+    const PTime & GetCallStartTime() const { return callStartTime; }
     const PTime & GetAlertingTime() const { return alertingTime; }
     const PTime & GetConnectedTime() const { return connectedTime; }
     const PTime & GetCallEndTime() const { return callEndTime; }
@@ -733,10 +818,12 @@ class H323GatekeeperCall : public PSafeObject
     unsigned             bandwidthUsed;
     unsigned             infoResponseRate;
     PTime                lastInfoResponse;
-    BOOL                 drqReceived;
-    PTime                alertingTime;
-    PTime                connectedTime;
-    PTime                callEndTime;
+
+    BOOL                          drqReceived;
+    PTime                         callStartTime;
+    PTime                         alertingTime;
+    PTime                         connectedTime;
+    PTime                         callEndTime;
     H323Connection::CallEndReason callEndReason;
 };
 
@@ -874,6 +961,44 @@ class H323RegisteredEndPoint : public PSafeObject
        still there and running. If the IRQ fails, FALSE is returned.
       */
     virtual BOOL OnTimeToLive();
+
+    /**Get the current call credit for this endpoint.
+       This function is only called if the client indicates that it can use
+       the information provided. If a server wishes to enable this feature by
+       returning a non-empty string, it must be consistent in that usage. That
+       is the H323GatekeeperCall::GetCallCreditAmount() for this endpoint
+       must also return non-empty value.
+
+       The return value is a UTF-8 string for amount, including currency.
+
+       The default behaviour returns an empty string disabling the function.
+      */
+    virtual PString GetCallCreditAmount() const;
+
+    /**Get the call credit billing mode for this endpoint.
+       This function is only called if the client indicates that it can use
+       the information provided.
+
+       The default behaviour return TRUE indicating that calls will debit the
+       account.
+      */
+    virtual BOOL GetCallCreditMode() const;
+
+    /**Send the service control session for the PDU.
+       This will send an SCI pdu to the endpoint with the control service
+       session information provided.
+      */
+    virtual BOOL SendServiceControlSession(
+      const H323ServiceControlSession & session
+    );
+
+    /**Set the service control session for the PDU.
+       This is an internal function.
+      */
+    virtual BOOL AddServiceControlSession(
+      const H323ServiceControlSession & session,
+      H225_ArrayOf_ServiceControlSession & serviceControl
+    );
   //@}
 
   /**@name Access functions */
@@ -958,6 +1083,14 @@ class H323RegisteredEndPoint : public PSafeObject
     /**Get the protocol version the endpoint registered with.
       */
     unsigned GetProtocolVersion() const { return protocolVersion; }
+
+    /**Get the flag indicating the endpoint can display credit amounts.
+      */
+    BOOL CanDisplayAmountString() const { return canDisplayAmountString; }
+
+    /**Get the flag indicating the endpoint can enforce a duration limit.
+      */
+    BOOL CanEnforceDurationLimit() const { return canEnforceDurationLimit; }
   //@}
 
   protected:
@@ -971,6 +1104,8 @@ class H323RegisteredEndPoint : public PSafeObject
     PStringArray              voicePrefixes;
     PCaselessString           applicationInfo;
     unsigned                  protocolVersion;
+    BOOL                      canDisplayAmountString;
+    BOOL                      canEnforceDurationLimit;
     unsigned                  timeToLive;
     H235Authenticators        authenticators;
 
@@ -978,6 +1113,7 @@ class H323RegisteredEndPoint : public PSafeObject
     PTime lastInfoResponse;
 
     PSortedList<H323GatekeeperCall> activeCalls;
+    POrdinalDictionary<PString>     serviceControlSessions;
 };
 
 
@@ -1026,6 +1162,14 @@ class H323GatekeeperListener : public H225_RAS
       */
     virtual BOOL InfoRequest(
       H323RegisteredEndPoint & ep,
+      H323GatekeeperCall * call = NULL
+    );
+
+    /**Send an ServiceControlIndication (SCI) to endpoint.
+      */
+    virtual BOOL ServiceControlIndication(
+      H323RegisteredEndPoint & ep,
+      const H323ServiceControlSession & session,
       H323GatekeeperCall * call = NULL
     );
   //@}
@@ -1308,37 +1452,44 @@ class H323GatekeeperServer : public PObject
       */
     virtual PString CreateEndPointIdentifier();
 
-    /**Find a registered alias given its endpoint identifier.
+    /**Find a registered endpoint given its endpoint identifier.
       */
     virtual PSafePtr<H323RegisteredEndPoint> FindEndPointByIdentifier(
       const PString & identifier,
       PSafetyMode mode = PSafeReference
     );
 
-    /**Find a registered alias given a list of signal addresses.
+    /**Find a registered endpoint given a list of signal addresses.
       */
     virtual PSafePtr<H323RegisteredEndPoint> FindEndPointBySignalAddresses(
       const H225_ArrayOf_TransportAddress & addresses,
       PSafetyMode mode = PSafeReference
     );
 
-    /**Find a registered alias given its signal address.
+    /**Find a registered endpoint given its signal address.
       */
     virtual PSafePtr<H323RegisteredEndPoint> FindEndPointBySignalAddress(
       const H323TransportAddress & address,
       PSafetyMode mode = PSafeReference
     );
 
-    /**Find a registered alias given its raw alias address.
+    /**Find a registered endpoint given its raw alias address.
       */
     virtual PSafePtr<H323RegisteredEndPoint> FindEndPointByAliasAddress(
       const H225_AliasAddress & alias,
       PSafetyMode mode = PSafeReadWrite
     );
 
-    /**Find a registered alias given its simple alias string.
+    /**Find a registered endpoint given its simple alias string.
       */
     virtual PSafePtr<H323RegisteredEndPoint> FindEndPointByAliasString(
+      const PString & alias,
+      PSafetyMode mode = PSafeReference
+    );
+
+    /**Find the first registered endpoint given a partial alias string.
+      */
+    virtual PSafePtr<H323RegisteredEndPoint> FindEndPointByPartialAlias(
       const PString & alias,
       PSafetyMode mode = PSafeReference
     );
@@ -1529,10 +1680,6 @@ class H323GatekeeperServer : public PObject
 
   /**@name Security and authentication functions */
   //@{
-    /**Get the default list of authenticators for endpoint.
-      */
-    virtual H235Authenticators CreateAuthenticators() const;
-
     /**Get separate H.235 authentication for the connection.
        This allows an individual ARQ to override the authentical credentials
        used in H.235 based RAS for this particular connection.
@@ -1562,6 +1709,10 @@ class H323GatekeeperServer : public PObject
 
   /**@name Access functions */
   //@{
+    /**Get the owner endpoint.
+     */
+    H323EndPoint & GetOwnerEndPoint() const { return ownerEndPoint; }
+
     /**Get the identifier name for this gatekeeper.
       */
     const PString & GetGatekeeperIdentifier() const { return gatekeeperIdentifier; }
@@ -1578,11 +1729,15 @@ class H323GatekeeperServer : public PObject
 
     /**Get the total bandwidth available in 100's of bits per second.
       */
-    unsigned GetAvailableBandwidth() const { return availableBandwidth; }
+    unsigned GetAvailableBandwidth() const { return totalBandwidth; }
 
     /**Set the total bandwidth available in 100's of bits per second.
       */
-    void SetAvailableBandwidth(unsigned bps100) { availableBandwidth = bps100; }
+    void SetAvailableBandwidth(unsigned bps100) { totalBandwidth = bps100; }
+
+    /**Get the total bandwidth used in 100's of bits per second.
+      */
+    unsigned GetUsedBandwidth() const { return usedBandwidth; }
 
     /**Get the default bandwidth for calls.
       */
@@ -1642,7 +1797,8 @@ class H323GatekeeperServer : public PObject
 
     // Configuration & policy variables
     PString  gatekeeperIdentifier;
-    unsigned availableBandwidth;
+    unsigned totalBandwidth;
+    unsigned usedBandwidth;
     unsigned defaultBandwidth;
     unsigned maximumBandwidth;
     unsigned defaultTimeToLive;
@@ -1660,7 +1816,7 @@ class H323GatekeeperServer : public PObject
     PStringToString passwords;
 
     // Dynamic variables
-    H323EndPoint & endpoint;
+    H323EndPoint & ownerEndPoint;
     PMutex         mutex;
     time_t         identifierBase;
     unsigned       nextIdentifier;
@@ -1671,9 +1827,17 @@ class H323GatekeeperServer : public PObject
     ListenerList listeners;
 
     PSafeDictionary<PString, H323RegisteredEndPoint> byIdentifier;
-    PStringToString byAddress;
-    PStringToString byAlias;
-    PStringToString byVoicePrefix;
+
+    class StringMap : public PString {
+        PCLASSINFO(StringMap, PString);
+      public:
+        StringMap(const PString & from, const PString & id)
+          : PString(from), identifier(id) { }
+        PString identifier;
+    };
+    PSortedStringList byAddress;
+    PSortedStringList byAlias;
+    PSortedStringList byVoicePrefix;
 
     PSafeSortedList<H323GatekeeperCall> activeCalls;
 
