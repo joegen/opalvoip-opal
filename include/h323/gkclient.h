@@ -27,8 +27,30 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.h,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 1.2002  2001/08/13 05:10:39  robertj
+ * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.24  2001/08/13 01:27:00  robertj
+ * Changed GK admission so can return multiple aliases to be used in
+ *   setup packet, thanks Nick Hoath.
+ *
+ * Revision 1.23  2001/08/10 11:03:49  robertj
+ * Major changes to H.235 support in RAS to support server.
+ *
+ * Revision 1.22  2001/08/06 07:44:52  robertj
+ * Fixed problems with building without SSL
+ *
+ * Revision 1.21  2001/08/06 03:18:35  robertj
+ * Fission of h323.h to h323ep.h & h323con.h, h323.h now just includes files.
+ * Improved access to H.235 secure RAS functionality.
+ * Changes to H.323 secure RAS contexts to help use with gk server.
+ *
+ * Revision 1.20  2001/08/02 04:30:09  robertj
+ * Added ability for AdmissionRequest to alter destination alias used in
+ *   the outgoing call.
  *
  * Revision 1.19  2001/06/18 06:23:47  robertj
  * Split raw H.225 RAS protocol out of gatekeeper client class.
@@ -100,9 +122,11 @@
 
 
 #include <h323/h225ras.h>
+#include <h323/h235auth.h>
 
 
 class H323Connection;
+class H225_ArrayOf_AliasAddress;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -141,14 +165,14 @@ class H323Gatekeeper : public H225_RAS
     BOOL OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm & gcf);
     BOOL OnReceiveRegistrationConfirm(const H225_RegistrationConfirm & rcf);
     BOOL OnReceiveRegistrationReject(const H225_RegistrationReject & rrj);
-    void OnReceiveUnregistrationRequest(const H225_UnregistrationRequest & urq);
+    BOOL OnReceiveUnregistrationRequest(const H225_UnregistrationRequest & urq);
     BOOL OnReceiveUnregistrationConfirm(const H225_UnregistrationConfirm & ucf);
     BOOL OnReceiveUnregistrationReject(const H225_UnregistrationReject & urj);
     BOOL OnReceiveAdmissionConfirm(const H225_AdmissionConfirm & acf);
-    void OnReceiveDisengageRequest(const H225_DisengageRequest & drq);
+    BOOL OnReceiveDisengageRequest(const H225_DisengageRequest & drq);
     BOOL OnReceiveBandwidthConfirm(const H225_BandwidthConfirm & bcf);
-    void OnReceiveBandwidthRequest(const H225_BandwidthRequest & brq);
-    void OnReceiveInfoRequest(const H225_InfoRequest & irq);
+    BOOL OnReceiveBandwidthRequest(const H225_BandwidthRequest & brq);
+    BOOL OnReceiveInfoRequest(const H225_InfoRequest & irq);
   //@}
 
   /**@name Protocol operations */
@@ -219,6 +243,7 @@ class H323Gatekeeper : public H225_RAS
     BOOL AdmissionRequest(
       H323Connection & connection,     /// Connection we wish to change.
       H323TransportAddress & address,  /// Gatekeeper routed transport address.
+      H225_ArrayOf_AliasAddress & newDestinationAlias, /// DestinationInfo to use in SETUP if not empty
       BOOL ignorePreGrantedARQ = FALSE /// Flag to force ARQ to be sent
     );
 
@@ -242,6 +267,10 @@ class H323Gatekeeper : public H225_RAS
       const H323Connection * connection,  /// Connection to send info about
       unsigned seqNum                     /// Sequence number responding to
     );
+
+    /**Get the security context for this RAS connection.
+      */
+    virtual H235Authenticators GetAuthenticators() const;
   //@}
 
   /**@name Member variable access */
@@ -259,6 +288,12 @@ class H323Gatekeeper : public H225_RAS
        default port is used.
       */
     PString GetName() const;
+
+    /**Set the H.235 password in the gatekeeper.
+      */
+    void SetPassword(
+      const PString & password
+    );
   //@}
 
 
@@ -272,7 +307,15 @@ class H323Gatekeeper : public H225_RAS
     // Gatekeeper registration state variables
     BOOL    discoveryComplete;
     BOOL    isRegistered;
-    PWORDArray endpointIdentifier;
+    PString endpointIdentifier;
+
+    H235Authenticators authenticators;
+
+    enum {
+      RequireARQ,
+      PregrantARQ,
+      PreGkRoutedARQ
+    } pregrantMakeCall, pregrantAnswerCall;
     H323TransportAddress gkRouteAddress;
 
     // Gatekeeper operation variables
@@ -282,6 +325,7 @@ class H323Gatekeeper : public H225_RAS
 
     // Inter-thread transfer variables
     unsigned allocatedBandwidth;
+    H225_ArrayOf_AliasAddress * newAliasAddresses;
 };
 
 

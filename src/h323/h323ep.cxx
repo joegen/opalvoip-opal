@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2003  2001/08/01 05:14:19  robertj
+ * Revision 1.2004  2001/08/13 05:10:39  robertj
+ * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 2.2  2001/08/01 05:14:19  robertj
  * Moved media formats list from endpoint to connection.
  * Fixed accept of call to early enough to set connections capabilities.
  *
@@ -36,6 +39,10 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.92  2001/08/02 04:31:48  robertj
+ * Changed to still maintain gatekeeper link if GRQ succeeded but RRQ
+ *   failed. Thanks Ben Madsen & Graeme Reid.
  *
  * Revision 1.91  2001/07/17 04:44:32  robertj
  * Partial implementation of T.120 and T.38 logical channels.
@@ -621,12 +628,17 @@ H323Gatekeeper * H323EndPoint::InternalCreateGatekeeper(OpalTransport * transpor
 
 BOOL H323EndPoint::InternalRegisterGatekeeper(H323Gatekeeper * gk, BOOL discovered)
 {
-  if (discovered && gk->RegistrationRequest()) {
-    gatekeeper = gk;
-    return TRUE;
+  if (discovered) {
+    if (gk->RegistrationRequest()) {
+      gatekeeper = gk;
+      return TRUE;
+    }
+    else  // RRQ was rejected continue listening
+      gatekeeper = gk;
   }
+  else // Only stop listening if the GRQ was rejected
+    delete gk;
 
-  delete gk;
   return FALSE;
 }
 
@@ -639,12 +651,15 @@ H323Gatekeeper * H323EndPoint::CreateGatekeeper(OpalTransport * transport)
 
 BOOL H323EndPoint::RemoveGatekeeper(int reason)
 {
+  BOOL ok = TRUE;
+
   if (gatekeeper == NULL)
-    return TRUE;
+    return ok;
 
   ClearAllCalls();
 
-  BOOL ok = gatekeeper->UnregistrationRequest(reason);
+  if (gatekeeper->IsRegistered()) // If we are registered send a URQ
+    ok = gatekeeper->UnregistrationRequest(reason);
 
   delete gatekeeper;
   gatekeeper = NULL;

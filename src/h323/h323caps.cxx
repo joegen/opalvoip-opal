@@ -27,12 +27,18 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2002  2001/08/01 05:12:59  robertj
+ * Revision 1.2003  2001/08/13 05:10:39  robertj
+ * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 2.1  2001/08/01 05:12:59  robertj
  * Major changes to H.323 capabilities, uses OpalMediaFormat for base name.
  * Added "known" codecs capability clases.
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.37  2001/08/06 03:08:56  robertj
+ * Fission of h323.h to h323ep.h & h323con.h, h323.h now just includes files.
  *
  * Revision 1.36  2001/07/19 09:50:30  robertj
  * Added code for default session ID on data channel being three.
@@ -165,9 +171,10 @@
 #pragma implementation "h323caps.h"
 #endif
 
+#include <h323/h323caps.h>
+
 #include <h323/h323ep.h>
 #include <h323/h323con.h>
-#include <h323/h323caps.h>
 #include <h323/h323pdu.h>
 #include <h323/transaddr.h>
 

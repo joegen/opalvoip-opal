@@ -24,8 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q931.h,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 1.2002  2001/08/13 05:10:39  robertj
+ * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.32  2001/08/03 14:12:07  robertj
+ * Fixed value for Call State Information Element
  *
  * Revision 1.31  2001/07/24 23:40:15  craigs
  * Added ability to remove Q931 IE
@@ -210,7 +216,7 @@ class Q931 : public PObject
       CauseIE              = 0x08,
       FacilityIE           = 0x1c,
       ProgressIndicatorIE  = 0x1e,
-      CallStateIE          = 0x24,
+      CallStateIE          = 0x14,
       DisplayIE            = 0x28,
       SignalIE             = 0x34,
       CallingPartyNumberIE = 0x6c,

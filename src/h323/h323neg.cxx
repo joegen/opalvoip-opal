@@ -27,8 +27,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323neg.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2001/08/13 05:10:39  robertj
+ * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.51  2001/08/06 03:08:56  robertj
+ * Fission of h323.h to h323ep.h & h323con.h, h323.h now just includes files.
  *
  * Revision 1.50  2001/05/30 23:34:54  robertj
  * Added functions to send TCS=0 for transmitter side pause.

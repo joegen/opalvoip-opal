@@ -27,8 +27,25 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkserver.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2001/08/13 05:10:39  robertj
+ * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.5  2001/08/10 11:03:52  robertj
+ * Major changes to H.235 support in RAS to support server.
+ *
+ * Revision 1.4  2001/08/06 07:44:55  robertj
+ * Fixed problems with building without SSL
+ *
+ * Revision 1.3  2001/08/06 03:18:38  robertj
+ * Fission of h323.h to h323ep.h & h323con.h, h323.h now just includes files.
+ * Improved access to H.235 secure RAS functionality.
+ * Changes to H.323 secure RAS contexts to help use with gk server.
+ *
+ * Revision 1.2  2001/07/24 10:12:33  craigs
+ * Fixed problem with admission requests not having src signalling addresses
  *
  * Revision 1.1  2001/07/24 02:31:07  robertj
  * Added gatekeeper RAS protocol server classes.
@@ -44,7 +61,7 @@
 #include <h323/gkserver.h>
 
 #include <h323/h323ep.h>
-#include <h323/h235ras.h>
+#include <h323/h323pdu.h>
 
 
 #define new PNEW
@@ -116,6 +133,11 @@ H323RegisteredEndPoint::H323RegisteredEndPoint(const PString & id)
 {
   PTRACE(4, "RAS\tCreated registered endpoint: " << id);
 
+#ifdef P_SSL
+  authenticators.Append(new H235AuthProcedure1);
+#endif
+  authenticators.Append(new H235AuthSimpleMD5);
+
   activeCalls.DisallowDeleteObjects();
 }
 
@@ -150,7 +172,7 @@ BOOL H323RegisteredEndPoint::OnRegistration(const H323GatekeeperServer & server,
   }
 
   if (rasAddresses.IsEmpty()) {
-    rrj.SetTag(H225_RegistrationRejectReason::e_invalidRASAddress);
+    rrj.m_rejectReason.SetTag(H225_RegistrationRejectReason::e_invalidRASAddress);
     return FALSE;
   }
 
@@ -161,14 +183,30 @@ BOOL H323RegisteredEndPoint::OnRegistration(const H323GatekeeperServer & server,
   }
 
   if (signalAddresses.IsEmpty()) {
-    rrj.SetTag(H225_RegistrationRejectReason::e_invalidCallSignalAddress);
+    rrj.m_rejectReason.SetTag(H225_RegistrationRejectReason::e_invalidCallSignalAddress);
     return FALSE;
   }
 
   if (rrq.HasOptionalField(H225_RegistrationRequest::e_terminalAlias)) {
     aliases.SetSize(rrq.m_terminalAlias.GetSize());
-    for (i = 0; i < rrq.m_terminalAlias.GetSize(); i++)
-      aliases[i] = H323GetAliasAddressString(rrq.m_terminalAlias[i]);
+    for (i = 0; i < rrq.m_terminalAlias.GetSize(); i++) {
+      PString alias = H323GetAliasAddressString(rrq.m_terminalAlias[i]);
+      aliases[i] = alias;
+
+      PString password;
+      if (!server.GetUsersPassword(alias, password)) {
+        rrj.m_rejectReason.SetTag(H225_RegistrationRejectReason::e_securityDenial);
+        return FALSE;
+      }
+      if (!password) {
+        for (PINDEX j = 0; j < authenticators.GetSize(); j++) {
+          authenticators[j].SetRemoteId(identifier);
+          authenticators[j].SetPassword(password);
+          if (!rrq.m_keepAlive)
+            authenticators[j].Enable();
+        }
+      }
+    }
   }
 
   timeToLive = server.GetTimeToLive();
@@ -217,6 +255,7 @@ H323GatekeeperListener::H323GatekeeperListener(H323EndPoint & ep,
     gatekeeper(gk)
 {
   gatekeeperIdentifier = id;
+  currentEP = NULL;
 
   transport->SetPromiscuous(TRUE);
 
@@ -238,11 +277,6 @@ H323GatekeeperListener::~H323GatekeeperListener()
 
 BOOL H323GatekeeperListener::CheckGatekeeperIdentifier(unsigned optionalField,
                                                       const PASN_Sequence & pdu,
-#if PTRACING
-                                                       const char * PDU_name,
-#else
-                                                       const char *,
-#endif
                                   const H225_GatekeeperIdentifier & identifier)
 {
   if (!pdu.HasOptionalField(optionalField))
@@ -253,30 +287,46 @@ BOOL H323GatekeeperListener::CheckGatekeeperIdentifier(unsigned optionalField,
   if (gatekeeperIdentifier == gkid)
     return TRUE;
 
-  PTRACE(2, "RAS\t" << PDU_name << " rejected, has different identifier, got \"" << gkid << '"');
+  PTRACE(2, "RAS\t" << lastReceivedPDU->GetTagName()
+         << " rejected, has different identifier, got \"" << gkid << '"');
   return FALSE;
 }
 
 
 BOOL H323GatekeeperListener::GetRegisteredEndPoint(unsigned rejectTag,
+                                                   unsigned securityRejectTag,
                                                    PASN_Choice & reject,
-#if PTRACING
-                                                   const char * PDU_name,
-#else
-                                                   const char *,
-#endif
-                                                   const H225_EndpointIdentifier & identifier,
-                                                   H323RegisteredEndPoint * & ep)
+                                                   unsigned securityField,
+                                                   const PASN_Sequence & pdu,
+                                                   const H225_ArrayOf_CryptoH323Token & cryptoTokens,
+                                                   const H225_EndpointIdentifier & identifier)
 {
-  ep = gatekeeper.FindEndPointByIdentifier(identifier);
-  if (ep != NULL) {
-    transport->ConnectTo(ep->GetRASAddress(0));
-    return TRUE;
+  currentEP = gatekeeper.FindEndPointByIdentifier(identifier);
+  if (currentEP == NULL) {
+    reject.SetTag(rejectTag);
+    PTRACE(2, "RAS\t" << lastReceivedPDU->GetTagName()
+           << " rejected, \"" << identifier.GetValue() << "\" not registered");
+    return FALSE;
   }
 
-  reject.SetTag(rejectTag);
-  PTRACE(2, "RAS\t" << PDU_name << " rejected, \"" << identifier << "\" not registered");
-  return FALSE;
+  transport->ConnectTo(currentEP->GetRASAddress(0));
+
+  if (!CheckCryptoTokens(cryptoTokens, pdu, securityField)) {
+    reject.SetTag(securityRejectTag);
+    PTRACE(2, "RAS\t" << lastReceivedPDU->GetTagName()
+           << " rejected, security tokens for \"" << identifier.GetValue() << "\" invalid.");
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+
+BOOL H323GatekeeperListener::HandleRasPDU(const H323RasPDU & response)
+{
+  BOOL status = H225_RAS::HandleRasPDU(response);
+  currentEP = NULL;
+  return status;
 }
 
 
@@ -291,7 +341,7 @@ BOOL H323GatekeeperListener::OnDiscovery(const H225_GatekeeperRequest & grq,
   }
 
   if (!CheckGatekeeperIdentifier(H225_GatekeeperRequest::e_gatekeeperIdentifier,
-                                 grq, "GRQ", grq.m_gatekeeperIdentifier))
+                                 grq, grq.m_gatekeeperIdentifier))
     return FALSE;
 
   H323TransportAddress address = transport->GetLocalAddress();
@@ -301,22 +351,22 @@ BOOL H323GatekeeperListener::OnDiscovery(const H225_GatekeeperRequest & grq,
 }
 
 
-void H323GatekeeperListener::OnReceiveGatekeeperRequest(const H225_GatekeeperRequest & request)
+BOOL H323GatekeeperListener::OnReceiveGatekeeperRequest(const H225_GatekeeperRequest & request)
 {
   if (!transport->ConnectTo(H323TransportAddress(request.m_rasAddress))) {
     PTRACE(2, "RAS\tGRQ does not have valid RAS address! Ignoring PDU.");
-    return;
+    return FALSE;
   }
 
-  H323_DECLARE_RAS_PDU(confirm, endpoint);
-  H323_DECLARE_RAS_PDU(reject, endpoint);
+  H323RasPDU confirm(*this);
+  H323RasPDU reject(*this);
   if (OnDiscovery(request,
                   confirm.BuildGatekeeperConfirm(request.m_requestSeqNum),
                   reject.BuildGatekeeperReject(request.m_requestSeqNum,
                                                H225_GatekeeperRejectReason::e_terminalExcluded)))
-    WritePDU(confirm);
+    return WritePDU(confirm);
   else
-    WritePDU(reject);
+    return WritePDU(reject);
 }
 
 
@@ -324,10 +374,8 @@ BOOL H323GatekeeperListener::OnRegistration(const H225_RegistrationRequest & rrq
                                             H225_RegistrationConfirm & rcf,
                                             H225_RegistrationReject & rrj)
 {
-  H323RegisteredEndPoint * ep = NULL;
-  if (rrq.HasOptionalField(H225_RegistrationRequest::e_keepAlive) && rrq.m_keepAlive &&
-      rrq.HasOptionalField(H225_RegistrationRequest::e_endpointIdentifier))
-    ep = gatekeeper.FindEndPointByIdentifier(rrq.m_endpointIdentifier);
+  if (rrq.m_keepAlive && rrq.HasOptionalField(H225_RegistrationRequest::e_endpointIdentifier))
+    currentEP = gatekeeper.FindEndPointByIdentifier(rrq.m_endpointIdentifier);
 
   PINDEX i;
   OpalTransportAddress oldRemoteAddress = transport->GetRemoteAddress();
@@ -337,7 +385,7 @@ BOOL H323GatekeeperListener::OnRegistration(const H225_RegistrationRequest & rrq
   }
 
   if (i >= rrq.m_rasAddress.GetSize() &&
-     (ep == NULL || !transport->ConnectTo(ep->GetRASAddress(0)))) {
+     (currentEP == NULL || !transport->ConnectTo(currentEP->GetRASAddress(0)))) {
     transport->ConnectTo(oldRemoteAddress);
     rrj.m_rejectReason.SetTag(H225_RegistrationRejectReason::e_invalidRASAddress);
     PTRACE(2, "RAS\tRRQ rejected, does not have valid RAS address!");
@@ -351,54 +399,38 @@ BOOL H323GatekeeperListener::OnRegistration(const H225_RegistrationRequest & rrq
   }
 
   if (!CheckGatekeeperIdentifier(H225_RegistrationRequest::e_gatekeeperIdentifier,
-                                 rrq, "RRQ", rrq.m_gatekeeperIdentifier))
+                                 rrq, rrq.m_gatekeeperIdentifier))
     return FALSE;
 
-  if (!gatekeeper.OnRegistration(ep, rrq, rcf, rrj)) {
+  if (!gatekeeper.OnRegistration(currentEP, rrq, rcf, rrj)) {
     PTRACE(2, "RAS\tRRQ rejected: " << rrj.m_rejectReason.GetTagName());
     return FALSE;
   }
 
-  PTRACE(2, "RAS\tRRQ accepted: " << rcf.m_endpointIdentifier.GetValue());
+  if (!CheckCryptoTokens(rrq.m_cryptoTokens, rrq, H225_RegistrationRequest::e_cryptoTokens)) {
+    rrj.m_rejectReason.SetTag(H225_RegistrationRejectReason::e_securityDenial);
+    PTRACE(2, "RAS\tRRQ rejected, security tokens for \"" << rcf.m_endpointIdentifier.GetValue() << "\" invalid.");
+    return FALSE;
+  }
+
+  PTRACE(2, "RAS\tRRQ accepted: \"" << rcf.m_endpointIdentifier.GetValue() << '"');
 
   SetUpCallSignalAddresses(rcf.m_callSignalAddress);
-
-  switch (pregrantMakeCall) {
-    case PreGkRoutedARQ :
-      rcf.m_preGrantedARQ.m_useGKCallSignalAddressToMakeCall = TRUE;
-      // Do next case
-    case PregrantARQ :
-      rcf.m_preGrantedARQ.m_makeCall = TRUE;
-      // Do next case
-    case RequireARQ :
-      break;
-  }
-
-  switch (pregrantAnswerCall) {
-    case PreGkRoutedARQ :
-      rcf.m_preGrantedARQ.m_useGKCallSignalAddressToAnswer = TRUE;
-      // Do next case
-    case PregrantARQ :
-      rcf.m_preGrantedARQ.m_answerCall = TRUE;
-      // Do next case
-    case RequireARQ :
-      break;
-  }
 
   return TRUE;
 }
 
 
-void H323GatekeeperListener::OnReceiveRegistrationRequest(const H225_RegistrationRequest & request)
+BOOL H323GatekeeperListener::OnReceiveRegistrationRequest(const H225_RegistrationRequest & request)
 {
-  H323_DECLARE_RAS_PDU(confirm, endpoint);
-  H323_DECLARE_RAS_PDU(reject, endpoint);
+  H323RasPDU confirm(*this);
+  H323RasPDU reject(*this);
   if (OnRegistration(request,
                      confirm.BuildRegistrationConfirm(request.m_requestSeqNum),
                      reject.BuildRegistrationReject(request.m_requestSeqNum)))
-    WritePDU(confirm);
+    return WritePDU(confirm);
   else
-    WritePDU(reject);
+    return WritePDU(reject);
 }
 
 
@@ -406,34 +438,39 @@ BOOL H323GatekeeperListener::OnUnregistration(const H225_UnregistrationRequest &
                                               H225_UnregistrationConfirm & ucf,
                                               H225_UnregistrationReject & urj)
 {
-  H323RegisteredEndPoint * ep;
   if (urq.HasOptionalField(H225_RegistrationRequest::e_endpointIdentifier))
-    ep = gatekeeper.FindEndPointByIdentifier(urq.m_endpointIdentifier);
+    currentEP = gatekeeper.FindEndPointByIdentifier(urq.m_endpointIdentifier);
   else
-    ep = gatekeeper.FindEndPointBySignalAddresses(urq.m_callSignalAddress);
+    currentEP = gatekeeper.FindEndPointBySignalAddresses(urq.m_callSignalAddress);
 
-  if (ep == NULL) {
+  if (currentEP == NULL) {
     urj.m_rejectReason.SetTag(H225_UnregRejectReason::e_notCurrentlyRegistered);
     PTRACE(2, "RAS\tURQ rejected, not registered");
     return FALSE;
   }
 
-  transport->ConnectTo(ep->GetRASAddress(0));
+  transport->ConnectTo(currentEP->GetRASAddress(0));
 
-  return gatekeeper.OnUnregistration(ep, urq, ucf, urj);
+  return gatekeeper.OnUnregistration(currentEP, urq, ucf, urj);
 }
 
 
-void H323GatekeeperListener::OnReceiveUnregistrationRequest(const H225_UnregistrationRequest & request)
+BOOL H323GatekeeperListener::OnReceiveUnregistrationRequest(const H225_UnregistrationRequest & request)
 {
-  H323_DECLARE_RAS_PDU(confirm, endpoint);
-  H323_DECLARE_RAS_PDU(reject, endpoint);
+  BOOL ok;
+  H323RasPDU confirm(*this);
+  H323RasPDU reject(*this);
   if (OnUnregistration(request,
                        confirm.BuildUnregistrationConfirm(request.m_requestSeqNum),
                        reject.BuildUnregistrationReject(request.m_requestSeqNum)))
-    WritePDU(confirm);
+    ok = WritePDU(confirm);
   else
-    WritePDU(reject);
+    ok = WritePDU(reject);
+
+  if (currentEP != NULL && gatekeeper.FindEndPointByIdentifier(currentEP->GetIdentifier()) == NULL)
+    delete currentEP;
+
+  return ok;
 }
 
 
@@ -459,16 +496,17 @@ BOOL H323GatekeeperListener::OnAdmission(const H225_AdmissionRequest & arq,
                                          H225_AdmissionConfirm & acf,
                                          H225_AdmissionReject & arj)
 {
-  H323RegisteredEndPoint * ep;
   if (!GetRegisteredEndPoint(H225_AdmissionRejectReason::e_invalidEndpointIdentifier,
-                             arj.m_rejectReason, "ARQ", arq.m_endpointIdentifier, ep))
+                             H225_AdmissionRejectReason::e_securityDenial,
+                             arj.m_rejectReason, H225_AdmissionRequest::e_cryptoTokens,
+                             arq, arq.m_cryptoTokens, arq.m_endpointIdentifier))
     return FALSE;
 
   if (!CheckGatekeeperIdentifier(H225_AdmissionRequest::e_gatekeeperIdentifier,
-                                 arq, "ARQ", arq.m_gatekeeperIdentifier))
+                                 arq, arq.m_gatekeeperIdentifier))
     return FALSE;
 
-  if (!gatekeeper.OnAdmission(*ep, arq, acf, arj))
+  if (!gatekeeper.OnAdmission(*currentEP, arq, acf, arj))
     return FALSE;
 
   if (acf.m_callModel.GetTag() == H225_CallModel::e_gatekeeperRouted) {
@@ -481,16 +519,16 @@ BOOL H323GatekeeperListener::OnAdmission(const H225_AdmissionRequest & arq,
 }
 
 
-void H323GatekeeperListener::OnReceiveAdmissionRequest(const H225_AdmissionRequest & request)
+BOOL H323GatekeeperListener::OnReceiveAdmissionRequest(const H225_AdmissionRequest & request)
 {
-  H323_DECLARE_RAS_PDU(confirm, endpoint);
-  H323_DECLARE_RAS_PDU(reject, endpoint);
+  H323RasPDU confirm(*this);
+  H323RasPDU reject(*this);
   if (OnAdmission(request,
                   confirm.BuildAdmissionConfirm(request.m_requestSeqNum),
                   reject.BuildAdmissionReject(request.m_requestSeqNum)))
-    WritePDU(confirm);
+    return WritePDU(confirm);
   else
-    WritePDU(reject);
+    return WritePDU(reject);
 }
 
 
@@ -498,29 +536,30 @@ BOOL H323GatekeeperListener::OnDisengage(const H225_DisengageRequest & drq,
                                          H225_DisengageConfirm & dcf,
                                          H225_DisengageReject & drj)
 {
-  H323RegisteredEndPoint * ep;
   if (!GetRegisteredEndPoint(H225_DisengageRejectReason::e_notRegistered,
-                             drj.m_rejectReason, "DRQ", drq.m_endpointIdentifier, ep))
+                             H225_DisengageRejectReason::e_securityDenial,
+                             drj.m_rejectReason, H225_DisengageRequest::e_cryptoTokens,
+                             drq, drq.m_cryptoTokens, drq.m_endpointIdentifier))
     return FALSE;
 
   if (!CheckGatekeeperIdentifier(H225_DisengageRequest::e_gatekeeperIdentifier,
-                                 drq, "DRQ", drq.m_gatekeeperIdentifier))
+                                 drq, drq.m_gatekeeperIdentifier))
     return FALSE;
 
-  return gatekeeper.OnDisengage(*ep, drq, dcf, drj);
+  return gatekeeper.OnDisengage(*currentEP, drq, dcf, drj);
 }
 
 
-void H323GatekeeperListener::OnReceiveDisengageRequest(const H225_DisengageRequest & request)
+BOOL H323GatekeeperListener::OnReceiveDisengageRequest(const H225_DisengageRequest & request)
 {
-  H323_DECLARE_RAS_PDU(confirm, endpoint);
-  H323_DECLARE_RAS_PDU(reject, endpoint);
+  H323RasPDU confirm(*this);
+  H323RasPDU reject(*this);
   if (OnDisengage(request,
                   confirm.BuildDisengageConfirm(request.m_requestSeqNum),
                   reject.BuildDisengageReject(request.m_requestSeqNum)))
-    WritePDU(confirm);
+    return WritePDU(confirm);
   else
-    WritePDU(reject);
+    return WritePDU(reject);
 }
 
 
@@ -543,32 +582,33 @@ BOOL H323GatekeeperListener::OnReceiveDisengageReject(const H225_DisengageReject
 
 
 BOOL H323GatekeeperListener::OnBandwidth(const H225_BandwidthRequest & brq,
-                                       H225_BandwidthConfirm & bcf,
-                                       H225_BandwidthReject & brj)
+                                         H225_BandwidthConfirm & bcf,
+                                         H225_BandwidthReject & brj)
 {
-  H323RegisteredEndPoint * ep;
   if (!GetRegisteredEndPoint(H225_BandRejectReason::e_notBound,
-                             brj.m_rejectReason, "BRQ", brq.m_endpointIdentifier, ep))
+                             H225_BandRejectReason::e_securityDenial,
+                             brj.m_rejectReason, H225_BandwidthRequest::e_cryptoTokens,
+                             brq, brq.m_cryptoTokens, brq.m_endpointIdentifier))
     return FALSE;
 
   if (!CheckGatekeeperIdentifier(H225_BandwidthRequest::e_gatekeeperIdentifier,
-                                 brq, "BRQ", brq.m_gatekeeperIdentifier))
+                                 brq, brq.m_gatekeeperIdentifier))
     return FALSE;
 
-  return gatekeeper.OnBandwidth(*ep, brq, bcf, brj);
+  return gatekeeper.OnBandwidth(*currentEP, brq, bcf, brj);
 }
 
 
-void H323GatekeeperListener::OnReceiveBandwidthRequest(const H225_BandwidthRequest & request)
+BOOL H323GatekeeperListener::OnReceiveBandwidthRequest(const H225_BandwidthRequest & request)
 {
-  H323_DECLARE_RAS_PDU(confirm, endpoint);
-  H323_DECLARE_RAS_PDU(reject, endpoint);
+  H323RasPDU confirm(*this);
+  H323RasPDU reject(*this);
   if (OnBandwidth(request,
                   confirm.BuildBandwidthConfirm(request.m_requestSeqNum),
                   reject.BuildBandwidthReject(request.m_requestSeqNum)))
-    WritePDU(confirm);
+    return WritePDU(confirm);
   else
-    WritePDU(reject);
+    return WritePDU(reject);
 }
 
 
@@ -594,10 +634,11 @@ BOOL H323GatekeeperListener::OnLocation(const H225_LocationRequest & lrq,
                                         H225_LocationConfirm & lcf,
                                         H225_LocationReject & lrj)
 {
-  H323RegisteredEndPoint * ep = NULL;
   if (lrq.HasOptionalField(H225_LocationRequest::e_endpointIdentifier)) {
     if (!GetRegisteredEndPoint(H225_LocationRejectReason::e_notRegistered,
-                               lrj.m_rejectReason, "LRQ", lrq.m_endpointIdentifier, ep))
+                               H225_LocationRejectReason::e_securityDenial,
+                               lrj.m_rejectReason, H225_LocationRequest::e_cryptoTokens,
+                               lrq, lrq.m_cryptoTokens, lrq.m_endpointIdentifier))
       return FALSE;
   }
   else if (!transport->ConnectTo(H323TransportAddress(lrq.m_replyAddress))) {
@@ -607,23 +648,23 @@ BOOL H323GatekeeperListener::OnLocation(const H225_LocationRequest & lrq,
   }
 
   if (!CheckGatekeeperIdentifier(H225_LocationRequest::e_gatekeeperIdentifier,
-                                 lrq, "LRQ", lrq.m_gatekeeperIdentifier))
+                                 lrq, lrq.m_gatekeeperIdentifier))
     return FALSE;
 
   return gatekeeper.OnLocation(lrq, lcf, lrj);
 }
 
 
-void H323GatekeeperListener::OnReceiveLocationRequest(const H225_LocationRequest & request)
+BOOL H323GatekeeperListener::OnReceiveLocationRequest(const H225_LocationRequest & request)
 {
-  H323_DECLARE_RAS_PDU(confirm, endpoint);
-  H323_DECLARE_RAS_PDU(reject, endpoint);
+  H323RasPDU confirm(*this);
+  H323RasPDU reject(*this);
   if (OnLocation(request,
                  confirm.BuildLocationConfirm(request.m_requestSeqNum),
                  reject.BuildLocationReject(request.m_requestSeqNum)))
-    WritePDU(confirm);
+    return WritePDU(confirm);
   else
-    WritePDU(reject);
+    return WritePDU(reject);
 }
 
 
@@ -663,6 +704,23 @@ BOOL H323GatekeeperListener::OnReceiveInfoRequestNak(const H225_InfoRequestNak &
 }
 
 
+H235Authenticators H323GatekeeperListener::GetAuthenticators() const
+{
+  H235Authenticators empty;
+  if (currentEP == NULL)
+    return empty;
+
+  H235Authenticators authenticators = currentEP->GetAuthenticators();
+  if (authenticators.IsEmpty())
+    return empty;
+
+  for (PINDEX i = 0; i < authenticators.GetSize(); i++)
+    authenticators[i].SetLocalId(gatekeeperIdentifier);
+
+  return authenticators;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 H323GatekeeperServer::H323GatekeeperServer(H323EndPoint & ep)
@@ -675,12 +733,16 @@ H323GatekeeperServer::H323GatekeeperServer(H323EndPoint & ep)
   overwriteOnSameSignalAddress = TRUE;
   canOnlyCallRegisteredEP = FALSE;
   canOnlyAnswerRegisteredEP = FALSE;
+  answerCallPreGrantedARQ = FALSE;
+  makeCallPreGrantedARQ = FALSE;
   isGatekeeperRouted = FALSE;
   aliasCanBeHostName = TRUE;
+  usingH235 = FALSE;
 
   identifierBase = time(NULL);
   nextIdentifier = 1;
 
+  byIdentifier.DisallowDeleteObjects();
   byAddress.DisallowDeleteObjects();
   byAlias.DisallowDeleteObjects();
 
@@ -767,7 +829,7 @@ BOOL H323GatekeeperServer::RemoveListener(H323GatekeeperListener * listener)
 }
 
 
-BOOL H323GatekeeperServer::OnRegistration(H323RegisteredEndPoint * ep,
+BOOL H323GatekeeperServer::OnRegistration(H323RegisteredEndPoint * & ep,
                                           const H225_RegistrationRequest & rrq,
                                           H225_RegistrationConfirm & rcf,
                                           H225_RegistrationReject & rrj)
@@ -776,7 +838,7 @@ BOOL H323GatekeeperServer::OnRegistration(H323RegisteredEndPoint * ep,
 
   BOOL isNew = FALSE;
 
-  if (rrq.HasOptionalField(H225_RegistrationRequest::e_keepAlive) && rrq.m_keepAlive) {
+  if (rrq.m_keepAlive) {
     if (ep == NULL) {
       rrj.m_rejectReason.SetTag(H225_RegistrationRejectReason::e_fullRegistrationRequired);
       PTRACE(2, "RAS\tRRQ keep alive rejected, not registered");
@@ -823,13 +885,20 @@ BOOL H323GatekeeperServer::OnRegistration(H323RegisteredEndPoint * ep,
     }
   }
 
+  rcf.m_preGrantedARQ.m_answerCall = answerCallPreGrantedARQ;
+  rcf.m_preGrantedARQ.m_useGKCallSignalAddressToAnswer = answerCallPreGrantedARQ && isGatekeeperRouted;
+  rcf.m_preGrantedARQ.m_makeCall = makeCallPreGrantedARQ;
+  rcf.m_preGrantedARQ.m_useGKCallSignalAddressToMakeCall = makeCallPreGrantedARQ && isGatekeeperRouted;
+
   BOOL accepted = ep->OnRegistration(*this, rrq, rcf, rrj);
 
   if (isNew) {
     if (accepted)
       AddEndPoint(ep);
-    else
+    else {
       delete ep;
+      ep = NULL;
+    }
   }
 
   return accepted;
@@ -856,10 +925,10 @@ BOOL H323GatekeeperServer::OnUnregistration(H323RegisteredEndPoint * ep,
     // Remove all the aliases specified in PDU, if no aliases left, then
     // RemoveAlias() will remove the endpoint
     for (i = 0; i < urq.m_endpointAlias.GetSize(); i++)
-      RemoveAlias(H323GetAliasAddressString(urq.m_endpointAlias[i]));
+      RemoveAlias(H323GetAliasAddressString(urq.m_endpointAlias[i]), FALSE);
   }
   else
-    RemoveEndPoint(ep);
+    RemoveEndPoint(ep, FALSE);
 
   return TRUE;
 }
@@ -885,7 +954,7 @@ void H323GatekeeperServer::AddEndPoint(H323RegisteredEndPoint * ep)
 }
 
 
-void H323GatekeeperServer::RemoveEndPoint(H323RegisteredEndPoint * ep, BOOL lock)
+void H323GatekeeperServer::RemoveEndPoint(H323RegisteredEndPoint * ep, BOOL autoDelete, BOOL lock)
 {
   PTRACE(3, "RAS\tRemoving registered endpoint: " << *ep);
 
@@ -904,10 +973,13 @@ void H323GatekeeperServer::RemoveEndPoint(H323RegisteredEndPoint * ep, BOOL lock
 
   if (lock)
     mutex.Signal();
+
+  if (autoDelete)
+    delete ep;
 }
 
 
-void H323GatekeeperServer::RemoveAlias(const PString & alias)
+void H323GatekeeperServer::RemoveAlias(const PString & alias, BOOL autoDelete)
 {
   PTRACE(3, "RAS\tRemoving registered endpoint alias: " << alias);
 
@@ -918,7 +990,7 @@ void H323GatekeeperServer::RemoveAlias(const PString & alias)
     byAlias.SetAt(alias, NULL);
     ep->RemoveAlias(alias);
     if (ep->GetAliasCount() == 0)
-      RemoveEndPoint(ep, FALSE);
+      RemoveEndPoint(ep, autoDelete, FALSE);
   }
 
   mutex.Signal();
@@ -935,7 +1007,7 @@ H323RegisteredEndPoint * H323GatekeeperServer::CreateRegisteredEndPoint(
 PString H323GatekeeperServer::CreateEndPointIdentifier()
 {
   PWaitAndSignal wait(mutex);
-  return psprintf("%u:%u", identifierBase, nextIdentifier++);
+  return psprintf("%x:%u", identifierBase, nextIdentifier++);
 }
 
 
@@ -977,7 +1049,7 @@ void H323GatekeeperServer::AgeEndPoints()
 
   for (PINDEX i = 0; i < byIdentifier.GetSize(); i++) {
     if (byIdentifier[i].HasExceededTimeToLive())
-      RemoveEndPoint(&byIdentifier[i--], FALSE);
+      RemoveEndPoint(&byIdentifier[i--], TRUE, FALSE);
   }
 }
 
@@ -1199,6 +1271,22 @@ BOOL H323GatekeeperServer::OnBandwidth(H323RegisteredEndPoint & ep,
   }
 
   bcf.m_bandWidth = newBandwidth;
+  return TRUE;
+}
+
+
+BOOL H323GatekeeperServer::GetUsersPassword(const PString & alias,
+                                            PString & password) const
+{
+  if (usingH235) {
+    if (passwords.Contains(alias)) {
+      password = passwords[alias];
+      return TRUE;
+    }
+    return FALSE;
+  }
+
+  password = PString();
   return TRUE;
 }
 
