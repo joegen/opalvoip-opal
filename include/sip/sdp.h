@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2008  2004/01/08 22:27:03  csoutheren
+ * Revision 1.2009  2004/02/07 02:18:19  rjongbloed
+ * Improved searching for media format to use payload type AND the encoding name.
+ *
+ * Revision 2.7  2004/01/08 22:27:03  csoutheren
  * Fixed problem with not using session ID when constructing SDP lists
  *
  * Revision 2.6  2002/09/16 02:52:35  robertj
@@ -208,7 +211,7 @@ class SDPSessionDescription : public PObject
 
     SDPMediaDescription * GetMediaDescription(
       SDPMediaDescription::MediaType rtpMediaType
-    );
+    ) const;
     void AddMediaDescription(SDPMediaDescription * md) { mediaDescriptions.Append(md); }
 
     const OpalTransportAddress & GetDefaultConnectAddress() const { return defaultConnectAddress; }
