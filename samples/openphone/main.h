@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.9  2004/05/25 12:56:07  rjongbloed
+ * Added all silence suppression modes to Options dialog.
+ *
  * Revision 1.8  2004/05/24 13:44:04  rjongbloed
  * More implementation on OPAL OpenPhone.
  *
@@ -155,7 +158,8 @@ class OptionsDialog : public wxDialog
     int       m_SoundBuffers;
     int       m_MinJitter;
     int       m_MaxJitter;
-    bool      m_SilenceSuppression;
+    int       m_SilenceSuppression;
+    int       m_SilenceThreshold;
     int       m_SignalDeadband;
     int       m_SilenceDeadband;
 
