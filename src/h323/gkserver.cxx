@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkserver.cxx,v $
- * Revision 1.2003  2001/10/05 00:22:13  robertj
+ * Revision 1.2004  2001/11/13 04:29:47  robertj
+ * Changed OpalTransportAddress CreateTransport and CreateListsner functions
+ *   to have extra parameter to control local binding of sockets.
+ *
+ * Revision 2.2  2001/10/05 00:22:13  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.1  2001/08/13 05:10:39  robertj
@@ -771,7 +775,7 @@ BOOL H323GatekeeperServer::AddListener(const OpalTransportAddress & interfaceNam
   PIPSocket::Address addr;
   WORD port = H225_RAS::DefaultRasUdpPort;
   if (!interfaceName.GetIpAndPort(addr, port))
-    return AddListener(interfaceName.CreateTransport(endpoint));
+    return AddListener(interfaceName.CreateTransport(endpoint, OpalTransportAddress::FullTSAP));
 
   if (addr != INADDR_ANY)
     return AddListener(new OpalTransportUDP(endpoint, addr, port));

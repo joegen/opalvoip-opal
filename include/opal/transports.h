@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.h,v $
- * Revision 1.2004  2001/11/12 05:32:12  robertj
+ * Revision 1.2005  2001/11/13 04:29:47  robertj
+ * Changed OpalTransportAddress CreateTransport and CreateListsner functions
+ *   to have extra parameter to control local binding of sockets.
+ *
+ * Revision 2.3  2001/11/12 05:32:12  robertj
  * Added OpalTransportAddress::GetIpAddress when don't need port number.
  *
  * Revision 2.2  2001/11/09 05:49:47  robertj
@@ -102,34 +106,63 @@ class OpalTransportAddress : public PString
       */
     virtual PString GetHostName() const;
 
-    /**Create a listener based on this transport address.
+    enum BindOptions {
+      NoBinding,
+      HostOnly,
+      FullTSAP,
+      NumBindOptions
+    };
 
-       For example an address of "tcp$10.0.0.1:1720" would create a TCP
-       listening socket that would be bound to the specific interface
-       10.0.0.1 and listens on port 1720. Note that the address
-       "tcp$*:1720" can be used to bind to INADDR_ANY.
+    /**Create a listener based on this transport address.
+       The BindOptions parameter indicates how the listener is to be created.
+       Note that some transport types may not use this parameter.
+
+       With FullTSAP the the full address is used for any local binding, for
+       example, an address of "tcp$10.0.0.1:1720" would create a TCP listening
+       socket that would be bound to the specific interface 10.0.0.1 and
+       listens on port 1720. Note that the address "tcp$*:1720" can be used
+       to bind to INADDR_ANY, and a port number of zero indicates allocate a
+       new random port number.
+
+       With HostOnly it would be equivalent to translating the above example
+       to "tcp$10.0.0.1:0" before using it.
+
+       With NoBinding then a compatible listener is created and no local
+       binding is made. This is equivalent to translating the address to
+       "tcp$*:0" so that only the overall protocol type is used.
+
+       Also note that if the address has a trailing '+' character then the
+       socket will be bound using the REUSEADDR option, where relevant.
+      */
+    OpalListener * CreateListener(
+      OpalEndPoint & endpoint,   /// Endpoint object for transport creation.
+      BindOptions option         /// Options for how to create listener
+    ) const;
+
+    /**Create a transport suitable for this address type.
+       The BindOptions parameter indicates how the transport is to be created.
+       Note that some transport types may not use this parameter.
+
+       With FullTSAP the the full address is used for any local binding, for
+       example, an address of "tcp$10.0.0.1:1720" would create a TCP transport
+       socket that would be bound to the specific interface 10.0.0.1 and
+       port 1720. Note that the address "tcp$*:1720" can be used to bind to
+       INADDR_ANY, and a port number of zero indicates allocate a new random
+       port number.
+
+       With HostOnly it would be equivalent to translating the above example
+       to "tcp$10.0.0.1:0" before using it.
+
+       With NoBinding then a compatible transport is created and no local
+       binding is made. This is equivalent to translating the address to
+       "tcp$*:0" so that only the overall protocol type is used.
 
        Also note that if the address has a trailing '+' character then the
        socket will be bound using the REUSEADDR option.
       */
-    OpalListener * CreateListener(
-      OpalEndPoint & endpoint   /// Endpoint object for transport creation.
-    ) const;
-
-    /**Create a listener compatible for this address type.
-       This is similar to CreateListener() but does not use the TSAP specified
-       in the OpalTransport. For example an address of "tcp$10.0.0.1:1720"
-       would create a TCP listening socket that would be bound to the specific
-       interface 10.0.0.1 but listens on a random OS allocated port number.
-      */
-    OpalListener * CreateCompatibleListener(
-      OpalEndPoint & endpoint   /// Endpoint object for transport creation.
-    ) const;
-
-    /**Create a transport suitable for this address type.
-      */
     virtual OpalTransport * CreateTransport(
-      OpalEndPoint & endpoint   /// Endpoint object for transport creation.
+      OpalEndPoint & endpoint,   /// Endpoint object for transport creation.
+      BindOptions option         /// Options for how to create transport
     ) const;
   //@}
 
@@ -172,6 +205,15 @@ class OpalListener : public PObject
     OpalListener(
       OpalEndPoint & endpoint   /// Endpoint listener is used for
     );
+  //@}
+
+  /**@name Overrides from PObject */
+  //@{
+    /**Print the description of the listener to the stream.
+      */
+    void PrintOn(
+      ostream & strm
+    ) const;
   //@}
 
   /**@name Operations */
@@ -448,6 +490,15 @@ class OpalTransport : public PIndirectChannel
     ~OpalTransport();
   //@}
 
+  /**@name Overrides from PObject */
+  //@{
+    /**Print the description of the listener to the stream.
+      */
+    void PrintOn(
+      ostream & strm
+    ) const;
+  //@}
+
   /**@name Operations */
   //@{
     /**Get indication of the type of underlying transport.
@@ -581,7 +632,8 @@ class OpalTransportIP : public OpalTransport
      */
     OpalTransportIP(
       OpalEndPoint & endpoint,    /// Endpoint object
-      PIPSocket::Address binding  /// Local interface to use
+      PIPSocket::Address binding, /// Local interface to use
+      WORD port                   /// Local port to bind to
     );
   //@}
 
@@ -628,7 +680,9 @@ class OpalTransportTCP : public OpalTransportIP
      */
     OpalTransportTCP(
       OpalEndPoint & endpoint,    /// Endpoint object
-      PIPSocket::Address binding = INADDR_ANY /// Local interface to use
+      PIPSocket::Address binding = INADDR_ANY, /// Local interface to use
+      WORD port = 0,              /// Local port to bind to
+      BOOL reuseAddr = FALSE      /// Flag for binding to already bound interface
     );
     OpalTransportTCP(
       OpalEndPoint & endpoint,    /// Endpoint object
@@ -690,6 +744,9 @@ class OpalTransportTCP : public OpalTransportIP
        Returns TRUE if the protocol handshaking is successful.
      */
     virtual BOOL OnOpen();
+
+
+    BOOL reuseAddressFlag;
 };
 
 
@@ -705,7 +762,7 @@ class OpalTransportUDP : public OpalTransportIP
       OpalEndPoint & endpoint,    /// Endpoint object
       PIPSocket::Address binding = INADDR_ANY, /// Local interface to use
       WORD port = 0,                           /// Local port to use
-      BOOL promiscuous = FALSE    /// Accept data from anyone
+      BOOL reuseAddr = FALSE      /// Flag for binding to already bound interface
     );
 
     /**Create a new transport channel.
@@ -767,6 +824,15 @@ class OpalTransportUDP : public OpalTransportIP
       */
     virtual void EndConnect(
       const OpalTransportAddress & localAddress  /// Resultant local address
+    );
+
+    /**Set remote address to connect to.
+       Note that this does not necessarily initiate a transport level
+       connection, but only indicates where to connect to. The actual
+       connection is made by the Connect() function.
+      */
+    virtual BOOL SetRemoteAddress(
+      const OpalTransportAddress & address
     );
 
     /**Set read to promiscuous mode.
