@@ -29888,6 +29888,7 @@ EXPORTS
     ?GetDeviceNames@OpalVoipBlasterDevice@@SA?AVPStringArray@@XZ @29877 NONAME
     ?GetDirection@H323BidirectionalChannel@@UBE?AW4Directions@H323Channel@@XZ @29878 NONAME
     ?GetDirection@H323UnidirectionalChannel@@UBE?AW4Directions@H323Channel@@XZ @29879 NONAME
+    ?GetDisplayName@OpalConnection@@QBEABVPString@@XZ @35501 NONAME
     ?GetDisplayName@Q931@@QBE?AVPString@@XZ @29880 NONAME
     ?GetDistinctiveRing@H323Connection@@QBEIXZ @29881 NONAME
     ?GetDistinctiveRing@H323SignalPDU@@QBEIXZ @29882 NONAME
