@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q931.cxx,v $
- * Revision 1.2009  2004/02/19 10:47:04  rjongbloed
+ * Revision 1.2010  2004/06/06 08:45:11  rjongbloed
+ * Fixed incorrect test for Q.931 calls state information element, thanks Stelios Vaiopoulos
+ *
+ * Revision 2.8  2004/02/19 10:47:04  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.7  2003/01/07 04:39:53  robertj
@@ -894,7 +897,7 @@ void Q931::SetCallState(CallStates value, unsigned standard)
 
 Q931::CallStates Q931::GetCallState(unsigned * standard) const
 {
-  if (!HasIE(SignalIE))
+  if (!HasIE(CallStateIE))
     return CallState_ErrorInIE;
 
   PBYTEArray data = GetIE(CallStateIE);
