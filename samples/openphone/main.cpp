@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cpp,v $
+ * Revision 1.24  2004/09/29 12:47:39  rjongbloed
+ * Added gatekeeper support
+ *
  * Revision 1.23  2004/09/29 12:02:40  rjongbloed
  * Added popup menu to edit Speed DIals
  *
@@ -982,31 +985,27 @@ bool MyFrame::Initialise()
   LOAD_FIELD_BOOL(DisableH245Tunneling, h323EP->DisableH245Tunneling);
   LOAD_FIELD_BOOL(DisableH245inSETUP, h323EP->DisableH245inSetup);
 
-  PwxString hostname, username, password;
-  int mode;
-  config->Read(GatekeeperModeKey, &mode, 0);
-  if (mode > 0) {
-    config->Read(GatekeeperAddressKey, &hostname, "");
-    config->Read(GatekeeperIdentifierKey, &username, "");
-    if (h323EP->UseGatekeeper(hostname, username)) {
-      if (config->Read(GatekeeperTTLKey, &value1))
-        h323EP->SetGatekeeperTimeToLive(PTimeInterval(0, value1));
+  PwxString username, password;
+  config->Read(GatekeeperModeKey, &m_gatekeeperMode, 0);
+  if (m_gatekeeperMode > 0) {
+    if (config->Read(GatekeeperTTLKey, &value1))
+      h323EP->SetGatekeeperTimeToLive(PTimeInterval(0, value1));
 
-      config->Read(GatekeeperLoginKey, &username, "");
-      config->Read(GatekeeperPasswordKey, &password, "");
-      h323EP->SetGatekeeperPassword(password, username);
-    }
-    else {
-      if (mode > 1) {
-        return false;
-      }
-    }
+    config->Read(GatekeeperLoginKey, &username, "");
+    config->Read(GatekeeperPasswordKey, &password, "");
+    h323EP->SetGatekeeperPassword(password, username);
+
+    config->Read(GatekeeperAddressKey, &m_gatekeeperAddress, "");
+    config->Read(GatekeeperIdentifierKey, &m_gatekeeperIdentifier, "");
+    if (!StartGatekeeper())
+      return false;
   }
 
   ////////////////////////////////////////
   // SIP fields
   config->SetPath(SIPGroup);
   const SIPURL & proxy = sipEP->GetProxy();
+  PwxString hostname;
   config->Read(SIPProxyKey, &hostname, PwxString(proxy.GetHostName()));
   config->Read(SIPProxyUsernameKey, &username, PwxString(proxy.GetUserName()));
   config->Read(SIPProxyPasswordKey, &password, PwxString(proxy.GetPassword()));
@@ -1017,10 +1016,8 @@ bool MyFrame::Initialise()
 
   if (config->Read(RegistrarNameKey, &m_registrarName) &&
       config->Read(RegistrarUsernameKey, &m_registrarUser) &&
-      config->Read(RegistrarPasswordKey, &m_registrarPassword)) {
-    sipEP->Register(m_registrarName, m_registrarUser, m_registrarPassword);
-    LogWindow << "SIP registration started for " << m_registrarUser << '@' << m_registrarName << endl;
-  }
+      config->Read(RegistrarPasswordKey, &m_registrarPassword))
+    StartRegistrar();
 
   ////////////////////////////////////////
   // Routing fields
@@ -1067,6 +1064,32 @@ bool MyFrame::Initialise()
     }
   }
 
+  return true;
+}
+
+
+bool MyFrame::StartGatekeeper()
+{
+  LogWindow << "H.323 registration started for " << m_gatekeeperIdentifier;
+  if (!m_gatekeeperIdentifier.IsEmpty() || !m_gatekeeperAddress.IsEmpty())
+    LogWindow << '@';
+  LogWindow << m_gatekeeperAddress << endl;
+
+  if (h323EP->UseGatekeeper(m_gatekeeperAddress, m_gatekeeperIdentifier)) {
+    LogWindow << "H.323 registration successful to " << *h323EP->GetGatekeeper() << endl;
+    return true;
+  }
+
+  return m_gatekeeperMode < 2;
+}
+
+
+bool MyFrame::StartRegistrar()
+{
+  if (!sipEP->Register(m_registrarName, m_registrarUser, m_registrarPassword))
+    return false;
+
+  LogWindow << "SIP registration started for " << m_registrarUser << '@' << m_registrarName << endl;
   return true;
 }
 
@@ -1261,6 +1284,12 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
   INIT_FIELD(DisableFastStart, m_frame.h323EP->IsFastStartDisabled() != FALSE);
   INIT_FIELD(DisableH245Tunneling, m_frame.h323EP->IsH245TunnelingDisabled() != FALSE);
   INIT_FIELD(DisableH245inSETUP, m_frame.h323EP->IsH245inSetupDisabled() != FALSE);
+  INIT_FIELD(GatekeeperMode, m_frame.m_gatekeeperMode);
+  INIT_FIELD(GatekeeperAddress, m_frame.m_gatekeeperAddress);
+  INIT_FIELD(GatekeeperIdentifier, m_frame.m_gatekeeperIdentifier);
+  INIT_FIELD(GatekeeperTTL, m_frame.h323EP->GetGatekeeperTimeToLive().GetSeconds());
+  INIT_FIELD(GatekeeperLogin, m_frame.h323EP->GetGatekeeperUsername());
+  INIT_FIELD(GatekeeperPassword, m_frame.h323EP->GetGatekeeperPassword());
 
   ////////////////////////////////////////
   // SIP fields
@@ -1448,7 +1477,24 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(DisableFastStart, m_frame.h323EP->DisableFastStart);
   SAVE_FIELD(DisableH245Tunneling, m_frame.h323EP->DisableH245Tunneling);
   SAVE_FIELD(DisableH245inSETUP, m_frame.h323EP->DisableH245inSetup);
-  SAVE_FIELD2(GatekeeperPassword, GatekeeperLogin, m_frame.h323EP->SetGatekeeperPassword);
+
+  config->Write(GatekeeperTTLKey, m_GatekeeperTTL);
+  m_frame.h323EP->SetGatekeeperTimeToLive(PTimeInterval(0, m_GatekeeperTTL));
+
+  if (m_frame.m_gatekeeperMode != m_GatekeeperMode ||
+      m_frame.m_gatekeeperAddress != m_GatekeeperAddress ||
+      m_frame.m_gatekeeperIdentifier != m_GatekeeperIdentifier ||
+      m_frame.h323EP->GetGatekeeperUsername() != m_GatekeeperLogin.c_str() ||
+      m_frame.h323EP->GetGatekeeperPassword() != m_GatekeeperPassword.c_str()) {
+    SAVE_FIELD(GatekeeperMode, m_frame.m_gatekeeperMode = );
+    SAVE_FIELD(GatekeeperAddress, m_frame.m_gatekeeperAddress = );
+    SAVE_FIELD(GatekeeperIdentifier, m_frame.m_gatekeeperIdentifier = );
+    SAVE_FIELD2(GatekeeperPassword, GatekeeperLogin, m_frame.h323EP->SetGatekeeperPassword);
+
+    if (!m_frame.StartGatekeeper()) {
+      // exit app
+    }
+  }
 
   ////////////////////////////////////////
   // SIP fields
@@ -1467,8 +1513,7 @@ bool OptionsDialog::TransferDataFromWindow()
     SAVE_FIELD(RegistrarName, m_frame.m_registrarName =);
     SAVE_FIELD(RegistrarUsername, m_frame.m_registrarUser =);
     SAVE_FIELD(RegistrarPassword, m_frame.m_registrarPassword =);
-    m_frame.sipEP->Register(m_RegistrarName, m_RegistrarUsername, m_RegistrarPassword);
-    LogWindow << "SIP registration started for " << m_RegistrarUsername << '@' << m_RegistrarName << endl;
+    m_frame.StartRegistrar();
   }
 
   ////////////////////////////////////////
@@ -1815,7 +1860,7 @@ MyH323EndPoint::MyH323EndPoint(MyFrame & f)
 
 void MyH323EndPoint::OnRegistrationConfirm()
 {
-  LogWindow << "H.323 registration successful." << endl;
+//  LogWindow << "H.323 registration successful." << endl;
 }
 
 #endif
