@@ -22,7 +22,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2034  2004/03/11 06:54:27  csoutheren
+ * Revision 1.2035  2004/03/13 06:32:17  rjongbloed
+ * Fixes for removal of SIP and H.323 subsystems.
+ * More registration work.
+ *
+ * Revision 2.33  2004/03/11 06:54:27  csoutheren
  * Added ability to disable SIP or H.323 stacks
  *
  * Revision 2.32  2004/03/09 12:09:56  rjongbloed
@@ -490,10 +494,6 @@ BOOL MyManager::Initialise(PArgList & args)
     SetVideoOutputDevice(video);
   }
 
-  // get the protocols in use
-  BOOL useSIP  = !args.HasOption("no-sip");
-  BOOL useH323 = !args.HasOption("no-h323");
-
   if (args.HasOption('j')) {
     unsigned minJitter;
     unsigned maxJitter;
@@ -625,7 +625,7 @@ BOOL MyManager::Initialise(PArgList & args)
   ///////////////////////////////////////
   // Create H.323 protocol handler
 
-  if (useH323) {
+  if (!args.HasOption("no-h323")) {
     h323EP = new H323EndPoint(*this);
 
     noFastStart      = args.HasOption('f');
@@ -713,7 +713,7 @@ BOOL MyManager::Initialise(PArgList & args)
   ///////////////////////////////////////
   // Create SIP protocol handler
 
-  if (useSIP) {
+  if (!args.HasOption("no-sip")) {
     sipEP = new SIPEndPoint(*this);
 
     // set MIME format
@@ -722,10 +722,10 @@ BOOL MyManager::Initialise(PArgList & args)
     // Get local username, multiple uses of -u indicates additional aliases
     if (args.HasOption('u')) {
       PStringArray aliases = args.GetOptionString('u').Lines();
-      sipEP->SetRegistrationName(aliases[0]);
+      sipEP->SetDefaultLocalPartyName(aliases[0]);
     }
     if (args.HasOption('p'))
-      sipEP->SetRegistrationPassword(args.GetOptionString('p'));
+      sipEP->SetProxyPassword(args.GetOptionString('p'));
 
     // Start the listener thread for incoming calls.
     if (args.HasOption("sip-listen")) {
@@ -752,7 +752,7 @@ BOOL MyManager::Initialise(PArgList & args)
     if (args.HasOption('r')) {
       PString registrar = args.GetOptionString('r');
       cout << "Using SIP registrar " << registrar << " ... " << flush;
-      if (sipEP->Register(registrar))
+      if (sipEP->Register(registrar, args.GetOptionString('u'), args.GetOptionString('p')))
         cout << "done.";
       else
         cout << "failed!";
