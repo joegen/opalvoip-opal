@@ -22,7 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2023  2003/04/02 06:52:04  robertj
+# Revision 1.2024  2003/04/08 06:09:19  robertj
+# Fixed ASN compilation so do not need -I on compile line for asn includes.
+#
+# Revision 2.22  2003/04/02 06:52:04  robertj
 # Added dependencies for H450 ASN files
 #
 # Revision 2.21  2003/03/26 02:49:00  robertj
@@ -503,7 +506,7 @@ endif
 # Build rules for ASN files
 
 $(ASN_INCDIR)/%.h : $(ASN_SRCDIR)/%.asn .asnparser.version
-	$(ASNPARSER) -m $(shell echo $(notdir $(basename $<)) | tr a-z A-Z) -c $<
+	$(ASNPARSER) -h asn/ -m $(shell echo $(notdir $(basename $<)) | tr a-z A-Z) -c $<
 	mv $(basename $<).h $@
 
 $(ASN_SRCDIR)/%.cxx : $(ASN_INCDIR)/%.h
@@ -511,12 +514,12 @@ $(ASN_SRCDIR)/%.cxx : $(ASN_INCDIR)/%.h
 
 $(OBJDIR)/%.o : $(ASN_SRCDIR)/%.cxx
 	@if [ ! -d $(OBJDIR) ] ; then mkdir -p $(OBJDIR) ; fi
-	$(CPLUS) -I$(ASN_INCDIR) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
+	$(CPLUS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
 
 $(DEPDIR)/%.dep : $(ASN_SRCDIR)/%.cxx
 	@if [ ! -d $(DEPDIR) ] ; then mkdir -p $(DEPDIR) ; fi
 	@printf %s $(OBJDIR)/ > $@
-	$(CPLUS) -I$(ASN_INCDIR) $(STDCCFLAGS) -M $< >> $@
+	$(CPLUS) $(STDCCFLAGS) -M $< >> $@
 
 
 
@@ -528,7 +531,7 @@ $(ASN_SRCDIR)/h225_2.cxx \
 $(ASN_SRCDIR)/h225_2.dep : $(ASN_INCDIR)/h225.h $(ASN_SRCDIR)/h235_t.cxx
 
 $(ASN_INCDIR)/h225.h: $(ASN_SRCDIR)/h225.asn $(ASN_INCDIR)/h235.h $(ASN_INCDIR)/h245.h .asnparser.version
-	$(ASNPARSER) -s2 -m H225 -r MULTIMEDIA-SYSTEM-CONTROL=H245 -c $<
+	$(ASNPARSER) -s2 -h asn/ -m H225 -r MULTIMEDIA-SYSTEM-CONTROL=H245 -c $<
 	mv $(basename $<).h $@
 
 
@@ -543,7 +546,7 @@ $(ASN_SRCDIR)/h245_3.dep : $(ASN_INCDIR)/h245.h
 
 
 $(ASN_INCDIR)/h245.h: $(ASN_SRCDIR)/h245.asn .asnparser.version
-	$(ASNPARSER) -s3 -m H245 --classheader "H245_AudioCapability=#ifndef PASN_NOPRINTON\nvoid PrintOn(ostream & strm) const;\n#endif" -c $<
+	$(ASNPARSER) -s3 -h asn/ -m H245 --classheader "H245_AudioCapability=#ifndef PASN_NOPRINTON\nvoid PrintOn(ostream & strm) const;\n#endif" -c $<
 	mv $(basename $<).h $@
 
 
