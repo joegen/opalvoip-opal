@@ -22,7 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2028  2004/03/11 06:54:25  csoutheren
+# Revision 1.2029  2004/04/25 02:53:28  rjongbloed
+# Fixed GNU 3.4 warnings
+#
+# Revision 2.27  2004/03/11 06:54:25  csoutheren
 # Added ability to disable SIP or H.323 stacks
 #
 # Revision 2.26  2004/02/23 01:28:49  rjongbloed
@@ -518,12 +521,12 @@ $(OPAL_OBJDIR)/%.o : $(VIC_DIR)/%.c
 $(DEPDIR)/%.dep : $(VIC_DIR)/%.c
 	@if [ ! -d $(DEPDIR) ] ; then mkdir -p $(DEPDIR) ; fi
 	@printf %s $(OPAL_OBJDIR)/ > $@
-	$(CPLUS) -I$(VIC_DIR) $(STDCCFLAGS) $(CFLAGS) -M $< >> $@
+	$(CPLUS) -I$(VIC_DIR) $(STDCCFLAGS:-g=) $(CFLAGS) -M $< >> $@
 
 $(DEPDIR)/%.dep : $(VIC_DIR)/%.cxx
 	@if [ ! -d $(DEPDIR) ] ; then mkdir -p $(DEPDIR) ; fi
 	@printf %s $(OPAL_OBJDIR)/ > $@
-	$(CPLUS) -I$(VIC_DIR) $(STDCCFLAGS) $(CFLAGS) -M $< >> $@
+	$(CPLUS) -I$(VIC_DIR) $(STDCCFLAGS:-g=) $(CFLAGS) -M $< >> $@
 
 
 # Build rules for the GSM codec
