@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2030  2004/01/08 22:23:23  csoutheren
+ * Revision 1.2031  2004/02/07 02:23:21  rjongbloed
+ * Changed to allow opening of more than just audio streams.
+ * Assured that symmetric codecs are used as required by "basic" SIP.
+ * Made media format list subject to adjust \\ment by remoe/order lists.
+ *
+ * Revision 2.29  2004/01/08 22:23:23  csoutheren
  * Fixed problem with not using session ID when constructing SDP lists
  *
  * Revision 2.28  2003/12/20 12:21:18  rjongbloed
@@ -293,23 +298,34 @@ BOOL SIPConnection::SetConnected()
     return TRUE;
   }
 
-  PINDEX i;
   PTRACE(2, "SIP\tSetConnected");
-
-  // create an RTP session number
-  // for now, just hard code it
-  unsigned rtpSessionId = OpalMediaFormat::DefaultAudioSessionID;
 
   SDPSessionDescription sdpOut(GetLocalAddress());
 
   // get the remote media formats
   SDPSessionDescription & sdpIn = originalInvite->GetSDP();
 
+  if (!OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut))
+    return FALSE;
 
-  // look for audio sessions only, at this stage
-  SDPMediaDescription::MediaType rtpMediaType = SDPMediaDescription::Audio;
+  if (endpoint.GetManager().CanAutoStartTransmitVideo())
+    OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut);
+
+  // send the response
+  SIP_PDU response(*originalInvite, SIP_PDU::Successful_OK);
+  response.SetSDP(sdpOut);
+  response.Write(*transport);
+  phase = ConnectedPhase;
+  
+  return TRUE;
+}
 
 
+BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpIn,
+                                              SDPMediaDescription::MediaType rtpMediaType,
+                                              unsigned rtpSessionId,
+                                              SDPSessionDescription & sdpOut)
+{
   // if no matching media type, return FALSE
   SDPMediaDescription * incomingMedia = sdpIn.GetMediaDescription(rtpMediaType);
   if (incomingMedia == NULL) {
@@ -319,10 +335,12 @@ BOOL SIPConnection::SetConnected()
 
   // create the list of Opal format names for the remote end
   remoteFormatList = incomingMedia->GetMediaFormats();
+  AdjustMediaFormats(remoteFormatList);
 
   // find the payload type used for telephone-event, if present
   const SDPMediaFormatList & sdpMediaList = incomingMedia->GetSDPMediaFormats();
 
+  PINDEX i;
   BOOL hasTelephoneEvent = FALSE;
   for (i = 0; !hasTelephoneEvent && (i < sdpMediaList.GetSize()); i++) {
     if (sdpMediaList[i].GetEncodingName() == "telephone-event") {
@@ -347,47 +365,61 @@ BOOL SIPConnection::SetConnected()
 
 
   // look for matching codec in peer connection
-  if (!GetCall().OpenSourceMediaStreams(remoteFormatList, rtpSessionId)) {
+  if (!ownerCall.OpenSourceMediaStreams(*this, remoteFormatList, rtpSessionId)) {
     PTRACE(2, "SIP\tCould not find compatible codecs");
     return FALSE;
   }
 
   // find out what media stream was opened
   // and get the payload type that was selected
-  if (mediaStreams.GetSize() < 1) {
-    PTRACE(2, "SIP\tNo media streams open");
+  if (mediaStreams.IsEmpty()) {
+    PTRACE(2, "SIP\tNo media streams opened");
     return FALSE;
   }
 
   // construct a new media session list with the selected format
   SDPMediaDescription * localMedia = new SDPMediaDescription(
                             GetLocalAddress(rtpSession->GetLocalDataPort()), rtpMediaType);
-  
+
+  // Locate the opened media stream, add it to the reply and open the reverse direction
+  BOOL reverseStreamsFailed = TRUE;
   for (i = 0; i < mediaStreams.GetSize(); i++) {
     OpalMediaStream & mediaStream = mediaStreams[i];
-    localMedia->AddMediaFormat(mediaStream.GetMediaFormat());
-    if (hasTelephoneEvent) {
-      OpalMediaPatch * patch = mediaStream.GetPatch();
-      if (patch != NULL) {
-        if (mediaStream.IsSource())
-          patch->AddFilter(rfc2833Handler->GetReceiveHandler(), mediaStream.GetMediaFormat());
-        else
-          patch->AddFilter(rfc2833Handler->GetTransmitHandler());
+    if (mediaStream.GetSessionID() == rtpSessionId) {
+      OpalMediaFormat mediaFormat = mediaStream.GetMediaFormat();
+      if (OpenSourceMediaStream(mediaFormat, rtpSessionId)) {
+        localMedia->AddMediaFormat(mediaFormat);
+        reverseStreamsFailed = FALSE;
       }
     }
   }
 
-  if (hasTelephoneEvent)
+  if (reverseStreamsFailed) {
+    PTRACE(2, "SIP\tNo reverse media streams opened");
+    mediaStreams.RemoveAll();
+    delete localMedia;
+    return FALSE;
+  }
+
+  // Add in the RFC2833 handler, if used
+  if (hasTelephoneEvent) {
     localMedia->AddSDPMediaFormat(new SDPMediaFormat("0-15", rfc2833Handler->GetPayloadType()));
 
-  sdpOut.AddMediaDescription(localMedia);
+    for (i = 0; i < mediaStreams.GetSize(); i++) {
+      OpalMediaStream & mediaStream = mediaStreams[i];
+      if (mediaStream.GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
+        OpalMediaPatch * patch = mediaStream.GetPatch();
+        if (patch != NULL) {
+          if (mediaStream.IsSource())
+            patch->AddFilter(rfc2833Handler->GetReceiveHandler(), mediaStream.GetMediaFormat());
+          else
+            patch->AddFilter(rfc2833Handler->GetTransmitHandler());
+        }
+      }
+    }
+  }
 
-  // send the response
-  SIP_PDU response(*originalInvite, SIP_PDU::Successful_OK);
-  response.SetSDP(sdpOut);
-  response.Write(*transport);
-  phase = ConnectedPhase;
-  
+  sdpOut.AddMediaDescription(localMedia);
   return TRUE;
 }
 
@@ -579,7 +611,7 @@ SDPSessionDescription * SIPConnection::BuildSDP(RTP_SessionManager & rtpSessions
 
 
   // add the audio formats
-  OpalMediaFormatList formats = ownerCall.GetMediaFormats(*this);
+  OpalMediaFormatList formats = ownerCall.GetMediaFormats(*this, FALSE);
   localMedia->AddMediaFormats(formats, rtpSessionId);
 
   // add in SDP records
@@ -915,14 +947,25 @@ void SIPConnection::OnReceivedSDP(SIP_PDU & pdu)
   if (!pdu.HasSDP())
     return;
 
-  unsigned rtpSessionId = OpalMediaFormat::DefaultAudioSessionID;
-
   SDPSessionDescription & sdp = pdu.GetSDP();
-
-  SDPMediaDescription * mediaDescription = sdp.GetMediaDescription(SDPMediaDescription::Audio);
-  if (mediaDescription == NULL) {
-    PTRACE(1, "SIP\tCould not find SDP media description for audio");
+  if (!OnReceivedSDPMediaDescription(sdp, SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID))
     return;
+
+  remoteFormatList += OpalRFC2833;
+
+  if (endpoint.GetManager().CanAutoStartTransmitVideo())
+    OnReceivedSDPMediaDescription(sdp, SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID);
+}
+
+
+BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
+                                                  SDPMediaDescription::MediaType mediaType,
+                                                  unsigned rtpSessionId)
+{
+  SDPMediaDescription * mediaDescription = sdp.GetMediaDescription(mediaType);
+  if (mediaDescription == NULL) {
+    PTRACE(1, "SIP\tCould not find SDP media description for " << mediaType);
+    return FALSE;
   }
 
   OpalTransportAddress address = mediaDescription->GetTransportAddress();
@@ -936,22 +979,30 @@ void SIPConnection::OnReceivedSDP(SIP_PDU & pdu)
     RTP_UDP * rtpSession = (RTP_UDP *)UseSession(rtpSessionId);
     if (rtpSession == NULL) {
       PTRACE(1, "SIP\tSession in response that we never offered!");
-      return;
+      return FALSE;
     }
 
     if (!rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
       PTRACE(1, "SIP\tCould not set RTP remote socket");
-      return;
+      return FALSE;
     }
   }
 
   remoteFormatList = mediaDescription->GetMediaFormats();
-  remoteFormatList += OpalRFC2833;
 
-  if (!ownerCall.OpenSourceMediaStreams(remoteFormatList, rtpSessionId)) {
+  if (!ownerCall.OpenSourceMediaStreams(*this, remoteFormatList, rtpSessionId)) {
     PTRACE(2, "SIP\tCould not open media streams for audio");
-    return;
+    return FALSE;
   }
+
+  // OPen the reverse streams
+  for (PINDEX i = 0; i < mediaStreams.GetSize(); i++) {
+    OpalMediaStream & mediaStream = mediaStreams[i];
+    if (mediaStream.GetSessionID() == rtpSessionId)
+      OpenSourceMediaStream(mediaStream.GetMediaFormat(), rtpSessionId);
+  }
+
+  return TRUE;
 }
 
 
