@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2012  2004/03/22 11:32:41  rjongbloed
+ * Revision 1.2013  2004/07/11 12:34:48  rjongbloed
+ * Added function to get a list of all possible media formats that may be used given
+ *   a list of media and taking into account all of the registered transcoders.
+ *
+ * Revision 2.11  2004/03/22 11:32:41  rjongbloed
  * Added new codec type for 16 bit Linear PCM as must distinguish between the internal
  *   format used by such things as the sound card and the RTP payload format which
  *   is always big endian.
@@ -278,6 +282,12 @@ class OpalTranscoder : public PObject
       */
     static OpalMediaFormatList GetSourceFormats(
       const OpalMediaFormat & dstFormat    /// Selected destination format
+    );
+
+    /**Get a list of possible media formats that can do bi-directional media.
+      */
+    static OpalMediaFormatList GetPossibleFormats(
+      const OpalMediaFormatList & formats    /// Destination format list
     );
   //@}
 
