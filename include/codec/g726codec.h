@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g726codec.h,v $
- * Revision 1.2008  2004/09/01 12:21:26  rjongbloed
+ * Revision 1.2009  2005/02/21 12:19:44  rjongbloed
+ * Added new "options list" to the OpalMediaFormat class.
+ *
+ * Revision 2.7  2004/09/01 12:21:26  rjongbloed
  * Added initialisation of H323EndPoints capability table to be all codecs so can
  *   correctly build remote caps from fqast connect params. This had knock on effect
  *   with const keywords added in numerous places.
@@ -68,11 +71,6 @@ struct g726_state_s;
 #define OPAL_G726_32 "G.726-32k"
 #define OPAL_G726_24 "G.726-24k"
 #define OPAL_G726_16 "G.726-16k"
-
-extern OpalMediaFormat const OpalG726_40;
-extern OpalMediaFormat const OpalG726_32;
-extern OpalMediaFormat const OpalG726_24;
-extern OpalMediaFormat const OpalG726_16;
 
 
 ///////////////////////////////////////////////////////////////////////////////
