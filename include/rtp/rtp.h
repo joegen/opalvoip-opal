@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2004  2001/11/14 06:20:40  robertj
+ * Revision 1.2005  2002/01/22 05:03:06  robertj
+ * Added enum for illegal payload type value.
+ *
+ * Revision 2.3  2001/11/14 06:20:40  robertj
  * Changed sending of control channel reports to be timer based.
  *
  * Revision 2.2  2001/10/05 00:22:13  robertj
@@ -199,7 +202,8 @@ class RTP_DataFrame : public PBYTEArray
       H263,
       LastKnownPayloadType,
       DynamicBase = 96,
-      MaxPayloadType = 127
+      maxPayloadType = 127,
+      IllegalPayloadType
     };
 
     unsigned GetVersion() const { return (theArray[0]>>6)&3; }
