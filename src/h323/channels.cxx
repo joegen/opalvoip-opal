@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2024  2003/03/17 10:26:59  robertj
+ * Revision 1.2025  2004/02/19 10:47:02  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.23  2003/03/17 10:26:59  robertj
  * Added video support.
  *
  * Revision 2.22  2003/01/07 04:39:53  robertj
@@ -100,6 +103,10 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.136  2003/02/10 05:36:13  robertj
+ * Fixed returning mediaControlChannel address in preference to mediaChannel
+ *   address as Cisco's just feed your own address back at you.
  *
  * Revision 1.135  2002/12/18 11:20:49  craigs
  * Fixed problem with T.38 channels SEGVing thanks to Vyacheslav Frolov
@@ -1323,15 +1330,15 @@ void H323_ExternalRTPChannel::SetExternalAddress(const H323TransportAddress & da
 BOOL H323_ExternalRTPChannel::GetRemoteAddress(PIPSocket::Address & ip,
                                                WORD & dataPort) const
 {
-  if (!remoteMediaAddress)
-    return remoteMediaAddress.GetIpAndPort(ip, dataPort);
-
   if (!remoteMediaControlAddress) {
     if (remoteMediaControlAddress.GetIpAndPort(ip, dataPort)) {
       dataPort--;
       return TRUE;
     }
   }
+
+  if (!remoteMediaAddress)
+    return remoteMediaAddress.GetIpAndPort(ip, dataPort);
 
   return FALSE;
 }

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g729codec.cxx,v $
- * Revision 1.2005  2003/06/02 04:04:54  rjongbloed
+ * Revision 1.2006  2004/02/19 10:47:02  rjongbloed
+ * Merged OpenH323 version 1.13.1 changes.
+ *
+ * Revision 2.4  2003/06/02 04:04:54  rjongbloed
  * Changed to use new autoconf system
  *
  * Revision 2.3  2003/01/07 04:39:53  robertj
@@ -38,6 +41,9 @@
  *
  * Revision 2.1  2002/07/01 04:56:31  robertj
  * Updated to OpenH323 v1.9.1
+ *
+ * Revision 1.7  2003/05/05 11:59:25  robertj
+ * Changed to use autoconf style selection of options and subsystems.
  *
  * Revision 1.6  2002/11/12 00:07:12  robertj
  * Added check for Voice Age G.729 only being able to do a single instance
@@ -78,6 +84,18 @@
 extern "C" {
 #include "va_g729a.h"
 };
+
+
+#if defined(_MSC_VER)
+
+#pragma comment(lib, VOICE_AGE_G729_LIBRARY)
+
+// All of PWLib/OpenH323 use MSVCRT.LIB or MSVCRTD.LIB, but vag729a.lib uses
+// libcmt.lib, so we need to tell the linker to ignore it, can't have two
+// Run Time libraries!
+#pragma comment(linker, "/NODEFAULTLIB:libcmt.lib")
+
+#endif
 
 
 #if defined(_MSC_VER)
