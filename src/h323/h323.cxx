@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2039  2003/03/17 10:26:59  robertj
+ * Revision 1.2040  2003/04/08 02:51:23  robertj
+ * Fixed incorrect test for already started media, thanks Guilhem Tardy.
+ *
+ * Revision 2.38  2003/03/17 10:26:59  robertj
  * Added video support.
  *
  * Revision 2.37  2003/03/07 05:51:10  robertj
@@ -4084,8 +4087,8 @@ BOOL H323Connection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForm
                                            unsigned sessionID)
 {
   // Check if we have already got a transmitter running, select one if not
-  if (fastStartState != FastStartDisabled ||
-      fastStartState != FastStartAcknowledged ||
+  if ((fastStartState == FastStartDisabled ||
+       fastStartState != FastStartAcknowledged) &&
       FindChannel(sessionID, FALSE) != NULL)
     return FALSE;
 
