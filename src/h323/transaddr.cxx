@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transaddr.cxx,v $
- * Revision 1.2007  2004/02/19 10:47:04  rjongbloed
+ * Revision 1.2008  2004/02/24 11:37:02  rjongbloed
+ * More work on NAT support, manual external address translation and STUN
+ *
+ * Revision 2.6  2004/02/19 10:47:04  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.5  2002/11/10 11:33:19  robertj
@@ -337,8 +340,8 @@ void H323SetTransportAddresses(const H323Transport & associatedTransport,
     if (addr.GetIpAndPort(ip, port)) {
       PIPSocket::Address remoteIP;
       if (associatedTransport.GetRemoteAddress().GetIpAddress(remoteIP)) {
-        associatedTransport.GetEndPoint().GetManager().TranslateIPAddress(ip, remoteIP);
-        addr = H323TransportAddress(ip, port);
+        if (associatedTransport.GetEndPoint().GetManager().TranslateIPAddress(ip, remoteIP))
+          addr = H323TransportAddress(ip, port);
       }
     }
 
