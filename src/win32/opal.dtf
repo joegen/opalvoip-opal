@@ -6031,7 +6031,9 @@ EXPORTS
     ??Eiterator@?$_Tree@VPString@@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@std@@U_Kfn@?$map@VPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@5@@3@U?$less@VPString@@@3@V?$allocator@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@3@@std@@QAE?AV012@H@Z @42863 NONAME
     ??R?$PStringDictionary@VPCaselessString@@@@QBE?AVPString@@ABVPCaselessString@@PBD@Z @19498 NONAME
     ??R?$PStringDictionary@VPString@@@@QBE?AVPString@@ABV1@PBD@Z @19499 NONAME
+    ??YOpalMediaFormatList@@QAEAAV0@ABV0@@Z @42878 NONAME
     ??YOpalMediaFormatList@@QAEAAV0@ABVOpalMediaFormat@@@Z @18740 NONAME
+    ??ZOpalMediaFormatList@@QAEAAV0@ABV0@@Z @42879 NONAME
     ??ZOpalMediaFormatList@@QAEAAV0@ABVOpalMediaFormat@@@Z @18741 NONAME
     ??_7?$H235_ENCRYPTED@VH235_EncodedGeneralToken@@@@6B@ @5803 NONAME
     ??_7?$H235_ENCRYPTED@VH235_EncodedKeySyncMaterial@@@@6B@ @5804 NONAME
@@ -17264,8 +17266,8 @@ EXPORTS
     ?AddSourceDescription@RTP_ControlFrame@@QAEAAUSourceDescription@1@K@Z @7243 NONAME
     ?AddSourceDescriptionItem@RTP_ControlFrame@@QAEAAUItem@SourceDescription@1@AAU31@IABVPString@@@Z @7244 NONAME
     ?AddVideoMediaFormats@OpalConnection@@UBEXAAVOpalMediaFormatList@@@Z @35239 NONAME
-    ?AddVideoMediaFormats@OpalEndPoint@@UBEXABVOpalConnection@@AAVOpalMediaFormatList@@@Z @35240 NONAME
-    ?AddVideoMediaFormats@OpalManager@@UBEXABVOpalConnection@@AAVOpalMediaFormatList@@@Z @35241 NONAME
+    ?AddVideoMediaFormats@OpalEndPoint@@UBEXAAVOpalMediaFormatList@@PBVOpalConnection@@@Z @42880 NONAME
+    ?AddVideoMediaFormats@OpalManager@@UBEXAAVOpalMediaFormatList@@PBVOpalConnection@@@Z @42881 NONAME
     ?AdjustForRequestURI@SIPURL@@QAEXXZ @19626 NONAME
     ?AdjustMediaFormats@OpalConnection@@UBEXAAVOpalMediaFormatList@@@Z @19627 NONAME
     ?AdjustMediaFormats@OpalEndPoint@@UBEXABVOpalConnection@@AAVOpalMediaFormatList@@@Z @19628 NONAME
@@ -26524,14 +26526,19 @@ EXPORTS
     ?GetMediaFormat@SDPMediaFormat@@QBE?AVOpalMediaFormat@@XZ @20027 NONAME
     ?GetMediaFormats@H323Capabilities@@QBE?AVOpalMediaFormatList@@XZ @18788 NONAME
     ?GetMediaFormats@H323Connection@@UBE?AVOpalMediaFormatList@@XZ @18789 NONAME
+    ?GetMediaFormats@H323EndPoint@@UBE?AVOpalMediaFormatList@@XZ @42882 NONAME
     ?GetMediaFormats@OpalCall@@QAE?AVOpalMediaFormatList@@ABVOpalConnection@@H@Z @37978 NONAME
     ?GetMediaFormats@OpalIVRConnection@@UBE?AVOpalMediaFormatList@@XZ @37979 NONAME
+    ?GetMediaFormats@OpalIVREndPoint@@UBE?AVOpalMediaFormatList@@XZ @42883 NONAME
     ?GetMediaFormats@OpalIxJDevice@@UBE?AVOpalMediaFormatList@@XZ @18793 NONAME
+    ?GetMediaFormats@OpalLIDEndPoint@@UBE?AVOpalMediaFormatList@@XZ @42884 NONAME
     ?GetMediaFormats@OpalLineConnection@@UBE?AVOpalMediaFormatList@@XZ @18794 NONAME
     ?GetMediaFormats@OpalPCSSConnection@@UBE?AVOpalMediaFormatList@@XZ @18796 NONAME
+    ?GetMediaFormats@OpalPCSSEndPoint@@UBE?AVOpalMediaFormatList@@XZ @42885 NONAME
     ?GetMediaFormats@OpalVoipBlasterDevice@@UBE?AVOpalMediaFormatList@@XZ @20879 NONAME
     ?GetMediaFormats@SDPMediaDescription@@QBE?AVOpalMediaFormatList@@XZ @20029 NONAME
     ?GetMediaFormats@SIPConnection@@UBE?AVOpalMediaFormatList@@XZ @20030 NONAME
+    ?GetMediaFormats@SIPEndPoint@@UBE?AVOpalMediaFormatList@@XZ @42886 NONAME
     ?GetMediaFormatsList@OpalMediaFormat@@CAAAVOpalMediaFormatList@@XZ @18799 NONAME
     ?GetMediaFormatsListMutex@OpalMediaFormat@@CAAAVPMutex@@XZ @37980 NONAME
     ?GetMediaInformation@H323Connection@@UBEHIAAUMediaInformation@OpalConnection@@@Z @20031 NONAME
@@ -26588,6 +26595,7 @@ EXPORTS
     ?GetPlayVolume@OpalLineInterfaceDevice@@UAEHIAAI@Z @14400 NONAME
     ?GetPlayVolume@OpalVoipBlasterDevice@@UAEHIAAI@Z @20053 NONAME
     ?GetPosition@OpalWAVFile@@UBEJXZ @20880 NONAME
+    ?GetPossibleFormats@OpalTranscoder@@SA?AVOpalMediaFormatList@@ABV2@@Z @42887 NONAME
     ?GetPrefix@H323RegisteredEndPoint@@QBE?AVPString@@H@Z @20054 NONAME
     ?GetProgressIndicator@Q931@@QBEHAAIPAI1@Z @20055 NONAME
     ?GetProtocolList@H323PeerElementDescriptor@@SAIABVH501_ArrayOf_SupportedProtocols@@@Z @38035 NONAME
