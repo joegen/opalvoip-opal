@@ -24,7 +24,10 @@
  * Contributor(s): __________________________________
  *
  * $Log: h235auth.cxx,v $
- * Revision 1.2002  2001/08/13 05:10:39  robertj
+ * Revision 1.2003  2001/08/17 05:24:53  robertj
+ * Fixed missing subdirectories in includes
+ *
+ * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
  *
  * Revision 1.2  2001/08/10 13:49:35  robertj
@@ -43,8 +46,8 @@
 #include <ptclib/random.h>
 #include <ptclib/cypher.h>
 
-#include "h235auth.h"
-#include "h323pdu.h"
+#include <h323/h235auth.h>
+#include <h323/h323pdu.h>
 
 
 #define new PNEW

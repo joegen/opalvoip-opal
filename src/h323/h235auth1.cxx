@@ -24,7 +24,10 @@
  * Contributor(s): Fürbass Franz <franz.fuerbass@infonova.at>
  *
  * $Log: h235auth1.cxx,v $
- * Revision 1.2002  2001/08/13 05:10:39  robertj
+ * Revision 1.2003  2001/08/17 05:24:53  robertj
+ * Fixed missing subdirectories in includes
+ *
+ * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
  *
  * Revision 1.1  2001/08/10 11:03:52  robertj
@@ -35,8 +38,8 @@
 #include <ptlib.h>
 #include <openssl/sha.h>
 
-#include "h235auth.h"
-#include "h323pdu.h"
+#include <h323/h235auth.h>
+#include <h323/h323pdu.h>
 
 
 #define REPLY_BUFFER_SIZE    1024
