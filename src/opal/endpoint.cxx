@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2009  2001/11/14 01:31:55  robertj
+ * Revision 1.2010  2002/01/22 05:12:27  robertj
+ * Revamp of user input API triggered by RFC2833 support
+ *
+ * Revision 2.8  2001/11/14 01:31:55  robertj
  * Corrected placement of adjusting media format list.
  *
  * Revision 2.7  2001/11/13 04:29:48  robertj
@@ -296,18 +299,18 @@ void OpalEndPoint::OnClosedMediaStream(const OpalMediaStream & stream)
 }
 
 
-void OpalEndPoint::OnUserIndicationString(OpalConnection & connection,
-                                    const PString & value)
+void OpalEndPoint::OnUserInputString(OpalConnection & connection,
+                                     const PString & value)
 {
-  manager.OnUserIndicationString(connection, value);
+  manager.OnUserInputString(connection, value);
 }
 
 
-void OpalEndPoint::OnUserIndicationTone(OpalConnection & connection,
-                                  char tone,
-                                  int duration)
+void OpalEndPoint::OnUserInputTone(OpalConnection & connection,
+                                   char tone,
+                                   int duration)
 {
-  manager.OnUserIndicationTone(connection, tone, duration);
+  manager.OnUserInputTone(connection, tone, duration);
 }
 
 
