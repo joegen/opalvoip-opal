@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2003  2001/08/17 08:21:15  robertj
+ * Revision 1.2004  2001/08/22 09:42:14  robertj
+ * Removed duplicate member variables moved to ancestor.
+ *
+ * Revision 2.2  2001/08/17 08:21:15  robertj
  * Update from OpenH323
  * Moved call end reasons enum from OpalConnection to global.
  *
@@ -1402,11 +1405,7 @@ class H323Connection : public OpalConnection
 
   protected:
     H323EndPoint & endpoint;
-    PMutex         inUseFlag;
-    PTime          connectionStartTime;
-    PSyncPoint     * endSync;
 
-    BOOL                 callAnswered;
     unsigned             distinctiveRing;
     unsigned             callReference;
     OpalGloballyUniqueID callIdentifier;
@@ -1415,7 +1414,6 @@ class H323Connection : public OpalConnection
     PString            localPartyName;
     PString            localDestinationAddress;
     H323Capabilities   localCapabilities; // Capabilities local system supports
-    PString            remotePartyName;
     PString            remotePartyNumber;
     PString            remotePartyAddress;
     PString            remoteApplication;
