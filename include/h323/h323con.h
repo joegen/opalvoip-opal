@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2030  2004/08/14 07:56:28  rjongbloed
+ * Revision 1.2031  2004/12/12 12:29:02  dsandras
+ * Moved GetRemoteApplication () to OpalConnection so that it is usable for all types of connection.
+ *
+ * Revision 2.29  2004/08/14 07:56:28  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.28  2004/06/04 06:54:17  csoutheren
@@ -2066,19 +2069,6 @@ class H323Connection : public OpalConnection
       const H323SignalPDU & pdu /// PDU from which to extract party info.
     );
 
-    /**Get the remote application name and version.
-       This information is obtained from the sourceInfo field of the H.225
-       Setup PDU or the destinationInfo of the call proceeding or alerting
-       PDU's. The general format of the string will be information extracted
-       from the VendorIdentifier field of the EndpointType. In particular:
-
-          productId <tab> versionId <tab> t35CountryCode/manufacturerCode
-
-       for example
-          "Equivalence OpenPhone\t1.4.2\t9/61"
-      */
-    const PString & GetRemoteApplication() const { return remoteApplication; }
-
     /**Set the name/alias of remote end from information in the PDU.
       */
     void SetRemoteApplication(
@@ -2188,7 +2178,6 @@ class H323Connection : public OpalConnection
     PStringList        localAliasNames;
     H323Capabilities   localCapabilities; // Capabilities local system supports
     PString            destExtraCallInfo;
-    PString            remoteApplication;
     H323Capabilities   remoteCapabilities; // Capabilities remote system supports
     unsigned           remoteMaxAudioDelayJitter;
     PTimer             roundTripDelayTimer;
