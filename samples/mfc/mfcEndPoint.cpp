@@ -38,7 +38,7 @@ BOOL CMfcEndPoint::Initialise(CMfcDlg *dlg)
   SetCapability(0, 0, new H323_G711Capability(H323_G711Capability::ALaw));
   H323_UserInputCapability::AddAllCapabilities(capabilities, 0, 0);
 
-  return StartListener(new H323ListenerTCP(*this));
+  return StartListener("");
 }
 
 H323Connection * CMfcEndPoint::CreateConnection(unsigned int refID)
