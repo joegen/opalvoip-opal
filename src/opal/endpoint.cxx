@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2001/07/30 01:40:01  robertj
+ * Fixed GNU C++ warnings.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  */
@@ -95,7 +98,7 @@ OpalConnection * OpalEndPoint::GetConnectionWithLock(const PString & token)
 BOOL OpalEndPoint::HasConnection(const PString & token)
 {
   PWaitAndSignal wait(inUseFlag);
-  return connectionsActive.Contains(token) != NULL;
+  return connectionsActive.Contains(token);
 }
 
 

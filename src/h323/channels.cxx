@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2001/07/30 01:40:01  robertj
+ * Fixed GNU C++ warnings.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.92  2001/07/24 02:26:44  robertj
@@ -832,7 +835,6 @@ H323DataChannel::H323DataChannel(H323Connection & conn,
 {
   listener = NULL;
   transport = NULL;
-  separateReverseChannel = NULL;
 }
 
 
@@ -1028,7 +1030,7 @@ BOOL H323DataChannel::CreateListener()
   if (listener == NULL) {
     listener = connection.GetControlChannel().GetLocalAddress().CreateCompatibleListener(connection.GetEndPoint());
     if (listener == NULL)
-      return NULL;
+      return FALSE;
   }
 
   return listener->Open(NULL);
