@@ -23179,6 +23179,7 @@ EXPORTS
     ?GetCallTransferT3@H323EndPoint@@QBEABVPTimeInterval@@XZ @13856 NONAME
     ?GetCallTransferT4@H323EndPoint@@QBEABVPTimeInterval@@XZ @13857 NONAME
     ?GetCanonicalName@RTP_Session@@QBE?AVPString@@XZ @16352 NONAME
+    ?GetCapabilities@H323EndPoint@@QBEABVH323Capabilities@@XZ @31100 NONAME
     ?GetCause@Q931@@QBE?AW4CauseValues@1@PAI0@Z @10477 NONAME
     ?GetChannel@H245NegLogicalChannel@@QAEPAVH323Channel@@XZ @10478 NONAME
     ?GetChannelAt@H245NegLogicalChannels@@QAEPAVH323Channel@@H@Z @10479 NONAME
