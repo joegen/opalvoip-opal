@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2013  2002/07/01 04:56:29  robertj
+ * Revision 1.2014  2002/07/04 07:41:46  robertj
+ * Fixed memory/thread leak of transports.
+ *
+ * Revision 2.12  2002/07/01 04:56:29  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.11  2002/03/22 06:57:48  robertj
@@ -487,7 +490,7 @@ class H323EndPoint : public OpalEndPoint
   //@{
     /**Handle new incoming connetion from listener.
       */
-    virtual void NewIncomingConnection(
+    virtual BOOL NewIncomingConnection(
       OpalTransport * transport  /// Transport connection came in on
     );
 
