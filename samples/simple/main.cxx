@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2006  2001/08/21 11:18:55  robertj
+ * Revision 1.2007  2002/01/22 05:34:58  robertj
+ * Revamp of user input API triggered by RFC2833 support
+ *
+ * Revision 2.5  2001/08/21 11:18:55  robertj
  * Added conditional compile for xJack code.
  *
  * Revision 2.4  2001/08/17 08:35:41  robertj
@@ -587,11 +590,10 @@ BOOL MyManager::OnOpenMediaStream(OpalConnection & connection,
 
 
 
-void MyManager::OnUserIndicationString(OpalConnection & connection,
-                                       const PString & value)
+void MyManager::OnUserInputString(OpalConnection & connection, const PString & value)
 {
   cout << "User input received: \"" << value << '"' << endl;
-  OpalManager::OnUserIndicationString(connection, value);
+  OpalManager::OnUserInputString(connection, value);
 }
 
 
