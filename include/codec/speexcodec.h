@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.h,v $
- * Revision 1.2003  2002/11/10 23:20:52  robertj
+ * Revision 1.2004  2004/02/15 03:12:51  rjongbloed
+ * Fixed typo in symbol for Speex codec, thanks Ted Szoczei
+ *
+ * Revision 2.2  2002/11/10 23:20:52  robertj
  * Fixed class names in static variable macros.
  *
  * Revision 2.1  2002/11/10 11:33:16  robertj
@@ -183,7 +186,7 @@ H323_STATIC_LOAD_REGISTER_CAPABILITY(SpeexNarrow6AudioCapability);
 
 #else // ifndef NO_H323
 
-#define OPAL_REGISTER_Speex_H323
+#define OPAL_REGISTER_SPEEX_H323
 
 #endif // ifndef NO_H323
 
