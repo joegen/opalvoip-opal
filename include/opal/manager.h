@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2032  2004/12/21 08:24:31  dsandras
+ * Revision 1.2033  2005/01/31 07:37:09  csoutheren
+ * Fixed problem with compiling under gcc 3.4
+ * Thanks to Peter Robinson
+ *
+ * Revision 2.31  2004/12/21 08:24:31  dsandras
  * The dictionnary key is a PString, not an OpalGloballyUniqueID. Fixes problem when doing several calls at the same time.
  *
  * Revision 2.30  2004/08/18 13:02:48  rjongbloed
@@ -989,6 +993,8 @@ class OpalManager : public PObject
     ) { ilsServer = server; }
   //@}
 
+    // needs to be public for gcc 3.4
+    void GarbageCollection();
 
   protected:
     // Configuration variables
@@ -1052,7 +1058,6 @@ class OpalManager : public PObject
     PThread    * garbageCollector;
     PSyncPoint   garbageCollectExit;
     PDECLARE_NOTIFIER(PThread, OpalManager, GarbageMain);
-    void GarbageCollection();
 
   friend OpalCall::OpalCall(OpalManager & mgr);
   friend void OpalCall::OnReleased(OpalConnection & connection);
