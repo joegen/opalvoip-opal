@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h450pdu.cxx,v $
- * Revision 1.2007  2002/02/11 09:32:13  robertj
+ * Revision 1.2008  2002/03/15 03:04:03  robertj
+ * Fixed incorrect use of function now returning a bool
+ *
+ * Revision 2.6  2002/02/11 09:32:13  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.5  2002/01/14 06:35:58  robertj
@@ -918,9 +921,9 @@ void H4502Handler::OnReceivedCallTransferInitiate(int /*linkedId*/,
   H450ServiceAPDU::ParseEndpointAddress(ctInitiateArg.m_reroutingNumber, remoteParty);
 
   if (!endpoint.OnCallTransferInitiate(connection, remoteParty) ||
-       endpoint.SetupTransfer(connection.GetToken(),
+      !endpoint.SetupTransfer(connection.GetToken(),
                               ctInitiateArg.m_callIdentity.GetValue(),
-                              remoteParty) == NULL)
+                              remoteParty))
     SendReturnError(H4502_CallTransferErrors::e_establishmentFailure);
 }
 
