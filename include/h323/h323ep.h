@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2016  2002/09/06 02:39:27  robertj
+ * Revision 1.2017  2002/09/10 07:42:40  robertj
+ * Added function to get gatekeeper password.
+ *
+ * Revision 2.15  2002/09/06 02:39:27  robertj
  * Added function to set gatekeeper access token OID.
  *
  * Revision 2.14  2002/09/04 06:01:46  robertj
@@ -495,6 +498,10 @@ class H323EndPoint : public OpalEndPoint
     void SetGatekeeperPassword(
       const PString & password
     );
+
+    /**Get the H.235 password for the gatekeeper.
+      */
+    const PString & GetGatekeeperPassword() const { return gatekeeperPassword; }
 
     /**Create a list of authenticators for gatekeeper.
       */
