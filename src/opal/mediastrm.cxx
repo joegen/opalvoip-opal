@@ -24,7 +24,11 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2013  2002/02/11 07:42:39  robertj
+ * Revision 1.2014  2002/02/13 02:33:15  robertj
+ * Added ability for media patch (and transcoders) to handle multiple RTP frames.
+ * Removed media stream being descended from PChannel, not really useful.
+ *
+ * Revision 2.12  2002/02/11 07:42:39  robertj
  * Added media bypass for streams between compatible protocols.
  *
  * Revision 2.11  2002/01/22 05:10:44  robertj
@@ -163,6 +167,17 @@ BOOL OpalMediaStream::Close()
 }
 
 
+BOOL OpalMediaStream::WritePackets(RTP_DataFrameList & packets)
+{
+  for (PINDEX i = 0; i < packets.GetSize(); i++) {
+    if (!WritePacket(packets[i]))
+      return FALSE;
+  }
+
+  return TRUE;
+}
+
+
 inline static unsigned CalculateTimestamp(PINDEX size, const OpalMediaFormat & mediaFormat)
 {
   unsigned frames = (size + mediaFormat.GetFrameSize() - 1)/mediaFormat.GetFrameSize();
@@ -174,7 +189,8 @@ BOOL OpalMediaStream::ReadPacket(RTP_DataFrame & packet)
 {
   unsigned oldTimestamp = timestamp;
 
-  if (!Read(packet.GetPayloadPtr(), defaultDataSize))
+  PINDEX lastReadCount;
+  if (!ReadData(packet.GetPayloadPtr(), defaultDataSize, lastReadCount))
     return FALSE;
 
   // If the Write() function did not change the timestamp then use the default
@@ -200,7 +216,8 @@ BOOL OpalMediaStream::WritePacket(RTP_DataFrame & packet)
   if (size == 0) {
     timestamp += CalculateTimestamp(1, mediaFormat);
     packet.SetTimestamp(timestamp);
-    return Write(NULL, 0);
+    PINDEX dummy;
+    return WriteData(NULL, 0, dummy);
   }
 
   marker = packet.GetMarker();
@@ -209,16 +226,17 @@ BOOL OpalMediaStream::WritePacket(RTP_DataFrame & packet)
   while (size > 0) {
     unsigned oldTimestamp = timestamp;
 
-    if (!Write(ptr, size))
+    PINDEX written;
+    if (!WriteData(ptr, size, written))
       return FALSE;
 
     // If the Write() function did not change the timestamp then use the default
     // method of fixed frame times and sizes.
     if (oldTimestamp == timestamp)
-      timestamp += CalculateTimestamp(lastWriteCount, mediaFormat);
+      timestamp += CalculateTimestamp(size, mediaFormat);
 
-    size -= lastWriteCount;
-    ptr += lastWriteCount;
+    size -= written;
+    ptr += written;
   }
 
   PTRACE_IF(1, size < 0, "Media\tRTP payload size too small, short " << -size << " bytes.");
@@ -226,6 +244,34 @@ BOOL OpalMediaStream::WritePacket(RTP_DataFrame & packet)
   packet.SetTimestamp(timestamp);
 
   return TRUE;
+}
+
+
+BOOL OpalMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & length)
+{
+  RTP_DataFrame packet(size);
+  if (!ReadPacket(packet))
+    return FALSE;
+
+  length = packet.GetPayloadSize();
+  if (length > size)
+    length = size;
+  memcpy(buffer, packet.GetPayloadPtr(), length);
+  timestamp = packet.GetTimestamp();
+  marker = packet.GetMarker();
+  return TRUE;
+}
+
+
+BOOL OpalMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX & written)
+{
+  written = length;
+  RTP_DataFrame packet(length);
+  memcpy(packet.GetPayloadPtr(), buffer, length);
+  packet.SetPayloadType(mediaFormat.GetPayloadType());
+  packet.SetTimestamp(timestamp);
+  packet.SetMarker(marker);
+  return WritePacket(packet);
 }
 
 
@@ -261,6 +307,18 @@ OpalNullMediaStream::OpalNullMediaStream(BOOL isSourceStream, unsigned sessionID
 }
 
 
+BOOL OpalNullMediaStream::ReadData(BYTE * /*buffer*/, PINDEX /*size*/, PINDEX & /*length*/)
+{
+  return FALSE;
+}
+
+
+BOOL OpalNullMediaStream::WriteData(const BYTE * /*buffer*/, PINDEX /*length*/, PINDEX & /*written*/)
+{
+  return FALSE;
+}
+
+
 BOOL OpalNullMediaStream::RequiresPatchThread() const
 {
   return FALSE;
@@ -280,7 +338,6 @@ OpalRTPMediaStream::OpalRTPMediaStream(BOOL isSourceStream,
   : OpalMediaStream(isSourceStream, rtp.GetSessionID()),
     rtpSession(rtp)
 {
-  os_handle = 1; // RTP session is always open
 }
 
 
@@ -292,33 +349,6 @@ BOOL OpalRTPMediaStream::Close()
   // terminate before we allow it to be deleted.
   rtpSession.Close(IsSource());
   return OpalMediaStream::Close();
-}
-
-
-BOOL OpalRTPMediaStream::Read(void * buf, PINDEX len)
-{
-  RTP_DataFrame packet(len);
-  if (!ReadPacket(packet))
-    return FALSE;
-
-  lastReadCount = packet.GetPayloadSize();
-  if (lastReadCount > len)
-    lastReadCount = len;
-  memcpy(buf, packet.GetPayloadPtr(), lastReadCount);
-  timestamp = packet.GetTimestamp();
-  marker = packet.GetMarker();
-  return TRUE;
-}
-
-
-BOOL OpalRTPMediaStream::Write(const void * buf, PINDEX len)
-{
-  RTP_DataFrame packet(len);
-  memcpy(packet.GetPayloadPtr(), buf, len);
-  packet.SetPayloadType(mediaFormat.GetPayloadType());
-  packet.SetTimestamp(timestamp);
-  packet.SetMarker(marker);
-  return WritePacket(packet);
 }
 
 
@@ -364,29 +394,29 @@ OpalLineMediaStream::OpalLineMediaStream(BOOL isSourceStream, unsigned id, OpalL
 }
 
 
-BOOL OpalLineMediaStream::Read(void * buffer, PINDEX length)
+BOOL OpalLineMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & length)
 {
-  lastReadCount = 0;
+  length = 0;
 
   if (IsSink())
-    return SetErrorValues(Miscellaneous, EINVAL);
+    return FALSE;
 
   if (useDeblocking) {
-    line.SetReadFrameSize(length);
-    if (line.ReadBlock(buffer, length)) {
-      lastReadCount = length;
+    line.SetReadFrameSize(size);
+    if (line.ReadBlock(buffer, size)) {
+      length = size;
       return TRUE;
     }
   }
   else {
-    if (line.ReadFrame(buffer, lastReadCount)) {
+    if (line.ReadFrame(buffer, length)) {
       // In the case of G.723.1 remember the last SID frame we sent and send
       // it again if the hardware sends us a CNG frame.
       if (mediaFormat.GetPayloadType() == RTP_DataFrame::G7231) {
-        switch (lastReadCount) {
+        switch (length) {
           case 1 : // CNG frame
             memcpy(buffer, lastSID, 4);
-            lastReadCount = 4;
+            length = 4;
             lastFrameWasSignal = FALSE;
             break;
           case 4 :
@@ -405,16 +435,16 @@ BOOL OpalLineMediaStream::Read(void * buffer, PINDEX length)
   DWORD osError = line.GetDevice().GetErrorNumber();
   PTRACE_IF(1, osError != 0, "Media\tDevice read frame error: " << line.GetDevice().GetErrorText());
 
-  return SetErrorValues(Miscellaneous, osError, LastReadError);
+  return FALSE;
 }
 
 
-BOOL OpalLineMediaStream::Write(const void * buffer, PINDEX length)
+BOOL OpalLineMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX & written)
 {
-  lastWriteCount = 0;
+  written = 0;
 
   if (IsSource())
-    return SetErrorValues(Miscellaneous, EINVAL);
+    return FALSE;
 
   // Check for writing silence
   PBYTEArray silenceBuffer;
@@ -437,7 +467,7 @@ BOOL OpalLineMediaStream::Write(const void * buffer, PINDEX length)
 
       case RTP_DataFrame::PCMU :
       case RTP_DataFrame::PCMA :
-        buffer = (const void *)silenceBuffer.GetPointer(line.GetWriteFrameSize());
+        buffer = silenceBuffer.GetPointer(line.GetWriteFrameSize());
         length = silenceBuffer.GetSize();
         memset((void *)buffer, 0xff, length);
         break;
@@ -452,7 +482,7 @@ BOOL OpalLineMediaStream::Write(const void * buffer, PINDEX length)
         // Else fall into default case
 
       default :
-        buffer = (const void *)silenceBuffer.GetPointer(line.GetWriteFrameSize()); // Fills with zeros
+        buffer = silenceBuffer.GetPointer(line.GetWriteFrameSize()); // Fills with zeros
         length = silenceBuffer.GetSize();
         break;
     }
@@ -461,19 +491,19 @@ BOOL OpalLineMediaStream::Write(const void * buffer, PINDEX length)
   if (useDeblocking) {
     line.SetWriteFrameSize(length);
     if (line.WriteBlock(buffer, length)) {
-      lastWriteCount = length;
+      written = length;
       return TRUE;
     }
   }
   else {
-    if (line.WriteFrame(buffer, length, lastWriteCount))
+    if (line.WriteFrame(buffer, length, written))
       return TRUE;
   }
 
   DWORD osError = line.GetDevice().GetErrorNumber();
   PTRACE_IF(1, osError != 0, "Media\tLID write frame error: " << line.GetDevice().GetErrorText());
 
-  return SetErrorValues(Miscellaneous, osError, LastWriteError);
+  return FALSE;
 }
 
 
@@ -498,15 +528,12 @@ BOOL OpalLineMediaStream::Open(const OpalMediaFormat & format)
          << line.GetWriteFrameSize() << ", "
          << (useDeblocking ? "needs" : "no") << " reblocking.");
 
-  os_handle = 1;
   return TRUE;
 }
 
 
 BOOL OpalLineMediaStream::Close()
 {
-  os_handle = -1;
-
   if (IsSource())
     line.StopReadCodec();
   else
@@ -529,8 +556,6 @@ OpalRawMediaStream::OpalRawMediaStream(BOOL isSourceStream, unsigned id, PChanne
 {
   channel = chan;
   autoDelete = autoDel;
-
-  os_handle = channel->IsOpen() ? 1 : -1;
 }
 
 
@@ -541,32 +566,32 @@ OpalRawMediaStream::~OpalRawMediaStream()
 }
 
 
-BOOL OpalRawMediaStream::Read(void * buf, PINDEX len)
+BOOL OpalRawMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & length)
 {
-  lastReadCount = 0;
+  length = 0;
 
   if (channel == NULL)
     return FALSE;
 
-  if (!channel->Read(buf, len))
+  if (!channel->Read(buffer, size))
     return FALSE;
 
-  lastReadCount = channel->GetLastReadCount();
+  length = channel->GetLastReadCount();
   return TRUE;
 }
 
 
-BOOL OpalRawMediaStream::Write(const void * buf, PINDEX len)
+BOOL OpalRawMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX & written)
 {
-  lastWriteCount = 0;
+  written = 0;
 
   if (channel == NULL)
     return FALSE;
 
-  if (!channel->Write(buf, len))
+  if (!channel->Write(buffer, length))
     return FALSE;
 
-  lastWriteCount = channel->GetLastWriteCount();
+  written = channel->GetLastWriteCount();
   return TRUE;
 }
 
@@ -574,8 +599,6 @@ BOOL OpalRawMediaStream::Write(const void * buf, PINDEX len)
 BOOL OpalRawMediaStream::Close()
 {
   OpalMediaStream::Close();
-
-  os_handle = -1;
 
   if (channel == NULL)
     return FALSE;
