@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: dllmain.cxx,v $
- * Revision 1.2003  2002/11/10 23:04:29  robertj
+ * Revision 1.2004  2002/11/11 06:54:30  robertj
+ * Added correct flag for including static global variables.
+ *
+ * Revision 2.2  2002/11/10 23:04:29  robertj
  * Added flag to assure linking of static variables (codecs etc).
  *
  * Revision 2.1  2001/08/01 05:53:31  robertj
@@ -41,11 +44,9 @@
  *
  */
 
-#pragma warning(disable:4201 4514)
-
 #include <ptlib.h>
 
-#define OPAL_STATIC_LINK
+#define H323_STATIC_LIB
 #include <codec/allcodecs.h>
 
 
