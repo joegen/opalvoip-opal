@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2025  2002/10/09 04:26:57  robertj
+ * Revision 1.2026  2002/11/10 11:33:20  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.24  2002/10/09 04:26:57  robertj
  * Fixed ability to call CloseWait() multiple times, thanks Ted Szoczei
  *
  * Revision 2.23  2002/09/26 01:21:16  robertj
@@ -373,16 +376,38 @@ BOOL OpalInternalTransport::GetIpAndPort(const OpalTransportAddress &,
 
 //////////////////////////////////////////////////////////////////////////
 
+static BOOL SplitAddress(const PString & addr, PString & host, PString & service)
+{
+  // skip transport identifier
+  PINDEX dollar = addr.Find('$');
+  if (dollar == P_MAX_INDEX)
+    return FALSE;
+  
+  PINDEX lastChar = addr.GetLength()-1;
+  if (addr[lastChar] == '+')
+    lastChar--;
+
+  PINDEX bracket = addr.FindLast(']');
+  if (bracket == P_MAX_INDEX)
+    bracket = 0;
+
+  PINDEX colon = addr.Find(':', bracket);
+  if (colon == P_MAX_INDEX)
+    host = addr(dollar+1, lastChar);
+  else {
+    host = addr(dollar+1, colon-1);
+    service = addr(colon+1, lastChar);
+  }
+
+  return TRUE;
+}
+
+
 PString OpalInternalIPTransport::GetHostName(const OpalTransportAddress & address) const
 {
-  PString str = OpalInternalTransport::GetHostName(address);
-
-  PString host;
-  PINDEX colon = str.Find(':');
-  if (colon == P_MAX_INDEX)
-    host = str;
-  else
-    host = str.Left(colon);
+  PString host, service;
+  if (!SplitAddress(address, host, service))
+    return address;
 
   PIPSocket::Address ip;
   if (PIPSocket::GetHostAddress(host, ip))
@@ -391,41 +416,36 @@ PString OpalInternalIPTransport::GetHostName(const OpalTransportAddress & addres
   return host;
 }
 
+
 BOOL OpalInternalIPTransport::GetIpAndPort(const OpalTransportAddress & address,
                                            PIPSocket::Address & ip,
                                            WORD & port) const
 {
-  // skip transport identifier
-  PINDEX dollar = address.Find('$');
-  if (dollar == P_MAX_INDEX)
-    return FALSE;
-  
-  PINDEX lastChar = address.GetLength()-1;
-  if (address[lastChar] == '+')
-    lastChar--;
-
-  // parse host and port
   PString host, service;
-  PINDEX colon = address.Find(':', dollar+1);
-  if (colon == P_MAX_INDEX)
-    host = address(dollar+1, lastChar);
-  else {
-    host = address(dollar+1, colon-1);
-    service = address(colon+1, lastChar);
-    if (service == "*")
-      port = 0;
-    else if (address.Left(dollar) == IpPrefix)
-      port = PIPSocket::GetPortByService("tcp", service);
-    else
-      port = PIPSocket::GetPortByService(address.Left(dollar-1), service);
-  }
+  if (!SplitAddress(address, host, service))
+    return FALSE;
 
-  if (host.IsEmpty() || (port == 0 && service != "*")) {
-    PTRACE(2, "Opal\tIllegal IP transport address: \"" << address << '"');
+  if (host.IsEmpty()) {
+    PTRACE(2, "Opal\tIllegal IP transport address: \"" << *this << '"');
     return FALSE;
   }
 
-  if (host == "*" || host == "0.0.0.0") {
+  if (service == "*")
+    port = 0;
+  else {
+    if (!service) {
+      PString proto = address.Left(address.Find('$'));
+      if (proto *= "ip")
+        proto = "tcp";
+      port = PIPSocket::GetPortByService(proto, service);
+    }
+    if (port == 0) {
+      PTRACE(2, "Opal\tIllegal IP transport port/service: \"" << *this << '"');
+      return FALSE;
+    }
+  }
+
+  if (host == "*") {
     ip = INADDR_ANY;
     return TRUE;
   }
@@ -433,7 +453,7 @@ BOOL OpalInternalIPTransport::GetIpAndPort(const OpalTransportAddress & address,
   if (PIPSocket::GetHostAddress(host, ip))
     return TRUE;
 
-  PTRACE(1, "Opal\tCould not find host \"" << host << '"');
+  PTRACE(1, "Opal\tCould not find host : \"" << host << '"');
   return FALSE;
 }
 

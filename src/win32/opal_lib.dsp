@@ -260,11 +260,19 @@ SOURCE=..\codec\mscodecs.cxx
 # End Source File
 # Begin Source File
 
+SOURCE=..\opal\opalvxml.cxx
+# End Source File
+# Begin Source File
+
 SOURCE=..\codec\opalwavfile.cxx
 # End Source File
 # Begin Source File
 
 SOURCE=..\codec\rfc2833.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speexcodec.cxx
 # End Source File
 # End Group
 # Begin Group "LID Sources"
@@ -510,11 +518,19 @@ SOURCE=..\..\include\codec\mscodecs.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\include\opal\opalvxml.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\include\codec\opalwavfile.h
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\include\codec\rfc2833.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\codec\speexcodec.h
 # End Source File
 # End Group
 # Begin Group "LID Headers"
@@ -2419,6 +2435,33 @@ BuildCmds= \
 # Begin Group "GSM Files"
 
 # PROP Default_Filter ".c"
+# Begin Group "GSM Headers"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\codec\gsm\inc\config.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\gsm\inc\gsm.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\gsm\inc\private.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\gsm\inc\proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\gsm\inc\unproto.h
+# End Source File
+# End Group
+# Begin Group "GSM Sources"
+
+# PROP Default_Filter ""
 # Begin Source File
 
 SOURCE=..\codec\gsm\src\add.c
@@ -2426,12 +2469,12 @@ SOURCE=..\codec\gsm\src\add.c
 !IF  "$(CFG)" == "OPAL_lib - Win32 Release"
 
 # ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /D "PTRACING" /YX /Yc /Yu
+# SUBTRACT CPP /I "$(OPENSSLDIR)/inc32" /D "PTRACING" /D P_SSL=0$(OPENSSLFLAG) /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
 # ADD CPP /w /W0 /ZI /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /D "PTRACING" /YX /Yc /Yu
+# SUBTRACT CPP /I "$(OPENSSLDIR)/inc32" /D "PTRACING" /D P_SSL=0$(OPENSSLFLAG) /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
 
@@ -2450,12 +2493,12 @@ SOURCE=..\codec\gsm\src\code.c
 !IF  "$(CFG)" == "OPAL_lib - Win32 Release"
 
 # ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /D "PTRACING" /YX /Yc /Yu
+# SUBTRACT CPP /I "$(OPENSSLDIR)/inc32" /D "PTRACING" /D P_SSL=0$(OPENSSLFLAG) /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
 # ADD CPP /w /W0 /ZI /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /D "PTRACING" /YX /Yc /Yu
+# SUBTRACT CPP /I "$(OPENSSLDIR)/inc32" /D "PTRACING" /D P_SSL=0$(OPENSSLFLAG) /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
 
@@ -2474,12 +2517,12 @@ SOURCE=..\codec\gsm\src\decode.c
 !IF  "$(CFG)" == "OPAL_lib - Win32 Release"
 
 # ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /D "PTRACING" /YX /Yc /Yu
+# SUBTRACT CPP /I "$(OPENSSLDIR)/inc32" /D "PTRACING" /D P_SSL=0$(OPENSSLFLAG) /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
 # ADD CPP /w /W0 /ZI /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /D "PTRACING" /YX /Yc /Yu
+# SUBTRACT CPP /I "$(OPENSSLDIR)/inc32" /D "PTRACING" /D P_SSL=0$(OPENSSLFLAG) /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
 
@@ -2498,12 +2541,12 @@ SOURCE=..\codec\gsm\src\gsm_create.c
 !IF  "$(CFG)" == "OPAL_lib - Win32 Release"
 
 # ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /D "PTRACING" /YX /Yc /Yu
+# SUBTRACT CPP /I "$(OPENSSLDIR)/inc32" /D "PTRACING" /D P_SSL=0$(OPENSSLFLAG) /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
 # ADD CPP /w /W0 /ZI /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /D "PTRACING" /YX /Yc /Yu
+# SUBTRACT CPP /I "$(OPENSSLDIR)/inc32" /D "PTRACING" /D P_SSL=0$(OPENSSLFLAG) /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
 
@@ -2522,12 +2565,12 @@ SOURCE=..\codec\gsm\src\gsm_decode.c
 !IF  "$(CFG)" == "OPAL_lib - Win32 Release"
 
 # ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /D "PTRACING" /YX /Yc /Yu
+# SUBTRACT CPP /I "$(OPENSSLDIR)/inc32" /D "PTRACING" /D P_SSL=0$(OPENSSLFLAG) /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
 # ADD CPP /w /W0 /ZI /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /D "PTRACING" /YX /Yc /Yu
+# SUBTRACT CPP /I "$(OPENSSLDIR)/inc32" /D "PTRACING" /D P_SSL=0$(OPENSSLFLAG) /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
 
@@ -2546,12 +2589,12 @@ SOURCE=..\codec\gsm\src\gsm_destroy.c
 !IF  "$(CFG)" == "OPAL_lib - Win32 Release"
 
 # ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /D "PTRACING" /YX /Yc /Yu
+# SUBTRACT CPP /I "$(OPENSSLDIR)/inc32" /D "PTRACING" /D P_SSL=0$(OPENSSLFLAG) /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
 # ADD CPP /w /W0 /ZI /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /D "PTRACING" /YX /Yc /Yu
+# SUBTRACT CPP /I "$(OPENSSLDIR)/inc32" /D "PTRACING" /D P_SSL=0$(OPENSSLFLAG) /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
 
@@ -2570,12 +2613,12 @@ SOURCE=..\codec\gsm\src\gsm_encode.c
 !IF  "$(CFG)" == "OPAL_lib - Win32 Release"
 
 # ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /D "PTRACING" /YX /Yc /Yu
+# SUBTRACT CPP /I "$(OPENSSLDIR)/inc32" /D "PTRACING" /D P_SSL=0$(OPENSSLFLAG) /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
 # ADD CPP /w /W0 /ZI /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /D "PTRACING" /YX /Yc /Yu
+# SUBTRACT CPP /I "$(OPENSSLDIR)/inc32" /D "PTRACING" /D P_SSL=0$(OPENSSLFLAG) /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
 
@@ -2589,17 +2632,39 @@ SOURCE=..\codec\gsm\src\gsm_encode.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\codec\gsm\src\gsm_lpc.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+# ADD CPP /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
+# SUBTRACT CPP /I "$(OPENSSLDIR)/inc32" /D "PTRACING" /D P_SSL=0$(OPENSSLFLAG) /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /w /W0 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
+# SUBTRACT CPP /I "$(OPENSSLDIR)/inc32" /D "PTRACING" /D P_SSL=0$(OPENSSLFLAG) /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /D NeedFunctionPrototypes=1 /D "WAV49"
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
 SOURCE=..\codec\gsm\src\gsm_option.c
 
 !IF  "$(CFG)" == "OPAL_lib - Win32 Release"
 
 # ADD CPP /w /W0 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /D "PTRACING" /YX /Yc /Yu
+# SUBTRACT CPP /I "$(OPENSSLDIR)/inc32" /D "PTRACING" /D P_SSL=0$(OPENSSLFLAG) /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
 # ADD CPP /w /W0 /ZI /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /D "PTRACING" /YX /Yc /Yu
+# SUBTRACT CPP /I "$(OPENSSLDIR)/inc32" /D "PTRACING" /D P_SSL=0$(OPENSSLFLAG) /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
 
@@ -2616,36 +2681,12 @@ SOURCE=..\codec\gsm\src\long_term.c
 !IF  "$(CFG)" == "OPAL_lib - Win32 Release"
 
 # ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /D "PTRACING" /YX /Yc /Yu
+# SUBTRACT CPP /I "$(OPENSSLDIR)/inc32" /D "PTRACING" /D P_SSL=0$(OPENSSLFLAG) /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
 # ADD CPP /w /W0 /ZI /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /D "PTRACING" /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
-
-# ADD BASE CPP /W1 /O2 /I "src\gsm\inc" /D NeedFunctionPrototypes=1
-# SUBTRACT BASE CPP /YX /Yc /Yu
-# ADD CPP /w /W0 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /O<none> /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\codec\gsm\src\lpc.c
-
-!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
-
-# ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /D "PTRACING" /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
-
-# ADD CPP /w /W0 /ZI /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /D "PTRACING" /YX /Yc /Yu
+# SUBTRACT CPP /I "$(OPENSSLDIR)/inc32" /D "PTRACING" /D P_SSL=0$(OPENSSLFLAG) /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
 
@@ -2664,12 +2705,12 @@ SOURCE=..\codec\gsm\src\preprocess.c
 !IF  "$(CFG)" == "OPAL_lib - Win32 Release"
 
 # ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /D "PTRACING" /YX /Yc /Yu
+# SUBTRACT CPP /I "$(OPENSSLDIR)/inc32" /D "PTRACING" /D P_SSL=0$(OPENSSLFLAG) /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
 # ADD CPP /w /W0 /ZI /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /D "PTRACING" /YX /Yc /Yu
+# SUBTRACT CPP /I "$(OPENSSLDIR)/inc32" /D "PTRACING" /D P_SSL=0$(OPENSSLFLAG) /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
 
@@ -2688,12 +2729,12 @@ SOURCE=..\codec\gsm\src\rpe.c
 !IF  "$(CFG)" == "OPAL_lib - Win32 Release"
 
 # ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /D "PTRACING" /YX /Yc /Yu
+# SUBTRACT CPP /I "$(OPENSSLDIR)/inc32" /D "PTRACING" /D P_SSL=0$(OPENSSLFLAG) /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
 # ADD CPP /w /W0 /ZI /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /D "PTRACING" /YX /Yc /Yu
+# SUBTRACT CPP /I "$(OPENSSLDIR)/inc32" /D "PTRACING" /D P_SSL=0$(OPENSSLFLAG) /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
 
@@ -2712,12 +2753,12 @@ SOURCE=..\codec\gsm\src\short_term.c
 !IF  "$(CFG)" == "OPAL_lib - Win32 Release"
 
 # ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /D "PTRACING" /YX /Yc /Yu
+# SUBTRACT CPP /I "$(OPENSSLDIR)/inc32" /D "PTRACING" /D P_SSL=0$(OPENSSLFLAG) /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
 # ADD CPP /w /W0 /ZI /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /D "PTRACING" /YX /Yc /Yu
+# SUBTRACT CPP /I "$(OPENSSLDIR)/inc32" /D "PTRACING" /D P_SSL=0$(OPENSSLFLAG) /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
 
@@ -2736,12 +2777,12 @@ SOURCE=..\codec\gsm\src\table.c
 !IF  "$(CFG)" == "OPAL_lib - Win32 Release"
 
 # ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /D "PTRACING" /YX /Yc /Yu
+# SUBTRACT CPP /I "$(OPENSSLDIR)/inc32" /D "PTRACING" /D P_SSL=0$(OPENSSLFLAG) /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
 # ADD CPP /w /W0 /ZI /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /D "PTRACING" /YX /Yc /Yu
+# SUBTRACT CPP /I "$(OPENSSLDIR)/inc32" /D "PTRACING" /D P_SSL=0$(OPENSSLFLAG) /YX /Yc /Yu
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
 
@@ -2753,6 +2794,7 @@ SOURCE=..\codec\gsm\src\table.c
 !ENDIF 
 
 # End Source File
+# End Group
 # End Group
 # Begin Group "VIC Files"
 
@@ -2925,6 +2967,17 @@ SOURCE=.\src\codec\vic\vid_coder.h
 # Begin Group "LPC10 Files"
 
 # PROP Default_Filter ""
+# Begin Group "LPC10 Headers"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\codec\lpc10\lpc10.h
+# End Source File
+# End Group
+# Begin Group "LPC10 Sources"
+
+# PROP Default_Filter ""
 # Begin Source File
 
 SOURCE=..\codec\lpc10\src\analys.c
@@ -3020,10 +3073,6 @@ SOURCE=..\codec\lpc10\src\irc2pc.c
 SOURCE=..\codec\lpc10\src\ivfilt.c
 # ADD CPP /W1 /I "../codec/lpc10"
 # SUBTRACT CPP /YX /Yc /Yu
-# End Source File
-# Begin Source File
-
-SOURCE=..\codec\lpc10\lpc10.h
 # End Source File
 # Begin Source File
 
@@ -3134,119 +3183,13 @@ SOURCE=..\codec\lpc10\src\vparms.c
 # SUBTRACT CPP /YX /Yc /Yu
 # End Source File
 # End Group
+# End Group
 # Begin Group "G.726 Files"
 
 # PROP Default_Filter ""
-# Begin Source File
+# Begin Group "G.726 Headers"
 
-SOURCE=..\codec\g726\g726_16.c
-
-!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
-
-# ADD CPP /W1
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
-
-# ADD CPP /W1
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
-
-# ADD CPP /W1
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\codec\g726\g726_24.c
-
-!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
-
-# ADD CPP /W1
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
-
-# ADD CPP /W1
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
-
-# ADD CPP /W1
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\codec\g726\g726_32.c
-
-!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
-
-# ADD CPP /W1
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
-
-# ADD CPP /W1
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
-
-# ADD CPP /W1
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\codec\g726\g726_40.c
-
-!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
-
-# ADD CPP /W1
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
-
-# ADD CPP /W1
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
-
-# ADD CPP /W1
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\codec\g726\g72x.c
-
-!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
-
-# ADD CPP /W1
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
-
-# ADD CPP /W1
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
-
-# ADD CPP /W1
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
-# End Source File
+# PROP Default_Filter ""
 # Begin Source File
 
 SOURCE=..\codec\g726\g72x.h
@@ -3255,6 +3198,641 @@ SOURCE=..\codec\g726\g72x.h
 
 SOURCE=..\codec\g726\private.h
 # End Source File
+# End Group
+# Begin Group "G.726 Sources"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\codec\g726\g726_16.c
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\g726\g726_24.c
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\g726\g726_32.c
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\g726\g726_40.c
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\g726\g72x.c
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# End Group
+# End Group
+# Begin Group "Speex Files"
+
+# PROP Default_Filter ""
+# Begin Group "Speex Headers"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\cb_search.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\filters.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\lpc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\lsp.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\ltp.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\misc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\modes.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\nb_celp.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\quant_lsp.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\sb_celp.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\speex.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\speex_bits.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\speex_callbacks.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\speex_header.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\stack_alloc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\vbr.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\vq.h
+# End Source File
+# End Group
+# Begin Group "Speex Sources"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\bits.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+# ADD CPP /W1
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\cb_search.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+# ADD CPP /W1
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\exc_10_16_table.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+# ADD CPP /W1
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\exc_10_32_table.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+# ADD CPP /W1
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\exc_5_256_table.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+# ADD CPP /W1
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\exc_5_64_table.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+# ADD CPP /W1
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\exc_8_128_table.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+# ADD CPP /W1
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\filters.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+# ADD CPP /W1
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\gain_table.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+# ADD CPP /W1
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\gain_table_lbr.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+# ADD CPP /W1
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\hexc_10_32_table.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+# ADD CPP /W1
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\hexc_table.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+# ADD CPP /W1
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\high_lsp_tables.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+# ADD CPP /W1
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\lpc.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+# ADD CPP /W1
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\lsp.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+# ADD CPP /W1
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\lsp_tables_nb.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+# ADD CPP /W1
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\ltp.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+# ADD CPP /W1
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\misc.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+# ADD CPP /W1
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\modes.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+# ADD CPP /W1
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\nb_celp.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+# ADD CPP /W1
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\quant_lsp.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+# ADD CPP /W1
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\sb_celp.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+# ADD CPP /W1
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\speex_callbacks.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+# ADD CPP /W1
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\speex_header.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+# ADD CPP /W1
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\vbr.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+# ADD CPP /W1
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\vq.c
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+# ADD CPP /W1
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# ADD CPP /W1
+# SUBTRACT CPP /YX /Yc /Yu
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# ADD CPP /W1
+
+!ENDIF 
+
+# End Source File
+# End Group
 # End Group
 # End Target
 # End Project
