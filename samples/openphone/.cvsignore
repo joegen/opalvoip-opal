@@ -5,3 +5,4 @@ NoTrace
 trace.txt
 mainwindow.h    mainwindow.cpp    moc_mainwindow.cpp
 configuration.h configuration.cpp moc_configuration.cpp
+makecall.cpp
