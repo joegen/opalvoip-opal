@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2026  2003/03/06 03:57:47  robertj
+ * Revision 1.2027  2003/03/07 08:12:01  robertj
+ * Removed lock not needed in new architecture, hang over from OpenH323.
+ *
+ * Revision 2.25  2003/03/06 03:57:47  robertj
  * IVR support (work in progress) requiring large changes everywhere.
  *
  * Revision 2.24  2003/01/24 11:31:01  robertj
@@ -1126,8 +1129,6 @@ BOOL H323EndPoint::InternalMakeCall(OpalCall & call,
     PTRACE(1, "H225\tEndpoint could not create connection, aborting setup.");
     return FALSE;
   }
-
-  connection->Lock();
 
   connectionsActive.SetAt(newToken, connection);
 
