@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2022  2004/05/03 00:59:18  csoutheren
+ * Revision 1.2023  2004/07/11 12:32:51  rjongbloed
+ * Added functions to add/subtract lists of media formats from a media format list
+ *
+ * Revision 2.21  2004/05/03 00:59:18  csoutheren
  * Fixed problem with OpalMediaFormat::GetMediaFormatsList
  * Added new version of OpalMediaFormat::GetMediaFormatsList that minimses copying
  *
@@ -196,11 +199,25 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
       const OpalMediaFormat & format    /// Format to add
     );
 
+    /**Add a format to the list.
+       If the format is invalid or already in the list then it is not added.
+      */
+    OpalMediaFormatList & operator+=(
+      const OpalMediaFormatList & formats    /// Formats to add
+    );
+
     /**Remove a format to the list.
        If the format is invalid or not in the list then this does nothing.
       */
     OpalMediaFormatList & operator-=(
       const OpalMediaFormat & format    /// Format to remove
+    );
+
+    /**Remove a format to the list.
+       If the format is invalid or not in the list then this does nothing.
+      */
+    OpalMediaFormatList & operator-=(
+      const OpalMediaFormatList & formats    /// Formats to remove
     );
 
     /**Get a format position in the list matching the payload type.

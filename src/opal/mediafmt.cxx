@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2023  2004/05/03 00:59:19  csoutheren
+ * Revision 1.2024  2004/07/11 12:32:51  rjongbloed
+ * Added functions to add/subtract lists of media formats from a media format list
+ *
+ * Revision 2.22  2004/05/03 00:59:19  csoutheren
  * Fixed problem with OpalMediaFormat::GetMediaFormatsList
  * Added new version of OpalMediaFormat::GetMediaFormatsList that minimses copying
  *
@@ -418,7 +421,7 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
   }
 
   // assume non-dynamic payload types are correct and do not need deconflicting
-  if (rtpPayloadType < RTP_DataFrame::DynamicBase) {
+  if (rtpPayloadType < RTP_DataFrame::DynamicBase || rtpPayloadType == RTP_DataFrame::MaxPayloadType) {
     registeredFormats.OpalMediaFormatBaseList::Append(this);
     return;
   }
@@ -545,12 +548,28 @@ OpalMediaFormatList & OpalMediaFormatList::operator+=(const OpalMediaFormat & fo
 }
 
 
+OpalMediaFormatList & OpalMediaFormatList::operator+=(const OpalMediaFormatList & formats)
+{
+  for (PINDEX i = 0; i < formats.GetSize(); i++)
+    *this += formats[i];
+  return *this;
+}
+
+
 OpalMediaFormatList & OpalMediaFormatList::operator-=(const OpalMediaFormat & format)
 {
   PINDEX idx = FindFormat(format);
   if (idx != P_MAX_INDEX)
     RemoveAt(idx);
 
+  return *this;
+}
+
+
+OpalMediaFormatList & OpalMediaFormatList::operator-=(const OpalMediaFormatList & formats)
+{
+  for (PINDEX i = 0; i < formats.GetSize(); i++)
+    *this -= formats[i];
   return *this;
 }
 
