@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.h,v $
- * Revision 1.2007  2004/02/19 10:46:43  rjongbloed
+ * Revision 1.2008  2004/03/11 06:54:26  csoutheren
+ * Added ability to disable SIP or H.323 stacks
+ *
+ * Revision 2.6  2004/02/19 10:46:43  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.5  2002/11/10 11:33:16  robertj
@@ -484,12 +487,13 @@
 #endif
 #include <codec/ilbccodec.h>
 #endif // NO_H323_AUDIO_CODECS
-#ifndef NO_H323_VIDEO
+
+#ifndef NO_OPAL_VIDEO
 #include <codec/h261codec.h>
 #ifdef HAS_CU30
 #include <codec/cu30codec.h>
 #endif
-#endif // NO_H323_VIDEO
+#endif // NO_OPAL_VIDEO
 
 
 PString  OpalGetVersion();
