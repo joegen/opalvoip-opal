@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vblasterlid.cxx,v $
- * Revision 1.2005  2002/09/06 07:20:31  robertj
+ * Revision 1.2006  2003/03/24 07:18:30  robertj
+ * Added registration system for LIDs so can work with various LID types by
+ *   name instead of class instance.
+ *
+ * Revision 2.4  2002/09/06 07:20:31  robertj
  * Fixed previous update, did not port properly.
  *
  * Revision 2.3  2002/09/04 06:01:49  robertj
@@ -300,6 +304,13 @@ PString OpalVoipBlasterDevice::GetName() const
 {
   return deviceName;
 }
+
+
+PStringArray OpalVoipBlasterDevice::GetAllNames() const
+{
+  return GetDeviceNames();
+}
+
 
 void OpalVoipBlasterDevice::StatusHandler(PThread &, INT)
 {

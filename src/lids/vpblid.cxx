@@ -22,7 +22,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vpblid.cxx,v $
- * Revision 1.2007  2002/09/04 06:01:49  robertj
+ * Revision 1.2008  2003/03/24 07:18:30  robertj
+ * Added registration system for LIDs so can work with various LID types by
+ *   name instead of class instance.
+ *
+ * Revision 2.6  2002/09/04 06:01:49  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.5  2002/07/01 04:56:33  robertj
@@ -175,6 +179,14 @@ PString OpalVpbDevice::GetName() const
   char buf[100];
   vpb_get_model(buf);
   return psprintf("%s/%u", buf, cardNumber);
+}
+
+
+PStringArray OpalVpbDevice::GetAllNames() const
+{
+  PStringArray devices(1);
+  devices[0] = "0";
+  return devices;
 }
 
 

@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: dllmain.cxx,v $
- * Revision 1.2005  2003/01/07 04:39:53  robertj
+ * Revision 1.2006  2003/03/24 07:18:30  robertj
+ * Added registration system for LIDs so can work with various LID types by
+ *   name instead of class instance.
+ *
+ * Revision 2.4  2003/01/07 04:39:53  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.3  2002/11/11 06:54:30  robertj
@@ -52,8 +56,10 @@
 
 #include <ptlib.h>
 
+#define OPAL_STATIC_LINK
 #define H323_STATIC_LIB
 #include <codec/allcodecs.h>
+#include <lids/alllids.h>
 
 
 ///////////////////////////////////////////////////////////////////////////////
