@@ -23,7 +23,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: allcodecs.h,v $
- * Revision 1.2004  2002/11/10 11:33:16  robertj
+ * Revision 1.2005  2003/03/17 10:26:59  robertj
+ * Added video support.
+ *
+ * Revision 2.3  2002/11/10 11:33:16  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.2  2002/07/01 04:56:29  robertj
@@ -55,6 +58,10 @@ OPAL_REGISTER_LPC10();
 
 #include <codec/speexcodec.h>
 OPAL_REGISTER_SPEEX();
+
+
+#include <codec/vidcodec.h>
+OPAL_REGISTER_UNCOMPRESSED_VIDEO();
 
 #include <codec/h261codec.h>
 OPAL_REGISTER_H261();

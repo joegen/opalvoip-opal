@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2021  2003/03/06 03:57:46  robertj
+ * Revision 1.2022  2003/03/17 10:26:59  robertj
+ * Added video support.
+ *
+ * Revision 2.20  2003/03/06 03:57:46  robertj
  * IVR support (work in progress) requiring large changes everywhere.
  *
  * Revision 2.19  2003/01/07 04:39:52  robertj
@@ -516,8 +519,9 @@ class H323Connection : public OpalConnection
        The default behaviour is pure.
      */
     virtual OpalMediaStream * CreateMediaStream(
-      BOOL isSource,      /// Is a source stream
-      unsigned sessionID  /// Session number for stream
+      const OpalMediaFormat & mediaFormat, /// Media format for stream
+      unsigned sessionID,                  /// Session number for stream
+      BOOL isSource                        /// Is a source stream
     );
 
     /**See if the media can bypass the local host.

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2038  2003/03/07 05:51:10  robertj
+ * Revision 1.2039  2003/03/17 10:26:59  robertj
+ * Added video support.
+ *
+ * Revision 2.37  2003/03/07 05:51:10  robertj
  * Fixed correct timing of call to OnSetUp() must be after connect PDU
  *   is available.
  * Fixed missing Unlock() in H.450 processing.
@@ -4095,7 +4098,9 @@ BOOL H323Connection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForm
 }
 
 
-OpalMediaStream * H323Connection::CreateMediaStream(BOOL isSource, unsigned sessionID)
+OpalMediaStream * H323Connection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
+                                                    unsigned sessionID,
+                                                    BOOL isSource)
 {
   if (!isSource && fastStartedTransmitMediaStream != NULL) {
     OpalMediaStream * stream = fastStartedTransmitMediaStream;
@@ -4104,9 +4109,9 @@ OpalMediaStream * H323Connection::CreateMediaStream(BOOL isSource, unsigned sess
   }
 
   if (ownerCall.IsMediaBypassPossible(*this, sessionID))
-    return new OpalNullMediaStream(isSource, sessionID);
+    return new OpalNullMediaStream(mediaFormat, sessionID, isSource);
 
-  return new OpalRTPMediaStream(isSource, *GetSession(sessionID),
+  return new OpalRTPMediaStream(mediaFormat, isSource, *GetSession(sessionID),
                                 endpoint.GetManager().GetMinAudioJitterDelay(),
                                 endpoint.GetManager().GetMaxAudioJitterDelay());
 }

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2014  2002/11/10 11:33:17  robertj
+ * Revision 1.2015  2003/03/17 10:26:59  robertj
+ * Added video support.
+ *
+ * Revision 2.13  2002/11/10 11:33:17  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.12  2002/09/16 02:52:35  robertj
@@ -104,8 +107,9 @@ class OpalMediaStream : public PObject
     /**Construct a new media stream.
       */
     OpalMediaStream(
-      BOOL isSourceStream,  /// Direction of I/O for stream
-      unsigned sessionID    /// Session ID for media stream
+      const OpalMediaFormat & mediaFormat, /// Media format for stream
+      unsigned sessionID,                  /// Session number for stream
+      BOOL isSource                        /// Is a source stream
     );
 
   public:
@@ -140,12 +144,9 @@ class OpalMediaStream : public PObject
 
     /**Open the media stream using the media format.
 
-       The default behaviour simply sets the member variable "mediaFormat"
-       and "defaultDataSize".
+       The default behaviour simply sets the isOpen variable to TRUE.
       */
-    virtual BOOL Open(
-      const OpalMediaFormat & format /// Media format to select
-    );
+    virtual BOOL Open();
 
     /**Start the media stream.
 
@@ -211,11 +212,16 @@ class OpalMediaStream : public PObject
     /**Set the data size in bytes that is expected to be used. Some media
        streams can make use of this information to perform optimisations.
 
-       The defafault behaviour does nothing.
+       The default behaviour does nothing.
       */
     virtual BOOL SetDataSize(
       PINDEX dataSize  /// New data size
     );
+
+    /**Get the data size in bytes that is expected to be used. Some media
+       streams can make use of this information to perform optimisations.
+      */
+    PINDEX GetDataSize() const { return defaultDataSize; }
 
     /**Indicate if the media stream is synchronous.
        If this returns TRUE then the media stream will block of the amount of
@@ -279,10 +285,11 @@ class OpalMediaStream : public PObject
   //@}
 
   protected:
-    BOOL            isSource;
-    unsigned        sessionID;
     OpalMediaFormat mediaFormat;
-    unsigned        defaultDataSize;
+    unsigned        sessionID;
+    BOOL            isSource;
+    BOOL            isOpen;
+    PINDEX          defaultDataSize;
     unsigned        timestamp;
     BOOL            marker;
     unsigned        mismatchedPayloadTypes;
@@ -304,8 +311,9 @@ class OpalNullMediaStream : public OpalMediaStream
     /**Construct a new media stream for RTP sessions.
       */
     OpalNullMediaStream(
-      BOOL isSourceStream,  /// Direction of I/O for stream
-      unsigned sessionID    /// Session ID for media stream
+      const OpalMediaFormat & mediaFormat, /// Media format for stream
+      unsigned sessionID,                  /// Session number for stream
+      BOOL isSource                        /// Is a source stream
     );
   //@}
 
@@ -354,7 +362,8 @@ class OpalRTPMediaStream : public OpalMediaStream
     /**Construct a new media stream for RTP sessions.
       */
     OpalRTPMediaStream(
-      BOOL isSourceStream,         /// Direction of I/O for stream
+      const OpalMediaFormat & mediaFormat, /// Media format for stream
+      BOOL isSource,                       /// Is a source stream
       RTP_Session & rtpSession,    /// RTP session to stream to/from
       unsigned minAudioJitterDelay,/// Minimum jitter buffer size (if applicable)
       unsigned maxAudioJitterDelay /// Maximum jitter buffer size (if applicable)
@@ -415,21 +424,21 @@ class OpalLineMediaStream : public OpalMediaStream
     /**Construct a new media stream for Line Interface Devices.
       */
     OpalLineMediaStream(
-      BOOL isSourceStream,  /// Direction of I/O for stream
-      unsigned sessionID,   /// Session ID for media stream
-      OpalLine & line       /// LID line to stream to/from
+      const OpalMediaFormat & mediaFormat, /// Media format for stream
+      unsigned sessionID,                  /// Session number for stream
+      BOOL isSource,                       /// Is a source stream
+      OpalLine & line                      /// LID line to stream to/from
     );
   //@}
 
   /**@name Overrides of OpalMediaStream class */
   //@{
-    /**Select the data format this channel is to operate.
+    /**Open the media stream.
 
-       The default behaviour simply sets the member variable "mediaFormat".
+       The default behaviour sets the OpalLineInterfaceDevice format and
+       calls Resume() on the associated OpalMediaPatch thread.
       */
-    virtual BOOL Open(
-      const OpalMediaFormat & format /// Media format to select
-    );
+    virtual BOOL Open();
 
     /**Close the media stream.
 
@@ -482,12 +491,15 @@ class OpalRawMediaStream : public OpalMediaStream
     /**Construct a new media stream for channel.
       */
     OpalRawMediaStream(
-      BOOL isSourceStream, /// Direction of I/O for stream
-      unsigned sessionID,  /// Session ID for media stream
-      PChannel * channel,  /// I/O channel to stream to/from
-      BOOL autoDelete      /// Automatically delete channel
+      const OpalMediaFormat & mediaFormat, /// Media format for stream
+      unsigned sessionID,                  /// Session number for stream
+      BOOL isSource,                       /// Is a source stream
+      PChannel * channel,                  /// I/O channel to stream to/from
+      BOOL autoDelete                      /// Automatically delete channel
     );
 
+    /**Delete attached channel if autoDelete enabled.
+      */
     ~OpalRawMediaStream();
   //@}
 
@@ -537,18 +549,20 @@ class OpalFileMediaStream : public OpalRawMediaStream
     /**Construct a new media stream for files.
       */
     OpalFileMediaStream(
-      BOOL isSourceStream,    /// Direction of I/O for stream
-      unsigned sessionID,     /// Session ID for media stream
-      PFile * file,           /// File to stream to/from
-      BOOL autoDelete = TRUE  /// Automatically delete file
+      const OpalMediaFormat & mediaFormat, /// Media format for stream
+      unsigned sessionID,                  /// Session number for stream
+      BOOL isSource,                       /// Is a source stream
+      PFile * file,                        /// File to stream to/from
+      BOOL autoDelete = TRUE               /// Automatically delete file
     );
 
     /**Construct a new media stream for files.
       */
     OpalFileMediaStream(
-      BOOL isSourceStream,    /// Direction of I/O for stream
-      unsigned sessionID,     /// Session ID for media stream
-      const PFilePath & path  /// File path to stream to/from
+      const OpalMediaFormat & mediaFormat, /// Media format for stream
+      unsigned sessionID,                  /// Session number for stream
+      BOOL isSource,                       /// Is a source stream
+      const PFilePath & path               /// File path to stream to/from
     );
   //@}
 
@@ -577,20 +591,22 @@ class OpalAudioMediaStream : public OpalRawMediaStream
     /**Construct a new media stream for audio.
       */
     OpalAudioMediaStream(
-      BOOL isSourceStream,      /// Direction of I/O for stream
-      unsigned sessionID,       /// Session ID for media stream
-      PINDEX buffers,           /// Number of buffers on sound channel
-      PSoundChannel * channel,  /// Audio device to stream to/from
-      BOOL autoDelete = TRUE    /// Automatically delete PSoundChannel
+      const OpalMediaFormat & mediaFormat, /// Media format for stream
+      unsigned sessionID,                  /// Session number for stream
+      BOOL isSource,                       /// Is a source stream
+      PINDEX buffers,                      /// Number of buffers on sound channel
+      PSoundChannel * channel,             /// Audio device to stream to/from
+      BOOL autoDelete = TRUE               /// Automatically delete PSoundChannel
     );
 
     /**Construct a new media stream for audio.
       */
     OpalAudioMediaStream(
-      BOOL isSourceStream,        /// Direction of I/O for stream
-      unsigned sessionID,         /// Session ID for media stream
-      PINDEX buffers,             /// Number of buffers on sound channel
-      const PString & deviceName  /// Name of audio device to stream to/from
+      const OpalMediaFormat & mediaFormat, /// Media format for stream
+      unsigned sessionID,                  /// Session number for stream
+      BOOL isSource,                       /// Is a source stream
+      PINDEX buffers,                      /// Number of buffers on sound channel
+      const PString & deviceName           /// Name of audio device to stream to/from
     );
   //@}
 
@@ -599,7 +615,7 @@ class OpalAudioMediaStream : public OpalRawMediaStream
     /**Set the data size in bytes that is expected to be used. Some media
        streams can make use of this information to perform optimisations.
 
-       The defafault behaviour does nothing.
+       The defafault simply sets teh member variable defaultDataSize.
       */
     virtual BOOL SetDataSize(
       PINDEX dataSize  /// New data size
@@ -622,44 +638,65 @@ class OpalAudioMediaStream : public OpalRawMediaStream
 class OpalVideoMediaStream : public OpalMediaStream
 {
     PCLASSINFO(OpalVideoMediaStream, OpalMediaStream);
-  protected:
+  public:
   /**@name Construction */
   //@{
     /**Construct a new media stream for channel.
       */
     OpalVideoMediaStream(
-      BOOL isSourceStream,    /// Direction of I/O for stream
-      unsigned sessionID,     /// Session ID for media stream
-      PVideoDevice & device   /// Device to use for video
+      const OpalMediaFormat & mediaFormat, /// Media format for stream
+      unsigned sessionID,                  /// Session number for stream
+      PVideoInputDevice * inputDevice,     /// Device to use for video grabbing
+      PVideoOutputDevice * outputDevice,   /// Device to use for video display
+      BOOL autoDelete = TRUE               /// Automatically delete PVideoDevices
     );
+
+    /**Delete attached channel if autoDelete enabled.
+      */
+    ~OpalVideoMediaStream();
   //@}
 
-  public:
   /**@name Overrides of PChannel class */
   //@{
-    /** Low level read from the media stream. This overrides the PChannel
-        class behaviour.
+    /**Open the media stream.
 
-       The new behaviour simply calls PChannel::ReadBlock().
-     */
-    virtual BOOL Read(
-      void * buf,   /// Pointer to a block of memory to receive the read bytes.
-      PINDEX len    /// Maximum number of bytes to read into the buffer.
+       The default behaviour sets the OpalLineInterfaceDevice format and
+       calls Resume() on the associated OpalMediaPatch thread.
+      */
+    virtual BOOL Open();
+
+    /**Read an RTP frame of data from the source media stream.
+       The default behaviour simply calls ReadPacket() on the data portion of the
+       RTP_DataFrame and sets the frames timestamp and marker from the internal
+       member variables of the media stream class.
+      */
+    virtual BOOL ReadData(
+      BYTE * data,      /// Data buffer to read to
+      PINDEX size,      /// Size of buffer
+      PINDEX & length   /// Length of data actually read
     );
 
-    /** Low level write to the media stream. This function overrides the
-        PChannel class behaviour.
-
-       The new behaviour simply calls PChannel::WriteBlock().
-     */
-    virtual BOOL Write(
-      const void * buf, /// Pointer to a block of memory to write.
-      PINDEX len        /// Number of bytes to write.
+    /**Write an RTP frame of data to the sink media stream.
+       The default behaviour calls WritePacket() on the data portion of the
+       RTP_DataFrame and and sets the internal timestamp and marker from the
+       member variables of the media stream class.
+      */
+    virtual BOOL WriteData(
+      const BYTE * data,   /// Data to write
+      PINDEX length,       /// Length of data to read.
+      PINDEX & written     /// Length of data actually written
     );
+
+    /**Indicate if the media stream is synchronous.
+       Returns TRUE for LID streams.
+      */
+    virtual BOOL IsSynchronous() const;
   //@}
 
   protected:
-    PVideoDevice & device;
+    PVideoInputDevice  * inputDevice;
+    PVideoOutputDevice * outputDevice;
+    BOOL                 autoDelete;
 };
 
 
