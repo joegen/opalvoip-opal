@@ -138,10 +138,10 @@ Package=<4>
     Project_Dep_Name Console Components
     End Project Dependency
     Begin Project Dependency
-    Project_Dep_Name OPAL_lib
+    Project_Dep_Name PTLib
     End Project Dependency
     Begin Project Dependency
-    Project_Dep_Name PTLib
+    Project_Dep_Name OPAL_dll
     End Project Dependency
 }}}
 
