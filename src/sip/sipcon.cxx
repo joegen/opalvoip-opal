@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2041  2004/04/26 05:40:39  rjongbloed
+ * Revision 1.2042  2004/08/14 07:56:43  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.40  2004/04/26 05:40:39  rjongbloed
  * Added RTP statistics callback to SIP
  *
  * Revision 2.39  2004/04/25 08:34:08  rjongbloed
@@ -245,11 +248,12 @@ SIPConnection::~SIPConnection()
 }
 
 
-BOOL SIPConnection::OnReleased()
+void SIPConnection::OnReleased()
 {
   PTRACE(3, "SIP\tOnReleased: " << *this);
 
-  SIPTransaction * bye = NULL; // potential dynamic transaction
+  SIPTransaction * byeTransaction = NULL;
+
   switch (releaseMethod) {
     case ReleaseWithNothing :
       break;
@@ -280,9 +284,7 @@ BOOL SIPConnection::OnReleased()
 
     case ReleaseWithBYE :
       // create BYE now & delete it later to prevent memory access errors
-      bye = new SIPTransaction (*this, *transport, SIP_PDU::Method_BYE);
-      if (bye != NULL)
-        bye->Wait();
+      byeTransaction = new SIPTransaction(*this, *transport, SIP_PDU::Method_BYE);
       break;
 
     case ReleaseWithCANCEL :
@@ -292,17 +294,19 @@ BOOL SIPConnection::OnReleased()
       }
   }
 
-  LockOnRelease();
-
-  // send the appropriate form 
-  PTRACE(2, "SIP\tReceived OnReleased in phase " << phase);
-
-  // close media ASAP
-  BOOL result = OpalConnection::OnReleased();
+  // close media
+  for (PINDEX i = 0; i < mediaStreams.GetSize(); i++)
+    mediaStreams[i].Close();
 
   invitations.RemoveAll();
 
-  delete bye; // delete dynamic bye
+  // Sent a BYE, wait for it to complete
+  if (byeTransaction != NULL) {
+    byeTransaction->Wait();
+    delete byeTransaction;
+  }
+
+  phase = ReleasedPhase;
 
   if (pduHandler != NULL) {
     pduSemaphore.Signal();
@@ -314,7 +318,7 @@ BOOL SIPConnection::OnReleased()
   if (transport != NULL)
     transport->CloseWait();
 
-  return result;
+  OpalConnection::OnReleased();
 }
 
 
@@ -1047,11 +1051,13 @@ void SIPConnection::QueuePDU(SIP_PDU * pdu)
   pduQueue.Enqueue(pdu);
   pduSemaphore.Signal();
 
-  if (pduHandler == NULL)
+  if (pduHandler == NULL) {
+    SafeReference();
     pduHandler = PThread::Create(PCREATE_NOTIFIER(HandlePDUsThreadMain), 0,
                                  PThread::NoAutoDeleteThread,
                                  PThread::NormalPriority,
                                  "SIP Handler:%x");
+  }
 }
 
 
@@ -1059,11 +1065,11 @@ void SIPConnection::HandlePDUsThreadMain(PThread &, INT)
 {
   PTRACE(2, "SIP\tPDU handler thread started.");
 
-  for(;;) {
+  while (phase != ReleasedPhase) {
     PTRACE(4, "SIP\tAwaiting next PDU.");
     pduSemaphore.Wait();
 
-    if (!Lock())
+    if (!LockReadOnly())
       break;
 
     SIP_PDU * pdu = pduQueue.Dequeue();
@@ -1072,8 +1078,10 @@ void SIPConnection::HandlePDUsThreadMain(PThread &, INT)
       delete pdu;
     }
 
-    Unlock();
+    UnlockReadOnly();
   }
+
+  SafeDereference();
 
   PTRACE(2, "SIP\tPDU handler thread finished.");
 }

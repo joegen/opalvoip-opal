@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2025  2004/07/11 12:42:13  rjongbloed
+ * Revision 1.2026  2004/08/14 07:56:43  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.24  2004/07/11 12:42:13  rjongbloed
  * Added function on endpoints to get the list of all media formats any
  *   connection the endpoint may create can support.
  *
@@ -118,6 +121,7 @@
 #include <sip/sipcon.h>
 
 #include <opal/manager.h>
+#include <opal/call.h>
 
 
 #define new PNEW
@@ -264,12 +268,12 @@ BOOL SIPEndPoint::MakeConnection(OpalCall & call,
   if (connection == NULL)
     return FALSE;
 
-  AddNewConnection(connection);
+  connectionsActive.SetAt(connection->GetToken(), connection);
 
   // If we are the A-party then need to initiate a call now in this thread. If
   // we are the B-Party then SetUpConnection() gets called in the context of
   // the A-party thread.
-  if (&call.GetConnection(0) == connection)
+  if (call.GetConnection(0) == connection)
     connection->SetUpConnection();
 
   return TRUE;
@@ -299,19 +303,11 @@ SIPConnection * SIPEndPoint::CreateConnection(OpalCall & call,
 }
 
 
-void SIPEndPoint::AddNewConnection(SIPConnection * conn)
-{
-  PWaitAndSignal m(inUseFlag);
-  connectionsActive.SetAt(conn->GetToken(), conn);
-}
-
-
 BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
 {
-  SIPConnection * connection = GetSIPConnectionWithLock(pdu->GetMIME().GetCallID());
+  PSafePtr<SIPConnection> connection = GetSIPConnectionWithLock(pdu->GetMIME().GetCallID());
   if (connection != NULL) {
     connection->QueuePDU(pdu);
-    connection->Unlock();
     return TRUE;
   }
 
@@ -405,7 +401,7 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
   }
 
   // add the connection to the endpoint list
-  AddNewConnection(connection);
+  connectionsActive.SetAt(connection->GetToken(), connection);
 
   // Get the connection to handle the rest of the INVITE
   connection->QueuePDU(request);
