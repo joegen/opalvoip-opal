@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2035  2004/10/25 23:28:28  csoutheren
+ * Revision 1.2036  2004/11/08 10:17:51  rjongbloed
+ * Tidied some trace logs
+ *
+ * Revision 2.34  2004/10/25 23:28:28  csoutheren
  * Fixed problems with systems that use commas between authentication parameters
  *
  * Revision 2.33  2004/09/27 12:51:20  rjongbloed
@@ -1103,7 +1106,7 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
 
   if (!transport.good()) {
     PTRACE_IF(1, transport.GetErrorCode(PChannel::LastReadError) != PChannel::NoError,
-              "Read SIP PDU failed: " << transport.GetErrorText(PChannel::LastReadError));
+              "SIP\tPDU Read failed: " << transport.GetErrorText(PChannel::LastReadError));
     return FALSE;
   }
 
@@ -1172,13 +1175,11 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
   }
 
 #if PTRACING
-  if (PTrace::CanTrace(4)) {
-    PTRACE(4, "Received SIP PDU on " << transport << "\n"
+  if (PTrace::CanTrace(4))
+    PTRACE(4, "SIP\tPDU Received on " << transport << "\n"
            << cmd << '\n' << mime << entityBody);
-  }
-  else {
-    PTRACE(3, "Received SIP PDU: " << cmd << " on " << transport);
-  }
+  else
+    PTRACE(3, "SIP\tPDU Received " << cmd << " on " << transport);
 #endif
 
   return TRUE;
@@ -1210,17 +1211,17 @@ BOOL SIP_PDU::Write(OpalTransport & transport)
 
 #if PTRACING
   if (PTrace::CanTrace(4))
-    PTRACE(4, "Sending SIP PDU on " << transport << '\n' << str);
-  else if (!method)
-    PTRACE(3, "Sending SIP PDU: " << MethodNames[method] << ' ' << uri << " on " << transport);
+    PTRACE(4, "SIP\tSending PDU on " << transport << '\n' << str);
+  else if (method != NumMethods)
+    PTRACE(3, "SIP\tSending PDU " << MethodNames[method] << ' ' << uri << " on " << transport);
   else
-    PTRACE(3, "Sending SIP PDU: " << (unsigned)statusCode << ' ' << info << " on " << transport);
+    PTRACE(3, "SIP\tSending PDU " << (unsigned)statusCode << ' ' << info << " on " << transport);
 #endif
 
   if (transport.WriteString(str))
     return TRUE;
 
-  PTRACE(1, "Write SIP PDU failed: " << transport.GetErrorText(PChannel::LastWriteError));
+  PTRACE(1, "SIP\tPDU Write failed: " << transport.GetErrorText(PChannel::LastWriteError));
   return FALSE;
 }
 
