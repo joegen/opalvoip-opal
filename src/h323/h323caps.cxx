@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2022  2004/09/01 12:21:28  rjongbloed
+ * Revision 1.2023  2004/11/07 12:26:40  rjongbloed
+ * Fixed incorrect conditional in decoding non standard application data
+ *   types in OLC, thanks Dmitriy
+ *
+ * Revision 2.21  2004/09/01 12:21:28  rjongbloed
  * Added initialisation of H323EndPoints capability table to be all codecs so can
  *   correctly build remote caps from fqast connect params. This had knock on effect
  *   with const keywords added in numerous places.
@@ -2166,7 +2170,7 @@ H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType
         const H245_DataApplicationCapability & data = dataType;
         checkExact = capability.GetMainType() == H323Capability::e_Data &&
                      capability.GetSubType() == data.m_application.GetTag() &&
-                    (capability.GetSubType() == H245_DataApplicationCapability_application::e_nonStandard ||
+                    (capability.GetSubType() != H245_DataApplicationCapability_application::e_nonStandard ||
                      capability.IsNonStandardMatch((const H245_NonStandardParameter &)data.m_application));
         break;
       }
