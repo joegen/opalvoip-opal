@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2005  2002/02/19 07:51:37  robertj
+ * Revision 1.2006  2002/06/16 02:22:49  robertj
+ * Fixed memory leak of RFC2833 ordinals, thanks Ted Szoczei
+ *
+ * Revision 2.4  2002/02/19 07:51:37  robertj
  * Added OpalRFC2833 as a OpalMediaFormat variable.
  * Fixed encoding name being used correctly in SDP media list.
  *
@@ -110,7 +113,8 @@ SDPMediaFormat::SDPMediaFormat(RTP_DataFrame::PayloadTypes pt,
   : payloadType(pt),
     encodingName(_name),
     clockRate(_clockRate),
-    parameters(_parms)
+    parameters(_parms),
+    nteSet(TRUE)
 {
   if (encodingName == OpalRFC2833.GetEncodingName())
     AddNTEString("0-15");
@@ -121,7 +125,8 @@ SDPMediaFormat::SDPMediaFormat(const PString & nteString, RTP_DataFrame::Payload
 
   : payloadType(pt),
     encodingName(OpalRFC2833.GetEncodingName()),
-    clockRate(8000)
+    clockRate(8000),
+    nteSet(TRUE)
 {
   AddNTEString(nteString);
 }
