@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2052  2004/04/25 02:53:29  rjongbloed
+ * Revision 1.2053  2004/04/26 04:33:06  rjongbloed
+ * Move various call progress times from H.323 specific to general conenction.
+ *
+ * Revision 2.51  2004/04/25 02:53:29  rjongbloed
  * Fixed GNU 3.4 warnings
  *
  * Revision 2.50  2004/04/18 13:38:01  rjongbloed
@@ -1384,10 +1387,7 @@ H323Connection::H323Connection(OpalCall & call,
                                unsigned options)
   : OpalConnection(call, ep, token),
     endpoint(ep),
-    gkAccessTokenOID(ep.GetGkAccessTokenOID()),
-    alertingTime(0),
-    connectedTime(0),
-    callEndTime(0)
+    gkAccessTokenOID(ep.GetGkAccessTokenOID())
 {
   if (alias.IsEmpty())
     remotePartyName = remotePartyAddress = address;

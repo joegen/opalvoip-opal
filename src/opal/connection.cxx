@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2032  2004/04/18 13:31:28  rjongbloed
+ * Revision 1.2033  2004/04/26 04:33:06  rjongbloed
+ * Move various call progress times from H.323 specific to general conenction.
+ *
+ * Revision 2.31  2004/04/18 13:31:28  rjongbloed
  * Added new end call value from OpenH323.
  *
  * Revision 2.30  2004/03/13 06:25:54  rjongbloed
@@ -210,6 +213,9 @@ OpalConnection::OpalConnection(OpalCall & call,
   : ownerCall(call),
     endpoint(ep),
     callToken(token),
+    alertingTime(0),
+    connectedTime(0),
+    callEndTime(0),
     localPartyName(ep.GetDefaultLocalPartyName()),
     remotePartyName(token)
 {
