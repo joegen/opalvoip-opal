@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.cxx,v $
- * Revision 1.2011  2003/03/17 10:26:59  robertj
+ * Revision 1.2012  2004/01/18 15:35:20  rjongbloed
+ * More work on video support
+ *
+ * Revision 2.10  2003/03/17 10:26:59  robertj
  * Added video support.
  *
  * Revision 2.9  2003/01/07 04:39:53  robertj
@@ -425,7 +428,7 @@ Opal_H261_YUV420P::~Opal_H261_YUV420P()
 
 PINDEX Opal_H261_YUV420P::GetOptimalDataFrameSize(BOOL input) const
 {
-  return input ? maxOutputPayloadSize : ((frameWidth * frameHeight * 12) / 8);
+  return input ? RTP_DataFrame::MaxEthernetPayloadSize : ((frameWidth * frameHeight * 12) / 8);
 }
 
 
@@ -519,7 +522,7 @@ Opal_YUV420P_H261::~Opal_YUV420P_H261()
 
 PINDEX Opal_YUV420P_H261::GetOptimalDataFrameSize(BOOL input) const
 {
-  return input ? ((frameWidth * frameHeight * 12) / 8) : maxOutputPayloadSize;
+  return input ? ((frameWidth * frameHeight * 12) / 8) : maxOutputSize;
 }
 
 
