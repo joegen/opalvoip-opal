@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2022  2004/05/17 13:24:18  rjongbloed
+ * Revision 1.2023  2004/05/24 13:52:30  rjongbloed
+ * Added a separate structure for the silence suppression paramters to make
+ *   it easier to set from global defaults in the manager class.
+ *
+ * Revision 2.21  2004/05/17 13:24:18  rjongbloed
  * Added silence suppression.
  *
  * Revision 2.20  2004/04/25 08:34:08  rjongbloed
@@ -542,8 +546,10 @@ BOOL OpalLineConnection::OnOpenMediaStream(OpalMediaStream & mediaStream)
 
   if (mediaStream.IsSource()) {
     OpalMediaPatch * patch = mediaStream.GetPatch();
-    if (patch != NULL)
+    if (patch != NULL) {
+      silenceDetector->SetParameters(endpoint.GetManager().GetSilenceDetectParams());
       patch->AddFilter(silenceDetector->GetReceiveHandler(), line.GetReadFormat());
+    }
   }
 
   return TRUE;
