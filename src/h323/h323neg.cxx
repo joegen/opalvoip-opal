@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323neg.cxx,v $
- * Revision 1.2002  2001/08/13 05:10:39  robertj
+ * Revision 1.2003  2001/08/17 08:30:00  robertj
+ * Moved call end reasons enum from OpalConnection to global.
+ *
+ * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
@@ -552,7 +555,7 @@ BOOL H245NegTerminalCapabilitySet::HandleIncoming(const H245_TerminalCapabilityS
   }
 
   connection.WriteControlPDU(reject);
-  connection.ClearCall(H323Connection::EndedByCapabilityExchange);
+  connection.ClearCall(EndedByCapabilityExchange);
   return TRUE;
 }
 
