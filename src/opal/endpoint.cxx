@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2010  2002/01/22 05:12:27  robertj
+ * Revision 1.2011  2002/04/05 10:37:46  robertj
+ * Rearranged OnRelease to remove the connection from endpoints connection
+ *   list at the end of the release phase rather than the beginning.
+ *
+ * Revision 2.9  2002/01/22 05:12:27  robertj
  * Revamp of user input API triggered by RFC2833 support
  *
  * Revision 2.8  2001/11/14 01:31:55  robertj
@@ -206,15 +210,6 @@ BOOL OpalEndPoint::HasConnection(const PString & token)
 }
 
 
-void OpalEndPoint::RemoveConnection(OpalConnection * connection)
-{
-  PAssertNULL(connection);
-  inUseFlag.Wait();
-  connectionsActive.SetAt(connection->GetToken(), NULL);
-  inUseFlag.Signal();
-}
-
-
 BOOL OpalEndPoint::OnIncomingConnection(OpalConnection & connection)
 {
   return manager.OnIncomingConnection(connection);
@@ -240,6 +235,10 @@ void OpalEndPoint::OnEstablished(OpalConnection & /*connection*/)
 
 BOOL OpalEndPoint::OnReleased(OpalConnection & connection)
 {
+  inUseFlag.Wait();
+  connectionsActive.SetAt(connection.GetToken(), NULL);
+  inUseFlag.Signal();
+
   return manager.OnReleased(connection);
 }
 
