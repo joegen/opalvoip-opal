@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2028  2004/08/14 07:56:43  rjongbloed
+ * Revision 1.2029  2004/10/02 11:50:58  rjongbloed
+ * Fixed RTP media stream so assures RTP session is open before starting.
+ *
+ * Revision 2.27  2004/08/14 07:56:43  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.26  2004/05/24 13:36:30  rjongbloed
@@ -460,6 +463,17 @@ OpalRTPMediaStream::OpalRTPMediaStream(const OpalMediaFormat & mediaFormat,
      maximum size. */
   if (isSource || defaultDataSize > RTP_DataFrame::MaxEthernetPayloadSize)
     defaultDataSize = RTP_DataFrame::MaxEthernetPayloadSize;
+}
+
+
+BOOL OpalRTPMediaStream::Open()
+{
+  if (isOpen)
+    return TRUE;
+
+  rtpSession.Reopen(IsSource());
+
+  return OpalMediaStream::Open();
 }
 
 
