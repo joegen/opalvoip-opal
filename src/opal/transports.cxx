@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2040  2004/12/12 13:37:02  dsandras
+ * Revision 1.2041  2005/01/16 23:08:33  csoutheren
+ * Fixed problem with IPv6 INADDR_ANY
+ * Fixed problem when transport thread self terminates
+ *
+ * Revision 2.39  2004/12/12 13:37:02  dsandras
  * Made the transport type comparison insensitive. Required for interoperation with some IP Phones.
  *
  * Revision 2.38  2004/08/14 07:56:43  rjongbloed
@@ -584,7 +588,7 @@ BOOL OpalTransportAddress::IsEquivalent(const OpalTransportAddress & address)
   WORD port1 = 65535, port2 = 65535;
   return GetIpAndPort(ip1, port1) &&
          address.GetIpAndPort(ip2, port2) &&
-         (ip1 == INADDR_ANY || ip2 == INADDR_ANY || ip1 == ip2) &&
+         (ip1.IsAny() || ip2.IsAny() || (ip1 *= ip2)) &&
          (port1 == 65535 || port2 == 65535 || port1 == port2);
 }
 
@@ -809,7 +813,7 @@ static BOOL GetAdjustedIpAndPort(const OpalTransportAddress & address,
 
   switch (option) {
     case OpalTransportAddress::NoBinding :
-      ip = INADDR_ANY;
+      ip = PIPSocket::GetDefaultIpAny();
       port = 0;
       return TRUE;
 
@@ -1041,7 +1045,7 @@ OpalTransportAddress OpalListenerIP::GetLocalAddress(const OpalTransportAddress 
   PString addr;
 
   // If specifically bound to interface use that
-  if (localAddress != INADDR_ANY)
+  if (!localAddress.IsAny())
     addr = localAddress.AsString();
   else {
     // If bound to all, then use '*' unless a preferred address is specified
@@ -1215,7 +1219,7 @@ BOOL OpalListenerUDP::Open(const PNotifier & theAcceptHandler, BOOL /*isSingleTh
 
   for (PINDEX i = 0; i < interfaces.GetSize(); i++) {
     PIPSocket::Address addr = interfaces[i].GetAddress();
-    if (addr != 0 && (localAddress == INADDR_ANY || localAddress == addr)) {
+    if (addr != 0 && (localAddress.IsAny() || localAddress == addr)) {
       if (OpenOneSocket(addr)) {
 #ifndef _WIN32
         PIPSocket::Address mask = interfaces[i].GetNetMask();
@@ -1340,7 +1344,10 @@ void OpalTransport::CloseWait()
 
   if (thread != NULL) {
     PAssert(thread->WaitForTermination(10000), "Transport thread did not terminate");
-    delete thread;
+    if (thread == PThread::Current())
+      thread->SetAutoDelete();
+    else
+      delete thread;
     thread = NULL;
   }
 }
@@ -1654,7 +1661,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
 
 
 OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep, PUDPSocket & udp)
-  : OpalTransportIP(ep, INADDR_ANY, 0)
+  : OpalTransportIP(ep, PIPSocket::GetDefaultIpAny(), 0)
 {
   promiscuousReads = AcceptFromAnyAutoSet;
   socketOwnedByListener = TRUE;
@@ -1972,7 +1979,7 @@ BOOL OpalTransportUDP::Read(void * buffer, PINDEX length)
         return TRUE;
     }
 
-    if (remoteAddress == address)
+    if (remoteAddress *= address)
       return TRUE;
 
     PTRACE(1, "UDP\tReceived PDU from incorrect host: " << address << ':' << port);
