@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2009  2002/01/14 06:35:58  robertj
+ * Revision 1.2010  2002/01/22 05:12:51  robertj
+ * Revamp of user input API triggered by RFC2833 support
+ *
+ * Revision 2.8  2002/01/14 06:35:58  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.7  2001/12/07 08:56:43  robertj
@@ -113,6 +116,7 @@ OpalManager::OpalManager()
 #endif
 
   maxAudioDelayJitter = 60;
+  defaultSendUserInputMode = OpalConnection::SendUserInputAsString;
 
   lastCallTokenID = 1;
 
@@ -427,18 +431,18 @@ BOOL OpalManager::OnStartMediaPatch(const OpalMediaPatch & /*patch*/)
 }
 
 
-void OpalManager::OnUserIndicationString(OpalConnection & connection,
-                                         const PString & value)
+void OpalManager::OnUserInputString(OpalConnection & connection,
+                                    const PString & value)
 {
-  connection.SetUserIndication(value);
+  connection.GetCall().OnUserInputString(connection, value);
 }
 
 
-void OpalManager::OnUserIndicationTone(OpalConnection & connection,
-                                       char tone,
-                                       int /*duration*/)
+void OpalManager::OnUserInputTone(OpalConnection & connection,
+                                  char tone,
+                                  int duration)
 {
-  connection.OnUserIndicationString(tone);
+  connection.GetCall().OnUserInputTone(connection, tone, duration);
 }
 
 
