@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2019  2004/04/07 08:21:03  rjongbloed
+ * Revision 1.2020  2004/06/04 04:09:59  csoutheren
+ * Fixed for updates to H225v5
+ *
+ * Revision 2.18  2004/04/07 08:21:03  rjongbloed
  * Changes for new RTTI system.
  *
  * Revision 2.17  2004/02/19 10:47:04  rjongbloed
@@ -817,7 +820,7 @@ BOOL H323AudioCapability::OnSendingPDU(H245_DataType & dataType) const
 
 BOOL H323AudioCapability::OnSendingPDU(H245_ModeElement & mode) const
 {
-  mode.m_type.SetTag(H245_ModeElement_type::e_audioMode);
+  mode.m_type.SetTag(H245_ModeElementType::e_audioMode);
   return OnSendingPDU((H245_AudioMode &)mode);
 }
 
@@ -1044,7 +1047,7 @@ BOOL H323VideoCapability::OnSendingPDU(H245_DataType & dataType) const
 
 BOOL H323VideoCapability::OnSendingPDU(H245_ModeElement & mode) const
 {
-  mode.m_type.SetTag(H245_ModeElement_type::e_videoMode);
+  mode.m_type.SetTag(H245_ModeElementType::e_videoMode);
   return OnSendingPDU((H245_VideoMode &)mode.m_type);
 }
 
@@ -1189,7 +1192,7 @@ BOOL H323DataCapability::OnSendingPDU(H245_DataType & dataType) const
 
 BOOL H323DataCapability::OnSendingPDU(H245_ModeElement & mode) const
 {
-  mode.m_type.SetTag(H245_ModeElement_type::e_dataMode);
+  mode.m_type.SetTag(H245_ModeElementType::e_dataMode);
   H245_DataMode & type = mode.m_type;
   type.m_bitRate = maxBitRate;
   return OnSendingPDU(type);
@@ -2187,19 +2190,19 @@ H323Capability * H323Capabilities::FindCapability(const H245_ModeElement & modeE
   PTRACE(4, "H323\tFindCapability: " << modeElement.m_type.GetTagName());
 
   switch (modeElement.m_type.GetTag()) {
-    case H245_ModeElement_type::e_audioMode :
+    case H245_ModeElementType::e_audioMode :
       {
         const H245_AudioMode & audio = modeElement.m_type;
         return FindCapability(H323Capability::e_Audio, audio, H245_AudioCapability::e_nonStandard);
       }
 
-    case H245_ModeElement_type::e_videoMode :
+    case H245_ModeElementType::e_videoMode :
       {
         const H245_VideoMode & video = modeElement.m_type;
         return FindCapability(H323Capability::e_Video, video, H245_VideoCapability::e_nonStandard);
       }
 
-    case H245_ModeElement_type::e_dataMode :
+    case H245_ModeElementType::e_dataMode :
       {
         const H245_DataMode & data = modeElement.m_type;
         return FindCapability(H323Capability::e_Data, data.m_application, H245_DataApplicationCapability_application::e_nonStandard);
