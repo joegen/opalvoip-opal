@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2003  2001/08/17 08:35:41  robertj
+ * Revision 1.2004  2001/08/21 11:18:55  robertj
+ * Added conditional compile for xJack code.
+ *
+ * Revision 2.2  2001/08/17 08:35:41  robertj
  * Changed OnEstablished() to OnEstablishedCall() to be consistent.
  * Moved call end reasons enum from OpalConnection to global.
  * Used LID management in lid EP.
@@ -60,6 +63,8 @@
 
 
 class MyManager;
+class OpalPOTSEndPoint;
+class H323EndPoint;
 
 
 class MyPCSSEndPoint : public OpalPCSSEndPoint

@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2005  2001/08/17 08:35:41  robertj
+ * Revision 1.2006  2001/08/21 11:18:55  robertj
+ * Added conditional compile for xJack code.
+ *
+ * Revision 2.4  2001/08/17 08:35:41  robertj
  * Changed OnEstablished() to OnEstablishedCall() to be consistent.
  * Moved call end reasons enum from OpalConnection to global.
  * Used LID management in lid EP.
@@ -86,14 +89,17 @@
 
 #include <ptlib.h>
 
-#include <h323/h323ep.h>
-#include <h323/gkclient.h>
-#include <lids/lidep.h>
-#include <lids/ixjlid.h>
-
 #include "main.h"
 #include "version.h"
 
+#include <h323/h323ep.h>
+#include <h323/gkclient.h>
+#include <lids/lidep.h>
+
+
+#ifdef HAS_IXJ
+#include <lids/ixjlid.h>
+#endif
 
 #ifdef OPAL_STATIC_LINK
 #include <codec/allcodecs.h>
@@ -143,11 +149,11 @@ void SimpleOpalProcess::Main()
              "o-output:"
 #endif
              "P-prefer:"
-#ifdef P_SSL
              "p-password:"
-#endif
+#ifdef HAS_IXJ
              "q-quicknet:"
              "Q-no-quicknet:"
+#endif
              "r-require-gatekeeper."
              "s-sound:"
              "S-no-sound:"
@@ -181,8 +187,10 @@ void SimpleOpalProcess::Main()
             "  -e --silence            : Disable transmitter silence detection.\n"
             "  -f --fast-disable       : Disable fast start.\n"
             "  -T --h245tunneldisable  : Disable H245 tunnelling.\n"
+#ifdef HAS_IXJ
             "  -q --quicknet device    : Select Quicknet xJACK device (default ALL).\n"
             "  -Q --no-quicknet        : Do not use Quicknet xJACK device.\n"
+#endif
             "  -s --sound device       : Select sound input/output device.\n"
             "  -S --no-sound           : Do not use sound input/output device.\n"
             "     --sound-in device    : Select sound input device.\n"
@@ -263,6 +271,7 @@ BOOL MyManager::Initialise(PArgList & args)
   ///////////////////////////////////////
   // Open the LID if parameter provided, create LID based endpoint
 
+#ifdef HAS_IXJ
   if (!args.HasOption('Q')) {
     PString device = args.GetOptionString('q');
     if (device.IsEmpty() || device == "ALL") {
@@ -290,6 +299,7 @@ BOOL MyManager::Initialise(PArgList & args)
       }
     }
   }
+#endif
 
 
   ///////////////////////////////////////
