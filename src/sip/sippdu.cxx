@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2034  2004/09/27 12:51:20  rjongbloed
+ * Revision 1.2035  2004/10/25 23:28:28  csoutheren
+ * Fixed problems with systems that use commas between authentication parameters
+ *
+ * Revision 2.33  2004/09/27 12:51:20  rjongbloed
  * Fixed deadlock in SIP transaction timeout
  *
  * Revision 2.32  2004/08/22 12:27:46  rjongbloed
@@ -749,7 +752,7 @@ static PString GetAuthParam(const PString & auth, const char * name)
   PINDEX pos = auth.Find(name);
   if (pos != P_MAX_INDEX)  {
     pos += strlen(name);
-    while (isspace(auth[pos]))
+    while (isspace(auth[pos]) || (auth[pos] == ','))
       pos++;
     if (auth[pos] == '=') {
       pos++;
@@ -761,7 +764,7 @@ static PString GetAuthParam(const PString & auth, const char * name)
       }
       else {
         PINDEX base = pos;
-        while (auth[pos] != '\0' && !isspace(auth[pos]))
+        while (auth[pos] != '\0' && !isspace(auth[pos]) && (auth[pos] != ','))
           pos++;
         value = auth(base, pos-1);
       }
@@ -829,7 +832,7 @@ static PString AsHex(PMessageDigest5::Code & digest)
 BOOL SIPAuthentication::Authorise(SIP_PDU & pdu) const
 {
   if (!IsValid()) {
-    PTRACE(2, "SIP\tNo authentication information available");
+    PTRACE(2, "SIP\tNo authentication information present");
     return FALSE;
   }
 
