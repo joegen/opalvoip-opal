@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2003  2002/01/22 05:13:15  robertj
+ * Revision 1.2004  2002/03/07 02:25:52  craigs
+ * Patch threads now take notice of failed writes by removing the offending sink from the list
+ *
+ * Revision 2.2  2002/01/22 05:13:15  robertj
  * Added filter functions to media patch.
  *
  * Revision 2.1  2002/01/14 02:19:03  robertj
@@ -141,11 +144,18 @@ void OpalMediaPatch::Main()
       }
 
       FilterFrame(*sinkFrame, OpalMediaFormat());
-      sink.stream->WritePacket(*sinkFrame);
-      sourceFrame.SetTimestamp(sinkFrame->GetTimestamp());
+
+      // if the write fails, remove the sink from the list for this patch
+      if (sink.stream->WritePacket(*sinkFrame))
+        sourceFrame.SetTimestamp(sinkFrame->GetTimestamp());
+      else
+        sinks.RemoveAt(i--);  // note rthis 
     }
 
+    PINDEX len = sinks.GetSize();
     inUse.Signal();
+    if (len == 0)
+      break;
   }
 
   PTRACE(3, "Patch\tThread ended for " << *this);
