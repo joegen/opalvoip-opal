@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2003  2001/07/30 07:22:25  robertj
+ * Revision 1.2004  2001/08/01 05:44:40  robertj
+ * Added function to get all media formats possible in a call.
+ *
+ * Revision 2.2  2001/07/30 07:22:25  robertj
  * Abstracted listener management from H.323 to OpalEndPoint class.
  *
  * Revision 2.1  2001/07/30 01:40:01  robertj
@@ -249,6 +252,13 @@ void OpalEndPoint::ClearAllCalls(OpalConnection::CallEndReason reason,
 
   if (wait)
     allConnectionsCleared.Wait();
+}
+
+
+void OpalEndPoint::AdjustMediaFormats(OpalConnection & connection,
+                                      OpalMediaFormatList & mediaFormats)
+{
+  manager.AdjustMediaFormats(connection, mediaFormats);
 }
 
 
