@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2040  2004/04/25 08:34:08  rjongbloed
+ * Revision 1.2041  2004/04/26 05:40:39  rjongbloed
+ * Added RTP statistics callback to SIP
+ *
+ * Revision 2.39  2004/04/25 08:34:08  rjongbloed
  * Fixed various GCC 3.4 warnings
  *
  * Revision 2.38  2004/03/16 12:03:33  rjongbloed
@@ -400,6 +403,8 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   if (rtpSession == NULL)
     return FALSE;
 
+  rtpSession->SetUserData(new SIP_RTP_Session(*this));
+
   // set the remote addresses
   PIPSocket::Address ip;
   WORD port;
@@ -594,6 +599,9 @@ SDPSessionDescription * SIPConnection::BuildSDP(RTP_SessionManager & rtpSessions
       rtpSession = CreateSession(GetTransport(), rtpSessionId, NULL);
       if (rtpSession == NULL)
         return NULL;
+
+      rtpSession->SetUserData(new SIP_RTP_Session(*this));
+
       // add the RTP session to the RTP session manager in INVITE
       rtpSessions.AddSession(rtpSession);
     }
@@ -814,8 +822,9 @@ void SIPConnection::OnReceivedACK(SIP_PDU & /*request*/)
 
   // start all of the media threads for the connection
   StartMediaStreams();
-  phase = EstablishedPhase;
   releaseMethod = ReleaseWithBYE;
+  phase = EstablishedPhase;
+  OnEstablished();
 }
 
 
@@ -956,9 +965,10 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
 
   OnConnected();
 
-  phase = EstablishedPhase;
   StartMediaStreams();
   releaseMethod = ReleaseWithBYE;
+  phase = EstablishedPhase;
+  OnEstablished();
 }
 
 
@@ -1001,6 +1011,8 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
       PTRACE(1, "SIP\tSession in response that we never offered!");
       return FALSE;
     }
+
+    rtpSession->SetUserData(new SIP_RTP_Session(*this));
 
     if (!rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
       PTRACE(1, "SIP\tCould not set RTP remote socket");
@@ -1073,6 +1085,32 @@ void SIPConnection::SendResponseToINVITE(SIP_PDU::StatusCodes code, const char *
     SIP_PDU response(*originalInvite, code, extra);
     response.Write(*transport);
   }
+}
+
+
+void SIPConnection::OnRTPStatistics(const RTP_Session & session) const
+{
+  endpoint.OnRTPStatistics(*this, session);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+SIP_RTP_Session::SIP_RTP_Session(const SIPConnection & conn)
+  : connection(conn)
+{
+}
+
+
+void SIP_RTP_Session::OnTxStatistics(const RTP_Session & session) const
+{
+  connection.OnRTPStatistics(session);
+}
+
+
+void SIP_RTP_Session::OnRxStatistics(const RTP_Session & session) const
+{
+  connection.OnRTPStatistics(session);
 }
 
 
