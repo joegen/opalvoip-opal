@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323rtp.cxx,v $
- * Revision 1.2012  2004/02/24 11:28:46  rjongbloed
+ * Revision 1.2013  2005/03/03 18:31:23  dsandras
+ * Fixed silence detection definition in the logical channel parameters.
+ *
+ * Revision 2.11  2004/02/24 11:28:46  rjongbloed
  * Normalised RTP session management across protocols
  *
  * Revision 2.10  2004/02/19 10:47:04  rjongbloed
@@ -226,7 +229,7 @@ BOOL H323_RTP_UDP::OnSendingPDU(const H323_RTPChannel & channel,
     OpalMediaStream * mediaStream = channel.GetMediaStream();
     if (mediaStream != NULL) {
       param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_silenceSuppression);
-      //param.m_silenceSuppression = ((H323AudioCodec*)codec)->GetSilenceDetectionMode() != H323AudioCodec::NoSilenceDetection;
+      param.m_silenceSuppression = (connection.GetEndPoint ().GetManager ().GetSilenceDetectParams ().m_mode != OpalSilenceDetector::NoSilenceDetection);
     }
   }
 
