@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2046  2004/12/18 03:54:43  rjongbloed
+ * Revision 1.2047  2004/12/22 18:55:08  dsandras
+ * Added support for Call Forwarding the "302 Moved Temporarily" SIP response.
+ *
+ * Revision 2.45  2004/12/18 03:54:43  rjongbloed
  * Added missing call of callback virtual for SIP 100 Trying response
  *
  * Revision 2.44  2004/12/12 13:40:45  dsandras
@@ -300,6 +303,11 @@ void SIPConnection::OnReleased()
         case EndedByCapabilityExchange :
           SendResponseToINVITE(SIP_PDU::Failure_UnsupportedMediaType);
           break;
+
+	case EndedByCallForwarded :
+	  SendResponseToINVITE(SIP_PDU::Redirection_MovedTemporarily,
+			       forwardParty);
+	  break;
 
         default :
           SendResponseToINVITE(SIP_PDU::Failure_BadGateway);
@@ -888,6 +896,7 @@ void SIPConnection::OnReceivedACK(SIP_PDU & response)
 {
   PTRACE(2, "SIP\tACK received");
 
+  
   // start all of the media threads for the connection
   StartMediaStreams();
   releaseMethod = ReleaseWithBYE;
@@ -1174,9 +1183,23 @@ void SIPConnection::HandlePDUsThreadMain(PThread &, INT)
 }
 
 
+BOOL SIPConnection::ForwardCall (const PString & fwdParty)
+{
+  if (fwdParty.IsEmpty ())
+    return FALSE;
+  
+  forwardParty = fwdParty;
+  PTRACE(2, "SIP\tIncoming SIP connection will be forwarded to " << forwardParty);
+  Release(EndedByCallForwarded);
+
+  return TRUE;
+}
+
+
 void SIPConnection::SendResponseToINVITE(SIP_PDU::StatusCodes code, const char * extra)
 {
   if (originalInvite != NULL) {
+        
     SIP_PDU response(*originalInvite, code, extra);
     response.Write(*transport);
   }
