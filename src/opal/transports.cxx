@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2012  2002/03/27 05:37:39  robertj
+ * Revision 1.2013  2002/04/09 00:22:16  robertj
+ * Added ability to set the local address on a transport, under some circumstances.
+ *
+ * Revision 2.11  2002/03/27 05:37:39  robertj
  * Fixed removal of writeChannel after wrinting to UDP transport in connect mode.
  *
  * Revision 2.10  2002/03/15 00:20:54  robertj
@@ -887,6 +890,15 @@ OpalTransportAddress OpalTransportIP::GetLocalAddress() const
 }
 
 
+BOOL OpalTransportIP::SetLocalAddress(const OpalTransportAddress & address)
+{
+  if (IsCompatibleTransport(address))
+    return address.GetIpAndPort(localAddress, localPort);
+
+  return FALSE;
+}
+
+
 OpalTransportAddress OpalTransportIP::GetRemoteAddress() const
 {
   return OpalTransportAddress(remoteAddress, remotePort, GetProtoPrefix());
@@ -1270,6 +1282,7 @@ void OpalTransportUDP::EndConnect(const OpalTransportAddress & theLocalAddress)
     PIPSocket::Address addr;
     WORD port;
     if (socket->GetLocalAddress(addr, port) && addr == localAddress && port == localPort) {
+      PTRACE(3, "OpalUDP\tEnded connect, selecting " << localAddress << ':' << localPort);
       connectSockets.DisallowDeleteObjects();
       connectSockets.RemoveAt(i);
       connectSockets.AllowDeleteObjects();
@@ -1284,6 +1297,28 @@ void OpalTransportUDP::EndConnect(const OpalTransportAddress & theLocalAddress)
   connectSockets.RemoveAll();
 
   OpalTransport::EndConnect(theLocalAddress);
+}
+
+
+BOOL OpalTransportUDP::SetLocalAddress(const OpalTransportAddress & address)
+{
+  if (!OpalTransportIP::SetLocalAddress(address))
+    return FALSE;
+
+  if (connectSockets.IsEmpty())
+    return !IsOpen();
+
+  for (PINDEX i = 0; i < connectSockets.GetSize(); i++) {
+    PUDPSocket * socket = (PUDPSocket *)connectSockets.GetAt(i);
+    PIPSocket::Address addr;
+    WORD port;
+    if (socket->GetLocalAddress(addr, port) && addr == localAddress && port == localPort) {
+      writeChannel = &connectSockets[i];
+      return TRUE;
+    }
+  }
+
+  return FALSE;
 }
 
 
@@ -1339,9 +1374,9 @@ BOOL OpalTransportUDP::Read(void * buffer, PINDEX length)
 
     socket->GetLastReceiveAddress(address, port);
     if (promiscuousReads) {
-      //remoteAddress = address;
-      //remotePort = port;
-      //socket->SetSendAddress(remoteAddress, remotePort);
+      remoteAddress = address;
+      remotePort = port;
+      socket->SetSendAddress(remoteAddress, remotePort);
       return TRUE;
     }
 
@@ -1391,7 +1426,6 @@ BOOL OpalTransportUDP::WriteConnect(WriteConnectCallback function, PObject * dat
     writeChannel = &socket;
     if (function(*this, data))
       ok = TRUE;
-    writeChannel = NULL;
   }
 
   return ok;
