@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2027  2004/08/18 13:04:56  rjongbloed
+ * Revision 1.2028  2004/08/20 12:54:48  rjongbloed
+ * Fixed crash caused by double delete of registration transactions
+ *
+ * Revision 2.26  2004/08/18 13:04:56  rjongbloed
  * Fixed trying to start regitration if have empty string for domain/user
  *
  * Revision 2.25  2004/08/14 07:56:43  rjongbloed
@@ -147,6 +150,8 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   lastSentCSeq = 0;
   userAgentString = "OPAL/2.0";
   registrarTransport = NULL;
+
+  registrations.DisallowDeleteObjects();
 
   PTRACE(3, "SIP\tCreated endpoint.");
 }
