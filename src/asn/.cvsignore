@@ -6,6 +6,7 @@ h225_2.cxx
 h245_1.cxx
 h245_2.cxx
 h245_3.cxx
+h248.cxx
 mcs.cxx
 gcc.cxx
 ldap.cxx
