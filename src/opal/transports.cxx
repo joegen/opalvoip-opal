@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2021  2002/07/04 07:41:47  robertj
+ * Revision 1.2022  2002/09/06 02:41:18  robertj
+ * Added ability to specify stream or datagram (TCP or UDP) transport is to
+ * be created from a transport address regardless of the addresses mode.
+ *
+ * Revision 2.20  2002/07/04 07:41:47  robertj
  * Fixed memory/thread leak of transports.
  *
  * Revision 2.19  2002/07/01 08:55:07  robertj
@@ -466,8 +470,11 @@ OpalTransport * OpalInternalTCPTransport::CreateTransport(const OpalTransportAdd
   PIPSocket::Address ip;
   WORD port;
   BOOL reuseAddr;
-  if (GetAdjustedIpAndPort(address, endpoint, option, ip, port, reuseAddr))
+  if (GetAdjustedIpAndPort(address, endpoint, option, ip, port, reuseAddr)) {
+    if (option == OpalTransportAddress::Datagram)
+      return new OpalTransportUDP(endpoint, ip, 0, reuseAddr);
     return new OpalTransportTCP(endpoint, ip, port, reuseAddr);
+  }
 
   return NULL;
 }
@@ -496,8 +503,11 @@ OpalTransport * OpalInternalUDPTransport::CreateTransport(const OpalTransportAdd
   PIPSocket::Address ip;
   WORD port;
   BOOL reuseAddr;
-  if (GetAdjustedIpAndPort(address, endpoint, option, ip, port, reuseAddr))
+  if (GetAdjustedIpAndPort(address, endpoint, option, ip, port, reuseAddr)) {
+    if (option == OpalTransportAddress::Streamed)
+      return new OpalTransportTCP(endpoint, ip, 0, reuseAddr);
     return new OpalTransportUDP(endpoint, ip, port, reuseAddr);
+  }
 
   return NULL;
 }
