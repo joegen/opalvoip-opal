@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2020  2004/11/29 08:18:31  csoutheren
+ * Revision 1.2021  2004/12/12 12:30:09  dsandras
+ * Added virtual function called when registration to a registrar fails.
+ *
+ * Revision 2.19  2004/11/29 08:18:31  csoutheren
  * Added support for setting the SIP authentication domain/realm as needed for many service
  *  providers
  *
@@ -282,6 +285,7 @@ class SIPEndPoint : public OpalEndPoint
       const PString & username = PString::Empty(),
       const PString & password = PString::Empty()
     );
+    virtual void OnRegistrationFailed();
     virtual void OnRegistered();
     bool IsRegistered() const { return registered; }
     BOOL Unregister(BOOL wait = TRUE);
