@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2025  2003/03/06 03:57:47  robertj
+ * Revision 1.2026  2003/03/07 05:52:35  robertj
+ * Made sure connection is locked with all function calls that are across
+ *   the "call" object.
+ *
+ * Revision 2.24  2003/03/06 03:57:47  robertj
  * IVR support (work in progress) requiring large changes everywhere.
  *
  * Revision 2.23  2002/11/10 11:33:20  robertj
@@ -250,16 +254,12 @@ BOOL SIPConnection::SetAlerting(const PString & /*calleeName*/, BOOL /*withMedia
   }
 
   PTRACE(2, "SIP\tSetAlerting");
-  if (!Lock())
-    return FALSE;
 
   if (phase != SetUpPhase) 
     return FALSE;
 
   SendResponseToINVITE(SIP_PDU::Information_Ringing);
   phase = AlertingPhase;
-
-  Unlock();
 
   return TRUE;
 }
