@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2030  2004/04/25 09:32:15  rjongbloed
+ * Revision 1.2031  2004/08/14 07:56:43  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.29  2004/04/25 09:32:15  rjongbloed
  * Fixed incorrect read of zero length SIP body, thanks Nick Hoath
  *
  * Revision 2.28  2004/03/23 09:43:42  rjongbloed
@@ -1254,6 +1257,9 @@ void SIPTransaction::Construct()
 
 SIPTransaction::~SIPTransaction()
 {
+  retryTimer.Stop();
+  completionTimer.Stop();
+
   if (connection != NULL && state > NotStarted && state < Terminated_Success) {
     PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " aborted.");
     connection->RemoveTransaction(this);

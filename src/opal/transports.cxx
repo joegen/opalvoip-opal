@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2038  2004/05/09 13:12:38  rjongbloed
+ * Revision 1.2039  2004/08/14 07:56:43  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.37  2004/05/09 13:12:38  rjongbloed
  * Fixed issues with non fast start and non-tunnelled connections
  *
  * Revision 2.36  2004/04/27 07:23:40  rjongbloed
@@ -422,6 +425,7 @@
 
 #include <opal/manager.h>
 #include <opal/endpoint.h>
+#include <opal/call.h>
 
 #include <ptclib/pstun.h>
 

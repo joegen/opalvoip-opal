@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2009  2004/05/17 13:24:18  rjongbloed
+ * Revision 1.2010  2004/08/14 07:56:43  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.8  2004/05/17 13:24:18  rjongbloed
  * Added silence suppression.
  *
  * Revision 2.7  2004/04/25 02:53:29  rjongbloed
@@ -96,6 +99,8 @@ void OpalMediaPatch::PrintOn(ostream & strm) const
 {
   strm << "Patch " << source;
 
+  inUse.Wait();
+
   if (sinks.GetSize() > 0) {
     strm << " -> ";
     if (sinks.GetSize() == 1)
@@ -108,6 +113,8 @@ void OpalMediaPatch::PrintOn(ostream & strm) const
       }
     }
   }
+
+  inUse.Signal();
 }
 
 
@@ -134,7 +141,7 @@ void OpalMediaPatch::Main()
 
     for (i = 0; i < sinks.GetSize(); i++) {
       if (!sinks[i].WriteFrame(sourceFrame))
-        sinks.RemoveAt(i--);  // Got write error, remove from sink list
+        sinks[i].stream->Close();  // Got write error, remove from sink list
     }
 
     PINDEX len = sinks.GetSize();
@@ -154,8 +161,14 @@ void OpalMediaPatch::Close()
   source.Close();
 
   // This relies on the channel close doing a RemoveSink() call
-  while (sinks.GetSize() > 0)
-    sinks[0].stream->Close();
+  inUse.Wait();
+  while (sinks.GetSize() > 0) {
+    OpalMediaStream * stream = sinks[0].stream;
+    inUse.Signal();
+    stream->Close();
+    inUse.Wait();
+  }
+  inUse.Signal();
 
   PTRACE(3, "Patch\tWaiting for media patch thread to stop " << *this);
   PAssert(WaitForTermination(10000), "Media patch thread not terminated.");

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2020  2004/07/14 13:26:14  rjongbloed
+ * Revision 1.2021  2004/08/14 07:56:43  rjongbloed
+ * Major revision to utilise the PSafeCollection classes for the connections and calls.
+ *
+ * Revision 2.19  2004/07/14 13:26:14  rjongbloed
  * Fixed issues with the propagation of the "established" phase of a call. Now
  *   calling an OnEstablished() chain like OnAlerting() and OnConnected() to
  *   finally arrive at OnEstablishedCall() on OpalManager
@@ -199,25 +202,21 @@ BOOL OpalPCSSEndPoint::MakeConnection(OpalCall & call,
   if (!SetDeviceName(recordDevice, PSoundChannel::Recorder, recordDevice))
     recordDevice = soundChannelRecordDevice;
 
-  OpalPCSSConnection * connection;
-  {
-    PWaitAndSignal mutex(inUseFlag);
+  PSafePtr<OpalPCSSConnection> connection = GetPCSSConnectionWithLock(MakeToken(playDevice, recordDevice));
+  if (connection != NULL)
+    return FALSE;
 
-    if (connectionsActive.Contains(MakeToken(playDevice, recordDevice)))
-      return FALSE;
+  connection = CreateConnection(call, playDevice, recordDevice, userData);
+  if (connection == NULL)
+    return FALSE;
 
-    connection = CreateConnection(call, playDevice, recordDevice, userData);
-    if (connection == NULL)
-      return FALSE;
-
-    connectionsActive.SetAt(connection->GetToken(), connection);
-  }
+  connectionsActive.SetAt(connection->GetToken(), connection);
 
   // If we are the A-party then need to initiate a call now in this thread and
   // go through the routing engine via OnIncomingConnection. If we are the
   // B-Party then SetUpConnection() gets called in the context of the A-party
   // thread.
-  if (&call.GetConnection(0) == connection)
+  if (call.GetConnection(0) == connection)
     connection->InitiateCall();
 
   return TRUE;
@@ -276,11 +275,9 @@ PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & 
 
 void OpalPCSSEndPoint::AcceptIncomingConnection(const PString & token)
 {
-  OpalPCSSConnection * connection = (OpalPCSSConnection *)GetConnectionWithLock(token);
-  if (connection != NULL) {
+  PSafePtr<OpalPCSSConnection> connection = GetPCSSConnectionWithLock(token);
+  if (connection != NULL)
     connection->AcceptIncoming();
-    connection->Unlock();
-  }
 }
 
 
@@ -335,7 +332,7 @@ OpalPCSSConnection::~OpalPCSSConnection()
 
 BOOL OpalPCSSConnection::SetUpConnection()
 {
-  remotePartyName = ownerCall.GetConnection(0).GetRemotePartyName();
+  remotePartyName = ownerCall.GetOtherPartyConnection(*this)->GetRemotePartyName();
 
   PTRACE(3, "PCSS\tSetUpConnection(" << remotePartyName << ')');
   phase = AlertingPhase;
@@ -436,9 +433,6 @@ BOOL OpalPCSSConnection::SendUserInputString(const PString & value)
 
 void OpalPCSSConnection::InitiateCall()
 {
-  if (!Lock())
-    return;
-
   phase = SetUpPhase;
   if (!OnIncomingConnection())
     Release(EndedByCallerAbort);
@@ -447,26 +441,40 @@ void OpalPCSSConnection::InitiateCall()
     if (!ownerCall.OnSetUp(*this))
       Release(EndedByNoAccept);
   }
-
-  Unlock();
 }
 
 
 void OpalPCSSConnection::AcceptIncoming()
 {
-  if (!Lock())
+  if (!LockReadOnly())
     return;
 
-  if (phase == AlertingPhase) {
-    phase = ConnectedPhase;
-    OnConnected();
-    if (!mediaStreams.IsEmpty()) {
-      phase = EstablishedPhase;
-      OnEstablished();
-    }
+  if (phase != AlertingPhase) {
+    UnlockReadOnly();
+    return;
   }
 
-  Unlock();
+  LockReadWrite();
+  phase = ConnectedPhase;
+  UnlockReadWrite();
+  UnlockReadOnly();
+
+  OnConnected();
+
+  if (!LockReadOnly())
+    return;
+
+  if (mediaStreams.IsEmpty()) {
+    UnlockReadOnly();
+    return;
+  }
+
+  LockReadWrite();
+  phase = EstablishedPhase;
+  UnlockReadWrite();
+  UnlockReadOnly();
+
+  OnEstablished();
 }
 
 
