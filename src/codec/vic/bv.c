@@ -1,8 +1,8 @@
 /************ Change log
  *
  * $Log: bv.c,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/15 23:42:59  robertj
+ * Update to OpenH323 v1.11.7
  *
  * Revision 1.5  2001/05/08 05:26:33  yurik
  * No ifdef _WIN32_WCE anymore - 3+ version of  SDK allows it

@@ -41,8 +41,26 @@
 /************ Change log
  *
  * $Log: encoder-h261.h,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/15 23:42:59  robertj
+ * Update to OpenH323 v1.11.7
+ *
+ * Revision 1.12  2002/05/17 01:47:33  dereks
+ * backout the integer maths in the h261 codec.
+ *
+ * Revision 1.11  2002/04/26 04:57:41  dereks
+ * Add Walter Whitlocks fixes, based on Victor Ivashim's suggestions to
+ * improve the quality with Netmeeting. Thanks guys!!!!
+ *
+ * Revision 1.10  2002/04/05 00:53:19  dereks
+ * Modify video frame encoding so that frame is encoded on an incremental basis.
+ * Thanks to Walter Whitlock - good work.
+ *
+ * Revision 1.9  2001/10/16 23:51:42  dereks
+ * Change vic's fdct() from floating-point to fix-point. Improves performance
+ * for h261 video significantly on some machines. Thanks to Cosmos Jiang
+ *
+ * Revision 1.8  2001/10/16 21:20:07  yurik
+ * Removed warnings on Windows CE. Submitted by Jehan Bing, jehan@bravobrava.com
  *
  * Revision 1.6  2001/05/10 05:25:44  robertj
  * Removed need for VIC code to use ptlib.
@@ -72,14 +90,17 @@
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  */
 
-
+// define H261 header related values
+// (currently these are defined in both p64.h and encoder-h261.h for use
+//  in decode and encode.  Should there be one common include file?)
+typedef unsigned h261hdr_t;
 
 #define HDRSIZE         4
 #define	CIF_WIDTH	352
 #define	CIF_HEIGHT	288
 #define	QCIF_WIDTH	176
 #define	QCIF_HEIGHT	144
-#define	BMB		6	/* # blocks in a MB */
+#define	BMB	6	/* # blocks in a MB */
 #define MBPERGOB	33	/* # of Macroblocks per GOB */
 
 #ifdef INT_64
@@ -93,14 +114,14 @@
 #if BYTE_ORDER == LITTLE_ENDIAN
 #if NBIT == 64
 #define STORE_BITS(bb, bc) \
-	bc[0] = bb >> 56; \
-	bc[1] = bb >> 48; \
-	bc[2] = bb >> 40; \
-	bc[3] = bb >> 32; \
-	bc[4] = bb >> 24; \
-	bc[5] = bb >> 16; \
-	bc[6] = bb >> 8; \
-	bc[7] = bb;
+	bc[0] = (u_char)(bb >> 56); \
+	bc[1] = (u_char)(bb >> 48); \
+	bc[2] = (u_char)(bb >> 40); \
+	bc[3] = (u_char)(bb >> 32); \
+	bc[4] = (u_char)(bb >> 24); \
+	bc[5] = (u_char)(bb >> 16); \
+	bc[6] = (u_char)(bb >> 8); \
+	bc[7] = (u_char)(bb);
 #define LOAD_BITS(bc) \
 	((BB_INT)bc[0] << 56 | \
 	 (BB_INT)bc[1] << 48 | \
@@ -112,10 +133,10 @@
 	 (BB_INT)bc[7])
 #else
 #define STORE_BITS(bb, bc) \
-	bc[0] = bb >> 24; \
-	bc[1] = bb >> 16; \
-	bc[2] = bb >> 8; \
-	bc[3] = bb;
+	bc[0] = (u_char)(bb >> 24); \
+	bc[1] = (u_char)(bb >> 16); \
+	bc[2] = (u_char)(bb >> 8); \
+	bc[3] = (u_char)(bb);
 #define LOAD_BITS(bc) (ntohl(*(BB_INT*)(bc)))
 #endif
 #else
@@ -123,6 +144,11 @@
 #define LOAD_BITS(bc) (*(BB_INT*)(bc))
 #endif
 
+/** append the "n" LSbits of "bits" to the place pointed to by bc
+    post-increment "bc" as needed.  "bb" is used for intermediate storage
+    "nbb" keeps track of bits in "bb"
+    note that ALL bits in "n" are OR'ed into the result
+ */
 #define PUT_BITS(bits, n, nbb, bb, bc) \
 { \
 	nbb += (n); \
@@ -131,10 +157,10 @@
 		bb |= (BB_INT)(bits) >> extra; \
 		STORE_BITS(bb, bc) \
 		bc += sizeof(BB_INT); \
-		bb = (BB_INT)(bits) << NBIT - extra; \
+		bb = (BB_INT)(bits) << (NBIT - extra); \
 		nbb = extra; \
 	} else \
-		bb |= (BB_INT)(bits) << NBIT - (nbb); \
+		bb |= (BB_INT)(bits) << (NBIT - (nbb)); \
 }
 
 
@@ -146,7 +172,7 @@ class H261Encoder :public  Encoder {
 	H261Encoder(Transmitter *T);
         virtual ~H261Encoder(void)=0;
 	void encode_blk(const short* blk, const char* lm);
-   	int flush(Transmitter::pktbuf* pb, int nbit, Transmitter::pktbuf* npb);
+	int flush(Transmitter::pktbuf* pb, int nbit, Transmitter::pktbuf* npb);
 	char* make_level_map(int q, u_int fthresh);
 	void setquantizers(int lq, int mq, int hq);
 
@@ -155,20 +181,20 @@ class H261Encoder :public  Encoder {
 			       u_int /*loff*/, u_int /*coff*/, int /*how*/){};
 
 	/* bit buffer */
-	BB_INT bb_;
-	u_int nbb_;
+	BB_INT bb_; // intermediate working space for encoding bits
+	u_int nbb_; // # of valid bits in bb_
 
-	u_char* bs_;
-	u_char* bc_;
-	int sbit_;
+	u_char* bs_; // used as pointer to start of buffer
+	u_char* bc_; // where to put encoded bits in buffer
+	int sbit_; // SBIT value obtained from previous packet for use on next packet
 
 	u_char lq_;		/* low quality quantizer */
 	u_char mq_;		/* medium quality quantizer */
 	u_char hq_;		/* high quality quantizer */
 	u_char mquant_;		/* the last quantizer we sent to other side */
 	int quant_required_;	/* 1 if not quant'd in dct */
-	u_int ngob_;
-	u_int mba_;
+	u_int ngob_; // number of GOBs for this frame size, (3 or 12)
+	u_int mba_;  // address of just encoded macroblock
 
 	u_int cif_;		/* 1 for CIF, 0 for QCIF */
 	u_int bstride_;
@@ -189,28 +215,57 @@ class H261Encoder :public  Encoder {
 	u_int coff_[12];	/* where to find U given gob# */
 	u_int loff_[12];	/* where to find Y given gob# */
 	u_int blkno_[12];	/* for CR */
+
+  const VideoFrame *gVf; // current video frame YUV data
+  BOOL gPicture; // if TRUE, send picture layer header
+  int gHdrGOBN; // next GOB number for last encoded MB
+  int gNxtGOB; // GOB number for next marcroblock to be considered for encoding
+  int gGobMax; // maximum GOB number in frame
+  BOOL gGOBhdrNxt; // set TRUE when GOB header is next data
+  BOOL gSendGOBhdr; // set TRUE when GOB header must be encoded before next MB
+  int gHdrMBAP; // address of last macroblock encoded in previous packet 1..33
+  int gNxtMBA; // address of next macroblock to be considered for encoding
+  int gHdrQUANT; // QUANT in effect for next MB in buffer
+  int gStep; // Macro Block step size
+  BOOL gDone; // Set TRUE when encoding of frame is done
+  int gDbase;  //offset from gData where valid data starts
+  int gNbytes; // number of bytes in gData buffer from previous packet
+  u_int gloff;
+  u_int gcoff;
+  u_int gblkno;
+  int gline;		
 };
 
 class H261DCTEncoder:  public H261Encoder 
 {
-    public:
-	H261DCTEncoder(Transmitter *T);
-	int consume(const VideoFrame*);
-	void SetSize(int w, int h);
-    protected:
-	void encode_mb(u_int mba, const u_char* frm,
+  public:
+    H261DCTEncoder(Transmitter *T);
+    int consume(const VideoFrame*);
+    void SetSize(int w, int h);
+  protected:
+    void encode_mb(u_int mba, const u_char* frm,
 		       u_int loff, u_int coff, int how);
 };
 
 class H261PixelEncoder : public H261Encoder 
 {
-   public:
-	H261PixelEncoder(Transmitter *T);
-	int consume(const VideoFrame*);
-	void SetSize(int w, int h);
-    protected:
-	void encode_mb(u_int mba, const u_char* frm,
+  public:
+    H261PixelEncoder(Transmitter *T);
+    int consume(const VideoFrame*);
+    void SetSize(int w, int h);
+    int PreIncEncodeSetup(const VideoFrame*);
+    void IncEncodeAndGetPacket(u_char * buffer, unsigned & length );
+    /** When incrementally encoding, return true if there is still 
+        more encoding waiting to be done for the current video frame.
+    */ 
+    int MoreToIncEncode() 
+      { return !gDone; }
+
+  protected:
+    void encode_mb(u_int mba, const u_char* frm,
 		       u_int loff, u_int coff, int how);
+    //
+    u_char gData[2 * RTP_MTU];
 };
 
 

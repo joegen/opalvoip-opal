@@ -30,14 +30,23 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Header: /home/svnmigrate/clean_cvs/opal/src/codec/vic/Attic/p64-huff.h,v 1.2001 2001/07/27 15:48:25 robertj Exp $ (LBL)
  */
 
 /************ Change log
  *
  * $Log: p64-huff.h,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/15 23:42:59  robertj
+ * Update to OpenH323 v1.11.7
+ *
+ * Revision 1.5  2003/03/14 07:25:55  robertj
+ * Removed $header keyword so is not different on alternate repositories
+ *
+ * Revision 1.4  2002/10/10 05:38:30  robertj
+ * Removed non-ansi-C comments to maximise portability, thanks Martijn Roest
+ *
+ * Revision 1.3  2002/04/05 00:53:19  dereks
+ * Modify video frame encoding so that frame is encoded on an incremental basis.
+ * Thanks to Walter Whitlock - good work.
  *
  * Revision 1.2  2000/08/25 03:18:50  dereks
  * Add change log facility (Thanks Robert for the info on implementation)
@@ -79,8 +88,8 @@ extern "C" {
 #ifndef HUFFSTRINGS
 
 struct huffent {
-	int val;
-	int nb;
+	int val; /* Huffman code value */
+	int nb;  /* number of bits */
 };
 
 extern const unsigned char skiptab[];

@@ -1,8 +1,8 @@
 /************ Change log
  *
  * $Log: huffcode.c,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/15 23:42:59  robertj
+ * Update to OpenH323 v1.11.7
  *
  * Revision 1.2  2001/01/29 19:42:38  dereks
  * Add change log facility (Thanks Robert)
