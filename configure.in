@@ -181,6 +181,9 @@ fi
 dnl ########################################################################
 dnl check if SIP and H.323 are enabled
 
+dnl MSWIN_DISPLAY sip,SIP support
+dnl MSWIN_DEFINE  sip,OPAL_SIP
+
 sip=yes
 AC_ARG_ENABLE(sip,
        [  --disable-sip           disable SIP protocol support],
@@ -194,6 +197,9 @@ else
   AC_SUBST(OPAL_SIP, 0)
   AC_MSG_RESULT(disabled)
 fi
+
+dnl MSWIN_DISPLAY h323,H.323 support
+dnl MSWIN_DEFINE  h323,OPAL_H323
 
 h323=yes
 AC_ARG_ENABLE(h323,
