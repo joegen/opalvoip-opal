@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q931.h,v $
- * Revision 1.2010  2002/11/10 11:33:17  robertj
+ * Revision 1.2011  2003/01/07 04:39:53  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.9  2002/11/10 11:33:17  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.8  2002/09/16 02:52:34  robertj
@@ -54,6 +57,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.50  2002/11/25 22:40:00  robertj
+ * Added another Q.850 code
  *
  * Revision 1.49  2002/11/07 03:49:49  robertj
  * Added extra "congested" Q.931 codes.
@@ -339,38 +345,39 @@ class Q931 : public PObject
 
     enum CauseValues {
       UnknownCauseIE,
-      UnallocatedNumber         =  1,
-      NoRouteToNetwork          =  2,
-      NoRouteToDestination      =  3,
-      SendSpecialTone           =  4,
-      MisdialledTrunkPrefix     =  5,
-      ChannelUnacceptable       =  6,
-      NormalCallClearing        = 16,
-      UserBusy                  = 17,
-      NoResponse                = 18,
-      NoAnswer                  = 19,
-      SubscriberAbsent          = 20,
-      CallRejected              = 21,
-      NumberChanged             = 22,
-      Redirection               = 23,
-      ExchangeRoutingError      = 25,
-      NonSelectedUserClearing   = 26,
-      DestinationOutOfOrder     = 27,
-      InvalidNumberFormat       = 28,
-      FacilityRejected          = 29,
-      StatusEnquiryResponse     = 30,
-      NormalUnspecified         = 31,
-      NoCircuitChannelAvailable = 34,
-      NetworkOutOfOrder         = 38,
-      TemporaryFailure          = 41,
-      Congestion                = 42,
+      UnallocatedNumber            =  1,
+      NoRouteToNetwork             =  2,
+      NoRouteToDestination         =  3,
+      SendSpecialTone              =  4,
+      MisdialledTrunkPrefix        =  5,
+      ChannelUnacceptable          =  6,
+      NormalCallClearing           = 16,
+      UserBusy                     = 17,
+      NoResponse                   = 18,
+      NoAnswer                     = 19,
+      SubscriberAbsent             = 20,
+      CallRejected                 = 21,
+      NumberChanged                = 22,
+      Redirection                  = 23,
+      ExchangeRoutingError         = 25,
+      NonSelectedUserClearing      = 26,
+      DestinationOutOfOrder        = 27,
+      InvalidNumberFormat          = 28,
+      FacilityRejected             = 29,
+      StatusEnquiryResponse        = 30,
+      NormalUnspecified            = 31,
+      NoCircuitChannelAvailable    = 34,
+      NetworkOutOfOrder            = 38,
+      TemporaryFailure             = 41,
+      Congestion                   = 42,
       RequestedCircuitNotAvailable = 44,
-      ResourceUnavailable       = 47,
-      InvalidCallReference      = 81,
-      IncompatibleDestination   = 88,
-      InterworkingUnspecified   = 111,
-      NonStandardReason         = 127,
-      ErrorInCauseIE            = 0x100
+      ResourceUnavailable          = 47,
+      InvalidCallReference         = 81,
+      ClearedRequestedCallIdentity = 86,
+      IncompatibleDestination      = 88,
+      InterworkingUnspecified      = 111,
+      NonStandardReason            = 127,
+      ErrorInCauseIE               = 0x100
     };
     void SetCause(
       CauseValues value,

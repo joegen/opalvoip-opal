@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323rtp.cxx,v $
- * Revision 1.2009  2002/11/10 11:33:19  robertj
+ * Revision 1.2010  2003/01/07 04:39:53  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.8  2002/11/10 11:33:19  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.7  2002/09/04 06:01:49  robertj
@@ -50,6 +53,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.22  2002/11/19 01:47:26  robertj
+ * Included canonical name in RTP statistics returned in IRR
  *
  * Revision 1.21  2002/10/08 13:08:21  robertj
  * Changed for IPv6 support, thanks Sébastien Josset.
@@ -351,6 +357,7 @@ void H323_RTP_UDP::OnSendRasInfo(H225_RTPSession & info)
 {
   info.m_sessionId = rtp.GetSessionID();
   info.m_ssrc = rtp.GetSyncSourceOut();
+  info.m_cname = rtp.GetCanonicalName();
 
   H323TransportAddress lda(rtp.GetLocalAddress(), rtp.GetLocalDataPort());
   lda.SetPDU(info.m_rtpAddress.m_recvAddress);

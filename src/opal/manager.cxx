@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2020  2002/11/10 11:33:19  robertj
+ * Revision 1.2021  2003/01/07 04:39:53  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.19  2002/11/10 11:33:19  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.18  2002/09/06 02:44:30  robertj
@@ -685,7 +688,7 @@ PString OpalManager::ApplyRouteTable(const PString & proto, const PString & addr
 
 void OpalManager::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
 {
-  PAssert(minDelay <= 1000 && maxDelay <= 1000, PInvalidParameter);
+  PAssert(minDelay <= 10000 && maxDelay <= 10000, PInvalidParameter);
 
   if (minDelay < 10)
     minDelay = 10;

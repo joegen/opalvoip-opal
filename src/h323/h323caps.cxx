@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2015  2002/11/10 11:33:18  robertj
+ * Revision 1.2016  2003/01/07 04:39:53  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.14  2002/11/10 11:33:18  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.13  2002/09/06 02:43:03  robertj
@@ -74,6 +77,18 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.61  2002/12/05 12:29:31  rogerh
+ * Add non standard codec identifier for Xiph.org
+ *
+ * Revision 1.60  2002/11/27 11:47:09  robertj
+ * Fixed GNU warning
+ *
+ * Revision 1.59  2002/11/26 22:48:18  craigs
+ * Changed nonStd codec identification to use a table for MS codecs
+ *
+ * Revision 1.58  2002/11/26 13:52:59  craigs
+ * Added PrintOn function for outputting names of nonStandard codecs
  *
  * Revision 1.57  2002/11/09 04:44:24  robertj
  * Fixed function to add capabilities to return correct table entry index.
@@ -2360,3 +2375,105 @@ H323CapabilityRegistration::H323CapabilityRegistration(const char * name)
 
 
 /////////////////////////////////////////////////////////////////////////////
+
+#ifndef PASN_NOPRINTON
+
+
+struct msNonStandardCodecDef {
+  char * name;
+  BYTE sig[2];
+};
+
+
+static msNonStandardCodecDef msNonStandardCodec[] = {
+  { "L&H CELP 4.8k", { 0x01, 0x11 } },
+  { "ADPCM",         { 0x02, 0x00 } },
+  { "L&H CELP 8k",   { 0x02, 0x11 } },
+  { "L&H CELP 12k",  { 0x03, 0x11 } },
+  { "L&H CELP 16k",  { 0x04, 0x11 } },
+  { "IMA-ADPCM",     { 0x11, 0x00 } },
+  { "GSM",           { 0x31, 0x00 } },
+  { NULL,            { 0,    0    } }
+};
+
+void H245_AudioCapability::PrintOn(ostream & strm) const
+{
+  strm << GetTagName();
+
+  if (tag == 0) {
+    H245_NonStandardParameter & param = (H245_NonStandardParameter &)GetObject();
+    const PBYTEArray & data = param.m_data;
+
+    switch (param.m_nonStandardIdentifier.GetTag()) {
+      case H245_NonStandardIdentifier::e_h221NonStandard:
+        {
+          H245_NonStandardIdentifier_h221NonStandard & h221 = param.m_nonStandardIdentifier;
+
+          // Microsoft is 181/0/21324
+          if ((h221.m_t35CountryCode   == 181) &&
+              (h221.m_t35Extension     == 0) &&
+              (h221.m_manufacturerCode == 21324)
+            ) {
+            PString name = "Unknown";
+            PINDEX i;
+            if (data.GetSize() >= 21) {
+              for (i = 0; msNonStandardCodec[i].name != NULL; i++) {
+                if ((data[20] == msNonStandardCodec[i].sig[0]) && 
+                    (data[21] == msNonStandardCodec[i].sig[1])) {
+                  name = msNonStandardCodec[i].name;
+                  break;
+                }
+              }
+            }
+            strm << (PString(" [Microsoft") & name) << "]";
+          }
+
+          // Equivalence is 9/0/61
+          else if ((h221.m_t35CountryCode   == 9) &&
+                   (h221.m_t35Extension     == 0) &&
+                   (h221.m_manufacturerCode == 61)
+                  ) {
+            PString name;
+            if (data.GetSize() > 0)
+              name = PString((const char *)(const BYTE *)data, data.GetSize());
+            strm << " [Equivalence " << name << "]";
+          }
+
+          // Xiph is 181/0/38
+          else if ((h221.m_t35CountryCode   == 181) &&
+                   (h221.m_t35Extension     == 0) &&
+                   (h221.m_manufacturerCode == 38)
+                  ) {
+            PString name;
+            if (data.GetSize() > 0)
+              name = PString((const char *)(const BYTE *)data, data.GetSize());
+            strm << " [Xiph " << name << "]";
+          }
+
+          // Cisco is 181/0/18
+          else if ((h221.m_t35CountryCode   == 181) &&
+                   (h221.m_t35Extension     == 0) &&
+                   (h221.m_manufacturerCode == 18)
+                  ) {
+            PString name;
+            if (data.GetSize() > 0)
+              name = PString((const char *)(const BYTE *)data, data.GetSize());
+            strm << " [Cisco " << name << "]";
+          }
+
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
+  if (choice == NULL)
+    strm << " (NULL)";
+  else {
+    strm << ' ' << *choice;
+  }
+
+  //PASN_Choice::PrintOn(strm);
+}
+#endif

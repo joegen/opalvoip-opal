@@ -3,8 +3,14 @@ BEGIN
 
 IFPPacket ::= SEQUENCE
 {
-	type-of-msg		Type-of-msg,
-	data-field			Data-Field OPTIONAL
+	type-of-msg     Type-of-msg,
+	data-field      Data-Field OPTIONAL
+}
+
+PreCorrigendum-IFPPacket ::= SEQUENCE
+{
+	type-of-msg     Type-of-msg,
+	data-field      PreCorrigendum-Data-Field OPTIONAL
 }
 
 Type-of-msg ::= CHOICE
@@ -46,6 +52,23 @@ Type-of-msg ::= CHOICE
 }
 
 Data-Field ::= SEQUENCE OF SEQUENCE
+{
+	field-type  ENUMERATED
+	{
+		hdlc-data,
+		hdlc-sig-end,
+		hdlc-fcs-OK,
+		hdlc-fcs-BAD,
+		hdlc-fcs-OK-sig-end,
+		hdlc-fcs-BAD-sig-end,
+		t4-non-ecm-data,
+		t4-non-ecm-sig-end,
+                ...
+	},
+	field-data  OCTET STRING (SIZE(1..65535)) OPTIONAL
+}
+
+PreCorrigendum-Data-Field ::= SEQUENCE OF SEQUENCE
 {
 	field-type  ENUMERATED
 	{

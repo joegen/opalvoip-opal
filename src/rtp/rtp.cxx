@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2012  2002/11/10 11:33:20  robertj
+ * Revision 1.2013  2003/01/07 04:39:53  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.11  2002/11/10 11:33:20  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.10  2002/10/09 04:28:10  robertj
@@ -62,6 +65,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.83  2002/11/19 01:48:00  robertj
+ * Allowed get/set of canonical anme and tool name.
  *
  * Revision 1.82  2002/11/05 03:32:04  robertj
  * Added session ID to trace logs.
@@ -595,7 +601,9 @@ void RTP_UserData::OnRxStatistics(const RTP_Session & /*session*/) const
 /////////////////////////////////////////////////////////////////////////////
 
 RTP_Session::RTP_Session(unsigned id, RTP_UserData * data)
-  : reportTimeInterval(0, 12),  // Seconds
+  : canonicalName(PProcess::Current().GetUserName()),
+    toolName(PProcess::Current().GetName()),
+    reportTimeInterval(0, 12),  // Seconds
     reportTimer(reportTimeInterval)
 {
   PAssert(id > 0 && id < 256, PInvalidParameter);
@@ -666,6 +674,38 @@ RTP_Session::~RTP_Session()
             );
   delete userData;
   delete jitter;
+}
+
+
+PString RTP_Session::GetCanonicalName() const
+{
+  PWaitAndSignal mutex(reportMutex);
+  PString s = canonicalName;
+  s.MakeUnique();
+  return s;
+}
+
+
+void RTP_Session::SetCanonicalName(const PString & name)
+{
+  PWaitAndSignal mutex(reportMutex);
+  canonicalName = name;
+}
+
+
+PString RTP_Session::GetToolName() const
+{
+  PWaitAndSignal mutex(reportMutex);
+  PString s = toolName;
+  s.MakeUnique();
+  return s;
+}
+
+
+void RTP_Session::SetToolName(const PString & name)
+{
+  PWaitAndSignal mutex(reportMutex);
+  toolName = name;
 }
 
 
@@ -1012,13 +1052,12 @@ BOOL RTP_Session::SendReport()
   }
 
   // Add the SDES part to compound RTCP packet
-  PString description = PProcess::Current().GetUserName() + '@' + GetLocalHostName();
-  PTRACE(2, "RTP\tSending SDES: " << description);
+  PTRACE(2, "RTP\tSending SDES: " << canonicalName);
   report.WriteNextCompound();
 
   RTP_ControlFrame::SourceDescription & sdes = report.AddSourceDescription(syncSourceOut);
-  report.AddSourceDescriptionItem(sdes, RTP_ControlFrame::e_CNAME, description);
-  report.AddSourceDescriptionItem(sdes, RTP_ControlFrame::e_TOOL, PProcess::Current().GetName());
+  report.AddSourceDescriptionItem(sdes, RTP_ControlFrame::e_CNAME, canonicalName);
+  report.AddSourceDescriptionItem(sdes, RTP_ControlFrame::e_TOOL, toolName);
 
   // Wait a fuzzy amount of time so things don't get into lock step
   int interval = (int)reportTimeInterval.GetMilliSeconds();
@@ -1416,6 +1455,9 @@ BOOL RTP_UDP::Open(PIPSocket::Address _localAddress, WORD portBase, WORD portMax
 
   shutdownRead = FALSE;
   shutdownWrite = FALSE;
+
+  if (canonicalName.Find('@') == P_MAX_INDEX)
+    canonicalName += '@' + GetLocalHostName();
 
   PTRACE(2, "RTP_UDP\tSession " << sessionID
          << " created: data=" << dataSocket.GetPort()

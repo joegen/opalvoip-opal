@@ -24,11 +24,17 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalvxml.cxx,v $
- * Revision 1.2003  2002/11/11 06:51:12  robertj
+ * Revision 1.2004  2003/01/07 04:39:53  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.2  2002/11/11 06:51:12  robertj
  * Fixed errors after adding P_EXPAT flag to build.
  *
  * Revision 2.1  2002/11/10 11:33:20  robertj
  * Updated to OpenH323 v1.10.3
+ *
+ * Revision 1.18  2002/12/10 23:50:25  robertj
+ * Fixed some tracing issues
  *
  * Revision 1.17  2002/08/27 02:21:31  craigs
  * Added silence detection capability to fake G.723.1codec

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q931.cxx,v $
- * Revision 1.2007  2002/09/04 06:01:49  robertj
+ * Revision 1.2008  2003/01/07 04:39:53  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.6  2002/09/04 06:01:49  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.5  2002/07/01 04:56:32  robertj
@@ -47,6 +50,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.55  2002/11/19 06:19:25  robertj
+ * Added extra "congested" Q.931 codes.
  *
  * Revision 1.54  2002/08/06 02:27:39  robertj
  * GNU C++ v3 compatibility.
@@ -278,6 +284,7 @@ static POrdinalToString::Initialiser CauseNames[] = {
   { Q931::NetworkOutOfOrder,         "Network out of order"         },
   { Q931::TemporaryFailure,          "Temporary failure"            },
   { Q931::Congestion,                "Congestion"                   },
+  { Q931::RequestedCircuitNotAvailable,"RequestedCircuitNotAvailable" },
   { Q931::ResourceUnavailable,       "Resource unavailable"         },
   { Q931::InvalidCallReference,      "Invalid call reference"       },
   { Q931::IncompatibleDestination,   "Incompatible destination"     },
