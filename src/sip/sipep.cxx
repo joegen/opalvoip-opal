@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2036  2005/01/09 03:42:46  rjongbloed
+ * Revision 1.2037  2005/01/15 23:34:26  dsandras
+ * Applied patch from Ted Szoczei to handle broken incoming connections.
+ *
+ * Revision 2.35  2005/01/09 03:42:46  rjongbloed
  * Fixed warning about unused parameter
  *
  * Revision 2.34  2004/12/27 22:20:17  dsandras
@@ -219,7 +222,7 @@ BOOL SIPEndPoint::NewIncomingConnection(OpalTransport * transport)
 
   do {
     HandlePDU(*transport);
-  } while (transport->IsOpen() && transport->IsReliable());
+  } while (transport->IsOpen() && transport->IsReliable() && transport->good());
 
   PTRACE_IF(2, transport->IsReliable(), "SIP\tListening thread finished.");
 
