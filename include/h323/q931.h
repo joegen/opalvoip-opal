@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q931.h,v $
- * Revision 1.2003  2001/08/21 01:11:12  robertj
+ * Revision 1.2004  2001/10/05 00:22:13  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.2  2001/08/21 01:11:12  robertj
  * Update from OpenH323
  *
  * Revision 2.1  2001/08/13 05:10:39  robertj
@@ -32,6 +35,15 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.36  2001/09/17 02:06:38  robertj
+ * Added Redirecting Number IE to Q.931, thanks Frank Derks
+ *
+ * Revision 1.35  2001/09/13 02:41:32  robertj
+ * Fixed call reference generation to use full range and common code, thanks Carlo Kielstra
+ *
+ * Revision 1.34  2001/09/12 02:01:33  robertj
+ * Added "No Circuit" release complete code.
  *
  * Revision 1.33  2001/08/20 06:48:26  robertj
  * Added Q.931 function for setting bearer capabilities, allowing
@@ -213,7 +225,7 @@ class Q931 : public PObject
     void PrintOn(ostream & strm) const;
     PString GetMessageTypeName() const;
 
-    void GenerateCallReference();
+    static unsigned GenerateCallReference();
     unsigned GetCallReference() const { return callReference; }
     BOOL IsFromDestination() const { return fromDestination; }
     MsgTypes GetMessageType() const { return messageType; }
@@ -228,6 +240,7 @@ class Q931 : public PObject
       SignalIE             = 0x34,
       CallingPartyNumberIE = 0x6c,
       CalledPartyNumberIE  = 0x70,
+      RedirectingNumberIE  = 0x74,
       UserUserIE           = 0x7e
     };
     BOOL HasIE(InformationElementCodes ie) const;
@@ -273,6 +286,7 @@ class Q931 : public PObject
       DestinationOutOfOrder = 0x1b,
       InvalidNumberFormat   = 0x1c,
       StatusEnquiryResponse = 0x1e,
+      NoCircuitChannelAvailable = 0x22,
       Congestion            = 0x2a,
       InvalidCallReference  = 0x51,
       ErrorInCauseIE        = 0
@@ -373,6 +387,26 @@ class Q931 : public PObject
       PString & number,       // Number string
       unsigned * plan = NULL, // ISDN/Telephony numbering system
       unsigned * type = NULL  // Number type
+    ) const;
+
+    void SetRedirectingNumber(
+      const PString & number, // Number string
+      unsigned plan = 1,      // 1 = ISDN/Telephony numbering system
+      unsigned type = 0,      // 0 = Unknown number type
+      int presentation = -1,  // 0 = presentation allowed, -1 = no octet3a
+      int screening = -1,     // 0 = user provided, not screened
+      int reason = -1         // 0 = Unknown reason , -1 = no octet 3b
+    );
+    BOOL GetRedirectingNumber(
+      PString & number,               // Number string
+      unsigned * plan = NULL,         // ISDN/Telephony numbering system
+      unsigned * type = NULL,         // Number type
+      unsigned * presentation = NULL, // Presentation indicator
+      unsigned * screening = NULL,    // Screening indicator
+      unsigned * reason = NULL,       // Reason for redirection
+      unsigned defPresentation = 0,   // Default value if octet3a not present
+      unsigned defScreening = 0,      // Default value if octet3a not present
+      unsigned defReason =0           // Default value if octet 3b not present
     ) const;
 
   protected:

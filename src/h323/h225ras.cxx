@@ -27,11 +27,25 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h225ras.cxx,v $
- * Revision 1.2002  2001/08/13 05:10:39  robertj
+ * Revision 1.2003  2001/10/05 00:22:13  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.11  2001/09/18 10:36:57  robertj
+ * Allowed multiple overlapping requests in RAS channel.
+ *
+ * Revision 1.10  2001/09/12 07:48:05  robertj
+ * Fixed various problems with tracing.
+ *
+ * Revision 1.9  2001/09/12 03:12:38  robertj
+ * Added ability to disable the checking of RAS responses against
+ *   security authenticators.
+ * Fixed bug in having multiple authentications if have a retry.
  *
  * Revision 1.8  2001/08/10 11:03:52  robertj
  * Major changes to H.235 support in RAS to support server.
@@ -88,7 +102,10 @@ H225_RAS::H225_RAS(H323EndPoint & ep, OpalTransport * trans)
   else
     transport = new OpalTransportUDP(ep, INADDR_ANY, DefaultRasUdpPort);
 
-  lastSequenceNumber = 0;
+  lastRequest = NULL;
+  lastReceivedPDU = NULL;
+  nextSequenceNumber = 0;
+  requests.DisallowDeleteObjects();
 }
 
 
@@ -121,19 +138,17 @@ void H225_RAS::HandleRasChannel(PThread &, INT)
   for (;;) {
     if (response.Read(*transport)) {
       if (HandleRasPDU(response))
-        responseHandled.Signal();
+        lastRequest->responseHandled.Signal();
     }
     else {
       switch (transport->GetErrorNumber()) {
         case ECONNRESET :
         case ECONNREFUSED :
           PTRACE(2, "RAS\tCannot access remote " << transport->GetRemoteAddress());
-          responseResult = RejectReceived;
-          responseHandled.Signal();
           break;
 
         default:
-          PTRACE(1, "RAS\tRead error: " << transport->GetErrorText());
+          PTRACE(1, "RAS\tRead error: " << transport->GetErrorText(PChannel::LastReadError));
           return;
       }
     }
@@ -253,150 +268,157 @@ BOOL H225_RAS::HandleRasPDU(const H323RasPDU & response)
 }
 
 
-BOOL H225_RAS::WritePDU(H323RasPDU & pdu)
+static void OnSendPDU(H225_RAS & ras, H323RasPDU & pdu)
 {
   switch (pdu.GetTag()) {
     case H225_RasMessage::e_gatekeeperRequest :
-      OnSendGatekeeperRequest(pdu);
+      ras.OnSendGatekeeperRequest(pdu);
       break;
 
     case H225_RasMessage::e_gatekeeperConfirm :
-      OnSendGatekeeperConfirm(pdu);
+      ras.OnSendGatekeeperConfirm(pdu);
       break;
 
     case H225_RasMessage::e_gatekeeperReject :
-      OnSendGatekeeperReject(pdu);
+      ras.OnSendGatekeeperReject(pdu);
       break;
 
     case H225_RasMessage::e_registrationRequest :
-      OnSendRegistrationRequest(pdu);
+      ras.OnSendRegistrationRequest(pdu);
       break;
 
     case H225_RasMessage::e_registrationConfirm :
-      OnSendRegistrationConfirm(pdu);
+      ras.OnSendRegistrationConfirm(pdu);
       break;
 
     case H225_RasMessage::e_registrationReject :
-      OnSendRegistrationReject(pdu);
+      ras.OnSendRegistrationReject(pdu);
       break;
 
     case H225_RasMessage::e_unregistrationRequest :
-      OnSendUnregistrationRequest(pdu);
+      ras.OnSendUnregistrationRequest(pdu);
       break;
 
     case H225_RasMessage::e_unregistrationConfirm :
-      OnSendUnregistrationConfirm(pdu);
+      ras.OnSendUnregistrationConfirm(pdu);
       break;
 
     case H225_RasMessage::e_unregistrationReject :
-      OnSendUnregistrationReject(pdu);
+      ras.OnSendUnregistrationReject(pdu);
       break;
 
     case H225_RasMessage::e_admissionRequest :
-      OnSendAdmissionRequest(pdu);
+      ras.OnSendAdmissionRequest(pdu);
       break;
 
     case H225_RasMessage::e_admissionConfirm :
-      OnSendAdmissionConfirm(pdu);
+      ras.OnSendAdmissionConfirm(pdu);
       break;
 
     case H225_RasMessage::e_admissionReject :
-      OnSendAdmissionReject(pdu);
+      ras.OnSendAdmissionReject(pdu);
       break;
 
     case H225_RasMessage::e_bandwidthRequest :
-      OnSendBandwidthRequest(pdu);
+      ras.OnSendBandwidthRequest(pdu);
       break;
 
     case H225_RasMessage::e_bandwidthConfirm :
-      OnSendBandwidthConfirm(pdu);
+      ras.OnSendBandwidthConfirm(pdu);
       break;
 
     case H225_RasMessage::e_bandwidthReject :
-      OnSendBandwidthReject(pdu);
+      ras.OnSendBandwidthReject(pdu);
       break;
 
     case H225_RasMessage::e_disengageRequest :
-      OnSendDisengageRequest(pdu);
+      ras.OnSendDisengageRequest(pdu);
       break;
 
     case H225_RasMessage::e_disengageConfirm :
-      OnSendDisengageConfirm(pdu);
+      ras.OnSendDisengageConfirm(pdu);
       break;
 
     case H225_RasMessage::e_disengageReject :
-      OnSendDisengageReject(pdu);
+      ras.OnSendDisengageReject(pdu);
       break;
 
     case H225_RasMessage::e_locationRequest :
-      OnSendLocationRequest(pdu);
+      ras.OnSendLocationRequest(pdu);
       break;
 
     case H225_RasMessage::e_locationConfirm :
-      OnSendLocationConfirm(pdu);
+      ras.OnSendLocationConfirm(pdu);
       break;
 
     case H225_RasMessage::e_locationReject :
-      OnSendLocationReject(pdu);
+      ras.OnSendLocationReject(pdu);
       break;
 
     case H225_RasMessage::e_infoRequest :
-      OnSendInfoRequest(pdu);
+      ras.OnSendInfoRequest(pdu);
       break;
 
     case H225_RasMessage::e_infoRequestResponse :
-      OnSendInfoRequestResponse(pdu);
+      ras.OnSendInfoRequestResponse(pdu);
       break;
 
     case H225_RasMessage::e_nonStandardMessage :
-      OnSendNonStandardMessage(pdu);
+      ras.OnSendNonStandardMessage(pdu);
       break;
 
     case H225_RasMessage::e_unknownMessageResponse :
-      OnSendUnknownMessageResponse(pdu);
+      ras.OnSendUnknownMessageResponse(pdu);
       break;
 
     case H225_RasMessage::e_requestInProgress :
-      OnSendRequestInProgress(pdu);
+      ras.OnSendRequestInProgress(pdu);
       break;
 
     case H225_RasMessage::e_resourcesAvailableIndicate :
-      OnSendResourcesAvailableIndicate(pdu);
+      ras.OnSendResourcesAvailableIndicate(pdu);
       break;
 
     case H225_RasMessage::e_resourcesAvailableConfirm :
-      OnSendResourcesAvailableConfirm(pdu);
+      ras.OnSendResourcesAvailableConfirm(pdu);
       break;
 
     case H225_RasMessage::e_infoRequestAck :
-      OnSendInfoRequestAck(pdu);
+      ras.OnSendInfoRequestAck(pdu);
       break;
 
     case H225_RasMessage::e_infoRequestNak :
-      OnSendInfoRequestNak(pdu);
+      ras.OnSendInfoRequestNak(pdu);
       break;
 
     default :
       break;
   }
+}
 
+
+BOOL H225_RAS::WritePDU(H323RasPDU & pdu)
+{
+  OnSendPDU(*this, pdu);
   return pdu.Write(*transport);
 }
 
 
-BOOL H225_RAS::MakeRequest(H323RasPDU & request)
+H225_RAS::Request::Request(unsigned seqNum, H323RasPDU  & pdu)
+  : requestPDU(pdu)
 {
-  PTRACE(3, "RAS\tMaking request: " << request.GetTagName());
+  sequenceNumber = seqNum;
+}
 
+
+BOOL H225_RAS::Request::Poll(H323EndPoint & endpoint, OpalTransport & transport)
+{
   // Assume a confirm, reject callbacks will set to RejectReceived
   responseResult = AwaitingResponse;
 
-  // Set request code for determining response
-  requestTag = request.GetTag();
-
   for (unsigned retry = 1; retry <= endpoint.GetRasRequestRetries(); retry++) {
-    if (!WritePDU(request))
-      return FALSE;
+    if (!requestPDU.Write(transport))
+      break;
 
     whenResponseExpected = PTimer::Tick() + endpoint.GetRasRequestTimeout();
     PTRACE(3, "RAS\tWaiting on response for "
@@ -426,37 +448,65 @@ BOOL H225_RAS::MakeRequest(H323RasPDU & request)
 }
 
 
-BOOL H225_RAS::CheckForResponse(unsigned reqTag, unsigned seqNum)
+void H225_RAS::Request::CheckResponse(unsigned reqTag, const PASN_Choice * reason)
 {
-  if (requestTag != reqTag)
-    return FALSE;
-
-  if (seqNum == lastSequenceNumber) {
-    responseResult = ConfirmReceived;
-    return TRUE;
+  if (requestPDU.GetTag() != reqTag) {
+    PTRACE(3, "RAS\tReceived reply for incorrect PDU tag.");
+    responseResult = RejectReceived;
+    rejectReason = UINT_MAX;
+    return;
   }
 
-  PTRACE(3, "RAS\tReceived incorrect sequence number, want "
-         << lastSequenceNumber << ", got " << seqNum);
-  return FALSE;
+  if (reason != NULL) {
+    PTRACE(1, "RAS\t" << requestPDU.GetTagName()
+           << " rejected: " << reason->GetTagName());
+    responseResult = RejectReceived;
+    rejectReason = reason->GetTag();
+    return;
+  }
+
+  responseResult = ConfirmReceived;
 }
 
 
-BOOL H225_RAS::CheckForRejectResponse(unsigned reqTag,
-                                            unsigned seqNum,
-#if PTRACING
-                                            const char * name,
-#else
-                                            const char *,
-#endif
-                                            const PASN_Choice & reason)
+void H225_RAS::Request::OnReceiveRIP(const H225_RequestInProgress & rip)
 {
-  if (!CheckForResponse(reqTag, seqNum))
-    return FALSE;
+  responseResult = RequestInProgress;
+  whenResponseExpected = PTimer::Tick() + PTimeInterval(rip.m_delay);
+}
 
-  PTRACE(1, "RAS\t" << name << " rejected: " << reason.GetTagName());
-  responseResult = RejectReceived;
-  rejectReason = reason.GetTag();
+
+BOOL H225_RAS::MakeRequest(Request & request)
+{
+  PTRACE(3, "RAS\tMaking request: " << request.requestPDU.GetTagName());
+
+  OnSendPDU(*this, request.requestPDU);
+
+  requestsMutex.Wait();
+  requests.SetAt(request.sequenceNumber, &request);
+  requestsMutex.Signal();
+
+  BOOL ok = request.Poll(endpoint, *transport);
+
+  requestsMutex.Wait();
+  requests.SetAt(request.sequenceNumber, NULL);
+  requestsMutex.Signal();
+
+  return ok;
+}
+
+
+BOOL H225_RAS::CheckForResponse(unsigned reqTag, unsigned seqNum, const PASN_Choice * reason)
+{
+  PWaitAndSignal mutex(requestsMutex);
+
+  if (!requests.Contains(seqNum)) {
+    PTRACE(3, "RAS\tReceived sequence number for PDU we never requested or timed out");
+    return FALSE;
+  }
+
+  lastRequest = &requests[seqNum];
+  lastRequest->CheckResponse(reqTag, reason);
   return TRUE;
 }
 
@@ -479,13 +529,17 @@ BOOL H225_RAS::SetUpCallSignalAddresses(H225_ArrayOf_TransportAddress & addresse
 
 BOOL H225_RAS::OnReceiveRequestInProgress(const H225_RequestInProgress & rip)
 {
-  if (!CheckForResponse(requestTag, rip.m_requestSeqNum))
-    return FALSE;
+  PWaitAndSignal mutex(requestsMutex);
 
-  responseResult = RequestInProgress;
-  whenResponseExpected = PTimer::Tick() + PTimeInterval(rip.m_delay);
+  unsigned seqNum = rip.m_requestSeqNum;
+  if (requests.Contains(seqNum)) {
+    lastRequest = &requests[seqNum];
+    lastRequest->OnReceiveRIP(rip);
+    return TRUE;
+  }
 
-  return TRUE;
+  PTRACE(3, "RAS\tReceived sequence number for PDU we never requested or timed out");
+  return FALSE;
 }
 
 
@@ -501,6 +555,10 @@ void H225_RAS::OnSendGatekeeperRequest(H225_GatekeeperRequest & grq)
     if (authenticators[i].SetCapability(grq.m_authenticationCapability, grq.m_algorithmOIDs)) {
       grq.IncludeOptionalField(H225_GatekeeperRequest::e_authenticationCapability);
       grq.IncludeOptionalField(H225_GatekeeperRequest::e_algorithmOIDs);
+    }
+    else {
+       PTRACE(1, "RAS\tAuthenticator " << authenticators[i]
+             << " SetCapability failed during GRQ");
     }
   }
 }
@@ -538,12 +596,7 @@ BOOL H225_RAS::OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm & gcf)
 
 BOOL H225_RAS::OnReceiveGatekeeperReject(const H225_GatekeeperReject & grj)
 {
-  if (!CheckForResponse(H225_RasMessage::e_gatekeeperReject, grj.m_requestSeqNum))
-    return FALSE;
-
-  PTRACE(1, "RAS\tGatekeeper discovery rejected: " << grj.m_rejectReason.GetTagName());
-  rejectReason = grj.m_rejectReason.GetTag();
-  return FALSE;
+  return CheckForResponse(H225_RasMessage::e_gatekeeperReject, grj.m_requestSeqNum, &grj.m_rejectReason);
 }
 
 
@@ -590,10 +643,7 @@ BOOL H225_RAS::OnReceiveRegistrationConfirm(const H225_RegistrationConfirm & rcf
 
 BOOL H225_RAS::OnReceiveRegistrationReject(const H225_RegistrationReject & rrj)
 {
-  return CheckForRejectResponse(H225_RasMessage::e_registrationRequest,
-                                rrj.m_requestSeqNum,
-                                "Registration",
-                                rrj.m_rejectReason) &&
+  return CheckForResponse(H225_RasMessage::e_registrationRequest, rrj.m_requestSeqNum, &rrj.m_rejectReason) &&
          CheckCryptoTokens(rrj.m_cryptoTokens, rrj, H225_RegistrationReject::e_cryptoTokens);
 }
 
@@ -631,10 +681,7 @@ BOOL H225_RAS::OnReceiveUnregistrationConfirm(const H225_UnregistrationConfirm &
 
 BOOL H225_RAS::OnReceiveUnregistrationReject(const H225_UnregistrationReject & urj)
 {
-  return CheckForRejectResponse(H225_RasMessage::e_unregistrationRequest,
-                                urj.m_requestSeqNum,
-                                "Unregistration",
-                                urj.m_rejectReason) &&
+  return CheckForResponse(H225_RasMessage::e_unregistrationRequest, urj.m_requestSeqNum, &urj.m_rejectReason) &&
          CheckCryptoTokens(urj.m_cryptoTokens, urj, H225_UnregistrationReject::e_cryptoTokens);
 }
 
@@ -672,10 +719,7 @@ BOOL H225_RAS::OnReceiveAdmissionConfirm(const H225_AdmissionConfirm & acf)
 
 BOOL H225_RAS::OnReceiveAdmissionReject(const H225_AdmissionReject & arj)
 {
-  return CheckForRejectResponse(H225_RasMessage::e_admissionRequest,
-                                arj.m_requestSeqNum,
-                                "Admission",
-                                arj.m_rejectReason) &&
+  return CheckForResponse(H225_RasMessage::e_admissionRequest, arj.m_requestSeqNum, &arj.m_rejectReason) &&
          CheckCryptoTokens(arj.m_cryptoTokens, arj, H225_AdmissionReject::e_cryptoTokens);
 }
 
@@ -713,10 +757,7 @@ void H225_RAS::OnSendBandwidthReject(H225_BandwidthReject & brj)
 
 BOOL H225_RAS::OnReceiveBandwidthReject(const H225_BandwidthReject & brj)
 {
-  return CheckForRejectResponse(H225_RasMessage::e_bandwidthRequest,
-                                brj.m_requestSeqNum,
-                                "Bandwidth",
-                                brj.m_rejectReason) &&
+  return CheckForResponse(H225_RasMessage::e_bandwidthRequest, brj.m_requestSeqNum, &brj.m_rejectReason) &&
          CheckCryptoTokens(brj.m_cryptoTokens, brj, H225_BandwidthReject::e_cryptoTokens);
 }
 
@@ -754,10 +795,7 @@ void H225_RAS::OnSendDisengageReject(H225_DisengageReject & drj)
 
 BOOL H225_RAS::OnReceiveDisengageReject(const H225_DisengageReject & drj)
 {
-  return CheckForRejectResponse(H225_RasMessage::e_disengageRequest,
-                                drj.m_requestSeqNum,
-                                "Disengage",
-                                drj.m_rejectReason) &&
+  return CheckForResponse(H225_RasMessage::e_disengageRequest, drj.m_requestSeqNum, &drj.m_rejectReason) &&
          CheckCryptoTokens(drj.m_cryptoTokens, drj, H225_DisengageReject::e_cryptoTokens);
 }
 
@@ -785,7 +823,10 @@ BOOL H225_RAS::OnReceiveLocationConfirm(const H225_LocationConfirm & lcf)
   if (!CheckForResponse(H225_RasMessage::e_locationRequest, lcf.m_requestSeqNum))
     return FALSE;
 
-  locatedAddress = lcf.m_callSignalAddress;
+  if (lastRequest->responseInfo != NULL) {
+    H323TransportAddress & locatedAddress = *(H323TransportAddress *)lastRequest->responseInfo;
+    locatedAddress = lcf.m_callSignalAddress;
+  }
 
   return TRUE;
 }
@@ -799,10 +840,7 @@ void H225_RAS::OnSendLocationReject(H225_LocationReject & lrj)
 
 BOOL H225_RAS::OnReceiveLocationReject(const H225_LocationReject & lrj)
 {
-  return CheckForRejectResponse(H225_RasMessage::e_locationRequest,
-                                lrj.m_requestSeqNum,
-                                "Location",
-                                lrj.m_rejectReason) &&
+  return CheckForResponse(H225_RasMessage::e_locationRequest, lrj.m_requestSeqNum, &lrj.m_rejectReason) &&
          CheckCryptoTokens(lrj.m_cryptoTokens, lrj, H225_LocationReject::e_cryptoTokens);
 }
 
@@ -923,10 +961,11 @@ BOOL H225_RAS::OnReceiveUnkown(const H323RasPDU &)
 
 unsigned H225_RAS::GetNextSequenceNumber()
 {
-  lastSequenceNumber++;
-  if (lastSequenceNumber >= 65536)
-    lastSequenceNumber = 1;
-  return lastSequenceNumber;
+  PWaitAndSignal mutex(nextSequenceNumberMutex);
+  nextSequenceNumber++;
+  if (nextSequenceNumber >= 65536)
+    nextSequenceNumber = 1;
+  return nextSequenceNumber;
 }
 
 
@@ -934,10 +973,20 @@ void H225_RAS::SetCryptoTokens(H225_ArrayOf_CryptoH323Token & cryptoTokens,
                                PASN_Sequence & pdu,
                                unsigned optionalField)
 {
+  // Clean out any crypto tokens in case this is a retry message
+  // and we are regenerating the tokens due to possible timestamp
+  // issues.
+  cryptoTokens.RemoveAll();
+
   H235Authenticators authenticators = GetAuthenticators();
   for (PINDEX i = 0; i < authenticators.GetSize(); i++) {
-    if (authenticators[i].Prepare(cryptoTokens))
+    if (authenticators[i].Prepare(cryptoTokens)) {
+      PTRACE(4, "RAS\tPrepared PDU with authenticator " << authenticators[i]);
       pdu.IncludeOptionalField(optionalField);
+    }
+    else {
+      PTRACE(4, "RAS\tFailed to prepare PDU with authenticator " << authenticators[i]);
+    }
   }
 }
 
@@ -946,6 +995,10 @@ BOOL H225_RAS::CheckCryptoTokens(const H225_ArrayOf_CryptoH323Token & cryptoToke
                                  const PASN_Sequence & pdu,
                                  unsigned optionalField)
 {
+  // If cypto token checking disabled, just return TRUE.
+  if (!GetCheckResponseCryptoTokens())
+    return TRUE;
+
   // Check for no security
   H235Authenticators authenticators = GetAuthenticators();
   BOOL noneActive = TRUE;
@@ -970,14 +1023,17 @@ BOOL H225_RAS::CheckCryptoTokens(const H225_ArrayOf_CryptoH323Token & cryptoToke
   for (i = 0; i < authenticators.GetSize(); i++) {
     switch (authenticators[i].Verify(cryptoTokens, lastReceivedPDU->GetLastReceivedRawPDU())) {
       case H235Authenticator::e_OK :
+        PTRACE(4, "RAS\tAuthenticator " << authenticators[i] << " OK");
         ok = TRUE;
         break;
 
       case H235Authenticator::e_Absent :
+        PTRACE(4, "RAS\tAuthenticator " << authenticators[i] << " absent from GK");
         authenticators[i].Disable();
         break;
 
       case H235Authenticator::e_Disabled :
+        PTRACE(4, "RAS\tAuthenticator " << authenticators[i] << " disabled");
         break;
 
       default :

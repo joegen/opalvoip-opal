@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.h,v $
- * Revision 1.2003  2001/08/17 08:20:26  robertj
+ * Revision 1.2004  2001/10/05 00:22:13  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.2  2001/08/17 08:20:26  robertj
  * Update from OpenH323
  *
  * Revision 2.1  2001/08/13 05:10:39  robertj
@@ -35,6 +38,24 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.31  2001/09/26 07:02:49  robertj
+ * Added needed mutex for SeparateAuthenticationInARQ mode, thanks Nick Hoath
+ *
+ * Revision 1.30  2001/09/18 10:36:54  robertj
+ * Allowed multiple overlapping requests in RAS channel.
+ *
+ * Revision 1.29  2001/09/13 03:21:16  robertj
+ * Added ability to override authentication credentials for ARQ, thanks Nick Hoath
+ *
+ * Revision 1.28  2001/09/12 06:57:58  robertj
+ * Added support for iNow Access Token from gk, thanks Nick Hoath
+ *
+ * Revision 1.27  2001/09/12 06:04:36  robertj
+ * Added support for sending UUIE's to gk on request, thanks Nick Hoath
+ *
+ * Revision 1.26  2001/09/06 02:32:26  robertj
+ * Added overloaded AdmissionRequest for backward compatibility.
  *
  * Revision 1.25  2001/08/14 04:26:46  robertj
  * Completed the Cisco compatible MD5 authentications, thanks Wolfgang Platzer.
@@ -133,6 +154,7 @@
 
 class H323Connection;
 class H225_ArrayOf_AliasAddress;
+class H225_H323_UU_PDU;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -179,6 +201,7 @@ class H323Gatekeeper : public H225_RAS
     BOOL OnReceiveBandwidthConfirm(const H225_BandwidthConfirm & bcf);
     BOOL OnReceiveBandwidthRequest(const H225_BandwidthRequest & brq);
     BOOL OnReceiveInfoRequest(const H225_InfoRequest & irq);
+    void OnSendAdmissionRequest(H225_AdmissionRequest & arq);
   //@}
 
   /**@name Protocol operations */
@@ -237,20 +260,30 @@ class H323Gatekeeper : public H225_RAS
       OpalTransportAddress & address  /// Resultant transport address.
     );
 
+    struct AdmissionResponse {
+      AdmissionResponse();
+
+      unsigned rejectReason;                      /// Reject reason if returns FALSE
+      H323TransportAddress * transportAddress;    /// Gatekeeper routed transport address.
+      H225_ArrayOf_AliasAddress * aliasAddresses; /// DestinationInfo to use in SETUP if not empty
+      PBYTEArray * accessTokenData;               /// iNow Gatekeeper Access Token data
+    };
+
     /**Admission request to gatekeeper.
      */
     BOOL AdmissionRequest(
-      H323Connection & connection  /// Connection we wish to change.
+      H323Connection & connection,      /// Connection we wish to change.
+      AdmissionResponse & response,     /// Response parameters to ARQ
+      BOOL ignorePreGrantedARQ = FALSE  /// Flag to force ARQ to be sent
     );
 
-
-    /**Admission request to gatekeeper.
-     */
-    BOOL AdmissionRequest(
-      H323Connection & connection,     /// Connection we wish to change.
-      H323TransportAddress & address,  /// Gatekeeper routed transport address.
-      H225_ArrayOf_AliasAddress & newDestinationAlias, /// DestinationInfo to use in SETUP if not empty
-      BOOL ignorePreGrantedARQ = FALSE /// Flag to force ARQ to be sent
+    /**Get separate authentication credentials for ARQ.
+      */
+    virtual BOOL GetAdmissionReqestAuthentication(
+      const H225_AdmissionRequest & arq,
+      PString & remoteId,
+      PString & localId,
+      PString & password
     );
 
     /**Disengage request to gatekeeper.
@@ -272,6 +305,14 @@ class H323Gatekeeper : public H225_RAS
     void InfoRequestResponse(
       const H323Connection * connection,  /// Connection to send info about
       unsigned seqNum                     /// Sequence number responding to
+    );
+
+    /**Send an unsolicited info response to the gatekeeper.
+     */
+    void InfoRequestResponse(
+      const H323Connection & connection,  /// Connection to send info about
+      const H225_H323_UU_PDU & pdu,       /// PDU that was sent or received
+      BOOL sent                           /// Flag for PDU was sent or received
     );
 
     /**Get the security context for this RAS connection.
@@ -303,15 +344,32 @@ class H323Gatekeeper : public H225_RAS
       const PString & password,            /// New password
       const PString & username = PString() /// Username for password
     );
+
+    /**Get the flag to use the destination alias as remote ID and password in
+       H.235 authentication during ARQ.
+     */
+    BOOL GetSeparateAuthenticationInARQ() const { return useSeparateAuthenticationInARQ; }
+
+    /**Set the flag to use the destination alias as remote ID and password in
+       H.235 authentication during ARQ.
+     */
+    void SetSeparateAuthenticationInARQ(BOOL b) { useSeparateAuthenticationInARQ = b; }
   //@}
 
 
   protected:
     BOOL StartDiscovery(const OpalTransportAddress & address);
     BOOL DiscoverGatekeeper(H323RasPDU & request, const OpalTransportAddress & address);
-    void SetupGatekeeperRequest(H323RasPDU & request);
+    unsigned SetupGatekeeperRequest(H323RasPDU & request);
     PDECLARE_NOTIFIER(PTimer, H323Gatekeeper, RegistrationTimeToLive);
+    void BuildInfoRequestResponse(
+      H225_InfoRequestResponse & irr,
+      const H323Connection * connection
+    );
 
+
+    // Option variables
+    BOOL useSeparateAuthenticationInARQ;
 
     // Gatekeeper registration state variables
     BOOL    discoveryComplete;
@@ -331,10 +389,7 @@ class H323Gatekeeper : public H225_RAS
     BOOL    autoReregister;
     PTimer  timeToLive;
     BOOL    requiresDiscovery;
-
-    // Inter-thread transfer variables
-    unsigned allocatedBandwidth;
-    H225_ArrayOf_AliasAddress * newAliasAddresses;
+    PMutex  mutexForSeparateAuthenticationInARQ;
 };
 
 

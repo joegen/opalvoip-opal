@@ -22,11 +22,17 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vpblid.h,v $
- * Revision 1.2002  2001/08/01 05:18:51  robertj
+ * Revision 1.2003  2001/10/05 00:22:13  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.1  2001/08/01 05:18:51  robertj
  * Made OpalMediaFormatList class global to help with documentation.
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.9  2001/09/13 05:27:46  robertj
+ * Fixed incorrect return type in virtual function, thanks Vjacheslav Andrejev
  *
  * Revision 1.8  2001/02/09 05:16:24  robertj
  * Added #pragma interface for GNU C++.
@@ -184,7 +190,7 @@ class OpalVpbDevice : public OpalLineInterfaceDevice
        Note that a LID may ignore this value so always use GetReadFrameSize()
        for I/O.
       */
-    virtual PINDEX SetWriteFrameSize(
+    virtual BOOL SetWriteFrameSize(
       unsigned line,    /// Number of line
       PINDEX frameSize  /// New frame size
     );

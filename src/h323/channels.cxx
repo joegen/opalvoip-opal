@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2006  2001/10/03 05:56:15  robertj
+ * Revision 1.2007  2001/10/05 00:22:13  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.5  2001/10/03 05:56:15  robertj
  * Changes abndwidth management API.
  *
  * Revision 2.4  2001/08/17 08:32:17  robertj
@@ -44,6 +47,15 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.99  2001/09/13 08:20:27  robertj
+ * Fixed broken back out of rev 1.95, thanks Santiago Garcia Mantinan
+ *
+ * Revision 1.98  2001/09/11 00:21:23  robertj
+ * Fixed missing stack sizes in endpoint for cleaner thread and jitter thread.
+ *
+ * Revision 1.97  2001/08/28 09:28:28  robertj
+ * Backed out change in revision 1.95, not compatible with G.711
  *
  * Revision 1.96  2001/08/16 06:34:42  robertj
  * Plugged memory leak if using trace level 5.

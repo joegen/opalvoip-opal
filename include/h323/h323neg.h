@@ -27,11 +27,17 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323neg.h,v $
- * Revision 1.2002  2001/08/13 05:10:39  robertj
+ * Revision 1.2003  2001/10/05 00:22:13  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.26  2001/09/12 01:54:45  robertj
+ * Added virtual keyword to function in logical channel management.
  *
  * Revision 1.25  2001/08/06 03:08:11  robertj
  * Fission of h323.h to h323ep.h & h323con.h, h323.h now just includes files.
@@ -247,19 +253,19 @@ class H245NegLogicalChannel : public H245Negotiator
                           H323Channel & channel);
     ~H245NegLogicalChannel();
 
-    BOOL Open(const H323Capability & capability, unsigned sessionID);
-    BOOL Close();
-    BOOL HandleOpen(const H245_OpenLogicalChannel & pdu);
-    BOOL HandleOpenAck(const H245_OpenLogicalChannelAck & pdu);
-    BOOL HandleOpenConfirm(const H245_OpenLogicalChannelConfirm & pdu);
-    BOOL HandleReject(const H245_OpenLogicalChannelReject & pdu);
-    BOOL HandleClose(const H245_CloseLogicalChannel & pdu);
-    BOOL HandleCloseAck(const H245_CloseLogicalChannelAck & pdu);
-    BOOL HandleRequestClose(const H245_RequestChannelClose & pdu);
-    BOOL HandleRequestCloseAck(const H245_RequestChannelCloseAck & pdu);
-    BOOL HandleRequestCloseReject(const H245_RequestChannelCloseReject & pdu);
-    BOOL HandleRequestCloseRelease(const H245_RequestChannelCloseRelease & pdu);
-    void HandleTimeout(PTimer &, INT);
+    virtual BOOL Open(const H323Capability & capability, unsigned sessionID);
+    virtual BOOL Close();
+    virtual BOOL HandleOpen(const H245_OpenLogicalChannel & pdu);
+    virtual BOOL HandleOpenAck(const H245_OpenLogicalChannelAck & pdu);
+    virtual BOOL HandleOpenConfirm(const H245_OpenLogicalChannelConfirm & pdu);
+    virtual BOOL HandleReject(const H245_OpenLogicalChannelReject & pdu);
+    virtual BOOL HandleClose(const H245_CloseLogicalChannel & pdu);
+    virtual BOOL HandleCloseAck(const H245_CloseLogicalChannelAck & pdu);
+    virtual BOOL HandleRequestClose(const H245_RequestChannelClose & pdu);
+    virtual BOOL HandleRequestCloseAck(const H245_RequestChannelCloseAck & pdu);
+    virtual BOOL HandleRequestCloseReject(const H245_RequestChannelCloseReject & pdu);
+    virtual BOOL HandleRequestCloseRelease(const H245_RequestChannelCloseRelease & pdu);
+    virtual void HandleTimeout(PTimer &, INT);
 
     H323Channel * GetChannel();
 
@@ -304,20 +310,20 @@ class H245NegLogicalChannels : public H245Negotiator
   public:
     H245NegLogicalChannels(H323EndPoint & endpoint, H323Connection & connection);
 
-    void Add(H323Channel & channel);
+    virtual void Add(H323Channel & channel);
 
-    BOOL Open(const H323Capability & capability, unsigned sessionID);
-    BOOL Close(unsigned channelNumber, BOOL fromRemote);
-    BOOL HandleOpen(const H245_OpenLogicalChannel & pdu);
-    BOOL HandleOpenAck(const H245_OpenLogicalChannelAck & pdu);
-    BOOL HandleOpenConfirm(const H245_OpenLogicalChannelConfirm & pdu);
-    BOOL HandleReject(const H245_OpenLogicalChannelReject & pdu);
-    BOOL HandleClose(const H245_CloseLogicalChannel & pdu);
-    BOOL HandleCloseAck(const H245_CloseLogicalChannelAck & pdu);
-    BOOL HandleRequestClose(const H245_RequestChannelClose & pdu);
-    BOOL HandleRequestCloseAck(const H245_RequestChannelCloseAck & pdu);
-    BOOL HandleRequestCloseReject(const H245_RequestChannelCloseReject & pdu);
-    BOOL HandleRequestCloseRelease(const H245_RequestChannelCloseRelease & pdu);
+    virtual BOOL Open(const H323Capability & capability, unsigned sessionID);
+    virtual BOOL Close(unsigned channelNumber, BOOL fromRemote);
+    virtual BOOL HandleOpen(const H245_OpenLogicalChannel & pdu);
+    virtual BOOL HandleOpenAck(const H245_OpenLogicalChannelAck & pdu);
+    virtual BOOL HandleOpenConfirm(const H245_OpenLogicalChannelConfirm & pdu);
+    virtual BOOL HandleReject(const H245_OpenLogicalChannelReject & pdu);
+    virtual BOOL HandleClose(const H245_CloseLogicalChannel & pdu);
+    virtual BOOL HandleCloseAck(const H245_CloseLogicalChannelAck & pdu);
+    virtual BOOL HandleRequestClose(const H245_RequestChannelClose & pdu);
+    virtual BOOL HandleRequestCloseAck(const H245_RequestChannelCloseAck & pdu);
+    virtual BOOL HandleRequestCloseReject(const H245_RequestChannelCloseReject & pdu);
+    virtual BOOL HandleRequestCloseRelease(const H245_RequestChannelCloseRelease & pdu);
 
     H323ChannelNumber GetNextChannelNumber();
     PINDEX GetSize() const { return channels.GetSize(); }

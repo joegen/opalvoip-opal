@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.cxx,v $
- * Revision 1.2002  2001/08/01 05:04:28  robertj
+ * Revision 1.2003  2001/10/05 00:22:13  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.1  2001/08/01 05:04:28  robertj
  * Changes to allow control of linking software transcoders, use macros
  *   to force linking.
  * Allowed codecs to be used without H.,323 being linked by using the
@@ -34,6 +37,19 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.36  2001/09/26 01:59:31  robertj
+ * Fixed MSVC warning.
+ *
+ * Revision 1.35  2001/09/25 03:14:47  dereks
+ * Add constant bitrate control for the h261 video codec.
+ * Thanks Tiziano Morganti for the code to set bit rate. Good work!
+ *
+ * Revision 1.34  2001/09/21 02:51:29  robertj
+ * Added default session ID to media format description.
+ *
+ * Revision 1.33  2001/08/22 01:28:20  robertj
+ * Resolved confusion with YUV411P and YUV420P video formats, thanks Mark Cooke.
  *
  * Revision 1.32  2001/07/09 07:19:40  rogerh
  * Make the encoder render a frames (for local video) only when there is a
@@ -458,17 +474,7 @@ BOOL Opal_YUV411P_H261::Convert(const RTP_DataFrame & src, RTP_DataFrame & dst)
 
 
 
-
-
-
-
-
-
-
-
 #if 0
-
-
 
 
 
@@ -579,6 +585,26 @@ H323_H261Codec::H323_H261Codec(Direction dir, BOOL isqCIF)
     frameHeight=0;
   }
 
+  // frame rate estimation accuracy
+  // is also average bitrate accuracy
+  estFps = 25.;         //  suppose 25 fps
+  frameRateDivider = 1;
+
+  // automatic bitrate control
+  videoBitRate = 256*1024;
+  //SetAverageBitrate( 256*1024 );
+
+  defBitsPerFrame = (int)((float)videoBitRate / estFps);
+  reqBitsPerFrame = defBitsPerFrame * frameRateDivider;  
+  frameBits = reqBitsPerFrame;  // bit/frame counter
+  numOf31 = 0;          // quality too low?
+  numOfNot31 = 0;       // quality too high?
+  //SetTxQualityLevel( 10 );  // quality around 10 ...
+  qualityLevel = 10;
+  highLimit = 22;       // quality somewhere between these
+  lowLimit = 8;         
+  actualQuality = qualityLevel;
+  frameNum = 0;         // frame counter
 }
 
 
@@ -650,37 +676,120 @@ BOOL H323_H261Codec::Read(BYTE * buffer,
 
   PINDEX bytesInFrame = 0;
   BOOL ok=TRUE;
+
   if(!videoEncoder->PacketsOutStanding()) {
-  
+    if( videoBitRate != 0 ) {    
+      if( (frameNum % frameRateDivider) == 0 ) {
+	int error = reqBitsPerFrame - frameBits;  // error signal
+	int aerror = PABS(error);                        
+	int act;        // action signal
+                        
+	if( aerror < (reqBitsPerFrame>>4) ) 
+	  act = 0;
+	else 
+	  if( aerror < (reqBitsPerFrame>>3) )
+	    act = error>0 ? 1 : -1;
+	  else {
+	    act = error * 10 / reqBitsPerFrame;     
+	    act=PMAX(PMIN(act,10),-10);
+	  }
+
+	actualQuality-=act;  //	
+	actualQuality = PMIN(PMAX(actualQuality, 1), 31 );
+	
+	if( actualQuality >= highLimit ) 
+	  numOf31++;
+	else 
+	  numOf31=0;
+	
+	if( actualQuality <= lowLimit ) 
+	  numOfNot31++;
+	else 
+	  numOfNot31=0;
+                                
+	if( numOf31 == 10 ) {
+	  frameRateDivider++;
+	  frameRateDivider = PMIN( frameRateDivider, 6); 
+	  reqBitsPerFrame = defBitsPerFrame * frameRateDivider;
+	  numOf31 = 0;
+	}
+	if( numOfNot31 == 10 ) {
+	  frameRateDivider--;
+	  frameRateDivider = PMAX( frameRateDivider, 1);
+	  reqBitsPerFrame = defBitsPerFrame * frameRateDivider;
+	  numOfNot31 = 0;
+	}
+
+	PTRACE(4, "H261\t ReqBitsPerFrame=" << reqBitsPerFrame << 
+	       " bitrate=" << videoBitRate <<
+	       " DefBitsPerFrame=" << defBitsPerFrame);
+	
+	PTRACE(3, "H261\t Constant bitrate control - FrameBits=" << frameBits 
+	       << " action=" << -act << " quality=" << actualQuality
+	       << " estfps=" <<  estFps
+	       << " framenum=" << frameNum
+	       << " FramerateDivider=" << frameRateDivider);
+	
+	PTRACE(4, "H261\t Adjust quality to "<<actualQuality);
+	
+	videoEncoder->SetQualityLevel( actualQuality );
+      }
+    }
 
   //NO data is waiting to be read. Go and get some with the read call.
-    if(rawDataChannel->Read(videoEncoder->GetFramePtr(),bytesInFrame)) {
+    if(rawDataChannel->Read(videoEncoder->GetFramePtr(), bytesInFrame)) {
       
       // If there is a Renderer attached, display the grabbed video.
-      if(((PVideoChannel *)rawDataChannel)->IsRenderOpen()) {
-        ok = RenderFrame();                   //use data from grab process.
+      if( ((PVideoChannel *)rawDataChannel)->IsRenderOpen() ) {
+	ok=RenderFrame();                     //use data from grab process.
       }
+      videoEncoder->ProcessOneFrame();        //Generate H261 packets.                
 
-      videoEncoder->ProcessOneFrame();        //Generate H261 packets.
+      if( (frameNum % frameRateDivider) == 0 ) {
+	frameBits=0;  //clear frame bits counter
+      }
+          
+      // estimate fps every 5 frames
+      if( (frameNum % 5 ) == 4 ) {
+        timeFor5Frames = PTimer::Tick() - timeFor5Frames;
+        estFps = (float)(5000.0 / timeFor5Frames.GetMilliSeconds());
+        defBitsPerFrame = (int) (videoBitRate / estFps);
+        reqBitsPerFrame = defBitsPerFrame * frameRateDivider;
+        timeFor5Frames = PTimer::Tick();
+      }
+      
+      frameNum++;
     } else {
       PTRACE(3,"H261\t Failed to read data from video grabber..");
       PTRACE(3,"H261\t Close down video transmission thread.");      
       return FALSE;   //Read failed, return false.
     }
-  } else
-    PThread::Current()->Sleep(5);  // Place a 5 ms interval betwen 
-                                   // packets of the same frame.
 
+  } else   //if(!videoEncoder->PacketsOutstanding())
+    PThread::Current()->Sleep(5);  // Place a 5 ms interval betwen 
+  // packets of the same frame.
  
   videoEncoder->ReadOnePacket(buffer,length); //get next packet on list
   if( length != 0 ) {                         
-      if(videoEncoder->PacketsOutStanding()) //packet read, so process it.
-         frame.SetMarker(FALSE);                
-       else
-	 frame.SetMarker(TRUE);
-  } 
+    if(videoEncoder->PacketsOutStanding()) //packet read, so process it.
+      frame.SetMarker(FALSE);                
+    else
+      frame.SetMarker(TRUE);
+  }  //ReadOnePacket()
+  
+  frameBits += length << 3;     // count current frame bits
+
+#if PTRACING
+  bytesSent+= length;
+  PTimeInterval pT = PTimer::Tick()-startTime;
+  if(pT.GetSeconds()>0 && videoBitRate)
+    PTRACE(1, "H261\t transmit video bit rate is " << (bytesSent<<3)/ (1024 * pT.GetSeconds()) <<" k bps"
+	   << " on quality of "<< actualQuality );
+#endif
+
   return ok;
 }
+
 
 
 BOOL H323_H261Codec::Write(const BYTE * buffer,
@@ -829,6 +938,16 @@ BOOL H323_H261Codec::RenderFrame()
 
   return ok;
 }
+
+
+void H323_H261Codec::SetTxQualityLevel(int qLevel)
+{
+  qualityLevel = PMIN(14, PMAX(qLevel,3));
+
+  lowLimit = PMIN(10, qLevel - 2);
+  highLimit = qLevel + 12;
+}
 #endif
+
 
 /////////////////////////////////////////////////////////////////////////////
