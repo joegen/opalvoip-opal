@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.h,v $
- * Revision 1.2009  2002/09/06 02:41:00  robertj
+ * Revision 1.2010  2002/09/12 06:58:17  robertj
+ * Removed protocol prefix strings as static members as has problems with
+ *   use in DLL environment.
+ *
+ * Revision 2.8  2002/09/06 02:41:00  robertj
  * Added ability to specify stream or datagram (TCP or UDP) transport is to
  * be created from a transport address regardless of the addresses mode.
  *
@@ -79,9 +83,6 @@ class OpalTransportAddress : public PString
 {
   PCLASSINFO(OpalTransportAddress, PString);
   public:
-    static const char * TcpPrefix;
-    static const char * UdpPrefix;
-
   /**@name Construction */
   //@{
     OpalTransportAddress();
