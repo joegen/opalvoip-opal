@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2027  2004/05/01 10:00:41  rjongbloed
+ * Revision 1.2028  2004/05/09 13:12:37  rjongbloed
+ * Fixed issues with non fast start and non-tunnelled connections
+ *
+ * Revision 2.26  2004/05/01 10:00:41  rjongbloed
  * Fixed ClearCallSynchronous so now is actually signalled when call is destroyed.
  *
  * Revision 2.25  2004/04/26 04:33:03  rjongbloed
@@ -1228,8 +1231,6 @@ class H323Connection : public OpalConnection
       H225_TransportAddress & h245Address  /// PDU transport address to set
     );
 
-    PDECLARE_NOTIFIER(PThread, H323Connection, NewIncomingControlChannel);
-
     /**Write a PDU to the control channel.
        If there is no control channel open then this will tunnel the PDU
        into the signalling channel.
@@ -2171,6 +2172,9 @@ class H323Connection : public OpalConnection
     void SetRemoteVersions(const H225_ProtocolIdentifier & id);
     void MonitorCallStatus();
     PDECLARE_NOTIFIER(PThread, H323Connection, StartOutgoing);
+    PDECLARE_NOTIFIER(PThread, H323Connection, NewOutgoingControlChannel);
+    PDECLARE_NOTIFIER(PThread, H323Connection, NewIncomingControlChannel);
+
 
     H323EndPoint & endpoint;
 
@@ -2256,7 +2260,7 @@ class H323Connection : public OpalConnection
     };
     FastStartStates        fastStartState;
     H323LogicalChannelList fastStartChannels;
-    OpalMediaStream      * fastStartedTransmitMediaStream;
+    OpalMediaStream      * transmitterMediaStream;
 
 #if PTRACING
     static const char * const ConnectionStatesNames[NumConnectionStates];
