@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t38.cxx,v $
- * Revision 1.2012  2002/11/10 11:33:20  robertj
+ * Revision 1.2013  2004/04/07 08:21:10  rjongbloed
+ * Changes for new RTTI system.
+ *
+ * Revision 2.11  2002/11/10 11:33:20  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.10  2002/09/04 06:01:49  robertj
@@ -178,7 +181,7 @@ PObject::Comparison H323_T38Capability::Compare(const PObject & obj) const
   if (result != EqualTo)
     return result;
 
-  PAssert(obj.IsDescendant(H323_T38Capability::Class()), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H323_T38Capability), PInvalidCast);
   const H323_T38Capability & other = (const H323_T38Capability &)obj;
 
   if (mode < other.mode)
@@ -352,7 +355,7 @@ H323_T38Channel::H323_T38Channel(H323Connection & connection,
 
   H323Channel * chan = connection.FindChannel(sessionID, dir == H323Channel::IsTransmitter);
   if (chan != NULL) {
-    if (chan->IsDescendant(H323_T38Channel::Class())) {
+    if (PIsDescendant(chan, H323_T38Channel)) {
       PTRACE(3, "H323T38\tConnected to existing T.38 handler");
       t38handler = ((H323_T38Channel *)chan)->GetHandler();
     }

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2034  2004/03/29 11:04:19  rjongbloed
+ * Revision 1.2035  2004/04/07 08:21:10  rjongbloed
+ * Changes for new RTTI system.
+ *
+ * Revision 2.33  2004/03/29 11:04:19  rjongbloed
  * Fixed shut down of OpalTransportUDP when still in "connect" phase.
  *
  * Revision 2.32  2004/03/22 11:39:44  rjongbloed
@@ -665,7 +668,7 @@ void OpalTransportAddressArray::AppendStringCollection(const PCollection & coll)
 {
   for (PINDEX i = 0; i < coll.GetSize(); i++) {
     PObject * obj = coll.GetAt(i);
-    if (obj != NULL && obj->IsDescendant(PString::Class()))
+    if (obj != NULL && PIsDescendant(obj, PString))
       AppendAddress(OpalTransportAddress(*(PString *)obj));
   }
 }
