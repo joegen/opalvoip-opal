@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.4  2005/02/27 22:03:39  dereksmithies
+# Add target to generate docs with doxygen.
+#
 # Revision 1.3  2005/01/31 07:40:41  csoutheren
 # Fix for MacOSX thanks to Hannes Friederich
 #
@@ -663,6 +666,11 @@ uninstall:
 	       $(DESTDIR)$(PREFIX)/share/opal
 	rm -f $(DESTDIR)@LIBDIR@/$(OPAL_FILE) \
 	      $(DESTDIR)@LIBDIR@/libopal.so
+
+ 
+docs:
+	doxygen opal_cfg.dxy
+ 
 
 # End of file #################################################################
 
