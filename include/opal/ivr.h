@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.h,v $
- * Revision 1.2006  2004/04/18 13:35:27  rjongbloed
+ * Revision 1.2007  2004/07/11 12:42:10  rjongbloed
+ * Added function on endpoints to get the list of all media formats any
+ *   connection the endpoint may create can support.
+ *
+ * Revision 2.5  2004/04/18 13:35:27  rjongbloed
  * Fixed ability to make calls where both endpoints are specified a priori. In particular
  *   fixing the VXML support for an outgoing sip/h323 call.
  *
@@ -80,7 +84,7 @@ class OpalIVREndPoint : public OpalEndPoint
     ~OpalIVREndPoint();
   //@}
 
-  /**@name Overrides from OpalManager */
+  /**@name Overrides from OpalEndPoint */
   //@{
     /**Set up a connection to a remote party.
        This is called from the OpalManager::MakeConnection() function once
@@ -116,6 +120,17 @@ class OpalIVREndPoint : public OpalEndPoint
       const PString & party,  /// Remote party to call
       void * userData = NULL  /// Arbitrary data to pass to connection
     );
+
+    /**Get the data formats this endpoint is capable of operating.
+       This provides a list of media data format names that may be used by an
+       OpalMediaStream may be created by a connection from this endpoint.
+
+       Note that a specific connection may not actually support all of the
+       media formats returned here, but should return no more.
+
+       The default behaviour is pure.
+      */
+    virtual OpalMediaFormatList GetMediaFormats() const;
   //@}
 
   /**@name Customisation call backs */

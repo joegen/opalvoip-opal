@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.h,v $
- * Revision 1.2012  2004/05/17 13:24:18  rjongbloed
+ * Revision 1.2013  2004/07/11 12:42:10  rjongbloed
+ * Added function on endpoints to get the list of all media formats any
+ *   connection the endpoint may create can support.
+ *
+ * Revision 2.11  2004/05/17 13:24:18  rjongbloed
  * Added silence suppression.
  *
  * Revision 2.10  2004/03/11 06:54:27  csoutheren
@@ -101,7 +105,7 @@ class OpalPCSSEndPoint : public OpalEndPoint
     ~OpalPCSSEndPoint();
   //@}
 
-  /**@name Overrides from OpalManager */
+  /**@name Overrides from OpalEndPoint */
   //@{
     /**Set up a connection to a remote party.
        This is called from the OpalManager::MakeConnection() function once
@@ -137,6 +141,17 @@ class OpalPCSSEndPoint : public OpalEndPoint
       const PString & party,  /// Remote party to call
       void * userData = NULL  /// Arbitrary data to pass to connection
     );
+
+    /**Get the data formats this endpoint is capable of operating.
+       This provides a list of media data format names that may be used by an
+       OpalMediaStream may be created by a connection from this endpoint.
+
+       Note that a specific connection may not actually support all of the
+       media formats returned here, but should return no more.
+
+       The default behaviour is pure.
+      */
+    virtual OpalMediaFormatList GetMediaFormats() const;
   //@}
 
   /**@name Customisation call backs */
