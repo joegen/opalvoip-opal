@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2028  2004/07/11 12:42:10  rjongbloed
+ * Revision 1.2029  2004/07/14 13:26:14  rjongbloed
+ * Fixed issues with the propagation of the "established" phase of a call. Now
+ *   calling an OnEstablished() chain like OnAlerting() and OnConnected() to
+ *   finally arrive at OnEstablishedCall() on OpalManager
+ *
+ * Revision 2.27  2004/07/11 12:42:10  rjongbloed
  * Added function on endpoints to get the list of all media formats any
  *   connection the endpoint may create can support.
  *
@@ -469,10 +474,8 @@ class OpalManager : public PObject
        For this you can obtain the name of the caller by using the function
        OpalConnection::GetRemotePartyName().
 
-       The default behaviour calls the OpalConnection::SendConnectionAlert()
-       function on the all the other connections contained in the OpalCall
-       this connection is associated with. As a rule that means the A party of
-       the call.
+       The default behaviour calls the OnAlerting() on the connections
+       associated OpalCall object.
      */
     virtual void OnAlerting(
       OpalConnection & connection   /// Connection that was established
@@ -486,9 +489,26 @@ class OpalManager : public PObject
        In the context of H.323 this means that the CONNECT pdu has been
        received.
 
-       The default behaviour calls the OpalManager function of the same name.
+       The default behaviour calls the OnConnected() on the connections
+       associated OpalCall object.
       */
     virtual void OnConnected(
+      OpalConnection & connection   /// Connection that was established
+    );
+
+    /**A call back function whenever a connection is "established".
+       This indicates that a connection to an endpoint was connected and that
+       media streams are opened. 
+
+       In the context of H.323 this means that the CONNECT pdu has been
+       received and either fast start was in operation or the subsequent Open
+       Logical Channels have occurred. For SIP it indicates the INVITE/OK/ACK
+       sequence is complete.
+
+       The default behaviour calls the OnEstablished() on the connections
+       associated OpalCall object.
+      */
+    virtual void OnEstablished(
       OpalConnection & connection   /// Connection that was established
     );
 
@@ -506,9 +526,10 @@ class OpalManager : public PObject
        An application will not typically call this function as it is used by
        the OpalManager during a release of the connection.
 
-       The default behaviour indicates to the call that the conection has been
-       released so it can release the last remaining connection and then
-       returns TRUE.
+       The default behaviour calls the OnReleased() on the connections
+       associated OpalCall object. This indicates to the call that the
+       conection has been released so it can release the last remaining
+       connection and then returns TRUE.
       */
     virtual BOOL OnReleased(
       OpalConnection & connection   /// Connection that was established
