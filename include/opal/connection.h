@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2012  2002/02/11 09:32:12  robertj
+ * Revision 1.2013  2002/02/19 07:42:07  robertj
+ * Added OpalRFC2833 as a OpalMediaFormat variable.
+ * Restructured media bypass functions to fix problems with RFC2833.
+ *
+ * Revision 2.11  2002/02/11 09:32:12  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.10  2002/02/11 07:38:35  robertj
@@ -75,13 +79,13 @@
 
 #include <opal/mediafmt.h>
 #include <opal/mediastrm.h>
+#include <opal/transports.h>
 #include <ptclib/dtmf.h>
 
 
 class OpalEndPoint;
 class OpalCall;
-class OpalTransportAddress;
-class OpalRFC2833;
+class OpalRFC2833Proto;
 class OpalRFC2833Info;
 
 
@@ -492,21 +496,27 @@ class OpalConnection : public PObject
        The default behaviour returns FALSE indicating that media bypass is not
        possible.
      */
-    virtual BOOL CanDoMediaBypass(
+    virtual BOOL IsMediaBypassPossible(
       unsigned sessionID                  /// Session ID for media channel
     ) const;
 
-    /**Get the media transport address for the connection.
-       This is primarily used to determine if media bypass is possible for the
-       call between two connections.
+    /**Meda information structure for GetMediaInformation() function.
+      */
+    struct MediaInformation {
+      MediaInformation() { rfc2833 = RTP_DataFrame::IllegalPayloadType; }
 
-       The default behaviour returns FALSE indicating that media bypass is not
-       possible.
+      OpalTransportAddress data;           /// Data channel address
+      OpalTransportAddress control;        /// Control channel address
+      RTP_DataFrame::PayloadTypes rfc2833; /// Payload type for RFC2833
+    };
+
+    /**Get information on the media channel for the connection.
+       The default behaviour returns FALSE indicating that no media information
+       is available for the session ID.
      */
-    virtual BOOL GetMediaTransportAddress(
-      unsigned sessionID,                 /// Session ID for media channel
-      OpalTransportAddress & data,        /// Data channel address
-      OpalTransportAddress & control      /// Control channel address
+    virtual BOOL GetMediaInformation(
+      unsigned sessionID,     /// Session ID for media channel
+      MediaInformation & info /// Information on media channel
     ) const;
   //@}
 
@@ -783,7 +793,7 @@ class OpalConnection : public PObject
     PMutex              userInputMutex;
     PSyncPoint          userInputAvailable;
     SendUserInputModes  sendUserInputMode;
-    OpalRFC2833       * rfc2833Handler;
+    OpalRFC2833Proto  * rfc2833Handler;
 
     OpalMediaStreamList mediaStreams;
     RTP_SessionManager  rtpSessions;
