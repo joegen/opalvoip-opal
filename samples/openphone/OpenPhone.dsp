@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386
-# ADD LINK32 opals.lib ptclib.lib ptlib.lib wxmsw.lib tiff.lib jpeg.lib png.lib regex.lib zlib.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib imm32.lib rpcrt4.lib wsock32.lib /nologo /subsystem:windows /machine:I386
+# ADD LINK32 opals.lib ptclib.lib ptlib.lib wxxrc.lib wxmsw.lib tiff.lib jpeg.lib png.lib regex.lib zlib.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib imm32.lib rpcrt4.lib wsock32.lib /nologo /subsystem:windows /machine:I386
 
 !ELSEIF  "$(CFG)" == "OpenPhone - Win32 Debug"
 
@@ -79,7 +79,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 opalsd.lib ptclibd.lib ptlibsd.lib wxmswd.lib tiffd.lib jpegd.lib pngd.lib regexd.lib zlibd.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib imm32.lib rpcrt4.lib wsock32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
+# ADD LINK32 opalsd.lib ptclibd.lib ptlibsd.lib wxxrcd.lib wxmswd.lib tiffd.lib jpegd.lib pngd.lib regexd.lib zlibd.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib imm32.lib rpcrt4.lib wsock32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
 
 !ENDIF 
 
