@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2075  2005/03/01 18:43:15  dsandras
+ * Revision 1.2076  2005/03/01 19:22:18  dsandras
+ * Call AdjustMediaFormats or the SinkMediaStream can be opened with a remote codec that is disabled locally.
+ *
+ * Revision 2.74  2005/03/01 18:43:15  dsandras
  * Removed call to OnEstablished() as it is already called via H323UnidirectionalChannel::Open().
  *
  * Revision 2.73  2005/02/24 19:58:26  dsandras
@@ -4354,7 +4357,12 @@ void H323Connection::InternalEstablishedConnectionCheck()
 
 OpalMediaFormatList H323Connection::GetMediaFormats() const
 {
-  return remoteCapabilities.GetMediaFormats();
+  OpalMediaFormatList list;
+  
+  list = remoteCapabilities.GetMediaFormats();
+  AdjustMediaFormats(list);
+
+  return list;
 }
 
 
