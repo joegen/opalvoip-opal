@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2010  2004/05/24 13:37:32  rjongbloed
+ * Revision 1.2011  2004/07/11 12:34:49  rjongbloed
+ * Added function to get a list of all possible media formats that may be used given
+ *   a list of media and taking into account all of the registered transcoders.
+ *
+ * Revision 2.9  2004/05/24 13:37:32  rjongbloed
  * Fixed propagating marker bit across transcoder which is important for
  *   silence suppression, thanks Ted Szoczei
  *
@@ -264,6 +268,26 @@ OpalMediaFormatList OpalTranscoder::GetSourceFormats(const OpalMediaFormat & dst
   }
 
   return list;
+}
+
+
+OpalMediaFormatList OpalTranscoder::GetPossibleFormats(const OpalMediaFormatList & formats)
+{
+  OpalMediaFormatList possibleFormats;
+
+  // Run through the formats connection can do directly and calculate all of
+  // the possible formats, including ones via a transcoder
+  for (PINDEX f = 0; f < formats.GetSize(); f++) {
+    OpalMediaFormat format = formats[f];
+    possibleFormats += format;
+    OpalMediaFormatList srcFormats = GetSourceFormats(format);
+    for (PINDEX i = 0; i < srcFormats.GetSize(); i++) {
+      if (GetDestinationFormats(srcFormats[i]).GetSize() > 0)
+        possibleFormats += srcFormats[i];
+    }
+  }
+
+  return possibleFormats;
 }
 
 
