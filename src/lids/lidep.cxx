@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2012  2001/11/14 01:31:55  robertj
+ * Revision 1.2013  2002/01/22 05:16:59  robertj
+ * Revamp of user input API triggered by RFC2833 support
+ *
+ * Revision 2.11  2001/11/14 01:31:55  robertj
  * Corrected placement of adjusting media format list.
  *
  * Revision 2.10  2001/11/13 06:25:56  robertj
@@ -381,7 +384,7 @@ BOOL OpalLineConnection::OnReleased()
   if (handlerThread != NULL) {
     PTRACE(3, "LID Con\tAwaiting handler thread termination " << *this);
     // Stop the signalling handler thread
-    SetUserIndication(PString()); // Break out of ReadUserInput
+    SetUserInput(PString()); // Break out of ReadUserInput
     handlerThread->WaitForTermination();
     delete handlerThread;
     handlerThread = NULL;
@@ -398,7 +401,7 @@ BOOL OpalLineConnection::OnReleased()
 
 PString OpalLineConnection::GetDestinationAddress()
 {
-  PString str = ReadUserIndication();
+  PString str = ReadUserInput();
   if (phase == SetUpPhase)
     return str;
 
@@ -433,13 +436,13 @@ OpalMediaStream * OpalLineConnection::CreateMediaStream(BOOL isSource, unsigned 
 }
 
 
-BOOL OpalLineConnection::SendUserIndicationString(const PString & value)
+BOOL OpalLineConnection::SendUserInputString(const PString & value)
 {
   return line.PlayDTMF(value);
 }
 
 
-BOOL OpalLineConnection::SendUserIndicationTone(char tone, int duration)
+BOOL OpalLineConnection::SendUserInputTone(char tone, int duration)
 {
   if (duration <= 0)
     return line.PlayDTMF(&tone);
@@ -448,7 +451,7 @@ BOOL OpalLineConnection::SendUserIndicationTone(char tone, int duration)
 }
 
 
-BOOL OpalLineConnection::PromptUserIndication(BOOL play)
+BOOL OpalLineConnection::PromptUserInput(BOOL play)
 {
   PTRACE(3, "LID Con\tConnection " << callToken << " dial tone " << (play ? "on" : "off"));
 
@@ -481,7 +484,7 @@ void OpalLineConnection::Monitor(BOOL offHook)
 
     char tone;
     while ((tone = line.ReadDTMF()) != '\0')
-      OnUserIndicationTone(tone, 0);
+      OnUserInputTone(tone, 180);
 
     wasOffHook = TRUE;
   }
