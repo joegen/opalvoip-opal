@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2011  2003/03/24 04:32:58  robertj
+ * Revision 1.2012  2003/12/20 12:21:18  rjongbloed
+ * Applied more enhancements, thank you very much Ted Szoczei
+ *
+ * Revision 2.10  2003/03/24 04:32:58  robertj
  * SIP register must have a server address
  *
  * Revision 2.9  2003/03/06 03:57:47  robertj
@@ -233,10 +236,6 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
 
 BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
 {
-  // send a response just in case this takes a while
-  SIP_PDU trying(*request, SIP_PDU::Information_Trying);
-  trying.Write(transport);
-
   SIPMIMEInfo & mime = request->GetMIME();
 
   // parse the incoming To field, and check if we accept incoming calls for this address
