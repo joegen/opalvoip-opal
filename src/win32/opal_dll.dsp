@@ -54,7 +54,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib /nologo /subsystem:windows /dll /machine:I386
-# ADD LINK32 ptclib.lib ptlib.lib setupapi.lib Delayimp.lib winmm.lib msacm32.lib wsock32.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:windows /dll /pdb:none /debug /debugtype:both /machine:I386 /def:"..\..\lib\Release\opal.def" /out:"..\..\lib\opal.dll" /delayload:setupapi.dll
+# ADD LINK32 ptclib.lib ptlib.lib setupapi.lib Delayimp.lib winmm.lib msacm32.lib wsock32.lib kernel32.lib user32.lib gdi32.lib advapi32.lib shell32.lib /nologo /subsystem:windows /dll /pdb:none /debug /debugtype:both /machine:I386 /def:"..\..\lib\Release\opal.def" /out:"..\..\lib\opal.dll" /delayload:setupapi.dll
 # Begin Custom Build - Extracting debug symbols
 OutDir=.\..\..\lib
 TargetName=opal
@@ -90,7 +90,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib /nologo /subsystem:windows /dll /debug /machine:I386
-# ADD LINK32 ptclibd.lib ptlibd.lib mpr.lib setupapi.lib Delayimp.lib winmm.lib msacm32.lib wsock32.lib kernel32.lib user32.lib advapi32.lib shell32.lib /nologo /subsystem:windows /dll /debug /machine:I386 /def:"..\..\lib\Debug\opald.def" /out:"..\..\lib\opald.dll" /delayload:setupapi.dll
+# ADD LINK32 ptclibd.lib ptlibd.lib mpr.lib setupapi.lib Delayimp.lib winmm.lib msacm32.lib wsock32.lib kernel32.lib user32.lib advapi32.lib shell32.lib gdi32.lib /nologo /subsystem:windows /dll /debug /machine:I386 /def:"..\..\lib\Debug\opald.def" /out:"..\..\lib\opald.dll" /delayload:setupapi.dll
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "OPAL_dll - Win32 No Trace"
@@ -180,7 +180,7 @@ TargetName=opal
 InputPath=.\opal.dtf
 
 "$(IntDir)\$(TargetName).def" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	MergeSym -I "$(INCLUDE)" -x ptlib.dtf -x $(InputDir)\Private.def $(OutDir)\opals.lib $(InputPath) 
+	MergeSym -I "$(INCLUDE)" -x ptlib\msos\ptlib.dtf -x $(InputDir)\Private.def $(OutDir)\opals.lib $(InputPath) 
 	copy $(InputPath)+nul $(IntDir)\$(TargetName).def > nul 
 	
 # End Custom Build
@@ -236,7 +236,7 @@ TargetName=opald
 InputPath=.\opald.dtf
 
 "$(IntDir)\$(TargetName).def" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	MergeSym -I "$(INCLUDE)" -x ptlibd.dtf -x $(InputDir)\Private.def $(OutDir)\opalsd.lib $(InputPath) 
+	MergeSym -I "$(INCLUDE)" -x ptlib\msos\ptlibd.dtf -x $(InputDir)\Private.def $(OutDir)\opalsd.lib $(InputPath) 
 	copy $(InputPath)+nul $(IntDir)\$(TargetName).def  > nul 
 	
 # End Custom Build
@@ -277,7 +277,7 @@ TargetName=opaln
 InputPath=.\opaln.dtf
 
 "$(IntDir)\$(TargetName).def" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	MergeSym -I "$(INCLUDE)" -x ptlib.dtf -x $(InputDir)\Private.def $(OutDir)\opalsn.lib $(InputPath) 
+	MergeSym -I "$(INCLUDE)" -x ptlib\msos\ptlib.dtf -x $(InputDir)\Private.def $(OutDir)\opalsn.lib $(InputPath) 
 	copy $(InputPath)+nul $(IntDir)\$(TargetName).def  > nul 
 	
 # End Custom Build
