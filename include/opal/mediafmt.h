@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2020  2004/03/11 06:54:27  csoutheren
+ * Revision 1.2021  2004/03/22 11:32:41  rjongbloed
+ * Added new codec type for 16 bit Linear PCM as must distinguish between the internal
+ *   format used by such things as the sound card and the RTP payload format which
+ *   is always big endian.
+ *
+ * Revision 2.19  2004/03/11 06:54:27  csoutheren
  * Added ability to disable SIP or H.323 stacks
  *
  * Revision 2.18  2004/02/07 02:18:18  rjongbloed
@@ -443,23 +448,27 @@ class OpalMediaFormat : public PCaselessString
 
 // List of known media formats
 
-#define OPAL_PCM16         "PCM-16"
-#define OPAL_G711_ULAW_64K "G.711-uLaw-64k"
-#define OPAL_G711_ALAW_64K "G.711-ALaw-64k"
-#define OPAL_G728          "G.728"
-#define OPAL_G729          "G.729"
-#define OPAL_G729A         "G.729A"
-#define OPAL_G729B         "G.729B"
-#define OPAL_G729AB        "G.729A/B"
-#define OPAL_G7231         "G.723.1"
-#define OPAL_G7231_6k3     OPAL_G7231
-#define OPAL_G7231_5k3     "G.723.1(5.3k)"
-#define OPAL_G7231A_6k3    "G.723.1A(6.3k)"
-#define OPAL_G7231A_5k3    "G.723.1A(5.3k)"
-#define OPAL_GSM0610       "GSM-06.10"
-#define OPAL_RFC2833       "UserInput/RFC2833"
+#define OPAL_PCM16          "PCM-16"
+#define OPAL_L16_MONO_8KHZ  "Linear-16-Mono-8kHz"
+#define OPAL_L16_MONO_16KHZ "Linear-16-Mono-16kHz"
+#define OPAL_G711_ULAW_64K  "G.711-uLaw-64k"
+#define OPAL_G711_ALAW_64K  "G.711-ALaw-64k"
+#define OPAL_G728           "G.728"
+#define OPAL_G729           "G.729"
+#define OPAL_G729A          "G.729A"
+#define OPAL_G729B          "G.729B"
+#define OPAL_G729AB         "G.729A/B"
+#define OPAL_G7231          "G.723.1"
+#define OPAL_G7231_6k3      OPAL_G7231
+#define OPAL_G7231_5k3      "G.723.1(5.3k)"
+#define OPAL_G7231A_6k3     "G.723.1A(6.3k)"
+#define OPAL_G7231A_5k3     "G.723.1A(5.3k)"
+#define OPAL_GSM0610        "GSM-06.10"
+#define OPAL_RFC2833        "UserInput/RFC2833"
 
 extern OpalMediaFormat const OpalPCM16;
+extern OpalMediaFormat const OpalL16Mono8kHz;
+extern OpalMediaFormat const OpalL16Mono16kHz;
 
 extern OpalMediaFormat const OpalG711uLaw;
 extern OpalMediaFormat const OpalG711ALaw;
