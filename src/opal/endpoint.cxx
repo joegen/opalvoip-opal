@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2014  2002/07/04 07:41:47  robertj
+ * Revision 1.2015  2002/09/06 02:42:03  robertj
+ * Fixed bug where get endless wait if clearing calls and there aren't any.
+ *
+ * Revision 2.13  2002/07/04 07:41:47  robertj
  * Fixed memory/thread leak of transports.
  *
  * Revision 2.12  2002/07/01 04:56:33  robertj
@@ -294,10 +297,14 @@ void OpalEndPoint::ClearAllCalls(OpalCallEndReason reason, BOOL wait)
 {
   inUseFlag.Wait();
 
-  // Add all connections to the to be deleted set
-  PINDEX i;
-  for (i = 0; i < connectionsActive.GetSize(); i++)
-    manager.ClearCall(connectionsActive.GetKeyAt(i), reason);
+  if (connectionsActive.IsEmpty())
+    wait = FALSE;
+  else {
+    // Add all connections to the to be deleted set
+    PINDEX i;
+    for (i = 0; i < connectionsActive.GetSize(); i++)
+      manager.ClearCall(connectionsActive.GetKeyAt(i), reason);
+  }
 
   inUseFlag.Signal();
 
