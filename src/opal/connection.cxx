@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2008  2001/10/15 04:34:02  robertj
+ * Revision 1.2009  2001/11/02 10:45:19  robertj
+ * Updated to OpenH323 v1.7.3
+ *
+ * Revision 2.7  2001/10/15 04:34:02  robertj
  * Added delayed start of media patch threads.
  * Removed answerCall signal and replaced with state based functions.
  *
@@ -160,6 +163,21 @@ BOOL OpalConnection::Lock()
 
   innerMutex.Wait();
   return TRUE;
+}
+
+
+int OpalConnection::TryLock()
+{
+  if (!outerMutex.Wait(0))
+    return -1;
+
+  if (isBeingReleased) {
+    outerMutex.Signal();
+    return 0;
+  }
+
+  innerMutex.Wait();
+  return 1;
 }
 
 

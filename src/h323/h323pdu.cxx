@@ -27,8 +27,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.cxx,v $
- * Revision 1.2004  2001/10/05 00:22:14  robertj
+ * Revision 1.2005  2001/11/02 10:45:19  robertj
+ * Updated to OpenH323 v1.7.3
+ *
+ * Revision 2.3  2001/10/05 00:22:14  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 1.87  2001/10/18 00:58:51  robertj
+ * Fixed problem with GetDestinationAlias() adding source aliases instead
+ *   of the destination from the setup PDU, thanks Mikael Stolt.
+ *
+ * Revision 1.86  2001/10/09 06:55:26  robertj
+ * Fixed separating destCallSignalAddress fields with tabs in
+ *    GetDestinationAlias() function, thanks Lee Kirchhoff
  *
  * Revision 2.2  2001/08/17 08:29:44  robertj
  * Update from OpenH323
@@ -876,10 +887,10 @@ PString H323SignalPDU::GetDestinationAlias(BOOL firstAliasOnly) const
       if (firstAliasOnly)
         return H323GetAliasAddressString(setup.m_destinationAddress[0]);
 
-      for (PINDEX i = 0; i < setup.m_sourceAddress.GetSize(); i++) {
+      for (PINDEX i = 0; i < setup.m_destinationAddress.GetSize(); i++) {
         if (!aliases.IsEmpty())
           aliases << '\t';
-        aliases << H323GetAliasAddressString(setup.m_sourceAddress[i]);
+        aliases << H323GetAliasAddressString(setup.m_destinationAddress[i]);
       }
     }
 

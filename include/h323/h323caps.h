@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.h,v $
- * Revision 1.2003  2001/10/05 00:22:13  robertj
+ * Revision 1.2004  2001/11/02 10:45:19  robertj
+ * Updated to OpenH323 v1.7.3
+ *
+ * Revision 2.2  2001/10/05 00:22:13  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.1  2001/08/01 05:12:04  robertj
@@ -36,6 +39,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.25  2001/10/24 01:20:34  robertj
+ * Added code to help with static linking of H323Capability names database.
  *
  * Revision 1.24  2001/09/21 02:48:51  robertj
  * Added default implementation for PDU encode/decode for codecs
@@ -1950,11 +1956,11 @@ class H323CapabilityRegistration : public PCaselessString
 
 
 #define H323_REGISTER_CAPABILITY_FUNCTION(cls, name, epvar) \
-static class cls##_Registration : public H323CapabilityRegistration { \
+class cls##_Registration : public H323CapabilityRegistration { \
   public: \
     cls##_Registration() : H323CapabilityRegistration(name) { } \
     H323Capability * Create(H323EndPoint & ep) const; \
-} instance_##cls##_Registration; \
+} cls##_Registration_Instance; \
 H323Capability * cls##_Registration::Create(H323EndPoint & epvar) const
 
 #define H323_NO_EP_VAR
@@ -1967,6 +1973,11 @@ H323Capability * cls##_Registration::Create(H323EndPoint & epvar) const
   H323_REGISTER_CAPABILITY_FUNCTION(cls, name, ep) \
   { return new cls(ep); }
 
+
+#define H323_STATIC_LOAD_REGISTER_CAPABILITY(cls) \
+  class cls##_Registration; \
+  extern cls##_Registration cls##_Registration_Instance; \
+  static cls##_Registration * cls##_Registration_Static_Library_Loader = &cls##_Registration_Instance
 
 
 #endif // __H323_H323CAPS_H

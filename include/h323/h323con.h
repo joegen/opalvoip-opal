@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2007  2001/10/15 04:31:14  robertj
+ * Revision 1.2008  2001/11/02 10:45:19  robertj
+ * Updated to OpenH323 v1.7.3
+ *
+ * Revision 2.6  2001/10/15 04:31:14  robertj
  * Removed answerCall signal and replaced with state based functions.
  * Maintained H.323 answerCall API for backward compatibility.
  *
@@ -49,6 +52,19 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.13  2001/11/01 06:11:54  robertj
+ * Plugged very small mutex hole that could cause crashes.
+ *
+ * Revision 1.12  2001/11/01 00:27:33  robertj
+ * Added default Fast Start disabled and H.245 tunneling disable flags
+ *   to the endpoint instance.
+ *
+ * Revision 1.11  2001/10/24 00:54:13  robertj
+ * Made cosmetic changes to H.245 miscellaneous command function.
+ *
+ * Revision 1.10  2001/10/23 02:18:06  dereks
+ * Initial release of CU30 video codec.
  *
  * Revision 1.9  2001/09/26 06:20:56  robertj
  * Fixed properly nesting connection locking and unlocking requiring a quite
@@ -161,9 +177,20 @@ class H323Connection : public OpalConnection
     H323Connection(
       OpalCall & call,                /// Call object connection belongs to
       H323EndPoint & endpoint,        /// H323 End Point object
+      const PString & token           /// Token for new connection
+    );
+    H323Connection(
+      OpalCall & call,                /// Call object connection belongs to
+      H323EndPoint & endpoint,        /// H323 End Point object
       const PString & token,          /// Token for new connection
-      BOOL disableFastStart = FALSE,  /// Flag to prevent fast start operation
-      BOOL disableTunneling = FALSE   /// Flag to prevent H.245 tunneling
+      BOOL disableFastStart     /// Flag to prevent fast start operation
+    );
+    H323Connection(
+      OpalCall & call,                /// Call object connection belongs to
+      H323EndPoint & endpoint,        /// H323 End Point object
+      const PString & token,          /// Token for new connection
+      BOOL disableFastStart,    /// Flag to prevent fast start operation
+      BOOL disableTunneling     /// Flag to prevent H.245 tunneling
     );
 
     /**Destroy the connection
@@ -1196,6 +1223,13 @@ class H323Connection : public OpalConnection
       int additionalBuffer     /// Additional size of video decoder buffer
     );
 
+    /**Send a miscellaneous command on the associated H245 channel.
+    */
+    void SendLogicalChannelMiscCommand(
+      H323Channel & channel,  /// Channel to send command for
+      unsigned command        /// Command code to send
+    );
+
     /**Get a logical channel.
        Locates the specified channel number and returns a pointer to it.
       */
@@ -1589,6 +1623,9 @@ class H323Connection : public OpalConnection
     H450xDispatcher                  * h450dispatcher;
     H4502Handler                     * h4502handler;
     H4504Handler                     * h4504handler;
+
+  private:
+    void Construct(BOOL disableFastStart, BOOL disableTunneling);
 };
 
 
