@@ -302,6 +302,10 @@ SOURCE=..\codec\rfc2833.cxx
 # End Source File
 # Begin Source File
 
+SOURCE=..\codec\silencedetect.cxx
+# End Source File
+# Begin Source File
+
 SOURCE=..\codec\speexcodec.cxx
 # End Source File
 # Begin Source File
@@ -589,6 +593,10 @@ SOURCE=..\..\include\codec\opalwavfile.h
 # Begin Source File
 
 SOURCE=..\..\include\codec\rfc2833.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\codec\silencedetect.h
 # End Source File
 # Begin Source File
 
