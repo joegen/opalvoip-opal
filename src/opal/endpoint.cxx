@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2011  2002/04/05 10:37:46  robertj
+ * Revision 1.2012  2002/06/16 02:24:43  robertj
+ * Fixed memory leak of failed listeners, thanks Ted Szoczei
+ *
+ * Revision 2.10  2002/04/05 10:37:46  robertj
  * Rearranged OnRelease to remove the connection from endpoints connection
  *   list at the end of the release phase rather than the beginning.
  *
@@ -148,15 +151,16 @@ BOOL OpalEndPoint::StartListener(const OpalTransportAddress & iface)
 
 BOOL OpalEndPoint::StartListener(OpalListener * listener)
 {
-  // Use default if NULL specified
   if (listener == NULL)
-    listener = new OpalListenerTCP(*this, INADDR_ANY, defaultSignalPort);
+    return FALSE;
 
   // as the listener is not open, this will have the effect of immediately
   // stopping the listener thread. This is good - it means that the 
   // listener Close function will appear to have stopped the thread
-  if (!listener->Open(PCREATE_NOTIFIER(ListenerCallback)))
+  if (!listener->Open(PCREATE_NOTIFIER(ListenerCallback))) {
+    delete listener;
     return FALSE;
+  }
 
   listeners.Append(listener);
   return TRUE;
