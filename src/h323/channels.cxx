@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2012  2002/01/22 05:24:36  robertj
+ * Revision 1.2013  2002/02/11 07:40:02  robertj
+ * Added media bypass for streams between compatible protocols.
+ *
+ * Revision 2.11  2002/01/22 05:24:36  robertj
  * Added enum for illegal payload type value.
  * Update from OpenH323
  *
@@ -534,6 +537,13 @@ unsigned H323Channel::GetSessionID() const
 }
 
 
+BOOL H323Channel::GetMediaTransportAddress(OpalTransportAddress & /*data*/,
+                                           OpalTransportAddress & /*control*/) const
+{
+  return FALSE;
+}
+
+
 void H323Channel::Close()
 {
   if (!opened || terminating)
@@ -952,14 +962,24 @@ BOOL H323_RTPChannel::OnReceivedAckPDU(const H245_H2250LogicalChannelAckParamete
 H323_ExternalRTPChannel::H323_ExternalRTPChannel(H323Connection & connection,
                                                  const H323Capability & capability,
                                                  Directions direction,
+                                                 unsigned id)
+  : H323_RealTimeChannel(connection, capability, direction)
+{
+  Construct(id);
+}
+
+
+H323_ExternalRTPChannel::H323_ExternalRTPChannel(H323Connection & connection,
+                                                 const H323Capability & capability,
+                                                 Directions direction,
                                                  unsigned id,
-                                                 H323TransportAddress & data,
-                                                 H323TransportAddress & control)
+                                                 const H323TransportAddress & data,
+                                                 const H323TransportAddress & control)
   : H323_RealTimeChannel(connection, capability, direction),
     externalMediaAddress(data),
     externalMediaControlAddress(control)
 {
-  sessionID = id;
+  Construct(id);
 }
 
 
@@ -973,7 +993,17 @@ H323_ExternalRTPChannel::H323_ExternalRTPChannel(H323Connection & connection,
     externalMediaAddress(ip, dataPort),
     externalMediaControlAddress(ip, (WORD)(dataPort+1))
 {
+  Construct(id);
+}
+
+
+void H323_ExternalRTPChannel::Construct(unsigned id)
+{
+  mediaStream = new OpalNullMediaStream(receiver, id);
   sessionID = id;
+
+  PTRACE(3, "H323RTP\tExternal " << (receiver ? "receiver" : "transmitter")
+         << " created using session " << GetSessionID());
 }
 
 
@@ -983,8 +1013,23 @@ unsigned H323_ExternalRTPChannel::GetSessionID() const
 }
 
 
+BOOL H323_ExternalRTPChannel::GetMediaTransportAddress(OpalTransportAddress & data,
+                                                       OpalTransportAddress & control) const
+{
+  data = remoteMediaAddress;
+  control = remoteMediaControlAddress;
+  return TRUE;
+}
+
+
 BOOL H323_ExternalRTPChannel::Start()
 {
+  if (!connection.GetCall().GetMediaTransportAddress(connection,
+                                                     sessionID,
+                                                     externalMediaAddress,
+                                                     externalMediaControlAddress))
+    return FALSE;
+
   return Open();
 }
 
@@ -1088,7 +1133,7 @@ BOOL H323_ExternalRTPChannel::OnReceivedAckPDU(const H245_H2250LogicalChannelAck
     return FALSE;
 
   if (!param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaChannel)) {
-    PTRACE(1, "iFaceRTPChannel\tNo mediaChannel specified");
+    PTRACE(1, "LogChan\tNo mediaChannel specified");
     return FALSE;
   }
 
@@ -1097,6 +1142,14 @@ BOOL H323_ExternalRTPChannel::OnReceivedAckPDU(const H245_H2250LogicalChannelAck
     return FALSE;
 
   return TRUE;
+}
+
+
+void H323_ExternalRTPChannel::SetExternalAddress(const H323TransportAddress & data,
+                                                 const H323TransportAddress & control)
+{
+  externalMediaAddress = data;
+  externalMediaControlAddress = control;
 }
 
 
