@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2031  2004/04/25 02:53:29  rjongbloed
+ * Revision 1.2032  2004/04/29 11:48:32  rjongbloed
+ * Fixed possible deadlock if close all and close synchronous.
+ *
+ * Revision 2.30  2004/04/25 02:53:29  rjongbloed
  * Fixed GNU 3.4 warnings
  *
  * Revision 2.29  2004/04/18 13:35:28  rjongbloed
@@ -383,14 +386,16 @@ BOOL OpalManager::ClearCall(const PString & token,
     The real work is done in the OpalGarbageCollector thread.
    */
 
-  PWaitAndSignal wait(callsMutex);
+  {
+    PWaitAndSignal wait(callsMutex);
 
-  // Find the call by token, callid or conferenceid
-  OpalCall * call = FindCallWithoutLocks(token);
-  if (call == NULL)
-    return FALSE;
+    // Find the call by token, callid or conferenceid
+    OpalCall * call = FindCallWithoutLocks(token);
+    if (call == NULL)
+      return FALSE;
 
-  call->Clear(reason);
+    call->Clear(reason);
+  }
 
   if (sync != NULL)
     sync->Wait();
