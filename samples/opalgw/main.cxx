@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.4  2004/03/16 11:06:28  rjongbloed
+ * Changed proxy to URL
+ *
  * Revision 1.3  2004/03/13 06:52:30  rjongbloed
  * Slight rearrangement of local party name and alias list to beter match common
  *   behaviour in ancestor.
@@ -101,7 +104,7 @@ static const char GatekeeperPasswordKey[] = "Gatekeeper Password";
 static const char GatekeeperTokenOIDKey[] = "Gatekeeper Token OID";
 
 static const char SIPUsernameKey[] = "SIP User Name";
-static const char SIPPasswordKey[] = "SIP Password";
+static const char SIPProxyKey[] = "SIP Proxy URL";
 static const char SIPRegistrarKey[] = "SIP Registrar";
 static const char SIPListenersKey[] = "SIP Listener Interfaces";
 
@@ -419,8 +422,9 @@ BOOL MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   sipEP->SetDefaultLocalPartyName(cfg.GetString(SIPUsernameKey, sipEP->GetDefaultLocalPartyName()));
   rsrc->Add(new PHTTPStringField(SIPUsernameKey, 25, sipEP->GetDefaultLocalPartyName()));
 
-  sipEP->SetProxyPassword(PHTTPPasswordField::Decrypt(cfg.GetString(SIPPasswordKey, sipEP->GetProxyPassword())));
-  rsrc->Add(new PHTTPStringField(SIPPasswordKey, 25, sipEP->GetProxyPassword()));
+  PString proxy = sipEP->GetProxy().AsString();
+  sipEP->SetProxy(cfg.GetString(SIPProxyKey, proxy));
+  rsrc->Add(new PHTTPStringField(SIPProxyKey, 25, proxy));
 
   PString registrar = cfg.GetString(SIPRegistrarKey);
   rsrc->Add(new PHTTPStringField(SIPRegistrarKey, 25, registrar));
