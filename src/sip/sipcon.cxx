@@ -24,7 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2044  2004/11/29 08:18:32  csoutheren
+ * Revision 1.2045  2004/12/12 13:40:45  dsandras
+ * - Correctly update the remote party name, address and applications at various strategic places.
+ * - If no outbound proxy authentication is provided, then use the registrar authentication parameters when proxy authentication is required.
+ * - Fixed use of connectedTime.
+ * - Correctly set the displayName in the FROM field for outgoing connections.
+ * - Added 2 "EndedBy" cases when a connection ends.
+ *
+ * Revision 2.43  2004/11/29 08:18:32  csoutheren
  * Added support for setting the SIP authentication domain/realm as needed for many service
  *  providers
  *
@@ -216,7 +223,9 @@ SIPConnection::SIPConnection(OpalCall & call,
     targetAddress.SetParamVar("proxy", PString::Empty());
   }
 
-  remotePartyAddress = targetAddress.AsQuotedString();
+  SIPURL url (targetAddress.AsQuotedString ());
+  remotePartyAddress = url.AsString ();
+  remotePartyName = url.GetDisplayName ();
 
   if (proxy.IsEmpty())
     proxy = endpoint.GetProxy();
@@ -226,7 +235,12 @@ SIPConnection::SIPConnection(OpalCall & call,
     authentication.SetUsername(proxy.GetUserName());
     authentication.SetPassword(proxy.GetPassword());
   }
-
+  else { // If no proxy, then we use the REGISTER auth params
+    
+    authentication.SetUsername (endpoint.GetAuthentication ().GetUsername ());
+    authentication.SetPassword (endpoint.GetAuthentication ().GetPassword ());
+  }
+  
   if (inviteTransport == NULL)
     transport = NULL;
   else {
@@ -375,6 +389,8 @@ BOOL SIPConnection::SetConnected()
   response.SetSDP(sdpOut);
   response.Write(*transport);
   phase = ConnectedPhase;
+
+  connectedTime = PTime ();
   
   return TRUE;
 }
@@ -667,6 +683,7 @@ void SIPConnection::SetLocalPartyAddress()
   WORD port;
   taddr.GetIpAndPort(addr, port);
   PString domain = endpoint.GetDomain();
+  PString displayName = endpoint.GetDefaultDisplayName();
 
   if (domain.IsEmpty()) {
     domain = addr.AsString();
@@ -674,7 +691,7 @@ void SIPConnection::SetLocalPartyAddress()
       domain += psprintf(":%d", port);
   }
 
-  SIPURL myAddress(GetLocalPartyName() + "@" + domain); 
+  SIPURL myAddress("\"" + displayName + "\" <" + GetLocalPartyName() + "@" + domain + ">"); 
 
   // add displayname, <> and tag
   SetLocalPartyAddress(myAddress.AsQuotedString() + ";tag=" + GetTag());
@@ -743,7 +760,11 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     // Save the sessions etc we are actually using
     rtpSessions = ((SIPInvite &)transaction).GetSessionManager();
     localPartyAddress = transaction.GetMIME().GetFrom();
-    remotePartyAddress = response.GetMIME().GetTo();
+    SIPURL url (response.GetMIME ().GetTo ());
+    remotePartyAddress = url.AsString ();
+    remotePartyName = url.GetDisplayName ();
+    remoteApplication = response.GetMIME().GetUserAgent ();
+    remoteApplication.Replace ('/', '\t'); 
 
     // Have a response to the INVITE, so end Connect mode on the transport
     transaction.GetTransport().EndConnect(transaction.GetLocalAddress());
@@ -780,6 +801,14 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
       OnReceivedRedirection(response);
       break;
 
+    case SIP_PDU::Failure_NotFound :
+      Release(EndedByNoUser);
+      break;
+      
+    case SIP_PDU::Failure_Forbidden :
+      Release(EndedBySecurityDenial);
+      break;
+
     case SIP_PDU::Failure_BusyHere :
       Release(EndedByRemoteBusy);
       break;
@@ -812,7 +841,11 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   releaseMethod = ReleaseWithResponse;
 
   SIPMIMEInfo & mime = originalInvite->GetMIME();
-  remotePartyAddress = mime.GetFrom();
+  SIPURL url (mime.GetFrom ());
+  remotePartyAddress = url.AsString (); 
+  remotePartyName = url.GetDisplayName ();
+  remoteApplication = mime.GetUserAgent ();
+  remoteApplication.Replace ('/', '\t'); 
   localPartyAddress  = mime.GetTo() + ";tag=" + GetTag(); // put a real random 
   mime.SetTo(localPartyAddress);
 
@@ -844,7 +877,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 }
 
 
-void SIPConnection::OnReceivedACK(SIP_PDU & /*request*/)
+void SIPConnection::OnReceivedACK(SIP_PDU & response)
 {
   PTRACE(2, "SIP\tACK received");
 
@@ -868,6 +901,13 @@ void SIPConnection::OnReceivedBYE(SIP_PDU & request)
   SIP_PDU response(request, SIP_PDU::Successful_OK);
   response.Write(*transport);
   releaseMethod = ReleaseWithNothing;
+  
+  SIPURL url (request.GetMIME ().GetFrom ());
+  remotePartyAddress = url.AsString (); 
+  remotePartyName = url.GetDisplayName ();
+  remoteApplication = request.GetMIME ().GetUserAgent ();
+  remoteApplication.Replace ('/', '\t'); 
+
   Release(EndedByRemoteUser);
 }
 
@@ -1005,7 +1045,8 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
   PTRACE(2, "SIP\tReceived INVITE OK response");
 
   OnReceivedSDP(response);
-
+  
+  connectedTime = PTime ();
   OnConnected();
 
   StartMediaStreams();
