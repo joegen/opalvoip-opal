@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2001/08/01 05:44:41  robertj
+ * Added function to get all media formats possible in a call.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  */
@@ -350,6 +353,15 @@ BOOL OpalManager::OnReleased(OpalConnection & connection)
 
   connection.GetCall().OnReleased(connection);
   return TRUE;
+}
+
+
+void OpalManager::AdjustMediaFormats(OpalConnection & /*connection*/,
+                                     OpalMediaFormatList & mediaFormats)
+{
+  PINDEX i;
+  for (i = 0; i < mediaFormatMask.GetSize(); i++)
+    mediaFormats -= mediaFormatMask[i];
 }
 
 
