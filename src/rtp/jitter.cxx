@@ -27,11 +27,18 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.cxx,v $
- * Revision 1.2002  2001/10/05 00:22:14  robertj
+ * Revision 1.2003  2002/01/22 05:21:10  robertj
+ * Update from OpenH323, rev 1.27
+ *
+ * Revision 2.1  2001/10/05 00:22:14  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.27  2002/01/17 07:01:28  robertj
+ * Fixed jitter buffer failing to deliver a talk burst shorted than the size of
+ *    the buffer, this is particularly noticable with RFC2833.
  *
  * Revision 1.26  2001/09/11 00:21:23  robertj
  * Fixed missing stack sizes in endpoint for cleaner thread and jitter thread.
@@ -430,15 +437,19 @@ BOOL RTP_JitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
   DWORD oldestTimestamp = oldestFrame->GetTimestamp();
   DWORD newestTimestamp = newestFrame->GetTimestamp();
 
-  if (preBuffering && (newestTimestamp - oldestTimestamp) > maxJitterTime/2)
-    preBuffering = FALSE;
-
   if (preBuffering) {
-    // Are filling the buffer, don't return anything yet
+    // Check for requesting something that already exceeds the maximum time,
+    // or have filled the jitter buffer, not filling if this is so
+    if ((timestamp - oldestTimestamp) < maxJitterTime &&
+        (newestTimestamp - oldestTimestamp) < maxJitterTime/2) {
+      // Are filling the buffer, don't return anything yet
 #if PTRACING && !defined(NO_ANALYSER)
-    analyser->Out(oldestTimestamp, currentDepth, "PreBuf");
+      analyser->Out(oldestTimestamp, currentDepth, "PreBuf");
 #endif
-    return TRUE;
+      return TRUE;
+    }
+
+    preBuffering = FALSE;
   }
 
   if (timestamp < oldestTimestamp && timestamp > (newestTimestamp - maxJitterTime)) {
