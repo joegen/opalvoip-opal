@@ -30,9 +30,10 @@ MAJOR_VERSION=`cat ${OPALDIR}/version.h | grep MAJOR_VERSION | cut -f3 -d' '`
 MINOR_VERSION=`cat ${OPALDIR}/version.h | grep MINOR_VERSION | cut -f3 -d' '`
 BUILD_NUMBER=`cat ${OPALDIR}/version.h | grep BUILD_NUMBER | cut -f3 -d' '`
 OPAL_VERSION="${MAJOR_VERSION}.${MINOR_VERSION}.${BUILD_NUMBER}"
-AC_SUBST(OPAL_VERSION)
-
-echo "OPAL version is ${OPAL_VERSION}"
+AC_DEFINE_UNQUOTED(OPAL_MAJOR,   ${MAJOR_VERSION})
+AC_DEFINE_UNQUOTED(OPAL_MINOR,   ${MINOR_VERSION})
+AC_DEFINE_UNQUOTED(OPAL_BUILD,   ${BUILD_NUMBER})
+AC_DEFINE_UNQUOTED(OPAL_VERSION, "$OPAL_VERSION")
 
 
 dnl ########################################################################

@@ -309,7 +309,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX EXEEXT OBJEXT OPALDIR INSTALLPREFIX LIBDIR OPAL_VERSION PTLIB_CONFIG PWLIBDIR OPAL_SYSTEM_SPEEX CC CFLAGS ac_ct_CC OPAL_SIP OPAL_H323 CPP EGREP STDCCFLAGS ENDLDLIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX EXEEXT OBJEXT OPALDIR INSTALLPREFIX LIBDIR PTLIB_CONFIG PWLIBDIR OPAL_SYSTEM_SPEEX CC CFLAGS ac_ct_CC OPAL_SIP OPAL_H323 CPP EGREP STDCCFLAGS ENDLDLIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1875,9 +1875,22 @@ MAJOR_VERSION=`cat ${OPALDIR}/version.h | grep MAJOR_VERSION | cut -f3 -d' '`
 MINOR_VERSION=`cat ${OPALDIR}/version.h | grep MINOR_VERSION | cut -f3 -d' '`
 BUILD_NUMBER=`cat ${OPALDIR}/version.h | grep BUILD_NUMBER | cut -f3 -d' '`
 OPAL_VERSION="${MAJOR_VERSION}.${MINOR_VERSION}.${BUILD_NUMBER}"
+cat >>confdefs.h <<_ACEOF
+#define OPAL_MAJOR ${MAJOR_VERSION}
+_ACEOF
 
+cat >>confdefs.h <<_ACEOF
+#define OPAL_MINOR ${MINOR_VERSION}
+_ACEOF
 
-echo "OPAL version is ${OPAL_VERSION}"
+cat >>confdefs.h <<_ACEOF
+#define OPAL_BUILD ${BUILD_NUMBER}
+_ACEOF
+
+cat >>confdefs.h <<_ACEOF
+#define OPAL_VERSION "$OPAL_VERSION"
+_ACEOF
+
 
 
 
@@ -4445,7 +4458,6 @@ s,@OBJEXT@,$OBJEXT,;t t
 s,@OPALDIR@,$OPALDIR,;t t
 s,@INSTALLPREFIX@,$INSTALLPREFIX,;t t
 s,@LIBDIR@,$LIBDIR,;t t
-s,@OPAL_VERSION@,$OPAL_VERSION,;t t
 s,@PTLIB_CONFIG@,$PTLIB_CONFIG,;t t
 s,@PWLIBDIR@,$PWLIBDIR,;t t
 s,@OPAL_SYSTEM_SPEEX@,$OPAL_SYSTEM_SPEEX,;t t
