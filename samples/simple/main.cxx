@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2008  2002/02/01 04:53:01  robertj
+ * Revision 1.2009  2002/02/06 13:29:03  rogerh
+ * H245 tunnelling is controlled by 'T' and not by 'h'
+ *
+ * Revision 2.7  2002/02/01 04:53:01  robertj
  * Added (very primitive!) SIP support.
  *
  * Revision 2.6  2002/01/22 05:34:58  robertj
@@ -347,7 +350,7 @@ BOOL MyManager::Initialise(PArgList & args)
     h323EP = new H323EndPoint(*this);
 
     noFastStart      = args.HasOption('f');
-    noH245Tunnelling = args.HasOption('h');
+    noH245Tunnelling = args.HasOption('T');
 
     // Get local username, multiple uses of -u indicates additional aliases
     if (args.HasOption('u')) {
