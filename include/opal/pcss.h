@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.h,v $
- * Revision 1.2011  2004/03/11 06:54:27  csoutheren
+ * Revision 1.2012  2004/05/17 13:24:18  rjongbloed
+ * Added silence suppression.
+ *
+ * Revision 2.10  2004/03/11 06:54:27  csoutheren
  * Added ability to disable SIP or H.323 stacks
  *
  * Revision 2.9  2003/03/17 10:11:05  robertj
@@ -340,6 +343,22 @@ class OpalPCSSConnection : public OpalConnection
       const OpalMediaFormat & mediaFormat, /// Media format for stream
       unsigned sessionID,                  /// Session number for stream
       BOOL isSource                        /// Is a source stream
+    );
+
+    /**Call back when opening a media stream.
+       This function is called when a connection has created a new media
+       stream according to the logic of its underlying protocol.
+
+       The usual requirement is that media streams are created on all other
+       connections participating in the call and all of the media streams are
+       attached to an instance of an OpalMediaPatch object that will read from
+       one of the media streams passing data to the other media streams.
+
+       The default behaviour calls the ancestor and adds a PCM silence
+       detector filter.
+      */
+    virtual BOOL OnOpenMediaStream(
+      OpalMediaStream & stream    /// New media stream being opened
     );
 
     /**Send a user input indication to the remote endpoint.

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2018  2004/03/11 06:54:27  csoutheren
+ * Revision 1.2019  2004/05/17 13:24:18  rjongbloed
+ * Added silence suppression.
+ *
+ * Revision 2.17  2004/03/11 06:54:27  csoutheren
  * Added ability to disable SIP or H.323 stacks
  *
  * Revision 2.16  2003/06/02 02:57:10  rjongbloed
@@ -468,7 +471,7 @@ class OpalRawMediaStream : public OpalMediaStream
 
     /**Close the media stream.
 
-       The default does nothing.
+       Closes the associated PChannel.
       */
     virtual BOOL Close();
   //@}

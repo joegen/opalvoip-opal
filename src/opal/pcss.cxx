@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2016  2004/04/18 13:35:28  rjongbloed
+ * Revision 1.2017  2004/05/17 13:24:18  rjongbloed
+ * Added silence suppression.
+ *
+ * Revision 2.15  2004/04/18 13:35:28  rjongbloed
  * Fixed ability to make calls where both endpoints are specified a priori. In particular
  *   fixing the VXML support for an outgoing sip/h323 call.
  *
@@ -92,8 +95,10 @@
 #include <opal/pcss.h>
 
 #include <ptlib/videoio.h>
+#include <codec/silencedetect.h>
 #include <codec/vidcodec.h>
 #include <opal/call.h>
+#include <opal/patch.h>
 
 
 #define new PNEW
@@ -290,6 +295,8 @@ OpalPCSSConnection::OpalPCSSConnection(OpalCall & call,
     soundChannelRecordDevice(recordDevice),
     soundChannelBuffers(ep.GetSoundChannelBufferDepth())
 {
+  silenceDetector = new OpalPCM16SilenceDetector;
+
   PTRACE(3, "PCSS\tCreated PC sound system connection.");
 }
 
@@ -361,6 +368,21 @@ OpalMediaStream * OpalPCSSConnection::CreateMediaStream(const OpalMediaFormat & 
     return NULL;
 
   return new OpalAudioMediaStream(mediaFormat, sessionID, isSource, soundChannelBuffers, soundChannel);
+}
+
+
+BOOL OpalPCSSConnection::OnOpenMediaStream(OpalMediaStream & mediaStream)
+{
+  if (!OpalConnection::OnOpenMediaStream(mediaStream))
+    return FALSE;
+
+  if (mediaStream.IsSource()) {
+    OpalMediaPatch * patch = mediaStream.GetPatch();
+    if (patch != NULL)
+      patch->AddFilter(silenceDetector->GetReceiveHandler(), OpalPCM16);
+  }
+
+  return TRUE;
 }
 
 
