@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.cxx,v $
- * Revision 1.2010  2003/01/07 04:39:53  robertj
+ * Revision 1.2011  2003/03/17 08:17:47  robertj
+ * Removed redundant code to search for media format, use existing function.
+ *
+ * Revision 2.9  2003/01/07 04:39:53  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.8  2002/11/10 11:33:19  robertj
@@ -484,29 +487,17 @@ BOOL OpalLineInterfaceDevice::IsLineToLineDirect(unsigned, unsigned)
 }
 
 
-OpalMediaFormat FindMediaFormat(RTP_DataFrame::PayloadTypes pt)
-{
-  const OpalMediaFormatList & formats = OpalMediaFormat::GetRegisteredMediaFormats();
-  for (PINDEX i = 0; i < formats.GetSize(); i++) {
-    if (formats[i].GetPayloadType() == pt)
-      return formats[i];
-  }
-
-  return "<<Unknown RTP payload type>>";
-}
-
-
 BOOL OpalLineInterfaceDevice::SetReadCodec(unsigned line,
                                            RTP_DataFrame::PayloadTypes codec)
 {
-  return SetReadFormat(line, FindMediaFormat(codec));
+  return SetReadFormat(line, OpalMediaFormat(codec));
 }
 
 
 BOOL OpalLineInterfaceDevice::SetWriteCodec(unsigned line,
                                             RTP_DataFrame::PayloadTypes codec)
 {
-  return SetWriteFormat(line, FindMediaFormat(codec));
+  return SetWriteFormat(line, OpalMediaFormat(codec));
 }
 
 
