@@ -27,8 +27,17 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2001/08/13 05:10:40  robertj
+ * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.81  2001/08/10 11:03:52  robertj
+ * Major changes to H.235 support in RAS to support server.
+ *
+ * Revision 1.80  2001/08/06 03:08:56  robertj
+ * Fission of h323.h to h323ep.h & h323con.h, h323.h now just includes files.
  *
  * Revision 1.79  2001/06/14 06:25:16  robertj
  * Added further H.225 PDU build functions.
@@ -295,6 +304,8 @@
 #include <h323/h323con.h>
 #include <h323/h450pdu.h>
 #include <h323/transaddr.h>
+#include <h323/h225ras.h>
+#include <h323/h235auth.h>
 
 
 #define new PNEW
@@ -1355,6 +1366,12 @@ PString H323GetAliasAddressString(const H225_AliasAddress & alias)
 
 /////////////////////////////////////////////////////////////////////////////
 
+H323RasPDU::H323RasPDU(H225_RAS & ras)
+  : rasChannel(ras)
+{
+}
+
+
 H225_GatekeeperRequest & H323RasPDU::BuildGatekeeperRequest(unsigned seqNum)
 {
   SetTag(e_gatekeeperRequest);
@@ -1578,26 +1595,29 @@ H225_UnknownMessageResponse & H323RasPDU::BuildUnknownMessageResponse(unsigned s
 
 BOOL H323RasPDU::Read(OpalTransport & transport)
 {
-  PPER_Stream strm;
-  if (!transport.ReadPDU(strm)) {
+  if (!transport.ReadPDU(rawPDU)) {
     PTRACE(1, "H225RAS\tRead error: " << transport.GetErrorText());
     return FALSE;
   }
 
-  BOOL ok = Decode(strm);
+  rawPDU.ResetDecoder();
+  BOOL ok = Decode(rawPDU);
   if (!ok) {
-    PTRACE(1, "H225RAS\tRead error: PER decode failure");
+    PTRACE(1, "H225RAS\tRead error: PER decode failure:\n  "
+           << setprecision(2) << rawPDU << "\n "  << setprecision(2) << *this);
+    SetTag(UINT_MAX);
+    return TRUE;
   }
 
 #if PTRACING
   if (PTrace::CanTrace(4))
-    PTRACE(4, "H225RAS\tReceived PDU:\n  " << setprecision(2) << strm
+    PTRACE(4, "H225RAS\tReceived PDU:\n  " << setprecision(2) << rawPDU
                                  << "\n "  << setprecision(2) << *this);
   else
     PTRACE(3, "H225RAS\tReceived PDU: " << GetTagName());
 #endif
 
-  return OnReadPDU(strm);
+  return TRUE;
 }
 
 
@@ -1607,8 +1627,10 @@ BOOL H323RasPDU::Write(OpalTransport & transport) const
   Encode(strm);
   strm.CompleteEncoding();
 
-  if (!OnWritePDU(strm))
-    return FALSE;
+  // Finalise the security if present
+  H235Authenticators authenticators = rasChannel.GetAuthenticators();
+  for (PINDEX i = 0; i < authenticators.GetSize(); i++)
+    authenticators[i].Finalise(strm);
 
 #if PTRACING
   if (PTrace::CanTrace(4))
@@ -1623,18 +1645,6 @@ BOOL H323RasPDU::Write(OpalTransport & transport) const
 
   PTRACE(1, "H225\tWrite PDU failed: " << transport.GetErrorText());
   return FALSE;
-}
-
-
-BOOL H323RasPDU::OnReadPDU(PPER_Stream &)
-{
-  return TRUE;
-}
-
-
-BOOL H323RasPDU::OnWritePDU(PPER_Stream &) const
-{
-  return TRUE;
 }
 
 

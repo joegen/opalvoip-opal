@@ -24,11 +24,17 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t120.cxx,v $
- * Revision 1.2002  2001/08/01 05:05:49  robertj
+ * Revision 1.2003  2001/08/13 05:10:40  robertj
+ * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 2.1  2001/08/01 05:05:49  robertj
  * Major changes to H.323 capabilities, uses OpalMediaFormat for base name.
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.3  2001/08/06 03:08:57  robertj
+ * Fission of h323.h to h323ep.h & h323con.h, h323.h now just includes files.
  *
  * Revision 1.2  2001/07/18 02:27:24  robertj
  * Fixed GNU warning.
@@ -49,6 +55,7 @@
 #include <h323/h323con.h>
 #include <h323/transaddr.h>
 #include <t120/t120proto.h>
+#include <t120/x224.h>
 #include <asn/h245.h>
 
 

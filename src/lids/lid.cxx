@@ -24,11 +24,17 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.cxx,v $
- * Revision 1.2002  2001/08/01 05:21:21  robertj
+ * Revision 1.2003  2001/08/13 05:10:40  robertj
+ * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 2.1  2001/08/01 05:21:21  robertj
  * Made OpalMediaFormatList class global to help with documentation.
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.73  2001/08/06 03:08:57  robertj
+ * Fission of h323.h to h323ep.h & h323con.h, h323.h now just includes files.
  *
  * Revision 1.72  2001/07/24 02:28:22  robertj
  * Added setting of tone filters for a handful of countries.

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2002  2001/08/01 05:45:01  robertj
+ * Revision 1.2003  2001/08/13 05:10:40  robertj
+ * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 2.1  2001/08/01 05:45:01  robertj
  * Moved media formats list from endpoint to connection.
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
@@ -61,9 +64,10 @@ const char * const OpalConnection::PhasesNames[NumPhases] = {
 const char * const OpalConnection::AnswerCallResponseNames[NumAnswerCallResponses] = {
   "AnswerCallNow",
   "AnswerCallDenied",
-  "AnswerCallPending",
+  "AnswerCallAlert",
   "AnswerCallDeferred",
-  "AnswerCallAlertWithMedia"
+  "AnswerCallAlertWithMedia",
+  "AnswerCallDeferredWithMedia"
 };
 
 const char * const OpalConnection::CallEndReasonNames[NumCallEndReasons] = {
