@@ -44,8 +44,20 @@
  * down into modules.  Each section of code below is preceded by
  * the name of the module which it is implementing.
  *
+ * The ITU-T G.726 coder is an adaptive differential pulse code modulation
+ * (ADPCM) waveform coding algorithm, suitable for coding of digitized
+ * telephone bandwidth (0.3-3.4 kHz) speech or audio signals sampled at 8 kHz.
+ * This coder operates on a sample-by-sample basis. Input samples may be 
+ * represented in linear PCM or companded 8-bit G.711 (m-law/A-law) formats
+ * (i.e., 64 kbps). For 32 kbps operation, each sample is converted into a
+ * 4-bit quantized difference signal resulting in a compression ratio of 
+ * 2:1 over the G.711 format. For 24 kbps 40 kbps operation, the quantized
+ * difference signal is 3 bits and 5 bits, respectively.
  *
  * $Log: g726_40.c,v $
+ * Revision 1.2  2002/11/20 04:53:16  robertj
+ * Included optimisations for G.711 and G.726 codecs, thanks Ted Szoczei
+ *
  * Revision 1.1  2002/02/11 23:24:23  robertj
  * Updated to openH323 v1.8.0
  *
@@ -85,13 +97,13 @@ static short	_fitab[32] = {0, 0, 0, 0, 0, 0x200, 0x200, 0x200,
 			0xC00, 0xC00, 0xA00, 0x800, 0x600, 0x400, 0x200, 0x200,
 			0x200, 0x200, 0x200, 0, 0, 0, 0, 0};
 
-static short qtab_723_40[15] = {-122, -16, 68, 139, 198, 250, 298, 339,
+static int qtab_723_40[15] = {-122, -16, 68, 139, 198, 250, 298, 339,
 				378, 413, 445, 475, 502, 528, 553};
 
 /*
  * g723_40_encoder()
  *
- * Encodes a 16-bit linear PCM, A-law or u-law input sample and retuens
+ * Encodes a 16-bit linear PCM, A-law or u-law input sample and returns
  * the resulting 5-bit CCITT G.723 40Kbps code.
  * Returns -1 if the input coding value is invalid.
  */
@@ -101,12 +113,16 @@ g726_40_encoder(
 	int		in_coding,
 	g726_state *state_ptr)
 {
-	short		sei, sezi, se, sez;	/* ACCUM */
-	short		d;			/* SUBTA */
-	short		y;			/* MIX */
-	short		sr;			/* ADDB */
-	short		dqsez;			/* ADDC */
-	short		dq, i;
+	int		sezi;
+	int		sez;			/* ACCUM */
+	int		sei;
+	int		se;
+	int		d;				/* SUBTA */
+	int		y;				/* MIX */
+	int		i;
+	int		dq;
+	int		sr;				/* ADDB */
+	int		dqsez;			/* ADDC */
 
 	switch (in_coding) {	/* linearize input sample to 14-bit PCM */
 	case AUDIO_ENCODING_ALAW:
@@ -157,13 +173,16 @@ g726_40_decoder(
 	int		out_coding,
 	g726_state *state_ptr)
 {
-	short		sezi, sei, sez, se;	/* ACCUM */
-	short		y, dif;			/* MIX */
-	short		sr;			/* ADDB */
-	short		dq;
-	short		dqsez;
+	int		sezi;
+	int		sez;			/* ACCUM */
+	int		sei;
+	int		se;
+	int		y;				/* MIX */
+	int		dq;
+	int		sr;				/* ADDB */
+	int		dqsez;
 
-	i &= 0x1f;			/* mask to get proper bits */
+	i &= 0x1f;				/* mask to get proper bits */
 	sezi = predictor_zero(state_ptr);
 	sez = sezi >> 1;
 	sei = sezi + predictor_pole(state_ptr);

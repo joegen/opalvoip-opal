@@ -47,8 +47,20 @@
  * down into modules.  Each section of code below is preceded by
  * the name of the module which it is implementing.
  *
+ * The ITU-T G.726 coder is an adaptive differential pulse code modulation
+ * (ADPCM) waveform coding algorithm, suitable for coding of digitized
+ * telephone bandwidth (0.3-3.4 kHz) speech or audio signals sampled at 8 kHz.
+ * This coder operates on a sample-by-sample basis. Input samples may be 
+ * represented in linear PCM or companded 8-bit G.711 (m-law/A-law) formats
+ * (i.e., 64 kbps). For 32 kbps operation, each sample is converted into a
+ * 4-bit quantized difference signal resulting in a compression ratio of 
+ * 2:1 over the G.711 format. For 24 kbps 40 kbps operation, the quantized
+ * difference signal is 3 bits and 5 bits, respectively.
  *
  * $Log: g726_32.c,v $
+ * Revision 1.2  2002/11/20 04:53:16  robertj
+ * Included optimisations for G.711 and G.726 codecs, thanks Ted Szoczei
+ *
  * Revision 1.1  2002/02/11 23:24:23  robertj
  * Updated to openH323 v1.8.0
  *
@@ -62,7 +74,7 @@
 #include "g72x.h"
 #include "private.h"
 
-static short qtab_721[7] = {-124, 80, 178, 246, 300, 349, 400};
+static int qtab_721[7] = {-124, 80, 178, 246, 300, 349, 400};
 /*
  * Maps G.721 code word to reconstructed scale factor normalized log
  * magnitude values.
@@ -93,12 +105,15 @@ g726_32_encoder(
 	int		in_coding,
 	g726_state *state_ptr)
 {
-	int		sezi, se, sez;		/* ACCUM */
-	int		d;			/* SUBTA */
-	int		sr;			/* ADDB */
-	int		y;			/* MIX */
+	int		sezi;
+	int		sez;			/* ACCUM */
+	int		se;
+	int		d;				/* SUBTA */
+	int		y;				/* MIX */
+	int		i;
+	int		dq;
+	int		sr;				/* ADDB */
 	int		dqsez;			/* ADDC */
-	int		dq, i;
 
 	switch (in_coding) {	/* linearize input sample to 14-bit PCM */
 	case AUDIO_ENCODING_ALAW:
@@ -150,14 +165,17 @@ g726_32_decoder(
 	int		out_coding,
 	g726_state *state_ptr)
 {
-	int		sezi, sei, sez, se;	/* ACCUM */
-	int		y;			/* MIX */
-	int		sr;			/* ADDB */
+	int		sezi;
+	int		sez;			/* ACCUM */
+	int		sei;
+	int		se;
+	int		y;				/* MIX */
 	int		dq;
+	int		sr;				/* ADDB */
 	int		dqsez;
-	int         lino;
+	long	lino;
 
-	i &= 0x0f;			/* mask to get proper bits */
+	i &= 0x0f;				/* mask to get proper bits */
 	sezi = predictor_zero(state_ptr);
 	sez = sezi >> 1;
 	sei = sezi + predictor_pole(state_ptr);
@@ -179,9 +197,9 @@ g726_32_decoder(
 	case AUDIO_ENCODING_ULAW:
 		return (tandem_adjust_ulaw(sr, se, y, i, 8, qtab_721));
 	case AUDIO_ENCODING_LINEAR:
-        lino = (int)sr << 2;  /* this seems to overflow */
-		lino = lino>32767 ? 32767 : lino;
-		lino = lino<-32768 ? -32768 : lino;
+        lino = (long)sr << 2;  /* this seems to overflow a short*/
+		lino = lino > 32767 ? 32767 : lino;
+		lino = lino < -32768 ? -32768 : lino;
 		return lino;//(sr << 2);	/* sr was 14-bit dynamic range */
 	default:
 		return (-1);
