@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.h,v $
- * Revision 1.2011  2004/02/19 10:46:44  rjongbloed
+ * Revision 1.2012  2005/01/24 00:16:44  csoutheren
+ * Added function to set Q.931 info in PDU, thanks to Paul Nader
+ *
+ * Revision 2.10  2004/02/19 10:46:44  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.9  2003/01/07 04:39:52  robertj
@@ -432,6 +435,10 @@ class H323SignalPDU : public H225_H323_UserInformation
     /**Get the Q.931 wrapper PDU for H.225 signalling PDU.
       */
     Q931 & GetQ931() { return q931pdu; }
+
+    /**Set the Q.931 wrapper PDU for H.225 signalling PDU
+     */
+    void SetQ931(const Q931 & _q931pdu) { q931pdu = _q931pdu; }
 
     /**Build the Q.931 wrapper PDU for H.225 signalling PDU.
        This must be called after altering fields in the H.225 part of the PDU.
