@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2003  2001/08/13 05:10:39  robertj
+ * Revision 1.2004  2001/08/17 08:22:23  robertj
+ * Moved call end reasons enum from OpalConnection to global.
+ *
+ * Revision 2.2  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
  *
  * Revision 2.1  2001/08/01 05:26:35  robertj
@@ -50,6 +53,41 @@
 
 class OpalEndPoint;
 class OpalCall;
+
+
+/**Call/Connection ending reasons.
+   NOTE: if anything is added to this, you also need to add the field to
+   the tables in call.cxx and h323pdu.cxx.
+  */
+enum OpalCallEndReason {
+  EndedByLocalUser,         /// Local endpoint application cleared call
+  EndedByNoAccept,          /// Local endpoint did not accept call OnIncomingCall()=FALSE
+  EndedByAnswerDenied,      /// Local endpoint declined to answer call
+  EndedByRemoteUser,        /// Remote endpoint application cleared call
+  EndedByRefusal,           /// Remote endpoint refused call
+  EndedByNoAnswer,          /// Remote endpoint did not answer in required time
+  EndedByCallerAbort,       /// Remote endpoint stopped calling
+  EndedByTransportFail,     /// Transport error cleared call
+  EndedByConnectFail,       /// Transport connection failed to establish call
+  EndedByGatekeeper,        /// Gatekeeper has cleared call
+  EndedByNoUser,            /// Call failed as could not find user (in GK)
+  EndedByNoBandwidth,       /// Call failed as could not get enough bandwidth
+  EndedByCapabilityExchange,/// Could not find common capabilities
+  EndedByCallForwarded,     /// Call was forwarded using FACILITY message
+  EndedBySecurityDenial,    /// Call failed a security check and was ended
+  EndedByLocalBusy,         /// Local endpoint busy
+  EndedByLocalCongestion,   /// Local endpoint congested
+  EndedByRemoteBusy,        /// Remote endpoint busy
+  EndedByRemoteCongestion,  /// Remote endpoint congested
+  EndedByUnreachable,       /// Could not reach the remote party
+  EndedByNoEndPoint,        /// The remote party is not running an endpoint
+  EndedByHostOffline,       /// The remote party host off line
+  OpalNumCallEndReasons
+};
+
+#if PTRACING
+ostream & operator<<(ostream & o, OpalCallEndReason reason);
+#endif
 
 
 /**This is the base class for connections to an endpoint.
@@ -130,52 +168,22 @@ class OpalConnection : public PObject
       */
     virtual Phases GetPhase() const = 0;
 
-    /**Connection release reasons.
-       NOTE: if anything is added to this, you also need to add the field to
-       the tables in connection.cxx and h323pdu.cxx.
-      */
-    enum CallEndReason {
-      EndedByLocalUser,         /// Local endpoint application cleared call
-      EndedByNoAccept,          /// Local endpoint did not accept call OnIncomingCall()=FALSE
-      EndedByAnswerDenied,      /// Local endpoint declined to answer call
-      EndedByRemoteUser,        /// Remote endpoint application cleared call
-      EndedByRefusal,           /// Remote endpoint refused call
-      EndedByNoAnswer,          /// Remote endpoint did not answer in required time
-      EndedByCallerAbort,       /// Remote endpoint stopped calling
-      EndedByTransportFail,     /// Transport error cleared call
-      EndedByConnectFail,       /// Transport connection failed to establish call
-      EndedByGatekeeper,        /// Gatekeeper has cleared call
-      EndedByNoUser,            /// Call failed as could not find user (in GK)
-      EndedByNoBandwidth,       /// Call failed as could not get enough bandwidth
-      EndedByCapabilityExchange,/// Could not find common capabilities
-      EndedByCallForwarded,     /// Call was forwarded using FACILITY message
-      EndedBySecurityDenial,    /// Call failed a security check and was ended
-      EndedByLocalBusy,         /// Local endpoint busy
-      EndedByLocalCongestion,   /// Local endpoint congested
-      EndedByRemoteBusy,        /// Remote endpoint busy
-      EndedByRemoteCongestion,  /// Remote endpoint congested
-      EndedByUnreachable,       /// Could not reach the remote party
-      EndedByNoEndPoint,        /// The remote party is not running an endpoint
-      EndedByHostOffline,       /// The remote party host off line
-      NumCallEndReasons
-    };
-
     /**Get the call clearand reason for this connection shutting down.
        Note that this function is only generally useful in the
        H323EndPoint::OnConnectionCleared() function. This is due to the
        connection not being cleared before that, and the object not even
        exiting after that.
 
-       If the call is still active then this will return NumCallEndReasons.
+       If the call is still active then this will return NumOpalCallEndReasons.
       */
-    CallEndReason GetCallEndReason() const { return callEndReason; }
+    OpalCallEndReason GetCallEndReason() const { return callEndReason; }
 
     /**Set the call clearance reason.
        An application should have no cause to use this function. It is present
        for the H323EndPoint::ClearCall() function to set the clearance reason.
       */
     void SetCallEndReason(
-      CallEndReason reason   /// Reason for clearance of connection.
+      OpalCallEndReason reason   /// Reason for clearance of connection.
     );
 
     /**Clear a current call.
@@ -186,14 +194,14 @@ class OpalConnection : public PObject
        disposal of the connections is done by another thread.
       */
     void ClearCall(
-      CallEndReason reason = EndedByLocalUser /// Reason for call clearing
+      OpalCallEndReason reason = EndedByLocalUser /// Reason for call clearing
     );
 
     /**Clear a current connection, synchronously
       */
     virtual void ClearCallSynchronous(
       PSyncPoint * sync,
-      CallEndReason reason = EndedByLocalUser  /// Reason for call clearing
+      OpalCallEndReason reason = EndedByLocalUser  /// Reason for call clearing
     );
   //@}
 
@@ -318,7 +326,7 @@ class OpalConnection : public PObject
        disposal of the connections is done by another thread.
       */
     void Release(
-      CallEndReason reason = EndedByLocalUser /// Reason for call release
+      OpalCallEndReason reason = EndedByLocalUser /// Reason for call release
     );
 
     /**Clean up the termination of the connection.
@@ -632,7 +640,7 @@ class OpalConnection : public PObject
     BOOL                callAnswered;
     PTime               connectionStartTime;
     PString             remotePartyName;
-    CallEndReason       callEndReason;
+    OpalCallEndReason   callEndReason;
 
     AnswerCallResponse  answerResponse;
     PSyncPoint          answerWaitFlag;
@@ -649,12 +657,8 @@ class OpalConnection : public PObject
 
 
 #if PTRACING
-    static const char * const PhasesNames[NumPhases];
-    friend ostream & operator<<(ostream & o, Phases p) { return o << PhasesNames[p]; }
-    static const char * const AnswerCallResponseNames[NumAnswerCallResponses];
-    friend ostream & operator<<(ostream & o, AnswerCallResponse s) { return o << AnswerCallResponseNames[s]; }
-    static const char * const CallEndReasonNames[NumCallEndReasons];
-    friend ostream & operator<<(ostream & o, CallEndReason r) { return o << CallEndReasonNames[r]; }
+    friend ostream & operator<<(ostream & o, Phases p);
+    friend ostream & operator<<(ostream & o, AnswerCallResponse s);
 #endif
 };
 

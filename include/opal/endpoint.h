@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2003  2001/08/01 05:26:35  robertj
+ * Revision 1.2004  2001/08/17 08:22:23  robertj
+ * Moved call end reasons enum from OpalConnection to global.
+ *
+ * Revision 2.2  2001/08/01 05:26:35  robertj
  * Moved media formats list from endpoint to connection.
  *
  * Revision 2.1  2001/07/30 07:22:25  robertj
@@ -310,8 +313,7 @@ class OpalEndPoint : public PObject
       */
     virtual BOOL ClearCall(
       const PString & token,    /// Token for identifying connection
-      OpalConnection::CallEndReason reason =
-                  OpalConnection::EndedByLocalUser, /// Reason for call clearing
+      OpalCallEndReason reason = EndedByLocalUser, /// Reason for call clearing
       PSyncPoint * sync = NULL  /// Sync point to wait on.
     );
 
@@ -321,8 +323,7 @@ class OpalEndPoint : public PObject
       */
     virtual BOOL ClearCallSynchronous(
       const PString & token,    /// Token for identifying connection
-      OpalConnection::CallEndReason reason =
-                  OpalConnection::EndedByLocalUser, /// Reason for call clearing
+      OpalCallEndReason reason = EndedByLocalUser, /// Reason for call clearing
       PSyncPoint * sync = NULL  /// Sync point to wait on.
     );
 
@@ -333,8 +334,7 @@ class OpalEndPoint : public PObject
        the destructor for your descendant of H323EndPoint.
       */
     virtual void ClearAllCalls(
-      OpalConnection::CallEndReason reason =
-                  OpalConnection::EndedByLocalUser, /// Reason for call clearing
+      OpalCallEndReason reason = EndedByLocalUser, /// Reason for call clearing
       BOOL wait = TRUE   /// Flag for wait for calls to e cleared.
     );
 
