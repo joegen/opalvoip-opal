@@ -22,7 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2009  2002/02/06 11:52:53  rogerh
+# Revision 1.2010  2002/02/11 09:38:28  robertj
+# Moved version to root directory
+#
+# Revision 2.8  2002/02/06 11:52:53  rogerh
 # Move -I$(ASN_INCDIR) so Opal's ldap.h is found instead of the OS's ldap.h
 #
 # Revision 2.7  2002/02/01 10:29:35  rogerh
@@ -78,7 +81,6 @@ endif
 OBJDIR	=	$(OPAL_OBJDIR)
 LIBDIR	=	$(OPAL_LIBDIR)
 TARGET	=	$(LIBDIR)/$(OPAL_FILE)
-VERSION_FILE =  version.h
 
 
 ifdef NOTRACE
