@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2004  2001/12/07 08:52:28  robertj
+ * Revision 1.2005  2002/01/14 02:24:06  robertj
+ * Fixed possible divide by zero error in statistics.
+ *
+ * Revision 2.3  2001/12/07 08:52:28  robertj
  * Used new const PWaitAndSignal
  *
  * Revision 2.2  2001/11/14 06:20:40  robertj
@@ -684,7 +687,7 @@ RTP_Session::SendReceiveStatus RTP_Session::OnSendData(RTP_DataFrame & frame)
   octetsSent += frame.GetPayloadSize();
   packetsSent++;
 
-  if (senderReportTimer.IsRunning())
+  if (senderReportTimer.IsRunning() || senderReportCount == 0)
     return e_ProcessPacket;
 
   averageSendTime = averageSendTimeAccum/senderReportCount;
@@ -832,7 +835,7 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(const RTP_DataFrame & 
   octetsReceived += frame.GetPayloadSize();
   packetsReceived++;
 
-  if (receiverReportTimer.IsRunning())
+  if (receiverReportTimer.IsRunning() || receiverReportCount == 0)
     return e_ProcessPacket;
 
   averageReceiveTime = averageReceiveTimeAccum/receiverReportCount;
