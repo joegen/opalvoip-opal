@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2037  2003/03/06 03:57:47  robertj
+ * Revision 1.2038  2003/03/07 05:51:10  robertj
+ * Fixed correct timing of call to OnSetUp() must be after connect PDU
+ *   is available.
+ * Fixed missing Unlock() in H.450 processing.
+ *
+ * Revision 2.36  2003/03/06 03:57:47  robertj
  * IVR support (work in progress) requiring large changes everywhere.
  *
  * Revision 2.35  2003/01/07 04:39:53  robertj
@@ -1655,8 +1660,10 @@ BOOL H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
 
   // Check for presence of supplementary services
   if (pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_h4501SupplementaryService)) {
-    if (!h450dispatcher->HandlePDU(pdu)) // Process H4501SupplementaryService APDU
+    if (!h450dispatcher->HandlePDU(pdu)) { // Process H4501SupplementaryService APDU
+      Unlock();
       return FALSE;
+    }
   }
 
   // Add special code to detect if call is from a Cisco and remoteApplication needs setting
@@ -2034,12 +2041,12 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
       fastStartState = FastStartResponse;
   }
 
-  // OK are now ready to send SETUP to remote protocol
-  ownerCall.OnSetUp(*this);
-
   // Build the reply with the channels we are actually using
   connectPDU = new H323SignalPDU;
   connectPDU->BuildConnect(*this);
+
+  // OK are now ready to send SETUP to remote protocol
+  ownerCall.OnSetUp(*this);
 
   /** If Call Intrusion is allowed we must answer the call*/
   if (IsCallIntrusion()) {
