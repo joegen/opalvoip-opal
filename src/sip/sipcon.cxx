@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2031  2004/02/07 02:23:21  rjongbloed
+ * Revision 1.2032  2004/02/14 22:52:51  csoutheren
+ * Re-ordered initialisations to remove warning on Linux
+ *
+ * Revision 2.30  2004/02/07 02:23:21  rjongbloed
  * Changed to allow opening of more than just audio streams.
  * Assured that symmetric codecs are used as required by "basic" SIP.
  * Made media format list subject to adjust \\ment by remoe/order lists.
@@ -158,10 +161,10 @@ SIPConnection::SIPConnection(OpalCall & call,
                              OpalTransport * inviteTransport)
   : OpalConnection(call, ep, token),
     endpoint(ep),
+    tag(OpalGloballyUniqueID().AsString()),    // local dialog tag
     authentication(endpoint.GetRegistrationName(),
                    endpoint.GetRegistrationPassword()),
-    pduSemaphore(0, P_MAX_INDEX),
-    tag(OpalGloballyUniqueID().AsString())     // local dialog tag
+    pduSemaphore(0, P_MAX_INDEX)
 {
   localPartyName = endpoint.GetRegistrationName();
 
