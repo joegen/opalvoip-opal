@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.h,v $
- * Revision 1.2007  2002/06/16 02:19:31  robertj
+ * Revision 1.2008  2002/09/16 02:52:35  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
+ *
+ * Revision 2.6  2002/06/16 02:19:31  robertj
  * Fixed and clarified function for initiating call, thanks Ted Szoczei
  *
  * Revision 2.5  2002/01/22 05:05:16  robertj
@@ -52,7 +56,7 @@
 #ifndef __OPAL_PCSS_H
 #define __OPAL_PCSS_H
 
-#ifdef __GNUC__
+#ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 

@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2009  2002/04/08 02:40:13  robertj
+ * Revision 1.2010  2002/09/16 02:52:35  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
+ *
+ * Revision 2.8  2002/04/08 02:40:13  robertj
  * Fixed issues with using double originate call, eg from simple app command line.
  *
  * Revision 2.7  2002/02/19 07:42:25  robertj
@@ -59,7 +63,7 @@
 #ifndef __OPAL_CALL_H
 #define __OPAL_CALL_H
 
-#ifdef __GNUC__
+#ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
