@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2013  2003/06/02 03:13:28  rjongbloed
+ * Revision 1.2014  2004/02/07 00:35:46  rjongbloed
+ * Fixed calls GetMediaFormats so no DOES return intersection of all connections formats.
+ * Tidied some API elements to make usage more explicit.
+ *
+ * Revision 2.12  2003/06/02 03:13:28  rjongbloed
  * Made changes so that media stream in opposite direction to the one already
  *   opened will use same media format for preference. That is try and use
  *   symmetric codecs if possible.
@@ -288,21 +292,25 @@ class OpalCall : public PObject
        transcoders registered.
       */
     OpalMediaFormatList GetMediaFormats(
-      const OpalConnection & connection,  /// Source requesting formats
-      BOOL includeSpecifiedConnection = FALSE  /// Include parameters media
+      const OpalConnection & connection,  /// Connection requesting formats
+      BOOL includeSpecifiedConnection     /// Include parameters media
     );
 
     /**Open transmitter media streams for each connection.
-       If the connection parameter is not NULL then it is exempt from the
-       opening of media streams.
+       All connections in the call except the one specified are requested to
+       open a source media stream. If successful, then PatchMediaStreams() is
+       called which in turns starts the sink media stream on the connection.
       */
     virtual BOOL OpenSourceMediaStreams(
+      const OpalConnection & connection,        /// Connection requesting open
       const OpalMediaFormatList & mediaFormats, /// Optional media format to open
-      unsigned sessionID,                       /// Session to start stream on
-      const OpalConnection * connection = NULL  /// Exempt connection
+      unsigned sessionID                        /// Session to start streams on
     );
 
     /**Connect up the media streams on the connections.
+       This creates a media patch and a sink media stream on the specified
+       connection for the specified source media stream. The created media
+       patch is a thread, but it is not started immediately.
      */
     virtual BOOL PatchMediaStreams(
       const OpalConnection & connection, /// Source connection
