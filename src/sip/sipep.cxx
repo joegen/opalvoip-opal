@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2003  2002/04/05 10:42:04  robertj
+ * Revision 1.2004  2002/04/09 07:18:33  robertj
+ * Fixed the default return address for PDU requests not attached to connection.
+ *
+ * Revision 2.2  2002/04/05 10:42:04  robertj
  * Major changes to support transactions (UDP timeouts and retries).
  *
  * Revision 2.1  2002/02/01 04:53:01  robertj
@@ -102,10 +105,10 @@ void SIPEndPoint::HandlePDU(OpalTransport & transport)
   PTRACE(4, "SIP\tWaiting for PDU on " << transport);
   if (pdu->Read(transport)) {
     if (!transport.IsReliable()) {
-      PString contact = pdu->GetMIME().GetContact();
-      if (!contact) {
-        SIPURL remote = contact;
-        transport.SetRemoteAddress(remote.GetHostAddress());
+      // Calculate default return address
+      if (!pdu->GetMethod() != SIP_PDU::NumMethods) {
+        PString via = pdu->GetMIME().GetContact();
+        transport.SetRemoteAddress(via.Mid(via.FindLast(' ')));
       }
     }
     if (!OnReceivedPDU(transport, pdu))
