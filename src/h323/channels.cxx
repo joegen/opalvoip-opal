@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2025  2004/02/19 10:47:02  rjongbloed
+ * Revision 1.2026  2004/04/07 08:21:01  rjongbloed
+ * Changes for new RTTI system.
+ *
+ * Revision 2.24  2004/02/19 10:47:02  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.23  2003/03/17 10:26:59  robertj
@@ -629,7 +632,7 @@ void H323ChannelNumber::PrintOn(ostream & strm) const
 PObject::Comparison H323ChannelNumber::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(IsDescendant(Class()), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H323ChannelNumber), PInvalidCast);
 #endif
   const H323ChannelNumber & other = (const H323ChannelNumber &)obj;
   if (number < other.number)
