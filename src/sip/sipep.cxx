@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2017  2004/03/14 08:34:10  csoutheren
+ * Revision 1.2018  2004/03/14 10:13:04  rjongbloed
+ * Moved transport on SIP top be constructed by endpoint as any transport created on
+ *   an endpoint can receive data for any connection.
+ * Changes to REGISTER to support authentication
+ *
+ * Revision 2.16  2004/03/14 08:34:10  csoutheren
  * Added ability to set User-Agent string
  *
  * Revision 2.15  2004/03/13 06:51:32  rjongbloed
@@ -97,7 +102,6 @@
 
 SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   : OpalEndPoint(mgr, "sip", CanTerminateCall),
-    registrationID(OpalGloballyUniqueID().AsString()),
     retryTimeoutMin(500),     // 0.5 seconds
     retryTimeoutMax(0, 4),    // 4 seconds
     nonInviteTimeout(0, 16),  // 16 seconds
@@ -110,6 +114,7 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   maxRetries = 10;
   lastSentCSeq = 0;
   userAgentString = "OPAL/2.0";
+  registrarTransport = NULL;
 
   PTRACE(3, "SIP\tCreated endpoint.");
 }
@@ -119,6 +124,8 @@ SIPEndPoint::~SIPEndPoint()
 {
   // Shut down the listeners as soon as possible to avoid race conditions
   listeners.RemoveAll();
+
+  delete registrarTransport;
 
   PTRACE(3, "SIP\tDeleted endpoint.");
 }
@@ -137,6 +144,46 @@ BOOL SIPEndPoint::NewIncomingConnection(OpalTransport * transport)
   PTRACE_IF(2, transport->IsReliable(), "SIP\tListening thread finished.");
 
   return TRUE;
+}
+
+
+void SIPEndPoint::TransportThreadMain(PThread &, INT param)
+{
+  PTRACE(2, "SIP\tRead thread started.");
+
+  OpalTransport * transport = (OpalTransport *)param;
+
+  do {
+    HandlePDU(*transport);
+  } while (transport->IsOpen());
+
+  PTRACE(2, "SIP\tRead thread finished.");
+}
+
+
+OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & address)
+{
+  OpalTransport * transport = address.CreateTransport(*this, OpalTransportAddress::NoBinding);
+  if (transport == NULL) {
+    PTRACE(1, "SIP\tCould not create transport from " << address);
+    return NULL;
+  }
+
+  transport->SetBufferSize(SIP_PDU::MaxSize);
+  if (!transport->ConnectTo(address)) {
+    PTRACE(1, "SIP\tCould not connect to " << address << " - " << transport->GetErrorText());
+    delete transport;
+    return NULL;
+  }
+
+  if (!transport->IsReliable())
+    transport->AttachThread(PThread::Create(PCREATE_NOTIFIER(TransportThreadMain),
+                                            (INT)transport,
+                                            PThread::NoAutoDeleteThread,
+                                            PThread::NormalPriority,
+                                            "SIP Transport:%x"));
+
+  return transport;
 }
 
 
@@ -226,8 +273,16 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
     return TRUE;
   }
 
-  // An INVITE is a special case
+  // PDU's outside of connection context
   switch (pdu->GetMethod()) {
+    case SIP_PDU::NumMethods :
+      {
+        SIPTransaction * transaction = transactions.GetAt(pdu->GetTransactionID());
+        if (transaction != NULL)
+          transaction->OnReceivedResponse(*pdu);
+      }
+      break;
+
     case SIP_PDU::Method_INVITE :
       return OnReceivedINVITE(transport, pdu);
 
@@ -247,6 +302,40 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
   }
 
   return FALSE;
+}
+
+
+void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
+{
+  if (transaction.GetMethod() == SIP_PDU::Method_REGISTER) {
+    // Have a response to the REGISTER, so CANCEL all the other registrations sent.
+    for (PINDEX i = 0; i < registrations.GetSize(); i++) {
+      if (&registrations[i] != &transaction)
+        registrations[i].SendCANCEL();
+    }
+
+    // Have a response to the INVITE, so end Connect mode on the transport
+    transaction.GetTransport().EndConnect(transaction.GetLocalAddress());
+  }
+
+  switch (response.GetStatusCode()) {
+    case SIP_PDU::Failure_UnAuthorised :
+    case SIP_PDU::Failure_ProxyAuthenticationRequired :
+      OnReceivedAuthenticationRequired(transaction, response);
+      break;
+
+    default :
+      switch (response.GetStatusCode()/100) {
+        case 1 :
+          // Do nothing on 1xx
+          break;
+        case 2 :
+          OnReceivedOK(transaction, response);
+          break;
+        default :
+          ;
+      }
+  }
 }
 
 
@@ -282,36 +371,66 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
 }
 
 
-struct WriteRegisterParam
+void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
+                                                     SIP_PDU & response)
 {
-  SIPEndPoint  * endpoint;
-  const SIPURL * address;
-};
+  BOOL isProxy = response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
+#if PTRACING
+  const char * proxyTrace = isProxy ? "Proxy " : "";
+#endif
 
-static BOOL WriteREGISTER(OpalTransport & transport, void * param)
-{
-  SIPEndPoint & endpoint = *((WriteRegisterParam *)param)->endpoint;
-  const SIPURL & address = *((WriteRegisterParam *)param)->address;
-
-  SIPTransaction request(endpoint, transport);
-
-  // translate contact address
-  OpalTransportAddress contactAddress = transport.GetLocalAddress();
-  WORD contactPort = endpoint.GetDefaultSignalPort();
-
-  PIPSocket::Address localIP;
-  if (transport.GetLocalAddress().GetIpAddress(localIP)) {
-    PIPSocket::Address remoteIP;
-    if (transport.GetRemoteAddress().GetIpAddress(remoteIP)) {
-      endpoint.GetManager().TranslateIPAddress(localIP, remoteIP);
-      contactAddress = OpalTransportAddress(localIP, contactPort, "udp");
-    }
+  if (authentication.IsValid()) {
+    PTRACE(1, "SIP\tAlready done INVITE for " << proxyTrace << "Authentication Required, aborting call");
+    return;
   }
 
-  SIPURL contact(address.GetUserName(), contactAddress, contactPort);
-  request.BuildREGISTER(address, contact);
+  if (transaction.GetMethod() != SIP_PDU::Method_REGISTER) {
+    PTRACE(1, "SIP\tCannot do " << proxyTrace << "Authentication Required for non REGISTER");
+    return;
+  }
 
-  return request.Start();
+  PTRACE(2, "SIP\tReceived " << proxyTrace << "Authentication Required response");
+
+  if (!authentication.Parse(response.GetMIME()(isProxy ? "Proxy-Authenticate"
+                                                       : "WWW-Authenticate"),
+                                               isProxy)) {
+    return;
+  }
+
+  // Restart the transaction with new authentication info
+  SIPTransaction * request = new SIPRegister(*this, transaction.GetTransport(), registrationAddress, registrationID);
+  if (request->Start())
+    registrations.Append(request);
+  else {
+    delete request;
+    PTRACE(1, "SIP\tCould not restart REGISTER for Authentication Required");
+  }
+}
+
+
+void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & /*response*/)
+{
+  if (transaction.GetMethod() != SIP_PDU::Method_REGISTER) {
+    PTRACE(3, "SIP\tReceived OK response for non REGISTER");
+    return;
+  }
+
+  PTRACE(2, "SIP\tReceived REGISTER OK response");
+}
+
+
+BOOL SIPEndPoint::WriteREGISTER(OpalTransport & transport, void * param)
+{
+  SIPEndPoint & endpoint = *(SIPEndPoint *)param;
+  SIPTransaction * request = new SIPRegister(endpoint, transport, endpoint.registrationAddress, endpoint.registrationID);
+
+  if (request->Start()) {
+    endpoint.registrations.Append(request);
+    return TRUE;
+  }
+
+  PTRACE(2, "SIP\tDid not start REGISTER transaction on " << transport);
+  return FALSE;
 }
 
 
@@ -329,38 +448,27 @@ BOOL SIPEndPoint::Register(const PString & hostname,
   if (adjustedUsername.Find('@') == P_MAX_INDEX)
     adjustedUsername += '@' + hostname;
 
-  SIPURL registrationAddress = adjustedUsername;
+  registrationAddress.Parse(adjustedUsername);
 
   OpalTransportAddress registrarAddress(hostname, defaultSignalPort, "udp");
   // Should do DNS SRV record loolup to get regisrar address
 
-  OpalTransport * transport = registrarAddress.CreateTransport(*this, OpalTransportAddress::NoBinding);
-  transport->ConnectTo(registrarAddress);
+  delete registrarTransport;
+  registrarTransport = CreateTransport(registrarAddress);
+  if (registrarTransport == NULL)
+    return FALSE;
 
-  WriteRegisterParam params;
-  params.endpoint = this;
-  params.address = &registrationAddress;
-  transport->WriteConnect(WriteREGISTER, &params);
+  authentication.SetUsername(registrationAddress.GetUserName());
+  authentication.SetPassword(password);
 
-  SIP_PDU response;
-  transport->SetReadTimeout(30000);
-  if (!response.Read(*transport)) {
-    delete transport;
+  registrationID = OpalGloballyUniqueID().AsString();
+
+  if (!registrarTransport->WriteConnect(WriteREGISTER, this)) {
+    PTRACE(1, "SIP\tCould not write to " << registrarAddress << " - " << registrarTransport->GetErrorText());
     return FALSE;
   }
 
-  transport->SetReadTimeout(PMaxTimeInterval);
-  transport->EndConnect(transport->GetLocalAddress());
-
-  PTRACE(2, "SIP\tSelecting reply from " << *transport);
-
-  while (response.GetStatusCode() < SIP_PDU::Successful_OK) {
-    if (!response.Read(*transport))
-      break;
-  }
-
-  delete transport;
-  return response.GetStatusCode() == SIP_PDU::Successful_OK;
+  return TRUE;
 }
 
 
