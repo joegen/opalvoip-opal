@@ -27,11 +27,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.cxx,v $
- * Revision 1.2002  2001/08/13 05:10:40  robertj
+ * Revision 1.2003  2001/08/17 08:29:44  robertj
+ * Update from OpenH323
+ * Moved call end reasons enum from OpalConnection to global.
+ *
+ * Revision 2.1  2001/08/13 05:10:40  robertj
  * Updates from OpenH323 v1.6.0 release.
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.82  2001/08/16 07:49:19  robertj
+ * Changed the H.450 support to be more extensible. Protocol handlers
+ *   are now in separate classes instead of all in H323Connection.
  *
  * Revision 1.81  2001/08/10 11:03:52  robertj
  * Major changes to H.235 support in RAS to support server.
@@ -302,7 +310,6 @@
 
 #include <h323/h323ep.h>
 #include <h323/h323con.h>
-#include <h323/h450pdu.h>
 #include <h323/transaddr.h>
 #include <h323/h225ras.h>
 #include <h323/h235auth.h>
@@ -495,24 +502,13 @@ H225_ReleaseComplete_UUIE &
 
   m_h323_uu_pdu.m_h323_message_body.SetTag(H225_H323_UU_PDU_h323_message_body::e_releaseComplete);
 
-  // Do we need to include a ctInitiateReturnResult APDU in our Release Complete Message?
-  int invokeId = connection.GetCallTransferInvokeId();
-
-  if (invokeId != -1)
-  {
-    H450ServiceAPDU serviceAPDU;
-
-    serviceAPDU.BuildReturnResult(invokeId);
-    AttachSupplementaryServiceAPDU(serviceAPDU);
-  }
-  
   H225_ReleaseComplete_UUIE & release = m_h323_uu_pdu.m_h323_message_body;
 
   release.m_protocolIdentifier.SetValue(H225_ProtocolID);
   release.m_callIdentifier.m_guid = connection.GetCallIdentifier();
 
-  OpalConnection::CallEndReason reason = connection.GetCallEndReason();
-  static Q931::CauseValues const Q931cause[H323Connection::NumCallEndReasons] = {
+  OpalCallEndReason reason = connection.GetCallEndReason();
+  static Q931::CauseValues const Q931cause[OpalNumCallEndReasons] = {
     Q931::NormalCallClearing, /// Local endpoint application cleared call
     Q931::UserBusy,           /// Local endpoint did not accept call OnIncomingCall()=FALSE
     Q931::CallRejected,       /// Local endpoint declined to answer call
@@ -536,7 +532,7 @@ H225_ReleaseComplete_UUIE &
   if (Q931cause[reason] != Q931::ErrorInCauseIE)
     q931pdu.SetCause(Q931cause[reason]);
 
-  static unsigned const H225reason[H323Connection::NumCallEndReasons] = {
+  static unsigned const H225reason[OpalNumCallEndReasons] = {
     0, /// Local endpoint application cleared call
     0, /// Local endpoint did not accept call OnIncomingCall()=FALSE
     0, /// Local endpoint declined to answer call
@@ -654,24 +650,6 @@ H225_Notify_UUIE & H323SignalPDU::BuildNotify(const H323Connection & connection)
   notify.m_callIdentifier.m_guid = connection.GetCallIdentifier();
 
   return notify;
-}
-
-
-void H323SignalPDU::AttachSupplementaryServiceAPDU(H450ServiceAPDU& serviceAPDU)
-{
-  H4501_SupplementaryService supplementaryService;
-
-  // Create an H.450.1 supplementary service object
-  // and store the H450ServiceAPDU in the ROS array.
-  supplementaryService.m_serviceApdu.SetTag(H4501_ServiceApdus::e_rosApdus);
-  H4501_ArrayOf_ROS & operations = (H4501_ArrayOf_ROS &)supplementaryService.m_serviceApdu;
-  operations.SetSize(1);
-  operations[0] = serviceAPDU;
-
-  // Add the H.450 PDU to the H.323 User-to-User PDU as an OCTET STRING
-  m_h323_uu_pdu.IncludeOptionalField(H225_H323_UU_PDU::e_h4501SupplementaryService);
-  m_h323_uu_pdu.m_h4501SupplementaryService.SetSize(1);
-  m_h323_uu_pdu.m_h4501SupplementaryService[0].EncodeSubType(supplementaryService);
 }
 
 
