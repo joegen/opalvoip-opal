@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.cxx,v $
- * Revision 1.2008  2002/09/04 06:01:47  robertj
+ * Revision 1.2009  2002/11/10 11:33:18  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.7  2002/09/04 06:01:47  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.6  2002/07/01 04:56:31  robertj
@@ -276,13 +279,11 @@ OpalMediaFormat const OpalH261_QCIF(
 
 ///////////////////////////////////////////////////////////////////////////////
 
-H323_H261Capability::H323_H261Capability(const OpalMediaFormat & fmt,
-                                         unsigned _qcifMPI,
+H323_H261Capability::H323_H261Capability(unsigned _qcifMPI,
                                          unsigned _cifMPI,
                                          BOOL _temporalSpatialTradeOffCapability,
                                          BOOL _stillImageTransmission,
                                          unsigned _maxBitRate)
-  : H323VideoCapability(fmt)
 {
   qcifMPI = _qcifMPI;
   cifMPI = _cifMPI;
@@ -321,6 +322,12 @@ PObject::Comparison H323_H261Capability::Compare(const PObject & obj) const
 unsigned H323_H261Capability::GetSubType() const
 {
   return H245_VideoCapability::e_h261VideoCapability;
+}
+
+
+PString H323_H261Capability::GetFormatName() const
+{
+  return OpalH261;
 }
 
 
