@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2003  2001/11/06 05:40:13  robertj
+ * Revision 1.2004  2001/11/09 05:49:47  robertj
+ * Abstracted UDP connection algorithm
+ *
+ * Revision 2.2  2001/11/06 05:40:13  robertj
  * Added OpalListenerUDP class to do listener semantics on a UDP socket.
  *
  * Revision 2.1  2001/10/03 05:53:25  robertj
@@ -47,10 +50,13 @@
 #include <opal/manager.h>
 #include <opal/endpoint.h>
 
+#include <ptclib/asner.h>
 
-static const char IpPrefix[]   = "ip$";
-static const char TcpPrefix[]  = "tcp$";
-static const char UdpPrefix[]  = "udp$";
+
+static const char IpPrefix[] = "ip$"; // For backward compatibility with OpenH323
+
+const char * OpalTransportAddress::TcpPrefix = "tcp$";
+const char * OpalTransportAddress::UdpPrefix = "udp$";
 
 
 ////////////////////////////////////////////////////////////////
@@ -326,7 +332,7 @@ BOOL OpalInternalIPTransport::GetIpAndPort(const OpalTransportAddress & address,
     return FALSE;
   }
 
-  if (host == "*") {
+  if (host == "*" || host == "0.0.0.0") {
     ip = INADDR_ANY;
     return TRUE;
   }
@@ -334,7 +340,7 @@ BOOL OpalInternalIPTransport::GetIpAndPort(const OpalTransportAddress & address,
   if (PIPSocket::GetHostAddress(host, ip))
     return TRUE;
 
-  PTRACE(1, "Opal\tCould not find host : \"" << host << '"');
+  PTRACE(1, "Opal\tCould not find host \"" << host << '"');
   return FALSE;
 }
 
@@ -594,7 +600,7 @@ OpalTransport * OpalListenerTCP::Accept(const PTimeInterval & timeout)
 
 const char * OpalListenerTCP::GetProtoPrefix() const
 {
-  return TcpPrefix;
+  return OpalTransportAddress::TcpPrefix;
 }
 
 
@@ -708,7 +714,7 @@ OpalTransport * OpalListenerUDP::Accept(const PTimeInterval & timeout)
 
 const char * OpalListenerUDP::GetProtoPrefix() const
 {
-  return UdpPrefix;
+  return OpalTransportAddress::UdpPrefix;
 }
 
 
@@ -724,6 +730,11 @@ OpalTransport::OpalTransport(OpalEndPoint & end)
 OpalTransport::~OpalTransport()
 {
   PAssert(thread == NULL, PLogicError);
+}
+
+
+void OpalTransport::EndConnect(const OpalTransportAddress &)
+{
 }
 
 
@@ -766,10 +777,29 @@ void OpalTransport::SetPromiscuous(BOOL /*promiscuous*/)
 }
 
 
+BOOL OpalTransport::WriteConnect(WriteConnectCallback function, PObject * data)
+{
+  return function(*this, data);
+}
+
+
 void OpalTransport::AttachThread(PThread * thrd)
 {
-  PAssert(thread == NULL, PLogicError);
+  if (thread != NULL) {
+    PAssert(thread->WaitForTermination(10000), "Transport not terminated when reattaching thread");
+    delete thread;
+  }
+
   thread = thrd;
+}
+
+
+BOOL OpalTransport::IsRunning() const
+{
+  if (thread == NULL)
+    return FALSE;
+
+  return !thread->IsTerminated();
 }
 
 
@@ -787,13 +817,13 @@ OpalTransportIP::OpalTransportIP(OpalEndPoint & end, PIPSocket::Address binding)
 
 OpalTransportAddress OpalTransportIP::GetLocalAddress() const
 {
-  return OpalTransportAddress(localAddress, localPort);
+  return OpalTransportAddress(localAddress, localPort, GetProtoPrefix());
 }
 
 
 OpalTransportAddress OpalTransportIP::GetRemoteAddress() const
 {
-  return OpalTransportAddress(remoteAddress, remotePort);
+  return OpalTransportAddress(remoteAddress, remotePort, GetProtoPrefix());
 }
 
 
@@ -835,7 +865,7 @@ BOOL OpalTransportTCP::IsReliable() const
 
 BOOL OpalTransportTCP::IsCompatibleTransport(const OpalTransportAddress & address) const
 {
-  return address.Left(sizeof(TcpPrefix)-1) == TcpPrefix ||
+  return address.Left(strlen(OpalTransportAddress::TcpPrefix)) == OpalTransportAddress::TcpPrefix ||
          address.Left(sizeof(IpPrefix)-1) == IpPrefix;
 }
 
@@ -984,6 +1014,12 @@ BOOL OpalTransportTCP::OnOpen()
 }
 
 
+const char * OpalTransportTCP::GetProtoPrefix() const
+{
+  return OpalTransportAddress::TcpPrefix;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
@@ -1020,11 +1056,11 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep, PUDPSocket & udp)
 
 OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
                                    PIPSocket::Address binding,
-                                   const PBYTEArray & pdu,
+                                   const PBYTEArray & packet,
                                    PIPSocket::Address remAddr,
                                    WORD remPort)
   : OpalTransportIP(ep, binding),
-    preReadPDU(pdu)
+    preReadPacket(packet)
 {
   promiscuousReads = TRUE;
 
@@ -1056,20 +1092,113 @@ BOOL OpalTransportUDP::IsReliable() const
 
 BOOL OpalTransportUDP::IsCompatibleTransport(const OpalTransportAddress & address) const
 {
-  return address.Left(sizeof(UdpPrefix)-1) == UdpPrefix ||
+  return address.Left(strlen(OpalTransportAddress::UdpPrefix)) == OpalTransportAddress::UdpPrefix ||
          address.Left(sizeof(IpPrefix)-1) == IpPrefix;
 }
 
 
 BOOL OpalTransportUDP::Connect()
 {
-  if (remoteAddress == 0 || remotePort == 0)
+  if (remotePort == 0)
     return FALSE;
 
-  PUDPSocket * socket = (PUDPSocket *)GetReadChannel();
-  socket->SetSendAddress(remoteAddress, remotePort);
+  if (remoteAddress == 0) {
+    remoteAddress = INADDR_BROADCAST;
+    PTRACE(2, "OpalUDP\tBroadcast connect to port " << remotePort);
+  }
+  else {
+    PTRACE(2, "OpalUDP\tStarted connect to " << remoteAddress << ':' << remotePort);
+  }
+
+  // Skip over the OpalTransportUDP::Close to make sure PUDPSocket is deleted.
+  PIndirectChannel::Close();
+  readAutoDelete = writeAutoDelete = FALSE;
+
+  localPort = 0;
+
+  // See if prebound to interface, only use that if so
+  PIPSocket::InterfaceTable interfaces;
+  if (localAddress != INADDR_ANY) {
+    PTRACE(3, "OpalUDP\tConnect on pre-bound interface: " << localAddress);
+    interfaces.Append(new PIPSocket::InterfaceEntry("", localAddress, PIPSocket::Address(0xffffffff), ""));
+  }
+  else if (!PIPSocket::GetInterfaceTable(interfaces)) {
+    PTRACE(1, "OpalUDP\tNo interfaces on system!");
+    interfaces.Append(new PIPSocket::InterfaceEntry("", localAddress, PIPSocket::Address(0xffffffff), ""));
+  }
+  else {
+    PTRACE(4, "OpalUDP\tConnecting to interfaces:\n" << setfill('\n') << interfaces << setfill(' '));
+  }
+
+  PINDEX i;
+  for (i = 0; i < interfaces.GetSize(); i++) {
+    PIPSocket::Address interfaceAddress = interfaces[i].GetAddress();
+    if (interfaceAddress == 0 || interfaceAddress == PIPSocket::Address())
+      continue;
+
+    // Check for already have had that IP address.
+    PINDEX j;
+    for (j = 0; j < i; j++) {
+      if (interfaceAddress == interfaces[j].GetAddress())
+        break;
+    }
+    if (j < i)
+      continue;
+
+    // Not explicitly multicast
+    PUDPSocket * socket = new PUDPSocket(localPort);
+    connectSockets.Append(socket);
+
+    if (!socket->Listen(interfaceAddress)) {
+      PTRACE(2, "OpalUDP\tError on connect listen: " << socket->GetErrorText());
+      return FALSE;
+    }
+
+#ifndef __BEOS__
+    if (remoteAddress == INADDR_BROADCAST) {
+      if (!socket->SetOption(SO_BROADCAST, 1)) {
+        PTRACE(2, "OpalUDP\tError allowing broadcast: " << socket->GetErrorText());
+        return FALSE;
+      }
+    }
+#else
+    PTRACE(3, "RAS\tBroadcast option under BeOS is not implemented yet");
+#endif
+
+    socket->SetSendAddress(remoteAddress, remotePort);
+  }
+
+  if (connectSockets.IsEmpty())
+    return FALSE;
+
+  SetPromiscuous(TRUE);
 
   return TRUE;
+}
+
+
+void OpalTransportUDP::EndConnect(const OpalTransportAddress & theLocalAddress)
+{
+  PAssert(theLocalAddress.GetIpAndPort(remoteAddress, remotePort), PInvalidParameter);
+
+  for (PINDEX i = 0; i < connectSockets.GetSize(); i++) {
+    PUDPSocket * socket = (PUDPSocket *)connectSockets.GetAt(i);
+    PIPSocket::Address addr;
+    WORD port;
+    if (socket->GetLocalAddress(addr, port) && addr == remoteAddress && port == remotePort) {
+      connectSockets.DisallowDeleteObjects();
+      connectSockets.RemoveAt(i);
+      connectSockets.AllowDeleteObjects();
+      readChannel = NULL;
+      writeChannel = NULL;
+      socket->SetOption(SO_BROADCAST, 0);
+      PAssert(Open(socket), PLogicError);
+    }
+  }
+
+  connectSockets.RemoveAll();
+
+  OpalTransport::EndConnect(theLocalAddress);
 }
 
 
@@ -1081,6 +1210,28 @@ void OpalTransportUDP::SetPromiscuous(BOOL promiscuous)
 
 BOOL OpalTransportUDP::Read(void * buffer, PINDEX length)
 {
+  if (!connectSockets.IsEmpty()) {
+    PSocket::SelectList selection;
+
+    PINDEX i;
+    for (i = 0; i < connectSockets.GetSize(); i++)
+      selection += connectSockets[i];
+
+    if (PSocket::Select(selection, GetReadTimeout()) != PChannel::NoError) {
+      PTRACE(1, "OpalUDP\tError on connection read select.");
+      return FALSE;
+    }
+
+    if (selection.IsEmpty()) {
+      PTRACE(2, "OpalUDP\tTimeout on connection read select.");
+      return FALSE;
+    }
+
+    PUDPSocket & socket = (PUDPSocket &)selection[0];
+    socket.GetLocalAddress(localAddress, localPort);
+    readChannel = &socket;
+  }
+
   for (;;) {
     if (!OpalTransportIP::Read(buffer, length))
       return FALSE;
@@ -1106,22 +1257,53 @@ BOOL OpalTransportUDP::Read(void * buffer, PINDEX length)
 }
 
 
-BOOL OpalTransportUDP::ReadPDU(PBYTEArray & pdu)
+BOOL OpalTransportUDP::ReadPDU(PBYTEArray & packet)
 {
-  if (!Read(pdu.GetPointer(10000), 10000)) {
-    pdu.SetSize(0);
+  if (preReadPacket.GetSize() > 0) {
+    packet = preReadPacket;
+    preReadPacket.SetSize(0);
+    return TRUE;
+  }
+
+  if (!Read(packet.GetPointer(10000), 10000)) {
+    packet.SetSize(0);
     return FALSE;
   }
 
-  pdu.SetSize(GetLastReadCount());
-
+  packet.SetSize(GetLastReadCount());
   return TRUE;
 }
 
 
-BOOL OpalTransportUDP::WritePDU(const PBYTEArray & pdu)
+BOOL OpalTransportUDP::WritePDU(const PBYTEArray & packet)
 {
-  return Write((const BYTE *)pdu, pdu.GetSize());
+  return Write((const BYTE *)packet, packet.GetSize());
+}
+
+
+BOOL OpalTransportUDP::WriteConnect(WriteConnectCallback function, PObject * data)
+{
+  if (connectSockets.IsEmpty())
+    return OpalTransport::WriteConnect(function, data);
+
+  BOOL ok = FALSE;
+
+  PINDEX i;
+  for (i = 0; i < connectSockets.GetSize(); i++) {
+    PUDPSocket & socket = (PUDPSocket &)connectSockets[i];
+    socket.GetLocalAddress(localAddress, localPort);
+    writeChannel = &socket;
+    if (function(*this, data))
+      ok = TRUE;
+  }
+
+  return ok;
+}
+
+
+const char * OpalTransportUDP::GetProtoPrefix() const
+{
+  return OpalTransportAddress::UdpPrefix;
 }
 
 
