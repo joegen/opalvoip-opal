@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2014  2002/02/11 09:32:13  robertj
+ * Revision 1.2015  2002/02/13 02:31:13  robertj
+ * Added trace for default CanDoMediaBypass
+ *
+ * Revision 2.13  2002/02/11 09:32:13  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.12  2002/02/11 07:41:58  robertj
@@ -432,6 +435,7 @@ OpalMediaStream * OpalConnection::GetMediaStream(unsigned sessionId, BOOL source
 
 BOOL OpalConnection::CanDoMediaBypass(unsigned /*sessionID*/) const
 {
+  PTRACE(3, "OpalCon\tCanDoMediaBypass: default returns FALSE");
   return FALSE;
 }
 
