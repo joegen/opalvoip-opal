@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2012  2002/02/19 07:49:47  robertj
+ * Revision 1.2013  2002/04/08 02:40:13  robertj
+ * Fixed issues with using double originate call, eg from simple app command line.
+ *
+ * Revision 2.11  2002/02/19 07:49:47  robertj
  * Restructured media bypass functions to fix problems with RFC2833.
  *
  * Revision 2.10  2002/02/11 07:42:17  robertj
@@ -189,7 +192,9 @@ BOOL OpalManager::SetUpCall(const PString & partyA,
   OpalCall * call = CreateCall();
   token = call->GetToken();
 
-  if (SetUpConnection(*call, partyA) && SetUpConnection(*call, partyB))
+  call->SetPartyB(partyB);
+
+  if (SetUpConnection(*call, partyA))
     return TRUE;
 
   call->Clear();

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2008  2002/02/19 07:42:25  robertj
+ * Revision 1.2009  2002/04/08 02:40:13  robertj
+ * Fixed issues with using double originate call, eg from simple app command line.
+ *
+ * Revision 2.7  2002/02/19 07:42:25  robertj
  * Restructured media bypass functions to fix problems with RFC2833.
  *
  * Revision 2.6  2002/02/11 07:38:01  robertj
@@ -338,6 +341,15 @@ class OpalCall : public PObject
        object represents a conference call with more that 2 parties.
      */
     const PString & GetPartyB() const { return partyB; }
+
+    /**Set the B party for a call.
+       This is used when we wish to make two outgoing calls and bridge them.
+       When the OnConnected() call back occurs for the first outgoing call
+       (the A-Party) then this variable ised to make teh second outgoing call.
+      */
+    void SetPartyB(
+      const PString & b
+    ) { partyB = b; }
 
     /**Get the time the call started.
      */
