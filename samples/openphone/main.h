@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.10  2004/06/05 14:37:03  rjongbloed
+ * More implemntation of options dialog.
+ *
  * Revision 1.9  2004/05/25 12:56:07  rjongbloed
  * Added all silence suppression modes to Options dialog.
  *
@@ -135,12 +138,34 @@ class OptionsDialog : public wxDialog
     virtual bool TransferDataFromWindow();
 
   private:
+    void BrowseSoundFile(wxCommandEvent & event);
+    void PlaySoundFile(wxCommandEvent & event);
+    void BandwidthClass(wxCommandEvent & event);
+    void SelectedLocalInterface(wxCommandEvent & event);
+    void AddInterface(wxCommandEvent & event);
+    void RemoveInterface(wxCommandEvent & event);
+    void SelectedCodecToAdd(wxCommandEvent & event);
+    void AddCodec(wxCommandEvent & event);
+    void RemoveCodec(wxCommandEvent & event);
+    void MoveUpCodec(wxCommandEvent & event);
+    void MoveDownCodec(wxCommandEvent & event);
+    void ConfigureCodec(wxCommandEvent & event);
+    void SelectedCodec(wxCommandEvent & event);
+    void AddAlias(wxCommandEvent & event);
+    void RemoveAlias(wxCommandEvent & event);
+    void AddRoute(wxCommandEvent & event);
+    void RemoveRoute(wxCommandEvent & event);
+    void SelectedRoute(wxCommandEvent & event);
+
     MyFrame & mainFrame;
 
     PwxString m_Username;
     PwxString m_DisplayName;
     PwxString m_RingSoundFileName;
     bool      m_AutoAnswer;
+#if P_EXPAT
+    PwxString m_IVRScript;
+#endif
 
     int       m_Bandwidth;
     int       m_TCPPortBase;
@@ -152,16 +177,56 @@ class OptionsDialog : public wxDialog
     int       m_RTPTOS;
     PwxString m_STUNServer;
     PwxString m_NATRouter;
+    PwxString m_InterfaceToAdd;
 
     PwxString m_SoundPlayer;
     PwxString m_SoundRecorder;
     int       m_SoundBuffers;
+    PwxString m_LineInterfaceDevice;
+    int       m_AEC;
+    PwxString m_Country;
     int       m_MinJitter;
     int       m_MaxJitter;
     int       m_SilenceSuppression;
     int       m_SilenceThreshold;
     int       m_SignalDeadband;
     int       m_SilenceDeadband;
+
+    PwxString m_VideoGrabber;
+    int       m_VideoGrabFormat;
+    int       m_VideoGrabSource;
+    int       m_VideoEncodeQuality;
+    int       m_VideoGrabFrameRate;
+    int       m_VideoEncodeMaxBitRate;
+    bool      m_VideoGrabPreview;
+    bool      m_VideoFlipLocal;
+    bool      m_VideoAutoTransmit;
+    bool      m_VideoAutoReceive;
+    bool      m_VideoFlipRemote;
+
+    PwxString m_NewAlias;
+    int       m_GatekeeperMode;
+    PwxString m_GatekeeperAddress;
+    PwxString m_GatekeeperIdentifier;
+    int       m_GatekeeperTTL;
+    PwxString m_GatekeeperLogin;
+    PwxString m_GatekeeperPassword;
+    int       m_DTMFSendMode;
+    int       m_CallIntrusionProtectionLevel;
+    bool      m_DisableFastStart;
+    bool      m_DisableH245Tunneling;
+    bool      m_DisableH245inSETUP;
+
+    PwxString m_SIPProxy;
+    PwxString m_SIPProxyUsername;
+    PwxString m_SIPProxyPassword;
+    PwxString m_RegistrarName;
+    PwxString m_RegistrarUsername;
+    PwxString m_RegistrarPassword;
+
+    PwxString m_RouteSource;
+    PwxString m_RoutePattern;
+    PwxString m_RouteDestination;
 
     bool      m_EnableTracing;
     int       m_TraceLevelThreshold;
