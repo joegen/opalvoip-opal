@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2020  2004/06/04 04:09:59  csoutheren
+ * Revision 1.2021  2004/06/08 13:47:58  rjongbloed
+ * Fixed (pre)condition for checking and matching capabilities, thanks Guilhem Tardy
+ *
+ * Revision 2.19  2004/06/04 04:09:59  csoutheren
  * Fixed for updates to H225v5
  *
  * Revision 2.18  2004/04/07 08:21:03  rjongbloed
@@ -2137,9 +2140,8 @@ H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType
       {
         const H245_AudioCapability & audio = dataType;
         checkExact = capability.GetMainType() == H323Capability::e_Audio &&
-                    (capability.GetSubType() == audio.GetTag() ||
-                     capability.GetSubType() == H245_AudioCapability::e_nonStandard &&
-                     audio.GetTag() == H245_AudioCapability::e_nonStandard &&
+                     capability.GetSubType() == audio.GetTag() &&
+                    (capability.GetSubType() != H245_AudioCapability::e_nonStandard ||
                      capability.IsNonStandardMatch((const H245_NonStandardParameter &)audio));
         break;
       }
@@ -2148,9 +2150,8 @@ H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType
       {
         const H245_VideoCapability & video = dataType;
         checkExact = capability.GetMainType() == H323Capability::e_Video &&
-                    (capability.GetSubType() == video.GetTag() ||
-                     capability.GetSubType() == H245_VideoCapability::e_nonStandard &&
-                     video.GetTag() == H245_VideoCapability::e_nonStandard &&
+                     capability.GetSubType() == video.GetTag() &&
+                    (capability.GetSubType() != H245_VideoCapability::e_nonStandard ||
                      capability.IsNonStandardMatch((const H245_NonStandardParameter &)video));
         break;
       }
@@ -2159,9 +2160,8 @@ H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType
       {
         const H245_DataApplicationCapability & data = dataType;
         checkExact = capability.GetMainType() == H323Capability::e_Data &&
-                    (capability.GetSubType() == data.m_application.GetTag() ||
-                     capability.GetSubType() == H245_DataApplicationCapability_application::e_nonStandard &&
-                     data.m_application.GetTag() == H245_DataApplicationCapability_application::e_nonStandard &&
+                     capability.GetSubType() == data.m_application.GetTag() &&
+                    (capability.GetSubType() == H245_DataApplicationCapability_application::e_nonStandard ||
                      capability.IsNonStandardMatch((const H245_NonStandardParameter &)data.m_application));
         break;
       }
