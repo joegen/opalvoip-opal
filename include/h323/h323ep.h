@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2020  2003/01/07 04:39:52  robertj
+ * Revision 1.2021  2003/03/06 03:57:46  robertj
+ * IVR support (work in progress) requiring large changes everywhere.
+ *
+ * Revision 2.19  2003/01/07 04:39:52  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.18  2002/11/10 11:33:16  robertj
@@ -336,7 +339,7 @@ class H323EndPoint : public OpalEndPoint
 
        The default behaviour is pure.
      */
-    virtual BOOL SetUpConnection(
+    virtual BOOL MakeConnection(
       OpalCall & call,        /// Owner of connection
       const PString & party,  /// Remote party to call
       void * userData = NULL  /// Arbitrary data to pass to connection
@@ -592,8 +595,10 @@ class H323EndPoint : public OpalEndPoint
     virtual H323Connection * CreateConnection(
       OpalCall & call,           /// Call object to attach the connection to
       const PString & token,     /// Call token for new connection
-      void * userData,           /// Arbitrary user data from SetUpConnection
-      OpalTransport * transport, /// Transport connection came in on
+      void * userData,           /// Arbitrary user data from MakeConnection
+      OpalTransport & transport, /// Transport for connection
+      const PString & alias,     /// Alias for outgoing call
+      const H323TransportAddress & address,   /// Address for outgoing call
       H323SignalPDU * setupPDU   /// Setup PDU for incoming call
     );
 
