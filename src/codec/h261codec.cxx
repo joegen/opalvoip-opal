@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.cxx,v $
- * Revision 1.2004  2001/11/02 10:45:19  robertj
+ * Revision 1.2005  2002/01/14 06:35:57  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.3  2001/11/02 10:45:19  robertj
  * Updated to OpenH323 v1.7.3
  *
  * Revision 2.2  2001/10/05 00:22:13  robertj
@@ -40,6 +43,30 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.45  2002/01/09 06:07:13  robertj
+ * Fixed setting of RTP timestamp values on video transmission.
+ *
+ * Revision 1.44  2002/01/09 00:21:39  robertj
+ * Changes to support outgoing H.245 RequstModeChange.
+ *
+ * Revision 1.43  2002/01/08 01:30:41  robertj
+ * Tidied up some PTRACE debug output.
+ *
+ * Revision 1.42  2002/01/03 23:05:50  dereks
+ * Add methods to count number of H261 packets waiting to be sent.
+ *
+ * Revision 1.41  2001/12/20 01:19:43  dereks
+ * modify ptrace statments.
+ *
+ * Revision 1.40  2001/12/13 03:01:23  dereks
+ * Modify trace statement.
+ *
+ * Revision 1.39  2001/12/04 05:13:12  robertj
+ * Added videa bandwidth limiting code for H.261, thanks Jose Luis Urien.
+ *
+ * Revision 1.38  2001/12/04 04:26:06  robertj
+ * Added code to allow change of video quality in H.261, thanks Damian Sandras
  *
  * Revision 1.37  2001/10/23 02:17:16  dereks
  * Initial release of cu30 video codec.
@@ -285,6 +312,18 @@ BOOL H323_H261Capability::OnSendingPDU(H245_VideoCapability & cap) const
   h261.m_temporalSpatialTradeOffCapability = temporalSpatialTradeOffCapability;
   h261.m_maxBitRate = maxBitRate;
   h261.m_stillImageTransmission = stillImageTransmission;
+  return TRUE;
+}
+
+
+BOOL H323_H261Capability::OnSendingPDU(H245_VideoMode & pdu) const
+{
+  pdu.SetTag(H245_VideoMode::e_h261VideoMode);
+  H245_H261VideoMode & mode = pdu;
+  mode.m_resolution.SetTag(cifMPI > 0 ? H245_H261VideoMode_resolution::e_cif
+                                      : H245_H261VideoMode_resolution::e_qcif);
+  mode.m_bitRate = maxBitRate;
+  mode.m_stillImageTransmission = stillImageTransmission;
   return TRUE;
 }
 
@@ -568,7 +607,8 @@ class H323_H261Codec : public H323VideoCodec
 H323_H261Codec::H323_H261Codec(Direction dir, BOOL isqCIF)
   : H323VideoCodec("H.261", dir)
 {
-  PTRACE(3, "Codec\tH261 " << (dir == Encoder ? "en" : "de") << "coder created");
+  PTRACE(3, "H261\t" << (isqCIF ? "Q" : "") << "CIF "
+         << (dir == Encoder ? "en" : "de") << "coder created.");
   
   // no video decoder until we receive a packet
   videoDecoder = NULL;
@@ -611,15 +651,14 @@ H323_H261Codec::H323_H261Codec(Direction dir, BOOL isqCIF)
   lowLimit = 8;         
   actualQuality = qualityLevel;
   frameNum = 0;         // frame counter
+
+  timestampDelta = 0;
 }
 
 
 H323_H261Codec::~H323_H261Codec()
 {
   PWaitAndSignal mutex1(videoHandlerActive);
-
-  PString label1 = ( (videoEncoder==NULL)? "" : "active encoder");
-  PString label2 = ( (videoDecoder==NULL)? "" : "active DEcoder");
 
   if (videoDecoder)
   {
@@ -635,7 +674,6 @@ H323_H261Codec::~H323_H261Codec()
   if (rvts){
     delete rvts;
   }
-
 }
 
 
@@ -649,21 +687,19 @@ BOOL H323_H261Codec::Read(BYTE * buffer,
                           RTP_DataFrame & frame)
 {
   PWaitAndSignal mutex1(videoHandlerActive);  
-  PTRACE(6,"Read\t Acquire next packet from h261 encoder.\n");
+  PTRACE(6,"H261\tAcquire next packet from h261 encoder.\n");
 
-  if (videoEncoder == NULL)
+  if ( videoEncoder == NULL )
       videoEncoder = new P64Encoder(qualityLevel, fillLevel);
 
   if( rawDataChannel == NULL ) {
     length = 0;
-     PTRACE(3,"H261\t No channel to connect to video grabber.");
-     PTRACE(3,"H261\t Close down video transmission thread.");
+    PTRACE(3,"H261\tNo channel to connect to video grabber, close down video transmission thread.");
     return FALSE;
   }
   
-  if( !rawDataChannel->IsOpen()) {
-     PTRACE(3,"H261\t Video grabber is not initialised.");
-     PTRACE(3,"H261\t Close down video transmission thread.");
+  if( !rawDataChannel->IsOpen() ) {
+     PTRACE(3,"H261\tVideo grabber is not initialised, close down video transmission thread.");
      length = 0;
      return FALSE;
   }
@@ -671,20 +707,19 @@ BOOL H323_H261Codec::Read(BYTE * buffer,
   frameWidth  = ((PVideoChannel *)rawDataChannel)->GetGrabWidth();
   frameHeight = ((PVideoChannel *)rawDataChannel)->GetGrabHeight();
 
-    if( frameWidth == 0) {
-    PTRACE(3,"H261\t Video grab width is 0 x 0.");
-    PTRACE(3,"H261\t Close down video transmission thread.");
+  if( frameWidth == 0 ) {
+    PTRACE(3,"H261\tVideo grab width is 0 x 0, close down video transmission thread.");
     length=0;
     return FALSE;
   } 
- 
+
   videoEncoder->SetSize(frameWidth, frameHeight); 
 
   PINDEX bytesInFrame = 0;
   BOOL ok=TRUE;
 
-  if(!videoEncoder->PacketsOutStanding()) {
-    if( videoBitRate != 0 ) {    
+  if( !videoEncoder->PacketsOutStanding() ) {
+    if( videoBitRate != 0 && (videoBitRateControlModes & DynamicVideoQuality) ) {    
       if( (frameNum % frameRateDivider) == 0 ) {
 	int error = reqBitsPerFrame - frameBits;  // error signal
 	int aerror = PABS(error);                        
@@ -707,7 +742,7 @@ BOOL H323_H261Codec::Read(BYTE * buffer,
 	  numOf31++;
 	else 
 	  numOf31=0;
-	
+
 	if( actualQuality <= lowLimit ) 
 	  numOfNot31++;
 	else 
@@ -726,17 +761,15 @@ BOOL H323_H261Codec::Read(BYTE * buffer,
 	  numOfNot31 = 0;
 	}
 
-	PTRACE(4, "H261\t ReqBitsPerFrame=" << reqBitsPerFrame << 
+	PTRACE(6, "H261\tReqBitsPerFrame=" << reqBitsPerFrame << 
 	       " bitrate=" << videoBitRate <<
-	       " DefBitsPerFrame=" << defBitsPerFrame);
-	
-	PTRACE(3, "H261\t Constant bitrate control - FrameBits=" << frameBits 
+	       " DefBitsPerFrame=" << defBitsPerFrame <<
+               " quality=" << actualQuality);
+	PTRACE(6, "H261\tConstant bitrate control - FrameBits=" << frameBits 
 	       << " action=" << -act << " quality=" << actualQuality
 	       << " estfps=" <<  estFps
 	       << " framenum=" << frameNum
 	       << " FramerateDivider=" << frameRateDivider);
-	
-	PTRACE(4, "H261\t Adjust quality to "<<actualQuality);
 	
 	videoEncoder->SetQualityLevel( actualQuality );
       }
@@ -744,58 +777,93 @@ BOOL H323_H261Codec::Read(BYTE * buffer,
 
   //NO data is waiting to be read. Go and get some with the read call.
     if(rawDataChannel->Read(videoEncoder->GetFramePtr(), bytesInFrame)) {
-      
+      PTRACE(6,"H261\tSuccess. Read frame from the video source.");
+
       // If there is a Renderer attached, display the grabbed video.
       if( ((PVideoChannel *)rawDataChannel)->IsRenderOpen() ) {
 	ok=RenderFrame();                     //use data from grab process.
       }
       videoEncoder->ProcessOneFrame();        //Generate H261 packets.                
+      PTRACE(6, "H261\t" << videoEncoder->GetCountPacketsOutStanding() << 
+	        " packets for this frame" );      
+      if( videoBitRate != 0 && (videoBitRateControlModes & DynamicVideoQuality) ) {    
+        if( (frameNum % frameRateDivider) == 0 ) {
+	  frameBits=0;  //clear frame bits counter
+        }
 
-      if( (frameNum % frameRateDivider) == 0 ) {
-	frameBits=0;  //clear frame bits counter
-      }
-          
-      // estimate fps every 5 frames
-      if( (frameNum % 5 ) == 4 ) {
-        timeFor5Frames = PTimer::Tick() - timeFor5Frames;
-        estFps = (float)(5000.0 / timeFor5Frames.GetMilliSeconds());
-        defBitsPerFrame = (int) (videoBitRate / estFps);
-        reqBitsPerFrame = defBitsPerFrame * frameRateDivider;
-        timeFor5Frames = PTimer::Tick();
-      }
+        // estimate fps every 5 frames
+        if( (frameNum % 5 ) == 4 ) {
+          timeFor5Frames = PTimer::Tick() - timeFor5Frames;
+          estFps = (float)(5000.0 / timeFor5Frames.GetMilliSeconds());
+          defBitsPerFrame = (int) (videoBitRate / estFps);
+          reqBitsPerFrame = defBitsPerFrame * frameRateDivider;
+          timeFor5Frames = PTimer::Tick();
+        }
       
-      frameNum++;
+        frameNum++;
+      }
     } else {
-      PTRACE(3,"H261\t Failed to read data from video grabber..");
-      PTRACE(3,"H261\t Close down video transmission thread.");      
+      PTRACE(3,"H261\tFailed to read data from video grabber, close down video transmission thread.");      
       return FALSE;   //Read failed, return false.
     }
 
-  } else   //if(!videoEncoder->PacketsOutstanding())
+    /////////////////////////////////////////////////////////////////
+    /// THIS VALUE MUST BE CALCULATED AND NOT JUST SET TO 29.97Hz!!!!
+    /////////////////////////////////////////////////////////////////
+    timestampDelta = 3003;
+
+  } else {  //if(!videoEncoder->PacketsOutstanding())
     PThread::Current()->Sleep(5);  // Place a 5 ms interval betwen 
+    timestampDelta = 0;
+  }
   // packets of the same frame.
- 
+
+  PTRACE(6, "H261\t" << videoEncoder->GetCountPacketsOutStanding() << " packets outstanding" );
+
   videoEncoder->ReadOnePacket(buffer,length); //get next packet on list
-  if( length != 0 ) {                         
-    if(videoEncoder->PacketsOutStanding()) //packet read, so process it.
-      frame.SetMarker(FALSE);                
-    else
-      frame.SetMarker(TRUE);
-  }  //ReadOnePacket()
-  
-  frameBits += length << 3;     // count current frame bits
+  frame.SetMarker(!videoEncoder->PacketsOutStanding());
+
+  if( videoBitRate != 0 && (videoBitRateControlModes & DynamicVideoQuality) ) {    
+    frameBits += length << 3;     // count current frame bits
 
 #if PTRACING
-  bytesSent+= length;
-  PTimeInterval pT = PTimer::Tick()-startTime;
-  if(pT.GetSeconds()>0 && videoBitRate)
-    PTRACE(1, "H261\t transmit video bit rate is " << (bytesSent<<3)/ (1024 * pT.GetSeconds()) <<" k bps"
-	   << " on quality of "<< actualQuality );
+    bytesSent += length;
+    PTimeInterval pT = PTimer::Tick()-startTime;
+    if (pT.GetSeconds()>0 && videoBitRate) {
+      PTRACE(2, "H261\tTransmit video bit rate is "
+             << (bytesSent<<3)/ (1024 * pT.GetSeconds()) <<" k bps"
+	     << " on quality of "<< actualQuality );
+      startTime = PTimer::Tick();
+    }
 #endif
+  }
+
+  // This is a simple workaround for bandwidth control. We try to limit the
+  // video bandwidth to certain value introducing a variable delay between
+  // packets
+  if( videoBitRate != 0 && 
+      (videoBitRateControlModes & AdaptivePacketDelay) )
+  {    
+    PTimeInterval sinceLastReturnInterval = PTimer::Tick() - lastReadReturn;
+    
+    // ms = (bytes * 8) / (bps / 1024)
+    PInt64 waitForNextPacket = (length*8)/(videoBitRate/1024)
+                                  - sinceLastReturnInterval.GetMilliSeconds();
+    
+    PTRACE(3, "H261\tFrame bits: " << length*8
+           << ", sinceLastReturnInterval: " << sinceLastReturnInterval.GetMilliSeconds()
+           << ", waitForNextPacket: " << waitForNextPacket);
+
+    if (waitForNextPacket>0)
+    {
+      PThread::Current()->Sleep(waitForNextPacket);
+    }
+    
+    lastReadReturn = PTimer::Tick();
+  }
 
   return ok;
 }
-
 
 
 BOOL H323_H261Codec::Write(const BYTE * buffer,
@@ -811,7 +879,7 @@ BOOL H323_H261Codec::Write(const BYTE * buffer,
   }
 
   if( (++lastSequenceNumber) != frame.GetSequenceNumber() ) {
-    PTRACE(3,"H261\t Detected loss of one video packet. Will recover.");
+    PTRACE(3,"H261\tDetected loss of one video packet. Will recover.");
     lastSequenceNumber = frame.GetSequenceNumber();
     SendMiscCommand(H245_MiscellaneousCommand_type::e_lostPartialPicture);
   }
@@ -886,6 +954,7 @@ BOOL H323_H261Codec::Write(const BYTE * buffer,
   return ok;
 }
 
+
 /* Resize is relevant to the decoder only, as the encoder does not
    change size mid transmission.
 */
@@ -918,6 +987,7 @@ BOOL H323_H261Codec::Redraw()
   return RenderFrame();
 }
 
+
 /* RenderFrame does three things.
    a) Set internal variables
    b) Set size of the display frame. This call happens with every frame.
@@ -939,7 +1009,7 @@ BOOL H323_H261Codec::RenderFrame()
 
     //Now display local image.
     ((PVideoChannel *)rawDataChannel)->SetRenderFrameSize(frameWidth, frameHeight);
-    PTRACE(6, "Size of video rendering frame set to " << frameWidth << "x" << frameHeight);
+    PTRACE(6, "H261\tSize of video rendering frame set to " << frameWidth << "x" << frameHeight);
 
     if (direction == Encoder)
         ok = rawDataChannel->Write((const void *)videoEncoder->GetFramePtr(),0);
@@ -956,19 +1026,37 @@ BOOL H323_H261Codec::RenderFrame()
 void H323_H261Codec::SetTxQualityLevel(int qLevel)
 {
   qualityLevel = PMIN(14, PMAX(qLevel,3));
-
+  
   lowLimit = PMIN(10, qLevel - 2);
   highLimit = qLevel + 12;
+  
+  // If a video encoder is running and if there is no
+  // bandwidth limit, update the value
+  if ((videoBitRate == 0)&&(videoEncoder != NULL)) 
+    videoEncoder->SetQualityLevel (qualityLevel);
 }
+
+
+void H323_H261Codec::SetBackgroundFill(int idle)
+{
+  fillLevel = PMIN(99, PMAX(idle,1));
+  
+  // If a video encoder is running and if there is no
+  // bandwidth limit, update the value
+  if ((videoBitRate == 0)&&(videoEncoder != NULL)) 
+    videoEncoder->SetBackgroundFill (idle);
+}
+
 
 void H323_H261Codec::OnLostPartialPicture()
 {
-  PTRACE(3,"H261Codec\t lost partial picture message ignored, not implemented");
+  PTRACE(3,"H261\tLost partial picture message ignored, not implemented");
 }
+
 
 void H323_H261Codec::OnLostPicture()
 {
-  PTRACE(3,"H261Codec\t lost picture message ignored, not implemented");
+  PTRACE(3,"H261\tLost picture message ignored, not implemented");
 }
 
 #endif

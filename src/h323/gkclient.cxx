@@ -27,8 +27,41 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2007  2001/11/18 23:10:42  craigs
+ * Revision 1.2008  2002/01/14 06:35:57  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.6  2001/11/18 23:10:42  craigs
  * Added cast to allow compilation under Linux
+ * Revision 1.83  2002/01/13 23:58:48  robertj
+ * Added ability to set destination extra call info in ARQ
+ * Filled in destinationInfo in ARQ when answering call.
+ * Allowed application to override srcInfo in ARQ on outgoing call by
+ *   changing localPartyName.
+ * Added better end call codes for some ARJ reasons.
+ * Thanks Ben Madsen of Norwood Systems.
+ *
+ * Revision 1.82  2001/12/15 10:10:48  robertj
+ * GCC compatibility
+ *
+ * Revision 1.81  2001/12/15 08:36:49  robertj
+ * Added previous call times to all the other PDU's it is supposed to be in!
+ *
+ * Revision 1.80  2001/12/15 08:09:21  robertj
+ * Added alerting, connect and end of call times to be sent to RAS server.
+ *
+ * Revision 1.79  2001/12/14 06:41:36  robertj
+ * Added call end reason codes in DisengageRequest for GK server use.
+ *
+ * Revision 1.78  2001/12/13 11:00:13  robertj
+ * Changed search for access token in ACF to be able to look for two OID's.
+ *
+ * Revision 1.77  2001/12/06 06:44:42  robertj
+ * Removed "Win32 SSL xxx" build configurations in favour of system
+ *   environment variables to select optional libraries.
+ *
+ * Revision 1.76  2001/10/12 04:14:31  robertj
+ * Changed gk unregister so only way it doe not actually unregister is if
+ *   get URJ with reason code callInProgress, thanks Chris Purvis.
  *
  * Revision 2.5  2001/11/09 05:49:47  robertj
  * Abstracted UDP connection algorithm
@@ -310,7 +343,7 @@ H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, OpalTransport * trans)
   pregrantMakeCall = pregrantAnswerCall = RequireARQ;
 
   authenticators.Append(new H235AuthSimpleMD5);
-#ifdef P_SSL
+#if P_SSL
   authenticators.Append(new H235AuthProcedure1);
 #endif
 
@@ -534,6 +567,10 @@ BOOL H323Gatekeeper::RegistrationRequest(BOOL autoReg)
   H323SetAliasAddresses(endpoint.GetAliasNames(), rrq.m_terminalAlias);
 
   rrq.m_willSupplyUUIEs = TRUE;
+  rrq.IncludeOptionalField(H225_RegistrationRequest::e_usageReportingCapability);
+  rrq.m_usageReportingCapability.IncludeOptionalField(H225_RasUsageInfoTypes::e_startTime);
+  rrq.m_usageReportingCapability.IncludeOptionalField(H225_RasUsageInfoTypes::e_endTime);
+  rrq.m_usageReportingCapability.IncludeOptionalField(H225_RasUsageInfoTypes::e_terminationCause);
 
   if (!gatekeeperIdentifier) {
     rrq.IncludeOptionalField(H225_RegistrationRequest::e_gatekeeperIdentifier);
@@ -829,7 +866,9 @@ struct AdmissionRequestResponseInfo {
   unsigned uuiesRequested;
   H323TransportAddress * transportAddress;
   H225_ArrayOf_AliasAddress * aliasAddresses;
-  PString      accessTokenOID;
+  H225_ArrayOf_AliasAddress   destExtraCallInfo;
+  PString      accessTokenOID1;
+  PString      accessTokenOID2;
   PBYTEArray * accessTokenData;
 };
 
@@ -870,12 +909,25 @@ BOOL H323Gatekeeper::AdmissionRequest(H323Connection & connection,
     arq.m_gatekeeperIdentifier = gatekeeperIdentifier;
   }
 
+  PString localInfo = connection.GetLocalPartyName();
   PString destInfo = connection.GetRemotePartyName();
   arq.m_srcInfo.SetSize(1);
-  if (answeringCall)
+  if (answeringCall) {
     H323SetAliasAddress(destInfo, arq.m_srcInfo[0]);
+
+    if (!localInfo) {
+      arq.IncludeOptionalField(H225_AdmissionRequest::e_destinationInfo);
+      arq.m_destinationInfo.SetSize(1);
+      H323SetAliasAddress(localInfo, arq.m_destinationInfo[0]);
+    }
+  }
   else {
-    H323SetAliasAddresses(endpoint.GetAliasNames(), arq.m_srcInfo);
+    if (localInfo == endpoint.GetLocalUserName())
+      H323SetAliasAddresses(endpoint.GetAliasNames(), arq.m_srcInfo);
+    else {
+      arq.m_srcInfo.SetSize(1);
+      H323SetAliasAddress(localInfo, arq.m_srcInfo[0]);
+    }
     if (response.transportAddress == NULL || destInfo != *response.transportAddress) {
       arq.IncludeOptionalField(H225_AdmissionRequest::e_destinationInfo);
       arq.m_destinationInfo.SetSize(1);
@@ -909,8 +961,15 @@ BOOL H323Gatekeeper::AdmissionRequest(H323Connection & connection,
   AdmissionRequestResponseInfo info;
   info.transportAddress = response.transportAddress;
   info.aliasAddresses   = response.aliasAddresses;
-  info.accessTokenOID   = connection.GetGkAccessTokenOID();
   info.accessTokenData  = response.accessTokenData;
+  info.accessTokenOID1  = connection.GetGkAccessTokenOID();
+  PINDEX comma = info.accessTokenOID1.Find(',');
+  if (comma == P_MAX_INDEX)
+    info.accessTokenOID2 = info.accessTokenOID1;
+  else {
+    info.accessTokenOID2 = info.accessTokenOID1.Mid(comma+1);
+    info.accessTokenOID1.Delete(comma, P_MAX_INDEX);
+  }
 
   Request request(arq.m_requestSeqNum, pdu);
   request.responseInfo = &info;
@@ -922,6 +981,12 @@ BOOL H323Gatekeeper::AdmissionRequest(H323Connection & connection,
 
   connection.SetBandwidthAvailable(info.allocatedBandwidth);
   connection.SetUUIEsRequested(info.uuiesRequested);
+
+  if (info.destExtraCallInfo.GetSize() > 0) {
+    // Just the first element for the time being
+    PString destExtraCallInfo = H323GetAliasAddressString(info.destExtraCallInfo[0]);
+    connection.SetDestExtraCallInfo(destExtraCallInfo);
+  }
 
   return TRUE;
 }
@@ -1057,19 +1122,49 @@ BOOL H323Gatekeeper::OnReceiveAdmissionConfirm(const H225_AdmissionConfirm & acf
   if (acf.HasOptionalField(H225_AdmissionConfirm::e_uuiesRequested))
     info.uuiesRequested = GetUUIEsRequested(acf.m_uuiesRequested);
 
-  if (info.accessTokenData != NULL && !info.accessTokenOID &&
+  if (acf.HasOptionalField(H225_AdmissionConfirm::e_destExtraCallInfo))
+    info.destExtraCallInfo = acf.m_destExtraCallInfo;
+
+  if (info.accessTokenData != NULL && !info.accessTokenOID1 &&
       acf.HasOptionalField(H225_AdmissionConfirm::e_tokens)) {
-    PTRACE(4, "Looking for OID " << info.accessTokenOID << " in ACF to copy.");
+    PTRACE(4, "Looking for OID " << info.accessTokenOID1 << " in ACF to copy.");
     for (PINDEX i = 0; i < acf.m_tokens.GetSize(); i++) {
-      if (info.accessTokenOID == acf.m_tokens[i].m_tokenOID) {
-        PTRACE(4, "Copying ACF nonStandard OctetString.");
-        *info.accessTokenData = acf.m_tokens[i].m_nonStandard.m_data;
-        break;
+      if (acf.m_tokens[i].m_tokenOID == info.accessTokenOID1) {
+        PTRACE(4, "Looking for OID " << info.accessTokenOID2 << " in token to copy.");
+        if (acf.m_tokens[i].HasOptionalField(H235_ClearToken::e_nonStandard) &&
+            acf.m_tokens[i].m_nonStandard.m_nonStandardIdentifier == info.accessTokenOID2) {
+          PTRACE(4, "Copying ACF nonStandard OctetString.");
+          *info.accessTokenData = acf.m_tokens[i].m_nonStandard.m_data;
+          break;
+        }
       }
     }
   }
 
   return TRUE;
+}
+
+
+static void SetRasUsageInformation(const H323Connection & connection, 
+                                   H225_RasUsageInformation & usage)
+{
+  unsigned time = connection.GetAlertingTime().GetTimeInSeconds();
+  if (time != 0) {
+    usage.IncludeOptionalField(H225_RasUsageInformation::e_alertingTime);
+    usage.m_alertingTime = time;
+  }
+
+  time = connection.GetConnectionStartTime().GetTimeInSeconds();
+  if (time != 0) {
+    usage.IncludeOptionalField(H225_RasUsageInformation::e_connectTime);
+    usage.m_connectTime = time;
+  }
+
+  time = connection.GetConnectionEndTime().GetTimeInSeconds();
+  if (time != 0) {
+    usage.IncludeOptionalField(H225_RasUsageInformation::e_endTime);
+    usage.m_endTime = time;
+  }
 }
 
 
@@ -1084,6 +1179,20 @@ BOOL H323Gatekeeper::DisengageRequest(const H323Connection & connection, unsigne
   drq.m_callIdentifier.m_guid = connection.GetCallIdentifier();
   drq.m_disengageReason.SetTag(reason);
   drq.m_answeredCall = connection.HadAnsweredCall();
+
+  drq.IncludeOptionalField(H225_DisengageRequest::e_usageInformation);
+  SetRasUsageInformation(connection, drq.m_usageInformation);
+
+  drq.IncludeOptionalField(H225_DisengageRequest::e_terminationCause);
+  drq.m_terminationCause.SetTag(H225_CallTerminationCause::e_releaseCompleteReason);
+  Q931::CauseValues cause = H323TranslateFromCallEndReason(connection, drq.m_terminationCause);
+  if (cause != Q931::ErrorInCauseIE) {
+    drq.m_terminationCause.SetTag(H225_CallTerminationCause::e_releaseCompleteCauseIE);
+    PASN_OctetString & rcReason = drq.m_terminationCause;
+    rcReason.SetSize(2);
+    rcReason[0] = 0x80;
+    rcReason[1] = (BYTE)(0x80|cause);
+  }
 
   if (!gatekeeperIdentifier) {
     drq.IncludeOptionalField(H225_DisengageRequest::e_gatekeeperIdentifier);
@@ -1105,10 +1214,25 @@ BOOL H323Gatekeeper::OnReceiveDisengageRequest(const H225_DisengageRequest & drq
     id = drq.m_callIdentifier.m_guid;
   if (id == NULL)
     id = drq.m_conferenceID;
+
   endpoint.ClearCall(id.AsString(), EndedByGatekeeper);
 
   H323RasPDU response(*this);
-  response.BuildDisengageConfirm(drq.m_requestSeqNum);
+
+  H323Connection * connection = endpoint.FindConnectionWithLock(id.AsString());
+  if (connection == NULL)
+    response.BuildDisengageReject(drq.m_requestSeqNum,
+                                  H225_DisengageRejectReason::e_requestToDropOther);
+  else {
+    H225_DisengageConfirm & dcf = response.BuildDisengageConfirm(drq.m_requestSeqNum);
+
+    dcf.IncludeOptionalField(H225_DisengageConfirm::e_usageInformation);
+    SetRasUsageInformation(*connection, dcf.m_usageInformation);
+
+    connection->Release(EndedByGatekeeper);
+    connection->Unlock();
+  }
+
   return WritePDU(response);
 }
 
@@ -1124,6 +1248,8 @@ BOOL H323Gatekeeper::BandwidthRequest(H323Connection & connection,
   brq.m_callReferenceValue = connection.GetCallReference();
   brq.m_callIdentifier.m_guid = connection.GetCallIdentifier();
   brq.m_bandWidth = requestedBandwidth;
+  brq.IncludeOptionalField(H225_BandwidthRequest::e_usageInformation);
+  SetRasUsageInformation(connection, brq.m_usageInformation);
 
   Request request(brq.m_requestSeqNum, pdu);
   
@@ -1263,6 +1389,8 @@ void H323Gatekeeper::BuildInfoRequestResponse(H225_InfoRequestResponse & irr,
     info.m_callType.SetTag(H225_CallType::e_pointToPoint);
     info.m_bandWidth = connection->GetBandwidthUsed();
     info.m_callModel.SetTag(H225_CallModel::e_direct);
+    info.IncludeOptionalField(H225_InfoRequestResponse_perCallInfo_subtype::e_usageInformation);
+    SetRasUsageInformation(*connection, info.m_usageInformation);
   }
 }
 

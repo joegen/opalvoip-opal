@@ -24,11 +24,24 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: t38proto.h,v $
- * Revision 1.2002  2001/08/01 05:06:00  robertj
+ * Revision 1.2003  2002/01/14 06:35:57  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.1  2001/08/01 05:06:00  robertj
  * Major changes to H.323 capabilities, uses OpalMediaFormat for base name.
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.4  2002/01/01 23:27:50  craigs
+ * Added CleanupOnTermination functions
+ * Thanks to Vyacheslav Frolov
+ *
+ * Revision 1.3  2001/12/22 01:57:04  robertj
+ * Cleaned up code and allowed for repeated sequence numbers.
+ *
+ * Revision 1.2  2001/11/09 05:39:54  craigs
+ * Added initial T.38 support thanks to Adam Lazur
  *
  * Revision 1.1  2001/07/17 04:44:29  robertj
  * Partial implementation of T.120 and T.38 logical channels.
@@ -52,8 +65,8 @@ class T38_IFPPacket;
 
 ///////////////////////////////////////////////////////////////////////////////
 
-/**This class describes the T.38 protocol handler.
- */
+/**This class handles the processing of the T.38 protocol.
+  */
 class OpalT38Protocol : public PObject
 {
     PCLASSINFO(OpalT38Protocol, PObject);
@@ -66,10 +79,18 @@ class OpalT38Protocol : public PObject
     /**Create a new protocol handler.
      */
     OpalT38Protocol();
+
+    /**Destroy the protocol handler.
+     */
+    ~OpalT38Protocol();
   //@}
 
   /**@name Operations */
   //@{
+    /**This is called to clean up any threads on connection termination.
+     */
+    virtual void Close();
+
     /**Handle the origination of a T.38 connection.
       */
     virtual BOOL Originate(
@@ -82,12 +103,28 @@ class OpalT38Protocol : public PObject
       OpalTransport & transport
     );
 
+    /**Prepare outgoing T.38 packet.
+
+       If returns FALSE, then the writing loop should be terminated.
+      */
+    virtual BOOL PreparePacket(
+      T38_IFPPacket & pdu
+    );
+
     /**Handle incoming T.38 packet.
 
        If returns FALSE, then the reading loop should be terminated.
       */
     virtual BOOL HandlePacket(
       const T38_IFPPacket & pdu
+    );
+
+    /**Handle lost T.38 packets.
+
+       If returns FALSE, then the reading loop should be terminated.
+      */
+    virtual BOOL HandlePacketLost(
+      unsigned nLost
     );
   //@}
 };

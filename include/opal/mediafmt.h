@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2007  2001/10/05 00:22:13  robertj
+ * Revision 1.2008  2002/01/14 06:35:57  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.6  2001/10/05 00:22:13  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.5  2001/10/04 00:42:12  robertj
@@ -46,6 +49,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.5  2001/12/11 04:27:50  craigs
+ * Added support for 5.3kbps G723.1
  *
  * Revision 1.4  2001/09/21 02:49:44  robertj
  * Implemented static object for all "known" media formats.
@@ -362,7 +368,8 @@ class OpalMediaFormat : public PCaselessString
 #define OPAL_G729A         "G.729A"
 #define OPAL_G729B         "G.729B"
 #define OPAL_G729AB        "G.729A/B"
-#define OPAL_G7231         "G.723.1"
+#define OPAL_G7231_6k3     "G.723.1(6.3k)"
+#define OPAL_G7231_5k3     "G.723.1(5.3k)"
 #define OPAL_GSM0610       "GSM-06.10"
 
 extern OpalMediaFormat const OpalPCM16;
@@ -376,7 +383,8 @@ extern OpalMediaFormat const OpalG729;
 extern OpalMediaFormat const OpalG729A;
 extern OpalMediaFormat const OpalG729B;
 extern OpalMediaFormat const OpalG729AB;
-extern OpalMediaFormat const OpalG7231;
+extern OpalMediaFormat const OpalG7231_6k3;
+extern OpalMediaFormat const OpalG7231_5k3;
 extern OpalMediaFormat const OpalGSM0610;
 
 #endif

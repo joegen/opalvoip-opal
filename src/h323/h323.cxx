@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2016  2002/01/14 02:26:23  robertj
+ * Revision 1.2017  2002/01/14 06:35:57  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.15  2002/01/14 02:26:23  robertj
  * Changes to support OPAL protocol model (eg SIP gateway).
  *
  * Revision 2.14  2001/11/15 07:01:36  robertj
@@ -79,6 +82,66 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.228  2002/01/14 00:06:51  robertj
+ * Added H.450.6, better H.450.2 error handling and  and Music On Hold.
+ * Added destExtraCallInfo field for ARQ.
+ * Improved end of call status on ARJ responses.
+ *   Thanks Ben Madsen of Norwood Systems
+ *
+ * Revision 1.227  2002/01/10 23:11:16  robertj
+ * Fixed failure to pass session ID in capability create channel function, this
+ *   only causes a problem with new external RTP sessions.
+ *
+ * Revision 1.226  2002/01/10 22:43:05  robertj
+ * Added initialisation of T.38 mode change flag, thanks Vyacheslav Frolov
+ *
+ * Revision 1.225  2002/01/10 22:40:57  robertj
+ * Fixed race condition with T.38 mode change variable, thanks Vyacheslav Frolov
+ *
+ * Revision 1.224  2002/01/10 05:13:54  robertj
+ * Added support for external RTP stacks, thanks NuMind Software Systems.
+ *
+ * Revision 1.223  2002/01/09 00:21:39  robertj
+ * Changes to support outgoing H.245 RequstModeChange.
+ *
+ * Revision 1.222  2002/01/07 01:42:07  robertj
+ * Fixed default tunneling flag value when usinf connection constructor wirth
+ *    3 parameters (works with 2 and 4 but not 3).
+ *
+ * Revision 1.221  2002/01/02 04:52:41  craigs
+ * Added RequestModeChange thanks to Vyacheslav Frolov
+ *
+ * Revision 1.220  2001/12/22 03:21:03  robertj
+ * Added create protocol function to H323Connection.
+ *
+ * Revision 1.219  2001/12/22 03:11:03  robertj
+ * Changed OnRequstModeChange to return ack, then actually do the change.
+ *
+ * Revision 1.218  2001/12/22 01:53:24  robertj
+ * Added more support for H.245 RequestMode operation.
+ *
+ * Revision 1.217  2001/12/15 09:10:21  robertj
+ * Fixed uninitialised end time preventing correct time from being set in DRQ.
+ *
+ * Revision 1.216  2001/12/15 08:08:34  robertj
+ * Added alerting, connect and end of call times to be sent to RAS server.
+ *
+ * Revision 1.215  2001/12/14 06:39:28  robertj
+ * Broke out conversion of Q.850 and H.225 release complete codes to
+ *   OpenH323 call end reasons enum.
+ *
+ * Revision 1.214  2001/12/13 11:03:00  robertj
+ * Added ability to automatically add ACF access token to SETUP pdu.
+ *
+ * Revision 1.213  2001/11/22 02:30:13  robertj
+ * Fixed GetSessionCodecNames so it actually returns the codec names.
+ *
+ * Revision 1.212  2001/11/09 05:39:54  craigs
+ * Added initial T.38 support thanks to Adam Lazur
+ *
+ * Revision 1.211  2001/11/06 22:57:23  robertj
+ * Added missing start of H.245 channel in SETUP PDU.
  *
  * Revision 1.210  2001/11/01 06:11:57  robertj
  * Plugged very small mutex hole that could cause crashes.
@@ -832,7 +895,11 @@ H323Connection::H323Connection(OpalCall & call,
                                const PString & token)
   : OpalConnection(call, ep, token),
     endpoint(ep),
-    localCapabilities(ep.GetCapabilities())
+    localCapabilities(ep.GetCapabilities()),
+    gkAccessTokenOID(ep.GetGkAccessTokenOID()),
+    alertingTime(0),
+    connectedTime(0),
+    callEndTime(0)
 {
   Construct(ep.IsFastStartDisabled(), ep.IsH245TunnelingDisabled());
 }
@@ -844,9 +911,13 @@ H323Connection::H323Connection(OpalCall & call,
                                BOOL disableFastStart)
   : OpalConnection(call, ep, token),
     endpoint(ep),
-    localCapabilities(ep.GetCapabilities())
+    localCapabilities(ep.GetCapabilities()),
+    gkAccessTokenOID(ep.GetGkAccessTokenOID()),
+    alertingTime(0),
+    connectedTime(0),
+    callEndTime(0)
 {
-  Construct(disableFastStart, !ep.IsH245TunnelingDisabled());
+  Construct(disableFastStart, ep.IsH245TunnelingDisabled());
 }
 
 
@@ -857,7 +928,10 @@ H323Connection::H323Connection(OpalCall & call,
                                BOOL disableTunneling)
   : OpalConnection(call, ep, token),
     endpoint(ep),
-    localCapabilities(ep.GetCapabilities())
+    localCapabilities(ep.GetCapabilities()),
+    alertingTime(0),
+    connectedTime(0),
+    callEndTime(0)
 {
   Construct(disableFastStart, disableTunneling);
 }
@@ -883,6 +957,7 @@ void H323Connection::Construct(BOOL disableFastStart, BOOL disableTunneling)
   bandwidthAvailable = endpoint.GetInitialBandwidth();
 
   uuiesRequested = 0; // Empty set
+  addAccessTokenToSetup = TRUE; // Automatic inclusion of ACF access token in SETUP
 
   mediaWaitForConnect = FALSE;
   transmitterSidePaused = FALSE;
@@ -891,6 +966,7 @@ void H323Connection::Construct(BOOL disableFastStart, BOOL disableTunneling)
   fastStartedTransmitMediaStream = NULL;
   earlyStart = FALSE;
   startT120 = TRUE;
+  t38ModeChange = FALSE;
 
   remoteMaxAudioDelayJitter = 0;
   maxAudioDelayJitter = endpoint.GetManager().GetMaxAudioDelayJitter();
@@ -904,6 +980,7 @@ void H323Connection::Construct(BOOL disableFastStart, BOOL disableTunneling)
   h450dispatcher = new H450xDispatcher(*this);
   h4502handler = new H4502Handler(*this, *h450dispatcher);
   h4504handler = new H4504Handler(*this, *h450dispatcher);
+  h4506handler = new H4506Handler(*this, *h450dispatcher);
 }
 
 
@@ -984,8 +1061,11 @@ void H323Connection::CleanUpOnCallEnd()
       H323SignalPDU replyPDU;
       replyPDU.BuildReleaseComplete(*this);
       h450dispatcher->AttachToReleaseComplete(replyPDU);
-      if (OnSendReleaseComplete(replyPDU))
+      if (OnSendReleaseComplete(replyPDU)) {
         replyPDU.Write(*signallingChannel);
+        if (callEndTime.GetTimeInSeconds() == 0)
+          callEndTime = PTime();
+      }
     }
     signallingChannel->CloseWait();
   }
@@ -995,7 +1075,7 @@ void H323Connection::CleanUpOnCallEnd()
     controlChannel->CloseWait();
 
   // Check for gatekeeper and do disengage if have one
-  if (callEndReason != EndedByGatekeeper) {
+  if (callEndReason != EndedByGatekeeper && callEndReason != EndedByCallForwarded) {
     H323Gatekeeper * gatekeeper = endpoint.GetGatekeeper();
     if (gatekeeper != NULL)
       gatekeeper->DisengageRequest(*this, H225_DisengageReason::e_normalDrop);
@@ -1329,8 +1409,16 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
       switch (response.rejectReason) {
         case H225_AdmissionRejectReason::e_calledPartyNotRegistered :
           Release(EndedByNoUser);
+          break;
         case H225_AdmissionRejectReason::e_requestDenied :
           Release(EndedByNoBandwidth);
+          break;
+        case H225_AdmissionRejectReason::e_invalidPermission :
+          Release(EndedBySecurityDenial);
+          break;
+        case H225_AdmissionRejectReason::e_resourceUnavailable :
+          Release(EndedByRemoteBusy);
+          break;
         default :
           Release(EndedByGatekeeper);
       }
@@ -1466,6 +1554,7 @@ BOOL H323Connection::OnReceivedAlerting(const H323SignalPDU & pdu)
     if (!CreateOutgoingControlChannel(alert.m_h245Address))
       return FALSE;
 
+  alertingTime = PTime();
   return OnAlerting(pdu, remotePartyName);
 }
 
@@ -1515,6 +1604,7 @@ BOOL H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
       fastStartChannels[i].Start();
   }
 
+  connectedTime = PTime();
   OnConnected();
 
   // If we have a H.245 channel available, bring it up. We either have media
@@ -1601,6 +1691,8 @@ BOOL H323Connection::OnReceivedStatusEnquiry(const H323SignalPDU & /*pdu*/)
 
 void H323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
 {
+  callEndTime = PTime();
+
   switch (connectionState) {
     case EstablishedConnection :
       Release(EndedByRemoteUser);
@@ -1613,26 +1705,8 @@ void H323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
     default :
       if (callEndReason == EndedByRefusal)
         callEndReason = OpalNumCallEndReasons;
-      switch (pdu.GetQ931().GetCause()) {
-        case Q931::UserBusy :
-          Release(EndedByRemoteBusy);
-          break;
-        case Q931::Congestion :
-          Release(EndedByRemoteCongestion);
-          break;
-        case Q931::NoRouteToDestination :
-          Release(EndedByNoUser);
-          break;
-        case Q931::Redirection :
-          Release(EndedByCallForwarded);
-          break;
-        case Q931::NoResponse :
-        case Q931::NoAnswer :
-          Release(EndedByNoAnswer);
-          break;
-        default :
-          Release(EndedByRefusal);
-      }
+      const H225_ReleaseComplete_UUIE & rc = pdu.m_h323_uu_pdu.m_h323_message_body;
+      Release(H323TranslateToCallEndReason(pdu.GetQ931().GetCause(), rc.m_reason));
   }
 }
 
@@ -1784,14 +1858,22 @@ OpalCallEndReason H323Connection::SendSignalSetup(const PString & alias,
     H323Gatekeeper::AdmissionResponse response;
     response.transportAddress = &gatekeeperRoute;
     response.aliasAddresses = &newAliasAddresses;
+    if (!gkAccessTokenOID)
+      response.accessTokenData = &gkAccessTokenData;
     while (!gatekeeper->AdmissionRequest(*this, response, alias.IsEmpty())) {
       PTRACE(1, "H225\tGatekeeper refused admission: "
              << H225_AdmissionRejectReason(response.rejectReason).GetTagName());
+      h4502handler->onReceivedAdmissionReject(H4501_GeneralErrorList::e_notAvailable);
+
       switch (response.rejectReason) {
         case H225_AdmissionRejectReason::e_calledPartyNotRegistered :
           return EndedByNoUser;
         case H225_AdmissionRejectReason::e_requestDenied :
           return EndedByNoBandwidth;
+        case H225_AdmissionRejectReason::e_invalidPermission :
+          return EndedBySecurityDenial;
+        case H225_AdmissionRejectReason::e_resourceUnavailable :
+          return EndedByRemoteBusy;
         case H225_AdmissionRejectReason::e_incompleteAddress :
           if (OnInsufficientDigits())
             break;
@@ -1815,6 +1897,29 @@ OpalCallEndReason H323Connection::SendSignalSetup(const PString & alias,
   if (newAliasAddresses.GetSize() > 0) {
     setup.IncludeOptionalField(H225_Setup_UUIE::e_destinationAddress);
     setup.m_destinationAddress = newAliasAddresses;
+
+    // Update the Q.931 Information Element (if is an E.164 address)
+    PString e164 = H323GetAliasAddressE164(newAliasAddresses);
+    if (!e164)
+      remotePartyNumber = e164;
+  }
+
+  if (addAccessTokenToSetup && !gkAccessTokenOID && !gkAccessTokenData.IsEmpty()) {
+    PString oid1, oid2;
+    PINDEX comma = gkAccessTokenOID.Find(',');
+    if (comma == P_MAX_INDEX)
+      oid1 = oid2 = gkAccessTokenOID;
+    else {
+      oid1 = gkAccessTokenOID.Left(comma);
+      oid2 = gkAccessTokenOID.Mid(comma+1);
+    }
+    setup.IncludeOptionalField(H225_Setup_UUIE::e_tokens);
+    PINDEX last = setup.m_tokens.GetSize();
+    setup.m_tokens.SetSize(last+1);
+    setup.m_tokens[last].m_tokenOID = oid1;
+    setup.m_tokens[last].IncludeOptionalField(H235_ClearToken::e_nonStandard);
+    setup.m_tokens[last].m_nonStandard.m_nonStandardIdentifier = oid2;
+    setup.m_tokens[last].m_nonStandard.m_data = gkAccessTokenData;
   }
 
   if (!signallingChannel->SetRemoteAddress(gatekeeperRoute)) {
@@ -1977,6 +2082,8 @@ BOOL H323Connection::SetAlerting(const PString & /*calleeName*/, BOOL withMedia)
     }
   }
 
+  alertingTime = PTime();
+
   // send Q931 Alerting PDU
   PTRACE(3, "H225\tSending Alerting PDU");
   h245TunnelTxPDU = alertingPDU;
@@ -2032,6 +2139,8 @@ BOOL H323Connection::SetConnected()
 
   delete alertingPDU;
   alertingPDU = NULL;
+
+  connectedTime = PTime();
 
   return TRUE;
 }
@@ -2763,15 +2872,86 @@ int H323Connection::GetCallTransferInvokeId()
 }
 
 
-void H323Connection::HoldCall(BOOL localHold)
+void H323Connection::HandleCallTransferFailure(const int returnError)
 {
-  h4504handler->HoldCall(localHold);
+  h4502handler->HandleCallTransferFailure(returnError);
 }
 
 
-void H323Connection::RetrieveCall(bool localHold)
+void H323Connection::HoldCall(BOOL localHold)
 {
-  h4504handler->RetrieveCall(localHold);
+  h4504handler->HoldCall(localHold);
+  holdMediaChannel = SwapHoldMediaChannels(holdMediaChannel);
+}
+
+
+void H323Connection::RetrieveCall()
+{
+  // Is the current call on hold?
+  if (IsLocalHold()) {
+    h4504handler->RetrieveCall();
+    holdMediaChannel = SwapHoldMediaChannels(holdMediaChannel);
+  }
+  else if (IsRemoteHold()) {
+    PTRACE(4, "H4504\tRemote-end Call Hold not implemented.");
+  }
+  else {
+    PTRACE(4, "H4504\tCall is not on Hold.");
+  }
+}
+
+
+void H323Connection::SetHoldMedia(PChannel * audioChannel)
+{
+  holdMediaChannel = PAssertNULL(audioChannel);
+}
+
+
+BOOL H323Connection::IsMediaOnHold() const
+{
+  return holdMediaChannel != NULL;
+}
+
+
+PChannel * H323Connection::SwapHoldMediaChannels(PChannel * newChannel)
+{
+  if (IsMediaOnHold())
+    PAssertNULL(newChannel);
+
+  PChannel * existingTransmitChannel = NULL;
+
+  PINDEX count = logicalChannels->GetSize();
+
+  for (PINDEX i = 0; i < count; ++i) {
+    H323Channel* channel = logicalChannels->GetChannelAt(i);
+    if (!channel)
+      return NULL;
+
+    unsigned int session_id = channel->GetSessionID();
+    if (session_id == OpalMediaFormat::DefaultAudioSessionID) {
+      const H323ChannelNumber & channelNumber = channel->GetNumber();
+
+      H323_RTPChannel * chan2 = reinterpret_cast<H323_RTPChannel*>(channel);
+
+      if(!channelNumber.IsFromRemote()) { // Transmit channel
+        if (IsMediaOnHold()) {
+//          H323Codec & codec = *channel->GetCodec();
+//          existingTransmitChannel = codec.GetRawDataChannel();
+//          codec.AttachChannel(newChannel, FALSE);   // Do not autodelete
+        }
+        else {
+          // Enable/mute the transmit channel depending on whether the remote end is held
+          chan2->SetPause(IsLocalHold());
+        }
+      }
+      else {
+        // Enable/mute the receive channel depending on whether the remote endis held
+        chan2->SetPause(IsLocalHold());
+      }
+    }
+  }
+
+  return existingTransmitChannel;
 }
 
 
@@ -2784,6 +2964,18 @@ BOOL H323Connection::IsLocalHold() const
 BOOL H323Connection::IsRemoteHold() const
 {
   return h4504handler->GetState() == H4504Handler::e_ch_RE_Held;
+}
+
+
+BOOL H323Connection::IsCallOnHold() const
+{
+  return h4504handler->GetState() != H4504Handler::e_ch_Idle;
+}
+
+
+void H323Connection::SendCallWaitingIndication(const unsigned nbOfAddWaitingCalls)
+{
+  h4506handler->AttachToAlerting(*alertingPDU, nbOfAddWaitingCalls);
 }
 
 
@@ -2950,7 +3142,6 @@ void H323Connection::InternalEstablishedConnectionCheck()
     OnSelectLogicalChannels();
 
   connectionState = EstablishedConnection;
-  connectionStartTime = PTime();
   OnEstablished();
 }
 
@@ -3027,6 +3218,8 @@ void H323Connection::OnSelectLogicalChannels()
       SelectDefaultLogicalChannel(OpalMediaFormat::DefaultAudioSessionID);
       if (endpoint.CanAutoStartTransmitVideo())
         SelectDefaultLogicalChannel(OpalMediaFormat::DefaultVideoSessionID);
+      if (endpoint.CanAutoStartTransmitFax())
+        SelectDefaultLogicalChannel(OpalMediaFormat::DefaultDataSessionID);
       break;
 
     case FastStartInitiate :
@@ -3034,6 +3227,9 @@ void H323Connection::OnSelectLogicalChannels()
       SelectFastStartChannels(OpalMediaFormat::DefaultVideoSessionID,
                               endpoint.CanAutoStartTransmitVideo(),
                               endpoint.CanAutoStartReceiveVideo());
+      SelectFastStartChannels(OpalMediaFormat::DefaultDataSessionID,
+                              endpoint.CanAutoStartTransmitFax(),
+                              endpoint.CanAutoStartReceiveFax());
       break;
 
     case FastStartResponse :
@@ -3043,6 +3239,10 @@ void H323Connection::OnSelectLogicalChannels()
         StartFastStartChannel(OpalMediaFormat::DefaultVideoSessionID, H323Channel::IsTransmitter);
       if (endpoint.CanAutoStartReceiveVideo())
         StartFastStartChannel(OpalMediaFormat::DefaultVideoSessionID, H323Channel::IsReceiver);
+      if (endpoint.CanAutoStartTransmitFax())
+        StartFastStartChannel(OpalMediaFormat::DefaultDataSessionID, H323Channel::IsTransmitter);
+      if (endpoint.CanAutoStartReceiveFax())
+        StartFastStartChannel(OpalMediaFormat::DefaultDataSessionID, H323Channel::IsReceiver);
       break;
   }
 }
@@ -3271,7 +3471,7 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
   if (!OnCreateLogicalChannel(*capability, direction, errorCode))
     return NULL; // If codec combination not supported, return error
 
-  H323Channel * channel = capability->CreateChannel(*this, direction, 0, param);
+  H323Channel * channel = capability->CreateChannel(*this, direction, param->m_sessionID, param);
   if (channel == NULL) {
     errorCode = H245_OpenLogicalChannelReject_cause::e_dataTypeNotAvailable;
     PTRACE(2, "H323\tCreateLogicalChannel - data type not available");
@@ -3286,6 +3486,31 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
   PTRACE(2, "H323\tCreateLogicalChannel - insufficient bandwidth");
   delete channel;
   return NULL;
+}
+
+
+H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability & capability,
+                                                           H323Channel::Directions dir,
+                                                           unsigned sessionID,
+                                        const H245_H2250LogicalChannelParameters * param)
+{
+  RTP_Session * session;
+
+  if (param != NULL)
+    session = UseSession(param->m_sessionID, param->m_mediaControlChannel);
+  else {
+    // Make a fake transmprt address from the connection so gets initialised with
+    // the transport type (IP, IPX, multicast etc).
+    H323TransportAddress h323Addr = GetControlChannel().GetLocalAddress();
+    H245_TransportAddress h245Addr;
+    h323Addr.SetPDU(h245Addr);
+    session = UseSession(sessionID, h245Addr);
+  }
+
+  if (session == NULL)
+    return NULL;
+
+  return new H323_RTPChannel(*this, capability, dir, *session);
 }
 
 
@@ -3356,6 +3581,17 @@ void H323Connection::CloseLogicalChannel(unsigned number, BOOL fromRemote)
 void H323Connection::CloseLogicalChannelNumber(const H323ChannelNumber & number)
 {
   CloseLogicalChannel(number, number.IsFromRemote());
+}
+
+
+void H323Connection::CloseAllLogicalChannels(BOOL fromRemote)
+{
+  for (PINDEX i = 0; i < logicalChannels->GetSize(); i++) {
+    H245NegLogicalChannel & negChannel = logicalChannels->GetNegLogicalChannelAt(i);
+    H323Channel * channel = negChannel.GetChannel();
+    if (channel != NULL && channel->GetNumber().IsFromRemote() == fromRemote)
+      negChannel.Close();
+  }
 }
 
 
@@ -3519,16 +3755,19 @@ RTP_Session * H323Connection::UseSession(unsigned sessionID,
                                          const H245_TransportAddress & taddr)
 {
   // We only support unicast IP at this time.
-  if (taddr.GetTag() != H245_TransportAddress::e_unicastAddress)
+  if (taddr.GetTag() != H245_TransportAddress::e_unicastAddress) {
     return NULL;
+  }
 
   const H245_UnicastAddress & uaddr = taddr;
-  if (uaddr.GetTag() != H245_UnicastAddress::e_iPAddress)
+  if (uaddr.GetTag() != H245_UnicastAddress::e_iPAddress) {
     return NULL;
+  }
 
   RTP_Session * session = rtpSessions.UseSession(sessionID);
-  if (session != NULL)
+  if (session != NULL) {
     return session;
+  }
 
   RTP_UDP * udp_session = new RTP_UDP(sessionID);
   udp_session->SetUserData(new H323_RTP_UDP(*this, *udp_session));
@@ -3549,38 +3788,136 @@ void H323Connection::OnRTPStatistics(const RTP_Session & session) const
 }
 
 
+static void AddSessionCodecName(PStringStream & name, H323Channel * channel)
+{
+  if (channel == NULL)
+    return;
+
+  OpalMediaStream * stream = ((H323UnidirectionalChannel*)channel)->GetMediaStream();
+  if (stream == NULL)
+    return;
+
+  OpalMediaFormat mediaFormat = stream->GetMediaFormat();
+  if (mediaFormat.IsEmpty())
+    return;
+
+  if (name.IsEmpty())
+    name << mediaFormat;
+  else if (name != mediaFormat)
+    name << " / " << mediaFormat;
+}
+
+
 PString H323Connection::GetSessionCodecNames(unsigned sessionID) const
 {
   PStringStream name;
 
-  H323Channel * channel = FindChannel(sessionID, FALSE);
-  if (channel != NULL)
-    name << *channel;
+  AddSessionCodecName(name, FindChannel(sessionID, FALSE));
+  AddSessionCodecName(name, FindChannel(sessionID, TRUE));
 
   return name;
 }
 
 
-void H323Connection::RequestModeChange()
+BOOL H323Connection::RequestModeChange(const PString & newModes)
 {
+  return requestModeProcedure->StartRequest(newModes);
 }
 
 
-BOOL H323Connection::OnRequestModeChange(const H245_RequestMode & /*pdu*/,
-                                         H245_RequestModeAck & /*ack*/,
-                                         H245_RequestModeReject & /*reject*/)
+BOOL H323Connection::RequestModeChange(const H245_ArrayOf_ModeDescription & newModes)
 {
-  return TRUE;
+  return requestModeProcedure->StartRequest(newModes);
+}
+
+
+BOOL H323Connection::OnRequestModeChange(const H245_RequestMode & pdu,
+                                         H245_RequestModeAck & /*ack*/,
+                                         H245_RequestModeReject & /*reject*/,
+                                         PINDEX & selectedMode)
+{
+  for (selectedMode = 0; selectedMode < pdu.m_requestedModes.GetSize(); selectedMode++) {
+    BOOL ok = TRUE;
+    for (PINDEX i = 0; i < pdu.m_requestedModes[0].GetSize(); i++) {
+      if (localCapabilities.FindCapability(pdu.m_requestedModes[selectedMode][i]) == NULL) {
+        ok = FALSE;
+        break;
+      }
+    }
+    if (ok)
+      return TRUE;
+  }
+
+  PTRACE(1, "H245\tMode change rejected as does not have capabilities");
+  return FALSE;
+}
+
+
+void H323Connection::OnModeChanged(const H245_ModeDescription & newMode)
+{
+  CloseAllLogicalChannels(FALSE);
+
+  // Start up the new ones
+  for (PINDEX i = 0; i < newMode.GetSize(); i++) {
+    H323Capability * capability = localCapabilities.FindCapability(newMode[i]);
+    PAssertNULL(capability); // Should not occur as OnRequestModeChange checks them
+    if (!OpenLogicalChannel(*capability,
+                            capability->GetDefaultSessionID(),
+                            H323Channel::IsTransmitter)) {
+      PTRACE(1, "H245\tCould not open channel after mode change: " << *capability);
+    }
+  }
 }
 
 
 void H323Connection::OnAcceptModeChange(const H245_RequestModeAck & /*pdu*/)
 {
+  if (t38ModeChange) {
+    PTRACE(2, "H323\tT.38 mode change accepted.");
+    t38ModeChange = FALSE;
+
+    CloseAllLogicalChannels(FALSE);
+
+    H323Capability * capability = localCapabilities.FindCapability("T.38");
+    PAssertNULL(capability); // Should not occur as RequestModeChangeT38 checks it
+    if (!OpenLogicalChannel(*capability,
+                            capability->GetDefaultSessionID(),
+                            H323Channel::IsTransmitter)) {
+      PTRACE(1, "H245\tCould not open channel after T.38 mode change");
+    }
+  }
 }
 
 
 void H323Connection::OnRefusedModeChange(const H245_RequestModeReject * /*pdu*/)
 {
+  if (t38ModeChange) {
+    PTRACE(2, "H323\tT.38 mode change rejected.");
+    t38ModeChange = FALSE;
+  }
+}
+
+
+OpalT120Protocol * H323Connection::CreateT120ProtocolHandler() const
+{
+  return endpoint.CreateT120ProtocolHandler(*this);
+}
+
+
+OpalT38Protocol * H323Connection::CreateT38ProtocolHandler() const
+{
+  return endpoint.CreateT38ProtocolHandler(*this);
+}
+
+
+BOOL H323Connection::RequestModeChangeT38()
+{
+  t38ModeChange = TRUE;
+  if (RequestModeChange("T.38"))
+    return TRUE;
+
+  t38ModeChange = FALSE;
+  return FALSE;
 }
 
 

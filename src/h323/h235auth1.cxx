@@ -24,7 +24,10 @@
  * Contributor(s): Fürbass Franz <franz.fuerbass@infonova.at>
  *
  * $Log: h235auth1.cxx,v $
- * Revision 1.2005  2001/10/05 00:22:14  robertj
+ * Revision 1.2006  2002/01/14 06:35:57  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.4  2001/10/05 00:22:14  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.3  2001/08/17 08:31:54  robertj
@@ -35,6 +38,10 @@
  *
  * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 1.4  2001/12/06 06:44:42  robertj
+ * Removed "Win32 SSL xxx" build configurations in favour of system
+ *   environment variables to select optional libraries.
  *
  * Revision 1.3  2001/09/13 01:15:20  robertj
  * Added flag to H235Authenticator to determine if gkid and epid is to be
@@ -49,6 +56,9 @@
  */
 
 #include <ptlib.h>
+
+#if P_SSL
+
 #include <openssl/sha.h>
 
 #include <h323/h235auth.h>
@@ -442,6 +452,9 @@ BOOL H235AuthProcedure1::UseGkAndEpIdentifiers() const
 {
   return TRUE;
 }
+
+
+#endif // P_SSL
 
 
 /////////////////////////////////////////////////////////////////////////////

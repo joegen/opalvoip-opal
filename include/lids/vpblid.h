@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vpblid.h,v $
- * Revision 1.2003  2001/10/05 00:22:13  robertj
+ * Revision 1.2004  2002/01/14 06:35:57  robertj
+ * Updated to OpenH323 v1.7.9
+ *
+ * Revision 2.2  2001/10/05 00:22:13  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.1  2001/08/01 05:18:51  robertj
@@ -30,6 +33,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.10  2001/11/19 06:35:59  robertj
+ * Added tone generation handling
  *
  * Revision 1.9  2001/09/13 05:27:46  robertj
  * Fixed incorrect return type in virtual function, thanks Vjacheslav Andrejev
@@ -65,17 +71,39 @@
 #ifndef __LIDS_VPBLID_H
 #define __LIDS_VPBLID_H
 
+#include <lids/lid.h>
+#include <vpbapi.h>
+
+
 #ifdef __GNUC__
 #pragma interface
 #endif
 
 
-#include <lids/lid.h>
+
+///////////////////////////////////////////////////////////////////////////////
+
+// DR - this thread is needed to keep tones playing indefinately, as VPB
+// tones normally end after a defined period.
+class ToneThread : public PThread
+{
+  PCLASSINFO(PThread, ToneThread);
+
+  public:
+    ToneThread(int handle, VPB_TONE tone);
+    ~ToneThread();
+    void Main();
+
+  private:
+    int        handle;   // VPB handle to play tone on
+    VPB_TONE   vpbtone;  // tone parameters of tone to play
+    PSyncPoint shutdown; // used to signal Main() to finish
+};
 
 
 ///////////////////////////////////////////////////////////////////////////////
 
-/**This class describes the xJack line interface device.
+/**This class describes the Voicetronix line interface device.
  */
 class OpalVpbDevice : public OpalLineInterfaceDevice
 {
@@ -91,13 +119,13 @@ class OpalVpbDevice : public OpalLineInterfaceDevice
       */
     ~OpalVpbDevice() { Close(); }
 
-    /**Open the xJack device.
+    /**Open the device.
       */
     virtual BOOL Open(
       const PString & device      /// Device identifier name.
     );
 
-    /**Close the xJack device.
+    /**Close the device.
       */
     virtual BOOL Close();
 
@@ -272,6 +300,14 @@ class OpalVpbDevice : public OpalLineInterfaceDevice
       unsigned line   /// Number of line
     );
 
+    virtual BOOL PlayTone(
+      unsigned line,          /// Number of line
+      CallProgressTones tone  /// Tone to be played
+    );
+
+    virtual BOOL StopTone(
+      unsigned line   /// Number of line
+    );
 
   protected:
     unsigned cardNumber;
@@ -284,12 +320,15 @@ class OpalVpbDevice : public OpalLineInterfaceDevice
       BOOL SetLineOffHook(BOOL newState);
       BOOL IsLineRinging(DWORD *);
 
-      int    handle;
-      BOOL   currentHookState;
-      PINDEX readFormat,    writeFormat;
-      PINDEX readFrameSize, writeFrameSize;
-      BOOL   readIdle,      writeIdle;
-      PTimer ringTimeout;
+      int        handle;
+      BOOL       currentHookState;
+      PINDEX     readFormat,    writeFormat;
+      PINDEX     readFrameSize, writeFrameSize;
+      BOOL       readIdle,      writeIdle;
+      PTimer     ringTimeout;
+      PMutex     DTMFmutex;
+      BOOL       DTMFplaying;
+      ToneThread *myToneThread;
     } lineState[MaxLineCount];
 };
 
