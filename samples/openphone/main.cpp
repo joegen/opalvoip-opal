@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cpp,v $
+ * Revision 1.22  2004/09/28 23:00:17  rjongbloed
+ * Added ability to add and edit Speed DIals
+ *
  * Revision 1.21  2004/08/22 12:27:45  rjongbloed
  * More work on SIP registration, time to live refresh and deregistration on exit.
  *
@@ -85,15 +88,6 @@
 #include <wx/image.h>
 #include <wx/valgen.h>
 #include <wx/xrc/xmlres.h>
-
-#if OPAL_SIP
-#include <sip/sip.h>
-#endif
-
-#if OPAL_H323
-#include <h323/h323.h>
-#include <h323/gkclient.h>
-#endif
 
 #include <opal/ivr.h>
 #include <lids/lidep.h>
@@ -278,20 +272,23 @@ BEGIN_EVENT_TABLE(MyFrame, wxFrame)
 
   EVT_MENU_OPEN(MyFrame::OnAdjustMenus)
 
-  EVT_MENU(XRCID("MenuQuit"),   MyFrame::OnMenuQuit)
-  EVT_MENU(XRCID("MenuAbout"),  MyFrame::OnMenuAbout)
-  EVT_MENU(XRCID("MenuCall"),   MyFrame::OnMenuCall)
-  EVT_MENU(XRCID("MenuAnswer"), MyFrame::OnMenuAnswer)
-  EVT_MENU(XRCID("MenuHangUp"), MyFrame::OnMenuHangUp)
-  EVT_MENU(XRCID("ViewLarge"),  MyFrame::OnViewLarge)
-  EVT_MENU(XRCID("ViewSmall"),  MyFrame::OnViewSmall)
-  EVT_MENU(XRCID("ViewList"),   MyFrame::OnViewList)
-  EVT_MENU(XRCID("ViewDetails"),MyFrame::OnViewDetails)
-  EVT_MENU(XRCID("MenuOptions"),MyFrame::OnOptions)
+  EVT_MENU(XRCID("MenuQuit"),     MyFrame::OnMenuQuit)
+  EVT_MENU(XRCID("MenuAbout"),    MyFrame::OnMenuAbout)
+  EVT_MENU(XRCID("MenuCall"),     MyFrame::OnMenuCall)
+  EVT_MENU(XRCID("MenuAnswer"),   MyFrame::OnMenuAnswer)
+  EVT_MENU(XRCID("MenuHangUp"),   MyFrame::OnMenuHangUp)
+  EVT_MENU(XRCID("NewSpeedDial"), MyFrame::OnNewSpeedDial)
+  EVT_MENU(XRCID("ViewLarge"),    MyFrame::OnViewLarge)
+  EVT_MENU(XRCID("ViewSmall"),    MyFrame::OnViewSmall)
+  EVT_MENU(XRCID("ViewList"),     MyFrame::OnViewList)
+  EVT_MENU(XRCID("ViewDetails"),  MyFrame::OnViewDetails)
+  EVT_MENU(XRCID("EditSpeedDial"),MyFrame::OnEditSpeedDial)
+  EVT_MENU(XRCID("MenuOptions"),  MyFrame::OnOptions)
 
   EVT_SPLITTER_SASH_POS_CHANGED(SplitterID, MyFrame::OnSashPositioned)
   EVT_LIST_ITEM_ACTIVATED(SpeedDialsID, MyFrame::OnSpeedDialActivated)
   EVT_LIST_COL_END_DRAG(SpeedDialsID, MyFrame::OnSpeedDialColumnResize)
+  EVT_LIST_ITEM_RIGHT_CLICK(SpeedDialsID, MyFrame::OnRightClick) 
 END_EVENT_TABLE()
 
 MyFrame::MyFrame()
@@ -500,6 +497,28 @@ void MyFrame::OnMenuHangUp(wxCommandEvent& WXUNUSED(event))
 }
 
 
+void MyFrame::OnNewSpeedDial(wxCommandEvent& WXUNUSED(event))
+{
+  wxString groupName = "New Speed Dial";
+  unsigned tieBreaker = 0;
+  int i = 0;
+  while (i < m_speedDials->GetItemCount()) {
+    if (m_speedDials->GetItemText(i) != groupName)
+      i++;
+    else {
+      groupName.sprintf("New Speed Dial (%u)", ++tieBreaker);
+      i = 0;
+    }
+  }
+
+  int pos = m_speedDials->InsertItem(INT_MAX, groupName);
+  m_speedDials->SetItem(pos, e_NumberColumn, "");
+  m_speedDials->SetItem(pos, e_AddressColumn, "");
+  m_speedDials->SetItem(pos, e_DescriptionColumn, "");
+  m_speedDials->EditLabel(pos);
+}
+
+
 void MyFrame::OnViewLarge(wxCommandEvent& event)
 {
   GetMenuBar()->Check(event.GetId(), true);
@@ -525,6 +544,13 @@ void MyFrame::OnViewDetails(wxCommandEvent& event)
 {
   GetMenuBar()->Check(event.GetId(), true);
   RecreateSpeedDials(e_ViewDetails);
+}
+
+
+void MyFrame::OnEditSpeedDial(wxCommandEvent& WXUNUSED(event))
+{
+  if (m_speedDials->GetSelectedItemCount() == 1)
+    EditSpeedDial(m_speedDials->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED));
 }
 
 
@@ -557,6 +583,90 @@ void MyFrame::OnSpeedDialColumnResize(wxListEvent& event)
   wxString key;
   key.sprintf("ColumnWidth%u", event.GetColumn());
   config->Write(key, m_speedDials->GetColumnWidth(event.GetColumn()));
+}
+
+
+void MyFrame::OnRightClick(wxListEvent& event)
+{
+  EditSpeedDial(event.GetIndex());
+}
+
+
+void MyFrame::EditSpeedDial(int index)
+{
+  if (index < 0)
+    return;
+
+  wxListItem item;
+  item.m_itemId = index;
+  item.m_mask = wxLIST_MASK_TEXT;
+
+  item.m_col = e_NameColumn;
+  if (!m_speedDials->GetItem(item))
+    return;
+
+  // Should display a menu, but initially just allow editing
+  SpeedDialDialog dlg(this);
+
+  wxString originalName = dlg.m_Name = item.m_text;
+
+  item.m_col = e_NumberColumn;
+  if (m_speedDials->GetItem(item))
+    dlg.m_Number = item.m_text;
+
+  item.m_col = e_AddressColumn;
+  if (m_speedDials->GetItem(item))
+    dlg.m_Address = item.m_text;
+
+  item.m_col = e_DescriptionColumn;
+  if (m_speedDials->GetItem(item))
+    dlg.m_Description = item.m_text;
+
+  if (dlg.ShowModal() == wxID_OK) {
+    item.m_col = e_NameColumn;
+    item.m_text = dlg.m_Name;
+    m_speedDials->SetItem(item);
+
+    item.m_col = e_NumberColumn;
+    item.m_text = dlg.m_Number;
+    m_speedDials->SetItem(item);
+
+    item.m_col = e_AddressColumn;
+    item.m_text = dlg.m_Address;
+    m_speedDials->GetItem(item);
+
+    item.m_col = e_DescriptionColumn;
+    item.m_text = dlg.m_Description;
+    m_speedDials->SetItem(item);
+
+    wxConfigBase * config = wxConfig::Get();
+    config->SetPath(SpeedDialsGroup);
+    config->DeleteGroup(originalName);
+    config->SetPath(dlg.m_Name);
+    config->Write(SpeedDialNumberKey, dlg.m_Number);
+    config->Write(SpeedDialAddressKey, dlg.m_Address);
+    config->Write(SpeedDialDescriptionKey, dlg.m_Description);
+  }
+}
+
+
+bool MyFrame::HasSpeedDialName(const wxString & name) const
+{
+  return m_speedDials->FindItem(-1, name) >= 0;
+}
+
+
+bool MyFrame::HasSpeedDialNumber(const wxString & number) const
+{
+  wxListItem item;
+  item.m_mask = wxLIST_MASK_TEXT;
+  item.m_col = e_NumberColumn;
+  for (item.m_itemId = 0; m_speedDials->GetItem(item); item.m_itemId++) {
+    int len = item.m_text.Length();
+    if (len > 0 && strncmp(number, item.m_text, len) == 0)
+      return true;
+  }
+  return false;
 }
 
 
@@ -697,14 +807,14 @@ bool MyFrame::Initialise()
   ////////////////////////////////////////
   // Creating the endpoints
 #if OPAL_H323
-  h323EP = new H323EndPoint(*this);
+  h323EP = new MyH323EndPoint(*this);
 
   if (h323EP->StartListeners(PStringArray()))
     LogWindow << "H.323 listening on " << setfill(',') << h323EP->GetListeners() << setfill(' ') << endl;
 #endif
 
 #if OPAL_SIP
-  sipEP = new SIPEndPoint(*this);
+  sipEP = new MySIPEndPoint(*this);
 
   if (sipEP->StartListeners(PStringArray()))
     LogWindow << "SIP listening on " << setfill(',') << sipEP->GetListeners() << setfill(' ') << endl;
@@ -896,8 +1006,10 @@ bool MyFrame::Initialise()
 
   if (config->Read(RegistrarNameKey, &m_registrarName) &&
       config->Read(RegistrarUsernameKey, &m_registrarUser) &&
-      config->Read(RegistrarPasswordKey, &m_registrarPassword))
+      config->Read(RegistrarPasswordKey, &m_registrarPassword)) {
     sipEP->Register(m_registrarName, m_registrarUser, m_registrarPassword);
+    LogWindow << "SIP registration started for " << m_registrarUser << '@' << m_registrarName << endl;
+  }
 
   ////////////////////////////////////////
   // Routing fields
@@ -1013,7 +1125,7 @@ END_EVENT_TABLE()
   FindWindowByName(name##Key)->SetValidator(wxGenericValidator(&m_##name))
 
 OptionsDialog::OptionsDialog(MyFrame *parent)
-  : mainFrame(*parent)
+  : m_frame(*parent)
 {
   PINDEX i;
 
@@ -1022,39 +1134,39 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
 
   ////////////////////////////////////////
   // General fields
-  INIT_FIELD(Username, mainFrame.GetDefaultUserName());
-  INIT_FIELD(DisplayName, mainFrame.GetDefaultDisplayName());
+  INIT_FIELD(Username, m_frame.GetDefaultUserName());
+  INIT_FIELD(DisplayName, m_frame.GetDefaultDisplayName());
   INIT_FIELD(RingSoundFileName, "");
-  INIT_FIELD(AutoAnswer, mainFrame.pcssEP->GetAutoAnswer());
+  INIT_FIELD(AutoAnswer, m_frame.pcssEP->GetAutoAnswer());
 #if P_EXPAT
-  INIT_FIELD(IVRScript, mainFrame.ivrEP->GetDefaultVXML());
+  INIT_FIELD(IVRScript, m_frame.ivrEP->GetDefaultVXML());
 #endif
 
   ////////////////////////////////////////
   // Networking fields
-  INIT_FIELD(Bandwidth, mainFrame.h323EP->GetInitialBandwidth());
-  INIT_FIELD(TCPPortBase, mainFrame.GetTCPPortBase());
-  INIT_FIELD(TCPPortMax, mainFrame.GetTCPPortMax());
-  INIT_FIELD(UDPPortBase, mainFrame.GetUDPPortBase());
-  INIT_FIELD(UDPPortMax, mainFrame.GetUDPPortMax());
-  INIT_FIELD(RTPPortBase, mainFrame.GetRtpIpPortBase());
-  INIT_FIELD(RTPPortMax, mainFrame.GetRtpIpPortMax());
-  INIT_FIELD(RTPTOS, mainFrame.GetRtpIpTypeofService());
-  INIT_FIELD(STUNServer, mainFrame.GetSTUN() != NULL ? mainFrame.GetSTUN()->GetServer() : PString());
+  INIT_FIELD(Bandwidth, m_frame.h323EP->GetInitialBandwidth());
+  INIT_FIELD(TCPPortBase, m_frame.GetTCPPortBase());
+  INIT_FIELD(TCPPortMax, m_frame.GetTCPPortMax());
+  INIT_FIELD(UDPPortBase, m_frame.GetUDPPortBase());
+  INIT_FIELD(UDPPortMax, m_frame.GetUDPPortMax());
+  INIT_FIELD(RTPPortBase, m_frame.GetRtpIpPortBase());
+  INIT_FIELD(RTPPortMax, m_frame.GetRtpIpPortMax());
+  INIT_FIELD(RTPTOS, m_frame.GetRtpIpTypeofService());
+  INIT_FIELD(STUNServer, m_frame.GetSTUN() != NULL ? m_frame.GetSTUN()->GetServer() : PString());
   PwxString natRouter;
-  if (mainFrame.GetTranslationAddress().IsValid())
-    natRouter = mainFrame.GetTranslationAddress().AsString();
+  if (m_frame.GetTranslationAddress().IsValid())
+    natRouter = m_frame.GetTranslationAddress().AsString();
   INIT_FIELD(NATRouter, natRouter);
 
   ////////////////////////////////////////
   // Sound fields
-  INIT_FIELD(SoundBuffers, mainFrame.pcssEP->GetSoundChannelBufferDepth());
-  INIT_FIELD(MinJitter, mainFrame.GetMinAudioJitterDelay());
-  INIT_FIELD(MaxJitter, mainFrame.GetMaxAudioJitterDelay());
-  INIT_FIELD(SilenceSuppression, mainFrame.GetSilenceDetectParams().m_mode);
-  INIT_FIELD(SilenceThreshold, mainFrame.GetSilenceDetectParams().m_threshold);
-  INIT_FIELD(SignalDeadband, mainFrame.GetSilenceDetectParams().m_signalDeadband/8);
-  INIT_FIELD(SilenceDeadband, mainFrame.GetSilenceDetectParams().m_silenceDeadband/8);
+  INIT_FIELD(SoundBuffers, m_frame.pcssEP->GetSoundChannelBufferDepth());
+  INIT_FIELD(MinJitter, m_frame.GetMinAudioJitterDelay());
+  INIT_FIELD(MaxJitter, m_frame.GetMaxAudioJitterDelay());
+  INIT_FIELD(SilenceSuppression, m_frame.GetSilenceDetectParams().m_mode);
+  INIT_FIELD(SilenceThreshold, m_frame.GetSilenceDetectParams().m_threshold);
+  INIT_FIELD(SignalDeadband, m_frame.GetSilenceDetectParams().m_signalDeadband/8);
+  INIT_FIELD(SilenceDeadband, m_frame.GetSilenceDetectParams().m_silenceDeadband/8);
 
   // Fill sound player combo box with available devices and set selection
   wxComboBox * combo = (wxComboBox *)FindWindowByName(SoundPlayerKey);
@@ -1062,7 +1174,7 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
   PStringList devices = PSoundChannel::GetDeviceNames(PSoundChannel::Player);
   for (i = 0; i < devices.GetSize(); i++)
     combo->Append((const char *)devices[i]);
-  m_SoundPlayer = mainFrame.pcssEP->GetSoundChannelPlayDevice();
+  m_SoundPlayer = m_frame.pcssEP->GetSoundChannelPlayDevice();
 
   // Fill sound recorder combo box with available devices and set selection
   combo = (wxComboBox *)FindWindowByName(SoundRecorderKey);
@@ -1070,12 +1182,12 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
   devices = PSoundChannel::GetDeviceNames(PSoundChannel::Recorder);
   for (i = 0; i < devices.GetSize(); i++)
     combo->Append((const char *)devices[i]);
-  m_SoundRecorder = mainFrame.pcssEP->GetSoundChannelRecordDevice();
+  m_SoundRecorder = m_frame.pcssEP->GetSoundChannelRecordDevice();
 
   // Fill line interface combo box with available devices and set selection
   combo = (wxComboBox *)FindWindowByName(LineInterfaceDeviceKey);
   combo->SetValidator(wxGenericValidator(&m_LineInterfaceDevice));
-  OpalLine * line = mainFrame.potsEP->GetLine("*");
+  OpalLine * line = m_frame.potsEP->GetLine("*");
   if (line != NULL) {
     devices = line->GetDevice().GetAllNames();
     for (i = 0; i < devices.GetSize(); i++)
@@ -1093,17 +1205,17 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
 
   ////////////////////////////////////////
   // Video fields
-  INIT_FIELD(VideoGrabber, mainFrame.GetVideoInputDevice().deviceName);
-  INIT_FIELD(VideoGrabFormat, mainFrame.GetVideoInputDevice().videoFormat);
-  INIT_FIELD(VideoGrabSource, mainFrame.GetVideoInputDevice().channelNumber);
-  INIT_FIELD(VideoGrabFrameRate, mainFrame.GetVideoInputDevice().rate);
-  INIT_FIELD(VideoFlipLocal, mainFrame.GetVideoInputDevice().flip != FALSE);
-//  INIT_FIELD(VideoEncodeQuality, mainFrame);
-//  INIT_FIELD(VideoEncodeMaxBitRate, mainFrame);
-//  INIT_FIELD(VideoGrabPreview, mainFrame);
-  INIT_FIELD(VideoAutoTransmit, mainFrame.CanAutoStartTransmitVideo() != FALSE);
-  INIT_FIELD(VideoAutoReceive, mainFrame.CanAutoStartReceiveVideo() != FALSE);
-  INIT_FIELD(VideoFlipRemote, mainFrame.GetVideoOutputDevice().flip != FALSE);
+  INIT_FIELD(VideoGrabber, m_frame.GetVideoInputDevice().deviceName);
+  INIT_FIELD(VideoGrabFormat, m_frame.GetVideoInputDevice().videoFormat);
+  INIT_FIELD(VideoGrabSource, m_frame.GetVideoInputDevice().channelNumber);
+  INIT_FIELD(VideoGrabFrameRate, m_frame.GetVideoInputDevice().rate);
+  INIT_FIELD(VideoFlipLocal, m_frame.GetVideoInputDevice().flip != FALSE);
+//  INIT_FIELD(VideoEncodeQuality, m_frame);
+//  INIT_FIELD(VideoEncodeMaxBitRate, m_frame);
+//  INIT_FIELD(VideoGrabPreview, m_frame);
+  INIT_FIELD(VideoAutoTransmit, m_frame.CanAutoStartTransmitVideo() != FALSE);
+  INIT_FIELD(VideoAutoReceive, m_frame.CanAutoStartReceiveVideo() != FALSE);
+  INIT_FIELD(VideoFlipRemote, m_frame.GetVideoOutputDevice().flip != FALSE);
 
   ////////////////////////////////////////
   // Codec fields
@@ -1120,7 +1232,7 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
 
   m_allCodecs = (wxListBox *)FindWindowByName("AllCodecs");
   m_selectedCodecs = (wxListBox *)FindWindowByName("SelectedCodecs");
-  for (MyMediaList::iterator mm = mainFrame.m_mediaInfo.begin(); mm != mainFrame.m_mediaInfo.end(); ++mm) {
+  for (MyMediaList::iterator mm = m_frame.m_mediaInfo.begin(); mm != m_frame.m_mediaInfo.end(); ++mm) {
     wxString str = mm->sourceProtocol;
     str += ": ";
     str += (const char *)mm->mediaFormat;
@@ -1133,21 +1245,21 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
 
   ////////////////////////////////////////
   // H.323 fields
-  INIT_FIELD(DTMFSendMode, mainFrame.h323EP->GetSendUserInputMode());
-  INIT_FIELD(CallIntrusionProtectionLevel, mainFrame.h323EP->GetCallIntrusionProtectionLevel());
-  INIT_FIELD(DisableFastStart, mainFrame.h323EP->IsFastStartDisabled() != FALSE);
-  INIT_FIELD(DisableH245Tunneling, mainFrame.h323EP->IsH245TunnelingDisabled() != FALSE);
-  INIT_FIELD(DisableH245inSETUP, mainFrame.h323EP->IsH245inSetupDisabled() != FALSE);
+  INIT_FIELD(DTMFSendMode, m_frame.h323EP->GetSendUserInputMode());
+  INIT_FIELD(CallIntrusionProtectionLevel, m_frame.h323EP->GetCallIntrusionProtectionLevel());
+  INIT_FIELD(DisableFastStart, m_frame.h323EP->IsFastStartDisabled() != FALSE);
+  INIT_FIELD(DisableH245Tunneling, m_frame.h323EP->IsH245TunnelingDisabled() != FALSE);
+  INIT_FIELD(DisableH245inSETUP, m_frame.h323EP->IsH245inSetupDisabled() != FALSE);
 
   ////////////////////////////////////////
   // SIP fields
-  INIT_FIELD(SIPProxy, mainFrame.sipEP->GetProxy().GetHostName());
-  INIT_FIELD(SIPProxyUsername, mainFrame.sipEP->GetProxy().GetUserName());
-  INIT_FIELD(SIPProxyPassword, mainFrame.sipEP->GetProxy().GetPassword());
-  INIT_FIELD(RegistrarName, mainFrame.m_registrarName);
-  INIT_FIELD(RegistrarUsername, mainFrame.m_registrarUser);
-  INIT_FIELD(RegistrarPassword, mainFrame.m_registrarPassword);
-  INIT_FIELD(RegistrarTimeToLive, mainFrame.sipEP->GetRegistrarTimeToLive().GetSeconds());
+  INIT_FIELD(SIPProxy, m_frame.sipEP->GetProxy().GetHostName());
+  INIT_FIELD(SIPProxyUsername, m_frame.sipEP->GetProxy().GetUserName());
+  INIT_FIELD(SIPProxyPassword, m_frame.sipEP->GetProxy().GetPassword());
+  INIT_FIELD(RegistrarName, m_frame.m_registrarName);
+  INIT_FIELD(RegistrarUsername, m_frame.m_registrarUser);
+  INIT_FIELD(RegistrarPassword, m_frame.m_registrarPassword);
+  INIT_FIELD(RegistrarTimeToLive, m_frame.sipEP->GetRegistrarTimeToLive().GetSeconds());
 
   ////////////////////////////////////////
   // Routing fields
@@ -1168,7 +1280,7 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
   m_Routes->InsertColumn(0, _T("Source"));
   m_Routes->InsertColumn(1, _T("Pattern"));
   m_Routes->InsertColumn(2, _T("Destination"));
-  const OpalManager::RouteTable & routeTable = mainFrame.GetRouteTable();
+  const OpalManager::RouteTable & routeTable = m_frame.GetRouteTable();
   for (i = 0; i < routeTable.GetSize(); i++) {
     PString pattern = routeTable[i].pattern;
     PINDEX colon = pattern.Find(':');
@@ -1191,7 +1303,7 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
   // Fill combo box with possible protocols
   m_RouteSource = (wxComboBox *)FindWindowByName("RouteSource");
   m_RouteSource->Append(AllSources);
-  const PList<OpalEndPoint> & endponts = mainFrame.GetEndPoints();
+  const PList<OpalEndPoint> & endponts = m_frame.GetEndPoints();
   for (i = 0; i < endponts.GetSize(); i++)
     m_RouteSource->Append((const char *)endponts[i].GetPrefixName());
   m_RouteSource->SetSelection(0);
@@ -1200,7 +1312,7 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
 #if PTRACING
   ////////////////////////////////////////
   // Tracing fields
-  INIT_FIELD(EnableTracing, mainFrame.m_enableTracing);
+  INIT_FIELD(EnableTracing, m_frame.m_enableTracing);
   INIT_FIELD(TraceLevelThreshold, PTrace::GetLevel());
   INIT_FIELD(TraceLevelNumber, (PTrace::GetOptions()&PTrace::TraceLevel) != 0);
   INIT_FIELD(TraceFileLine, (PTrace::GetOptions()&PTrace::FileAndLine) != 0);
@@ -1209,7 +1321,7 @@ OptionsDialog::OptionsDialog(MyFrame *parent)
   INIT_FIELD(TraceTimestamp, (PTrace::GetOptions()&PTrace::Timestamp) != 0);
   INIT_FIELD(TraceThreadName, (PTrace::GetOptions()&PTrace::Thread) != 0);
   INIT_FIELD(TraceThreadAddress, (PTrace::GetOptions()&PTrace::ThreadAddress) != 0);
-  INIT_FIELD(TraceFileName, mainFrame.m_traceFileName);
+  INIT_FIELD(TraceFileName, m_frame.m_traceFileName);
 #endif // PTRACING
 }
 
@@ -1233,69 +1345,69 @@ bool OptionsDialog::TransferDataFromWindow()
   ////////////////////////////////////////
   // General fields
   config->SetPath(GeneralGroup);
-  SAVE_FIELD(Username, mainFrame.SetDefaultUserName);
-  SAVE_FIELD(DisplayName, mainFrame.SetDefaultDisplayName);
-  SAVE_FIELD(AutoAnswer, mainFrame.pcssEP->SetAutoAnswer);
+  SAVE_FIELD(Username, m_frame.SetDefaultUserName);
+  SAVE_FIELD(DisplayName, m_frame.SetDefaultDisplayName);
+  SAVE_FIELD(AutoAnswer, m_frame.pcssEP->SetAutoAnswer);
 #if P_EXPAT
-  SAVE_FIELD(IVRScript, mainFrame.ivrEP->SetDefaultVXML);
+  SAVE_FIELD(IVRScript, m_frame.ivrEP->SetDefaultVXML);
 #endif
 
   ////////////////////////////////////////
   // Networking fields
   config->SetPath(NetworkingGroup);
-  SAVE_FIELD(Bandwidth, mainFrame.h323EP->SetInitialBandwidth);
-  SAVE_FIELD2(TCPPortBase, TCPPortMax, mainFrame.SetTCPPorts);
-  SAVE_FIELD2(UDPPortBase, UDPPortMax, mainFrame.SetUDPPorts);
-  SAVE_FIELD2(RTPPortBase, RTPPortMax, mainFrame.SetRtpIpPorts);
-  SAVE_FIELD(RTPTOS, mainFrame.SetRtpIpTypeofService);
-  SAVE_FIELD(STUNServer, mainFrame.SetSTUNServer);
-  SAVE_FIELD(NATRouter, mainFrame.SetTranslationAddress);
+  SAVE_FIELD(Bandwidth, m_frame.h323EP->SetInitialBandwidth);
+  SAVE_FIELD2(TCPPortBase, TCPPortMax, m_frame.SetTCPPorts);
+  SAVE_FIELD2(UDPPortBase, UDPPortMax, m_frame.SetUDPPorts);
+  SAVE_FIELD2(RTPPortBase, RTPPortMax, m_frame.SetRtpIpPorts);
+  SAVE_FIELD(RTPTOS, m_frame.SetRtpIpTypeofService);
+  SAVE_FIELD(STUNServer, m_frame.SetSTUNServer);
+  SAVE_FIELD(NATRouter, m_frame.SetTranslationAddress);
 
   ////////////////////////////////////////
   // Sound fields
   config->SetPath(AudioGroup);
-  SAVE_FIELD(SoundPlayer, mainFrame.pcssEP->SetSoundChannelPlayDevice);
-  SAVE_FIELD(SoundRecorder, mainFrame.pcssEP->SetSoundChannelRecordDevice);
-  SAVE_FIELD(SoundBuffers, mainFrame.pcssEP->SetSoundChannelBufferDepth);
-//  SAVE_FIELD(LineInterfaceDevice, mainFrame.potsEP->);
-//  SAVE_FIELD(AEC, mainFrame.potsEP->);
-//  SAVE_FIELD(Country, mainFrame.potsEP->);
-  SAVE_FIELD2(MinJitter, MaxJitter, mainFrame.SetAudioJitterDelay);
+  SAVE_FIELD(SoundPlayer, m_frame.pcssEP->SetSoundChannelPlayDevice);
+  SAVE_FIELD(SoundRecorder, m_frame.pcssEP->SetSoundChannelRecordDevice);
+  SAVE_FIELD(SoundBuffers, m_frame.pcssEP->SetSoundChannelBufferDepth);
+//  SAVE_FIELD(LineInterfaceDevice, m_frame.potsEP->);
+//  SAVE_FIELD(AEC, m_frame.potsEP->);
+//  SAVE_FIELD(Country, m_frame.potsEP->);
+  SAVE_FIELD2(MinJitter, MaxJitter, m_frame.SetAudioJitterDelay);
 
   OpalSilenceDetector::Params silenceParams;
   SAVE_FIELD(SilenceSuppression, silenceParams.m_mode=(OpalSilenceDetector::Mode));
   SAVE_FIELD(SilenceThreshold, silenceParams.m_threshold=);
   SAVE_FIELD(SignalDeadband, silenceParams.m_signalDeadband=8*);
   SAVE_FIELD(SilenceDeadband, silenceParams.m_silenceDeadband=8*);
-  mainFrame.SetSilenceDetectParams(silenceParams);
+  m_frame.SetSilenceDetectParams(silenceParams);
 
   ////////////////////////////////////////
   // Video fields
   config->SetPath(VideoGroup);
-  PVideoDevice::OpenArgs grabber = mainFrame.GetVideoInputDevice();
+  PVideoDevice::OpenArgs grabber = m_frame.GetVideoInputDevice();
   SAVE_FIELD(VideoGrabber, grabber.deviceName = (PString));
   SAVE_FIELD(VideoGrabFormat, grabber.videoFormat = (PVideoDevice::VideoFormat));
   SAVE_FIELD(VideoGrabSource, grabber.channelNumber = );
   SAVE_FIELD(VideoGrabFrameRate, grabber.rate = );
   SAVE_FIELD(VideoFlipLocal, grabber.flip = );
-  mainFrame.SetVideoInputDevice(grabber);
+  m_frame.SetVideoInputDevice(grabber);
 //  SAVE_FIELD(VideoEncodeQuality, );
 //  SAVE_FIELD(VideoEncodeMaxBitRate, );
 //  SAVE_FIELD(VideoGrabPreview, );
-  SAVE_FIELD(VideoAutoTransmit, mainFrame.SetAutoStartTransmitVideo);
-  SAVE_FIELD(VideoAutoReceive, mainFrame.SetAutoStartReceiveVideo);
+  SAVE_FIELD(VideoAutoTransmit, m_frame.SetAutoStartTransmitVideo);
+  SAVE_FIELD(VideoAutoReceive, m_frame.SetAutoStartReceiveVideo);
 //  SAVE_FIELD(VideoFlipRemote, );
 
   ////////////////////////////////////////
   // Codec fields
   MyMediaList::iterator mm;
-  for (mm = mainFrame.m_mediaInfo.begin(); mm != mainFrame.m_mediaInfo.end(); ++mm)
+  for (mm = m_frame.m_mediaInfo.begin(); mm != m_frame.m_mediaInfo.end(); ++mm)
     mm->preferenceOrder = -1;
 
   int codecIndex;
   for (codecIndex = 0; codecIndex < m_selectedCodecs->GetCount(); codecIndex++) {
     PwxString selectedFormat = m_selectedCodecs->GetString(codecIndex);
-    for (mm = mainFrame.m_mediaInfo.begin(); mm != mainFrame.m_mediaInfo.end(); ++mm) {
+    for (mm = m_frame.m_mediaInfo.begin(); mm != m_frame.m_mediaInfo.end(); ++mm) {
       if (selectedFormat == mm->mediaFormat) {
         mm->preferenceOrder = codecIndex;
         break;
@@ -1303,10 +1415,10 @@ bool OptionsDialog::TransferDataFromWindow()
     }
   }
 
-  mainFrame.ApplyMediaInfo();
+  m_frame.ApplyMediaInfo();
 
   config->DeleteGroup(CodecsGroup);
-  for (mm = mainFrame.m_mediaInfo.begin(); mm != mainFrame.m_mediaInfo.end(); ++mm) {
+  for (mm = m_frame.m_mediaInfo.begin(); mm != m_frame.m_mediaInfo.end(); ++mm) {
     if (mm->preferenceOrder >= 0) {
       wxString groupName;
       groupName.sprintf("%s/%04u", CodecsGroup, mm->preferenceOrder);
@@ -1319,29 +1431,34 @@ bool OptionsDialog::TransferDataFromWindow()
   ////////////////////////////////////////
   // H.323 fields
   config->SetPath(H323Group);
-  mainFrame.h323EP->SetSendUserInputMode((H323Connection::SendUserInputModes)m_DTMFSendMode);
+  m_frame.h323EP->SetSendUserInputMode((H323Connection::SendUserInputModes)m_DTMFSendMode);
   config->Write(DTMFSendModeKey, m_DTMFSendMode);
-  SAVE_FIELD(CallIntrusionProtectionLevel, mainFrame.h323EP->SetCallIntrusionProtectionLevel);
-  SAVE_FIELD(DisableFastStart, mainFrame.h323EP->DisableFastStart);
-  SAVE_FIELD(DisableH245Tunneling, mainFrame.h323EP->DisableH245Tunneling);
-  SAVE_FIELD(DisableH245inSETUP, mainFrame.h323EP->DisableH245inSetup);
-  SAVE_FIELD2(GatekeeperPassword, GatekeeperLogin, mainFrame.h323EP->SetGatekeeperPassword);
+  SAVE_FIELD(CallIntrusionProtectionLevel, m_frame.h323EP->SetCallIntrusionProtectionLevel);
+  SAVE_FIELD(DisableFastStart, m_frame.h323EP->DisableFastStart);
+  SAVE_FIELD(DisableH245Tunneling, m_frame.h323EP->DisableH245Tunneling);
+  SAVE_FIELD(DisableH245inSETUP, m_frame.h323EP->DisableH245inSetup);
+  SAVE_FIELD2(GatekeeperPassword, GatekeeperLogin, m_frame.h323EP->SetGatekeeperPassword);
 
   ////////////////////////////////////////
   // SIP fields
   config->SetPath(SIPGroup);
-  mainFrame.sipEP->SetProxy(m_SIPProxy, m_SIPProxyUsername, m_SIPProxyPassword);
+  m_frame.sipEP->SetProxy(m_SIPProxy, m_SIPProxyUsername, m_SIPProxyPassword);
   config->Write(SIPProxyKey, m_SIPProxy);
   config->Write(SIPProxyUsernameKey, m_SIPProxyUsername);
   config->Write(SIPProxyPasswordKey, m_SIPProxyPassword);
 
   config->Write(RegistrarTimeToLiveKey, m_RegistrarTimeToLive);
-  mainFrame.sipEP->SetRegistrarTimeToLive(PTimeInterval(0, m_RegistrarTimeToLive));
+  m_frame.sipEP->SetRegistrarTimeToLive(PTimeInterval(0, m_RegistrarTimeToLive));
 
-  SAVE_FIELD(RegistrarName, mainFrame.m_registrarName =);
-  SAVE_FIELD(RegistrarUsername, mainFrame.m_registrarUser =);
-  SAVE_FIELD(RegistrarPassword, mainFrame.m_registrarPassword =);
-  mainFrame.sipEP->Register(m_RegistrarName, m_RegistrarUsername, m_RegistrarPassword);
+  if (m_frame.m_registrarName != m_RegistrarName ||
+      m_frame.m_registrarUser != m_RegistrarUsername ||
+      m_frame.m_registrarPassword != m_RegistrarPassword) {
+    SAVE_FIELD(RegistrarName, m_frame.m_registrarName =);
+    SAVE_FIELD(RegistrarUsername, m_frame.m_registrarUser =);
+    SAVE_FIELD(RegistrarPassword, m_frame.m_registrarPassword =);
+    m_frame.sipEP->Register(m_RegistrarName, m_RegistrarUsername, m_RegistrarPassword);
+    LogWindow << "SIP registration started for " << m_RegistrarUsername << '@' << m_RegistrarName << endl;
+  }
 
   ////////////////////////////////////////
   // Routing fields
@@ -1373,9 +1490,9 @@ bool OptionsDialog::TransferDataFromWindow()
   config->Write(TraceOptionsKey, traceOptions);
 
   // Check for stopping tracing
-  if (mainFrame.m_enableTracing && (!m_EnableTracing || m_TraceFileName.empty()))
+  if (m_frame.m_enableTracing && (!m_EnableTracing || m_TraceFileName.empty()))
     PTrace::SetStream(NULL);
-  else if (m_EnableTracing && (!mainFrame.m_enableTracing || mainFrame.m_traceFileName != m_TraceFileName))
+  else if (m_EnableTracing && (!m_frame.m_enableTracing || m_frame.m_traceFileName != m_TraceFileName))
     PTrace::Initialise(m_TraceLevelThreshold, m_TraceFileName, traceOptions);
   else {
     PTrace::SetLevel(m_TraceLevelThreshold);
@@ -1383,8 +1500,8 @@ bool OptionsDialog::TransferDataFromWindow()
     PTrace::ClearOptions(~traceOptions);
   }
 
-  mainFrame.m_enableTracing = m_EnableTracing;
-  mainFrame.m_traceFileName = m_TraceFileName;
+  m_frame.m_enableTracing = m_EnableTracing;
+  m_frame.m_traceFileName = m_TraceFileName;
 #endif // PTRACING
 
   return true;
@@ -1596,6 +1713,53 @@ void CallDialog::OnAddressChange(wxCommandEvent & WXUNUSED(event))
 
 ///////////////////////////////////////////////////////////////////////////////
 
+BEGIN_EVENT_TABLE(SpeedDialDialog, wxDialog)
+  EVT_TEXT(XRCID("SpeedDialName"), SpeedDialDialog::OnChange)
+  EVT_TEXT(XRCID("SpeedDialNumber"), SpeedDialDialog::OnChange)
+END_EVENT_TABLE()
+
+SpeedDialDialog::SpeedDialDialog(MyFrame * parent)
+  : m_frame(*parent)
+{
+  wxXmlResource::Get()->LoadDialog(this, parent, "SpeedDialDialog");
+
+  m_ok = (wxButton *)FindWindowByName("wxID_OK", this);
+
+  m_nameCtrl = (wxTextCtrl *)FindWindowByName("SpeedDialName");
+  m_nameCtrl->SetValidator(wxGenericValidator(&m_Name));
+
+  m_numberCtrl = (wxTextCtrl *)FindWindowByName("SpeedDialNumber");
+  m_numberCtrl->SetValidator(wxGenericValidator(&m_Number));
+
+  FindWindowByName("SpeedDialAddress")->SetValidator(wxGenericValidator(&m_Address));
+  FindWindowByName("SpeedDialDescription")->SetValidator(wxGenericValidator(&m_Description));
+
+  m_inUse = (wxStaticText *)FindWindowByName("SpeedDialInUse");
+  m_inUse->Show(false);
+
+  m_ambiguous = (wxStaticText *)FindWindowByName("SpeedDialAmbiguous");
+  m_ambiguous->Show(false);
+
+  m_ok->Enable(true);
+}
+
+
+void SpeedDialDialog::OnChange(wxCommandEvent & WXUNUSED(event))
+{
+  wxString newName = m_nameCtrl->GetValue();
+  bool inUse = newName != m_Name && m_frame.HasSpeedDialName(newName);
+  m_inUse->Show(inUse);
+
+  wxString newNumber = m_numberCtrl->GetValue();
+  bool ambiguous = newNumber != m_Number && m_frame.HasSpeedDialNumber(newNumber);
+  m_ambiguous->Show(ambiguous);
+
+  m_ok->Enable(!newName.IsEmpty() && !inUse);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
 MyPCSSEndPoint::MyPCSSEndPoint(MyFrame & ep)
   : OpalPCSSEndPoint(ep),
     frame(ep)
@@ -1633,6 +1797,42 @@ BOOL MyPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection & connection)
             << now.AsString("w h:mma") << " ..." << endl;
   return TRUE;
 }
+
+
+///////////////////////////////////////////////////////////////////////////////
+#if OPAL_H323
+
+MyH323EndPoint::MyH323EndPoint(MyFrame & f)
+  : H323EndPoint(f),
+    frame(f)
+{
+}
+
+
+void MyH323EndPoint::OnRegistrationConfirm()
+{
+  LogWindow << "H.323 registration successful." << endl;
+}
+
+#endif
+
+
+///////////////////////////////////////////////////////////////////////////////
+#if OPAL_SIP
+
+MySIPEndPoint::MySIPEndPoint(MyFrame & f)
+  : SIPEndPoint(f),
+    frame(f)
+{
+}
+
+
+void MySIPEndPoint::OnRegistered()
+{
+  LogWindow << "SIP registration successful." << endl;
+}
+
+#endif
 
 
 // End of File ///////////////////////////////////////////////////////////////
