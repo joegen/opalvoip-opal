@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2012  2001/11/06 05:40:13  robertj
+ * Revision 1.2013  2001/11/13 04:29:47  robertj
+ * Changed OpalTransportAddress CreateTransport and CreateListsner functions
+ *   to have extra parameter to control local binding of sockets.
+ *
+ * Revision 2.11  2001/11/06 05:40:13  robertj
  * Added OpalListenerUDP class to do listener semantics on a UDP socket.
  *
  * Revision 2.10  2001/11/02 10:45:19  robertj
@@ -2210,7 +2214,8 @@ BOOL H323Connection::CreateOutgoingControlChannel(const H225_TransportAddress & 
     return TRUE;
 
   // Check that it is an IP address, all we support at the moment
-  controlChannel = signallingChannel->GetLocalAddress().CreateTransport(endpoint);
+  controlChannel = signallingChannel->GetLocalAddress().CreateTransport(
+                                  endpoint, OpalTransportAddress::HostOnly);
   if (controlChannel == NULL) {
     PTRACE(1, "H225\tConnect of H245 failed: Unsupported transport");
     return FALSE;
@@ -2240,7 +2245,8 @@ BOOL H323Connection::CreateIncomingControlChannel(H225_TransportAddress & h245Ad
 
   OpalTransportAddress localSignallingInterface = signallingChannel->GetLocalAddress();
   if (controlListener == NULL) {
-    controlListener = localSignallingInterface.CreateCompatibleListener(endpoint);
+    controlListener = localSignallingInterface.CreateListener(
+                            endpoint, OpalTransportAddress::HostOnly);
     if (controlListener == NULL)
       return FALSE;
 
