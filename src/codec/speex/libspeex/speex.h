@@ -88,17 +88,38 @@ extern "C" {
 /** Get current complexity of the encoder (0-10) */
 #define SPEEX_GET_COMPLEXITY 17
 
-/*Would be SPEEX_SET_FRAME_SIZE, but it's (currently) invalid*/
+/** Set bit-rate used by the encoder (or lower) */
+#define SPEEX_SET_BITRATE 18
 /** Get current bit-rate used by the encoder or decoder */
 #define SPEEX_GET_BITRATE 19
 
 /**Define a handler function for in-band Speex request*/
 #define SPEEX_SET_HANDLER 20
 
-
 /**Define a handler function for in-band user-defined request*/
 #define SPEEX_SET_USER_HANDLER 22
 
+#define SPEEX_SET_SAMPLING_RATE 24
+#define SPEEX_GET_SAMPLING_RATE 25
+
+#define SPEEX_RESET_STATE 26
+
+#define SPEEX_GET_RELATIVE_QUALITY 29
+
+#define SPEEX_SET_VAD 30
+#define SPEEX_GET_VAD 31
+
+#define SPEEX_SET_ABR 32
+#define SPEEX_GET_ABR 33
+
+#define SPEEX_SET_DTX 34
+#define SPEEX_GET_DTX 35
+
+
+   /* Used internally, not to be used in applications */
+#define SPEEX_GET_PI_GAIN 100
+#define SPEEX_GET_EXC     101
+#define SPEEX_GET_INNOV   102
 
 
 /* Preserving compatibility:*/
@@ -117,7 +138,7 @@ extern "C" {
 
 
 /** Number of defined modes in Speex */
-#define SPEEX_NB_MODES 2
+#define SPEEX_NB_MODES 3
 
 struct SpeexMode;
 
@@ -131,7 +152,7 @@ typedef void *(*encoder_init_func)(struct SpeexMode *mode);
 typedef void (*encoder_destroy_func)(void *st);
 
 /** Main encoding function */
-typedef void (*encode_func)(void *state, float *in, SpeexBits *bits);
+typedef int (*encode_func)(void *state, float *in, SpeexBits *bits);
 
 /** Function for controlling the encoder options */
 typedef void (*encoder_ctl_func)(void *state, int request, void *ptr);
@@ -217,7 +238,7 @@ void speex_encoder_destroy(void *state);
  @param in Frame that will be encoded with a +-2^16 range
  @param bits Bit-stream where the data will be written
  */
-void speex_encode(void *state, float *in, SpeexBits *bits);
+int speex_encode(void *state, float *in, SpeexBits *bits);
 
 /** Used like the ioctl function to control the encoder parameters
  *
@@ -277,6 +298,9 @@ extern SpeexMode speex_nb_mode;
 
 /** Default wideband mode */
 extern SpeexMode speex_wb_mode;
+
+/** Default "ultra-wideband" mode */
+extern SpeexMode speex_uwb_mode;
 
 /** List of all modes availavle */
 extern SpeexMode *speex_mode_list[SPEEX_NB_MODES];
