@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: t120proto.cxx,v $
- * Revision 1.2004  2002/01/22 05:22:19  robertj
+ * Revision 1.2005  2002/02/11 09:32:13  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.3  2002/01/22 05:22:19  robertj
  * Added RTP encoding name string to media format database.
  * Changed time units to clock rate in Hz.
  *
@@ -36,6 +39,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.2  2002/02/01 01:47:34  robertj
+ * Some more fixes for T.120 channel establishment, more to do!
  *
  * Revision 1.1  2001/07/17 04:44:32  robertj
  * Partial implementation of T.120 and T.38 logical channels.
@@ -55,6 +61,24 @@
 #include <asn/mcs.h>
 
 
+class T120_X224 : public X224 {
+    PCLASSINFO(T120_X224, X224);
+  public:
+    BOOL Read(OpalTransport & transport);
+    BOOL Write(OpalTransport & transport);
+};
+
+
+class T120ConnectPDU : public MCS_ConnectMCSPDU {
+    PCLASSINFO(T120ConnectPDU, MCS_ConnectMCSPDU);
+  public:
+    BOOL Read(OpalTransport & transport);
+    BOOL Write(OpalTransport & transport);
+  protected:
+    T120_X224 x224;
+};
+
+
 #define new PNEW
 
 
@@ -68,67 +92,152 @@ OpalMediaFormat const OpalT120Protocol::MediaFormat("T.120",
 
 /////////////////////////////////////////////////////////////////////////////
 
+BOOL T120_X224::Read(OpalTransport & transport)
+{
+  PBYTEArray rawData;
+
+  if (!transport.ReadPDU(rawData)) {
+    PTRACE(1, "T120\tRead of X224 failed: " << transport.GetErrorText());
+    return FALSE;
+  }
+
+  if (Decode(rawData)) {
+    PTRACE(1, "T120\tDecode of PDU failed:\n  " << setprecision(2) << *this);
+    return FALSE;
+  }
+
+  PTRACE(4, "T120\tRead X224 PDU:\n  " << setprecision(2) << *this);
+  return TRUE;
+}
+
+
+BOOL T120_X224::Write(OpalTransport & transport)
+{
+  PBYTEArray rawData;
+
+  PTRACE(4, "T120\tWrite X224 PDU:\n  " << setprecision(2) << *this);
+
+  if (!Encode(rawData)) {
+    PTRACE(1, "T120\tEncode of PDU failed:\n  " << setprecision(2) << *this);
+    return FALSE;
+  }
+
+  if (!transport.WritePDU(rawData)) {
+    PTRACE(1, "T120\tWrite X224 PDU failed: " << transport.GetErrorText());
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+BOOL T120ConnectPDU::Read(OpalTransport & transport)
+{
+  if (!x224.Read(transport))
+    return FALSE;
+
+  // An X224 Data PDU...
+  if (x224.GetCode() != X224::DataPDU) {
+    PTRACE(1, "T120\tX224 must be data PDU");
+    return FALSE;
+  }
+
+  // ... contains the T120 MCS PDU
+  PBER_Stream ber = x224.GetData();
+  if (!Decode(ber)) {
+    PTRACE(1, "T120\tDecode of PDU failed:\n  " << setprecision(2) << *this);
+    return FALSE;
+  }
+
+  PTRACE(4, "T120\tReceived MCS Connect PDU:\n  " << setprecision(2) << *this);
+  return TRUE;
+}
+
+
+BOOL T120ConnectPDU::Write(OpalTransport & transport)
+{
+  PTRACE(4, "T120\tSending MCS Connect PDU:\n  " << setprecision(2) << *this);
+
+  PBER_Stream ber;
+  Encode(ber);
+  ber.CompleteEncoding();
+  x224.BuildData(ber);
+  return x224.Write(transport);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
 OpalT120Protocol::OpalT120Protocol()
 {
 }
 
 
-BOOL OpalT120Protocol::Originate(OpalTransport & /*transport*/)
+BOOL OpalT120Protocol::Originate(OpalTransport & transport)
 {
+  PTRACE(3, "T120\tOriginate, sending X224 CONNECT-REQUEST");
+
+  T120_X224 x224;
+  x224.BuildConnectRequest();
+  if (!x224.Write(transport))
+    return FALSE;
+
+  transport.SetReadTimeout(10000); // Wait 10 seconds for reply
+  if (!x224.Read(transport))
+    return FALSE;
+
+  if (x224.GetCode() != X224::ConnectConfirm) {
+    PTRACE(1, "T120\tPDU was not X224 CONNECT-CONFIRM");
+    return FALSE;
+  }
+
+  T120ConnectPDU pdu;
+  while (pdu.Read(transport)) {
+    if (!HandleConnect(pdu))
+      return TRUE;
+  }
+
   return FALSE;
 }
 
 
 BOOL OpalT120Protocol::Answer(OpalTransport & transport)
 {
-  PBYTEArray rawData;
-  while (transport.ReadPDU(rawData)) {
-    X224 pdu;
-    if (pdu.Decode(rawData)) {
-      PTRACE(4, "H323T120\tRead PDU:\n  " << setprecision(2) << pdu);
-      if (!HandlePacket(pdu))
-        return TRUE;
-    }
-    else {
-      PTRACE(1, "H323T120\tDecode of PDU failed:\n  " << setprecision(2) << pdu);
-    }
-  }
-  return FALSE;
-}
+  PTRACE(3, "T120\tAnswer, awaiting X224 CONNECT-REQUEST");
 
+  T120_X224 x224;
+  transport.SetReadTimeout(60000); // Wait 60 seconds for reply
 
-BOOL OpalT120Protocol::HandlePacket(const X224 & pdu)
-{
-  switch (pdu.GetCode()) {
-    case X224::DataPDU :
-      break;
-    case X224::ConnectRequest :
-      return TRUE;
-    default :
+  do {
+    if (!x224.Read(transport))
       return FALSE;
+  } while (x224.GetCode() != X224::ConnectRequest);
+
+  x224.BuildConnectConfirm();
+  if (!x224.Write(transport))
+    return FALSE;
+
+  T120ConnectPDU pdu;
+  while (pdu.Read(transport)) {
+    if (!HandleConnect(pdu))
+      return TRUE;
   }
 
-  PBER_Stream ber = pdu.GetData();
-  MCS_ConnectMCSPDU mcs_pdu;
-  if (mcs_pdu.Decode(ber)) {
-    PTRACE(4, "T120\tReceived ConnectMCSPDU:\n  " << setprecision(2) << mcs_pdu);
-    return TRUE;
-  }
-
-  PTRACE(1, "T120\t\tMCS PDU invalid:\n  " << setprecision(2) << mcs_pdu);
   return FALSE;
 }
 
 
 BOOL OpalT120Protocol::HandleConnect(const MCS_ConnectMCSPDU & /*pdu*/)
 {
-  return FALSE;
+  return TRUE;
 }
 
 
 BOOL OpalT120Protocol::HandleDomain(const MCS_DomainMCSPDU & /*pdu*/)
 {
-  return FALSE;
+  return TRUE;
 }
 
 
