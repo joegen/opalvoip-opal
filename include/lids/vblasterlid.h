@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vblasterlid.h,v $
- * Revision 1.2008  2004/02/19 10:46:44  rjongbloed
+ * Revision 1.2009  2004/10/06 13:03:41  rjongbloed
+ * Added "configure" support for known LIDs
+ * Changed LID GetName() function to be normalised against the GetAllNames()
+ *   return values and fixed the pre-factory registration system.
+ * Added a GetDescription() function to do what the previous GetName() did.
+ *
+ * Revision 2.7  2004/02/19 10:46:44  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.6  2003/03/24 07:18:29  robertj
@@ -80,7 +86,9 @@
 #endif
 
 
-#define HAS_VBLASTER
+#include <opal/buildopts.h>
+
+#ifdef HAS_VBLASTER
 
 #include <lids/lid.h>
 #include <ptclib/delaychan.h>
@@ -224,13 +232,23 @@ class OpalVoipBlasterDevice : public OpalLineInterfaceDevice
       */
     virtual BOOL Close();
 
-    /**Get the device name.
+    /**Get the device type identifier.
+       This is as is used in the factory registration.
       */
-    virtual PString GetName() const;
+    virtual PString GetDeviceType() const;
+
+    /**Get the device name, as used to open the device
+      */
+    virtual PString GetDeviceName() const;
 
     /**Get all the possible devices that can be opened.
       */
     virtual PStringArray GetAllNames() const;
+
+    /**Get the description of the line interface device.
+      */
+    virtual PString GetDescription() const;
+
 
     /**Get the total number of lines supported by this device.
       */
@@ -648,8 +666,14 @@ class OpalVoipBlasterDevice : public OpalLineInterfaceDevice
 };
 
 
-#define OPAL_REGISTER_VBLASTER() OPAL_REGISTER_LID(OpalVoipBlasterDevice, "VoIPBlaster")
+#define OPAL_VBLASTER_TYPE_NAME  "VoIPBlaster"
+#define OPAL_REGISTER_VBLASTER() OPAL_REGISTER_LID(OpalVoipBlasterDevice, OPAL_VBLASTER_TYPE_NAME)
 
+#else // HAS_VBLASTER
+
+#define OPAL_REGISTER_VBLASTER()
+
+#endif // HAS_VBLASTER
 
 #endif // __OPAL_VBLASTERLID_H
 

@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.cxx,v $
- * Revision 1.2013  2004/02/19 10:47:05  rjongbloed
+ * Revision 1.2014  2004/10/06 13:03:41  rjongbloed
+ * Added "configure" support for known LIDs
+ * Changed LID GetName() function to be normalised against the GetAllNames()
+ *   return values and fixed the pre-factory registration system.
+ * Added a GetDescription() function to do what the previous GetName() did.
+ *
+ * Revision 2.12  2004/02/19 10:47:05  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.11  2003/03/24 07:18:29  robertj
@@ -1319,7 +1325,7 @@ PString OpalLineInterfaceDevice::GetErrorText() const
 
 void OpalLineInterfaceDevice::PrintOn(ostream & strm) const
 {
-  strm << GetName();
+  strm << GetDescription();
 }
 
 
@@ -1374,7 +1380,7 @@ PStringList OpalLineInterfaceDevice::GetAllDevices()
 OpalLine::OpalLine(OpalLineInterfaceDevice & dev, unsigned num, const char * descript)
   : device(dev),
     lineNumber(num),
-    token(device.GetName()),
+    token(device.GetDeviceType() + ": " + device.GetDeviceName()),
     ringStoppedTime(0, 10),     // 10 seconds
     ringInterCadenceTime(0, 4)  // 4 seconds
 {

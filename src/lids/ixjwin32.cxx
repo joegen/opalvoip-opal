@@ -27,7 +27,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjwin32.cxx,v $
- * Revision 1.2012  2004/04/09 12:57:28  rjongbloed
+ * Revision 1.2013  2004/10/06 13:03:41  rjongbloed
+ * Added "configure" support for known LIDs
+ * Changed LID GetName() function to be normalised against the GetAllNames()
+ *   return values and fixed the pre-factory registration system.
+ * Added a GetDescription() function to do what the previous GetName() did.
+ *
+ * Revision 2.11  2004/04/09 12:57:28  rjongbloed
  * Fixed automatic loading of winmm.lib if this module included.
  *
  * Revision 2.10  2004/02/19 10:47:05  rjongbloed
@@ -447,6 +453,8 @@
 
 #include <lids/ixjlid.h>
 
+#if HAS_IXJ
+
 #include <lids/QTIoctl.h>
 #include <lids/ixjDefs.h>
 
@@ -566,11 +574,7 @@ BOOL OpalIxJDevice::Open(const PString & device)
       return FALSE;
     }
 
-    PINDEX prefixLen = strlen(DevicePathPrefix);
-    if (strnicmp(devicePath, DevicePathPrefix, prefixLen) == 0)
-      deviceName = devicePath.Mid(prefixLen);
-    else
-      deviceName = devicePath;
+    deviceName = devicePath;
   }
 
   dwCardType = dwDeviceId >> 28;
@@ -584,7 +588,7 @@ BOOL OpalIxJDevice::Open(const PString & device)
   IoControl(IOCTL_VxD_GetVersion, 0, &ver);
   driverVersion = ((ver&0xff)<<24)|((ver&0xff00)<<8)|((ver>>16)&0xffff);
 
-  PTRACE(2, "xJack\tOpened IxJ device \"" << GetName() << "\" version "
+  PTRACE(2, "xJack\tOpened IxJ device \"" << GetDescription() << "\" version "
          << ((driverVersion>>24)&0xff  ) << '.'
          << ((driverVersion>>16)&0xff  ) << '.'
          << ( driverVersion     &0xffff));
@@ -629,7 +633,19 @@ BOOL OpalIxJDevice::Close()
 }
 
 
-PString OpalIxJDevice::GetName() const
+PString OpalIxJDevice::GetDeviceType() const
+{
+  return OPAL_IXJ_TYPE_NAME;
+}
+
+
+PString OpalIxJDevice::GetDeviceName() const
+{
+  return deviceName;
+}
+
+
+PString OpalIxJDevice::GetDescription() const
 {
   PStringStream name;
 
@@ -2226,10 +2242,8 @@ PStringArray OpalIxJDevice::GetDeviceNames()
           DWORD devId, bytesReturned;
           if (DeviceIoControl(hDriver, IOCTL_Device_GetSerialNumber,
                               NULL, 0, &devId, sizeof(devId), &bytesReturned, NULL) &&
-              bytesReturned == sizeof(devId) && devId != 0) {
-            devpath.sprintf(" (%08X)", devId);
+                                                    bytesReturned == sizeof(devId) && devId != 0)
             array.SetAt(array.GetSize(), new PCaselessString(devpath));
-          }
           CloseHandle(hDriver);
         }
       }
@@ -2308,5 +2322,6 @@ BOOL OpalIxJDevice::IoControl(DWORD dwIoControlCode,
 }
 
 
+#endif // HAS_IXJ
 
 /////////////////////////////////////////////////////////////////////////////
