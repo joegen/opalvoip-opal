@@ -24,7 +24,12 @@
  * Contributor(s): 
  *
  * $Log: vidcodec.h,v $
- * Revision 1.2004  2004/03/11 06:54:26  csoutheren
+ * Revision 1.2005  2004/09/01 12:21:27  rjongbloed
+ * Added initialisation of H323EndPoints capability table to be all codecs so can
+ *   correctly build remote caps from fqast connect params. This had knock on effect
+ *   with const keywords added in numerous places.
+ *
+ * Revision 2.3  2004/03/11 06:54:26  csoutheren
  * Added ability to disable SIP or H.323 stacks
  *
  * Revision 2.2  2004/01/18 15:35:20  rjongbloed
@@ -121,7 +126,7 @@ class H323_UncompVideoCapability : public H323NonStandardVideoCapability
     /**Create a new uncompressed video Capability
      */
     H323_UncompVideoCapability(
-      H323EndPoint & endpoint,        /// Endpoint to get t35 information
+      const H323EndPoint & endpoint, /// Endpoint to get t35 information
       const PString & colourFormat   /// Video colour format name
     );
   //@}

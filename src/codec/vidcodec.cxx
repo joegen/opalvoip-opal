@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vidcodec.cxx,v $
- * Revision 1.2004  2004/07/11 12:37:00  rjongbloed
+ * Revision 1.2005  2004/09/01 12:21:27  rjongbloed
+ * Added initialisation of H323EndPoints capability table to be all codecs so can
+ *   correctly build remote caps from fqast connect params. This had knock on effect
+ *   with const keywords added in numerous places.
+ *
+ * Revision 2.3  2004/07/11 12:37:00  rjongbloed
  * Changed internal video formats to use value so do not appear in available media lists.
  *
  * Revision 2.2  2004/01/18 15:35:20  rjongbloed
@@ -112,7 +117,7 @@ BOOL OpalVideoTranscoder::Convert(const RTP_DataFrame & /*input*/,
 
 #ifndef NO_H323
 
-H323_UncompVideoCapability::H323_UncompVideoCapability(H323EndPoint & endpoint,
+H323_UncompVideoCapability::H323_UncompVideoCapability(const H323EndPoint & endpoint,
                                                        const PString & colourFmt)
   : H323NonStandardVideoCapability(endpoint,
                                    (const BYTE *)(const char *)colourFmt,
