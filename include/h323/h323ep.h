@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2009  2002/01/22 04:59:04  robertj
+ * Revision 1.2010  2002/02/11 09:32:11  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.8  2002/01/22 04:59:04  robertj
  * Update from OpenH323, RFC2833 support
  *
  * Revision 2.7  2002/01/14 06:35:57  robertj
@@ -55,6 +58,13 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.17  2002/02/04 07:17:52  robertj
+ * Added H.450.2 Consultation Transfer, thanks Norwood Systems.
+ *
+ * Revision 1.16  2002/01/24 06:29:02  robertj
+ * Added option to disable H.245 negotiation in SETUP pdu, this required
+ *   API change so have a bit mask instead of a series of booleans.
  *
  * Revision 1.15  2002/01/17 07:04:58  robertj
  * Added support for RFC2833 embedded DTMF in the RTP stream.
@@ -453,13 +463,27 @@ class H323EndPoint : public OpalEndPoint
       void * userData = NULL        /// user data to pass to CreateConnection
     );
 
-    /**Initiate the transfer of an existing call (connection) to a new remote party
-       using H.450.2.  This sends a Call Transfer Initiate Invoke message from the
-       A-Party (transferring endpoint) to the B-Party (transferred endpoint).
+    /**Initiate the transfer of an existing call (connection) to a new remote
+       party using H.450.2.  This sends a Call Transfer Initiate Invoke
+       message from the A-Party (transferring endpoint) to the B-Party
+       (transferred endpoint).
      */
     void TransferCall(
       const PString & token,        /// Existing connection to be transferred
-      const PString & remoteParty   /// Remote party to transfer the existing call to
+      const PString & remoteParty,  /// Remote party to transfer the existing call to
+      const PString & callIdentity = PString()
+                                    /// Call Identity of secondary call if present
+    );
+
+    /**Transfer the call through consultation so the remote party in the
+       primary call is connected to the called party in the second call
+       using H.450.2.  This sends a Call Transfer Identify Invoke message
+       from the A-Party (transferring endpoint) to the C-Party
+       (transferred-to endpoint).
+     */
+    void ConsultationTransfer(
+      const PString & primaryCallToken,   /// Token of primary call
+      const PString & secondaryCallToken  /// Token of secondary call
     );
 
     /**Place the call on hold, suspending all media channels (H.450.4)
@@ -520,6 +544,14 @@ class H323EndPoint : public OpalEndPoint
     BOOL OnCallTransferInitiate(
       H323Connection & connection,    /// Connection to transfer
       const PString & remoteParty     /// Party transferring to.
+    );
+
+    /**Handle a transfer via consultation.
+       This gives the transferred-to user an opportunity to abort the transfer.
+       The default behaviour just returns TRUE.
+      */
+    virtual BOOL OnCallTransferIdentify(
+      H323Connection & connection    /// Connection to transfer
     );
 
     /**Call back for answering an incoming call.
@@ -726,6 +758,17 @@ class H323EndPoint : public OpalEndPoint
       BOOL mode /// New default mode
     ) { disableH245Tunneling = mode; } 
 
+    /**Get the default H.245 tunneling mode.
+      */
+    BOOL IsH245inSetupDisabled() const
+      { return disableH245inSetup; }
+
+    /**Set the default H.245 tunneling mode.
+      */
+    void DisableH245inSetup(
+      BOOL mode /// New default mode
+    ) { disableH245inSetup = mode; } 
+
     /**See if should auto-start receive video channels on connection.
      */
     BOOL CanAutoStartReceiveVideo() const { return manager.CanAutoStartReceiveVideo(); }
@@ -870,6 +913,10 @@ class H323EndPoint : public OpalEndPoint
     /**Get the iNow Gatekeeper Access Token OID.
      */
     const PString GetGkAccessTokenOID() const { return gkAccessTokenOID; }
+
+    /**Get the dictionary of <callIdentities, connections>
+     */
+    H323CallIdentityDict& GetCallIdentityDictionary() { return secondaryConenctionsActive; }
   //@}
 
 
@@ -892,6 +939,7 @@ class H323EndPoint : public OpalEndPoint
     BOOL        autoStartTransmitFax;
     BOOL        disableFastStart;
     BOOL        disableH245Tunneling;
+    BOOL        disableH245inSetup;
 
     BYTE          t35CountryCode;
     BYTE          t35Extension;
@@ -932,9 +980,10 @@ class H323EndPoint : public OpalEndPoint
     PTimeInterval callTransferT4;
 
     // Dynamic variables
-    H323Capabilities capabilities;
-    H323Gatekeeper * gatekeeper;
-    PString          gatekeeperPassword;
+    H323Capabilities     capabilities;
+    H323Gatekeeper *     gatekeeper;
+    PString              gatekeeperPassword;
+    H323CallIdentityDict secondaryConenctionsActive;
 };
 
 

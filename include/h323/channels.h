@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.h,v $
- * Revision 1.2006  2002/02/11 07:37:21  robertj
+ * Revision 1.2007  2002/02/11 09:32:11  robertj
+ * Updated to openH323 v1.8.0
+ *
+ * Revision 2.5  2002/02/11 07:37:21  robertj
  * Added media bypass for streams between compatible protocols.
  *
  * Revision 2.4  2002/01/22 04:56:55  robertj
@@ -44,6 +47,16 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.31  2002/02/09 04:39:01  robertj
+ * Changes to allow T.38 logical channels to use single transport which is
+ *   now owned by the OpalT38Protocol object instead of H323Channel.
+ *
+ * Revision 1.30  2002/02/05 08:13:20  robertj
+ * Added ability to not have addresses when external RTP channel created.
+ *
+ * Revision 1.29  2002/01/22 22:48:21  robertj
+ * Fixed RFC2833 support (transmitter) requiring large rewrite
  *
  * Revision 1.28  2002/01/17 07:04:57  robertj
  * Added support for RFC2833 embedded DTMF in the RTP stream.
@@ -757,7 +770,7 @@ class H323_ExternalRTPChannel : public H323_RealTimeChannel
       Directions direction,               /// Direction of channel
       unsigned sessionID,                 /// Session ID for channel
       const H323TransportAddress & data,  /// Data address
-      const H323TransportAddress & control /// Control address
+      const H323TransportAddress & control/// Control address
     );
     /**Create a new channel.
      */
@@ -849,8 +862,8 @@ class H323_ExternalRTPChannel : public H323_RealTimeChannel
   //@}
 
     void SetExternalAddress(
-      const H323TransportAddress & data,        /// Data address
-      const H323TransportAddress & control      /// Control address
+      const H323TransportAddress & data,  /// Data address
+      const H323TransportAddress & control/// Control address
     );
 
     const H323TransportAddress & GetRemoteMediaAddress()        const { return remoteMediaAddress; }
@@ -966,7 +979,9 @@ class H323DataChannel : public H323UnidirectionalChannel
 
   protected:
     OpalListener  * listener;
+    BOOL            autoDeleteListener;
     OpalTransport * transport;
+    BOOL            autoDeleteTransport;
     BOOL            separateReverseChannel;
 };
 
