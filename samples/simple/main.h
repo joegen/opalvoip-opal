@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2008  2002/09/06 02:44:52  robertj
+ * Revision 1.2009  2003/03/06 03:57:47  robertj
+ * IVR support (work in progress) requiring large changes everywhere.
+ *
+ * Revision 2.7  2002/09/06 02:44:52  robertj
  * Added routing table system to route calls by regular expressions.
  *
  * Revision 2.6  2002/03/27 05:34:15  robertj
@@ -73,6 +76,7 @@
 #include <ptclib/ipacl.h>
 #include <opal/manager.h>
 #include <opal/pcss.h>
+#include <opal/ivr.h>
 
 
 class MyManager;
@@ -136,6 +140,7 @@ class MyManager : public OpalManager
     MyPCSSEndPoint   * pcssEP;
     H323EndPoint     * h323EP;
     SIPEndPoint      * sipEP;
+    OpalIVREndPoint  * ivrEP;
 };
 
 

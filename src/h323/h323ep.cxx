@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2025  2003/01/24 11:31:01  robertj
+ * Revision 1.2026  2003/03/06 03:57:47  robertj
+ * IVR support (work in progress) requiring large changes everywhere.
+ *
+ * Revision 2.24  2003/01/24 11:31:01  robertj
  * Fixed correct UDP address being used for gatkeeper discovery, thanks Chih-Wei Huang
  *
  * Revision 2.23  2003/01/07 04:39:53  robertj
@@ -619,72 +622,12 @@
 #include <h323/gkclient.h>
 
 
-class H225CallThread : public PThread
-{
-  PCLASSINFO(H225CallThread, PThread)
-
-  public:
-    H225CallThread(H323Connection & connection,
-                   OpalTransport & transport,
-                   const PString & alias,
-                   const OpalTransportAddress & address);
-
-  protected:
-    void Main();
-
-    H323Connection     & connection;
-    OpalTransport      & transport;
-    PString              alias;
-    OpalTransportAddress address;
-};
-
-
 #define new PNEW
 
 #if !PTRACING // Stuff to remove unised parameters warning
 #define PTRACE_isEncoding
 #define PTRACE_channel
 #endif
-
-
-/////////////////////////////////////////////////////////////////////////////
-
-H225CallThread::H225CallThread(H323Connection & c,
-                               OpalTransport & t,
-                               const PString & a,
-                               const OpalTransportAddress & addr)
-  : PThread(10000,
-            NoAutoDeleteThread,
-            NormalPriority,
-            "H225 Caller:%0x"),
-    connection(c),
-    transport(t),
-    alias(a),
-    address(addr)
-{
-  transport.AttachThread(this);
-  Resume();
-}
-
-
-void H225CallThread::Main()
-{
-  PTRACE(3, "H225\tStarted call thread");
-
-  if (connection.Lock()) {
-    H323Connection::CallEndReason reason = connection.SendSignalSetup(alias, address);
-
-    // Special case, if we aborted the call then already will be unlocked
-    if (reason != H323Connection::EndedByCallerAbort)
-      connection.Unlock();
-
-    // Check if had an error, clear call if so
-    if (reason != H323Connection::NumCallEndReasons)
-      connection.ClearCall(reason);
-    else
-      connection.HandleSignallingChannel();
-  }
-}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1030,9 +973,9 @@ H235Authenticators H323EndPoint::CreateAuthenticators()
 }
 
 
-BOOL H323EndPoint::SetUpConnection(OpalCall & call,
-                                   const PString & remoteParty,
-                                   void * userData)
+BOOL H323EndPoint::MakeConnection(OpalCall & call,
+                                  const PString & remoteParty,
+                                  void * userData)
 {
   PTRACE(2, "H323\tMaking call to: " << remoteParty);
   return InternalMakeCall(call,
@@ -1068,7 +1011,8 @@ BOOL H323EndPoint::NewIncomingConnection(OpalTransport * transport)
   if (connectionsActive.Contains(token))
     connection = (H323Connection *)&connectionsActive[token];
   else {
-    connection = CreateConnection(*manager.CreateCall(), token, NULL, transport, &pdu);
+    connection = CreateConnection(*manager.CreateCall(), token, NULL,
+                                  *transport, PString::Empty(), PString::Empty(), &pdu);
     connectionsActive.SetAt(token, connection);
   }
 
@@ -1105,10 +1049,12 @@ BOOL H323EndPoint::NewIncomingConnection(OpalTransport * transport)
 H323Connection * H323EndPoint::CreateConnection(OpalCall & call,
                                                 const PString & token,
                                                 void * /*userData*/,
-                                                OpalTransport * /*transport*/,
+                                                OpalTransport & /*transport*/,
+                                                const PString & alias,
+                                                const H323TransportAddress & address,
                                                 H323SignalPDU * /*setupPDU*/)
 {
-  return new H323Connection(call, *this, token);
+  return new H323Connection(call, *this, token, alias, address);
 }
 
 
@@ -1175,7 +1121,7 @@ BOOL H323EndPoint::InternalMakeCall(OpalCall & call,
     PTRACE(3, "H323\tOverwriting call " << newToken << ", renamed to " << adjustedToken);
   }
 
-  connection = CreateConnection(call, newToken, userData, transport, NULL);
+  connection = CreateConnection(call, newToken, userData, *transport, alias, address, NULL);
   if (connection == NULL) {
     PTRACE(1, "H225\tEndpoint could not create connection, aborting setup.");
     return FALSE;
@@ -1200,7 +1146,9 @@ BOOL H323EndPoint::InternalMakeCall(OpalCall & call,
 
   PTRACE(3, "H323\tCreated new connection: " << newToken);
 
-  new H225CallThread(*connection, *transport, alias, address);
+  // See if we are starting an outgoing connection as first in a call
+  if (&call.GetConnection(0) == connection)
+    connection->SetUpConnection();
 
   return TRUE;
 }

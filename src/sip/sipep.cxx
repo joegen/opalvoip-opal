@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2009  2002/10/09 04:27:44  robertj
+ * Revision 1.2010  2003/03/06 03:57:47  robertj
+ * IVR support (work in progress) requiring large changes everywhere.
+ *
+ * Revision 2.8  2002/10/09 04:27:44  robertj
  * Fixed memory leak on error reading PDU, thanks Ted Szoczei
  *
  * Revision 2.7  2002/09/12 06:58:34  robertj
@@ -142,9 +145,9 @@ void SIPEndPoint::HandlePDU(OpalTransport & transport)
 }
 
 
-BOOL SIPEndPoint::SetUpConnection(OpalCall & call,
-                                  const PString & remoteParty,
-                                  void * userData)
+BOOL SIPEndPoint::MakeConnection(OpalCall & call,
+                                 const PString & remoteParty,
+                                 void * userData)
 {
   if (remoteParty.Find("sip:") != 0)
     return FALSE;
@@ -152,14 +155,17 @@ BOOL SIPEndPoint::SetUpConnection(OpalCall & call,
   PStringStream callID;
   OpalGloballyUniqueID id;
   callID << id << '@' << PIPSocket::GetHostName();
-  SIPConnection * connection = CreateConnection(call, callID, userData, NULL, NULL);
+  SIPConnection * connection = CreateConnection(call, callID, userData, remoteParty, NULL, NULL);
   if (connection == NULL)
     return FALSE;
 
-  connection->Lock();
   AddNewConnection(connection);
-  connection->InitiateCall(remoteParty);
-  connection->Unlock();
+
+  // If we are the A-party then need to initiate a call now in this thread. If
+  // we are the B-Party then SetUpConnection() gets called in the context of
+  // the A-party thread.
+  if (&call.GetConnection(0) == connection)
+    connection->SetUpConnection();
 
   return TRUE;
 }
@@ -174,10 +180,11 @@ BOOL SIPEndPoint::IsAcceptedAddress(const SIPURL & /*toAddr*/)
 SIPConnection * SIPEndPoint::CreateConnection(OpalCall & call,
                                               const PString & token,
                                               void * /*userData*/,
+                                              const SIPURL & destination,
                                               OpalTransport * transport,
                                               SIP_PDU * /*invite*/)
 {
-  return new SIPConnection(call, *this, token, transport);
+  return new SIPConnection(call, *this, token, destination, transport);
 }
 
 
@@ -239,8 +246,8 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
   }
 
   // ask the endpoint for a connection
-  SIPConnection * connection = CreateConnection(*GetManager().CreateCall(),
-                                                mime.GetCallID(), NULL, &transport, request);
+  SIPConnection * connection = CreateConnection(*GetManager().CreateCall(), mime.GetCallID(),
+                                                NULL, request->GetURI(), &transport, request);
   if (connection == NULL) {
     PTRACE(2, "SIP\tFailed to create SIPConnection for INVITE from " << request->GetURI() << " for " << toAddr);
     SIP_PDU response(*request, SIP_PDU::Failure_NotFound);

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2024  2002/11/10 11:33:20  robertj
+ * Revision 1.2025  2003/03/06 03:57:47  robertj
+ * IVR support (work in progress) requiring large changes everywhere.
+ *
+ * Revision 2.23  2002/11/10 11:33:20  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.22  2002/09/12 06:58:34  robertj
@@ -129,6 +132,7 @@ typedef void (SIPConnection::* SIPMethodFunction)(SIP_PDU & pdu);
 SIPConnection::SIPConnection(OpalCall & call,
                              SIPEndPoint & ep,
                              const PString & token,
+                             const SIPURL & destination,
                              OpalTransport * inviteTransport)
   : OpalConnection(call, ep, token),
     endpoint(ep),
@@ -136,16 +140,27 @@ SIPConnection::SIPConnection(OpalCall & call,
                    endpoint.GetRegistrationPassword()),
     pduSemaphore(0, P_MAX_INDEX)
 {
-  currentPhase = SetUpPhase;
-
   localPartyName = endpoint.GetRegistrationName();
+
+  targetAddress = destination;
+
+  PStringToString params = targetAddress.GetParamVars();
+  if (params.Contains("proxyusername") && params.Contains("proxypassword")) {
+    localPartyName = params["proxyusername"];
+    authentication.SetUsername(localPartyName);
+    targetAddress.SetParamVar("proxyusername", PString::Empty());
+    authentication.SetPassword(params["proxypassword"]);
+    targetAddress.SetParamVar("proxypassword", PString::Empty());
+    PTRACE(3, "SIP\tExtracted proxy authentication user=\"" << localPartyName << '"');
+  }
+
+  remotePartyAddress = targetAddress.AsQuotedString();
 
   if (inviteTransport == NULL)
     transport = NULL;
   else {
     transport = inviteTransport->GetLocalAddress().CreateTransport(
                                          endpoint, OpalTransportAddress::HostOnly);
-    transport->SetRemoteAddress(inviteTransport->GetRemoteAddress());
     transport->SetBufferSize(SIP_PDU::MaxSize); // Maximum possible PDU size
   }
 
@@ -166,12 +181,6 @@ SIPConnection::~SIPConnection()
   delete transport;
 
   PTRACE(3, "SIP\tDeleted connection.");
-}
-
-
-OpalConnection::Phases SIPConnection::GetPhase() const
-{
-  return currentPhase;
 }
 
 
@@ -216,7 +225,7 @@ BOOL SIPConnection::OnReleased()
   LockOnRelease();
 
   // send the appropriate form 
-  PTRACE(2, "SIP\tReceived OnReleased in phase " << currentPhase);
+  PTRACE(2, "SIP\tReceived OnReleased in phase " << phase);
 
   invitations.RemoveAll();
 
@@ -244,11 +253,11 @@ BOOL SIPConnection::SetAlerting(const PString & /*calleeName*/, BOOL /*withMedia
   if (!Lock())
     return FALSE;
 
-  if (currentPhase != SetUpPhase) 
+  if (phase != SetUpPhase) 
     return FALSE;
 
   SendResponseToINVITE(SIP_PDU::Information_Ringing);
-  currentPhase = AlertingPhase;
+  phase = AlertingPhase;
 
   Unlock();
 
@@ -356,7 +365,7 @@ BOOL SIPConnection::SetConnected()
   SIP_PDU response(*originalInvite, SIP_PDU::Successful_OK);
   response.SetSDP(sdpOut);
   response.Write(*transport);
-  currentPhase = ConnectedPhase;
+  phase = ConnectedPhase;
   
   return TRUE;
 }
@@ -461,24 +470,11 @@ BOOL SIPConnection::WriteINVITE(OpalTransport & transport, PObject * param)
 }
 
 
-void SIPConnection::InitiateCall(const SIPURL & destination)
+BOOL SIPConnection::SetUpConnection()
 {
-  PTRACE(2, "SIP\tInitiating connection to " << destination);
+  PTRACE(2, "SIP\tSetUpConnection: " << remotePartyAddress);
 
-  targetAddress = destination;
   originating = TRUE;
-
-  PStringToString params = targetAddress.GetParamVars();
-  if (params.Contains("proxyusername") && params.Contains("proxypassword")) {
-    localPartyName = params["proxyusername"];
-    authentication.SetUsername(localPartyName);
-    targetAddress.SetParamVar("proxyusername", PString::Empty());
-    authentication.SetPassword(params["proxypassword"]);
-    targetAddress.SetParamVar("proxypassword", PString::Empty());
-    PTRACE(3, "SIP\tExtracted proxy authentication user=\"" << localPartyName << '"');
-  }
-
-  remotePartyAddress = targetAddress.AsQuotedString();
 
   OpalTransportAddress address = targetAddress.GetHostAddress();
 
@@ -486,23 +482,24 @@ void SIPConnection::InitiateCall(const SIPURL & destination)
   transport = address.CreateTransport(endpoint, OpalTransportAddress::NoBinding);
   if (transport == NULL) {
     PTRACE(1, "SIP\tCould not create transport from " << address);
-    return;
+    return FALSE;
   }
 
   transport->SetBufferSize(SIP_PDU::MaxSize);
   if (!transport->ConnectTo(address)) {
     PTRACE(1, "SIP\tCould not connect to " << address << " - " << transport->GetErrorText());
     Release(EndedByTransportFail);
-    return;
+    return FALSE;
   }
 
   if (!transport->WriteConnect(WriteINVITE, this)) {
     PTRACE(1, "SIP\tCould not write to " << address << " - " << transport->GetErrorText());
     Release(EndedByTransportFail);
-    return;
+    return FALSE;
   }
 
   releaseMethod = ReleaseWithCANCEL;
+  return TRUE;
 }
 
 
@@ -707,6 +704,18 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   localPartyAddress  = mime.GetTo() + ";tag=XXXXX";
   mime.SetTo(localPartyAddress);
 
+  PString contact = mime.GetContact();
+  if (contact.IsEmpty()) {
+    targetAddress = mime.GetFrom();
+    PString via = mime.GetVia();
+    transport->SetRemoteAddress(via.Mid(via.FindLast(' ')));
+  }
+  else {
+    targetAddress = contact;
+    transport->SetRemoteAddress(targetAddress.GetHostAddress());
+  }
+  targetAddress.AdjustForRequestURI();
+
   // indicate the other is to start ringing
   if (!OnIncomingConnection()) {
     PTRACE(2, "SIP\tOnIncomingConnection failed for INVITE from " << request.GetURI() << " for " << *this);
@@ -715,6 +724,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   }
 
   PTRACE(2, "SIP\tOnIncomingConnection succeeded for INVITE from " << request.GetURI() << " for " << *this);
+  phase = SetUpPhase;
+  ownerCall.OnSetUp(*this);
 }
 
 
@@ -724,7 +735,7 @@ void SIPConnection::OnReceivedACK(SIP_PDU & /*request*/)
 
   // start all of the media threads for the connection
   StartMediaStreams();
-  currentPhase = EstablishedPhase;
+  phase = EstablishedPhase;
   releaseMethod = ReleaseWithBYE;
 }
 
@@ -780,7 +791,7 @@ void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
   OnReceivedSDP(response);
 
   OnAlerting();
-  currentPhase = AlertingPhase;
+  phase = AlertingPhase;
 
   PTRACE(3, "SIP\tStarting receive media to annunciate remote progress tones");
   for (PINDEX i = 0; i < mediaStreams.GetSize(); i++) {
@@ -855,7 +866,7 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
     return;
   }
 
-  if (currentPhase == EstablishedPhase) {
+  if (phase == EstablishedPhase) {
     PTRACE(2, "SIP\tIgnoring repeated INVITE OK response");
     return;
   }
@@ -866,7 +877,7 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
 
   OnConnected();
 
-  currentPhase = EstablishedPhase;
+  phase = EstablishedPhase;
   StartMediaStreams();
   releaseMethod = ReleaseWithBYE;
 }

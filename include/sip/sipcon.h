@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2013  2002/09/16 02:52:35  robertj
+ * Revision 1.2014  2003/03/06 03:57:47  robertj
+ * IVR support (work in progress) requiring large changes everywhere.
+ *
+ * Revision 2.12  2002/09/16 02:52:35  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -100,6 +103,7 @@ class SIPConnection : public OpalConnection
       OpalCall & call,            /// Owner calll for connection
       SIPEndPoint & endpoint,     /// Owner endpoint for connection
       const PString & token,      /// token to identify the connection
+      const SIPURL & address,     /// Destination address for outgoing call
       OpalTransport * transport   /// Transport INVITE came in on
     );
 
@@ -110,9 +114,13 @@ class SIPConnection : public OpalConnection
 
   /**@name Overrides from OpalConnection */
   //@{
-    /**Get the phase of the connection.
+    /**Start an outgoing connection.
+       This function will initiate the connection to the remote entity, for
+       example in H.323 it sends a SETUP, in SIP it sends an INVITE etc.
+
+       The default behaviour is .
       */
-    virtual Phases GetPhase() const;
+    virtual BOOL SetUpConnection();
 
     /**Indicate to remote endpoint an alert is in progress.
        If this is an incoming connection and the AnswerCallResponse is in a
@@ -273,10 +281,6 @@ class SIPConnection : public OpalConnection
 
     unsigned GetNextCSeq() { return ++lastSentCSeq; }
 
-    void InitiateCall(
-      const SIPURL & destination
-    );
-
     SDPSessionDescription * BuildSDP(
       RTP_SessionManager & rtpSessions,
       unsigned rtpSessionId
@@ -315,7 +319,6 @@ class SIPConnection : public OpalConnection
     static BOOL WriteINVITE(OpalTransport & transport, PObject * param);
 
     SIPEndPoint   & endpoint;
-    Phases          currentPhase;
     OpalTransport * transport;
 
     PString           localPartyAddress;
