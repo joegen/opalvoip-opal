@@ -22,7 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2011  2002/02/22 04:16:25  robertj
+# Revision 1.2012  2002/03/05 06:27:34  robertj
+# Added ASN parser build and version check code.
+#
+# Revision 2.10  2002/02/22 04:16:25  robertj
 # Added G.726 codec and fixed the lpc10 and GSM codecs.
 #
 # Revision 2.9  2002/02/11 09:38:28  robertj
@@ -366,16 +369,39 @@ $(DEPDIR)/%.dep : $(LPC10_SRCDIR)/%.c
 	$(CC) -I$(LPC10_INCDIR) $(CFLAGS) -M $< >> $@
 
 
-# Build rules for ASN files
+# Make sure the asnparser is built and if new version force recompiles
 
-ASNPARSER = $(ASNPARSE_DIR)/obj_$(PLATFORM_TYPE)_r/asnparser 
-
-ifdef ASN_EXCLUDE
-ASNPARSE_DIR = $(PWLIBDIR)/tools/asnparser.new
-ASNPARSER += -x $(ASN_EXCLUDE)
-else
-ASNPARSE_DIR = $(PWLIBDIR)/tools/asnparser
+# Use a different variable here to support cross compiling
+ifndef HOSTPWLIBDIR
+HOSTPWLIBDIR=$(PWLIBDIR)
 endif
+
+ifndef HOST_PLATFORM_TYPE
+HOST_PLATFORM_TYPE=$(PLATFORM_TYPE)
+endif
+
+
+# Set library path so asnparser will run
+
+ifndef LD_LIBRARY_PATH
+export LD_LIBRARY_PATH = $(HOSTPWLIBDIR)/lib
+else
+export LD_LIBRARY_PATH += :$(HOSTPWLIBDIR)/lib
+endif
+
+
+# If we're cross compiling, we want the host's asnparser
+# otherwise use the one for the current platform
+ASNPARSE_DIR = $(HOSTPWLIBDIR)/tools/asnparser
+ASNPARSER = $(ASNPARSE_DIR)/obj_$(HOST_PLATFORM_TYPE)_r/asnparser
+
+
+# If not cross compiling then make sure asnparser is built
+ifeq ($(PLATFORM_TYPE),$(HOST_PLATFORM_TYPE))
+$(ASNPARSER):
+	$(MAKE) -C $(ASNPARSE_DIR) opt
+endif
+
 
 .asnparser.version: $(ASNPARSER)
 	$(MAKE) -C $(ASNPARSE_DIR) opt
@@ -384,6 +410,8 @@ endif
 
 $(ASNPARSER):
 
+
+# Build rules for ASN files
 
 $(ASN_INCDIR)/%.h : $(ASN_SRCDIR)/%.asn .asnparser.version
 	$(ASNPARSER) -m $(shell echo $(notdir $(basename $<)) | tr a-z A-Z) -c $<
