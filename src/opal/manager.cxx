@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2018  2002/09/04 06:01:49  robertj
+ * Revision 1.2019  2002/09/06 02:44:30  robertj
+ * Added routing table system to route calls by regular expressions.
+ *
+ * Revision 2.17  2002/09/04 06:01:49  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.16  2002/07/01 04:56:33  robertj
@@ -387,7 +390,21 @@ BOOL OpalManager::OnIncomingConnection(OpalConnection & connection)
 
 PString OpalManager::OnRouteConnection(OpalConnection & connection)
 {
-  return connection.GetDestinationAddress();
+  PString addr = connection.GetDestinationAddress();
+
+  // No address, fail call
+  if (addr.IsEmpty())
+    return PString::Empty();
+
+  // Have explicit protocol defined, so use that
+  if (addr.Find(':') != P_MAX_INDEX)
+    return addr;
+
+  // No routes specified, just return what we've got so far
+  if (routeTable.IsEmpty())
+    return addr;
+
+  return ApplyRouteTable(connection.GetEndPoint().GetPrefixName(), addr);
 }
 
 
@@ -494,6 +511,141 @@ OpalT120Protocol * OpalManager::CreateT120ProtocolHandler(const OpalConnection &
 OpalT38Protocol * OpalManager::CreateT38ProtocolHandler(const OpalConnection & ) const
 {
   return NULL;
+}
+
+
+OpalManager::RouteEntry::RouteEntry(const PString & pat, const PString dest)
+  : pattern('^'+pat+'$'),
+    destination(dest)
+{
+}
+
+
+BOOL OpalManager::AddRouteEntry(const PString & spec)
+{
+  if (spec[0] == '#') // Comment
+    return FALSE;
+
+  if (spec[0] == '@') { // Load from file
+    PTextFile file;
+    if (!file.Open(spec.Mid(1), PFile::ReadOnly)) {
+      PTRACE(1, "OpalMan\nCould not open route file \"" << spec << '"');
+      return FALSE;
+    }
+    BOOL ok = FALSE;
+    PString line;
+    while (file.good()) {
+      file >> line;
+      if (AddRouteEntry(line))
+        ok = TRUE;
+    }
+    return ok;
+  }
+
+  PINDEX equal = spec.Find('=');
+  if (equal == P_MAX_INDEX) {
+    PTRACE(2, "OpalMan\tInvalid route table entry: \"" << spec << '"');
+    return FALSE;
+  }
+
+  RouteEntry * entry = new RouteEntry(spec.Left(equal).Trim(), spec.Mid(equal+1).Trim());
+  if (entry->pattern.GetErrorCode() != PRegularExpression::NoError) {
+    PTRACE(1, "OpalMan\tIllegal regular expression in route table entry: \"" << spec << '"');
+    delete entry;
+    return FALSE;
+  }
+
+  routeTableMutex.Wait();
+  routeTable.Append(entry);
+  routeTableMutex.Signal();
+  return TRUE;
+}
+
+
+BOOL OpalManager::SetRouteTable(const PStringArray & specs)
+{
+  BOOL ok = FALSE;
+
+  routeTableMutex.Wait();
+  routeTable.RemoveAll();
+
+  for (PINDEX i = 0; i < specs.GetSize(); i++) {
+    if (AddRouteEntry(specs[i].Trim()))
+      ok = TRUE;
+  }
+
+  routeTableMutex.Signal();
+
+  return ok;
+}
+
+
+void OpalManager::SetRouteTable(const RouteTable & table)
+{
+  routeTableMutex.Wait();
+  routeTable = table;
+  routeTable.MakeUnique();
+  routeTableMutex.Signal();
+}
+
+
+PString OpalManager::ApplyRouteTable(const PString & proto, const PString & addr)
+{
+  PWaitAndSignal mutex(routeTableMutex);
+
+  PString destination;
+  PString patternSearch = proto + ':' + addr;
+  for (PINDEX i = 0; i < routeTable.GetSize(); i++) {
+    PINDEX pos;
+    if (routeTable[i].pattern.Execute(patternSearch, pos)) {
+      destination = routeTable[i].destination;
+      break;
+    }
+  }
+
+  if (destination.IsEmpty())
+    return PString::Empty();
+
+  destination.Replace("<da>", addr);
+
+  PINDEX pos;
+  if ((pos = destination.Find("<dn>")) != P_MAX_INDEX)
+    destination.Splice(addr.Left(::strspn(addr, "0123456789*#")), pos, 4);
+
+  if ((pos = destination.Find("<!dn>")) != P_MAX_INDEX)
+    destination.Splice(addr.Mid(::strspn(addr, "0123456789*#")), pos, 5);
+
+  // Do meta character substitutions
+  if ((pos = destination.Find("<dn2ip>")) != P_MAX_INDEX) {
+    PStringStream route;
+    PStringArray stars = addr.Tokenise('*');
+    switch (stars.GetSize()) {
+      case 0 :
+      case 1 :
+      case 2 :
+      case 3 :
+        route << addr;
+        break;
+
+      case 4 :
+        route << stars[0] << '.' << stars[1] << '.'<< stars[2] << '.'<< stars[3];
+        break;
+
+      case 5 :
+        route << stars[0] << '@'
+              << stars[1] << '.' << stars[2] << '.'<< stars[3] << '.'<< stars[4];
+        break;
+
+      default :
+        route << stars[0] << '@'
+              << stars[1] << '.' << stars[2] << '.'<< stars[3] << '.'<< stars[4]
+              << ':' << stars[5];
+        break;
+    }
+    destination.Splice(route, pos, 7);
+  }
+
+  return destination;
 }
 
 
