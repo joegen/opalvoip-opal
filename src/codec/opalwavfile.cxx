@@ -22,11 +22,24 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalwavfile.cxx,v $
- * Revision 1.2003  2004/02/19 10:53:04  rjongbloed
+ * Revision 1.2004  2004/07/15 12:19:23  rjongbloed
+ * Various enhancements to the VXML code
+ *
+ * Revision 2.2  2004/02/19 10:53:04  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.1  2002/09/06 07:19:21  robertj
  * OPAL port.
+ *
+ * Revision 1.5  2004/07/15 11:14:25  rjongbloed
+ * Added missing purity to G.711 decoder function
+ *
+ * Revision 1.4  2004/07/15 03:18:00  csoutheren
+ * Migrated changes from crs_vxnml_devel branch into main trunk
+ *
+ * Revision 1.3.6.1  2004/07/07 07:10:11  csoutheren
+ * Changed to use new factory based PWAVFile
+ * Removed redundant blocking/unblocking when using G.723.1
  *
  * Revision 1.3  2003/12/28 00:07:56  csoutheren
  * Added support for 8-bit PCM WAV files
@@ -57,12 +70,14 @@
 OpalWAVFile::OpalWAVFile(unsigned fmt)
   : PWAVFile(fmt)
 {
+  SetAutoconvert();
 }
 
 
 OpalWAVFile::OpalWAVFile(OpenMode mode, int opts, unsigned fmt)
   : PWAVFile(mode, opts, fmt)
 {
+  SetAutoconvert();
 }
 
 
@@ -72,201 +87,98 @@ OpalWAVFile::OpalWAVFile(const PFilePath & name,
                                    unsigned fmt)  /// Type of WAV File to create
   : PWAVFile(name, mode, opts, fmt)
 {
+  SetAutoconvert();
 }
 
 
-unsigned OpalWAVFile::GetFormat() const
+/////////////////////////////////////////////////////////////////////////////////
+
+class PWAVFileConverterXLaw : public PWAVFileConverter
 {
-  unsigned fmt = PWAVFile::GetFormat();
-  switch (fmt) {
-    case fmt_ALaw:
-    case fmt_uLaw:
-      fmt = fmt_PCM;
-      break;
+  public:
+    off_t GetPosition     (const PWAVFile & file) const;
+    BOOL SetPosition      (PWAVFile & file, off_t pos, PFile::FilePositionOrigin origin);
+    unsigned GetSampleSize(const PWAVFile & file) const;
+    off_t GetDataLength   (PWAVFile & file);
+    BOOL Read             (PWAVFile & file, void * buf, PINDEX len);
+    BOOL Write            (PWAVFile & file, const void * buf, PINDEX len);
 
-    default:
-      break;
-  }
+    virtual short DecodeSample(int sample) = 0;
+};
 
-  return fmt;
-}
-
-
-BOOL OpalWAVFile::Read(void * buf, PINDEX len)
+off_t PWAVFileConverterXLaw::GetPosition(const PWAVFile & file) const
 {
-  switch (format) {
-    case fmt_uLaw:
-      {
-        // read the uLaw data
-        PINDEX samples = (len / 2);
-        PBYTEArray ulaw;
-        if (!PWAVFile::Read(ulaw.GetPointer(samples), samples))
-          return FALSE;
-
-        // convert to PCM
-        PINDEX i;
-        short * pcmPtr = (short *)buf;
-        for (i = 0; i < samples; i++)
-          *pcmPtr++ = (short)Opal_PCM_G711_uLaw::ConvertSample(ulaw[i]);
-
-        // fake the lastReadCount
-        lastReadCount = len;
-      }
-      return TRUE;
-
-    case fmt_ALaw:
-      {
-        // read the aLaw data
-        PINDEX samples = (len / 2);
-        PBYTEArray Alaw;
-        if (!PWAVFile::Read(Alaw.GetPointer(samples), samples))
-          return FALSE;
-
-        // convert to PCM
-        PINDEX i;
-        short * pcmPtr = (short *)buf;
-        for (i = 0; i < samples; i++)
-          *pcmPtr++ = (short)Opal_G711_ALaw_PCM::ConvertSample(Alaw[i]);
-
-        // fake the lastReadCount
-        lastReadCount = len;
-      }
-      return TRUE;
-
-    case fmt_PCM:
-      if (bitsPerSample != 8)
-        break;
-
-      {
-        // read the PCM data
-        PINDEX samples = (len / 2);
-        PBYTEArray pcm8;
-        if (!PWAVFile::Read(pcm8.GetPointer(samples), samples))
-          return FALSE;
-
-        // convert to PCM-16
-        PINDEX i;
-        short * pcmPtr = (short *)buf;
-        for (i = 0; i < samples; i++)
-          *pcmPtr++ = (unsigned short)((pcm8[i] << 8) - 0x8000);
-
-        // fake the lastReadCount
-        lastReadCount = len;
-      }
-      return TRUE;
-
-    default:
-      break;
-  }
-
-  return PWAVFile::Read(buf, len);
+  off_t pos = file.RawGetPosition();
+  return pos * 2;
 }
 
-BOOL OpalWAVFile::Write(const void * buf, PINDEX len)
+BOOL PWAVFileConverterXLaw::SetPosition(PWAVFile & file, off_t pos, PFile::FilePositionOrigin origin)
 {
-  switch (format) {
-    case fmt_ALaw:
-    case fmt_uLaw:
-      return FALSE;
-
-    case fmt_PCM:
-      if (bitsPerSample != 16)
-        return FALSE;
-      break;
-
-    default:
-      break;
-  }
-
-  return PWAVFile::Write(buf, len);
+  pos /= 2;
+  return file.SetPosition(pos, origin);
 }
 
-off_t OpalWAVFile::GetPosition() const
+unsigned PWAVFileConverterXLaw::GetSampleSize(const PWAVFile &) const
 {
-  // remember: the application thinks samples are 16 bits
-  // so the actual position must be doubled before returning it
-  off_t pos = PWAVFile::GetPosition();
-
-  switch (format) {
-    case fmt_ALaw:
-    case fmt_uLaw:
-      return pos * 2;
-
-    case fmt_PCM:
-      if (bitsPerSample == 8)
-        return pos * 2;
-      break;
-
-    default:
-      break;
-  }
-
-  return pos;
+  return 16;
 }
 
-BOOL OpalWAVFile::SetPosition(off_t pos, FilePositionOrigin origin)
+off_t PWAVFileConverterXLaw::GetDataLength(PWAVFile & file)
 {
-  // remember: the application thinks samples are 16 bits
-  // so the applications request must be halved
-  switch (format) {
-    case fmt_ALaw:
-    case fmt_uLaw:
-      pos /= 2;
-      break;
-
-    case fmt_PCM:
-      if (bitsPerSample == 8)
-        return pos /= 2;
-      break;
-
-    default:
-      break;
-  }
-
-  return PWAVFile::SetPosition(pos, origin);
+  return file.RawGetDataLength() * 2;
 }
 
-
-unsigned OpalWAVFile::GetSampleSize() const
+BOOL PWAVFileConverterXLaw::Read(PWAVFile & file, void * buf, PINDEX len)
 {
-  switch (format) {
-    case fmt_ALaw:
-    case fmt_uLaw:
-      return 16;
+  // read the xLaw data
+  PINDEX samples = (len / 2);
+  PBYTEArray xlaw;
+  if (!file.PFile::Read(xlaw.GetPointer(samples), samples))
+    return FALSE;
 
-    case fmt_PCM:
-      if (bitsPerSample == 8)
-        return 16;
+  // convert to PCM
+  PINDEX i;
+  short * pcmPtr = (short *)buf;
+  for (i = 0; i < samples; i++)
+    *pcmPtr++ = DecodeSample(xlaw[i]);
 
-    default:
-      break;
-  }
+  // fake the lastReadCount
+  file.SetLastReadCount(len);
 
-  return PWAVFile::GetSampleSize();
+  return TRUE;
 }
 
 
-off_t OpalWAVFile::GetDataLength()
+BOOL PWAVFileConverterXLaw::Write(PWAVFile & /*file*/, const void * /*buf*/, PINDEX /*len*/)
 {
-  // get length of underlying file
-  // if format is not one we can convert, then return length
-  off_t len = PWAVFile::GetDataLength();
-
-  switch (format) {
-    case fmt_ALaw:
-    case fmt_uLaw:
-      // the application thinks samples are 16 bits
-      // so the actual length must be doubled before returning it
-      return len * 2;
-
-    case fmt_PCM:
-      if (bitsPerSample == 8)
-        return len * 2;
-      break;
-
-    default:
-      break;
-  }
-
-  return len;
+  return FALSE;
 }
+
+//////////////////////////////////////////////////////////////////////
+
+class PWAVFileConverterULaw : public PWAVFileConverterXLaw
+{
+  public:
+    unsigned GetFormat(const PWAVFile & /*file*/) const
+    { return PWAVFile::fmt_uLaw; }
+
+    short DecodeSample(int sample)
+    { return (short)Opal_G711_uLaw_PCM::ConvertSample(sample);}
+};
+
+class PWAVFileConverterALaw : public PWAVFileConverterXLaw
+{
+  public:
+    unsigned GetFormat(const PWAVFile & /*file*/) const
+    { return PWAVFile::fmt_ALaw; }
+
+    short DecodeSample(int sample)
+    { return (short)Opal_G711_ALaw_PCM::ConvertSample(sample);}
+};
+
+PWAVFileConverterFactory::Worker<PWAVFileConverterULaw> uLawConverter(PWAVFile::fmt_uLaw, true);
+PWAVFileConverterFactory::Worker<PWAVFileConverterALaw> ALawConverter(PWAVFile::fmt_ALaw, true);
+
+
+///////////////////////////////////////////////////////////////////////
+
