@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2007  2002/01/14 02:27:32  robertj
+ * Revision 1.2008  2002/01/22 05:09:00  robertj
+ * Removed payload mismatch detection from RTP media stream.
+ * Added function to get media patch from media stream.
+ *
+ * Revision 2.6  2002/01/14 02:27:32  robertj
  * Added ability to turn jitter buffer off in media stream to allow for patches
  *   that do not require it.
  *
@@ -213,6 +217,9 @@ class OpalMediaStream : public PChannel
       OpalMediaPatch * patch  /// Media patch thread
     );
 
+    /**Get the patch thread that is using the stream.
+      */
+    OpalMediaPatch * GetPatch() const { return patchThread; }
   //@}
 
   protected:
@@ -241,19 +248,14 @@ class OpalRTPMediaStream : public OpalMediaStream
     /**Construct a new media stream for RTP sessions.
       */
     OpalRTPMediaStream(
-      BOOL isSourceStream,      /// Direction of I/O for stream
-      RTP_Session & rtpSession  /// RTP session to stream to/from
+      BOOL isSourceStream,         /// Direction of I/O for stream
+      OpalConnection & connection, /// Connection for user indications
+      RTP_Session & rtpSession     /// RTP session to stream to/from
     );
   //@}
 
   /**@name Overrides of PChannel class */
   //@{
-    /**Open the media stream using the media format.
-      */
-    virtual BOOL Open(
-      const OpalMediaFormat & format /// Media format to select
-    );
-
     /**Close the media stream.
 
        The default does nothing.
@@ -314,9 +316,8 @@ class OpalRTPMediaStream : public OpalMediaStream
   //@}
 
   protected:
+    OpalConnection & connection;
     RTP_Session & rtpSession;
-    unsigned consecutiveMismatches;
-    RTP_DataFrame::PayloadTypes mismatchPayloadType;
 };
 
 
