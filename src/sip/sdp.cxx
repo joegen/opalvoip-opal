@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2015  2004/04/27 07:22:40  rjongbloed
+ * Revision 1.2016  2004/10/23 11:43:05  ykiryanov
+ * Added ifdef _WIN32_WCE for PocketPC 2003 SDK port
+ *
+ * Revision 2.14  2004/04/27 07:22:40  rjongbloed
  * Adjusted some logging
  *
  * Revision 2.13  2004/03/25 11:51:12  rjongbloed
@@ -471,7 +474,11 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
   PINDEX i;
   for (i = 0; i < formats.GetSize(); i++) {
     if (formats[i].GetPayloadType() == payloadType ||
+#ifndef _WIN32_WCE
         strcasecmp(formats[i].GetEncodingName(), encodingName) == 0)
+#else
+        strcmp(formats[i].GetEncodingName(), encodingName) == 0)
+#endif
       return;
   }
 
