@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2005  2002/02/19 07:52:40  robertj
+ * Revision 1.2006  2002/03/08 06:28:19  craigs
+ * Changed to allow Authorisation to be included in other PDUs
+ *
+ * Revision 2.4  2002/02/19 07:52:40  robertj
  * Restructured media bypass functions to fix problems with RFC2833.
  *
  * Revision 2.3  2002/02/13 04:55:59  craigs
@@ -242,7 +245,6 @@ class SIPConnection : public OpalConnection
 
     void SendResponse(SIP_PDU::StatusCodes code, const char * str = NULL);
 
-    PINDEX GetExpectedCSeq() const { return expectedCseq; }
     PINDEX GetLastSentCSeq() const { return lastSentCseq; }
 
     void InitiateCall(
@@ -261,6 +263,8 @@ class SIPConnection : public OpalConnection
 
     SIPEndPoint & GetEndPoint() const { return endpoint; }
 
+    void AddAuthorisation(SIP_PDU & pdu);
+
   protected:
     PDECLARE_NOTIFIER(PThread, SIPConnection, InitiateCallThreadMain);
     PDECLARE_NOTIFIER(PThread, SIPConnection, HandlePDUsThreadMain);
@@ -274,10 +278,16 @@ class SIPConnection : public OpalConnection
     SIP_PDU * originalInvite;
     SIPURL    originalDestination;
 
-    unsigned expectedCseq;
+    unsigned inviteCSeq;
+    //unsigned expectedCseq;
     unsigned lastSentCseq;
+    unsigned lastReceivedCseq;
+    BOOL     haveLastReceivedCseq;
+
     BOOL     sendBYE;
-    BOOL     inviteAuthenticateAlreadySent;
+    BOOL     isProxyAuthenticate;
+    PString  realm;
+    PString  nonce;
 
     OpalMediaFormatList remoteFormatList;
     RTP_SessionManager  rtpSessions;
