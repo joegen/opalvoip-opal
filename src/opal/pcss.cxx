@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2005  2001/08/23 03:15:51  robertj
+ * Revision 1.2006  2001/10/15 04:33:17  robertj
+ * Removed answerCall signal and replaced with state based functions.
+ *
+ * Revision 2.4  2001/08/23 03:15:51  robertj
  * Added missing Lock() calls in SetUpConnection
  *
  * Revision 2.3  2001/08/21 01:13:22  robertj
@@ -240,7 +243,7 @@ OpalConnection::Phases OpalPCSSConnection::GetPhase() const
 }
 
 
-BOOL OpalPCSSConnection::SetAlerting(const PString & calleeName)
+BOOL OpalPCSSConnection::SetAlerting(const PString & calleeName, BOOL)
 {
   PTRACE(3, "PCSS\tSetAlerting(" << calleeName << ')');
   phase = AlertingPhase;
