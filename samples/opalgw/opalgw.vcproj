@@ -38,7 +38,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="opal.lib ptclib.lib ptlib.lib wsock32.lib"
+				AdditionalDependencies="opals.lib ptclib.lib ptlib.lib wsock32.lib"
 				OutputFile=".\Release/opalgw.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
