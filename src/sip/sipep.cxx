@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2020  2004/03/29 10:56:31  rjongbloed
+ * Revision 1.2021  2004/04/25 08:46:08  rjongbloed
+ * Fixed GNU compatibility
+ *
+ * Revision 2.19  2004/03/29 10:56:31  rjongbloed
  * Made sure SIP UDP socket is "promiscuous", ie the host/port being sent to may not
  *   be where packets come from.
  *
@@ -443,7 +446,7 @@ BOOL SIPEndPoint::WriteREGISTER(OpalTransport & transport, void * param)
 }
 
 
-BOOL SIPEndPoint::Register(const PString & hostname,
+BOOL SIPEndPoint::Register(const PString & domain,
                            const PString & username,
                            const PString & password)
 {
@@ -455,14 +458,26 @@ BOOL SIPEndPoint::Register(const PString & hostname,
     adjustedUsername = GetDefaultLocalPartyName();
 
   if (adjustedUsername.Find('@') == P_MAX_INDEX)
-    adjustedUsername += '@' + hostname;
+    adjustedUsername += '@' + domain;
 
   registrationAddress.Parse(adjustedUsername);
 
-  // Should do DNS SRV record lookup to get registrar address
+  PString hostname;
+  WORD port;
 
-  OpalTransportAddress registrarAddress(proxy.IsEmpty() ? hostname : proxy.GetHostName(),
-                                        defaultSignalPort, "udp");
+  if (proxy.IsEmpty()) {
+    // Should do DNS SRV record lookup to get registrar address
+    hostname = domain;
+    port = defaultSignalPort;
+  }
+  else {
+    hostname = proxy.GetHostName();
+    port = proxy.GetPort();
+    if (port == 0)
+      port = defaultSignalPort;
+  }
+
+  OpalTransportAddress registrarAddress(hostname, port, "udp");
 
   delete registrarTransport;
   registrarTransport = CreateTransport(registrarAddress);
