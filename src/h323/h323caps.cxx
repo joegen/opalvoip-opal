@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2010  2002/03/22 06:57:49  robertj
+ * Revision 1.2011  2002/03/27 02:21:51  robertj
+ * Updated to OpenH323 v1.8.4
+ *
+ * Revision 2.9  2002/03/22 06:57:49  robertj
  * Updated to OpenH323 version 1.8.2
  *
  * Revision 2.8  2002/02/19 07:47:29  robertj
@@ -59,6 +62,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.50  2002/03/26 05:51:12  robertj
+ * Forced RFC2833 to payload type 101 as some IOS's go nuts otherwise.
  *
  * Revision 1.49  2002/03/05 06:18:46  robertj
  * Fixed problem with some custom local capabilities not being used in getting

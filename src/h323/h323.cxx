@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2025  2002/03/26 23:40:05  robertj
+ * Revision 1.2026  2002/03/27 02:21:51  robertj
+ * Updated to OpenH323 v1.8.4
+ *
+ * Revision 2.24  2002/03/26 23:40:05  robertj
  * Added missing call to OnCleared() for backward compatibility.
  *
  * Revision 2.23  2002/03/22 06:57:49  robertj
@@ -109,6 +112,13 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.250  2002/03/27 00:17:27  robertj
+ * Fixed fall back from RFC2833 to H.245 UII if remote does not have capability.
+ *
+ * Revision 1.249  2002/03/26 08:47:14  robertj
+ * Changed setting of RFC2833 payload type so depends on call direction (who
+ *   answered) rather than master/slave. Fixed problem with TCS in SETUP packet.
  *
  * Revision 1.248  2002/03/19 05:16:13  robertj
  * Normalised ACF destExtraCallIInfo to be same as other parameters.
@@ -3298,8 +3308,31 @@ BOOL H323Connection::OnControlProtocolError(ControlProtocolErrors /*errorSource*
 }
 
 
+static void SetRFC2833PayloadType(H323Connection & connection,
+                                  H323Capabilities & capabilities,
+                                  OpalRFC2833Proto & rfc2833handler)
+{
+  H323Capability * capability = capabilities.FindCapability(H323_UserInputCapability::SubTypeNames[H323_UserInputCapability::SignalToneRFC2833]);
+  if (capability == NULL) {
+    // Local endpoint cannot do this mode, disable it if set
+    if (connection.GetSendUserInputMode() == H323Connection::SendUserInputAsInlineRFC2833)
+      connection.SetSendUserInputMode(H323Connection::SendUserInputAsTone);
+  }
+  else {
+    RTP_DataFrame::PayloadTypes pt = ((H323_UserInputCapability*)capability)->GetPayloadType();
+    if (rfc2833handler.GetPayloadType() != pt) {
+      PTRACE(2, "H323\tUser Input RFC2833 payload type set to " << pt);
+      rfc2833handler.SetPayloadType(pt);
+    }
+  }
+}
+
+
 void H323Connection::OnSendCapabilitySet(H245_TerminalCapabilitySet & /*pdu*/)
 {
+  // If we originated call, then check for RFC2833 capability and set payload type
+  if (!callAnswered)
+    SetRFC2833PayloadType(*this, localCapabilities, *rfc2833Handler);
 }
 
 
@@ -3346,6 +3379,12 @@ BOOL H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remoteCaps
     else {
       if (localCapabilities.GetSize() > 0)
         capabilityExchangeProcedure->Start(FALSE);
+
+      // If we terminated call, then check for RFC2833 capability and set payload type
+      if (callAnswered)
+        SetRFC2833PayloadType(*this, remoteCapabilities, *rfc2833Handler);
+      else
+        SetSendUserInputMode(sendUserInputMode);
     }
   }
 
@@ -3450,26 +3489,6 @@ void H323Connection::InternalEstablishedConnectionCheck()
   BOOL h245_available = masterSlaveDeterminationProcedure->IsDetermined() &&
                         capabilityExchangeProcedure->HasSentCapabilities() &&
                         capabilityExchangeProcedure->HasReceivedCapabilities();
-
-  // Check for RFC2833 capability and set payload type
-  if (h245_available) {
-    const char * rfc2833 = H323_UserInputCapability::SubTypeNames[H323_UserInputCapability::SignalToneRFC2833];
-    H323Capability * capability = IsH245Master() ? localCapabilities.FindCapability(rfc2833)
-                                                 : remoteCapabilities.FindCapability(rfc2833);
-    if (capability != NULL) {
-      RTP_DataFrame::PayloadTypes pt = ((H323_UserInputCapability*)capability)->GetPayloadType();
-      PTRACE(2, "H323\tUser Input RFC2833 payload type set to " << pt);
-      rfc2833Handler->SetPayloadType(pt);
-    }
-    else {
-      // Remote cannot do this, disable that send mode if set
-      if (sendUserInputMode == SendUserInputAsInlineRFC2833)
-        sendUserInputMode = SendUserInputAsTone;
-    }
-
-    // Adjust the send mode according to capabilities
-    SetSendUserInputMode(sendUserInputMode);
-  }
 
   // Check for if all the 245 conditions are met so can start up logical
   // channels and complete the connection establishment.
