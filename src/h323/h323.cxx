@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2035  2002/11/10 22:59:49  robertj
+ * Revision 1.2036  2003/01/07 04:39:53  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.34  2002/11/10 22:59:49  robertj
  * Fixed override of SetCallEndReason to have same parameters as base virtual.
  *
  * Revision 2.33  2002/11/10 11:33:18  robertj
@@ -141,6 +144,36 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.305  2002/12/18 06:56:09  robertj
+ * Moved the RAS IRR on UUIE to after UUIE is processed. Means you get
+ *   correct state variables such as connectedTime.
+ *
+ * Revision 1.304  2002/12/12 01:24:38  robertj
+ * Changed default user indication input mode to be alphanumeric H.245 if the
+ *   remote TCS does not indicate any UII capability (per spec).
+ *
+ * Revision 1.303  2002/12/10 23:38:33  robertj
+ * Moved the unsolicited IRR for sending requested UUIE to inside mutex.
+ *
+ * Revision 1.302  2002/12/06 03:44:41  robertj
+ * Fixed bug in seleting request mode other than zero, thanks Ulrich Findeisen
+ *
+ * Revision 1.301  2002/11/27 06:54:56  robertj
+ * Added Service Control Session management as per Annex K/H.323 via RAS
+ *   only at this stage.
+ * Added H.248 ASN and very primitive infrastructure for linking into the
+ *   Service Control Session management system.
+ * Added basic infrastructure for Annex K/H.323 HTTP transport system.
+ * Added Call Credit Service Control to display account balances.
+ *
+ * Revision 1.300  2002/11/15 05:17:26  robertj
+ * Added facility redirect support without changing the call token for access
+ *   to the call. If it gets redirected a new H323Connection object is
+ *   created but it looks like the same thing to an application.
+ *
+ * Revision 1.299  2002/11/13 04:37:55  robertj
+ * Added ability to get (and set) Q.931 release complete cause codes.
  *
  * Revision 1.298  2002/10/31 00:39:21  robertj
  * Enhanced jitter buffer system so operates dynamically between minimum and
@@ -1168,7 +1201,7 @@ const PTimeInterval MonitorCallStatusTime(0, 10); // Seconds
 #if PTRACING
 ostream & operator<<(ostream & o, H323Connection::AnswerCallResponse s)
 {
-  const char * const AnswerCallResponseNames[H323Connection::NumAnswerCallResponses] = {
+  static const char * const AnswerCallResponseNames[H323Connection::NumAnswerCallResponses] = {
     "AnswerCallNow",
     "AnswerCallDenied",
     "AnswerCallPending",
@@ -1275,6 +1308,7 @@ H323Connection::H323Connection(OpalCall & call,
   connectPDU = NULL;
 
   connectionState = NoConnectionActive;
+  q931Cause = 0;
 
   uuiesRequested = 0; // Empty set
   addAccessTokenToSetup = TRUE; // Automatic inclusion of ACF access token in SETUP
@@ -1499,7 +1533,9 @@ PString H323Connection::GetDestinationAddress()
 }
 
 
-void H323Connection::AttachSignalChannel(H323Transport * channel, BOOL answeringCall)
+void H323Connection::AttachSignalChannel(const PString & token,
+                                         H323Transport * channel,
+                                         BOOL answeringCall)
 {
   originating = !answeringCall;
 
@@ -1510,6 +1546,9 @@ void H323Connection::AttachSignalChannel(H323Transport * channel, BOOL answering
 
   delete signallingChannel;
   signallingChannel = channel;
+
+  // Set our call token for identification in endpoint dictionary
+  callToken = token;
 }
 
 
@@ -1593,10 +1632,6 @@ BOOL H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
 
   PTRACE(3, "H225\tHandling PDU: " << q931.GetMessageTypeName()
                     << " callRef=" << q931.GetCallReference());
-
-  H323Gatekeeper * gk = endpoint.GetGatekeeper();
-  if (gk != NULL)
-    gk->InfoRequestResponse(*this, pdu.m_h323_uu_pdu, FALSE);
 
   if (!Lock()) {
     // Continue to look for endSession/releaseComplete pdus
@@ -1711,6 +1746,10 @@ BOOL H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
   PString digits = pdu.GetQ931().GetKeypad();
   if (!digits)
     OnUserInputString(digits);
+
+  H323Gatekeeper * gk = endpoint.GetGatekeeper();
+  if (gk != NULL)
+    gk->InfoRequestResponse(*this, pdu.m_h323_uu_pdu, FALSE);
 
   Unlock();
 
@@ -2322,7 +2361,17 @@ BOOL H323Connection::OnReceivedFacility(const H323SignalPDU & pdu)
     return FALSE;
   }
 
-  return TRUE;
+  if (!endpoint.CanAutoCallForward())
+    return TRUE;
+
+  if (!endpoint.ForwardConnection(*this, address, pdu))
+    return TRUE;
+
+  // This connection is on the way out and a new one has the same token now
+  // so change our token to make sure no accidents can happen clearing the
+  // wrong call
+  callToken += "-forwarded";
+  return FALSE;
 }
 
 
@@ -2365,6 +2414,12 @@ void H323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
     callEndTime = PTime();
 
   endSessionReceived.Signal();
+
+  if (q931Cause == 0) {
+    q931Cause = pdu.GetQ931().GetCause();
+    if (q931Cause == Q931::ErrorInCauseIE)
+      q931Cause = 0;
+  }
 
   switch (connectionState) {
     case EstablishedConnection :
@@ -4613,8 +4668,8 @@ static BOOL CheckSendUserInputMode(const H323Capabilities & caps,
 
 H323Connection::SendUserInputModes H323Connection::GetRealSendUserInputMode() const
 {
-  // If have not yet exchanged capabilities then the only thing we can do
-  // is Q.931
+  // If have not yet exchanged capabilities (ie not finished setting up the
+  // H.245 channel) then the only thing we can do is Q.931
   if (!capabilityExchangeProcedure->HasReceivedCapabilities())
     return SendUserInputAsQ931;
 
@@ -4630,8 +4685,9 @@ H323Connection::SendUserInputModes H323Connection::GetRealSendUserInputMode() co
   if (CheckSendUserInputMode(remoteCapabilities, SendUserInputAsString))
     return SendUserInputAsString;
 
-  // Give up and do it as Q.931
-  return SendUserInputAsQ931;
+  // Finally if is H.245 alphanumeric or does not indicate it could do other
+  // modes we use H.245 alphanumeric as per spec.
+  return SendUserInputAsString;
 }
 
 
@@ -4855,7 +4911,7 @@ BOOL H323Connection::OnRequestModeChange(const H245_RequestMode & pdu,
 {
   for (selectedMode = 0; selectedMode < pdu.m_requestedModes.GetSize(); selectedMode++) {
     BOOL ok = TRUE;
-    for (PINDEX i = 0; i < pdu.m_requestedModes[0].GetSize(); i++) {
+    for (PINDEX i = 0; i < pdu.m_requestedModes[selectedMode].GetSize(); i++) {
       if (localCapabilities.FindCapability(pdu.m_requestedModes[selectedMode][i]) == NULL) {
         ok = FALSE;
         break;
@@ -4977,6 +5033,12 @@ void H323Connection::SendLogicalChannelMiscCommand(H323Channel & channel,
 }
 
 
+void H323Connection::SetEnforcedDurationLimit(unsigned seconds)
+{
+  enforcedDurationLimit.SetInterval(0, seconds);
+}
+
+
 void H323Connection::MonitorCallStatus()
 {
   if (!Lock())
@@ -5007,6 +5069,9 @@ void H323Connection::MonitorCallStatus()
       ClearCall(EndedByTransportFail);
   }
 */
+
+  if (enforcedDurationLimit.GetResetTime() > 0 && enforcedDurationLimit == 0)
+    ClearCall(EndedByDurationLimit);
 
   Unlock();
 }

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2022  2002/11/10 11:33:18  robertj
+ * Revision 1.2023  2003/01/07 04:39:53  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.21  2002/11/10 11:33:18  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.20  2002/09/04 06:01:47  robertj
@@ -94,6 +97,20 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.135  2002/12/18 11:20:49  craigs
+ * Fixed problem with T.38 channels SEGVing thanks to Vyacheslav Frolov
+ *
+ * Revision 1.134  2002/12/17 08:48:09  robertj
+ * Set silence suppression mode earlier in codec life so gets correct
+ *   value for silenceSuppression in fast start OLC's.
+ *
+ * Revision 1.133  2002/12/16 08:20:04  robertj
+ * Fixed problem where a spurious RTP packet full of zeros could be sent
+ *   at the beginning of the transmission, thanks Bruce Fitzsimons
+ *
+ * Revision 1.132  2002/11/26 02:59:25  robertj
+ * Added logging to help find logical channel thread stop failures.
  *
  * Revision 1.131  2002/10/31 00:37:47  robertj
  * Enhanced jitter buffer system so operates dynamically between minimum and

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2016  2002/11/10 11:33:17  robertj
+ * Revision 1.2017  2003/01/07 04:39:53  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.15  2002/11/10 11:33:17  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.14  2002/09/16 02:52:35  robertj
@@ -75,6 +78,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.13  2002/12/02 03:06:26  robertj
+ * Fixed over zealous removal of code when NO_AUDIO_CODECS set.
  *
  * Revision 1.12  2002/09/16 01:14:15  robertj
  * Added #define so can select if #pragma interface/implementation is used on
@@ -440,8 +446,6 @@ class OpalMediaFormat : public PCaselessString
 
 extern OpalMediaFormat const OpalPCM16;
 
-#if !defined(NO_H323_AUDIO_CODECS) && !defined(NO_OPAL_AUDIO_CODECS)
-
 extern OpalMediaFormat const OpalG711uLaw;
 extern OpalMediaFormat const OpalG711ALaw;
 extern OpalMediaFormat const OpalG728;
@@ -457,7 +461,6 @@ extern OpalMediaFormat const OpalG7231A_5k3;
 extern OpalMediaFormat const OpalGSM0610;
 extern OpalMediaFormat const OpalRFC2833;
 
-#endif
 
 #endif  // __OPAL_MEDIAFMT_H
 

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.cxx,v $
- * Revision 1.2006  2002/11/10 11:33:20  robertj
+ * Revision 1.2007  2003/01/07 04:39:53  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.5  2002/11/10 11:33:20  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.4  2002/09/04 06:01:49  robertj
@@ -44,6 +47,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.33  2002/11/26 03:00:06  robertj
+ * Added logging to help find logical channel thread stop failures.
  *
  * Revision 1.32  2002/11/05 04:06:48  robertj
  * Better tracing
@@ -252,7 +258,8 @@ RTP_JitterBuffer::RTP_JitterBuffer(RTP_Session & sess,
   PTRACE(2, "RTP\tJitter buffer created:"
             " size=" << bufferSize <<
             " delay=" << minJitterTime << '-' << maxJitterTime << '/' << currentJitterTime <<
-            " (" << (currentJitterTime/8) << "ms)");
+            " (" << (currentJitterTime/8) << "ms)"
+            " obj=" << this);
 
 #if PTRACING && !defined(NO_ANALYSER)
   analyser = new RTP_JitterBufferAnalyser;
@@ -267,7 +274,7 @@ RTP_JitterBuffer::RTP_JitterBuffer(RTP_Session & sess,
 
 RTP_JitterBuffer::~RTP_JitterBuffer()
 {
-  PTRACE(3, "RTP\tRemoving jitter buffer");
+  PTRACE(3, "RTP\tRemoving jitter buffer " << this << ' ' << GetThreadName());
 
   shuttingDown = TRUE;
   PAssert(WaitForTermination(10000), "Jitter buffer thread did not terminate");
@@ -343,7 +350,7 @@ void RTP_JitterBuffer::SetDelay(unsigned minJitterDelay, unsigned maxJitterDelay
 
 void RTP_JitterBuffer::Main()
 {
-  PTRACE(3, "RTP\tJitter RTP receive thread started");
+  PTRACE(3, "RTP\tJitter RTP receive thread started: " << this);
 
   bufferMutex.Wait();
 

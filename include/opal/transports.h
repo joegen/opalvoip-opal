@@ -25,8 +25,17 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.h,v $
- * Revision 1.2012  2002/11/10 11:33:17  robertj
+ * Revision 1.2013  2003/01/07 04:39:53  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.11  2002/11/10 11:33:17  robertj
  * Updated to OpenH323 v1.10.3
+ * Revision 1.38  2002/11/21 06:39:56  robertj
+ * Changed promiscuous mode to be three way. Fixes race condition in gkserver
+ *   which can cause crashes or more PDUs to be sent to the wrong place.
+ *
+ * Revision 1.37  2002/11/10 08:10:43  robertj
+ * Moved constants for "well known" ports to better place (OPAL change).
  *
  * Revision 2.10  2002/09/16 02:52:35  robertj
  * Added #define so can select if #pragma interface/implementation is used on
@@ -568,7 +577,7 @@ class OpalTransport : public PIndirectChannel
       const OpalTransportAddress & address
     ) = 0;
 
-    /**Get the transport dependent name of the remote endpoint.
+    /**Get the transport address of the remote endpoint.
       */
     virtual OpalTransportAddress GetRemoteAddress() const = 0;
 
@@ -620,18 +629,35 @@ class OpalTransport : public PIndirectChannel
       const OpalTransportAddress & address
     ) const = 0;
 
+    /// Promiscious modes for transport
+    enum PromisciousModes {
+      AcceptFromRemoteOnly,
+      AcceptFromAnyAutoSet,
+      AcceptFromAny,
+      NumPromisciousModes
+    };
+
     /**Set read to promiscuous mode.
        Normally only reads from the specifed remote address are accepted. This
-       flag allows the remote address to be automatically set to whatever the
-       sender of the last received message was.
+       flag allows packets to be accepted from any remote, provided the
+       underlying protocol can do so. For example TCP will do nothing.
+
+       The Read() call may optionally set the remote address automatically to
+       whatever the sender host of the last received message was.
 
        Default behaviour does nothing.
       */
     virtual void SetPromiscuous(
-      BOOL promiscuous
+      PromisciousModes promiscuous
     );
 
-    /**Read a packet from the transport.
+    /**Get the transport address of the last received PDU.
+
+       Default behaviour returns GetRemoteAddress().
+      */
+    virtual OpalTransportAddress GetLastReceivedAddress() const;
+
+    /**Read a protocol data unit from the transport.
        This will read using the transports mechanism for PDU boundaries, for
        example UDP is a single Read() call, while for TCP there is a TPKT
        header that indicates the size of the PDU.
@@ -922,16 +948,26 @@ class OpalTransportUDP : public OpalTransportIP
 
     /**Set read to promiscuous mode.
        Normally only reads from the specifed remote address are accepted. This
-       flag allows the remote address to be automatically set to whatever the
-       sender of the last received message was.
+       flag allows packets to be accepted from any remote, provided the
+       underlying protocol can do so.
 
-       Default behaviour does nothing.
+       The Read() call may optionally set the remote address automatically to
+       whatever the sender host of the last received message was.
+
+       Default behaviour sets the internal flag, so that Read() operates as
+       described.
       */
     virtual void SetPromiscuous(
-      BOOL promiscuous
+      PromisciousModes promiscuous
     );
 
-    /**Read a packet from the transport.
+    /**Get the transport address of the last received PDU.
+
+       Default behaviour returns the lastReceivedAddress member variable.
+      */
+    virtual OpalTransportAddress GetLastReceivedAddress() const;
+
+    /**Read a protocol data unit from the transport.
        This will read using the transports mechanism for PDU boundaries, for
        example UDP is a single Read() call, while for TCP there is a TPKT
        header that indicates the size of the PDU.
@@ -971,9 +1007,10 @@ class OpalTransportUDP : public OpalTransportIP
       */
     virtual const char * GetProtoPrefix() const;
 
-    BOOL        promiscuousReads;
-    PBYTEArray  preReadPacket;
-    PSocketList connectSockets;
+    PromisciousModes     promiscuousReads;
+    OpalTransportAddress lastReceivedAddress;
+    PBYTEArray           preReadPacket;
+    PSocketList          connectSockets;
 };
 
 

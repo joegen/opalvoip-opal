@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: dllmain.cxx,v $
- * Revision 1.2004  2002/11/11 06:54:30  robertj
+ * Revision 1.2005  2003/01/07 04:39:53  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.3  2002/11/11 06:54:30  robertj
  * Added correct flag for including static global variables.
  *
  * Revision 2.2  2002/11/10 23:04:29  robertj
@@ -35,6 +38,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.3  2002/11/10 23:14:40  robertj
+ * Made sure static variables are included in DLL
  *
  * Revision 1.2  2000/05/02 04:32:26  robertj
  * Fixed copyright notice comment.

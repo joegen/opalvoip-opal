@@ -24,7 +24,10 @@
  * Contributor(s): __________________________________
  *
  * $Log: h235auth.cxx,v $
- * Revision 1.2008  2002/11/10 11:33:18  robertj
+ * Revision 1.2009  2003/01/07 04:39:53  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.7  2002/11/10 11:33:18  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.6  2002/09/04 06:01:48  robertj
@@ -44,6 +47,9 @@
  *
  * Revision 2.1  2001/08/13 05:10:39  robertj
  * Updates from OpenH323 v1.6.0 release.
+ *
+ * Revision 1.15  2002/11/11 07:04:22  robertj
+ * Fixed typo in trace.
  *
  * Revision 1.14  2002/11/05 00:04:21  robertj
  * Returned code back to including trailing NULL in BMPString after
@@ -262,7 +268,7 @@ BOOL H235Authenticators::ValidatePDU(const H225_ArrayOf_CryptoH323Token & crypto
 
   //do not accept non secure RAS Messages
   if (!pdu.HasOptionalField(optionalField)) {
-    PTRACE(2, "H235RAS\tReceived unsecured RAS message (not crypto tokens)");
+    PTRACE(2, "H235RAS\tReceived unsecured RAS message (no crypto tokens)");
     return FALSE;
   }
 
