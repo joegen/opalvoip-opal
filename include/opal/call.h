@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2004  2001/08/22 10:20:09  robertj
+ * Revision 1.2005  2001/11/15 07:02:12  robertj
+ * Changed OpalCall::OpenSourceMediaStreams so the connection to not open
+ *   a media stream on is optional.
+ *
+ * Revision 2.3  2001/08/22 10:20:09  robertj
  * Changed connection locking to use double mutex to guarantee that
  *   no threads can ever deadlock or access deleted connection.
  *
@@ -242,12 +246,14 @@ class OpalCall : public PObject
       const OpalConnection & connection  /// Source requesting formats
     );
 
-    /**Get the B party to start transmitters.
+    /**Open transmitter media streams for each connection.
+       If the connection parameter is not NULL then it is exempt from the
+       opening of media streams.
       */
     virtual BOOL OpenSourceMediaStreams(
-      const OpalConnection & connection,   /// Sink connection
       const OpalMediaFormatList & mediaFormats, /// Optional media format to open
-      unsigned sessionID                   /// Session to start stream on
+      unsigned sessionID,                       /// Session to start stream on
+      const OpalConnection * connection = NULL  /// Exempt connection
     );
 
     /**Connect up the media streams on the connections.
