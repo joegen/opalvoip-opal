@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2013  2001/11/13 04:29:47  robertj
+ * Revision 1.2014  2001/11/14 01:31:55  robertj
+ * Corrected placement of adjusting media format list.
+ *
+ * Revision 2.12  2001/11/13 04:29:47  robertj
  * Changed OpalTransportAddress CreateTransport and CreateListsner functions
  *   to have extra parameter to control local binding of sockets.
  *
@@ -2842,7 +2845,6 @@ void H323Connection::SendCapabilitySet(BOOL empty)
 void H323Connection::OnSetLocalCapabilities()
 {
   OpalMediaFormatList formats = ownerCall.GetMediaFormats(*this);
-  endpoint.AdjustMediaFormats(*this, formats);
 
   PINDEX simultaneous = P_MAX_INDEX;
 

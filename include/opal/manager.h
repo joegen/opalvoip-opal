@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2005  2001/11/13 06:25:56  robertj
+ * Revision 1.2006  2001/11/14 01:31:55  robertj
+ * Corrected placement of adjusting media format list.
+ *
+ * Revision 2.4  2001/11/13 06:25:56  robertj
  * Changed SetUpConnection() so returns BOOL as returning
  *   pointer to connection is not useful.
  *
@@ -422,7 +425,7 @@ class OpalManager : public PObject
     virtual void AdjustMediaFormats(
       const OpalConnection & connection,  /// Connection that is about to use formats
       OpalMediaFormatList & mediaFormats  /// Media formats to use
-    );
+    ) const;
 
     /**Call back when opening a media stream.
        This function is called when a connection has created a new media

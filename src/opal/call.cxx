@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2007  2001/11/06 05:33:52  robertj
+ * Revision 1.2008  2001/11/14 01:31:55  robertj
+ * Corrected placement of adjusting media format list.
+ *
+ * Revision 2.6  2001/11/06 05:33:52  robertj
  * Added fail safe starting of media streams on CONNECT
  *
  * Revision 2.5  2001/10/15 04:33:17  robertj
@@ -285,7 +288,9 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection)
     }
   }
 
-  PTRACE(3, "Call\tGetMediaFormats " << connection << '\n'
+  connection.AdjustMediaFormats(formats);
+
+  PTRACE(3, "Call\tGetMediaFormats for " << connection << '\n'
          << setfill('\n') << formats << setfill(' '));
 
   return formats;

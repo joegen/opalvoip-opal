@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2006  2001/11/13 06:25:56  robertj
+ * Revision 1.2007  2001/11/14 01:31:55  robertj
+ * Corrected placement of adjusting media format list.
+ *
+ * Revision 2.5  2001/11/13 06:25:56  robertj
  * Changed SetUpConnection() so returns BOOL as returning
  *   pointer to connection is not useful.
  *
@@ -376,12 +379,10 @@ BOOL OpalManager::OnReleased(OpalConnection & connection)
 
 
 void OpalManager::AdjustMediaFormats(const OpalConnection & /*connection*/,
-                                     OpalMediaFormatList & mediaFormats)
+                                     OpalMediaFormatList & mediaFormats) const
 {
   mediaFormats.Remove(mediaFormatMask);
   mediaFormats.Reorder(mediaFormatOrder);
-  PTRACE(3, "OpalMan\tAdjusted media formats to "
-         << setfill(',') << mediaFormats << setfill(' '));
 }
 
 
