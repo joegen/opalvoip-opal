@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2038  2004/12/12 13:44:38  dsandras
+ * Revision 1.2039  2004/12/17 12:06:53  dsandras
+ * Added error code to OnRegistrationFailed. Made Register/Unregister wait until the transaction is over. Fixed Unregister so that the SIPRegister is used as a pointer or the object is deleted at the end of the function and make Opal crash when transactions are cleaned. Reverted part of the patch that was sending authentication again when it had already been done on a Register.
+ *
+ * Revision 2.37  2004/12/12 13:44:38  dsandras
  * - Modified InternalParse so that the remote displayName defaults to the sip url when none is provided.
  * - Changed GetDisplayName accordingly.
  * - Added call to OnRegistrationFailed when the REGISTER fails for any reason.
@@ -1574,8 +1577,10 @@ void SIPTransaction::SetTerminated(States newState)
   // REGISTER Failed, tell the endpoint
   if (GetMethod() == SIP_PDU::Method_REGISTER
       && state != Terminated_Success) 
-    endpoint.OnRegistrationFailed();
-    
+    endpoint.OnRegistrationFailed(state == Terminated_Timeout 
+				  ? SIPEndPoint::Timeout 
+				  : SIPEndPoint::RegistrationFailed,
+				  !endpoint.IsRegistered ()); 
 
   finished.Signal();
 }
