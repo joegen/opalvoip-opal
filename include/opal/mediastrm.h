@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2004  2001/10/04 00:41:20  robertj
+ * Revision 1.2005  2001/10/04 05:44:00  craigs
+ * Changed to start media patch threads in Paused state
+ *
+ * Revision 2.3  2001/10/04 00:41:20  robertj
  * Removed GetMediaFormats() function as is not useful.
  *
  * Revision 2.2  2001/08/21 01:10:35  robertj
@@ -189,6 +192,11 @@ class OpalMediaStream : public PChannel
     void SetPatch(
       OpalMediaPatch * patch  /// Media patch thread
     );
+
+    /**Resume the patch thread
+      */
+    void ResumePatch();
+
   //@}
 
   protected:
