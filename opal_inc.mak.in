@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: opal_inc.mak.in,v $
+# Revision 1.2  2004/04/25 08:33:42  rjongbloed
+# Removed detection of various LIDs as now in configure
+#
 # Revision 1.1  2004/03/16 04:27:18  csoutheren
 # Initial version
 #
@@ -96,36 +99,6 @@ LDLIBS	    := -l$(OPAL_BASE)$(LIB_TYPE) $(LDLIBS)
 
 STDCCFLAGS  += -I$(OPAL_INCDIR)
 
-ifneq (,$(wildcard $(SYSINCDIR)/linux/telephony.h))
-HAS_IXJ	    = 1
-STDCCFLAGS += -DHAS_IXJ
-endif
-
-ifneq (,$(wildcard $(SYSINCDIR)/sys/telephony.h))
-HAS_IXJ	    = 1
-STDCCFLAGS += -DHAS_IXJ
-endif
-
-ifneq (,$(wildcard /usr/local/include/sys/telephony.h))
-HAS_IXJ	    = 1
-STDCCFLAGS += -DHAS_IXJ -I/usr/local/include
-endif
-
-ifneq (,$(wildcard $(SYSINCDIR)/linux/soundcard.h))
-HAS_OSS	    = 1
-STDCCFLAGS += -DHAS_OSS
-endif
-
-ifeq ($(OSTYPE),linux)
-
-#ifneq (,$(wildcard /usr/local/lib/libvpb.a))
-#HAS_VPB	   = 1
-#STDCCFLAGS += -DHAS_VPB
-#LDLIBS	   += /usr/local/lib/libvpb.a
-#endif
-
-# linux
-endif
 
 $(TARGET) :	$(OPAL_LIBDIR)/$(OPAL_FILE)
 
