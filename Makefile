@@ -22,7 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2021  2003/03/19 04:45:29  robertj
+# Revision 1.2022  2003/03/26 02:49:00  robertj
+# Added service/daemon sample application.
+#
+# Revision 2.20  2003/03/19 04:45:29  robertj
 # Added opalvxml to build
 #
 # Revision 2.19  2003/03/18 23:09:37  robertj
@@ -92,7 +95,7 @@
 # Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
 #
 
-SUBDIRS := samples/simple
+SUBDIRS := samples/simple samples/opalgw
 
 ifndef OPALDIR
 OPALDIR=$(CURDIR)
