@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:25  robertj
+ * Revision 1.2002  2001/08/01 05:16:18  robertj
+ * Moved default session ID's to OpalMediaFormat class.
+ *
+ * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.57  2001/06/22 00:21:10  robertj
@@ -1085,13 +1088,13 @@ void H323Gatekeeper::InfoRequestResponse(const H323Connection * connection,
     info.m_callReferenceValue = connection->GetCallReference();
     info.m_callIdentifier.m_guid = connection->GetCallIdentifier();
     info.m_conferenceID = connection->GetConferenceIdentifier();
-    H323_RTP_Session * session = connection->GetSessionCallbacks(RTP_Session::DefaultAudioSessionID);
+    H323_RTP_Session * session = connection->GetSessionCallbacks(OpalMediaFormat::DefaultAudioSessionID);
     if (session != NULL) {
       info.IncludeOptionalField(H225_InfoRequestResponse_perCallInfo_subtype::e_audio);
       info.m_audio.SetSize(1);
       session->OnSendRasInfo(info.m_audio[0]);
     }
-    session = connection->GetSessionCallbacks(RTP_Session::DefaultVideoSessionID);
+    session = connection->GetSessionCallbacks(OpalMediaFormat::DefaultVideoSessionID);
     if (session != NULL) {
       info.IncludeOptionalField(H225_InfoRequestResponse_perCallInfo_subtype::e_video);
       info.m_video.SetSize(1);
