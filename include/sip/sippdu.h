@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2009  2002/04/16 07:53:15  robertj
+ * Revision 1.2010  2002/09/16 02:52:35  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
+ *
+ * Revision 2.8  2002/04/16 07:53:15  robertj
  * Changes to support calls through proxies.
  *
  * Revision 2.7  2002/04/12 12:23:03  robertj
@@ -55,7 +59,7 @@
 #ifndef __OPAL_SIPPDU_H
 #define __OPAL_SIPPDU_H
 
-#ifdef __GNUC__
+#ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 

@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.h,v $
- * Revision 1.2010  2002/09/12 06:58:17  robertj
+ * Revision 1.2011  2002/09/16 02:52:35  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
+ *
+ * Revision 2.9  2002/09/12 06:58:17  robertj
  * Removed protocol prefix strings as static members as has problems with
  *   use in DLL environment.
  *
@@ -63,7 +67,7 @@
 #ifndef __OPAL_TRANSPORT_H
 #define __OPAL_TRANSPORT_H
 
-#ifdef __GNUC__
+#ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 

@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2012  2002/07/04 07:41:47  robertj
+ * Revision 1.2013  2002/09/16 02:52:35  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
+ *
+ * Revision 2.11  2002/07/04 07:41:47  robertj
  * Fixed memory/thread leak of transports.
  *
  * Revision 2.10  2002/07/01 04:56:30  robertj
@@ -69,7 +73,7 @@
 #ifndef __OPAL_ENDPOINT_H
 #define __OPAL_ENDPOINT_H
 
-#ifdef __GNUC__
+#ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 

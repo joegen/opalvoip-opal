@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2006  2002/06/16 02:21:56  robertj
+ * Revision 1.2007  2002/09/16 02:52:35  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
+ *
+ * Revision 2.5  2002/06/16 02:21:56  robertj
  * Utilised new standard PWLib class for POrdinalKey
  *
  * Revision 2.4  2002/03/15 07:08:24  robertj
@@ -46,7 +50,7 @@
 #ifndef __OPAL_SDP_H
 #define __OPAL_SDP_H
 
-#ifdef __GNUC__
+#ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 

@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2014  2002/09/06 02:44:09  robertj
+ * Revision 1.2015  2002/09/16 02:52:35  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
+ *
+ * Revision 2.13  2002/09/06 02:44:09  robertj
  * Added routing table system to route calls by regular expressions.
  *
  * Revision 2.12  2002/09/04 06:01:47  robertj
@@ -75,7 +79,7 @@
 #ifndef __OPAL_MANAGER_H
 #define __OPAL_MANAGER_H
 
-#ifdef __GNUC__
+#ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 

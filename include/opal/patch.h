@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.h,v $
- * Revision 1.2002  2002/01/22 05:07:49  robertj
+ * Revision 1.2003  2002/09/16 02:52:35  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
+ *
+ * Revision 2.1  2002/01/22 05:07:49  robertj
  * Added filter functions to media patch.
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
@@ -36,7 +40,7 @@
 #ifndef __OPAL_PATCH_H
 #define __OPAL_PATCH_H
 
-#ifdef __GNUC__
+#ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 

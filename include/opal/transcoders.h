@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2004  2002/02/13 02:30:21  robertj
+ * Revision 1.2005  2002/09/16 02:52:35  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
+ *
+ * Revision 2.3  2002/02/13 02:30:21  robertj
  * Added ability for media patch (and transcoders) to handle multiple RTP frames.
  *
  * Revision 2.2  2002/01/22 05:07:02  robertj
@@ -45,7 +49,7 @@
 #ifndef __OPAL_TRANSCODERS_H
 #define __OPAL_TRANSCODERS_H
 
-#ifdef __GNUC__
+#ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 

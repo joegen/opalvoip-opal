@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2005  2002/07/04 07:41:47  robertj
+ * Revision 1.2006  2002/09/16 02:52:35  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
+ *
+ * Revision 2.4  2002/07/04 07:41:47  robertj
  * Fixed memory/thread leak of transports.
  *
  * Revision 2.3  2002/04/16 08:06:35  robertj
@@ -42,7 +46,7 @@
 #ifndef __OPAL_SIPEP_H
 #define __OPAL_SIPEP_H
 
-#ifdef __GNUC__
+#ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
