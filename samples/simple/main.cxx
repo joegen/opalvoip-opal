@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2017  2002/09/06 02:46:00  robertj
+ * Revision 1.2018  2002/11/10 11:33:17  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.16  2002/09/06 02:46:00  robertj
  * Added routing table system to route calls by regular expressions.
  * Added ability to set gatekeeper access token OID and password.
  *
@@ -230,7 +233,7 @@ void SimpleOpalProcess::Main()
             "Audio options:\n"
             "  -D --disable codec      : Disable the specified codec (may be used multiple times)\n"
             "  -P --prefer codec       : Prefer the specified codec (may be used multiple times)\n"
-            "  -j --jitter delay       : Set jitter buffer to delay milliseconds.\n"
+            "  -j --jitter [min-]max   : Set minimum (optional) and maximum jitter buffer (in milliseconds).\n"
             "  -e --silence            : Disable transmitter silence detection.\n"
             "\n"
             "SIP options:\n"
@@ -371,11 +374,21 @@ BOOL MyManager::Initialise(PArgList & args)
   BOOL useH323 = !args.HasOption("no-h323");
 
   if (args.HasOption('j')) {
-    unsigned jitter = args.GetOptionString('j').AsUnsigned();
-    if (jitter >= 20 && jitter <= 10000)
-      SetMaxAudioDelayJitter(jitter);
+    unsigned minJitter;
+    unsigned maxJitter;
+    PStringArray delays = args.GetOptionString('j').Tokenise(",-");
+    if (delays.GetSize() < 2) {
+      maxJitter = delays[0].AsUnsigned();
+      minJitter = PMIN(GetMinAudioJitterDelay(), maxJitter);
+    }
     else {
-      cerr << "Jitter should be between 20 milliseconds and 10 seconds." << endl;
+      minJitter = delays[0].AsUnsigned();
+      maxJitter = delays[1].AsUnsigned();
+    }
+    if (minJitter >= 20 && minJitter <= maxJitter && maxJitter <= 1000)
+      SetAudioJitterDelay(minJitter, maxJitter);
+    else {
+      cerr << "Jitter should be between 20 and 1000 milliseconds." << endl;
       return FALSE;
     }
   }
@@ -408,7 +421,7 @@ BOOL MyManager::Initialise(PArgList & args)
 
   cout << "Auto answer is " << (autoAnswer ? "on" : "off") << "\n"
           "Silence supression is " << (silenceOn ? "on" : "off") << "\n"
-          "Jitter buffer: "  << GetMaxAudioDelayJitter() << " ms\n"
+          "Jitter buffer: "  << GetMinAudioJitterDelay() << '-' << GetMaxAudioJitterDelay() << " ms\n"
           "Codecs removed: " << setfill(',') << GetMediaFormatMask() << "\n"
           "Codec order: " << setfill(',') << GetMediaFormatOrder() << setfill(' ') << "\n"
           "TCP ports: " << GetTCPPortBase() << '-' << GetTCPPortMax() << "\n"
@@ -657,7 +670,7 @@ void MyManager::Main(PArgList & args)
 
     if (pcssEP != NULL && !pcssEP->incomingConnectionToken) {
       if (cmd == "n")
-        pcssEP->ClearCall(pcssEP->incomingConnectionToken, EndedByRefusal);
+        pcssEP->ClearCall(pcssEP->incomingConnectionToken, OpalConnection::EndedByRefusal);
       else if (cmd == "y")
         pcssEP->AcceptIncomingConnection(pcssEP->incomingConnectionToken);
     }
@@ -681,46 +694,46 @@ void MyManager::OnClearedCall(OpalCall & call)
 
   PString remoteName = '"' + call.GetPartyB() + '"';
   switch (call.GetCallEndReason()) {
-    case EndedByRemoteUser :
+    case OpalConnection::EndedByRemoteUser :
       cout << remoteName << " has cleared the call";
       break;
-    case EndedByCallerAbort :
+    case OpalConnection::EndedByCallerAbort :
       cout << remoteName << " has stopped calling";
       break;
-    case EndedByRefusal :
+    case OpalConnection::EndedByRefusal :
       cout << remoteName << " did not accept your call";
       break;
-    case EndedByNoAnswer :
+    case OpalConnection::EndedByNoAnswer :
       cout << remoteName << " did not answer your call";
       break;
-    case EndedByTransportFail :
+    case OpalConnection::EndedByTransportFail :
       cout << "Call with " << remoteName << " ended abnormally";
       break;
-    case EndedByCapabilityExchange :
+    case OpalConnection::EndedByCapabilityExchange :
       cout << "Could not find common codec with " << remoteName;
       break;
-    case EndedByNoAccept :
+    case OpalConnection::EndedByNoAccept :
       cout << "Did not accept incoming call from " << remoteName;
       break;
-    case EndedByAnswerDenied :
+    case OpalConnection::EndedByAnswerDenied :
       cout << "Refused incoming call from " << remoteName;
       break;
-    case EndedByNoUser :
+    case OpalConnection::EndedByNoUser :
       cout << "Gatekeeper could find user " << remoteName;
       break;
-    case EndedByNoBandwidth :
+    case OpalConnection::EndedByNoBandwidth :
       cout << "Call to " << remoteName << " aborted, insufficient bandwidth.";
       break;
-    case EndedByUnreachable :
+    case OpalConnection::EndedByUnreachable :
       cout << remoteName << " could not be reached.";
       break;
-    case EndedByNoEndPoint :
+    case OpalConnection::EndedByNoEndPoint :
       cout << "No phone running for " << remoteName;
       break;
-    case EndedByHostOffline :
+    case OpalConnection::EndedByHostOffline :
       cout << remoteName << " is not online.";
       break;
-    case EndedByConnectFail :
+    case OpalConnection::EndedByConnectFail :
       cout << "Transport error calling " << remoteName;
       break;
     default :

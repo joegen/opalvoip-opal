@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2010  2002/09/16 02:52:35  robertj
+ * Revision 1.2011  2002/11/10 11:33:17  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.9  2002/09/16 02:52:35  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -146,16 +149,16 @@ class OpalCall : public PObject
        connection not being cleared before that, and the object not even
        exiting after that.
 
-       If the call is still active then this will return NumOpalCallEndReasons.
+       If the call is still active then this will return OpalConnection::NumCallEndReasons.
       */
-    OpalCallEndReason GetCallEndReason() const { return callEndReason; }
+    OpalConnection::CallEndReason GetCallEndReason() const { return callEndReason; }
 
     /**Set the call clearance reason.
        An application should have no cause to use this function. It is present
        for the H323EndPoint::ClearCall() function to set the clearance reason.
       */
     void SetCallEndReason(
-      OpalCallEndReason reason   /// Reason for clearance of connection.
+      OpalConnection::CallEndReason reason   /// Reason for clearance of connection.
     );
 
     /**Clear call.
@@ -164,7 +167,7 @@ class OpalCall : public PObject
        connections is done by another thread.
      */
     void Clear(
-      OpalCallEndReason reason = EndedByLocalUser, /// Reason for call clearing
+      OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser, /// Reason for call clearing
       PSyncPoint * sync = NULL
     );
 
@@ -362,7 +365,7 @@ class OpalCall : public PObject
 
 
   protected:
-    void InternalReleaseConnection(PINDEX activeIndex, OpalCallEndReason reason);
+    void InternalReleaseConnection(PINDEX activeIndex, OpalConnection::CallEndReason reason);
 
     OpalManager & manager;
 
@@ -372,7 +375,7 @@ class OpalCall : public PObject
     PString partyB;
     PTime   startTime;
 
-    OpalCallEndReason callEndReason;
+    OpalConnection::CallEndReason callEndReason;
 
     OpalConnectionList activeConnections;
     OpalConnectionList garbageConnections;

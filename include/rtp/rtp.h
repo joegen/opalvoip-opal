@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2012  2002/09/16 02:52:35  robertj
+ * Revision 1.2013  2002/11/10 11:33:17  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.11  2002/09/16 02:52:35  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -63,6 +66,17 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.41  2002/10/31 00:33:29  robertj
+ * Enhanced jitter buffer system so operates dynamically between minimum and
+ *   maximum values. Altered API to assure app writers note the change!
+ *
+ * Revision 1.40  2002/09/26 04:01:58  robertj
+ * Fixed calculation of fraction of packets lost in RR, thanks Awais Ali
+ *
+ * Revision 1.39  2002/09/16 01:14:15  robertj
+ * Added #define so can select if #pragma interface/implementation is used on
+ *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
  * Revision 1.38  2002/09/03 05:47:02  robertj
  * Normalised the multi-include header prevention ifdef/define symbol.
@@ -465,9 +479,14 @@ class RTP_Session : public PObject
        attached to this RTP session.
       */
     void SetJitterBufferSize(
-      unsigned jitterDelay,    /// Total jitter buffer delay in milliseconds
+      unsigned minJitterDelay, /// Minimum jitter buffer delay in RTP timestamp units
+      unsigned maxJitterDelay, /// Maximum jitter buffer delay in RTP timestamp units
       PINDEX stackSize = 30000 /// Stack size for jitter thread
     );
+
+    /**Get current size of the jitter buffer.
+      */
+    unsigned GetJitterBufferSize() const;
 
     /**Read a data frame from the RTP channel.
        This function will conditionally read data from eth jitter buffer or
@@ -722,7 +741,12 @@ class RTP_Session : public PObject
        This is the calculated statistical variance of the interarrival
        time of received packets in milliseconds.
       */
-    DWORD GetJitterTime() const { return jitterLevel>>7; }
+    DWORD GetAvgJitterTime() const { return jitterLevel>>7; }
+
+    /**Get averaged jitter time for received packets.
+       This is the maximum value of jitterLevel for the session.
+      */
+    DWORD GetMaxJitterTime() const { return maximumJitterLevel>>7; }
   //@}
 
   protected:
@@ -762,6 +786,7 @@ class RTP_Session : public PObject
     DWORD maximumReceiveTime;
     DWORD minimumReceiveTime;
     DWORD jitterLevel;
+    DWORD maximumJitterLevel;
 
     unsigned txStatisticsCount;
     unsigned rxStatisticsCount;
@@ -772,6 +797,7 @@ class RTP_Session : public PObject
     DWORD    averageReceiveTimeAccum;
     DWORD    maximumReceiveTimeAccum;
     DWORD    minimumReceiveTimeAccum;
+    DWORD    packetsLostSinceLastRR;
     DWORD    lastTransitTime;
 
     PMutex reportMutex;

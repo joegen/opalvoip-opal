@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transaddr.h,v $
- * Revision 1.2005  2002/09/16 02:52:34  robertj
+ * Revision 1.2006  2002/11/10 11:33:17  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.4  2002/09/16 02:52:34  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -61,6 +64,12 @@
 class H225_TransportAddress;
 class H245_TransportAddress;
 class H225_ArrayOf_TransportAddress;
+
+
+typedef OpalListener  H323Listener;
+typedef PList<H323Listener> H323ListenerList;
+typedef OpalTransport H323Transport;
+typedef OpalTransportUDP H323TransportUDP;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -100,6 +109,9 @@ class H323TransportAddress : public OpalTransportAddress
     BOOL SetPDU(H225_TransportAddress & pdu) const;
     BOOL SetPDU(H245_TransportAddress & pdu) const;
 };
+
+
+typedef PArray<H323TransportAddress> H323TransportAddressArray;
 
 
 #endif // __H323_TRANSADDR_H

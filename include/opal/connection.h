@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2018  2002/09/16 02:52:35  robertj
+ * Revision 1.2019  2002/11/10 11:33:17  robertj
+ * Updated to OpenH323 v1.10.3
+ *
+ * Revision 2.17  2002/09/16 02:52:35  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -108,42 +111,6 @@ class OpalT120Protocol;
 class OpalT38Protocol;
 
 
-/**Call/Connection ending reasons.
-   NOTE: if anything is added to this, you also need to add the field to
-   the tables in call.cxx and h323pdu.cxx.
-  */
-enum OpalCallEndReason {
-  EndedByLocalUser,         /// Local endpoint application cleared call
-  EndedByNoAccept,          /// Local endpoint did not accept call OnIncomingCall()=FALSE
-  EndedByAnswerDenied,      /// Local endpoint declined to answer call
-  EndedByRemoteUser,        /// Remote endpoint application cleared call
-  EndedByRefusal,           /// Remote endpoint refused call
-  EndedByNoAnswer,          /// Remote endpoint did not answer in required time
-  EndedByCallerAbort,       /// Remote endpoint stopped calling
-  EndedByTransportFail,     /// Transport error cleared call
-  EndedByConnectFail,       /// Transport connection failed to establish call
-  EndedByGatekeeper,        /// Gatekeeper has cleared call
-  EndedByNoUser,            /// Call failed as could not find user (in GK)
-  EndedByNoBandwidth,       /// Call failed as could not get enough bandwidth
-  EndedByCapabilityExchange,/// Could not find common capabilities
-  EndedByCallForwarded,     /// Call was forwarded using FACILITY message
-  EndedBySecurityDenial,    /// Call failed a security check and was ended
-  EndedByLocalBusy,         /// Local endpoint busy
-  EndedByLocalCongestion,   /// Local endpoint congested
-  EndedByRemoteBusy,        /// Remote endpoint busy
-  EndedByRemoteCongestion,  /// Remote endpoint congested
-  EndedByUnreachable,       /// Could not reach the remote party
-  EndedByNoEndPoint,        /// The remote party is not running an endpoint
-  EndedByHostOffline,       /// The remote party host off line
-  EndedByTemporaryFailure,  /// The remote failed temporarily app may retry
-  OpalNumCallEndReasons
-};
-
-#if PTRACING
-ostream & operator<<(ostream & o, OpalCallEndReason reason);
-#endif
-
-
 /**This is the base class for connections to an endpoint.
    A particular protocol will have a descendant class from this to implement
    the specific semantics of that protocols connection.
@@ -165,6 +132,42 @@ class OpalConnection : public PObject
 {
     PCLASSINFO(OpalConnection, PObject);
   public:
+    /**Call/Connection ending reasons.
+       NOTE: if anything is added to this, you also need to add the field to
+       the tables in call.cxx and h323pdu.cxx.
+      */
+    enum CallEndReason {
+      EndedByLocalUser,         /// Local endpoint application cleared call
+      EndedByNoAccept,          /// Local endpoint did not accept call OnIncomingCall()=FALSE
+      EndedByAnswerDenied,      /// Local endpoint declined to answer call
+      EndedByRemoteUser,        /// Remote endpoint application cleared call
+      EndedByRefusal,           /// Remote endpoint refused call
+      EndedByNoAnswer,          /// Remote endpoint did not answer in required time
+      EndedByCallerAbort,       /// Remote endpoint stopped calling
+      EndedByTransportFail,     /// Transport error cleared call
+      EndedByConnectFail,       /// Transport connection failed to establish call
+      EndedByGatekeeper,        /// Gatekeeper has cleared call
+      EndedByNoUser,            /// Call failed as could not find user (in GK)
+      EndedByNoBandwidth,       /// Call failed as could not get enough bandwidth
+      EndedByCapabilityExchange,/// Could not find common capabilities
+      EndedByCallForwarded,     /// Call was forwarded using FACILITY message
+      EndedBySecurityDenial,    /// Call failed a security check and was ended
+      EndedByLocalBusy,         /// Local endpoint busy
+      EndedByLocalCongestion,   /// Local endpoint congested
+      EndedByRemoteBusy,        /// Remote endpoint busy
+      EndedByRemoteCongestion,  /// Remote endpoint congested
+      EndedByUnreachable,       /// Could not reach the remote party
+      EndedByNoEndPoint,        /// The remote party is not running an endpoint
+      EndedByHostOffline,       /// The remote party host off line
+      EndedByTemporaryFailure,  /// The remote failed temporarily app may retry
+      NumCallEndReasons
+    };
+
+#if PTRACING
+    friend ostream & operator<<(ostream & o, CallEndReason reason);
+#endif
+
+
   /**@name Construction */
   //@{
     /**Create a new connection.
@@ -241,16 +244,17 @@ class OpalConnection : public PObject
        connection not being cleared before that, and the object not even
        exiting after that.
 
-       If the call is still active then this will return NumOpalCallEndReasons.
+       If the call is still active then this will return NumCallEndReasons.
       */
-    OpalCallEndReason GetCallEndReason() const { return callEndReason; }
+    CallEndReason GetCallEndReason() const { return callEndReason; }
 
     /**Set the call clearance reason.
        An application should have no cause to use this function. It is present
        for the H323EndPoint::ClearCall() function to set the clearance reason.
       */
     virtual void SetCallEndReason(
-      OpalCallEndReason reason   /// Reason for clearance of connection.
+      CallEndReason reason,       /// Reason for clearance of connection.
+      PSyncPoint * sync = NULL    /// syncpoint to use for synchronous destruction
     );
 
     /**Clear a current call.
@@ -261,14 +265,14 @@ class OpalConnection : public PObject
        disposal of the connections is done by another thread.
       */
     void ClearCall(
-      OpalCallEndReason reason = EndedByLocalUser /// Reason for call clearing
+      CallEndReason reason = EndedByLocalUser /// Reason for call clearing
     );
 
     /**Clear a current connection, synchronously
       */
     virtual void ClearCallSynchronous(
       PSyncPoint * sync,
-      OpalCallEndReason reason = EndedByLocalUser  /// Reason for call clearing
+      CallEndReason reason = EndedByLocalUser  /// Reason for call clearing
     );
   //@}
 
@@ -368,7 +372,7 @@ class OpalConnection : public PObject
        disposal of the connections is done by another thread.
       */
     virtual void Release(
-      OpalCallEndReason reason = EndedByLocalUser /// Reason for call release
+      CallEndReason reason = EndedByLocalUser /// Reason for call release
     );
 
     /**Clean up the termination of the connection.
@@ -788,6 +792,23 @@ class OpalConnection : public PObject
        always be accurate.
       */
     const PString & GetRemotePartyAddress() const { return remotePartyAddress; }
+
+    /**Get the default maximum audio jitter delay parameter.
+       Defaults to 50ms
+     */
+    unsigned GetMinAudioJitterDelay() const { return minAudioJitterDelay; }
+
+    /**Get the default maximum audio delay jitter parameter.
+       Defaults to 250ms.
+     */
+    unsigned GetMaxAudioJitterDelay() const { return maxAudioJitterDelay; }
+
+    /**Set the maximum audio delay jitter parameter.
+     */
+    void SetAudioJitterDelay(
+      unsigned minDelay,   // New minimum jitter buffer delay in milliseconds
+      unsigned maxDelay    // New maximum jitter buffer delay in milliseconds
+    );
   //@}
 
   protected:
@@ -809,7 +830,7 @@ class OpalConnection : public PObject
     PString             remotePartyName;
     PString             remotePartyNumber;
     PString             remotePartyAddress;
-    OpalCallEndReason   callEndReason;
+    CallEndReason       callEndReason;
 
     PString             userInputString;
     PMutex              userInputMutex;
@@ -824,6 +845,8 @@ class OpalConnection : public PObject
     MediaAddressesDict  mediaTransportAddresses;
     OpalMediaStreamList mediaStreams;
     RTP_SessionManager  rtpSessions;
+    unsigned            minAudioJitterDelay;
+    unsigned            maxAudioJitterDelay;
     unsigned            bandwidthAvailable;
 
     // The In-Band DTMF detector. This is used inside an audio filter which is
