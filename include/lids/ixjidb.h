@@ -8,11 +8,17 @@
 
     -----------------------------------------------------------------
 
-	$Header: /home/svnmigrate/clean_cvs/opal/include/lids/Attic/ixjidb.h,v 1.2002 2002/03/22 06:57:48 robertj Exp $
+	$Header: /home/svnmigrate/clean_cvs/opal/include/lids/Attic/ixjidb.h,v 1.2003 2002/03/27 02:21:51 robertj Exp $
 
     $Log: ixjidb.h,v $
-    Revision 1.2002  2002/03/22 06:57:48  robertj
+    Revision 1.2003  2002/03/27 02:21:51  robertj
+    Updated to OpenH323 v1.8.4
+
+    Revision 2.1  2002/03/22 06:57:48  robertj
     Updated to OpenH323 version 1.8.2
+
+    Revision 1.3  2002/03/27 00:18:13  robertj
+    Added new line to end of file
 
     Revision 1.2  2002/03/21 21:21:27  craigs
     Added information from ixjDefs.h
@@ -47,5 +53,6 @@ typedef struct {
   UINT32 ulMinDetectLoops;
   qthDetectToneCadenceElement element[4]; // Array
 } qthDetectToneCadence;
+
 
 #endif
