@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2038  2005/02/19 22:48:48  dsandras
+ * Revision 1.2039  2005/02/21 12:20:05  rjongbloed
+ * Added new "options list" to the OpalMediaFormat class.
+ *
+ * Revision 2.37  2005/02/19 22:48:48  dsandras
  * Added the possibility to register to several registrars and be able to do authenticated calls to each of them. Added SUBSCRIBE/NOTIFY support for Message Waiting Indications.
  *
  * Revision 2.36  2005/01/15 23:34:26  dsandras
@@ -279,7 +282,7 @@ void SIPMWISubscribeInfo::OnSuccess ()
   SetRegistered((expire == 0)?FALSE:TRUE);
 }
 
-void SIPMWISubscribeInfo::OnFailed (FailureReasons r)
+void SIPMWISubscribeInfo::OnFailed(FailureReasons /*reason*/)
 { 
   SetRegistered((expire == 0)?TRUE:FALSE);
 }
@@ -858,17 +861,17 @@ BOOL SIPEndPoint::OnReceivedNOTIFY (OpalTransport & transport, SIP_PDU & pdu)
 }
 
 
-void SIPEndPoint::OnRegistrationFailed(const PString & domain, 
-				       const PString & userName,
-				       SIPInfo::FailureReasons reason, 
-				       BOOL wasRegistering)
+void SIPEndPoint::OnRegistrationFailed(const PString & /*domain*/, 
+				       const PString & /*userName*/,
+				       SIPInfo::FailureReasons /*reason*/, 
+				       BOOL /*wasRegistering*/)
 {
 }
     
 
-void SIPEndPoint::OnRegistered(const PString & domain, 
-			       const PString & userName,
-			       BOOL wasRegistering)
+void SIPEndPoint::OnRegistered(const PString & /*domain*/, 
+			       const PString & /*userName*/,
+			       BOOL /*wasRegistering*/)
 {
 }
 
@@ -979,10 +982,10 @@ BOOL SIPEndPoint::Register(const PString & domain,
 }
 
 
-void SIPEndPoint::OnMWIReceived (const PString & remoteAddress,
-				 const PString & user,
-				 SIPMWISubscribe::MWIType type,
-				 const PString & msgs)
+void SIPEndPoint::OnMWIReceived (const PString & /*remoteAddress*/,
+				 const PString & /*user*/,
+				 SIPMWISubscribe::MWIType /*type*/,
+				 const PString & /*msgs*/)
 {
 }
 
