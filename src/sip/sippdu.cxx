@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2032  2004/08/18 13:05:49  rjongbloed
+ * Revision 1.2033  2004/08/22 12:27:46  rjongbloed
+ * More work on SIP registration, time to live refresh and deregistration on exit.
+ *
+ * Revision 2.31  2004/08/18 13:05:49  rjongbloed
  * Fixed indicating transaction finished before it really is. Possible crash if then delete object.
  *
  * Revision 2.30  2004/08/14 07:56:43  rjongbloed
@@ -1484,6 +1487,9 @@ void SIPTransaction::SetTerminated(States newState)
 
     connection->RemoveTransaction(this);
   }
+  else {
+    endpoint.RemoveTransaction(this);
+  }
 
   finished.Signal();
 }
@@ -1549,7 +1555,8 @@ BOOL SIPInvite::OnCompleted(SIP_PDU & response)
 SIPRegister::SIPRegister(SIPEndPoint & ep,
                          OpalTransport & trans,
                          const SIPURL & address,
-                         const PString & id)
+                         const PString & id,
+                         unsigned expires)
   : SIPTransaction(ep, trans)
 {
   // translate contact address
@@ -1565,8 +1572,6 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
     }
   }
 
-  SIPURL contact(address.GetUserName(), contactAddress, contactPort);
-
   PString addrStr = address.AsQuotedString();
   SIP_PDU::Construct(Method_REGISTER,
                      "sip:"+address.GetHostName(),
@@ -1576,8 +1581,9 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
                      endpoint.GetNextCSeq(),
                      transport.GetLocalAddress());
 
+  SIPURL contact(address.GetUserName(), contactAddress, contactPort);
   mime.SetContact(contact);
-//  mime.SetExpires(60);
+  mime.SetExpires(expires);
 }
 
 
