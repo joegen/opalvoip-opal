@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2009  2002/02/19 07:47:29  robertj
+ * Revision 1.2010  2002/03/22 06:57:49  robertj
+ * Updated to OpenH323 version 1.8.2
+ *
+ * Revision 2.8  2002/02/19 07:47:29  robertj
  * Added OpalRFC2833 as a OpalMediaFormat variable.
  * Fixes to capability tables to make RFC2833 work properly.
  *
@@ -56,6 +59,20 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.49  2002/03/05 06:18:46  robertj
+ * Fixed problem with some custom local capabilities not being used in getting
+ *   remote capability list, especially in things like OpenAM.
+ *
+ * Revision 1.48  2002/02/25 04:38:42  robertj
+ * Fixed wildcard lookup with * at end of string.
+ * Fixed being able to create remote capability table before have local table.
+ * Fixed using add all with wildcards adding capability multiple times.
+ *
+ * Revision 1.47  2002/02/14 07:15:15  robertj
+ * Fixed problem with creation of remoteCapabilities and the "set" part contianing
+ *   pointers to objects that have been deleted. Does not seem to be a practical
+ *   problem but certainly needs fixing!
  *
  * Revision 1.46  2002/01/22 07:08:26  robertj
  * Added IllegalPayloadType enum as need marker for none set
@@ -1591,6 +1608,9 @@ H323Capabilities::H323Capabilities(const H323Connection & connection,
                                    const H245_TerminalCapabilitySet & pdu)
 {
   H323Capabilities allCapabilities;
+  const H323Capabilities & localCapabilities = connection.GetLocalCapabilities();
+  for (PINDEX c = 0; c < localCapabilities.GetSize(); c++)
+    allCapabilities.Add(allCapabilities.Copy(localCapabilities[c]));
   allCapabilities.AddAllCapabilities(connection.GetEndPoint(), 0, 0, "*");
   H323_UserInputCapability::AddAllCapabilities(allCapabilities, P_MAX_INDEX, P_MAX_INDEX);
 
@@ -1647,11 +1667,14 @@ H323Capabilities & H323Capabilities::operator=(const H323Capabilities & original
   for (PINDEX i = 0; i < original.GetSize(); i++)
     Copy(original[i]);
 
-  set.SetSize(original.set.GetSize());
-  for (PINDEX outer = 0; outer < original.set.GetSize(); outer++) {
-    set[outer].SetSize(original.set[outer].GetSize());
-    for (PINDEX middle = 0; middle < original.set[outer].GetSize(); middle++) {
-      for (PINDEX inner = 0; inner < original.set[outer][middle].GetSize(); inner++)
+  PINDEX outerSize = original.set.GetSize();
+  set.SetSize(outerSize);
+  for (PINDEX outer = 0; outer < outerSize; outer++) {
+    PINDEX middleSize = original.set[outer].GetSize();
+    set[outer].SetSize(middleSize);
+    for (PINDEX middle = 0; middle < middleSize; middle++) {
+      PINDEX innerSize = original.set[outer][middle].GetSize();
+      for (PINDEX inner = 0; inner < innerSize; inner++)
         set[outer][middle].Append(FindCapability(original.set[outer][middle][inner].GetCapabilityNumber()));
     }
   }
@@ -2113,7 +2136,7 @@ BOOL H323Capabilities::Merge(const H323Capabilities & newCaps)
   PTRACE_IF(4, !table.IsEmpty(), "H245\tCapability merge of:\n" << newCaps
             << "\nInto:\n" << *this);
 
-  // Add any new capabilities.
+  // Add any new capabilities not already in set.
   PINDEX i;
   for (i = 0; i < newCaps.GetSize(); i++) {
     // Only add if not already in
@@ -2121,7 +2144,7 @@ BOOL H323Capabilities::Merge(const H323Capabilities & newCaps)
       Copy(newCaps[i]);
   }
 
-  // This should merge instead of just replacing the set.
+  // This should merge instead of just adding to it.
   PINDEX outerSize = newCaps.set.GetSize();
   PINDEX outerBase = set.GetSize();
   set.SetSize(outerBase+outerSize);
@@ -2138,7 +2161,7 @@ BOOL H323Capabilities::Merge(const H323Capabilities & newCaps)
     }
   }
 
-  PTRACE(4, "H245\tCapability merge result:\n" << *this);
+  PTRACE_IF(4, !table.IsEmpty(), "H245\tCapability merge result:\n" << *this);
   PTRACE(3, "H245\tReceived capability set, is "
                  << (table.IsEmpty() ? "rejected" : "accepted"));
   return !table.IsEmpty();

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2011  2002/02/19 07:36:28  robertj
+ * Revision 1.2012  2002/03/22 06:57:49  robertj
+ * Updated to OpenH323 version 1.8.2
+ *
+ * Revision 2.10  2002/02/19 07:36:28  robertj
  * Added OpalRFC2833 as a OpalMediaFormat variable.
  *
  * Revision 2.9  2002/02/11 09:32:12  robertj
@@ -59,6 +62,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.8  2002/03/21 02:39:15  robertj
+ * Added backward compatibility define
  *
  * Revision 1.7  2002/02/11 04:15:56  robertj
  * Put G.723.1 at 6.3kbps back to old string value of "G.723.1" to improve
@@ -413,6 +419,7 @@ extern OpalMediaFormat const OpalG729;
 extern OpalMediaFormat const OpalG729A;
 extern OpalMediaFormat const OpalG729B;
 extern OpalMediaFormat const OpalG729AB;
+#define OpalG7231 OpalG7231_6k3
 extern OpalMediaFormat const OpalG7231_6k3;
 extern OpalMediaFormat const OpalG7231_5k3;
 extern OpalMediaFormat const OpalGSM0610;

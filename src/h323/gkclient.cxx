@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2009  2002/02/11 09:32:12  robertj
+ * Revision 1.2010  2002/03/22 06:57:49  robertj
+ * Updated to OpenH323 version 1.8.2
+ *
+ * Revision 2.8  2002/02/11 09:32:12  robertj
  * Updated to openH323 v1.8.0
  *
  * Revision 2.7  2002/01/14 06:35:57  robertj
@@ -35,6 +38,16 @@
  *
  * Revision 2.6  2001/11/18 23:10:42  craigs
  * Added cast to allow compilation under Linux
+ * Revision 1.87  2002/03/20 02:12:49  robertj
+ * Added missing return value for number of endpoints returned in ACF
+ *
+ * Revision 1.86  2002/03/19 05:17:25  robertj
+ * Normalised ACF destExtraCallIInfo to be same as other parameters.
+ * Added ability to get multiple endpoint addresses and tokens from ACF.
+ *
+ * Revision 1.85  2002/03/01 04:06:44  robertj
+ * Fixed autoreregister on ARQ failing due to unregistered endpoint.
+ *
  * Revision 1.84  2002/02/11 04:25:57  robertj
  * Added ability to automatically reregister if do an ARQ and are told are not
  *   registered. Can occur if gk is restarted and is faster than waiting for TTL..
@@ -862,18 +875,23 @@ BOOL H323Gatekeeper::LocationRequest(const PStringList & aliases,
 H323Gatekeeper::AdmissionResponse::AdmissionResponse()
 {
   rejectReason = UINT_MAX;
+
+  endpointCount = 1;
   transportAddress = NULL;
-  aliasAddresses = NULL;
   accessTokenData = NULL;
+
+  aliasAddresses = NULL;
+  destExtraCallInfo = NULL;
 }
 
 
 struct AdmissionRequestResponseInfo {
   unsigned allocatedBandwidth;
   unsigned uuiesRequested;
+  PINDEX endpointCount;
   H323TransportAddress * transportAddress;
   H225_ArrayOf_AliasAddress * aliasAddresses;
-  H225_ArrayOf_AliasAddress   destExtraCallInfo;
+  H225_ArrayOf_AliasAddress * destExtraCallInfo;
   PString      accessTokenOID1;
   PString      accessTokenOID2;
   PBYTEArray * accessTokenData;
@@ -966,8 +984,10 @@ BOOL H323Gatekeeper::AdmissionRequest(H323Connection & connection,
   arq.m_callIdentifier.m_guid = connection.GetCallIdentifier();
 
   AdmissionRequestResponseInfo info;
+  info.endpointCount    = response.endpointCount;
   info.transportAddress = response.transportAddress;
   info.aliasAddresses   = response.aliasAddresses;
+  info.destExtraCallInfo= response.destExtraCallInfo;
   info.accessTokenData  = response.accessTokenData;
   info.accessTokenOID1  = connection.GetGkAccessTokenOID();
   PINDEX comma = info.accessTokenOID1.Find(',');
@@ -984,29 +1004,37 @@ BOOL H323Gatekeeper::AdmissionRequest(H323Connection & connection,
   if (!MakeRequest(request)) {
     response.rejectReason = request.rejectReason;
 
-    if (request.rejectReason != H225_AdmissionRejectReason::e_calledPartyNotRegistered)
+    // See if we are registered.
+    if (request.rejectReason != H225_AdmissionRejectReason::e_invalidEndpointIdentifier)
       return FALSE;
 
+    // If we are not registered and auto register is set ...
     if (!autoReregister)
       return FALSE;
 
+    // Then immediately reregister.
+    isRegistered = FALSE;
     if (!RegistrationRequest(autoReregister))
       return FALSE;
 
+    // Reset the gk info in ARQ
+    arq.m_endpointIdentifier = endpointIdentifier;
+    if (!gatekeeperIdentifier) {
+      arq.IncludeOptionalField(H225_AdmissionRequest::e_gatekeeperIdentifier);
+      arq.m_gatekeeperIdentifier = gatekeeperIdentifier;
+    }
+    else
+      arq.RemoveOptionalField(H225_AdmissionRequest::e_gatekeeperIdentifier);
     if (!MakeRequest(request)) {
       response.rejectReason = request.rejectReason;
       return FALSE;
     }
   }
 
+  response.endpointCount = info.endpointCount;
+
   connection.SetBandwidthAvailable(info.allocatedBandwidth);
   connection.SetUUIEsRequested(info.uuiesRequested);
-
-  if (info.destExtraCallInfo.GetSize() > 0) {
-    // Just the first element for the time being
-    PString destExtraCallInfo = H323GetAliasAddressString(info.destExtraCallInfo[0]);
-    connection.SetDestExtraCallInfo(destExtraCallInfo);
-  }
 
   return TRUE;
 }
@@ -1120,6 +1148,27 @@ static unsigned GetUUIEsRequested(const H225_UUIEsRequested & pdu)
 }
 
 
+static void ExtractToken(const AdmissionRequestResponseInfo & info,
+                         const H225_ArrayOf_ClearToken & tokens,
+                         PBYTEArray & accessTokenData)
+{
+  if (!info.accessTokenOID1 && tokens.GetSize() > 0) {
+    PTRACE(4, "Looking for OID " << info.accessTokenOID1 << " in ACF to copy.");
+    for (PINDEX i = 0; i < tokens.GetSize(); i++) {
+      if (tokens[i].m_tokenOID == info.accessTokenOID1) {
+        PTRACE(4, "Looking for OID " << info.accessTokenOID2 << " in token to copy.");
+        if (tokens[i].HasOptionalField(H235_ClearToken::e_nonStandard) &&
+            tokens[i].m_nonStandard.m_nonStandardIdentifier == info.accessTokenOID2) {
+          PTRACE(4, "Copying ACF nonStandard OctetString.");
+          accessTokenData = tokens[i].m_nonStandard.m_data;
+          break;
+        }
+      }
+    }
+  }
+}
+
+
 BOOL H323Gatekeeper::OnReceiveAdmissionConfirm(const H225_AdmissionConfirm & acf)
 {
   if (!H225_RAS::OnReceiveAdmissionConfirm(acf))
@@ -1141,23 +1190,25 @@ BOOL H323Gatekeeper::OnReceiveAdmissionConfirm(const H225_AdmissionConfirm & acf
   if (acf.HasOptionalField(H225_AdmissionConfirm::e_uuiesRequested))
     info.uuiesRequested = GetUUIEsRequested(acf.m_uuiesRequested);
 
-  if (acf.HasOptionalField(H225_AdmissionConfirm::e_destExtraCallInfo))
-    info.destExtraCallInfo = acf.m_destExtraCallInfo;
+  if (info.destExtraCallInfo != NULL &&
+      acf.HasOptionalField(H225_AdmissionConfirm::e_destExtraCallInfo))
+    *info.destExtraCallInfo = acf.m_destExtraCallInfo;
 
-  if (info.accessTokenData != NULL && !info.accessTokenOID1 &&
-      acf.HasOptionalField(H225_AdmissionConfirm::e_tokens)) {
-    PTRACE(4, "Looking for OID " << info.accessTokenOID1 << " in ACF to copy.");
-    for (PINDEX i = 0; i < acf.m_tokens.GetSize(); i++) {
-      if (acf.m_tokens[i].m_tokenOID == info.accessTokenOID1) {
-        PTRACE(4, "Looking for OID " << info.accessTokenOID2 << " in token to copy.");
-        if (acf.m_tokens[i].HasOptionalField(H235_ClearToken::e_nonStandard) &&
-            acf.m_tokens[i].m_nonStandard.m_nonStandardIdentifier == info.accessTokenOID2) {
-          PTRACE(4, "Copying ACF nonStandard OctetString.");
-          *info.accessTokenData = acf.m_tokens[i].m_nonStandard.m_data;
-          break;
-        }
+  if (info.accessTokenData != NULL && acf.HasOptionalField(H225_AdmissionConfirm::e_tokens))
+    ExtractToken(info, acf.m_tokens, *info.accessTokenData);
+
+  if (info.transportAddress != NULL) {
+    PINDEX count = 1;
+    for (PINDEX i = 0; i < acf.m_alternateEndpoints.GetSize() && count < info.endpointCount; i++) {
+      if (acf.m_alternateEndpoints[i].HasOptionalField(H225_Endpoint::e_callSignalAddress) &&
+          acf.m_alternateEndpoints[i].m_callSignalAddress.GetSize() > 0) {
+        info.transportAddress[count] = acf.m_alternateEndpoints[i].m_callSignalAddress[0];
+        if (info.accessTokenData != NULL)
+          ExtractToken(info, acf.m_alternateEndpoints[i].m_tokens, info.accessTokenData[count]);
+        count++;
       }
     }
+    info.endpointCount = count;
   }
 
   return TRUE;

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2023  2002/03/18 00:33:36  robertj
+ * Revision 1.2024  2002/03/22 06:57:49  robertj
+ * Updated to OpenH323 version 1.8.2
+ *
+ * Revision 2.22  2002/03/18 00:33:36  robertj
  * Removed duplicate initialBandwidth variable in H.323 class, moved to ancestor.
  *
  * Revision 2.21  2002/03/15 00:24:33  robertj
@@ -103,6 +106,20 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.248  2002/03/19 05:16:13  robertj
+ * Normalised ACF destExtraCallIInfo to be same as other parameters.
+ *
+ * Revision 1.247  2002/02/25 23:32:20  robertj
+ * Fixed problem with "late" H.245 tunnelled messages arriving while switching
+ *   to separate H.245 channal, thanks Chih-Wei Huang.
+ *
+ * Revision 1.246  2002/02/25 06:16:53  robertj
+ * Fixed problem where sending a TCS in response to receiving a TCS, waits
+ *    until we actually have local capabilities so don't get a false TCS=0
+ *
+ * Revision 1.245  2002/02/19 06:18:41  robertj
+ * Improved tracing, especially re UserInput send modes.
  *
  * Revision 1.244  2002/02/11 04:17:33  robertj
  * Fixed bug where could send DRQ if never received an ACF.
@@ -935,7 +952,7 @@ PLIST(H245_OpenLogicalChannel_List, H245_OpenLogicalChannel);
 #if PTRACING
 ostream & operator<<(ostream & o, H323Connection::AnswerCallResponse s)
 {
-  const char * const AnswerCallResponseNames[] = {
+  const char * const AnswerCallResponseNames[H323Connection::NumAnswerCallResponses] = {
     "AnswerCallNow",
     "AnswerCallDenied",
     "AnswerCallPending",
@@ -943,10 +960,31 @@ ostream & operator<<(ostream & o, H323Connection::AnswerCallResponse s)
     "AnswerCallAlertWithMedia",
     "AnswerCallDeferredWithMedia"
   };
-  if ((PINDEX)s < PARRAYSIZE(AnswerCallResponseNames))
-    o << AnswerCallResponseNames[s];
+  if ((PINDEX)s >= PARRAYSIZE(AnswerCallResponseNames))
+    o << "InvalidAnswerCallResponse<" << (unsigned)s << '>';
+  else if (AnswerCallResponseNames[s] == NULL)
+    o << "AnswerCallResponse<" << (unsigned)s << '>';
   else
-    o << (unsigned)s;
+    o << AnswerCallResponseNames[s];
+  return o;
+}
+
+
+ostream & operator<<(ostream & o, H323Connection::SendUserInputModes m)
+{
+  static const char * const SendUserInputModeNames[H323Connection::NumSendUserInputModes] = {
+    "SendUserInputAsString",
+    "SendUserInputAsTone",
+    "SendUserInputAsRFC2833",
+    "SendUserInputAsSeparateRFC2833"
+  };
+
+  if ((PINDEX)m >= PARRAYSIZE(SendUserInputModeNames))
+    o << "InvalidSendUserInputMode<" << (unsigned)m << '>';
+  else if (SendUserInputModeNames[m] == NULL)
+    o << "SendUserInputMode<" << (unsigned)m << '>';
+  else
+    o << SendUserInputModeNames[m];
   return o;
 }
 
@@ -1350,7 +1388,7 @@ BOOL H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
 
 void H323Connection::HandleTunnelPDU(H323SignalPDU * txPDU)
 {
-  if (!h245Tunneling || h245TunnelRxPDU == NULL)
+  if (h245TunnelRxPDU == NULL || !h245TunnelRxPDU->m_h323_uu_pdu.m_h245Tunneling)
     return;
 
   H323SignalPDU localTunnelPDU;
@@ -1564,7 +1602,9 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
     // Check for gatekeeper and do admission check if have one
     H323Gatekeeper * gatekeeper = endpoint.GetGatekeeper();
     if (gatekeeper != NULL) {
+      H225_ArrayOf_AliasAddress destExtraCallInfoArray;
       H323Gatekeeper::AdmissionResponse response;
+      response.destExtraCallInfo = &destExtraCallInfoArray;
       if (!gatekeeper->AdmissionRequest(*this, response)) {
         PTRACE(1, "H225\tGatekeeper refused admission: "
                << H225_AdmissionRejectReason(response.rejectReason).GetTagName());
@@ -1586,6 +1626,9 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
         }
         return FALSE;
       }
+
+      if (destExtraCallInfoArray.GetSize() > 0)
+        destExtraCallInfo = H323GetAliasAddressString(destExtraCallInfoArray[0]);
       mustSendDRQ = TRUE;
     }
   }
@@ -3409,8 +3452,11 @@ void H323Connection::InternalEstablishedConnectionCheck()
     const char * rfc2833 = H323_UserInputCapability::SubTypeNames[H323_UserInputCapability::SignalToneRFC2833];
     H323Capability * capability = IsH245Master() ? localCapabilities.FindCapability(rfc2833)
                                                  : remoteCapabilities.FindCapability(rfc2833);
-    if (capability != NULL)
-      rfc2833Handler->SetPayloadType(((H323_UserInputCapability*)capability)->GetPayloadType());
+    if (capability != NULL) {
+      RTP_DataFrame::PayloadTypes pt = ((H323_UserInputCapability*)capability)->GetPayloadType();
+      PTRACE(2, "H323\tUser Input RFC2833 payload type set to " << pt);
+      rfc2833Handler->SetPayloadType(pt);
+    }
     else {
       // Remote cannot do this, disable that send mode if set
       if (sendUserInputMode == SendUserInputAsInlineRFC2833)
@@ -4007,6 +4053,7 @@ BOOL H323Connection::SetBandwidthAvailable(unsigned newBandwidth, BOOL force)
 
 void H323Connection::SetSendUserInputMode(SendUserInputModes mode)
 {
+  PTRACE(2, "H323\tAttempting to set User Input send mode to " << mode);
   OpalConnection::SetSendUserInputMode(mode);
 
   // If have remote capabilities, then verify we can send selected mode,
@@ -4025,11 +4072,13 @@ void H323Connection::SetSendUserInputMode(SendUserInputModes mode)
 
   // If no capability then fall back to simple string mode
   sendUserInputMode = SendUserInputAsString;
+  PTRACE(1, "H323\tUser Input send mode reset to H.245 string mode");
 }
 
 
 BOOL H323Connection::SendUserInputString(const PString & value)
 {
+  PTRACE(2, "H323\tSendUserInput(\"" << value << "\"), using mode " << sendUserInputMode);
   if (sendUserInputMode != SendUserInputAsString)
     return OpalConnection::SendUserInputString(value);
   else
