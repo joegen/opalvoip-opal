@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2031  2004/08/14 07:56:43  rjongbloed
+ * Revision 1.2032  2004/08/18 13:05:49  rjongbloed
+ * Fixed indicating transaction finished before it really is. Possible crash if then delete object.
+ *
+ * Revision 2.30  2004/08/14 07:56:43  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.29  2004/04/25 09:32:15  rjongbloed
@@ -1396,7 +1399,6 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
     state = Completed;
     retryTimer.Stop();
     completionTimer = endpoint.GetPduCleanUpTimeout();
-    finished.Signal();  // keep this at the end to prevent deletion before actual completion
   }
 
   return TRUE;
