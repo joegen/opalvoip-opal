@@ -22,15 +22,24 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
-# Revision 1.2001  2001/07/27 15:48:24  robertj
+# Revision 1.2002  2001/07/30 03:41:20  robertj
+# Added build of subdirectories for samples.
+# Hid the asnparser.version file.
+# Changed default OPALDIR variable to be current directory.
+#
+# Revision 2.0  2001/07/27 15:48:24  robertj
 # Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
 #
+
+
+SUBDIRS := samples/simple
 
 
 OPAL_LIBRARY_MAKEFILE=1
 
 ifndef OPALDIR
-OPALDIR=$(HOME)/opal
+OPALDIR=$(CURDIR)
+export OPALDIR
 endif
 
 include $(OPALDIR)/opal_inc.mak
@@ -309,15 +318,15 @@ else
 ASNPARSE_DIR = $(PWLIBDIR)/tools/asnparser
 endif
 
-asnparser.version: $(ASNPARSER)
+.asnparser.version: $(ASNPARSER)
 	$(MAKE) -C $(ASNPARSE_DIR) opt
-	$(ASNPARSER) --version | awk '{print $$1,$$2,$$3}' > asnparser.version.new
-	if test -e asnparser.version && diff -q asnparser.version.new asnparser.version ; then rm asnparser.version.new ; else mv asnparser.version.new asnparser.version ; fi
+	$(ASNPARSER) --version | awk '{print $$1,$$2,$$3}' > .asnparser.version.new
+	if test -e .asnparser.version && diff -q .asnparser.version.new .asnparser.version ; then rm .asnparser.version.new ; else mv .asnparser.version.new .asnparser.version ; fi
 
 $(ASNPARSER):
 
 
-$(ASN_INCDIR)/%.h : $(ASN_SRCDIR)/%.asn asnparser.version
+$(ASN_INCDIR)/%.h : $(ASN_SRCDIR)/%.asn .asnparser.version
 	$(ASNPARSER) -m $(shell echo $(notdir $(basename $<)) | tr a-z A-Z) -c $<
 	mv $(basename $<).h $@
 
@@ -328,8 +337,11 @@ $(OBJDIR)/%.o : $(ASN_SRCDIR)/%.cxx
 	@if [ ! -d $(OBJDIR) ] ; then mkdir -p $(OBJDIR) ; fi
 	$(CPLUS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -I$(ASN_INCDIR) -c $< -o $@
 
-#$(OBJDIR)/%.dep : $(ASN_INCDIR)/%.h
-#	@true
+$(DEPDIR)/%.dep : $(ASN_SRCDIR)/%.cxx
+	@if [ ! -d $(DEPDIR) ] ; then mkdir -p $(DEPDIR) ; fi
+	@printf %s $(OBJDIR)/ > $@
+	$(CPLUS) $(STDCCFLAGS) -I$(ASN_INCDIR) -M $< >> $@
+
 
 
 #### h225
@@ -337,7 +349,7 @@ $(OBJDIR)/%.o : $(ASN_SRCDIR)/%.cxx
 $(ASN_SRCDIR)/h225_1.cxx \
 $(ASN_SRCDIR)/h225_2.cxx : $(ASN_INCDIR)/h225.h $(ASN_SRCDIR)/h235_t.cxx
 
-$(ASN_INCDIR)/h225.h: $(ASN_SRCDIR)/h225.asn $(ASN_INCDIR)/h235.h $(ASN_INCDIR)/h245.h asnparser.version
+$(ASN_INCDIR)/h225.h: $(ASN_SRCDIR)/h225.asn $(ASN_INCDIR)/h235.h $(ASN_INCDIR)/h245.h .asnparser.version
 	$(ASNPARSER) -s2 -m H225 -r MULTIMEDIA-SYSTEM-CONTROL=H245 -c $<
 	mv $(basename $<).h $@
 
@@ -349,7 +361,7 @@ $(ASN_SRCDIR)/h245_2.cxx \
 $(ASN_SRCDIR)/h245_3.cxx : $(ASN_INCDIR)/h245.h
 
 
-$(ASN_INCDIR)/h245.h: $(ASN_SRCDIR)/h245.asn asnparser.version
+$(ASN_INCDIR)/h245.h: $(ASN_SRCDIR)/h245.asn .asnparser.version
 	$(ASNPARSER) -s3 -m H245 -c $<
 	mv $(basename $<).h $@
 
@@ -360,6 +372,14 @@ $(ASN_SRCDIR)/h235.cxx $(ASN_SRCDIR)/h235_t.cxx : $(ASN_INCDIR)/h235.h
 
 $(addprefix $(ASN_SRCDIR)/,$(addsuffix .cxx,$(H450_ASN_FILES))) : \
                                 $(ASN_INCDIR)/x880.h $(ASN_INCDIR)/h225.h
+
+
+
+###############################################################################
+#### Subdirectories
+
+$(STANDARD_TARGETS) ::
+	set -e; $(foreach dir,$(SUBDIRS),$(MAKE) -C $(dir) $@;)
 
 
 
