@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2013  2002/04/09 01:19:41  robertj
+ * Revision 1.2014  2002/04/09 07:26:20  robertj
+ * Added correct error return if get transport failure to remote endpoint.
+ *
+ * Revision 2.12  2002/04/09 01:19:41  robertj
  * Fixed typo on changing "callAnswered" to better description of "originating".
  *
  * Revision 2.11  2002/04/09 01:02:14  robertj
@@ -462,13 +465,23 @@ void SIPConnection::InitiateCall(const SIPURL & destination)
 
   delete transport;
   transport = address.CreateTransport(endpoint, OpalTransportAddress::NoBinding);
-  if (transport == NULL)
+  if (transport == NULL) {
+    PTRACE(1, "SIP\tCould not create transport from " << address);
     return;
+  }
 
   transport->SetBufferSize(SIP_PDU::MaxSize);
-  transport->ConnectTo(address);
+  if (!transport->ConnectTo(address)) {
+    PTRACE(1, "SIP\tCould not connect to " << address << " - " << transport->GetErrorText());
+    Release(EndedByTransportFail);
+    return;
+  }
 
-  transport->WriteConnect(WriteINVITE, this);
+  if (!transport->WriteConnect(WriteINVITE, this)) {
+    PTRACE(1, "SIP\tCould not write to " << address << " - " << transport->GetErrorText());
+    Release(EndedByTransportFail);
+    return;
+  }
 
   releaseMethod = ReleaseWithCANCEL;
 }
