@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2005  2001/08/17 08:32:17  robertj
+ * Revision 1.2006  2001/10/03 05:56:15  robertj
+ * Changes abndwidth management API.
+ *
+ * Revision 2.4  2001/08/17 08:32:17  robertj
  * Update from OpenH323
  *
  * Revision 2.3  2001/08/13 05:10:39  robertj
@@ -453,7 +456,7 @@ H323Channel::H323Channel(H323Connection & conn, const H323Capability & cap)
 
 H323Channel::~H323Channel()
 {
-  connection.UseBandwidth(bandwidthUsed, FALSE);
+  connection.SetBandwidthUsed(bandwidthUsed, 0);
 }
 
 
@@ -545,11 +548,11 @@ BOOL H323Channel::SetBandwidthUsed(unsigned bandwidth)
          << bandwidth/10 << '.' << bandwidth%10 << '/'
          << bandwidthUsed/10 << '.' << bandwidthUsed%10
          << " kb/s");
-  connection.UseBandwidth(bandwidthUsed, TRUE);
-  bandwidthUsed = 0;
 
-  if (!connection.UseBandwidth(bandwidth, FALSE))
+  if (!connection.SetBandwidthUsed(bandwidthUsed, bandwidth)) {
+    bandwidthUsed = 0;
     return FALSE;
+  }
 
   bandwidthUsed = bandwidth;
   return TRUE;

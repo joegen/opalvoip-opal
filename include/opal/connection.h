@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2005  2001/08/22 10:20:09  robertj
+ * Revision 1.2006  2001/10/03 05:56:15  robertj
+ * Changes abndwidth management API.
+ *
+ * Revision 2.4  2001/08/22 10:20:09  robertj
  * Changed connection locking to use double mutex to guarantee that
  *   no threads can ever deadlock or access deleted connection.
  *
@@ -512,7 +515,7 @@ class OpalConnection : public PObject
       */
     virtual unsigned GetBandwidthUsed() const;
 
-    /**Request use the available bandwidth in 100's of bits/sec.
+    /**Set the used bandwidth in 100's of bits/sec.
        This is an internal function used by the OpalMediaStream bandwidth
        management code.
 
@@ -520,16 +523,9 @@ class OpalConnection : public PObject
        sufficient bandwidth is available, then TRUE is returned and the amount
        of available bandwidth is reduced by the specified amount.
       */
-    virtual BOOL RequestBandwidth(
-      unsigned bandwidth     /// Bandwidth required
-    );
-
-    /**Release use the available bandwidth in 100's of bits/sec.
-       This is an internal function used by the OpalMediaStream bandwidth
-       management code.
-      */
-    virtual void ReleaseBandwidth(
-      unsigned bandwidth     /// Bandwidth required
+    virtual BOOL SetBandwidthUsed(
+      unsigned releasedBandwidth,   /// Bandwidth to release
+      unsigned requiredBandwidth    /// Bandwidth required
     );
   //@}
 
@@ -630,9 +626,31 @@ class OpalConnection : public PObject
       */
     PTime GetConnectionStartTime() const { return connectionStartTime; }
 
+    /**Get the local name/alias.
+      */
+    const PString & GetLocalPartyName() const { return localPartyName; }
+
+    /**Set the local name/alias from information in the PDU.
+      */
+    void SetLocalPartyName(const PString & name) { localPartyName = name; }
+
     /**Get the caller name/alias.
       */
     const PString & GetRemotePartyName() const { return remotePartyName; }
+
+    /**Get the remote party number, if there was one one.
+       If the remote party has indicated an e164 number as one of its aliases
+       or as a field in the Q.931 PDU, then this function will return it.
+      */
+    const PString & GetRemotePartyNumber() const { return remotePartyNumber; }
+
+    /**Get the remote party address.
+       This will return the "best guess" at an address to use in a
+       H323EndPoint::MakeCall() function to call the remote party back again.
+       Note that due to the presence of gatekeepers/proxies etc this may not
+       always be accurate.
+      */
+    const PString & GetRemotePartyAddress() const { return remotePartyAddress; }
   //@}
 
   protected:
@@ -647,7 +665,10 @@ class OpalConnection : public PObject
     PString             callToken;
     BOOL                callAnswered;
     PTime               connectionStartTime;
+    PString             localPartyName;
     PString             remotePartyName;
+    PString             remotePartyNumber;
+    PString             remotePartyAddress;
     OpalCallEndReason   callEndReason;
 
     AnswerCallResponse  answerResponse;
