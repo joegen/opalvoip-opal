@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2010  2002/09/04 06:01:49  robertj
+ * Revision 1.2011  2002/10/09 04:28:10  robertj
+ * Added session ID to soem trace logs, thanks Ted Szoczei
+ *
+ * Revision 2.9  2002/09/04 06:01:49  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.8  2002/07/01 04:56:33  robertj
@@ -1412,7 +1415,7 @@ PString RTP_UDP::GetLocalHostName()
 
 BOOL RTP_UDP::SetRemoteSocketInfo(PIPSocket::Address address, WORD port, BOOL isDataPort)
 {
-  PTRACE(3, "RTP_UDP\tSetRemoteSocketInfo: "
+  PTRACE(3, "RTP_UDP\tSetRemoteSocketInfo: session=" << sessionID << ' '
          << (isDataPort ? "data" : "control") << " channel, "
             "new=" << address << ':' << port << ", "
             "local=" << localAddress << ':' << localDataPort << '-' << localControlPort << ", "
@@ -1507,7 +1510,8 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(PUDPSocket & socket
       if (remoteTransmitAddress == 0)
         remoteTransmitAddress = addr;
       else if (remoteTransmitAddress != addr) {
-        PTRACE(1, "RTP_UDP\t" << PTRACE_name << " PDU from incorrect host, "
+        PTRACE(1, "RTP_UDP\tSession " << sessionID << ", "
+               << PTRACE_name << " PDU from incorrect host, "
                   " is " << addr << " should be " << remoteTransmitAddress);
         return RTP_Session::e_IgnorePacket;
       }
@@ -1519,7 +1523,8 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(PUDPSocket & socket
   switch (socket.GetErrorNumber()) {
     case ECONNRESET :
     case ECONNREFUSED :
-      PTRACE(2, "RTP_UDP\t" << PTRACE_name << " port on remote not ready.");
+      PTRACE(2, "RTP_UDP\tSession " << sessionID << ", "
+             << PTRACE_name << " port on remote not ready.");
       return RTP_Session::e_IgnorePacket;
 
     default:
