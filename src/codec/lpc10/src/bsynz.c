@@ -1,8 +1,11 @@
 /*
 
 $Log: bsynz.c,v $
-Revision 1.2001  2001/07/27 15:48:24  robertj
-Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+Revision 1.2002  2003/03/14 09:53:26  robertj
+Updated to openH323 v1.11.7
+
+Revision 1.2  2002/02/15 03:57:55  yurik
+Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
 
 Revision 1.1  2000/06/05 04:45:12  robertj
 Added LPC-10 2400bps codec
@@ -48,9 +51,12 @@ extern struct {
 /* 	BSYNZ Version 54 */
 
 /* $Log: bsynz.c,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/14 09:53:26  robertj
+ * Updated to openH323 v1.11.7
  *
+/* Revision 1.2  2002/02/15 03:57:55  yurik
+/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+/*
 /* Revision 1.1  2000/06/05 04:45:12  robertj
 /* Added LPC-10 2400bps codec
 /*
@@ -144,9 +150,12 @@ extern struct {
     real lpi0, hpi0;
 
 /* $Log: bsynz.c,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/14 09:53:26  robertj
+ * Updated to openH323 v1.11.7
  *
+/* Revision 1.2  2002/02/15 03:57:55  yurik
+/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+/*
 /* Revision 1.1  2000/06/05 04:45:12  robertj
 /* Added LPC-10 2400bps codec
 /*
@@ -175,9 +184,12 @@ extern struct {
 /* Frame size, Prediction order, Pitch period */
 /*       Arguments */
 /* $Log: bsynz.c,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ * Revision 1.2002  2003/03/14 09:53:26  robertj
+ * Updated to openH323 v1.11.7
  *
+/* Revision 1.2  2002/02/15 03:57:55  yurik
+/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+/*
 /* Revision 1.1  2000/06/05 04:45:12  robertj
 /* Added LPC-10 2400bps codec
 /*
@@ -348,7 +360,7 @@ e */
 	exc[px] -= pulse;
 /*  Load voiced excitation */
     } else {
-	sscale = sqrt((real) (*ip)) / 6.928f;
+	sscale = (real)sqrt((real) (*ip)) / 6.928f;
 	i__1 = *ip;
 	for (i__ = 1; i__ <= i__1; ++i__) {
 	    exc[contrl_1.order + i__ - 1] = 0.f;
@@ -414,7 +426,7 @@ e */
 /*  Apply gain to match RMS */
     r__1 = *rms * *rms;
     ssq = r__1 * *ip;
-    gain = sqrt(ssq / xssq);
+    gain = (real)sqrt(ssq / xssq);
     i__1 = *ip;
     for (i__ = 1; i__ <= i__1; ++i__) {
 	sout[i__] = gain * exc2[contrl_1.order + i__ - 1];
