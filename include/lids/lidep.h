@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.h,v $
- * Revision 1.2005  2001/10/03 05:56:15  robertj
+ * Revision 1.2006  2001/10/15 04:29:35  robertj
+ * Removed answerCall signal and replaced with state based functions.
+ *
+ * Revision 2.4  2001/10/03 05:56:15  robertj
  * Changes abndwidth management API.
  *
  * Revision 2.3  2001/08/17 01:11:52  robertj
@@ -311,7 +314,8 @@ class OpalLineConnection : public OpalConnection
        The default behaviour starts the ring back tone.
       */
     virtual BOOL SetAlerting(
-      const PString & calleeName    /// Name of endpoint being alerted.
+      const PString & calleeName,   /// Name of endpoint being alerted.
+      BOOL withMedia                /// Open media with alerting
     );
 
     /**Indicate to remote endpoint we are connected.
