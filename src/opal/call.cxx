@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2026  2004/05/02 05:18:45  rjongbloed
+ * Revision 1.2027  2004/05/09 13:19:00  rjongbloed
+ * Fixed issues with non fast start and non-tunnelled connections
+ *
+ * Revision 2.25  2004/05/02 05:18:45  rjongbloed
  * More logging
  *
  * Revision 2.24  2004/05/01 10:00:52  rjongbloed
@@ -337,15 +340,6 @@ BOOL OpalCall::OnConnected(OpalConnection & connection)
 
   if (!ok)
     return FALSE;
-
-#if 0
-  OpalMediaFormatList formats = GetMediaFormats(connection, TRUE);
-  BOOL createdOne = OpenSourceMediaStreams(formats, OpalMediaFormat::DefaultAudioSessionID);
-  if (manager.CanAutoStartTransmitVideo()) {
-    if (OpenSourceMediaStreams(formats, OpalMediaFormat::DefaultVideoSessionID))
-      createdOne = TRUE;
-  }
-#endif
 
   if (createdOne) {
     inUseFlag.Wait();
