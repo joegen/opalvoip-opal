@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t38.h,v $
- * Revision 1.2003  2002/01/14 06:35:57  robertj
+ * Revision 1.2004  2002/07/01 04:56:31  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.2  2002/01/14 06:35:57  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.1  2001/08/01 05:08:04  robertj
@@ -32,6 +35,19 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.11  2002/05/15 23:30:01  robertj
+ * Backed out delete of t38 handler, causes race conditions.
+ *
+ * Revision 1.10  2002/05/15 01:30:49  robertj
+ * Added missing delete of t38 handler, thanks thsuk@digitalsis.com.
+ * Changed to allow the T.35 information to be adjusted so it will work for
+ *    various vendors version of the non-standard capability.
+ *
+ * Revision 1.9  2002/05/10 05:49:22  robertj
+ * Added the max bit rate field to the data channel capability class.
+ * Added session ID to the data logical channel class.
+ * Added capability for old pre-v3 non-standard T.38.
  *
  * Revision 1.8  2002/01/09 00:21:36  robertj
  * Changes to support outgoing H.245 RequstModeChange.
@@ -77,7 +93,7 @@ class OpalT38Protocol;
 
 ///////////////////////////////////////////////////////////////////////////////
 
-/**This class describes the T.38 logical channel.
+/**This class describes the T.38 standard capability.
  */
 class H323_T38Capability : public H323DataCapability
 {
@@ -92,7 +108,7 @@ class H323_T38Capability : public H323DataCapability
       NumTransportModes
     };
 
-    /**Create a new channel.
+    /**Create a new capability.
      */
     H323_T38Capability(
       TransportMode mode
@@ -191,6 +207,45 @@ class H323_T38Capability : public H323DataCapability
 };
 
 
+/**This class describes the T.38 non-standard capability.
+ */
+class H323_T38NonStandardCapability : public H323NonStandardDataCapability
+{
+    PCLASSINFO(H323_T38NonStandardCapability, H323NonStandardDataCapability);
+  public:
+  /**@name Construction */
+  //@{
+    /**Create a new capability.
+     */
+    H323_T38NonStandardCapability(
+      BYTE country = 181,            /// t35 information
+      BYTE extension = 0,            /// t35 information
+      WORD maufacturer = 18          /// t35 information
+    );
+  //@}
+
+  /**@name Overrides from class PObject */
+  //@{
+    /**Create a copy of the object.
+      */
+    virtual PObject * Clone() const;
+  //@}
+
+  /**@name Operations */
+  //@{
+    /**Create the channel instance, allocating resources as required.
+     */
+    virtual H323Channel * CreateChannel(
+      H323Connection & connection,    /// Owner connection for channel
+      H323Channel::Directions dir,    /// Direction of channel
+      unsigned sessionID,             /// Session ID for RTP channel
+      const H245_H2250LogicalChannelParameters * param
+                                      /// Parameters for channel
+    ) const;
+  //@}
+};
+
+
 /**This class describes the T.38 logical channel.
  */
 class H323_T38Channel : public H323DataChannel
@@ -202,10 +257,11 @@ class H323_T38Channel : public H323DataChannel
     /**Create a new channel.
      */
     H323_T38Channel(
-      H323Connection & connection,           /// Connection to endpoint for channel
-      const H323_T38Capability & capability, /// Capability channel is using
-      Directions direction,                  /// Direction of channel
-      OpalT38Protocol * t38handler           /// Handler for channel
+      H323Connection & connection,       /// Connection to endpoint for channel
+      const H323Capability & capability, /// Capability channel is using
+      Directions direction,              /// Direction of channel
+      unsigned sessionID,                /// Session ID for channel
+      H323_T38Capability::TransportMode mode
     );
     ~H323_T38Channel();
   //@}

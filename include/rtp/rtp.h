@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2009  2002/04/10 03:10:13  robertj
+ * Revision 1.2010  2002/07/01 04:56:31  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.8  2002/04/10 03:10:13  robertj
  * Added referential (container) copy functions to session manager class.
  *
  * Revision 2.7  2002/02/13 02:30:06  robertj
@@ -45,6 +48,23 @@
  * Revision 2.3  2001/11/14 06:20:40  robertj
  * Changed sending of control channel reports to be timer based.
  *
+ * Revision 2.2  2001/10/05 00:22:13  robertj
+ * Updated to PWLib 1.2.0 and OpenH323 1.7.0
+ *
+ * Revision 2.1  2001/08/01 05:08:43  robertj
+ * Moved default session ID's to OpalMediaFormat class.
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
+ * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.36  2002/05/28 02:37:37  robertj
+ * Fixed reading data out of RTCP compound statements.
+ *
+ * Revision 1.35  2002/05/02 05:58:24  robertj
+ * Changed the mechanism for sending RTCP reports so that they will continue
+ *   to be sent regardless of if there is any actual data traffic.
+ * Added support for compound RTCP statements for sender and receiver reports.
+ *
  * Revision 1.34  2002/02/09 02:33:37  robertj
  * Improved payload type docuemntation and added Cisco CN.
  *
@@ -54,15 +74,6 @@
  *
  * Revision 1.32  2001/11/09 05:39:54  craigs
  * Added initial T.38 support thanks to Adam Lazur
- *
- * Revision 2.2  2001/10/05 00:22:13  robertj
- * Updated to PWLib 1.2.0 and OpenH323 1.7.0
- *
- * Revision 2.1  2001/08/01 05:08:43  robertj
- * Moved default session ID's to OpalMediaFormat class.
- *
- * Revision 2.0  2001/07/27 15:48:24  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.31  2001/09/11 00:21:21  robertj
  * Fixed missing stack sizes in endpoint for cleaner thread and jitter thread.
@@ -280,11 +291,11 @@ class RTP_ControlFrame : public PBYTEArray
   PCLASSINFO(RTP_ControlFrame, PBYTEArray);
 
   public:
-    RTP_ControlFrame(PINDEX payloadSize = 2048);
+    RTP_ControlFrame(PINDEX compoundSize = 2048);
 
-    unsigned GetVersion() const { return (BYTE)theArray[0]>>6; }
+    unsigned GetVersion() const { return (BYTE)theArray[compoundOffset]>>6; }
 
-    unsigned GetCount() const { return (BYTE)theArray[0]&0x1f; }
+    unsigned GetCount() const { return (BYTE)theArray[compoundOffset]&0x1f; }
     void     SetCount(unsigned count);
 
     enum PayloadTypes {
@@ -295,13 +306,18 @@ class RTP_ControlFrame : public PBYTEArray
       e_ApplDefined
     };
 
-    unsigned GetPayloadType() const { return (BYTE)theArray[1]; }
+    unsigned GetPayloadType() const { return (BYTE)theArray[compoundOffset+1]; }
     void     SetPayloadType(unsigned t);
 
-    PINDEX GetPayloadSize() const { return 4*(*(PUInt16b *)&theArray[2]); }
+    PINDEX GetPayloadSize() const { return 4*(*(PUInt16b *)&theArray[compoundOffset+2]); }
     void   SetPayloadSize(PINDEX sz);
 
-    BYTE * GetPayloadPtr() const { return (BYTE *)(theArray+4); }
+    BYTE * GetPayloadPtr() const { return (BYTE *)(theArray+compoundOffset+4); }
+
+    BOOL ReadNextCompound();
+    BOOL WriteNextCompound();
+
+    PINDEX GetCompoundSize() const { return compoundSize; }
 
 #pragma pack(1)
     struct ReceiverReport {
@@ -361,6 +377,10 @@ class RTP_ControlFrame : public PBYTEArray
       const PString & data      /// Data for description
     );
 #pragma pack()
+
+  protected:
+    PINDEX compoundOffset;
+    PINDEX compoundSize;
 };
 
 
@@ -376,7 +396,7 @@ class RTP_UserData : public PObject
 
   public:
     /**Callback from the RTP session for transmit statistics monitoring.
-       This is called every RTP_Session::senderReportTime milliseconds on the
+       This is called every RTP_Session::txStatisticsInterval packets on the
        transmitter indicating that the statistics have been updated.
 
        The default behaviour does nothing.
@@ -386,7 +406,7 @@ class RTP_UserData : public PObject
     ) const;
 
     /**Callback from the RTP session for receive statistics monitoring.
-       This is called every RTP_Session::receiverReportTime milliseconds on the
+       This is called every RTP_Session::receiverReportInterval packets on the
        receiver indicating that the statistics have been updated.
 
        The default behaviour does nothing.
@@ -466,6 +486,10 @@ class RTP_Session : public PObject
       RTP_ControlFrame & frame    /// Frame to write to the RTP session
     ) = 0;
 
+    /**Write the RTCP reports.
+      */
+    virtual BOOL SendReport();
+
     /**Close down the RTP session.
       */
     virtual void Close(
@@ -477,7 +501,7 @@ class RTP_Session : public PObject
     virtual PString GetLocalHostName() = 0;
   //@}
 
-  /**@name Call back frunctions */
+  /**@name Call back functions */
   //@{
     enum SendReceiveStatus {
       e_ProcessPacket,
@@ -486,7 +510,7 @@ class RTP_Session : public PObject
     };
     virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame);
     virtual SendReceiveStatus OnReceiveData(const RTP_DataFrame & frame);
-    virtual SendReceiveStatus OnReceiveControl(const RTP_ControlFrame & frame);
+    virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
 
     class ReceiverReport : public PObject  {
         PCLASSINFO(ReceiverReport, PObject);
@@ -586,24 +610,34 @@ class RTP_Session : public PObject
       BOOL ignore   /// Flag for ignore out of order packets
     ) { ignoreOutOfOrderPackets = ignore; }
 
-    /**Get the time interval for transmitter reports in the session.
+    /**Get the time interval for sending RTCP reports in the session.
       */
-    const PTimeInterval & GetSenderReportTime() { return senderReportTimer.GetResetTime(); }
+    const PTimeInterval & GetReportTimeInterval() { return reportTimeInterval; }
 
-    /**Set the time interval for transmitter reports in the session.
+    /**Set the time interval for sending RTCP reports in the session.
       */
-    void SetSenderReportTime(
-      const PTimeInterval & time   // Time between reports
+    void SetReportTimeInterval(
+      const PTimeInterval & interval /// New time interval for reports.
+    )  { reportTimeInterval = interval; }
+
+    /**Get the interval for transmitter statistics in the session.
+      */
+    unsigned GetTxStatisticsInterval() { return txStatisticsInterval; }
+
+    /**Set the interval for transmitter statistics in the session.
+      */
+    void SetTxStatisticsInterval(
+      unsigned packets   /// Number of packets between callbacks
     );
 
-    /**Get the interval for receiver reports in the session.
+    /**Get the interval for receiver statistics in the session.
       */
-    const PTimeInterval & GetReceiverReportTime() { return receiverReportTimer.GetResetTime(); }
+    unsigned GetRxStatisticsInterval() { return rxStatisticsInterval; }
 
-    /**Set the interval for receiver reports in the session.
+    /**Set the interval for receiver statistics in the session.
       */
-    void SetReceiverReportTime(
-      const PTimeInterval & time  // Time between reports
+    void SetRxStatisticsInterval(
+      unsigned packets   /// Number of packets between callbacks
     );
 
     /**Get total number of packets sent in session.
@@ -635,37 +669,37 @@ class RTP_Session : public PObject
     DWORD GetPacketsTooLate() const;
 
     /**Get average time between sent packets.
-       This is averaged over the last senderReportTime milliseconds and is in
+       This is averaged over the last txStatisticsInterval packets and is in
        milliseconds.
       */
     DWORD GetAverageSendTime() const { return averageSendTime; }
 
     /**Get maximum time between sent packets.
-       This is over the last senderReportTime milliseconds and is in
+       This is over the last txStatisticsInterval packets and is in
        milliseconds.
       */
     DWORD GetMaximumSendTime() const { return maximumSendTime; }
 
     /**Get minimum time between sent packets.
-       This is over the last senderReportTime milliseconds and is in
+       This is over the last txStatisticsInterval packets and is in
        milliseconds.
       */
     DWORD GetMinimumSendTime() const { return minimumSendTime; }
 
     /**Get average time between received packets.
-       This is averaged over the last receiverReportTime milliseconds and is in
+       This is averaged over the last rxStatisticsInterval packets and is in
        milliseconds.
       */
     DWORD GetAverageReceiveTime() const { return averageReceiveTime; }
 
     /**Get maximum time between received packets.
-       This is over the last receiverReportTime milliseconds and is in
+       This is over the last rxStatisticsInterval packets and is in
        milliseconds.
       */
     DWORD GetMaximumReceiveTime() const { return maximumReceiveTime; }
 
     /**Get minimum time between received packets.
-       This is over the last receiverReportTime milliseconds and is in
+       This is over the last rxStatisticsInterval packets and is in
        milliseconds.
       */
     DWORD GetMinimumReceiveTime() const { return minimumReceiveTime; }
@@ -678,7 +712,7 @@ class RTP_Session : public PObject
   //@}
 
   protected:
-    void SetReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
+    void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
 
     unsigned           sessionID;
     unsigned           referenceCount;
@@ -689,8 +723,12 @@ class RTP_Session : public PObject
     BOOL          ignoreOutOfOrderPackets;
     DWORD         syncSourceOut;
     DWORD         syncSourceIn;
+    PTimeInterval reportTimeInterval;
+    unsigned      txStatisticsInterval;
+    unsigned      rxStatisticsInterval;
     WORD          lastSentSequenceNumber;
     WORD          expectedSequenceNumber;
+    DWORD         lastSentTimestamp;
     PTimeInterval lastSentPacketTime;
     PTimeInterval lastReceivedPacketTime;
     WORD          lastRRSequenceNumber;
@@ -711,10 +749,9 @@ class RTP_Session : public PObject
     DWORD minimumReceiveTime;
     DWORD jitterLevel;
 
-    PTimer   senderReportTimer;
-    PTimer   receiverReportTimer;
-    unsigned senderReportCount;
-    unsigned receiverReportCount;
+    unsigned txStatisticsCount;
+    unsigned rxStatisticsCount;
+
     DWORD    averageSendTimeAccum;
     DWORD    maximumSendTimeAccum;
     DWORD    minimumSendTimeAccum;
@@ -722,6 +759,9 @@ class RTP_Session : public PObject
     DWORD    maximumReceiveTimeAccum;
     DWORD    minimumReceiveTimeAccum;
     DWORD    lastTransitTime;
+
+    PMutex reportMutex;
+    PTimer reportTimer;
 };
 
 

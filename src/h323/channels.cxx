@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2019  2002/04/18 03:41:54  robertj
+ * Revision 1.2020  2002/07/01 04:56:31  robertj
+ * Updated to OpenH323 v1.9.1
+ *
+ * Revision 2.18  2002/04/18 03:41:54  robertj
  * Fixed logical channel so does not delete media stream too early.
  *
  * Revision 2.17  2002/04/15 08:51:42  robertj
@@ -85,6 +88,41 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.129  2002/06/28 03:34:28  robertj
+ * Fixed issues with address translation on gatekeeper RAS channel.
+ *
+ * Revision 1.128  2002/06/25 08:30:12  robertj
+ * Changes to differentiate between stright G.723.1 and G.723.1 Annex A using
+ *   the OLC dataType silenceSuppression field so does not send SID frames
+ *   to receiver codecs that do not understand them.
+ *
+ * Revision 1.127  2002/06/24 00:07:31  robertj
+ * Fixed bandwidth usage being exactly opposite (adding when it should
+ *   be subtracting), thanks Saswat Praharaj.
+ *
+ * Revision 1.126  2002/05/23 04:53:57  robertj
+ * Added function to remove a filter from logical channel.
+ *
+ * Revision 1.125  2002/05/10 05:47:15  robertj
+ * Added session ID to the data logical channel class.
+ *
+ * Revision 1.124  2002/05/07 23:49:11  robertj
+ * Fixed incorrect setting of session ID in data channel OLC, caused an
+ *   incorrect optional field to be included, thanks Ulrich Findeisen.
+ *
+ * Revision 1.123  2002/05/03 00:07:24  robertj
+ * Fixed missing setting of isRunning flag in external RTP channels.
+ *
+ * Revision 1.122  2002/05/02 07:56:27  robertj
+ * Added automatic clearing of call if no media (RTP data) is transferred in a
+ *   configurable (default 5 minutes) amount of time.
+ *
+ * Revision 1.121  2002/05/02 06:28:53  robertj
+ * Fixed problem with external RTP channels not fast starting.
+ *
+ * Revision 1.120  2002/04/17 05:56:05  robertj
+ * Added trace output of H323Channel::Direction enum.
  *
  * Revision 1.119  2002/02/25 08:42:26  robertj
  * Fixed comments on the real time requirements of the codec.
@@ -490,13 +528,30 @@
 #define RTP_TRACE_DISPLAY_RATE 16000 // 2 seconds
 
 
-#if !PTRACING // Stuff to remove unused parameters warning
+#if PTRACING
+
+ostream & operator<<(ostream & out, H323Channel::Directions dir)
+{
+  static const char * const DirNames[H323Channel::NumDirections] = {
+    "IsBidirectional", "IsTransmitter", "IsReceiver"
+  };
+
+  if (dir < H323Channel::NumDirections && DirNames[dir] != NULL)
+    out << DirNames[dir];
+  else
+    out << "Direction<" << (unsigned)dir << '>';
+
+  return out;
+}
+
+#else // Stuff to remove unused parameters warning
 #define PTRACE_bitRateRestriction
 #define PTRACE_type
 #define PTRACE_jitter
 #define PTRACE_skippedFrameCount
 #define PTRACE_additionalBuffer
 #define PTRACE_direction
+
 #endif
 
 
@@ -560,9 +615,9 @@ H323ChannelNumber & H323ChannelNumber::operator++(int)
 
 H323Channel::H323Channel(H323Connection & conn, const H323Capability & cap)
   : endpoint(conn.GetEndPoint()),
-    connection(conn),
-    capability(cap)
+    connection(conn)
 {
+  capability = (H323Capability *)cap.Clone();
   bandwidthUsed = 0;
   terminating = FALSE;
   opened = FALSE;
@@ -573,6 +628,8 @@ H323Channel::H323Channel(H323Connection & conn, const H323Capability & cap)
 H323Channel::~H323Channel()
 {
   connection.SetBandwidthUsed(bandwidthUsed, 0);
+
+  delete capability;
 }
 
 
@@ -665,7 +722,6 @@ BOOL H323Channel::SetBandwidthUsed(unsigned bandwidth)
          << bandwidth/10 << '.' << bandwidth%10 << '/'
          << bandwidthUsed/10 << '.' << bandwidthUsed%10
          << " kb/s");
-
   if (!connection.SetBandwidthUsed(bandwidthUsed, bandwidth)) {
     bandwidthUsed = 0;
     return FALSE;
@@ -726,7 +782,7 @@ H323Channel::Directions H323UnidirectionalChannel::GetDirection() const
 
 BOOL H323UnidirectionalChannel::SetInitialBandwidth()
 {
-  return SetBandwidthUsed(capability.GetMediaFormat().GetBandwidth()/100);
+  return SetBandwidthUsed(capability->GetMediaFormat().GetBandwidth()/100);
 }
 
 
@@ -738,7 +794,7 @@ BOOL H323UnidirectionalChannel::Open()
   if (PAssertNULL(mediaStream) == NULL)
     return FALSE;
 
-  OpalMediaFormat mediaFormat = capability.GetMediaFormat();
+  OpalMediaFormat mediaFormat = capability->GetMediaFormat();
   if (mediaFormat.IsEmpty()) {
     PTRACE(1, "LogChan\t" << (GetDirection() == IsReceiver ? "Receive" : "Transmit")
            << " open failed (Invalid OpalMediaFormat)");
@@ -893,8 +949,8 @@ BOOL H323_RealTimeChannel::OnReceivedPDU(const H245_OpenLogicalChannel & open,
   const H245_DataType & dataType = reverse ? open.m_reverseLogicalChannelParameters.m_dataType
                                            : open.m_forwardLogicalChannelParameters.m_dataType;
 
-  if (!((H323Capability&)capability).OnReceivedPDU(dataType, receiver)) {
-    PTRACE(1, "H323RTP\tOnly H.225.0 multiplex supported");
+  if (!capability->OnReceivedPDU(dataType, receiver)) {
+    PTRACE(1, "H323RTP\tData type not supported");
     errorCode = H245_OpenLogicalChannelReject_cause::e_dataTypeNotSupported;
     return FALSE;
   }
@@ -1258,9 +1314,11 @@ BOOL H323_ExternalRTPChannel::GetRemoteAddress(PIPSocket::Address & ip,
 
 H323DataChannel::H323DataChannel(H323Connection & conn,
                                  const H323Capability & cap,
-                                 Directions dir)
+                                 Directions dir,
+                                 unsigned id)
   : H323UnidirectionalChannel(conn, cap, dir)
 {
+  sessionID = id;
   listener = NULL;
   autoDeleteListener = TRUE;
   transport = NULL;
@@ -1296,6 +1354,12 @@ void H323DataChannel::Close()
 }
 
 
+unsigned H323DataChannel::GetSessionID() const
+{
+  return sessionID;
+}
+
+
 BOOL H323DataChannel::OnSendingPDU(H245_OpenLogicalChannel & open) const
 {
   PTRACE(3, "LogChan\tOnSendingPDU for channel: " << number);
@@ -1306,12 +1370,7 @@ BOOL H323DataChannel::OnSendingPDU(H245_OpenLogicalChannel & open) const
               H245_OpenLogicalChannel_forwardLogicalChannelParameters_multiplexParameters
                   ::e_h2250LogicalChannelParameters);
   H245_H2250LogicalChannelParameters & fparam = open.m_forwardLogicalChannelParameters.m_multiplexParameters;
-
-  unsigned session = GetSessionID();
-  if (session != 0) {
-    fparam.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_sessionID);
-    fparam.m_sessionID = GetSessionID();
-  }
+  fparam.m_sessionID = GetSessionID();
 
   if (separateReverseChannel)
     return TRUE;
@@ -1323,9 +1382,9 @@ BOOL H323DataChannel::OnSendingPDU(H245_OpenLogicalChannel & open) const
               H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters
                   ::e_h2250LogicalChannelParameters);
   H245_H2250LogicalChannelParameters & rparam = open.m_reverseLogicalChannelParameters.m_multiplexParameters;
-  rparam.m_sessionID = capability.GetDefaultSessionID();
+  rparam.m_sessionID = GetSessionID();
 
-  return capability.OnSendingPDU(open.m_reverseLogicalChannelParameters.m_dataType);
+  return capability->OnSendingPDU(open.m_reverseLogicalChannelParameters.m_dataType);
 }
 
 
@@ -1390,6 +1449,12 @@ BOOL H323DataChannel::OnReceivedPDU(const H245_OpenLogicalChannel & open,
       open.HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters)) {
     errorCode = H245_OpenLogicalChannelReject_cause::e_unsuitableReverseParameters;
     PTRACE(2, "LogChan\tOnReceivedPDU has unexpected reverse parameters");
+    return FALSE;
+  }
+
+  if (!capability->OnReceivedPDU(open.m_forwardLogicalChannelParameters.m_dataType, receiver)) {
+    PTRACE(1, "H323RTP\tData type not supported");
+    errorCode = H245_OpenLogicalChannelReject_cause::e_dataTypeNotSupported;
     return FALSE;
   }
 
