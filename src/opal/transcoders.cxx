@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2008  2004/02/16 09:15:20  csoutheren
+ * Revision 1.2009  2004/03/22 11:32:42  rjongbloed
+ * Added new codec type for 16 bit Linear PCM as must distinguish between the internal
+ *   format used by such things as the sound card and the RTP payload format which
+ *   is always big endian.
+ *
+ * Revision 2.7  2004/02/16 09:15:20  csoutheren
  * Fixed problems with codecs on Unix systems
  *
  * Revision 2.6  2004/01/18 15:35:21  rjongbloed
@@ -454,6 +459,41 @@ BOOL OpalStreamedTranscoder::Convert(const RTP_DataFrame & input,
   }
 
   return TRUE;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+Opal_Linear16Mono_PCM::Opal_Linear16Mono_PCM(const OpalTranscoderRegistration & registration)
+  : OpalStreamedTranscoder(registration, 16, 16, 320)
+{
+}
+
+int Opal_Linear16Mono_PCM::ConvertOne(int sample) const
+{
+#if PBYTE_ORDER==PLITTLE_ENDIAN
+  return (sample>>8)|(sample<<8);
+#else
+  return sample;
+#endif
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+Opal_PCM_Linear16Mono::Opal_PCM_Linear16Mono(const OpalTranscoderRegistration & registration)
+  : OpalStreamedTranscoder(registration, 16, 16, 320)
+{
+}
+
+
+int Opal_PCM_Linear16Mono::ConvertOne(int sample) const
+{
+#if PBYTE_ORDER==PLITTLE_ENDIAN
+  return (sample>>8)|(sample<<8);
+#else
+  return sample;
+#endif
 }
 
 

@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2020  2004/02/13 22:15:35  csoutheren
+ * Revision 1.2021  2004/03/22 11:32:42  rjongbloed
+ * Added new codec type for 16 bit Linear PCM as must distinguish between the internal
+ *   format used by such things as the sound card and the RTP payload format which
+ *   is always big endian.
+ *
+ * Revision 2.19  2004/02/13 22:15:35  csoutheren
  * Changed stricmp to strcascmp thanks to Diana Cionoiu
  *
  * Revision 2.18  2004/02/07 02:18:19  rjongbloed
@@ -146,6 +151,18 @@
 OpalMediaFormat const OpalPCM16(
   OPAL_PCM16,
   OpalMediaFormat::DefaultAudioSessionID,
+  RTP_DataFrame::IllegalPayloadType,
+  "",
+  TRUE,   // Needs jitter
+  128000, // bits/sec
+  16, // bytes/frame
+  8, // 1 millisecond
+  OpalMediaFormat::AudioClockRate
+);
+
+OpalMediaFormat const OpalL16Mono8kHz(
+  OPAL_L16_MONO_8KHZ,
+  OpalMediaFormat::DefaultAudioSessionID,
   RTP_DataFrame::L16_Mono,
   "L16",
   TRUE,   // Needs jitter
@@ -153,6 +170,18 @@ OpalMediaFormat const OpalPCM16(
   16, // bytes/frame
   8, // 1 millisecond
   OpalMediaFormat::AudioClockRate
+);
+
+OpalMediaFormat const OpalL16Mono16kHz(
+  OPAL_L16_MONO_16KHZ,
+  OpalMediaFormat::DefaultAudioSessionID,
+  RTP_DataFrame::L16_Mono,
+  "L16",
+  TRUE,   // Needs jitter
+  256000, // bits/sec
+  16, // bytes/frame
+  16, // 1 millisecond
+  16000
 );
 
 OpalMediaFormat const OpalG711uLaw(
