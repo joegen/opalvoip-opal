@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323rtp.cxx,v $
- * Revision 1.2011  2004/02/19 10:47:04  rjongbloed
+ * Revision 1.2012  2004/02/24 11:28:46  rjongbloed
+ * Normalised RTP session management across protocols
+ *
+ * Revision 2.10  2004/02/19 10:47:04  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.9  2003/01/07 04:39:53  robertj
@@ -190,36 +193,10 @@ void H323_RTP_Session::OnRxStatistics(const RTP_Session & session) const
 /////////////////////////////////////////////////////////////////////////////
 
 H323_RTP_UDP::H323_RTP_UDP(const H323Connection & conn,
-                           RTP_UDP & rtp_udp,
-                           RTP_QOS * rtpQos)
+                           RTP_UDP & rtp_udp)
   : H323_RTP_Session(conn),
     rtp(rtp_udp)
 {
-  const H323Transport & transport = connection.GetControlChannel();
-  PIPSocket::Address localAddress;
-  transport.GetLocalAddress().GetIpAddress(localAddress);
-
-  OpalManager & manager = connection.GetEndPoint().GetManager();
-
-  PIPSocket::Address remoteAddress;
-  transport.GetRemoteAddress().GetIpAddress(remoteAddress);
-  PSTUNClient * stun = manager.GetSTUN(remoteAddress);
-
-  WORD firstPort = manager.GetRtpIpPortPair();
-  WORD nextPort = firstPort;
-  while (!rtp.Open(localAddress,
-                   nextPort, nextPort,
-                   manager.GetRtpIpTypeofService(),
-                   stun,
-                   rtpQos)) {
-    nextPort = manager.GetRtpIpPortPair();
-    if (nextPort == firstPort)
-      break;
-  }
-
-  localAddress = rtp.GetLocalAddress();
-  manager.TranslateIPAddress(localAddress, remoteAddress);
-  rtp.SetLocalAddress(localAddress);
 }
 
 
