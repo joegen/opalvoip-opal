@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2014  2003/01/07 04:39:53  robertj
+ * Revision 1.2015  2004/01/18 15:35:20  rjongbloed
+ * More work on video support
+ *
+ * Revision 2.13  2003/01/07 04:39:53  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.12  2002/11/10 11:33:17  robertj
@@ -241,7 +244,9 @@ class RTP_DataFrame : public PBYTEArray
 
     enum {
       ProtocolVersion = 2,
-      MinHeaderSize = 12
+      MinHeaderSize = 12,
+      // Max Ethernet packet (1518 bytes) minus 802.3/CRC, 802.3, IP, UDP an RTP headers
+      MaxEthernetPayloadSize = (1518-14-4-8-20-16-12)
     };
 
     enum PayloadTypes {

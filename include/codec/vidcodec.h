@@ -24,7 +24,10 @@
  * Contributor(s): 
  *
  * $Log: vidcodec.h,v $
- * Revision 1.2002  2003/03/17 10:26:59  robertj
+ * Revision 1.2003  2004/01/18 15:35:20  rjongbloed
+ * More work on video support
+ *
+ * Revision 2.1  2003/03/17 10:26:59  robertj
  * Added video support.
  *
  */
@@ -54,10 +57,10 @@ class OpalVideoTranscoder : public OpalTranscoder
     PCLASSINFO(OpalVideoTranscoder, OpalTranscoder);
   public:
     struct FrameHeader {
-      unsigned x;
-      unsigned y;
-      unsigned width;
-      unsigned height;
+      PInt32l  x;
+      PInt32l  y;
+      PUInt32l width;
+      PUInt32l height;
       BYTE     data[1];
     };
 
@@ -202,6 +205,16 @@ class OpalUncompVideoTranscoder : public OpalVideoTranscoder
 
   protected:
     PColourConverter * converter;
+    PINDEX             srcFrameBytes;
+    PINDEX             dstFrameBytes;
+};
+
+
+class Opal_RGB24_RGB24 : public OpalUncompVideoTranscoder {
+  public:
+    Opal_RGB24_RGB24(
+      const OpalTranscoderRegistration & registration /// Registration fro transcoder
+    ) : OpalUncompVideoTranscoder(registration) { }
 };
 
 
@@ -241,10 +254,11 @@ class Opal_RGB32_YUV420P : public OpalUncompVideoTranscoder {
 
 #define OPAL_REGISTER_UNCOMPRESSED_VIDEO() \
           OPAL_REGISTER_UNCOMPRESSED_VIDEO_H323 \
+          OPAL_REGISTER_TRANSCODER(Opal_RGB24_RGB24,   OPAL_RGB24,   OPAL_RGB24); \
           OPAL_REGISTER_TRANSCODER(Opal_YUV420P_RGB24, OPAL_YUV420P, OPAL_RGB24); \
           OPAL_REGISTER_TRANSCODER(Opal_YUV420P_RGB32, OPAL_YUV420P, OPAL_RGB32); \
-          OPAL_REGISTER_TRANSCODER(Opal_RGB24_YUV420P, OPAL_RGB24, OPAL_YUV420P); \
-          OPAL_REGISTER_TRANSCODER(Opal_RGB32_YUV420P, OPAL_RGB32, OPAL_YUV420P)
+          OPAL_REGISTER_TRANSCODER(Opal_RGB24_YUV420P, OPAL_RGB24,   OPAL_YUV420P); \
+          OPAL_REGISTER_TRANSCODER(Opal_RGB32_YUV420P, OPAL_RGB32,   OPAL_YUV420P)
 
 
 #define OPAL_RGB24         "RGB24"

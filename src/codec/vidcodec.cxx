@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vidcodec.cxx,v $
- * Revision 1.2002  2003/03/17 10:26:59  robertj
+ * Revision 1.2003  2004/01/18 15:35:20  rjongbloed
+ * More work on video support
+ *
+ * Revision 2.1  2003/03/17 10:26:59  robertj
  * Added video support.
  *
  */
@@ -39,6 +42,9 @@
 
 #include <ptlib/vconvert.h>
 
+#define FRAME_WIDTH  PVideoDevice::CIFWidth
+#define FRAME_HEIGHT PVideoDevice::CIFHeight
+#define FRAME_RATE   25 // PAL
 
 OpalMediaFormat const OpalRGB24(
   OPAL_RGB24,
@@ -46,9 +52,9 @@ OpalMediaFormat const OpalRGB24(
   RTP_DataFrame::DynamicBase,
   OPAL_RGB24,
   FALSE,   // No jitter
-  24*PVideoDevice::CIFWidth*PVideoDevice::CIFHeight*25,  // Bandwith for PAL CIF
-  0,
-  0,
+  24*FRAME_WIDTH*FRAME_HEIGHT*FRAME_RATE,  // Bandwidth
+  3*FRAME_WIDTH*FRAME_HEIGHT,
+  96000/FRAME_RATE,
   OpalMediaFormat::VideoClockRate
 );
 
@@ -58,9 +64,9 @@ OpalMediaFormat const OpalRGB32(
   RTP_DataFrame::DynamicBase,
   OPAL_RGB32,
   FALSE,   // No jitter
-  32*PVideoDevice::CIFWidth*PVideoDevice::CIFHeight*25,  // Bandwith for PAL CIF
-  0,
-  0,
+  32*FRAME_WIDTH*FRAME_HEIGHT*FRAME_RATE,  // Bandwidth
+  4*FRAME_WIDTH*FRAME_HEIGHT,
+  96000/FRAME_RATE,
   OpalMediaFormat::VideoClockRate
 );
 
@@ -70,9 +76,9 @@ OpalMediaFormat const OpalYUV420P(
   RTP_DataFrame::DynamicBase,
   OPAL_YUV420P,
   FALSE,   // No jitter
-  12*PVideoDevice::CIFWidth*PVideoDevice::CIFHeight*25,  // Bandwith for PAL CIF
-  0,
-  0,
+  12*FRAME_WIDTH*FRAME_HEIGHT*FRAME_RATE,  // Bandwidth
+  3*FRAME_WIDTH*FRAME_HEIGHT/2,
+  96000/FRAME_RATE,
   OpalMediaFormat::VideoClockRate
 );
 
@@ -132,7 +138,14 @@ PString H323_UncompVideoCapability::GetFormatName() const
 OpalUncompVideoTranscoder::OpalUncompVideoTranscoder(const OpalTranscoderRegistration & registration)
   : OpalVideoTranscoder(registration)
 {
-  converter = NULL;
+  converter = PColourConverter::Create(GetInputFormat(), GetOutputFormat(),
+                                       frameWidth, frameHeight);
+  if (converter == NULL)
+    srcFrameBytes = dstFrameBytes = 0;
+  else {
+    srcFrameBytes = converter->GetMaxSrcFrameBytes();
+    dstFrameBytes = converter->GetMaxDstFrameBytes();
+  }
 }
 
 
@@ -144,10 +157,7 @@ OpalUncompVideoTranscoder::~OpalUncompVideoTranscoder()
 
 PINDEX OpalUncompVideoTranscoder::GetOptimalDataFrameSize(BOOL input) const
 {
-  if (converter == NULL)
-    return 0;
-
-  return input ? converter->GetMaxSrcFrameBytes() : converter->GetMaxDstFrameBytes();
+  return input ? srcFrameBytes : PMIN(dstFrameBytes, maxOutputSize);
 }
 
 
@@ -162,35 +172,41 @@ BOOL OpalUncompVideoTranscoder::ConvertFrames(const RTP_DataFrame & input,
 
   if (srcHeader->width != frameWidth || srcHeader->height != frameHeight) {
     delete converter;
-    converter = NULL;
     frameWidth = srcHeader->width;
     frameHeight = srcHeader->height;
-  }
-
-  if (converter == NULL) {
     converter = PColourConverter::Create(GetInputFormat(), GetOutputFormat(),
                                          frameWidth, frameHeight);
-    if (converter == NULL)
-      return FALSE;
+    srcFrameBytes = converter->GetMaxSrcFrameBytes();
+    dstFrameBytes = converter->GetMaxDstFrameBytes();
   }
 
   // Calculate number of output frames
-  PINDEX bytesPerScanLine = converter->GetMaxDstFrameBytes()/frameHeight;
-  PINDEX scanLinePerBand = converter->GetMaxDstFrameBytes()/maxOutputPayloadSize/bytesPerScanLine;
-  PINDEX bandCount = (frameHeight+scanLinePerBand-1)/scanLinePerBand;
+  PINDEX srcBytesPerScanLine = srcFrameBytes/frameHeight;
+  PINDEX dstBytesPerScanLine = dstFrameBytes/frameHeight;
 
-  if (bandCount == 1) {
-    RTP_DataFrame * pkt = new RTP_DataFrame(converter->GetMaxDstFrameBytes());
+  unsigned scanLinesPerBand = maxOutputSize/dstBytesPerScanLine;
+  if (scanLinesPerBand > frameHeight)
+    scanLinesPerBand = frameHeight;
+  if (!converter->SetFrameSize(frameWidth, scanLinesPerBand))
+    return FALSE;
+
+  unsigned bandCount = (frameHeight+scanLinesPerBand-1)/scanLinesPerBand;
+
+  for (unsigned band = 0; band < bandCount; band++) {
+    RTP_DataFrame * pkt = new RTP_DataFrame(scanLinesPerBand*dstBytesPerScanLine);
     pkt->SetPayloadType(outputMediaFormat.GetPayloadType());
     pkt->SetTimestamp(input.GetTimestamp());
     output.Append(pkt);
     FrameHeader * dstHeader = (FrameHeader *)pkt->GetPayloadPtr();
-    *dstHeader = *srcHeader;
-    return converter->Convert(srcHeader->data, dstHeader->data);
+    dstHeader->x = srcHeader->x;
+    dstHeader->y = srcHeader->y + band*scanLinesPerBand;
+    dstHeader->width = srcHeader->width;
+    dstHeader->height = scanLinesPerBand;
+    if (!converter->Convert(srcHeader->data+band*srcBytesPerScanLine, dstHeader->data))
+      return FALSE;
   }
 
-  // More here
-  return FALSE;
+  return TRUE;
 }
 
 

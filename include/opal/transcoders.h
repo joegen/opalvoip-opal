@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2008  2003/06/02 02:59:43  rjongbloed
+ * Revision 1.2009  2004/01/18 15:35:20  rjongbloed
+ * More work on video support
+ *
+ * Revision 2.7  2003/06/02 02:59:43  rjongbloed
  * Changed transcoder search so uses destination list as preference order.
  *
  * Revision 2.6  2003/03/24 04:32:11  robertj
@@ -151,11 +154,6 @@ class OpalTranscoder : public PObject
 {
     PCLASSINFO(OpalTranscoder, PObject);
   public:
-    enum {
-      // Max Ethernet packet (1518 bytes) minus 802.3/CRC, 802.3, IP, UDP an RTP headers
-      MaxEthernetPayloadSize = (1518-14-4-8-20-16-12)
-    };
-
   /**@name Construction */
   //@{
     /** Create a new transcoder implementation.
@@ -283,13 +281,23 @@ class OpalTranscoder : public PObject
     /**Get the names of the input or output formats.
       */
     const OpalMediaFormat & GetOutputFormat() const { return outputMediaFormat; }
+
+    /**Get maximum output size.
+      */
+    PINDEX GetMaxOutputSize() const { return maxOutputSize; }
+
+    /**Set the maximum output size.
+      */
+    void SetMaxOutputSize(
+      PINDEX size
+    ) { maxOutputSize = size; }
   //@}
 
   protected:
     const OpalTranscoderRegistration & registration;
     OpalMediaFormat                    inputMediaFormat;
     OpalMediaFormat                    outputMediaFormat;
-    PINDEX                             maxOutputPayloadSize;
+    PINDEX                             maxOutputSize;
 };
 
 
