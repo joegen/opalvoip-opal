@@ -24,8 +24,17 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vblasterlid.h,v $
- * Revision 1.2002  2002/01/22 06:28:43  robertj
+ * Revision 1.2003  2002/09/04 06:01:47  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.1  2002/01/22 06:28:43  robertj
  * Added voice blaster support
+ *
+ * Revision 1.4  2002/09/03 06:19:37  robertj
+ * Normalised the multi-include header prevention ifdef/define symbol.
+ *
+ * Revision 1.3  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
  *
  * Revision 1.2  2002/01/15 07:23:24  craigs
  * Added IsDevicePresent command
@@ -36,8 +45,13 @@
  *
  */
 
-#ifndef __VBLASTER_LID_H
-#define __VBLASTER_LID_H
+#ifndef __OPAL_VBLASTERLID_H
+#define __OPAL_VBLASTERLID_H
+
+#ifdef __GNUC__
+#pragma interface
+#endif
+
 
 #define HAS_VBLASTER
 
@@ -46,9 +60,7 @@
 
 #include <ptclib/delaychan.h>
 
-#ifdef __GNUC__
-#pragma interface
-#endif
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -611,6 +623,7 @@ class OpalVoipBlasterDevice : public OpalLineInterfaceDevice
 };
 
 
-#endif 
+#endif // __OPAL_VBLASTERLID_H
+
 
 /////////////////////////////////////////////////////////////////////////////

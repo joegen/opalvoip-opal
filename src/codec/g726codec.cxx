@@ -23,6 +23,12 @@
  *
  * Contributor(s): ______________________________________.
  *
+ * $Log: g726codec.cxx,v $
+ * Revision 1.2003  2002/09/04 06:01:47  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 1.4  2002/09/03 07:28:42  robertj
+ * Cosmetic change to formatting.
  *
  */
 

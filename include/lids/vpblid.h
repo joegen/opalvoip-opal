@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vpblid.h,v $
- * Revision 1.2004  2002/01/14 06:35:57  robertj
+ * Revision 1.2005  2002/09/04 06:01:47  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.3  2002/01/14 06:35:57  robertj
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.2  2001/10/05 00:22:13  robertj
@@ -33,6 +36,15 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.13  2002/09/03 06:19:37  robertj
+ * Normalised the multi-include header prevention ifdef/define symbol.
+ *
+ * Revision 1.12  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
+ *
+ * Revision 1.11  2002/07/02 03:20:37  dereks
+ * Fix check for line disconnected state.   Remove timer on line ringing.
  *
  * Revision 1.10  2001/11/19 06:35:59  robertj
  * Added tone generation handling
@@ -68,17 +80,16 @@
  *
  */
 
-#ifndef __LIDS_VPBLID_H
-#define __LIDS_VPBLID_H
-
-#include <lids/lid.h>
-#include <vpbapi.h>
-
+#ifndef __OPAL_VPBLID_H
+#define __OPAL_VPBLID_H
 
 #ifdef __GNUC__
 #pragma interface
 #endif
 
+
+#include <lids/lid.h>
+#include <vpbapi.h>
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -162,6 +173,13 @@ class OpalVpbDevice : public OpalLineInterfaceDevice
       DWORD * cadence = NULL  /// Cadence of incoming ring
     );
 
+    /**Determine if line has been disconnected from a call.
+       return TRUE if a tone is detected.
+      */
+    virtual BOOL IsLineDisconnected(
+      unsigned line,   /// Number of line
+      BOOL checkForWink = TRUE
+    );
 
     /**Get the media formats this device is capable of using.
       */
@@ -325,7 +343,6 @@ class OpalVpbDevice : public OpalLineInterfaceDevice
       PINDEX     readFormat,    writeFormat;
       PINDEX     readFrameSize, writeFrameSize;
       BOOL       readIdle,      writeIdle;
-      PTimer     ringTimeout;
       PMutex     DTMFmutex;
       BOOL       DTMFplaying;
       ToneThread *myToneThread;
@@ -333,7 +350,7 @@ class OpalVpbDevice : public OpalLineInterfaceDevice
 };
 
 
-#endif // __LIDS_VPBLID_H
+#endif // __OPAL_VPBLID_H
 
 
 /////////////////////////////////////////////////////////////////////////////

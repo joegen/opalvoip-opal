@@ -24,8 +24,17 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: x224.h,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 1.2002  2002/09/04 06:01:47  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.9  2002/09/03 06:19:37  robertj
+ * Normalised the multi-include header prevention ifdef/define symbol.
+ *
+ * Revision 1.8  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
  *
  * Revision 1.7  2001/02/09 05:16:24  robertj
  * Added #pragma interface for GNU C++.
@@ -50,8 +59,8 @@
  *
  */
 
-#ifndef __T120_X224_H
-#define __T120_X224_H
+#ifndef __OPAL_X224_H
+#define __OPAL_X224_H
 
 #ifdef __GNUC__
 #pragma interface
@@ -59,6 +68,7 @@
 
 
 #include <ptlib/sockets.h>
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -95,7 +105,7 @@ class X224 : public PObject
 };
 
 
-#endif // __T120_X224_H
+#endif // __OPAL_X224_H
 
 
 /////////////////////////////////////////////////////////////////////////////

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.h,v $
- * Revision 1.2006  2002/07/01 04:56:30  robertj
+ * Revision 1.2007  2002/09/04 06:01:47  robertj
+ * Updated to OpenH323 v1.9.6
+ *
+ * Revision 2.5  2002/07/01 04:56:30  robertj
  * Updated to OpenH323 v1.9.1
  *
  * Revision 2.4  2002/03/22 06:57:48  robertj
@@ -44,6 +47,28 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.55  2002/09/03 06:19:37  robertj
+ * Normalised the multi-include header prevention ifdef/define symbol.
+ *
+ * Revision 1.54  2002/08/12 05:38:21  robertj
+ * Changes to the RAS subsystem to support ability to make requests to client
+ *   from gkserver without causing bottlenecks and race conditions.
+ *
+ * Revision 1.53  2002/08/05 10:03:47  robertj
+ * Cosmetic changes to normalise the usage of pragma interface/implementation.
+ *
+ * Revision 1.52  2002/08/05 05:17:37  robertj
+ * Fairly major modifications to support different authentication credentials
+ *   in ARQ to the logged in ones on RRQ. For both client and server.
+ * Various other H.235 authentication bugs and anomalies fixed on the way.
+ *
+ * Revision 1.51  2002/07/25 10:55:40  robertj
+ * Changes to allow more granularity in PDU dumps, hex output increasing
+ *   with increasing trace level.
+ *
+ * Revision 1.50  2002/07/11 07:04:12  robertj
+ * Added build InfoRequest pdu type to RAS.
  *
  * Revision 1.49  2002/05/29 03:55:17  robertj
  * Added protocol version number checking infrastructure, primarily to improve
@@ -209,8 +234,8 @@
  *
  */
 
-#ifndef __H323_H323PDU_H
-#define __H323_H323PDU_H
+#ifndef __OPAL_H323PDU_H
+#define __OPAL_H323PDU_H
 
 #ifdef __GNUC__
 #pragma interface
@@ -222,12 +247,14 @@
 #include <h323/q931.h>
 #include <asn/h225.h>
 #include <asn/h245.h>
+#include <h323/h235auth.h>
 
 
 class H323Connection;
 class H323TransportAddress;
 class H225_RAS;
 class OpalTransport;
+class OpalGloballyUniqueID;
 
 
 #define H225_PROTOCOL_VERSION 4
@@ -543,7 +570,10 @@ class H323RasPDU : public H225_RasMessage
   PCLASSINFO(H323RasPDU, H225_RasMessage);
 
   public:
-    H323RasPDU(H225_RAS & ras);
+    H323RasPDU();
+    H323RasPDU(
+      const H235Authenticators & authenticators
+    );
 
     H225_GatekeeperRequest     & BuildGatekeeperRequest(unsigned seqNum);
     H225_GatekeeperConfirm     & BuildGatekeeperConfirm(unsigned seqNum);
@@ -566,6 +596,7 @@ class H323RasPDU : public H225_RasMessage
     H225_BandwidthRequest      & BuildBandwidthRequest(unsigned seqNum);
     H225_BandwidthConfirm      & BuildBandwidthConfirm(unsigned seqNum, unsigned bandwidth = 0);
     H225_BandwidthReject       & BuildBandwidthReject(unsigned seqNum, unsigned reason = H225_BandRejectReason::e_undefinedReason);
+    H225_InfoRequest           & BuildInfoRequest(unsigned seqNum, unsigned callRef = 0, const OpalGloballyUniqueID * id = 0);
     H225_InfoRequestResponse   & BuildInfoRequestResponse(unsigned seqNum);
     H225_InfoRequestAck        & BuildInfoRequestAck(unsigned seqNum);
     H225_InfoRequestNak        & BuildInfoRequestNak(unsigned seqNum, unsigned reason = H225_InfoRequestNakReason::e_undefinedReason);
@@ -579,9 +610,26 @@ class H323RasPDU : public H225_RasMessage
 
     unsigned GetSequenceNumber() const;
 
+    const H235Authenticators & GetAuthenticators() const { return authenticators; }
+    void SetAuthenticators(
+      const H235Authenticators & auth
+    ) { authenticators = auth; }
+
+    BOOL Validate(
+      const H225_ArrayOf_CryptoH323Token & cryptoTokens,
+      const PASN_Sequence & pdu,
+      unsigned optionalField
+    ) const { return authenticators.ValidatePDU(cryptoTokens, pdu, optionalField, rawPDU); }
+
+    void Prepare(
+      H225_ArrayOf_CryptoH323Token & cryptoTokens,
+      PASN_Sequence & pdu,
+      unsigned optionalField
+    ) { authenticators.PreparePDU(cryptoTokens, pdu, optionalField); }
+
   protected:
-    H225_RAS  & rasChannel;
-    PPER_Stream rawPDU;
+    H235Authenticators authenticators;
+    PPER_Stream        rawPDU;
 };
 
 
@@ -605,7 +653,21 @@ Q931::CauseValues H323TranslateFromCallEndReason(
 PString H323GetApplicationInfo(const H225_VendorIdentifier & vendor);
 
 
-#endif // __H323_H323PDU_H
+#if PTRACING
+void H323TraceDumpPDU(
+  const char * proto,
+  BOOL writing,
+  const PBYTEArray & rawData,
+  const PASN_Object & pdu,
+  const PASN_Choice & tag1,
+  unsigned seqNum
+);
+#else
+#define H323TraceDumpPDU(proto, writing, rawData, pdu, tag1, seqNum)
+#endif
+
+
+#endif // __OPAL_H323PDU_H
 
 
 /////////////////////////////////////////////////////////////////////////////
