@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2019  2002/11/10 11:33:17  robertj
+ * Revision 1.2020  2003/01/07 04:39:53  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.18  2002/11/10 11:33:17  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.17  2002/09/16 02:52:35  robertj
@@ -160,6 +163,8 @@ class OpalConnection : public PObject
       EndedByNoEndPoint,        /// The remote party is not running an endpoint
       EndedByHostOffline,       /// The remote party host off line
       EndedByTemporaryFailure,  /// The remote failed temporarily app may retry
+      EndedByQ931Cause,         /// The remote ended the call with unmapped Q.931 cause code
+      EndedByDurationLimit,     /// Call cleared due to an enforced duration limit
       NumCallEndReasons
     };
 

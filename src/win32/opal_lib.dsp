@@ -649,6 +649,10 @@ SOURCE=..\..\include\asn\h245.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\include\asn\h248.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\include\asn\h4501.h
 # End Source File
 # Begin Source File
@@ -805,6 +809,10 @@ SOURCE=..\asn\h245_2.cxx
 
 !ENDIF 
 
+# End Source File
+# Begin Source File
+
+SOURCE=..\asn\h248.cxx
 # End Source File
 # Begin Source File
 
@@ -1170,7 +1178,7 @@ SOURCE=..\asn\h225.asn
 
 # PROP Intermediate_Dir "..\..\include\asn"
 USERDEP__H225_="$(IntDir)\h235.h"	
-# Begin Custom Build - Compiling H225 ASN File
+# Begin Custom Build - Compiling H.225 ASN File
 InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h225.asn
@@ -1192,7 +1200,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 USERDEP__H225_="$(IntDir)\h235.h"	
-# Begin Custom Build - Compiling H225 ASN File
+# Begin Custom Build - Compiling H.225 ASN File
 InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h225.asn
@@ -1214,7 +1222,7 @@ BuildCmds= \
 
 # PROP Intermediate_Dir "..\..\include\asn"
 USERDEP__H225_="$(IntDir)\h235.h"	
-# Begin Custom Build - Compiling H225 ASN File
+# Begin Custom Build - Compiling H.225 ASN File
 InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h225.asn
@@ -1242,7 +1250,7 @@ SOURCE=..\asn\h235.asn
 !IF  "$(CFG)" == "OPAL_lib - Win32 Release"
 
 # PROP Intermediate_Dir "..\..\include\asn"
-# Begin Custom Build - Compiling H235 ASN File
+# Begin Custom Build - Compiling H.235 ASN File
 InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h235.asn
@@ -1263,7 +1271,7 @@ BuildCmds= \
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
 # PROP Intermediate_Dir "..\..\include\asn"
-# Begin Custom Build - Compiling H235 ASN File
+# Begin Custom Build - Compiling H.235 ASN File
 InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h235.asn
@@ -1284,7 +1292,7 @@ BuildCmds= \
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
 
 # PROP Intermediate_Dir "..\..\include\asn"
-# Begin Custom Build - Compiling H235 ASN File
+# Begin Custom Build - Compiling H.235 ASN File
 InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h235.asn
@@ -1312,14 +1320,14 @@ SOURCE=..\asn\h245.asn
 !IF  "$(CFG)" == "OPAL_lib - Win32 Release"
 
 # PROP Intermediate_Dir "..\..\include\asn"
-# Begin Custom Build - Compiling H245 ASN File
+# Begin Custom Build - Compiling H.245 ASN File
 InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h245.asn
 InputName=h245
 
 BuildCmds= \
-	asnparser -s2 -m H245 -c $(InputPath) \
+	asnparser -s2 -m H245 --classheader "H245_AudioCapability=#ifndef PASN_NOPRINTON\nvoid PrintOn(ostream & strm) const;\n#endif" -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1336,14 +1344,14 @@ BuildCmds= \
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
 # PROP Intermediate_Dir "..\..\include\asn"
-# Begin Custom Build - Compiling H245 ASN File
+# Begin Custom Build - Compiling H.245 ASN File
 InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h245.asn
 InputName=h245
 
 BuildCmds= \
-	asnparser -s2 -m H245 -c $(InputPath) \
+	asnparser -s2 -m H245 --classheader "H245_AudioCapability=#ifndef PASN_NOPRINTON\nvoid PrintOn(ostream & strm) const;\n#endif" -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1360,14 +1368,14 @@ BuildCmds= \
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
 
 # PROP Intermediate_Dir "..\..\include\asn"
-# Begin Custom Build - Compiling H245 ASN File
+# Begin Custom Build - Compiling H.245 ASN File
 InputDir=\Work\opal\src\asn
 IntDir=.\..\..\include\asn
 InputPath=..\asn\h245.asn
 InputName=h245
 
 BuildCmds= \
-	asnparser -s2 -m H245 -c $(InputPath) \
+	asnparser -s2 -m H245 --classheader "H245_AudioCapability=#ifndef PASN_NOPRINTON\nvoid PrintOn(ostream & strm) const;\n#endif" -c $(InputPath) \
 	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
 	
 
@@ -1375,6 +1383,76 @@ BuildCmds= \
    $(BuildCmds)
 
 "$(InputDir)\$(InputName)_2.cxx" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   $(BuildCmds)
+
+"$(IntDir)\$(InputName).h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   $(BuildCmds)
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\asn\h248.asn
+
+!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
+
+# PROP Intermediate_Dir "..\..\include\asn"
+# Begin Custom Build - Compiling H.248 ASN File
+InputDir=\Work\opal\src\asn
+IntDir=.\..\..\include\asn
+InputPath=..\asn\h248.asn
+InputName=h248
+
+BuildCmds= \
+	asnparser -m H248 -c $(InputPath) \
+	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
+	
+
+"$(InputDir)\$(InputName).cxx" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   $(BuildCmds)
+
+"$(IntDir)\$(InputName).h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   $(BuildCmds)
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
+
+# PROP Intermediate_Dir "..\..\include\asn"
+# Begin Custom Build - Compiling H.248 ASN File
+InputDir=\Work\opal\src\asn
+IntDir=.\..\..\include\asn
+InputPath=..\asn\h248.asn
+InputName=h248
+
+BuildCmds= \
+	asnparser -m H248 -c $(InputPath) \
+	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
+	
+
+"$(InputDir)\$(InputName).cxx" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   $(BuildCmds)
+
+"$(IntDir)\$(InputName).h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   $(BuildCmds)
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
+
+# PROP Intermediate_Dir "..\..\include\asn"
+# Begin Custom Build - Compiling H.248 ASN File
+InputDir=\Work\opal\src\asn
+IntDir=.\..\..\include\asn
+InputPath=..\asn\h248.asn
+InputName=h248
+
+BuildCmds= \
+	asnparser -m H248 -c $(InputPath) \
+	move $(InputDir)\$(InputName).h $(IntDir)\$(InputName).h \
+	
+
+"$(InputDir)\$(InputName).cxx" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
    $(BuildCmds)
 
 "$(IntDir)\$(InputName).h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
@@ -2483,7 +2561,7 @@ SOURCE=..\codec\gsm\src\add.c
 
 # ADD BASE CPP /W1 /O2 /I "src\gsm\inc" /D NeedFunctionPrototypes=1
 # SUBTRACT BASE CPP /YX /Yc /Yu
-# ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /I "$(OPENSSLDIR)/inc32" /D NeedFunctionPrototypes=1 /D "WAV49"
+# ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ENDIF 
@@ -2507,7 +2585,7 @@ SOURCE=..\codec\gsm\src\code.c
 
 # ADD BASE CPP /W1 /O2 /I "src\gsm\inc" /D NeedFunctionPrototypes=1
 # SUBTRACT BASE CPP /YX /Yc /Yu
-# ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /I "$(OPENSSLDIR)/inc32" /D NeedFunctionPrototypes=1 /D "WAV49"
+# ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ENDIF 
@@ -2531,7 +2609,7 @@ SOURCE=..\codec\gsm\src\decode.c
 
 # ADD BASE CPP /W1 /O2 /I "src\gsm\inc" /D NeedFunctionPrototypes=1
 # SUBTRACT BASE CPP /YX /Yc /Yu
-# ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /I "$(OPENSSLDIR)/inc32" /D NeedFunctionPrototypes=1 /D "WAV49"
+# ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ENDIF 
@@ -2555,7 +2633,7 @@ SOURCE=..\codec\gsm\src\gsm_create.c
 
 # ADD BASE CPP /W1 /O2 /I "src\gsm\inc" /D NeedFunctionPrototypes=1
 # SUBTRACT BASE CPP /YX /Yc /Yu
-# ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /I "$(OPENSSLDIR)/inc32" /D NeedFunctionPrototypes=1 /D "WAV49"
+# ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ENDIF 
@@ -2579,7 +2657,7 @@ SOURCE=..\codec\gsm\src\gsm_decode.c
 
 # ADD BASE CPP /W1 /O2 /I "src\gsm\inc" /D NeedFunctionPrototypes=1
 # SUBTRACT BASE CPP /YX /Yc /Yu
-# ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /I "$(OPENSSLDIR)/inc32" /D NeedFunctionPrototypes=1 /D "WAV49"
+# ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ENDIF 
@@ -2603,7 +2681,7 @@ SOURCE=..\codec\gsm\src\gsm_destroy.c
 
 # ADD BASE CPP /W1 /O2 /I "src\gsm\inc" /D NeedFunctionPrototypes=1
 # SUBTRACT BASE CPP /YX /Yc /Yu
-# ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /I "$(OPENSSLDIR)/inc32" /D NeedFunctionPrototypes=1 /D "WAV49"
+# ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ENDIF 
@@ -2627,7 +2705,7 @@ SOURCE=..\codec\gsm\src\gsm_encode.c
 
 # ADD BASE CPP /W1 /O2 /I "src\gsm\inc" /D NeedFunctionPrototypes=1
 # SUBTRACT BASE CPP /YX /Yc /Yu
-# ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /I "$(OPENSSLDIR)/inc32" /D NeedFunctionPrototypes=1 /D "WAV49"
+# ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ENDIF 
@@ -2636,24 +2714,8 @@ SOURCE=..\codec\gsm\src\gsm_encode.c
 # Begin Source File
 
 SOURCE=..\codec\gsm\src\gsm_lpc.c
-
-!IF  "$(CFG)" == "OPAL_lib - Win32 Release"
-
 # ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
 # SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
-
-# ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
-
-# ADD CPP /w /W0 /O2 /I "$(OPENSSLDIR)/inc32" /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
-# SUBTRACT CPP /YX /Yc /Yu
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
@@ -2671,7 +2733,7 @@ SOURCE=..\codec\gsm\src\gsm_option.c
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
 
-# ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /I "$(OPENSSLDIR)/inc32" /D NeedFunctionPrototypes=1 /D "WAV49"
+# ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ENDIF 
@@ -2695,7 +2757,7 @@ SOURCE=..\codec\gsm\src\long_term.c
 
 # ADD BASE CPP /W1 /O2 /I "src\gsm\inc" /D NeedFunctionPrototypes=1
 # SUBTRACT BASE CPP /YX /Yc /Yu
-# ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /I "$(OPENSSLDIR)/inc32" /D NeedFunctionPrototypes=1 /D "WAV49"
+# ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ENDIF 
@@ -2719,7 +2781,7 @@ SOURCE=..\codec\gsm\src\preprocess.c
 
 # ADD BASE CPP /W1 /O2 /I "src\gsm\inc" /D NeedFunctionPrototypes=1
 # SUBTRACT BASE CPP /YX /Yc /Yu
-# ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /I "$(OPENSSLDIR)/inc32" /D NeedFunctionPrototypes=1 /D "WAV49"
+# ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ENDIF 
@@ -2743,7 +2805,7 @@ SOURCE=..\codec\gsm\src\rpe.c
 
 # ADD BASE CPP /W1 /O2 /I "src\gsm\inc" /D NeedFunctionPrototypes=1
 # SUBTRACT BASE CPP /YX /Yc /Yu
-# ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /I "$(OPENSSLDIR)/inc32" /D NeedFunctionPrototypes=1 /D "WAV49"
+# ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ENDIF 
@@ -2767,7 +2829,7 @@ SOURCE=..\codec\gsm\src\short_term.c
 
 # ADD BASE CPP /W1 /O2 /I "src\gsm\inc" /D NeedFunctionPrototypes=1
 # SUBTRACT BASE CPP /YX /Yc /Yu
-# ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /I "$(OPENSSLDIR)/inc32" /D NeedFunctionPrototypes=1 /D "WAV49"
+# ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ENDIF 
@@ -2791,7 +2853,7 @@ SOURCE=..\codec\gsm\src\table.c
 
 # ADD BASE CPP /W1 /O2 /I "src\gsm\inc" /D NeedFunctionPrototypes=1
 # SUBTRACT BASE CPP /YX /Yc /Yu
-# ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /I "$(OPENSSLDIR)/inc32" /D NeedFunctionPrototypes=1 /D "WAV49"
+# ADD CPP /w /W0 /O2 /I "..\codec\gsm\inc" /D NeedFunctionPrototypes=1 /D "WAV49"
 # SUBTRACT CPP /YX /Yc /Yu
 
 !ENDIF 

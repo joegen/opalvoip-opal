@@ -5,7 +5,7 @@
  *
  * Open Phone Abstraction Library
  *
- * Copyright (c) 1998-2000 Equivalence Pty. Ltd.
+ * Copyright (c) 1998-2002 Equivalence Pty. Ltd.
  *
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.0 (the "License"); you may not use this file except in
@@ -21,10 +21,13 @@
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
- * Contributor(s): ______________________________________.
+ * Contributor(s): Vyacheslav Frolov.
  *
  * $Log: t38proto.cxx,v $
- * Revision 1.2007  2002/11/10 11:33:20  robertj
+ * Revision 1.2008  2003/01/07 04:39:53  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.6  2002/11/10 11:33:20  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.5  2002/09/04 06:01:49  robertj
@@ -45,6 +48,25 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.17  2002/12/19 01:49:08  robertj
+ * Fixed incorrect setting of optional fields in pre-corrigendum packet
+ *   translation function, thanks Vyacheslav Frolov
+ *
+ * Revision 1.16  2002/12/06 04:18:02  robertj
+ * Fixed GNU warning
+ *
+ * Revision 1.15  2002/12/02 04:08:02  robertj
+ * Turned T.38 Originate inside out, so now has WriteXXX() functions that can
+ *   be call ed in different thread contexts.
+ *
+ * Revision 1.14  2002/12/02 00:37:19  robertj
+ * More implementation of T38 base library code, some taken from the t38modem
+ *   application by Vyacheslav Frolov, eg redundent frames.
+ *
+ * Revision 1.13  2002/11/21 06:40:00  robertj
+ * Changed promiscuous mode to be three way. Fixes race condition in gkserver
+ *   which can cause crashes or more PDUs to be sent to the wrong place.
  *
  * Revision 1.12  2002/09/25 05:20:40  robertj
  * Fixed warning on no trace version.
@@ -115,6 +137,11 @@ OpalT38Protocol::OpalT38Protocol()
 {
   transport = NULL;
   autoDeleteTransport = FALSE;
+  corrigendumASN = TRUE;
+  indicatorRedundancy = 0;
+  lowSpeedRedundancy = 0;
+  highSpeedRedundancy = 0;
+  lastSentSequenceNumber = -1;
 }
 
 
@@ -147,41 +174,136 @@ BOOL OpalT38Protocol::Originate()
 {
   PTRACE(3, "T38\tOriginate, transport=" << *transport);
 
-  WORD seq = 0;	// 16 bit
-  T38_IFPPacket ifp;
-
-  while (PreparePacket(ifp)) {
-    T38_UDPTLPacket udptl;
-
-    udptl.m_seq_number = seq;
-    udptl.m_primary_ifp_packet.EncodeSubType(ifp);
-
-    PPER_Stream rawData;
-    udptl.Encode(rawData);
-
-#if PTRACING
-    if (PTrace::CanTrace(4)) {
-      PTRACE(4, "T38\tSending PDU:\n  "
-             << setprecision(2) << ifp << "\n "
-             << setprecision(2) << udptl << "\n "
-             << setprecision(2) << rawData);
-    }
-    else {
-      PTRACE(3, "T38\tSending PDU:"
-                " seq=" << seq <<
-                " type=" << ifp.m_type_of_msg.GetTagName());
-    }
-#endif
-
-    if(!transport->WritePDU(rawData) ) {
-      PTRACE(1, "T38\tOriginate - WritePDU ERROR: " << transport->GetErrorText());
-      break;
-    }
-
-    seq++;      // 16 bit
-  }
+  // Application would normally override this. The default just sends
+  // a "heartbeat".
+  while (WriteIndicator(T38_Type_of_msg_t30_indicator::e_no_signal))
+    PThread::Sleep(500);
 
   return FALSE;
+}
+
+
+BOOL OpalT38Protocol::WritePacket(const T38_IFPPacket & ifp)
+{
+  T38_UDPTLPacket udptl;
+
+  // If there are redundant frames saved from last time, put them in
+  if (!redundantIFPs.IsEmpty()) {
+    udptl.m_error_recovery.SetTag(T38_UDPTLPacket_error_recovery::e_secondary_ifp_packets);
+    T38_UDPTLPacket_error_recovery_secondary_ifp_packets & secondary = udptl.m_error_recovery;
+    secondary.SetSize(redundantIFPs.GetSize());
+    for (PINDEX i = 0; i < redundantIFPs.GetSize(); i++)
+      secondary[i].SetValue(redundantIFPs[i]);
+  }
+
+  // Encode the current ifp, but need to do stupid things as there are two
+  // versions of the ASN out there, completely incompatible.
+  if (corrigendumASN || !ifp.HasOptionalField(T38_IFPPacket::e_data_field))
+    udptl.m_primary_ifp_packet.EncodeSubType(ifp);
+  else {
+    T38_PreCorrigendum_IFPPacket old_ifp;
+
+    old_ifp.m_type_of_msg = ifp.m_type_of_msg;
+
+    old_ifp.IncludeOptionalField(T38_IFPPacket::e_data_field);
+
+    PINDEX count = ifp.m_data_field.GetSize();
+    old_ifp.m_data_field.SetSize(count);
+
+    for (PINDEX i = 0 ; i < count; i++) {
+      old_ifp.m_data_field[i].m_field_type = ifp.m_data_field[i].m_field_type;
+      if (ifp.m_data_field[i].HasOptionalField(T38_Data_Field_subtype::e_field_data)) {
+        old_ifp.m_data_field[i].IncludeOptionalField(T38_Data_Field_subtype::e_field_data);
+        old_ifp.m_data_field[i].m_field_data = ifp.m_data_field[i].m_field_data;
+      }
+    }
+
+    udptl.m_primary_ifp_packet.PASN_OctetString::EncodeSubType(old_ifp);
+  }
+
+  lastSentSequenceNumber = (lastSentSequenceNumber + 1) & 0xffff;
+  udptl.m_seq_number = lastSentSequenceNumber;
+
+  PPER_Stream rawData;
+  udptl.Encode(rawData);
+
+#if PTRACING
+  if (PTrace::CanTrace(4)) {
+    PTRACE(4, "T38\tSending PDU:\n  "
+           << setprecision(2) << ifp << "\n "
+           << setprecision(2) << udptl << "\n "
+           << setprecision(2) << rawData);
+  }
+  else {
+    PTRACE(3, "T38\tSending PDU:"
+              " seq=" << lastSentSequenceNumber <<
+              " type=" << ifp.m_type_of_msg.GetTagName());
+  }
+#endif
+
+  if (!transport->WritePDU(rawData)) {
+    PTRACE(1, "T38\tWritePacket error: " << transport->GetErrorText());
+    return FALSE;
+  }
+
+  // Calculate the level of redundency for this data phase
+  PINDEX maxRedundancy;
+  if (ifp.m_type_of_msg.GetTag() == T38_Type_of_msg::e_t30_indicator)
+    maxRedundancy = indicatorRedundancy;
+  else if ((T38_Type_of_msg_data)ifp.m_type_of_msg  == T38_Type_of_msg_data::e_v21)
+    maxRedundancy = lowSpeedRedundancy;
+  else
+    maxRedundancy = highSpeedRedundancy;
+
+  // Push down the current ifp into redundant data
+  if (maxRedundancy > 0)
+    redundantIFPs.InsertAt(0, new PBYTEArray(udptl.m_primary_ifp_packet.GetValue()));
+
+  // Remove redundant data that are surplus to requirements
+  while (redundantIFPs.GetSize() > maxRedundancy)
+    redundantIFPs.RemoveAt(maxRedundancy);
+
+  return TRUE;
+}
+
+
+BOOL OpalT38Protocol::WriteIndicator(unsigned indicator)
+{
+  T38_IFPPacket ifp;
+
+  ifp.SetTag(T38_Type_of_msg::e_t30_indicator);
+  T38_Type_of_msg_t30_indicator & ind = ifp.m_type_of_msg;
+  ind.SetValue(indicator);
+
+  return WritePacket(ifp);
+}
+
+
+BOOL OpalT38Protocol::WriteMultipleData(unsigned mode,
+                                        PINDEX count,
+                                        unsigned * type,
+                                        const PBYTEArray * data)
+{
+  T38_IFPPacket ifp;
+
+  ifp.SetTag(T38_Type_of_msg::e_data);
+  T38_Type_of_msg_data & datamode = ifp.m_type_of_msg;
+  datamode.SetValue(mode);
+
+  ifp.IncludeOptionalField(T38_IFPPacket::e_data_field);
+  ifp.m_data_field.SetSize(count);
+  for (PINDEX i = 0; i < count; i++) {
+    ifp.m_data_field[i].m_field_type.SetValue(type[i]);
+    ifp.m_data_field[i].m_field_data.SetValue(data[i]);
+  }
+
+  return WritePacket(ifp);
+}
+
+
+BOOL OpalT38Protocol::WriteData(unsigned mode, unsigned type, const PBYTEArray & data)
+{
+  return WriteMultipleData(mode, 1, &type, &data);
 }
 
 
@@ -189,27 +311,30 @@ BOOL OpalT38Protocol::Answer()
 {
   PTRACE(3, "T38\tAnswer, transport=" << *transport);
 
-  /* HACK HACK HACK -- need to figure out how to get the remote address
-   * properly here */
-  transport->SetPromiscuous(TRUE);
+  // Should probably get this from the channel open negotiation, but for
+  // the time being just accept from whoever sends us something first
+  transport->SetPromiscuous(H323Transport::AcceptFromAnyAutoSet);
 
   int consecutiveBadPackets = 0;
-  WORD expectedSequenceNumber = 0;	// 16 bit
+  int expectedSequenceNumber = 0;	// 16 bit
+  BOOL firstPacket = TRUE;
 
   for (;;) {
     PPER_Stream rawData;
     if (!transport->ReadPDU(rawData)) {
       PTRACE(1, "T38\tError reading PDU: " << transport->GetErrorText(PChannel::LastReadError));
-      break;
+      return FALSE;
     }
 
     /* when we get the first packet, set the RemoteAddress and then turn off
      * promiscuous listening */
-    if (expectedSequenceNumber == 0) {
+    if (firstPacket) {
       PTRACE(3, "T38\tReceived first packet, remote=" << transport->GetRemoteAddress());
-      transport->SetPromiscuous(FALSE);
+      transport->SetPromiscuous(H323Transport::AcceptFromRemoteOnly);
+      firstPacket = FALSE;
     }
 
+    // Decode the PDU
     T38_UDPTLPacket udptl;
     if (udptl.Decode(rawData))
       consecutiveBadPackets = 0;
@@ -220,7 +345,7 @@ BOOL OpalT38Protocol::Answer()
              << setprecision(2) << udptl);
       if (consecutiveBadPackets > 3) {
         PTRACE(1, "T38\tRaw data decode failed multiple times, aborting!");
-        break;
+        return FALSE;
       }
       continue;
     }
@@ -234,56 +359,185 @@ BOOL OpalT38Protocol::Answer()
       continue;
     }
 
-    WORD receivedSequenceNumber = (WORD)udptl.m_seq_number;	// 16 bit
+    unsigned receivedSequenceNumber = udptl.m_seq_number;
 
 #if PTRACING
+    if (PTrace::CanTrace(5)) {
+      PTRACE(4, "T38\tReceived UDPTL packet:\n  "
+             << setprecision(2) << rawData << "\n  "
+             << setprecision(2) << udptl);
+    }
     if (PTrace::CanTrace(4)) {
-      PTRACE(4, "T38\tReceived PDU:\n  "
-             << setprecision(2) << rawData << "\n  UDPTL = "
-             << setprecision(2) << udptl << "\n  ifp = "
-             << setprecision(2) << ifp);
+      PTRACE(4, "T38\tReceived UDPTL packet:\n  " << setprecision(2) << udptl);
     }
     else {
-      PTRACE(3, "T38\tReceived PDU:"
-                " seq=" << receivedSequenceNumber <<
-                " type=" << ifp.m_type_of_msg.GetTagName());
+      PTRACE(3, "T38\tReceived UDPTL packet: seq=" << receivedSequenceNumber);
     }
 #endif
 
-    if (receivedSequenceNumber < expectedSequenceNumber) {
-      PTRACE(3, "T38\tRepeated packet");
+    // Calculate the number of lost packets, if the number lost is really
+    // really big then it means it is actually a packet arriving out of order
+    int lostPackets = (receivedSequenceNumber - expectedSequenceNumber)&0xffff;
+    if (lostPackets > 32767) {
+      PTRACE(3, "T38\tIgnoring out of order packet");
       continue;
-    } else if (receivedSequenceNumber > expectedSequenceNumber) {
-      if (!HandlePacketLost(receivedSequenceNumber - expectedSequenceNumber))
-        break;
-      expectedSequenceNumber = (WORD)(receivedSequenceNumber+1);
     }
-    else
-      expectedSequenceNumber++;
 
-    if (!HandlePacket(ifp))
-      break;
+    expectedSequenceNumber = (WORD)(receivedSequenceNumber+1);
+
+    // See if this is the expected packet
+    if (lostPackets > 0) {
+      // Not what was expected, see if we have enough redundant data
+      if (udptl.m_error_recovery.GetTag() == T38_UDPTLPacket_error_recovery::e_secondary_ifp_packets) {
+        T38_UDPTLPacket_error_recovery_secondary_ifp_packets & secondary = udptl.m_error_recovery;
+        int nRedundancy = secondary.GetSize();
+        if (lostPackets >= nRedundancy) {
+          if (!HandlePacketLost(lostPackets - nRedundancy)) {
+            PTRACE(1, "T38\tHandle packet failed, aborting answer");
+            return FALSE;
+          }
+          lostPackets = nRedundancy;
+        }
+        while (lostPackets > 0) {
+          if (!HandleRawIFP(secondary[lostPackets++])) {
+            PTRACE(1, "T38\tHandle packet failed, aborting answer");
+            return FALSE;
+          }
+        }
+      }
+      else {
+        if (!HandlePacketLost(lostPackets)) {
+          PTRACE(1, "T38\tHandle lost packet, aborting answer");
+          return FALSE;
+        }
+      }
+    }
+
+    if (!HandleRawIFP(udptl.m_primary_ifp_packet)) {
+      PTRACE(1, "T38\tHandle packet failed, aborting answer");
+      return FALSE;
+    }
   }
-
-  return FALSE;
 }
 
 
-BOOL OpalT38Protocol::HandlePacket(const T38_IFPPacket & /*pdu*/)
+BOOL OpalT38Protocol::HandleRawIFP(const PASN_OctetString & pdu)
+{
+  T38_IFPPacket ifp;
+
+  if (corrigendumASN) {
+    if (pdu.DecodeSubType(ifp))
+      return HandlePacket(ifp);
+
+    PTRACE(2, "T38\tIFP decode failure:\n  " << setprecision(2) << ifp);
+    return TRUE;
+  }
+
+  T38_PreCorrigendum_IFPPacket old_ifp;
+  if (!pdu.DecodeSubType(old_ifp)) {
+    PTRACE(2, "T38\tPre-corrigendum IFP decode failure:\n  " << setprecision(2) << old_ifp);
+    return TRUE;
+  }
+
+  ifp.m_type_of_msg = old_ifp.m_type_of_msg;
+
+  if (old_ifp.HasOptionalField(T38_IFPPacket::e_data_field)) {
+    ifp.IncludeOptionalField(T38_IFPPacket::e_data_field);
+    PINDEX count = old_ifp.m_data_field.GetSize();
+    ifp.m_data_field.SetSize(count);
+    for (PINDEX i = 0 ; i < count; i++) {
+      ifp.m_data_field[i].m_field_type = old_ifp.m_data_field[i].m_field_type;
+      if (old_ifp.m_data_field[i].HasOptionalField(T38_Data_Field_subtype::e_field_data)) {
+        ifp.m_data_field[i].IncludeOptionalField(T38_Data_Field_subtype::e_field_data);
+        ifp.m_data_field[i].m_field_data = old_ifp.m_data_field[i].m_field_data;
+      }
+    }
+  }
+
+  return HandlePacket(ifp);
+}
+
+
+BOOL OpalT38Protocol::HandlePacket(const T38_IFPPacket & ifp)
+{
+  if (ifp.m_type_of_msg.GetTag() == T38_Type_of_msg::e_t30_indicator)
+    return OnIndicator((T38_Type_of_msg_t30_indicator)ifp.m_type_of_msg);
+
+  for (PINDEX i = 0; i < ifp.m_data_field.GetSize(); i++) {
+    if (!OnData((T38_Type_of_msg_data)ifp.m_type_of_msg,
+                ifp.m_data_field[i].m_field_type,
+                ifp.m_data_field[i].m_field_data.GetValue()))
+      return FALSE;
+  }
+  return TRUE;
+}
+
+
+BOOL OpalT38Protocol::OnIndicator(unsigned indicator)
+{
+  switch (indicator) {
+    case T38_Type_of_msg_t30_indicator::e_no_signal :
+      break;
+
+    case T38_Type_of_msg_t30_indicator::e_cng :
+      return OnCNG();
+
+    case T38_Type_of_msg_t30_indicator::e_ced :
+      return OnCED();
+
+    case T38_Type_of_msg_t30_indicator::e_v21_preamble :
+      return OnPreamble();
+
+    case T38_Type_of_msg_t30_indicator::e_v27_2400_training :
+    case T38_Type_of_msg_t30_indicator::e_v27_4800_training :
+    case T38_Type_of_msg_t30_indicator::e_v29_7200_training :
+    case T38_Type_of_msg_t30_indicator::e_v29_9600_training :
+    case T38_Type_of_msg_t30_indicator::e_v17_7200_short_training :
+    case T38_Type_of_msg_t30_indicator::e_v17_7200_long_training :
+    case T38_Type_of_msg_t30_indicator::e_v17_9600_short_training :
+    case T38_Type_of_msg_t30_indicator::e_v17_9600_long_training :
+    case T38_Type_of_msg_t30_indicator::e_v17_12000_short_training :
+    case T38_Type_of_msg_t30_indicator::e_v17_12000_long_training :
+    case T38_Type_of_msg_t30_indicator::e_v17_14400_short_training :
+    case T38_Type_of_msg_t30_indicator::e_v17_14400_long_training :
+      return OnTraining(indicator);
+
+    default:
+      break;
+  }
+
+  return TRUE;
+}
+
+
+BOOL OpalT38Protocol::OnCNG()
 {
   return TRUE;
 }
 
 
-BOOL OpalT38Protocol::PreparePacket(T38_IFPPacket & pdu)
+BOOL OpalT38Protocol::OnCED()
 {
-  pdu.m_type_of_msg = T38_Type_of_msg::e_t30_indicator;
-  pdu.m_type_of_msg = T38_Type_of_msg_t30_indicator::e_cng;
-  // pdu.m_data_field = new T38_Data_Field();
+  return TRUE;
+}
 
-  /* sleep for a second and loop... this is only for debugging and should be
-   * removed */
-  PThread::Sleep(1000);
+
+BOOL OpalT38Protocol::OnPreamble()
+{
+  return TRUE;
+}
+
+
+BOOL OpalT38Protocol::OnTraining(unsigned /*indicator*/)
+{
+  return TRUE;
+}
+
+
+BOOL OpalT38Protocol::OnData(unsigned /*mode*/,
+                             unsigned /*type*/,
+                             const PBYTEArray & /*data*/)
+{
   return TRUE;
 }
 

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.cxx,v $
- * Revision 1.2009  2002/11/10 11:33:19  robertj
+ * Revision 1.2010  2003/01/07 04:39:53  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.8  2002/11/10 11:33:19  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.7  2002/09/04 06:01:49  robertj
@@ -50,6 +53,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.90  2002/12/02 03:06:26  robertj
+ * Fixed over zealous removal of code when NO_AUDIO_CODECS set.
  *
  * Revision 1.89  2002/11/05 04:27:12  robertj
  * Imported RingLine() by array from OPAL.

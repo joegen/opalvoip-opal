@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2026  2002/11/10 11:33:20  robertj
+ * Revision 1.2027  2003/01/07 04:39:53  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.25  2002/11/10 11:33:20  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.24  2002/10/09 04:26:57  robertj
@@ -936,8 +939,14 @@ BOOL OpalTransport::IsCompatibleTransport(const OpalTransportAddress &) const
 }
 
 
-void OpalTransport::SetPromiscuous(BOOL /*promiscuous*/)
+void OpalTransport::SetPromiscuous(PromisciousModes /*promiscuous*/)
 {
+}
+
+
+OpalTransportAddress OpalTransport::GetLastReceivedAddress() const
+{
+  return GetRemoteAddress();
 }
 
 
@@ -1213,7 +1222,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
                                    BOOL reuseAddr)
   : OpalTransportIP(ep, binding, port)
 {
-  promiscuousReads = FALSE;
+  promiscuousReads = AcceptFromRemoteOnly;
 
   PUDPSocket * udp = new PUDPSocket;
   udp->Listen(binding, 0, port,
@@ -1230,7 +1239,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
 OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep, PUDPSocket & udp)
   : OpalTransportIP(ep, INADDR_ANY, 0)
 {
-  promiscuousReads = TRUE;
+  promiscuousReads = AcceptFromAnyAutoSet;
 
   udp.GetLocalAddress(localAddress, localPort);
 
@@ -1248,7 +1257,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
   : OpalTransportIP(ep, binding, 0),
     preReadPacket(packet)
 {
-  promiscuousReads = TRUE;
+  promiscuousReads = AcceptFromAnyAutoSet;
 
   remoteAddress = remAddr;
   remotePort = remPort;
@@ -1377,7 +1386,7 @@ BOOL OpalTransportUDP::Connect()
   if (connectSockets.IsEmpty())
     return FALSE;
 
-  SetPromiscuous(TRUE);
+  promiscuousReads = AcceptFromAnyAutoSet;
 
   return TRUE;
 }
@@ -1447,9 +1456,18 @@ BOOL OpalTransportUDP::SetRemoteAddress(const OpalTransportAddress & address)
 }
 
 
-void OpalTransportUDP::SetPromiscuous(BOOL promiscuous)
+void OpalTransportUDP::SetPromiscuous(PromisciousModes promiscuous)
 {
   promiscuousReads = promiscuous;
+}
+
+
+OpalTransportAddress OpalTransportUDP::GetLastReceivedAddress() const
+{
+  if (!lastReceivedAddress)
+    return lastReceivedAddress;
+
+  return OpalTransport::GetLastReceivedAddress();
 }
 
 
@@ -1487,11 +1505,22 @@ BOOL OpalTransportUDP::Read(void * buffer, PINDEX length)
     WORD port;
 
     socket->GetLastReceiveAddress(address, port);
-    if (promiscuousReads) {
-      remoteAddress = address;
-      remotePort = port;
-      socket->SetSendAddress(remoteAddress, remotePort);
-      return TRUE;
+    lastReceivedAddress = OpalTransportAddress(address, port);
+
+    switch (promiscuousReads) {
+      case AcceptFromRemoteOnly :
+        if (remoteAddress == address)
+          return TRUE;
+        break;
+
+      case AcceptFromAnyAutoSet :
+        remoteAddress = address;
+        remotePort = port;
+        socket->SetSendAddress(remoteAddress, remotePort);
+        // fall into next case
+
+      default : //AcceptFromAny
+        return TRUE;
     }
 
     if (remoteAddress == address)

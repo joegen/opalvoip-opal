@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2021  2002/11/10 11:33:19  robertj
+ * Revision 1.2022  2003/01/07 04:39:53  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.20  2002/11/10 11:33:19  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.19  2002/07/01 04:56:33  robertj
@@ -154,6 +157,8 @@ ostream & operator<<(ostream & out, OpalConnection::CallEndReason reason)
     "EndedByNoEndPoint",        /// The remote party is not running an endpoint
     "EndedByOffline",           /// The remote party is off line
     "EndedByTemporaryFailure",  /// The remote failed temporarily app may retry
+    "EndedByQ931Cause",         /// The remote ended the call with unmapped Q.931 cause code
+    "EndedByDurationLimit",     /// Call cleared due to an enforced duration limit
  };
   return out << names[reason];
 }

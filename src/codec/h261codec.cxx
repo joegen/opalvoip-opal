@@ -4,7 +4,7 @@
  * H.323 protocol handler
  *
  * Open H323 Library
- *    
+ *
  * Copyright (c) 1998-2000 Equivalence Pty. Ltd.
  *
  * The contents of this file are subject to the Mozilla Public License
@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.cxx,v $
- * Revision 1.2009  2002/11/10 11:33:18  robertj
+ * Revision 1.2010  2003/01/07 04:39:53  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.8  2002/11/10 11:33:18  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.7  2002/09/04 06:01:47  robertj
@@ -56,6 +59,15 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.52  2002/12/29 22:35:34  dereks
+ * Fix so video with Windows XP works. Thanks Damien Sandras.
+ *
+ * Revision 1.51  2002/12/24 07:38:49  robertj
+ * Patches to fix divide by zero error, thanks Damien Sandras
+ *
+ * Revision 1.50  2002/12/16 09:11:19  robertj
+ * Added new video bit rate control, thanks Walter H. Whitlock
  *
  * Revision 1.49  2002/08/05 10:03:47  robertj
  * Cosmetic changes to normalise the usage of pragma interface/implementation.
@@ -236,6 +248,7 @@
 
 
 #define new PNEW
+#define INC_ENCODE 1
 
 
 OpalMediaFormat const OpalH261(
@@ -644,7 +657,7 @@ H323_H261Codec::H323_H261Codec(Direction dir, BOOL isqCIF)
 {
   PTRACE(3, "H261\t" << (isqCIF ? "Q" : "") << "CIF "
          << (dir == Encoder ? "en" : "de") << "coder created.");
-  
+
   // no video decoder until we receive a packet
   videoDecoder = NULL;
 
@@ -666,28 +679,24 @@ H323_H261Codec::H323_H261Codec(Direction dir, BOOL isqCIF)
     frameHeight=0;
   }
 
-  // frame rate estimation accuracy
-  // is also average bitrate accuracy
-  estFps = 25.;         //  suppose 25 fps
-  frameRateDivider = 1;
-
-  // automatic bitrate control
-  videoBitRate = 256*1024;
-  //SetAverageBitrate( 256*1024 );
-
-  defBitsPerFrame = (int)((float)videoBitRate / estFps);
-  reqBitsPerFrame = defBitsPerFrame * frameRateDivider;  
-  frameBits = reqBitsPerFrame;  // bit/frame counter
-  numOf31 = 0;          // quality too low?
-  numOfNot31 = 0;       // quality too high?
-  //SetTxQualityLevel( 10 );  // quality around 10 ...
-  qualityLevel = 10;
-  highLimit = 22;       // quality somewhere between these
-  lowLimit = 8;         
-  actualQuality = qualityLevel;
-  frameNum = 0;         // frame counter
-
+  frameNum = 0; // frame counter
   timestampDelta = 0;
+  videoBitRateControlModes = None;
+
+  // video quality control
+  videoQMin = 1;
+  videoQMax = 24;
+  videoQuality = 9; // default = 9
+  //SetTxQualityLevel( videoQuality ); // don't have encoder yet
+
+  // video bit rate control
+  sumFrameTimeMs = 0;
+  sumAdjFrameTimeMs = 0;
+  sumFrameBytes = 0;
+  bitRateHighLimit = 0;
+  videoBitRateControlModes = None;
+  targetFrameTimeMs = 167;
+  oldTime = newTime = 0;
 }
 
 
@@ -698,12 +707,12 @@ H323_H261Codec::~H323_H261Codec()
   if (videoDecoder)
   {
     delete videoDecoder;
-    videoDecoder = NULL;    
+    videoDecoder = NULL;
   }
-  
+
   if (videoEncoder){
     delete videoEncoder;
-    videoEncoder = NULL;    
+    videoEncoder = NULL;
   }
 
   if (rvts){
@@ -721,20 +730,20 @@ BOOL H323_H261Codec::Read(BYTE * buffer,
                           unsigned & length,
                           RTP_DataFrame & frame)
 {
-  PWaitAndSignal mutex1(videoHandlerActive);  
+  PWaitAndSignal mutex1(videoHandlerActive);
   PTRACE(6,"H261\tAcquire next packet from h261 encoder.\n");
 
   if ( videoEncoder == NULL )
-      videoEncoder = new P64Encoder(qualityLevel, fillLevel);
+      videoEncoder = new P64Encoder(videoQuality, fillLevel);
 
   if( rawDataChannel == NULL ) {
     length = 0;
-    PTRACE(3,"H261\tNo channel to connect to video grabber, close down video transmission thread.");
+    PTRACE(1,"H261\tNo channel to connect to video grabber, close down video transmission thread.");
     return FALSE;
   }
-  
+
   if( !rawDataChannel->IsOpen() ) {
-     PTRACE(3,"H261\tVideo grabber is not initialised, close down video transmission thread.");
+     PTRACE(1,"H261\tVideo grabber is not initialised, close down video transmission thread.");
      length = 0;
      return FALSE;
   }
@@ -743,158 +752,197 @@ BOOL H323_H261Codec::Read(BYTE * buffer,
   frameHeight = ((PVideoChannel *)rawDataChannel)->GetGrabHeight();
 
   if( frameWidth == 0 ) {
-    PTRACE(3,"H261\tVideo grab width is 0 x 0, close down video transmission thread.");
+    PTRACE(1,"H261\tVideo grab width is 0 x 0, close down video transmission thread.");
     length=0;
     return FALSE;
-  } 
+  }
 
-  videoEncoder->SetSize(frameWidth, frameHeight); 
+  videoEncoder->SetSize(frameWidth, frameHeight);
 
   PINDEX bytesInFrame = 0;
   BOOL ok=TRUE;
 
-  if( !videoEncoder->MoreToIncEncode() ) {
-    if( videoBitRate != 0 && (videoBitRateControlModes & DynamicVideoQuality) ) {    
-      if( (frameNum % frameRateDivider) == 0 ) {
-	int error = reqBitsPerFrame - frameBits;  // error signal
-	int aerror = PABS(error);                        
-	int act;        // action signal
-                        
-	if( aerror < (reqBitsPerFrame>>4) ) 
-	  act = 0;
-	else 
-	  if( aerror < (reqBitsPerFrame>>3) )
-	    act = error>0 ? 1 : -1;
-	  else {
-	    act = error * 10 / reqBitsPerFrame;     
-	    act=PMAX(PMIN(act,10),-10);
-	  }
+#define NUMAVG 8
 
-	actualQuality-=act;  //	
-	actualQuality = PMIN(PMAX(actualQuality, 1), 31 );
-	
-	if( actualQuality >= highLimit ) 
-	  numOf31++;
-	else 
-	  numOf31=0;
+#ifdef INC_ENCODE
+  if( !videoEncoder->MoreToIncEncode() ) { // get a new frame
+#else
+  if( !videoEncoder->PacketsOutStanding() ) { // }get a new frame
+#endif
+    if (0 == frameNum) { // frame 0 means no frame has been sent yet
+      frameStartTime = PTimer::Tick();
+    }
+    else {
+      int frameTimeMs, avgFrameTimeMs, adjFrameTimeMs, avgAdjFrameTimeMs, avgFrameBytes;
+      PTimeInterval currentTime;
 
-	if( actualQuality <= lowLimit ) 
-	  numOfNot31++;
-	else 
-	  numOfNot31=0;
-                                
-	if( numOf31 == 10 ) {
-	  frameRateDivider++;
-	  frameRateDivider = PMIN( frameRateDivider, 6); 
-	  reqBitsPerFrame = defBitsPerFrame * frameRateDivider;
-	  numOf31 = 0;
-	}
-	if( numOfNot31 == 10 ) {
-	  frameRateDivider--;
-	  frameRateDivider = PMAX( frameRateDivider, 1);
-	  reqBitsPerFrame = defBitsPerFrame * frameRateDivider;
-	  numOfNot31 = 0;
-	}
+      currentTime = PTimer::Tick();
+      frameTimeMs = (int)(currentTime - frameStartTime).GetMilliSeconds();
+      adjFrameTimeMs = frameTimeMs - (int)grabInterval.GetMilliSeconds(); // subtract time possibly blocked in grabbing
+      frameStartTime = currentTime;
 
-	PTRACE(6, "H261\tReqBitsPerFrame=" << reqBitsPerFrame << 
-	       " bitrate=" << videoBitRate <<
-	       " DefBitsPerFrame=" << defBitsPerFrame <<
-               " quality=" << actualQuality);
-	PTRACE(6, "H261\tConstant bitrate control - FrameBits=" << frameBits 
-	       << " action=" << -act << " quality=" << actualQuality
-	       << " estfps=" <<  estFps
-	       << " framenum=" << frameNum
-	       << " FramerateDivider=" << frameRateDivider);
-	
-	videoEncoder->SetQualityLevel( actualQuality );
+      sumFrameTimeMs += frameTimeMs;
+      avgFrameTimeMs = sumFrameTimeMs / NUMAVG;
+      sumFrameTimeMs -= avgFrameTimeMs;
+      sumAdjFrameTimeMs += adjFrameTimeMs;
+      avgAdjFrameTimeMs = sumAdjFrameTimeMs / NUMAVG;
+      sumAdjFrameTimeMs -= avgAdjFrameTimeMs;
+      sumFrameBytes += frameBytes;
+      avgFrameBytes = sumFrameBytes / NUMAVG;
+      sumFrameBytes -= avgFrameBytes;
+
+      //PTRACE(3,"H261\tframeNum                             grabInterval: "
+      //  << frameNum << " " << grabInterval.GetMilliSeconds());
+      //PTRACE(3,"H261\tframeNum    frameBits       frameTimeMs       Bps: "
+      //  << frameNum << " " << (frameBytes*8) << " " << frameTimeMs
+      //  << " " << frameBytes*8*1000/frameTimeMs );
+      //PTRACE(3,"H261\tframeNum avgFrameBits    avgFrameTimeMs    avgBps: "
+      //  << frameNum << " " << (avgFrameBytes*8) << " " << avgFrameTimeMs
+      //  << " " << avgFrameBytes*8*1000/avgFrameTimeMs );
+      //PTRACE(3,"H261\tframeNum avgFrameBits avgAdjFrameTimeMs avgAdjBps: "
+      //  << frameNum << " " << (avgFrameBytes*8) << " " << avgAdjFrameTimeMs
+      //  << " " << avgFrameBytes*8*1000/avgAdjFrameTimeMs );
+
+      if (frameNum > NUMAVG) { // do quality adjustment after first NUMAVG frames
+        if( 0 != targetFrameTimeMs && (videoBitRateControlModes & DynamicVideoQuality) ) {
+          int error; // error signal
+          int aerror;
+          int act; // action signal
+          int newQuality;
+          int avgFrameBitRate;
+          int targetFrameBits;
+
+          // keep track of average frame size and
+          // adjust encoder quality to get targetFrameBits bits per frame
+	  if (avgAdjFrameTimeMs)
+	    avgFrameBitRate = avgFrameBytes*8*1000 / avgAdjFrameTimeMs; // bits per second
+	  else
+	    avgFrameBitRate = avgFrameBytes*8*1000;
+
+          targetFrameBits = avgFrameBitRate * targetFrameTimeMs / 1000;
+          error = (frameBytes*8) - targetFrameBits; // error signal
+          aerror = PABS(error);
+
+          act = 0;
+          if (aerror > (targetFrameBits/8) ) {
+            if (aerror > (targetFrameBits/4) ) {
+              if (aerror > (targetFrameBits/2) ) {
+                act = error>0 ? 2 : -4;
+              }
+              else {
+                act = error>0 ? 1 : -2;
+              }
+            }
+            else {
+              act = error>0 ? 1 : -1;
+            }
+          }
+          newQuality = videoQuality + act;
+          newQuality = PMIN(PMAX(newQuality, videoQMin), videoQMax );
+          //PTRACE(3,"H261\tframeNum targetFrameBits frameBits videoQuality newQuality: "
+          //  << frameNum << " " << targetFrameBits << " " << (frameBytes*8) << " "
+          //  << videoQuality << " "  << newQuality );
+          videoQuality = newQuality;
+          videoEncoder->SetQualityLevel( videoQuality );
+
+          //PTRACE(3,"H261\tframeNum     avgFrameBitRate     bitRateHighLimit: "
+          //  << frameNum << " " << avgFrameBitRate << " " << bitRateHighLimit );
+        }
       }
     }
 
-  //NO data is waiting to be read. Go and get some with the read call.
-    if(rawDataChannel->Read(videoEncoder->GetFramePtr(), bytesInFrame)) {
-
+    //NO data is waiting to be read. Go and get some with the read call.
+    PTRACE(3,"H261\tRead frame from the video source.");
+    PTimeInterval grabStartTime = PTimer::Tick();
+    if (rawDataChannel->Read(videoEncoder->GetFramePtr(), bytesInFrame)) {
+      PTRACE(3,"H261\tSuccess. Read frame from the video source in "
+        << (PTimer::Tick() - grabStartTime).GetMilliSeconds() << " ms.");
+      packetNum = 0; // reset packet counter
       // If there is a Renderer attached, display the grabbed video.
       if( ((PVideoChannel *)rawDataChannel)->IsRenderOpen() ) {
-	ok=RenderFrame();                     //use data from grab process.
+        ok=RenderFrame(); //use data from grab process.
       }
-      videoEncoder->PreProcessOneFrame();        
-
-      if( videoBitRate != 0 && (videoBitRateControlModes & DynamicVideoQuality) ) {    
-        if( (frameNum % frameRateDivider) == 0 ) {
-	  frameBits=0;  //clear frame bits counter
-        }
-
-        // estimate fps every 5 frames
-        if( (frameNum % 5 ) == 4 ) {
-          timeFor5Frames = PTimer::Tick() - timeFor5Frames;
-          estFps = (float)(5000.0 / timeFor5Frames.GetMilliSeconds());
-          defBitsPerFrame = (int) (videoBitRate / estFps);
-          reqBitsPerFrame = defBitsPerFrame * frameRateDivider;
-          timeFor5Frames = PTimer::Tick();
-        }
-      
-        frameNum++;
-      }
+#ifdef INC_ENCODE
+      videoEncoder->PreProcessOneFrame(); //Prepare to generate H261 packets
+#else
+      videoEncoder->ProcessOneFrame(); //Generate H261 packets
+#endif
+      frameNum++;
     } else {
-      PTRACE(3,"H261\tFailed to read data from video grabber, close down video transmission thread.");      
+      PTRACE(1,"H261\tFailed to read data from video grabber, close down video transmission thread.");
       return FALSE;   //Read failed, return false.
     }
+    grabInterval = PTimer::Tick() - grabStartTime;
 
     /////////////////////////////////////////////////////////////////
     /// THIS VALUE MUST BE CALCULATED AND NOT JUST SET TO 29.97Hz!!!!
     /////////////////////////////////////////////////////////////////
     timestampDelta = 3003;
+    frameBytes = 0;
 
-  } else {  //if(!videoEncoder->MoreToIncEncode())...    There is more to inc encode
-    PThread::Current()->Sleep(5);  // Place a 5 ms interval between packets.
+  }
+  else {  //if(!videoEncoder->PacketsOutstanding())
+    if( 0 != bitRateHighLimit &&
+      (videoBitRateControlModes & AdaptivePacketDelay) )
+      ; // do nothing now, packet delay will be done later
+    else
+      PThread::Current()->Sleep(5);  // Place a 5 ms interval betwen
+        // packets of the same frame.
     timestampDelta = 0;
   }
-  // packets of the same frame.
-  videoEncoder->IncEncodeAndGetPacket(buffer,length); //get next packet from this frame.
+
+#ifdef INC_ENCODE
+  videoEncoder->IncEncodeAndGetPacket(buffer,length); //encode & get next packet
   frame.SetMarker(!videoEncoder->MoreToIncEncode());
-
-  PTRACE(6, "H261\t" << videoEncoder->GetCountPacketsOutStanding() << " packets outstanding" );
-
+#else
   videoEncoder->ReadOnePacket(buffer,length); //get next packet on list
   frame.SetMarker(!videoEncoder->PacketsOutStanding());
-
-  if( videoBitRate != 0 && (videoBitRateControlModes & DynamicVideoQuality) ) {    
-    frameBits += length << 3;     // count current frame bits
-
-#if PTRACING
-    bytesSent += length;
-    PTimeInterval pT = PTimer::Tick()-startTime;
-    if (pT.GetSeconds()>0 && videoBitRate) {
-      PTRACE(2, "H261\tTransmit video bit rate is "
-             << (bytesSent<<3)/ (1024 * pT.GetSeconds()) <<" k bps"
-	     << " on quality of "<< actualQuality );
-      startTime = PTimer::Tick();
-    }
 #endif
-  }
+  packetNum++;
 
-  // This is a simple workaround for bandwidth control. We try to limit the
-  // video bandwidth to certain value introducing a variable delay between
-  // packets
-  if( videoBitRate != 0 && 
-      (videoBitRateControlModes & AdaptivePacketDelay) ) {    
-    PTimeInterval sinceLastReturnInterval = PTimer::Tick() - lastReadReturn;
-    
-    // ms = (bytes * 8) / (bps / 1024)
-    PInt64 waitForNextPacket = (length*8)/(videoBitRate/1024)
-                              - sinceLastReturnInterval.GetMilliSeconds();
-    
-    PTRACE(3, "H261\tFrame bits: "          << length*8
-           << ", sinceLastReturnInterval: " << sinceLastReturnInterval.GetMilliSeconds()
-           << ", waitForNextPacket: "       << waitForNextPacket);
+  // Monitor and report bandwidth usage.
+  // If controlling bandwidth, limit the video bandwidth to
+  // bitRateHighLimit by introducing a variable delay between packets.
+  PTimeInterval currentTime;
+  if( 0 != bitRateHighLimit &&
+      (videoBitRateControlModes & AdaptivePacketDelay) ) {
+    PTimeInterval waitBeforeSending;
 
-    if (waitForNextPacket>0) {
-      PThread::Current()->Sleep(waitForNextPacket);
+    if (newTime != 0) { // calculate delay and wait
+      currentTime = PTimer::Tick();
+      waitBeforeSending = newTime - currentTime;
+      if (waitBeforeSending > 0) PThread::Current()->Sleep(waitBeforeSending);
+      // report bit rate & control error for previous packet
+      currentTime = PTimer::Tick(); //re-acquire current time after wait
+      //PTRACE(3, "H261\tBitRateControl Packet(" << oldPacketNum
+      //  << ") Bits: " << oldLength*8
+      //  << " Interval: " << (currentTime - oldTime).GetMilliSeconds()
+      //  << " Rate: " << oldLength*8000/(currentTime - oldTime).GetMilliSeconds()
+      //  << " Error: " << (currentTime - newTime).GetMilliSeconds()
+      //  << " Slept: " << waitBeforeSending.GetMilliSeconds() );
     }
-    
-    lastReadReturn = PTimer::Tick();
+    currentTime = PTimer::Tick(); // re-acquire current time due to possible PTRACE delay
+    // ms = (bytes * 8) / (bps / 1000)
+    if (bitRateHighLimit/1000)
+      newTime = currentTime + length*8/(bitRateHighLimit/1000);
+    else
+      newTime = currentTime + length*8;
   }
-
+  else {
+    // monitor & report bit rate
+    if (oldTime != 0) { // report bit rate for previous packet
+      PTimeInterval currentTime = PTimer::Tick();
+      //PTRACE(3, "H261\tBitRateReport  Packet(" << oldPacketNum
+      //  << ") Bits: " << oldLength*8
+      //  << " Interval: " << (currentTime - oldTime).GetMilliSeconds()
+      //  << " Rate: " << oldLength*8000/(currentTime - oldTime).GetMilliSeconds() );
+    }
+    currentTime = PTimer::Tick(); // re-acquire current time due to possible PTRACE delay
+  }
+  //oldPacketNum = packetNum; // used only for PTRACE
+  oldTime = currentTime;
+  oldLength = length;
+  frameBytes += length; // count current frame bytes
   return ok;
 }
 
@@ -905,7 +953,7 @@ BOOL H323_H261Codec::Write(const BYTE * buffer,
                            const RTP_DataFrame & frame,
                            unsigned & written)
 {
-  PWaitAndSignal mutex1(videoHandlerActive);  
+  PWaitAndSignal mutex1(videoHandlerActive);
 
   if( rawDataChannel == NULL ) {
     //Some other task has killed our videohandler. Exit.
@@ -919,7 +967,7 @@ BOOL H323_H261Codec::Write(const BYTE * buffer,
       << lastSequenceNumber << " != "
       << frame.GetSequenceNumber() << " Will recover.");
     lastSequenceNumber = frame.GetSequenceNumber();
-    SendMiscCommand(H245_MiscellaneousCommand_type::e_lostPartialPicture);
+    //    SendMiscCommand(H245_MiscellaneousCommand_type::e_lostPartialPicture);
   }
 
   // always indicate we have written the entire packet
@@ -955,7 +1003,7 @@ BOOL H323_H261Codec::Write(const BYTE * buffer,
   if (ok && frame.GetMarker()) {
     videoDecoder->sync();
     ndblk = videoDecoder->ndblk();
-    ok = RenderFrame();       
+    ok = RenderFrame();
     videoDecoder->resetndblk();
   }
 
@@ -980,9 +1028,9 @@ BOOL H323_H261Codec::Resize(int _width, int _height)
       rvts = new BYTE[nblk];
       memset(rvts, 0, nblk);
       if(videoDecoder!=NULL)
-	videoDecoder->marks(rvts);
+  videoDecoder->marks(rvts);
   }
- 
+
   return TRUE;
 }
 
@@ -1021,8 +1069,8 @@ BOOL H323_H261Codec::RenderFrame()
 
     if (direction == Encoder)
         ok = rawDataChannel->Write((const void *)videoEncoder->GetFramePtr(),0);
-      else 
-        ok = rawDataChannel->Write((const void *)videoDecoder->GetFramePtr(),0);    
+      else
+        ok = rawDataChannel->Write((const void *)videoDecoder->GetFramePtr(),0);
   }
 
   now = (now + 1) & 0xff;
@@ -1033,26 +1081,36 @@ BOOL H323_H261Codec::RenderFrame()
 
 void H323_H261Codec::SetTxQualityLevel(int qLevel)
 {
-  qualityLevel = PMIN(14, PMAX(qLevel,3));
-  
-  lowLimit = PMIN(10, qLevel - 2);
-  highLimit = qLevel + 12;
-  
+  videoQuality = PMIN(videoQMax, PMAX(qLevel, videoQMin));
+
   // If a video encoder is running and if there is no
-  // bandwidth limit, update the value
-  if ((videoBitRate == 0)&&(videoEncoder != NULL)) 
-    videoEncoder->SetQualityLevel (qualityLevel);
+  // dynamic video quality control, update the value
+  // in the encoder
+  if (!(DynamicVideoQuality & videoBitRateControlModes) && (videoEncoder != NULL))
+    videoEncoder->SetQualityLevel (videoQuality);
+  PTRACE(3, "H261\tvideoQuality set to " << videoQuality);
 }
 
+void H323_H261Codec::SetTxMinQuality(int qlevel) {
+  videoQMin = PMIN(videoQMax, PMAX(1, qlevel));
+  PTRACE(3, "H261\tvideoQMin set to " << videoQMin);
+}
+
+void H323_H261Codec::SetTxMaxQuality(int qlevel) {
+  videoQMax = PMAX(videoQMin, PMIN(31, qlevel));
+  PTRACE(3, "H261\tvideoQMax set to " << videoQMax);
+}
 
 void H323_H261Codec::SetBackgroundFill(int idle)
 {
   fillLevel = PMIN(99, PMAX(idle,1));
-  
+
   // If a video encoder is running and if there is no
-  // bandwidth limit, update the value
-  if ((videoBitRate == 0)&&(videoEncoder != NULL)) 
+  // dynamic video quality control, update the value
+  // in the encoder
+  if (!(DynamicVideoQuality & videoBitRateControlModes) && (NULL != videoEncoder))
     videoEncoder->SetBackgroundFill (idle);
+  PTRACE(3, "H261\tfillLevel set to " << fillLevel);
 }
 
 

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h450pdu.cxx,v $
- * Revision 1.2011  2002/11/10 11:33:19  robertj
+ * Revision 1.2012  2003/01/07 04:39:53  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.10  2002/11/10 11:33:19  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.9  2002/09/04 06:01:49  robertj
@@ -56,6 +59,9 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.19  2002/11/21 22:37:47  robertj
+ * Fixed problems with unrecognized invoke APDU, thanks Andrea Bondavalli
  *
  * Revision 1.18  2002/10/01 06:47:39  robertj
  * Fixed GNU compiler warning
@@ -489,6 +495,8 @@ BOOL result = TRUE;
       continue;
     }
 
+    H4501_InterpretationApdu & interpretation = supplementaryService.m_interpretationApdu;
+
     if (supplementaryService.m_serviceApdu.GetTag() == H4501_ServiceApdus::e_rosApdus) {
       H4501_ArrayOf_ROS& operations = (H4501_ArrayOf_ROS&) supplementaryService.m_serviceApdu;
 
@@ -499,7 +507,7 @@ BOOL result = TRUE;
 
         switch (operation.GetTag()) {
           case X880_ROS::e_invoke:
-            result = OnReceivedInvoke((X880_Invoke &)operation);
+            result = OnReceivedInvoke((X880_Invoke &)operation, interpretation);
             break;
 
           case X880_ROS::e_returnResult:
@@ -524,7 +532,7 @@ BOOL result = TRUE;
 }
 
 
-BOOL H450xDispatcher::OnReceivedInvoke(X880_Invoke & invoke)
+BOOL H450xDispatcher::OnReceivedInvoke(X880_Invoke & invoke, H4501_InterpretationApdu & interpretation)
 {
   BOOL result = TRUE;
   // Get the invokeId
@@ -546,17 +554,21 @@ BOOL H450xDispatcher::OnReceivedInvoke(X880_Invoke & invoke)
   if (invoke.m_opcode.GetTag() == X880_Code::e_local) {
     int opcode = ((PASN_Integer&) invoke.m_opcode).GetValue();
     if (!opcodeHandler.Contains(opcode)) {
-      PTRACE(2, "H4501\tInvoke of unsupported local opcode:\n  " << invoke);
-      SendInvokeReject(invokeId, 1 /*X880_InvokeProblem::e_unrecognisedOperation*/);
-      result = FALSE;
+      PTRACE(2, "H4501\tInvoke of unsupported local opcode:\n  " << invoke);	  
+      if (interpretation.GetTag() != H4501_InterpretationApdu::e_discardAnyUnrecognizedInvokePdu)
+        SendInvokeReject(invokeId, 1 /*X880_InvokeProblem::e_unrecognisedOperation*/);
+      if (interpretation.GetTag() == H4501_InterpretationApdu::e_clearCallIfAnyInvokePduNotRecognized)
+        result = FALSE;
     }
     else
       result = opcodeHandler[opcode].OnReceivedInvoke(opcode, invokeId, linkedId, argument);
   }
   else {
-    SendInvokeReject(invokeId, 1 /*X880_InvokeProblem::e_unrecognisedOperation*/);
+    if (interpretation.GetTag() != H4501_InterpretationApdu::e_discardAnyUnrecognizedInvokePdu)
+      SendInvokeReject(invokeId, 1 /*X880_InvokeProblem::e_unrecognisedOperation*/);
     PTRACE(2, "H4501\tInvoke of unsupported global opcode:\n  " << invoke);
-    result = FALSE;
+    if (interpretation.GetTag() == H4501_InterpretationApdu::e_clearCallIfAnyInvokePduNotRecognized)
+      result = FALSE;
   }
   return result;
 }

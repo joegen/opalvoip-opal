@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2013  2002/11/10 11:33:17  robertj
+ * Revision 1.2014  2003/01/07 04:39:53  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.12  2002/11/10 11:33:17  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.11  2002/09/16 02:52:35  robertj
@@ -66,6 +69,12 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.43  2002/11/19 01:48:15  robertj
+ * Allowed get/set of canonical anme and tool name.
+ *
+ * Revision 1.42  2002/11/12 22:10:48  robertj
+ * Updated documentation.
  *
  * Revision 1.41  2002/10/31 00:33:29  robertj
  * Enhanced jitter buffer system so operates dynamically between minimum and
@@ -485,6 +494,9 @@ class RTP_Session : public PObject
     );
 
     /**Get current size of the jitter buffer.
+       This returns the currently used jitter buffer delay in RTP timestamp
+       units. It will be some value between the minimum and maximum set in
+       the SetJitterBufferSize() function.
       */
     unsigned GetJitterBufferSize() const;
 
@@ -600,6 +612,22 @@ class RTP_Session : public PObject
     /**Get the ID for the RTP session.
       */
     unsigned GetSessionID() const { return sessionID; }
+
+    /**Get the canonical name for the RTP session.
+      */
+    PString GetCanonicalName() const;
+
+    /**Set the canonical name for the RTP session.
+      */
+    void SetCanonicalName(const PString & name);
+
+    /**Get the tool name for the RTP session.
+      */
+    PString GetToolName() const;
+
+    /**Set the tool name for the RTP session.
+      */
+    void SetToolName(const PString & name);
 
     /**Get the user data for the session.
       */
@@ -753,6 +781,8 @@ class RTP_Session : public PObject
     void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
 
     unsigned           sessionID;
+    PString            canonicalName;
+    PString            toolName;
     unsigned           referenceCount;
     RTP_UserData     * userData;
     RTP_JitterBuffer * jitter;

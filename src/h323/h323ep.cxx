@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2023  2002/11/10 11:33:19  robertj
+ * Revision 1.2024  2003/01/07 04:39:53  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.22  2002/11/10 11:33:19  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.21  2002/09/06 02:40:27  robertj
@@ -103,6 +106,31 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.149  2003/01/06 06:13:37  robertj
+ * Increased maximum possible jitter configuration to 10 seconds.
+ *
+ * Revision 1.148  2002/11/27 06:54:57  robertj
+ * Added Service Control Session management as per Annex K/H.323 via RAS
+ *   only at this stage.
+ * Added H.248 ASN and very primitive infrastructure for linking into the
+ *   Service Control Session management system.
+ * Added basic infrastructure for Annex K/H.323 HTTP transport system.
+ * Added Call Credit Service Control to display account balances.
+ *
+ * Revision 1.147  2002/11/19 07:07:44  robertj
+ * Changed priority so H.235 standard authentication used by preference.
+ *
+ * Revision 1.146  2002/11/15 06:53:24  robertj
+ * Fixed non facility redirect calls being able to be cleared!
+ *
+ * Revision 1.145  2002/11/15 05:17:26  robertj
+ * Added facility redirect support without changing the call token for access
+ *   to the call. If it gets redirected a new H323Connection object is
+ *   created but it looks like the same thing to an application.
+ *
+ * Revision 1.144  2002/11/14 22:06:08  robertj
+ * Increased default maximum number of ports.
  *
  * Revision 1.143  2002/11/10 08:10:43  robertj
  * Moved constants for "well known" ports to better place (OPAL change).
@@ -692,9 +720,12 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
 
   autoStartReceiveFax = autoStartTransmitFax = FALSE;
 
+  autoCallForward = TRUE;
   disableFastStart = FALSE;
   disableH245Tunneling = FALSE;
   disableH245inSetup = FALSE;
+  canDisplayAmountString = FALSE;
+  canEnforceDurationLimit = TRUE;
   callIntrusionProtectionLevel = 3; //H45011_CIProtectionLevel::e_fullProtection;
   defaultSendUserInputMode = H323Connection::SendUserInputAsString;
 
@@ -985,10 +1016,10 @@ H235Authenticators H323EndPoint::CreateAuthenticators()
 {
   H235Authenticators authenticators;
 
-  authenticators.Append(new H235AuthSimpleMD5);
 #if P_SSL
   authenticators.Append(new H235AuthProcedure1);
 #endif
+  authenticators.Append(new H235AuthSimpleMD5);
 
   return authenticators;
 }
@@ -999,7 +1030,12 @@ BOOL H323EndPoint::SetUpConnection(OpalCall & call,
                                    void * userData)
 {
   PTRACE(2, "H323\tMaking call to: " << remoteParty);
-  return InternalMakeCall(call, PString(), PString(), UINT_MAX, remoteParty, userData);
+  return InternalMakeCall(call,
+                          PString::Empty(),
+                          PString::Empty(),
+                          UINT_MAX,
+                          remoteParty,
+                          userData);
 }
 
 
@@ -1045,7 +1081,7 @@ BOOL H323EndPoint::NewIncomingConnection(OpalTransport * transport)
   }
 
   PTRACE(3, "H323\tCreated new connection: " << token);
-  connection->AttachSignalChannel(transport, TRUE);
+  connection->AttachSignalChannel(token, transport, TRUE);
 
   if (connection->HandleSignalPDU(pdu)) {
     // All subsequent PDU's should wait forever
@@ -1078,7 +1114,11 @@ BOOL H323EndPoint::SetupTransfer(const PString & oldToken,
 {
   PTRACE(2, "H323\tTransferring call to: " << remoteParty);
   return InternalMakeCall(*manager.CreateCall(),
-                          oldToken, callIdentity, UINT_MAX, remoteParty, userData);
+                          oldToken,
+                          callIdentity,
+                          UINT_MAX,
+                          remoteParty,
+                          userData);
 }
 
 
@@ -1107,35 +1147,56 @@ BOOL H323EndPoint::InternalMakeCall(OpalCall & call,
     return FALSE;
   }
 
+  H323Connection * connection;
+
   inUseFlag.Wait();
 
   PString newToken;
-  newToken.sprintf("localhost/%u", Q931::GenerateCallReference());
+  if (existingToken.IsEmpty()) {
+    do {
+      newToken = psprintf("localhost/%u", Q931::GenerateCallReference());
+    } while (connectionsActive.Contains(newToken));
+  }
+  else {
+    // Move old connection on token to new value and flag for removal
+    PString adjustedToken;
+    unsigned tieBreaker = 0;
+    do {
+      adjustedToken = newToken + "-replaced";
+      adjustedToken.sprintf("-%u", ++tieBreaker);
+    } while (connectionsActive.Contains(adjustedToken));
+    connectionsActive.SetAt(adjustedToken, connectionsActive.RemoveAt(newToken));
+//    call.Release(connection);
+    PTRACE(3, "H323\tOverwriting call " << newToken << ", renamed to " << adjustedToken);
+  }
 
-  H323Connection * connection = CreateConnection(call, newToken, userData, transport, NULL);
-  connectionsActive.SetAt(newToken, connection);
-
-  inUseFlag.Signal();
-
+  connection = CreateConnection(call, newToken, userData, transport, NULL);
   if (connection == NULL) {
     PTRACE(1, "H225\tEndpoint could not create connection, aborting setup.");
     return FALSE;
   }
 
   connection->Lock();
-  connection->AttachSignalChannel(transport, FALSE);
-  if (capabilityLevel == UINT_MAX)
-    connection->HandleTransferCall(existingToken, callIdentity);
-  else {
-    connection->HandleIntrudeCall(existingToken, callIdentity);
-    connection->IntrudeCall(capabilityLevel);
+
+  connectionsActive.SetAt(newToken, connection);
+
+  inUseFlag.Signal();
+
+  connection->AttachSignalChannel(newToken, transport, FALSE);
+
+  if (!callIdentity) {
+    if (capabilityLevel == UINT_MAX)
+      connection->HandleTransferCall(existingToken, callIdentity);
+    else {
+      connection->HandleIntrudeCall(existingToken, callIdentity);
+      connection->IntrudeCall(capabilityLevel);
+    }
   }
 
   PTRACE(3, "H323\tCreated new connection: " << newToken);
 
   new H225CallThread(*connection, *transport, alias, address);
 
-  connection->Unlock();
   return TRUE;
 }
 
@@ -1178,8 +1239,11 @@ BOOL H323EndPoint::IntrudeCall(const PString & remoteParty,
                                void * userData)
 {
   return InternalMakeCall(*manager.CreateCall(),
-                          PString(), PString(), capabilityLevel,
-                          remoteParty, userData);
+                          PString::Empty(),
+                          PString::Empty(),
+                          capabilityLevel,
+                          remoteParty,
+                          userData);
 }
 
 
@@ -1324,6 +1388,24 @@ BOOL H323EndPoint::OnConnectionForwarded(H323Connection & /*connection*/,
 }
 
 
+BOOL H323EndPoint::ForwardConnection(H323Connection & connection,
+                                     const PString & forwardParty,
+                                     const H323SignalPDU & /*pdu*/)
+{
+  if (!InternalMakeCall(connection.GetCall(),
+                        connection.GetCallToken(),
+                        PString::Empty(),
+                        UINT_MAX,
+                        forwardParty,
+                        NULL))
+    return FALSE;
+
+  connection.SetCallEndReason(H323Connection::EndedByCallForwarded);
+
+  return TRUE;
+}
+
+
 void H323EndPoint::OnConnectionEstablished(H323Connection & /*connection*/,
                                            const PString & /*token*/)
 {
@@ -1395,6 +1477,41 @@ void H323EndPoint::OnClosedLogicalChannel(H323Connection & /*connection*/,
 void H323EndPoint::OnRTPStatistics(const H323Connection & /*connection*/,
                                    const RTP_Session & /*session*/) const
 {
+}
+
+
+void H323EndPoint::OnHTTPServiceControl(unsigned /*opeartion*/,
+                                        unsigned /*sessionId*/,
+                                        const PString & /*url*/)
+{
+}
+
+
+void H323EndPoint::OnCallCreditServiceControl(const PString & /*amount*/, BOOL /*mode*/)
+{
+}
+
+
+void H323EndPoint::OnServiceControlSession(unsigned type,
+                                           unsigned sessionId,
+                                           const H323ServiceControlSession & session,
+                                           H323Connection * connection)
+{
+  session.OnChange(type, sessionId, *this, connection);
+}
+
+
+H323ServiceControlSession * H323EndPoint::CreateServiceControlSession(const H225_ServiceControlDescriptor & contents)
+{
+  switch (contents.GetTag()) {
+    case H225_ServiceControlDescriptor::e_url :
+      return new H323HTTPServiceControl(contents);
+
+    case H225_ServiceControlDescriptor::e_callCreditServiceControl :
+      return new H323CallCreditServiceControl(contents);
+  }
+
+  return NULL;
 }
 
 

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2016  2002/11/10 11:33:19  robertj
+ * Revision 1.2017  2003/01/07 04:39:53  robertj
+ * Updated to OpenH323 v1.11.2
+ *
+ * Revision 2.15  2002/11/10 11:33:19  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.14  2002/09/04 06:01:49  robertj
@@ -75,6 +78,12 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.11  2002/12/03 09:20:01  craigs
+ * Fixed problem with RFC2833 and a dynamic RTP type using the same RTP payload number
+ *
+ * Revision 1.10  2002/12/02 03:06:26  robertj
+ * Fixed over zealous removal of code when NO_AUDIO_CODECS set.
  *
  * Revision 1.9  2002/10/30 05:54:17  craigs
  * Fixed compatibilty problems with G.723.1 6k3 and 5k3
@@ -136,8 +145,6 @@ OpalMediaFormat const OpalPCM16(
   8, // 1 millisecond
   OpalMediaFormat::AudioClockRate
 );
-
-#if !defined(NO_H323_AUDIO_CODECS) && !defined(NO_OPAL_AUDIO_CODECS)
 
 OpalMediaFormat const OpalG711uLaw(
   OPAL_G711_ULAW_64K,
@@ -283,8 +290,6 @@ OpalMediaFormat const OpalGSM0610(
   OpalMediaFormat::AudioClockRate
 );
 
-#endif // NO_H323_AUDIO_CODECS
-
 OpalMediaFormat const OpalRFC2833(
   OPAL_RFC2833,
   0,
@@ -296,7 +301,6 @@ OpalMediaFormat const OpalRFC2833(
   150*8,  // 150 millisecond
   OpalMediaFormat::AudioClockRate
 );
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -359,17 +363,34 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
     return;
   }
 
-  if (rtpPayloadType == RTP_DataFrame::DynamicBase) {
-    // Are dynamic RTP payload, find unique value in registered list.
-    do {
-      for (i = 0; i < registeredFormats.GetSize(); i++) {
-        if (registeredFormats[i].GetPayloadType() == rtpPayloadType) {
-          rtpPayloadType = (RTP_DataFrame::PayloadTypes)(rtpPayloadType+1);
-          break;
-        }
-      }
-    } while (i < registeredFormats.GetSize());
+  // assume non-dynamic payload types are correct and do not need deconflicting
+  if (rtpPayloadType < RTP_DataFrame::DynamicBase) {
+    registeredFormats.OpalMediaFormatBaseList::Append(this);
+    return;
   }
+
+  // find the next unused dynamic number, and find anything with the new 
+  // rtp payload type if it is explicitly required
+  OpalMediaFormat * match = NULL;
+  RTP_DataFrame::PayloadTypes nextUnused = RTP_DataFrame::DynamicBase;
+  do {
+    for (i = 0; i < registeredFormats.GetSize(); i++) {
+      if (registeredFormats[i].GetPayloadType() == nextUnused) {
+        nextUnused = (RTP_DataFrame::PayloadTypes)(nextUnused + 1);
+        break;
+      }
+      if ((rtpPayloadType >= RTP_DataFrame::DynamicBase) && 
+          (registeredFormats[i].GetPayloadType() == rtpPayloadType))
+        match = &registeredFormats[i];
+    }
+  } while (i < registeredFormats.GetSize());
+
+  // if new format requires a specific payload type in the dynamic range, 
+  // then move the old format to the next unused format
+  if (match != NULL)
+    match->rtpPayloadType = nextUnused;
+  else
+    rtpPayloadType = nextUnused;
 
   registeredFormats.OpalMediaFormatBaseList::Append(this);
 }
@@ -392,7 +413,6 @@ OpalMediaFormat & OpalMediaFormat::operator=(const char * wildcard)
 {
   return operator=(PString(wildcard));
 }
-
 
 OpalMediaFormat & OpalMediaFormat::operator=(const PString & wildcard)
 {
