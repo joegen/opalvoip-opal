@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2010  2002/01/14 02:23:00  robertj
+ * Revision 1.2011  2002/01/22 05:11:34  robertj
+ * Revamp of user input API triggered by RFC2833 support
+ *
+ * Revision 2.9  2002/01/14 02:23:00  robertj
  * Fixed problem in not getting fast started medai in Alerting
  *
  * Revision 2.8  2001/11/15 07:01:55  robertj
@@ -357,6 +360,47 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
   inUseFlag.Signal();
 
   return patchedOne;
+}
+
+
+void OpalCall::OnUserInputString(OpalConnection & connection,
+                                    const PString & value)
+{
+  inUseFlag.Wait();
+
+  if (activeConnections.GetSize() == 1)
+    connection.SetUserInput(value);
+  else {
+    for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
+      OpalConnection & conn = activeConnections[i];
+      if (&connection != &conn)
+        conn.SendUserInputString(value);
+    }
+  }
+
+  inUseFlag.Signal();
+}
+
+
+void OpalCall::OnUserInputTone(OpalConnection & connection,
+                               char tone,
+                               int duration)
+{
+  inUseFlag.Wait();
+
+  if (activeConnections.GetSize() == 1) {
+    if (duration > 0)
+      connection.OnUserInputString(tone);
+  }
+  else {
+    for (PINDEX i = 0; i < activeConnections.GetSize(); i++) {
+      OpalConnection & conn = activeConnections[i];
+      if (&connection != &conn)
+        conn.SendUserInputTone(tone, duration);
+    }
+  }
+
+  inUseFlag.Signal();
 }
 
 
