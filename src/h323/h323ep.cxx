@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2031  2004/06/04 06:54:18  csoutheren
+ * Revision 1.2032  2004/06/05 14:32:32  rjongbloed
+ * Added ability to have separate gatekeeper username to endpoint local alias name.
+ *
+ * Revision 2.30  2004/06/04 06:54:18  csoutheren
  * Migrated updates from OpenH323 1.14.1
  *
  * Revision 2.29  2004/04/07 08:21:03  rjongbloed
@@ -995,7 +998,7 @@ H323Gatekeeper * H323EndPoint::InternalCreateGatekeeper(H323Transport * transpor
 
   H323Gatekeeper * gk = CreateGatekeeper(transport);
 
-  gk->SetPassword(gatekeeperPassword);
+  gk->SetPassword(gatekeeperPassword, gatekeeperUsername);
 
   return gk;
 }
@@ -1053,12 +1056,13 @@ BOOL H323EndPoint::RemoveGatekeeper(int reason)
 }
 
 
-void H323EndPoint::SetGatekeeperPassword(const PString & password)
+void H323EndPoint::SetGatekeeperPassword(const PString & password, const PString & username)
 {
+  gatekeeperUsername = username;
   gatekeeperPassword = password;
 
   if (gatekeeper != NULL) {
-    gatekeeper->SetPassword(gatekeeperPassword);
+    gatekeeper->SetPassword(gatekeeperPassword, gatekeeperUsername);
     if (gatekeeper->IsRegistered()) // If we are registered send a URQ
       gatekeeper->UnregistrationRequest(H225_UnregRequestReason::e_reregistrationRequired);
     InternalRegisterGatekeeper(gatekeeper, TRUE);
