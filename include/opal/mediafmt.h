@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 1.2002  2001/08/01 05:51:39  robertj
+ * Made OpalMediaFormatList class global to help with documentation.
+ *
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.3  2001/05/11 04:43:41  robertj
@@ -51,6 +54,72 @@
 #include <rtp/rtp.h>
 
 
+class OpalMediaFormat;
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+PLIST(OpalMediaFormatBaseList, OpalMediaFormat);
+
+/**This class contains a list of media formats.
+  */
+class OpalMediaFormatList : public OpalMediaFormatBaseList
+{
+    PCLASSINFO(OpalMediaFormatList, OpalMediaFormatBaseList);
+  public:
+  /**@name Construction */
+  //@{
+    /**Create a new media format list.
+     */
+    OpalMediaFormatList();
+
+    OpalMediaFormatList(const OpalMediaFormatList & l) : OpalMediaFormatBaseList(l) { }
+  //@}
+
+  /**@name Operations */
+  //@{
+    /**Add a format to the list.
+       If the format is invalid or already in the list then it is not added.
+      */
+    OpalMediaFormatList & operator+=(
+      const OpalMediaFormat & format    /// Format to add
+    );
+
+    /**Remove a format to the list.
+       If the format is invalid or not in the list then this does nothing.
+      */
+    OpalMediaFormatList & operator-=(
+      const OpalMediaFormat & format    /// Format to remove
+    );
+
+    /**Get a format position matching the wildcard is in the list.
+       The wildcard string is a simple substring match using the '*'
+       character. For example: "G.711*" would match "G.711-uLaw-64k" and
+       "G.711-ALaw-64k".
+
+       Returns P_MAX_INDEX if not in list.
+      */
+    PINDEX FindFormat(
+      const PString & wildcard    /// Wildcard string name.
+    ) const;
+
+    /**Determine if a format matching the wildcard is in the list.
+       The wildcard string is a simple substring match using the '*'
+       character. For example: "G.711*" would match "G.711-uLaw-64k" and
+       "G.711-ALaw-64k".
+      */
+    BOOL HasFormat(
+      const PString & wildcard    /// Wildcard string name.
+    ) const { return FindFormat(wildcard) != P_MAX_INDEX; }
+  //@}
+
+  private:
+    virtual PINDEX Append(PObject *) { return P_MAX_INDEX; }
+    virtual PINDEX Insert(const PObject &, PObject *) { return P_MAX_INDEX; }
+    virtual PINDEX InsertAt(PINDEX, PObject *) { return P_MAX_INDEX; }
+    virtual BOOL SetAt(PINDEX, PObject *) { return FALSE; }
+};
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -70,13 +139,38 @@ class OpalMediaFormat : public PCaselessString
       */
     OpalMediaFormat();
 
-    /**A constructor that only has a string name will search through the
-       RegisteredMediaFormats list for the full specification so the other
-       information fields can be set from the database.
+    /**Construct a media format, searching database for information.
+       This constructor will search through the RegisteredMediaFormats list
+       for the wildcard match of the parameter string, if found the other
+       information fields are set from the database. If not found then the
+       ancestor string is set to the empty string.
+
+       The wildcard string is a simple substring match using the '*'
+       character. For example: "G.711*" would match the first of
+       "G.711-uLaw-64k" and "G.711-ALaw-64k" to have been registered.
+
+       Note it is impossible to determine the order of registration so this
+       should not be relied on.
       */
     OpalMediaFormat(
-      const char * search,  /// Name to search for
-      BOOL exact = TRUE     /// Flag for if search is to match name exactly
+      const char * wildcard  /// Wildcard name to search for
+    );
+
+    /**Construct a media format, searching database for information.
+       This constructor will search through the RegisteredMediaFormats list
+       for the wildcard match of the parameter string, if found the other
+       information fields are set from the database. If not found then the
+       ancestor string is set to the empty string.
+
+       The wildcard string is a simple substring match using the '*'
+       character. For example: "G.711*" would match the first of
+       "G.711-uLaw-64k" and "G.711-ALaw-64k" to have been registered.
+
+       Note it is impossible to determine the order of registration so this
+       should not be relied on.
+      */
+    OpalMediaFormat(
+      const PString & wildcard  /// Wildcard name to search for
     );
 
     /**This form of the constructor will register the full details of the
@@ -104,17 +198,18 @@ class OpalMediaFormat : public PCaselessString
     );
 
     /**Search for the specified format name.
-       This is equivalent to going fmt = OpalMediaFormat(search, TRUE);
+       This is equivalent to going fmt = OpalMediaFormat(search);
       */
     OpalMediaFormat & operator=(
-      const char * search
+      const char * wildcard  /// Wildcard name to search for
     );
 
-    /**Return TRUE if media format info is valid. This may be used if the
-       single string constructor is used to check that it matched something
-       in the registered media formats database.
+    /**Search for the specified format name.
+       This is equivalent to going fmt = OpalMediaFormat(search);
       */
-    BOOL IsValid() const { return rtpPayloadType < RTP_DataFrame::MaxPayloadType; }
+    OpalMediaFormat & operator=(
+      const PString & wildcard  /// Wildcard name to search for
+    );
 
     /**Get the RTP payload type that is to be used for this media format.
        This will either be an intrinsic one for the media format eg GSM or it
@@ -122,6 +217,12 @@ class OpalMediaFormat : public PCaselessString
        uniqueue amongst the registered media formats.
       */
     RTP_DataFrame::PayloadTypes GetPayloadType() const { return rtpPayloadType; }
+
+    enum {
+      DefaultAudioSessionID = 1,
+      DefaultVideoSessionID = 2,
+      DefaultDataSessionID  = 3
+    };
 
     /**Get the default session ID for media format.
       */
@@ -156,21 +257,9 @@ class OpalMediaFormat : public PCaselessString
       VideoTimeUnits = 90  // 90kHz sample rate
     };
 
-
-    PLIST(BaseList, OpalMediaFormat);
-    class List : public BaseList
-    {
-        PCLASSINFO(List, BaseList);
-      public:
-        List(BOOL disallow = FALSE);
-        List(const List & l) : BaseList(l) { }
-        List & operator+=(const OpalMediaFormat & format);
-        List & operator-=(const OpalMediaFormat & format);
-    };
-
     /**Get the list of media formats that have been registered.
       */
-    inline static const List & GetRegisteredMediaFormats() { return GetMediaFormatsList(); }
+    inline static const OpalMediaFormatList & GetRegisteredMediaFormats() { return GetMediaFormatsList(); }
 
 
   protected:
@@ -182,25 +271,34 @@ class OpalMediaFormat : public PCaselessString
     unsigned frameTime;
     unsigned timeUnits;
 
-    static List & GetMediaFormatsList();
+  private:
+    static OpalMediaFormatList & GetMediaFormatsList();
 };
 
 
+// List of known media formats
+
 #define OPAL_PCM16         "PCM-16"
 #define OPAL_G711_ULAW_64K "G.711-uLaw-64k"
-#define OPAL_G711_ALAW_64K "G.711-uLaw-64k"
+#define OPAL_G711_ALAW_64K "G.711-ALaw-64k"
 #define OPAL_G728          "G.728"
+#define OPAL_G729          "G.729"
 #define OPAL_G729A         "G.729A"
+#define OPAL_G729B         "G 729B"
 #define OPAL_G729AB        "G 729A/B"
 #define OPAL_G7231         "G.723.1"
+#define OPAL_GSM0610       "GSM-06.10"
 
 extern OpalMediaFormat const OpalPCM16;
 extern OpalMediaFormat const OpalG711uLaw;
 extern OpalMediaFormat const OpalG711ALaw;
 extern OpalMediaFormat const OpalG728;
+extern OpalMediaFormat const OpalG729;
 extern OpalMediaFormat const OpalG729A;
+extern OpalMediaFormat const OpalG729B;
 extern OpalMediaFormat const OpalG729AB;
 extern OpalMediaFormat const OpalG7231;
+extern OpalMediaFormat const OpalGSM0610;
 
 
 #endif  // __OPAL_MEDIAFMT_H
