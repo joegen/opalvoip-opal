@@ -27657,6 +27657,7 @@ EXPORTS
     ?Open@OpalListenerTCP@@UAEHABVPNotifier@@H@Z @27214 NONAME
     ?Open@OpalListenerUDP@@UAEHABVPNotifier@@H@Z @27215 NONAME
     ?Open@OpalMediaStream@@UAEHXZ @27216 NONAME
+    ?Open@OpalRTPMediaStream@@UAEHXZ @29354 NONAME
     ?Open@OpalVideoMediaStream@@UAEHXZ @27217 NONAME
     ?Open@OpalVoipBlasterDevice@@UAEHABVPString@@@Z @27218 NONAME
     ?Open@RTP_UDP@@QAEHVAddress@PIPSocket@@GGEPAVPSTUNClient@@PAVRTP_QOS@@@Z @27219 NONAME
@@ -27911,7 +27912,7 @@ EXPORTS
     ?RemoveSink@OpalMediaPatch@@QAEXPAVOpalMediaStream@@@Z @27462 NONAME
     ?RemoveTransaction@SIPConnection@@QAEXPAVSIPTransaction@@@Z @27463 NONAME
     ?RemoveTransaction@SIPEndPoint@@QAEXPAVSIPTransaction@@@Z @29324 NONAME
-    ?Reopen@RTP_UDP@@QAEXH@Z @27464 NONAME
+    ?Reopen@RTP_UDP@@UAEXH@Z @29355 NONAME
     ?Reorder@H323Capabilities@@QAEXABVPStringArray@@@Z @27465 NONAME
     ?Reorder@OpalMediaFormatList@@QAEXABVPStringArray@@@Z @27466 NONAME
     ?ReorderCapabilities@H323EndPoint@@QAEXABVPStringArray@@@Z @27467 NONAME
