@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2025  2004/03/13 06:25:50  rjongbloed
+ * Revision 1.2026  2004/04/18 13:31:28  rjongbloed
+ * Added new end call value from OpenH323.
+ *
+ * Revision 2.24  2004/03/13 06:25:50  rjongbloed
  * Slight rearrangement of local party name and alias list to beter match common
  *   behaviour in ancestor.
  * Abstracted local party name for endpoint into ancestor from H.,323.
@@ -183,6 +186,7 @@ class OpalConnection : public PObject
       EndedByTemporaryFailure,  /// The remote failed temporarily app may retry
       EndedByQ931Cause,         /// The remote ended the call with unmapped Q.931 cause code
       EndedByDurationLimit,     /// Call cleared due to an enforced duration limit
+      EndedByInvalidConferenceID, /// Call cleared due to invalid conference ID
       NumCallEndReasons
     };
 
