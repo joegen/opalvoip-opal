@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2026  2003/03/07 05:52:35  robertj
+ * Revision 1.2027  2003/03/17 10:27:00  robertj
+ * Added video support.
+ *
+ * Revision 2.25  2003/03/07 05:52:35  robertj
  * Made sure connection is locked with all function calls that are across
  *   the "call" object.
  *
@@ -430,15 +433,17 @@ OpalMediaFormatList SIPConnection::GetMediaFormats() const
 }
 
 
-OpalMediaStream * SIPConnection::CreateMediaStream(BOOL isSource, unsigned sessionID)
+OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
+                                                   unsigned sessionID,
+                                                   BOOL isSource)
 {
   if (ownerCall.IsMediaBypassPossible(*this, sessionID))
-    return new OpalNullMediaStream(isSource, sessionID);
+    return new OpalNullMediaStream(mediaFormat, sessionID, isSource);
 
   if (rtpSessions.GetSession(sessionID) == NULL)
     return NULL;
 
-  return new OpalRTPMediaStream(isSource, *rtpSessions.GetSession(sessionID),
+  return new OpalRTPMediaStream(mediaFormat, isSource, *rtpSessions.GetSession(sessionID),
                                 endpoint.GetManager().GetMinAudioJitterDelay(),
                                 endpoint.GetManager().GetMaxAudioJitterDelay());
 }

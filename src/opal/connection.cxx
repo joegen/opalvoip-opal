@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2024  2003/03/07 08:12:54  robertj
+ * Revision 1.2025  2003/03/17 10:27:00  robertj
+ * Added video support.
+ *
+ * Revision 2.23  2003/03/07 08:12:54  robertj
  * Changed DTMF entry so single # returns itself instead of an empty string.
  *
  * Revision 2.22  2003/03/06 03:57:47  robertj
@@ -367,36 +370,38 @@ BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForm
 
   PTRACE(3, "OpalCon\tOpenSourceMediaStream for session " << sessionID << " on " << *this);
 
-  OpalMediaStream * stream = CreateMediaStream(TRUE, sessionID);
+  OpalMediaFormat sourceFormat, destinationFormat;
+  if (!OpalTranscoder::SelectFormats(sessionID,
+                                     GetMediaFormats(),
+                                     mediaFormats,
+                                     sourceFormat,
+                                     destinationFormat)) {
+    PTRACE(2, "OpalCon\tOpenSourceMediaStream session " << sessionID
+           << ", could not find compatible media format:\n"
+              "  source formats=" << setfill(',') << GetMediaFormats() << "\n"
+              "   sink  formats=" << mediaFormats << setfill(' '));
+    return FALSE;
+  }
+
+  PTRACE(3, "OpalCon\tSelected media stream "
+         << sourceFormat << " -> " << destinationFormat);
+
+  OpalMediaStream * stream = CreateMediaStream(sourceFormat, sessionID, TRUE);
   if (stream == NULL) {
     PTRACE(1, "OpalCon\tCreateMediaStream returned NULL for session "
            << sessionID << " on " << *this);
     return FALSE;
   }
 
-  OpalMediaFormat sourceFormat, destinationFormat;
-  if (OpalTranscoder::SelectFormats(sessionID,
-                                    GetMediaFormats(),
-                                    mediaFormats,
-                                    sourceFormat,
-                                    destinationFormat)) {
-    PTRACE(3, "OpalCon\tSelected media stream "
-           << sourceFormat << " -> " << destinationFormat);
-    if (stream->Open(sourceFormat)) {
-      if (OnOpenMediaStream(*stream)) {
-        mediaStreams.Append(stream);
-        return TRUE;
-      }
+  if (stream->Open()) {
+    if (OnOpenMediaStream(*stream)) {
+      mediaStreams.Append(stream);
+      return TRUE;
     }
-    else {
-      PTRACE(2, "OpalCon\tSource media stream open of " << sourceFormat << " failed.");
-    }
+    PTRACE(2, "OpalCon\tSource media OnOpenMediaStream open of " << sourceFormat << " failed.");
   }
   else {
-    PTRACE(2, "OpalCon\tOpenSourceMediaStream session " << sessionID
-           << ", could not find compatible media format:\n"
-              "  source formats=" << setfill(',') << GetMediaFormats() << "\n"
-              "   sink  formats=" << mediaFormats << setfill(' '));
+    PTRACE(2, "OpalCon\tSource media stream open of " << sourceFormat << " failed.");
   }
 
   delete stream;
@@ -409,34 +414,36 @@ OpalMediaStream * OpalConnection::OpenSinkMediaStream(OpalMediaStream & source)
   unsigned sessionID = source.GetSessionID();
   PTRACE(3, "OpalCon\tOpenSinkMediaStream " << *this << " session=" << sessionID);
 
-  OpalMediaStream * stream = CreateMediaStream(FALSE, sessionID);
+  OpalMediaFormat sourceFormat, destinationFormat;
+  if (!OpalTranscoder::SelectFormats(sessionID,
+                                     source.GetMediaFormat(), // Only use selected format on source
+                                     GetMediaFormats(),
+                                     sourceFormat,
+                                     destinationFormat)) {
+    PTRACE(2, "OpalCon\tOpenSinkMediaStream, could not find compatible media format:\n"
+              "  source formats=" << setfill(',') << source.GetMediaFormat() << "\n"
+              "   sink  formats=" << GetMediaFormats() << setfill(' '));
+    return NULL;
+  }
+
+  PTRACE(3, "OpalCon\tOpenSinkMediaStream, selected "
+         << sourceFormat << " -> " << destinationFormat);
+
+  OpalMediaStream * stream = CreateMediaStream(destinationFormat, sessionID, FALSE);
   if (stream == NULL) {
     PTRACE(1, "OpalCon\tCreateMediaStream " << *this << " returned NULL");
     return FALSE;
   }
 
-  OpalMediaFormat sourceFormat, destinationFormat;
-  if (OpalTranscoder::SelectFormats(sessionID,
-                                    source.GetMediaFormat(), // Only use selected format on source
-                                    GetMediaFormats(),
-                                    sourceFormat,
-                                    destinationFormat)) {
-    PTRACE(3, "OpalCon\tOpenSinkMediaStream, selected "
-           << sourceFormat << " -> " << destinationFormat);
-    if (stream->Open(destinationFormat)) {
-      if (OnOpenMediaStream(*stream)) {
-        mediaStreams.Append(stream);
-        return stream;
-      }
+  if (stream->Open()) {
+    if (OnOpenMediaStream(*stream)) {
+      mediaStreams.Append(stream);
+      return stream;
     }
-    else {
-      PTRACE(2, "OpalCon\tSink media stream open of " << destinationFormat << " failed.");
-    }
+    PTRACE(2, "OpalCon\tSink media stream OnOpenMediaStream of " << destinationFormat << " failed.");
   }
   else {
-    PTRACE(2, "OpalCon\tOpenSinkMediaStream, could not find compatible media format:\n"
-              "  source formats=" << setfill(',') << source.GetMediaFormat() << "\n"
-              "   sink  formats=" << GetMediaFormats() << setfill(' '));
+    PTRACE(2, "OpalCon\tSink media stream open of " << destinationFormat << " failed.");
   }
 
   delete stream;
@@ -447,8 +454,29 @@ OpalMediaStream * OpalConnection::OpenSinkMediaStream(OpalMediaStream & source)
 void OpalConnection::StartMediaStreams()
 {
   for (PINDEX i = 0; i < mediaStreams.GetSize(); i++)
-    mediaStreams[i].Start();
+    mediaStreams[i].Open();
   PTRACE(2, "OpalCon\tMedia stream threads started.");
+}
+
+
+OpalMediaStream * OpalConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
+                                                    unsigned sessionID,
+                                                    BOOL isSource)
+{
+  if (sessionID == OpalMediaFormat::DefaultVideoSessionID) {
+    if (isSource) {
+      PVideoInputDevice * videoDevice = CreateVideoInputDevice();
+      if (videoDevice != NULL)
+        return new OpalVideoMediaStream(mediaFormat, sessionID, videoDevice, NULL);
+    }
+    else {
+      PVideoOutputDevice * videoDevice = CreateVideoOutputDevice();
+      if (videoDevice != NULL)
+        return new OpalVideoMediaStream(mediaFormat, sessionID, NULL, videoDevice);
+    }
+  }
+
+  return NULL;
 }
 
 
@@ -509,6 +537,22 @@ BOOL OpalConnection::GetMediaInformation(unsigned sessionID,
 }
 
 
+void OpalConnection::AddVideoMediaFormats(OpalMediaFormatList & mediaFormats) const
+{
+  endpoint.AddVideoMediaFormats(*this, mediaFormats);
+}
+
+
+PVideoInputDevice * OpalConnection::CreateVideoInputDevice()
+{
+  return endpoint.CreateVideoInputDevice(*this);
+}
+
+
+PVideoOutputDevice * OpalConnection::CreateVideoOutputDevice()
+{
+  return endpoint.CreateVideoOutputDevice(*this);
+}
 
 
 RTP_Session * OpalConnection::GetSession(unsigned sessionID) const
