@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2015  2003/03/17 10:26:59  robertj
+ * Revision 1.2016  2003/04/16 02:30:21  robertj
+ * Fixed comments on ReadData() and WriteData() functions.
+ *
+ * Revision 2.14  2003/03/17 10:26:59  robertj
  * Added video support.
  *
  * Revision 2.13  2002/11/10 11:33:17  robertj
@@ -187,7 +190,7 @@ class OpalMediaStream : public PObject
       RTP_DataFrame & packet
     );
 
-    /**Read an RTP frame of data from the source media stream.
+    /**Read raw media data from the source media stream.
        The default behaviour simply calls ReadPacket() on the data portion of the
        RTP_DataFrame and sets the frames timestamp and marker from the internal
        member variables of the media stream class.
@@ -198,7 +201,7 @@ class OpalMediaStream : public PObject
       PINDEX & length   /// Length of data actually read
     );
 
-    /**Write an RTP frame of data to the sink media stream.
+    /**Write raw media data to the sink media stream.
        The default behaviour calls WritePacket() on the data portion of the
        RTP_DataFrame and and sets the internal timestamp and marker from the
        member variables of the media stream class.
@@ -319,7 +322,7 @@ class OpalNullMediaStream : public OpalMediaStream
 
   /**@name Overrides of OpalMediaStream class */
   //@{
-    /**Read an RTP frame of data from the source media stream.
+    /**Read raw media data from the source media stream.
        The default behaviour does nothing and returns FALSE.
       */
     virtual BOOL ReadData(
@@ -328,7 +331,7 @@ class OpalNullMediaStream : public OpalMediaStream
       PINDEX & length   /// Length of data actually read
     );
 
-    /**Write an RTP frame of data to the sink media stream.
+    /**Write raw media data to the sink media stream.
        The default behaviour does nothing and returns FALSE.
       */
     virtual BOOL WriteData(
@@ -446,7 +449,7 @@ class OpalLineMediaStream : public OpalMediaStream
       */
     virtual BOOL Close();
 
-    /**Read an RTP frame of data from the source media stream.
+    /**Read raw media data from the source media stream.
        The default behaviour reads from the OpalLine object.
       */
     virtual BOOL ReadData(
@@ -455,7 +458,7 @@ class OpalLineMediaStream : public OpalMediaStream
       PINDEX & length   /// Length of data actually read
     );
 
-    /**Write an RTP frame of data to the sink media stream.
+    /**Write raw media data to the sink media stream.
        The default behaviour writes to the OpalLine object.
       */
     virtual BOOL WriteData(
@@ -506,7 +509,7 @@ class OpalRawMediaStream : public OpalMediaStream
   public:
   /**@name Overrides of OpalMediaStream class */
   //@{
-    /**Read an RTP frame of data from the source media stream.
+    /**Read raw media data from the source media stream.
        The default behaviour reads from the PChannel object.
       */
     virtual BOOL ReadData(
@@ -515,7 +518,7 @@ class OpalRawMediaStream : public OpalMediaStream
       PINDEX & length   /// Length of data actually read
     );
 
-    /**Write an RTP frame of data to the sink media stream.
+    /**Write raw media data to the sink media stream.
        The default behaviour writes to the PChannel object.
       */
     virtual BOOL WriteData(
@@ -665,7 +668,7 @@ class OpalVideoMediaStream : public OpalMediaStream
       */
     virtual BOOL Open();
 
-    /**Read an RTP frame of data from the source media stream.
+    /**Read raw media data from the source media stream.
        The default behaviour simply calls ReadPacket() on the data portion of the
        RTP_DataFrame and sets the frames timestamp and marker from the internal
        member variables of the media stream class.
@@ -676,7 +679,7 @@ class OpalVideoMediaStream : public OpalMediaStream
       PINDEX & length   /// Length of data actually read
     );
 
-    /**Write an RTP frame of data to the sink media stream.
+    /**Write raw media data to the sink media stream.
        The default behaviour calls WritePacket() on the data portion of the
        RTP_DataFrame and and sets the internal timestamp and marker from the
        member variables of the media stream class.
