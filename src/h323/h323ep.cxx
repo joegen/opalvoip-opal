@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2002  2001/07/30 07:22:25  robertj
+ * Revision 1.2003  2001/08/01 05:14:19  robertj
+ * Moved media formats list from endpoint to connection.
+ * Fixed accept of call to early enough to set connections capabilities.
+ *
+ * Revision 2.1  2001/07/30 07:22:25  robertj
  * Abstracted listener management from H.323 to OpalEndPoint class.
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
@@ -514,12 +518,6 @@ H235SecurityInfo * H323EndPoint::GetSecurityInfo()
 }
 
 
-OpalMediaFormat::List H323EndPoint::GetMediaFormats() const
-{
-  return capabilities.GetMediaFormats();
-}
-
-
 H323Capability * H323EndPoint::FindCapability(const H245_Capability & cap) const
 {
   return capabilities.FindCapability(cap);
@@ -913,24 +911,21 @@ H323Connection * H323EndPoint::FindConnectionWithoutLocks(const PString & token)
 }
 
 
-BOOL H323EndPoint::OnIncomingCall(H323Connection & /*connection*/,
+BOOL H323EndPoint::OnIncomingCall(H323Connection & connection,
                                   const H323SignalPDU & /*setupPDU*/,
                                   H323SignalPDU & /*alertingPDU*/)
 {
-  return TRUE;
+  return connection.OnIncomingConnection();
 }
 
 
 H323Connection::AnswerCallResponse
-       H323EndPoint::OnAnswerCall(H323Connection & connection,
+       H323EndPoint::OnAnswerCall(H323Connection & /*connection*/,
                                   const PString & /*caller*/,
                                   const H323SignalPDU & /*setupPDU*/,
                                   H323SignalPDU & /*connectPDU*/)
 {
-  if (connection.OnIncomingConnection())
-    return OpalConnection::NumAnswerCallResponses;
-  else
-    return OpalConnection::AnswerCallDenied;
+  return OpalConnection::NumAnswerCallResponses;
 }
 
 
