@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2002  2001/08/01 05:46:55  robertj
+ * Revision 1.2003  2002/02/13 02:30:37  robertj
+ * Added ability for media patch (and transcoders) to handle multiple RTP frames.
+ *
+ * Revision 2.1  2001/08/01 05:46:55  robertj
  * Made OpalMediaFormatList class global to help with documentation.
  * Added functions to aid in determining if a transcoder can be used to get
  *   to another media format.
@@ -95,6 +98,20 @@ void OpalTranscoder::PrintOn(ostream & strm) const
 {
   strm << registration.GetInputFormat() << "->"
        << registration.GetOutputFormat();
+}
+
+
+BOOL OpalTranscoder::ConvertFrames(const RTP_DataFrame & input,
+                                   RTP_DataFrameList & output)
+{
+  if (output.IsEmpty())
+    output.Append(new RTP_DataFrame);
+  else {
+    while (output.GetSize() > 1)
+      output.RemoveAt(1);
+  }
+
+  return Convert(input, output[0]);
 }
 
 
