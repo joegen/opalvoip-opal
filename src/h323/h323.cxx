@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2009  2001/10/05 00:22:14  robertj
+ * Revision 1.2010  2001/10/15 04:36:37  robertj
+ * Added delayed start of media patch threads.
+ * Removed answerCall signal and replaced with state based functions.
+ * Maintained H.323 answerCall API for backward compatibility.
+ *
+ * Revision 2.8  2001/10/05 00:22:14  robertj
  * Updated to PWLib 1.2.0 and OpenH323 1.7.0
  *
  * Revision 2.7  2001/10/04 00:46:33  robertj
@@ -752,6 +757,19 @@
 /////////////////////////////////////////////////////////////////////////////
 
 #if PTRACING
+ostream & operator<<(ostream & out, H323Connection::AnswerCallResponse response)
+{
+  const char * const names[H323Connection::NumAnswerCallResponses] = {
+    "AnswerCallNow",
+    "AnswerCallDenied",
+    "AnswerCallAlert",
+    "AnswerCallDeferred",
+    "AnswerCallAlertWithMedia",
+    "AnswerCallDeferredWithMedia"
+  };
+  return out << names[response];
+}
+
 const char * const H323Connection::ConnectionStatesNames[NumConnectionStates] = {
   "NoConnectionActive",
   "AwaitingGatekeeperAdmission",
@@ -876,7 +894,7 @@ void H323Connection::CleanUpOnCallEnd()
   // Clean up any fast start "pending" channels we may have running.
   PINDEX i;
   for (i = 0; i < fastStartChannels.GetSize(); i++)
-    fastStartChannels[i].CleanUpOnTermination();
+    fastStartChannels[i].Close();
   fastStartChannels.RemoveAll();
 
   // Dispose of all the logical channels
@@ -1424,6 +1442,11 @@ BOOL H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
     fastStartState = FastStartDisabled;
     fastStartChannels.RemoveAll();
   }
+  else if (mediaWaitForConnect) {
+    // Otherwise start fast started channels if we were waiting for CONNECT
+    for (PINDEX i = 0; i < fastStartChannels.GetSize(); i++)
+      fastStartChannels[i].Start();
+  }
 
   OnConnected();
 
@@ -1602,44 +1625,11 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
       break;
 
     case AnswerCallPending :
-      if (alertingPDU != NULL) {
-        // send Q931 Alerting PDU
-        PTRACE(3, "H225\tSending Alerting PDU");
-        h245TunnelTxPDU = alertingPDU;
-        HandleTunnelPDU();
-        h245TunnelTxPDU = NULL;
-        h450dispatcher->AttachToAlerting(*alertingPDU);
-        WriteSignalPDU(*alertingPDU);
-      }
+      SetAlerting(localPartyName, FALSE);
       break;
 
     case AnswerCallAlertWithMedia :
-      if (alertingPDU != NULL && !mediaWaitForConnect) {
-        H225_Alerting_UUIE & alerting = alertingPDU->m_h323_uu_pdu.m_h323_message_body;
-        BOOL sendPDU = TRUE;
-        if (SendFastStartAcknowledge(alerting.m_fastStart))
-          alerting.IncludeOptionalField(H225_Alerting_UUIE::e_fastStart);
-        else {
-          // See if aborted call
-          if (connectionState == ShuttingDownConnection)
-            break;
-
-          // Do early H.245 start
-          earlyStart = TRUE;
-          if (!h245Tunneling && (controlChannel == NULL)) {
-            if (!CreateIncomingControlChannel(alerting.m_h245Address))
-              break;
-            alerting.IncludeOptionalField(H225_Alerting_UUIE::e_h245Address);
-          }
-          else
-            sendPDU = FALSE;
-        }
-
-        if (sendPDU) {
-          h450dispatcher->AttachToAlerting(*alertingPDU);
-          WriteSignalPDU(*alertingPDU);
-        }
-      }
+      SetAlerting(localPartyName, TRUE);
       break;
 
     case AnswerCallDeferredWithMedia :
@@ -1685,43 +1675,7 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
       break;
 
     case AnswerCallNow :
-      if (connectPDU != NULL) {
-        H225_Connect_UUIE & connect = connectPDU->m_h323_uu_pdu.m_h323_message_body;
-        // Now ask the application to select which channels to start
-        if (SendFastStartAcknowledge(connect.m_fastStart))
-          connect.IncludeOptionalField(H225_Connect_UUIE::e_fastStart);
-
-        // See if aborted call
-        if (connectionState == ShuttingDownConnection)
-          break;
-
-        // Set flag that we are up to CONNECT stage
-        connectionState = HasExecutedSignalConnect;
-
-        h450dispatcher->AttachToConnect(*connectPDU);
- 
-        if (h245Tunneling) {
-          // If no channels selected (or never provided) do traditional H245 start
-          if (fastStartState == FastStartDisabled) {
-            h245TunnelTxPDU = connectPDU; // Piggy back H245 on this reply
-            if (!StartControlNegotiations()) 
-              break;
-            HandleTunnelPDU();
-            h245TunnelTxPDU = NULL;
-          }
-        }
-        else { // Start separate H.245 channel if not tunneling.
-          if (!CreateIncomingControlChannel(connect.m_h245Address))
-            break;
-          connect.IncludeOptionalField(H225_Connect_UUIE::e_h245Address);
-        }
-
-        WriteSignalPDU(*connectPDU); // Send H323 Connect PDU
-        delete connectPDU;
-        connectPDU = NULL;
-        delete alertingPDU;
-        alertingPDU = NULL;
-      }
+      SetConnected();
   }
 }
 
@@ -1927,18 +1881,87 @@ BOOL H323Connection::OnAlerting(const H323SignalPDU & alertingPDU,
 }
 
 
-BOOL H323Connection::SetAlerting(const PString & /*calleeName*/)
+BOOL H323Connection::SetAlerting(const PString & /*calleeName*/, BOOL withMedia)
 {
   PTRACE(3, "H323\tSetAlerting " << *this);
-  SetAnswerResponse(AnswerCallPending);
-  return TRUE;
+  if (alertingPDU == NULL)
+    return FALSE;
+
+  if (withMedia && !mediaWaitForConnect) {
+    H225_Alerting_UUIE & alerting = alertingPDU->m_h323_uu_pdu.m_h323_message_body;
+    if (SendFastStartAcknowledge(alerting.m_fastStart))
+      alerting.IncludeOptionalField(H225_Alerting_UUIE::e_fastStart);
+    else {
+      // See if aborted call
+      if (connectionState == ShuttingDownConnection)
+        return FALSE;
+
+      // Do early H.245 start
+      earlyStart = TRUE;
+      if (!h245Tunneling && (controlChannel == NULL)) {
+        if (!CreateIncomingControlChannel(alerting.m_h245Address))
+          return FALSE;
+        alerting.IncludeOptionalField(H225_Alerting_UUIE::e_h245Address);
+      }
+    }
+  }
+
+  // send Q931 Alerting PDU
+  PTRACE(3, "H225\tSending Alerting PDU");
+  h245TunnelTxPDU = alertingPDU;
+  HandleTunnelPDU();
+  h245TunnelTxPDU = NULL;
+  h450dispatcher->AttachToAlerting(*alertingPDU);
+  return WriteSignalPDU(*alertingPDU);
+
 }
 
 
 BOOL H323Connection::SetConnected()
 {
   PTRACE(3, "H323\tSetConnected " << *this);
-  SetAnswerResponse(AnswerCallNow);
+  if (connectPDU == NULL)
+    return FALSE;
+
+  H225_Connect_UUIE & connect = connectPDU->m_h323_uu_pdu.m_h323_message_body;
+  // Now ask the application to select which channels to start
+  if (SendFastStartAcknowledge(connect.m_fastStart))
+    connect.IncludeOptionalField(H225_Connect_UUIE::e_fastStart);
+
+  // See if aborted call
+  if (connectionState == ShuttingDownConnection)
+    return FALSE;
+
+  // Set flag that we are up to CONNECT stage
+  connectionState = HasExecutedSignalConnect;
+
+  h450dispatcher->AttachToConnect(*connectPDU);
+
+  if (h245Tunneling) {
+    // If no channels selected (or never provided) do traditional H245 start
+    if (fastStartState == FastStartDisabled) {
+      h245TunnelTxPDU = connectPDU; // Piggy back H245 on this reply
+      if (!StartControlNegotiations()) 
+        return FALSE;
+      HandleTunnelPDU();
+      h245TunnelTxPDU = NULL;
+    }
+  }
+  else { // Start separate H.245 channel if not tunneling.
+    if (!CreateIncomingControlChannel(connect.m_h245Address))
+      return FALSE;
+    connect.IncludeOptionalField(H225_Connect_UUIE::e_h245Address);
+  }
+
+  if (!WriteSignalPDU(*connectPDU)) // Send H323 Connect PDU
+    return FALSE;
+
+  delete connectPDU;
+  connectPDU = NULL;
+
+  delete alertingPDU;
+  alertingPDU = NULL;
+
   return TRUE;
 }
 
@@ -1987,7 +2010,7 @@ BOOL H323Connection::SendFastStartAcknowledge(H225_ArrayOf_PASN_OctetString & ar
   // Remove any channels that were not started by OnSelectLogicalChannels(),
   // those that were started are put into the logical channel dictionary
   for (i = 0; i < fastStartChannels.GetSize(); i++) {
-    if (fastStartChannels[i].IsRunning())
+    if (fastStartChannels[i].IsOpen())
       logicalChannels->Add(fastStartChannels[i]);
     else
       fastStartChannels.RemoveAt(i--);
@@ -2055,17 +2078,23 @@ BOOL H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_OctetStr
                 }
                 if (OnCreateLogicalChannel(*remoteCapability, channelToStart.GetDirection(), error)) {
                   if (channelToStart.SetInitialBandwidth()) {
-                    if (channelToStart.GetDirection() == H323Channel::IsTransmitter) {
-                      if (channelToStart.Open()) {
+                    if (channelToStart.Open()) {
+                      if (channelToStart.GetDirection() == H323Channel::IsTransmitter) {
                         fastStartedTransmitMediaStream = ((H323UnidirectionalChannel &)channelToStart).GetMediaStream();
-                        if (GetCall().OpenSourceMediaStreams(*this, fastStartedTransmitMediaStream->GetMediaFormat(), channelToStart.GetSessionID()))
-                          channelToStart.Start();
-                        else
+                        if (GetCall().OpenSourceMediaStreams(*this, fastStartedTransmitMediaStream->GetMediaFormat(), channelToStart.GetSessionID())) {
+                          if (!mediaWaitForConnect)
+                            channelToStart.Start();
+                        }
+                        else {
                           fastStartedTransmitMediaStream = NULL;
+                          channelToStart.Close();
+                        }
                       }
+                      else
+                        channelToStart.Start();
+                      if (channelToStart.IsOpen())
+                        break;
                     }
-                      channelToStart.Start();
-                    break;
                   }
                   else
                     PTRACE(2, "H225\tFast start channel open fail: insufficent bandwidth");
@@ -2088,7 +2117,7 @@ BOOL H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_OctetStr
   // Remove any channels that were not started by above, those that were
   // started are put into the logical channel dictionary
   for (i = 0; i < fastStartChannels.GetSize(); i++) {
-    if (fastStartChannels[i].IsRunning())
+    if (fastStartChannels[i].IsOpen())
       logicalChannels->Add(fastStartChannels[i]);
     else
       fastStartChannels.RemoveAt(i--);
@@ -2106,6 +2135,7 @@ BOOL H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_OctetStr
   fastStartChannels.RemoveAll();
 
   fastStartState = FastStartAcknowledged;
+
   return TRUE;
 }
 
@@ -2889,18 +2919,23 @@ void H323Connection::StartFastStartChannel(unsigned sessionID, H323Channel::Dire
   for (PINDEX i = 0; i < fastStartChannels.GetSize(); i++) {
     H323Channel & channel = fastStartChannels[i];
     if (channel.GetSessionID() == sessionID && channel.GetDirection() == direction) {
-      if (direction == H323Channel::IsTransmitter) {
-        if (channel.Open()) {
+      if (channel.Open()) {
+        if (direction == H323Channel::IsTransmitter) {
           fastStartedTransmitMediaStream = ((H323UnidirectionalChannel &)channel).GetMediaStream();
-          if (GetCall().OpenSourceMediaStreams(*this, fastStartedTransmitMediaStream->GetMediaFormat(), channel.GetSessionID()))
-            channel.Start();
-          else
+          if (GetCall().OpenSourceMediaStreams(*this, fastStartedTransmitMediaStream->GetMediaFormat(), channel.GetSessionID())) {
+            if (!mediaWaitForConnect)
+              channel.Start();
+          }
+          else {
             fastStartedTransmitMediaStream = NULL;
+            channel.Close();
+          }
         }
+        else
+          channel.Start();
+        if (channel.IsOpen())
+          break;
       }
-      else
-        channel.Start();
-      break;
     }
   }
 }
@@ -3065,7 +3100,7 @@ BOOL H323Connection::OnConflictingLogicalChannel(H323Channel & conflictingChanne
   }
 
   if (!fromRemote) {
-    conflictingChannel.CleanUpOnTermination();
+    conflictingChannel.Close();
     H323Capability * capability = remoteCapabilities.FindCapability(channel->GetCapability());
     if (capability == NULL) {
       PTRACE(1, "H323\tCould not resolve conflict, capability not available on remote.");
@@ -3076,7 +3111,7 @@ BOOL H323Connection::OnConflictingLogicalChannel(H323Channel & conflictingChanne
   }
 
   // Close the conflicting channel that got in before our transmitter
-  channel->CleanUpOnTermination();
+  channel->Close();
   CloseLogicalChannelNumber(channel->GetNumber());
 
   // Must be slave and conflict from something we are sending, so try starting a
