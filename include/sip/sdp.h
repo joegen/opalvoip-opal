@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2005  2002/03/15 07:08:24  robertj
+ * Revision 1.2006  2002/06/16 02:21:56  robertj
+ * Utilised new standard PWLib class for POrdinalKey
+ *
+ * Revision 2.4  2002/03/15 07:08:24  robertj
  * Removed redundent return value on SetXXX function.
  *
  * Revision 2.3  2002/02/13 02:27:50  robertj
@@ -54,8 +57,6 @@
 
 
 /////////////////////////////////////////////////////////
-
-PSET(POrdinalSet, POrdinalKey);
 
 class SDPMediaFormat : public PObject
 {
