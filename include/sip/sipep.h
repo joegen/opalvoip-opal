@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2010  2004/03/14 08:34:09  csoutheren
+ * Revision 1.2011  2004/03/14 10:13:03  rjongbloed
+ * Moved transport on SIP top be constructed by endpoint as any transport created on
+ *   an endpoint can receive data for any connection.
+ * Changes to REGISTER to support authentication
+ *
+ * Revision 2.9  2004/03/14 08:34:09  csoutheren
  * Added ability to set User-Agent string
  *
  * Revision 2.8  2004/03/13 06:51:31  rjongbloed
@@ -65,12 +70,10 @@
 
 
 #include <opal/endpoint.h>
+#include <sip/sippdu.h>
 
 
 class SIPConnection;
-class SIPURL;
-class SIP_PDU;
-class SIPMIMEInfo;
 
 
 /////////////////////////////////////////////////////////////////////////
@@ -158,6 +161,10 @@ class SIPEndPoint : public OpalEndPoint
   
   /**@name Protocol handling routines */
   //@{
+    OpalTransport * CreateTransport(
+      const OpalTransportAddress & address
+    );
+
     virtual void HandlePDU(
       OpalTransport & transport
     );
@@ -169,15 +176,37 @@ class SIPEndPoint : public OpalEndPoint
       SIP_PDU * pdu
     );
 
+    /**Handle an incoming response PDU.
+      */
+    virtual void OnReceivedResponse(
+      SIPTransaction & transaction,
+      SIP_PDU & response
+    );
+
     /**Handle an incoming INVITE request.
       */
     virtual BOOL OnReceivedINVITE(
       OpalTransport & transport,
       SIP_PDU * pdu
     );
+  
+    /**Handle an incoming Proxy Authentication Required response PDU
+      */
+    virtual void OnReceivedAuthenticationRequired(
+      SIPTransaction & transaction,
+      SIP_PDU & response
+    );
+
+    /**Handle an incoming OK response PDU.
+       This actually gets any PDU of the class 2xx not just 200.
+      */
+    virtual void OnReceivedOK(
+      SIPTransaction & transaction,
+      SIP_PDU & response
+    );
   //@}
  
-  
+
     SIPConnection * GetSIPConnectionWithLock(const PString & str)
       { return (SIPConnection *)GetConnectionWithLock(str); }
 
@@ -224,20 +253,32 @@ class SIPEndPoint : public OpalEndPoint
     ) { ackTimeout = t; }
     const PTimeInterval & GetAckTimeout() const { return ackTimeout; }
 
+    void AddTransaction(
+      SIPTransaction * transaction
+    ) { transactions.SetAt(transaction->GetTransactionID(), transaction); }
+
+    void RemoveTransaction(
+      SIPTransaction * transaction
+    ) { transactions.SetAt(transaction->GetTransactionID(), NULL); }
+
     unsigned GetNextCSeq() { return ++lastSentCSeq; }
+
+    const SIPAuthentication & GetAuthentication() const { return authentication; }
 
     const PString & GetProxyPassword() const { return proxyPassword; }
     void SetProxyPassword(const PString & pwd) { proxyPassword = pwd; }
-
-    const PString & GetRegistrationID() const { return registrationID; }
 
     virtual PString GetUserAgent() const;
     void SetUserAgent(const PString & str) { userAgentString = str; }
 
   protected:
-    PString  proxyPassword;
-    PString  registrationID;
-    PString  userAgentString;
+    PDECLARE_NOTIFIER(PThread, SIPEndPoint, TransportThreadMain);
+    static BOOL WriteREGISTER(OpalTransport & transport, void * param);
+
+  protected:
+    PString           proxyPassword;
+    PString           userAgentString;
+    SIPAuthentication authentication;
 
     BOOL          mimeForm;
     unsigned      maxRetries;
@@ -248,7 +289,12 @@ class SIPEndPoint : public OpalEndPoint
     PTimeInterval inviteTimeout;
     PTimeInterval ackTimeout;
 
-    unsigned lastSentCSeq;
+    OpalTransport    * registrarTransport;
+    SIPURL             registrationAddress;
+    PString            registrationID;
+    SIPTransactionList registrations;
+    SIPTransactionDict transactions;
+    unsigned           lastSentCSeq;
 };
 
 #endif // __OPAL_SIPEP_H
