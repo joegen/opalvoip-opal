@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2025  2004/03/25 11:53:42  rjongbloed
+ * Revision 1.2026  2004/05/02 05:18:45  rjongbloed
+ * More logging
+ *
+ * Revision 2.24  2004/03/25 11:53:42  rjongbloed
  * Fixed size of RTP data frame buffer when reading from RTP, needs to be big
  *   enough for anything that can be received. Pointed out by Ted Szoczei
  *
@@ -205,6 +208,7 @@ BOOL OpalMediaStream::Start()
 BOOL OpalMediaStream::Close()
 {
   if (patchThread != NULL) {
+    PTRACE(4, "Media\tClosing stream " << *this);
     OpalMediaPatch * patch = patchThread;
     patchThread = NULL;
 
