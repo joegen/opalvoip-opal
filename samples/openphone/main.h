@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.11  2004/07/04 12:53:09  rjongbloed
+ * Added support for route editing.
+ *
  * Revision 1.10  2004/06/05 14:37:03  rjongbloed
  * More implemntation of options dialog.
  *
@@ -155,7 +158,9 @@ class OptionsDialog : public wxDialog
     void RemoveAlias(wxCommandEvent & event);
     void AddRoute(wxCommandEvent & event);
     void RemoveRoute(wxCommandEvent & event);
-    void SelectedRoute(wxCommandEvent & event);
+    void SelectedRoute(wxListEvent & event);
+    void DeselectedRoute(wxListEvent & event);
+    void ChangedRouteInfo(wxCommandEvent & event);
 
     MyFrame & mainFrame;
 
@@ -224,10 +229,6 @@ class OptionsDialog : public wxDialog
     PwxString m_RegistrarUsername;
     PwxString m_RegistrarPassword;
 
-    PwxString m_RouteSource;
-    PwxString m_RoutePattern;
-    PwxString m_RouteDestination;
-
     bool      m_EnableTracing;
     int       m_TraceLevelThreshold;
     bool      m_TraceLevelNumber;
@@ -238,6 +239,14 @@ class OptionsDialog : public wxDialog
     bool      m_TraceThreadName;
     bool      m_TraceThreadAddress;
     PwxString m_TraceFileName;
+
+    wxListCtrl * m_Routes;
+    int          m_SelectedRoute;
+    wxComboBox * m_RouteSource;
+    wxTextCtrl * m_RoutePattern;
+    wxTextCtrl * m_RouteDestination;
+    wxButton   * m_AddRoute;
+    wxButton   * m_RemoveRoute;
 
     DECLARE_EVENT_TABLE()
 };
@@ -303,7 +312,6 @@ class MyFrame : public wxFrame, public OpalManager
     wxListCtrl               * m_speedDials;
     wxTextCtrl               * m_logWindow;
 
-    PTextFile        * m_TraceFile;
     MyPCSSEndPoint   * pcssEP;
     OpalPOTSEndPoint * potsEP;
 #if OPAL_H323
@@ -316,7 +324,9 @@ class MyFrame : public wxFrame, public OpalManager
     OpalIVREndPoint  * ivrEP;
 #endif
 
-    PString currentCallToken;
+    bool     m_enableTracing;
+    wxString m_traceFileName;
+    PString  m_currentCallToken;
 
     DECLARE_EVENT_TABLE()
 
