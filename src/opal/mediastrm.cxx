@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2030  2005/03/12 00:33:28  csoutheren
+ * Revision 1.2031  2005/04/10 21:16:11  dsandras
+ * Added support to put an OpalMediaStream on pause.
+ *
+ * Revision 2.29  2005/03/12 00:33:28  csoutheren
  * Fixed problems with STL compatibility on MSVC 6
  * Fixed problems with video streams
  * Thanks to Adrian Sietsma
@@ -170,6 +173,7 @@ OpalMediaStream::OpalMediaStream(const OpalMediaFormat & fmt, unsigned id, BOOL 
 
   timestamp = 0;
   marker = TRUE;
+  paused = FALSE;
   mismatchedPayloadTypes = 0;
   patchThread = NULL;
 }
@@ -301,8 +305,11 @@ BOOL OpalMediaStream::ReadPacket(RTP_DataFrame & packet)
 BOOL OpalMediaStream::WritePacket(RTP_DataFrame & packet)
 {
   timestamp = packet.GetTimestamp();
-  int size = packet.GetPayloadSize();
+  int size = paused?0:packet.GetPayloadSize();
 
+  if (paused)
+    packet.SetPayloadSize(0);
+  
   if (size != 0) {
     if (packet.GetPayloadType() == mediaFormat.GetPayloadType()) {
       PTRACE_IF(2, mismatchedPayloadTypes > 0,
@@ -510,6 +517,9 @@ BOOL OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
 
 BOOL OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
 {
+  if (paused)
+    packet.SetPayloadSize(0);
+  
   if (IsSource()) {
     PTRACE(1, "Media\tTried to write to source media stream");
     return FALSE;
