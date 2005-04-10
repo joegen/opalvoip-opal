@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2024  2005/03/11 18:12:08  dsandras
+ * Revision 1.2025  2005/04/10 21:01:09  dsandras
+ * Added Blind Transfer support.
+ *
+ * Revision 2.23  2005/03/11 18:12:08  dsandras
  * Added support to specify the realm when registering. That way softphones already know what authentication information to use when required. The realm/domain can also be used in the From field.
  *
  * Revision 2.22  2005/02/19 22:48:48  dsandras
@@ -344,6 +347,16 @@ class SIPEndPoint : public OpalEndPoint
       OpalTransport * transport,  /// Transport INVITE has been received on
       SIP_PDU * invite            /// Original INVITE pdu
     );
+    
+    /**Setup a connection transfer a connection for the SIP endpoint.
+      */
+    virtual BOOL SetupTransfer(
+      const PString & token,        /// Existing connection to be transferred
+      const PString & callIdentity, /// Call identity of the secondary call (if it exists)
+      const PString & remoteParty,  /// Remote party to transfer the existing call to
+      void * userData = NULL        /// user data to pass to CreateConnection
+    );
+
   //@}
   
   /**@name Protocol handling routines */
