@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2035  2005/04/10 20:33:53  dsandras
+ * Revision 1.2036  2005/04/10 20:35:20  dsandras
+ * Added support for blind transfert.
+ *
+ * Revision 2.34  2005/04/10 20:33:53  dsandras
  * Added support to hold and retrieve a connection. Basically a rename of the old
  * functions while keeping backward compatibility.
  *
@@ -906,6 +909,14 @@ class H323Connection : public OpalConnection
      */
     virtual void OnConsultationTransferSuccess(
       H323Connection & secondaryCall  /// Secondary call for consultation
+    );
+
+    /**Transfer the current connection to a new destination.
+     * Simply calls TransferCall() which is kept for backward compatibility.
+     */
+    virtual void TransferConnection(
+      const PString & remoteParty,
+      const PString & callIdentity = PString::Empty()
     );
 
     /**Put the current connection on hold, suspending all media streams.
