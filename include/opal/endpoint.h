@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2022  2004/08/14 07:56:29  rjongbloed
+ * Revision 1.2023  2005/04/10 20:45:22  dsandras
+ * Added callback that is called when a connection is put on hold (locally or remotely).
+ *
+ * Revision 2.21  2004/08/14 07:56:29  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.20  2004/07/11 12:42:10  rjongbloed
@@ -376,6 +379,16 @@ class OpalEndPoint : public PObject
       */
     virtual void OnReleased(
       OpalConnection & connection   /// Connection that was established
+    );
+
+    /**A call back function whenever a connection is "held" or "retrieved".
+       This indicates that a connection to an endpoint was held, or
+       retrieved, either locally or by the remote endpoint.
+
+       The default behaviour calls the OpalManager function of the same name.
+      */
+    void OnHold(
+      OpalConnection & connection   /// Connection that was held
     );
 
     /**Clear a call.
