@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2026  2004/08/14 07:56:39  rjongbloed
+ * Revision 1.2027  2005/04/10 21:13:55  dsandras
+ * Added callback that is called when a connection is put on hold.
+ *
+ * Revision 2.25  2004/08/14 07:56:39  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.24  2004/07/14 13:26:14  rjongbloed
@@ -327,6 +330,13 @@ void OpalEndPoint::OnReleased(OpalConnection & connection)
   PTRACE(4, "OpalEP\tOnReleased " << connection);
   connectionsActive.RemoveAt(connection.GetToken());
   manager.OnReleased(connection);
+}
+
+
+void OpalEndPoint::OnHold(OpalConnection & connection)
+{
+  PTRACE(4, "OpalEP\tOnHold " << connection);
+  manager.OnHold(connection);
 }
 
 
