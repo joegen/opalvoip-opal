@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2023  2005/03/12 00:33:27  csoutheren
+ * Revision 1.2024  2005/04/10 20:48:30  dsandras
+ * Added functions to put an OpalMediaStream on pause.
+ *
+ * Revision 2.22  2005/03/12 00:33:27  csoutheren
  * Fixed problems with STL compatibility on MSVC 6
  * Fixed problems with video streams
  * Thanks to Adrian Sietsma
@@ -300,6 +303,14 @@ class OpalMediaStream : public PObject
       */
     void SetMarker(BOOL m) { marker = m; }
 
+    /**Get the paused state for writing.
+      */
+    BOOL IsPaused() const { return paused; }
+
+    /**Set the paused state for writing.
+      */
+    void SetPaused(BOOL p) { paused = p; }
+
     /**Set the patch thread that is using this stream.
       */
     void SetPatch(
@@ -314,6 +325,7 @@ class OpalMediaStream : public PObject
   protected:
     OpalMediaFormat mediaFormat;
     unsigned        sessionID;
+    BOOL	    paused;
     BOOL            isSource;
     BOOL            isOpen;
     PINDEX          defaultDataSize;
