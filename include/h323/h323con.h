@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2034  2005/04/10 20:31:17  dsandras
+ * Revision 1.2035  2005/04/10 20:33:53  dsandras
+ * Added support to hold and retrieve a connection. Basically a rename of the old
+ * functions while keeping backward compatibility.
+ *
+ * Revision 2.33  2005/04/10 20:31:17  dsandras
  * Added support to return the "best guess" callback h323 url.
  *
  * Revision 2.32  2005/03/01 17:51:02  dsandras
@@ -903,6 +907,22 @@ class H323Connection : public OpalConnection
     virtual void OnConsultationTransferSuccess(
       H323Connection & secondaryCall  /// Secondary call for consultation
     );
+
+    /**Put the current connection on hold, suspending all media streams.
+     * Simply calls HoldCall() which is kept for backward compatibility.
+     */
+    virtual void HoldConnection();
+
+    /**Retrieve the current connection from hold, activating all media 
+     * streams.
+     * Simply calls RetrieveCall() which is kept for backward compatibility.
+     */
+    virtual void RetrieveConnection();
+
+    /**Return TRUE if the current connection is on hold.
+     * Simply calls IsCallOnHold() which is kept for backward compatibility.
+     */
+    virtual BOOL IsConnectionOnHold();
 
     /**Place the call on hold, suspending all media channels (H.450.4).  Note it is the responsibility 
        of the application layer to delete the MOH Channel if music on hold is provided to the remote
