@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2032  2005/01/16 11:28:05  csoutheren
+ * Revision 1.2033  2005/04/10 20:40:20  dsandras
+ * Added support for Blind Transfert.
+ *
+ * Revision 2.31  2005/01/16 11:28:05  csoutheren
  * Added GetIdentifier virtual function to OpalConnection, and changed H323
  * and SIP descendants to use this function. This allows an application to
  * obtain a GUID for any connection regardless of the protocol used
@@ -299,6 +302,15 @@ class OpalConnection : public PSafeObject
       CallEndReason reason = EndedByLocalUser  /// Reason for call clearing
     );
   //@}
+
+    /**Initiate the transfer of an existing call (connection) to a new remote 
+       party.
+     */
+    virtual void TransferConnection(
+      const PString & remoteParty,   /// Remote party to transfer the existing call to
+      const PString & callIdentity = PString::Empty()
+                                    /// Call Identity of secondary call if present
+    );
 
   /**@name Call progress functions */
   //@{
