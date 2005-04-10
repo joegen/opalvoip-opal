@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2029  2005/04/10 20:57:18  dsandras
+ * Revision 1.2030  2005/04/10 20:58:21  dsandras
+ * Added function to handle incoming transfer (REFER).
+ *
+ * Revision 2.28  2005/04/10 20:57:18  dsandras
  * Added support for Blind Transfer (transfering and being transfered)
  *
  * Revision 2.27  2005/04/10 20:54:35  dsandras
@@ -295,6 +298,10 @@ class SIPConnection : public OpalConnection
     /**Handle an incoming NOTIFY PDU
       */
     virtual void OnReceivedNOTIFY(SIP_PDU & pdu);
+
+    /**Handle an incoming REFER PDU
+      */
+    virtual void OnReceivedREFER(SIP_PDU & pdu);
   
     /**Handle an incoming BYE PDU
       */
