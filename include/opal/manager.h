@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2033  2005/01/31 07:37:09  csoutheren
+ * Revision 1.2034  2005/04/10 20:46:56  dsandras
+ * Added callback that is called when a connection is put on hold (locally or remotely).
+ *
+ * Revision 2.32  2005/01/31 07:37:09  csoutheren
  * Fixed problem with compiling under gcc 3.4
  * Thanks to Peter Robinson
  *
@@ -517,6 +520,17 @@ class OpalManager : public PObject
     virtual void OnReleased(
       OpalConnection & connection   /// Connection that was established
     );
+    
+    /**A call back function whenever a connection is "held" or "retrieved".
+       This indicates that a connection to an endpoint was held, or
+       retrieved, either locally or by the remote endpoint.
+
+       The default behaviour does nothing.
+      */
+    virtual void OnHold(
+      OpalConnection & connection   /// Connection that was held
+    );
+
   //@}
 
   /**@name Media Streams management */
