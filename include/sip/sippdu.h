@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2021  2005/04/10 21:04:08  dsandras
+ * Revision 1.2022  2005/04/10 21:05:14  dsandras
+ * Added support for SIP Invite using the same RTP Session (call hold).
+ *
+ * Revision 2.20  2005/04/10 21:04:08  dsandras
  * Added support for Blind Transfer (SIP REFER).
  *
  * Revision 2.19  2005/03/11 18:12:08  dsandras
@@ -598,6 +601,11 @@ class SIPInvite : public SIPTransaction
     SIPInvite(
       SIPConnection & connection,
       OpalTransport & transport
+    );
+    SIPInvite(
+      SIPConnection & connection,
+      OpalTransport & transport,
+      RTP_SessionManager & sm
     );
 
     virtual BOOL OnReceivedResponse(SIP_PDU & response);
