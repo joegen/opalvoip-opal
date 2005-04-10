@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2017  2004/10/24 10:45:19  rjongbloed
+ * Revision 1.2018  2005/04/10 21:19:38  dsandras
+ * Added support to set / get the stream direction in a SDP.
+ *
+ * Revision 2.16  2004/10/24 10:45:19  rjongbloed
  * Back out change of strcasecmp to strcmp for WinCE
  *
  * Revision 2.15  2004/10/23 11:43:05  ykiryanov
@@ -136,8 +139,10 @@ static PString GetConnectAddressString(const OpalTransportAddress & address)
   PStringStream str;
 
   PIPSocket::Address ip;
-  if (address.GetIpAddress(ip))
+  if (address != 0 && address.GetIpAddress(ip))
     str << "IN IP" << ip.GetVersion() << ' ' << ip;
+  else
+    str << "IN IP4 0.0.0.0";
 
   return str;
 }
@@ -432,9 +437,8 @@ void SDPMediaDescription::PrintOn(ostream & str) const
   PINDEX i;
   for (i = 0; i < formats.GetSize(); i++)
     str << ' ' << (int)formats[i].GetPayloadType();
-  str << "\r\n"
-         "c=" << GetConnectAddressString(transportAddress) << "\r\n";
-
+  str << "\r\n";
+  
   // output attributes for each payload type
   for (i = 0; i < formats.GetSize(); i++)
     str << formats[i];
@@ -506,6 +510,7 @@ SDPSessionDescription::SDPSessionDescription(const OpalTransportAddress & addres
 {
   protocolVersion  = 0;
   ownerSessionId  = ownerVersion = PTime().GetTimeInSeconds();
+  direction = SDPSessionDescription::Undefined;
 }
 
 
@@ -519,9 +524,27 @@ void SDPSessionDescription::PrintOn(ostream & str) const
               << GetConnectAddressString(ownerAddress)
               << "\r\n"
          "s=" << sessionName << "\r\n"
-         "c=" << GetConnectAddressString(defaultConnectAddress) << "\r\n"
+         "c=" << (direction == SDPSessionDescription::SendOnly?GetConnectAddressString("0"):GetConnectAddressString(defaultConnectAddress)) << "\r\n"
          "t=" << "0 0" << "\r\n";
 
+  switch (direction) {
+  
+  case SDPSessionDescription::RecvOnly:
+    str << "a=recvonly" << "\r\n";
+    break;
+  case SDPSessionDescription::SendOnly:
+    str << "a=sendonly" << "\r\n";
+    break;
+  case SDPSessionDescription::SendRecv:
+    str << "a=sendrecv" << "\r\n";
+    break;
+  case SDPSessionDescription::Inactive:
+    str << "a=inactive" << "\r\n";
+    break;
+  default:
+    break;
+  }
+  
   // encode media session information
   PINDEX i;
   for (i = 0; i < mediaDescriptions.GetSize(); i++) 
@@ -622,7 +645,16 @@ BOOL SDPSessionDescription::Decode(const PString & str)
               break;
 
             case 'a' : // zero or more media attribute lines
-              currentMedia->SetAttribute(value);
+	      if (value *= "sendonly")
+		SetDirection (SendOnly);
+	      else if (value *= "recvonly")
+		SetDirection (RecvOnly);
+	      else if (value *= "sendrecv")
+		SetDirection (SendRecv);
+	      else if (value *= "inactive")
+		SetDirection (Inactive);
+	      else
+		currentMedia->SetAttribute(value);
               break;
 
             default:
