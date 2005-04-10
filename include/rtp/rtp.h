@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2018  2004/10/02 11:50:54  rjongbloed
+ * Revision 1.2019  2005/04/10 20:50:16  dsandras
+ * Allow changes of remote transmit address and SyncSource in an established RTP connection.
+ *
+ * Revision 2.17  2004/10/02 11:50:54  rjongbloed
  * Fixed RTP media stream so assures RTP session is open before starting.
  *
  * Revision 2.16  2004/04/26 05:37:13  rjongbloed
@@ -866,6 +869,8 @@ class RTP_Session : public PObject
     BOOL          ignoreOutOfOrderPackets;
     DWORD         syncSourceOut;
     DWORD         syncSourceIn;
+    BOOL	  allowSyncSourceInChange;
+    BOOL	  allowRemoteTransmitAddressChange;
     PTimeInterval reportTimeInterval;
     unsigned      txStatisticsInterval;
     unsigned      rxStatisticsInterval;
