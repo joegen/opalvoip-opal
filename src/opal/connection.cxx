@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2040  2005/04/10 21:11:25  dsandras
+ * Revision 1.2041  2005/04/10 21:12:12  dsandras
+ * Added support for Blind Transfer.
+ *
+ * Revision 2.39  2005/04/10 21:11:25  dsandras
  * Added support for call hold.
  *
  * Revision 2.38  2004/08/14 07:56:35  rjongbloed
@@ -325,6 +328,12 @@ void OpalConnection::ClearCallSynchronous(PSyncPoint * sync, CallEndReason reaso
   // Now set reason for the connection close
   SetCallEndReason(reason);
   ownerCall.Clear(reason, sync);
+}
+
+
+void OpalConnection::TransferConnection(const PString & remoteParty, const PString & callIdentity)
+{
+  PTRACE(3, "OpalCon\tCan not transfer connection to " << remoteParty);
 }
 
 
