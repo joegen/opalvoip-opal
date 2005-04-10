@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2034  2005/04/10 20:41:29  dsandras
+ * Revision 1.2035  2005/04/10 20:42:33  dsandras
+ * Added support for a function that returns the "best guess" callback URL.
+ *
+ * Revision 2.33  2005/04/10 20:41:29  dsandras
  * Added support for call hold.
  *
  * Revision 2.32  2005/04/10 20:40:20  dsandras
@@ -894,12 +897,14 @@ class OpalConnection : public PSafeObject
     const PString & GetRemotePartyNumber() const { return remotePartyNumber; }
 
     /**Get the remote party address.
-       This will return the "best guess" at an address to use in a
-       H323EndPoint::MakeCall() function to call the remote party back again.
-       Note that due to the presence of gatekeepers/proxies etc this may not
-       always be accurate.
       */
     const PString & GetRemotePartyAddress() const { return remotePartyAddress; }
+
+    /**Get the remote party address.
+       This will return the "best guess" at an address to use in a
+       to call the user again later.
+      */
+    virtual const PString GetRemotePartyCallbackURL() const { return remotePartyAddress; }
 
     /**Get the default maximum audio jitter delay parameter.
        Defaults to 50ms
