@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2033  2005/03/01 17:51:02  dsandras
+ * Revision 1.2034  2005/04/10 20:31:17  dsandras
+ * Added support to return the "best guess" callback h323 url.
+ *
+ * Revision 2.32  2005/03/01 17:51:02  dsandras
  * Removed erroneous definition of RTP_SessionManager preventing the get the RTP_Session from the connection when called on an OpalConnection object. The RTP_SessionManager is now part of OpalConnection.
  *
  * Revision 2.31  2005/01/16 11:28:04  csoutheren
@@ -2084,6 +2087,12 @@ class H323Connection : public OpalConnection
     void SetRemoteApplication(
       const H225_EndpointType & pdu /// PDU from which to extract application info.
     );
+    
+    /**Get the remote party address.
+       This will return the "best guess" at an address to use in a
+       to call the user again later.
+      */
+    const PString GetRemotePartyCallbackURL() const;
     
     /**Get the remotes capability table for this connection.
      */
