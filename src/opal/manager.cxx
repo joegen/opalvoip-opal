@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2041  2005/02/21 12:19:55  rjongbloed
+ * Revision 1.2042  2005/04/10 21:15:08  dsandras
+ * Added callback that is called when a connection is put on hold (local or remote).
+ *
+ * Revision 2.40  2005/02/21 12:19:55  rjongbloed
  * Added new "options list" to the OpalMediaFormat class.
  *
  * Revision 2.39  2004/10/16 03:10:04  rjongbloed
@@ -549,6 +552,12 @@ void OpalManager::OnReleased(OpalConnection & connection)
   PTRACE(3, "OpalMan\tOnReleased " << connection);
 
   connection.GetCall().OnReleased(connection);
+}
+
+
+void OpalManager::OnHold(OpalConnection & connection)
+{
+  PTRACE(3, "OpalMan\tOnHold " << connection);
 }
 
 
