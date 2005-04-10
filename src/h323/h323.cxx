@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2078  2005/04/10 21:08:14  dsandras
+ * Revision 1.2079  2005/04/10 21:09:11  dsandras
+ * Added support for connection hold (new API).
+ *
+ * Revision 2.77  2005/04/10 21:08:14  dsandras
  * Added support for Blind Transfer (new API).
  *
  * Revision 2.76  2005/04/10 21:07:24  dsandras
@@ -4019,6 +4022,24 @@ void H323Connection::SetAssociatedCallToken(const PString& token)
 void H323Connection::OnConsultationTransferSuccess(H323Connection& /*secondaryCall*/)
 {
    h4502handler->SetConsultationTransferSuccess();
+}
+
+
+void H323Connection::HoldConnection()
+{
+  HoldCall(TRUE);
+}
+
+
+void H323Connection::RetrieveConnection()
+{
+  RetrieveCall();
+}
+
+
+BOOL H323Connection::IsConnectionOnHold() 
+{
+  return IsCallOnHold ();
 }
 
 
