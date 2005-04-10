@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2041  2005/04/10 21:12:12  dsandras
+ * Revision 1.2042  2005/04/10 21:12:59  dsandras
+ * Added function to put the OpalMediaStreams on pause.
+ *
+ * Revision 2.40  2005/04/10 21:12:12  dsandras
  * Added support for Blind Transfer.
  *
  * Revision 2.39  2005/04/10 21:11:25  dsandras
@@ -535,6 +538,13 @@ void OpalConnection::StartMediaStreams()
   for (PINDEX i = 0; i < mediaStreams.GetSize(); i++)
     mediaStreams[i].Start();
   PTRACE(2, "OpalCon\tMedia stream threads started.");
+}
+
+
+void OpalConnection::PauseMediaStreams(BOOL paused)
+{
+  for (PINDEX i = 0; i < mediaStreams.GetSize(); i++)
+    mediaStreams[i].SetPaused(paused);
 }
 
 
