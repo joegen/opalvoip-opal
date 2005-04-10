@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2028  2005/04/10 20:54:35  dsandras
+ * Revision 1.2029  2005/04/10 20:57:18  dsandras
+ * Added support for Blind Transfer (transfering and being transfered)
+ *
+ * Revision 2.27  2005/04/10 20:54:35  dsandras
  * Added function that returns the "best guess" callback URL of a connection.
  *
  * Revision 2.26  2005/02/19 22:48:48  dsandras
@@ -169,6 +172,15 @@ class SIPConnection : public OpalConnection
       */
     virtual BOOL SetUpConnection();
 
+    /**Initiate the transfer of an existing call (connection) to a new remote 
+       party.
+     */
+    virtual void TransferConnection(
+      const PString & remoteParty,   /// Remote party to transfer the existing call to
+      const PString & callIdentity = PString::Empty()
+                                    /// Call Identity of secondary call if present
+    );
+
     /**Indicate to remote endpoint an alert is in progress.
        If this is an incoming connection and the AnswerCallResponse is in a
        AnswerCallDeferred or AnswerCallPending state, then this function is
@@ -279,6 +291,10 @@ class SIPConnection : public OpalConnection
     /**Handle an incoming OPTIONS PDU
       */
     virtual void OnReceivedOPTIONS(SIP_PDU & pdu);
+
+    /**Handle an incoming NOTIFY PDU
+      */
+    virtual void OnReceivedNOTIFY(SIP_PDU & pdu);
   
     /**Handle an incoming BYE PDU
       */
@@ -437,6 +453,7 @@ class SIPConnection : public OpalConnection
     PSemaphore    pduSemaphore;
     PThread     * pduHandler;
 
+    SIPTransaction   * referTransaction;
     SIPTransactionList invitations;
     SIPTransactionDict transactions;
     unsigned           lastSentCSeq;
