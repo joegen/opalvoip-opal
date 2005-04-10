@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2076  2005/03/01 19:22:18  dsandras
+ * Revision 1.2077  2005/04/10 21:07:24  dsandras
+ * Added support for function that returns the "best guess" h323 callback URL for a connection.
+ *
+ * Revision 2.75  2005/03/01 19:22:18  dsandras
  * Call AdjustMediaFormats or the SinkMediaStream can be opened with a remote codec that is disabled locally.
  *
  * Revision 2.74  2005/03/01 18:43:15  dsandras
@@ -2320,6 +2323,32 @@ void H323Connection::SetRemoteApplication(const H225_EndpointType & pdu)
     remoteApplication = H323GetApplicationInfo(pdu.m_vendor);
     PTRACE(2, "H225\tSet remote application name: \"" << remoteApplication << '"');
   }
+}
+
+
+const PString H323Connection::GetRemotePartyCallbackURL() const
+{
+  PString remote;
+  PINDEX j;
+  
+  if (IsGatekeeperRouted()) {
+
+    remote = GetRemotePartyNumber();
+  }
+  
+  if (remote.IsEmpty() && signallingChannel) {
+  
+    remote = signallingChannel->GetRemoteAddress();
+
+    /* The address is formated the H.323 way */
+    j = remote.FindLast(":");
+    if (j != P_MAX_INDEX)
+      remote = remote.Mid (j+1);
+  }
+
+  remote = "h323:" + remote;
+  
+  return remote;
 }
 
 
