@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2010  2004/02/09 13:13:01  rjongbloed
+ * Revision 1.2011  2005/04/10 20:51:25  dsandras
+ * Added possibility to set/get the direction of a stream in an SDP.
+ *
+ * Revision 2.9  2004/02/09 13:13:01  rjongbloed
  * Added debug string output for media type enum.
  *
  * Revision 2.8  2004/02/07 02:18:19  rjongbloed
@@ -95,7 +98,7 @@ class SDPMediaFormat : public PObject
       D      = 15,
       Flash  = 16
     };
-
+    
     SDPMediaFormat::SDPMediaFormat(
       RTP_DataFrame::PayloadTypes payloadType,
       const char * name = "-",
@@ -201,6 +204,15 @@ class SDPSessionDescription : public PObject
 {
   PCLASSINFO(SDPSessionDescription, PObject);
   public:
+    // the session streams direction
+    enum Direction {
+      RecvOnly,
+      SendOnly,
+      SendRecv,
+      Inactive,
+      Undefined
+    };
+    
     SDPSessionDescription(
       const OpalTransportAddress & address = OpalTransportAddress()
     );
@@ -222,6 +234,9 @@ class SDPSessionDescription : public PObject
     ) const;
     void AddMediaDescription(SDPMediaDescription * md) { mediaDescriptions.Append(md); }
 
+    void SetDirection(const Direction & d) { direction = d; }
+    Direction GetDirection() const { return direction; }
+
     const OpalTransportAddress & GetDefaultConnectAddress() const { return defaultConnectAddress; }
     void SetDefaultConnectAddress(
       const OpalTransportAddress & address
@@ -235,6 +250,8 @@ class SDPSessionDescription : public PObject
 
     PINDEX protocolVersion;
     PString sessionName;
+
+    Direction direction;
 
     PString ownerUsername;
     unsigned ownerSessionId;
