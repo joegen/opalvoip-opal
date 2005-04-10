@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2027  2005/02/19 22:48:48  dsandras
+ * Revision 1.2028  2005/04/10 20:54:35  dsandras
+ * Added function that returns the "best guess" callback URL of a connection.
+ *
+ * Revision 2.26  2005/02/19 22:48:48  dsandras
  * Added the possibility to register to several registrars and be able to do authenticated calls to each of them. Added SUBSCRIBE/NOTIFY support for Message Waiting Indications.
  *
  * Revision 2.25  2005/01/16 11:28:05  csoutheren
@@ -391,6 +394,12 @@ class SIPConnection : public OpalConnection
     void SetLocalPartyAddress(
       const PString & addr
     ) { localPartyAddress = addr; }
+
+    /**Get the remote party address.
+       This will return the "best guess" at an address to use in a
+       to call the user again later.
+      */
+    const PString GetRemotePartyCallbackURL() const;
 
     PString GetTag() const { return GetIdentifier().AsString(); }
     SIPEndPoint & GetEndPoint() const { return endpoint; }
