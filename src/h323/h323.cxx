@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2077  2005/04/10 21:07:24  dsandras
+ * Revision 1.2078  2005/04/10 21:08:14  dsandras
+ * Added support for Blind Transfer (new API).
+ *
+ * Revision 2.76  2005/04/10 21:07:24  dsandras
  * Added support for function that returns the "best guess" h323 callback URL for a connection.
  *
  * Revision 2.75  2005/03/01 19:22:18  dsandras
@@ -3932,6 +3935,13 @@ H323Channel * H323Connection::GetLogicalChannel(unsigned number, BOOL fromRemote
 H323Channel * H323Connection::FindChannel(unsigned rtpSessionId, BOOL fromRemote) const
 {
   return logicalChannels->FindChannelBySession(rtpSessionId, fromRemote);
+}
+
+
+void H323Connection::TransferConnection(const PString & remoteParty,
+					const PString & callIdentity)
+{
+  TransferCall(remoteParty, callIdentity);
 }
 
 
