@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2035  2005/04/10 20:42:33  dsandras
+ * Revision 1.2036  2005/04/10 20:43:39  dsandras
+ * Added support for function allowing to put the OpalMediaStreams on pause.
+ *
+ * Revision 2.34  2005/04/10 20:42:33  dsandras
  * Added support for a function that returns the "best guess" callback URL.
  *
  * Revision 2.33  2005/04/10 20:41:29  dsandras
@@ -521,6 +524,10 @@ class OpalConnection : public PSafeObject
     /**Start media streams for session.
       */
     virtual void StartMediaStreams();
+
+    /**Pause media streams for session.
+      */
+    virtual void PauseMediaStreams(BOOL paused);
 
     /**Create a new media stream.
        This will create a media stream of an appropriate subclass as required
