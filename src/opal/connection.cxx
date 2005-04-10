@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2039  2004/08/14 07:56:35  rjongbloed
+ * Revision 1.2040  2005/04/10 21:11:25  dsandras
+ * Added support for call hold.
+ *
+ * Revision 2.38  2004/08/14 07:56:35  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.37  2004/07/14 13:26:14  rjongbloed
@@ -281,6 +284,23 @@ void OpalConnection::PrintOn(ostream & strm) const
   strm << ownerCall << '-'<< endpoint << '[' << callToken << ']';
 }
 
+
+void OpalConnection::HoldConnection()
+{
+  
+}
+
+
+void OpalConnection::RetrieveConnection()
+{
+  
+}
+
+
+BOOL OpalConnection::IsConnectionOnHold()
+{
+  return FALSE;
+}
 
 void OpalConnection::SetCallEndReason(CallEndReason reason)
 {
