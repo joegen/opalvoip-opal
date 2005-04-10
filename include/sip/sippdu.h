@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2022  2005/04/10 21:05:14  dsandras
+ * Revision 1.2023  2005/04/10 21:18:24  dsandras
+ * Added support for the SIPMessage PDU.
+ *
+ * Revision 2.21  2005/04/10 21:05:14  dsandras
  * Added support for SIP Invite using the same RTP Session (call hold).
  *
  * Revision 2.20  2005/04/10 21:04:08  dsandras
@@ -692,6 +695,23 @@ class SIPReferNotify : public SIPTransaction
     );
 };
 
+
+/////////////////////////////////////////////////////////////////////////
+
+/* This is a MESSAGE PDU, with a body
+ */
+class SIPMessage : public SIPTransaction
+{
+    PCLASSINFO(SIPMessage, SIPTransaction);
+    
+  public:
+    SIPMessage(
+	       SIPEndPoint & ep,
+	       OpalTransport & trans,
+	       const SIPURL & address,
+	       const PString & body
+    );
+};
 
 #endif // __OPAL_SIPPDU_H
 
