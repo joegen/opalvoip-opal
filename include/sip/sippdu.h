@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2020  2005/03/11 18:12:08  dsandras
+ * Revision 1.2021  2005/04/10 21:04:08  dsandras
+ * Added support for Blind Transfer (SIP REFER).
+ *
+ * Revision 2.19  2005/03/11 18:12:08  dsandras
  * Added support to specify the realm when registering. That way softphones already know what authentication information to use when required. The realm/domain can also be used in the From field.
  *
  * Revision 2.18  2005/02/19 22:48:48  dsandras
@@ -240,6 +243,9 @@ class SIPMIMEInfo : public PMIMEInfo
     PString GetVia() const;
     void SetVia(const PString & v);
 
+    PString GetReferTo() const;
+    void SetReferTo(const PString & r);
+
     PINDEX  GetContentLength() const;
     void SetContentLength(PINDEX v);
 
@@ -362,6 +368,7 @@ class SIP_PDU : public PObject
       Method_REGISTER,
       Method_SUBSCRIBE,
       Method_NOTIFY,
+      Method_REFER,
       NumMethods
     };
 
@@ -434,6 +441,7 @@ class SIP_PDU : public PObject
     SIP_PDU(
       const SIP_PDU & request,
       StatusCodes code,
+      const char * contact = NULL,
       const char * extra = NULL
     );
     SIP_PDU(const SIP_PDU &);
@@ -642,6 +650,37 @@ class SIPMWISubscribe : public SIPTransaction
       const SIPURL & address,
       const PString & id,
       unsigned expires
+    );
+};
+
+
+/////////////////////////////////////////////////////////////////////////
+
+class SIPRefer : public SIPTransaction
+{
+    PCLASSINFO(SIPRefer, SIPTransaction);
+  public:
+    SIPRefer(
+      SIPConnection & connection,
+      OpalTransport & transport,
+      const PString & refer
+    );
+};
+
+
+/////////////////////////////////////////////////////////////////////////
+
+/* This is not a generic NOTIFY PDU, but the minimal one
+ * that gets sent when receiving a REFER
+ */
+class SIPReferNotify : public SIPTransaction
+{
+    PCLASSINFO(SIPReferNotify, SIPTransaction);
+  public:
+    SIPReferNotify(
+      SIPConnection & connection,
+      OpalTransport & transport,
+      StatusCodes code
     );
 };
 
