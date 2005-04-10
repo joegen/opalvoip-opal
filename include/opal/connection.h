@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2033  2005/04/10 20:40:20  dsandras
+ * Revision 1.2034  2005/04/10 20:41:29  dsandras
+ * Added support for call hold.
+ *
+ * Revision 2.32  2005/04/10 20:40:20  dsandras
  * Added support for Blind Transfert.
  *
  * Revision 2.31  2005/01/16 11:28:05  csoutheren
@@ -301,7 +304,6 @@ class OpalConnection : public PSafeObject
       PSyncPoint * sync,
       CallEndReason reason = EndedByLocalUser  /// Reason for call clearing
     );
-  //@}
 
     /**Initiate the transfer of an existing call (connection) to a new remote 
        party.
@@ -311,6 +313,20 @@ class OpalConnection : public PSafeObject
       const PString & callIdentity = PString::Empty()
                                     /// Call Identity of secondary call if present
     );
+    
+    /**Put the current connection on hold, suspending all media streams.
+     */
+    virtual void HoldConnection();
+
+    /**Retrieve the current connection from hold, activating all media 
+     * streams.
+     */
+    virtual void RetrieveConnection();
+
+    /**Return TRUE if the current connection is on hold.
+     */
+    virtual BOOL IsConnectionOnHold();
+  //@}
 
   /**@name Call progress functions */
   //@{
