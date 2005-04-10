@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2030  2005/04/10 20:58:21  dsandras
+ * Revision 1.2031  2005/04/10 20:59:42  dsandras
+ * Added call hold support (local and remote).
+ *
+ * Revision 2.29  2005/04/10 20:58:21  dsandras
  * Added function to handle incoming transfer (REFER).
  *
  * Revision 2.28  2005/04/10 20:57:18  dsandras
@@ -183,6 +186,19 @@ class SIPConnection : public OpalConnection
       const PString & callIdentity = PString::Empty()
                                     /// Call Identity of secondary call if present
     );
+
+    /**Put the current connection on hold, suspending all media streams.
+     */
+    virtual void HoldConnection();
+
+    /**Retrieve the current connection from hold, activating all media 
+     * streams.
+     */
+    virtual void RetrieveConnection();
+
+    /**Return TRUE if the current connection is on hold.
+     */
+    virtual BOOL IsConnectionOnHold();
 
     /**Indicate to remote endpoint an alert is in progress.
        If this is an incoming connection and the AnswerCallResponse is in a
@@ -449,6 +465,8 @@ class SIPConnection : public OpalConnection
     SIPEndPoint   & endpoint;
     OpalTransport * transport;
 
+    BOOL	      local_hold;
+    BOOL	      remote_hold;
     PString           localPartyAddress;
     PString	          forwardParty;
     SIP_PDU         * originalInvite;
