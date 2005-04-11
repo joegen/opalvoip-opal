@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2036  2005/04/10 20:43:39  dsandras
+ * Revision 1.2037  2005/04/11 10:42:35  dsandras
+ * Fixed previous commit.
+ *
+ * Revision 2.35  2005/04/10 20:43:39  dsandras
  * Added support for function allowing to put the OpalMediaStreams on pause.
  *
  * Revision 2.34  2005/04/10 20:42:33  dsandras
@@ -524,6 +527,10 @@ class OpalConnection : public PSafeObject
     /**Start media streams for session.
       */
     virtual void StartMediaStreams();
+    
+    /**Pause media streams for session.
+      */
+    virtual void PauseMediaStreams(BOOL paused);
 
     /**Pause media streams for session.
       */
@@ -844,7 +851,7 @@ class OpalConnection : public PSafeObject
     /**Get the owner endpoint for this connection.
      */
     OpalEndPoint & GetEndPoint() const { return endpoint; }
-
+    
     /**Get the owner call for this connection.
      */
     OpalCall & GetCall() const { return ownerCall; }
