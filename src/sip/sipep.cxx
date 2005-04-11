@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2041  2005/04/11 10:26:30  dsandras
+ * Revision 1.2042  2005/04/11 10:31:32  dsandras
+ * Cleanups.
+ *
+ * Revision 2.40  2005/04/11 10:26:30  dsandras
  * Added SetUpTransfer similar to the one from in the H.323 part.
  *
  * Revision 2.39  2005/03/11 18:12:09  dsandras
@@ -809,11 +812,14 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 BOOL SIPEndPoint::OnReceivedNOTIFY (OpalTransport & transport, SIP_PDU & pdu)
 {
   PSafePtr<SIPInfo> info = NULL;
+  PCaselessString state, event;
   
   PTRACE(3, "SIP\tReceived NOTIFY");
   
+  event = pdu.GetMIME().GetEvent();
+  
   // Only support MWI Subscribe for now, other events are unrequested
-  if (!(pdu.GetMIME().GetEvent() *= "message-summary")) {
+  if (event.Find("message-summary") == P_MAX_INDEX) {
 
     SIP_PDU response(pdu, SIP_PDU::Failure_BadEvent);
     response.Write(transport);
@@ -844,14 +850,16 @@ BOOL SIPEndPoint::OnReceivedNOTIFY (OpalTransport & transport, SIP_PDU & pdu)
       activeRegistrations.Remove (info);
     }
 
+    state = pdu.GetMIME().GetSubscriptionState();
+
     // Check the susbscription state
-    if (pdu.GetMIME().GetSubscriptionState() *= "terminated") {
+    if (state.Find("terminated") != P_MAX_INDEX) {
 
       PTRACE(3, "SIP\tSubscription is terminated");
       activeRegistrations.Remove (info);
     }
-    else if ((pdu.GetMIME().GetSubscriptionState() *= "active")
-	     || (pdu.GetMIME().GetSubscriptionState() *= "pending")) {
+    else if (state.Find("active") != P_MAX_INDEX
+	     || state.Find("pending") != P_MAX_INDEX) {
 
       PTRACE(3, "SIP\tSubscription is " << pdu.GetMIME().GetSubscriptionState());
       if (pdu.GetMIME().GetExpires(0) != 0) {
