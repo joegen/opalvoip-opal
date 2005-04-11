@@ -24,7 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2055  2005/03/11 18:12:09  dsandras
+ * Revision 1.2056  2005/04/11 10:23:58  dsandras
+ * 1) Added support for SIP ReINVITE without codec changes.
+ * 2) Added support for GetRemotePartyCallbackURL.
+ * 3) Added support for call hold (local and remote).
+ * 4) Fixed missing tag problem when sending BYE requests.
+ * 5) Added support for Blind Transfer (without support for being transfered).
+ *
+ * Revision 2.54  2005/03/11 18:12:09  dsandras
  * Added support to specify the realm when registering. That way softphones already know what authentication information to use when required. The realm/domain can also be used in the From field.
  *
  * Revision 2.53  2005/02/19 22:48:48  dsandras
@@ -255,8 +262,8 @@ SIPConnection::SIPConnection(OpalCall & call,
     targetAddress.SetParamVar("proxy", PString::Empty());
   }
 
-  SIPURL url (targetAddress.AsQuotedString ());
-  remotePartyAddress = url.AsString ();
+  SIPURL url(targetAddress.AsQuotedString());
+  remotePartyAddress = targetAddress.AsQuotedString();
   remotePartyName = url.GetDisplayName ();
 
   if (proxy.IsEmpty())
@@ -281,6 +288,10 @@ SIPConnection::SIPConnection(OpalCall & call,
   releaseMethod = ReleaseWithNothing;
 
   transactions.DisallowDeleteObjects();
+
+  referTransaction = NULL;
+  local_hold = FALSE;
+  remote_hold = FALSE;
 
   PTRACE(3, "SIP\tCreated connection.");
 }
@@ -373,6 +384,17 @@ void SIPConnection::OnReleased()
   OpalConnection::OnReleased();
 }
 
+void SIPConnection::TransferConnection(const PString & remoteParty, 
+				       const PString & callIdentity)
+{
+  if (referTransaction != NULL) 
+    /* There is still an ongoing REFER transaction */
+    return;
+ 
+  referTransaction = 
+    new SIPRefer(*this, *transport, remoteParty);
+  referTransaction->Start ();
+}
 
 BOOL SIPConnection::SetAlerting(const PString & /*calleeName*/, BOOL /*withMedia*/)
 {
@@ -415,8 +437,21 @@ BOOL SIPConnection::SetConnected()
   if (endpoint.GetManager().CanAutoStartTransmitVideo())
     OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut);
 
-  // send the response
-  SIP_PDU response(*originalInvite, SIP_PDU::Successful_OK);
+  // translate contact address
+  OpalTransportAddress contactAddress = transport->GetLocalAddress();
+  WORD contactPort = endpoint.GetDefaultSignalPort();
+  PIPSocket::Address localIP;
+  if (transport->GetLocalAddress().GetIpAddress(localIP)) {
+    PIPSocket::Address remoteIP;
+    if (transport->GetRemoteAddress().GetIpAddress(remoteIP)) {
+      endpoint.GetManager().TranslateIPAddress(localIP, remoteIP);
+      contactAddress = OpalTransportAddress(localIP, contactPort, "udp");
+    }
+  }
+    
+  // send the 200 OK response
+  SIPURL contact(endpoint.GetRegisteredPartyName(SIPURL(remotePartyAddress).GetHostName()).GetUserName(), contactAddress, contactPort);
+  SIP_PDU response(*originalInvite, SIP_PDU::Successful_OK, (const char *) contact.AsQuotedString());
   response.SetSDP(sdpOut);
   response.Write(*transport);
   phase = ConnectedPhase;
@@ -461,18 +496,23 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   if (rtpSession == NULL)
     return FALSE;
 
-  rtpSession->SetUserData(new SIP_RTP_Session(*this));
-
-  // set the remote addresses
-  PIPSocket::Address ip;
-  WORD port;
-  incomingMedia->GetTransportAddress().GetIpAndPort(ip, port);
-  if (!rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
-    PTRACE(1, "SIP\tCannot set remote ports on RTP session");
-    ReleaseSession(rtpSessionId);
-    return FALSE;
+  // If it is not a hold, update the RTP Session info
+  if (!IsConnectionOnHold()) {
+    
+    // Set user data
+    if (rtpSession->GetUserData() == NULL)
+      rtpSession->SetUserData(new SIP_RTP_Session(*this));
+    
+    // set the remote addresses
+    PIPSocket::Address ip;
+    WORD port;
+    incomingMedia->GetTransportAddress().GetIpAndPort(ip, port);
+    if (!rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
+      PTRACE(1, "SIP\tCannot set remote ports on RTP session");
+      ReleaseSession(rtpSessionId);
+      return FALSE;
+    }
   }
-
 
   // look for matching codec in peer connection
   if (!ownerCall.OpenSourceMediaStreams(*this, remoteFormatList, rtpSessionId)) {
@@ -518,7 +558,7 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   if (hasTelephoneEvent) {
     localMedia->AddSDPMediaFormat(new SDPMediaFormat("0-15", rfc2833Handler->GetPayloadType()));
   }
-
+  
   sdpOut.AddMediaDescription(localMedia);
   return TRUE;
 }
@@ -642,6 +682,62 @@ BOOL SIPConnection::SetUpConnection()
 }
 
 
+void SIPConnection::HoldConnection()
+{
+  if (local_hold)
+    return;
+  else
+    local_hold = TRUE;
+
+  if (transport == NULL)
+    return;
+
+  PTRACE(2, "SIP\tWill put connection on hold");
+
+  SIPTransaction * invite = new SIPInvite(*this, *transport, rtpSessions);
+  if (invite->Start()) {
+    invitations.Append(invite);
+    
+    // Pause the media streams
+    PauseMediaStreams(TRUE);
+    
+    // Signal the manager that there is a hold
+    endpoint.OnHold(*this);
+  }
+}
+
+
+void SIPConnection::RetrieveConnection()
+{
+  if (!local_hold)
+    return;
+  else
+    local_hold = FALSE;
+
+  if (transport == NULL)
+    return;
+
+  PTRACE(2, "SIP\tWill retrieve connection from hold");
+
+  SIPTransaction * invite = new SIPInvite(*this, *transport, rtpSessions);
+  if (invite->Start()) {
+    invitations.Append(invite);
+    
+    // Un-Pause the media streams
+    PauseMediaStreams(FALSE);
+
+    // Signal the manager that there is a hold
+    endpoint.OnHold(*this);
+  }
+}
+
+
+BOOL SIPConnection::IsConnectionOnHold()
+{
+  return (local_hold || remote_hold);
+}
+
+
 SDPSessionDescription * SIPConnection::BuildSDP(RTP_SessionManager & rtpSessions,
                                                 unsigned rtpSessionId)
 {
@@ -667,11 +763,11 @@ SDPSessionDescription * SIPConnection::BuildSDP(RTP_SessionManager & rtpSessions
        accepted the rtpSessions for that INVITE is put into th connection. */
     RTP_Session * rtpSession = rtpSessions.UseSession(rtpSessionId);
     if (rtpSession == NULL) {
+
       // Not already there, so create one
       rtpSession = CreateSession(GetTransport(), rtpSessionId, NULL);
       if (rtpSession == NULL)
-        return NULL;
-
+	return NULL;
       rtpSession->SetUserData(new SIP_RTP_Session(*this));
 
       // add the RTP session to the RTP session manager in INVITE
@@ -717,6 +813,10 @@ SDPSessionDescription * SIPConnection::BuildSDP(RTP_SessionManager & rtpSessions
   // add in SDP records
   sdp->AddMediaDescription(localMedia);
 
+  // add sendonly
+  if (local_hold)
+    sdp->SetDirection (SDPSessionDescription::SendOnly);
+
   return sdp;
 }
 
@@ -746,6 +846,14 @@ void SIPConnection::SetLocalPartyAddress()
 
   // add displayname, <> and tag
   SetLocalPartyAddress(myAddress.AsQuotedString() + ";tag=" + GetTag());
+}
+
+
+const PString SIPConnection::GetRemotePartyCallbackURL() const
+{
+  SIPURL url = GetRemotePartyAddress();
+  url.AdjustForRequestURI();
+  return url.AsString();
 }
 
 
@@ -786,8 +894,16 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
     case SIP_PDU::Method_OPTIONS :
       OnReceivedOPTIONS(pdu);
       break;
-    case SIP_PDU::Method_SUBSCRIBE :
     case SIP_PDU::Method_NOTIFY :
+      OnReceivedNOTIFY(pdu);
+      break;
+    case SIP_PDU::Method_REFER :
+      OnReceivedREFER(pdu);
+      break;
+    case SIP_PDU::Method_MESSAGE :
+      endpoint.OnReceivedMESSAGE (*transport, pdu);
+      break;
+    case SIP_PDU::Method_SUBSCRIBE :
     case SIP_PDU::Method_REGISTER :
       // Shouldn't have got this!
       break;
@@ -811,10 +927,14 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     }
 
     // Save the sessions etc we are actually using
-    rtpSessions = ((SIPInvite &)transaction).GetSessionManager();
+    // If we are in the EstablishedPhase, then the 
+    // sessions are kept identical because the response is the
+    // response to a hold/retrieve
+    if (phase != EstablishedPhase)
+      rtpSessions = ((SIPInvite &)transaction).GetSessionManager();
     localPartyAddress = transaction.GetMIME().GetFrom();
-    SIPURL url (response.GetMIME ().GetTo ());
-    remotePartyAddress = url.AsString ();
+    remotePartyAddress = response.GetMIME().GetTo();
+    SIPURL url(remotePartyAddress);
     remotePartyName = url.GetDisplayName ();
     remoteApplication = response.GetMIME().GetUserAgent ();
     remoteApplication.Replace ('/', '\t'); 
@@ -879,8 +999,17 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
           OnReceivedOK(transaction, response);
           break;
         default :
-          // All other final responses cause a call end.
-          Release(EndedByRefusal);
+          // All other final responses cause a call end, if it is not a
+	  // local hold.
+	  if (!local_hold)
+	    Release(EndedByRefusal);
+	  else {
+	    local_hold = FALSE; // It failed
+	    // Un-Pause the media streams
+	    PauseMediaStreams(FALSE);
+	    // Signal the manager that there is no more hold
+	    endpoint.OnHold(*this);
+	  }
       }
   }
 }
@@ -888,18 +1017,25 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
 void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 {
-  // ignore duplicate INVITES
-  if (originalInvite != NULL) {
-    PTRACE(2, "SIP\tIgnoring duplicate INVITE from " << request.GetURI() << " for " << *this);
-    return;
+  BOOL isReinvite = FALSE;
+  
+  // Is Re-INVITE?
+  if ((!IsOriginating() && originalInvite != NULL)
+      || (IsOriginating())) {
+    PTRACE(2, "SIP\tReceived re-INVITE from " << request.GetURI() << " for " << *this);
+    isReinvite = TRUE;
   }
 
+  if (originalInvite)
+    delete originalInvite;
+
   originalInvite = new SIP_PDU(request);
-  releaseMethod = ReleaseWithResponse;
+  if (!isReinvite)
+    releaseMethod = ReleaseWithResponse;
 
   SIPMIMEInfo & mime = originalInvite->GetMIME();
-  SIPURL url (mime.GetFrom ());
-  remotePartyAddress = url.AsString (); 
+  remotePartyAddress = mime.GetFrom(); 
+  SIPURL url(remotePartyAddress);
   remotePartyName = url.GetDisplayName ();
   remoteApplication = mime.GetUserAgent ();
   remoteApplication.Replace ('/', '\t'); 
@@ -918,6 +1054,75 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   }
   targetAddress.AdjustForRequestURI();
 
+  // We received a Re-INVITE for a current connection
+  if (isReinvite) {
+
+    SDPSessionDescription sdpOut(GetLocalAddress());
+
+    // get the remote media formats
+    SDPSessionDescription & sdpIn = originalInvite->GetSDP();
+
+    // The Re-INVITE can be sent to change the RTP Session parameters,
+    // the current codecs, or to put the call on hold
+    if (sdpIn.GetDirection() == SDPSessionDescription::SendOnly) {
+
+      // Remotely put on hold
+      remote_hold = TRUE;
+      
+      // Pause the media streams or not
+      PauseMediaStreams(TRUE);
+      
+      // Signal the manager that there is a hold
+      endpoint.OnHold(*this);
+    }
+    else {
+      
+      // If we receive a consecutive reinvite without the SendOnly
+      // parameter, then we are not on hold anymore
+      if (remote_hold) {
+	
+	// No hold
+	remote_hold = FALSE;
+	
+	// Pause the media streams or not
+	PauseMediaStreams(FALSE);
+	
+	// Signal the manager that there is a hold
+	endpoint.OnHold(*this);
+      }
+    }
+
+    if (!OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut)) {
+      Release(EndedByCapabilityExchange);
+      return;
+    }
+
+    if (endpoint.GetManager().CanAutoStartTransmitVideo())
+      OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut);
+
+    // translate contact address to put it in the 200 OK response
+    OpalTransportAddress contactAddress = transport->GetLocalAddress();
+    WORD contactPort = endpoint.GetDefaultSignalPort();
+    PIPSocket::Address localIP;
+    if (transport->GetLocalAddress().GetIpAddress(localIP)) {
+      PIPSocket::Address remoteIP;
+      if (transport->GetRemoteAddress().GetIpAddress(remoteIP)) {
+	endpoint.GetManager().TranslateIPAddress(localIP, remoteIP);
+	contactAddress = OpalTransportAddress(localIP, contactPort, "udp");
+      }
+    }
+    
+    // send the 200 OK response
+    SIPURL contact(endpoint.GetRegisteredPartyName(SIPURL(remotePartyAddress).GetHostName()).GetUserName(), contactAddress, contactPort);
+    SIP_PDU response(*originalInvite, SIP_PDU::Successful_OK, (const char *) contact.AsQuotedString ());
+    response.SetSDP(sdpOut);
+    if (remote_hold)
+      sdpOut.SetDirection(SDPSessionDescription::RecvOnly);
+    response.Write(*transport);
+    
+    return;
+  }
+  
   // send trying with To: tag
   SendResponseToINVITE(SIP_PDU::Information_Trying);
 
@@ -959,6 +1164,66 @@ void SIPConnection::OnReceivedOPTIONS(SIP_PDU & /*request*/)
 }
 
 
+void SIPConnection::OnReceivedNOTIFY(SIP_PDU & pdu)
+{
+  PCaselessString event, state;
+  
+  if (referTransaction == NULL){
+    PTRACE(1, "SIP\tNOTIFY in a connection only supported for REFER requests");
+    return;
+  }
+  
+  event = pdu.GetMIME().GetEvent();
+  
+  // We could also compare the To and From tags
+  if (pdu.GetMIME().GetCallID() != referTransaction->GetMIME().GetCallID()
+      || event.Find("refer") == P_MAX_INDEX) {
+
+    SIP_PDU response(pdu, SIP_PDU::Failure_BadEvent);
+    response.Write(*transport);
+    return;
+  }
+
+  state = pdu.GetMIME().GetSubscriptionState();
+  // The REFER is over
+  if (state.Find("terminated") != P_MAX_INDEX) {
+    referTransaction->Wait();
+    delete referTransaction;
+    referTransaction = NULL;
+  }
+
+  // The REFER is not over yet, ignore the state of the REFER for now
+  SIP_PDU response(pdu, SIP_PDU::Successful_OK);
+  response.Write(*transport);
+}
+
+
+void SIPConnection::OnReceivedREFER(SIP_PDU & pdu)
+{
+//  SIPTransaction *notifyTransaction = NULL;
+  PString referto = pdu.GetMIME().GetReferTo();
+  
+  if (referto.IsEmpty()) {
+    SIP_PDU response(pdu, SIP_PDU::Failure_BadEvent);
+    response.Write(*transport);
+    return;
+  }    
+
+  // Reject the Refer
+  SIP_PDU response(pdu, SIP_PDU::Failure_Decline);
+  response.Write(*transport);
+  
+//  endpoint.SetupTransfer(GetToken(),  
+//			 PString (), 
+//			 referto,  
+//			 NULL);
+  
+  // Send a Final NOTIFY,
+//  notifyTransaction = 
+//    new SIPReferNotify(*this, *transport, SIP_PDU::Successful_Accepted);
+}
+
+
 void SIPConnection::OnReceivedBYE(SIP_PDU & request)
 {
   PTRACE(2, "SIP\tBYE received for call " << request.GetMIME().GetCallID());
@@ -966,8 +1231,8 @@ void SIPConnection::OnReceivedBYE(SIP_PDU & request)
   response.Write(*transport);
   releaseMethod = ReleaseWithNothing;
   
-  SIPURL url (request.GetMIME ().GetFrom ());
-  remotePartyAddress = url.AsString (); 
+  remotePartyAddress = request.GetMIME().GetFrom();
+  SIPURL url(remotePartyAddress);
   remotePartyName = url.GetDisplayName ();
   remoteApplication = request.GetMIME ().GetUserAgent ();
   remoteApplication.Replace ('/', '\t'); 
@@ -1147,14 +1412,12 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
     return;
   }
 
-  if (phase == EstablishedPhase) {
-    PTRACE(2, "SIP\tIgnoring repeated INVITE OK response");
-    return;
-  }
-
   PTRACE(2, "SIP\tReceived INVITE OK response");
 
   OnReceivedSDP(response);
+
+  if (phase == EstablishedPhase)
+    return;
   
   connectedTime = PTime ();
   OnConnected();
@@ -1196,6 +1459,7 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
   if (ownerCall.IsMediaBypassPossible(*this, rtpSessionId))
     mediaTransportAddresses.SetAt(rtpSessionId, new OpalTransportAddress(address));
   else {
+
     PIPSocket::Address ip;
     WORD port;
     address.GetIpAndPort(ip, port);
@@ -1294,7 +1558,7 @@ void SIPConnection::SendResponseToINVITE(SIP_PDU::StatusCodes code, const char *
 {
   if (originalInvite != NULL) {
         
-    SIP_PDU response(*originalInvite, code, extra);
+    SIP_PDU response(*originalInvite, code, NULL, extra);
     response.Write(*transport);
   }
 }
