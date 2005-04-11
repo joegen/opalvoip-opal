@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2019  2005/04/10 20:50:16  dsandras
+ * Revision 1.2020  2005/04/11 17:34:57  dsandras
+ * Added support for dynamic sequence changes in case of Re-INVITE.
+ *
+ * Revision 2.18  2005/04/10 20:50:16  dsandras
  * Allow changes of remote transmit address and SyncSource in an established RTP connection.
  *
  * Revision 2.17  2004/10/02 11:50:54  rjongbloed
@@ -871,6 +874,7 @@ class RTP_Session : public PObject
     DWORD         syncSourceIn;
     BOOL	  allowSyncSourceInChange;
     BOOL	  allowRemoteTransmitAddressChange;
+    BOOL	  allowSequenceChange;
     PTimeInterval reportTimeInterval;
     unsigned      txStatisticsInterval;
     unsigned      rxStatisticsInterval;
