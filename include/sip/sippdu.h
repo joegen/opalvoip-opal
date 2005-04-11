@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2023  2005/04/10 21:18:24  dsandras
+ * Revision 1.2024  2005/04/11 11:12:38  dsandras
+ * Added Method_MESSAGE support for future use.
+ *
+ * Revision 2.22  2005/04/10 21:18:24  dsandras
  * Added support for the SIPMessage PDU.
  *
  * Revision 2.21  2005/04/10 21:05:14  dsandras
@@ -375,6 +378,7 @@ class SIP_PDU : public PObject
       Method_SUBSCRIBE,
       Method_NOTIFY,
       Method_REFER,
+      Method_MESSAGE,
       NumMethods
     };
 

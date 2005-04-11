@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2056  2005/04/11 10:23:58  dsandras
+ * Revision 1.2057  2005/04/11 11:12:38  dsandras
+ * Added Method_MESSAGE support for future use.
+ *
+ * Revision 2.55  2005/04/11 10:23:58  dsandras
  * 1) Added support for SIP ReINVITE without codec changes.
  * 2) Added support for GetRemotePartyCallbackURL.
  * 3) Added support for call hold (local and remote).
@@ -901,8 +904,6 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
       OnReceivedREFER(pdu);
       break;
     case SIP_PDU::Method_MESSAGE :
-      endpoint.OnReceivedMESSAGE (*transport, pdu);
-      break;
     case SIP_PDU::Method_SUBSCRIBE :
     case SIP_PDU::Method_REGISTER :
       // Shouldn't have got this!
