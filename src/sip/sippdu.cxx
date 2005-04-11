@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2047  2005/04/11 10:37:14  dsandras
+ * Revision 1.2048  2005/04/11 10:38:14  dsandras
+ * Added support for INVITE done with the same RTP Session for call HOLD.
+ *
+ * Revision 2.46  2005/04/11 10:37:14  dsandras
  * Added support for the MESSAGE PDU.
  *
  * Revision 2.45  2005/04/11 10:36:34  dsandras
@@ -1706,6 +1709,18 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport)
   mime.SetUserAgent(connection.GetEndPoint()); // normally 'OPAL/2.0'
   mime.SetMaxForwards(70);                     // default
 
+  sdp = connection.BuildSDP(rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
+}
+
+
+SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, RTP_SessionManager & sm)
+  : SIPTransaction(connection, transport, Method_INVITE)
+{
+  mime.SetDate() ;                             // now
+  mime.SetUserAgent(connection.GetEndPoint()); // normally 'OPAL/2.0'
+  mime.SetMaxForwards(70);                     // default
+
+  rtpSessions = sm;
   sdp = connection.BuildSDP(rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
 }
 
