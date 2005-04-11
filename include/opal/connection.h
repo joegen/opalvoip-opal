@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2037  2005/04/11 10:42:35  dsandras
+ * Revision 1.2038  2005/04/11 11:12:00  dsandras
+ * Fixed previous commit.
+ *
+ * Revision 2.36  2005/04/11 10:42:35  dsandras
  * Fixed previous commit.
  *
  * Revision 2.35  2005/04/10 20:43:39  dsandras
@@ -528,10 +531,6 @@ class OpalConnection : public PSafeObject
       */
     virtual void StartMediaStreams();
     
-    /**Pause media streams for session.
-      */
-    virtual void PauseMediaStreams(BOOL paused);
-
     /**Pause media streams for session.
       */
     virtual void PauseMediaStreams(BOOL paused);
