@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2046  2005/04/11 10:36:34  dsandras
+ * Revision 1.2047  2005/04/11 10:37:14  dsandras
+ * Added support for the MESSAGE PDU.
+ *
+ * Revision 2.45  2005/04/11 10:36:34  dsandras
  * Added support for REFER and its associated NOTIFY for blind transfer.
  *
  * Revision 2.44  2005/03/11 18:12:09  dsandras
@@ -1858,5 +1861,47 @@ SIPReferNotify::SIPReferNotify(SIPConnection & connection, OpalTransport & trans
   str << "SIP/" << versionMajor << '.' << versionMinor << " " << code << " " << sipErrorDescriptions[code].desc;
   entityBody = str;
 }
+
+
+/////////////////////////////////////////////////////////////////////////
+
+SIPMessage::SIPMessage(SIPEndPoint & ep,
+		       OpalTransport & trans,
+		       const SIPURL & address,
+		       const PString & body)
+  : SIPTransaction(ep, trans)
+{
+  PString id =
+    OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
+    
+  // Build the correct From field
+  int port = 0;
+  PString displayName = ep.GetDefaultDisplayName();
+  PString localName = endpoint.GetRegisteredPartyName(SIPURL(address).GetHostName()).GetUserName(); 
+  PString domain = endpoint.GetRegisteredPartyName(SIPURL(address).GetHostName()).GetHostName();
+
+  // If no domain, use the local domain as default
+  if (domain.IsEmpty()) {
+    domain = trans.GetLocalAddress().GetHostName();
+    if (port != endpoint.GetDefaultSignalPort())
+      domain += psprintf(":%d", port);
+  }
+  if (localName.IsEmpty())
+    localName = ep.GetDefaultLocalPartyName ();
+
+  SIPURL myAddress("\"" + displayName + "\" <" + localName + "@" + domain + ">"); 
+  
+  SIP_PDU::Construct(Method_MESSAGE,
+                     "sip:"+address.GetUserName()+"@"+address.GetHostName(),
+                     address.AsQuotedString(),
+                     myAddress.AsQuotedString(),
+		     id,
+                     endpoint.GetNextCSeq(),
+                     transport.GetLocalAddress());
+  mime.SetContentType("text/plain;charset=UTF-8");
+
+  entityBody = body;
+}
+
 
 // End of file ////////////////////////////////////////////////////////////////
