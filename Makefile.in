@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.5  2005/04/11 10:41:05  dsandras
+# Added patch from Georgi Georgiev to fix compilation issues on Athlon64.
+#
 # Revision 1.4  2005/02/27 22:03:39  dereksmithies
 # Add target to generate docs with doxygen.
 #
@@ -564,7 +567,7 @@ $(DEPDIR)/%.dep : $(VIC_DIR)/%.cxx
 
 $(OPAL_OBJDIR)/%.o : $(GSM_SRCDIR)/%.c
 	@if [ ! -d $(OPAL_OBJDIR) ] ; then mkdir -p $(OPAL_OBJDIR) ; fi
-	$(CC) -ansi -I$(GSM_INCDIR) -DWAV49 -DNeedFunctionPrototypes=1 $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
+	$(CC) $(STDCCFLAGS) -ansi -I$(GSM_INCDIR) -DWAV49 -DNeedFunctionPrototypes=1 $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
 
 $(DEPDIR)/%.dep : $(GSM_SRCDIR)/%.c
 	@if [ ! -d $(DEPDIR) ] ; then mkdir -p $(DEPDIR) ; fi
@@ -576,7 +579,7 @@ $(DEPDIR)/%.dep : $(GSM_SRCDIR)/%.c
 
 $(OPAL_OBJDIR)/%.o : $(G726_DIR)/%.c
 	@if [ ! -d $(OPAL_OBJDIR) ] ; then mkdir -p $(OPAL_OBJDIR) ; fi
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(STDCCFLAGS) $(CFLAGS) -c $< -o $@
 
 $(DEPDIR)/%.dep : $(G726_DIR)/%.c
 	@if [ ! -d $(DEPDIR) ] ; then mkdir -p $(DEPDIR) ; fi
@@ -588,7 +591,7 @@ $(DEPDIR)/%.dep : $(G726_DIR)/%.c
 
 $(OPAL_OBJDIR)/%.o : $(LPC10_SRCDIR)/%.c
 	@if [ ! -d $(OPAL_OBJDIR) ] ; then mkdir -p $(OPAL_OBJDIR) ; fi
-	$(CC) -I$(LPC10_INCDIR) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
+	$(CC) $(STDCCFLAGS) -I$(LPC10_INCDIR) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
 
 $(DEPDIR)/%.dep : $(LPC10_SRCDIR)/%.c
 	@if [ ! -d $(DEPDIR) ] ; then mkdir -p $(DEPDIR) ; fi
