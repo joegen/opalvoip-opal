@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2019  2005/04/10 21:17:05  dsandras
+ * Revision 1.2020  2005/04/11 17:34:57  dsandras
+ * Added support for dynamic sequence changes in case of Re-INVITE.
+ *
+ * Revision 2.18  2005/04/10 21:17:05  dsandras
  * Added support for remote address and SyncSource changes during an active RTP Session.
  *
  * Revision 2.17  2005/01/16 23:07:35  csoutheren
@@ -733,8 +736,9 @@ RTP_Session::RTP_Session(unsigned id, RTP_UserData * data, BOOL autoDelete)
   ignoreOutOfOrderPackets = TRUE;
   syncSourceOut = PRandom::Number();
   syncSourceIn = 0;
-  allowSyncSourceInChange = TRUE;
-  allowRemoteTransmitAddressChange = TRUE;
+  allowSyncSourceInChange = FALSE;
+  allowRemoteTransmitAddressChange = FALSE;
+  allowSequenceChange = FALSE;
   txStatisticsInterval = 100;  // Number of data packets between tx reports
   rxStatisticsInterval = 100;  // Number of data packets between rx reports
   lastSentSequenceNumber = (WORD)PRandom::Number();
@@ -1053,7 +1057,12 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(const RTP_DataFrame & 
 	  maximumJitterLevel = jitterLevel;
       }
     }
+    else if (allowSequenceChange) {
+
+      expectedSequenceNumber = (WORD) (sequenceNumber + 1);
+    }
     else if (sequenceNumber < expectedSequenceNumber) {
+
       PTRACE(3, "RTP\tOut of order packet, received "
 	     << sequenceNumber << " expected " << expectedSequenceNumber
 	     << " ssrc=" << syncSourceIn);
@@ -1709,10 +1718,10 @@ BOOL RTP_UDP::SetRemoteSocketInfo(PIPSocket::Address address, WORD port, BOOL is
     return TRUE;
 
   remoteAddress = address;
-  remoteTransmitAddress = address;
 
   allowSyncSourceInChange = TRUE;
   allowRemoteTransmitAddressChange = TRUE;
+  allowSequenceChange = TRUE;
 
   if (isDataPort) {
     remoteDataPort = port;
@@ -1813,7 +1822,11 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(PUDPSocket & socket
           remoteControlPort = port;
       }
 
-      if (!remoteTransmitAddress.IsValid()||(allowRemoteTransmitAddressChange && remoteTransmitAddress != addr)) {
+      if (!remoteTransmitAddress.IsValid()) {
+	
+	remoteTransmitAddress = addr;
+      } 
+      else if (allowRemoteTransmitAddressChange && remoteTransmitAddress != addr && remoteTransmitAddress != remoteAddress) {
 
         remoteTransmitAddress = addr;
 	allowRemoteTransmitAddressChange = FALSE;
