@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2040  2005/03/11 18:12:09  dsandras
+ * Revision 1.2041  2005/04/11 10:26:30  dsandras
+ * Added SetUpTransfer similar to the one from in the H.323 part.
+ *
+ * Revision 2.39  2005/03/11 18:12:09  dsandras
  * Added support to specify the realm when registering. That way softphones already know what authentication information to use when required. The realm/domain can also be used in the From field.
  *
  * Revision 2.38  2005/02/21 12:20:05  rjongbloed
@@ -468,6 +471,46 @@ SIPConnection * SIPEndPoint::CreateConnection(OpalCall & call,
                                               SIP_PDU * /*invite*/)
 {
   return new SIPConnection(call, *this, token, destination, transport);
+}
+
+
+BOOL SIPEndPoint::SetupTransfer(const PString & token,  
+				const PString & callIdentity, 
+				const PString & remoteParty,  
+				void * userData)
+{
+  // Make a new connection
+  PSafePtr<OpalConnection> otherConnection = 
+    GetConnectionWithLock(token, PSafeReference);
+  if (otherConnection == NULL) {
+    return FALSE;
+  }
+  
+  OpalCall call = otherConnection->GetCall();
+
+  // Move old connection on token to new value and flag for removal
+  PString adjustedToken;
+  unsigned tieBreaker = 0;
+  do {
+    adjustedToken = token + "-replaced";
+    adjustedToken.sprintf("-%u", ++tieBreaker);
+  } while (connectionsActive.Contains(adjustedToken));
+  connectionsActive.SetAt(adjustedToken, otherConnection);
+  call.OnReleased(*otherConnection);
+  
+  PStringStream callID;
+  OpalGloballyUniqueID id;
+  callID << id << '@' << PIPSocket::GetHostName();
+  SIPConnection * connection = 
+    CreateConnection(call, callID, userData, remoteParty, NULL, NULL);
+  
+  if (connection == NULL)
+    return FALSE;
+
+  connectionsActive.SetAt(callID, connection);
+  connection->SetUpConnection();
+
+  return TRUE;
 }
 
 
