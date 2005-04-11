@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2045  2005/03/11 18:12:09  dsandras
+ * Revision 1.2046  2005/04/11 10:36:34  dsandras
+ * Added support for REFER and its associated NOTIFY for blind transfer.
+ *
+ * Revision 2.44  2005/03/11 18:12:09  dsandras
  * Added support to specify the realm when registering. That way softphones already know what authentication information to use when required. The realm/domain can also be used in the From field.
  *
  * Revision 2.43  2005/02/19 22:48:48  dsandras
@@ -210,7 +213,8 @@ static const char * const MethodNames[SIP_PDU::NumMethods] = {
   "CANCEL",
   "REGISTER",
   "SUBSCRIBE",
-  "NOTIFY"
+  "NOTIFY",
+  "REFER"
 };
 
 static struct {
@@ -563,6 +567,18 @@ PString SIPMIMEInfo::GetVia() const
 void SIPMIMEInfo::SetVia(const PString & v)
 {
   SetAt(compactForm ? "v" : "Via",  v);
+}
+
+
+PString SIPMIMEInfo::GetReferTo() const
+{
+  return GetFullOrCompact("Refer-To", 'r');
+}
+
+
+void SIPMIMEInfo::SetReferTo(const PString & r)
+{
+  SetAt(compactForm ? "r" : "Refer-To",  r);
 }
 
 
@@ -1025,7 +1041,10 @@ SIP_PDU::SIP_PDU(Methods method,
 }
 
 
-SIP_PDU::SIP_PDU(const SIP_PDU & request, StatusCodes code, const char * extra)
+SIP_PDU::SIP_PDU(const SIP_PDU & request, 
+		 StatusCodes code, 
+		 const char * contact,
+		 const char * extra)
 {
   char *extraInfo = NULL;
  
@@ -1054,10 +1073,13 @@ SIP_PDU::SIP_PDU(const SIP_PDU & request, StatusCodes code, const char * extra)
   
   /* Use extra paramater as redirection URL in case of 302 */
   if (code == SIP_PDU::Redirection_MovedTemporarily) {
-
-    SIPURL contact (extraInfo);
-    mime.SetContact (contact.AsQuotedString ());
+    SIPURL contact(extraInfo);
+    mime.SetContact(contact.AsQuotedString ());
     extraInfo = NULL;
+  }
+  else if (contact != NULL) {
+
+    mime.SetContact(PString(contact));
   }
     
   // format response
@@ -1806,6 +1828,35 @@ SIPMWISubscribe::SIPMWISubscribe(SIPEndPoint & ep,
   mime.SetAccept("application/simple-message-summary");
   mime.SetEvent("message-summary");
   mime.SetExpires(expires);
+}
+
+
+/////////////////////////////////////////////////////////////////////////
+
+SIPRefer::SIPRefer(SIPConnection & connection, OpalTransport & transport, const PString & refer)
+  : SIPTransaction(connection, transport, Method_REFER)
+{
+  mime.SetUserAgent(connection.GetEndPoint()); // normally 'OPAL/2.0'
+  mime.SetReferTo(refer);
+}
+
+
+/////////////////////////////////////////////////////////////////////////
+
+SIPReferNotify::SIPReferNotify(SIPConnection & connection, OpalTransport & transport, StatusCodes code)
+  : SIPTransaction(connection, transport, Method_NOTIFY)
+{
+  PStringStream str;
+  
+  mime.SetUserAgent(connection.GetEndPoint()); // normally 'OPAL/2.0'
+  mime.SetSubscriptionState("terminated;reason=noresource"); // Do not keep
+  							     // an internal state
+  mime.SetEvent("refer");
+  mime.SetContentType("message/sipfrag;version=2.0");
+
+
+  str << "SIP/" << versionMajor << '.' << versionMinor << " " << code << " " << sipErrorDescriptions[code].desc;
+  entityBody = str;
 }
 
 // End of file ////////////////////////////////////////////////////////////////
