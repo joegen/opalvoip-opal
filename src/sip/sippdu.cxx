@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2049  2005/04/15 10:48:34  dsandras
+ * Revision 1.2050  2005/04/15 14:01:39  dsandras
+ * Added User Agent string in REGISTER and SUBSCRIBE PDUs.
+ *
+ * Revision 2.48  2005/04/15 10:48:34  dsandras
  * Allow reading on the transport until there is an EOF or it becomes bad. Fixes interoperability problem with QSC.DE which is sending keep-alive messages, leading to a timeout (transport.good() fails, but the stream is still usable).
  *
  * Revision 2.47  2005/04/11 10:38:14  dsandras
@@ -1806,6 +1809,7 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
                      endpoint.GetNextCSeq(),
                      transport.GetLocalAddress());
 
+  mime.SetUserAgent(ep); // normally 'OPAL/2.0'
   SIPURL contact(address.GetUserName(), contactAddress, contactPort);
   mime.SetContact(contact);
   mime.SetExpires(expires);
@@ -1846,6 +1850,7 @@ SIPMWISubscribe::SIPMWISubscribe(SIPEndPoint & ep,
                      transport.GetLocalAddress());
 
   SIPURL contact(address.GetUserName(), contactAddress, contactPort);
+  mime.SetUserAgent(ep); // normally 'OPAL/2.0'
   mime.SetContact(contact);
   mime.SetAccept("application/simple-message-summary");
   mime.SetEvent("message-summary");
