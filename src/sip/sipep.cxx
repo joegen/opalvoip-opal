@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2042  2005/04/11 10:31:32  dsandras
+ * Revision 1.2043  2005/04/15 10:48:34  dsandras
+ * Allow reading on the transport until there is an EOF or it becomes bad. Fixes interoperability problem with QSC.DE which is sending keep-alive messages, leading to a timeout (transport.good() fails, but the stream is still usable).
+ *
+ * Revision 2.41  2005/04/11 10:31:32  dsandras
  * Cleanups.
  *
  * Revision 2.40  2005/04/11 10:26:30  dsandras
@@ -351,7 +354,7 @@ BOOL SIPEndPoint::NewIncomingConnection(OpalTransport * transport)
 
   do {
     HandlePDU(*transport);
-  } while (transport->IsOpen() && transport->IsReliable() && transport->good());
+  } while (transport->IsOpen() && transport->IsReliable() && !transport->bad() && !transport->eof());
 
   PTRACE_IF(2, transport->IsReliable(), "SIP\tListening thread finished.");
 

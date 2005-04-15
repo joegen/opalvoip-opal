@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2048  2005/04/11 10:38:14  dsandras
+ * Revision 1.2049  2005/04/15 10:48:34  dsandras
+ * Allow reading on the transport until there is an EOF or it becomes bad. Fixes interoperability problem with QSC.DE which is sending keep-alive messages, leading to a timeout (transport.good() fails, but the stream is still usable).
+ *
+ * Revision 2.47  2005/04/11 10:38:14  dsandras
  * Added support for INVITE done with the same RTP Session for call HOLD.
  *
  * Revision 2.46  2005/04/11 10:37:14  dsandras
@@ -1262,16 +1265,17 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
   if (transport.rdbuf()->pubseekoff(0, ios_base::cur) == streampos(_BADOFF))
 #else
   if (transport.rdbuf()->seekoff(0, ios::cur, ios::in) == EOF)
-#endif                                                   
+#endif                  
     transport.clear(ios::badbit);
 
+  transport.clear();
   PString cmd;
-  if (transport.good()) {
+  if (!transport.bad() && !transport.eof()) {
     transport.SetReadTimeout(3000);
     transport >> cmd >> mime;
   }
 
-  if (!transport.good()) {
+  if (transport.bad()) {
     PTRACE_IF(1, transport.GetErrorCode(PChannel::LastReadError) != PChannel::NoError,
               "SIP\tPDU Read failed: " << transport.GetErrorText(PChannel::LastReadError));
     return FALSE;
