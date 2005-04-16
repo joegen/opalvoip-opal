@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2057  2005/04/11 11:12:38  dsandras
+ * Revision 1.2058  2005/04/16 18:57:36  dsandras
+ * Use a TO header without tag when restarting an INVITE.
+ *
+ * Revision 2.56  2005/04/11 11:12:38  dsandras
  * Added Method_MESSAGE support for future use.
  *
  * Revision 2.55  2005/04/11 10:23:58  dsandras
@@ -1319,6 +1322,8 @@ void SIPConnection::OnReceivedRedirection(SIP_PDU & /*response*/)
   remotePartyAddress = targetAddress.AsQuotedString();
 
   // send a new INVITE
+  remotePartyAddress = targetAddress.AsQuotedString(); // start with a new
+  						       // To tag
   SIPTransaction * invite = new SIPInvite(*this, *transport);
   if (invite->Start())
     invitations.Append(invite);
@@ -1396,6 +1401,8 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
   }
 
   // Restart the transaction with new authentication info
+  remotePartyAddress = targetAddress.AsQuotedString(); // start with a new
+  						       // To tag
   SIPTransaction * invite = new SIPInvite(*this, *transport);
   if (invite->Start())
     invitations.Append(invite);
