@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2058  2005/04/16 18:57:36  dsandras
+ * Revision 1.2059  2005/04/18 17:07:17  dsandras
+ * Fixed cut and paste error in last commit thanks to Ted Szoczei.
+ *
+ * Revision 2.57  2005/04/16 18:57:36  dsandras
  * Use a TO header without tag when restarting an INVITE.
  *
  * Revision 2.56  2005/04/11 11:12:38  dsandras
@@ -1318,9 +1321,6 @@ void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
 
 void SIPConnection::OnReceivedRedirection(SIP_PDU & /*response*/)
 {
-  // set the remote party address, targetAddress already set to Contact field
-  remotePartyAddress = targetAddress.AsQuotedString();
-
   // send a new INVITE
   remotePartyAddress = targetAddress.AsQuotedString(); // start with a new
   						       // To tag
