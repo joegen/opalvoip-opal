@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2023  2005/02/21 19:24:18  dsandras
+ * Revision 1.2024  2005/04/20 06:18:35  csoutheren
+ * Patch 1182998. Fix for using GK through NAT, and fixed Connect to be idempotent
+ * Thanks to Hannes Friederich
+ *
+ * Revision 2.22  2005/02/21 19:24:18  dsandras
  * Fixed problem with GRQ timeout not being set.
  *
  * Revision 2.21  2005/01/16 23:07:33  csoutheren
@@ -709,8 +713,24 @@ static BOOL WriteGRQ(H323Transport & transport, void * param)
 {
   H323RasPDU & pdu = *(H323RasPDU *)param;
   H225_GatekeeperRequest & grq = pdu;
-  H323TransportAddress localAddress = transport.GetLocalAddress();
-  localAddress.SetPDU(grq.m_rasAddress);
+  H323TransportAddress address = transport.GetLocalAddress();
+  
+  // We do have to use the translated address if one is specified
+  PIPSocket::Address localAddress, remoteAddress;
+  WORD localPort;
+  
+  if(address.GetIpAndPort(localAddress, localPort) &&
+	 transport.GetRemoteAddress().GetIpAddress(remoteAddress))
+  {
+	  OpalManager & manager = transport.GetEndPoint().GetManager();
+	  
+	  if(manager.TranslateIPAddress(localAddress, remoteAddress))
+	  {
+		  address = H323TransportAddress(localAddress, localPort);
+	  }
+  }
+  
+  address.SetPDU(grq.m_rasAddress);
   return pdu.Write(transport);
 }
 
@@ -885,6 +905,22 @@ BOOL H323Gatekeeper::RegistrationRequest(BOOL autoReg)
 
   rrq.m_rasAddress.SetSize(1);
   H323TransportAddress rasAddress = transport->GetLocalAddress();
+  
+  // We do have to use the translated address if specified
+  PIPSocket::Address localAddress, remoteAddress;
+  WORD localPort;
+  
+  if(rasAddress.GetIpAndPort(localAddress, localPort) &&
+	 transport->GetRemoteAddress().GetIpAddress(remoteAddress))
+  {
+	  OpalManager & manager = transport->GetEndPoint().GetManager();
+	  
+	  if(manager.TranslateIPAddress(localAddress, remoteAddress))
+	  {
+		  rasAddress = H323TransportAddress(localAddress, localPort);
+	  }
+  }
+  
   rasAddress.SetPDU(rrq.m_rasAddress[0]);
 
   H323TransportAddressArray listeners = endpoint.GetInterfaceAddresses(TRUE, transport);
@@ -894,7 +930,7 @@ BOOL H323Gatekeeper::RegistrationRequest(BOOL autoReg)
   }
 
   for (PINDEX i = 0; i < listeners.GetSize(); i++)
-    listeners[i].SetPDU(rrq.m_callSignalAddress, *transport);
+	  listeners[i].SetPDU(rrq.m_callSignalAddress, *transport);
 
   endpoint.SetEndpointTypeInfo(rrq.m_terminalType);
   endpoint.SetVendorIdentifierInfo(rrq.m_endpointVendor);
@@ -1831,6 +1867,21 @@ H225_InfoRequestResponse & H323Gatekeeper::BuildInfoRequestResponse(H323RasPDU &
   irr.m_endpointIdentifier = endpointIdentifier;
 
   H323TransportAddress address = transport->GetLocalAddress();
+  
+  // We do have to use the translated address if specified
+  PIPSocket::Address localAddress, remoteAddress;
+  WORD localPort;
+  
+  if(address.GetIpAndPort(localAddress, localPort) &&
+	 transport->GetRemoteAddress().GetIpAddress(remoteAddress)) {
+	  
+    OpalManager & manager = transport->GetEndPoint().GetManager();
+	  
+	if(manager.TranslateIPAddress(localAddress, remoteAddress))
+	{
+	  address = H323TransportAddress(localAddress, localPort);
+	}
+  }
   address.SetPDU(irr.m_rasAddress);
 
   const H323ListenerList & listeners = endpoint.GetListeners();
