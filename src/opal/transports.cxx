@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2041  2005/01/16 23:08:33  csoutheren
+ * Revision 1.2042  2005/04/20 06:15:25  csoutheren
+ * Patch 1181901. Fix race condition in OpalTransportUDP
+ * Thanks to Ted Szoczei
+ *
+ * Revision 2.40  2005/01/16 23:08:33  csoutheren
  * Fixed problem with IPv6 INADDR_ANY
  * Fixed problem when transport thread self terminates
  *
@@ -1947,8 +1951,15 @@ BOOL OpalTransportUDP::Read(void * buffer, PINDEX length)
     }
 
     PUDPSocket & socket = (PUDPSocket &)selection[0];
+    channelPointerMutex.StartWrite();
+    if (!socket.IsOpen()) {
+      channelPointerMutex.EndWrite();
+      PTRACE(2, "OpalUDP\tSocket closed in connection read select.");
+      return FALSE;
+    }
     socket.GetLocalAddress(localAddress, localPort);
     readChannel = &socket;
+    channelPointerMutex.EndWrite();
   }
 
   for (;;) {
