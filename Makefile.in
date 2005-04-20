@@ -22,6 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.6  2005/04/20 05:46:32  csoutheren
+# Patch 1146010. Fix problem with install targets
+# Thanks to Peter Robinson
+#
 # Revision 1.5  2005/04/11 10:41:05  dsandras
 # Added patch from Georgi Georgiev to fix compilation issues on Athlon64.
 #
@@ -506,7 +510,7 @@ SOURCES += $(OPAL_SRCDIR)/codec/h261codec.c \
 
 
 #
-# Files to be cleande during make clean
+# Files to be cleaned during make clean
 #
 
 CLEAN_FILES = $(OPAL_LIB) 
@@ -517,30 +521,111 @@ CLEAN_FILES = $(OPAL_LIB)
 include @PWLIBDIR@/make/common.mak
 
 ####################################################
+# replace lib.mak
 
-ifeq ($(OSTYPE),beos)
-# When linking the shared version of the OPAL library under BeOS,
-# pwlib must be in the list of external libraries
-SYSLIBS        += -L$(PW_LIBDIR) -l$(PTLIB_BASE)$(LIB_TYPE)
+ifneq ($(OSTYPE),Darwin)
+  LIBNAME_MAJ	= $(OPAL_FILE).$(MAJOR_VERSION)
+  LIBNAME_MIN	= $(LIBNAME_MAJ).$(MINOR_VERSION)
+  ifeq ($(BUILD_TYPE),.)
+    LIBNAME_PAT	= $(LIBNAME_MIN).$(BUILD_NUMBER)
+  else
+    LIBNAME_PAT	= $(LIBNAME_MIN)-$(BUILD_TYPE)$(BUILD_NUMBER)
+  endif
+else
+  LIBNAME_MAJ	= $(subst .$(LIB_SUFFIX),.$(MAJOR_VERSION).$(LIB_SUFFIX),$(OPAL_FILE))
+  LIBNAME_MIN	= $(subst .$(LIB_SUFFIX),.$(MAJOR_VERSION).$(MINOR_VERSION).$(LIB_SUFFIX),$(OPAL_FILE))
+  ifeq ($(BUILD_TYPE),.)
+    LIBNAME_PAT	= $(subst .$(LIB_SUFFIX),.$(MAJOR_VERSION).$(MINOR_VERSION).$(BUILD_NUMBER).$(LIB_SUFFIX),$(OPAL_FILE))
+  else
+    LIBNAME_PAT	= $(subst .$(LIB_SUFFIX),.$(MAJOR_VERSION).$(MINOR_VERSION)-$(BUILD_TYPE)$(BUILD_NUMBER).$(LIB_SUFFIX),$(OPAL_FILE))
+  endif
 endif
 
-# The same as with BeOS also applies to Darwin
-ifeq ($(OSTYPE),Darwin)
-SYSLIBS	+= -l$(PTLIB_BASE)$(LIB_TYPE)
+LIB_SONAME	= $(LIBNAME_MAJ)
+
+CLEAN_FILES += $(LIBDIR)/$(LIBNAME_PAT) $(LIBDIR)/$(OPAL_FILE) $(LIBDIR)/$(LIBNAME_MAJ) $(LIBDIR)/$(LIBNAME_MIN)
+
+ifneq ($(P_SHAREDLIB),1)
+  STATIC_LIB_FILE = $(LIBDIR)/$(OPAL_FILE)
+else
+  STATIC_LIB_FILE = $(LIBDIR)/$(subst .$(LIB_SUFFIX),_s.$(STATICLIBEXT),$(OPAL_FILE))
 endif
 
-LIB_BASENAME=$(OPAL_BASE)
-LIB_FILENAME=$(OPAL_FILE)
+$(LIBDIR)/$(OPAL_FILE) : $(TARGETLIB)
 
+ifeq ($(P_SHAREDLIB),1)
 
-include @PWLIBDIR@/make/lib.mak
+  ENDLDLIBS := $(SYSLIBS) $(ENDLDLIBS)
+  ifeq ($(OSTYPE),beos)
+    # BeOS requires different options when building shared libraries
+    # Also, when building a shared library x that references symbols in libraries y,
+    # the y libraries need to be added to the linker command
+    LDSOOPTS = -nostdlib -nostart
+    EXTLIBS = -lstdc++.r4
+    SYSLIBS += -L$(PW_LIBDIR) -l$(PTLIB_BASE)$(LIB_TYPE)
+  else
+    ifeq ($(OSTYPE),Darwin)
+      LDSOOPTS = -dynamiclib
+      SYSLIBS += -l$(PTLIB_BASE)$(LIB_TYPE)
+    else
+      LDSOOPTS = -shared
+    endif
+  endif
+
+  ifeq ($(OSTYPE),rtems)
+    EXTLIBS = -lstdc++
+  endif
+
+  ifneq ($(OSTYPE), QNX)
+    ifneq (,$(findstring $(OSTYPE),FreeBSD OpenBSDs))
+      ifdef P_PTHREADS
+        EXTLIBS += -pthread
+      endif
+    else
+      ifdef P_PTHREADS
+        EXTLIBS += -lpthread
+      endif
+    endif
+  endif
+
+  # Solaris loader doesn't grok -soname  (sees it as -s -oname)
+  # We could use -Wl,-h,$(LIB_BASENAME).1 but then we find that the arglist
+  # to gcc is 2900+ bytes long and it will barf.  I fix this by invoking ld
+  # directly and passing it the equivalent arguments...jpd@louisiana.edu
+  ifeq ($(OSTYPE),solaris)
+     LDSOOPTS = -Bdynamic -G -h $(LIB_SONAME)
+     LD = $(CPLUS)
+  else
+    ifneq ($(OSTYPE),Darwin)
+      LDSOOPTS += -Wl,-soname,$(LIB_SONAME)
+    endif
+    LD = $(CPLUS)
+  endif
+
+  $(LIBDIR)/$(OPAL_FILE): $(LIBDIR)/$(LIBNAME_PAT)
+	cd $(LIBDIR) ; rm -f $(OPAL_FILE) ; ln -sf $(LIBNAME_PAT) $(OPAL_FILE)
+	cd $(LIBDIR) ; rm -f $(LIBNAME_MAJ) ;  ln -sf $(LIBNAME_PAT) $(LIBNAME_MAJ)
+	cd $(LIBDIR) ; rm -f $(LIBNAME_MIN) ;  ln -sf $(LIBNAME_PAT) $(LIBNAME_MIN)
+
+  $(LIBDIR)/$(LIBNAME_PAT): $(STATIC_LIB_FILE)
+	@echo EXTLIBS = $(EXTLIBS)
+	@echo SYSLIBS = $(SYSLIBS)
+	@if [ ! -d $(LIBDIR) ] ; then mkdir $(LIBDIR) ; fi
+	$(LD) $(LDSOOPTS) -o $(LIBDIR)/$(LIBNAME_PAT) $(LDFLAGS) $(EXTLIBS) $(OBJS) $(ENDLDLIBS)
+
+endif # P_SHAREDLIB
+
+$(STATIC_LIB_FILE): $(OBJS)
+	@if [ ! -d $(LIBDIR) ] ; then mkdir $(LIBDIR) ; fi
+	$(ARCHIVE) $(STATIC_LIB_FILE) $(OBJS)
+ifeq ($(P_USE_RANLIB),1)
+	$(RANLIB) $(STATIC_LIB_FILE)
+endif
 
 ####################################################
 
-
 notrace::
 	$(MAKE) NOTRACE=1 opt
-
 
 # Build rules for VIC codecs
 
@@ -612,17 +697,17 @@ test:
 ###############################################################################
 #### Install targets
 install:
-	mkdir -p $(DESTDIR)@LIBDIR@
-	rm -f $(DESTDIR)@LIBDIR@/libopal_*_r.so*
-	$(INSTALL) -m 444 lib/*_r.so $(DESTDIR)@LIBDIR@
+	mkdir -p $(DESTDIR)$(LIBDIR)
+	rm -f $(DESTDIR)$(LIBDIR)/libopal_*_r.so*
+	$(INSTALL) -m 644 lib/*_r.so $(DESTDIR)$(LIBDIR)
 	(for fn in lib/*_r.so.* ; do \
-		cd $(DESTDIR)@LIBDIR@ ; \
+		cd $(DESTDIR)$(LIBDIR) ; \
 		rm -f `basename $$fn` ; \
 		ln -s libopal_*_r.so `basename $$fn` ; \
 	done)
-	$(INSTALL) -m 444 lib/$(OPAL_FILE) $(DESTDIR)@LIBDIR@
-	( cd $(DESTDIR)@LIBDIR@; rm libopal.so ; ln -s $(OPAL_FILE) libopal.so)
-	( for dir in $(DESTDIR)@LIBDIR@ \
+	$(INSTALL) -m 644 lib/$(OPAL_FILE) $(DESTDIR)$(LIBDIR)
+	( cd $(DESTDIR)$(LIBDIR); rm libopal.so ; ln -s $(OPAL_FILE) libopal.so)
+	( for dir in $(DESTDIR)$(LIBDIR) \
 		     $(DESTDIR)$(PREFIX)/include/opal/asn \
 		     $(DESTDIR)$(PREFIX)/include/opal/codec \
 		     $(DESTDIR)$(PREFIX)/include/opal/h323 \
@@ -636,39 +721,39 @@ install:
 		do mkdir -p $$dir ; chmod 755 $$dir ; \
 	done)
 	( for fn in include/asn/*.h ; do \
-		$(INSTALL) -m 444 $$fn $(DESTDIR)$(PREFIX)/include/opal/asn ; \
+		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/asn ; \
 	done)
 	( for fn in include/codec/*.h ; do \
-		$(INSTALL) -m 444 $$fn $(DESTDIR)$(PREFIX)/include/opal/codec ; \
+		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/codec ; \
 	done)
 	( for fn in include/h323/*.h ; do \
-		$(INSTALL) -m 444 $$fn $(DESTDIR)$(PREFIX)/include/opal/h323 ; \
+		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/h323 ; \
 	done)
 	( for fn in include/lids/*.h ; do \
-		$(INSTALL) -m 444 $$fn $(DESTDIR)$(PREFIX)/include/opal/lids ; \
+		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/lids ; \
 	done)
 	( for fn in include/opal/*.h ; do \
-		$(INSTALL) -m 444 $$fn $(DESTDIR)$(PREFIX)/include/opal/opal ; \
+		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/opal ; \
 	done)
 	( for fn in include/rtp/*.h ; do \
-		$(INSTALL) -m 444 $$fn $(DESTDIR)$(PREFIX)/include/opal/rtp ; \
+		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/rtp ; \
 	done)
 	( for fn in include/sip/*.h ; do \
-		$(INSTALL) -m 444 $$fn $(DESTDIR)$(PREFIX)/include/opal/sip ; \
+		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/sip ; \
 	done)
 	( for fn in include/t120/*.h ; do \
-		$(INSTALL) -m 444 $$fn $(DESTDIR)$(PREFIX)/include/opal/t120 ; \
+		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/t120 ; \
 	done)
 	( for fn in include/t38/*.h ; do \
-		$(INSTALL) -m 444 $$fn $(DESTDIR)$(PREFIX)/include/opal/t38 ; \
+		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/t38 ; \
 	done)
-	$(INSTALL) -m 444 opal_inc.mak $(DESTDIR)$(PREFIX)/share/opal
+	$(INSTALL) -m 644 opal_inc.mak $(DESTDIR)$(PREFIX)/share/opal
 
 uninstall:
 	rm -rf $(DESTDIR)$(PREFIX)/include/opal \
 	       $(DESTDIR)$(PREFIX)/share/opal
-	rm -f $(DESTDIR)@LIBDIR@/$(OPAL_FILE) \
-	      $(DESTDIR)@LIBDIR@/libopal.so
+	rm -f $(DESTDIR)$(LIBDIR)/$(OPAL_FILE) \
+	      $(DESTDIR)$(LIBDIR)/libopal.so
 
  
 docs:
@@ -676,4 +761,3 @@ docs:
  
 
 # End of file #################################################################
-
