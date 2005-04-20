@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2042  2005/04/20 06:15:25  csoutheren
+ * Revision 1.2043  2005/04/20 06:18:35  csoutheren
+ * Patch 1182998. Fix for using GK through NAT, and fixed Connect to be idempotent
+ * Thanks to Hannes Friederich
+ *
+ * Revision 2.41  2005/04/20 06:15:25  csoutheren
  * Patch 1181901. Fix race condition in OpalTransportUDP
  * Thanks to Ted Szoczei
  *
@@ -1754,7 +1758,7 @@ BOOL OpalTransportUDP::IsCompatibleTransport(const OpalTransportAddress & addres
 
 
 BOOL OpalTransportUDP::Connect()
-{
+{	
   if (remotePort == 0)
     return FALSE;
 
@@ -1763,7 +1767,13 @@ BOOL OpalTransportUDP::Connect()
     PTRACE(2, "OpalUDP\tBroadcast connect to port " << remotePort);
   }
   else {
-    PTRACE(2, "OpalUDP\tStarted connect to " << remoteAddress << ':' << remotePort);
+    // the remote address is known and we have to check whether we are already connected
+	if(writeChannel && localAddress.IsValid()) {
+	  PTRACE(2, "OpalUDP\tConnect() to already connected channel");
+	  return TRUE;
+	}
+	  
+	PTRACE(2, "OpalUDP\tStarted connect to " << remoteAddress << ':' << remotePort);
   }
 
   // Skip over the OpalTransportUDP::Close to make sure PUDPSocket is deleted.
