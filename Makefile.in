@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.7  2005/04/21 01:05:55  csoutheren
+# New fix from Peter Robinson
+#
 # Revision 1.6  2005/04/20 05:46:32  csoutheren
 # Patch 1146010. Fix problem with install targets
 # Thanks to Peter Robinson
@@ -694,19 +697,10 @@ $(STANDARD_TARGETS) ::
 test:
 	@echo $(ASN_CXX_FILES)
 
-###############################################################################
+
 #### Install targets
 install:
 	mkdir -p $(DESTDIR)$(LIBDIR)
-	rm -f $(DESTDIR)$(LIBDIR)/libopal_*_r.so*
-	$(INSTALL) -m 644 lib/*_r.so $(DESTDIR)$(LIBDIR)
-	(for fn in lib/*_r.so.* ; do \
-		cd $(DESTDIR)$(LIBDIR) ; \
-		rm -f `basename $$fn` ; \
-		ln -s libopal_*_r.so `basename $$fn` ; \
-	done)
-	$(INSTALL) -m 644 lib/$(OPAL_FILE) $(DESTDIR)$(LIBDIR)
-	( cd $(DESTDIR)$(LIBDIR); rm libopal.so ; ln -s $(OPAL_FILE) libopal.so)
 	( for dir in $(DESTDIR)$(LIBDIR) \
 		     $(DESTDIR)$(PREFIX)/include/opal/asn \
 		     $(DESTDIR)$(PREFIX)/include/opal/codec \
@@ -720,6 +714,13 @@ install:
 		     $(DESTDIR)$(PREFIX)/share/opal ;\
 		do mkdir -p $$dir ; chmod 755 $$dir ; \
 	done)
+	$(INSTALL) -m 755 lib/$(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION).$(BUILD_NUMBER) $(DESTDIR)$(LIBDIR)
+	ln -snf $(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION).$(BUILD_NUMBER) \
+		$(DESTDIR)$(LIBDIR)/$(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION)
+	ln -snf $(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION).$(BUILD_NUMBER) \
+		$(DESTDIR)$(LIBDIR)/$(OPAL_FILE).$(MAJOR_VERSION)
+	ln -snf $(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION).$(BUILD_NUMBER) \
+		$(DESTDIR)$(LIBDIR)/$(OPAL_FILE)
 	( for fn in include/asn/*.h ; do \
 		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/asn ; \
 	done)
