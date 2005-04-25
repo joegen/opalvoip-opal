@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2043  2005/04/15 10:48:34  dsandras
+ * Revision 1.2044  2005/04/25 21:12:51  dsandras
+ * Use the correct remote address.
+ *
+ * Revision 2.42  2005/04/15 10:48:34  dsandras
  * Allow reading on the transport until there is an EOF or it becomes bad. Fixes interoperability problem with QSC.DE which is sending keep-alive messages, leading to a timeout (transport.good() fails, but the stream is still usable).
  *
  * Revision 2.41  2005/04/11 10:31:32  dsandras
@@ -895,7 +898,7 @@ BOOL SIPEndPoint::OnReceivedNOTIFY (OpalTransport & transport, SIP_PDU & pdu)
 	NULL
       };
     PStringArray bodylines = body.Lines ();
-    SIPURL url (pdu.GetMIME().GetTo());
+    SIPURL url (pdu.GetMIME().GetFrom());
     for (int z = 0 ; validMessageClasses [z] != NULL ; z++) {
       
       for (int i = 0 ; i <= bodylines.GetSize () ; i++) {
