@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.10  2005/04/25 10:14:14  dsandras
+# Move LIBDIR down due to conflicting names.
+#
 # Revision 1.9  2005/04/25 09:31:35  dsandras
 # Fixed make.
 #
@@ -695,7 +698,6 @@ $(DEPDIR)/%.dep : $(LPC10_SRCDIR)/%.c
 
 ###############################################################################
 #### Subdirectories
-LIBDIR  = @LIBDIR@
 
 $(STANDARD_TARGETS) ::
 	set -e; $(foreach dir,$(SUBDIRS),$(MAKE) -C $(dir) $@;)
@@ -707,6 +709,7 @@ test:
 
 #### Install targets
 install:
+	LIBDIR=@LIBDIR@
 	mkdir -p $(DESTDIR)$(LIBDIR)
 	( for dir in $(DESTDIR)$(LIBDIR) \
 		     $(DESTDIR)$(PREFIX)/include/opal/asn \
@@ -760,6 +763,7 @@ install:
 	$(INSTALL) -m 644 opal_inc.mak $(DESTDIR)$(PREFIX)/share/opal
 
 uninstall:
+	LIBDIR=@LIBDIR@
 	rm -rf $(DESTDIR)$(PREFIX)/include/opal \
 	       $(DESTDIR)$(PREFIX)/share/opal
 	rm -f $(DESTDIR)$(LIBDIR)/$(OPAL_FILE) \
