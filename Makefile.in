@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.8  2005/04/25 09:07:58  dsandras
+# Fixed install/uninstall.
+#
 # Revision 1.7  2005/04/21 01:05:55  csoutheren
 # New fix from Peter Robinson
 #
@@ -169,7 +172,7 @@ endif
 
 
 OBJDIR	=	$(OPAL_OBJDIR)
-LIBDIR  =	$(OPAL_LIBDIR)
+LIBDIR  =	@LIBDIR@
 TARGET	=	$(OPAL_LIBDIR)/$(OPAL_FILE)
 
 ifdef NOTRACE
@@ -714,13 +717,15 @@ install:
 		     $(DESTDIR)$(PREFIX)/share/opal ;\
 		do mkdir -p $$dir ; chmod 755 $$dir ; \
 	done)
-	$(INSTALL) -m 755 lib/$(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION).$(BUILD_NUMBER) $(DESTDIR)$(LIBDIR)
-	ln -snf $(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION).$(BUILD_NUMBER) \
+	$(INSTALL) -m 755 lib/$(LIBNAME_PAT) $(DESTDIR)$(LIBDIR)
+	ln -snf $(LIBNAME_PAT) \
 		$(DESTDIR)$(LIBDIR)/$(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION)
-	ln -snf $(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION).$(BUILD_NUMBER) \
+	ln -snf $(LIBNAME_PAT) \
 		$(DESTDIR)$(LIBDIR)/$(OPAL_FILE).$(MAJOR_VERSION)
-	ln -snf $(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION).$(BUILD_NUMBER) \
+	ln -snf $(LIBNAME_PAT) \
 		$(DESTDIR)$(LIBDIR)/$(OPAL_FILE)
+	ln -snf $(LIBNAME_PAT) \
+		$(DESTDIR)$(LIBDIR)/libopal.so
 	( for fn in include/asn/*.h ; do \
 		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/asn ; \
 	done)
@@ -754,7 +759,12 @@ uninstall:
 	rm -rf $(DESTDIR)$(PREFIX)/include/opal \
 	       $(DESTDIR)$(PREFIX)/share/opal
 	rm -f $(DESTDIR)$(LIBDIR)/$(OPAL_FILE) \
-	      $(DESTDIR)$(LIBDIR)/libopal.so
+	      $(DESTDIR)$(LIBDIR)/libopal.so \
+	      $(DESTDIR)$(LIBDIR)/$(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION) \
+	      $(DESTDIR)$(LIBDIR)/$(OPAL_FILE).$(MAJOR_VERSION) \
+	      $(DESTDIR)$(LIBDIR)/$(LIBNAME_PAT)
+
+  
 
  
 docs:
