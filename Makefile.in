@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.9  2005/04/25 09:31:35  dsandras
+# Fixed make.
+#
 # Revision 1.8  2005/04/25 09:07:58  dsandras
 # Fixed install/uninstall.
 #
@@ -172,7 +175,7 @@ endif
 
 
 OBJDIR	=	$(OPAL_OBJDIR)
-LIBDIR  =	@LIBDIR@
+LIBDIR  =	$(OPAL_LIBDIR)
 TARGET	=	$(OPAL_LIBDIR)/$(OPAL_FILE)
 
 ifdef NOTRACE
@@ -692,6 +695,7 @@ $(DEPDIR)/%.dep : $(LPC10_SRCDIR)/%.c
 
 ###############################################################################
 #### Subdirectories
+LIBDIR  = @LIBDIR@
 
 $(STANDARD_TARGETS) ::
 	set -e; $(foreach dir,$(SUBDIRS),$(MAKE) -C $(dir) $@;)
