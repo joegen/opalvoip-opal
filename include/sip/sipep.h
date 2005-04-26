@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2025  2005/04/10 21:01:09  dsandras
+ * Revision 1.2026  2005/04/26 19:50:54  dsandras
+ * Added function to return the number of registered accounts.
+ *
+ * Revision 2.24  2005/04/10 21:01:09  dsandras
  * Added Blind Transfer support.
  *
  * Revision 2.23  2005/03/11 18:12:08  dsandras
@@ -506,6 +509,11 @@ class SIPEndPoint : public OpalEndPoint
      * it can also be the realm/domain.
      */
     BOOL IsRegistered(const PString & host);
+
+
+    /** Returns the number of registered accounts.
+     */
+    unsigned GetRegistrationsCount () { return activeRegistrations.GetRegistrationsCount (); }
     
     
     /**Returns TRUE if subscribed to the given host for MWI.
@@ -657,6 +665,16 @@ class SIPEndPoint : public OpalEndPoint
     {
       public:
 
+	  //Return the number of registered accounts
+	  unsigned GetRegistrationsCount ()
+	    {
+	      unsigned count = 0;
+	      for (PSafePtr<SIPInfo> info(*this, PSafeReference); info != NULL; ++info)
+		if (info->IsRegistered ()) count++;
+
+	      return count;
+	    }
+	  
 	  //Find the SIPInfo object with the specified callID
 	  SIPInfo *FindSIPInfoByCallID (const PString & callID, PSafetyMode m)
 	    {
