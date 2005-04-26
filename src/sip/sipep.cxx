@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2044  2005/04/25 21:12:51  dsandras
+ * Revision 1.2045  2005/04/26 19:50:15  dsandras
+ * Fixed remoteAddress and user parameters in MWIReceived.
+ * Added function to return the number of registered accounts.
+ *
+ * Revision 2.43  2005/04/25 21:12:51  dsandras
  * Use the correct remote address.
  *
  * Revision 2.42  2005/04/15 10:48:34  dsandras
@@ -258,19 +262,19 @@ SIPTransaction * SIPRegisterInfo::CreateTransaction (OpalTransport &t, BOOL unre
 
 void SIPRegisterInfo::OnSuccess ()
 { 
+  SetRegistered((expire == 0)?FALSE:TRUE);
   ep.OnRegistered(registrationAddress.GetHostName(), 
 		  registrationAddress.GetUserName(),
 		  (expire > 0)); 
-  SetRegistered((expire == 0)?FALSE:TRUE);
 }
 
 void SIPRegisterInfo::OnFailed (FailureReasons r)
 { 
+  SetRegistered((expire == 0)?TRUE:FALSE);
   ep.OnRegistrationFailed (registrationAddress.GetHostName(), 
 			   registrationAddress.GetUserName(),
 			   r,
 			   (expire > 0));
-  SetRegistered((expire == 0)?TRUE:FALSE);
 }
 
 SIPMWISubscribeInfo::SIPMWISubscribeInfo (SIPEndPoint & endpoint, const PString & name)
@@ -898,7 +902,8 @@ BOOL SIPEndPoint::OnReceivedNOTIFY (OpalTransport & transport, SIP_PDU & pdu)
 	NULL
       };
     PStringArray bodylines = body.Lines ();
-    SIPURL url (pdu.GetMIME().GetFrom());
+    SIPURL url_from (pdu.GetMIME().GetFrom());
+    SIPURL url_to (pdu.GetMIME().GetTo());
     for (int z = 0 ; validMessageClasses [z] != NULL ; z++) {
       
       for (int i = 0 ; i <= bodylines.GetSize () ; i++) {
@@ -909,8 +914,8 @@ BOOL SIPEndPoint::OnReceivedNOTIFY (OpalTransport & transport, SIP_PDU & pdu)
 	  line.Replace (validMessageClasses[z], "");
 	  line.Replace (":", "");
 	  msgs = line.Trim ();
-	  OnMWIReceived (url.GetHostName(),
-			 url.GetUserName(), 
+	  OnMWIReceived (url_from.GetHostName(),
+			 url_to.GetUserName(), 
 			 (SIPMWISubscribe::MWIType) z, 
 			 msgs);
 	  return TRUE;
