@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.11  2005/04/26 10:58:37  dsandras
+# Committed workaround for "make install".
+#
 # Revision 1.10  2005/04/25 10:14:14  dsandras
 # Move LIBDIR down due to conflicting names.
 #
@@ -698,7 +701,6 @@ $(DEPDIR)/%.dep : $(LPC10_SRCDIR)/%.c
 
 ###############################################################################
 #### Subdirectories
-
 $(STANDARD_TARGETS) ::
 	set -e; $(foreach dir,$(SUBDIRS),$(MAKE) -C $(dir) $@;)
 
@@ -706,12 +708,10 @@ $(STANDARD_TARGETS) ::
 test:
 	@echo $(ASN_CXX_FILES)
 
-
 #### Install targets
 install:
-	LIBDIR=@LIBDIR@
-	mkdir -p $(DESTDIR)$(LIBDIR)
-	( for dir in $(DESTDIR)$(LIBDIR) \
+	mkdir -p $(DESTDIR)@LIBDIR@
+	( for dir in $(DESTDIR)@LIBDIR@ \
 		     $(DESTDIR)$(PREFIX)/include/opal/asn \
 		     $(DESTDIR)$(PREFIX)/include/opal/codec \
 		     $(DESTDIR)$(PREFIX)/include/opal/h323 \
@@ -724,15 +724,15 @@ install:
 		     $(DESTDIR)$(PREFIX)/share/opal ;\
 		do mkdir -p $$dir ; chmod 755 $$dir ; \
 	done)
-	$(INSTALL) -m 755 lib/$(LIBNAME_PAT) $(DESTDIR)$(LIBDIR)
+	$(INSTALL) -m 755 lib/$(LIBNAME_PAT) $(DESTDIR)@LIBDIR@
 	ln -snf $(LIBNAME_PAT) \
-		$(DESTDIR)$(LIBDIR)/$(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION)
+		$(DESTDIR)@LIBDIR@/$(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION)
 	ln -snf $(LIBNAME_PAT) \
-		$(DESTDIR)$(LIBDIR)/$(OPAL_FILE).$(MAJOR_VERSION)
+		$(DESTDIR)@LIBDIR@/$(OPAL_FILE).$(MAJOR_VERSION)
 	ln -snf $(LIBNAME_PAT) \
-		$(DESTDIR)$(LIBDIR)/$(OPAL_FILE)
+		$(DESTDIR)@LIBDIR@/$(OPAL_FILE)
 	ln -snf $(LIBNAME_PAT) \
-		$(DESTDIR)$(LIBDIR)/libopal.so
+		$(DESTDIR)@LIBDIR@/libopal.so
 	( for fn in include/asn/*.h ; do \
 		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/asn ; \
 	done)
@@ -763,14 +763,13 @@ install:
 	$(INSTALL) -m 644 opal_inc.mak $(DESTDIR)$(PREFIX)/share/opal
 
 uninstall:
-	LIBDIR=@LIBDIR@
 	rm -rf $(DESTDIR)$(PREFIX)/include/opal \
 	       $(DESTDIR)$(PREFIX)/share/opal
-	rm -f $(DESTDIR)$(LIBDIR)/$(OPAL_FILE) \
-	      $(DESTDIR)$(LIBDIR)/libopal.so \
-	      $(DESTDIR)$(LIBDIR)/$(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION) \
-	      $(DESTDIR)$(LIBDIR)/$(OPAL_FILE).$(MAJOR_VERSION) \
-	      $(DESTDIR)$(LIBDIR)/$(LIBNAME_PAT)
+	rm -f $(DESTDIR)@LIBDIR@/$(OPAL_FILE) \
+	      $(DESTDIR)@LIBDIR@/libopal.so \
+	      $(DESTDIR)@LIBDIR@/$(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION) \
+	      $(DESTDIR)@LIBDIR@/$(OPAL_FILE).$(MAJOR_VERSION) \
+	      $(DESTDIR)@LIBDIR@/$(LIBNAME_PAT)
 
   
 
