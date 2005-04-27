@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2026  2005/04/26 19:50:54  dsandras
+ * Revision 1.2027  2005/04/27 16:54:43  dsandras
+ * Fixed GetRegistrationsCount so that it doesn't count the active SUBSCRIBE's.
+ *
+ * Revision 2.25  2005/04/26 19:50:54  dsandras
  * Added function to return the number of registered accounts.
  *
  * Revision 2.24  2005/04/10 21:01:09  dsandras
@@ -670,7 +673,8 @@ class SIPEndPoint : public OpalEndPoint
 	    {
 	      unsigned count = 0;
 	      for (PSafePtr<SIPInfo> info(*this, PSafeReference); info != NULL; ++info)
-		if (info->IsRegistered ()) count++;
+		if (info->IsRegistered()
+		    && info->GetMethod() == SIP_PDU::Method_REGISTER) count++;
 
 	      return count;
 	    }
