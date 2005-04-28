@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2018  2005/04/10 21:19:38  dsandras
+ * Revision 1.2019  2005/04/28 20:22:54  dsandras
+ * Applied big sanity patch for SIP thanks to Ted Szoczei <tszoczei@microtronix.ca>.
+ * Thanks a lot!
+ *
+ * Revision 2.17  2005/04/10 21:19:38  dsandras
  * Added support to set / get the stream direction in a SDP.
  *
  * Revision 2.16  2004/10/24 10:45:19  rjongbloed
@@ -152,7 +156,7 @@ static PString GetConnectAddressString(const OpalTransportAddress & address)
 
 SDPMediaFormat::SDPMediaFormat(RTP_DataFrame::PayloadTypes pt,
                                const char * _name,
-                               PINDEX _clockRate,
+                               unsigned _clockRate,
                                const char * _parms)
   : payloadType(pt),
     clockRate(_clockRate),
@@ -290,7 +294,8 @@ ostream & operator<<(ostream & out, SDPMediaDescription::MediaType type)
 
 SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, MediaType _mediaType)
   : mediaType(_mediaType),
-    transportAddress(address)
+    transportAddress(address),
+	packetTime(0)
 {
   switch (mediaType) {
     case Audio:
@@ -370,6 +375,10 @@ void SDPMediaDescription::SetAttribute(const PString & ostr)
   PString attr = ostr.Left(pos);
   PString str  = ostr.Mid(pos+1);
 
+  if (attr *= "ptime") {                // caseless comparison
+      packetTime = str.AsUnsigned() ;
+      return;
+  }
   // extract the RTP payload type
   pos = str.Find(" ");
   if (pos == P_MAX_INDEX) {
@@ -402,7 +411,7 @@ void SDPMediaDescription::SetAttribute(const PString & ostr)
     }
 
     format.SetEncodingName(tokens[0]);
-    format.SetClockRate(tokens[1].AsInteger());
+    format.SetClockRate(tokens[1].AsUnsigned());
     if (tokens.GetSize() > 2)
       format.SetParameters(tokens[2]);
 
@@ -442,6 +451,9 @@ void SDPMediaDescription::PrintOn(ostream & str) const
   // output attributes for each payload type
   for (i = 0; i < formats.GetSize(); i++)
     str << formats[i];
+
+  if (packetTime)
+	  str << "a=ptime:" << packetTime << "\r\n";
 }
 
 

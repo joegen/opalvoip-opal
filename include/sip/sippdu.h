@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2025  2005/04/28 07:59:37  dsandras
+ * Revision 1.2026  2005/04/28 20:22:54  dsandras
+ * Applied big sanity patch for SIP thanks to Ted Szoczei <tszoczei@microtronix.ca>.
+ * Thanks a lot!
+ *
+ * Revision 2.24  2005/04/28 07:59:37  dsandras
  * Applied patch from Ted Szoczei to fix problem when answering to PDUs containing
  * multiple Via fields in the message header. Thanks!
  *
@@ -125,6 +129,12 @@ class SIP_PDU;
 
 
 /////////////////////////////////////////////////////////////////////////
+// SIPURL
+
+/** This class extends PURL to include displayname, optional "<>" delimiters
+	and extended parameters - like tag.
+	It may be used for From:, To: and Contact: lines.
+ */
 
 class SIPURL : public PURL
 {
@@ -207,8 +217,36 @@ class SIPURL : public PURL
 
 
 /////////////////////////////////////////////////////////////////////////
+// SIPMIMEInfo
 
-/**Session Initiation Protocol MIME info container
+/** Session Initiation Protocol MIME info container
+   This is a string dictionary: for each item mime header is key, value
+   is value.
+   Headers may be full ("From") or compact ("f"). Colons not included.
+   PMIMEInfo::ReadFrom (>>) parses from stream. That adds a header-value
+   element for each mime line. If a mime header is duplicated in the
+   stream then the additional value is appended to the existing, 
+   separated by "/n".
+   PMIMEInfo::ReadFrom supports multi-line values if the next line starts
+   with a space - it just appends the next line to the existing string
+   with the separating space.
+   There is no checking of header names or values.
+   compactForm decides whether 'Set' methods store full or compact headers.
+   'Set' methods replace values, there is no method for appending except
+   ReadFrom.
+   'Get' methods work whether stored headers are full or compact.
+
+   to do to satisfy RFC3261 (mandatory(*) & should):
+    Accept
+    Accept-Encoding
+    Accept-Language
+   *Allow
+   *Max-Forwards
+   *Min-Expires
+   *Proxy-Authenticate
+    Supported
+   *Unsupported
+   *WWW-Authenticate
  */
 
 class SIPMIMEInfo : public PMIMEInfo
@@ -312,8 +350,17 @@ class SIPMIMEInfo : public PMIMEInfo
     void SetWWWAuthenticate(const PString & v);
 
   protected:
+    	/** return list of route values from internal comma-delimited list
+	 */
     PStringList GetRouteList(const char * name) const;
+
+	/** store string list as one comma-delimited string of route values
+	    value formed as "<v[0]>,<v[1]>,<v[2]>" etc
+	 */
     void SetRouteList(const char * name, const PStringList & v);
+
+	/** return string keyed by full or compact header
+	 */
     PString GetFullOrCompact(const char * fullForm, char compactForm) const;
 
     /// Encode using compact form
@@ -322,6 +369,7 @@ class SIPMIMEInfo : public PMIMEInfo
 
 
 /////////////////////////////////////////////////////////////////////////
+// SIPAuthentication
 
 class SIPAuthentication : public PObject
 {
@@ -370,6 +418,12 @@ class SIPAuthentication : public PObject
 
 
 /////////////////////////////////////////////////////////////////////////
+// SIP_PDU
+
+/** Session Initiation Protocol message.
+	Each message contains a header, MIME lines and possibly SDP.
+	Class provides methods for reading from and writing to transport.
+ */
 
 class SIP_PDU : public PObject
 {
@@ -392,16 +446,20 @@ class SIP_PDU : public PObject
     enum StatusCodes {
       IllegalStatusCode,
 
-      Information_Trying                       = 100,
-      Information_Ringing                      = 180,
-      Information_CallForwarded                = 181,
-      Information_Queued                       = 182,
-      Information_Session_Progress             = 183,
+      Information_Trying                  = 100,
+      Information_Ringing                 = 180,
+      Information_CallForwarded           = 181,
+      Information_Queued                  = 182,
+      Information_Session_Progress        = 183,
 
-      Successful_OK                            = 200,
-      Successful_Accepted		       = 202,
+      Successful_OK                       = 200,
+      Successful_Accepted		          = 202,
 
-      Redirection_MovedTemporarily             = 302,
+      Redirection_MultipleChoices         = 300,
+      Redirection_MovedPermanently        = 301,
+      Redirection_MovedTemporarily        = 302,
+      Redirection_UseProxy                = 305,
+      Redirection_AlternativeService      = 380,
 
       Failure_BadRequest                  = 400,
       Failure_UnAuthorised                = 401,
@@ -415,10 +473,13 @@ class SIP_PDU : public PObject
       Failure_Conflict                    = 409,
       Failure_Gone                        = 410,
       Failure_LengthRequired              = 411,
-      Failure_RequestEntityTooLarge       = 412,
-      Failure_RequestURITooLong           = 413,
-      Failure_UnsupportedMediaType        = 414,
+      Failure_RequestEntityTooLarge       = 413,
+      Failure_RequestURITooLong           = 414,
+      Failure_UnsupportedMediaType        = 415,
+      Failure_UnsupportedURIScheme        = 416,
       Failure_BadExtension                = 420,
+      Failure_ExtensionRequired           = 421,
+      Failure_IntervalTooBrief            = 423,
       Failure_TemporarilyUnavailable      = 480,
       Failure_TransactionDoesNotExist     = 481,
       Failure_LoopDetected                = 482,
@@ -427,20 +488,37 @@ class SIP_PDU : public PObject
       Failure_Ambiguous                   = 485,
       Failure_BusyHere                    = 486,
       Failure_RequestTerminated           = 487,
-      Failure_BadEvent			  = 489,
+      Failure_NotAcceptableHere           = 488,
+      Failure_BadEvent			          = 489,
+      Failure_RequestPending              = 491,
+      Failure_Undecipherable              = 493,
 
+      Failure_InternalServerError         = 500,
+      Failure_NotImplemented              = 501,
       Failure_BadGateway                  = 502,
+      Failure_ServiceUnavailable          = 503,
+      Failure_ServerTimeout               = 504,
+      Failure_SIPVersionNotSupported      = 505,
+      Failure_MessageTooLarge             = 513,
 
-      Failure_Decline                     = 603,
+      GlobalFailure_BusyEverywhere        = 600,
+      GlobalFailure_Decline               = 603,
+      GlobalFailure_DoesNotExistAnywhere  = 604,
+      GlobalFailure_NotAcceptable         = 606,
 
       MaxStatusCode                       = 699
     };
+
+	static const char * GetStatusCodeDescription (int code);
 
     enum {
       MaxSize = 65535
     };
 
     SIP_PDU();
+
+    /** Construct a Request message
+     */
     SIP_PDU(
       Methods method,
       const SIPURL & dest,
@@ -455,6 +533,10 @@ class SIP_PDU : public PObject
       SIPConnection & connection,
       const OpalTransport & transport
     );
+
+    /** Construct a Response message
+        extra is passed as message body
+     */
     SIP_PDU(
       const SIP_PDU & request,
       StatusCodes code,
@@ -487,6 +569,12 @@ class SIP_PDU : public PObject
       const OpalTransport & transport
     );
 
+    /**Add and populate Route header if connection has routeSet.
+	   If first route is strict, exchange with URI.
+	   Returns TRUE if conection has a routeSet.
+	  */
+    BOOL SetRoute(SIPConnection & connection);
+
     /**Read PDU from the specified transport.
       */
     BOOL Read(
@@ -516,9 +604,9 @@ class SIP_PDU : public PObject
     void SetSDP(const SDPSessionDescription & s) { sdp = new SDPSessionDescription(s); }
 
   protected:
-    Methods     method;
+    Methods     method;                 // Request type, ==NumMethods for Response
     StatusCodes statusCode;
-    SIPURL      uri;
+    SIPURL      uri;                    // display name & URI, no tag
     unsigned    versionMajor;
     unsigned    versionMinor;
     PString     info;
@@ -533,6 +621,17 @@ PQUEUE(SIP_PDU_Queue, SIP_PDU);
 
 
 /////////////////////////////////////////////////////////////////////////
+// SIPTransaction
+
+/** Session Initiation Protocol transaction.
+    A transaction is a stateful independent entity that provides services to
+    a connection (Transaction User). Transactions are contained within 
+    connections.
+    A client transaction handles sending a request and receiving its
+    responses.
+    A server transaction handles sending responses to a received request.
+    In either case the SIP_PDU ancestor is the sent or received request.
+ */
 
 class SIPTransaction : public SIP_PDU
 {
@@ -607,6 +706,12 @@ PDICTIONARY(SIPTransactionDict, PString, SIPTransaction);
 
 
 /////////////////////////////////////////////////////////////////////////
+// SIPInvite
+
+/** Session Initiation Protocol transaction for INVITE
+    INVITE implements a three-way handshake to handle the human input and 
+    extended duration of the transaction.
+ */
 
 class SIPInvite : public SIPTransaction
 {
