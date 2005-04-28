@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2059  2005/04/18 17:07:17  dsandras
+ * Revision 1.2060  2005/04/28 07:59:37  dsandras
+ * Applied patch from Ted Szoczei to fix problem when answering to PDUs containing
+ * multiple Via fields in the message header. Thanks!
+ *
+ * Revision 2.58  2005/04/18 17:07:17  dsandras
  * Fixed cut and paste error in last commit thanks to Ted Szoczei.
  *
  * Revision 2.57  2005/04/16 18:57:36  dsandras
@@ -1052,8 +1056,11 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   PString contact = mime.GetContact();
   if (contact.IsEmpty()) {
     targetAddress = mime.GetFrom();
-    PString via = mime.GetVia();
-    transport->SetRemoteAddress(via.Mid(via.FindLast(' ')));
+    PStringList viaList = request.GetMIME().GetViaList();
+    PString via = viaList[0];
+    OpalTransportAddress viaAddress(via.Mid(via.FindLast(' ') + 1), endpoint.GetDefaultSignalPort(), "udp$");
+    transport->SetRemoteAddress(viaAddress);
+    PTRACE(4, "SIP\tOnReceivedINVITE Changed remote address of transport " << *transport);
   }
   else {
     targetAddress = contact;
