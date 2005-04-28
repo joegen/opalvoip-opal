@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2051  2005/04/28 07:59:37  dsandras
+ * Revision 1.2052  2005/04/28 20:22:55  dsandras
+ * Applied big sanity patch for SIP thanks to Ted Szoczei <tszoczei@microtronix.ca>.
+ * Thanks a lot!
+ *
+ * Revision 2.50  2005/04/28 07:59:37  dsandras
  * Applied patch from Ted Szoczei to fix problem when answering to PDUs containing
  * multiple Via fields in the message header. Thanks!
  *
@@ -239,13 +243,18 @@ static struct {
 } sipErrorDescriptions[] = {
   { SIP_PDU::Information_Trying,                  "Trying" },
   { SIP_PDU::Information_Ringing,                 "Ringing" },
-  { SIP_PDU::Information_CallForwarded,           "CallForwarded" },
+  { SIP_PDU::Information_CallForwarded,           "Call Forwarded" },
   { SIP_PDU::Information_Queued,                  "Queued" },
+  { SIP_PDU::Information_Session_Progress,        "Progress" },
 
   { SIP_PDU::Successful_OK,                       "OK" },
   { SIP_PDU::Successful_Accepted,                 "Accepted" },
 
+  { SIP_PDU::Redirection_MultipleChoices,         "Multiple Choices" },
+  { SIP_PDU::Redirection_MovedPermanently,        "Moved Permanently" },
   { SIP_PDU::Redirection_MovedTemporarily,        "Moved Temporarily" },
+  { SIP_PDU::Redirection_UseProxy,                "Use Proxy" },
+  { SIP_PDU::Redirection_AlternativeService,      "Alternative Service" },
 
   { SIP_PDU::Failure_BadRequest,                  "BadRequest" },
   { SIP_PDU::Failure_UnAuthorised,                "Unauthorised" },
@@ -262,7 +271,10 @@ static struct {
   { SIP_PDU::Failure_RequestEntityTooLarge,       "Request Entity Too Large" },
   { SIP_PDU::Failure_RequestURITooLong,           "Request URI Too Long" },
   { SIP_PDU::Failure_UnsupportedMediaType,        "Unsupported Media Type" },
+  { SIP_PDU::Failure_UnsupportedURIScheme,        "Unsupported URI Scheme" },
   { SIP_PDU::Failure_BadExtension,                "Bad Extension" },
+  { SIP_PDU::Failure_ExtensionRequired,           "Extension Required" },
+  { SIP_PDU::Failure_IntervalTooBrief,            "Interval Too Brief" },
   { SIP_PDU::Failure_TemporarilyUnavailable,      "Temporarily Unavailable" },
   { SIP_PDU::Failure_TransactionDoesNotExist,     "Call Leg/Transaction Does Not Exist" },
   { SIP_PDU::Failure_LoopDetected,                "Loop Detected" },
@@ -271,14 +283,37 @@ static struct {
   { SIP_PDU::Failure_Ambiguous,                   "Ambiguous" },
   { SIP_PDU::Failure_BusyHere,                    "Busy Here" },
   { SIP_PDU::Failure_RequestTerminated,           "Request Terminated" },
-  { SIP_PDU::Failure_BadEvent,           	  "Bad Event" },
+  { SIP_PDU::Failure_NotAcceptableHere,           "Not Acceptable Here" },
+  { SIP_PDU::Failure_BadEvent,           	      "Bad Event" },
+  { SIP_PDU::Failure_RequestPending,              "Request Pending" },
+  { SIP_PDU::Failure_Undecipherable,              "Undecipherable" },
 
+  { SIP_PDU::Failure_InternalServerError,         "Internal Server Error" },
+  { SIP_PDU::Failure_NotImplemented,              "Not Implemented" },
   { SIP_PDU::Failure_BadGateway,                  "Bad Gateway" },
+  { SIP_PDU::Failure_ServiceUnavailable,          "Service Unavailable" },
+  { SIP_PDU::Failure_ServerTimeout,               "Server Time-out" },
+  { SIP_PDU::Failure_SIPVersionNotSupported,      "SIP Version Not Supported" },
+  { SIP_PDU::Failure_MessageTooLarge,             "Message Too Large" },
 
-  { SIP_PDU::Failure_Decline,                     "Decline" },
+  { SIP_PDU::GlobalFailure_BusyEverywhere,        "Busy Everywhere" },
+  { SIP_PDU::GlobalFailure_Decline,               "Decline" },
+  { SIP_PDU::GlobalFailure_DoesNotExistAnywhere,  "Does Not Exist Anywhere" },
+  { SIP_PDU::GlobalFailure_NotAcceptable,         "Not Acceptable" },
 
   { 0 }
 };
+
+
+const char * SIP_PDU::GetStatusCodeDescription (int code)
+{
+  unsigned i;
+  for (i = 0; sipErrorDescriptions[i].code != 0; i++) {
+    if (sipErrorDescriptions[i].code == code)
+	  return sipErrorDescriptions[i].desc;
+  }
+  return 0;
+}
 
 
 static const char * const AlgorithmNames[SIPAuthentication::NumAlgorithms] = {
@@ -603,11 +638,11 @@ void SIPMIMEInfo::SetViaList(const PStringList & v)
 {
   PString fieldValue;
   if (v.GetSize() > 0)
-    {
-      fieldValue = v[0];
-      for (PINDEX i = 1; i < v.GetSize(); i++)
-	fieldValue += '\n' + v[i];
-    }
+  {
+    fieldValue = v[0];
+    for (PINDEX i = 1; i < v.GetSize(); i++)
+      fieldValue += '\n' + v[i];
+  }
   SetAt(compactForm ? "v" : "Via", fieldValue);
 }
 
@@ -1262,10 +1297,17 @@ void SIP_PDU::Construct(Methods meth,
             connection.GetNextCSeq(),
             localAddress);
 
+  SetRoute(connection);
+}
+
+
+BOOL SIP_PDU::SetRoute(SIPConnection & connection)
+{
   PStringList routeSet = connection.GetRouteSet();
   if (!routeSet.IsEmpty()) {
     SIPURL firstRoute = routeSet[0];
     if (!firstRoute.GetParamVars().Contains("lr")) {
+      // this procedure is specified in RFC3261:12.2.1.1 for backwards compatibility with RFC2543
       routeSet.MakeUnique();
       routeSet.RemoveAt(0);
       routeSet.AppendString(uri.AsString());
@@ -1273,7 +1315,9 @@ void SIP_PDU::Construct(Methods meth,
       uri.AdjustForRequestURI();
     }
     mime.SetRoute(routeSet);
+	return TRUE;
   }
+  return FALSE;
 }
 
 
@@ -1368,7 +1412,9 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
 
   BOOL removeSDP = TRUE;
 
-  if (mime.GetContentType() == "application/sdp") {
+  // 'application/' is case sensitive, 'sdp' is not
+  PString ContentType = mime.GetContentType();
+  if ((ContentType.Left(12) == "application/") && (ContentType.Mid(12) *= "sdp")) {
     sdp = new SDPSessionDescription();
     removeSDP = !sdp->Decode(entityBody);
   }
@@ -1508,12 +1554,8 @@ BOOL SIPTransaction::Start()
   completionTimer = endpoint.GetNonInviteTimeout();
   localAddress = transport.GetLocalAddress();
 
-  if (method == Method_REGISTER 
-      || !endpoint.GetProxy().IsEmpty()
-      || transport.SetRemoteAddress(uri.GetHostAddress())) {
-    if (Write(transport))
-      return TRUE;
-  }
+  if (Write(transport))
+    return TRUE;
 
   SetTerminated(Terminated_TransportError);
   return FALSE;
@@ -1729,7 +1771,7 @@ void SIPTransaction::SetTerminated(States newState)
     
     endpoint.OnRegistrationFailed(url.GetHostName(), 
 				  url.GetUserName(),
-				  SIPInfo::Timeout,
+                  SIP_PDU::Failure_RequestTimeout,
 				  (GetMIME().GetExpires(0) > 0));
   }
 
@@ -1783,20 +1825,37 @@ BOOL SIPInvite::OnCompleted(SIP_PDU & response)
   // Adjust "to" field for possible added tag in response
   mime.SetTo(response.GetMIME().GetTo());
 
+  // Use Contact for request URI as specified in RFC 3261:12.1.2, 12.2.1.1
+  PString contact = response.GetMIME().GetContact();
+  SIPURL targetAddress = contact;
+
   // Build an ACK
   SIP_PDU ack(Method_ACK,
-              uri,
+              targetAddress,
               mime.GetTo(),
               mime.GetFrom(),
               mime.GetCallID(),
               mime.GetCSeqIndex(),
               localAddress);
 
-  // Add authentication if had any on INVITE
-  if (connection != NULL && 
-          (mime.Contains("Proxy-Authorization") || mime.Contains("Authorization")))
-    connection->GetAuthentication().Authorise(ack);
+  BOOL targetChange = FALSE;
+  if (connection != NULL) {
+    // Add authentication if had any on INVITE
+    if (mime.Contains("Proxy-Authorization") || mime.Contains("Authorization"))
+      connection->GetAuthentication().Authorise(ack);
 
+    if (ack.SetRoute(*connection) == FALSE)
+      targetChange = TRUE;
+  }
+  // In peer-to-peer the transport will have been sending to the called party.
+  // When calling thru proxy the transport will have been sending to the proxy.
+  // If the proxy does not want to handle signalling any more, there will
+  // be no Record-Route - to indicate that signalling should now be sent 
+  // directly to the called party. (RFC 3261:4)
+  if (targetChange) {
+    transport.SetRemoteAddress(targetAddress.GetHostAddress());
+    PTRACE(4, "SIP\tNon-recording proxy changed remote address of transport " << transport);
+  }
   // Send the ACK
   if (ack.Write(transport))
     return TRUE;
