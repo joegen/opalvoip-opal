@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2060  2005/04/28 07:59:37  dsandras
+ * Revision 1.2061  2005/04/28 20:22:54  dsandras
+ * Applied big sanity patch for SIP thanks to Ted Szoczei <tszoczei@microtronix.ca>.
+ * Thanks a lot!
+ *
+ * Revision 2.59  2005/04/28 07:59:37  dsandras
  * Applied patch from Ted Szoczei to fix problem when answering to PDUs containing
  * multiple Via fields in the message header. Thanks!
  *
@@ -332,7 +336,7 @@ void SIPConnection::OnReleased()
     case ReleaseWithResponse :
       switch (callEndReason) {
         case EndedByAnswerDenied :
-          SendResponseToINVITE(SIP_PDU::Failure_Decline);
+          SendResponseToINVITE(SIP_PDU::GlobalFailure_Decline);
           break;
 
         case EndedByLocalBusy :
@@ -771,9 +775,9 @@ SDPSessionDescription * SIPConnection::BuildSDP(RTP_SessionManager & rtpSessions
   if (localAddress.IsEmpty()) {
     /* We are not doing media bypass, so must have an RTP session.
        Due to the possibility of several INVITEs going out, all with different
-       transport requirements, we actually need to use an rtSession dictionary
-       for each INVITE and not teh one for the connection. Once an INVITE is
-       accepted the rtpSessions for that INVITE is put into th connection. */
+       transport requirements, we actually need to use an rtpSession dictionary
+       for each INVITE and not the one for the connection. Once an INVITE is
+       accepted the rtpSessions for that INVITE is put into the connection. */
     RTP_Session * rtpSession = rtpSessions.UseSession(rtpSessionId);
     if (rtpSession == NULL) {
 
@@ -950,10 +954,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     remoteApplication = response.GetMIME().GetUserAgent ();
     remoteApplication.Replace ('/', '\t'); 
 
-    // Have a response to the INVITE, so end Connect mode on the transport
-    transaction.GetTransport().EndConnect(transaction.GetLocalAddress());
-
-    // Get teh route set from the Record-Route response field (in reverse order)
+    // Get the route set from the Record-Route response field (in reverse order)
     PStringList recordRoute = response.GetMIME().GetRecordRoute();
     routeSet.RemoveAll();
     for (i = recordRoute.GetSize(); i > 0; i--)
@@ -999,6 +1000,10 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
     case SIP_PDU::Failure_BusyHere :
       Release(EndedByRemoteBusy);
+      break;
+
+    case SIP_PDU::Failure_UnsupportedMediaType :
+      Release(EndedByCapabilityExchange);
       break;
 
     default :
@@ -1053,19 +1058,13 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   localPartyAddress  = mime.GetTo() + ";tag=" + GetTag(); // put a real random 
   mime.SetTo(localPartyAddress);
 
-  PString contact = mime.GetContact();
-  if (contact.IsEmpty()) {
-    targetAddress = mime.GetFrom();
-    PStringList viaList = request.GetMIME().GetViaList();
-    PString via = viaList[0];
-    OpalTransportAddress viaAddress(via.Mid(via.FindLast(' ') + 1), endpoint.GetDefaultSignalPort(), "udp$");
-    transport->SetRemoteAddress(viaAddress);
-    PTRACE(4, "SIP\tOnReceivedINVITE Changed remote address of transport " << *transport);
-  }
-  else {
-    targetAddress = contact;
-    transport->SetRemoteAddress(targetAddress.GetHostAddress());
-  }
+  PStringList viaList = request.GetMIME().GetViaList();
+  PString via = viaList[0];
+  OpalTransportAddress viaAddress(via.Mid(via.FindLast(' ') + 1), endpoint.GetDefaultSignalPort(), "udp$");
+  transport->SetRemoteAddress(viaAddress);
+  PTRACE(4, "SIP\tOnReceivedINVITE Changed remote address of transport " << transport << "=" << *transport);
+
+  targetAddress = mime.GetFrom();
   targetAddress.AdjustForRequestURI();
 
   // We received a Re-INVITE for a current connection
@@ -1095,14 +1094,14 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
       // parameter, then we are not on hold anymore
       if (remote_hold) {
 	
-	// No hold
-	remote_hold = FALSE;
+        // No hold
+        remote_hold = FALSE;
 	
-	// Pause the media streams or not
-	PauseMediaStreams(FALSE);
+        // Pause the media streams or not
+        PauseMediaStreams(FALSE);
 	
-	// Signal the manager that there is a hold
-	endpoint.OnHold(*this);
+        // Signal the manager that there is a hold
+        endpoint.OnHold(*this);
       }
     }
 
@@ -1121,8 +1120,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     if (transport->GetLocalAddress().GetIpAddress(localIP)) {
       PIPSocket::Address remoteIP;
       if (transport->GetRemoteAddress().GetIpAddress(remoteIP)) {
-	endpoint.GetManager().TranslateIPAddress(localIP, remoteIP);
-	contactAddress = OpalTransportAddress(localIP, contactPort, "udp");
+        endpoint.GetManager().TranslateIPAddress(localIP, remoteIP);
+        contactAddress = OpalTransportAddress(localIP, contactPort, "udp");
       }
     }
     
@@ -1132,8 +1131,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     response.SetSDP(sdpOut);
     if (remote_hold)
       sdpOut.SetDirection(SDPSessionDescription::RecvOnly);
-    response.Write(*transport);
-    
+
+    response.Write(*transport);    
     return;
   }
   
@@ -1224,7 +1223,7 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & pdu)
   }    
 
   // Reject the Refer
-  SIP_PDU response(pdu, SIP_PDU::Failure_Decline);
+  SIP_PDU response(pdu, SIP_PDU::GlobalFailure_Decline);
   response.Write(*transport);
   
 //  endpoint.SetupTransfer(GetToken(),  
@@ -1435,9 +1434,8 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
     return;
   
   connectedTime = PTime ();
-  OnConnected();
+  OnConnected();                        // start media streams
 
-  StartMediaStreams();
   releaseMethod = ReleaseWithBYE;
   phase = EstablishedPhase;
   OnEstablished();
