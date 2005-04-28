@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2031  2005/04/10 20:59:42  dsandras
+ * Revision 1.2032  2005/04/28 20:22:53  dsandras
+ * Applied big sanity patch for SIP thanks to Ted Szoczei <tszoczei@microtronix.ca>.
+ * Thanks a lot!
+ *
+ * Revision 2.30  2005/04/10 20:59:42  dsandras
  * Added call hold support (local and remote).
  *
  * Revision 2.29  2005/04/10 20:58:21  dsandras
@@ -156,7 +160,7 @@ class SIPConnection : public OpalConnection
     /**Create a new connection.
      */
     SIPConnection(
-      OpalCall & call,            /// Owner calll for connection
+      OpalCall & call,            /// Owner call for connection
       SIPEndPoint & endpoint,     /// Owner endpoint for connection
       const PString & token,      /// token to identify the connection
       const SIPURL & address,     /// Destination address for outgoing call
@@ -411,6 +415,8 @@ class SIPConnection : public OpalConnection
       RTP_SessionManager & rtpSessions,
       unsigned rtpSessionId
     );
+
+	SIPTransaction * GetTransaction (PString transactionID) { return transactions.GetAt(transactionID); }
 
     void AddTransaction(
       SIPTransaction * transaction
