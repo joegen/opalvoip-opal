@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2024  2005/04/11 11:12:38  dsandras
+ * Revision 1.2025  2005/04/28 07:59:37  dsandras
+ * Applied patch from Ted Szoczei to fix problem when answering to PDUs containing
+ * multiple Via fields in the message header. Thanks!
+ *
+ * Revision 2.23  2005/04/11 11:12:38  dsandras
  * Added Method_MESSAGE support for future use.
  *
  * Revision 2.22  2005/04/10 21:18:24  dsandras
@@ -251,6 +255,9 @@ class SIPMIMEInfo : public PMIMEInfo
 
     PString GetVia() const;
     void SetVia(const PString & v);
+
+    PStringList GetViaList() const;
+    void SetViaList(const PStringList & v);
 
     PString GetReferTo() const;
     void SetReferTo(const PString & r);

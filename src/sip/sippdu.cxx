@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2050  2005/04/15 14:01:39  dsandras
+ * Revision 1.2051  2005/04/28 07:59:37  dsandras
+ * Applied patch from Ted Szoczei to fix problem when answering to PDUs containing
+ * multiple Via fields in the message header. Thanks!
+ *
+ * Revision 2.49  2005/04/15 14:01:39  dsandras
  * Added User Agent string in REGISTER and SUBSCRIBE PDUs.
  *
  * Revision 2.48  2005/04/15 10:48:34  dsandras
@@ -579,6 +583,32 @@ PString SIPMIMEInfo::GetVia() const
 void SIPMIMEInfo::SetVia(const PString & v)
 {
   SetAt(compactForm ? "v" : "Via",  v);
+}
+
+
+PStringList SIPMIMEInfo::GetViaList() const
+{
+  PStringList viaList;
+  PString s = GetVia();
+  if (s.FindOneOf("\r\n") != P_MAX_INDEX)
+    viaList = s.Lines();
+  else
+    viaList.AppendString(s);
+
+  return viaList;
+}
+
+
+void SIPMIMEInfo::SetViaList(const PStringList & v)
+{
+  PString fieldValue;
+  if (v.GetSize() > 0)
+    {
+      fieldValue = v[0];
+      for (PINDEX i = 1; i < v.GetSize(); i++)
+	fieldValue += '\n' + v[i];
+    }
+  SetAt(compactForm ? "v" : "Via", fieldValue);
 }
 
 

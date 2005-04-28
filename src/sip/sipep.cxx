@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2045  2005/04/26 19:50:15  dsandras
+ * Revision 1.2046  2005/04/28 07:59:37  dsandras
+ * Applied patch from Ted Szoczei to fix problem when answering to PDUs containing
+ * multiple Via fields in the message header. Thanks!
+ *
+ * Revision 2.44  2005/04/26 19:50:15  dsandras
  * Fixed remoteAddress and user parameters in MWIReceived.
  * Added function to return the number of registered accounts.
  *
@@ -421,8 +425,13 @@ void SIPEndPoint::HandlePDU(OpalTransport & transport)
     if (!transport.IsReliable()) {
       // Calculate default return address
       if (pdu->GetMethod() != SIP_PDU::NumMethods) {
-        PString via = pdu->GetMIME().GetVia();
-        transport.SetRemoteAddress(via.Mid(via.FindLast(' ')));
+	if (pdu->GetMethod() != SIP_PDU::NumMethods) {
+	  PStringList viaList = pdu->GetMIME().GetViaList();
+	  PString via = viaList[0];
+	  OpalTransportAddress viaAddress(via.Mid(via.FindLast(' ') + 1), GetDefaultSignalPort(), "udp$");
+	  transport.SetRemoteAddress(viaAddress);
+	  PTRACE(4, "SIP\tTranport remote address change from Via: " << &transport << "=" << transport);
+	}
       }
     }
     if (OnReceivedPDU(transport, pdu))
