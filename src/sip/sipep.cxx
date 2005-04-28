@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2046  2005/04/28 07:59:37  dsandras
+ * Revision 1.2047  2005/04/28 20:22:55  dsandras
+ * Applied big sanity patch for SIP thanks to Ted Szoczei <tszoczei@microtronix.ca>.
+ * Thanks a lot!
+ *
+ * Revision 2.45  2005/04/28 07:59:37  dsandras
  * Applied patch from Ted Szoczei to fix problem when answering to PDUs containing
  * multiple Via fields in the message header. Thanks!
  *
@@ -272,7 +276,7 @@ void SIPRegisterInfo::OnSuccess ()
 		  (expire > 0)); 
 }
 
-void SIPRegisterInfo::OnFailed (FailureReasons r)
+void SIPRegisterInfo::OnFailed (SIP_PDU::StatusCodes r)
 { 
   SetRegistered((expire == 0)?TRUE:FALSE);
   ep.OnRegistrationFailed (registrationAddress.GetHostName(), 
@@ -307,7 +311,7 @@ void SIPMWISubscribeInfo::OnSuccess ()
   SetRegistered((expire == 0)?FALSE:TRUE);
 }
 
-void SIPMWISubscribeInfo::OnFailed(FailureReasons /*reason*/)
+void SIPMWISubscribeInfo::OnFailed(SIP_PDU::StatusCodes /*reason*/)
 { 
   SetRegistered((expire == 0)?TRUE:FALSE);
 }
@@ -389,11 +393,30 @@ void SIPEndPoint::TransportThreadMain(PThread &, INT param)
 
 OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & address)
 {
-  OpalTransport * transport = address.CreateTransport(*this, OpalTransportAddress::NoBinding);
-  if (transport == NULL) {
-    PTRACE(1, "SIP\tCould not create transport from \"" << address << '"');
-    return NULL;
+  PIPSocket::Address ip(PIPSocket::GetDefaultIpAny());
+  WORD port = GetDefaultSignalPort();
+  if (!listeners.IsEmpty())
+    GetListeners()[0].GetLocalAddress().GetIpAndPort(ip, port);
+
+  OpalTransport * transport;
+  if (ip.IsAny()) {
+    // endpoint is listening to anything - attempt call using all interfaces
+    transport = address.CreateTransport(*this, OpalTransportAddress::NoBinding);
+    if (transport == NULL) {
+      PTRACE(1, "SIP\tCould not create transport from " << address);
+      return NULL;
+    }
   }
+  else {
+    // endpoint has a specific listener - use only that interface
+    OpalTransportAddress LocalAddress(ip, port, "udp$");
+    transport = LocalAddress.CreateTransport(*this) ;
+    if (transport == NULL) {
+      PTRACE(1, "SIP\tCould not create transport for " << LocalAddress);
+      return NULL;
+    }
+  }
+  PTRACE(4, "SIP\tCreated transport " << *transport);
 
   transport->SetBufferSize(SIP_PDU::MaxSize);
   if (!transport->ConnectTo(address)) {
@@ -422,18 +445,6 @@ void SIPEndPoint::HandlePDU(OpalTransport & transport)
 
   PTRACE(4, "SIP\tWaiting for PDU on " << transport);
   if (pdu->Read(transport)) {
-    if (!transport.IsReliable()) {
-      // Calculate default return address
-      if (pdu->GetMethod() != SIP_PDU::NumMethods) {
-	if (pdu->GetMethod() != SIP_PDU::NumMethods) {
-	  PStringList viaList = pdu->GetMIME().GetViaList();
-	  PString via = viaList[0];
-	  OpalTransportAddress viaAddress(via.Mid(via.FindLast(' ') + 1), GetDefaultSignalPort(), "udp$");
-	  transport.SetRemoteAddress(viaAddress);
-	  PTRACE(4, "SIP\tTranport remote address change from Via: " << &transport << "=" << transport);
-	}
-      }
-    }
     if (OnReceivedPDU(transport, pdu))
       return;
   }
@@ -540,11 +551,26 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
 {
   PSafePtr<SIPConnection> connection = GetSIPConnectionWithLock(pdu->GetMIME().GetCallID());
   if (connection != NULL) {
+    SIPTransaction * transaction = connection->GetTransaction(pdu->GetTransactionID());
+    if (transaction != NULL && transaction->GetMethod() == SIP_PDU::Method_INVITE) {
+      // Have a response to the INVITE, so end Connect mode on the transport
+      transport.EndConnect(transaction->GetLocalAddress());
+    }
     connection->QueuePDU(pdu);
     return TRUE;
   }
-
   // PDU's outside of connection context
+  if (!transport.IsReliable()) {
+    // Get response address from new request
+    if (pdu->GetMethod() != SIP_PDU::NumMethods) {
+	  PStringList viaList = pdu->GetMIME().GetViaList();
+	  PString via = viaList[0];
+      // sets return port to 5060 if none supplied and selects UDP transport
+      OpalTransportAddress viaAddress(via.Mid(via.FindLast(' ') + 1), GetDefaultSignalPort(), "udp$");
+      transport.SetRemoteAddress(viaAddress);
+      PTRACE(4, "SIP\tTranport remote address change from Via: " << transport);
+    }
+  }
   switch (pdu->GetMethod()) {
     case SIP_PDU::NumMethods :
       {
@@ -595,64 +621,32 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
 
 void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
 {
-  PSafePtr<SIPInfo> info = NULL; 
-  SIPInfo::FailureReasons reason;
-  
   /* Only support responses to REGISTER and SUBSCRIBE requests */
   if (transaction.GetMethod() == SIP_PDU::Method_REGISTER
-      || transaction.GetMethod() == SIP_PDU::Method_SUBSCRIBE) {
+   || transaction.GetMethod() == SIP_PDU::Method_SUBSCRIBE) {
     
     PString callID = transaction.GetMIME().GetCallID ();
 
     // Have a response to the REGISTER or to the SUBSCRIBE, 
     // so CANCEL all the other REGISTER or SUBSCRIBE requests
     // sent to that host.
-    info = activeRegistrations.FindSIPInfoByCallID (callID, PSafeReadOnly);
-
-    if (info != NULL) 
-      info->Cancel (transaction);
-    else
+    PSafePtr<SIPInfo> info = activeRegistrations.FindSIPInfoByCallID (callID, PSafeReadOnly);
+    if (info == NULL) 
       return;
+
+    info->Cancel (transaction);
 
     // Have a response to the INVITE, so end Connect mode on the transport
     transaction.GetTransport().EndConnect(transaction.GetLocalAddress());
 
     // Failure, in the 4XX class, handle some cases to give feedback.
     if (response.GetStatusCode()/100 == 4
-	&& response.GetStatusCode() != SIP_PDU::Failure_UnAuthorised
-	&& response.GetStatusCode() != SIP_PDU::Failure_ProxyAuthenticationRequired) {
-
-      switch (response.GetStatusCode()) {
-
-      case SIP_PDU::Failure_BadRequest:
-	reason = SIPInfo::BadRequest;
-	break;
-      case SIP_PDU::Failure_UnAuthorised:
-      case SIP_PDU::Failure_Forbidden:
-	reason = SIPInfo::Forbidden;
-	break;
-      case SIP_PDU::Failure_PaymentRequired:
-	reason = SIPInfo::PaymentRequired;
-	break;
-      case SIP_PDU::Failure_RequestTimeout:
-	reason = SIPInfo::Timeout;
-	break;
-      case SIP_PDU::Failure_Conflict:
-	reason = SIPInfo::Conflict;
-	break;
-      case SIP_PDU::Failure_TemporarilyUnavailable:
-	reason = SIPInfo::TemporarilyUnavailable;
-	break;
-
-      default:
-	reason = SIPInfo::RegistrationFailed;
-      }
-
+     && response.GetStatusCode() != SIP_PDU::Failure_UnAuthorised
+     && response.GetStatusCode() != SIP_PDU::Failure_ProxyAuthenticationRequired) {
       // Trigger the callback 
-      info->OnFailed (reason);
+      info->OnFailed (response.GetStatusCode());
     }
   }
-
   switch (response.GetStatusCode()) {
     case SIP_PDU::Failure_UnAuthorised :
     case SIP_PDU::Failure_ProxyAuthenticationRequired :
@@ -782,15 +776,19 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
       && lastNonce == callid_info->GetAuthentication().GetNonce ()) {
 
     PTRACE(1, "SIP\tAlready done REGISTER/SUBSCRIBE for " << proxyTrace << "Authentication Required");
-    callid_info->OnFailed(SIPInfo::Forbidden);
+    callid_info->OnFailed(SIP_PDU::Failure_UnAuthorised);
     return;
   }
 
   // Restart the transaction with new authentication info
   request = callid_info->CreateTransaction(transaction.GetTransport(), 
 					   (callid_info->GetExpire () == 0)); 
-  realm_info->GetAuthentication().Authorise(*request);
-
+  if (!realm_info->GetAuthentication().Authorise(*request)) {
+    // don't REGISTER again if no authentication info available
+    delete request;
+	callid_info->OnFailed(SIP_PDU::Failure_UnAuthorised);
+    return;
+  }
   if (request->Start()) 
     callid_info->AppendTransaction(request);
   else {
@@ -939,7 +937,7 @@ BOOL SIPEndPoint::OnReceivedNOTIFY (OpalTransport & transport, SIP_PDU & pdu)
 
 void SIPEndPoint::OnRegistrationFailed(const PString & /*host*/, 
 				       const PString & /*userName*/,
-				       SIPInfo::FailureReasons /*reason*/, 
+				       SIP_PDU::StatusCodes /*reason*/, 
 				       BOOL /*wasRegistering*/)
 {
 }
@@ -1088,7 +1086,7 @@ BOOL SIPEndPoint::TransmitSIPRegistrationInfo(const PString & host,
   PSafePtr<SIPInfo> info = NULL;
   OpalTransport *transport = NULL;
   
-  if (listeners.IsEmpty() || host.IsEmpty() || username.IsEmpty())
+  if (listeners.IsEmpty() || host.IsEmpty())
     return FALSE;
   
   // Adjusted user name
@@ -1200,24 +1198,26 @@ BOOL SIPEndPoint::TransmitSIPUnregistrationInfo(const PString & host,
 	
       if (info == NULL) {
 
-	return FALSE;
+        PTRACE(1, "SIP\tCould not find active registration/subscription for " << adjustedUsername);
+        return FALSE;
       }
       
       if (!info->IsRegistered() 
 	  || info->GetTransport() == NULL) {
-	activeRegistrations.Remove(info);
-	return FALSE;
+        PTRACE(1, "SIP\tRemoving local registration/subscription info for apparently unregistered/subscribed " << adjustedUsername);
+        activeRegistrations.Remove(info);
+        return FALSE;
       }
 
       request = info->CreateTransaction (*info->GetTransport(), TRUE);
 
       if (!request->Start()) {
 
-	PTRACE(1, "SIP\tCould not start UNREGISTER/UNSUBSCRIBE transaction");
-	delete (request);
-	request = NULL;
+        PTRACE(1, "SIP\tCould not start UNREGISTER/UNSUBSCRIBE transaction");
+        delete (request);
+        request = NULL;
 
-	return FALSE;
+        return FALSE;
       }
 
       info->AppendTransaction(request);
