@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2011  2005/04/10 20:51:25  dsandras
+ * Revision 1.2012  2005/04/28 20:22:52  dsandras
+ * Applied big sanity patch for SIP thanks to Ted Szoczei <tszoczei@microtronix.ca>.
+ * Thanks a lot!
+ *
+ * Revision 2.10  2005/04/10 20:51:25  dsandras
  * Added possibility to set/get the direction of a stream in an SDP.
  *
  * Revision 2.9  2004/02/09 13:13:01  rjongbloed
@@ -102,7 +106,7 @@ class SDPMediaFormat : public PObject
     SDPMediaFormat::SDPMediaFormat(
       RTP_DataFrame::PayloadTypes payloadType,
       const char * name = "-",
-      PINDEX rate = 8000,
+      unsigned rate = 8000,
       const char * param = ""
     );
 
@@ -118,7 +122,9 @@ class SDPMediaFormat : public PObject
     void SetFMTP(const PString & _fmtp); 
     PString GetFMTP() const;
 
-    void SetClockRate(PINDEX v)                        { clockRate = v; }
+    unsigned GetClockRate(void)                        { return clockRate ; }
+    void SetClockRate(unsigned  v)                     { clockRate = v; }
+
     void SetParameters(const PString & v)              { parameters = v; }
 
     // used only for audio formats
@@ -131,7 +137,7 @@ class SDPMediaFormat : public PObject
 
     RTP_DataFrame::PayloadTypes payloadType;
 
-    PINDEX clockRate;
+    unsigned clockRate;
     PString encodingName;
     PString parameters;
 
@@ -185,6 +191,9 @@ class SDPMediaDescription : public PObject
     PString GetTransport() const         { return transport; }
     void SetTransport(const PString & v) { transport = v; }
 
+	PINDEX GetPacketTime () const            { return packetTime; }
+	void SetPacketTime (PINDEX milliseconds) { packetTime = milliseconds; }
+
   protected:
     MediaType mediaType;
     WORD portCount;
@@ -193,6 +202,7 @@ class SDPMediaDescription : public PObject
     OpalTransportAddress transportAddress;
 
     SDPMediaFormatList formats;
+    PINDEX packetTime;                  // ptime attribute, in milliseconds
 };
 
 PLIST(SDPMediaDescriptionList, SDPMediaDescription);
