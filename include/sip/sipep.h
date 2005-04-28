@@ -25,8 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2027  2005/04/27 16:54:43  dsandras
- * Fixed GetRegistrationsCount so that it doesn't count the active SUBSCRIBE's.
+ * Revision 1.2028  2005/04/28 20:22:53  dsandras
+ * Applied big sanity patch for SIP thanks to Ted Szoczei <tszoczei@microtronix.ca>.
+ * Thanks a lot!
  *
  * Revision 2.25  2005/04/26 19:50:54  dsandras
  * Added function to return the number of registered accounts.
@@ -137,19 +138,6 @@ class SIPInfo : public PSafeObject {
 
   public:
   
-  /* Valid reasons returned when a registration/subscription fails */
-  enum FailureReasons {
-
-    BadRequest,
-    PaymentRequired,
-    Forbidden,
-    Timeout,
-    Conflict,
-    TemporarilyUnavailable,
-    RegistrationFailed,
-    NumFailureReasons
-  };
-  
   SIPInfo (SIPEndPoint & ep, const PString & name);
 
   ~SIPInfo ();
@@ -202,7 +190,7 @@ class SIPInfo : public PSafeObject {
 
   virtual void OnSuccess () = 0;
 
-  virtual void OnFailed (FailureReasons) = 0;
+  virtual void OnFailed (SIP_PDU::StatusCodes) = 0;
 
   protected:
 
@@ -234,7 +222,7 @@ public:
 
   virtual void OnSuccess ();
 
-  virtual void OnFailed (FailureReasons r);
+  virtual void OnFailed (SIP_PDU::StatusCodes r);
 };
 
 
@@ -252,7 +240,7 @@ public:
 
   virtual void OnSuccess ();
   
-  virtual void OnFailed (FailureReasons);
+  virtual void OnFailed (SIP_PDU::StatusCodes);
 };
 
 
@@ -493,7 +481,7 @@ class SIPEndPoint : public OpalEndPoint
     virtual void OnRegistrationFailed(
       const PString & host,
       const PString & userName,
-      SIPInfo::FailureReasons reason,
+      SIP_PDU::StatusCodes reason,
       BOOL wasRegistering);
     
       
@@ -673,8 +661,7 @@ class SIPEndPoint : public OpalEndPoint
 	    {
 	      unsigned count = 0;
 	      for (PSafePtr<SIPInfo> info(*this, PSafeReference); info != NULL; ++info)
-		if (info->IsRegistered()
-		    && info->GetMethod() == SIP_PDU::Method_REGISTER) count++;
+		if (info->IsRegistered ()) count++;
 
 	      return count;
 	    }
