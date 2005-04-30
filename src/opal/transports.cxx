@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2043  2005/04/20 06:18:35  csoutheren
+ * Revision 1.2044  2005/04/30 20:59:55  dsandras
+ * Consider we are already connected only if the connectSockets array is not empty.
+ *
+ * Revision 2.42  2005/04/20 06:18:35  csoutheren
  * Patch 1182998. Fix for using GK through NAT, and fixed Connect to be idempotent
  * Thanks to Hannes Friederich
  *
@@ -1768,7 +1771,7 @@ BOOL OpalTransportUDP::Connect()
   }
   else {
     // the remote address is known and we have to check whether we are already connected
-	if(writeChannel && localAddress.IsValid()) {
+	if(writeChannel && localAddress.IsValid() && connectSockets.GetSize() > 0) {
 	  PTRACE(2, "OpalUDP\tConnect() to already connected channel");
 	  return TRUE;
 	}
