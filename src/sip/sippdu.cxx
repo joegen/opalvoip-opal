@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2052  2005/04/28 20:22:55  dsandras
+ * Revision 1.2053  2005/05/02 20:12:32  dsandras
+ * Use the first listener port as signaling port in the Contact field for REGISTER PDU's.
+ *
+ * Revision 2.51  2005/04/28 20:22:55  dsandras
  * Applied big sanity patch for SIP thanks to Ted Szoczei <tszoczei@microtronix.ca>.
  * Thanks a lot!
  *
@@ -1873,8 +1876,11 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
   : SIPTransaction(ep, trans)
 {
   // translate contact address
+  PIPSocket::Address ip(PIPSocket::GetDefaultIpAny());
   OpalTransportAddress contactAddress = transport.GetLocalAddress();
   WORD contactPort = endpoint.GetDefaultSignalPort();
+  if (!ep.GetListeners().IsEmpty())
+    ep.GetListeners()[0].GetLocalAddress().GetIpAndPort(ip, contactPort);
 
   PIPSocket::Address localIP;
   if (transport.GetLocalAddress().GetIpAddress(localIP)) {
@@ -1913,8 +1919,11 @@ SIPMWISubscribe::SIPMWISubscribe(SIPEndPoint & ep,
   : SIPTransaction(ep, trans)
 {
   // translate contact address
+  PIPSocket::Address ip(PIPSocket::GetDefaultIpAny());
   OpalTransportAddress contactAddress = transport.GetLocalAddress();
   WORD contactPort = endpoint.GetDefaultSignalPort();
+  if (!ep.GetListeners().IsEmpty())
+    ep.GetListeners()[0].GetLocalAddress().GetIpAndPort(ip, contactPort);
 
   PIPSocket::Address localIP;
   if (transport.GetLocalAddress().GetIpAddress(localIP)) {
