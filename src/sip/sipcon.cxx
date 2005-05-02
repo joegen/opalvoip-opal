@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2063  2005/05/02 21:23:22  dsandras
+ * Revision 1.2064  2005/05/02 21:31:54  dsandras
+ * Reinvite only if connectedPhase.
+ *
+ * Revision 2.62  2005/05/02 21:23:22  dsandras
  * Set default contact port to the first listener port.
  *
  * Revision 2.61  2005/05/02 20:43:03  dsandras
@@ -1044,8 +1047,9 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   BOOL isReinvite = FALSE;
   
   // Is Re-INVITE?
-  if ((!IsOriginating() && originalInvite != NULL)
-      || (IsOriginating())) {
+  if (phase == ConnectedPhase 
+      && ((!IsOriginating() && originalInvite != NULL)
+      || (IsOriginating()))) {
     PTRACE(2, "SIP\tReceived re-INVITE from " << request.GetURI() << " for " << *this);
     isReinvite = TRUE;
   }
