@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2061  2005/04/28 20:22:54  dsandras
+ * Revision 1.2062  2005/05/02 20:43:03  dsandras
+ * Remove the via parameters when updating to the via address in the transport.
+ *
+ * Revision 2.60  2005/04/28 20:22:54  dsandras
  * Applied big sanity patch for SIP thanks to Ted Szoczei <tszoczei@microtronix.ca>.
  * Thanks a lot!
  *
@@ -1060,7 +1063,12 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   PStringList viaList = request.GetMIME().GetViaList();
   PString via = viaList[0];
-  OpalTransportAddress viaAddress(via.Mid(via.FindLast(' ') + 1), endpoint.GetDefaultSignalPort(), "udp$");
+  PINDEX j = 0;
+  if ((j = via.FindLast (' ')) != P_MAX_INDEX)
+    via = via.Mid(j+1);
+  if ((j = via.Find (';')) != P_MAX_INDEX)
+    via = via.Left(j);
+  OpalTransportAddress viaAddress(via, endpoint.GetDefaultSignalPort(), "udp$");
   transport->SetRemoteAddress(viaAddress);
   PTRACE(4, "SIP\tOnReceivedINVITE Changed remote address of transport " << transport << "=" << *transport);
 
