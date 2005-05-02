@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2062  2005/05/02 20:43:03  dsandras
+ * Revision 1.2063  2005/05/02 21:23:22  dsandras
+ * Set default contact port to the first listener port.
+ *
+ * Revision 2.61  2005/05/02 20:43:03  dsandras
  * Remove the via parameters when updating to the via address in the transport.
  *
  * Revision 2.60  2005/04/28 20:22:54  dsandras
@@ -461,6 +464,8 @@ BOOL SIPConnection::SetConnected()
   OpalTransportAddress contactAddress = transport->GetLocalAddress();
   WORD contactPort = endpoint.GetDefaultSignalPort();
   PIPSocket::Address localIP;
+  if (!endpoint.GetListeners().IsEmpty())
+    endpoint.GetListeners()[0].GetLocalAddress().GetIpAndPort(localIP, contactPort);
   if (transport->GetLocalAddress().GetIpAddress(localIP)) {
     PIPSocket::Address remoteIP;
     if (transport->GetRemoteAddress().GetIpAddress(remoteIP)) {
