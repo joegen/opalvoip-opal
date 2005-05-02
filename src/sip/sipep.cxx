@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2047  2005/04/28 20:22:55  dsandras
+ * Revision 1.2048  2005/05/02 19:30:36  dsandras
+ * Do not use the realm in the comparison for the case when none is specified.
+ *
+ * Revision 2.46  2005/04/28 20:22:55  dsandras
  * Applied big sanity patch for SIP thanks to Ted Szoczei <tszoczei@microtronix.ca>.
  * Thanks a lot!
  *
@@ -771,7 +774,6 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
   // Already sent info for that callID. Check if params are different
   // from the ones found for the given realm
   if (callid_info->GetAuthentication().IsValid()
-      && lastRealm == callid_info->GetAuthentication().GetRealm ()
       && lastUsername == callid_info->GetAuthentication().GetUsername ()
       && lastNonce == callid_info->GetAuthentication().GetNonce ()) {
 
