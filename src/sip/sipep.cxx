@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2048  2005/05/02 19:30:36  dsandras
+ * Revision 1.2049  2005/05/03 20:42:33  dsandras
+ * Unregister accounts when exiting the program.
+ *
+ * Revision 2.47  2005/05/02 19:30:36  dsandras
  * Do not use the realm in the comparison for the case when none is specified.
  *
  * Revision 2.46  2005/04/28 20:22:55  dsandras
@@ -350,6 +353,19 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
 SIPEndPoint::~SIPEndPoint()
 {
   listeners.RemoveAll();
+
+  /* Unregister */
+  for (PINDEX i = 0 ; i < activeRegistrations.GetSize () ; i++) {
+    
+    SIPURL url;
+    SIPInfo *info = 
+      activeRegistrations.GetAt (i);
+
+    url = info->GetRegistrationAddress ();
+    if (info->IsRegistered() 
+	&& info->GetMethod() == SIP_PDU::Method_REGISTER)
+      Unregister (url.GetHostName(), url.GetUserName());
+  }
 
   PTRACE(3, "SIP\tDeleted endpoint.");
 }
