@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2028  2005/04/28 20:22:53  dsandras
+ * Revision 1.2029  2005/05/03 20:41:51  dsandras
+ * Do not count SUBSCRIBEs when returning the number of registered accounts.
+ *
+ * Revision 2.27  2005/04/28 20:22:53  dsandras
  * Applied big sanity patch for SIP thanks to Ted Szoczei <tszoczei@microtronix.ca>.
  * Thanks a lot!
  *
@@ -661,7 +664,8 @@ class SIPEndPoint : public OpalEndPoint
 	    {
 	      unsigned count = 0;
 	      for (PSafePtr<SIPInfo> info(*this, PSafeReference); info != NULL; ++info)
-		if (info->IsRegistered ()) count++;
+		if (info->IsRegistered()
+		    && info->GetMethod() == SIP_PDU::Method_REGISTER) count++;
 
 	      return count;
 	    }
