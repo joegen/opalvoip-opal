@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2049  2005/05/03 20:42:33  dsandras
+ * Revision 1.2050  2005/05/04 17:10:42  dsandras
+ * Get rid of the extra parameters in the Via field before using it to change
+ * the transport remote address.
+ *
+ * Revision 2.48  2005/05/03 20:42:33  dsandras
  * Unregister accounts when exiting the program.
  *
  * Revision 2.47  2005/05/02 19:30:36  dsandras
@@ -582,10 +586,15 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
   if (!transport.IsReliable()) {
     // Get response address from new request
     if (pdu->GetMethod() != SIP_PDU::NumMethods) {
-	  PStringList viaList = pdu->GetMIME().GetViaList();
-	  PString via = viaList[0];
+      PStringList viaList = pdu->GetMIME().GetViaList();
+      PString via = viaList[0];
+      PINDEX j = 0;
+      if ((j = via.FindLast (' ')) != P_MAX_INDEX)
+	via = via.Mid(j+1);
+      if ((j = via.Find (';')) != P_MAX_INDEX)
+	via = via.Left(j);
       // sets return port to 5060 if none supplied and selects UDP transport
-      OpalTransportAddress viaAddress(via.Mid(via.FindLast(' ') + 1), GetDefaultSignalPort(), "udp$");
+      OpalTransportAddress viaAddress(via, GetDefaultSignalPort(), "udp$");
       transport.SetRemoteAddress(viaAddress);
       PTRACE(4, "SIP\tTranport remote address change from Via: " << transport);
     }
@@ -701,8 +710,9 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
   }
 
   // ask the endpoint for a connection
-  SIPConnection * connection = CreateConnection(*GetManager().CreateCall(), mime.GetCallID(),
-                                                NULL, request->GetURI(), &transport, request);
+  SIPConnection *connection = 
+    CreateConnection(*GetManager().CreateCall(), mime.GetCallID(),
+		     NULL, request->GetURI(), &transport, request);
   if (connection == NULL) {
     PTRACE(2, "SIP\tFailed to create SIPConnection for INVITE from " << request->GetURI() << " for " << toAddr);
     SIP_PDU response(*request, SIP_PDU::Failure_NotFound);
@@ -712,7 +722,7 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
 
   // add the connection to the endpoint list
   connectionsActive.SetAt(connection->GetToken(), connection);
-
+  
   // Get the connection to handle the rest of the INVITE
   connection->QueuePDU(request);
   return TRUE;
