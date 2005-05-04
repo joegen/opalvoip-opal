@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2064  2005/05/02 21:31:54  dsandras
+ * Revision 1.2065  2005/05/04 17:09:40  dsandras
+ * Re-Invite happens during the "EstablishedPhase". Ignore duplicate INVITEs
+ * due to retransmission.
+ *
+ * Revision 2.63  2005/05/02 21:31:54  dsandras
  * Reinvite only if connectedPhase.
  *
  * Revision 2.62  2005/05/02 21:23:22  dsandras
@@ -1047,11 +1051,16 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   BOOL isReinvite = FALSE;
   
   // Is Re-INVITE?
-  if (phase == ConnectedPhase 
+  if (phase == EstablishedPhase 
       && ((!IsOriginating() && originalInvite != NULL)
-      || (IsOriginating()))) {
+	  || (IsOriginating()))) {
     PTRACE(2, "SIP\tReceived re-INVITE from " << request.GetURI() << " for " << *this);
     isReinvite = TRUE;
+  }
+
+  if (originalInvite && !isReinvite) {
+    PTRACE(2, "SIP\tIgnoring duplicate INVITE from " << request.GetURI());
+    return;
   }
 
   if (originalInvite)
