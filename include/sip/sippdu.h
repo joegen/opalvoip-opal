@@ -25,7 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2026  2005/04/28 20:22:54  dsandras
+ * Revision 1.2027  2005/05/06 07:37:06  csoutheren
+ * Various changed while working with SIP carrier
+ *   - remove assumption that authentication realm is a domain name.
+ *   - stopped rewrite of "To" field when proxy being used
+ *   - fix Contact field in REGISTER to match actual port used when Symmetric NATin use
+ *   - lots of formatting changes and cleanups
+ *
+ * Revision 2.25  2005/04/28 20:22:54  dsandras
  * Applied big sanity patch for SIP thanks to Ted Szoczei <tszoczei@microtronix.ca>.
  * Thanks a lot!
  *
@@ -373,7 +380,7 @@ class SIPMIMEInfo : public PMIMEInfo
 
 class SIPAuthentication : public PObject
 {
-    PCLASSINFO(SIPAuthentication, PObject);
+  PCLASSINFO(SIPAuthentication, PObject);
   public:
     SIPAuthentication(
       const PString & username = PString::Empty(),
@@ -396,20 +403,20 @@ class SIPAuthentication : public PObject
       NumAlgorithms
     };
 
-    BOOL IsProxy() const                { return isProxy; }
-    const PString & GetRealm() const    { return realm; }
-    const PString & GetUsername() const { return username; }
-    const PString & GetPassword() const { return password; }
-    const PString & GetNonce() const    { return nonce; }
-    Algorithm GetAlgorithm() const      { return algorithm; }
+    BOOL IsProxy() const                   { return isProxy; }
+    const PString & GetAuthRealm() const   { return authRealm; }
+    const PString & GetUsername() const    { return username; }
+    const PString & GetPassword() const    { return password; }
+    const PString & GetNonce() const       { return nonce; }
+    Algorithm GetAlgorithm() const         { return algorithm; }
 
     void SetUsername(const PString & user) { username = user; }
     void SetPassword(const PString & pass) { password = pass; }
-    void SetRealm(const PString & r) { realm = r; }
+    void SetAuthRealm(const PString & r)   { authRealm = r; }
 
   protected:
     BOOL      isProxy;
-    PString   realm;
+    PString   authRealm;
     PString   username;
     PString   password;
     PString   nonce;

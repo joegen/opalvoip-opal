@@ -25,7 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2032  2005/04/28 20:22:53  dsandras
+ * Revision 1.2033  2005/05/06 07:37:06  csoutheren
+ * Various changed while working with SIP carrier
+ *   - remove assumption that authentication realm is a domain name.
+ *   - stopped rewrite of "To" field when proxy being used
+ *   - fix Contact field in REGISTER to match actual port used when Symmetric NATin use
+ *   - lots of formatting changes and cleanups
+ *
+ * Revision 2.31  2005/04/28 20:22:53  dsandras
  * Applied big sanity patch for SIP thanks to Ted Szoczei <tszoczei@microtronix.ca>.
  * Thanks a lot!
  *
@@ -406,7 +413,6 @@ class SIPConnection : public OpalConnection
       const PString & forwardParty   /// Party to forward call to.
     );
     
-    
     void SendResponseToINVITE(SIP_PDU::StatusCodes code, const char * str = NULL);
 
     unsigned GetNextCSeq() { return ++lastSentCSeq; }
@@ -450,7 +456,7 @@ class SIPConnection : public OpalConnection
     SIPEndPoint & GetEndPoint() const { return endpoint; }
     const SIPURL & GetTargetAddress() const { return targetAddress; }
     const PStringList & GetRouteSet() const { return routeSet; }
-    const SIPAuthentication & GetAuthentication() const { return authentication; }
+    const SIPAuthentication & GetAuthenticator() const { return authentication; }
 
   protected:
     PDECLARE_NOTIFIER(PThread, SIPConnection, HandlePDUsThreadMain);
@@ -471,8 +477,8 @@ class SIPConnection : public OpalConnection
     SIPEndPoint   & endpoint;
     OpalTransport * transport;
 
-    BOOL	      local_hold;
-    BOOL	      remote_hold;
+    BOOL	            local_hold;
+    BOOL	            remote_hold;
     PString           localPartyAddress;
     PString	          forwardParty;
     SIP_PDU         * originalInvite;
