@@ -24,7 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2053  2005/05/02 20:12:32  dsandras
+ * Revision 1.2054  2005/05/06 07:37:06  csoutheren
+ * Various changed while working with SIP carrier
+ *   - remove assumption that authentication realm is a domain name.
+ *   - stopped rewrite of "To" field when proxy being used
+ *   - fix Contact field in REGISTER to match actual port used when Symmetric NATin use
+ *   - lots of formatting changes and cleanups
+ *
+ * Revision 2.52  2005/05/02 20:12:32  dsandras
  * Use the first listener port as signaling port in the Contact field for REGISTER PDU's.
  *
  * Revision 2.51  2005/04/28 20:22:55  dsandras
@@ -287,7 +294,7 @@ static struct {
   { SIP_PDU::Failure_BusyHere,                    "Busy Here" },
   { SIP_PDU::Failure_RequestTerminated,           "Request Terminated" },
   { SIP_PDU::Failure_NotAcceptableHere,           "Not Acceptable Here" },
-  { SIP_PDU::Failure_BadEvent,           	      "Bad Event" },
+  { SIP_PDU::Failure_BadEvent,           	        "Bad Event" },
   { SIP_PDU::Failure_RequestPending,              "Request Pending" },
   { SIP_PDU::Failure_Undecipherable,              "Undecipherable" },
 
@@ -948,8 +955,7 @@ PString SIPMIMEInfo::GetFullOrCompact(const char * fullForm, char compactForm) c
 ////////////////////////////////////////////////////////////////////////////////////
 
 SIPAuthentication::SIPAuthentication(const PString & user, const PString & pwd)
-  : username(user),
-    password(pwd)
+  : username(user), password(pwd)
 {
   algorithm = NumAlgorithms;
   isProxy = FALSE;
@@ -988,7 +994,7 @@ static PString GetAuthParam(const PString & auth, const char * name)
 
 BOOL SIPAuthentication::Parse(const PCaselessString & auth, BOOL proxy)
 {
-  realm.Empty();
+  authRealm.Empty();
   nonce.Empty();
   algorithm = NumAlgorithms;
 
@@ -1007,8 +1013,8 @@ BOOL SIPAuthentication::Parse(const PCaselessString & auth, BOOL proxy)
     return FALSE;
   }
 
-  realm = GetAuthParam(auth, "realm");
-  if (realm.IsEmpty()) {
+  authRealm = GetAuthParam(auth, "realm");
+  if (authRealm.IsEmpty()) {
     PTRACE(1, "SIP\tNo realm in authentication");
     return FALSE;
   }
@@ -1026,7 +1032,7 @@ BOOL SIPAuthentication::Parse(const PCaselessString & auth, BOOL proxy)
 
 BOOL SIPAuthentication::IsValid() const
 {
-  return !realm && !username && !nonce && algorithm < NumAlgorithms;
+  return /*!authRealm && */ !username && !nonce && algorithm < NumAlgorithms;
 }
 
 
@@ -1060,7 +1066,7 @@ BOOL SIPAuthentication::Authorise(SIP_PDU & pdu) const
   digestor.Start();
   digestor.Process(username);
   digestor.Process(":");
-  digestor.Process(realm);
+  digestor.Process(authRealm);
   digestor.Process(":");
   digestor.Process(password);
   digestor.Complete(a1);
@@ -1082,7 +1088,7 @@ BOOL SIPAuthentication::Authorise(SIP_PDU & pdu) const
   PStringStream auth;
   auth << "Digest "
           "username=\"" << username << "\", "
-          "realm=\"" << realm << "\", "
+          "realm=\"" << authRealm << "\", "
           "nonce=\"" << nonce << "\", "
           "uri=\"" << uriText << "\", "
           "response=\"" << AsHex(response) << "\", "
@@ -1146,7 +1152,7 @@ SIP_PDU::SIP_PDU(const SIP_PDU & request,
   mime.SetVia(requestMIME.GetVia());
   mime.SetRecordRoute(requestMIME.GetRecordRoute());
   for (PINDEX i = 0 ; i < SIP_PDU::NumMethods ; i++) {
-      methods = methods + MethodNames [i] + ", ";
+    methods = methods + MethodNames [i] + ", ";
   }
   mime.SetAllow(methods.Left(methods.GetLength () - 2));
 
@@ -1158,13 +1164,11 @@ SIP_PDU::SIP_PDU(const SIP_PDU & request,
     extraInfo = NULL;
   }
   else if (contact != NULL) {
-
     mime.SetContact(PString(contact));
   }
     
   // format response
   if (extraInfo != NULL) {
-
     info = extraInfo;
   }
   else {
@@ -1459,7 +1463,7 @@ BOOL SIP_PDU::Write(OpalTransport & transport)
     str << ' ' << (unsigned)statusCode << ' ' << info;
 
   str << "\r\n"
-      << setfill('\r') << mime << setfill(' ')
+      << mime
       << entityBody;
 
 #if PTRACING
@@ -1542,7 +1546,7 @@ BOOL SIPTransaction::Start()
 
   if (connection != NULL) {
     connection->AddTransaction(this);
-    connection->GetAuthentication().Authorise(*this); 
+    connection->GetAuthenticator().Authorise(*this); 
   }
   else {
     endpoint.AddTransaction(this);
@@ -1845,7 +1849,7 @@ BOOL SIPInvite::OnCompleted(SIP_PDU & response)
   if (connection != NULL) {
     // Add authentication if had any on INVITE
     if (mime.Contains("Proxy-Authorization") || mime.Contains("Authorization"))
-      connection->GetAuthentication().Authorise(ack);
+      connection->GetAuthenticator().Authorise(ack);
 
     if (ack.SetRoute(*connection) == FALSE)
       targetChange = TRUE;
@@ -1883,19 +1887,23 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
     ep.GetListeners()[0].GetLocalAddress().GetIpAndPort(ip, contactPort);
 
   PIPSocket::Address localIP;
-  if (transport.GetLocalAddress().GetIpAddress(localIP)) {
+  WORD localPort;
+  if (transport.GetLocalAddress().GetIpAndPort(localIP, localPort)) {
     PIPSocket::Address remoteIP;
     if (transport.GetRemoteAddress().GetIpAddress(remoteIP)) {
+      PIPSocket::Address _localIP(localIP);
       endpoint.GetManager().TranslateIPAddress(localIP, remoteIP);
+      if (localIP != _localIP)
+        contactPort = localPort;
       contactAddress = OpalTransportAddress(localIP, contactPort, "udp");
     }
   }
 
   // Find the correct From/To fields
-  PString addrStr = 
-    ep.GetRegisteredPartyName(address.GetHostName()).AsQuotedString();
-  if (addrStr.IsEmpty())
-    addrStr = address.AsQuotedString();
+  // changed CRS 6/5/05
+  //PString addrStr = ep.GetRegisteredPartyName(address.GetHostName()).AsQuotedString();
+  //if (addrStr.IsEmpty())
+  PString addrStr = address.AsQuotedString();
   SIP_PDU::Construct(Method_REGISTER,
                      "sip:"+address.GetHostName(),
                      addrStr,
@@ -1926,19 +1934,25 @@ SIPMWISubscribe::SIPMWISubscribe(SIPEndPoint & ep,
     ep.GetListeners()[0].GetLocalAddress().GetIpAndPort(ip, contactPort);
 
   PIPSocket::Address localIP;
-  if (transport.GetLocalAddress().GetIpAddress(localIP)) {
+  WORD localPort;
+  if (transport.GetLocalAddress().GetIpAndPort(localIP, localPort)) {
     PIPSocket::Address remoteIP;
     if (transport.GetRemoteAddress().GetIpAddress(remoteIP)) {
+      PIPSocket::Address _localIP(localIP);
       endpoint.GetManager().TranslateIPAddress(localIP, remoteIP);
+      if (localIP != localIP)
+        contactPort = localPort;
       contactAddress = OpalTransportAddress(localIP, contactPort, "udp");
     }
   }
 
   // Find the correct From/To fields
-  PString addrStr = 
-    ep.GetRegisteredPartyName(address.GetHostName()).AsQuotedString();
-  if (addrStr.IsEmpty())
-    addrStr = address.AsQuotedString();
+  // changed CRS 6/5/05
+  //PString addrStr = 
+  //  ep.GetRegisteredPartyName(address.GetHostName()).AsQuotedString();
+  //if (addrStr.IsEmpty())
+
+  PString addrStr = address.AsQuotedString();
   SIP_PDU::Construct(Method_SUBSCRIBE,
                      "sip:"+address.GetUserName()+"@"+address.GetHostName(),
                      addrStr,
@@ -1993,8 +2007,7 @@ SIPMessage::SIPMessage(SIPEndPoint & ep,
 		       const PString & body)
   : SIPTransaction(ep, trans)
 {
-  PString id =
-    OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
+  PString id = OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
     
   // Build the correct From field
   int port = 0;
@@ -2017,7 +2030,7 @@ SIPMessage::SIPMessage(SIPEndPoint & ep,
                      "sip:"+address.GetUserName()+"@"+address.GetHostName(),
                      address.AsQuotedString(),
                      myAddress.AsQuotedString(),
-		     id,
+		                 id,
                      endpoint.GetNextCSeq(),
                      transport.GetLocalAddress());
   mime.SetContentType("text/plain;charset=UTF-8");
