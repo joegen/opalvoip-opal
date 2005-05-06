@@ -24,7 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2065  2005/05/04 17:09:40  dsandras
+ * Revision 1.2066  2005/05/06 07:37:06  csoutheren
+ * Various changed while working with SIP carrier
+ *   - remove assumption that authentication realm is a domain name.
+ *   - stopped rewrite of "To" field when proxy being used
+ *   - fix Contact field in REGISTER to match actual port used when Symmetric NATin use
+ *   - lots of formatting changes and cleanups
+ *
+ * Revision 2.64  2005/05/04 17:09:40  dsandras
  * Re-Invite happens during the "EstablishedPhase". Ignore duplicate INVITEs
  * due to retransmission.
  *
@@ -299,10 +306,11 @@ SIPConnection::SIPConnection(OpalCall & call,
   if (proxy.IsEmpty())
     proxy = endpoint.GetProxy();
 
+  // CRS proxy does not affect the target address
   // Proxy parameters. 
-  if (!proxy.IsEmpty()) {
-    targetAddress = proxy.GetScheme() + ':' + proxy.GetHostName() + ':' + PString(proxy.GetPort());
-  }
+  //if (!proxy.IsEmpty()) {
+  //  targetAddress = proxy.GetScheme() + ':' + proxy.GetHostName() + ':' + PString(proxy.GetPort());
+  //}
   
   if (inviteTransport == NULL)
     transport = NULL;
@@ -414,8 +422,7 @@ void SIPConnection::OnReleased()
   OpalConnection::OnReleased();
 }
 
-void SIPConnection::TransferConnection(const PString & remoteParty, 
-				       const PString & callIdentity)
+void SIPConnection::TransferConnection(const PString & remoteParty, const PString & /*callIdentity*/)
 {
   if (referTransaction != NULL) 
     /* There is still an ongoing REFER transaction */
@@ -861,7 +868,7 @@ void SIPConnection::SetLocalPartyAddress()
   taddr.GetIpAndPort(addr, port);
   PString displayName = endpoint.GetDefaultDisplayName();
   PString localName = endpoint.GetRegisteredPartyName(SIPURL(remotePartyAddress).GetHostName()).GetUserName(); 
-  PString domain = endpoint.GetRegisteredPartyName(SIPURL(remotePartyAddress).GetHostName()).GetHostName();
+  PString domain = SIPURL(remotePartyAddress).GetHostName(); // //endpoint.GetRegisteredPartyName(SIPURL(remotePartyAddress).GetHostName()).GetHostName();
 
   // If no domain, use the local domain as default
   if (domain.IsEmpty()) {
@@ -1143,10 +1150,14 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     OpalTransportAddress contactAddress = transport->GetLocalAddress();
     WORD contactPort = endpoint.GetDefaultSignalPort();
     PIPSocket::Address localIP;
-    if (transport->GetLocalAddress().GetIpAddress(localIP)) {
+    WORD localPort;
+    if (transport->GetLocalAddress().GetIpAndPort(localIP, localPort)) {
       PIPSocket::Address remoteIP;
       if (transport->GetRemoteAddress().GetIpAddress(remoteIP)) {
+        PIPSocket::Address _localIP(localIP);
         endpoint.GetManager().TranslateIPAddress(localIP, remoteIP);
+        if (localIP != _localIP)
+          contactPort = localPort;
         contactAddress = OpalTransportAddress(localIP, contactPort, "udp");
       }
     }
@@ -1354,8 +1365,7 @@ void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
 void SIPConnection::OnReceivedRedirection(SIP_PDU & /*response*/)
 {
   // send a new INVITE
-  remotePartyAddress = targetAddress.AsQuotedString(); // start with a new
-  						       // To tag
+  remotePartyAddress = targetAddress.AsQuotedString(); // start with a new To tag
   SIPTransaction * invite = new SIPInvite(*this, *transport);
   if (invite->Start())
     invitations.Append(invite);
@@ -1398,8 +1408,8 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
 
   // Try to find authentication parameters for the given realm,
   // if not, use the proxy authentication parameters (if any)
-  if (!endpoint.GetAuthentication(auth.GetRealm(), authentication)) {
-    PTRACE (3, "SIP\tCouldn't find authentication information for realm " << auth.GetRealm() << ", will use SIP Outbound Proxy authentication settings, if any");
+  if (!endpoint.GetAuthentication(auth.GetAuthRealm(), authentication)) {
+    PTRACE (3, "SIP\tCouldn't find authentication information for realm " << auth.GetAuthRealm() << ", will use SIP Outbound Proxy authentication settings, if any");
     if (!endpoint.GetProxy().IsEmpty()) {
       authentication.SetUsername(endpoint.GetProxy().GetUserName());
       authentication.SetPassword(endpoint.GetProxy().GetPassword());
@@ -1408,8 +1418,7 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
   
   // Save the username, realm and nonce
   if (authentication.IsValid()) {
-    
-    lastRealm = authentication.GetRealm();
+    lastRealm = authentication.GetAuthRealm();
     lastUsername = authentication.GetUsername();
     lastNonce = authentication.GetNonce();
   }
@@ -1423,9 +1432,9 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
   }
   
   if (authentication.IsValid()
-      && lastRealm == authentication.GetRealm ()
+      && lastRealm    == authentication.GetAuthRealm ()
       && lastUsername == authentication.GetUsername ()
-      && lastNonce == authentication.GetNonce ()) {
+      && lastNonce    == authentication.GetNonce ()) {
 
     PTRACE(1, "SIP\tAlready done INVITE for " << proxyTrace << "Authentication Required");
     Release(EndedBySecurityDenial);
@@ -1433,8 +1442,8 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
   }
 
   // Restart the transaction with new authentication info
-  remotePartyAddress = targetAddress.AsQuotedString(); // start with a new
-  						       // To tag
+  remotePartyAddress = targetAddress.AsQuotedString(); // start with a new To tag
+
   SIPTransaction * invite = new SIPInvite(*this, *transport);
   if (invite->Start())
     invitations.Append(invite);

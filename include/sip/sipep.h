@@ -25,7 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2029  2005/05/03 20:41:51  dsandras
+ * Revision 1.2030  2005/05/06 07:37:06  csoutheren
+ * Various changed while working with SIP carrier
+ *   - remove assumption that authentication realm is a domain name.
+ *   - stopped rewrite of "To" field when proxy being used
+ *   - fix Contact field in REGISTER to match actual port used when Symmetric NATin use
+ *   - lots of formatting changes and cleanups
+ *
+ * Revision 2.28  2005/05/03 20:41:51  dsandras
  * Do not count SUBSCRIBEs when returning the number of registered accounts.
  *
  * Revision 2.27  2005/04/28 20:22:53  dsandras
@@ -133,119 +140,130 @@ class SIPConnection;
 
 /////////////////////////////////////////////////////////////////////////
 
-/* Class to contain parameters about SIP registrations and subscribes.
+/* Class to contain parameters about SIP requests such as INVITE and SUBSCRIBE
  */
-class SIPInfo : public PSafeObject {
-
-  PCLASSINFO (SIPInfo, PSafeObject);
-
+class SIPInfo : public PSafeObject 
+{
+  PCLASSINFO(SIPInfo, PSafeObject);
   public:
+    SIPInfo(
+      SIPEndPoint & ep, 
+      const PString & name
+    );
+
+    ~SIPInfo();
   
-  SIPInfo (SIPEndPoint & ep, const PString & name);
+    virtual BOOL CreateTransport(OpalTransportAddress & addr);
 
-  ~SIPInfo ();
-  
-  virtual BOOL CreateTransport (OpalTransportAddress & addr);
+    virtual void Cancel(SIPTransaction & transaction);
 
-  virtual void Cancel (SIPTransaction & transaction);
-
-  virtual OpalTransport *GetTransport ()
+    virtual OpalTransport *GetTransport()
     { return registrarTransport; }
 
-  virtual SIPAuthentication & GetAuthentication ()
+    virtual SIPAuthentication & GetAuthentication()
     { return authentication; }
 
-  virtual const SIPURL & GetRegistrationAddress ()
+    virtual const SIPURL & GetRegistrationAddress()
     { return registrationAddress; }
-  
-  virtual void AppendTransaction (SIPTransaction * transaction) 
+    
+    virtual void AppendTransaction(SIPTransaction * transaction) 
     { registrations.Append (transaction); }
 
-  virtual BOOL IsRegistered () 
+    virtual BOOL IsRegistered() 
     { return registered; }
 
-  virtual void SetRegistered (BOOL r) 
+    virtual void SetRegistered(BOOL r) 
     { registered = r; if (r) registrationTime = PTime ();}
 
-  // An expire time of -1 corresponds to an invalid SIPInfo that 
-  // should be deleted.
-  virtual void SetExpire (int e)
+    // An expire time of -1 corresponds to an invalid SIPInfo that 
+    // should be deleted.
+    virtual void SetExpire(int e)
     { expire = e; }
 
-  virtual int GetExpire ()
+    virtual int GetExpire()
     { return expire; }
 
-  virtual PString GetRegistrationID ()
+    virtual PString GetRegistrationID()
     { return registrationID; }
 
-  virtual BOOL HasExpired ()
+    virtual BOOL HasExpired()
     { return ((PTime () - registrationTime) >= PTimeInterval (0, expire)); }
 
-  virtual void SetPassword (PString p)
+    virtual void SetPassword(const PString & p)
     { password = p;}
-  
-  virtual void SetRealm (PString r)
-    { realm = r;}
- 
-  virtual SIPTransaction * CreateTransaction (OpalTransport & t, BOOL unregister) = 0;
+    
+    virtual void SetAuthRealm(const PString & r)
+    { authRealm = r;}
+   
+    virtual SIPTransaction * CreateTransaction(
+      OpalTransport & t, 
+      BOOL unregister
+    ) = 0;
 
-  virtual SIP_PDU::Methods GetMethod () = 0;
+    virtual SIP_PDU::Methods GetMethod() = 0;
 
-  virtual void OnSuccess () = 0;
+    virtual void OnSuccess() = 0;
 
-  virtual void OnFailed (SIP_PDU::StatusCodes) = 0;
+    virtual void OnFailed(
+      SIP_PDU::StatusCodes
+    ) = 0;
 
-  protected:
-
-  SIPEndPoint      &     ep;
-  SIPAuthentication      authentication;
-  OpalTransport    *     registrarTransport;
-  SIPURL                 registrationAddress;
-  PString                registrationID;
-  SIPTransactionList     registrations;
-  PTime		         registrationTime;
-  BOOL                   registered;
-  int		         expire;
-  PString 		 password;
-  PString		 realm;
+    protected:
+      SIPEndPoint      & ep;
+      SIPAuthentication  authentication;
+      OpalTransport    * registrarTransport;
+      SIPURL             registrationAddress;
+      PString            registrationID;
+      SIPTransactionList registrations;
+      PTime		           registrationTime;
+      BOOL               registered;
+      int		             expire;
+      PString		         authRealm;
+      PString 		       password;
 };
-
 
 class SIPRegisterInfo : public SIPInfo
 {
   PCLASSINFO(SIPRegisterInfo, SIPInfo);
 
-public:
-  SIPRegisterInfo (SIPEndPoint & ep, const PString & adjustedUsername, const PString & password, const PString & realm);
-
-  virtual SIPTransaction * CreateTransaction (OpalTransport &, BOOL);
-
-  virtual SIP_PDU::Methods GetMethod ()
+  public:
+    SIPRegisterInfo (SIPEndPoint & ep, const PString & adjustedUsername, const PString & password/*, const PString & authRealm*/);
+    virtual SIPTransaction * CreateTransaction (OpalTransport &, BOOL);
+    virtual SIP_PDU::Methods GetMethod ()
     { return SIP_PDU::Method_REGISTER; }
 
-  virtual void OnSuccess ();
-
-  virtual void OnFailed (SIP_PDU::StatusCodes r);
+    virtual void OnSuccess ();
+    virtual void OnFailed (SIP_PDU::StatusCodes r);
 };
-
 
 class SIPMWISubscribeInfo : public SIPInfo
 {
   PCLASSINFO(SIPMWISubscribeInfo, SIPInfo);
-
-public:
-  SIPMWISubscribeInfo (SIPEndPoint & ep, const PString & adjustedUsername);
-
-  virtual SIPTransaction * CreateTransaction (OpalTransport &, BOOL);
-  
-  virtual SIP_PDU::Methods GetMethod ()
+  public:
+    SIPMWISubscribeInfo (SIPEndPoint & ep, const PString & adjustedUsername);
+    virtual SIPTransaction * CreateTransaction (OpalTransport &, BOOL);
+    virtual SIP_PDU::Methods GetMethod ()
     { return SIP_PDU::Method_SUBSCRIBE; }
-
-  virtual void OnSuccess ();
-  
-  virtual void OnFailed (SIP_PDU::StatusCodes);
+    virtual void OnSuccess ();
+    virtual void OnFailed (SIP_PDU::StatusCodes);
 };
 
+/////////////////////////////////////////////////////////////////////////
+
+/** Class to hold authentication information 
+  */
+
+class SIPAuthInfo : public PObject
+{
+  public:
+    SIPAuthInfo()
+    { }
+
+    SIPAuthInfo(const PString & u, const PString & p)
+    { username = u; password = p; }
+    PString username;
+    PString password;
+};
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -439,25 +457,17 @@ class SIPEndPoint : public OpalEndPoint
      * several registrations to occur at the same time. It can be
      * called several times for different hosts and users.
      * 
-     * The realm/domain can be specified when registering, this will
+     * The realm can be specified when registering, this will
      * allow to find the correct authentication information when being
-     * requested. If no realm/domain is specified, authentication will
+     * requested. If no realm is specified, authentication will
      * occur with the "best guess" of authentication parameters.
-     *  
-     * Notice that the realm/domain will also be used in the from part
-     * of the PDU's.
-     *  
-     * For example, you could register 6001 to sip.seconix.com, with 
-     * a realm/domain of "seconix.com", which would result in calls
-     * coming from sip:6001@seconix.com, and not sip:6001@sip.seconix.com.
      */
     BOOL Register(
       const PString & host,
       const PString & username = PString::Empty(),
       const PString & password = PString::Empty(),
-      const PString & realm = PString::Empty()
+      const PString & authRealm = PString::Empty()
     );
-    
 
     /**Callback called when MWI is received
      */
@@ -500,7 +510,7 @@ class SIPEndPoint : public OpalEndPoint
     
     /**Returns TRUE if registered to the given host.
      * The hostname is the one used in the Register function,
-     * it can also be the realm/domain.
+     * it can also be the realm.
      */
     BOOL IsRegistered(const PString & host);
 
@@ -585,27 +595,21 @@ class SIPEndPoint : public OpalEndPoint
 
     unsigned GetNextCSeq() { return ++lastSentCSeq; }
 
-    /**
-     * Return the SIPAuthentication for a specific realm/domain.
+   /**
+     * Return the SIPAuthentication for a specific realm.
      */
-    BOOL GetAuthentication(const PString & realm, SIPAuthentication &); 
+    BOOL GetAuthentication(const PString & authRealm, SIPAuthentication &); 
 
     /**
      * Return the registered party name URL for the given host.
      *
      * That URL can be used in the FORM field of the PDU's. 
      * The host part can be different from the registration domain.
-     * 
-     * For example, you could register 6001 to sip.seconix.com,
-     * with domain/realm seconix.com. 
-     * GetRegisteredPartyName("sip.seconix.com")
-     * and GetRegisteredPartyName("seconix.com")
-     * will return sip:6001@seconix.com as URL.
      */
     const SIPURL GetRegisteredPartyName(const PString &);
 
     const SIPURL & GetProxy() const { return proxy; }
-    void SetProxy(const SIPURL & url) { proxy = url; }
+    void SetProxy(const SIPURL & url);
     void SetProxy(
       const PString & hostname,
       const PString & username,
@@ -616,27 +620,102 @@ class SIPEndPoint : public OpalEndPoint
     void SetUserAgent(const PString & str) { userAgentString = str; }
 
   protected:
-    struct RegParam {
-      SIPEndPoint * ep;
-      PSafePtr<SIPInfo> info;
-    };
     PDECLARE_NOTIFIER(PThread, SIPEndPoint, TransportThreadMain);
     PDECLARE_NOTIFIER(PTimer, SIPEndPoint, RegistrationRefresh);
-    static BOOL WriteSIPINFO(
+
+    /** This dictionary is used both to contain the active and successful
+      * registrations, and subscriptions. Currently, only MWI subscriptions
+      * are supported.
+      */
+    class RegistrationList : public PSafeList<SIPInfo>
+    {
+      public:
+
+	    /**
+        * Return the number of registered accounts
+        */
+	    unsigned GetRegistrationsCount ()
+	    {
+	      unsigned count = 0;
+	      for (PSafePtr<SIPInfo> info(*this, PSafeReference); info != NULL; ++info)
+		      if (info->IsRegistered() && info->GetMethod() == SIP_PDU::Method_REGISTER) 
+            count++;
+    	  return count;
+	    }
+	  
+	    /**
+        * Find the SIPInfo object with the specified callID
+        */
+	    SIPInfo *FindSIPInfoByCallID (const PString & callID, PSafetyMode m)
+	    {
+	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
+		      if (callID == info->GetRegistrationID())
+		        return info;
+	      return NULL;
+	    }
+
+	    /**
+        * Find the SIPInfo object with the specified authRealm
+        */
+	    SIPInfo *FindSIPInfoByAuthRealm (const PString & authRealm, PSafetyMode m)
+	    {
+	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
+		      if (authRealm == info->GetAuthentication().GetAuthRealm())
+		        return info;
+	      return NULL;
+	    }
+
+	    /**
+        * Find the SIPInfo object with the specified URL. The url is
+	      * the registration address, for example, 6001@sip.seconix.com
+	      * when registering 6001 to sip.seconix.com with realm seconix.com
+        */
+	    SIPInfo *FindSIPInfoByUrl (const PString & url, SIP_PDU::Methods meth, PSafetyMode m)
+	    {
+	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
+		      if (SIPURL(url) == info->GetRegistrationAddress() && meth == info->GetMethod())
+		        return info;
+	      return NULL;
+	    }
+
+      /**
+        * Find the SIPInfo object with the specified registration host.
+	      * For example, in the above case, the name parameter
+	      * could be "sip.seconix.com" and "seconix.com"
+        */
+	    SIPInfo *FindSIPInfoByDomain (const PString & name, SIP_PDU::Methods meth, PSafetyMode m)
+	    {
+	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
+      		if (
+              (
+                name == info->GetRegistrationAddress().GetHostName() 
+                /*|| name == info->GetAuthentication().GetRealm() */
+               )
+		           && meth == info->GetMethod()
+             )
+		        return info;
+	      return NULL;
+	    }
+    };
+
+    static BOOL WriteSIPInfo(
       OpalTransport & transport, 
-      void * param);
+      void * info
+    );
+
     BOOL TransmitSIPRegistrationInfo (
       const PString & host, 
       const PString & username, 
       const PString & password, 
-      const PString & realm, 
-      SIP_PDU::Methods method);
+      const PString & authRealm,
+      SIP_PDU::Methods method
+    );
+
     BOOL TransmitSIPUnregistrationInfo (
       const PString & host, 
       const PString & username, 
       SIP_PDU::Methods method);
 
-  protected:
     SIPURL            proxy;
     PString           userAgentString;
 
@@ -650,71 +729,12 @@ class SIPEndPoint : public OpalEndPoint
     PTimeInterval ackTimeout;
     PTimeInterval registrarTimeToLive;
     PTimeInterval notifierTimeToLive;
+    
+    RegistrationList   activeRegistrations;
 
-    /* This dictionary is used both to contain the active and successful
-     * registrations, and subscriptions. Currently, only MWI subscriptions
-     * are supported.
-     */
-    class RegistrationDict : public PSafeList<SIPInfo>
-    {
-      public:
-
-	  //Return the number of registered accounts
-	  unsigned GetRegistrationsCount ()
-	    {
-	      unsigned count = 0;
-	      for (PSafePtr<SIPInfo> info(*this, PSafeReference); info != NULL; ++info)
-		if (info->IsRegistered()
-		    && info->GetMethod() == SIP_PDU::Method_REGISTER) count++;
-
-	      return count;
-	    }
-	  
-	  //Find the SIPInfo object with the specified callID
-	  SIPInfo *FindSIPInfoByCallID (const PString & callID, PSafetyMode m)
-	    {
-	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
-		if (callID == info->GetRegistrationID())
-		  return info;
-	      return NULL;
-	    }
-	  //Find the SIPInfo object with the specified realm
-	  SIPInfo *FindSIPInfoByRealm (const PString & realm, PSafetyMode m)
-	    {
-	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
-		if (realm == info->GetAuthentication().GetRealm())
-		  return info;
-	      return NULL;
-	    }
-	  //Find the SIPInfo object with the specified URL. The url is
-	  //the registration address, for example, 6001@sip.seconix.com
-	  //when registering 6001 to sip.seconix.com with realm seconix.com
-	  SIPInfo *FindSIPInfoByUrl (const PString & url, SIP_PDU::Methods meth, PSafetyMode m)
-	    {
-	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
-		if (SIPURL(url) == info->GetRegistrationAddress()
-		    && meth == info->GetMethod())
-		  return info;
-	      return NULL;
-	    }
-	  //Find the SIPInfo object with the specified registration host,
-	  //or realm. For example, in the above case, the name parameter
-	  //could be "sip.seconix.com" and "seconix.com"
-	  SIPInfo *FindSIPInfoByDomain (const PString & name, SIP_PDU::Methods meth, PSafetyMode m)
-	    {
-	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
-		if ((name == info->GetRegistrationAddress().GetHostName()
-		     || name == info->GetAuthentication().GetRealm())
-		    && meth == info->GetMethod())
-		  return info;
-	      return NULL;
-	    }
-
-    } activeRegistrations;
-    PTimer             registrationTimer; // Used to refresh the REGISTER
-    					  // and the SUBSCRIBE transactions.
-
+    PTimer registrationTimer; // Used to refresh the REGISTER and the SUBSCRIBE transactions.
     SIPTransactionDict transactions;
+
     unsigned           lastSentCSeq;
 };
 
