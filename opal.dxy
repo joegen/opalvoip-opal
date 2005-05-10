@@ -4,17 +4,14 @@
 
 \section Introduction Open Phone Abstraction Library
 
-        This is a Open Source class library for the development of applications
-        that wish to use the H.323 protocol for multi-media communications over
-        packet based networks.
+        This is a Open Source class library for the development of
+        applications that wish to use the SIP and H.323 protocols for
+        multi-media communications over packet based networks.
 
 
 
-This document is intended as reference guide, not a tutorial. For examples
-of using OpenH323, see the sample programs provided in the samples directory.
-A tutorial on using PWLib and OpenH323 is also available at http://toncar.cz/openh323/tut.
 
-Last updated 28 February, 2005
+Last updated 10 May, 2005
 
 Copyright (C) 1999-2003 Equivalence Pty Ltd, All right reserved 
 
@@ -23,12 +20,19 @@ Portions Copyright (C) 2004 Post Increment, All Rights Reserved
 
 \section arch Architecture
 
-The fundamental object in the ownership hierarchy is the H323Endpoint 
-class. An application would typically have one instance of a descendant of 
-this class. The application defined descendant would set up defaults for 
-various H323 parameters (timeouts etc), the most important of which is the 
-capability table which defines the codecs and channel types the application 
-is capable of handling.
+The fundamental object in the ownership hierarchy is the OpalManager
+class. 
+
+There are endpoint classes, which control the specifics for that particular
+protocol. Thus, SIPEndPoint controls SIP specific things, and H323EndPoint
+controls h.323 specific things. An application would typically create one
+instance of a descendant of either (or both) endpoint classes.
+
+\subsection Flow of the RTP data.  
+The flow of RTP data is from the "source"-->patch-->"sink". The patch is a
+thread which reads from the "source", and writes to the "sink". For example,
+the source OpalMediaStream reads UDP data in, which the patch then writes to a
+sink media stream (e.g. the attached sound card).
 
 
 \subsection t120 t120 classes
