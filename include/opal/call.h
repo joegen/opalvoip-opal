@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2019  2004/08/14 07:56:29  rjongbloed
+ * Revision 1.2020  2005/05/11 04:25:09  dereksmithies
+ * Add description of the OpalConnection class instances managed by an OpalCall structure.
+ *
+ * Revision 2.18  2004/08/14 07:56:29  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.17  2004/07/14 13:26:14  rjongbloed
@@ -114,6 +117,15 @@ class OpalManager;
    A call consists of one or more OpalConnection instances. While these
    connections may be created elsewhere this class is responsible for their
    disposal.
+
+   An OpalCall could manage (for example) a H323Connection and
+   PCSSConnection instance, which allows the user to use opal in a
+   H.323 application. Alternatively, if OpalCall manages a
+   H323Connection and a SIPConnection instance, the call is being
+   gatewayed from one protocol to another.
+
+   In a conference situation, one OpalCall would manage lots of
+   H323Connection/SIPConnection classes.
  */
 class OpalCall : public PSafeObject
 {
