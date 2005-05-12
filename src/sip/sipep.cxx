@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2051  2005/05/06 07:37:06  csoutheren
+ * Revision 1.2052  2005/05/12 19:44:12  dsandras
+ * Fixed leak thanks to Ted Szoczei.
+ *
+ * Revision 2.50  2005/05/06 07:37:06  csoutheren
  * Various changed while working with SIP carrier
  *   - remove assumption that authentication realm is a domain name.
  *   - stopped rewrite of "To" field when proxy being used
@@ -223,7 +226,6 @@ SIPInfo::SIPInfo(SIPEndPoint &endpoint, const PString & adjustedUsername)
   registered = FALSE; 
   registrarTransport = NULL;
   registrationAddress.Parse(adjustedUsername);
-  registrations.DisallowDeleteObjects();
   registrationID = 
     OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
 }
@@ -850,6 +852,8 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
     int sec = contact.GetParamVars()("expires", "3600").AsUnsigned()*9/10;  
     info->SetExpire(sec);
   }
+  else
+    info->SetExpire(-1);
 
   // Callback
   info->OnSuccess();
@@ -1019,7 +1023,7 @@ void SIPEndPoint::RegistrationRefresh(PTimer &, INT)
     
     PSafePtr<SIPInfo> info = activeRegistrations.GetAt (i);
 
-    if (info->GetExpire() == -1)
+    if (info->GetExpire() == -1) 
       activeRegistrations.Remove(info); // Was invalid the last time, delete it
 					
     if (info->GetExpire() > 0 && !info->IsRegistered ())
@@ -1034,10 +1038,10 @@ void SIPEndPoint::RegistrationRefresh(PTimer &, INT)
       request = info->CreateTransaction(*info->GetTransport(), FALSE); 
 
       if (request->Start()) 
-	      info->AppendTransaction(request);
+	info->AppendTransaction(request);
       else {
-	      delete request;
-        PTRACE(1, "SIP\tCould not start REGISTER/SUBSCRIBE for binding refresh");
+	delete request;
+	PTRACE(1, "SIP\tCould not start REGISTER/SUBSCRIBE for binding refresh");
       }
     }
   }
