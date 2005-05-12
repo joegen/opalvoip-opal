@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2066  2005/05/06 07:37:06  csoutheren
+ * Revision 1.2067  2005/05/12 19:47:29  dsandras
+ * Fixed indentation.
+ *
+ * Revision 2.65  2005/05/06 07:37:06  csoutheren
  * Various changed while working with SIP carrier
  *   - remove assumption that authentication realm is a domain name.
  *   - stopped rewrite of "To" field when proxy being used
@@ -315,8 +318,7 @@ SIPConnection::SIPConnection(OpalCall & call,
   if (inviteTransport == NULL)
     transport = NULL;
   else {
-    transport = inviteTransport->GetLocalAddress().CreateTransport(
-                                         endpoint, OpalTransportAddress::HostOnly);
+    transport = inviteTransport->GetLocalAddress().CreateTransport(endpoint, OpalTransportAddress::HostOnly);
     transport->SetBufferSize(SIP_PDU::MaxSize); // Maximum possible PDU size
   }
 
