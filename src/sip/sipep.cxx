@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2052  2005/05/12 19:44:12  dsandras
+ * Revision 1.2053  2005/05/13 12:47:51  dsandras
+ * Instantly remove unregistration from the collection, and do not process
+ * removed SIPInfo objects, thanks to Ted Szoczei.
+ *
+ * Revision 2.51  2005/05/12 19:44:12  dsandras
  * Fixed leak thanks to Ted Szoczei.
  *
  * Revision 2.50  2005/05/06 07:37:06  csoutheren
@@ -853,7 +857,7 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
     info->SetExpire(sec);
   }
   else
-    info->SetExpire(-1);
+    activeRegistrations.Remove(info);
 
   // Callback
   info->OnSuccess();
@@ -1020,28 +1024,30 @@ void SIPEndPoint::RegistrationRefresh(PTimer &, INT)
 
   // Timer has elapsed
   for (PINDEX i = 0 ; i < activeRegistrations.GetSize () ; i++) {
-    
+
     PSafePtr<SIPInfo> info = activeRegistrations.GetAt (i);
 
     if (info->GetExpire() == -1) 
       activeRegistrations.Remove(info); // Was invalid the last time, delete it
-					
-    if (info->GetExpire() > 0 && !info->IsRegistered ())
-      info->SetExpire(-1); // Mark it as invalid, REGISTER/SUBSCRIBE not successful
+    else {
 
-    // Need to refresh
-    if (info->GetExpire() > 0 
-	        && info->GetTransport() != NULL 
-	        && info->HasExpired()) {
-      PTRACE(2, "SIP\tStarting REGISTER/SUBSCRIBE for binding refresh");
-      info->SetRegistered(FALSE);
-      request = info->CreateTransaction(*info->GetTransport(), FALSE); 
+      if (info->GetExpire() > 0 && !info->IsRegistered ())
+	info->SetExpire(-1); // Mark it as invalid, REGISTER/SUBSCRIBE not successful
 
-      if (request->Start()) 
-	info->AppendTransaction(request);
-      else {
-	delete request;
-	PTRACE(1, "SIP\tCould not start REGISTER/SUBSCRIBE for binding refresh");
+      // Need to refresh
+      if (info->GetExpire() > 0 
+	  && info->GetTransport() != NULL 
+	  && info->HasExpired()) {
+	PTRACE(2, "SIP\tStarting REGISTER/SUBSCRIBE for binding refresh");
+	info->SetRegistered(FALSE);
+	request = info->CreateTransaction(*info->GetTransport(), FALSE); 
+
+	if (request->Start()) 
+	  info->AppendTransaction(request);
+	else {
+	  delete request;
+	  PTRACE(1, "SIP\tCould not start REGISTER/SUBSCRIBE for binding refresh");
+	}
       }
     }
   }
