@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.cxx,v $
- * Revision 1.2011  2004/08/14 07:56:39  rjongbloed
+ * Revision 1.2012  2005/05/13 10:05:06  dsandras
+ * Slightly modified code so that it compiles with pwlib HEAD.
+ *
+ * Revision 2.10  2004/08/14 07:56:39  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.9  2004/07/17 09:45:58  rjongbloed
@@ -337,13 +340,18 @@ BOOL OpalIVRMediaStream::Open()
     return TRUE;
 
   if (vxmlSession.IsOpen()) {
-    PVXMLChannel * vxmlChannel = vxmlSession.GetVXMLChannel();
+    PVXMLChannel * vxmlChannel = vxmlSession.GetAndLockVXMLChannel();
+    PString vxmlChannelMediaFormat;
+    
     if (vxmlChannel == NULL) {
       PTRACE(1, "IVR\tVXML engine not really open");
       return FALSE;
     }
 
-    if (mediaFormat != vxmlChannel->GetMediaFormat()) {
+    vxmlChannelMediaFormat = vxmlChannel->GetMediaFormat();
+    vxmlSession.UnLockVXMLChannel();
+    
+    if (mediaFormat != vxmlChannelMediaFormat) {
       PTRACE(1, "IVR\tCannot use VXML engine: asymmetrical media format");
       return FALSE;
     }
