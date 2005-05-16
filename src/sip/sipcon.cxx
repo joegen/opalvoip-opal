@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2067  2005/05/12 19:47:29  dsandras
+ * Revision 1.2068  2005/05/16 14:40:32  dsandras
+ * Make the connection fail when there is no authentication information present
+ * and authentication is required.
+ *
+ * Revision 2.66  2005/05/12 19:47:29  dsandras
  * Fixed indentation.
  *
  * Revision 2.65  2005/05/06 07:37:06  csoutheren
@@ -1415,6 +1419,10 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
     if (!endpoint.GetProxy().IsEmpty()) {
       authentication.SetUsername(endpoint.GetProxy().GetUserName());
       authentication.SetPassword(endpoint.GetProxy().GetPassword());
+    }
+    else {
+      Release(EndedBySecurityDenial);
+      return;
     }
   }
   
