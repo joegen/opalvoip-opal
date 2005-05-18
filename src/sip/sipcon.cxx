@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2068  2005/05/16 14:40:32  dsandras
+ * Revision 1.2069  2005/05/18 17:26:39  dsandras
+ * Added back proxy support for INVITE.
+ *
+ * Revision 2.67  2005/05/16 14:40:32  dsandras
  * Make the connection fail when there is no authentication information present
  * and authentication is required.
  *
@@ -313,11 +316,10 @@ SIPConnection::SIPConnection(OpalCall & call,
   if (proxy.IsEmpty())
     proxy = endpoint.GetProxy();
 
-  // CRS proxy does not affect the target address
   // Proxy parameters. 
-  //if (!proxy.IsEmpty()) {
-  //  targetAddress = proxy.GetScheme() + ':' + proxy.GetHostName() + ':' + PString(proxy.GetPort());
-  //}
+  if (!proxy.IsEmpty()) {
+    targetAddress = proxy.GetScheme() + ':' + proxy.GetHostName() + ':' + PString(proxy.GetPort());
+  }
   
   if (inviteTransport == NULL)
     transport = NULL;
