@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2053  2005/05/13 12:47:51  dsandras
+ * Revision 1.2054  2005/05/23 20:14:00  dsandras
+ * Added preliminary support for basic instant messenging.
+ *
+ * Revision 2.52  2005/05/13 12:47:51  dsandras
  * Instantly remove unregistration from the collection, and do not process
  * removed SIPInfo objects, thanks to Ted Szoczei.
  *
@@ -635,6 +638,14 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
 
     case SIP_PDU::Method_NOTIFY :
        return OnReceivedNOTIFY(transport, *pdu);
+       break;
+
+    case SIP_PDU::Method_MESSAGE :
+      {
+	OnReceivedMESSAGE(transport, *pdu);
+        SIP_PDU response(*pdu, SIP_PDU::Successful_OK);
+        response.Write(transport);
+      }
    
     case SIP_PDU::Method_OPTIONS :
      {
@@ -661,9 +672,18 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
 
 void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
 {
-  /* Only support responses to REGISTER and SUBSCRIBE requests */
-  if (transaction.GetMethod() == SIP_PDU::Method_REGISTER
-   || transaction.GetMethod() == SIP_PDU::Method_SUBSCRIBE) {
+  if (transaction.GetMethod() == SIP_PDU::Method_MESSAGE) {
+
+    // Failure, in the 4XX class, handle some cases to give feedback.
+    if (response.GetStatusCode()/100 == 4)
+      OnMessageFailed(SIPURL(transaction.GetMIME().GetTo()),
+		      response.GetStatusCode());
+
+    if (response.GetStatusCode()/100 != 1)
+      transaction.GetTransport().Close();
+  }
+  else if (transaction.GetMethod() == SIP_PDU::Method_REGISTER
+	   || transaction.GetMethod() == SIP_PDU::Method_SUBSCRIBE) {
     
     PString callID = transaction.GetMIME().GetCallID ();
 
@@ -687,6 +707,7 @@ void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & res
       info->OnFailed (response.GetStatusCode());
     }
   }
+  
   switch (response.GetStatusCode()) {
     case SIP_PDU::Failure_UnAuthorised :
     case SIP_PDU::Failure_ProxyAuthenticationRequired :
@@ -973,6 +994,13 @@ BOOL SIPEndPoint::OnReceivedNOTIFY (OpalTransport & transport, SIP_PDU & pdu)
 }
 
 
+void SIPEndPoint::OnReceivedMESSAGE(OpalTransport & transport, 
+				    SIP_PDU & pdu)
+{
+  OnMessageReceived(pdu.GetMIME().GetFrom(), pdu.GetEntityBody());
+}
+
+
 void SIPEndPoint::OnRegistrationFailed(const PString & /*host*/, 
 				       const PString & /*userName*/,
 				       SIP_PDU::StatusCodes /*reason*/, 
@@ -1054,6 +1082,28 @@ void SIPEndPoint::RegistrationRefresh(PTimer &, INT)
 }
 
 
+BOOL SIPEndPoint::WriteMESSAGE(OpalTransport & transport, void * _message)
+{
+  if (_message == NULL)
+    return FALSE;
+
+  SIPMessageInfo * minfo = (SIPMessageInfo *) _message;
+  SIPTransaction * message = NULL;
+  
+  message = new SIPMessage(minfo->ep, transport, minfo->url, minfo->body);
+
+  if (!message->Start()) {
+    delete message;
+    message = NULL;
+    PTRACE(2, "SIP\tDid not start MESSAGE transaction on " << transport);
+    return FALSE;
+  }
+  minfo->ep.messages.Append(message);
+
+  return TRUE;
+}
+
+
 BOOL SIPEndPoint::WriteSIPInfo(OpalTransport & transport, void * _info)
 {
   if (_info == NULL)
@@ -1085,6 +1135,12 @@ BOOL SIPEndPoint::Register(const PString & host,
 }
 
 
+void SIPEndPoint::OnMessageReceived (const SIPURL & /*from*/,
+				     const PString & /*body*/)
+{
+}
+
+
 void SIPEndPoint::OnMWIReceived (const PString & /*remoteAddress*/,
 				 const PString & /*user*/,
 				 SIPMWISubscribe::MWIType /*type*/,
@@ -1098,11 +1154,11 @@ BOOL SIPEndPoint::MWISubscribe(const PString & host, const PString & username)
   return TransmitSIPRegistrationInfo (host, username, "", "", SIP_PDU::Method_SUBSCRIBE);
 }
 
-BOOL SIPEndPoint::TransmitSIPRegistrationInfo(
-                const PString & host,
+
+BOOL SIPEndPoint::TransmitSIPRegistrationInfo(const PString & host,
 					      const PString & username,
 					      const PString & password,
-                const PString & realm,
+					      const PString & realm,
 					      SIP_PDU::Methods m)
 {
   PSafePtr<SIPInfo> info = NULL;
@@ -1193,6 +1249,12 @@ BOOL SIPEndPoint::MWIUnsubscribe(const PString & host,
   return TransmitSIPUnregistrationInfo (host, 
 					user, 
 					SIP_PDU::Method_SUBSCRIBE); 
+}
+
+
+void SIPEndPoint::OnMessageFailed(const SIPURL & /* messageUrl */,
+				  SIP_PDU::StatusCodes /* reason */)
+{
 }
 
 
@@ -1290,22 +1352,60 @@ const SIPURL SIPEndPoint::GetRegisteredPartyName(const PString & host)
   if (info == NULL)
     return SIPURL();
 
-  // NEVER NEVER NEVER assume the realm is a domain name
-  //realm = info->GetAuthentication().GetAuthRealm();
-  //if (!realm.IsEmpty ()) {
-  //  partyName = info->GetRegistrationAddress().GetUserName();
-  //  contactDomain = realm;
-  //  return SIPURL(partyName+"@"+contactDomain);
-  //}
-  // else {
-  //
-
   return info->GetRegistrationAddress();
 }
+
+
+BOOL SIPEndPoint::SendMessage (const SIPURL & url, 
+			       const PString & body)
+{
+  SIPMessageInfo *minfo = NULL;
+  OpalTransport *transport = NULL;
+
+  minfo = new SIPMessageInfo(*this, url, body);
+
+  // If we have a proxy, use it
+  PString hostname;
+  WORD port;
+
+  if (proxy.IsEmpty()) {
+    // Should do DNS SRV record lookup to get registrar address
+    hostname = url.GetHostName();
+    port = url.GetPort();
+  }
+  else {
+    hostname = proxy.GetHostName();
+    port = proxy.GetPort();
+    if (port == 0)
+      port = defaultSignalPort;
+  }
+
+  OpalTransportAddress transportAddress(hostname, port, "udp");
+  transport = CreateTransport(transportAddress);
+  if (transport != NULL && !transport->WriteConnect(WriteMESSAGE, &*minfo)) {
+    PTRACE(1, "SIP\tCould not write to " << transportAddress << " - " << transport->GetErrorText());
+    delete minfo;
+    return FALSE;
+  }
+  delete minfo;
+
+  return TRUE;
+}
+
 
 void SIPEndPoint::OnRTPStatistics(const SIPConnection & /*connection*/,
                                   const RTP_Session & /*session*/) const
 {
 }
+
+
+SIPEndPoint::
+SIPMessageInfo::SIPMessageInfo(SIPEndPoint &endpoint, 
+			     const SIPURL & u, 
+			     const PString & b)
+  :ep(endpoint),url(u),body(b)
+{
+}
+
 
 // End of file ////////////////////////////////////////////////////////////////
