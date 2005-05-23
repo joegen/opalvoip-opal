@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2030  2005/05/06 07:37:06  csoutheren
+ * Revision 1.2031  2005/05/23 20:14:05  dsandras
+ * Added preliminary support for basic instant messenging.
+ *
+ * Revision 2.29  2005/05/06 07:37:06  csoutheren
  * Various changed while working with SIP carrier
  *   - remove assumption that authentication realm is a domain name.
  *   - stopped rewrite of "To" field when proxy being used
@@ -427,6 +430,13 @@ class SIPEndPoint : public OpalEndPoint
       SIP_PDU & response
     );
 
+    /**Handle an incoming MESSAGE PDU.
+      */
+    virtual void OnReceivedMESSAGE(
+      OpalTransport & transport,
+      SIP_PDU & response
+    );
+    
     /**Callback from the RTP session for statistics monitoring.
        This is called every so many packets on the transmitter and receiver
        threads of the RTP session indicating that the statistics have been
@@ -453,6 +463,12 @@ class SIPEndPoint : public OpalEndPoint
     virtual BOOL IsAcceptedAddress(const SIPURL & toAddr);
 
 
+    /**Callback called when MWI is received
+     */
+    virtual void OnMessageReceived (const SIPURL & from,
+				    const PString & body);
+
+				
     /**Register to a registrar. This function is asynchronous to permit
      * several registrations to occur at the same time. It can be
      * called several times for different hosts and users.
@@ -541,6 +557,15 @@ class SIPEndPoint : public OpalEndPoint
       const PString & host,
       const PString & user);
     
+    
+    /**Callback called when a message sent by the endpoint didn't reach
+     * its destination or when the proxy or remote endpoint returns
+     * an error code.
+     */
+    virtual void OnMessageFailed(
+      const SIPURL & messageUrl,
+      SIP_PDU::StatusCodes reason);
+    
 
     void SetMIMEForm(BOOL v) { mimeForm = v; }
     BOOL GetMIMEForm() const { return mimeForm; }
@@ -619,6 +644,8 @@ class SIPEndPoint : public OpalEndPoint
     virtual PString GetUserAgent() const;
     void SetUserAgent(const PString & str) { userAgentString = str; }
 
+    BOOL SendMessage (const SIPURL & url, const PString & body);
+
   protected:
     PDECLARE_NOTIFIER(PThread, SIPEndPoint, TransportThreadMain);
     PDECLARE_NOTIFIER(PTimer, SIPEndPoint, RegistrationRefresh);
@@ -632,20 +659,20 @@ class SIPEndPoint : public OpalEndPoint
       public:
 
 	    /**
-        * Return the number of registered accounts
-        */
+	     * Return the number of registered accounts
+	     */
 	    unsigned GetRegistrationsCount ()
 	    {
 	      unsigned count = 0;
 	      for (PSafePtr<SIPInfo> info(*this, PSafeReference); info != NULL; ++info)
-		      if (info->IsRegistered() && info->GetMethod() == SIP_PDU::Method_REGISTER) 
-            count++;
-    	  return count;
+		if (info->IsRegistered() && info->GetMethod() == SIP_PDU::Method_REGISTER) 
+		  count++;
+	      return count;
 	    }
 	  
 	    /**
-        * Find the SIPInfo object with the specified callID
-        */
+	     * Find the SIPInfo object with the specified callID
+	     */
 	    SIPInfo *FindSIPInfoByCallID (const PString & callID, PSafetyMode m)
 	    {
 	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
@@ -655,8 +682,8 @@ class SIPEndPoint : public OpalEndPoint
 	    }
 
 	    /**
-        * Find the SIPInfo object with the specified authRealm
-        */
+	     * Find the SIPInfo object with the specified authRealm
+	     */
 	    SIPInfo *FindSIPInfoByAuthRealm (const PString & authRealm, PSafetyMode m)
 	    {
 	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
@@ -666,10 +693,10 @@ class SIPEndPoint : public OpalEndPoint
 	    }
 
 	    /**
-        * Find the SIPInfo object with the specified URL. The url is
-	      * the registration address, for example, 6001@sip.seconix.com
-	      * when registering 6001 to sip.seconix.com with realm seconix.com
-        */
+	     * Find the SIPInfo object with the specified URL. The url is
+	     * the registration address, for example, 6001@sip.seconix.com
+	     * when registering 6001 to sip.seconix.com with realm seconix.com
+	     */
 	    SIPInfo *FindSIPInfoByUrl (const PString & url, SIP_PDU::Methods meth, PSafetyMode m)
 	    {
 	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
@@ -678,11 +705,11 @@ class SIPEndPoint : public OpalEndPoint
 	      return NULL;
 	    }
 
-      /**
-        * Find the SIPInfo object with the specified registration host.
-	      * For example, in the above case, the name parameter
-	      * could be "sip.seconix.com" and "seconix.com"
-        */
+	    /**
+	     * Find the SIPInfo object with the specified registration host.
+	     * For example, in the above case, the name parameter
+	     * could be "sip.seconix.com" and "seconix.com"
+	     */
 	    SIPInfo *FindSIPInfoByDomain (const PString & name, SIP_PDU::Methods meth, PSafetyMode m)
 	    {
 	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
@@ -697,6 +724,27 @@ class SIPEndPoint : public OpalEndPoint
 	      return NULL;
 	    }
     };
+
+    class SIPMessageInfo : public PObject 
+    {
+      PCLASSINFO(SIPMessageInfo, PObject);
+      
+    public:
+      SIPMessageInfo(
+        SIPEndPoint & ep,
+        const SIPURL & url,
+        const PString & body
+      );
+
+      SIPEndPoint & ep;
+      const SIPURL & url;
+      const PString & body;
+    };
+    
+    static BOOL WriteMESSAGE(
+      OpalTransport & transport, 
+      void * message
+    );
 
     static BOOL WriteSIPInfo(
       OpalTransport & transport, 
@@ -714,7 +762,8 @@ class SIPEndPoint : public OpalEndPoint
     BOOL TransmitSIPUnregistrationInfo (
       const PString & host, 
       const PString & username, 
-      SIP_PDU::Methods method);
+      SIP_PDU::Methods method
+    );
 
     SIPURL            proxy;
     PString           userAgentString;
@@ -733,6 +782,7 @@ class SIPEndPoint : public OpalEndPoint
     RegistrationList   activeRegistrations;
 
     PTimer registrationTimer; // Used to refresh the REGISTER and the SUBSCRIBE transactions.
+    SIPTransactionList messages;
     SIPTransactionDict transactions;
 
     unsigned           lastSentCSeq;
