@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2069  2005/05/18 17:26:39  dsandras
+ * Revision 1.2070  2005/05/23 20:55:15  dsandras
+ * Use STUN on incoming calls if required so that all the PDU fields are setup appropriately.
+ *
+ * Revision 2.68  2005/05/18 17:26:39  dsandras
  * Added back proxy support for INVITE.
  *
  * Revision 2.67  2005/05/16 14:40:32  dsandras
@@ -324,7 +327,12 @@ SIPConnection::SIPConnection(OpalCall & call,
   if (inviteTransport == NULL)
     transport = NULL;
   else {
-    transport = inviteTransport->GetLocalAddress().CreateTransport(endpoint, OpalTransportAddress::HostOnly);
+    OpalManager & manager = endpoint.GetManager();
+    PSTUNClient * stun = manager.GetSTUN(targetAddress.GetHostAddress());
+    if (stun != NULL) 
+      transport = endpoint.CreateTransport(targetAddress.GetHostAddress());
+    else
+      transport = inviteTransport->GetLocalAddress().CreateTransport(endpoint, OpalTransportAddress::HostOnly);
     transport->SetBufferSize(SIP_PDU::MaxSize); // Maximum possible PDU size
   }
 
