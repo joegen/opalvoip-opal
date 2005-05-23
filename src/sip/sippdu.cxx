@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2054  2005/05/06 07:37:06  csoutheren
+ * Revision 1.2055  2005/05/23 20:14:04  dsandras
+ * Added preliminary support for basic instant messenging.
+ *
+ * Revision 2.53  2005/05/06 07:37:06  csoutheren
  * Various changed while working with SIP carrier
  *   - remove assumption that authentication realm is a domain name.
  *   - stopped rewrite of "To" field when proxy being used
@@ -244,7 +247,8 @@ static const char * const MethodNames[SIP_PDU::NumMethods] = {
   "REGISTER",
   "SUBSCRIBE",
   "NOTIFY",
-  "REFER"
+  "REFER",
+  "MESSAGE"
 };
 
 static struct {
@@ -1770,16 +1774,25 @@ void SIPTransaction::SetTerminated(States newState)
   }
     
 
-  // REGISTER Failed, tell the endpoint
-  if (GetMethod() == SIP_PDU::Method_REGISTER
-      && state != Terminated_Success) {
+  // REGISTER or MESSAGE Failed, tell the endpoint
+  if (state != Terminated_Success) {
     
-    SIPURL url (GetMIME().GetFrom ());
-    
-    endpoint.OnRegistrationFailed(url.GetHostName(), 
-				  url.GetUserName(),
-                  SIP_PDU::Failure_RequestTimeout,
-				  (GetMIME().GetExpires(0) > 0));
+    if (GetMethod() == SIP_PDU::Method_REGISTER) {
+      
+      SIPURL url (GetMIME().GetFrom ());
+
+      endpoint.OnRegistrationFailed(url.GetHostName(), 
+				    url.GetUserName(),
+				    SIP_PDU::Failure_RequestTimeout,
+				    (GetMIME().GetExpires(0) > 0));
+    }
+    else if (GetMethod() == SIP_PDU::Method_MESSAGE) {
+
+      SIPURL url (GetMIME().GetTo ());
+
+      endpoint.OnMessageFailed(url,
+			       SIP_PDU::Failure_RequestTimeout);
+    }
   }
 
   finished.Signal();
@@ -2037,6 +2050,5 @@ SIPMessage::SIPMessage(SIPEndPoint & ep,
 
   entityBody = body;
 }
-
 
 // End of file ////////////////////////////////////////////////////////////////
