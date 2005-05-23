@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2044  2005/04/30 20:59:55  dsandras
+ * Revision 1.2045  2005/05/23 20:14:48  dsandras
+ * Added STUN socket to the list of connected sockets.
+ *
+ * Revision 2.43  2005/04/30 20:59:55  dsandras
  * Consider we are already connected only if the connectSockets array is not empty.
  *
  * Revision 2.42  2005/04/20 06:18:35  csoutheren
@@ -1793,6 +1796,7 @@ BOOL OpalTransportUDP::Connect()
       socket->GetLocalAddress(localAddress, localPort);
       socket->SetSendAddress(remoteAddress, remotePort);
       PTRACE(4, "OpalUDP\tSTUN created socket: " << localAddress << ':' << localPort);
+      connectSockets.Append(socket);
       return true;
     }
     PTRACE(4, "OpalUDP\tSTUN could not create socket!");
