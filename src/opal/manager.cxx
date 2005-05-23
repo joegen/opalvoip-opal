@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2042  2005/04/10 21:15:08  dsandras
+ * Revision 1.2043  2005/05/23 21:22:04  dsandras
+ * Wait on the mutex for calls missed by the garbage collector.
+ *
+ * Revision 2.41  2005/04/10 21:15:08  dsandras
  * Added callback that is called when a connection is put on hold (local or remote).
  *
  * Revision 2.40  2005/02/21 12:19:55  rjongbloed
@@ -298,6 +301,8 @@ OpalManager::~OpalManager()
 
   // Clean up any calls that the cleaner thread missed
   GarbageCollection();
+
+  allCallsCleared.Wait();
 
   delete garbageCollector;
 
