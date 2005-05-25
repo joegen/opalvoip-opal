@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2034  2005/04/10 20:46:56  dsandras
+ * Revision 1.2035  2005/05/25 17:04:08  dsandras
+ * Fixed ClearAllCalls when being executed synchronously. Fixes a crash on exit when a call is in progress. Thanks Robert!
+ *
+ * Revision 2.33  2005/04/10 20:46:56  dsandras
  * Added callback that is called when a connection is put on hold (locally or remotely).
  *
  * Revision 2.32  2005/01/31 07:37:09  csoutheren
@@ -319,6 +322,7 @@ class OpalManager : public PObject
     /**Clear all current calls.
        This effectively executes the OpalCall::Clear() on every call that the
        manager has active.
+       This function can not be called from several threads at the same time.
       */
     virtual void ClearAllCalls(
       OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser, /// Reason for call clearing
@@ -1068,6 +1072,7 @@ class OpalManager : public PObject
         OpalManager & manager;
     } activeCalls;
 
+    BOOL	 clearingAllCalls;
     PSyncPoint   allCallsCleared;
     PThread    * garbageCollector;
     PSyncPoint   garbageCollectExit;
