@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2043  2005/05/23 21:22:04  dsandras
+ * Revision 1.2044  2005/05/25 17:04:07  dsandras
+ * Fixed ClearAllCalls when being executed synchronously. Fixes a crash on exit when a call is in progress. Thanks Robert!
+ *
+ * Revision 2.42  2005/05/23 21:22:04  dsandras
  * Wait on the mutex for calls missed by the garbage collector.
  *
  * Revision 2.41  2005/04/10 21:15:08  dsandras
@@ -258,6 +261,8 @@ OpalManager::OpalManager()
 
   stun = NULL;
 
+  clearingAllCalls = FALSE;
+
 #ifdef _WIN32
   rtpIpTypeofService = IPTOS_PREC_CRITIC_ECP|IPTOS_LOWDELAY;
 #else
@@ -301,8 +306,6 @@ OpalManager::~OpalManager()
 
   // Clean up any calls that the cleaner thread missed
   GarbageCollection();
-
-  allCallsCleared.Wait();
 
   delete garbageCollector;
 
@@ -427,11 +430,14 @@ BOOL OpalManager::ClearCallSynchronous(const PString & token,
 void OpalManager::ClearAllCalls(OpalConnection::CallEndReason reason, BOOL wait)
 {
   // Remove all calls from the active list first
-  for (PSafePtr<OpalCall> call = activeCalls; call != NULL; ++call)
+  for (PSafePtr<OpalCall> call = activeCalls; call != NULL; ++call) {
     call->Clear(reason);
+  }
 
-  if (wait)
+  if (wait) {
+    clearingAllCalls = TRUE;
     allCallsCleared.Wait();
+  }
 }
 
 
@@ -1040,8 +1046,10 @@ void OpalManager::GarbageCollection()
     if (!endpoints[i].connectionsActive.DeleteObjectsToBeRemoved())
       allCleared = FALSE;
   }
-  if (allCleared)
+  if (allCleared && clearingAllCalls) {
     allCallsCleared.Signal();
+    clearingAllCalls = FALSE;
+  }
 }
 
 
@@ -1054,7 +1062,7 @@ void OpalManager::CallDict::DeleteObject(PObject * object) const
 void OpalManager::GarbageMain(PThread &, INT)
 {
   while (!garbageCollectExit.Wait(1000))
-    GarbageCollection();
+      GarbageCollection();
 }
 
 
