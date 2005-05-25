@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2070  2005/05/23 20:55:15  dsandras
+ * Revision 1.2071  2005/05/25 18:34:25  dsandras
+ * Added missing AdjustMediaFormats so that only enabled common codecs are used on outgoing calls.
+ *
+ * Revision 2.69  2005/05/23 20:55:15  dsandras
  * Use STUN on incoming calls if required so that all the PDU fields are setup appropriately.
  *
  * Revision 2.68  2005/05/18 17:26:39  dsandras
@@ -1547,6 +1550,7 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
   }
 
   remoteFormatList = mediaDescription->GetMediaFormats();
+  AdjustMediaFormats(remoteFormatList);
 
   if (!ownerCall.OpenSourceMediaStreams(*this, remoteFormatList, rtpSessionId)) {
     PTRACE(2, "SIP\tCould not open media streams for audio");
