@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ilbccodec.cxx,v $
- * Revision 1.2005  2005/02/21 12:19:54  rjongbloed
+ * Revision 1.2006  2005/05/25 17:05:17  dsandras
+ * Fixed iLBC codec, thanks Robert!
+ *
+ * Revision 2.4  2005/02/21 12:19:54  rjongbloed
  * Added new "options list" to the OpalMediaFormat class.
  *
  * Revision 2.3  2004/09/01 12:21:27  rjongbloed
@@ -113,7 +116,7 @@ PString H323_iLBC_Capability::GetFormatName() const
 Opal_iLBC_Decoder::Opal_iLBC_Decoder(const OpalTranscoderRegistration & registration, int speed)
   : OpalFramedTranscoder(registration,
                          speed == 30 ? NO_OF_BYTES_30MS : NO_OF_BYTES_20MS,
-                         speed == 30 ? BLOCKL_30MS      : BLOCKL_20MS)
+                         speed == 30 ? BLOCKL_30MS * 2  : BLOCKL_20MS * 2)
 {
   decoder = (struct iLBC_Dec_Inst_t_ *)malloc((unsigned)sizeof(struct iLBC_Dec_Inst_t_));
   if (decoder != NULL) 
@@ -165,7 +168,7 @@ Opal_iLBC_15k2_PCM::Opal_iLBC_15k2_PCM(const OpalTranscoderRegistration & regist
 
 Opal_iLBC_Encoder::Opal_iLBC_Encoder(const OpalTranscoderRegistration & registration, int speed)
   : OpalFramedTranscoder(registration,
-                         speed == 30 ? BLOCKL_30MS      : BLOCKL_20MS,
+                         speed == 30 ? BLOCKL_30MS * 2  : BLOCKL_20MS * 2,
                          speed == 30 ? NO_OF_BYTES_30MS : NO_OF_BYTES_20MS)
 {
     encoder = (struct iLBC_Enc_Inst_t_ *)malloc((unsigned)sizeof(struct iLBC_Enc_Inst_t_));
