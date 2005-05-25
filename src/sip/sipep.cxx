@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2054  2005/05/23 20:14:00  dsandras
+ * Revision 1.2055  2005/05/25 18:36:07  dsandras
+ * Fixed unregistration of all accounts when exiting.
+ *
+ * Revision 2.53  2005/05/23 20:14:00  dsandras
  * Added preliminary support for basic instant messenging.
  *
  * Revision 2.52  2005/05/13 12:47:51  dsandras
@@ -376,9 +379,9 @@ SIPEndPoint::~SIPEndPoint()
   listeners.RemoveAll();
 
   /* Unregister */
-  for (PINDEX i = 0 ; i < activeRegistrations.GetSize () ; i++) {
+  while (GetRegistrationsCount() > 0) {
     SIPURL url;
-    SIPInfo *info = activeRegistrations.GetAt(i);
+    SIPInfo *info = activeRegistrations.GetAt(0);
     url = info->GetRegistrationAddress ();
     if (info->IsRegistered() && info->GetMethod() == SIP_PDU::Method_REGISTER)
       Unregister(url.GetHostName(), url.GetUserName());
