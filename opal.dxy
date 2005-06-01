@@ -35,6 +35,28 @@ the source OpalMediaStream reads UDP data in, which the patch then writes to a
 sink media stream (e.g. the attached sound card).
 
 
+\subsection Key Opal clases 
+There are four key classes in opal. - OpalManager, OpalEndPoint,
+OpalConnection, and OpalCall.
+
+The OpalManager maintains state on the entire application. 
+
+There is an EndPoint (descended of OpalEndPoint) for each protocol the
+application supports. Thus, you have (for example) the classes
+H323EndPoint, SIPEndPoint, OpalLIDEndPoint, OpalPCSSEndPoint
+
+The Connection class does the state handling for each call of that
+protocol.  Thus, if there are four concurrent H.323 calls being
+handled by the application, there will be four instances of the
+H323Connection class.
+
+The OpalCall provides the glue between two Connection instances. Thus,
+if use a OpalCall class to glue a H323Connection and PCSSConnection,
+H.323 calls are connected to the PC Sound System, and the application
+behaves like ohphone.  Conversely, if OpalCall is used to glue a
+H323Connection and SIP connection together, you have a H.323 - SIP
+gateway.
+
 \section opal Opal Classes 
 Classes with the word "Opal" in their name are independent of
 protocol. Thus, the OpalEndPoint class will be used for the H.323 and
