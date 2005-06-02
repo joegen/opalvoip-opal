@@ -25,6 +25,10 @@
  * Contributor(s): 
  *
  * $Log: main.cpp,v $
+ * Revision 1.28  2005/06/02 13:21:49  rjongbloed
+ * Save and restore media format options to registry.
+ * Added check for valid value for media format option in dialog.
+ *
  * Revision 1.27  2005/02/21 12:19:49  rjongbloed
  * Added new "options list" to the OpalMediaFormat class.
  *
@@ -557,15 +561,23 @@ bool MyFrame::Initialise()
       for (MyMediaList::iterator mm = m_mediaInfo.begin(); mm != m_mediaInfo.end(); ++mm) {
         if (codecName == mm->mediaFormat) {
           mm->preferenceOrder = codecIndex;
+          bool changedSomething = false;
           for (PINDEX i = 0; i < mm->mediaFormat.GetOptionCount(); i++) {
             const OpalMediaOption & option = mm->mediaFormat.GetOption(i);
             if (!option.IsReadOnly()) {
               PwxString codecOptionName = option.GetName();
               PwxString codecOptionValue;
-              if (config->Read(codecOptionName, &codecOptionValue) && !codecOptionValue.empty())
-                mm->mediaFormat.SetOptionValue(codecOptionName, codecOptionValue);
+              PString oldOptionValue;
+              mm->mediaFormat.GetOptionValue(codecOptionName, oldOptionValue);
+              if (config->Read(codecOptionName, &codecOptionValue) &&
+                              !codecOptionValue.empty() && codecOptionValue != oldOptionValue) {
+                if (mm->mediaFormat.SetOptionValue(codecOptionName, codecOptionValue))
+                  changedSomething = true;
+              }
             }
           }
+          if (changedSomething)
+            OpalMediaFormat::SetRegisteredMediaFormat(mm->mediaFormat);
         }
       }
     }
@@ -1653,6 +1665,10 @@ bool OptionsDialog::TransferDataFromWindow()
         if (!option.IsReadOnly())
           config->Write(PwxString(option.GetName()), PwxString(option.AsString()));
       }
+      if (mm->dirty) {
+        OpalMediaFormat::SetRegisteredMediaFormat(mm->mediaFormat);
+        mm->dirty = false;
+      }
     }
   }
 
@@ -1955,7 +1971,10 @@ void OptionsDialog::ChangedCodecOptionValue(wxCommandEvent & /*event*/)
   PAssert(m_selectedCodecs->GetSelections(selections) == 1, PLogicError);
   MyMedia * media = (MyMedia *)m_selectedCodecs->GetClientData(selections[0]);
   PAssert(media != NULL, PLogicError);
-  media->mediaFormat.SetOptionValue(PwxString(item.m_text), newValue);
+  if (media->mediaFormat.SetOptionValue(PwxString(item.m_text), newValue))
+    media->dirty = true;
+  else
+    wxMessageBox("Could not set option to specified value!", "Error", wxCANCEL|wxICON_EXCLAMATION);
 }
 
 
