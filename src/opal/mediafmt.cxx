@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2029  2005/03/12 00:33:28  csoutheren
+ * Revision 1.2030  2005/06/02 13:20:46  rjongbloed
+ * Added minimum and maximum check to media format options.
+ * Added ability to set the options on the primordial media format list.
+ *
+ * Revision 2.28  2005/03/12 00:33:28  csoutheren
  * Fixed problems with STL compatibility on MSVC 6
  * Fixed problems with video streams
  * Thanks to Adrian Sietsma
@@ -194,7 +198,7 @@ const OpalAudioFormat OpalG7231_6k3     (OPAL_G7231_6k3,      RTP_DataFrame::G72
 const OpalAudioFormat OpalG7231_5k3     (OPAL_G7231_5k3,      RTP_DataFrame::G7231,          "G723", 24, 240,  8,  3);
 const OpalAudioFormat OpalG7231A_6k3    (OPAL_G7231A_6k3,     RTP_DataFrame::G7231,          "G723", 24, 240,  8,  3);
 const OpalAudioFormat OpalG7231A_5k3    (OPAL_G7231A_5k3,     RTP_DataFrame::G7231,          "G723", 24, 240,  8,  3);
-const OpalAudioFormat OpalGSM0610       (OPAL_GSM0610,        RTP_DataFrame::GSM,            "GSM",  33, 160,  7,  4);
+const OpalAudioFormat OpalGSM0610       (OPAL_GSM0610,        RTP_DataFrame::GSM,            "GSM",  33, 160,  7,  4, 7);
 
 const OpalMediaFormat OpalRFC2833(
   OPAL_RFC2833,
@@ -207,6 +211,20 @@ const OpalMediaFormat OpalRFC2833(
   150*8,  // 150 millisecond
   OpalMediaFormat::AudioClockRate
 );
+
+
+static OpalMediaFormatList & GetMediaFormatsList()
+{
+  static OpalMediaFormatList registeredFormats;
+  return registeredFormats;
+}
+
+
+static PMutex & GetMediaFormatsListMutex()
+{
+  static PMutex mutex;
+  return mutex;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -269,7 +287,7 @@ bool OpalMediaOption::FromString(const PString & value)
   PStringStream strm;
   strm = value;
   ReadFrom(strm);
-  return strm.good();
+  return !strm.fail();
 }
 
 
@@ -593,16 +611,6 @@ OpalMediaFormat & OpalMediaFormat::operator=(const PString & wildcard)
 }
 
 
-void OpalMediaFormat::GetAllRegisteredMediaFormats(OpalMediaFormatList & copy)
-{
-  PWaitAndSignal mutex(GetMediaFormatsListMutex());
-  const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
-
-  for (PINDEX i = 0; i < registeredFormats.GetSize(); i++)
-    copy.OpalMediaFormatBaseList::Append(registeredFormats[i].Clone());
-}
-
-
 bool OpalMediaFormat::GetOptionValue(const PString & name, PString & value) const
 {
   OpalMediaOption * option = FindOption(name);
@@ -616,8 +624,7 @@ bool OpalMediaFormat::GetOptionValue(const PString & name, PString & value) cons
 
 bool OpalMediaFormat::SetOptionValue(const PString & name, const PString & value)
 {
-  if (!options.MakeUnique())
-    return false;
+  options.MakeUnique();
 
   OpalMediaOption * option = FindOption(name);
   if (option == NULL)
@@ -639,8 +646,7 @@ bool OpalMediaFormat::GetOptionBoolean(const PString & name, bool dflt) const
 
 bool OpalMediaFormat::SetOptionBoolean(const PString & name, bool value)
 {
-  if (!options.MakeUnique())
-    return false;
+  options.MakeUnique();
 
   OpalMediaOption * option = FindOption(name);
   if (option == NULL)
@@ -663,8 +669,7 @@ int OpalMediaFormat::GetOptionInteger(const PString & name, int dflt) const
 
 bool OpalMediaFormat::SetOptionInteger(const PString & name, int value)
 {
-  if (!options.MakeUnique())
-    return false;
+  options.MakeUnique();
 
   OpalMediaOption * option = FindOption(name);
   if (option == NULL)
@@ -687,8 +692,7 @@ double OpalMediaFormat::GetOptionReal(const PString & name, double dflt) const
 
 bool OpalMediaFormat::SetOptionReal(const PString & name, double value)
 {
-  if (!options.MakeUnique())
-    return false;
+  options.MakeUnique();
 
   OpalMediaOption * option = FindOption(name);
   if (option == NULL)
@@ -711,8 +715,7 @@ PINDEX OpalMediaFormat::GetOptionEnum(const PString & name, PINDEX dflt) const
 
 bool OpalMediaFormat::SetOptionEnum(const PString & name, PINDEX value)
 {
-  if (!options.MakeUnique())
-    return false;
+  options.MakeUnique();
 
   OpalMediaOption * option = FindOption(name);
   if (option == NULL)
@@ -735,8 +738,7 @@ PString OpalMediaFormat::GetOptionString(const PString & name, const PString & d
 
 bool OpalMediaFormat::SetOptionString(const PString & name, const PString & value)
 {
-  if (!options.MakeUnique())
-    return false;
+  options.MakeUnique();
 
   OpalMediaOption * option = FindOption(name);
   if (option == NULL)
@@ -781,17 +783,33 @@ OpalMediaFormatList OpalMediaFormat::GetAllRegisteredMediaFormats()
 }
 
 
-OpalMediaFormatList & OpalMediaFormat::GetMediaFormatsList()
+void OpalMediaFormat::GetAllRegisteredMediaFormats(OpalMediaFormatList & copy)
 {
-  static OpalMediaFormatList registeredFormats;
-  return registeredFormats;
+  PWaitAndSignal mutex(GetMediaFormatsListMutex());
+  const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
+
+  for (PINDEX i = 0; i < registeredFormats.GetSize(); i++)
+    copy.OpalMediaFormatBaseList::Append(registeredFormats[i].Clone());
 }
 
 
-PMutex & OpalMediaFormat::GetMediaFormatsListMutex()
+bool OpalMediaFormat::SetRegisteredMediaFormat(const OpalMediaFormat & mediaFormat)
 {
-  static PMutex mutex;
-  return mutex;
+  PWaitAndSignal mutex(GetMediaFormatsListMutex());
+  const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
+
+  for (PINDEX i = 0; i < registeredFormats.GetSize(); i++) {
+    if (registeredFormats[i] == mediaFormat) {
+      /* Yes, this looks a little odd as we just did equality above and seem to
+         be assigning the left hand side with exactly the same value. But what
+         is really happening is the above only compares the name, and below
+         copies all of the attributes (OpalMediaFormatOtions) across. */
+      registeredFormats[i] = mediaFormat;
+      return true;
+    }
+  }
+
+  return false;
 }
 
 
@@ -806,7 +824,8 @@ OpalAudioFormat::OpalAudioFormat(const char * fullName,
                                  PINDEX   frameSize,
                                  unsigned frameTime,
                                  unsigned rxFrames,
-                                 unsigned txFrames)
+                                 unsigned txFrames,
+                                 unsigned maxFrames)
   : OpalMediaFormat(fullName,
                     OpalMediaFormat::DefaultAudioSessionID,
                     rtpPayloadType,
@@ -817,8 +836,8 @@ OpalAudioFormat::OpalAudioFormat(const char * fullName,
                     frameTime,
                     OpalMediaFormat::AudioClockRate)
 {
-  AddOption(new OpalMediaOptionInteger(RxFramesPerPacketOption, false, OpalMediaOption::MinMerge, rxFrames));
-  AddOption(new OpalMediaOptionInteger(TxFramesPerPacketOption, false, OpalMediaOption::MinMerge, txFrames));
+  AddOption(new OpalMediaOptionInteger(RxFramesPerPacketOption, false, OpalMediaOption::MinMerge, rxFrames, 1, maxFrames));
+  AddOption(new OpalMediaOptionInteger(TxFramesPerPacketOption, false, OpalMediaOption::MinMerge, txFrames, 1, maxFrames));
 }
 
 
@@ -841,8 +860,8 @@ OpalMediaFormatList & OpalMediaFormatList::operator+=(const OpalMediaFormat & fo
 {
   if (!format) {
     if (!HasFormat(format)) {
-      PWaitAndSignal mutex(OpalMediaFormat::GetMediaFormatsListMutex());
-      const OpalMediaFormatList & registeredFormats = OpalMediaFormat::GetMediaFormatsList();
+      PWaitAndSignal mutex(GetMediaFormatsListMutex());
+      const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
       PINDEX idx = registeredFormats.FindFormat(format);
       if (idx != P_MAX_INDEX)
         OpalMediaFormatBaseList::Append(&registeredFormats[idx]);
