@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2042  2005/04/10 21:12:59  dsandras
+ * Revision 1.2043  2005/06/02 13:18:02  rjongbloed
+ * Fixed compiler warnings
+ *
+ * Revision 2.41  2005/04/10 21:12:59  dsandras
  * Added function to put the OpalMediaStreams on pause.
  *
  * Revision 2.40  2005/04/10 21:12:12  dsandras
@@ -334,7 +337,8 @@ void OpalConnection::ClearCallSynchronous(PSyncPoint * sync, CallEndReason reaso
 }
 
 
-void OpalConnection::TransferConnection(const PString & remoteParty, const PString & callIdentity)
+void OpalConnection::TransferConnection(const PString & PTRACE_PARAM(remoteParty),
+                                        const PString & /*callIdentity*/)
 {
   PTRACE(3, "OpalCon\tCan not transfer connection to " << remoteParty);
 }

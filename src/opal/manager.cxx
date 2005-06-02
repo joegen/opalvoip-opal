@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2044  2005/05/25 17:04:07  dsandras
+ * Revision 1.2045  2005/06/02 13:18:02  rjongbloed
+ * Fixed compiler warnings
+ *
+ * Revision 2.43  2005/05/25 17:04:07  dsandras
  * Fixed ClearAllCalls when being executed synchronously. Fixes a crash on exit when a call is in progress. Thanks Robert!
  *
  * Revision 2.42  2005/05/23 21:22:04  dsandras
@@ -566,7 +569,7 @@ void OpalManager::OnReleased(OpalConnection & connection)
 }
 
 
-void OpalManager::OnHold(OpalConnection & connection)
+void OpalManager::OnHold(OpalConnection & PTRACE_PARAM(connection))
 {
   PTRACE(3, "OpalMan\tOnHold " << connection);
 }
