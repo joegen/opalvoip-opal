@@ -25,6 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.21  2005/06/02 13:21:49  rjongbloed
+ * Save and restore media format options to registry.
+ * Added check for valid value for media format option in dialog.
+ *
  * Revision 1.20  2005/02/21 12:19:50  rjongbloed
  * Added new "options list" to the OpalMediaFormat class.
  *
@@ -441,7 +445,8 @@ public:
     const PString & format
   ) : sourceProtocol(source),
       mediaFormat(format),
-      preferenceOrder(-1) // -1 indicates disabled
+      preferenceOrder(-1), // -1 indicates disabled
+      dirty(false)
   { }
 
   bool operator<(const MyMedia & other) { return preferenceOrder < other.preferenceOrder; }
@@ -449,6 +454,7 @@ public:
   const char    * sourceProtocol;
   OpalMediaFormat mediaFormat;
   int             preferenceOrder;
+  bool            dirty;
 };
 
 typedef std::list<MyMedia> MyMediaList;
