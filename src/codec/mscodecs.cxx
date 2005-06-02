@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mscodecs.cxx,v $
- * Revision 1.2009  2005/02/21 12:19:54  rjongbloed
+ * Revision 1.2010  2005/06/02 13:20:45  rjongbloed
+ * Added minimum and maximum check to media format options.
+ * Added ability to set the options on the primordial media format list.
+ *
+ * Revision 2.8  2005/02/21 12:19:54  rjongbloed
  * Added new "options list" to the OpalMediaFormat class.
  *
  * Revision 2.7  2004/04/25 08:34:08  rjongbloed
@@ -156,7 +160,7 @@ static OpalAudioFormat MSGSM(
   OPAL_MSGSM,
   GSM_BYTES_PER_FRAME,
   GSM_SAMPLES_PER_FRAME, // 40 milliseconds
-  1, 1
+  1, 1, 1
 );
 
 
@@ -268,7 +272,7 @@ static OpalAudioFormat MSIMA(
   OPAL_MSIMA,
   IMA_BYTES_PER_FRAME,
   IMA_SAMPLES_PER_FRAME, // 63.1 milliseconds
-  1, 1
+  1, 1, 1
 );
 
 

@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2025  2005/03/12 00:33:26  csoutheren
+ * Revision 1.2026  2005/06/02 13:20:45  rjongbloed
+ * Added minimum and maximum check to media format options.
+ * Added ability to set the options on the primordial media format list.
+ *
+ * Revision 2.24  2005/03/12 00:33:26  csoutheren
  * Fixed problems with STL compatibility on MSVC 6
  * Fixed problems with video streams
  * Thanks to Adrian Sietsma
@@ -167,6 +171,14 @@
 
 #include <rtp/rtp.h>
 
+#include <limits>
+
+#ifdef min
+#undef min
+#endif
+#ifdef max
+#undef max
+#endif
 
 class OpalMediaFormat;
 
@@ -351,15 +363,33 @@ class OpalMediaOptionValue : public OpalMediaOption
       const char * name,
       bool readOnly,
       MergeType merge = MinMerge,
-      T value = 0
+      T value = 0,
+      T minimum = std::numeric_limits<T>::min(),
+      T maximum = std::numeric_limits<T>::max()
     ) : OpalMediaOption(name, readOnly, merge),
-        m_value(value)
+        m_value(value),
+        m_minimum(minimum),
+        m_maximum(maximum)
     { }
 
-    virtual PObject * Clone() const { return new OpalMediaOptionValue(*this); }
+    virtual PObject * Clone() const
+    {
+      return new OpalMediaOptionValue(*this);
+    }
 
-    virtual void PrintOn(ostream & strm) const { strm << m_value; }
-    virtual void ReadFrom(istream & strm) { int i; strm >> i; m_value = (i != 0); }
+    virtual void PrintOn(ostream & strm) const
+    {
+      strm << m_value;
+    }
+    virtual void ReadFrom(istream & strm)
+    {
+      T temp;
+      strm >> temp;
+      if (temp >= m_minimum && temp <= m_maximum)
+        m_value = temp;
+      else
+        strm.setstate(ios::failbit);
+    }
 
     virtual void Assign(
       const OpalMediaOption & option
@@ -374,6 +404,8 @@ class OpalMediaOptionValue : public OpalMediaOption
 
   protected:
     T m_value;
+    T m_minimum;
+    T m_maximum;
 };
 
 
@@ -623,7 +655,7 @@ class OpalMediaFormat : public PCaselessString
        description and value for the option.
       */
     const OpalMediaOption & GetOption(
-      PINDEX index
+      PINDEX index   /// Index of option in list to get
     ) { return options[index]; }
 
     /**Get the option value of the specified name as a string.
@@ -631,8 +663,8 @@ class OpalMediaFormat : public PCaselessString
        Returns false of the option is not present.
       */
     bool GetOptionValue(
-      const PString & name,
-      PString & value
+      const PString & name,   /// Option name
+      PString & value         /// String to receive option value
     ) const;
 
     /**Set the option value of the specified name as a string.
@@ -642,16 +674,16 @@ class OpalMediaFormat : public PCaselessString
        Returns false of the option is not present.
       */
     bool SetOptionValue(
-      const PString & name,
-      const PString & value
+      const PString & name,   /// Option name
+      const PString & value   /// New option value as string
     );
 
     /**Get the option value of the specified name as a boolean. The default
        value is returned if the option is not present.
       */
     bool GetOptionBoolean(
-      const PString & name,
-      bool dflt = FALSE
+      const PString & name,   /// Option name
+      bool dflt = FALSE       /// Default value if option not present
     ) const;
 
     /**Set the option value of the specified name as a boolean.
@@ -661,35 +693,36 @@ class OpalMediaFormat : public PCaselessString
        Returns false of the option is not present or is not of the same type.
       */
     bool SetOptionBoolean(
-      const PString & name,
-      bool value
+      const PString & name,   /// Option name
+      bool value              /// New value for option
     );
 
     /**Get the option value of the specified name as an integer. The default
        value is returned if the option is not present.
       */
     int GetOptionInteger(
-      const PString & name,
-      int dflt = 0
+      const PString & name,   /// Option name
+      int dflt = 0            /// Default value if option not present
     ) const;
 
     /**Set the option value of the specified name as an integer.
        Note the option will not be added if it does not exist, the option
        must be explicitly added using AddOption().
 
-       Returns false of the option is not present or is not of the same type.
+       Returns false of the option is not present, not of the same type or
+       is putside the allowable range.
       */
     bool SetOptionInteger(
-      const PString & name,
-      int value
+      const PString & name,   /// Option name
+      int value               /// New value for option
     );
 
     /**Get the option value of the specified name as a real. The default
        value is returned if the option is not present.
       */
     double GetOptionReal(
-      const PString & name,
-      double dflt = 0
+      const PString & name,   /// Option name
+      double dflt = 0         /// Default value if option not present
     ) const;
 
     /**Set the option value of the specified name as a real.
@@ -699,8 +732,8 @@ class OpalMediaFormat : public PCaselessString
        Returns false of the option is not present or is not of the same type.
       */
     bool SetOptionReal(
-      const PString & name,
-      double value
+      const PString & name,   /// Option name
+      double value            /// New value for option
     );
 
     /**Get the option value of the specified name as an index into an
@@ -708,8 +741,8 @@ class OpalMediaFormat : public PCaselessString
        present.
       */
     PINDEX GetOptionEnum(
-      const PString & name,
-      PINDEX dflt = 0
+      const PString & name,   /// Option name
+      PINDEX dflt = 0         /// Default value if option not present
     ) const;
 
     /**Set the option value of the specified name as an index into an enumeration.
@@ -719,16 +752,16 @@ class OpalMediaFormat : public PCaselessString
        Returns false of the option is not present or is not of the same type.
       */
     bool SetOptionEnum(
-      const PString & name,
-      PINDEX value
+      const PString & name,   /// Option name
+      PINDEX value            /// New value for option
     );
 
     /**Get the option value of the specified name as a string. The default
        value is returned if the option is not present.
       */
     PString GetOptionString(
-      const PString & name,
-      const PString & dflt = PString::Empty()
+      const PString & name,                   /// Option name
+      const PString & dflt = PString::Empty() /// Default value if option not present
     ) const;
 
     /**Set the option value of the specified name as a string.
@@ -738,14 +771,23 @@ class OpalMediaFormat : public PCaselessString
        Returns false of the option is not present or is not of the same type.
       */
     bool SetOptionString(
-      const PString & name,
-      const PString & value
+      const PString & name,   /// Option name
+      const PString & value   /// New value for option
     );
 
     /**Get a copy of the list of media formats that have been registered.
       */
     static OpalMediaFormatList GetAllRegisteredMediaFormats();
-    static void GetAllRegisteredMediaFormats(OpalMediaFormatList & copy);
+    static void GetAllRegisteredMediaFormats(
+      OpalMediaFormatList & copy    /// List to receive the copy of the master list
+    );
+
+    /**Set the options on the master format list entry.
+       The media format must already be registered. Returns false if not.
+      */
+    static bool SetRegisteredMediaFormat(
+      const OpalMediaFormat & mediaFormat  /// Media format to copy to master list
+    );
 
   protected:
     bool AddOption(
@@ -760,10 +802,6 @@ class OpalMediaFormat : public PCaselessString
     const char *                 rtpEncodingName;
     unsigned                     defaultSessionID;
     PSortedList<OpalMediaOption> options;
-
-  private:
-    static OpalMediaFormatList & GetMediaFormatsList();
-    static PMutex & GetMediaFormatsListMutex();
 
   friend class OpalMediaFormatList;
 };
@@ -786,13 +824,14 @@ class OpalAudioFormat : public OpalMediaFormat
     PCLASSINFO(OpalAudioFormat, OpalMediaFormat);
   public:
     OpalAudioFormat(
-      const char * fullName,  /// Full name of media format
+      const char * fullName,    /// Full name of media format
       RTP_DataFrame::PayloadTypes rtpPayloadType, /// RTP payload type code
-      const char * encodingName, /// RTP encoding name
-      PINDEX   frameSize, /// Size of frame in bytes (if applicable)
-      unsigned frameTime, /// Time for frame in RTP units (if applicable)
-      unsigned rxFrames,  /// Maximum number of frames per packet we can receive
-      unsigned txFrames   /// Desired number of frames per packet we transmit
+      const char * encodingName,/// RTP encoding name
+      PINDEX   frameSize,       /// Size of frame in bytes (if applicable)
+      unsigned frameTime,       /// Time for frame in RTP units (if applicable)
+      unsigned rxFrames,        /// Maximum number of frames per packet we can receive
+      unsigned txFrames,        /// Desired number of frames per packet we transmit
+      unsigned maxFrames = 256  /// Maximum possible frames per packet
     );
 
     static const char * const RxFramesPerPacketOption;
