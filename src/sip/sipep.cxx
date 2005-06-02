@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2055  2005/05/25 18:36:07  dsandras
+ * Revision 1.2056  2005/06/02 13:18:02  rjongbloed
+ * Fixed compiler warnings
+ *
+ * Revision 2.54  2005/05/25 18:36:07  dsandras
  * Fixed unregistration of all accounts when exiting.
  *
  * Revision 2.53  2005/05/23 20:14:00  dsandras
@@ -997,7 +1000,7 @@ BOOL SIPEndPoint::OnReceivedNOTIFY (OpalTransport & transport, SIP_PDU & pdu)
 }
 
 
-void SIPEndPoint::OnReceivedMESSAGE(OpalTransport & transport, 
+void SIPEndPoint::OnReceivedMESSAGE(OpalTransport & /*transport*/, 
 				    SIP_PDU & pdu)
 {
   OnMessageReceived(pdu.GetMIME().GetFrom(), pdu.GetEntityBody());
