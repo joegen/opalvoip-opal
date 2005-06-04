@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2027  2005/05/06 07:37:06  csoutheren
+ * Revision 1.2028  2005/06/04 12:44:36  dsandras
+ * Applied patch from Ted Szoczei to fix leaks and problems on cancelling a call and to improve the Allow PDU field handling.
+ *
+ * Revision 2.26  2005/05/06 07:37:06  csoutheren
  * Various changed while working with SIP carrier
  *   - remove assumption that authentication realm is a domain name.
  *   - stopped rewrite of "To" field when proxy being used
@@ -581,6 +584,10 @@ class SIP_PDU : public PObject
 	   Returns TRUE if conection has a routeSet.
 	  */
     BOOL SetRoute(SIPConnection & connection);
+
+    /**Set mime allow field to all supported methods.
+      */
+    void SetAllow(void);
 
     /**Read PDU from the specified transport.
       */
