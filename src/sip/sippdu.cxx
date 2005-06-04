@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2055  2005/05/23 20:14:04  dsandras
+ * Revision 1.2056  2005/06/04 12:44:36  dsandras
+ * Applied patch from Ted Szoczei to fix leaks and problems on cancelling a call and to improve the Allow PDU field handling.
+ *
+ * Revision 2.54  2005/05/23 20:14:04  dsandras
  * Added preliminary support for basic instant messenging.
  *
  * Revision 2.53  2005/05/06 07:37:06  csoutheren
@@ -298,7 +301,7 @@ static struct {
   { SIP_PDU::Failure_BusyHere,                    "Busy Here" },
   { SIP_PDU::Failure_RequestTerminated,           "Request Terminated" },
   { SIP_PDU::Failure_NotAcceptableHere,           "Not Acceptable Here" },
-  { SIP_PDU::Failure_BadEvent,           	        "Bad Event" },
+  { SIP_PDU::Failure_BadEvent,                    "Bad Event" },
   { SIP_PDU::Failure_RequestPending,              "Request Pending" },
   { SIP_PDU::Failure_Undecipherable,              "Undecipherable" },
 
@@ -681,13 +684,13 @@ void SIPMIMEInfo::SetContentLength(PINDEX v)
 
 PString SIPMIMEInfo::GetCSeq() const
 {
-  return (*this)("CSeq");
+  return (*this)("CSeq");       // no compact form
 }
 
 
 void SIPMIMEInfo::SetCSeq(const PString & v)
 {
-  SetAt("CSeq",  v);
+  SetAt("CSeq",  v);            // no compact form
 }
 
 
@@ -1138,7 +1141,6 @@ SIP_PDU::SIP_PDU(const SIP_PDU & request,
 {
   char *extraInfo = NULL;
  
-  PString methods;
   method       = NumMethods;
   statusCode   = code;
   versionMajor = request.GetVersionMajor();
@@ -1155,13 +1157,9 @@ SIP_PDU::SIP_PDU(const SIP_PDU & request,
   mime.SetCSeq(requestMIME.GetCSeq());
   mime.SetVia(requestMIME.GetVia());
   mime.SetRecordRoute(requestMIME.GetRecordRoute());
-  for (PINDEX i = 0 ; i < SIP_PDU::NumMethods ; i++) {
-    methods = methods + MethodNames [i] + ", ";
-  }
-  mime.SetAllow(methods.Left(methods.GetLength () - 2));
+  SetAllow();
 
-  
-  /* Use extra paramater as redirection URL in case of 302 */
+  /* Use extra parameter as redirection URL in case of 302 */
   if (code == SIP_PDU::Redirection_MovedTemporarily) {
     SIPURL contact(extraInfo);
     mime.SetContact(contact.AsQuotedString ());
@@ -1263,6 +1261,7 @@ void SIP_PDU::Construct(Methods meth,
   mime.SetCallID(callID);
   mime.SetCSeq(PString(cseq) & MethodNames[method]);
 
+  // construct Via:
   PINDEX dollar = via.Find('$');
 
   PStringStream str;
@@ -1277,11 +1276,7 @@ void SIP_PDU::Construct(Methods meth,
 
   mime.SetVia(str);
 
-  PString methods;
-  for (PINDEX i = 0 ; i < SIP_PDU::NumMethods ; i++) {
-    methods = methods + MethodNames [i] + ", ";
-  }
-  mime.SetAllow(methods.Left(methods.GetLength () - 2));
+  SetAllow();
 }
 
 
@@ -1332,6 +1327,18 @@ BOOL SIP_PDU::SetRoute(SIPConnection & connection)
 }
 
 
+void SIP_PDU::SetAllow(void)
+{
+  PString methods;
+  methods = MethodNames [0];
+  for (PINDEX i = 1 ; i < SIP_PDU::NumMethods ; i++)
+    methods = methods + ", " + MethodNames[i];
+
+  mime.SetAllow(methods);
+}
+
+
+
 void SIP_PDU::PrintOn(ostream & strm) const
 {
   strm << mime.GetCSeq() << ' ';
@@ -1356,6 +1363,7 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
 #endif                  
     transport.clear(ios::badbit);
 
+  // get the message from transport into cmd and parse MIME
   transport.clear();
   PString cmd;
   if (!transport.bad() && !transport.eof()) {
@@ -1375,6 +1383,7 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
   }
 
   if (cmd.Left(4) *= "SIP/") {
+    // parse Response version, code & reason (ie: "SIP/2.0 200 OK")
     PINDEX space = cmd.Find(' ');
     if (space == P_MAX_INDEX) {
       PTRACE(1, "SIP\tBad Status-Line received on " << transport);
@@ -1416,6 +1425,7 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
     return FALSE;
   }
 
+  // get the SDP content
   PINDEX contentLength = mime.GetContentLength();
   if (contentLength > 0)
     transport.read(entityBody.GetPointer(contentLength+1), contentLength);
@@ -1467,7 +1477,7 @@ BOOL SIP_PDU::Write(OpalTransport & transport)
     str << ' ' << (unsigned)statusCode << ' ' << info;
 
   str << "\r\n"
-      << mime
+      << setfill('\r') << mime << setfill(' ')
       << entityBody;
 
 #if PTRACING
@@ -1491,7 +1501,7 @@ PString SIP_PDU::GetTransactionID() const
 {
   // sometimes peers put <> around address, use GetHostAddress on GetFrom to handle all cases
   SIPURL fromURL(mime.GetFrom());
-  return fromURL.GetHostAddress().ToLower() + PString(mime.GetCSeqIndex());
+  return fromURL.GetHostAddress().ToLower() + PString(mime.GetCSeq());
 }
 
 
@@ -1516,6 +1526,7 @@ SIPTransaction::SIPTransaction(SIPConnection & conn,
 {
   connection = &conn;
   Construct();
+  PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " created.");
 }
 
 
@@ -1538,6 +1549,7 @@ SIPTransaction::~SIPTransaction()
     PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " aborted.");
     connection->RemoveTransaction(this);
   }
+  PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " destroyed.");
 }
 
 
@@ -1755,13 +1767,13 @@ void SIPTransaction::SetTerminated(States newState)
 #endif
 
   if (state >= Terminated_Success) {
-    PTRACE(3, "SIP\tTried to set " << StateNames[newState] << " for " << mime.GetCSeq()
+    PTRACE(3, "SIP\tTried to set state " << StateNames[newState] << " for transaction " << mime.GetCSeq()
            << " but already terminated ( " << StateNames[state] << ')');
     return;
   }
 
   state = newState;
-  PTRACE(3, "SIP\tSet " << StateNames[newState] << " for " << mime.GetCSeq());
+  PTRACE(3, "SIP\tSet state " << StateNames[newState] << " for transaction " << mime.GetCSeq());
 
   if (connection != NULL) {
     if (state != Terminated_Success)
@@ -1835,6 +1847,10 @@ BOOL SIPInvite::OnReceivedResponse(SIP_PDU & response)
   }
   else
     completionTimer = endpoint.GetAckTimeout();
+
+  /* Handle response to outgoing call cancellation */
+  if (response.GetStatusCode() == Failure_RequestTerminated)
+    SetTerminated(Terminated_Success);
 
   return TRUE;
 }
@@ -2043,7 +2059,7 @@ SIPMessage::SIPMessage(SIPEndPoint & ep,
                      "sip:"+address.GetUserName()+"@"+address.GetHostName(),
                      address.AsQuotedString(),
                      myAddress.AsQuotedString(),
-		                 id,
+                     id,
                      endpoint.GetNextCSeq(),
                      transport.GetLocalAddress());
   mime.SetContentType("text/plain;charset=UTF-8");

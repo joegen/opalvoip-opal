@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2071  2005/05/25 18:34:25  dsandras
+ * Revision 1.2072  2005/06/04 12:44:36  dsandras
+ * Applied patch from Ted Szoczei to fix leaks and problems on cancelling a call and to improve the Allow PDU field handling.
+ *
+ * Revision 2.70  2005/05/25 18:34:25  dsandras
  * Added missing AdjustMediaFormats so that only enabled common codecs are used on outgoing calls.
  *
  * Revision 2.69  2005/05/23 20:55:15  dsandras
@@ -315,8 +318,8 @@ SIPConnection::SIPConnection(OpalCall & call,
     targetAddress.SetParamVar("proxy", PString::Empty());
   }
 
-  SIPURL url(targetAddress.AsQuotedString());
   remotePartyAddress = targetAddress.AsQuotedString();
+  SIPURL url(remotePartyAddress);
   remotePartyName = url.GetDisplayName ();
 
   if (proxy.IsEmpty())
@@ -392,10 +395,9 @@ void SIPConnection::OnReleased()
           SendResponseToINVITE(SIP_PDU::Failure_UnsupportedMediaType);
           break;
 
-	case EndedByCallForwarded :
-	  SendResponseToINVITE(SIP_PDU::Redirection_MovedTemporarily,
-			       forwardParty);
-	  break;
+        case EndedByCallForwarded :
+          SendResponseToINVITE(SIP_PDU::Redirection_MovedTemporarily, forwardParty);
+          break;
 
         default :
           SendResponseToINVITE(SIP_PDU::Failure_BadGateway);
@@ -825,7 +827,8 @@ SDPSessionDescription * SIPConnection::BuildSDP(RTP_SessionManager & rtpSessions
       // Not already there, so create one
       rtpSession = CreateSession(GetTransport(), rtpSessionId, NULL);
       if (rtpSession == NULL)
-	return NULL;
+        return NULL;
+
       rtpSession->SetUserData(new SIP_RTP_Session(*this));
 
       // add the RTP session to the RTP session manager in INVITE
@@ -1050,23 +1053,24 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     default :
       switch (response.GetStatusCode()/100) {
         case 1 :
-          // Do nothing on 1xx
+          // old: Do nothing on 1xx
+          PTRACE(2, "SIP\tReceived unknown informational response " << response.GetStatusCode());
           break;
         case 2 :
           OnReceivedOK(transaction, response);
           break;
         default :
           // All other final responses cause a call end, if it is not a
-	  // local hold.
-	  if (!local_hold)
-	    Release(EndedByRefusal);
-	  else {
-	    local_hold = FALSE; // It failed
-	    // Un-Pause the media streams
-	    PauseMediaStreams(FALSE);
-	    // Signal the manager that there is no more hold
-	    endpoint.OnHold(*this);
-	  }
+          // local hold.
+          if (!local_hold)
+            Release(EndedByRefusal);
+          else {
+            local_hold = FALSE; // It failed
+            // Un-Pause the media streams
+            PauseMediaStreams(FALSE);
+            // Signal the manager that there is no more hold
+            endpoint.OnHold(*this);
+          }
       }
   }
 }
@@ -1114,7 +1118,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     via = via.Left(j);
   OpalTransportAddress viaAddress(via, endpoint.GetDefaultSignalPort(), "udp$");
   transport->SetRemoteAddress(viaAddress);
-  PTRACE(4, "SIP\tOnReceivedINVITE Changed remote address of transport " << transport << "=" << *transport);
+  PTRACE(4, "SIP\tOnReceivedINVITE Changed remote address of transport " << *transport);
 
   targetAddress = mime.GetFrom();
   targetAddress.AdjustForRequestURI();
@@ -1573,16 +1577,23 @@ void SIPConnection::QueuePDU(SIP_PDU * pdu)
   if (PAssertNULL(pdu) == NULL)
     return;
 
-  PTRACE(4, "SIP\tQueueing PDU: " << *pdu);
-  pduQueue.Enqueue(pdu);
-  pduSemaphore.Signal();
+  if (phase >= ReleasingPhase && pduHandler == NULL) {
+    // don't create another handler thread while releasing!
+    PTRACE(4, "SIP\tIgnoring PDU: " << *pdu);
+    delete pdu;
+  }
+  else {
+    PTRACE(4, "SIP\tQueueing PDU: " << *pdu);
+    pduQueue.Enqueue(pdu);
+    pduSemaphore.Signal();
 
-  if (pduHandler == NULL) {
-    SafeReference();
-    pduHandler = PThread::Create(PCREATE_NOTIFIER(HandlePDUsThreadMain), 0,
-                                 PThread::NoAutoDeleteThread,
-                                 PThread::NormalPriority,
-                                 "SIP Handler:%x");
+    if (pduHandler == NULL) {
+      SafeReference();
+      pduHandler = PThread::Create(PCREATE_NOTIFIER(HandlePDUsThreadMain), 0,
+                                   PThread::NoAutoDeleteThread,
+                                   PThread::NormalPriority,
+                                   "SIP Handler:%x");
+    }
   }
 }
 
