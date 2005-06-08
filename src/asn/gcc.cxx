@@ -5,11 +5,11 @@
 //
 
 #ifdef P_USE_PRAGMA
-#pragma implementation "gccpdu.h"
+#pragma implementation "gcc.h"
 #endif
 
 #include <ptlib.h>
-#include "gccpdu.h"
+#include "asn/gcc.h"
 
 #define new PNEW
 
