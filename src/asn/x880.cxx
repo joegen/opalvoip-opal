@@ -9,7 +9,7 @@
 #endif
 
 #include <ptlib.h>
-#include "x880.h"
+#include "asn/x880.h"
 
 #define new PNEW
 
