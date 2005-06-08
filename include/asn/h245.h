@@ -88,6 +88,7 @@ class H245_CommunicationModeRequest;
 class H245_ConferenceRequest;
 class H245_MultilinkRequest;
 class H245_LogicalChannelRateRequest;
+class H245_GenericMessage;
 
 class H245_RequestMessage : public PASN_Choice
 {
@@ -112,7 +113,8 @@ class H245_RequestMessage : public PASN_Choice
       e_communicationModeRequest,
       e_conferenceRequest,
       e_multilinkRequest,
-      e_logicalChannelRateRequest
+      e_logicalChannelRateRequest,
+      e_genericRequest
     };
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
@@ -205,6 +207,12 @@ class H245_RequestMessage : public PASN_Choice
     operator H245_LogicalChannelRateRequest &();
     operator const H245_LogicalChannelRateRequest &() const;
 #endif
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+    operator H245_GenericMessage &() const;
+#else
+    operator H245_GenericMessage &();
+    operator const H245_GenericMessage &() const;
+#endif
 
     BOOL CreateObject();
     PObject * Clone() const;
@@ -239,6 +247,7 @@ class H245_ConferenceResponse;
 class H245_MultilinkResponse;
 class H245_LogicalChannelRateAcknowledge;
 class H245_LogicalChannelRateReject;
+class H245_GenericMessage;
 
 class H245_ResponseMessage : public PASN_Choice
 {
@@ -272,7 +281,8 @@ class H245_ResponseMessage : public PASN_Choice
       e_conferenceResponse,
       e_multilinkResponse,
       e_logicalChannelRateAcknowledge,
-      e_logicalChannelRateReject
+      e_logicalChannelRateReject,
+      e_genericResponse
     };
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
@@ -419,6 +429,12 @@ class H245_ResponseMessage : public PASN_Choice
     operator H245_LogicalChannelRateReject &();
     operator const H245_LogicalChannelRateReject &() const;
 #endif
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+    operator H245_GenericMessage &() const;
+#else
+    operator H245_GenericMessage &();
+    operator const H245_GenericMessage &() const;
+#endif
 
     BOOL CreateObject();
     PObject * Clone() const;
@@ -441,6 +457,7 @@ class H245_ConferenceCommand;
 class H245_H223MultiplexReconfiguration;
 class H245_NewATMVCCommand;
 class H245_MobileMultilinkReconfigurationCommand;
+class H245_GenericMessage;
 
 class H245_CommandMessage : public PASN_Choice
 {
@@ -462,7 +479,8 @@ class H245_CommandMessage : public PASN_Choice
       e_conferenceCommand,
       e_h223MultiplexReconfiguration,
       e_newATMVCCommand,
-      e_mobileMultilinkReconfigurationCommand
+      e_mobileMultilinkReconfigurationCommand,
+      e_genericCommand
     };
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
@@ -537,6 +555,12 @@ class H245_CommandMessage : public PASN_Choice
     operator H245_MobileMultilinkReconfigurationCommand &();
     operator const H245_MobileMultilinkReconfigurationCommand &() const;
 #endif
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+    operator H245_GenericMessage &() const;
+#else
+    operator H245_GenericMessage &();
+    operator const H245_GenericMessage &() const;
+#endif
 
     BOOL CreateObject();
     PObject * Clone() const;
@@ -570,6 +594,7 @@ class H245_MultilinkIndication;
 class H245_LogicalChannelRateRelease;
 class H245_FlowControlIndication;
 class H245_MobileMultilinkReconfigurationIndication;
+class H245_GenericMessage;
 
 class H245_IndicationMessage : public PASN_Choice
 {
@@ -602,7 +627,8 @@ class H245_IndicationMessage : public PASN_Choice
       e_multilinkIndication,
       e_logicalChannelRateRelease,
       e_flowControlIndication,
-      e_mobileMultilinkReconfigurationIndication
+      e_mobileMultilinkReconfigurationIndication,
+      e_genericIndication
     };
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
@@ -742,6 +768,12 @@ class H245_IndicationMessage : public PASN_Choice
 #else
     operator H245_MobileMultilinkReconfigurationIndication &();
     operator const H245_MobileMultilinkReconfigurationIndication &() const;
+#endif
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+    operator H245_GenericMessage &() const;
+#else
+    operator H245_GenericMessage &();
+    operator const H245_GenericMessage &() const;
 #endif
 
     BOOL CreateObject();
@@ -1398,6 +1430,7 @@ class H245_H262VideoCapability;
 class H245_H263VideoCapability;
 class H245_IS11172VideoCapability;
 class H245_GenericCapability;
+class H245_ExtendedVideoCapability;
 
 class H245_VideoCapability : public PASN_Choice
 {
@@ -1413,7 +1446,8 @@ class H245_VideoCapability : public PASN_Choice
       e_h262VideoCapability,
       e_h263VideoCapability,
       e_is11172VideoCapability,
-      e_genericVideoCapability
+      e_genericVideoCapability,
+      e_extendedVideoCapability
     };
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
@@ -1451,6 +1485,12 @@ class H245_VideoCapability : public PASN_Choice
 #else
     operator H245_GenericCapability &();
     operator const H245_GenericCapability &() const;
+#endif
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+    operator H245_ExtendedVideoCapability &() const;
+#else
+    operator H245_ExtendedVideoCapability &();
+    operator const H245_ExtendedVideoCapability &() const;
 #endif
 
     BOOL CreateObject();
@@ -2242,7 +2282,11 @@ class H245_UserInputCapability : public PASN_Choice
       e_generalString,
       e_dtmf,
       e_hookflash,
-      e_extendedAlphanumeric
+      e_extendedAlphanumeric,
+      e_encryptedBasicString,
+      e_encryptedIA5String,
+      e_encryptedGeneralString,
+      e_secureDTMF
     };
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
@@ -4775,6 +4819,28 @@ class H245_SubstituteConferenceIDCommand : public PASN_Sequence
 
 
 //
+// EncryptionUpdateDirection
+//
+
+class H245_EncryptionUpdateDirection : public PASN_Choice
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_EncryptionUpdateDirection, PASN_Choice);
+#endif
+  public:
+    H245_EncryptionUpdateDirection(unsigned tag = 0, TagClass tagClass = UniversalTagClass);
+
+    enum Choices {
+      e_masterToSlave,
+      e_slaveToMaster
+    };
+
+    BOOL CreateObject();
+    PObject * Clone() const;
+};
+
+
+//
 // KeyProtectionMethod
 //
 
@@ -4814,10 +4880,12 @@ class H245_EncryptionUpdateRequest : public PASN_Sequence
     H245_EncryptionUpdateRequest(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
 
     enum OptionalFields {
-      e_keyProtectionMethod
+      e_keyProtectionMethod,
+      e_synchFlag
     };
 
     H245_KeyProtectionMethod m_keyProtectionMethod;
+    PASN_Integer m_synchFlag;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -5156,6 +5224,85 @@ class H245_VendorIdentification : public PASN_Sequence
 
 
 //
+// IV8
+//
+
+class H245_IV8 : public PASN_OctetString
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_IV8, PASN_OctetString);
+#endif
+  public:
+    H245_IV8(unsigned tag = UniversalOctetString, TagClass tagClass = UniversalTagClass);
+
+    H245_IV8(const char * v);
+    H245_IV8(const PString & v);
+    H245_IV8(const PBYTEArray & v);
+
+    H245_IV8 & operator=(const char * v);
+    H245_IV8 & operator=(const PString & v);
+    H245_IV8 & operator=(const PBYTEArray & v);
+    PObject * Clone() const;
+};
+
+
+//
+// IV16
+//
+
+class H245_IV16 : public PASN_OctetString
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_IV16, PASN_OctetString);
+#endif
+  public:
+    H245_IV16(unsigned tag = UniversalOctetString, TagClass tagClass = UniversalTagClass);
+
+    H245_IV16(const char * v);
+    H245_IV16(const PString & v);
+    H245_IV16(const PBYTEArray & v);
+
+    H245_IV16 & operator=(const char * v);
+    H245_IV16 & operator=(const PString & v);
+    H245_IV16 & operator=(const PBYTEArray & v);
+    PObject * Clone() const;
+};
+
+
+//
+// Params
+//
+
+class H245_Params : public PASN_Sequence
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_Params, PASN_Sequence);
+#endif
+  public:
+    H245_Params(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    enum OptionalFields {
+      e_iv8,
+      e_iv16,
+      e_iv
+    };
+
+    H245_IV8 m_iv8;
+    H245_IV16 m_iv16;
+    PASN_OctetString m_iv;
+
+    PINDEX GetDataLength() const;
+    BOOL Decode(PASN_Stream & strm);
+    void Encode(PASN_Stream & strm) const;
+#ifndef PASN_NOPRINTON
+    void PrintOn(ostream & strm) const;
+#endif
+    Comparison Compare(const PObject & obj) const;
+    PObject * Clone() const;
+};
+
+
+//
 // UserInputIndication
 //
 
@@ -5164,6 +5311,7 @@ class H245_UserInputIndication_userInputSupportIndication;
 class H245_UserInputIndication_signal;
 class H245_UserInputIndication_signalUpdate;
 class H245_UserInputIndication_extendedAlphanumeric;
+class H245_UserInputIndication_encryptedAlphanumeric;
 
 class H245_UserInputIndication : public PASN_Choice
 {
@@ -5179,7 +5327,8 @@ class H245_UserInputIndication : public PASN_Choice
       e_userInputSupportIndication,
       e_signal,
       e_signalUpdate,
-      e_extendedAlphanumeric
+      e_extendedAlphanumeric,
+      e_encryptedAlphanumeric
     };
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
@@ -5212,6 +5361,12 @@ class H245_UserInputIndication : public PASN_Choice
     operator H245_UserInputIndication_extendedAlphanumeric &();
     operator const H245_UserInputIndication_extendedAlphanumeric &() const;
 #endif
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+    operator H245_UserInputIndication_encryptedAlphanumeric &() const;
+#else
+    operator H245_UserInputIndication_encryptedAlphanumeric &();
+    operator const H245_UserInputIndication_encryptedAlphanumeric &() const;
+#endif
 
     BOOL CreateObject();
     PObject * Clone() const;
@@ -5240,6 +5395,26 @@ class H245_MobileMultilinkReconfigurationIndication : public PASN_Sequence
     void PrintOn(ostream & strm) const;
 #endif
     Comparison Compare(const PObject & obj) const;
+    PObject * Clone() const;
+};
+
+
+//
+// ArrayOf_GenericParameter
+//
+
+class H245_GenericParameter;
+
+class H245_ArrayOf_GenericParameter : public PASN_Array
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_ArrayOf_GenericParameter, PASN_Array);
+#endif
+  public:
+    H245_ArrayOf_GenericParameter(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    PASN_Object * CreateObject() const;
+    H245_GenericParameter & operator[](PINDEX i) const;
     PObject * Clone() const;
 };
 
@@ -5856,6 +6031,46 @@ class H245_ArrayOf_DataApplicationCapability : public PASN_Array
 
 
 //
+// ArrayOf_VideoCapability
+//
+
+class H245_VideoCapability;
+
+class H245_ArrayOf_VideoCapability : public PASN_Array
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_ArrayOf_VideoCapability, PASN_Array);
+#endif
+  public:
+    H245_ArrayOf_VideoCapability(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    PASN_Object * CreateObject() const;
+    H245_VideoCapability & operator[](PINDEX i) const;
+    PObject * Clone() const;
+};
+
+
+//
+// ArrayOf_GenericCapability
+//
+
+class H245_GenericCapability;
+
+class H245_ArrayOf_GenericCapability : public PASN_Array
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_ArrayOf_GenericCapability, PASN_Array);
+#endif
+  public:
+    H245_ArrayOf_GenericCapability(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    PASN_Object * CreateObject() const;
+    H245_GenericCapability & operator[](PINDEX i) const;
+    PObject * Clone() const;
+};
+
+
+//
 // ArrayOf_EnhancementOptions
 //
 
@@ -6325,26 +6540,6 @@ class H245_ArrayOf_NonStandardParameter : public PASN_Array
 
     PASN_Object * CreateObject() const;
     H245_NonStandardParameter & operator[](PINDEX i) const;
-    PObject * Clone() const;
-};
-
-
-//
-// ArrayOf_GenericParameter
-//
-
-class H245_GenericParameter;
-
-class H245_ArrayOf_GenericParameter : public PASN_Array
-{
-#ifndef PASN_LEANANDMEAN
-    PCLASSINFO(H245_ArrayOf_GenericParameter, PASN_Array);
-#endif
-  public:
-    H245_ArrayOf_GenericParameter(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
-
-    PASN_Object * CreateObject() const;
-    H245_GenericParameter & operator[](PINDEX i) const;
     PObject * Clone() const;
 };
 
@@ -8884,6 +9079,8 @@ class H245_MiscellaneousCommand_type_progressiveRefinementStart;
 class H245_MiscellaneousCommand_type_videoBadMBs;
 class H245_ArrayOf_PictureReference;
 class H245_MiscellaneousCommand_type_lostPartialPicture;
+class H245_MiscellaneousCommand_type_encryptionUpdateCommand;
+class H245_MiscellaneousCommand_type_encryptionUpdateAck;
 
 class H245_MiscellaneousCommand_type : public PASN_Choice
 {
@@ -8916,7 +9113,9 @@ class H245_MiscellaneousCommand_type : public PASN_Choice
       e_videoBadMBs,
       e_lostPicture,
       e_lostPartialPicture,
-      e_recoveryReferencePicture
+      e_recoveryReferencePicture,
+      e_encryptionUpdateCommand,
+      e_encryptionUpdateAck
     };
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
@@ -8966,6 +9165,18 @@ class H245_MiscellaneousCommand_type : public PASN_Choice
 #else
     operator H245_MiscellaneousCommand_type_lostPartialPicture &();
     operator const H245_MiscellaneousCommand_type_lostPartialPicture &() const;
+#endif
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+    operator H245_MiscellaneousCommand_type_encryptionUpdateCommand &() const;
+#else
+    operator H245_MiscellaneousCommand_type_encryptionUpdateCommand &();
+    operator const H245_MiscellaneousCommand_type_encryptionUpdateCommand &() const;
+#endif
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+    operator H245_MiscellaneousCommand_type_encryptionUpdateAck &() const;
+#else
+    operator H245_MiscellaneousCommand_type_encryptionUpdateAck &();
+    operator const H245_MiscellaneousCommand_type_encryptionUpdateAck &() const;
 #endif
 
     BOOL CreateObject();
@@ -9284,7 +9495,10 @@ class H245_UserInputIndication_userInputSupportIndication : public PASN_Choice
       e_nonStandard,
       e_basicString,
       e_iA5String,
-      e_generalString
+      e_generalString,
+      e_encryptedBasicString,
+      e_encryptedIA5String,
+      e_encryptedGeneralString
     };
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
@@ -9300,23 +9514,24 @@ class H245_UserInputIndication_userInputSupportIndication : public PASN_Choice
 
 
 //
-// UserInputIndication_extendedAlphanumeric
+// UserInputIndication_encryptedAlphanumeric
 //
 
-class H245_UserInputIndication_extendedAlphanumeric : public PASN_Sequence
+class H245_UserInputIndication_encryptedAlphanumeric : public PASN_Sequence
 {
 #ifndef PASN_LEANANDMEAN
-    PCLASSINFO(H245_UserInputIndication_extendedAlphanumeric, PASN_Sequence);
+    PCLASSINFO(H245_UserInputIndication_encryptedAlphanumeric, PASN_Sequence);
 #endif
   public:
-    H245_UserInputIndication_extendedAlphanumeric(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+    H245_UserInputIndication_encryptedAlphanumeric(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
 
     enum OptionalFields {
-      e_rtpPayloadIndication
+      e_paramS
     };
 
-    PASN_GeneralString m_alphanumeric;
-    PASN_Null m_rtpPayloadIndication;
+    PASN_ObjectId m_algorithmOID;
+    H245_Params m_paramS;
+    PASN_OctetString m_encrypted;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -10220,6 +10435,31 @@ class H245_MiscellaneousCommand_type_lostPartialPicture : public PASN_Sequence
 
 
 //
+// MiscellaneousCommand_type_encryptionUpdateAck
+//
+
+class H245_MiscellaneousCommand_type_encryptionUpdateAck : public PASN_Sequence
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_MiscellaneousCommand_type_encryptionUpdateAck, PASN_Sequence);
+#endif
+  public:
+    H245_MiscellaneousCommand_type_encryptionUpdateAck(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    PASN_Integer m_synchFlag;
+
+    PINDEX GetDataLength() const;
+    BOOL Decode(PASN_Stream & strm);
+    void Encode(PASN_Stream & strm) const;
+#ifndef PASN_NOPRINTON
+    void PrintOn(ostream & strm) const;
+#endif
+    Comparison Compare(const PObject & obj) const;
+    PObject * Clone() const;
+};
+
+
+//
 // NewATMVCCommand_aal_aal5
 //
 
@@ -10389,6 +10629,37 @@ class H245_UserInputIndication_signalUpdate_rtp : public PASN_Sequence
     H245_UserInputIndication_signalUpdate_rtp(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
 
     H245_LogicalChannelNumber m_logicalChannelNumber;
+
+    PINDEX GetDataLength() const;
+    BOOL Decode(PASN_Stream & strm);
+    void Encode(PASN_Stream & strm) const;
+#ifndef PASN_NOPRINTON
+    void PrintOn(ostream & strm) const;
+#endif
+    Comparison Compare(const PObject & obj) const;
+    PObject * Clone() const;
+};
+
+
+//
+// UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric
+//
+
+class H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric : public PASN_Sequence
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric, PASN_Sequence);
+#endif
+  public:
+    H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    enum OptionalFields {
+      e_paramS
+    };
+
+    PASN_ObjectId m_algorithmOID;
+    H245_Params m_paramS;
+    PASN_OctetString m_encrypted;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -10817,6 +11088,38 @@ class H245_FECMode_rfc2733Mode_mode_separateStream_samePort : public PASN_Sequen
     H245_FECMode_rfc2733Mode_mode_separateStream_samePort(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
 
     H245_ModeElementType m_protectedType;
+
+    PINDEX GetDataLength() const;
+    BOOL Decode(PASN_Stream & strm);
+    void Encode(PASN_Stream & strm) const;
+#ifndef PASN_NOPRINTON
+    void PrintOn(ostream & strm) const;
+#endif
+    Comparison Compare(const PObject & obj) const;
+    PObject * Clone() const;
+};
+
+
+//
+// GenericMessage
+//
+
+class H245_GenericMessage : public PASN_Sequence
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_GenericMessage, PASN_Sequence);
+#endif
+  public:
+    H245_GenericMessage(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    enum OptionalFields {
+      e_subMessageIdentifer,
+      e_messageContent
+    };
+
+    H245_CapabilityIdentifier m_messageIdentifier;
+    PASN_Integer m_subMessageIdentifer;
+    H245_ArrayOf_GenericParameter m_messageContent;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -11420,6 +11723,36 @@ class H245_MediaDistributionCapability : public PASN_Sequence
     PASN_Boolean m_distributedVideo;
     H245_ArrayOf_DataApplicationCapability m_centralizedData;
     H245_ArrayOf_DataApplicationCapability m_distributedData;
+
+    PINDEX GetDataLength() const;
+    BOOL Decode(PASN_Stream & strm);
+    void Encode(PASN_Stream & strm) const;
+#ifndef PASN_NOPRINTON
+    void PrintOn(ostream & strm) const;
+#endif
+    Comparison Compare(const PObject & obj) const;
+    PObject * Clone() const;
+};
+
+
+//
+// ExtendedVideoCapability
+//
+
+class H245_ExtendedVideoCapability : public PASN_Sequence
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_ExtendedVideoCapability, PASN_Sequence);
+#endif
+  public:
+    H245_ExtendedVideoCapability(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    enum OptionalFields {
+      e_videoCapabilityExtension
+    };
+
+    H245_ArrayOf_VideoCapability m_videoCapability;
+    H245_ArrayOf_GenericCapability m_videoCapabilityExtension;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -13263,8 +13596,13 @@ class H245_MiscellaneousCommand : public PASN_Sequence
   public:
     H245_MiscellaneousCommand(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
 
+    enum OptionalFields {
+      e_direction
+    };
+
     H245_LogicalChannelNumber m_logicalChannelNumber;
     H245_MiscellaneousCommand_type m_type;
+    H245_EncryptionUpdateDirection m_direction;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -14151,13 +14489,17 @@ class H245_UserInputIndication_signal : public PASN_Sequence
     enum OptionalFields {
       e_duration,
       e_rtp,
-      e_rtpPayloadIndication
+      e_rtpPayloadIndication,
+      e_paramS,
+      e_encryptedSignalType
     };
 
     PASN_IA5String m_signalType;
     PASN_Integer m_duration;
     H245_UserInputIndication_signal_rtp m_rtp;
     PASN_Null m_rtpPayloadIndication;
+    H245_Params m_paramS;
+    PASN_OctetString m_encryptedSignalType;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -14188,6 +14530,38 @@ class H245_UserInputIndication_signalUpdate : public PASN_Sequence
 
     PASN_Integer m_duration;
     H245_UserInputIndication_signalUpdate_rtp m_rtp;
+
+    PINDEX GetDataLength() const;
+    BOOL Decode(PASN_Stream & strm);
+    void Encode(PASN_Stream & strm) const;
+#ifndef PASN_NOPRINTON
+    void PrintOn(ostream & strm) const;
+#endif
+    Comparison Compare(const PObject & obj) const;
+    PObject * Clone() const;
+};
+
+
+//
+// UserInputIndication_extendedAlphanumeric
+//
+
+class H245_UserInputIndication_extendedAlphanumeric : public PASN_Sequence
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_UserInputIndication_extendedAlphanumeric, PASN_Sequence);
+#endif
+  public:
+    H245_UserInputIndication_extendedAlphanumeric(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    enum OptionalFields {
+      e_rtpPayloadIndication,
+      e_encryptedAlphanumeric
+    };
+
+    PASN_GeneralString m_alphanumeric;
+    PASN_Null m_rtpPayloadIndication;
+    H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric m_encryptedAlphanumeric;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -14239,6 +14613,36 @@ class H245_MiscellaneousCommand_type_progressiveRefinementStart : public PASN_Se
     H245_MiscellaneousCommand_type_progressiveRefinementStart(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
 
     H245_MiscellaneousCommand_type_progressiveRefinementStart_repeatCount m_repeatCount;
+
+    PINDEX GetDataLength() const;
+    BOOL Decode(PASN_Stream & strm);
+    void Encode(PASN_Stream & strm) const;
+#ifndef PASN_NOPRINTON
+    void PrintOn(ostream & strm) const;
+#endif
+    Comparison Compare(const PObject & obj) const;
+    PObject * Clone() const;
+};
+
+
+//
+// MiscellaneousCommand_type_encryptionUpdateCommand
+//
+
+class H245_MiscellaneousCommand_type_encryptionUpdateCommand : public PASN_Sequence
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_MiscellaneousCommand_type_encryptionUpdateCommand, PASN_Sequence);
+#endif
+  public:
+    H245_MiscellaneousCommand_type_encryptionUpdateCommand(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    enum OptionalFields {
+      e_multiplePayloadStream
+    };
+
+    H245_EncryptionSync m_encryptionSync;
+    H245_MultiplePayloadStream m_multiplePayloadStream;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -15140,7 +15544,8 @@ class H245_ModeElement : public PASN_Sequence
       e_v76ModeParameters,
       e_h2250ModeParameters,
       e_genericModeParameters,
-      e_multiplexedStreamModeParameters
+      e_multiplexedStreamModeParameters,
+      e_logicalChannelNumber
     };
 
     H245_ModeElementType m_type;
@@ -15149,6 +15554,7 @@ class H245_ModeElement : public PASN_Sequence
     H245_H2250ModeParameters m_h2250ModeParameters;
     H245_GenericCapability m_genericModeParameters;
     H245_MultiplexedStreamModeParameters m_multiplexedStreamModeParameters;
+    H245_LogicalChannelNumber m_logicalChannelNumber;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
