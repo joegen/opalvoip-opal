@@ -5,7 +5,7 @@
 //
 
 #include <ptlib.h>
-#include "asn/h225.h"
+#include "h225.h"
 
 #define new PNEW
 
@@ -639,6 +639,16 @@ PObject * H225_ServiceControlIndication_callSpecific::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_ServiceControlResponse_result[]={
+      {"started",0}
+     ,{"failed",1}
+     ,{"stopped",2}
+     ,{"notAvailable",3}
+     ,{"neededFeatureNotSupported",4}
+};
+#endif
 //
 // ServiceControlResponse_result
 //
@@ -646,13 +656,9 @@ PObject * H225_ServiceControlIndication_callSpecific::Clone() const
 H225_ServiceControlResponse_result::H225_ServiceControlResponse_result(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 5, TRUE
 #ifndef PASN_NOPRINTON
-      , "started "
-        "failed "
-        "stopped "
-        "notAvailable "
-        "neededFeatureNotSupported "
+    ,(const PASN_Names *)Names_H225_ServiceControlResponse_result,5
 #endif
-    )
+)
 {
 }
 
@@ -706,6 +712,13 @@ PObject * H225_TransportAddress_ipSourceRoute_route::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_TransportAddress_ipSourceRoute_routing[]={
+      {"strict",0}
+     ,{"loose",1}
+};
+#endif
 //
 // TransportAddress_ipSourceRoute_routing
 //
@@ -713,10 +726,9 @@ PObject * H225_TransportAddress_ipSourceRoute_route::Clone() const
 H225_TransportAddress_ipSourceRoute_routing::H225_TransportAddress_ipSourceRoute_routing(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "strict "
-        "loose "
+    ,(const PASN_Names *)Names_H225_TransportAddress_ipSourceRoute_routing,2
 #endif
-    )
+)
 {
 }
 

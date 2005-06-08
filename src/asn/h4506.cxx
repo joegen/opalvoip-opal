@@ -9,7 +9,7 @@
 #endif
 
 #include <ptlib.h>
-#include "asn/h4506.h"
+#include "h4506.h"
 
 #define new PNEW
 
@@ -18,6 +18,11 @@
 
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4506_CallWaitingOperations[]={
+        {"callWaiting",105}
+};
+#endif
 //
 // CallWaitingOperations
 //
@@ -25,7 +30,7 @@
 H4506_CallWaitingOperations::H4506_CallWaitingOperations(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 105, FALSE
 #ifndef PASN_NOPRINTON
-      , "callWaiting=105 "
+    ,(const PASN_Names *)Names_H4506_CallWaitingOperations,1
 #endif
     )
 {

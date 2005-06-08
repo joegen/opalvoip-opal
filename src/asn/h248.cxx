@@ -9,7 +9,7 @@
 #endif
 
 #include <ptlib.h>
-#include "asn/h248.h"
+#include "h248.h"
 
 #define new PNEW
 
@@ -193,6 +193,16 @@ PObject * H248_AuthData::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H248_MId[]={
+      {"ip4Address",0}
+     ,{"ip6Address",1}
+     ,{"domainName",2}
+     ,{"deviceName",3}
+     ,{"mtpAddress",4}
+};
+#endif
 //
 // MId
 //
@@ -200,13 +210,9 @@ PObject * H248_AuthData::Clone() const
 H248_MId::H248_MId(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 5, TRUE
 #ifndef PASN_NOPRINTON
-      , "ip4Address "
-        "ip6Address "
-        "domainName "
-        "deviceName "
-        "mtpAddress "
+    ,(const PASN_Names *)Names_H248_MId,5
 #endif
-    )
+)
 {
 }
 
@@ -631,6 +637,15 @@ PObject * H248_PathName::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H248_Transaction[]={
+      {"transactionRequest",0}
+     ,{"transactionPending",1}
+     ,{"transactionReply",2}
+     ,{"transactionResponseAck",3}
+};
+#endif
 //
 // Transaction
 //
@@ -638,12 +653,9 @@ PObject * H248_PathName::Clone() const
 H248_Transaction::H248_Transaction(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "transactionRequest "
-        "transactionPending "
-        "transactionReply "
-        "transactionResponseAck "
+    ,(const PASN_Names *)Names_H248_Transaction,4
 #endif
-    )
+)
 {
 }
 
@@ -1194,6 +1206,19 @@ PObject * H248_ContextAttrAuditRequest::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H248_Command[]={
+      {"addReq",0}
+     ,{"moveReq",1}
+     ,{"modReq",2}
+     ,{"subtractReq",3}
+     ,{"auditCapRequest",4}
+     ,{"auditValueRequest",5}
+     ,{"notifyReq",6}
+     ,{"serviceChangeReq",7}
+};
+#endif
 //
 // Command
 //
@@ -1201,16 +1226,9 @@ PObject * H248_ContextAttrAuditRequest::Clone() const
 H248_Command::H248_Command(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 8, TRUE
 #ifndef PASN_NOPRINTON
-      , "addReq "
-        "moveReq "
-        "modReq "
-        "subtractReq "
-        "auditCapRequest "
-        "auditValueRequest "
-        "notifyReq "
-        "serviceChangeReq "
+    ,(const PASN_Names *)Names_H248_Command,8
 #endif
-    )
+)
 {
 }
 
@@ -1362,6 +1380,19 @@ PObject * H248_Command::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H248_CommandReply[]={
+      {"addReply",0}
+     ,{"moveReply",1}
+     ,{"modReply",2}
+     ,{"subtractReply",3}
+     ,{"auditCapReply",4}
+     ,{"auditValueReply",5}
+     ,{"notifyReply",6}
+     ,{"serviceChangeReply",7}
+};
+#endif
 //
 // CommandReply
 //
@@ -1369,16 +1400,9 @@ PObject * H248_Command::Clone() const
 H248_CommandReply::H248_CommandReply(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 8, TRUE
 #ifndef PASN_NOPRINTON
-      , "addReply "
-        "moveReply "
-        "modReply "
-        "subtractReply "
-        "auditCapReply "
-        "auditValueReply "
-        "notifyReply "
-        "serviceChangeReply "
+    ,(const PASN_Names *)Names_H248_CommandReply,8
 #endif
-    )
+)
 {
 }
 
@@ -1506,6 +1530,19 @@ PObject * H248_CommandReply::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H248_AmmDescriptor[]={
+      {"mediaDescriptor",0}
+     ,{"modemDescriptor",1}
+     ,{"muxDescriptor",2}
+     ,{"eventsDescriptor",3}
+     ,{"eventBufferDescriptor",4}
+     ,{"signalsDescriptor",5}
+     ,{"digitMapDescriptor",6}
+     ,{"auditDescriptor",7}
+};
+#endif
 //
 // AmmDescriptor
 //
@@ -1513,16 +1550,9 @@ PObject * H248_CommandReply::Clone() const
 H248_AmmDescriptor::H248_AmmDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 8, TRUE
 #ifndef PASN_NOPRINTON
-      , "mediaDescriptor "
-        "modemDescriptor "
-        "muxDescriptor "
-        "eventsDescriptor "
-        "eventBufferDescriptor "
-        "signalsDescriptor "
-        "digitMapDescriptor "
-        "auditDescriptor "
+    ,(const PASN_Names *)Names_H248_AmmDescriptor,8
 #endif
-    )
+)
 {
 }
 
@@ -1746,6 +1776,14 @@ PObject * H248_AmmDescriptor::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H248_AuditReply[]={
+      {"contextAuditResult",0}
+     ,{"error",1}
+     ,{"auditResult",2}
+};
+#endif
 //
 // AuditReply
 //
@@ -1753,11 +1791,9 @@ PObject * H248_AmmDescriptor::Clone() const
 H248_AuditReply::H248_AuditReply(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "contextAuditResult "
-        "error "
-        "auditResult "
+    ,(const PASN_Names *)Names_H248_AuditReply,3
 #endif
-    )
+)
 {
 }
 
@@ -1887,6 +1923,23 @@ PObject * H248_TerminationAudit::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H248_AuditReturnParameter[]={
+      {"errorDescriptor",0}
+     ,{"mediaDescriptor",1}
+     ,{"modemDescriptor",2}
+     ,{"muxDescriptor",3}
+     ,{"eventsDescriptor",4}
+     ,{"eventBufferDescriptor",5}
+     ,{"signalsDescriptor",6}
+     ,{"digitMapDescriptor",7}
+     ,{"observedEventsDescriptor",8}
+     ,{"statisticsDescriptor",9}
+     ,{"packagesDescriptor",10}
+     ,{"emptyDescriptors",11}
+};
+#endif
 //
 // AuditReturnParameter
 //
@@ -1894,20 +1947,9 @@ PObject * H248_TerminationAudit::Clone() const
 H248_AuditReturnParameter::H248_AuditReturnParameter(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 12, TRUE
 #ifndef PASN_NOPRINTON
-      , "errorDescriptor "
-        "mediaDescriptor "
-        "modemDescriptor "
-        "muxDescriptor "
-        "eventsDescriptor "
-        "eventBufferDescriptor "
-        "signalsDescriptor "
-        "digitMapDescriptor "
-        "observedEventsDescriptor "
-        "statisticsDescriptor "
-        "packagesDescriptor "
-        "emptyDescriptors "
+    ,(const PASN_Names *)Names_H248_AuditReturnParameter,12
 #endif
-    )
+)
 {
 }
 
@@ -2231,6 +2273,18 @@ PObject * H248_AuditReturnParameter::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H248_IndAuditParameter[]={
+      {"indaudmediaDescriptor",0}
+     ,{"indaudeventsDescriptor",1}
+     ,{"indaudeventBufferDescriptor",2}
+     ,{"indaudsignalsDescriptor",3}
+     ,{"indauddigitMapDescriptor",4}
+     ,{"indaudstatisticsDescriptor",5}
+     ,{"indaudpackagesDescriptor",6}
+};
+#endif
 //
 // IndAuditParameter
 //
@@ -2238,15 +2292,9 @@ PObject * H248_AuditReturnParameter::Clone() const
 H248_IndAuditParameter::H248_IndAuditParameter(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 7, TRUE
 #ifndef PASN_NOPRINTON
-      , "indaudmediaDescriptor "
-        "indaudeventsDescriptor "
-        "indaudeventBufferDescriptor "
-        "indaudsignalsDescriptor "
-        "indauddigitMapDescriptor "
-        "indaudstatisticsDescriptor "
-        "indaudpackagesDescriptor "
+    ,(const PASN_Names *)Names_H248_IndAuditParameter,7
 #endif
-    )
+)
 {
 }
 
@@ -2476,6 +2524,13 @@ PObject * H248_IndAudPropertyGroup::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H248_IndAudSignalsDescriptor[]={
+      {"signal",0}
+     ,{"seqSigList",1}
+};
+#endif
 //
 // IndAudSignalsDescriptor
 //
@@ -2483,10 +2538,9 @@ PObject * H248_IndAudPropertyGroup::Clone() const
 H248_IndAudSignalsDescriptor::H248_IndAudSignalsDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "signal "
-        "seqSigList "
+    ,(const PASN_Names *)Names_H248_IndAudSignalsDescriptor,2
 #endif
-    )
+)
 {
 }
 
@@ -2560,6 +2614,13 @@ PObject * H248_IndAudSignalsDescriptor::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H248_ServiceChangeResult[]={
+      {"errorDescriptor",0}
+     ,{"serviceChangeResParms",1}
+};
+#endif
 //
 // ServiceChangeResult
 //
@@ -2567,10 +2628,9 @@ PObject * H248_IndAudSignalsDescriptor::Clone() const
 H248_ServiceChangeResult::H248_ServiceChangeResult(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "errorDescriptor "
-        "serviceChangeResParms "
+    ,(const PASN_Names *)Names_H248_ServiceChangeResult,2
 #endif
-    )
+)
 {
 }
 
@@ -2734,6 +2794,15 @@ PObject * H248_TerminationIDList::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H248_StreamMode[]={
+        {"sendOnly",0}
+       ,{"recvOnly",1}
+       ,{"sendRecv",2}
+       ,{"inactive",3}
+       ,{"loopBack",4}
+};
+#endif
 //
 // StreamMode
 //
@@ -2741,11 +2810,7 @@ PObject * H248_TerminationIDList::Clone() const
 H248_StreamMode::H248_StreamMode(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "sendOnly "
-        "recvOnly "
-        "sendRecv "
-        "inactive "
-        "loopBack "
+    ,(const PASN_Names *)Names_H248_StreamMode,5
 #endif
     )
 {
@@ -2886,6 +2951,13 @@ PObject * H248_PkgdName::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H248_Relation[]={
+        {"greaterThan",0}
+       ,{"smallerThan",1}
+       ,{"unequalTo",2}
+};
+#endif
 //
 // Relation
 //
@@ -2893,9 +2965,7 @@ PObject * H248_PkgdName::Clone() const
 H248_Relation::H248_Relation(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "greaterThan "
-        "smallerThan "
-        "unequalTo "
+    ,(const PASN_Names *)Names_H248_Relation,3
 #endif
     )
 {
@@ -2949,6 +3019,12 @@ PObject * H248_PropertyGroup::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H248_EventBufferControl[]={
+        {"off",0}
+       ,{"lockStep",1}
+};
+#endif
 //
 // EventBufferControl
 //
@@ -2956,8 +3032,7 @@ PObject * H248_PropertyGroup::Clone() const
 H248_EventBufferControl::H248_EventBufferControl(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 1, TRUE
 #ifndef PASN_NOPRINTON
-      , "off "
-        "lockStep "
+    ,(const PASN_Names *)Names_H248_EventBufferControl,2
 #endif
     )
 {
@@ -2980,6 +3055,13 @@ PObject * H248_EventBufferControl::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H248_ServiceState[]={
+        {"test",0}
+       ,{"outOfSvc",1}
+       ,{"inSvc",2}
+};
+#endif
 //
 // ServiceState
 //
@@ -2987,9 +3069,7 @@ PObject * H248_EventBufferControl::Clone() const
 H248_ServiceState::H248_ServiceState(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "test "
-        "outOfSvc "
-        "inSvc "
+    ,(const PASN_Names *)Names_H248_ServiceState,3
 #endif
     )
 {
@@ -3012,6 +3092,15 @@ PObject * H248_ServiceState::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H248_MuxType[]={
+        {"h221",0}
+       ,{"h223",1}
+       ,{"h226",2}
+       ,{"v76",3}
+       ,{"nx64k",4}
+};
+#endif
 //
 // MuxType
 //
@@ -3019,11 +3108,7 @@ PObject * H248_ServiceState::Clone() const
 H248_MuxType::H248_MuxType(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "h221 "
-        "h223 "
-        "h226 "
-        "v76 "
-        "nx64k "
+    ,(const PASN_Names *)Names_H248_MuxType,5
 #endif
     )
 {
@@ -3080,6 +3165,13 @@ PObject * H248_StreamID::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H248_EventDM[]={
+      {"digitMapName",0}
+     ,{"digitMapValue",1}
+};
+#endif
 //
 // EventDM
 //
@@ -3087,10 +3179,9 @@ PObject * H248_StreamID::Clone() const
 H248_EventDM::H248_EventDM(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "digitMapName "
-        "digitMapValue "
+    ,(const PASN_Names *)Names_H248_EventDM,2
 #endif
-    )
+)
 {
 }
 
@@ -3226,6 +3317,13 @@ PObject * H248_SignalsDescriptor::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H248_SignalRequest[]={
+      {"signal",0}
+     ,{"seqSigList",1}
+};
+#endif
 //
 // SignalRequest
 //
@@ -3233,10 +3331,9 @@ PObject * H248_SignalsDescriptor::Clone() const
 H248_SignalRequest::H248_SignalRequest(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "signal "
-        "seqSigList "
+    ,(const PASN_Names *)Names_H248_SignalRequest,2
 #endif
-    )
+)
 {
 }
 
@@ -3310,6 +3407,13 @@ PObject * H248_SignalRequest::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H248_SignalType[]={
+        {"brief",0}
+       ,{"onOff",1}
+       ,{"timeOut",2}
+};
+#endif
 //
 // SignalType
 //
@@ -3317,9 +3421,7 @@ PObject * H248_SignalRequest::Clone() const
 H248_SignalType::H248_SignalType(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "brief "
-        "onOff "
-        "timeOut "
+    ,(const PASN_Names *)Names_H248_SignalType,3
 #endif
     )
 {
@@ -3453,6 +3555,19 @@ PObject * H248_RequestID::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H248_ModemType[]={
+        {"v18",0}
+       ,{"v22",1}
+       ,{"v22bis",2}
+       ,{"v32",3}
+       ,{"v32bis",4}
+       ,{"v34",5}
+       ,{"v90",6}
+       ,{"v91",7}
+       ,{"synchISDN",8}
+};
+#endif
 //
 // ModemType
 //
@@ -3460,15 +3575,7 @@ PObject * H248_RequestID::Clone() const
 H248_ModemType::H248_ModemType(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 8, TRUE
 #ifndef PASN_NOPRINTON
-      , "v18 "
-        "v22 "
-        "v22bis "
-        "v32 "
-        "v32bis "
-        "v34 "
-        "v90 "
-        "v91 "
-        "synchISDN "
+    ,(const PASN_Names *)Names_H248_ModemType,9
 #endif
     )
 {
@@ -3664,6 +3771,17 @@ PObject * H248_DigitMapValue::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H248_ServiceChangeAddress[]={
+      {"portNumber",0}
+     ,{"ip4Address",1}
+     ,{"ip6Address",2}
+     ,{"domainName",3}
+     ,{"deviceName",4}
+     ,{"mtpAddress",5}
+};
+#endif
 //
 // ServiceChangeAddress
 //
@@ -3671,14 +3789,9 @@ PObject * H248_DigitMapValue::Clone() const
 H248_ServiceChangeAddress::H248_ServiceChangeAddress(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 6, TRUE
 #ifndef PASN_NOPRINTON
-      , "portNumber "
-        "ip4Address "
-        "ip6Address "
-        "domainName "
-        "deviceName "
-        "mtpAddress "
+    ,(const PASN_Names *)Names_H248_ServiceChangeAddress,6
 #endif
-    )
+)
 {
 }
 
@@ -3810,6 +3923,16 @@ PObject * H248_ServiceChangeAddress::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H248_ServiceChangeMethod[]={
+        {"failover",0}
+       ,{"forced",1}
+       ,{"graceful",2}
+       ,{"restart",3}
+       ,{"disconnected",4}
+       ,{"handOff",5}
+};
+#endif
 //
 // ServiceChangeMethod
 //
@@ -3817,12 +3940,7 @@ PObject * H248_ServiceChangeAddress::Clone() const
 H248_ServiceChangeMethod::H248_ServiceChangeMethod(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 5, TRUE
 #ifndef PASN_NOPRINTON
-      , "failover "
-        "forced "
-        "graceful "
-        "restart "
-        "disconnected "
-        "handOff "
+    ,(const PASN_Names *)Names_H248_ServiceChangeMethod,6
 #endif
     )
 {
@@ -4068,6 +4186,14 @@ PObject * H248_StatisticsDescriptor::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H248_NonStandardIdentifier[]={
+      {"object",0}
+     ,{"h221NonStandard",1}
+     ,{"experimental",2}
+};
+#endif
 //
 // NonStandardIdentifier
 //
@@ -4075,11 +4201,9 @@ PObject * H248_StatisticsDescriptor::Clone() const
 H248_NonStandardIdentifier::H248_NonStandardIdentifier(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "object "
-        "h221NonStandard "
-        "experimental "
+    ,(const PASN_Names *)Names_H248_NonStandardIdentifier,3
 #endif
-    )
+)
 {
 }
 
@@ -4352,6 +4476,13 @@ PObject * H248_Value::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H248_Message_messageBody[]={
+      {"messageError",0}
+     ,{"transactions",1}
+};
+#endif
 //
 // Message_messageBody
 //
@@ -4359,10 +4490,9 @@ PObject * H248_Value::Clone() const
 H248_Message_messageBody::H248_Message_messageBody(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "messageError "
-        "transactions "
+    ,(const PASN_Names *)Names_H248_Message_messageBody,2
 #endif
-    )
+)
 {
 }
 
@@ -4467,6 +4597,13 @@ PObject * H248_ArrayOf_ActionRequest::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H248_TransactionReply_transactionResult[]={
+      {"transactionError",0}
+     ,{"actionReplies",1}
+};
+#endif
 //
 // TransactionReply_transactionResult
 //
@@ -4474,10 +4611,9 @@ PObject * H248_ArrayOf_ActionRequest::Clone() const
 H248_TransactionReply_transactionResult::H248_TransactionReply_transactionResult(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "transactionError "
-        "actionReplies "
+    ,(const PASN_Names *)Names_H248_TransactionReply_transactionResult,2
 #endif
-    )
+)
 {
 }
 
@@ -4644,6 +4780,13 @@ PObject * H248_ArrayOf_TopologyRequest::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H248_TopologyRequest_topologyDirection[]={
+        {"bothway",0}
+       ,{"isolate",1}
+       ,{"oneway",2}
+};
+#endif
 //
 // TopologyRequest_topologyDirection
 //
@@ -4651,9 +4794,7 @@ PObject * H248_ArrayOf_TopologyRequest::Clone() const
 H248_TopologyRequest_topologyDirection::H248_TopologyRequest_topologyDirection(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "bothway "
-        "isolate "
-        "oneway "
+    ,(const PASN_Names *)Names_H248_TopologyRequest_topologyDirection,3
 #endif
     )
 {
@@ -4738,6 +4879,13 @@ PObject * H248_ArrayOf_IndAuditParameter::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H248_IndAudMediaDescriptor_streams[]={
+      {"oneStream",0}
+     ,{"multiStream",1}
+};
+#endif
 //
 // IndAudMediaDescriptor_streams
 //
@@ -4745,10 +4893,9 @@ PObject * H248_ArrayOf_IndAuditParameter::Clone() const
 H248_IndAudMediaDescriptor_streams::H248_IndAudMediaDescriptor_streams(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "oneStream "
-        "multiStream "
+    ,(const PASN_Names *)Names_H248_IndAudMediaDescriptor_streams,2
 #endif
-    )
+)
 {
 }
 
@@ -4915,6 +5062,14 @@ PObject * H248_ArrayOf_EventParameter::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H248_EventParameter_extraInfo[]={
+      {"relation",0}
+     ,{"range",1}
+     ,{"sublist",2}
+};
+#endif
 //
 // EventParameter_extraInfo
 //
@@ -4922,11 +5077,9 @@ PObject * H248_ArrayOf_EventParameter::Clone() const
 H248_EventParameter_extraInfo::H248_EventParameter_extraInfo(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, FALSE
 #ifndef PASN_NOPRINTON
-      , "relation "
-        "range "
-        "sublist "
+    ,(const PASN_Names *)Names_H248_EventParameter_extraInfo,3
 #endif
-    )
+)
 {
 }
 
@@ -5010,6 +5163,13 @@ PObject * H248_ArrayOf_WildcardField::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H248_MediaDescriptor_streams[]={
+      {"oneStream",0}
+     ,{"multiStream",1}
+};
+#endif
 //
 // MediaDescriptor_streams
 //
@@ -5017,10 +5177,9 @@ PObject * H248_ArrayOf_WildcardField::Clone() const
 H248_MediaDescriptor_streams::H248_MediaDescriptor_streams(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "oneStream "
-        "multiStream "
+    ,(const PASN_Names *)Names_H248_MediaDescriptor_streams,2
 #endif
-    )
+)
 {
 }
 
@@ -5156,6 +5315,14 @@ PObject * H248_ArrayOf_PASN_OctetString::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H248_PropertyParm_extraInfo[]={
+      {"relation",0}
+     ,{"range",1}
+     ,{"sublist",2}
+};
+#endif
 //
 // PropertyParm_extraInfo
 //
@@ -5163,11 +5330,9 @@ PObject * H248_ArrayOf_PASN_OctetString::Clone() const
 H248_PropertyParm_extraInfo::H248_PropertyParm_extraInfo(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, FALSE
 #ifndef PASN_NOPRINTON
-      , "relation "
-        "range "
-        "sublist "
+    ,(const PASN_Names *)Names_H248_PropertyParm_extraInfo,3
 #endif
-    )
+)
 {
 }
 
@@ -5406,6 +5571,14 @@ PObject * H248_ArrayOf_SigParameter::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H248_SigParameter_extraInfo[]={
+      {"relation",0}
+     ,{"range",1}
+     ,{"sublist",2}
+};
+#endif
 //
 // SigParameter_extraInfo
 //
@@ -5413,11 +5586,9 @@ PObject * H248_ArrayOf_SigParameter::Clone() const
 H248_SigParameter_extraInfo::H248_SigParameter_extraInfo(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, FALSE
 #ifndef PASN_NOPRINTON
-      , "relation "
-        "range "
-        "sublist "
+    ,(const PASN_Names *)Names_H248_SigParameter_extraInfo,3
 #endif
-    )
+)
 {
 }
 

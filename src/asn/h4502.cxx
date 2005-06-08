@@ -9,7 +9,7 @@
 #endif
 
 #include <ptlib.h>
-#include "asn/h4502.h"
+#include "h4502.h"
 
 #define new PNEW
 
@@ -18,6 +18,13 @@
 
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4502_DummyArg[]={
+      {"extensionSeq",0}
+     ,{"nonStandardData",1}
+};
+#endif
 //
 // DummyArg
 //
@@ -25,10 +32,9 @@
 H4502_DummyArg::H4502_DummyArg(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "extensionSeq "
-        "nonStandardData "
+    ,(const PASN_Names *)Names_H4502_DummyArg,2
 #endif
-    )
+)
 {
 }
 
@@ -102,6 +108,13 @@ PObject * H4502_DummyArg::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4502_DummyRes[]={
+      {"extensionSeq",0}
+     ,{"nonStandardData",1}
+};
+#endif
 //
 // DummyRes
 //
@@ -109,10 +122,9 @@ PObject * H4502_DummyArg::Clone() const
 H4502_DummyRes::H4502_DummyRes(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "extensionSeq "
-        "nonStandardData "
+    ,(const PASN_Names *)Names_H4502_DummyRes,2
 #endif
-    )
+)
 {
 }
 
@@ -186,6 +198,12 @@ PObject * H4502_DummyRes::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4502_EndDesignation[]={
+        {"primaryEnd",0}
+       ,{"secondaryEnd",1}
+};
+#endif
 //
 // EndDesignation
 //
@@ -193,8 +211,7 @@ PObject * H4502_DummyRes::Clone() const
 H4502_EndDesignation::H4502_EndDesignation(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 1, TRUE
 #ifndef PASN_NOPRINTON
-      , "primaryEnd "
-        "secondaryEnd "
+    ,(const PASN_Names *)Names_H4502_EndDesignation,2
 #endif
     )
 {
@@ -217,6 +234,12 @@ PObject * H4502_EndDesignation::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4502_CallStatus[]={
+        {"answered",0}
+       ,{"alerting",1}
+};
+#endif
 //
 // CallStatus
 //
@@ -224,8 +247,7 @@ PObject * H4502_EndDesignation::Clone() const
 H4502_CallStatus::H4502_CallStatus(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 1, TRUE
 #ifndef PASN_NOPRINTON
-      , "answered "
-        "alerting "
+    ,(const PASN_Names *)Names_H4502_CallStatus,2
 #endif
     )
 {
@@ -313,6 +335,18 @@ PObject * H4502_ExtensionSeq::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4502_CallTransferOperation[]={
+        {"callTransferIdentify",7}
+       ,{"callTransferAbandon",8}
+       ,{"callTransferInitiate",9}
+       ,{"callTransferSetup",10}
+       ,{"callTransferUpdate",13}
+       ,{"subaddressTransfer",14}
+       ,{"callTransferComplete",12}
+       ,{"callTransferActive",11}
+};
+#endif
 //
 // CallTransferOperation
 //
@@ -320,14 +354,7 @@ PObject * H4502_ExtensionSeq::Clone() const
 H4502_CallTransferOperation::H4502_CallTransferOperation(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 14, FALSE
 #ifndef PASN_NOPRINTON
-      , "callTransferIdentify=7 "
-        "callTransferAbandon "
-        "callTransferInitiate "
-        "callTransferSetup "
-        "callTransferUpdate=13 "
-        "subaddressTransfer "
-        "callTransferComplete=12 "
-        "callTransferActive=11 "
+    ,(const PASN_Names *)Names_H4502_CallTransferOperation,8
 #endif
     )
 {
@@ -350,6 +377,14 @@ PObject * H4502_CallTransferOperation::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4502_CallTransferErrors[]={
+        {"unspecified",1008}
+       ,{"invalidReroutingNumber",1004}
+       ,{"unrecognizedCallIdentity",1005}
+       ,{"establishmentFailure",1006}
+};
+#endif
 //
 // CallTransferErrors
 //
@@ -357,10 +392,7 @@ PObject * H4502_CallTransferOperation::Clone() const
 H4502_CallTransferErrors::H4502_CallTransferErrors(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 1008, FALSE
 #ifndef PASN_NOPRINTON
-      , "unspecified=1008 "
-        "invalidReroutingNumber=1004 "
-        "unrecognizedCallIdentity "
-        "establishmentFailure "
+    ,(const PASN_Names *)Names_H4502_CallTransferErrors,4
 #endif
     )
 {
@@ -383,6 +415,13 @@ PObject * H4502_CallTransferErrors::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4502_CTInitiateArg_argumentExtension[]={
+      {"extensionSeq",0}
+     ,{"nonStandardData",1}
+};
+#endif
 //
 // CTInitiateArg_argumentExtension
 //
@@ -390,10 +429,9 @@ PObject * H4502_CallTransferErrors::Clone() const
 H4502_CTInitiateArg_argumentExtension::H4502_CTInitiateArg_argumentExtension(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "extensionSeq "
-        "nonStandardData "
+    ,(const PASN_Names *)Names_H4502_CTInitiateArg_argumentExtension,2
 #endif
-    )
+)
 {
 }
 
@@ -467,6 +505,13 @@ PObject * H4502_CTInitiateArg_argumentExtension::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4502_CTSetupArg_argumentExtension[]={
+      {"extensionSeq",0}
+     ,{"nonStandardData",1}
+};
+#endif
 //
 // CTSetupArg_argumentExtension
 //
@@ -474,10 +519,9 @@ PObject * H4502_CTInitiateArg_argumentExtension::Clone() const
 H4502_CTSetupArg_argumentExtension::H4502_CTSetupArg_argumentExtension(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "extensionSeq "
-        "nonStandardData "
+    ,(const PASN_Names *)Names_H4502_CTSetupArg_argumentExtension,2
 #endif
-    )
+)
 {
 }
 
@@ -551,6 +595,13 @@ PObject * H4502_CTSetupArg_argumentExtension::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4502_CTIdentifyRes_resultExtension[]={
+      {"extensionSeq",0}
+     ,{"nonStandardData",1}
+};
+#endif
 //
 // CTIdentifyRes_resultExtension
 //
@@ -558,10 +609,9 @@ PObject * H4502_CTSetupArg_argumentExtension::Clone() const
 H4502_CTIdentifyRes_resultExtension::H4502_CTIdentifyRes_resultExtension(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "extensionSeq "
-        "nonStandardData "
+    ,(const PASN_Names *)Names_H4502_CTIdentifyRes_resultExtension,2
 #endif
-    )
+)
 {
 }
 
@@ -635,6 +685,13 @@ PObject * H4502_CTIdentifyRes_resultExtension::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4502_CTUpdateArg_argumentExtension[]={
+      {"extensionSeq",0}
+     ,{"nonStandardData",1}
+};
+#endif
 //
 // CTUpdateArg_argumentExtension
 //
@@ -642,10 +699,9 @@ PObject * H4502_CTIdentifyRes_resultExtension::Clone() const
 H4502_CTUpdateArg_argumentExtension::H4502_CTUpdateArg_argumentExtension(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "extensionSeq "
-        "nonStandardData "
+    ,(const PASN_Names *)Names_H4502_CTUpdateArg_argumentExtension,2
 #endif
-    )
+)
 {
 }
 
@@ -719,6 +775,13 @@ PObject * H4502_CTUpdateArg_argumentExtension::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4502_SubaddressTransferArg_argumentExtension[]={
+      {"extensionSeq",0}
+     ,{"nonStandardData",1}
+};
+#endif
 //
 // SubaddressTransferArg_argumentExtension
 //
@@ -726,10 +789,9 @@ PObject * H4502_CTUpdateArg_argumentExtension::Clone() const
 H4502_SubaddressTransferArg_argumentExtension::H4502_SubaddressTransferArg_argumentExtension(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "extensionSeq "
-        "nonStandardData "
+    ,(const PASN_Names *)Names_H4502_SubaddressTransferArg_argumentExtension,2
 #endif
-    )
+)
 {
 }
 
@@ -803,6 +865,13 @@ PObject * H4502_SubaddressTransferArg_argumentExtension::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4502_CTCompleteArg_argumentExtension[]={
+      {"extensionSeq",0}
+     ,{"nonStandardData",1}
+};
+#endif
 //
 // CTCompleteArg_argumentExtension
 //
@@ -810,10 +879,9 @@ PObject * H4502_SubaddressTransferArg_argumentExtension::Clone() const
 H4502_CTCompleteArg_argumentExtension::H4502_CTCompleteArg_argumentExtension(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "extensionSeq "
-        "nonStandardData "
+    ,(const PASN_Names *)Names_H4502_CTCompleteArg_argumentExtension,2
 #endif
-    )
+)
 {
 }
 
@@ -887,6 +955,13 @@ PObject * H4502_CTCompleteArg_argumentExtension::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4502_CTActiveArg_argumentExtension[]={
+      {"extensionSeq",0}
+     ,{"nonStandardData",1}
+};
+#endif
 //
 // CTActiveArg_argumentExtension
 //
@@ -894,10 +969,9 @@ PObject * H4502_CTCompleteArg_argumentExtension::Clone() const
 H4502_CTActiveArg_argumentExtension::H4502_CTActiveArg_argumentExtension(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "extensionSeq "
-        "nonStandardData "
+    ,(const PASN_Names *)Names_H4502_CTActiveArg_argumentExtension,2
 #endif
-    )
+)
 {
 }
 

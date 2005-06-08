@@ -9,13 +9,22 @@
 #endif
 
 #include <ptlib.h>
-#include "asn/h245.h"
+#include "h245.h"
 
 #define new PNEW
 
 
 #if ! H323_DISABLE_H245
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_MultimediaSystemControlMessage[]={
+      {"request",0}
+     ,{"response",1}
+     ,{"command",2}
+     ,{"indication",3}
+};
+#endif
 //
 // MultimediaSystemControlMessage
 //
@@ -23,12 +32,9 @@
 H245_MultimediaSystemControlMessage::H245_MultimediaSystemControlMessage(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "request "
-        "response "
-        "command "
-        "indication "
+    ,(const PASN_Names *)Names_H245_MultimediaSystemControlMessage,4
 #endif
-    )
+)
 {
 }
 
@@ -152,6 +158,27 @@ PObject * H245_MultimediaSystemControlMessage::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_RequestMessage[]={
+      {"nonStandard",0}
+     ,{"masterSlaveDetermination",1}
+     ,{"terminalCapabilitySet",2}
+     ,{"openLogicalChannel",3}
+     ,{"closeLogicalChannel",4}
+     ,{"requestChannelClose",5}
+     ,{"multiplexEntrySend",6}
+     ,{"requestMultiplexEntry",7}
+     ,{"requestMode",8}
+     ,{"roundTripDelayRequest",9}
+     ,{"maintenanceLoopRequest",10}
+     ,{"communicationModeRequest",11}
+     ,{"conferenceRequest",12}
+     ,{"multilinkRequest",13}
+     ,{"logicalChannelRateRequest",14}
+     ,{"genericRequest",15}
+};
+#endif
 //
 // RequestMessage
 //
@@ -159,23 +186,9 @@ PObject * H245_MultimediaSystemControlMessage::Clone() const
 H245_RequestMessage::H245_RequestMessage(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 11, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "masterSlaveDetermination "
-        "terminalCapabilitySet "
-        "openLogicalChannel "
-        "closeLogicalChannel "
-        "requestChannelClose "
-        "multiplexEntrySend "
-        "requestMultiplexEntry "
-        "requestMode "
-        "roundTripDelayRequest "
-        "maintenanceLoopRequest "
-        "communicationModeRequest "
-        "conferenceRequest "
-        "multilinkRequest "
-        "logicalChannelRateRequest "
+    ,(const PASN_Names *)Names_H245_RequestMessage,16
 #endif
-    )
+)
 {
 }
 
@@ -510,6 +523,28 @@ H245_RequestMessage::operator const H245_LogicalChannelRateRequest &() const
 }
 
 
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+H245_RequestMessage::operator H245_GenericMessage &() const
+#else
+H245_RequestMessage::operator H245_GenericMessage &()
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_GenericMessage), PInvalidCast);
+#endif
+  return *(H245_GenericMessage *)choice;
+}
+
+
+H245_RequestMessage::operator const H245_GenericMessage &() const
+#endif
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_GenericMessage), PInvalidCast);
+#endif
+  return *(H245_GenericMessage *)choice;
+}
+
+
 BOOL H245_RequestMessage::CreateObject()
 {
   switch (tag) {
@@ -558,6 +593,9 @@ BOOL H245_RequestMessage::CreateObject()
     case e_logicalChannelRateRequest :
       choice = new H245_LogicalChannelRateRequest();
       return TRUE;
+    case e_genericRequest :
+      choice = new H245_GenericMessage();
+      return TRUE;
   }
 
   choice = NULL;
@@ -574,6 +612,36 @@ PObject * H245_RequestMessage::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_ResponseMessage[]={
+      {"nonStandard",0}
+     ,{"masterSlaveDeterminationAck",1}
+     ,{"masterSlaveDeterminationReject",2}
+     ,{"terminalCapabilitySetAck",3}
+     ,{"terminalCapabilitySetReject",4}
+     ,{"openLogicalChannelAck",5}
+     ,{"openLogicalChannelReject",6}
+     ,{"closeLogicalChannelAck",7}
+     ,{"requestChannelCloseAck",8}
+     ,{"requestChannelCloseReject",9}
+     ,{"multiplexEntrySendAck",10}
+     ,{"multiplexEntrySendReject",11}
+     ,{"requestMultiplexEntryAck",12}
+     ,{"requestMultiplexEntryReject",13}
+     ,{"requestModeAck",14}
+     ,{"requestModeReject",15}
+     ,{"roundTripDelayResponse",16}
+     ,{"maintenanceLoopAck",17}
+     ,{"maintenanceLoopReject",18}
+     ,{"communicationModeResponse",19}
+     ,{"conferenceResponse",20}
+     ,{"multilinkResponse",21}
+     ,{"logicalChannelRateAcknowledge",22}
+     ,{"logicalChannelRateReject",23}
+     ,{"genericResponse",24}
+};
+#endif
 //
 // ResponseMessage
 //
@@ -581,32 +649,9 @@ PObject * H245_RequestMessage::Clone() const
 H245_ResponseMessage::H245_ResponseMessage(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 19, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "masterSlaveDeterminationAck "
-        "masterSlaveDeterminationReject "
-        "terminalCapabilitySetAck "
-        "terminalCapabilitySetReject "
-        "openLogicalChannelAck "
-        "openLogicalChannelReject "
-        "closeLogicalChannelAck "
-        "requestChannelCloseAck "
-        "requestChannelCloseReject "
-        "multiplexEntrySendAck "
-        "multiplexEntrySendReject "
-        "requestMultiplexEntryAck "
-        "requestMultiplexEntryReject "
-        "requestModeAck "
-        "requestModeReject "
-        "roundTripDelayResponse "
-        "maintenanceLoopAck "
-        "maintenanceLoopReject "
-        "communicationModeResponse "
-        "conferenceResponse "
-        "multilinkResponse "
-        "logicalChannelRateAcknowledge "
-        "logicalChannelRateReject "
+    ,(const PASN_Names *)Names_H245_ResponseMessage,25
 #endif
-    )
+)
 {
 }
 
@@ -1139,6 +1184,28 @@ H245_ResponseMessage::operator const H245_LogicalChannelRateReject &() const
 }
 
 
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+H245_ResponseMessage::operator H245_GenericMessage &() const
+#else
+H245_ResponseMessage::operator H245_GenericMessage &()
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_GenericMessage), PInvalidCast);
+#endif
+  return *(H245_GenericMessage *)choice;
+}
+
+
+H245_ResponseMessage::operator const H245_GenericMessage &() const
+#endif
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_GenericMessage), PInvalidCast);
+#endif
+  return *(H245_GenericMessage *)choice;
+}
+
+
 BOOL H245_ResponseMessage::CreateObject()
 {
   switch (tag) {
@@ -1214,6 +1281,9 @@ BOOL H245_ResponseMessage::CreateObject()
     case e_logicalChannelRateReject :
       choice = new H245_LogicalChannelRateReject();
       return TRUE;
+    case e_genericResponse :
+      choice = new H245_GenericMessage();
+      return TRUE;
   }
 
   choice = NULL;
@@ -1230,6 +1300,24 @@ PObject * H245_ResponseMessage::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_CommandMessage[]={
+      {"nonStandard",0}
+     ,{"maintenanceLoopOffCommand",1}
+     ,{"sendTerminalCapabilitySet",2}
+     ,{"encryptionCommand",3}
+     ,{"flowControlCommand",4}
+     ,{"endSessionCommand",5}
+     ,{"miscellaneousCommand",6}
+     ,{"communicationModeCommand",7}
+     ,{"conferenceCommand",8}
+     ,{"h223MultiplexReconfiguration",9}
+     ,{"newATMVCCommand",10}
+     ,{"mobileMultilinkReconfigurationCommand",11}
+     ,{"genericCommand",12}
+};
+#endif
 //
 // CommandMessage
 //
@@ -1237,20 +1325,9 @@ PObject * H245_ResponseMessage::Clone() const
 H245_CommandMessage::H245_CommandMessage(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 7, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "maintenanceLoopOffCommand "
-        "sendTerminalCapabilitySet "
-        "encryptionCommand "
-        "flowControlCommand "
-        "endSessionCommand "
-        "miscellaneousCommand "
-        "communicationModeCommand "
-        "conferenceCommand "
-        "h223MultiplexReconfiguration "
-        "newATMVCCommand "
-        "mobileMultilinkReconfigurationCommand "
+    ,(const PASN_Names *)Names_H245_CommandMessage,13
 #endif
-    )
+)
 {
 }
 
@@ -1519,6 +1596,28 @@ H245_CommandMessage::operator const H245_MobileMultilinkReconfigurationCommand &
 }
 
 
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+H245_CommandMessage::operator H245_GenericMessage &() const
+#else
+H245_CommandMessage::operator H245_GenericMessage &()
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_GenericMessage), PInvalidCast);
+#endif
+  return *(H245_GenericMessage *)choice;
+}
+
+
+H245_CommandMessage::operator const H245_GenericMessage &() const
+#endif
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_GenericMessage), PInvalidCast);
+#endif
+  return *(H245_GenericMessage *)choice;
+}
+
+
 BOOL H245_CommandMessage::CreateObject()
 {
   switch (tag) {
@@ -1558,6 +1657,9 @@ BOOL H245_CommandMessage::CreateObject()
     case e_mobileMultilinkReconfigurationCommand :
       choice = new H245_MobileMultilinkReconfigurationCommand();
       return TRUE;
+    case e_genericCommand :
+      choice = new H245_GenericMessage();
+      return TRUE;
   }
 
   choice = NULL;
@@ -1574,6 +1676,35 @@ PObject * H245_CommandMessage::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_IndicationMessage[]={
+      {"nonStandard",0}
+     ,{"functionNotUnderstood",1}
+     ,{"masterSlaveDeterminationRelease",2}
+     ,{"terminalCapabilitySetRelease",3}
+     ,{"openLogicalChannelConfirm",4}
+     ,{"requestChannelCloseRelease",5}
+     ,{"multiplexEntrySendRelease",6}
+     ,{"requestMultiplexEntryRelease",7}
+     ,{"requestModeRelease",8}
+     ,{"miscellaneousIndication",9}
+     ,{"jitterIndication",10}
+     ,{"h223SkewIndication",11}
+     ,{"newATMVCIndication",12}
+     ,{"userInput",13}
+     ,{"h2250MaximumSkewIndication",14}
+     ,{"mcLocationIndication",15}
+     ,{"conferenceIndication",16}
+     ,{"vendorIdentification",17}
+     ,{"functionNotSupported",18}
+     ,{"multilinkIndication",19}
+     ,{"logicalChannelRateRelease",20}
+     ,{"flowControlIndication",21}
+     ,{"mobileMultilinkReconfigurationIndication",22}
+     ,{"genericIndication",23}
+};
+#endif
 //
 // IndicationMessage
 //
@@ -1581,31 +1712,9 @@ PObject * H245_CommandMessage::Clone() const
 H245_IndicationMessage::H245_IndicationMessage(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 14, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "functionNotUnderstood "
-        "masterSlaveDeterminationRelease "
-        "terminalCapabilitySetRelease "
-        "openLogicalChannelConfirm "
-        "requestChannelCloseRelease "
-        "multiplexEntrySendRelease "
-        "requestMultiplexEntryRelease "
-        "requestModeRelease "
-        "miscellaneousIndication "
-        "jitterIndication "
-        "h223SkewIndication "
-        "newATMVCIndication "
-        "userInput "
-        "h2250MaximumSkewIndication "
-        "mcLocationIndication "
-        "conferenceIndication "
-        "vendorIdentification "
-        "functionNotSupported "
-        "multilinkIndication "
-        "logicalChannelRateRelease "
-        "flowControlIndication "
-        "mobileMultilinkReconfigurationIndication "
+    ,(const PASN_Names *)Names_H245_IndicationMessage,24
 #endif
-    )
+)
 {
 }
 
@@ -2116,6 +2225,28 @@ H245_IndicationMessage::operator const H245_MobileMultilinkReconfigurationIndica
 }
 
 
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+H245_IndicationMessage::operator H245_GenericMessage &() const
+#else
+H245_IndicationMessage::operator H245_GenericMessage &()
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_GenericMessage), PInvalidCast);
+#endif
+  return *(H245_GenericMessage *)choice;
+}
+
+
+H245_IndicationMessage::operator const H245_GenericMessage &() const
+#endif
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_GenericMessage), PInvalidCast);
+#endif
+  return *(H245_GenericMessage *)choice;
+}
+
+
 BOOL H245_IndicationMessage::CreateObject()
 {
   switch (tag) {
@@ -2188,6 +2319,9 @@ BOOL H245_IndicationMessage::CreateObject()
     case e_mobileMultilinkReconfigurationIndication :
       choice = new H245_MobileMultilinkReconfigurationIndication();
       return TRUE;
+    case e_genericIndication :
+      choice = new H245_GenericMessage();
+      return TRUE;
   }
 
   choice = NULL;
@@ -2238,6 +2372,13 @@ PObject * H245_SequenceNumber::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_NonStandardIdentifier[]={
+      {"object",0}
+     ,{"h221NonStandard",1}
+};
+#endif
 //
 // NonStandardIdentifier
 //
@@ -2245,10 +2386,9 @@ PObject * H245_SequenceNumber::Clone() const
 H245_NonStandardIdentifier::H245_NonStandardIdentifier(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "object "
-        "h221NonStandard "
+    ,(const PASN_Names *)Names_H245_NonStandardIdentifier,2
 #endif
-    )
+)
 {
 }
 
@@ -2671,6 +2811,37 @@ PObject * H245_TerminalCapabilitySetRelease::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_Capability[]={
+      {"nonStandard",0}
+     ,{"receiveVideoCapability",1}
+     ,{"transmitVideoCapability",2}
+     ,{"receiveAndTransmitVideoCapability",3}
+     ,{"receiveAudioCapability",4}
+     ,{"transmitAudioCapability",5}
+     ,{"receiveAndTransmitAudioCapability",6}
+     ,{"receiveDataApplicationCapability",7}
+     ,{"transmitDataApplicationCapability",8}
+     ,{"receiveAndTransmitDataApplicationCapability",9}
+     ,{"h233EncryptionTransmitCapability",10}
+     ,{"h233EncryptionReceiveCapability",11}
+     ,{"conferenceCapability",12}
+     ,{"h235SecurityCapability",13}
+     ,{"maxPendingReplacementFor",14}
+     ,{"receiveUserInputCapability",15}
+     ,{"transmitUserInputCapability",16}
+     ,{"receiveAndTransmitUserInputCapability",17}
+     ,{"genericControlCapability",18}
+     ,{"receiveMultiplexedStreamCapability",19}
+     ,{"transmitMultiplexedStreamCapability",20}
+     ,{"receiveAndTransmitMultiplexedStreamCapability",21}
+     ,{"receiveRTPAudioTelephonyEventCapability",22}
+     ,{"receiveRTPAudioToneCapability",23}
+     ,{"fecCapability",24}
+     ,{"multiplePayloadStreamCapability",25}
+};
+#endif
 //
 // Capability
 //
@@ -2678,34 +2849,9 @@ PObject * H245_TerminalCapabilitySetRelease::Clone() const
 H245_Capability::H245_Capability(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 12, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "receiveVideoCapability "
-        "transmitVideoCapability "
-        "receiveAndTransmitVideoCapability "
-        "receiveAudioCapability "
-        "transmitAudioCapability "
-        "receiveAndTransmitAudioCapability "
-        "receiveDataApplicationCapability "
-        "transmitDataApplicationCapability "
-        "receiveAndTransmitDataApplicationCapability "
-        "h233EncryptionTransmitCapability "
-        "h233EncryptionReceiveCapability "
-        "conferenceCapability "
-        "h235SecurityCapability "
-        "maxPendingReplacementFor "
-        "receiveUserInputCapability "
-        "transmitUserInputCapability "
-        "receiveAndTransmitUserInputCapability "
-        "genericControlCapability "
-        "receiveMultiplexedStreamCapability "
-        "transmitMultiplexedStreamCapability "
-        "receiveAndTransmitMultiplexedStreamCapability "
-        "receiveRTPAudioTelephonyEventCapability "
-        "receiveRTPAudioToneCapability "
-        "fecCapability "
-        "multiplePayloadStreamCapability "
+    ,(const PASN_Names *)Names_H245_Capability,26
 #endif
-    )
+)
 {
 }
 
@@ -3096,6 +3242,17 @@ PObject * H245_Capability::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_MultiplexCapability[]={
+      {"nonStandard",0}
+     ,{"h222Capability",1}
+     ,{"h223Capability",2}
+     ,{"v76Capability",3}
+     ,{"h2250Capability",4}
+     ,{"genericMultiplexCapability",5}
+};
+#endif
 //
 // MultiplexCapability
 //
@@ -3103,14 +3260,9 @@ PObject * H245_Capability::Clone() const
 H245_MultiplexCapability::H245_MultiplexCapability(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "h222Capability "
-        "h223Capability "
-        "v76Capability "
-        "h2250Capability "
-        "genericMultiplexCapability "
+    ,(const PASN_Names *)Names_H245_MultiplexCapability,6
 #endif
-    )
+)
 {
 }
 
@@ -3528,6 +3680,13 @@ PObject * H245_V75Capability::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_QOSMode[]={
+      {"guaranteedQOS",0}
+     ,{"controlledLoad",1}
+};
+#endif
 //
 // QOSMode
 //
@@ -3535,10 +3694,9 @@ PObject * H245_V75Capability::Clone() const
 H245_QOSMode::H245_QOSMode(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "guaranteedQOS "
-        "controlledLoad "
+    ,(const PASN_Names *)Names_H245_QOSMode,2
 #endif
-    )
+)
 {
 }
 
@@ -3671,6 +3829,16 @@ PObject * H245_ATMParameters::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_MediaTransportType[]={
+      {"ip_UDP",0}
+     ,{"ip_TCP",1}
+     ,{"atm_AAL5_UNIDIR",2}
+     ,{"atm_AAL5_BIDIR",3}
+     ,{"atm_AAL5_compressed",4}
+};
+#endif
 //
 // MediaTransportType
 //
@@ -3678,13 +3846,9 @@ PObject * H245_ATMParameters::Clone() const
 H245_MediaTransportType::H245_MediaTransportType(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "ip_UDP "
-        "ip_TCP "
-        "atm_AAL5_UNIDIR "
-        "atm_AAL5_BIDIR "
-        "atm_AAL5_compressed "
+    ,(const PASN_Names *)Names_H245_MediaTransportType,5
 #endif
-    )
+)
 {
 }
 
@@ -3818,6 +3982,14 @@ PObject * H245_MediaChannelCapability::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_RedundancyEncodingMethod[]={
+      {"nonStandard",0}
+     ,{"rtpAudioRedundancyEncoding",1}
+     ,{"rtpH263VideoRedundancyEncoding",2}
+};
+#endif
 //
 // RedundancyEncodingMethod
 //
@@ -3825,11 +3997,9 @@ PObject * H245_MediaChannelCapability::Clone() const
 H245_RedundancyEncodingMethod::H245_RedundancyEncodingMethod(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "rtpAudioRedundancyEncoding "
-        "rtpH263VideoRedundancyEncoding "
+    ,(const PASN_Names *)Names_H245_RedundancyEncodingMethod,3
 #endif
-    )
+)
 {
 }
 
@@ -3906,6 +4076,18 @@ PObject * H245_RedundancyEncodingMethod::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_VideoCapability[]={
+      {"nonStandard",0}
+     ,{"h261VideoCapability",1}
+     ,{"h262VideoCapability",2}
+     ,{"h263VideoCapability",3}
+     ,{"is11172VideoCapability",4}
+     ,{"genericVideoCapability",5}
+     ,{"extendedVideoCapability",6}
+};
+#endif
 //
 // VideoCapability
 //
@@ -3913,14 +4095,9 @@ PObject * H245_RedundancyEncodingMethod::Clone() const
 H245_VideoCapability::H245_VideoCapability(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 5, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "h261VideoCapability "
-        "h262VideoCapability "
-        "h263VideoCapability "
-        "is11172VideoCapability "
-        "genericVideoCapability "
+    ,(const PASN_Names *)Names_H245_VideoCapability,7
 #endif
-    )
+)
 {
 }
 
@@ -4057,6 +4234,28 @@ H245_VideoCapability::operator const H245_GenericCapability &() const
 }
 
 
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+H245_VideoCapability::operator H245_ExtendedVideoCapability &() const
+#else
+H245_VideoCapability::operator H245_ExtendedVideoCapability &()
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_ExtendedVideoCapability), PInvalidCast);
+#endif
+  return *(H245_ExtendedVideoCapability *)choice;
+}
+
+
+H245_VideoCapability::operator const H245_ExtendedVideoCapability &() const
+#endif
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_ExtendedVideoCapability), PInvalidCast);
+#endif
+  return *(H245_ExtendedVideoCapability *)choice;
+}
+
+
 BOOL H245_VideoCapability::CreateObject()
 {
   switch (tag) {
@@ -4077,6 +4276,9 @@ BOOL H245_VideoCapability::CreateObject()
       return TRUE;
     case e_genericVideoCapability :
       choice = new H245_GenericCapability();
+      return TRUE;
+    case e_extendedVideoCapability :
+      choice = new H245_ExtendedVideoCapability();
       return TRUE;
   }
 
@@ -4953,6 +5155,36 @@ PObject * H245_IS11172VideoCapability::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_AudioCapability[]={
+      {"nonStandard",0}
+     ,{"g711Alaw64k",1}
+     ,{"g711Alaw56k",2}
+     ,{"g711Ulaw64k",3}
+     ,{"g711Ulaw56k",4}
+     ,{"g722_64k",5}
+     ,{"g722_56k",6}
+     ,{"g722_48k",7}
+     ,{"g7231",8}
+     ,{"g728",9}
+     ,{"g729",10}
+     ,{"g729AnnexA",11}
+     ,{"is11172AudioCapability",12}
+     ,{"is13818AudioCapability",13}
+     ,{"g729wAnnexB",14}
+     ,{"g729AnnexAwAnnexB",15}
+     ,{"g7231AnnexCCapability",16}
+     ,{"gsmFullRate",17}
+     ,{"gsmHalfRate",18}
+     ,{"gsmEnhancedFullRate",19}
+     ,{"genericAudioCapability",20}
+     ,{"g729Extensions",21}
+     ,{"vbd",22}
+     ,{"audioTelephonyEvent",23}
+     ,{"audioTone",24}
+};
+#endif
 //
 // AudioCapability
 //
@@ -4960,33 +5192,9 @@ PObject * H245_IS11172VideoCapability::Clone() const
 H245_AudioCapability::H245_AudioCapability(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 14, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "g711Alaw64k "
-        "g711Alaw56k "
-        "g711Ulaw64k "
-        "g711Ulaw56k "
-        "g722_64k "
-        "g722_56k "
-        "g722_48k "
-        "g7231 "
-        "g728 "
-        "g729 "
-        "g729AnnexA "
-        "is11172AudioCapability "
-        "is13818AudioCapability "
-        "g729wAnnexB "
-        "g729AnnexAwAnnexB "
-        "g7231AnnexCCapability "
-        "gsmFullRate "
-        "gsmHalfRate "
-        "gsmEnhancedFullRate "
-        "genericAudioCapability "
-        "g729Extensions "
-        "vbd "
-        "audioTelephonyEvent "
-        "audioTone "
+    ,(const PASN_Names *)Names_H245_AudioCapability,25
 #endif
-    )
+)
 {
 }
 
@@ -5981,6 +6189,25 @@ PObject * H245_VBDCapability::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_DataProtocolCapability[]={
+      {"nonStandard",0}
+     ,{"v14buffered",1}
+     ,{"v42lapm",2}
+     ,{"hdlcFrameTunnelling",3}
+     ,{"h310SeparateVCStack",4}
+     ,{"h310SingleVCStack",5}
+     ,{"transparent",6}
+     ,{"segmentationAndReassembly",7}
+     ,{"hdlcFrameTunnelingwSAR",8}
+     ,{"v120",9}
+     ,{"separateLANStack",10}
+     ,{"v76wCompression",11}
+     ,{"tcp",12}
+     ,{"udp",13}
+};
+#endif
 //
 // DataProtocolCapability
 //
@@ -5988,22 +6215,9 @@ PObject * H245_VBDCapability::Clone() const
 H245_DataProtocolCapability::H245_DataProtocolCapability(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 7, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "v14buffered "
-        "v42lapm "
-        "hdlcFrameTunnelling "
-        "h310SeparateVCStack "
-        "h310SingleVCStack "
-        "transparent "
-        "segmentationAndReassembly "
-        "hdlcFrameTunnelingwSAR "
-        "v120 "
-        "separateLANStack "
-        "v76wCompression "
-        "tcp "
-        "udp "
+    ,(const PASN_Names *)Names_H245_DataProtocolCapability,14
 #endif
-    )
+)
 {
 }
 
@@ -6091,6 +6305,12 @@ PObject * H245_DataProtocolCapability::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_CompressionType[]={
+      {"v42bis",0}
+};
+#endif
 //
 // CompressionType
 //
@@ -6098,9 +6318,9 @@ PObject * H245_DataProtocolCapability::Clone() const
 H245_CompressionType::H245_CompressionType(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 1, TRUE
 #ifndef PASN_NOPRINTON
-      , "v42bis "
+    ,(const PASN_Names *)Names_H245_CompressionType,1
 #endif
-    )
+)
 {
 }
 
@@ -6234,6 +6454,13 @@ PObject * H245_V42bis::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_T84Profile[]={
+      {"t84Unrestricted",0}
+     ,{"t84Restricted",1}
+};
+#endif
 //
 // T84Profile
 //
@@ -6241,10 +6468,9 @@ PObject * H245_V42bis::Clone() const
 H245_T84Profile::H245_T84Profile(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "t84Unrestricted "
-        "t84Restricted "
+    ,(const PASN_Names *)Names_H245_T84Profile,2
 #endif
-    )
+)
 {
 }
 
@@ -6296,6 +6522,13 @@ PObject * H245_T84Profile::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_T38FaxRateManagement[]={
+      {"localTCF",0}
+     ,{"transferredTCF",1}
+};
+#endif
 //
 // T38FaxRateManagement
 //
@@ -6303,10 +6536,9 @@ PObject * H245_T84Profile::Clone() const
 H245_T38FaxRateManagement::H245_T38FaxRateManagement(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "localTCF "
-        "transferredTCF "
+    ,(const PASN_Names *)Names_H245_T38FaxRateManagement,2
 #endif
-    )
+)
 {
 }
 
@@ -6435,6 +6667,13 @@ PObject * H245_EncryptionCapability::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_MediaEncryptionAlgorithm[]={
+      {"nonStandard",0}
+     ,{"algorithm",1}
+};
+#endif
 //
 // MediaEncryptionAlgorithm
 //
@@ -6442,10 +6681,9 @@ PObject * H245_EncryptionCapability::Clone() const
 H245_MediaEncryptionAlgorithm::H245_MediaEncryptionAlgorithm(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "algorithm "
+    ,(const PASN_Names *)Names_H245_MediaEncryptionAlgorithm,2
 #endif
-    )
+)
 {
 }
 
@@ -6497,6 +6735,22 @@ PObject * H245_MediaEncryptionAlgorithm::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_UserInputCapability[]={
+      {"nonStandard",0}
+     ,{"basicString",1}
+     ,{"iA5String",2}
+     ,{"generalString",3}
+     ,{"dtmf",4}
+     ,{"hookflash",5}
+     ,{"extendedAlphanumeric",6}
+     ,{"encryptedBasicString",7}
+     ,{"encryptedIA5String",8}
+     ,{"encryptedGeneralString",9}
+     ,{"secureDTMF",10}
+};
+#endif
 //
 // UserInputCapability
 //
@@ -6504,15 +6758,9 @@ PObject * H245_MediaEncryptionAlgorithm::Clone() const
 H245_UserInputCapability::H245_UserInputCapability(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 6, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "basicString "
-        "iA5String "
-        "generalString "
-        "dtmf "
-        "hookflash "
-        "extendedAlphanumeric "
+    ,(const PASN_Names *)Names_H245_UserInputCapability,11
 #endif
-    )
+)
 {
 }
 
@@ -6552,6 +6800,10 @@ BOOL H245_UserInputCapability::CreateObject()
     case e_dtmf :
     case e_hookflash :
     case e_extendedAlphanumeric :
+    case e_encryptedBasicString :
+    case e_encryptedIA5String :
+    case e_encryptedGeneralString :
+    case e_secureDTMF :
       choice = new PASN_Null();
       return TRUE;
   }
@@ -6570,6 +6822,15 @@ PObject * H245_UserInputCapability::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_CapabilityIdentifier[]={
+      {"standard",0}
+     ,{"h221NonStandard",1}
+     ,{"uuid",2}
+     ,{"domainBased",3}
+};
+#endif
 //
 // CapabilityIdentifier
 //
@@ -6577,12 +6838,9 @@ PObject * H245_UserInputCapability::Clone() const
 H245_CapabilityIdentifier::H245_CapabilityIdentifier(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "standard "
-        "h221NonStandard "
-        "uuid "
-        "domainBased "
+    ,(const PASN_Names *)Names_H245_CapabilityIdentifier,4
 #endif
-    )
+)
 {
 }
 
@@ -6642,6 +6900,15 @@ PObject * H245_CapabilityIdentifier::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_ParameterIdentifier[]={
+      {"standard",0}
+     ,{"h221NonStandard",1}
+     ,{"uuid",2}
+     ,{"domainBased",3}
+};
+#endif
 //
 // ParameterIdentifier
 //
@@ -6649,12 +6916,9 @@ PObject * H245_CapabilityIdentifier::Clone() const
 H245_ParameterIdentifier::H245_ParameterIdentifier(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "standard "
-        "h221NonStandard "
-        "uuid "
-        "domainBased "
+    ,(const PASN_Names *)Names_H245_ParameterIdentifier,4
 #endif
-    )
+)
 {
 }
 
@@ -6715,6 +6979,19 @@ PObject * H245_ParameterIdentifier::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_ParameterValue[]={
+      {"logical",0}
+     ,{"booleanArray",1}
+     ,{"unsignedMin",2}
+     ,{"unsignedMax",3}
+     ,{"unsigned32Min",4}
+     ,{"unsigned32Max",5}
+     ,{"octetString",6}
+     ,{"genericParameter",7}
+};
+#endif
 //
 // ParameterValue
 //
@@ -6722,16 +6999,9 @@ PObject * H245_ParameterIdentifier::Clone() const
 H245_ParameterValue::H245_ParameterValue(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 8, TRUE
 #ifndef PASN_NOPRINTON
-      , "logical "
-        "booleanArray "
-        "unsignedMin "
-        "unsignedMax "
-        "unsigned32Min "
-        "unsigned32Max "
-        "octetString "
-        "genericParameter "
+    ,(const PASN_Names *)Names_H245_ParameterValue,8
 #endif
-    )
+)
 {
 }
 
@@ -6806,6 +7076,14 @@ PObject * H245_ParameterValue::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_MultiplexFormat[]={
+      {"nonStandard",0}
+     ,{"h222Capability",1}
+     ,{"h223Capability",2}
+};
+#endif
 //
 // MultiplexFormat
 //
@@ -6813,11 +7091,9 @@ PObject * H245_ParameterValue::Clone() const
 H245_MultiplexFormat::H245_MultiplexFormat(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "h222Capability "
-        "h223Capability "
+    ,(const PASN_Names *)Names_H245_MultiplexFormat,3
 #endif
-    )
+)
 {
 }
 
@@ -7208,6 +7484,12 @@ PObject * H245_NoPTAudioToneCapability::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_FECCapability[]={
+      {"rfc2733",0}
+};
+#endif
 //
 // FECCapability
 //
@@ -7215,9 +7497,9 @@ PObject * H245_NoPTAudioToneCapability::Clone() const
 H245_FECCapability::H245_FECCapability(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 1, TRUE
 #ifndef PASN_NOPRINTON
-      , "rfc2733 "
+    ,(const PASN_Names *)Names_H245_FECCapability,1
 #endif
-    )
+)
 {
 }
 
@@ -7376,6 +7658,23 @@ PObject * H245_V75Parameters::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_DataType[]={
+      {"nonStandard",0}
+     ,{"nullData",1}
+     ,{"videoData",2}
+     ,{"audioData",3}
+     ,{"data",4}
+     ,{"encryptionData",5}
+     ,{"h235Control",6}
+     ,{"h235Media",7}
+     ,{"multiplexedStream",8}
+     ,{"redundancyEncoding",9}
+     ,{"multiplePayloadStream",10}
+     ,{"fec",11}
+};
+#endif
 //
 // DataType
 //
@@ -7383,20 +7682,9 @@ PObject * H245_V75Parameters::Clone() const
 H245_DataType::H245_DataType(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 6, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "nullData "
-        "videoData "
-        "audioData "
-        "data "
-        "encryptionData "
-        "h235Control "
-        "h235Media "
-        "multiplexedStream "
-        "redundancyEncoding "
-        "multiplePayloadStream "
-        "fec "
+    ,(const PASN_Names *)Names_H245_DataType,12
 #endif
-    )
+)
 {
 }
 
@@ -7873,6 +8161,14 @@ PObject * H245_H222LogicalChannelParameters::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_CRCLength[]={
+      {"crc8bit",0}
+     ,{"crc16bit",1}
+     ,{"crc32bit",2}
+};
+#endif
 //
 // CRCLength
 //
@@ -7880,11 +8176,9 @@ PObject * H245_H222LogicalChannelParameters::Clone() const
 H245_CRCLength::H245_CRCLength(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "crc8bit "
-        "crc16bit "
-        "crc32bit "
+    ,(const PASN_Names *)Names_H245_CRCLength,3
 #endif
-    )
+)
 {
 }
 
@@ -8079,6 +8373,12 @@ PObject * H245_MultiplePayloadStreamElement::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_FECData[]={
+      {"rfc2733",0}
+};
+#endif
 //
 // FECData
 //
@@ -8086,9 +8386,9 @@ PObject * H245_MultiplePayloadStreamElement::Clone() const
 H245_FECData::H245_FECData(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 1, FALSE
 #ifndef PASN_NOPRINTON
-      , "rfc2733 "
+    ,(const PASN_Names *)Names_H245_FECData,1
 #endif
-    )
+)
 {
 }
 
@@ -8137,6 +8437,13 @@ PObject * H245_FECData::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_TransportAddress[]={
+      {"unicastAddress",0}
+     ,{"multicastAddress",1}
+};
+#endif
 //
 // TransportAddress
 //
@@ -8144,10 +8451,9 @@ PObject * H245_FECData::Clone() const
 H245_TransportAddress::H245_TransportAddress(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "unicastAddress "
-        "multicastAddress "
+    ,(const PASN_Names *)Names_H245_TransportAddress,2
 #endif
-    )
+)
 {
 }
 
@@ -8221,6 +8527,18 @@ PObject * H245_TransportAddress::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_UnicastAddress[]={
+      {"iPAddress",0}
+     ,{"iPXAddress",1}
+     ,{"iP6Address",2}
+     ,{"netBios",3}
+     ,{"iPSourceRouteAddress",4}
+     ,{"nsap",5}
+     ,{"nonStandardAddress",6}
+};
+#endif
 //
 // UnicastAddress
 //
@@ -8228,15 +8546,9 @@ PObject * H245_TransportAddress::Clone() const
 H245_UnicastAddress::H245_UnicastAddress(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 5, TRUE
 #ifndef PASN_NOPRINTON
-      , "iPAddress "
-        "iPXAddress "
-        "iP6Address "
-        "netBios "
-        "iPSourceRouteAddress "
-        "nsap "
-        "nonStandardAddress "
+    ,(const PASN_Names *)Names_H245_UnicastAddress,7
 #endif
-    )
+)
 {
 }
 
@@ -8393,6 +8705,15 @@ PObject * H245_UnicastAddress::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_MulticastAddress[]={
+      {"iPAddress",0}
+     ,{"iP6Address",1}
+     ,{"nsap",2}
+     ,{"nonStandardAddress",3}
+};
+#endif
 //
 // MulticastAddress
 //
@@ -8400,12 +8721,9 @@ PObject * H245_UnicastAddress::Clone() const
 H245_MulticastAddress::H245_MulticastAddress(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "iPAddress "
-        "iP6Address "
-        "nsap "
-        "nonStandardAddress "
+    ,(const PASN_Names *)Names_H245_MulticastAddress,4
 #endif
-    )
+)
 {
 }
 
@@ -9017,6 +9335,21 @@ PObject * H245_ModeDescription::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_ModeElementType[]={
+      {"nonStandard",0}
+     ,{"videoMode",1}
+     ,{"audioMode",2}
+     ,{"dataMode",3}
+     ,{"encryptionMode",4}
+     ,{"h235Mode",5}
+     ,{"multiplexedStreamMode",6}
+     ,{"redundancyEncodingDTMode",7}
+     ,{"multiplePayloadStreamMode",8}
+     ,{"fecMode",9}
+};
+#endif
 //
 // ModeElementType
 //
@@ -9024,18 +9357,9 @@ PObject * H245_ModeDescription::Clone() const
 H245_ModeElementType::H245_ModeElementType(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 5, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "videoMode "
-        "audioMode "
-        "dataMode "
-        "encryptionMode "
-        "h235Mode "
-        "multiplexedStreamMode "
-        "redundancyEncodingDTMode "
-        "multiplePayloadStreamMode "
-        "fecMode "
+    ,(const PASN_Names *)Names_H245_ModeElementType,10
 #endif
-    )
+)
 {
 }
 
@@ -9461,6 +9785,12 @@ PObject * H245_MultiplePayloadStreamElementMode::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_FECMode[]={
+      {"rfc2733Mode",0}
+};
+#endif
 //
 // FECMode
 //
@@ -9468,9 +9798,9 @@ PObject * H245_MultiplePayloadStreamElementMode::Clone() const
 H245_FECMode::H245_FECMode(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 1, TRUE
 #ifndef PASN_NOPRINTON
-      , "rfc2733Mode "
+    ,(const PASN_Names *)Names_H245_FECMode,1
 #endif
-    )
+)
 {
 }
 
@@ -9519,6 +9849,13 @@ PObject * H245_FECMode::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_V76ModeParameters[]={
+      {"suspendResumewAddress",0}
+     ,{"suspendResumewoAddress",1}
+};
+#endif
 //
 // V76ModeParameters
 //
@@ -9526,10 +9863,9 @@ PObject * H245_FECMode::Clone() const
 H245_V76ModeParameters::H245_V76ModeParameters(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "suspendResumewAddress "
-        "suspendResumewoAddress "
+    ,(const PASN_Names *)Names_H245_V76ModeParameters,2
 #endif
-    )
+)
 {
 }
 
@@ -9550,6 +9886,17 @@ PObject * H245_V76ModeParameters::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_VideoMode[]={
+      {"nonStandard",0}
+     ,{"h261VideoMode",1}
+     ,{"h262VideoMode",2}
+     ,{"h263VideoMode",3}
+     ,{"is11172VideoMode",4}
+     ,{"genericVideoMode",5}
+};
+#endif
 //
 // VideoMode
 //
@@ -9557,14 +9904,9 @@ PObject * H245_V76ModeParameters::Clone() const
 H245_VideoMode::H245_VideoMode(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 5, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "h261VideoMode "
-        "h262VideoMode "
-        "h263VideoMode "
-        "is11172VideoMode "
-        "genericVideoMode "
+    ,(const PASN_Names *)Names_H245_VideoMode,6
 #endif
-    )
+)
 {
 }
 
@@ -9880,6 +10222,34 @@ PObject * H245_IS11172VideoMode::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_AudioMode[]={
+      {"nonStandard",0}
+     ,{"g711Alaw64k",1}
+     ,{"g711Alaw56k",2}
+     ,{"g711Ulaw64k",3}
+     ,{"g711Ulaw56k",4}
+     ,{"g722_64k",5}
+     ,{"g722_56k",6}
+     ,{"g722_48k",7}
+     ,{"g728",8}
+     ,{"g729",9}
+     ,{"g729AnnexA",10}
+     ,{"g7231",11}
+     ,{"is11172AudioMode",12}
+     ,{"is13818AudioMode",13}
+     ,{"g729wAnnexB",14}
+     ,{"g729AnnexAwAnnexB",15}
+     ,{"g7231AnnexCMode",16}
+     ,{"gsmFullRate",17}
+     ,{"gsmHalfRate",18}
+     ,{"gsmEnhancedFullRate",19}
+     ,{"genericAudioMode",20}
+     ,{"g729Extensions",21}
+     ,{"vbd",22}
+};
+#endif
 //
 // AudioMode
 //
@@ -9887,31 +10257,9 @@ PObject * H245_IS11172VideoMode::Clone() const
 H245_AudioMode::H245_AudioMode(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 14, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "g711Alaw64k "
-        "g711Alaw56k "
-        "g711Ulaw64k "
-        "g711Ulaw56k "
-        "g722_64k "
-        "g722_56k "
-        "g722_48k "
-        "g728 "
-        "g729 "
-        "g729AnnexA "
-        "g7231 "
-        "is11172AudioMode "
-        "is13818AudioMode "
-        "g729wAnnexB "
-        "g729AnnexAwAnnexB "
-        "g7231AnnexCMode "
-        "gsmFullRate "
-        "gsmHalfRate "
-        "gsmEnhancedFullRate "
-        "genericAudioMode "
-        "g729Extensions "
-        "vbd "
+    ,(const PASN_Names *)Names_H245_AudioMode,23
 #endif
-    )
+)
 {
 }
 
@@ -10258,6 +10606,13 @@ PObject * H245_VBDMode::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_EncryptionMode[]={
+      {"nonStandard",0}
+     ,{"h233Encryption",1}
+};
+#endif
 //
 // EncryptionMode
 //
@@ -10265,10 +10620,9 @@ PObject * H245_VBDMode::Clone() const
 H245_EncryptionMode::H245_EncryptionMode(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "h233Encryption "
+    ,(const PASN_Names *)Names_H245_EncryptionMode,2
 #endif
-    )
+)
 {
 }
 
@@ -10582,6 +10936,12 @@ PObject * H245_CommunicationModeRequest::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_CommunicationModeResponse[]={
+      {"communicationModeTable",0}
+};
+#endif
 //
 // CommunicationModeResponse
 //
@@ -10589,9 +10949,9 @@ PObject * H245_CommunicationModeRequest::Clone() const
 H245_CommunicationModeResponse::H245_CommunicationModeResponse(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 1, TRUE
 #ifndef PASN_NOPRINTON
-      , "communicationModeTable "
+    ,(const PASN_Names *)Names_H245_CommunicationModeResponse,1
 #endif
-    )
+)
 {
 }
 
@@ -10641,6 +11001,27 @@ PObject * H245_CommunicationModeResponse::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_ConferenceRequest[]={
+      {"terminalListRequest",0}
+     ,{"makeMeChair",1}
+     ,{"cancelMakeMeChair",2}
+     ,{"dropTerminal",3}
+     ,{"requestTerminalID",4}
+     ,{"enterH243Password",5}
+     ,{"enterH243TerminalID",6}
+     ,{"enterH243ConferenceID",7}
+     ,{"enterExtensionAddress",8}
+     ,{"requestChairTokenOwner",9}
+     ,{"requestTerminalCertificate",10}
+     ,{"broadcastMyLogicalChannel",11}
+     ,{"makeTerminalBroadcaster",12}
+     ,{"sendThisSource",13}
+     ,{"requestAllTerminalIDs",14}
+     ,{"remoteMCRequest",15}
+};
+#endif
 //
 // ConferenceRequest
 //
@@ -10648,24 +11029,9 @@ PObject * H245_CommunicationModeResponse::Clone() const
 H245_ConferenceRequest::H245_ConferenceRequest(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 8, TRUE
 #ifndef PASN_NOPRINTON
-      , "terminalListRequest "
-        "makeMeChair "
-        "cancelMakeMeChair "
-        "dropTerminal "
-        "requestTerminalID "
-        "enterH243Password "
-        "enterH243TerminalID "
-        "enterH243ConferenceID "
-        "enterExtensionAddress "
-        "requestChairTokenOwner "
-        "requestTerminalCertificate "
-        "broadcastMyLogicalChannel "
-        "makeTerminalBroadcaster "
-        "sendThisSource "
-        "requestAllTerminalIDs "
-        "remoteMCRequest "
+    ,(const PASN_Names *)Names_H245_ConferenceRequest,16
 #endif
-    )
+)
 {
 }
 
@@ -10987,6 +11353,27 @@ PObject * H245_TerminalNumber::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_ConferenceResponse[]={
+      {"mCTerminalIDResponse",0}
+     ,{"terminalIDResponse",1}
+     ,{"conferenceIDResponse",2}
+     ,{"passwordResponse",3}
+     ,{"terminalListResponse",4}
+     ,{"videoCommandReject",5}
+     ,{"terminalDropReject",6}
+     ,{"makeMeChairResponse",7}
+     ,{"extensionAddressResponse",8}
+     ,{"chairTokenOwnerResponse",9}
+     ,{"terminalCertificateResponse",10}
+     ,{"broadcastMyLogicalChannelResponse",11}
+     ,{"makeTerminalBroadcasterResponse",12}
+     ,{"sendThisSourceResponse",13}
+     ,{"requestAllTerminalIDsResponse",14}
+     ,{"remoteMCResponse",15}
+};
+#endif
 //
 // ConferenceResponse
 //
@@ -10994,24 +11381,9 @@ PObject * H245_TerminalNumber::Clone() const
 H245_ConferenceResponse::H245_ConferenceResponse(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 8, TRUE
 #ifndef PASN_NOPRINTON
-      , "mCTerminalIDResponse "
-        "terminalIDResponse "
-        "conferenceIDResponse "
-        "passwordResponse "
-        "terminalListResponse "
-        "videoCommandReject "
-        "terminalDropReject "
-        "makeMeChairResponse "
-        "extensionAddressResponse "
-        "chairTokenOwnerResponse "
-        "terminalCertificateResponse "
-        "broadcastMyLogicalChannelResponse "
-        "makeTerminalBroadcasterResponse "
-        "sendThisSourceResponse "
-        "requestAllTerminalIDsResponse "
-        "remoteMCResponse "
+    ,(const PASN_Names *)Names_H245_ConferenceResponse,16
 #endif
-    )
+)
 {
 }
 
@@ -11567,6 +11939,14 @@ PObject * H245_Password::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_RemoteMCRequest[]={
+      {"masterActivate",0}
+     ,{"slaveActivate",1}
+     ,{"deActivate",2}
+};
+#endif
 //
 // RemoteMCRequest
 //
@@ -11574,11 +11954,9 @@ PObject * H245_Password::Clone() const
 H245_RemoteMCRequest::H245_RemoteMCRequest(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "masterActivate "
-        "slaveActivate "
-        "deActivate "
+    ,(const PASN_Names *)Names_H245_RemoteMCRequest,3
 #endif
-    )
+)
 {
 }
 
@@ -11599,6 +11977,13 @@ PObject * H245_RemoteMCRequest::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_RemoteMCResponse[]={
+      {"accept",0}
+     ,{"reject",1}
+};
+#endif
 //
 // RemoteMCResponse
 //
@@ -11606,10 +11991,9 @@ PObject * H245_RemoteMCRequest::Clone() const
 H245_RemoteMCResponse::H245_RemoteMCResponse(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "accept "
-        "reject "
+    ,(const PASN_Names *)Names_H245_RemoteMCResponse,2
 #endif
-    )
+)
 {
 }
 
@@ -11661,6 +12045,16 @@ PObject * H245_RemoteMCResponse::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_MultilinkRequest[]={
+      {"nonStandard",0}
+     ,{"callInformation",1}
+     ,{"addConnection",2}
+     ,{"removeConnection",3}
+     ,{"maximumHeaderInterval",4}
+};
+#endif
 //
 // MultilinkRequest
 //
@@ -11668,13 +12062,9 @@ PObject * H245_RemoteMCResponse::Clone() const
 H245_MultilinkRequest::H245_MultilinkRequest(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 5, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "callInformation "
-        "addConnection "
-        "removeConnection "
-        "maximumHeaderInterval "
+    ,(const PASN_Names *)Names_H245_MultilinkRequest,5
 #endif
-    )
+)
 {
 }
 
@@ -11823,6 +12213,16 @@ PObject * H245_MultilinkRequest::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_MultilinkResponse[]={
+      {"nonStandard",0}
+     ,{"callInformation",1}
+     ,{"addConnection",2}
+     ,{"removeConnection",3}
+     ,{"maximumHeaderInterval",4}
+};
+#endif
 //
 // MultilinkResponse
 //
@@ -11830,13 +12230,9 @@ PObject * H245_MultilinkRequest::Clone() const
 H245_MultilinkResponse::H245_MultilinkResponse(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 5, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "callInformation "
-        "addConnection "
-        "removeConnection "
-        "maximumHeaderInterval "
+    ,(const PASN_Names *)Names_H245_MultilinkResponse,5
 #endif
-    )
+)
 {
 }
 
@@ -11985,6 +12381,14 @@ PObject * H245_MultilinkResponse::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_MultilinkIndication[]={
+      {"nonStandard",0}
+     ,{"crcDesired",1}
+     ,{"excessiveError",2}
+};
+#endif
 //
 // MultilinkIndication
 //
@@ -11992,11 +12396,9 @@ PObject * H245_MultilinkResponse::Clone() const
 H245_MultilinkIndication::H245_MultilinkIndication(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "crcDesired "
-        "excessiveError "
+    ,(const PASN_Names *)Names_H245_MultilinkIndication,3
 #endif
-    )
+)
 {
 }
 
@@ -12095,6 +12497,14 @@ PObject * H245_MultilinkIndication::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_DialingInformation[]={
+      {"nonStandard",0}
+     ,{"differential",1}
+     ,{"infoNotAvailable",2}
+};
+#endif
 //
 // DialingInformation
 //
@@ -12102,11 +12512,9 @@ PObject * H245_MultilinkIndication::Clone() const
 H245_DialingInformation::H245_DialingInformation(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "differential "
-        "infoNotAvailable "
+    ,(const PASN_Names *)Names_H245_DialingInformation,3
 #endif
-    )
+)
 {
 }
 
@@ -12185,6 +12593,15 @@ PObject * H245_DialingInformation::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_DialingInformationNetworkType[]={
+      {"nonStandard",0}
+     ,{"n_isdn",1}
+     ,{"gstn",2}
+     ,{"mobile",3}
+};
+#endif
 //
 // DialingInformationNetworkType
 //
@@ -12192,12 +12609,9 @@ PObject * H245_DialingInformation::Clone() const
 H245_DialingInformationNetworkType::H245_DialingInformationNetworkType(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "n_isdn "
-        "gstn "
-        "mobile "
+    ,(const PASN_Names *)Names_H245_DialingInformationNetworkType,4
 #endif
-    )
+)
 {
 }
 
@@ -12550,6 +12964,13 @@ PObject * H245_LogicalChannelRateAcknowledge::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_LogicalChannelRateRejectReason[]={
+      {"undefinedReason",0}
+     ,{"insufficientResources",1}
+};
+#endif
 //
 // LogicalChannelRateRejectReason
 //
@@ -12557,10 +12978,9 @@ PObject * H245_LogicalChannelRateAcknowledge::Clone() const
 H245_LogicalChannelRateRejectReason::H245_LogicalChannelRateRejectReason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "undefinedReason "
-        "insufficientResources "
+    ,(const PASN_Names *)Names_H245_LogicalChannelRateRejectReason,2
 #endif
-    )
+)
 {
 }
 
@@ -12636,6 +13056,13 @@ PObject * H245_LogicalChannelRateRelease::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_SendTerminalCapabilitySet[]={
+      {"specificRequest",0}
+     ,{"genericRequest",1}
+};
+#endif
 //
 // SendTerminalCapabilitySet
 //
@@ -12643,10 +13070,9 @@ PObject * H245_LogicalChannelRateRelease::Clone() const
 H245_SendTerminalCapabilitySet::H245_SendTerminalCapabilitySet(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "specificRequest "
-        "genericRequest "
+    ,(const PASN_Names *)Names_H245_SendTerminalCapabilitySet,2
 #endif
-    )
+)
 {
 }
 
@@ -12698,6 +13124,14 @@ PObject * H245_SendTerminalCapabilitySet::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_EncryptionCommand[]={
+      {"encryptionSE",0}
+     ,{"encryptionIVRequest",1}
+     ,{"encryptionAlgorithmID",2}
+};
+#endif
 //
 // EncryptionCommand
 //
@@ -12705,11 +13139,9 @@ PObject * H245_SendTerminalCapabilitySet::Clone() const
 H245_EncryptionCommand::H245_EncryptionCommand(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "encryptionSE "
-        "encryptionIVRequest "
-        "encryptionAlgorithmID "
+    ,(const PASN_Names *)Names_H245_EncryptionCommand,3
 #endif
-    )
+)
 {
 }
 
@@ -12764,6 +13196,15 @@ PObject * H245_EncryptionCommand::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_EndSessionCommand[]={
+      {"nonStandard",0}
+     ,{"disconnect",1}
+     ,{"gstnOptions",2}
+     ,{"isdnOptions",3}
+};
+#endif
 //
 // EndSessionCommand
 //
@@ -12771,12 +13212,9 @@ PObject * H245_EncryptionCommand::Clone() const
 H245_EndSessionCommand::H245_EndSessionCommand(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "disconnect "
-        "gstnOptions "
-        "isdnOptions "
+    ,(const PASN_Names *)Names_H245_EndSessionCommand,4
 #endif
-    )
+)
 {
 }
 
@@ -12878,6 +13316,19 @@ PObject * H245_EndSessionCommand::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_ConferenceCommand[]={
+      {"broadcastMyLogicalChannel",0}
+     ,{"cancelBroadcastMyLogicalChannel",1}
+     ,{"makeTerminalBroadcaster",2}
+     ,{"cancelMakeTerminalBroadcaster",3}
+     ,{"sendThisSource",4}
+     ,{"cancelSendThisSource",5}
+     ,{"dropConference",6}
+     ,{"substituteConferenceIDCommand",7}
+};
+#endif
 //
 // ConferenceCommand
 //
@@ -12885,16 +13336,9 @@ PObject * H245_EndSessionCommand::Clone() const
 H245_ConferenceCommand::H245_ConferenceCommand(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 7, TRUE
 #ifndef PASN_NOPRINTON
-      , "broadcastMyLogicalChannel "
-        "cancelBroadcastMyLogicalChannel "
-        "makeTerminalBroadcaster "
-        "cancelMakeTerminalBroadcaster "
-        "sendThisSource "
-        "cancelSendThisSource "
-        "dropConference "
-        "substituteConferenceIDCommand "
+    ,(const PASN_Names *)Names_H245_ConferenceCommand,8
 #endif
-    )
+)
 {
 }
 
@@ -13077,6 +13521,43 @@ PObject * H245_SubstituteConferenceIDCommand::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_EncryptionUpdateDirection[]={
+      {"masterToSlave",0}
+     ,{"slaveToMaster",1}
+};
+#endif
+//
+// EncryptionUpdateDirection
+//
+
+H245_EncryptionUpdateDirection::H245_EncryptionUpdateDirection(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Choice(tag, tagClass, 2, TRUE
+#ifndef PASN_NOPRINTON
+    ,(const PASN_Names *)Names_H245_EncryptionUpdateDirection,2
+#endif
+)
+{
+}
+
+
+BOOL H245_EncryptionUpdateDirection::CreateObject()
+{
+  choice = (tag <= e_slaveToMaster) ? new PASN_Null() : NULL;
+  return choice != NULL;
+}
+
+
+PObject * H245_EncryptionUpdateDirection::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_EncryptionUpdateDirection::Class()), PInvalidCast);
+#endif
+  return new H245_EncryptionUpdateDirection(*this);
+}
+
+
 //
 // KeyProtectionMethod
 //
@@ -13172,8 +13653,9 @@ PObject * H245_KeyProtectionMethod::Clone() const
 //
 
 H245_EncryptionUpdateRequest::H245_EncryptionUpdateRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, TRUE, 1)
 {
+  m_synchFlag.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
 }
 
 
@@ -13184,6 +13666,8 @@ void H245_EncryptionUpdateRequest::PrintOn(ostream & strm) const
   strm << "{\n";
   if (HasOptionalField(e_keyProtectionMethod))
     strm << setw(indent+22) << "keyProtectionMethod = " << setprecision(indent) << m_keyProtectionMethod << '\n';
+  if (HasOptionalField(e_synchFlag))
+    strm << setw(indent+12) << "synchFlag = " << setprecision(indent) << m_synchFlag << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
@@ -13221,6 +13705,8 @@ BOOL H245_EncryptionUpdateRequest::Decode(PASN_Stream & strm)
 
   if (HasOptionalField(e_keyProtectionMethod) && !m_keyProtectionMethod.Decode(strm))
     return FALSE;
+  if (!KnownExtensionDecode(strm, e_synchFlag, m_synchFlag))
+    return FALSE;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -13232,6 +13718,7 @@ void H245_EncryptionUpdateRequest::Encode(PASN_Stream & strm) const
 
   if (HasOptionalField(e_keyProtectionMethod))
     m_keyProtectionMethod.Encode(strm);
+  KnownExtensionEncode(strm, e_synchFlag, m_synchFlag);
 
   UnknownExtensionsEncode(strm);
 }
@@ -13246,6 +13733,13 @@ PObject * H245_EncryptionUpdateRequest::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_PictureReference[]={
+      {"pictureNumber",0}
+     ,{"longTermPictureIndex",1}
+};
+#endif
 //
 // PictureReference
 //
@@ -13253,10 +13747,9 @@ PObject * H245_EncryptionUpdateRequest::Clone() const
 H245_PictureReference::H245_PictureReference(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "pictureNumber "
-        "longTermPictureIndex "
+    ,(const PASN_Names *)Names_H245_PictureReference,2
 #endif
-    )
+)
 {
 }
 
@@ -13288,6 +13781,13 @@ PObject * H245_PictureReference::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_H223MultiplexReconfiguration[]={
+      {"h223ModeChange",0}
+     ,{"h223AnnexADoubleFlag",1}
+};
+#endif
 //
 // H223MultiplexReconfiguration
 //
@@ -13295,10 +13795,9 @@ PObject * H245_PictureReference::Clone() const
 H245_H223MultiplexReconfiguration::H245_H223MultiplexReconfiguration(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "h223ModeChange "
-        "h223AnnexADoubleFlag "
+    ,(const PASN_Names *)Names_H245_H223MultiplexReconfiguration,2
 #endif
-    )
+)
 {
 }
 
@@ -13372,6 +13871,14 @@ PObject * H245_H223MultiplexReconfiguration::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_FunctionNotUnderstood[]={
+      {"request",0}
+     ,{"response",1}
+     ,{"command",2}
+};
+#endif
 //
 // FunctionNotUnderstood
 //
@@ -13379,11 +13886,9 @@ PObject * H245_H223MultiplexReconfiguration::Clone() const
 H245_FunctionNotUnderstood::H245_FunctionNotUnderstood(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, FALSE
 #ifndef PASN_NOPRINTON
-      , "request "
-        "response "
-        "command "
+    ,(const PASN_Names *)Names_H245_FunctionNotUnderstood,3
 #endif
-    )
+)
 {
 }
 
@@ -13482,6 +13987,25 @@ PObject * H245_FunctionNotUnderstood::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_ConferenceIndication[]={
+      {"sbeNumber",0}
+     ,{"terminalNumberAssign",1}
+     ,{"terminalJoinedConference",2}
+     ,{"terminalLeftConference",3}
+     ,{"seenByAtLeastOneOther",4}
+     ,{"cancelSeenByAtLeastOneOther",5}
+     ,{"seenByAll",6}
+     ,{"cancelSeenByAll",7}
+     ,{"terminalYouAreSeeing",8}
+     ,{"requestForFloor",9}
+     ,{"withdrawChairToken",10}
+     ,{"floorRequested",11}
+     ,{"terminalYouAreSeeingInSubPictureNumber",12}
+     ,{"videoIndicateCompose",13}
+};
+#endif
 //
 // ConferenceIndication
 //
@@ -13489,22 +14013,9 @@ PObject * H245_FunctionNotUnderstood::Clone() const
 H245_ConferenceIndication::H245_ConferenceIndication(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 10, TRUE
 #ifndef PASN_NOPRINTON
-      , "sbeNumber "
-        "terminalNumberAssign "
-        "terminalJoinedConference "
-        "terminalLeftConference "
-        "seenByAtLeastOneOther "
-        "cancelSeenByAtLeastOneOther "
-        "seenByAll "
-        "cancelSeenByAll "
-        "terminalYouAreSeeing "
-        "requestForFloor "
-        "withdrawChairToken "
-        "floorRequested "
-        "terminalYouAreSeeingInSubPictureNumber "
-        "videoIndicateCompose "
+    ,(const PASN_Names *)Names_H245_ConferenceIndication,14
 #endif
-    )
+)
 {
 }
 
@@ -14137,20 +14648,244 @@ PObject * H245_VendorIdentification::Clone() const
 
 
 //
+// IV8
+//
+
+H245_IV8::H245_IV8(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_OctetString(tag, tagClass)
+{
+  SetConstraints(PASN_Object::FixedConstraint, 8);
+}
+
+
+H245_IV8::H245_IV8(const char * v)
+{
+  SetValue(v);
+}
+
+
+H245_IV8::H245_IV8(const PString & v)
+{
+  SetValue(v);
+}
+
+
+H245_IV8::H245_IV8(const PBYTEArray & v)
+{
+  SetValue(v);
+}
+
+
+H245_IV8 & H245_IV8::operator=(const char * v)
+{
+  SetValue(v);
+  return *this;
+}
+
+
+H245_IV8 & H245_IV8::operator=(const PString & v)
+{
+  SetValue(v);
+  return *this;
+}
+
+
+H245_IV8 & H245_IV8::operator=(const PBYTEArray & v)
+{
+  SetValue(v);
+  return *this;
+}
+
+
+PObject * H245_IV8::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_IV8::Class()), PInvalidCast);
+#endif
+  return new H245_IV8(*this);
+}
+
+
+//
+// IV16
+//
+
+H245_IV16::H245_IV16(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_OctetString(tag, tagClass)
+{
+  SetConstraints(PASN_Object::FixedConstraint, 16);
+}
+
+
+H245_IV16::H245_IV16(const char * v)
+{
+  SetValue(v);
+}
+
+
+H245_IV16::H245_IV16(const PString & v)
+{
+  SetValue(v);
+}
+
+
+H245_IV16::H245_IV16(const PBYTEArray & v)
+{
+  SetValue(v);
+}
+
+
+H245_IV16 & H245_IV16::operator=(const char * v)
+{
+  SetValue(v);
+  return *this;
+}
+
+
+H245_IV16 & H245_IV16::operator=(const PString & v)
+{
+  SetValue(v);
+  return *this;
+}
+
+
+H245_IV16 & H245_IV16::operator=(const PBYTEArray & v)
+{
+  SetValue(v);
+  return *this;
+}
+
+
+PObject * H245_IV16::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_IV16::Class()), PInvalidCast);
+#endif
+  return new H245_IV16(*this);
+}
+
+
+//
+// Params
+//
+
+H245_Params::H245_Params(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Sequence(tag, tagClass, 3, TRUE, 0)
+{
+}
+
+
+#ifndef PASN_NOPRINTON
+void H245_Params::PrintOn(ostream & strm) const
+{
+  int indent = strm.precision() + 2;
+  strm << "{\n";
+  if (HasOptionalField(e_iv8))
+    strm << setw(indent+6) << "iv8 = " << setprecision(indent) << m_iv8 << '\n';
+  if (HasOptionalField(e_iv16))
+    strm << setw(indent+7) << "iv16 = " << setprecision(indent) << m_iv16 << '\n';
+  if (HasOptionalField(e_iv))
+    strm << setw(indent+5) << "iv = " << setprecision(indent) << m_iv << '\n';
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
+}
+#endif
+
+
+PObject::Comparison H245_Params::Compare(const PObject & obj) const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(&obj, H245_Params), PInvalidCast);
+#endif
+  const H245_Params & other = (const H245_Params &)obj;
+
+  Comparison result;
+
+  if ((result = m_iv8.Compare(other.m_iv8)) != EqualTo)
+    return result;
+  if ((result = m_iv16.Compare(other.m_iv16)) != EqualTo)
+    return result;
+  if ((result = m_iv.Compare(other.m_iv)) != EqualTo)
+    return result;
+
+  return PASN_Sequence::Compare(other);
+}
+
+
+PINDEX H245_Params::GetDataLength() const
+{
+  PINDEX length = 0;
+  if (HasOptionalField(e_iv8))
+    length += m_iv8.GetObjectLength();
+  if (HasOptionalField(e_iv16))
+    length += m_iv16.GetObjectLength();
+  if (HasOptionalField(e_iv))
+    length += m_iv.GetObjectLength();
+  return length;
+}
+
+
+BOOL H245_Params::Decode(PASN_Stream & strm)
+{
+  if (!PreambleDecode(strm))
+    return FALSE;
+
+  if (HasOptionalField(e_iv8) && !m_iv8.Decode(strm))
+    return FALSE;
+  if (HasOptionalField(e_iv16) && !m_iv16.Decode(strm))
+    return FALSE;
+  if (HasOptionalField(e_iv) && !m_iv.Decode(strm))
+    return FALSE;
+
+  return UnknownExtensionsDecode(strm);
+}
+
+
+void H245_Params::Encode(PASN_Stream & strm) const
+{
+  PreambleEncode(strm);
+
+  if (HasOptionalField(e_iv8))
+    m_iv8.Encode(strm);
+  if (HasOptionalField(e_iv16))
+    m_iv16.Encode(strm);
+  if (HasOptionalField(e_iv))
+    m_iv.Encode(strm);
+
+  UnknownExtensionsEncode(strm);
+}
+
+
+PObject * H245_Params::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_Params::Class()), PInvalidCast);
+#endif
+  return new H245_Params(*this);
+}
+
+
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_UserInputIndication[]={
+      {"nonStandard",0}
+     ,{"alphanumeric",1}
+     ,{"userInputSupportIndication",2}
+     ,{"signal",3}
+     ,{"signalUpdate",4}
+     ,{"extendedAlphanumeric",5}
+     ,{"encryptedAlphanumeric",6}
+};
+#endif
+//
 // UserInputIndication
 //
 
 H245_UserInputIndication::H245_UserInputIndication(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "alphanumeric "
-        "userInputSupportIndication "
-        "signal "
-        "signalUpdate "
-        "extendedAlphanumeric "
+    ,(const PASN_Names *)Names_H245_UserInputIndication,7
 #endif
-    )
+)
 {
 }
 
@@ -14265,6 +15000,28 @@ H245_UserInputIndication::operator const H245_UserInputIndication_extendedAlphan
 }
 
 
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+H245_UserInputIndication::operator H245_UserInputIndication_encryptedAlphanumeric &() const
+#else
+H245_UserInputIndication::operator H245_UserInputIndication_encryptedAlphanumeric &()
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_UserInputIndication_encryptedAlphanumeric), PInvalidCast);
+#endif
+  return *(H245_UserInputIndication_encryptedAlphanumeric *)choice;
+}
+
+
+H245_UserInputIndication::operator const H245_UserInputIndication_encryptedAlphanumeric &() const
+#endif
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_UserInputIndication_encryptedAlphanumeric), PInvalidCast);
+#endif
+  return *(H245_UserInputIndication_encryptedAlphanumeric *)choice;
+}
+
+
 BOOL H245_UserInputIndication::CreateObject()
 {
   switch (tag) {
@@ -14285,6 +15042,9 @@ BOOL H245_UserInputIndication::CreateObject()
       return TRUE;
     case e_extendedAlphanumeric :
       choice = new H245_UserInputIndication_extendedAlphanumeric();
+      return TRUE;
+    case e_encryptedAlphanumeric :
+      choice = new H245_UserInputIndication_encryptedAlphanumeric();
       return TRUE;
   }
 
@@ -14388,6 +15148,37 @@ PObject * H245_MobileMultilinkReconfigurationIndication::Clone() const
 
 
 //
+// ArrayOf_GenericParameter
+//
+
+H245_ArrayOf_GenericParameter::H245_ArrayOf_GenericParameter(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Array(tag, tagClass)
+{
+}
+
+
+PASN_Object * H245_ArrayOf_GenericParameter::CreateObject() const
+{
+  return new H245_GenericParameter;
+}
+
+
+H245_GenericParameter & H245_ArrayOf_GenericParameter::operator[](PINDEX i) const
+{
+  return (H245_GenericParameter &)array[i];
+}
+
+
+PObject * H245_ArrayOf_GenericParameter::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_ArrayOf_GenericParameter::Class()), PInvalidCast);
+#endif
+  return new H245_ArrayOf_GenericParameter(*this);
+}
+
+
+//
 // NonStandardIdentifier_h221NonStandard
 //
 
@@ -14480,6 +15271,13 @@ PObject * H245_NonStandardIdentifier_h221NonStandard::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_MasterSlaveDeterminationAck_decision[]={
+      {"master",0}
+     ,{"slave",1}
+};
+#endif
 //
 // MasterSlaveDeterminationAck_decision
 //
@@ -14487,10 +15285,9 @@ PObject * H245_NonStandardIdentifier_h221NonStandard::Clone() const
 H245_MasterSlaveDeterminationAck_decision::H245_MasterSlaveDeterminationAck_decision(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "master "
-        "slave "
+    ,(const PASN_Names *)Names_H245_MasterSlaveDeterminationAck_decision,2
 #endif
-    )
+)
 {
 }
 
@@ -14511,6 +15308,12 @@ PObject * H245_MasterSlaveDeterminationAck_decision::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_MasterSlaveDeterminationReject_cause[]={
+      {"identicalNumbers",0}
+};
+#endif
 //
 // MasterSlaveDeterminationReject_cause
 //
@@ -14518,9 +15321,9 @@ PObject * H245_MasterSlaveDeterminationAck_decision::Clone() const
 H245_MasterSlaveDeterminationReject_cause::H245_MasterSlaveDeterminationReject_cause(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 1, TRUE
 #ifndef PASN_NOPRINTON
-      , "identicalNumbers "
+    ,(const PASN_Names *)Names_H245_MasterSlaveDeterminationReject_cause,1
 #endif
-    )
+)
 {
 }
 
@@ -14634,6 +15437,15 @@ PObject * H245_ArrayOf_AlternativeCapabilitySet::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_TerminalCapabilitySetReject_cause[]={
+      {"unspecified",0}
+     ,{"undefinedTableEntryUsed",1}
+     ,{"descriptorCapacityExceeded",2}
+     ,{"tableEntryCapacityExceeded",3}
+};
+#endif
 //
 // TerminalCapabilitySetReject_cause
 //
@@ -14641,12 +15453,9 @@ PObject * H245_ArrayOf_AlternativeCapabilitySet::Clone() const
 H245_TerminalCapabilitySetReject_cause::H245_TerminalCapabilitySetReject_cause(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "unspecified "
-        "undefinedTableEntryUsed "
-        "descriptorCapacityExceeded "
-        "tableEntryCapacityExceeded "
+    ,(const PASN_Names *)Names_H245_TerminalCapabilitySetReject_cause,4
 #endif
-    )
+)
 {
 }
 
@@ -15025,6 +15834,13 @@ PObject * H245_VCCapability_aal5::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_H223Capability_h223MultiplexTableCapability[]={
+      {"basic",0}
+     ,{"enhanced",1}
+};
+#endif
 //
 // H223Capability_h223MultiplexTableCapability
 //
@@ -15032,10 +15848,9 @@ PObject * H245_VCCapability_aal5::Clone() const
 H245_H223Capability_h223MultiplexTableCapability::H245_H223Capability_h223MultiplexTableCapability(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "basic "
-        "enhanced "
+    ,(const PASN_Names *)Names_H245_H223Capability_h223MultiplexTableCapability,2
 #endif
-    )
+)
 {
 }
 
@@ -15590,6 +16405,13 @@ PObject * H245_ArrayOf_CapabilityTableEntryNumber::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_RTPH263VideoRedundancyEncoding_frameToThreadMapping[]={
+      {"roundrobin",0}
+     ,{"custom",1}
+};
+#endif
 //
 // RTPH263VideoRedundancyEncoding_frameToThreadMapping
 //
@@ -15597,10 +16419,9 @@ PObject * H245_ArrayOf_CapabilityTableEntryNumber::Clone() const
 H245_RTPH263VideoRedundancyEncoding_frameToThreadMapping::H245_RTPH263VideoRedundancyEncoding_frameToThreadMapping(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "roundrobin "
-        "custom "
+    ,(const PASN_Names *)Names_H245_RTPH263VideoRedundancyEncoding_frameToThreadMapping,2
 #endif
-    )
+)
 {
 }
 
@@ -15784,6 +16605,68 @@ PObject * H245_ArrayOf_DataApplicationCapability::Clone() const
 
 
 //
+// ArrayOf_VideoCapability
+//
+
+H245_ArrayOf_VideoCapability::H245_ArrayOf_VideoCapability(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Array(tag, tagClass)
+{
+}
+
+
+PASN_Object * H245_ArrayOf_VideoCapability::CreateObject() const
+{
+  return new H245_VideoCapability;
+}
+
+
+H245_VideoCapability & H245_ArrayOf_VideoCapability::operator[](PINDEX i) const
+{
+  return (H245_VideoCapability &)array[i];
+}
+
+
+PObject * H245_ArrayOf_VideoCapability::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_ArrayOf_VideoCapability::Class()), PInvalidCast);
+#endif
+  return new H245_ArrayOf_VideoCapability(*this);
+}
+
+
+//
+// ArrayOf_GenericCapability
+//
+
+H245_ArrayOf_GenericCapability::H245_ArrayOf_GenericCapability(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Array(tag, tagClass)
+{
+}
+
+
+PASN_Object * H245_ArrayOf_GenericCapability::CreateObject() const
+{
+  return new H245_GenericCapability;
+}
+
+
+H245_GenericCapability & H245_ArrayOf_GenericCapability::operator[](PINDEX i) const
+{
+  return (H245_GenericCapability &)array[i];
+}
+
+
+PObject * H245_ArrayOf_GenericCapability::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_ArrayOf_GenericCapability::Class()), PInvalidCast);
+#endif
+  return new H245_ArrayOf_GenericCapability(*this);
+}
+
+
+//
 // ArrayOf_EnhancementOptions
 //
 
@@ -15842,99 +16725,6 @@ PObject * H245_ArrayOf_BEnhancementParameters::Clone() const
   PAssert(IsClass(H245_ArrayOf_BEnhancementParameters::Class()), PInvalidCast);
 #endif
   return new H245_ArrayOf_BEnhancementParameters(*this);
-}
-
-
-//
-// ArrayOf_CustomPictureClockFrequency
-//
-
-H245_ArrayOf_CustomPictureClockFrequency::H245_ArrayOf_CustomPictureClockFrequency(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Array(tag, tagClass)
-{
-}
-
-
-PASN_Object * H245_ArrayOf_CustomPictureClockFrequency::CreateObject() const
-{
-  return new H245_CustomPictureClockFrequency;
-}
-
-
-H245_CustomPictureClockFrequency & H245_ArrayOf_CustomPictureClockFrequency::operator[](PINDEX i) const
-{
-  return (H245_CustomPictureClockFrequency &)array[i];
-}
-
-
-PObject * H245_ArrayOf_CustomPictureClockFrequency::Clone() const
-{
-#ifndef PASN_LEANANDMEAN
-  PAssert(IsClass(H245_ArrayOf_CustomPictureClockFrequency::Class()), PInvalidCast);
-#endif
-  return new H245_ArrayOf_CustomPictureClockFrequency(*this);
-}
-
-
-//
-// ArrayOf_CustomPictureFormat
-//
-
-H245_ArrayOf_CustomPictureFormat::H245_ArrayOf_CustomPictureFormat(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Array(tag, tagClass)
-{
-}
-
-
-PASN_Object * H245_ArrayOf_CustomPictureFormat::CreateObject() const
-{
-  return new H245_CustomPictureFormat;
-}
-
-
-H245_CustomPictureFormat & H245_ArrayOf_CustomPictureFormat::operator[](PINDEX i) const
-{
-  return (H245_CustomPictureFormat &)array[i];
-}
-
-
-PObject * H245_ArrayOf_CustomPictureFormat::Clone() const
-{
-#ifndef PASN_LEANANDMEAN
-  PAssert(IsClass(H245_ArrayOf_CustomPictureFormat::Class()), PInvalidCast);
-#endif
-  return new H245_ArrayOf_CustomPictureFormat(*this);
-}
-
-
-//
-// ArrayOf_H263VideoModeCombos
-//
-
-H245_ArrayOf_H263VideoModeCombos::H245_ArrayOf_H263VideoModeCombos(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Array(tag, tagClass)
-{
-}
-
-
-PASN_Object * H245_ArrayOf_H263VideoModeCombos::CreateObject() const
-{
-  return new H245_H263VideoModeCombos;
-}
-
-
-H245_H263VideoModeCombos & H245_ArrayOf_H263VideoModeCombos::operator[](PINDEX i) const
-{
-  return (H245_H263VideoModeCombos &)array[i];
-}
-
-
-PObject * H245_ArrayOf_H263VideoModeCombos::Clone() const
-{
-#ifndef PASN_LEANANDMEAN
-  PAssert(IsClass(H245_ArrayOf_H263VideoModeCombos::Class()), PInvalidCast);
-#endif
-  return new H245_ArrayOf_H263VideoModeCombos(*this);
 }
 
 

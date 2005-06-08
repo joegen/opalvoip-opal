@@ -9,7 +9,7 @@
 #endif
 
 #include <ptlib.h>
-#include "asn/h4503.h"
+#include "h4503.h"
 
 #define new PNEW
 
@@ -18,6 +18,20 @@
 
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4503_H323CallDiversionOperations[]={
+        {"activateDiversionQ",15}
+       ,{"deactivateDiversionQ",16}
+       ,{"interrogateDiversionQ",17}
+       ,{"checkRestriction",18}
+       ,{"callRerouting",19}
+       ,{"divertingLegInformation1",20}
+       ,{"divertingLegInformation2",21}
+       ,{"divertingLegInformation3",22}
+       ,{"divertingLegInformation4",100}
+       ,{"cfnrDivertedLegFailed",23}
+};
+#endif
 //
 // H323CallDiversionOperations
 //
@@ -25,16 +39,7 @@
 H4503_H323CallDiversionOperations::H4503_H323CallDiversionOperations(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 100, FALSE
 #ifndef PASN_NOPRINTON
-      , "activateDiversionQ=15 "
-        "deactivateDiversionQ "
-        "interrogateDiversionQ "
-        "checkRestriction "
-        "callRerouting "
-        "divertingLegInformation1 "
-        "divertingLegInformation2 "
-        "divertingLegInformation3 "
-        "divertingLegInformation4=100 "
-        "cfnrDivertedLegFailed=23 "
+    ,(const PASN_Names *)Names_H4503_H323CallDiversionOperations,10
 #endif
     )
 {
@@ -57,6 +62,14 @@ PObject * H4503_H323CallDiversionOperations::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4503_DiversionReason[]={
+        {"unknown",0}
+       ,{"cfu",1}
+       ,{"cfb",2}
+       ,{"cfnr",3}
+};
+#endif
 //
 // DiversionReason
 //
@@ -64,10 +77,7 @@ PObject * H4503_H323CallDiversionOperations::Clone() const
 H4503_DiversionReason::H4503_DiversionReason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "unknown "
-        "cfu "
-        "cfb "
-        "cfnr "
+    ,(const PASN_Names *)Names_H4503_DiversionReason,4
 #endif
     )
 {
@@ -122,6 +132,13 @@ PObject * H4503_IntResultList::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4503_Procedure[]={
+        {"cfu",0}
+       ,{"cfb",1}
+       ,{"cfnr",2}
+};
+#endif
 //
 // Procedure
 //
@@ -129,9 +146,7 @@ PObject * H4503_IntResultList::Clone() const
 H4503_Procedure::H4503_Procedure(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "cfu "
-        "cfb "
-        "cfnr "
+    ,(const PASN_Names *)Names_H4503_Procedure,3
 #endif
     )
 {
@@ -154,6 +169,13 @@ PObject * H4503_Procedure::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4503_SubscriptionOption[]={
+        {"noNotification",0}
+       ,{"notificationWithoutDivertedToNr",1}
+       ,{"notificationWithDivertedToNr",2}
+};
+#endif
 //
 // SubscriptionOption
 //
@@ -161,9 +183,7 @@ PObject * H4503_Procedure::Clone() const
 H4503_SubscriptionOption::H4503_SubscriptionOption(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "noNotification "
-        "notificationWithoutDivertedToNr "
-        "notificationWithDivertedToNr "
+    ,(const PASN_Names *)Names_H4503_SubscriptionOption,3
 #endif
     )
 {
@@ -186,6 +206,17 @@ PObject * H4503_SubscriptionOption::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4503_CallDiversionErrors[]={
+        {"invalidDivertedNumber",12}
+       ,{"specialServiceNumber",14}
+       ,{"diversionToServedUserNumber",15}
+       ,{"numberOfDiversionsExceeded",24}
+       ,{"temporarilyUnavailable",1000}
+       ,{"notAuthorized",1007}
+       ,{"unspecified",1008}
+};
+#endif
 //
 // CallDiversionErrors
 //
@@ -193,13 +224,7 @@ PObject * H4503_SubscriptionOption::Clone() const
 H4503_CallDiversionErrors::H4503_CallDiversionErrors(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 1008, FALSE
 #ifndef PASN_NOPRINTON
-      , "invalidDivertedNumber=12 "
-        "specialServiceNumber=14 "
-        "diversionToServedUserNumber "
-        "numberOfDiversionsExceeded=24 "
-        "temporarilyUnavailable=1000 "
-        "notAuthorized=1007 "
-        "unspecified "
+    ,(const PASN_Names *)Names_H4503_CallDiversionErrors,7
 #endif
     )
 {
@@ -222,6 +247,11 @@ PObject * H4503_CallDiversionErrors::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4503_BasicService[]={
+        {"allServices",0}
+};
+#endif
 //
 // BasicService
 //
@@ -229,7 +259,7 @@ PObject * H4503_CallDiversionErrors::Clone() const
 H4503_BasicService::H4503_BasicService(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 0, TRUE
 #ifndef PASN_NOPRINTON
-      , "allServices "
+    ,(const PASN_Names *)Names_H4503_BasicService,1
 #endif
     )
 {
@@ -283,6 +313,13 @@ PObject * H4503_ExtensionSeq::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4503_IntResult_extension[]={
+      {"extensionSeq",0}
+     ,{"nonStandardData",1}
+};
+#endif
 //
 // IntResult_extension
 //
@@ -290,10 +327,9 @@ PObject * H4503_ExtensionSeq::Clone() const
 H4503_IntResult_extension::H4503_IntResult_extension(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "extensionSeq "
-        "nonStandardData "
+    ,(const PASN_Names *)Names_H4503_IntResult_extension,2
 #endif
-    )
+)
 {
 }
 
@@ -389,7 +425,7 @@ void H4503_IntResult::PrintOn(ostream & strm) const
   strm << setw(indent+16) << "remoteEnabled = " << setprecision(indent) << m_remoteEnabled << '\n';
   if (HasOptionalField(e_extension))
     strm << setw(indent+12) << "extension = " << setprecision(indent) << m_extension << '\n';
-  strm << setw(indent-1) << "}";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 

@@ -9,7 +9,7 @@
 #endif
 
 #include <ptlib.h>
-#include "asn/h4507.h"
+#include "h4507.h"
 
 #define new PNEW
 
@@ -18,6 +18,13 @@
 
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4507_H323_MWI_Operations[]={
+        {"mwiActivate",80}
+       ,{"mwiDeactivate",81}
+       ,{"mwiInterrogate",82}
+};
+#endif
 //
 // H323-MWI-Operations
 //
@@ -25,9 +32,7 @@
 H4507_H323_MWI_Operations::H4507_H323_MWI_Operations(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 82, FALSE
 #ifndef PASN_NOPRINTON
-      , "mwiActivate=80 "
-        "mwiDeactivate "
-        "mwiInterrogate "
+    ,(const PASN_Names *)Names_H4507_H323_MWI_Operations,3
 #endif
     )
 {
@@ -114,6 +119,14 @@ PObject * H4507_MWIInterrogateRes::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4507_MsgCentreId[]={
+      {"integer",0}
+     ,{"partyNumber",1}
+     ,{"numericString",2}
+};
+#endif
 //
 // MsgCentreId
 //
@@ -121,11 +134,9 @@ PObject * H4507_MWIInterrogateRes::Clone() const
 H4507_MsgCentreId::H4507_MsgCentreId(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, FALSE
 #ifndef PASN_NOPRINTON
-      , "integer "
-        "partyNumber "
-        "numericString "
+    ,(const PASN_Names *)Names_H4507_MsgCentreId,3
 #endif
-    )
+)
 {
 }
 
@@ -236,6 +247,13 @@ PObject * H4507_TimeStamp::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4507_MessageWaitingIndicationErrors[]={
+        {"notActivated",31}
+       ,{"undefined",2002}
+       ,{"invalidMsgCentreId",1018}
+};
+#endif
 //
 // MessageWaitingIndicationErrors
 //
@@ -243,9 +261,7 @@ PObject * H4507_TimeStamp::Clone() const
 H4507_MessageWaitingIndicationErrors::H4507_MessageWaitingIndicationErrors(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 2002, FALSE
 #ifndef PASN_NOPRINTON
-      , "notActivated=31 "
-        "undefined=2002 "
-        "invalidMsgCentreId=1018 "
+    ,(const PASN_Names *)Names_H4507_MessageWaitingIndicationErrors,3
 #endif
     )
 {
@@ -268,6 +284,19 @@ PObject * H4507_MessageWaitingIndicationErrors::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4507_BasicService[]={
+        {"allServices",0}
+       ,{"speech",1}
+       ,{"unrestrictedDigitalInformation",2}
+       ,{"audio3100Hz",3}
+       ,{"telephony",32}
+       ,{"teletex",33}
+       ,{"telefaxGroup4Class1",34}
+       ,{"videotexSyntaxBased",35}
+       ,{"videotelephony",36}
+};
+#endif
 //
 // BasicService
 //
@@ -275,15 +304,7 @@ PObject * H4507_MessageWaitingIndicationErrors::Clone() const
 H4507_BasicService::H4507_BasicService(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 36, FALSE
 #ifndef PASN_NOPRINTON
-      , "allServices "
-        "speech "
-        "unrestrictedDigitalInformation "
-        "audio3100Hz "
-        "telephony=32 "
-        "teletex "
-        "telefaxGroup4Class1 "
-        "videotexSyntaxBased "
-        "videotelephony "
+    ,(const PASN_Names *)Names_H4507_BasicService,9
 #endif
     )
 {
