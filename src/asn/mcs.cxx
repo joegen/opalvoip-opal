@@ -5,11 +5,11 @@
 //
 
 #ifdef P_USE_PRAGMA
-#pragma implementation "mcs.h"
+#pragma implementation "mcspdu.h"
 #endif
 
 #include <ptlib.h>
-#include "asn/mcs.h"
+#include "mcspdu.h"
 
 #define new PNEW
 
@@ -251,6 +251,18 @@ PObject * MCS_TokenId::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_MCS_TokenStatus[]={
+        {"notInUse",0}
+       ,{"selfGrabbed",1}
+       ,{"otherGrabbed",2}
+       ,{"selfInhibited",3}
+       ,{"otherInhibited",4}
+       ,{"selfRecipient",5}
+       ,{"selfGiving",6}
+       ,{"otherGiving",7}
+};
+#endif
 //
 // TokenStatus
 //
@@ -258,14 +270,7 @@ PObject * MCS_TokenId::Clone() const
 MCS_TokenStatus::MCS_TokenStatus(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 7, FALSE
 #ifndef PASN_NOPRINTON
-      , "notInUse "
-        "selfGrabbed "
-        "otherGrabbed "
-        "selfInhibited "
-        "otherInhibited "
-        "selfRecipient "
-        "selfGiving "
-        "otherGiving "
+    ,(const PASN_Names *)Names_MCS_TokenStatus,8
 #endif
     )
 {
@@ -288,6 +293,14 @@ PObject * MCS_TokenStatus::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_MCS_DataPriority[]={
+        {"top",0}
+       ,{"high",1}
+       ,{"medium",2}
+       ,{"low",3}
+};
+#endif
 //
 // DataPriority
 //
@@ -295,10 +308,7 @@ PObject * MCS_TokenStatus::Clone() const
 MCS_DataPriority::MCS_DataPriority(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 3, FALSE
 #ifndef PASN_NOPRINTON
-      , "top "
-        "high "
-        "medium "
-        "low "
+    ,(const PASN_Names *)Names_MCS_DataPriority,4
 #endif
     )
 {
@@ -838,6 +848,15 @@ PObject * MCS_EDrq::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_MCS_ChannelAttributes[]={
+      {"static",0}
+     ,{"userId",1}
+     ,{"private",2}
+     ,{"assigned",3}
+};
+#endif
 //
 // ChannelAttributes
 //
@@ -845,12 +864,9 @@ PObject * MCS_EDrq::Clone() const
 MCS_ChannelAttributes::MCS_ChannelAttributes(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, FALSE
 #ifndef PASN_NOPRINTON
-      , "static "
-        "userId "
-        "private "
-        "assigned "
+    ,(const PASN_Names *)Names_MCS_ChannelAttributes,4
 #endif
-    )
+)
 {
 }
 
@@ -974,6 +990,16 @@ PObject * MCS_ChannelAttributes::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_MCS_TokenAttributes[]={
+      {"grabbed",0}
+     ,{"inhibited",1}
+     ,{"giving",2}
+     ,{"ungivable",3}
+     ,{"given",4}
+};
+#endif
 //
 // TokenAttributes
 //
@@ -981,13 +1007,9 @@ PObject * MCS_ChannelAttributes::Clone() const
 MCS_TokenAttributes::MCS_TokenAttributes(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 5, FALSE
 #ifndef PASN_NOPRINTON
-      , "grabbed "
-        "inhibited "
-        "giving "
-        "ungivable "
-        "given "
+    ,(const PASN_Names *)Names_MCS_TokenAttributes,5
 #endif
-    )
+)
 {
 }
 
@@ -2693,6 +2715,15 @@ PObject * MCS_TTcf::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_MCS_Reason[]={
+        {"rn-domain-disconnected",0}
+       ,{"rn-provider-initiated",1}
+       ,{"rn-token-purged",2}
+       ,{"rn-user-requested",3}
+       ,{"rn-channel-purged",4}
+};
+#endif
 //
 // Reason
 //
@@ -2700,11 +2731,7 @@ PObject * MCS_TTcf::Clone() const
 MCS_Reason::MCS_Reason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 4, FALSE
 #ifndef PASN_NOPRINTON
-      , "rn-domain-disconnected "
-        "rn-provider-initiated "
-        "rn-token-purged "
-        "rn-user-requested "
-        "rn-channel-purged "
+    ,(const PASN_Names *)Names_MCS_Reason,5
 #endif
     )
 {
@@ -2727,6 +2754,26 @@ PObject * MCS_Reason::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_MCS_Result[]={
+        {"rt-successful",0}
+       ,{"rt-domain-merging",1}
+       ,{"rt-domain-not-hierarchical",2}
+       ,{"rt-no-such-channel",3}
+       ,{"rt-no-such-domain",4}
+       ,{"rt-no-such-user",5}
+       ,{"rt-not-admitted",6}
+       ,{"rt-other-user-id",7}
+       ,{"rt-parameters-unacceptable",8}
+       ,{"rt-token-not-available",9}
+       ,{"rt-token-not-possessed",10}
+       ,{"rt-too-many-channels",11}
+       ,{"rt-too-many-tokens",12}
+       ,{"rt-too-many-users",13}
+       ,{"rt-unspecified-failure",14}
+       ,{"rt-user-rejected",15}
+};
+#endif
 //
 // Result
 //
@@ -2734,22 +2781,7 @@ PObject * MCS_Reason::Clone() const
 MCS_Result::MCS_Result(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 15, FALSE
 #ifndef PASN_NOPRINTON
-      , "rt-successful "
-        "rt-domain-merging "
-        "rt-domain-not-hierarchical "
-        "rt-no-such-channel "
-        "rt-no-such-domain "
-        "rt-no-such-user "
-        "rt-not-admitted "
-        "rt-other-user-id "
-        "rt-parameters-unacceptable "
-        "rt-token-not-available "
-        "rt-token-not-possessed "
-        "rt-too-many-channels "
-        "rt-too-many-tokens "
-        "rt-too-many-users "
-        "rt-unspecified-failure "
-        "rt-user-rejected "
+    ,(const PASN_Names *)Names_MCS_Result,16
 #endif
     )
 {
@@ -2772,6 +2804,24 @@ PObject * MCS_Result::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_MCS_Diagnostic[]={
+        {"dc-inconsistent-merge",0}
+       ,{"dc-forbidden-PDU-downward",1}
+       ,{"dc-forbidden-PDU-upward",2}
+       ,{"dc-invalid-BER-encoding",3}
+       ,{"dc-invalid-PER-encoding",4}
+       ,{"dc-misrouted-user",5}
+       ,{"dc-unrequested-confirm",6}
+       ,{"dc-wrong-transport-priority",7}
+       ,{"dc-channel-id-conflict",8}
+       ,{"dc-token-id-conflict",9}
+       ,{"dc-not-user-id-channel",10}
+       ,{"dc-too-many-channels",11}
+       ,{"dc-too-many-tokens",12}
+       ,{"dc-too-many-users",13}
+};
+#endif
 //
 // Diagnostic
 //
@@ -2779,20 +2829,7 @@ PObject * MCS_Result::Clone() const
 MCS_Diagnostic::MCS_Diagnostic(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 13, FALSE
 #ifndef PASN_NOPRINTON
-      , "dc-inconsistent-merge "
-        "dc-forbidden-PDU-downward "
-        "dc-forbidden-PDU-upward "
-        "dc-invalid-BER-encoding "
-        "dc-invalid-PER-encoding "
-        "dc-misrouted-user "
-        "dc-unrequested-confirm "
-        "dc-wrong-transport-priority "
-        "dc-channel-id-conflict "
-        "dc-token-id-conflict "
-        "dc-not-user-id-channel "
-        "dc-too-many-channels "
-        "dc-too-many-tokens "
-        "dc-too-many-users "
+    ,(const PASN_Names *)Names_MCS_Diagnostic,14
 #endif
     )
 {
@@ -2815,6 +2852,15 @@ PObject * MCS_Diagnostic::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_MCS_ConnectMCSPDU[]={
+      {"connect_initial",101}
+     ,{"connect_response",102}
+     ,{"connect_additional",103}
+     ,{"connect_result",104}
+};
+#endif
 //
 // ConnectMCSPDU
 //
@@ -2822,12 +2868,9 @@ PObject * MCS_Diagnostic::Clone() const
 MCS_ConnectMCSPDU::MCS_ConnectMCSPDU(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, FALSE
 #ifndef PASN_NOPRINTON
-      , "connect_initial=101 "
-        "connect_response "
-        "connect_additional "
-        "connect_result "
+    ,(const PASN_Names *)Names_MCS_ConnectMCSPDU,4
 #endif
-    )
+)
 {
 }
 
@@ -2951,6 +2994,54 @@ PObject * MCS_ConnectMCSPDU::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_MCS_DomainMCSPDU[]={
+      {"pdin",0}
+     ,{"edrq",1}
+     ,{"mcrq",2}
+     ,{"mccf",3}
+     ,{"pcin",4}
+     ,{"mtrq",5}
+     ,{"mtcf",6}
+     ,{"ptin",7}
+     ,{"dpum",8}
+     ,{"rjum",9}
+     ,{"aurq",10}
+     ,{"aucf",11}
+     ,{"durq",12}
+     ,{"duin",13}
+     ,{"cjrq",14}
+     ,{"cjcf",15}
+     ,{"clrq",16}
+     ,{"ccrq",17}
+     ,{"cccf",18}
+     ,{"cdrq",19}
+     ,{"cdin",20}
+     ,{"carq",21}
+     ,{"cain",22}
+     ,{"cerq",23}
+     ,{"cein",24}
+     ,{"sdrq",25}
+     ,{"sdin",26}
+     ,{"usrq",27}
+     ,{"usin",28}
+     ,{"tgrq",29}
+     ,{"tgcf",30}
+     ,{"tirq",31}
+     ,{"ticf",32}
+     ,{"tvrq",33}
+     ,{"tvin",34}
+     ,{"tvrs",35}
+     ,{"tvcf",36}
+     ,{"tprq",37}
+     ,{"tpin",38}
+     ,{"trrq",39}
+     ,{"trcf",40}
+     ,{"ttrq",41}
+     ,{"ttcf",42}
+};
+#endif
 //
 // DomainMCSPDU
 //
@@ -2958,51 +3049,9 @@ PObject * MCS_ConnectMCSPDU::Clone() const
 MCS_DomainMCSPDU::MCS_DomainMCSPDU(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 43, FALSE
 #ifndef PASN_NOPRINTON
-      , "pdin "
-        "edrq "
-        "mcrq "
-        "mccf "
-        "pcin "
-        "mtrq "
-        "mtcf "
-        "ptin "
-        "dpum "
-        "rjum "
-        "aurq "
-        "aucf "
-        "durq "
-        "duin "
-        "cjrq "
-        "cjcf "
-        "clrq "
-        "ccrq "
-        "cccf "
-        "cdrq "
-        "cdin "
-        "carq "
-        "cain "
-        "cerq "
-        "cein "
-        "sdrq "
-        "sdin "
-        "usrq "
-        "usin "
-        "tgrq "
-        "tgcf "
-        "tirq "
-        "ticf "
-        "tvrq "
-        "tvin "
-        "tvrs "
-        "tvcf "
-        "tprq "
-        "tpin "
-        "trrq "
-        "trcf "
-        "ttrq "
-        "ttcf "
+    ,(const PASN_Names *)Names_MCS_DomainMCSPDU,43
 #endif
-    )
+)
 {
 }
 
