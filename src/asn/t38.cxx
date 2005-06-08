@@ -9,13 +9,20 @@
 #endif
 
 #include <ptlib.h>
-#include "asn/t38.h"
+#include "t38.h"
 
 #define new PNEW
 
 
 #if ! H323_DISABLE_T38
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_T38_Type_of_msg[]={
+      {"t30_indicator",0}
+     ,{"data",1}
+};
+#endif
 //
 // Type-of-msg
 //
@@ -23,10 +30,9 @@
 T38_Type_of_msg::T38_Type_of_msg(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "t30_indicator "
-        "data "
+    ,(const PASN_Names *)Names_T38_Type_of_msg,2
 #endif
-    )
+)
 {
 }
 
@@ -162,6 +168,26 @@ PObject * T38_PreCorrigendum_Data_Field::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_T38_Type_of_msg_t30_indicator[]={
+        {"no-signal",0}
+       ,{"cng",1}
+       ,{"ced",2}
+       ,{"v21-preamble",3}
+       ,{"v27-2400-training",4}
+       ,{"v27-4800-training",5}
+       ,{"v29-7200-training",6}
+       ,{"v29-9600-training",7}
+       ,{"v17-7200-short-training",8}
+       ,{"v17-7200-long-training",9}
+       ,{"v17-9600-short-training",10}
+       ,{"v17-9600-long-training",11}
+       ,{"v17-12000-short-training",12}
+       ,{"v17-12000-long-training",13}
+       ,{"v17-14400-short-training",14}
+       ,{"v17-14400-long-training",15}
+};
+#endif
 //
 // Type-of-msg_t30-indicator
 //
@@ -169,22 +195,7 @@ PObject * T38_PreCorrigendum_Data_Field::Clone() const
 T38_Type_of_msg_t30_indicator::T38_Type_of_msg_t30_indicator(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 15, TRUE
 #ifndef PASN_NOPRINTON
-      , "no-signal "
-        "cng "
-        "ced "
-        "v21-preamble "
-        "v27-2400-training "
-        "v27-4800-training "
-        "v29-7200-training "
-        "v29-9600-training "
-        "v17-7200-short-training "
-        "v17-7200-long-training "
-        "v17-9600-short-training "
-        "v17-9600-long-training "
-        "v17-12000-short-training "
-        "v17-12000-long-training "
-        "v17-14400-short-training "
-        "v17-14400-long-training "
+    ,(const PASN_Names *)Names_T38_Type_of_msg_t30_indicator,16
 #endif
     )
 {
@@ -207,6 +218,19 @@ PObject * T38_Type_of_msg_t30_indicator::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_T38_Type_of_msg_data[]={
+        {"v21",0}
+       ,{"v27-2400",1}
+       ,{"v27-4800",2}
+       ,{"v29-7200",3}
+       ,{"v29-9600",4}
+       ,{"v17-7200",5}
+       ,{"v17-9600",6}
+       ,{"v17-12000",7}
+       ,{"v17-14400",8}
+};
+#endif
 //
 // Type-of-msg_data
 //
@@ -214,15 +238,7 @@ PObject * T38_Type_of_msg_t30_indicator::Clone() const
 T38_Type_of_msg_data::T38_Type_of_msg_data(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 8, TRUE
 #ifndef PASN_NOPRINTON
-      , "v21 "
-        "v27-2400 "
-        "v27-4800 "
-        "v29-7200 "
-        "v29-9600 "
-        "v17-7200 "
-        "v17-9600 "
-        "v17-12000 "
-        "v17-14400 "
+    ,(const PASN_Names *)Names_T38_Type_of_msg_data,9
 #endif
     )
 {
@@ -245,6 +261,13 @@ PObject * T38_Type_of_msg_data::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_T38_UDPTLPacket_error_recovery[]={
+      {"secondary_ifp_packets",0}
+     ,{"fec_info",1}
+};
+#endif
 //
 // UDPTLPacket_error-recovery
 //
@@ -252,10 +275,9 @@ PObject * T38_Type_of_msg_data::Clone() const
 T38_UDPTLPacket_error_recovery::T38_UDPTLPacket_error_recovery(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "secondary_ifp_packets "
-        "fec_info "
+    ,(const PASN_Names *)Names_T38_UDPTLPacket_error_recovery,2
 #endif
-    )
+)
 {
 }
 
@@ -329,6 +351,18 @@ PObject * T38_UDPTLPacket_error_recovery::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_T38_Data_Field_subtype_field_type[]={
+        {"hdlc-data",0}
+       ,{"hdlc-sig-end",1}
+       ,{"hdlc-fcs-OK",2}
+       ,{"hdlc-fcs-BAD",3}
+       ,{"hdlc-fcs-OK-sig-end",4}
+       ,{"hdlc-fcs-BAD-sig-end",5}
+       ,{"t4-non-ecm-data",6}
+       ,{"t4-non-ecm-sig-end",7}
+};
+#endif
 //
 // Data-Field_subtype_field-type
 //
@@ -336,14 +370,7 @@ PObject * T38_UDPTLPacket_error_recovery::Clone() const
 T38_Data_Field_subtype_field_type::T38_Data_Field_subtype_field_type(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 7, TRUE
 #ifndef PASN_NOPRINTON
-      , "hdlc-data "
-        "hdlc-sig-end "
-        "hdlc-fcs-OK "
-        "hdlc-fcs-BAD "
-        "hdlc-fcs-OK-sig-end "
-        "hdlc-fcs-BAD-sig-end "
-        "t4-non-ecm-data "
-        "t4-non-ecm-sig-end "
+    ,(const PASN_Names *)Names_T38_Data_Field_subtype_field_type,8
 #endif
     )
 {
@@ -366,6 +393,18 @@ PObject * T38_Data_Field_subtype_field_type::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_T38_PreCorrigendum_Data_Field_subtype_field_type[]={
+        {"hdlc-data",0}
+       ,{"hdlc-sig-end",1}
+       ,{"hdlc-fcs-OK",2}
+       ,{"hdlc-fcs-BAD",3}
+       ,{"hdlc-fcs-OK-sig-end",4}
+       ,{"hdlc-fcs-BAD-sig-end",5}
+       ,{"t4-non-ecm-data",6}
+       ,{"t4-non-ecm-sig-end",7}
+};
+#endif
 //
 // PreCorrigendum-Data-Field_subtype_field-type
 //
@@ -373,14 +412,7 @@ PObject * T38_Data_Field_subtype_field_type::Clone() const
 T38_PreCorrigendum_Data_Field_subtype_field_type::T38_PreCorrigendum_Data_Field_subtype_field_type(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 7, FALSE
 #ifndef PASN_NOPRINTON
-      , "hdlc-data "
-        "hdlc-sig-end "
-        "hdlc-fcs-OK "
-        "hdlc-fcs-BAD "
-        "hdlc-fcs-OK-sig-end "
-        "hdlc-fcs-BAD-sig-end "
-        "t4-non-ecm-data "
-        "t4-non-ecm-sig-end "
+    ,(const PASN_Names *)Names_T38_PreCorrigendum_Data_Field_subtype_field_type,8
 #endif
     )
 {
