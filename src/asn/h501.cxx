@@ -9,7 +9,7 @@
 #endif
 
 #include <ptlib.h>
-#include "asn/h501.h"
+#include "h501.h"
 
 #define new PNEW
 
@@ -18,6 +18,43 @@
 
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H501_MessageBody[]={
+      {"serviceRequest",0}
+     ,{"serviceConfirmation",1}
+     ,{"serviceRejection",2}
+     ,{"serviceRelease",3}
+     ,{"descriptorRequest",4}
+     ,{"descriptorConfirmation",5}
+     ,{"descriptorRejection",6}
+     ,{"descriptorIDRequest",7}
+     ,{"descriptorIDConfirmation",8}
+     ,{"descriptorIDRejection",9}
+     ,{"descriptorUpdate",10}
+     ,{"descriptorUpdateAck",11}
+     ,{"accessRequest",12}
+     ,{"accessConfirmation",13}
+     ,{"accessRejection",14}
+     ,{"requestInProgress",15}
+     ,{"nonStandardRequest",16}
+     ,{"nonStandardConfirmation",17}
+     ,{"nonStandardRejection",18}
+     ,{"unknownMessageResponse",19}
+     ,{"usageRequest",20}
+     ,{"usageConfirmation",21}
+     ,{"usageIndication",22}
+     ,{"usageIndicationConfirmation",23}
+     ,{"usageIndicationRejection",24}
+     ,{"usageRejection",25}
+     ,{"validationRequest",26}
+     ,{"validationConfirmation",27}
+     ,{"validationRejection",28}
+     ,{"authenticationRequest",29}
+     ,{"authenticationConfirmation",30}
+     ,{"authenticationRejection",31}
+};
+#endif
 //
 // MessageBody
 //
@@ -25,40 +62,9 @@
 H501_MessageBody::H501_MessageBody(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 29, TRUE
 #ifndef PASN_NOPRINTON
-      , "serviceRequest "
-        "serviceConfirmation "
-        "serviceRejection "
-        "serviceRelease "
-        "descriptorRequest "
-        "descriptorConfirmation "
-        "descriptorRejection "
-        "descriptorIDRequest "
-        "descriptorIDConfirmation "
-        "descriptorIDRejection "
-        "descriptorUpdate "
-        "descriptorUpdateAck "
-        "accessRequest "
-        "accessConfirmation "
-        "accessRejection "
-        "requestInProgress "
-        "nonStandardRequest "
-        "nonStandardConfirmation "
-        "nonStandardRejection "
-        "unknownMessageResponse "
-        "usageRequest "
-        "usageConfirmation "
-        "usageIndication "
-        "usageIndicationConfirmation "
-        "usageIndicationRejection "
-        "usageRejection "
-        "validationRequest "
-        "validationConfirmation "
-        "validationRejection "
-        "authenticationRequest "
-        "authenticationConfirmation "
-        "authenticationRejection "
+    ,(const PASN_Names *)Names_H501_MessageBody,32
 #endif
-    )
+)
 {
 }
 
@@ -882,6 +888,22 @@ PObject * H501_MessageBody::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H501_ServiceRejectionReason[]={
+      {"serviceUnavailable",0}
+     ,{"serviceRedirected",1}
+     ,{"security",2}
+     ,{"continue",3}
+     ,{"undefined",4}
+     ,{"unknownServiceID",5}
+     ,{"cannotSupportUsageSpec",6}
+     ,{"neededFeature",7}
+     ,{"genericDataReason",8}
+     ,{"usageUnavailable",9}
+     ,{"unknownUsageSendTo",10}
+};
+#endif
 //
 // ServiceRejectionReason
 //
@@ -889,19 +911,9 @@ PObject * H501_MessageBody::Clone() const
 H501_ServiceRejectionReason::H501_ServiceRejectionReason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 5, TRUE
 #ifndef PASN_NOPRINTON
-      , "serviceUnavailable "
-        "serviceRedirected "
-        "security "
-        "continue "
-        "undefined "
-        "unknownServiceID "
-        "cannotSupportUsageSpec "
-        "neededFeature "
-        "genericDataReason "
-        "usageUnavailable "
-        "unknownUsageSendTo "
+    ,(const PASN_Names *)Names_H501_ServiceRejectionReason,11
 #endif
-    )
+)
 {
 }
 
@@ -922,6 +934,15 @@ PObject * H501_ServiceRejectionReason::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H501_ServiceReleaseReason[]={
+      {"outOfService",0}
+     ,{"maintenance",1}
+     ,{"terminated",2}
+     ,{"expired",3}
+};
+#endif
 //
 // ServiceReleaseReason
 //
@@ -929,12 +950,9 @@ PObject * H501_ServiceRejectionReason::Clone() const
 H501_ServiceReleaseReason::H501_ServiceReleaseReason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "outOfService "
-        "maintenance "
-        "terminated "
-        "expired "
+    ,(const PASN_Names *)Names_H501_ServiceReleaseReason,4
 #endif
-    )
+)
 {
 }
 
@@ -955,6 +973,20 @@ PObject * H501_ServiceReleaseReason::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H501_DescriptorRejectionReason[]={
+      {"packetSizeExceeded",0}
+     ,{"illegalID",1}
+     ,{"security",2}
+     ,{"hopCountExceeded",3}
+     ,{"noServiceRelationship",4}
+     ,{"undefined",5}
+     ,{"neededFeature",6}
+     ,{"genericDataReason",7}
+     ,{"unknownServiceID",8}
+};
+#endif
 //
 // DescriptorRejectionReason
 //
@@ -962,17 +994,9 @@ PObject * H501_ServiceReleaseReason::Clone() const
 H501_DescriptorRejectionReason::H501_DescriptorRejectionReason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 6, TRUE
 #ifndef PASN_NOPRINTON
-      , "packetSizeExceeded "
-        "illegalID "
-        "security "
-        "hopCountExceeded "
-        "noServiceRelationship "
-        "undefined "
-        "neededFeature "
-        "genericDataReason "
-        "unknownServiceID "
+    ,(const PASN_Names *)Names_H501_DescriptorRejectionReason,9
 #endif
-    )
+)
 {
 }
 
@@ -1048,6 +1072,19 @@ PObject * H501_DescriptorIDRequest::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H501_DescriptorIDRejectionReason[]={
+      {"noDescriptors",0}
+     ,{"security",1}
+     ,{"hopCountExceeded",2}
+     ,{"noServiceRelationship",3}
+     ,{"undefined",4}
+     ,{"neededFeature",5}
+     ,{"genericDataReason",6}
+     ,{"unknownServiceID",7}
+};
+#endif
 //
 // DescriptorIDRejectionReason
 //
@@ -1055,16 +1092,9 @@ PObject * H501_DescriptorIDRequest::Clone() const
 H501_DescriptorIDRejectionReason::H501_DescriptorIDRejectionReason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 5, TRUE
 #ifndef PASN_NOPRINTON
-      , "noDescriptors "
-        "security "
-        "hopCountExceeded "
-        "noServiceRelationship "
-        "undefined "
-        "neededFeature "
-        "genericDataReason "
-        "unknownServiceID "
+    ,(const PASN_Names *)Names_H501_DescriptorIDRejectionReason,8
 #endif
-    )
+)
 {
 }
 
@@ -1140,6 +1170,28 @@ PObject * H501_DescriptorUpdateAck::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H501_AccessRejectionReason[]={
+      {"noMatch",0}
+     ,{"packetSizeExceeded",1}
+     ,{"security",2}
+     ,{"hopCountExceeded",3}
+     ,{"needCallInformation",4}
+     ,{"noServiceRelationship",5}
+     ,{"undefined",6}
+     ,{"neededFeature",7}
+     ,{"genericDataReason",8}
+     ,{"destinationUnavailable",9}
+     ,{"aliasesInconsistent",10}
+     ,{"resourceUnavailable",11}
+     ,{"incompleteAddress",12}
+     ,{"unknownServiceID",13}
+     ,{"usageUnavailable",14}
+     ,{"cannotSupportUsageSpec",15}
+     ,{"unknownUsageSendTo",16}
+};
+#endif
 //
 // AccessRejectionReason
 //
@@ -1147,25 +1199,9 @@ PObject * H501_DescriptorUpdateAck::Clone() const
 H501_AccessRejectionReason::H501_AccessRejectionReason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 7, TRUE
 #ifndef PASN_NOPRINTON
-      , "noMatch "
-        "packetSizeExceeded "
-        "security "
-        "hopCountExceeded "
-        "needCallInformation "
-        "noServiceRelationship "
-        "undefined "
-        "neededFeature "
-        "genericDataReason "
-        "destinationUnavailable "
-        "aliasesInconsistent "
-        "resourceUnavailable "
-        "incompleteAddress "
-        "unknownServiceID "
-        "usageUnavailable "
-        "cannotSupportUsageSpec "
-        "unknownUsageSendTo "
+    ,(const PASN_Names *)Names_H501_AccessRejectionReason,17
 #endif
-    )
+)
 {
 }
 
@@ -1324,6 +1360,19 @@ PObject * H501_UsageField::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H501_UsageRejectReason[]={
+      {"invalidCall",0}
+     ,{"unavailable",1}
+     ,{"security",2}
+     ,{"noServiceRelationship",3}
+     ,{"undefined",4}
+     ,{"neededFeature",5}
+     ,{"genericDataReason",6}
+     ,{"unknownServiceID",7}
+};
+#endif
 //
 // UsageRejectReason
 //
@@ -1331,16 +1380,9 @@ PObject * H501_UsageField::Clone() const
 H501_UsageRejectReason::H501_UsageRejectReason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 5, TRUE
 #ifndef PASN_NOPRINTON
-      , "invalidCall "
-        "unavailable "
-        "security "
-        "noServiceRelationship "
-        "undefined "
-        "neededFeature "
-        "genericDataReason "
-        "unknownServiceID "
+    ,(const PASN_Names *)Names_H501_UsageRejectReason,8
 #endif
-    )
+)
 {
 }
 
@@ -1416,6 +1458,19 @@ PObject * H501_UsageIndicationConfirmation::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H501_UsageIndicationRejectionReason[]={
+      {"unknownCall",0}
+     ,{"incomplete",1}
+     ,{"security",2}
+     ,{"noServiceRelationship",3}
+     ,{"undefined",4}
+     ,{"neededFeature",5}
+     ,{"genericDataReason",6}
+     ,{"unknownServiceID",7}
+};
+#endif
 //
 // UsageIndicationRejectionReason
 //
@@ -1423,16 +1478,9 @@ PObject * H501_UsageIndicationConfirmation::Clone() const
 H501_UsageIndicationRejectionReason::H501_UsageIndicationRejectionReason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 5, TRUE
 #ifndef PASN_NOPRINTON
-      , "unknownCall "
-        "incomplete "
-        "security "
-        "noServiceRelationship "
-        "undefined "
-        "neededFeature "
-        "genericDataReason "
-        "unknownServiceID "
+    ,(const PASN_Names *)Names_H501_UsageIndicationRejectionReason,8
 #endif
-    )
+)
 {
 }
 
@@ -1453,6 +1501,21 @@ PObject * H501_UsageIndicationRejectionReason::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H501_ValidationRejectionReason[]={
+      {"tokenNotValid",0}
+     ,{"security",1}
+     ,{"hopCountExceeded",2}
+     ,{"missingSourceInfo",3}
+     ,{"missingDestInfo",4}
+     ,{"noServiceRelationship",5}
+     ,{"undefined",6}
+     ,{"neededFeature",7}
+     ,{"genericDataReason",8}
+     ,{"unknownServiceID",9}
+};
+#endif
 //
 // ValidationRejectionReason
 //
@@ -1460,18 +1523,9 @@ PObject * H501_UsageIndicationRejectionReason::Clone() const
 H501_ValidationRejectionReason::H501_ValidationRejectionReason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 7, TRUE
 #ifndef PASN_NOPRINTON
-      , "tokenNotValid "
-        "security "
-        "hopCountExceeded "
-        "missingSourceInfo "
-        "missingDestInfo "
-        "noServiceRelationship "
-        "undefined "
-        "neededFeature "
-        "genericDataReason "
-        "unknownServiceID "
+    ,(const PASN_Names *)Names_H501_ValidationRejectionReason,10
 #endif
-    )
+)
 {
 }
 
@@ -1602,6 +1656,17 @@ PObject * H501_NonStandardConfirmation::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H501_NonStandardRejectionReason[]={
+      {"notSupported",0}
+     ,{"noServiceRelationship",1}
+     ,{"undefined",2}
+     ,{"neededFeature",3}
+     ,{"genericDataReason",4}
+     ,{"unknownServiceID",5}
+};
+#endif
 //
 // NonStandardRejectionReason
 //
@@ -1609,14 +1674,9 @@ PObject * H501_NonStandardConfirmation::Clone() const
 H501_NonStandardRejectionReason::H501_NonStandardRejectionReason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "notSupported "
-        "noServiceRelationship "
-        "undefined "
-        "neededFeature "
-        "genericDataReason "
-        "unknownServiceID "
+    ,(const PASN_Names *)Names_H501_NonStandardRejectionReason,6
 #endif
-    )
+)
 {
 }
 
@@ -1637,6 +1697,13 @@ PObject * H501_NonStandardRejectionReason::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H501_UnknownMessageReason[]={
+      {"notUnderstood",0}
+     ,{"undefined",1}
+};
+#endif
 //
 // UnknownMessageReason
 //
@@ -1644,10 +1711,9 @@ PObject * H501_NonStandardRejectionReason::Clone() const
 H501_UnknownMessageReason::H501_UnknownMessageReason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "notUnderstood "
-        "undefined "
+    ,(const PASN_Names *)Names_H501_UnknownMessageReason,2
 #endif
-    )
+)
 {
 }
 
@@ -1781,6 +1847,24 @@ PObject * H501_AuthenticationConfirmation::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H501_AuthenticationRejectionReason[]={
+      {"security",0}
+     ,{"hopCountExceeded",1}
+     ,{"noServiceRelationship",2}
+     ,{"undefined",3}
+     ,{"neededFeature",4}
+     ,{"genericDataReason",5}
+     ,{"unknownServiceID",6}
+     ,{"securityWrongSyncTime",7}
+     ,{"securityReplay",8}
+     ,{"securityWrongGeneralID",9}
+     ,{"securityWrongSendersID",10}
+     ,{"securityIntegrityFailed",11}
+     ,{"securityWrongOID",12}
+};
+#endif
 //
 // AuthenticationRejectionReason
 //
@@ -1788,21 +1872,9 @@ PObject * H501_AuthenticationConfirmation::Clone() const
 H501_AuthenticationRejectionReason::H501_AuthenticationRejectionReason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 13, TRUE
 #ifndef PASN_NOPRINTON
-      , "security "
-        "hopCountExceeded "
-        "noServiceRelationship "
-        "undefined "
-        "neededFeature "
-        "genericDataReason "
-        "unknownServiceID "
-        "securityWrongSyncTime "
-        "securityReplay "
-        "securityWrongGeneralID "
-        "securityWrongSendersID "
-        "securityIntegrityFailed "
-        "securityWrongOID "
+    ,(const PASN_Names *)Names_H501_AuthenticationRejectionReason,13
 #endif
-    )
+)
 {
 }
 
@@ -1823,6 +1895,14 @@ PObject * H501_AuthenticationRejectionReason::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H501_Pattern[]={
+      {"specific",0}
+     ,{"wildcard",1}
+     ,{"range",2}
+};
+#endif
 //
 // Pattern
 //
@@ -1830,11 +1910,9 @@ PObject * H501_AuthenticationRejectionReason::Clone() const
 H501_Pattern::H501_Pattern(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "specific "
-        "wildcard "
-        "range "
+    ,(const PASN_Names *)Names_H501_Pattern,3
 #endif
-    )
+)
 {
 }
 
@@ -1909,6 +1987,14 @@ PObject * H501_Pattern::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H501_AccessToken[]={
+      {"token",0}
+     ,{"cryptoToken",1}
+     ,{"genericData",2}
+};
+#endif
 //
 // AccessToken
 //
@@ -1916,11 +2002,9 @@ PObject * H501_Pattern::Clone() const
 H501_AccessToken::H501_AccessToken(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "token "
-        "cryptoToken "
-        "genericData "
+    ,(const PASN_Names *)Names_H501_AccessToken,3
 #endif
-    )
+)
 {
 }
 
@@ -2107,6 +2191,15 @@ PObject * H501_CallInformation::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H501_UsageCallStatus[]={
+      {"preConnect",0}
+     ,{"callInProgress",1}
+     ,{"callEnded",2}
+     ,{"registrationLost",3}
+};
+#endif
 //
 // UsageCallStatus
 //
@@ -2114,12 +2207,9 @@ PObject * H501_CallInformation::Clone() const
 H501_UsageCallStatus::H501_UsageCallStatus(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "preConnect "
-        "callInProgress "
-        "callEnded "
-        "registrationLost "
+    ,(const PASN_Names *)Names_H501_UsageCallStatus,4
 #endif
-    )
+)
 {
 }
 
@@ -2140,6 +2230,14 @@ PObject * H501_UsageCallStatus::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H501_Role[]={
+      {"originator",0}
+     ,{"destination",1}
+     ,{"nonStandardData",2}
+};
+#endif
 //
 // Role
 //
@@ -2147,11 +2245,9 @@ PObject * H501_UsageCallStatus::Clone() const
 H501_Role::H501_Role(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "originator "
-        "destination "
-        "nonStandardData "
+    ,(const PASN_Names *)Names_H501_Role,3
 #endif
-    )
+)
 {
 }
 
@@ -2777,6 +2873,13 @@ PObject * H501_ArrayOf_UpdateInformation::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H501_UpdateInformation_descriptorInfo[]={
+      {"descriptorID",0}
+     ,{"descriptor",1}
+};
+#endif
 //
 // UpdateInformation_descriptorInfo
 //
@@ -2784,10 +2887,9 @@ PObject * H501_ArrayOf_UpdateInformation::Clone() const
 H501_UpdateInformation_descriptorInfo::H501_UpdateInformation_descriptorInfo(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "descriptorID "
-        "descriptor "
+    ,(const PASN_Names *)Names_H501_UpdateInformation_descriptorInfo,2
 #endif
-    )
+)
 {
 }
 
@@ -2861,6 +2963,14 @@ PObject * H501_UpdateInformation_descriptorInfo::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H501_UpdateInformation_updateType[]={
+      {"added",0}
+     ,{"deleted",1}
+     ,{"changed",2}
+};
+#endif
 //
 // UpdateInformation_updateType
 //
@@ -2868,11 +2978,9 @@ PObject * H501_UpdateInformation_descriptorInfo::Clone() const
 H501_UpdateInformation_updateType::H501_UpdateInformation_updateType(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "added "
-        "deleted "
-        "changed "
+    ,(const PASN_Names *)Names_H501_UpdateInformation_updateType,3
 #endif
-    )
+)
 {
 }
 
@@ -3193,6 +3301,14 @@ PObject * H501_Pattern_range::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H501_RouteInformation_messageType[]={
+      {"sendAccessRequest",0}
+     ,{"sendSetup",1}
+     ,{"nonExistent",2}
+};
+#endif
 //
 // RouteInformation_messageType
 //
@@ -3200,11 +3316,9 @@ PObject * H501_Pattern_range::Clone() const
 H501_RouteInformation_messageType::H501_RouteInformation_messageType(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "sendAccessRequest "
-        "sendSetup "
-        "nonExistent "
+    ,(const PASN_Names *)Names_H501_RouteInformation_messageType,3
 #endif
-    )
+)
 {
 }
 
@@ -3349,6 +3463,17 @@ PObject * H501_ArrayOf_PriceElement::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H501_PriceElement_units[]={
+      {"seconds",0}
+     ,{"packets",1}
+     ,{"bytes",2}
+     ,{"initial",3}
+     ,{"minimum",4}
+     ,{"maximum",5}
+};
+#endif
 //
 // PriceElement_units
 //
@@ -3356,14 +3481,9 @@ PObject * H501_ArrayOf_PriceElement::Clone() const
 H501_PriceElement_units::H501_PriceElement_units(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 6, TRUE
 #ifndef PASN_NOPRINTON
-      , "seconds "
-        "packets "
-        "bytes "
-        "initial "
-        "minimum "
-        "maximum "
+    ,(const PASN_Names *)Names_H501_PriceElement_units,6
 #endif
-    )
+)
 {
 }
 

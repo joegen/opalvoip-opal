@@ -9,7 +9,7 @@
 #endif
 
 #include <ptlib.h>
-#include "asn/h4504.h"
+#include "h4504.h"
 
 #define new PNEW
 
@@ -18,6 +18,14 @@
 
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4504_CallHoldOperation[]={
+        {"holdNotific",101}
+       ,{"retrieveNotific",102}
+       ,{"remoteHold",103}
+       ,{"remoteRetrieve",104}
+};
+#endif
 //
 // CallHoldOperation
 //
@@ -25,10 +33,7 @@
 H4504_CallHoldOperation::H4504_CallHoldOperation(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 104, FALSE
 #ifndef PASN_NOPRINTON
-      , "holdNotific=101 "
-        "retrieveNotific "
-        "remoteHold "
-        "remoteRetrieve "
+    ,(const PASN_Names *)Names_H4504_CallHoldOperation,4
 #endif
     )
 {
@@ -51,6 +56,13 @@ PObject * H4504_CallHoldOperation::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4504_MixedExtension[]={
+      {"extension",0}
+     ,{"nonStandardData",1}
+};
+#endif
 //
 // MixedExtension
 //
@@ -58,10 +70,9 @@ PObject * H4504_CallHoldOperation::Clone() const
 H4504_MixedExtension::H4504_MixedExtension(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "extension "
-        "nonStandardData "
+    ,(const PASN_Names *)Names_H4504_MixedExtension,2
 #endif
-    )
+)
 {
 }
 

@@ -9,7 +9,7 @@
 #endif
 
 #include <ptlib.h>
-#include "asn/h4505.h"
+#include "h4505.h"
 
 #define new PNEW
 
@@ -18,6 +18,19 @@
 
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4505_CallParkPickupOperations[]={
+        {"cpRequest",106}
+       ,{"cpSetup",107}
+       ,{"groupIndicationOn",8}
+       ,{"groupIndicationOff",9}
+       ,{"pickrequ",110}
+       ,{"pickup",111}
+       ,{"pickExe",112}
+       ,{"cpNotify",113}
+       ,{"cpickupNotify",114}
+};
+#endif
 //
 // CallParkPickupOperations
 //
@@ -25,15 +38,7 @@
 H4505_CallParkPickupOperations::H4505_CallParkPickupOperations(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 114, FALSE
 #ifndef PASN_NOPRINTON
-      , "cpRequest=106 "
-        "cpSetup "
-        "groupIndicationOn=8 "
-        "groupIndicationOff "
-        "pickrequ=110 "
-        "pickup "
-        "pickExe "
-        "cpNotify "
-        "cpickupNotify "
+    ,(const PASN_Names *)Names_H4505_CallParkPickupOperations,9
 #endif
     )
 {
@@ -90,6 +95,14 @@ PObject * H4505_ParkedToPosition::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4505_ParkCondition[]={
+        {"unspecified",0}
+       ,{"parkedToUserIdle",1}
+       ,{"parkedToUserBusy",2}
+       ,{"parkedToGroup",3}
+};
+#endif
 //
 // ParkCondition
 //
@@ -97,10 +110,7 @@ PObject * H4505_ParkedToPosition::Clone() const
 H4505_ParkCondition::H4505_ParkCondition(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "unspecified "
-        "parkedToUserIdle "
-        "parkedToUserBusy "
-        "parkedToGroup "
+    ,(const PASN_Names *)Names_H4505_ParkCondition,4
 #endif
     )
 {
@@ -123,6 +133,12 @@ PObject * H4505_ParkCondition::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4505_CallType[]={
+        {"parkedCall",0}
+       ,{"alertingCall",1}
+};
+#endif
 //
 // CallType
 //
@@ -130,8 +146,7 @@ PObject * H4505_ParkCondition::Clone() const
 H4505_CallType::H4505_CallType(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 1, TRUE
 #ifndef PASN_NOPRINTON
-      , "parkedCall "
-        "alertingCall "
+    ,(const PASN_Names *)Names_H4505_CallType,2
 #endif
     )
 {
@@ -154,6 +169,13 @@ PObject * H4505_CallType::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4505_CallPickupErrors[]={
+        {"callPickupIdInvalid",2000}
+       ,{"callAlreadyPickedUp",2001}
+       ,{"undefined",2002}
+};
+#endif
 //
 // CallPickupErrors
 //
@@ -161,9 +183,7 @@ PObject * H4505_CallType::Clone() const
 H4505_CallPickupErrors::H4505_CallPickupErrors(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 2002, FALSE
 #ifndef PASN_NOPRINTON
-      , "callPickupIdInvalid=2000 "
-        "callAlreadyPickedUp "
-        "undefined "
+    ,(const PASN_Names *)Names_H4505_CallPickupErrors,3
 #endif
     )
 {

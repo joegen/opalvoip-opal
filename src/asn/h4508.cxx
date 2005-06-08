@@ -9,7 +9,7 @@
 #endif
 
 #include <ptlib.h>
-#include "asn/h4508.h"
+#include "h4508.h"
 
 #define new PNEW
 
@@ -18,6 +18,14 @@
 
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4508_NameOperations[]={
+        {"callingName",0}
+       ,{"alertingName",1}
+       ,{"connectedName",2}
+       ,{"busyName",3}
+};
+#endif
 //
 // NameOperations
 //
@@ -25,10 +33,7 @@
 H4508_NameOperations::H4508_NameOperations(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 3, FALSE
 #ifndef PASN_NOPRINTON
-      , "callingName "
-        "alertingName "
-        "connectedName "
-        "busyName "
+    ,(const PASN_Names *)Names_H4508_NameOperations,4
 #endif
     )
 {
@@ -51,6 +56,14 @@ PObject * H4508_NameOperations::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4508_Name[]={
+      {"namePresentationAllowed",0}
+     ,{"namePresentationRestricted",1}
+     ,{"nameNotAvailable",2}
+};
+#endif
 //
 // Name
 //
@@ -58,11 +71,9 @@ PObject * H4508_NameOperations::Clone() const
 H4508_Name::H4508_Name(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "namePresentationAllowed "
-        "namePresentationRestricted "
-        "nameNotAvailable "
+    ,(const PASN_Names *)Names_H4508_Name,3
 #endif
-    )
+)
 {
 }
 
@@ -139,6 +150,13 @@ PObject * H4508_Name::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4508_NamePresentationAllowed[]={
+      {"simpleName",0}
+     ,{"extendedName",1}
+};
+#endif
 //
 // NamePresentationAllowed
 //
@@ -146,10 +164,9 @@ PObject * H4508_Name::Clone() const
 H4508_NamePresentationAllowed::H4508_NamePresentationAllowed(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "simpleName "
-        "extendedName "
+    ,(const PASN_Names *)Names_H4508_NamePresentationAllowed,2
 #endif
-    )
+)
 {
 }
 
@@ -223,6 +240,14 @@ PObject * H4508_NamePresentationAllowed::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4508_NamePresentationRestricted[]={
+      {"simpleName",0}
+     ,{"extendedName",1}
+     ,{"restrictedNull",2}
+};
+#endif
 //
 // NamePresentationRestricted
 //
@@ -230,11 +255,9 @@ PObject * H4508_NamePresentationAllowed::Clone() const
 H4508_NamePresentationRestricted::H4508_NamePresentationRestricted(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "simpleName "
-        "extendedName "
-        "restrictedNull "
+    ,(const PASN_Names *)Names_H4508_NamePresentationRestricted,3
 #endif
-    )
+)
 {
 }
 

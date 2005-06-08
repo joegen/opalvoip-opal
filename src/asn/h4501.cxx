@@ -9,7 +9,7 @@
 #endif
 
 #include <ptlib.h>
-#include "asn/h4501.h"
+#include "h4501.h"
 
 #define new PNEW
 
@@ -18,6 +18,13 @@
 
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4501_EntityType[]={
+      {"endpoint",0}
+     ,{"anyEntity",1}
+};
+#endif
 //
 // EntityType
 //
@@ -25,10 +32,9 @@
 H4501_EntityType::H4501_EntityType(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "endpoint "
-        "anyEntity "
+    ,(const PASN_Names *)Names_H4501_EntityType,2
 #endif
-    )
+)
 {
 }
 
@@ -68,6 +74,14 @@ PObject * H4501_AddressInformation::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4501_InterpretationApdu[]={
+      {"discardAnyUnrecognizedInvokePdu",0}
+     ,{"clearCallIfAnyInvokePduNotRecognized",1}
+     ,{"rejectAnyUnrecognizedInvokePdu",2}
+};
+#endif
 //
 // InterpretationApdu
 //
@@ -75,11 +89,9 @@ PObject * H4501_AddressInformation::Clone() const
 H4501_InterpretationApdu::H4501_InterpretationApdu(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "discardAnyUnrecognizedInvokePdu "
-        "clearCallIfAnyInvokePduNotRecognized "
-        "rejectAnyUnrecognizedInvokePdu "
+    ,(const PASN_Names *)Names_H4501_InterpretationApdu,3
 #endif
-    )
+)
 {
 }
 
@@ -100,6 +112,12 @@ PObject * H4501_InterpretationApdu::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4501_ServiceApdus[]={
+      {"rosApdus",0}
+};
+#endif
 //
 // ServiceApdus
 //
@@ -107,9 +125,9 @@ PObject * H4501_InterpretationApdu::Clone() const
 H4501_ServiceApdus::H4501_ServiceApdus(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 1, TRUE
 #ifndef PASN_NOPRINTON
-      , "rosApdus "
+    ,(const PASN_Names *)Names_H4501_ServiceApdus,1
 #endif
-    )
+)
 {
 }
 
@@ -226,6 +244,15 @@ PObject * H4501_InvokeIDs::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4501_PresentedAddressScreened[]={
+      {"presentationAllowedAddress",0}
+     ,{"presentationRestricted",1}
+     ,{"numberNotAvailableDueToInterworking",2}
+     ,{"presentationRestrictedAddress",3}
+};
+#endif
 //
 // PresentedAddressScreened
 //
@@ -233,12 +260,9 @@ PObject * H4501_InvokeIDs::Clone() const
 H4501_PresentedAddressScreened::H4501_PresentedAddressScreened(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "presentationAllowedAddress "
-        "presentationRestricted "
-        "numberNotAvailableDueToInterworking "
-        "presentationRestrictedAddress "
+    ,(const PASN_Names *)Names_H4501_PresentedAddressScreened,4
 #endif
-    )
+)
 {
 }
 
@@ -292,6 +316,15 @@ PObject * H4501_PresentedAddressScreened::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4501_PresentedAddressUnscreened[]={
+      {"presentationAllowedAddress",0}
+     ,{"presentationRestricted",1}
+     ,{"numberNotAvailableDueToInterworking",2}
+     ,{"presentationRestrictedAddress",3}
+};
+#endif
 //
 // PresentedAddressUnscreened
 //
@@ -299,12 +332,9 @@ PObject * H4501_PresentedAddressScreened::Clone() const
 H4501_PresentedAddressUnscreened::H4501_PresentedAddressUnscreened(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "presentationAllowedAddress "
-        "presentationRestricted "
-        "numberNotAvailableDueToInterworking "
-        "presentationRestrictedAddress "
+    ,(const PASN_Names *)Names_H4501_PresentedAddressUnscreened,4
 #endif
-    )
+)
 {
 }
 
@@ -358,6 +388,15 @@ PObject * H4501_PresentedAddressUnscreened::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4501_PresentedNumberScreened[]={
+      {"presentationAllowedAddress",0}
+     ,{"presentationRestricted",1}
+     ,{"numberNotAvailableDueToInterworking",2}
+     ,{"presentationRestrictedAddress",3}
+};
+#endif
 //
 // PresentedNumberScreened
 //
@@ -365,12 +404,9 @@ PObject * H4501_PresentedAddressUnscreened::Clone() const
 H4501_PresentedNumberScreened::H4501_PresentedNumberScreened(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "presentationAllowedAddress "
-        "presentationRestricted "
-        "numberNotAvailableDueToInterworking "
-        "presentationRestrictedAddress "
+    ,(const PASN_Names *)Names_H4501_PresentedNumberScreened,4
 #endif
-    )
+)
 {
 }
 
@@ -424,6 +460,15 @@ PObject * H4501_PresentedNumberScreened::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4501_PresentedNumberUnscreened[]={
+      {"presentationAllowedAddress",0}
+     ,{"presentationRestricted",1}
+     ,{"numberNotAvailableDueToInterworking",2}
+     ,{"presentationRestrictedAddress",3}
+};
+#endif
 //
 // PresentedNumberUnscreened
 //
@@ -431,12 +476,9 @@ PObject * H4501_PresentedNumberScreened::Clone() const
 H4501_PresentedNumberUnscreened::H4501_PresentedNumberUnscreened(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "presentationAllowedAddress "
-        "presentationRestricted "
-        "numberNotAvailableDueToInterworking "
-        "presentationRestrictedAddress "
+    ,(const PASN_Names *)Names_H4501_PresentedNumberUnscreened,4
 #endif
-    )
+)
 {
 }
 
@@ -490,6 +532,13 @@ PObject * H4501_PresentedNumberUnscreened::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4501_PartySubaddress[]={
+      {"userSpecifiedSubaddress",0}
+     ,{"nsapSubaddress",1}
+};
+#endif
 //
 // PartySubaddress
 //
@@ -497,10 +546,9 @@ PObject * H4501_PresentedNumberUnscreened::Clone() const
 H4501_PartySubaddress::H4501_PartySubaddress(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "userSpecifiedSubaddress "
-        "nsapSubaddress "
+    ,(const PASN_Names *)Names_H4501_PartySubaddress,2
 #endif
-    )
+)
 {
 }
 
@@ -692,6 +740,14 @@ PObject * H4501_SubaddressInformation::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4501_ScreeningIndicator[]={
+        {"userProvidedNotScreened",0}
+       ,{"userProvidedVerifiedAndPassed",1}
+       ,{"userProvidedVerifiedAndFailed",2}
+       ,{"networkProvided",3}
+};
+#endif
 //
 // ScreeningIndicator
 //
@@ -699,10 +755,7 @@ PObject * H4501_SubaddressInformation::Clone() const
 H4501_ScreeningIndicator::H4501_ScreeningIndicator(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "userProvidedNotScreened "
-        "userProvidedVerifiedAndPassed "
-        "userProvidedVerifiedAndFailed "
-        "networkProvided "
+    ,(const PASN_Names *)Names_H4501_ScreeningIndicator,4
 #endif
     )
 {
@@ -751,6 +804,23 @@ PObject * H4501_PresentationAllowedIndicator::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4501_GeneralErrorList[]={
+        {"userNotSubscribed",0}
+       ,{"rejectedByNetwork",1}
+       ,{"rejectedByUser",2}
+       ,{"notAvailable",3}
+       ,{"insufficientInformation",5}
+       ,{"invalidServedUserNumber",6}
+       ,{"invalidCallState",7}
+       ,{"basicServiceNotProvided",8}
+       ,{"notIncomingCall",9}
+       ,{"supplementaryServiceInteractionNotAllowed",10}
+       ,{"resourceUnavailable",11}
+       ,{"callFailure",25}
+       ,{"proceduralError",43}
+};
+#endif
 //
 // GeneralErrorList
 //
@@ -758,19 +828,7 @@ PObject * H4501_PresentationAllowedIndicator::Clone() const
 H4501_GeneralErrorList::H4501_GeneralErrorList(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 43, FALSE
 #ifndef PASN_NOPRINTON
-      , "userNotSubscribed "
-        "rejectedByNetwork "
-        "rejectedByUser "
-        "notAvailable "
-        "insufficientInformation=5 "
-        "invalidServedUserNumber "
-        "invalidCallState "
-        "basicServiceNotProvided "
-        "notIncomingCall "
-        "supplementaryServiceInteractionNotAllowed "
-        "resourceUnavailable "
-        "callFailure=25 "
-        "proceduralError=43 "
+    ,(const PASN_Names *)Names_H4501_GeneralErrorList,13
 #endif
     )
 {

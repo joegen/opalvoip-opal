@@ -9,7 +9,7 @@
 #endif
 
 #include <ptlib.h>
-#include "asn/h45010.h"
+#include "h45010.h"
 
 #define new PNEW
 
@@ -18,6 +18,13 @@
 
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H45010_H323CallOfferOperations[]={
+        {"callOfferRequest",34}
+       ,{"remoteUserAlerting",115}
+       ,{"cfbOverride",49}
+};
+#endif
 //
 // H323CallOfferOperations
 //
@@ -25,9 +32,7 @@
 H45010_H323CallOfferOperations::H45010_H323CallOfferOperations(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 115, FALSE
 #ifndef PASN_NOPRINTON
-      , "callOfferRequest=34 "
-        "remoteUserAlerting=115 "
-        "cfbOverride=49 "
+    ,(const PASN_Names *)Names_H45010_H323CallOfferOperations,3
 #endif
     )
 {
