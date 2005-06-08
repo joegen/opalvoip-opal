@@ -9,7 +9,7 @@
 #endif
 
 #include <ptlib.h>
-#include "t38.h"
+#include "asn/t38.h"
 
 #define new PNEW
 

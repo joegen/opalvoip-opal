@@ -9,7 +9,7 @@
 #endif
 
 #include <ptlib.h>
-#include "h4508.h"
+#include "asn/h4508.h"
 
 #define new PNEW
 
