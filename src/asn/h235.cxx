@@ -9,7 +9,7 @@
 #endif
 
 #include <ptlib.h>
-#include "asn/h235.h"
+#include "h235.h"
 
 #define new PNEW
 
@@ -527,6 +527,13 @@ PObject * H235_ECpoint::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H235_ECKASDH[]={
+      {"eckasdhp",0}
+     ,{"eckasdh2",1}
+};
+#endif
 //
 // ECKASDH
 //
@@ -534,10 +541,9 @@ PObject * H235_ECpoint::Clone() const
 H235_ECKASDH::H235_ECKASDH(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "eckasdhp "
-        "eckasdh2 "
+    ,(const PASN_Names *)Names_H235_ECKASDH,2
 #endif
-    )
+)
 {
 }
 
@@ -779,6 +785,13 @@ PObject * H235_TypedCertificate::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H235_AuthenticationBES[]={
+      {"default",0}
+     ,{"radius",1}
+};
+#endif
 //
 // AuthenticationBES
 //
@@ -786,10 +799,9 @@ PObject * H235_TypedCertificate::Clone() const
 H235_AuthenticationBES::H235_AuthenticationBES(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "default "
-        "radius "
+    ,(const PASN_Names *)Names_H235_AuthenticationBES,2
 #endif
-    )
+)
 {
 }
 
@@ -810,6 +822,19 @@ PObject * H235_AuthenticationBES::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H235_AuthenticationMechanism[]={
+      {"dhExch",0}
+     ,{"pwdSymEnc",1}
+     ,{"pwdHash",2}
+     ,{"certSign",3}
+     ,{"ipsec",4}
+     ,{"tls",5}
+     ,{"nonStandard",6}
+     ,{"authenticationBES",7}
+};
+#endif
 //
 // AuthenticationMechanism
 //
@@ -817,16 +842,9 @@ PObject * H235_AuthenticationBES::Clone() const
 H235_AuthenticationMechanism::H235_AuthenticationMechanism(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 7, TRUE
 #ifndef PASN_NOPRINTON
-      , "dhExch "
-        "pwdSymEnc "
-        "pwdHash "
-        "certSign "
-        "ipsec "
-        "tls "
-        "nonStandard "
-        "authenticationBES "
+    ,(const PASN_Names *)Names_H235_AuthenticationMechanism,8
 #endif
-    )
+)
 {
 }
 
@@ -1943,6 +1961,15 @@ PObject * H235_H235CertificateSignature::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H235_H235Key[]={
+      {"secureChannel",0}
+     ,{"sharedSecret",1}
+     ,{"certProtectedKey",2}
+     ,{"secureSharedSecret",3}
+};
+#endif
 //
 // H235Key
 //
@@ -1950,12 +1977,9 @@ PObject * H235_H235CertificateSignature::Clone() const
 H235_H235Key::H235_H235Key(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "secureChannel "
-        "sharedSecret "
-        "certProtectedKey "
-        "secureSharedSecret "
+    ,(const PASN_Names *)Names_H235_H235Key,4
 #endif
-    )
+)
 {
 }
 
@@ -2309,6 +2333,15 @@ PObject * H235_EncodedPwdCertToken::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H235_CryptoToken[]={
+      {"cryptoEncryptedToken",0}
+     ,{"cryptoSignedToken",1}
+     ,{"cryptoHashedToken",2}
+     ,{"cryptoPwdEncr",3}
+};
+#endif
 //
 // CryptoToken
 //
@@ -2316,12 +2349,9 @@ PObject * H235_EncodedPwdCertToken::Clone() const
 H235_CryptoToken::H235_CryptoToken(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "cryptoEncryptedToken "
-        "cryptoSignedToken "
-        "cryptoHashedToken "
-        "cryptoPwdEncr "
+    ,(const PASN_Names *)Names_H235_CryptoToken,4
 #endif
-    )
+)
 {
 }
 

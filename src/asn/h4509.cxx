@@ -9,7 +9,7 @@
 #endif
 
 #include <ptlib.h>
-#include "asn/h4509.h"
+#include "h4509.h"
 
 #define new PNEW
 
@@ -18,6 +18,17 @@
 
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4509_H323CallCompletionOperations[]={
+        {"ccbsRequest",40}
+       ,{"ccnrRequest",27}
+       ,{"ccCancel",28}
+       ,{"ccExecPossible",29}
+       ,{"ccRingout",31}
+       ,{"ccSuspend",32}
+       ,{"ccResume",33}
+};
+#endif
 //
 // H323CallCompletionOperations
 //
@@ -25,13 +36,7 @@
 H4509_H323CallCompletionOperations::H4509_H323CallCompletionOperations(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 40, FALSE
 #ifndef PASN_NOPRINTON
-      , "ccbsRequest=40 "
-        "ccnrRequest=27 "
-        "ccCancel "
-        "ccExecPossible "
-        "ccRingout=31 "
-        "ccSuspend "
-        "ccResume "
+    ,(const PASN_Names *)Names_H4509_H323CallCompletionOperations,7
 #endif
     )
 {
@@ -54,6 +59,13 @@ PObject * H4509_H323CallCompletionOperations::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4509_CcArg[]={
+      {"shortArg",0}
+     ,{"longArg",1}
+};
+#endif
 //
 // CcArg
 //
@@ -61,10 +73,9 @@ PObject * H4509_H323CallCompletionOperations::Clone() const
 H4509_CcArg::H4509_CcArg(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "shortArg "
-        "longArg "
+    ,(const PASN_Names *)Names_H4509_CcArg,2
 #endif
-    )
+)
 {
 }
 
@@ -138,6 +149,14 @@ PObject * H4509_CcArg::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H4509_CallCompletionErrors[]={
+        {"shortTermRejection",1010}
+       ,{"longTermRejection",1011}
+       ,{"remoteUserBusyAgain",1012}
+       ,{"failureToMatch",1013}
+};
+#endif
 //
 // CallCompletionErrors
 //
@@ -145,10 +164,7 @@ PObject * H4509_CcArg::Clone() const
 H4509_CallCompletionErrors::H4509_CallCompletionErrors(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 1013, FALSE
 #ifndef PASN_NOPRINTON
-      , "shortTermRejection=1010 "
-        "longTermRejection "
-        "remoteUserBusyAgain "
-        "failureToMatch "
+    ,(const PASN_Names *)Names_H4509_CallCompletionErrors,4
 #endif
     )
 {

@@ -9,7 +9,7 @@
 #endif
 
 #include <ptlib.h>
-#include "asn/h225.h"
+#include "h225.h"
 
 #define new PNEW
 
@@ -19,6 +19,36 @@
 #include "h235_t.cxx"
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_ReleaseCompleteReason[]={
+      {"noBandwidth",0}
+     ,{"gatekeeperResources",1}
+     ,{"unreachableDestination",2}
+     ,{"destinationRejection",3}
+     ,{"invalidRevision",4}
+     ,{"noPermission",5}
+     ,{"unreachableGatekeeper",6}
+     ,{"gatewayResources",7}
+     ,{"badFormatAddress",8}
+     ,{"adaptiveBusy",9}
+     ,{"inConf",10}
+     ,{"undefinedReason",11}
+     ,{"facilityCallDeflection",12}
+     ,{"securityDenied",13}
+     ,{"calledPartyNotRegistered",14}
+     ,{"callerNotRegistered",15}
+     ,{"newConnectionNeeded",16}
+     ,{"nonStandardReason",17}
+     ,{"replaceWithConferenceInvite",18}
+     ,{"genericDataReason",19}
+     ,{"neededFeatureNotSupported",20}
+     ,{"tunnelledSignallingRejected",21}
+     ,{"invalidCID",22}
+     ,{"securityError",23}
+     ,{"hopCountExceeded",24}
+};
+#endif
 //
 // ReleaseCompleteReason
 //
@@ -26,33 +56,9 @@
 H225_ReleaseCompleteReason::H225_ReleaseCompleteReason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 12, TRUE
 #ifndef PASN_NOPRINTON
-      , "noBandwidth "
-        "gatekeeperResources "
-        "unreachableDestination "
-        "destinationRejection "
-        "invalidRevision "
-        "noPermission "
-        "unreachableGatekeeper "
-        "gatewayResources "
-        "badFormatAddress "
-        "adaptiveBusy "
-        "inConf "
-        "undefinedReason "
-        "facilityCallDeflection "
-        "securityDenied "
-        "calledPartyNotRegistered "
-        "callerNotRegistered "
-        "newConnectionNeeded "
-        "nonStandardReason "
-        "replaceWithConferenceInvite "
-        "genericDataReason "
-        "neededFeatureNotSupported "
-        "tunnelledSignallingRejected "
-        "invalidCID "
-        "securityError "
-        "hopCountExceeded "
+    ,(const PASN_Names *)Names_H225_ReleaseCompleteReason,25
 #endif
-    )
+)
 {
 }
 
@@ -175,6 +181,18 @@ PObject * H225_ReleaseCompleteReason::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_ScnConnectionType[]={
+      {"unknown",0}
+     ,{"bChannel",1}
+     ,{"hybrid2x64",2}
+     ,{"hybrid384",3}
+     ,{"hybrid1536",4}
+     ,{"hybrid1920",5}
+     ,{"multirate",6}
+};
+#endif
 //
 // ScnConnectionType
 //
@@ -182,15 +200,9 @@ PObject * H225_ReleaseCompleteReason::Clone() const
 H225_ScnConnectionType::H225_ScnConnectionType(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 7, TRUE
 #ifndef PASN_NOPRINTON
-      , "unknown "
-        "bChannel "
-        "hybrid2x64 "
-        "hybrid384 "
-        "hybrid1536 "
-        "hybrid1920 "
-        "multirate "
+    ,(const PASN_Names *)Names_H225_ScnConnectionType,7
 #endif
-    )
+)
 {
 }
 
@@ -211,6 +223,17 @@ PObject * H225_ScnConnectionType::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_ScnConnectionAggregation[]={
+      {"auto",0}
+     ,{"none",1}
+     ,{"h221",2}
+     ,{"bonded_mode1",3}
+     ,{"bonded_mode2",4}
+     ,{"bonded_mode3",5}
+};
+#endif
 //
 // ScnConnectionAggregation
 //
@@ -218,14 +241,9 @@ PObject * H225_ScnConnectionType::Clone() const
 H225_ScnConnectionAggregation::H225_ScnConnectionAggregation(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 6, TRUE
 #ifndef PASN_NOPRINTON
-      , "auto "
-        "none "
-        "h221 "
-        "bonded_mode1 "
-        "bonded_mode2 "
-        "bonded_mode3 "
+    ,(const PASN_Names *)Names_H225_ScnConnectionAggregation,6
 #endif
-    )
+)
 {
 }
 
@@ -246,6 +264,14 @@ PObject * H225_ScnConnectionAggregation::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_PresentationIndicator[]={
+      {"presentationAllowed",0}
+     ,{"presentationRestricted",1}
+     ,{"addressNotAvailable",2}
+};
+#endif
 //
 // PresentationIndicator
 //
@@ -253,11 +279,9 @@ PObject * H225_ScnConnectionAggregation::Clone() const
 H225_PresentationIndicator::H225_PresentationIndicator(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "presentationAllowed "
-        "presentationRestricted "
-        "addressNotAvailable "
+    ,(const PASN_Names *)Names_H225_PresentationIndicator,3
 #endif
-    )
+)
 {
 }
 
@@ -278,6 +302,14 @@ PObject * H225_PresentationIndicator::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_ScreeningIndicator[]={
+        {"userProvidedNotScreened",0}
+       ,{"userProvidedVerifiedAndPassed",1}
+       ,{"userProvidedVerifiedAndFailed",2}
+       ,{"networkProvided",3}
+};
+#endif
 //
 // ScreeningIndicator
 //
@@ -285,10 +317,7 @@ PObject * H225_PresentationIndicator::Clone() const
 H225_ScreeningIndicator::H225_ScreeningIndicator(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "userProvidedNotScreened "
-        "userProvidedVerifiedAndPassed "
-        "userProvidedVerifiedAndFailed "
-        "networkProvided "
+    ,(const PASN_Names *)Names_H225_ScreeningIndicator,4
 #endif
     )
 {
@@ -311,6 +340,22 @@ PObject * H225_ScreeningIndicator::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_FacilityReason[]={
+      {"routeCallToGatekeeper",0}
+     ,{"callForwarded",1}
+     ,{"routeCallToMC",2}
+     ,{"undefinedReason",3}
+     ,{"conferenceListChoice",4}
+     ,{"startH245",5}
+     ,{"noH245",6}
+     ,{"newTokens",7}
+     ,{"featureSetUpdate",8}
+     ,{"forwardedElements",9}
+     ,{"transportedInformation",10}
+};
+#endif
 //
 // FacilityReason
 //
@@ -318,19 +363,9 @@ PObject * H225_ScreeningIndicator::Clone() const
 H225_FacilityReason::H225_FacilityReason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "routeCallToGatekeeper "
-        "callForwarded "
-        "routeCallToMC "
-        "undefinedReason "
-        "conferenceListChoice "
-        "startH245 "
-        "noH245 "
-        "newTokens "
-        "featureSetUpdate "
-        "forwardedElements "
-        "transportedInformation "
+    ,(const PASN_Names *)Names_H225_FacilityReason,11
 #endif
-    )
+)
 {
 }
 
@@ -351,6 +386,18 @@ PObject * H225_FacilityReason::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_TransportAddress[]={
+      {"ipAddress",0}
+     ,{"ipSourceRoute",1}
+     ,{"ipxAddress",2}
+     ,{"ip6Address",3}
+     ,{"netBios",4}
+     ,{"nsap",5}
+     ,{"nonStandardAddress",6}
+};
+#endif
 //
 // TransportAddress
 //
@@ -358,15 +405,9 @@ PObject * H225_FacilityReason::Clone() const
 H225_TransportAddress::H225_TransportAddress(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 7, TRUE
 #ifndef PASN_NOPRINTON
-      , "ipAddress "
-        "ipSourceRoute "
-        "ipxAddress "
-        "ip6Address "
-        "netBios "
-        "nsap "
-        "nonStandardAddress "
+    ,(const PASN_Names *)Names_H225_TransportAddress,7
 #endif
-    )
+)
 {
 }
 
@@ -523,6 +564,23 @@ PObject * H225_TransportAddress::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_SupportedProtocols[]={
+      {"nonStandardData",0}
+     ,{"h310",1}
+     ,{"h320",2}
+     ,{"h321",3}
+     ,{"h322",4}
+     ,{"h323",5}
+     ,{"h324",6}
+     ,{"voice",7}
+     ,{"t120_only",8}
+     ,{"nonStandardProtocol",9}
+     ,{"t38FaxAnnexbOnly",10}
+     ,{"sip",11}
+};
+#endif
 //
 // SupportedProtocols
 //
@@ -530,20 +588,9 @@ PObject * H225_TransportAddress::Clone() const
 H225_SupportedProtocols::H225_SupportedProtocols(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 9, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandardData "
-        "h310 "
-        "h320 "
-        "h321 "
-        "h322 "
-        "h323 "
-        "h324 "
-        "voice "
-        "t120_only "
-        "nonStandardProtocol "
-        "t38FaxAnnexbOnly "
-        "sip "
+    ,(const PASN_Names *)Names_H225_SupportedProtocols,12
 #endif
-    )
+)
 {
 }
 
@@ -1048,6 +1095,13 @@ PObject * H225_TunnelledProtocolAlternateIdentifier::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_NonStandardIdentifier[]={
+      {"object",0}
+     ,{"h221NonStandard",1}
+};
+#endif
 //
 // NonStandardIdentifier
 //
@@ -1055,10 +1109,9 @@ PObject * H225_TunnelledProtocolAlternateIdentifier::Clone() const
 H225_NonStandardIdentifier::H225_NonStandardIdentifier(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "object "
-        "h221NonStandard "
+    ,(const PASN_Names *)Names_H225_NonStandardIdentifier,2
 #endif
-    )
+)
 {
 }
 
@@ -1110,6 +1163,18 @@ PObject * H225_NonStandardIdentifier::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_AliasAddress[]={
+      {"dialedDigits",0}
+     ,{"h323_ID",1}
+     ,{"url_ID",2}
+     ,{"transportID",3}
+     ,{"email_ID",4}
+     ,{"partyNumber",5}
+     ,{"mobileUIM",6}
+};
+#endif
 //
 // AliasAddress
 //
@@ -1117,15 +1182,9 @@ PObject * H225_NonStandardIdentifier::Clone() const
 H225_AliasAddress::H225_AliasAddress(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "dialedDigits "
-        "h323_ID "
-        "url_ID "
-        "transportID "
-        "email_ID "
-        "partyNumber "
-        "mobileUIM "
+    ,(const PASN_Names *)Names_H225_AliasAddress,7
 #endif
-    )
+)
 {
 }
 
@@ -1241,6 +1300,13 @@ PObject * H225_AliasAddress::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_AddressPattern[]={
+      {"wildcard",0}
+     ,{"range",1}
+};
+#endif
 //
 // AddressPattern
 //
@@ -1248,10 +1314,9 @@ PObject * H225_AliasAddress::Clone() const
 H225_AddressPattern::H225_AddressPattern(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "wildcard "
-        "range "
+    ,(const PASN_Names *)Names_H225_AddressPattern,2
 #endif
-    )
+)
 {
 }
 
@@ -1325,6 +1390,16 @@ PObject * H225_AddressPattern::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_PartyNumber[]={
+      {"e164Number",0}
+     ,{"dataPartyNumber",1}
+     ,{"telexPartyNumber",2}
+     ,{"privateNumber",3}
+     ,{"nationalStandardPartyNumber",4}
+};
+#endif
 //
 // PartyNumber
 //
@@ -1332,13 +1407,9 @@ PObject * H225_AddressPattern::Clone() const
 H225_PartyNumber::H225_PartyNumber(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 5, TRUE
 #ifndef PASN_NOPRINTON
-      , "e164Number "
-        "dataPartyNumber "
-        "telexPartyNumber "
-        "privateNumber "
-        "nationalStandardPartyNumber "
+    ,(const PASN_Names *)Names_H225_PartyNumber,5
 #endif
-    )
+)
 {
 }
 
@@ -1474,6 +1545,17 @@ PObject * H225_NumberDigits::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_PublicTypeOfNumber[]={
+      {"unknown",0}
+     ,{"internationalNumber",1}
+     ,{"nationalNumber",2}
+     ,{"networkSpecificNumber",3}
+     ,{"subscriberNumber",4}
+     ,{"abbreviatedNumber",5}
+};
+#endif
 //
 // PublicTypeOfNumber
 //
@@ -1481,14 +1563,9 @@ PObject * H225_NumberDigits::Clone() const
 H225_PublicTypeOfNumber::H225_PublicTypeOfNumber(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 6, TRUE
 #ifndef PASN_NOPRINTON
-      , "unknown "
-        "internationalNumber "
-        "nationalNumber "
-        "networkSpecificNumber "
-        "subscriberNumber "
-        "abbreviatedNumber "
+    ,(const PASN_Names *)Names_H225_PublicTypeOfNumber,6
 #endif
-    )
+)
 {
 }
 
@@ -1509,6 +1586,17 @@ PObject * H225_PublicTypeOfNumber::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_PrivateTypeOfNumber[]={
+      {"unknown",0}
+     ,{"level2RegionalNumber",1}
+     ,{"level1RegionalNumber",2}
+     ,{"pISNSpecificNumber",3}
+     ,{"localNumber",4}
+     ,{"abbreviatedNumber",5}
+};
+#endif
 //
 // PrivateTypeOfNumber
 //
@@ -1516,14 +1604,9 @@ PObject * H225_PublicTypeOfNumber::Clone() const
 H225_PrivateTypeOfNumber::H225_PrivateTypeOfNumber(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 6, TRUE
 #ifndef PASN_NOPRINTON
-      , "unknown "
-        "level2RegionalNumber "
-        "level1RegionalNumber "
-        "pISNSpecificNumber "
-        "localNumber "
-        "abbreviatedNumber "
+    ,(const PASN_Names *)Names_H225_PrivateTypeOfNumber,6
 #endif
-    )
+)
 {
 }
 
@@ -1544,6 +1627,13 @@ PObject * H225_PrivateTypeOfNumber::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_MobileUIM[]={
+      {"ansi_41_uim",0}
+     ,{"gsm_uim",1}
+};
+#endif
 //
 // MobileUIM
 //
@@ -1551,10 +1641,9 @@ PObject * H225_PrivateTypeOfNumber::Clone() const
 H225_MobileUIM::H225_MobileUIM(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "ansi_41_uim "
-        "gsm_uim "
+    ,(const PASN_Names *)Names_H225_MobileUIM,2
 #endif
-    )
+)
 {
 }
 
@@ -1893,6 +1982,14 @@ PObject * H225_ExtendedAliasAddress::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_UseSpecifiedTransport[]={
+      {"tcp",0}
+     ,{"annexE",1}
+     ,{"sctp",2}
+};
+#endif
 //
 // UseSpecifiedTransport
 //
@@ -1900,11 +1997,9 @@ PObject * H225_ExtendedAliasAddress::Clone() const
 H225_UseSpecifiedTransport::H225_UseSpecifiedTransport(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "tcp "
-        "annexE "
-        "sctp "
+    ,(const PASN_Names *)Names_H225_UseSpecifiedTransport,3
 #endif
-    )
+)
 {
 }
 
@@ -1925,6 +2020,14 @@ PObject * H225_UseSpecifiedTransport::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_SecurityServiceMode[]={
+      {"nonStandard",0}
+     ,{"none",1}
+     ,{"default",2}
+};
+#endif
 //
 // SecurityServiceMode
 //
@@ -1932,11 +2035,9 @@ PObject * H225_UseSpecifiedTransport::Clone() const
 H225_SecurityServiceMode::H225_SecurityServiceMode(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "none "
-        "default "
+    ,(const PASN_Names *)Names_H225_SecurityServiceMode,3
 #endif
-    )
+)
 {
 }
 
@@ -1989,6 +2090,27 @@ PObject * H225_SecurityServiceMode::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_SecurityErrors[]={
+      {"securityWrongSyncTime",0}
+     ,{"securityReplay",1}
+     ,{"securityWrongGeneralID",2}
+     ,{"securityWrongSendersID",3}
+     ,{"securityIntegrityFailed",4}
+     ,{"securityWrongOID",5}
+     ,{"securityDHmismatch",6}
+     ,{"securityCertificateExpired",7}
+     ,{"securityCertificateDateInvalid",8}
+     ,{"securityCertificateRevoked",9}
+     ,{"securityCertificateNotReadable",10}
+     ,{"securityCertificateSignatureInvalid",11}
+     ,{"securityCertificateMissing",12}
+     ,{"securityCertificateIncomplete",13}
+     ,{"securityUnsupportedCertificateAlgOID",14}
+     ,{"securityUnknownCA",15}
+};
+#endif
 //
 // SecurityErrors
 //
@@ -1996,24 +2118,9 @@ PObject * H225_SecurityServiceMode::Clone() const
 H225_SecurityErrors::H225_SecurityErrors(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 16, TRUE
 #ifndef PASN_NOPRINTON
-      , "securityWrongSyncTime "
-        "securityReplay "
-        "securityWrongGeneralID "
-        "securityWrongSendersID "
-        "securityIntegrityFailed "
-        "securityWrongOID "
-        "securityDHmismatch "
-        "securityCertificateExpired "
-        "securityCertificateDateInvalid "
-        "securityCertificateRevoked "
-        "securityCertificateNotReadable "
-        "securityCertificateSignatureInvalid "
-        "securityCertificateMissing "
-        "securityCertificateIncomplete "
-        "securityUnsupportedCertificateAlgOID "
-        "securityUnknownCA "
+    ,(const PASN_Names *)Names_H225_SecurityErrors,16
 #endif
-    )
+)
 {
 }
 
@@ -2034,6 +2141,17 @@ PObject * H225_SecurityErrors::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_SecurityErrors2[]={
+      {"securityWrongSyncTime",0}
+     ,{"securityReplay",1}
+     ,{"securityWrongGeneralID",2}
+     ,{"securityWrongSendersID",3}
+     ,{"securityIntegrityFailed",4}
+     ,{"securityWrongOID",5}
+};
+#endif
 //
 // SecurityErrors2
 //
@@ -2041,14 +2159,9 @@ PObject * H225_SecurityErrors::Clone() const
 H225_SecurityErrors2::H225_SecurityErrors2(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 6, TRUE
 #ifndef PASN_NOPRINTON
-      , "securityWrongSyncTime "
-        "securityReplay "
-        "securityWrongGeneralID "
-        "securityWrongSendersID "
-        "securityIntegrityFailed "
-        "securityWrongOID "
+    ,(const PASN_Names *)Names_H225_SecurityErrors2,6
 #endif
-    )
+)
 {
 }
 
@@ -2069,6 +2182,15 @@ PObject * H225_SecurityErrors2::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_H245Security[]={
+      {"nonStandard",0}
+     ,{"noSecurity",1}
+     ,{"tls",2}
+     ,{"ipsec",3}
+};
+#endif
 //
 // H245Security
 //
@@ -2076,12 +2198,9 @@ PObject * H225_SecurityErrors2::Clone() const
 H225_H245Security::H225_H245Security(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "noSecurity "
-        "tls "
-        "ipsec "
+    ,(const PASN_Names *)Names_H225_H245Security,4
 #endif
-    )
+)
 {
 }
 
@@ -2802,6 +2921,13 @@ PObject * H225_CallIdentifier::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_EncryptIntAlg[]={
+      {"nonStandard",0}
+     ,{"isoAlgorithm",1}
+};
+#endif
 //
 // EncryptIntAlg
 //
@@ -2809,10 +2935,9 @@ PObject * H225_CallIdentifier::Clone() const
 H225_EncryptIntAlg::H225_EncryptIntAlg(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "isoAlgorithm "
+    ,(const PASN_Names *)Names_H225_EncryptIntAlg,2
 #endif
-    )
+)
 {
 }
 
@@ -2864,6 +2989,15 @@ PObject * H225_EncryptIntAlg::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_NonIsoIntegrityMechanism[]={
+      {"hMAC_MD5",0}
+     ,{"hMAC_iso10118_2_s",1}
+     ,{"hMAC_iso10118_2_l",2}
+     ,{"hMAC_iso10118_3",3}
+};
+#endif
 //
 // NonIsoIntegrityMechanism
 //
@@ -2871,12 +3005,9 @@ PObject * H225_EncryptIntAlg::Clone() const
 H225_NonIsoIntegrityMechanism::H225_NonIsoIntegrityMechanism(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "hMAC_MD5 "
-        "hMAC_iso10118_2_s "
-        "hMAC_iso10118_2_l "
-        "hMAC_iso10118_3 "
+    ,(const PASN_Names *)Names_H225_NonIsoIntegrityMechanism,4
 #endif
-    )
+)
 {
 }
 
@@ -2932,6 +3063,15 @@ PObject * H225_NonIsoIntegrityMechanism::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_IntegrityMechanism[]={
+      {"nonStandard",0}
+     ,{"digSig",1}
+     ,{"iso9797",2}
+     ,{"nonIsoIM",3}
+};
+#endif
 //
 // IntegrityMechanism
 //
@@ -2939,12 +3079,9 @@ PObject * H225_NonIsoIntegrityMechanism::Clone() const
 H225_IntegrityMechanism::H225_IntegrityMechanism(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "digSig "
-        "iso9797 "
-        "nonIsoIM "
+    ,(const PASN_Names *)Names_H225_IntegrityMechanism,4
 #endif
-    )
+)
 {
 }
 
@@ -3148,6 +3285,19 @@ PObject * H225_EncodedFastStartToken::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_CryptoH323Token[]={
+      {"cryptoEPPwdHash",0}
+     ,{"cryptoGKPwdHash",1}
+     ,{"cryptoEPPwdEncr",2}
+     ,{"cryptoGKPwdEncr",3}
+     ,{"cryptoEPCert",4}
+     ,{"cryptoGKCert",5}
+     ,{"cryptoFastStart",6}
+     ,{"nestedcryptoToken",7}
+};
+#endif
 //
 // CryptoH323Token
 //
@@ -3155,16 +3305,9 @@ PObject * H225_EncodedFastStartToken::Clone() const
 H225_CryptoH323Token::H225_CryptoH323Token(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 8, TRUE
 #ifndef PASN_NOPRINTON
-      , "cryptoEPPwdHash "
-        "cryptoGKPwdHash "
-        "cryptoEPPwdEncr "
-        "cryptoGKPwdEncr "
-        "cryptoEPCert "
-        "cryptoGKCert "
-        "cryptoFastStart "
-        "nestedcryptoToken "
+    ,(const PASN_Names *)Names_H225_CryptoH323Token,8
 #endif
-    )
+)
 {
 }
 
@@ -3596,6 +3739,15 @@ PObject * H225_CarrierInfo::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_ServiceControlDescriptor[]={
+      {"url",0}
+     ,{"signal",1}
+     ,{"nonStandard",2}
+     ,{"callCreditServiceControl",3}
+};
+#endif
 //
 // ServiceControlDescriptor
 //
@@ -3603,12 +3755,9 @@ PObject * H225_CarrierInfo::Clone() const
 H225_ServiceControlDescriptor::H225_ServiceControlDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "url "
-        "signal "
-        "nonStandard "
-        "callCreditServiceControl "
+    ,(const PASN_Names *)Names_H225_ServiceControlDescriptor,4
 #endif
-    )
+)
 {
 }
 
@@ -3711,6 +3860,13 @@ PObject * H225_ServiceControlDescriptor::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_CallTerminationCause[]={
+      {"releaseCompleteReason",0}
+     ,{"releaseCompleteCauseIE",1}
+};
+#endif
 //
 // CallTerminationCause
 //
@@ -3718,10 +3874,9 @@ PObject * H225_ServiceControlDescriptor::Clone() const
 H225_CallTerminationCause::H225_CallTerminationCause(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "releaseCompleteReason "
-        "releaseCompleteCauseIE "
+    ,(const PASN_Names *)Names_H225_CallTerminationCause,2
 #endif
-    )
+)
 {
 }
 
@@ -3863,6 +4018,14 @@ PObject * H225_CallCreditCapability::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_GenericIdentifier[]={
+      {"standard",0}
+     ,{"oid",1}
+     ,{"nonStandard",2}
+};
+#endif
 //
 // GenericIdentifier
 //
@@ -3870,11 +4033,9 @@ PObject * H225_CallCreditCapability::Clone() const
 H225_GenericIdentifier::H225_GenericIdentifier(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "standard "
-        "oid "
-        "nonStandard "
+    ,(const PASN_Names *)Names_H225_GenericIdentifier,3
 #endif
-    )
+)
 {
 }
 
@@ -3930,6 +4091,23 @@ PObject * H225_GenericIdentifier::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_Content[]={
+      {"raw",0}
+     ,{"text",1}
+     ,{"unicode",2}
+     ,{"bool",3}
+     ,{"number8",4}
+     ,{"number16",5}
+     ,{"number32",6}
+     ,{"id",7}
+     ,{"alias",8}
+     ,{"transport",9}
+     ,{"compound",10}
+     ,{"nested",11}
+};
+#endif
 //
 // Content
 //
@@ -3937,20 +4115,9 @@ PObject * H225_GenericIdentifier::Clone() const
 H225_Content::H225_Content(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 12, TRUE
 #ifndef PASN_NOPRINTON
-      , "raw "
-        "text "
-        "unicode "
-        "bool "
-        "number8 "
-        "number16 "
-        "number32 "
-        "id "
-        "alias "
-        "transport "
-        "compound "
-        "nested "
+    ,(const PASN_Names *)Names_H225_Content,12
 #endif
-    )
+)
 {
 }
 
@@ -4214,6 +4381,44 @@ PObject * H225_TransportChannelInfo::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_RasMessage[]={
+      {"gatekeeperRequest",0}
+     ,{"gatekeeperConfirm",1}
+     ,{"gatekeeperReject",2}
+     ,{"registrationRequest",3}
+     ,{"registrationConfirm",4}
+     ,{"registrationReject",5}
+     ,{"unregistrationRequest",6}
+     ,{"unregistrationConfirm",7}
+     ,{"unregistrationReject",8}
+     ,{"admissionRequest",9}
+     ,{"admissionConfirm",10}
+     ,{"admissionReject",11}
+     ,{"bandwidthRequest",12}
+     ,{"bandwidthConfirm",13}
+     ,{"bandwidthReject",14}
+     ,{"disengageRequest",15}
+     ,{"disengageConfirm",16}
+     ,{"disengageReject",17}
+     ,{"locationRequest",18}
+     ,{"locationConfirm",19}
+     ,{"locationReject",20}
+     ,{"infoRequest",21}
+     ,{"infoRequestResponse",22}
+     ,{"nonStandardMessage",23}
+     ,{"unknownMessageResponse",24}
+     ,{"requestInProgress",25}
+     ,{"resourcesAvailableIndicate",26}
+     ,{"resourcesAvailableConfirm",27}
+     ,{"infoRequestAck",28}
+     ,{"infoRequestNak",29}
+     ,{"serviceControlIndication",30}
+     ,{"serviceControlResponse",31}
+     ,{"admissionConfirmSequence",32}
+};
+#endif
 //
 // RasMessage
 //
@@ -4221,41 +4426,9 @@ PObject * H225_TransportChannelInfo::Clone() const
 H225_RasMessage::H225_RasMessage(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 25, TRUE
 #ifndef PASN_NOPRINTON
-      , "gatekeeperRequest "
-        "gatekeeperConfirm "
-        "gatekeeperReject "
-        "registrationRequest "
-        "registrationConfirm "
-        "registrationReject "
-        "unregistrationRequest "
-        "unregistrationConfirm "
-        "unregistrationReject "
-        "admissionRequest "
-        "admissionConfirm "
-        "admissionReject "
-        "bandwidthRequest "
-        "bandwidthConfirm "
-        "bandwidthReject "
-        "disengageRequest "
-        "disengageConfirm "
-        "disengageReject "
-        "locationRequest "
-        "locationConfirm "
-        "locationReject "
-        "infoRequest "
-        "infoRequestResponse "
-        "nonStandardMessage "
-        "unknownMessageResponse "
-        "requestInProgress "
-        "resourcesAvailableIndicate "
-        "resourcesAvailableConfirm "
-        "infoRequestAck "
-        "infoRequestNak "
-        "serviceControlIndication "
-        "serviceControlResponse "
-        "admissionConfirmSequence "
+    ,(const PASN_Names *)Names_H225_RasMessage,33
 #endif
-    )
+)
 {
 }
 
@@ -5104,6 +5277,19 @@ PObject * H225_RasMessage::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_GatekeeperRejectReason[]={
+      {"resourceUnavailable",0}
+     ,{"terminalExcluded",1}
+     ,{"invalidRevision",2}
+     ,{"undefinedReason",3}
+     ,{"securityDenial",4}
+     ,{"genericDataReason",5}
+     ,{"neededFeatureNotSupported",6}
+     ,{"securityError",7}
+};
+#endif
 //
 // GatekeeperRejectReason
 //
@@ -5111,16 +5297,9 @@ PObject * H225_RasMessage::Clone() const
 H225_GatekeeperRejectReason::H225_GatekeeperRejectReason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "resourceUnavailable "
-        "terminalExcluded "
-        "invalidRevision "
-        "undefinedReason "
-        "securityDenial "
-        "genericDataReason "
-        "neededFeatureNotSupported "
-        "securityError "
+    ,(const PASN_Names *)Names_H225_GatekeeperRejectReason,8
 #endif
-    )
+)
 {
 }
 
@@ -5178,6 +5357,29 @@ PObject * H225_GatekeeperRejectReason::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_RegistrationRejectReason[]={
+      {"discoveryRequired",0}
+     ,{"invalidRevision",1}
+     ,{"invalidCallSignalAddress",2}
+     ,{"invalidRASAddress",3}
+     ,{"duplicateAlias",4}
+     ,{"invalidTerminalType",5}
+     ,{"undefinedReason",6}
+     ,{"transportNotSupported",7}
+     ,{"transportQOSNotSupported",8}
+     ,{"resourceUnavailable",9}
+     ,{"invalidAlias",10}
+     ,{"securityDenial",11}
+     ,{"fullRegistrationRequired",12}
+     ,{"additiveRegistrationNotSupported",13}
+     ,{"invalidTerminalAliases",14}
+     ,{"genericDataReason",15}
+     ,{"neededFeatureNotSupported",16}
+     ,{"securityError",17}
+};
+#endif
 //
 // RegistrationRejectReason
 //
@@ -5185,26 +5387,9 @@ PObject * H225_GatekeeperRejectReason::Clone() const
 H225_RegistrationRejectReason::H225_RegistrationRejectReason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 8, TRUE
 #ifndef PASN_NOPRINTON
-      , "discoveryRequired "
-        "invalidRevision "
-        "invalidCallSignalAddress "
-        "invalidRASAddress "
-        "duplicateAlias "
-        "invalidTerminalType "
-        "undefinedReason "
-        "transportNotSupported "
-        "transportQOSNotSupported "
-        "resourceUnavailable "
-        "invalidAlias "
-        "securityDenial "
-        "fullRegistrationRequired "
-        "additiveRegistrationNotSupported "
-        "invalidTerminalAliases "
-        "genericDataReason "
-        "neededFeatureNotSupported "
-        "securityError "
+    ,(const PASN_Names *)Names_H225_RegistrationRejectReason,18
 #endif
-    )
+)
 {
 }
 
@@ -5320,6 +5505,17 @@ PObject * H225_RegistrationRejectReason::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_UnregRequestReason[]={
+      {"reregistrationRequired",0}
+     ,{"ttlExpired",1}
+     ,{"securityDenial",2}
+     ,{"undefinedReason",3}
+     ,{"maintenance",4}
+     ,{"securityError",5}
+};
+#endif
 //
 // UnregRequestReason
 //
@@ -5327,14 +5523,9 @@ PObject * H225_RegistrationRejectReason::Clone() const
 H225_UnregRequestReason::H225_UnregRequestReason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "reregistrationRequired "
-        "ttlExpired "
-        "securityDenial "
-        "undefinedReason "
-        "maintenance "
-        "securityError "
+    ,(const PASN_Names *)Names_H225_UnregRequestReason,6
 #endif
-    )
+)
 {
 }
 
@@ -5390,6 +5581,17 @@ PObject * H225_UnregRequestReason::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_UnregRejectReason[]={
+      {"notCurrentlyRegistered",0}
+     ,{"callInProgress",1}
+     ,{"undefinedReason",2}
+     ,{"permissionDenied",3}
+     ,{"securityDenial",4}
+     ,{"securityError",5}
+};
+#endif
 //
 // UnregRejectReason
 //
@@ -5397,14 +5599,9 @@ PObject * H225_UnregRequestReason::Clone() const
 H225_UnregRejectReason::H225_UnregRejectReason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "notCurrentlyRegistered "
-        "callInProgress "
-        "undefinedReason "
-        "permissionDenied "
-        "securityDenial "
-        "securityError "
+    ,(const PASN_Names *)Names_H225_UnregRejectReason,6
 #endif
-    )
+)
 {
 }
 
@@ -5460,6 +5657,15 @@ PObject * H225_UnregRejectReason::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_CallType[]={
+      {"pointToPoint",0}
+     ,{"oneToN",1}
+     ,{"nToOne",2}
+     ,{"nToN",3}
+};
+#endif
 //
 // CallType
 //
@@ -5467,12 +5673,9 @@ PObject * H225_UnregRejectReason::Clone() const
 H225_CallType::H225_CallType(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "pointToPoint "
-        "oneToN "
-        "nToOne "
-        "nToN "
+    ,(const PASN_Names *)Names_H225_CallType,4
 #endif
-    )
+)
 {
 }
 
@@ -5493,6 +5696,13 @@ PObject * H225_CallType::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_CallModel[]={
+      {"direct",0}
+     ,{"gatekeeperRouted",1}
+};
+#endif
 //
 // CallModel
 //
@@ -5500,10 +5710,9 @@ PObject * H225_CallType::Clone() const
 H225_CallModel::H225_CallModel(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "direct "
-        "gatekeeperRouted "
+    ,(const PASN_Names *)Names_H225_CallModel,2
 #endif
-    )
+)
 {
 }
 
@@ -5524,6 +5733,14 @@ PObject * H225_CallModel::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_TransportQOS[]={
+      {"endpointControlled",0}
+     ,{"gatekeeperControlled",1}
+     ,{"noControl",2}
+};
+#endif
 //
 // TransportQOS
 //
@@ -5531,11 +5748,9 @@ PObject * H225_CallModel::Clone() const
 H225_TransportQOS::H225_TransportQOS(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "endpointControlled "
-        "gatekeeperControlled "
-        "noControl "
+    ,(const PASN_Names *)Names_H225_TransportQOS,3
 #endif
-    )
+)
 {
 }
 
@@ -5712,6 +5927,33 @@ PObject * H225_UUIEsRequested::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_AdmissionRejectReason[]={
+      {"calledPartyNotRegistered",0}
+     ,{"invalidPermission",1}
+     ,{"requestDenied",2}
+     ,{"undefinedReason",3}
+     ,{"callerNotRegistered",4}
+     ,{"routeCallToGatekeeper",5}
+     ,{"invalidEndpointIdentifier",6}
+     ,{"resourceUnavailable",7}
+     ,{"securityDenial",8}
+     ,{"qosControlNotSupported",9}
+     ,{"incompleteAddress",10}
+     ,{"aliasesInconsistent",11}
+     ,{"routeCallToSCN",12}
+     ,{"exceedsCallCapacity",13}
+     ,{"collectDestination",14}
+     ,{"collectPIN",15}
+     ,{"genericDataReason",16}
+     ,{"neededFeatureNotSupported",17}
+     ,{"securityErrors",18}
+     ,{"securityDHmismatch",19}
+     ,{"noRouteToDestination",20}
+     ,{"unallocatedNumber",21}
+};
+#endif
 //
 // AdmissionRejectReason
 //
@@ -5719,30 +5961,9 @@ PObject * H225_UUIEsRequested::Clone() const
 H225_AdmissionRejectReason::H225_AdmissionRejectReason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 8, TRUE
 #ifndef PASN_NOPRINTON
-      , "calledPartyNotRegistered "
-        "invalidPermission "
-        "requestDenied "
-        "undefinedReason "
-        "callerNotRegistered "
-        "routeCallToGatekeeper "
-        "invalidEndpointIdentifier "
-        "resourceUnavailable "
-        "securityDenial "
-        "qosControlNotSupported "
-        "incompleteAddress "
-        "aliasesInconsistent "
-        "routeCallToSCN "
-        "exceedsCallCapacity "
-        "collectDestination "
-        "collectPIN "
-        "genericDataReason "
-        "neededFeatureNotSupported "
-        "securityErrors "
-        "securityDHmismatch "
-        "noRouteToDestination "
-        "unallocatedNumber "
+    ,(const PASN_Names *)Names_H225_AdmissionRejectReason,22
 #endif
-    )
+)
 {
 }
 
@@ -5838,6 +6059,19 @@ PObject * H225_AdmissionRejectReason::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_BandRejectReason[]={
+      {"notBound",0}
+     ,{"invalidConferenceID",1}
+     ,{"invalidPermission",2}
+     ,{"insufficientResources",3}
+     ,{"invalidRevision",4}
+     ,{"undefinedReason",5}
+     ,{"securityDenial",6}
+     ,{"securityError",7}
+};
+#endif
 //
 // BandRejectReason
 //
@@ -5845,16 +6079,9 @@ PObject * H225_AdmissionRejectReason::Clone() const
 H225_BandRejectReason::H225_BandRejectReason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 6, TRUE
 #ifndef PASN_NOPRINTON
-      , "notBound "
-        "invalidConferenceID "
-        "invalidPermission "
-        "insufficientResources "
-        "invalidRevision "
-        "undefinedReason "
-        "securityDenial "
-        "securityError "
+    ,(const PASN_Names *)Names_H225_BandRejectReason,8
 #endif
-    )
+)
 {
 }
 
@@ -5912,6 +6139,27 @@ PObject * H225_BandRejectReason::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_LocationRejectReason[]={
+      {"notRegistered",0}
+     ,{"invalidPermission",1}
+     ,{"requestDenied",2}
+     ,{"undefinedReason",3}
+     ,{"securityDenial",4}
+     ,{"aliasesInconsistent",5}
+     ,{"routeCalltoSCN",6}
+     ,{"resourceUnavailable",7}
+     ,{"genericDataReason",8}
+     ,{"neededFeatureNotSupported",9}
+     ,{"hopCountExceeded",10}
+     ,{"incompleteAddress",11}
+     ,{"securityError",12}
+     ,{"securityDHmismatch",13}
+     ,{"noRouteToDestination",14}
+     ,{"unallocatedNumber",15}
+};
+#endif
 //
 // LocationRejectReason
 //
@@ -5919,24 +6167,9 @@ PObject * H225_BandRejectReason::Clone() const
 H225_LocationRejectReason::H225_LocationRejectReason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "notRegistered "
-        "invalidPermission "
-        "requestDenied "
-        "undefinedReason "
-        "securityDenial "
-        "aliasesInconsistent "
-        "routeCalltoSCN "
-        "resourceUnavailable "
-        "genericDataReason "
-        "neededFeatureNotSupported "
-        "hopCountExceeded "
-        "incompleteAddress "
-        "securityError "
-        "securityDHmismatch "
-        "noRouteToDestination "
-        "unallocatedNumber "
+    ,(const PASN_Names *)Names_H225_LocationRejectReason,16
 #endif
-    )
+)
 {
 }
 
@@ -6026,6 +6259,14 @@ PObject * H225_LocationRejectReason::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_DisengageReason[]={
+      {"forcedDrop",0}
+     ,{"normalDrop",1}
+     ,{"undefinedReason",2}
+};
+#endif
 //
 // DisengageReason
 //
@@ -6033,11 +6274,9 @@ PObject * H225_LocationRejectReason::Clone() const
 H225_DisengageReason::H225_DisengageReason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "forcedDrop "
-        "normalDrop "
-        "undefinedReason "
+    ,(const PASN_Names *)Names_H225_DisengageReason,3
 #endif
-    )
+)
 {
 }
 
@@ -6058,6 +6297,15 @@ PObject * H225_DisengageReason::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_DisengageRejectReason[]={
+      {"notRegistered",0}
+     ,{"requestToDropOther",1}
+     ,{"securityDenial",2}
+     ,{"securityError",3}
+};
+#endif
 //
 // DisengageRejectReason
 //
@@ -6065,12 +6313,9 @@ PObject * H225_DisengageReason::Clone() const
 H225_DisengageRejectReason::H225_DisengageRejectReason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "notRegistered "
-        "requestToDropOther "
-        "securityDenial "
-        "securityError "
+    ,(const PASN_Names *)Names_H225_DisengageRejectReason,4
 #endif
-    )
+)
 {
 }
 
@@ -6124,6 +6369,15 @@ PObject * H225_DisengageRejectReason::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_InfoRequestResponseStatus[]={
+      {"complete",0}
+     ,{"incomplete",1}
+     ,{"segment",2}
+     ,{"invalidCall",3}
+};
+#endif
 //
 // InfoRequestResponseStatus
 //
@@ -6131,12 +6385,9 @@ PObject * H225_DisengageRejectReason::Clone() const
 H225_InfoRequestResponseStatus::H225_InfoRequestResponseStatus(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "complete "
-        "incomplete "
-        "segment "
-        "invalidCall "
+    ,(const PASN_Names *)Names_H225_InfoRequestResponseStatus,4
 #endif
-    )
+)
 {
 }
 
@@ -6169,6 +6420,15 @@ PObject * H225_InfoRequestResponseStatus::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_InfoRequestNakReason[]={
+      {"notRegistered",0}
+     ,{"securityDenial",1}
+     ,{"undefinedReason",2}
+     ,{"securityError",3}
+};
+#endif
 //
 // InfoRequestNakReason
 //
@@ -6176,12 +6436,9 @@ PObject * H225_InfoRequestResponseStatus::Clone() const
 H225_InfoRequestNakReason::H225_InfoRequestNakReason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "notRegistered "
-        "securityDenial "
-        "undefinedReason "
-        "securityError "
+    ,(const PASN_Names *)Names_H225_InfoRequestNakReason,4
 #endif
-    )
+)
 {
 }
 
@@ -6320,6 +6577,24 @@ PObject * H225_H323_UserInformation_user_data::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_H323_UU_PDU_h323_message_body[]={
+      {"setup",0}
+     ,{"callProceeding",1}
+     ,{"connect",2}
+     ,{"alerting",3}
+     ,{"information",4}
+     ,{"releaseComplete",5}
+     ,{"facility",6}
+     ,{"progress",7}
+     ,{"empty",8}
+     ,{"status",9}
+     ,{"statusInquiry",10}
+     ,{"setupAcknowledge",11}
+     ,{"notify",12}
+};
+#endif
 //
 // H323-UU-PDU_h323-message-body
 //
@@ -6327,21 +6602,9 @@ PObject * H225_H323_UserInformation_user_data::Clone() const
 H225_H323_UU_PDU_h323_message_body::H225_H323_UU_PDU_h323_message_body(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 7, TRUE
 #ifndef PASN_NOPRINTON
-      , "setup "
-        "callProceeding "
-        "connect "
-        "alerting "
-        "information "
-        "releaseComplete "
-        "facility "
-        "progress "
-        "empty "
-        "status "
-        "statusInquiry "
-        "setupAcknowledge "
-        "notify "
+    ,(const PASN_Names *)Names_H225_H323_UU_PDU_h323_message_body,13
 #endif
-    )
+)
 {
 }
 
@@ -6949,6 +7212,16 @@ PObject * H225_ArrayOf_CallReferenceValue::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_Setup_UUIE_conferenceGoal[]={
+      {"create",0}
+     ,{"join",1}
+     ,{"invite",2}
+     ,{"capability_negotiation",3}
+     ,{"callIndependentSupplementaryService",4}
+};
+#endif
 //
 // Setup-UUIE_conferenceGoal
 //
@@ -6956,13 +7229,9 @@ PObject * H225_ArrayOf_CallReferenceValue::Clone() const
 H225_Setup_UUIE_conferenceGoal::H225_Setup_UUIE_conferenceGoal(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "create "
-        "join "
-        "invite "
-        "capability_negotiation "
-        "callIndependentSupplementaryService "
+    ,(const PASN_Names *)Names_H225_Setup_UUIE_conferenceGoal,5
 #endif
-    )
+)
 {
 }
 
@@ -7618,6 +7887,13 @@ PObject * H225_ArrayOf_SupportedPrefix::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_TunnelledProtocol_id[]={
+      {"tunnelledProtocolObjectID",0}
+     ,{"tunnelledProtocolAlternateID",1}
+};
+#endif
 //
 // TunnelledProtocol_id
 //
@@ -7625,10 +7901,9 @@ PObject * H225_ArrayOf_SupportedPrefix::Clone() const
 H225_TunnelledProtocol_id::H225_TunnelledProtocol_id(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "tunnelledProtocolObjectID "
-        "tunnelledProtocolAlternateID "
+    ,(const PASN_Names *)Names_H225_TunnelledProtocol_id,2
 #endif
-    )
+)
 {
 }
 
@@ -7763,6 +8038,13 @@ PObject * H225_AddressPattern_range::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_ANSI_41_UIM_system_id[]={
+      {"sid",0}
+     ,{"mid",1}
+};
+#endif
 //
 // ANSI-41-UIM_system-id
 //
@@ -7770,10 +8052,9 @@ PObject * H225_AddressPattern_range::Clone() const
 H225_ANSI_41_UIM_system_id::H225_ANSI_41_UIM_system_id(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "sid "
-        "mid "
+    ,(const PASN_Names *)Names_H225_ANSI_41_UIM_system_id,2
 #endif
-    )
+)
 {
 }
 
@@ -8233,6 +8514,14 @@ PObject * H225_GroupID_member::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_ServiceControlSession_reason[]={
+      {"open",0}
+     ,{"refresh",1}
+     ,{"close",2}
+};
+#endif
 //
 // ServiceControlSession_reason
 //
@@ -8240,11 +8529,9 @@ PObject * H225_GroupID_member::Clone() const
 H225_ServiceControlSession_reason::H225_ServiceControlSession_reason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "open "
-        "refresh "
-        "close "
+    ,(const PASN_Names *)Names_H225_ServiceControlSession_reason,3
 #endif
-    )
+)
 {
 }
 
@@ -8453,6 +8740,13 @@ PObject * H225_RasUsageSpecification_callStartingPoint::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_CallCreditServiceControl_billingMode[]={
+      {"credit",0}
+     ,{"debit",1}
+};
+#endif
 //
 // CallCreditServiceControl_billingMode
 //
@@ -8460,10 +8754,9 @@ PObject * H225_RasUsageSpecification_callStartingPoint::Clone() const
 H225_CallCreditServiceControl_billingMode::H225_CallCreditServiceControl_billingMode(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "credit "
-        "debit "
+    ,(const PASN_Names *)Names_H225_CallCreditServiceControl_billingMode,2
 #endif
-    )
+)
 {
 }
 
@@ -8484,6 +8777,13 @@ PObject * H225_CallCreditServiceControl_billingMode::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_CallCreditServiceControl_callStartingPoint[]={
+      {"alerting",0}
+     ,{"connect",1}
+};
+#endif
 //
 // CallCreditServiceControl_callStartingPoint
 //
@@ -8491,10 +8791,9 @@ PObject * H225_CallCreditServiceControl_billingMode::Clone() const
 H225_CallCreditServiceControl_callStartingPoint::H225_CallCreditServiceControl_callStartingPoint(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "alerting "
-        "connect "
+    ,(const PASN_Names *)Names_H225_CallCreditServiceControl_callStartingPoint,2
 #endif
-    )
+)
 {
 }
 

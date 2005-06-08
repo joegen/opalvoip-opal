@@ -9,7 +9,7 @@
 #endif
 
 #include <ptlib.h>
-#include "asn/h45011.h"
+#include "h45011.h"
 
 #define new PNEW
 
@@ -18,6 +18,17 @@
 
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H45011_H323CallIntrusionOperations[]={
+        {"callIntrusionRequest",43}
+       ,{"callIntrusionGetCIPL",44}
+       ,{"callIntrusionIsolate",45}
+       ,{"callIntrusionForcedRelease",46}
+       ,{"callIntrusionWOBRequest",47}
+       ,{"callIntrusionSilentMonitor",116}
+       ,{"callIntrusionNotification",117}
+};
+#endif
 //
 // H323CallIntrusionOperations
 //
@@ -25,13 +36,7 @@
 H45011_H323CallIntrusionOperations::H45011_H323CallIntrusionOperations(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 117, FALSE
 #ifndef PASN_NOPRINTON
-      , "callIntrusionRequest=43 "
-        "callIntrusionGetCIPL "
-        "callIntrusionIsolate "
-        "callIntrusionForcedRelease "
-        "callIntrusionWOBRequest "
-        "callIntrusionSilentMonitor=116 "
-        "callIntrusionNotification "
+    ,(const PASN_Names *)Names_H45011_H323CallIntrusionOperations,7
 #endif
     )
 {
@@ -120,6 +125,17 @@ PObject * H45011_CIProtectionLevel::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H45011_CIStatusInformation[]={
+      {"callIntrusionImpending",0}
+     ,{"callIntruded",1}
+     ,{"callIsolated",2}
+     ,{"callForceReleased",3}
+     ,{"callIntrusionComplete",4}
+     ,{"callIntrusionEnd",5}
+};
+#endif
 //
 // CIStatusInformation
 //
@@ -127,14 +143,9 @@ PObject * H45011_CIProtectionLevel::Clone() const
 H45011_CIStatusInformation::H45011_CIStatusInformation(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 6, TRUE
 #ifndef PASN_NOPRINTON
-      , "callIntrusionImpending "
-        "callIntruded "
-        "callIsolated "
-        "callForceReleased "
-        "callIntrusionComplete "
-        "callIntrusionEnd "
+    ,(const PASN_Names *)Names_H45011_CIStatusInformation,6
 #endif
-    )
+)
 {
 }
 
@@ -155,6 +166,13 @@ PObject * H45011_CIStatusInformation::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H45011_CallIntrusionErrors[]={
+        {"notBusy",1009}
+       ,{"temporarilyUnavailable",1000}
+       ,{"notAuthorized",1007}
+};
+#endif
 //
 // CallIntrusionErrors
 //
@@ -162,9 +180,7 @@ PObject * H45011_CIStatusInformation::Clone() const
 H45011_CallIntrusionErrors::H45011_CallIntrusionErrors(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 1009, FALSE
 #ifndef PASN_NOPRINTON
-      , "notBusy=1009 "
-        "temporarilyUnavailable=1000 "
-        "notAuthorized=1007 "
+    ,(const PASN_Names *)Names_H45011_CallIntrusionErrors,3
 #endif
     )
 {

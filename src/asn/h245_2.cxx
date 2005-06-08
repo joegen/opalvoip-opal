@@ -5,12 +5,105 @@
 //
 
 #include <ptlib.h>
-#include "asn/h245.h"
+#include "h245.h"
 
 #define new PNEW
 
 
 #if ! H323_DISABLE_H245
+
+//
+// ArrayOf_CustomPictureClockFrequency
+//
+
+H245_ArrayOf_CustomPictureClockFrequency::H245_ArrayOf_CustomPictureClockFrequency(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Array(tag, tagClass)
+{
+}
+
+
+PASN_Object * H245_ArrayOf_CustomPictureClockFrequency::CreateObject() const
+{
+  return new H245_CustomPictureClockFrequency;
+}
+
+
+H245_CustomPictureClockFrequency & H245_ArrayOf_CustomPictureClockFrequency::operator[](PINDEX i) const
+{
+  return (H245_CustomPictureClockFrequency &)array[i];
+}
+
+
+PObject * H245_ArrayOf_CustomPictureClockFrequency::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_ArrayOf_CustomPictureClockFrequency::Class()), PInvalidCast);
+#endif
+  return new H245_ArrayOf_CustomPictureClockFrequency(*this);
+}
+
+
+//
+// ArrayOf_CustomPictureFormat
+//
+
+H245_ArrayOf_CustomPictureFormat::H245_ArrayOf_CustomPictureFormat(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Array(tag, tagClass)
+{
+}
+
+
+PASN_Object * H245_ArrayOf_CustomPictureFormat::CreateObject() const
+{
+  return new H245_CustomPictureFormat;
+}
+
+
+H245_CustomPictureFormat & H245_ArrayOf_CustomPictureFormat::operator[](PINDEX i) const
+{
+  return (H245_CustomPictureFormat &)array[i];
+}
+
+
+PObject * H245_ArrayOf_CustomPictureFormat::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_ArrayOf_CustomPictureFormat::Class()), PInvalidCast);
+#endif
+  return new H245_ArrayOf_CustomPictureFormat(*this);
+}
+
+
+//
+// ArrayOf_H263VideoModeCombos
+//
+
+H245_ArrayOf_H263VideoModeCombos::H245_ArrayOf_H263VideoModeCombos(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Array(tag, tagClass)
+{
+}
+
+
+PASN_Object * H245_ArrayOf_H263VideoModeCombos::CreateObject() const
+{
+  return new H245_H263VideoModeCombos;
+}
+
+
+H245_H263VideoModeCombos & H245_ArrayOf_H263VideoModeCombos::operator[](PINDEX i) const
+{
+  return (H245_H263VideoModeCombos &)array[i];
+}
+
+
+PObject * H245_ArrayOf_H263VideoModeCombos::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_ArrayOf_H263VideoModeCombos::Class()), PInvalidCast);
+#endif
+  return new H245_ArrayOf_H263VideoModeCombos(*this);
+}
+
 
 //
 // RefPictureSelection_additionalPictureMemory
@@ -147,6 +240,16 @@ PObject * H245_RefPictureSelection_additionalPictureMemory::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_RefPictureSelection_videoBackChannelSend[]={
+      {"none",0}
+     ,{"ackMessageOnly",1}
+     ,{"nackMessageOnly",2}
+     ,{"ackOrNackMessageOnly",3}
+     ,{"ackAndNackMessage",4}
+};
+#endif
 //
 // RefPictureSelection_videoBackChannelSend
 //
@@ -154,13 +257,9 @@ PObject * H245_RefPictureSelection_additionalPictureMemory::Clone() const
 H245_RefPictureSelection_videoBackChannelSend::H245_RefPictureSelection_videoBackChannelSend(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 5, TRUE
 #ifndef PASN_NOPRINTON
-      , "none "
-        "ackMessageOnly "
-        "nackMessageOnly "
-        "ackOrNackMessageOnly "
-        "ackAndNackMessage "
+    ,(const PASN_Names *)Names_H245_RefPictureSelection_videoBackChannelSend,5
 #endif
-    )
+)
 {
 }
 
@@ -181,6 +280,14 @@ PObject * H245_RefPictureSelection_videoBackChannelSend::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_CustomPictureFormat_pixelAspectInformation[]={
+      {"anyPixelAspectRatio",0}
+     ,{"pixelAspectCode",1}
+     ,{"extendedPAR",2}
+};
+#endif
 //
 // CustomPictureFormat_pixelAspectInformation
 //
@@ -188,11 +295,9 @@ PObject * H245_RefPictureSelection_videoBackChannelSend::Clone() const
 H245_CustomPictureFormat_pixelAspectInformation::H245_CustomPictureFormat_pixelAspectInformation(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "anyPixelAspectRatio "
-        "pixelAspectCode "
-        "extendedPAR "
+    ,(const PASN_Names *)Names_H245_CustomPictureFormat_pixelAspectInformation,3
 #endif
-    )
+)
 {
 }
 
@@ -501,6 +606,25 @@ PObject * H245_G7231AnnexCCapability_g723AnnexCAudioMode::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_DataApplicationCapability_application[]={
+      {"nonStandard",0}
+     ,{"t120",1}
+     ,{"dsm_cc",2}
+     ,{"userData",3}
+     ,{"t84",4}
+     ,{"t434",5}
+     ,{"h224",6}
+     ,{"nlpid",7}
+     ,{"dsvdControl",8}
+     ,{"h222DataPartitioning",9}
+     ,{"t30fax",10}
+     ,{"t140",11}
+     ,{"t38fax",12}
+     ,{"genericDataCapability",13}
+};
+#endif
 //
 // DataApplicationCapability_application
 //
@@ -508,22 +632,9 @@ PObject * H245_G7231AnnexCCapability_g723AnnexCAudioMode::Clone() const
 H245_DataApplicationCapability_application::H245_DataApplicationCapability_application(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 10, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "t120 "
-        "dsm_cc "
-        "userData "
-        "t84 "
-        "t434 "
-        "h224 "
-        "nlpid "
-        "dsvdControl "
-        "h222DataPartitioning "
-        "t30fax "
-        "t140 "
-        "t38fax "
-        "genericDataCapability "
+    ,(const PASN_Names *)Names_H245_DataApplicationCapability_application,14
 #endif
-    )
+)
 {
 }
 
@@ -707,6 +818,14 @@ PObject * H245_DataApplicationCapability_application::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_DataProtocolCapability_v76wCompression[]={
+      {"transmitCompression",0}
+     ,{"receiveCompression",1}
+     ,{"transmitAndReceiveCompression",2}
+};
+#endif
 //
 // DataProtocolCapability_v76wCompression
 //
@@ -714,11 +833,9 @@ PObject * H245_DataApplicationCapability_application::Clone() const
 H245_DataProtocolCapability_v76wCompression::H245_DataProtocolCapability_v76wCompression(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "transmitCompression "
-        "receiveCompression "
-        "transmitAndReceiveCompression "
+    ,(const PASN_Names *)Names_H245_DataProtocolCapability_v76wCompression,3
 #endif
-    )
+)
 {
 }
 
@@ -971,6 +1088,13 @@ PObject * H245_T84Profile_t84Restricted::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_T38FaxUdpOptions_t38FaxUdpEC[]={
+      {"t38UDPFEC",0}
+     ,{"t38UDPRedundancy",1}
+};
+#endif
 //
 // T38FaxUdpOptions_t38FaxUdpEC
 //
@@ -978,10 +1102,9 @@ PObject * H245_T84Profile_t84Restricted::Clone() const
 H245_T38FaxUdpOptions_t38FaxUdpEC::H245_T38FaxUdpOptions_t38FaxUdpEC(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "t38UDPFEC "
-        "t38UDPRedundancy "
+    ,(const PASN_Names *)Names_H245_T38FaxUdpOptions_t38FaxUdpEC,2
 #endif
-    )
+)
 {
 }
 
@@ -1034,37 +1157,6 @@ PObject * H245_ArrayOf_NonStandardParameter::Clone() const
 
 
 //
-// ArrayOf_GenericParameter
-//
-
-H245_ArrayOf_GenericParameter::H245_ArrayOf_GenericParameter(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Array(tag, tagClass)
-{
-}
-
-
-PASN_Object * H245_ArrayOf_GenericParameter::CreateObject() const
-{
-  return new H245_GenericParameter;
-}
-
-
-H245_GenericParameter & H245_ArrayOf_GenericParameter::operator[](PINDEX i) const
-{
-  return (H245_GenericParameter &)array[i];
-}
-
-
-PObject * H245_ArrayOf_GenericParameter::Clone() const
-{
-#ifndef PASN_LEANANDMEAN
-  PAssert(IsClass(H245_ArrayOf_GenericParameter::Class()), PInvalidCast);
-#endif
-  return new H245_ArrayOf_GenericParameter(*this);
-}
-
-
-//
 // ArrayOf_ParameterIdentifier
 //
 
@@ -1095,6 +1187,13 @@ PObject * H245_ArrayOf_ParameterIdentifier::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_NetworkAccessParameters_distribution[]={
+      {"unicast",0}
+     ,{"multicast",1}
+};
+#endif
 //
 // NetworkAccessParameters_distribution
 //
@@ -1102,10 +1201,9 @@ PObject * H245_ArrayOf_ParameterIdentifier::Clone() const
 H245_NetworkAccessParameters_distribution::H245_NetworkAccessParameters_distribution(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "unicast "
-        "multicast "
+    ,(const PASN_Names *)Names_H245_NetworkAccessParameters_distribution,2
 #endif
-    )
+)
 {
 }
 
@@ -1126,6 +1224,14 @@ PObject * H245_NetworkAccessParameters_distribution::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_NetworkAccessParameters_networkAddress[]={
+      {"q2931Address",0}
+     ,{"e164Address",1}
+     ,{"localAreaAddress",2}
+};
+#endif
 //
 // NetworkAccessParameters_networkAddress
 //
@@ -1133,11 +1239,9 @@ PObject * H245_NetworkAccessParameters_distribution::Clone() const
 H245_NetworkAccessParameters_networkAddress::H245_NetworkAccessParameters_networkAddress(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "q2931Address "
-        "e164Address "
-        "localAreaAddress "
+    ,(const PASN_Names *)Names_H245_NetworkAccessParameters_networkAddress,3
 #endif
-    )
+)
 {
 }
 
@@ -1216,6 +1320,14 @@ PObject * H245_NetworkAccessParameters_networkAddress::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_NetworkAccessParameters_t120SetupProcedure[]={
+      {"originateCall",0}
+     ,{"waitForCall",1}
+     ,{"issueQuery",2}
+};
+#endif
 //
 // NetworkAccessParameters_t120SetupProcedure
 //
@@ -1223,11 +1335,9 @@ PObject * H245_NetworkAccessParameters_networkAddress::Clone() const
 H245_NetworkAccessParameters_t120SetupProcedure::H245_NetworkAccessParameters_t120SetupProcedure(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "originateCall "
-        "waitForCall "
-        "issueQuery "
+    ,(const PASN_Names *)Names_H245_NetworkAccessParameters_t120SetupProcedure,3
 #endif
-    )
+)
 {
 }
 
@@ -1248,6 +1358,13 @@ PObject * H245_NetworkAccessParameters_t120SetupProcedure::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_Q2931Address_address[]={
+      {"internationalNumber",0}
+     ,{"nsapAddress",1}
+};
+#endif
 //
 // Q2931Address_address
 //
@@ -1255,10 +1372,9 @@ PObject * H245_NetworkAccessParameters_t120SetupProcedure::Clone() const
 H245_Q2931Address_address::H245_Q2931Address_address(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "internationalNumber "
-        "nsapAddress "
+    ,(const PASN_Names *)Names_H245_Q2931Address_address,2
 #endif
-    )
+)
 {
 }
 
@@ -1290,6 +1406,18 @@ PObject * H245_Q2931Address_address::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_H235Media_mediaType[]={
+      {"nonStandard",0}
+     ,{"videoData",1}
+     ,{"audioData",2}
+     ,{"data",3}
+     ,{"redundancyEncoding",4}
+     ,{"multiplePayloadStream",5}
+     ,{"fec",6}
+};
+#endif
 //
 // H235Media_mediaType
 //
@@ -1297,15 +1425,9 @@ PObject * H245_Q2931Address_address::Clone() const
 H245_H235Media_mediaType::H245_H235Media_mediaType(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "videoData "
-        "audioData "
-        "data "
-        "redundancyEncoding "
-        "multiplePayloadStream "
-        "fec "
+    ,(const PASN_Names *)Names_H245_H235Media_mediaType,7
 #endif
-    )
+)
 {
 }
 
@@ -1504,6 +1626,20 @@ PObject * H245_H235Media_mediaType::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_H223LogicalChannelParameters_adaptationLayerType[]={
+      {"nonStandard",0}
+     ,{"al1Framed",1}
+     ,{"al1NotFramed",2}
+     ,{"al2WithoutSequenceNumbers",3}
+     ,{"al2WithSequenceNumbers",4}
+     ,{"al3",5}
+     ,{"al1M",6}
+     ,{"al2M",7}
+     ,{"al3M",8}
+};
+#endif
 //
 // H223LogicalChannelParameters_adaptationLayerType
 //
@@ -1511,17 +1647,9 @@ PObject * H245_H235Media_mediaType::Clone() const
 H245_H223LogicalChannelParameters_adaptationLayerType::H245_H223LogicalChannelParameters_adaptationLayerType(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 6, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "al1Framed "
-        "al1NotFramed "
-        "al2WithoutSequenceNumbers "
-        "al2WithSequenceNumbers "
-        "al3 "
-        "al1M "
-        "al2M "
-        "al3M "
+    ,(const PASN_Names *)Names_H245_H223LogicalChannelParameters_adaptationLayerType,9
 #endif
-    )
+)
 {
 }
 
@@ -1676,6 +1804,13 @@ PObject * H245_H223LogicalChannelParameters_adaptationLayerType::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_H223AL1MParameters_transferMode[]={
+      {"framed",0}
+     ,{"unframed",1}
+};
+#endif
 //
 // H223AL1MParameters_transferMode
 //
@@ -1683,10 +1818,9 @@ PObject * H245_H223LogicalChannelParameters_adaptationLayerType::Clone() const
 H245_H223AL1MParameters_transferMode::H245_H223AL1MParameters_transferMode(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "framed "
-        "unframed "
+    ,(const PASN_Names *)Names_H245_H223AL1MParameters_transferMode,2
 #endif
-    )
+)
 {
 }
 
@@ -1707,6 +1841,13 @@ PObject * H245_H223AL1MParameters_transferMode::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_H223AL1MParameters_headerFEC[]={
+      {"sebch16_7",0}
+     ,{"golay24_12",1}
+};
+#endif
 //
 // H223AL1MParameters_headerFEC
 //
@@ -1714,10 +1855,9 @@ PObject * H245_H223AL1MParameters_transferMode::Clone() const
 H245_H223AL1MParameters_headerFEC::H245_H223AL1MParameters_headerFEC(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "sebch16_7 "
-        "golay24_12 "
+    ,(const PASN_Names *)Names_H245_H223AL1MParameters_headerFEC,2
 #endif
-    )
+)
 {
 }
 
@@ -1738,6 +1878,19 @@ PObject * H245_H223AL1MParameters_headerFEC::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_H223AL1MParameters_crcLength[]={
+      {"crc4bit",0}
+     ,{"crc12bit",1}
+     ,{"crc20bit",2}
+     ,{"crc28bit",3}
+     ,{"crc8bit",4}
+     ,{"crc16bit",5}
+     ,{"crc32bit",6}
+     ,{"crcNotUsed",7}
+};
+#endif
 //
 // H223AL1MParameters_crcLength
 //
@@ -1745,16 +1898,9 @@ PObject * H245_H223AL1MParameters_headerFEC::Clone() const
 H245_H223AL1MParameters_crcLength::H245_H223AL1MParameters_crcLength(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "crc4bit "
-        "crc12bit "
-        "crc20bit "
-        "crc28bit "
-        "crc8bit "
-        "crc16bit "
-        "crc32bit "
-        "crcNotUsed "
+    ,(const PASN_Names *)Names_H245_H223AL1MParameters_crcLength,8
 #endif
-    )
+)
 {
 }
 
@@ -1775,6 +1921,14 @@ PObject * H245_H223AL1MParameters_crcLength::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_H223AL1MParameters_arqType[]={
+      {"noArq",0}
+     ,{"typeIArq",1}
+     ,{"typeIIArq",2}
+};
+#endif
 //
 // H223AL1MParameters_arqType
 //
@@ -1782,11 +1936,9 @@ PObject * H245_H223AL1MParameters_crcLength::Clone() const
 H245_H223AL1MParameters_arqType::H245_H223AL1MParameters_arqType(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "noArq "
-        "typeIArq "
-        "typeIIArq "
+    ,(const PASN_Names *)Names_H245_H223AL1MParameters_arqType,3
 #endif
-    )
+)
 {
 }
 
@@ -1839,6 +1991,13 @@ PObject * H245_H223AL1MParameters_arqType::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_H223AL2MParameters_headerFEC[]={
+      {"sebch16_5",0}
+     ,{"golay24_12",1}
+};
+#endif
 //
 // H223AL2MParameters_headerFEC
 //
@@ -1846,10 +2005,9 @@ PObject * H245_H223AL1MParameters_arqType::Clone() const
 H245_H223AL2MParameters_headerFEC::H245_H223AL2MParameters_headerFEC(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "sebch16_5 "
-        "golay24_12 "
+    ,(const PASN_Names *)Names_H245_H223AL2MParameters_headerFEC,2
 #endif
-    )
+)
 {
 }
 
@@ -1870,6 +2028,13 @@ PObject * H245_H223AL2MParameters_headerFEC::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_H223AL3MParameters_headerFormat[]={
+      {"sebch16_7",0}
+     ,{"golay24_12",1}
+};
+#endif
 //
 // H223AL3MParameters_headerFormat
 //
@@ -1877,10 +2042,9 @@ PObject * H245_H223AL2MParameters_headerFEC::Clone() const
 H245_H223AL3MParameters_headerFormat::H245_H223AL3MParameters_headerFormat(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "sebch16_7 "
-        "golay24_12 "
+    ,(const PASN_Names *)Names_H245_H223AL3MParameters_headerFormat,2
 #endif
-    )
+)
 {
 }
 
@@ -1901,6 +2065,19 @@ PObject * H245_H223AL3MParameters_headerFormat::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_H223AL3MParameters_crcLength[]={
+      {"crc4bit",0}
+     ,{"crc12bit",1}
+     ,{"crc20bit",2}
+     ,{"crc28bit",3}
+     ,{"crc8bit",4}
+     ,{"crc16bit",5}
+     ,{"crc32bit",6}
+     ,{"crcNotUsed",7}
+};
+#endif
 //
 // H223AL3MParameters_crcLength
 //
@@ -1908,16 +2085,9 @@ PObject * H245_H223AL3MParameters_headerFormat::Clone() const
 H245_H223AL3MParameters_crcLength::H245_H223AL3MParameters_crcLength(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "crc4bit "
-        "crc12bit "
-        "crc20bit "
-        "crc28bit "
-        "crc8bit "
-        "crc16bit "
-        "crc32bit "
-        "crcNotUsed "
+    ,(const PASN_Names *)Names_H245_H223AL3MParameters_crcLength,8
 #endif
-    )
+)
 {
 }
 
@@ -1938,6 +2108,14 @@ PObject * H245_H223AL3MParameters_crcLength::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_H223AL3MParameters_arqType[]={
+      {"noArq",0}
+     ,{"typeIArq",1}
+     ,{"typeIIArq",2}
+};
+#endif
 //
 // H223AL3MParameters_arqType
 //
@@ -1945,11 +2123,9 @@ PObject * H245_H223AL3MParameters_crcLength::Clone() const
 H245_H223AL3MParameters_arqType::H245_H223AL3MParameters_arqType(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "noArq "
-        "typeIArq "
-        "typeIIArq "
+    ,(const PASN_Names *)Names_H245_H223AL3MParameters_arqType,3
 #endif
-    )
+)
 {
 }
 
@@ -2002,6 +2178,13 @@ PObject * H245_H223AL3MParameters_arqType::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_H223AnnexCArqParameters_numberOfRetransmissions[]={
+      {"finite",0}
+     ,{"infinite",1}
+};
+#endif
 //
 // H223AnnexCArqParameters_numberOfRetransmissions
 //
@@ -2009,10 +2192,9 @@ PObject * H245_H223AL3MParameters_arqType::Clone() const
 H245_H223AnnexCArqParameters_numberOfRetransmissions::H245_H223AnnexCArqParameters_numberOfRetransmissions(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "finite "
-        "infinite "
+    ,(const PASN_Names *)Names_H245_H223AnnexCArqParameters_numberOfRetransmissions,2
 #endif
-    )
+)
 {
 }
 
@@ -2043,6 +2225,14 @@ PObject * H245_H223AnnexCArqParameters_numberOfRetransmissions::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_V76LogicalChannelParameters_suspendResume[]={
+      {"noSuspendResume",0}
+     ,{"suspendResumewAddress",1}
+     ,{"suspendResumewoAddress",2}
+};
+#endif
 //
 // V76LogicalChannelParameters_suspendResume
 //
@@ -2050,11 +2240,9 @@ PObject * H245_H223AnnexCArqParameters_numberOfRetransmissions::Clone() const
 H245_V76LogicalChannelParameters_suspendResume::H245_V76LogicalChannelParameters_suspendResume(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "noSuspendResume "
-        "suspendResumewAddress "
-        "suspendResumewoAddress "
+    ,(const PASN_Names *)Names_H245_V76LogicalChannelParameters_suspendResume,3
 #endif
-    )
+)
 {
 }
 
@@ -2075,6 +2263,13 @@ PObject * H245_V76LogicalChannelParameters_suspendResume::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_V76LogicalChannelParameters_mode[]={
+      {"eRM",0}
+     ,{"uNERM",1}
+};
+#endif
 //
 // V76LogicalChannelParameters_mode
 //
@@ -2082,10 +2277,9 @@ PObject * H245_V76LogicalChannelParameters_suspendResume::Clone() const
 H245_V76LogicalChannelParameters_mode::H245_V76LogicalChannelParameters_mode(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "eRM "
-        "uNERM "
+    ,(const PASN_Names *)Names_H245_V76LogicalChannelParameters_mode,2
 #endif
-    )
+)
 {
 }
 
@@ -2137,6 +2331,13 @@ PObject * H245_V76LogicalChannelParameters_mode::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_H2250LogicalChannelParameters_mediaPacketization[]={
+      {"h261aVideoPacketization",0}
+     ,{"rtpPayloadType",1}
+};
+#endif
 //
 // H2250LogicalChannelParameters_mediaPacketization
 //
@@ -2144,10 +2345,9 @@ PObject * H245_V76LogicalChannelParameters_mode::Clone() const
 H245_H2250LogicalChannelParameters_mediaPacketization::H245_H2250LogicalChannelParameters_mediaPacketization(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 1, TRUE
 #ifndef PASN_NOPRINTON
-      , "h261aVideoPacketization "
-        "rtpPayloadType "
+    ,(const PASN_Names *)Names_H245_H2250LogicalChannelParameters_mediaPacketization,2
 #endif
-    )
+)
 {
 }
 
@@ -2199,6 +2399,14 @@ PObject * H245_H2250LogicalChannelParameters_mediaPacketization::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_RTPPayloadType_payloadDescriptor[]={
+      {"nonStandardIdentifier",0}
+     ,{"rfc_number",1}
+     ,{"oid",2}
+};
+#endif
 //
 // RTPPayloadType_payloadDescriptor
 //
@@ -2206,11 +2414,9 @@ PObject * H245_H2250LogicalChannelParameters_mediaPacketization::Clone() const
 H245_RTPPayloadType_payloadDescriptor::H245_RTPPayloadType_payloadDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandardIdentifier "
-        "rfc_number "
-        "oid "
+    ,(const PASN_Names *)Names_H245_RTPPayloadType_payloadDescriptor,3
 #endif
-    )
+)
 {
 }
 
@@ -2761,6 +2967,12 @@ PObject * H245_ArrayOf_EscrowData::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_OpenLogicalChannelAck_forwardMultiplexAckParameters[]={
+      {"h2250LogicalChannelAckParameters",0}
+};
+#endif
 //
 // OpenLogicalChannelAck_forwardMultiplexAckParameters
 //
@@ -2768,9 +2980,9 @@ PObject * H245_ArrayOf_EscrowData::Clone() const
 H245_OpenLogicalChannelAck_forwardMultiplexAckParameters::H245_OpenLogicalChannelAck_forwardMultiplexAckParameters(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 1, TRUE
 #ifndef PASN_NOPRINTON
-      , "h2250LogicalChannelAckParameters "
+    ,(const PASN_Names *)Names_H245_OpenLogicalChannelAck_forwardMultiplexAckParameters,1
 #endif
-    )
+)
 {
 }
 
@@ -2819,6 +3031,25 @@ PObject * H245_OpenLogicalChannelAck_forwardMultiplexAckParameters::Clone() cons
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_OpenLogicalChannelReject_cause[]={
+      {"unspecified",0}
+     ,{"unsuitableReverseParameters",1}
+     ,{"dataTypeNotSupported",2}
+     ,{"dataTypeNotAvailable",3}
+     ,{"unknownDataType",4}
+     ,{"dataTypeALCombinationNotSupported",5}
+     ,{"multicastChannelNotAllowed",6}
+     ,{"insufficientBandwidth",7}
+     ,{"separateStackEstablishmentFailed",8}
+     ,{"invalidSessionID",9}
+     ,{"masterSlaveConflict",10}
+     ,{"waitForCommunicationMode",11}
+     ,{"invalidDependentChannel",12}
+     ,{"replacementForRejected",13}
+};
+#endif
 //
 // OpenLogicalChannelReject_cause
 //
@@ -2826,22 +3057,9 @@ PObject * H245_OpenLogicalChannelAck_forwardMultiplexAckParameters::Clone() cons
 H245_OpenLogicalChannelReject_cause::H245_OpenLogicalChannelReject_cause(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 6, TRUE
 #ifndef PASN_NOPRINTON
-      , "unspecified "
-        "unsuitableReverseParameters "
-        "dataTypeNotSupported "
-        "dataTypeNotAvailable "
-        "unknownDataType "
-        "dataTypeALCombinationNotSupported "
-        "multicastChannelNotAllowed "
-        "insufficientBandwidth "
-        "separateStackEstablishmentFailed "
-        "invalidSessionID "
-        "masterSlaveConflict "
-        "waitForCommunicationMode "
-        "invalidDependentChannel "
-        "replacementForRejected "
+    ,(const PASN_Names *)Names_H245_OpenLogicalChannelReject_cause,14
 #endif
-    )
+)
 {
 }
 
@@ -2862,6 +3080,13 @@ PObject * H245_OpenLogicalChannelReject_cause::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_CloseLogicalChannel_source[]={
+      {"user",0}
+     ,{"lcse",1}
+};
+#endif
 //
 // CloseLogicalChannel_source
 //
@@ -2869,10 +3094,9 @@ PObject * H245_OpenLogicalChannelReject_cause::Clone() const
 H245_CloseLogicalChannel_source::H245_CloseLogicalChannel_source(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "user "
-        "lcse "
+    ,(const PASN_Names *)Names_H245_CloseLogicalChannel_source,2
 #endif
-    )
+)
 {
 }
 
@@ -2893,6 +3117,14 @@ PObject * H245_CloseLogicalChannel_source::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_CloseLogicalChannel_reason[]={
+      {"unknown",0}
+     ,{"reopen",1}
+     ,{"reservationFailure",2}
+};
+#endif
 //
 // CloseLogicalChannel_reason
 //
@@ -2900,11 +3132,9 @@ PObject * H245_CloseLogicalChannel_source::Clone() const
 H245_CloseLogicalChannel_reason::H245_CloseLogicalChannel_reason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "unknown "
-        "reopen "
-        "reservationFailure "
+    ,(const PASN_Names *)Names_H245_CloseLogicalChannel_reason,3
 #endif
-    )
+)
 {
 }
 
@@ -2925,6 +3155,15 @@ PObject * H245_CloseLogicalChannel_reason::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_RequestChannelClose_reason[]={
+      {"unknown",0}
+     ,{"normal",1}
+     ,{"reopen",2}
+     ,{"reservationFailure",3}
+};
+#endif
 //
 // RequestChannelClose_reason
 //
@@ -2932,12 +3171,9 @@ PObject * H245_CloseLogicalChannel_reason::Clone() const
 H245_RequestChannelClose_reason::H245_RequestChannelClose_reason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "unknown "
-        "normal "
-        "reopen "
-        "reservationFailure "
+    ,(const PASN_Names *)Names_H245_RequestChannelClose_reason,4
 #endif
-    )
+)
 {
 }
 
@@ -2958,6 +3194,12 @@ PObject * H245_RequestChannelClose_reason::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_RequestChannelCloseReject_cause[]={
+      {"unspecified",0}
+};
+#endif
 //
 // RequestChannelCloseReject_cause
 //
@@ -2965,9 +3207,9 @@ PObject * H245_RequestChannelClose_reason::Clone() const
 H245_RequestChannelCloseReject_cause::H245_RequestChannelCloseReject_cause(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 1, TRUE
 #ifndef PASN_NOPRINTON
-      , "unspecified "
+    ,(const PASN_Names *)Names_H245_RequestChannelCloseReject_cause,1
 #endif
-    )
+)
 {
 }
 
@@ -3050,6 +3292,13 @@ PObject * H245_ArrayOf_MultiplexElement::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_MultiplexElement_type[]={
+      {"logicalChannelNumber",0}
+     ,{"subElementList",1}
+};
+#endif
 //
 // MultiplexElement_type
 //
@@ -3057,10 +3306,9 @@ PObject * H245_ArrayOf_MultiplexElement::Clone() const
 H245_MultiplexElement_type::H245_MultiplexElement_type(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "logicalChannelNumber "
-        "subElementList "
+    ,(const PASN_Names *)Names_H245_MultiplexElement_type,2
 #endif
-    )
+)
 {
 }
 
@@ -3114,6 +3362,13 @@ PObject * H245_MultiplexElement_type::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_MultiplexElement_repeatCount[]={
+      {"finite",0}
+     ,{"untilClosingFlag",1}
+};
+#endif
 //
 // MultiplexElement_repeatCount
 //
@@ -3121,10 +3376,9 @@ PObject * H245_MultiplexElement_type::Clone() const
 H245_MultiplexElement_repeatCount::H245_MultiplexElement_repeatCount(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "finite "
-        "untilClosingFlag "
+    ,(const PASN_Names *)Names_H245_MultiplexElement_repeatCount,2
 #endif
-    )
+)
 {
 }
 
@@ -3217,6 +3471,13 @@ PObject * H245_ArrayOf_MultiplexEntryRejectionDescriptions::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_MultiplexEntryRejectionDescriptions_cause[]={
+      {"unspecifiedCause",0}
+     ,{"descriptorTooComplex",1}
+};
+#endif
 //
 // MultiplexEntryRejectionDescriptions_cause
 //
@@ -3224,10 +3485,9 @@ PObject * H245_ArrayOf_MultiplexEntryRejectionDescriptions::Clone() const
 H245_MultiplexEntryRejectionDescriptions_cause::H245_MultiplexEntryRejectionDescriptions_cause(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "unspecifiedCause "
-        "descriptorTooComplex "
+    ,(const PASN_Names *)Names_H245_MultiplexEntryRejectionDescriptions_cause,2
 #endif
-    )
+)
 {
 }
 
@@ -3279,6 +3539,12 @@ PObject * H245_ArrayOf_RequestMultiplexEntryRejectionDescriptions::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_RequestMultiplexEntryRejectionDescriptions_cause[]={
+      {"unspecifiedCause",0}
+};
+#endif
 //
 // RequestMultiplexEntryRejectionDescriptions_cause
 //
@@ -3286,9 +3552,9 @@ PObject * H245_ArrayOf_RequestMultiplexEntryRejectionDescriptions::Clone() const
 H245_RequestMultiplexEntryRejectionDescriptions_cause::H245_RequestMultiplexEntryRejectionDescriptions_cause(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 1, TRUE
 #ifndef PASN_NOPRINTON
-      , "unspecifiedCause "
+    ,(const PASN_Names *)Names_H245_RequestMultiplexEntryRejectionDescriptions_cause,1
 #endif
-    )
+)
 {
 }
 
@@ -3340,6 +3606,13 @@ PObject * H245_ArrayOf_ModeDescription::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_RequestModeAck_response[]={
+      {"willTransmitMostPreferredMode",0}
+     ,{"willTransmitLessPreferredMode",1}
+};
+#endif
 //
 // RequestModeAck_response
 //
@@ -3347,10 +3620,9 @@ PObject * H245_ArrayOf_ModeDescription::Clone() const
 H245_RequestModeAck_response::H245_RequestModeAck_response(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "willTransmitMostPreferredMode "
-        "willTransmitLessPreferredMode "
+    ,(const PASN_Names *)Names_H245_RequestModeAck_response,2
 #endif
-    )
+)
 {
 }
 
@@ -3371,6 +3643,14 @@ PObject * H245_RequestModeAck_response::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_RequestModeReject_cause[]={
+      {"modeUnavailable",0}
+     ,{"multipointConstraint",1}
+     ,{"requestDenied",2}
+};
+#endif
 //
 // RequestModeReject_cause
 //
@@ -3378,11 +3658,9 @@ PObject * H245_RequestModeAck_response::Clone() const
 H245_RequestModeReject_cause::H245_RequestModeReject_cause(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "modeUnavailable "
-        "multipointConstraint "
-        "requestDenied "
+    ,(const PASN_Names *)Names_H245_RequestModeReject_cause,3
 #endif
-    )
+)
 {
 }
 
@@ -3403,6 +3681,15 @@ PObject * H245_RequestModeReject_cause::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_H235Mode_mediaMode[]={
+      {"nonStandard",0}
+     ,{"videoMode",1}
+     ,{"audioMode",2}
+     ,{"dataMode",3}
+};
+#endif
 //
 // H235Mode_mediaMode
 //
@@ -3410,12 +3697,9 @@ PObject * H245_RequestModeReject_cause::Clone() const
 H245_H235Mode_mediaMode::H245_H235Mode_mediaMode(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "videoMode "
-        "audioMode "
-        "dataMode "
+    ,(const PASN_Names *)Names_H245_H235Mode_mediaMode,4
 #endif
-    )
+)
 {
 }
 
@@ -3570,6 +3854,17 @@ PObject * H245_ArrayOf_RedundancyEncodingDTModeElement::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_RedundancyEncodingDTModeElement_type[]={
+      {"nonStandard",0}
+     ,{"videoMode",1}
+     ,{"audioMode",2}
+     ,{"dataMode",3}
+     ,{"encryptionMode",4}
+     ,{"h235Mode",5}
+};
+#endif
 //
 // RedundancyEncodingDTModeElement_type
 //
@@ -3577,14 +3872,9 @@ PObject * H245_ArrayOf_RedundancyEncodingDTModeElement::Clone() const
 H245_RedundancyEncodingDTModeElement_type::H245_RedundancyEncodingDTModeElement_type(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 6, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "videoMode "
-        "audioMode "
-        "dataMode "
-        "encryptionMode "
-        "h235Mode "
+    ,(const PASN_Names *)Names_H245_RedundancyEncodingDTModeElement_type,6
 #endif
-    )
+)
 {
 }
 
@@ -3789,6 +4079,20 @@ PObject * H245_ArrayOf_MultiplePayloadStreamElementMode::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_H223ModeParameters_adaptationLayerType[]={
+      {"nonStandard",0}
+     ,{"al1Framed",1}
+     ,{"al1NotFramed",2}
+     ,{"al2WithoutSequenceNumbers",3}
+     ,{"al2WithSequenceNumbers",4}
+     ,{"al3",5}
+     ,{"al1M",6}
+     ,{"al2M",7}
+     ,{"al3M",8}
+};
+#endif
 //
 // H223ModeParameters_adaptationLayerType
 //
@@ -3796,17 +4100,9 @@ PObject * H245_ArrayOf_MultiplePayloadStreamElementMode::Clone() const
 H245_H223ModeParameters_adaptationLayerType::H245_H223ModeParameters_adaptationLayerType(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 6, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "al1Framed "
-        "al1NotFramed "
-        "al2WithoutSequenceNumbers "
-        "al2WithSequenceNumbers "
-        "al3 "
-        "al1M "
-        "al2M "
-        "al3M "
+    ,(const PASN_Names *)Names_H245_H223ModeParameters_adaptationLayerType,9
 #endif
-    )
+)
 {
 }
 
@@ -3961,6 +4257,13 @@ PObject * H245_H223ModeParameters_adaptationLayerType::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_RedundancyEncodingMode_secondaryEncoding[]={
+      {"nonStandard",0}
+     ,{"audioData",1}
+};
+#endif
 //
 // RedundancyEncodingMode_secondaryEncoding
 //
@@ -3968,10 +4271,9 @@ PObject * H245_H223ModeParameters_adaptationLayerType::Clone() const
 H245_RedundancyEncodingMode_secondaryEncoding::H245_RedundancyEncodingMode_secondaryEncoding(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "audioData "
+    ,(const PASN_Names *)Names_H245_RedundancyEncodingMode_secondaryEncoding,2
 #endif
-    )
+)
 {
 }
 
@@ -4045,6 +4347,13 @@ PObject * H245_RedundancyEncodingMode_secondaryEncoding::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_H261VideoMode_resolution[]={
+      {"qcif",0}
+     ,{"cif",1}
+};
+#endif
 //
 // H261VideoMode_resolution
 //
@@ -4052,10 +4361,9 @@ PObject * H245_RedundancyEncodingMode_secondaryEncoding::Clone() const
 H245_H261VideoMode_resolution::H245_H261VideoMode_resolution(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "qcif "
-        "cif "
+    ,(const PASN_Names *)Names_H245_H261VideoMode_resolution,2
 #endif
-    )
+)
 {
 }
 
@@ -4076,6 +4384,22 @@ PObject * H245_H261VideoMode_resolution::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_H262VideoMode_profileAndLevel[]={
+      {"profileAndLevel_SPatML",0}
+     ,{"profileAndLevel_MPatLL",1}
+     ,{"profileAndLevel_MPatML",2}
+     ,{"profileAndLevel_MPatH_14",3}
+     ,{"profileAndLevel_MPatHL",4}
+     ,{"profileAndLevel_SNRatLL",5}
+     ,{"profileAndLevel_SNRatML",6}
+     ,{"profileAndLevel_SpatialatH_14",7}
+     ,{"profileAndLevel_HPatML",8}
+     ,{"profileAndLevel_HPatH_14",9}
+     ,{"profileAndLevel_HPatHL",10}
+};
+#endif
 //
 // H262VideoMode_profileAndLevel
 //
@@ -4083,19 +4407,9 @@ PObject * H245_H261VideoMode_resolution::Clone() const
 H245_H262VideoMode_profileAndLevel::H245_H262VideoMode_profileAndLevel(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 11, TRUE
 #ifndef PASN_NOPRINTON
-      , "profileAndLevel_SPatML "
-        "profileAndLevel_MPatLL "
-        "profileAndLevel_MPatML "
-        "profileAndLevel_MPatH_14 "
-        "profileAndLevel_MPatHL "
-        "profileAndLevel_SNRatLL "
-        "profileAndLevel_SNRatML "
-        "profileAndLevel_SpatialatH_14 "
-        "profileAndLevel_HPatML "
-        "profileAndLevel_HPatH_14 "
-        "profileAndLevel_HPatHL "
+    ,(const PASN_Names *)Names_H245_H262VideoMode_profileAndLevel,11
 #endif
-    )
+)
 {
 }
 
@@ -4116,6 +4430,17 @@ PObject * H245_H262VideoMode_profileAndLevel::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_H263VideoMode_resolution[]={
+      {"sqcif",0}
+     ,{"qcif",1}
+     ,{"cif",2}
+     ,{"cif4",3}
+     ,{"cif16",4}
+     ,{"custom",5}
+};
+#endif
 //
 // H263VideoMode_resolution
 //
@@ -4123,14 +4448,9 @@ PObject * H245_H262VideoMode_profileAndLevel::Clone() const
 H245_H263VideoMode_resolution::H245_H263VideoMode_resolution(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 5, TRUE
 #ifndef PASN_NOPRINTON
-      , "sqcif "
-        "qcif "
-        "cif "
-        "cif4 "
-        "cif16 "
-        "custom "
+    ,(const PASN_Names *)Names_H245_H263VideoMode_resolution,6
 #endif
-    )
+)
 {
 }
 
@@ -4151,6 +4471,15 @@ PObject * H245_H263VideoMode_resolution::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_AudioMode_g7231[]={
+      {"noSilenceSuppressionLowRate",0}
+     ,{"noSilenceSuppressionHighRate",1}
+     ,{"silenceSuppressionLowRate",2}
+     ,{"silenceSuppressionHighRate",3}
+};
+#endif
 //
 // AudioMode_g7231
 //
@@ -4158,12 +4487,9 @@ PObject * H245_H263VideoMode_resolution::Clone() const
 H245_AudioMode_g7231::H245_AudioMode_g7231(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, FALSE
 #ifndef PASN_NOPRINTON
-      , "noSilenceSuppressionLowRate "
-        "noSilenceSuppressionHighRate "
-        "silenceSuppressionLowRate "
-        "silenceSuppressionHighRate "
+    ,(const PASN_Names *)Names_H245_AudioMode_g7231,4
 #endif
-    )
+)
 {
 }
 
@@ -4184,6 +4510,14 @@ PObject * H245_AudioMode_g7231::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_IS11172AudioMode_audioLayer[]={
+      {"audioLayer1",0}
+     ,{"audioLayer2",1}
+     ,{"audioLayer3",2}
+};
+#endif
 //
 // IS11172AudioMode_audioLayer
 //
@@ -4191,11 +4525,9 @@ PObject * H245_AudioMode_g7231::Clone() const
 H245_IS11172AudioMode_audioLayer::H245_IS11172AudioMode_audioLayer(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, FALSE
 #ifndef PASN_NOPRINTON
-      , "audioLayer1 "
-        "audioLayer2 "
-        "audioLayer3 "
+    ,(const PASN_Names *)Names_H245_IS11172AudioMode_audioLayer,3
 #endif
-    )
+)
 {
 }
 
@@ -4216,6 +4548,14 @@ PObject * H245_IS11172AudioMode_audioLayer::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_IS11172AudioMode_audioSampling[]={
+      {"audioSampling32k",0}
+     ,{"audioSampling44k1",1}
+     ,{"audioSampling48k",2}
+};
+#endif
 //
 // IS11172AudioMode_audioSampling
 //
@@ -4223,11 +4563,9 @@ PObject * H245_IS11172AudioMode_audioLayer::Clone() const
 H245_IS11172AudioMode_audioSampling::H245_IS11172AudioMode_audioSampling(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, FALSE
 #ifndef PASN_NOPRINTON
-      , "audioSampling32k "
-        "audioSampling44k1 "
-        "audioSampling48k "
+    ,(const PASN_Names *)Names_H245_IS11172AudioMode_audioSampling,3
 #endif
-    )
+)
 {
 }
 
@@ -4248,6 +4586,14 @@ PObject * H245_IS11172AudioMode_audioSampling::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_IS11172AudioMode_multichannelType[]={
+      {"singleChannel",0}
+     ,{"twoChannelStereo",1}
+     ,{"twoChannelDual",2}
+};
+#endif
 //
 // IS11172AudioMode_multichannelType
 //
@@ -4255,11 +4601,9 @@ PObject * H245_IS11172AudioMode_audioSampling::Clone() const
 H245_IS11172AudioMode_multichannelType::H245_IS11172AudioMode_multichannelType(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, FALSE
 #ifndef PASN_NOPRINTON
-      , "singleChannel "
-        "twoChannelStereo "
-        "twoChannelDual "
+    ,(const PASN_Names *)Names_H245_IS11172AudioMode_multichannelType,3
 #endif
-    )
+)
 {
 }
 
@@ -4280,6 +4624,14 @@ PObject * H245_IS11172AudioMode_multichannelType::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_IS13818AudioMode_audioLayer[]={
+      {"audioLayer1",0}
+     ,{"audioLayer2",1}
+     ,{"audioLayer3",2}
+};
+#endif
 //
 // IS13818AudioMode_audioLayer
 //
@@ -4287,11 +4639,9 @@ PObject * H245_IS11172AudioMode_multichannelType::Clone() const
 H245_IS13818AudioMode_audioLayer::H245_IS13818AudioMode_audioLayer(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, FALSE
 #ifndef PASN_NOPRINTON
-      , "audioLayer1 "
-        "audioLayer2 "
-        "audioLayer3 "
+    ,(const PASN_Names *)Names_H245_IS13818AudioMode_audioLayer,3
 #endif
-    )
+)
 {
 }
 
@@ -4312,6 +4662,17 @@ PObject * H245_IS13818AudioMode_audioLayer::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_IS13818AudioMode_audioSampling[]={
+      {"audioSampling16k",0}
+     ,{"audioSampling22k05",1}
+     ,{"audioSampling24k",2}
+     ,{"audioSampling32k",3}
+     ,{"audioSampling44k1",4}
+     ,{"audioSampling48k",5}
+};
+#endif
 //
 // IS13818AudioMode_audioSampling
 //
@@ -4319,14 +4680,9 @@ PObject * H245_IS13818AudioMode_audioLayer::Clone() const
 H245_IS13818AudioMode_audioSampling::H245_IS13818AudioMode_audioSampling(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 6, FALSE
 #ifndef PASN_NOPRINTON
-      , "audioSampling16k "
-        "audioSampling22k05 "
-        "audioSampling24k "
-        "audioSampling32k "
-        "audioSampling44k1 "
-        "audioSampling48k "
+    ,(const PASN_Names *)Names_H245_IS13818AudioMode_audioSampling,6
 #endif
-    )
+)
 {
 }
 
@@ -4347,6 +4703,21 @@ PObject * H245_IS13818AudioMode_audioSampling::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_IS13818AudioMode_multichannelType[]={
+      {"singleChannel",0}
+     ,{"twoChannelStereo",1}
+     ,{"twoChannelDual",2}
+     ,{"threeChannels2_1",3}
+     ,{"threeChannels3_0",4}
+     ,{"fourChannels2_0_2_0",5}
+     ,{"fourChannels2_2",6}
+     ,{"fourChannels3_1",7}
+     ,{"fiveChannels3_0_2_0",8}
+     ,{"fiveChannels3_2",9}
+};
+#endif
 //
 // IS13818AudioMode_multichannelType
 //
@@ -4354,18 +4725,9 @@ PObject * H245_IS13818AudioMode_audioSampling::Clone() const
 H245_IS13818AudioMode_multichannelType::H245_IS13818AudioMode_multichannelType(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 10, FALSE
 #ifndef PASN_NOPRINTON
-      , "singleChannel "
-        "twoChannelStereo "
-        "twoChannelDual "
-        "threeChannels2_1 "
-        "threeChannels3_0 "
-        "fourChannels2_0_2_0 "
-        "fourChannels2_2 "
-        "fourChannels3_1 "
-        "fiveChannels3_0_2_0 "
-        "fiveChannels3_2 "
+    ,(const PASN_Names *)Names_H245_IS13818AudioMode_multichannelType,10
 #endif
-    )
+)
 {
 }
 
@@ -4503,6 +4865,25 @@ PObject * H245_G7231AnnexCMode_g723AnnexCAudioMode::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_DataMode_application[]={
+      {"nonStandard",0}
+     ,{"t120",1}
+     ,{"dsm_cc",2}
+     ,{"userData",3}
+     ,{"t84",4}
+     ,{"t434",5}
+     ,{"h224",6}
+     ,{"nlpid",7}
+     ,{"dsvdControl",8}
+     ,{"h222DataPartitioning",9}
+     ,{"t30fax",10}
+     ,{"t140",11}
+     ,{"t38fax",12}
+     ,{"genericDataMode",13}
+};
+#endif
 //
 // DataMode_application
 //
@@ -4510,22 +4891,9 @@ PObject * H245_G7231AnnexCMode_g723AnnexCAudioMode::Clone() const
 H245_DataMode_application::H245_DataMode_application(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 10, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "t120 "
-        "dsm_cc "
-        "userData "
-        "t84 "
-        "t434 "
-        "h224 "
-        "nlpid "
-        "dsvdControl "
-        "h222DataPartitioning "
-        "t30fax "
-        "t140 "
-        "t38fax "
-        "genericDataMode "
+    ,(const PASN_Names *)Names_H245_DataMode_application,14
 #endif
-    )
+)
 {
 }
 
@@ -4685,6 +5053,14 @@ PObject * H245_DataMode_application::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_MaintenanceLoopRequest_type[]={
+      {"systemLoop",0}
+     ,{"mediaLoop",1}
+     ,{"logicalChannelLoop",2}
+};
+#endif
 //
 // MaintenanceLoopRequest_type
 //
@@ -4692,11 +5068,9 @@ PObject * H245_DataMode_application::Clone() const
 H245_MaintenanceLoopRequest_type::H245_MaintenanceLoopRequest_type(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "systemLoop "
-        "mediaLoop "
-        "logicalChannelLoop "
+    ,(const PASN_Names *)Names_H245_MaintenanceLoopRequest_type,3
 #endif
-    )
+)
 {
 }
 
@@ -4749,6 +5123,14 @@ PObject * H245_MaintenanceLoopRequest_type::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_MaintenanceLoopAck_type[]={
+      {"systemLoop",0}
+     ,{"mediaLoop",1}
+     ,{"logicalChannelLoop",2}
+};
+#endif
 //
 // MaintenanceLoopAck_type
 //
@@ -4756,11 +5138,9 @@ PObject * H245_MaintenanceLoopRequest_type::Clone() const
 H245_MaintenanceLoopAck_type::H245_MaintenanceLoopAck_type(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "systemLoop "
-        "mediaLoop "
-        "logicalChannelLoop "
+    ,(const PASN_Names *)Names_H245_MaintenanceLoopAck_type,3
 #endif
-    )
+)
 {
 }
 
@@ -4813,6 +5193,14 @@ PObject * H245_MaintenanceLoopAck_type::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_MaintenanceLoopReject_type[]={
+      {"systemLoop",0}
+     ,{"mediaLoop",1}
+     ,{"logicalChannelLoop",2}
+};
+#endif
 //
 // MaintenanceLoopReject_type
 //
@@ -4820,11 +5208,9 @@ PObject * H245_MaintenanceLoopAck_type::Clone() const
 H245_MaintenanceLoopReject_type::H245_MaintenanceLoopReject_type(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "systemLoop "
-        "mediaLoop "
-        "logicalChannelLoop "
+    ,(const PASN_Names *)Names_H245_MaintenanceLoopReject_type,3
 #endif
-    )
+)
 {
 }
 
@@ -4877,6 +5263,12 @@ PObject * H245_MaintenanceLoopReject_type::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_MaintenanceLoopReject_cause[]={
+      {"canNotPerformLoop",0}
+};
+#endif
 //
 // MaintenanceLoopReject_cause
 //
@@ -4884,9 +5276,9 @@ PObject * H245_MaintenanceLoopReject_type::Clone() const
 H245_MaintenanceLoopReject_cause::H245_MaintenanceLoopReject_cause(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 1, TRUE
 #ifndef PASN_NOPRINTON
-      , "canNotPerformLoop "
+    ,(const PASN_Names *)Names_H245_MaintenanceLoopReject_cause,1
 #endif
-    )
+)
 {
 }
 
@@ -4938,6 +5330,14 @@ PObject * H245_ArrayOf_CommunicationModeTableEntry::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_CommunicationModeTableEntry_dataType[]={
+      {"videoData",0}
+     ,{"audioData",1}
+     ,{"data",2}
+};
+#endif
 //
 // CommunicationModeTableEntry_dataType
 //
@@ -4945,11 +5345,9 @@ PObject * H245_ArrayOf_CommunicationModeTableEntry::Clone() const
 H245_CommunicationModeTableEntry_dataType::H245_CommunicationModeTableEntry_dataType(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "videoData "
-        "audioData "
-        "data "
+    ,(const PASN_Names *)Names_H245_CommunicationModeTableEntry_dataType,3
 #endif
-    )
+)
 {
 }
 
@@ -5079,6 +5477,13 @@ PObject * H245_ArrayOf_TerminalLabel::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_ConferenceResponse_makeMeChairResponse[]={
+      {"grantedChairToken",0}
+     ,{"deniedChairToken",1}
+};
+#endif
 //
 // ConferenceResponse_makeMeChairResponse
 //
@@ -5086,10 +5491,9 @@ PObject * H245_ArrayOf_TerminalLabel::Clone() const
 H245_ConferenceResponse_makeMeChairResponse::H245_ConferenceResponse_makeMeChairResponse(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "grantedChairToken "
-        "deniedChairToken "
+    ,(const PASN_Names *)Names_H245_ConferenceResponse_makeMeChairResponse,2
 #endif
-    )
+)
 {
 }
 
@@ -5186,6 +5590,13 @@ PObject * H245_ConferenceResponse_extensionAddressResponse::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_ConferenceResponse_broadcastMyLogicalChannelResponse[]={
+      {"grantedBroadcastMyLogicalChannel",0}
+     ,{"deniedBroadcastMyLogicalChannel",1}
+};
+#endif
 //
 // ConferenceResponse_broadcastMyLogicalChannelResponse
 //
@@ -5193,10 +5604,9 @@ PObject * H245_ConferenceResponse_extensionAddressResponse::Clone() const
 H245_ConferenceResponse_broadcastMyLogicalChannelResponse::H245_ConferenceResponse_broadcastMyLogicalChannelResponse(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "grantedBroadcastMyLogicalChannel "
-        "deniedBroadcastMyLogicalChannel "
+    ,(const PASN_Names *)Names_H245_ConferenceResponse_broadcastMyLogicalChannelResponse,2
 #endif
-    )
+)
 {
 }
 
@@ -5217,6 +5627,13 @@ PObject * H245_ConferenceResponse_broadcastMyLogicalChannelResponse::Clone() con
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_ConferenceResponse_makeTerminalBroadcasterResponse[]={
+      {"grantedMakeTerminalBroadcaster",0}
+     ,{"deniedMakeTerminalBroadcaster",1}
+};
+#endif
 //
 // ConferenceResponse_makeTerminalBroadcasterResponse
 //
@@ -5224,10 +5641,9 @@ PObject * H245_ConferenceResponse_broadcastMyLogicalChannelResponse::Clone() con
 H245_ConferenceResponse_makeTerminalBroadcasterResponse::H245_ConferenceResponse_makeTerminalBroadcasterResponse(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "grantedMakeTerminalBroadcaster "
-        "deniedMakeTerminalBroadcaster "
+    ,(const PASN_Names *)Names_H245_ConferenceResponse_makeTerminalBroadcasterResponse,2
 #endif
-    )
+)
 {
 }
 
@@ -5248,6 +5664,13 @@ PObject * H245_ConferenceResponse_makeTerminalBroadcasterResponse::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_ConferenceResponse_sendThisSourceResponse[]={
+      {"grantedSendThisSource",0}
+     ,{"deniedSendThisSource",1}
+};
+#endif
 //
 // ConferenceResponse_sendThisSourceResponse
 //
@@ -5255,10 +5678,9 @@ PObject * H245_ConferenceResponse_makeTerminalBroadcasterResponse::Clone() const
 H245_ConferenceResponse_sendThisSourceResponse::H245_ConferenceResponse_sendThisSourceResponse(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "grantedSendThisSource "
-        "deniedSendThisSource "
+    ,(const PASN_Names *)Names_H245_ConferenceResponse_sendThisSourceResponse,2
 #endif
-    )
+)
 {
 }
 
@@ -5310,6 +5732,13 @@ PObject * H245_ArrayOf_TerminalInformation::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_RemoteMCResponse_reject[]={
+      {"unspecified",0}
+     ,{"functionNotSupported",1}
+};
+#endif
 //
 // RemoteMCResponse_reject
 //
@@ -5317,10 +5746,9 @@ PObject * H245_ArrayOf_TerminalInformation::Clone() const
 H245_RemoteMCResponse_reject::H245_RemoteMCResponse_reject(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "unspecified "
-        "functionNotSupported "
+    ,(const PASN_Names *)Names_H245_RemoteMCResponse_reject,2
 #endif
-    )
+)
 {
 }
 
@@ -6007,6 +6435,14 @@ PObject * H245_ArrayOf_DialingInformationNetworkType::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_FlowControlCommand_scope[]={
+      {"logicalChannelNumber",0}
+     ,{"resourceID",1}
+     ,{"wholeMultiplex",2}
+};
+#endif
 //
 // FlowControlCommand_scope
 //
@@ -6014,11 +6450,9 @@ PObject * H245_ArrayOf_DialingInformationNetworkType::Clone() const
 H245_FlowControlCommand_scope::H245_FlowControlCommand_scope(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, FALSE
 #ifndef PASN_NOPRINTON
-      , "logicalChannelNumber "
-        "resourceID "
-        "wholeMultiplex "
+    ,(const PASN_Names *)Names_H245_FlowControlCommand_scope,3
 #endif
-    )
+)
 {
 }
 
@@ -6074,6 +6508,13 @@ PObject * H245_FlowControlCommand_scope::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_FlowControlCommand_restriction[]={
+      {"maximumBitRate",0}
+     ,{"noRestriction",1}
+};
+#endif
 //
 // FlowControlCommand_restriction
 //
@@ -6081,10 +6522,9 @@ PObject * H245_FlowControlCommand_scope::Clone() const
 H245_FlowControlCommand_restriction::H245_FlowControlCommand_restriction(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "maximumBitRate "
-        "noRestriction "
+    ,(const PASN_Names *)Names_H245_FlowControlCommand_restriction,2
 #endif
-    )
+)
 {
 }
 
@@ -6115,6 +6555,16 @@ PObject * H245_FlowControlCommand_restriction::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_EndSessionCommand_gstnOptions[]={
+      {"telephonyMode",0}
+     ,{"v8bis",1}
+     ,{"v34DSVD",2}
+     ,{"v34DuplexFAX",3}
+     ,{"v34H324",4}
+};
+#endif
 //
 // EndSessionCommand_gstnOptions
 //
@@ -6122,13 +6572,9 @@ PObject * H245_FlowControlCommand_restriction::Clone() const
 H245_EndSessionCommand_gstnOptions::H245_EndSessionCommand_gstnOptions(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 5, TRUE
 #ifndef PASN_NOPRINTON
-      , "telephonyMode "
-        "v8bis "
-        "v34DSVD "
-        "v34DuplexFAX "
-        "v34H324 "
+    ,(const PASN_Names *)Names_H245_EndSessionCommand_gstnOptions,5
 #endif
-    )
+)
 {
 }
 
@@ -6149,6 +6595,14 @@ PObject * H245_EndSessionCommand_gstnOptions::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_EndSessionCommand_isdnOptions[]={
+      {"telephonyMode",0}
+     ,{"v140",1}
+     ,{"terminalOnHold",2}
+};
+#endif
 //
 // EndSessionCommand_isdnOptions
 //
@@ -6156,11 +6610,9 @@ PObject * H245_EndSessionCommand_gstnOptions::Clone() const
 H245_EndSessionCommand_isdnOptions::H245_EndSessionCommand_isdnOptions(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "telephonyMode "
-        "v140 "
-        "terminalOnHold "
+    ,(const PASN_Names *)Names_H245_EndSessionCommand_isdnOptions,3
 #endif
-    )
+)
 {
 }
 
@@ -6181,6 +6633,36 @@ PObject * H245_EndSessionCommand_isdnOptions::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_MiscellaneousCommand_type[]={
+      {"equaliseDelay",0}
+     ,{"zeroDelay",1}
+     ,{"multipointModeCommand",2}
+     ,{"cancelMultipointModeCommand",3}
+     ,{"videoFreezePicture",4}
+     ,{"videoFastUpdatePicture",5}
+     ,{"videoFastUpdateGOB",6}
+     ,{"videoTemporalSpatialTradeOff",7}
+     ,{"videoSendSyncEveryGOB",8}
+     ,{"videoSendSyncEveryGOBCancel",9}
+     ,{"videoFastUpdateMB",10}
+     ,{"maxH223MUXPDUsize",11}
+     ,{"encryptionUpdate",12}
+     ,{"encryptionUpdateRequest",13}
+     ,{"switchReceiveMediaOff",14}
+     ,{"switchReceiveMediaOn",15}
+     ,{"progressiveRefinementStart",16}
+     ,{"progressiveRefinementAbortOne",17}
+     ,{"progressiveRefinementAbortContinuous",18}
+     ,{"videoBadMBs",19}
+     ,{"lostPicture",20}
+     ,{"lostPartialPicture",21}
+     ,{"recoveryReferencePicture",22}
+     ,{"encryptionUpdateCommand",23}
+     ,{"encryptionUpdateAck",24}
+};
+#endif
 //
 // MiscellaneousCommand_type
 //
@@ -6188,31 +6670,9 @@ PObject * H245_EndSessionCommand_isdnOptions::Clone() const
 H245_MiscellaneousCommand_type::H245_MiscellaneousCommand_type(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 10, TRUE
 #ifndef PASN_NOPRINTON
-      , "equaliseDelay "
-        "zeroDelay "
-        "multipointModeCommand "
-        "cancelMultipointModeCommand "
-        "videoFreezePicture "
-        "videoFastUpdatePicture "
-        "videoFastUpdateGOB "
-        "videoTemporalSpatialTradeOff "
-        "videoSendSyncEveryGOB "
-        "videoSendSyncEveryGOBCancel "
-        "videoFastUpdateMB "
-        "maxH223MUXPDUsize "
-        "encryptionUpdate "
-        "encryptionUpdateRequest "
-        "switchReceiveMediaOff "
-        "switchReceiveMediaOn "
-        "progressiveRefinementStart "
-        "progressiveRefinementAbortOne "
-        "progressiveRefinementAbortContinuous "
-        "videoBadMBs "
-        "lostPicture "
-        "lostPartialPicture "
-        "recoveryReferencePicture "
+    ,(const PASN_Names *)Names_H245_MiscellaneousCommand_type,25
 #endif
-    )
+)
 {
 }
 
@@ -6393,6 +6853,50 @@ H245_MiscellaneousCommand_type::operator const H245_MiscellaneousCommand_type_lo
 }
 
 
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+H245_MiscellaneousCommand_type::operator H245_MiscellaneousCommand_type_encryptionUpdateCommand &() const
+#else
+H245_MiscellaneousCommand_type::operator H245_MiscellaneousCommand_type_encryptionUpdateCommand &()
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_MiscellaneousCommand_type_encryptionUpdateCommand), PInvalidCast);
+#endif
+  return *(H245_MiscellaneousCommand_type_encryptionUpdateCommand *)choice;
+}
+
+
+H245_MiscellaneousCommand_type::operator const H245_MiscellaneousCommand_type_encryptionUpdateCommand &() const
+#endif
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_MiscellaneousCommand_type_encryptionUpdateCommand), PInvalidCast);
+#endif
+  return *(H245_MiscellaneousCommand_type_encryptionUpdateCommand *)choice;
+}
+
+
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+H245_MiscellaneousCommand_type::operator H245_MiscellaneousCommand_type_encryptionUpdateAck &() const
+#else
+H245_MiscellaneousCommand_type::operator H245_MiscellaneousCommand_type_encryptionUpdateAck &()
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_MiscellaneousCommand_type_encryptionUpdateAck), PInvalidCast);
+#endif
+  return *(H245_MiscellaneousCommand_type_encryptionUpdateAck *)choice;
+}
+
+
+H245_MiscellaneousCommand_type::operator const H245_MiscellaneousCommand_type_encryptionUpdateAck &() const
+#endif
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_MiscellaneousCommand_type_encryptionUpdateAck), PInvalidCast);
+#endif
+  return *(H245_MiscellaneousCommand_type_encryptionUpdateAck *)choice;
+}
+
+
 BOOL H245_MiscellaneousCommand_type::CreateObject()
 {
   switch (tag) {
@@ -6443,6 +6947,12 @@ BOOL H245_MiscellaneousCommand_type::CreateObject()
     case e_lostPartialPicture :
       choice = new H245_MiscellaneousCommand_type_lostPartialPicture();
       return TRUE;
+    case e_encryptionUpdateCommand :
+      choice = new H245_MiscellaneousCommand_type_encryptionUpdateCommand();
+      return TRUE;
+    case e_encryptionUpdateAck :
+      choice = new H245_MiscellaneousCommand_type_encryptionUpdateAck();
+      return TRUE;
   }
 
   choice = NULL;
@@ -6459,6 +6969,15 @@ PObject * H245_MiscellaneousCommand_type::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_H223MultiplexReconfiguration_h223ModeChange[]={
+      {"toLevel0",0}
+     ,{"toLevel1",1}
+     ,{"toLevel2",2}
+     ,{"toLevel2withOptionalHeader",3}
+};
+#endif
 //
 // H223MultiplexReconfiguration_h223ModeChange
 //
@@ -6466,12 +6985,9 @@ PObject * H245_MiscellaneousCommand_type::Clone() const
 H245_H223MultiplexReconfiguration_h223ModeChange::H245_H223MultiplexReconfiguration_h223ModeChange(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "toLevel0 "
-        "toLevel1 "
-        "toLevel2 "
-        "toLevel2withOptionalHeader "
+    ,(const PASN_Names *)Names_H245_H223MultiplexReconfiguration_h223ModeChange,4
 #endif
-    )
+)
 {
 }
 
@@ -6492,6 +7008,13 @@ PObject * H245_H223MultiplexReconfiguration_h223ModeChange::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_H223MultiplexReconfiguration_h223AnnexADoubleFlag[]={
+      {"start",0}
+     ,{"stop",1}
+};
+#endif
 //
 // H223MultiplexReconfiguration_h223AnnexADoubleFlag
 //
@@ -6499,10 +7022,9 @@ PObject * H245_H223MultiplexReconfiguration_h223ModeChange::Clone() const
 H245_H223MultiplexReconfiguration_h223AnnexADoubleFlag::H245_H223MultiplexReconfiguration_h223AnnexADoubleFlag(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "start "
-        "stop "
+    ,(const PASN_Names *)Names_H245_H223MultiplexReconfiguration_h223AnnexADoubleFlag,2
 #endif
-    )
+)
 {
 }
 
@@ -6523,6 +7045,13 @@ PObject * H245_H223MultiplexReconfiguration_h223AnnexADoubleFlag::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_NewATMVCCommand_aal[]={
+      {"aal1",0}
+     ,{"aal5",1}
+};
+#endif
 //
 // NewATMVCCommand_aal
 //
@@ -6530,10 +7059,9 @@ PObject * H245_H223MultiplexReconfiguration_h223AnnexADoubleFlag::Clone() const
 H245_NewATMVCCommand_aal::H245_NewATMVCCommand_aal(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "aal1 "
-        "aal5 "
+    ,(const PASN_Names *)Names_H245_NewATMVCCommand_aal,2
 #endif
-    )
+)
 {
 }
 
@@ -6607,6 +7135,14 @@ PObject * H245_NewATMVCCommand_aal::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_NewATMVCCommand_multiplex[]={
+      {"noMultiplex",0}
+     ,{"transportStream",1}
+     ,{"programStream",2}
+};
+#endif
 //
 // NewATMVCCommand_multiplex
 //
@@ -6614,11 +7150,9 @@ PObject * H245_NewATMVCCommand_aal::Clone() const
 H245_NewATMVCCommand_multiplex::H245_NewATMVCCommand_multiplex(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "noMultiplex "
-        "transportStream "
-        "programStream "
+    ,(const PASN_Names *)Names_H245_NewATMVCCommand_multiplex,3
 #endif
-    )
+)
 {
 }
 
@@ -6639,6 +7173,13 @@ PObject * H245_NewATMVCCommand_multiplex::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_MobileMultilinkReconfigurationCommand_status[]={
+      {"synchronized",0}
+     ,{"reconfiguration",1}
+};
+#endif
 //
 // MobileMultilinkReconfigurationCommand_status
 //
@@ -6646,10 +7187,9 @@ PObject * H245_NewATMVCCommand_multiplex::Clone() const
 H245_MobileMultilinkReconfigurationCommand_status::H245_MobileMultilinkReconfigurationCommand_status(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "synchronized "
-        "reconfiguration "
+    ,(const PASN_Names *)Names_H245_MobileMultilinkReconfigurationCommand_status,2
 #endif
-    )
+)
 {
 }
 
@@ -6670,6 +7210,14 @@ PObject * H245_MobileMultilinkReconfigurationCommand_status::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_FunctionNotSupported_cause[]={
+      {"syntaxError",0}
+     ,{"semanticError",1}
+     ,{"unknownFunction",2}
+};
+#endif
 //
 // FunctionNotSupported_cause
 //
@@ -6677,11 +7225,9 @@ PObject * H245_MobileMultilinkReconfigurationCommand_status::Clone() const
 H245_FunctionNotSupported_cause::H245_FunctionNotSupported_cause(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "syntaxError "
-        "semanticError "
-        "unknownFunction "
+    ,(const PASN_Names *)Names_H245_FunctionNotSupported_cause,3
 #endif
-    )
+)
 {
 }
 
@@ -6702,6 +7248,23 @@ PObject * H245_FunctionNotSupported_cause::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_MiscellaneousIndication_type[]={
+      {"logicalChannelActive",0}
+     ,{"logicalChannelInactive",1}
+     ,{"multipointConference",2}
+     ,{"cancelMultipointConference",3}
+     ,{"multipointZeroComm",4}
+     ,{"cancelMultipointZeroComm",5}
+     ,{"multipointSecondaryStatus",6}
+     ,{"cancelMultipointSecondaryStatus",7}
+     ,{"videoIndicateReadyToActivate",8}
+     ,{"videoTemporalSpatialTradeOff",9}
+     ,{"videoNotDecodedMBs",10}
+     ,{"transportCapability",11}
+};
+#endif
 //
 // MiscellaneousIndication_type
 //
@@ -6709,20 +7272,9 @@ PObject * H245_FunctionNotSupported_cause::Clone() const
 H245_MiscellaneousIndication_type::H245_MiscellaneousIndication_type(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 10, TRUE
 #ifndef PASN_NOPRINTON
-      , "logicalChannelActive "
-        "logicalChannelInactive "
-        "multipointConference "
-        "cancelMultipointConference "
-        "multipointZeroComm "
-        "cancelMultipointZeroComm "
-        "multipointSecondaryStatus "
-        "cancelMultipointSecondaryStatus "
-        "videoIndicateReadyToActivate "
-        "videoTemporalSpatialTradeOff "
-        "videoNotDecodedMBs "
-        "transportCapability "
+    ,(const PASN_Names *)Names_H245_MiscellaneousIndication_type,12
 #endif
-    )
+)
 {
 }
 
@@ -6811,6 +7363,14 @@ PObject * H245_MiscellaneousIndication_type::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_JitterIndication_scope[]={
+      {"logicalChannelNumber",0}
+     ,{"resourceID",1}
+     ,{"wholeMultiplex",2}
+};
+#endif
 //
 // JitterIndication_scope
 //
@@ -6818,11 +7378,9 @@ PObject * H245_MiscellaneousIndication_type::Clone() const
 H245_JitterIndication_scope::H245_JitterIndication_scope(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, FALSE
 #ifndef PASN_NOPRINTON
-      , "logicalChannelNumber "
-        "resourceID "
-        "wholeMultiplex "
+    ,(const PASN_Names *)Names_H245_JitterIndication_scope,3
 #endif
-    )
+)
 {
 }
 
@@ -6878,6 +7436,13 @@ PObject * H245_JitterIndication_scope::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_NewATMVCIndication_aal[]={
+      {"aal1",0}
+     ,{"aal5",1}
+};
+#endif
 //
 // NewATMVCIndication_aal
 //
@@ -6885,10 +7450,9 @@ PObject * H245_JitterIndication_scope::Clone() const
 H245_NewATMVCIndication_aal::H245_NewATMVCIndication_aal(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "aal1 "
-        "aal5 "
+    ,(const PASN_Names *)Names_H245_NewATMVCIndication_aal,2
 #endif
-    )
+)
 {
 }
 
@@ -6962,6 +7526,14 @@ PObject * H245_NewATMVCIndication_aal::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_NewATMVCIndication_multiplex[]={
+      {"noMultiplex",0}
+     ,{"transportStream",1}
+     ,{"programStream",2}
+};
+#endif
 //
 // NewATMVCIndication_multiplex
 //
@@ -6969,11 +7541,9 @@ PObject * H245_NewATMVCIndication_aal::Clone() const
 H245_NewATMVCIndication_multiplex::H245_NewATMVCIndication_multiplex(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "noMultiplex "
-        "transportStream "
-        "programStream "
+    ,(const PASN_Names *)Names_H245_NewATMVCIndication_multiplex,3
 #endif
-    )
+)
 {
 }
 
@@ -6994,6 +7564,18 @@ PObject * H245_NewATMVCIndication_multiplex::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_UserInputIndication_userInputSupportIndication[]={
+      {"nonStandard",0}
+     ,{"basicString",1}
+     ,{"iA5String",2}
+     ,{"generalString",3}
+     ,{"encryptedBasicString",4}
+     ,{"encryptedIA5String",5}
+     ,{"encryptedGeneralString",6}
+};
+#endif
 //
 // UserInputIndication_userInputSupportIndication
 //
@@ -7001,12 +7583,9 @@ PObject * H245_NewATMVCIndication_multiplex::Clone() const
 H245_UserInputIndication_userInputSupportIndication::H245_UserInputIndication_userInputSupportIndication(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandard "
-        "basicString "
-        "iA5String "
-        "generalString "
+    ,(const PASN_Names *)Names_H245_UserInputIndication_userInputSupportIndication,7
 #endif
-    )
+)
 {
 }
 
@@ -7042,6 +7621,9 @@ BOOL H245_UserInputIndication_userInputSupportIndication::CreateObject()
     case e_basicString :
     case e_iA5String :
     case e_generalString :
+    case e_encryptedBasicString :
+    case e_encryptedIA5String :
+    case e_encryptedGeneralString :
       choice = new PASN_Null();
       return TRUE;
   }
@@ -7061,91 +7643,106 @@ PObject * H245_UserInputIndication_userInputSupportIndication::Clone() const
 
 
 //
-// UserInputIndication_extendedAlphanumeric
+// UserInputIndication_encryptedAlphanumeric
 //
 
-H245_UserInputIndication_extendedAlphanumeric::H245_UserInputIndication_extendedAlphanumeric(unsigned tag, PASN_Object::TagClass tagClass)
+H245_UserInputIndication_encryptedAlphanumeric::H245_UserInputIndication_encryptedAlphanumeric(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
 {
 }
 
 
 #ifndef PASN_NOPRINTON
-void H245_UserInputIndication_extendedAlphanumeric::PrintOn(ostream & strm) const
+void H245_UserInputIndication_encryptedAlphanumeric::PrintOn(ostream & strm) const
 {
   int indent = strm.precision() + 2;
   strm << "{\n";
-  strm << setw(indent+15) << "alphanumeric = " << setprecision(indent) << m_alphanumeric << '\n';
-  if (HasOptionalField(e_rtpPayloadIndication))
-    strm << setw(indent+23) << "rtpPayloadIndication = " << setprecision(indent) << m_rtpPayloadIndication << '\n';
+  strm << setw(indent+15) << "algorithmOID = " << setprecision(indent) << m_algorithmOID << '\n';
+  if (HasOptionalField(e_paramS))
+    strm << setw(indent+9) << "paramS = " << setprecision(indent) << m_paramS << '\n';
+  strm << setw(indent+12) << "encrypted = " << setprecision(indent) << m_encrypted << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
 
 
-PObject::Comparison H245_UserInputIndication_extendedAlphanumeric::Compare(const PObject & obj) const
+PObject::Comparison H245_UserInputIndication_encryptedAlphanumeric::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(&obj, H245_UserInputIndication_extendedAlphanumeric), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_UserInputIndication_encryptedAlphanumeric), PInvalidCast);
 #endif
-  const H245_UserInputIndication_extendedAlphanumeric & other = (const H245_UserInputIndication_extendedAlphanumeric &)obj;
+  const H245_UserInputIndication_encryptedAlphanumeric & other = (const H245_UserInputIndication_encryptedAlphanumeric &)obj;
 
   Comparison result;
 
-  if ((result = m_alphanumeric.Compare(other.m_alphanumeric)) != EqualTo)
+  if ((result = m_algorithmOID.Compare(other.m_algorithmOID)) != EqualTo)
     return result;
-  if ((result = m_rtpPayloadIndication.Compare(other.m_rtpPayloadIndication)) != EqualTo)
+  if ((result = m_paramS.Compare(other.m_paramS)) != EqualTo)
+    return result;
+  if ((result = m_encrypted.Compare(other.m_encrypted)) != EqualTo)
     return result;
 
   return PASN_Sequence::Compare(other);
 }
 
 
-PINDEX H245_UserInputIndication_extendedAlphanumeric::GetDataLength() const
+PINDEX H245_UserInputIndication_encryptedAlphanumeric::GetDataLength() const
 {
   PINDEX length = 0;
-  length += m_alphanumeric.GetObjectLength();
-  if (HasOptionalField(e_rtpPayloadIndication))
-    length += m_rtpPayloadIndication.GetObjectLength();
+  length += m_algorithmOID.GetObjectLength();
+  if (HasOptionalField(e_paramS))
+    length += m_paramS.GetObjectLength();
+  length += m_encrypted.GetObjectLength();
   return length;
 }
 
 
-BOOL H245_UserInputIndication_extendedAlphanumeric::Decode(PASN_Stream & strm)
+BOOL H245_UserInputIndication_encryptedAlphanumeric::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
     return FALSE;
 
-  if (!m_alphanumeric.Decode(strm))
+  if (!m_algorithmOID.Decode(strm))
     return FALSE;
-  if (HasOptionalField(e_rtpPayloadIndication) && !m_rtpPayloadIndication.Decode(strm))
+  if (HasOptionalField(e_paramS) && !m_paramS.Decode(strm))
+    return FALSE;
+  if (!m_encrypted.Decode(strm))
     return FALSE;
 
   return UnknownExtensionsDecode(strm);
 }
 
 
-void H245_UserInputIndication_extendedAlphanumeric::Encode(PASN_Stream & strm) const
+void H245_UserInputIndication_encryptedAlphanumeric::Encode(PASN_Stream & strm) const
 {
   PreambleEncode(strm);
 
-  m_alphanumeric.Encode(strm);
-  if (HasOptionalField(e_rtpPayloadIndication))
-    m_rtpPayloadIndication.Encode(strm);
+  m_algorithmOID.Encode(strm);
+  if (HasOptionalField(e_paramS))
+    m_paramS.Encode(strm);
+  m_encrypted.Encode(strm);
 
   UnknownExtensionsEncode(strm);
 }
 
 
-PObject * H245_UserInputIndication_extendedAlphanumeric::Clone() const
+PObject * H245_UserInputIndication_encryptedAlphanumeric::Clone() const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(IsClass(H245_UserInputIndication_extendedAlphanumeric::Class()), PInvalidCast);
+  PAssert(IsClass(H245_UserInputIndication_encryptedAlphanumeric::Class()), PInvalidCast);
 #endif
-  return new H245_UserInputIndication_extendedAlphanumeric(*this);
+  return new H245_UserInputIndication_encryptedAlphanumeric(*this);
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_FlowControlIndication_scope[]={
+      {"logicalChannelNumber",0}
+     ,{"resourceID",1}
+     ,{"wholeMultiplex",2}
+};
+#endif
 //
 // FlowControlIndication_scope
 //
@@ -7153,11 +7750,9 @@ PObject * H245_UserInputIndication_extendedAlphanumeric::Clone() const
 H245_FlowControlIndication_scope::H245_FlowControlIndication_scope(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, FALSE
 #ifndef PASN_NOPRINTON
-      , "logicalChannelNumber "
-        "resourceID "
-        "wholeMultiplex "
+    ,(const PASN_Names *)Names_H245_FlowControlIndication_scope,3
 #endif
-    )
+)
 {
 }
 
@@ -7213,6 +7808,13 @@ PObject * H245_FlowControlIndication_scope::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_FlowControlIndication_restriction[]={
+      {"maximumBitRate",0}
+     ,{"noRestriction",1}
+};
+#endif
 //
 // FlowControlIndication_restriction
 //
@@ -7220,10 +7822,9 @@ PObject * H245_FlowControlIndication_scope::Clone() const
 H245_FlowControlIndication_restriction::H245_FlowControlIndication_restriction(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "maximumBitRate "
-        "noRestriction "
+    ,(const PASN_Names *)Names_H245_FlowControlIndication_restriction,2
 #endif
-    )
+)
 {
 }
 
@@ -7254,6 +7855,13 @@ PObject * H245_FlowControlIndication_restriction::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_TerminalCapabilitySetReject_cause_tableEntryCapacityExceeded[]={
+      {"highestEntryNumberProcessed",0}
+     ,{"noneProcessed",1}
+};
+#endif
 //
 // TerminalCapabilitySetReject_cause_tableEntryCapacityExceeded
 //
@@ -7261,10 +7869,9 @@ PObject * H245_FlowControlIndication_restriction::Clone() const
 H245_TerminalCapabilitySetReject_cause_tableEntryCapacityExceeded::H245_TerminalCapabilitySetReject_cause_tableEntryCapacityExceeded(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "highestEntryNumberProcessed "
-        "noneProcessed "
+    ,(const PASN_Names *)Names_H245_TerminalCapabilitySetReject_cause_tableEntryCapacityExceeded,2
 #endif
-    )
+)
 {
 }
 
@@ -7316,6 +7923,13 @@ PObject * H245_TerminalCapabilitySetReject_cause_tableEntryCapacityExceeded::Clo
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_VCCapability_availableBitRates_type[]={
+      {"singleBitRate",0}
+     ,{"rangeOfBitRates",1}
+};
+#endif
 //
 // VCCapability_availableBitRates_type
 //
@@ -7323,10 +7937,9 @@ PObject * H245_TerminalCapabilitySetReject_cause_tableEntryCapacityExceeded::Clo
 H245_VCCapability_availableBitRates_type::H245_VCCapability_availableBitRates_type(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "singleBitRate "
-        "rangeOfBitRates "
+    ,(const PASN_Names *)Names_H245_VCCapability_availableBitRates_type,2
 #endif
-    )
+)
 {
 }
 
@@ -7974,6 +8587,16 @@ PObject * H245_FECCapability_rfc2733_separateStream::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_OpenLogicalChannel_forwardLogicalChannelParameters_multiplexParameters[]={
+      {"h222LogicalChannelParameters",0}
+     ,{"h223LogicalChannelParameters",1}
+     ,{"v76LogicalChannelParameters",2}
+     ,{"h2250LogicalChannelParameters",3}
+     ,{"none",4}
+};
+#endif
 //
 // OpenLogicalChannel_forwardLogicalChannelParameters_multiplexParameters
 //
@@ -7981,13 +8604,9 @@ PObject * H245_FECCapability_rfc2733_separateStream::Clone() const
 H245_OpenLogicalChannel_forwardLogicalChannelParameters_multiplexParameters::H245_OpenLogicalChannel_forwardLogicalChannelParameters_multiplexParameters(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "h222LogicalChannelParameters "
-        "h223LogicalChannelParameters "
-        "v76LogicalChannelParameters "
-        "h2250LogicalChannelParameters "
-        "none "
+    ,(const PASN_Names *)Names_H245_OpenLogicalChannel_forwardLogicalChannelParameters_multiplexParameters,5
 #endif
-    )
+)
 {
 }
 
@@ -8114,6 +8733,14 @@ PObject * H245_OpenLogicalChannel_forwardLogicalChannelParameters_multiplexParam
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters[]={
+      {"h223LogicalChannelParameters",0}
+     ,{"v76LogicalChannelParameters",1}
+     ,{"h2250LogicalChannelParameters",2}
+};
+#endif
 //
 // OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters
 //
@@ -8121,11 +8748,9 @@ PObject * H245_OpenLogicalChannel_forwardLogicalChannelParameters_multiplexParam
 H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters::H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "h223LogicalChannelParameters "
-        "v76LogicalChannelParameters "
-        "h2250LogicalChannelParameters "
+    ,(const PASN_Names *)Names_H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters,3
 #endif
-    )
+)
 {
 }
 
@@ -8340,6 +8965,13 @@ PObject * H245_ArrayOf_RedundancyEncodingElement::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_FECData_rfc2733_mode[]={
+      {"redundancyEncoding",0}
+     ,{"separateStream",1}
+};
+#endif
 //
 // FECData_rfc2733_mode
 //
@@ -8347,10 +8979,9 @@ PObject * H245_ArrayOf_RedundancyEncodingElement::Clone() const
 H245_FECData_rfc2733_mode::H245_FECData_rfc2733_mode(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "redundancyEncoding "
-        "separateStream "
+    ,(const PASN_Names *)Names_H245_FECData_rfc2733_mode,2
 #endif
-    )
+)
 {
 }
 
@@ -8402,6 +9033,13 @@ PObject * H245_FECData_rfc2733_mode::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_UnicastAddress_iPSourceRouteAddress_routing[]={
+      {"strict",0}
+     ,{"loose",1}
+};
+#endif
 //
 // UnicastAddress_iPSourceRouteAddress_routing
 //
@@ -8409,10 +9047,9 @@ PObject * H245_FECData_rfc2733_mode::Clone() const
 H245_UnicastAddress_iPSourceRouteAddress_routing::H245_UnicastAddress_iPSourceRouteAddress_routing(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "strict "
-        "loose "
+    ,(const PASN_Names *)Names_H245_UnicastAddress_iPSourceRouteAddress_routing,2
 #endif
-    )
+)
 {
 }
 
@@ -8466,6 +9103,13 @@ PObject * H245_UnicastAddress_iPSourceRouteAddress_route::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_OpenLogicalChannelAck_reverseLogicalChannelParameters_multiplexParameters[]={
+      {"h222LogicalChannelParameters",0}
+     ,{"h2250LogicalChannelParameters",1}
+};
+#endif
 //
 // OpenLogicalChannelAck_reverseLogicalChannelParameters_multiplexParameters
 //
@@ -8473,10 +9117,9 @@ PObject * H245_UnicastAddress_iPSourceRouteAddress_route::Clone() const
 H245_OpenLogicalChannelAck_reverseLogicalChannelParameters_multiplexParameters::H245_OpenLogicalChannelAck_reverseLogicalChannelParameters_multiplexParameters(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 1, TRUE
 #ifndef PASN_NOPRINTON
-      , "h222LogicalChannelParameters "
-        "h2250LogicalChannelParameters "
+    ,(const PASN_Names *)Names_H245_OpenLogicalChannelAck_reverseLogicalChannelParameters_multiplexParameters,2
 #endif
-    )
+)
 {
 }
 
@@ -8550,6 +9193,13 @@ PObject * H245_OpenLogicalChannelAck_reverseLogicalChannelParameters_multiplexPa
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_FECMode_rfc2733Mode_mode[]={
+      {"redundancyEncoding",0}
+     ,{"separateStream",1}
+};
+#endif
 //
 // FECMode_rfc2733Mode_mode
 //
@@ -8557,10 +9207,9 @@ PObject * H245_OpenLogicalChannelAck_reverseLogicalChannelParameters_multiplexPa
 H245_FECMode_rfc2733Mode_mode::H245_FECMode_rfc2733Mode_mode(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "redundancyEncoding "
-        "separateStream "
+    ,(const PASN_Names *)Names_H245_FECMode_rfc2733Mode_mode,2
 #endif
-    )
+)
 {
 }
 
@@ -8780,6 +9429,13 @@ PObject * H245_DataMode_application_nlpid::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_MultilinkRequest_maximumHeaderInterval_requestType[]={
+      {"currentIntervalInformation",0}
+     ,{"requestedInterval",1}
+};
+#endif
 //
 // MultilinkRequest_maximumHeaderInterval_requestType
 //
@@ -8787,10 +9443,9 @@ PObject * H245_DataMode_application_nlpid::Clone() const
 H245_MultilinkRequest_maximumHeaderInterval_requestType::H245_MultilinkRequest_maximumHeaderInterval_requestType(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "currentIntervalInformation "
-        "requestedInterval "
+    ,(const PASN_Names *)Names_H245_MultilinkRequest_maximumHeaderInterval_requestType,2
 #endif
-    )
+)
 {
 }
 
@@ -8821,6 +9476,13 @@ PObject * H245_MultilinkRequest_maximumHeaderInterval_requestType::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_MultilinkResponse_addConnection_responseCode[]={
+      {"accepted",0}
+     ,{"rejected",1}
+};
+#endif
 //
 // MultilinkResponse_addConnection_responseCode
 //
@@ -8828,10 +9490,9 @@ PObject * H245_MultilinkRequest_maximumHeaderInterval_requestType::Clone() const
 H245_MultilinkResponse_addConnection_responseCode::H245_MultilinkResponse_addConnection_responseCode(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "accepted "
-        "rejected "
+    ,(const PASN_Names *)Names_H245_MultilinkResponse_addConnection_responseCode,2
 #endif
-    )
+)
 {
 }
 
@@ -9315,6 +9976,83 @@ PObject * H245_MiscellaneousCommand_type_lostPartialPicture::Clone() const
 
 
 //
+// MiscellaneousCommand_type_encryptionUpdateAck
+//
+
+H245_MiscellaneousCommand_type_encryptionUpdateAck::H245_MiscellaneousCommand_type_encryptionUpdateAck(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+{
+  m_synchFlag.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
+}
+
+
+#ifndef PASN_NOPRINTON
+void H245_MiscellaneousCommand_type_encryptionUpdateAck::PrintOn(ostream & strm) const
+{
+  int indent = strm.precision() + 2;
+  strm << "{\n";
+  strm << setw(indent+12) << "synchFlag = " << setprecision(indent) << m_synchFlag << '\n';
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
+}
+#endif
+
+
+PObject::Comparison H245_MiscellaneousCommand_type_encryptionUpdateAck::Compare(const PObject & obj) const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(&obj, H245_MiscellaneousCommand_type_encryptionUpdateAck), PInvalidCast);
+#endif
+  const H245_MiscellaneousCommand_type_encryptionUpdateAck & other = (const H245_MiscellaneousCommand_type_encryptionUpdateAck &)obj;
+
+  Comparison result;
+
+  if ((result = m_synchFlag.Compare(other.m_synchFlag)) != EqualTo)
+    return result;
+
+  return PASN_Sequence::Compare(other);
+}
+
+
+PINDEX H245_MiscellaneousCommand_type_encryptionUpdateAck::GetDataLength() const
+{
+  PINDEX length = 0;
+  length += m_synchFlag.GetObjectLength();
+  return length;
+}
+
+
+BOOL H245_MiscellaneousCommand_type_encryptionUpdateAck::Decode(PASN_Stream & strm)
+{
+  if (!PreambleDecode(strm))
+    return FALSE;
+
+  if (!m_synchFlag.Decode(strm))
+    return FALSE;
+
+  return UnknownExtensionsDecode(strm);
+}
+
+
+void H245_MiscellaneousCommand_type_encryptionUpdateAck::Encode(PASN_Stream & strm) const
+{
+  PreambleEncode(strm);
+
+  m_synchFlag.Encode(strm);
+
+  UnknownExtensionsEncode(strm);
+}
+
+
+PObject * H245_MiscellaneousCommand_type_encryptionUpdateAck::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_MiscellaneousCommand_type_encryptionUpdateAck::Class()), PInvalidCast);
+#endif
+  return new H245_MiscellaneousCommand_type_encryptionUpdateAck(*this);
+}
+
+
+//
 // NewATMVCCommand_aal_aal5
 //
 
@@ -9399,6 +10137,14 @@ PObject * H245_NewATMVCCommand_aal_aal5::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_NewATMVCCommand_reverseParameters_multiplex[]={
+      {"noMultiplex",0}
+     ,{"transportStream",1}
+     ,{"programStream",2}
+};
+#endif
 //
 // NewATMVCCommand_reverseParameters_multiplex
 //
@@ -9406,11 +10152,9 @@ PObject * H245_NewATMVCCommand_aal_aal5::Clone() const
 H245_NewATMVCCommand_reverseParameters_multiplex::H245_NewATMVCCommand_reverseParameters_multiplex(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "noMultiplex "
-        "transportStream "
-        "programStream "
+    ,(const PASN_Names *)Names_H245_NewATMVCCommand_reverseParameters_multiplex,3
 #endif
-    )
+)
 {
 }
 
@@ -9609,6 +10353,14 @@ PObject * H245_NewATMVCIndication_aal_aal5::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_NewATMVCIndication_reverseParameters_multiplex[]={
+      {"noMultiplex",0}
+     ,{"transportStream",1}
+     ,{"programStream",2}
+};
+#endif
 //
 // NewATMVCIndication_reverseParameters_multiplex
 //
@@ -9616,11 +10368,9 @@ PObject * H245_NewATMVCIndication_aal_aal5::Clone() const
 H245_NewATMVCIndication_reverseParameters_multiplex::H245_NewATMVCIndication_reverseParameters_multiplex(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "noMultiplex "
-        "transportStream "
-        "programStream "
+    ,(const PASN_Names *)Names_H245_NewATMVCIndication_reverseParameters_multiplex,3
 #endif
-    )
+)
 {
 }
 
@@ -9812,6 +10562,99 @@ PObject * H245_UserInputIndication_signalUpdate_rtp::Clone() const
   PAssert(IsClass(H245_UserInputIndication_signalUpdate_rtp::Class()), PInvalidCast);
 #endif
   return new H245_UserInputIndication_signalUpdate_rtp(*this);
+}
+
+
+//
+// UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric
+//
+
+H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric::H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+{
+}
+
+
+#ifndef PASN_NOPRINTON
+void H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric::PrintOn(ostream & strm) const
+{
+  int indent = strm.precision() + 2;
+  strm << "{\n";
+  strm << setw(indent+15) << "algorithmOID = " << setprecision(indent) << m_algorithmOID << '\n';
+  if (HasOptionalField(e_paramS))
+    strm << setw(indent+9) << "paramS = " << setprecision(indent) << m_paramS << '\n';
+  strm << setw(indent+12) << "encrypted = " << setprecision(indent) << m_encrypted << '\n';
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
+}
+#endif
+
+
+PObject::Comparison H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric::Compare(const PObject & obj) const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(&obj, H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric), PInvalidCast);
+#endif
+  const H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric & other = (const H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric &)obj;
+
+  Comparison result;
+
+  if ((result = m_algorithmOID.Compare(other.m_algorithmOID)) != EqualTo)
+    return result;
+  if ((result = m_paramS.Compare(other.m_paramS)) != EqualTo)
+    return result;
+  if ((result = m_encrypted.Compare(other.m_encrypted)) != EqualTo)
+    return result;
+
+  return PASN_Sequence::Compare(other);
+}
+
+
+PINDEX H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric::GetDataLength() const
+{
+  PINDEX length = 0;
+  length += m_algorithmOID.GetObjectLength();
+  if (HasOptionalField(e_paramS))
+    length += m_paramS.GetObjectLength();
+  length += m_encrypted.GetObjectLength();
+  return length;
+}
+
+
+BOOL H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric::Decode(PASN_Stream & strm)
+{
+  if (!PreambleDecode(strm))
+    return FALSE;
+
+  if (!m_algorithmOID.Decode(strm))
+    return FALSE;
+  if (HasOptionalField(e_paramS) && !m_paramS.Decode(strm))
+    return FALSE;
+  if (!m_encrypted.Decode(strm))
+    return FALSE;
+
+  return UnknownExtensionsDecode(strm);
+}
+
+
+void H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric::Encode(PASN_Stream & strm) const
+{
+  PreambleEncode(strm);
+
+  m_algorithmOID.Encode(strm);
+  if (HasOptionalField(e_paramS))
+    m_paramS.Encode(strm);
+  m_encrypted.Encode(strm);
+
+  UnknownExtensionsEncode(strm);
+}
+
+
+PObject * H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric::Class()), PInvalidCast);
+#endif
+  return new H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric(*this);
 }
 
 
@@ -10078,6 +10921,14 @@ PObject * H245_CustomPictureFormat_pixelAspectInformation_extendedPAR_subtype::C
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_V76LogicalChannelParameters_mode_eRM_recovery[]={
+      {"rej",0}
+     ,{"sREJ",1}
+     ,{"mSREJ",2}
+};
+#endif
 //
 // V76LogicalChannelParameters_mode_eRM_recovery
 //
@@ -10085,11 +10936,9 @@ PObject * H245_CustomPictureFormat_pixelAspectInformation_extendedPAR_subtype::C
 H245_V76LogicalChannelParameters_mode_eRM_recovery::H245_V76LogicalChannelParameters_mode_eRM_recovery(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "rej "
-        "sREJ "
-        "mSREJ "
+    ,(const PASN_Names *)Names_H245_V76LogicalChannelParameters_mode_eRM_recovery,3
 #endif
-    )
+)
 {
 }
 
@@ -10110,6 +10959,13 @@ PObject * H245_V76LogicalChannelParameters_mode_eRM_recovery::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_FECData_rfc2733_mode_separateStream[]={
+      {"differentPort",0}
+     ,{"samePort",1}
+};
+#endif
 //
 // FECData_rfc2733_mode_separateStream
 //
@@ -10117,10 +10973,9 @@ PObject * H245_V76LogicalChannelParameters_mode_eRM_recovery::Clone() const
 H245_FECData_rfc2733_mode_separateStream::H245_FECData_rfc2733_mode_separateStream(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "differentPort "
-        "samePort "
+    ,(const PASN_Names *)Names_H245_FECData_rfc2733_mode_separateStream,2
 #endif
-    )
+)
 {
 }
 
