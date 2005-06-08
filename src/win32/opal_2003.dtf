@@ -56,9 +56,9 @@ EXPORTS
     ??0?$map@IPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@U?$less@I@std@@V?$allocator@U?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@std@@@4@@std@@QAE@XZ @35641 NONAME
     ??0?$map@VPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@std@@@5@@std@@QAE@XZ @35547 NONAME
     ??0?$OpalMediaOptionValue@H@@QAE@ABV0@@Z @36192 NONAME
-    ??0?$OpalMediaOptionValue@H@@QAE@PBD_NW4MergeType@OpalMediaOption@@H@Z @36193 NONAME
+    ??0?$OpalMediaOptionValue@H@@QAE@PBD_NW4MergeType@OpalMediaOption@@HHH@Z @36589 NONAME
     ??0?$OpalMediaOptionValue@_N@@QAE@ABV0@@Z @36194 NONAME
-    ??0?$OpalMediaOptionValue@_N@@QAE@PBD_NW4MergeType@OpalMediaOption@@1@Z @36195 NONAME
+    ??0?$OpalMediaOptionValue@_N@@QAE@PBD_NW4MergeType@OpalMediaOption@@111@Z @36590 NONAME
     ??0?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@std@@QAE@ABIABQAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@Z @35642 NONAME
     ??0?$pair@Viterator@?$_Tree@V?$_Tmap_traits@IPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@U?$less@I@std@@V?$allocator@U?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@std@@@4@$0A@@std@@@std@@_N@std@@QAE@ABViterator@?$_Tree@V?$_Tmap_traits@IPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@U?$less@I@std@@V?$allocator@U?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@std@@@4@$0A@@std@@@1@AB_N@Z @35643 NONAME
     ??0?$PArray@V?$PList@VH323Capability@@@@@@IAE@HPBV0@@Z @21 NONAME
@@ -83,6 +83,7 @@ EXPORTS
     ??0?$PDictionary@VPOrdinalKey@@VH323ServiceControlSession@@@@QAE@XZ @44 NONAME
     ??0?$PDictionary@VPOrdinalKey@@VH450xHandler@@@@IAE@HPBV0@@Z @45 NONAME
     ??0?$PDictionary@VPOrdinalKey@@VH450xHandler@@@@QAE@XZ @46 NONAME
+    ??0?$PDictionary@VPOrdinalKey@@VNest@PReadWriteMutex@@@@QAE@ABV0@@Z @36591 NONAME
     ??0?$PDictionary@VPOrdinalKey@@VOpalTransportAddress@@@@IAE@HPBV0@@Z @47 NONAME
     ??0?$PDictionary@VPOrdinalKey@@VOpalTransportAddress@@@@QAE@XZ @48 NONAME
     ??0?$PDictionary@VPOrdinalKey@@VPBYTEArray@@@@IAE@HPBV0@@Z @49 NONAME
@@ -138,6 +139,7 @@ EXPORTS
     ??0?$PList@VOpalMediaStream@@@@QAE@XZ @99 NONAME
     ??0?$PList@VPBYTEArray@@@@IAE@HPBV0@@Z @100 NONAME
     ??0?$PList@VPBYTEArray@@@@QAE@XZ @101 NONAME
+    ??0?$PList@VPSafeObject@@@@QAE@ABV0@@Z @36592 NONAME
     ??0?$PList@VRouteEntry@OpalManager@@@@IAE@HPBV0@@Z @102 NONAME
     ??0?$PList@VRouteEntry@OpalManager@@@@QAE@XZ @103 NONAME
     ??0?$PList@VRTP_DataFrame@@@@IAE@HPBV0@@Z @104 NONAME
@@ -155,6 +157,7 @@ EXPORTS
     ??0?$PList@VSIPTransaction@@@@QAE@XZ @112 NONAME
     ??0?$PQueue@VSIP_PDU@@@@IAE@HPBV0@@Z @113 NONAME
     ??0?$PQueue@VSIP_PDU@@@@QAE@XZ @114 NONAME
+    ??0?$PSafeColl@V?$PList@VOpalConnection@@@@VOpalConnection@@@@QAE@ABV0@@Z @36593 NONAME
     ??0?$PSafeColl@V?$PList@VOpalConnection@@@@VOpalConnection@@@@QAE@XZ @35802 NONAME
     ??0?$PSafeColl@V?$PList@VSIPInfo@@@@VSIPInfo@@@@QAE@XZ @36200 NONAME
     ??0?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@QAE@XZ @115 NONAME
@@ -166,6 +169,7 @@ EXPORTS
     ??0?$PSafeDictionaryBase@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@QAE@XZ @119 NONAME
     ??0?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalCall@@@@VPString@@VOpalCall@@@@QAE@XZ @36202 NONAME
     ??0?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalConnection@@@@VPString@@VOpalConnection@@@@QAE@XZ @35806 NONAME
+    ??0?$PSafeList@VOpalConnection@@@@QAE@ABV0@@Z @36594 NONAME
     ??0?$PSafeList@VOpalConnection@@@@QAE@XZ @35807 NONAME
     ??0?$PSafeList@VSIPInfo@@@@QAE@XZ @36203 NONAME
     ??0?$PSafePtr@VH323Connection@@@@QAE@ABV0@@Z @35808 NONAME
@@ -223,7 +227,6 @@ EXPORTS
     ??0?$PStringDictionary@VPCaselessString@@@@IAE@HPBV0@@Z @148 NONAME
     ??0?$PStringDictionary@VPCaselessString@@@@QAE@ABV0@@Z @149 NONAME
     ??0?$PStringDictionary@VPCaselessString@@@@QAE@XZ @150 NONAME
-    ??0?$PStringDictionary@VPOrdinalKey@@@@QAE@ABV0@@Z @151 NONAME
     ??0?$Worker@VPWAVFileConverterALaw@@@?$PFactory@VPWAVFileConverter@@I@@QAE@ABI_N@Z @35645 NONAME
     ??0?$Worker@VPWAVFileConverterULaw@@@?$PFactory@VPWAVFileConverter@@I@@QAE@ABI_N@Z @35646 NONAME
     ??0?$_Tmap_traits@IPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@U?$less@I@std@@V?$allocator@U?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@std@@@4@$0A@@std@@QAE@U?$less@I@1@@Z @35647 NONAME
@@ -1193,6 +1196,8 @@ EXPORTS
     ??0H245_ArrayOf_EnhancementOptions@@QAE@IW4TagClass@PASN_Object@@@Z @1086 NONAME
     ??0H245_ArrayOf_EscrowData@@QAE@ABV0@@Z @1087 NONAME
     ??0H245_ArrayOf_EscrowData@@QAE@IW4TagClass@PASN_Object@@@Z @1088 NONAME
+    ??0H245_ArrayOf_GenericCapability@@QAE@ABV0@@Z @36595 NONAME
+    ??0H245_ArrayOf_GenericCapability@@QAE@IW4TagClass@PASN_Object@@@Z @36596 NONAME
     ??0H245_ArrayOf_GenericParameter@@QAE@ABV0@@Z @1089 NONAME
     ??0H245_ArrayOf_GenericParameter@@QAE@IW4TagClass@PASN_Object@@@Z @1090 NONAME
     ??0H245_ArrayOf_H263ModeComboFlags@@QAE@ABV0@@Z @1091 NONAME
@@ -1245,6 +1250,8 @@ EXPORTS
     ??0H245_ArrayOf_TerminalLabel@@QAE@IW4TagClass@PASN_Object@@@Z @1130 NONAME
     ??0H245_ArrayOf_VCCapability@@QAE@ABV0@@Z @1131 NONAME
     ??0H245_ArrayOf_VCCapability@@QAE@IW4TagClass@PASN_Object@@@Z @1132 NONAME
+    ??0H245_ArrayOf_VideoCapability@@QAE@ABV0@@Z @36597 NONAME
+    ??0H245_ArrayOf_VideoCapability@@QAE@IW4TagClass@PASN_Object@@@Z @36598 NONAME
     ??0H245_ATMParameters@@QAE@ABV0@@Z @1133 NONAME
     ??0H245_ATMParameters@@QAE@IW4TagClass@PASN_Object@@@Z @1134 NONAME
     ??0H245_AudioCapability@@QAE@ABV0@@Z @1135 NONAME
@@ -1406,6 +1413,8 @@ EXPORTS
     ??0H245_EncryptionMode@@QAE@IW4TagClass@PASN_Object@@@Z @1291 NONAME
     ??0H245_EncryptionSync@@QAE@ABV0@@Z @1292 NONAME
     ??0H245_EncryptionSync@@QAE@IW4TagClass@PASN_Object@@@Z @1293 NONAME
+    ??0H245_EncryptionUpdateDirection@@QAE@ABV0@@Z @36599 NONAME
+    ??0H245_EncryptionUpdateDirection@@QAE@IW4TagClass@PASN_Object@@@Z @36600 NONAME
     ??0H245_EncryptionUpdateRequest@@QAE@ABV0@@Z @1294 NONAME
     ??0H245_EncryptionUpdateRequest@@QAE@IW4TagClass@PASN_Object@@@Z @1295 NONAME
     ??0H245_EndSessionCommand@@QAE@ABV0@@Z @1296 NONAME
@@ -1420,6 +1429,8 @@ EXPORTS
     ??0H245_EnhancementOptions@@QAE@IW4TagClass@PASN_Object@@@Z @1305 NONAME
     ??0H245_EscrowData@@QAE@ABV0@@Z @1306 NONAME
     ??0H245_EscrowData@@QAE@IW4TagClass@PASN_Object@@@Z @1307 NONAME
+    ??0H245_ExtendedVideoCapability@@QAE@ABV0@@Z @36601 NONAME
+    ??0H245_ExtendedVideoCapability@@QAE@IW4TagClass@PASN_Object@@@Z @36602 NONAME
     ??0H245_FECCapability@@QAE@ABV0@@Z @34664 NONAME
     ??0H245_FECCapability@@QAE@IW4TagClass@PASN_Object@@@Z @34665 NONAME
     ??0H245_FECCapability_rfc2733@@QAE@ABV0@@Z @34666 NONAME
@@ -1480,6 +1491,8 @@ EXPORTS
     ??0H245_G729Extensions@@QAE@IW4TagClass@PASN_Object@@@Z @1335 NONAME
     ??0H245_GenericCapability@@QAE@ABV0@@Z @1336 NONAME
     ??0H245_GenericCapability@@QAE@IW4TagClass@PASN_Object@@@Z @1337 NONAME
+    ??0H245_GenericMessage@@QAE@ABV0@@Z @36603 NONAME
+    ??0H245_GenericMessage@@QAE@IW4TagClass@PASN_Object@@@Z @36604 NONAME
     ??0H245_GenericParameter@@QAE@ABV0@@Z @1338 NONAME
     ??0H245_GenericParameter@@QAE@IW4TagClass@PASN_Object@@@Z @1339 NONAME
     ??0H245_GSMAudioCapability@@QAE@ABV0@@Z @1340 NONAME
@@ -1624,6 +1637,16 @@ EXPORTS
     ??0H245_IS13818AudioMode_audioSampling@@QAE@IW4TagClass@PASN_Object@@@Z @1479 NONAME
     ??0H245_IS13818AudioMode_multichannelType@@QAE@ABV0@@Z @1480 NONAME
     ??0H245_IS13818AudioMode_multichannelType@@QAE@IW4TagClass@PASN_Object@@@Z @1481 NONAME
+    ??0H245_IV16@@QAE@ABV0@@Z @36605 NONAME
+    ??0H245_IV16@@QAE@ABVPBYTEArray@@@Z @36606 NONAME
+    ??0H245_IV16@@QAE@ABVPString@@@Z @36607 NONAME
+    ??0H245_IV16@@QAE@IW4TagClass@PASN_Object@@@Z @36608 NONAME
+    ??0H245_IV16@@QAE@PBD@Z @36609 NONAME
+    ??0H245_IV8@@QAE@ABV0@@Z @36610 NONAME
+    ??0H245_IV8@@QAE@ABVPBYTEArray@@@Z @36611 NONAME
+    ??0H245_IV8@@QAE@ABVPString@@@Z @36612 NONAME
+    ??0H245_IV8@@QAE@IW4TagClass@PASN_Object@@@Z @36613 NONAME
+    ??0H245_IV8@@QAE@PBD@Z @36614 NONAME
     ??0H245_JitterIndication@@QAE@ABV0@@Z @1482 NONAME
     ??0H245_JitterIndication@@QAE@IW4TagClass@PASN_Object@@@Z @1483 NONAME
     ??0H245_JitterIndication_scope@@QAE@ABV0@@Z @1484 NONAME
@@ -1692,6 +1715,10 @@ EXPORTS
     ??0H245_MiscellaneousCommand@@QAE@IW4TagClass@PASN_Object@@@Z @1547 NONAME
     ??0H245_MiscellaneousCommand_type@@QAE@ABV0@@Z @1548 NONAME
     ??0H245_MiscellaneousCommand_type@@QAE@IW4TagClass@PASN_Object@@@Z @1549 NONAME
+    ??0H245_MiscellaneousCommand_type_encryptionUpdateAck@@QAE@ABV0@@Z @36615 NONAME
+    ??0H245_MiscellaneousCommand_type_encryptionUpdateAck@@QAE@IW4TagClass@PASN_Object@@@Z @36616 NONAME
+    ??0H245_MiscellaneousCommand_type_encryptionUpdateCommand@@QAE@ABV0@@Z @36617 NONAME
+    ??0H245_MiscellaneousCommand_type_encryptionUpdateCommand@@QAE@IW4TagClass@PASN_Object@@@Z @36618 NONAME
     ??0H245_MiscellaneousCommand_type_lostPartialPicture@@QAE@ABV0@@Z @1550 NONAME
     ??0H245_MiscellaneousCommand_type_lostPartialPicture@@QAE@IW4TagClass@PASN_Object@@@Z @1551 NONAME
     ??0H245_MiscellaneousCommand_type_progressiveRefinementStart@@QAE@ABV0@@Z @1552 NONAME
@@ -1890,6 +1917,8 @@ EXPORTS
     ??0H245_ParameterIdentifier@@QAE@IW4TagClass@PASN_Object@@@Z @1731 NONAME
     ??0H245_ParameterValue@@QAE@ABV0@@Z @1732 NONAME
     ??0H245_ParameterValue@@QAE@IW4TagClass@PASN_Object@@@Z @1733 NONAME
+    ??0H245_Params@@QAE@ABV0@@Z @36619 NONAME
+    ??0H245_Params@@QAE@IW4TagClass@PASN_Object@@@Z @36620 NONAME
     ??0H245_Password@@QAE@ABV0@@Z @1734 NONAME
     ??0H245_Password@@QAE@ABVPBYTEArray@@@Z @1735 NONAME
     ??0H245_Password@@QAE@ABVPString@@@Z @1736 NONAME
@@ -2074,8 +2103,12 @@ EXPORTS
     ??0H245_UserInputCapability@@QAE@IW4TagClass@PASN_Object@@@Z @1905 NONAME
     ??0H245_UserInputIndication@@QAE@ABV0@@Z @1906 NONAME
     ??0H245_UserInputIndication@@QAE@IW4TagClass@PASN_Object@@@Z @1907 NONAME
+    ??0H245_UserInputIndication_encryptedAlphanumeric@@QAE@ABV0@@Z @36621 NONAME
+    ??0H245_UserInputIndication_encryptedAlphanumeric@@QAE@IW4TagClass@PASN_Object@@@Z @36622 NONAME
     ??0H245_UserInputIndication_extendedAlphanumeric@@QAE@ABV0@@Z @1908 NONAME
     ??0H245_UserInputIndication_extendedAlphanumeric@@QAE@IW4TagClass@PASN_Object@@@Z @1909 NONAME
+    ??0H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric@@QAE@ABV0@@Z @36623 NONAME
+    ??0H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric@@QAE@IW4TagClass@PASN_Object@@@Z @36624 NONAME
     ??0H245_UserInputIndication_signal@@QAE@ABV0@@Z @1910 NONAME
     ??0H245_UserInputIndication_signal@@QAE@IW4TagClass@PASN_Object@@@Z @1911 NONAME
     ??0H245_UserInputIndication_signalUpdate@@QAE@ABV0@@Z @1912 NONAME
@@ -3334,10 +3367,11 @@ EXPORTS
     ??0OnTimeout_PNotifier@SIPTransaction@@QAE@PAV1@@Z @3266 NONAME
     ??0OnUserInputInBandDTMF_PNotifier@OpalConnection@@QAE@PAV1@@Z @3267 NONAME
     ??0OnUserInputInlineRFC2833_PNotifier@OpalConnection@@QAE@PAV1@@Z @3268 NONAME
-    ??0OpalAudioFormat@@QAE@PBDW4PayloadTypes@RTP_DataFrame@@0HIII@Z @36214 NONAME
+    ??0OpalAudioFormat@@QAE@PBDW4PayloadTypes@RTP_DataFrame@@0HIIII@Z @36625 NONAME
     ??0OpalAudioMediaStream@@QAE@ABVOpalMediaFormat@@IHHABVPString@@@Z @3269 NONAME
     ??0OpalAudioMediaStream@@QAE@ABVOpalMediaFormat@@IHHPAVPSoundChannel@@H@Z @3270 NONAME
     ??0OpalCall@@QAE@AAVOpalManager@@@Z @3271 NONAME
+    ??0OpalCall@@QAE@ABV0@@Z @36626 NONAME
     ??0OpalConnection@@QAE@AAVOpalCall@@AAVOpalEndPoint@@ABVPString@@@Z @3272 NONAME
     ??0OpalEndPoint@@QAE@AAVOpalManager@@ABVPCaselessString@@I@Z @3273 NONAME
     ??0OpalFileMediaStream@@QAE@ABVOpalMediaFormat@@IHABVPFilePath@@@Z @3274 NONAME
@@ -3523,11 +3557,14 @@ EXPORTS
     ??0PMIMEInfo@@QAE@ABV0@@Z @3440 NONAME
     ??0PMIMEInfo@@QAE@XZ @3441 NONAME
     ??0POrdinalKey@@QAE@ABV0@@Z @3442 NONAME
-    ??0POrdinalToString@@QAE@ABV0@@Z @3443 NONAME
     ??0PortInfo@OpalManager@@QAE@XZ @3444 NONAME
     ??0PPER_Stream@@QAE@ABV0@@Z @3445 NONAME
+    ??0PReadWriteMutex@@QAE@ABV0@@Z @36627 NONAME
     ??0Pre_Vid_Coder@@QAE@XZ @3446 NONAME
+    ??0PSafeCollection@@QAE@ABV0@@Z @36628 NONAME
+    ??0PSafeObject@@QAE@ABV0@@Z @36629 NONAME
     ??0PSortedStringList@@QAE@XZ @3447 NONAME
+    ??0PTimer@@QAE@ABV0@@Z @36630 NONAME
     ??0PUInt32b@@QAE@K@Z @3448 NONAME
     ??0PUInt32l@@QAE@XZ @3449 NONAME
     ??0PURL@@QAE@ABV0@@Z @3450 NONAME
@@ -3541,9 +3578,8 @@ EXPORTS
     ??0ReceivedPacket_PNotifier@OpalSilenceDetector@@QAE@PAV1@@Z @34585 NONAME
     ??0ReceiverReport@RTP_Session@@QAE@XZ @3454 NONAME
     ??0ReceiveTimeout_PNotifier@OpalRFC2833Proto@@QAE@PAV1@@Z @3455 NONAME
-    ??0RegistrationDict@SIPEndPoint@@QAE@XZ @36224 NONAME
+    ??0RegistrationList@SIPEndPoint@@QAE@XZ @36631 NONAME
     ??0RegistrationRefresh_PNotifier@SIPEndPoint@@QAE@PAV1@@Z @36069 NONAME
-    ??0RegParam@SIPEndPoint@@QAE@XZ @36225 NONAME
     ??0Request@H323Transactor@@QAE@IAAVH323TransactionPDU@@@Z @3456 NONAME
     ??0Request@H323Transactor@@QAE@IAAVH323TransactionPDU@@ABVH323TransportAddressArray@@@Z @3457 NONAME
     ??0Response@H323Transactor@@QAE@ABV01@@Z @3458 NONAME
@@ -3563,7 +3599,7 @@ EXPORTS
     ??0RTP_UserData@@QAE@XZ @3472 NONAME
     ??0SDPMediaDescription@@QAE@ABVOpalTransportAddress@@W4MediaType@0@@Z @3473 NONAME
     ??0SDPMediaFormat@@QAE@ABVPString@@W4PayloadTypes@RTP_DataFrame@@@Z @3474 NONAME
-    ??0SDPMediaFormat@@QAE@W4PayloadTypes@RTP_DataFrame@@PBDH1@Z @3475 NONAME
+    ??0SDPMediaFormat@@QAE@W4PayloadTypes@RTP_DataFrame@@PBDI1@Z @36632 NONAME
     ??0SDPSessionDescription@@QAE@ABV0@@Z @3476 NONAME
     ??0SDPSessionDescription@@QAE@ABVOpalTransportAddress@@@Z @3477 NONAME
     ??0SenderReport@RTP_Session@@QAE@XZ @3478 NONAME
@@ -3573,10 +3609,15 @@ EXPORTS
     ??0SIPEndPoint@@QAE@AAVOpalManager@@@Z @3482 NONAME
     ??0SIPInfo@@QAE@AAVSIPEndPoint@@ABVPString@@@Z @36226 NONAME
     ??0SIPInvite@@QAE@AAVSIPConnection@@AAVOpalTransport@@@Z @3483 NONAME
+    ??0SIPInvite@@QAE@AAVSIPConnection@@AAVOpalTransport@@AAVRTP_SessionManager@@@Z @36633 NONAME
+    ??0SIPMessage@@QAE@AAVSIPEndPoint@@AAVOpalTransport@@ABVSIPURL@@ABVPString@@@Z @36634 NONAME
+    ??0SIPMessageInfo@SIPEndPoint@@QAE@AAV1@ABVSIPURL@@ABVPString@@@Z @36635 NONAME
     ??0SIPMIMEInfo@@QAE@ABV0@@Z @3484 NONAME
     ??0SIPMIMEInfo@@QAE@H@Z @3485 NONAME
     ??0SIPMWISubscribe@@QAE@AAVSIPEndPoint@@AAVOpalTransport@@ABVSIPURL@@ABVPString@@I@Z @36227 NONAME
     ??0SIPMWISubscribeInfo@@QAE@AAVSIPEndPoint@@ABVPString@@@Z @36228 NONAME
+    ??0SIPRefer@@QAE@AAVSIPConnection@@AAVOpalTransport@@ABVPString@@@Z @36636 NONAME
+    ??0SIPReferNotify@@QAE@AAVSIPConnection@@AAVOpalTransport@@W4StatusCodes@SIP_PDU@@@Z @36637 NONAME
     ??0SIPRegister@@QAE@AAVSIPEndPoint@@AAVOpalTransport@@ABVSIPURL@@ABVPString@@I@Z @36070 NONAME
     ??0SIPRegisterInfo@@QAE@AAVSIPEndPoint@@ABVPString@@1@Z @36229 NONAME
     ??0SIPTransaction@@QAE@AAVSIPConnection@@AAVOpalTransport@@W4Methods@SIP_PDU@@@Z @3487 NONAME
@@ -3587,7 +3628,7 @@ EXPORTS
     ??0SIPURL@@QAE@PBD0@Z @3492 NONAME
     ??0SIPURL@@QAE@XZ @3493 NONAME
     ??0SIP_PDU@@QAE@ABV0@@Z @3494 NONAME
-    ??0SIP_PDU@@QAE@ABV0@W4StatusCodes@0@PBD@Z @3495 NONAME
+    ??0SIP_PDU@@QAE@ABV0@W4StatusCodes@0@PBD2@Z @36638 NONAME
     ??0SIP_PDU@@QAE@W4Methods@0@AAVSIPConnection@@ABVOpalTransport@@@Z @3496 NONAME
     ??0SIP_PDU@@QAE@W4Methods@0@ABVSIPURL@@ABVPString@@22IABVOpalTransportAddress@@@Z @3497 NONAME
     ??0SIP_PDU@@QAE@XZ @3498 NONAME
@@ -3795,6 +3836,7 @@ EXPORTS
     ??1ByteQueue@OpalVoipBlasterDevice@@UAE@XZ @3671 NONAME
     ??1CallDict@OpalManager@@UAE@XZ @35850 NONAME
     ??1ConnectionDict@OpalEndPoint@@UAE@XZ @35851 NONAME
+    ??1Encoder@@UAE@XZ @36639 NONAME
     ??1Entry@RTP_JitterBuffer@@UAE@XZ @3672 NONAME
     ??1Filter@OpalMediaPatch@@UAE@XZ @3673 NONAME
     ??1FullP64Decoder@@UAE@XZ @3674 NONAME
@@ -4260,6 +4302,7 @@ EXPORTS
     ??1H245_ArrayOf_DialingInformationNumber@@UAE@XZ @4127 NONAME
     ??1H245_ArrayOf_EnhancementOptions@@UAE@XZ @4128 NONAME
     ??1H245_ArrayOf_EscrowData@@UAE@XZ @4129 NONAME
+    ??1H245_ArrayOf_GenericCapability@@UAE@XZ @36640 NONAME
     ??1H245_ArrayOf_GenericParameter@@UAE@XZ @4130 NONAME
     ??1H245_ArrayOf_H263ModeComboFlags@@UAE@XZ @4131 NONAME
     ??1H245_ArrayOf_H263VideoModeCombos@@UAE@XZ @4132 NONAME
@@ -4286,6 +4329,7 @@ EXPORTS
     ??1H245_ArrayOf_TerminalInformation@@UAE@XZ @4149 NONAME
     ??1H245_ArrayOf_TerminalLabel@@UAE@XZ @4150 NONAME
     ??1H245_ArrayOf_VCCapability@@UAE@XZ @4151 NONAME
+    ??1H245_ArrayOf_VideoCapability@@UAE@XZ @36641 NONAME
     ??1H245_ATMParameters@@UAE@XZ @4152 NONAME
     ??1H245_AudioCapability@@UAE@XZ @4153 NONAME
     ??1H245_AudioCapability_g7231@@UAE@XZ @4154 NONAME
@@ -4365,6 +4409,7 @@ EXPORTS
     ??1H245_EncryptionCommand_encryptionAlgorithmID@@UAE@XZ @4228 NONAME
     ??1H245_EncryptionMode@@UAE@XZ @4229 NONAME
     ??1H245_EncryptionSync@@UAE@XZ @4230 NONAME
+    ??1H245_EncryptionUpdateDirection@@UAE@XZ @36642 NONAME
     ??1H245_EncryptionUpdateRequest@@UAE@XZ @4231 NONAME
     ??1H245_EndSessionCommand@@UAE@XZ @4232 NONAME
     ??1H245_EndSessionCommand_gstnOptions@@UAE@XZ @4233 NONAME
@@ -4372,6 +4417,7 @@ EXPORTS
     ??1H245_EnhancementLayerInfo@@UAE@XZ @4235 NONAME
     ??1H245_EnhancementOptions@@UAE@XZ @4236 NONAME
     ??1H245_EscrowData@@UAE@XZ @4237 NONAME
+    ??1H245_ExtendedVideoCapability@@UAE@XZ @36643 NONAME
     ??1H245_FECCapability@@UAE@XZ @34736 NONAME
     ??1H245_FECCapability_rfc2733@@UAE@XZ @34737 NONAME
     ??1H245_FECCapability_rfc2733_separateStream@@UAE@XZ @34738 NONAME
@@ -4402,6 +4448,7 @@ EXPORTS
     ??1H245_G7231AnnexCMode_g723AnnexCAudioMode@@UAE@XZ @4250 NONAME
     ??1H245_G729Extensions@@UAE@XZ @4251 NONAME
     ??1H245_GenericCapability@@UAE@XZ @4252 NONAME
+    ??1H245_GenericMessage@@UAE@XZ @36644 NONAME
     ??1H245_GenericParameter@@UAE@XZ @4253 NONAME
     ??1H245_GSMAudioCapability@@UAE@XZ @4254 NONAME
     ??1H245_H222Capability@@UAE@XZ @4255 NONAME
@@ -4474,6 +4521,8 @@ EXPORTS
     ??1H245_IS13818AudioMode_audioLayer@@UAE@XZ @4322 NONAME
     ??1H245_IS13818AudioMode_audioSampling@@UAE@XZ @4323 NONAME
     ??1H245_IS13818AudioMode_multichannelType@@UAE@XZ @4324 NONAME
+    ??1H245_IV16@@UAE@XZ @36645 NONAME
+    ??1H245_IV8@@UAE@XZ @36646 NONAME
     ??1H245_JitterIndication@@UAE@XZ @4325 NONAME
     ??1H245_JitterIndication_scope@@UAE@XZ @4326 NONAME
     ??1H245_KeyProtectionMethod@@UAE@XZ @4327 NONAME
@@ -4508,6 +4557,8 @@ EXPORTS
     ??1H245_MediaTransportType_atm_AAL5_compressed@@UAE@XZ @4356 NONAME
     ??1H245_MiscellaneousCommand@@UAE@XZ @4357 NONAME
     ??1H245_MiscellaneousCommand_type@@UAE@XZ @4358 NONAME
+    ??1H245_MiscellaneousCommand_type_encryptionUpdateAck@@UAE@XZ @36647 NONAME
+    ??1H245_MiscellaneousCommand_type_encryptionUpdateCommand@@UAE@XZ @36648 NONAME
     ??1H245_MiscellaneousCommand_type_lostPartialPicture@@UAE@XZ @4359 NONAME
     ??1H245_MiscellaneousCommand_type_progressiveRefinementStart@@UAE@XZ @4360 NONAME
     ??1H245_MiscellaneousCommand_type_progressiveRefinementStart_repeatCount@@UAE@XZ @4361 NONAME
@@ -4607,6 +4658,7 @@ EXPORTS
     ??1H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters@@UAE@XZ @4448 NONAME
     ??1H245_ParameterIdentifier@@UAE@XZ @4449 NONAME
     ??1H245_ParameterValue@@UAE@XZ @4450 NONAME
+    ??1H245_Params@@UAE@XZ @36649 NONAME
     ??1H245_Password@@UAE@XZ @4451 NONAME
     ??1H245_PictureReference@@UAE@XZ @4452 NONAME
     ??1H245_Q2931Address@@UAE@XZ @4453 NONAME
@@ -4696,7 +4748,9 @@ EXPORTS
     ??1H245_UnicastAddress_iPXAddress@@UAE@XZ @4532 NONAME
     ??1H245_UserInputCapability@@UAE@XZ @4533 NONAME
     ??1H245_UserInputIndication@@UAE@XZ @4534 NONAME
+    ??1H245_UserInputIndication_encryptedAlphanumeric@@UAE@XZ @36650 NONAME
     ??1H245_UserInputIndication_extendedAlphanumeric@@UAE@XZ @4535 NONAME
+    ??1H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric@@UAE@XZ @36651 NONAME
     ??1H245_UserInputIndication_signal@@UAE@XZ @4536 NONAME
     ??1H245_UserInputIndication_signalUpdate@@UAE@XZ @4537 NONAME
     ??1H245_UserInputIndication_signalUpdate_rtp@@UAE@XZ @4538 NONAME
@@ -5509,14 +5563,17 @@ EXPORTS
     ??1Pre_Vid_Coder@@UAE@XZ @5378 NONAME
     ??1PURL@@UAE@XZ @5379 NONAME
     ??1PWAVFile@@UAE@XZ @5380 NONAME
+    ??1PWAVFileConverter@@UAE@XZ @36652 NONAME
+    ??1PWAVFileConverterALaw@@UAE@XZ @36653 NONAME
+    ??1PWAVFileConverterULaw@@UAE@XZ @36654 NONAME
+    ??1PWAVFileConverterXLaw@@UAE@XZ @36655 NONAME
     ??1Q931@@UAE@XZ @5381 NONAME
     ??1ReceivedPacket_PNotifier@OpalRFC2833Proto@@UAE@XZ @5382 NONAME
     ??1ReceivedPacket_PNotifier@OpalSilenceDetector@@UAE@XZ @34589 NONAME
     ??1ReceiverReport@RTP_Session@@UAE@XZ @5383 NONAME
     ??1ReceiveTimeout_PNotifier@OpalRFC2833Proto@@UAE@XZ @5384 NONAME
-    ??1RegistrationDict@SIPEndPoint@@UAE@XZ @36245 NONAME
+    ??1RegistrationList@SIPEndPoint@@UAE@XZ @36656 NONAME
     ??1RegistrationRefresh_PNotifier@SIPEndPoint@@UAE@XZ @36071 NONAME
-    ??1RegParam@SIPEndPoint@@QAE@XZ @36246 NONAME
     ??1Request@H323Transactor@@UAE@XZ @5385 NONAME
     ??1Response@H323Transactor@@UAE@XZ @5386 NONAME
     ??1RouteEntry@OpalManager@@UAE@XZ @5387 NONAME
@@ -5540,9 +5597,13 @@ EXPORTS
     ??1SIPEndPoint@@UAE@XZ @5405 NONAME
     ??1SIPInfo@@UAE@XZ @36247 NONAME
     ??1SIPInvite@@UAE@XZ @5406 NONAME
+    ??1SIPMessage@@UAE@XZ @36657 NONAME
+    ??1SIPMessageInfo@SIPEndPoint@@UAE@XZ @36658 NONAME
     ??1SIPMIMEInfo@@UAE@XZ @5407 NONAME
     ??1SIPMWISubscribe@@UAE@XZ @36248 NONAME
     ??1SIPMWISubscribeInfo@@UAE@XZ @36249 NONAME
+    ??1SIPRefer@@UAE@XZ @36659 NONAME
+    ??1SIPReferNotify@@UAE@XZ @36660 NONAME
     ??1SIPRegister@@UAE@XZ @5408 NONAME
     ??1SIPRegisterInfo@@UAE@XZ @36250 NONAME
     ??1SIPTransaction@@UAE@XZ @5409 NONAME
@@ -5794,6 +5855,12 @@ EXPORTS
     ??4H245_ConferenceID@@QAEAAV0@ABVPBYTEArray@@@Z @5644 NONAME
     ??4H245_ConferenceID@@QAEAAV0@ABVPString@@@Z @5645 NONAME
     ??4H245_ConferenceID@@QAEAAV0@PBD@Z @5646 NONAME
+    ??4H245_IV16@@QAEAAV0@ABVPBYTEArray@@@Z @36661 NONAME
+    ??4H245_IV16@@QAEAAV0@ABVPString@@@Z @36662 NONAME
+    ??4H245_IV16@@QAEAAV0@PBD@Z @36663 NONAME
+    ??4H245_IV8@@QAEAAV0@ABVPBYTEArray@@@Z @36664 NONAME
+    ??4H245_IV8@@QAEAAV0@ABVPString@@@Z @36665 NONAME
+    ??4H245_IV8@@QAEAAV0@PBD@Z @36666 NONAME
     ??4H245_LogicalChannelNumber@@QAEAAV0@H@Z @5647 NONAME
     ??4H245_LogicalChannelNumber@@QAEAAV0@I@Z @5648 NONAME
     ??4H245_MaximumBitRate@@QAEAAV0@H@Z @5649 NONAME
@@ -6179,6 +6246,7 @@ EXPORTS
     ??AH245_ArrayOf_DialingInformationNumber@@QBEAAVH245_DialingInformationNumber@@H@Z @6049 NONAME
     ??AH245_ArrayOf_EnhancementOptions@@QBEAAVH245_EnhancementOptions@@H@Z @6050 NONAME
     ??AH245_ArrayOf_EscrowData@@QBEAAVH245_EscrowData@@H@Z @6051 NONAME
+    ??AH245_ArrayOf_GenericCapability@@QBEAAVH245_GenericCapability@@H@Z @36667 NONAME
     ??AH245_ArrayOf_GenericParameter@@QBEAAVH245_GenericParameter@@H@Z @6052 NONAME
     ??AH245_ArrayOf_H263ModeComboFlags@@QBEAAVH245_H263ModeComboFlags@@H@Z @6053 NONAME
     ??AH245_ArrayOf_H263VideoModeCombos@@QBEAAVH245_H263VideoModeCombos@@H@Z @6054 NONAME
@@ -6205,6 +6273,7 @@ EXPORTS
     ??AH245_ArrayOf_TerminalInformation@@QBEAAVH245_TerminalInformation@@H@Z @6071 NONAME
     ??AH245_ArrayOf_TerminalLabel@@QBEAAVH245_TerminalLabel@@H@Z @6072 NONAME
     ??AH245_ArrayOf_VCCapability@@QBEAAVH245_VCCapability@@H@Z @6073 NONAME
+    ??AH245_ArrayOf_VideoCapability@@QBEAAVH245_VideoCapability@@H@Z @36668 NONAME
     ??AH245_CertSelectionCriteria@@QBEAAVH245_Criteria@@H@Z @6074 NONAME
     ??AH245_CustomPictureFormat_mPI_customPCF@@QBEAAVH245_CustomPictureFormat_mPI_customPCF_subtype@@H@Z @6075 NONAME
     ??AH245_CustomPictureFormat_pixelAspectInformation_extendedPAR@@QBEAAVH245_CustomPictureFormat_pixelAspectInformation_extendedPAR_subtype@@H@Z @6076 NONAME
@@ -6797,6 +6866,7 @@ EXPORTS
     ??BH245_CommandMessage@@QAEAAVH245_EncryptionCommand@@XZ @6629 NONAME
     ??BH245_CommandMessage@@QAEAAVH245_EndSessionCommand@@XZ @6630 NONAME
     ??BH245_CommandMessage@@QAEAAVH245_FlowControlCommand@@XZ @6631 NONAME
+    ??BH245_CommandMessage@@QAEAAVH245_GenericMessage@@XZ @36669 NONAME
     ??BH245_CommandMessage@@QAEAAVH245_H223MultiplexReconfiguration@@XZ @6632 NONAME
     ??BH245_CommandMessage@@QAEAAVH245_MaintenanceLoopOffCommand@@XZ @6633 NONAME
     ??BH245_CommandMessage@@QAEAAVH245_MiscellaneousCommand@@XZ @6634 NONAME
@@ -6809,6 +6879,7 @@ EXPORTS
     ??BH245_CommandMessage@@QBEABVH245_EncryptionCommand@@XZ @6641 NONAME
     ??BH245_CommandMessage@@QBEABVH245_EndSessionCommand@@XZ @6642 NONAME
     ??BH245_CommandMessage@@QBEABVH245_FlowControlCommand@@XZ @6643 NONAME
+    ??BH245_CommandMessage@@QBEABVH245_GenericMessage@@XZ @36670 NONAME
     ??BH245_CommandMessage@@QBEABVH245_H223MultiplexReconfiguration@@XZ @6644 NONAME
     ??BH245_CommandMessage@@QBEABVH245_MaintenanceLoopOffCommand@@XZ @6645 NONAME
     ??BH245_CommandMessage@@QBEABVH245_MiscellaneousCommand@@XZ @6646 NONAME
@@ -7028,6 +7099,7 @@ EXPORTS
     ??BH245_IndicationMessage@@QAEAAVH245_FlowControlIndication@@XZ @6830 NONAME
     ??BH245_IndicationMessage@@QAEAAVH245_FunctionNotSupported@@XZ @6831 NONAME
     ??BH245_IndicationMessage@@QAEAAVH245_FunctionNotUnderstood@@XZ @6832 NONAME
+    ??BH245_IndicationMessage@@QAEAAVH245_GenericMessage@@XZ @36671 NONAME
     ??BH245_IndicationMessage@@QAEAAVH245_H223SkewIndication@@XZ @6833 NONAME
     ??BH245_IndicationMessage@@QAEAAVH245_H2250MaximumSkewIndication@@XZ @6834 NONAME
     ??BH245_IndicationMessage@@QAEAAVH245_JitterIndication@@XZ @6835 NONAME
@@ -7051,6 +7123,7 @@ EXPORTS
     ??BH245_IndicationMessage@@QBEABVH245_FlowControlIndication@@XZ @6853 NONAME
     ??BH245_IndicationMessage@@QBEABVH245_FunctionNotSupported@@XZ @6854 NONAME
     ??BH245_IndicationMessage@@QBEABVH245_FunctionNotUnderstood@@XZ @6855 NONAME
+    ??BH245_IndicationMessage@@QBEABVH245_GenericMessage@@XZ @36672 NONAME
     ??BH245_IndicationMessage@@QBEABVH245_H223SkewIndication@@XZ @6856 NONAME
     ??BH245_IndicationMessage@@QBEABVH245_H2250MaximumSkewIndication@@XZ @6857 NONAME
     ??BH245_IndicationMessage@@QBEABVH245_JitterIndication@@XZ @6858 NONAME
@@ -7085,6 +7158,8 @@ EXPORTS
     ??BH245_MiscellaneousCommand_type@@QAEAAVH245_ArrayOf_PictureReference@@XZ @6887 NONAME
     ??BH245_MiscellaneousCommand_type@@QAEAAVH245_EncryptionSync@@XZ @6888 NONAME
     ??BH245_MiscellaneousCommand_type@@QAEAAVH245_EncryptionUpdateRequest@@XZ @6889 NONAME
+    ??BH245_MiscellaneousCommand_type@@QAEAAVH245_MiscellaneousCommand_type_encryptionUpdateAck@@XZ @36673 NONAME
+    ??BH245_MiscellaneousCommand_type@@QAEAAVH245_MiscellaneousCommand_type_encryptionUpdateCommand@@XZ @36674 NONAME
     ??BH245_MiscellaneousCommand_type@@QAEAAVH245_MiscellaneousCommand_type_lostPartialPicture@@XZ @6890 NONAME
     ??BH245_MiscellaneousCommand_type@@QAEAAVH245_MiscellaneousCommand_type_progressiveRefinementStart@@XZ @6891 NONAME
     ??BH245_MiscellaneousCommand_type@@QAEAAVH245_MiscellaneousCommand_type_videoBadMBs@@XZ @6892 NONAME
@@ -7093,6 +7168,8 @@ EXPORTS
     ??BH245_MiscellaneousCommand_type@@QBEABVH245_ArrayOf_PictureReference@@XZ @6895 NONAME
     ??BH245_MiscellaneousCommand_type@@QBEABVH245_EncryptionSync@@XZ @6896 NONAME
     ??BH245_MiscellaneousCommand_type@@QBEABVH245_EncryptionUpdateRequest@@XZ @6897 NONAME
+    ??BH245_MiscellaneousCommand_type@@QBEABVH245_MiscellaneousCommand_type_encryptionUpdateAck@@XZ @36675 NONAME
+    ??BH245_MiscellaneousCommand_type@@QBEABVH245_MiscellaneousCommand_type_encryptionUpdateCommand@@XZ @36676 NONAME
     ??BH245_MiscellaneousCommand_type@@QBEABVH245_MiscellaneousCommand_type_lostPartialPicture@@XZ @6898 NONAME
     ??BH245_MiscellaneousCommand_type@@QBEABVH245_MiscellaneousCommand_type_progressiveRefinementStart@@XZ @6899 NONAME
     ??BH245_MiscellaneousCommand_type@@QBEABVH245_MiscellaneousCommand_type_videoBadMBs@@XZ @6900 NONAME
@@ -7247,6 +7324,7 @@ EXPORTS
     ??BH245_RequestMessage@@QAEAAVH245_CloseLogicalChannel@@XZ @7031 NONAME
     ??BH245_RequestMessage@@QAEAAVH245_CommunicationModeRequest@@XZ @7032 NONAME
     ??BH245_RequestMessage@@QAEAAVH245_ConferenceRequest@@XZ @7033 NONAME
+    ??BH245_RequestMessage@@QAEAAVH245_GenericMessage@@XZ @36677 NONAME
     ??BH245_RequestMessage@@QAEAAVH245_LogicalChannelRateRequest@@XZ @7034 NONAME
     ??BH245_RequestMessage@@QAEAAVH245_MaintenanceLoopRequest@@XZ @7035 NONAME
     ??BH245_RequestMessage@@QAEAAVH245_MasterSlaveDetermination@@XZ @7036 NONAME
@@ -7262,6 +7340,7 @@ EXPORTS
     ??BH245_RequestMessage@@QBEABVH245_CloseLogicalChannel@@XZ @7046 NONAME
     ??BH245_RequestMessage@@QBEABVH245_CommunicationModeRequest@@XZ @7047 NONAME
     ??BH245_RequestMessage@@QBEABVH245_ConferenceRequest@@XZ @7048 NONAME
+    ??BH245_RequestMessage@@QBEABVH245_GenericMessage@@XZ @36678 NONAME
     ??BH245_RequestMessage@@QBEABVH245_LogicalChannelRateRequest@@XZ @7049 NONAME
     ??BH245_RequestMessage@@QBEABVH245_MaintenanceLoopRequest@@XZ @7050 NONAME
     ??BH245_RequestMessage@@QBEABVH245_MasterSlaveDetermination@@XZ @7051 NONAME
@@ -7277,6 +7356,7 @@ EXPORTS
     ??BH245_ResponseMessage@@QAEAAVH245_CloseLogicalChannelAck@@XZ @7061 NONAME
     ??BH245_ResponseMessage@@QAEAAVH245_CommunicationModeResponse@@XZ @7062 NONAME
     ??BH245_ResponseMessage@@QAEAAVH245_ConferenceResponse@@XZ @7063 NONAME
+    ??BH245_ResponseMessage@@QAEAAVH245_GenericMessage@@XZ @36679 NONAME
     ??BH245_ResponseMessage@@QAEAAVH245_LogicalChannelRateAcknowledge@@XZ @7064 NONAME
     ??BH245_ResponseMessage@@QAEAAVH245_LogicalChannelRateReject@@XZ @7065 NONAME
     ??BH245_ResponseMessage@@QAEAAVH245_MaintenanceLoopAck@@XZ @7066 NONAME
@@ -7301,6 +7381,7 @@ EXPORTS
     ??BH245_ResponseMessage@@QBEABVH245_CloseLogicalChannelAck@@XZ @7085 NONAME
     ??BH245_ResponseMessage@@QBEABVH245_CommunicationModeResponse@@XZ @7086 NONAME
     ??BH245_ResponseMessage@@QBEABVH245_ConferenceResponse@@XZ @7087 NONAME
+    ??BH245_ResponseMessage@@QBEABVH245_GenericMessage@@XZ @36680 NONAME
     ??BH245_ResponseMessage@@QBEABVH245_LogicalChannelRateAcknowledge@@XZ @7088 NONAME
     ??BH245_ResponseMessage@@QBEABVH245_LogicalChannelRateReject@@XZ @7089 NONAME
     ??BH245_ResponseMessage@@QBEABVH245_MaintenanceLoopAck@@XZ @7090 NONAME
@@ -7351,11 +7432,13 @@ EXPORTS
     ??BH245_UserInputCapability@@QAEAAVH245_ArrayOf_NonStandardParameter@@XZ @7135 NONAME
     ??BH245_UserInputCapability@@QBEABVH245_ArrayOf_NonStandardParameter@@XZ @7136 NONAME
     ??BH245_UserInputIndication@@QAEAAVH245_NonStandardParameter@@XZ @7137 NONAME
+    ??BH245_UserInputIndication@@QAEAAVH245_UserInputIndication_encryptedAlphanumeric@@XZ @36681 NONAME
     ??BH245_UserInputIndication@@QAEAAVH245_UserInputIndication_extendedAlphanumeric@@XZ @7138 NONAME
     ??BH245_UserInputIndication@@QAEAAVH245_UserInputIndication_signal@@XZ @7139 NONAME
     ??BH245_UserInputIndication@@QAEAAVH245_UserInputIndication_signalUpdate@@XZ @7140 NONAME
     ??BH245_UserInputIndication@@QAEAAVH245_UserInputIndication_userInputSupportIndication@@XZ @7141 NONAME
     ??BH245_UserInputIndication@@QBEABVH245_NonStandardParameter@@XZ @7142 NONAME
+    ??BH245_UserInputIndication@@QBEABVH245_UserInputIndication_encryptedAlphanumeric@@XZ @36682 NONAME
     ??BH245_UserInputIndication@@QBEABVH245_UserInputIndication_extendedAlphanumeric@@XZ @7143 NONAME
     ??BH245_UserInputIndication@@QBEABVH245_UserInputIndication_signal@@XZ @7144 NONAME
     ??BH245_UserInputIndication@@QBEABVH245_UserInputIndication_signalUpdate@@XZ @7145 NONAME
@@ -7366,12 +7449,14 @@ EXPORTS
     ??BH245_V76LogicalChannelParameters_mode@@QBEABVH245_V76LogicalChannelParameters_mode_eRM@@XZ @7150 NONAME
     ??BH245_VCCapability_availableBitRates_type@@QAEAAVH245_VCCapability_availableBitRates_type_rangeOfBitRates@@XZ @7151 NONAME
     ??BH245_VCCapability_availableBitRates_type@@QBEABVH245_VCCapability_availableBitRates_type_rangeOfBitRates@@XZ @7152 NONAME
+    ??BH245_VideoCapability@@QAEAAVH245_ExtendedVideoCapability@@XZ @36683 NONAME
     ??BH245_VideoCapability@@QAEAAVH245_GenericCapability@@XZ @7153 NONAME
     ??BH245_VideoCapability@@QAEAAVH245_H261VideoCapability@@XZ @7154 NONAME
     ??BH245_VideoCapability@@QAEAAVH245_H262VideoCapability@@XZ @7155 NONAME
     ??BH245_VideoCapability@@QAEAAVH245_H263VideoCapability@@XZ @7156 NONAME
     ??BH245_VideoCapability@@QAEAAVH245_IS11172VideoCapability@@XZ @7157 NONAME
     ??BH245_VideoCapability@@QAEAAVH245_NonStandardParameter@@XZ @7158 NONAME
+    ??BH245_VideoCapability@@QBEABVH245_ExtendedVideoCapability@@XZ @36684 NONAME
     ??BH245_VideoCapability@@QBEABVH245_GenericCapability@@XZ @7159 NONAME
     ??BH245_VideoCapability@@QBEABVH245_H261VideoCapability@@XZ @7160 NONAME
     ??BH245_VideoCapability@@QBEABVH245_H262VideoCapability@@XZ @7161 NONAME
@@ -7853,6 +7938,7 @@ EXPORTS
     ??D?$PSafePtr@VH323PeerElementDescriptor@@@@QBEAAVH323PeerElementDescriptor@@XZ @7673 NONAME
     ??D?$PSafePtr@VH323RegisteredEndPoint@@@@QBEAAVH323RegisteredEndPoint@@XZ @7674 NONAME
     ??D?$PSafePtr@VOpalConnection@@@@QBEAAVOpalConnection@@XZ @35874 NONAME
+    ??D?$PSafePtr@VSIPInfo@@@@QBEAAVSIPInfo@@XZ @36685 NONAME
     ??Dconst_iterator@?$_Tree@V?$_Tmap_traits@IPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@U?$less@I@std@@V?$allocator@U?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@std@@@4@$0A@@std@@@std@@QBEABU?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@2@XZ @35672 NONAME
     ??Dconst_iterator@?$_Tree@V?$_Tmap_traits@VPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@std@@@5@$0A@@std@@@std@@QBEABU?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPTextToSpeech@@VPString@@@@@2@XZ @35565 NONAME
     ??Diterator@?$vector@VPString@@V?$allocator@VPString@@@std@@@std@@QBEAAVPString@@XZ @35511 NONAME
@@ -8449,6 +8535,7 @@ EXPORTS
     ??_7H245_ArrayOf_DialingInformationNumber@@6B@ @8218 NONAME
     ??_7H245_ArrayOf_EnhancementOptions@@6B@ @8219 NONAME
     ??_7H245_ArrayOf_EscrowData@@6B@ @8220 NONAME
+    ??_7H245_ArrayOf_GenericCapability@@6B@ @36686 NONAME
     ??_7H245_ArrayOf_GenericParameter@@6B@ @8221 NONAME
     ??_7H245_ArrayOf_H263ModeComboFlags@@6B@ @8222 NONAME
     ??_7H245_ArrayOf_H263VideoModeCombos@@6B@ @8223 NONAME
@@ -8475,6 +8562,7 @@ EXPORTS
     ??_7H245_ArrayOf_TerminalInformation@@6B@ @8240 NONAME
     ??_7H245_ArrayOf_TerminalLabel@@6B@ @8241 NONAME
     ??_7H245_ArrayOf_VCCapability@@6B@ @8242 NONAME
+    ??_7H245_ArrayOf_VideoCapability@@6B@ @36687 NONAME
     ??_7H245_ATMParameters@@6B@ @8243 NONAME
     ??_7H245_AudioCapability@@6B@ @8244 NONAME
     ??_7H245_AudioCapability_g7231@@6B@ @8245 NONAME
@@ -8554,6 +8642,7 @@ EXPORTS
     ??_7H245_EncryptionCommand_encryptionAlgorithmID@@6B@ @8319 NONAME
     ??_7H245_EncryptionMode@@6B@ @8320 NONAME
     ??_7H245_EncryptionSync@@6B@ @8321 NONAME
+    ??_7H245_EncryptionUpdateDirection@@6B@ @36688 NONAME
     ??_7H245_EncryptionUpdateRequest@@6B@ @8322 NONAME
     ??_7H245_EndSessionCommand@@6B@ @8323 NONAME
     ??_7H245_EndSessionCommand_gstnOptions@@6B@ @8324 NONAME
@@ -8561,6 +8650,7 @@ EXPORTS
     ??_7H245_EnhancementLayerInfo@@6B@ @8326 NONAME
     ??_7H245_EnhancementOptions@@6B@ @8327 NONAME
     ??_7H245_EscrowData@@6B@ @8328 NONAME
+    ??_7H245_ExtendedVideoCapability@@6B@ @36689 NONAME
     ??_7H245_FECCapability@@6B@ @34884 NONAME
     ??_7H245_FECCapability_rfc2733@@6B@ @34885 NONAME
     ??_7H245_FECCapability_rfc2733_separateStream@@6B@ @34886 NONAME
@@ -8591,6 +8681,7 @@ EXPORTS
     ??_7H245_G7231AnnexCMode_g723AnnexCAudioMode@@6B@ @8341 NONAME
     ??_7H245_G729Extensions@@6B@ @8342 NONAME
     ??_7H245_GenericCapability@@6B@ @8343 NONAME
+    ??_7H245_GenericMessage@@6B@ @36690 NONAME
     ??_7H245_GenericParameter@@6B@ @8344 NONAME
     ??_7H245_GSMAudioCapability@@6B@ @8345 NONAME
     ??_7H245_H222Capability@@6B@ @8346 NONAME
@@ -8663,6 +8754,8 @@ EXPORTS
     ??_7H245_IS13818AudioMode_audioLayer@@6B@ @8413 NONAME
     ??_7H245_IS13818AudioMode_audioSampling@@6B@ @8414 NONAME
     ??_7H245_IS13818AudioMode_multichannelType@@6B@ @8415 NONAME
+    ??_7H245_IV16@@6B@ @36691 NONAME
+    ??_7H245_IV8@@6B@ @36692 NONAME
     ??_7H245_JitterIndication@@6B@ @8416 NONAME
     ??_7H245_JitterIndication_scope@@6B@ @8417 NONAME
     ??_7H245_KeyProtectionMethod@@6B@ @8418 NONAME
@@ -8697,6 +8790,8 @@ EXPORTS
     ??_7H245_MediaTransportType_atm_AAL5_compressed@@6B@ @8447 NONAME
     ??_7H245_MiscellaneousCommand@@6B@ @8448 NONAME
     ??_7H245_MiscellaneousCommand_type@@6B@ @8449 NONAME
+    ??_7H245_MiscellaneousCommand_type_encryptionUpdateAck@@6B@ @36693 NONAME
+    ??_7H245_MiscellaneousCommand_type_encryptionUpdateCommand@@6B@ @36694 NONAME
     ??_7H245_MiscellaneousCommand_type_lostPartialPicture@@6B@ @8450 NONAME
     ??_7H245_MiscellaneousCommand_type_progressiveRefinementStart@@6B@ @8451 NONAME
     ??_7H245_MiscellaneousCommand_type_progressiveRefinementStart_repeatCount@@6B@ @8452 NONAME
@@ -8796,6 +8891,7 @@ EXPORTS
     ??_7H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters@@6B@ @8539 NONAME
     ??_7H245_ParameterIdentifier@@6B@ @8540 NONAME
     ??_7H245_ParameterValue@@6B@ @8541 NONAME
+    ??_7H245_Params@@6B@ @36695 NONAME
     ??_7H245_Password@@6B@ @8542 NONAME
     ??_7H245_PictureReference@@6B@ @8543 NONAME
     ??_7H245_Q2931Address@@6B@ @8544 NONAME
@@ -8885,7 +8981,9 @@ EXPORTS
     ??_7H245_UnicastAddress_iPXAddress@@6B@ @8623 NONAME
     ??_7H245_UserInputCapability@@6B@ @8624 NONAME
     ??_7H245_UserInputIndication@@6B@ @8625 NONAME
+    ??_7H245_UserInputIndication_encryptedAlphanumeric@@6B@ @36696 NONAME
     ??_7H245_UserInputIndication_extendedAlphanumeric@@6B@ @8626 NONAME
+    ??_7H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric@@6B@ @36697 NONAME
     ??_7H245_UserInputIndication_signal@@6B@ @8627 NONAME
     ??_7H245_UserInputIndication_signalUpdate@@6B@ @8628 NONAME
     ??_7H245_UserInputIndication_signalUpdate_rtp@@6B@ @8629 NONAME
@@ -9708,7 +9806,7 @@ EXPORTS
     ??_7ReceivedPacket_PNotifier@OpalSilenceDetector@@6B@ @34593 NONAME
     ??_7ReceiverReport@RTP_Session@@6B@ @9475 NONAME
     ??_7ReceiveTimeout_PNotifier@OpalRFC2833Proto@@6B@ @9476 NONAME
-    ??_7RegistrationDict@SIPEndPoint@@6B@ @36275 NONAME
+    ??_7RegistrationList@SIPEndPoint@@6B@ @36698 NONAME
     ??_7RegistrationRefresh_PNotifier@SIPEndPoint@@6B@ @36072 NONAME
     ??_7Request@H323Transactor@@6B@ @9477 NONAME
     ??_7Response@H323Transactor@@6B@ @9478 NONAME
@@ -9733,9 +9831,13 @@ EXPORTS
     ??_7SIPEndPoint@@6B@ @9497 NONAME
     ??_7SIPInfo@@6B@ @36276 NONAME
     ??_7SIPInvite@@6B@ @9498 NONAME
+    ??_7SIPMessage@@6B@ @36699 NONAME
+    ??_7SIPMessageInfo@SIPEndPoint@@6B@ @36700 NONAME
     ??_7SIPMIMEInfo@@6B@ @9499 NONAME
     ??_7SIPMWISubscribe@@6B@ @36277 NONAME
     ??_7SIPMWISubscribeInfo@@6B@ @36278 NONAME
+    ??_7SIPRefer@@6B@ @36701 NONAME
+    ??_7SIPReferNotify@@6B@ @36702 NONAME
     ??_7SIPRegister@@6B@ @9500 NONAME
     ??_7SIPRegisterInfo@@6B@ @36279 NONAME
     ??_7SIPTransaction@@6B@ @9501 NONAME
@@ -10415,6 +10517,7 @@ EXPORTS
     ??_R0?AVH245_ArrayOf_DialingInformationNumber@@@8 @10142 NONAME
     ??_R0?AVH245_ArrayOf_EnhancementOptions@@@8 @10143 NONAME
     ??_R0?AVH245_ArrayOf_EscrowData@@@8 @10144 NONAME
+    ??_R0?AVH245_ArrayOf_GenericCapability@@@8 @36703 NONAME
     ??_R0?AVH245_ArrayOf_GenericParameter@@@8 @10145 NONAME
     ??_R0?AVH245_ArrayOf_H263ModeComboFlags@@@8 @10146 NONAME
     ??_R0?AVH245_ArrayOf_H263VideoModeCombos@@@8 @10147 NONAME
@@ -10441,6 +10544,7 @@ EXPORTS
     ??_R0?AVH245_ArrayOf_TerminalInformation@@@8 @10164 NONAME
     ??_R0?AVH245_ArrayOf_TerminalLabel@@@8 @10165 NONAME
     ??_R0?AVH245_ArrayOf_VCCapability@@@8 @10166 NONAME
+    ??_R0?AVH245_ArrayOf_VideoCapability@@@8 @36704 NONAME
     ??_R0?AVH245_ATMParameters@@@8 @10167 NONAME
     ??_R0?AVH245_AudioCapability@@@8 @10168 NONAME
     ??_R0?AVH245_AudioCapability_g7231@@@8 @10169 NONAME
@@ -10520,6 +10624,7 @@ EXPORTS
     ??_R0?AVH245_EncryptionCommand_encryptionAlgorithmID@@@8 @10243 NONAME
     ??_R0?AVH245_EncryptionMode@@@8 @10244 NONAME
     ??_R0?AVH245_EncryptionSync@@@8 @10245 NONAME
+    ??_R0?AVH245_EncryptionUpdateDirection@@@8 @36705 NONAME
     ??_R0?AVH245_EncryptionUpdateRequest@@@8 @10246 NONAME
     ??_R0?AVH245_EndSessionCommand@@@8 @10247 NONAME
     ??_R0?AVH245_EndSessionCommand_gstnOptions@@@8 @10248 NONAME
@@ -10527,6 +10632,7 @@ EXPORTS
     ??_R0?AVH245_EnhancementLayerInfo@@@8 @10250 NONAME
     ??_R0?AVH245_EnhancementOptions@@@8 @10251 NONAME
     ??_R0?AVH245_EscrowData@@@8 @10252 NONAME
+    ??_R0?AVH245_ExtendedVideoCapability@@@8 @36706 NONAME
     ??_R0?AVH245_FECCapability@@@8 @34926 NONAME
     ??_R0?AVH245_FECCapability_rfc2733@@@8 @34927 NONAME
     ??_R0?AVH245_FECCapability_rfc2733_separateStream@@@8 @34928 NONAME
@@ -10557,6 +10663,7 @@ EXPORTS
     ??_R0?AVH245_G7231AnnexCMode_g723AnnexCAudioMode@@@8 @10265 NONAME
     ??_R0?AVH245_G729Extensions@@@8 @10266 NONAME
     ??_R0?AVH245_GenericCapability@@@8 @10267 NONAME
+    ??_R0?AVH245_GenericMessage@@@8 @36707 NONAME
     ??_R0?AVH245_GenericParameter@@@8 @10268 NONAME
     ??_R0?AVH245_GSMAudioCapability@@@8 @10269 NONAME
     ??_R0?AVH245_H222Capability@@@8 @10270 NONAME
@@ -10629,6 +10736,8 @@ EXPORTS
     ??_R0?AVH245_IS13818AudioMode_audioLayer@@@8 @10337 NONAME
     ??_R0?AVH245_IS13818AudioMode_audioSampling@@@8 @10338 NONAME
     ??_R0?AVH245_IS13818AudioMode_multichannelType@@@8 @10339 NONAME
+    ??_R0?AVH245_IV16@@@8 @36708 NONAME
+    ??_R0?AVH245_IV8@@@8 @36709 NONAME
     ??_R0?AVH245_JitterIndication@@@8 @10340 NONAME
     ??_R0?AVH245_JitterIndication_scope@@@8 @10341 NONAME
     ??_R0?AVH245_KeyProtectionMethod@@@8 @10342 NONAME
@@ -10663,6 +10772,8 @@ EXPORTS
     ??_R0?AVH245_MediaTransportType_atm_AAL5_compressed@@@8 @10371 NONAME
     ??_R0?AVH245_MiscellaneousCommand@@@8 @10372 NONAME
     ??_R0?AVH245_MiscellaneousCommand_type@@@8 @10373 NONAME
+    ??_R0?AVH245_MiscellaneousCommand_type_encryptionUpdateAck@@@8 @36710 NONAME
+    ??_R0?AVH245_MiscellaneousCommand_type_encryptionUpdateCommand@@@8 @36711 NONAME
     ??_R0?AVH245_MiscellaneousCommand_type_lostPartialPicture@@@8 @10374 NONAME
     ??_R0?AVH245_MiscellaneousCommand_type_progressiveRefinementStart@@@8 @10375 NONAME
     ??_R0?AVH245_MiscellaneousCommand_type_progressiveRefinementStart_repeatCount@@@8 @10376 NONAME
@@ -10762,6 +10873,7 @@ EXPORTS
     ??_R0?AVH245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters@@@8 @10463 NONAME
     ??_R0?AVH245_ParameterIdentifier@@@8 @10464 NONAME
     ??_R0?AVH245_ParameterValue@@@8 @10465 NONAME
+    ??_R0?AVH245_Params@@@8 @36712 NONAME
     ??_R0?AVH245_Password@@@8 @10466 NONAME
     ??_R0?AVH245_PictureReference@@@8 @10467 NONAME
     ??_R0?AVH245_Q2931Address@@@8 @10468 NONAME
@@ -10851,7 +10963,9 @@ EXPORTS
     ??_R0?AVH245_UnicastAddress_iPXAddress@@@8 @10547 NONAME
     ??_R0?AVH245_UserInputCapability@@@8 @10548 NONAME
     ??_R0?AVH245_UserInputIndication@@@8 @10549 NONAME
+    ??_R0?AVH245_UserInputIndication_encryptedAlphanumeric@@@8 @36713 NONAME
     ??_R0?AVH245_UserInputIndication_extendedAlphanumeric@@@8 @10550 NONAME
+    ??_R0?AVH245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric@@@8 @36714 NONAME
     ??_R0?AVH245_UserInputIndication_signal@@@8 @10551 NONAME
     ??_R0?AVH245_UserInputIndication_signalUpdate@@@8 @10552 NONAME
     ??_R0?AVH245_UserInputIndication_signalUpdate_rtp@@@8 @10553 NONAME
@@ -11638,7 +11752,7 @@ EXPORTS
     ??_R0?AVReceivedPacket_PNotifier@OpalSilenceDetector@@@8 @34597 NONAME
     ??_R0?AVReceiverReport@RTP_Session@@@8 @11363 NONAME
     ??_R0?AVReceiveTimeout_PNotifier@OpalRFC2833Proto@@@8 @11364 NONAME
-    ??_R0?AVRegistrationDict@SIPEndPoint@@@8 @36296 NONAME
+    ??_R0?AVRegistrationList@SIPEndPoint@@@8 @36715 NONAME
     ??_R0?AVRegistrationRefresh_PNotifier@SIPEndPoint@@@8 @36073 NONAME
     ??_R0?AVRequest@H323Transactor@@@8 @11365 NONAME
     ??_R0?AVResponse@H323Transactor@@@8 @11366 NONAME
@@ -11663,9 +11777,13 @@ EXPORTS
     ??_R0?AVSIPEndPoint@@@8 @11385 NONAME
     ??_R0?AVSIPInfo@@@8 @36297 NONAME
     ??_R0?AVSIPInvite@@@8 @11386 NONAME
+    ??_R0?AVSIPMessage@@@8 @36716 NONAME
+    ??_R0?AVSIPMessageInfo@SIPEndPoint@@@8 @36717 NONAME
     ??_R0?AVSIPMIMEInfo@@@8 @11387 NONAME
     ??_R0?AVSIPMWISubscribe@@@8 @36298 NONAME
     ??_R0?AVSIPMWISubscribeInfo@@@8 @36299 NONAME
+    ??_R0?AVSIPRefer@@@8 @36718 NONAME
+    ??_R0?AVSIPReferNotify@@@8 @36719 NONAME
     ??_R0?AVSIPRegister@@@8 @11388 NONAME
     ??_R0?AVSIPRegisterInfo@@@8 @36300 NONAME
     ??_R0?AVSIPTransaction@@@8 @11389 NONAME
@@ -12293,6 +12411,7 @@ EXPORTS
     ??_R1A@?0A@A@H245_ArrayOf_DialingInformationNumber@@8 @11978 NONAME
     ??_R1A@?0A@A@H245_ArrayOf_EnhancementOptions@@8 @11979 NONAME
     ??_R1A@?0A@A@H245_ArrayOf_EscrowData@@8 @11980 NONAME
+    ??_R1A@?0A@A@H245_ArrayOf_GenericCapability@@8 @36720 NONAME
     ??_R1A@?0A@A@H245_ArrayOf_GenericParameter@@8 @11981 NONAME
     ??_R1A@?0A@A@H245_ArrayOf_H263ModeComboFlags@@8 @11982 NONAME
     ??_R1A@?0A@A@H245_ArrayOf_H263VideoModeCombos@@8 @11983 NONAME
@@ -12319,6 +12438,7 @@ EXPORTS
     ??_R1A@?0A@A@H245_ArrayOf_TerminalInformation@@8 @12000 NONAME
     ??_R1A@?0A@A@H245_ArrayOf_TerminalLabel@@8 @12001 NONAME
     ??_R1A@?0A@A@H245_ArrayOf_VCCapability@@8 @12002 NONAME
+    ??_R1A@?0A@A@H245_ArrayOf_VideoCapability@@8 @36721 NONAME
     ??_R1A@?0A@A@H245_ATMParameters@@8 @12003 NONAME
     ??_R1A@?0A@A@H245_AudioCapability@@8 @12004 NONAME
     ??_R1A@?0A@A@H245_AudioCapability_g7231@@8 @12005 NONAME
@@ -12398,6 +12518,7 @@ EXPORTS
     ??_R1A@?0A@A@H245_EncryptionCommand_encryptionAlgorithmID@@8 @12079 NONAME
     ??_R1A@?0A@A@H245_EncryptionMode@@8 @12080 NONAME
     ??_R1A@?0A@A@H245_EncryptionSync@@8 @12081 NONAME
+    ??_R1A@?0A@A@H245_EncryptionUpdateDirection@@8 @36722 NONAME
     ??_R1A@?0A@A@H245_EncryptionUpdateRequest@@8 @12082 NONAME
     ??_R1A@?0A@A@H245_EndSessionCommand@@8 @12083 NONAME
     ??_R1A@?0A@A@H245_EndSessionCommand_gstnOptions@@8 @12084 NONAME
@@ -12405,6 +12526,7 @@ EXPORTS
     ??_R1A@?0A@A@H245_EnhancementLayerInfo@@8 @12086 NONAME
     ??_R1A@?0A@A@H245_EnhancementOptions@@8 @12087 NONAME
     ??_R1A@?0A@A@H245_EscrowData@@8 @12088 NONAME
+    ??_R1A@?0A@A@H245_ExtendedVideoCapability@@8 @36723 NONAME
     ??_R1A@?0A@A@H245_FECCapability@@8 @34968 NONAME
     ??_R1A@?0A@A@H245_FECCapability_rfc2733@@8 @34969 NONAME
     ??_R1A@?0A@A@H245_FECCapability_rfc2733_separateStream@@8 @34970 NONAME
@@ -12435,6 +12557,7 @@ EXPORTS
     ??_R1A@?0A@A@H245_G7231AnnexCMode_g723AnnexCAudioMode@@8 @12101 NONAME
     ??_R1A@?0A@A@H245_G729Extensions@@8 @12102 NONAME
     ??_R1A@?0A@A@H245_GenericCapability@@8 @12103 NONAME
+    ??_R1A@?0A@A@H245_GenericMessage@@8 @36724 NONAME
     ??_R1A@?0A@A@H245_GenericParameter@@8 @12104 NONAME
     ??_R1A@?0A@A@H245_GSMAudioCapability@@8 @12105 NONAME
     ??_R1A@?0A@A@H245_H222Capability@@8 @12106 NONAME
@@ -12507,6 +12630,8 @@ EXPORTS
     ??_R1A@?0A@A@H245_IS13818AudioMode_audioLayer@@8 @12173 NONAME
     ??_R1A@?0A@A@H245_IS13818AudioMode_audioSampling@@8 @12174 NONAME
     ??_R1A@?0A@A@H245_IS13818AudioMode_multichannelType@@8 @12175 NONAME
+    ??_R1A@?0A@A@H245_IV16@@8 @36725 NONAME
+    ??_R1A@?0A@A@H245_IV8@@8 @36726 NONAME
     ??_R1A@?0A@A@H245_JitterIndication@@8 @12176 NONAME
     ??_R1A@?0A@A@H245_JitterIndication_scope@@8 @12177 NONAME
     ??_R1A@?0A@A@H245_KeyProtectionMethod@@8 @12178 NONAME
@@ -12541,6 +12666,8 @@ EXPORTS
     ??_R1A@?0A@A@H245_MediaTransportType_atm_AAL5_compressed@@8 @12207 NONAME
     ??_R1A@?0A@A@H245_MiscellaneousCommand@@8 @12208 NONAME
     ??_R1A@?0A@A@H245_MiscellaneousCommand_type@@8 @12209 NONAME
+    ??_R1A@?0A@A@H245_MiscellaneousCommand_type_encryptionUpdateAck@@8 @36727 NONAME
+    ??_R1A@?0A@A@H245_MiscellaneousCommand_type_encryptionUpdateCommand@@8 @36728 NONAME
     ??_R1A@?0A@A@H245_MiscellaneousCommand_type_lostPartialPicture@@8 @12210 NONAME
     ??_R1A@?0A@A@H245_MiscellaneousCommand_type_progressiveRefinementStart@@8 @12211 NONAME
     ??_R1A@?0A@A@H245_MiscellaneousCommand_type_progressiveRefinementStart_repeatCount@@8 @12212 NONAME
@@ -12640,6 +12767,7 @@ EXPORTS
     ??_R1A@?0A@A@H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters@@8 @12299 NONAME
     ??_R1A@?0A@A@H245_ParameterIdentifier@@8 @12300 NONAME
     ??_R1A@?0A@A@H245_ParameterValue@@8 @12301 NONAME
+    ??_R1A@?0A@A@H245_Params@@8 @36729 NONAME
     ??_R1A@?0A@A@H245_Password@@8 @12302 NONAME
     ??_R1A@?0A@A@H245_PictureReference@@8 @12303 NONAME
     ??_R1A@?0A@A@H245_Q2931Address@@8 @12304 NONAME
@@ -12729,7 +12857,9 @@ EXPORTS
     ??_R1A@?0A@A@H245_UnicastAddress_iPXAddress@@8 @12383 NONAME
     ??_R1A@?0A@A@H245_UserInputCapability@@8 @12384 NONAME
     ??_R1A@?0A@A@H245_UserInputIndication@@8 @12385 NONAME
+    ??_R1A@?0A@A@H245_UserInputIndication_encryptedAlphanumeric@@8 @36730 NONAME
     ??_R1A@?0A@A@H245_UserInputIndication_extendedAlphanumeric@@8 @12386 NONAME
+    ??_R1A@?0A@A@H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric@@8 @36731 NONAME
     ??_R1A@?0A@A@H245_UserInputIndication_signal@@8 @12387 NONAME
     ??_R1A@?0A@A@H245_UserInputIndication_signalUpdate@@8 @12388 NONAME
     ??_R1A@?0A@A@H245_UserInputIndication_signalUpdate_rtp@@8 @12389 NONAME
@@ -13541,7 +13671,7 @@ EXPORTS
     ??_R1A@?0A@A@ReceivedPacket_PNotifier@OpalSilenceDetector@@8 @34601 NONAME
     ??_R1A@?0A@A@ReceiverReport@RTP_Session@@8 @13225 NONAME
     ??_R1A@?0A@A@ReceiveTimeout_PNotifier@OpalRFC2833Proto@@8 @13226 NONAME
-    ??_R1A@?0A@A@RegistrationDict@SIPEndPoint@@8 @36316 NONAME
+    ??_R1A@?0A@A@RegistrationList@SIPEndPoint@@8 @36732 NONAME
     ??_R1A@?0A@A@RegistrationRefresh_PNotifier@SIPEndPoint@@8 @36074 NONAME
     ??_R1A@?0A@A@Request@H323Transactor@@8 @13227 NONAME
     ??_R1A@?0A@A@Response@H323Transactor@@8 @13228 NONAME
@@ -13566,9 +13696,13 @@ EXPORTS
     ??_R1A@?0A@A@SIPEndPoint@@8 @13247 NONAME
     ??_R1A@?0A@A@SIPInfo@@8 @36317 NONAME
     ??_R1A@?0A@A@SIPInvite@@8 @13248 NONAME
+    ??_R1A@?0A@A@SIPMessage@@8 @36733 NONAME
+    ??_R1A@?0A@A@SIPMessageInfo@SIPEndPoint@@8 @36734 NONAME
     ??_R1A@?0A@A@SIPMIMEInfo@@8 @13249 NONAME
     ??_R1A@?0A@A@SIPMWISubscribe@@8 @36318 NONAME
     ??_R1A@?0A@A@SIPMWISubscribeInfo@@8 @36319 NONAME
+    ??_R1A@?0A@A@SIPRefer@@8 @36735 NONAME
+    ??_R1A@?0A@A@SIPReferNotify@@8 @36736 NONAME
     ??_R1A@?0A@A@SIPRegister@@8 @13250 NONAME
     ??_R1A@?0A@A@SIPRegisterInfo@@8 @36320 NONAME
     ??_R1A@?0A@A@SIPTransaction@@8 @13251 NONAME
@@ -13630,9 +13764,9 @@ EXPORTS
     ??_R1A@?0A@A@X880_ReturnResultProblem@@8 @13305 NONAME
     ??_R1A@?0A@A@X880_ReturnResult_result@@8 @13306 NONAME
     ??_R1A@?0A@A@X880_ROS@@8 @13307 NONAME
-    ??_R1CE@?0A@A@H323TransactionPDU@@8 @13310 NONAME
+    ??_R1CA@?0A@A@H323TransactionPDU@@8 @36737 NONAME
     ??_R1EA@?0A@A@H323NonStandardCapabilityInfo@@8 @36321 NONAME
-    ??_R1EMI@?0A@A@H323TransactionPDU@@8 @13311 NONAME
+    ??_R1EME@?0A@A@H323TransactionPDU@@8 @36738 NONAME
     ??_R1PA@?0A@A@PVXMLChannelInterface@@8 @35516 NONAME
     ??_R2?$H235_ENCRYPTED@VH235_EncodedGeneralToken@@@@8 @13312 NONAME
     ??_R2?$H235_ENCRYPTED@VH235_EncodedKeySyncMaterial@@@@8 @13313 NONAME
@@ -14199,6 +14333,7 @@ EXPORTS
     ??_R2H245_ArrayOf_DialingInformationNumber@@8 @13844 NONAME
     ??_R2H245_ArrayOf_EnhancementOptions@@8 @13845 NONAME
     ??_R2H245_ArrayOf_EscrowData@@8 @13846 NONAME
+    ??_R2H245_ArrayOf_GenericCapability@@8 @36739 NONAME
     ??_R2H245_ArrayOf_GenericParameter@@8 @13847 NONAME
     ??_R2H245_ArrayOf_H263ModeComboFlags@@8 @13848 NONAME
     ??_R2H245_ArrayOf_H263VideoModeCombos@@8 @13849 NONAME
@@ -14225,6 +14360,7 @@ EXPORTS
     ??_R2H245_ArrayOf_TerminalInformation@@8 @13866 NONAME
     ??_R2H245_ArrayOf_TerminalLabel@@8 @13867 NONAME
     ??_R2H245_ArrayOf_VCCapability@@8 @13868 NONAME
+    ??_R2H245_ArrayOf_VideoCapability@@8 @36740 NONAME
     ??_R2H245_ATMParameters@@8 @13869 NONAME
     ??_R2H245_AudioCapability@@8 @13870 NONAME
     ??_R2H245_AudioCapability_g7231@@8 @13871 NONAME
@@ -14304,6 +14440,7 @@ EXPORTS
     ??_R2H245_EncryptionCommand_encryptionAlgorithmID@@8 @13945 NONAME
     ??_R2H245_EncryptionMode@@8 @13946 NONAME
     ??_R2H245_EncryptionSync@@8 @13947 NONAME
+    ??_R2H245_EncryptionUpdateDirection@@8 @36741 NONAME
     ??_R2H245_EncryptionUpdateRequest@@8 @13948 NONAME
     ??_R2H245_EndSessionCommand@@8 @13949 NONAME
     ??_R2H245_EndSessionCommand_gstnOptions@@8 @13950 NONAME
@@ -14311,6 +14448,7 @@ EXPORTS
     ??_R2H245_EnhancementLayerInfo@@8 @13952 NONAME
     ??_R2H245_EnhancementOptions@@8 @13953 NONAME
     ??_R2H245_EscrowData@@8 @13954 NONAME
+    ??_R2H245_ExtendedVideoCapability@@8 @36742 NONAME
     ??_R2H245_FECCapability@@8 @35010 NONAME
     ??_R2H245_FECCapability_rfc2733@@8 @35011 NONAME
     ??_R2H245_FECCapability_rfc2733_separateStream@@8 @35012 NONAME
@@ -14341,6 +14479,7 @@ EXPORTS
     ??_R2H245_G7231AnnexCMode_g723AnnexCAudioMode@@8 @13967 NONAME
     ??_R2H245_G729Extensions@@8 @13968 NONAME
     ??_R2H245_GenericCapability@@8 @13969 NONAME
+    ??_R2H245_GenericMessage@@8 @36743 NONAME
     ??_R2H245_GenericParameter@@8 @13970 NONAME
     ??_R2H245_GSMAudioCapability@@8 @13971 NONAME
     ??_R2H245_H222Capability@@8 @13972 NONAME
@@ -14413,6 +14552,8 @@ EXPORTS
     ??_R2H245_IS13818AudioMode_audioLayer@@8 @14039 NONAME
     ??_R2H245_IS13818AudioMode_audioSampling@@8 @14040 NONAME
     ??_R2H245_IS13818AudioMode_multichannelType@@8 @14041 NONAME
+    ??_R2H245_IV16@@8 @36744 NONAME
+    ??_R2H245_IV8@@8 @36745 NONAME
     ??_R2H245_JitterIndication@@8 @14042 NONAME
     ??_R2H245_JitterIndication_scope@@8 @14043 NONAME
     ??_R2H245_KeyProtectionMethod@@8 @14044 NONAME
@@ -14447,6 +14588,8 @@ EXPORTS
     ??_R2H245_MediaTransportType_atm_AAL5_compressed@@8 @14073 NONAME
     ??_R2H245_MiscellaneousCommand@@8 @14074 NONAME
     ??_R2H245_MiscellaneousCommand_type@@8 @14075 NONAME
+    ??_R2H245_MiscellaneousCommand_type_encryptionUpdateAck@@8 @36746 NONAME
+    ??_R2H245_MiscellaneousCommand_type_encryptionUpdateCommand@@8 @36747 NONAME
     ??_R2H245_MiscellaneousCommand_type_lostPartialPicture@@8 @14076 NONAME
     ??_R2H245_MiscellaneousCommand_type_progressiveRefinementStart@@8 @14077 NONAME
     ??_R2H245_MiscellaneousCommand_type_progressiveRefinementStart_repeatCount@@8 @14078 NONAME
@@ -14546,6 +14689,7 @@ EXPORTS
     ??_R2H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters@@8 @14165 NONAME
     ??_R2H245_ParameterIdentifier@@8 @14166 NONAME
     ??_R2H245_ParameterValue@@8 @14167 NONAME
+    ??_R2H245_Params@@8 @36748 NONAME
     ??_R2H245_Password@@8 @14168 NONAME
     ??_R2H245_PictureReference@@8 @14169 NONAME
     ??_R2H245_Q2931Address@@8 @14170 NONAME
@@ -14635,7 +14779,9 @@ EXPORTS
     ??_R2H245_UnicastAddress_iPXAddress@@8 @14249 NONAME
     ??_R2H245_UserInputCapability@@8 @14250 NONAME
     ??_R2H245_UserInputIndication@@8 @14251 NONAME
+    ??_R2H245_UserInputIndication_encryptedAlphanumeric@@8 @36749 NONAME
     ??_R2H245_UserInputIndication_extendedAlphanumeric@@8 @14252 NONAME
+    ??_R2H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric@@8 @36750 NONAME
     ??_R2H245_UserInputIndication_signal@@8 @14253 NONAME
     ??_R2H245_UserInputIndication_signalUpdate@@8 @14254 NONAME
     ??_R2H245_UserInputIndication_signalUpdate_rtp@@8 @14255 NONAME
@@ -15437,7 +15583,7 @@ EXPORTS
     ??_R2ReceivedPacket_PNotifier@OpalSilenceDetector@@8 @34605 NONAME
     ??_R2ReceiverReport@RTP_Session@@8 @15081 NONAME
     ??_R2ReceiveTimeout_PNotifier@OpalRFC2833Proto@@8 @15082 NONAME
-    ??_R2RegistrationDict@SIPEndPoint@@8 @36337 NONAME
+    ??_R2RegistrationList@SIPEndPoint@@8 @36751 NONAME
     ??_R2RegistrationRefresh_PNotifier@SIPEndPoint@@8 @36075 NONAME
     ??_R2Request@H323Transactor@@8 @15083 NONAME
     ??_R2Response@H323Transactor@@8 @15084 NONAME
@@ -15462,9 +15608,13 @@ EXPORTS
     ??_R2SIPEndPoint@@8 @15103 NONAME
     ??_R2SIPInfo@@8 @36338 NONAME
     ??_R2SIPInvite@@8 @15104 NONAME
+    ??_R2SIPMessage@@8 @36752 NONAME
+    ??_R2SIPMessageInfo@SIPEndPoint@@8 @36753 NONAME
     ??_R2SIPMIMEInfo@@8 @15105 NONAME
     ??_R2SIPMWISubscribe@@8 @36339 NONAME
     ??_R2SIPMWISubscribeInfo@@8 @36340 NONAME
+    ??_R2SIPRefer@@8 @36754 NONAME
+    ??_R2SIPReferNotify@@8 @36755 NONAME
     ??_R2SIPRegister@@8 @15106 NONAME
     ??_R2SIPRegisterInfo@@8 @36341 NONAME
     ??_R2SIPTransaction@@8 @15107 NONAME
@@ -16091,6 +16241,7 @@ EXPORTS
     ??_R3H245_ArrayOf_DialingInformationNumber@@8 @15696 NONAME
     ??_R3H245_ArrayOf_EnhancementOptions@@8 @15697 NONAME
     ??_R3H245_ArrayOf_EscrowData@@8 @15698 NONAME
+    ??_R3H245_ArrayOf_GenericCapability@@8 @36756 NONAME
     ??_R3H245_ArrayOf_GenericParameter@@8 @15699 NONAME
     ??_R3H245_ArrayOf_H263ModeComboFlags@@8 @15700 NONAME
     ??_R3H245_ArrayOf_H263VideoModeCombos@@8 @15701 NONAME
@@ -16117,6 +16268,7 @@ EXPORTS
     ??_R3H245_ArrayOf_TerminalInformation@@8 @15718 NONAME
     ??_R3H245_ArrayOf_TerminalLabel@@8 @15719 NONAME
     ??_R3H245_ArrayOf_VCCapability@@8 @15720 NONAME
+    ??_R3H245_ArrayOf_VideoCapability@@8 @36757 NONAME
     ??_R3H245_ATMParameters@@8 @15721 NONAME
     ??_R3H245_AudioCapability@@8 @15722 NONAME
     ??_R3H245_AudioCapability_g7231@@8 @15723 NONAME
@@ -16196,6 +16348,7 @@ EXPORTS
     ??_R3H245_EncryptionCommand_encryptionAlgorithmID@@8 @15797 NONAME
     ??_R3H245_EncryptionMode@@8 @15798 NONAME
     ??_R3H245_EncryptionSync@@8 @15799 NONAME
+    ??_R3H245_EncryptionUpdateDirection@@8 @36758 NONAME
     ??_R3H245_EncryptionUpdateRequest@@8 @15800 NONAME
     ??_R3H245_EndSessionCommand@@8 @15801 NONAME
     ??_R3H245_EndSessionCommand_gstnOptions@@8 @15802 NONAME
@@ -16203,6 +16356,7 @@ EXPORTS
     ??_R3H245_EnhancementLayerInfo@@8 @15804 NONAME
     ??_R3H245_EnhancementOptions@@8 @15805 NONAME
     ??_R3H245_EscrowData@@8 @15806 NONAME
+    ??_R3H245_ExtendedVideoCapability@@8 @36759 NONAME
     ??_R3H245_FECCapability@@8 @35052 NONAME
     ??_R3H245_FECCapability_rfc2733@@8 @35053 NONAME
     ??_R3H245_FECCapability_rfc2733_separateStream@@8 @35054 NONAME
@@ -16233,6 +16387,7 @@ EXPORTS
     ??_R3H245_G7231AnnexCMode_g723AnnexCAudioMode@@8 @15819 NONAME
     ??_R3H245_G729Extensions@@8 @15820 NONAME
     ??_R3H245_GenericCapability@@8 @15821 NONAME
+    ??_R3H245_GenericMessage@@8 @36760 NONAME
     ??_R3H245_GenericParameter@@8 @15822 NONAME
     ??_R3H245_GSMAudioCapability@@8 @15823 NONAME
     ??_R3H245_H222Capability@@8 @15824 NONAME
@@ -16305,6 +16460,8 @@ EXPORTS
     ??_R3H245_IS13818AudioMode_audioLayer@@8 @15891 NONAME
     ??_R3H245_IS13818AudioMode_audioSampling@@8 @15892 NONAME
     ??_R3H245_IS13818AudioMode_multichannelType@@8 @15893 NONAME
+    ??_R3H245_IV16@@8 @36761 NONAME
+    ??_R3H245_IV8@@8 @36762 NONAME
     ??_R3H245_JitterIndication@@8 @15894 NONAME
     ??_R3H245_JitterIndication_scope@@8 @15895 NONAME
     ??_R3H245_KeyProtectionMethod@@8 @15896 NONAME
@@ -16339,6 +16496,8 @@ EXPORTS
     ??_R3H245_MediaTransportType_atm_AAL5_compressed@@8 @15925 NONAME
     ??_R3H245_MiscellaneousCommand@@8 @15926 NONAME
     ??_R3H245_MiscellaneousCommand_type@@8 @15927 NONAME
+    ??_R3H245_MiscellaneousCommand_type_encryptionUpdateAck@@8 @36763 NONAME
+    ??_R3H245_MiscellaneousCommand_type_encryptionUpdateCommand@@8 @36764 NONAME
     ??_R3H245_MiscellaneousCommand_type_lostPartialPicture@@8 @15928 NONAME
     ??_R3H245_MiscellaneousCommand_type_progressiveRefinementStart@@8 @15929 NONAME
     ??_R3H245_MiscellaneousCommand_type_progressiveRefinementStart_repeatCount@@8 @15930 NONAME
@@ -16438,6 +16597,7 @@ EXPORTS
     ??_R3H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters@@8 @16017 NONAME
     ??_R3H245_ParameterIdentifier@@8 @16018 NONAME
     ??_R3H245_ParameterValue@@8 @16019 NONAME
+    ??_R3H245_Params@@8 @36765 NONAME
     ??_R3H245_Password@@8 @16020 NONAME
     ??_R3H245_PictureReference@@8 @16021 NONAME
     ??_R3H245_Q2931Address@@8 @16022 NONAME
@@ -16527,7 +16687,9 @@ EXPORTS
     ??_R3H245_UnicastAddress_iPXAddress@@8 @16101 NONAME
     ??_R3H245_UserInputCapability@@8 @16102 NONAME
     ??_R3H245_UserInputIndication@@8 @16103 NONAME
+    ??_R3H245_UserInputIndication_encryptedAlphanumeric@@8 @36766 NONAME
     ??_R3H245_UserInputIndication_extendedAlphanumeric@@8 @16104 NONAME
+    ??_R3H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric@@8 @36767 NONAME
     ??_R3H245_UserInputIndication_signal@@8 @16105 NONAME
     ??_R3H245_UserInputIndication_signalUpdate@@8 @16106 NONAME
     ??_R3H245_UserInputIndication_signalUpdate_rtp@@8 @16107 NONAME
@@ -17329,7 +17491,7 @@ EXPORTS
     ??_R3ReceivedPacket_PNotifier@OpalSilenceDetector@@8 @34609 NONAME
     ??_R3ReceiverReport@RTP_Session@@8 @16933 NONAME
     ??_R3ReceiveTimeout_PNotifier@OpalRFC2833Proto@@8 @16934 NONAME
-    ??_R3RegistrationDict@SIPEndPoint@@8 @36357 NONAME
+    ??_R3RegistrationList@SIPEndPoint@@8 @36768 NONAME
     ??_R3RegistrationRefresh_PNotifier@SIPEndPoint@@8 @36076 NONAME
     ??_R3Request@H323Transactor@@8 @16935 NONAME
     ??_R3Response@H323Transactor@@8 @16936 NONAME
@@ -17354,9 +17516,13 @@ EXPORTS
     ??_R3SIPEndPoint@@8 @16955 NONAME
     ??_R3SIPInfo@@8 @36358 NONAME
     ??_R3SIPInvite@@8 @16956 NONAME
+    ??_R3SIPMessage@@8 @36769 NONAME
+    ??_R3SIPMessageInfo@SIPEndPoint@@8 @36770 NONAME
     ??_R3SIPMIMEInfo@@8 @16957 NONAME
     ??_R3SIPMWISubscribe@@8 @36359 NONAME
     ??_R3SIPMWISubscribeInfo@@8 @36360 NONAME
+    ??_R3SIPRefer@@8 @36771 NONAME
+    ??_R3SIPReferNotify@@8 @36772 NONAME
     ??_R3SIPRegister@@8 @16958 NONAME
     ??_R3SIPRegisterInfo@@8 @36361 NONAME
     ??_R3SIPTransaction@@8 @16959 NONAME
@@ -17983,6 +18149,7 @@ EXPORTS
     ??_R4H245_ArrayOf_DialingInformationNumber@@6B@ @17548 NONAME
     ??_R4H245_ArrayOf_EnhancementOptions@@6B@ @17549 NONAME
     ??_R4H245_ArrayOf_EscrowData@@6B@ @17550 NONAME
+    ??_R4H245_ArrayOf_GenericCapability@@6B@ @36773 NONAME
     ??_R4H245_ArrayOf_GenericParameter@@6B@ @17551 NONAME
     ??_R4H245_ArrayOf_H263ModeComboFlags@@6B@ @17552 NONAME
     ??_R4H245_ArrayOf_H263VideoModeCombos@@6B@ @17553 NONAME
@@ -18009,6 +18176,7 @@ EXPORTS
     ??_R4H245_ArrayOf_TerminalInformation@@6B@ @17570 NONAME
     ??_R4H245_ArrayOf_TerminalLabel@@6B@ @17571 NONAME
     ??_R4H245_ArrayOf_VCCapability@@6B@ @17572 NONAME
+    ??_R4H245_ArrayOf_VideoCapability@@6B@ @36774 NONAME
     ??_R4H245_ATMParameters@@6B@ @17573 NONAME
     ??_R4H245_AudioCapability@@6B@ @17574 NONAME
     ??_R4H245_AudioCapability_g7231@@6B@ @17575 NONAME
@@ -18088,6 +18256,7 @@ EXPORTS
     ??_R4H245_EncryptionCommand_encryptionAlgorithmID@@6B@ @17649 NONAME
     ??_R4H245_EncryptionMode@@6B@ @17650 NONAME
     ??_R4H245_EncryptionSync@@6B@ @17651 NONAME
+    ??_R4H245_EncryptionUpdateDirection@@6B@ @36775 NONAME
     ??_R4H245_EncryptionUpdateRequest@@6B@ @17652 NONAME
     ??_R4H245_EndSessionCommand@@6B@ @17653 NONAME
     ??_R4H245_EndSessionCommand_gstnOptions@@6B@ @17654 NONAME
@@ -18095,6 +18264,7 @@ EXPORTS
     ??_R4H245_EnhancementLayerInfo@@6B@ @17656 NONAME
     ??_R4H245_EnhancementOptions@@6B@ @17657 NONAME
     ??_R4H245_EscrowData@@6B@ @17658 NONAME
+    ??_R4H245_ExtendedVideoCapability@@6B@ @36776 NONAME
     ??_R4H245_FECCapability@@6B@ @35094 NONAME
     ??_R4H245_FECCapability_rfc2733@@6B@ @35095 NONAME
     ??_R4H245_FECCapability_rfc2733_separateStream@@6B@ @35096 NONAME
@@ -18125,6 +18295,7 @@ EXPORTS
     ??_R4H245_G7231AnnexCMode_g723AnnexCAudioMode@@6B@ @17671 NONAME
     ??_R4H245_G729Extensions@@6B@ @17672 NONAME
     ??_R4H245_GenericCapability@@6B@ @17673 NONAME
+    ??_R4H245_GenericMessage@@6B@ @36777 NONAME
     ??_R4H245_GenericParameter@@6B@ @17674 NONAME
     ??_R4H245_GSMAudioCapability@@6B@ @17675 NONAME
     ??_R4H245_H222Capability@@6B@ @17676 NONAME
@@ -18197,6 +18368,8 @@ EXPORTS
     ??_R4H245_IS13818AudioMode_audioLayer@@6B@ @17743 NONAME
     ??_R4H245_IS13818AudioMode_audioSampling@@6B@ @17744 NONAME
     ??_R4H245_IS13818AudioMode_multichannelType@@6B@ @17745 NONAME
+    ??_R4H245_IV16@@6B@ @36778 NONAME
+    ??_R4H245_IV8@@6B@ @36779 NONAME
     ??_R4H245_JitterIndication@@6B@ @17746 NONAME
     ??_R4H245_JitterIndication_scope@@6B@ @17747 NONAME
     ??_R4H245_KeyProtectionMethod@@6B@ @17748 NONAME
@@ -18231,6 +18404,8 @@ EXPORTS
     ??_R4H245_MediaTransportType_atm_AAL5_compressed@@6B@ @17777 NONAME
     ??_R4H245_MiscellaneousCommand@@6B@ @17778 NONAME
     ??_R4H245_MiscellaneousCommand_type@@6B@ @17779 NONAME
+    ??_R4H245_MiscellaneousCommand_type_encryptionUpdateAck@@6B@ @36780 NONAME
+    ??_R4H245_MiscellaneousCommand_type_encryptionUpdateCommand@@6B@ @36781 NONAME
     ??_R4H245_MiscellaneousCommand_type_lostPartialPicture@@6B@ @17780 NONAME
     ??_R4H245_MiscellaneousCommand_type_progressiveRefinementStart@@6B@ @17781 NONAME
     ??_R4H245_MiscellaneousCommand_type_progressiveRefinementStart_repeatCount@@6B@ @17782 NONAME
@@ -18330,6 +18505,7 @@ EXPORTS
     ??_R4H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters@@6B@ @17869 NONAME
     ??_R4H245_ParameterIdentifier@@6B@ @17870 NONAME
     ??_R4H245_ParameterValue@@6B@ @17871 NONAME
+    ??_R4H245_Params@@6B@ @36782 NONAME
     ??_R4H245_Password@@6B@ @17872 NONAME
     ??_R4H245_PictureReference@@6B@ @17873 NONAME
     ??_R4H245_Q2931Address@@6B@ @17874 NONAME
@@ -18419,7 +18595,9 @@ EXPORTS
     ??_R4H245_UnicastAddress_iPXAddress@@6B@ @17953 NONAME
     ??_R4H245_UserInputCapability@@6B@ @17954 NONAME
     ??_R4H245_UserInputIndication@@6B@ @17955 NONAME
+    ??_R4H245_UserInputIndication_encryptedAlphanumeric@@6B@ @36783 NONAME
     ??_R4H245_UserInputIndication_extendedAlphanumeric@@6B@ @17956 NONAME
+    ??_R4H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric@@6B@ @36784 NONAME
     ??_R4H245_UserInputIndication_signal@@6B@ @17957 NONAME
     ??_R4H245_UserInputIndication_signalUpdate@@6B@ @17958 NONAME
     ??_R4H245_UserInputIndication_signalUpdate_rtp@@6B@ @17959 NONAME
@@ -19242,7 +19420,7 @@ EXPORTS
     ??_R4ReceivedPacket_PNotifier@OpalSilenceDetector@@6B@ @34613 NONAME
     ??_R4ReceiverReport@RTP_Session@@6B@ @18805 NONAME
     ??_R4ReceiveTimeout_PNotifier@OpalRFC2833Proto@@6B@ @18806 NONAME
-    ??_R4RegistrationDict@SIPEndPoint@@6B@ @36377 NONAME
+    ??_R4RegistrationList@SIPEndPoint@@6B@ @36785 NONAME
     ??_R4RegistrationRefresh_PNotifier@SIPEndPoint@@6B@ @36077 NONAME
     ??_R4Request@H323Transactor@@6B@ @18807 NONAME
     ??_R4Response@H323Transactor@@6B@ @18808 NONAME
@@ -19267,9 +19445,13 @@ EXPORTS
     ??_R4SIPEndPoint@@6B@ @18827 NONAME
     ??_R4SIPInfo@@6B@ @36378 NONAME
     ??_R4SIPInvite@@6B@ @18828 NONAME
+    ??_R4SIPMessage@@6B@ @36786 NONAME
+    ??_R4SIPMessageInfo@SIPEndPoint@@6B@ @36787 NONAME
     ??_R4SIPMIMEInfo@@6B@ @18829 NONAME
     ??_R4SIPMWISubscribe@@6B@ @36379 NONAME
     ??_R4SIPMWISubscribeInfo@@6B@ @36380 NONAME
+    ??_R4SIPRefer@@6B@ @36788 NONAME
+    ??_R4SIPReferNotify@@6B@ @36789 NONAME
     ??_R4SIPRegister@@6B@ @18830 NONAME
     ??_R4SIPRegisterInfo@@6B@ @36381 NONAME
     ??_R4SIPTransaction@@6B@ @18831 NONAME
@@ -20212,6 +20394,7 @@ EXPORTS
     ?Class@H245_ArrayOf_DialingInformationNumber@@SAPBDXZ @19730 NONAME
     ?Class@H245_ArrayOf_EnhancementOptions@@SAPBDXZ @19731 NONAME
     ?Class@H245_ArrayOf_EscrowData@@SAPBDXZ @19732 NONAME
+    ?Class@H245_ArrayOf_GenericCapability@@SAPBDXZ @36790 NONAME
     ?Class@H245_ArrayOf_GenericParameter@@SAPBDXZ @19733 NONAME
     ?Class@H245_ArrayOf_H263ModeComboFlags@@SAPBDXZ @19734 NONAME
     ?Class@H245_ArrayOf_H263VideoModeCombos@@SAPBDXZ @19735 NONAME
@@ -20238,6 +20421,7 @@ EXPORTS
     ?Class@H245_ArrayOf_TerminalInformation@@SAPBDXZ @19752 NONAME
     ?Class@H245_ArrayOf_TerminalLabel@@SAPBDXZ @19753 NONAME
     ?Class@H245_ArrayOf_VCCapability@@SAPBDXZ @19754 NONAME
+    ?Class@H245_ArrayOf_VideoCapability@@SAPBDXZ @36791 NONAME
     ?Class@H245_ATMParameters@@SAPBDXZ @19755 NONAME
     ?Class@H245_AudioCapability@@SAPBDXZ @19756 NONAME
     ?Class@H245_AudioCapability_g7231@@SAPBDXZ @19757 NONAME
@@ -20317,6 +20501,7 @@ EXPORTS
     ?Class@H245_EncryptionCommand_encryptionAlgorithmID@@SAPBDXZ @19831 NONAME
     ?Class@H245_EncryptionMode@@SAPBDXZ @19832 NONAME
     ?Class@H245_EncryptionSync@@SAPBDXZ @19833 NONAME
+    ?Class@H245_EncryptionUpdateDirection@@SAPBDXZ @36792 NONAME
     ?Class@H245_EncryptionUpdateRequest@@SAPBDXZ @19834 NONAME
     ?Class@H245_EndSessionCommand@@SAPBDXZ @19835 NONAME
     ?Class@H245_EndSessionCommand_gstnOptions@@SAPBDXZ @19836 NONAME
@@ -20324,6 +20509,7 @@ EXPORTS
     ?Class@H245_EnhancementLayerInfo@@SAPBDXZ @19838 NONAME
     ?Class@H245_EnhancementOptions@@SAPBDXZ @19839 NONAME
     ?Class@H245_EscrowData@@SAPBDXZ @19840 NONAME
+    ?Class@H245_ExtendedVideoCapability@@SAPBDXZ @36793 NONAME
     ?Class@H245_FECCapability@@SAPBDXZ @35137 NONAME
     ?Class@H245_FECCapability_rfc2733@@SAPBDXZ @35138 NONAME
     ?Class@H245_FECCapability_rfc2733_separateStream@@SAPBDXZ @35139 NONAME
@@ -20354,6 +20540,7 @@ EXPORTS
     ?Class@H245_G7231AnnexCMode_g723AnnexCAudioMode@@SAPBDXZ @19853 NONAME
     ?Class@H245_G729Extensions@@SAPBDXZ @19854 NONAME
     ?Class@H245_GenericCapability@@SAPBDXZ @19855 NONAME
+    ?Class@H245_GenericMessage@@SAPBDXZ @36794 NONAME
     ?Class@H245_GenericParameter@@SAPBDXZ @19856 NONAME
     ?Class@H245_GSMAudioCapability@@SAPBDXZ @19857 NONAME
     ?Class@H245_H222Capability@@SAPBDXZ @19858 NONAME
@@ -20426,6 +20613,8 @@ EXPORTS
     ?Class@H245_IS13818AudioMode_audioLayer@@SAPBDXZ @19925 NONAME
     ?Class@H245_IS13818AudioMode_audioSampling@@SAPBDXZ @19926 NONAME
     ?Class@H245_IS13818AudioMode_multichannelType@@SAPBDXZ @19927 NONAME
+    ?Class@H245_IV16@@SAPBDXZ @36795 NONAME
+    ?Class@H245_IV8@@SAPBDXZ @36796 NONAME
     ?Class@H245_JitterIndication@@SAPBDXZ @19928 NONAME
     ?Class@H245_JitterIndication_scope@@SAPBDXZ @19929 NONAME
     ?Class@H245_KeyProtectionMethod@@SAPBDXZ @19930 NONAME
@@ -20460,6 +20649,8 @@ EXPORTS
     ?Class@H245_MediaTransportType_atm_AAL5_compressed@@SAPBDXZ @19959 NONAME
     ?Class@H245_MiscellaneousCommand@@SAPBDXZ @19960 NONAME
     ?Class@H245_MiscellaneousCommand_type@@SAPBDXZ @19961 NONAME
+    ?Class@H245_MiscellaneousCommand_type_encryptionUpdateAck@@SAPBDXZ @36797 NONAME
+    ?Class@H245_MiscellaneousCommand_type_encryptionUpdateCommand@@SAPBDXZ @36798 NONAME
     ?Class@H245_MiscellaneousCommand_type_lostPartialPicture@@SAPBDXZ @19962 NONAME
     ?Class@H245_MiscellaneousCommand_type_progressiveRefinementStart@@SAPBDXZ @19963 NONAME
     ?Class@H245_MiscellaneousCommand_type_progressiveRefinementStart_repeatCount@@SAPBDXZ @19964 NONAME
@@ -20559,6 +20750,7 @@ EXPORTS
     ?Class@H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters@@SAPBDXZ @20051 NONAME
     ?Class@H245_ParameterIdentifier@@SAPBDXZ @20052 NONAME
     ?Class@H245_ParameterValue@@SAPBDXZ @20053 NONAME
+    ?Class@H245_Params@@SAPBDXZ @36799 NONAME
     ?Class@H245_Password@@SAPBDXZ @20054 NONAME
     ?Class@H245_PictureReference@@SAPBDXZ @20055 NONAME
     ?Class@H245_Q2931Address@@SAPBDXZ @20056 NONAME
@@ -20648,7 +20840,9 @@ EXPORTS
     ?Class@H245_UnicastAddress_iPXAddress@@SAPBDXZ @20135 NONAME
     ?Class@H245_UserInputCapability@@SAPBDXZ @20136 NONAME
     ?Class@H245_UserInputIndication@@SAPBDXZ @20137 NONAME
+    ?Class@H245_UserInputIndication_encryptedAlphanumeric@@SAPBDXZ @36800 NONAME
     ?Class@H245_UserInputIndication_extendedAlphanumeric@@SAPBDXZ @20138 NONAME
+    ?Class@H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric@@SAPBDXZ @36801 NONAME
     ?Class@H245_UserInputIndication_signal@@SAPBDXZ @20139 NONAME
     ?Class@H245_UserInputIndication_signalUpdate@@SAPBDXZ @20140 NONAME
     ?Class@H245_UserInputIndication_signalUpdate_rtp@@SAPBDXZ @20141 NONAME
@@ -21356,9 +21550,13 @@ EXPORTS
     ?Class@SIPEndPoint@@SAPBDXZ @20879 NONAME
     ?Class@SIPInfo@@SAPBDXZ @36404 NONAME
     ?Class@SIPInvite@@SAPBDXZ @20880 NONAME
+    ?Class@SIPMessage@@SAPBDXZ @36802 NONAME
+    ?Class@SIPMessageInfo@SIPEndPoint@@SAPBDXZ @36803 NONAME
     ?Class@SIPMIMEInfo@@SAPBDXZ @20881 NONAME
     ?Class@SIPMWISubscribe@@SAPBDXZ @36405 NONAME
     ?Class@SIPMWISubscribeInfo@@SAPBDXZ @36406 NONAME
+    ?Class@SIPRefer@@SAPBDXZ @36804 NONAME
+    ?Class@SIPReferNotify@@SAPBDXZ @36805 NONAME
     ?Class@SIPRegister@@SAPBDXZ @20882 NONAME
     ?Class@SIPRegisterInfo@@SAPBDXZ @36407 NONAME
     ?Class@SIPTransaction@@SAPBDXZ @20883 NONAME
@@ -21939,6 +22137,7 @@ EXPORTS
     ?Clone@H245_ArrayOf_DialingInformationNumber@@UBEPAVPObject@@XZ @21446 NONAME
     ?Clone@H245_ArrayOf_EnhancementOptions@@UBEPAVPObject@@XZ @21447 NONAME
     ?Clone@H245_ArrayOf_EscrowData@@UBEPAVPObject@@XZ @21448 NONAME
+    ?Clone@H245_ArrayOf_GenericCapability@@UBEPAVPObject@@XZ @36806 NONAME
     ?Clone@H245_ArrayOf_GenericParameter@@UBEPAVPObject@@XZ @21449 NONAME
     ?Clone@H245_ArrayOf_H263ModeComboFlags@@UBEPAVPObject@@XZ @21450 NONAME
     ?Clone@H245_ArrayOf_H263VideoModeCombos@@UBEPAVPObject@@XZ @21451 NONAME
@@ -21965,6 +22164,7 @@ EXPORTS
     ?Clone@H245_ArrayOf_TerminalInformation@@UBEPAVPObject@@XZ @21468 NONAME
     ?Clone@H245_ArrayOf_TerminalLabel@@UBEPAVPObject@@XZ @21469 NONAME
     ?Clone@H245_ArrayOf_VCCapability@@UBEPAVPObject@@XZ @21470 NONAME
+    ?Clone@H245_ArrayOf_VideoCapability@@UBEPAVPObject@@XZ @36807 NONAME
     ?Clone@H245_ATMParameters@@UBEPAVPObject@@XZ @21471 NONAME
     ?Clone@H245_AudioCapability@@UBEPAVPObject@@XZ @21472 NONAME
     ?Clone@H245_AudioCapability_g7231@@UBEPAVPObject@@XZ @21473 NONAME
@@ -22044,6 +22244,7 @@ EXPORTS
     ?Clone@H245_EncryptionCommand_encryptionAlgorithmID@@UBEPAVPObject@@XZ @21547 NONAME
     ?Clone@H245_EncryptionMode@@UBEPAVPObject@@XZ @21548 NONAME
     ?Clone@H245_EncryptionSync@@UBEPAVPObject@@XZ @21549 NONAME
+    ?Clone@H245_EncryptionUpdateDirection@@UBEPAVPObject@@XZ @36808 NONAME
     ?Clone@H245_EncryptionUpdateRequest@@UBEPAVPObject@@XZ @21550 NONAME
     ?Clone@H245_EndSessionCommand@@UBEPAVPObject@@XZ @21551 NONAME
     ?Clone@H245_EndSessionCommand_gstnOptions@@UBEPAVPObject@@XZ @21552 NONAME
@@ -22051,6 +22252,7 @@ EXPORTS
     ?Clone@H245_EnhancementLayerInfo@@UBEPAVPObject@@XZ @21554 NONAME
     ?Clone@H245_EnhancementOptions@@UBEPAVPObject@@XZ @21555 NONAME
     ?Clone@H245_EscrowData@@UBEPAVPObject@@XZ @21556 NONAME
+    ?Clone@H245_ExtendedVideoCapability@@UBEPAVPObject@@XZ @36809 NONAME
     ?Clone@H245_FECCapability@@UBEPAVPObject@@XZ @35179 NONAME
     ?Clone@H245_FECCapability_rfc2733@@UBEPAVPObject@@XZ @35180 NONAME
     ?Clone@H245_FECCapability_rfc2733_separateStream@@UBEPAVPObject@@XZ @35181 NONAME
@@ -22081,6 +22283,7 @@ EXPORTS
     ?Clone@H245_G7231AnnexCMode_g723AnnexCAudioMode@@UBEPAVPObject@@XZ @21569 NONAME
     ?Clone@H245_G729Extensions@@UBEPAVPObject@@XZ @21570 NONAME
     ?Clone@H245_GenericCapability@@UBEPAVPObject@@XZ @21571 NONAME
+    ?Clone@H245_GenericMessage@@UBEPAVPObject@@XZ @36810 NONAME
     ?Clone@H245_GenericParameter@@UBEPAVPObject@@XZ @21572 NONAME
     ?Clone@H245_GSMAudioCapability@@UBEPAVPObject@@XZ @21573 NONAME
     ?Clone@H245_H222Capability@@UBEPAVPObject@@XZ @21574 NONAME
@@ -22153,6 +22356,8 @@ EXPORTS
     ?Clone@H245_IS13818AudioMode_audioLayer@@UBEPAVPObject@@XZ @21641 NONAME
     ?Clone@H245_IS13818AudioMode_audioSampling@@UBEPAVPObject@@XZ @21642 NONAME
     ?Clone@H245_IS13818AudioMode_multichannelType@@UBEPAVPObject@@XZ @21643 NONAME
+    ?Clone@H245_IV16@@UBEPAVPObject@@XZ @36811 NONAME
+    ?Clone@H245_IV8@@UBEPAVPObject@@XZ @36812 NONAME
     ?Clone@H245_JitterIndication@@UBEPAVPObject@@XZ @21644 NONAME
     ?Clone@H245_JitterIndication_scope@@UBEPAVPObject@@XZ @21645 NONAME
     ?Clone@H245_KeyProtectionMethod@@UBEPAVPObject@@XZ @21646 NONAME
@@ -22187,6 +22392,8 @@ EXPORTS
     ?Clone@H245_MediaTransportType_atm_AAL5_compressed@@UBEPAVPObject@@XZ @21675 NONAME
     ?Clone@H245_MiscellaneousCommand@@UBEPAVPObject@@XZ @21676 NONAME
     ?Clone@H245_MiscellaneousCommand_type@@UBEPAVPObject@@XZ @21677 NONAME
+    ?Clone@H245_MiscellaneousCommand_type_encryptionUpdateAck@@UBEPAVPObject@@XZ @36813 NONAME
+    ?Clone@H245_MiscellaneousCommand_type_encryptionUpdateCommand@@UBEPAVPObject@@XZ @36814 NONAME
     ?Clone@H245_MiscellaneousCommand_type_lostPartialPicture@@UBEPAVPObject@@XZ @21678 NONAME
     ?Clone@H245_MiscellaneousCommand_type_progressiveRefinementStart@@UBEPAVPObject@@XZ @21679 NONAME
     ?Clone@H245_MiscellaneousCommand_type_progressiveRefinementStart_repeatCount@@UBEPAVPObject@@XZ @21680 NONAME
@@ -22286,6 +22493,7 @@ EXPORTS
     ?Clone@H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters@@UBEPAVPObject@@XZ @21767 NONAME
     ?Clone@H245_ParameterIdentifier@@UBEPAVPObject@@XZ @21768 NONAME
     ?Clone@H245_ParameterValue@@UBEPAVPObject@@XZ @21769 NONAME
+    ?Clone@H245_Params@@UBEPAVPObject@@XZ @36815 NONAME
     ?Clone@H245_Password@@UBEPAVPObject@@XZ @21770 NONAME
     ?Clone@H245_PictureReference@@UBEPAVPObject@@XZ @21771 NONAME
     ?Clone@H245_Q2931Address@@UBEPAVPObject@@XZ @21772 NONAME
@@ -22375,7 +22583,9 @@ EXPORTS
     ?Clone@H245_UnicastAddress_iPXAddress@@UBEPAVPObject@@XZ @21851 NONAME
     ?Clone@H245_UserInputCapability@@UBEPAVPObject@@XZ @21852 NONAME
     ?Clone@H245_UserInputIndication@@UBEPAVPObject@@XZ @21853 NONAME
+    ?Clone@H245_UserInputIndication_encryptedAlphanumeric@@UBEPAVPObject@@XZ @36816 NONAME
     ?Clone@H245_UserInputIndication_extendedAlphanumeric@@UBEPAVPObject@@XZ @21854 NONAME
+    ?Clone@H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric@@UBEPAVPObject@@XZ @36817 NONAME
     ?Clone@H245_UserInputIndication_signal@@UBEPAVPObject@@XZ @21855 NONAME
     ?Clone@H245_UserInputIndication_signalUpdate@@UBEPAVPObject@@XZ @21856 NONAME
     ?Clone@H245_UserInputIndication_signalUpdate_rtp@@UBEPAVPObject@@XZ @21857 NONAME
@@ -23255,6 +23465,7 @@ EXPORTS
     ?Compare@H245_EnhancementLayerInfo@@UBE?AW4Comparison@PObject@@ABV3@@Z @22767 NONAME
     ?Compare@H245_EnhancementOptions@@UBE?AW4Comparison@PObject@@ABV3@@Z @22768 NONAME
     ?Compare@H245_EscrowData@@UBE?AW4Comparison@PObject@@ABV3@@Z @22769 NONAME
+    ?Compare@H245_ExtendedVideoCapability@@UBE?AW4Comparison@PObject@@ABV3@@Z @36818 NONAME
     ?Compare@H245_FECCapability_rfc2733@@UBE?AW4Comparison@PObject@@ABV3@@Z @35215 NONAME
     ?Compare@H245_FECCapability_rfc2733_separateStream@@UBE?AW4Comparison@PObject@@ABV3@@Z @35216 NONAME
     ?Compare@H245_FECData_rfc2733@@UBE?AW4Comparison@PObject@@ABV3@@Z @35217 NONAME
@@ -23272,6 +23483,7 @@ EXPORTS
     ?Compare@H245_G7231AnnexCMode_g723AnnexCAudioMode@@UBE?AW4Comparison@PObject@@ABV3@@Z @22776 NONAME
     ?Compare@H245_G729Extensions@@UBE?AW4Comparison@PObject@@ABV3@@Z @22777 NONAME
     ?Compare@H245_GenericCapability@@UBE?AW4Comparison@PObject@@ABV3@@Z @22778 NONAME
+    ?Compare@H245_GenericMessage@@UBE?AW4Comparison@PObject@@ABV3@@Z @36819 NONAME
     ?Compare@H245_GenericParameter@@UBE?AW4Comparison@PObject@@ABV3@@Z @22779 NONAME
     ?Compare@H245_GSMAudioCapability@@UBE?AW4Comparison@PObject@@ABV3@@Z @22780 NONAME
     ?Compare@H245_H222Capability@@UBE?AW4Comparison@PObject@@ABV3@@Z @22781 NONAME
@@ -23333,6 +23545,8 @@ EXPORTS
     ?Compare@H245_MediaPacketizationCapability@@UBE?AW4Comparison@PObject@@ABV3@@Z @22837 NONAME
     ?Compare@H245_MediaTransportType_atm_AAL5_compressed@@UBE?AW4Comparison@PObject@@ABV3@@Z @22838 NONAME
     ?Compare@H245_MiscellaneousCommand@@UBE?AW4Comparison@PObject@@ABV3@@Z @22839 NONAME
+    ?Compare@H245_MiscellaneousCommand_type_encryptionUpdateAck@@UBE?AW4Comparison@PObject@@ABV3@@Z @36820 NONAME
+    ?Compare@H245_MiscellaneousCommand_type_encryptionUpdateCommand@@UBE?AW4Comparison@PObject@@ABV3@@Z @36821 NONAME
     ?Compare@H245_MiscellaneousCommand_type_lostPartialPicture@@UBE?AW4Comparison@PObject@@ABV3@@Z @22840 NONAME
     ?Compare@H245_MiscellaneousCommand_type_progressiveRefinementStart@@UBE?AW4Comparison@PObject@@ABV3@@Z @22841 NONAME
     ?Compare@H245_MiscellaneousCommand_type_videoBadMBs@@UBE?AW4Comparison@PObject@@ABV3@@Z @22842 NONAME
@@ -23390,6 +23604,7 @@ EXPORTS
     ?Compare@H245_OpenLogicalChannelReject@@UBE?AW4Comparison@PObject@@ABV3@@Z @22888 NONAME
     ?Compare@H245_OpenLogicalChannel_forwardLogicalChannelParameters@@UBE?AW4Comparison@PObject@@ABV3@@Z @22889 NONAME
     ?Compare@H245_OpenLogicalChannel_reverseLogicalChannelParameters@@UBE?AW4Comparison@PObject@@ABV3@@Z @22890 NONAME
+    ?Compare@H245_Params@@UBE?AW4Comparison@PObject@@ABV3@@Z @36822 NONAME
     ?Compare@H245_Q2931Address@@UBE?AW4Comparison@PObject@@ABV3@@Z @22891 NONAME
     ?Compare@H245_QOSCapability@@UBE?AW4Comparison@PObject@@ABV3@@Z @22892 NONAME
     ?Compare@H245_RedundancyEncoding@@UBE?AW4Comparison@PObject@@ABV3@@Z @22893 NONAME
@@ -23440,7 +23655,9 @@ EXPORTS
     ?Compare@H245_UnicastAddress_iPAddress@@UBE?AW4Comparison@PObject@@ABV3@@Z @22934 NONAME
     ?Compare@H245_UnicastAddress_iPSourceRouteAddress@@UBE?AW4Comparison@PObject@@ABV3@@Z @22935 NONAME
     ?Compare@H245_UnicastAddress_iPXAddress@@UBE?AW4Comparison@PObject@@ABV3@@Z @22936 NONAME
+    ?Compare@H245_UserInputIndication_encryptedAlphanumeric@@UBE?AW4Comparison@PObject@@ABV3@@Z @36823 NONAME
     ?Compare@H245_UserInputIndication_extendedAlphanumeric@@UBE?AW4Comparison@PObject@@ABV3@@Z @22937 NONAME
+    ?Compare@H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric@@UBE?AW4Comparison@PObject@@ABV3@@Z @36824 NONAME
     ?Compare@H245_UserInputIndication_signal@@UBE?AW4Comparison@PObject@@ABV3@@Z @22938 NONAME
     ?Compare@H245_UserInputIndication_signalUpdate@@UBE?AW4Comparison@PObject@@ABV3@@Z @22939 NONAME
     ?Compare@H245_UserInputIndication_signalUpdate_rtp@@UBE?AW4Comparison@PObject@@ABV3@@Z @22940 NONAME
@@ -24275,6 +24492,7 @@ EXPORTS
     ?CompareObjectMemoryDirect@H245_ArrayOf_DialingInformationNumber@@UBE?AW4Comparison@PObject@@ABV3@@Z @23759 NONAME
     ?CompareObjectMemoryDirect@H245_ArrayOf_EnhancementOptions@@UBE?AW4Comparison@PObject@@ABV3@@Z @23760 NONAME
     ?CompareObjectMemoryDirect@H245_ArrayOf_EscrowData@@UBE?AW4Comparison@PObject@@ABV3@@Z @23761 NONAME
+    ?CompareObjectMemoryDirect@H245_ArrayOf_GenericCapability@@UBE?AW4Comparison@PObject@@ABV3@@Z @36825 NONAME
     ?CompareObjectMemoryDirect@H245_ArrayOf_GenericParameter@@UBE?AW4Comparison@PObject@@ABV3@@Z @23762 NONAME
     ?CompareObjectMemoryDirect@H245_ArrayOf_H263ModeComboFlags@@UBE?AW4Comparison@PObject@@ABV3@@Z @23763 NONAME
     ?CompareObjectMemoryDirect@H245_ArrayOf_H263VideoModeCombos@@UBE?AW4Comparison@PObject@@ABV3@@Z @23764 NONAME
@@ -24301,6 +24519,7 @@ EXPORTS
     ?CompareObjectMemoryDirect@H245_ArrayOf_TerminalInformation@@UBE?AW4Comparison@PObject@@ABV3@@Z @23781 NONAME
     ?CompareObjectMemoryDirect@H245_ArrayOf_TerminalLabel@@UBE?AW4Comparison@PObject@@ABV3@@Z @23782 NONAME
     ?CompareObjectMemoryDirect@H245_ArrayOf_VCCapability@@UBE?AW4Comparison@PObject@@ABV3@@Z @23783 NONAME
+    ?CompareObjectMemoryDirect@H245_ArrayOf_VideoCapability@@UBE?AW4Comparison@PObject@@ABV3@@Z @36826 NONAME
     ?CompareObjectMemoryDirect@H245_ATMParameters@@UBE?AW4Comparison@PObject@@ABV3@@Z @23784 NONAME
     ?CompareObjectMemoryDirect@H245_AudioCapability@@UBE?AW4Comparison@PObject@@ABV3@@Z @23785 NONAME
     ?CompareObjectMemoryDirect@H245_AudioCapability_g7231@@UBE?AW4Comparison@PObject@@ABV3@@Z @23786 NONAME
@@ -24380,6 +24599,7 @@ EXPORTS
     ?CompareObjectMemoryDirect@H245_EncryptionCommand_encryptionAlgorithmID@@UBE?AW4Comparison@PObject@@ABV3@@Z @23860 NONAME
     ?CompareObjectMemoryDirect@H245_EncryptionMode@@UBE?AW4Comparison@PObject@@ABV3@@Z @23861 NONAME
     ?CompareObjectMemoryDirect@H245_EncryptionSync@@UBE?AW4Comparison@PObject@@ABV3@@Z @23862 NONAME
+    ?CompareObjectMemoryDirect@H245_EncryptionUpdateDirection@@UBE?AW4Comparison@PObject@@ABV3@@Z @36827 NONAME
     ?CompareObjectMemoryDirect@H245_EncryptionUpdateRequest@@UBE?AW4Comparison@PObject@@ABV3@@Z @23863 NONAME
     ?CompareObjectMemoryDirect@H245_EndSessionCommand@@UBE?AW4Comparison@PObject@@ABV3@@Z @23864 NONAME
     ?CompareObjectMemoryDirect@H245_EndSessionCommand_gstnOptions@@UBE?AW4Comparison@PObject@@ABV3@@Z @23865 NONAME
@@ -24387,6 +24607,7 @@ EXPORTS
     ?CompareObjectMemoryDirect@H245_EnhancementLayerInfo@@UBE?AW4Comparison@PObject@@ABV3@@Z @23867 NONAME
     ?CompareObjectMemoryDirect@H245_EnhancementOptions@@UBE?AW4Comparison@PObject@@ABV3@@Z @23868 NONAME
     ?CompareObjectMemoryDirect@H245_EscrowData@@UBE?AW4Comparison@PObject@@ABV3@@Z @23869 NONAME
+    ?CompareObjectMemoryDirect@H245_ExtendedVideoCapability@@UBE?AW4Comparison@PObject@@ABV3@@Z @36828 NONAME
     ?CompareObjectMemoryDirect@H245_FECCapability@@UBE?AW4Comparison@PObject@@ABV3@@Z @35247 NONAME
     ?CompareObjectMemoryDirect@H245_FECCapability_rfc2733@@UBE?AW4Comparison@PObject@@ABV3@@Z @35248 NONAME
     ?CompareObjectMemoryDirect@H245_FECCapability_rfc2733_separateStream@@UBE?AW4Comparison@PObject@@ABV3@@Z @35249 NONAME
@@ -24417,6 +24638,7 @@ EXPORTS
     ?CompareObjectMemoryDirect@H245_G7231AnnexCMode_g723AnnexCAudioMode@@UBE?AW4Comparison@PObject@@ABV3@@Z @23882 NONAME
     ?CompareObjectMemoryDirect@H245_G729Extensions@@UBE?AW4Comparison@PObject@@ABV3@@Z @23883 NONAME
     ?CompareObjectMemoryDirect@H245_GenericCapability@@UBE?AW4Comparison@PObject@@ABV3@@Z @23884 NONAME
+    ?CompareObjectMemoryDirect@H245_GenericMessage@@UBE?AW4Comparison@PObject@@ABV3@@Z @36829 NONAME
     ?CompareObjectMemoryDirect@H245_GenericParameter@@UBE?AW4Comparison@PObject@@ABV3@@Z @23885 NONAME
     ?CompareObjectMemoryDirect@H245_GSMAudioCapability@@UBE?AW4Comparison@PObject@@ABV3@@Z @23886 NONAME
     ?CompareObjectMemoryDirect@H245_H222Capability@@UBE?AW4Comparison@PObject@@ABV3@@Z @23887 NONAME
@@ -24489,6 +24711,8 @@ EXPORTS
     ?CompareObjectMemoryDirect@H245_IS13818AudioMode_audioLayer@@UBE?AW4Comparison@PObject@@ABV3@@Z @23954 NONAME
     ?CompareObjectMemoryDirect@H245_IS13818AudioMode_audioSampling@@UBE?AW4Comparison@PObject@@ABV3@@Z @23955 NONAME
     ?CompareObjectMemoryDirect@H245_IS13818AudioMode_multichannelType@@UBE?AW4Comparison@PObject@@ABV3@@Z @23956 NONAME
+    ?CompareObjectMemoryDirect@H245_IV16@@UBE?AW4Comparison@PObject@@ABV3@@Z @36830 NONAME
+    ?CompareObjectMemoryDirect@H245_IV8@@UBE?AW4Comparison@PObject@@ABV3@@Z @36831 NONAME
     ?CompareObjectMemoryDirect@H245_JitterIndication@@UBE?AW4Comparison@PObject@@ABV3@@Z @23957 NONAME
     ?CompareObjectMemoryDirect@H245_JitterIndication_scope@@UBE?AW4Comparison@PObject@@ABV3@@Z @23958 NONAME
     ?CompareObjectMemoryDirect@H245_KeyProtectionMethod@@UBE?AW4Comparison@PObject@@ABV3@@Z @23959 NONAME
@@ -24523,6 +24747,8 @@ EXPORTS
     ?CompareObjectMemoryDirect@H245_MediaTransportType_atm_AAL5_compressed@@UBE?AW4Comparison@PObject@@ABV3@@Z @23988 NONAME
     ?CompareObjectMemoryDirect@H245_MiscellaneousCommand@@UBE?AW4Comparison@PObject@@ABV3@@Z @23989 NONAME
     ?CompareObjectMemoryDirect@H245_MiscellaneousCommand_type@@UBE?AW4Comparison@PObject@@ABV3@@Z @23990 NONAME
+    ?CompareObjectMemoryDirect@H245_MiscellaneousCommand_type_encryptionUpdateAck@@UBE?AW4Comparison@PObject@@ABV3@@Z @36832 NONAME
+    ?CompareObjectMemoryDirect@H245_MiscellaneousCommand_type_encryptionUpdateCommand@@UBE?AW4Comparison@PObject@@ABV3@@Z @36833 NONAME
     ?CompareObjectMemoryDirect@H245_MiscellaneousCommand_type_lostPartialPicture@@UBE?AW4Comparison@PObject@@ABV3@@Z @23991 NONAME
     ?CompareObjectMemoryDirect@H245_MiscellaneousCommand_type_progressiveRefinementStart@@UBE?AW4Comparison@PObject@@ABV3@@Z @23992 NONAME
     ?CompareObjectMemoryDirect@H245_MiscellaneousCommand_type_progressiveRefinementStart_repeatCount@@UBE?AW4Comparison@PObject@@ABV3@@Z @23993 NONAME
@@ -24622,6 +24848,7 @@ EXPORTS
     ?CompareObjectMemoryDirect@H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters@@UBE?AW4Comparison@PObject@@ABV3@@Z @24080 NONAME
     ?CompareObjectMemoryDirect@H245_ParameterIdentifier@@UBE?AW4Comparison@PObject@@ABV3@@Z @24081 NONAME
     ?CompareObjectMemoryDirect@H245_ParameterValue@@UBE?AW4Comparison@PObject@@ABV3@@Z @24082 NONAME
+    ?CompareObjectMemoryDirect@H245_Params@@UBE?AW4Comparison@PObject@@ABV3@@Z @36834 NONAME
     ?CompareObjectMemoryDirect@H245_Password@@UBE?AW4Comparison@PObject@@ABV3@@Z @24083 NONAME
     ?CompareObjectMemoryDirect@H245_PictureReference@@UBE?AW4Comparison@PObject@@ABV3@@Z @24084 NONAME
     ?CompareObjectMemoryDirect@H245_Q2931Address@@UBE?AW4Comparison@PObject@@ABV3@@Z @24085 NONAME
@@ -24711,7 +24938,9 @@ EXPORTS
     ?CompareObjectMemoryDirect@H245_UnicastAddress_iPXAddress@@UBE?AW4Comparison@PObject@@ABV3@@Z @24164 NONAME
     ?CompareObjectMemoryDirect@H245_UserInputCapability@@UBE?AW4Comparison@PObject@@ABV3@@Z @24165 NONAME
     ?CompareObjectMemoryDirect@H245_UserInputIndication@@UBE?AW4Comparison@PObject@@ABV3@@Z @24166 NONAME
+    ?CompareObjectMemoryDirect@H245_UserInputIndication_encryptedAlphanumeric@@UBE?AW4Comparison@PObject@@ABV3@@Z @36835 NONAME
     ?CompareObjectMemoryDirect@H245_UserInputIndication_extendedAlphanumeric@@UBE?AW4Comparison@PObject@@ABV3@@Z @24167 NONAME
+    ?CompareObjectMemoryDirect@H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric@@UBE?AW4Comparison@PObject@@ABV3@@Z @36836 NONAME
     ?CompareObjectMemoryDirect@H245_UserInputIndication_signal@@UBE?AW4Comparison@PObject@@ABV3@@Z @24168 NONAME
     ?CompareObjectMemoryDirect@H245_UserInputIndication_signalUpdate@@UBE?AW4Comparison@PObject@@ABV3@@Z @24169 NONAME
     ?CompareObjectMemoryDirect@H245_UserInputIndication_signalUpdate_rtp@@UBE?AW4Comparison@PObject@@ABV3@@Z @24170 NONAME
@@ -25411,9 +25640,13 @@ EXPORTS
     ?CompareObjectMemoryDirect@SIPEndPoint@@UBE?AW4Comparison@PObject@@ABV3@@Z @24900 NONAME
     ?CompareObjectMemoryDirect@SIPInfo@@UBE?AW4Comparison@PObject@@ABV3@@Z @36431 NONAME
     ?CompareObjectMemoryDirect@SIPInvite@@UBE?AW4Comparison@PObject@@ABV3@@Z @24901 NONAME
+    ?CompareObjectMemoryDirect@SIPMessage@@UBE?AW4Comparison@PObject@@ABV3@@Z @36837 NONAME
+    ?CompareObjectMemoryDirect@SIPMessageInfo@SIPEndPoint@@UBE?AW4Comparison@PObject@@ABV4@@Z @36838 NONAME
     ?CompareObjectMemoryDirect@SIPMIMEInfo@@UBE?AW4Comparison@PObject@@ABV3@@Z @24902 NONAME
     ?CompareObjectMemoryDirect@SIPMWISubscribe@@UBE?AW4Comparison@PObject@@ABV3@@Z @36432 NONAME
     ?CompareObjectMemoryDirect@SIPMWISubscribeInfo@@UBE?AW4Comparison@PObject@@ABV3@@Z @36433 NONAME
+    ?CompareObjectMemoryDirect@SIPRefer@@UBE?AW4Comparison@PObject@@ABV3@@Z @36839 NONAME
+    ?CompareObjectMemoryDirect@SIPReferNotify@@UBE?AW4Comparison@PObject@@ABV3@@Z @36840 NONAME
     ?CompareObjectMemoryDirect@SIPRegister@@UBE?AW4Comparison@PObject@@ABV3@@Z @24903 NONAME
     ?CompareObjectMemoryDirect@SIPRegisterInfo@@UBE?AW4Comparison@PObject@@ABV3@@Z @36434 NONAME
     ?CompareObjectMemoryDirect@SIPTransaction@@UBE?AW4Comparison@PObject@@ABV3@@Z @24904 NONAME
@@ -25793,6 +26026,7 @@ EXPORTS
     ?CreateObject@H245_ArrayOf_DialingInformationNumber@@UBEPAVPASN_Object@@XZ @25260 NONAME
     ?CreateObject@H245_ArrayOf_EnhancementOptions@@UBEPAVPASN_Object@@XZ @25261 NONAME
     ?CreateObject@H245_ArrayOf_EscrowData@@UBEPAVPASN_Object@@XZ @25262 NONAME
+    ?CreateObject@H245_ArrayOf_GenericCapability@@UBEPAVPASN_Object@@XZ @36841 NONAME
     ?CreateObject@H245_ArrayOf_GenericParameter@@UBEPAVPASN_Object@@XZ @25263 NONAME
     ?CreateObject@H245_ArrayOf_H263ModeComboFlags@@UBEPAVPASN_Object@@XZ @25264 NONAME
     ?CreateObject@H245_ArrayOf_H263VideoModeCombos@@UBEPAVPASN_Object@@XZ @25265 NONAME
@@ -25819,6 +26053,7 @@ EXPORTS
     ?CreateObject@H245_ArrayOf_TerminalInformation@@UBEPAVPASN_Object@@XZ @25282 NONAME
     ?CreateObject@H245_ArrayOf_TerminalLabel@@UBEPAVPASN_Object@@XZ @25283 NONAME
     ?CreateObject@H245_ArrayOf_VCCapability@@UBEPAVPASN_Object@@XZ @25284 NONAME
+    ?CreateObject@H245_ArrayOf_VideoCapability@@UBEPAVPASN_Object@@XZ @36842 NONAME
     ?CreateObject@H245_AudioCapability@@UAEHXZ @25285 NONAME
     ?CreateObject@H245_AudioMode@@UAEHXZ @25286 NONAME
     ?CreateObject@H245_AudioMode_g7231@@UAEHXZ @25287 NONAME
@@ -25854,6 +26089,7 @@ EXPORTS
     ?CreateObject@H245_EncryptionCapability@@UBEPAVPASN_Object@@XZ @25317 NONAME
     ?CreateObject@H245_EncryptionCommand@@UAEHXZ @25318 NONAME
     ?CreateObject@H245_EncryptionMode@@UAEHXZ @25319 NONAME
+    ?CreateObject@H245_EncryptionUpdateDirection@@UAEHXZ @36843 NONAME
     ?CreateObject@H245_EndSessionCommand@@UAEHXZ @25320 NONAME
     ?CreateObject@H245_EndSessionCommand_gstnOptions@@UAEHXZ @25321 NONAME
     ?CreateObject@H245_EndSessionCommand_isdnOptions@@UAEHXZ @25322 NONAME
@@ -26465,6 +26701,7 @@ EXPORTS
     ?Decode@H245_EnhancementLayerInfo@@UAEHAAVPASN_Stream@@@Z @25922 NONAME
     ?Decode@H245_EnhancementOptions@@UAEHAAVPASN_Stream@@@Z @25923 NONAME
     ?Decode@H245_EscrowData@@UAEHAAVPASN_Stream@@@Z @25924 NONAME
+    ?Decode@H245_ExtendedVideoCapability@@UAEHAAVPASN_Stream@@@Z @36844 NONAME
     ?Decode@H245_FECCapability_rfc2733@@UAEHAAVPASN_Stream@@@Z @35299 NONAME
     ?Decode@H245_FECCapability_rfc2733_separateStream@@UAEHAAVPASN_Stream@@@Z @35300 NONAME
     ?Decode@H245_FECData_rfc2733@@UAEHAAVPASN_Stream@@@Z @35301 NONAME
@@ -26482,6 +26719,7 @@ EXPORTS
     ?Decode@H245_G7231AnnexCMode_g723AnnexCAudioMode@@UAEHAAVPASN_Stream@@@Z @25931 NONAME
     ?Decode@H245_G729Extensions@@UAEHAAVPASN_Stream@@@Z @25932 NONAME
     ?Decode@H245_GenericCapability@@UAEHAAVPASN_Stream@@@Z @25933 NONAME
+    ?Decode@H245_GenericMessage@@UAEHAAVPASN_Stream@@@Z @36845 NONAME
     ?Decode@H245_GenericParameter@@UAEHAAVPASN_Stream@@@Z @25934 NONAME
     ?Decode@H245_GSMAudioCapability@@UAEHAAVPASN_Stream@@@Z @25935 NONAME
     ?Decode@H245_H222Capability@@UAEHAAVPASN_Stream@@@Z @25936 NONAME
@@ -26546,6 +26784,8 @@ EXPORTS
     ?Decode@H245_MediaPacketizationCapability@@UAEHAAVPASN_Stream@@@Z @25995 NONAME
     ?Decode@H245_MediaTransportType_atm_AAL5_compressed@@UAEHAAVPASN_Stream@@@Z @25996 NONAME
     ?Decode@H245_MiscellaneousCommand@@UAEHAAVPASN_Stream@@@Z @25997 NONAME
+    ?Decode@H245_MiscellaneousCommand_type_encryptionUpdateAck@@UAEHAAVPASN_Stream@@@Z @36846 NONAME
+    ?Decode@H245_MiscellaneousCommand_type_encryptionUpdateCommand@@UAEHAAVPASN_Stream@@@Z @36847 NONAME
     ?Decode@H245_MiscellaneousCommand_type_lostPartialPicture@@UAEHAAVPASN_Stream@@@Z @25998 NONAME
     ?Decode@H245_MiscellaneousCommand_type_progressiveRefinementStart@@UAEHAAVPASN_Stream@@@Z @25999 NONAME
     ?Decode@H245_MiscellaneousCommand_type_videoBadMBs@@UAEHAAVPASN_Stream@@@Z @26000 NONAME
@@ -26605,6 +26845,7 @@ EXPORTS
     ?Decode@H245_OpenLogicalChannelReject@@UAEHAAVPASN_Stream@@@Z @26047 NONAME
     ?Decode@H245_OpenLogicalChannel_forwardLogicalChannelParameters@@UAEHAAVPASN_Stream@@@Z @26048 NONAME
     ?Decode@H245_OpenLogicalChannel_reverseLogicalChannelParameters@@UAEHAAVPASN_Stream@@@Z @26049 NONAME
+    ?Decode@H245_Params@@UAEHAAVPASN_Stream@@@Z @36848 NONAME
     ?Decode@H245_Q2931Address@@UAEHAAVPASN_Stream@@@Z @26050 NONAME
     ?Decode@H245_QOSCapability@@UAEHAAVPASN_Stream@@@Z @26051 NONAME
     ?Decode@H245_RedundancyEncoding@@UAEHAAVPASN_Stream@@@Z @26052 NONAME
@@ -26657,7 +26898,9 @@ EXPORTS
     ?Decode@H245_UnicastAddress_iPAddress@@UAEHAAVPASN_Stream@@@Z @26095 NONAME
     ?Decode@H245_UnicastAddress_iPSourceRouteAddress@@UAEHAAVPASN_Stream@@@Z @26096 NONAME
     ?Decode@H245_UnicastAddress_iPXAddress@@UAEHAAVPASN_Stream@@@Z @26097 NONAME
+    ?Decode@H245_UserInputIndication_encryptedAlphanumeric@@UAEHAAVPASN_Stream@@@Z @36849 NONAME
     ?Decode@H245_UserInputIndication_extendedAlphanumeric@@UAEHAAVPASN_Stream@@@Z @26098 NONAME
+    ?Decode@H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric@@UAEHAAVPASN_Stream@@@Z @36850 NONAME
     ?Decode@H245_UserInputIndication_signal@@UAEHAAVPASN_Stream@@@Z @26099 NONAME
     ?Decode@H245_UserInputIndication_signalUpdate@@UAEHAAVPASN_Stream@@@Z @26100 NONAME
     ?Decode@H245_UserInputIndication_signalUpdate_rtp@@UAEHAAVPASN_Stream@@@Z @26101 NONAME
@@ -27271,6 +27514,7 @@ EXPORTS
     ?Encode@H245_EnhancementLayerInfo@@UBEXAAVPASN_Stream@@@Z @26702 NONAME
     ?Encode@H245_EnhancementOptions@@UBEXAAVPASN_Stream@@@Z @26703 NONAME
     ?Encode@H245_EscrowData@@UBEXAAVPASN_Stream@@@Z @26704 NONAME
+    ?Encode@H245_ExtendedVideoCapability@@UBEXAAVPASN_Stream@@@Z @36851 NONAME
     ?Encode@H245_FECCapability_rfc2733@@UBEXAAVPASN_Stream@@@Z @35331 NONAME
     ?Encode@H245_FECCapability_rfc2733_separateStream@@UBEXAAVPASN_Stream@@@Z @35332 NONAME
     ?Encode@H245_FECData_rfc2733@@UBEXAAVPASN_Stream@@@Z @35333 NONAME
@@ -27288,6 +27532,7 @@ EXPORTS
     ?Encode@H245_G7231AnnexCMode_g723AnnexCAudioMode@@UBEXAAVPASN_Stream@@@Z @26711 NONAME
     ?Encode@H245_G729Extensions@@UBEXAAVPASN_Stream@@@Z @26712 NONAME
     ?Encode@H245_GenericCapability@@UBEXAAVPASN_Stream@@@Z @26713 NONAME
+    ?Encode@H245_GenericMessage@@UBEXAAVPASN_Stream@@@Z @36852 NONAME
     ?Encode@H245_GenericParameter@@UBEXAAVPASN_Stream@@@Z @26714 NONAME
     ?Encode@H245_GSMAudioCapability@@UBEXAAVPASN_Stream@@@Z @26715 NONAME
     ?Encode@H245_H222Capability@@UBEXAAVPASN_Stream@@@Z @26716 NONAME
@@ -27352,6 +27597,8 @@ EXPORTS
     ?Encode@H245_MediaPacketizationCapability@@UBEXAAVPASN_Stream@@@Z @26775 NONAME
     ?Encode@H245_MediaTransportType_atm_AAL5_compressed@@UBEXAAVPASN_Stream@@@Z @26776 NONAME
     ?Encode@H245_MiscellaneousCommand@@UBEXAAVPASN_Stream@@@Z @26777 NONAME
+    ?Encode@H245_MiscellaneousCommand_type_encryptionUpdateAck@@UBEXAAVPASN_Stream@@@Z @36853 NONAME
+    ?Encode@H245_MiscellaneousCommand_type_encryptionUpdateCommand@@UBEXAAVPASN_Stream@@@Z @36854 NONAME
     ?Encode@H245_MiscellaneousCommand_type_lostPartialPicture@@UBEXAAVPASN_Stream@@@Z @26778 NONAME
     ?Encode@H245_MiscellaneousCommand_type_progressiveRefinementStart@@UBEXAAVPASN_Stream@@@Z @26779 NONAME
     ?Encode@H245_MiscellaneousCommand_type_videoBadMBs@@UBEXAAVPASN_Stream@@@Z @26780 NONAME
@@ -27411,6 +27658,7 @@ EXPORTS
     ?Encode@H245_OpenLogicalChannelReject@@UBEXAAVPASN_Stream@@@Z @26827 NONAME
     ?Encode@H245_OpenLogicalChannel_forwardLogicalChannelParameters@@UBEXAAVPASN_Stream@@@Z @26828 NONAME
     ?Encode@H245_OpenLogicalChannel_reverseLogicalChannelParameters@@UBEXAAVPASN_Stream@@@Z @26829 NONAME
+    ?Encode@H245_Params@@UBEXAAVPASN_Stream@@@Z @36855 NONAME
     ?Encode@H245_Q2931Address@@UBEXAAVPASN_Stream@@@Z @26830 NONAME
     ?Encode@H245_QOSCapability@@UBEXAAVPASN_Stream@@@Z @26831 NONAME
     ?Encode@H245_RedundancyEncoding@@UBEXAAVPASN_Stream@@@Z @26832 NONAME
@@ -27463,7 +27711,9 @@ EXPORTS
     ?Encode@H245_UnicastAddress_iPAddress@@UBEXAAVPASN_Stream@@@Z @26875 NONAME
     ?Encode@H245_UnicastAddress_iPSourceRouteAddress@@UBEXAAVPASN_Stream@@@Z @26876 NONAME
     ?Encode@H245_UnicastAddress_iPXAddress@@UBEXAAVPASN_Stream@@@Z @26877 NONAME
+    ?Encode@H245_UserInputIndication_encryptedAlphanumeric@@UBEXAAVPASN_Stream@@@Z @36856 NONAME
     ?Encode@H245_UserInputIndication_extendedAlphanumeric@@UBEXAAVPASN_Stream@@@Z @26878 NONAME
+    ?Encode@H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric@@UBEXAAVPASN_Stream@@@Z @36857 NONAME
     ?Encode@H245_UserInputIndication_signal@@UBEXAAVPASN_Stream@@@Z @26879 NONAME
     ?Encode@H245_UserInputIndication_signalUpdate@@UBEXAAVPASN_Stream@@@Z @26880 NONAME
     ?Encode@H245_UserInputIndication_signalUpdate_rtp@@UBEXAAVPASN_Stream@@@Z @26881 NONAME
@@ -27809,10 +28059,10 @@ EXPORTS
     ?FindIntermediateFormat@OpalTranscoder@@SAHABVOpalMediaFormat@@0AAV2@@Z @27229 NONAME
     ?FindNegLogicalChannel@H245NegLogicalChannels@@QAEPAVH245NegLogicalChannel@@IH@Z @27230 NONAME
     ?FindOption@OpalMediaFormat@@IBEPAVOpalMediaOption@@ABVPString@@@Z @36442 NONAME
-    ?FindSIPInfoByCallID@RegistrationDict@SIPEndPoint@@QAEPAVSIPInfo@@ABVPString@@W4PSafetyMode@@@Z @36443 NONAME
-    ?FindSIPInfoByDomain@RegistrationDict@SIPEndPoint@@QAEPAVSIPInfo@@ABVPString@@W4Methods@SIP_PDU@@W4PSafetyMode@@@Z @36444 NONAME
-    ?FindSIPInfoByRealm@RegistrationDict@SIPEndPoint@@QAEPAVSIPInfo@@ABVPString@@W4PSafetyMode@@@Z @36445 NONAME
-    ?FindSIPInfoByUrl@RegistrationDict@SIPEndPoint@@QAEPAVSIPInfo@@ABVPString@@W4Methods@SIP_PDU@@W4PSafetyMode@@@Z @36446 NONAME
+    ?FindSIPInfoByAuthRealm@RegistrationList@SIPEndPoint@@QAEPAVSIPInfo@@ABVPString@@W4PSafetyMode@@@Z @36858 NONAME
+    ?FindSIPInfoByCallID@RegistrationList@SIPEndPoint@@QAEPAVSIPInfo@@ABVPString@@W4PSafetyMode@@@Z @36859 NONAME
+    ?FindSIPInfoByDomain@RegistrationList@SIPEndPoint@@QAEPAVSIPInfo@@ABVPString@@W4Methods@SIP_PDU@@W4PSafetyMode@@@Z @36860 NONAME
+    ?FindSIPInfoByUrl@RegistrationList@SIPEndPoint@@QAEPAVSIPInfo@@ABVPString@@W4Methods@SIP_PDU@@W4PSafetyMode@@@Z @36861 NONAME
     ?FindWithLock@?$PSafeColl@V?$PList@VOpalConnection@@@@VOpalConnection@@@@UAE?AV?$PSafePtr@VOpalConnection@@@@ABVOpalConnection@@W4PSafetyMode@@@Z @36008 NONAME
     ?FindWithLock@?$PSafeColl@V?$PList@VSIPInfo@@@@VSIPInfo@@@@UAE?AV?$PSafePtr@VSIPInfo@@@@ABVSIPInfo@@W4PSafetyMode@@@Z @36447 NONAME
     ?FindWithLock@?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@UAE?AV?$PSafePtr@VH323GatekeeperCall@@@@ABVH323GatekeeperCall@@W4PSafetyMode@@@Z @27231 NONAME
@@ -27858,6 +28108,7 @@ EXPORTS
     ?GetAllRegisteredMediaFormats@OpalMediaFormat@@SA?AVOpalMediaFormatList@@XZ @27267 NONAME
     ?GetAllRegisteredMediaFormats@OpalMediaFormat@@SAXAAVOpalMediaFormatList@@@Z @27268 NONAME
     ?GetAllTypes@OpalLineInterfaceDevice@@SA?AVPStringList@@XZ @27269 NONAME
+    ?GetAndLockVXMLChannel@PVXMLSession@@QAEPAVPVXMLChannel@@XZ @36862 NONAME
     ?GetAt@?$PDictionary@VH323ChannelNumber@@VH245NegLogicalChannel@@@@UBEPAVH245NegLogicalChannel@@ABVH323ChannelNumber@@@Z @27270 NONAME
     ?GetAt@?$PDictionary@VPOrdinalKey@@VH323ServiceControlSession@@@@UBEPAVH323ServiceControlSession@@ABVPOrdinalKey@@@Z @27272 NONAME
     ?GetAt@?$PDictionary@VPOrdinalKey@@VH450xHandler@@@@UBEPAVH450xHandler@@ABVPOrdinalKey@@@Z @27273 NONAME
@@ -27880,11 +28131,12 @@ EXPORTS
     ?GetAt@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalCall@@@@VPString@@VOpalCall@@@@UAE?AV?$PSafePtr@VOpalCall@@@@HW4PSafetyMode@@@Z @36455 NONAME
     ?GetAt@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalConnection@@@@VPString@@VOpalConnection@@@@UAE?AV?$PSafePtr@VOpalConnection@@@@HW4PSafetyMode@@@Z @36018 NONAME
     ?GetAt@?$PStringDictionary@VPCaselessString@@@@UBEPAVPString@@ABVPCaselessString@@@Z @27283 NONAME
-    ?GetAuthentication@SIPConnection@@QBEABVSIPAuthentication@@XZ @27284 NONAME
     ?GetAuthentication@SIPEndPoint@@QAEHABVPString@@AAVSIPAuthentication@@@Z @36456 NONAME
     ?GetAuthentication@SIPInfo@@UAEAAVSIPAuthentication@@XZ @36457 NONAME
+    ?GetAuthenticator@SIPConnection@@QBEABVSIPAuthentication@@XZ @36863 NONAME
     ?GetAuthenticators@H323RegisteredEndPoint@@UBEABVH235Authenticators@@XZ @27286 NONAME
     ?GetAuthenticators@H323TransactionPDU@@QBEABVH235Authenticators@@XZ @27287 NONAME
+    ?GetAuthRealm@SIPAuthentication@@QBEABVPString@@XZ @36864 NONAME
     ?GetAverageSignalLevel@OpalIxJDevice@@UAEIIH@Z @27288 NONAME
     ?GetAverageSignalLevel@OpalLine@@UAEIH@Z @27289 NONAME
     ?GetAverageSignalLevel@OpalLineInterfaceDevice@@UAEIIH@Z @27290 NONAME
@@ -28490,6 +28742,7 @@ EXPORTS
     ?GetClass@H245_ArrayOf_DialingInformationNumber@@UBEPBDI@Z @27867 NONAME
     ?GetClass@H245_ArrayOf_EnhancementOptions@@UBEPBDI@Z @27868 NONAME
     ?GetClass@H245_ArrayOf_EscrowData@@UBEPBDI@Z @27869 NONAME
+    ?GetClass@H245_ArrayOf_GenericCapability@@UBEPBDI@Z @36865 NONAME
     ?GetClass@H245_ArrayOf_GenericParameter@@UBEPBDI@Z @27870 NONAME
     ?GetClass@H245_ArrayOf_H263ModeComboFlags@@UBEPBDI@Z @27871 NONAME
     ?GetClass@H245_ArrayOf_H263VideoModeCombos@@UBEPBDI@Z @27872 NONAME
@@ -28516,6 +28769,7 @@ EXPORTS
     ?GetClass@H245_ArrayOf_TerminalInformation@@UBEPBDI@Z @27889 NONAME
     ?GetClass@H245_ArrayOf_TerminalLabel@@UBEPBDI@Z @27890 NONAME
     ?GetClass@H245_ArrayOf_VCCapability@@UBEPBDI@Z @27891 NONAME
+    ?GetClass@H245_ArrayOf_VideoCapability@@UBEPBDI@Z @36866 NONAME
     ?GetClass@H245_ATMParameters@@UBEPBDI@Z @27892 NONAME
     ?GetClass@H245_AudioCapability@@UBEPBDI@Z @27893 NONAME
     ?GetClass@H245_AudioCapability_g7231@@UBEPBDI@Z @27894 NONAME
@@ -28595,6 +28849,7 @@ EXPORTS
     ?GetClass@H245_EncryptionCommand_encryptionAlgorithmID@@UBEPBDI@Z @27968 NONAME
     ?GetClass@H245_EncryptionMode@@UBEPBDI@Z @27969 NONAME
     ?GetClass@H245_EncryptionSync@@UBEPBDI@Z @27970 NONAME
+    ?GetClass@H245_EncryptionUpdateDirection@@UBEPBDI@Z @36867 NONAME
     ?GetClass@H245_EncryptionUpdateRequest@@UBEPBDI@Z @27971 NONAME
     ?GetClass@H245_EndSessionCommand@@UBEPBDI@Z @27972 NONAME
     ?GetClass@H245_EndSessionCommand_gstnOptions@@UBEPBDI@Z @27973 NONAME
@@ -28602,6 +28857,7 @@ EXPORTS
     ?GetClass@H245_EnhancementLayerInfo@@UBEPBDI@Z @27975 NONAME
     ?GetClass@H245_EnhancementOptions@@UBEPBDI@Z @27976 NONAME
     ?GetClass@H245_EscrowData@@UBEPBDI@Z @27977 NONAME
+    ?GetClass@H245_ExtendedVideoCapability@@UBEPBDI@Z @36868 NONAME
     ?GetClass@H245_FECCapability@@UBEPBDI@Z @35364 NONAME
     ?GetClass@H245_FECCapability_rfc2733@@UBEPBDI@Z @35365 NONAME
     ?GetClass@H245_FECCapability_rfc2733_separateStream@@UBEPBDI@Z @35366 NONAME
@@ -28632,6 +28888,7 @@ EXPORTS
     ?GetClass@H245_G7231AnnexCMode_g723AnnexCAudioMode@@UBEPBDI@Z @27990 NONAME
     ?GetClass@H245_G729Extensions@@UBEPBDI@Z @27991 NONAME
     ?GetClass@H245_GenericCapability@@UBEPBDI@Z @27992 NONAME
+    ?GetClass@H245_GenericMessage@@UBEPBDI@Z @36869 NONAME
     ?GetClass@H245_GenericParameter@@UBEPBDI@Z @27993 NONAME
     ?GetClass@H245_GSMAudioCapability@@UBEPBDI@Z @27994 NONAME
     ?GetClass@H245_H222Capability@@UBEPBDI@Z @27995 NONAME
@@ -28704,6 +28961,8 @@ EXPORTS
     ?GetClass@H245_IS13818AudioMode_audioLayer@@UBEPBDI@Z @28062 NONAME
     ?GetClass@H245_IS13818AudioMode_audioSampling@@UBEPBDI@Z @28063 NONAME
     ?GetClass@H245_IS13818AudioMode_multichannelType@@UBEPBDI@Z @28064 NONAME
+    ?GetClass@H245_IV16@@UBEPBDI@Z @36870 NONAME
+    ?GetClass@H245_IV8@@UBEPBDI@Z @36871 NONAME
     ?GetClass@H245_JitterIndication@@UBEPBDI@Z @28065 NONAME
     ?GetClass@H245_JitterIndication_scope@@UBEPBDI@Z @28066 NONAME
     ?GetClass@H245_KeyProtectionMethod@@UBEPBDI@Z @28067 NONAME
@@ -28738,6 +28997,8 @@ EXPORTS
     ?GetClass@H245_MediaTransportType_atm_AAL5_compressed@@UBEPBDI@Z @28096 NONAME
     ?GetClass@H245_MiscellaneousCommand@@UBEPBDI@Z @28097 NONAME
     ?GetClass@H245_MiscellaneousCommand_type@@UBEPBDI@Z @28098 NONAME
+    ?GetClass@H245_MiscellaneousCommand_type_encryptionUpdateAck@@UBEPBDI@Z @36872 NONAME
+    ?GetClass@H245_MiscellaneousCommand_type_encryptionUpdateCommand@@UBEPBDI@Z @36873 NONAME
     ?GetClass@H245_MiscellaneousCommand_type_lostPartialPicture@@UBEPBDI@Z @28099 NONAME
     ?GetClass@H245_MiscellaneousCommand_type_progressiveRefinementStart@@UBEPBDI@Z @28100 NONAME
     ?GetClass@H245_MiscellaneousCommand_type_progressiveRefinementStart_repeatCount@@UBEPBDI@Z @28101 NONAME
@@ -28837,6 +29098,7 @@ EXPORTS
     ?GetClass@H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters@@UBEPBDI@Z @28188 NONAME
     ?GetClass@H245_ParameterIdentifier@@UBEPBDI@Z @28189 NONAME
     ?GetClass@H245_ParameterValue@@UBEPBDI@Z @28190 NONAME
+    ?GetClass@H245_Params@@UBEPBDI@Z @36874 NONAME
     ?GetClass@H245_Password@@UBEPBDI@Z @28191 NONAME
     ?GetClass@H245_PictureReference@@UBEPBDI@Z @28192 NONAME
     ?GetClass@H245_Q2931Address@@UBEPBDI@Z @28193 NONAME
@@ -28926,7 +29188,9 @@ EXPORTS
     ?GetClass@H245_UnicastAddress_iPXAddress@@UBEPBDI@Z @28272 NONAME
     ?GetClass@H245_UserInputCapability@@UBEPBDI@Z @28273 NONAME
     ?GetClass@H245_UserInputIndication@@UBEPBDI@Z @28274 NONAME
+    ?GetClass@H245_UserInputIndication_encryptedAlphanumeric@@UBEPBDI@Z @36875 NONAME
     ?GetClass@H245_UserInputIndication_extendedAlphanumeric@@UBEPBDI@Z @28275 NONAME
+    ?GetClass@H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric@@UBEPBDI@Z @36876 NONAME
     ?GetClass@H245_UserInputIndication_signal@@UBEPBDI@Z @28276 NONAME
     ?GetClass@H245_UserInputIndication_signalUpdate@@UBEPBDI@Z @28277 NONAME
     ?GetClass@H245_UserInputIndication_signalUpdate_rtp@@UBEPBDI@Z @28278 NONAME
@@ -29634,9 +29898,13 @@ EXPORTS
     ?GetClass@SIPEndPoint@@UBEPBDI@Z @29016 NONAME
     ?GetClass@SIPInfo@@UBEPBDI@Z @36470 NONAME
     ?GetClass@SIPInvite@@UBEPBDI@Z @29017 NONAME
+    ?GetClass@SIPMessage@@UBEPBDI@Z @36877 NONAME
+    ?GetClass@SIPMessageInfo@SIPEndPoint@@UBEPBDI@Z @36878 NONAME
     ?GetClass@SIPMIMEInfo@@UBEPBDI@Z @29018 NONAME
     ?GetClass@SIPMWISubscribe@@UBEPBDI@Z @36471 NONAME
     ?GetClass@SIPMWISubscribeInfo@@UBEPBDI@Z @36472 NONAME
+    ?GetClass@SIPRefer@@UBEPBDI@Z @36879 NONAME
+    ?GetClass@SIPReferNotify@@UBEPBDI@Z @36880 NONAME
     ?GetClass@SIPRegister@@UBEPBDI@Z @29019 NONAME
     ?GetClass@SIPRegisterInfo@@UBEPBDI@Z @36473 NONAME
     ?GetClass@SIPTransaction@@UBEPBDI@Z @29020 NONAME
@@ -29999,6 +30267,7 @@ EXPORTS
     ?GetDataLength@H245_EnhancementLayerInfo@@UBEHXZ @29374 NONAME
     ?GetDataLength@H245_EnhancementOptions@@UBEHXZ @29375 NONAME
     ?GetDataLength@H245_EscrowData@@UBEHXZ @29376 NONAME
+    ?GetDataLength@H245_ExtendedVideoCapability@@UBEHXZ @36881 NONAME
     ?GetDataLength@H245_FECCapability_rfc2733@@UBEHXZ @35400 NONAME
     ?GetDataLength@H245_FECCapability_rfc2733_separateStream@@UBEHXZ @35401 NONAME
     ?GetDataLength@H245_FECData_rfc2733@@UBEHXZ @35402 NONAME
@@ -30016,6 +30285,7 @@ EXPORTS
     ?GetDataLength@H245_G7231AnnexCMode_g723AnnexCAudioMode@@UBEHXZ @29383 NONAME
     ?GetDataLength@H245_G729Extensions@@UBEHXZ @29384 NONAME
     ?GetDataLength@H245_GenericCapability@@UBEHXZ @29385 NONAME
+    ?GetDataLength@H245_GenericMessage@@UBEHXZ @36882 NONAME
     ?GetDataLength@H245_GenericParameter@@UBEHXZ @29386 NONAME
     ?GetDataLength@H245_GSMAudioCapability@@UBEHXZ @29387 NONAME
     ?GetDataLength@H245_H222Capability@@UBEHXZ @29388 NONAME
@@ -30080,6 +30350,8 @@ EXPORTS
     ?GetDataLength@H245_MediaPacketizationCapability@@UBEHXZ @29447 NONAME
     ?GetDataLength@H245_MediaTransportType_atm_AAL5_compressed@@UBEHXZ @29448 NONAME
     ?GetDataLength@H245_MiscellaneousCommand@@UBEHXZ @29449 NONAME
+    ?GetDataLength@H245_MiscellaneousCommand_type_encryptionUpdateAck@@UBEHXZ @36883 NONAME
+    ?GetDataLength@H245_MiscellaneousCommand_type_encryptionUpdateCommand@@UBEHXZ @36884 NONAME
     ?GetDataLength@H245_MiscellaneousCommand_type_lostPartialPicture@@UBEHXZ @29450 NONAME
     ?GetDataLength@H245_MiscellaneousCommand_type_progressiveRefinementStart@@UBEHXZ @29451 NONAME
     ?GetDataLength@H245_MiscellaneousCommand_type_videoBadMBs@@UBEHXZ @29452 NONAME
@@ -30139,6 +30411,7 @@ EXPORTS
     ?GetDataLength@H245_OpenLogicalChannelReject@@UBEHXZ @29499 NONAME
     ?GetDataLength@H245_OpenLogicalChannel_forwardLogicalChannelParameters@@UBEHXZ @29500 NONAME
     ?GetDataLength@H245_OpenLogicalChannel_reverseLogicalChannelParameters@@UBEHXZ @29501 NONAME
+    ?GetDataLength@H245_Params@@UBEHXZ @36885 NONAME
     ?GetDataLength@H245_Q2931Address@@UBEHXZ @29502 NONAME
     ?GetDataLength@H245_QOSCapability@@UBEHXZ @29503 NONAME
     ?GetDataLength@H245_RedundancyEncoding@@UBEHXZ @29504 NONAME
@@ -30191,7 +30464,9 @@ EXPORTS
     ?GetDataLength@H245_UnicastAddress_iPAddress@@UBEHXZ @29547 NONAME
     ?GetDataLength@H245_UnicastAddress_iPSourceRouteAddress@@UBEHXZ @29548 NONAME
     ?GetDataLength@H245_UnicastAddress_iPXAddress@@UBEHXZ @29549 NONAME
+    ?GetDataLength@H245_UserInputIndication_encryptedAlphanumeric@@UBEHXZ @36886 NONAME
     ?GetDataLength@H245_UserInputIndication_extendedAlphanumeric@@UBEHXZ @29550 NONAME
+    ?GetDataLength@H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric@@UBEHXZ @36887 NONAME
     ?GetDataLength@H245_UserInputIndication_signal@@UBEHXZ @29551 NONAME
     ?GetDataLength@H245_UserInputIndication_signalUpdate@@UBEHXZ @29552 NONAME
     ?GetDataLength@H245_UserInputIndication_signalUpdate_rtp@@UBEHXZ @29553 NONAME
@@ -30517,6 +30792,7 @@ EXPORTS
     ?GetDeviceType@OpalVpbDevice@@UBE?AVPString@@XZ @36146 NONAME
     ?GetDirection@H323BidirectionalChannel@@UBE?AW4Directions@H323Channel@@XZ @29878 NONAME
     ?GetDirection@H323UnidirectionalChannel@@UBE?AW4Directions@H323Channel@@XZ @29879 NONAME
+    ?GetDirection@SDPSessionDescription@@QBE?AW4Direction@1@XZ @36888 NONAME
     ?GetDisplayName@OpalConnection@@QBEABVPString@@XZ @35501 NONAME
     ?GetDisplayName@Q931@@QBE?AVPString@@XZ @29880 NONAME
     ?GetDisplayName@SIPURL@@QBE?AVPString@@XZ @36474 NONAME
@@ -30609,6 +30885,7 @@ EXPORTS
     ?GetGatekeeperRejectTag@H323GatekeeperRRQ@@UBEIXZ @29964 NONAME
     ?GetGatekeeperRejectTag@H323GatekeeperURQ@@UBEIXZ @29965 NONAME
     ?GetGatekeeperRequestRetries@H323EndPoint@@QBEIXZ @29966 NONAME
+    ?GetGatekeeperRequestTimeout@H323EndPoint@@QBEABVPTimeInterval@@XZ @36889 NONAME
     ?GetGatekeeperTimeToLive@H323EndPoint@@QBEABVPTimeInterval@@XZ @29967 NONAME
     ?GetGatekeeperUsername@H323EndPoint@@UBEABVPString@@XZ @35498 NONAME
     ?GetGkAccessTokenOID@H323Connection@@QBE?BVPString@@XZ @29968 NONAME
@@ -30708,8 +30985,6 @@ EXPORTS
     ?GetMediaFormats@SDPMediaDescription@@QBE?AVOpalMediaFormatList@@XZ @30051 NONAME
     ?GetMediaFormats@SIPConnection@@UBE?AVOpalMediaFormatList@@XZ @30052 NONAME
     ?GetMediaFormats@SIPEndPoint@@UBE?AVOpalMediaFormatList@@XZ @35626 NONAME
-    ?GetMediaFormatsList@OpalMediaFormat@@CAAAVOpalMediaFormatList@@XZ @30053 NONAME
-    ?GetMediaFormatsListMutex@OpalMediaFormat@@CAAAVPMutex@@XZ @30054 NONAME
     ?GetMediaInformation@H323Connection@@UBEHIAAUMediaInformation@OpalConnection@@@Z @30055 NONAME
     ?GetMediaInformation@OpalConnection@@UBEHIAAUMediaInformation@1@@Z @30056 NONAME
     ?GetMediaStream@H323UnidirectionalChannel@@UBEPAVOpalMediaStream@@XZ @30057 NONAME
@@ -30839,7 +31114,6 @@ EXPORTS
     ?GetReadFrameSize@OpalLine@@UAEHXZ @30168 NONAME
     ?GetReadFrameSize@OpalVoipBlasterDevice@@UAEHI@Z @30169 NONAME
     ?GetReadFrameSize@OpalVpbDevice@@UAEHI@Z @36151 NONAME
-    ?GetRealm@SIPAuthentication@@QBEABVPString@@XZ @36490 NONAME
     ?GetRealSendUserInputMode@H323Connection@@QBE?AW4SendUserInputModes@1@XZ @30170 NONAME
     ?GetReceiveHandler@OpalRFC2833Proto@@QBEABVPNotifier@@XZ @30171 NONAME
     ?GetReceiveHandler@OpalSilenceDetector@@QBEABVPNotifier@@XZ @34627 NONAME
@@ -30849,6 +31123,7 @@ EXPORTS
     ?GetRecordVolume@OpalLineInterfaceDevice@@UAEHIAAI@Z @30175 NONAME
     ?GetRecordVolume@OpalVoipBlasterDevice@@UAEHIAAI@Z @30176 NONAME
     ?GetRedirectingNumber@Q931@@QBEHAAVPString@@PAI1111III@Z @30177 NONAME
+    ?GetReferTo@SIPMIMEInfo@@QBE?AVPString@@XZ @36890 NONAME
     ?GetRegisteredEndPoint@H323GatekeeperRequest@@QAEHXZ @30178 NONAME
     ?GetRegisteredEndPointRejectTag@H323GatekeeperARQ@@UBEIXZ @30179 NONAME
     ?GetRegisteredEndPointRejectTag@H323GatekeeperBRQ@@UBEIXZ @30180 NONAME
@@ -30862,6 +31137,8 @@ EXPORTS
     ?GetRegistrarTimeToLive@SIPEndPoint@@QBEABVPTimeInterval@@XZ @36492 NONAME
     ?GetRegistrationAddress@SIPInfo@@UAEABVSIPURL@@XZ @36493 NONAME
     ?GetRegistrationID@SIPInfo@@UAE?AVPString@@XZ @36494 NONAME
+    ?GetRegistrationsCount@RegistrationList@SIPEndPoint@@QAEIXZ @36891 NONAME
+    ?GetRegistrationsCount@SIPEndPoint@@QAEIXZ @36892 NONAME
     ?GetRemoteAddress@H323_ExternalRTPChannel@@QBEHAAVAddress@PIPSocket@@AAG@Z @30187 NONAME
     ?GetRemoteAddress@OpalTransportIP@@UBE?AVOpalTransportAddress@@XZ @30188 NONAME
     ?GetRemoteAddress@RTP_UDP@@QBE?AVAddress@PIPSocket@@XZ @30189 NONAME
@@ -30872,6 +31149,9 @@ EXPORTS
     ?GetRemoteDataPort@RTP_UDP@@QBEGXZ @30194 NONAME
     ?GetRemoteId@H235Authenticator@@QBEABVPString@@XZ @30195 NONAME
     ?GetRemotePartyAddress@OpalConnection@@QBEABVPString@@XZ @30196 NONAME
+    ?GetRemotePartyCallbackURL@H323Connection@@UBE?BVPString@@XZ @36893 NONAME
+    ?GetRemotePartyCallbackURL@OpalConnection@@UBE?BVPString@@XZ @36894 NONAME
+    ?GetRemotePartyCallbackURL@SIPConnection@@UBE?BVPString@@XZ @36895 NONAME
     ?GetRemotePartyName@OpalConnection@@QBEABVPString@@XZ @30197 NONAME
     ?GetRemotePartyNumber@OpalConnection@@QBEABVPString@@XZ @30198 NONAME
     ?GetRemoveDTMF@OpalIxJDevice@@UAEHI@Z @30199 NONAME
@@ -30957,6 +31237,7 @@ EXPORTS
     ?GetState@H4504Handler@@QBE?AW4State@1@XZ @30279 NONAME
     ?GetStatus@OpalSilenceDetector@@QBE?AW4Mode@1@PAHPAI@Z @34636 NONAME
     ?GetStatusCode@SIP_PDU@@QBE?AW4StatusCodes@1@XZ @30280 NONAME
+    ?GetStatusCodeDescription@SIP_PDU@@SAPBDH@Z @36896 NONAME
     ?GetSTUN@OpalManager@@QBEPAVPSTUNClient@@ABVAddress@PIPSocket@@@Z @30281 NONAME
     ?GetSubject@SIPMIMEInfo@@QBE?AVPString@@XZ @30282 NONAME
     ?GetSubscriptionState@SIPMIMEInfo@@QBE?AVPString@@XZ @36496 NONAME
@@ -30989,6 +31270,7 @@ EXPORTS
     ?GetToken@OpalLine@@QBE?AVPString@@XZ @30309 NONAME
     ?GetTone@OpalRFC2833Info@@QBEDXZ @30310 NONAME
     ?GetToolName@RTP_Session@@QBE?AVPString@@XZ @30311 NONAME
+    ?GetTransaction@SIPConnection@@QAEPAVSIPTransaction@@VPString@@@Z @36897 NONAME
     ?GetTransactionID@SIP_PDU@@QBE?AVPString@@XZ @30312 NONAME
     ?GetTransmitHandler@OpalRFC2833Proto@@QBEABVPNotifier@@XZ @30313 NONAME
     ?GetTransport@H323Transactor@@QBEAAVOpalTransport@@XZ @30314 NONAME
@@ -31031,7 +31313,7 @@ EXPORTS
     ?GetVersionMajor@SIP_PDU@@QBEIXZ @30343 NONAME
     ?GetVersionMinor@SIP_PDU@@QBEIXZ @30344 NONAME
     ?GetVia@SIPMIMEInfo@@QBE?AVPString@@XZ @30345 NONAME
-    ?GetVXMLChannel@PVXMLSession@@QBEPAVPVXMLChannel@@XZ @35753 NONAME
+    ?GetViaList@SIPMIMEInfo@@QBE?AVPStringList@@XZ @36898 NONAME
     ?GetWinkDuration@OpalIxJDevice@@UAEII@Z @30346 NONAME
     ?GetWinkDuration@OpalLineInterfaceDevice@@UAEII@Z @30347 NONAME
     ?GetWritableMediaFormat@H323Capability@@IAEAAVOpalMediaFormat@@XZ @36505 NONAME
@@ -31164,6 +31446,9 @@ EXPORTS
     ?HoldCall@H323Connection@@QAEXH@Z @30475 NONAME
     ?HoldCall@H323EndPoint@@QAEXABVPString@@H@Z @30476 NONAME
     ?HoldCall@H4504Handler@@QAEXH@Z @30477 NONAME
+    ?HoldConnection@H323Connection@@UAEXXZ @36899 NONAME
+    ?HoldConnection@OpalConnection@@UAEXXZ @36900 NONAME
+    ?HoldConnection@SIPConnection@@UAEXXZ @36901 NONAME
     ?HookFlash@OpalLine@@UAEHI@Z @30478 NONAME
     ?HookFlash@OpalLineInterfaceDevice@@UAEHII@Z @30479 NONAME
     ?In@RTP_JitterBufferAnalyser@@QAEXKIPBD@Z @30480 NONAME
@@ -31733,6 +32018,7 @@ EXPORTS
     ?InternalIsDescendant@H245_ArrayOf_DialingInformationNumber@@UBEHPBD@Z @31022 NONAME
     ?InternalIsDescendant@H245_ArrayOf_EnhancementOptions@@UBEHPBD@Z @31023 NONAME
     ?InternalIsDescendant@H245_ArrayOf_EscrowData@@UBEHPBD@Z @31024 NONAME
+    ?InternalIsDescendant@H245_ArrayOf_GenericCapability@@UBEHPBD@Z @36902 NONAME
     ?InternalIsDescendant@H245_ArrayOf_GenericParameter@@UBEHPBD@Z @31025 NONAME
     ?InternalIsDescendant@H245_ArrayOf_H263ModeComboFlags@@UBEHPBD@Z @31026 NONAME
     ?InternalIsDescendant@H245_ArrayOf_H263VideoModeCombos@@UBEHPBD@Z @31027 NONAME
@@ -31759,6 +32045,7 @@ EXPORTS
     ?InternalIsDescendant@H245_ArrayOf_TerminalInformation@@UBEHPBD@Z @31044 NONAME
     ?InternalIsDescendant@H245_ArrayOf_TerminalLabel@@UBEHPBD@Z @31045 NONAME
     ?InternalIsDescendant@H245_ArrayOf_VCCapability@@UBEHPBD@Z @31046 NONAME
+    ?InternalIsDescendant@H245_ArrayOf_VideoCapability@@UBEHPBD@Z @36903 NONAME
     ?InternalIsDescendant@H245_ATMParameters@@UBEHPBD@Z @31047 NONAME
     ?InternalIsDescendant@H245_AudioCapability@@UBEHPBD@Z @31048 NONAME
     ?InternalIsDescendant@H245_AudioCapability_g7231@@UBEHPBD@Z @31049 NONAME
@@ -31838,6 +32125,7 @@ EXPORTS
     ?InternalIsDescendant@H245_EncryptionCommand_encryptionAlgorithmID@@UBEHPBD@Z @31123 NONAME
     ?InternalIsDescendant@H245_EncryptionMode@@UBEHPBD@Z @31124 NONAME
     ?InternalIsDescendant@H245_EncryptionSync@@UBEHPBD@Z @31125 NONAME
+    ?InternalIsDescendant@H245_EncryptionUpdateDirection@@UBEHPBD@Z @36904 NONAME
     ?InternalIsDescendant@H245_EncryptionUpdateRequest@@UBEHPBD@Z @31126 NONAME
     ?InternalIsDescendant@H245_EndSessionCommand@@UBEHPBD@Z @31127 NONAME
     ?InternalIsDescendant@H245_EndSessionCommand_gstnOptions@@UBEHPBD@Z @31128 NONAME
@@ -31845,6 +32133,7 @@ EXPORTS
     ?InternalIsDescendant@H245_EnhancementLayerInfo@@UBEHPBD@Z @31130 NONAME
     ?InternalIsDescendant@H245_EnhancementOptions@@UBEHPBD@Z @31131 NONAME
     ?InternalIsDescendant@H245_EscrowData@@UBEHPBD@Z @31132 NONAME
+    ?InternalIsDescendant@H245_ExtendedVideoCapability@@UBEHPBD@Z @36905 NONAME
     ?InternalIsDescendant@H245_FECCapability@@UBEHPBD@Z @35435 NONAME
     ?InternalIsDescendant@H245_FECCapability_rfc2733@@UBEHPBD@Z @35436 NONAME
     ?InternalIsDescendant@H245_FECCapability_rfc2733_separateStream@@UBEHPBD@Z @35437 NONAME
@@ -31875,6 +32164,7 @@ EXPORTS
     ?InternalIsDescendant@H245_G7231AnnexCMode_g723AnnexCAudioMode@@UBEHPBD@Z @31145 NONAME
     ?InternalIsDescendant@H245_G729Extensions@@UBEHPBD@Z @31146 NONAME
     ?InternalIsDescendant@H245_GenericCapability@@UBEHPBD@Z @31147 NONAME
+    ?InternalIsDescendant@H245_GenericMessage@@UBEHPBD@Z @36906 NONAME
     ?InternalIsDescendant@H245_GenericParameter@@UBEHPBD@Z @31148 NONAME
     ?InternalIsDescendant@H245_GSMAudioCapability@@UBEHPBD@Z @31149 NONAME
     ?InternalIsDescendant@H245_H222Capability@@UBEHPBD@Z @31150 NONAME
@@ -31947,6 +32237,8 @@ EXPORTS
     ?InternalIsDescendant@H245_IS13818AudioMode_audioLayer@@UBEHPBD@Z @31217 NONAME
     ?InternalIsDescendant@H245_IS13818AudioMode_audioSampling@@UBEHPBD@Z @31218 NONAME
     ?InternalIsDescendant@H245_IS13818AudioMode_multichannelType@@UBEHPBD@Z @31219 NONAME
+    ?InternalIsDescendant@H245_IV16@@UBEHPBD@Z @36907 NONAME
+    ?InternalIsDescendant@H245_IV8@@UBEHPBD@Z @36908 NONAME
     ?InternalIsDescendant@H245_JitterIndication@@UBEHPBD@Z @31220 NONAME
     ?InternalIsDescendant@H245_JitterIndication_scope@@UBEHPBD@Z @31221 NONAME
     ?InternalIsDescendant@H245_KeyProtectionMethod@@UBEHPBD@Z @31222 NONAME
@@ -31981,6 +32273,8 @@ EXPORTS
     ?InternalIsDescendant@H245_MediaTransportType_atm_AAL5_compressed@@UBEHPBD@Z @31251 NONAME
     ?InternalIsDescendant@H245_MiscellaneousCommand@@UBEHPBD@Z @31252 NONAME
     ?InternalIsDescendant@H245_MiscellaneousCommand_type@@UBEHPBD@Z @31253 NONAME
+    ?InternalIsDescendant@H245_MiscellaneousCommand_type_encryptionUpdateAck@@UBEHPBD@Z @36909 NONAME
+    ?InternalIsDescendant@H245_MiscellaneousCommand_type_encryptionUpdateCommand@@UBEHPBD@Z @36910 NONAME
     ?InternalIsDescendant@H245_MiscellaneousCommand_type_lostPartialPicture@@UBEHPBD@Z @31254 NONAME
     ?InternalIsDescendant@H245_MiscellaneousCommand_type_progressiveRefinementStart@@UBEHPBD@Z @31255 NONAME
     ?InternalIsDescendant@H245_MiscellaneousCommand_type_progressiveRefinementStart_repeatCount@@UBEHPBD@Z @31256 NONAME
@@ -32080,6 +32374,7 @@ EXPORTS
     ?InternalIsDescendant@H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters@@UBEHPBD@Z @31343 NONAME
     ?InternalIsDescendant@H245_ParameterIdentifier@@UBEHPBD@Z @31344 NONAME
     ?InternalIsDescendant@H245_ParameterValue@@UBEHPBD@Z @31345 NONAME
+    ?InternalIsDescendant@H245_Params@@UBEHPBD@Z @36911 NONAME
     ?InternalIsDescendant@H245_Password@@UBEHPBD@Z @31346 NONAME
     ?InternalIsDescendant@H245_PictureReference@@UBEHPBD@Z @31347 NONAME
     ?InternalIsDescendant@H245_Q2931Address@@UBEHPBD@Z @31348 NONAME
@@ -32169,7 +32464,9 @@ EXPORTS
     ?InternalIsDescendant@H245_UnicastAddress_iPXAddress@@UBEHPBD@Z @31427 NONAME
     ?InternalIsDescendant@H245_UserInputCapability@@UBEHPBD@Z @31428 NONAME
     ?InternalIsDescendant@H245_UserInputIndication@@UBEHPBD@Z @31429 NONAME
+    ?InternalIsDescendant@H245_UserInputIndication_encryptedAlphanumeric@@UBEHPBD@Z @36912 NONAME
     ?InternalIsDescendant@H245_UserInputIndication_extendedAlphanumeric@@UBEHPBD@Z @31430 NONAME
+    ?InternalIsDescendant@H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric@@UBEHPBD@Z @36913 NONAME
     ?InternalIsDescendant@H245_UserInputIndication_signal@@UBEHPBD@Z @31431 NONAME
     ?InternalIsDescendant@H245_UserInputIndication_signalUpdate@@UBEHPBD@Z @31432 NONAME
     ?InternalIsDescendant@H245_UserInputIndication_signalUpdate_rtp@@UBEHPBD@Z @31433 NONAME
@@ -32877,9 +33174,13 @@ EXPORTS
     ?InternalIsDescendant@SIPEndPoint@@UBEHPBD@Z @32171 NONAME
     ?InternalIsDescendant@SIPInfo@@UBEHPBD@Z @36519 NONAME
     ?InternalIsDescendant@SIPInvite@@UBEHPBD@Z @32172 NONAME
+    ?InternalIsDescendant@SIPMessage@@UBEHPBD@Z @36914 NONAME
+    ?InternalIsDescendant@SIPMessageInfo@SIPEndPoint@@UBEHPBD@Z @36915 NONAME
     ?InternalIsDescendant@SIPMIMEInfo@@UBEHPBD@Z @32173 NONAME
     ?InternalIsDescendant@SIPMWISubscribe@@UBEHPBD@Z @36520 NONAME
     ?InternalIsDescendant@SIPMWISubscribeInfo@@UBEHPBD@Z @36521 NONAME
+    ?InternalIsDescendant@SIPRefer@@UBEHPBD@Z @36916 NONAME
+    ?InternalIsDescendant@SIPReferNotify@@UBEHPBD@Z @36917 NONAME
     ?InternalIsDescendant@SIPRegister@@UBEHPBD@Z @32174 NONAME
     ?InternalIsDescendant@SIPRegisterInfo@@UBEHPBD@Z @36522 NONAME
     ?InternalIsDescendant@SIPTransaction@@UBEHPBD@Z @32175 NONAME
@@ -32965,6 +33266,9 @@ EXPORTS
     ?IsCompatibleTransport@OpalTransportTCP@@UBEHABVOpalTransportAddress@@@Z @32255 NONAME
     ?IsCompatibleTransport@OpalTransportUDP@@UBEHABVOpalTransportAddress@@@Z @32256 NONAME
     ?IsConnectionEstablished@H323EndPoint@@UAEHABVPString@@@Z @32257 NONAME
+    ?IsConnectionOnHold@H323Connection@@UAEHXZ @36918 NONAME
+    ?IsConnectionOnHold@OpalConnection@@UAEHXZ @36919 NONAME
+    ?IsConnectionOnHold@SIPConnection@@UAEHXZ @36920 NONAME
     ?isConsultationTransferSuccess@H4502Handler@@QAEHXZ @32258 NONAME
     ?IsctTimerRunning@H4502Handler@@QAEHXZ @32259 NONAME
     ?IsDetermined@H245NegMasterSlaveDetermination@@QBEHXZ @32260 NONAME
@@ -33199,8 +33503,8 @@ EXPORTS
     ?OnEstablished@OpalManager@@UAEXAAVOpalConnection@@@Z @35629 NONAME
     ?OnEstablishedCall@OpalCall@@UAEXXZ @35630 NONAME
     ?OnEstablishedCall@OpalManager@@UAEXAAVOpalCall@@@Z @32470 NONAME
-    ?OnFailed@SIPMWISubscribeInfo@@UAEXW4FailureReasons@SIPInfo@@@Z @36534 NONAME
-    ?OnFailed@SIPRegisterInfo@@UAEXW4FailureReasons@SIPInfo@@@Z @36535 NONAME
+    ?OnFailed@SIPMWISubscribeInfo@@UAEXW4StatusCodes@SIP_PDU@@@Z @36921 NONAME
+    ?OnFailed@SIPRegisterInfo@@UAEXW4StatusCodes@SIP_PDU@@@Z @36922 NONAME
     ?OnFlowControl@H323Channel@@UAEXJ@Z @32471 NONAME
     ?OnFullRegistration@H323RegisteredEndPoint@@UAE?AW4Response@H323Transaction@@AAVH323GatekeeperRRQ@@@Z @32472 NONAME
     ?OnGatekeeperConfirm@H323EndPoint@@UAEXXZ @32473 NONAME
@@ -33226,6 +33530,8 @@ EXPORTS
     ?OnHandlePDU@H501DescriptorUpdate@@MAE?AW4Response@H323Transaction@@XZ @32493 NONAME
     ?OnHandlePDU@H501ServiceRequest@@MAE?AW4Response@H323Transaction@@XZ @32494 NONAME
     ?OnHeartbeat@H323GatekeeperCall@@UAEHXZ @32495 NONAME
+    ?OnHold@OpalEndPoint@@QAEXAAVOpalConnection@@@Z @36923 NONAME
+    ?OnHold@OpalManager@@UAEXAAVOpalConnection@@@Z @36924 NONAME
     ?OnHTTPServiceControl@H323EndPoint@@UAEXIIABVPString@@@Z @32496 NONAME
     ?OnIncomingCall@H323Connection@@UAEHABVH323SignalPDU@@AAV2@@Z @32497 NONAME
     ?OnIncomingCall@H323EndPoint@@UAEHAAVH323Connection@@ABVH323SignalPDU@@AAV3@@Z @32498 NONAME
@@ -33243,6 +33549,8 @@ EXPORTS
     ?OnLocation@H323GatekeeperServer@@UAE?AW4Response@H323Transaction@@AAVH323GatekeeperLRQ@@@Z @32510 NONAME
     ?OnLogicalChannelFlowControl@H323Connection@@UAEXPAVH323Channel@@J@Z @32511 NONAME
     ?OnLogicalChannelJitter@H323Connection@@UAEXPAVH323Channel@@KHH@Z @32512 NONAME
+    ?OnMessageFailed@SIPEndPoint@@UAEXABVSIPURL@@W4StatusCodes@SIP_PDU@@@Z @36925 NONAME
+    ?OnMessageReceived@SIPEndPoint@@UAEXABVSIPURL@@ABVPString@@@Z @36926 NONAME
     ?OnMiscellaneousCommand@H323Channel@@UAEXABVH245_MiscellaneousCommand_type@@@Z @32513 NONAME
     ?OnMiscellaneousIndication@H323Channel@@UAEXABVH245_MiscellaneousIndication_type@@@Z @32514 NONAME
     ?OnModeChanged@H323Connection@@UAEXABVH245_ModeDescription@@@Z @32515 NONAME
@@ -33361,7 +33669,9 @@ EXPORTS
     ?OnReceiveDisengageRequest@H323GatekeeperListener@@UAEHABVH323RasPDU@@ABVH225_DisengageRequest@@@Z @32624 NONAME
     ?OnReceivedLocalCallHold@H4504Handler@@UAEXH@Z @32625 NONAME
     ?OnReceivedLocalCallRetrieve@H4504Handler@@UAEXH@Z @32626 NONAME
+    ?OnReceivedMESSAGE@SIPEndPoint@@UAEXAAVOpalTransport@@AAVSIP_PDU@@@Z @36927 NONAME
     ?OnReceivedNonStandardPDU@H323NonStandardCapabilityInfo@@IAEHABVPASN_Choice@@I@Z @32627 NONAME
+    ?OnReceivedNOTIFY@SIPConnection@@UAEXAAVSIP_PDU@@@Z @36928 NONAME
     ?OnReceivedNOTIFY@SIPEndPoint@@UAEHAAVOpalTransport@@AAVSIP_PDU@@@Z @36537 NONAME
     ?OnReceivedOK@SIPConnection@@UAEXAAVSIPTransaction@@AAVSIP_PDU@@@Z @32628 NONAME
     ?OnReceivedOK@SIPEndPoint@@UAEXAAVSIPTransaction@@AAVSIP_PDU@@@Z @32629 NONAME
@@ -33402,6 +33712,7 @@ EXPORTS
     ?OnReceivedPDU@SIPEndPoint@@UAEHAAVOpalTransport@@PAVSIP_PDU@@@Z @32664 NONAME
     ?OnReceivedProgress@H323Connection@@UAEHABVH323SignalPDU@@@Z @32665 NONAME
     ?OnReceivedRedirection@SIPConnection@@UAEXAAVSIP_PDU@@@Z @32666 NONAME
+    ?OnReceivedREFER@SIPConnection@@UAEXAAVSIP_PDU@@@Z @36929 NONAME
     ?OnReceivedReject@H45011Handler@@UAEHHH@Z @32667 NONAME
     ?OnReceivedReject@H450xDispatcher@@UAEHAAVX880_Reject@@@Z @32668 NONAME
     ?OnReceivedReject@H450xHandler@@UAEHHH@Z @32669 NONAME
@@ -33527,7 +33838,7 @@ EXPORTS
     ?OnRegistration@H323GatekeeperServer@@UAE?AW4Response@H323Transaction@@AAVH323GatekeeperRRQ@@@Z @32787 NONAME
     ?OnRegistration@H323RegisteredEndPoint@@UAE?AW4Response@H323Transaction@@AAVH323GatekeeperRRQ@@@Z @32788 NONAME
     ?OnRegistrationConfirm@H323EndPoint@@UAEXXZ @32789 NONAME
-    ?OnRegistrationFailed@SIPEndPoint@@UAEXABVPString@@0W4FailureReasons@SIPInfo@@H@Z @36539 NONAME
+    ?OnRegistrationFailed@SIPEndPoint@@UAEXABVPString@@0W4StatusCodes@SIP_PDU@@H@Z @36930 NONAME
     ?OnRegistrationReject@H323EndPoint@@UAEXXZ @32790 NONAME
     ?OnReleased@H323Connection@@UAEXXZ @36050 NONAME
     ?OnReleased@OpalCall@@UAEXAAVOpalConnection@@@Z @32792 NONAME
@@ -33783,6 +34094,7 @@ EXPORTS
     ?parse_picture_hdr@P64Decoder@@IAEHXZ @33058 NONAME
     ?parse_sc@P64Decoder@@IAEHXZ @33059 NONAME
     ?PatchMediaStreams@OpalCall@@UAEHABVOpalConnection@@AAVOpalMediaStream@@@Z @33060 NONAME
+    ?PauseMediaStreams@OpalConnection@@UAEXH@Z @36931 NONAME
     ?PlayAudio@OpalLineInterfaceDevice@@UAEHIABVPString@@@Z @33061 NONAME
     ?PlayAudio@OpalVpbDevice@@UAEHIABVPString@@@Z @36164 NONAME
     ?PlayDTMF@OpalIxJDevice@@UAEHIPBDKK@Z @33062 NONAME
@@ -34086,6 +34398,7 @@ EXPORTS
     ?PrintOn@H245_EnhancementLayerInfo@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @33351 NONAME
     ?PrintOn@H245_EnhancementOptions@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @33352 NONAME
     ?PrintOn@H245_EscrowData@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @33353 NONAME
+    ?PrintOn@H245_ExtendedVideoCapability@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @36932 NONAME
     ?PrintOn@H245_FECCapability_rfc2733@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @35477 NONAME
     ?PrintOn@H245_FECCapability_rfc2733_separateStream@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @35478 NONAME
     ?PrintOn@H245_FECData_rfc2733@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @35479 NONAME
@@ -34103,6 +34416,7 @@ EXPORTS
     ?PrintOn@H245_G7231AnnexCMode_g723AnnexCAudioMode@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @33360 NONAME
     ?PrintOn@H245_G729Extensions@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @33361 NONAME
     ?PrintOn@H245_GenericCapability@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @33362 NONAME
+    ?PrintOn@H245_GenericMessage@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @36933 NONAME
     ?PrintOn@H245_GenericParameter@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @33363 NONAME
     ?PrintOn@H245_GSMAudioCapability@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @33364 NONAME
     ?PrintOn@H245_H222Capability@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @33365 NONAME
@@ -34167,6 +34481,8 @@ EXPORTS
     ?PrintOn@H245_MediaPacketizationCapability@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @33424 NONAME
     ?PrintOn@H245_MediaTransportType_atm_AAL5_compressed@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @33425 NONAME
     ?PrintOn@H245_MiscellaneousCommand@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @33426 NONAME
+    ?PrintOn@H245_MiscellaneousCommand_type_encryptionUpdateAck@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @36934 NONAME
+    ?PrintOn@H245_MiscellaneousCommand_type_encryptionUpdateCommand@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @36935 NONAME
     ?PrintOn@H245_MiscellaneousCommand_type_lostPartialPicture@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @33427 NONAME
     ?PrintOn@H245_MiscellaneousCommand_type_progressiveRefinementStart@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @33428 NONAME
     ?PrintOn@H245_MiscellaneousCommand_type_videoBadMBs@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @33429 NONAME
@@ -34226,6 +34542,7 @@ EXPORTS
     ?PrintOn@H245_OpenLogicalChannelReject@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @33476 NONAME
     ?PrintOn@H245_OpenLogicalChannel_forwardLogicalChannelParameters@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @33477 NONAME
     ?PrintOn@H245_OpenLogicalChannel_reverseLogicalChannelParameters@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @33478 NONAME
+    ?PrintOn@H245_Params@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @36936 NONAME
     ?PrintOn@H245_Q2931Address@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @33479 NONAME
     ?PrintOn@H245_QOSCapability@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @33480 NONAME
     ?PrintOn@H245_RedundancyEncoding@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @33481 NONAME
@@ -34278,7 +34595,9 @@ EXPORTS
     ?PrintOn@H245_UnicastAddress_iPAddress@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @33524 NONAME
     ?PrintOn@H245_UnicastAddress_iPSourceRouteAddress@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @33525 NONAME
     ?PrintOn@H245_UnicastAddress_iPXAddress@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @33526 NONAME
+    ?PrintOn@H245_UserInputIndication_encryptedAlphanumeric@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @36937 NONAME
     ?PrintOn@H245_UserInputIndication_extendedAlphanumeric@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @33527 NONAME
+    ?PrintOn@H245_UserInputIndication_extendedAlphanumeric_encryptedAlphanumeric@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @36938 NONAME
     ?PrintOn@H245_UserInputIndication_signal@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @33528 NONAME
     ?PrintOn@H245_UserInputIndication_signalUpdate@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @33529 NONAME
     ?PrintOn@H245_UserInputIndication_signalUpdate_rtp@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @33530 NONAME
@@ -34706,7 +35025,7 @@ EXPORTS
     ?ReceivedPacket@OpalSilenceDetector@@MAEXAAVRTP_DataFrame@@H@Z @34633 NONAME
     ?ReceiveTimeout@OpalRFC2833Proto@@MAEXAAVPTimer@@H@Z @33957 NONAME
     ?Register@?$PFactory@VPWAVFileConverter@@I@@SAXABIPAVWorkerBase@1@@Z @35760 NONAME
-    ?Register@SIPEndPoint@@QAEHABVPString@@00@Z @33958 NONAME
+    ?Register@SIPEndPoint@@QAEHABVPString@@000@Z @36939 NONAME
     ?registeredCapabilitiesListHead@H323CapabilityRegistration@@1PAV1@A @33959 NONAME
     ?Register_Internal@?$PFactory@VPWAVFileConverter@@I@@IAEXABIPAVWorkerBase@1@@Z @35761 NONAME
     ?RegistrationRefresh@SIPEndPoint@@MAEXAAVPTimer@@H@Z @36080 NONAME
@@ -34789,6 +35108,9 @@ EXPORTS
     ?Restart@H245NegMasterSlaveDetermination@@IAEHXZ @34031 NONAME
     ?RetrieveCall@H323Connection@@QAEXXZ @34032 NONAME
     ?RetrieveCall@H4504Handler@@QAEXXZ @34033 NONAME
+    ?RetrieveConnection@H323Connection@@UAEXXZ @36940 NONAME
+    ?RetrieveConnection@OpalConnection@@UAEXXZ @36941 NONAME
+    ?RetrieveConnection@SIPConnection@@UAEXXZ @36942 NONAME
     ?Ring@OpalLine@@UAEHHPAI@Z @34034 NONAME
     ?Ring@OpalLine@@UAEHK@Z @34035 NONAME
     ?RingLine@OpalIxJDevice@@UAEHIHPAI@Z @34036 NONAME
@@ -34822,6 +35144,7 @@ EXPORTS
     ?SendInvokeReject@H450xDispatcher@@QAEXHH@Z @34063 NONAME
     ?SendInvokeReject@H450xHandler@@QAEXH@Z @34064 NONAME
     ?SendLogicalChannelMiscCommand@H323Connection@@QAEXAAVH323Channel@@I@Z @34065 NONAME
+    ?SendMessageA@SIPEndPoint@@QAEHABVSIPURL@@ABVPString@@@Z @36943 NONAME
     ?SendMiscCommand@H323Channel@@QAEXI@Z @34066 NONAME
     ?SendMoreDigits@H323Connection@@UAEXABVPString@@@Z @34067 NONAME
     ?SendReport@RTP_Session@@UAEHXZ @34068 NONAME
@@ -34874,6 +35197,7 @@ EXPORTS
     ?SetAlerting@OpalPCSSConnection@@UAEHABVPString@@H@Z @34115 NONAME
     ?SetAlerting@SIPConnection@@UAEHABVPString@@H@Z @34116 NONAME
     ?SetAllow@SIPMIMEInfo@@QAEXABVPString@@@Z @34117 NONAME
+    ?SetAllow@SIP_PDU@@QAEXXZ @36944 NONAME
     ?SetAlternates@H323Gatekeeper@@IAEXABVH225_ArrayOf_AlternateGK@@H@Z @34118 NONAME
     ?SetAssociatedCallToken@H323Connection@@QAEXABVPString@@@Z @34119 NONAME
     ?SetAssociatedCallToken@H4502Handler@@QAEXABVPString@@@Z @34120 NONAME
@@ -34900,6 +35224,8 @@ EXPORTS
     ?SetAudioJitterDelay@OpalConnection@@QAEXII@Z @34139 NONAME
     ?SetAudioJitterDelay@OpalManager@@QAEXII@Z @34140 NONAME
     ?SetAuthenticators@H323TransactionPDU@@QAEXABVH235Authenticators@@@Z @34141 NONAME
+    ?SetAuthRealm@SIPAuthentication@@QAEXABVPString@@@Z @36945 NONAME
+    ?SetAuthRealm@SIPInfo@@UAEXABVPString@@@Z @36946 NONAME
     ?SetBackgroundFill@P64Encoder@@QAEXH@Z @34142 NONAME
     ?SetBackgroundFill@Pre_Vid_Coder@@QAEXH@Z @34143 NONAME
     ?SetBandwidthAvailable@H323Connection@@UAEHIH@Z @34144 NONAME
@@ -34928,7 +35254,7 @@ EXPORTS
     ?SetCapabilityNumber@H323Capability@@QAEXI@Z @34168 NONAME
     ?SetCause@Q931@@QAEXW4CauseValues@1@II@Z @34169 NONAME
     ?SetChannelIdentification@Q931@@QAEXIIH@Z @34170 NONAME
-    ?SetClockRate@SDPMediaFormat@@QAEXH@Z @34171 NONAME
+    ?SetClockRate@SDPMediaFormat@@QAEXI@Z @36947 NONAME
     ?SetConnected@H323Connection@@UAEHXZ @34172 NONAME
     ?SetConnected@OpalIVRConnection@@UAEHXZ @34173 NONAME
     ?SetConnected@OpalLineConnection@@UAEHXZ @34174 NONAME
@@ -34954,6 +35280,7 @@ EXPORTS
     ?SetDataAt@?$PStringDictionary@VPCaselessString@@@@UAEHHABVPString@@@Z @34194 NONAME
     ?SetDataSize@OpalAudioMediaStream@@UAEHH@Z @34195 NONAME
     ?SetDataSize@OpalMediaStream@@UAEHH@Z @34196 NONAME
+    ?SetDataSize@OpalVideoMediaStream@@UAEHH@Z @36948 NONAME
     ?SetDate@SIPMIMEInfo@@QAEXABVPString@@@Z @34197 NONAME
     ?SetDate@SIPMIMEInfo@@QAEXABVPTime@@@Z @34198 NONAME
     ?SetDate@SIPMIMEInfo@@QAEXXZ @34199 NONAME
@@ -34961,6 +35288,7 @@ EXPORTS
     ?SetDefaultMediaFormats@OpalIVREndPoint@@QAEXABVOpalMediaFormatList@@@Z @35793 NONAME
     ?SetDefaultVXML@OpalIVREndPoint@@QAEXABVPString@@@Z @34201 NONAME
     ?SetDelay@RTP_JitterBuffer@@QAEXII@Z @34202 NONAME
+    ?SetDirection@SDPSessionDescription@@QAEXABW4Direction@1@@Z @36949 NONAME
     ?SetDisplayName@Q931@@QAEXABVPString@@@Z @34203 NONAME
     ?SetDomainName@H323PeerElement@@QAEXABVPString@@@Z @34204 NONAME
     ?SetDynamicRTPPayloadType@H323_RealTimeChannel@@UAEHH@Z @34205 NONAME
@@ -35037,9 +35365,10 @@ EXPORTS
     ?SetPassword@H323Gatekeeper@@QAEXABVPString@@0@Z @34265 NONAME
     ?SetPassword@H323RegisteredEndPoint@@UAEHABVPString@@0@Z @34266 NONAME
     ?SetPassword@SIPAuthentication@@QAEXABVPString@@@Z @34267 NONAME
-    ?SetPassword@SIPInfo@@UAEXVPString@@@Z @36576 NONAME
+    ?SetPassword@SIPInfo@@UAEXABVPString@@@Z @36950 NONAME
     ?SetPatch@OpalMediaStream@@QAEXPAVOpalMediaPatch@@@Z @34268 NONAME
     ?SetPause@H323Channel@@QAEXH@Z @34269 NONAME
+    ?SetPaused@OpalMediaStream@@QAEXH@Z @36951 NONAME
     ?SetPayloadSize@RTP_ControlFrame@@QAEXH@Z @34270 NONAME
     ?SetPayloadSize@RTP_DataFrame@@QAEHH@Z @34271 NONAME
     ?SetPayloadType@H323Capability@@QAEXW4PayloadTypes@RTP_DataFrame@@@Z @34272 NONAME
@@ -35062,6 +35391,7 @@ EXPORTS
     ?SetPromiscuous@OpalTransportUDP@@UAEXW4PromisciousModes@OpalTransport@@@Z @34288 NONAME
     ?SetProtocolList@H323PeerElementDescriptor@@SAXAAVH501_ArrayOf_SupportedProtocols@@I@Z @34289 NONAME
     ?SetProxy@SIPEndPoint@@QAEXABVPString@@00@Z @35500 NONAME
+    ?SetProxy@SIPEndPoint@@QAEXABVSIPURL@@@Z @36952 NONAME
     ?SetProxyAuthenticate@SIPMIMEInfo@@QAEXABVPString@@@Z @34290 NONAME
     ?SetQ931Fields@H323SignalPDU@@QAEXABVH323Connection@@HIIHH@Z @34291 NONAME
     ?setq@H261Encoder@@QAEXH@Z @34292 NONAME
@@ -35088,7 +35418,9 @@ EXPORTS
     ?SetRecordVolume@OpalVoipBlasterDevice@@UAEHII@Z @34311 NONAME
     ?SetRecordVolume@OpalVpbDevice@@UAEHII@Z @36174 NONAME
     ?SetRedirectingNumber@Q931@@QAEXABVPString@@IIHHH@Z @34312 NONAME
+    ?SetReferTo@SIPMIMEInfo@@QAEXABVPString@@@Z @36953 NONAME
     ?SetRegistered@SIPInfo@@UAEXH@Z @36577 NONAME
+    ?SetRegisteredMediaFormat@OpalMediaFormat@@SA_NABV1@@Z @36954 NONAME
     ?SetRejectReason@H323GatekeeperARQ@@UAEXI@Z @34313 NONAME
     ?SetRejectReason@H323GatekeeperBRQ@@UAEXI@Z @34314 NONAME
     ?SetRejectReason@H323GatekeeperDRQ@@UAEXI@Z @34315 NONAME
@@ -35113,6 +35445,7 @@ EXPORTS
     ?SetRemoveDTMF@OpalLineInterfaceDevice@@UAEHIH@Z @34334 NONAME
     ?SetRemoveDTMF@OpalVoipBlasterDevice@@UAEHIH@Z @34335 NONAME
     ?SetRoute@SIPMIMEInfo@@QAEXABVPStringList@@@Z @34336 NONAME
+    ?SetRoute@SIP_PDU@@QAEHAAVSIPConnection@@@Z @36955 NONAME
     ?SetRouteList@SIPMIMEInfo@@IAEXPBDABVPStringList@@@Z @34337 NONAME
     ?SetRouteTable@OpalManager@@QAEHABVPStringArray@@@Z @34338 NONAME
     ?SetRouteTable@OpalManager@@QAEXABV?$PList@VRouteEntry@OpalManager@@@@@Z @34339 NONAME
@@ -35166,6 +35499,7 @@ EXPORTS
     ?SetUpConnection@SIPConnection@@UAEHXZ @34385 NONAME
     ?SetupGatekeeperRequest@H323Gatekeeper@@IAEIAAVH323RasPDU@@@Z @34386 NONAME
     ?SetupTransfer@H323EndPoint@@UAEHABVPString@@00PAX@Z @34387 NONAME
+    ?SetupTransfer@SIPEndPoint@@UAEHABVPString@@00PAX@Z @36956 NONAME
     ?SetUsageInfo@H323GatekeeperCall@@IAEXABVH225_RasUsageInformation@@@Z @34388 NONAME
     ?SetUserAgent@SIPMIMEInfo@@QAEXABVSIPEndPoint@@@Z @34389 NONAME
     ?SetUserData@RTP_Session@@QAEXPAVRTP_UserData@@H@Z @34390 NONAME
@@ -35195,6 +35529,7 @@ EXPORTS
     ?SetValue@PASN_OctetString@@QAEXPBD@Z @34409 NONAME
     ?SetVendorIdentifierInfo@H323EndPoint@@UBEXAAVH225_VendorIdentifier@@@Z @34410 NONAME
     ?SetVia@SIPMIMEInfo@@QAEXABVPString@@@Z @34411 NONAME
+    ?SetViaList@SIPMIMEInfo@@QAEXABVPStringList@@@Z @36957 NONAME
     ?SetVideoInputDevice@OpalManager@@UAEHABUOpenArgs@PVideoDevice@@@Z @34412 NONAME
     ?SetVideoOutputDevice@OpalManager@@UAEHABUOpenArgs@PVideoDevice@@@Z @34413 NONAME
     ?SetWinkDuration@OpalIxJDevice@@UAEHII@Z @34414 NONAME
@@ -35280,6 +35615,9 @@ EXPORTS
     ?TransferCall@H323Connection@@QAEXABVPString@@0@Z @34488 NONAME
     ?TransferCall@H323EndPoint@@QAEXABVPString@@00@Z @34489 NONAME
     ?TransferCall@H4502Handler@@QAEXABVPString@@0@Z @34490 NONAME
+    ?TransferConnection@H323Connection@@UAEXABVPString@@0@Z @36958 NONAME
+    ?TransferConnection@OpalConnection@@UAEXABVPString@@0@Z @36959 NONAME
+    ?TransferConnection@SIPConnection@@UAEXABVPString@@0@Z @36960 NONAME
     ?TranslateAliasAddress@H323GatekeeperCall@@UAEHABVH225_AliasAddress@@AAVH225_ArrayOf_AliasAddress@@AAVH323TransportAddress@@@Z @34491 NONAME
     ?TranslateAliasAddress@H323GatekeeperServer@@UAEHABVH225_AliasAddress@@AAVH225_ArrayOf_AliasAddress@@AAVH323TransportAddress@@@Z @34492 NONAME
     ?TranslateAliasAddressToSignalAddress@H323GatekeeperServer@@UAEHABVH225_AliasAddress@@AAVH323TransportAddress@@@Z @34493 NONAME
@@ -35290,11 +35628,12 @@ EXPORTS
     ?Transmit@H323_T38Channel@@UAEXXZ @34498 NONAME
     ?TransmitEnded@OpalRFC2833Proto@@MAEXAAVPTimer@@H@Z @34499 NONAME
     ?TransmitPacket@OpalRFC2833Proto@@MAEXAAVRTP_DataFrame@@H@Z @34500 NONAME
-    ?TransmitSIPRegistrationInfo@SIPEndPoint@@IAEHABVPString@@00W4Methods@SIP_PDU@@@Z @36584 NONAME
+    ?TransmitSIPRegistrationInfo@SIPEndPoint@@IAEHABVPString@@000W4Methods@SIP_PDU@@@Z @36961 NONAME
     ?TransmitSIPUnregistrationInfo@SIPEndPoint@@IAEHABVPString@@0W4Methods@SIP_PDU@@@Z @36585 NONAME
     ?TransportThreadMain@SIPEndPoint@@MAEXAAVPThread@@H@Z @34501 NONAME
     ?TxFramesPerPacketOption@OpalAudioFormat@@2QBDB @36586 NONAME
     ?uLawConverter@@3V?$Worker@VPWAVFileConverterULaw@@@?$PFactory@VPWAVFileConverter@@I@@A @35765 NONAME
+    ?UnLockVXMLChannel@PVXMLSession@@QAEXXZ @36962 NONAME
     ?Unregister@H323RegisteredEndPoint@@UAEHH@Z @34504 NONAME
     ?Unregister@SIPEndPoint@@QAEHABVPString@@0@Z @36587 NONAME
     ?UnregistrationRequest@H323Gatekeeper@@QAEHH@Z @34505 NONAME
@@ -35360,6 +35699,7 @@ EXPORTS
     ?WriteFrame@Sink@OpalMediaPatch@@QAE_NAAVRTP_DataFrame@@@Z @36063 NONAME
     ?WriteIndicator@OpalT38Protocol@@UAEHI@Z @34565 NONAME
     ?WriteINVITE@SIPConnection@@KAHAAVOpalTransport@@PAX@Z @34566 NONAME
+    ?WriteMESSAGE@SIPEndPoint@@KAHAAVOpalTransport@@PAX@Z @36963 NONAME
     ?WriteMultipleData@OpalT38Protocol@@UAEHIHPAIPBVPBYTEArray@@@Z @34567 NONAME
     ?WriteNextCompound@RTP_ControlFrame@@QAEHXZ @34568 NONAME
     ?WritePacket@OpalMediaStream@@UAEHAAVRTP_DataFrame@@@Z @34569 NONAME
@@ -35373,7 +35713,7 @@ EXPORTS
     ?WritePDU@OpalTransportUDP@@UAEHABVPBYTEArray@@@Z @34577 NONAME
     ?WritePipe@VoipBlasterInterface@@IAEHPAXPBXK@Z @34578 NONAME
     ?WriteSignalPDU@H323Connection@@QAEHAAVH323SignalPDU@@@Z @34580 NONAME
-    ?WriteSIPINFO@SIPEndPoint@@KAHAAVOpalTransport@@PAX@Z @36588 NONAME
+    ?WriteSIPInfo@SIPEndPoint@@KAHAAVOpalTransport@@PAX@Z @36588 NONAME
     ?WriteTo@H323Transactor@@UAEHAAVH323TransactionPDU@@ABVH323TransportAddressArray@@H@Z @34581 NONAME
     ?_Buynode@?$_Tree@V?$_Tmap_traits@IPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@U?$less@I@std@@V?$allocator@U?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@std@@@4@$0A@@std@@@std@@IAEPAU_Node@?$_Tree_nod@V?$_Tmap_traits@IPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@U?$less@I@std@@V?$allocator@U?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@std@@@4@$0A@@std@@@2@PAU342@00ABU?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@2@D@Z @35767 NONAME
     ?_Buynode@?$_Tree@V?$_Tmap_traits@IPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@U?$less@I@std@@V?$allocator@U?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@std@@@4@$0A@@std@@@std@@IAEPAU_Node@?$_Tree_nod@V?$_Tmap_traits@IPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@U?$less@I@std@@V?$allocator@U?$pair@$$CBIPAVWorkerBase@?$PFactory@VPWAVFileConverter@@I@@@std@@@4@$0A@@std@@@2@XZ @35768 NONAME
