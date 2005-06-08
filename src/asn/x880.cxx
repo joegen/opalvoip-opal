@@ -9,13 +9,22 @@
 #endif
 
 #include <ptlib.h>
-#include "asn/x880.h"
+#include "x880.h"
 
 #define new PNEW
 
 
 #if ! H323_DISABLE_X880
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_X880_ROS[]={
+      {"invoke",0}
+     ,{"returnResult",1}
+     ,{"returnError",2}
+     ,{"reject",3}
+};
+#endif
 //
 // ROS
 //
@@ -23,12 +32,9 @@
 X880_ROS::X880_ROS(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, FALSE
 #ifndef PASN_NOPRINTON
-      , "invoke "
-        "returnResult "
-        "returnError "
-        "reject "
+    ,(const PASN_Names *)Names_X880_ROS,4
 #endif
-    )
+)
 {
 }
 
@@ -350,6 +356,13 @@ PObject * X880_InvokeId::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_X880_Code[]={
+      {"local",0}
+     ,{"global",1}
+};
+#endif
 //
 // Code
 //
@@ -357,10 +370,9 @@ PObject * X880_InvokeId::Clone() const
 X880_Code::X880_Code(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "local "
-        "global "
+    ,(const PASN_Names *)Names_X880_Code,2
 #endif
-    )
+)
 {
 }
 
@@ -473,6 +485,15 @@ PObject * X880_ReturnResult_result::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_X880_Reject_problem[]={
+      {"general",0}
+     ,{"invoke",1}
+     ,{"returnResult",2}
+     ,{"returnError",3}
+};
+#endif
 //
 // Reject_problem
 //
@@ -480,12 +501,9 @@ PObject * X880_ReturnResult_result::Clone() const
 X880_Reject_problem::X880_Reject_problem(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, FALSE
 #ifndef PASN_NOPRINTON
-      , "general "
-        "invoke "
-        "returnResult "
-        "returnError "
+    ,(const PASN_Names *)Names_X880_Reject_problem,4
 #endif
-    )
+)
 {
 }
 
