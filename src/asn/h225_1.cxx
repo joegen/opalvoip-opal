@@ -9,7 +9,7 @@
 #endif
 
 #include <ptlib.h>
-#include "h225.h"
+#include "asn/h225.h"
 
 #define new PNEW
 

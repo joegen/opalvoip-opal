@@ -5,7 +5,7 @@
 //
 
 #include <ptlib.h>
-#include "h245.h"
+#include "asn/h245.h"
 
 #define new PNEW
 
