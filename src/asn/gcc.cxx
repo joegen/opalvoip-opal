@@ -5,11 +5,11 @@
 //
 
 #ifdef P_USE_PRAGMA
-#pragma implementation "gcc.h"
+#pragma implementation "gccpdu.h"
 #endif
 
 #include <ptlib.h>
-#include "asn/gcc.h"
+#include "gccpdu.h"
 
 #define new PNEW
 
@@ -380,6 +380,13 @@ PObject * GCC_H221NonStandardIdentifier::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_Key[]={
+      {"object",0}
+     ,{"h221NonStandard",1}
+};
+#endif
 //
 // Key
 //
@@ -387,10 +394,9 @@ PObject * GCC_H221NonStandardIdentifier::Clone() const
 GCC_Key::GCC_Key(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "object "
-        "h221NonStandard "
+    ,(const PASN_Names *)Names_GCC_Key,2
 #endif
-    )
+)
 {
 }
 
@@ -893,6 +899,13 @@ PObject * GCC_Password::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_PasswordSelector[]={
+      {"numeric",0}
+     ,{"text",1}
+};
+#endif
 //
 // PasswordSelector
 //
@@ -900,10 +913,9 @@ PObject * GCC_Password::Clone() const
 GCC_PasswordSelector::GCC_PasswordSelector(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "numeric "
-        "text "
+    ,(const PASN_Names *)Names_GCC_PasswordSelector,2
 #endif
-    )
+)
 {
 }
 
@@ -977,6 +989,13 @@ PObject * GCC_PasswordSelector::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_ChallengeResponseItem[]={
+      {"passwordString",0}
+     ,{"responseData",1}
+};
+#endif
 //
 // ChallengeResponseItem
 //
@@ -984,10 +1003,9 @@ PObject * GCC_PasswordSelector::Clone() const
 GCC_ChallengeResponseItem::GCC_ChallengeResponseItem(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "passwordString "
-        "responseData "
+    ,(const PASN_Names *)Names_GCC_ChallengeResponseItem,2
 #endif
-    )
+)
 {
 }
 
@@ -1061,6 +1079,13 @@ PObject * GCC_ChallengeResponseItem::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_ChallengeResponseAlgorithm[]={
+      {"passwordInTheClear",0}
+     ,{"nonStandardAlgorithm",1}
+};
+#endif
 //
 // ChallengeResponseAlgorithm
 //
@@ -1068,10 +1093,9 @@ PObject * GCC_ChallengeResponseItem::Clone() const
 GCC_ChallengeResponseAlgorithm::GCC_ChallengeResponseAlgorithm(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "passwordInTheClear "
-        "nonStandardAlgorithm "
+    ,(const PASN_Names *)Names_GCC_ChallengeResponseAlgorithm,2
 #endif
-    )
+)
 {
 }
 
@@ -1296,6 +1320,13 @@ PObject * GCC_ChallengeResponse::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_PasswordChallengeRequestResponse[]={
+      {"passwordInTheClear",0}
+     ,{"challengeRequestResponse",1}
+};
+#endif
 //
 // PasswordChallengeRequestResponse
 //
@@ -1303,10 +1334,9 @@ PObject * GCC_ChallengeResponse::Clone() const
 GCC_PasswordChallengeRequestResponse::GCC_PasswordChallengeRequestResponse(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "passwordInTheClear "
-        "challengeRequestResponse "
+    ,(const PASN_Names *)Names_GCC_PasswordChallengeRequestResponse,2
 #endif
-    )
+)
 {
 }
 
@@ -1466,6 +1496,13 @@ PObject * GCC_ConferenceName::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_ConferenceNameSelector[]={
+      {"numeric",0}
+     ,{"text",1}
+};
+#endif
 //
 // ConferenceNameSelector
 //
@@ -1473,10 +1510,9 @@ PObject * GCC_ConferenceName::Clone() const
 GCC_ConferenceNameSelector::GCC_ConferenceNameSelector(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "numeric "
-        "text "
+    ,(const PASN_Names *)Names_GCC_ConferenceNameSelector,2
 #endif
-    )
+)
 {
 }
 
@@ -1583,6 +1619,15 @@ PObject * GCC_ConferenceNameModifier::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_Privilege[]={
+        {"terminate",0}
+       ,{"ejectUser",1}
+       ,{"add",2}
+       ,{"lockUnlock",3}
+       ,{"transfer",4}
+};
+#endif
 //
 // Privilege
 //
@@ -1590,11 +1635,7 @@ PObject * GCC_ConferenceNameModifier::Clone() const
 GCC_Privilege::GCC_Privilege(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "terminate "
-        "ejectUser "
-        "add "
-        "lockUnlock "
-        "transfer "
+    ,(const PASN_Names *)Names_GCC_Privilege,5
 #endif
     )
 {
@@ -1617,6 +1658,12 @@ PObject * GCC_Privilege::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_TerminationMethod[]={
+        {"automatic",0}
+       ,{"manual",1}
+};
+#endif
 //
 // TerminationMethod
 //
@@ -1624,8 +1671,7 @@ PObject * GCC_Privilege::Clone() const
 GCC_TerminationMethod::GCC_TerminationMethod(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 1, TRUE
 #ifndef PASN_NOPRINTON
-      , "automatic "
-        "manual "
+    ,(const PASN_Names *)Names_GCC_TerminationMethod,2
 #endif
     )
 {
@@ -1648,6 +1694,12 @@ PObject * GCC_TerminationMethod::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_ConferencePriorityScheme[]={
+      {"nonStandardScheme",0}
+};
+#endif
 //
 // ConferencePriorityScheme
 //
@@ -1655,9 +1707,9 @@ PObject * GCC_TerminationMethod::Clone() const
 GCC_ConferencePriorityScheme::GCC_ConferencePriorityScheme(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 1, TRUE
 #ifndef PASN_NOPRINTON
-      , "nonStandardScheme "
+    ,(const PASN_Names *)Names_GCC_ConferencePriorityScheme,1
 #endif
-    )
+)
 {
 }
 
@@ -1822,6 +1874,13 @@ PObject * GCC_NetworkAddress::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_NodeType[]={
+        {"terminal",0}
+       ,{"multiportTerminal",1}
+       ,{"mcu",2}
+};
+#endif
 //
 // NodeType
 //
@@ -1829,9 +1888,7 @@ PObject * GCC_NetworkAddress::Clone() const
 GCC_NodeType::GCC_NodeType(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "terminal "
-        "multiportTerminal "
-        "mcu "
+    ,(const PASN_Names *)Names_GCC_NodeType,3
 #endif
     )
 {
@@ -1937,6 +1994,14 @@ PObject * GCC_NodeProperties::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_AsymmetryIndicator[]={
+      {"callingNode",0}
+     ,{"calledNode",1}
+     ,{"unknown",2}
+};
+#endif
 //
 // AsymmetryIndicator
 //
@@ -1944,11 +2009,9 @@ PObject * GCC_NodeProperties::Clone() const
 GCC_AsymmetryIndicator::GCC_AsymmetryIndicator(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, FALSE
 #ifndef PASN_NOPRINTON
-      , "callingNode "
-        "calledNode "
-        "unknown "
+    ,(const PASN_Names *)Names_GCC_AsymmetryIndicator,3
 #endif
-    )
+)
 {
 }
 
@@ -1980,6 +2043,12 @@ PObject * GCC_AsymmetryIndicator::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_AlternativeNodeID[]={
+      {"h243NodeID",0}
+};
+#endif
 //
 // AlternativeNodeID
 //
@@ -1987,9 +2056,9 @@ PObject * GCC_AsymmetryIndicator::Clone() const
 GCC_AlternativeNodeID::GCC_AlternativeNodeID(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 1, TRUE
 #ifndef PASN_NOPRINTON
-      , "h243NodeID "
+    ,(const PASN_Names *)Names_GCC_AlternativeNodeID,1
 #endif
-    )
+)
 {
 }
 
@@ -2229,6 +2298,14 @@ PObject * GCC_SessionKey::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_ChannelType[]={
+        {"static",0}
+       ,{"dynamicMulticast",1}
+       ,{"dynamicPrivate",2}
+       ,{"dynamicUserId",3}
+};
+#endif
 //
 // ChannelType
 //
@@ -2236,10 +2313,7 @@ PObject * GCC_SessionKey::Clone() const
 GCC_ChannelType::GCC_ChannelType(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 3, FALSE
 #ifndef PASN_NOPRINTON
-      , "static "
-        "dynamicMulticast "
-        "dynamicPrivate "
-        "dynamicUserId "
+    ,(const PASN_Names *)Names_GCC_ChannelType,4
 #endif
     )
 {
@@ -2262,6 +2336,13 @@ PObject * GCC_ChannelType::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_CapabilityID[]={
+      {"standard",0}
+     ,{"nonStandard",1}
+};
+#endif
 //
 // CapabilityID
 //
@@ -2269,10 +2350,9 @@ PObject * GCC_ChannelType::Clone() const
 GCC_CapabilityID::GCC_CapabilityID(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "standard "
-        "nonStandard "
+    ,(const PASN_Names *)Names_GCC_CapabilityID,2
 #endif
-    )
+)
 {
 }
 
@@ -2325,6 +2405,14 @@ PObject * GCC_CapabilityID::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_CapabilityClass[]={
+      {"logical",0}
+     ,{"unsignedMin",1}
+     ,{"unsignedMax",2}
+};
+#endif
 //
 // CapabilityClass
 //
@@ -2332,11 +2420,9 @@ PObject * GCC_CapabilityID::Clone() const
 GCC_CapabilityClass::GCC_CapabilityClass(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "logical "
-        "unsignedMin "
-        "unsignedMax "
+    ,(const PASN_Names *)Names_GCC_CapabilityClass,3
 #endif
-    )
+)
 {
 }
 
@@ -2489,6 +2575,15 @@ PObject * GCC_RegistryKey::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_RegistryItem[]={
+      {"channelID",0}
+     ,{"tokenID",1}
+     ,{"parameter",2}
+     ,{"vacant",3}
+};
+#endif
 //
 // RegistryItem
 //
@@ -2496,12 +2591,9 @@ PObject * GCC_RegistryKey::Clone() const
 GCC_RegistryItem::GCC_RegistryItem(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "channelID "
-        "tokenID "
-        "parameter "
-        "vacant "
+    ,(const PASN_Names *)Names_GCC_RegistryItem,4
 #endif
-    )
+)
 {
 }
 
@@ -2582,6 +2674,13 @@ PObject * GCC_RegistryItem::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_RegistryEntryOwner[]={
+      {"owned",0}
+     ,{"notOwned",1}
+};
+#endif
 //
 // RegistryEntryOwner
 //
@@ -2589,10 +2688,9 @@ PObject * GCC_RegistryItem::Clone() const
 GCC_RegistryEntryOwner::GCC_RegistryEntryOwner(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "owned "
-        "notOwned "
+    ,(const PASN_Names *)Names_GCC_RegistryEntryOwner,2
 #endif
-    )
+)
 {
 }
 
@@ -2644,6 +2742,13 @@ PObject * GCC_RegistryEntryOwner::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_RegistryModificationRights[]={
+        {"owner",0}
+       ,{"session",1}
+       ,{"public",2}
+};
+#endif
 //
 // RegistryModificationRights
 //
@@ -2651,9 +2756,7 @@ PObject * GCC_RegistryEntryOwner::Clone() const
 GCC_RegistryModificationRights::GCC_RegistryModificationRights(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 2, FALSE
 #ifndef PASN_NOPRINTON
-      , "owner "
-        "session "
-        "public "
+    ,(const PASN_Names *)Names_GCC_RegistryModificationRights,3
 #endif
     )
 {
@@ -4790,6 +4893,19 @@ PObject * GCC_ConnectData::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_ConnectGCCPDU[]={
+      {"conferenceCreateRequest",0}
+     ,{"conferenceCreateResponse",1}
+     ,{"conferenceQueryRequest",2}
+     ,{"conferenceQueryResponse",3}
+     ,{"conferenceJoinRequest",4}
+     ,{"conferenceJoinResponse",5}
+     ,{"conferenceInviteRequest",6}
+     ,{"conferenceInviteResponse",7}
+};
+#endif
 //
 // ConnectGCCPDU
 //
@@ -4797,16 +4913,9 @@ PObject * GCC_ConnectData::Clone() const
 GCC_ConnectGCCPDU::GCC_ConnectGCCPDU(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 8, TRUE
 #ifndef PASN_NOPRINTON
-      , "conferenceCreateRequest "
-        "conferenceCreateResponse "
-        "conferenceQueryRequest "
-        "conferenceQueryResponse "
-        "conferenceJoinRequest "
-        "conferenceJoinResponse "
-        "conferenceInviteRequest "
-        "conferenceInviteResponse "
+    ,(const PASN_Names *)Names_GCC_ConnectGCCPDU,8
 #endif
-    )
+)
 {
 }
 
@@ -5030,6 +5139,14 @@ PObject * GCC_ConnectGCCPDU::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_GCCPDU[]={
+      {"request",0}
+     ,{"response",1}
+     ,{"indication",2}
+};
+#endif
 //
 // GCCPDU
 //
@@ -5037,11 +5154,9 @@ PObject * GCC_ConnectGCCPDU::Clone() const
 GCC_GCCPDU::GCC_GCCPDU(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, FALSE
 #ifndef PASN_NOPRINTON
-      , "request "
-        "response "
-        "indication "
+    ,(const PASN_Names *)Names_GCC_GCCPDU,3
 #endif
-    )
+)
 {
 }
 
@@ -5140,6 +5255,26 @@ PObject * GCC_GCCPDU::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_RequestPDU[]={
+      {"conferenceJoinRequest",0}
+     ,{"conferenceAddRequest",1}
+     ,{"conferenceLockRequest",2}
+     ,{"conferenceUnlockRequest",3}
+     ,{"conferenceTerminateRequest",4}
+     ,{"conferenceEjectUserRequest",5}
+     ,{"conferenceTransferRequest",6}
+     ,{"registryRegisterChannelRequest",7}
+     ,{"registryAssignTokenRequest",8}
+     ,{"registrySetParameterRequest",9}
+     ,{"registryRetrieveEntryRequest",10}
+     ,{"registryDeleteEntryRequest",11}
+     ,{"registryMonitorEntryRequest",12}
+     ,{"registryAllocateHandleRequest",13}
+     ,{"nonStandardRequest",14}
+};
+#endif
 //
 // RequestPDU
 //
@@ -5147,23 +5282,9 @@ PObject * GCC_GCCPDU::Clone() const
 GCC_RequestPDU::GCC_RequestPDU(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 15, TRUE
 #ifndef PASN_NOPRINTON
-      , "conferenceJoinRequest "
-        "conferenceAddRequest "
-        "conferenceLockRequest "
-        "conferenceUnlockRequest "
-        "conferenceTerminateRequest "
-        "conferenceEjectUserRequest "
-        "conferenceTransferRequest "
-        "registryRegisterChannelRequest "
-        "registryAssignTokenRequest "
-        "registrySetParameterRequest "
-        "registryRetrieveEntryRequest "
-        "registryDeleteEntryRequest "
-        "registryMonitorEntryRequest "
-        "registryAllocateHandleRequest "
-        "nonStandardRequest "
+    ,(const PASN_Names *)Names_GCC_RequestPDU,15
 #endif
-    )
+)
 {
 }
 
@@ -5562,6 +5683,22 @@ PObject * GCC_RequestPDU::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_ResponsePDU[]={
+      {"conferenceJoinResponse",0}
+     ,{"conferenceAddResponse",1}
+     ,{"conferenceLockResponse",2}
+     ,{"conferenceUnlockResponse",3}
+     ,{"conferenceTerminateResponse",4}
+     ,{"conferenceEjectUserResponse",5}
+     ,{"conferenceTransferResponse",6}
+     ,{"registryResponse",7}
+     ,{"registryAllocateHandleResponse",8}
+     ,{"functionNotSupportedResponse",9}
+     ,{"nonStandardResponse",10}
+};
+#endif
 //
 // ResponsePDU
 //
@@ -5569,19 +5706,9 @@ PObject * GCC_RequestPDU::Clone() const
 GCC_ResponsePDU::GCC_ResponsePDU(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 11, TRUE
 #ifndef PASN_NOPRINTON
-      , "conferenceJoinResponse "
-        "conferenceAddResponse "
-        "conferenceLockResponse "
-        "conferenceUnlockResponse "
-        "conferenceTerminateResponse "
-        "conferenceEjectUserResponse "
-        "conferenceTransferResponse "
-        "registryResponse "
-        "registryAllocateHandleResponse "
-        "functionNotSupportedResponse "
-        "nonStandardResponse "
+    ,(const PASN_Names *)Names_GCC_ResponsePDU,11
 #endif
-    )
+)
 {
 }
 
@@ -5880,6 +6007,30 @@ PObject * GCC_ResponsePDU::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_IndicationPDU[]={
+      {"userIDIndication",0}
+     ,{"conferenceLockIndication",1}
+     ,{"conferenceUnlockIndication",2}
+     ,{"conferenceTerminateIndication",3}
+     ,{"conferenceEjectUserIndication",4}
+     ,{"conferenceTransferIndication",5}
+     ,{"rosterUpdateIndication",6}
+     ,{"applicationInvokeIndication",7}
+     ,{"registryMonitorEntryIndication",8}
+     ,{"conductorAssignIndication",9}
+     ,{"conductorReleaseIndication",10}
+     ,{"conductorPermissionAskIndication",11}
+     ,{"conductorPermissionGrantIndication",12}
+     ,{"conferenceTimeRemainingIndication",13}
+     ,{"conferenceTimeInquireIndication",14}
+     ,{"conferenceTimeExtendIndication",15}
+     ,{"conferenceAssistanceIndication",16}
+     ,{"textMessageIndication",17}
+     ,{"nonStandardIndication",18}
+};
+#endif
 //
 // IndicationPDU
 //
@@ -5887,27 +6038,9 @@ PObject * GCC_ResponsePDU::Clone() const
 GCC_IndicationPDU::GCC_IndicationPDU(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 19, TRUE
 #ifndef PASN_NOPRINTON
-      , "userIDIndication "
-        "conferenceLockIndication "
-        "conferenceUnlockIndication "
-        "conferenceTerminateIndication "
-        "conferenceEjectUserIndication "
-        "conferenceTransferIndication "
-        "rosterUpdateIndication "
-        "applicationInvokeIndication "
-        "registryMonitorEntryIndication "
-        "conductorAssignIndication "
-        "conductorReleaseIndication "
-        "conductorPermissionAskIndication "
-        "conductorPermissionGrantIndication "
-        "conferenceTimeRemainingIndication "
-        "conferenceTimeInquireIndication "
-        "conferenceTimeExtendIndication "
-        "conferenceAssistanceIndication "
-        "textMessageIndication "
-        "nonStandardIndication "
+    ,(const PASN_Names *)Names_GCC_IndicationPDU,19
 #endif
-    )
+)
 {
 }
 
@@ -6523,6 +6656,14 @@ PObject * GCC_ArrayOf_ChallengeItem::Clone() const
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_NetworkAddress_subtype[]={
+      {"aggregatedChannel",0}
+     ,{"transportConnection",1}
+     ,{"nonStandard",2}
+};
+#endif
 //
 // NetworkAddress_subtype
 //
@@ -6530,11 +6671,9 @@ PObject * GCC_ArrayOf_ChallengeItem::Clone() const
 GCC_NetworkAddress_subtype::GCC_NetworkAddress_subtype(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "aggregatedChannel "
-        "transportConnection "
-        "nonStandard "
+    ,(const PASN_Names *)Names_GCC_NetworkAddress_subtype,3
 #endif
-    )
+)
 {
 }
 
@@ -6840,6 +6979,15 @@ PObject * GCC_ArrayOf_Privilege::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_ConferenceCreateResponse_result[]={
+        {"success",0}
+       ,{"userRejected",1}
+       ,{"resourcesNotAvailable",2}
+       ,{"rejectedForSymmetryBreaking",3}
+       ,{"lockedConferenceNotSupported",4}
+};
+#endif
 //
 // ConferenceCreateResponse_result
 //
@@ -6847,11 +6995,7 @@ PObject * GCC_ArrayOf_Privilege::Clone() const
 GCC_ConferenceCreateResponse_result::GCC_ConferenceCreateResponse_result(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-      , "success "
-        "userRejected "
-        "resourcesNotAvailable "
-        "rejectedForSymmetryBreaking "
-        "lockedConferenceNotSupported "
+    ,(const PASN_Names *)Names_GCC_ConferenceCreateResponse_result,5
 #endif
     )
 {
@@ -6905,6 +7049,12 @@ PObject * GCC_ArrayOf_ConferenceDescriptor::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_ConferenceQueryResponse_result[]={
+        {"success",0}
+       ,{"userRejected",1}
+};
+#endif
 //
 // ConferenceQueryResponse_result
 //
@@ -6912,8 +7062,7 @@ PObject * GCC_ArrayOf_ConferenceDescriptor::Clone() const
 GCC_ConferenceQueryResponse_result::GCC_ConferenceQueryResponse_result(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 1, TRUE
 #ifndef PASN_NOPRINTON
-      , "success "
-        "userRejected "
+    ,(const PASN_Names *)Names_GCC_ConferenceQueryResponse_result,2
 #endif
     )
 {
@@ -6936,6 +7085,17 @@ PObject * GCC_ConferenceQueryResponse_result::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_ConferenceJoinResponse_result[]={
+        {"success",0}
+       ,{"userRejected",1}
+       ,{"invalidConference",2}
+       ,{"invalidPassword",3}
+       ,{"invalidConvenerPassword",4}
+       ,{"challengeResponseRequired",5}
+       ,{"invalidChallengeResponse",6}
+};
+#endif
 //
 // ConferenceJoinResponse_result
 //
@@ -6943,13 +7103,7 @@ PObject * GCC_ConferenceQueryResponse_result::Clone() const
 GCC_ConferenceJoinResponse_result::GCC_ConferenceJoinResponse_result(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 6, TRUE
 #ifndef PASN_NOPRINTON
-      , "success "
-        "userRejected "
-        "invalidConference "
-        "invalidPassword "
-        "invalidConvenerPassword "
-        "challengeResponseRequired "
-        "invalidChallengeResponse "
+    ,(const PASN_Names *)Names_GCC_ConferenceJoinResponse_result,7
 #endif
     )
 {
@@ -6972,6 +7126,12 @@ PObject * GCC_ConferenceJoinResponse_result::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_ConferenceInviteResponse_result[]={
+        {"success",0}
+       ,{"userRejected",1}
+};
+#endif
 //
 // ConferenceInviteResponse_result
 //
@@ -6979,8 +7139,7 @@ PObject * GCC_ConferenceJoinResponse_result::Clone() const
 GCC_ConferenceInviteResponse_result::GCC_ConferenceInviteResponse_result(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 1, TRUE
 #ifndef PASN_NOPRINTON
-      , "success "
-        "userRejected "
+    ,(const PASN_Names *)Names_GCC_ConferenceInviteResponse_result,2
 #endif
     )
 {
@@ -7003,6 +7162,18 @@ PObject * GCC_ConferenceInviteResponse_result::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_ConferenceAddResponse_result[]={
+        {"success",0}
+       ,{"invalidRequester",1}
+       ,{"invalidNetworkType",2}
+       ,{"invalidNetworkAddress",3}
+       ,{"addedNodeBusy",4}
+       ,{"networkBusy",5}
+       ,{"noPortsAvailable",6}
+       ,{"connectionUnsuccessful",7}
+};
+#endif
 //
 // ConferenceAddResponse_result
 //
@@ -7010,14 +7181,7 @@ PObject * GCC_ConferenceInviteResponse_result::Clone() const
 GCC_ConferenceAddResponse_result::GCC_ConferenceAddResponse_result(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 7, TRUE
 #ifndef PASN_NOPRINTON
-      , "success "
-        "invalidRequester "
-        "invalidNetworkType "
-        "invalidNetworkAddress "
-        "addedNodeBusy "
-        "networkBusy "
-        "noPortsAvailable "
-        "connectionUnsuccessful "
+    ,(const PASN_Names *)Names_GCC_ConferenceAddResponse_result,8
 #endif
     )
 {
@@ -7040,6 +7204,13 @@ PObject * GCC_ConferenceAddResponse_result::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_ConferenceLockResponse_result[]={
+        {"success",0}
+       ,{"invalidRequester",1}
+       ,{"alreadyLocked",2}
+};
+#endif
 //
 // ConferenceLockResponse_result
 //
@@ -7047,9 +7218,7 @@ PObject * GCC_ConferenceAddResponse_result::Clone() const
 GCC_ConferenceLockResponse_result::GCC_ConferenceLockResponse_result(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "success "
-        "invalidRequester "
-        "alreadyLocked "
+    ,(const PASN_Names *)Names_GCC_ConferenceLockResponse_result,3
 #endif
     )
 {
@@ -7072,6 +7241,13 @@ PObject * GCC_ConferenceLockResponse_result::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_ConferenceUnlockResponse_result[]={
+        {"success",0}
+       ,{"invalidRequester",1}
+       ,{"alreadyUnlocked",2}
+};
+#endif
 //
 // ConferenceUnlockResponse_result
 //
@@ -7079,9 +7255,7 @@ PObject * GCC_ConferenceLockResponse_result::Clone() const
 GCC_ConferenceUnlockResponse_result::GCC_ConferenceUnlockResponse_result(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "success "
-        "invalidRequester "
-        "alreadyUnlocked "
+    ,(const PASN_Names *)Names_GCC_ConferenceUnlockResponse_result,3
 #endif
     )
 {
@@ -7104,6 +7278,12 @@ PObject * GCC_ConferenceUnlockResponse_result::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_ConferenceTerminateRequest_reason[]={
+        {"userInitiated",0}
+       ,{"timedConferenceTermination",1}
+};
+#endif
 //
 // ConferenceTerminateRequest_reason
 //
@@ -7111,8 +7291,7 @@ PObject * GCC_ConferenceUnlockResponse_result::Clone() const
 GCC_ConferenceTerminateRequest_reason::GCC_ConferenceTerminateRequest_reason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 1, TRUE
 #ifndef PASN_NOPRINTON
-      , "userInitiated "
-        "timedConferenceTermination "
+    ,(const PASN_Names *)Names_GCC_ConferenceTerminateRequest_reason,2
 #endif
     )
 {
@@ -7135,6 +7314,12 @@ PObject * GCC_ConferenceTerminateRequest_reason::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_ConferenceTerminateResponse_result[]={
+        {"success",0}
+       ,{"invalidRequester",1}
+};
+#endif
 //
 // ConferenceTerminateResponse_result
 //
@@ -7142,8 +7327,7 @@ PObject * GCC_ConferenceTerminateRequest_reason::Clone() const
 GCC_ConferenceTerminateResponse_result::GCC_ConferenceTerminateResponse_result(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 1, TRUE
 #ifndef PASN_NOPRINTON
-      , "success "
-        "invalidRequester "
+    ,(const PASN_Names *)Names_GCC_ConferenceTerminateResponse_result,2
 #endif
     )
 {
@@ -7166,6 +7350,12 @@ PObject * GCC_ConferenceTerminateResponse_result::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_ConferenceTerminateIndication_reason[]={
+        {"userInitiated",0}
+       ,{"timedConferenceTermination",1}
+};
+#endif
 //
 // ConferenceTerminateIndication_reason
 //
@@ -7173,8 +7363,7 @@ PObject * GCC_ConferenceTerminateResponse_result::Clone() const
 GCC_ConferenceTerminateIndication_reason::GCC_ConferenceTerminateIndication_reason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 1, TRUE
 #ifndef PASN_NOPRINTON
-      , "userInitiated "
-        "timedConferenceTermination "
+    ,(const PASN_Names *)Names_GCC_ConferenceTerminateIndication_reason,2
 #endif
     )
 {
@@ -7197,6 +7386,11 @@ PObject * GCC_ConferenceTerminateIndication_reason::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_ConferenceEjectUserRequest_reason[]={
+        {"userInitiated",0}
+};
+#endif
 //
 // ConferenceEjectUserRequest_reason
 //
@@ -7204,7 +7398,7 @@ PObject * GCC_ConferenceTerminateIndication_reason::Clone() const
 GCC_ConferenceEjectUserRequest_reason::GCC_ConferenceEjectUserRequest_reason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 0, TRUE
 #ifndef PASN_NOPRINTON
-      , "userInitiated "
+    ,(const PASN_Names *)Names_GCC_ConferenceEjectUserRequest_reason,1
 #endif
     )
 {
@@ -7227,6 +7421,13 @@ PObject * GCC_ConferenceEjectUserRequest_reason::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_ConferenceEjectUserResponse_result[]={
+        {"success",0}
+       ,{"invalidRequester",1}
+       ,{"invalidNode",2}
+};
+#endif
 //
 // ConferenceEjectUserResponse_result
 //
@@ -7234,9 +7435,7 @@ PObject * GCC_ConferenceEjectUserRequest_reason::Clone() const
 GCC_ConferenceEjectUserResponse_result::GCC_ConferenceEjectUserResponse_result(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "success "
-        "invalidRequester "
-        "invalidNode "
+    ,(const PASN_Names *)Names_GCC_ConferenceEjectUserResponse_result,3
 #endif
     )
 {
@@ -7259,6 +7458,13 @@ PObject * GCC_ConferenceEjectUserResponse_result::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_ConferenceEjectUserIndication_reason[]={
+        {"userInitiated",0}
+       ,{"higherNodeDisconnected",1}
+       ,{"higherNodeEjected",2}
+};
+#endif
 //
 // ConferenceEjectUserIndication_reason
 //
@@ -7266,9 +7472,7 @@ PObject * GCC_ConferenceEjectUserResponse_result::Clone() const
 GCC_ConferenceEjectUserIndication_reason::GCC_ConferenceEjectUserIndication_reason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "userInitiated "
-        "higherNodeDisconnected "
-        "higherNodeEjected "
+    ,(const PASN_Names *)Names_GCC_ConferenceEjectUserIndication_reason,3
 #endif
     )
 {
@@ -7322,6 +7526,12 @@ PObject * GCC_ArrayOf_UserID::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_ConferenceTransferResponse_result[]={
+        {"success",0}
+       ,{"invalidRequester",1}
+};
+#endif
 //
 // ConferenceTransferResponse_result
 //
@@ -7329,8 +7539,7 @@ PObject * GCC_ArrayOf_UserID::Clone() const
 GCC_ConferenceTransferResponse_result::GCC_ConferenceTransferResponse_result(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 1, TRUE
 #ifndef PASN_NOPRINTON
-      , "success "
-        "invalidRequester "
+    ,(const PASN_Names *)Names_GCC_ConferenceTransferResponse_result,2
 #endif
     )
 {
@@ -7416,6 +7625,12 @@ PObject * GCC_ArrayOf_ApplicationInvokeSpecifier::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_RegistryAllocateHandleResponse_result[]={
+        {"successful",0}
+       ,{"noHandlesAvailable",1}
+};
+#endif
 //
 // RegistryAllocateHandleResponse_result
 //
@@ -7423,8 +7638,7 @@ PObject * GCC_ArrayOf_ApplicationInvokeSpecifier::Clone() const
 GCC_RegistryAllocateHandleResponse_result::GCC_RegistryAllocateHandleResponse_result(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 1, TRUE
 #ifndef PASN_NOPRINTON
-      , "successful "
-        "noHandlesAvailable "
+    ,(const PASN_Names *)Names_GCC_RegistryAllocateHandleResponse_result,2
 #endif
     )
 {
@@ -7447,6 +7661,16 @@ PObject * GCC_RegistryAllocateHandleResponse_result::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_RegistryResponse_primitiveType[]={
+        {"registerChannel",0}
+       ,{"assignToken",1}
+       ,{"setParameter",2}
+       ,{"retrieveEntry",3}
+       ,{"deleteEntry",4}
+       ,{"monitorEntry",5}
+};
+#endif
 //
 // RegistryResponse_primitiveType
 //
@@ -7454,12 +7678,7 @@ PObject * GCC_RegistryAllocateHandleResponse_result::Clone() const
 GCC_RegistryResponse_primitiveType::GCC_RegistryResponse_primitiveType(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 5, TRUE
 #ifndef PASN_NOPRINTON
-      , "registerChannel "
-        "assignToken "
-        "setParameter "
-        "retrieveEntry "
-        "deleteEntry "
-        "monitorEntry "
+    ,(const PASN_Names *)Names_GCC_RegistryResponse_primitiveType,6
 #endif
     )
 {
@@ -7482,6 +7701,17 @@ PObject * GCC_RegistryResponse_primitiveType::Clone() const
 }
 
 
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_RegistryResponse_result[]={
+        {"successful",0}
+       ,{"belongsToOther",1}
+       ,{"tooManyEntries",2}
+       ,{"inconsistentType",3}
+       ,{"entryNotFound",4}
+       ,{"entryAlreadyExists",5}
+       ,{"invalidRequester",6}
+};
+#endif
 //
 // RegistryResponse_result
 //
@@ -7489,13 +7719,7 @@ PObject * GCC_RegistryResponse_primitiveType::Clone() const
 GCC_RegistryResponse_result::GCC_RegistryResponse_result(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Enumeration(tag, tagClass, 6, TRUE
 #ifndef PASN_NOPRINTON
-      , "successful "
-        "belongsToOther "
-        "tooManyEntries "
-        "inconsistentType "
-        "entryNotFound "
-        "entryAlreadyExists "
-        "invalidRequester "
+    ,(const PASN_Names *)Names_GCC_RegistryResponse_result,7
 #endif
     )
 {
@@ -7774,6 +7998,14 @@ PObject * GCC_ApplicationInvokeSpecifier_expectedCapabilitySet_subtype::Clone() 
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_RosterUpdateIndication_nodeInformation_nodeRecordList[]={
+      {"noChange",0}
+     ,{"refresh",1}
+     ,{"update",2}
+};
+#endif
 //
 // RosterUpdateIndication_nodeInformation_nodeRecordList
 //
@@ -7781,11 +8013,9 @@ PObject * GCC_ApplicationInvokeSpecifier_expectedCapabilitySet_subtype::Clone() 
 GCC_RosterUpdateIndication_nodeInformation_nodeRecordList::GCC_RosterUpdateIndication_nodeInformation_nodeRecordList(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "noChange "
-        "refresh "
-        "update "
+    ,(const PASN_Names *)Names_GCC_RosterUpdateIndication_nodeInformation_nodeRecordList,3
 #endif
-    )
+)
 {
 }
 
@@ -8239,6 +8469,14 @@ PObject * GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_update::Clon
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList[]={
+      {"noChange",0}
+     ,{"refresh",1}
+     ,{"update",2}
+};
+#endif
 //
 // RosterUpdateIndication_applicationInformation_subtype_applicationRecordList
 //
@@ -8246,11 +8484,9 @@ PObject * GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_update::Clon
 GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList::GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "noChange "
-        "refresh "
-        "update "
+    ,(const PASN_Names *)Names_GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList,3
 #endif
-    )
+)
 {
 }
 
@@ -8327,6 +8563,13 @@ PObject * GCC_RosterUpdateIndication_applicationInformation_subtype_applicationR
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_RosterUpdateIndication_applicationInformation_subtype_applicationCapabilitiesList[]={
+      {"noChange",0}
+     ,{"refresh",1}
+};
+#endif
 //
 // RosterUpdateIndication_applicationInformation_subtype_applicationCapabilitiesList
 //
@@ -8334,10 +8577,9 @@ PObject * GCC_RosterUpdateIndication_applicationInformation_subtype_applicationR
 GCC_RosterUpdateIndication_applicationInformation_subtype_applicationCapabilitiesList::GCC_RosterUpdateIndication_applicationInformation_subtype_applicationCapabilitiesList(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-      , "noChange "
-        "refresh "
+    ,(const PASN_Names *)Names_GCC_RosterUpdateIndication_applicationInformation_subtype_applicationCapabilitiesList,2
 #endif
-    )
+)
 {
 }
 
@@ -8484,6 +8726,14 @@ PObject * GCC_RosterUpdateIndication_applicationInformation_subtype_applicationC
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_update_subtype_nodeUpdate[]={
+      {"addRecord",0}
+     ,{"replaceRecord",1}
+     ,{"removeRecord",2}
+};
+#endif
 //
 // RosterUpdateIndication_nodeInformation_nodeRecordList_update_subtype_nodeUpdate
 //
@@ -8491,11 +8741,9 @@ PObject * GCC_RosterUpdateIndication_applicationInformation_subtype_applicationC
 GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_update_subtype_nodeUpdate::GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_update_subtype_nodeUpdate(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "addRecord "
-        "replaceRecord "
-        "removeRecord "
+    ,(const PASN_Names *)Names_GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_update_subtype_nodeUpdate,3
 #endif
-    )
+)
 {
 }
 
@@ -8639,6 +8887,14 @@ PObject * GCC_RosterUpdateIndication_applicationInformation_subtype_applicationC
 }
 
 
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList_update_subtype_applicationUpdate[]={
+      {"addRecord",0}
+     ,{"replaceRecord",1}
+     ,{"removeRecord",2}
+};
+#endif
 //
 // RosterUpdateIndication_applicationInformation_subtype_applicationRecordList_update_subtype_applicationUpdate
 //
@@ -8646,11 +8902,9 @@ PObject * GCC_RosterUpdateIndication_applicationInformation_subtype_applicationC
 GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList_update_subtype_applicationUpdate::GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList_update_subtype_applicationUpdate(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-      , "addRecord "
-        "replaceRecord "
-        "removeRecord "
+    ,(const PASN_Names *)Names_GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList_update_subtype_applicationUpdate,3
 #endif
-    )
+)
 {
 }
 
