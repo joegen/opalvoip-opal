@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2046  2005/06/02 18:39:03  dsandras
+ * Revision 1.2047  2005/06/08 17:35:10  dsandras
+ * Fixed sockets leak thanks to Ted Szoczei. Thanks!
+ *
+ * Revision 2.45  2005/06/02 18:39:03  dsandras
  * Committed fix for Gatekeeper registration thanks to Hannes Friederich <hannesf   __@__ ee.ethz.ch>.
  *
  * Revision 2.44  2005/05/23 20:14:48  dsandras
@@ -1779,15 +1782,14 @@ BOOL OpalTransportUDP::Connect()
 	PTRACE(2, "OpalUDP\tStarted connect to " << remoteAddress << ':' << remotePort);
   }
 
-  readAutoDelete = writeAutoDelete = FALSE;
-
   OpalManager & manager = endpoint.GetManager();
 
   PSTUNClient * stun = manager.GetSTUN(remoteAddress);
   if (stun != NULL) {
     PUDPSocket * socket;
     if (stun->CreateSocket(socket)) {
-		PIndirectChannel::Close();	//closing the channel and opening it with the new socket
+      PIndirectChannel::Close();	//closing the channel and opening it with the new socket
+      readAutoDelete = writeAutoDelete = FALSE;
       Open(socket);
       socket->GetLocalAddress(localAddress, localPort);
       socket->SetSendAddress(remoteAddress, remotePort);
@@ -1806,6 +1808,7 @@ BOOL OpalTransportUDP::Connect()
   
   // Skip over the OpalTransportUDP::Close to make sure PUDPSocket is deleted.
   PIndirectChannel::Close();
+  readAutoDelete = writeAutoDelete = FALSE;
 
   // See if prebound to interface, only use that if so
   PIPSocket::InterfaceTable interfaces;
