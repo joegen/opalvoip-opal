@@ -22,7 +22,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2048  2005/03/11 18:12:09  dsandras
+ * Revision 1.2049  2005/06/09 04:45:57  dereksmithies
+ * Correctly close the incoming connection  if the user rejects the incoming call.
+ * Thanks to Robert Jongbloed for some helpful advice.
+ *
+ * Revision 2.47  2005/03/11 18:12:09  dsandras
  * Added support to specify the realm when registering. That way softphones already know what authentication information to use when required. The realm/domain can also be used in the From field.
  *
  * Revision 2.46  2005/02/19 22:46:19  dsandras
@@ -908,9 +912,13 @@ void MyManager::Main(PArgList & args)
       break;
 
     if (pcssEP != NULL && !pcssEP->incomingConnectionToken) {
-      if (cmd == "n")
-        pcssEP->ClearCall(pcssEP->incomingConnectionToken, OpalConnection::EndedByRefusal);
-      else if (cmd == "y")
+      if (cmd == "n") {
+	PSafePtr<OpalConnection> con = pcssEP->GetConnectionWithLock(pcssEP->incomingConnectionToken);
+	if (con != NULL)
+	  con->GetCall().Clear(OpalConnection::EndedByRefusal);
+	else
+	  cout << "Sorry, could not reject incoming call" << endl;	
+       } else if (cmd == "y")
         pcssEP->AcceptIncomingConnection(pcssEP->incomingConnectionToken);
     }
 
