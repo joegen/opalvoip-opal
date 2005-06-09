@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2049  2005/06/09 04:45:57  dereksmithies
+ * Revision 1.2050  2005/06/09 04:51:58  dereksmithies
+ * Fix formatting.
+ *
+ * Revision 2.48  2005/06/09 04:45:57  dereksmithies
  * Correctly close the incoming connection  if the user rejects the incoming call.
  * Thanks to Robert Jongbloed for some helpful advice.
  *
@@ -918,10 +921,10 @@ void MyManager::Main(PArgList & args)
 	  con->GetCall().Clear(OpalConnection::EndedByRefusal);
 	else
 	  cout << "Sorry, could not reject incoming call" << endl;	
-       } else if (cmd == "y")
+      } else if (cmd == "y")
         pcssEP->AcceptIncomingConnection(pcssEP->incomingConnectionToken);
     }
-
+    
     // Process commands
     PStringArray params = cmd.Tokenise(" ", FALSE);
     if (params.IsEmpty())
