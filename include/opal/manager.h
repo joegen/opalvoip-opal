@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2035  2005/05/25 17:04:08  dsandras
+ * Revision 1.2036  2005/06/13 23:13:53  csoutheren
+ * Fixed various typos thanks to Julien PUYDT
+ *
+ * Revision 2.34  2005/05/25 17:04:08  dsandras
  * Fixed ClearAllCalls when being executed synchronously. Fixes a crash on exit when a call is in progress. Thanks Robert!
  *
  * Revision 2.33  2005/04/10 20:46:56  dsandras
@@ -186,7 +189,7 @@ class OpalManager : public PObject
     OpalManager();
 
     /**Destroy the manager.
-       This will clear all calls, then deletes all endpoints still attached to
+       This will clear all calls, then delete all endpoints still attached to
        the manager.
      */
     ~OpalManager();
@@ -212,7 +215,7 @@ class OpalManager : public PObject
       OpalEndPoint * endpoint
     );
 
-    /**Find an endpoint instance that is using teh specified prefix.
+    /**Find an endpoint instance that is using the specified prefix.
       */
     OpalEndPoint * FindEndPoint(
       const PString & prefix
@@ -296,10 +299,10 @@ class OpalManager : public PObject
 
     /**Clear a call.
        This finds the call by using the token then calls the OpalCall::Clear()
-       function on it. All connections are released, and the conenctions and
-       call disposed of. Note that this function returns quickly and the
-       disposal happens at some later time by a background thread. This it is
-       safe to call this function from anywhere.
+       function on it. All connections are released, and the connections and
+       call are disposed of. Note that this function returns quickly and the
+       disposal happens at some later time in a background thread. It is safe
+       to call this function from anywhere.
       */
     virtual BOOL ClearCall(
       const PString & token,    /// Token for identifying connection
@@ -309,10 +312,10 @@ class OpalManager : public PObject
 
     /**Clear a call.
        This finds the call by using the token then calls the OpalCall::Clear()
-       function on it. All connections are released, and the conenctions and
-       call disposed of. Note that this function waits untile th call has been
-       cleared and all responses timeouts etc completed. Care must be used as
-       to when it is called as deadlocks may result.
+       function on it. All connections are released, and the connections and
+       call er disposed of. Note that this function waits until the call has
+       been cleared and all responses timeouts etc completed. Care must be
+       used as to when it is called as deadlocks may result.
       */
     virtual BOOL ClearCallSynchronous(
       const PString & token,    /// Token for identifying connection
@@ -320,13 +323,13 @@ class OpalManager : public PObject
     );
 
     /**Clear all current calls.
-       This effectively executes the OpalCall::Clear() on every call that the
+       This effectively executes OpalCall::Clear() on every call that the
        manager has active.
        This function can not be called from several threads at the same time.
       */
     virtual void ClearAllCalls(
       OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser, /// Reason for call clearing
-      BOOL wait = TRUE   /// Flag for wait for calls to e cleared.
+      BOOL wait = TRUE   /// Flag to wait for calls to e cleared.
     );
 
     /**A call back function whenever a call is cleared.
@@ -368,7 +371,7 @@ class OpalManager : public PObject
       OpalCall * call
     );
 
-    /**Get next uique token ID for calls.
+    /**Get next unique token ID for calls.
        This is an internal function called by the OpalCall constructor.
       */
     PString GetNextCallToken();
@@ -379,7 +382,7 @@ class OpalManager : public PObject
     /**Set up a connection to a remote party.
        An appropriate protocol (endpoint) is determined from the party
        parameter. That endpoint is then called to create a connection and that
-       connection attached to the call provided.
+       connection is attached to the call provided.
        
        If the endpoint is already occupied in a call then the endpoints list
        is further searched for additional endpoints that support the protocol.
@@ -403,7 +406,7 @@ class OpalManager : public PObject
        continuing to occur in a new background thread.
 
        If FALSE is returned then the connection could not be established. For
-       example if a PSTN endpoint is used and the assiciated line is engaged
+       example if a PSTN endpoint is used and the associated line is engaged
        then it may return immediately. Returning a non-NULL value does not
        mean that the connection will succeed, only that an attempt is being
        made.
@@ -434,8 +437,8 @@ class OpalManager : public PObject
        this you can obtain the name of the caller by using the function
        OpalConnection::GetRemotePartyName().
 
-       The default behaviour call OnRouteConnection to determine a B party for
-       the connection.
+       The default behaviour is to call OnRouteConnection to determine a
+       B party for the connection.
 
        If the call associated with the incoming call already had two parties
        and this connection is a third party for a conference call then
@@ -457,8 +460,8 @@ class OpalManager : public PObject
 
     /**Call back for remote party being alerted on outgoing call.
        This function is called after the connection is informed that the
-       remote endpoint is "ringing". Generally some time after the
-       MakeConnection() function was called, this is function is called.
+       remote endpoint is "ringing". This function is generally called
+       some time after the MakeConnection() function was called.
 
        If FALSE is returned the connection is aborted.
 
@@ -468,7 +471,7 @@ class OpalManager : public PObject
        For this you can obtain the name of the caller by using the function
        OpalConnection::GetRemotePartyName().
 
-       The default behaviour calls the OnAlerting() on the connections
+       The default behaviour calls the OnAlerting() on the connection's
        associated OpalCall object.
      */
     virtual void OnAlerting(
@@ -499,7 +502,7 @@ class OpalManager : public PObject
        Logical Channels have occurred. For SIP it indicates the INVITE/OK/ACK
        sequence is complete.
 
-       The default behaviour calls the OnEstablished() on the connections
+       The default behaviour calls the OnEstablished() on the connection's
        associated OpalCall object.
       */
     virtual void OnEstablished(
@@ -516,9 +519,9 @@ class OpalManager : public PObject
        An application will not typically call this function as it is used by
        the OpalManager during a release of the connection.
 
-       The default behaviour calls the OnReleased() on the connections
+       The default behaviour calls OnReleased() on the connection's
        associated OpalCall object. This indicates to the call that the
-       conection has been released so it can release the last remaining
+       connection has been released so it can release the last remaining
        connection and then returns TRUE.
       */
     virtual void OnReleased(
@@ -598,7 +601,7 @@ class OpalManager : public PObject
       const OpalConnection * connection = NULL  /// Optional connection that is using formats
     ) const;
 
-    /**Create an PVideoInputDevice for a source media stream.
+    /**Create a PVideoInputDevice for a source media stream.
       */
     virtual PVideoInputDevice * CreateVideoInputDevice(
       const OpalConnection & connection /// Connection needing created video device
@@ -672,9 +675,9 @@ class OpalManager : public PObject
        This is called when the OpenLogicalChannel subsystem requires that
        a T.120 channel be established.
 
-       Note that if the application overrides this it should return a pointer to a
-       heap variable (using new) as it will be automatically deleted when the
-       H323Connection is deleted.
+       Note that if the application overrides this it should return a pointer
+       to a heap variable (using new) as it will be automatically deleted when
+       the H323Connection is deleted.
 
        The default behavour returns NULL.
       */
@@ -686,9 +689,9 @@ class OpalManager : public PObject
        This is called when the OpenLogicalChannel subsystem requires that
        a T.38 fax channel be established.
 
-       Note that if the application overrides this it should return a pointer to a
-       heap variable (using new) as it will be automatically deleted when the
-       H323Connection is deleted.
+       Note that if the application overrides this it should return a pointer
+       to a heap variable (using new) as it will be automatically deleted when
+       the H323Connection is deleted.
 
        The default behavour returns NULL.
       */
@@ -715,7 +718,7 @@ class OpalManager : public PObject
        pattern is a regular expression matching the incoming calls
        destination address and will translate it to the outgoing destination
        address for making an outgoing call. For example, picking up a PhoneJACK
-       handset and dialling 2, 6 would result in an address of "pots:26"
+       handset and dialing 2, 6 would result in an address of "pots:26"
        which would then be matched against, say, a specification of
        pots:26=h323:10.0.1.1, resulting in a call from the pots handset to
        10.0.1.1 using H.323.
@@ -809,7 +812,7 @@ class OpalManager : public PObject
     /**Determine if the address is "local", ie does not need any address
        translation (fixed or via STUN) to access.
 
-       The default behaviour checks for if remoteAddress is a RFC1918 private
+       The default behaviour checks if remoteAddress is a RFC1918 private
        IP address: 10.x.x.x, 172.16.x.x or 192.168.x.x.
      */
     virtual BOOL IsLocalAddress(
@@ -915,12 +918,12 @@ class OpalManager : public PObject
      */
     unsigned GetMinAudioJitterDelay() const { return minAudioJitterDelay; }
 
-    /**Get the default maximum audio delay jitter parameter.
+    /**Get the default maximum audio jitter delay parameter.
        Defaults to 250ms.
      */
     unsigned GetMaxAudioJitterDelay() const { return maxAudioJitterDelay; }
 
-    /**Set the maximum audio delay jitter parameter.
+    /**Set the maximum audio jitter delay parameter.
      */
     void SetAudioJitterDelay(
       unsigned minDelay,   // New minimum jitter buffer delay in milliseconds
@@ -939,7 +942,7 @@ class OpalManager : public PObject
      */
     const PStringArray & GetMediaFormatMask() const { return mediaFormatMask; }
 
-    /**Set the default media format order.
+    /**Set the default media format mask.
      */
     void SetMediaFormatMask(const PStringArray & mask) { mediaFormatMask = mask; }
 
@@ -990,11 +993,11 @@ class OpalManager : public PObject
       BOOL mode /// New default mode
     ) { disableDetectInBandDTMF = mode; } 
 
-    /**Get the amount of time with no media that should cause call to clear
+    /**Get the amount of time with no media that should cause a call to clear
      */
     const PTimeInterval & GetNoMediaTimeout() const { return noMediaTimeout; }
 
-    /**Set the amount of time with no media that should cause call to clear
+    /**Set the amount of time with no media that should cause a call to clear
      */
     BOOL SetNoMediaTimeout(
       const PTimeInterval & newInterval  /// New timeout for media
