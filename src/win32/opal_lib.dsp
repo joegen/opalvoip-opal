@@ -42,7 +42,7 @@ RSC=rc.exe
 # PROP Intermediate_Dir "..\..\lib\Release"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /MD /W4 /GR /GX /Zd /O2 /Ob2 /D "NDEBUG" /D "PTRACING" /Yu"ptlib.h" /Fd"..\..\lib\opal.pdb" /FD /c
+# ADD CPP /nologo /MD /W3 /GR /GX /Zd /O2 /Ob2 /D "NDEBUG" /D "PTRACING" /Yu"ptlib.h" /Fd"..\..\lib\opal.pdb" /FD /c
 # SUBTRACT CPP /u
 # ADD BASE RSC /l 0xc09
 # ADD RSC /l 0xc09
@@ -66,7 +66,7 @@ LIB32=link.exe -lib
 # PROP Intermediate_Dir "..\..\lib\Debug"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /Z7 /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /MDd /W4 /Gm /GR /GX /ZI /Od /D "_DEBUG" /D "PTRACING" /FR /Yu"ptlib.h" /Fd"..\..\lib\opald.pdb" /FD /c
+# ADD CPP /nologo /MDd /W3 /Gm /GR /GX /ZI /Od /D "_DEBUG" /D "PTRACING" /FR /Yu"ptlib.h" /Fd"..\..\lib\opald.pdb" /FD /c
 # SUBTRACT CPP /u
 # ADD BASE RSC /l 0xc09
 # ADD RSC /l 0xc09
@@ -707,7 +707,7 @@ SOURCE=..\..\include\opal\buildopts.h.in
 
 USERDEP__BUILD="..\..\configure.in"	"..\..\configure.exe"	
 # Begin Custom Build - Configuring Build Options
-InputDir=\Work\opal\include\opal
+InputDir=\Storage\cvs2\opal\include\opal
 InputPath=..\..\include\opal\buildopts.h.in
 
 "$(InputDir)\buildopts.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
@@ -720,7 +720,7 @@ InputPath=..\..\include\opal\buildopts.h.in
 
 USERDEP__BUILD="..\..\configure.in"	"..\..\configure.exe"	
 # Begin Custom Build - Configuring Build Options
-InputDir=\Work\opal\include\opal
+InputDir=\Storage\cvs2\opal\include\opal
 InputPath=..\..\include\opal\buildopts.h.in
 
 "$(InputDir)\buildopts.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
@@ -733,7 +733,7 @@ InputPath=..\..\include\opal\buildopts.h.in
 
 USERDEP__BUILD="..\..\configure.in"	"..\..\configure.exe"	
 # Begin Custom Build - Configuring Build Options
-InputDir=\Work\opal\include\opal
+InputDir=\Storage\cvs2\opal\include\opal
 InputPath=..\..\include\opal\buildopts.h.in
 
 "$(InputDir)\buildopts.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
