@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2026  2005/06/02 13:20:45  rjongbloed
+ * Revision 1.2027  2005/06/20 16:47:52  shorne
+ * Fix STL compatibility issue on MSVC6
+ *
+ * Revision 2.25  2005/06/02 13:20:45  rjongbloed
  * Added minimum and maximum check to media format options.
  * Added ability to set the options on the primordial media format list.
  *
@@ -353,6 +356,12 @@ class OpalMediaOption : public PObject
     MergeType m_merge;
 };
 
+#if ! __USE_STL__
+__inline istream & operator>>(istream & strm, bool& b)
+{
+   int i;strm >> i;b = i; return strm;
+}
+#endif
 
 template <typename T>
 class OpalMediaOptionValue : public OpalMediaOption
@@ -387,8 +396,13 @@ class OpalMediaOptionValue : public OpalMediaOption
       strm >> temp;
       if (temp >= m_minimum && temp <= m_maximum)
         m_value = temp;
-      else
-        strm.setstate(ios::failbit);
+      else {
+#if __USE_STL__
+	   strm.setstate(ios::badbit);
+#else
+	   strm.setf(ios::badbit , ios::badbit);
+#endif
+       }
     }
 
     virtual void Assign(
