@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2050  2005/06/09 04:51:58  dereksmithies
+ * Revision 1.2051  2005/06/23 06:14:02  csoutheren
+ * Fixed rtp-tos argument parsing. Thanks to Paul Nader
+ *
+ * Revision 2.49  2005/06/09 04:51:58  dereksmithies
  * Fix formatting.
  *
  * Revision 2.48  2005/06/09 04:45:57  dereksmithies
@@ -310,7 +313,7 @@ void SimpleOpalProcess::Main()
              "r-register-sip:"
              "-rtp-base:"
              "-rtp-max:"
-             "-rtp_tos:"
+             "-rtp-tos:"
              "s-sound:"
              "S-no-sound."
              "-sound-in:"
