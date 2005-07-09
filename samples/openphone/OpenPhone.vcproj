@@ -3,6 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="OpenPhone"
+	RootNamespace="OpenPhone"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>
@@ -188,6 +189,25 @@
 			</File>
 			<File
 				RelativePath=".\openphone.xrc">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Creating C++ source from XML resource file"
+						CommandLine="%WXWIN%\contrib\utils\wxrc\Release\wxrc -c $(InputPath)"
+						Outputs="resource.cpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Creating C++ source from XML resource file"
+						CommandLine="%WXWIN%\contrib\utils\wxrc\Release\wxrc -c $(InputPath)"
+						Outputs="resource.cpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\resource.cpp">
 			</File>
 		</Filter>
 	</Files>
