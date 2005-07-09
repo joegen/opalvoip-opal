@@ -25,6 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.22  2005/07/09 07:05:16  rjongbloed
+ * Changed so resources are included in compile and not separate file at run time.
+ * General code clean ups.
+ *
  * Revision 1.21  2005/06/02 13:21:49  rjongbloed
  * Save and restore media format options to registry.
  * Added check for valid value for media format option in dialog.
@@ -106,7 +110,7 @@
 #include <list>
 
 
-class MyFrame;
+class MyManager;
 
 class OpalPOTSEndPoint;
 class OpalIVREndPoint;
@@ -141,14 +145,14 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
   PCLASSINFO(MyPCSSEndPoint, OpalPCSSEndPoint);
 
   public:
-    MyPCSSEndPoint(MyFrame & frame);
+    MyPCSSEndPoint(MyManager & manager);
 
   private:
     virtual PString OnGetDestination(const OpalPCSSConnection & connection);
     virtual void OnShowIncoming(const OpalPCSSConnection & connection);
     virtual BOOL OnShowOutgoing(const OpalPCSSConnection & connection);
 
-    MyFrame & m_frame;
+    MyManager & m_manager;
 };
 
 
@@ -156,12 +160,12 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
 class MyH323EndPoint : public H323EndPoint
 {
   public:
-    MyH323EndPoint(MyFrame & f);
+    MyH323EndPoint(MyManager & manager);
 
   private:
     virtual void OnRegistrationConfirm();
 
-    MyFrame & frame;
+    MyManager & m_manager;
 };
 #endif
 
@@ -170,12 +174,12 @@ class MyH323EndPoint : public H323EndPoint
 class MySIPEndPoint : public SIPEndPoint
 {
   public:
-    MySIPEndPoint(MyFrame & f);
+    MySIPEndPoint(MyManager & manager);
 
   private:
     virtual void OnRegistered();
 
-    MyFrame & frame;
+    MyManager & m_manager;
 };
 #endif
 
@@ -183,7 +187,7 @@ class MySIPEndPoint : public SIPEndPoint
 class CallDialog : public wxDialog
 {
   public:
-    CallDialog(MyFrame *parent);
+    CallDialog(wxFrame * parent);
 
     PwxString m_Address;
 
@@ -200,12 +204,12 @@ class CallDialog : public wxDialog
 class CallingPanel : public wxPanel
 {
   public:
-    CallingPanel(MyFrame & frame, wxWindow * parent);
+    CallingPanel(MyManager & manager, wxWindow * parent);
 
   private:
     void OnHangUp(wxCommandEvent & event);
 
-    MyFrame & m_frame;
+    MyManager & m_manager;
 
     DECLARE_EVENT_TABLE()
 };
@@ -214,13 +218,13 @@ class CallingPanel : public wxPanel
 class AnswerPanel : public wxPanel
 {
   public:
-    AnswerPanel(MyFrame & frame, wxWindow * parent);
+    AnswerPanel(MyManager & manager, wxWindow * parent);
 
   private:
     void OnAnswer(wxCommandEvent & event);
     void OnReject(wxCommandEvent & event);
 
-    MyFrame & m_frame;
+    MyManager & m_manager;
 
     DECLARE_EVENT_TABLE()
 };
@@ -229,7 +233,7 @@ class AnswerPanel : public wxPanel
 class InCallPanel : public wxPanel
 {
   public:
-    InCallPanel(MyFrame & frame, wxWindow * parent);
+    InCallPanel(MyManager & manager, wxWindow * parent);
 
   private:
     void OnHangUp(wxCommandEvent & event);
@@ -247,7 +251,7 @@ class InCallPanel : public wxPanel
     void OnUserInputHash(wxCommandEvent & event);
     void OnUserInputFlash(wxCommandEvent & event);
 
-    MyFrame & m_frame;
+    MyManager & m_manager;
 
     DECLARE_EVENT_TABLE()
 };
@@ -256,7 +260,7 @@ class InCallPanel : public wxPanel
 class SpeedDialDialog : public wxDialog
 {
   public:
-    SpeedDialDialog(MyFrame *parent);
+    SpeedDialDialog(MyManager *parent);
 
     wxString m_Name;
     wxString m_Number;
@@ -266,7 +270,7 @@ class SpeedDialDialog : public wxDialog
   private:
     void OnChange(wxCommandEvent & event);
 
-    MyFrame & m_frame;
+    MyManager & m_manager;
 
     wxButton     * m_ok;
     wxTextCtrl   * m_nameCtrl;
@@ -281,11 +285,11 @@ class SpeedDialDialog : public wxDialog
 class OptionsDialog : public wxDialog
 {
   public:
-    OptionsDialog(MyFrame *parent);
+    OptionsDialog(MyManager *parent);
     virtual bool TransferDataFromWindow();
 
   private:
-    MyFrame & m_frame;
+    MyManager & m_manager;
 
     ////////////////////////////////////////
     // General fields
@@ -460,11 +464,11 @@ public:
 typedef std::list<MyMedia> MyMediaList;
 
 
-class MyFrame : public wxFrame, public OpalManager
+class MyManager : public wxFrame, public OpalManager
 {
   public:
-    MyFrame();
-    ~MyFrame();
+    MyManager();
+    ~MyManager();
 
     bool Initialise();
 
