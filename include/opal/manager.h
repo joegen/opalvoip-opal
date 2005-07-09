@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2036  2005/06/13 23:13:53  csoutheren
+ * Revision 1.2037  2005/07/09 06:57:20  rjongbloed
+ * Changed SetSTUNServer so returns the determined NAT type.
+ *
+ * Revision 2.35  2005/06/13 23:13:53  csoutheren
  * Fixed various typos thanks to Julien PUYDT
  *
  * Revision 2.34  2005/05/25 17:04:08  dsandras
@@ -155,11 +158,10 @@
 #include <opal/call.h>
 #include <opal/guid.h>
 #include <codec/silencedetect.h>
-
+#include <ptclib/pstun.h>
 
 class OpalEndPoint;
 class OpalMediaPatch;
-class PSTUNClient;
 
 
 /**This class is the central manager for OPAL.
@@ -853,7 +855,7 @@ class OpalManager : public PObject
        Note that if the STUN server is found then the translationAddress
        is automatically set to the router address as determined by STUN.
       */
-    void SetSTUNServer(
+    PSTUNClient::NatTypes SetSTUNServer(
       const PString & server
     );
 
