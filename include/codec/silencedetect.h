@@ -23,6 +23,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: silencedetect.h,v $
+ * Revision 1.3  2005/07/09 06:52:38  rjongbloed
+ * Added print (operator<<) of silence detect mode enum.
+ *
  * Revision 1.2  2004/05/24 13:39:26  rjongbloed
  * Fixed setting marker bit when silence suppression transitions from
  *   silence to signal, thanks Ted Szoczei
@@ -54,7 +57,8 @@ class OpalSilenceDetector : public PObject
     enum Mode {
       NoSilenceDetection,
       FixedSilenceDetection,
-      AdaptiveSilenceDetection
+      AdaptiveSilenceDetection,
+      NumModes
     };
 
     struct Params {
@@ -163,6 +167,8 @@ class OpalPCM16SilenceDetector : public OpalSilenceDetector
   //@}
 };
 
+
+extern ostream & operator<<(ostream & strm, OpalSilenceDetector::Mode mode);
 
 
 #endif // __OPAL_SILENCEDETECT_H
