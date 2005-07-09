@@ -23,6 +23,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: silencedetect.cxx,v $
+ * Revision 1.4  2005/07/09 06:52:39  rjongbloed
+ * Added print (operator<<) of silence detect mode enum.
+ *
  * Revision 1.3  2005/03/06 15:00:26  dsandras
  * Fixed silence detection, we are now working with time frames, not the number of frames.
  *
@@ -53,6 +56,22 @@ extern "C" {
   unsigned char linear2ulaw(int pcm_val);
   int ulaw2linear(unsigned char u_val);
 };
+
+
+ostream & operator<<(ostream & strm, OpalSilenceDetector::Mode mode)
+{
+  static const char * const names[OpalSilenceDetector::NumModes] = {
+      "NoSilenceDetection",
+      "FixedSilenceDetection",
+      "AdaptiveSilenceDetection"
+  };
+
+  if (mode >= 0 && mode < OpalSilenceDetector::NumModes && names[mode] != NULL)
+    strm << names[mode];
+  else
+    strm << "OpalSilenceDetector::Modes<" << mode << '>';
+  return strm;
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
