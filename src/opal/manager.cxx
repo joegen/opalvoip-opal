@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2045  2005/06/02 13:18:02  rjongbloed
+ * Revision 1.2046  2005/07/09 06:59:28  rjongbloed
+ * Changed SetSTUNServer so returns the determined NAT type.
+ * Fixed SetSTUNServer so does not try and get external router address is have blocking NAT,
+ *   just takes up more time!
+ * Fixed possible deadlock on exiting program, waiting for garbage collector to finish.
+ *
+ * Revision 2.44  2005/06/02 13:18:02  rjongbloed
  * Fixed compiler warnings
  *
  * Revision 2.43  2005/05/25 17:04:07  dsandras
@@ -181,7 +187,6 @@
 #include <opal/patch.h>
 #include <opal/mediastrm.h>
 #include <codec/vidcodec.h>
-#include <ptclib/pstun.h>
 
 #include "../../version.h"
 
@@ -440,6 +445,7 @@ void OpalManager::ClearAllCalls(OpalConnection::CallEndReason reason, BOOL wait)
   if (wait) {
     clearingAllCalls = TRUE;
     allCallsCleared.Wait();
+    clearingAllCalls = FALSE;
   }
 }
 
@@ -878,19 +884,25 @@ PSTUNClient * OpalManager::GetSTUN(const PIPSocket::Address & ip) const
 }
 
 
-void OpalManager::SetSTUNServer(const PString & server)
+PSTUNClient::NatTypes OpalManager::SetSTUNServer(const PString & server)
 {
   delete stun;
 
-  if (server.IsEmpty())
+  if (server.IsEmpty()) {
     stun = NULL;
-  else {
+    return PSTUNClient::UnknownNat;
+  }
+
     stun = new PSTUNClient(server,
                            GetUDPPortBase(), GetUDPPortMax(),
                            GetRtpIpPortBase(), GetRtpIpPortMax());
-    PTRACE(2, "OPAL\tSTUN server \"" << server << "\" replies " << stun->GetNatTypeName());
+  PSTUNClient::NatTypes type = stun->GetNatType();
+  if (type != PSTUNClient::BlockedNat)
     stun->GetExternalAddress(translationAddress);
-  }
+
+  PTRACE(2, "OPAL\tSTUN server \"" << server << "\" replies " << type << ", external IP " << translationAddress);
+
+  return type;
 }
 
 
@@ -1049,10 +1061,8 @@ void OpalManager::GarbageCollection()
     if (!endpoints[i].connectionsActive.DeleteObjectsToBeRemoved())
       allCleared = FALSE;
   }
-  if (allCleared && clearingAllCalls) {
+  if (allCleared && clearingAllCalls)
     allCallsCleared.Signal();
-    clearingAllCalls = FALSE;
-  }
 }
 
 
