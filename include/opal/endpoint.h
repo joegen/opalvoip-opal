@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2024  2005/07/11 01:52:23  csoutheren
+ * Revision 1.2025  2005/07/11 06:52:16  csoutheren
+ * Added support for outgoing calls using external RTP
+ *
+ * Revision 2.23  2005/07/11 01:52:23  csoutheren
  * Extended AnsweringCall to work for SIP as well as H.323
  * Fixed problems with external RTP connection in H.323
  * Added call to OnClosedMediaStream
@@ -602,6 +605,17 @@ class OpalEndPoint : public PObject
     virtual OpalT38Protocol * CreateT38ProtocolHandler(
       const OpalConnection & connection  /// Connection for which T.38 handler created
     ) const;
+
+    /**
+      * Get IP addresses for an external RTP connection
+      */
+    virtual BOOL GetExternalRTPAddress(
+      const OpalConnection & connection,      /// connection using external RTP
+      unsigned sessionID,                     /// RTP session ID
+      OpalTransportAddress & data,            /// return data address
+      OpalTransportAddress & control          /// return control address
+    );
+
   //@}
 
   /**@name Member variable access */
