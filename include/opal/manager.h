@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2037  2005/07/09 06:57:20  rjongbloed
+ * Revision 1.2038  2005/07/11 01:52:24  csoutheren
+ * Extended AnsweringCall to work for SIP as well as H.323
+ * Fixed problems with external RTP connection in H.323
+ * Added call to OnClosedMediaStream
+ *
+ * Revision 2.36  2005/07/09 06:57:20  rjongbloed
  * Changed SetSTUNServer so returns the determined NAT type.
  *
  * Revision 2.35  2005/06/13 23:13:53  csoutheren
@@ -478,6 +483,11 @@ class OpalManager : public PObject
      */
     virtual void OnAlerting(
       OpalConnection & connection   /// Connection that was established
+    );
+
+    virtual OpalConnection::AnswerCallResponse
+       OnAnswerCall(OpalConnection & connection,
+                     const PString & caller
     );
 
     /**A call back function whenever a connection is "connected".

@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2079  2005/04/10 21:09:11  dsandras
+ * Revision 1.2080  2005/07/11 01:52:24  csoutheren
+ * Extended AnsweringCall to work for SIP as well as H.323
+ * Fixed problems with external RTP connection in H.323
+ * Added call to OnClosedMediaStream
+ *
+ * Revision 2.78  2005/04/10 21:09:11  dsandras
  * Added support for connection hold (new API).
  *
  * Revision 2.77  2005/04/10 21:08:14  dsandras
@@ -1404,25 +1409,6 @@ const PTimeInterval MonitorCallStatusTime(0, 10); // Seconds
 /////////////////////////////////////////////////////////////////////////////
 
 #if PTRACING
-ostream & operator<<(ostream & o, H323Connection::AnswerCallResponse s)
-{
-  static const char * const AnswerCallResponseNames[H323Connection::NumAnswerCallResponses] = {
-    "AnswerCallNow",
-    "AnswerCallDenied",
-    "AnswerCallPending",
-    "AnswerCallDeferred",
-    "AnswerCallAlertWithMedia",
-    "AnswerCallDeferredWithMedia"
-  };
-  if ((PINDEX)s >= PARRAYSIZE(AnswerCallResponseNames))
-    o << "InvalidAnswerCallResponse<" << (unsigned)s << '>';
-  else if (AnswerCallResponseNames[s] == NULL)
-    o << "AnswerCallResponse<" << (unsigned)s << '>';
-  else
-    o << AnswerCallResponseNames[s];
-  return o;
-}
-
 
 ostream & operator<<(ostream & o, H323Connection::SendUserInputModes m)
 {
@@ -2720,6 +2706,11 @@ H323Connection::AnswerCallResponse
   return endpoint.OnAnswerCall(*this, caller, setupPDU, connectPDU);
 }
 
+H323Connection::AnswerCallResponse
+     H323Connection::OnAnswerCall(const PString & caller)
+{
+  return OpalConnection::OnAnswerCall(caller);
+}
 
 void H323Connection::AnsweringCall(AnswerCallResponse response)
 {
@@ -4815,10 +4806,10 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
 
 
 H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability & capability,
-                                                           H323Channel::Directions dir,
-                                                           unsigned sessionID,
-							   const H245_H2250LogicalChannelParameters * param,
-                                                           RTP_QOS * rtpqos)
+                                                          H323Channel::Directions dir,
+                                                                         unsigned sessionID,
+							                         const H245_H2250LogicalChannelParameters * param,
+                                                                        RTP_QOS * rtpqos)
 {
   if (ownerCall.IsMediaBypassPossible(*this, sessionID))
     return new H323_ExternalRTPChannel(*this, capability, dir, sessionID);
@@ -5384,6 +5375,10 @@ const H323Transport & H323Connection::GetControlChannel() const
   return *(controlChannel != NULL ? controlChannel : signallingChannel);
 }
 
+OpalTransport & H323Connection::GetTransport() const
+{
+  return *(controlChannel != NULL ? controlChannel : signallingChannel);
+}
 
 void H323Connection::SendLogicalChannelMiscCommand(H323Channel & channel,
                                                    unsigned commandIdentifier)
