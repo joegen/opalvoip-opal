@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2032  2004/11/30 00:15:07  csoutheren
+ * Revision 1.2033  2005/07/11 01:52:25  csoutheren
+ * Extended AnsweringCall to work for SIP as well as H.323
+ * Fixed problems with external RTP connection in H.323
+ * Added call to OnClosedMediaStream
+ *
+ * Revision 2.31  2004/11/30 00:15:07  csoutheren
  * Don' t convert userIndication::signalUpdate messages into UserInputString messages
  *
  * Revision 2.30  2004/08/18 13:03:57  rjongbloed
@@ -287,6 +292,16 @@ BOOL OpalCall::OnAlerting(OpalConnection & connection)
   return ok;
 }
 
+OpalConnection::AnswerCallResponse
+       OpalCall::OnAnswerCall(OpalConnection & /*connection*/,
+                               const PString & /*caller*/)
+{
+  return OpalConnection::NumAnswerCallResponses;
+}
+
+void OpalCall::AnsweringCall(OpalConnection::AnswerCallResponse /*response*/)
+{
+}
 
 BOOL OpalCall::OnConnected(OpalConnection & connection)
 {
