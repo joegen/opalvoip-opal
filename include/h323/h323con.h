@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2036  2005/04/10 20:35:20  dsandras
+ * Revision 1.2037  2005/07/11 01:52:15  csoutheren
+ * Extended AnsweringCall to work for SIP as well as H.323
+ * Fixed problems with external RTP connection in H.323
+ * Added call to OnClosedMediaStream
+ *
+ * Revision 2.35  2005/04/10 20:35:20  dsandras
  * Added support for blind transfert.
  *
  * Revision 2.34  2005/04/10 20:33:53  dsandras
@@ -1030,19 +1035,6 @@ class H323Connection : public OpalConnection
       const unsigned nbOfAddWaitingCalls = 0   /// number of additional waiting calls at the served user
     );
 
-    enum AnswerCallResponse {
-      AnswerCallNow,               /// Answer the call continuing with the connection.
-      AnswerCallDenied,            /// Refuse the call sending a release complete.
-      AnswerCallPending,           /// Send an Alerting PDU and wait for AnsweringCall()
-      AnswerCallDeferred,          /// As for AnswerCallPending but does not send Alerting PDU
-      AnswerCallAlertWithMedia,    /// As for AnswerCallPending but starts media channels
-      AnswerCallDeferredWithMedia, /// As for AnswerCallDeferred but starts media channels
-      NumAnswerCallResponses
-    };
-#if PTRACING
-    friend ostream & operator<<(ostream & o, AnswerCallResponse s);
-#endif
-
     /**Call back for answering an incoming call.
        This function is used for an application to control the answering of
        incoming calls. It is usually used to indicate the immediate action to
@@ -1073,6 +1065,9 @@ class H323Connection : public OpalConnection
       const PString & callerName,       /// Name of caller
       const H323SignalPDU & setupPDU,   /// Received setup PDU
       H323SignalPDU & connectPDU        /// Connect PDU to send. 
+    );
+    virtual AnswerCallResponse OnAnswerCall(
+      const PString & callerName        /// Name of caller
     );
 
     /**Indicate the result of answering an incoming call.
@@ -2148,6 +2143,10 @@ class H323Connection : public OpalConnection
     /**Get the control channel being used (may return signalling channel).
       */
     const H323Transport & GetControlChannel() const;
+
+    /**Get the control channel being used (may return signalling channel).
+      */
+    OpalTransport & GetTransport() const;
 
     /**Get the control channel protocol version number.
       */
