@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2026  2004/04/07 08:21:01  rjongbloed
+ * Revision 1.2027  2005/07/11 01:52:24  csoutheren
+ * Extended AnsweringCall to work for SIP as well as H.323
+ * Fixed problems with external RTP connection in H.323
+ * Added call to OnClosedMediaStream
+ *
+ * Revision 2.25  2004/04/07 08:21:01  rjongbloed
  * Changes for new RTTI system.
  *
  * Revision 2.24  2004/02/19 10:47:02  rjongbloed
@@ -1275,6 +1280,10 @@ BOOL H323_ExternalRTPChannel::OnReceivedPDU(const H245_H2250LogicalChannelParame
     if (remoteMediaAddress.IsEmpty())
       return FALSE;
   }
+
+  unsigned id = param.m_sessionID;
+  if (!remoteMediaAddress.IsEmpty() && (connection.GetMediaTransportAddresses().GetAt(id) == NULL))
+    connection.GetMediaTransportAddresses().SetAt(id, new OpalTransportAddress(remoteMediaAddress));
 
   return TRUE;
 }
