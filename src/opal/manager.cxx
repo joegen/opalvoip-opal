@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2046  2005/07/09 06:59:28  rjongbloed
+ * Revision 1.2047  2005/07/11 01:52:26  csoutheren
+ * Extended AnsweringCall to work for SIP as well as H.323
+ * Fixed problems with external RTP connection in H.323
+ * Added call to OnClosedMediaStream
+ *
+ * Revision 2.45  2005/07/09 06:59:28  rjongbloed
  * Changed SetSTUNServer so returns the determined NAT type.
  * Fixed SetSTUNServer so does not try and get external router address is have blocking NAT,
  *   just takes up more time!
@@ -550,6 +555,12 @@ void OpalManager::OnAlerting(OpalConnection & connection)
   connection.GetCall().OnAlerting(connection);
 }
 
+OpalConnection::AnswerCallResponse
+       OpalManager::OnAnswerCall(OpalConnection & connection,
+                                  const PString & caller)
+{
+  return connection.GetCall().OnAnswerCall(connection, caller);
+}
 
 void OpalManager::OnConnected(OpalConnection & connection)
 {
@@ -797,8 +808,9 @@ PString OpalManager::ApplyRouteTable(const PString & proto, const PString & addr
   PString search = proto + ':' + addr;
   PTRACE(4, "OpalMan\tSearching for route \"" << search << '"');
   for (PINDEX i = 0; i < routeTable.GetSize(); i++) {
+    RouteEntry & entry = routeTable[i];
     PINDEX pos;
-    if (routeTable[i].regex.Execute(search, pos)) {
+    if (entry.regex.Execute(search, pos)) {
       destination = routeTable[i].destination;
       break;
     }
@@ -1077,6 +1089,5 @@ void OpalManager::GarbageMain(PThread &, INT)
   while (!garbageCollectExit.Wait(1000))
       GarbageCollection();
 }
-
 
 /////////////////////////////////////////////////////////////////////////////
