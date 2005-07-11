@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2020  2005/05/11 04:25:09  dereksmithies
+ * Revision 1.2021  2005/07/11 01:52:23  csoutheren
+ * Extended AnsweringCall to work for SIP as well as H.323
+ * Fixed problems with external RTP connection in H.323
+ * Added call to OnClosedMediaStream
+ *
+ * Revision 2.19  2005/05/11 04:25:09  dereksmithies
  * Add description of the OpalConnection class instances managed by an OpalCall structure.
  *
  * Revision 2.18  2004/08/14 07:56:29  rjongbloed
@@ -225,6 +230,15 @@ class OpalCall : public PSafeObject
       */
     virtual BOOL OnAlerting(
       OpalConnection & connection   /// Connection that indicates it is alerting
+    );
+
+    virtual OpalConnection::AnswerCallResponse
+       OnAnswerCall(OpalConnection & connection,
+                     const PString & caller
+    );
+
+    virtual void AnsweringCall(
+      OpalConnection::AnswerCallResponse response /// Answer response to incoming call
     );
 
     /**A call back function whenever a connection is "connected".
