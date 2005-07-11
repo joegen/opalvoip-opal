@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2051  2005/06/23 06:14:02  csoutheren
+ * Revision 1.2052  2005/07/11 01:57:31  csoutheren
+ * Fixed error message
+ *
+ * Revision 2.50  2005/06/23 06:14:02  csoutheren
  * Fixed rtp-tos argument parsing. Thanks to Paul Nader
  *
  * Revision 2.49  2005/06/09 04:51:58  dereksmithies
@@ -1010,7 +1013,7 @@ void MyManager::OnClearedCall(OpalCall & call)
       cout << "Refused incoming call from " << remoteName;
       break;
     case OpalConnection::EndedByNoUser :
-      cout << "Gatekeeper could find user " << remoteName;
+      cout << "Gatekeeper or registrar could not find user " << remoteName;
       break;
     case OpalConnection::EndedByNoBandwidth :
       cout << "Call to " << remoteName << " aborted, insufficient bandwidth.";
