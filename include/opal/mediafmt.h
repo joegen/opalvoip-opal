@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2027  2005/06/20 16:47:52  shorne
+ * Revision 1.2028  2005/07/11 01:42:21  csoutheren
+ * Fixed problems with some constants names not being available
+ *
+ * Revision 2.26  2005/06/20 16:47:52  shorne
  * Fix STL compatibility issue on MSVC6
  *
  * Revision 2.25  2005/06/02 13:20:45  rjongbloed
@@ -874,10 +877,10 @@ class OpalAudioFormat : public OpalMediaFormat
 #define OPAL_RFC2833        "UserInput/RFC2833"
 
 extern const OpalAudioFormat OpalPCM16;
-extern const OpalAudioFormat OpalL16Mono8kHz;
-extern const OpalAudioFormat OpalL16Mono16kHz;
-extern const OpalAudioFormat OpalG711uLaw;
-extern const OpalAudioFormat OpalG711ALaw;
+extern const OpalAudioFormat OpalL16_MONO_8KHZ;
+extern const OpalAudioFormat OpalL16_MONO_16KHZ;
+extern const OpalAudioFormat OpalG711_ULAW_64K;
+extern const OpalAudioFormat OpalG711_ALAW_64K;
 extern const OpalAudioFormat OpalG728;
 extern const OpalAudioFormat OpalG729;
 extern const OpalAudioFormat OpalG729A;
@@ -890,6 +893,10 @@ extern const OpalAudioFormat OpalG7231A_5k3;
 extern const OpalAudioFormat OpalGSM0610;
 extern const OpalMediaFormat OpalRFC2833;
 
+#define OpalL16Mono8kHz       OpalL16_MONO_8KHZ
+#define OpalL16Mono16kHz      OpalL16_MONO_16KHZ
+#define OpalG711uLaw          OpalG711_ULAW_64K
+#define OpalG711ALaw          OpalG711_ALAW_64K
 
 #endif  // __OPAL_MEDIAFMT_H
 
