@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2044  2005/07/11 01:52:26  csoutheren
+ * Revision 1.2045  2005/07/11 06:52:16  csoutheren
+ * Added support for outgoing calls using external RTP
+ *
+ * Revision 2.43  2005/07/11 01:52:26  csoutheren
  * Extended AnsweringCall to work for SIP as well as H.323
  * Fixed problems with external RTP connection in H.323
  * Added call to OnClosedMediaStream
@@ -645,6 +648,10 @@ BOOL OpalConnection::IsMediaBypassPossible(unsigned /*sessionID*/) const
   return FALSE;
 }
 
+BOOL OpalConnection::GetExternalRTPAddress(unsigned id, OpalTransportAddress & data, OpalTransportAddress & control)
+{
+  return endpoint.GetExternalRTPAddress(*this, id, data, control);
+}
 
 BOOL OpalConnection::GetMediaInformation(unsigned sessionID,
                                          MediaInformation & info) const
