@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2038  2005/04/11 11:12:00  dsandras
+ * Revision 1.2039  2005/07/11 01:52:23  csoutheren
+ * Extended AnsweringCall to work for SIP as well as H.323
+ * Fixed problems with external RTP connection in H.323
+ * Added call to OnClosedMediaStream
+ *
+ * Revision 2.37  2005/04/11 11:12:00  dsandras
  * Fixed previous commit.
  *
  * Revision 2.36  2005/04/11 10:42:35  dsandras
@@ -235,6 +240,19 @@ class OpalConnection : public PSafeObject
     friend ostream & operator<<(ostream & o, CallEndReason reason);
 #endif
 
+    enum AnswerCallResponse {
+      AnswerCallNow,               /// Answer the call continuing with the connection.
+      AnswerCallDenied,            /// Refuse the call sending a release complete.
+      AnswerCallPending,           /// Send an Alerting PDU and wait for AnsweringCall()
+      AnswerCallDeferred,          /// As for AnswerCallPending but does not send Alerting PDU
+      AnswerCallAlertWithMedia,    /// As for AnswerCallPending but starts media channels
+      AnswerCallDeferredWithMedia, /// As for AnswerCallDeferred but starts media channels
+      NumAnswerCallResponses
+    };
+#if PTRACING
+    friend ostream & operator<<(ostream & o, AnswerCallResponse s);
+#endif
+
 
   /**@name Construction */
   //@{
@@ -404,6 +422,40 @@ class OpalConnection : public PSafeObject
       const PString & calleeName,   /// Name of endpoint being alerted.
       BOOL withMedia                /// Open media with alerting
     ) = 0;
+
+    /**Call back for answering an incoming call.
+       This function is called after the connection has been acknowledged
+       but before the connection is established
+
+       This gives the application time to wait for some event before
+       signalling to the endpoint that the connection is to proceed. For
+       example the user pressing an "Answer call" button.
+
+       If AnswerCallDenied is returned the connection is aborted and the
+       connetion specific end call PDU is sent. If AnswerCallNow is returned 
+       then the connection proceeding, Finally if AnswerCallPending is returned then the
+       protocol negotiations are paused until the AnsweringCall() function is
+       called.
+
+       The default behaviour simply returns AnswerNow.
+     */
+    virtual AnswerCallResponse OnAnswerCall(
+      const PString & callerName        /// Name of caller
+    );
+
+    /**Indicate the result of answering an incoming call.
+       This should only be called if the OnAnswerCall() callback function has
+       returned a AnswerCallPending or AnswerCallDeferred response.
+
+       Note sending further AnswerCallPending responses via this function will
+       have the result of notification PDUs being sent to the remote endpoint (if possible).
+       In this way multiple notification PDUs may be sent.
+
+       Sending a AnswerCallDeferred response would have no effect.
+      */
+    virtual void AnsweringCall(
+      AnswerCallResponse response /// Answer response to incoming call
+    );
 
     /**A call back function whenever a connection is "connected".
        This indicates that a connection to an endpoint was connected. That
@@ -944,6 +996,14 @@ class OpalConnection : public PSafeObject
      */
     virtual const OpalGloballyUniqueID & GetIdentifier() const
     { return callIdentifier; }
+
+    virtual OpalTransport & GetTransport() const
+    { return *(OpalTransport *)NULL; }
+
+    PDICTIONARY(MediaAddressesDict, POrdinalKey, OpalTransportAddress);
+    MediaAddressesDict & GetMediaTransportAddresses()
+    { return mediaTransportAddresses; }
+
   //@}
 
   protected:
@@ -981,7 +1041,6 @@ class OpalConnection : public PSafeObject
     OpalT38Protocol     * t38handler;
 
 
-    PDICTIONARY(MediaAddressesDict, POrdinalKey, OpalTransportAddress);
     MediaAddressesDict  mediaTransportAddresses;
     OpalMediaStreamList mediaStreams;
     RTP_SessionManager  rtpSessions;
