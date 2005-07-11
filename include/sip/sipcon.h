@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2033  2005/05/06 07:37:06  csoutheren
+ * Revision 1.2034  2005/07/11 01:52:24  csoutheren
+ * Extended AnsweringCall to work for SIP as well as H.323
+ * Fixed problems with external RTP connection in H.323
+ * Added call to OnClosedMediaStream
+ *
+ * Revision 2.32  2005/05/06 07:37:06  csoutheren
  * Various changed while working with SIP carrier
  *   - remove assumption that authentication realm is a domain name.
  *   - stopped rewrite of "To" field when proxy being used
@@ -255,6 +260,40 @@ class SIPConnection : public OpalConnection
       unsigned sessionID,                  /// Session number for stream
       BOOL isSource                        /// Is a source stream
     );
+
+    /**Call back for answering an incoming call.
+       This function is called from the OnReceivedSignalSetup() function
+       before it sends the 200 OK response. 
+
+       It also gives an application time to wait for some event before
+       signalling to the endpoint that the connection is to proceed. For
+       example the user pressing an "Answer call" button.
+
+       If AnswerCallDenied is returned the connection is aborted and a 200 OK 
+       is sent. If AnswerCallNow is returned then the SIP protocol proceeds. 
+       Finally if AnswerCallPending is returned then the protocol negotiations 
+       are paused until the AnsweringCall() function is called.
+
+       The default behaviour simply returns AnswerNow.
+     */
+    virtual OpalConnection::AnswerCallResponse OnAnswerCall(
+      const PString & callerName      /// Name of caller
+    );
+
+    /**Indicate the result of answering an incoming call.
+       This should only be called if the OnAnswerCall() callback function has
+       returned a AnswerCallPending or AnswerCallDeferred response.
+
+       Note sending further AnswerCallPending responses via this function will
+       have the result of an 180 PDU being sent to the remote endpoint.
+       In this way multiple Alerting PDUs may be sent.
+
+       Sending a AnswerCallDeferred response would have no effect.
+      */
+    void AnsweringCall(
+      AnswerCallResponse response /// Answer response to incoming call
+    );
+
 
     /**A call back function whenever a connection is "connected".
        This indicates that a connection to an endpoint was connected. That

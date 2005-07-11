@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2036  2004/11/07 12:30:12  rjongbloed
+ * Revision 1.2037  2005/07/11 01:52:24  csoutheren
+ * Extended AnsweringCall to work for SIP as well as H.323
+ * Fixed problems with external RTP connection in H.323
+ * Added call to OnClosedMediaStream
+ *
+ * Revision 2.35  2004/11/07 12:30:12  rjongbloed
  * Minor optimisation
  *
  * Revision 2.34  2004/09/24 10:06:22  rjongbloed
@@ -1549,15 +1554,22 @@ BOOL H323EndPoint::OnCallTransferIdentify(H323Connection & /*connection*/)
 }
 
 
-H323Connection::AnswerCallResponse
-       H323EndPoint::OnAnswerCall(H323Connection & /*connection*/,
-                                  const PString & /*caller*/,
+OpalConnection::AnswerCallResponse
+       H323EndPoint::OnAnswerCall(H323Connection & connection,
+                                  const PString & caller,
                                   const H323SignalPDU & /*setupPDU*/,
                                   H323SignalPDU & /*connectPDU*/)
 {
-  return H323Connection::NumAnswerCallResponses;
+  return connection.OnAnswerCall(caller);
 }
 
+OpalConnection::AnswerCallResponse
+       H323EndPoint::OnAnswerCall(OpalConnection & connection,
+       const PString & caller
+)
+{
+  return OpalEndPoint::OnAnswerCall(connection, caller);
+}
 
 BOOL H323EndPoint::OnAlerting(H323Connection & connection,
                               const H323SignalPDU & /*alertingPDU*/,
