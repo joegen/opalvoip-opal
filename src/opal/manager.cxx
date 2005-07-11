@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2047  2005/07/11 01:52:26  csoutheren
+ * Revision 1.2048  2005/07/11 06:52:17  csoutheren
+ * Added support for outgoing calls using external RTP
+ *
+ * Revision 2.46  2005/07/11 01:52:26  csoutheren
  * Extended AnsweringCall to work for SIP as well as H.323
  * Fixed problems with external RTP connection in H.323
  * Added call to OnClosedMediaStream
@@ -715,6 +718,15 @@ OpalT38Protocol * OpalManager::CreateT38ProtocolHandler(const OpalConnection & )
   return NULL;
 }
 
+BOOL OpalManager::GetExternalRTPAddress(
+      const OpalConnection & connection,      /// connection using external RTP
+      unsigned sessionID,                     /// RTP session ID
+      OpalTransportAddress & data,            /// return data address
+      OpalTransportAddress & control          /// return control address
+)
+{
+  return FALSE;
+}
 
 OpalManager::RouteEntry::RouteEntry(const PString & pat, const PString & dest)
   : pattern(pat),
