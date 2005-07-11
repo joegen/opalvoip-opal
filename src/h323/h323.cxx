@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2080  2005/07/11 01:52:24  csoutheren
+ * Revision 1.2081  2005/07/11 06:52:16  csoutheren
+ * Added support for outgoing calls using external RTP
+ *
+ * Revision 2.79  2005/07/11 01:52:24  csoutheren
  * Extended AnsweringCall to work for SIP as well as H.323
  * Fixed problems with external RTP connection in H.323
  * Added call to OnClosedMediaStream
@@ -4811,8 +4814,17 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
 							                         const H245_H2250LogicalChannelParameters * param,
                                                                         RTP_QOS * rtpqos)
 {
-  if (ownerCall.IsMediaBypassPossible(*this, sessionID))
-    return new H323_ExternalRTPChannel(*this, capability, dir, sessionID);
+  if (ownerCall.IsMediaBypassPossible(*this, sessionID)) {
+    OpalTransportAddress data;
+    OpalTransportAddress control;
+    if (!GetExternalRTPAddress(sessionID, data, control))
+      return NULL;
+
+    //if (IsOriginating())
+      return new H323_ExternalRTPChannel(*this, capability, dir, sessionID, data, control);
+
+    //return new H323_ExternalRTPChannel(*this, capability, dir, sessionID);
+  }
 
   RTP_Session * session;
 
