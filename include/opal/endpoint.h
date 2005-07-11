@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2023  2005/04/10 20:45:22  dsandras
+ * Revision 1.2024  2005/07/11 01:52:23  csoutheren
+ * Extended AnsweringCall to work for SIP as well as H.323
+ * Fixed problems with external RTP connection in H.323
+ * Added call to OnClosedMediaStream
+ *
+ * Revision 2.22  2005/04/10 20:45:22  dsandras
  * Added callback that is called when a connection is put on hold (locally or remotely).
  *
  * Revision 2.21  2004/08/14 07:56:29  rjongbloed
@@ -328,6 +333,27 @@ class OpalEndPoint : public PObject
      */
     virtual void OnAlerting(
       OpalConnection & connection   /// Connection that was established
+    );
+
+    /**Call back for answering an incoming call.
+       This function is called after the connection has been acknowledged
+       but before the connection is established
+
+       This gives the application time to wait for some event before
+       signalling to the endpoint that the connection is to proceed. For
+       example the user pressing an "Answer call" button.
+
+       If AnswerCallDenied is returned the connection is aborted and the
+       connetion specific end call PDU is sent. If AnswerCallNow is returned 
+       then the connection proceeding, Finally if AnswerCallPending is returned then the
+       protocol negotiations are paused until the AnsweringCall() function is
+       called.
+
+       The default behaviour simply returns AnswerNow.
+     */
+    virtual OpalConnection::AnswerCallResponse OnAnswerCall(
+      OpalConnection & connection,    // connection that is being answered
+       const PString & caller         // caller
     );
 
     /**A call back function whenever a connection is "connected".

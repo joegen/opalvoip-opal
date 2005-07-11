@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2028  2004/09/01 12:21:27  rjongbloed
+ * Revision 1.2029  2005/07/11 01:52:23  csoutheren
+ * Extended AnsweringCall to work for SIP as well as H.323
+ * Fixed problems with external RTP connection in H.323
+ * Added call to OnClosedMediaStream
+ *
+ * Revision 2.27  2004/09/01 12:21:27  rjongbloed
  * Added initialisation of H323EndPoints capability table to be all codecs so can
  *   correctly build remote caps from fqast connect params. This had knock on effect
  *   with const keywords added in numerous places.
@@ -845,28 +850,20 @@ class H323EndPoint : public OpalEndPoint
     );
 
     /**Call back for answering an incoming call.
-       This function is called from the OnReceivedSignalSetup() function
-       before it sends the Connect PDU. It gives an opportunity for an
-       application to alter the reply before transmission to the other
-       endpoint.
+       This function is a H.323 specific version of OpalEndPoint::OnAnswerCall
+       that contains additional information that applies only to H.323.
 
-       It also gives an application time to wait for some event before
-       signalling to the endpoint that the connection is to proceed. For
-       example the user pressing an "Answer call" button.
-
-       If AnswerCallDenied is returned the connection is aborted and a Release
-       Complete PDU is sent. If AnswerCallNow is returned then the H.323
-       protocol proceeds. Finally if AnswerCallPending is returned then the
-       protocol negotiations are paused until the AnsweringCall() function is
-       called.
-
-       The default behaviour simply returns AnswerNow.
+       By default this calls OpalEndPoint::OnAnswerCall, which returns
      */
-    virtual H323Connection::AnswerCallResponse OnAnswerCall(
+    virtual OpalConnection::AnswerCallResponse OnAnswerCall(
       H323Connection & connection,    /// Connection that was established
       const PString & callerName,       /// Name of caller
       const H323SignalPDU & setupPDU,   /// Received setup PDU
       H323SignalPDU & connectPDU        /// Connect PDU to send. 
+    );
+    virtual OpalConnection::AnswerCallResponse OnAnswerCall(
+       OpalConnection & connection,
+       const PString & caller
     );
 
     /**Call back for remote party being alerted.
