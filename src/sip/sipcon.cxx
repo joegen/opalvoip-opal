@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2072  2005/06/04 12:44:36  dsandras
+ * Revision 1.2073  2005/07/11 01:52:26  csoutheren
+ * Extended AnsweringCall to work for SIP as well as H.323
+ * Fixed problems with external RTP connection in H.323
+ * Added call to OnClosedMediaStream
+ *
+ * Revision 2.71  2005/06/04 12:44:36  dsandras
  * Applied patch from Ted Szoczei to fix leaks and problems on cancelling a call and to improve the Allow PDU field handling.
  *
  * Revision 2.70  2005/05/25 18:34:25  dsandras
@@ -572,6 +577,8 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
       ReleaseSession(rtpSessionId);
       return FALSE;
     }
+    if (ownerCall.IsMediaBypassPossible(*this, rtpSessionId))
+      mediaTransportAddresses.SetAt(rtpSessionId, new OpalTransportAddress(incomingMedia->GetTransportAddress()));  // XXXXXXX
   }
 
   // look for matching codec in peer connection
@@ -668,22 +675,18 @@ OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & media
 void SIPConnection::OnConnected ()
 {
   if (rfc2833Handler != NULL) {
-
     for (int i = 0; i < mediaStreams.GetSize(); i++) {
-
       OpalMediaStream & mediaStream = mediaStreams[i];
-
       if (mediaStream.GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
-	OpalMediaPatch * patch = mediaStream.GetPatch();
-
-	if (patch != NULL) {
-	  if (mediaStream.IsSource()) {
-	    patch->AddFilter(rfc2833Handler->GetReceiveHandler(), mediaStream.GetMediaFormat());
-	  }
-	  else {
-	    patch->AddFilter(rfc2833Handler->GetTransmitHandler());
-	  }
-	}
+	      OpalMediaPatch * patch = mediaStream.GetPatch();
+	      if (patch != NULL) {
+	        if (mediaStream.IsSource()) {
+	          patch->AddFilter(rfc2833Handler->GetReceiveHandler(), mediaStream.GetMediaFormat());
+	        }
+	        else {
+	          patch->AddFilter(rfc2833Handler->GetTransmitHandler());
+	        }
+	      }
       }
     }
   }
@@ -1209,8 +1212,58 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   PTRACE(2, "SIP\tOnIncomingConnection succeeded for INVITE from " << request.GetURI() << " for " << *this);
   phase = SetUpPhase;
   ownerCall.OnSetUp(*this);
+
+  AnsweringCall(OnAnswerCall(remotePartyAddress));
 }
 
+OpalConnection::AnswerCallResponse SIPConnection::OnAnswerCall(
+      const PString & callerName      /// Name of caller
+)
+{
+  return OpalConnection::OnAnswerCall(callerName);
+}
+
+void SIPConnection::AnsweringCall(AnswerCallResponse response)
+{
+  switch (phase) {
+    case SetUpPhase:
+    case AlertingPhase:
+      switch (response) {
+        case AnswerCallNow:
+          SetConnected();
+          break;
+
+        case AnswerCallDenied:
+          PTRACE(1, "SIP\tApplication has declined to answer incoming call");
+          Release(EndedByAnswerDenied);
+          break;
+
+        case AnswerCallPending:
+          SetAlerting(localPartyName, FALSE);
+          break;
+
+        case AnswerCallAlertWithMedia:
+          SetAlerting(localPartyName, TRUE);
+          break;
+
+        case AnswerCallDeferred:
+        case AnswerCallDeferredWithMedia:
+          break;
+      }
+      break;
+
+    // 
+    // cannot answer call in any of the following phases
+    //
+    case ConnectedPhase:
+    case UninitialisedPhase:
+    case EstablishedPhase:
+    case ReleasingPhase:
+    case ReleasedPhase:
+    default:
+      break;
+  }
+}
 
 void SIPConnection::OnReceivedACK(SIP_PDU & /*response*/)
 {
@@ -1532,7 +1585,7 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
 
   OpalTransportAddress address = mediaDescription->GetTransportAddress();
   if (ownerCall.IsMediaBypassPossible(*this, rtpSessionId))
-    mediaTransportAddresses.SetAt(rtpSessionId, new OpalTransportAddress(address));
+    mediaTransportAddresses.SetAt(rtpSessionId, new OpalTransportAddress(address));  // XXXXXXX
   else {
 
     PIPSocket::Address ip;

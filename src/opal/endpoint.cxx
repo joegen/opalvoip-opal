@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2027  2005/04/10 21:13:55  dsandras
+ * Revision 1.2028  2005/07/11 01:52:26  csoutheren
+ * Extended AnsweringCall to work for SIP as well as H.323
+ * Fixed problems with external RTP connection in H.323
+ * Added call to OnClosedMediaStream
+ *
+ * Revision 2.26  2005/04/10 21:13:55  dsandras
  * Added callback that is called when a connection is put on hold.
  *
  * Revision 2.25  2004/08/14 07:56:39  rjongbloed
@@ -312,6 +317,12 @@ void OpalEndPoint::OnAlerting(OpalConnection & connection)
   manager.OnAlerting(connection);
 }
 
+OpalConnection::AnswerCallResponse
+       OpalEndPoint::OnAnswerCall(OpalConnection & connection,
+                                  const PString & caller)
+{
+  return manager.OnAnswerCall(connection, caller);
+}
 
 void OpalEndPoint::OnConnected(OpalConnection & connection)
 {
@@ -444,6 +455,5 @@ OpalT38Protocol * OpalEndPoint::CreateT38ProtocolHandler(const OpalConnection & 
 {
   return manager.CreateT38ProtocolHandler(connection);
 }
-
 
 /////////////////////////////////////////////////////////////////////////////

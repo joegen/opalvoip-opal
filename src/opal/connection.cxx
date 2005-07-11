@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2043  2005/06/02 13:18:02  rjongbloed
+ * Revision 1.2044  2005/07/11 01:52:26  csoutheren
+ * Extended AnsweringCall to work for SIP as well as H.323
+ * Fixed problems with external RTP connection in H.323
+ * Added call to OnClosedMediaStream
+ *
+ * Revision 2.42  2005/06/02 13:18:02  rjongbloed
  * Fixed compiler warnings
  *
  * Revision 2.41  2005/04/10 21:12:59  dsandras
@@ -236,8 +241,27 @@ ostream & operator<<(ostream & out, OpalConnection::CallEndReason reason)
   };
   return out << names[reason];
 }
-#endif
 
+ostream & operator<<(ostream & o, OpalConnection::AnswerCallResponse s)
+{
+  static const char * const AnswerCallResponseNames[OpalConnection::NumAnswerCallResponses] = {
+    "AnswerCallNow",
+    "AnswerCallDenied",
+    "AnswerCallPending",
+    "AnswerCallDeferred",
+    "AnswerCallAlertWithMedia",
+    "AnswerCallDeferredWithMedia"
+  };
+  if ((PINDEX)s >= PARRAYSIZE(AnswerCallResponseNames))
+    o << "InvalidAnswerCallResponse<" << (unsigned)s << '>';
+  else if (AnswerCallResponseNames[s] == NULL)
+    o << "AnswerCallResponse<" << (unsigned)s << '>';
+  else
+    o << AnswerCallResponseNames[s];
+  return o;
+}
+
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -382,8 +406,10 @@ void OpalConnection::OnReleased()
 {
   PTRACE(3, "OpalCon\tOnReleased " << *this);
 
-  for (PINDEX i = 0; i < mediaStreams.GetSize(); i++)
+  for (PINDEX i = 0; i < mediaStreams.GetSize(); i++) {
+    OnClosedMediaStream(mediaStreams[i]);
     mediaStreams[i].Close();
+  }
 
   endpoint.OnReleased(*this);
 }
@@ -412,6 +438,14 @@ void OpalConnection::OnAlerting()
   endpoint.OnAlerting(*this);
 }
 
+OpalConnection::AnswerCallResponse OpalConnection::OnAnswerCall(const PString & callerName)
+{
+  return endpoint.OnAnswerCall(*this, callerName);
+}
+
+void OpalConnection::AnsweringCall(AnswerCallResponse /*response*/)
+{
+}
 
 void OpalConnection::OnConnected()
 {
@@ -616,7 +650,7 @@ BOOL OpalConnection::GetMediaInformation(unsigned sessionID,
                                          MediaInformation & info) const
 {
   if (!mediaTransportAddresses.Contains(sessionID)) {
-    PTRACE(3, "SIP\tGetMediaInformation for session " << sessionID << " - no channel.");
+    PTRACE(3, "OpalCon\tGetMediaInformation for session " << sessionID << " - no channel.");
     return FALSE;
   }
 
@@ -632,7 +666,7 @@ BOOL OpalConnection::GetMediaInformation(unsigned sessionID,
     info.data = info.control = address;
 
   info.rfc2833 = rfc2833Handler->GetPayloadType();
-  PTRACE(3, "SIP\tGetMediaInformation for session " << sessionID
+  PTRACE(3, "OpalCon\tGetMediaInformation for session " << sessionID
          << " data=" << info.data << " rfc2833=" << info.rfc2833);
   return TRUE;
 }
@@ -947,6 +981,5 @@ void OpalConnection::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
     maxDelay = minDelay;
   maxAudioJitterDelay = maxDelay;
 }
-
 
 /////////////////////////////////////////////////////////////////////////////
