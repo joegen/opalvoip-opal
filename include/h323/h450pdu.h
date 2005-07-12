@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h450pdu.h,v $
- * Revision 1.2009  2003/01/07 04:39:52  robertj
+ * Revision 1.2010  2005/07/12 12:34:37  csoutheren
+ * Fixes for H.450 errors and return values
+ * Thanks to Iker Perez San Roman
+ *
+ * Revision 2.8  2003/01/07 04:39:52  robertj
  * Updated to OpenH323 v1.11.2
  *
  * Revision 2.7  2002/11/10 11:33:17  robertj
@@ -550,10 +554,6 @@ class H4502Handler : public H450xHandler
      */
     const PString& getTransferringCallToken() const { return transferringCallToken; }
 
-    /**Get the next available invoke Id for H450 operations
-     */
-    unsigned GetNextCallIdentityValue() const { return nextCallIdentity++; }
-
     /**Set the 'consultationTransfer' member to TRUE (indicating a successful transfer)
      */
     void SetConsultationTransferSuccess() { consultationTransfer = TRUE; }
@@ -570,8 +570,6 @@ class H4502Handler : public H450xHandler
     PTimer  ctTimer;                  // Call Transfer Timer - Handles all four timers CT-T1,
     PString CallToken;                // Call Token of the associated connection 
                                       // (used during a consultation transfer).
-    mutable unsigned nextCallIdentity;// Next available callIdentity for H450 Transfer operations
-                                      // via consultation.
     BOOL consultationTransfer;        // Flag used to indicate whether an incoming call is involved in
                                       // a transfer through consultation.
 };

@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2029  2005/07/11 01:52:23  csoutheren
+ * Revision 1.2030  2005/07/12 12:34:37  csoutheren
+ * Fixes for H.450 errors and return values
+ * Thanks to Iker Perez San Roman
+ *
+ * Revision 2.28  2005/07/11 01:52:23  csoutheren
  * Extended AnsweringCall to work for SIP as well as H.323
  * Fixed problems with external RTP connection in H.323
  * Added call to OnClosedMediaStream
@@ -353,7 +357,7 @@ class PSTUNClient;
 
 /**This class manages the H323 endpoint.
    An endpoint may have zero or more listeners to create incoming connections
-   or zero or more outgoing conenctions initiated via the MakeCall() function.
+   or zero or more outgoing connections initiated via the MakeCall() function.
    Once a conection exists it is managed by this class instance.
 
    The main thing this class embodies is the capabilities of the application,
@@ -1167,6 +1171,10 @@ class H323EndPoint : public OpalEndPoint
       unsigned level  // New level from 0 to 3
     ) { PAssert(level<=3, PInvalidParameter); callIntrusionProtectionLevel = level; }
 
+    /**Called from H.450 OnReceivedInitiateReturnError
+      */
+    virtual void OnReceivedInitiateReturnError();
+
     /**Get the default mode for sending User Input Indications.
       */
     H323Connection::SendUserInputModes GetSendUserInputMode() const { return defaultSendUserInputMode; }
@@ -1462,7 +1470,12 @@ class H323EndPoint : public OpalEndPoint
 
     /**Get the dictionary of <callIdentities, connections>
      */
-    H323CallIdentityDict& GetCallIdentityDictionary() { return secondaryConenctionsActive; }
+    H323CallIdentityDict& GetCallIdentityDictionary() { return secondaryConnectionsActive; }
+
+    /**Get the next available invoke Id for H450 operations
+      */
+    unsigned GetNextH450CallIdentityValue() const { return ++nextH450CallIdentity; }
+
   //@}
 
     /**
@@ -1549,7 +1562,11 @@ class H323EndPoint : public OpalEndPoint
     H323Gatekeeper *     gatekeeper;
     PString              gatekeeperUsername;
     PString              gatekeeperPassword;
-    H323CallIdentityDict secondaryConenctionsActive;
+    H323CallIdentityDict secondaryConnectionsActive;
+
+    mutable PAtomicInteger nextH450CallIdentity;
+            /// Next available callIdentity for H450 Transfer operations via consultation.
+
 };
 
 
