@@ -12,21 +12,97 @@
 
 #if ! H323_DISABLE_H245
 
+//
+// FECData_rfc2733_pktMode_rfc2733diffport
+//
+
+H245_FECData_rfc2733_pktMode_rfc2733diffport::H245_FECData_rfc2733_pktMode_rfc2733diffport(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+{
+}
+
 
 #ifndef PASN_NOPRINTON
-const static PASN_Names Names_H245_FECMode_rfc2733Mode_mode_separateStream[]={
+void H245_FECData_rfc2733_pktMode_rfc2733diffport::PrintOn(ostream & strm) const
+{
+  int indent = strm.precision() + 2;
+  strm << "{\n";
+  strm << setw(indent+19) << "protectedChannel = " << setprecision(indent) << m_protectedChannel << '\n';
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
+}
+#endif
+
+
+PObject::Comparison H245_FECData_rfc2733_pktMode_rfc2733diffport::Compare(const PObject & obj) const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(&obj, H245_FECData_rfc2733_pktMode_rfc2733diffport), PInvalidCast);
+#endif
+  const H245_FECData_rfc2733_pktMode_rfc2733diffport & other = (const H245_FECData_rfc2733_pktMode_rfc2733diffport &)obj;
+
+  Comparison result;
+
+  if ((result = m_protectedChannel.Compare(other.m_protectedChannel)) != EqualTo)
+    return result;
+
+  return PASN_Sequence::Compare(other);
+}
+
+
+PINDEX H245_FECData_rfc2733_pktMode_rfc2733diffport::GetDataLength() const
+{
+  PINDEX length = 0;
+  length += m_protectedChannel.GetObjectLength();
+  return length;
+}
+
+
+BOOL H245_FECData_rfc2733_pktMode_rfc2733diffport::Decode(PASN_Stream & strm)
+{
+  if (!PreambleDecode(strm))
+    return FALSE;
+
+  if (!m_protectedChannel.Decode(strm))
+    return FALSE;
+
+  return UnknownExtensionsDecode(strm);
+}
+
+
+void H245_FECData_rfc2733_pktMode_rfc2733diffport::Encode(PASN_Stream & strm) const
+{
+  PreambleEncode(strm);
+
+  m_protectedChannel.Encode(strm);
+
+  UnknownExtensionsEncode(strm);
+}
+
+
+PObject * H245_FECData_rfc2733_pktMode_rfc2733diffport::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_FECData_rfc2733_pktMode_rfc2733diffport::Class()), PInvalidCast);
+#endif
+  return new H245_FECData_rfc2733_pktMode_rfc2733diffport(*this);
+}
+
+
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_DepFECMode_rfc2733Mode_mode_separateStream[]={
       {"differentPort",0}
      ,{"samePort",1}
 };
 #endif
 //
-// FECMode_rfc2733Mode_mode_separateStream
+// DepFECMode_rfc2733Mode_mode_separateStream
 //
 
-H245_FECMode_rfc2733Mode_mode_separateStream::H245_FECMode_rfc2733Mode_mode_separateStream(unsigned tag, PASN_Object::TagClass tagClass)
+H245_DepFECMode_rfc2733Mode_mode_separateStream::H245_DepFECMode_rfc2733Mode_mode_separateStream(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-    ,(const PASN_Names *)Names_H245_FECMode_rfc2733Mode_mode_separateStream,2
+    ,(const PASN_Names *)Names_H245_DepFECMode_rfc2733Mode_mode_separateStream,2
 #endif
 )
 {
@@ -34,57 +110,57 @@ H245_FECMode_rfc2733Mode_mode_separateStream::H245_FECMode_rfc2733Mode_mode_sepa
 
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
-H245_FECMode_rfc2733Mode_mode_separateStream::operator H245_FECMode_rfc2733Mode_mode_separateStream_differentPort &() const
+H245_DepFECMode_rfc2733Mode_mode_separateStream::operator H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort &() const
 #else
-H245_FECMode_rfc2733Mode_mode_separateStream::operator H245_FECMode_rfc2733Mode_mode_separateStream_differentPort &()
+H245_DepFECMode_rfc2733Mode_mode_separateStream::operator H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort &()
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(PAssertNULL(choice), H245_FECMode_rfc2733Mode_mode_separateStream_differentPort), PInvalidCast);
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort), PInvalidCast);
 #endif
-  return *(H245_FECMode_rfc2733Mode_mode_separateStream_differentPort *)choice;
+  return *(H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort *)choice;
 }
 
 
-H245_FECMode_rfc2733Mode_mode_separateStream::operator const H245_FECMode_rfc2733Mode_mode_separateStream_differentPort &() const
+H245_DepFECMode_rfc2733Mode_mode_separateStream::operator const H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort &() const
 #endif
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(PAssertNULL(choice), H245_FECMode_rfc2733Mode_mode_separateStream_differentPort), PInvalidCast);
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort), PInvalidCast);
 #endif
-  return *(H245_FECMode_rfc2733Mode_mode_separateStream_differentPort *)choice;
+  return *(H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort *)choice;
 }
 
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
-H245_FECMode_rfc2733Mode_mode_separateStream::operator H245_FECMode_rfc2733Mode_mode_separateStream_samePort &() const
+H245_DepFECMode_rfc2733Mode_mode_separateStream::operator H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort &() const
 #else
-H245_FECMode_rfc2733Mode_mode_separateStream::operator H245_FECMode_rfc2733Mode_mode_separateStream_samePort &()
+H245_DepFECMode_rfc2733Mode_mode_separateStream::operator H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort &()
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(PAssertNULL(choice), H245_FECMode_rfc2733Mode_mode_separateStream_samePort), PInvalidCast);
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort), PInvalidCast);
 #endif
-  return *(H245_FECMode_rfc2733Mode_mode_separateStream_samePort *)choice;
+  return *(H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort *)choice;
 }
 
 
-H245_FECMode_rfc2733Mode_mode_separateStream::operator const H245_FECMode_rfc2733Mode_mode_separateStream_samePort &() const
+H245_DepFECMode_rfc2733Mode_mode_separateStream::operator const H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort &() const
 #endif
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(PAssertNULL(choice), H245_FECMode_rfc2733Mode_mode_separateStream_samePort), PInvalidCast);
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort), PInvalidCast);
 #endif
-  return *(H245_FECMode_rfc2733Mode_mode_separateStream_samePort *)choice;
+  return *(H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort *)choice;
 }
 
 
-BOOL H245_FECMode_rfc2733Mode_mode_separateStream::CreateObject()
+BOOL H245_DepFECMode_rfc2733Mode_mode_separateStream::CreateObject()
 {
   switch (tag) {
     case e_differentPort :
-      choice = new H245_FECMode_rfc2733Mode_mode_separateStream_differentPort();
+      choice = new H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort();
       return TRUE;
     case e_samePort :
-      choice = new H245_FECMode_rfc2733Mode_mode_separateStream_samePort();
+      choice = new H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort();
       return TRUE;
   }
 
@@ -93,12 +169,12 @@ BOOL H245_FECMode_rfc2733Mode_mode_separateStream::CreateObject()
 }
 
 
-PObject * H245_FECMode_rfc2733Mode_mode_separateStream::Clone() const
+PObject * H245_DepFECMode_rfc2733Mode_mode_separateStream::Clone() const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(IsClass(H245_FECMode_rfc2733Mode_mode_separateStream::Class()), PInvalidCast);
+  PAssert(IsClass(H245_DepFECMode_rfc2733Mode_mode_separateStream::Class()), PInvalidCast);
 #endif
-  return new H245_FECMode_rfc2733Mode_mode_separateStream(*this);
+  return new H245_DepFECMode_rfc2733Mode_mode_separateStream(*this);
 }
 
 
@@ -333,10 +409,10 @@ PObject * H245_NewATMVCIndication_aal_aal1_errorCorrection::Clone() const
 
 
 //
-// FECData_rfc2733_mode_separateStream_differentPort
+// DepFECData_rfc2733_mode_separateStream_differentPort
 //
 
-H245_FECData_rfc2733_mode_separateStream_differentPort::H245_FECData_rfc2733_mode_separateStream_differentPort(unsigned tag, PASN_Object::TagClass tagClass)
+H245_DepFECData_rfc2733_mode_separateStream_differentPort::H245_DepFECData_rfc2733_mode_separateStream_differentPort(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
 {
   m_protectedSessionID.SetConstraints(PASN_Object::FixedConstraint, 1, 255);
@@ -345,7 +421,7 @@ H245_FECData_rfc2733_mode_separateStream_differentPort::H245_FECData_rfc2733_mod
 
 
 #ifndef PASN_NOPRINTON
-void H245_FECData_rfc2733_mode_separateStream_differentPort::PrintOn(ostream & strm) const
+void H245_DepFECData_rfc2733_mode_separateStream_differentPort::PrintOn(ostream & strm) const
 {
   int indent = strm.precision() + 2;
   strm << "{\n";
@@ -357,12 +433,12 @@ void H245_FECData_rfc2733_mode_separateStream_differentPort::PrintOn(ostream & s
 #endif
 
 
-PObject::Comparison H245_FECData_rfc2733_mode_separateStream_differentPort::Compare(const PObject & obj) const
+PObject::Comparison H245_DepFECData_rfc2733_mode_separateStream_differentPort::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(&obj, H245_FECData_rfc2733_mode_separateStream_differentPort), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_DepFECData_rfc2733_mode_separateStream_differentPort), PInvalidCast);
 #endif
-  const H245_FECData_rfc2733_mode_separateStream_differentPort & other = (const H245_FECData_rfc2733_mode_separateStream_differentPort &)obj;
+  const H245_DepFECData_rfc2733_mode_separateStream_differentPort & other = (const H245_DepFECData_rfc2733_mode_separateStream_differentPort &)obj;
 
   Comparison result;
 
@@ -375,7 +451,7 @@ PObject::Comparison H245_FECData_rfc2733_mode_separateStream_differentPort::Comp
 }
 
 
-PINDEX H245_FECData_rfc2733_mode_separateStream_differentPort::GetDataLength() const
+PINDEX H245_DepFECData_rfc2733_mode_separateStream_differentPort::GetDataLength() const
 {
   PINDEX length = 0;
   length += m_protectedSessionID.GetObjectLength();
@@ -385,7 +461,7 @@ PINDEX H245_FECData_rfc2733_mode_separateStream_differentPort::GetDataLength() c
 }
 
 
-BOOL H245_FECData_rfc2733_mode_separateStream_differentPort::Decode(PASN_Stream & strm)
+BOOL H245_DepFECData_rfc2733_mode_separateStream_differentPort::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
     return FALSE;
@@ -399,7 +475,7 @@ BOOL H245_FECData_rfc2733_mode_separateStream_differentPort::Decode(PASN_Stream 
 }
 
 
-void H245_FECData_rfc2733_mode_separateStream_differentPort::Encode(PASN_Stream & strm) const
+void H245_DepFECData_rfc2733_mode_separateStream_differentPort::Encode(PASN_Stream & strm) const
 {
   PreambleEncode(strm);
 
@@ -411,20 +487,20 @@ void H245_FECData_rfc2733_mode_separateStream_differentPort::Encode(PASN_Stream 
 }
 
 
-PObject * H245_FECData_rfc2733_mode_separateStream_differentPort::Clone() const
+PObject * H245_DepFECData_rfc2733_mode_separateStream_differentPort::Clone() const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(IsClass(H245_FECData_rfc2733_mode_separateStream_differentPort::Class()), PInvalidCast);
+  PAssert(IsClass(H245_DepFECData_rfc2733_mode_separateStream_differentPort::Class()), PInvalidCast);
 #endif
-  return new H245_FECData_rfc2733_mode_separateStream_differentPort(*this);
+  return new H245_DepFECData_rfc2733_mode_separateStream_differentPort(*this);
 }
 
 
 //
-// FECData_rfc2733_mode_separateStream_samePort
+// DepFECData_rfc2733_mode_separateStream_samePort
 //
 
-H245_FECData_rfc2733_mode_separateStream_samePort::H245_FECData_rfc2733_mode_separateStream_samePort(unsigned tag, PASN_Object::TagClass tagClass)
+H245_DepFECData_rfc2733_mode_separateStream_samePort::H245_DepFECData_rfc2733_mode_separateStream_samePort(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
 {
   m_protectedPayloadType.SetConstraints(PASN_Object::FixedConstraint, 0, 127);
@@ -432,7 +508,7 @@ H245_FECData_rfc2733_mode_separateStream_samePort::H245_FECData_rfc2733_mode_sep
 
 
 #ifndef PASN_NOPRINTON
-void H245_FECData_rfc2733_mode_separateStream_samePort::PrintOn(ostream & strm) const
+void H245_DepFECData_rfc2733_mode_separateStream_samePort::PrintOn(ostream & strm) const
 {
   int indent = strm.precision() + 2;
   strm << "{\n";
@@ -442,12 +518,12 @@ void H245_FECData_rfc2733_mode_separateStream_samePort::PrintOn(ostream & strm) 
 #endif
 
 
-PObject::Comparison H245_FECData_rfc2733_mode_separateStream_samePort::Compare(const PObject & obj) const
+PObject::Comparison H245_DepFECData_rfc2733_mode_separateStream_samePort::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(&obj, H245_FECData_rfc2733_mode_separateStream_samePort), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_DepFECData_rfc2733_mode_separateStream_samePort), PInvalidCast);
 #endif
-  const H245_FECData_rfc2733_mode_separateStream_samePort & other = (const H245_FECData_rfc2733_mode_separateStream_samePort &)obj;
+  const H245_DepFECData_rfc2733_mode_separateStream_samePort & other = (const H245_DepFECData_rfc2733_mode_separateStream_samePort &)obj;
 
   Comparison result;
 
@@ -458,7 +534,7 @@ PObject::Comparison H245_FECData_rfc2733_mode_separateStream_samePort::Compare(c
 }
 
 
-PINDEX H245_FECData_rfc2733_mode_separateStream_samePort::GetDataLength() const
+PINDEX H245_DepFECData_rfc2733_mode_separateStream_samePort::GetDataLength() const
 {
   PINDEX length = 0;
   length += m_protectedPayloadType.GetObjectLength();
@@ -466,7 +542,7 @@ PINDEX H245_FECData_rfc2733_mode_separateStream_samePort::GetDataLength() const
 }
 
 
-BOOL H245_FECData_rfc2733_mode_separateStream_samePort::Decode(PASN_Stream & strm)
+BOOL H245_DepFECData_rfc2733_mode_separateStream_samePort::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
     return FALSE;
@@ -478,7 +554,7 @@ BOOL H245_FECData_rfc2733_mode_separateStream_samePort::Decode(PASN_Stream & str
 }
 
 
-void H245_FECData_rfc2733_mode_separateStream_samePort::Encode(PASN_Stream & strm) const
+void H245_DepFECData_rfc2733_mode_separateStream_samePort::Encode(PASN_Stream & strm) const
 {
   PreambleEncode(strm);
 
@@ -488,20 +564,20 @@ void H245_FECData_rfc2733_mode_separateStream_samePort::Encode(PASN_Stream & str
 }
 
 
-PObject * H245_FECData_rfc2733_mode_separateStream_samePort::Clone() const
+PObject * H245_DepFECData_rfc2733_mode_separateStream_samePort::Clone() const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(IsClass(H245_FECData_rfc2733_mode_separateStream_samePort::Class()), PInvalidCast);
+  PAssert(IsClass(H245_DepFECData_rfc2733_mode_separateStream_samePort::Class()), PInvalidCast);
 #endif
-  return new H245_FECData_rfc2733_mode_separateStream_samePort(*this);
+  return new H245_DepFECData_rfc2733_mode_separateStream_samePort(*this);
 }
 
 
 //
-// FECMode_rfc2733Mode_mode_separateStream_differentPort
+// DepFECMode_rfc2733Mode_mode_separateStream_differentPort
 //
 
-H245_FECMode_rfc2733Mode_mode_separateStream_differentPort::H245_FECMode_rfc2733Mode_mode_separateStream_differentPort(unsigned tag, PASN_Object::TagClass tagClass)
+H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort::H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
 {
   m_protectedSessionID.SetConstraints(PASN_Object::FixedConstraint, 1, 255);
@@ -510,7 +586,7 @@ H245_FECMode_rfc2733Mode_mode_separateStream_differentPort::H245_FECMode_rfc2733
 
 
 #ifndef PASN_NOPRINTON
-void H245_FECMode_rfc2733Mode_mode_separateStream_differentPort::PrintOn(ostream & strm) const
+void H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort::PrintOn(ostream & strm) const
 {
   int indent = strm.precision() + 2;
   strm << "{\n";
@@ -522,12 +598,12 @@ void H245_FECMode_rfc2733Mode_mode_separateStream_differentPort::PrintOn(ostream
 #endif
 
 
-PObject::Comparison H245_FECMode_rfc2733Mode_mode_separateStream_differentPort::Compare(const PObject & obj) const
+PObject::Comparison H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(&obj, H245_FECMode_rfc2733Mode_mode_separateStream_differentPort), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort), PInvalidCast);
 #endif
-  const H245_FECMode_rfc2733Mode_mode_separateStream_differentPort & other = (const H245_FECMode_rfc2733Mode_mode_separateStream_differentPort &)obj;
+  const H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort & other = (const H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort &)obj;
 
   Comparison result;
 
@@ -540,7 +616,7 @@ PObject::Comparison H245_FECMode_rfc2733Mode_mode_separateStream_differentPort::
 }
 
 
-PINDEX H245_FECMode_rfc2733Mode_mode_separateStream_differentPort::GetDataLength() const
+PINDEX H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort::GetDataLength() const
 {
   PINDEX length = 0;
   length += m_protectedSessionID.GetObjectLength();
@@ -550,7 +626,7 @@ PINDEX H245_FECMode_rfc2733Mode_mode_separateStream_differentPort::GetDataLength
 }
 
 
-BOOL H245_FECMode_rfc2733Mode_mode_separateStream_differentPort::Decode(PASN_Stream & strm)
+BOOL H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
     return FALSE;
@@ -564,7 +640,7 @@ BOOL H245_FECMode_rfc2733Mode_mode_separateStream_differentPort::Decode(PASN_Str
 }
 
 
-void H245_FECMode_rfc2733Mode_mode_separateStream_differentPort::Encode(PASN_Stream & strm) const
+void H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort::Encode(PASN_Stream & strm) const
 {
   PreambleEncode(strm);
 
@@ -576,27 +652,27 @@ void H245_FECMode_rfc2733Mode_mode_separateStream_differentPort::Encode(PASN_Str
 }
 
 
-PObject * H245_FECMode_rfc2733Mode_mode_separateStream_differentPort::Clone() const
+PObject * H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort::Clone() const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(IsClass(H245_FECMode_rfc2733Mode_mode_separateStream_differentPort::Class()), PInvalidCast);
+  PAssert(IsClass(H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort::Class()), PInvalidCast);
 #endif
-  return new H245_FECMode_rfc2733Mode_mode_separateStream_differentPort(*this);
+  return new H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort(*this);
 }
 
 
 //
-// FECMode_rfc2733Mode_mode_separateStream_samePort
+// DepFECMode_rfc2733Mode_mode_separateStream_samePort
 //
 
-H245_FECMode_rfc2733Mode_mode_separateStream_samePort::H245_FECMode_rfc2733Mode_mode_separateStream_samePort(unsigned tag, PASN_Object::TagClass tagClass)
+H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort::H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
 {
 }
 
 
 #ifndef PASN_NOPRINTON
-void H245_FECMode_rfc2733Mode_mode_separateStream_samePort::PrintOn(ostream & strm) const
+void H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort::PrintOn(ostream & strm) const
 {
   int indent = strm.precision() + 2;
   strm << "{\n";
@@ -606,12 +682,12 @@ void H245_FECMode_rfc2733Mode_mode_separateStream_samePort::PrintOn(ostream & st
 #endif
 
 
-PObject::Comparison H245_FECMode_rfc2733Mode_mode_separateStream_samePort::Compare(const PObject & obj) const
+PObject::Comparison H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(&obj, H245_FECMode_rfc2733Mode_mode_separateStream_samePort), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort), PInvalidCast);
 #endif
-  const H245_FECMode_rfc2733Mode_mode_separateStream_samePort & other = (const H245_FECMode_rfc2733Mode_mode_separateStream_samePort &)obj;
+  const H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort & other = (const H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort &)obj;
 
   Comparison result;
 
@@ -622,7 +698,7 @@ PObject::Comparison H245_FECMode_rfc2733Mode_mode_separateStream_samePort::Compa
 }
 
 
-PINDEX H245_FECMode_rfc2733Mode_mode_separateStream_samePort::GetDataLength() const
+PINDEX H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort::GetDataLength() const
 {
   PINDEX length = 0;
   length += m_protectedType.GetObjectLength();
@@ -630,7 +706,7 @@ PINDEX H245_FECMode_rfc2733Mode_mode_separateStream_samePort::GetDataLength() co
 }
 
 
-BOOL H245_FECMode_rfc2733Mode_mode_separateStream_samePort::Decode(PASN_Stream & strm)
+BOOL H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
     return FALSE;
@@ -642,7 +718,7 @@ BOOL H245_FECMode_rfc2733Mode_mode_separateStream_samePort::Decode(PASN_Stream &
 }
 
 
-void H245_FECMode_rfc2733Mode_mode_separateStream_samePort::Encode(PASN_Stream & strm) const
+void H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort::Encode(PASN_Stream & strm) const
 {
   PreambleEncode(strm);
 
@@ -652,12 +728,12 @@ void H245_FECMode_rfc2733Mode_mode_separateStream_samePort::Encode(PASN_Stream &
 }
 
 
-PObject * H245_FECMode_rfc2733Mode_mode_separateStream_samePort::Clone() const
+PObject * H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort::Clone() const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(IsClass(H245_FECMode_rfc2733Mode_mode_separateStream_samePort::Class()), PInvalidCast);
+  PAssert(IsClass(H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort::Class()), PInvalidCast);
 #endif
-  return new H245_FECMode_rfc2733Mode_mode_separateStream_samePort(*this);
+  return new H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort(*this);
 }
 
 
@@ -668,7 +744,7 @@ PObject * H245_FECMode_rfc2733Mode_mode_separateStream_samePort::Clone() const
 H245_GenericMessage::H245_GenericMessage(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
 {
-  m_subMessageIdentifer.SetConstraints(PASN_Object::FixedConstraint, 0, 127);
+  m_subMessageIdentifier.SetConstraints(PASN_Object::FixedConstraint, 0, 127);
 }
 
 
@@ -678,8 +754,8 @@ void H245_GenericMessage::PrintOn(ostream & strm) const
   int indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+20) << "messageIdentifier = " << setprecision(indent) << m_messageIdentifier << '\n';
-  if (HasOptionalField(e_subMessageIdentifer))
-    strm << setw(indent+22) << "subMessageIdentifer = " << setprecision(indent) << m_subMessageIdentifer << '\n';
+  if (HasOptionalField(e_subMessageIdentifier))
+    strm << setw(indent+23) << "subMessageIdentifier = " << setprecision(indent) << m_subMessageIdentifier << '\n';
   if (HasOptionalField(e_messageContent))
     strm << setw(indent+17) << "messageContent = " << setprecision(indent) << m_messageContent << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
@@ -698,7 +774,7 @@ PObject::Comparison H245_GenericMessage::Compare(const PObject & obj) const
 
   if ((result = m_messageIdentifier.Compare(other.m_messageIdentifier)) != EqualTo)
     return result;
-  if ((result = m_subMessageIdentifer.Compare(other.m_subMessageIdentifer)) != EqualTo)
+  if ((result = m_subMessageIdentifier.Compare(other.m_subMessageIdentifier)) != EqualTo)
     return result;
   if ((result = m_messageContent.Compare(other.m_messageContent)) != EqualTo)
     return result;
@@ -711,8 +787,8 @@ PINDEX H245_GenericMessage::GetDataLength() const
 {
   PINDEX length = 0;
   length += m_messageIdentifier.GetObjectLength();
-  if (HasOptionalField(e_subMessageIdentifer))
-    length += m_subMessageIdentifer.GetObjectLength();
+  if (HasOptionalField(e_subMessageIdentifier))
+    length += m_subMessageIdentifier.GetObjectLength();
   if (HasOptionalField(e_messageContent))
     length += m_messageContent.GetObjectLength();
   return length;
@@ -726,7 +802,7 @@ BOOL H245_GenericMessage::Decode(PASN_Stream & strm)
 
   if (!m_messageIdentifier.Decode(strm))
     return FALSE;
-  if (HasOptionalField(e_subMessageIdentifer) && !m_subMessageIdentifer.Decode(strm))
+  if (HasOptionalField(e_subMessageIdentifier) && !m_subMessageIdentifier.Decode(strm))
     return FALSE;
   if (HasOptionalField(e_messageContent) && !m_messageContent.Decode(strm))
     return FALSE;
@@ -740,8 +816,8 @@ void H245_GenericMessage::Encode(PASN_Stream & strm) const
   PreambleEncode(strm);
 
   m_messageIdentifier.Encode(strm);
-  if (HasOptionalField(e_subMessageIdentifer))
-    m_subMessageIdentifer.Encode(strm);
+  if (HasOptionalField(e_subMessageIdentifier))
+    m_subMessageIdentifier.Encode(strm);
   if (HasOptionalField(e_messageContent))
     m_messageContent.Encode(strm);
 
@@ -4094,6 +4170,102 @@ PObject * H245_MultiplePayloadStreamCapability::Clone() const
 
 
 //
+// FECCapability
+//
+
+H245_FECCapability::H245_FECCapability(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
+{
+}
+
+
+#ifndef PASN_NOPRINTON
+void H245_FECCapability::PrintOn(ostream & strm) const
+{
+  int indent = strm.precision() + 2;
+  strm << "{\n";
+  strm << setw(indent+22) << "protectedCapability = " << setprecision(indent) << m_protectedCapability << '\n';
+  if (HasOptionalField(e_fecScheme))
+    strm << setw(indent+12) << "fecScheme = " << setprecision(indent) << m_fecScheme << '\n';
+  if (HasOptionalField(e_rfc2733Format))
+    strm << setw(indent+16) << "rfc2733Format = " << setprecision(indent) << m_rfc2733Format << '\n';
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
+}
+#endif
+
+
+PObject::Comparison H245_FECCapability::Compare(const PObject & obj) const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(&obj, H245_FECCapability), PInvalidCast);
+#endif
+  const H245_FECCapability & other = (const H245_FECCapability &)obj;
+
+  Comparison result;
+
+  if ((result = m_protectedCapability.Compare(other.m_protectedCapability)) != EqualTo)
+    return result;
+  if ((result = m_fecScheme.Compare(other.m_fecScheme)) != EqualTo)
+    return result;
+  if ((result = m_rfc2733Format.Compare(other.m_rfc2733Format)) != EqualTo)
+    return result;
+
+  return PASN_Sequence::Compare(other);
+}
+
+
+PINDEX H245_FECCapability::GetDataLength() const
+{
+  PINDEX length = 0;
+  length += m_protectedCapability.GetObjectLength();
+  if (HasOptionalField(e_fecScheme))
+    length += m_fecScheme.GetObjectLength();
+  if (HasOptionalField(e_rfc2733Format))
+    length += m_rfc2733Format.GetObjectLength();
+  return length;
+}
+
+
+BOOL H245_FECCapability::Decode(PASN_Stream & strm)
+{
+  if (!PreambleDecode(strm))
+    return FALSE;
+
+  if (!m_protectedCapability.Decode(strm))
+    return FALSE;
+  if (HasOptionalField(e_fecScheme) && !m_fecScheme.Decode(strm))
+    return FALSE;
+  if (HasOptionalField(e_rfc2733Format) && !m_rfc2733Format.Decode(strm))
+    return FALSE;
+
+  return UnknownExtensionsDecode(strm);
+}
+
+
+void H245_FECCapability::Encode(PASN_Stream & strm) const
+{
+  PreambleEncode(strm);
+
+  m_protectedCapability.Encode(strm);
+  if (HasOptionalField(e_fecScheme))
+    m_fecScheme.Encode(strm);
+  if (HasOptionalField(e_rfc2733Format))
+    m_rfc2733Format.Encode(strm);
+
+  UnknownExtensionsEncode(strm);
+}
+
+
+PObject * H245_FECCapability::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_FECCapability::Class()), PInvalidCast);
+#endif
+  return new H245_FECCapability(*this);
+}
+
+
+//
 // NetworkAccessParameters
 //
 
@@ -5034,7 +5206,7 @@ PObject * H245_MultiplePayloadStream::Clone() const
 //
 
 H245_EncryptionSync::H245_EncryptionSync(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 2, TRUE, 1)
 {
   m_synchFlag.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
   m_h235Key.SetConstraints(PASN_Object::FixedConstraint, 1, 65535);
@@ -5053,6 +5225,8 @@ void H245_EncryptionSync::PrintOn(ostream & strm) const
   strm << setw(indent+10) << "h235Key = " << setprecision(indent) << m_h235Key << '\n';
   if (HasOptionalField(e_escrowentry))
     strm << setw(indent+14) << "escrowentry = " << setprecision(indent) << m_escrowentry << '\n';
+  if (HasOptionalField(e_genericParameter))
+    strm << setw(indent+19) << "genericParameter = " << setprecision(indent) << m_genericParameter << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
@@ -5106,6 +5280,8 @@ BOOL H245_EncryptionSync::Decode(PASN_Stream & strm)
     return FALSE;
   if (HasOptionalField(e_escrowentry) && !m_escrowentry.Decode(strm))
     return FALSE;
+  if (!KnownExtensionDecode(strm, e_genericParameter, m_genericParameter))
+    return FALSE;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5121,6 +5297,7 @@ void H245_EncryptionSync::Encode(PASN_Stream & strm) const
   m_h235Key.Encode(strm);
   if (HasOptionalField(e_escrowentry))
     m_escrowentry.Encode(strm);
+  KnownExtensionEncode(strm, e_genericParameter, m_genericParameter);
 
   UnknownExtensionsEncode(strm);
 }
@@ -6990,6 +7167,102 @@ PObject * H245_MultiplePayloadStreamMode::Clone() const
   PAssert(IsClass(H245_MultiplePayloadStreamMode::Class()), PInvalidCast);
 #endif
   return new H245_MultiplePayloadStreamMode(*this);
+}
+
+
+//
+// FECMode
+//
+
+H245_FECMode::H245_FECMode(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
+{
+}
+
+
+#ifndef PASN_NOPRINTON
+void H245_FECMode::PrintOn(ostream & strm) const
+{
+  int indent = strm.precision() + 2;
+  strm << "{\n";
+  strm << setw(indent+19) << "protectedElement = " << setprecision(indent) << m_protectedElement << '\n';
+  if (HasOptionalField(e_fecScheme))
+    strm << setw(indent+12) << "fecScheme = " << setprecision(indent) << m_fecScheme << '\n';
+  if (HasOptionalField(e_rfc2733Format))
+    strm << setw(indent+16) << "rfc2733Format = " << setprecision(indent) << m_rfc2733Format << '\n';
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
+}
+#endif
+
+
+PObject::Comparison H245_FECMode::Compare(const PObject & obj) const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(&obj, H245_FECMode), PInvalidCast);
+#endif
+  const H245_FECMode & other = (const H245_FECMode &)obj;
+
+  Comparison result;
+
+  if ((result = m_protectedElement.Compare(other.m_protectedElement)) != EqualTo)
+    return result;
+  if ((result = m_fecScheme.Compare(other.m_fecScheme)) != EqualTo)
+    return result;
+  if ((result = m_rfc2733Format.Compare(other.m_rfc2733Format)) != EqualTo)
+    return result;
+
+  return PASN_Sequence::Compare(other);
+}
+
+
+PINDEX H245_FECMode::GetDataLength() const
+{
+  PINDEX length = 0;
+  length += m_protectedElement.GetObjectLength();
+  if (HasOptionalField(e_fecScheme))
+    length += m_fecScheme.GetObjectLength();
+  if (HasOptionalField(e_rfc2733Format))
+    length += m_rfc2733Format.GetObjectLength();
+  return length;
+}
+
+
+BOOL H245_FECMode::Decode(PASN_Stream & strm)
+{
+  if (!PreambleDecode(strm))
+    return FALSE;
+
+  if (!m_protectedElement.Decode(strm))
+    return FALSE;
+  if (HasOptionalField(e_fecScheme) && !m_fecScheme.Decode(strm))
+    return FALSE;
+  if (HasOptionalField(e_rfc2733Format) && !m_rfc2733Format.Decode(strm))
+    return FALSE;
+
+  return UnknownExtensionsDecode(strm);
+}
+
+
+void H245_FECMode::Encode(PASN_Stream & strm) const
+{
+  PreambleEncode(strm);
+
+  m_protectedElement.Encode(strm);
+  if (HasOptionalField(e_fecScheme))
+    m_fecScheme.Encode(strm);
+  if (HasOptionalField(e_rfc2733Format))
+    m_rfc2733Format.Encode(strm);
+
+  UnknownExtensionsEncode(strm);
+}
+
+
+PObject * H245_FECMode::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_FECMode::Class()), PInvalidCast);
+#endif
+  return new H245_FECMode(*this);
 }
 
 
@@ -9545,17 +9818,17 @@ PObject * H245_CustomPictureFormat_mPI::Clone() const
 
 
 //
-// FECCapability_rfc2733
+// DepFECCapability_rfc2733
 //
 
-H245_FECCapability_rfc2733::H245_FECCapability_rfc2733(unsigned tag, PASN_Object::TagClass tagClass)
+H245_DepFECCapability_rfc2733::H245_DepFECCapability_rfc2733(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
 {
 }
 
 
 #ifndef PASN_NOPRINTON
-void H245_FECCapability_rfc2733::PrintOn(ostream & strm) const
+void H245_DepFECCapability_rfc2733::PrintOn(ostream & strm) const
 {
   int indent = strm.precision() + 2;
   strm << "{\n";
@@ -9566,12 +9839,12 @@ void H245_FECCapability_rfc2733::PrintOn(ostream & strm) const
 #endif
 
 
-PObject::Comparison H245_FECCapability_rfc2733::Compare(const PObject & obj) const
+PObject::Comparison H245_DepFECCapability_rfc2733::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(&obj, H245_FECCapability_rfc2733), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_DepFECCapability_rfc2733), PInvalidCast);
 #endif
-  const H245_FECCapability_rfc2733 & other = (const H245_FECCapability_rfc2733 &)obj;
+  const H245_DepFECCapability_rfc2733 & other = (const H245_DepFECCapability_rfc2733 &)obj;
 
   Comparison result;
 
@@ -9584,7 +9857,7 @@ PObject::Comparison H245_FECCapability_rfc2733::Compare(const PObject & obj) con
 }
 
 
-PINDEX H245_FECCapability_rfc2733::GetDataLength() const
+PINDEX H245_DepFECCapability_rfc2733::GetDataLength() const
 {
   PINDEX length = 0;
   length += m_redundancyEncoding.GetObjectLength();
@@ -9593,7 +9866,7 @@ PINDEX H245_FECCapability_rfc2733::GetDataLength() const
 }
 
 
-BOOL H245_FECCapability_rfc2733::Decode(PASN_Stream & strm)
+BOOL H245_DepFECCapability_rfc2733::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
     return FALSE;
@@ -9607,7 +9880,7 @@ BOOL H245_FECCapability_rfc2733::Decode(PASN_Stream & strm)
 }
 
 
-void H245_FECCapability_rfc2733::Encode(PASN_Stream & strm) const
+void H245_DepFECCapability_rfc2733::Encode(PASN_Stream & strm) const
 {
   PreambleEncode(strm);
 
@@ -9618,12 +9891,12 @@ void H245_FECCapability_rfc2733::Encode(PASN_Stream & strm) const
 }
 
 
-PObject * H245_FECCapability_rfc2733::Clone() const
+PObject * H245_DepFECCapability_rfc2733::Clone() const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(IsClass(H245_FECCapability_rfc2733::Class()), PInvalidCast);
+  PAssert(IsClass(H245_DepFECCapability_rfc2733::Class()), PInvalidCast);
 #endif
-  return new H245_FECCapability_rfc2733(*this);
+  return new H245_DepFECCapability_rfc2733(*this);
 }
 
 
@@ -9917,12 +10190,89 @@ PObject * H245_RedundancyEncoding_rtpRedundancyEncoding::Clone() const
 
 
 //
+// DepFECData_rfc2733
+//
+
+H245_DepFECData_rfc2733::H245_DepFECData_rfc2733(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+{
+}
+
+
+#ifndef PASN_NOPRINTON
+void H245_DepFECData_rfc2733::PrintOn(ostream & strm) const
+{
+  int indent = strm.precision() + 2;
+  strm << "{\n";
+  strm << setw(indent+7) << "mode = " << setprecision(indent) << m_mode << '\n';
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
+}
+#endif
+
+
+PObject::Comparison H245_DepFECData_rfc2733::Compare(const PObject & obj) const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(&obj, H245_DepFECData_rfc2733), PInvalidCast);
+#endif
+  const H245_DepFECData_rfc2733 & other = (const H245_DepFECData_rfc2733 &)obj;
+
+  Comparison result;
+
+  if ((result = m_mode.Compare(other.m_mode)) != EqualTo)
+    return result;
+
+  return PASN_Sequence::Compare(other);
+}
+
+
+PINDEX H245_DepFECData_rfc2733::GetDataLength() const
+{
+  PINDEX length = 0;
+  length += m_mode.GetObjectLength();
+  return length;
+}
+
+
+BOOL H245_DepFECData_rfc2733::Decode(PASN_Stream & strm)
+{
+  if (!PreambleDecode(strm))
+    return FALSE;
+
+  if (!m_mode.Decode(strm))
+    return FALSE;
+
+  return UnknownExtensionsDecode(strm);
+}
+
+
+void H245_DepFECData_rfc2733::Encode(PASN_Stream & strm) const
+{
+  PreambleEncode(strm);
+
+  m_mode.Encode(strm);
+
+  UnknownExtensionsEncode(strm);
+}
+
+
+PObject * H245_DepFECData_rfc2733::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_DepFECData_rfc2733::Class()), PInvalidCast);
+#endif
+  return new H245_DepFECData_rfc2733(*this);
+}
+
+
+//
 // FECData_rfc2733
 //
 
 H245_FECData_rfc2733::H245_FECData_rfc2733(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
 {
+  m_protectedPayloadType.SetConstraints(PASN_Object::FixedConstraint, 0, 127);
 }
 
 
@@ -9931,7 +10281,10 @@ void H245_FECData_rfc2733::PrintOn(ostream & strm) const
 {
   int indent = strm.precision() + 2;
   strm << "{\n";
-  strm << setw(indent+7) << "mode = " << setprecision(indent) << m_mode << '\n';
+  strm << setw(indent+23) << "protectedPayloadType = " << setprecision(indent) << m_protectedPayloadType << '\n';
+  if (HasOptionalField(e_fecScheme))
+    strm << setw(indent+12) << "fecScheme = " << setprecision(indent) << m_fecScheme << '\n';
+  strm << setw(indent+10) << "pktMode = " << setprecision(indent) << m_pktMode << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
@@ -9946,7 +10299,11 @@ PObject::Comparison H245_FECData_rfc2733::Compare(const PObject & obj) const
 
   Comparison result;
 
-  if ((result = m_mode.Compare(other.m_mode)) != EqualTo)
+  if ((result = m_protectedPayloadType.Compare(other.m_protectedPayloadType)) != EqualTo)
+    return result;
+  if ((result = m_fecScheme.Compare(other.m_fecScheme)) != EqualTo)
+    return result;
+  if ((result = m_pktMode.Compare(other.m_pktMode)) != EqualTo)
     return result;
 
   return PASN_Sequence::Compare(other);
@@ -9956,7 +10313,10 @@ PObject::Comparison H245_FECData_rfc2733::Compare(const PObject & obj) const
 PINDEX H245_FECData_rfc2733::GetDataLength() const
 {
   PINDEX length = 0;
-  length += m_mode.GetObjectLength();
+  length += m_protectedPayloadType.GetObjectLength();
+  if (HasOptionalField(e_fecScheme))
+    length += m_fecScheme.GetObjectLength();
+  length += m_pktMode.GetObjectLength();
   return length;
 }
 
@@ -9966,7 +10326,11 @@ BOOL H245_FECData_rfc2733::Decode(PASN_Stream & strm)
   if (!PreambleDecode(strm))
     return FALSE;
 
-  if (!m_mode.Decode(strm))
+  if (!m_protectedPayloadType.Decode(strm))
+    return FALSE;
+  if (HasOptionalField(e_fecScheme) && !m_fecScheme.Decode(strm))
+    return FALSE;
+  if (!m_pktMode.Decode(strm))
     return FALSE;
 
   return UnknownExtensionsDecode(strm);
@@ -9977,7 +10341,10 @@ void H245_FECData_rfc2733::Encode(PASN_Stream & strm) const
 {
   PreambleEncode(strm);
 
-  m_mode.Encode(strm);
+  m_protectedPayloadType.Encode(strm);
+  if (HasOptionalField(e_fecScheme))
+    m_fecScheme.Encode(strm);
+  m_pktMode.Encode(strm);
 
   UnknownExtensionsEncode(strm);
 }
@@ -10194,17 +10561,17 @@ PObject * H245_OpenLogicalChannelAck_reverseLogicalChannelParameters::Clone() co
 
 
 //
-// FECMode_rfc2733Mode
+// DepFECMode_rfc2733Mode
 //
 
-H245_FECMode_rfc2733Mode::H245_FECMode_rfc2733Mode(unsigned tag, PASN_Object::TagClass tagClass)
+H245_DepFECMode_rfc2733Mode::H245_DepFECMode_rfc2733Mode(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
 {
 }
 
 
 #ifndef PASN_NOPRINTON
-void H245_FECMode_rfc2733Mode::PrintOn(ostream & strm) const
+void H245_DepFECMode_rfc2733Mode::PrintOn(ostream & strm) const
 {
   int indent = strm.precision() + 2;
   strm << "{\n";
@@ -10214,12 +10581,12 @@ void H245_FECMode_rfc2733Mode::PrintOn(ostream & strm) const
 #endif
 
 
-PObject::Comparison H245_FECMode_rfc2733Mode::Compare(const PObject & obj) const
+PObject::Comparison H245_DepFECMode_rfc2733Mode::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(&obj, H245_FECMode_rfc2733Mode), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_DepFECMode_rfc2733Mode), PInvalidCast);
 #endif
-  const H245_FECMode_rfc2733Mode & other = (const H245_FECMode_rfc2733Mode &)obj;
+  const H245_DepFECMode_rfc2733Mode & other = (const H245_DepFECMode_rfc2733Mode &)obj;
 
   Comparison result;
 
@@ -10230,7 +10597,7 @@ PObject::Comparison H245_FECMode_rfc2733Mode::Compare(const PObject & obj) const
 }
 
 
-PINDEX H245_FECMode_rfc2733Mode::GetDataLength() const
+PINDEX H245_DepFECMode_rfc2733Mode::GetDataLength() const
 {
   PINDEX length = 0;
   length += m_mode.GetObjectLength();
@@ -10238,7 +10605,7 @@ PINDEX H245_FECMode_rfc2733Mode::GetDataLength() const
 }
 
 
-BOOL H245_FECMode_rfc2733Mode::Decode(PASN_Stream & strm)
+BOOL H245_DepFECMode_rfc2733Mode::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
     return FALSE;
@@ -10250,7 +10617,7 @@ BOOL H245_FECMode_rfc2733Mode::Decode(PASN_Stream & strm)
 }
 
 
-void H245_FECMode_rfc2733Mode::Encode(PASN_Stream & strm) const
+void H245_DepFECMode_rfc2733Mode::Encode(PASN_Stream & strm) const
 {
   PreambleEncode(strm);
 
@@ -10260,12 +10627,12 @@ void H245_FECMode_rfc2733Mode::Encode(PASN_Stream & strm) const
 }
 
 
-PObject * H245_FECMode_rfc2733Mode::Clone() const
+PObject * H245_DepFECMode_rfc2733Mode::Clone() const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(IsClass(H245_FECMode_rfc2733Mode::Class()), PInvalidCast);
+  PAssert(IsClass(H245_DepFECMode_rfc2733Mode::Class()), PInvalidCast);
 #endif
-  return new H245_FECMode_rfc2733Mode(*this);
+  return new H245_DepFECMode_rfc2733Mode(*this);
 }
 
 
@@ -11415,7 +11782,7 @@ PObject * H245_NewATMVCIndication_reverseParameters::Clone() const
 //
 
 H245_UserInputIndication_signal::H245_UserInputIndication_signal(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 3)
+  : PASN_Sequence(tag, tagClass, 2, TRUE, 4)
 {
   m_signalType.SetConstraints(PASN_Object::FixedConstraint, 1);
   m_signalType.SetCharacterSet(PASN_Object::FixedConstraint, "0123456789#*ABCD!");
@@ -11440,6 +11807,8 @@ void H245_UserInputIndication_signal::PrintOn(ostream & strm) const
     strm << setw(indent+9) << "paramS = " << setprecision(indent) << m_paramS << '\n';
   if (HasOptionalField(e_encryptedSignalType))
     strm << setw(indent+22) << "encryptedSignalType = " << setprecision(indent) << m_encryptedSignalType << '\n';
+  if (HasOptionalField(e_algorithmOID))
+    strm << setw(indent+15) << "algorithmOID = " << setprecision(indent) << m_algorithmOID << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
@@ -11494,6 +11863,8 @@ BOOL H245_UserInputIndication_signal::Decode(PASN_Stream & strm)
     return FALSE;
   if (!KnownExtensionDecode(strm, e_encryptedSignalType, m_encryptedSignalType))
     return FALSE;
+  if (!KnownExtensionDecode(strm, e_algorithmOID, m_algorithmOID))
+    return FALSE;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11511,6 +11882,7 @@ void H245_UserInputIndication_signal::Encode(PASN_Stream & strm) const
   KnownExtensionEncode(strm, e_rtpPayloadIndication, m_rtpPayloadIndication);
   KnownExtensionEncode(strm, e_paramS, m_paramS);
   KnownExtensionEncode(strm, e_encryptedSignalType, m_encryptedSignalType);
+  KnownExtensionEncode(strm, e_algorithmOID, m_algorithmOID);
 
   UnknownExtensionsEncode(strm);
 }
@@ -12892,7 +13264,7 @@ PObject * H245_T38FaxProfile::Clone() const
 //
 
 H245_EncryptionAuthenticationAndIntegrity::H245_EncryptionAuthenticationAndIntegrity(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 3, TRUE, 1)
 {
 }
 
@@ -12908,6 +13280,8 @@ void H245_EncryptionAuthenticationAndIntegrity::PrintOn(ostream & strm) const
     strm << setw(indent+27) << "authenticationCapability = " << setprecision(indent) << m_authenticationCapability << '\n';
   if (HasOptionalField(e_integrityCapability))
     strm << setw(indent+22) << "integrityCapability = " << setprecision(indent) << m_integrityCapability << '\n';
+  if (HasOptionalField(e_genericH235SecurityCapability))
+    strm << setw(indent+32) << "genericH235SecurityCapability = " << setprecision(indent) << m_genericH235SecurityCapability << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
@@ -12957,6 +13331,8 @@ BOOL H245_EncryptionAuthenticationAndIntegrity::Decode(PASN_Stream & strm)
     return FALSE;
   if (HasOptionalField(e_integrityCapability) && !m_integrityCapability.Decode(strm))
     return FALSE;
+  if (!KnownExtensionDecode(strm, e_genericH235SecurityCapability, m_genericH235SecurityCapability))
+    return FALSE;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -12972,6 +13348,7 @@ void H245_EncryptionAuthenticationAndIntegrity::Encode(PASN_Stream & strm) const
     m_authenticationCapability.Encode(strm);
   if (HasOptionalField(e_integrityCapability))
     m_integrityCapability.Encode(strm);
+  KnownExtensionEncode(strm, e_genericH235SecurityCapability, m_genericH235SecurityCapability);
 
   UnknownExtensionsEncode(strm);
 }

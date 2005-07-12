@@ -2838,8 +2838,11 @@ const static PASN_Names Names_H245_Capability[]={
      ,{"receiveAndTransmitMultiplexedStreamCapability",21}
      ,{"receiveRTPAudioTelephonyEventCapability",22}
      ,{"receiveRTPAudioToneCapability",23}
-     ,{"fecCapability",24}
+     ,{"depFecCapability",24}
      ,{"multiplePayloadStreamCapability",25}
+     ,{"fecCapability",26}
+     ,{"redundancyEncodingCap",27}
+     ,{"oneOfCapabilities",28}
 };
 #endif
 //
@@ -2849,7 +2852,7 @@ const static PASN_Names Names_H245_Capability[]={
 H245_Capability::H245_Capability(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 12, TRUE
 #ifndef PASN_NOPRINTON
-    ,(const PASN_Names *)Names_H245_Capability,26
+    ,(const PASN_Names *)Names_H245_Capability,29
 #endif
 )
 {
@@ -3121,24 +3124,24 @@ H245_Capability::operator const H245_AudioToneCapability &() const
 
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
-H245_Capability::operator H245_FECCapability &() const
+H245_Capability::operator H245_DepFECCapability &() const
 #else
-H245_Capability::operator H245_FECCapability &()
+H245_Capability::operator H245_DepFECCapability &()
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(PAssertNULL(choice), H245_FECCapability), PInvalidCast);
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_DepFECCapability), PInvalidCast);
 #endif
-  return *(H245_FECCapability *)choice;
+  return *(H245_DepFECCapability *)choice;
 }
 
 
-H245_Capability::operator const H245_FECCapability &() const
+H245_Capability::operator const H245_DepFECCapability &() const
 #endif
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(PAssertNULL(choice), H245_FECCapability), PInvalidCast);
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_DepFECCapability), PInvalidCast);
 #endif
-  return *(H245_FECCapability *)choice;
+  return *(H245_DepFECCapability *)choice;
 }
 
 
@@ -3161,6 +3164,72 @@ H245_Capability::operator const H245_MultiplePayloadStreamCapability &() const
   PAssert(PIsDescendant(PAssertNULL(choice), H245_MultiplePayloadStreamCapability), PInvalidCast);
 #endif
   return *(H245_MultiplePayloadStreamCapability *)choice;
+}
+
+
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+H245_Capability::operator H245_FECCapability &() const
+#else
+H245_Capability::operator H245_FECCapability &()
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_FECCapability), PInvalidCast);
+#endif
+  return *(H245_FECCapability *)choice;
+}
+
+
+H245_Capability::operator const H245_FECCapability &() const
+#endif
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_FECCapability), PInvalidCast);
+#endif
+  return *(H245_FECCapability *)choice;
+}
+
+
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+H245_Capability::operator H245_RedundancyEncodingCapability &() const
+#else
+H245_Capability::operator H245_RedundancyEncodingCapability &()
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_RedundancyEncodingCapability), PInvalidCast);
+#endif
+  return *(H245_RedundancyEncodingCapability *)choice;
+}
+
+
+H245_Capability::operator const H245_RedundancyEncodingCapability &() const
+#endif
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_RedundancyEncodingCapability), PInvalidCast);
+#endif
+  return *(H245_RedundancyEncodingCapability *)choice;
+}
+
+
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+H245_Capability::operator H245_AlternativeCapabilitySet &() const
+#else
+H245_Capability::operator H245_AlternativeCapabilitySet &()
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_AlternativeCapabilitySet), PInvalidCast);
+#endif
+  return *(H245_AlternativeCapabilitySet *)choice;
+}
+
+
+H245_Capability::operator const H245_AlternativeCapabilitySet &() const
+#endif
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_AlternativeCapabilitySet), PInvalidCast);
+#endif
+  return *(H245_AlternativeCapabilitySet *)choice;
 }
 
 
@@ -3220,11 +3289,20 @@ BOOL H245_Capability::CreateObject()
     case e_receiveRTPAudioToneCapability :
       choice = new H245_AudioToneCapability();
       return TRUE;
-    case e_fecCapability :
-      choice = new H245_FECCapability();
+    case e_depFecCapability :
+      choice = new H245_DepFECCapability();
       return TRUE;
     case e_multiplePayloadStreamCapability :
       choice = new H245_MultiplePayloadStreamCapability();
+      return TRUE;
+    case e_fecCapability :
+      choice = new H245_FECCapability();
+      return TRUE;
+    case e_redundancyEncodingCap :
+      choice = new H245_RedundancyEncodingCapability();
+      return TRUE;
+    case e_oneOfCapabilities :
+      choice = new H245_AlternativeCapabilitySet();
       return TRUE;
   }
 
@@ -4420,7 +4498,7 @@ PObject * H245_H261VideoCapability::Clone() const
 //
 
 H245_H262VideoCapability::H245_H262VideoCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 6, TRUE, 1)
+  : PASN_Sequence(tag, tagClass, 6, FALSE, 0)
 {
   m_videoBitRate.SetConstraints(PASN_Object::FixedConstraint, 0, 1073741823);
   m_vbvBufferSize.SetConstraints(PASN_Object::FixedConstraint, 0, 262143);
@@ -4428,7 +4506,6 @@ H245_H262VideoCapability::H245_H262VideoCapability(unsigned tag, PASN_Object::Ta
   m_linesPerFrame.SetConstraints(PASN_Object::FixedConstraint, 0, 16383);
   m_framesPerSecond.SetConstraints(PASN_Object::FixedConstraint, 0, 15);
   m_luminanceSampleRate.SetConstraints(PASN_Object::FixedConstraint, 0, 4294967295U);
-  IncludeOptionalField(e_videoBadMBsCap);
 }
 
 
@@ -4460,8 +4537,7 @@ void H245_H262VideoCapability::PrintOn(ostream & strm) const
     strm << setw(indent+18) << "framesPerSecond = " << setprecision(indent) << m_framesPerSecond << '\n';
   if (HasOptionalField(e_luminanceSampleRate))
     strm << setw(indent+22) << "luminanceSampleRate = " << setprecision(indent) << m_luminanceSampleRate << '\n';
-  if (HasOptionalField(e_videoBadMBsCap))
-    strm << setw(indent+17) << "videoBadMBsCap = " << setprecision(indent) << m_videoBadMBsCap << '\n';
+  strm << setw(indent+17) << "videoBadMBsCap = " << setprecision(indent) << m_videoBadMBsCap << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
@@ -4510,6 +4586,8 @@ PObject::Comparison H245_H262VideoCapability::Compare(const PObject & obj) const
     return result;
   if ((result = m_luminanceSampleRate.Compare(other.m_luminanceSampleRate)) != EqualTo)
     return result;
+  if ((result = m_videoBadMBsCap.Compare(other.m_videoBadMBsCap)) != EqualTo)
+    return result;
 
   return PASN_Sequence::Compare(other);
 }
@@ -4541,6 +4619,7 @@ PINDEX H245_H262VideoCapability::GetDataLength() const
     length += m_framesPerSecond.GetObjectLength();
   if (HasOptionalField(e_luminanceSampleRate))
     length += m_luminanceSampleRate.GetObjectLength();
+  length += m_videoBadMBsCap.GetObjectLength();
   return length;
 }
 
@@ -4584,7 +4663,7 @@ BOOL H245_H262VideoCapability::Decode(PASN_Stream & strm)
     return FALSE;
   if (HasOptionalField(e_luminanceSampleRate) && !m_luminanceSampleRate.Decode(strm))
     return FALSE;
-  if (!KnownExtensionDecode(strm, e_videoBadMBsCap, m_videoBadMBsCap))
+  if (!m_videoBadMBsCap.Decode(strm))
     return FALSE;
 
   return UnknownExtensionsDecode(strm);
@@ -4618,7 +4697,7 @@ void H245_H262VideoCapability::Encode(PASN_Stream & strm) const
     m_framesPerSecond.Encode(strm);
   if (HasOptionalField(e_luminanceSampleRate))
     m_luminanceSampleRate.Encode(strm);
-  KnownExtensionEncode(strm, e_videoBadMBsCap, m_videoBadMBsCap);
+  m_videoBadMBsCap.Encode(strm);
 
   UnknownExtensionsEncode(strm);
 }
@@ -7486,18 +7565,18 @@ PObject * H245_NoPTAudioToneCapability::Clone() const
 
 
 #ifndef PASN_NOPRINTON
-const static PASN_Names Names_H245_FECCapability[]={
+const static PASN_Names Names_H245_DepFECCapability[]={
       {"rfc2733",0}
 };
 #endif
 //
-// FECCapability
+// DepFECCapability
 //
 
-H245_FECCapability::H245_FECCapability(unsigned tag, PASN_Object::TagClass tagClass)
+H245_DepFECCapability::H245_DepFECCapability(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 1, TRUE
 #ifndef PASN_NOPRINTON
-    ,(const PASN_Names *)Names_H245_FECCapability,1
+    ,(const PASN_Names *)Names_H245_DepFECCapability,1
 #endif
 )
 {
@@ -7505,32 +7584,32 @@ H245_FECCapability::H245_FECCapability(unsigned tag, PASN_Object::TagClass tagCl
 
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
-H245_FECCapability::operator H245_FECCapability_rfc2733 &() const
+H245_DepFECCapability::operator H245_DepFECCapability_rfc2733 &() const
 #else
-H245_FECCapability::operator H245_FECCapability_rfc2733 &()
+H245_DepFECCapability::operator H245_DepFECCapability_rfc2733 &()
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(PAssertNULL(choice), H245_FECCapability_rfc2733), PInvalidCast);
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_DepFECCapability_rfc2733), PInvalidCast);
 #endif
-  return *(H245_FECCapability_rfc2733 *)choice;
+  return *(H245_DepFECCapability_rfc2733 *)choice;
 }
 
 
-H245_FECCapability::operator const H245_FECCapability_rfc2733 &() const
+H245_DepFECCapability::operator const H245_DepFECCapability_rfc2733 &() const
 #endif
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(PAssertNULL(choice), H245_FECCapability_rfc2733), PInvalidCast);
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_DepFECCapability_rfc2733), PInvalidCast);
 #endif
-  return *(H245_FECCapability_rfc2733 *)choice;
+  return *(H245_DepFECCapability_rfc2733 *)choice;
 }
 
 
-BOOL H245_FECCapability::CreateObject()
+BOOL H245_DepFECCapability::CreateObject()
 {
   switch (tag) {
     case e_rfc2733 :
-      choice = new H245_FECCapability_rfc2733();
+      choice = new H245_DepFECCapability_rfc2733();
       return TRUE;
   }
 
@@ -7539,12 +7618,46 @@ BOOL H245_FECCapability::CreateObject()
 }
 
 
-PObject * H245_FECCapability::Clone() const
+PObject * H245_DepFECCapability::Clone() const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(IsClass(H245_FECCapability::Class()), PInvalidCast);
+  PAssert(IsClass(H245_DepFECCapability::Class()), PInvalidCast);
 #endif
-  return new H245_FECCapability(*this);
+  return new H245_DepFECCapability(*this);
+}
+
+
+//
+// MaxRedundancy
+//
+
+H245_MaxRedundancy::H245_MaxRedundancy(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Integer(tag, tagClass)
+{
+  SetConstraints(PASN_Object::FixedConstraint, 1, MaximumValue);
+}
+
+
+H245_MaxRedundancy & H245_MaxRedundancy::operator=(int v)
+{
+  SetValue(v);
+  return *this;
+}
+
+
+H245_MaxRedundancy & H245_MaxRedundancy::operator=(unsigned v)
+{
+  SetValue(v);
+  return *this;
+}
+
+
+PObject * H245_MaxRedundancy::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_MaxRedundancy::Class()), PInvalidCast);
+#endif
+  return new H245_MaxRedundancy(*this);
 }
 
 
@@ -7672,7 +7785,8 @@ const static PASN_Names Names_H245_DataType[]={
      ,{"multiplexedStream",8}
      ,{"redundancyEncoding",9}
      ,{"multiplePayloadStream",10}
-     ,{"fec",11}
+     ,{"depFec",11}
+     ,{"fec",12}
 };
 #endif
 //
@@ -7682,7 +7796,7 @@ const static PASN_Names Names_H245_DataType[]={
 H245_DataType::H245_DataType(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 6, TRUE
 #ifndef PASN_NOPRINTON
-    ,(const PASN_Names *)Names_H245_DataType,12
+    ,(const PASN_Names *)Names_H245_DataType,13
 #endif
 )
 {
@@ -7888,6 +8002,28 @@ H245_DataType::operator const H245_MultiplePayloadStream &() const
 
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+H245_DataType::operator H245_DepFECData &() const
+#else
+H245_DataType::operator H245_DepFECData &()
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_DepFECData), PInvalidCast);
+#endif
+  return *(H245_DepFECData *)choice;
+}
+
+
+H245_DataType::operator const H245_DepFECData &() const
+#endif
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_DepFECData), PInvalidCast);
+#endif
+  return *(H245_DepFECData *)choice;
+}
+
+
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
 H245_DataType::operator H245_FECData &() const
 #else
 H245_DataType::operator H245_FECData &()
@@ -7942,6 +8078,9 @@ BOOL H245_DataType::CreateObject()
       return TRUE;
     case e_multiplePayloadStream :
       choice = new H245_MultiplePayloadStream();
+      return TRUE;
+    case e_depFec :
+      choice = new H245_DepFECData();
       return TRUE;
     case e_fec :
       choice = new H245_FECData();
@@ -8375,6 +8514,70 @@ PObject * H245_MultiplePayloadStreamElement::Clone() const
 
 
 #ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_DepFECData[]={
+      {"rfc2733",0}
+};
+#endif
+//
+// DepFECData
+//
+
+H245_DepFECData::H245_DepFECData(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Choice(tag, tagClass, 1, FALSE
+#ifndef PASN_NOPRINTON
+    ,(const PASN_Names *)Names_H245_DepFECData,1
+#endif
+)
+{
+}
+
+
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+H245_DepFECData::operator H245_DepFECData_rfc2733 &() const
+#else
+H245_DepFECData::operator H245_DepFECData_rfc2733 &()
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_DepFECData_rfc2733), PInvalidCast);
+#endif
+  return *(H245_DepFECData_rfc2733 *)choice;
+}
+
+
+H245_DepFECData::operator const H245_DepFECData_rfc2733 &() const
+#endif
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_DepFECData_rfc2733), PInvalidCast);
+#endif
+  return *(H245_DepFECData_rfc2733 *)choice;
+}
+
+
+BOOL H245_DepFECData::CreateObject()
+{
+  switch (tag) {
+    case e_rfc2733 :
+      choice = new H245_DepFECData_rfc2733();
+      return TRUE;
+  }
+
+  choice = NULL;
+  return FALSE;
+}
+
+
+PObject * H245_DepFECData::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_DepFECData::Class()), PInvalidCast);
+#endif
+  return new H245_DepFECData(*this);
+}
+
+
+
+#ifndef PASN_NOPRINTON
 const static PASN_Names Names_H245_FECData[]={
       {"rfc2733",0}
 };
@@ -8384,7 +8587,7 @@ const static PASN_Names Names_H245_FECData[]={
 //
 
 H245_FECData::H245_FECData(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 1, FALSE
+  : PASN_Choice(tag, tagClass, 1, TRUE
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_FECData,1
 #endif
@@ -9347,7 +9550,8 @@ const static PASN_Names Names_H245_ModeElementType[]={
      ,{"multiplexedStreamMode",6}
      ,{"redundancyEncodingDTMode",7}
      ,{"multiplePayloadStreamMode",8}
-     ,{"fecMode",9}
+     ,{"depFecMode",9}
+     ,{"fecMode",10}
 };
 #endif
 //
@@ -9357,7 +9561,7 @@ const static PASN_Names Names_H245_ModeElementType[]={
 H245_ModeElementType::H245_ModeElementType(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 5, TRUE
 #ifndef PASN_NOPRINTON
-    ,(const PASN_Names *)Names_H245_ModeElementType,10
+    ,(const PASN_Names *)Names_H245_ModeElementType,11
 #endif
 )
 {
@@ -9563,6 +9767,28 @@ H245_ModeElementType::operator const H245_MultiplePayloadStreamMode &() const
 
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+H245_ModeElementType::operator H245_DepFECMode &() const
+#else
+H245_ModeElementType::operator H245_DepFECMode &()
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_DepFECMode), PInvalidCast);
+#endif
+  return *(H245_DepFECMode *)choice;
+}
+
+
+H245_ModeElementType::operator const H245_DepFECMode &() const
+#endif
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_DepFECMode), PInvalidCast);
+#endif
+  return *(H245_DepFECMode *)choice;
+}
+
+
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
 H245_ModeElementType::operator H245_FECMode &() const
 #else
 H245_ModeElementType::operator H245_FECMode &()
@@ -9613,6 +9839,9 @@ BOOL H245_ModeElementType::CreateObject()
       return TRUE;
     case e_multiplePayloadStreamMode :
       choice = new H245_MultiplePayloadStreamMode();
+      return TRUE;
+    case e_depFecMode :
+      choice = new H245_DepFECMode();
       return TRUE;
     case e_fecMode :
       choice = new H245_FECMode();
@@ -9787,18 +10016,18 @@ PObject * H245_MultiplePayloadStreamElementMode::Clone() const
 
 
 #ifndef PASN_NOPRINTON
-const static PASN_Names Names_H245_FECMode[]={
+const static PASN_Names Names_H245_DepFECMode[]={
       {"rfc2733Mode",0}
 };
 #endif
 //
-// FECMode
+// DepFECMode
 //
 
-H245_FECMode::H245_FECMode(unsigned tag, PASN_Object::TagClass tagClass)
+H245_DepFECMode::H245_DepFECMode(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 1, TRUE
 #ifndef PASN_NOPRINTON
-    ,(const PASN_Names *)Names_H245_FECMode,1
+    ,(const PASN_Names *)Names_H245_DepFECMode,1
 #endif
 )
 {
@@ -9806,32 +10035,32 @@ H245_FECMode::H245_FECMode(unsigned tag, PASN_Object::TagClass tagClass)
 
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
-H245_FECMode::operator H245_FECMode_rfc2733Mode &() const
+H245_DepFECMode::operator H245_DepFECMode_rfc2733Mode &() const
 #else
-H245_FECMode::operator H245_FECMode_rfc2733Mode &()
+H245_DepFECMode::operator H245_DepFECMode_rfc2733Mode &()
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(PAssertNULL(choice), H245_FECMode_rfc2733Mode), PInvalidCast);
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_DepFECMode_rfc2733Mode), PInvalidCast);
 #endif
-  return *(H245_FECMode_rfc2733Mode *)choice;
+  return *(H245_DepFECMode_rfc2733Mode *)choice;
 }
 
 
-H245_FECMode::operator const H245_FECMode_rfc2733Mode &() const
+H245_DepFECMode::operator const H245_DepFECMode_rfc2733Mode &() const
 #endif
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(PAssertNULL(choice), H245_FECMode_rfc2733Mode), PInvalidCast);
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_DepFECMode_rfc2733Mode), PInvalidCast);
 #endif
-  return *(H245_FECMode_rfc2733Mode *)choice;
+  return *(H245_DepFECMode_rfc2733Mode *)choice;
 }
 
 
-BOOL H245_FECMode::CreateObject()
+BOOL H245_DepFECMode::CreateObject()
 {
   switch (tag) {
     case e_rfc2733Mode :
-      choice = new H245_FECMode_rfc2733Mode();
+      choice = new H245_DepFECMode_rfc2733Mode();
       return TRUE;
   }
 
@@ -9840,12 +10069,12 @@ BOOL H245_FECMode::CreateObject()
 }
 
 
-PObject * H245_FECMode::Clone() const
+PObject * H245_DepFECMode::Clone() const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(IsClass(H245_FECMode::Class()), PInvalidCast);
+  PAssert(IsClass(H245_DepFECMode::Class()), PInvalidCast);
 #endif
-  return new H245_FECMode(*this);
+  return new H245_DepFECMode(*this);
 }
 
 
@@ -16725,6 +16954,37 @@ PObject * H245_ArrayOf_BEnhancementParameters::Clone() const
   PAssert(IsClass(H245_ArrayOf_BEnhancementParameters::Class()), PInvalidCast);
 #endif
   return new H245_ArrayOf_BEnhancementParameters(*this);
+}
+
+
+//
+// ArrayOf_CustomPictureClockFrequency
+//
+
+H245_ArrayOf_CustomPictureClockFrequency::H245_ArrayOf_CustomPictureClockFrequency(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Array(tag, tagClass)
+{
+}
+
+
+PASN_Object * H245_ArrayOf_CustomPictureClockFrequency::CreateObject() const
+{
+  return new H245_CustomPictureClockFrequency;
+}
+
+
+H245_CustomPictureClockFrequency & H245_ArrayOf_CustomPictureClockFrequency::operator[](PINDEX i) const
+{
+  return (H245_CustomPictureClockFrequency &)array[i];
+}
+
+
+PObject * H245_ArrayOf_CustomPictureClockFrequency::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_ArrayOf_CustomPictureClockFrequency::Class()), PInvalidCast);
+#endif
+  return new H245_ArrayOf_CustomPictureClockFrequency(*this);
 }
 
 

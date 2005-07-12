@@ -13,37 +13,6 @@
 #if ! H323_DISABLE_H245
 
 //
-// ArrayOf_CustomPictureClockFrequency
-//
-
-H245_ArrayOf_CustomPictureClockFrequency::H245_ArrayOf_CustomPictureClockFrequency(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Array(tag, tagClass)
-{
-}
-
-
-PASN_Object * H245_ArrayOf_CustomPictureClockFrequency::CreateObject() const
-{
-  return new H245_CustomPictureClockFrequency;
-}
-
-
-H245_CustomPictureClockFrequency & H245_ArrayOf_CustomPictureClockFrequency::operator[](PINDEX i) const
-{
-  return (H245_CustomPictureClockFrequency &)array[i];
-}
-
-
-PObject * H245_ArrayOf_CustomPictureClockFrequency::Clone() const
-{
-#ifndef PASN_LEANANDMEAN
-  PAssert(IsClass(H245_ArrayOf_CustomPictureClockFrequency::Class()), PInvalidCast);
-#endif
-  return new H245_ArrayOf_CustomPictureClockFrequency(*this);
-}
-
-
-//
 // ArrayOf_CustomPictureFormat
 //
 
@@ -1189,6 +1158,74 @@ PObject * H245_ArrayOf_ParameterIdentifier::Clone() const
 
 
 #ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_FECCapability_rfc2733Format[]={
+      {"rfc2733rfc2198",0}
+     ,{"rfc2733sameport",1}
+     ,{"rfc2733diffport",2}
+};
+#endif
+//
+// FECCapability_rfc2733Format
+//
+
+H245_FECCapability_rfc2733Format::H245_FECCapability_rfc2733Format(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Choice(tag, tagClass, 3, FALSE
+#ifndef PASN_NOPRINTON
+    ,(const PASN_Names *)Names_H245_FECCapability_rfc2733Format,3
+#endif
+)
+{
+}
+
+
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+H245_FECCapability_rfc2733Format::operator H245_MaxRedundancy &() const
+#else
+H245_FECCapability_rfc2733Format::operator H245_MaxRedundancy &()
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_MaxRedundancy), PInvalidCast);
+#endif
+  return *(H245_MaxRedundancy *)choice;
+}
+
+
+H245_FECCapability_rfc2733Format::operator const H245_MaxRedundancy &() const
+#endif
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_MaxRedundancy), PInvalidCast);
+#endif
+  return *(H245_MaxRedundancy *)choice;
+}
+
+
+BOOL H245_FECCapability_rfc2733Format::CreateObject()
+{
+  switch (tag) {
+    case e_rfc2733rfc2198 :
+    case e_rfc2733sameport :
+    case e_rfc2733diffport :
+      choice = new H245_MaxRedundancy();
+      return TRUE;
+  }
+
+  choice = NULL;
+  return FALSE;
+}
+
+
+PObject * H245_FECCapability_rfc2733Format::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_FECCapability_rfc2733Format::Class()), PInvalidCast);
+#endif
+  return new H245_FECCapability_rfc2733Format(*this);
+}
+
+
+
+#ifndef PASN_NOPRINTON
 const static PASN_Names Names_H245_NetworkAccessParameters_distribution[]={
       {"unicast",0}
      ,{"multicast",1}
@@ -1415,7 +1452,8 @@ const static PASN_Names Names_H245_H235Media_mediaType[]={
      ,{"data",3}
      ,{"redundancyEncoding",4}
      ,{"multiplePayloadStream",5}
-     ,{"fec",6}
+     ,{"depFec",6}
+     ,{"fec",7}
 };
 #endif
 //
@@ -1425,7 +1463,7 @@ const static PASN_Names Names_H245_H235Media_mediaType[]={
 H245_H235Media_mediaType::H245_H235Media_mediaType(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-    ,(const PASN_Names *)Names_H245_H235Media_mediaType,7
+    ,(const PASN_Names *)Names_H245_H235Media_mediaType,8
 #endif
 )
 {
@@ -1565,6 +1603,28 @@ H245_H235Media_mediaType::operator const H245_MultiplePayloadStream &() const
 
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+H245_H235Media_mediaType::operator H245_DepFECData &() const
+#else
+H245_H235Media_mediaType::operator H245_DepFECData &()
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_DepFECData), PInvalidCast);
+#endif
+  return *(H245_DepFECData *)choice;
+}
+
+
+H245_H235Media_mediaType::operator const H245_DepFECData &() const
+#endif
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_DepFECData), PInvalidCast);
+#endif
+  return *(H245_DepFECData *)choice;
+}
+
+
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
 H245_H235Media_mediaType::operator H245_FECData &() const
 #else
 H245_H235Media_mediaType::operator H245_FECData &()
@@ -1606,6 +1666,9 @@ BOOL H245_H235Media_mediaType::CreateObject()
       return TRUE;
     case e_multiplePayloadStream :
       choice = new H245_MultiplePayloadStream();
+      return TRUE;
+    case e_depFec :
+      choice = new H245_DepFECData();
       return TRUE;
     case e_fec :
       choice = new H245_FECData();
@@ -3048,6 +3111,7 @@ const static PASN_Names Names_H245_OpenLogicalChannelReject_cause[]={
      ,{"waitForCommunicationMode",11}
      ,{"invalidDependentChannel",12}
      ,{"replacementForRejected",13}
+     ,{"securityDenied",14}
 };
 #endif
 //
@@ -3057,7 +3121,7 @@ const static PASN_Names Names_H245_OpenLogicalChannelReject_cause[]={
 H245_OpenLogicalChannelReject_cause::H245_OpenLogicalChannelReject_cause(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 6, TRUE
 #ifndef PASN_NOPRINTON
-    ,(const PASN_Names *)Names_H245_OpenLogicalChannelReject_cause,14
+    ,(const PASN_Names *)Names_H245_OpenLogicalChannelReject_cause,15
 #endif
 )
 {
@@ -3066,7 +3130,7 @@ H245_OpenLogicalChannelReject_cause::H245_OpenLogicalChannelReject_cause(unsigne
 
 BOOL H245_OpenLogicalChannelReject_cause::CreateObject()
 {
-  choice = (tag <= e_replacementForRejected) ? new PASN_Null() : NULL;
+  choice = (tag <= e_securityDenied) ? new PASN_Null() : NULL;
   return choice != NULL;
 }
 
@@ -3863,6 +3927,7 @@ const static PASN_Names Names_H245_RedundancyEncodingDTModeElement_type[]={
      ,{"dataMode",3}
      ,{"encryptionMode",4}
      ,{"h235Mode",5}
+     ,{"fecMode",6}
 };
 #endif
 //
@@ -3872,7 +3937,7 @@ const static PASN_Names Names_H245_RedundancyEncodingDTModeElement_type[]={
 H245_RedundancyEncodingDTModeElement_type::H245_RedundancyEncodingDTModeElement_type(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 6, TRUE
 #ifndef PASN_NOPRINTON
-    ,(const PASN_Names *)Names_H245_RedundancyEncodingDTModeElement_type,6
+    ,(const PASN_Names *)Names_H245_RedundancyEncodingDTModeElement_type,7
 #endif
 )
 {
@@ -4011,6 +4076,28 @@ H245_RedundancyEncodingDTModeElement_type::operator const H245_H235Mode &() cons
 }
 
 
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+H245_RedundancyEncodingDTModeElement_type::operator H245_FECMode &() const
+#else
+H245_RedundancyEncodingDTModeElement_type::operator H245_FECMode &()
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_FECMode), PInvalidCast);
+#endif
+  return *(H245_FECMode *)choice;
+}
+
+
+H245_RedundancyEncodingDTModeElement_type::operator const H245_FECMode &() const
+#endif
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_FECMode), PInvalidCast);
+#endif
+  return *(H245_FECMode *)choice;
+}
+
+
 BOOL H245_RedundancyEncodingDTModeElement_type::CreateObject()
 {
   switch (tag) {
@@ -4031,6 +4118,9 @@ BOOL H245_RedundancyEncodingDTModeElement_type::CreateObject()
       return TRUE;
     case e_h235Mode :
       choice = new H245_H235Mode();
+      return TRUE;
+    case e_fecMode :
+      choice = new H245_FECMode();
       return TRUE;
   }
 
@@ -4076,6 +4166,74 @@ PObject * H245_ArrayOf_MultiplePayloadStreamElementMode::Clone() const
   PAssert(IsClass(H245_ArrayOf_MultiplePayloadStreamElementMode::Class()), PInvalidCast);
 #endif
   return new H245_ArrayOf_MultiplePayloadStreamElementMode(*this);
+}
+
+
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_FECMode_rfc2733Format[]={
+      {"rfc2733rfc2198",0}
+     ,{"rfc2733sameport",1}
+     ,{"rfc2733diffport",2}
+};
+#endif
+//
+// FECMode_rfc2733Format
+//
+
+H245_FECMode_rfc2733Format::H245_FECMode_rfc2733Format(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Choice(tag, tagClass, 3, FALSE
+#ifndef PASN_NOPRINTON
+    ,(const PASN_Names *)Names_H245_FECMode_rfc2733Format,3
+#endif
+)
+{
+}
+
+
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+H245_FECMode_rfc2733Format::operator H245_MaxRedundancy &() const
+#else
+H245_FECMode_rfc2733Format::operator H245_MaxRedundancy &()
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_MaxRedundancy), PInvalidCast);
+#endif
+  return *(H245_MaxRedundancy *)choice;
+}
+
+
+H245_FECMode_rfc2733Format::operator const H245_MaxRedundancy &() const
+#endif
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_MaxRedundancy), PInvalidCast);
+#endif
+  return *(H245_MaxRedundancy *)choice;
+}
+
+
+BOOL H245_FECMode_rfc2733Format::CreateObject()
+{
+  switch (tag) {
+    case e_rfc2733rfc2198 :
+    case e_rfc2733sameport :
+    case e_rfc2733diffport :
+      choice = new H245_MaxRedundancy();
+      return TRUE;
+  }
+
+  choice = NULL;
+  return FALSE;
+}
+
+
+PObject * H245_FECMode_rfc2733Format::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_FECMode_rfc2733Format::Class()), PInvalidCast);
+#endif
+  return new H245_FECMode_rfc2733Format(*this);
 }
 
 
@@ -8505,17 +8663,17 @@ PObject * H245_DataApplicationCapability_application_nlpid::Clone() const
 
 
 //
-// FECCapability_rfc2733_separateStream
+// DepFECCapability_rfc2733_separateStream
 //
 
-H245_FECCapability_rfc2733_separateStream::H245_FECCapability_rfc2733_separateStream(unsigned tag, PASN_Object::TagClass tagClass)
+H245_DepFECCapability_rfc2733_separateStream::H245_DepFECCapability_rfc2733_separateStream(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
 {
 }
 
 
 #ifndef PASN_NOPRINTON
-void H245_FECCapability_rfc2733_separateStream::PrintOn(ostream & strm) const
+void H245_DepFECCapability_rfc2733_separateStream::PrintOn(ostream & strm) const
 {
   int indent = strm.precision() + 2;
   strm << "{\n";
@@ -8526,12 +8684,12 @@ void H245_FECCapability_rfc2733_separateStream::PrintOn(ostream & strm) const
 #endif
 
 
-PObject::Comparison H245_FECCapability_rfc2733_separateStream::Compare(const PObject & obj) const
+PObject::Comparison H245_DepFECCapability_rfc2733_separateStream::Compare(const PObject & obj) const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(&obj, H245_FECCapability_rfc2733_separateStream), PInvalidCast);
+  PAssert(PIsDescendant(&obj, H245_DepFECCapability_rfc2733_separateStream), PInvalidCast);
 #endif
-  const H245_FECCapability_rfc2733_separateStream & other = (const H245_FECCapability_rfc2733_separateStream &)obj;
+  const H245_DepFECCapability_rfc2733_separateStream & other = (const H245_DepFECCapability_rfc2733_separateStream &)obj;
 
   Comparison result;
 
@@ -8544,7 +8702,7 @@ PObject::Comparison H245_FECCapability_rfc2733_separateStream::Compare(const POb
 }
 
 
-PINDEX H245_FECCapability_rfc2733_separateStream::GetDataLength() const
+PINDEX H245_DepFECCapability_rfc2733_separateStream::GetDataLength() const
 {
   PINDEX length = 0;
   length += m_separatePort.GetObjectLength();
@@ -8553,7 +8711,7 @@ PINDEX H245_FECCapability_rfc2733_separateStream::GetDataLength() const
 }
 
 
-BOOL H245_FECCapability_rfc2733_separateStream::Decode(PASN_Stream & strm)
+BOOL H245_DepFECCapability_rfc2733_separateStream::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
     return FALSE;
@@ -8567,7 +8725,7 @@ BOOL H245_FECCapability_rfc2733_separateStream::Decode(PASN_Stream & strm)
 }
 
 
-void H245_FECCapability_rfc2733_separateStream::Encode(PASN_Stream & strm) const
+void H245_DepFECCapability_rfc2733_separateStream::Encode(PASN_Stream & strm) const
 {
   PreambleEncode(strm);
 
@@ -8578,12 +8736,12 @@ void H245_FECCapability_rfc2733_separateStream::Encode(PASN_Stream & strm) const
 }
 
 
-PObject * H245_FECCapability_rfc2733_separateStream::Clone() const
+PObject * H245_DepFECCapability_rfc2733_separateStream::Clone() const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(IsClass(H245_FECCapability_rfc2733_separateStream::Class()), PInvalidCast);
+  PAssert(IsClass(H245_DepFECCapability_rfc2733_separateStream::Class()), PInvalidCast);
 #endif
-  return new H245_FECCapability_rfc2733_separateStream(*this);
+  return new H245_DepFECCapability_rfc2733_separateStream(*this);
 }
 
 
@@ -8967,19 +9125,19 @@ PObject * H245_ArrayOf_RedundancyEncodingElement::Clone() const
 
 
 #ifndef PASN_NOPRINTON
-const static PASN_Names Names_H245_FECData_rfc2733_mode[]={
+const static PASN_Names Names_H245_DepFECData_rfc2733_mode[]={
       {"redundancyEncoding",0}
      ,{"separateStream",1}
 };
 #endif
 //
-// FECData_rfc2733_mode
+// DepFECData_rfc2733_mode
 //
 
-H245_FECData_rfc2733_mode::H245_FECData_rfc2733_mode(unsigned tag, PASN_Object::TagClass tagClass)
+H245_DepFECData_rfc2733_mode::H245_DepFECData_rfc2733_mode(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-    ,(const PASN_Names *)Names_H245_FECData_rfc2733_mode,2
+    ,(const PASN_Names *)Names_H245_DepFECData_rfc2733_mode,2
 #endif
 )
 {
@@ -8987,35 +9145,35 @@ H245_FECData_rfc2733_mode::H245_FECData_rfc2733_mode(unsigned tag, PASN_Object::
 
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
-H245_FECData_rfc2733_mode::operator H245_FECData_rfc2733_mode_separateStream &() const
+H245_DepFECData_rfc2733_mode::operator H245_DepFECData_rfc2733_mode_separateStream &() const
 #else
-H245_FECData_rfc2733_mode::operator H245_FECData_rfc2733_mode_separateStream &()
+H245_DepFECData_rfc2733_mode::operator H245_DepFECData_rfc2733_mode_separateStream &()
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(PAssertNULL(choice), H245_FECData_rfc2733_mode_separateStream), PInvalidCast);
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_DepFECData_rfc2733_mode_separateStream), PInvalidCast);
 #endif
-  return *(H245_FECData_rfc2733_mode_separateStream *)choice;
+  return *(H245_DepFECData_rfc2733_mode_separateStream *)choice;
 }
 
 
-H245_FECData_rfc2733_mode::operator const H245_FECData_rfc2733_mode_separateStream &() const
+H245_DepFECData_rfc2733_mode::operator const H245_DepFECData_rfc2733_mode_separateStream &() const
 #endif
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(PAssertNULL(choice), H245_FECData_rfc2733_mode_separateStream), PInvalidCast);
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_DepFECData_rfc2733_mode_separateStream), PInvalidCast);
 #endif
-  return *(H245_FECData_rfc2733_mode_separateStream *)choice;
+  return *(H245_DepFECData_rfc2733_mode_separateStream *)choice;
 }
 
 
-BOOL H245_FECData_rfc2733_mode::CreateObject()
+BOOL H245_DepFECData_rfc2733_mode::CreateObject()
 {
   switch (tag) {
     case e_redundancyEncoding :
       choice = new PASN_Null();
       return TRUE;
     case e_separateStream :
-      choice = new H245_FECData_rfc2733_mode_separateStream();
+      choice = new H245_DepFECData_rfc2733_mode_separateStream();
       return TRUE;
   }
 
@@ -9024,12 +9182,106 @@ BOOL H245_FECData_rfc2733_mode::CreateObject()
 }
 
 
-PObject * H245_FECData_rfc2733_mode::Clone() const
+PObject * H245_DepFECData_rfc2733_mode::Clone() const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(IsClass(H245_FECData_rfc2733_mode::Class()), PInvalidCast);
+  PAssert(IsClass(H245_DepFECData_rfc2733_mode::Class()), PInvalidCast);
 #endif
-  return new H245_FECData_rfc2733_mode(*this);
+  return new H245_DepFECData_rfc2733_mode(*this);
+}
+
+
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_FECData_rfc2733_pktMode[]={
+      {"rfc2198coding",0}
+     ,{"rfc2733sameport",1}
+     ,{"rfc2733diffport",2}
+};
+#endif
+//
+// FECData_rfc2733_pktMode
+//
+
+H245_FECData_rfc2733_pktMode::H245_FECData_rfc2733_pktMode(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Choice(tag, tagClass, 3, TRUE
+#ifndef PASN_NOPRINTON
+    ,(const PASN_Names *)Names_H245_FECData_rfc2733_pktMode,3
+#endif
+)
+{
+}
+
+
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+H245_FECData_rfc2733_pktMode::operator H245_FECData_rfc2733_pktMode_rfc2733sameport &() const
+#else
+H245_FECData_rfc2733_pktMode::operator H245_FECData_rfc2733_pktMode_rfc2733sameport &()
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_FECData_rfc2733_pktMode_rfc2733sameport), PInvalidCast);
+#endif
+  return *(H245_FECData_rfc2733_pktMode_rfc2733sameport *)choice;
+}
+
+
+H245_FECData_rfc2733_pktMode::operator const H245_FECData_rfc2733_pktMode_rfc2733sameport &() const
+#endif
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_FECData_rfc2733_pktMode_rfc2733sameport), PInvalidCast);
+#endif
+  return *(H245_FECData_rfc2733_pktMode_rfc2733sameport *)choice;
+}
+
+
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+H245_FECData_rfc2733_pktMode::operator H245_FECData_rfc2733_pktMode_rfc2733diffport &() const
+#else
+H245_FECData_rfc2733_pktMode::operator H245_FECData_rfc2733_pktMode_rfc2733diffport &()
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_FECData_rfc2733_pktMode_rfc2733diffport), PInvalidCast);
+#endif
+  return *(H245_FECData_rfc2733_pktMode_rfc2733diffport *)choice;
+}
+
+
+H245_FECData_rfc2733_pktMode::operator const H245_FECData_rfc2733_pktMode_rfc2733diffport &() const
+#endif
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_FECData_rfc2733_pktMode_rfc2733diffport), PInvalidCast);
+#endif
+  return *(H245_FECData_rfc2733_pktMode_rfc2733diffport *)choice;
+}
+
+
+BOOL H245_FECData_rfc2733_pktMode::CreateObject()
+{
+  switch (tag) {
+    case e_rfc2198coding :
+      choice = new PASN_Null();
+      return TRUE;
+    case e_rfc2733sameport :
+      choice = new H245_FECData_rfc2733_pktMode_rfc2733sameport();
+      return TRUE;
+    case e_rfc2733diffport :
+      choice = new H245_FECData_rfc2733_pktMode_rfc2733diffport();
+      return TRUE;
+  }
+
+  choice = NULL;
+  return FALSE;
+}
+
+
+PObject * H245_FECData_rfc2733_pktMode::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_FECData_rfc2733_pktMode::Class()), PInvalidCast);
+#endif
+  return new H245_FECData_rfc2733_pktMode(*this);
 }
 
 
@@ -9195,19 +9447,19 @@ PObject * H245_OpenLogicalChannelAck_reverseLogicalChannelParameters_multiplexPa
 
 
 #ifndef PASN_NOPRINTON
-const static PASN_Names Names_H245_FECMode_rfc2733Mode_mode[]={
+const static PASN_Names Names_H245_DepFECMode_rfc2733Mode_mode[]={
       {"redundancyEncoding",0}
      ,{"separateStream",1}
 };
 #endif
 //
-// FECMode_rfc2733Mode_mode
+// DepFECMode_rfc2733Mode_mode
 //
 
-H245_FECMode_rfc2733Mode_mode::H245_FECMode_rfc2733Mode_mode(unsigned tag, PASN_Object::TagClass tagClass)
+H245_DepFECMode_rfc2733Mode_mode::H245_DepFECMode_rfc2733Mode_mode(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-    ,(const PASN_Names *)Names_H245_FECMode_rfc2733Mode_mode,2
+    ,(const PASN_Names *)Names_H245_DepFECMode_rfc2733Mode_mode,2
 #endif
 )
 {
@@ -9215,35 +9467,35 @@ H245_FECMode_rfc2733Mode_mode::H245_FECMode_rfc2733Mode_mode(unsigned tag, PASN_
 
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
-H245_FECMode_rfc2733Mode_mode::operator H245_FECMode_rfc2733Mode_mode_separateStream &() const
+H245_DepFECMode_rfc2733Mode_mode::operator H245_DepFECMode_rfc2733Mode_mode_separateStream &() const
 #else
-H245_FECMode_rfc2733Mode_mode::operator H245_FECMode_rfc2733Mode_mode_separateStream &()
+H245_DepFECMode_rfc2733Mode_mode::operator H245_DepFECMode_rfc2733Mode_mode_separateStream &()
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(PAssertNULL(choice), H245_FECMode_rfc2733Mode_mode_separateStream), PInvalidCast);
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_DepFECMode_rfc2733Mode_mode_separateStream), PInvalidCast);
 #endif
-  return *(H245_FECMode_rfc2733Mode_mode_separateStream *)choice;
+  return *(H245_DepFECMode_rfc2733Mode_mode_separateStream *)choice;
 }
 
 
-H245_FECMode_rfc2733Mode_mode::operator const H245_FECMode_rfc2733Mode_mode_separateStream &() const
+H245_DepFECMode_rfc2733Mode_mode::operator const H245_DepFECMode_rfc2733Mode_mode_separateStream &() const
 #endif
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(PAssertNULL(choice), H245_FECMode_rfc2733Mode_mode_separateStream), PInvalidCast);
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_DepFECMode_rfc2733Mode_mode_separateStream), PInvalidCast);
 #endif
-  return *(H245_FECMode_rfc2733Mode_mode_separateStream *)choice;
+  return *(H245_DepFECMode_rfc2733Mode_mode_separateStream *)choice;
 }
 
 
-BOOL H245_FECMode_rfc2733Mode_mode::CreateObject()
+BOOL H245_DepFECMode_rfc2733Mode_mode::CreateObject()
 {
   switch (tag) {
     case e_redundancyEncoding :
       choice = new PASN_Null();
       return TRUE;
     case e_separateStream :
-      choice = new H245_FECMode_rfc2733Mode_mode_separateStream();
+      choice = new H245_DepFECMode_rfc2733Mode_mode_separateStream();
       return TRUE;
   }
 
@@ -9252,12 +9504,12 @@ BOOL H245_FECMode_rfc2733Mode_mode::CreateObject()
 }
 
 
-PObject * H245_FECMode_rfc2733Mode_mode::Clone() const
+PObject * H245_DepFECMode_rfc2733Mode_mode::Clone() const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(IsClass(H245_FECMode_rfc2733Mode_mode::Class()), PInvalidCast);
+  PAssert(IsClass(H245_DepFECMode_rfc2733Mode_mode::Class()), PInvalidCast);
 #endif
-  return new H245_FECMode_rfc2733Mode_mode(*this);
+  return new H245_DepFECMode_rfc2733Mode_mode(*this);
 }
 
 
@@ -10961,19 +11213,19 @@ PObject * H245_V76LogicalChannelParameters_mode_eRM_recovery::Clone() const
 
 
 #ifndef PASN_NOPRINTON
-const static PASN_Names Names_H245_FECData_rfc2733_mode_separateStream[]={
+const static PASN_Names Names_H245_DepFECData_rfc2733_mode_separateStream[]={
       {"differentPort",0}
      ,{"samePort",1}
 };
 #endif
 //
-// FECData_rfc2733_mode_separateStream
+// DepFECData_rfc2733_mode_separateStream
 //
 
-H245_FECData_rfc2733_mode_separateStream::H245_FECData_rfc2733_mode_separateStream(unsigned tag, PASN_Object::TagClass tagClass)
+H245_DepFECData_rfc2733_mode_separateStream::H245_DepFECData_rfc2733_mode_separateStream(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-    ,(const PASN_Names *)Names_H245_FECData_rfc2733_mode_separateStream,2
+    ,(const PASN_Names *)Names_H245_DepFECData_rfc2733_mode_separateStream,2
 #endif
 )
 {
@@ -10981,57 +11233,57 @@ H245_FECData_rfc2733_mode_separateStream::H245_FECData_rfc2733_mode_separateStre
 
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
-H245_FECData_rfc2733_mode_separateStream::operator H245_FECData_rfc2733_mode_separateStream_differentPort &() const
+H245_DepFECData_rfc2733_mode_separateStream::operator H245_DepFECData_rfc2733_mode_separateStream_differentPort &() const
 #else
-H245_FECData_rfc2733_mode_separateStream::operator H245_FECData_rfc2733_mode_separateStream_differentPort &()
+H245_DepFECData_rfc2733_mode_separateStream::operator H245_DepFECData_rfc2733_mode_separateStream_differentPort &()
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(PAssertNULL(choice), H245_FECData_rfc2733_mode_separateStream_differentPort), PInvalidCast);
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_DepFECData_rfc2733_mode_separateStream_differentPort), PInvalidCast);
 #endif
-  return *(H245_FECData_rfc2733_mode_separateStream_differentPort *)choice;
+  return *(H245_DepFECData_rfc2733_mode_separateStream_differentPort *)choice;
 }
 
 
-H245_FECData_rfc2733_mode_separateStream::operator const H245_FECData_rfc2733_mode_separateStream_differentPort &() const
+H245_DepFECData_rfc2733_mode_separateStream::operator const H245_DepFECData_rfc2733_mode_separateStream_differentPort &() const
 #endif
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(PAssertNULL(choice), H245_FECData_rfc2733_mode_separateStream_differentPort), PInvalidCast);
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_DepFECData_rfc2733_mode_separateStream_differentPort), PInvalidCast);
 #endif
-  return *(H245_FECData_rfc2733_mode_separateStream_differentPort *)choice;
+  return *(H245_DepFECData_rfc2733_mode_separateStream_differentPort *)choice;
 }
 
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
-H245_FECData_rfc2733_mode_separateStream::operator H245_FECData_rfc2733_mode_separateStream_samePort &() const
+H245_DepFECData_rfc2733_mode_separateStream::operator H245_DepFECData_rfc2733_mode_separateStream_samePort &() const
 #else
-H245_FECData_rfc2733_mode_separateStream::operator H245_FECData_rfc2733_mode_separateStream_samePort &()
+H245_DepFECData_rfc2733_mode_separateStream::operator H245_DepFECData_rfc2733_mode_separateStream_samePort &()
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(PAssertNULL(choice), H245_FECData_rfc2733_mode_separateStream_samePort), PInvalidCast);
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_DepFECData_rfc2733_mode_separateStream_samePort), PInvalidCast);
 #endif
-  return *(H245_FECData_rfc2733_mode_separateStream_samePort *)choice;
+  return *(H245_DepFECData_rfc2733_mode_separateStream_samePort *)choice;
 }
 
 
-H245_FECData_rfc2733_mode_separateStream::operator const H245_FECData_rfc2733_mode_separateStream_samePort &() const
+H245_DepFECData_rfc2733_mode_separateStream::operator const H245_DepFECData_rfc2733_mode_separateStream_samePort &() const
 #endif
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(PAssertNULL(choice), H245_FECData_rfc2733_mode_separateStream_samePort), PInvalidCast);
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_DepFECData_rfc2733_mode_separateStream_samePort), PInvalidCast);
 #endif
-  return *(H245_FECData_rfc2733_mode_separateStream_samePort *)choice;
+  return *(H245_DepFECData_rfc2733_mode_separateStream_samePort *)choice;
 }
 
 
-BOOL H245_FECData_rfc2733_mode_separateStream::CreateObject()
+BOOL H245_DepFECData_rfc2733_mode_separateStream::CreateObject()
 {
   switch (tag) {
     case e_differentPort :
-      choice = new H245_FECData_rfc2733_mode_separateStream_differentPort();
+      choice = new H245_DepFECData_rfc2733_mode_separateStream_differentPort();
       return TRUE;
     case e_samePort :
-      choice = new H245_FECData_rfc2733_mode_separateStream_samePort();
+      choice = new H245_DepFECData_rfc2733_mode_separateStream_samePort();
       return TRUE;
   }
 
@@ -11040,12 +11292,67 @@ BOOL H245_FECData_rfc2733_mode_separateStream::CreateObject()
 }
 
 
-PObject * H245_FECData_rfc2733_mode_separateStream::Clone() const
+PObject * H245_DepFECData_rfc2733_mode_separateStream::Clone() const
 {
 #ifndef PASN_LEANANDMEAN
-  PAssert(IsClass(H245_FECData_rfc2733_mode_separateStream::Class()), PInvalidCast);
+  PAssert(IsClass(H245_DepFECData_rfc2733_mode_separateStream::Class()), PInvalidCast);
 #endif
-  return new H245_FECData_rfc2733_mode_separateStream(*this);
+  return new H245_DepFECData_rfc2733_mode_separateStream(*this);
+}
+
+
+//
+// FECData_rfc2733_pktMode_rfc2733sameport
+//
+
+H245_FECData_rfc2733_pktMode_rfc2733sameport::H245_FECData_rfc2733_pktMode_rfc2733sameport(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+{
+}
+
+
+#ifndef PASN_NOPRINTON
+void H245_FECData_rfc2733_pktMode_rfc2733sameport::PrintOn(ostream & strm) const
+{
+  int indent = strm.precision() + 2;
+  strm << "{\n";
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
+}
+#endif
+
+
+PINDEX H245_FECData_rfc2733_pktMode_rfc2733sameport::GetDataLength() const
+{
+  PINDEX length = 0;
+  return length;
+}
+
+
+BOOL H245_FECData_rfc2733_pktMode_rfc2733sameport::Decode(PASN_Stream & strm)
+{
+  if (!PreambleDecode(strm))
+    return FALSE;
+
+
+  return UnknownExtensionsDecode(strm);
+}
+
+
+void H245_FECData_rfc2733_pktMode_rfc2733sameport::Encode(PASN_Stream & strm) const
+{
+  PreambleEncode(strm);
+
+
+  UnknownExtensionsEncode(strm);
+}
+
+
+PObject * H245_FECData_rfc2733_pktMode_rfc2733sameport::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_FECData_rfc2733_pktMode_rfc2733sameport::Class()), PInvalidCast);
+#endif
+  return new H245_FECData_rfc2733_pktMode_rfc2733sameport(*this);
 }
 
 
