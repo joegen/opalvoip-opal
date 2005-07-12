@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.h,v $
- * Revision 1.2012  2005/01/24 00:16:44  csoutheren
+ * Revision 1.2013  2005/07/12 12:33:27  csoutheren
+ * Updated H.245 to version 11
+ *
+ * Revision 2.11  2005/01/24 00:16:44  csoutheren
  * Added function to set Q.931 info in PDU, thanks to Paul Nader
  *
  * Revision 2.10  2004/02/19 10:46:44  rjongbloed
@@ -306,7 +309,7 @@ class OpalGloballyUniqueID;
 
 
 #define H225_PROTOCOL_VERSION 4
-#define H245_PROTOCOL_VERSION 7
+#define H245_PROTOCOL_VERSION 11
 
 
 ///////////////////////////////////////////////////////////////////////////////
