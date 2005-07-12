@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2037  2005/07/11 01:52:24  csoutheren
+ * Revision 1.2038  2005/07/12 12:34:37  csoutheren
+ * Fixes for H.450 errors and return values
+ * Thanks to Iker Perez San Roman
+ *
+ * Revision 2.36  2005/07/11 01:52:24  csoutheren
  * Extended AnsweringCall to work for SIP as well as H.323
  * Fixed problems with external RTP connection in H.323
  * Added call to OnClosedMediaStream
@@ -768,7 +772,8 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
     callIntrusionT3(0,30),                  // Seconds
     callIntrusionT4(0,30),                  // Seconds
     callIntrusionT5(0,10),                  // Seconds
-    callIntrusionT6(0,10)                   // Seconds
+    callIntrusionT6(0,10),                  // Seconds
+    nextH450CallIdentity(0)
 {
   // Set port in OpalEndPoint class
   defaultSignalPort = DefaultTcpPort;
@@ -798,6 +803,8 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   rasRequestRetries = 2;
 
   gatekeeper = NULL;
+
+  secondaryConnectionsActive.DisallowDeleteObjects();
 
   PTRACE(3, "H323\tCreated endpoint.");
 }
@@ -1355,6 +1362,9 @@ BOOL H323EndPoint::IntrudeCall(const PString & remoteParty,
                           userData);
 }
 
+void H323EndPoint::OnReceivedInitiateReturnError()
+{
+}
 
 BOOL H323EndPoint::ParsePartyName(const PString & remoteParty,
                                   PString & alias,
