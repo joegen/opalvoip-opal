@@ -999,8 +999,11 @@ class H245_GenericCapability;
 class H245_MultiplexedStreamCapability;
 class H245_AudioTelephonyEventCapability;
 class H245_AudioToneCapability;
-class H245_FECCapability;
+class H245_DepFECCapability;
 class H245_MultiplePayloadStreamCapability;
+class H245_FECCapability;
+class H245_RedundancyEncodingCapability;
+class H245_AlternativeCapabilitySet;
 
 class H245_Capability : public PASN_Choice
 {
@@ -1035,8 +1038,11 @@ class H245_Capability : public PASN_Choice
       e_receiveAndTransmitMultiplexedStreamCapability,
       e_receiveRTPAudioTelephonyEventCapability,
       e_receiveRTPAudioToneCapability,
+      e_depFecCapability,
+      e_multiplePayloadStreamCapability,
       e_fecCapability,
-      e_multiplePayloadStreamCapability
+      e_redundancyEncodingCap,
+      e_oneOfCapabilities
     };
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
@@ -1112,16 +1118,34 @@ class H245_Capability : public PASN_Choice
     operator const H245_AudioToneCapability &() const;
 #endif
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
-    operator H245_FECCapability &() const;
+    operator H245_DepFECCapability &() const;
 #else
-    operator H245_FECCapability &();
-    operator const H245_FECCapability &() const;
+    operator H245_DepFECCapability &();
+    operator const H245_DepFECCapability &() const;
 #endif
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
     operator H245_MultiplePayloadStreamCapability &() const;
 #else
     operator H245_MultiplePayloadStreamCapability &();
     operator const H245_MultiplePayloadStreamCapability &() const;
+#endif
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+    operator H245_FECCapability &() const;
+#else
+    operator H245_FECCapability &();
+    operator const H245_FECCapability &() const;
+#endif
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+    operator H245_RedundancyEncodingCapability &() const;
+#else
+    operator H245_RedundancyEncodingCapability &();
+    operator const H245_RedundancyEncodingCapability &() const;
+#endif
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+    operator H245_AlternativeCapabilitySet &() const;
+#else
+    operator H245_AlternativeCapabilitySet &();
+    operator const H245_AlternativeCapabilitySet &() const;
 #endif
 
     BOOL CreateObject();
@@ -1552,8 +1576,7 @@ class H245_H262VideoCapability : public PASN_Sequence
       e_samplesPerLine,
       e_linesPerFrame,
       e_framesPerSecond,
-      e_luminanceSampleRate,
-      e_videoBadMBsCap
+      e_luminanceSampleRate
     };
 
     PASN_Boolean m_profileAndLevel_SPatML;
@@ -2550,31 +2573,49 @@ class H245_NoPTAudioToneCapability : public PASN_Sequence
 
 
 //
-// FECCapability
+// DepFECCapability
 //
 
-class H245_FECCapability_rfc2733;
+class H245_DepFECCapability_rfc2733;
 
-class H245_FECCapability : public PASN_Choice
+class H245_DepFECCapability : public PASN_Choice
 {
 #ifndef PASN_LEANANDMEAN
-    PCLASSINFO(H245_FECCapability, PASN_Choice);
+    PCLASSINFO(H245_DepFECCapability, PASN_Choice);
 #endif
   public:
-    H245_FECCapability(unsigned tag = 0, TagClass tagClass = UniversalTagClass);
+    H245_DepFECCapability(unsigned tag = 0, TagClass tagClass = UniversalTagClass);
 
     enum Choices {
       e_rfc2733
     };
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
-    operator H245_FECCapability_rfc2733 &() const;
+    operator H245_DepFECCapability_rfc2733 &() const;
 #else
-    operator H245_FECCapability_rfc2733 &();
-    operator const H245_FECCapability_rfc2733 &() const;
+    operator H245_DepFECCapability_rfc2733 &();
+    operator const H245_DepFECCapability_rfc2733 &() const;
 #endif
 
     BOOL CreateObject();
+    PObject * Clone() const;
+};
+
+
+//
+// MaxRedundancy
+//
+
+class H245_MaxRedundancy : public PASN_Integer
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_MaxRedundancy, PASN_Integer);
+#endif
+  public:
+    H245_MaxRedundancy(unsigned tag = UniversalInteger, TagClass tagClass = UniversalTagClass);
+
+    H245_MaxRedundancy & operator=(int v);
+    H245_MaxRedundancy & operator=(unsigned v);
     PObject * Clone() const;
 };
 
@@ -2635,6 +2676,7 @@ class H245_H235Media;
 class H245_MultiplexedStreamParameter;
 class H245_RedundancyEncoding;
 class H245_MultiplePayloadStream;
+class H245_DepFECData;
 class H245_FECData;
 
 class H245_DataType : public PASN_Choice
@@ -2657,6 +2699,7 @@ class H245_DataType : public PASN_Choice
       e_multiplexedStream,
       e_redundancyEncoding,
       e_multiplePayloadStream,
+      e_depFec,
       e_fec
     };
 
@@ -2713,6 +2756,12 @@ class H245_DataType : public PASN_Choice
 #else
     operator H245_MultiplePayloadStream &();
     operator const H245_MultiplePayloadStream &() const;
+#endif
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+    operator H245_DepFECData &() const;
+#else
+    operator H245_DepFECData &();
+    operator const H245_DepFECData &() const;
 #endif
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
     operator H245_FECData &() const;
@@ -2866,6 +2915,36 @@ class H245_MultiplePayloadStreamElement : public PASN_Sequence
     void PrintOn(ostream & strm) const;
 #endif
     Comparison Compare(const PObject & obj) const;
+    PObject * Clone() const;
+};
+
+
+//
+// DepFECData
+//
+
+class H245_DepFECData_rfc2733;
+
+class H245_DepFECData : public PASN_Choice
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_DepFECData, PASN_Choice);
+#endif
+  public:
+    H245_DepFECData(unsigned tag = 0, TagClass tagClass = UniversalTagClass);
+
+    enum Choices {
+      e_rfc2733
+    };
+
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+    operator H245_DepFECData_rfc2733 &() const;
+#else
+    operator H245_DepFECData_rfc2733 &();
+    operator const H245_DepFECData_rfc2733 &() const;
+#endif
+
+    BOOL CreateObject();
     PObject * Clone() const;
 };
 
@@ -3249,6 +3328,7 @@ class H245_H235Mode;
 class H245_MultiplexedStreamParameter;
 class H245_RedundancyEncodingDTMode;
 class H245_MultiplePayloadStreamMode;
+class H245_DepFECMode;
 class H245_FECMode;
 
 class H245_ModeElementType : public PASN_Choice
@@ -3269,6 +3349,7 @@ class H245_ModeElementType : public PASN_Choice
       e_multiplexedStreamMode,
       e_redundancyEncodingDTMode,
       e_multiplePayloadStreamMode,
+      e_depFecMode,
       e_fecMode
     };
 
@@ -3325,6 +3406,12 @@ class H245_ModeElementType : public PASN_Choice
 #else
     operator H245_MultiplePayloadStreamMode &();
     operator const H245_MultiplePayloadStreamMode &() const;
+#endif
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+    operator H245_DepFECMode &() const;
+#else
+    operator H245_DepFECMode &();
+    operator const H245_DepFECMode &() const;
 #endif
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
     operator H245_FECMode &() const;
@@ -3389,28 +3476,28 @@ class H245_MultiplePayloadStreamElementMode : public PASN_Sequence
 
 
 //
-// FECMode
+// DepFECMode
 //
 
-class H245_FECMode_rfc2733Mode;
+class H245_DepFECMode_rfc2733Mode;
 
-class H245_FECMode : public PASN_Choice
+class H245_DepFECMode : public PASN_Choice
 {
 #ifndef PASN_LEANANDMEAN
-    PCLASSINFO(H245_FECMode, PASN_Choice);
+    PCLASSINFO(H245_DepFECMode, PASN_Choice);
 #endif
   public:
-    H245_FECMode(unsigned tag = 0, TagClass tagClass = UniversalTagClass);
+    H245_DepFECMode(unsigned tag = 0, TagClass tagClass = UniversalTagClass);
 
     enum Choices {
       e_rfc2733Mode
     };
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
-    operator H245_FECMode_rfc2733Mode &() const;
+    operator H245_DepFECMode_rfc2733Mode &() const;
 #else
-    operator H245_FECMode_rfc2733Mode &();
-    operator const H245_FECMode_rfc2733Mode &() const;
+    operator H245_DepFECMode_rfc2733Mode &();
+    operator const H245_DepFECMode_rfc2733Mode &() const;
 #endif
 
     BOOL CreateObject();
@@ -6565,6 +6652,38 @@ class H245_ArrayOf_ParameterIdentifier : public PASN_Array
 
 
 //
+// FECCapability_rfc2733Format
+//
+
+class H245_MaxRedundancy;
+
+class H245_FECCapability_rfc2733Format : public PASN_Choice
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_FECCapability_rfc2733Format, PASN_Choice);
+#endif
+  public:
+    H245_FECCapability_rfc2733Format(unsigned tag = 0, TagClass tagClass = UniversalTagClass);
+
+    enum Choices {
+      e_rfc2733rfc2198,
+      e_rfc2733sameport,
+      e_rfc2733diffport
+    };
+
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+    operator H245_MaxRedundancy &() const;
+#else
+    operator H245_MaxRedundancy &();
+    operator const H245_MaxRedundancy &() const;
+#endif
+
+    BOOL CreateObject();
+    PObject * Clone() const;
+};
+
+
+//
 // NetworkAccessParameters_distribution
 //
 
@@ -6680,6 +6799,7 @@ class H245_AudioCapability;
 class H245_DataApplicationCapability;
 class H245_RedundancyEncoding;
 class H245_MultiplePayloadStream;
+class H245_DepFECData;
 class H245_FECData;
 
 class H245_H235Media_mediaType : public PASN_Choice
@@ -6697,6 +6817,7 @@ class H245_H235Media_mediaType : public PASN_Choice
       e_data,
       e_redundancyEncoding,
       e_multiplePayloadStream,
+      e_depFec,
       e_fec
     };
 
@@ -6735,6 +6856,12 @@ class H245_H235Media_mediaType : public PASN_Choice
 #else
     operator H245_MultiplePayloadStream &();
     operator const H245_MultiplePayloadStream &() const;
+#endif
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+    operator H245_DepFECData &() const;
+#else
+    operator H245_DepFECData &();
+    operator const H245_DepFECData &() const;
 #endif
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
     operator H245_FECData &() const;
@@ -7388,7 +7515,8 @@ class H245_OpenLogicalChannelReject_cause : public PASN_Choice
       e_masterSlaveConflict,
       e_waitForCommunicationMode,
       e_invalidDependentChannel,
-      e_replacementForRejected
+      e_replacementForRejected,
+      e_securityDenied
     };
 
     BOOL CreateObject();
@@ -7831,6 +7959,7 @@ class H245_AudioMode;
 class H245_DataMode;
 class H245_EncryptionMode;
 class H245_H235Mode;
+class H245_FECMode;
 
 class H245_RedundancyEncodingDTModeElement_type : public PASN_Choice
 {
@@ -7846,7 +7975,8 @@ class H245_RedundancyEncodingDTModeElement_type : public PASN_Choice
       e_audioMode,
       e_dataMode,
       e_encryptionMode,
-      e_h235Mode
+      e_h235Mode,
+      e_fecMode
     };
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
@@ -7885,6 +8015,12 @@ class H245_RedundancyEncodingDTModeElement_type : public PASN_Choice
     operator H245_H235Mode &();
     operator const H245_H235Mode &() const;
 #endif
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+    operator H245_FECMode &() const;
+#else
+    operator H245_FECMode &();
+    operator const H245_FECMode &() const;
+#endif
 
     BOOL CreateObject();
     PObject * Clone() const;
@@ -7907,6 +8043,38 @@ class H245_ArrayOf_MultiplePayloadStreamElementMode : public PASN_Array
 
     PASN_Object * CreateObject() const;
     H245_MultiplePayloadStreamElementMode & operator[](PINDEX i) const;
+    PObject * Clone() const;
+};
+
+
+//
+// FECMode_rfc2733Format
+//
+
+class H245_MaxRedundancy;
+
+class H245_FECMode_rfc2733Format : public PASN_Choice
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_FECMode_rfc2733Format, PASN_Choice);
+#endif
+  public:
+    H245_FECMode_rfc2733Format(unsigned tag = 0, TagClass tagClass = UniversalTagClass);
+
+    enum Choices {
+      e_rfc2733rfc2198,
+      e_rfc2733sameport,
+      e_rfc2733diffport
+    };
+
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+    operator H245_MaxRedundancy &() const;
+#else
+    operator H245_MaxRedundancy &();
+    operator const H245_MaxRedundancy &() const;
+#endif
+
+    BOOL CreateObject();
     PObject * Clone() const;
 };
 
@@ -9865,16 +10033,16 @@ class H245_DataApplicationCapability_application_nlpid : public PASN_Sequence
 
 
 //
-// FECCapability_rfc2733_separateStream
+// DepFECCapability_rfc2733_separateStream
 //
 
-class H245_FECCapability_rfc2733_separateStream : public PASN_Sequence
+class H245_DepFECCapability_rfc2733_separateStream : public PASN_Sequence
 {
 #ifndef PASN_LEANANDMEAN
-    PCLASSINFO(H245_FECCapability_rfc2733_separateStream, PASN_Sequence);
+    PCLASSINFO(H245_DepFECCapability_rfc2733_separateStream, PASN_Sequence);
 #endif
   public:
-    H245_FECCapability_rfc2733_separateStream(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+    H245_DepFECCapability_rfc2733_separateStream(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
 
     PASN_Boolean m_separatePort;
     PASN_Boolean m_samePort;
@@ -10038,18 +10206,18 @@ class H245_ArrayOf_RedundancyEncodingElement : public PASN_Array
 
 
 //
-// FECData_rfc2733_mode
+// DepFECData_rfc2733_mode
 //
 
-class H245_FECData_rfc2733_mode_separateStream;
+class H245_DepFECData_rfc2733_mode_separateStream;
 
-class H245_FECData_rfc2733_mode : public PASN_Choice
+class H245_DepFECData_rfc2733_mode : public PASN_Choice
 {
 #ifndef PASN_LEANANDMEAN
-    PCLASSINFO(H245_FECData_rfc2733_mode, PASN_Choice);
+    PCLASSINFO(H245_DepFECData_rfc2733_mode, PASN_Choice);
 #endif
   public:
-    H245_FECData_rfc2733_mode(unsigned tag = 0, TagClass tagClass = UniversalTagClass);
+    H245_DepFECData_rfc2733_mode(unsigned tag = 0, TagClass tagClass = UniversalTagClass);
 
     enum Choices {
       e_redundancyEncoding,
@@ -10057,10 +10225,49 @@ class H245_FECData_rfc2733_mode : public PASN_Choice
     };
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
-    operator H245_FECData_rfc2733_mode_separateStream &() const;
+    operator H245_DepFECData_rfc2733_mode_separateStream &() const;
 #else
-    operator H245_FECData_rfc2733_mode_separateStream &();
-    operator const H245_FECData_rfc2733_mode_separateStream &() const;
+    operator H245_DepFECData_rfc2733_mode_separateStream &();
+    operator const H245_DepFECData_rfc2733_mode_separateStream &() const;
+#endif
+
+    BOOL CreateObject();
+    PObject * Clone() const;
+};
+
+
+//
+// FECData_rfc2733_pktMode
+//
+
+class H245_FECData_rfc2733_pktMode_rfc2733sameport;
+class H245_FECData_rfc2733_pktMode_rfc2733diffport;
+
+class H245_FECData_rfc2733_pktMode : public PASN_Choice
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_FECData_rfc2733_pktMode, PASN_Choice);
+#endif
+  public:
+    H245_FECData_rfc2733_pktMode(unsigned tag = 0, TagClass tagClass = UniversalTagClass);
+
+    enum Choices {
+      e_rfc2198coding,
+      e_rfc2733sameport,
+      e_rfc2733diffport
+    };
+
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+    operator H245_FECData_rfc2733_pktMode_rfc2733sameport &() const;
+#else
+    operator H245_FECData_rfc2733_pktMode_rfc2733sameport &();
+    operator const H245_FECData_rfc2733_pktMode_rfc2733sameport &() const;
+#endif
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+    operator H245_FECData_rfc2733_pktMode_rfc2733diffport &() const;
+#else
+    operator H245_FECData_rfc2733_pktMode_rfc2733diffport &();
+    operator const H245_FECData_rfc2733_pktMode_rfc2733diffport &() const;
 #endif
 
     BOOL CreateObject();
@@ -10147,18 +10354,18 @@ class H245_OpenLogicalChannelAck_reverseLogicalChannelParameters_multiplexParame
 
 
 //
-// FECMode_rfc2733Mode_mode
+// DepFECMode_rfc2733Mode_mode
 //
 
-class H245_FECMode_rfc2733Mode_mode_separateStream;
+class H245_DepFECMode_rfc2733Mode_mode_separateStream;
 
-class H245_FECMode_rfc2733Mode_mode : public PASN_Choice
+class H245_DepFECMode_rfc2733Mode_mode : public PASN_Choice
 {
 #ifndef PASN_LEANANDMEAN
-    PCLASSINFO(H245_FECMode_rfc2733Mode_mode, PASN_Choice);
+    PCLASSINFO(H245_DepFECMode_rfc2733Mode_mode, PASN_Choice);
 #endif
   public:
-    H245_FECMode_rfc2733Mode_mode(unsigned tag = 0, TagClass tagClass = UniversalTagClass);
+    H245_DepFECMode_rfc2733Mode_mode(unsigned tag = 0, TagClass tagClass = UniversalTagClass);
 
     enum Choices {
       e_redundancyEncoding,
@@ -10166,10 +10373,10 @@ class H245_FECMode_rfc2733Mode_mode : public PASN_Choice
     };
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
-    operator H245_FECMode_rfc2733Mode_mode_separateStream &() const;
+    operator H245_DepFECMode_rfc2733Mode_mode_separateStream &() const;
 #else
-    operator H245_FECMode_rfc2733Mode_mode_separateStream &();
-    operator const H245_FECMode_rfc2733Mode_mode_separateStream &() const;
+    operator H245_DepFECMode_rfc2733Mode_mode_separateStream &();
+    operator const H245_DepFECMode_rfc2733Mode_mode_separateStream &() const;
 #endif
 
     BOOL CreateObject();
@@ -10775,19 +10982,19 @@ class H245_V76LogicalChannelParameters_mode_eRM_recovery : public PASN_Choice
 
 
 //
-// FECData_rfc2733_mode_separateStream
+// DepFECData_rfc2733_mode_separateStream
 //
 
-class H245_FECData_rfc2733_mode_separateStream_differentPort;
-class H245_FECData_rfc2733_mode_separateStream_samePort;
+class H245_DepFECData_rfc2733_mode_separateStream_differentPort;
+class H245_DepFECData_rfc2733_mode_separateStream_samePort;
 
-class H245_FECData_rfc2733_mode_separateStream : public PASN_Choice
+class H245_DepFECData_rfc2733_mode_separateStream : public PASN_Choice
 {
 #ifndef PASN_LEANANDMEAN
-    PCLASSINFO(H245_FECData_rfc2733_mode_separateStream, PASN_Choice);
+    PCLASSINFO(H245_DepFECData_rfc2733_mode_separateStream, PASN_Choice);
 #endif
   public:
-    H245_FECData_rfc2733_mode_separateStream(unsigned tag = 0, TagClass tagClass = UniversalTagClass);
+    H245_DepFECData_rfc2733_mode_separateStream(unsigned tag = 0, TagClass tagClass = UniversalTagClass);
 
     enum Choices {
       e_differentPort,
@@ -10795,16 +11002,16 @@ class H245_FECData_rfc2733_mode_separateStream : public PASN_Choice
     };
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
-    operator H245_FECData_rfc2733_mode_separateStream_differentPort &() const;
+    operator H245_DepFECData_rfc2733_mode_separateStream_differentPort &() const;
 #else
-    operator H245_FECData_rfc2733_mode_separateStream_differentPort &();
-    operator const H245_FECData_rfc2733_mode_separateStream_differentPort &() const;
+    operator H245_DepFECData_rfc2733_mode_separateStream_differentPort &();
+    operator const H245_DepFECData_rfc2733_mode_separateStream_differentPort &() const;
 #endif
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
-    operator H245_FECData_rfc2733_mode_separateStream_samePort &() const;
+    operator H245_DepFECData_rfc2733_mode_separateStream_samePort &() const;
 #else
-    operator H245_FECData_rfc2733_mode_separateStream_samePort &();
-    operator const H245_FECData_rfc2733_mode_separateStream_samePort &() const;
+    operator H245_DepFECData_rfc2733_mode_separateStream_samePort &();
+    operator const H245_DepFECData_rfc2733_mode_separateStream_samePort &() const;
 #endif
 
     BOOL CreateObject();
@@ -10813,19 +11020,67 @@ class H245_FECData_rfc2733_mode_separateStream : public PASN_Choice
 
 
 //
-// FECMode_rfc2733Mode_mode_separateStream
+// FECData_rfc2733_pktMode_rfc2733sameport
 //
 
-class H245_FECMode_rfc2733Mode_mode_separateStream_differentPort;
-class H245_FECMode_rfc2733Mode_mode_separateStream_samePort;
-
-class H245_FECMode_rfc2733Mode_mode_separateStream : public PASN_Choice
+class H245_FECData_rfc2733_pktMode_rfc2733sameport : public PASN_Sequence
 {
 #ifndef PASN_LEANANDMEAN
-    PCLASSINFO(H245_FECMode_rfc2733Mode_mode_separateStream, PASN_Choice);
+    PCLASSINFO(H245_FECData_rfc2733_pktMode_rfc2733sameport, PASN_Sequence);
 #endif
   public:
-    H245_FECMode_rfc2733Mode_mode_separateStream(unsigned tag = 0, TagClass tagClass = UniversalTagClass);
+    H245_FECData_rfc2733_pktMode_rfc2733sameport(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+
+    PINDEX GetDataLength() const;
+    BOOL Decode(PASN_Stream & strm);
+    void Encode(PASN_Stream & strm) const;
+#ifndef PASN_NOPRINTON
+    void PrintOn(ostream & strm) const;
+#endif
+    PObject * Clone() const;
+};
+
+
+//
+// FECData_rfc2733_pktMode_rfc2733diffport
+//
+
+class H245_FECData_rfc2733_pktMode_rfc2733diffport : public PASN_Sequence
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_FECData_rfc2733_pktMode_rfc2733diffport, PASN_Sequence);
+#endif
+  public:
+    H245_FECData_rfc2733_pktMode_rfc2733diffport(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    H245_LogicalChannelNumber m_protectedChannel;
+
+    PINDEX GetDataLength() const;
+    BOOL Decode(PASN_Stream & strm);
+    void Encode(PASN_Stream & strm) const;
+#ifndef PASN_NOPRINTON
+    void PrintOn(ostream & strm) const;
+#endif
+    Comparison Compare(const PObject & obj) const;
+    PObject * Clone() const;
+};
+
+
+//
+// DepFECMode_rfc2733Mode_mode_separateStream
+//
+
+class H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort;
+class H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort;
+
+class H245_DepFECMode_rfc2733Mode_mode_separateStream : public PASN_Choice
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_DepFECMode_rfc2733Mode_mode_separateStream, PASN_Choice);
+#endif
+  public:
+    H245_DepFECMode_rfc2733Mode_mode_separateStream(unsigned tag = 0, TagClass tagClass = UniversalTagClass);
 
     enum Choices {
       e_differentPort,
@@ -10833,16 +11088,16 @@ class H245_FECMode_rfc2733Mode_mode_separateStream : public PASN_Choice
     };
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
-    operator H245_FECMode_rfc2733Mode_mode_separateStream_differentPort &() const;
+    operator H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort &() const;
 #else
-    operator H245_FECMode_rfc2733Mode_mode_separateStream_differentPort &();
-    operator const H245_FECMode_rfc2733Mode_mode_separateStream_differentPort &() const;
+    operator H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort &();
+    operator const H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort &() const;
 #endif
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
-    operator H245_FECMode_rfc2733Mode_mode_separateStream_samePort &() const;
+    operator H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort &() const;
 #else
-    operator H245_FECMode_rfc2733Mode_mode_separateStream_samePort &();
-    operator const H245_FECMode_rfc2733Mode_mode_separateStream_samePort &() const;
+    operator H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort &();
+    operator const H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort &() const;
 #endif
 
     BOOL CreateObject();
@@ -10991,16 +11246,16 @@ class H245_NewATMVCIndication_aal_aal1_errorCorrection : public PASN_Choice
 
 
 //
-// FECData_rfc2733_mode_separateStream_differentPort
+// DepFECData_rfc2733_mode_separateStream_differentPort
 //
 
-class H245_FECData_rfc2733_mode_separateStream_differentPort : public PASN_Sequence
+class H245_DepFECData_rfc2733_mode_separateStream_differentPort : public PASN_Sequence
 {
 #ifndef PASN_LEANANDMEAN
-    PCLASSINFO(H245_FECData_rfc2733_mode_separateStream_differentPort, PASN_Sequence);
+    PCLASSINFO(H245_DepFECData_rfc2733_mode_separateStream_differentPort, PASN_Sequence);
 #endif
   public:
-    H245_FECData_rfc2733_mode_separateStream_differentPort(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+    H245_DepFECData_rfc2733_mode_separateStream_differentPort(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
 
     enum OptionalFields {
       e_protectedPayloadType
@@ -11021,16 +11276,16 @@ class H245_FECData_rfc2733_mode_separateStream_differentPort : public PASN_Seque
 
 
 //
-// FECData_rfc2733_mode_separateStream_samePort
+// DepFECData_rfc2733_mode_separateStream_samePort
 //
 
-class H245_FECData_rfc2733_mode_separateStream_samePort : public PASN_Sequence
+class H245_DepFECData_rfc2733_mode_separateStream_samePort : public PASN_Sequence
 {
 #ifndef PASN_LEANANDMEAN
-    PCLASSINFO(H245_FECData_rfc2733_mode_separateStream_samePort, PASN_Sequence);
+    PCLASSINFO(H245_DepFECData_rfc2733_mode_separateStream_samePort, PASN_Sequence);
 #endif
   public:
-    H245_FECData_rfc2733_mode_separateStream_samePort(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+    H245_DepFECData_rfc2733_mode_separateStream_samePort(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
 
     PASN_Integer m_protectedPayloadType;
 
@@ -11046,16 +11301,16 @@ class H245_FECData_rfc2733_mode_separateStream_samePort : public PASN_Sequence
 
 
 //
-// FECMode_rfc2733Mode_mode_separateStream_differentPort
+// DepFECMode_rfc2733Mode_mode_separateStream_differentPort
 //
 
-class H245_FECMode_rfc2733Mode_mode_separateStream_differentPort : public PASN_Sequence
+class H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort : public PASN_Sequence
 {
 #ifndef PASN_LEANANDMEAN
-    PCLASSINFO(H245_FECMode_rfc2733Mode_mode_separateStream_differentPort, PASN_Sequence);
+    PCLASSINFO(H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort, PASN_Sequence);
 #endif
   public:
-    H245_FECMode_rfc2733Mode_mode_separateStream_differentPort(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+    H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
 
     enum OptionalFields {
       e_protectedPayloadType
@@ -11076,16 +11331,16 @@ class H245_FECMode_rfc2733Mode_mode_separateStream_differentPort : public PASN_S
 
 
 //
-// FECMode_rfc2733Mode_mode_separateStream_samePort
+// DepFECMode_rfc2733Mode_mode_separateStream_samePort
 //
 
-class H245_FECMode_rfc2733Mode_mode_separateStream_samePort : public PASN_Sequence
+class H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort : public PASN_Sequence
 {
 #ifndef PASN_LEANANDMEAN
-    PCLASSINFO(H245_FECMode_rfc2733Mode_mode_separateStream_samePort, PASN_Sequence);
+    PCLASSINFO(H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort, PASN_Sequence);
 #endif
   public:
-    H245_FECMode_rfc2733Mode_mode_separateStream_samePort(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+    H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
 
     H245_ModeElementType m_protectedType;
 
@@ -11113,12 +11368,12 @@ class H245_GenericMessage : public PASN_Sequence
     H245_GenericMessage(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
 
     enum OptionalFields {
-      e_subMessageIdentifer,
+      e_subMessageIdentifier,
       e_messageContent
     };
 
     H245_CapabilityIdentifier m_messageIdentifier;
-    PASN_Integer m_subMessageIdentifer;
+    PASN_Integer m_subMessageIdentifier;
     H245_ArrayOf_GenericParameter m_messageContent;
 
     PINDEX GetDataLength() const;
@@ -12160,6 +12415,38 @@ class H245_MultiplePayloadStreamCapability : public PASN_Sequence
 
 
 //
+// FECCapability
+//
+
+class H245_FECCapability : public PASN_Sequence
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_FECCapability, PASN_Sequence);
+#endif
+  public:
+    H245_FECCapability(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    enum OptionalFields {
+      e_fecScheme,
+      e_rfc2733Format
+    };
+
+    H245_CapabilityTableEntryNumber m_protectedCapability;
+    PASN_ObjectId m_fecScheme;
+    H245_FECCapability_rfc2733Format m_rfc2733Format;
+
+    PINDEX GetDataLength() const;
+    BOOL Decode(PASN_Stream & strm);
+    void Encode(PASN_Stream & strm) const;
+#ifndef PASN_NOPRINTON
+    void PrintOn(ostream & strm) const;
+#endif
+    Comparison Compare(const PObject & obj) const;
+    PObject * Clone() const;
+};
+
+
+//
 // NetworkAccessParameters
 //
 
@@ -12468,13 +12755,15 @@ class H245_EncryptionSync : public PASN_Sequence
 
     enum OptionalFields {
       e_nonStandard,
-      e_escrowentry
+      e_escrowentry,
+      e_genericParameter
     };
 
     H245_NonStandardParameter m_nonStandard;
     PASN_Integer m_synchFlag;
     PASN_OctetString m_h235Key;
     H245_ArrayOf_EscrowData m_escrowentry;
+    H245_GenericParameter m_genericParameter;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -13071,6 +13360,38 @@ class H245_MultiplePayloadStreamMode : public PASN_Sequence
     H245_MultiplePayloadStreamMode(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
 
     H245_ArrayOf_MultiplePayloadStreamElementMode m_elements;
+
+    PINDEX GetDataLength() const;
+    BOOL Decode(PASN_Stream & strm);
+    void Encode(PASN_Stream & strm) const;
+#ifndef PASN_NOPRINTON
+    void PrintOn(ostream & strm) const;
+#endif
+    Comparison Compare(const PObject & obj) const;
+    PObject * Clone() const;
+};
+
+
+//
+// FECMode
+//
+
+class H245_FECMode : public PASN_Sequence
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_FECMode, PASN_Sequence);
+#endif
+  public:
+    H245_FECMode(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    enum OptionalFields {
+      e_fecScheme,
+      e_rfc2733Format
+    };
+
+    H245_ModeElementType m_protectedElement;
+    PASN_ObjectId m_fecScheme;
+    H245_FECMode_rfc2733Format m_rfc2733Format;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -13878,19 +14199,19 @@ class H245_CustomPictureFormat_mPI : public PASN_Sequence
 
 
 //
-// FECCapability_rfc2733
+// DepFECCapability_rfc2733
 //
 
-class H245_FECCapability_rfc2733 : public PASN_Sequence
+class H245_DepFECCapability_rfc2733 : public PASN_Sequence
 {
 #ifndef PASN_LEANANDMEAN
-    PCLASSINFO(H245_FECCapability_rfc2733, PASN_Sequence);
+    PCLASSINFO(H245_DepFECCapability_rfc2733, PASN_Sequence);
 #endif
   public:
-    H245_FECCapability_rfc2733(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+    H245_DepFECCapability_rfc2733(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
 
     PASN_Boolean m_redundancyEncoding;
-    H245_FECCapability_rfc2733_separateStream m_separateStream;
+    H245_DepFECCapability_rfc2733_separateStream m_separateStream;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -14004,6 +14325,31 @@ class H245_RedundancyEncoding_rtpRedundancyEncoding : public PASN_Sequence
 
 
 //
+// DepFECData_rfc2733
+//
+
+class H245_DepFECData_rfc2733 : public PASN_Sequence
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_DepFECData_rfc2733, PASN_Sequence);
+#endif
+  public:
+    H245_DepFECData_rfc2733(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    H245_DepFECData_rfc2733_mode m_mode;
+
+    PINDEX GetDataLength() const;
+    BOOL Decode(PASN_Stream & strm);
+    void Encode(PASN_Stream & strm) const;
+#ifndef PASN_NOPRINTON
+    void PrintOn(ostream & strm) const;
+#endif
+    Comparison Compare(const PObject & obj) const;
+    PObject * Clone() const;
+};
+
+
+//
 // FECData_rfc2733
 //
 
@@ -14015,7 +14361,13 @@ class H245_FECData_rfc2733 : public PASN_Sequence
   public:
     H245_FECData_rfc2733(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
 
-    H245_FECData_rfc2733_mode m_mode;
+    enum OptionalFields {
+      e_fecScheme
+    };
+
+    PASN_Integer m_protectedPayloadType;
+    PASN_ObjectId m_fecScheme;
+    H245_FECData_rfc2733_pktMode m_pktMode;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -14091,18 +14443,18 @@ class H245_OpenLogicalChannelAck_reverseLogicalChannelParameters : public PASN_S
 
 
 //
-// FECMode_rfc2733Mode
+// DepFECMode_rfc2733Mode
 //
 
-class H245_FECMode_rfc2733Mode : public PASN_Sequence
+class H245_DepFECMode_rfc2733Mode : public PASN_Sequence
 {
 #ifndef PASN_LEANANDMEAN
-    PCLASSINFO(H245_FECMode_rfc2733Mode, PASN_Sequence);
+    PCLASSINFO(H245_DepFECMode_rfc2733Mode, PASN_Sequence);
 #endif
   public:
-    H245_FECMode_rfc2733Mode(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+    H245_DepFECMode_rfc2733Mode(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
 
-    H245_FECMode_rfc2733Mode_mode m_mode;
+    H245_DepFECMode_rfc2733Mode_mode m_mode;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -14491,7 +14843,8 @@ class H245_UserInputIndication_signal : public PASN_Sequence
       e_rtp,
       e_rtpPayloadIndication,
       e_paramS,
-      e_encryptedSignalType
+      e_encryptedSignalType,
+      e_algorithmOID
     };
 
     PASN_IA5String m_signalType;
@@ -14500,6 +14853,7 @@ class H245_UserInputIndication_signal : public PASN_Sequence
     PASN_Null m_rtpPayloadIndication;
     H245_Params m_paramS;
     PASN_OctetString m_encryptedSignalType;
+    PASN_ObjectId m_algorithmOID;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -14956,12 +15310,14 @@ class H245_EncryptionAuthenticationAndIntegrity : public PASN_Sequence
     enum OptionalFields {
       e_encryptionCapability,
       e_authenticationCapability,
-      e_integrityCapability
+      e_integrityCapability,
+      e_genericH235SecurityCapability
     };
 
     H245_EncryptionCapability m_encryptionCapability;
     H245_AuthenticationCapability m_authenticationCapability;
     H245_IntegrityCapability m_integrityCapability;
+    H245_GenericCapability m_genericH235SecurityCapability;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
