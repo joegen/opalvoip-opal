@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h450pdu.cxx,v $
- * Revision 1.2016  2004/08/14 07:56:31  rjongbloed
+ * Revision 1.2017  2005/07/12 12:34:37  csoutheren
+ * Fixes for H.450 errors and return values
+ * Thanks to Iker Perez San Roman
+ *
+ * Revision 2.15  2004/08/14 07:56:31  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.14  2004/04/25 08:59:50  rjongbloed
@@ -871,7 +875,6 @@ H4502Handler::H4502Handler(H323Connection & conn, H450xDispatcher & disp)
   ctState = e_ctIdle;
   ctResponseSent = FALSE;
   CallToken = PString();
-  nextCallIdentity = 0;
   consultationTransfer = FALSE;
 
   ctTimer.SetNotifier(PCREATE_NOTIFIER(OnCallTransferTimeOut));
@@ -1018,7 +1021,7 @@ void H4502Handler::OnReceivedCallTransferIdentify(int /*linkedId*/)
   H4502_CTIdentifyRes ctIdentifyResult;
 
   // Restrict the generated value to 4 digits (13 bits)
-  unsigned int id = GetNextCallIdentityValue() & 0x1FFF;
+  unsigned int id = endpoint.GetNextH450CallIdentityValue() & 0x1FFF;
   PString pstrId(PString::Unsigned, id);
   ctIdentifyResult.m_callIdentity = pstrId;
 
@@ -1321,6 +1324,9 @@ void H4502Handler::OnReceivedInitiateReturnError(const bool timerExpiry)
     serviceAPDU.BuildCallTransferAbandon(dispatcher.GetNextInvokeId());
     serviceAPDU.WriteFacilityPDU(*secondaryConnection);
   }
+
+  // Notify the callTransferInitiate return error to the endpoint
+  endpoint.OnReceivedInitiateReturnError();
 }
 
 
@@ -1426,7 +1432,6 @@ void H4502Handler::HandleConsultationTransfer(const PString & callIdentity,
     case e_ctAwaitSetup:
       {
         // Remove this callIdentity, connection pair from our dictionary as we no longer need it
-        endpoint.GetCallIdentityDictionary().DisallowDeleteObjects();
         endpoint.GetCallIdentityDictionary().RemoveAt(callIdentity);
 
         // Stop timer CT-T2
