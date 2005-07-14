@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2040  2005/07/11 06:52:15  csoutheren
+ * Revision 1.2041  2005/07/14 08:51:17  csoutheren
+ * Removed CreateExternalRTPAddress - it's not needed because you can override GetMediaAddress
+ * to do the same thing
+ * Fixed problems with logic associated with media bypass
+ *
+ * Revision 2.39  2005/07/11 06:52:15  csoutheren
  * Added support for outgoing calls using external RTP
  *
  * Revision 2.38  2005/07/11 01:52:23  csoutheren
@@ -898,15 +903,6 @@ class OpalConnection : public PSafeObject
        while keeping track of that variable for autmatic deletion.
       */
     virtual OpalT38Protocol * CreateT38ProtocolHandler();
-
-    /**
-      * Get IP addresses for an external RTP connection
-      */
-    virtual BOOL GetExternalRTPAddress(
-      unsigned sessionID,               /// RTP session ID
-      OpalTransportAddress & data,      /// return data address
-      OpalTransportAddress & control    /// return control address
-    );
 
   //@}
 
