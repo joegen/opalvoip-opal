@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2012  2005/04/28 20:22:52  dsandras
+ * Revision 1.2013  2005/07/14 08:52:19  csoutheren
+ * Modified to output media desscription specific connection address if needed
+ *
+ * Revision 2.11  2005/04/28 20:22:52  dsandras
  * Applied big sanity patch for SIP thanks to Ted Szoczei <tszoczei@microtronix.ca>.
  * Thanks a lot!
  *
@@ -170,6 +173,8 @@ class SDPMediaDescription : public PObject
     );
 
     void PrintOn(ostream & strm) const;
+    void PrintOn(const OpalTransportAddress & commonAddr, ostream & str) const;
+
     BOOL Decode(const PString & str);
 
     MediaType GetMediaType() const { return mediaType; }
@@ -191,10 +196,11 @@ class SDPMediaDescription : public PObject
     PString GetTransport() const         { return transport; }
     void SetTransport(const PString & v) { transport = v; }
 
-	PINDEX GetPacketTime () const            { return packetTime; }
-	void SetPacketTime (PINDEX milliseconds) { packetTime = milliseconds; }
+	  PINDEX GetPacketTime () const            { return packetTime; }
+	  void SetPacketTime (PINDEX milliseconds) { packetTime = milliseconds; }
 
   protected:
+    void PrintOn(ostream & strm, const PString & str) const;
     MediaType mediaType;
     WORD portCount;
     PCaselessString media;
