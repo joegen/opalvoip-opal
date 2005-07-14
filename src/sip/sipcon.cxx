@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2073  2005/07/11 01:52:26  csoutheren
+ * Revision 1.2074  2005/07/14 08:51:19  csoutheren
+ * Removed CreateExternalRTPAddress - it's not needed because you can override GetMediaAddress
+ * to do the same thing
+ * Fixed problems with logic associated with media bypass
+ *
+ * Revision 2.72  2005/07/11 01:52:26  csoutheren
  * Extended AnsweringCall to work for SIP as well as H.323
  * Fixed problems with external RTP connection in H.323
  * Added call to OnClosedMediaStream
@@ -556,30 +561,51 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
     }
   }
 
-  // create an RTP session
-  RTP_UDP * rtpSession = (RTP_UDP *)UseSession(GetTransport(), rtpSessionId, NULL);
-  if (rtpSession == NULL)
-    return FALSE;
+  OpalTransportAddress localAddress;
+  RTP_DataFrame::PayloadTypes ntePayloadCode = RTP_DataFrame::IllegalPayloadType;
 
-  // If it is not a hold, update the RTP Session info
-  if (!IsConnectionOnHold()) {
-    
-    // Set user data
-    if (rtpSession->GetUserData() == NULL)
-      rtpSession->SetUserData(new SIP_RTP_Session(*this));
-    
-    // set the remote addresses
-    PIPSocket::Address ip;
-    WORD port;
-    incomingMedia->GetTransportAddress().GetIpAndPort(ip, port);
-    if (!rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
-      PTRACE(1, "SIP\tCannot set remote ports on RTP session");
-      ReleaseSession(rtpSessionId);
-      return FALSE;
+  // if doing media bypass, we need to set the local address
+  // otherwise create an RTP session
+  if (ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
+    OpalConnection * otherParty = GetCall().GetOtherPartyConnection(*this);
+    if (otherParty != NULL) {
+      MediaInformation info;
+      if (otherParty->GetMediaInformation(rtpSessionId, info)) {
+        localAddress = info.data;
+        ntePayloadCode = info.rfc2833;
+      }
     }
-    if (ownerCall.IsMediaBypassPossible(*this, rtpSessionId))
-      mediaTransportAddresses.SetAt(rtpSessionId, new OpalTransportAddress(incomingMedia->GetTransportAddress()));  // XXXXXXX
+    mediaTransportAddresses.SetAt(rtpSessionId, new OpalTransportAddress(incomingMedia->GetTransportAddress()));
   }
+
+  else {
+
+    // create an RTP session
+    RTP_UDP * rtpSession = (RTP_UDP *)UseSession(GetTransport(), rtpSessionId, NULL);
+    if (rtpSession == NULL)
+      return FALSE;
+
+    // If it is not a hold, update the RTP Session info
+    if (!IsConnectionOnHold()) {
+      
+      // Set user data
+      if (rtpSession->GetUserData() == NULL)
+        rtpSession->SetUserData(new SIP_RTP_Session(*this));
+      
+      // set the remote addresses
+      PIPSocket::Address ip;
+      WORD port;
+      incomingMedia->GetTransportAddress().GetIpAndPort(ip, port);
+      if (!rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
+        PTRACE(1, "SIP\tCannot set remote ports on RTP session");
+        ReleaseSession(rtpSessionId);
+        return FALSE;
+      }
+    }
+
+    localAddress = GetLocalAddress(rtpSession->GetLocalDataPort());
+  }
+
 
   // look for matching codec in peer connection
   if (!ownerCall.OpenSourceMediaStreams(*this, remoteFormatList, rtpSessionId)) {
@@ -597,8 +623,7 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   }
 
   // construct a new media session list with the selected format
-  SDPMediaDescription * localMedia = new SDPMediaDescription(
-                            GetLocalAddress(rtpSession->GetLocalDataPort()), rtpMediaType);
+  SDPMediaDescription * localMedia = new SDPMediaDescription(localAddress, rtpMediaType);
 
   // Locate the opened media stream, add it to the reply and open the reverse direction
   BOOL reverseStreamsFailed = TRUE;
@@ -1585,7 +1610,7 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
 
   OpalTransportAddress address = mediaDescription->GetTransportAddress();
   if (ownerCall.IsMediaBypassPossible(*this, rtpSessionId))
-    mediaTransportAddresses.SetAt(rtpSessionId, new OpalTransportAddress(address));  // XXXXXXX
+    mediaTransportAddresses.SetAt(rtpSessionId, new OpalTransportAddress(address));
   else {
 
     PIPSocket::Address ip;
