@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2033  2005/07/11 01:52:25  csoutheren
+ * Revision 1.2034  2005/07/14 08:56:44  csoutheren
+ * Fixed problem with sink streams not being created when media bypass being used
+ *
+ * Revision 2.32  2005/07/11 01:52:25  csoutheren
  * Extended AnsweringCall to work for SIP as well as H.323
  * Fixed problems with external RTP connection in H.323
  * Added call to OnClosedMediaStream
@@ -463,8 +466,7 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
     if (conn != &connection) {
       OpalMediaStream * sink = conn->OpenSinkMediaStream(source);
-
-      if (sink != NULL) {
+      if (source.RequiresPatchThread() && (sink != NULL)) {
         if (patch == NULL) {
           patch = manager.CreateMediaPatch(source);
           if (patch == NULL)
@@ -475,7 +477,7 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
     }
   }
 
-  return patch != NULL;
+  return TRUE;
 }
 
 
