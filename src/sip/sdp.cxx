@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2019  2005/04/28 20:22:54  dsandras
+ * Revision 1.2020  2005/07/14 08:52:19  csoutheren
+ * Modified to output media desscription specific connection address if needed
+ *
+ * Revision 2.18  2005/04/28 20:22:54  dsandras
  * Applied big sanity patch for SIP thanks to Ted Szoczei <tszoczei@microtronix.ca>.
  * Thanks a lot!
  *
@@ -430,7 +433,29 @@ void SDPMediaDescription::SetAttribute(const PString & ostr)
 }
 
 
+void SDPMediaDescription::PrintOn(const OpalTransportAddress & commonAddr, ostream & str) const
+{
+  PIPSocket::Address commonIP;
+  commonAddr.GetIpAddress(commonIP);
+
+  PIPSocket::Address transportIP;
+  transportAddress.GetIpAddress(transportIP);
+
+  PString connectString;
+  if (commonIP != transportIP)
+    connectString = GetConnectAddressString(transportAddress);
+
+  PrintOn(str, connectString);
+}
+
 void SDPMediaDescription::PrintOn(ostream & str) const
+{
+  PIPSocket::Address ip;
+  transportAddress.GetIpAddress(ip);
+  PrintOn(str, GetConnectAddressString(transportAddress));
+}
+
+void SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) const
 {
   PIPSocket::Address ip;
   WORD port;
@@ -454,6 +479,9 @@ void SDPMediaDescription::PrintOn(ostream & str) const
 
   if (packetTime)
 	  str << "a=ptime:" << packetTime << "\r\n";
+
+  if (!connectString.IsEmpty())
+    str << "c=" << connectString << "\r\n";
 }
 
 
@@ -528,6 +556,31 @@ SDPSessionDescription::SDPSessionDescription(const OpalTransportAddress & addres
 
 void SDPSessionDescription::PrintOn(ostream & str) const
 {
+  OpalTransportAddress connectionAddress(defaultConnectAddress);
+  BOOL useCommonConnect = TRUE;
+
+  // see common connect address is needed
+  {
+    OpalTransportAddress descrAddress;
+    PINDEX matched = 0;
+    PINDEX descrMatched = 0;
+    PINDEX i;
+    for (i = 0; i < mediaDescriptions.GetSize(); i++) {
+      if (i == 0)
+        descrAddress = mediaDescriptions[i].GetTransportAddress();
+      if (mediaDescriptions[i].GetTransportAddress() == connectionAddress)
+        ++matched;
+      if (mediaDescriptions[i].GetTransportAddress() == descrAddress)
+        ++descrMatched;
+    }
+    if (connectionAddress != descrAddress) {
+      if ((descrMatched > matched))
+        connectionAddress = descrAddress;
+      else
+        useCommonConnect = FALSE;
+    }
+  }
+
   // encode mandatory session information
   str << "v=" << protocolVersion << "\r\n"
          "o=" << ownerUsername << ' '
@@ -536,8 +589,10 @@ void SDPSessionDescription::PrintOn(ostream & str) const
               << GetConnectAddressString(ownerAddress)
               << "\r\n"
          "s=" << sessionName << "\r\n"
-         "c=" << (direction == SDPSessionDescription::SendOnly?GetConnectAddressString("0"):GetConnectAddressString(defaultConnectAddress)) << "\r\n"
          "t=" << "0 0" << "\r\n";
+
+  if (useCommonConnect)
+    str << "c=" << (direction == SDPSessionDescription::SendOnly?GetConnectAddressString("0"):GetConnectAddressString(connectionAddress)) << "\r\n";
 
   switch (direction) {
   
@@ -559,8 +614,12 @@ void SDPSessionDescription::PrintOn(ostream & str) const
   
   // encode media session information
   PINDEX i;
-  for (i = 0; i < mediaDescriptions.GetSize(); i++) 
-    str << mediaDescriptions[i];
+  for (i = 0; i < mediaDescriptions.GetSize(); i++) {
+    if (useCommonConnect)
+      mediaDescriptions[i].PrintOn(connectionAddress, str);
+    else
+      str << mediaDescriptions[i];
+  }
 }
 
 
