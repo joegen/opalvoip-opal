@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2031  2005/04/10 21:16:11  dsandras
+ * Revision 1.2032  2005/07/14 08:54:35  csoutheren
+ * Fixed transposition of parameters in OpalNULLStream constructor
+ *
+ * Revision 2.30  2005/04/10 21:16:11  dsandras
  * Added support to put an OpalMediaStream on pause.
  *
  * Revision 2.29  2005/03/12 00:33:28  csoutheren
@@ -428,7 +431,7 @@ void OpalMediaStream::SetPatch(OpalMediaPatch * patch)
 OpalNullMediaStream::OpalNullMediaStream(const OpalMediaFormat & mediaFormat,
                                          unsigned sessionID,
                                          BOOL isSource)
-  : OpalMediaStream(mediaFormat, isSource, sessionID)
+  : OpalMediaStream(mediaFormat, sessionID, isSource)
 {
 }
 
