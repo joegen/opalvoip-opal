@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2012  2005/02/17 03:25:05  csoutheren
+ * Revision 1.2013  2005/07/14 08:53:34  csoutheren
+ * Change transcoding selection algorithm to prefer untranslated codec connections rather
+ * than multi-stage transcoders
+ *
+ * Revision 2.11  2005/02/17 03:25:05  csoutheren
  * Added support for audio codecs that consume and produce variable size
  * frames, such as G.723.1
  *
@@ -182,37 +186,42 @@ BOOL OpalTranscoder::SelectFormats(unsigned sessionID,
 {
   PINDEX s, d;
 
+  // Search through the supported formats to see if can pass data
+  // directly from the given format to a possible one with no transcoders.
   for (d = 0; d < dstFormats.GetSize(); d++) {
     dstFormat = dstFormats[d];
     if (dstFormat.GetDefaultSessionID() == sessionID) {
-
-      // Search through the supported formats to see if can pass data
-      // directly from the given format to a possible one with no transcoders.
       for (s = 0; s < srcFormats.GetSize(); s++) {
         srcFormat = srcFormats[s];
         if (srcFormat == dstFormat)
           return TRUE;
       }
+    }
+  }
 
-      // Search for a single transcoder to get from a to b
-      for (s = 0; s < srcFormats.GetSize(); s++) {
-        srcFormat = srcFormats[s];
-        PString searchName = srcFormat + '\t' + dstFormat;
-        OpalTranscoderRegistration * find = RegisteredTranscodersListHead;
-        while (find != NULL) {
-          if (*find == searchName)
-            return TRUE;
-          find = find->link;
-        }
-      }
-
-      // Last gasp search for a double transcoder to get from a to b
-      for (s = 0; s < srcFormats.GetSize(); s++) {
-        srcFormat = srcFormats[s];
-        OpalMediaFormat intermediateFormat;
-        if (FindIntermediateFormat(srcFormat, dstFormat, intermediateFormat))
+  // Search for a single transcoder to get from a to b
+  for (d = 0; d < dstFormats.GetSize(); d++) {
+    dstFormat = dstFormats[d];
+    for (s = 0; s < srcFormats.GetSize(); s++) {
+      srcFormat = srcFormats[s];
+      PString searchName = srcFormat + '\t' + dstFormat;
+      OpalTranscoderRegistration * find = RegisteredTranscodersListHead;
+      while (find != NULL) {
+        if (*find == searchName)
           return TRUE;
+        find = find->link;
       }
+    }
+  }
+
+  // Last gasp search for a double transcoder to get from a to b
+  for (d = 0; d < dstFormats.GetSize(); d++) {
+    dstFormat = dstFormats[d];
+    for (s = 0; s < srcFormats.GetSize(); s++) {
+      srcFormat = srcFormats[s];
+      OpalMediaFormat intermediateFormat;
+      if (FindIntermediateFormat(srcFormat, dstFormat, intermediateFormat))
+        return TRUE;
     }
   }
 
