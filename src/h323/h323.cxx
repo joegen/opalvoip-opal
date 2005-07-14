@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2081  2005/07/11 06:52:16  csoutheren
+ * Revision 1.2082  2005/07/14 08:55:36  csoutheren
+ * Removed CreateExternalRTPAddress - it's not needed because you can override GetMediaAddress
+ * to do the same thing
+ * Fixed problems with logic associated with media bypass
+ *
+ * Revision 2.80  2005/07/11 06:52:16  csoutheren
  * Added support for outgoing calls using external RTP
  *
  * Revision 2.79  2005/07/11 01:52:24  csoutheren
@@ -4815,15 +4820,12 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
                                                                         RTP_QOS * rtpqos)
 {
   if (ownerCall.IsMediaBypassPossible(*this, sessionID)) {
-    OpalTransportAddress data;
-    OpalTransportAddress control;
-    if (!GetExternalRTPAddress(sessionID, data, control))
+    MediaInformation info;
+    OpalConnection * otherParty = GetCall().GetOtherPartyConnection(*this);
+    if ((otherParty == NULL) || !otherParty->GetMediaInformation(OpalMediaFormat::DefaultAudioSessionID, info))
       return NULL;
 
-    //if (IsOriginating())
-      return new H323_ExternalRTPChannel(*this, capability, dir, sessionID, data, control);
-
-    //return new H323_ExternalRTPChannel(*this, capability, dir, sessionID);
+    return new H323_ExternalRTPChannel(*this, capability, dir, sessionID, info.data, info.control);
   }
 
   RTP_Session * session;
