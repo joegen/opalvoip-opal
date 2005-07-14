@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2029  2005/07/11 06:52:16  csoutheren
+ * Revision 1.2030  2005/07/14 08:51:19  csoutheren
+ * Removed CreateExternalRTPAddress - it's not needed because you can override GetMediaAddress
+ * to do the same thing
+ * Fixed problems with logic associated with media bypass
+ *
+ * Revision 2.28  2005/07/11 06:52:16  csoutheren
  * Added support for outgoing calls using external RTP
  *
  * Revision 2.27  2005/07/11 01:52:26  csoutheren
@@ -458,11 +463,5 @@ OpalT38Protocol * OpalEndPoint::CreateT38ProtocolHandler(const OpalConnection & 
 {
   return manager.CreateT38ProtocolHandler(connection);
 }
-
-BOOL OpalEndPoint::GetExternalRTPAddress(const OpalConnection & connection, unsigned id, OpalTransportAddress & data, OpalTransportAddress & control)
-{
-  return manager.GetExternalRTPAddress(connection, id, data, control);
-}
-
 
 /////////////////////////////////////////////////////////////////////////////

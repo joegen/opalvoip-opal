@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2045  2005/07/11 06:52:16  csoutheren
+ * Revision 1.2046  2005/07/14 08:51:19  csoutheren
+ * Removed CreateExternalRTPAddress - it's not needed because you can override GetMediaAddress
+ * to do the same thing
+ * Fixed problems with logic associated with media bypass
+ *
+ * Revision 2.44  2005/07/11 06:52:16  csoutheren
  * Added support for outgoing calls using external RTP
  *
  * Revision 2.43  2005/07/11 01:52:26  csoutheren
@@ -646,11 +651,6 @@ BOOL OpalConnection::IsMediaBypassPossible(unsigned /*sessionID*/) const
 {
   PTRACE(3, "OpalCon\tIsMediaBypassPossible: default returns FALSE");
   return FALSE;
-}
-
-BOOL OpalConnection::GetExternalRTPAddress(unsigned id, OpalTransportAddress & data, OpalTransportAddress & control)
-{
-  return endpoint.GetExternalRTPAddress(*this, id, data, control);
 }
 
 BOOL OpalConnection::GetMediaInformation(unsigned sessionID,
