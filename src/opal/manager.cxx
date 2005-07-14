@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2048  2005/07/11 06:52:17  csoutheren
+ * Revision 1.2049  2005/07/14 08:51:19  csoutheren
+ * Removed CreateExternalRTPAddress - it's not needed because you can override GetMediaAddress
+ * to do the same thing
+ * Fixed problems with logic associated with media bypass
+ *
+ * Revision 2.47  2005/07/11 06:52:17  csoutheren
  * Added support for outgoing calls using external RTP
  *
  * Revision 2.46  2005/07/11 01:52:26  csoutheren
@@ -619,7 +624,7 @@ BOOL OpalManager::OnOpenMediaStream(OpalConnection & connection,
 {
   PTRACE(3, "OpalMan\tOnOpenMediaStream " << connection << ',' << stream);
 
-  if (stream.IsSource() && stream.RequiresPatchThread())
+  if (stream.IsSource())
     return connection.GetCall().PatchMediaStreams(connection, stream);
 
   return TRUE;
@@ -716,16 +721,6 @@ OpalT120Protocol * OpalManager::CreateT120ProtocolHandler(const OpalConnection &
 OpalT38Protocol * OpalManager::CreateT38ProtocolHandler(const OpalConnection & ) const
 {
   return NULL;
-}
-
-BOOL OpalManager::GetExternalRTPAddress(
-      const OpalConnection & connection,      /// connection using external RTP
-      unsigned sessionID,                     /// RTP session ID
-      OpalTransportAddress & data,            /// return data address
-      OpalTransportAddress & control          /// return control address
-)
-{
-  return FALSE;
 }
 
 OpalManager::RouteEntry::RouteEntry(const PString & pat, const PString & dest)
