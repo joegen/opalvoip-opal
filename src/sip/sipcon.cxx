@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2074  2005/07/14 08:51:19  csoutheren
+ * Revision 1.2075  2005/07/15 17:22:43  dsandras
+ * Use correct To tag when sending a new INVITE when authentication is required and an outbound proxy is being used.
+ *
+ * Revision 2.73  2005/07/14 08:51:19  csoutheren
  * Removed CreateExternalRTPAddress - it's not needed because you can override GetMediaAddress
  * to do the same thing
  * Fixed problems with logic associated with media bypass
@@ -1351,7 +1354,7 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & pdu)
 
 void SIPConnection::OnReceivedREFER(SIP_PDU & pdu)
 {
-//  SIPTransaction *notifyTransaction = NULL;
+  //SIPTransaction *notifyTransaction = NULL;
   PString referto = pdu.GetMIME().GetReferTo();
   
   if (referto.IsEmpty()) {
@@ -1363,15 +1366,15 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & pdu)
   // Reject the Refer
   SIP_PDU response(pdu, SIP_PDU::GlobalFailure_Decline);
   response.Write(*transport);
-  
-//  endpoint.SetupTransfer(GetToken(),  
+
+  //endpoint.SetupTransfer(GetToken(),  
 //			 PString (), 
 //			 referto,  
 //			 NULL);
   
   // Send a Final NOTIFY,
-//  notifyTransaction = 
-//    new SIPReferNotify(*this, *transport, SIP_PDU::Successful_Accepted);
+  //notifyTransaction = 
+  //  new SIPReferNotify(*this, *transport, SIP_PDU::Successful_Accepted);
 }
 
 
@@ -1465,8 +1468,12 @@ void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
 
 void SIPConnection::OnReceivedRedirection(SIP_PDU & /*response*/)
 {
+  // start with a new To tag
   // send a new INVITE
-  remotePartyAddress = targetAddress.AsQuotedString(); // start with a new To tag
+  PINDEX j;
+  if ((j = remotePartyAddress.Find (';')) != P_MAX_INDEX)
+    remotePartyAddress = remotePartyAddress.Left(j);
+
   SIPTransaction * invite = new SIPInvite(*this, *transport);
   if (invite->Start())
     invitations.Append(invite);
@@ -1547,7 +1554,10 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
   }
 
   // Restart the transaction with new authentication info
-  remotePartyAddress = targetAddress.AsQuotedString(); // start with a new To tag
+  // and start with a fresh To tag
+  PINDEX j;
+  if ((j = remotePartyAddress.Find (';')) != P_MAX_INDEX)
+    remotePartyAddress = remotePartyAddress.Left(j);
 
   SIPTransaction * invite = new SIPInvite(*this, *transport);
   if (invite->Start())
