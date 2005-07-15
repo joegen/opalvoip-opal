@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2056  2005/06/04 12:44:36  dsandras
+ * Revision 1.2057  2005/07/15 18:03:02  dsandras
+ * Use the original URI in the ACK request if no contact field is present.
+ *
+ * Revision 2.55  2005/06/04 12:44:36  dsandras
  * Applied patch from Ted Szoczei to fix leaks and problems on cancelling a call and to improve the Allow PDU field handling.
  *
  * Revision 2.54  2005/05/23 20:14:04  dsandras
@@ -1858,12 +1861,18 @@ BOOL SIPInvite::OnReceivedResponse(SIP_PDU & response)
 
 BOOL SIPInvite::OnCompleted(SIP_PDU & response)
 {
+  SIPURL targetAddress;
+  
   // Adjust "to" field for possible added tag in response
   mime.SetTo(response.GetMIME().GetTo());
 
   // Use Contact for request URI as specified in RFC 3261:12.1.2, 12.2.1.1
+  // or use the original URI
   PString contact = response.GetMIME().GetContact();
-  SIPURL targetAddress = contact;
+  if (!contact.IsEmpty())
+    targetAddress = contact;
+  else
+    targetAddress = this->GetURI();
 
   // Build an ACK
   SIP_PDU ack(Method_ACK,
