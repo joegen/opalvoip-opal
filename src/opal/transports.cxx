@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2047  2005/06/08 17:35:10  dsandras
+ * Revision 1.2048  2005/07/16 17:16:17  dsandras
+ * Moved code upward so that the local source port range is always taken into account when creating a transport.
+ *
+ * Revision 2.46  2005/06/08 17:35:10  dsandras
  * Fixed sockets leak thanks to Ted Szoczei. Thanks!
  *
  * Revision 2.45  2005/06/02 18:39:03  dsandras
@@ -1800,15 +1803,6 @@ BOOL OpalTransportUDP::Connect()
     PTRACE(4, "OpalUDP\tSTUN could not create socket!");
   }
   
-  // check to make sure that we are not already connected. (thus, EndConnect() has been called)
-  if(writeChannel && localAddress.IsValid()) {
-	  PTRACE(2, "OpalUDP\tConnect() to already connected channel");
-	  return TRUE;
-  }
-  
-  // Skip over the OpalTransportUDP::Close to make sure PUDPSocket is deleted.
-  PIndirectChannel::Close();
-  readAutoDelete = writeAutoDelete = FALSE;
 
   // See if prebound to interface, only use that if so
   PIPSocket::InterfaceTable interfaces;
@@ -1867,6 +1861,17 @@ BOOL OpalTransportUDP::Connect()
 
     socket->SetSendAddress(remoteAddress, remotePort);
   }
+  
+  // check to make sure that we are not already connected. (thus, EndConnect() has been called)
+  if(writeChannel && localAddress.IsValid()) {
+	  PTRACE(2, "OpalUDP\tConnect() to already connected channel");
+	  return TRUE;
+  }
+  
+  // Skip over the OpalTransportUDP::Close to make sure PUDPSocket is deleted.
+  PIndirectChannel::Close();
+  readAutoDelete = writeAutoDelete = FALSE;
+
 
   if (connectSockets.IsEmpty())
     return FALSE;
