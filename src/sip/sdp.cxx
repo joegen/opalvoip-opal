@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2020  2005/07/14 08:52:19  csoutheren
+ * Revision 1.2021  2005/07/18 01:19:37  csoutheren
+ * Fixed proxy with FWD rejecting call because of the order of the SDP fields
+ * I can't see any requirement for ordering in the RFC, so this is probably a
+ * bug in the FWD proxy
+ *
+ * Revision 2.19  2005/07/14 08:52:19  csoutheren
  * Modified to output media desscription specific connection address if needed
  *
  * Revision 2.18  2005/04/28 20:22:54  dsandras
@@ -588,11 +593,14 @@ void SDPSessionDescription::PrintOn(ostream & str) const
 	      << ownerVersion << ' '
               << GetConnectAddressString(ownerAddress)
               << "\r\n"
-         "s=" << sessionName << "\r\n"
-         "t=" << "0 0" << "\r\n";
+         "s=" << sessionName << "\r\n";
 
+  // make sure the "c=" line (if required) is before the "t=" otherwise the proxy
+  // used by FWD will reject the call with an SDP parse error. This does not seem to be 
+  // required by the RFC so it is probably a bug in the proxy
   if (useCommonConnect)
     str << "c=" << (direction == SDPSessionDescription::SendOnly?GetConnectAddressString("0"):GetConnectAddressString(connectionAddress)) << "\r\n";
+  str << "t=" << "0 0" << "\r\n";
 
   switch (direction) {
   
