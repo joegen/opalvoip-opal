@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2023  2005/02/19 22:44:41  dsandras
+ * Revision 1.2024  2005/07/24 07:28:29  rjongbloed
+ * Fixed inclusion of silence detecter in media stream if is audio only.
+ *
+ * Revision 2.22  2005/02/19 22:44:41  dsandras
  * Changed pointer to PSafeReadOnly to avoid deadlock on incoming calls.
  *
  * Revision 2.21  2004/12/12 13:36:22  dsandras
@@ -416,7 +419,7 @@ BOOL OpalPCSSConnection::OnOpenMediaStream(OpalMediaStream & mediaStream)
 
   if (mediaStream.IsSource()) {
     OpalMediaPatch * patch = mediaStream.GetPatch();
-    if (patch != NULL) {
+    if (patch != NULL && mediaStream.GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
       silenceDetector->SetParameters(endpoint.GetManager().GetSilenceDetectParams());
       patch->AddFilter(silenceDetector->GetReceiveHandler(), OpalPCM16);
     }
