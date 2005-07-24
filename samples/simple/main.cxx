@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2052  2005/07/11 01:57:31  csoutheren
+ * Revision 1.2053  2005/07/24 07:56:35  rjongbloed
+ * Removed -l parameter, as it always listens.
+ *
+ * Revision 2.51  2005/07/11 01:57:31  csoutheren
  * Fixed error message
  *
  * Revision 2.50  2005/06/23 06:14:02  csoutheren
@@ -300,7 +303,6 @@ void SimpleOpalProcess::Main()
              "-h323-listen:"
              "I-no-sip."
              "j-jitter:"
-             "l-listen."
              "n-no-gatekeeper."
              "-no-std-dial-peer."
 #if PTRACING
@@ -895,18 +897,23 @@ BOOL MyManager::Initialise(PArgList & args)
 void MyManager::Main(PArgList & args)
 {
   // See if making a call or just listening.
-  if (args.HasOption('l'))
-    cout << "Waiting for incoming calls\n";
-  else if (args.GetCount() == 1) {
-    cout << "Initiating call to \"" << args[0] << "\"\n";
-    if (potsEP != NULL)
-      SetUpCall("pots:*", args[0], currentCallToken);
-    else
-      SetUpCall("pc:*", args[0], currentCallToken);
-  }
-  else {
-    cout << "Initiating call from \"" << args[0] << "\"to \"" << args[1] << "\"\n";
-    SetUpCall(args[0], args[1], currentCallToken);
+  switch (args.GetCount()) {
+    case 0 :
+      cout << "Waiting for incoming calls\n";
+      break;
+
+    case 1 :
+      cout << "Initiating call to \"" << args[0] << "\"\n";
+      if (potsEP != NULL)
+        SetUpCall("pots:*", args[0], currentCallToken);
+      else
+        SetUpCall("pc:*", args[0], currentCallToken);
+      break;
+
+    default :
+      cout << "Initiating call from \"" << args[0] << "\"to \"" << args[1] << "\"\n";
+      SetUpCall(args[0], args[1], currentCallToken);
+      break;
   }
 
   cout << "Press X to exit." << endl;
