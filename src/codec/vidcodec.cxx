@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vidcodec.cxx,v $
- * Revision 1.2006  2005/02/21 12:19:54  rjongbloed
+ * Revision 1.2007  2005/07/24 07:33:09  rjongbloed
+ * Simplified "uncompressed" transcoder sp can test video media streams.
+ *
+ * Revision 2.5  2005/02/21 12:19:54  rjongbloed
  * Added new "options list" to the OpalMediaFormat class.
  *
  * Revision 2.4  2004/09/01 12:21:27  rjongbloed
@@ -149,26 +152,21 @@ PString H323_UncompVideoCapability::GetFormatName() const
 OpalUncompVideoTranscoder::OpalUncompVideoTranscoder(const OpalTranscoderRegistration & registration)
   : OpalVideoTranscoder(registration)
 {
-  converter = PColourConverter::Create(GetInputFormat(), GetOutputFormat(),
-                                       frameWidth, frameHeight);
-  if (converter == NULL)
-    srcFrameBytes = dstFrameBytes = 0;
-  else {
-    srcFrameBytes = converter->GetMaxSrcFrameBytes();
-    dstFrameBytes = converter->GetMaxDstFrameBytes();
-  }
 }
 
 
 OpalUncompVideoTranscoder::~OpalUncompVideoTranscoder()
 {
-  delete converter;
 }
 
 
 PINDEX OpalUncompVideoTranscoder::GetOptimalDataFrameSize(BOOL input) const
 {
-  return input ? srcFrameBytes : PMIN(dstFrameBytes, maxOutputSize);
+  PINDEX frameBytes = PVideoDevice::CalculateFrameBytes(frameWidth, frameHeight, GetOutputFormat());
+  if (!input && frameBytes > maxOutputSize)
+    frameBytes = maxOutputSize;
+
+  return frameBytes;
 }
 
 
@@ -182,29 +180,25 @@ BOOL OpalUncompVideoTranscoder::ConvertFrames(const RTP_DataFrame & input,
     return FALSE;
 
   if (srcHeader->width != frameWidth || srcHeader->height != frameHeight) {
-    delete converter;
     frameWidth = srcHeader->width;
     frameHeight = srcHeader->height;
-    converter = PColourConverter::Create(GetInputFormat(), GetOutputFormat(),
-                                         frameWidth, frameHeight);
-    srcFrameBytes = converter->GetMaxSrcFrameBytes();
-    dstFrameBytes = converter->GetMaxDstFrameBytes();
   }
 
-  // Calculate number of output frames
-  PINDEX srcBytesPerScanLine = srcFrameBytes/frameHeight;
-  PINDEX dstBytesPerScanLine = dstFrameBytes/frameHeight;
+  PINDEX frameBytes = PVideoDevice::CalculateFrameBytes(frameWidth, frameHeight, GetOutputFormat());
 
-  unsigned scanLinesPerBand = maxOutputSize/dstBytesPerScanLine;
+  // Calculate number of output frames
+  PINDEX bytesPerScanLine = frameBytes/frameHeight;
+
+  unsigned scanLinesPerBand = maxOutputSize/bytesPerScanLine;
   if (scanLinesPerBand > frameHeight)
     scanLinesPerBand = frameHeight;
-  if (!converter->SetFrameSize(frameWidth, scanLinesPerBand))
-    return FALSE;
 
   unsigned bandCount = (frameHeight+scanLinesPerBand-1)/scanLinesPerBand;
+  if (bandCount < 1)
+    return FALSE;
 
   for (unsigned band = 0; band < bandCount; band++) {
-    RTP_DataFrame * pkt = new RTP_DataFrame(scanLinesPerBand*dstBytesPerScanLine);
+    RTP_DataFrame * pkt = new RTP_DataFrame(scanLinesPerBand*bytesPerScanLine);
     pkt->SetPayloadType(outputMediaFormat.GetPayloadType());
     pkt->SetTimestamp(input.GetTimestamp());
     output.Append(pkt);
@@ -213,9 +207,10 @@ BOOL OpalUncompVideoTranscoder::ConvertFrames(const RTP_DataFrame & input,
     dstHeader->y = srcHeader->y + band*scanLinesPerBand;
     dstHeader->width = srcHeader->width;
     dstHeader->height = scanLinesPerBand;
-    if (!converter->Convert(srcHeader->data+band*srcBytesPerScanLine, dstHeader->data))
-      return FALSE;
+    memcpy(dstHeader->data, srcHeader->data+band*bytesPerScanLine, scanLinesPerBand*bytesPerScanLine);
   }
+
+  output[output.GetSize()-1].SetMarker(TRUE);
 
   return TRUE;
 }
