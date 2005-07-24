@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2012  2004/08/16 09:53:48  rjongbloed
+ * Revision 1.2013  2005/07/24 07:42:29  rjongbloed
+ * Fixed various video media stream issues.
+ *
+ * Revision 2.11  2004/08/16 09:53:48  rjongbloed
  * Fixed possible deadlock in PTRACE output of media patch.
  *
  * Revision 2.10  2004/08/15 10:10:28  rjongbloed
@@ -134,10 +137,12 @@ void OpalMediaPatch::Main()
   PINDEX i;
 
   inUse.Wait();
-  for (i = 0; i < sinks.GetSize(); i++) {
-    if (sinks[i].stream->IsSynchronous()) {
-      source.EnableJitterBuffer();
-      break;
+  if (!source.IsSynchronous()) {
+    for (i = 0; i < sinks.GetSize(); i++) {
+      if (sinks[i].stream->IsSynchronous()) {
+        source.EnableJitterBuffer();
+        break;
+      }
     }
   }
   inUse.Signal();
@@ -207,6 +212,8 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream)
 
   sink->primaryCodec = OpalTranscoder::Create(sourceFormat, destinationFormat);
   if (sink->primaryCodec != NULL) {
+    sink->primaryCodec->SetMaxOutputSize(stream->GetDataSize());
+
     if (!stream->SetDataSize(sink->primaryCodec->GetOptimalDataFrameSize(FALSE))) {
       PTRACE(2, "Patch\tSink stream " << *stream << " cannot support data size "
               << sink->primaryCodec->GetOptimalDataFrameSize(FALSE));
@@ -226,6 +233,9 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream)
 
     sink->primaryCodec = OpalTranscoder::Create(sourceFormat, intermediateFormat);
     sink->secondaryCodec = OpalTranscoder::Create(intermediateFormat, destinationFormat);
+
+    sink->secondaryCodec->SetMaxOutputSize(sink->stream->GetDataSize());
+
     if (!stream->SetDataSize(sink->secondaryCodec->GetOptimalDataFrameSize(FALSE))) {
       PTRACE(2, "Patch\tSink stream " << *stream << " cannot support data size "
               << sink->secondaryCodec->GetOptimalDataFrameSize(FALSE));
