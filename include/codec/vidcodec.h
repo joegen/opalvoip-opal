@@ -24,7 +24,10 @@
  * Contributor(s): 
  *
  * $Log: vidcodec.h,v $
- * Revision 1.2006  2005/02/21 12:19:45  rjongbloed
+ * Revision 1.2007  2005/07/24 07:33:07  rjongbloed
+ * Simplified "uncompressed" transcoder sp can test video media streams.
+ *
+ * Revision 2.5  2005/02/21 12:19:45  rjongbloed
  * Added new "options list" to the OpalMediaFormat class.
  *
  * Revision 2.4  2004/09/01 12:21:27  rjongbloed
@@ -93,7 +96,7 @@ class OpalVideoTranscoder : public OpalTranscoder
        This function takes the input data as a RTP_DataFrame and converts it
        to its output format, placing it into the RTP_DataFrame provided.
 
-       THis is a dummy function as nearly all video conversion will does not
+       This is a dummy function as nearly all video conversion will does not
        have a one to one input to output frames ratio, so the ConvertFrames()
        function is used instead.
 
@@ -156,9 +159,7 @@ class H323_UncompVideoCapability : public H323NonStandardVideoCapability
   H323_REGISTER_CAPABILITY_FUNCTION(H323_RGB24, OPAL_RGB24, ep) \
     { return new H323_UncompVideoCapability(ep, OPAL_RGB24); } \
   H323_REGISTER_CAPABILITY_FUNCTION(H323_RGB32, OPAL_RGB32, ep) \
-    { return new H323_UncompVideoCapability(ep, OPAL_RGB32); } \
-  H323_REGISTER_CAPABILITY_FUNCTION(H323_YUV420P, OPAL_YUV420P, ep) \
-    { return new H323_UncompVideoCapability(ep, OPAL_YUV420P); }
+    { return new H323_UncompVideoCapability(ep, OPAL_RGB32); }
 
 #else // ifndef NO_H323
 
@@ -216,11 +217,6 @@ class OpalUncompVideoTranscoder : public OpalVideoTranscoder
       RTP_DataFrameList & output    /// Output data
     );
   //@}
-
-  protected:
-    PColourConverter * converter;
-    PINDEX             srcFrameBytes;
-    PINDEX             dstFrameBytes;
 };
 
 
@@ -232,33 +228,9 @@ class Opal_RGB24_RGB24 : public OpalUncompVideoTranscoder {
 };
 
 
-class Opal_YUV420P_RGB24 : public OpalUncompVideoTranscoder {
+class Opal_RGB32_RGB32 : public OpalUncompVideoTranscoder {
   public:
-    Opal_YUV420P_RGB24(
-      const OpalTranscoderRegistration & registration /// Registration fro transcoder
-    ) : OpalUncompVideoTranscoder(registration) { }
-};
-
-
-class Opal_YUV420P_RGB32 : public OpalUncompVideoTranscoder {
-  public:
-    Opal_YUV420P_RGB32(
-      const OpalTranscoderRegistration & registration /// Registration fro transcoder
-    ) : OpalUncompVideoTranscoder(registration) { }
-};
-
-
-class Opal_RGB24_YUV420P : public OpalUncompVideoTranscoder {
-  public:
-    Opal_RGB24_YUV420P(
-      const OpalTranscoderRegistration & registration /// Registration fro transcoder
-    ) : OpalUncompVideoTranscoder(registration) { }
-};
-
-
-class Opal_RGB32_YUV420P : public OpalUncompVideoTranscoder {
-  public:
-    Opal_RGB32_YUV420P(
+    Opal_RGB32_RGB32(
       const OpalTranscoderRegistration & registration /// Registration fro transcoder
     ) : OpalUncompVideoTranscoder(registration) { }
 };
@@ -268,11 +240,8 @@ class Opal_RGB32_YUV420P : public OpalUncompVideoTranscoder {
 
 #define OPAL_REGISTER_UNCOMPRESSED_VIDEO() \
           OPAL_REGISTER_UNCOMPRESSED_VIDEO_H323 \
-          OPAL_REGISTER_TRANSCODER(Opal_RGB24_RGB24,   OPAL_RGB24,   OPAL_RGB24); \
-          OPAL_REGISTER_TRANSCODER(Opal_YUV420P_RGB24, OPAL_YUV420P, OPAL_RGB24); \
-          OPAL_REGISTER_TRANSCODER(Opal_YUV420P_RGB32, OPAL_YUV420P, OPAL_RGB32); \
-          OPAL_REGISTER_TRANSCODER(Opal_RGB24_YUV420P, OPAL_RGB24,   OPAL_YUV420P); \
-          OPAL_REGISTER_TRANSCODER(Opal_RGB32_YUV420P, OPAL_RGB32,   OPAL_YUV420P)
+          OPAL_REGISTER_TRANSCODER(Opal_RGB32_RGB32, OPAL_RGB32, OPAL_RGB32); \
+          OPAL_REGISTER_TRANSCODER(Opal_RGB24_RGB24, OPAL_RGB24, OPAL_RGB24)
 
 
 #define OPAL_RGB24   "RGB24"
