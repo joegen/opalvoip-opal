@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2032  2005/07/14 08:54:35  csoutheren
+ * Revision 1.2033  2005/07/24 07:41:27  rjongbloed
+ * Fixed various video media stream issues.
+ *
+ * Revision 2.31  2005/07/14 08:54:35  csoutheren
  * Fixed transposition of parameters in OpalNULLStream constructor
  *
  * Revision 2.30  2005/04/10 21:16:11  dsandras
@@ -753,6 +756,7 @@ BOOL OpalVideoMediaStream::Open()
       PTRACE(1, "Media\tCould not start video grabber");
       return FALSE;
     }
+    SetDataSize(inputDevice->GetMaxFrameBytes());
   }
 
   if (outputDevice != NULL) {
@@ -764,6 +768,8 @@ BOOL OpalVideoMediaStream::Open()
       PTRACE(1, "Media\tCould not start video display device");
       return FALSE;
     }
+    if (IsSink())
+      SetDataSize(outputDevice->GetMaxFrameBytes());
   }
 
   return OpalMediaStream::Open();
@@ -798,6 +804,7 @@ BOOL OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & length)
   if (!inputDevice->GetFrameData(frame->data, &bytesReturned))
     return FALSE;
 
+  marker = TRUE;
   length = bytesReturned + sizeof(OpalVideoTranscoder::FrameHeader);
 
   if (outputDevice == NULL)
@@ -816,7 +823,7 @@ BOOL OpalVideoMediaStream::WriteData(const BYTE * data, PINDEX length, PINDEX & 
     return FALSE;
   }
 
-  if (outputDevice != NULL) {
+  if (outputDevice == NULL) {
     PTRACE(1, "Media\tTried to write to video capture device");
     return FALSE;
   }
@@ -833,7 +840,7 @@ BOOL OpalVideoMediaStream::WriteData(const BYTE * data, PINDEX length, PINDEX & 
 
 BOOL OpalVideoMediaStream::IsSynchronous() const
 {
-  return TRUE;
+  return IsSource();
 }
 
 
