@@ -309,7 +309,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX EXEEXT OBJEXT OPALDIR INSTALLPREFIX LIBDIR PTLIB_CONFIG PWLIBDIR OPAL_SYSTEM_SPEEX CC CFLAGS ac_ct_CC OPAL_SIP OPAL_H323 CPP EGREP HAS_IXJ STDCCFLAGS ENDLDLIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX EXEEXT OBJEXT OPALDIR INSTALLPREFIX LIBDIR PTLIB_CONFIG PWLIBDIR OPAL_SYSTEM_SPEEX CC CFLAGS ac_ct_CC OPAL_SIP OPAL_H323 OPAL_IAX2 CPP EGREP HAS_IXJ STDCCFLAGS ENDLDLIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -851,6 +851,7 @@ Optional Features:
   --enable-localspeex     use local version of Speex library rather than system version
   --disable-sip           disable SIP protocol support
   --disable-h323          disable H.323 protocol support
+  --disable-iax           disable IAX2 protocol support
 
 Some influential environment variables:
   CXX         C++ compiler command
@@ -3080,6 +3081,30 @@ OPAL_H323=$OPAL_H323
 
 
 
+iax=yes
+# Check whether --enable-iax or --disable-iax was given.
+if test "${enable_iax+set}" = set; then
+  enableval="$enable_iax"
+  iax=$enableval
+fi;
+echo "$as_me:$LINENO: checking IAX2 protocol" >&5
+echo $ECHO_N "checking IAX2 protocol... $ECHO_C" >&6
+if test "$iax" = "yes" ; then
+  OPAL_IAX2=1
+
+  cat >>confdefs.h <<\_ACEOF
+#define OPAL_IAX2 1
+_ACEOF
+
+  echo "$as_me:$LINENO: result: enabled" >&5
+echo "${ECHO_T}enabled" >&6
+else
+  OPAL_IAX2=0
+
+  echo "$as_me:$LINENO: result: disabled" >&5
+echo "${ECHO_T}disabled" >&6
+fi
+
 
 HAS_IXJ=
 ac_ext=c
@@ -4483,6 +4508,7 @@ s,@CFLAGS@,$CFLAGS,;t t
 s,@ac_ct_CC@,$ac_ct_CC,;t t
 s,@OPAL_SIP@,$OPAL_SIP,;t t
 s,@OPAL_H323@,$OPAL_H323,;t t
+s,@OPAL_IAX2@,$OPAL_IAX2,;t t
 s,@CPP@,$CPP,;t t
 s,@EGREP@,$EGREP,;t t
 s,@HAS_IXJ@,$HAS_IXJ,;t t
