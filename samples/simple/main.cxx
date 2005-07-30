@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2053  2005/07/24 07:56:35  rjongbloed
+ * Revision 1.2054  2005/07/30 07:42:15  csoutheren
+ * Added IAX2 functions
+ *
+ * Revision 2.52  2005/07/24 07:56:35  rjongbloed
  * Removed -l parameter, as it always listens.
  *
  * Revision 2.51  2005/07/11 01:57:31  csoutheren
@@ -239,6 +242,10 @@
 
 #include <opal/buildopts.h>
 
+#if OPAL_IAX2
+#include <iax2/iax2.h>
+#endif
+
 #if OPAL_SIP
 #include <sip/sip.h>
 #endif
@@ -305,6 +312,9 @@ void SimpleOpalProcess::Main()
              "j-jitter:"
              "n-no-gatekeeper."
              "-no-std-dial-peer."
+#if OPAL_IAX2
+	     "X-no-iax2."
+#endif
 #if PTRACING
              "o-output:"
 #endif
@@ -442,6 +452,9 @@ void SimpleOpalProcess::Main()
             "  -t --trace              : Enable trace, use multiple times for more detail.\n"
             "  -o --output             : File for trace output, default is stderr.\n"
 #endif
+#if OPAL_IAX2
+            "  -X --no-iax2            : Remove support for iax2\n"
+#endif
             "  -h --help               : This help message.\n"
             "\n"
             "\n"
@@ -466,12 +479,12 @@ void SimpleOpalProcess::Main()
 "  without and equal sign or beginning with '#' are ignored.\n"
 "\n"
 "  The standard dial peers that will be included are:\n"
-"    If SIP is enabled:\n"
+"    If SIP is enabled but H.323 & IAX2 are disabled:\n"
 "      pots:.*\\*.*\\*.* = sip:<dn2ip>\n"
 "      pots:.*         = sip:<da>\n"
 "      pc:.*           = sip:<da>\n"
 "\n"
-"    If SIP is not enabled and H.323 is enabled:\n"
+"    If SIP & IAX2 are not enabled and H.323 is enabled:\n"
 "      pots:.*\\*.*\\*.* = h323:<dn2ip>\n"
 "      pots:.*         = h323:<da>\n"
 "      pc:.*           = h323:<da>\n"
@@ -479,15 +492,21 @@ void SimpleOpalProcess::Main()
 "    If POTS is enabled:\n"
 "      h323:.* = pots:<da>\n"
 "      sip:.*  = pots:<da>\n"
+"      iax2:.* = pots:<da>\n"
 "\n"
 "    If POTS is not enabled and the PC sound system is enabled:\n"
+"      iax2:.* = pc:<da>\n"
 "      h323:.* = pc:<da>\n"
-"      sip:.*  = pc:<da>\n"
+"      sip:. * = pc:<da>\n"
 "\n"
 #if P_EXPAT
 "    If IVR is enabled then a # from any protocol will route it it, ie:\n"
 "      .*:#  = ivr:\n"
 "\n"
+#endif
+#if OPAL_IAX2
+"    If IAX2 is enabled then you can make a iax2 call with a command like:\n"
+"       simpleopal -IHn  iax2:guest@misery.digium.com/s\n"
 #endif
             << endl;
     return;
@@ -523,6 +542,9 @@ MyManager::MyManager()
 #endif
 #if OPAL_SIP
   sipEP  = NULL;
+#endif
+#if OPAL_IAX2
+  iax2EP = NULL;
 #endif
 #if P_EXPAT
   ivrEP  = NULL;
@@ -778,6 +800,23 @@ BOOL MyManager::Initialise(PArgList & args)
 
 #endif
 
+#if OPAL_IAX2
+  ///////////////////////////////////////
+  // Create IAX2 protocol handler
+
+  if (!args.HasOption("no-iax2")) {
+    iax2EP = new IAX2EndPoint(*this);
+    
+    if (args.HasOption('p'))
+      iax2EP->SetPassword(args.GetOptionString('p'));
+    
+    if (args.HasOption('u')) {
+      PStringArray aliases = args.GetOptionString('u').Lines();
+      iax2EP->SetLocalUserName(aliases[0]);
+    }
+  }
+#endif
+
 #if OPAL_SIP
 
   ///////////////////////////////////////
@@ -889,6 +928,13 @@ BOOL MyManager::Initialise(PArgList & args)
 #endif
     }
   }
+                                                                                                                                            
+#if OPAL_IAX2
+  if (pcssEP != NULL) {
+    AddRouteEntry("iax2:.*  = pc:<da>");
+    AddRouteEntry("pc:.*   = iax2:<da>");
+  }
+#endif
 
   return TRUE;
 }

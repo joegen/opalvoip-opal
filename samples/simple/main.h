@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2016  2004/04/26 07:06:08  rjongbloed
+ * Revision 1.2017  2005/07/30 07:42:15  csoutheren
+ * Added IAX2 functions
+ *
+ * Revision 2.15  2004/04/26 07:06:08  rjongbloed
  * Removed some ancient pieces of code and used new API's for them.
  *
  * Revision 2.14  2004/03/22 10:20:34  rjongbloed
@@ -103,7 +106,7 @@
 class MyManager;
 class SIPEndPoint;
 class H323EndPoint;
-
+class IAX2EndPoint;
 
 class MyPCSSEndPoint : public OpalPCSSEndPoint
 {
@@ -160,6 +163,9 @@ class MyManager : public OpalManager
 #endif
 #if OPAL_SIP
     SIPEndPoint      * sipEP;
+#endif
+#if OPAL_IAX2
+    IAX2EndPoint      * iax2EP;
 #endif
 #if P_EXPAT
     OpalIVREndPoint  * ivrEP;
