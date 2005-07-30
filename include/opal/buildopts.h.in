@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: buildopts.h.in,v $
+ * Revision 1.7  2005/07/30 07:39:26  csoutheren
+ * Added support for compiling new IAX2 code
+ *
  * Revision 1.6  2004/12/05 11:12:10  dsandras
  * Added support for OPAL_VERSION, similar to OPENH323_VERSION.
  *
@@ -67,6 +70,7 @@
 // Protocol support
 //
 
+#undef  OPAL_IAX2
 #undef	OPAL_SIP
 #undef	OPAL_H323
 

@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.12  2005/07/30 07:39:26  csoutheren
+# Added support for compiling new IAX2 code
+#
 # Revision 1.11  2005/04/26 10:58:37  dsandras
 # Committed workaround for "make install".
 #
@@ -179,7 +182,6 @@ ifdef NOTRACE
 OPAL_OBJDIR += n
 endif
 
-
 OBJDIR	=	$(OPAL_OBJDIR)
 LIBDIR  =	$(OPAL_LIBDIR)
 TARGET	=	$(OPAL_LIBDIR)/$(OPAL_FILE)
@@ -193,12 +195,15 @@ endif
 VPATH_CXX := $(OPAL_SRCDIR)/opal \
 	     $(OPAL_SRCDIR)/rtp \
 	     $(OPAL_SRCDIR)/h323 \
+	     $(OPAL_SRCDIR)/iax2 \
 	     $(OPAL_SRCDIR)/lids \
 	     $(OPAL_SRCDIR)/codec \
 	     $(OPAL_SRCDIR)/t120 \
 	     $(OPAL_SRCDIR)/t38 \
 	     $(OPAL_SRCDIR)/sip \
-	     $(OPAL_SRCDIR)/asn
+	     $(OPAL_SRCDIR)/asn 
+
+
 
 VPATH_C := $(OPAL_SRCDIR)/codec
 
@@ -222,6 +227,7 @@ SOURCES := $(OPAL_SRCDIR)/opal/manager.cxx \
            $(OPAL_SRCDIR)/rtp/jitter.cxx \
 
 ########################################
+
 # H.323 files
 
 ifeq ($(OPAL_H323),1)
@@ -288,6 +294,26 @@ SOURCES += $(OPAL_SRCDIR)/t120/t120proto.cxx \
 endif
 
 ##################
+# IAX2 files
+
+ifeq ($(OPAL_IAX2),1)
+
+SOURCES += \
+           $(OPAL_SRCDIR)/iax2/frame.cxx \
+           $(OPAL_SRCDIR)/iax2/iax2con.cxx \
+           $(OPAL_SRCDIR)/iax2/iax2ep.cxx \
+           $(OPAL_SRCDIR)/iax2/iax2medstrm.cxx \
+           $(OPAL_SRCDIR)/iax2/iedata.cxx \
+           $(OPAL_SRCDIR)/iax2/ies.cxx \
+           $(OPAL_SRCDIR)/iax2/processor.cxx \
+           $(OPAL_SRCDIR)/iax2/receiver.cxx \
+           $(OPAL_SRCDIR)/iax2/remote.cxx \
+           $(OPAL_SRCDIR)/iax2/safestrings.cxx \
+           $(OPAL_SRCDIR)/iax2/sound.cxx \
+           $(OPAL_SRCDIR)/iax2/transmit.cxx 
+endif
+
+################################################################################
 # SIP files
 
 ifeq ($(OPAL_SIP),1)
@@ -301,7 +327,6 @@ endif
 
 ##################
 # LIDS
-
 
 SOURCES += $(OPAL_SRCDIR)/lids/lid.cxx \
            $(OPAL_SRCDIR)/lids/lidep.cxx \
@@ -770,9 +795,6 @@ uninstall:
 	      $(DESTDIR)@LIBDIR@/$(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION) \
 	      $(DESTDIR)@LIBDIR@/$(OPAL_FILE).$(MAJOR_VERSION) \
 	      $(DESTDIR)@LIBDIR@/$(LIBNAME_PAT)
-
-  
-
  
 docs:
 	doxygen opal_cfg.dxy
