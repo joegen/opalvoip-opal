@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2024  2005/04/10 20:48:30  dsandras
+ * Revision 1.2025  2005/08/04 17:23:38  dsandras
+ * Added function to determine if a stream is open or not.
+ *
+ * Revision 2.23  2005/04/10 20:48:30  dsandras
  * Added functions to put an OpalMediaStream on pause.
  *
  * Revision 2.22  2005/03/12 00:33:27  csoutheren
@@ -311,6 +314,10 @@ class OpalMediaStream : public PObject
       */
     void SetPaused(BOOL p) { paused = p; }
 
+    /**Returns TRUE if the media stream is open.
+      */
+    BOOL IsOpen() { return isOpen; }
+    
     /**Set the patch thread that is using this stream.
       */
     void SetPatch(
