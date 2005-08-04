@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2020  2005/04/11 17:34:57  dsandras
+ * Revision 1.2021  2005/08/04 17:17:08  dsandras
+ * Fixed remote address change of an established RTP Session.
+ *
+ * Revision 2.19  2005/04/11 17:34:57  dsandras
  * Added support for dynamic sequence changes in case of Re-INVITE.
  *
  * Revision 2.18  2005/04/10 21:17:05  dsandras
@@ -1828,7 +1831,7 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(PUDPSocket & socket
       } 
       else if (allowRemoteTransmitAddressChange && remoteTransmitAddress != addr && remoteTransmitAddress != remoteAddress) {
 
-        remoteTransmitAddress = addr;
+        remoteTransmitAddress = remoteAddress;
 	allowRemoteTransmitAddressChange = FALSE;
       }
       else if (remoteTransmitAddress != addr) {
