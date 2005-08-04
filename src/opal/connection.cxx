@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2046  2005/07/14 08:51:19  csoutheren
+ * Revision 1.2047  2005/08/04 17:20:22  dsandras
+ * Added functions to close/remove the media streams of a connection.
+ *
+ * Revision 2.45  2005/07/14 08:51:19  csoutheren
  * Removed CreateExternalRTPAddress - it's not needed because you can override GetMediaAddress
  * to do the same thing
  * Fixed problems with logic associated with media bypass
@@ -500,8 +503,8 @@ BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForm
 
   PTRACE(3, "OpalCon\tSelected media stream "
          << sourceFormat << " -> " << destinationFormat);
-
-  OpalMediaStream * stream = CreateMediaStream(sourceFormat, sessionID, TRUE);
+  
+  OpalMediaStream *stream = CreateMediaStream(sourceFormat, sessionID, TRUE);
   if (stream == NULL) {
     PTRACE(1, "OpalCon\tCreateMediaStream returned NULL for session "
            << sessionID << " on " << *this);
@@ -584,6 +587,28 @@ void OpalConnection::StartMediaStreams()
   for (PINDEX i = 0; i < mediaStreams.GetSize(); i++)
     mediaStreams[i].Start();
   PTRACE(2, "OpalCon\tMedia stream threads started.");
+}
+
+
+void OpalConnection::CloseMediaStreams()
+{
+  for (PINDEX i = 0; i < mediaStreams.GetSize(); i++) {
+    if (mediaStreams[i].IsOpen()) {
+      OnClosedMediaStream(mediaStreams[i]);
+      mediaStreams[i].Close();
+    }
+  }
+  
+  PTRACE(2, "OpalCon\tMedia stream threads closed.");
+}
+
+
+void OpalConnection::RemoveMediaStreams()
+{
+  CloseMediaStreams();
+  mediaStreams.RemoveAll();
+  
+  PTRACE(2, "OpalCon\tMedia stream threads removed from session.");
 }
 
 
