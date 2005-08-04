@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2057  2005/07/15 18:03:02  dsandras
+ * Revision 1.2058  2005/08/04 17:11:20  dsandras
+ * Added support for rport in the Via field.
+ *
+ * Revision 2.56  2005/07/15 18:03:02  dsandras
  * Use the original URI in the ACK request if no contact field is present.
  *
  * Revision 2.55  2005/06/04 12:44:36  dsandras
@@ -480,12 +483,12 @@ PString SIPURL::GetDisplayName () const
   PINDEX tag;
     
   s = displayName;
-  
+
   if (displayName.IsEmpty ()) {
-    
+
     s = AsString ();
     s.Replace ("sip:", "");
-    
+
     /* There could be a tag if we are using the URL,
      * remove it
      */
@@ -1273,9 +1276,9 @@ void SIP_PDU::Construct(Methods meth,
   PIPSocket::Address ip;
   WORD port;
   if (via.GetIpAndPort(ip, port))
-    str << ip << ':' << port;
+    str << ip << ':' << port << ";rport";
   else
-    str << via.Mid(dollar+1);
+    str << via.Mid(dollar+1) << ";rport";
 
   mime.SetVia(str);
 
@@ -1861,18 +1864,15 @@ BOOL SIPInvite::OnReceivedResponse(SIP_PDU & response)
 
 BOOL SIPInvite::OnCompleted(SIP_PDU & response)
 {
-  SIPURL targetAddress;
+  SIPURL targetAddress = this->GetURI();
   
   // Adjust "to" field for possible added tag in response
   mime.SetTo(response.GetMIME().GetTo());
 
   // Use Contact for request URI as specified in RFC 3261:12.1.2, 12.2.1.1
-  // or use the original URI
   PString contact = response.GetMIME().GetContact();
   if (!contact.IsEmpty())
     targetAddress = contact;
-  else
-    targetAddress = this->GetURI();
 
   // Build an ACK
   SIP_PDU ack(Method_ACK,
