@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2054  2005/07/30 07:42:15  csoutheren
+ * Revision 1.2055  2005/08/04 08:47:38  rjongbloed
+ * Some cosmetic changes, and print out the codecs that are available
+ *
+ * Revision 2.53  2005/07/30 07:42:15  csoutheren
  * Added IAX2 functions
  *
  * Revision 2.52  2005/07/24 07:56:35  rjongbloed
@@ -310,6 +313,7 @@ void SimpleOpalProcess::Main()
              "-h323-listen:"
              "I-no-sip."
              "j-jitter:"
+             "l-listen."
              "n-no-gatekeeper."
              "-no-std-dial-peer."
 #if OPAL_IAX2
@@ -350,8 +354,8 @@ void SimpleOpalProcess::Main()
              "-udp-base:"
              "-udp-max:"
              "-use-long-mime."
-             "-rx-video."
-             "-tx-video."
+             "-rx-video." "-no-rx-video."
+             "-tx-video." "-no-tx-video."
              "-grabber:"
              "-display:"
 #if P_EXPAT
@@ -441,11 +445,11 @@ void SimpleOpalProcess::Main()
             "     --tcp-base n         : Set TCP port base (default 0)\n"
             "     --tcp-max n          : Set TCP port max (default base+99)\n"
             "     --udp-base n         : Set UDP port base (default 6000)\n"
-            "     --udp-max n          : Set UDP port max (default base+199)"
+            "     --udp-max n          : Set UDP port max (default base+199)\n"
             "     --rtp-base n         : Set RTP port base (default 5000)\n"
-            "     --rtp-max n          : Set RTP port max (default base+199)"
+            "     --rtp-max n          : Set RTP port max (default base+199)\n"
             "     --rtp-tos n          : Set RTP packet IP TOS bits to n\n"
-			      "     --stun server        : Set STUN server\n"
+	    "     --stun server        : Set STUN server\n"
             "\n"
             "Debug options:\n"
 #if PTRACING
@@ -563,11 +567,14 @@ MyManager::~MyManager()
 BOOL MyManager::Initialise(PArgList & args)
 {
   // Set the various global options
-  autoStartReceiveVideo = args.HasOption("rx-video");
-  autoStartTransmitVideo = args.HasOption("tx-video");
-
-//  SetSilenceDetectionMode(args.HasOption('e') ? H323AudioCodec::NoSilenceDetection
-//                                              : H323AudioCodec::AdaptiveSilenceDetection);
+  if (args.HasOption("rx-video"))
+    autoStartReceiveVideo = TRUE;
+  if (args.HasOption("no-rx-video"))
+    autoStartReceiveVideo = FALSE;
+  if (args.HasOption("tx-video"))
+    autoStartTransmitVideo = TRUE;
+  if (args.HasOption("no-tx-video"))
+    autoStartTransmitVideo = FALSE;
 
   if (args.HasOption("grabber")) {
     PVideoDevice::OpenArgs video = GetVideoInputDevice();
@@ -601,6 +608,9 @@ BOOL MyManager::Initialise(PArgList & args)
     }
   }
 
+  silenceDetectParams.m_mode = args.HasOption('e') ? OpalSilenceDetector::NoSilenceDetection
+                                                   : OpalSilenceDetector::AdaptiveSilenceDetection;
+
   if (args.HasOption('D'))
     SetMediaFormatMask(args.GetOptionString('D').Lines());
   if (args.HasOption('P'))
@@ -608,11 +618,11 @@ BOOL MyManager::Initialise(PArgList & args)
 
   cout << "Jitter buffer: "  << GetMinAudioJitterDelay() << '-' << GetMaxAudioJitterDelay() << " ms\n"
           "Codecs removed: " << setfill(',') << GetMediaFormatMask() << "\n"
-          "Codec order: " << setfill(',') << GetMediaFormatOrder() << setfill(' ') << "\n";
+          "Codec order: " << setfill(',') << GetMediaFormatOrder() << setfill(' ') << '\n';
 
   if (args.HasOption("translate")) {
     SetTranslationAddress(args.GetOptionString("translate"));
-    cout << "External address set to " << GetTranslationAddress() << "\n";
+    cout << "External address set to " << GetTranslationAddress() << '\n';
   }
 
   if (args.HasOption("portbase")) {
@@ -705,7 +715,10 @@ BOOL MyManager::Initialise(PArgList & args)
       return FALSE;
 
     cout << "Sound output device: \"" << pcssEP->GetSoundChannelPlayDevice() << "\"\n"
-            "Sound  input device: \"" << pcssEP->GetSoundChannelRecordDevice() << '"' << endl;
+            "Sound  input device: \"" << pcssEP->GetSoundChannelRecordDevice() << "\"\n"
+            "Video output device: \"" << GetVideoInputDevice().deviceName << "\"\n"
+            "Video  input device: \"" << GetVideoInputDevice().deviceName << "\"\n"
+            "Available codecs: " << setfill(',') << OpalTranscoder::GetPossibleFormats(pcssEP->GetMediaFormats()) << setfill(' ') << endl;
   }
 
 #if OPAL_H323
@@ -739,8 +752,8 @@ BOOL MyManager::Initialise(PArgList & args)
     h323EP->SetGkAccessTokenOID(args.GetOptionString("gk-token"));
 
     cout << "H.323 Local username: " << h323EP->GetLocalUserName() << "\n"
-      << "H.323 FastConnect is " << (h323EP->IsFastStartDisabled() ? "off" : "on") << "\n"
-      << "H.323 H245Tunnelling is " << (h323EP->IsH245TunnelingDisabled() ? "off" : "on") << "\n"
+         << "H.323 FastConnect is " << (h323EP->IsFastStartDisabled() ? "off" : "on") << "\n"
+         << "H.323 H245Tunnelling is " << (h323EP->IsH245TunnelingDisabled() ? "off" : "on") << "\n"
          << "H.323 gk Token OID is " << h323EP->GetGkAccessTokenOID() << endl;
 
 
