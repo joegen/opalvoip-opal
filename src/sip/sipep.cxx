@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2056  2005/06/02 13:18:02  rjongbloed
+ * Revision 1.2057  2005/08/04 17:13:53  dsandras
+ * More implementation of blind transfer.
+ *
+ * Revision 2.55  2005/06/02 13:18:02  rjongbloed
  * Fixed compiler warnings
  *
  * Revision 2.54  2005/05/25 18:36:07  dsandras
@@ -561,17 +564,9 @@ BOOL SIPEndPoint::SetupTransfer(const PString & token,
     return FALSE;
   }
   
-  OpalCall call = otherConnection->GetCall();
-
-  // Move old connection on token to new value and flag for removal
-  PString adjustedToken;
-  unsigned tieBreaker = 0;
-  do {
-    adjustedToken = token + "-replaced";
-    adjustedToken.sprintf("-%u", ++tieBreaker);
-  } while (connectionsActive.Contains(adjustedToken));
-  connectionsActive.SetAt(adjustedToken, otherConnection);
-  call.OnReleased(*otherConnection);
+  OpalCall & call = otherConnection->GetCall();
+  
+  call.CloseMediaStreams();
   
   PStringStream callID;
   OpalGloballyUniqueID id;
@@ -584,6 +579,8 @@ BOOL SIPEndPoint::SetupTransfer(const PString & token,
 
   connectionsActive.SetAt(callID, connection);
   connection->SetUpConnection();
+  
+  call.OnReleased(*otherConnection);
 
   return TRUE;
 }
