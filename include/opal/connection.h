@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2041  2005/07/14 08:51:17  csoutheren
+ * Revision 1.2042  2005/08/04 17:21:01  dsandras
+ * Added functions to close/remove the media streams of a connection.
+ *
+ * Revision 2.40  2005/07/14 08:51:17  csoutheren
  * Removed CreateExternalRTPAddress - it's not needed because you can override GetMediaAddress
  * to do the same thing
  * Fixed problems with logic associated with media bypass
@@ -590,6 +593,14 @@ class OpalConnection : public PSafeObject
     /**Start media streams for session.
       */
     virtual void StartMediaStreams();
+    
+    /**Close media streams for session.
+      */
+    virtual void CloseMediaStreams();
+    
+    /**Close media streams from session.
+      */
+    virtual void RemoveMediaStreams();
     
     /**Pause media streams for session.
       */
