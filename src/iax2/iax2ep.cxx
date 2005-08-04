@@ -28,6 +28,9 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.2  2005/08/04 08:14:17  rjongbloed
+ * Fixed Windows build under DevStudio 2003 of IAX2 code
+ *
  * Revision 1.1  2005/07/30 07:01:33  csoutheren
  * Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
  * Thanks to Derek Smithies of Indranet Technologies Ltd. for
@@ -100,6 +103,12 @@ IAX2EndPoint::~IAX2EndPoint()
 void IAX2EndPoint::ReportTransmitterLists()
 {
   transmitter->ReportLists(); 
+}
+
+
+BOOL IAX2EndPoint::NewIncomingConnection(OpalTransport * /*transport*/)
+{
+  return TRUE;
 }
 
 
@@ -295,7 +304,7 @@ IAX2Connection * IAX2EndPoint::CreateConnection(
       void * userData,
       const PString &remoteParty)
 {
-  return new IAX2Connection(call, *this, token, userData, *this, remoteParty); 
+  return new IAX2Connection(call, *this, token, userData, remoteParty); 
 }
 
 
@@ -324,7 +333,7 @@ BOOL IAX2EndPoint::Initialise()
 
   PTRACE(6, "IAX2EndPoint\tInitialise()");
   PRandom rand;
-  rand.SetSeed((PTime().GetTimestamp() & 0xffffff) + 1);
+  rand.SetSeed(PTime().GetTimeInSeconds() + 1);
   callnumbs = PRandom::Number() % 32000;
   
   sock = new PUDPSocket(ListenPortNumber());
@@ -466,7 +475,7 @@ void IAX2EndPoint::ProcessReceivedEthernetFrames()
 }     
 
 
-unsigned short IAX2EndPoint::GetPreferredCodec(OpalMediaFormatList & list)
+PINDEX IAX2EndPoint::GetPreferredCodec(OpalMediaFormatList & list)
 {
   PTRACE(3, "preferred codecs are " << list);
 
@@ -526,7 +535,7 @@ void IAX2EndPoint::GetCodecLengths(PINDEX codec, PINDEX &compressedBytes, PINDEX
   compressedBytes = 33;
 }  
 
-unsigned short IAX2EndPoint::GetSupportedCodecs(OpalMediaFormatList & list)
+PINDEX IAX2EndPoint::GetSupportedCodecs(OpalMediaFormatList & list)
 {
   PTRACE(3, "Supported codecs are " << list);
 
@@ -539,7 +548,7 @@ unsigned short IAX2EndPoint::GetSupportedCodecs(OpalMediaFormatList & list)
     PTRACE(3, "Supported codec in opal is " << codecNames[i]);
   }
     
-  unsigned short returnValue = 0;
+  PINDEX returnValue = 0;
   for (i = 0; i < codecNames.GetSize(); i++) 
     returnValue += FullFrameVoice::OpalNameToIax2Value(codecNames[i]);
 

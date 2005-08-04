@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: frame.cxx,v $
+ *  Revision 1.2  2005/08/04 08:14:17  rjongbloed
+ *  Fixed Windows build under DevStudio 2003 of IAX2 code
+ *
  *  Revision 1.1  2005/07/30 07:01:33  csoutheren
  *  Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
  *  Thanks to Derek Smithies of Indranet Technologies Ltd. for
@@ -161,18 +164,18 @@ BOOL Frame::Read2Bytes(PINDEX & res)
   return FALSE;
 }
 
-BOOL Frame::Read2Bytes(unsigned int & res)
+BOOL Frame::Read2Bytes(WORD & res)
 {
   BYTE a = 0, b = 0;
   if (Read1Byte(a) && Read1Byte(b)) {
-    res = (a << 8) | b;
+    res = (WORD)((a << 8) | b);
     return TRUE;
   }
   
   return FALSE;
 }
 
-BOOL Frame::Read4Bytes(unsigned int & res)
+BOOL Frame::Read4Bytes(DWORD & res)
 {
   PINDEX a = 0, b = 0;
   if (Read2Bytes(a) && Read2Bytes(b)) {
@@ -282,9 +285,9 @@ void Frame::BuildTimeStamp(const PTime & callStartTime)
     timeStamp = CalcTimeStamp(callStartTime);
 }
 
-PINDEX Frame::CalcTimeStamp(const PTime & callStartTime)
+DWORD Frame::CalcTimeStamp(const PTime & callStartTime)
 {
-  PINDEX tVal = (PTime() - callStartTime).GetMilliSeconds();
+  DWORD tVal = (PTime() - callStartTime).GetInterval();
   PTRACE(3, "Calculate timestamp as " << tVal);
   return tVal;
 }
@@ -355,7 +358,9 @@ void MiniFrame::InitialiseHeader(IAX2Processor *iaxProcessor)
 
 BOOL MiniFrame::ProcessNetworkPacket() 
 {
-  Read2Bytes(timeStamp);
+  WORD data;
+  Read2Bytes(data);
+  timeStamp = data;
   isAudio = isVideo =  FALSE;
   return TRUE;
 }
@@ -894,7 +899,7 @@ PString FullFrameVoice::GetSubClassName() const
   return GetSubClassName(GetSubClass());
 }
 
-PString FullFrameVoice::GetOpalNameOfCodec(unsigned short testValue)
+PString FullFrameVoice::GetOpalNameOfCodec(PINDEX testValue)
 {
   switch (testValue) {
   case g7231:     return PString("G.723.1");
