@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.cxx,v $
- * Revision 1.2008  2004/02/19 10:47:06  rjongbloed
+ * Revision 1.2009  2005/08/04 17:18:37  dsandras
+ * Reinitialize frame pointers when the jitter is restarted.
+ *
+ * Revision 2.7  2004/02/19 10:47:06  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.6  2003/01/07 04:39:53  robertj
@@ -357,6 +360,8 @@ void RTP_JitterBuffer::SetDelay(unsigned minJitterDelay, unsigned maxJitterDelay
     consecutiveBufferOverruns = 0;
     consecutiveMarkerBits = 0;
     consecutiveEarlyPacketStartTime = 0;
+
+    oldestFrame = newestFrame = currentWriteFrame = NULL;
 
     shuttingDown = FALSE;
     preBuffering = TRUE;
