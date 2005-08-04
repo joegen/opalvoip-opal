@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2033  2005/07/24 07:41:27  rjongbloed
+ * Revision 1.2034  2005/08/04 08:46:21  rjongbloed
+ * Fixed video output stream to allow for empty/missing packets
+ *
+ * Revision 2.32  2005/07/24 07:41:27  rjongbloed
  * Fixed various video media stream issues.
  *
  * Revision 2.31  2005/07/14 08:54:35  csoutheren
@@ -795,7 +798,7 @@ BOOL OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & length)
 
   unsigned width, height;
   inputDevice->GetFrameSize(width, height);
-  OpalVideoTranscoder::FrameHeader * frame = (OpalVideoTranscoder::FrameHeader *)data;
+  OpalVideoTranscoder::FrameHeader * frame = (OpalVideoTranscoder::FrameHeader *)PAssertNULL(data);
   frame->x = frame->y = 0;
   frame->width = width;
   frame->height = height;
@@ -831,7 +834,12 @@ BOOL OpalVideoMediaStream::WriteData(const BYTE * data, PINDEX length, PINDEX & 
   // Assume we are writing the exact amount (check?)
   written = length;
 
+  // Check for missing packets, we do nothing at this level, just ignore it
+  if (data == NULL)
+    return TRUE;
+
   const OpalVideoTranscoder::FrameHeader * frame = (const OpalVideoTranscoder::FrameHeader *)data;
+  outputDevice->SetFrameSize(frame->width, frame->height);
   return outputDevice->SetFrameData(frame->x, frame->y,
                                     frame->width, frame->height,
                                     frame->data, marker);
