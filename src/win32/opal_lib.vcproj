@@ -1786,6 +1786,46 @@
 					</FileConfiguration>
 				</File>
 			</Filter>
+			<Filter
+				Name="IAX2 Sources"
+				Filter="">
+				<File
+					RelativePath="..\iax2\frame.cxx">
+				</File>
+				<File
+					RelativePath="..\iax2\iax2con.cxx">
+				</File>
+				<File
+					RelativePath="..\iax2\iax2ep.cxx">
+				</File>
+				<File
+					RelativePath="..\iax2\iax2medstrm.cxx">
+				</File>
+				<File
+					RelativePath="..\iax2\iedata.cxx">
+				</File>
+				<File
+					RelativePath="..\iax2\ies.cxx">
+				</File>
+				<File
+					RelativePath="..\iax2\processor.cxx">
+				</File>
+				<File
+					RelativePath="..\iax2\receiver.cxx">
+				</File>
+				<File
+					RelativePath="..\iax2\remote.cxx">
+				</File>
+				<File
+					RelativePath="..\iax2\safestrings.cxx">
+				</File>
+				<File
+					RelativePath="..\iax2\sound.cxx">
+				</File>
+				<File
+					RelativePath="..\iax2\transmit.cxx">
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -2051,6 +2091,55 @@
 				</File>
 				<File
 					RelativePath="..\..\include\sip\sippdu.h">
+				</File>
+			</Filter>
+			<Filter
+				Name="IAX2 Headers"
+				Filter="">
+				<File
+					RelativePath="..\..\include\iax2\causecode.h">
+				</File>
+				<File
+					RelativePath="..\..\include\iax2\frame.h">
+				</File>
+				<File
+					RelativePath="..\..\include\iax2\iax2.h">
+				</File>
+				<File
+					RelativePath="..\..\include\iax2\iax2con.h">
+				</File>
+				<File
+					RelativePath="..\..\include\iax2\iax2ep.h">
+				</File>
+				<File
+					RelativePath="..\..\include\iax2\iax2medstrm.h">
+				</File>
+				<File
+					RelativePath="..\..\include\iax2\iedata.h">
+				</File>
+				<File
+					RelativePath="..\..\include\iax2\ies.h">
+				</File>
+				<File
+					RelativePath="..\..\include\iax2\processor.h">
+				</File>
+				<File
+					RelativePath="..\..\include\iax2\receiver.h">
+				</File>
+				<File
+					RelativePath="..\..\include\iax2\remote.h">
+				</File>
+				<File
+					RelativePath="..\..\include\iax2\safestrings.h">
+				</File>
+				<File
+					RelativePath="..\..\include\iax2\sound.h">
+				</File>
+				<File
+					RelativePath="..\..\include\iax2\transmit.h">
+				</File>
+				<File
+					RelativePath="..\..\include\iax2\version.h">
 				</File>
 			</Filter>
 		</Filter>
