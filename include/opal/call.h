@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2021  2005/07/11 01:52:23  csoutheren
+ * Revision 1.2022  2005/08/04 17:21:48  dsandras
+ * Added functions to close/remove the media streams of a call.
+ *
+ * Revision 2.20  2005/07/11 01:52:23  csoutheren
  * Extended AnsweringCall to work for SIP as well as H.323
  * Fixed problems with external RTP connection in H.323
  * Added call to OnClosedMediaStream
@@ -334,6 +337,14 @@ class OpalCall : public PSafeObject
       const OpalConnection & connection, /// Source connection
       OpalMediaStream & source           /// Source media stream to patch
     );
+    
+    /**Close the media streams on the connections.
+     */
+    virtual void CloseMediaStreams();
+    
+    /**Remove the media streams on the connections.
+     */
+    virtual void RemoveMediaStreams();
 
     /**See if the media can bypass the local host.
      */
