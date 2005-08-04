@@ -27,6 +27,9 @@
  *
  *
  * $Log: remote.cxx,v $
+ * Revision 1.2  2005/08/04 08:14:17  rjongbloed
+ * Fixed Windows build under DevStudio 2003 of IAX2 code
+ *
  * Revision 1.1  2005/07/30 07:01:33  csoutheren
  * Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
  * Thanks to Derek Smithies of Indranet Technologies Ltd. for
@@ -150,17 +153,17 @@ FrameIdValue::FrameIdValue(PINDEX val)
 
 PINDEX FrameIdValue::GetPlainSequence() const
 {
-  return value & P_MAX_INDEX;
+  return (PINDEX)(value & P_MAX_INDEX);
 }
 
 PINDEX FrameIdValue::GetTimeStamp() const
 {
-  return value >> 8;            
+  return (PINDEX)(value >> 8);            
 }
 
 PINDEX FrameIdValue::GetSequenceVal() const 
 {
-  return value & 0xff;         
+  return (PINDEX)(value & 0xff);         
 }
 
 void FrameIdValue::PrintOn(ostream & strm) const 

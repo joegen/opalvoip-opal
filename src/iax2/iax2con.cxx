@@ -28,6 +28,9 @@
  *
  *
  * $Log: iax2con.cxx,v $
+ * Revision 1.2  2005/08/04 08:14:17  rjongbloed
+ * Fixed Windows build under DevStudio 2003 of IAX2 code
+ *
  * Revision 1.1  2005/07/30 07:01:33  csoutheren
  * Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
  * Thanks to Derek Smithies of Indranet Technologies Ltd. for
@@ -63,12 +66,11 @@
 
 
 IAX2Connection::IAX2Connection(OpalCall & call,               /* Owner call for connection        */
-			     OpalEndPoint & opalEndPoint,   /* Owner endpoint for connection    */
+			       IAX2EndPoint &ep, 
 			     const PString & token,         /* Token to identify the connection */
 			     void * /*userData */,
-			     IAX2EndPoint &ep, 
 			     const PString & remoteParty)
-  : OpalConnection(call, opalEndPoint, token), 
+  : OpalConnection(call, ep, token), 
      endpoint(ep)
 {  
   remotePartyName = remoteParty;
@@ -170,7 +172,7 @@ void IAX2Connection::OnAlerting()
   OpalConnection::OnAlerting();
 }
 
-BOOL IAX2Connection::SetAlerting(const PString & calleeName, BOOL withMedia  ) 
+BOOL IAX2Connection::SetAlerting(const PString & /*calleeName*/, BOOL /*withMedia*/) 
 { 
  PTRACE(3, "IAXCon\tSetAlerting " << *this); 
  return TRUE;
@@ -260,18 +262,17 @@ void IAX2Connection::SetCallToken(PString newToken)
 
 
 
-unsigned short IAX2Connection::GetSupportedCodecs() 
+PINDEX IAX2Connection::GetSupportedCodecs() 
 { 
   return endpoint.GetSupportedCodecs(localMediaFormats);
 }
   
-unsigned short IAX2Connection::GetPreferredCodec()
+PINDEX IAX2Connection::GetPreferredCodec()
 { 
   return endpoint.GetPreferredCodec(localMediaFormats);
 }
 
-void IAX2Connection::BuildRemoteCapabilityTable
-    (unsigned int remoteCapability, unsigned int format)
+void IAX2Connection::BuildRemoteCapabilityTable(unsigned int remoteCapability, unsigned int format)
 {
   PTRACE(3, "Connection\tBuildRemote Capability table for codecs");
   

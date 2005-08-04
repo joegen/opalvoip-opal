@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2ep.h,v $
+ *  Revision 1.2  2005/08/04 08:14:17  rjongbloed
+ *  Fixed Windows build under DevStudio 2003 of IAX2 code
+ *
  *  Revision 1.1  2005/07/30 07:01:32  csoutheren
  *  Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
  *  Thanks to Derek Smithies of Indranet Technologies Ltd. for
@@ -105,8 +108,8 @@ class IAX2EndPoint : public OpalEndPoint
   //@{
   /**Create the endpoint, and define local variables */
   IAX2EndPoint(
-      OpalManager & manager
-      );
+    OpalManager & manager
+  );
   
   /**Destroy the endpoint, and all associated connections*/
   ~IAX2EndPoint();
@@ -119,8 +122,8 @@ class IAX2EndPoint : public OpalEndPoint
   The default behaviour does nothing.
   */
   virtual BOOL NewIncomingConnection(
-				     OpalTransport * transport  /// Transport connection came in on
-				     ) { return TRUE; };
+    OpalTransport * transport  /// Transport connection came in on
+  );
   
   /**Set up a connection to a remote party.
      This is called from the OpalManager::MakeConnection() function once
@@ -264,10 +267,10 @@ class IAX2EndPoint : public OpalEndPoint
     virtual OpalMediaFormatList GetMediaFormats() const;
 
   /**Return the bitmask which specifies the possible codecs we support */
-  unsigned short GetSupportedCodecs(OpalMediaFormatList & list);
+  PINDEX GetSupportedCodecs(OpalMediaFormatList & list);
   
   /**Return the bitmask which specifies the preferred codec */
-  unsigned short GetPreferredCodec(OpalMediaFormatList & list);
+  PINDEX GetPreferredCodec(OpalMediaFormatList & list);
 
   /**Get the frame size (bytes) and frame duration (ms) for compressed
      data from this codec */

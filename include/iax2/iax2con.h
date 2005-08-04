@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2con.h,v $
+ *  Revision 1.2  2005/08/04 08:14:17  rjongbloed
+ *  Fixed Windows build under DevStudio 2003 of IAX2 code
+ *
  *  Revision 1.1  2005/07/30 07:01:32  csoutheren
  *  Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
  *  Thanks to Derek Smithies of Indranet Technologies Ltd. for
@@ -69,13 +72,12 @@ class IAX2Connection : public OpalConnection
   /**Construct a connection given the endpoint. 
    */
   IAX2Connection(
-		OpalCall & call,             /*!< Owner call for connection             */
-		OpalEndPoint & endpoint,     /*!< Owner opal endpoint for connection    */
-		const PString & token,       /*!< Token to identify the connection      */	 	  
-		void *userData,              /*!< Specific user data for this call      */
-		IAX2EndPoint & endpoint,      /*!< Owner iax endpoint for connection     */
-		const PString & remoteParty  /*!< Person we are calling                 */
-		);
+    OpalCall & call,             /*!< Owner call for connection             */
+    IAX2EndPoint & endpoint,      /*!< Owner iax endpoint for connection     */
+    const PString & token,       /*!< Token to identify the connection      */	 	  
+    void *userData,              /*!< Specific user data for this call      */
+    const PString & remoteParty  /*!< Person we are calling                 */
+  );
   
   /**Destroy this connection, but do it nicely and let attached sound objects
      close first.
@@ -333,12 +335,12 @@ class IAX2Connection : public OpalConnection
   /**Return the bitmask which specifies the possible codecs we
      support.  The supported codecs are a bitmask of values defined by
      FullFrameVoice::AudioSc */
-  unsigned short GetSupportedCodecs();
+  PINDEX GetSupportedCodecs();
   
   /**Return the bitmask which specifies the preferred codec. The
      selected codec is in the binary value defined by
      FullFrameVoice::AudioSc */
-  unsigned short GetPreferredCodec();
+  PINDEX GetPreferredCodec();
 
   /**Fill the OpalMediaFormatList which describes the remote nodes
      capabilities */
