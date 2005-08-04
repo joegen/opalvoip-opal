@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2075  2005/07/15 17:22:43  dsandras
+ * Revision 1.2076  2005/08/04 17:15:52  dsandras
+ * Fixed local port for sending requests on incoming calls.
+ * Allow for codec changes on re-INVITE.
+ * More blind transfer implementation.
+ *
+ * Revision 2.74  2005/07/15 17:22:43  dsandras
  * Use correct To tag when sending a new INVITE when authentication is required and an outbound proxy is being used.
  *
  * Revision 2.73  2005/07/14 08:51:19  csoutheren
@@ -347,11 +352,7 @@ SIPConnection::SIPConnection(OpalCall & call,
     transport = NULL;
   else {
     OpalManager & manager = endpoint.GetManager();
-    PSTUNClient * stun = manager.GetSTUN(targetAddress.GetHostAddress());
-    if (stun != NULL) 
-      transport = endpoint.CreateTransport(targetAddress.GetHostAddress());
-    else
-      transport = inviteTransport->GetLocalAddress().CreateTransport(endpoint, OpalTransportAddress::HostOnly);
+    transport = endpoint.CreateTransport(targetAddress.GetHostAddress());
     transport->SetBufferSize(SIP_PDU::MaxSize); // Maximum possible PDU size
   }
 
@@ -429,10 +430,10 @@ void SIPConnection::OnReleased()
       }
   }
 
-  // close media
-  for (PINDEX i = 0; i < mediaStreams.GetSize(); i++)
-    mediaStreams[i].Close();
+  // Close media
+  CloseMediaStreams();
 
+  // Remove all INVITEs
   invitations.RemoveAll();
 
   // Sent a BYE, wait for it to complete
@@ -512,12 +513,16 @@ BOOL SIPConnection::SetConnected()
   OpalTransportAddress contactAddress = transport->GetLocalAddress();
   WORD contactPort = endpoint.GetDefaultSignalPort();
   PIPSocket::Address localIP;
+  WORD localPort;
   if (!endpoint.GetListeners().IsEmpty())
     endpoint.GetListeners()[0].GetLocalAddress().GetIpAndPort(localIP, contactPort);
-  if (transport->GetLocalAddress().GetIpAddress(localIP)) {
+  if (transport->GetLocalAddress().GetIpAndPort(localIP, localPort)) {
     PIPSocket::Address remoteIP;
     if (transport->GetRemoteAddress().GetIpAddress(remoteIP)) {
+      PIPSocket::Address _localIP(localIP);
       endpoint.GetManager().TranslateIPAddress(localIP, remoteIP);
+      if (localIP != _localIP)
+	contactPort = localPort;
       contactAddress = OpalTransportAddress(localIP, contactPort, "udp");
     }
   }
@@ -588,7 +593,6 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
     if (rtpSession == NULL)
       return FALSE;
 
-    // If it is not a hold, update the RTP Session info
     if (!IsConnectionOnHold()) {
       
       // Set user data
@@ -1111,6 +1115,12 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 {
   BOOL isReinvite = FALSE;
   
+  // Ignore duplicate INVITEs
+  if (originalInvite && (originalInvite->GetMIME().GetCSeq() == request.GetMIME().GetCSeq())) {
+    PTRACE(2, "SIP\tIgnoring duplicate INVITE from " << request.GetURI());
+    return;
+  }
+  
   // Is Re-INVITE?
   if (phase == EstablishedPhase 
       && ((!IsOriginating() && originalInvite != NULL)
@@ -1119,11 +1129,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     isReinvite = TRUE;
   }
 
-  if (originalInvite && !isReinvite) {
-    PTRACE(2, "SIP\tIgnoring duplicate INVITE from " << request.GetURI());
-    return;
-  }
-
+  // originalInvite should contain the first received INVITE for
+  // this connection
   if (originalInvite)
     delete originalInvite;
 
@@ -1166,13 +1173,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     // the current codecs, or to put the call on hold
     if (sdpIn.GetDirection() == SDPSessionDescription::SendOnly) {
 
-      // Remotely put on hold
       remote_hold = TRUE;
-      
-      // Pause the media streams or not
       PauseMediaStreams(TRUE);
-      
-      // Signal the manager that there is a hold
       endpoint.OnHold(*this);
     }
     else {
@@ -1181,30 +1183,24 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
       // parameter, then we are not on hold anymore
       if (remote_hold) {
 	
-        // No hold
         remote_hold = FALSE;
-	
-        // Pause the media streams or not
         PauseMediaStreams(FALSE);
-	
-        // Signal the manager that there is a hold
         endpoint.OnHold(*this);
       }
     }
-
-    if (!OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut)) {
-      Release(EndedByCapabilityExchange);
-      return;
-    }
-
-    if (endpoint.GetManager().CanAutoStartTransmitVideo())
-      OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut);
-
+    
+    // If it is a RE-INVITE that doesn't correspond to a HOLD, then
+    // Close all media streams, they will be reopened.
+    if (!IsConnectionOnHold())
+      GetCall().RemoveMediaStreams();
+    
     // translate contact address to put it in the 200 OK response
     OpalTransportAddress contactAddress = transport->GetLocalAddress();
     WORD contactPort = endpoint.GetDefaultSignalPort();
     PIPSocket::Address localIP;
     WORD localPort;
+    if (!endpoint.GetListeners().IsEmpty())
+      endpoint.GetListeners()[0].GetLocalAddress().GetIpAndPort(localIP, contactPort);
     if (transport->GetLocalAddress().GetIpAndPort(localIP, localPort)) {
       PIPSocket::Address remoteIP;
       if (transport->GetRemoteAddress().GetIpAddress(remoteIP)) {
@@ -1216,6 +1212,14 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
       }
     }
     
+    if (!OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut)) {
+      Release(EndedByCapabilityExchange);
+      return;
+    }
+
+    if (endpoint.GetManager().CanAutoStartTransmitVideo())
+      OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut);
+    
     // send the 200 OK response
     SIPURL contact(endpoint.GetRegisteredPartyName(SIPURL(remotePartyAddress).GetHostName()).GetUserName(), contactAddress, contactPort);
     SIP_PDU response(*originalInvite, SIP_PDU::Successful_OK, (const char *) contact.AsQuotedString ());
@@ -1224,6 +1228,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
       sdpOut.SetDirection(SDPSessionDescription::RecvOnly);
 
     response.Write(*transport);    
+
     return;
   }
   
@@ -1297,8 +1302,13 @@ void SIPConnection::OnReceivedACK(SIP_PDU & /*response*/)
 {
   PTRACE(2, "SIP\tACK received: " << phase);
 
+  // If we receive an ACK in established phase, perhaps it
+  // is a re-INVITE
+  if (phase == EstablishedPhase)
+    StartMediaStreams();
+  
   // start all of the media threads for the connection
-  if (phase != ConnectedPhase)
+  if (phase != ConnectedPhase) 
     return;
   
   releaseMethod = ReleaseWithBYE;
@@ -1354,7 +1364,7 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & pdu)
 
 void SIPConnection::OnReceivedREFER(SIP_PDU & pdu)
 {
-  //SIPTransaction *notifyTransaction = NULL;
+  SIPTransaction *notifyTransaction = NULL;
   PString referto = pdu.GetMIME().GetReferTo();
   
   if (referto.IsEmpty()) {
@@ -1364,17 +1374,17 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & pdu)
   }    
 
   // Reject the Refer
-  SIP_PDU response(pdu, SIP_PDU::GlobalFailure_Decline);
-  response.Write(*transport);
+  //SIP_PDU response(pdu, SIP_PDU::GlobalFailure_Decline);
+  //response.Write(*transport);
 
-  //endpoint.SetupTransfer(GetToken(),  
-//			 PString (), 
-//			 referto,  
-//			 NULL);
+  endpoint.SetupTransfer(GetToken(),  
+			 PString (), 
+			 referto,  
+			 NULL);
   
   // Send a Final NOTIFY,
-  //notifyTransaction = 
-  //  new SIPReferNotify(*this, *transport, SIP_PDU::Successful_Accepted);
+  notifyTransaction = 
+    new SIPReferNotify(*this, *transport, SIP_PDU::Successful_Accepted);
 }
 
 
