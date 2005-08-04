@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2034  2005/07/14 08:56:44  csoutheren
+ * Revision 1.2035  2005/08/04 17:22:17  dsandras
+ * Added functions to close/remove the media streams of a call.
+ *
+ * Revision 2.33  2005/07/14 08:56:44  csoutheren
  * Fixed problem with sink streams not being created when media bypass being used
  *
  * Revision 2.32  2005/07/11 01:52:25  csoutheren
@@ -449,6 +452,20 @@ BOOL OpalCall::OpenSourceMediaStreams(const OpalConnection & connection,
   }
 
   return startedOne;
+}
+
+
+void OpalCall::CloseMediaStreams()
+{
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) 
+    conn->CloseMediaStreams();
+}
+
+
+void OpalCall::RemoveMediaStreams()
+{
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) 
+    conn->RemoveMediaStreams();
 }
 
 
