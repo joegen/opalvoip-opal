@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: frame.h,v $
+ *  Revision 1.2  2005/08/04 08:14:17  rjongbloed
+ *  Fixed Windows build under DevStudio 2003 of IAX2 code
+ *
  *  Revision 1.1  2005/07/30 07:01:32  csoutheren
  *  Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
  *  Thanks to Derek Smithies of Indranet Technologies Ltd. for
@@ -132,7 +135,7 @@ class Frame :  public PObject
   virtual void PrintOn(ostream & strm) const;
   
   /**Calculate the timestamp value, given the call start time*/
-  static PINDEX CalcTimeStamp(const PTime & callStartTime);
+  static DWORD CalcTimeStamp(const PTime & callStartTime);
 
   /**Write the timestamp value, in preparation for writing the
      header. When sending a packet, the timestamp is written at packet
@@ -147,7 +150,7 @@ class Frame :  public PObject
   
   
   /**Get the timestamp as used by this class*/
-  PINDEX  GetTimeStamp() { return timeStamp; }
+  DWORD  GetTimeStamp() { return timeStamp; }
   
   /** Report flag stating that this call must be active when this frame is transmitted*/
   virtual BOOL CallMustBeActive() { return TRUE; }     
@@ -212,10 +215,10 @@ class Frame :  public PObject
   BOOL          Read2Bytes(PINDEX & res);
   
   /** Read 2 bytes from the internal area, (Internal area is filled when reading the packet in)  Big Endian.*/
-  BOOL          Read2Bytes(unsigned int & res);
+  BOOL          Read2Bytes(WORD & res);
   
   /** Read 4 bytes from the internal area, (Internal area is filled when reading the packet in)  Big Endian.*/
-  BOOL          Read4Bytes(unsigned int & res);
+  BOOL          Read4Bytes(DWORD & res);
   
   /** Write 1 byte to the internal area, as part of writing the header info */
   void          Write1Byte(BYTE newVal);
@@ -257,7 +260,7 @@ class Frame :  public PObject
   PINDEX               currentWriteIndex;  
   
   /**unsigned 32 bit representaiton of the time of this day */
-  unsigned int       timeStamp;  
+  DWORD                timeStamp;  
   
   /** Internal variable that uniquely identifies this frame */
   int                frameIndex;
@@ -633,7 +636,7 @@ class FullFrameVoice : public FullFrame
   /**Get text description of the subclass contents, given the supplied
    argument.  The name returned is that recoginised by the OPAL
    library. */
-  static PString GetOpalNameOfCodec(unsigned short testValue);
+  static PString GetOpalNameOfCodec(PINDEX testValue);
   
   /**Get text description of the subclass contents, given the supplied argument*/
   static PString GetSubClassName(int testValue) 

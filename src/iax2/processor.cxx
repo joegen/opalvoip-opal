@@ -27,6 +27,9 @@
  *
  *
  * $Log: processor.cxx,v $
+ * Revision 1.2  2005/08/04 08:14:17  rjongbloed
+ * Fixed Windows build under DevStudio 2003 of IAX2 code
+ *
  * Revision 1.1  2005/07/30 07:01:33  csoutheren
  * Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
  * Thanks to Derek Smithies of Indranet Technologies Ltd. for
@@ -560,15 +563,15 @@ void IAX2Processor::SendSoundMessage(PBYTEArray *sound)
   PTRACE(3, "This frame is compresed bytes of " << audioCompressedBytes);
 
   PINDEX thisDuration = (PINDEX)((sound->GetSize() * audioFrameDuration) / audioCompressedBytes);
-  PINDEX thisTimeStamp = (PTime() - callStartTime).GetMilliSeconds();
+  long thisTimeStamp = (PTime() - callStartTime).GetInterval();
   PTRACE(3, "This frame is duration " << thisDuration << " ms   at time " << thisTimeStamp);
 
-  thisTimeStamp = (PINDEX)((thisTimeStamp + (thisDuration > 1))/thisDuration);
-  thisTimeStamp = thisTimeStamp * thisDuration;
-  PINDEX lastTimeStamp = thisTimeStamp - thisDuration;
+  thisTimeStamp = ((thisTimeStamp + (thisDuration > 1))/thisDuration) * thisDuration;
+  long lastTimeStamp = thisTimeStamp - thisDuration;
+
   BOOL sendFullFrame =  ((thisTimeStamp - lastSentAudioFrameTime) > 65536)
-    || ((thisTimeStamp & 0xffff) < (lastTimeStamp & 0xffff))
-    || audioFramesNotStarted;
+                        || ((thisTimeStamp & 0xffff) < (lastTimeStamp & 0xffff))
+                        || audioFramesNotStarted;
 
   if ((thisTimeStamp - lastSentAudioFrameTime) > 65536) {
     PTRACE(3, "RollOver last sent audio frame too large " );
@@ -694,7 +697,7 @@ void IAX2Processor::ProcessNetworkFrame(FullFrameDtmf * src)
 {
   PTRACE(3, "ProcessNetworkFrame(FullFrameDtmf * src)");
   SendAckFrame(src);
-  con->OnUserInputTone(src->GetSubClass(), 1);
+  con->OnUserInputTone((char)src->GetSubClass(), 1);
 
   delete src;
 }
@@ -1146,8 +1149,7 @@ void IAX2Processor::SetConnected()
   CleanPendingLists();
 }  
 
-BOOL IAX2Processor::SetAlerting( const PString & calleeName,
-				BOOL withMedia)
+BOOL IAX2Processor::SetAlerting(const PString & PTRACE_PARAM(calleeName), BOOL /*withMedia*/)
 {
   PTRACE(3, "Processor\tSetAlerting from " << calleeName);
   return TRUE;

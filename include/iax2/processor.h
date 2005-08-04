@@ -26,6 +26,9 @@
  *
  *
  *  $Log: processor.h,v $
+ *  Revision 1.2  2005/08/04 08:14:17  rjongbloed
+ *  Fixed Windows build under DevStudio 2003 of IAX2 code
+ *
  *  Revision 1.1  2005/07/30 07:01:32  csoutheren
  *  Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
  *  Thanks to Derek Smithies of Indranet Technologies Ltd. for
@@ -111,7 +114,7 @@ class WaitingForAck : public PObject
   
  private:
   /**Timestamp of the ack packet we are looking for */
-  PINDEX timeStamp;
+  DWORD timeStamp;
   
   /**OutSeqNo of the ack packet we are looking for */
   PINDEX seqNo;
