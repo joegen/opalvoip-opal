@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2082  2005/07/14 08:55:36  csoutheren
+ * Revision 1.2083  2005/08/05 19:21:06  csoutheren
+ * Ensure H323Connection calls OnAlerting even if no ALERT is received
+ *
+ * Revision 2.81  2005/07/14 08:55:36  csoutheren
  * Removed CreateExternalRTPAddress - it's not needed because you can override GetMediaAddress
  * to do the same thing
  * Fixed problems with logic associated with media bypass
@@ -1586,6 +1589,7 @@ H323Connection::H323Connection(OpalCall & call,
   h45011handler = new H45011Handler(*this, *h450dispatcher);
 
   remoteIsNAT = FALSE;
+  alertDone   = FALSE;
 }
 
 
@@ -2415,6 +2419,9 @@ BOOL H323Connection::OnReceivedAlerting(const H323SignalPDU & pdu)
     return FALSE;
   const H225_Alerting_UUIE & alert = pdu.m_h323_uu_pdu.m_h323_message_body;
 
+  if (alertDone) 
+	return TRUE;
+
   SetRemoteVersions(alert.m_protocolIdentifier);
   SetRemotePartyInfo(pdu);
   SetRemoteApplication(alert.m_destinationInfo);
@@ -2428,13 +2435,22 @@ BOOL H323Connection::OnReceivedAlerting(const H323SignalPDU & pdu)
     if (!CreateOutgoingControlChannel(alert.m_h245Address))
       return FALSE;
 
+  alertDone = TRUE;
   alertingTime = PTime();
+
   return OnAlerting(pdu, remotePartyName);
 }
 
 
 BOOL H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
 {
+  if (!alertDone) {
+    alertDone = TRUE;
+    alertingTime = PTime();
+		if (!OnAlerting(pdu, remotePartyName))
+			return FALSE;
+  }
+
   if (connectionState == ShuttingDownConnection)
     return FALSE;
   connectionState = HasExecutedSignalConnect;
