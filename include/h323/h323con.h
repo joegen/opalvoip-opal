@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2037  2005/07/11 01:52:15  csoutheren
+ * Revision 1.2038  2005/08/05 19:21:04  csoutheren
+ * Ensure H323Connection calls OnAlerting even if no ALERT is received
+ *
+ * Revision 2.36  2005/07/11 01:52:15  csoutheren
  * Extended AnsweringCall to work for SIP as well as H.323
  * Fixed problems with external RTP connection in H.323
  * Added call to OnClosedMediaStream
@@ -2235,6 +2238,7 @@ class H323Connection : public OpalConnection
     PBYTEArray         gkAccessTokenData;
     BOOL               addAccessTokenToSetup;
     SendUserInputModes sendUserInputMode;
+	BOOL               alertDone;
 
     H323Transport * signallingChannel;
     H323Transport * controlChannel;
