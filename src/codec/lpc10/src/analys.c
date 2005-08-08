@@ -1,7 +1,10 @@
 /*
 
 $Log: analys.c,v $
-Revision 1.2003  2005/08/08 03:28:41  dereksmithies
+Revision 1.2004  2005/08/08 03:42:47  dereksmithies
+And finally remove all "/ * within comment" warnings from GCC compilation.
+
+Revision 2.2  2005/08/08 03:28:41  dereksmithies
 Eradicate all "/ * within comments" messages from GCC compilations.
 
 Revision 2.1  2003/03/14 09:53:26  robertj
@@ -84,8 +87,12 @@ static integer c__1 = 1;
 
 /* 	ANALYS Version 55 */
 
-/* $Log: analys.c,v $
- * Revision 1.2003  2005/08/08 03:28:41  dereksmithies
+/*
+ * $Log: analys.c,v $
+ * Revision 1.2004  2005/08/08 03:42:47  dereksmithies
+ * And finally remove all "/ * within comment" warnings from GCC compilation.
+ *
+ * Revision 2.2  2005/08/08 03:28:41  dereksmithies
  * Eradicate all "/ * within comments" messages from GCC compilations.
  *
  * Revision 2.1  2003/03/14 09:53:26  robertj
@@ -257,8 +264,13 @@ static integer c__1 = 1;
 	    *, integer *, integer *, struct lpc10_encoder_state *);
     real phi[100]	/* was [10][10] */, psi[10];
 
-/* $Log: analys.c,v $
- * Revision 1.2003  2005/08/08 03:28:41  dereksmithies
+    
+/*
+ * $Log: analys.c,v $
+ * Revision 1.2004  2005/08/08 03:42:47  dereksmithies
+ * And finally remove all "/ * within comment" warnings from GCC compilation.
+ *
+ * Revision 2.2  2005/08/08 03:28:41  dereksmithies
  * Eradicate all "/ * within comments" messages from GCC compilations.
  *
  * Revision 2.1  2003/03/14 09:53:26  robertj
@@ -295,7 +307,10 @@ static integer c__1 = 1;
 /* Frame size, Prediction order, Pitch period */
 /*       Arguments to ANALYS 
  * $Log: analys.c,v $
- * Revision 1.2003  2005/08/08 03:28:41  dereksmithies
+ * Revision 1.2004  2005/08/08 03:42:47  dereksmithies
+ * And finally remove all "/ * within comment" warnings from GCC compilation.
+ *
+ * Revision 2.2  2005/08/08 03:28:41  dereksmithies
  * Eradicate all "/ * within comments" messages from GCC compilations.
  *
  * Revision 2.1  2003/03/14 09:53:26  robertj
