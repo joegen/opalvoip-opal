@@ -938,7 +938,7 @@ class H4503_ARGUMENT_callRerouting : public PASN_Sequence
     H4503_DiversionReason m_originalReroutingReason;
     H4501_EndpointAddress m_calledAddress;
     PASN_Integer m_diversionCounter;
-    H225_H225InformationElement m_h225InfoElement;
+    H4501_H225InformationElement m_h225InfoElement;
     H4501_EndpointAddress m_lastReroutingNr;
     H4503_SubscriptionOption m_subscriptionOption;
     H4501_PartySubaddress m_callingPartySubaddress;
