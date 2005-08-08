@@ -1,7 +1,10 @@
 /*
 
 $Log: hp100.c,v $
-Revision 1.2002  2003/03/14 09:53:27  robertj
+Revision 1.2003  2005/08/08 03:28:42  dereksmithies
+Eradicate all "/ * within comments" messages from GCC compilations.
+
+Revision 2.1  2003/03/14 09:53:27  robertj
 Updated to openH323 v1.11.7
 
 Revision 1.1  2000/06/05 04:45:12  robertj
@@ -38,13 +41,17 @@ extern int inithp100_(void);
 
 /*      HP100 Version 55 */
 
-/* $Log: hp100.c,v $
- * Revision 1.2002  2003/03/14 09:53:27  robertj
+/*
+ * $Log: hp100.c,v $
+ * Revision 1.2003  2005/08/08 03:28:42  dereksmithies
+ * Eradicate all "/ * within comments" messages from GCC compilations.
+ *
+ * Revision 2.1  2003/03/14 09:53:27  robertj
  * Updated to openH323 v1.11.7
  *
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:28:05  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
  * code, and put them in struct lpc10_encoder_state that is passed as an

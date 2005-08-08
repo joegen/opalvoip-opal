@@ -1,7 +1,10 @@
 /*
 
 $Log: lpcini.c,v $
-Revision 1.2002  2003/03/14 09:53:27  robertj
+Revision 1.2003  2005/08/08 03:28:42  dereksmithies
+Eradicate all "/ * within comments" messages from GCC compilations.
+
+Revision 2.1  2003/03/14 09:53:27  robertj
 Updated to openH323 v1.11.7
 
 Revision 1.3  2002/10/10 05:29:04  robertj
@@ -57,21 +60,24 @@ struct {
 
 #define contrl_1 contrl_
 
-/* ***************************************************************** */
+/* ***************************************************************** 
 
-/* $Log: lpcini.c,v $
- * Revision 1.2002  2003/03/14 09:53:27  robertj
+ * $Log: lpcini.c,v $
+ * Revision 1.2003  2005/08/08 03:28:42  dereksmithies
+ * Eradicate all "/ * within comments" messages from GCC compilations.
+ *
+ * Revision 2.1  2003/03/14 09:53:27  robertj
  * Updated to openH323 v1.11.7
  *
-/* Revision 1.3  2002/10/10 05:29:04  robertj
-/* Removed non-ansi-C comments to maximise portability, thanks Martijn Roest
-/*
-/* Revision 1.2  2001/02/24 14:00:10  rogerh
-/* Select the correct header file for malloc (stdlib.h or malloc.h)
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.3  2002/10/10 05:29:04  robertj
+ * Removed non-ansi-C comments to maximise portability, thanks Martijn Roest
+ *
+ * Revision 1.2  2001/02/24 14:00:10  rogerh
+ * Select the correct header file for malloc (stdlib.h or malloc.h)
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:35:41  jaf
  * Added functions for allocating and initializing lpc10_encoder_state
  * and lpc10_decoder_state structures.
@@ -90,20 +96,24 @@ struct {
 
 /* Subroutine */ int lpcini_(void)
 {
-
-/* $Log: lpcini.c,v $
- * Revision 1.2002  2003/03/14 09:53:27  robertj
+  
+/*
+ * $Log: lpcini.c,v $
+ * Revision 1.2003  2005/08/08 03:28:42  dereksmithies
+ * Eradicate all "/ * within comments" messages from GCC compilations.
+ *
+ * Revision 2.1  2003/03/14 09:53:27  robertj
  * Updated to openH323 v1.11.7
  *
-/* Revision 1.3  2002/10/10 05:29:04  robertj
-/* Removed non-ansi-C comments to maximise portability, thanks Martijn Roest
-/*
-/* Revision 1.2  2001/02/24 14:00:10  rogerh
-/* Select the correct header file for malloc (stdlib.h or malloc.h)
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.3  2002/10/10 05:29:04  robertj
+ * Removed non-ansi-C comments to maximise portability, thanks Martijn Roest
+ *
+ * Revision 1.2  2001/02/24 14:00:10  rogerh
+ * Select the correct header file for malloc (stdlib.h or malloc.h)
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:35:41  jaf
  * Added functions for allocating and initializing lpc10_encoder_state
  * and lpc10_decoder_state structures.
@@ -121,21 +131,24 @@ struct {
 /* Revision 1.1  1996/02/07  14:43:51  jaf */
 /* Initial revision */
 
-/*   LPC Configuration parameters: */
-/* Frame size, Prediction order, Pitch period */
-/* $Log: lpcini.c,v $
- * Revision 1.2002  2003/03/14 09:53:27  robertj
- * Updated to openH323 v1.11.7
+/*   LPC Configuration parameters: 
+ *  Frame size, Prediction order, Pitch period 
+ * $Log: lpcini.c,v $
+ * Revision 1.2003  2005/08/08 03:28:42  dereksmithies
+ * Eradicate all "/ * within comments" messages from GCC compilations.
  *
-/* Revision 1.3  2002/10/10 05:29:04  robertj
-/* Removed non-ansi-C comments to maximise portability, thanks Martijn Roest
-/*
-/* Revision 1.2  2001/02/24 14:00:10  rogerh
-/* Select the correct header file for malloc (stdlib.h or malloc.h)
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ *  Revision 2.1  2003/03/14 09:53:27  robertj
+ *  Updated to openH323 v1.11.7
+ *
+ *  Revision 1.3  2002/10/10 05:29:04  robertj
+ *  Removed non-ansi-C comments to maximise portability, thanks Martijn Roest
+ * 
+ *  Revision 1.2  2001/02/24 14:00:10  rogerh
+ * Select the correct header file for malloc (stdlib.h or malloc.h)
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:35:41  jaf
  * Added functions for allocating and initializing lpc10_encoder_state
  * and lpc10_decoder_state structures.
@@ -278,7 +291,7 @@ void init_lpc10_encoder_state(struct lpc10_encoder_state *st)
 	st->ivbuf[i] = 0.0f;
     }
     st->bias = 0.0f;
-    /* integer osbuf[10];  /* no initial value necessary */
+    /* integer osbuf[10];   no initial value necessary */
     st->osptr = 1;
     for (i = 0; i < 3; i++) {
 	st->obound[i] = 0;
@@ -302,14 +315,14 @@ void init_lpc10_encoder_state(struct lpc10_encoder_state *st)
     /* State used by function onset */
     st->n = 0.0f;
     st->d__ = 1.0f;
-    /* real fpc;   /* no initial value necessary */
+    /* real fpc;    no initial value necessary */
     for (i = 0; i < 16; i++) {
 	st->l2buf[i] = 0.0f;
     }
     st->l2sum1 = 0.0f;
     st->l2ptr1 = 1;
     st->l2ptr2 = 9;
-    /* integer lasti;    /* no initial value necessary */
+    /* integer lasti;     no initial value necessary */
     st->hyst = FALSE_;
 
     /* State used by function voicin */
@@ -393,11 +406,11 @@ void init_lpc10_decoder_state(struct lpc10_decoder_state *st)
     st->buflen = 180;
 
     /* State used by function pitsyn */
-    /* ivoico;   /* no initial value necessary as long as first_pitsyn is initially TRUE_ */
-    /* ipito;   /* no initial value necessary as long as first_pitsyn is initially TRUE_ */
+    /* ivoico;    no initial value necessary as long as first_pitsyn is initially TRUE_ */
+    /* ipito;    no initial value necessary as long as first_pitsyn is initially TRUE_ */
     st->rmso = 1.0f;
-    /* rco[10];   /* no initial value necessary as long as first_pitsyn is initially TRUE_ */
-    /* integer jsamp;   /* no initial value necessary as long as first_pitsyn is initially TRUE_ */
+    /* rco[10];    no initial value necessary as long as first_pitsyn is initially TRUE_ */
+    /* integer jsamp;    no initial value necessary as long as first_pitsyn is initially TRUE_ */
     st->first_pitsyn = TRUE_;
 
     /* State used by function bsynz */
