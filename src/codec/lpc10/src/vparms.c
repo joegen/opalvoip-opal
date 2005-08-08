@@ -1,7 +1,10 @@
 /*
 
 $Log: vparms.c,v $
-Revision 1.2002  2003/03/14 09:53:27  robertj
+Revision 1.2003  2005/08/08 03:28:43  dereksmithies
+Eradicate all "/ * within comments" messages from GCC compilations.
+
+Revision 2.1  2003/03/14 09:53:27  robertj
 Updated to openH323 v1.11.7
 
 Revision 1.2  2002/02/15 03:57:55  yurik
@@ -33,18 +36,21 @@ static real c_b2 = 1.f;
 
 /* ********************************************************************* */
 
-/* 	VPARMS Version 50 */
+/* 	VPARMS Version 50 
 
-/* $Log: vparms.c,v $
- * Revision 1.2002  2003/03/14 09:53:27  robertj
+ * $Log: vparms.c,v $
+ * Revision 1.2003  2005/08/08 03:28:43  dereksmithies
+ * Eradicate all "/ * within comments" messages from GCC compilations.
+ *
+ * Revision 2.1  2003/03/14 09:53:27  robertj
  * Updated to openH323 v1.11.7
  *
-/* Revision 1.2  2002/02/15 03:57:55  yurik
-/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.2  2002/02/15 03:57:55  yurik
+ * Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.1  1996/08/19  22:30:04  jaf
  * Initial revision
  * */
@@ -82,13 +88,11 @@ static real c_b2 = 1.f;
 /*           Indices 1 through 2 read. */
 /*  INBUF  - Input speech buffer */
 /*           Indices START-1 through STOP read, */
-/*          where START and STOP are defined in the code (only written once).
-*/
+/*          where START and STOP are defined in the code (only written once).*/
 /*           Note that STOP can be as large as VWIN(2)+1 ! */
 /*  LPBUF  - Low pass filtered speech */
 /*           Indices START-MINTAU through STOP+MINTAU read, */
-/*          where START and STOP are defined in the code (only written once).
-*/
+/*          where START and STOP are defined in the code (only written once).*/
 /*  BUFLIM - Array bounds for INBUF and LPBUF */
 /*           Indices 1 through 4 read. */
 /*  HALF   - Half frame (1 or 2) */
