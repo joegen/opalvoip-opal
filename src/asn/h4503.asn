@@ -45,6 +45,209 @@ BEGIN
     cfnrDivertedLegFailed(23)
   }
 
+
+  -- sent from the activating h.323-endpoint to the served h.323-endpoint
+  ARGUMENT-activateDiversionQ ::= SEQUENCE
+  {
+	procedure	    Procedure,
+	basicService        BasicService,
+	divertedToAddress   EndpointAddress,
+	servedUserNr        EndpointAddress,
+	activatingUserNr    EndpointAddress,
+	extension CHOICE 
+	{
+		extensionSeq    ExtensionSeq,
+		nonStandardData NonStandardParameter
+	} OPTIONAL,    
+	...
+  }
+
+
+  RESULT-activateDiversionQ ::= CHOICE 
+  {
+	extensionSeq	ExtensionSeq,
+	nonStandardData	NonStandardParameter
+  }
+
+
+  -- sent from the deactivating h.323-endpoint to the served h.323-endpoint
+  ARGUMENT-deactivateDiversionQ ::= SEQUENCE
+  {
+	procedure		Procedure,
+	basicService		BasicService,
+	servedUserNr		EndpointAddress,
+	deactivatingUserNr	EndpointAddress,
+	extension		CHOICE 
+	{
+		extensionSeq	ExtensionSeq,
+		nonStandardData NonStandardParameter
+	} OPTIONAL,
+	...
+  }
+ 
+  RESULT-deactivateDiversionQ ::= CHOICE 
+  {
+	extensionSeq	ExtensionSeq,
+	nonStandardData	NonStandardParameter
+  }
+
+
+  -- sent from the interrogating h.323-endpoint to the served h.323-endpoint
+  ARGUMENT-interrogateDiversionQ ::= SEQUENCE
+  {
+	procedure		Procedure,
+	basicService		BasicService DEFAULT allServices,
+	servedUserNr		EndpointAddress,
+	interrogatingUserNr	EndpointAddress,
+	extension		CHOICE 
+	{
+		extensionSeq	ExtensionSeq,
+		nonStandardData	NonStandardParameter
+	} OPTIONAL,
+	...
+  }
+
+
+  -- sent from the served h.323-endpoint to the diverted-to h.323-endpoint
+  ARGUMENT-checkRestriction ::= SEQUENCE
+  {
+	servedUserNr		EndpointAddress,
+	basicService		BasicService,
+	divertedToNr		EndpointAddress,
+	extension		CHOICE 
+	{
+		extensionSeq	ExtensionSeq,
+		nonStandardData NonStandardParameter
+	} OPTIONAL,
+	...
+  }
+
+  RESULT-checkRestriction ::= CHOICE 
+  {
+	extensionSeq	ExtensionSeq,
+	nonStandardData	NonStandardParameter
+  }
+  
+  
+  -- sent from the served h.323-endpoint to the rerouting h.323-endpoint
+  ARGUMENT-callRerouting ::= SEQUENCE
+  {
+	reroutingReason			DiversionReason,
+	originalReroutingReason		DiversionReason OPTIONAL,
+	calledAddress			EndpointAddress,
+	diversionCounter		INTEGER (1..15),
+	h225InfoElement			H225InformationElement,
+	-- The H.225 information elements Bearer capability, 
+	-- High layer compatibility, Low layer compatibility and 
+	-- Progress Indicator information element may  be embedded 
+	-- in the h225InfoElement in accordance with H.450.1. 
+	lastReroutingNr			EndpointAddress,
+	subscriptionOption		SubscriptionOption,
+	callingPartySubaddress		PartySubaddress OPTIONAL,
+	callingNumber			EndpointAddress,
+	callingInfo			BMPString (SIZE(1..128)) OPTIONAL,
+	originalCalledNr		EndpointAddress OPTIONAL,
+	redirectingInfo			BMPString (SIZE(1..128)) OPTIONAL,
+	originalCalledInfo		BMPString (SIZE(1..128)) OPTIONAL,
+	extension			CHOICE 
+	{
+		extensionSeq		ExtensionSeq,
+		nonStandardData 	NonStandardParameter
+	} OPTIONAL,
+	...
+  }
+  
+  RESULT-callRerouting ::= CHOICE
+  {
+	extensionSeq	ExtensionSeq,
+	nonStandardData	NonStandardParameter
+  }
+
+		
+  -- sent from the re-routing h.323-endpoint to the originating h.323-endpoint 
+  -- if the re-routing endpoint equals the originating endpoint, this operation 
+  -- is not applicable; may also be sent from the rerouting endpoint to other 
+  -- members of a conference, if subscription option allows. 
+  ARGUMENT-divertingLegInformation1 ::= SEQUENCE
+  {
+	diversionReason		DiversionReason,
+	subscriptionOption	SubscriptionOption,
+	nominatedNr		EndpointAddress,
+	nominatedInfo		BMPString (SIZE(1..128)) OPTIONAL, 
+	redirectingNr		EndpointAddress OPTIONAL,
+	redirectingInfo		BMPString (SIZE(1..128)) OPTIONAL,
+	extension		CHOICE 
+	{
+		extensionSeq	ExtensionSeq,
+		nonStandardData NonStandardParameter
+	} OPTIONAL,
+	...
+  }
+
+
+  --sent from the re-routing h.323-endpoint to the diverted-to h.323-endpoint 
+  ARGUMENT-divertingLegInformation2 ::= SEQUENCE
+  {
+	diversionCounter	INTEGER (1..15),
+	diversionReason		DiversionReason,
+	originalDiversionReason	DiversionReason OPTIONAL,
+	divertingNr		EndpointAddress OPTIONAL,
+	originalCalledNr	EndpointAddress OPTIONAL,
+	redirectingInfo		BMPString (SIZE(1..128)) OPTIONAL,
+	originalCalledInfo	BMPString (SIZE(1..128)) OPTIONAL,
+	extension		CHOICE 
+	{
+		extensionSeq	ExtensionSeq,
+		nonStandardData NonStandardParameter
+	} OPTIONAL,
+	...
+  }
+
+
+  --sent from the diverted-to h.323-endpoint to the originating h.323-endpoint
+  ARGUMENT-divertingLegInformation3 ::= SEQUENCE
+  {
+	presentationAllowedIndicator	PresentationAllowedIndicator,
+	redirectionNr			EndpointAddress OPTIONAL,
+	redirectionInfo			BMPString (SIZE(1..128)) OPTIONAL,
+	extension			CHOICE 
+	{
+		extensionSeq		ExtensionSeq,
+		nonStandardData 	NonStandardParameter
+	} OPTIONAL,
+	...
+  }
+
+
+  -- If call diversion in not performed by the forwarding terminal but by a
+  --  gatekeeper, the gatekeeper may send divertingLegInformation4 apdu to the 
+  -- forwarding terminal. 
+  ARGUMENT-divertingLegInformation4 ::= SEQUENCE
+  {
+  	diversionReason		DiversionReason,
+	subscriptionOption	SubscriptionOption,
+	callingNr		EndpointAddress,
+	callingInfo		BMPString (SIZE(1..128)) OPTIONAL,
+	nominatedNr		EndpointAddress,
+	nominatedInfo		BMPString (SIZE(1..128)) OPTIONAL,
+	extension		CHOICE 
+	{
+		extensionSeq	ExtensionSeq,
+		nonStandardData NonStandardParameter
+	} OPTIONAL,
+	...
+  }
+
+
+  -- sent from the rerouting h.323-terminal to the served  h.323-endpoint
+  -- This indicates that the diverted-to leg has been cleared during SS-CFNR execution.
+  ARGUMENT-cfnrDivertedLegFailed ::= CHOICE 
+  {
+	extensionSeq	ExtensionSeq,
+	nonStandardData NonStandardParameter
+  }
+  
+
   -- Definitions of general used data types:
 
   DiversionReason ::= ENUMERATED
