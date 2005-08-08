@@ -1,7 +1,10 @@
 /*
 
 $Log: analys.c,v $
-Revision 1.2002  2003/03/14 09:53:26  robertj
+Revision 1.2003  2005/08/08 03:28:41  dereksmithies
+Eradicate all "/ * within comments" messages from GCC compilations.
+
+Revision 2.1  2003/03/14 09:53:26  robertj
 Updated to openH323 v1.11.7
 
 Revision 1.2  2002/02/15 03:57:55  yurik
@@ -82,15 +85,18 @@ static integer c__1 = 1;
 /* 	ANALYS Version 55 */
 
 /* $Log: analys.c,v $
- * Revision 1.2002  2003/03/14 09:53:26  robertj
+ * Revision 1.2003  2005/08/08 03:28:41  dereksmithies
+ * Eradicate all "/ * within comments" messages from GCC compilations.
+ *
+ * Revision 2.1  2003/03/14 09:53:26  robertj
  * Updated to openH323 v1.11.7
  *
-/* Revision 1.2  2002/02/15 03:57:55  yurik
-/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.2  2002/02/15 03:57:55  yurik
+ * Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+ * 
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:16:01  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
  * code, and put them in struct lpc10_encoder_state that is passed as an
@@ -101,12 +107,12 @@ static integer c__1 = 1;
  *
  * Revision 1.1  1996/08/19  22:29:08  jaf
  * Initial revision
- * */
-/* Revision 1.9  1996/05/23  19:41:07  jaf */
-/* Commented out some unnecessary lines that were reading uninitialized */
-/* values. */
+ * 
+ * Revision 1.9  1996/05/23  19:41:07  jaf 
+ * Commented out some unnecessary lines that were reading uninitialized 
+ * values. */
 
-/* Revision 1.8  1996/03/27  23:57:55  jaf */
+ /* Revision 1.8  1996/03/27  23:57:55  jaf                             */
 /* Added some comments about which indices of the local buffers INBUF, */
 /* LPBUF, etc., get read or modified by some of the subroutine calls.  I */
 /* just did this while trying to figure out the discrepancy between the */
@@ -252,15 +258,18 @@ static integer c__1 = 1;
     real phi[100]	/* was [10][10] */, psi[10];
 
 /* $Log: analys.c,v $
- * Revision 1.2002  2003/03/14 09:53:26  robertj
+ * Revision 1.2003  2005/08/08 03:28:41  dereksmithies
+ * Eradicate all "/ * within comments" messages from GCC compilations.
+ *
+ * Revision 2.1  2003/03/14 09:53:26  robertj
  * Updated to openH323 v1.11.7
  *
-/* Revision 1.2  2002/02/15 03:57:55  yurik
-/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.2  2002/02/15 03:57:55  yurik
+ * Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:16:01  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
  * code, and put them in struct lpc10_encoder_state that is passed as an
@@ -284,17 +293,20 @@ static integer c__1 = 1;
 
 /*   LPC Configuration parameters: */
 /* Frame size, Prediction order, Pitch period */
-/*       Arguments to ANALYS */
-/* $Log: analys.c,v $
- * Revision 1.2002  2003/03/14 09:53:26  robertj
+/*       Arguments to ANALYS 
+ * $Log: analys.c,v $
+ * Revision 1.2003  2005/08/08 03:28:41  dereksmithies
+ * Eradicate all "/ * within comments" messages from GCC compilations.
+ *
+ * Revision 2.1  2003/03/14 09:53:26  robertj
  * Updated to openH323 v1.11.7
  *
-/* Revision 1.2  2002/02/15 03:57:55  yurik
-/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.2  2002/02/15 03:57:55  yurik
+ * Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:16:01  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
  * code, and put them in struct lpc10_encoder_state that is passed as an
