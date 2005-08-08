@@ -1,7 +1,10 @@
 /*
 
 $Log: encode_.c,v $
-Revision 1.2002  2003/03/14 09:53:27  robertj
+Revision 1.2003  2005/08/08 03:28:42  dereksmithies
+Eradicate all "/ * within comments" messages from GCC compilations.
+
+Revision 2.1  2003/03/14 09:53:27  robertj
 Updated to openH323 v1.11.7
 
 Revision 1.2  2002/02/15 03:57:55  yurik
@@ -45,16 +48,20 @@ static integer c__2 = 2;
 
 /* 	ENCODE Version 54 */
 
-/* $Log: encode_.c,v $
- * Revision 1.2002  2003/03/14 09:53:27  robertj
+/*
+ * $Log: encode_.c,v $
+ * Revision 1.2003  2005/08/08 03:28:42  dereksmithies
+ * Eradicate all "/ * within comments" messages from GCC compilations.
+ *
+ * Revision 2.1  2003/03/14 09:53:27  robertj
  * Updated to openH323 v1.11.7
  *
-/* Revision 1.2  2002/02/15 03:57:55  yurik
-/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.2  2002/02/15 03:57:55  yurik
+ * Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.1  1996/08/19  22:32:21  jaf
  * Initial revision
  * */
@@ -133,16 +140,20 @@ static integer c__2 = 2;
     /* Local variables */
     integer idel, nbit, i__, j, i2, i3, mrk;
 
-/* $Log: encode_.c,v $
- * Revision 1.2002  2003/03/14 09:53:27  robertj
+/*
+ * $Log: encode_.c,v $
+ * Revision 1.2003  2005/08/08 03:28:42  dereksmithies
+ * Eradicate all "/ * within comments" messages from GCC compilations.
+ *
+ * Revision 2.1  2003/03/14 09:53:27  robertj
  * Updated to openH323 v1.11.7
  *
-/* Revision 1.2  2002/02/15 03:57:55  yurik
-/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.2  2002/02/15 03:57:55  yurik
+ * Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.1  1996/08/19  22:32:21  jaf
  * Initial revision
  * */
@@ -158,17 +169,20 @@ static integer c__2 = 2;
 
 /*   LPC Configuration parameters: */
 /* Frame size, Prediction order, Pitch period */
-/*       Arguments */
-/* $Log: encode_.c,v $
- * Revision 1.2002  2003/03/14 09:53:27  robertj
+/*       Arguments 
+ * $Log: encode_.c,v $
+ * Revision 1.2003  2005/08/08 03:28:42  dereksmithies
+ * Eradicate all "/ * within comments" messages from GCC compilations.
+ *
+ * Revision 2.1  2003/03/14 09:53:27  robertj
  * Updated to openH323 v1.11.7
  *
-/* Revision 1.2  2002/02/15 03:57:55  yurik
-/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.2  2002/02/15 03:57:55  yurik
+ * Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.1  1996/08/19  22:32:21  jaf
  * Initial revision
  * */

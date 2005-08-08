@@ -1,7 +1,10 @@
 /*
 
 $Log: synths.c,v $
-Revision 1.2002  2003/03/14 09:53:27  robertj
+Revision 1.2003  2005/08/08 03:28:42  dereksmithies
+Eradicate all "/ * within comments" messages from GCC compilations.
+
+Revision 2.1  2003/03/14 09:53:27  robertj
 Updated to openH323 v1.11.7
 
 Revision 1.1  2000/06/05 04:45:12  robertj
@@ -55,15 +58,18 @@ static real c_b2 = .7f;
 
 /* ***************************************************************** */
 
-/* 	SYNTHS Version 54 */
+/* 	SYNTHS Version 54 
 
-/* $Log: synths.c,v $
- * Revision 1.2002  2003/03/14 09:53:27  robertj
+ * $Log: synths.c,v $
+ * Revision 1.2003  2005/08/08 03:28:42  dereksmithies
+ * Eradicate all "/ * within comments" messages from GCC compilations.
+ *
+ * Revision 2.1  2003/03/14 09:53:27  robertj
  * Updated to openH323 v1.11.7
  *
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:42:59  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
  * code, and put them in struct lpc10_decoder_state that is passed as an
@@ -178,12 +184,15 @@ static real c_b2 = .7f;
     real rci[160]	/* was [10][16] */;
 
 /* $Log: synths.c,v $
- * Revision 1.2002  2003/03/14 09:53:27  robertj
+ * Revision 1.2003  2005/08/08 03:28:42  dereksmithies
+ * Eradicate all "/ * within comments" messages from GCC compilations.
+ *
+ * Revision 2.1  2003/03/14 09:53:27  robertj
  * Updated to openH323 v1.11.7
  *
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:42:59  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
  * code, and put them in struct lpc10_decoder_state that is passed as an
@@ -207,14 +216,17 @@ static real c_b2 = .7f;
 
 /*   LPC Configuration parameters: */
 /* Frame size, Prediction order, Pitch period */
-/*       Arguments */
-/* $Log: synths.c,v $
- * Revision 1.2002  2003/03/14 09:53:27  robertj
+/*       Arguments 
+ * $Log: synths.c,v $
+ * Revision 1.2003  2005/08/08 03:28:42  dereksmithies
+ * Eradicate all "/ * within comments" messages from GCC compilations.
+ *
+ * Revision 2.1  2003/03/14 09:53:27  robertj
  * Updated to openH323 v1.11.7
  *
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:42:59  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
  * code, and put them in struct lpc10_decoder_state that is passed as an

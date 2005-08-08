@@ -1,7 +1,10 @@
 /*
 
 $Log: lpcdec.c,v $
-Revision 1.2002  2003/03/14 09:53:27  robertj
+Revision 1.2003  2005/08/08 03:28:42  dereksmithies
+Eradicate all "/ * within comments" messages from GCC compilations.
+
+Revision 2.1  2003/03/14 09:53:27  robertj
 Updated to openH323 v1.11.7
 
 Revision 1.1  2000/06/05 04:45:12  robertj
@@ -55,15 +58,18 @@ extern struct {
 
 static integer c__10 = 10;
 
-/* ***************************************************************** */
+/* ***************************************************************** 
 
-/* $Log: lpcdec.c,v $
- * Revision 1.2002  2003/03/14 09:53:27  robertj
+ * $Log: lpcdec.c,v $
+ * Revision 1.2003  2005/08/08 03:28:42  dereksmithies
+ * Eradicate all "/ * within comments" messages from GCC compilations.
+ *
+ * Revision 2.1  2003/03/14 09:53:27  robertj
  * Updated to openH323 v1.11.7
  *
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:30:11  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
  * code, and put them in struct lpc10_encoder_state that is passed as an
@@ -112,13 +118,17 @@ static integer c__10 = 10;
     integer irc[10], len;
     real rms;
 
-/* $Log: lpcdec.c,v $
- * Revision 1.2002  2003/03/14 09:53:27  robertj
+ /*
+ * $Log: lpcdec.c,v $
+ * Revision 1.2003  2005/08/08 03:28:42  dereksmithies
+ * Eradicate all "/ * within comments" messages from GCC compilations.
+ *
+ * Revision 2.1  2003/03/14 09:53:27  robertj
  * Updated to openH323 v1.11.7
  *
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:30:11  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
  * code, and put them in struct lpc10_encoder_state that is passed as an
@@ -145,14 +155,17 @@ static integer c__10 = 10;
 
 /*   LPC Configuration parameters: */
 /* Frame size, Prediction order, Pitch period */
-/*       Arguments */
-/* $Log: lpcdec.c,v $
- * Revision 1.2002  2003/03/14 09:53:27  robertj
+/*       Arguments 
+ * $Log: lpcdec.c,v $
+ * Revision 1.2003  2005/08/08 03:28:42  dereksmithies
+ * Eradicate all "/ * within comments" messages from GCC compilations.
+ *
+ * Revision 2.1  2003/03/14 09:53:27  robertj
  * Updated to openH323 v1.11.7
  *
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:30:11  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
  * code, and put them in struct lpc10_encoder_state that is passed as an
