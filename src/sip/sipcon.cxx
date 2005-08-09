@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2076  2005/08/04 17:15:52  dsandras
+ * Revision 1.2077  2005/08/09 09:16:24  rjongbloed
+ * Fixed compiler warning
+ *
+ * Revision 2.75  2005/08/04 17:15:52  dsandras
  * Fixed local port for sending requests on incoming calls.
  * Allow for codec changes on re-INVITE.
  * More blind transfer implementation.
@@ -351,7 +354,6 @@ SIPConnection::SIPConnection(OpalCall & call,
   if (inviteTransport == NULL)
     transport = NULL;
   else {
-    OpalManager & manager = endpoint.GetManager();
     transport = endpoint.CreateTransport(targetAddress.GetHostAddress());
     transport->SetBufferSize(SIP_PDU::MaxSize); // Maximum possible PDU size
   }
