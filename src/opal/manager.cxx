@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2049  2005/07/14 08:51:19  csoutheren
+ * Revision 1.2050  2005/08/09 09:20:20  rjongbloed
+ * Utilise new video driver/device name interface to select default video grabber/display.
+ *
+ * Revision 2.48  2005/07/14 08:51:19  csoutheren
  * Removed CreateExternalRTPAddress - it's not needed because you can override GetMediaAddress
  * to do the same thing
  * Fixed problems with logic associated with media bypass
@@ -271,8 +274,6 @@ OpalManager::OpalManager()
     translationAddress(0),       // Invalid address to disable
     activeCalls(*this)
 {
-  autoStartReceiveVideo = autoStartTransmitVideo = TRUE;
-
   rtpIpPorts.current = rtpIpPorts.base = 5000;
   rtpIpPorts.max = 5199;
 
@@ -294,12 +295,23 @@ OpalManager::OpalManager()
   minAudioJitterDelay = 50;  // milliseconds
   maxAudioJitterDelay = 250; // milliseconds
 
-  PStringList drivers = PVideoInputDevice::GetDriverNames();
-  if (drivers.GetSize() > 0) {
-    PStringList devices = PVideoInputDevice::GetDriversDeviceNames(drivers[0]);
-    if (devices.GetSize() > 0)
-      videoInputDevice.deviceName = devices[0];
+  PStringList devices = PVideoInputDevice::GetDriversDeviceNames("*"); // Get all devices on all drivers
+  if (devices.GetSize() > 0) {
+    videoInputDevice.deviceName = devices[0];
+    if (devices.GetSize() > 1 && (videoInputDevice.deviceName *= "fake"))
+      videoInputDevice.deviceName = devices[1];
   }
+  autoStartTransmitVideo = !(videoInputDevice.deviceName *= "fake");
+
+
+  devices = PVideoOutputDevice::GetDriversDeviceNames("*"); // Get all devices on all drivers
+  if (devices.GetSize() > 0) {
+    videoOutputDevice.deviceName = devices[0];
+    if (devices.GetSize() > 1 && (videoOutputDevice.deviceName *= "null"))
+      videoOutputDevice.deviceName = devices[1];
+  }
+  autoStartReceiveVideo = !(videoInputDevice.deviceName *= "null");
+
 
   lastCallTokenID = 1;
 
@@ -639,24 +651,23 @@ void OpalManager::OnClosedMediaStream(const OpalMediaStream & /*channel*/)
 void OpalManager::AddVideoMediaFormats(OpalMediaFormatList & mediaFormats,
                                        const OpalConnection * /*connection*/) const
 {
-  if (!videoInputDevice.deviceName) {
-    mediaFormats += OPAL_RGB24;
-    mediaFormats += OPAL_RGB32;
-    mediaFormats += OPAL_YUV420P;
-  }
+  if (videoInputDevice.deviceName.IsEmpty())
+      return;
+
+  mediaFormats += OPAL_YUV420P;
+  mediaFormats += OPAL_RGB32;
+  mediaFormats += OPAL_RGB24;
 }
 
 
 PVideoInputDevice * OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection*/)
 {
-  PStringList drivers = PVideoInputDevice::GetDriverNames();
-  for (PINDEX i = 0; i < drivers.GetSize(); i++) {
-    PVideoInputDevice * videoDevice = PVideoInputDevice::CreateDevice(drivers[i]);
-    if (videoDevice != NULL) {
-      if (videoDevice->OpenFull(videoInputDevice, FALSE))
-        return videoDevice;
-      delete videoDevice;
-    }
+  PVideoInputDevice * videoDevice = PVideoInputDevice::CreateDeviceByName(videoInputDevice.deviceName);
+  if (videoDevice != NULL) {
+    if (videoDevice->OpenFull(videoInputDevice, FALSE))
+      return videoDevice;
+
+    delete videoDevice;
   }
 
   return NULL;
@@ -665,14 +676,12 @@ PVideoInputDevice * OpalManager::CreateVideoInputDevice(const OpalConnection & /
 
 PVideoOutputDevice * OpalManager::CreateVideoOutputDevice(const OpalConnection & /*connection*/)
 {
-  PStringList drivers = PVideoOutputDevice::GetDriverNames();
-  for (PINDEX i = 0; i < drivers.GetSize(); i++) {
-    PVideoOutputDevice * videoDevice = PVideoOutputDevice::CreateDevice(drivers[i]);
-    if (videoDevice != NULL) {
-      if (videoDevice->OpenFull(videoOutputDevice, FALSE))
-        return videoDevice;
-      delete videoDevice;
-    }
+  PVideoOutputDevice * videoDevice = PVideoOutputDevice::CreateDeviceByName(videoOutputDevice.deviceName);
+  if (videoDevice != NULL) {
+    if (videoDevice->OpenFull(videoOutputDevice, FALSE))
+      return videoDevice;
+
+    delete videoDevice;
   }
 
   return NULL;
