@@ -22,6 +22,11 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.13  2005/08/10 11:07:14  csoutheren
+# Fixed bug #1255554
+# Fixed dynamic linking on MacOSX
+# Thanks to Hannes Friederich
+#
 # Revision 1.12  2005/07/30 07:39:26  csoutheren
 # Added support for compiling new IAX2 code
 #
@@ -595,7 +600,6 @@ $(LIBDIR)/$(OPAL_FILE) : $(TARGETLIB)
 
 ifeq ($(P_SHAREDLIB),1)
 
-  ENDLDLIBS := $(SYSLIBS) $(ENDLDLIBS)
   ifeq ($(OSTYPE),beos)
     # BeOS requires different options when building shared libraries
     # Also, when building a shared library x that references symbols in libraries y,
@@ -611,6 +615,8 @@ ifeq ($(P_SHAREDLIB),1)
       LDSOOPTS = -shared
     endif
   endif
+  
+  ENDLDLIBS := $(SYSLIBS) $(ENDLDLIBS)
 
   ifeq ($(OSTYPE),rtems)
     EXTLIBS = -lstdc++
