@@ -25,6 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.23  2005/08/10 08:07:44  rjongbloed
+ * Upgraded to support wxWidgets 2.6
+ * Also improved build so uses WXDIR environment variable
+ *
  * Revision 1.22  2005/07/09 07:05:16  rjongbloed
  * Changed so resources are included in compile and not separate file at run time.
  * General code clean ups.
@@ -90,9 +94,9 @@
 #ifndef _OpenPhone_MAIN_H
 #define _OpenPhone_MAIN_H
 
-#include <wx/wx.h>
-
 #include <ptlib.h>
+
+#include <wx/wx.h>
 
 #include <opal/manager.h>
 #include <opal/pcss.h>
@@ -373,8 +377,8 @@ class OptionsDialog : public wxDialog
     void MoveDownCodec(wxCommandEvent & event);
     void SelectedCodecToAdd(wxCommandEvent & event);
     void SelectedCodec(wxCommandEvent & event);
-    void SelectedCodecOption(wxCommandEvent & event);
-    void DeselectedCodecOption(wxCommandEvent & event);
+    void SelectedCodecOption(wxListEvent & event);
+    void DeselectedCodecOption(wxListEvent & event);
     void ChangedCodecOptionValue(wxCommandEvent & event);
 
     ////////////////////////////////////////
