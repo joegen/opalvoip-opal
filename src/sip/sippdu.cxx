@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2059  2005/08/10 19:34:34  dsandras
+ * Revision 1.2060  2005/08/10 21:09:34  dsandras
+ * Fixed previous commit.
+ *
+ * Revision 2.58  2005/08/10 19:34:34  dsandras
  * Added helper functions to get and set values of parameters in PDU fields.
  *
  * Revision 2.57  2005/08/04 17:11:20  dsandras
@@ -982,7 +985,7 @@ void SIPMIMEInfo::SetFieldParameter(const PString & param,
   }
   else { // There is no such parameter
 
-    s << field << ";" << param << "=" << value;
+    s << param << ";" << field << "=" << value;
     field = s;
   }
 }
