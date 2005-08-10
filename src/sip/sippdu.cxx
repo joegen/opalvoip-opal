@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2058  2005/08/04 17:11:20  dsandras
+ * Revision 1.2059  2005/08/10 19:34:34  dsandras
+ * Added helper functions to get and set values of parameters in PDU fields.
+ *
+ * Revision 2.57  2005/08/04 17:11:20  dsandras
  * Added support for rport in the Via field.
  *
  * Revision 2.56  2005/07/15 18:03:02  dsandras
@@ -954,6 +957,69 @@ PString SIPMIMEInfo::GetWWWAuthenticate() const
 void SIPMIMEInfo::SetWWWAuthenticate(const PString & v)
 {
   SetAt("WWW-Authenticate",  v);        // no compact form
+}
+
+
+void SIPMIMEInfo::SetFieldParameter(const PString & param,
+				    PString & field,
+				    const PString & value)
+{
+  PStringStream s;
+  
+  PCaselessString val = field;
+  
+  if (HasFieldParameter(param, field)) {
+
+    val = GetFieldParameter(param, field);
+    
+    if (!val.IsEmpty()) // The parameter already has a value, replace it.
+      field.Replace(val, value);
+    else { // The parameter has no value
+     
+      s << param << "=" << value;
+      field.Replace(param, s);
+    }
+  }
+  else { // There is no such parameter
+
+    s << field << ";" << param << "=" << value;
+    field = s;
+  }
+}
+
+
+PString SIPMIMEInfo::GetFieldParameter(const PString & param,
+				       const PString & field)
+{
+  PINDEX j = 0;
+  
+  PCaselessString val = field;
+  if ((j = val.FindLast (param)) != P_MAX_INDEX) {
+
+    val = val.Mid(j+param.GetLength());
+    if ((j = val.Find ('=')) != P_MAX_INDEX) {
+      val = val.Mid(j+1);
+
+      if ((j = val.Find (';')) != P_MAX_INDEX)
+	val = val.Left(j);
+
+      if ((j = val.Find (' ')) != P_MAX_INDEX)
+	val = val.Left(j);
+    }
+  }
+  else
+    val = "";
+	
+  return val;
+}
+
+
+BOOL SIPMIMEInfo::HasFieldParameter(const PString & param,
+				    const PString & field)
+{
+  PCaselessString val = field;
+  
+  return (val.Find(param) != P_MAX_INDEX);
 }
 
 

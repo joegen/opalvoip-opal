@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2028  2005/06/04 12:44:36  dsandras
+ * Revision 1.2029  2005/08/10 19:34:34  dsandras
+ * Added helper functions to get and set values of parameters in PDU fields.
+ *
+ * Revision 2.27  2005/06/04 12:44:36  dsandras
  * Applied patch from Ted Szoczei to fix leaks and problems on cancelling a call and to improve the Allow PDU field handling.
  *
  * Revision 2.26  2005/05/06 07:37:06  csoutheren
@@ -358,6 +361,25 @@ class SIPMIMEInfo : public PMIMEInfo
 
     PString GetWWWAuthenticate() const;
     void SetWWWAuthenticate(const PString & v);
+
+
+    /** return the value of a header field parameter, empty if none
+     */
+    PString GetFieldParameter(const PString &,
+			      const PString &);
+    
+    /** set the value for a header field parameter, replace the
+     *  current value, or add the parameter and its
+     *  value if not already present.
+     */
+    void SetFieldParameter(const PString &,
+			   PString &,
+			   const PString &);
+    
+    /** return TRUE if the header field parameter is present
+     */
+    BOOL HasFieldParameter(const PString &,
+			   const PString &);
 
   protected:
     	/** return list of route values from internal comma-delimited list
