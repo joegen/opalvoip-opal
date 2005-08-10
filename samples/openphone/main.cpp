@@ -25,6 +25,10 @@
  * Contributor(s): 
  *
  * $Log: main.cpp,v $
+ * Revision 1.30  2005/08/10 08:07:44  rjongbloed
+ * Upgraded to support wxWidgets 2.6
+ * Also improved build so uses WXDIR environment variable
+ *
  * Revision 1.29  2005/07/09 07:05:16  rjongbloed
  * Changed so resources are included in compile and not separate file at run time.
  * General code clean ups.
@@ -108,11 +112,9 @@
 #include <wx/config.h>
 #include <wx/splitter.h>
 #include <wx/listctrl.h>
-#include <wx/grid.h>
 #include <wx/image.h>
 #include <wx/valgen.h>
 #include <wx/filesys.h>
-#include <wx/fs_zip.h>
 
 #undef LoadMenu // Bizarre but necessary before the xml code
 #include <wx/xrc/xmlres.h>
@@ -356,7 +358,6 @@ MyManager::~MyManager()
 bool MyManager::Initialise()
 {
   wxImage::AddHandler(new wxGIFHandler);
-  wxFileSystem::AddHandler(new wxZipFSHandler);
   wxXmlResource::Get()->InitAllHandlers();
   InitXmlResource();
 
@@ -780,7 +781,7 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
 }
 
 
-void MyManager::OnClose(wxCloseEvent& event)
+void MyManager::OnClose(wxCloseEvent& /*event*/)
 {
   wxConfigBase * config = wxConfig::Get();
   config->SetPath(AppearanceGroup);
@@ -1302,7 +1303,7 @@ void MyManager::ApplyMediaInfo()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void MyManager::OnOptions(wxCommandEvent& event)
+void MyManager::OnOptions(wxCommandEvent& /*event*/)
 {
   OptionsDialog dlg(this);
   dlg.ShowModal();
@@ -1804,12 +1805,12 @@ bool OptionsDialog::TransferDataFromWindow()
 ////////////////////////////////////////
 // General fields
 
-void OptionsDialog::BrowseSoundFile(wxCommandEvent & event)
+void OptionsDialog::BrowseSoundFile(wxCommandEvent & /*event*/)
 {
 }
 
 
-void OptionsDialog::PlaySoundFile(wxCommandEvent & event)
+void OptionsDialog::PlaySoundFile(wxCommandEvent & /*event*/)
 {
 }
 
@@ -1817,22 +1818,22 @@ void OptionsDialog::PlaySoundFile(wxCommandEvent & event)
 ////////////////////////////////////////
 // Networking fields
 
-void OptionsDialog::BandwidthClass(wxCommandEvent & event)
+void OptionsDialog::BandwidthClass(wxCommandEvent & /*event*/)
 {
 }
 
 
-void OptionsDialog::SelectedLocalInterface(wxCommandEvent & event)
+void OptionsDialog::SelectedLocalInterface(wxCommandEvent & /*event*/)
 {
 }
 
 
-void OptionsDialog::AddInterface(wxCommandEvent & event)
+void OptionsDialog::AddInterface(wxCommandEvent & /*event*/)
 {
 }
 
 
-void OptionsDialog::RemoveInterface(wxCommandEvent & event)
+void OptionsDialog::RemoveInterface(wxCommandEvent & /*event*/)
 {
 }
 
@@ -1840,7 +1841,7 @@ void OptionsDialog::RemoveInterface(wxCommandEvent & event)
 ////////////////////////////////////////
 // Audio fields
 
-void OptionsDialog::SelectedLID(wxCommandEvent & event)
+void OptionsDialog::SelectedLID(wxCommandEvent & /*event*/)
 {
   bool enabled = m_selectedLID->GetSelection() > 0;
   m_selectedAEC->Enable(enabled);
@@ -1851,7 +1852,7 @@ void OptionsDialog::SelectedLID(wxCommandEvent & event)
 ////////////////////////////////////////
 // Codec fields
 
-void OptionsDialog::AddCodec(wxCommandEvent & event)
+void OptionsDialog::AddCodec(wxCommandEvent & /*event*/)
 {
   int insertionPoint = -1;
   wxArrayInt destinationSelections;
@@ -1880,7 +1881,7 @@ void OptionsDialog::AddCodec(wxCommandEvent & event)
 }
 
 
-void OptionsDialog::RemoveCodec(wxCommandEvent & event)
+void OptionsDialog::RemoveCodec(wxCommandEvent & /*event*/)
 {
   wxArrayInt selections;
   m_selectedCodecs->GetSelections(selections);
@@ -1892,7 +1893,7 @@ void OptionsDialog::RemoveCodec(wxCommandEvent & event)
 }
 
 
-void OptionsDialog::MoveUpCodec(wxCommandEvent & event)
+void OptionsDialog::MoveUpCodec(wxCommandEvent & /*event*/)
 {
   wxArrayInt selections;
   m_selectedCodecs->GetSelections(selections);
@@ -1905,7 +1906,7 @@ void OptionsDialog::MoveUpCodec(wxCommandEvent & event)
 }
 
 
-void OptionsDialog::MoveDownCodec(wxCommandEvent & event)
+void OptionsDialog::MoveDownCodec(wxCommandEvent & /*event*/)
 {
   wxArrayInt selections;
   m_selectedCodecs->GetSelections(selections);
@@ -1954,7 +1955,7 @@ void OptionsDialog::SelectedCodec(wxCommandEvent & /*event*/)
 }
 
 
-void OptionsDialog::SelectedCodecOption(wxCommandEvent & /*event*/)
+void OptionsDialog::SelectedCodecOption(wxListEvent & /*event*/)
 {
   wxListItem item;
   item.m_mask = wxLIST_MASK_TEXT|wxLIST_MASK_DATA;
@@ -1967,7 +1968,7 @@ void OptionsDialog::SelectedCodecOption(wxCommandEvent & /*event*/)
 }
 
 
-void OptionsDialog::DeselectedCodecOption(wxCommandEvent & /*event*/)
+void OptionsDialog::DeselectedCodecOption(wxListEvent & /*event*/)
 {
   m_codecOptionValue->SetValue("");
   m_codecOptionValue->Disable();
@@ -2010,12 +2011,12 @@ void OptionsDialog::ChangedCodecOptionValue(wxCommandEvent & /*event*/)
 ////////////////////////////////////////
 // H.323 fields
 
-void OptionsDialog::AddAlias(wxCommandEvent & event)
+void OptionsDialog::AddAlias(wxCommandEvent & /*event*/)
 {
 }
 
 
-void OptionsDialog::RemoveAlias(wxCommandEvent & event)
+void OptionsDialog::RemoveAlias(wxCommandEvent & /*event*/)
 {
 }
 
@@ -2023,7 +2024,7 @@ void OptionsDialog::RemoveAlias(wxCommandEvent & event)
 ////////////////////////////////////////
 // Routing fields
 
-void OptionsDialog::AddRoute(wxCommandEvent & )
+void OptionsDialog::AddRoute(wxCommandEvent & /*event*/)
 {
   int pos = m_Routes->InsertItem(m_SelectedRoute, m_RouteSource->GetValue());
   m_Routes->SetItem(pos, 1, m_RoutePattern->GetValue());
@@ -2031,7 +2032,7 @@ void OptionsDialog::AddRoute(wxCommandEvent & )
 }
 
 
-void OptionsDialog::RemoveRoute(wxCommandEvent & event)
+void OptionsDialog::RemoveRoute(wxCommandEvent & /*event*/)
 {
   m_Routes->DeleteItem(m_SelectedRoute);
 }
@@ -2044,14 +2045,14 @@ void OptionsDialog::SelectedRoute(wxListEvent & event)
 }
 
 
-void OptionsDialog::DeselectedRoute(wxListEvent & event)
+void OptionsDialog::DeselectedRoute(wxListEvent & /*event*/)
 {
   m_SelectedRoute = INT_MAX;
   m_RemoveRoute->Enable(false);
 }
 
 
-void OptionsDialog::ChangedRouteInfo(wxCommandEvent & event)
+void OptionsDialog::ChangedRouteInfo(wxCommandEvent & /*event*/)
 {
   m_AddRoute->Enable(!m_RoutePattern->GetValue().IsEmpty() && !m_RouteDestination->GetValue().IsEmpty());
 }
@@ -2099,13 +2100,13 @@ AnswerPanel::AnswerPanel(MyManager & manager, wxWindow * parent)
 }
 
 
-void AnswerPanel::OnAnswer(wxCommandEvent & event)
+void AnswerPanel::OnAnswer(wxCommandEvent & /*event*/)
 {
   m_manager.AnswerCall();
 }
 
 
-void AnswerPanel::OnReject(wxCommandEvent & event)
+void AnswerPanel::OnReject(wxCommandEvent & /*event*/)
 {
   m_manager.RejectCall();
 }
@@ -2124,7 +2125,7 @@ CallingPanel::CallingPanel(MyManager & manager, wxWindow * parent)
 }
 
 
-void CallingPanel::OnHangUp(wxCommandEvent & event)
+void CallingPanel::OnHangUp(wxCommandEvent & /*event*/)
 {
   m_manager.HangUpCall();
 }
@@ -2156,7 +2157,7 @@ InCallPanel::InCallPanel(MyManager & manager, wxWindow * parent)
 }
 
 
-void InCallPanel::OnHangUp(wxCommandEvent & event)
+void InCallPanel::OnHangUp(wxCommandEvent & /*event*/)
 {
   m_manager.HangUpCall();
 }

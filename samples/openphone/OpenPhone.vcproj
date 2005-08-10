@@ -22,7 +22,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories=""
+				AdditionalIncludeDirectories="&quot;$(WXDIR)\lib\vc_lib\msw&quot;;&quot;$(WXDIR)\include&quot;"
 				PreprocessorDefinitions="OPAL_STATIC_LINK"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
@@ -40,11 +40,11 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="opals.lib ptclib.lib ptlib.lib zlib.lib regex.lib png.lib jpeg.lib tiff.lib wxxrc.lib wxmsw.lib wsock32.lib odbc32.lib odbccp32.lib comctl32.lib rpcrt4.lib"
+				AdditionalDependencies="opals.lib ptclib.lib ptlib.lib wxmsw26_xrc.lib wxmsw26_html.lib wxmsw26_adv.lib wxmsw26_core.lib wxbase26_xml.lib wxbase26.lib wxtiff.lib wxjpeg.lib wxpng.lib wxzlib.lib wxregex.lib wsock32.lib odbc32.lib odbccp32.lib comctl32.lib rpcrt4.lib"
 				OutputFile=".\Release/OpenPhone.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				AdditionalLibraryDirectories=""
+				AdditionalLibraryDirectories="$(WXDIR)\lib\vc_lib"
 				ProgramDatabaseFile=".\Release/OpenPhone.pdb"
 				SubSystem="2"
 				TargetMachine="1"/>
@@ -59,13 +59,19 @@
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
-				Name="VCPreBuildEventTool"/>
+				Name="VCPreBuildEventTool"
+				Description="Checking for wxWidgets"
+				CommandLine="if exist &quot;%WXDIR%&quot; exit 0
+echo $(TargetName) : error : Must have a WXDIR variable set to use wxWidgets!
+exit 1
+"/>
 			<Tool
 				Name="VCPreLinkEventTool"/>
 			<Tool
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="NDEBUG"
-				Culture="3081"/>
+				Culture="3081"
+				AdditionalIncludeDirectories="&quot;$(WXDIR)\include&quot;"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
@@ -87,7 +93,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=""
+				AdditionalIncludeDirectories="&quot;$(WXDIR)\lib\vc_lib\mswd&quot;;&quot;$(WXDIR)\include&quot;"
 				PreprocessorDefinitions="OPAL_STATIC_LINK"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -105,11 +111,11 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="opalsd.lib ptclibd.lib ptlibsd.lib zlibd.lib regexd.lib pngd.lib jpegd.lib tiffd.lib wxxrcd.lib wxmswd.lib wsock32.lib odbc32.lib odbccp32.lib comctl32.lib rpcrt4.lib"
+				AdditionalDependencies="opalsd.lib ptclibd.lib ptlibd.lib wxmsw26d_xrc.lib wxmsw26d_html.lib wxmsw26d_adv.lib wxmsw26d_core.lib wxbase26d_xml.lib wxbase26d.lib wxtiffd.lib wxjpegd.lib wxpngd.lib wxzlibd.lib wxregexd.lib wsock32.lib odbc32.lib odbccp32.lib comctl32.lib rpcrt4.lib"
 				OutputFile=".\Debug/OpenPhone.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
-				AdditionalLibraryDirectories=""
+				AdditionalLibraryDirectories="$(WXDIR)\lib\vc_lib"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\Debug/OpenPhone.pdb"
 				SubSystem="2"
@@ -125,13 +131,19 @@
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
-				Name="VCPreBuildEventTool"/>
+				Name="VCPreBuildEventTool"
+				Description="Checking for wxWidgets"
+				CommandLine="if exist &quot;%WXDIR%&quot; exit 0
+echo $(TargetName) : error : Must have a WXDIR variable set to use wxWidgets!
+exit 1
+"/>
 			<Tool
 				Name="VCPreLinkEventTool"/>
 			<Tool
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="_DEBUG"
-				Culture="3081"/>
+				Culture="3081"
+				AdditionalIncludeDirectories="&quot;$(WXDIR)\include&quot;"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
@@ -194,7 +206,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating C++ source from XML resource file"
-						CommandLine="%WXWIN%\contrib\utils\wxrc\Release\wxrc -c $(InputPath)"
+						CommandLine="%WXDIR%\bin\wxrc -c $(InputPath)
+"
 						Outputs="resource.cpp"/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -202,7 +215,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating C++ source from XML resource file"
-						CommandLine="%WXWIN%\contrib\utils\wxrc\Release\wxrc -c $(InputPath)"
+						CommandLine="%WXDIR%\bin\wxrc -c $(InputPath)
+"
 						Outputs="resource.cpp"/>
 				</FileConfiguration>
 			</File>
