@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2024  2005/04/20 06:18:35  csoutheren
+ * Revision 1.2025  2005/08/11 22:47:17  rjongbloed
+ * Fixed correct default gatekeeper address when doing auto-discovery
+ *
+ * Revision 2.23  2005/04/20 06:18:35  csoutheren
  * Patch 1182998. Fix for using GK through NAT, and fixed Connect to be idempotent
  * Thanks to Hannes Friederich
  *
@@ -719,15 +722,11 @@ static BOOL WriteGRQ(H323Transport & transport, void * param)
   PIPSocket::Address localAddress, remoteAddress;
   WORD localPort;
   
-  if(address.GetIpAndPort(localAddress, localPort) &&
-	 transport.GetRemoteAddress().GetIpAddress(remoteAddress))
+  if (address.GetIpAndPort(localAddress, localPort) &&
+      transport.GetRemoteAddress().GetIpAddress(remoteAddress))
   {
-	  OpalManager & manager = transport.GetEndPoint().GetManager();
-	  
-	  if(manager.TranslateIPAddress(localAddress, remoteAddress))
-	  {
-		  address = H323TransportAddress(localAddress, localPort);
-	  }
+    if (transport.GetEndPoint().GetManager().TranslateIPAddress(localAddress, remoteAddress))
+      address = H323TransportAddress(localAddress, localPort);
   }
   
   address.SetPDU(grq.m_rasAddress);
@@ -742,7 +741,11 @@ BOOL H323Gatekeeper::StartDiscovery(const H323TransportAddress & initialAddress)
 
   PAssert(!transport->IsRunning(), "Cannot do discovery on running RAS channel");
 
-  if (!transport->ConnectTo(initialAddress))
+  H323TransportAddress address = initialAddress;
+  if (address.IsEmpty())
+    address = "udp$*:1719";
+
+  if (!transport->ConnectTo(address))
     return FALSE;
 
   discoveryComplete = FALSE;
@@ -750,7 +753,6 @@ BOOL H323Gatekeeper::StartDiscovery(const H323TransportAddress & initialAddress)
   H323RasPDU pdu;
   Request request(SetupGatekeeperRequest(pdu), pdu);
 
-  H323TransportAddress address = initialAddress;
   request.responseInfo = &address;
 
   requestsMutex.Wait();
