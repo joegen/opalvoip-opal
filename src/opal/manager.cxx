@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2050  2005/08/09 09:20:20  rjongbloed
+ * Revision 1.2051  2005/08/11 22:45:13  rjongbloed
+ * Fixed incorrect test for auto start receive video
+ *
+ * Revision 2.49  2005/08/09 09:20:20  rjongbloed
  * Utilise new video driver/device name interface to select default video grabber/display.
  *
  * Revision 2.48  2005/07/14 08:51:19  csoutheren
@@ -303,14 +306,13 @@ OpalManager::OpalManager()
   }
   autoStartTransmitVideo = !(videoInputDevice.deviceName *= "fake");
 
-
   devices = PVideoOutputDevice::GetDriversDeviceNames("*"); // Get all devices on all drivers
   if (devices.GetSize() > 0) {
     videoOutputDevice.deviceName = devices[0];
     if (devices.GetSize() > 1 && (videoOutputDevice.deviceName *= "null"))
       videoOutputDevice.deviceName = devices[1];
   }
-  autoStartReceiveVideo = !(videoInputDevice.deviceName *= "null");
+  autoStartReceiveVideo = !(videoOutputDevice.deviceName *= "null");
 
 
   lastCallTokenID = 1;
