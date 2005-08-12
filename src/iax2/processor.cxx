@@ -27,6 +27,9 @@
  *
  *
  * $Log: processor.cxx,v $
+ * Revision 1.3  2005/08/12 10:40:22  rjongbloed
+ * Fixed compiler warning when notrace
+ *
  * Revision 1.2  2005/08/04 08:14:17  rjongbloed
  * Fixed Windows build under DevStudio 2003 of IAX2 code
  *
@@ -1122,7 +1125,7 @@ void IAX2Processor::AcceptIncomingCall()
 
 }
 
-void IAX2Processor::SetEstablished(BOOL originator)
+void IAX2Processor::SetEstablished(BOOL PTRACE_PARAM(originator))
 {
   PTRACE(3, "Processor\tStatusCheck timer set to 10 seconds");
   StartStatusCheckTimer();
@@ -1243,8 +1246,7 @@ void IAX2Processor::ProcessIaxCmdLagRp(FullFrameProtocol *src)
 {
   PTRACE(3, "ProcessIaxCmdLagRp(FullFrameProtocol *src)");
   SendAckFrame(src);
-  PINDEX lagTime = Frame::CalcTimeStamp(callStartTime) - src->GetTimeStamp();
-  PTRACE(3, "Process\tRound trip lag time is " << lagTime);
+  PTRACE(3, "Process\tRound trip lag time is " << (Frame::CalcTimeStamp(callStartTime) - src->GetTimeStamp()));
 }
 
 void IAX2Processor::ProcessIaxCmdRegReq(FullFrameProtocol *src)
