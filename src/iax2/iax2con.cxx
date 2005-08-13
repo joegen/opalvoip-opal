@@ -28,6 +28,9 @@
  *
  *
  * $Log: iax2con.cxx,v $
+ * Revision 1.3  2005/08/13 07:19:17  rjongbloed
+ * Fixed MSVC6 compiler issues
+ *
  * Revision 1.2  2005/08/04 08:14:17  rjongbloed
  * Fixed Windows build under DevStudio 2003 of IAX2 code
  *
@@ -326,14 +329,15 @@ unsigned int IAX2Connection::ChooseCodec()
   }
 
   {
-    for (PINDEX local = 0; local < localMediaFormats.GetSize(); local++) {
+    PINDEX local;
+    for (local = 0; local < localMediaFormats.GetSize(); local++) {
       if (localMediaFormats[local].GetPayloadType() == remoteMediaFormats[0].GetPayloadType()) {
 	res = local;
 	goto selectCodec;
       }
     }
 
-    for (PINDEX local = 0; local < localMediaFormats.GetSize(); local++) 
+    for (local = 0; local < localMediaFormats.GetSize(); local++) 
       for (PINDEX remote = 0; local < remoteMediaFormats.GetSize(); remote++) {
 	if (localMediaFormats[local].GetPayloadType() == remoteMediaFormats[remote].GetPayloadType()) {
 	  res = local;
