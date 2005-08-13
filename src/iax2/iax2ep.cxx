@@ -28,6 +28,9 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.3  2005/08/13 07:19:18  rjongbloed
+ * Fixed MSVC6 compiler issues
+ *
  * Revision 1.2  2005/08/04 08:14:17  rjongbloed
  * Fixed Windows build under DevStudio 2003 of IAX2 code
  *
@@ -194,12 +197,13 @@ void IAX2EndPoint::ReportStoredConnections()
   return;
   PStringList cons = GetAllConnections();
   PTRACE(3, " There are " << cons.GetSize() << " stored connections in connectionsActive");
-  for(PINDEX i = 0; i < cons.GetSize(); i++)
+  PINDEX i;
+  for(i = 0; i < cons.GetSize(); i++)
     PTRACE(3, "    #" << (i + 1) << "                     \"" << cons[i] << "\"");
 
   PWaitAndSignal m(mutexTokenTable);
   PTRACE(3, " There are " << tokenTable.GetSize() << " stored connections in the token translation table.");
-  for (PINDEX i = 0; i < tokenTable.GetSize(); i++)
+  for (i = 0; i < tokenTable.GetSize(); i++)
     PTRACE(3, " token table at " << i << " is " << tokenTable.GetKeyAt(i) << " " << tokenTable.GetDataAt(i));
 }
 
