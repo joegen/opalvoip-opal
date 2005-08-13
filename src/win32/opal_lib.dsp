@@ -335,7 +335,6 @@ SOURCE=..\lids\vblasterlid.cxx
 # Begin Source File
 
 SOURCE=..\lids\vpblid.cxx
-# PROP Exclude_From_Build 1
 # End Source File
 # End Group
 # Begin Group "RTP Sources"
@@ -396,6 +395,58 @@ SOURCE=..\sip\sipep.cxx
 # Begin Source File
 
 SOURCE=..\sip\sippdu.cxx
+# End Source File
+# End Group
+# Begin Group "IAX2 Sources"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\iax2\frame.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\iax2\iax2con.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\iax2\iax2ep.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\iax2\iax2medstrm.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\iax2\iedata.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\iax2\ies.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\iax2\processor.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\iax2\receiver.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\iax2\remote.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\iax2\safestrings.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\iax2\sound.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\iax2\transmit.cxx
 # End Source File
 # End Group
 # Begin Source File
@@ -695,6 +746,70 @@ SOURCE=..\..\include\sip\sipep.h
 SOURCE=..\..\include\sip\sippdu.h
 # End Source File
 # End Group
+# Begin Group "IAX2 Headers"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\include\iax2\causecode.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\iax2\frame.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\iax2\iax2.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\iax2\iax2con.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\iax2\iax2ep.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\iax2\iax2medstrm.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\iax2\iedata.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\iax2\ies.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\iax2\processor.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\iax2\receiver.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\iax2\remote.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\iax2\safestrings.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\iax2\sound.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\iax2\transmit.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\iax2\version.h
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=..\..\include\opal\buildopts.h
@@ -705,9 +820,9 @@ SOURCE=..\..\include\opal\buildopts.h.in
 
 !IF  "$(CFG)" == "OPAL_lib - Win32 Release"
 
-USERDEP__BUILD="..\..\configure.in"	"..\..\configure.exe"	
+USERDEP__BUILD="..\..\configure.ac"	"..\..\configure.exe"	
 # Begin Custom Build - Configuring Build Options
-InputDir=\Storage\cvs2\opal\include\opal
+InputDir=\Work\opal\include\opal
 InputPath=..\..\include\opal\buildopts.h.in
 
 "$(InputDir)\buildopts.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
@@ -718,9 +833,9 @@ InputPath=..\..\include\opal\buildopts.h.in
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 Debug"
 
-USERDEP__BUILD="..\..\configure.in"	"..\..\configure.exe"	
+USERDEP__BUILD="..\..\configure.ac"	"..\..\configure.exe"	
 # Begin Custom Build - Configuring Build Options
-InputDir=\Storage\cvs2\opal\include\opal
+InputDir=\Work\opal\include\opal
 InputPath=..\..\include\opal\buildopts.h.in
 
 "$(InputDir)\buildopts.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
@@ -731,9 +846,9 @@ InputPath=..\..\include\opal\buildopts.h.in
 
 !ELSEIF  "$(CFG)" == "OPAL_lib - Win32 No Trace"
 
-USERDEP__BUILD="..\..\configure.in"	"..\..\configure.exe"	
+USERDEP__BUILD="..\..\configure.ac"	"..\..\configure.exe"	
 # Begin Custom Build - Configuring Build Options
-InputDir=\Storage\cvs2\opal\include\opal
+InputDir=\Work\opal\include\opal
 InputPath=..\..\include\opal\buildopts.h.in
 
 "$(InputDir)\buildopts.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
