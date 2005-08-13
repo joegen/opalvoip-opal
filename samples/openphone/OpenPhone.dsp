@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /MD /W4 /GR /GX /O2 /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D wxUSE_GUI=1 /D "OPAL_STATIC_LINK" /YX /FD /c
+# ADD CPP /nologo /MD /W4 /GR /GX /O2 /I "$(WXDIR)\include" /I "$(WXDIR)\lib\vc_lib\msw" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D wxUSE_GUI=1 /D "OPAL_STATIC_LINK" /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0xc09 /d "NDEBUG"
@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386
-# ADD LINK32 opals.lib ptclib.lib ptlib.lib wxxrc.lib wxmsw.lib tiff.lib jpeg.lib png.lib regex.lib zlib.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib imm32.lib rpcrt4.lib wsock32.lib /nologo /subsystem:windows /machine:I386
+# ADD LINK32 opals.lib ptclib.lib ptlib.lib wxmsw26_xrc.lib wxmsw26_html.lib wxmsw26_adv.lib wxmsw26_core.lib wxbase26_xml.lib wxbase26.lib wxtiff.lib wxjpeg.lib wxpng.lib wxzlib.lib wxregex.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib imm32.lib rpcrt4.lib wsock32.lib /nologo /subsystem:windows /machine:I386 /libpath:"$(WXDIR)\lib\vc_lib"
 
 !ELSEIF  "$(CFG)" == "OpenPhone - Win32 Debug"
 
@@ -69,7 +69,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W4 /Gm /GR /GX /ZI /Od /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D wxUSE_GUI=1 /D "__WXDEBUG__" /D WXDEBUG=1 /D "OPAL_STATIC_LINK" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W4 /Gm /GR /GX /ZI /Od /I "$(WXDIR)\include" /I "$(WXDIR)\lib\vc_lib\mswd" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D wxUSE_GUI=1 /D "__WXDEBUG__" /D WXDEBUG=1 /D "OPAL_STATIC_LINK" /YX /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0xc09 /d "_DEBUG"
@@ -79,7 +79,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 opalsd.lib ptclibd.lib ptlibsd.lib wxxrcd.lib wxmswd.lib tiffd.lib jpegd.lib pngd.lib regexd.lib zlibd.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib imm32.lib rpcrt4.lib wsock32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
+# ADD LINK32 opalsd.lib ptclibd.lib ptlibsd.lib wxmsw26d_xrc.lib wxmsw26d_html.lib wxmsw26d_adv.lib wxmsw26d_core.lib wxbase26d_xml.lib wxbase26d.lib wxtiffd.lib wxjpegd.lib wxpngd.lib wxzlibd.lib wxregexd.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib imm32.lib rpcrt4.lib wsock32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept /libpath:"$(WXDIR)\lib\vc_lib"
 
 !ENDIF 
 
@@ -113,6 +113,37 @@ SOURCE=.\version.h
 # Begin Source File
 
 SOURCE=.\openphone.rc
+# End Source File
+# Begin Source File
+
+SOURCE=.\openphone.xrc
+
+!IF  "$(CFG)" == "OpenPhone - Win32 Release"
+
+# Begin Custom Build - Compiling resources
+InputPath=.\openphone.xrc
+
+"resource.cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	%WXDIR%\bin\wxrc -c $(InputPath)
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "OpenPhone - Win32 Debug"
+
+# Begin Custom Build - Compiling resources
+InputPath=.\openphone.xrc
+
+"resource.cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	%WXDIR%\bin\wxrc -c $(InputPath)
+
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\resource.cpp
 # End Source File
 # End Group
 # End Target
