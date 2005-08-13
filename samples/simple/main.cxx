@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2055  2005/08/04 08:47:38  rjongbloed
+ * Revision 1.2056  2005/08/13 09:16:18  rjongbloed
+ * Added no-Xt-video to "usage" output
+ *
+ * Revision 2.54  2005/08/04 08:47:38  rjongbloed
  * Some cosmetic changes, and print out the codecs that are available
  *
  * Revision 2.53  2005/07/30 07:42:15  csoutheren
@@ -386,6 +389,8 @@ void SimpleOpalProcess::Main()
             "Video options:\n"
             "     --rx-video           : Start receiving video immediately.\n"
             "     --tx-video           : Start transmitting video immediately.\n"
+            "     --no-rx-video        : Don't start receiving video immediately.\n"
+            "     --no-tx-video        : Don't start transmitting video immediately.\n"
             "     --grabber dev        : Set the video grabber device.\n"
             "     --display dev        : Set the video display device.\n"
             "\n"
