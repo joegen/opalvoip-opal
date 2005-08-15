@@ -247,8 +247,16 @@ dnl MSWIN_DEFINE  ixj,HAS_IXJ
 HAS_IXJ=
 AC_CHECK_HEADERS(linux/telephony.h sys/telephony.h /usr/local/include/sys/telephony.h, HAS_IXJ=1)
 if test "x$HAS_IXJ" != "x" ; then
-  AC_DEFINE(HAS_IXJ, 1)
-  HAS_IXJ=1
+  AC_MSG_CHECKING(if ixjuser.h actually compiles)
+  AC_TRY_COMPILE([#include <linux/ixjuser.h>],
+                 [int main(int ac,char **av) { return 0; }], HAS_IXJ=1, HAS_IXJ=)
+  if test "x$HAS_IXJ" != "x" ; then
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(HAS_IXJ, 1)
+    HAS_IXJ=1
+  else
+    AC_MSG_RESULT(no)
+  fi
 fi
 AC_SUBST(HAS_IXJ)
 
