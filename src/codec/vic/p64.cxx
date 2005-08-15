@@ -54,7 +54,10 @@
 /************ Change log
  *
  * $Log: p64.cxx,v $
- * Revision 1.2002  2003/03/15 23:43:00  robertj
+ * Revision 1.2003  2005/08/15 01:47:27  csoutheren
+ * Fixed compile problem on 64 bit
+ *
+ * Revision 2.1  2003/03/15 23:43:00  robertj
  * Update to OpenH323 v1.11.7
  *
  * Revision 1.12  2003/03/14 07:25:55  robertj
@@ -1128,7 +1131,7 @@ BOOL P64Decoder::decode(const unsigned char *hdrPtr, int buffLen,
 	 * If input buffer not aligned, prime bit-buffer
 	 * with 8 bits; otherwise, prime it with a 16.
 	 */
-	if ((int)bp & 1) {
+	if ((long)bp & 1) {
 		bs_ = (u_short*)(bp + 1);
 		bb_ = *bp;
 		nbb_ = 8 - sbit;
