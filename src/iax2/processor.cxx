@@ -27,6 +27,9 @@
  *
  *
  * $Log: processor.cxx,v $
+ * Revision 1.4  2005/08/20 07:36:08  rjongbloed
+ * Fixed 10 second delay when exiting application
+ *
  * Revision 1.3  2005/08/12 10:40:22  rjongbloed
  * Fixed compiler warning when notrace
  *
@@ -172,6 +175,7 @@ IAX2Processor::IAX2Processor(IAX2EndPoint &ep)
   answerCallNow = FALSE;
   audioFrameDuration = 0;
   audioCompressedBytes = 0;
+  Resume();
 }
 
 IAX2Processor::~IAX2Processor()
@@ -242,7 +246,7 @@ void IAX2Processor::OnReleased()
 
 void IAX2Processor::Terminate()
 {
-  PTRACE(3, "Processor has been directed to end. So  end now.");
+  PTRACE(3, "Processor has been directed to end. So end now.");
   if (IsTerminated()) {
     PTRACE(3, "Processor has already ended");
   }
