@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.h,v $
- * Revision 1.2014  2005/02/21 12:19:45  rjongbloed
+ * Revision 1.2015  2005/08/20 09:01:56  rjongbloed
+ * H.261 port to OPAL model
+ *
+ * Revision 2.13  2005/02/21 12:19:45  rjongbloed
  * Added new "options list" to the OpalMediaFormat class.
  *
  * Revision 2.12  2004/03/11 06:54:25  csoutheren
@@ -208,7 +211,11 @@
 class P64Decoder;
 class P64Encoder;
 
-#define OPAL_H261 "H.261"
+#define OPAL_H261_QCIF "H.261(QCIF)"
+#define OPAL_H261_CIF  "H.261(CIF)"
+
+extern const OpalVideoFormat OpalH261_QCIF;
+extern const OpalVideoFormat OpalH261_CIF;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -229,7 +236,7 @@ class H323_H261Capability : public H323VideoCapability
     H323_H261Capability(
       unsigned qcifMPI,
       unsigned cifMPI,
-      BOOL temporalSpatialTradeOffCapability = TRUE,
+      BOOL temporalSpatialTradeOffCapability = FALSE,
       BOOL stillImageTransmission = FALSE,
       unsigned maxBitRate = 850
     );
@@ -339,12 +346,10 @@ class H323_H261Capability : public H323VideoCapability
 };
 
 #define OPAL_REGISTER_H261_H323 \
-  H323_REGISTER_CAPABILITY_FUNCTION(H323_H261_QCIF_CIF, OPAL_H261, H323_NO_EP_VAR) \
-    { return new H323_H261Capability(2, 4, FALSE, FALSE, 6217); } \
-  H323_REGISTER_CAPABILITY_FUNCTION(H323_H261_CIF, OPAL_H261, H323_NO_EP_VAR) \
-    { return new H323_H261Capability(0, 4, FALSE, FALSE, 6217); } \
-  H323_REGISTER_CAPABILITY_FUNCTION(H323_H261_QCIF, OPAL_H261, H323_NO_EP_VAR) \
-    { return new H323_H261Capability(2, 0, FALSE, FALSE, 6217); }
+  H323_REGISTER_CAPABILITY_FUNCTION(H323_H261_CIF, OPAL_H261_CIF, H323_NO_EP_VAR) \
+    { return new H323_H261Capability(0, 1); } \
+  H323_REGISTER_CAPABILITY_FUNCTION(H323_H261_QCIF, OPAL_H261_QCIF, H323_NO_EP_VAR) \
+    { return new H323_H261Capability(1, 0); }
 
 #else // ifndef NO_H323
 
@@ -389,9 +394,8 @@ class Opal_YUV420P_H261 : public OpalVideoTranscoder {
 
 #define OPAL_REGISTER_H261() \
           OPAL_REGISTER_H261_H323 \
-          OPAL_REGISTER_TRANSCODER(Opal_H261_YUV420P, OPAL_H261, OPAL_YUV420P); \
-          OPAL_REGISTER_TRANSCODER(Opal_YUV420P_H261, OPAL_YUV420P, OPAL_H261)
-
+          OPAL_REGISTER_TRANSCODER(Opal_H261_YUV420P, OPAL_H261_QCIF, OPAL_YUV420P); \
+          OPAL_REGISTER_TRANSCODER(Opal_YUV420P_H261, OPAL_YUV420P,   OPAL_H261_QCIF)
 
 #endif // __OPAL_H261CODEC_H
 
