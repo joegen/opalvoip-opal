@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2028  2005/07/11 01:42:21  csoutheren
+ * Revision 1.2029  2005/08/20 07:32:49  rjongbloed
+ * Added video specific OpalMediaFormat
+ *
+ * Revision 2.27  2005/07/11 01:42:21  csoutheren
  * Fixed problems with some constants names not being available
  *
  * Revision 2.26  2005/06/20 16:47:52  shorne
@@ -853,6 +856,25 @@ class OpalAudioFormat : public OpalMediaFormat
 
     static const char * const RxFramesPerPacketOption;
     static const char * const TxFramesPerPacketOption;
+};
+
+
+class OpalVideoFormat : public OpalMediaFormat
+{
+    PCLASSINFO(OpalVideoFormat, OpalMediaFormat);
+  public:
+    OpalVideoFormat(
+      const char * fullName,    /// Full name of media format
+      RTP_DataFrame::PayloadTypes rtpPayloadType, /// RTP payload type code
+      const char * encodingName,/// RTP encoding name
+      unsigned frameWidth,      /// Width of video frame
+      unsigned frameHeight,     /// Height of video frame
+      unsigned frameRate,       /// Number of frames per second
+      unsigned bitRate          /// Maximum bits per second
+    );
+
+    static const char * const FrameWidthOption;
+    static const char * const FrameHeightOption;
 };
 
 
