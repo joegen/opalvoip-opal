@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2056  2005/08/13 09:16:18  rjongbloed
+ * Revision 1.2057  2005/08/20 09:03:10  rjongbloed
+ * Some cosmetic fixes in output messages
+ *
+ * Revision 2.55  2005/08/13 09:16:18  rjongbloed
  * Added no-Xt-video to "usage" output
  *
  * Revision 2.54  2005/08/04 08:47:38  rjongbloed
@@ -319,9 +322,6 @@ void SimpleOpalProcess::Main()
              "l-listen."
              "n-no-gatekeeper."
              "-no-std-dial-peer."
-#if OPAL_IAX2
-	     "X-no-iax2."
-#endif
 #if PTRACING
              "o-output:"
 #endif
@@ -364,6 +364,9 @@ void SimpleOpalProcess::Main()
 #if P_EXPAT
              "V-no-ivr."
              "x-vxml:"
+#endif
+#if OPAL_IAX2
+	     "X-no-iax2."
 #endif
           , FALSE);
 
@@ -721,7 +724,7 @@ BOOL MyManager::Initialise(PArgList & args)
 
     cout << "Sound output device: \"" << pcssEP->GetSoundChannelPlayDevice() << "\"\n"
             "Sound  input device: \"" << pcssEP->GetSoundChannelRecordDevice() << "\"\n"
-            "Video output device: \"" << GetVideoInputDevice().deviceName << "\"\n"
+            "Video output device: \"" << GetVideoOutputDevice().deviceName << "\"\n"
             "Video  input device: \"" << GetVideoInputDevice().deviceName << "\"\n"
             "Available codecs: " << setfill(',') << OpalTranscoder::GetPossibleFormats(pcssEP->GetMediaFormats()) << setfill(' ') << endl;
   }
@@ -766,9 +769,10 @@ BOOL MyManager::Initialise(PArgList & args)
     PStringArray listeners = args.GetOptionString("h323-listen").Lines();
     if (!h323EP->StartListeners(listeners)) {
       cerr <<  "Could not open any H.323 listener from "
-            << setfill(',') << listeners << endl;
+           << setfill(',') << listeners << endl;
       return FALSE;
     }
+    cout << "H.323 listeners: " << setfill(',') << h323EP->GetListeners() << setfill(' ') << endl;
 
 
     if (args.HasOption('p'))
@@ -1119,14 +1123,18 @@ BOOL MyManager::OnOpenMediaStream(OpalConnection & connection,
   if (!OpalManager::OnOpenMediaStream(connection, stream))
     return FALSE;
 
-  cout << connection.GetEndPoint().GetPrefixName() << " started ";
+  cout << "Started ";
 
-  if (stream.IsSource())
-    cout << "sending ";
+  PCaselessString prefix = connection.GetEndPoint().GetPrefixName();
+  if (prefix == "pc" || prefix == "pots")
+    cout << (stream.IsSink() ? "playing " : "grabbing ") << stream.GetMediaFormat();
+  else if (prefix == "ivr")
+    cout << (stream.IsSink() ? "streaming" : "recording") << stream.GetMediaFormat();
   else
-    cout << "receiving ";
+    cout << (stream.IsSink() ? "sending " : "receiving ") << stream.GetMediaFormat()
+          << (stream.IsSink() ? " to " : " from ")<< prefix;
 
-  cout << stream.GetMediaFormat() << endl;  
+  cout << endl;
 
   return TRUE;
 }
