@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2030  2005/06/02 13:20:46  rjongbloed
+ * Revision 1.2031  2005/08/20 07:33:30  rjongbloed
+ * Added video specific OpalMediaFormat
+ *
+ * Revision 2.29  2005/06/02 13:20:46  rjongbloed
  * Added minimum and maximum check to media format options.
  * Added ability to set the options on the primordial media format list.
  *
@@ -180,9 +183,6 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
-#define STD_AUDIO(name, rtpPayloadType, encodingName, frameSize, frameTime, rxFrames, txFrames) \
-  OpalAudioFormat OpalMediaFormat_##name##_Instance( \
-          OPAL_##name, rtpPayloadType, encodingName, frameSize, frameTime, rxFrames, txFrames); \
 
 const OpalAudioFormat OpalPCM16         (OPAL_PCM16,          RTP_DataFrame::MaxPayloadType, "",     16, 8,  240, 30);
 const OpalAudioFormat OpalL16_MONO_8KHZ (OPAL_L16_MONO_8KHZ,  RTP_DataFrame::L16_Mono,       "L16",  16, 8,  240, 30);
@@ -838,6 +838,33 @@ OpalAudioFormat::OpalAudioFormat(const char * fullName,
 {
   AddOption(new OpalMediaOptionInteger(RxFramesPerPacketOption, false, OpalMediaOption::MinMerge, rxFrames, 1, maxFrames));
   AddOption(new OpalMediaOptionInteger(TxFramesPerPacketOption, false, OpalMediaOption::MinMerge, txFrames, 1, maxFrames));
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+const char * const OpalVideoFormat::FrameWidthOption = "FramwWidth";
+const char * const OpalVideoFormat::FrameHeightOption = "FrameHeight";
+
+OpalVideoFormat::OpalVideoFormat(const char * fullName,
+                                 RTP_DataFrame::PayloadTypes rtpPayloadType,
+                                 const char * encodingName,
+                                 unsigned frameWidth,
+                                 unsigned frameHeight,
+                                 unsigned frameRate,
+                                 unsigned bitRate)
+  : OpalMediaFormat(fullName,
+                    OpalMediaFormat::DefaultAudioSessionID,
+                    rtpPayloadType,
+                    encodingName,
+                    FALSE,
+                    bitRate,
+                    0,
+                    OpalMediaFormat::VideoClockRate/frameRate,
+                    OpalMediaFormat::VideoClockRate)
+{
+  AddOption(new OpalMediaOptionInteger(FrameWidthOption, false, OpalMediaOption::MinMerge, frameWidth, 11, 32767));
+  AddOption(new OpalMediaOptionInteger(FrameHeightOption, false, OpalMediaOption::MinMerge, frameHeight, 9, 32767));
 }
 
 
