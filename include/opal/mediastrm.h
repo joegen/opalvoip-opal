@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2025  2005/08/04 17:23:38  dsandras
+ * Revision 1.2026  2005/08/20 07:35:22  rjongbloed
+ * Set video RTP timestamps to value dirived from real time clock.
+ *
+ * Revision 2.24  2005/08/04 17:23:38  dsandras
  * Added function to determine if a stream is open or not.
  *
  * Revision 2.23  2005/04/10 20:48:30  dsandras
@@ -694,6 +697,7 @@ class OpalVideoMediaStream : public OpalMediaStream
     PVideoInputDevice  * inputDevice;
     PVideoOutputDevice * outputDevice;
     BOOL                 autoDelete;
+    PTimeInterval        lastGrabTime;
 };
 
 
