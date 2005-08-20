@@ -24,7 +24,11 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2034  2005/08/04 08:46:21  rjongbloed
+ * Revision 1.2035  2005/08/20 07:35:11  rjongbloed
+ * Correctly set grabber size to size of video frame in OpalMediaFormat
+ * Set video RTP timestamps to value dirived from real time clock.
+ *
+ * Revision 2.33  2005/08/04 08:46:21  rjongbloed
  * Fixed video output stream to allow for empty/missing packets
  *
  * Revision 2.32  2005/07/24 07:41:27  rjongbloed
@@ -296,7 +300,7 @@ BOOL OpalMediaStream::ReadPacket(RTP_DataFrame & packet)
   if (!ReadData(packet.GetPayloadPtr(), defaultDataSize, lastReadCount))
     return FALSE;
 
-  // If the Write() function did not change the timestamp then use the default
+  // If the ReadData() function did not change the timestamp then use the default
   // method or fixed frame times and sizes.
   if (oldTimestamp == timestamp)
     timestamp += CalculateTimestamp(lastReadCount, mediaFormat);
@@ -755,16 +759,27 @@ BOOL OpalVideoMediaStream::Open()
       PTRACE(1, "Media\tCould not set colour format in grabber to " << mediaFormat);
       return FALSE;
     }
+    if (!inputDevice->SetFrameSizeConverter(mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption, 176),
+                                            mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption, 144), FALSE)) {
+      PTRACE(1, "Media\tCould not set frame size in grabber to " << mediaFormat);
+      return FALSE;
+    }
     if (!inputDevice->Start()) {
       PTRACE(1, "Media\tCould not start video grabber");
       return FALSE;
     }
     SetDataSize(inputDevice->GetMaxFrameBytes());
+    lastGrabTime = PTimer::Tick();
   }
 
   if (outputDevice != NULL) {
     if (!outputDevice->SetColourFormatConverter(mediaFormat)) {
       PTRACE(1, "Media\tCould not set colour format in video display to " << mediaFormat);
+      return FALSE;
+    }
+    if (!outputDevice->SetFrameSizeConverter(mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption, 176),
+                                             mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption, 144), FALSE)) {
+      PTRACE(1, "Media\tCould not set frame size in video display to " << mediaFormat);
       return FALSE;
     }
     if (!outputDevice->Start()) {
@@ -806,6 +821,10 @@ BOOL OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & length)
   PINDEX bytesReturned;
   if (!inputDevice->GetFrameData(frame->data, &bytesReturned))
     return FALSE;
+
+  PTimeInterval currentGrabTime = PTimer::Tick();
+  timestamp += ((lastGrabTime - currentGrabTime)*1000/OpalMediaFormat::VideoClockRate).GetInterval();
+  lastGrabTime = currentGrabTime;
 
   marker = TRUE;
   length = bytesReturned + sizeof(OpalVideoTranscoder::FrameHeader);
