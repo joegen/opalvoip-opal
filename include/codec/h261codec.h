@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.h,v $
- * Revision 1.2015  2005/08/20 09:01:56  rjongbloed
+ * Revision 1.2016  2005/08/23 12:46:27  rjongbloed
+ * Fix some decoder issues, now get inital frame displayed!
+ *
+ * Revision 2.14  2005/08/20 09:01:56  rjongbloed
  * H.261 port to OPAL model
  *
  * Revision 2.13  2005/02/21 12:19:45  rjongbloed
@@ -370,9 +373,10 @@ class Opal_H261_YUV420P : public OpalVideoTranscoder {
     virtual BOOL ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dst);
   protected:
     P64Decoder * videoDecoder;
+    WORD expectedSequenceNumber;
     BYTE * rvts;
     int ndblk, nblk;
-    int now;    
+    int now;
     BOOL packetReceived;
 };
 
