@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2047  2005/08/04 17:20:22  dsandras
+ * Revision 1.2048  2005/08/23 12:45:09  rjongbloed
+ * Fixed creation of video preview window and setting video grab/display initial frame size.
+ *
+ * Revision 2.46  2005/08/04 17:20:22  dsandras
  * Added functions to close/remove the media streams of a connection.
  *
  * Revision 2.45  2005/07/14 08:51:19  csoutheren
@@ -625,12 +628,12 @@ OpalMediaStream * OpalConnection::CreateMediaStream(const OpalMediaFormat & medi
 {
   if (sessionID == OpalMediaFormat::DefaultVideoSessionID) {
     if (isSource) {
-      PVideoInputDevice * videoDevice = CreateVideoInputDevice();
+      PVideoInputDevice * videoDevice = CreateVideoInputDevice(mediaFormat);
       if (videoDevice != NULL)
-        return new OpalVideoMediaStream(mediaFormat, sessionID, videoDevice, NULL);
+        return new OpalVideoMediaStream(mediaFormat, sessionID, videoDevice, CreateVideoOutputDevice(mediaFormat, TRUE));
     }
     else {
-      PVideoOutputDevice * videoDevice = CreateVideoOutputDevice();
+      PVideoOutputDevice * videoDevice = CreateVideoOutputDevice(mediaFormat, FALSE);
       if (videoDevice != NULL)
         return new OpalVideoMediaStream(mediaFormat, sessionID, NULL, videoDevice);
     }
@@ -710,15 +713,15 @@ void OpalConnection::AddVideoMediaFormats(OpalMediaFormatList & mediaFormats) co
 }
 
 
-PVideoInputDevice * OpalConnection::CreateVideoInputDevice()
+PVideoInputDevice * OpalConnection::CreateVideoInputDevice(const OpalMediaFormat & mediaFormat)
 {
-  return endpoint.CreateVideoInputDevice(*this);
+  return endpoint.CreateVideoInputDevice(*this, mediaFormat);
 }
 
 
-PVideoOutputDevice * OpalConnection::CreateVideoOutputDevice()
+PVideoOutputDevice * OpalConnection::CreateVideoOutputDevice(const OpalMediaFormat & mediaFormat, BOOL preview)
 {
-  return endpoint.CreateVideoOutputDevice(*this);
+  return endpoint.CreateVideoOutputDevice(*this, mediaFormat, preview);
 }
 
 

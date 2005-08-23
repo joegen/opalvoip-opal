@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2040  2005/07/14 08:51:18  csoutheren
+ * Revision 1.2041  2005/08/23 12:45:09  rjongbloed
+ * Fixed creation of video preview window and setting video grab/display initial frame size.
+ *
+ * Revision 2.39  2005/07/14 08:51:18  csoutheren
  * Removed CreateExternalRTPAddress - it's not needed because you can override GetMediaAddress
  * to do the same thing
  * Fixed problems with logic associated with media bypass
@@ -624,13 +627,17 @@ class OpalManager : public PObject
     /**Create a PVideoInputDevice for a source media stream.
       */
     virtual PVideoInputDevice * CreateVideoInputDevice(
-      const OpalConnection & connection /// Connection needing created video device
+      const OpalConnection & connection,  /// Connection needing created video device
+      const OpalMediaFormat & mediaFormat /// Media format for stream
     );
 
-    /**Create an PVideoOutputDevice for a sink media stream.
+    /**Create an PVideoOutputDevice for a sink media stream or the preview
+       display for a source media stream.
       */
     virtual PVideoOutputDevice * CreateVideoOutputDevice(
-      const OpalConnection & connection /// Connection needing created video device
+      const OpalConnection & connection,   /// Connection needing created video device
+      const OpalMediaFormat & mediaFormat, /// Media format for stream
+      BOOL preview                         /// Flag indicating is a preview output
     );
 
     /**Create a OpalMediaPatch instance.
@@ -983,12 +990,30 @@ class OpalManager : public PObject
        This defaults to the value of the PVideoInputDevice::GetInputDeviceNames()
        function.
      */
-    virtual BOOL SetVideoInputDevice(const PVideoDevice::OpenArgs & name);
+    virtual BOOL SetVideoInputDevice(
+      const PVideoDevice::OpenArgs & deviceArgs /// Full description of device
+    );
 
     /**Get the parameters for the video device to be used for input.
        This defaults to the value of the PSoundChannel::GetInputDeviceNames()[0].
      */
     const PVideoDevice::OpenArgs & GetVideoInputDevice() const { return videoInputDevice; }
+
+    /**Set the parameters for the video device to be used to preview input.
+       If the name is not suitable for use with the PVideoOutputDevice class
+       then the function will return FALSE and not change the device.
+
+       This defaults to the value of the PVideoInputDevice::GetOutputDeviceNames()
+       function.
+     */
+    virtual BOOL SetVideoPreviewDevice(
+      const PVideoDevice::OpenArgs & deviceArgs /// Full description of device
+    );
+
+    /**Get the parameters for the video device to be used for input.
+       This defaults to the value of the PSoundChannel::GetInputDeviceNames()[0].
+     */
+    const PVideoDevice::OpenArgs & GetVideoPreviewDevice() const { return videoPreviewDevice; }
 
     /**Set the parameters for the video device to be used for output.
        If the name is not suitable for use with the PVideoOutputDevice class
@@ -997,7 +1022,9 @@ class OpalManager : public PObject
        This defaults to the value of the PVideoInputDevice::GetOutputDeviceNames()
        function.
      */
-    virtual BOOL SetVideoOutputDevice(const PVideoDevice::OpenArgs & name);
+    virtual BOOL SetVideoOutputDevice(
+      const PVideoDevice::OpenArgs & deviceArgs /// Full description of device
+    );
 
     /**Get the parameters for the video device to be used for input.
        This defaults to the value of the PSoundChannel::GetOutputDeviceNames()[0].
@@ -1055,6 +1082,7 @@ class OpalManager : public PObject
     OpalSilenceDetector::Params silenceDetectParams;
 
     PVideoDevice::OpenArgs videoInputDevice;
+    PVideoDevice::OpenArgs videoPreviewDevice;
     PVideoDevice::OpenArgs videoOutputDevice;
 
     struct PortInfo {
