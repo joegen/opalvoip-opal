@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2030  2005/07/14 08:51:19  csoutheren
+ * Revision 1.2031  2005/08/23 12:45:09  rjongbloed
+ * Fixed creation of video preview window and setting video grab/display initial frame size.
+ *
+ * Revision 2.29  2005/07/14 08:51:19  csoutheren
  * Removed CreateExternalRTPAddress - it's not needed because you can override GetMediaAddress
  * to do the same thing
  * Fixed problems with logic associated with media bypass
@@ -426,15 +429,18 @@ void OpalEndPoint::AddVideoMediaFormats(OpalMediaFormatList & mediaFormats,
 }
 
 
-PVideoInputDevice * OpalEndPoint::CreateVideoInputDevice(const OpalConnection & connection)
+PVideoInputDevice * OpalEndPoint::CreateVideoInputDevice(const OpalConnection & connection,
+                                                         const OpalMediaFormat & mediaFormat)
 {
-  return manager.CreateVideoInputDevice(connection);
+  return manager.CreateVideoInputDevice(connection, mediaFormat);
 }
 
 
-PVideoOutputDevice * OpalEndPoint::CreateVideoOutputDevice(const OpalConnection & connection)
+PVideoOutputDevice * OpalEndPoint::CreateVideoOutputDevice(const OpalConnection & connection,
+                                                           const OpalMediaFormat & mediaFormat,
+                                                           BOOL preview)
 {
-  return manager.CreateVideoOutputDevice(connection);
+  return manager.CreateVideoOutputDevice(connection, mediaFormat, preview);
 }
 
 

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2051  2005/08/11 22:45:13  rjongbloed
+ * Revision 1.2052  2005/08/23 12:45:09  rjongbloed
+ * Fixed creation of video preview window and setting video grab/display initial frame size.
+ *
+ * Revision 2.50  2005/08/11 22:45:13  rjongbloed
  * Fixed incorrect test for auto start receive video
  *
  * Revision 2.49  2005/08/09 09:20:20  rjongbloed
@@ -313,6 +316,9 @@ OpalManager::OpalManager()
       videoOutputDevice.deviceName = devices[1];
   }
   autoStartReceiveVideo = !(videoOutputDevice.deviceName *= "null");
+
+  if (autoStartReceiveVideo)
+    videoPreviewDevice = videoOutputDevice;
 
 
   lastCallTokenID = 1;
@@ -662,10 +668,13 @@ void OpalManager::AddVideoMediaFormats(OpalMediaFormatList & mediaFormats,
 }
 
 
-PVideoInputDevice * OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection*/)
+PVideoInputDevice * OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection*/,
+                                                        const OpalMediaFormat & mediaFormat)
 {
   PVideoInputDevice * videoDevice = PVideoInputDevice::CreateDeviceByName(videoInputDevice.deviceName);
   if (videoDevice != NULL) {
+    videoInputDevice.width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption, 176);
+    videoInputDevice.height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption, 144);
     if (videoDevice->OpenFull(videoInputDevice, FALSE))
       return videoDevice;
 
@@ -676,11 +685,16 @@ PVideoInputDevice * OpalManager::CreateVideoInputDevice(const OpalConnection & /
 }
 
 
-PVideoOutputDevice * OpalManager::CreateVideoOutputDevice(const OpalConnection & /*connection*/)
+PVideoOutputDevice * OpalManager::CreateVideoOutputDevice(const OpalConnection & /*connection*/,
+                                                          const OpalMediaFormat & mediaFormat,
+                                                          BOOL preview)
 {
-  PVideoOutputDevice * videoDevice = PVideoOutputDevice::CreateDeviceByName(videoOutputDevice.deviceName);
+  const PVideoDevice::OpenArgs & args = preview ? videoPreviewDevice : videoOutputDevice;
+  PVideoOutputDevice * videoDevice = PVideoOutputDevice::CreateDeviceByName(args.deviceName);
   if (videoDevice != NULL) {
-    if (videoDevice->OpenFull(videoOutputDevice, FALSE))
+    videoOutputDevice.width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption, 176);
+    videoOutputDevice.height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption, 144);
+    if (videoDevice->OpenFull(args, FALSE))
       return videoDevice;
 
     delete videoDevice;
@@ -1062,6 +1076,13 @@ BOOL OpalManager::SetVideoInputDevice(const PVideoDevice::OpenArgs & args)
   }
 
   return FALSE;
+}
+
+
+BOOL OpalManager::SetVideoPreviewDevice(const PVideoDevice::OpenArgs & args)
+{
+  videoPreviewDevice = args;
+  return TRUE;
 }
 
 
