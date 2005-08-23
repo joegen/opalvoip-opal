@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.cxx,v $
- * Revision 1.2018  2005/08/20 09:01:56  rjongbloed
+ * Revision 1.2019  2005/08/23 12:46:27  rjongbloed
+ * Fix some decoder issues, now get inital frame displayed!
+ *
+ * Revision 2.17  2005/08/20 09:01:56  rjongbloed
  * H.261 port to OPAL model
  *
  * Revision 2.16  2005/02/24 19:49:44  dsandras
@@ -433,6 +436,7 @@ Opal_H261_YUV420P::Opal_H261_YUV420P(const OpalTranscoderRegistration & registra
   : OpalVideoTranscoder(registration)
 {
   videoDecoder = NULL;
+  expectedSequenceNumber = 0;
   nblk = ndblk = 0;
   rvts = NULL;
   now = 1;
@@ -460,42 +464,36 @@ BOOL Opal_H261_YUV420P::ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameLi
 {
   dst.RemoveAll();
 
-  // assume buffer is start of H.261 header
-  const BYTE * payload = src.GetPayloadPtr();
-  PINDEX length = src.GetPayloadSize();
-
-  const BYTE * rtpHeader = payload;
-  // see if any contributing source
-  PINDEX cnt = src.GetContribSrcCount();
-  if (cnt > 0) {
-    rtpHeader += cnt * 4;
-    length -= cnt * 4;
-  }
-
-  // determine video codec type
   if (videoDecoder == NULL) {
-    if ((*rtpHeader & 2) && !(*rtpHeader & 1)) // check value of I field in header
-      videoDecoder = new IntraP64Decoder();
-    else
-      videoDecoder = new FullP64Decoder();
+    // Create the actual decoder
+    videoDecoder = new FullP64Decoder();
     videoDecoder->marks(rvts);
   }
 
+  // Check for lost packets to help decoder
+  BOOL lostPreviousPacket = FALSE;
+  if (expectedSequenceNumber != 0 && expectedSequenceNumber != src.GetSequenceNumber()) {
+    lostPreviousPacket = TRUE;
+    PTRACE(3,"H261\tDetected loss of one video packet. "
+          << expectedSequenceNumber << " != "
+          << src.GetSequenceNumber() << " Will recover.");
+  }
+  expectedSequenceNumber = (WORD)(src.GetSequenceNumber()+1);
+
   videoDecoder->mark(now);
-  if (!videoDecoder->decode(rtpHeader, length, 0)) {
+  if (!videoDecoder->decode(src.GetPayloadPtr(), src.GetPayloadSize(), lostPreviousPacket)) {
     PTRACE (3, "H261\t Could not decode frame, continuing in hope.");
     return TRUE;
   }
 
-  //Check for a resize is carried out one two level -.
-  // a) size change in the receive video stream.
+  //Check for a resize - can change at any time!
   if (frameWidth  != (unsigned)videoDecoder->width() ||
       frameHeight != (unsigned)videoDecoder->height()) {
     frameWidth = videoDecoder->width();
     frameHeight = videoDecoder->height();
 
     nblk = (frameWidth * frameHeight) / 64;
-    delete rvts;
+    delete [] rvts;
     rvts = new BYTE[nblk];
     memset(rvts, 0, nblk);
     videoDecoder->marks(rvts);
@@ -503,6 +501,9 @@ BOOL Opal_H261_YUV420P::ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameLi
 
   if (!src.GetMarker()) // Have not built an entire frame yet
     return TRUE;
+
+  videoDecoder->sync();
+  ndblk = videoDecoder->ndblk();
 
   int wraptime = now ^ 0x80;
   BYTE * ts = rvts;
@@ -523,6 +524,8 @@ BOOL Opal_H261_YUV420P::ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameLi
   memcpy(frameHeader->data, videoDecoder->GetFramePtr(), frameBytes);
 
   dst.Append(pkt);
+
+  videoDecoder->resetndblk();
 
   return TRUE;
 }
