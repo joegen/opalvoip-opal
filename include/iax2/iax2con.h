@@ -25,6 +25,10 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2con.h,v $
+ *  Revision 1.3  2005/08/24 04:56:25  dereksmithies
+ *  Add code from Adrian Sietsma to send FullFrameTexts and FullFrameDtmfs to
+ *  the remote end.  Many Thanks.
+ *
  *  Revision 1.2  2005/08/04 08:14:17  rjongbloed
  *  Fixed Windows build under DevStudio 2003 of IAX2 code
  *
@@ -132,8 +136,15 @@ class IAX2Connection : public OpalConnection
     { OpalConnection::ClearCall(reason); }
 
   /**Provided as a link between the iax endpoint and the iax processor */
-  void SendDtmf(PString dtmf) { iaxProcessor->SendDtmf(dtmf); }
+  void SendDtmf(PString dtmf);
+
+  /** sending text fullframes **/
+  virtual BOOL SendUserInputString(const PString & value );
   
+  /** sending dtmf  - which is 1 char per FullFrameDtmf on the frame.**/
+  virtual BOOL SendUserInputTone(char tone, unsigned duration );
+
+
   /**Send appropriate packets to the remote node to indicate we will accept this call.
      Note that this method is called from the endpoint thread, (not this IAX2Connection's thread*/
   void AcceptIncomingCall();

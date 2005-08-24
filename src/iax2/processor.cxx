@@ -27,6 +27,10 @@
  *
  *
  * $Log: processor.cxx,v $
+ * Revision 1.9  2005/08/24 04:56:25  dereksmithies
+ * Add code from Adrian Sietsma to send FullFrameTexts and FullFrameDtmfs to
+ * the remote end.  Many Thanks.
+ *
  * Revision 1.8  2005/08/24 03:26:32  dereksmithies
  * Add excellent patch from Adrian Sietsma to set some variables correctly
  * when receiving a call. Many Thanks.
@@ -551,15 +555,21 @@ void IAX2Processor::ProcessLists()
     ConnectToRemoteNode(nodeToCall);
   }
   
-  PStringArray dtmfs;
-  dtmfList.GetAllDeleteAll(dtmfs);
+  PString dtmfs = dtmfText.GetAndDelete();
   
-  while(dtmfs.GetSize() > 0) {
-    PTRACE(3, "Have " << dtmfs.GetSize() << " dtmf strings to send");
-    PString dtmf = *(PString *)dtmfs.GetAt(0);
-    SendDtmfMessage(dtmf);
-    dtmfs.RemoveAt(0);
+  while(dtmfs.GetLength() > 0) {
+    SendDtmfMessage(dtmfs[0]);
+    dtmfs = dtmfs.Mid(1);
   }  
+
+  PStringArray sendList; // text messages
+  textList.GetAllDeleteAll(sendList);
+
+  PTRACE(3, "Have " << sendList.GetSize() << " text strings to send");
+  while(sendList.GetSize() > 0) {
+    PString text = *(PString *)sendList.RemoveAt(0);
+    SendTextMessage(text);    
+  }
 
   if (answerCallNow)
     SendAnswerMessageToRemoteNode();
@@ -644,9 +654,25 @@ void IAX2Processor::SendSoundMessage(PBYTEArray *sound)
   delete sound;
 }
 
-void IAX2Processor::SendDtmfMessage(PString & message)
+void IAX2Processor::SendDtmf(PString  dtmfs)
+{
+  dtmfText += dtmfs;
+}
+
+void IAX2Processor::SendText(const PString & text)
+{
+  textList.AppendString(text);
+}
+
+void IAX2Processor::SendDtmfMessage(char  message)
 {
   FullFrameDtmf *f = new FullFrameDtmf(this, message);
+  TransmitFrameToRemoteEndpoint(f);
+}
+
+void IAX2Processor::SendTextMessage(PString & message)
+{
+  FullFrameText *f = new FullFrameText(this, message);
   TransmitFrameToRemoteEndpoint(f);
 }
 
