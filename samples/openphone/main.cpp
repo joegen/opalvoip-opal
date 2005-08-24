@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cpp,v $
+ * Revision 1.31  2005/08/24 10:21:36  rjongbloed
+ * Added function to create video output windows, can now get correct titles.
+ *
  * Revision 1.30  2005/08/10 08:07:44  rjongbloed
  * Upgraded to support wxWidgets 2.6
  * Also improved build so uses WXDIR environment variable
@@ -1195,6 +1198,26 @@ void MyManager::SendUserInput(char tone)
   }
 }
 
+
+PVideoOutputDevice * MyManager::CreateVideoOutputDevice(const OpalConnection & connection,
+                                                        const OpalMediaFormat & mediaFormat,
+                                                        BOOL preview)
+{
+  // We ALWAYS use a Window
+  PVideoOutputDevice * videoDevice = PVideoOutputDevice::CreateDevice("Window");
+  if (videoDevice != NULL) {
+    if (videoDevice->Open(psprintf("MSWIN STYLE=0x%08X TITLE=\"%s\"",
+                                   WS_POPUP|WS_BORDER|WS_SYSMENU|WS_CAPTION,
+                                   preview ? "Local" : (const char *)connection.GetRemotePartyName())))
+      return videoDevice;
+
+    delete videoDevice;
+  }
+
+  return OpalManager::CreateVideoOutputDevice(connection, mediaFormat, preview);
+}
+
+    
 void MyManager::OnUserInputString(OpalConnection & connection, const PString & value)
 {
   LogWindow << "User input received: \"" << value << '"' << endl;

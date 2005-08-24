@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.24  2005/08/24 10:21:36  rjongbloed
+ * Added function to create video output windows, can now get correct titles.
+ *
  * Revision 1.23  2005/08/10 08:07:44  rjongbloed
  * Upgraded to support wxWidgets 2.6
  * Also improved build so uses WXDIR environment variable
@@ -525,6 +528,11 @@ class MyManager : public wxFrame, public OpalManager
     virtual BOOL OnOpenMediaStream(
       OpalConnection & connection,  /// Connection that owns the media stream
       OpalMediaStream & stream    /// New media stream being opened
+    );
+    virtual PVideoOutputDevice * CreateVideoOutputDevice(
+      const OpalConnection & connection,   /// Connection needing created video device
+      const OpalMediaFormat & mediaFormat, /// Media format for stream
+      BOOL preview                         /// Flag indicating is a preview output
     );
     virtual void OnUserInputString(
       OpalConnection & connection,  /// Connection input has come from
