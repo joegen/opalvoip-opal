@@ -27,6 +27,9 @@
  *
  *
  * $Log: processor.cxx,v $
+ * Revision 1.5  2005/08/24 01:38:38  dereksmithies
+ * Add encryption, iax2 style. Numerous tidy ups. Use the label iax2, not iax
+ *
  * Revision 1.4  2005/08/20 07:36:08  rjongbloed
  * Fixed 10 second delay when exiting application
  *
@@ -257,10 +260,11 @@ void IAX2Processor::Terminate()
 
 void IAX2Processor::Main()
 {
+  PString name = GetThreadName();
   if (IsHandlingSpecialPackets())
     SetThreadName("Special Iax packets");
   else
-    SetThreadName("IAX Processor");
+    SetThreadName("Process " + name);
 
   while(endThread == FALSE) {
     activate.Wait();
@@ -287,7 +291,7 @@ BOOL IAX2Processor::IsStatusQueryEthernetFrame(Frame *frame)
     return FALSE;
    
   FullFrame *f = (FullFrame *)frame;
-  if (f->GetFrameType() != FullFrame::iaxProtocolType)
+  if (f->GetFrameType() != FullFrame::iax2ProtocolType)
     return FALSE;
    
   PINDEX subClass = f->GetSubClass();
@@ -359,19 +363,19 @@ void IAX2Processor::Hangup(PString dieMessage)
 void IAX2Processor::ConnectToRemoteNode(PString & newRemoteNode)
 {      // Parse a string like guest@node.name.com/23234
   
-  PTRACE(1, "Connect to remote node " << newRemoteNode);
+  PTRACE(2, "Connect to remote node " << newRemoteNode);
   PStringList res = IAX2EndPoint::DissectRemoteParty(newRemoteNode);
 
   if (res[IAX2EndPoint::userIndex].IsEmpty()     ||
       res[IAX2EndPoint::addressIndex].IsEmpty()  ||
       res[IAX2EndPoint::extensionIndex].IsEmpty()) {
-    PTRACE(3, "Opal\tremote node to call is not specified correctly" << newRemoteNode);
+    PTRACE(3, "Opal\tremote node to call is not specified correctly iax2:" << newRemoteNode);
     PTRACE(3, "Opal\tExample format is iax2:guest@misery.digium.com/s");
-    PTRACE(3, "opal\tYou supplied " <<
+    PTRACE(3, "Opal\tYou supplied " <<
 	   "iax2:" <<
-	   res[IAX2EndPoint::userIndex].IsEmpty()     << "@" <<
-	   res[IAX2EndPoint::addressIndex].IsEmpty()  << "/" <<
-	   res[IAX2EndPoint::extensionIndex].IsEmpty());
+	   (res[IAX2EndPoint::userIndex].IsEmpty()      ? "" : res[IAX2EndPoint::userIndex])     << "@" <<
+	   (res[IAX2EndPoint::addressIndex].IsEmpty()   ? "" : res[IAX2EndPoint::addressIndex])  << "/" <<
+	   (res[IAX2EndPoint::extensionIndex].IsEmpty() ? "" : res[IAX2EndPoint::extensionIndex])            );
     return;
   }
     
@@ -401,7 +405,8 @@ void IAX2Processor::ConnectToRemoteNode(PString & newRemoteNode)
   f->AppendIe(new IeCalledNumber(res[IAX2EndPoint::extensionIndex] ));
   f->AppendIe(new IeDnid(res[IAX2EndPoint::extensionIndex]));
   f->AppendIe(new IeCalledContext(res[IAX2EndPoint::contextIndex]));
-  
+  f->AppendIe(new IeEncryption());
+
   PTRACE(3, "Create full frame protocol to do cmdNew. Finished appending Ies. ");
   TransmitFrameToRemoteEndpoint(f);
   StartNoResponseTimer();
@@ -427,15 +432,22 @@ BOOL IAX2Processor::ProcessOneIncomingEthernetFrame()
     return FALSE;
   }
   
-  PTRACE(3, "IaxConnection process this incoming frame " << frame->IdString() << endl << *frame);
+  PTRACE(3, "IaxConnection\tUnknown  incoming frame " << frame->IdString());
+  Frame *af = frame->BuildAppropriateFrameType(encryption);
+  delete frame;
+
+  if (af == NULL)
+    return TRUE;
+  frame = af;
   
-  if (!PIsDescendant(frame, FullFrame)) {
-    PTRACE(3, "Incoming mini frame" << frame->GetClass());
+  if (PIsDescendant(frame, MiniFrame)) {
+    PTRACE(3, "IaxConnection\tIncoming mini frame" << frame->IdString());
     ProcessNetworkFrame((MiniFrame *)frame);
     return TRUE;
   }
   
   FullFrame *f = (FullFrame *) frame;
+  PTRACE(3, "IaxConnection\tFullFrame incoming frame " << frame->IdString());
   
   endpoint.transmitter->PurgeMatchingFullFrames(f);
 
@@ -471,8 +483,8 @@ BOOL IAX2Processor::ProcessOneIncomingEthernetFrame()
     PTRACE(3, "Build matching full frame    nullType");
     ProcessNetworkFrame(new FullFrameNull(*f));
     break;
-  case FullFrame::iaxProtocolType: 
-    PTRACE(3, "Build matching full frame    iaxProtocolType");
+  case FullFrame::iax2ProtocolType: 
+    PTRACE(3, "Build matching full frame    iax2ProtocolType");
     ProcessNetworkFrame(new FullFrameProtocol(*f));
     break;
   case FullFrame::textType:        
@@ -522,8 +534,8 @@ void IAX2Processor::ProcessLists()
   PStringArray dtmfs;
   dtmfList.GetAllDeleteAll(dtmfs);
   
-  PTRACE(3, "Have " << dtmfs.GetSize() << " dtmf strings to send");
   while(dtmfs.GetSize() > 0) {
+    PTRACE(3, "Have " << dtmfs.GetSize() << " dtmf strings to send");
     PString dtmf = *(PString *)dtmfs.GetAt(0);
     SendDtmfMessage(dtmf);
     dtmfs.RemoveAt(0);
@@ -540,10 +552,12 @@ void IAX2Processor::ProcessLists()
 
 void IAX2Processor::ProcessIncomingAudioFrame(Frame *newFrame)
 {
-  PTRACE(3, "Incoming audio frame passed on to the sound player");
+  PTRACE(3, "Processor\tPlace audio frame on queue " << newFrame->IdString());
+  
   IncAudioFramesRcvd();
-
+  
   soundReadFromEthernet.AddNewFrame(newFrame);
+  PTRACE(3, "have " << soundReadFromEthernet.GetSize() << " pending packets on incoming sound queue");
 }
 
 void IAX2Processor::ProcessIncomingVideoFrame(Frame *newFrame)
@@ -618,16 +632,20 @@ void IAX2Processor::SendDtmfMessage(PString & message)
 
 void IAX2Processor::SendAckFrame(FullFrame *inReplyTo)
 {
-  PTRACE(1, "Send an ack frame in reply" );
-  PTRACE(1, "In reply to " << *inReplyTo);
+  PTRACE(3, "Processor\tSend an ack frame in reply" );
+  PTRACE(3, "Processor\tIn reply to " << *inReplyTo);
   FullFrameProtocol *f = new FullFrameProtocol(this, FullFrameProtocol::cmdAck, inReplyTo); //, FullFrame::callIrrelevant);
-  PTRACE(1, "SEqunece for sending is (pre) " << sequence.AsString());
+  PTRACE(4, "Swquence for sending is (pre) " << sequence.AsString());
   TransmitFrameToRemoteEndpoint(f);
-  PTRACE(1, "SEqunece for sending is (ppost) " << sequence.AsString());
+  PTRACE(4, "Sequence for sending is (ppost) " << sequence.AsString());
 }
 
 void IAX2Processor::TransmitFrameNow(Frame *src)
 {
+  if (!src->EncryptContents(encryption)) {
+    delete src;
+    return;
+  }
   endpoint.transmitter->SendFrame(src);
 }
 
@@ -712,10 +730,10 @@ void IAX2Processor::ProcessNetworkFrame(FullFrameDtmf * src)
 void IAX2Processor::ProcessNetworkFrame(FullFrameVoice * src)
 {
   if (firstMediaFrame) {
-    PTRACE(3, "Processor\tReceived first voice media frame ");
+    PTRACE(3, "Processor\tReceived first voice media frame " << src->IdString());
     firstMediaFrame = FALSE;
   }
-  PTRACE(3, "ProcessNetworkFrame(FullFrameVoice * src)");
+  PTRACE(3, "ProcessNetworkFrame(FullFrameVoice * src)" << src->IdString());
   SendAckFrame(src);
   ProcessIncomingAudioFrame(src);
   
@@ -1410,9 +1428,12 @@ BOOL IAX2Processor::Authenticate(FullFrameProtocol *reply)
   }
   
   if (ie.IsMd5Authentication()) {
+    PTRACE(3, "Processor\tMD5 Authentiction yes, make reply up");
     IeMd5Result *res = new IeMd5Result(ieData.challenge, con->GetEndPoint().GetPassword());
     reply->AppendIe(res);
     processed = TRUE;
+    encryption.SetChallengeKey(ieData.challenge);
+    encryption.SetEncryptionKey(con->GetEndPoint().GetPassword());
   }
   
   if (ie.IsPlainTextAuthentication() && (!processed)) {
@@ -1420,6 +1441,12 @@ BOOL IAX2Processor::Authenticate(FullFrameProtocol *reply)
     processed = TRUE;
   }
   
+  if (ieData.encryptionMethods == IeEncryption::encryptAes128) {
+    PTRACE(3, "Processor\tEnable AES 128 encryption");
+    encryption.SetEncryptionOn();
+    reply->AppendIe(new IeEncryption);
+  }
+
   return processed;
 }
 
@@ -1471,10 +1498,12 @@ void IAX2Processor::IncomingEthernetFrame(Frame *frame)
 Frame * IAX2Processor::GetSoundPacketFromNetwork()
 {
   Frame * newSound = soundReadFromEthernet.GetLastFrame();
-  if (newSound == NULL) 
+  if (newSound == NULL) {
+    PTRACE(3, "OpalMediaStream\t NULL sound packet on stack ");
     return NULL;
+  }
      
-  PTRACE(1, "Processr\tSend frame to media stream " << newSound->IdString());
+  PTRACE(3, "OpalMediaStream\tSend frame to media stream " << newSound->IdString());
   return newSound;
 } 
 

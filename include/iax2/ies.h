@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: ies.h,v $
+ *  Revision 1.2  2005/08/24 01:38:38  dereksmithies
+ *  Add encryption, iax2 style. Numerous tidy ups. Use the label iax2, not iax
+ *
  *  Revision 1.1  2005/07/30 07:01:32  csoutheren
  *  Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
  *  Thanks to Derek Smithies of Indranet Technologies Ltd. for
@@ -49,6 +52,7 @@
 
 
 class Ie;
+class Iax2Encryption;
 
 /**Ie class is for handling information elements*/
 class Ie : public PObject
@@ -1092,8 +1096,14 @@ class IeMd5Result : public IeString
   IeMd5Result(PString newValue) { SetData(newValue); }
   
   /**Take the challenge and password, calculate the result, and store */
-  IeMd5Result(PString challenge, PString password);
+  IeMd5Result(PString &challenge, PString &password);
   
+  /**Take the supplied Iax2Encrption arguement, calculate the result, and store */
+  IeMd5Result(Iax2Encryption & encryption);
+  
+  /**Initialize the internal structurees */
+  void InitializeChallengePassword(const PString &newChallenge, const PString &newPassword);
+
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
   
@@ -1103,7 +1113,15 @@ class IeMd5Result : public IeString
   /** Take the data from this Ie, and copy it into the IeData structure.
       This is done on processing an incoming frame which contains Ie in the data section. */
   virtual void StoreDataIn(IeData &res) { res.md5Result = dataValue; }     
+
+  /**GetAccess to the stomach, which is the concatanation of the various
+     components used to make a key */
+  PBYTEArray & GetDataBlock() { return dataBlock; }
+
  protected:
+
+  /**The contents of the stomach in a binary block */
+  PBYTEArray dataBlock;
 };
 
 ///////////////////////////////////////////////////////////////////////
@@ -1705,6 +1723,14 @@ class IeEncryption : public IeUShort
 {
   PCLASSINFO(IeEncryption, IeUShort);
  public:
+  /**Specify the different encryption methods */
+  enum IeEncryptionMethod {
+    encryptAes128 = 1    /*!< Specify to use AES 128 bit encryption */
+  };
+
+  /**Constructor to specify a particular encryption method */
+  IeEncryption(IeEncryptionMethod method = encryptAes128);
+
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
@@ -1718,7 +1744,7 @@ class IeEncryption : public IeUShort
   
   /** Take the data from this Ie, and copy it into the IeData structure.
       This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.encryptionMethods = dataValue; }     
+  virtual void StoreDataIn(IeData &res) { res.encryptionMethods = dataValue; }
  protected:
 };
 

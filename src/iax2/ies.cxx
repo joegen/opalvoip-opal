@@ -27,6 +27,9 @@
  *
  *
  * $Log: ies.cxx,v $
+ * Revision 1.2  2005/08/24 01:38:38  dereksmithies
+ * Add encryption, iax2 style. Numerous tidy ups. Use the label iax2, not iax
+ *
  * Revision 1.1  2005/07/30 07:01:33  csoutheren
  * Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
  * Thanks to Derek Smithies of Indranet Technologies Ltd. for
@@ -251,14 +254,14 @@ IeUShort::IeUShort(BYTE length, BYTE *srcData)
   }
   
   validData = TRUE;
-  dataValue = (unsigned short)((srcData[1] << 8) | srcData[0]);
+  dataValue = (unsigned short)((srcData[0] << 8) | srcData[1]);
 }
 
 
 void IeUShort::PrintOn(ostream & str) const
 {
   if (validData)
-    str << setw(17) << Class() << " " << dataValue;
+    str << setw(17) << Class() << " " << dataValue << "UShort";
   else
     str << setw(17) << Class() << " does not hold valid data" ;
 }
@@ -649,22 +652,40 @@ void IeChallenge::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-IeMd5Result::IeMd5Result(PString challenge, PString password)
+IeMd5Result::IeMd5Result(Iax2Encryption & encryption)
+{
+  InitializeChallengePassword(encryption.ChallengeKey(), encryption.EncryptionKey());
+}
+
+IeMd5Result::IeMd5Result(PString &challenge, PString &password)
+{
+  InitializeChallengePassword(challenge, password);
+}
+
+
+void IeMd5Result::InitializeChallengePassword(const PString &newChallenge, const PString &newPassword)
 {
   PMessageDigest5 stomach;
-  stomach.Process(challenge);
-  stomach.Process(password);
+  stomach.Process(newChallenge);
+  stomach.Process(newPassword);
   PMessageDigest5::Code digester;
   stomach.Complete(digester);
+
+  dataBlock.SetSize(sizeof(digester));
+  memcpy(dataBlock.GetPointer(), &digester, dataBlock.GetSize());
   
   PStringStream res;
-  for (PINDEX i = 0; i < (PINDEX)sizeof(digester); i++)
+  for (PINDEX i = 0; i < (PINDEX)sizeof(digester); i++) 
     res  << ::hex << ::setfill('0') << ::setw(2) << (int)(*(((BYTE *)&digester)+i));
-  
+
   res.Trim();
   res.MakeMinimumSize();
   
   SetData(res);
+
+  PTRACE(3, "IeMd5Result\tChallenge is " << newChallenge);
+  PTRACE(3, "IeMd5Result\tPassword  is " << newPassword);
+  PTRACE(3, "IeMd5Result\tresult    is " << res);
 }
 
 void IeMd5Result::PrintOn(ostream & str) const
@@ -891,6 +912,11 @@ void IeSamplingRate::PrintOn(ostream & str) const
     str << setw(17) << Class() << " does not contain valid data";
 }
 ////////////////////////////////////////////////////////////////////////////////
+
+IeEncryption::IeEncryption(IeEncryptionMethod method)
+{
+  SetData((unsigned short)method);
+}
 
 void IeEncryption::PrintOn(ostream & str) const
 {
