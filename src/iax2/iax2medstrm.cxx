@@ -27,6 +27,9 @@
  *
  *
  * $Log: iax2medstrm.cxx,v $
+ * Revision 1.2  2005/08/24 01:38:38  dereksmithies
+ * Add encryption, iax2 style. Numerous tidy ups. Use the label iax2, not iax
+ *
  * Revision 1.1  2005/07/30 07:01:33  csoutheren
  * Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
  * Thanks to Derek Smithies of Indranet Technologies Ltd. for
@@ -136,10 +139,11 @@ BOOL OpalIAX2MediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & length)
     }
   }
   
-  Frame *res;
-  res = connection.GetSoundPacketFromNetwork();
-  if ((res == NULL) && (length > 0))
+  Frame *res = connection.GetSoundPacketFromNetwork();
+  if ((res == NULL) && (length > 0)) {
+    PTRACE(3, "Finished getting media data. Send " << length);
     return TRUE;
+  }
 
   if (res == NULL) {
     do {
@@ -149,18 +153,25 @@ BOOL OpalIAX2MediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & length)
       }
 
       PThread::Sleep(10);
-      res = connection.GetSoundPacketFromNetwork();
       PTRACE(6, "Media\tJust slept another 10ms cause read nothing in last iteration ");
+      res = connection.GetSoundPacketFromNetwork();
+      if (res != NULL) {
+	PTRACE(6, "Media\tNow we have data to process " << res->IdString());
+      }
     } while ((res == NULL) && isOpen);
   }
 
-  if (res == NULL)
+  if (res == NULL) {
+    PTRACE(3, "Media\tWe have looped and looped, but still have a null");
     return FALSE;
+  }
 
+  PTRACE(6, "Media\tThis frame has " << res->GetMediaDataSize() << " bytes of media");
   if (res->GetMediaDataSize() <= (size - length)) {
     memcpy(buffer + length, res->GetMediaDataPointer(), res->GetMediaDataSize());
     length = length + res->GetMediaDataSize();
     delete res;
+    PTRACE(3, "Media\t have written to supplied data array & exit");
     return TRUE;
   }
 
@@ -171,6 +182,7 @@ BOOL OpalIAX2MediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & length)
   length = size;
   delete res;
 
+  PTRACE(3, "Media\tOk, we have to save some to pending... ");
   return TRUE;
 }
 
@@ -179,15 +191,15 @@ BOOL OpalIAX2MediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & length)
 BOOL OpalIAX2MediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX & written)
 {
   written = 0;
-
   if (IsSource()) {
     PTRACE(1, "Media\tTried to write to source media stream");
     return FALSE;
   }
-  PTRACE(3, "Media\tWrite data to the network : have " << length << " bytes to send to remote host");
+  PTRACE(6, "Media\tSend data to the network : have " << length << " bytes to send to remote host");
   PBYTEArray *sound = new PBYTEArray(buffer, length);
   written = length;
   connection.PutSoundPacketToNetwork(sound);
+
   return TRUE;
 }
 

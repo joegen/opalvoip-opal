@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: frame.h,v $
+ *  Revision 1.3  2005/08/24 01:38:38  dereksmithies
+ *  Add encryption, iax2 style. Numerous tidy ups. Use the label iax2, not iax
+ *
  *  Revision 1.2  2005/08/04 08:14:17  rjongbloed
  *  Fixed Windows build under DevStudio 2003 of IAX2 code
  *
@@ -81,7 +84,7 @@ class Frame :  public PObject
   Frame(IAX2EndPoint &_endpoint);
   
   /**Destructor - which is empty */
-  virtual ~Frame() {}
+  virtual ~Frame();
   
   /**Wait on the designated socket for an incoming UDP packet. This
      method is only called by the receiver. This method does NO interpretation*/
@@ -93,15 +96,12 @@ class Frame :  public PObject
   /**True if this is a full frame */
   virtual BOOL IsFullFrame();
   
-  /**True if this is encrypted */
-  BOOL IsEncrypted();
-  
   /**True if it is a video frame */
   BOOL IsVideo() const;
   
   /**True if is is an audio frame */
   BOOL IsAudio() const;
-  
+
   /**Pointer to the beginning of the media (after the header) in this packet.
      The low level frame has no idea on headers, so just return pointer to beginning
      of data. */
@@ -121,6 +121,17 @@ class Frame :  public PObject
   /**Obtain a pointer to the current position in the incoming data array */
   const BYTE * GetDataPointer() { return data + currentReadIndex; }
   
+  /** Read the input frame, and create the correct MiniFrame,
+      FullFrame, and set frame type variables.  If a password is
+      supplied, decrypt the frame with this password
+
+      This method will never delete the input frame.
+      If the output is null, it failed to derive a result.*/
+  Frame * BuildAppropriateFrameType(Iax2Encryption &encryptionInfo);
+
+  /**Same as the preceeding function, except that encryption is off */
+  Frame * BuildAppropriateFrameType();
+
   /** How many bytes are unread in the incoming data array */
   PINDEX   GetUnReadBytes() { return data.GetSize() - currentReadIndex; }
   
@@ -157,18 +168,18 @@ class Frame :  public PObject
   
   /**Specify the type of this frame. */
   enum IaxFrameType {
-    undefType       = 0,     /*!< full frame type is  Undefined                     */
-    dtmfType        = 1,     /*!< full frame type is  DTMF                          */
-    voiceType       = 2,     /*!< full frame type is  Audio                         */
-    videoType       = 3,     /*!< full frame type is  Video                         */
-    controlType     = 4,     /*!< full frame type is  Session Control               */
-    nullType        = 5,     /*!< full frame type is  NULL - frame ignored.         */
-    iaxProtocolType = 6,     /*!< full frame type is  IAX protocol specific         */
-    textType        = 7,     /*!< full frame type is  text message                  */
-    imageType       = 8,     /*!< full frame type is  image                         */
-    htmlType        = 9,     /*!< full frame type is  HTML                          */
-    cngType         = 10,    /*!< full frame type is  CNG (comfort noise generation */
-    numFrameTypes   = 11     /*!< the number of defined IAX2 frame types            */
+    undefType        = 0,     /*!< full frame type is  Undefined                     */
+    dtmfType         = 1,     /*!< full frame type is  DTMF                          */
+    voiceType        = 2,     /*!< full frame type is  Audio                         */
+    videoType        = 3,     /*!< full frame type is  Video                         */
+    controlType      = 4,     /*!< full frame type is  Session Control               */
+    nullType         = 5,     /*!< full frame type is  NULL - frame ignored.         */
+    iax2ProtocolType = 6,     /*!< full frame type is  IAX protocol specific         */
+    textType         = 7,     /*!< full frame type is  text message                  */
+    imageType        = 8,     /*!< full frame type is  image                         */
+    htmlType         = 9,     /*!< full frame type is  HTML                          */
+    cngType          = 10,    /*!< full frame type is  CNG (comfort noise generation */
+    numFrameTypes    = 11     /*!< the number of defined IAX2 frame types            */
   };
   
   /**Access the current value of the variable controlling frame type,
@@ -195,15 +206,22 @@ class Frame :  public PObject
      connection to process this call */
   void BuildConnectionTokenId();
 
-  
+  /**Write the data in the variables to this frame's data array. If
+     encryption is on, the data will be encrypted */
+  BOOL EncryptContents(Iax2Encryption &encData);
+
+  /**Get the offset to the beginning of the encrypted region */
+  virtual PINDEX GetEncryptionOffset();
 
  protected:
-  
+
+  /**Use the supplied encryptionKey, and data in storage, to decrypt this frame.
+   
+  Return False if the decryption fails, TRUE if the decryption works.*/
+  BOOL DecryptContents(Iax2Encryption & encryption);
+
   /**Specification of the location (address, call number etc) of the far endpoint */
   Remote  remote;
-  
-  /**Examine frame type, which is used in deciding how to read a full frame from the network */
-  BOOL LookAheadFullFrameType();
   
   /**Variable specifying the IAX type of frame that this is. Used only in reading from the network */
   IaxFrameType frameType;
@@ -240,9 +258,6 @@ class Frame :  public PObject
   
   /**Internal storage array, ready for sending to remote node, or ready for receiving from remote node*/
   PBYTEArray         data;
-  
-  /**Flag to indicate if this data is encrypted or not */
-  BOOL               encrypted;
   
   /**Flag to indicate if this is a MiniFrame or FullFrame */
   BOOL               isFullFrame;
@@ -329,6 +344,9 @@ class MiniFrame : public Frame
      Whenever a frame is transmitted, this method will be called.*/ 
   virtual void InitialiseHeader(IAX2Processor *processor);
   
+  /**Get the offset to the beginning of the encrypted region */
+  virtual PINDEX GetEncryptionOffset();
+
  protected:
   /**Initialise valus in this class to some preset value */
   void ZeroAllValues();
@@ -460,6 +478,9 @@ class FullFrame : public Frame
   
   /**Return the FullFrame type represented here (voice, protocol, session etc*/
   virtual BYTE GetFullFrameType() { return 0; }
+
+  /**Get the offset to the beginning of the encrypted region */
+  virtual PINDEX GetEncryptionOffset() { return 4; }
   
  protected:
   /** Report flag stating that this call must be active when this frame is transmitted*/
@@ -470,9 +491,6 @@ class FullFrame : public Frame
   
   /**Turn the 16 bit subClass value into a 8 bit representation */
   int  CompressSubClass();
-  
-  /**Set flag in internal data area to indicate this frame is resent */
-  void MarkDataResent();
   
   /**Mark this frame as not to be sent, and not to be deleted */
   void ClearListFlags();
@@ -925,7 +943,7 @@ class FullFrameProtocol : public FullFrame
   void GetRemoteCapability(unsigned int & capability, unsigned int & preferred);
 
   /**Return the FullFrame type represented here (voice, protocol, session etc*/
-  virtual BYTE GetFullFrameType() { return iaxProtocolType; }
+  virtual BYTE GetFullFrameType() { return iax2ProtocolType; }
   
  protected:
   

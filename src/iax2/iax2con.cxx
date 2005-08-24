@@ -28,6 +28,9 @@
  *
  *
  * $Log: iax2con.cxx,v $
+ * Revision 1.4  2005/08/24 01:38:38  dereksmithies
+ * Add encryption, iax2 style. Numerous tidy ups. Use the label iax2, not iax
+ *
  * Revision 1.3  2005/08/13 07:19:17  rjongbloed
  * Fixed MSVC6 compiler issues
  *
@@ -109,7 +112,7 @@ IAX2Connection::~IAX2Connection()
 
 void IAX2Connection::ClearCall(CallEndReason reason)
 {
-  PTRACE(3, "IAXCon\tClearCall(reason);");
+  PTRACE(3, "IAX2Con\tClearCall(reason);");
 
   callEndReason = reason;
   iaxProcessor->Hangup(reason);
@@ -120,7 +123,7 @@ void IAX2Connection::ClearCall(CallEndReason reason)
 
 void IAX2Connection::Release( CallEndReason reason)		        
 { 
-  PTRACE(3, "IAXCon\tRelease( CallEndReason reason)		        ");
+  PTRACE(3, "IAX2Con\tRelease( CallEndReason reason)		        ");
 
   iaxProcessor->Release(reason); 
   OpalConnection::Release(reason);
@@ -128,8 +131,8 @@ void IAX2Connection::Release( CallEndReason reason)
 
 void IAX2Connection::OnReleased()
 {
-  PTRACE(3, "IAXCon\tOnReleased()");
-  PTRACE(3, "IAX\t***************************************************OnReleased:from IAX connection " 
+  PTRACE(3, "IAX2Con\tOnReleased()");
+  PTRACE(3, "IAX2\t***************************************************OnReleased:from IAX connection " 
 	 << *this);
 
   iaxProcessor->OnReleased();
@@ -139,7 +142,7 @@ void IAX2Connection::OnReleased()
 
 void IAX2Connection::IncomingEthernetFrame(Frame *frame)
 {
-  PTRACE(3, "IAXCon\tIncomingEthernetFrame(Frame *frame)" << frame->IdString());
+  PTRACE(3, "IAX2Con\tIncomingEthernetFrame(Frame *frame)" << frame->IdString());
   
   iaxProcessor->IncomingEthernetFrame(frame);
 } 
@@ -151,41 +154,41 @@ void IAX2Connection::TransmitFrameToRemoteEndpoint(Frame *src)
 
 void IAX2Connection::OnSetUp()
 {
-  PTRACE(3, "IAXCon\tOnSetUp - we are proceeding with this call.");
+  PTRACE(3, "IAX2Con\tOnSetUp - we are proceeding with this call.");
   ownerCall.OnSetUp(*this); 
 }
 
 BOOL IAX2Connection::OnIncomingConnection()
 {
-  PTRACE(3, "IAXCon\tOnIncomingConnection()");
+  PTRACE(3, "IAX2Con\tOnIncomingConnection()");
   phase = SetUpPhase;
   originating = FALSE;
-  PTRACE(3, "IAXCon\tWe are receiving an incoming IAX call");
-  PTRACE(3, "IAXCon\tOnIncomingConnection  - we have received a cmdNew packet");
+  PTRACE(3, "IAX2Con\tWe are receiving an incoming IAX call");
+  PTRACE(3, "IAX2Con\tOnIncomingConnection  - we have received a cmdNew packet");
   return OpalConnection::OnIncomingConnection();
 }
 
 void IAX2Connection::OnAlerting()
 {
-  PTRACE(3, "IAXCon\tOnAlerting()");
-  PTRACE(3, "IAXCon\t ON ALERTING " 
+  PTRACE(3, "IAX2Con\tOnAlerting()");
+  PTRACE(3, "IAX2Con\t ON ALERTING " 
 	 << PString(IsOriginating() ? " Originating" : "Receiving"));
   phase = AlertingPhase;
-  PTRACE(3, "IAXCon\tOn Alerting. Phone is ringing at  " << GetRemotePartyName());
+  PTRACE(3, "IAX2Con\tOn Alerting. Phone is ringing at  " << GetRemotePartyName());
   OpalConnection::OnAlerting();
 }
 
 BOOL IAX2Connection::SetAlerting(const PString & /*calleeName*/, BOOL /*withMedia*/) 
 { 
- PTRACE(3, "IAXCon\tSetAlerting " << *this); 
+ PTRACE(3, "IAX2Con\tSetAlerting " << *this); 
  return TRUE;
 }
 
 
 BOOL IAX2Connection::SetConnected()
 {
-  PTRACE(3, "IAXCon\tSetConnected " << *this);
-  PTRACE(3, "IAXCon\tSETCONNECTED " 
+  PTRACE(3, "IAX2Con\tSetConnected " << *this);
+  PTRACE(3, "IAX2Con\tSETCONNECTED " 
 	 << PString(IsOriginating() ? " Originating" : "Receiving"));
   if (!originating)
     iaxProcessor->SetConnected();
@@ -205,11 +208,11 @@ BOOL IAX2Connection::SetConnected()
 
 void IAX2Connection::OnConnected()
 {
-  PTRACE(3, "IAXCon\tOnConnected()");
-  PTRACE(3, "IAXCon\t ON CONNECTED " 
+  PTRACE(3, "IAX2Con\tOnConnected()");
+  PTRACE(3, "IAX2Con\t ON CONNECTED " 
 	 << PString(IsOriginating() ? " Originating" : "Receiving"));
   phase = ConnectedPhase;
-  PTRACE(3, "IAXCon\tThis call has been connected");
+  PTRACE(3, "IAX2Con\tThis call has been connected");
   OpalConnection::OnConnected();
 }
 
@@ -217,7 +220,7 @@ void IAX2Connection::OnConnected()
 void IAX2Connection::OnEstablished()
 {
   phase = EstablishedPhase;
-  PTRACE(3, "IAXCon\t ON ESTABLISHED " 
+  PTRACE(3, "IAX2Con\t ON ESTABLISHED " 
 	 << PString(IsOriginating() ? " Originating" : "Receiving"));
   OpalConnection::OnEstablished();
   iaxProcessor->SetEstablished(originating);
@@ -227,13 +230,13 @@ OpalMediaStream * IAX2Connection::CreateMediaStream(const OpalMediaFormat & medi
                                                    unsigned sessionID,
                                                    BOOL isDataSource)
 {
-  PTRACE(3, "IAXCon\tCreateMediaStream");
+  PTRACE(3, "IAX2Con\tCreateMediaStream");
   if (ownerCall.IsMediaBypassPossible(*this, sessionID)) {
     PTRACE(3, "connection\t  create a null media stream ");
     return new OpalNullMediaStream(mediaFormat, sessionID, isDataSource);
   }
 
-  PTRACE(3, "IAX CON\tCreate an OpalIAXMediaStream");
+  PTRACE(3, "IAX2con\tCreate an OpalIAXMediaStream");
   return new OpalIAX2MediaStream(mediaFormat, sessionID, isDataSource,
                                  endpoint.GetManager().GetMinAudioJitterDelay(),
                                  endpoint.GetManager().GetMaxAudioJitterDelay(),
@@ -249,15 +252,15 @@ void IAX2Connection::PutSoundPacketToNetwork(PBYTEArray *sound)
 
 BOOL IAX2Connection::SetUpConnection() 
 {
-  PTRACE(3, "IAXCon\tSetUpConnection() ");
-  PTRACE(3, "IAXCon\tWe are making a call");
+  PTRACE(3, "IAX2Con\tSetUpConnection() ");
+  PTRACE(3, "IAX2Con\tWe are making a call");
   originating = TRUE;
   return iaxProcessor->SetUpConnection(); 
 }
 
 void IAX2Connection::SetCallToken(PString newToken)
 {
-  PTRACE(3, "IAXCon\tSetCallToken(PString newToken)" << newToken);
+  PTRACE(3, "IAX2Con\tSetCallToken(PString newToken)" << newToken);
 
   callToken = newToken;
   iaxProcessor->SetCallToken(newToken);

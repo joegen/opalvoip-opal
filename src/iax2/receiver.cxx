@@ -26,6 +26,9 @@
  *
  *
  *  $Log: receiver.cxx,v $
+ *  Revision 1.2  2005/08/24 01:38:38  dereksmithies
+ *  Add encryption, iax2 style. Numerous tidy ups. Use the label iax2, not iax
+ *
  *  Revision 1.1  2005/07/30 07:01:33  csoutheren
  *  Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
  *  Thanks to Derek Smithies of Indranet Technologies Ltd. for
@@ -98,10 +101,6 @@ void Receiver::Main()
 	break;
       
       endpoint.IncomingEthernetFrame(frame);
-      PStringList eps = endpoint.GetAllConnections();
-      for(PINDEX i = 0; i < eps.GetSize(); i++) {
-	PTRACE(5, "IAX Rx\tconnection #" << (i + 1) << " of " << eps.GetSize() << " connections in the ep is " << eps[i]);
-      }
     }
   }
   PTRACE(3, "End of receiver thread ");
@@ -119,16 +118,17 @@ BOOL Receiver::ReadNetworkSocket()
 {
   Frame *frame = new Frame(endpoint);
   
-  PTRACE(3, "IAX Rx\tWait for packet on socket.with port " << sock.GetPort() << " Data-->" << frame->IdString());
+  PTRACE(3, "IAX Rx\tWait for packet on socket.with port " << sock.GetPort() << " FrameID-->" << frame->IdString());
   BOOL res = frame->ReadNetworkPacket(sock);
   
   if (res == FALSE) {
-    PTRACE(3, "IAX Rx\tFailed to read network packet from socket for " << frame->IdString());
+    PTRACE(3, "IAX Rx\tFailed to read network packet from socket for FrameID-->" << frame->IdString());
     delete frame;
     return FALSE;
   }
   
-  PTRACE(3, "IAX Rx\tHave read a frame from the network socket " << endl  << *frame);
+  PTRACE(3, "IAX Rx\tHave read a frame from the network socket fro FrameID-->" 
+	 << frame->IdString() << endl  << *frame);
   
   if(frame->ProcessNetworkPacket() == FALSE) {
     PTRACE(3, "IAX Rx\tFailed to interpret header for " << frame->IdString());
@@ -136,24 +136,7 @@ BOOL Receiver::ReadNetworkSocket()
     return TRUE;
   }
   
-  if (!frame->IsFullFrame()) {
-    MiniFrame *m = new MiniFrame(*frame);
-    AddNewReceivedFrame(m);
-    delete frame;
-    return TRUE;
-  }
-  
-  FullFrame *f = new FullFrame(*frame);
-  
-  delete frame;
-  if (f == NULL) {
-    PTRACE(0, "IAX Rx\tCould not turn received frame into a full frame, "
-	   "even though it is a full frame");
-    return FALSE;
-  }
-  
-  PTRACE(3, "IAX Rx\tThis is a good frame, so add it " << f->IdString());
-  AddNewReceivedFrame(f);
+  AddNewReceivedFrame(frame);
   
   return TRUE;
 }
