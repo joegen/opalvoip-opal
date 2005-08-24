@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2031  2005/08/20 07:33:30  rjongbloed
+ * Revision 1.2032  2005/08/24 10:18:23  rjongbloed
+ * Fix incorrect session ID for video media format, doesn't work if thinks is audio!
+ *
+ * Revision 2.30  2005/08/20 07:33:30  rjongbloed
  * Added video specific OpalMediaFormat
  *
  * Revision 2.29  2005/06/02 13:20:46  rjongbloed
@@ -854,7 +857,7 @@ OpalVideoFormat::OpalVideoFormat(const char * fullName,
                                  unsigned frameRate,
                                  unsigned bitRate)
   : OpalMediaFormat(fullName,
-                    OpalMediaFormat::DefaultAudioSessionID,
+                    OpalMediaFormat::DefaultVideoSessionID,
                     rtpPayloadType,
                     encodingName,
                     FALSE,
