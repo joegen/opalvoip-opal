@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: frame.cxx,v $
+ *  Revision 1.5  2005/08/24 13:06:19  rjongbloed
+ *  Added configuration define for AEC encryption
+ *
  *  Revision 1.4  2005/08/24 04:56:25  dereksmithies
  *  Add code from Adrian Sietsma to send FullFrameTexts and FullFrameDtmfs to
  *  the remote end.  Many Thanks.
@@ -46,8 +49,10 @@
  */
 #include <ptlib.h>
 #include <ptclib/cypher.h>
-#include <openssl/aes.h>
 
+#if P_SSL_AES
+#include <openssl/aes.h>
+#endif
 
 #ifdef P_USE_PRAGMA
 #pragma implementation "frame.h"
@@ -344,6 +349,7 @@ BOOL Frame::DecryptContents(Iax2Encryption &encryption)
   if (!encryption.IsEncrypted())
     return TRUE;
 
+#if P_SSL_AES
   PINDEX headerSize = GetEncryptionOffset();
   PTRACE(2, "Decryption\tUnEncrypted headerSize for " << IdString() << " is " << headerSize);
 
@@ -381,7 +387,9 @@ BOOL Frame::DecryptContents(Iax2Encryption &encryption)
   memcpy(data.GetPointer() + headerSize, working.GetPointer() + padding, encryptedSize);
   PTRACE(6, "Entire frame unencrypted is " << endl << ::hex << data << ::dec);
   return TRUE;
-  
+#else
+  return FALSE;
+#endif
 }
 
 BOOL Frame::EncryptContents(Iax2Encryption &encryption)
@@ -389,6 +397,7 @@ BOOL Frame::EncryptContents(Iax2Encryption &encryption)
   if (!encryption.IsEncrypted())
     return TRUE;
 
+#if P_SSL_AES
   PINDEX headerSize = GetEncryptionOffset();
   PINDEX eDataSize = data.GetSize() - headerSize;
   PINDEX padding = 16 + ((16 - (eDataSize % 16)) & 0x0f);
@@ -414,6 +423,9 @@ BOOL Frame::EncryptContents(Iax2Encryption &encryption)
 
   data = result;
   return TRUE;
+#else
+  return FALSE;
+#endif
 }
 
 
