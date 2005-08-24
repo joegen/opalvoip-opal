@@ -27,6 +27,10 @@
  *
  *
  * $Log: processor.cxx,v $
+ * Revision 1.8  2005/08/24 03:26:32  dereksmithies
+ * Add excellent patch from Adrian Sietsma to set some variables correctly
+ * when receiving a call. Many Thanks.
+ *
  * Revision 1.7  2005/08/24 02:38:00  dereksmithies
  * Ensure that string information elements in CmdNew contain data.
  *
@@ -1091,7 +1095,12 @@ void IAX2Processor::ProcessIaxCmdNew(FullFrameProtocol *src)
   }
   
   SetCallNewed();
-  
+
+  con->GetEndPoint().GetCodecLengths(selectedCodec, audioCompressedBytes, audioFrameDuration);
+  PTRACE(3, "codec frame play duration is " << audioFrameDuration << " ms, which compressed to "
+         << audioCompressedBytes << " bytes of data");
+
+
   /*At this point, we have selected a codec to use. */
   reply = new  FullFrameProtocol(this, FullFrameProtocol::cmdAccept);
   reply->AppendIe(new IeFormat(selectedCodec));
