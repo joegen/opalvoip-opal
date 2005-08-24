@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2ep.h,v $
+ *  Revision 1.3  2005/08/24 01:38:38  dereksmithies
+ *  Add encryption, iax2 style. Numerous tidy ups. Use the label iax2, not iax
+ *
  *  Revision 1.2  2005/08/04 08:14:17  rjongbloed
  *  Fixed Windows build under DevStudio 2003 of IAX2 code
  *
@@ -217,7 +220,7 @@ class IAX2EndPoint : public OpalEndPoint
   void SetLocalNumber(PString newValue);
   
   /**Report the password*/
-  PString GetPassword() { return password; }
+  PString & GetPassword() { return password; }
   
   /**Set the password to some value */
   void SetPassword(PString newValue);

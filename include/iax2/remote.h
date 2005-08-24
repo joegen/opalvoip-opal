@@ -26,6 +26,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: remote.h,v $
+ *  Revision 1.2  2005/08/24 01:38:38  dereksmithies
+ *  Add encryption, iax2 style. Numerous tidy ups. Use the label iax2, not iax
+ *
  *  Revision 1.1  2005/07/30 07:01:32  csoutheren
  *  Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
  *  Thanks to Derek Smithies of Indranet Technologies Ltd. for
@@ -41,6 +44,7 @@
 
 #include <ptlib.h>
 #include <ptlib/sockets.h>
+#include <openssl/aes.h>
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -239,6 +243,10 @@ class SequenceNumbers
   
   /**Assign a new value to the sequence number used for outgoing frames */
   void SetOutSeqNo(PINDEX newVal);
+
+  /**Assign a new value to the seq.in and seq.out, which is used prior
+     to sending a frame */
+  void SetInOutSeqNo(PINDEX inVal, PINDEX outVal);
   
   /**Assign the sequence nos as appropropriate for when we are sending a
    * sequence set in a ack frame */
@@ -295,6 +303,62 @@ class SequenceNumbers
   /**Dictionary of timestamp and OutSeqNo for frames received by  this iax device */
   PacketIdList receivedLog;
 };
+
+////////////////////////////////////////////////////////////////////////////////
+/** A class that holds the state variables on encryption - is it on, and the two keys. */
+class Iax2Encryption : public PObject 
+{
+  PCLASSINFO(Iax2Encryption, PObject);
+ public:
+  /**Constructor, which sets encrytpion to the default value of "OFF" */
+  Iax2Encryption();
+
+  /**Set the flag that indicates this communication session is all encrypted.. */
+  void SetEncryptionOn (BOOL newState = TRUE);
+
+  /**Set the password/key used in encryption process */
+  void SetEncryptionKey(PString & newKey);
+
+  /**Set the challenge  used in encryption process */
+  void SetChallengeKey(PString & newKey);
+
+  /**Get the value of the encrption key  - or password key */
+  const PString & EncryptionKey() const;
+
+  /**Get the value of the challenge key */
+  const PString & ChallengeKey() const;
+
+  /**Report if the encryption is enabled  (or turned on) */
+  const BOOL IsEncrypted() const;
+
+  /**Get a pointer to a filled AES_KEY encrypt structure */
+  AES_KEY *AesEncryptKey();
+
+  /**Get a pointer to a filled AES_KEY decrypt structure */
+  AES_KEY *AesDecryptKey();
+
+ protected:
+  /**Do the calculation of the encrypt and decrypt AES 128 keys. 
+     If neither, or only 1 of the encrypt/challenge keys are defined, do nothing */
+  void CalculateAesKeys();
+
+  /**string to use for decryption/encryption of this frame */
+  PString encryptionKey;
+
+  /**string to use for decryption/encryption of this frame */
+  PString challengeKey;
+
+  /**Flag to specify if encryption is happening */
+  BOOL encryptionEnabled;
+
+  /**key to be used for AES 128 encryption */
+  AES_KEY aesEncryptKey;
+
+  /**key to be used for AES 128 decoding */
+  AES_KEY aesDecryptKey;
+};
+
+////////////////////////////////////////////////////////////////////////////////
 
 #endif
 

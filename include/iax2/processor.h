@@ -26,6 +26,9 @@
  *
  *
  *  $Log: processor.h,v $
+ *  Revision 1.3  2005/08/24 01:38:38  dereksmithies
+ *  Add encryption, iax2 style. Numerous tidy ups. Use the label iax2, not iax
+ *
  *  Revision 1.2  2005/08/04 08:14:17  rjongbloed
  *  Fixed Windows build under DevStudio 2003 of IAX2 code
  *
@@ -166,6 +169,9 @@ class IAX2Processor : public PThread
   /**Get the sequence number info (inSeqNo and outSeqNo) */
   SequenceNumbers & GetSequenceInfo() { return sequence; }
   
+  /**Get the iax2 encryption info */
+  Iax2Encryption & GetEncryptionInfo() { return encryption; }
+
   /**Get the call start time */
   const PTime & GetCallStartTime() { return callStartTime; }
 
@@ -196,10 +202,11 @@ class IAX2Processor : public PThread
   /**Handle a received IAX frame. This may be a mini frame or full frame */
   void IncomingEthernetFrame (Frame *frame);
 
-  /**A sound packet has been given (by the Receiver thread) to this IAX2Processor
-     class, and queued on the SoundList structure. The
-     OpalIAXMediaStream class is now retrieving the sound packet to
-     play to the audio device
+  /**A sound packet has been given (by the Receiver thread) to this
+     IAX2Processor class, and queued on the SoundList structure. The
+     OpalIAX2MediaStream thread will call this method to retrieving the
+     sound packet. The OpalIAX2MediaStream will handle this packet
+     appropriately - eg send to the PC speaker..
    */
   Frame *GetSoundPacketFromNetwork();
 
@@ -801,6 +808,9 @@ class IAX2Processor : public PThread
   /**If the incoming frame has Information Elements defining remote
      capability, define the list of remote capabilities */
   void CheckForRemoteCapabilities(FullFrameProtocol *src);
+
+  /**Status of encryption for this processor - by default, no encrytpion */
+  Iax2Encryption encryption;
 };
 
 

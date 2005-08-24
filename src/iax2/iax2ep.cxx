@@ -28,6 +28,9 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.4  2005/08/24 01:38:38  dereksmithies
+ * Add encryption, iax2 style. Numerous tidy ups. Use the label iax2, not iax
+ *
  * Revision 1.3  2005/08/13 07:19:18  rjongbloed
  * Fixed MSVC6 compiler issues
  *
@@ -77,7 +80,7 @@ IAX2EndPoint::IAX2EndPoint(OpalManager & mgr)
   callsEstablished = 0;
 
   Initialise();
-  PTRACE(5, "IAX\tCreated endpoint.");
+  PTRACE(5, "IAX2\tCreated endpoint.");
 }
 
 IAX2EndPoint::~IAX2EndPoint()
@@ -96,8 +99,12 @@ IAX2EndPoint::~IAX2EndPoint()
   if (sock != NULL)
     delete sock;
   
-  if (specialPacketHandler != NULL)
+  if (specialPacketHandler != NULL) {
+    specialPacketHandler->Resume();
+    specialPacketHandler->Terminate();
+    specialPacketHandler->WaitForTermination();
     delete specialPacketHandler;
+  }
   specialPacketHandler = NULL;
 
   PTRACE(3, "Endpoint\tDESTRUCTOR of IAX2 endpoint has Finished.");  
@@ -117,11 +124,11 @@ BOOL IAX2EndPoint::NewIncomingConnection(OpalTransport * /*transport*/)
 
 void IAX2EndPoint::NewIncomingConnection(Frame *f)
 {
-  PTRACE(2, "IAX\tWe have received a  NEW request from " << f->GetConnectionToken());
+  PTRACE(2, "IAX2\tWe have received a  NEW request from " << f->GetConnectionToken());
   // ask the endpoint for a connection
 
   if (connectionsActive.Contains(f->GetConnectionToken())) {
-    PTRACE(3, "IAX\thave received  a duplicate new packet from " << f->GetConnectionToken());
+    PTRACE(3, "IAX2\thave received  a duplicate new packet from " << f->GetConnectionToken());
     cerr << " Haave received  a duplicate new packet from " << f->GetConnectionToken() << endl;
     delete f;
     return;
@@ -131,7 +138,7 @@ void IAX2EndPoint::NewIncomingConnection(Frame *f)
     CreateConnection(*GetManager().CreateCall(), f->GetConnectionToken(),
 		     NULL, f->GetConnectionToken());
   if (connection == NULL) {
-    PTRACE(2, "IAX\tFailed to create IAX2Connection for NEW request from " << f->GetConnectionToken());
+    PTRACE(2, "IAX2\tFailed to create IAX2Connection for NEW request from " << f->GetConnectionToken());
     delete f;
     return;
   }
@@ -194,7 +201,6 @@ BOOL IAX2EndPoint::ConnectionForFrameIsAlive(Frame *f)
 
 void IAX2EndPoint::ReportStoredConnections()
 {
-  return;
   PStringList cons = GetAllConnections();
   PTRACE(3, " There are " << cons.GetSize() << " stored connections in connectionsActive");
   PINDEX i;
@@ -214,13 +220,14 @@ PStringList IAX2EndPoint::DissectRemoteParty(const PString & other)
   for(int i = 0; i < maximumIndex; i++)
     res.AppendString(PString());
 
+  res[protoIndex] = PString("iax2");
+  res[transportIndex] = PString("UDP");
+
   PString working;                 
-  if (other.Find("iax2:") != P_MAX_INDEX) { //Remove iax2:  from "other"
+  if (other.Find("iax2:") != P_MAX_INDEX)  //Remove iax2:  from "other"
     working = other.Mid(5);
-    res[protoIndex] = PString("iax2");
-  } else {
+  else 
     working = other;
-  }
 
   PStringList halfs = working.Tokenise("@");
   if (halfs.GetSize() == 2) {
@@ -375,22 +382,20 @@ BOOL IAX2EndPoint::AddNewTranslationEntry(Frame *frame)
     PTRACE(3, frame->GetConnectionToken() << " is Not a FullFrame, so dont add a translation entry(return now) ");
     return FALSE;
   }
-
-  FullFrame *f = (FullFrame *)frame;
-  if (!f->GetSequenceInfo().IsFirstReply()) {
-    PTRACE(3, f->GetConnectionToken() << " is Not first reply, so don't add a translation entry (return now) ");
-    return FALSE;
-  }
+  
+  PINDEX destCallNo = frame->GetRemoteInfo().DestCallNumber();  /*Call number at our end */
+  /* We do not know if the frame is encrypted, so examination of anything other than the 
+     source call number/dest call number is unwise */ 
 
   PSafePtr<IAX2Connection> connection;
   for (connection = PSafePtrCast<OpalConnection, IAX2Connection>(connectionsActive.GetAt(0)); connection != NULL; ++connection) {
-
-    if (connection->GetRemoteInfo() *= f->GetRemoteInfo()) {
-      PTRACE(5, "Need to add translation for" << connection->GetCallToken() << endl  
-	     << "                                   (" << f->GetConnectionToken() 
-	     << ")   into token translation table");
+    PTRACE(3, "Compare " << connection->GetRemoteInfo().SourceCallNumber() << " and " <<  destCallNo);
+    if (connection->GetRemoteInfo().SourceCallNumber() == destCallNo) {
+      PTRACE(3, "Need to add translation for " << connection->GetCallToken() 
+	     << " (" << frame->GetConnectionToken() 
+	     << PString(") into token translation table"));
       PWaitAndSignal m(mutexTokenTable);
-      tokenTable.SetAt(f->GetConnectionToken(), connection->GetCallToken());
+      tokenTable.SetAt(frame->GetConnectionToken(), connection->GetCallToken());
       return TRUE;
     }
   }
@@ -400,6 +405,8 @@ BOOL IAX2EndPoint::AddNewTranslationEntry(Frame *frame)
 
 BOOL IAX2EndPoint::ProcessInMatchingConnection(Frame *f)
 {
+  ReportStoredConnections();
+
   PString tokenTranslated;
   mutexTokenTable.Wait();
   tokenTranslated = tokenTable(f->GetConnectionToken());
@@ -420,6 +427,8 @@ BOOL IAX2EndPoint::ProcessInMatchingConnection(Frame *f)
   return FALSE;
 }
 
+//The receiving thread has finished reading a frame, and has droppped it here.
+//At this stage, we do not know the frame type. We just know if it is full or mini.
 void IAX2EndPoint::IncomingEthernetFrame(Frame *frame)
 {
   PTRACE(3, "IAXEp\tEthernet Frame received from Receiver " << frame->IdString());   
@@ -448,6 +457,13 @@ void IAX2EndPoint::ProcessReceivedEthernetFrames()
       }
     }
 
+    /**These packets cannot be encrypted, as they are not going to a phone call */
+    Frame *af = f->BuildAppropriateFrameType();
+    if (af == NULL) 
+      continue;
+    delete f;
+    f = af;
+
     if (specialPacketHandler->IsStatusQueryEthernetFrame(f)) {
       PTRACE(3, "Distribution\tthis frame is a  Status Query with no destination call" << idString);
       specialPacketHandler->IncomingEthernetFrame(f);
@@ -456,20 +472,20 @@ void IAX2EndPoint::ProcessReceivedEthernetFrames()
     
     if (!PIsDescendant(f, FullFrame)) {
       PTRACE(3, "Distribution\tNO matching connection for incoming ethernet frame Sorry" << idString);
-      delete f;
+      delete af;
       continue;
     }	  
 
     FullFrame *ff = (FullFrame *)f;
-    if (ff->GetFrameType() != FullFrame::iaxProtocolType) {
+    if (ff->GetFrameType() != FullFrame::iax2ProtocolType) {
       PTRACE(3, "Distribution\tNO matching connection for incoming ethernet frame Sorry" << idString);
-      delete f;
+      delete ff;
       continue;
     }	      
     
     if (ff->GetSubClass() != FullFrameProtocol::cmdNew) {
       PTRACE(3, "Distribution\tNO matching connection for incoming ethernet frame Sorry" << idString);
-      delete f;
+      delete ff;
       continue;
     }	      
         

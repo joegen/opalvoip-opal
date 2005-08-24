@@ -27,6 +27,9 @@
  *
  *
  * $Log: remote.cxx,v $
+ * Revision 1.3  2005/08/24 01:38:38  dereksmithies
+ * Add encryption, iax2 style. Numerous tidy ups. Use the label iax2, not iax
+ *
  * Revision 1.2  2005/08/04 08:14:17  rjongbloed
  * Fixed Windows build under DevStudio 2003 of IAX2 code
  *
@@ -256,7 +259,7 @@ void PacketIdList::AppendNewFrame(FullFrame &src)
   Append(f);
   RemoveOldContiguousValues();
 
-  PTRACE(3, "SeqNos\tzzzz " << endl  << (*this));
+  PTRACE(3, "SeqNos\t"  << (*this));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -401,8 +404,82 @@ void SequenceNumbers::SetOutSeqNo(PINDEX newVal)
   outSeqNo = newVal;
 }
 
+void SequenceNumbers::SetInOutSeqNo(PINDEX inVal, PINDEX outVal)
+{
+  PWaitAndSignal m(mutex);
+  
+  inSeqNo = inVal;
+  outSeqNo = outVal;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+Iax2Encryption::Iax2Encryption() 
+{ 
+  encryptionEnabled = FALSE; 
+}
 
 
+void Iax2Encryption::SetEncryptionOn (BOOL newState) 
+{ 
+  encryptionEnabled = newState; 
+  PTRACE(3, "Set encryption to " << PString(encryptionEnabled ? "On" : "Off"));
+}
+
+void Iax2Encryption::SetEncryptionKey(PString & newKey) 
+{ 
+  encryptionKey = newKey; 
+  CalculateAesKeys();
+}
+
+void Iax2Encryption::SetChallengeKey(PString & newKey) 
+{ 
+  challengeKey = newKey; 
+  CalculateAesKeys();
+}
+
+const PString & Iax2Encryption::EncryptionKey() const 
+{ 
+  return encryptionKey; 
+}
+
+const PString & Iax2Encryption::ChallengeKey() const 
+{ 
+  return challengeKey; 
+}
+
+const BOOL Iax2Encryption::IsEncrypted() const
+{
+  return encryptionEnabled;
+}
+
+AES_KEY *Iax2Encryption::AesEncryptKey()
+{
+  return &aesEncryptKey; 
+}
+
+AES_KEY *Iax2Encryption::AesDecryptKey()
+{
+  return &aesDecryptKey;
+}
+
+void Iax2Encryption::CalculateAesKeys()
+{
+  if (encryptionKey.IsEmpty())
+    return;
+
+  if (challengeKey.IsEmpty())
+    return;
+
+  IeMd5Result ie(*this);
+  PBYTEArray context = ie.GetDataBlock();
+
+  PTRACE(6, "Decryption\tContext has a size of " << context.GetSize());
+
+  AES_set_encrypt_key(context.GetPointer(), 128, &aesEncryptKey);
+  AES_set_decrypt_key(context.GetPointer(), 128, &aesDecryptKey);
+}
+  
+////////////////////////////////////////////////////////////////////////////////
 
 /* The comment below is magic for those who use emacs to edit this file. */
 /* With the comment below, the tab key does auto indent to 4 spaces.     */
