@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2035  2005/08/20 07:35:11  rjongbloed
+ * Revision 1.2036  2005/08/24 10:16:33  rjongbloed
+ * Fix checking of payload type when mediaFormat is not an RTP media but internal.
+ *
+ * Revision 2.34  2005/08/20 07:35:11  rjongbloed
  * Correctly set grabber size to size of video frame in OpalMediaFormat
  * Set video RTP timestamps to value dirived from real time clock.
  *
@@ -323,7 +326,7 @@ BOOL OpalMediaStream::WritePacket(RTP_DataFrame & packet)
   if (paused)
     packet.SetPayloadSize(0);
   
-  if (size != 0) {
+  if (size > 0 && mediaFormat.GetPayloadType() != RTP_DataFrame::MaxPayloadType) {
     if (packet.GetPayloadType() == mediaFormat.GetPayloadType()) {
       PTRACE_IF(2, mismatchedPayloadTypes > 0,
                 "H323RTP\tPayload type matched again " << mediaFormat.GetPayloadType());
