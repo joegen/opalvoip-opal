@@ -26,6 +26,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: remote.h,v $
+ *  Revision 1.3  2005/08/24 13:06:18  rjongbloed
+ *  Added configuration define for AEC encryption
+ *
  *  Revision 1.2  2005/08/24 01:38:38  dereksmithies
  *  Add encryption, iax2 style. Numerous tidy ups. Use the label iax2, not iax
  *
@@ -44,13 +47,18 @@
 
 #include <ptlib.h>
 #include <ptlib/sockets.h>
+
+#if P_SSL_AES
 #include <openssl/aes.h>
+#endif
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
-class FullFrame; 
+class FullFrame;
+
+
 /**A simple class which contains the different source and dest call
    numbers, and the remote address + remote port */
 class Remote : public PObject
@@ -331,11 +339,13 @@ class Iax2Encryption : public PObject
   /**Report if the encryption is enabled  (or turned on) */
   const BOOL IsEncrypted() const;
 
+#if P_SSL_AES
   /**Get a pointer to a filled AES_KEY encrypt structure */
   AES_KEY *AesEncryptKey();
 
   /**Get a pointer to a filled AES_KEY decrypt structure */
   AES_KEY *AesDecryptKey();
+#endif
 
  protected:
   /**Do the calculation of the encrypt and decrypt AES 128 keys. 
@@ -351,11 +361,13 @@ class Iax2Encryption : public PObject
   /**Flag to specify if encryption is happening */
   BOOL encryptionEnabled;
 
+#if P_SSL_AES
   /**key to be used for AES 128 encryption */
   AES_KEY aesEncryptKey;
 
   /**key to be used for AES 128 decoding */
   AES_KEY aesDecryptKey;
+#endif
 };
 
 ////////////////////////////////////////////////////////////////////////////////
