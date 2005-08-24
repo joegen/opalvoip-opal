@@ -27,6 +27,9 @@
  *
  *
  * $Log: processor.cxx,v $
+ * Revision 1.7  2005/08/24 02:38:00  dereksmithies
+ * Ensure that string information elements in CmdNew contain data.
+ *
  * Revision 1.6  2005/08/24 02:09:05  dereksmithies
  * Remove Resume() call from constructor.
  *
@@ -400,13 +403,24 @@ void IAX2Processor::ConnectToRemoteNode(PString & newRemoteNode)
   f->AppendIe(new IeFormat(con->GetPreferredCodec()));
   f->AppendIe(new IeCapability(con->GetSupportedCodecs()));
   
-  f->AppendIe(new IeCallingNumber(endpoint.GetLocalNumber()));
-  f->AppendIe(new IeCallingName(endpoint.GetLocalUserName()));
+  if (!endpoint.GetLocalNumber().IsEmpty())
+    f->AppendIe(new IeCallingNumber(endpoint.GetLocalNumber()));
+
+  if (!endpoint.GetLocalUserName().IsEmpty())
+    f->AppendIe(new IeCallingName(endpoint.GetLocalUserName()));
   
-  f->AppendIe(new IeUserName(res[IAX2EndPoint::userIndex]));
-  f->AppendIe(new IeCalledNumber(res[IAX2EndPoint::extensionIndex] ));
-  f->AppendIe(new IeDnid(res[IAX2EndPoint::extensionIndex]));
-  f->AppendIe(new IeCalledContext(res[IAX2EndPoint::contextIndex]));
+  if (!res[IAX2EndPoint::userIndex].IsEmpty())
+    f->AppendIe(new IeUserName(res[IAX2EndPoint::userIndex]));
+
+  if (!res[IAX2EndPoint::extensionIndex].IsEmpty())
+    f->AppendIe(new IeCalledNumber(res[IAX2EndPoint::extensionIndex] ));
+
+  if (!res[IAX2EndPoint::extensionIndex].IsEmpty())
+    f->AppendIe(new IeDnid(res[IAX2EndPoint::extensionIndex]));
+
+  if (!res[IAX2EndPoint::contextIndex].IsEmpty())
+    f->AppendIe(new IeCalledContext(res[IAX2EndPoint::contextIndex]));
+
   f->AppendIe(new IeEncryption());
 
   PTRACE(3, "Create full frame protocol to do cmdNew. Finished appending Ies. ");
