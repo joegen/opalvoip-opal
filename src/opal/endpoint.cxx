@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2031  2005/08/23 12:45:09  rjongbloed
+ * Revision 1.2032  2005/08/24 10:43:51  rjongbloed
+ * Changed create video functions yet again so can return pointers that are not to be deleted.
+ *
+ * Revision 2.30  2005/08/23 12:45:09  rjongbloed
  * Fixed creation of video preview window and setting video grab/display initial frame size.
  *
  * Revision 2.29  2005/07/14 08:51:19  csoutheren
@@ -429,18 +432,22 @@ void OpalEndPoint::AddVideoMediaFormats(OpalMediaFormatList & mediaFormats,
 }
 
 
-PVideoInputDevice * OpalEndPoint::CreateVideoInputDevice(const OpalConnection & connection,
-                                                         const OpalMediaFormat & mediaFormat)
+BOOL OpalEndPoint::CreateVideoInputDevice(const OpalConnection & connection,
+                                          const OpalMediaFormat & mediaFormat,
+                                          PVideoInputDevice * & device,
+                                          BOOL & autoDelete)
 {
-  return manager.CreateVideoInputDevice(connection, mediaFormat);
+  return manager.CreateVideoInputDevice(connection, mediaFormat, device, autoDelete);
 }
 
 
-PVideoOutputDevice * OpalEndPoint::CreateVideoOutputDevice(const OpalConnection & connection,
-                                                           const OpalMediaFormat & mediaFormat,
-                                                           BOOL preview)
+BOOL OpalEndPoint::CreateVideoOutputDevice(const OpalConnection & connection,
+                                           const OpalMediaFormat & mediaFormat,
+                                           BOOL preview,
+                                           PVideoOutputDevice * & device,
+                                           BOOL & autoDelete)
 {
-  return manager.CreateVideoOutputDevice(connection, mediaFormat, preview);
+  return manager.CreateVideoOutputDevice(connection, mediaFormat, preview, device, autoDelete);
 }
 
 
