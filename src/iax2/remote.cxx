@@ -27,6 +27,9 @@
  *
  *
  * $Log: remote.cxx,v $
+ * Revision 1.4  2005/08/24 13:06:19  rjongbloed
+ * Added configuration define for AEC encryption
+ *
  * Revision 1.3  2005/08/24 01:38:38  dereksmithies
  * Add encryption, iax2 style. Numerous tidy ups. Use the label iax2, not iax
  *
@@ -452,6 +455,7 @@ const BOOL Iax2Encryption::IsEncrypted() const
   return encryptionEnabled;
 }
 
+#if P_SSL_AES
 AES_KEY *Iax2Encryption::AesEncryptKey()
 {
   return &aesEncryptKey; 
@@ -461,6 +465,7 @@ AES_KEY *Iax2Encryption::AesDecryptKey()
 {
   return &aesDecryptKey;
 }
+#endif
 
 void Iax2Encryption::CalculateAesKeys()
 {
@@ -470,6 +475,7 @@ void Iax2Encryption::CalculateAesKeys()
   if (challengeKey.IsEmpty())
     return;
 
+#if P_SSL_AES
   IeMd5Result ie(*this);
   PBYTEArray context = ie.GetDataBlock();
 
@@ -477,6 +483,7 @@ void Iax2Encryption::CalculateAesKeys()
 
   AES_set_encrypt_key(context.GetPointer(), 128, &aesEncryptKey);
   AES_set_decrypt_key(context.GetPointer(), 128, &aesDecryptKey);
+#endif
 }
   
 ////////////////////////////////////////////////////////////////////////////////
