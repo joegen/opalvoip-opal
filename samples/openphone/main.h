@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.25  2005/08/24 10:43:51  rjongbloed
+ * Changed create video functions yet again so can return pointers that are not to be deleted.
+ *
  * Revision 1.24  2005/08/24 10:21:36  rjongbloed
  * Added function to create video output windows, can now get correct titles.
  *
@@ -529,10 +532,12 @@ class MyManager : public wxFrame, public OpalManager
       OpalConnection & connection,  /// Connection that owns the media stream
       OpalMediaStream & stream    /// New media stream being opened
     );
-    virtual PVideoOutputDevice * CreateVideoOutputDevice(
-      const OpalConnection & connection,   /// Connection needing created video device
-      const OpalMediaFormat & mediaFormat, /// Media format for stream
-      BOOL preview                         /// Flag indicating is a preview output
+    virtual BOOL CreateVideoOutputDevice(
+      const OpalConnection & connection,    /// Connection needing created video device
+      const OpalMediaFormat & mediaFormat,  /// Media format for stream
+      BOOL preview,                         /// Flag indicating is a preview output
+      PVideoOutputDevice * & device,        /// Created device
+      BOOL & autoDelete                     /// Flag for auto delete device
     );
     virtual void OnUserInputString(
       OpalConnection & connection,  /// Connection input has come from

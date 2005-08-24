@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2048  2005/08/23 12:45:09  rjongbloed
+ * Revision 1.2049  2005/08/24 10:43:51  rjongbloed
+ * Changed create video functions yet again so can return pointers that are not to be deleted.
+ *
+ * Revision 2.47  2005/08/23 12:45:09  rjongbloed
  * Fixed creation of video preview window and setting video grab/display initial frame size.
  *
  * Revision 2.46  2005/08/04 17:20:22  dsandras
@@ -628,14 +631,20 @@ OpalMediaStream * OpalConnection::CreateMediaStream(const OpalMediaFormat & medi
 {
   if (sessionID == OpalMediaFormat::DefaultVideoSessionID) {
     if (isSource) {
-      PVideoInputDevice * videoDevice = CreateVideoInputDevice(mediaFormat);
-      if (videoDevice != NULL)
-        return new OpalVideoMediaStream(mediaFormat, sessionID, videoDevice, CreateVideoOutputDevice(mediaFormat, TRUE));
+      PVideoInputDevice * videoDevice;
+      BOOL autoDelete;
+      if (CreateVideoInputDevice(mediaFormat, videoDevice, autoDelete)) {
+        PVideoOutputDevice * previewDevice;
+        if (!CreateVideoOutputDevice(mediaFormat, TRUE, previewDevice, autoDelete))
+          previewDevice = NULL;
+        return new OpalVideoMediaStream(mediaFormat, sessionID, videoDevice, previewDevice, autoDelete);
+      }
     }
     else {
-      PVideoOutputDevice * videoDevice = CreateVideoOutputDevice(mediaFormat, FALSE);
-      if (videoDevice != NULL)
-        return new OpalVideoMediaStream(mediaFormat, sessionID, NULL, videoDevice);
+      PVideoOutputDevice * videoDevice;
+      BOOL autoDelete;
+      if (CreateVideoOutputDevice(mediaFormat, FALSE, videoDevice, autoDelete))
+        return new OpalVideoMediaStream(mediaFormat, sessionID, NULL, videoDevice, autoDelete);
     }
   }
 
@@ -713,15 +722,20 @@ void OpalConnection::AddVideoMediaFormats(OpalMediaFormatList & mediaFormats) co
 }
 
 
-PVideoInputDevice * OpalConnection::CreateVideoInputDevice(const OpalMediaFormat & mediaFormat)
+BOOL OpalConnection::CreateVideoInputDevice(const OpalMediaFormat & mediaFormat,
+                                            PVideoInputDevice * & device,
+                                            BOOL & autoDelete)
 {
-  return endpoint.CreateVideoInputDevice(*this, mediaFormat);
+  return endpoint.CreateVideoInputDevice(*this, mediaFormat, device, autoDelete);
 }
 
 
-PVideoOutputDevice * OpalConnection::CreateVideoOutputDevice(const OpalMediaFormat & mediaFormat, BOOL preview)
+BOOL OpalConnection::CreateVideoOutputDevice(const OpalMediaFormat & mediaFormat,
+                                             BOOL preview,
+                                             PVideoOutputDevice * & device,
+                                             BOOL & autoDelete)
 {
-  return endpoint.CreateVideoOutputDevice(*this, mediaFormat, preview);
+  return endpoint.CreateVideoOutputDevice(*this, mediaFormat, preview, device, autoDelete);
 }
 
 

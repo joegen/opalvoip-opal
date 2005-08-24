@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cpp,v $
+ * Revision 1.32  2005/08/24 10:43:51  rjongbloed
+ * Changed create video functions yet again so can return pointers that are not to be deleted.
+ *
  * Revision 1.31  2005/08/24 10:21:36  rjongbloed
  * Added function to create video output windows, can now get correct titles.
  *
@@ -1199,22 +1202,25 @@ void MyManager::SendUserInput(char tone)
 }
 
 
-PVideoOutputDevice * MyManager::CreateVideoOutputDevice(const OpalConnection & connection,
-                                                        const OpalMediaFormat & mediaFormat,
-                                                        BOOL preview)
+BOOL MyManager::CreateVideoOutputDevice(const OpalConnection & connection,
+                                        const OpalMediaFormat & mediaFormat,
+                                        BOOL preview,
+                                        PVideoOutputDevice * & device,
+                                        BOOL & autoDelete)
 {
   // We ALWAYS use a Window
-  PVideoOutputDevice * videoDevice = PVideoOutputDevice::CreateDevice("Window");
-  if (videoDevice != NULL) {
-    if (videoDevice->Open(psprintf("MSWIN STYLE=0x%08X TITLE=\"%s\"",
-                                   WS_POPUP|WS_BORDER|WS_SYSMENU|WS_CAPTION,
-                                   preview ? "Local" : (const char *)connection.GetRemotePartyName())))
-      return videoDevice;
+  device = PVideoOutputDevice::CreateDevice("Window");
+  if (device != NULL) {
+    autoDelete = TRUE;
+    if (device->Open(psprintf("MSWIN STYLE=0x%08X TITLE=\"%s\"",
+                              WS_POPUP|WS_BORDER|WS_SYSMENU|WS_CAPTION,
+                              preview ? "Local" : (const char *)connection.GetRemotePartyName())))
+      return TRUE;
 
-    delete videoDevice;
+    delete device;
   }
 
-  return OpalManager::CreateVideoOutputDevice(connection, mediaFormat, preview);
+  return OpalManager::CreateVideoOutputDevice(connection, mediaFormat, preview, device, autoDelete);
 }
 
     

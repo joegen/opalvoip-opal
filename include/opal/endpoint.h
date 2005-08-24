@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2027  2005/08/23 12:45:09  rjongbloed
+ * Revision 1.2028  2005/08/24 10:43:51  rjongbloed
+ * Changed create video functions yet again so can return pointers that are not to be deleted.
+ *
+ * Revision 2.26  2005/08/23 12:45:09  rjongbloed
  * Fixed creation of video preview window and setting video grab/display initial frame size.
  *
  * Revision 2.25  2005/07/14 08:51:18  csoutheren
@@ -549,18 +552,22 @@ class OpalEndPoint : public PObject
 
     /**Create an PVideoInputDevice for a source media stream.
       */
-    virtual PVideoInputDevice * CreateVideoInputDevice(
-      const OpalConnection & connection,  /// Connection needing created video device
-      const OpalMediaFormat & mediaFormat /// Media format for stream
+    virtual BOOL CreateVideoInputDevice(
+      const OpalConnection & connection,    /// Connection needing created video device
+      const OpalMediaFormat & mediaFormat,  /// Media format for stream
+      PVideoInputDevice * & device,         /// Created device
+      BOOL & autoDelete                     /// Flag for auto delete device
     );
 
     /**Create an PVideoOutputDevice for a sink media stream or the preview
        display for a source media stream.
       */
-    virtual PVideoOutputDevice * CreateVideoOutputDevice(
-      const OpalConnection & connection,   /// Connection needing created video device
-      const OpalMediaFormat & mediaFormat, /// Media format for stream
-      BOOL preview                         /// Flag indicating is a preview output
+    virtual BOOL CreateVideoOutputDevice(
+      const OpalConnection & connection,    /// Connection needing created video device
+      const OpalMediaFormat & mediaFormat,  /// Media format for stream
+      BOOL preview,                         /// Flag indicating is a preview output
+      PVideoOutputDevice * & device,        /// Created device
+      BOOL & autoDelete                     /// Flag for auto delete device
     );
   //@}
 

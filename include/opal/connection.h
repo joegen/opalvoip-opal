@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2043  2005/08/23 12:45:09  rjongbloed
+ * Revision 1.2044  2005/08/24 10:43:51  rjongbloed
+ * Changed create video functions yet again so can return pointers that are not to be deleted.
+ *
+ * Revision 2.42  2005/08/23 12:45:09  rjongbloed
  * Fixed creation of video preview window and setting video grab/display initial frame size.
  *
  * Revision 2.41  2005/08/04 17:21:01  dsandras
@@ -704,16 +707,20 @@ class OpalConnection : public PSafeObject
 
     /**Create an PVideoInputDevice for a source media stream.
       */
-    virtual PVideoInputDevice * CreateVideoInputDevice(
-      const OpalMediaFormat & mediaFormat /// Media format for stream
+    virtual BOOL CreateVideoInputDevice(
+      const OpalMediaFormat & mediaFormat,  /// Media format for stream
+      PVideoInputDevice * & device,         /// Created device
+      BOOL & autoDelete                     /// Flag for auto delete device
     );
 
     /**Create an PVideoOutputDevice for a sink media stream or the preview
        display for a source media stream.
       */
-    virtual PVideoOutputDevice * CreateVideoOutputDevice(
-      const OpalMediaFormat & mediaFormat, /// Media format for stream
-      BOOL preview    /// Flag indicating is a preview output
+    virtual BOOL CreateVideoOutputDevice(
+      const OpalMediaFormat & mediaFormat,  /// Media format for stream
+      BOOL preview,                         /// Flag indicating is a preview output
+      PVideoOutputDevice * & device,        /// Created device
+      BOOL & autoDelete                     /// Flag for auto delete device
     );
   //@}
 
