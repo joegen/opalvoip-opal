@@ -25,6 +25,10 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: frame.cxx,v $
+ *  Revision 1.4  2005/08/24 04:56:25  dereksmithies
+ *  Add code from Adrian Sietsma to send FullFrameTexts and FullFrameDtmfs to
+ *  the remote end.  Many Thanks.
+ *
  *  Revision 1.3  2005/08/24 01:38:38  dereksmithies
  *  Add encryption, iax2 style. Numerous tidy ups. Use the label iax2, not iax
  *
@@ -893,6 +897,13 @@ FullFrameDtmf::FullFrameDtmf(IAX2Processor *iax2Processor, PString  subClassValu
   InitialiseHeader(iax2Processor);
 }
 
+FullFrameDtmf::FullFrameDtmf(IAX2Processor *iax2Processor, char  subClassValue)
+  : FullFrame(iax2Processor->GetEndPoint())
+{
+  SetSubClass(toupper(subClassValue));
+  InitialiseHeader(iax2Processor);
+}
+
 
 PString FullFrameDtmf::GetSubClassName() const {
   switch (GetSubClass()) {    
@@ -1349,6 +1360,32 @@ PString FullFrameText::GetSubClassName() const
 {
   return PString("FullFrameText never has a valid sub class");
 }
+
+FullFrameText::FullFrameText(IAX2Processor *iaxProcessor, const PString&  text )
+  : FullFrame(iaxProcessor->GetEndPoint())
+{
+//  presetTimeStamp = usersTimeStamp;
+  InitialiseHeader(iaxProcessor);
+
+  internalText = text;
+
+  PINDEX headerSize = data.GetSize();
+  data.SetSize(text.GetLength() + headerSize);
+  memcpy(data.GetPointer() + headerSize, 
+	 internalText.GetPointer(), internalText.GetLength());
+
+  PTRACE(3, "Construct a full frame text" << IdString() << " for text " << text);
+}
+
+
+
+PString FullFrameText::GetTextString() const
+{
+  return internalText;
+}
+
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 FullFrameImage::FullFrameImage(Frame & srcFrame)

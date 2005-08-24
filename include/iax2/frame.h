@@ -25,6 +25,10 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: frame.h,v $
+ *  Revision 1.4  2005/08/24 04:56:25  dereksmithies
+ *  Add code from Adrian Sietsma to send FullFrameTexts and FullFrameDtmfs to
+ *  the remote end.  Many Thanks.
+ *
  *  Revision 1.3  2005/08/24 01:38:38  dereksmithies
  *  Add encryption, iax2 style. Numerous tidy ups. Use the label iax2, not iax
  *
@@ -564,14 +568,21 @@ class FullFrameDtmf : public FullFrame
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
   FullFrameDtmf(Frame & srcFrame);
+
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
   FullFrameDtmf(FullFrame & srcFrame);
   
   /**Construction from a Connection class. 
      Classes generated from this are then on sent to a remote endpoint. */
-  FullFrameDtmf(IAX2Processor *processor,       /*!< Iax Processor from which this frame originates      */ 
-		PString  subClassValue/*!< IAX protocol command for remote end to process   */
+  FullFrameDtmf(IAX2Processor *processor, /*!< Iax Processor from which this frame originates      */ 
+		char  subClassValue       /*!< IAX protocol command for remote end to process   */
+		);
+  
+  /**Construction from a Connection class. 
+     Classes generated from this are then on sent to a remote endpoint. */
+  FullFrameDtmf(IAX2Processor *processor, /*!< Iax Processor from which this frame originates      */ 
+		PString  subClassValue    /*!< IAX protocol command for remote end to process   */
 		);
   
   
@@ -965,6 +976,12 @@ class FullFrameText : public FullFrame
 {
   PCLASSINFO(FullFrameText, FullFrame);
  public:
+
+  /**Construction from a Connection class.
+     Classes generated from this are then on sent to a remote endpoint. */
+  FullFrameText(IAX2Processor *processor,       /*!< Iax Processor from which this frame originates      */
+		const PString&  textValue/*!< text to send to remote end   */
+		);
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
@@ -979,7 +996,14 @@ class FullFrameText : public FullFrame
   
   /**Return the FullFrame type represented here (voice, protocol, session etc*/
   virtual BYTE GetFullFrameType() { return textType; }
+
+  /**Return the text data*/
+  PString GetTextString() const;
+
  protected:
+
+  /**The text string that will be placed in the body of this message */
+  PString internalText;
 };
 /////////////////////////////////////////////////////////////////////////////    
 
