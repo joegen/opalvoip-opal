@@ -27,6 +27,9 @@
  *
  *
  * $Log: processor.cxx,v $
+ * Revision 1.6  2005/08/24 02:09:05  dereksmithies
+ * Remove Resume() call from constructor.
+ *
  * Revision 1.5  2005/08/24 01:38:38  dereksmithies
  * Add encryption, iax2 style. Numerous tidy ups. Use the label iax2, not iax
  *
@@ -178,7 +181,6 @@ IAX2Processor::IAX2Processor(IAX2EndPoint &ep)
   answerCallNow = FALSE;
   audioFrameDuration = 0;
   audioCompressedBytes = 0;
-  Resume();
 }
 
 IAX2Processor::~IAX2Processor()
