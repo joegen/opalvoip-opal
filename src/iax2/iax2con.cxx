@@ -28,6 +28,10 @@
  *
  *
  * $Log: iax2con.cxx,v $
+ * Revision 1.5  2005/08/24 04:56:25  dereksmithies
+ * Add code from Adrian Sietsma to send FullFrameTexts and FullFrameDtmfs to
+ * the remote end.  Many Thanks.
+ *
  * Revision 1.4  2005/08/24 01:38:38  dereksmithies
  * Add encryption, iax2 style. Numerous tidy ups. Use the label iax2, not iax
  *
@@ -214,6 +218,23 @@ void IAX2Connection::OnConnected()
   phase = ConnectedPhase;
   PTRACE(3, "IAX2Con\tThis call has been connected");
   OpalConnection::OnConnected();
+}
+
+void IAX2Connection::SendDtmf(PString dtmf)
+{
+  iaxProcessor->SendDtmf(dtmf); 
+}
+
+BOOL IAX2Connection::SendUserInputString(const PString & value ) 
+{ 
+  iaxProcessor->SendText(value); 
+  return TRUE;
+}
+  
+BOOL IAX2Connection::SendUserInputTone(char tone, unsigned /*duration*/ ) 
+{ 
+  iaxProcessor->SendDtmf(tone); 
+  return TRUE;
 }
 
 

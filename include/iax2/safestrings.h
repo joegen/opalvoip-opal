@@ -26,6 +26,10 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: safestrings.h,v $
+ *  Revision 1.2  2005/08/24 04:56:25  dereksmithies
+ *  Add code from Adrian Sietsma to send FullFrameTexts and FullFrameDtmfs to
+ *  the remote end.  Many Thanks.
+ *
  *  Revision 1.1  2005/07/30 07:01:32  csoutheren
  *  Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
  *  Thanks to Derek Smithies of Indranet Technologies Ltd. for
@@ -123,6 +127,16 @@ class SafeString : public PObject
   /**Retrive the value of the internal variable as a string */
   operator PString();
   
+  /**Add a new text to the string, in a thread safe fashion. */
+  void operator += (PString toBeAdded);
+
+  /**Retrieve and clear the value of the internal variable */
+  PString GetAndDelete();
+
+  /** Return True if this list is empty */
+  BOOL IsEmpty() const;
+
+
  protected:
   /**The internal variable which is accessed in a thread safe fashion.*/
   PString internal;

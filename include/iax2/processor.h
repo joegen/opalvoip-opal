@@ -26,6 +26,10 @@
  *
  *
  *  $Log: processor.h,v $
+ *  Revision 1.4  2005/08/24 04:56:25  dereksmithies
+ *  Add code from Adrian Sietsma to send FullFrameTexts and FullFrameDtmfs to
+ *  the remote end.  Many Thanks.
+ *
  *  Revision 1.3  2005/08/24 01:38:38  dereksmithies
  *  Add encryption, iax2 style. Numerous tidy ups. Use the label iax2, not iax
  *
@@ -189,7 +193,11 @@ class IAX2Processor : public PThread
   
   /** Ask this IAX2Processor to send dtmf to the remote endpoint. The dtmf is placed on a queue,
       ready for transmission in fullframes of type dtmf. */
-  void SendDtmf(PString dtmf);
+  void SendDtmf(PString  dtmfs);
+
+  /** Ask this IAX2Processor to send text to the remote endpoint. The text is placed on a queue,
+      ready for transmission in fullframes of type text. */
+  void SendText(const PString & text);
 
   /**Start an outgoing connection.
      This function will initiate the connection to the remote entity, for
@@ -386,9 +394,12 @@ class IAX2Processor : public PThread
   /**Make a call to a remote node*/
   void ConnectToRemoteNode(PString & destination);
   
-  /**Cause the dtmf full frames to go out for this dtmf message*/
-  void SendDtmfMessage(PString & message);
+  /**Cause the dtmf full frames to go out for this dtmf character*/
+  void SendDtmfMessage(char message);
   
+  /**Cause the text full frames to go out for this text message*/
+  void SendTextMessage(PString & message);
+
   /**Cause a sound frame (which is full or mini) to be sent. 
      The data in the array is already compressed. */
   void SendSoundMessage(PBYTEArray *sound);
@@ -583,9 +594,13 @@ class IAX2Processor : public PThread
   /**Array of remote node we have to make a call to */
   SafeStrings callList;
   
-  /**Array of the dtmf we have to send to the remote endpoint */
-  SafeStrings dtmfList;
-  
+  /**Contains the concatanation  of the dtmf we have to send to the remote endpoint.
+   This string is sent a character at a time, one DTMF frame per character.*/
+  SafeString dtmfText;
+
+  /**Array of the text we have to send to the remote endpoint */
+  SafeStrings textList;
+
   /**Array of received dtmf characters (These have come from the network)*/
   SafeStrings dtmfNetworkList;
 
