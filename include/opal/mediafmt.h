@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2030  2005/08/22 01:26:25  shorne
+ * Revision 1.2031  2005/08/24 02:07:56  dereksmithies
+ * Put guard around a MSVC pragma, so GCC does not generate zillions of warnings.
+ *
+ * Revision 2.29  2005/08/22 01:26:25  shorne
  * Removed warning on numeric_limits on MSVC6
  *
  * Revision 2.28  2005/08/20 07:32:49  rjongbloed
@@ -179,8 +182,10 @@
 #pragma interface
 #endif
 
+#ifdef _WIN32
 #if _MSC_VER < 1300   
 #pragma warning(disable:4663)
+#endif
 #endif
 
 #include <opal/buildopts.h>
@@ -927,8 +932,10 @@ extern const OpalMediaFormat OpalRFC2833;
 #define OpalG711uLaw          OpalG711_ULAW_64K
 #define OpalG711ALaw          OpalG711_ALAW_64K
 
+#ifdef _WIN32
 #if _MSC_VER < 1300
 #pragma warning(default:4663)
+#endif
 #endif
 
 #endif  // __OPAL_MEDIAFMT_H
