@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.cxx,v $
- * Revision 1.2019  2005/08/23 12:46:27  rjongbloed
+ * Revision 1.2020  2005/08/24 10:15:10  rjongbloed
+ * Fixed missing marker bit on codec output, get more than just the first frame!
+ *
+ * Revision 2.18  2005/08/23 12:46:27  rjongbloed
  * Fix some decoder issues, now get inital frame displayed!
  *
  * Revision 2.17  2005/08/20 09:01:56  rjongbloed
@@ -517,6 +520,7 @@ BOOL Opal_H261_YUV420P::ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameLi
 
   PINDEX frameBytes = (frameWidth * frameHeight * 12) / 8;
   RTP_DataFrame * pkt = new RTP_DataFrame(sizeof(FrameHeader)+frameBytes);
+  pkt->SetMarker(true);
   FrameHeader * frameHeader = (FrameHeader *)pkt->GetPayloadPtr();
   frameHeader->x = frameHeader->y = 0;
   frameHeader->width = frameWidth;
