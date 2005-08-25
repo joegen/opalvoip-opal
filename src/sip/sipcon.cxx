@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2077  2005/08/09 09:16:24  rjongbloed
+ * Revision 1.2078  2005/08/25 18:49:52  dsandras
+ * Added SIP Video support. Changed API of BuildSDP to allow it to be called
+ * for both audio and video.
+ *
+ * Revision 2.76  2005/08/09 09:16:24  rjongbloed
  * Fixed compiler warning
  *
  * Revision 2.75  2005/08/04 17:15:52  dsandras
@@ -835,8 +839,9 @@ BOOL SIPConnection::IsConnectionOnHold()
 }
 
 
-SDPSessionDescription * SIPConnection::BuildSDP(RTP_SessionManager & rtpSessions,
-                                                unsigned rtpSessionId)
+BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp, 
+			     RTP_SessionManager & rtpSessions,
+			     unsigned rtpSessionId)
 {
   OpalTransportAddress localAddress;
   RTP_DataFrame::PayloadTypes ntePayloadCode = RTP_DataFrame::IllegalPayloadType;
@@ -864,7 +869,7 @@ SDPSessionDescription * SIPConnection::BuildSDP(RTP_SessionManager & rtpSessions
       // Not already there, so create one
       rtpSession = CreateSession(GetTransport(), rtpSessionId, NULL);
       if (rtpSession == NULL)
-        return NULL;
+        return FALSE;
 
       rtpSession->SetUserData(new SIP_RTP_Session(*this));
 
@@ -875,36 +880,39 @@ SDPSessionDescription * SIPConnection::BuildSDP(RTP_SessionManager & rtpSessions
     localAddress = GetLocalAddress(((RTP_UDP *)rtpSession)->GetLocalDataPort());
   }
 
-  SDPSessionDescription * sdp = new SDPSessionDescription(localAddress);
+  if (sdp == NULL)
+    sdp = new SDPSessionDescription(localAddress);
 
-  SDPMediaDescription * localMedia = new SDPMediaDescription(localAddress, SDPMediaDescription::Audio);
+  SDPMediaDescription * localMedia = new SDPMediaDescription(localAddress, (rtpSessionId == OpalMediaFormat::DefaultAudioSessionID)?SDPMediaDescription::Audio:SDPMediaDescription::Video);
 
   // Set format if we have an RTP payload type for RFC2833
-  if (ntePayloadCode != RTP_DataFrame::IllegalPayloadType) {
-    PTRACE(3, "SIP\tUsing bypass RTP payload " << ntePayloadCode << " for NTE");
-    localMedia->AddSDPMediaFormat(new SDPMediaFormat("0-15", ntePayloadCode));
-  }
-  else {
-    ntePayloadCode = rfc2833Handler->GetPayloadType();
-    if (ntePayloadCode == RTP_DataFrame::IllegalPayloadType) {
-      ntePayloadCode = OpalRFC2833.GetPayloadType();
-    }
+  if (rtpSessionId == OpalMediaFormat::DefaultAudioSessionID) {
 
     if (ntePayloadCode != RTP_DataFrame::IllegalPayloadType) {
-      PTRACE(3, "SIP\tUsing RTP payload " << ntePayloadCode << " for NTE");
-
-      // create and add the NTE media format
+      PTRACE(3, "SIP\tUsing bypass RTP payload " << ntePayloadCode << " for NTE");
       localMedia->AddSDPMediaFormat(new SDPMediaFormat("0-15", ntePayloadCode));
     }
     else {
-      PTRACE(2, "SIP\tCould not allocate dynamic RTP payload for NTE");
+      ntePayloadCode = rfc2833Handler->GetPayloadType();
+      if (ntePayloadCode == RTP_DataFrame::IllegalPayloadType) {
+	ntePayloadCode = OpalRFC2833.GetPayloadType();
+      }
+
+      if (ntePayloadCode != RTP_DataFrame::IllegalPayloadType) {
+	PTRACE(3, "SIP\tUsing RTP payload " << ntePayloadCode << " for NTE");
+
+	// create and add the NTE media format
+	localMedia->AddSDPMediaFormat(new SDPMediaFormat("0-15", ntePayloadCode));
+      }
+      else {
+	PTRACE(2, "SIP\tCould not allocate dynamic RTP payload for NTE");
+      }
     }
+
+    rfc2833Handler->SetPayloadType(ntePayloadCode);
   }
-
-  rfc2833Handler->SetPayloadType(ntePayloadCode);
-
-
-  // add the audio formats
+  
+  // add the formats
   OpalMediaFormatList formats = ownerCall.GetMediaFormats(*this, FALSE);
   localMedia->AddMediaFormats(formats, rtpSessionId);
 
@@ -915,7 +923,7 @@ SDPSessionDescription * SIPConnection::BuildSDP(RTP_SessionManager & rtpSessions
   if (local_hold)
     sdp->SetDirection (SDPSessionDescription::SendOnly);
 
-  return sdp;
+  return TRUE;
 }
 
 
