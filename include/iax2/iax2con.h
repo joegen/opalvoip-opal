@@ -25,6 +25,10 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2con.h,v $
+ *  Revision 1.4  2005/08/25 03:26:06  dereksmithies
+ *  Add patch from Adrian Sietsma to correctly set the packet timestamps under windows.
+ *  Many thanks.
+ *
  *  Revision 1.3  2005/08/24 04:56:25  dereksmithies
  *  Add code from Adrian Sietsma to send FullFrameTexts and FullFrameDtmfs to
  *  the remote end.  Many Thanks.
@@ -235,33 +239,33 @@ class IAX2Connection : public OpalConnection
   SequenceNumbers & GetSequenceInfo() { return iaxProcessor->GetSequenceInfo(); }
   
   /**Get the call start time */
-  const PTime & GetCallStartTime() { return iaxProcessor->GetCallStartTime(); } 
+  const PTimeInterval & GetCallStartTick() { return iaxProcessor->GetCallStartTick(); } 
 
-    /**Call back for an incoming call.
-       This function is used for an application to control the answering of
-       incoming calls.
-
-       If TRUE is returned then the connection continues. If FALSE then the
-       connection is aborted.
-
-       Note this function should not block for any length of time. If the
-       decision to answer the call may take some time eg waiting for a user to
-       pick up the phone, then AnswerCallPending or AnswerCallDeferred should
-       be returned.
-
-       If an application overrides this function, it should generally call the
-       ancestor version to complete calls. Unless the application completely
-       takes over that responsibility. Generally, an application would only
-       intercept this function if it wishes to do some form of logging. For
-       this you can obtain the name of the caller by using the function
-       OpalConnection::GetRemotePartyName().
-
-       The default behaviour calls the OpalManager function of the same name.
-
-       This method is called right at the very beginning of the call sequence 
-     */
-    virtual BOOL OnIncomingConnection();
-
+  /**Call back for an incoming call.
+     This function is used for an application to control the answering of
+     incoming calls.
+     
+     If TRUE is returned then the connection continues. If FALSE then the
+     connection is aborted.
+     
+     Note this function should not block for any length of time. If the
+     decision to answer the call may take some time eg waiting for a user to
+     pick up the phone, then AnswerCallPending or AnswerCallDeferred should
+     be returned.
+     
+     If an application overrides this function, it should generally call the
+     ancestor version to complete calls. Unless the application completely
+     takes over that responsibility. Generally, an application would only
+     intercept this function if it wishes to do some form of logging. For
+     this you can obtain the name of the caller by using the function
+     OpalConnection::GetRemotePartyName().
+     
+     The default behaviour calls the OpalManager function of the same name.
+     
+     This method is called right at the very beginning of the call sequence 
+  */
+  virtual BOOL OnIncomingConnection();
+  
     /**We have received a packet from the remote iax endpoint, requeting a call.
        Now, we use this method to invoke the opal components to do their bit.
 

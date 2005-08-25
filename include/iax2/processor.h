@@ -26,6 +26,10 @@
  *
  *
  *  $Log: processor.h,v $
+ *  Revision 1.5  2005/08/25 03:26:06  dereksmithies
+ *  Add patch from Adrian Sietsma to correctly set the packet timestamps under windows.
+ *  Many thanks.
+ *
  *  Revision 1.4  2005/08/24 04:56:25  dereksmithies
  *  Add code from Adrian Sietsma to send FullFrameTexts and FullFrameDtmfs to
  *  the remote end.  Many Thanks.
@@ -176,8 +180,8 @@ class IAX2Processor : public PThread
   /**Get the iax2 encryption info */
   Iax2Encryption & GetEncryptionInfo() { return encryption; }
 
-  /**Get the call start time */
-  const PTime & GetCallStartTime() { return callStartTime; }
+  /**Get the call start tick */
+  const PTimeInterval & GetCallStartTick() { return callStartTick; }
 
   /**Call back from the IAX2Connection class */
   virtual void Release(OpalConnection::CallEndReason releaseReason = OpalConnection::EndedByLocalUser);
@@ -234,8 +238,6 @@ class IAX2Processor : public PThread
   /**A method to cause some of the values in this class to be formatted
      into a printable stream */
   virtual void PrintOn(ostream & strm) const;
-
-
   
   /**Invoked by the User interface, which causes the statistics (count of in/out packets)
      to be printed*/
@@ -561,8 +563,10 @@ class IAX2Processor : public PThread
   BOOL Authenticate(FullFrameProtocol *reply /*!< this frame contains the result of authenticating the internal data*/
 		    );
     
-  /**Time this connection class was created, which is the call start time */
-  PTime callStartTime;
+  /**Time this connection class was created, which is the call start
+     time.  It is reported in Ticks, which is required for millisecond
+     accuracy under windows.   */
+  PTimeInterval callStartTick;
   
   /**Details on the address of the remote endpoint, and source/dest call numbers */
   Remote remote;
