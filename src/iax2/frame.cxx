@@ -25,6 +25,10 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: frame.cxx,v $
+ *  Revision 1.6  2005/08/25 00:46:08  dereksmithies
+ *  Thanks to Adrian Sietsma for his code to better dissect the remote party name
+ *  Add  PTRACE statements, and more P_SSL_AES tests
+ *
  *  Revision 1.5  2005/08/24 13:06:19  rjongbloed
  *  Added configuration define for AEC encryption
  *
@@ -424,6 +428,7 @@ BOOL Frame::EncryptContents(Iax2Encryption &encryption)
   data = result;
   return TRUE;
 #else
+  PTRACE(1, "Frame\tEncryption is Flagged on, but AES routines in openssl are not available");
   return FALSE;
 #endif
 }
