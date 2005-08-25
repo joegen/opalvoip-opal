@@ -25,6 +25,10 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: frame.h,v $
+ *  Revision 1.5  2005/08/25 03:26:06  dereksmithies
+ *  Add patch from Adrian Sietsma to correctly set the packet timestamps under windows.
+ *  Many thanks.
+ *
  *  Revision 1.4  2005/08/24 04:56:25  dereksmithies
  *  Add code from Adrian Sietsma to send FullFrameTexts and FullFrameDtmfs to
  *  the remote end.  Many Thanks.
@@ -149,13 +153,13 @@ class Frame :  public PObject
   /**Pretty print this frame data to the designated stream*/
   virtual void PrintOn(ostream & strm) const;
   
-  /**Calculate the timestamp value, given the call start time*/
-  static DWORD CalcTimeStamp(const PTime & callStartTime);
+  /**Calculate the timestamp value, given the call start tick*/
+  static DWORD CalcTimeStamp(const PTimeInterval & callStartTick);
 
   /**Write the timestamp value, in preparation for writing the
      header. When sending a packet, the timestamp is written at packet
      construction.*/
-  virtual void BuildTimeStamp(const PTime & callStartTime);
+  virtual void BuildTimeStamp(const PTimeInterval & callStartTick);
   
   /**Return a reference to the endpoint structure */
   IAX2EndPoint & GetEndpoint() { return endpoint; }
