@@ -27,6 +27,10 @@
  *
  *
  * $Log: processor.cxx,v $
+ * Revision 1.11  2005/08/25 03:26:06  dereksmithies
+ * Add patch from Adrian Sietsma to correctly set the packet timestamps under windows.
+ * Many thanks.
+ *
  * Revision 1.10  2005/08/25 00:46:08  dereksmithies
  * Thanks to Adrian Sietsma for his code to better dissect the remote party name
  * Add  PTRACE statements, and more P_SSL_AES tests
@@ -222,8 +226,8 @@ void IAX2Processor::AssignConnection(IAX2Connection * _con)
 void IAX2Processor::PrintOn(ostream & strm) const
 {
   strm << "In call with " << con->GetRemotePartyName() << "  " << remotePhoneNumber << " " << callToken  << endl
-       << "  Call has been up for " << setprecision(0) << setw(5)
-       << (PTime() - callStartTime) << endl
+       << "  Call has been up for " << setprecision(0) << setw(8)
+       << (PTimer::Tick() - callStartTick) << " milliseconds" << endl
        << "  Control frames sent " << controlFramesSent    << endl
        << "  Control frames rcvd " << controlFramesRcvd    << endl
        << "  Audio frames sent   " << audioFramesSent      << endl
@@ -407,7 +411,7 @@ void IAX2Processor::ConnectToRemoteNode(PString & newRemoteNode)
   remote.SetRemotePort(con->GetEndPoint().ListenPortNumber());
   remote.SetRemoteAddress(ip);
     
-  callStartTime = PTime();
+  callStartTick = PTimer::Tick();
   FullFrameProtocol * f = new FullFrameProtocol(this, FullFrameProtocol::cmdNew);
   PTRACE(3, "Create full frame protocol to do cmdNew. Just contains data. ");
   f->AppendIe(new IeVersion());
@@ -444,8 +448,8 @@ void IAX2Processor::ConnectToRemoteNode(PString & newRemoteNode)
 
 void IAX2Processor::ReportStatistics()
 {
-  cout << "  Call has been up for " << setprecision(0) << setw(5)
-       << (PTime() - callStartTime) << endl
+  cout << "  Call has been up for " << setprecision(0) << setw(8)
+       << (PTimer::Tick() - callStartTick) << " milliseconds" << endl
        << "  Control frames sent " << controlFramesSent  << endl
        << "  Control frames rcvd " << controlFramesRcvd  << endl
        << "  Audio frames sent   " << audioFramesSent      << endl
@@ -619,7 +623,7 @@ void IAX2Processor::SendSoundMessage(PBYTEArray *sound)
   PTRACE(3, "This frame is compresed bytes of " << audioCompressedBytes);
 
   PINDEX thisDuration = (PINDEX)((sound->GetSize() * audioFrameDuration) / audioCompressedBytes);
-  long thisTimeStamp = (PTime() - callStartTime).GetInterval();
+  long thisTimeStamp = (PTimer::Tick() - callStartTick).GetMilliSeconds();
   PTRACE(3, "This frame is duration " << thisDuration << " ms   at time " << thisTimeStamp);
 
   thisTimeStamp = ((thisTimeStamp + (thisDuration > 1))/thisDuration) * thisDuration;
@@ -1325,7 +1329,7 @@ void IAX2Processor::ProcessIaxCmdLagRp(FullFrameProtocol *src)
 {
   PTRACE(3, "ProcessIaxCmdLagRp(FullFrameProtocol *src)");
   SendAckFrame(src);
-  PTRACE(3, "Process\tRound trip lag time is " << (Frame::CalcTimeStamp(callStartTime) - src->GetTimeStamp()));
+  PTRACE(3, "Process\tRound trip lag time is " << (Frame::CalcTimeStamp(callStartTick) - src->GetTimeStamp()));
 }
 
 void IAX2Processor::ProcessIaxCmdRegReq(FullFrameProtocol *src)

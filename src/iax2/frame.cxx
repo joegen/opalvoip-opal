@@ -25,6 +25,10 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: frame.cxx,v $
+ *  Revision 1.7  2005/08/25 03:26:06  dereksmithies
+ *  Add patch from Adrian Sietsma to correctly set the packet timestamps under windows.
+ *  Many thanks.
+ *
  *  Revision 1.6  2005/08/25 00:46:08  dereksmithies
  *  Thanks to Adrian Sietsma for his code to better dissect the remote party name
  *  Add  PTRACE statements, and more P_SSL_AES tests
@@ -284,17 +288,17 @@ void Frame::PrintOn(ostream & strm) const
        << ::hex << data << ::dec;
 }
 
-void Frame::BuildTimeStamp(const PTime & callStartTime)
+void Frame::BuildTimeStamp(const PTimeInterval & callStartTick)
 {
   if (presetTimeStamp > 0)
     timeStamp = presetTimeStamp;
   else
-    timeStamp = CalcTimeStamp(callStartTime);
+    timeStamp = CalcTimeStamp(callStartTick);
 }
 
-DWORD Frame::CalcTimeStamp(const PTime & callStartTime)
+DWORD Frame::CalcTimeStamp(const PTimeInterval & callStartTick)
 {
-  DWORD tVal = (PTime() - callStartTime).GetInterval();
+  DWORD tVal = (PTimer::Tick() - callStartTick).GetMilliSeconds();
   PTRACE(3, "Calculate timestamp as " << tVal);
   return tVal;
 }
@@ -484,7 +488,7 @@ void MiniFrame::InitialiseHeader(IAX2Processor *iax2Processor)
 {
   if (iax2Processor != NULL) {
     remote   = iax2Processor->GetRemoteInfo();
-    BuildTimeStamp(iax2Processor->GetCallStartTime());          
+    BuildTimeStamp(iax2Processor->GetCallStartTick());          
     SetConnectionToken(iax2Processor->GetCallToken());
   }
   WriteHeader();
@@ -864,7 +868,7 @@ void FullFrame::InitialiseHeader(IAX2Processor *iax2Processor)
 {
   if (iax2Processor != NULL) {
     SetConnectionToken(iax2Processor->GetCallToken());
-    BuildTimeStamp(iax2Processor->GetCallStartTime());    
+    BuildTimeStamp(iax2Processor->GetCallStartTick());    
     remote   = iax2Processor->GetRemoteInfo();
   }
   PTRACE(3, "source timestamp is " << timeStamp);
