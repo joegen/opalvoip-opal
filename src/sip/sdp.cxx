@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2021  2005/07/18 01:19:37  csoutheren
+ * Revision 1.2022  2005/08/25 18:50:55  dsandras
+ * Added support for clockrate based on the media format.
+ *
+ * Revision 2.20  2005/07/18 01:19:37  csoutheren
  * Fixed proxy with FWD rejecting call because of the order of the SDP fields
  * I can't see any requirement for ordering in the RFC, so this is probably a
  * bug in the FWD proxy
@@ -530,7 +533,7 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
       return;
   }
 
-  AddSDPMediaFormat(new SDPMediaFormat(payloadType, encodingName));
+  AddSDPMediaFormat(new SDPMediaFormat(payloadType, encodingName, mediaFormat.GetClockRate()));
 }
 
 
