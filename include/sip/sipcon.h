@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2034  2005/07/11 01:52:24  csoutheren
+ * Revision 1.2035  2005/08/25 18:49:52  dsandras
+ * Added SIP Video support. Changed API of BuildSDP to allow it to be called
+ * for both audio and video.
+ *
+ * Revision 2.33  2005/07/11 01:52:24  csoutheren
  * Extended AnsweringCall to work for SIP as well as H.323
  * Fixed problems with external RTP connection in H.323
  * Added call to OnClosedMediaStream
@@ -456,7 +460,8 @@ class SIPConnection : public OpalConnection
 
     unsigned GetNextCSeq() { return ++lastSentCSeq; }
 
-    SDPSessionDescription * BuildSDP(
+    BOOL BuildSDP(
+      SDPSessionDescription * &,			     
       RTP_SessionManager & rtpSessions,
       unsigned rtpSessionId
     );
