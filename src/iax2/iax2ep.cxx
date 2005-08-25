@@ -28,6 +28,10 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.5  2005/08/25 00:46:08  dereksmithies
+ * Thanks to Adrian Sietsma for his code to better dissect the remote party name
+ * Add  PTRACE statements, and more P_SSL_AES tests
+ *
  * Revision 1.4  2005/08/24 01:38:38  dereksmithies
  * Add encryption, iax2 style. Numerous tidy ups. Use the label iax2, not iax
  *
@@ -236,6 +240,9 @@ PStringList IAX2EndPoint::DissectRemoteParty(const PString & other)
   } else
     working = halfs[0];
 
+  if (working.IsEmpty())
+    goto finishedDissection;
+
   halfs = working.Tokenise("$");
   if (halfs.GetSize() == 2) {
     res[transportIndex] = halfs[0];
@@ -243,12 +250,18 @@ PStringList IAX2EndPoint::DissectRemoteParty(const PString & other)
   } else
     working = halfs[0];
 
+  if (working.IsEmpty())
+    goto finishedDissection;
+
   halfs = working.Tokenise("/");
   if (halfs.GetSize() == 2) {
     res[addressIndex] = halfs[0];
     working = halfs[1];
-  } else
+  } else {
     res[addressIndex] = halfs[0];
+    goto finishedDissection;
+  }
+
 
   halfs = working.Tokenise("+");
   if (halfs.GetSize() == 2) {
@@ -256,6 +269,8 @@ PStringList IAX2EndPoint::DissectRemoteParty(const PString & other)
     res[contextIndex]   = halfs[1];
   } else
     res[extensionIndex] = halfs[0];
+
+ finishedDissection:
 
   PTRACE(3, "Opal\t call protocol          " << res[protoIndex]);
   PTRACE(3, "Opal\t destination user       " << res[userIndex]);
