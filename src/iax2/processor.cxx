@@ -27,6 +27,10 @@
  *
  *
  * $Log: processor.cxx,v $
+ * Revision 1.10  2005/08/25 00:46:08  dereksmithies
+ * Thanks to Adrian Sietsma for his code to better dissect the remote party name
+ * Add  PTRACE statements, and more P_SSL_AES tests
+ *
  * Revision 1.9  2005/08/24 04:56:25  dereksmithies
  * Add code from Adrian Sietsma to send FullFrameTexts and FullFrameDtmfs to
  * the remote end.  Many Thanks.
@@ -379,11 +383,10 @@ void IAX2Processor::ConnectToRemoteNode(PString & newRemoteNode)
   PTRACE(2, "Connect to remote node " << newRemoteNode);
   PStringList res = IAX2EndPoint::DissectRemoteParty(newRemoteNode);
 
-  if (res[IAX2EndPoint::userIndex].IsEmpty()     ||
-      res[IAX2EndPoint::addressIndex].IsEmpty()  ||
-      res[IAX2EndPoint::extensionIndex].IsEmpty()) {
+  if (res[IAX2EndPoint::addressIndex].IsEmpty()) {
     PTRACE(3, "Opal\tremote node to call is not specified correctly iax2:" << newRemoteNode);
     PTRACE(3, "Opal\tExample format is iax2:guest@misery.digium.com/s");
+    PTRACE(3, "Opal\tYou must supply (as a minimum iax2:address)");
     PTRACE(3, "Opal\tYou supplied " <<
 	   "iax2:" <<
 	   (res[IAX2EndPoint::userIndex].IsEmpty()      ? "" : res[IAX2EndPoint::userIndex])     << "@" <<
@@ -429,7 +432,9 @@ void IAX2Processor::ConnectToRemoteNode(PString & newRemoteNode)
   if (!res[IAX2EndPoint::contextIndex].IsEmpty())
     f->AppendIe(new IeCalledContext(res[IAX2EndPoint::contextIndex]));
 
+#if P_SSL_AES
   f->AppendIe(new IeEncryption());
+#endif
 
   PTRACE(3, "Create full frame protocol to do cmdNew. Finished appending Ies. ");
   TransmitFrameToRemoteEndpoint(f);
@@ -689,6 +694,7 @@ void IAX2Processor::SendAckFrame(FullFrame *inReplyTo)
 void IAX2Processor::TransmitFrameNow(Frame *src)
 {
   if (!src->EncryptContents(encryption)) {
+    PTRACE(3, "Processor\tEncryption failed. Delete this frame " << *src);
     delete src;
     return;
   }
