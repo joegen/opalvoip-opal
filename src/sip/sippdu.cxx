@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2060  2005/08/10 21:09:34  dsandras
+ * Revision 1.2061  2005/08/25 18:51:43  dsandras
+ * Fixed bug. Added support for video in the SDP of INVITE's.
+ *
+ * Revision 2.59  2005/08/10 21:09:34  dsandras
  * Fixed previous commit.
  *
  * Revision 2.58  2005/08/10 19:34:34  dsandras
@@ -985,7 +988,7 @@ void SIPMIMEInfo::SetFieldParameter(const PString & param,
   }
   else { // There is no such parameter
 
-    s << param << ";" << field << "=" << value;
+    s << field << ";" << param << "=" << value;
     field = s;
   }
 }
@@ -1000,15 +1003,16 @@ PString SIPMIMEInfo::GetFieldParameter(const PString & param,
   if ((j = val.FindLast (param)) != P_MAX_INDEX) {
 
     val = val.Mid(j+param.GetLength());
-    if ((j = val.Find ('=')) != P_MAX_INDEX) {
+    if ((j = val.Find (';')) != P_MAX_INDEX)
+      val = val.Left(j);
+
+    if ((j = val.Find (' ')) != P_MAX_INDEX)
+      val = val.Left(j);
+    
+    if ((j = val.Find ('=')) != P_MAX_INDEX) 
       val = val.Mid(j+1);
-
-      if ((j = val.Find (';')) != P_MAX_INDEX)
-	val = val.Left(j);
-
-      if ((j = val.Find (' ')) != P_MAX_INDEX)
-	val = val.Left(j);
-    }
+    else
+      val = "";
   }
   else
     val = "";
@@ -1895,7 +1899,9 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport)
   mime.SetUserAgent(connection.GetEndPoint()); // normally 'OPAL/2.0'
   mime.SetMaxForwards(70);                     // default
 
-  sdp = connection.BuildSDP(rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
+  connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
+  if (connection.GetEndPoint().GetManager().CanAutoStartTransmitVideo())
+    connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID);
 }
 
 
@@ -1907,7 +1913,9 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, RTP_
   mime.SetMaxForwards(70);                     // default
 
   rtpSessions = sm;
-  sdp = connection.BuildSDP(rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
+  connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
+  if (connection.GetEndPoint().GetManager().CanAutoStartTransmitVideo())
+    connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID);
 }
 
 
