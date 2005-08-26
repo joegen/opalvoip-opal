@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: causecode.h,v $
+ *  Revision 1.2  2005/08/26 03:07:35  dereksmithies
+ *  Change naming convention, so all class names contain the string "IAX2"
+ *
  *  Revision 1.1  2005/07/30 07:01:32  csoutheren
  *  Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
  *  Thanks to Derek Smithies of Indranet Technologies Ltd. for
@@ -39,9 +42,9 @@
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the hangup cause code*/
-class IeCauseCode : public IeByte
+class IAX2IeCauseCode : public IAX2IeByte
 {
-  PCLASSINFO(IeCauseCode, IeByte);
+  PCLASSINFO(IAX2IeCauseCode, IAX2IeByte);
  public:
   /**Enums to specify why this call failed */
   enum CauseCodes {
@@ -103,10 +106,10 @@ class IeCauseCode : public IeByte
   /** Constructor from data read from the network.
 	 
   Contents are undefined if the network data is bogus/invalid */
-  IeCauseCode(BYTE length, BYTE *srcData) : IeByte(length, srcData) { };
+  IAX2IeCauseCode(BYTE length, BYTE *srcData) : IAX2IeByte(length, srcData) { };
      
   /**Construct with a predefined value (Typically used prior to transmission)*/
-  IeCauseCode(BYTE newValue) : IeByte(newValue) { }
+  IAX2IeCauseCode(BYTE newValue) : IAX2IeByte(newValue) { }
 
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const { return ie_causeCode; }
@@ -116,8 +119,8 @@ class IeCauseCode : public IeByte
 
   /** Take the data from this Ie, and copy it into the IeData structure.
       This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.causeCode = dataValue; }     
- protected:
+  virtual void StoreDataIn(IAX2IeData &res) { res.causeCode = dataValue; }     
+
 };
 
 /* The comment below is magic for those who use emacs to edit this file. */
