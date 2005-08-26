@@ -27,6 +27,9 @@
  *
  *
  * $Log: ies.cxx,v $
+ * Revision 1.3  2005/08/26 03:07:38  dereksmithies
+ * Change naming convention, so all class names contain the string "IAX2"
+ *
  * Revision 1.2  2005/08/24 01:38:38  dereksmithies
  * Add encryption, iax2 style. Numerous tidy ups. Use the label iax2, not iax
  *
@@ -55,74 +58,74 @@
 
 #define new PNEW
 
-Ie * Ie::BuildInformationElement(BYTE _typeCode, BYTE length, BYTE *srcData)
-{
-  switch (_typeCode) {
-  case ie_calledNumber    : return new IeCalledNumber(length, srcData);
-  case ie_callingNumber   : return new IeCallingNumber(length, srcData);
-  case ie_callingAni      : return new IeCallingAni(length, srcData);
-  case ie_callingName     : return new IeCallingName(length, srcData);
-  case ie_calledContext   : return new IeCalledContext(length, srcData);
-  case ie_userName        : return new IeUserName(length, srcData);
-  case ie_password        : return new IePassword(length, srcData);
-  case ie_capability      : return new IeCapability(length, srcData);
-  case ie_format          : return new IeFormat(length, srcData);
-  case ie_language        : return new IeLanguage(length, srcData);
-  case ie_version         : return new IeVersion(length, srcData);
-  case ie_adsicpe         : return new IeAdsicpe(length, srcData);
-  case ie_dnid            : return new IeDnid(length, srcData);
-  case ie_authMethods     : return new IeAuthMethods(length, srcData);
-  case ie_challenge       : return new IeChallenge(length, srcData);
-  case ie_md5Result       : return new IeMd5Result(length, srcData);
-  case ie_rsaResult       : return new IeRsaResult(length, srcData);
-  case ie_apparentAddr    : return new IeApparentAddr(length, srcData);
-  case ie_refresh         : return new IeRefresh(length, srcData);
-  case ie_dpStatus        : return new IeDpStatus(length, srcData);
-  case ie_callNo          : return new IeCallNo(length, srcData);
-  case ie_cause           : return new IeCause(length, srcData);
-  case ie_iaxUnknown      : return new IeIaxUnknown(length, srcData);
-  case ie_msgCount        : return new IeMsgCount(length, srcData);
-  case ie_autoAnswer      : return new IeAutoAnswer(length, srcData);
-  case ie_musicOnHold     : return new IeMusicOnHold(length, srcData);
-  case ie_transferId      : return new IeTransferId(length, srcData);
-  case ie_rdnis           : return new IeRdnis(length, srcData);
-  case ie_provisioning    : return new IeProvisioning(length, srcData);
-  case ie_aesProvisioning : return new IeAesProvisioning(length, srcData);
-  case ie_dateTime        : return new IeDateTime(length, srcData);
-  case ie_deviceType      : return new IeDeviceType(length, srcData);
-  case ie_serviceIdent    : return new IeServiceIdent(length, srcData);
-  case ie_firmwareVer     : return new IeFirmwareVer(length, srcData);
-  case ie_fwBlockDesc     : return new IeFwBlockDesc(length, srcData);
-  case ie_fwBlockData     : return new IeFwBlockData(length, srcData);
-  case ie_provVer         : return new IeProvVer(length, srcData);
-  case ie_callingPres     : return new IeCallingPres(length, srcData);
-  case ie_callingTon      : return new IeCallingTon(length, srcData);
-  case ie_callingTns      : return new IeCallingTns(length, srcData);
-  case ie_samplingRate    : return new IeSamplingRate(length, srcData);
-  case ie_causeCode       : return new IeCauseCode(length, srcData);
-  case ie_encryption      : return new IeEncryption(length, srcData);
-  case ie_encKey          : return new IeEncKey(length, srcData);
-  case ie_codecPrefs      : return new IeCodecPrefs(length, srcData);
-  case ie_recJitter       : return new IeReceivedJitter(length, srcData);
-  case ie_recLoss         : return new IeReceivedLoss(length, srcData);
-  case ie_recPackets      : return new IeDroppedFrames(length, srcData);
-  case ie_recDelay        : return new IeReceivedDelay(length, srcData);
-  case ie_recDropped      : return new IeDroppedFrames(length, srcData);
-  case ie_recOoo          : return new IeReceivedOoo(length, srcData);
-    
-  default: PTRACE(1, "Ie\t Invalid IE type code " << ::hex << ((int)_typeCode) << ::dec);
-  };
-  
-  return new IeInvalidElement();
-}
-
-Ie::Ie()
+IAX2Ie::IAX2Ie()
 {
   validData = FALSE;
 }
 
+IAX2Ie * IAX2Ie::BuildInformationElement(BYTE _typeCode, BYTE length, BYTE *srcData)
+{
+  switch (_typeCode) {
+  case ie_calledNumber    : return new IAX2IeCalledNumber(length, srcData);
+  case ie_callingNumber   : return new IAX2IeCallingNumber(length, srcData);
+  case ie_callingAni      : return new IAX2IeCallingAni(length, srcData);
+  case ie_callingName     : return new IAX2IeCallingName(length, srcData);
+  case ie_calledContext   : return new IAX2IeCalledContext(length, srcData);
+  case ie_userName        : return new IAX2IeUserName(length, srcData);
+  case ie_password        : return new IAX2IePassword(length, srcData);
+  case ie_capability      : return new IAX2IeCapability(length, srcData);
+  case ie_format          : return new IAX2IeFormat(length, srcData);
+  case ie_language        : return new IAX2IeLanguage(length, srcData);
+  case ie_version         : return new IAX2IeVersion(length, srcData);
+  case ie_adsicpe         : return new IAX2IeAdsicpe(length, srcData);
+  case ie_dnid            : return new IAX2IeDnid(length, srcData);
+  case ie_authMethods     : return new IAX2IeAuthMethods(length, srcData);
+  case ie_challenge       : return new IAX2IeChallenge(length, srcData);
+  case ie_md5Result       : return new IAX2IeMd5Result(length, srcData);
+  case ie_rsaResult       : return new IAX2IeRsaResult(length, srcData);
+  case ie_apparentAddr    : return new IAX2IeApparentAddr(length, srcData);
+  case ie_refresh         : return new IAX2IeRefresh(length, srcData);
+  case ie_dpStatus        : return new IAX2IeDpStatus(length, srcData);
+  case ie_callNo          : return new IAX2IeCallNo(length, srcData);
+  case ie_cause           : return new IAX2IeCause(length, srcData);
+  case ie_iaxUnknown      : return new IAX2IeIaxUnknown(length, srcData);
+  case ie_msgCount        : return new IAX2IeMsgCount(length, srcData);
+  case ie_autoAnswer      : return new IAX2IeAutoAnswer(length, srcData);
+  case ie_musicOnHold     : return new IAX2IeMusicOnHold(length, srcData);
+  case ie_transferId      : return new IAX2IeTransferId(length, srcData);
+  case ie_rdnis           : return new IAX2IeRdnis(length, srcData);
+  case ie_provisioning    : return new IAX2IeProvisioning(length, srcData);
+  case ie_aesProvisioning : return new IAX2IeAesProvisioning(length, srcData);
+  case ie_dateTime        : return new IAX2IeDateTime(length, srcData);
+  case ie_deviceType      : return new IAX2IeDeviceType(length, srcData);
+  case ie_serviceIdent    : return new IAX2IeServiceIdent(length, srcData);
+  case ie_firmwareVer     : return new IAX2IeFirmwareVer(length, srcData);
+  case ie_fwBlockDesc     : return new IAX2IeFwBlockDesc(length, srcData);
+  case ie_fwBlockData     : return new IAX2IeFwBlockData(length, srcData);
+  case ie_provVer         : return new IAX2IeProvVer(length, srcData);
+  case ie_callingPres     : return new IAX2IeCallingPres(length, srcData);
+  case ie_callingTon      : return new IAX2IeCallingTon(length, srcData);
+  case ie_callingTns      : return new IAX2IeCallingTns(length, srcData);
+  case ie_samplingRate    : return new IAX2IeSamplingRate(length, srcData);
+  case ie_causeCode       : return new IAX2IeCauseCode(length, srcData);
+  case ie_encryption      : return new IAX2IeEncryption(length, srcData);
+  case ie_encKey          : return new IAX2IeEncKey(length, srcData);
+  case ie_codecPrefs      : return new IAX2IeCodecPrefs(length, srcData);
+  case ie_recJitter       : return new IAX2IeReceivedJitter(length, srcData);
+  case ie_recLoss         : return new IAX2IeReceivedLoss(length, srcData);
+  case ie_recPackets      : return new IAX2IeDroppedFrames(length, srcData);
+  case ie_recDelay        : return new IAX2IeReceivedDelay(length, srcData);
+  case ie_recDropped      : return new IAX2IeDroppedFrames(length, srcData);
+  case ie_recOoo          : return new IAX2IeReceivedOoo(length, srcData);
+    
+  default: PTRACE(1, "Ie\t Invalid IE type code " << ::hex << ((int)_typeCode) << ::dec);
+  };
+  
+  return new IAX2IeInvalidElement();
+}
 
-void Ie::PrintOn(ostream & str) const
+
+void IAX2Ie::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " information element " ;
@@ -131,7 +134,7 @@ void Ie::PrintOn(ostream & str) const
 }
 
 
-void Ie::WriteBinary(void *_data, PINDEX &writeIndex)
+void IAX2Ie::WriteBinary(void *_data, PINDEX &writeIndex)
 {
   BYTE *data = (BYTE *)_data;
   data[writeIndex] = GetKeyValue();
@@ -145,20 +148,20 @@ void Ie::WriteBinary(void *_data, PINDEX &writeIndex)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-IeNone::IeNone(BYTE /*length*/, BYTE * /*srcData*/)
+IAX2IeNone::IAX2IeNone(BYTE /*length*/, BYTE * /*srcData*/)
 {
   validData = TRUE;
 }
 
 
-void IeNone::PrintOn(ostream & str) const
+void IAX2IeNone::PrintOn(ostream & str) const
 {
   str << setw(17) << Class();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-IeDateAndTime::IeDateAndTime(BYTE length, BYTE *srcData)
+IAX2IeDateAndTime::IAX2IeDateAndTime(BYTE length, BYTE *srcData)
 {
   if (length != sizeof(unsigned int)) {
     validData = FALSE;
@@ -178,12 +181,12 @@ IeDateAndTime::IeDateAndTime(BYTE length, BYTE *srcData)
 }
 
 
-void IeDateAndTime::PrintOn(ostream & str) const
+void IAX2IeDateAndTime::PrintOn(ostream & str) const
 {
   str << setw(17) << Class() << dataValue;
 }
 
-void IeDateAndTime::WriteBinary(BYTE *data)
+void IAX2IeDateAndTime::WriteBinary(BYTE *data)
 {
   unsigned int second = dataValue.GetSecond() >> 1;
   unsigned int minute = dataValue.GetMinute()        << 5;
@@ -200,8 +203,8 @@ void IeDateAndTime::WriteBinary(BYTE *data)
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-IeByte::IeByte(BYTE length, BYTE *srcData)
-  : Ie()
+IAX2IeByte::IAX2IeByte(BYTE length, BYTE *srcData)
+  : IAX2Ie()
 {
   if (length != sizeof(BYTE)) {
     validData = FALSE;
@@ -213,7 +216,7 @@ IeByte::IeByte(BYTE length, BYTE *srcData)
 }
 
 
-void IeByte::PrintOn(ostream & str) const
+void IAX2IeByte::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << ((int) dataValue);
@@ -222,8 +225,8 @@ void IeByte::PrintOn(ostream & str) const
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-IeChar::IeChar(BYTE length, BYTE *srcData)
-  : Ie()
+IAX2IeChar::IAX2IeChar(BYTE length, BYTE *srcData)
+  : IAX2Ie()
 {
   if (length != sizeof(BYTE)) {
     validData = FALSE;
@@ -235,7 +238,7 @@ IeChar::IeChar(BYTE length, BYTE *srcData)
 }
 
 
-void IeChar::PrintOn(ostream & str) const
+void IAX2IeChar::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -245,8 +248,8 @@ void IeChar::PrintOn(ostream & str) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-IeUShort::IeUShort(BYTE length, BYTE *srcData)
-  : Ie()
+IAX2IeUShort::IAX2IeUShort(BYTE length, BYTE *srcData)
+  : IAX2Ie()
 {
   if (length != sizeof(unsigned short)) {
     validData = FALSE;
@@ -258,7 +261,7 @@ IeUShort::IeUShort(BYTE length, BYTE *srcData)
 }
 
 
-void IeUShort::PrintOn(ostream & str) const
+void IAX2IeUShort::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue << "UShort";
@@ -266,15 +269,15 @@ void IeUShort::PrintOn(ostream & str) const
     str << setw(17) << Class() << " does not hold valid data" ;
 }
 
-void IeUShort::WriteBinary(BYTE *data)
+void IAX2IeUShort::WriteBinary(BYTE *data)
 {
   data[0] = (BYTE)((dataValue >> 8) & 0xff);
   data[1] = (BYTE)(dataValue & 0xff);
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-IeShort::IeShort(BYTE length, BYTE *srcData)
-  : Ie()
+IAX2IeShort::IAX2IeShort(BYTE length, BYTE *srcData)
+  : IAX2Ie()
 {
   if (length != sizeof(short)) {
     validData = FALSE;
@@ -286,7 +289,7 @@ IeShort::IeShort(BYTE length, BYTE *srcData)
 }
 
 
-void IeShort::PrintOn(ostream & str) const
+void IAX2IeShort::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -294,15 +297,15 @@ void IeShort::PrintOn(ostream & str) const
     str << setw(17) << Class() << " does not hold valid data" ;
 }
 
-void IeShort::WriteBinary(BYTE *data)
+void IAX2IeShort::WriteBinary(BYTE *data)
 {
   data[0] = (BYTE)((dataValue >> 8) & 0xff);
   data[1] = (BYTE)(dataValue & 0xff);
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-IeInt::IeInt(BYTE length, BYTE *srcData)
-  : Ie()
+IAX2IeInt::IAX2IeInt(BYTE length, BYTE *srcData)
+  : IAX2Ie()
 {
   if (length != sizeof(int)) {
     validData = FALSE;
@@ -314,7 +317,7 @@ IeInt::IeInt(BYTE length, BYTE *srcData)
 }
 
 
-void IeInt::PrintOn(ostream & str) const
+void IAX2IeInt::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -322,7 +325,7 @@ void IeInt::PrintOn(ostream & str) const
     str << setw(17) << Class() << " does not hold valid data" ;
 }
 
-void IeInt::WriteBinary(BYTE *data)
+void IAX2IeInt::WriteBinary(BYTE *data)
 {
   data[0] = (BYTE)((dataValue >> 24) & 0xff);
   data[1] = (BYTE)((dataValue >> 16) & 0xff);
@@ -332,8 +335,8 @@ void IeInt::WriteBinary(BYTE *data)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-IeUInt::IeUInt(BYTE length, BYTE *srcData)
-  : Ie()
+IAX2IeUInt::IAX2IeUInt(BYTE length, BYTE *srcData)
+  : IAX2Ie()
 {
   if (length != sizeof(unsigned int)) {
     validData = FALSE;
@@ -345,7 +348,7 @@ IeUInt::IeUInt(BYTE length, BYTE *srcData)
 }
 
 
-void IeUInt::PrintOn(ostream & str) const
+void IAX2IeUInt::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -353,7 +356,7 @@ void IeUInt::PrintOn(ostream & str) const
     str << setw(17) << Class() << " does not hold valid data" ;
 }
 
-void IeUInt::WriteBinary(BYTE *data)
+void IAX2IeUInt::WriteBinary(BYTE *data)
 {
   data[0] = (BYTE)((dataValue >> 24) & 0xff);
   data[1] = (BYTE)((dataValue >> 16) & 0xff);
@@ -362,15 +365,15 @@ void IeUInt::WriteBinary(BYTE *data)
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-IeString::IeString(BYTE length, BYTE *srcData)
-  : Ie()
+IAX2IeString::IAX2IeString(BYTE length, BYTE *srcData)
+  : IAX2Ie()
 {
   validData = TRUE;
   dataValue = PString((const char *)srcData, length);
 }
 
 
-void IeString::PrintOn(ostream & str) const
+void IAX2IeString::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -378,13 +381,13 @@ void IeString::PrintOn(ostream & str) const
     str << setw(17) << Class() << " does not hold valid data" ;
 }
 
-void IeString::WriteBinary(BYTE *data)
+void IAX2IeString::WriteBinary(BYTE *data)
 {
   if(validData)
     memcpy(data, dataValue.GetPointer(), GetLengthOfData());
 }
 
-BYTE IeString::GetLengthOfData() 
+BYTE IAX2IeString::GetLengthOfData() 
 { 
   if (dataValue.GetSize() == 0)
     return 0;
@@ -392,13 +395,13 @@ BYTE IeString::GetLengthOfData()
     return (BYTE)(dataValue.GetSize() - 1); 
 }
 
-void IeString::SetData(PString & newData) 
+void IAX2IeString::SetData(PString & newData) 
 { 
   dataValue = newData; 
   validData = TRUE; 
 }
 
-void IeString::SetData(const char * newData) 
+void IAX2IeString::SetData(const char * newData) 
 { 
   dataValue = PString(newData); 
   validData = TRUE; 
@@ -406,8 +409,8 @@ void IeString::SetData(const char * newData)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-IeSockaddrIn::IeSockaddrIn(BYTE length, BYTE *srcData)
-  : Ie()
+IAX2IeSockaddrIn::IAX2IeSockaddrIn(BYTE length, BYTE *srcData)
+  : IAX2Ie()
 {
   if (length != sizeof(sockaddr_in)) {
     validData = FALSE;
@@ -423,7 +426,7 @@ IeSockaddrIn::IeSockaddrIn(BYTE length, BYTE *srcData)
 }
 
 
-void IeSockaddrIn::PrintOn(ostream & str) const
+void IAX2IeSockaddrIn::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue << ":" << portNumber;
@@ -431,7 +434,7 @@ void IeSockaddrIn::PrintOn(ostream & str) const
     str << setw(17) << Class() << " does not hold valid data" ;
 }
 
-void IeSockaddrIn::WriteBinary(BYTE *data)
+void IAX2IeSockaddrIn::WriteBinary(BYTE *data)
 {
   sockaddr_in a;
   a.sin_addr = (in_addr)dataValue;
@@ -442,8 +445,8 @@ void IeSockaddrIn::WriteBinary(BYTE *data)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-IeBlockOfData::IeBlockOfData(BYTE length, BYTE *srcData)
-  : Ie()
+IAX2IeBlockOfData::IAX2IeBlockOfData(BYTE length, BYTE *srcData)
+  : IAX2Ie()
 {
   validData = TRUE;
   
@@ -451,13 +454,13 @@ IeBlockOfData::IeBlockOfData(BYTE length, BYTE *srcData)
 }
 
 
-void IeBlockOfData::PrintOn(ostream & str) const
+void IAX2IeBlockOfData::PrintOn(ostream & str) const
 {
   str << setw(17) << Class() << " " << dataValue;
 }
 
 
-void IeBlockOfData::WriteBinary(BYTE *data)
+void IAX2IeBlockOfData::WriteBinary(BYTE *data)
 {
   memcpy(data, dataValue.GetPointer(), dataValue.GetSize());
 }
@@ -465,20 +468,20 @@ void IeBlockOfData::WriteBinary(BYTE *data)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-IeList::~IeList()
+IAX2IeList::~IAX2IeList()
 {
     AllowDeleteObjects();
 }
 
-Ie *IeList::RemoveIeAt(PINDEX i)
+IAX2Ie *IAX2IeList::RemoveIeAt(PINDEX i)
 { 
   if (i >= GetSize())
     return NULL;
   
-  return (Ie *) PAbstractList::RemoveAt(i);
+  return (IAX2Ie *) PAbstractList::RemoveAt(i);
 }
 
-Ie *IeList::RemoveLastIe()
+IAX2Ie *IAX2IeList::RemoveLastIe()
 {
   PINDEX elems = PAbstractList::GetSize();
   if (elems > 0) {
@@ -488,17 +491,17 @@ Ie *IeList::RemoveLastIe()
   return NULL;
 }
 
-void IeList::DeleteAt(PINDEX idex)
+void IAX2IeList::DeleteAt(PINDEX idex)
 {
   if (idex >= PAbstractList::GetSize())
     return;
   
-  Ie *obj = RemoveIeAt(idex);
+  IAX2Ie *obj = RemoveIeAt(idex);
   
   delete obj;
 }
 
-int IeList::GetBinaryDataSize()
+int IAX2IeList::GetBinaryDataSize()
 {
   PINDEX totalSize = 0;
   for(PINDEX i = 0; i < PAbstractList::GetSize(); i++)
@@ -507,17 +510,17 @@ int IeList::GetBinaryDataSize()
   return totalSize;
 }
 
-Ie *IeList::GetIeAt(int i)
+IAX2Ie *IAX2IeList::GetIeAt(int i)
 {
   if (i >= GetSize())
     return NULL;
   
-  return (Ie *)GetAt(i); 
+  return (IAX2Ie *)GetAt(i); 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeCalledNumber::PrintOn(ostream & str) const
+void IAX2IeCalledNumber::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -526,7 +529,7 @@ void IeCalledNumber::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeCallingNumber::PrintOn(ostream & str) const
+void IAX2IeCallingNumber::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -535,7 +538,7 @@ void IeCallingNumber::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeCallingAni::PrintOn(ostream & str) const
+void IAX2IeCallingAni::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -544,7 +547,7 @@ void IeCallingAni::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeCallingName::PrintOn(ostream & str) const
+void IAX2IeCallingName::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -553,7 +556,7 @@ void IeCallingName::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeCalledContext::PrintOn(ostream & str) const
+void IAX2IeCalledContext::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -562,7 +565,7 @@ void IeCalledContext::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeUserName::PrintOn(ostream & str) const
+void IAX2IeUserName::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -571,7 +574,7 @@ void IeUserName::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IePassword::PrintOn(ostream & str) const
+void IAX2IePassword::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -580,7 +583,7 @@ void IePassword::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeCapability::PrintOn(ostream & str) const
+void IAX2IeCapability::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -589,7 +592,7 @@ void IeCapability::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeFormat::PrintOn(ostream & str) const
+void IAX2IeFormat::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -598,7 +601,7 @@ void IeFormat::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeLanguage::PrintOn(ostream & str) const
+void IAX2IeLanguage::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -607,7 +610,7 @@ void IeLanguage::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeVersion::PrintOn(ostream & str) const
+void IAX2IeVersion::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -616,7 +619,7 @@ void IeVersion::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeAdsicpe::PrintOn(ostream & str) const
+void IAX2IeAdsicpe::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -625,7 +628,7 @@ void IeAdsicpe::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeDnid::PrintOn(ostream & str) const
+void IAX2IeDnid::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -634,7 +637,7 @@ void IeDnid::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeAuthMethods::PrintOn(ostream & str) const
+void IAX2IeAuthMethods::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -643,7 +646,7 @@ void IeAuthMethods::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeChallenge::PrintOn(ostream & str) const
+void IAX2IeChallenge::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -652,18 +655,18 @@ void IeChallenge::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-IeMd5Result::IeMd5Result(Iax2Encryption & encryption)
+IAX2IeMd5Result::IAX2IeMd5Result(IAX2Encryption & encryption)
 {
   InitializeChallengePassword(encryption.ChallengeKey(), encryption.EncryptionKey());
 }
 
-IeMd5Result::IeMd5Result(PString &challenge, PString &password)
+IAX2IeMd5Result::IAX2IeMd5Result(PString &challenge, PString &password)
 {
   InitializeChallengePassword(challenge, password);
 }
 
 
-void IeMd5Result::InitializeChallengePassword(const PString &newChallenge, const PString &newPassword)
+void IAX2IeMd5Result::InitializeChallengePassword(const PString &newChallenge, const PString &newPassword)
 {
   PMessageDigest5 stomach;
   stomach.Process(newChallenge);
@@ -683,12 +686,12 @@ void IeMd5Result::InitializeChallengePassword(const PString &newChallenge, const
   
   SetData(res);
 
-  PTRACE(3, "IeMd5Result\tChallenge is " << newChallenge);
-  PTRACE(3, "IeMd5Result\tPassword  is " << newPassword);
-  PTRACE(3, "IeMd5Result\tresult    is " << res);
+  PTRACE(3, "IAX2IeMd5Result\tChallenge is " << newChallenge);
+  PTRACE(3, "IAX2IeMd5Result\tPassword  is " << newPassword);
+  PTRACE(3, "IAX2IeMd5Result\tresult    is " << res);
 }
 
-void IeMd5Result::PrintOn(ostream & str) const
+void IAX2IeMd5Result::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -697,7 +700,7 @@ void IeMd5Result::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeRsaResult::PrintOn(ostream & str) const
+void IAX2IeRsaResult::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -706,7 +709,7 @@ void IeRsaResult::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeApparentAddr::PrintOn(ostream & str) const
+void IAX2IeApparentAddr::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -715,7 +718,7 @@ void IeApparentAddr::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeRefresh::PrintOn(ostream & str) const
+void IAX2IeRefresh::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -724,7 +727,7 @@ void IeRefresh::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeDpStatus::PrintOn(ostream & str) const
+void IAX2IeDpStatus::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -733,7 +736,7 @@ void IeDpStatus::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeCallNo::PrintOn(ostream & str) const
+void IAX2IeCallNo::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -742,7 +745,7 @@ void IeCallNo::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeCause::PrintOn(ostream & str) const
+void IAX2IeCause::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " \"" << dataValue;
@@ -751,7 +754,7 @@ void IeCause::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeIaxUnknown::PrintOn(ostream & str) const
+void IAX2IeIaxUnknown::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -760,7 +763,7 @@ void IeIaxUnknown::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeMsgCount::PrintOn(ostream & str) const
+void IAX2IeMsgCount::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -769,19 +772,19 @@ void IeMsgCount::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeAutoAnswer::PrintOn(ostream & str) const
+void IAX2IeAutoAnswer::PrintOn(ostream & str) const
 {
   str << setw(17) << Class() << "   key(" << ((int) GetKeyValue()) << ")";
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeMusicOnHold::PrintOn(ostream & str) const
+void IAX2IeMusicOnHold::PrintOn(ostream & str) const
 {
   str << setw(17) << Class() << "    key(" << ((int) GetKeyValue()) << ")";
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeTransferId::PrintOn(ostream & str) const
+void IAX2IeTransferId::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -790,7 +793,7 @@ void IeTransferId::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeRdnis::PrintOn(ostream & str) const
+void IAX2IeRdnis::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -799,7 +802,7 @@ void IeRdnis::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeProvisioning::PrintOn(ostream & str) const
+void IAX2IeProvisioning::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -808,13 +811,13 @@ void IeProvisioning::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeAesProvisioning::PrintOn(ostream & str) const
+void IAX2IeAesProvisioning::PrintOn(ostream & str) const
 {
   str << setw(17) << Class() << "   key(" << ((int) GetKeyValue()) << ")";
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeDateTime::PrintOn(ostream & str) const
+void IAX2IeDateTime::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -823,7 +826,7 @@ void IeDateTime::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeDeviceType::PrintOn(ostream & str) const
+void IAX2IeDeviceType::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -832,7 +835,7 @@ void IeDeviceType::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeServiceIdent::PrintOn(ostream & str) const
+void IAX2IeServiceIdent::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -841,7 +844,7 @@ void IeServiceIdent::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeFirmwareVer::PrintOn(ostream & str) const
+void IAX2IeFirmwareVer::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -850,7 +853,7 @@ void IeFirmwareVer::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeFwBlockDesc::PrintOn(ostream & str) const
+void IAX2IeFwBlockDesc::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -859,7 +862,7 @@ void IeFwBlockDesc::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeFwBlockData::PrintOn(ostream & str) const
+void IAX2IeFwBlockData::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -868,7 +871,7 @@ void IeFwBlockData::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeProvVer::PrintOn(ostream & str) const
+void IAX2IeProvVer::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -877,7 +880,7 @@ void IeProvVer::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeCallingPres::PrintOn(ostream & str) const
+void IAX2IeCallingPres::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -886,7 +889,7 @@ void IeCallingPres::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeCallingTon::PrintOn(ostream & str) const
+void IAX2IeCallingTon::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -895,7 +898,7 @@ void IeCallingTon::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeCallingTns::PrintOn(ostream & str) const
+void IAX2IeCallingTns::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -904,7 +907,7 @@ void IeCallingTns::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeSamplingRate::PrintOn(ostream & str) const
+void IAX2IeSamplingRate::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -913,12 +916,12 @@ void IeSamplingRate::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-IeEncryption::IeEncryption(IeEncryptionMethod method)
+IAX2IeEncryption::IAX2IeEncryption(IAX2IeEncryptionMethod method)
 {
   SetData((unsigned short)method);
 }
 
-void IeEncryption::PrintOn(ostream & str) const
+void IAX2IeEncryption::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -927,7 +930,7 @@ void IeEncryption::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeEncKey::PrintOn(ostream & str) const
+void IAX2IeEncKey::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -936,7 +939,7 @@ void IeEncKey::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeCodecPrefs::PrintOn(ostream & str) const
+void IAX2IeCodecPrefs::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << dataValue;
@@ -944,7 +947,7 @@ void IeCodecPrefs::PrintOn(ostream & str) const
     str << setw(17) << Class() << " does not contain valid data";
 }
 ////////////////////////////////////////////////////////////////////////////////
-void IeCauseCode::PrintOn(ostream & str) const
+void IAX2IeCauseCode::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << ((int)dataValue);
@@ -953,7 +956,7 @@ void IeCauseCode::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeReceivedJitter::PrintOn(ostream & str) const
+void IAX2IeReceivedJitter::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << ((unsigned int)dataValue);
@@ -963,7 +966,7 @@ void IeReceivedJitter::PrintOn(ostream & str) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeReceivedLoss::PrintOn(ostream & str) const
+void IAX2IeReceivedLoss::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << ((unsigned int)dataValue);
@@ -971,7 +974,7 @@ void IeReceivedLoss::PrintOn(ostream & str) const
     str << setw(17) << Class() << " does not contain valid data";
 }
 ////////////////////////////////////////////////////////////////////////////////
-void IeReceivedFrames::PrintOn(ostream & str) const
+void IAX2IeReceivedFrames::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << ((unsigned int)dataValue);
@@ -980,7 +983,7 @@ void IeReceivedFrames::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeReceivedDelay::PrintOn(ostream & str) const
+void IAX2IeReceivedDelay::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << ((unsigned short)dataValue);
@@ -990,7 +993,7 @@ void IeReceivedDelay::PrintOn(ostream & str) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeDroppedFrames::PrintOn(ostream & str) const
+void IAX2IeDroppedFrames::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << ((unsigned int)dataValue);
@@ -999,7 +1002,7 @@ void IeDroppedFrames::PrintOn(ostream & str) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void IeReceivedOoo::PrintOn(ostream & str) const
+void IAX2IeReceivedOoo::PrintOn(ostream & str) const
 {
   if (validData)
     str << setw(17) << Class() << " " << ((unsigned int)dataValue);

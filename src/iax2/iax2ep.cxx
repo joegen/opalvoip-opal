@@ -28,6 +28,9 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.6  2005/08/26 03:07:38  dereksmithies
+ * Change naming convention, so all class names contain the string "IAX2"
+ *
  * Revision 1.5  2005/08/25 00:46:08  dereksmithies
  * Thanks to Adrian Sietsma for his code to better dissect the remote party name
  * Add  PTRACE statements, and more P_SSL_AES tests
@@ -126,7 +129,7 @@ BOOL IAX2EndPoint::NewIncomingConnection(OpalTransport * /*transport*/)
 }
 
 
-void IAX2EndPoint::NewIncomingConnection(Frame *f)
+void IAX2EndPoint::NewIncomingConnection(IAX2Frame *f)
 {
   PTRACE(2, "IAX2\tWe have received a  NEW request from " << f->GetConnectionToken());
   // ask the endpoint for a connection
@@ -172,7 +175,7 @@ int IAX2EndPoint::NextSrcCallNumber()
 }
 
 
-BOOL IAX2EndPoint::ConnectionForFrameIsAlive(Frame *f)
+BOOL IAX2EndPoint::ConnectionForFrameIsAlive(IAX2Frame *f)
 {
   PString frameToken = f->GetConnectionToken();
 
@@ -350,7 +353,7 @@ BOOL IAX2EndPoint::Initialise()
     PStringStream strm;
     strm << localMediaFormats[i - 1];
     const PString formatName = strm;
-    if (FullFrameVoice::OpalNameToIax2Value(formatName) == 0)
+    if (IAX2FullFrameVoice::OpalNameToIax2Value(formatName) == 0)
       localMediaFormats.RemoveAt(i - 1);
   }
 
@@ -373,8 +376,8 @@ BOOL IAX2EndPoint::Initialise()
   
   PTRACE(6, "Receiver\tYES.. Ready for incoming connections on " << ListenPortNumber());
   
-    transmitter = new Transmit(*this, *sock);
-  receiver    = new Receiver(*this, *sock);
+  transmitter = new IAX2Transmit(*this, *sock);
+  receiver    = new IAX2Receiver(*this, *sock);
   
   return TRUE;
 }
@@ -391,7 +394,7 @@ PINDEX IAX2EndPoint::GetOutSequenceNumberForStatusQuery()
 }
 
 
-BOOL IAX2EndPoint::AddNewTranslationEntry(Frame *frame)
+BOOL IAX2EndPoint::AddNewTranslationEntry(IAX2Frame *frame)
 {   
   if (!frame->IsFullFrame()) {
     PTRACE(3, frame->GetConnectionToken() << " is Not a FullFrame, so dont add a translation entry(return now) ");
@@ -418,7 +421,7 @@ BOOL IAX2EndPoint::AddNewTranslationEntry(Frame *frame)
   return FALSE;
 }
 
-BOOL IAX2EndPoint::ProcessInMatchingConnection(Frame *f)
+BOOL IAX2EndPoint::ProcessInMatchingConnection(IAX2Frame *f)
 {
   ReportStoredConnections();
 
@@ -444,7 +447,7 @@ BOOL IAX2EndPoint::ProcessInMatchingConnection(Frame *f)
 
 //The receiving thread has finished reading a frame, and has droppped it here.
 //At this stage, we do not know the frame type. We just know if it is full or mini.
-void IAX2EndPoint::IncomingEthernetFrame(Frame *frame)
+void IAX2EndPoint::IncomingEthernetFrame(IAX2Frame *frame)
 {
   PTRACE(3, "IAXEp\tEthernet Frame received from Receiver " << frame->IdString());   
   packetsReadFromEthernet.AddNewFrame(frame);
@@ -453,7 +456,7 @@ void IAX2EndPoint::IncomingEthernetFrame(Frame *frame)
 
 void IAX2EndPoint::ProcessReceivedEthernetFrames() 
 { 
-  Frame *f;
+  IAX2Frame *f;
   do {
     f = packetsReadFromEthernet.GetLastFrame();
     if (f == NULL) {
@@ -473,7 +476,7 @@ void IAX2EndPoint::ProcessReceivedEthernetFrames()
     }
 
     /**These packets cannot be encrypted, as they are not going to a phone call */
-    Frame *af = f->BuildAppropriateFrameType();
+    IAX2Frame *af = f->BuildAppropriateFrameType();
     if (af == NULL) 
       continue;
     delete f;
@@ -485,20 +488,20 @@ void IAX2EndPoint::ProcessReceivedEthernetFrames()
       continue;
     }
     
-    if (!PIsDescendant(f, FullFrame)) {
+    if (!PIsDescendant(f, IAX2FullFrame)) {
       PTRACE(3, "Distribution\tNO matching connection for incoming ethernet frame Sorry" << idString);
       delete af;
       continue;
     }	  
 
-    FullFrame *ff = (FullFrame *)f;
-    if (ff->GetFrameType() != FullFrame::iax2ProtocolType) {
+    IAX2FullFrame *ff = (IAX2FullFrame *)f;
+    if (ff->GetFrameType() != IAX2FullFrame::iax2ProtocolType) {
       PTRACE(3, "Distribution\tNO matching connection for incoming ethernet frame Sorry" << idString);
       delete ff;
       continue;
     }	      
     
-    if (ff->GetSubClass() != FullFrameProtocol::cmdNew) {
+    if (ff->GetSubClass() != IAX2FullFrameProtocol::cmdNew) {
       PTRACE(3, "Distribution\tNO matching connection for incoming ethernet frame Sorry" << idString);
       delete ff;
       continue;
@@ -522,7 +525,7 @@ PINDEX IAX2EndPoint::GetPreferredCodec(OpalMediaFormatList & list)
   PINDEX index = 0;
   
   while ((index < codecNames.GetSize()) && (val == 0)) {
-    val = FullFrameVoice::OpalNameToIax2Value(codecNames[index]);
+    val = IAX2FullFrameVoice::OpalNameToIax2Value(codecNames[index]);
     index++;
   }
   
@@ -538,34 +541,34 @@ PINDEX IAX2EndPoint::GetPreferredCodec(OpalMediaFormatList & list)
 void IAX2EndPoint::GetCodecLengths(PINDEX codec, PINDEX &compressedBytes, PINDEX &duration)
 {
   switch (codec) {
-  case FullFrameVoice::g7231:     
+  case IAX2FullFrameVoice::g7231:     
     compressedBytes = 24;
     duration = 30;
     return;
-  case FullFrameVoice::gsm:  
+  case IAX2FullFrameVoice::gsm:  
     compressedBytes = 33;
     duration = 20;
     return;
-  case FullFrameVoice::g711ulaw: 
-  case FullFrameVoice::g711alaw: 
+  case IAX2FullFrameVoice::g711ulaw: 
+  case IAX2FullFrameVoice::g711alaw: 
     compressedBytes = 8;
     duration = 1;
     return;
-  case FullFrameVoice::pcm:
+  case IAX2FullFrameVoice::pcm:
     compressedBytes = 16;
     duration =  1;
-  case FullFrameVoice::mp3: 
-  case FullFrameVoice::adpcm:
-  case FullFrameVoice::lpc10:
-  case FullFrameVoice::g729: 
-  case FullFrameVoice::speex:
-  case FullFrameVoice::ilbc: 
+  case IAX2FullFrameVoice::mp3: 
+  case IAX2FullFrameVoice::adpcm:
+  case IAX2FullFrameVoice::lpc10:
+  case IAX2FullFrameVoice::g729: 
+  case IAX2FullFrameVoice::speex:
+  case IAX2FullFrameVoice::ilbc: 
 
   default: ;
 
   }
 
-  PTRACE(1, "ERROR - could not find format " << FullFrameVoice::GetOpalNameOfCodec(codec) << " so use 20ms");
+  PTRACE(1, "ERROR - could not find format " << IAX2FullFrameVoice::GetOpalNameOfCodec(codec) << " so use 20ms");
   duration = 20;
   compressedBytes = 33;
 }  
@@ -585,7 +588,7 @@ PINDEX IAX2EndPoint::GetSupportedCodecs(OpalMediaFormatList & list)
     
   PINDEX returnValue = 0;
   for (i = 0; i < codecNames.GetSize(); i++) 
-    returnValue += FullFrameVoice::OpalNameToIax2Value(codecNames[i]);
+    returnValue += IAX2FullFrameVoice::OpalNameToIax2Value(codecNames[i]);
 
   PTRACE(3, "Bitmask of codecs we support is 0x" 
 	 << ::hex << returnValue << ::dec);
@@ -620,27 +623,27 @@ void IAX2EndPoint::SetLocalNumber(PString newValue)
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-IncomingEthernetFrames::IncomingEthernetFrames() 
+IAX2IncomingEthernetFrames::IAX2IncomingEthernetFrames() 
   : PThread(1000, NoAutoDeleteThread)
 {
   keepGoing = TRUE;
 }
 
 
-void IncomingEthernetFrames::Assign(IAX2EndPoint *ep)
+void IAX2IncomingEthernetFrames::Assign(IAX2EndPoint *ep)
 {
   endpoint = ep;
   Resume();
 }
 
-void IncomingEthernetFrames::Terminate()
+void IAX2IncomingEthernetFrames::Terminate()
 {
   PTRACE(3, "Distribute\tEnd of thread - have received a terminate signal");
   keepGoing = FALSE;
   ProcessList();
 }
 
-void IncomingEthernetFrames::Main()
+void IAX2IncomingEthernetFrames::Main()
 {
   SetThreadName("Distribute to Cons");
   while (keepGoing) {
@@ -653,7 +656,7 @@ void IncomingEthernetFrames::Main()
   return;
 }
 
-void IncomingEthernetFrames::ProcessList()
+void IAX2IncomingEthernetFrames::ProcessList()
 {
   activate.Signal(); 
 }

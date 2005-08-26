@@ -26,6 +26,9 @@
  *
  *
  *  $Log: processor.h,v $
+ *  Revision 1.6  2005/08/26 03:07:38  dereksmithies
+ *  Change naming convention, so all class names contain the string "IAX2"
+ *
  *  Revision 1.5  2005/08/25 03:26:06  dereksmithies
  *  Add patch from Adrian Sietsma to correctly set the packet timestamps under windows.
  *  Many thanks.
@@ -86,12 +89,12 @@ class IAX2Connection;
    process.  Thus, on receipt of a ack for a timestamp of X and oseqno
    of Y, we send this packet.
    
-   The outgoing FullFrame has an inSeqNo, which must match the
+   The outgoing IAX2FullFrame has an inSeqNo, which must match the
    outSeqNo of the received ack frame.
 */
-class WaitingForAck : public PObject
+class IAX2WaitingForAck : public PObject
 {
-  PCLASSINFO(WaitingForAck, PObject);
+  PCLASSINFO(IAX2WaitingForAck, PObject);
 
  public:
   /**The action to do on receiving the specified ack */
@@ -103,13 +106,13 @@ class WaitingForAck : public PObject
   };
   
   /**Construct this response message with values that cannot match an incoming ack packet*/
-  WaitingForAck();
+  IAX2WaitingForAck();
   
   /**Assign this response to wait for the specified coords */
-  void Assign(FullFrame *f, ResponseToAck _response);
+  void Assign(IAX2FullFrame *f, ResponseToAck _response);
   
   /**Return true if the supplied ack frame matches the internal coordinates */
-  BOOL MatchingAckPacket(FullFrame *f);
+  BOOL MatchingAckPacket(IAX2FullFrame *f);
   
   /**Report the response to carry out */
   ResponseToAck GetResponse() { return response; }
@@ -171,14 +174,14 @@ class IAX2Processor : public PThread
   Now onsend this to the remote endpoint. */
   void PutSoundPacketToNetwork(PBYTEArray *sund);
 
- /**Get information on Remote class (remote node address & port + source & dest call number.) */
-  Remote & GetRemoteInfo() { return remote; }
+ /**Get information on IAX2Remote class (remote node address & port + source & dest call number.) */
+  IAX2Remote & GetRemoteInfo() { return remote; }
   
   /**Get the sequence number info (inSeqNo and outSeqNo) */
-  SequenceNumbers & GetSequenceInfo() { return sequence; }
+  IAX2SequenceNumbers & GetSequenceInfo() { return sequence; }
   
   /**Get the iax2 encryption info */
-  Iax2Encryption & GetEncryptionInfo() { return encryption; }
+  IAX2Encryption & GetEncryptionInfo() { return encryption; }
 
   /**Get the call start tick */
   const PTimeInterval & GetCallStartTick() { return callStartTick; }
@@ -212,15 +215,15 @@ class IAX2Processor : public PThread
   virtual BOOL SetUpConnection();
 
   /**Handle a received IAX frame. This may be a mini frame or full frame */
-  void IncomingEthernetFrame (Frame *frame);
+  void IncomingEthernetFrame (IAX2Frame *frame);
 
   /**A sound packet has been given (by the Receiver thread) to this
-     IAX2Processor class, and queued on the SoundList structure. The
+     IAX2Processor class, and queued on the IAX2SoundList structure. The
      OpalIAX2MediaStream thread will call this method to retrieving the
      sound packet. The OpalIAX2MediaStream will handle this packet
      appropriately - eg send to the PC speaker..
    */
-  Frame *GetSoundPacketFromNetwork();
+  IAX2Frame *GetSoundPacketFromNetwork();
 
 
   /**Set the flag to indicate if we are handling specialPackets (those
@@ -229,10 +232,10 @@ class IAX2Processor : public PThread
 
   /**Test to see if it is a status query type iax frame (eg lagrq) and handle it. If the frame
      is a status query, and it is handled, return TRUE */
-  BOOL IsStatusQueryEthernetFrame(Frame *frame);
+  BOOL IsStatusQueryEthernetFrame(IAX2Frame *frame);
 
   /**Return TRUE if the remote info in the frame matches the remote info in this connection */
-  BOOL Matches(Frame *frame) { return remote == (frame->GetRemoteInfo()); }
+  BOOL Matches(IAX2Frame *frame) { return remote == (frame->GetRemoteInfo()); }
   
   
   /**A method to cause some of the values in this class to be formatted
@@ -320,70 +323,70 @@ class IAX2Processor : public PThread
   void CheckForHangupMessages();
  
   /**Transmit an iax protocol frame with subclass type ack immediately to remote endpoint */
-  void SendAckFrame(FullFrame *inReplyTo);
+  void SendAckFrame(IAX2FullFrame *inReplyTo);
   
-  /**Transmit Frame to remote endpoint, and then increment send count. This calls a method in
+  /**Transmit IAX2Frame to remote endpoint, and then increment send count. This calls a method in
      the Transmitter class. .It is only called by the this IAX2Processor class.  */
-  void TransmitFrameToRemoteEndpoint(Frame *src);
+  void TransmitFrameToRemoteEndpoint(IAX2Frame *src);
 
-  /**Transmit Frame to remote endpoint, and then increment send
+  /**Transmit IAX2Frame to remote endpoint, and then increment send
      count. This calls a method in the Transmitter class. .It is only
      called by the this IAX2Processor class. The second parameter
      determines what to do when an ack frame is received for the sent
      frame.  */
-  void TransmitFrameToRemoteEndpoint(FullFrame *src,
-				     WaitingForAck::ResponseToAck response  ///action to do on getting Ack
+  void TransmitFrameToRemoteEndpoint(IAX2FullFrame *src,
+				     IAX2WaitingForAck::ResponseToAck response  ///action to do on getting Ack
 				     );
 
-  /**Transmit Frame to remote endpoint,. This calls a method in the
+  /**Transmit IAX2Frame to remote endpoint,. This calls a method in the
      Transmitter class. .It is only called by the this Connection
      class. There is no stats change when this method is called. */
-  void TransmitFrameNow(Frame *src);
+  void TransmitFrameNow(IAX2Frame *src);
   
   /**FullFrameProtocol class needs to have the IE's correctly appended prior to transmission */
-  void TransmitFrameToRemoteEndpoint(FullFrameProtocol *src);
+  void TransmitFrameToRemoteEndpoint(IAX2FullFrameProtocol *src);
   
-  /**Internal method to process an incoming network frame of type  Frame */
-  void ProcessNetworkFrame(Frame * src);
+  /**Internal method to process an incoming network frame of type  IAX2Frame */
+  void ProcessNetworkFrame(IAX2Frame * src);
   
-  /**Internal method to process an incoming network frame of type  MiniFrame */
-  void ProcessNetworkFrame(MiniFrame * src);
+  /**Internal method to process an incoming network frame of type  IAX2MiniFrame */
+  void ProcessNetworkFrame(IAX2MiniFrame * src);
   
-  /**Internal method to process an incoming network frame of type  FullFrame */
-  void ProcessNetworkFrame(FullFrame * src);
+  /**Internal method to process an incoming network frame of type  IAX2FullFrame */
+  void ProcessNetworkFrame(IAX2FullFrame * src);
   
-  /**Internal method to process an incoming network frame of type  FullFrameDtmf */
-  void ProcessNetworkFrame(FullFrameDtmf * src);
+  /**Internal method to process an incoming network frame of type  IAX2FullFrameDtmf */
+  void ProcessNetworkFrame(IAX2FullFrameDtmf * src);
   
-  /**Internal method to process an incoming network frame of type  FullFrameVoice */
-  void ProcessNetworkFrame(FullFrameVoice * src);
+  /**Internal method to process an incoming network frame of type  IAX2FullFrameVoice */
+  void ProcessNetworkFrame(IAX2FullFrameVoice * src);
   
-  /**Internal method to process an incoming network frame of type  FullFrameVideo */
-  void ProcessNetworkFrame(FullFrameVideo * src);
+  /**Internal method to process an incoming network frame of type  IAX2FullFrameVideo */
+  void ProcessNetworkFrame(IAX2FullFrameVideo * src);
   
-  /**Internal method to process an incoming network frame of type  FullFrameSessionControl */
-  void ProcessNetworkFrame(FullFrameSessionControl * src);
+  /**Internal method to process an incoming network frame of type  IAX2FullFrameSessionControl */
+  void ProcessNetworkFrame(IAX2FullFrameSessionControl * src);
   
-  /**Internal method to process an incoming network frame of type  FullFrameNull */
-  void ProcessNetworkFrame(FullFrameNull * src);
+  /**Internal method to process an incoming network frame of type  IAX2FullFrameNull */
+  void ProcessNetworkFrame(IAX2FullFrameNull * src);
   
-  /**Internal method to process an incoming network frame of type  FullFrameProtocol.
+  /**Internal method to process an incoming network frame of type  IAX2FullFrameProtocol.
      
   A frame of FullFrameProtocol type is labelled as AST_FRAME_IAX in the asterisk souces,
   It will contain 0, 1, 2 or more Information Elements (Ie) in the data section.*/
-  void ProcessNetworkFrame(FullFrameProtocol * src);
+  void ProcessNetworkFrame(IAX2FullFrameProtocol * src);
   
-  /**Internal method to process an incoming network frame of type  FullFrameText */
-  void ProcessNetworkFrame(FullFrameText * src);
+  /**Internal method to process an incoming network frame of type  IAX2FullFrameText */
+  void ProcessNetworkFrame(IAX2FullFrameText * src);
   
-  /**Internal method to process an incoming network frame of type  FullFrameImage */
-  void ProcessNetworkFrame(FullFrameImage * src);
+  /**Internal method to process an incoming network frame of type  IAX2FullFrameImage */
+  void ProcessNetworkFrame(IAX2FullFrameImage * src);
   
-  /**Internal method to process an incoming network frame of type  FullFrameHtml */
-  void ProcessNetworkFrame(FullFrameHtml * src);
+  /**Internal method to process an incoming network frame of type  IAX2FullFrameHtml */
+  void ProcessNetworkFrame(IAX2FullFrameHtml * src);
   
-  /**Internal method to process an incoming network frame of type  FullFrameCng */
-  void ProcessNetworkFrame(FullFrameCng * src);
+  /**Internal method to process an incoming network frame of type  IAX2FullFrameCng */
+  void ProcessNetworkFrame(IAX2FullFrameCng * src);
     
   /**Go through the three lists for incoming data (ethernet/sound/UI commands.  */
   void ProcessLists();
@@ -442,125 +445,125 @@ class IAX2Processor : public PThread
   void RemoteNodeIsBusy();
   
   /**Process the audio data portions of the Frame argument, which may be a MiniFrame or FullFrame */
-  void ProcessIncomingAudioFrame(Frame *newFrame);
+  void ProcessIncomingAudioFrame(IAX2Frame *newFrame);
   
   /**Process the video data  portions of the Frame argument, which may be a MiniFrame or FullFrame */
-  void ProcessIncomingVideoFrame(Frame *newFrame);
+  void ProcessIncomingVideoFrame(IAX2Frame *newFrame);
   
   /** Process a FullFrameProtocol class, where the sub Class value is   Create a new call    */
-  void ProcessIaxCmdNew(FullFrameProtocol *src);
+  void ProcessIaxCmdNew(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Ping request,     */
-  void ProcessIaxCmdPing(FullFrameProtocol *src);
+  void ProcessIaxCmdPing(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is reply to a Ping    */
-  void ProcessIaxCmdPong(FullFrameProtocol *src);
+  void ProcessIaxCmdPong(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Acknowledge a Reliably sent full frame    */
-  void ProcessIaxCmdAck(FullFrameProtocol *src);
+  void ProcessIaxCmdAck(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Request to terminate this call    */
-  void ProcessIaxCmdHangup(FullFrameProtocol *src);
+  void ProcessIaxCmdHangup(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Refuse to accept this call. May happen if authentication faile    */
-  void ProcessIaxCmdReject(FullFrameProtocol *src);
+  void ProcessIaxCmdReject(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Allow this call to procee    */
-  void ProcessIaxCmdAccept(FullFrameProtocol *src);
+  void ProcessIaxCmdAccept(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Ask remote end to supply authenticatio    */
-  void ProcessIaxCmdAuthReq(FullFrameProtocol *src);
+  void ProcessIaxCmdAuthReq(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is A reply, that contains authenticatio    */
-  void ProcessIaxCmdAuthRep(FullFrameProtocol *src);
+  void ProcessIaxCmdAuthRep(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Destroy this call immediatly    */
-  void ProcessIaxCmdInval(FullFrameProtocol *src);
+  void ProcessIaxCmdInval(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Initial message, used to measure the round trip time    */
-  void ProcessIaxCmdLagRq(FullFrameProtocol *src);
+  void ProcessIaxCmdLagRq(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Reply to cmdLagrq, which tells us the round trip time    */
-  void ProcessIaxCmdLagRp(FullFrameProtocol *src);
+  void ProcessIaxCmdLagRp(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Registration request    */
-  void ProcessIaxCmdRegReq(FullFrameProtocol *src);
+  void ProcessIaxCmdRegReq(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Registration authentication required    */
-  void ProcessIaxCmdRegAuth(FullFrameProtocol *src);
+  void ProcessIaxCmdRegAuth(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Registration accepted    */
-  void ProcessIaxCmdRegAck(FullFrameProtocol *src);
+  void ProcessIaxCmdRegAck(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Registration rejected    */
-  void ProcessIaxCmdRegRej(FullFrameProtocol *src);
+  void ProcessIaxCmdRegRej(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Force release of registration    */
-  void ProcessIaxCmdRegRel(FullFrameProtocol *src);
+  void ProcessIaxCmdRegRel(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is If we receive voice before valid first voice frame, send this    */
-  void ProcessIaxCmdVnak(FullFrameProtocol *src);
+  void ProcessIaxCmdVnak(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Request status of a dialplan entry    */
-  void ProcessIaxCmdDpReq(FullFrameProtocol *src);
+  void ProcessIaxCmdDpReq(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Request status of a dialplan entry    */
-  void ProcessIaxCmdDpRep(FullFrameProtocol *src);
+  void ProcessIaxCmdDpRep(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Request a dial on channel brought up TBD    */
-  void ProcessIaxCmdDial(FullFrameProtocol *src);
+  void ProcessIaxCmdDial(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Transfer Request    */
-  void ProcessIaxCmdTxreq(FullFrameProtocol *src);
+  void ProcessIaxCmdTxreq(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Transfer Connect    */
-  void ProcessIaxCmdTxcnt(FullFrameProtocol *src);
+  void ProcessIaxCmdTxcnt(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Transfer Accepted    */
-  void ProcessIaxCmdTxacc(FullFrameProtocol *src);
+  void ProcessIaxCmdTxacc(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Transfer ready    */
-  void ProcessIaxCmdTxready(FullFrameProtocol *src);
+  void ProcessIaxCmdTxready(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Transfer release    */
-  void ProcessIaxCmdTxrel(FullFrameProtocol *src);
+  void ProcessIaxCmdTxrel(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Transfer reject    */
-  void ProcessIaxCmdTxrej(FullFrameProtocol *src);
+  void ProcessIaxCmdTxrej(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Stop audio/video transmission    */
-  void ProcessIaxCmdQuelch(FullFrameProtocol *src);
+  void ProcessIaxCmdQuelch(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Resume audio/video transmission    */
-  void ProcessIaxCmdUnquelch(FullFrameProtocol *src);
+  void ProcessIaxCmdUnquelch(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Like ping, but does not require an open connection    */
-  void ProcessIaxCmdPoke(FullFrameProtocol *src);
+  void ProcessIaxCmdPoke(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Paging description    */
-  void ProcessIaxCmdPage(FullFrameProtocol *src);
+  void ProcessIaxCmdPage(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Stand-alone message waiting indicator    */
-  void ProcessIaxCmdMwi(FullFrameProtocol *src);
+  void ProcessIaxCmdMwi(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Unsupported message received    */
-  void ProcessIaxCmdUnsupport(FullFrameProtocol *src);
+  void ProcessIaxCmdUnsupport(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Request remote transfer    */
-  void ProcessIaxCmdTransfer(FullFrameProtocol *src);
+  void ProcessIaxCmdTransfer(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Provision device    */
-  void ProcessIaxCmdProvision(FullFrameProtocol *src);
+  void ProcessIaxCmdProvision(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Download firmware    */
-  void ProcessIaxCmdFwDownl(FullFrameProtocol *src);
+  void ProcessIaxCmdFwDownl(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Firmware Data    */
-  void ProcessIaxCmdFwData(FullFrameProtocol *src);
+  void ProcessIaxCmdFwData(IAX2FullFrameProtocol *src);
   
   /** Do the md5/rsa authentication. Return True if successful. Has the side effect of appending the
       appropriate Ie class to the "reply" parameter.*/
-  BOOL Authenticate(FullFrameProtocol *reply /*!< this frame contains the result of authenticating the internal data*/
+  BOOL Authenticate(IAX2FullFrameProtocol *reply /*!< this frame contains the result of authenticating the internal data*/
 		    );
     
   /**Time this connection class was created, which is the call start
@@ -569,10 +572,10 @@ class IAX2Processor : public PThread
   PTimeInterval callStartTick;
   
   /**Details on the address of the remote endpoint, and source/dest call numbers */
-  Remote remote;
+  IAX2Remote remote;
   
   /**Details on the in/out sequence numbers */
-  SequenceNumbers sequence;
+  IAX2SequenceNumbers sequence;
   
   /**Count of the number of control frames sent */
   PAtomicInteger controlFramesSent;
@@ -613,14 +616,14 @@ class IAX2Processor : public PThread
       
   /**Array of sound packets read from the audio device, and is about
      to be transmitted to the remote node */
-  SoundList   soundWaitingForTransmission;
+  IAX2SoundList   soundWaitingForTransmission;
   
   /**Array of sound packets which has been read from the ethernet, and
      is to be sent to the audio device */
-  FrameList   soundReadFromEthernet;
+  IAX2FrameList   soundReadFromEthernet;
   
   /**Array of frames read from the Receiver for this call */
-  FrameList frameList;
+  IAX2FrameList frameList;
   
   /**This is the timestamp of the last received full frame, which is used to reconstruct the timestamp
      of received MiniFrames */
@@ -630,7 +633,7 @@ class IAX2Processor : public PThread
   BOOL audioCanFlow;
 
   /**Hold each of the possible values from an Ie class */
-  IeData ieData;
+  IAX2IeData ieData;
   
   /** Bitmask of FullFrameVoice::AudioSc values to specify which codec is used*/
   unsigned int selectedCodec;
@@ -771,7 +774,7 @@ class IAX2Processor : public PThread
 
   /**Action to perform on receiving an ACK packet (which is required
      during call setup phase for receiver */
-  WaitingForAck nextTask;
+  IAX2WaitingForAck nextTask;
   
   /**Flag which is used to activate this thread, so all pending tasks/packets are processed */
   PSyncPoint activate;    
@@ -826,10 +829,10 @@ class IAX2Processor : public PThread
 
   /**If the incoming frame has Information Elements defining remote
      capability, define the list of remote capabilities */
-  void CheckForRemoteCapabilities(FullFrameProtocol *src);
+  void CheckForRemoteCapabilities(IAX2FullFrameProtocol *src);
 
   /**Status of encryption for this processor - by default, no encrytpion */
-  Iax2Encryption encryption;
+  IAX2Encryption encryption;
 };
 
 

@@ -26,6 +26,9 @@
  *
  *
  *  $Log: receiver.cxx,v $
+ *  Revision 1.3  2005/08/26 03:07:38  dereksmithies
+ *  Change naming convention, so all class names contain the string "IAX2"
+ *
  *  Revision 1.2  2005/08/24 01:38:38  dereksmithies
  *  Add encryption, iax2 style. Numerous tidy ups. Use the label iax2, not iax
  *
@@ -50,7 +53,7 @@
 
 #define new PNEW
 
-Receiver::Receiver(IAX2EndPoint & _newEndpoint, PUDPSocket & _newSocket)
+IAX2Receiver::IAX2Receiver(IAX2EndPoint & _newEndpoint, PUDPSocket & _newSocket)
   : PThread(1000, NoAutoDeleteThread),
      endpoint(_newEndpoint),
      sock(_newSocket)
@@ -63,7 +66,7 @@ Receiver::Receiver(IAX2EndPoint & _newEndpoint, PUDPSocket & _newSocket)
   Resume();
 }
 
-Receiver::~Receiver()
+IAX2Receiver::~IAX2Receiver()
 {
   PTRACE(3, "End receiver thread");
   keepGoing = FALSE;
@@ -82,9 +85,9 @@ Receiver::~Receiver()
   PTRACE(3, "IAX Rx\tDestructor finished");
 }
 
-void Receiver::Main()
+void IAX2Receiver::Main()
 {
-  SetThreadName("Receiver");
+  SetThreadName("IAX2Receiver");
   
   while (keepGoing) {
     BOOL res = ReadNetworkSocket();
@@ -96,7 +99,7 @@ void Receiver::Main()
     PTRACE(3, "IAX Rx\tHave successfully read a packet from the network");
     
     for(;;) {
-      Frame *frame     = (Frame *)fromNetworkFrames.GetLastFrame();
+      IAX2Frame *frame     = (IAX2Frame *)fromNetworkFrames.GetLastFrame();
       if (frame == NULL)
 	break;
       
@@ -107,16 +110,16 @@ void Receiver::Main()
 }
 
 
-void Receiver::AddNewReceivedFrame(Frame *newFrame)
+void IAX2Receiver::AddNewReceivedFrame(IAX2Frame *newFrame)
 {
   /**This method may split a frame up (if it is trunked) */
   PTRACE(3, "IAX Rx\tAdd frame to list of received frames " << newFrame->IdString());
   fromNetworkFrames.AddNewFrame(newFrame);
 }
 
-BOOL Receiver::ReadNetworkSocket()
+BOOL IAX2Receiver::ReadNetworkSocket()
 {
-  Frame *frame = new Frame(endpoint);
+  IAX2Frame *frame = new IAX2Frame(endpoint);
   
   PTRACE(3, "IAX Rx\tWait for packet on socket.with port " << sock.GetPort() << " FrameID-->" << frame->IdString());
   BOOL res = frame->ReadNetworkPacket(sock);

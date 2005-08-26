@@ -27,6 +27,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: transmit.h,v $
+ *  Revision 1.2  2005/08/26 03:07:38  dereksmithies
+ *  Change naming convention, so all class names contain the string "IAX2"
+ *
  *  Revision 1.1  2005/07/30 07:01:32  csoutheren
  *  Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
  *  Thanks to Derek Smithies of Indranet Technologies Ltd. for
@@ -59,9 +62,9 @@
    
    Note that this class is a thread, and runs when activated by outside
    events.*/
-class Transmit : public PThread
+class IAX2Transmit : public PThread
 { 
-  PCLASSINFO(Transmit, PThread);
+  PCLASSINFO(IAX2Transmit, PThread);
  public:
   /**@name Construction/destruction*/
   //@{
@@ -69,12 +72,12 @@ class Transmit : public PThread
   /**
      Constructor, which creates a thread to send all packets on the
      designated socket.  */
-  Transmit(IAX2EndPoint & _newEndpoint, PUDPSocket & _newSocket);
+  IAX2Transmit(IAX2EndPoint & _newEndpoint, PUDPSocket & _newSocket);
   
   /** 
       Destructor. Deletes all pending packets.
   */
-  ~Transmit();
+  ~IAX2Transmit();
   //@}
   
   /**@name Worker methods*/
@@ -83,7 +86,7 @@ class Transmit : public PThread
   /**Queue a frame for delivery. This is called by a connection, and then
      the transmit thread is woken up.
   */
-  void SendFrame(Frame *newFrame);
+  void SendFrame(IAX2Frame *newFrame);
   
   /**Activate the transmit thread to process all frames in the lists 
    */
@@ -102,7 +105,7 @@ class Transmit : public PThread
       a suitable acknowledgement. The acknowledgment (the newFrame) means that matching
       frames in the ack list should be removed.
   */
-  void PurgeMatchingFullFrames(Frame *frame);
+  void PurgeMatchingFullFrames(IAX2Frame *frame);
 
   /** Report on the contents of the lists waiting for transmission */
   void ReportLists();
@@ -127,10 +130,10 @@ class Transmit : public PThread
   PSyncPoint activate;
   
   /**Frames in the acking list - These frames are waiting on an ack*/
-  FrameList  ackingFrames;   
+  IAX2FrameList  ackingFrames;   
   
   /**Send Now list of frames - These frames are to be sent now */
-  FrameList  sendNowFrames;  
+  IAX2FrameList  sendNowFrames;  
   
   /**Flag to indicate that this thread should keep working */
   BOOL       keepGoing;
