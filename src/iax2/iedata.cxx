@@ -27,6 +27,9 @@
  *
  *
  * $Log: iedata.cxx,v $
+ * Revision 1.2  2005/08/26 03:07:38  dereksmithies
+ * Change naming convention, so all class names contain the string "IAX2"
+ *
  * Revision 1.1  2005/07/30 07:01:33  csoutheren
  * Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
  * Thanks to Derek Smithies of Indranet Technologies Ltd. for
@@ -48,7 +51,7 @@
 
 #define new PNEW
 
-IeData::IeData()
+IAX2IeData::IAX2IeData()
 {
   adsicpe      = 0;
   autoAnswer   = 0;
@@ -69,12 +72,12 @@ IeData::IeData()
 }
 
 
-IeData::~IeData()
+IAX2IeData::~IAX2IeData()
 {
 }
 
 
-void IeData::PrintOn(ostream & strm) const
+void IAX2IeData::PrintOn(ostream & strm) const
 {
   strm << endl 	  
        <<   "Number/extension being called - string               " << calledNumber      << endl

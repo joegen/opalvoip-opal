@@ -26,6 +26,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: receiver.h,v $
+ *  Revision 1.2  2005/08/26 03:07:38  dereksmithies
+ *  Change naming convention, so all class names contain the string "IAX2"
+ *
  *  Revision 1.1  2005/07/30 07:01:32  csoutheren
  *  Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
  *  Thanks to Derek Smithies of Indranet Technologies Ltd. for
@@ -48,26 +51,26 @@
 #endif
 
 class IAX2EndPoint;
-class Frame;
-class FrameList;
-class PacketIdList;
+class IAX2Frame;
+class IAX2FrameList;
+class IAX2PacketIdList;
 
 #include <iax2/frame.h>
 
 /**Manage the reception of etherenet packets on the specified port.
    All received packets are handed to the appropriate connection.
    A separate thread is used to wait on the ethernet port*/
-class Receiver : public PThread
+class IAX2Receiver : public PThread
 { 
-  PCLASSINFO(Receiver, PThread);
+  PCLASSINFO(IAX2Receiver, PThread);
  public:
   /**@name Constructors/destructors*/
   //@{
   /**Construct a receiver, given references to the endpoint and socket*/
-  Receiver(IAX2EndPoint & _newEndpoint, PUDPSocket & _newSocket);
+  IAX2Receiver(IAX2EndPoint & _newEndpoint, PUDPSocket & _newSocket);
   
   /**Destroy the receiver*/
-  ~Receiver();
+  ~IAX2Receiver();
   //@}
   
   /**@name general worker methods*/
@@ -79,10 +82,14 @@ class Receiver : public PThread
   BOOL ReadNetworkSocket();
   
   /**We have just read a frame from the network. This is a good
-     MiniFrame, or good FullFrame. Put it on the queue of frames to be
-     processed by the IAX2EndPoint.  The IAX2EndPoint will give this frame
-     to the appropriate IAXConnection */
-  void AddNewReceivedFrame(Frame *newFrame);
+     IAX2Frame. Put it on the queue of frames to be processed by the
+     IAX2EndPoint.  The IAX2EndPoint will give this frame to the
+     appropriate IAXConnection. Since this frame could be encrypted,
+     and we do not have access to the keys (only the IAX2Connection
+     has the keys, we cannot do anymore with the frame). Indeed, we
+     are the receiving thread, and must put all our time into reading
+     from the socket, not processing the packets. */
+  void AddNewReceivedFrame(IAX2Frame *newFrame);
   //@}
  protected:
   /**Global variable which holds the application specific data */
@@ -93,7 +100,7 @@ class Receiver : public PThread
   
   /**The act of processing a header will (inevitably) create  additional
      frames as trunked frames are split up */
-  FrameList      fromNetworkFrames;
+  IAX2FrameList      fromNetworkFrames;
   
   /**Flag to indicate if this receiver thread should keep listening for network data */
   BOOL           keepGoing;

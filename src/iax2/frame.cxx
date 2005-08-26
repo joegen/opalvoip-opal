@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: frame.cxx,v $
+ *  Revision 1.8  2005/08/26 03:07:38  dereksmithies
+ *  Change naming convention, so all class names contain the string "IAX2"
+ *
  *  Revision 1.7  2005/08/25 03:26:06  dereksmithies
  *  Add patch from Adrian Sietsma to correctly set the packet timestamps under windows.
  *  Many thanks.
@@ -88,7 +91,7 @@ int NextIndex()
   return ++counter;
 }
 
-Frame::Frame(IAX2EndPoint &_endpoint)
+IAX2Frame::IAX2Frame(IAX2EndPoint &_endpoint)
   : endpoint(_endpoint)
 {
   ZeroAllValues();
@@ -96,12 +99,12 @@ Frame::Frame(IAX2EndPoint &_endpoint)
   frameIndex = NextIndex();
 }
 
-Frame::~Frame()
+IAX2Frame::~IAX2Frame()
 {
-  PTRACE(3, "Delete this Frame  " << IdString());
+  PTRACE(3, "Delete this IAX2Frame  " << IdString());
 }
 
-void Frame::ZeroAllValues()
+void IAX2Frame::ZeroAllValues()
 {
   data.SetSize(0);
   
@@ -119,24 +122,24 @@ void Frame::ZeroAllValues()
   frameType = undefType;
 }
 
-BOOL Frame::IsVideo() const 
+BOOL IAX2Frame::IsVideo() const 
 { 
   return isVideo; 
 }
 
-BOOL Frame::IsAudio() const
+BOOL IAX2Frame::IsAudio() const
 { 
   return isAudio; 
 }
 
 
-BOOL Frame::IsFullFrame()
+BOOL IAX2Frame::IsFullFrame()
 {
   return isFullFrame;
 }
 
 
-BOOL Frame::ReadNetworkPacket(PUDPSocket &sock)
+BOOL IAX2Frame::ReadNetworkPacket(PUDPSocket &sock)
 {
   data.SetSize(4096);  //Surely no packets > 4096 bytes in length
   
@@ -165,7 +168,7 @@ BOOL Frame::ReadNetworkPacket(PUDPSocket &sock)
   return TRUE;
 }
 
-BOOL Frame::Read1Byte(BYTE & result)
+BOOL IAX2Frame::Read1Byte(BYTE & result)
 {
   if (currentReadIndex >= data.GetSize())
     return FALSE;
@@ -176,7 +179,7 @@ BOOL Frame::Read1Byte(BYTE & result)
   return TRUE;
 }
 
-BOOL Frame::Read2Bytes(PINDEX & res)
+BOOL IAX2Frame::Read2Bytes(PINDEX & res)
 {
   BYTE a = 0;
   BYTE b = 0;
@@ -188,7 +191,7 @@ BOOL Frame::Read2Bytes(PINDEX & res)
   return FALSE;
 }
 
-BOOL Frame::Read2Bytes(WORD & res)
+BOOL IAX2Frame::Read2Bytes(WORD & res)
 {
   BYTE a = 0, b = 0;
   if (Read1Byte(a) && Read1Byte(b)) {
@@ -199,7 +202,7 @@ BOOL Frame::Read2Bytes(WORD & res)
   return FALSE;
 }
 
-BOOL Frame::Read4Bytes(DWORD & res)
+BOOL IAX2Frame::Read4Bytes(DWORD & res)
 {
   PINDEX a = 0, b = 0;
   if (Read2Bytes(a) && Read2Bytes(b)) {
@@ -210,12 +213,12 @@ BOOL Frame::Read4Bytes(DWORD & res)
   return FALSE;
 }
 
-void Frame::Write1Byte(PINDEX newVal)
+void IAX2Frame::Write1Byte(PINDEX newVal)
 {
   Write1Byte((BYTE)(newVal & 0xff));
 }
 
-void Frame::Write1Byte(BYTE newVal)
+void IAX2Frame::Write1Byte(BYTE newVal)
 {
   if (currentWriteIndex >= data.GetSize())
     data.SetSize(currentWriteIndex + 1);
@@ -224,7 +227,7 @@ void Frame::Write1Byte(BYTE newVal)
   currentWriteIndex++;
 }
 
-void Frame::Write2Bytes(PINDEX newVal)
+void IAX2Frame::Write2Bytes(PINDEX newVal)
 {
   BYTE a = (BYTE)(newVal >> 8);
   BYTE b = (BYTE)(newVal & 0xff);
@@ -233,7 +236,7 @@ void Frame::Write2Bytes(PINDEX newVal)
   Write1Byte(b);
 }
 
-void Frame::Write4Bytes(unsigned int newVal)
+void IAX2Frame::Write4Bytes(unsigned int newVal)
 {
   PINDEX a = newVal >> 16;
   PINDEX b = newVal & 0xffff;
@@ -243,7 +246,7 @@ void Frame::Write4Bytes(unsigned int newVal)
 }
 
 
-BOOL Frame::ProcessNetworkPacket()
+BOOL IAX2Frame::ProcessNetworkPacket()
 {
   /*We are guaranteed to have a packet > 4 bytes in size */
   PINDEX a = 0;
@@ -276,19 +279,19 @@ BOOL Frame::ProcessNetworkPacket()
   return TRUE;
 }
 
-void Frame::BuildConnectionTokenId()
+void IAX2Frame::BuildConnectionTokenId()
 {
   connectionToken = PString("iax2:") + remote.RemoteAddress().AsString() + PString("-") + PString(remote.SourceCallNumber());
   PTRACE(3, "This frame belongs to connection \"" << connectionToken << "\"");
 }
 
-void Frame::PrintOn(ostream & strm) const
+void IAX2Frame::PrintOn(ostream & strm) const
 {
   strm << IdString() << "      " << data.GetSize() << " bytes in frame" << endl
        << ::hex << data << ::dec;
 }
 
-void Frame::BuildTimeStamp(const PTimeInterval & callStartTick)
+void IAX2Frame::BuildTimeStamp(const PTimeInterval & callStartTick)
 {
   if (presetTimeStamp > 0)
     timeStamp = presetTimeStamp;
@@ -296,14 +299,14 @@ void Frame::BuildTimeStamp(const PTimeInterval & callStartTick)
     timeStamp = CalcTimeStamp(callStartTick);
 }
 
-DWORD Frame::CalcTimeStamp(const PTimeInterval & callStartTick)
+DWORD IAX2Frame::CalcTimeStamp(const PTimeInterval & callStartTick)
 {
   DWORD tVal = (PTimer::Tick() - callStartTick).GetMilliSeconds();
   PTRACE(3, "Calculate timestamp as " << tVal);
   return tVal;
 }
 
-BOOL Frame::TransmitPacket(PUDPSocket &sock)
+BOOL IAX2Frame::TransmitPacket(PUDPSocket &sock)
 {
   if (CallMustBeActive()) {
     if (!endpoint.ConnectionForFrameIsAlive(this)) {
@@ -323,17 +326,17 @@ BOOL Frame::TransmitPacket(PUDPSocket &sock)
   return transmitResult;
 }
 
-Frame * Frame::BuildAppropriateFrameType(Iax2Encryption & encryptionInfo)
+IAX2Frame * IAX2Frame::BuildAppropriateFrameType(IAX2Encryption & encryptionInfo)
 {
   DecryptContents(encryptionInfo);
 
   return BuildAppropriateFrameType();
 }
 
-Frame *Frame::BuildAppropriateFrameType()
+IAX2Frame *IAX2Frame::BuildAppropriateFrameType()
 {
   if (isFullFrame) {
-    FullFrame *ff = new FullFrame(*this);
+    IAX2FullFrame *ff = new IAX2FullFrame(*this);
     if (!ff->ProcessNetworkPacket()) {
       delete ff;
       return NULL;
@@ -342,7 +345,7 @@ Frame *Frame::BuildAppropriateFrameType()
     return ff;
   }
 
-  MiniFrame *mf = new MiniFrame(*this);
+  IAX2MiniFrame *mf = new IAX2MiniFrame(*this);
   if (!mf->ProcessNetworkPacket()) {
     delete mf;
     return NULL;
@@ -352,7 +355,7 @@ Frame *Frame::BuildAppropriateFrameType()
 }
 
 
-BOOL Frame::DecryptContents(Iax2Encryption &encryption)
+BOOL IAX2Frame::DecryptContents(IAX2Encryption &encryption)
 {
   if (!encryption.IsEncrypted())
     return TRUE;
@@ -400,7 +403,7 @@ BOOL Frame::DecryptContents(Iax2Encryption &encryption)
 #endif
 }
 
-BOOL Frame::EncryptContents(Iax2Encryption &encryption)
+BOOL IAX2Frame::EncryptContents(IAX2Encryption &encryption)
 {
   if (!encryption.IsEncrypted())
     return TRUE;
@@ -438,7 +441,7 @@ BOOL Frame::EncryptContents(Iax2Encryption &encryption)
 }
 
 
-PINDEX Frame::GetEncryptionOffset()
+PINDEX IAX2Frame::GetEncryptionOffset()
 {
   if (isFullFrame)
     return 4;
@@ -451,8 +454,8 @@ PINDEX Frame::GetEncryptionOffset()
 
 ////////////////////////////////////////////////////////////////////////////////  
 
-MiniFrame::MiniFrame(Frame & srcFrame)
-  : Frame(srcFrame)
+IAX2MiniFrame::IAX2MiniFrame(IAX2Frame & srcFrame)
+  : IAX2Frame(srcFrame)
 {
   ZeroAllValues();
   frameIndex = NextIndex();
@@ -460,15 +463,15 @@ MiniFrame::MiniFrame(Frame & srcFrame)
   isVideo = !isAudio;
 }
 
-MiniFrame::MiniFrame(IAX2EndPoint &_endpoint)
-  : Frame(_endpoint)
+IAX2MiniFrame::IAX2MiniFrame(IAX2EndPoint &_endpoint)
+  : IAX2Frame(_endpoint)
 {
   ZeroAllValues();
 }
 
-MiniFrame::MiniFrame(IAX2Processor * iax2Processor, PBYTEArray &sound, 
+IAX2MiniFrame::IAX2MiniFrame(IAX2Processor * iax2Processor, PBYTEArray &sound, 
 		     BOOL _isAudio, PINDEX usersTimeStamp) 
-  : Frame(iax2Processor->GetEndPoint())
+  : IAX2Frame(iax2Processor->GetEndPoint())
 {
   isAudio = _isAudio;
   presetTimeStamp = usersTimeStamp;
@@ -479,12 +482,12 @@ MiniFrame::MiniFrame(IAX2Processor * iax2Processor, PBYTEArray &sound,
   memcpy(data.GetPointer() + headerSize, sound.GetPointer(), sound.GetSize());
 }
 
-MiniFrame::~MiniFrame()
+IAX2MiniFrame::~IAX2MiniFrame()
 {
-  PTRACE(3, "Destroy this MiniFrame " << IdString());
+  PTRACE(3, "Destroy this IAX2MiniFrame " << IdString());
 }
 
-void MiniFrame::InitialiseHeader(IAX2Processor *iax2Processor)
+void IAX2MiniFrame::InitialiseHeader(IAX2Processor *iax2Processor)
 {
   if (iax2Processor != NULL) {
     remote   = iax2Processor->GetRemoteInfo();
@@ -494,7 +497,7 @@ void MiniFrame::InitialiseHeader(IAX2Processor *iax2Processor)
   WriteHeader();
 }
 
-BOOL MiniFrame::ProcessNetworkPacket() 
+BOOL IAX2MiniFrame::ProcessNetworkPacket() 
 {
   WORD dataWord;
   Read2Bytes(dataWord);
@@ -506,19 +509,19 @@ BOOL MiniFrame::ProcessNetworkPacket()
 
 
 
-void MiniFrame::ZeroAllValues()
+void IAX2MiniFrame::ZeroAllValues()
 {
 }
 
 
-void MiniFrame::AlterTimeStamp(PINDEX newValue)
+void IAX2MiniFrame::AlterTimeStamp(PINDEX newValue)
 {
   timeStamp = (newValue & (0xffff << 16)) | (timeStamp & 0xffff);
 }
 
 
 
-BOOL MiniFrame::WriteHeader()
+BOOL IAX2MiniFrame::WriteHeader()
 {
   currentWriteIndex = 0;   //Probably not needed, but this makes everything "obvious"
   
@@ -534,15 +537,15 @@ BOOL MiniFrame::WriteHeader()
   return TRUE;
 }
 
-void MiniFrame::PrintOn(ostream & strm) const
+void IAX2MiniFrame::PrintOn(ostream & strm) const
 {
-  strm << "MiniFrame of " << PString(IsVideo() ? "video" : "audio") << " " 
+  strm << "IAX2MiniFrame of " << PString(IsVideo() ? "video" : "audio") << " " 
        << IdString() << " \"" << GetConnectionToken() << "\"  " << endl;
   
-  Frame::PrintOn(strm);
+  IAX2Frame::PrintOn(strm);
 }
 
-BYTE *MiniFrame::GetMediaDataPointer()
+BYTE *IAX2MiniFrame::GetMediaDataPointer()
 {
   if (IsVideo())
     return data.GetPointer() + 6;
@@ -551,7 +554,7 @@ BYTE *MiniFrame::GetMediaDataPointer()
 }
 
 
-PINDEX MiniFrame::GetMediaDataSize()
+PINDEX IAX2MiniFrame::GetMediaDataSize()
 {
   int thisSize;
   if (IsVideo()) 
@@ -565,7 +568,7 @@ PINDEX MiniFrame::GetMediaDataSize()
     return thisSize;
 }
 
-PINDEX MiniFrame::GetEncryptionOffset() 
+PINDEX IAX2MiniFrame::GetEncryptionOffset() 
 { 
   if (IsAudio())
     return 2; 
@@ -574,15 +577,15 @@ PINDEX MiniFrame::GetEncryptionOffset()
 }
 ////////////////////////////////////////////////////////////////////////////////  
 
-FullFrame::FullFrame(IAX2EndPoint &_newEndpoint)
-  : Frame(_newEndpoint)
+IAX2FullFrame::IAX2FullFrame(IAX2EndPoint &_newEndpoint)
+  : IAX2Frame(_newEndpoint)
 {
   ZeroAllValues();
 }
 
 /*This is built from an incoming frame (from the network*/
-FullFrame::FullFrame(Frame & srcFrame)
-  : Frame(srcFrame)
+IAX2FullFrame::IAX2FullFrame(IAX2Frame & srcFrame)
+  : IAX2Frame(srcFrame)
 {
   PTRACE(5, "START Constructor for a full frame");
   ZeroAllValues();
@@ -591,25 +594,25 @@ FullFrame::FullFrame(Frame & srcFrame)
 }
 
 
-FullFrame::~FullFrame()
+IAX2FullFrame::~IAX2FullFrame()
 {
-  PTRACE(3, "Delete this FullFrame  " << IdString());
+  PTRACE(3, "Delete this IAX2FullFrame  " << IdString());
   MarkDeleteNow();
 }
 
-BOOL FullFrame::operator*=(FullFrame & /*other*/)
+BOOL IAX2FullFrame::operator*=(IAX2FullFrame & /*other*/)
 {
-  PAssertAlways("Sorry, FullFrame comparison operator is Not implemented");
+  PAssertAlways("Sorry, IAX2FullFrame comparison operator is Not implemented");
   return TRUE;
 }
 
-void FullFrame::MarkAsResent()
+void IAX2FullFrame::MarkAsResent()
 {
   if (data.GetSize() > 2)
     data[2] |= 0x80;
 }
 
-void FullFrame::ZeroAllValues()
+void IAX2FullFrame::ZeroAllValues()
 {
   subClass = 0;     
   timeStamp = 0;
@@ -629,13 +632,13 @@ void FullFrame::ZeroAllValues()
   isAckFrame = FALSE;
 }
 
-void FullFrame::ClearListFlags()
+void IAX2FullFrame::ClearListFlags()
 {
   deleteFrameNow = FALSE;
   sendFrameNow   = FALSE;
 }
 
-BOOL FullFrame::TransmitPacket(PUDPSocket &sock)
+BOOL IAX2FullFrame::TransmitPacket(PUDPSocket &sock)
 {
   PTRACE(6, "Send network packet on " << IdString() << " " << connectionToken);
   if (packetResent) {
@@ -652,11 +655,11 @@ BOOL FullFrame::TransmitPacket(PUDPSocket &sock)
   transmissionTimer.Reset();   //*This causes the timer to start running.
   ClearListFlags();
   
-  return Frame::TransmitPacket(sock);
+  return IAX2Frame::TransmitPacket(sock);
 }
 
 
-BOOL FullFrame::ProcessNetworkPacket()
+BOOL IAX2FullFrame::ProcessNetworkPacket()
 {
   PTRACE(1, "ProcessNetworkPacket - read the frame header");
   if (data.GetSize() < 12) {
@@ -680,7 +683,7 @@ BOOL FullFrame::ProcessNetworkPacket()
     return FALSE;
   }
   
-  frameType = (IaxFrameType)a;
+  frameType = (IAX2FrameType)a;
   isAudio = frameType == voiceType;
   isVideo = frameType == videoType;
   
@@ -691,60 +694,60 @@ BOOL FullFrame::ProcessNetworkPacket()
   PTRACE(1, "Process network frame");
   PTRACE(1, "subClass is " << subClass);
   PTRACE(1, "frameType is " << frameType);
-  isAckFrame = (subClass == FullFrameProtocol::cmdAck) && (frameType == iax2ProtocolType);     
+  isAckFrame = (subClass == IAX2FullFrameProtocol::cmdAck) && (frameType == iax2ProtocolType);     
   return TRUE;
 }
 
-BOOL FullFrame::IsPingFrame()
+BOOL IAX2FullFrame::IsPingFrame()
 {
-  return (subClass == FullFrameProtocol::cmdPing) && (frameType == iax2ProtocolType);     
+  return (subClass == IAX2FullFrameProtocol::cmdPing) && (frameType == iax2ProtocolType);     
 }
 
-BOOL FullFrame::IsNewFrame()
+BOOL IAX2FullFrame::IsNewFrame()
 {
-  return (subClass == FullFrameProtocol::cmdNew) && (frameType == iax2ProtocolType);     
+  return (subClass == IAX2FullFrameProtocol::cmdNew) && (frameType == iax2ProtocolType);     
 }
 
-BOOL FullFrame::IsLagRqFrame()
+BOOL IAX2FullFrame::IsLagRqFrame()
 {
-  return (subClass == FullFrameProtocol::cmdLagRq) && (frameType == iax2ProtocolType);     
+  return (subClass == IAX2FullFrameProtocol::cmdLagRq) && (frameType == iax2ProtocolType);     
 }
 
-BOOL FullFrame::IsLagRpFrame()
+BOOL IAX2FullFrame::IsLagRpFrame()
 {
-  return (subClass == FullFrameProtocol::cmdLagRp) && (frameType == iax2ProtocolType);     
+  return (subClass == IAX2FullFrameProtocol::cmdLagRp) && (frameType == iax2ProtocolType);     
 }
 
-BOOL FullFrame::IsPongFrame()
+BOOL IAX2FullFrame::IsPongFrame()
 {
-  return (subClass == FullFrameProtocol::cmdPong) && (frameType == iax2ProtocolType);     
+  return (subClass == IAX2FullFrameProtocol::cmdPong) && (frameType == iax2ProtocolType);     
 }
 
-BOOL FullFrame::IsAuthReqFrame()
+BOOL IAX2FullFrame::IsAuthReqFrame()
 {
-  return (subClass == FullFrameProtocol::cmdAuthReq) && (frameType == iax2ProtocolType);     
+  return (subClass == IAX2FullFrameProtocol::cmdAuthReq) && (frameType == iax2ProtocolType);     
 }
 
-BOOL FullFrame::IsVNakFrame()
+BOOL IAX2FullFrame::IsVNakFrame()
 {
-  return (subClass == FullFrameProtocol::cmdVnak) && (frameType == iax2ProtocolType);     
+  return (subClass == IAX2FullFrameProtocol::cmdVnak) && (frameType == iax2ProtocolType);     
 }
 
-BOOL FullFrame::FrameIncrementsInSeqNo()
+BOOL IAX2FullFrame::FrameIncrementsInSeqNo()
 {
   if (frameType != iax2ProtocolType) {
     PTRACE(3, "SeqNos\tFrameType is not iaxProtocol, so we do increment inseqno. FrameType is " << frameType);
     return TRUE;
   }
 
-  FullFrameProtocol::ProtocolSc cmdType = (FullFrameProtocol::ProtocolSc)subClass;
-  PTRACE(3, "SeqNos\tThe cmd type (or subclass of FullFrameProtocol) is " << cmdType);
-  if ((cmdType == FullFrameProtocol::cmdAck)     ||
-      //  (cmdType == FullFrameProtocol::cmdLagRq)   ||
-      //  (cmdType == FullFrameProtocol::cmdLagRp)   ||
-      //  (cmdType == FullFrameProtocol::cmdAuthReq) ||
-      //  (cmdType == FullFrameProtocol::cmdAuthRep) ||
-      (cmdType == FullFrameProtocol::cmdVnak))   {
+  IAX2FullFrameProtocol::ProtocolSc cmdType = (IAX2FullFrameProtocol::ProtocolSc)subClass;
+  PTRACE(3, "SeqNos\tThe cmd type (or subclass of IAX2FullFrameProtocol) is " << cmdType);
+  if ((cmdType == IAX2FullFrameProtocol::cmdAck)     ||
+      //  (cmdType == IAX2FullFrameProtocol::cmdLagRq)   ||
+      //  (cmdType == IAX2FullFrameProtocol::cmdLagRp)   ||
+      //  (cmdType == IAX2FullFrameProtocol::cmdAuthReq) ||
+      //  (cmdType == IAX2FullFrameProtocol::cmdAuthRep) ||
+      (cmdType == IAX2FullFrameProtocol::cmdVnak))   {
     PTRACE(3, "SeqNos\tThis is a iaxProtocol cmd type that does not increment inseqno");
     return FALSE;
   } else {
@@ -753,7 +756,7 @@ BOOL FullFrame::FrameIncrementsInSeqNo()
   return TRUE;
 }
 
-void FullFrame::UnCompressSubClass(BYTE a)
+void IAX2FullFrame::UnCompressSubClass(BYTE a)
 {
   if (a & 0x80) {
     if (a == 0xff)
@@ -764,7 +767,7 @@ void FullFrame::UnCompressSubClass(BYTE a)
     subClass = a;
 }
 
-int FullFrame::CompressSubClass()
+int IAX2FullFrame::CompressSubClass()
 {
   if (subClass < 0x80)
     return subClass;
@@ -777,7 +780,7 @@ int FullFrame::CompressSubClass()
   return -1;
 }
 
-BOOL FullFrame::WriteHeader()
+BOOL IAX2FullFrame::WriteHeader()
 {
   data.SetSize(12);
   PTRACE(6, "Write a source call number of " << remote.SourceCallNumber());
@@ -805,14 +808,14 @@ BOOL FullFrame::WriteHeader()
   return TRUE;
 }
 
-void FullFrame::MarkDeleteNow()
+void IAX2FullFrame::MarkDeleteNow()
 {
   transmissionTimer.Stop();
   deleteFrameNow = TRUE;
   retries = -1;
 }
 
-void FullFrame::OnTransmissionTimeout(PTimer &, INT)
+void IAX2FullFrame::OnTransmissionTimeout(PTimer &, INT)
 {
   PTRACE(3, "Has had a timeout " << IdString() << " " << connectionToken);
   retryDelta = 4 * retryDelta.GetMilliSeconds();
@@ -833,38 +836,38 @@ void FullFrame::OnTransmissionTimeout(PTimer &, INT)
 }
 
 
-PString FullFrame::GetFullFrameName() const
+PString IAX2FullFrame::GetFullFrameName() const
 {
   switch(frameType)  {
-      case undefType      : return PString("(0?)      ");
-      case dtmfType       : return PString("Dtmf      ");
-      case voiceType      : return PString("Voice     ");
-      case videoType      : return PString("Video     ");
-      case controlType    : return PString("Session   ");
-      case nullType       : return PString("Null      ");
+      case undefType       : return PString("(0?)      ");
+      case dtmfType        : return PString("Dtmf      ");
+      case voiceType       : return PString("Voice     ");
+      case videoType       : return PString("Video     ");
+      case controlType     : return PString("Session   ");
+      case nullType        : return PString("Null      ");
       case iax2ProtocolType: return PString("Protocol  ");
-      case textType       : return PString("Text      ");
-      case imageType      : return PString("Image     ");
-      case htmlType       : return PString("Html      ");
-      case cngType        : return PString("Cng       ");
-      case numFrameTypes  : return PString("# F types ");
+      case textType        : return PString("Text      ");
+      case imageType       : return PString("Image     ");
+      case htmlType        : return PString("Html      ");
+      case cngType         : return PString("Cng       ");
+      case numFrameTypes   : return PString("# F types ");
   }
   
   return PString("Frame name is undefined for value of ") + PString(frameType);
 }
 
-BYTE *FullFrame::GetMediaDataPointer()
+BYTE *IAX2FullFrame::GetMediaDataPointer()
 {
   return data.GetPointer() + 12;
 }
 
 
-PINDEX FullFrame::GetMediaDataSize()
+PINDEX IAX2FullFrame::GetMediaDataSize()
 {
   return data.GetSize() - 12;
 }
 
-void FullFrame::InitialiseHeader(IAX2Processor *iax2Processor)
+void IAX2FullFrame::InitialiseHeader(IAX2Processor *iax2Processor)
 {
   if (iax2Processor != NULL) {
     SetConnectionToken(iax2Processor->GetCallToken());
@@ -872,11 +875,11 @@ void FullFrame::InitialiseHeader(IAX2Processor *iax2Processor)
     remote   = iax2Processor->GetRemoteInfo();
   }
   PTRACE(3, "source timestamp is " << timeStamp);
-  frameType = (IaxFrameType)GetFullFrameType();  
+  frameType = (IAX2FrameType)GetFullFrameType();  
   WriteHeader();
 }
 
-void FullFrame::PrintOn(ostream & strm) const
+void IAX2FullFrame::PrintOn(ostream & strm) const
 {
   strm << IdString() << " ++  " << GetFullFrameName() << " -- " 
        << GetSubClassName() << " \"" << connectionToken << "\"" << endl
@@ -884,14 +887,14 @@ void FullFrame::PrintOn(ostream & strm) const
        << ::hex << data << ::dec;
 }
 
-void FullFrame::ModifyFrameHeaderSequenceNumbers(PINDEX inNo, PINDEX outNo)
+void IAX2FullFrame::ModifyFrameHeaderSequenceNumbers(PINDEX inNo, PINDEX outNo)
 {
   data[8] = (BYTE) (outNo & 0xff);
   data[9] = (BYTE) (inNo & 0xff);
   GetSequenceInfo().SetInOutSeqNo(inNo, outNo);
 }
 
-void FullFrame::ModifyFrameTimeStamp(PINDEX newTimeStamp)
+void IAX2FullFrame::ModifyFrameTimeStamp(PINDEX newTimeStamp)
 {
   timeStamp = newTimeStamp;
   PINDEX oldWriteIndex = currentWriteIndex;
@@ -901,32 +904,32 @@ void FullFrame::ModifyFrameTimeStamp(PINDEX newTimeStamp)
 }
 ////////////////////////////////////////////////////////////////////////////////  
 
-FullFrameDtmf::FullFrameDtmf(Frame & srcFrame)
-  : FullFrame(srcFrame)
+IAX2FullFrameDtmf::IAX2FullFrameDtmf(IAX2Frame & srcFrame)
+  : IAX2FullFrame(srcFrame)
 {
 }
 
-FullFrameDtmf::FullFrameDtmf(FullFrame & srcFrame)
-  : FullFrame(srcFrame)
+IAX2FullFrameDtmf::IAX2FullFrameDtmf(IAX2FullFrame & srcFrame)
+  : IAX2FullFrame(srcFrame)
 {
 }
 
-FullFrameDtmf::FullFrameDtmf(IAX2Processor *iax2Processor, PString  subClassValue)
-  : FullFrame(iax2Processor->GetEndPoint())
+IAX2FullFrameDtmf::IAX2FullFrameDtmf(IAX2Processor *iax2Processor, PString  subClassValue)
+  : IAX2FullFrame(iax2Processor->GetEndPoint())
 {
   SetSubClass(subClassValue.ToUpper()[0]);
   InitialiseHeader(iax2Processor);
 }
 
-FullFrameDtmf::FullFrameDtmf(IAX2Processor *iax2Processor, char  subClassValue)
-  : FullFrame(iax2Processor->GetEndPoint())
+IAX2FullFrameDtmf::IAX2FullFrameDtmf(IAX2Processor *iax2Processor, char  subClassValue)
+  : IAX2FullFrame(iax2Processor->GetEndPoint())
 {
   SetSubClass(toupper(subClassValue));
   InitialiseHeader(iax2Processor);
 }
 
 
-PString FullFrameDtmf::GetSubClassName() const {
+PString IAX2FullFrameDtmf::GetSubClassName() const {
   switch (GetSubClass()) {    
   case dtmf0:    return PString("0"); 
   case dtmf1:    return PString("1"); 
@@ -949,20 +952,20 @@ PString FullFrameDtmf::GetSubClassName() const {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-FullFrameVoice::FullFrameVoice(Frame & srcFrame)
-  : FullFrame(srcFrame)
+IAX2FullFrameVoice::IAX2FullFrameVoice(IAX2Frame & srcFrame)
+  : IAX2FullFrame(srcFrame)
 {
   PTRACE(3, "Construct a full frame voice from a Frame" << IdString());
 }
 
-FullFrameVoice::FullFrameVoice(FullFrame & srcFrame)
-  : FullFrame(srcFrame)
+IAX2FullFrameVoice::IAX2FullFrameVoice(IAX2FullFrame & srcFrame)
+  : IAX2FullFrame(srcFrame)
 {
-  PTRACE(3, "Construct a full frame voice from a FullFrame" << IdString());
+  PTRACE(3, "Construct a full frame voice from a IAX2FullFrame" << IdString());
 }
 
-FullFrameVoice::FullFrameVoice(IAX2Processor *iax2Processor, PBYTEArray & sound, PINDEX usersTimeStamp)
-  : FullFrame(iax2Processor->GetEndPoint())
+IAX2FullFrameVoice::IAX2FullFrameVoice(IAX2Processor *iax2Processor, PBYTEArray & sound, PINDEX usersTimeStamp)
+  : IAX2FullFrame(iax2Processor->GetEndPoint())
 {
   if (iax2Processor != NULL) {
     SetSubClass((PINDEX)iax2Processor->GetSelectedCodec());
@@ -978,12 +981,12 @@ FullFrameVoice::FullFrameVoice(IAX2Processor *iax2Processor, PBYTEArray & sound,
 }
 
 
-FullFrameVoice::~FullFrameVoice()
+IAX2FullFrameVoice::~IAX2FullFrameVoice()
 {
-  PTRACE(3, "Destroy this FullFrameVoice" << IdString());
+  PTRACE(3, "Destroy this IAX2FullFrameVoice" << IdString());
 }
 
-PString FullFrameVoice::GetSubClassName(unsigned int testValue) 
+PString IAX2FullFrameVoice::GetSubClassName(unsigned int testValue) 
 {
   switch (testValue) {
   case g7231:     return PString("G.723.1");
@@ -1005,7 +1008,7 @@ PString FullFrameVoice::GetSubClassName(unsigned int testValue)
   return res;
 }
 
-unsigned short FullFrameVoice::OpalNameToIax2Value(const PString opalName)
+unsigned short IAX2FullFrameVoice::OpalNameToIax2Value(const PString opalName)
 {
   if (opalName.Find("uLaw") != P_MAX_INDEX) {
     PTRACE(3, "Codec supported "<< opalName);
@@ -1031,12 +1034,12 @@ unsigned short FullFrameVoice::OpalNameToIax2Value(const PString opalName)
 }
 
 
-PString FullFrameVoice::GetSubClassName() const 
+PString IAX2FullFrameVoice::GetSubClassName() const 
 {
   return GetSubClassName(GetSubClass());
 }
 
-PString FullFrameVoice::GetOpalNameOfCodec(PINDEX testValue)
+PString IAX2FullFrameVoice::GetOpalNameOfCodec(PINDEX testValue)
 {
   switch (testValue) {
   case g7231:     return PString("G.723.1");
@@ -1060,17 +1063,17 @@ PString FullFrameVoice::GetOpalNameOfCodec(PINDEX testValue)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-FullFrameVideo::FullFrameVideo(Frame & srcFrame)
-  : FullFrame(srcFrame)
+IAX2FullFrameVideo::IAX2FullFrameVideo(IAX2Frame & srcFrame)
+  : IAX2FullFrame(srcFrame)
 {
 }
 
-FullFrameVideo::FullFrameVideo(FullFrame & srcFrame)
-  : FullFrame(srcFrame)
+IAX2FullFrameVideo::IAX2FullFrameVideo(IAX2FullFrame & srcFrame)
+  : IAX2FullFrame(srcFrame)
 {
 }
 
-PString FullFrameVideo::GetSubClassName() const
+PString IAX2FullFrameVideo::GetSubClassName() const
 {
   switch (GetSubClass()) {
   case jpeg:  return PString("jpeg");
@@ -1078,23 +1081,23 @@ PString FullFrameVideo::GetSubClassName() const
   case h261:  return PString("H.261");
   case h263:  return PString("H.263");
   };
-  return PString("Undefined FullFrameVideo subclass value of ") + PString(GetSubClass());
+  return PString("Undefined IAX2FullFrameVideo subclass value of ") + PString(GetSubClass());
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-FullFrameSessionControl::FullFrameSessionControl(Frame & srcFrame)
-  : FullFrame(srcFrame)
+IAX2FullFrameSessionControl::IAX2FullFrameSessionControl(IAX2Frame & srcFrame)
+  : IAX2FullFrame(srcFrame)
 {
 }
 
-FullFrameSessionControl::FullFrameSessionControl(FullFrame & srcFrame)
-  : FullFrame(srcFrame)
+IAX2FullFrameSessionControl::IAX2FullFrameSessionControl(IAX2FullFrame & srcFrame)
+  : IAX2FullFrame(srcFrame)
 {
 }
 
-FullFrameSessionControl::FullFrameSessionControl(IAX2Processor *iax2Processor,
+IAX2FullFrameSessionControl::IAX2FullFrameSessionControl(IAX2Processor *iax2Processor,
 						 SessionSc session)  
-  :  FullFrame(iax2Processor->GetEndPoint())          
+  :  IAX2FullFrame(iax2Processor->GetEndPoint())          
 {
   SetSubClass((PINDEX)session);
   isAckFrame = FALSE;
@@ -1102,9 +1105,9 @@ FullFrameSessionControl::FullFrameSessionControl(IAX2Processor *iax2Processor,
   callMustBeActive = TRUE;
 }
 
-FullFrameSessionControl::FullFrameSessionControl(IAX2Processor *iax2Processor,
+IAX2FullFrameSessionControl::IAX2FullFrameSessionControl(IAX2Processor *iax2Processor,
 						 PINDEX subClassValue)   
-  :  FullFrame(iax2Processor->GetEndPoint())          
+  :  IAX2FullFrame(iax2Processor->GetEndPoint())          
 {
   SetSubClass(subClassValue);
   isAckFrame = FALSE;
@@ -1113,7 +1116,7 @@ FullFrameSessionControl::FullFrameSessionControl(IAX2Processor *iax2Processor,
 }
 
 
-PString FullFrameSessionControl::GetSubClassName() const {
+PString IAX2FullFrameSessionControl::GetSubClassName() const {
   switch (GetSubClass()) {
   case hangup:          return PString("hangup");
   case ring:            return PString("ring");
@@ -1132,25 +1135,25 @@ PString FullFrameSessionControl::GetSubClassName() const {
   case callProceeding:  return PString("callProceeding");
   };
   
-  return PString("Undefined FullFrameSessionControl subclass value of ") 
+  return PString("Undefined IAX2FullFrameSessionControl subclass value of ") 
     + PString(GetSubClass());
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-FullFrameNull::FullFrameNull(Frame & srcFrame)
-  : FullFrame(srcFrame)
+IAX2FullFrameNull::IAX2FullFrameNull(IAX2Frame & srcFrame)
+  : IAX2FullFrame(srcFrame)
 {
 }
 
-FullFrameNull::FullFrameNull(FullFrame & srcFrame)
-  : FullFrame(srcFrame)
+IAX2FullFrameNull::IAX2FullFrameNull(IAX2FullFrame & srcFrame)
+  : IAX2FullFrame(srcFrame)
 {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-FullFrameProtocol::FullFrameProtocol(IAX2Processor *iax2Processor, PINDEX subClassValue, ConnectionRequired needCon)
-  :  FullFrame(iax2Processor->GetEndPoint())
+IAX2FullFrameProtocol::IAX2FullFrameProtocol(IAX2Processor *iax2Processor, PINDEX subClassValue, ConnectionRequired needCon)
+  :  IAX2FullFrame(iax2Processor->GetEndPoint())
 {
   SetSubClass(subClassValue);
   isAckFrame = (subClassValue == cmdAck);
@@ -1162,8 +1165,8 @@ FullFrameProtocol::FullFrameProtocol(IAX2Processor *iax2Processor, PINDEX subCla
   PTRACE(3, "Contstruct a fullframeprotocol from a processor, subclass value    and a connectionrequired. " << IdString());
 }
 
-FullFrameProtocol::FullFrameProtocol(IAX2Processor *iax2Processor,  ProtocolSc  subClassValue, ConnectionRequired needCon)
-  : FullFrame(iax2Processor->GetEndPoint())
+IAX2FullFrameProtocol::IAX2FullFrameProtocol(IAX2Processor *iax2Processor,  ProtocolSc  subClassValue, ConnectionRequired needCon)
+  : IAX2FullFrame(iax2Processor->GetEndPoint())
 {
   SetSubClass(subClassValue);
   isAckFrame = (subClassValue == cmdAck);
@@ -1173,8 +1176,8 @@ FullFrameProtocol::FullFrameProtocol(IAX2Processor *iax2Processor,  ProtocolSc  
   PTRACE(3, "Contstruct a fullframeprotocol from a processor subclass value and connection required " << IdString());
 }
 
-FullFrameProtocol::FullFrameProtocol(IAX2Processor *iax2Processor,  ProtocolSc  subClassValue, FullFrame *inReplyTo, ConnectionRequired needCon)
-  : FullFrame(iax2Processor->GetEndPoint())
+IAX2FullFrameProtocol::IAX2FullFrameProtocol(IAX2Processor *iax2Processor,  ProtocolSc  subClassValue, IAX2FullFrame *inReplyTo, ConnectionRequired needCon)
+  : IAX2FullFrame(iax2Processor->GetEndPoint())
 {
   SetSubClass(subClassValue);     
   timeStamp = inReplyTo->GetTimeStamp();     
@@ -1183,7 +1186,7 @@ FullFrameProtocol::FullFrameProtocol(IAX2Processor *iax2Processor,  ProtocolSc  
     sequence.SetAckSequenceInfo(inReplyTo->GetSequenceInfo());
   }
   if (iax2Processor == NULL) {
-    Remote rem = inReplyTo->GetRemoteInfo();
+    IAX2Remote rem = inReplyTo->GetRemoteInfo();
     remote = rem;
     ///	  remote.SetSourceCallNumber(rem.GetDestCallNumber());
     ///       remote.SetDestCallNumber(rem.GetSourceCallNumber());	  
@@ -1198,42 +1201,42 @@ FullFrameProtocol::FullFrameProtocol(IAX2Processor *iax2Processor,  ProtocolSc  
   PTRACE(3, "Contstruct a fullframeprotocol from a  processor, subclass value and a connection required" << IdString());
 }
 
-FullFrameProtocol::FullFrameProtocol(Frame & srcFrame)
-  : FullFrame(srcFrame)
+IAX2FullFrameProtocol::IAX2FullFrameProtocol(IAX2Frame & srcFrame)
+  : IAX2FullFrame(srcFrame)
 {
   ReadInformationElements();
   PTRACE(3, "Contstruct a fullframeprotocol from a Frame" << IdString());
 }
 
-FullFrameProtocol::FullFrameProtocol(FullFrame & srcFrame)
-  : FullFrame(srcFrame)
+IAX2FullFrameProtocol::IAX2FullFrameProtocol(IAX2FullFrame & srcFrame)
+  : IAX2FullFrame(srcFrame)
 {
   ReadInformationElements();
   PTRACE(3, "Contstruct a fullframeprotocol from a Full Frame" << IdString());
 }
 
-FullFrameProtocol::~FullFrameProtocol()
+IAX2FullFrameProtocol::~IAX2FullFrameProtocol()
 {
   ieElements.AllowDeleteObjects(TRUE);
-  PTRACE(3, "Destroy this FullFrameProtocol " << IdString());
+  PTRACE(3, "Destroy this IAX2FullFrameProtocol " << IdString());
 }
 
 
 
-void FullFrameProtocol::SetRetransmissionRequired()
+void IAX2FullFrameProtocol::SetRetransmissionRequired()
 {
-  if (GetSubClass() == FullFrameProtocol::cmdAck)
+  if (GetSubClass() == IAX2FullFrameProtocol::cmdAck)
     canRetransmitFrame = FALSE;
   
-  if (GetSubClass() == FullFrameProtocol::cmdLagRp)
+  if (GetSubClass() == IAX2FullFrameProtocol::cmdLagRp)
     canRetransmitFrame = FALSE;
   
-  if (GetSubClass() == FullFrameProtocol::cmdPong)
+  if (GetSubClass() == IAX2FullFrameProtocol::cmdPong)
     canRetransmitFrame = FALSE;
 }
 
 
-void FullFrameProtocol::WriteIeAsBinaryData()
+void IAX2FullFrameProtocol::WriteIeAsBinaryData()
 {
   PTRACE(6, "Write the IE data (" << ieElements.GetSize() 
 	 << " elements) as binary data to frame");
@@ -1246,16 +1249,16 @@ void FullFrameProtocol::WriteIeAsBinaryData()
   }    
 }
 
-BOOL FullFrameProtocol::ReadInformationElements()
+BOOL IAX2FullFrameProtocol::ReadInformationElements()
 {
-  Ie *elem = NULL;
+  IAX2Ie *elem = NULL;
   
   while (GetUnReadBytes() >= 2) {
     BYTE thisType = 0, thisLength = 0;
     Read1Byte(thisType);
     Read1Byte(thisLength);
     if (thisLength <= GetUnReadBytes()){
-      elem = Ie::BuildInformationElement(thisType, thisLength, data.GetPointer() + currentReadIndex);
+      elem = IAX2Ie::BuildInformationElement(thisType, thisLength, data.GetPointer() + currentReadIndex);
       currentReadIndex += thisLength;
       if (elem != NULL)
 	if (elem->IsValid()) {
@@ -1277,11 +1280,11 @@ BOOL FullFrameProtocol::ReadInformationElements()
   return GetUnReadBytes() == 0;
 }
 
-void FullFrameProtocol::GetRemoteCapability(unsigned int & capability, unsigned int & preferred)
+void IAX2FullFrameProtocol::GetRemoteCapability(unsigned int & capability, unsigned int & preferred)
 {
   capability = 0;
   preferred = 0;
-  Ie * p;
+  IAX2Ie * p;
   PINDEX i = 0;
   for(;;) {
     p = GetIeAt(i);
@@ -1290,13 +1293,13 @@ void FullFrameProtocol::GetRemoteCapability(unsigned int & capability, unsigned 
     
     i++;
     if (p->IsValid()) {
-      if (PIsDescendant(p, IeCapability)) {
-	capability = ((IeCapability *)p)->ReadData();
-	PTRACE(3, "FullFrameProtocol\tCapability codecs are " << capability);
+      if (PIsDescendant(p, IAX2IeCapability)) {
+	capability = ((IAX2IeCapability *)p)->ReadData();
+	PTRACE(3, "IAX2FullFrameProtocol\tCapability codecs are " << capability);
       }
-      if (PIsDescendant(p, IeFormat)) {
-	preferred = ((IeFormat *)p)->ReadData();
-	PTRACE(3, "FullFrameProtocol\tPreferred codec is " << preferred);
+      if (PIsDescendant(p, IAX2IeFormat)) {
+	preferred = ((IAX2IeFormat *)p)->ReadData();
+	PTRACE(3, "IAX2FullFrameProtocol\tPreferred codec is " << preferred);
       }
     } else {
       PTRACE(3, "Invalid data in IE. ");
@@ -1304,9 +1307,9 @@ void FullFrameProtocol::GetRemoteCapability(unsigned int & capability, unsigned 
   }
 }
 
-void FullFrameProtocol::CopyDataFromIeListTo(IeData &res)
+void IAX2FullFrameProtocol::CopyDataFromIeListTo(IAX2IeData &res)
 {
-  Ie * p;
+  IAX2Ie * p;
   PINDEX i = 0;
   for(;;) {
     p = GetIeAt(i);
@@ -1314,7 +1317,7 @@ void FullFrameProtocol::CopyDataFromIeListTo(IeData &res)
       break;
     
     i++;
-    PTRACE(3, "From FullFrameProtocol, handle Ie of type " << *p);
+    PTRACE(3, "From IAX2FullFrameProtocol, handle IAX2Ie of type " << *p);
     if (p->IsValid()) 
       p->StoreDataIn(res);
     else {
@@ -1323,7 +1326,7 @@ void FullFrameProtocol::CopyDataFromIeListTo(IeData &res)
   }
 }
 
-PString FullFrameProtocol::GetSubClassName() const{
+PString IAX2FullFrameProtocol::GetSubClassName() const{
   switch (GetSubClass()) {
   case cmdNew:        return PString("new");
   case cmdPing:       return PString("ping");
@@ -1367,23 +1370,23 @@ PString FullFrameProtocol::GetSubClassName() const{
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-FullFrameText::FullFrameText(Frame & srcFrame)
-  : FullFrame(srcFrame)
+IAX2FullFrameText::IAX2FullFrameText(IAX2Frame & srcFrame)
+  : IAX2FullFrame(srcFrame)
 {
 }
 
-FullFrameText::FullFrameText(FullFrame & srcFrame)
-  : FullFrame(srcFrame)
+IAX2FullFrameText::IAX2FullFrameText(IAX2FullFrame & srcFrame)
+  : IAX2FullFrame(srcFrame)
 {
 }
 
-PString FullFrameText::GetSubClassName() const 
+PString IAX2FullFrameText::GetSubClassName() const 
 {
-  return PString("FullFrameText never has a valid sub class");
+  return PString("IAX2FullFrameText never has a valid sub class");
 }
 
-FullFrameText::FullFrameText(IAX2Processor *iaxProcessor, const PString&  text )
-  : FullFrame(iaxProcessor->GetEndPoint())
+IAX2FullFrameText::IAX2FullFrameText(IAX2Processor *iaxProcessor, const PString&  text )
+  : IAX2FullFrame(iaxProcessor->GetEndPoint())
 {
 //  presetTimeStamp = usersTimeStamp;
   InitialiseHeader(iaxProcessor);
@@ -1400,7 +1403,7 @@ FullFrameText::FullFrameText(IAX2Processor *iaxProcessor, const PString&  text )
 
 
 
-PString FullFrameText::GetTextString() const
+PString IAX2FullFrameText::GetTextString() const
 {
   return internalText;
 }
@@ -1409,72 +1412,72 @@ PString FullFrameText::GetTextString() const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-FullFrameImage::FullFrameImage(Frame & srcFrame)
-  : FullFrame(srcFrame)
+IAX2FullFrameImage::IAX2FullFrameImage(IAX2Frame & srcFrame)
+  : IAX2FullFrame(srcFrame)
 {
 }
 
-FullFrameImage::FullFrameImage(FullFrame & srcFrame)
-  : FullFrame(srcFrame)
+IAX2FullFrameImage::IAX2FullFrameImage(IAX2FullFrame & srcFrame)
+  : IAX2FullFrame(srcFrame)
 {
 }
 
-PString FullFrameImage::GetSubClassName() const 
+PString IAX2FullFrameImage::GetSubClassName() const 
 {
-  return PString("FullFrameImage never has a valid sub class");
+  return PString("IAX2FullFrameImage never has a valid sub class");
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-FullFrameHtml::FullFrameHtml(Frame & srcFrame)
-  : FullFrame(srcFrame)
+IAX2FullFrameHtml::IAX2FullFrameHtml(IAX2Frame & srcFrame)
+  : IAX2FullFrame(srcFrame)
 {
 }
 
-FullFrameHtml::FullFrameHtml(FullFrame & srcFrame)
-  : FullFrame(srcFrame)
+IAX2FullFrameHtml::IAX2FullFrameHtml(IAX2FullFrame & srcFrame)
+  : IAX2FullFrame(srcFrame)
 {
 }
 
-PString FullFrameHtml::GetSubClassName() const 
+PString IAX2FullFrameHtml::GetSubClassName() const 
 {
-  return PString("FullFrameHtml has a sub class of ") + PString(GetSubClass());
+  return PString("IAX2FullFrameHtml has a sub class of ") + PString(GetSubClass());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-FullFrameCng::FullFrameCng(Frame & srcFrame)
-  : FullFrame(srcFrame)
+IAX2FullFrameCng::IAX2FullFrameCng(IAX2Frame & srcFrame)
+  : IAX2FullFrame(srcFrame)
 {
 }
 
-FullFrameCng::FullFrameCng(FullFrame & srcFrame)
-  : FullFrame(srcFrame)
+IAX2FullFrameCng::IAX2FullFrameCng(IAX2FullFrame & srcFrame)
+  : IAX2FullFrame(srcFrame)
 {
 }
 
-PString FullFrameCng::GetSubClassName() const 
+PString IAX2FullFrameCng::GetSubClassName() const 
 {
-  return PString("FullFrameCng has a sub class of ") + PString(GetSubClass());
+  return PString("IAX2FullFrameCng has a sub class of ") + PString(GetSubClass());
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
-FrameList::~FrameList()
+IAX2FrameList::~IAX2FrameList()
 {   
   AllowDeleteObjects(); 
 }
 
-void FrameList::ReportList()
+void IAX2FrameList::ReportList()
 {
   PWaitAndSignal m(mutex);
 
   for(PINDEX i = 0; i < PAbstractList::GetSize(); i++){
-    PTRACE(3, "#" << (i + 1) << " of " << PAbstractList::GetSize() << "     " << ((Frame *)(GetAt(i)))->GetClass() << "  " << ((Frame *)(GetAt(i)))->IdString());
+    PTRACE(3, "#" << (i + 1) << " of " << PAbstractList::GetSize() << "     " << ((IAX2Frame *)(GetAt(i)))->GetClass() << "  " << ((IAX2Frame *)(GetAt(i)))->IdString());
   }
 }
 
-void FrameList::AddNewFrame(Frame *newFrame)
+void IAX2FrameList::AddNewFrame(IAX2Frame *newFrame)
 {
   if (newFrame == NULL)
     return;
@@ -1484,9 +1487,9 @@ void FrameList::AddNewFrame(Frame *newFrame)
 }
 
 
-void FrameList::GrabContents(FrameList &src)
+void IAX2FrameList::GrabContents(IAX2FrameList &src)
 {
-  Frame *current;
+  IAX2Frame *current;
   do {
     current = src.GetLastFrame();
     AddNewFrame(current);
@@ -1494,7 +1497,7 @@ void FrameList::GrabContents(FrameList &src)
 }
 
 
-Frame *FrameList::GetLastFrame()
+IAX2Frame *IAX2FrameList::GetLastFrame()
 {
   PWaitAndSignal m(mutex);
   PINDEX elems = GetEntries();
@@ -1503,25 +1506,25 @@ Frame *FrameList::GetLastFrame()
   }
   
   PObject *p = PAbstractList::RemoveAt(0);
-  return (Frame *)p;
+  return (IAX2Frame *)p;
 }
 
 
 
-void FrameList::DeleteMatchingSendFrame(FullFrame *reply)
+void IAX2FrameList::DeleteMatchingSendFrame(IAX2FullFrame *reply)
 {
   PWaitAndSignal m(mutex);
   PTRACE(3, "Look for a frame that has been sent, which is waiting for a reply/ack");
 
   for (PINDEX i = 0; i < GetEntries(); i++) {
-    Frame *frame = (Frame *)GetAt(i);
+    IAX2Frame *frame = (IAX2Frame *)GetAt(i);
     if (frame == NULL)
       continue;
     
     if (!frame->IsFullFrame())
       continue;
 
-    FullFrame *sent = (FullFrame *)frame;
+    IAX2FullFrame *sent = (IAX2FullFrame *)frame;
 
     if (sent->DeleteFrameNow()) {
       PTRACE(3, "Skip this frame, as it is marked, delete now" << sent->IdString());
@@ -1592,7 +1595,7 @@ void FrameList::DeleteMatchingSendFrame(FullFrame *reply)
 }
 
 
-void FrameList::GetResendFramesDeleteOldFrames(FrameList &framesToSend)
+void IAX2FrameList::GetResendFramesDeleteOldFrames(IAX2FrameList &framesToSend)
 {
   PWaitAndSignal m(mutex);
   
@@ -1602,7 +1605,7 @@ void FrameList::GetResendFramesDeleteOldFrames(FrameList &framesToSend)
   }
   
   for (PINDEX i = GetEntries(); i > 0; i--) {
-    FullFrame *active = (FullFrame *)PAbstractList::GetAt(i - 1);
+    IAX2FullFrame *active = (IAX2FullFrame *)PAbstractList::GetAt(i - 1);
     if (active == NULL)
       continue;
     
@@ -1621,10 +1624,10 @@ void FrameList::GetResendFramesDeleteOldFrames(FrameList &framesToSend)
 }
 
 
-void FrameList::MarkAllAsResent()
+void IAX2FrameList::MarkAllAsResent()
 {
   for (PINDEX i = 0; i < GetEntries(); i++) {
-    FullFrame *active = (FullFrame *)PAbstractList::GetAt(i);
+    IAX2FullFrame *active = (IAX2FullFrame *)PAbstractList::GetAt(i);
     active->MarkAsResent();
   }
 }

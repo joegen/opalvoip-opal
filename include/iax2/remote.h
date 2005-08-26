@@ -26,6 +26,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: remote.h,v $
+ *  Revision 1.4  2005/08/26 03:07:38  dereksmithies
+ *  Change naming convention, so all class names contain the string "IAX2"
+ *
  *  Revision 1.3  2005/08/24 13:06:18  rjongbloed
  *  Added configuration define for AEC encryption
  *
@@ -56,21 +59,21 @@
 #pragma interface
 #endif
 
-class FullFrame;
+class IAX2FullFrame;
 
 
 /**A simple class which contains the different source and dest call
    numbers, and the remote address + remote port */
-class Remote : public PObject
+class IAX2Remote : public PObject
 { 
-  PCLASSINFO(Remote, PObject);
+  PCLASSINFO(IAX2Remote, PObject);
   
  public:
   
   /**Constructor*/
-  Remote();
+  IAX2Remote();
   
-  virtual ~Remote() { };
+  virtual ~IAX2Remote() { };
   
   /**Call number as used at the destination of this data frame. If we are
      receiving this packet, it refers to our call number. */
@@ -96,7 +99,7 @@ class Remote : public PObject
   PINDEX   RemotePort() { return remotePort; }
   
   /**Copy data from supplied Remote structure to this class */
-  void Assign(Remote &);
+  void Assign(IAX2Remote &);
   
   /**Set the remote address as used by this class */
   void SetRemoteAddress(PIPSocket::Address &newVal) { remoteAddress = newVal; }
@@ -116,15 +119,15 @@ class Remote : public PObject
   /**Return true if remote port & address & destCallNumber & source
      call number match up.  This is used when finding a Connection
      that generated an ethernet frame which is to be transmitted*/
-  BOOL operator == (Remote & other);
+  BOOL operator == (IAX2Remote & other);
   
   /**Return true if remote port & address & destCallNumber==sourceCallNumber match up.
      This is used when finding a Connection to process an incoming ethernet frame */
-  BOOL operator *= (Remote & other);
+  BOOL operator *= (IAX2Remote & other);
   
   
   /**Returns true if these are are different */
-  BOOL operator != (Remote & other);
+  BOOL operator != (IAX2Remote & other);
   
   
  protected:
@@ -152,15 +155,15 @@ class Remote : public PObject
 
   The 32 bit timestamp is left shifted by 8 bits, and the
   result is added to the 8 bit seqno value */
-class FrameIdValue : public PObject
+class IAX2FrameIdValue : public PObject
 {
-  PCLASSINFO(FrameIdValue, PObject);
+  PCLASSINFO(IAX2FrameIdValue, PObject);
  public:
   /**Constructor. to timestamp<<8   +  sequenceNumber*/
-  FrameIdValue (PINDEX timeStamp, PINDEX seqVal);
+  IAX2FrameIdValue (PINDEX timeStamp, PINDEX seqVal);
 
   /**Constructor to some value */
-  FrameIdValue (PINDEX val);
+  IAX2FrameIdValue (PINDEX val);
 
   /**Retrieve this timestamp */
   PINDEX GetTimeStamp() const;
@@ -192,22 +195,22 @@ class FrameIdValue : public PObject
 of all frames we have sent and received. This will be sued to keep the
 iseqno correct (for use in sent frames), and to ensure that we never
 send two frames with the same iseqno and timestamp pair.*/
-PDECLARE_SORTED_LIST(PacketIdList, FrameIdValue)
+PDECLARE_SORTED_LIST(IAX2PacketIdList, IAX2FrameIdValue)
 #ifdef DOC_PLUS_PLUS
-class PacketIdList : public PSortedList
+class IAX2PacketIdList : public PSortedList
 {
 #endif
   
   /**Return true if a FrameIdValue object is found in the list that
    * matches the value in the supplied arguement*/
-  BOOL Contains(FrameIdValue &src);
+  BOOL Contains(IAX2FrameIdValue &src);
   
   /**Return the value at the beginning of the list. Use this value as
      the InSeqNo of this endpoint.*/
   PINDEX GetFirstValue();
   
   /**For the supplied frame, append to this list */
-  void AppendNewFrame(FullFrame &src);
+  void AppendNewFrame(IAX2FullFrame &src);
   
   /**Pretty print this listto the designated stream*/
   virtual void PrintOn(ostream & strm) const;	
@@ -223,15 +226,15 @@ class PacketIdList : public PSortedList
 
 ////////////////////////////////////////////////////////////////////////////////
 /**A structure to hold incoming and outgoing sequence numbers */
-class SequenceNumbers
+class IAX2SequenceNumbers
 {
  public:
   /**Constructor, which sets the in and out sequence numbers to zero*/
-  SequenceNumbers() 
+  IAX2SequenceNumbers() 
     { ZeroAllValues();   };
   
   /**Destructor, which is provided as this class contains virtual methods*/
-  virtual ~SequenceNumbers() { }
+  virtual ~IAX2SequenceNumbers() { }
   
   /**Initialise to Zero values */
   void ZeroAllValues();
@@ -258,29 +261,29 @@ class SequenceNumbers
   
   /**Assign the sequence nos as appropropriate for when we are sending a
    * sequence set in a ack frame */
-  void SetAckSequenceInfo(SequenceNumbers & other);
+  void SetAckSequenceInfo(IAX2SequenceNumbers & other);
   
   /**Comparison operator - tests if sequence numbers are different */
-  BOOL  operator !=(SequenceNumbers &other);
+  BOOL  operator !=(IAX2SequenceNumbers &other);
   
   /**Comparison operator - tests if sequence numbers are equal */
-  BOOL operator ==(SequenceNumbers &other);
+  BOOL operator ==(IAX2SequenceNumbers &other);
   
   /**Increment this sequences outSeqNo, and assign the results to the source arg */
-  void MassageSequenceForSending(FullFrame &src /*<!src will be transmitted to the remote node */
+  void MassageSequenceForSending(IAX2FullFrame &src /*<!src will be transmitted to the remote node */
 				 );
 
   /**Take the incoming frame, and increment seq nos by some multiple
      of 256 to bring them into line with the current values. Use the
      wrapAound member variable to do this.*/
-  void WrapAroundFrameSequence(SequenceNumbers & src);
+  void WrapAroundFrameSequence(IAX2SequenceNumbers & src);
   
   /** We have received a message from the remote node. Check sequence numbers
    * are ok. If ok reply TRUE  */
-  BOOL IncomingMessageIsOk(FullFrame &src /*<!frame to be compared with current data base.*/  );
+  BOOL IncomingMessageIsOk(IAX2FullFrame &src /*<!frame to be compared with current data base.*/  );
   
   /**Copy the sequence info from the source argument to this class */
-  void CopyContents(SequenceNumbers &src);
+  void CopyContents(IAX2SequenceNumbers &src);
   
   /**Report  the contents as a string*/
   PString AsString() const;
@@ -309,17 +312,17 @@ class SequenceNumbers
   PINDEX lastSentTimeStamp;
 
   /**Dictionary of timestamp and OutSeqNo for frames received by  this iax device */
-  PacketIdList receivedLog;
+  IAX2PacketIdList receivedLog;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 /** A class that holds the state variables on encryption - is it on, and the two keys. */
-class Iax2Encryption : public PObject 
+class IAX2Encryption : public PObject 
 {
-  PCLASSINFO(Iax2Encryption, PObject);
+  PCLASSINFO(IAX2Encryption, PObject);
  public:
   /**Constructor, which sets encrytpion to the default value of "OFF" */
-  Iax2Encryption();
+  IAX2Encryption();
 
   /**Set the flag that indicates this communication session is all encrypted.. */
   void SetEncryptionOn (BOOL newState = TRUE);

@@ -28,6 +28,9 @@
  *
  *
  * $Log: iax2con.cxx,v $
+ * Revision 1.6  2005/08/26 03:07:38  dereksmithies
+ * Change naming convention, so all class names contain the string "IAX2"
+ *
  * Revision 1.5  2005/08/24 04:56:25  dereksmithies
  * Add code from Adrian Sietsma to send FullFrameTexts and FullFrameDtmfs to
  * the remote end.  Many Thanks.
@@ -85,8 +88,8 @@ IAX2Connection::IAX2Connection(OpalCall & call,               /* Owner call for 
 {  
   remotePartyName = remoteParty;
   
-  iaxProcessor = new IAX2Processor(ep);
-  iaxProcessor->AssignConnection(this);
+  iax2Processor = new IAX2Processor(ep);
+  iax2Processor->AssignConnection(this);
   SetCallToken(token);
   originating = FALSE;
 
@@ -103,15 +106,15 @@ IAX2Connection::IAX2Connection(OpalCall & call,               /* Owner call for 
 
 IAX2Connection::~IAX2Connection()
 {
-  iaxProcessor->Terminate();
-  iaxProcessor->WaitForTermination(1000);
-  if (!iaxProcessor->IsTerminated()) {
+  iax2Processor->Terminate();
+  iax2Processor->WaitForTermination(1000);
+  if (!iax2Processor->IsTerminated()) {
     PAssertAlways("List rpocessor failed to terminate");
   }
   PTRACE(3, "connection has terminated");
 
-  delete iaxProcessor;
-  iaxProcessor = NULL;
+  delete iax2Processor;
+  iax2Processor = NULL;
 }
 
 void IAX2Connection::ClearCall(CallEndReason reason)
@@ -119,7 +122,7 @@ void IAX2Connection::ClearCall(CallEndReason reason)
   PTRACE(3, "IAX2Con\tClearCall(reason);");
 
   callEndReason = reason;
-  iaxProcessor->Hangup(reason);
+  iax2Processor->Hangup(reason);
 
   OpalConnection::ClearCall(reason);
 }
@@ -129,7 +132,7 @@ void IAX2Connection::Release( CallEndReason reason)
 { 
   PTRACE(3, "IAX2Con\tRelease( CallEndReason reason)		        ");
 
-  iaxProcessor->Release(reason); 
+  iax2Processor->Release(reason); 
   OpalConnection::Release(reason);
 }
 
@@ -139,19 +142,19 @@ void IAX2Connection::OnReleased()
   PTRACE(3, "IAX2\t***************************************************OnReleased:from IAX connection " 
 	 << *this);
 
-  iaxProcessor->OnReleased();
+  iax2Processor->OnReleased();
   OpalConnection::OnReleased();
   
 }
 
-void IAX2Connection::IncomingEthernetFrame(Frame *frame)
+void IAX2Connection::IncomingEthernetFrame(IAX2Frame *frame)
 {
-  PTRACE(3, "IAX2Con\tIncomingEthernetFrame(Frame *frame)" << frame->IdString());
+  PTRACE(3, "IAX2Con\tIncomingEthernetFrame(IAX2Frame *frame)" << frame->IdString());
   
-  iaxProcessor->IncomingEthernetFrame(frame);
+  iax2Processor->IncomingEthernetFrame(frame);
 } 
 
-void IAX2Connection::TransmitFrameToRemoteEndpoint(Frame *src)
+void IAX2Connection::TransmitFrameToRemoteEndpoint(IAX2Frame *src)
 {
   endpoint.transmitter->SendFrame(src);
 }
@@ -195,7 +198,7 @@ BOOL IAX2Connection::SetConnected()
   PTRACE(3, "IAX2Con\tSETCONNECTED " 
 	 << PString(IsOriginating() ? " Originating" : "Receiving"));
   if (!originating)
-    iaxProcessor->SetConnected();
+    iax2Processor->SetConnected();
  
   connectedTime = PTime ();
 
@@ -222,18 +225,18 @@ void IAX2Connection::OnConnected()
 
 void IAX2Connection::SendDtmf(PString dtmf)
 {
-  iaxProcessor->SendDtmf(dtmf); 
+  iax2Processor->SendDtmf(dtmf); 
 }
 
 BOOL IAX2Connection::SendUserInputString(const PString & value ) 
 { 
-  iaxProcessor->SendText(value); 
+  iax2Processor->SendText(value); 
   return TRUE;
 }
   
 BOOL IAX2Connection::SendUserInputTone(char tone, unsigned /*duration*/ ) 
 { 
-  iaxProcessor->SendDtmf(tone); 
+  iax2Processor->SendDtmf(tone); 
   return TRUE;
 }
 
@@ -244,7 +247,7 @@ void IAX2Connection::OnEstablished()
   PTRACE(3, "IAX2Con\t ON ESTABLISHED " 
 	 << PString(IsOriginating() ? " Originating" : "Receiving"));
   OpalConnection::OnEstablished();
-  iaxProcessor->SetEstablished(originating);
+  iax2Processor->SetEstablished(originating);
 }
 
 OpalMediaStream * IAX2Connection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
@@ -267,7 +270,7 @@ OpalMediaStream * IAX2Connection::CreateMediaStream(const OpalMediaFormat & medi
 
 void IAX2Connection::PutSoundPacketToNetwork(PBYTEArray *sound)
 {
-  iaxProcessor->PutSoundPacketToNetwork(sound);
+  iax2Processor->PutSoundPacketToNetwork(sound);
 } 
 
 
@@ -276,7 +279,7 @@ BOOL IAX2Connection::SetUpConnection()
   PTRACE(3, "IAX2Con\tSetUpConnection() ");
   PTRACE(3, "IAX2Con\tWe are making a call");
   originating = TRUE;
-  return iaxProcessor->SetUpConnection(); 
+  return iax2Processor->SetUpConnection(); 
 }
 
 void IAX2Connection::SetCallToken(PString newToken)
@@ -284,7 +287,7 @@ void IAX2Connection::SetCallToken(PString newToken)
   PTRACE(3, "IAX2Con\tSetCallToken(PString newToken)" << newToken);
 
   callToken = newToken;
-  iaxProcessor->SetCallToken(newToken);
+  iax2Processor->SetCallToken(newToken);
 }
 
 
@@ -308,11 +311,11 @@ void IAX2Connection::BuildRemoteCapabilityTable(unsigned int remoteCapability, u
 
   PINDEX i;
   if (remoteCapability != 0) {
-    for (i = 0; i < FullFrameVoice::supportedCodecs; i++) {
+    for (i = 0; i < IAX2FullFrameVoice::supportedCodecs; i++) {
       if ((remoteCapability & (1 << i)) == 0)
 	continue;
 
-      PString wildcard = FullFrameVoice::GetSubClassName(1 << i);
+      PString wildcard = IAX2FullFrameVoice::GetSubClassName(1 << i);
       if (!remoteMediaFormats.HasFormat(wildcard)) {
 	PTRACE(2, "Connection\tRemote capability says add codec " << wildcard);
 	remoteMediaFormats += *(new OpalMediaFormat(wildcard));
@@ -321,7 +324,7 @@ void IAX2Connection::BuildRemoteCapabilityTable(unsigned int remoteCapability, u
   }
 
   if (format != 0) {
-    PString wildcard = FullFrameVoice::GetSubClassName(format);
+    PString wildcard = IAX2FullFrameVoice::GetSubClassName(format);
     remoteMediaFormats.Reorder(PStringArray(wildcard));
   }
 
@@ -377,7 +380,7 @@ unsigned int IAX2Connection::ChooseCodec()
   strm << localMediaFormats[res];
   PTRACE(3, "Connection\t have selected the codec " << strm);
 
-  return FullFrameVoice::OpalNameToIax2Value(strm);
+  return IAX2FullFrameVoice::OpalNameToIax2Value(strm);
 }
 
 

@@ -29,6 +29,9 @@
  * 
  * 
  *  $Log: iedata.h,v $
+ *  Revision 1.2  2005/08/26 03:07:38  dereksmithies
+ *  Change naming convention, so all class names contain the string "IAX2"
+ *
  *  Revision 1.1  2005/07/30 07:01:32  csoutheren
  *  Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
  *  Thanks to Derek Smithies of Indranet Technologies Ltd. for
@@ -55,18 +58,18 @@
 
      This class is not thread safe.
 */
-class IeData :  public PObject
+class IAX2IeData :  public PObject
 {
-  PCLASSINFO(IeData, PObject);
+  PCLASSINFO(IAX2IeData, PObject);
  public:
   /**@name Construction/Destruction */
   //@{
   /**Construct IeData class
    */
-  IeData();
+  IAX2IeData();
      
      
-  ~IeData();
+  ~IAX2IeData();
   //@}
 
   /**Pretty print the varaibles in this class to the designated stream*/

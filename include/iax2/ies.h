@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: ies.h,v $
+ *  Revision 1.3  2005/08/26 03:07:38  dereksmithies
+ *  Change naming convention, so all class names contain the string "IAX2"
+ *
  *  Revision 1.2  2005/08/24 01:38:38  dereksmithies
  *  Add encryption, iax2 style. Numerous tidy ups. Use the label iax2, not iax
  *
@@ -51,16 +54,16 @@
 #endif
 
 
-class Ie;
-class Iax2Encryption;
+class IAX2Ie;
+class IAX2Encryption;
 
 /**Ie class is for handling information elements*/
-class Ie : public PObject
+class IAX2Ie : public PObject
 { 
-  PCLASSINFO(Ie, PObject);
+  PCLASSINFO(IAX2Ie, PObject);
  public:
   /** Each of the 45 possible Information Element types */
-  enum IeTypeCode {    
+  enum IAX2IeTypeCode {    
     ie_calledNumber      = 1,     /*!< Number or extension that is being being called  (string)    */
     ie_callingNumber     = 2,     /*!< The number of the node initating the call r (string)   */
     ie_callingAni        = 3,     /*!< The ANI (calling number) to use for billing   (string)   */
@@ -91,7 +94,7 @@ class Ie : public PObject
     ie_rdnis             = 28,    /*!< DNIS of the referring agent (string)    */
     ie_provisioning      = 29,    /*!< Info to be used for provisioning   (binary data)  */
     ie_aesProvisioning   = 30,    /*!< Info for provisioning AES      (binary data) */
-    ie_dateTime          = 31,    /*!< Date and Time  (which is stored in binary format defined in IeDateTime)    */
+    ie_dateTime          = 31,    /*!< Date and Time  (which is stored in binary format defined in IAX2IeDateTime)    */
     ie_deviceType        = 32,    /*!< The type of device  (string)    */
     ie_serviceIdent      = 33,    /*!< The Identifier for service (string)   */
     ie_firmwareVer       = 34,    /*!< The version of firmware    (unsigned 32 bit number)    */
@@ -118,16 +121,16 @@ class Ie : public PObject
   //@{
   
   /**Constructor*/
-  Ie();
+  IAX2Ie();
   
   /**Destructor*/
-  virtual ~Ie() { };
+  virtual ~IAX2Ie() { };
   //@{
   
   /**@name Worker methods*/
   //@{
-  /** Given an arbitrary type code, build & initialise the Ie descendant class */
-  static Ie *BuildInformationElement(BYTE _typeCode, BYTE length, BYTE *srcData);     
+  /** Given an arbitrary type code, build & initialise the IAX2Ie descendant class */
+  static IAX2Ie *BuildInformationElement(BYTE _typeCode, BYTE length, BYTE *srcData);     
   
   /** returns TRUE if contains an initialised    information element */
   virtual BOOL IsValid() { return validData; }
@@ -150,17 +153,17 @@ class Ie : public PObject
   /**Read the value of the stored data for this class */
   int ReadData() { PAssertAlways("Ie class cannot read the internal data value"); return 0; };
   
-  /** Take the data from this Ie and copy into the memory region.
+  /** Take the data from this IAX2Ie and copy into the memory region.
       When finished, increment the writeIndex appropriately. */
   void WriteBinary(void *data, PINDEX & writeIndex);
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &/*res*/) { PTRACE(0, "UNIMPLEMENTED FUNCTION"); }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &/*res*/) { PTRACE(0, "UNIMPLEMENTED FUNCTION"); }     
   //@}
   
  protected:
-  /** Take the data value for this particular Ie and copy into the memory region.*/
+  /** Take the data value for this particular IAX2Ie and copy into the memory region.*/
   virtual void WriteBinary(BYTE * /*data*/) { PTRACE(0, "UNIMPLEMENTED FUNCTION"); }
   
   /**A flag indicating if the data was read from the supplied bytes
@@ -170,11 +173,11 @@ class Ie : public PObject
 
 /////////////////////////////////////////////////////////////////////////////    
 /**An Information Element that identifies an invalid code in the processed binary data.*/
-class IeInvalidElement : public Ie
+class IAX2IeInvalidElement : public IAX2Ie
 {
-  PCLASSINFO(IeInvalidElement, Ie);
+  PCLASSINFO(IAX2IeInvalidElement, IAX2Ie);
  public:
-  IeInvalidElement() : Ie() {};
+  IAX2IeInvalidElement() : IAX2Ie() {};
   
   /**Access function to get the length of data, which is used when writing to network packet*/
   virtual BYTE GetlengthOfData() { return 0; }
@@ -183,25 +186,25 @@ class IeInvalidElement : public Ie
   void PrintOn(ostream & str) const
     { str << "Invlalid Information Element" << endl; }
  protected:
-  /** Take the data value for this particular Ie and copy into the memory region.
-      For an IeInvalidElement, there is no work done, as the data is invalid. */
+  /** Take the data value for this particular IAX2Ie and copy into the memory region.
+      For an IAX2IeInvalidElement, there is no work done, as the data is invalid. */
   virtual void WriteBinary(BYTE * /*data*/) {  }
 };
 /////////////////////////////////////////////////////////////////////////////    
 /**An Information Element that contains no data. */
-class IeNone : public Ie
+class IAX2IeNone : public IAX2Ie
 {
-  PCLASSINFO(IeNone, Ie);
+  PCLASSINFO(IAX2IeNone, IAX2Ie);
   /**@name construction/destruction*/
   //@{
   
   /**Constructor - read data from source array. 
      
   Contents are valid if source array is valid. */
-  IeNone(BYTE length, BYTE *srcData);     
+  IAX2IeNone(BYTE length, BYTE *srcData);     
   
   /**Constructor to an invalid and empty result*/
-  IeNone() : Ie() {}
+  IAX2IeNone() : IAX2Ie() {}
   //@}
   
   /**@name Worker methods*/
@@ -223,29 +226,29 @@ class IeNone : public Ie
   
   //@}
  protected:
-  /** Take the data value for this particular Ie and copy into the memory region.
-      For this Ie (IeNone) there is no work to do as there is no data. */
+  /** Take the data value for this particular IAX2Ie and copy into the memory region.
+      For this IAX2Ie (IAX2IeNone) there is no work to do as there is no data. */
   virtual void WriteBinary(BYTE * /*data*/) {  }
 };
 
 /////////////////////////////////////////////////////////////////////////////    
 /**An Information Element that contains one byte of data*/
-class IeByte : public Ie
+class IAX2IeByte : public IAX2Ie
 {
-  PCLASSINFO(IeByte, Ie);
+  PCLASSINFO(IAX2IeByte, IAX2Ie);
   /**@name construction/destruction*/
   //@{
   
   /**Constructor - read data from source array. 
      
   Contents are valid if source array is valid. */  
-  IeByte(BYTE length, BYTE *srcData);     
+  IAX2IeByte(BYTE length, BYTE *srcData);     
   
   /**Constructor to a specific value */
-  IeByte(BYTE newValue) : Ie() { SetData(newValue); }
+  IAX2IeByte(BYTE newValue) : IAX2Ie() { SetData(newValue); }
   
   /**Constructor to an invalid and empty result*/
-  IeByte() : Ie() { }
+  IAX2IeByte() : IAX2Ie() { }
   //@}
   
   /**@name Worker methods*/
@@ -264,31 +267,31 @@ class IeByte : public Ie
   
   //@}
  protected:
-  /** Take the data value for this particular Ie and copy into the memory region.*/
+  /** Take the data value for this particular IAX2Ie and copy into the memory region.*/
   virtual void WriteBinary(BYTE *data) { data[0] = dataValue; }
   
-  /**The actual data stored in a IeByte class */
+  /**The actual data stored in a IAX2IeByte class */
   BYTE dataValue;
 };
 
 /////////////////////////////////////////////////////////////////////////////    
 /**An Information Element that contains one character of data*/
-class IeChar : public Ie
+class IAX2IeChar : public IAX2Ie
 {
-  PCLASSINFO(IeChar, Ie);
+  PCLASSINFO(IAX2IeChar, IAX2Ie);
   /**@name construction/destruction*/
   //@{
   
   /**Constructor - read data from source array. 
      
   Contents are valid if source array is valid. */
-  IeChar(BYTE length, BYTE *srcData);     
+  IAX2IeChar(BYTE length, BYTE *srcData);     
   
   /**Construct to an initialised value */
-  IeChar(char newValue) : Ie() { SetData(newValue); }
+  IAX2IeChar(char newValue) : IAX2Ie() { SetData(newValue); }
   
   /**Constructor to an invalid and empty result*/
-  IeChar() : Ie() { }
+  IAX2IeChar() : IAX2Ie() { }
   //@}
   
   /**@name Worker methods*/
@@ -307,31 +310,31 @@ class IeChar : public Ie
   
   //@}
  protected:
-  /** Take the data value for this particular Ie and copy into the memory region.*/
+  /** Take the data value for this particular IAX2Ie and copy into the memory region.*/
   virtual void WriteBinary(BYTE *data) { data[0] = dataValue; }
   
-  /**The actual data stored in a IeChar class */
+  /**The actual data stored in a IAX2IeChar class */
   char dataValue;
 };
 
 /////////////////////////////////////////////////////////////////////////////    
 /**An Information Element that contains one short (signed 16 bits) of data*/
-class IeShort : public Ie
+class IAX2IeShort : public IAX2Ie
 {
-  PCLASSINFO(IeShort, Ie);
+  PCLASSINFO(IAX2IeShort, IAX2Ie);
   /**@name construction/destruction*/
   //@{
   
   /**Constructor - read data from source array. 
      
   Contents are valid if source array is valid. */
-  IeShort(BYTE length, BYTE *srcData);     
+  IAX2IeShort(BYTE length, BYTE *srcData);     
   
   /**Construct to an initialied value */
-  IeShort(short newValue) : Ie() { SetData(newValue); }
+  IAX2IeShort(short newValue) : IAX2Ie() { SetData(newValue); }
   
   /**Constructor to an invalid and empty result*/
-  IeShort() : Ie() { }
+  IAX2IeShort() : IAX2Ie() { }
   //@}
   
   /**@name Worker methods*/
@@ -349,30 +352,30 @@ class IeShort : public Ie
   short ReadData() { return dataValue; }  
   //@}
  protected:
-  /** Take the data value for this particular Ie and copy into the memory region.*/
+  /** Take the data value for this particular IAX2Ie and copy into the memory region.*/
   virtual void WriteBinary(BYTE *data);
   
-  /**The actual data stored in a IeShort class */
+  /**The actual data stored in a IAX2IeShort class */
   short dataValue;
 };
 /////////////////////////////////////////////////////////////////////////////    
 /**An Information Element that contains one integer (signed 16 bits) of data*/
-class IeInt : public Ie
+class IAX2IeInt : public IAX2Ie
 {
-  PCLASSINFO(IeInt, Ie);
+  PCLASSINFO(IAX2IeInt, IAX2Ie);
   /**@name construction/destruction*/
   //@{
   
   /**Constructor - read data from source array. 
      
   Contents are valid if source array is valid. */
-  IeInt(BYTE length, BYTE *srcData);     
+  IAX2IeInt(BYTE length, BYTE *srcData);     
   
   /**Construct to an initialised value */
-  IeInt(int  newValue) : Ie() { SetData(newValue); }
+  IAX2IeInt(int  newValue) : IAX2Ie() { SetData(newValue); }
   
   /**Constructor to an invalid and empty result*/
-  IeInt() : Ie() { }
+  IAX2IeInt() : IAX2Ie() { }
   //@}
   
   /**@name Worker methods*/
@@ -391,30 +394,30 @@ class IeInt : public Ie
   
   //@}
  protected:
-  /** Take the data value for this particular Ie and copy into the memory region.*/
+  /** Take the data value for this particular IAX2Ie and copy into the memory region.*/
   virtual void WriteBinary(BYTE *data);
   
-  /**The actual data stored in a IeInt class */
+  /**The actual data stored in a IAX2IeInt class */
   int dataValue;
 };
 ////////////////////////////////////////////////////////////////////////////////
 /**An Information Element that contains an unsigned short (16 bits) of data*/
-class IeUShort : public Ie
+class IAX2IeUShort : public IAX2Ie
 {
-  PCLASSINFO(IeUShort, Ie);
+  PCLASSINFO(IAX2IeUShort, IAX2Ie);
   /**@name construction/destruction*/
   //@{
   
   /**Constructor - read data from source array. 
      
   Contents are valid if source array is valid. */
-  IeUShort(BYTE length, BYTE *srcData);     
+  IAX2IeUShort(BYTE length, BYTE *srcData);     
   
   /**Construct to an initialised value */
-  IeUShort(unsigned short newValue) : Ie() { SetData(newValue); }
+  IAX2IeUShort(unsigned short newValue) : IAX2Ie() { SetData(newValue); }
   
   /**Constructor to an invalid and empty result*/
-  IeUShort() : Ie() {}
+  IAX2IeUShort() : IAX2Ie() {}
   //@}
   
   /**@name Worker methods*/
@@ -432,30 +435,30 @@ class IeUShort : public Ie
   unsigned short ReadData() { return dataValue; }         
   //@}
  protected:
-  /** Take the data value for this particular Ie and copy into the memory region.*/
+  /** Take the data value for this particular IAX2Ie and copy into the memory region.*/
   virtual void WriteBinary(BYTE *data);
   
-  /**The actual data stored in a IeUShort class */
+  /**The actual data stored in a IAX2IeUShort class */
   unsigned short dataValue;
 };
 ////////////////////////////////////////////////////////////////////////////////
 /**An Information Element that contains an unsigned int (32 bits) of data*/
-class IeUInt : public Ie
+class IAX2IeUInt : public IAX2Ie
 {
-  PCLASSINFO(IeUInt, Ie);
+  PCLASSINFO(IAX2IeUInt, IAX2Ie);
   /**@name construction/destruction*/
   //@{
   
   /**Constructor - read data from source array. 
      
   Contents are valid if source array is valid. */
-  IeUInt(BYTE length, BYTE *srcData);     
+  IAX2IeUInt(BYTE length, BYTE *srcData);     
   
   /**Constructor to an invalid and empty result*/
-  IeUInt() : Ie() {}
+  IAX2IeUInt() : IAX2Ie() {}
   
   /**Constructor to an initialised value, (Typically used prior to transmission)*/
-  IeUInt(unsigned int newValue) { SetData(newValue); }
+  IAX2IeUInt(unsigned int newValue) { SetData(newValue); }
   //@}
   
   /**@name Worker methods*/
@@ -474,18 +477,18 @@ class IeUInt : public Ie
   //@}
   
  protected:
-  /** Take the data value for this particular Ie and copy into the memory region.*/
+  /** Take the data value for this particular IAX2Ie and copy into the memory region.*/
   virtual void WriteBinary(BYTE *data);
   
-  /**The actual data stored in a IeUInt class */
+  /**The actual data stored in a IAX2IeUInt class */
   unsigned int dataValue;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 /**An Information Element that contains an array of characters. */
-class IeString : public Ie
+class IAX2IeString : public IAX2Ie
 {
-  PCLASSINFO(IeString, Ie);
+  PCLASSINFO(IAX2IeString, IAX2Ie);
   /**@name construction/destruction*/
   //@{
   
@@ -493,16 +496,16 @@ class IeString : public Ie
   /**Constructor - read data from source array. 
      
   Contents are valid if source array is valid. */
-  IeString(BYTE length, BYTE *srcData);     
+  IAX2IeString(BYTE length, BYTE *srcData);     
   
   /**Construct to an initialised value */
-  IeString(PString & newValue) : Ie() { SetData(newValue); }
+  IAX2IeString(PString & newValue) : IAX2Ie() { SetData(newValue); }
   
   /**Construct to an initialised value */
-  IeString(const char * newValue) : Ie() { SetData(newValue); }
+  IAX2IeString(const char * newValue) : IAX2Ie() { SetData(newValue); }
   
   /**Constructor to an invalid and empty result*/
-  IeString() : Ie() {}
+  IAX2IeString() : IAX2Ie() {}
   //@}
   
   /**@name Worker methods*/
@@ -524,17 +527,17 @@ class IeString : public Ie
   //@}
   
  protected:
-  /** Take the data value for this particular Ie and copy into the memory region.*/
+  /** Take the data value for this particular IAX2Ie and copy into the memory region.*/
   virtual void WriteBinary(BYTE *data);
   
-  /**The actual data stored in a IeString class */
+  /**The actual data stored in a IAX2IeString class */
   PString dataValue;
 };
 ////////////////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the date and time, from a 32 bit long representation*/
-class IeDateAndTime : public Ie
+class IAX2IeDateAndTime : public IAX2Ie
 {
-  PCLASSINFO(IeDateAndTime, Ie);
+  PCLASSINFO(IAX2IeDateAndTime, IAX2Ie);
   /**@name construction/destruction*/
   //@{
   
@@ -542,13 +545,13 @@ class IeDateAndTime : public Ie
   /**Constructor - read data from source array. 
      
   Contents are valid if source array is valid. */
-  IeDateAndTime(BYTE length, BYTE *srcData);     
+  IAX2IeDateAndTime(BYTE length, BYTE *srcData);     
   
   /**Construct to an initialized value */
-  IeDateAndTime(PTime & newValue) : Ie() { SetData(newValue); }
+  IAX2IeDateAndTime(PTime & newValue) : IAX2Ie() { SetData(newValue); }
   
   /**Constructor to an invalid and empty result*/
-  IeDateAndTime() : Ie() {}
+  IAX2IeDateAndTime() : IAX2Ie() {}
   //@}
   
   /**@name Worker methods*/
@@ -566,17 +569,17 @@ class IeDateAndTime : public Ie
   PTime ReadData() { return dataValue; }
   //@}
  protected:
-  /** Take the data value for this particular Ie and copy into the memory region.*/
+  /** Take the data value for this particular IAX2Ie and copy into the memory region.*/
   virtual void WriteBinary(BYTE *data);
   
-  /**The actual data stored in a IeDateAndTime class */
+  /**The actual data stored in a IAX2IeDateAndTime class */
   PTime dataValue;
 };
 ////////////////////////////////////////////////////////////////////////////////
 /**An Information Element that contains an array of BYTES (with possible nulls in middle) */
-class IeBlockOfData : public Ie
+class IAX2IeBlockOfData : public IAX2Ie
 {
-  PCLASSINFO(IeBlockOfData, Ie);
+  PCLASSINFO(IAX2IeBlockOfData, IAX2Ie);
   /**@name construction/destruction*/
   //@{
   
@@ -584,13 +587,13 @@ class IeBlockOfData : public Ie
   /**Constructor - read data from source array. 
      
   Contents are valid if source array is valid. */
-  IeBlockOfData(BYTE length, BYTE *srcData);     
+  IAX2IeBlockOfData(BYTE length, BYTE *srcData);     
   
   /**Construct to an initialized value */
-  IeBlockOfData(PBYTEArray & newData) : Ie() { SetData(newData); }
+  IAX2IeBlockOfData(PBYTEArray & newData) : IAX2Ie() { SetData(newData); }
   
   /**Constructor to an invalid and empty result*/
-  IeBlockOfData() : Ie() {}
+  IAX2IeBlockOfData() : IAX2Ie() {}
   //@}
   
   /**@name Worker methods*/
@@ -609,17 +612,17 @@ class IeBlockOfData : public Ie
   
   //@}
  protected:
-  /** Take the data value for this particular Ie and copy into the memory region.*/
+  /** Take the data value for this particular IAX2Ie and copy into the memory region.*/
   virtual void WriteBinary(BYTE *data);
   
-  /**The actual data stored in a IeBlockOfData class */
+  /**The actual data stored in a IAX2IeBlockOfData class */
   PBYTEArray dataValue;
 };
 ////////////////////////////////////////////////////////////////////////////////
 /**An Information Element that contains an Ip address and port */
-class IeSockaddrIn : public Ie
+class IAX2IeSockaddrIn : public IAX2Ie
 {
-  PCLASSINFO(IeSockaddrIn, Ie);
+  PCLASSINFO(IAX2IeSockaddrIn, IAX2Ie);
   /**@name construction/destruction*/
   //@{
   
@@ -627,16 +630,16 @@ class IeSockaddrIn : public Ie
   /**Constructor - read data from source array. 
      
   Contents are valid if source array is valid. */
-  IeSockaddrIn(BYTE length, BYTE *srcData);     
+  IAX2IeSockaddrIn(BYTE length, BYTE *srcData);     
   
   /**Construct to an initialized value */
-  IeSockaddrIn(PIPSocket::Address &addr, PINDEX port) : Ie() { SetData(addr, port); }
+  IAX2IeSockaddrIn(PIPSocket::Address &addr, PINDEX port) : IAX2Ie() { SetData(addr, port); }
   
   /**Constructor to an invalid and empty result*/
-  IeSockaddrIn() : Ie() {}
+  IAX2IeSockaddrIn() : IAX2Ie() {}
   
   /**Destructor*/
-  ~IeSockaddrIn() { } ;
+  ~IAX2IeSockaddrIn() { } ;
   //@}
   
   /**@name Worker methods*/
@@ -657,29 +660,29 @@ class IeSockaddrIn : public Ie
   
   //@}
  protected:
-  /** Take the data value for this particular Ie and copy into the memory region.*/
+  /** Take the data value for this particular IAX2Ie and copy into the memory region.*/
   virtual void WriteBinary(BYTE *data);
   
-  /**The actual ip address data stored in a IeSockaddrIn class */
+  /**The actual ip address data stored in a IAX2IeSockaddrIn class */
   PIPSocket::Address dataValue;
   
-  /**The actual port number data stored in a IeSockaddrIn class */  
+  /**The actual port number data stored in a IAX2IeSockaddrIn class */  
   PINDEX               portNumber;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the number/extension being called.*/
-class IeCalledNumber : public IeString
+class IAX2IeCalledNumber : public IAX2IeString
 {
-  PCLASSINFO(IeCalledNumber, IeString);
+  PCLASSINFO(IAX2IeCalledNumber, IAX2IeString);
  public:
   /**Constructor from data read from the network.
      
   Contents are undefined if network data is bogus.*/
-  IeCalledNumber(BYTE length, BYTE *srcData) : IeString(length, srcData) {};
+  IAX2IeCalledNumber(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) {};
   
   /**Initialise to the supplied string value */
-  IeCalledNumber(PString newValue) { SetData(newValue); }
+  IAX2IeCalledNumber(PString newValue) { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -687,24 +690,24 @@ class IeCalledNumber : public IeString
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_calledNumber; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.calledNumber = dataValue; }
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.calledNumber = dataValue; }
  protected:
 };
 ////////////////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the Calling number (number trying to make call?)*/
-class IeCallingNumber : public IeString
+class IAX2IeCallingNumber : public IAX2IeString
 {
-  PCLASSINFO(IeCallingNumber, IeString);
+  PCLASSINFO(IAX2IeCallingNumber, IAX2IeString);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus. */
-  IeCallingNumber(BYTE length, BYTE *srcData) : IeString(length, srcData) { };
+  IAX2IeCallingNumber(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**Initialise to the supplied string value */
-  IeCallingNumber(PString newValue)  { SetData(newValue); } 
+  IAX2IeCallingNumber(PString newValue)  { SetData(newValue); } 
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -712,25 +715,25 @@ class IeCallingNumber : public IeString
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_callingNumber; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.callingNumber = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.callingNumber = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the calling number ANI (for billing)*/
-class IeCallingAni : public IeString
+class IAX2IeCallingAni : public IAX2IeString
 {
-  PCLASSINFO(IeCallingAni, IeString);
+  PCLASSINFO(IAX2IeCallingAni, IAX2IeString);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus. */
-  IeCallingAni(BYTE length, BYTE *srcData) : IeString(length, srcData) { };
+  IAX2IeCallingAni(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**Initialise to the supplied string value */
-  IeCallingAni(PString newValue) { SetData(newValue); }
+  IAX2IeCallingAni(PString newValue) { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -738,25 +741,25 @@ class IeCallingAni : public IeString
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_callingAni; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.callingAni = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.callingAni = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains name of the the person making the call*/
-class IeCallingName : public IeString
+class IAX2IeCallingName : public IAX2IeString
 {
-  PCLASSINFO(IeCallingName, IeString);
+  PCLASSINFO(IAX2IeCallingName, IAX2IeString);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeCallingName(BYTE length, BYTE *srcData) : IeString(length, srcData) { };
+  IAX2IeCallingName(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**Initialise to the supplied string value */
-  IeCallingName(PString newValue) { SetData(newValue); }
+  IAX2IeCallingName(PString newValue) { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -764,25 +767,25 @@ class IeCallingName : public IeString
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_callingName; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.callingName = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.callingName = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the context for this number*/
-class IeCalledContext : public IeString
+class IAX2IeCalledContext : public IAX2IeString
 {
-  PCLASSINFO(IeCalledContext, IeString);
+  PCLASSINFO(IAX2IeCalledContext, IAX2IeString);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeCalledContext(BYTE length, BYTE *srcData) : IeString(length, srcData) { };
+  IAX2IeCalledContext(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**Initialise to the supplied string value */
-  IeCalledContext(PString newValue) { SetData(newValue); }
+  IAX2IeCalledContext(PString newValue) { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -790,25 +793,25 @@ class IeCalledContext : public IeString
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_calledContext; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.calledContext = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.calledContext = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the userName (peer or user) for authentication*/
-class IeUserName : public IeString
+class IAX2IeUserName : public IAX2IeString
 {
-  PCLASSINFO(IeUserName, IeString);
+  PCLASSINFO(IAX2IeUserName, IAX2IeString);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeUserName(BYTE length, BYTE *srcData) : IeString(length, srcData) { };
+  IAX2IeUserName(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**Initialise to the supplied string value */
-  IeUserName(PString newValue)  { SetData(newValue); }
+  IAX2IeUserName(PString newValue)  { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -816,25 +819,25 @@ class IeUserName : public IeString
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_userName; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.userName = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.userName = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the password (for authentication)*/
-class IePassword : public IeString
+class IAX2IePassword : public IAX2IeString
 {
-  PCLASSINFO(IePassword, IeString);
+  PCLASSINFO(IAX2IePassword, IAX2IeString);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IePassword(BYTE length, BYTE *srcData) : IeString(length, srcData) { };
+  IAX2IePassword(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**Initialise to the supplied string value */
-  IePassword(PString newValue) { SetData(newValue); }
+  IAX2IePassword(PString newValue) { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -842,25 +845,25 @@ class IePassword : public IeString
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_password; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.password = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.password = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the actual codecs available*/
-class IeCapability : public IeUInt
+class IAX2IeCapability : public IAX2IeUInt
 {
-  PCLASSINFO(IeCapability, IeUInt);
+  PCLASSINFO(IAX2IeCapability, IAX2IeUInt);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeCapability(BYTE length, BYTE *srcData) : IeUInt(length, srcData) { };
+  IAX2IeCapability(BYTE length, BYTE *srcData) : IAX2IeUInt(length, srcData) { };
   
   /**Construct with a predefined value (Typically used prior to transmission)*/
-  IeCapability(unsigned int newValue) : IeUInt(newValue) { }
+  IAX2IeCapability(unsigned int newValue) : IAX2IeUInt(newValue) { }
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -868,25 +871,25 @@ class IeCapability : public IeUInt
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_capability; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.capability = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.capability = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the desired codec format*/
-class IeFormat : public IeUInt
+class IAX2IeFormat : public IAX2IeUInt
 {
-  PCLASSINFO(IeFormat, IeUInt);
+  PCLASSINFO(IAX2IeFormat, IAX2IeUInt);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeFormat(BYTE length, BYTE *srcData) : IeUInt(length, srcData) { };
+  IAX2IeFormat(BYTE length, BYTE *srcData) : IAX2IeUInt(length, srcData) { };
   
   /**Construct with a predefined value (Typically used prior to transmission)*/
-  IeFormat(unsigned int newValue) : IeUInt(newValue) { }
+  IAX2IeFormat(unsigned int newValue) : IAX2IeUInt(newValue) { }
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -894,25 +897,25 @@ class IeFormat : public IeUInt
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_format; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.format = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.format = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the desired language*/
-class IeLanguage : public IeString
+class IAX2IeLanguage : public IAX2IeString
 {
-  PCLASSINFO(IeLanguage, IeString);
+  PCLASSINFO(IAX2IeLanguage, IAX2IeString);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeLanguage(BYTE length, BYTE *srcData) : IeString(length, srcData) { };
+  IAX2IeLanguage(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**Initialise to the supplied string value */
-  IeLanguage(PString newValue) { SetData(newValue); }
+  IAX2IeLanguage(PString newValue) { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -920,25 +923,25 @@ class IeLanguage : public IeString
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_language; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.language = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.language = dataValue; }     
  protected:
 };
 
 //////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the protocol version*/
-class IeVersion : public IeShort
+class IAX2IeVersion : public IAX2IeShort
 {
-  PCLASSINFO(IeVersion, IeShort);
+  PCLASSINFO(IAX2IeVersion, IAX2IeShort);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeVersion(BYTE length, BYTE *srcData) : IeShort(length, srcData) { };
+  IAX2IeVersion(BYTE length, BYTE *srcData) : IAX2IeShort(length, srcData) { };
   
   /**Construct to the one possible value - version 2 */
-  IeVersion() { dataValue = 2; validData = TRUE; }
+  IAX2IeVersion() { dataValue = 2; validData = TRUE; }
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -946,22 +949,22 @@ class IeVersion : public IeShort
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_version; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.version = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.version = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the CPE ADSI capability*/
-class IeAdsicpe : public IeShort
+class IAX2IeAdsicpe : public IAX2IeShort
 {
-  PCLASSINFO(IeAdsicpe, IeShort);
+  PCLASSINFO(IAX2IeAdsicpe, IAX2IeShort);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeAdsicpe(BYTE length, BYTE *srcData) : IeShort(length, srcData) { };
+  IAX2IeAdsicpe(BYTE length, BYTE *srcData) : IAX2IeShort(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -969,25 +972,25 @@ class IeAdsicpe : public IeShort
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_adsicpe; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.adsicpe = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.adsicpe = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains  the originally dialed DNID*/
-class IeDnid : public IeString
+class IAX2IeDnid : public IAX2IeString
 {
-  PCLASSINFO(IeDnid, IeString);
+  PCLASSINFO(IAX2IeDnid, IAX2IeString);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeDnid(BYTE length, BYTE *srcData) : IeString(length, srcData) { };
+  IAX2IeDnid(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**Initialise to the supplied string value */
-  IeDnid(PString newValue)  { SetData(newValue); }
+  IAX2IeDnid(PString newValue)  { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -995,25 +998,25 @@ class IeDnid : public IeString
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_dnid; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.dnid = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.dnid = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the authentication methods */
-class IeAuthMethods : public IeShort
+class IAX2IeAuthMethods : public IAX2IeShort
 {
-  PCLASSINFO(IeAuthMethods, IeShort);
+  PCLASSINFO(IAX2IeAuthMethods, IAX2IeShort);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeAuthMethods(BYTE length, BYTE *srcData) : IeShort(length, srcData) { };
+  IAX2IeAuthMethods(BYTE length, BYTE *srcData) : IAX2IeShort(length, srcData) { };
   
   /** Initialise to the supplied short value, which is usually done prior to transmission*/
-  IeAuthMethods(short newValue) { SetData(newValue); }
+  IAX2IeAuthMethods(short newValue) { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1021,9 +1024,9 @@ class IeAuthMethods : public IeShort
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_authMethods; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.authMethods = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.authMethods = dataValue; }     
   
   /**Return true if the supplied value has the RSA key on*/
   static BOOL IsRsaAuthentication(short testValue) { return InternalIsRsa(testValue); }
@@ -1057,17 +1060,17 @@ class IeAuthMethods : public IeShort
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the challenge data for MD5/RSA*/
-class IeChallenge : public IeString
+class IAX2IeChallenge : public IAX2IeString
 {
-  PCLASSINFO(IeChallenge, IeString);
+  PCLASSINFO(IAX2IeChallenge, IAX2IeString);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeChallenge(BYTE length, BYTE *srcData) : IeString(length, srcData) { };
+  IAX2IeChallenge(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**Initialise to the supplied string value */
-  IeChallenge(PString newValue) { SetData(newValue); }
+  IAX2IeChallenge(PString newValue) { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1075,31 +1078,31 @@ class IeChallenge : public IeString
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_challenge; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.challenge = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.challenge = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the MD5 chaallenge result*/
-class IeMd5Result : public IeString
+class IAX2IeMd5Result : public IAX2IeString
 {
-  PCLASSINFO(IeMd5Result, IeString);
+  PCLASSINFO(IAX2IeMd5Result, IAX2IeString);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeMd5Result(BYTE length, BYTE *srcData) : IeString(length, srcData) { };
+  IAX2IeMd5Result(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**Initialise to the supplied string value */
-  IeMd5Result(PString newValue) { SetData(newValue); }
+  IAX2IeMd5Result(PString newValue) { SetData(newValue); }
   
   /**Take the challenge and password, calculate the result, and store */
-  IeMd5Result(PString &challenge, PString &password);
+  IAX2IeMd5Result(PString &challenge, PString &password);
   
   /**Take the supplied Iax2Encrption arguement, calculate the result, and store */
-  IeMd5Result(Iax2Encryption & encryption);
+  IAX2IeMd5Result(IAX2Encryption & encryption);
   
   /**Initialize the internal structurees */
   void InitializeChallengePassword(const PString &newChallenge, const PString &newPassword);
@@ -1110,9 +1113,9 @@ class IeMd5Result : public IeString
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_md5Result; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.md5Result = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.md5Result = dataValue; }     
 
   /**GetAccess to the stomach, which is the concatanation of the various
      components used to make a key */
@@ -1126,17 +1129,17 @@ class IeMd5Result : public IeString
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the RSA challenge result*/
-class IeRsaResult : public IeString
+class IAX2IeRsaResult : public IAX2IeString
 {
-  PCLASSINFO(IeRsaResult, IeString);
+  PCLASSINFO(IAX2IeRsaResult, IAX2IeString);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeRsaResult(BYTE length, BYTE *srcData) : IeString(length, srcData) { };
+  IAX2IeRsaResult(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**Initialise to the supplied string value */
-  IeRsaResult(PString newValue) { SetData(newValue); }
+  IAX2IeRsaResult(PString newValue) { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1144,25 +1147,25 @@ class IeRsaResult : public IeString
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_rsaResult; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.rsaResult = dataValue; }
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.rsaResult = dataValue; }
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the apparent daddress of peer*/
-class IeApparentAddr : public IeSockaddrIn
+class IAX2IeApparentAddr : public IAX2IeSockaddrIn
 {
-  PCLASSINFO(IeApparentAddr, IeSockaddrIn);
+  PCLASSINFO(IAX2IeApparentAddr, IAX2IeSockaddrIn);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeApparentAddr(BYTE length, BYTE *srcData) : IeSockaddrIn(length, srcData) { };
+  IAX2IeApparentAddr(BYTE length, BYTE *srcData) : IAX2IeSockaddrIn(length, srcData) { };
   
   /**Desttructor, which does nothing */
-  ~IeApparentAddr() { };
+  ~IAX2IeApparentAddr() { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1170,22 +1173,22 @@ class IeApparentAddr : public IeSockaddrIn
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_apparentAddr; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.apparentAddr = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.apparentAddr = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the time when to refresh registration*/
-class IeRefresh : public IeShort
+class IAX2IeRefresh : public IAX2IeShort
 {
-  PCLASSINFO(IeRefresh, IeShort);
+  PCLASSINFO(IAX2IeRefresh, IAX2IeShort);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeRefresh(BYTE length, BYTE *srcData) : IeShort(length, srcData) { };
+  IAX2IeRefresh(BYTE length, BYTE *srcData) : IAX2IeShort(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1193,22 +1196,22 @@ class IeRefresh : public IeShort
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_refresh; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.refresh = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.refresh = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the dial plan status*/
-class IeDpStatus : public IeShort
+class IAX2IeDpStatus : public IAX2IeShort
 {
-  PCLASSINFO(IeDpStatus, IeShort);
+  PCLASSINFO(IAX2IeDpStatus, IAX2IeShort);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeDpStatus(BYTE length, BYTE *srcData) : IeShort(length, srcData) { };
+  IAX2IeDpStatus(BYTE length, BYTE *srcData) : IAX2IeShort(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1216,22 +1219,22 @@ class IeDpStatus : public IeShort
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_dpStatus; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.dpStatus = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.dpStatus = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains  the call number of peer*/
-class IeCallNo : public IeShort
+class IAX2IeCallNo : public IAX2IeShort
 {
-  PCLASSINFO(IeCallNo, IeShort);
+  PCLASSINFO(IAX2IeCallNo, IAX2IeShort);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeCallNo(BYTE length, BYTE *srcData) : IeShort(length, srcData) { };
+  IAX2IeCallNo(BYTE length, BYTE *srcData) : IAX2IeShort(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1239,28 +1242,28 @@ class IeCallNo : public IeShort
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_callNo; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.callNo = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.callNo = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the cause*/
-class IeCause : public IeString
+class IAX2IeCause : public IAX2IeString
 {
-  PCLASSINFO(IeCause, IeString);
+  PCLASSINFO(IAX2IeCause, IAX2IeString);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeCause(BYTE length, BYTE *srcData) : IeString(length, srcData) { };
+  IAX2IeCause(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**Construct with a predefined value (Typically used prior to transmission)*/
-  IeCause(PString & newValue) : IeString(newValue) { }
+  IAX2IeCause(PString & newValue) : IAX2IeString(newValue) { }
   
   /**Construct with a predefined value (Typically used prior to transmission)*/
-  IeCause(const char *newValue) : IeString(newValue) { }
+  IAX2IeCause(const char *newValue) : IAX2IeString(newValue) { }
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1268,22 +1271,22 @@ class IeCause : public IeString
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_cause; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.cause = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.cause = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains  an unknown IAX command*/
-class IeIaxUnknown : public IeByte
+class IAX2IeIaxUnknown : public IAX2IeByte
 {
-  PCLASSINFO(IeIaxUnknown, IeByte);
+  PCLASSINFO(IAX2IeIaxUnknown, IAX2IeByte);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeIaxUnknown(BYTE length, BYTE *srcData) : IeByte(length, srcData) { };
+  IAX2IeIaxUnknown(BYTE length, BYTE *srcData) : IAX2IeByte(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1291,22 +1294,22 @@ class IeIaxUnknown : public IeByte
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_iaxUnknown; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.iaxUnknown = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.iaxUnknown = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains how many messages are waiting*/
-class IeMsgCount : public IeShort
+class IAX2IeMsgCount : public IAX2IeShort
 {
-  PCLASSINFO(IeMsgCount, IeShort);
+  PCLASSINFO(IAX2IeMsgCount, IAX2IeShort);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeMsgCount(BYTE length, BYTE *srcData) : IeShort(length, srcData) { };
+  IAX2IeMsgCount(BYTE length, BYTE *srcData) : IAX2IeShort(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1314,22 +1317,22 @@ class IeMsgCount : public IeShort
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_msgCount; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.msgCount = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.msgCount = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains a request for auto-answering*/
-class IeAutoAnswer : public IeNone
+class IAX2IeAutoAnswer : public IAX2IeNone
 {
-  PCLASSINFO(IeAutoAnswer, IeNone);
+  PCLASSINFO(IAX2IeAutoAnswer, IAX2IeNone);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeAutoAnswer(BYTE length, BYTE *srcData) : IeNone(length, srcData) { };
+  IAX2IeAutoAnswer(BYTE length, BYTE *srcData) : IAX2IeNone(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1337,22 +1340,22 @@ class IeAutoAnswer : public IeNone
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_autoAnswer; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.autoAnswer = TRUE;; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.autoAnswer = TRUE;; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains a request for music on hold with Quelch*/
-class IeMusicOnHold : public IeNone
+class IAX2IeMusicOnHold : public IAX2IeNone
 {
-  PCLASSINFO(IeMusicOnHold, IeNone);
+  PCLASSINFO(IAX2IeMusicOnHold, IAX2IeNone);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeMusicOnHold(BYTE length, BYTE *srcData) : IeNone(length, srcData) { };
+  IAX2IeMusicOnHold(BYTE length, BYTE *srcData) : IAX2IeNone(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1360,22 +1363,22 @@ class IeMusicOnHold : public IeNone
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_musicOnHold; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.musicOnHold = TRUE; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.musicOnHold = TRUE; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains a transfer request identifier*/
-class IeTransferId : public IeInt
+class IAX2IeTransferId : public IAX2IeInt
 {
-  PCLASSINFO(IeTransferId, IeInt);
+  PCLASSINFO(IAX2IeTransferId, IAX2IeInt);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeTransferId(BYTE length, BYTE *srcData) : IeInt(length, srcData) { };
+  IAX2IeTransferId(BYTE length, BYTE *srcData) : IAX2IeInt(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1383,22 +1386,22 @@ class IeTransferId : public IeInt
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_transferId; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.transferId = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.transferId = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the referring DNIs*/
-class IeRdnis : public IeString
+class IAX2IeRdnis : public IAX2IeString
 {
-  PCLASSINFO(IeRdnis, IeString);
+  PCLASSINFO(IAX2IeRdnis, IAX2IeString);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeRdnis(BYTE length, BYTE *srcData) : IeString(length, srcData) { };
+  IAX2IeRdnis(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1406,22 +1409,22 @@ class IeRdnis : public IeString
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_rdnis; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.rdnis = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.rdnis = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains Provisioning - a great big data block */
-class IeProvisioning : public IeBlockOfData
+class IAX2IeProvisioning : public IAX2IeBlockOfData
 {
-  PCLASSINFO(IeProvisioning, IeBlockOfData);
+  PCLASSINFO(IAX2IeProvisioning, IAX2IeBlockOfData);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeProvisioning(BYTE length, BYTE *srcData) : IeBlockOfData   (length, srcData) { };
+  IAX2IeProvisioning(BYTE length, BYTE *srcData) : IAX2IeBlockOfData   (length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1429,22 +1432,22 @@ class IeProvisioning : public IeBlockOfData
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_provisioning; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &/*res*/) {  }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &/*res*/) {  }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains aes provisioning info*/
-class IeAesProvisioning : public IeNone
+class IAX2IeAesProvisioning : public IAX2IeNone
 {
-  PCLASSINFO(IeAesProvisioning, IeNone);
+  PCLASSINFO(IAX2IeAesProvisioning, IAX2IeNone);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeAesProvisioning(BYTE length, BYTE *srcData) : IeNone(length, srcData) { };
+  IAX2IeAesProvisioning(BYTE length, BYTE *srcData) : IAX2IeNone(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1452,22 +1455,22 @@ class IeAesProvisioning : public IeNone
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_aesProvisioning; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &/*res*/) {  }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &/*res*/) {  }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the date and time (in 32 bits)*/
-class IeDateTime : public IeDateAndTime
+class IAX2IeDateTime : public IAX2IeDateAndTime
 {
-  PCLASSINFO(IeDateTime, IeDateAndTime);
+  PCLASSINFO(IAX2IeDateTime, IAX2IeDateAndTime);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeDateTime(BYTE length, BYTE *srcData) : IeDateAndTime(length, srcData) { };
+  IAX2IeDateTime(BYTE length, BYTE *srcData) : IAX2IeDateAndTime(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1475,22 +1478,22 @@ class IeDateTime : public IeDateAndTime
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_dateTime; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.dateTime = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.dateTime = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the device type*/
-class IeDeviceType : public IeString
+class IAX2IeDeviceType : public IAX2IeString
 {
-  PCLASSINFO(IeDeviceType, IeString);
+  PCLASSINFO(IAX2IeDeviceType, IAX2IeString);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeDeviceType(BYTE length, BYTE *srcData) : IeString(length, srcData) { };
+  IAX2IeDeviceType(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1498,22 +1501,22 @@ class IeDeviceType : public IeString
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_deviceType; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.deviceType = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.deviceType = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the service identifier*/
-class IeServiceIdent : public IeString
+class IAX2IeServiceIdent : public IAX2IeString
 {
-  PCLASSINFO(IeServiceIdent, IeString);
+  PCLASSINFO(IAX2IeServiceIdent, IAX2IeString);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeServiceIdent(BYTE length, BYTE *srcData) : IeString(length, srcData) { };
+  IAX2IeServiceIdent(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1521,22 +1524,22 @@ class IeServiceIdent : public IeString
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_serviceIdent; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.serviceIdent = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.serviceIdent = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the firmware version*/
-class IeFirmwareVer : public IeShort
+class IAX2IeFirmwareVer : public IAX2IeShort
 {
-  PCLASSINFO(IeFirmwareVer, IeShort);
+  PCLASSINFO(IAX2IeFirmwareVer, IAX2IeShort);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeFirmwareVer(BYTE length, BYTE *srcData) : IeShort(length, srcData) { };
+  IAX2IeFirmwareVer(BYTE length, BYTE *srcData) : IAX2IeShort(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1544,25 +1547,25 @@ class IeFirmwareVer : public IeShort
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_firmwareVer; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.firmwareVer = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.firmwareVer = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains firmware block description*/
-class IeFwBlockDesc : public IeUInt
+class IAX2IeFwBlockDesc : public IAX2IeUInt
 {
-  PCLASSINFO(IeFwBlockDesc, IeUInt);
+  PCLASSINFO(IAX2IeFwBlockDesc, IAX2IeUInt);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeFwBlockDesc(BYTE length, BYTE *srcData) : IeUInt(length, srcData) { };
+  IAX2IeFwBlockDesc(BYTE length, BYTE *srcData) : IAX2IeUInt(length, srcData) { };
   
   /**Construct with a predefined value (Typically used prior to transmission)*/
-  IeFwBlockDesc(unsigned int newValue) : IeUInt(newValue) { }
+  IAX2IeFwBlockDesc(unsigned int newValue) : IAX2IeUInt(newValue) { }
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1570,22 +1573,22 @@ class IeFwBlockDesc : public IeUInt
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_fwBlockDesc; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.fwBlockDesc = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.fwBlockDesc = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the block of firmware data */
-class IeFwBlockData : public IeBlockOfData
+class IAX2IeFwBlockData : public IAX2IeBlockOfData
 {
-  PCLASSINFO(IeFwBlockData, IeBlockOfData);
+  PCLASSINFO(IAX2IeFwBlockData, IAX2IeBlockOfData);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeFwBlockData(BYTE length, BYTE *srcData) : IeBlockOfData(length, srcData) { };
+  IAX2IeFwBlockData(BYTE length, BYTE *srcData) : IAX2IeBlockOfData(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1593,25 +1596,25 @@ class IeFwBlockData : public IeBlockOfData
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_fwBlockData; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.fwBlockData = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.fwBlockData = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the Provisioning version*/
-class IeProvVer : public IeUInt
+class IAX2IeProvVer : public IAX2IeUInt
 {
-  PCLASSINFO(IeProvVer, IeUInt);
+  PCLASSINFO(IAX2IeProvVer, IAX2IeUInt);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeProvVer(BYTE length, BYTE *srcData) : IeUInt(length, srcData) { };
+  IAX2IeProvVer(BYTE length, BYTE *srcData) : IAX2IeUInt(length, srcData) { };
   
   /**Construct with a predefined value (Typically used prior to transmission)*/
-  IeProvVer(unsigned int newValue) : IeUInt(newValue) { }
+  IAX2IeProvVer(unsigned int newValue) : IAX2IeUInt(newValue) { }
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1619,22 +1622,22 @@ class IeProvVer : public IeUInt
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_provVer; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.provVer = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.provVer = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the calling presentation*/
-class IeCallingPres : public IeByte
+class IAX2IeCallingPres : public IAX2IeByte
 {
-  PCLASSINFO(IeCallingPres, IeByte);
+  PCLASSINFO(IAX2IeCallingPres, IAX2IeByte);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeCallingPres(BYTE length, BYTE *srcData) : IeByte(length, srcData) { };
+  IAX2IeCallingPres(BYTE length, BYTE *srcData) : IAX2IeByte(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1642,22 +1645,22 @@ class IeCallingPres : public IeByte
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_callingPres; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.callingPres = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.callingPres = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the calling type of number*/
-class IeCallingTon : public IeByte
+class IAX2IeCallingTon : public IAX2IeByte
 {
-  PCLASSINFO(IeCallingTon, IeByte);
+  PCLASSINFO(IAX2IeCallingTon, IAX2IeByte);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeCallingTon(BYTE length, BYTE *srcData) : IeByte(length, srcData) { };
+  IAX2IeCallingTon(BYTE length, BYTE *srcData) : IAX2IeByte(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1665,22 +1668,22 @@ class IeCallingTon : public IeByte
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_callingTon; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.callingTon = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.callingTon = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the calling transit network select */
-class IeCallingTns : public IeUShort
+class IAX2IeCallingTns : public IAX2IeUShort
 {
-  PCLASSINFO(IeCallingTns, IeUShort);
+  PCLASSINFO(IAX2IeCallingTns, IAX2IeUShort);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeCallingTns(BYTE length, BYTE *srcData) : IeUShort(length, srcData) { };
+  IAX2IeCallingTns(BYTE length, BYTE *srcData) : IAX2IeUShort(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1688,22 +1691,22 @@ class IeCallingTns : public IeUShort
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_callingTns; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.callingTns = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.callingTns = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the supported sampling rates*/
-class IeSamplingRate : public IeUShort
+class IAX2IeSamplingRate : public IAX2IeUShort
 {
-  PCLASSINFO(IeSamplingRate, IeUShort);
+  PCLASSINFO(IAX2IeSamplingRate, IAX2IeUShort);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeSamplingRate(BYTE length, BYTE *srcData) : IeUShort(length, srcData) { };
+  IAX2IeSamplingRate(BYTE length, BYTE *srcData) : IAX2IeUShort(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1711,30 +1714,30 @@ class IeSamplingRate : public IeUShort
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_samplingRate; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.samplingRate = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.samplingRate = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the encryption format*/
-class IeEncryption : public IeUShort
+class IAX2IeEncryption : public IAX2IeUShort
 {
-  PCLASSINFO(IeEncryption, IeUShort);
+  PCLASSINFO(IAX2IeEncryption, IAX2IeUShort);
  public:
   /**Specify the different encryption methods */
-  enum IeEncryptionMethod {
+  enum IAX2IeEncryptionMethod {
     encryptAes128 = 1    /*!< Specify to use AES 128 bit encryption */
   };
 
   /**Constructor to specify a particular encryption method */
-  IeEncryption(IeEncryptionMethod method = encryptAes128);
+  IAX2IeEncryption(IAX2IeEncryptionMethod method = encryptAes128);
 
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeEncryption(BYTE length, BYTE *srcData) : IeUShort(length, srcData) { };
+  IAX2IeEncryption(BYTE length, BYTE *srcData) : IAX2IeUShort(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1742,22 +1745,22 @@ class IeEncryption : public IeUShort
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_encryption; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.encryptionMethods = dataValue; }
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.encryptionMethods = dataValue; }
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the encryption key (raw)*/
-class IeEncKey : public IeString
+class IAX2IeEncKey : public IAX2IeString
 {
-  PCLASSINFO(IeEncKey, IeString);
+  PCLASSINFO(IAX2IeEncKey, IAX2IeString);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeEncKey(BYTE length, BYTE *srcData) : IeString(length, srcData) { };
+  IAX2IeEncKey(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1765,22 +1768,22 @@ class IeEncKey : public IeString
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_encKey; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.encKey = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.encKey = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains data for codec negotiation. */
-class IeCodecPrefs : public IeByte
+class IAX2IeCodecPrefs : public IAX2IeByte
 {
-  PCLASSINFO(IeCodecPrefs, IeByte);
+  PCLASSINFO(IAX2IeCodecPrefs, IAX2IeByte);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeCodecPrefs(BYTE length, BYTE *srcData) : IeByte(length, srcData) { };
+  IAX2IeCodecPrefs(BYTE length, BYTE *srcData) : IAX2IeByte(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1788,22 +1791,22 @@ class IeCodecPrefs : public IeByte
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_codecPrefs; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.codecPrefs = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.codecPrefs = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the received jitter */
-class IeReceivedJitter : public IeUInt
+class IAX2IeReceivedJitter : public IAX2IeUInt
 {
-  PCLASSINFO(IeReceivedJitter, IeUInt);
+  PCLASSINFO(IAX2IeReceivedJitter, IAX2IeUInt);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeReceivedJitter(BYTE length, BYTE *srcData) : IeUInt(length, srcData) { };
+  IAX2IeReceivedJitter(BYTE length, BYTE *srcData) : IAX2IeUInt(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1811,22 +1814,22 @@ class IeReceivedJitter : public IeUInt
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_recJitter; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.receivedJitter = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.receivedJitter = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the received loss */
-class IeReceivedLoss : public IeUInt
+class IAX2IeReceivedLoss : public IAX2IeUInt
 {
-  PCLASSINFO(IeReceivedLoss, IeUInt);
+  PCLASSINFO(IAX2IeReceivedLoss, IAX2IeUInt);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeReceivedLoss(BYTE length, BYTE *srcData) : IeUInt(length, srcData) { };
+  IAX2IeReceivedLoss(BYTE length, BYTE *srcData) : IAX2IeUInt(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1834,22 +1837,22 @@ class IeReceivedLoss : public IeUInt
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_recLoss; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.receivedLoss = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.receivedLoss = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the received frames */
-class IeReceivedFrames : public IeUInt
+class IAX2IeReceivedFrames : public IAX2IeUInt
 {
-  PCLASSINFO(IeReceivedFrames, IeUInt);
+  PCLASSINFO(IAX2IeReceivedFrames, IAX2IeUInt);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeReceivedFrames(BYTE length, BYTE *srcData) : IeUInt(length, srcData) { };
+  IAX2IeReceivedFrames(BYTE length, BYTE *srcData) : IAX2IeUInt(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1857,22 +1860,22 @@ class IeReceivedFrames : public IeUInt
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_recPackets; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.receivedPackets = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.receivedPackets = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the received delay */
-class IeReceivedDelay : public IeUShort
+class IAX2IeReceivedDelay : public IAX2IeUShort
 {
-  PCLASSINFO(IeReceivedDelay, IeUShort);
+  PCLASSINFO(IAX2IeReceivedDelay, IAX2IeUShort);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeReceivedDelay(BYTE length, BYTE *srcData) : IeUShort(length, srcData) { };
+  IAX2IeReceivedDelay(BYTE length, BYTE *srcData) : IAX2IeUShort(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1880,22 +1883,22 @@ class IeReceivedDelay : public IeUShort
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_recDelay; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.receivedDelay = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.receivedDelay = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the number of dropped frames */
-class IeDroppedFrames : public IeUInt
+class IAX2IeDroppedFrames : public IAX2IeUInt
 {
-  PCLASSINFO(IeDroppedFrames, IeUInt);
+  PCLASSINFO(IAX2IeDroppedFrames, IAX2IeUInt);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeDroppedFrames(BYTE length, BYTE *srcData) : IeUInt(length, srcData) { };
+  IAX2IeDroppedFrames(BYTE length, BYTE *srcData) : IAX2IeUInt(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1903,22 +1906,22 @@ class IeDroppedFrames : public IeUInt
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_recDropped; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.receivedDropped = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.receivedDropped = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the number of frames received out of order */
-class IeReceivedOoo : public IeUInt
+class IAX2IeReceivedOoo : public IAX2IeUInt
 {
-  PCLASSINFO(IeReceivedOoo, IeUInt);
+  PCLASSINFO(IAX2IeReceivedOoo, IAX2IeUInt);
  public:
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IeReceivedOoo(BYTE length, BYTE *srcData) : IeUInt(length, srcData) { };
+  IAX2IeReceivedOoo(BYTE length, BYTE *srcData) : IAX2IeUInt(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1926,34 +1929,34 @@ class IeReceivedOoo : public IeUInt
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_recOoo; }
   
-  /** Take the data from this Ie, and copy it into the IeData structure.
-      This is done on processing an incoming frame which contains Ie in the data section. */
-  virtual void StoreDataIn(IeData &res) { res.receivedOoo = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
+      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.receivedOoo = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
 
 
-PDECLARE_LIST (IeList, Ie *)
+PDECLARE_LIST (IAX2IeList, IAX2Ie *)
 #ifdef DOC_PLUS_PLUS 
 /**An array of IE* elements are stored in this list */
-class IeList : public Ie *
+class IAX2IeList : public IAX2Ie *
 {
 #endif
  public:
   /**Destructor, so all eleents are destroyed on destruction */
-  ~IeList();
+  ~IAX2IeList();
   
   /**Access method, get pointer to infromation element at index. 
      Returns NULL if index is out of bounds.
-     This will remove the specified Ie from the list. */
-  Ie *RemoveIeAt(PINDEX i);
+     This will remove the specified IAX2Ie from the list. */
+  IAX2Ie *RemoveIeAt(PINDEX i);
   
   /**Access method, get pointer to last information element in the list.
      Returns NULL if index is out of bounds.
-     This will remove the specified Ie from the list. */
-  Ie *RemoveLastIe();
+     This will remove the specified IAX2Ie from the list. */
+  IAX2Ie *RemoveLastIe();
   
   /**Initialisation - Objects are not automatically deleted on removal */
   void Initialise() {  DisallowDeleteObjects(); }
@@ -1967,14 +1970,14 @@ class IeList : public Ie *
   /**Test to see if list is empty - returns TRUE if no elements stored in this list */
   BOOL IsEmpty() { return GetSize() == 0; }
   
-  /**Add a new Ie to the list */
-  void AppendIe(Ie *newMember) { Append(newMember);}
+  /**Add a new IAX2Ie to the list */
+  void AppendIe(IAX2Ie *newMember) { Append(newMember);}
   
-  /**Get the number of bytes to store all these Ie's in a network packet */
+  /**Get the number of bytes to store all these IAX2Ie's in a network packet */
   int GetBinaryDataSize();
   
-  /**Get a pointer to the Ie which is stored at index i*/
-  Ie *GetIeAt(int i); 
+  /**Get a pointer to the IAX2Ie which is stored at index i*/
+  IAX2Ie *GetIeAt(int i); 
   
  protected:
   
