@@ -27,6 +27,9 @@
  *
  *
  * $Log: processor.cxx,v $
+ * Revision 1.13  2005/08/26 03:26:51  dereksmithies
+ * Add some tidyups from Adrian Sietsma.  Many thanks..
+ *
  * Revision 1.12  2005/08/26 03:07:38  dereksmithies
  * Change naming convention, so all class names contain the string "IAX2"
  *
@@ -568,21 +571,20 @@ void IAX2Processor::ProcessLists()
     ConnectToRemoteNode(nodeToCall);
   }
   
-  PString dtmfs = dtmfText.GetAndDelete();
-  
-  while(dtmfs.GetLength() > 0) {
-    SendDtmfMessage(dtmfs[0]);
-    dtmfs = dtmfs.Mid(1);
+  if (!dtmfText.IsEmpty()) {
+    PString dtmfs = dtmfText.GetAndDelete();
+   PTRACE(3, "Have " << dtmfs << " DTMF chars to send");
+    for (PINDEX i = 0; i < dtmfs.GetLength(); i++)
+      SendDtmfMessage(dtmfs[i]);
   }  
 
-  PStringArray sendList; // text messages
-  textList.GetAllDeleteAll(sendList);
-
-  PTRACE(3, "Have " << sendList.GetSize() << " text strings to send");
-  while(sendList.GetSize() > 0) {
-    PString text = *(PString *)sendList.RemoveAt(0);
-    SendTextMessage(text);    
-  }
+  if (!textList.IsEmpty()) {
+   PStringArray sendList; // text messages
+   textList.GetAllDeleteAll(sendList);
+   PTRACE(3, "Have " << sendList.GetSize() << " text strings to send");
+   for (PINDEX i = 0; i < sendList.GetSize(); i++)
+     SendTextMessage(sendList[i]);    
+   }
 
   if (answerCallNow)
     SendAnswerMessageToRemoteNode();
@@ -627,11 +629,11 @@ void IAX2Processor::SendSoundMessage(PBYTEArray *sound)
   PTRACE(3, "This frame is compresed bytes of " << audioCompressedBytes);
 
   PINDEX thisDuration = (PINDEX)((sound->GetSize() * audioFrameDuration) / audioCompressedBytes);
-  long thisTimeStamp = (PTimer::Tick() - callStartTick).GetMilliSeconds();
+  DWORD thisTimeStamp = (DWORD)(PTimer::Tick() - callStartTick).GetMilliSeconds();
   PTRACE(3, "This frame is duration " << thisDuration << " ms   at time " << thisTimeStamp);
 
   thisTimeStamp = ((thisTimeStamp + (thisDuration > 1))/thisDuration) * thisDuration;
-  long lastTimeStamp = thisTimeStamp - thisDuration;
+  DWORD lastTimeStamp = thisTimeStamp - thisDuration;
 
   BOOL sendFullFrame =  ((thisTimeStamp - lastSentAudioFrameTime) > 65536)
                         || ((thisTimeStamp & 0xffff) < (lastTimeStamp & 0xffff))
