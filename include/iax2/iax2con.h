@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2con.h,v $
+ *  Revision 1.5  2005/08/26 03:07:38  dereksmithies
+ *  Change naming convention, so all class names contain the string "IAX2"
+ *
  *  Revision 1.4  2005/08/25 03:26:06  dereksmithies
  *  Add patch from Adrian Sietsma to correctly set the packet timestamps under windows.
  *  Many thanks.
@@ -97,11 +100,11 @@ class IAX2Connection : public OpalConnection
   //@{
   
   /**Handle a received IAX frame. This may be a mini frame or full frame */
-  void IncomingEthernetFrame (Frame *frame);
+  void IncomingEthernetFrame (IAX2Frame *frame);
   
   /**Test to see if it is a status query type iax frame (eg lagrq) and handle it. If the frame
      is a status query, and it is handled, return TRUE */
-  static BOOL IsStatusQueryEthernetFrame(Frame *frame);
+  static BOOL IsStatusQueryEthernetFrame(IAX2Frame *frame);
     
   /**Return reference to the endpoint class */
   IAX2EndPoint & GetEndPoint() { return endpoint; }
@@ -145,7 +148,7 @@ class IAX2Connection : public OpalConnection
   /** sending text fullframes **/
   virtual BOOL SendUserInputString(const PString & value );
   
-  /** sending dtmf  - which is 1 char per FullFrameDtmf on the frame.**/
+  /** sending dtmf  - which is 1 char per IAX2FullFrameDtmf on the frame.**/
   virtual BOOL SendUserInputTone(char tone, unsigned duration );
 
 
@@ -154,7 +157,7 @@ class IAX2Connection : public OpalConnection
   void AcceptIncomingCall();
   
   /**Report if this Connection is still active */
-  BOOL IsTerminated() { return iaxProcessor->IsTerminated(); }
+  BOOL IsTerminated() { return iax2Processor->IsTerminated(); }
   
 
   /**Indicate to remote endpoint an alert is in progress.  If this is
@@ -217,11 +220,11 @@ class IAX2Connection : public OpalConnection
   void SetCallToken(PString newToken);
 
   /**Return the string that identifies this IAX2Connection instance */
-  PString GetCallToken() { return iaxProcessor->GetCallToken(); }
+  PString GetCallToken() { return iax2Processor->GetCallToken(); }
 
-  /**Transmit Frame to remote endpoint,
+  /**Transmit IAX2Frame to remote endpoint,
     It is only called by the the IAXProcessor class. */
-  void TransmitFrameToRemoteEndpoint(Frame *src);
+  void TransmitFrameToRemoteEndpoint(IAX2Frame *src);
  
   /**Handle a sound packet received from the sound device. 
      
@@ -229,17 +232,17 @@ class IAX2Connection : public OpalConnection
   void PutSoundPacketToNetwork(PBYTEArray *sund);
 
   /**Handle a sound packet received from the network.
-     Return the media frame (MiniFrame or FullFrame) to the audio play stream */
-  Frame *GetSoundPacketFromNetwork() { return iaxProcessor->GetSoundPacketFromNetwork(); }
+     Return the media frame (IAX2MiniFrame or IAX2FullFrame) to the audio play stream */
+  IAX2Frame *GetSoundPacketFromNetwork() { return iax2Processor->GetSoundPacketFromNetwork(); }
 
   /**Get information on Remote class (remote node address & port + source & dest call number.) */
-  Remote & GetRemoteInfo() { return iaxProcessor->GetRemoteInfo(); }
+  IAX2Remote & GetRemoteInfo() { return iax2Processor->GetRemoteInfo(); }
 
   /**Get the sequence number info (inSeqNo and outSeqNo) */
-  SequenceNumbers & GetSequenceInfo() { return iaxProcessor->GetSequenceInfo(); }
+  IAX2SequenceNumbers & GetSequenceInfo() { return iax2Processor->GetSequenceInfo(); }
   
   /**Get the call start time */
-  const PTimeInterval & GetCallStartTick() { return iaxProcessor->GetCallStartTick(); } 
+  const PTimeInterval & GetCallStartTick() { return iax2Processor->GetCallStartTick(); } 
 
   /**Call back for an incoming call.
      This function is used for an application to control the answering of
@@ -389,7 +392,7 @@ class IAX2Connection : public OpalConnection
   OpalMediaFormatList localMediaFormats;
     
   /**The thread that processes the list of pending frames on this class */
-  IAX2Processor * iaxProcessor;
+  IAX2Processor * iax2Processor;
 
   //@}
 };

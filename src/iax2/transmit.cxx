@@ -26,6 +26,9 @@
  *
  *
  *  $Log: transmit.cxx,v $
+ *  Revision 1.2  2005/08/26 03:07:38  dereksmithies
+ *  Change naming convention, so all class names contain the string "IAX2"
+ *
  *  Revision 1.1  2005/07/30 07:01:33  csoutheren
  *  Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
  *  Thanks to Derek Smithies of Indranet Technologies Ltd. for
@@ -46,7 +49,7 @@
 
 #define new PNEW
 
-Transmit::Transmit(IAX2EndPoint & _newEndpoint, PUDPSocket & _newSocket)
+IAX2Transmit::IAX2Transmit(IAX2EndPoint & _newEndpoint, PUDPSocket & _newSocket)
   : PThread(1000, NoAutoDeleteThread),
      ep(_newEndpoint),
      sock(_newSocket)
@@ -60,7 +63,7 @@ Transmit::Transmit(IAX2EndPoint & _newEndpoint, PUDPSocket & _newSocket)
   Resume();
 }
 
-Transmit::~Transmit()
+IAX2Transmit::~IAX2Transmit()
 {
   keepGoing = FALSE;
   activate.Signal();
@@ -76,7 +79,7 @@ Transmit::~Transmit()
 }
 
 
-void Transmit::SendFrame(Frame *newFrame)
+void IAX2Transmit::SendFrame(IAX2Frame *newFrame)
 {
   PTRACE(5,"Process request to send frame " << newFrame->IdString());
   
@@ -86,18 +89,18 @@ void Transmit::SendFrame(Frame *newFrame)
   activate.Signal();
 }
 
-void Transmit::PurgeMatchingFullFrames(Frame *newFrame)
+void IAX2Transmit::PurgeMatchingFullFrames(IAX2Frame *newFrame)
 {
-  if (!PIsDescendant(newFrame, FullFrame))
+  if (!PIsDescendant(newFrame, IAX2FullFrame))
     return;
   
   PTRACE(4, "Purge frames matching  received " << newFrame->IdString());
-  ackingFrames.DeleteMatchingSendFrame((FullFrame *)newFrame);
+  ackingFrames.DeleteMatchingSendFrame((IAX2FullFrame *)newFrame);
 }
 
-void Transmit::Main()
+void IAX2Transmit::Main()
 {
-  SetThreadName("Transmit");
+  SetThreadName("IAX2Transmit");
   while(keepGoing) {
     activate.Wait();
 
@@ -110,11 +113,11 @@ void Transmit::Main()
   
 }
 
-void Transmit::ProcessAckingList()
+void IAX2Transmit::ProcessAckingList()
 {
   PTRACE(3,"TASK 1 of 2: ackingFrameList");
   
-  FrameList framesToSend;
+  IAX2FrameList framesToSend;
   framesToSend.Initialise();
   
   ackingFrames.GetResendFramesDeleteOldFrames(framesToSend);
@@ -124,31 +127,31 @@ void Transmit::ProcessAckingList()
   sendNowFrames.GrabContents(framesToSend);
 }
 
-void Transmit::ReportLists()
+void IAX2Transmit::ReportLists()
 {
-  PTRACE(3, "Transmit\tSend now frames is: ");
+  PTRACE(3, "IAX2Transmit\tSend now frames is: ");
   sendNowFrames.ReportList();
-  PTRACE(3, "Transmit\tAckingFrames is:");
+  PTRACE(3, "IAX2Transmit\tAckingFrames is:");
   ackingFrames.ReportList();
 }
 
-void Transmit::ProcessSendList()
+void IAX2Transmit::ProcessSendList()
 {
   PTRACE(3,"TASK 2 of 2: ProcessSendList");
   PTRACE(3,"SendList has " << sendNowFrames.GetSize() << " elements");
   
   for(;;) {
-    Frame * active = sendNowFrames.GetLastFrame();
+    IAX2Frame * active = sendNowFrames.GetLastFrame();
     if (active == NULL) {
-      PTRACE(3, "Transmit has emptied the sendNowFrames list, so finish (for now)");
+      PTRACE(3, "IAX2Transmit has emptied the sendNowFrames list, so finish (for now)");
       break;
     }
-    PTRACE(3, "Transmit\tProcess (or send) frame " << active->IdString());
+    PTRACE(3, "IAX2Transmit\tProcess (or send) frame " << active->IdString());
 
     BOOL isFullFrame = FALSE;
-    if (PIsDescendant(active, FullFrame)) {
+    if (PIsDescendant(active, IAX2FullFrame)) {
       isFullFrame = TRUE;
-      FullFrame *f= (FullFrame *)active;
+      IAX2FullFrame *f= (IAX2FullFrame *)active;
       if (f->DeleteFrameNow()) {
 	PTRACE(6, "This frame has timed out, so do not transmit" <<  f->IdString());
 	delete f;
@@ -168,7 +171,7 @@ void Transmit::ProcessSendList()
       continue;
     }
     
-    FullFrame *f= (FullFrame *)active;
+    IAX2FullFrame *f= (IAX2FullFrame *)active;
     if (f->IsAckFrame()) {
       PTRACE(3, "Delete this frame as it is an ack frame, and continue" << f->IdString());
       delete f;

@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2ep.h,v $
+ *  Revision 1.4  2005/08/26 03:07:38  dereksmithies
+ *  Change naming convention, so all class names contain the string "IAX2"
+ *
  *  Revision 1.3  2005/08/24 01:38:38  dereksmithies
  *  Add encryption, iax2 style. Numerous tidy ups. Use the label iax2, not iax
  *
@@ -54,24 +57,24 @@
 #include <opal/endpoint.h>
 #include <iax2/iax2con.h>
 
-class Receiver;
-class Transmit;
+class IAX2Receiver;
+class IAX2Transmit;
 
 /** A class to take frames from the transmitter, and disperse them to
     the appropriate IAX2Connection class.  This class calls a method in
     the IAX2EndPoint to do the dispersal. */
-class IncomingEthernetFrames : public PThread
+class IAX2IncomingEthernetFrames : public PThread
 {
-  PCLASSINFO(IncomingEthernetFrames, PThread);
+  PCLASSINFO(IAX2IncomingEthernetFrames, PThread);
 public:
 
   /**@name Constructors/destructors*/
   //@{
   /**Construct a distributor, to send packets on to the relevant connection */
-  IncomingEthernetFrames();
+  IAX2IncomingEthernetFrames();
    
   /**Destroy the distributor */
-  ~IncomingEthernetFrames() { }
+  ~IAX2IncomingEthernetFrames() { }
 
   /**@name general worker methods*/
   //@{
@@ -181,14 +184,14 @@ class IAX2EndPoint : public OpalEndPoint
   BOOL Initialise();
 
   /**Handle a received IAX frame. This may be a mini frame or full frame */
-  virtual void IncomingEthernetFrame (Frame *frame);
+  virtual void IncomingEthernetFrame (IAX2Frame *frame);
   
   /**A simple test to report if the connection associated with this
      frame is still alive. This test is used when transmitting the
      frame. If the connection is gone, don't bother transmitting the
      frame. There are exceptins to this rule, such as when a hangup
      packet is sent (which is after the connections has died. */
-  BOOL ConectionForFrameIsAlive(Frame *f);
+  BOOL ConectionForFrameIsAlive(IAX2Frame *f);
   
   /**Request a new src call number, one that is different to all other src
      call numbers for this invocation of the program.*/
@@ -202,10 +205,10 @@ class IAX2EndPoint : public OpalEndPoint
   WORD ListenPortNumber()  { return 4569; }
       
   /**Pointer to the transmitter class, which is always valid*/
-  Transmit *transmitter;
+  IAX2Transmit *transmitter;
   
   /**Pointer to the receiver class, which is always valid*/
-  Receiver    *receiver;
+  IAX2Receiver    *receiver;
   
   /**Report the local username*/
   PString GetLocalUserName() { return localUserName; }
@@ -228,7 +231,7 @@ class IAX2EndPoint : public OpalEndPoint
   /**Return True if a connection (which matches this Frame ) can be
      found. This check is called prior to transmission of this
      frame. */
-  BOOL ConnectionForFrameIsAlive(Frame *f);
+  BOOL ConnectionForFrameIsAlive(IAX2Frame *f);
   
   /**Get out sequence number to use on status query frames*/
   PINDEX GetOutSequenceNumberForStatusQuery();
@@ -249,8 +252,7 @@ class IAX2EndPoint : public OpalEndPoint
     The transport arguement is ignore. In Iax2, this method is void, as no value is returned.
     Further, in iax2, we process the incoming frame.
     */
-  void NewIncomingConnection(
-			     Frame *f  /// Frame carrying the new request.
+  void NewIncomingConnection(IAX2Frame *f  /// Frame carrying the new request.
 			     );
 
 
@@ -284,7 +286,7 @@ class IAX2EndPoint : public OpalEndPoint
   
       [iax2:]{username@][transport$]address[/extension][+context]
   */
-  enum RemoteAddressFields {
+  enum IAX2RemoteAddressFields {
     protoIndex     = 0,     /*!< the protocol, or iax2: field            */
     userIndex      = 1,     /*!< the username, or alias field            */
     transportIndex = 2,     /*!< the transport, or transport field       */
@@ -324,11 +326,11 @@ class IAX2EndPoint : public OpalEndPoint
      be, this thread will create a new conneciton (to cope with a new
      incoming call) and add the new connections to the internal
      list. */
-  IncomingEthernetFrames incomingFrameHandler;
+  IAX2IncomingEthernetFrames incomingFrameHandler;
 
   /**List of iax packets which has been read from the ethernet, and
      is to be sent to the matching IAX2Connection */
-  FrameList   packetsReadFromEthernet;
+  IAX2FrameList   packetsReadFromEthernet;
   
   /**The socket on which all data is sent/received.*/
   PUDPSocket  *sock;
@@ -361,13 +363,13 @@ class IAX2EndPoint : public OpalEndPoint
      destination call to handle them. */
   IAX2Processor * specialPacketHandler;
     
-  /**For the supplied Frame, pass it to a connection in the connectionsActive structure.
+  /**For the supplied IAX2Frame, pass it to a connection in the connectionsActive structure.
      If no matching connection is found, return FALSE;
      
      If a matching connections is found, give the frame to the
      connection (for the connection to process) and return TRUE;
   */
-  BOOL ProcessInMatchingConnection(Frame *f);  
+  BOOL ProcessInMatchingConnection(IAX2Frame *f);  
   
   /**The TokenTranslationDict may need a new entry. Examine
      the list of active connections, to see if any match this frame.
@@ -376,7 +378,7 @@ class IAX2EndPoint : public OpalEndPoint
      If a matching connection is found in connectionsActive, create a
      new translation entry and return TRUE. The connection, after
      processing the frame, will then delete the frame. */
-  BOOL AddNewTranslationEntry(Frame *f);
+  BOOL AddNewTranslationEntry(IAX2Frame *f);
   
   /**tokenTable is a hack to allow IAX2 to fit in with one of the
      demands of the opal library. 

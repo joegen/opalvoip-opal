@@ -27,6 +27,9 @@
  *
  *
  * $Log: remote.cxx,v $
+ * Revision 1.5  2005/08/26 03:07:38  dereksmithies
+ * Change naming convention, so all class names contain the string "IAX2"
+ *
  * Revision 1.4  2005/08/24 13:06:19  rjongbloed
  * Added configuration define for AEC encryption
  *
@@ -57,7 +60,7 @@
 #define new PNEW
 
 
-Remote::Remote()
+IAX2Remote::IAX2Remote()
 {
   sourceCallNumber  = callNumberUndefined;
   destCallNumber    = callNumberUndefined;
@@ -67,7 +70,7 @@ Remote::Remote()
 
 
 
-void Remote::Assign(Remote & source)
+void IAX2Remote::Assign(IAX2Remote & source)
 {
   destCallNumber   = source.SourceCallNumber();
   sourceCallNumber = source.DestCallNumber();
@@ -75,7 +78,7 @@ void Remote::Assign(Remote & source)
   remotePort       = source.RemotePort();
 }
 
-BOOL Remote::operator==(Remote & other)
+BOOL IAX2Remote::operator==(IAX2Remote & other)
 {
   if (remoteAddress != other.RemoteAddress()) {
     PTRACE(3, "Comparison of two remotes " << endl << other << endl << (*this) );
@@ -104,7 +107,7 @@ BOOL Remote::operator==(Remote & other)
   return TRUE;
 }
 
-BOOL Remote::operator*=(Remote & other)
+BOOL IAX2Remote::operator*=(IAX2Remote & other)
 {
   PTRACE(6, "Incoming ethernet frame. Compare" << endl << other << endl << (*this) );
   
@@ -130,58 +133,58 @@ BOOL Remote::operator*=(Remote & other)
 }
 
 
-BOOL Remote::operator!=(Remote & other)
+BOOL IAX2Remote::operator!=(IAX2Remote & other)
 {
   return !(*this == other);
 }
 
-void Remote::PrintOn(ostream & strm) const
+void IAX2Remote::PrintOn(ostream & strm) const
 {
   strm << "src call number" << sourceCallNumber 
        << "        Dest call number" << destCallNumber 
        << "        remote address" << remoteAddress 
-       << "                Remote port" << remotePort ;
+       << "        Remote port" << remotePort ;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
  //paranoia here. Use brackets to guarantee the order of calculation.
-FrameIdValue::FrameIdValue(PINDEX timeStamp, PINDEX seqVal)
+IAX2FrameIdValue::IAX2FrameIdValue(PINDEX timeStamp, PINDEX seqVal)
 {
   value = (timeStamp << 8) + (seqVal & 0xff);
 }
 
-FrameIdValue::FrameIdValue(PINDEX val)
+IAX2FrameIdValue::IAX2FrameIdValue(PINDEX val)
 {
   value = val;
 }
 
 
-PINDEX FrameIdValue::GetPlainSequence() const
+PINDEX IAX2FrameIdValue::GetPlainSequence() const
 {
   return (PINDEX)(value & P_MAX_INDEX);
 }
 
-PINDEX FrameIdValue::GetTimeStamp() const
+PINDEX IAX2FrameIdValue::GetTimeStamp() const
 {
   return (PINDEX)(value >> 8);            
 }
 
-PINDEX FrameIdValue::GetSequenceVal() const 
+PINDEX IAX2FrameIdValue::GetSequenceVal() const 
 {
   return (PINDEX)(value & 0xff);         
 }
 
-void FrameIdValue::PrintOn(ostream & strm) const 
+void IAX2FrameIdValue::PrintOn(ostream & strm) const 
 {
   strm << setw(8) << GetTimeStamp() << " --" << setw(4) << GetSequenceVal(); 
 }
 
 
-PObject::Comparison FrameIdValue::Compare(const PObject & obj) const
+PObject::Comparison IAX2FrameIdValue::Compare(const PObject & obj) const
 {
-  PAssert(PIsDescendant(&obj, FrameIdValue), PInvalidCast);
-  const FrameIdValue & other = (const FrameIdValue &)obj;
+  PAssert(PIsDescendant(&obj, IAX2FrameIdValue), PInvalidCast);
+  const IAX2FrameIdValue & other = (const IAX2FrameIdValue &)obj;
  
   if ((value > 224) && (other.value < 32))
     return LessThan;   //value has wrapped around 256, other has not.
@@ -199,42 +202,42 @@ PObject::Comparison FrameIdValue::Compare(const PObject & obj) const
 } 
 
 ////////////////////////////////////////////////////////////////////////////////
-BOOL PacketIdList::Contains(FrameIdValue &src)
+BOOL IAX2PacketIdList::Contains(IAX2FrameIdValue &src)
 {
 	PINDEX idex = GetValuesIndex(src);
 	return idex != P_MAX_INDEX;
 }
 
-PINDEX PacketIdList::GetFirstValue()
+PINDEX IAX2PacketIdList::GetFirstValue()
 {
   if (GetSize() == 0)
     return 255;
 
-  return ((FrameIdValue *)GetAt(0))->GetPlainSequence();
+  return ((IAX2FrameIdValue *)GetAt(0))->GetPlainSequence();
 }
 
-void PacketIdList::RemoveOldContiguousValues()
+void IAX2PacketIdList::RemoveOldContiguousValues()
 {
   BOOL contiguous = TRUE;
   while((GetSize() > 1) && contiguous)  {
-    PINDEX first = ((FrameIdValue *)GetAt(0))->GetPlainSequence();
-    PINDEX second = ((FrameIdValue *)GetAt(1))->GetPlainSequence();
+    PINDEX first = ((IAX2FrameIdValue *)GetAt(0))->GetPlainSequence();
+    PINDEX second = ((IAX2FrameIdValue *)GetAt(1))->GetPlainSequence();
     contiguous = ((first + 1) & 0xff) == second;
     if (contiguous)
       RemoveAt(0);
   }
 }
 
-void PacketIdList::PrintOn(ostream & strm) const
+void IAX2PacketIdList::PrintOn(ostream & strm) const
 {
   strm << "Packet Id List Size=" << GetSize() << endl;
   for(PINDEX i = 0; i < GetSize(); i++)
-    strm << (*((FrameIdValue *)GetAt(i))) << endl;
+    strm << (*((IAX2FrameIdValue *)GetAt(i))) << endl;
 }
 
-void PacketIdList::AppendNewFrame(FullFrame &src)
+void IAX2PacketIdList::AppendNewFrame(IAX2FullFrame &src)
 {
-  FrameIdValue *f = new FrameIdValue(src.GetSequenceInfo().OutSeqNo());
+  IAX2FrameIdValue *f = new IAX2FrameIdValue(src.GetSequenceInfo().OutSeqNo());
   PTRACE(3, "AppendNewFrame " << (*f));
 
   if(GetSize() == 0) {
@@ -250,9 +253,9 @@ void PacketIdList::AppendNewFrame(FullFrame &src)
     return;
   }
 
-  if (((FrameIdValue *)GetAt(0))->Compare(*f) == GreaterThan) {
+  if (((IAX2FrameIdValue *)GetAt(0))->Compare(*f) == GreaterThan) {
     PTRACE(3, "SeqNos\tHave already processed " << (*f));
-    PTRACE(3, "SeqNos\tFirst frame in que " << (*(FrameIdValue *)GetAt(0)));
+    PTRACE(3, "SeqNos\tFirst frame in que " << (*(IAX2FrameIdValue *)GetAt(0)));
     PTRACE(3, "SeqNos\tFrame just read is " << (*f));
     delete f;
     return;
@@ -267,7 +270,7 @@ void PacketIdList::AppendNewFrame(FullFrame &src)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void SequenceNumbers::ZeroAllValues()
+void IAX2SequenceNumbers::ZeroAllValues()
 {
   PWaitAndSignal m(mutex);
 
@@ -278,7 +281,7 @@ void SequenceNumbers::ZeroAllValues()
 
 
 
-BOOL  SequenceNumbers::operator != (SequenceNumbers &other)
+BOOL  IAX2SequenceNumbers::operator != (IAX2SequenceNumbers &other)
 {
   PWaitAndSignal m(mutex);
   if (inSeqNo == other.InSeqNo())
@@ -296,13 +299,13 @@ BOOL  SequenceNumbers::operator != (SequenceNumbers &other)
   return TRUE;
 }
 
-void SequenceNumbers::SetAckSequenceInfo(SequenceNumbers & other)
+void IAX2SequenceNumbers::SetAckSequenceInfo(IAX2SequenceNumbers & other)
 {
   PWaitAndSignal m(mutex);
   outSeqNo = other.InSeqNo();
 }
 
-BOOL SequenceNumbers::operator == (SequenceNumbers &other)
+BOOL IAX2SequenceNumbers::operator == (IAX2SequenceNumbers &other)
 {
   PWaitAndSignal m(mutex);
   if ((inSeqNo == other.InSeqNo()) && (outSeqNo == other.OutSeqNo()))
@@ -316,7 +319,7 @@ BOOL SequenceNumbers::operator == (SequenceNumbers &other)
 }
 
 
-void SequenceNumbers::MassageSequenceForSending(FullFrame &src)
+void IAX2SequenceNumbers::MassageSequenceForSending(IAX2FullFrame &src)
 {
   PWaitAndSignal m(mutex);
 
@@ -343,7 +346,7 @@ void SequenceNumbers::MassageSequenceForSending(FullFrame &src)
   outSeqNo++;
 }
 
-BOOL SequenceNumbers::IncomingMessageIsOk(FullFrame &src)
+BOOL IAX2SequenceNumbers::IncomingMessageIsOk(IAX2FullFrame &src)
 {
   PWaitAndSignal m(mutex);
 
@@ -356,14 +359,14 @@ BOOL SequenceNumbers::IncomingMessageIsOk(FullFrame &src)
 
 
 
-void SequenceNumbers::CopyContents(SequenceNumbers &src)
+void IAX2SequenceNumbers::CopyContents(IAX2SequenceNumbers &src)
 {
   PWaitAndSignal m(mutex);
   inSeqNo = src.InSeqNo();
   outSeqNo = src.OutSeqNo();
 }
 
-PString SequenceNumbers::AsString() const
+PString IAX2SequenceNumbers::AsString() const
 {
   PWaitAndSignal m(mutex);
   PStringStream  res;
@@ -372,42 +375,42 @@ PString SequenceNumbers::AsString() const
   return res;
 }
 
-void SequenceNumbers::PrintOn(ostream & strm) const
+void IAX2SequenceNumbers::PrintOn(ostream & strm) const
 {
   strm << AsString();
 }
 
-PINDEX SequenceNumbers::InSeqNo() 
+PINDEX IAX2SequenceNumbers::InSeqNo() 
 { 
   PWaitAndSignal m(mutex);
   return inSeqNo; 
 }
   
-PINDEX SequenceNumbers::OutSeqNo() 
+PINDEX IAX2SequenceNumbers::OutSeqNo() 
 {
   PWaitAndSignal m(mutex);
   return outSeqNo; 
 }
   
-BOOL SequenceNumbers::IsSequenceNosZero() 
+BOOL IAX2SequenceNumbers::IsSequenceNosZero() 
 { 
   PWaitAndSignal m(mutex);
   return ((inSeqNo & 0xff) == 0) && ((outSeqNo & 0xff) == 0); 
 }
 
-void SequenceNumbers::SetInSeqNo(PINDEX newVal) 
+void IAX2SequenceNumbers::SetInSeqNo(PINDEX newVal) 
 {
   PWaitAndSignal m(mutex);
   inSeqNo = newVal; 
 }
   
-void SequenceNumbers::SetOutSeqNo(PINDEX newVal) 
+void IAX2SequenceNumbers::SetOutSeqNo(PINDEX newVal) 
 {
   PWaitAndSignal m(mutex);
   outSeqNo = newVal;
 }
 
-void SequenceNumbers::SetInOutSeqNo(PINDEX inVal, PINDEX outVal)
+void IAX2SequenceNumbers::SetInOutSeqNo(PINDEX inVal, PINDEX outVal)
 {
   PWaitAndSignal m(mutex);
   
@@ -416,58 +419,58 @@ void SequenceNumbers::SetInOutSeqNo(PINDEX inVal, PINDEX outVal)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-Iax2Encryption::Iax2Encryption() 
+IAX2Encryption::IAX2Encryption() 
 { 
   encryptionEnabled = FALSE; 
 }
 
 
-void Iax2Encryption::SetEncryptionOn (BOOL newState) 
+void IAX2Encryption::SetEncryptionOn (BOOL newState) 
 { 
   encryptionEnabled = newState; 
   PTRACE(3, "Set encryption to " << PString(encryptionEnabled ? "On" : "Off"));
 }
 
-void Iax2Encryption::SetEncryptionKey(PString & newKey) 
+void IAX2Encryption::SetEncryptionKey(PString & newKey) 
 { 
   encryptionKey = newKey; 
   CalculateAesKeys();
 }
 
-void Iax2Encryption::SetChallengeKey(PString & newKey) 
+void IAX2Encryption::SetChallengeKey(PString & newKey) 
 { 
   challengeKey = newKey; 
   CalculateAesKeys();
 }
 
-const PString & Iax2Encryption::EncryptionKey() const 
+const PString & IAX2Encryption::EncryptionKey() const 
 { 
   return encryptionKey; 
 }
 
-const PString & Iax2Encryption::ChallengeKey() const 
+const PString & IAX2Encryption::ChallengeKey() const 
 { 
   return challengeKey; 
 }
 
-const BOOL Iax2Encryption::IsEncrypted() const
+const BOOL IAX2Encryption::IsEncrypted() const
 {
   return encryptionEnabled;
 }
 
 #if P_SSL_AES
-AES_KEY *Iax2Encryption::AesEncryptKey()
+AES_KEY *IAX2Encryption::AesEncryptKey()
 {
   return &aesEncryptKey; 
 }
 
-AES_KEY *Iax2Encryption::AesDecryptKey()
+AES_KEY *IAX2Encryption::AesDecryptKey()
 {
   return &aesDecryptKey;
 }
 #endif
 
-void Iax2Encryption::CalculateAesKeys()
+void IAX2Encryption::CalculateAesKeys()
 {
   if (encryptionKey.IsEmpty())
     return;
@@ -475,8 +478,9 @@ void Iax2Encryption::CalculateAesKeys()
   if (challengeKey.IsEmpty())
     return;
 
+
 #if P_SSL_AES
-  IeMd5Result ie(*this);
+  IAX2IeMd5Result ie(*this);
   PBYTEArray context = ie.GetDataBlock();
 
   PTRACE(6, "Decryption\tContext has a size of " << context.GetSize());

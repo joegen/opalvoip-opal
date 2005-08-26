@@ -27,6 +27,9 @@
  *
  *
  * $Log: iax2medstrm.cxx,v $
+ * Revision 1.3  2005/08/26 03:07:38  dereksmithies
+ * Change naming convention, so all class names contain the string "IAX2"
+ *
  * Revision 1.2  2005/08/24 01:38:38  dereksmithies
  * Add encryption, iax2 style. Numerous tidy ups. Use the label iax2, not iax
  *
@@ -139,7 +142,7 @@ BOOL OpalIAX2MediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & length)
     }
   }
   
-  Frame *res = connection.GetSoundPacketFromNetwork();
+  IAX2Frame *res = connection.GetSoundPacketFromNetwork();
   if ((res == NULL) && (length > 0)) {
     PTRACE(3, "Finished getting media data. Send " << length);
     return TRUE;

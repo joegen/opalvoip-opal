@@ -27,6 +27,9 @@
  *
  *
  * $Log: sound.cxx,v $
+ * Revision 1.2  2005/08/26 03:07:38  dereksmithies
+ * Change naming convention, so all class names contain the string "IAX2"
+ *
  * Revision 1.1  2005/07/30 07:01:33  csoutheren
  * Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
  * Thanks to Derek Smithies of Indranet Technologies Ltd. for
@@ -50,14 +53,14 @@
 
 #define new PNEW  
 ////////////////////////////////////////////////////////////////////////////////
-SoundList::~SoundList()
+IAX2SoundList::~IAX2SoundList()
 { 
   AllowDeleteObjects();
 }
 
 
 
-PBYTEArray * SoundList::GetLastEntry() 
+PBYTEArray * IAX2SoundList::GetLastEntry() 
 {
   PWaitAndSignal m(mutex);
   
@@ -69,14 +72,14 @@ PBYTEArray * SoundList::GetLastEntry()
   return (PBYTEArray *) RemoveAt(size - 1);
 }
 
-void SoundList::AddNewEntry(PBYTEArray *newElem)
+void IAX2SoundList::AddNewEntry(PBYTEArray *newElem)
 {
   PWaitAndSignal m(mutex);
   
   InsertAt(0, newElem);
 }
 
-void SoundList::GetAllDeleteAll(SoundList &dest)
+void IAX2SoundList::GetAllDeleteAll(IAX2SoundList &dest)
 {
   PWaitAndSignal m(mutex);
   while(PAbstractList::GetSize() > 0) {

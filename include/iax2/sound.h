@@ -26,6 +26,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: sound.h,v $
+ *  Revision 1.2  2005/08/26 03:07:38  dereksmithies
+ *  Change naming convention, so all class names contain the string "IAX2"
+ *
  *  Revision 1.1  2005/07/30 07:01:32  csoutheren
  *  Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
  *  Thanks to Derek Smithies of Indranet Technologies Ltd. for
@@ -46,7 +49,7 @@
 #pragma interface
 #endif
 
-class Frame;
+class IAX2Frame;
 class IAXConnection;
 class PSoundChannel;
 
@@ -59,16 +62,16 @@ class PSoundChannel;
    
    Old sound blocks are removed from the end of the list.
    
-   The SoundList is a thread safe storage of PBYTEArray structures.
+   The IAX2SoundList is a thread safe storage of PBYTEArray structures.
 */
-PDECLARE_LIST(SoundList, PBYTEArray *)
+PDECLARE_LIST(IAX2SoundList, PBYTEArray *)
 #ifdef DOC_PLUS_PLUS                           //This makes emacs bracket matching code happy.
-class SoundList : public PBYTEArray *
+class IAX2SoundList : public PBYTEArray *
 {
 #endif
  public:
   /**Destructor, which deletes all sound packets on this list*/
-  ~SoundList();
+  ~IAX2SoundList();
   
   /**Removing item from list will not automatically delete it */
   void Initialise() {  DisallowDeleteObjects(); }
@@ -82,7 +85,7 @@ class SoundList : public PBYTEArray *
   void AddNewEntry(PBYTEArray *newEntry);
   
   /**Return a copy of all entries, and purge list */
-  void GetAllDeleteAll(SoundList &dest);
+  void GetAllDeleteAll(IAX2SoundList &dest);
   
   /** Thread safe read of the size of the list */
   PINDEX GetSize() { PWaitAndSignal m(mutex); return PAbstractList::GetSize(); }

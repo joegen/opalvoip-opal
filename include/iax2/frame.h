@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: frame.h,v $
+ *  Revision 1.6  2005/08/26 03:07:38  dereksmithies
+ *  Change naming convention, so all class names contain the string "IAX2"
+ *
  *  Revision 1.5  2005/08/25 03:26:06  dereksmithies
  *  Add patch from Adrian Sietsma to correctly set the packet timestamps under windows.
  *  Many thanks.
@@ -53,24 +56,24 @@
 #define FRAME_H
 
 
-class Frame;
-class FrameList;
-class FullFrame;
-class FullFrameCng;
-class FullFrameDtmf;
-class FullFrameHtml;
-class FullFrameImage;
-class FullFrameNull;
-class FullFrameProtocol;
-class FullFrameSessionControl;
-class FullFrameText;
-class FullFrameVideo;
-class FullFrameVoice;
+class IAX2Frame;
+class IAX2FrameList;
+class IAX2FullFrame;
+class IAX2FullFrameCng;
+class IAX2FullFrameDtmf;
+class IAX2FullFrameHtml;
+class IAX2FullFrameImage;
+class IAX2FullFrameNull;
+class IAX2FullFrameProtocol;
+class IAX2FullFrameSessionControl;
+class IAX2FullFrameText;
+class IAX2FullFrameVideo;
+class IAX2FullFrameVoice;
 class IAX2EndPoint;
 class IAX2Processor;
-class IeList;
-class MiniFrame;
-class Transmitter;
+class IAX2IeList;
+class IAX2MiniFrame;
+class IAX2Transmitter;
 
 #include <iax2/ies.h>
 #include <iax2/remote.h>
@@ -84,15 +87,15 @@ class Transmitter;
 
 
 /**Base class for holding data to be sent to a remote endpoint*/
-class Frame :  public PObject
+class IAX2Frame :  public PObject
 {
-  PCLASSINFO(Frame, PObject);
+  PCLASSINFO(IAX2Frame, PObject);
  public:
   /**construction */
-  Frame(IAX2EndPoint &_endpoint);
+  IAX2Frame(IAX2EndPoint &_endpoint);
   
   /**Destructor - which is empty */
-  virtual ~Frame();
+  virtual ~IAX2Frame();
   
   /**Wait on the designated socket for an incoming UDP packet. This
      method is only called by the receiver. This method does NO interpretation*/
@@ -124,21 +127,21 @@ class Frame :  public PObject
   PINDEX DataSize() { return data.GetSize(); }
   
   /**Get the value of the Remote structure */
-  Remote & GetRemoteInfo() { return remote; }
+  IAX2Remote & GetRemoteInfo() { return remote; }
   
   /**Obtain a pointer to the current position in the incoming data array */
   const BYTE * GetDataPointer() { return data + currentReadIndex; }
   
-  /** Read the input frame, and create the correct MiniFrame,
+  /** Read the input frame, and create the correct IAX2MiniFrame,
       FullFrame, and set frame type variables.  If a password is
       supplied, decrypt the frame with this password
 
       This method will never delete the input frame.
       If the output is null, it failed to derive a result.*/
-  Frame * BuildAppropriateFrameType(Iax2Encryption &encryptionInfo);
+  IAX2Frame * BuildAppropriateFrameType(IAX2Encryption &encryptionInfo);
 
   /**Same as the preceeding function, except that encryption is off */
-  Frame * BuildAppropriateFrameType();
+  IAX2Frame * BuildAppropriateFrameType();
 
   /** How many bytes are unread in the incoming data array */
   PINDEX   GetUnReadBytes() { return data.GetSize() - currentReadIndex; }
@@ -175,7 +178,7 @@ class Frame :  public PObject
   virtual BOOL CallMustBeActive() { return TRUE; }     
   
   /**Specify the type of this frame. */
-  enum IaxFrameType {
+  enum IAX2FrameType {
     undefType        = 0,     /*!< full frame type is  Undefined                     */
     dtmfType         = 1,     /*!< full frame type is  DTMF                          */
     voiceType        = 2,     /*!< full frame type is  Audio                         */
@@ -192,9 +195,8 @@ class Frame :  public PObject
   
   /**Access the current value of the variable controlling frame type,
      which is used when reading data from the network socket. */
-  IaxFrameType GetFrameType() { return frameType; }
-  
-  
+  IAX2FrameType GetFrameType() { return frameType; }
+    
   /**Method supplied here to provide basis for descendant classes.
 
    Whenever a frame is transmitted, this method will be called.*/
@@ -216,7 +218,7 @@ class Frame :  public PObject
 
   /**Write the data in the variables to this frame's data array. If
      encryption is on, the data will be encrypted */
-  BOOL EncryptContents(Iax2Encryption &encData);
+  BOOL EncryptContents(IAX2Encryption &encData);
 
   /**Get the offset to the beginning of the encrypted region */
   virtual PINDEX GetEncryptionOffset();
@@ -226,13 +228,13 @@ class Frame :  public PObject
   /**Use the supplied encryptionKey, and data in storage, to decrypt this frame.
    
   Return False if the decryption fails, TRUE if the decryption works.*/
-  BOOL DecryptContents(Iax2Encryption & encryption);
+  BOOL DecryptContents(IAX2Encryption & encryption);
 
   /**Specification of the location (address, call number etc) of the far endpoint */
-  Remote  remote;
+  IAX2Remote  remote;
   
   /**Variable specifying the IAX type of frame that this is. Used only in reading from the network */
-  IaxFrameType frameType;
+  IAX2FrameType frameType;
   
   /** Read 1 byte from the internal area, (Internal area is filled when reading the packet in). Big Endian.*/
   BOOL          Read1Byte(BYTE & res);
@@ -304,16 +306,16 @@ class Frame :  public PObject
 
 /////////////////////////////////////////////////////////////////////////////    
 /**Class to manage a mini frame, which is sent unreliable to the remote endpoint*/
-class MiniFrame : public Frame
+class IAX2MiniFrame : public IAX2Frame
 {
-  PCLASSINFO(MiniFrame, Frame);
+  PCLASSINFO(IAX2MiniFrame, IAX2Frame);
  public:
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  MiniFrame(Frame & srcFrame);
+  IAX2MiniFrame(IAX2Frame & srcFrame);
   
   /** Construction from an endpoint, to create an empty frame. */
-  MiniFrame(IAX2EndPoint & _endpoint); 
+  IAX2MiniFrame(IAX2EndPoint & _endpoint); 
   
   /**Construction from an encoded audio array (stored in a
      PBYTEArray), in preparation to sending to remote node.  The
@@ -322,10 +324,10 @@ class MiniFrame : public Frame
      TimeStamp will be calculated from time since call started, if the users timestamp is 0.
      If the users timeStamp is non zero, the frames timestamp will be this.
   */
-  MiniFrame(IAX2Processor * con, PBYTEArray &sound, BOOL isAudio, PINDEX usersTimeStamp = 0);
+  IAX2MiniFrame(IAX2Processor * con, PBYTEArray &sound, BOOL isAudio, PINDEX usersTimeStamp = 0);
 
   /**Destructor*/
-  virtual ~MiniFrame();
+  virtual ~IAX2MiniFrame();
   
   /** Process the incoming frame some more, but process it as this frame type demands*/
   virtual BOOL ProcessNetworkPacket();
@@ -362,21 +364,21 @@ class MiniFrame : public Frame
 
 /////////////////////////////////////////////////////////////////////////////    
 /**Class to handle a full frame, which is sent reliably to the remote endpoint */
-class FullFrame : public Frame
+class IAX2FullFrame : public IAX2Frame
 {
-  PCLASSINFO(FullFrame, Frame);
+  PCLASSINFO(IAX2FullFrame, IAX2Frame);
  public:
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  FullFrame(Frame & srcFrame);
+  IAX2FullFrame(IAX2Frame & srcFrame);
   
   /** Construction from an endpoint, to create an empty frame. 
       In this case, the class is filled with the various methods*/
-  FullFrame(IAX2EndPoint  &_endpoint);
+  IAX2FullFrame(IAX2EndPoint  &_endpoint);
   
   /**Delete this frame now, but first we have to delete every timer on it.
    */
-  virtual ~FullFrame();
+  virtual ~IAX2FullFrame();
   
   /**Return True if this an ack frame */
   BOOL IsAckFrame() { return isAckFrame; }
@@ -465,7 +467,7 @@ class FullFrame : public Frame
   BOOL  DeleteFrameNow() { return deleteFrameNow; }
   
   /**Get the sequence number info (inSeqNo and outSeqNo) */
-  SequenceNumbers & GetSequenceInfo() { return sequence; }
+  IAX2SequenceNumbers & GetSequenceInfo() { return sequence; }
   
   /**Pretty print this frame data to the designated stream*/
   virtual void PrintOn(ostream & strm) const;
@@ -475,7 +477,7 @@ class FullFrame : public Frame
   
   /**Compare this FullFrame with another full frame, which is used when determining if we are
      dealing with a frame we have already processed */
-  BOOL operator *= (FullFrame & other);
+  BOOL operator *= (IAX2FullFrame & other);
   
   /**enum to define if the call must be active when sending this
      frame*/
@@ -516,7 +518,7 @@ class FullFrame : public Frame
       required time period. This frame will be resent.*/
   void OnTransmissionTimeout(PTimer &, INT);
 #else
-  PDECLARE_NOTIFIER(PTimer, FullFrame, OnTransmissionTimeout);
+  PDECLARE_NOTIFIER(PTimer, IAX2FullFrame, OnTransmissionTimeout);
 #endif
   /** The timer which is used to test for no reply to this frame (on transmission) */
   PTimer transmissionTimer;
@@ -541,7 +543,7 @@ class FullFrame : public Frame
   };
   
   /**Class holding the sequence numbers, which is used by all classes which have a FullFrame ancestor. */
-  SequenceNumbers sequence;
+  IAX2SequenceNumbers sequence;
   
   /**List flag, indicating if this frame ready for sending*/
   BOOL         sendFrameNow;   
@@ -565,27 +567,27 @@ class FullFrame : public Frame
    frame per dtmf character.  No data is carried in the data
    section */
 
-class FullFrameDtmf : public FullFrame
+class IAX2FullFrameDtmf : public IAX2FullFrame
 {
-  PCLASSINFO(FullFrameDtmf, FullFrame);
+  PCLASSINFO(IAX2FullFrameDtmf, IAX2FullFrame);
  public:
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  FullFrameDtmf(Frame & srcFrame);
+  IAX2FullFrameDtmf(IAX2Frame & srcFrame);
 
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  FullFrameDtmf(FullFrame & srcFrame);
+  IAX2FullFrameDtmf(IAX2FullFrame & srcFrame);
   
   /**Construction from a Connection class. 
      Classes generated from this are then on sent to a remote endpoint. */
-  FullFrameDtmf(IAX2Processor *processor, /*!< Iax Processor from which this frame originates      */ 
-		char  subClassValue       /*!< IAX protocol command for remote end to process   */
-		);
+  IAX2FullFrameDtmf(IAX2Processor *processor, /*!< Iax Processor from which this frame originates      */ 
+		    char  subClassValue       /*!< IAX protocol command for remote end to process   */
+		    );
   
   /**Construction from a Connection class. 
      Classes generated from this are then on sent to a remote endpoint. */
-  FullFrameDtmf(IAX2Processor *processor, /*!< Iax Processor from which this frame originates      */ 
+  IAX2FullFrameDtmf(IAX2Processor *processor, /*!< Iax Processor from which this frame originates      */ 
 		PString  subClassValue    /*!< IAX protocol command for remote end to process   */
 		);
   
@@ -627,18 +629,18 @@ class FullFrameDtmf : public FullFrame
    This class has the ability to build audio codecs, and report on available formats.
    
    The contents the data section is the compressed audio frame. */
-class FullFrameVoice : public FullFrame
+class IAX2FullFrameVoice : public IAX2FullFrame
 {
-  PCLASSINFO(FullFrameVoice, FullFrame);
+  PCLASSINFO(IAX2FullFrameVoice, IAX2FullFrame);
  public:
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  FullFrameVoice(Frame & srcFrame);
+  IAX2FullFrameVoice(IAX2Frame & srcFrame);
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  FullFrameVoice(FullFrame & srcFrame);
+  IAX2FullFrameVoice(IAX2FullFrame & srcFrame);
   
   /**Construction from an encoded audio array (stored in a
      PBYTEArray), in preparation to sending to remote node.  The
@@ -648,11 +650,11 @@ class FullFrameVoice : public FullFrame
      specified timeStamp == 0, the timeStamp will be calculated from when the
      call started.
   */
-  FullFrameVoice(IAX2Processor *processor, PBYTEArray &sound, 
+  IAX2FullFrameVoice(IAX2Processor *processor, PBYTEArray &sound, 
 		 PINDEX usersTimeStamp = 0);
   
   /**Declare an empty destructor */
-  virtual ~FullFrameVoice();
+  virtual ~IAX2FullFrameVoice();
 
   /**Get text description of the subclass contents*/
   virtual PString GetSubClassName() const;
@@ -695,7 +697,7 @@ class FullFrameVoice : public FullFrame
     supportedCodecs = 11  /*!< The number of codecs defined by this enum */
   };
   
-  /**Return the FullFrame type represented here (voice, protocol, session etc*/
+  /**Return the IAX2FullFrame type represented here (voice, protocol, session etc*/
   virtual BYTE GetFullFrameType() { return voiceType; }
 };
 /////////////////////////////////////////////////////////////////////////////    
@@ -704,18 +706,18 @@ class FullFrameVoice : public FullFrame
    at regular intervals in the call to keep the timestamps in sync.
    
    The contents the data section is compressed video. */
-class FullFrameVideo : public FullFrame
+class IAX2FullFrameVideo : public IAX2FullFrame
 {
-  PCLASSINFO(FullFrameVideo, FullFrame);
+  PCLASSINFO(IAX2FullFrameVideo, IAX2FullFrame);
  public:
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  FullFrameVideo(Frame & srcFrame);
+  IAX2FullFrameVideo(IAX2Frame & srcFrame);
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  FullFrameVideo(FullFrame & srcFrame);
+  IAX2FullFrameVideo(IAX2FullFrame & srcFrame);
   
   /**Get text description of the subclass contents*/
   virtual PString GetSubClassName() const;
@@ -739,9 +741,9 @@ class FullFrameVideo : public FullFrame
 Asterisk calls these AST_FRAME_CONTROLs
 
 No data is carried in the data section */
-class FullFrameSessionControl : public FullFrame
+class IAX2FullFrameSessionControl : public IAX2FullFrame
 {
-  PCLASSINFO(FullFrameSessionControl, FullFrame);
+  PCLASSINFO(IAX2FullFrameSessionControl, IAX2FullFrame);
  public:
   
   /**enum comtaining the possible subclass value for these Session Control frames */
@@ -770,31 +772,31 @@ class FullFrameSessionControl : public FullFrame
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  FullFrameSessionControl(Frame & srcFrame);
+  IAX2FullFrameSessionControl(IAX2Frame & srcFrame);
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  FullFrameSessionControl(FullFrame & srcFrame);
+  IAX2FullFrameSessionControl(IAX2FullFrame & srcFrame);
   
   /**Construction from a Connection class. 
      Classes generated from this are then on sent to a remote endpoint. */
-  FullFrameSessionControl(IAX2Processor *processor, /*!<Iax Processor from which this frame originates    */ 
+  IAX2FullFrameSessionControl(IAX2Processor *processor, /*!<Iax Processor from which this frame originates    */ 
 			  PINDEX subClassValue/*!<IAX protocol command for remote end to process   */
 			  );
   
   /**Construction from a Connection class. 
      Classes generated from this are then on sent to a remote endpoint. */
-  FullFrameSessionControl(IAX2Processor *processor,     /*!< Iax Processor from which this frame originates */
+  IAX2FullFrameSessionControl(IAX2Processor *processor,     /*!< Iax Processor from which this frame originates */
 			  SessionSc subClassValue /*!< IAX protocol command for remote end to process*/
 			  );
   
   /**Declare an empty destructor*/
-  virtual ~FullFrameSessionControl() { }
+  virtual ~IAX2FullFrameSessionControl() { }
 
   /**Get text description of the subclass contents*/
   virtual PString GetSubClassName() const;
   
-  /**Return the FullFrame type represented here (voice, protocol, session etc*/
+  /**Return the IAX2FullFrame type represented here (voice, protocol, session etc*/
   virtual BYTE GetFullFrameType() { return controlType; }
   
  protected:
@@ -807,28 +809,28 @@ class FullFrameSessionControl : public FullFrame
    These frames are sent reliably.
    There is no data in the subclass section.
    There is no data in the data section */
-class FullFrameNull : public FullFrame
+class IAX2FullFrameNull : public IAX2FullFrame
 {
-  PCLASSINFO(FullFrameNull, FullFrame);
+  PCLASSINFO(IAX2FullFrameNull, IAX2FullFrame);
  public:
   /**Construct an empty Full Frame.
      Classes generated like this are used to handle transmitted information */
-  FullFrameNull(IAX2EndPoint & endpoint) : FullFrame(endpoint)   { }
+  IAX2FullFrameNull(IAX2EndPoint & endpoint) : IAX2FullFrame(endpoint)   { }
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet.
      Classes generated like this are used to handle received data. */
-  FullFrameNull(Frame & srcFrame);
+  IAX2FullFrameNull(IAX2Frame & srcFrame);
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet.
      Classes generated like this are used to handle received data. */
-  FullFrameNull(FullFrame & srcFrame);
+  IAX2FullFrameNull(IAX2FullFrame & srcFrame);
   
   /**Get text description of the subclass contents*/
   virtual PString GetSubClassName() const { return  PString(""); }
   
-  /**Return the FullFrame type represented here (voice, protocol, session etc*/
+  /**Return the IAX2FullFrame type represented here (voice, protocol, session etc*/
   virtual BYTE GetFullFrameType() { return nullType; }
   
  protected:
@@ -841,9 +843,9 @@ class FullFrameNull : public FullFrame
    
    The data section contains information elements, or type Ie classes. */
 
-class FullFrameProtocol : public FullFrame
+class IAX2FullFrameProtocol : public IAX2FullFrame
 {
-  PCLASSINFO(FullFrameProtocol, FullFrame);
+  PCLASSINFO(IAX2FullFrameProtocol, IAX2FullFrame);
  public:
   
   /**enum comtaining the possible subclass value for these IAX protocol control frames */
@@ -890,43 +892,43 @@ class FullFrameProtocol : public FullFrame
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet.
      Classes generated like this are used to handle received data. */
-  FullFrameProtocol(Frame & srcFrame);
+  IAX2FullFrameProtocol(IAX2Frame & srcFrame);
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet.
      Classes generated like this are used to handle received data. */
-  FullFrameProtocol(FullFrame & srcFrame);
+  IAX2FullFrameProtocol(IAX2FullFrame & srcFrame);
   
   /**Construction from a Connection class. 
      Classes generated from this are then on sent to a remote endpoint. */
-  FullFrameProtocol(IAX2Processor *processor,         /*!< Iax Processor from which this frame originates            */ 
+  IAX2FullFrameProtocol(IAX2Processor *processor,         /*!< Iax Processor from which this frame originates            */ 
 		    PINDEX subClassValue,            /*!< IAX protocol command for remote end to process         */
-		    ConnectionRequired needCon = FullFrame::callActive
+		    ConnectionRequired needCon = IAX2FullFrame::callActive
 		                                     /*!< this frame is only sent if the Connection class exists */
 		    );
   
   /**Construction from an Connection class. 
      Classes generated from this are then on sent to a remote endpoint. */
-  FullFrameProtocol(IAX2Processor *processor,         /*!< Iax Processor from which this frame originates            */ 
+  IAX2FullFrameProtocol(IAX2Processor *processor,         /*!< Iax Processor from which this frame originates            */ 
 		    ProtocolSc  subClassValue,       /*!< IAX protocol command for remote end to process         */
-		    ConnectionRequired needCon=FullFrame::callActive 
+		    ConnectionRequired needCon=IAX2FullFrame::callActive 
 		                                     /*!< this frame is only sent if the Connection class exists */
 		    );
   
   /**Construction from a Connection class. 
      Classes generated from this are then on sent to a remote endpoint.
      
-     We have received a FullFrameProtocol, and this constructor is used to create a reply.
+     We have received a IAX2FullFrameProtocol, and this constructor is used to create a reply.
      Use the iseqno and time stamp from the supplied frame to construct the reply */
-  FullFrameProtocol(IAX2Processor *processor,         /*!< Iax Processor from which this frame originates            */ 
+  IAX2FullFrameProtocol(IAX2Processor *processor,         /*!< Iax Processor from which this frame originates            */ 
 		    ProtocolSc  subClassValue,       /*!< IAX protocol command for remote end to process         */
-		    FullFrame *inReplyTo,            /*!< this message was sent in reply to this frame           */
-		    ConnectionRequired needCon = FullFrame::callActive
+		    IAX2FullFrame *inReplyTo,            /*!< this message was sent in reply to this frame           */
+		    ConnectionRequired needCon = IAX2FullFrame::callActive
 		                                     /*!< this frame is only sent if the Connection class exists */
 		    );
   
   /**Destructor, which deletes all current Information Elements */
-  virtual ~FullFrameProtocol();
+  virtual ~IAX2FullFrameProtocol();
   
   /**Set internal variable to say that this frame does not need to be retransmitted*/
   void SetRetransmissionRequired();
@@ -939,10 +941,10 @@ class FullFrameProtocol : public FullFrame
   
   /**Return a pointer to the n'th Ie in the internal list. If it is not
      there, a NULL is returned */
-  Ie *GetIeAt(PINDEX i) {      return ieElements.GetIeAt(i); }
+  IAX2Ie *GetIeAt(PINDEX i) {      return ieElements.GetIeAt(i); }
   
   /**Add a new Information Element (Ie) to the intenral list */
-  void AppendIe(Ie *newElement) { ieElements.AppendIe(newElement); }
+  void AppendIe(IAX2Ie *newElement) { ieElements.AppendIe(newElement); }
   
   /**Write the contents of the Ie internal list to the frame data array.
      This is usually done in preparation to transmitting this frame */
@@ -951,13 +953,13 @@ class FullFrameProtocol : public FullFrame
   /**Transfer the data (stored in the IeList) and place it in into
      the IeData class.  This is done when precessing a frame we
      have received from an external node, which has to be stored in the IeData class*/
-  void CopyDataFromIeListTo(IeData &res);
+  void CopyDataFromIeListTo(IAX2IeData &res);
   
   /**Look through the list of IEs, and look for remote capabability
      and preferred codec */
   void GetRemoteCapability(unsigned int & capability, unsigned int & preferred);
 
-  /**Return the FullFrame type represented here (voice, protocol, session etc*/
+  /**Return the IAX2FullFrame type represented here (voice, protocol, session etc*/
   virtual BYTE GetFullFrameType() { return iax2ProtocolType; }
   
  protected:
@@ -967,7 +969,7 @@ class FullFrameProtocol : public FullFrame
   BOOL ReadInformationElements();
   
   /**A list of the IEs read from/(or  written to) the data section of this frame,*/
-  IeList ieElements;
+  IAX2IeList ieElements;
 };
 
 /////////////////////////////////////////////////////////////////////////////    
@@ -976,29 +978,29 @@ class FullFrameProtocol : public FullFrame
    
    The text is carried in the data section.
 */
-class FullFrameText : public FullFrame
+class IAX2FullFrameText : public IAX2FullFrame
 {
-  PCLASSINFO(FullFrameText, FullFrame);
+  PCLASSINFO(IAX2FullFrameText, IAX2FullFrame);
  public:
 
   /**Construction from a Connection class.
      Classes generated from this are then on sent to a remote endpoint. */
-  FullFrameText(IAX2Processor *processor,       /*!< Iax Processor from which this frame originates      */
+  IAX2FullFrameText(IAX2Processor *processor,       /*!< Iax Processor from which this frame originates      */
 		const PString&  textValue/*!< text to send to remote end   */
 		);
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  FullFrameText(Frame & srcFrame);
+  IAX2FullFrameText(IAX2Frame & srcFrame);
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  FullFrameText(FullFrame & srcFrame);
+  IAX2FullFrameText(IAX2FullFrame & srcFrame);
   
   /**Get text description of the subclass contents*/
   virtual PString GetSubClassName() const;
   
-  /**Return the FullFrame type represented here (voice, protocol, session etc*/
+  /**Return the IAX2FullFrame type represented here (voice, protocol, session etc*/
   virtual BYTE GetFullFrameType() { return textType; }
 
   /**Return the text data*/
@@ -1015,23 +1017,23 @@ class FullFrameText : public FullFrame
    The subclass describes the image compression format.
    
    The contents of the data section is the raw image data */
-class FullFrameImage : public FullFrame
+class IAX2FullFrameImage : public IAX2FullFrame
 {
-  PCLASSINFO(FullFrameImage, FullFrame);
+  PCLASSINFO(IAX2FullFrameImage, IAX2FullFrame);
  public:
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  FullFrameImage(Frame & srcFrame);
+  IAX2FullFrameImage(IAX2Frame & srcFrame);
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  FullFrameImage(FullFrame & srcFrame);
+  IAX2FullFrameImage(IAX2FullFrame & srcFrame);
   
   /**Get text description of the subclass contents*/
   virtual PString GetSubClassName() const;
   
-  /**Return the FullFrame type represented here (voice, protocol, session etc*/
+  /**Return the IAX2FullFrame type represented here (voice, protocol, session etc*/
   virtual BYTE GetFullFrameType() { return imageType; }
  protected:
 };
@@ -1042,23 +1044,23 @@ class FullFrameImage : public FullFrame
    The subclass describes the html frame type.
    
    The contents of the data section is message specific */
-class FullFrameHtml : public FullFrame
+class IAX2FullFrameHtml : public IAX2FullFrame
 {
-  PCLASSINFO(FullFrameHtml, FullFrame);
+  PCLASSINFO(IAX2FullFrameHtml, IAX2FullFrame);
  public:
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  FullFrameHtml(Frame & srcFrame);
+  IAX2FullFrameHtml(IAX2Frame & srcFrame);
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  FullFrameHtml(FullFrame & srcFrame);
+  IAX2FullFrameHtml(IAX2FullFrame & srcFrame);
   
   /**Get text description of the subclass contents*/
   virtual PString GetSubClassName() const;
   
-  /**Return the FullFrame type represented here (voice, protocol, session etc*/
+  /**Return the IAX2FullFrame type represented here (voice, protocol, session etc*/
   virtual BYTE GetFullFrameType() { return htmlType; }
  protected:
 };
@@ -1068,30 +1070,30 @@ class FullFrameHtml : public FullFrame
    
 
 The contents of the data section is message specific */
-class FullFrameCng : public FullFrame
+class IAX2FullFrameCng : public IAX2FullFrame
 {
-  PCLASSINFO(FullFrameCng, FullFrame);
+  PCLASSINFO(IAX2FullFrameCng, IAX2FullFrame);
  public:
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  FullFrameCng(Frame & srcFrame);
+  IAX2FullFrameCng(IAX2Frame & srcFrame);
   
   /**Construction from a supplied dataframe.
      In this case, this class is filled from an incoming data packet*/
-  FullFrameCng(FullFrame & srcFrame);
+  IAX2FullFrameCng(IAX2FullFrame & srcFrame);
   
   /**Get text description of the subclass contents*/
   virtual PString GetSubClassName() const;
   
-  /**Return the FullFrame type represented here (voice, protocol, session etc*/
+  /**Return the IAX2FullFrame type represented here (voice, protocol, session etc*/
   virtual BYTE GetFullFrameType() { return cngType; }
  protected:
 };
 
 /////////////////////////////////////////////////////////////////////////////    
 
-PDECLARE_LIST (FrameList, Frame *)
+PDECLARE_LIST (IAX2FrameList, IAX2Frame *)
 #ifdef DOC_PLUS_PLUS     //This makes emacs bracket matching code happy.
 /** A list of all frames waiting for processing
 	 
@@ -1099,17 +1101,17 @@ PDECLARE_LIST (FrameList, Frame *)
      
    You do not need to protect acces to this class.
 */     
-class FrameList : public Frame *  
+class IAX2FrameList : public IAX2Frame *  
 {
 #endif
  public:
-  ~FrameList();
+  ~IAX2FrameList();
   
   /**Report the frames queued in this list*/
   void ReportList();
   
   /**Get pointer to last frame in the list. Remove this frame from the list */
-  Frame *GetLastFrame();
+  IAX2Frame *GetLastFrame();
   
   /**Removing item from list will not automatically delete it */
   void Initialise() {  DisallowDeleteObjects(); }
@@ -1118,17 +1120,17 @@ class FrameList : public Frame *
   BOOL Empty() { return GetSize() == 0; }
   
   /**Copy to this frame the contents of the frameList pointed to by src*/
-  void GrabContents(FrameList &src);
+  void GrabContents(IAX2FrameList &src);
   
   /**Delete the frame that has been sent, which is waiting for this
    * reply. The reply is the argument. */
-  void DeleteMatchingSendFrame(FullFrame *reply);
+  void DeleteMatchingSendFrame(IAX2FullFrame *reply);
   
   /**Add the frame (supplied as an argument) to the end of this list*/
-  void AddNewFrame(Frame *src);
+  void AddNewFrame(IAX2Frame *src);
   
   /**Get a list of frames to send, and delete the timed out frames */
-  void GetResendFramesDeleteOldFrames(FrameList & framesToSend);
+  void GetResendFramesDeleteOldFrames(IAX2FrameList & framesToSend);
   
   /**Thread safe read of the number of elements on this list. */
   virtual PINDEX GetSize() { PWaitAndSignal m(mutex); return PAbstractList::GetSize(); }
