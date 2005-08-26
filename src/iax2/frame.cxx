@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: frame.cxx,v $
+ *  Revision 1.9  2005/08/26 03:26:51  dereksmithies
+ *  Add some tidyups from Adrian Sietsma.  Many thanks..
+ *
  *  Revision 1.8  2005/08/26 03:07:38  dereksmithies
  *  Change naming convention, so all class names contain the string "IAX2"
  *
@@ -301,7 +304,7 @@ void IAX2Frame::BuildTimeStamp(const PTimeInterval & callStartTick)
 
 DWORD IAX2Frame::CalcTimeStamp(const PTimeInterval & callStartTick)
 {
-  DWORD tVal = (PTimer::Tick() - callStartTick).GetMilliSeconds();
+  DWORD tVal = (DWORD)(PTimer::Tick() - callStartTick).GetMilliSeconds();
   PTRACE(3, "Calculate timestamp as " << tVal);
   return tVal;
 }

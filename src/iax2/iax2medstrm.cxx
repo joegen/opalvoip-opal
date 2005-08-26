@@ -27,6 +27,9 @@
  *
  *
  * $Log: iax2medstrm.cxx,v $
+ * Revision 1.4  2005/08/26 03:26:51  dereksmithies
+ * Add some tidyups from Adrian Sietsma.  Many thanks..
+ *
  * Revision 1.3  2005/08/26 03:07:38  dereksmithies
  * Change naming convention, so all class names contain the string "IAX2"
  *
@@ -155,7 +158,7 @@ BOOL OpalIAX2MediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & length)
 	return FALSE;
       }
 
-      PThread::Sleep(10);
+      PThread::Sleep(10); //Under windows may not be 10ms..
       PTRACE(6, "Media\tJust slept another 10ms cause read nothing in last iteration ");
       res = connection.GetSoundPacketFromNetwork();
       if (res != NULL) {
