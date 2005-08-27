@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2084  2005/08/23 21:26:21  dsandras
+ * Revision 1.2085  2005/08/27 02:39:32  csoutheren
+ * Reverted previous patch pending a more compliant solution
+ *
+ * Revision 2.83  2005/08/23 21:26:21  dsandras
  * Fixed bug in OnReceivedFacility thanks to Ted Szoczei <tszoczei AT_ microtronix.ca>. Thanks Ted!
  *
  * Revision 2.82  2005/08/05 19:21:06  csoutheren
@@ -2555,7 +2558,7 @@ BOOL H323Connection::OnReceivedFacility(const H323SignalPDU & pdu)
       // channel bit it is not open (ie we are listening) and the remote has
       // sent us an address to connect to. To resolve we compare the addresses.
 
-      H323TransportAddress h323Address = controlChannel->GetRemoteAddress();
+      H323TransportAddress h323Address = controlChannel->GetLocalAddress();
       H225_TransportAddress myAddress;
       h323Address.SetPDU(myAddress);
       PPER_Stream myBuffer;
@@ -2564,7 +2567,7 @@ BOOL H323Connection::OnReceivedFacility(const H323SignalPDU & pdu)
       PPER_Stream otherBuffer;
       fac.m_h245Address.Encode(otherBuffer);
 
-      if (myBuffer != otherBuffer) {
+      if (myBuffer < otherBuffer) {
         PTRACE(2, "H225\tSimultaneous start of H.245 channel, connecting to remote.");
         controlChannel->CloseWait();
         delete controlChannel;
