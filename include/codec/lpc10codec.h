@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lpc10codec.h,v $
- * Revision 1.2009  2005/02/21 12:19:45  rjongbloed
+ * Revision 1.2010  2005/08/28 07:59:17  rjongbloed
+ * Converted OpalTranscoder to use factory, requiring sme changes in making sure
+ *   OpalMediaFormat instances are initialised before use.
+ *
+ * Revision 2.8  2005/02/21 12:19:45  rjongbloed
  * Added new "options list" to the OpalMediaFormat class.
  *
  * Revision 2.7  2004/09/01 12:21:27  rjongbloed
@@ -110,6 +114,10 @@ struct lpc10_decoder_state;
 
 #define OPAL_LPC10 "LPC-10"
 
+extern const OpalAudioFormat & GetOpalLPC10();
+
+#define OpalLPC10 GetOpalLPC10()
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -167,7 +175,7 @@ H323_STATIC_LOAD_REGISTER_CAPABILITY(H323_LPC10Capability);
 
 class Opal_LPC10_PCM : public OpalFramedTranscoder {
   public:
-    Opal_LPC10_PCM(const OpalTranscoderRegistration & registration);
+    Opal_LPC10_PCM();
     ~Opal_LPC10_PCM();
     virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
   protected:
@@ -177,7 +185,7 @@ class Opal_LPC10_PCM : public OpalFramedTranscoder {
 
 class Opal_PCM_LPC10 : public OpalFramedTranscoder {
   public:
-    Opal_PCM_LPC10(const OpalTranscoderRegistration & registration);
+    Opal_PCM_LPC10();
     ~Opal_PCM_LPC10();
     virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
   protected:
@@ -189,8 +197,8 @@ class Opal_PCM_LPC10 : public OpalFramedTranscoder {
 
 #define OPAL_REGISTER_LPC10() \
           OPAL_REGISTER_LPC10_H323 \
-          OPAL_REGISTER_TRANSCODER(Opal_LPC10_PCM, OPAL_LPC10, OPAL_PCM16); \
-          OPAL_REGISTER_TRANSCODER(Opal_PCM_LPC10, OPAL_PCM16, OPAL_LPC10)
+          OPAL_REGISTER_TRANSCODER(Opal_LPC10_PCM, OpalLPC10, OpalPCM16); \
+          OPAL_REGISTER_TRANSCODER(Opal_PCM_LPC10, OpalPCM16, OpalLPC10)
 
 
 #endif // __OPAL_LPC10CODEC_H

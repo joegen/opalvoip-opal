@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mscodecs.cxx,v $
- * Revision 1.2010  2005/06/02 13:20:45  rjongbloed
+ * Revision 1.2011  2005/08/28 07:59:17  rjongbloed
+ * Converted OpalTranscoder to use factory, requiring sme changes in making sure
+ *   OpalMediaFormat instances are initialised before use.
+ *
+ * Revision 2.9  2005/06/02 13:20:45  rjongbloed
  * Added minimum and maximum check to media format options.
  * Added ability to set the options on the primordial media format list.
  *
@@ -154,14 +158,18 @@ MicrosoftNonStandardAudioCapability::MicrosoftNonStandardAudioCapability(
 #define	GSM_BYTES_PER_FRAME 65
 #define GSM_SAMPLES_PER_FRAME 320
 
-static OpalAudioFormat MSGSM(
-  OPAL_MSGSM,
-  RTP_DataFrame::DynamicBase,
-  OPAL_MSGSM,
-  GSM_BYTES_PER_FRAME,
-  GSM_SAMPLES_PER_FRAME, // 40 milliseconds
-  1, 1, 1
-);
+const OpalAudioFormat & GetOpalMSGSM()
+{
+  static const OpalAudioFormat MSGSM(
+    OPAL_MSGSM,
+    RTP_DataFrame::DynamicBase,
+    OPAL_MSGSM,
+    GSM_BYTES_PER_FRAME,
+    GSM_SAMPLES_PER_FRAME, // 40 milliseconds
+    1, 1, 1
+  );
+  return MSGSM;
+}
 
 
 static const BYTE msGSMHeader[] = {
@@ -211,15 +219,15 @@ PObject * MicrosoftGSMAudioCapability::Clone() const
 
 PString MicrosoftGSMAudioCapability::GetFormatName() const
 {
-  return MSGSM;
+  return GetOpalMSGSM();
 }
 
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Opal_MSGSM_PCM::Opal_MSGSM_PCM(const OpalTranscoderRegistration & registration)
-  : Opal_GSM0610(registration, GSM_BYTES_PER_FRAME, GSM_SAMPLES_PER_FRAME*2)
+Opal_MSGSM_PCM::Opal_MSGSM_PCM()
+  : Opal_GSM0610(GetOpalMSGSM(), OpalPCM16, GSM_BYTES_PER_FRAME, GSM_SAMPLES_PER_FRAME*2)
 {
   int opt = 1;
   gsm_option(gsm, GSM_OPT_WAV49, &opt);
@@ -240,8 +248,8 @@ BOOL Opal_MSGSM_PCM::ConvertFrame(const BYTE * src, BYTE * dst)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Opal_PCM_MSGSM::Opal_PCM_MSGSM(const OpalTranscoderRegistration & registration)
-  : Opal_GSM0610(registration, GSM_SAMPLES_PER_FRAME*2, GSM_BYTES_PER_FRAME)
+Opal_PCM_MSGSM::Opal_PCM_MSGSM()
+  : Opal_GSM0610(OpalPCM16, GetOpalMSGSM(), GSM_SAMPLES_PER_FRAME*2, GSM_BYTES_PER_FRAME)
 {
   int opt = 1;
   gsm_option(gsm, GSM_OPT_WAV49, &opt);
@@ -266,14 +274,18 @@ BOOL Opal_PCM_MSGSM::ConvertFrame(const BYTE * src, BYTE * dst)
 #define IMA_SAMPLES_PER_FRAME		505
 #define IMA_BYTES_PER_FRAME		256
 
-static OpalAudioFormat MSIMA(
-  OPAL_MSIMA,
-  RTP_DataFrame::DynamicBase,
-  OPAL_MSIMA,
-  IMA_BYTES_PER_FRAME,
-  IMA_SAMPLES_PER_FRAME, // 63.1 milliseconds
-  1, 1, 1
-);
+const OpalAudioFormat & GetOpalMSIMA()
+{
+  static const OpalAudioFormat MSIMA(
+    OPAL_MSIMA,
+    RTP_DataFrame::DynamicBase,
+    OPAL_MSIMA,
+    IMA_BYTES_PER_FRAME,
+    IMA_SAMPLES_PER_FRAME, // 63.1 milliseconds
+    1, 1, 1
+  );
+  return MSIMA;
+}
 
 
 #ifndef NO_H323
@@ -320,7 +332,7 @@ PObject * MicrosoftIMAAudioCapability::Clone() const
 
 PString MicrosoftIMAAudioCapability::GetFormatName() const
 {
-  return MSIMA;
+  return GetOpalMSIMA();
 }
 
 #endif
@@ -538,8 +550,8 @@ static void adpcm_decoder(char indata[], short outdata[], int len)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Opal_MSIMA_PCM::Opal_MSIMA_PCM(const OpalTranscoderRegistration & registration)
-  : OpalFramedTranscoder(registration, IMA_BYTES_PER_FRAME, IMA_SAMPLES_PER_FRAME*2)
+Opal_MSIMA_PCM::Opal_MSIMA_PCM()
+  : OpalFramedTranscoder(GetOpalMSIMA(), OpalPCM16, IMA_BYTES_PER_FRAME, IMA_SAMPLES_PER_FRAME*2)
 {
   PTRACE(3, "Codec\tMS-IMA decoder created");
 }
@@ -555,8 +567,8 @@ BOOL Opal_MSIMA_PCM::ConvertFrame(const BYTE * src, BYTE * dst)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Opal_PCM_MSIMA::Opal_PCM_MSIMA(const OpalTranscoderRegistration & registration)
-  : OpalFramedTranscoder(registration, IMA_SAMPLES_PER_FRAME*2, IMA_BYTES_PER_FRAME)
+Opal_PCM_MSIMA::Opal_PCM_MSIMA()
+  : OpalFramedTranscoder(OpalPCM16, GetOpalMSIMA(), IMA_SAMPLES_PER_FRAME*2, IMA_BYTES_PER_FRAME)
 {
   s_adpcm.valprev = 0;
   s_adpcm.index = 0;

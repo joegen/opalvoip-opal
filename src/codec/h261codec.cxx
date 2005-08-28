@@ -25,7 +25,11 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.cxx,v $
- * Revision 1.2020  2005/08/24 10:15:10  rjongbloed
+ * Revision 1.2021  2005/08/28 07:59:17  rjongbloed
+ * Converted OpalTranscoder to use factory, requiring sme changes in making sure
+ *   OpalMediaFormat instances are initialised before use.
+ *
+ * Revision 2.19  2005/08/24 10:15:10  rjongbloed
  * Fixed missing marker bit on codec output, get more than just the first frame!
  *
  * Revision 2.18  2005/08/23 12:46:27  rjongbloed
@@ -304,8 +308,17 @@
 #define new PNEW
 
 
-const OpalVideoFormat OpalH261_QCIF(OPAL_H261_QCIF, RTP_DataFrame::H261, "H261", 176, 144, 10, 128000);
-const OpalVideoFormat OpalH261_CIF (OPAL_H261_CIF,  RTP_DataFrame::H261, "H261", 352, 288, 10, 128000);
+const OpalVideoFormat & GetOpalH261_QCIF()
+{
+  static const OpalVideoFormat H261_QCIF(OPAL_H261_QCIF, RTP_DataFrame::H261, "H261", 176, 144, 10, 128000);
+  return H261_QCIF;
+}
+
+const OpalVideoFormat & GetOpalH261_CIF()
+{
+  static const OpalVideoFormat H261_CIF(OPAL_H261_CIF,  RTP_DataFrame::H261, "H261", 352, 288, 10, 128000);
+  return H261_CIF;
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -435,8 +448,8 @@ BOOL H323_H261Capability::OnReceivedPDU(const H245_VideoCapability & cap)
 
 //////////////////////////////////////////////////////////////////////////////
 
-Opal_H261_YUV420P::Opal_H261_YUV420P(const OpalTranscoderRegistration & registration)
-  : OpalVideoTranscoder(registration)
+Opal_H261_YUV420P::Opal_H261_YUV420P()
+  : OpalVideoTranscoder(OpalH261_QCIF, OpalYUV420P)
 {
   videoDecoder = NULL;
   expectedSequenceNumber = 0;
@@ -537,8 +550,8 @@ BOOL Opal_H261_YUV420P::ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameLi
 
 //////////////////////////////////////////////////////////////////////////////
 
-Opal_YUV420P_H261::Opal_YUV420P_H261(const OpalTranscoderRegistration & registration)
-  : OpalVideoTranscoder(registration)
+Opal_YUV420P_H261::Opal_YUV420P_H261()
+  : OpalVideoTranscoder(OpalYUV420P, OpalH261_QCIF)
 {
   videoEncoder = NULL;
   PTRACE(3, "Codec\tH261 encoder created");

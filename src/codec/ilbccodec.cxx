@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ilbccodec.cxx,v $
- * Revision 1.2006  2005/05/25 17:05:17  dsandras
+ * Revision 1.2007  2005/08/28 07:59:17  rjongbloed
+ * Converted OpalTranscoder to use factory, requiring sme changes in making sure
+ *   OpalMediaFormat instances are initialised before use.
+ *
+ * Revision 2.5  2005/05/25 17:05:17  dsandras
  * Fixed iLBC codec, thanks Robert!
  *
  * Revision 2.4  2005/02/21 12:19:54  rjongbloed
@@ -67,21 +71,30 @@ extern "C" {
 #define new PNEW
 
 
-static OpalAudioFormat Opal_iLBC_13k3(
-                          OPAL_ILBC_13k3,
-                          RTP_DataFrame::DynamicBase,
-                          "ilbc",
-                          NO_OF_BYTES_30MS,
-                          BLOCKL_30MS,
-                          7, 3);
+const OpalAudioFormat & GetOpal_iLBC_13k3()
+{
+  static const OpalAudioFormat iLBC_13k3(
+    OPAL_ILBC_13k3,
+    RTP_DataFrame::DynamicBase,
+    "ilbc",
+    NO_OF_BYTES_30MS,
+    BLOCKL_30MS,
+    7, 3);
+  return iLBC_13k3;
+}
 
-static OpalAudioFormat Opal_iLBC_15k2(
-                          OPAL_ILBC_15k2,
-                          RTP_DataFrame::DynamicBase,
-                          "ilbc",
-                          NO_OF_BYTES_20MS,
-                          BLOCKL_20MS,
-                          7, 4);
+
+const OpalAudioFormat & GetOpal_iLBC_15k2()
+{
+  static const OpalAudioFormat iLBC_15k2(
+    OPAL_ILBC_15k2,
+    RTP_DataFrame::DynamicBase,
+    "ilbc",
+    NO_OF_BYTES_20MS,
+    BLOCKL_20MS,
+    7, 4);
+  return iLBC_15k2;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -113,8 +126,8 @@ PString H323_iLBC_Capability::GetFormatName() const
 
 /////////////////////////////////////////////////////////////////////////////
 
-Opal_iLBC_Decoder::Opal_iLBC_Decoder(const OpalTranscoderRegistration & registration, int speed)
-  : OpalFramedTranscoder(registration,
+Opal_iLBC_Decoder::Opal_iLBC_Decoder(const OpalMediaFormat & inputMediaFormat, int speed)
+  : OpalFramedTranscoder(inputMediaFormat, OpalPCM16,
                          speed == 30 ? NO_OF_BYTES_30MS : NO_OF_BYTES_20MS,
                          speed == 30 ? BLOCKL_30MS * 2  : BLOCKL_20MS * 2)
 {
@@ -154,20 +167,20 @@ BOOL Opal_iLBC_Decoder::ConvertFrame(const BYTE * src, BYTE * dst)
 }
 
 
-Opal_iLBC_13k3_PCM::Opal_iLBC_13k3_PCM(const OpalTranscoderRegistration & registration)
-  : Opal_iLBC_Decoder(registration, 30)
+Opal_iLBC_13k3_PCM::Opal_iLBC_13k3_PCM()
+  : Opal_iLBC_Decoder(Opal_iLBC_13k3, 30)
 {
 }
 
 
-Opal_iLBC_15k2_PCM::Opal_iLBC_15k2_PCM(const OpalTranscoderRegistration & registration)
-  : Opal_iLBC_Decoder(registration, 20)
+Opal_iLBC_15k2_PCM::Opal_iLBC_15k2_PCM()
+  : Opal_iLBC_Decoder(Opal_iLBC_15k2, 20)
 {
 }
 
 
-Opal_iLBC_Encoder::Opal_iLBC_Encoder(const OpalTranscoderRegistration & registration, int speed)
-  : OpalFramedTranscoder(registration,
+Opal_iLBC_Encoder::Opal_iLBC_Encoder(const OpalMediaFormat & outputMediaFormat, int speed)
+  : OpalFramedTranscoder(OpalPCM16, outputMediaFormat,
                          speed == 30 ? BLOCKL_30MS * 2  : BLOCKL_20MS * 2,
                          speed == 30 ? NO_OF_BYTES_30MS : NO_OF_BYTES_20MS)
 {
@@ -200,14 +213,14 @@ BOOL Opal_iLBC_Encoder::ConvertFrame(const BYTE * src, BYTE * dst)
 }
 
 
-Opal_PCM_iLBC_13k3::Opal_PCM_iLBC_13k3(const OpalTranscoderRegistration & registration)
-  : Opal_iLBC_Encoder(registration, 30)
+Opal_PCM_iLBC_13k3::Opal_PCM_iLBC_13k3()
+  : Opal_iLBC_Encoder(Opal_iLBC_13k3, 30)
 {
 }
 
 
-Opal_PCM_iLBC_15k2::Opal_PCM_iLBC_15k2(const OpalTranscoderRegistration & registration)
-  : Opal_iLBC_Encoder(registration, 20)
+Opal_PCM_iLBC_15k2::Opal_PCM_iLBC_15k2()
+  : Opal_iLBC_Encoder(Opal_iLBC_15k2, 20)
 {
 }
 

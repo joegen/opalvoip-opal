@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2032  2005/08/24 10:18:23  rjongbloed
+ * Revision 1.2033  2005/08/28 07:59:17  rjongbloed
+ * Converted OpalTranscoder to use factory, requiring sme changes in making sure
+ *   OpalMediaFormat instances are initialised before use.
+ *
+ * Revision 2.31  2005/08/24 10:18:23  rjongbloed
  * Fix incorrect session ID for video media format, doesn't work if thinks is audio!
  *
  * Revision 2.30  2005/08/20 07:33:30  rjongbloed
@@ -186,34 +190,46 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
+#define AUDIO_FORMAT(name, rtpPayloadType, encodingName, frameSize, frameTime, rxFrames, txFrames, maxFrames) \
+  const OpalAudioFormat & GetOpal##name() \
+  { \
+    static const OpalAudioFormat name(OPAL_##name, RTP_DataFrame::rtpPayloadType, \
+                                    encodingName, frameSize, frameTime, rxFrames, txFrames, maxFrames); \
+    return name; \
+  }
 
-const OpalAudioFormat OpalPCM16         (OPAL_PCM16,          RTP_DataFrame::MaxPayloadType, "",     16, 8,  240, 30);
-const OpalAudioFormat OpalL16_MONO_8KHZ (OPAL_L16_MONO_8KHZ,  RTP_DataFrame::L16_Mono,       "L16",  16, 8,  240, 30);
-const OpalAudioFormat OpalL16_MONO_16KHZ(OPAL_L16_MONO_16KHZ, RTP_DataFrame::L16_Mono,       "L16",  16, 4,  120, 15);
-const OpalAudioFormat OpalG711_ULAW_64K (OPAL_G711_ULAW_64K,  RTP_DataFrame::PCMU,           "PCMU",  8, 8,  240, 30);
-const OpalAudioFormat OpalG711_ALAW_64K (OPAL_G711_ALAW_64K,  RTP_DataFrame::PCMA,           "PCMA",  8, 8,  240, 30);
-const OpalAudioFormat OpalG728          (OPAL_G728,           RTP_DataFrame::G728,           "G728",  5, 20, 100, 10);
-const OpalAudioFormat OpalG729          (OPAL_G729,           RTP_DataFrame::G729,           "G729", 10, 80,  24,  5);
-const OpalAudioFormat OpalG729A         (OPAL_G729A,          RTP_DataFrame::G729,           "G729", 10, 80,  24,  5);
-const OpalAudioFormat OpalG729B         (OPAL_G729B,          RTP_DataFrame::G729,           "G729", 10, 80,  24,  5);
-const OpalAudioFormat OpalG729AB        (OPAL_G729AB,         RTP_DataFrame::G729,           "G729", 10, 80,  24,  5);
-const OpalAudioFormat OpalG7231_6k3     (OPAL_G7231_6k3,      RTP_DataFrame::G7231,          "G723", 24, 240,  8,  3);
-const OpalAudioFormat OpalG7231_5k3     (OPAL_G7231_5k3,      RTP_DataFrame::G7231,          "G723", 24, 240,  8,  3);
-const OpalAudioFormat OpalG7231A_6k3    (OPAL_G7231A_6k3,     RTP_DataFrame::G7231,          "G723", 24, 240,  8,  3);
-const OpalAudioFormat OpalG7231A_5k3    (OPAL_G7231A_5k3,     RTP_DataFrame::G7231,          "G723", 24, 240,  8,  3);
-const OpalAudioFormat OpalGSM0610       (OPAL_GSM0610,        RTP_DataFrame::GSM,            "GSM",  33, 160,  7,  4, 7);
+AUDIO_FORMAT(PCM16,          MaxPayloadType, "",     16, 8,  240, 30, 256);
+AUDIO_FORMAT(L16_MONO_8KHZ,  L16_Mono,       "L16",  16, 8,  240, 30, 256);
+AUDIO_FORMAT(L16_MONO_16KHZ, L16_Mono,       "L16",  16, 4,  120, 15, 256);
+AUDIO_FORMAT(G711_ULAW_64K,  PCMU,           "PCMU",  8, 8,  240, 30, 256);
+AUDIO_FORMAT(G711_ALAW_64K,  PCMA,           "PCMA",  8, 8,  240, 30, 256);
+AUDIO_FORMAT(G728,           G728,           "G728",  5, 20, 100, 10, 256);
+AUDIO_FORMAT(G729,           G729,           "G729", 10, 80,  24,  5, 256);
+AUDIO_FORMAT(G729A,          G729,           "G729", 10, 80,  24,  5, 256);
+AUDIO_FORMAT(G729B,          G729,           "G729", 10, 80,  24,  5, 256);
+AUDIO_FORMAT(G729AB,         G729,           "G729", 10, 80,  24,  5, 256);
+AUDIO_FORMAT(G7231_6k3,      G7231,          "G723", 24, 240,  8,  3, 256);
+AUDIO_FORMAT(G7231_5k3,      G7231,          "G723", 24, 240,  8,  3, 256);
+AUDIO_FORMAT(G7231A_6k3,     G7231,          "G723", 24, 240,  8,  3, 256);
+AUDIO_FORMAT(G7231A_5k3,     G7231,          "G723", 24, 240,  8,  3, 256);
+AUDIO_FORMAT(GSM0610,        GSM,            "GSM",  33, 160,  7,  4, 7);
 
-const OpalMediaFormat OpalRFC2833(
-  OPAL_RFC2833,
-  0,
-  (RTP_DataFrame::PayloadTypes)101,  // Set to this for Cisco compatibility
-  "telephone-event",
-  TRUE,   // Needs jitter
-  32*(1000/50), // bits/sec  (32 bits every 50ms)
-  4,      // bytes/frame
-  150*8,  // 150 millisecond
-  OpalMediaFormat::AudioClockRate
-);
+
+const OpalMediaFormat & GetOpalRFC2833()
+{
+  static const OpalMediaFormat RFC2833(
+    OPAL_RFC2833,
+    0,
+    (RTP_DataFrame::PayloadTypes)101,  // Set to this for Cisco compatibility
+    "telephone-event",
+    TRUE,   // Needs jitter
+    32*(1000/50), // bits/sec  (32 bits every 50ms)
+    4,      // bytes/frame
+    150*8,  // 150 millisecond
+    OpalMediaFormat::AudioClockRate
+  );
+  return RFC2833;
+}
 
 
 static OpalMediaFormatList & GetMediaFormatsList()

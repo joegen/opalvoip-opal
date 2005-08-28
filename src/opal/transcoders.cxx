@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2013  2005/07/14 08:53:34  csoutheren
+ * Revision 1.2014  2005/08/28 07:59:17  rjongbloed
+ * Converted OpalTranscoder to use factory, requiring sme changes in making sure
+ *   OpalMediaFormat instances are initialised before use.
+ *
+ * Revision 2.12  2005/07/14 08:53:34  csoutheren
  * Change transcoding selection algorithm to prefer untranslated codec connections rather
  * than multi-stage transcoders
  *
@@ -90,57 +94,41 @@
 #define new PNEW
 
 
-static OpalTranscoderRegistration * RegisteredTranscodersListHead;
-
-
 /////////////////////////////////////////////////////////////////////////////
 
-OpalTranscoderRegistration::OpalTranscoderRegistration(const char * input,
-                                                       const char * output)
-  : PCaselessString(input)
+OpalMediaFormatPair::OpalMediaFormatPair(const OpalMediaFormat & inputFmt,
+                                         const OpalMediaFormat & outputFmt)
+  : inputMediaFormat(inputFmt),
+    outputMediaFormat(outputFmt)
 {
-  *this += '\t';
-  *this += output;
-
-  OpalTranscoderRegistration * test = RegisteredTranscodersListHead;
-  while (test != NULL) {
-    if (*test == *this)
-      return;
-    test = test->link;
-  }
-
-  link = RegisteredTranscodersListHead;
-  RegisteredTranscodersListHead = this;
 }
 
 
-PString OpalTranscoderRegistration::GetInputFormat() const
+void OpalMediaFormatPair::PrintOn(ostream & strm) const
 {
-  return Left(Find('\t'));
+  strm << inputMediaFormat << "->" << outputMediaFormat;
 }
 
 
-PString OpalTranscoderRegistration::GetOutputFormat() const
+PObject::Comparison OpalMediaFormatPair::Compare(const PObject & obj) const
 {
-  return Mid(Find('\t')+1);
+  PAssert(PIsDescendant(&obj, OpalMediaFormatPair), PInvalidCast);
+  const OpalMediaFormatPair & other = (const OpalMediaFormatPair &)obj;
+  if (inputMediaFormat < other.inputMediaFormat)
+    return LessThan;
+  if (inputMediaFormat > other.inputMediaFormat)
+    return GreaterThan;
+  return outputMediaFormat.Compare(other.outputMediaFormat);
 }
 
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalTranscoder::OpalTranscoder(const OpalTranscoderRegistration & reg)
-  : registration(reg),
-    inputMediaFormat(reg.GetInputFormat()),
-    outputMediaFormat(reg.GetOutputFormat())
+OpalTranscoder::OpalTranscoder(const OpalMediaFormat & inputMediaFormat,
+                               const OpalMediaFormat & outputMediaFormat)
+  : OpalMediaFormatPair(inputMediaFormat, outputMediaFormat)
 {
   maxOutputSize = RTP_DataFrame::MaxEthernetPayloadSize;
-}
-
-
-void OpalTranscoder::PrintOn(ostream & strm) const
-{
-  strm << registration.GetInputFormat() << "->"
-       << registration.GetOutputFormat();
 }
 
 
@@ -162,19 +150,9 @@ BOOL OpalTranscoder::ConvertFrames(const RTP_DataFrame & input,
 
 
 OpalTranscoder * OpalTranscoder::Create(const OpalMediaFormat & srcFormat,
-                                        const OpalMediaFormat & destFormat,
-                                        void * parameters)
+                                        const OpalMediaFormat & destFormat)
 {
-  PString name = srcFormat + '\t' + destFormat;
-
-  OpalTranscoderRegistration * find = RegisteredTranscodersListHead;
-  while (find != NULL) {
-    if (*find == name)
-      return find->Create(parameters);
-    find = find->link;
-  }
-
-  return NULL;
+  return OpalTranscoderFactory::CreateInstance(OpalMediaFormatPair(srcFormat, destFormat));
 }
 
 
@@ -204,12 +182,11 @@ BOOL OpalTranscoder::SelectFormats(unsigned sessionID,
     dstFormat = dstFormats[d];
     for (s = 0; s < srcFormats.GetSize(); s++) {
       srcFormat = srcFormats[s];
-      PString searchName = srcFormat + '\t' + dstFormat;
-      OpalTranscoderRegistration * find = RegisteredTranscodersListHead;
-      while (find != NULL) {
-        if (*find == searchName)
+      OpalMediaFormatPair search(srcFormat, dstFormat);
+      OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
+      for (OpalTranscoderIterator i = availableTranscoders.begin(); i != availableTranscoders.end(); ++i) {
+        if (search == *i)
           return TRUE;
-        find = find->link;
       }
     }
   }
@@ -235,19 +212,17 @@ BOOL OpalTranscoder::FindIntermediateFormat(const OpalMediaFormat & srcFormat,
 {
   intermediateFormat = OpalMediaFormat();
 
-  OpalTranscoderRegistration * find1 = RegisteredTranscodersListHead;
-  while (find1 != NULL) {
+  OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
+  for (OpalTranscoderIterator find1 = availableTranscoders.begin(); find1 != availableTranscoders.end(); ++find1) {
     if (find1->GetInputFormat() == srcFormat) {
       intermediateFormat = find1->GetOutputFormat();
-      PString searchName = intermediateFormat + '\t' + dstFormat;
-      OpalTranscoderRegistration * find2 = RegisteredTranscodersListHead;
-      while (find2 != NULL) {
-        if (*find2 == searchName)
+      for (OpalTranscoderIterator find2 = availableTranscoders.begin(); find2 != availableTranscoders.end(); ++find2) {
+        if (find2->GetInputFormat() == find1->GetOutputFormat() && find2->GetOutputFormat() == dstFormat) {
+          intermediateFormat = find1->GetOutputFormat();
           return TRUE;
-        find2 = find2->link;
+        }
       }
     }
-    find1 = find1->link;
   }
 
   return FALSE;
@@ -258,11 +233,10 @@ OpalMediaFormatList OpalTranscoder::GetDestinationFormats(const OpalMediaFormat 
 {
   OpalMediaFormatList list;
 
-  OpalTranscoderRegistration * find = RegisteredTranscodersListHead;
-  while (find != NULL) {
+  OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
+  for (OpalTranscoderIterator find = availableTranscoders.begin(); find != availableTranscoders.end(); ++find) {
     if (find->GetInputFormat() == srcFormat)
       list += find->GetOutputFormat();
-    find = find->link;
   }
 
   return list;
@@ -273,11 +247,10 @@ OpalMediaFormatList OpalTranscoder::GetSourceFormats(const OpalMediaFormat & dst
 {
   OpalMediaFormatList list;
 
-  OpalTranscoderRegistration * find = RegisteredTranscodersListHead;
-  while (find != NULL) {
+  OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
+  for (OpalTranscoderIterator find = availableTranscoders.begin(); find != availableTranscoders.end(); ++find) {
     if (find->GetOutputFormat() == dstFormat)
       list += find->GetInputFormat();
-    find = find->link;
   }
 
   return list;
@@ -306,9 +279,10 @@ OpalMediaFormatList OpalTranscoder::GetPossibleFormats(const OpalMediaFormatList
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalFramedTranscoder::OpalFramedTranscoder(const OpalTranscoderRegistration & registration,
+OpalFramedTranscoder::OpalFramedTranscoder(const OpalMediaFormat & inputMediaFormat,
+                                           const OpalMediaFormat & outputMediaFormat,
                                            PINDEX inputBytes, PINDEX outputBytes)
-  : OpalTranscoder(registration)
+  : OpalTranscoder(inputMediaFormat, outputMediaFormat)
 {
   inputBytesPerFrame = inputBytes;
   outputBytesPerFrame = outputBytes;
@@ -357,11 +331,12 @@ BOOL OpalFramedTranscoder::ConvertFrame(const BYTE * /*inputPtr*/, BYTE * /*outp
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalStreamedTranscoder::OpalStreamedTranscoder(const OpalTranscoderRegistration & registration,
+OpalStreamedTranscoder::OpalStreamedTranscoder(const OpalMediaFormat & inputMediaFormat,
+                                               const OpalMediaFormat & outputMediaFormat,
                                                unsigned inputBits,
                                                unsigned outputBits,
                                                PINDEX optimal)
-  : OpalTranscoder(registration)
+  : OpalTranscoder(inputMediaFormat, outputMediaFormat)
 {
   inputBitsPerSample = inputBits;
   outputBitsPerSample = outputBits;
@@ -489,8 +464,8 @@ BOOL OpalStreamedTranscoder::Convert(const RTP_DataFrame & input,
 
 /////////////////////////////////////////////////////////////////////////////
 
-Opal_Linear16Mono_PCM::Opal_Linear16Mono_PCM(const OpalTranscoderRegistration & registration)
-  : OpalStreamedTranscoder(registration, 16, 16, 320)
+Opal_Linear16Mono_PCM::Opal_Linear16Mono_PCM()
+  : OpalStreamedTranscoder(OpalL16_MONO_8KHZ, OpalPCM16, 16, 16, 320)
 {
 }
 
@@ -506,8 +481,8 @@ int Opal_Linear16Mono_PCM::ConvertOne(int sample) const
 
 /////////////////////////////////////////////////////////////////////////////
 
-Opal_PCM_Linear16Mono::Opal_PCM_Linear16Mono(const OpalTranscoderRegistration & registration)
-  : OpalStreamedTranscoder(registration, 16, 16, 320)
+Opal_PCM_Linear16Mono::Opal_PCM_Linear16Mono()
+  : OpalStreamedTranscoder(OpalPCM16, OpalL16_MONO_8KHZ, 16, 16, 320)
 {
 }
 

@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lpc10codec.cxx,v $
- * Revision 1.2009  2005/02/21 12:19:54  rjongbloed
+ * Revision 1.2010  2005/08/28 07:59:17  rjongbloed
+ * Converted OpalTranscoder to use factory, requiring sme changes in making sure
+ *   OpalMediaFormat instances are initialised before use.
+ *
+ * Revision 2.8  2005/02/21 12:19:54  rjongbloed
  * Added new "options list" to the OpalMediaFormat class.
  *
  * Revision 2.7  2004/09/01 12:21:27  rjongbloed
@@ -123,15 +127,18 @@ const real MaxSampleValue = 32767.0;
 const real MinSampleValue = -32767.0;
 
 
-
-static OpalAudioFormat OpalLPC10(
-  OPAL_LPC10,
-  RTP_DataFrame::LPC,
-  "LPC",
-  BytesPerFrame,
-  SamplesPerFrame,
-  7, 4
-);
+const OpalAudioFormat & GetOpalLPC10()
+{
+  static const OpalAudioFormat LPC10(
+    OPAL_LPC10,
+    RTP_DataFrame::LPC,
+    "LPC",
+    BytesPerFrame,
+    SamplesPerFrame,
+    7, 4
+  );
+  return LPC10;
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -163,8 +170,8 @@ PString H323_LPC10Capability::GetFormatName() const
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Opal_LPC10_PCM::Opal_LPC10_PCM(const OpalTranscoderRegistration & registration)
-  : OpalFramedTranscoder(registration, BytesPerFrame, SamplesPerFrame*2)
+Opal_LPC10_PCM::Opal_LPC10_PCM()
+  : OpalFramedTranscoder(OpalLPC10, OpalPCM16, BytesPerFrame, SamplesPerFrame*2)
 {
   decoder = (struct lpc10_decoder_state *)malloc((unsigned)sizeof(struct lpc10_decoder_state));
   ::init_lpc10_decoder_state(decoder);
@@ -205,8 +212,8 @@ BOOL Opal_LPC10_PCM::ConvertFrame(const BYTE * src, BYTE * dst)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Opal_PCM_LPC10::Opal_PCM_LPC10(const OpalTranscoderRegistration & registration)
-  : OpalFramedTranscoder(registration, SamplesPerFrame*2, BytesPerFrame)
+Opal_PCM_LPC10::Opal_PCM_LPC10()
+  : OpalFramedTranscoder(OpalPCM16, OpalLPC10, SamplesPerFrame*2, BytesPerFrame)
 {
   encoder = (struct lpc10_encoder_state *)malloc((unsigned)sizeof(struct lpc10_encoder_state));
   ::init_lpc10_encoder_state(encoder);

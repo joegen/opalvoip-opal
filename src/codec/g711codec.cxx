@@ -23,7 +23,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g711codec.cxx,v $
- * Revision 1.2004  2002/11/20 04:53:16  robertj
+ * Revision 1.2005  2005/08/28 07:59:17  rjongbloed
+ * Converted OpalTranscoder to use factory, requiring sme changes in making sure
+ *   OpalMediaFormat instances are initialised before use.
+ *
+ * Revision 2.3  2002/11/20 04:53:16  robertj
  * Included optimisations for G.711 and G.726 codecs, thanks Ted Szoczei
  *
  * Revision 2.2  2002/03/15 03:07:25  robertj
@@ -58,8 +62,8 @@ extern "C" {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Opal_G711_uLaw_PCM::Opal_G711_uLaw_PCM(const OpalTranscoderRegistration & registration)
-  : OpalStreamedTranscoder(registration, 8, 16, 160)
+Opal_G711_uLaw_PCM::Opal_G711_uLaw_PCM()
+  : OpalStreamedTranscoder(OpalG711_ULAW_64K, OpalPCM16, 8, 16, 160)
 {
   PTRACE(3, "Codec\tG711-uLaw-64k decoder created");
 }
@@ -79,8 +83,8 @@ int Opal_G711_uLaw_PCM::ConvertSample(int sample)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Opal_PCM_G711_uLaw::Opal_PCM_G711_uLaw(const OpalTranscoderRegistration & registration)
-  : OpalStreamedTranscoder(registration, 16, 8, 160)
+Opal_PCM_G711_uLaw::Opal_PCM_G711_uLaw()
+  : OpalStreamedTranscoder(OpalPCM16, OpalG711_ULAW_64K, 16, 8, 160)
 {
   PTRACE(3, "Codec\tG711-uLaw-64k encoder created");
 }
@@ -100,8 +104,8 @@ int Opal_PCM_G711_uLaw::ConvertSample(int sample)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Opal_G711_ALaw_PCM::Opal_G711_ALaw_PCM(const OpalTranscoderRegistration & registration)
-  : OpalStreamedTranscoder(registration, 8, 16, 160)
+Opal_G711_ALaw_PCM::Opal_G711_ALaw_PCM()
+  : OpalStreamedTranscoder(OpalG711_ALAW_64K, OpalPCM16, 8, 16, 160)
 {
   PTRACE(3, "Codec\tG711-ALaw-64k decoder created");
 }
@@ -121,8 +125,8 @@ int Opal_G711_ALaw_PCM::ConvertSample(int sample)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Opal_PCM_G711_ALaw::Opal_PCM_G711_ALaw(const OpalTranscoderRegistration & registration)
-  : OpalStreamedTranscoder(registration, 16, 8, 160)
+Opal_PCM_G711_ALaw::Opal_PCM_G711_ALaw()
+  : OpalStreamedTranscoder(OpalPCM16, OpalG711_ALAW_64K, 16, 8, 160)
 {
   PTRACE(3, "Codec\tG711-ALaw-64k encoder created");
 }
