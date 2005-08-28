@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g729codec.cxx,v $
- * Revision 1.2006  2004/02/19 10:47:02  rjongbloed
+ * Revision 1.2007  2005/08/28 07:59:17  rjongbloed
+ * Converted OpalTranscoder to use factory, requiring sme changes in making sure
+ *   OpalMediaFormat instances are initialised before use.
+ *
+ * Revision 2.5  2004/02/19 10:47:02  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.4  2003/06/02 04:04:54  rjongbloed
@@ -124,8 +128,8 @@ enum {
 
 /////////////////////////////////////////////////////////////////////////////
 
-Opal_G729_PCM::Opal_G729_PCM(const OpalTranscoderRegistration & registration)
-  : OpalFramedTranscoder(registration, FrameSize, FrameSamples*2)
+Opal_G729_PCM::Opal_G729_PCM()
+  : OpalFramedTranscoder(OpalG729, OpalPCM16, FrameSize, FrameSamples*2)
 {
   if (voiceAgeDecoderInUse != NULL) {
     PTRACE(1, "Codec\tVoice Age G.729A decoder already in use!");
@@ -157,8 +161,8 @@ BOOL Opal_G729_PCM::ConvertFrame(const BYTE * src, BYTE * dst)
 }
 
 
-Opal_PCM_G729::Opal_PCM_G729(const OpalTranscoderRegistration & registration)
-  : OpalFramedTranscoder(registration, FrameSamples*2, FrameSize)
+Opal_PCM_G729::Opal_PCM_G729()
+  : OpalFramedTranscoder(OpalPCM16, OpalG729, FrameSamples*2, FrameSize)
 {
   if (voiceAgeEncoderInUse != NULL) {
     PTRACE(1, "Codec\tVoice Age G.729A encoder already in use!");

@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g726codec.h,v $
- * Revision 1.2009  2005/02/21 12:19:44  rjongbloed
+ * Revision 1.2010  2005/08/28 07:59:17  rjongbloed
+ * Converted OpalTranscoder to use factory, requiring sme changes in making sure
+ *   OpalMediaFormat instances are initialised before use.
+ *
+ * Revision 2.8  2005/02/21 12:19:44  rjongbloed
  * Added new "options list" to the OpalMediaFormat class.
  *
  * Revision 2.7  2004/09/01 12:21:26  rjongbloed
@@ -71,6 +75,16 @@ struct g726_state_s;
 #define OPAL_G726_32 "G.726-32k"
 #define OPAL_G726_24 "G.726-24k"
 #define OPAL_G726_16 "G.726-16k"
+
+extern const OpalAudioFormat & GetOpalG726_40();
+extern const OpalAudioFormat & GetOpalG726_32();
+extern const OpalAudioFormat & GetOpalG726_24();
+extern const OpalAudioFormat & GetOpalG726_16();
+
+#define OpalG726_40 GetOpalG726_40()
+#define OpalG726_32 GetOpalG726_32()
+#define OpalG726_24 GetOpalG726_24()
+#define OpalG726_16 GetOpalG726_16()
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -178,7 +192,11 @@ H323_STATIC_LOAD_REGISTER_CAPABILITY(H323_G726_16_Capability);
 
 class Opal_G726_Transcoder : public OpalStreamedTranscoder {
   public:
-    Opal_G726_Transcoder(const OpalTranscoderRegistration & registration, unsigned bits);
+    Opal_G726_Transcoder(
+      const OpalMediaFormat & inputMediaFormat,  // Input media format
+      const OpalMediaFormat & outputMediaFormat, // Output media format
+      unsigned bits
+    );
     ~Opal_G726_Transcoder();
   protected:
     g726_state_s * g726;
@@ -187,56 +205,56 @@ class Opal_G726_Transcoder : public OpalStreamedTranscoder {
 
 class Opal_G726_40_PCM : public Opal_G726_Transcoder {
   public:
-    Opal_G726_40_PCM(const OpalTranscoderRegistration & registration);
+    Opal_G726_40_PCM();
     virtual int ConvertOne(int sample) const;
 };
 
 
 class Opal_PCM_G726_40 : public Opal_G726_Transcoder {
   public:
-    Opal_PCM_G726_40(const OpalTranscoderRegistration & registration);
+    Opal_PCM_G726_40();
     virtual int ConvertOne(int sample) const;
 };
 
 
 class Opal_G726_32_PCM : public Opal_G726_Transcoder {
   public:
-    Opal_G726_32_PCM(const OpalTranscoderRegistration & registration);
+    Opal_G726_32_PCM();
     virtual int ConvertOne(int sample) const;
 };
 
 
 class Opal_PCM_G726_32 : public Opal_G726_Transcoder {
   public:
-    Opal_PCM_G726_32(const OpalTranscoderRegistration & registration);
+    Opal_PCM_G726_32();
     virtual int ConvertOne(int sample) const;
 };
 
 
 class Opal_G726_24_PCM : public Opal_G726_Transcoder {
   public:
-    Opal_G726_24_PCM(const OpalTranscoderRegistration & registration);
+    Opal_G726_24_PCM();
     virtual int ConvertOne(int sample) const;
 };
 
 
 class Opal_PCM_G726_24 : public Opal_G726_Transcoder {
   public:
-    Opal_PCM_G726_24(const OpalTranscoderRegistration & registration);
+    Opal_PCM_G726_24();
     virtual int ConvertOne(int sample) const;
 };
 
 
 class Opal_G726_16_PCM : public Opal_G726_Transcoder {
   public:
-    Opal_G726_16_PCM(const OpalTranscoderRegistration & registration);
+    Opal_G726_16_PCM();
     virtual int ConvertOne(int sample) const;
 };
 
 
 class Opal_PCM_G726_16 : public Opal_G726_Transcoder {
   public:
-    Opal_PCM_G726_16(const OpalTranscoderRegistration & registration);
+    Opal_PCM_G726_16();
     virtual int ConvertOne(int sample) const;
 };
 
@@ -245,14 +263,14 @@ class Opal_PCM_G726_16 : public Opal_G726_Transcoder {
 
 #define OPAL_REGISTER_G726() \
           OPAL_REGISTER_G726_H323 \
-          OPAL_REGISTER_TRANSCODER(Opal_G726_40_PCM, OPAL_G726_40, OPAL_PCM16); \
-          OPAL_REGISTER_TRANSCODER(Opal_PCM_G726_40, OPAL_PCM16, OPAL_G726_40); \
-          OPAL_REGISTER_TRANSCODER(Opal_G726_32_PCM, OPAL_G726_32, OPAL_PCM16); \
-          OPAL_REGISTER_TRANSCODER(Opal_PCM_G726_32, OPAL_PCM16, OPAL_G726_32); \
-          OPAL_REGISTER_TRANSCODER(Opal_G726_24_PCM, OPAL_G726_24, OPAL_PCM16); \
-          OPAL_REGISTER_TRANSCODER(Opal_PCM_G726_24, OPAL_PCM16, OPAL_G726_24); \
-          OPAL_REGISTER_TRANSCODER(Opal_G726_16_PCM, OPAL_G726_16, OPAL_PCM16); \
-          OPAL_REGISTER_TRANSCODER(Opal_PCM_G726_16, OPAL_PCM16, OPAL_G726_16)
+          OPAL_REGISTER_TRANSCODER(Opal_G726_40_PCM, OpalG726_40, OpalPCM16); \
+          OPAL_REGISTER_TRANSCODER(Opal_PCM_G726_40, OpalPCM16,   OpalG726_40); \
+          OPAL_REGISTER_TRANSCODER(Opal_G726_32_PCM, OpalG726_32, OpalPCM16); \
+          OPAL_REGISTER_TRANSCODER(Opal_PCM_G726_32, OpalPCM16,   OpalG726_32); \
+          OPAL_REGISTER_TRANSCODER(Opal_G726_24_PCM, OpalG726_24, OpalPCM16); \
+          OPAL_REGISTER_TRANSCODER(Opal_PCM_G726_24, OpalPCM16,   OpalG726_24); \
+          OPAL_REGISTER_TRANSCODER(Opal_G726_16_PCM, OpalG726_16, OpalPCM16); \
+          OPAL_REGISTER_TRANSCODER(Opal_PCM_G726_16, OpalPCM16,   OpalG726_16)
 
 
 #endif // __OPAL_G726CODEC_H

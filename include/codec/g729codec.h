@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g729codec.h,v $
- * Revision 1.2009  2004/02/23 01:32:06  rjongbloed
+ * Revision 1.2010  2005/08/28 07:59:17  rjongbloed
+ * Converted OpalTranscoder to use factory, requiring sme changes in making sure
+ *   OpalMediaFormat instances are initialised before use.
+ *
+ * Revision 2.8  2004/02/23 01:32:06  rjongbloed
  * Removed duplicate #if for if voice age included and made sure there was a
  *   dummy G729 declaration macro if no G.729 included.
  *
@@ -98,9 +102,7 @@
 
 class Opal_G729_PCM : public OpalFramedTranscoder {
   public:
-    Opal_G729_PCM(
-      const OpalTranscoderRegistration & registration /// Registration for transcoder
-    );
+    Opal_G729_PCM();
     ~Opal_G729_PCM();
     virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
 };
@@ -112,9 +114,7 @@ typedef Opal_G729_PCM Opal_G729A_PCM;
 
 class Opal_PCM_G729 : public OpalFramedTranscoder {
   public:
-    Opal_PCM_G729(
-      const OpalTranscoderRegistration & registration /// Registration for transcoder
-    );
+    Opal_PCM_G729();
     ~Opal_PCM_G729();
     virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
 };
@@ -125,10 +125,10 @@ typedef Opal_PCM_G729 Opal_PCM_G729A;
 ///////////////////////////////////////////////////////////////////////////////
 
 #define OPAL_REGISTER_G729() \
-          OPAL_REGISTER_TRANSCODER(Opal_G729_PCM, OPAL_G729, OPAL_PCM16); \
-          OPAL_REGISTER_TRANSCODER(Opal_PCM_G729, OPAL_PCM16, OPAL_G729); \
-          OPAL_REGISTER_TRANSCODER(Opal_G729A_PCM, OPAL_G729A, OPAL_PCM16); \
-          OPAL_REGISTER_TRANSCODER(Opal_PCM_G729A, OPAL_PCM16, OPAL_G729A)
+          OPAL_REGISTER_TRANSCODER(Opal_G729_PCM,  OpalG729,  OpalPCM16); \
+          OPAL_REGISTER_TRANSCODER(Opal_PCM_G729,  OpalPCM16, OpalG729); \
+          OPAL_REGISTER_TRANSCODER(Opal_G729A_PCM, OpalG729A, OpalPCM16); \
+          OPAL_REGISTER_TRANSCODER(Opal_PCM_G729A, OpalPCM16, OpalG729A)
 
 
 #else // VOICE_AGE_G729A

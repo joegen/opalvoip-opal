@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vidcodec.cxx,v $
- * Revision 1.2007  2005/07/24 07:33:09  rjongbloed
+ * Revision 1.2008  2005/08/28 07:59:17  rjongbloed
+ * Converted OpalTranscoder to use factory, requiring sme changes in making sure
+ *   OpalMediaFormat instances are initialised before use.
+ *
+ * Revision 2.6  2005/07/24 07:33:09  rjongbloed
  * Simplified "uncompressed" transcoder sp can test video media streams.
  *
  * Revision 2.5  2005/02/21 12:19:54  rjongbloed
@@ -60,41 +64,44 @@
 #define FRAME_HEIGHT PVideoDevice::CIFHeight
 #define FRAME_RATE   25 // PAL
 
-const OpalMediaFormat OpalRGB24(
-  OPAL_RGB24,
-  OpalMediaFormat::DefaultVideoSessionID,
-  RTP_DataFrame::MaxPayloadType,
-  OPAL_RGB24,
-  FALSE,   // No jitter
-  24*FRAME_WIDTH*FRAME_HEIGHT*FRAME_RATE,  // Bandwidth
-  3*FRAME_WIDTH*FRAME_HEIGHT,
-  96000/FRAME_RATE,
-  OpalMediaFormat::VideoClockRate
-);
+const OpalVideoFormat & GetOpalRGB24()
+{
+  static const OpalVideoFormat RGB24(
+    OPAL_RGB24,
+    RTP_DataFrame::MaxPayloadType,
+    OPAL_RGB24,
+    FRAME_WIDTH, FRAME_HEIGHT,
+    FRAME_RATE,
+    24*FRAME_WIDTH*FRAME_HEIGHT*FRAME_RATE  // Bandwidth
+  );
+  return RGB24;
+}
 
-const OpalMediaFormat OpalRGB32(
-  OPAL_RGB32,
-  OpalMediaFormat::DefaultVideoSessionID,
-  RTP_DataFrame::MaxPayloadType,
-  OPAL_RGB32,
-  FALSE,   // No jitter
-  32*FRAME_WIDTH*FRAME_HEIGHT*FRAME_RATE,  // Bandwidth
-  4*FRAME_WIDTH*FRAME_HEIGHT,
-  96000/FRAME_RATE,
-  OpalMediaFormat::VideoClockRate
-);
+const OpalVideoFormat & GetOpalRGB32()
+{
+  static const OpalVideoFormat RGB32(
+    OPAL_RGB32,
+    RTP_DataFrame::MaxPayloadType,
+    OPAL_RGB32,
+    FRAME_WIDTH, FRAME_HEIGHT,
+    FRAME_RATE,
+    32*FRAME_WIDTH*FRAME_HEIGHT*FRAME_RATE  // Bandwidth
+  );
+  return RGB32;
+}
 
-const OpalMediaFormat OpalYUV420P(
-  OPAL_YUV420P,
-  OpalMediaFormat::DefaultVideoSessionID,
-  RTP_DataFrame::MaxPayloadType,
-  OPAL_YUV420P,
-  FALSE,   // No jitter
-  12*FRAME_WIDTH*FRAME_HEIGHT*FRAME_RATE,  // Bandwidth
-  3*FRAME_WIDTH*FRAME_HEIGHT/2,
-  96000/FRAME_RATE,
-  OpalMediaFormat::VideoClockRate
-);
+const OpalVideoFormat & GetOpalYUV420P()
+{
+  static const OpalVideoFormat YUV420P(
+    OPAL_YUV420P,
+    RTP_DataFrame::MaxPayloadType,
+    OPAL_YUV420P,
+    FRAME_WIDTH, FRAME_HEIGHT,
+    FRAME_RATE,
+    12*FRAME_WIDTH*FRAME_HEIGHT*FRAME_RATE  // Bandwidth
+  );
+  return YUV420P;
+}
 
 
 #define new PNEW
@@ -102,8 +109,9 @@ const OpalMediaFormat OpalYUV420P(
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalVideoTranscoder::OpalVideoTranscoder(const OpalTranscoderRegistration & registration)
-  : OpalTranscoder(registration)
+OpalVideoTranscoder::OpalVideoTranscoder(const OpalMediaFormat & inputMediaFormat,
+                                         const OpalMediaFormat & outputMediaFormat)
+  : OpalTranscoder(inputMediaFormat, outputMediaFormat)
 {
   frameWidth = PVideoDevice::CIFWidth;
   frameHeight = PVideoDevice::CIFHeight;
@@ -149,8 +157,9 @@ PString H323_UncompVideoCapability::GetFormatName() const
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalUncompVideoTranscoder::OpalUncompVideoTranscoder(const OpalTranscoderRegistration & registration)
-  : OpalVideoTranscoder(registration)
+OpalUncompVideoTranscoder::OpalUncompVideoTranscoder(const OpalMediaFormat & inputMediaFormat,
+                                                     const OpalMediaFormat & outputMediaFormat)
+  : OpalVideoTranscoder(inputMediaFormat, outputMediaFormat)
 {
 }
 

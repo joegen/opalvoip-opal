@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gsmcodec.h,v $
- * Revision 1.2006  2002/11/10 11:33:16  robertj
+ * Revision 1.2007  2005/08/28 07:59:17  rjongbloed
+ * Converted OpalTranscoder to use factory, requiring sme changes in making sure
+ *   OpalMediaFormat instances are initialised before use.
+ *
+ * Revision 2.5  2002/11/10 11:33:16  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.4  2002/09/16 02:52:33  robertj
@@ -114,7 +118,8 @@ struct gsm_state;
 class Opal_GSM0610 : public OpalFramedTranscoder {
   public:
     Opal_GSM0610(
-      const OpalTranscoderRegistration & registration, /// Registration for transcoder
+      const OpalMediaFormat & inputMediaFormat,  // Input media format
+      const OpalMediaFormat & outputMediaFormat, // Output media format
       unsigned inputBytesPerFrame,  /// Number of bytes in an input frame
       unsigned outputBytesPerFrame  /// Number of bytes in an output frame
     );
@@ -128,9 +133,7 @@ class Opal_GSM0610 : public OpalFramedTranscoder {
 
 class Opal_GSM0610_PCM : public Opal_GSM0610 {
   public:
-    Opal_GSM0610_PCM(
-      const OpalTranscoderRegistration & registration /// Registration for transcoder
-    );
+    Opal_GSM0610_PCM();
     virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
 };
 
@@ -139,9 +142,7 @@ class Opal_GSM0610_PCM : public Opal_GSM0610 {
 
 class Opal_PCM_GSM0610 : public Opal_GSM0610 {
   public:
-    Opal_PCM_GSM0610(
-      const OpalTranscoderRegistration & registration /// Registration for transcoder
-    );
+    Opal_PCM_GSM0610();
     virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
 };
 
@@ -149,8 +150,8 @@ class Opal_PCM_GSM0610 : public Opal_GSM0610 {
 ///////////////////////////////////////////////////////////////////////////////
 
 #define OPAL_REGISTER_GSM0610() \
-          OPAL_REGISTER_TRANSCODER(Opal_GSM0610_PCM, OPAL_GSM0610, OPAL_PCM16); \
-          OPAL_REGISTER_TRANSCODER(Opal_PCM_GSM0610, OPAL_PCM16, OPAL_GSM0610)
+          OPAL_REGISTER_TRANSCODER(Opal_GSM0610_PCM, OpalGSM0610, OpalPCM16); \
+          OPAL_REGISTER_TRANSCODER(Opal_PCM_GSM0610, OpalPCM16,   OpalGSM0610)
 
 
 

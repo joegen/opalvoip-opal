@@ -24,7 +24,11 @@
  * Contributor(s): 
  *
  * $Log: vidcodec.h,v $
- * Revision 1.2007  2005/07/24 07:33:07  rjongbloed
+ * Revision 1.2008  2005/08/28 07:59:17  rjongbloed
+ * Converted OpalTranscoder to use factory, requiring sme changes in making sure
+ *   OpalMediaFormat instances are initialised before use.
+ *
+ * Revision 2.6  2005/07/24 07:33:07  rjongbloed
  * Simplified "uncompressed" transcoder sp can test video media streams.
  *
  * Revision 2.5  2005/02/21 12:19:45  rjongbloed
@@ -61,6 +65,19 @@
 #endif
 
 
+#define OPAL_RGB24   "RGB24"
+#define OPAL_RGB32   "RGB32"
+#define OPAL_YUV420P "YUV420P"
+
+extern const OpalVideoFormat & GetOpalRGB24();
+extern const OpalVideoFormat & GetOpalRGB32();
+extern const OpalVideoFormat & GetOpalYUV420P();
+
+#define OpalRGB24   GetOpalRGB24()
+#define OpalRGB32   GetOpalRGB32()
+#define OpalYUV420P GetOpalYUV420P()
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 /**This class defines a transcoder implementation class that will
@@ -86,7 +103,8 @@ class OpalVideoTranscoder : public OpalTranscoder
     /** Create a new video transcoder implementation.
       */
     OpalVideoTranscoder(
-      const OpalTranscoderRegistration & registration /// Registration fro transcoder
+      const OpalMediaFormat & inputMediaFormat,  // Input media format
+      const OpalMediaFormat & outputMediaFormat  // Output media format
     );
   //@}
 
@@ -157,9 +175,9 @@ class H323_UncompVideoCapability : public H323NonStandardVideoCapability
 
 #define OPAL_REGISTER_UNCOMPRESSED_VIDEO_H323 \
   H323_REGISTER_CAPABILITY_FUNCTION(H323_RGB24, OPAL_RGB24, ep) \
-    { return new H323_UncompVideoCapability(ep, OPAL_RGB24); } \
+    { return new H323_UncompVideoCapability(ep, OpalRGB24); } \
   H323_REGISTER_CAPABILITY_FUNCTION(H323_RGB32, OPAL_RGB32, ep) \
-    { return new H323_UncompVideoCapability(ep, OPAL_RGB32); }
+    { return new H323_UncompVideoCapability(ep, OpalRGB32); }
 
 #else // ifndef NO_H323
 
@@ -182,7 +200,8 @@ class OpalUncompVideoTranscoder : public OpalVideoTranscoder
     /** Create a new video transcoder implementation.
       */
     OpalUncompVideoTranscoder(
-      const OpalTranscoderRegistration & registration /// Registration fro transcoder
+      const OpalMediaFormat & inputMediaFormat,  // Input media format
+      const OpalMediaFormat & outputMediaFormat  // Output media format
     );
 
     /**Destroy the video transcoder cleaning up the colour converter.
@@ -222,17 +241,13 @@ class OpalUncompVideoTranscoder : public OpalVideoTranscoder
 
 class Opal_RGB24_RGB24 : public OpalUncompVideoTranscoder {
   public:
-    Opal_RGB24_RGB24(
-      const OpalTranscoderRegistration & registration /// Registration fro transcoder
-    ) : OpalUncompVideoTranscoder(registration) { }
+    Opal_RGB24_RGB24() : OpalUncompVideoTranscoder(OpalRGB24, OpalRGB24) { }
 };
 
 
 class Opal_RGB32_RGB32 : public OpalUncompVideoTranscoder {
   public:
-    Opal_RGB32_RGB32(
-      const OpalTranscoderRegistration & registration /// Registration fro transcoder
-    ) : OpalUncompVideoTranscoder(registration) { }
+    Opal_RGB32_RGB32() : OpalUncompVideoTranscoder(OpalRGB32, OpalRGB32) { }
 };
 
 
@@ -240,13 +255,8 @@ class Opal_RGB32_RGB32 : public OpalUncompVideoTranscoder {
 
 #define OPAL_REGISTER_UNCOMPRESSED_VIDEO() \
           OPAL_REGISTER_UNCOMPRESSED_VIDEO_H323 \
-          OPAL_REGISTER_TRANSCODER(Opal_RGB32_RGB32, OPAL_RGB32, OPAL_RGB32); \
-          OPAL_REGISTER_TRANSCODER(Opal_RGB24_RGB24, OPAL_RGB24, OPAL_RGB24)
-
-
-#define OPAL_RGB24   "RGB24"
-#define OPAL_RGB32   "RGB32"
-#define OPAL_YUV420P "YUV420P"
+          OPAL_REGISTER_TRANSCODER(Opal_RGB32_RGB32, OpalRGB32, OpalRGB32); \
+          OPAL_REGISTER_TRANSCODER(Opal_RGB24_RGB24, OpalRGB24, OpalRGB24)
 
 
 #endif // __OPAL_VIDCODEC_H

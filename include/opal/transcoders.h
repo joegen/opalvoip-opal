@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2015  2005/03/19 04:08:10  csoutheren
+ * Revision 1.2016  2005/08/28 07:59:17  rjongbloed
+ * Converted OpalTranscoder to use factory, requiring sme changes in making sure
+ *   OpalMediaFormat instances are initialised before use.
+ *
+ * Revision 2.14  2005/03/19 04:08:10  csoutheren
  * Fixed warnings with gcc snapshot 4.1-20050313
  * Updated to configure 2.59
  *
@@ -95,97 +99,25 @@
 
 
 class RTP_DataFrame;
+class OpalTranscoder;
 
 
 ///////////////////////////////////////////////////////////////////////////////
 
-class OpalTranscoder;
-
-/**This class embodies the description of an object used to convert media data
-   from one format to another.
-
-   An application may create a descendent off this class and override
-   the Create() function to make the instance of a class implementing a
-   transcoder.
- */
-class OpalTranscoderRegistration : public PCaselessString
+/** This class described an OpalTranscoder in terms of a pair of
+    OpalMediaFormat instances, for input and output.
+  */
+class OpalMediaFormatPair : public PObject
 {
-    PCLASSINFO(OpalTranscoderRegistration, PCaselessString);
-  public:
-  /**@name Construction */
-  //@{
-    /**Create a new transcoder registration.
-     */
-    OpalTranscoderRegistration(
-      const char * inputFormat,  /// Input format name
-      const char * outputFormat  /// Output format name
-    );
-    virtual ~OpalTranscoderRegistration() { }
-  //@}
-
-  /**@name Operations */
-  //@{
-    /**Create an instance of the transcoder implementation.
-      */
-    virtual OpalTranscoder * Create(
-      void * parameters   /// Arbitrary parameters for the transcoder
-    ) const = 0;
-
-    /**Get the names of the input or output formats.
-      */
-    PString GetInputFormat() const;
-
-    /**Get the names of the input or output formats.
-      */
-    PString GetOutputFormat() const;
-  //@}
-
-  protected:
-    OpalTranscoderRegistration * link;
-
-  friend class OpalTranscoder;
-};
-
-
-#define OPAL_REGISTER_TRANSCODER_FUNCTION(cls, src, dst, param) \
-static class Transcoder_##cls##_Registration : public OpalTranscoderRegistration { \
-  public: \
-    Transcoder_##cls##_Registration() : OpalTranscoderRegistration(src, dst) { } \
-    OpalTranscoder * Create(void * param) const; \
-} Transcoder_##cls##_Registration_instance; \
-static Transcoder_##cls##_Registration * static_Transcoder_##cls##_Registration = &Transcoder_##cls##_Registration_instance; \
-OpalTranscoder * Transcoder_##cls##_Registration::Create(void * param) const 
-
-#ifndef OPAL_NO_PARAM
-#define OPAL_NO_PARAM
-#endif
-
-#define OPAL_REGISTER_TRANSCODER(cls, src, dst) \
-  OPAL_REGISTER_TRANSCODER_FUNCTION(cls, src, dst, OPAL_NO_PARAM) \
-  { return new cls(*this); }
-
-#define OPAL_REGISTER_TRANSCODER_PARAM(cls, src, dst) \
-  OPAL_REGISTER_TRANSCODER_FUNCTION(cls, src, dst, parameter) \
-  { return new cls(*this, parameter); }
-
-
-
-/**This class embodies the implementation of a specific transcoder instance
-   used to convert data from one format to another.
-
-   An application may create a descendent off this class and override
-   functions as required for implementing a transcoder.
- */
-class OpalTranscoder : public PObject
-{
-    PCLASSINFO(OpalTranscoder, PObject);
+    PCLASSINFO(OpalMediaFormatPair, PObject);
   public:
   /**@name Construction */
   //@{
     /** Create a new transcoder implementation.
       */
-    OpalTranscoder(
-      const OpalTranscoderRegistration & registration /// Registration fro transcoder
+    OpalMediaFormatPair(
+      const OpalMediaFormat & inputMediaFormat,  // Input media format
+      const OpalMediaFormat & outputMediaFormat  // Output media format
     );
   //@}
 
@@ -198,6 +130,66 @@ class OpalTranscoder : public PObject
     void PrintOn(
       ostream & strm    /// Stream to output text representation
     ) const;
+
+    /** Compare the two objects and return their relative rank. This function is
+       usually overridden by descendent classes to yield the ranking according
+       to the semantics of the object.
+       
+       The default function is to use the #CompareObjectMemoryDirect()#
+       function to do a byte wise memory comparison of the two objects.
+
+       @return
+       #LessThan#, #EqualTo# or #GreaterThan#
+       according to the relative rank of the objects.
+     */
+    virtual Comparison Compare(
+      const PObject & obj   // Object to compare against.
+    ) const;
+  //@}
+
+  /**@name Operations */
+  //@{
+    /**Get the names of the input or output formats.
+      */
+    const OpalMediaFormat & GetInputFormat() const { return inputMediaFormat; }
+
+    /**Get the names of the input or output formats.
+      */
+    const OpalMediaFormat & GetOutputFormat() const { return outputMediaFormat; }
+  //@}
+
+  protected:
+    OpalMediaFormat inputMediaFormat;
+    OpalMediaFormat outputMediaFormat;
+};
+
+
+typedef PFactory<OpalTranscoder, OpalMediaFormatPair>                      OpalTranscoderFactory;
+typedef PFactory<OpalTranscoder, OpalMediaFormatPair>::KeyList_T           OpalTranscoderList;
+typedef PFactory<OpalTranscoder, OpalMediaFormatPair>::KeyList_T::iterator OpalTranscoderIterator;
+
+#define OPAL_REGISTER_TRANSCODER(cls, input, output) \
+  OpalTranscoderFactory::Worker<cls> OpalTranscoder_##cls(OpalMediaFormatPair(input, output))
+
+
+/**This class embodies the implementation of a specific transcoder instance
+   used to convert data from one format to another.
+
+   An application may create a descendent off this class and override
+   functions as required for implementing a transcoder.
+ */
+class OpalTranscoder : public OpalMediaFormatPair
+{
+    PCLASSINFO(OpalTranscoder, OpalMediaFormatPair);
+  public:
+  /**@name Construction */
+  //@{
+    /** Create a new transcoder implementation.
+      */
+    OpalTranscoder(
+      const OpalMediaFormat & inputMediaFormat,  // Input media format
+      const OpalMediaFormat & outputMediaFormat  // Output media format
+    );
   //@}
 
   /**@name Operations */
@@ -244,8 +236,7 @@ class OpalTranscoder : public PObject
       */
     static OpalTranscoder * Create(
       const OpalMediaFormat & srcFormat,  /// Name of source format
-      const OpalMediaFormat & dstFormat,  /// Name of destination format
-      void * parameters = NULL            /// Arbitrary parameters for the transcoder
+      const OpalMediaFormat & dstFormat   /// Name of destination format
     );
 
     /**Find media format(s) for transcoders.
@@ -302,18 +293,6 @@ class OpalTranscoder : public PObject
 
   /**@name Operations */
   //@{
-    /**Get the transcoder registration that created this transcoder.
-     */
-    const OpalTranscoderRegistration & GetRegistration() const { return registration; }
-
-    /**Get the names of the input or output formats.
-      */
-    const OpalMediaFormat & GetInputFormat() const { return inputMediaFormat; }
-
-    /**Get the names of the input or output formats.
-      */
-    const OpalMediaFormat & GetOutputFormat() const { return outputMediaFormat; }
-
     /**Get maximum output size.
       */
     PINDEX GetMaxOutputSize() const { return maxOutputSize; }
@@ -326,10 +305,7 @@ class OpalTranscoder : public PObject
   //@}
 
   protected:
-    const OpalTranscoderRegistration & registration;
-    OpalMediaFormat                    inputMediaFormat;
-    OpalMediaFormat                    outputMediaFormat;
-    PINDEX                             maxOutputSize;
+    PINDEX          maxOutputSize;
 };
 
 
@@ -349,7 +325,8 @@ class OpalFramedTranscoder : public OpalTranscoder
     /** Create a new framed transcoder implementation.
       */
     OpalFramedTranscoder(
-      const OpalTranscoderRegistration & registration, /// Registration fro transcoder
+      const OpalMediaFormat & inputMediaFormat,  // Input media format
+      const OpalMediaFormat & outputMediaFormat, // Output media format
       PINDEX inputBytesPerFrame,  /// Number of bytes in an input frame
       PINDEX outputBytesPerFrame  /// Number of bytes in an output frame
     );
@@ -417,7 +394,8 @@ class OpalStreamedTranscoder : public OpalTranscoder
     /** Create a new streamed transcoder implementation.
       */
     OpalStreamedTranscoder(
-      const OpalTranscoderRegistration & registration, /// Registration fro transcoder
+      const OpalMediaFormat & inputMediaFormat,  // Input media format
+      const OpalMediaFormat & outputMediaFormat, // Output media format
       unsigned inputBits,           /// Bits per sample in input data
       unsigned outputBits,          /// Bits per sample in output data
       PINDEX   optimalSamples       /// Optimal number of samples for read
@@ -467,9 +445,7 @@ class OpalStreamedTranscoder : public OpalTranscoder
 
 class Opal_Linear16Mono_PCM : public OpalStreamedTranscoder {
   public:
-    Opal_Linear16Mono_PCM(
-      const OpalTranscoderRegistration & registration /// Registration for transcoder
-    );
+    Opal_Linear16Mono_PCM();
     virtual int ConvertOne(int sample) const;
 };
 
@@ -478,18 +454,16 @@ class Opal_Linear16Mono_PCM : public OpalStreamedTranscoder {
 
 class Opal_PCM_Linear16Mono : public OpalStreamedTranscoder {
   public:
-    Opal_PCM_Linear16Mono(
-      const OpalTranscoderRegistration & registration /// Registration for transcoder
-    );
+    Opal_PCM_Linear16Mono();
     virtual int ConvertOne(int sample) const;
 };
 
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#define OPAL_REGISTER_OPAL_L16_MONO() \
-  OPAL_REGISTER_TRANSCODER(Opal_Linear16Mono_PCM, OPAL_OPAL_L16_MONO, OPAL_PCM16); \
-  OPAL_REGISTER_TRANSCODER(Opal_PCM_Linear16Mono, OPAL_PCM16, OPAL_OPAL_L16_MONO)
+#define OPAL_REGISTER_L16_MONO() \
+  OPAL_REGISTER_TRANSCODER(Opal_Linear16Mono_PCM, OpalL16_MONO_8KHZ, OpalPCM16); \
+  OPAL_REGISTER_TRANSCODER(Opal_PCM_Linear16Mono, OpalPCM16,         OpalL16_MONO_8KHZ)
 
 
 

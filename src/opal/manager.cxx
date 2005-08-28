@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2053  2005/08/24 10:43:51  rjongbloed
+ * Revision 1.2054  2005/08/28 07:59:17  rjongbloed
+ * Converted OpalTranscoder to use factory, requiring sme changes in making sure
+ *   OpalMediaFormat instances are initialised before use.
+ *
+ * Revision 2.52  2005/08/24 10:43:51  rjongbloed
  * Changed create video functions yet again so can return pointers that are not to be deleted.
  *
  * Revision 2.51  2005/08/23 12:45:09  rjongbloed
@@ -665,9 +669,9 @@ void OpalManager::AddVideoMediaFormats(OpalMediaFormatList & mediaFormats,
   if (videoInputDevice.deviceName.IsEmpty())
       return;
 
-  mediaFormats += OPAL_YUV420P;
-  mediaFormats += OPAL_RGB32;
-  mediaFormats += OPAL_RGB24;
+  mediaFormats += OpalYUV420P;
+  mediaFormats += OpalRGB32;
+  mediaFormats += OpalRGB24;
 }
 
 

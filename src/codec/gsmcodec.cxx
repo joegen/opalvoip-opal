@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gsmcodec.cxx,v $
- * Revision 1.2004  2002/09/04 06:01:47  robertj
+ * Revision 1.2005  2005/08/28 07:59:17  rjongbloed
+ * Converted OpalTranscoder to use factory, requiring sme changes in making sure
+ *   OpalMediaFormat instances are initialised before use.
+ *
+ * Revision 2.3  2002/09/04 06:01:47  robertj
  * Updated to OpenH323 v1.9.6
  *
  * Revision 2.2  2001/10/05 00:22:13  robertj
@@ -134,10 +138,11 @@ extern "C" {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Opal_GSM0610::Opal_GSM0610(const OpalTranscoderRegistration & registration,
+Opal_GSM0610::Opal_GSM0610(const OpalMediaFormat & inputMediaFormat,
+                           const OpalMediaFormat & outputMediaFormat,
                            unsigned inputBytesPerFrame,
                            unsigned outputBytesPerFrame)
-  : OpalFramedTranscoder(registration, inputBytesPerFrame, outputBytesPerFrame)
+  : OpalFramedTranscoder(inputMediaFormat, outputMediaFormat, inputBytesPerFrame, outputBytesPerFrame)
 {
   gsm = gsm_create();
 }
@@ -151,8 +156,8 @@ Opal_GSM0610::~Opal_GSM0610()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Opal_GSM0610_PCM::Opal_GSM0610_PCM(const OpalTranscoderRegistration & registration)
-  : Opal_GSM0610(registration, GSM_BYTES_PER_FRAME, GSM_SAMPLES_PER_FRAME*2)
+Opal_GSM0610_PCM::Opal_GSM0610_PCM()
+  : Opal_GSM0610(OpalGSM0610, OpalPCM16, GSM_BYTES_PER_FRAME, GSM_SAMPLES_PER_FRAME*2)
 {
   PTRACE(3, "Codec\tGSM0610 decoder created");
 }
@@ -167,8 +172,8 @@ BOOL Opal_GSM0610_PCM::ConvertFrame(const BYTE * src, BYTE * dst)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Opal_PCM_GSM0610::Opal_PCM_GSM0610(const OpalTranscoderRegistration & registration)
-  : Opal_GSM0610(registration, GSM_SAMPLES_PER_FRAME*2, GSM_BYTES_PER_FRAME)
+Opal_PCM_GSM0610::Opal_PCM_GSM0610()
+  : Opal_GSM0610(OpalPCM16, OpalGSM0610, GSM_SAMPLES_PER_FRAME*2, GSM_BYTES_PER_FRAME)
 {
   PTRACE(3, "Codec\tGSM0610 encoder created");
 }

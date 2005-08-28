@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2031  2005/08/24 02:07:56  dereksmithies
+ * Revision 1.2032  2005/08/28 07:59:17  rjongbloed
+ * Converted OpalTranscoder to use factory, requiring sme changes in making sure
+ *   OpalMediaFormat instances are initialised before use.
+ *
+ * Revision 2.30  2005/08/24 02:07:56  dereksmithies
  * Put guard around a MSVC pragma, so GCC does not generate zillions of warnings.
  *
  * Revision 2.29  2005/08/22 01:26:25  shorne
@@ -910,27 +914,44 @@ class OpalVideoFormat : public OpalMediaFormat
 #define OPAL_GSM0610        "GSM-06.10"
 #define OPAL_RFC2833        "UserInput/RFC2833"
 
-extern const OpalAudioFormat OpalPCM16;
-extern const OpalAudioFormat OpalL16_MONO_8KHZ;
-extern const OpalAudioFormat OpalL16_MONO_16KHZ;
-extern const OpalAudioFormat OpalG711_ULAW_64K;
-extern const OpalAudioFormat OpalG711_ALAW_64K;
-extern const OpalAudioFormat OpalG728;
-extern const OpalAudioFormat OpalG729;
-extern const OpalAudioFormat OpalG729A;
-extern const OpalAudioFormat OpalG729B;
-extern const OpalAudioFormat OpalG729AB;
-extern const OpalAudioFormat OpalG7231_6k3;
-extern const OpalAudioFormat OpalG7231_5k3;
-extern const OpalAudioFormat OpalG7231A_6k3;
-extern const OpalAudioFormat OpalG7231A_5k3;
-extern const OpalAudioFormat OpalGSM0610;
-extern const OpalMediaFormat OpalRFC2833;
+extern const OpalAudioFormat & GetOpalPCM16();
+extern const OpalAudioFormat & GetOpalL16_MONO_8KHZ();
+extern const OpalAudioFormat & GetOpalL16_MONO_16KHZ();
+extern const OpalAudioFormat & GetOpalG711_ULAW_64K();
+extern const OpalAudioFormat & GetOpalG711_ALAW_64K();
+extern const OpalAudioFormat & GetOpalG728();
+extern const OpalAudioFormat & GetOpalG729();
+extern const OpalAudioFormat & GetOpalG729A();
+extern const OpalAudioFormat & GetOpalG729B();
+extern const OpalAudioFormat & GetOpalG729AB();
+extern const OpalAudioFormat & GetOpalG7231_6k3();
+extern const OpalAudioFormat & GetOpalG7231_5k3();
+extern const OpalAudioFormat & GetOpalG7231A_6k3();
+extern const OpalAudioFormat & GetOpalG7231A_5k3();
+extern const OpalAudioFormat & GetOpalGSM0610();
+extern const OpalMediaFormat & GetOpalRFC2833();
 
-#define OpalL16Mono8kHz       OpalL16_MONO_8KHZ
-#define OpalL16Mono16kHz      OpalL16_MONO_16KHZ
-#define OpalG711uLaw          OpalG711_ULAW_64K
-#define OpalG711ALaw          OpalG711_ALAW_64K
+#define OpalPCM16          GetOpalPCM16()
+#define OpalL16_MONO_8KHZ  GetOpalL16_MONO_8KHZ()
+#define OpalL16_MONO_16KHZ GetOpalL16_MONO_16KHZ()
+#define OpalG711_ULAW_64K  GetOpalG711_ULAW_64K()
+#define OpalG711_ALAW_64K  GetOpalG711_ALAW_64K()
+#define OpalG728           GetOpalG728()
+#define OpalG729           GetOpalG729()
+#define OpalG729A          GetOpalG729A()
+#define OpalG729B          GetOpalG729B()
+#define OpalG729AB         GetOpalG729AB()
+#define OpalG7231_6k3      GetOpalG7231_6k3()
+#define OpalG7231_5k3      GetOpalG7231_5k3()
+#define OpalG7231A_6k3     GetOpalG7231A_6k3()
+#define OpalG7231A_5k3     GetOpalG7231A_5k3()
+#define OpalGSM0610        GetOpalGSM0610()
+#define OpalRFC2833        GetOpalRFC2833()
+
+#define OpalL16Mono8kHz    OpalL16_MONO_8KHZ
+#define OpalL16Mono16kHz   OpalL16_MONO_16KHZ
+#define OpalG711uLaw       OpalG711_ULAW_64K
+#define OpalG711ALaw       OpalG711_ALAW_64K
 
 #ifdef _WIN32
 #if _MSC_VER < 1300

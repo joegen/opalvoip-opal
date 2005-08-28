@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mscodecs.h,v $
- * Revision 1.2009  2005/02/21 12:19:45  rjongbloed
+ * Revision 1.2010  2005/08/28 07:59:17  rjongbloed
+ * Converted OpalTranscoder to use factory, requiring sme changes in making sure
+ *   OpalMediaFormat instances are initialised before use.
+ *
+ * Revision 2.8  2005/02/21 12:19:45  rjongbloed
  * Added new "options list" to the OpalMediaFormat class.
  *
  * Revision 2.7  2004/03/11 06:54:26  csoutheren
@@ -113,6 +117,12 @@
 #define OPAL_MSGSM "MS-GSM"
 #define OPAL_MSIMA "MS-IMA-ADPCM"
 
+extern const OpalAudioFormat & GetOpalMSGSM();
+extern const OpalAudioFormat & GetOpalMSIMA();
+
+#define OpalMSGSM GetOpalMSGSM()
+#define OpalMSIMA GetOpalMSIMA()
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -181,14 +191,14 @@ H323_STATIC_LOAD_REGISTER_CAPABILITY(MicrosoftIMAAudioCapability);
 
 class Opal_MSGSM_PCM : public Opal_GSM0610 {
   public:
-    Opal_MSGSM_PCM(const OpalTranscoderRegistration & registration);
+    Opal_MSGSM_PCM();
     virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
 };
 
 
 class Opal_PCM_MSGSM : public Opal_GSM0610 {
   public:
-    Opal_PCM_MSGSM(const OpalTranscoderRegistration & registration);
+    Opal_PCM_MSGSM();
     virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
 };
 
@@ -197,7 +207,7 @@ class Opal_PCM_MSGSM : public Opal_GSM0610 {
 
 class Opal_MSIMA_PCM : public OpalFramedTranscoder {
   public:
-    Opal_MSIMA_PCM(const OpalTranscoderRegistration & registration);
+    Opal_MSIMA_PCM();
     virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
 };
 
@@ -209,7 +219,7 @@ struct adpcm_state {
 
 class Opal_PCM_MSIMA : public OpalFramedTranscoder {
   public:
-    Opal_PCM_MSIMA(const OpalTranscoderRegistration & registration);
+    Opal_PCM_MSIMA();
     virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
   protected:
     adpcm_state s_adpcm;
@@ -220,10 +230,10 @@ class Opal_PCM_MSIMA : public OpalFramedTranscoder {
 
 #define OPAL_REGISTER_MSCODECS() \
           OPAL_REGISTER_MSCODECS_H323 \
-          OPAL_REGISTER_TRANSCODER(Opal_MSGSM_PCM, OPAL_MSGSM, OPAL_PCM16); \
-          OPAL_REGISTER_TRANSCODER(Opal_PCM_MSGSM, OPAL_PCM16, OPAL_MSGSM); \
-          OPAL_REGISTER_TRANSCODER(Opal_MSIMA_PCM, OPAL_MSIMA, OPAL_PCM16); \
-          OPAL_REGISTER_TRANSCODER(Opal_PCM_MSIMA, OPAL_PCM16, OPAL_MSIMA)
+          OPAL_REGISTER_TRANSCODER(Opal_MSGSM_PCM, OpalMSGSM, OpalPCM16); \
+          OPAL_REGISTER_TRANSCODER(Opal_PCM_MSGSM, OpalPCM16, OpalMSGSM); \
+          OPAL_REGISTER_TRANSCODER(Opal_MSIMA_PCM, OpalMSIMA, OpalPCM16); \
+          OPAL_REGISTER_TRANSCODER(Opal_PCM_MSIMA, OpalPCM16, OpalMSIMA)
 
 
 #endif // __OPAL_MSCODECS_H

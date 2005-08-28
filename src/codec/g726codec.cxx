@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g726codec.cxx,v $
- * Revision 1.2008  2005/02/21 12:19:52  rjongbloed
+ * Revision 1.2009  2005/08/28 07:59:17  rjongbloed
+ * Converted OpalTranscoder to use factory, requiring sme changes in making sure
+ *   OpalMediaFormat instances are initialised before use.
+ *
+ * Revision 2.7  2005/02/21 12:19:52  rjongbloed
  * Added new "options list" to the OpalMediaFormat class.
  *
  * Revision 2.6  2004/09/01 12:21:27  rjongbloed
@@ -71,38 +75,53 @@ extern "C" {
 #define new PNEW
 
 
-static OpalAudioFormat OpalG726_40(
-  OPAL_G726_40,
-  RTP_DataFrame::G721,
-  "G721",
-  5,  // 5 bytes per "frame"
-  8,  // 1 millisecond
-  250, 30);
+const OpalAudioFormat & GetOpalG726_40()
+{
+  static const OpalAudioFormat G726_40(
+    OPAL_G726_40,
+    RTP_DataFrame::G721,
+    "G721",
+    5,  // 5 bytes per "frame"
+    8,  // 1 millisecond
+    250, 30);
+  return G726_40;
+}
 
-static OpalAudioFormat  OpalG726_32(
-  OPAL_G726_32,
-  RTP_DataFrame::G721,
-  "G721",
-  4,  // 4 bytes per "frame"
-  8,  // 1 millisecond
-  250, 30);
+const OpalAudioFormat & GetOpalG726_32()
+{
+  static const OpalAudioFormat G726_32(
+    OPAL_G726_32,
+    RTP_DataFrame::G721,
+    "G721",
+    4,  // 4 bytes per "frame"
+    8,  // 1 millisecond
+    250, 30);
+  return G726_32;
+}
 
-static OpalAudioFormat  OpalG726_24(
-  OPAL_G726_24,
-  RTP_DataFrame::G721,
-  "G721",
-  3,  // 4 bytes per "frame"
-  8,  // 1 millisecond
-  250, 30);
+const OpalAudioFormat & GetOpalG726_24()
+{
+  static const OpalAudioFormat G726_24(
+    OPAL_G726_24,
+    RTP_DataFrame::G721,
+    "G721",
+    3,  // 4 bytes per "frame"
+    8,  // 1 millisecond
+    250, 30);
+  return G726_24;
+}
 
-static OpalAudioFormat  OpalG726_16(
-  OPAL_G726_16,
-  RTP_DataFrame::G721,
-  "G721",
-  2,  // 4 bytes per "frame"
-  8,  // 1 millisecond
-  250, 30);
-
+const OpalAudioFormat & GetOpalG726_16()
+{
+  static const OpalAudioFormat G726_16(
+    OPAL_G726_16,
+    RTP_DataFrame::G721,
+    "G721",
+    2,  // 4 bytes per "frame"
+    8,  // 1 millisecond
+    250, 30);
+  return G726_16;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -170,9 +189,10 @@ BOOL H323_G726_Capability::OnReceivedPDU(const H245_AudioCapability & pdu,
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Opal_G726_Transcoder::Opal_G726_Transcoder(const OpalTranscoderRegistration & registration,
+Opal_G726_Transcoder::Opal_G726_Transcoder(const OpalMediaFormat & inputMediaFormat,
+                                           const OpalMediaFormat & outputMediaFormat,
                                            unsigned bits)
-  : OpalStreamedTranscoder(registration, bits, 16, 160)
+  : OpalStreamedTranscoder(inputMediaFormat, outputMediaFormat, bits, 16, 160)
 {
   g726 = (struct g726_state_s *)malloc((unsigned)sizeof(struct g726_state_s));
   PTRACE(3, "Codec\tG.726 transcoder created");
@@ -186,8 +206,8 @@ Opal_G726_Transcoder::~Opal_G726_Transcoder()
 }
  
 
-Opal_G726_40_PCM::Opal_G726_40_PCM(const OpalTranscoderRegistration & registration)
-  : Opal_G726_Transcoder(registration, 5)
+Opal_G726_40_PCM::Opal_G726_40_PCM()
+  : Opal_G726_Transcoder(OpalG726_40, OpalPCM16, 5)
 {
 }
 
@@ -198,8 +218,8 @@ int Opal_G726_40_PCM::ConvertOne(int sample) const
 }
 
 
-Opal_PCM_G726_40::Opal_PCM_G726_40(const OpalTranscoderRegistration & registration)
-  : Opal_G726_Transcoder(registration, 5)
+Opal_PCM_G726_40::Opal_PCM_G726_40()
+  : Opal_G726_Transcoder(OpalPCM16, OpalG726_40, 5)
 {
 }
 
@@ -210,8 +230,8 @@ int Opal_PCM_G726_40::ConvertOne(int sample) const
 }
 
 
-Opal_G726_32_PCM::Opal_G726_32_PCM(const OpalTranscoderRegistration & registration)
-  : Opal_G726_Transcoder(registration, 4)
+Opal_G726_32_PCM::Opal_G726_32_PCM()
+  : Opal_G726_Transcoder(OpalG726_32, OpalPCM16, 4)
 {
 }
 
@@ -222,8 +242,8 @@ int Opal_G726_32_PCM::ConvertOne(int sample) const
 }
 
 
-Opal_PCM_G726_32::Opal_PCM_G726_32(const OpalTranscoderRegistration & registration)
-  : Opal_G726_Transcoder(registration, 4)
+Opal_PCM_G726_32::Opal_PCM_G726_32()
+  : Opal_G726_Transcoder(OpalPCM16, OpalG726_32, 4)
 {
 }
 
@@ -234,8 +254,8 @@ int Opal_PCM_G726_32::ConvertOne(int sample) const
 }
 
 
-Opal_G726_24_PCM::Opal_G726_24_PCM(const OpalTranscoderRegistration & registration)
-  : Opal_G726_Transcoder(registration, 3)
+Opal_G726_24_PCM::Opal_G726_24_PCM()
+  : Opal_G726_Transcoder(OpalG726_24, OpalPCM16, 3)
 {
 }
 
@@ -246,8 +266,8 @@ int Opal_G726_24_PCM::ConvertOne(int sample) const
 }
 
 
-Opal_PCM_G726_24::Opal_PCM_G726_24(const OpalTranscoderRegistration & registration)
-  : Opal_G726_Transcoder(registration, 3)
+Opal_PCM_G726_24::Opal_PCM_G726_24()
+  : Opal_G726_Transcoder(OpalPCM16, OpalG726_24, 3)
 {
 }
 
@@ -258,8 +278,8 @@ int Opal_PCM_G726_24::ConvertOne(int sample) const
 }
 
 
-Opal_G726_16_PCM::Opal_G726_16_PCM(const OpalTranscoderRegistration & registration)
-  : Opal_G726_Transcoder(registration, 2)
+Opal_G726_16_PCM::Opal_G726_16_PCM()
+  : Opal_G726_Transcoder(OpalG726_16, OpalPCM16, 2)
 {
 }
 
@@ -270,8 +290,8 @@ int Opal_G726_16_PCM::ConvertOne(int sample) const
 }
 
 
-Opal_PCM_G726_16::Opal_PCM_G726_16(const OpalTranscoderRegistration & registration)
-  : Opal_G726_Transcoder(registration, 2)
+Opal_PCM_G726_16::Opal_PCM_G726_16()
+  : Opal_G726_Transcoder(OpalPCM16, OpalG726_16, 2)
 {
 }
 
