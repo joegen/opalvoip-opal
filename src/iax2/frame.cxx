@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: frame.cxx,v $
+ *  Revision 1.10  2005/08/28 23:28:34  dereksmithies
+ *  Add a good fix from Adrian Sietsma. Many thanks.
+ *
  *  Revision 1.9  2005/08/26 03:26:51  dereksmithies
  *  Add some tidyups from Adrian Sietsma.  Many thanks..
  *
@@ -1376,11 +1379,19 @@ PString IAX2FullFrameProtocol::GetSubClassName() const{
 IAX2FullFrameText::IAX2FullFrameText(IAX2Frame & srcFrame)
   : IAX2FullFrame(srcFrame)
 {
+   if (GetMediaDataSize() > 0)
+     internalText = PString((const char *)GetMediaDataPointer(),
+			    GetMediaDataSize());
+
 }
 
 IAX2FullFrameText::IAX2FullFrameText(IAX2FullFrame & srcFrame)
   : IAX2FullFrame(srcFrame)
-{
+{ 
+  if (GetMediaDataSize() > 0)
+    internalText = PString((const char *)GetMediaDataPointer(),
+			   GetMediaDataSize());
+
 }
 
 PString IAX2FullFrameText::GetSubClassName() const 
