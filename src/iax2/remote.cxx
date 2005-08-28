@@ -27,6 +27,9 @@
  *
  *
  * $Log: remote.cxx,v $
+ * Revision 1.6  2005/08/28 23:51:30  dereksmithies
+ * Improve test for massaging timestamps in fullframes. Thanks to Adrian Sietsma
+ *
  * Revision 1.5  2005/08/26 03:07:38  dereksmithies
  * Change naming convention, so all class names contain the string "IAX2"
  *
@@ -335,8 +338,10 @@ void IAX2SequenceNumbers::MassageSequenceForSending(IAX2FullFrame &src)
   PTRACE(3, "SeqNos\tMassage - SequenceForSending(FullFrame &src) ordinary Frame");
 
   PINDEX timeStamp = src.GetTimeStamp();
-  if ((timeStamp < (lastSentTimeStamp + 3)) && (!src.IsNewFrame())) {
-    timeStamp = lastSentTimeStamp + 3;
+  if ((timeStamp < (lastSentTimeStamp + minSpacing)) && !src.IsNewFrame() && 
+      !src.IsPongFrame() && !src.IsLagRpFrame() &&
+      !src.IsAckFrame()) {
+    timeStamp = lastSentTimeStamp + minSpacing;
     src.ModifyFrameTimeStamp(timeStamp);
   }
 
