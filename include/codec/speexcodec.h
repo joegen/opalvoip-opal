@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.h,v $
- * Revision 1.2006  2005/02/21 12:19:45  rjongbloed
+ * Revision 1.2007  2005/08/28 07:59:17  rjongbloed
+ * Converted OpalTranscoder to use factory, requiring sme changes in making sure
+ *   OpalMediaFormat instances are initialised before use.
+ *
+ * Revision 2.5  2005/02/21 12:19:45  rjongbloed
  * Added new "options list" to the OpalMediaFormat class.
  *
  * Revision 2.4  2004/02/19 10:46:43  rjongbloed
@@ -102,6 +106,18 @@
 #define OPAL_SPEEX_NARROW_11k  "SpeexNarrow-11k"
 #define OPAL_SPEEX_NARROW_15k  "SpeexNarrow-15k"
 #define OPAL_SPEEX_NARROW_18k2 "SpeexNarrow-18.2k"
+
+extern const OpalAudioFormat & GetOpalSpeexNarrow_5k95();
+extern const OpalAudioFormat & GetOpalSpeexNarrow_8k();
+extern const OpalAudioFormat & GetOpalSpeexNarrow_11k();
+extern const OpalAudioFormat & GetOpalSpeexNarrow_15k();
+extern const OpalAudioFormat & GetOpalSpeexNarrow_18k2();
+
+#define OpalSpeexNarrow_5k95 GetOpalSpeexNarrow_5k95()
+#define OpalSpeexNarrow_8k   GetOpalSpeexNarrow_8k()
+#define OpalSpeexNarrow_11k  GetOpalSpeexNarrow_11k()
+#define OpalSpeexNarrow_15k  GetOpalSpeexNarrow_15k()
+#define OpalSpeexNarrow_18k2 GetOpalSpeexNarrow_18k2()
 
 
 struct SpeexBits;
@@ -203,7 +219,8 @@ H323_STATIC_LOAD_REGISTER_CAPABILITY(SpeexNarrow6AudioCapability);
 class Opal_Speex_Transcoder : public OpalFramedTranscoder {
   public:
     Opal_Speex_Transcoder(
-      const OpalTranscoderRegistration & registration, /// Registration fro transcoder
+      const OpalMediaFormat & inputMediaFormat,  // Input media format
+      const OpalMediaFormat & outputMediaFormat, // Output media format
       unsigned inputBytesPerFrame,  /// Number of bytes in an input frame
       unsigned outputBytesPerFrame  /// Number of bytes in an output frame
     );
@@ -218,7 +235,7 @@ class Opal_Speex_Transcoder : public OpalFramedTranscoder {
 class Opal_Speex_Decoder : public Opal_Speex_Transcoder {
   public:
     Opal_Speex_Decoder(
-      const OpalTranscoderRegistration & registration,
+      const OpalMediaFormat & inputMediaFormat,  // Input media format
       int mode
     );
     ~Opal_Speex_Decoder();
@@ -233,7 +250,7 @@ class Opal_Speex_Decoder : public Opal_Speex_Transcoder {
 class Opal_Speex_Encoder : public Opal_Speex_Transcoder {
   public:
     Opal_Speex_Encoder(
-      const OpalTranscoderRegistration & registration,
+      const OpalMediaFormat & outputMediaFormat, // Output media format
       int mode
     );
     ~Opal_Speex_Encoder();
@@ -248,13 +265,13 @@ class Opal_Speex_Encoder : public Opal_Speex_Transcoder {
 
 class Opal_Speex_5k95_PCM : public Opal_Speex_Decoder {
   public:
-    Opal_Speex_5k95_PCM(const OpalTranscoderRegistration & registration);
+    Opal_Speex_5k95_PCM();
 };
 
 
 class Opal_PCM_Speex_5k95 : public Opal_Speex_Encoder {
   public:
-    Opal_PCM_Speex_5k95(const OpalTranscoderRegistration & registration);
+    Opal_PCM_Speex_5k95();
 };
 
 
@@ -262,13 +279,13 @@ class Opal_PCM_Speex_5k95 : public Opal_Speex_Encoder {
 
 class Opal_Speex_8k_PCM : public Opal_Speex_Decoder {
   public:
-    Opal_Speex_8k_PCM(const OpalTranscoderRegistration & registration);
+    Opal_Speex_8k_PCM();
 };
 
 
 class Opal_PCM_Speex_8k : public Opal_Speex_Encoder {
   public:
-    Opal_PCM_Speex_8k(const OpalTranscoderRegistration & registration);
+    Opal_PCM_Speex_8k();
 };
 
 
@@ -276,13 +293,13 @@ class Opal_PCM_Speex_8k : public Opal_Speex_Encoder {
 
 class Opal_Speex_11k_PCM : public Opal_Speex_Decoder {
   public:
-    Opal_Speex_11k_PCM(const OpalTranscoderRegistration & registration);
+    Opal_Speex_11k_PCM();
 };
 
 
 class Opal_PCM_Speex_11k : public Opal_Speex_Encoder {
   public:
-    Opal_PCM_Speex_11k(const OpalTranscoderRegistration & registration);
+    Opal_PCM_Speex_11k();
 };
 
 
@@ -290,13 +307,13 @@ class Opal_PCM_Speex_11k : public Opal_Speex_Encoder {
 
 class Opal_Speex_15k_PCM : public Opal_Speex_Decoder {
   public:
-    Opal_Speex_15k_PCM(const OpalTranscoderRegistration & registration);
+    Opal_Speex_15k_PCM();
 };
 
 
 class Opal_PCM_Speex_15k : public Opal_Speex_Encoder {
   public:
-    Opal_PCM_Speex_15k(const OpalTranscoderRegistration & registration);
+    Opal_PCM_Speex_15k();
 };
 
 
@@ -304,13 +321,13 @@ class Opal_PCM_Speex_15k : public Opal_Speex_Encoder {
 
 class Opal_Speex_18k2_PCM : public Opal_Speex_Decoder {
   public:
-    Opal_Speex_18k2_PCM(const OpalTranscoderRegistration & registration);
+    Opal_Speex_18k2_PCM();
 };
 
 
 class Opal_PCM_Speex_18k2 : public Opal_Speex_Encoder {
   public:
-    Opal_PCM_Speex_18k2(const OpalTranscoderRegistration & registration);
+    Opal_PCM_Speex_18k2();
 };
 
 
@@ -318,16 +335,16 @@ class Opal_PCM_Speex_18k2 : public Opal_Speex_Encoder {
 
 #define OPAL_REGISTER_SPEEX() \
           OPAL_REGISTER_SPEEX_H323 \
-          OPAL_REGISTER_TRANSCODER(Opal_Speex_5k95_PCM, OPAL_SPEEX_NARROW_5k95, OPAL_PCM16); \
-          OPAL_REGISTER_TRANSCODER(Opal_PCM_Speex_5k95, OPAL_PCM16, OPAL_SPEEX_NARROW_5k95); \
-          OPAL_REGISTER_TRANSCODER(Opal_Speex_8k_PCM, OPAL_SPEEX_NARROW_8k, OPAL_PCM16); \
-          OPAL_REGISTER_TRANSCODER(Opal_PCM_Speex_8k, OPAL_PCM16, OPAL_SPEEX_NARROW_8k); \
-          OPAL_REGISTER_TRANSCODER(Opal_Speex_11k_PCM, OPAL_SPEEX_NARROW_11k, OPAL_PCM16); \
-          OPAL_REGISTER_TRANSCODER(Opal_PCM_Speex_11k, OPAL_PCM16, OPAL_SPEEX_NARROW_11k); \
-          OPAL_REGISTER_TRANSCODER(Opal_Speex_15k_PCM, OPAL_SPEEX_NARROW_15k, OPAL_PCM16); \
-          OPAL_REGISTER_TRANSCODER(Opal_PCM_Speex_15k, OPAL_PCM16, OPAL_SPEEX_NARROW_15k); \
-          OPAL_REGISTER_TRANSCODER(Opal_Speex_18k2_PCM, OPAL_SPEEX_NARROW_18k2, OPAL_PCM16); \
-          OPAL_REGISTER_TRANSCODER(Opal_PCM_Speex_18k2, OPAL_PCM16, OPAL_SPEEX_NARROW_18k2)
+          OPAL_REGISTER_TRANSCODER(Opal_Speex_5k95_PCM, OpalSpeexNarrow_5k95, OpalPCM16); \
+          OPAL_REGISTER_TRANSCODER(Opal_PCM_Speex_5k95, OpalPCM16,            OpalSpeexNarrow_5k95); \
+          OPAL_REGISTER_TRANSCODER(Opal_Speex_8k_PCM,   OpalSpeexNarrow_8k,   OpalPCM16); \
+          OPAL_REGISTER_TRANSCODER(Opal_PCM_Speex_8k,   OpalPCM16,            OpalSpeexNarrow_8k); \
+          OPAL_REGISTER_TRANSCODER(Opal_Speex_11k_PCM,  OpalSpeexNarrow_11k,  OpalPCM16); \
+          OPAL_REGISTER_TRANSCODER(Opal_PCM_Speex_11k,  OpalPCM16,            OpalSpeexNarrow_11k); \
+          OPAL_REGISTER_TRANSCODER(Opal_Speex_15k_PCM,  OpalSpeexNarrow_15k,  OpalPCM16); \
+          OPAL_REGISTER_TRANSCODER(Opal_PCM_Speex_15k,  OpalPCM16,            OpalSpeexNarrow_15k); \
+          OPAL_REGISTER_TRANSCODER(Opal_Speex_18k2_PCM, OpalSpeexNarrow_18k2, OpalPCM16); \
+          OPAL_REGISTER_TRANSCODER(Opal_PCM_Speex_18k2, OpalPCM16,            OpalSpeexNarrow_18k2)
 
 
 #endif // __OPAL_SPEEXCODEC_H

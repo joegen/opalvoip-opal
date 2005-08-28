@@ -25,7 +25,11 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.h,v $
- * Revision 1.2016  2005/08/23 12:46:27  rjongbloed
+ * Revision 1.2017  2005/08/28 07:59:17  rjongbloed
+ * Converted OpalTranscoder to use factory, requiring sme changes in making sure
+ *   OpalMediaFormat instances are initialised before use.
+ *
+ * Revision 2.15  2005/08/23 12:46:27  rjongbloed
  * Fix some decoder issues, now get inital frame displayed!
  *
  * Revision 2.14  2005/08/20 09:01:56  rjongbloed
@@ -217,8 +221,11 @@ class P64Encoder;
 #define OPAL_H261_QCIF "H.261(QCIF)"
 #define OPAL_H261_CIF  "H.261(CIF)"
 
-extern const OpalVideoFormat OpalH261_QCIF;
-extern const OpalVideoFormat OpalH261_CIF;
+extern const OpalVideoFormat & GetOpalH261_QCIF();
+extern const OpalVideoFormat & GetOpalH261_CIF();
+
+#define OpalH261_QCIF GetOpalH261_QCIF()
+#define OpalH261_CIF  GetOpalH261_CIF()
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -365,9 +372,7 @@ class H323_H261Capability : public H323VideoCapability
 
 class Opal_H261_YUV420P : public OpalVideoTranscoder {
   public:
-    Opal_H261_YUV420P(
-      const OpalTranscoderRegistration & registration /// Registration fro transcoder
-    );
+    Opal_H261_YUV420P();
     ~Opal_H261_YUV420P();
     virtual PINDEX GetOptimalDataFrameSize(BOOL input) const;
     virtual BOOL ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dst);
@@ -383,9 +388,7 @@ class Opal_H261_YUV420P : public OpalVideoTranscoder {
 
 class Opal_YUV420P_H261 : public OpalVideoTranscoder {
   public:
-    Opal_YUV420P_H261(
-      const OpalTranscoderRegistration & registration /// Registration fro transcoder
-    );
+    Opal_YUV420P_H261();
     ~Opal_YUV420P_H261();
     virtual PINDEX GetOptimalDataFrameSize(BOOL input) const;
     virtual BOOL ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dst);
@@ -397,9 +400,12 @@ class Opal_YUV420P_H261 : public OpalVideoTranscoder {
 ///////////////////////////////////////////////////////////////////////////////
 
 #define OPAL_REGISTER_H261() \
-          OPAL_REGISTER_H261_H323 \
-          OPAL_REGISTER_TRANSCODER(Opal_H261_YUV420P, OPAL_H261_QCIF, OPAL_YUV420P); \
-          OPAL_REGISTER_TRANSCODER(Opal_YUV420P_H261, OPAL_YUV420P,   OPAL_H261_QCIF)
+        OPAL_REGISTER_H261_H323 \
+        OpalTranscoderFactory::Worker<Opal_H261_YUV420P> Opal_H261_YUV420P_QCIF(OpalMediaFormatPair(OpalH261_QCIF, OpalYUV420P)); \
+        OpalTranscoderFactory::Worker<Opal_YUV420P_H261> Opal_YUV420P_H261_QCIF(OpalMediaFormatPair(OpalYUV420P,   OpalH261_QCIF)); \
+        OpalTranscoderFactory::Worker<Opal_H261_YUV420P> Opal_H261_YUV420P_CIF (OpalMediaFormatPair(OpalH261_CIF,  OpalYUV420P)); \
+        OpalTranscoderFactory::Worker<Opal_YUV420P_H261> Opal_YUV420P_H261_CIF (OpalMediaFormatPair(OpalYUV420P,   OpalH261_CIF))
+
 
 #endif // __OPAL_H261CODEC_H
 

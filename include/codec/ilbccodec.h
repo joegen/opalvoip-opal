@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ilbccodec.h,v $
- * Revision 1.2005  2005/02/21 12:19:45  rjongbloed
+ * Revision 1.2006  2005/08/28 07:59:17  rjongbloed
+ * Converted OpalTranscoder to use factory, requiring sme changes in making sure
+ *   OpalMediaFormat instances are initialised before use.
+ *
+ * Revision 2.4  2005/02/21 12:19:45  rjongbloed
  * Added new "options list" to the OpalMediaFormat class.
  *
  * Revision 2.3  2004/09/01 12:21:26  rjongbloed
@@ -64,6 +68,12 @@ struct iLBC_Dec_Inst_t_;
 
 #define OPAL_ILBC_13k3 "iLBC-13k3"
 #define OPAL_ILBC_15k2 "iLBC-15k2"
+
+extern const OpalAudioFormat & GetOpal_iLBC_13k3();
+extern const OpalAudioFormat & GetOpal_iLBC_15k2();
+
+#define Opal_iLBC_13k3 GetOpal_iLBC_13k3()
+#define Opal_iLBC_15k2 GetOpal_iLBC_15k2()
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -133,7 +143,10 @@ H323_STATIC_LOAD_REGISTER_CAPABILITY(H323_ILBC_15k2_Capability);
 
 class Opal_iLBC_Decoder : public OpalFramedTranscoder {
   public:
-    Opal_iLBC_Decoder(const OpalTranscoderRegistration & registration, int speed);
+    Opal_iLBC_Decoder(
+      const OpalMediaFormat & inputMediaFormat,
+      int speed
+    );
     ~Opal_iLBC_Decoder();
     virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
   protected:
@@ -143,19 +156,22 @@ class Opal_iLBC_Decoder : public OpalFramedTranscoder {
 
 class Opal_iLBC_13k3_PCM : public Opal_iLBC_Decoder {
   public:
-    Opal_iLBC_13k3_PCM(const OpalTranscoderRegistration & registration);
+    Opal_iLBC_13k3_PCM();
 };
 
 
 class Opal_iLBC_15k2_PCM : public Opal_iLBC_Decoder {
   public:
-    Opal_iLBC_15k2_PCM(const OpalTranscoderRegistration & registration);
+    Opal_iLBC_15k2_PCM();
 };
 
 
 class Opal_iLBC_Encoder : public OpalFramedTranscoder {
   public:
-    Opal_iLBC_Encoder(const OpalTranscoderRegistration & registration, int speed);
+    Opal_iLBC_Encoder(
+      const OpalMediaFormat & outputMediaFormat,
+      int speed
+    );
     ~Opal_iLBC_Encoder();
     virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
   protected:
@@ -165,13 +181,13 @@ class Opal_iLBC_Encoder : public OpalFramedTranscoder {
 
 class Opal_PCM_iLBC_13k3 : public Opal_iLBC_Encoder {
   public:
-    Opal_PCM_iLBC_13k3(const OpalTranscoderRegistration & registration);
+    Opal_PCM_iLBC_13k3();
 };
 
 
 class Opal_PCM_iLBC_15k2 : public Opal_iLBC_Encoder {
   public:
-    Opal_PCM_iLBC_15k2(const OpalTranscoderRegistration & registration);
+    Opal_PCM_iLBC_15k2();
 };
 
 
@@ -179,10 +195,10 @@ class Opal_PCM_iLBC_15k2 : public Opal_iLBC_Encoder {
 
 #define OPAL_REGISTER_iLBC() \
           OPAL_REGISTER_iLBC_H323 \
-          OPAL_REGISTER_TRANSCODER(Opal_iLBC_13k3_PCM, OPAL_ILBC_13k3, OPAL_PCM16); \
-          OPAL_REGISTER_TRANSCODER(Opal_PCM_iLBC_13k3, OPAL_PCM16, OPAL_ILBC_13k3); \
-          OPAL_REGISTER_TRANSCODER(Opal_iLBC_15k2_PCM, OPAL_ILBC_15k2, OPAL_PCM16); \
-          OPAL_REGISTER_TRANSCODER(Opal_PCM_iLBC_15k2, OPAL_PCM16, OPAL_ILBC_15k2)
+          OPAL_REGISTER_TRANSCODER(Opal_iLBC_13k3_PCM, Opal_iLBC_13k3, OpalPCM16); \
+          OPAL_REGISTER_TRANSCODER(Opal_PCM_iLBC_13k3, OpalPCM16,      Opal_iLBC_13k3); \
+          OPAL_REGISTER_TRANSCODER(Opal_iLBC_15k2_PCM, Opal_iLBC_15k2, OpalPCM16); \
+          OPAL_REGISTER_TRANSCODER(Opal_PCM_iLBC_15k2, OpalPCM16,      Opal_iLBC_15k2)
 
 
 #endif // __OPAL_ILBC_H

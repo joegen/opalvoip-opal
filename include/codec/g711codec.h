@@ -23,7 +23,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g711codec.h,v $
- * Revision 1.2005  2002/09/16 02:52:33  robertj
+ * Revision 1.2006  2005/08/28 07:59:17  rjongbloed
+ * Converted OpalTranscoder to use factory, requiring sme changes in making sure
+ *   OpalMediaFormat instances are initialised before use.
+ *
+ * Revision 2.4  2002/09/16 02:52:33  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -54,9 +58,7 @@
 
 class Opal_G711_uLaw_PCM : public OpalStreamedTranscoder {
   public:
-    Opal_G711_uLaw_PCM(
-      const OpalTranscoderRegistration & registration /// Registration for transcoder
-    );
+    Opal_G711_uLaw_PCM();
     virtual int ConvertOne(int sample) const;
     static int ConvertSample(int sample);
 };
@@ -66,9 +68,7 @@ class Opal_G711_uLaw_PCM : public OpalStreamedTranscoder {
 
 class Opal_PCM_G711_uLaw : public OpalStreamedTranscoder {
   public:
-    Opal_PCM_G711_uLaw(
-      const OpalTranscoderRegistration & registration /// Registration for transcoder
-    );
+    Opal_PCM_G711_uLaw();
     virtual int ConvertOne(int sample) const;
     static int ConvertSample(int sample);
 };
@@ -78,9 +78,7 @@ class Opal_PCM_G711_uLaw : public OpalStreamedTranscoder {
 
 class Opal_G711_ALaw_PCM : public OpalStreamedTranscoder {
   public:
-    Opal_G711_ALaw_PCM(
-      const OpalTranscoderRegistration & registration /// Registration for transcoder
-    );
+    Opal_G711_ALaw_PCM();
     virtual int ConvertOne(int sample) const;
     static int ConvertSample(int sample);
 };
@@ -90,9 +88,7 @@ class Opal_G711_ALaw_PCM : public OpalStreamedTranscoder {
 
 class Opal_PCM_G711_ALaw : public OpalStreamedTranscoder {
   public:
-    Opal_PCM_G711_ALaw(
-      const OpalTranscoderRegistration & registration /// Registration for transcoder
-    );
+    Opal_PCM_G711_ALaw();
     virtual int ConvertOne(int sample) const;
     static int ConvertSample(int sample);
 };
@@ -101,10 +97,10 @@ class Opal_PCM_G711_ALaw : public OpalStreamedTranscoder {
 ///////////////////////////////////////////////////////////////////////////////
 
 #define OPAL_REGISTER_G711() \
-  OPAL_REGISTER_TRANSCODER(Opal_G711_uLaw_PCM, OPAL_G711_ULAW_64K, OPAL_PCM16); \
-  OPAL_REGISTER_TRANSCODER(Opal_PCM_G711_uLaw, OPAL_PCM16, OPAL_G711_ULAW_64K); \
-  OPAL_REGISTER_TRANSCODER(Opal_G711_ALaw_PCM, OPAL_G711_ALAW_64K, OPAL_PCM16); \
-  OPAL_REGISTER_TRANSCODER(Opal_PCM_G711_ALaw, OPAL_PCM16, OPAL_G711_ALAW_64K)
+  OPAL_REGISTER_TRANSCODER(Opal_G711_uLaw_PCM, OpalG711_ULAW_64K, OpalPCM16); \
+  OPAL_REGISTER_TRANSCODER(Opal_PCM_G711_uLaw, OpalPCM16,         OpalG711_ULAW_64K); \
+  OPAL_REGISTER_TRANSCODER(Opal_G711_ALaw_PCM, OpalG711_ALAW_64K, OpalPCM16); \
+  OPAL_REGISTER_TRANSCODER(Opal_PCM_G711_ALaw, OpalPCM16,         OpalG711_ALAW_64K)
 
 
 
