@@ -26,6 +26,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: remote.h,v $
+ *  Revision 1.5  2005/08/28 23:51:29  dereksmithies
+ *  Improve test for massaging timestamps in fullframes. Thanks to Adrian Sietsma
+ *
  *  Revision 1.4  2005/08/26 03:07:38  dereksmithies
  *  Change naming convention, so all class names contain the string "IAX2"
  *
@@ -142,7 +145,7 @@ class IAX2Remote : public PObject
   
   /**Port number used by the remote endpoint.*/
   PINDEX               remotePort;    
-  
+
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -184,6 +187,7 @@ class IAX2FrameIdValue : public PObject
   virtual Comparison Compare(const PObject & obj) const;
 
  protected:
+
   /**The combination of time and sequence number is stored in this
      element, which is a pwlib construct of 64 bits */
   PUInt64 value;
@@ -299,6 +303,12 @@ class IAX2SequenceNumbers
   void AddWrapAroundValue(PINDEX newOffset);
 
  protected:
+
+  /**An enum to contain the various defines required by this clsss */
+  enum sequenceDefines {
+    minSpacing = 3   /*!< minimum spacing in ms for the time stamp of full frames */
+  };
+  
   /** Packet number (next incoming expected)*/
   PINDEX inSeqNo;  
   
