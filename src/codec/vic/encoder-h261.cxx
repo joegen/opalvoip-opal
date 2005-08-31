@@ -41,8 +41,14 @@
 /************ Change log
  *
  * $Log: encoder-h261.cxx,v $
- * Revision 1.2002  2003/03/15 23:42:59  robertj
+ * Revision 1.2003  2005/08/31 13:16:01  rjongbloed
+ * Ported video fast update from OpenH323
+ *
+ * Revision 2.1  2003/03/15 23:42:59  robertj
  * Update to OpenH323 v1.11.7
+ *
+ * Revision 1.20  2004/04/25 01:52:47  rjongbloed
+ * Fixed GCC 3.4 warnings
  *
  * Revision 1.19  2003/03/14 07:25:55  robertj
  * Removed $header keyword so is not different on alternate repositories
@@ -789,7 +795,7 @@ void H261PixelEncoder::IncEncodeAndGetPacket(
   u_char * buffer,    // returns buffer of encoded data
   unsigned & length ) // returns actual length of encoded data buffer
 {
-  u_int previousBitCount, currentBitCount;
+  u_int previousBitCount = 0, currentBitCount;
   h261hdr_t h261hdr;
 
   if (gDone) {
