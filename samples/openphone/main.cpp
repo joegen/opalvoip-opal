@@ -25,6 +25,10 @@
  * Contributor(s): 
  *
  * $Log: main.cpp,v $
+ * Revision 1.33  2005/08/31 13:21:20  rjongbloed
+ * Moved some video options to be in the options list from OpalMediaFormat
+ * Added selection of video grabber preview window.
+ *
  * Revision 1.32  2005/08/24 10:43:51  rjongbloed
  * Changed create video functions yet again so can return pointers that are not to be deleted.
  *
@@ -186,9 +190,7 @@ static const char VideoGroup[] = "/Video";
 DEF_FIELD(VideoGrabber);
 DEF_FIELD(VideoGrabFormat);
 DEF_FIELD(VideoGrabSource);
-DEF_FIELD(VideoEncodeQuality);
 DEF_FIELD(VideoGrabFrameRate);
-DEF_FIELD(VideoEncodeMaxBitRate);
 DEF_FIELD(VideoGrabPreview);
 DEF_FIELD(VideoFlipLocal);
 DEF_FIELD(VideoAutoTransmit);
@@ -545,9 +547,7 @@ bool MyManager::Initialise()
   config->Read(VideoFlipLocalKey, &videoArgs.flip);
   SetVideoInputDevice(videoArgs);
 
-//  VideoEncodeQuality
-//  VideoEncodeMaxBitRate
-//  VideoGrabPreview
+  config->Read(VideoGrabPreviewKey, &m_VideoGrabPreview);
   if (config->Read(VideoAutoTransmitKey, &onoff))
     SetAutoStartTransmitVideo(onoff);
   if (config->Read(VideoAutoReceiveKey, &onoff))
@@ -1096,7 +1096,7 @@ void MyManager::OnRinging(const OpalPCSSConnection & connection)
 void MyManager::OnEstablishedCall(OpalCall & call)
 {
   m_currentCallToken = call.GetToken();
-  LogWindow << "Established call with " << call.GetPartyB() << " using " << call.GetPartyA() << endl;
+  LogWindow << "Established call from " << call.GetPartyA() << " to " << call.GetPartyB() << endl;
   SetState(InCallState);
 }
 
@@ -1208,6 +1208,9 @@ BOOL MyManager::CreateVideoOutputDevice(const OpalConnection & connection,
                                         PVideoOutputDevice * & device,
                                         BOOL & autoDelete)
 {
+  if (preview && !m_VideoGrabPreview)
+    return FALSE;
+
   // We ALWAYS use a Window
   device = PVideoOutputDevice::CreateDevice("Window");
   if (device != NULL) {
@@ -1481,9 +1484,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(VideoGrabSource, m_manager.GetVideoInputDevice().channelNumber);
   INIT_FIELD(VideoGrabFrameRate, m_manager.GetVideoInputDevice().rate);
   INIT_FIELD(VideoFlipLocal, m_manager.GetVideoInputDevice().flip != FALSE);
-//  INIT_FIELD(VideoEncodeQuality, m_manager);
-//  INIT_FIELD(VideoEncodeMaxBitRate, m_manager);
-//  INIT_FIELD(VideoGrabPreview, m_manager);
+  INIT_FIELD(VideoGrabPreview, m_manager.m_VideoGrabPreview);
   INIT_FIELD(VideoAutoTransmit, m_manager.CanAutoStartTransmitVideo() != FALSE);
   INIT_FIELD(VideoAutoReceive, m_manager.CanAutoStartReceiveVideo() != FALSE);
   INIT_FIELD(VideoFlipRemote, m_manager.GetVideoOutputDevice().flip != FALSE);
@@ -1686,9 +1687,7 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(VideoGrabFrameRate, grabber.rate = );
   SAVE_FIELD(VideoFlipLocal, grabber.flip = );
   m_manager.SetVideoInputDevice(grabber);
-//  SAVE_FIELD(VideoEncodeQuality, );
-//  SAVE_FIELD(VideoEncodeMaxBitRate, );
-//  SAVE_FIELD(VideoGrabPreview, );
+  SAVE_FIELD(VideoGrabPreview, m_manager.m_VideoGrabPreview = );
   SAVE_FIELD(VideoAutoTransmit, m_manager.SetAutoStartTransmitVideo);
   SAVE_FIELD(VideoAutoReceive, m_manager.SetAutoStartReceiveVideo);
 //  SAVE_FIELD(VideoFlipRemote, );
