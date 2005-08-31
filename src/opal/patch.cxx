@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2013  2005/07/24 07:42:29  rjongbloed
+ * Revision 1.2014  2005/08/31 13:19:25  rjongbloed
+ * Added mechanism for controlling media (especially codecs) including
+ *   changing the OpalMediaFormat option list (eg bit rate) and a completely
+ *   new OpalMediaCommand abstraction for things like video fast update.
+ *
+ * Revision 2.12  2005/07/24 07:42:29  rjongbloed
  * Fixed various video media stream issues.
  *
  * Revision 2.11  2004/08/16 09:53:48  rjongbloed
@@ -320,6 +325,61 @@ void OpalMediaPatch::FilterFrame(RTP_DataFrame & frame,
     if (filter.stage.IsEmpty() || filter.stage == mediaFormat)
       filter.notifier(frame, (INT)this);
   }
+}
+
+
+BOOL OpalMediaPatch::UpdateMediaFormat(const OpalMediaFormat & mediaFormat, BOOL fromSink)
+{
+  PWaitAndSignal mutex(inUse);
+
+  if (fromSink)
+    return source.UpdateMediaFormat(mediaFormat);
+
+  BOOL atLeastOne = FALSE;
+
+  for (PINDEX i = 0; i < sinks.GetSize(); i++)
+    atLeastOne = sinks[i].UpdateMediaFormat(mediaFormat) || atLeastOne;
+
+  return atLeastOne;
+}
+
+
+BOOL OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command)
+{
+  PWaitAndSignal mutex(inUse);
+
+  BOOL atLeastOne = source.ExecuteCommand(command);
+
+  for (PINDEX i = 0; i < sinks.GetSize(); i++)
+    atLeastOne = sinks[i].ExecuteCommand(command) || atLeastOne;
+
+  return atLeastOne;
+}
+
+
+bool OpalMediaPatch::Sink::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
+{
+  if (secondaryCodec != NULL)
+    return secondaryCodec->UpdateOutputMediaFormat(mediaFormat);
+
+  if (primaryCodec != NULL)
+    return primaryCodec->UpdateOutputMediaFormat(mediaFormat);
+
+  return stream->UpdateMediaFormat(mediaFormat);
+}
+
+
+bool OpalMediaPatch::Sink::ExecuteCommand(const OpalMediaCommand & command)
+{
+  BOOL atLeastOne = stream->ExecuteCommand(command);
+
+  if (secondaryCodec != NULL)
+    atLeastOne = secondaryCodec->ExecuteCommand(command) || atLeastOne;
+
+  if (primaryCodec != NULL)
+    atLeastOne = primaryCodec->ExecuteCommand(command) || atLeastOne;
+
+  return atLeastOne;
 }
 
 

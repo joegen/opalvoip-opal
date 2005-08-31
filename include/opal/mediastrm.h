@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2026  2005/08/20 07:35:22  rjongbloed
+ * Revision 1.2027  2005/08/31 13:19:25  rjongbloed
+ * Added mechanism for controlling media (especially codecs) including
+ *   changing the OpalMediaFormat option list (eg bit rate) and a completely
+ *   new OpalMediaCommand abstraction for things like video fast update.
+ *
+ * Revision 2.25  2005/08/20 07:35:22  rjongbloed
  * Set video RTP timestamps to value dirived from real time clock.
  *
  * Revision 2.24  2005/08/04 17:23:38  dsandras
@@ -122,6 +127,7 @@
 
 #include <opal/buildopts.h>
 #include <opal/mediafmt.h>
+#include <opal/mediacmd.h>
 
 
 class RTP_Session;
@@ -177,6 +183,28 @@ class OpalMediaStream : public PObject
        The default behaviour simply returns the member variable "mediaFormat".
       */
     virtual OpalMediaFormat GetMediaFormat() const;
+
+    /**Update the media format. This can be used to adjust the
+       parameters of a codec at run time. Note you cannot change the basic
+       media format, eg change GSM0610 to G.711, only options for that
+       format, eg 6k3 mode to 5k3 mode in G.723.1.
+
+       The default behaviour updates the mediaFormat member variable and
+       pases the value on to the OpalMediaPatch.
+      */
+    virtual BOOL UpdateMediaFormat(
+      const OpalMediaFormat & mediaFormat  /// New media format
+    );
+
+    /**Execute the command specified to the transcoder. The commands are
+       highly context sensitive, for example VideoFastUpdate would only apply
+       to a video transcoder.
+
+       The default behaviour passes the command on to the OpalMediaPatch.
+      */
+    virtual BOOL ExecuteCommand(
+      const OpalMediaCommand & command    /// Command to execute.
+    );
 
     /**Open the media stream using the media format.
 

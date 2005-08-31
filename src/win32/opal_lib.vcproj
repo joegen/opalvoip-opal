@@ -1891,6 +1891,9 @@
 					RelativePath="..\..\include\opal\manager.h">
 				</File>
 				<File
+					RelativePath="..\..\include\opal\mediacmd.h">
+				</File>
+				<File
 					RelativePath="..\..\include\opal\mediafmt.h">
 				</File>
 				<File

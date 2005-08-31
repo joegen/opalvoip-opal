@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2033  2005/08/28 07:59:17  rjongbloed
+ * Revision 1.2034  2005/08/31 13:19:25  rjongbloed
+ * Added mechanism for controlling media (especially codecs) including
+ *   changing the OpalMediaFormat option list (eg bit rate) and a completely
+ *   new OpalMediaCommand abstraction for things like video fast update.
+ *
+ * Revision 2.32  2005/08/28 07:59:17  rjongbloed
  * Converted OpalTranscoder to use factory, requiring sme changes in making sure
  *   OpalMediaFormat instances are initialised before use.
  *
@@ -485,11 +490,11 @@ void OpalMediaOptionString::SetValue(const PString & value)
 
 /////////////////////////////////////////////////////////////////////////////
 
-const char * const OpalMediaFormat::NeedsJitterOption = "NeedsJitter";
-const char * const OpalMediaFormat::MaxBitRateOption = "MaxBitRate";
-const char * const OpalMediaFormat::MaxFrameSizeOption = "MaxFrameSize";
-const char * const OpalMediaFormat::FrameTimeOption = "FrameTime";
-const char * const OpalMediaFormat::ClockRateOption = "ClockRate";
+const char * const OpalMediaFormat::NeedsJitterOption = "Needs Jitter";
+const char * const OpalMediaFormat::MaxBitRateOption = "Max Bit Rate";
+const char * const OpalMediaFormat::MaxFrameSizeOption = "Max Frame Size";
+const char * const OpalMediaFormat::FrameTimeOption = "Frame Time";
+const char * const OpalMediaFormat::ClockRateOption = "Clock Rate";
 
 OpalMediaFormat::OpalMediaFormat()
 {
@@ -834,8 +839,8 @@ bool OpalMediaFormat::SetRegisteredMediaFormat(const OpalMediaFormat & mediaForm
 
 ///////////////////////////////////////////////////////////////////////////////
 
-const char * const OpalAudioFormat::RxFramesPerPacketOption = "RxFramesPerPacket";
-const char * const OpalAudioFormat::TxFramesPerPacketOption = "TxFramesPerPacket";
+const char * const OpalAudioFormat::RxFramesPerPacketOption = "Rx Frames Per Packet";
+const char * const OpalAudioFormat::TxFramesPerPacketOption = "Tx Frames Per Packet";
 
 OpalAudioFormat::OpalAudioFormat(const char * fullName,
                                  RTP_DataFrame::PayloadTypes rtpPayloadType,
@@ -862,8 +867,10 @@ OpalAudioFormat::OpalAudioFormat(const char * fullName,
 
 ///////////////////////////////////////////////////////////////////////////////
 
-const char * const OpalVideoFormat::FrameWidthOption = "FramwWidth";
-const char * const OpalVideoFormat::FrameHeightOption = "FrameHeight";
+const char * const OpalVideoFormat::FrameWidthOption = "Frame Width";
+const char * const OpalVideoFormat::FrameHeightOption = "Frame Height";
+const char * const OpalVideoFormat::EncodingQualityOption = "Encoding Quality";
+const char * const OpalVideoFormat::TargetBitRateOption = "Target Bit Rate";
 
 OpalVideoFormat::OpalVideoFormat(const char * fullName,
                                  RTP_DataFrame::PayloadTypes rtpPayloadType,
@@ -882,8 +889,8 @@ OpalVideoFormat::OpalVideoFormat(const char * fullName,
                     OpalMediaFormat::VideoClockRate/frameRate,
                     OpalMediaFormat::VideoClockRate)
 {
-  AddOption(new OpalMediaOptionInteger(FrameWidthOption, false, OpalMediaOption::MinMerge, frameWidth, 11, 32767));
-  AddOption(new OpalMediaOptionInteger(FrameHeightOption, false, OpalMediaOption::MinMerge, frameHeight, 9, 32767));
+  AddOption(new OpalMediaOptionInteger(FrameWidthOption, true, OpalMediaOption::MinMerge, frameWidth, 11, 32767));
+  AddOption(new OpalMediaOptionInteger(FrameHeightOption, true, OpalMediaOption::MinMerge, frameHeight, 9, 32767));
 }
 
 

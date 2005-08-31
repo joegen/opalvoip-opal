@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2014  2005/08/28 07:59:17  rjongbloed
+ * Revision 1.2015  2005/08/31 13:19:25  rjongbloed
+ * Added mechanism for controlling media (especially codecs) including
+ *   changing the OpalMediaFormat option list (eg bit rate) and a completely
+ *   new OpalMediaCommand abstraction for things like video fast update.
+ *
+ * Revision 2.13  2005/08/28 07:59:17  rjongbloed
  * Converted OpalTranscoder to use factory, requiring sme changes in making sure
  *   OpalMediaFormat instances are initialised before use.
  *
@@ -129,6 +134,23 @@ OpalTranscoder::OpalTranscoder(const OpalMediaFormat & inputMediaFormat,
   : OpalMediaFormatPair(inputMediaFormat, outputMediaFormat)
 {
   maxOutputSize = RTP_DataFrame::MaxEthernetPayloadSize;
+}
+
+
+BOOL OpalTranscoder::UpdateOutputMediaFormat(const OpalMediaFormat & mediaFormat)
+{
+  if (outputMediaFormat != mediaFormat)
+    return FALSE;
+
+  outputMediaFormat = mediaFormat;
+  outputMediaFormatUpdated = true;
+  return TRUE;
+}
+
+
+BOOL OpalTranscoder::ExecuteCommand(const OpalMediaCommand & /*command*/)
+{
+  return FALSE;
 }
 
 
