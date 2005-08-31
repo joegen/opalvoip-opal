@@ -1,6 +1,5 @@
 /*encoder.h       (c) 1999-2000 Derek J Smithies (dereks@ibm.net)
  *                           Indranet Technologies ltd (lara@indranet.co.nz)
- *                           Under the terms of the Gnu Public License (GPL)
  *
  * This file is derived from vic, http://www-nrg.ee.lbl.gov/vic/
  * Their copyright notice is below.
@@ -42,12 +41,21 @@
 /************ Change log
  *
  * $Log: encoder.h,v $
- * Revision 1.2003  2005/03/19 04:08:10  csoutheren
+ * Revision 1.2004  2005/08/31 13:16:02  rjongbloed
+ * Ported video fast update from OpenH323
+ *
+ * Revision 2.2  2005/03/19 04:08:10  csoutheren
  * Fixed warnings with gcc snapshot 4.1-20050313
  * Updated to configure 2.59
  *
  * Revision 2.1  2003/03/15 23:42:59  robertj
  * Update to OpenH323 v1.11.7
+ *
+ * Revision 1.7  2005/03/19 03:22:12  csoutheren
+ * Removed warnings from gcc snapshot 4.1-20050313
+ *
+ * Revision 1.6  2003/04/10 22:39:32  dereks
+ * Sort out copyright issues. Thanks Qhong Wang
  *
  * Revision 1.5  2003/03/14 07:25:55  robertj
  * Removed $header keyword so is not different on alternate repositories
@@ -73,7 +81,7 @@ class Transmitter;
 
 class Encoder {
     public:
-        virtual ~Encoder() {}
+        virtual ~Encoder() { }
 	virtual int consume(const VideoFrame*)
            {return 0; };
 

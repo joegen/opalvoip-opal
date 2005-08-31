@@ -54,11 +54,20 @@
 /************ Change log
  *
  * $Log: p64.cxx,v $
- * Revision 1.2003  2005/08/15 01:47:27  csoutheren
+ * Revision 1.2004  2005/08/31 13:16:02  rjongbloed
+ * Ported video fast update from OpenH323
+ *
+ * Revision 2.2  2005/08/15 01:47:27  csoutheren
  * Fixed compile problem on 64 bit
  *
  * Revision 2.1  2003/03/15 23:43:00  robertj
  * Update to OpenH323 v1.11.7
+ *
+ * Revision 1.13  2005/02/25 01:21:12  dominance
+ * fixed building on amd64 with gcc-4.0 according to
+ * http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=287864
+ *
+ * Thanks fly to Andreas Jochens <aj@andaco.de>.
  *
  * Revision 1.12  2003/03/14 07:25:55  robertj
  * Removed $header keyword so is not different on alternate repositories

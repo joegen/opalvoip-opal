@@ -9,7 +9,10 @@
 /************ Change log
  *
  * $Log: p64encoder.h,v $
- * Revision 1.2002  2003/03/15 23:43:00  robertj
+ * Revision 1.2003  2005/08/31 13:16:02  rjongbloed
+ * Ported video fast update from OpenH323
+ *
+ * Revision 2.1  2003/03/15 23:43:00  robertj
  * Update to OpenH323 v1.11.7
  *
  * Revision 1.17  2002/04/05 00:53:19  dereks
@@ -157,6 +160,8 @@ class P64Encoder{
 	*/ 
   int GetCountPacketsOutStanding()
 	  { return trans->GetCountPacketsOutStanding();}
+
+  void FastUpdatePicture();
 
 protected:
   //variables used in grabbing/processing the image. 
