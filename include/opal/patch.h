@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.h,v $
- * Revision 1.2007  2004/08/15 10:10:27  rjongbloed
+ * Revision 1.2008  2005/08/31 13:19:25  rjongbloed
+ * Added mechanism for controlling media (especially codecs) including
+ *   changing the OpalMediaFormat option list (eg bit rate) and a completely
+ *   new OpalMediaCommand abstraction for things like video fast update.
+ *
+ * Revision 2.6  2004/08/15 10:10:27  rjongbloed
  * Fixed possible deadlock when closing media patch
  *
  * Revision 2.5  2004/08/14 07:56:29  rjongbloed
@@ -59,6 +64,7 @@
 #include <opal/buildopts.h>
 
 #include <opal/mediafmt.h>
+#include <opal/mediacmd.h>
 
 
 class OpalMediaStream;
@@ -160,6 +166,29 @@ class OpalMediaPatch : public PThread
       RTP_DataFrame & frame,
       const OpalMediaFormat & mediaFormat
     );
+
+    /**Update the source/sink media format. This can be used to adjust the
+       parameters of a codec at run time. Note you cannot change the basic
+       media format, eg change GSM0610 to G.711, only options for that
+       format, eg 6k3 mode to 5k3 mode in G.723.1.
+
+       The default behaviour updates the source/sink media stream and the
+       output side of any relevant transcoders.
+      */
+    virtual BOOL UpdateMediaFormat(
+      const OpalMediaFormat & mediaFormat,  /// New media format
+      BOOL fromSink                         /// Flag for source or sink
+    );
+
+    /**Execute the command specified to the transcoder. The commands are
+       highly context sensitive, for example VideoFastUpdate would only apply
+       to a video transcoder.
+
+       The default behaviour just deletes the command and returns FALSE.
+      */
+    virtual BOOL ExecuteCommand(
+      const OpalMediaCommand & command    /// Command to execute.
+    );
   //@}
 
   protected:
@@ -170,6 +199,8 @@ class OpalMediaPatch : public PThread
       public:
         Sink(OpalMediaPatch & p, OpalMediaStream * s);
         ~Sink();
+        bool UpdateMediaFormat(const OpalMediaFormat & mediaFormat);
+        bool ExecuteCommand(const OpalMediaCommand & command);
         bool WriteFrame(RTP_DataFrame & sourceFrame);
 
         OpalMediaPatch  & patch;

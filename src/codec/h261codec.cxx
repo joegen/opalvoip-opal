@@ -25,7 +25,12 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.cxx,v $
- * Revision 1.2021  2005/08/28 07:59:17  rjongbloed
+ * Revision 1.2022  2005/08/31 13:19:25  rjongbloed
+ * Added mechanism for controlling media (especially codecs) including
+ *   changing the OpalMediaFormat option list (eg bit rate) and a completely
+ *   new OpalMediaCommand abstraction for things like video fast update.
+ *
+ * Revision 2.20  2005/08/28 07:59:17  rjongbloed
  * Converted OpalTranscoder to use factory, requiring sme changes in making sure
  *   OpalMediaFormat instances are initialised before use.
  *
@@ -597,6 +602,20 @@ BOOL Opal_YUV420P_H261::ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameLi
 
   // "grab" the frame
   memcpy(videoEncoder->GetFramePtr(), header->data, frameWidth*frameHeight*12/8);
+
+  // Check for changes in the encoding options
+  if (outputMediaFormatUpdated) {
+    frameWidth = outputMediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption, frameWidth);
+    frameHeight = outputMediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption, frameHeight);
+    videoQuality = outputMediaFormat.GetOptionInteger(OpalVideoFormat::EncodingQualityOption, videoQuality);
+    targetBitRate = outputMediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption, targetBitRate);
+    outputMediaFormatUpdated = false;
+  }
+
+  if (updatePicture) {
+    videoEncoder->FastUpdatePicture();
+    updatePicture = false;
+  }
 
   videoEncoder->PreProcessOneFrame();
 

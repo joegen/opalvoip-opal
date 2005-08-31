@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2016  2005/08/28 07:59:17  rjongbloed
+ * Revision 1.2017  2005/08/31 13:19:25  rjongbloed
+ * Added mechanism for controlling media (especially codecs) including
+ *   changing the OpalMediaFormat option list (eg bit rate) and a completely
+ *   new OpalMediaCommand abstraction for things like video fast update.
+ *
+ * Revision 2.15  2005/08/28 07:59:17  rjongbloed
  * Converted OpalTranscoder to use factory, requiring sme changes in making sure
  *   OpalMediaFormat instances are initialised before use.
  *
@@ -96,6 +101,7 @@
 #include <opal/buildopts.h>
 
 #include <opal/mediafmt.h>
+#include <opal/mediacmd.h>
 
 
 class RTP_DataFrame;
@@ -194,6 +200,28 @@ class OpalTranscoder : public OpalMediaFormatPair
 
   /**@name Operations */
   //@{
+    /**Update the output media format. This can be used to adjust the
+       parameters of a codec at run time. Note you cannot change the basic
+       media format, eg change GSM0610 to G.711, only options for that
+       format, eg 6k3 mode to 5k3 mode in G.723.1.
+
+       The default behaviour updates the outputMediaFormat member variable
+       and sets the outputMediaFormatUpdated flag.
+      */
+    virtual BOOL UpdateOutputMediaFormat(
+      const OpalMediaFormat & mediaFormat  /// New media format
+    );
+
+    /**Execute the command specified to the transcoder. The commands are
+       highly context sensitive, for example VideoFastUpdate would only apply
+       to a video transcoder.
+
+       The default behaviour simply returns FALSE.
+      */
+    virtual BOOL ExecuteCommand(
+      const OpalMediaCommand & command    /// Command to execute.
+    );
+
     /**Get the optimal size for data frames to be converted.
        This function returns the size of frames that will be most efficient
        in conversion. A RTP_DataFrame will attempt to provide or use data in
@@ -305,7 +333,8 @@ class OpalTranscoder : public OpalMediaFormatPair
   //@}
 
   protected:
-    PINDEX          maxOutputSize;
+    PINDEX maxOutputSize;
+    BOOL   outputMediaFormatUpdated;
 };
 
 

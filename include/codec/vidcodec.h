@@ -24,7 +24,12 @@
  * Contributor(s): 
  *
  * $Log: vidcodec.h,v $
- * Revision 1.2008  2005/08/28 07:59:17  rjongbloed
+ * Revision 1.2009  2005/08/31 13:19:25  rjongbloed
+ * Added mechanism for controlling media (especially codecs) including
+ *   changing the OpalMediaFormat option list (eg bit rate) and a completely
+ *   new OpalMediaCommand abstraction for things like video fast update.
+ *
+ * Revision 2.7  2005/08/28 07:59:17  rjongbloed
  * Converted OpalTranscoder to use factory, requiring sme changes in making sure
  *   OpalMediaFormat instances are initialised before use.
  *
@@ -110,6 +115,16 @@ class OpalVideoTranscoder : public OpalTranscoder
 
   /**@name Operations */
   //@{
+    /**Execute the command specified to the transcoder. The commands are
+       highly context sensitive, for example VideoFastUpdate would only apply
+       to a video transcoder.
+
+       The default behaviour simply returns FALSE.
+      */
+    virtual BOOL ExecuteCommand(
+      const OpalMediaCommand & command    /// Command to execute.
+    );
+
     /**Convert the data from one format to another.
        This function takes the input data as a RTP_DataFrame and converts it
        to its output format, placing it into the RTP_DataFrame provided.
@@ -129,8 +144,47 @@ class OpalVideoTranscoder : public OpalTranscoder
   protected:
     unsigned frameWidth;
     unsigned frameHeight;
-    unsigned fillLevel;
     unsigned videoQuality;
+    unsigned targetBitRate;
+    unsigned fillLevel;
+    bool     updatePicture;
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+OPAL_DEFINE_MEDIA_COMMAND(OpalVideoFreezePicture, "Freeze Picture");
+
+class OpalVideoUpdatePicture : public OpalMediaCommand
+{
+  public:
+    OpalVideoUpdatePicture(int firstGOB = -1, int firstMB = -1, int numBlocks = 0)
+      : m_firstGOB(firstGOB), m_firstMB(firstMB), m_numBlocks(numBlocks) { }
+
+    virtual PString GetName() const { return "Update Picture"; }
+
+    int GetFirstGOB() const { return m_firstGOB; }
+    int GetFirstMB() const { return m_firstMB; }
+    int GetNumBlocks() const { return m_numBlocks; }
+
+  protected:
+    int m_firstGOB;
+    int m_firstMB;
+    int m_numBlocks;
+};
+
+
+class OpalTemporalSpatialTradeOff : public OpalMediaCommand
+{
+  public:
+    OpalTemporalSpatialTradeOff(int quality) : m_quality(quality) { }
+
+    virtual PString GetName() const { return "Temporal Spatial Trade Off"; }
+
+    int GetQuality() const { return m_quality; }
+
+  protected:
+    int m_quality;
 };
 
 

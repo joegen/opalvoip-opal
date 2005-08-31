@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.h,v $
- * Revision 1.2012  2002/11/10 11:33:16  robertj
+ * Revision 1.2013  2005/08/31 13:19:25  rjongbloed
+ * Added mechanism for controlling media (especially codecs) including
+ *   changing the OpalMediaFormat option list (eg bit rate) and a completely
+ *   new OpalMediaCommand abstraction for things like video fast update.
+ *
+ * Revision 2.11  2002/11/10 11:33:16  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.10  2002/09/16 02:52:33  robertj
@@ -558,6 +563,16 @@ class H323UnidirectionalChannel : public H323Channel
      */
     virtual void Close();
 
+    /**Process a miscellaneous command on the logical channel.
+       The default behaviour passes this on to the codec if not NULL.
+     */
+    virtual void OnMiscellaneousCommand(
+      const H245_MiscellaneousCommand_type & type  /// Command to process
+    );
+  //@}
+
+  /**@name Member variable access */
+  //@{
     /**Get the media stream associated with this logical channel.
        The default behaviour returns NULL.
       */

@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vidcodec.cxx,v $
- * Revision 1.2008  2005/08/28 07:59:17  rjongbloed
+ * Revision 1.2009  2005/08/31 13:19:25  rjongbloed
+ * Added mechanism for controlling media (especially codecs) including
+ *   changing the OpalMediaFormat option list (eg bit rate) and a completely
+ *   new OpalMediaCommand abstraction for things like video fast update.
+ *
+ * Revision 2.7  2005/08/28 07:59:17  rjongbloed
  * Converted OpalTranscoder to use factory, requiring sme changes in making sure
  *   OpalMediaFormat instances are initialised before use.
  *
@@ -113,10 +118,23 @@ OpalVideoTranscoder::OpalVideoTranscoder(const OpalMediaFormat & inputMediaForma
                                          const OpalMediaFormat & outputMediaFormat)
   : OpalTranscoder(inputMediaFormat, outputMediaFormat)
 {
-  frameWidth = PVideoDevice::CIFWidth;
-  frameHeight = PVideoDevice::CIFHeight;
+  frameWidth = outputMediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption, PVideoDevice::CIFWidth);
+  frameHeight = outputMediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption, PVideoDevice::CIFHeight);
+  videoQuality = outputMediaFormat.GetOptionInteger(OpalVideoFormat::EncodingQualityOption, 15);
+  targetBitRate = outputMediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption, 64000);
   fillLevel = 0;
-  videoQuality = 9;
+  updatePicture = false;
+}
+
+
+BOOL OpalVideoTranscoder::ExecuteCommand(const OpalMediaCommand & command)
+{
+  if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
+    updatePicture = true;
+    return TRUE;
+  }
+
+  return OpalTranscoder::ExecuteCommand(command);
 }
 
 

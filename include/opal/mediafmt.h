@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2032  2005/08/28 07:59:17  rjongbloed
+ * Revision 1.2033  2005/08/31 13:19:25  rjongbloed
+ * Added mechanism for controlling media (especially codecs) including
+ *   changing the OpalMediaFormat option list (eg bit rate) and a completely
+ *   new OpalMediaCommand abstraction for things like video fast update.
+ *
+ * Revision 2.31  2005/08/28 07:59:17  rjongbloed
  * Converted OpalTranscoder to use factory, requiring sme changes in making sure
  *   OpalMediaFormat instances are initialised before use.
  *
@@ -891,6 +896,8 @@ class OpalVideoFormat : public OpalMediaFormat
 
     static const char * const FrameWidthOption;
     static const char * const FrameHeightOption;
+    static const char * const EncodingQualityOption;
+    static const char * const TargetBitRateOption;
 };
 
 
