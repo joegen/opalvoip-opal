@@ -24,7 +24,12 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2036  2005/08/24 10:16:33  rjongbloed
+ * Revision 1.2037  2005/08/31 13:19:25  rjongbloed
+ * Added mechanism for controlling media (especially codecs) including
+ *   changing the OpalMediaFormat option list (eg bit rate) and a completely
+ *   new OpalMediaCommand abstraction for things like video fast update.
+ *
+ * Revision 2.35  2005/08/24 10:16:33  rjongbloed
  * Fix checking of payload type when mediaFormat is not an RTP media but internal.
  *
  * Revision 2.34  2005/08/20 07:35:11  rjongbloed
@@ -215,6 +220,29 @@ void OpalMediaStream::PrintOn(ostream & strm) const
 OpalMediaFormat OpalMediaStream::GetMediaFormat() const
 {
   return mediaFormat;
+}
+
+
+BOOL OpalMediaStream::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
+{
+  PWaitAndSignal mutex(patchMutex);
+
+  if (patchThread == NULL)
+    return FALSE;
+
+  // If we are source, then update the sink side, and vice versa
+  return patchThread->UpdateMediaFormat(mediaFormat, IsSink());
+}
+
+
+BOOL OpalMediaStream::ExecuteCommand(const OpalMediaCommand & command)
+{
+  PWaitAndSignal mutex(patchMutex);
+
+  if (patchThread == NULL)
+    return FALSE;
+
+  return patchThread->ExecuteCommand(command);
 }
 
 

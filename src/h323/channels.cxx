@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2027  2005/07/11 01:52:24  csoutheren
+ * Revision 1.2028  2005/08/31 13:19:25  rjongbloed
+ * Added mechanism for controlling media (especially codecs) including
+ *   changing the OpalMediaFormat option list (eg bit rate) and a completely
+ *   new OpalMediaCommand abstraction for things like video fast update.
+ *
+ * Revision 2.26  2005/07/11 01:52:24  csoutheren
  * Extended AnsweringCall to work for SIP as well as H.323
  * Fixed problems with external RTP connection in H.323
  * Added call to OnClosedMediaStream
@@ -562,6 +567,7 @@
 #include <h323/channels.h>
 
 #include <opal/transports.h>
+#include <codec/vidcodec.h>
 #include <h323/h323ep.h>
 #include <h323/h323con.h>
 #include <h323/h323rtp.h>
@@ -591,14 +597,6 @@ ostream & operator<<(ostream & out, H323Channel::Directions dir)
 
   return out;
 }
-
-#else // Stuff to remove unused parameters warning
-#define PTRACE_bitRateRestriction
-#define PTRACE_type
-#define PTRACE_jitter
-#define PTRACE_skippedFrameCount
-#define PTRACE_additionalBuffer
-#define PTRACE_direction
 
 #endif
 
@@ -733,34 +731,33 @@ void H323Channel::OnSendOpenAck(const H245_OpenLogicalChannel & /*pdu*/,
 }
 
 
-void H323Channel::OnFlowControl(long PTRACE_bitRateRestriction)
+void H323Channel::OnFlowControl(long PTRACE_PARAM(bitRateRestriction))
 {
-  PTRACE(3, "LogChan\tOnFlowControl: " << PTRACE_bitRateRestriction);
+  PTRACE(3, "LogChan\tOnFlowControl: " << bitRateRestriction);
 }
 
 
-void H323Channel::OnMiscellaneousCommand(const H245_MiscellaneousCommand_type & PTRACE_type)
+void H323Channel::OnMiscellaneousCommand(const H245_MiscellaneousCommand_type & PTRACE_PARAM(type))
 {
-  PTRACE(3, "LogChan\tOnMiscellaneousCommand: chan=" << number
-         << ", type=" << PTRACE_type.GetTagName());
+  PTRACE(3, "LogChan\tOnMiscellaneousCommand: chan=" << number << ", type=" << type.GetTagName());
 }
 
 
-void H323Channel::OnMiscellaneousIndication(const H245_MiscellaneousIndication_type & PTRACE_type)
+void H323Channel::OnMiscellaneousIndication(const H245_MiscellaneousIndication_type & PTRACE_PARAM(type))
 {
   PTRACE(3, "LogChan\tOnMiscellaneousIndication: chan=" << number
-         << ", type=" << PTRACE_type.GetTagName());
+         << ", type=" << type.GetTagName());
 }
 
 
-void H323Channel::OnJitterIndication(DWORD PTRACE_jitter,
-                                     int   PTRACE_skippedFrameCount,
-                                     int   PTRACE_additionalBuffer)
+void H323Channel::OnJitterIndication(DWORD PTRACE_PARAM(jitter),
+                                     int   PTRACE_PARAM(skippedFrameCount),
+                                     int   PTRACE_PARAM(additionalBuffer))
 {
   PTRACE(3, "LogChan\tOnJitterIndication:"
-            " jitter=" << PTRACE_jitter <<
-            " skippedFrameCount=" << PTRACE_skippedFrameCount <<
-            " additionalBuffer=" << PTRACE_additionalBuffer);
+            " jitter=" << jitter <<
+            " skippedFrameCount=" << skippedFrameCount <<
+            " additionalBuffer=" << additionalBuffer);
 }
 
 
@@ -882,6 +879,46 @@ void H323UnidirectionalChannel::Close()
     mediaStream->Close();
 
   H323Channel::Close();
+}
+
+
+void H323UnidirectionalChannel::OnMiscellaneousCommand(const H245_MiscellaneousCommand_type & type)
+{
+  H323Channel::OnMiscellaneousCommand(type);
+
+  if (mediaStream == NULL)
+    return;
+
+  switch (type.GetTag())
+  {
+    case H245_MiscellaneousCommand_type::e_videoFreezePicture :
+      mediaStream->ExecuteCommand(OpalVideoFreezePicture());
+      break;
+
+    case H245_MiscellaneousCommand_type::e_videoFastUpdatePicture:
+      mediaStream->ExecuteCommand(OpalVideoUpdatePicture());
+      break;
+
+    case H245_MiscellaneousCommand_type::e_videoFastUpdateGOB :
+    {
+      const H245_MiscellaneousCommand_type_videoFastUpdateGOB & fuGOB = type;
+      mediaStream->ExecuteCommand(OpalVideoUpdatePicture(fuGOB.m_firstGOB, -1, fuGOB.m_numberOfGOBs));
+    }
+    break;
+
+    case H245_MiscellaneousCommand_type::e_videoFastUpdateMB :
+    {
+      const H245_MiscellaneousCommand_type_videoFastUpdateMB & vfuMB = type;
+      mediaStream->ExecuteCommand(OpalVideoUpdatePicture(vfuMB.HasOptionalField(H245_MiscellaneousCommand_type_videoFastUpdateMB::e_firstGOB) ? (int)vfuMB.m_firstGOB : -1,
+                                                         vfuMB.HasOptionalField(H245_MiscellaneousCommand_type_videoFastUpdateMB::e_firstMB)  ? (int)vfuMB.m_firstMB  : -1,
+                                                         vfuMB.m_numberOfMBs));
+    }
+    break;
+
+    case H245_MiscellaneousCommand_type::e_videoTemporalSpatialTradeOff :
+      mediaStream->ExecuteCommand(OpalTemporalSpatialTradeOff((const PASN_Integer &)type));
+      break;
+  }
 }
 
 
