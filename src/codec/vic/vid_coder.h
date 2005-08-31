@@ -42,8 +42,14 @@
 /************ Change log
  *
  * $Log: vid_coder.h,v $
- * Revision 1.2002  2003/03/15 23:43:00  robertj
+ * Revision 1.2003  2005/08/31 13:16:02  rjongbloed
+ * Ported video fast update from OpenH323
+ *
+ * Revision 2.1  2003/03/15 23:43:00  robertj
  * Update to OpenH323 v1.11.7
+ *
+ * Revision 1.10  2003/04/03 23:54:15  robertj
+ * Added fast update to H.261 codec, thanks Gustavo García Bernardo
  *
  * Revision 1.9  2002/04/26 04:57:41  dereks
  * Add Walter Whitlocks fixes, based on Victor Ivashim's suggestions to
@@ -186,6 +192,8 @@ class Pre_Vid_Coder : public Encoder {
       void SetBackgroundFill(int fillLevel)
         {idle_high= fillLevel; }  
 
+      void FastUpdatePicture();
+
  protected:
       void SetSize(int _width,int _height);
       void allocref();
@@ -233,6 +241,8 @@ class Pre_Vid_Coder : public Encoder {
       /** index used to find the unchanged blocks to be transmitted with those
           that have changed*/
       int rover;
+
+      int fastUpdCount;
 };
 
 

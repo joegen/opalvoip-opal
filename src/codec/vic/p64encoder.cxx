@@ -12,8 +12,14 @@
 /************ Change log
  *
  * $Log: p64encoder.cxx,v $
- * Revision 1.2002  2003/03/15 23:43:00  robertj
+ * Revision 1.2003  2005/08/31 13:16:02  rjongbloed
+ * Ported video fast update from OpenH323
+ *
+ * Revision 2.1  2003/03/15 23:43:00  robertj
  * Update to OpenH323 v1.11.7
+ *
+ * Revision 1.15  2003/04/03 23:54:15  robertj
+ * Added fast update to H.261 codec, thanks Gustavo García Bernardo
  *
  * Revision 1.14  2003/02/10 00:32:15  robertj
  * Changed delete of array pointer (use of []) to avoid complaints.
@@ -135,6 +141,12 @@ u_char* P64Encoder::GetFramePtr()
     return vid_frame->frameptr;
   return NULL; 
 }
+
+void P64Encoder::FastUpdatePicture()
+{
+  pre_vid->FastUpdatePicture();
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 //VideoFrame
