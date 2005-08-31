@@ -25,6 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.26  2005/08/31 13:21:20  rjongbloed
+ * Moved some video options to be in the options list from OpalMediaFormat
+ * Added selection of video grabber preview window.
+ *
  * Revision 1.25  2005/08/24 10:43:51  rjongbloed
  * Changed create video functions yet again so can return pointers that are not to be deleted.
  *
@@ -357,9 +361,7 @@ class OptionsDialog : public wxDialog
     PwxString m_VideoGrabber;
     int       m_VideoGrabFormat;
     int       m_VideoGrabSource;
-    int       m_VideoEncodeQuality;
     int       m_VideoGrabFrameRate;
-    int       m_VideoEncodeMaxBitRate;
     bool      m_VideoGrabPreview;
     bool      m_VideoFlipLocal;
     bool      m_VideoAutoTransmit;
@@ -600,6 +602,7 @@ class MyManager : public wxFrame, public OpalManager
 #endif
 
     bool m_autoAnswer;
+    bool m_VideoGrabPreview;
 
     MyMediaList m_mediaInfo;
     void InitMediaInfo(const char * source, const OpalMediaFormatList & formats);
