@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2017  2005/08/31 13:19:25  rjongbloed
+ * Revision 1.2018  2005/09/02 14:31:40  csoutheren
+ * Use inline function to work around compiler foo in gcc
+ *
+ * Revision 2.16  2005/08/31 13:19:25  rjongbloed
  * Added mechanism for controlling media (especially codecs) including
  *   changing the OpalMediaFormat option list (eg bit rate) and a completely
  *   new OpalMediaCommand abstraction for things like video fast update.
@@ -174,8 +177,11 @@ typedef PFactory<OpalTranscoder, OpalMediaFormatPair>                      OpalT
 typedef PFactory<OpalTranscoder, OpalMediaFormatPair>::KeyList_T           OpalTranscoderList;
 typedef PFactory<OpalTranscoder, OpalMediaFormatPair>::KeyList_T::iterator OpalTranscoderIterator;
 
+inline OpalMediaFormatPair OpalCreateMediaFormatPair(const OpalMediaFormat & from, const OpalMediaFormat & to)
+{ return OpalMediaFormatPair(from, to); }
+
 #define OPAL_REGISTER_TRANSCODER(cls, input, output) \
-  OpalTranscoderFactory::Worker<cls> OpalTranscoder_##cls(OpalMediaFormatPair(input, output))
+  OpalTranscoderFactory::Worker<cls> OpalTranscoder_##cls(OpalCreateMediaFormatPair(input, output))
 
 
 /**This class embodies the implementation of a specific transcoder instance
