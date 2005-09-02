@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.h,v $
- * Revision 1.2017  2005/08/28 07:59:17  rjongbloed
+ * Revision 1.2018  2005/09/02 14:31:41  csoutheren
+ * Use inline function to work around compiler foo in gcc
+ *
+ * Revision 2.16  2005/08/28 07:59:17  rjongbloed
  * Converted OpalTranscoder to use factory, requiring sme changes in making sure
  *   OpalMediaFormat instances are initialised before use.
  *
@@ -401,10 +404,10 @@ class Opal_YUV420P_H261 : public OpalVideoTranscoder {
 
 #define OPAL_REGISTER_H261() \
         OPAL_REGISTER_H261_H323 \
-        OpalTranscoderFactory::Worker<Opal_H261_YUV420P> Opal_H261_YUV420P_QCIF(OpalMediaFormatPair(OpalH261_QCIF, OpalYUV420P)); \
-        OpalTranscoderFactory::Worker<Opal_YUV420P_H261> Opal_YUV420P_H261_QCIF(OpalMediaFormatPair(OpalYUV420P,   OpalH261_QCIF)); \
-        OpalTranscoderFactory::Worker<Opal_H261_YUV420P> Opal_H261_YUV420P_CIF (OpalMediaFormatPair(OpalH261_CIF,  OpalYUV420P)); \
-        OpalTranscoderFactory::Worker<Opal_YUV420P_H261> Opal_YUV420P_H261_CIF (OpalMediaFormatPair(OpalYUV420P,   OpalH261_CIF))
+        OpalTranscoderFactory::Worker<Opal_H261_YUV420P> Opal_H261_YUV420P_QCIF(OpalCreateMediaFormatPair(OpalH261_QCIF, OpalYUV420P)); \
+        OpalTranscoderFactory::Worker<Opal_YUV420P_H261> Opal_YUV420P_H261_QCIF(OpalCreateMediaFormatPair(OpalYUV420P,   OpalH261_QCIF)); \
+        OpalTranscoderFactory::Worker<Opal_H261_YUV420P> Opal_H261_YUV420P_CIF (OpalCreateMediaFormatPair(OpalH261_CIF,  OpalYUV420P)); \
+        OpalTranscoderFactory::Worker<Opal_YUV420P_H261> Opal_YUV420P_H261_CIF (OpalCreateMediaFormatPair(OpalYUV420P,   OpalH261_CIF))
 
 
 #endif // __OPAL_H261CODEC_H
