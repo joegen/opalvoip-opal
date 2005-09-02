@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2034  2005/08/31 13:19:25  rjongbloed
+ * Revision 1.2035  2005/09/02 14:49:21  csoutheren
+ * Fixed link problem in Linux
+ *
+ * Revision 2.33  2005/08/31 13:19:25  rjongbloed
  * Added mechanism for controlling media (especially codecs) including
  *   changing the OpalMediaFormat option list (eg bit rate) and a completely
  *   new OpalMediaCommand abstraction for things like video fast update.
@@ -185,9 +188,11 @@
 
 #ifdef __GNUC__
 #pragma implementation "mediafmt.h"
+#pragma implementation "mediacmd.h"
 #endif
 
 #include <opal/mediafmt.h>
+#include <opal/mediacmd.h>
 
 
 #define new PNEW
