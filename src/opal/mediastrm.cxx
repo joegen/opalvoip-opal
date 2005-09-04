@@ -24,7 +24,11 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2037  2005/08/31 13:19:25  rjongbloed
+ * Revision 1.2038  2005/09/04 06:23:39  rjongbloed
+ * Added OpalMediaCommand mechanism (via PNotifier) for media streams
+ *   and media transcoders to send commands back to remote.
+ *
+ * Revision 2.36  2005/08/31 13:19:25  rjongbloed
  * Added mechanism for controlling media (especially codecs) including
  *   changing the OpalMediaFormat option list (eg bit rate) and a completely
  *   new OpalMediaCommand abstraction for things like video fast update.
@@ -242,7 +246,18 @@ BOOL OpalMediaStream::ExecuteCommand(const OpalMediaCommand & command)
   if (patchThread == NULL)
     return FALSE;
 
-  return patchThread->ExecuteCommand(command);
+  return patchThread->ExecuteCommand(command, IsSink());
+}
+
+
+void OpalMediaStream::SetCommandNotifier(const PNotifier & notifier)
+{
+  PWaitAndSignal mutex(patchMutex);
+
+  if (patchThread != NULL)
+    patchThread->SetCommandNotifier(notifier, IsSink());
+
+  commandNotifier = notifier;
 }
 
 
