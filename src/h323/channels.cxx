@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2029  2005/09/04 06:23:39  rjongbloed
+ * Revision 1.2030  2005/09/04 06:51:52  rjongbloed
+ * Added OpalMediaCommand mechanism (via PNotifier) for media streams
+ *   and media transcoders to send commands back to remote.
+ *
+ * Revision 2.28  2005/09/04 06:23:39  rjongbloed
  * Added OpalMediaCommand mechanism (via PNotifier) for media streams
  *   and media transcoders to send commands back to remote.
  *
@@ -859,6 +863,8 @@ BOOL H323UnidirectionalChannel::Start()
 
   if (!mediaStream->Start())
     return FALSE;
+
+  mediaStream->SetCommandNotifier(PCREATE_NOTIFIER(OnMediaCommand));
 
   paused = FALSE;
   return TRUE;
