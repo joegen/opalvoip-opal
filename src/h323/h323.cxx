@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2085  2005/08/27 02:39:32  csoutheren
+ * Revision 1.2086  2005/09/04 06:23:39  rjongbloed
+ * Added OpalMediaCommand mechanism (via PNotifier) for media streams
+ *   and media transcoders to send commands back to remote.
+ *
+ * Revision 2.84  2005/08/27 02:39:32  csoutheren
  * Reverted previous patch pending a more compliant solution
  *
  * Revision 2.83  2005/08/23 21:26:21  dsandras
@@ -5415,20 +5419,6 @@ OpalTransport & H323Connection::GetTransport() const
 {
   return *(controlChannel != NULL ? controlChannel : signallingChannel);
 }
-
-void H323Connection::SendLogicalChannelMiscCommand(H323Channel & channel,
-                                                   unsigned commandIdentifier)
-{
-  if (channel.GetDirection() == H323Channel::IsReceiver) {
-    H323ControlPDU pdu;
-    H245_CommandMessage & command = pdu.Build(H245_CommandMessage::e_miscellaneousCommand);
-    H245_MiscellaneousCommand & miscCommand = command;
-    miscCommand.m_logicalChannelNumber = (unsigned)channel.GetNumber();
-    miscCommand.m_type.SetTag(commandIdentifier);
-    WriteControlPDU(pdu);
-  }
-}
-
 
 void H323Connection::SetEnforcedDurationLimit(unsigned seconds)
 {

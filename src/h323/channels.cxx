@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2028  2005/08/31 13:19:25  rjongbloed
+ * Revision 1.2029  2005/09/04 06:23:39  rjongbloed
+ * Added OpalMediaCommand mechanism (via PNotifier) for media streams
+ *   and media transcoders to send commands back to remote.
+ *
+ * Revision 2.27  2005/08/31 13:19:25  rjongbloed
  * Added mechanism for controlling media (especially codecs) including
  *   changing the OpalMediaFormat option list (eg bit rate) and a completely
  *   new OpalMediaCommand abstraction for things like video fast update.
@@ -572,7 +576,7 @@
 #include <h323/h323con.h>
 #include <h323/h323rtp.h>
 #include <h323/transaddr.h>
-#include <asn/h245.h>
+#include <h323/h323pdu.h>
 
 
 #define new PNEW
@@ -795,12 +799,6 @@ BOOL H323Channel::Open()
 }
 
 
-void H323Channel::SendMiscCommand(unsigned command)
-{ 
-  connection.SendLogicalChannelMiscCommand(*this, command); 
-}
-
-
 /////////////////////////////////////////////////////////////////////////////
 
 H323UnidirectionalChannel::H323UnidirectionalChannel(H323Connection & conn,
@@ -919,6 +917,42 @@ void H323UnidirectionalChannel::OnMiscellaneousCommand(const H245_MiscellaneousC
       mediaStream->ExecuteCommand(OpalTemporalSpatialTradeOff((const PASN_Integer &)type));
       break;
   }
+}
+
+
+void H323UnidirectionalChannel::OnMediaCommand(OpalMediaCommand & command, INT)
+{
+  H323ControlPDU pdu;
+
+  if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
+    const OpalVideoUpdatePicture & updatePicture = (const OpalVideoUpdatePicture &)command;
+
+    if (updatePicture.GetNumBlocks() < 0)
+      pdu.BuildMiscellaneousCommand(GetNumber(), H245_MiscellaneousCommand_type::e_videoFastUpdatePicture);
+    else if (updatePicture.GetFirstMB() < 0) {
+      H245_MiscellaneousCommand_type_videoFastUpdateGOB & fuGOB = 
+            pdu.BuildMiscellaneousCommand(GetNumber(), H245_MiscellaneousCommand_type::e_videoFastUpdateGOB).m_type;
+      fuGOB.m_firstGOB = updatePicture.GetFirstGOB();
+      fuGOB.m_numberOfGOBs = updatePicture.GetNumBlocks();
+    }
+    else {
+      H245_MiscellaneousCommand_type_videoFastUpdateMB & vfuMB =
+            pdu.BuildMiscellaneousCommand(GetNumber(), H245_MiscellaneousCommand_type::e_videoFastUpdateMB).m_type;
+      if (updatePicture.GetFirstGOB() >= 0) {
+        vfuMB.IncludeOptionalField(H245_MiscellaneousCommand_type_videoFastUpdateMB::e_firstGOB);
+        vfuMB.m_firstGOB = updatePicture.GetFirstGOB();
+      }
+      if (updatePicture.GetFirstMB() >= 0) {
+        vfuMB.IncludeOptionalField(H245_MiscellaneousCommand_type_videoFastUpdateMB::e_firstMB);
+        vfuMB.m_firstMB = updatePicture.GetFirstMB();
+      }
+      vfuMB.m_numberOfMBs = updatePicture.GetNumBlocks();
+    }
+
+    connection.WriteControlPDU(pdu);
+    return;
+  }
+
 }
 
 

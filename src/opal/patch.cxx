@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2014  2005/08/31 13:19:25  rjongbloed
+ * Revision 1.2015  2005/09/04 06:23:39  rjongbloed
+ * Added OpalMediaCommand mechanism (via PNotifier) for media streams
+ *   and media transcoders to send commands back to remote.
+ *
+ * Revision 2.13  2005/08/31 13:19:25  rjongbloed
  * Added mechanism for controlling media (especially codecs) including
  *   changing the OpalMediaFormat option list (eg bit rate) and a completely
  *   new OpalMediaCommand abstraction for things like video fast update.
@@ -336,7 +340,6 @@ BOOL OpalMediaPatch::UpdateMediaFormat(const OpalMediaFormat & mediaFormat, BOOL
     return source.UpdateMediaFormat(mediaFormat);
 
   BOOL atLeastOne = FALSE;
-
   for (PINDEX i = 0; i < sinks.GetSize(); i++)
     atLeastOne = sinks[i].UpdateMediaFormat(mediaFormat) || atLeastOne;
 
@@ -344,16 +347,31 @@ BOOL OpalMediaPatch::UpdateMediaFormat(const OpalMediaFormat & mediaFormat, BOOL
 }
 
 
-BOOL OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command)
+BOOL OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command, BOOL fromSink)
 {
   PWaitAndSignal mutex(inUse);
 
-  BOOL atLeastOne = source.ExecuteCommand(command);
+  if (fromSink)
+    return source.ExecuteCommand(command);
 
+  BOOL atLeastOne = FALSE;
   for (PINDEX i = 0; i < sinks.GetSize(); i++)
     atLeastOne = sinks[i].ExecuteCommand(command) || atLeastOne;
 
   return atLeastOne;
+}
+
+
+void OpalMediaPatch::SetCommandNotifier(const PNotifier & notifier, BOOL fromSink)
+{
+  PWaitAndSignal mutex(inUse);
+
+  if (fromSink)
+    source.SetCommandNotifier(notifier);
+  else {
+    for (PINDEX i = 0; i < sinks.GetSize(); i++)
+      sinks[i].SetCommandNotifier(notifier);
+  }
 }
 
 
@@ -380,6 +398,18 @@ bool OpalMediaPatch::Sink::ExecuteCommand(const OpalMediaCommand & command)
     atLeastOne = primaryCodec->ExecuteCommand(command) || atLeastOne;
 
   return atLeastOne;
+}
+
+
+void OpalMediaPatch::Sink::SetCommandNotifier(const PNotifier & notifier)
+{
+  stream->SetCommandNotifier(notifier);
+
+  if (secondaryCodec != NULL)
+    secondaryCodec->SetCommandNotifier(notifier);
+
+  if (primaryCodec != NULL)
+    primaryCodec->SetCommandNotifier(notifier);
 }
 
 
