@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.h,v $
- * Revision 1.2013  2005/08/31 13:19:25  rjongbloed
+ * Revision 1.2014  2005/09/04 06:23:38  rjongbloed
+ * Added OpalMediaCommand mechanism (via PNotifier) for media streams
+ *   and media transcoders to send commands back to remote.
+ *
+ * Revision 2.12  2005/08/31 13:19:25  rjongbloed
  * Added mechanism for controlling media (especially codecs) including
  *   changing the OpalMediaFormat option list (eg bit rate) and a completely
  *   new OpalMediaCommand abstraction for things like video fast update.
@@ -212,6 +216,7 @@
 
 
 class OpalMediaStream;
+class OpalMediaCommand;
 
 class H245_OpenLogicalChannel;
 class H245_OpenLogicalChannelAck;
@@ -424,12 +429,6 @@ class H323Channel : public PObject
       int skippedFrameCount,  /// Frames skipped by decodec
       int additionalBuffer    /// Additional size of video decoder buffer
     );
-
-    /**
-       Send a miscellanous command to the remote transmitting video codec.
-       Typically, used to indicate a problem in the received video stream.
-    */
-    void SendMiscCommand(unsigned command);
   //@}
 
   /**@name Member variable access */
@@ -580,6 +579,8 @@ class H323UnidirectionalChannel : public H323Channel
   //@}
 
   protected:
+    PDECLARE_NOTIFIER(OpalMediaCommand, H323UnidirectionalChannel, OnMediaCommand);
+
     BOOL              receiver;
     OpalMediaStream * mediaStream;
 };

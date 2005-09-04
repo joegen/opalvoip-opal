@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2038  2005/08/05 19:21:04  csoutheren
+ * Revision 1.2039  2005/09/04 06:23:38  rjongbloed
+ * Added OpalMediaCommand mechanism (via PNotifier) for media streams
+ *   and media transcoders to send commands back to remote.
+ *
+ * Revision 2.37  2005/08/05 19:21:04  csoutheren
  * Ensure H323Connection calls OnAlerting even if no ALERT is received
  *
  * Revision 2.36  2005/07/11 01:52:15  csoutheren
@@ -1719,13 +1723,6 @@ class H323Connection : public OpalConnection
       DWORD jitter,            /// Estimated received jitter in microseconds
       int skippedFrameCount,   /// Frames skipped by decodec
       int additionalBuffer     /// Additional size of video decoder buffer
-    );
-
-    /**Send a miscellaneous command on the associated H245 channel.
-    */
-    void SendLogicalChannelMiscCommand(
-      H323Channel & channel,  /// Channel to send command for
-      unsigned command        /// Command code to send
     );
 
     /**Get a logical channel.
