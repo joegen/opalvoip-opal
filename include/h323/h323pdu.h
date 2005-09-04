@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.h,v $
- * Revision 1.2013  2005/07/12 12:33:27  csoutheren
+ * Revision 1.2014  2005/09/04 06:23:38  rjongbloed
+ * Added OpalMediaCommand mechanism (via PNotifier) for media streams
+ *   and media transcoders to send commands back to remote.
+ *
+ * Revision 2.12  2005/07/12 12:33:27  csoutheren
  * Updated H.245 to version 11
  *
  * Revision 2.11  2005/01/24 00:16:44  csoutheren
@@ -604,6 +608,11 @@ class H323ControlPDU : public H245_MultimediaSystemControlMessage
       unsigned duration,       /// Duration of tone in milliseconds
       unsigned logicalChannel, /// Logical channel number for RTP sync.
       unsigned rtpTimestamp    /// RTP timestamp in logical channel sync.
+    );
+
+    H245_MiscellaneousCommand & BuildMiscellaneousCommand(
+      unsigned channelNumber,
+      unsigned type
     );
 
     H245_FunctionNotUnderstood & BuildFunctionNotUnderstood(
