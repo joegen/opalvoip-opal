@@ -25,7 +25,11 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.cxx,v $
- * Revision 1.2022  2005/08/31 13:19:25  rjongbloed
+ * Revision 1.2023  2005/09/04 06:23:39  rjongbloed
+ * Added OpalMediaCommand mechanism (via PNotifier) for media streams
+ *   and media transcoders to send commands back to remote.
+ *
+ * Revision 2.21  2005/08/31 13:19:25  rjongbloed
  * Added mechanism for controlling media (especially codecs) including
  *   changing the OpalMediaFormat option list (eg bit rate) and a completely
  *   new OpalMediaCommand abstraction for things like video fast update.
@@ -503,7 +507,9 @@ BOOL Opal_H261_YUV420P::ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameLi
 
   videoDecoder->mark(now);
   if (!videoDecoder->decode(src.GetPayloadPtr(), src.GetPayloadSize(), lostPreviousPacket)) {
-    PTRACE (3, "H261\t Could not decode frame, continuing in hope.");
+    OpalVideoUpdatePicture updatePicture;
+    commandNotifier(updatePicture, 0);
+    PTRACE (3, "H261\t Could not decode frame, sending VideoUpdatePicture in hope of an I-Frame.");
     return TRUE;
   }
 

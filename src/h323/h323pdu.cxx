@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.cxx,v $
- * Revision 1.2017  2004/06/06 13:01:36  rjongbloed
+ * Revision 1.2018  2005/09/04 06:23:39  rjongbloed
+ * Added OpalMediaCommand mechanism (via PNotifier) for media streams
+ *   and media transcoders to send commands back to remote.
+ *
+ * Revision 2.16  2004/06/06 13:01:36  rjongbloed
  * Fixed correct setting of Q.931 Display IE from DisplayName field of connection.
  *
  * Revision 2.15  2004/04/09 12:30:16  rjongbloed
@@ -1835,6 +1839,15 @@ H245_UserInputIndication & H323ControlPDU::BuildUserInputIndication(char tone,
   }
 
   return ind;
+}
+
+
+H245_MiscellaneousCommand & H323ControlPDU::BuildMiscellaneousCommand(unsigned channelNumber, unsigned type)
+{
+  H245_MiscellaneousCommand & miscCommand = Build(H245_CommandMessage::e_miscellaneousCommand);
+  miscCommand.m_logicalChannelNumber = channelNumber;
+  miscCommand.m_type.SetTag(type);
+  return miscCommand;
 }
 
 
