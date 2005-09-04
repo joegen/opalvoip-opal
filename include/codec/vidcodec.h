@@ -24,7 +24,11 @@
  * Contributor(s): 
  *
  * $Log: vidcodec.h,v $
- * Revision 1.2009  2005/08/31 13:19:25  rjongbloed
+ * Revision 1.2010  2005/09/04 06:23:38  rjongbloed
+ * Added OpalMediaCommand mechanism (via PNotifier) for media streams
+ *   and media transcoders to send commands back to remote.
+ *
+ * Revision 2.8  2005/08/31 13:19:25  rjongbloed
  * Added mechanism for controlling media (especially codecs) including
  *   changing the OpalMediaFormat option list (eg bit rate) and a completely
  *   new OpalMediaCommand abstraction for things like video fast update.
@@ -119,7 +123,8 @@ class OpalVideoTranscoder : public OpalTranscoder
        highly context sensitive, for example VideoFastUpdate would only apply
        to a video transcoder.
 
-       The default behaviour simply returns FALSE.
+       The default behaviour checks for a OpalVideoUpdatePicture and sets the
+       updatePicture member variable if that is the command.
       */
     virtual BOOL ExecuteCommand(
       const OpalMediaCommand & command    /// Command to execute.
