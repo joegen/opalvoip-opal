@@ -27,6 +27,10 @@
  *
  *
  * $Log: processor.cxx,v $
+ * Revision 1.14  2005/09/05 01:19:44  dereksmithies
+ * add patches from Adrian Sietsma to avoid multiple hangup packets at call end,
+ * and stop the sending of ping/lagrq packets at call end. Many thanks.
+ *
  * Revision 1.13  2005/08/26 03:26:51  dereksmithies
  * Add some tidyups from Adrian Sietsma.  Many thanks..
  *
@@ -376,16 +380,22 @@ void IAX2Processor::Hangup(PString dieMessage)
 
  void IAX2Processor::CheckForHangupMessages()
 {
-  if (!hangList.IsEmpty()) {
+  if (hangList.IsEmpty()) 
+    return;
+
+  if (!IsCallTerminating()) {
     IAX2FullFrameProtocol * f = 
       new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdHangup, IAX2FullFrame::callIrrelevant);
     PTRACE(3, "Send a hangup frame to the remote endpoint");
-	  
+    
     f->AppendIe(new IAX2IeCause(hangList.GetFirstDeleteAll()));
     //        f->AppendIe(new IeCauseCode(IAX2IeCauseCode::NormalClearing));
     TransmitFrameToRemoteEndpoint(f);
-    Terminate();
+  } else {
+    PTRACE(3, "hangup message required. Not sending, cause already have a hangup message in queue");
   }
+  
+  Terminate();
 }
 
 void IAX2Processor::ConnectToRemoteNode(PString & newRemoteNode)
@@ -825,6 +835,7 @@ void IAX2Processor::ProcessNetworkFrame(IAX2FullFrameSessionControl * src)
   
   switch(src->GetSubClass()) {
   case IAX2FullFrameSessionControl::hangup:          // Other end has hungup
+    SetCallTerminating(TRUE);
     cout << "Other end has hungup, so exit" << endl;
     con->EndCallNow();
     break;
@@ -1129,6 +1140,7 @@ void IAX2Processor::ProcessIaxCmdNew(IAX2FullFrameProtocol *src)
     reply= new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdHangup, IAX2FullFrame::callIrrelevant);
     PTRACE(3, "Send a hangup frame to the remote endpoint as there is no codec available");		 
     reply->AppendIe(new IAX2IeCause("No matching codec"));
+    SetCallTerminating();
     //              f->AppendIe(new IeCauseCode(IeCauseCode::NormalClearing));
     TransmitFrameToRemoteEndpoint(reply);
     
@@ -1250,9 +1262,13 @@ BOOL IAX2Processor::SetAlerting(const PString & PTRACE_PARAM(calleeName), BOOL /
 /*The remote node has told us to hangup and go away */
 void IAX2Processor::ProcessIaxCmdHangup(IAX2FullFrameProtocol *src)
 { 
+  SetCallTerminating(TRUE);
+
   PTRACE(3, "ProcessIaxCmdHangup(IAX2FullFrameProtocol *src)");
   SendAckFrame(src);
-  cerr << "The remote node (" << con->GetRemotePartyName()  << ") has closed the call" << endl;
+
+  PTRACE(1, "The remote node (" << con->GetRemotePartyName()  << ") has closed the call");
+
   con->EndCallNow(OpalConnection::EndedByRemoteUser);
 }
 
@@ -1587,6 +1603,9 @@ PString IAX2Processor::GetCallToken()
 void IAX2Processor::DoStatusCheck()
 {
   statusCheckOtherEnd = FALSE;
+  if (IsCallTerminating())
+    return;
+
   IAX2FullFrame *p = new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdPing);
   TransmitFrameToRemoteEndpoint(p);
 
