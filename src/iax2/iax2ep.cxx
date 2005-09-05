@@ -28,6 +28,10 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.7  2005/09/05 01:19:43  dereksmithies
+ * add patches from Adrian Sietsma to avoid multiple hangup packets at call end,
+ * and stop the sending of ping/lagrq packets at call end. Many thanks.
+ *
  * Revision 1.6  2005/08/26 03:07:38  dereksmithies
  * Change naming convention, so all class names contain the string "IAX2"
  *
@@ -495,6 +499,14 @@ void IAX2EndPoint::ProcessReceivedEthernetFrames()
     }	  
 
     IAX2FullFrame *ff = (IAX2FullFrame *)f;
+     if (ff->IsAckFrame()) {// snuck in here after termination. may be an ack for hangup ?
+       PTRACE(3, "Distribution\t***** it's an ACK " << idString);
+       /* purge will check for remote, call id, etc */
+       transmitter->PurgeMatchingFullFrames(ff);
+       delete ff;
+       continue;
+     }
+
     if (ff->GetFrameType() != IAX2FullFrame::iax2ProtocolType) {
       PTRACE(3, "Distribution\tNO matching connection for incoming ethernet frame Sorry" << idString);
       delete ff;

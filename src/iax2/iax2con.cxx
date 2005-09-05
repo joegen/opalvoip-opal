@@ -28,6 +28,10 @@
  *
  *
  * $Log: iax2con.cxx,v $
+ * Revision 1.7  2005/09/05 01:19:43  dereksmithies
+ * add patches from Adrian Sietsma to avoid multiple hangup packets at call end,
+ * and stop the sending of ping/lagrq packets at call end. Many thanks.
+ *
  * Revision 1.6  2005/08/26 03:07:38  dereksmithies
  * Change naming convention, so all class names contain the string "IAX2"
  *
@@ -130,7 +134,8 @@ void IAX2Connection::ClearCall(CallEndReason reason)
 
 void IAX2Connection::Release( CallEndReason reason)		        
 { 
-  PTRACE(3, "IAX2Con\tRelease( CallEndReason reason)		        ");
+  PTRACE(3, "IAX2Con\tRelease( CallEndReason " << reason);
+  iax2Processor->Hangup(reason);
 
   iax2Processor->Release(reason); 
   OpalConnection::Release(reason);
@@ -150,8 +155,18 @@ void IAX2Connection::OnReleased()
 void IAX2Connection::IncomingEthernetFrame(IAX2Frame *frame)
 {
   PTRACE(3, "IAX2Con\tIncomingEthernetFrame(IAX2Frame *frame)" << frame->IdString());
-  
-  iax2Processor->IncomingEthernetFrame(frame);
+
+  if (iax2Processor->IsCallTerminating()) { 
+    PTRACE(3, "IAX2Con\t***** incoming frame during termination " << frame->IdString());
+     // snuck in here during termination. may be an ack for hangup or other re-transmitted frames
+     IAX2Frame *af = frame->BuildAppropriateFrameType(iax2Processor->GetEncryptionInfo());
+     if (af != NULL) {
+       endpoint.transmitter->PurgeMatchingFullFrames(af);
+       delete af;
+     }
+   }
+   else
+     iax2Processor->IncomingEthernetFrame(frame);
 } 
 
 void IAX2Connection::TransmitFrameToRemoteEndpoint(IAX2Frame *src)
@@ -199,7 +214,7 @@ BOOL IAX2Connection::SetConnected()
 	 << PString(IsOriginating() ? " Originating" : "Receiving"));
   if (!originating)
     iax2Processor->SetConnected();
- 
+
   connectedTime = PTime ();
 
  if (mediaStreams.IsEmpty())
@@ -337,6 +352,10 @@ void IAX2Connection::BuildRemoteCapabilityTable(unsigned int remoteCapability, u
   PTRACE(3, "REMOTE Codecs are " << remoteMediaFormats);
 }
 
+void IAX2Connection::EndCallNow(CallEndReason reason)
+{ 
+  OpalConnection::ClearCall(reason); 
+}
 
 unsigned int IAX2Connection::ChooseCodec()
 {
