@@ -26,6 +26,10 @@
  *
  *
  *  $Log: processor.h,v $
+ *  Revision 1.7  2005/09/05 01:19:43  dereksmithies
+ *  add patches from Adrian Sietsma to avoid multiple hangup packets at call end,
+ *  and stop the sending of ping/lagrq packets at call end. Many thanks.
+ *
  *  Revision 1.6  2005/08/26 03:07:38  dereksmithies
  *  Change naming convention, so all class names contain the string "IAX2"
  *
@@ -302,8 +306,11 @@ class IAX2Processor : public PThread
      will come soon though. The argument is placed in the iax2 hangup
      packet as the cause string.*/
   void Hangup(PString messageToSend);
-  
 
+  /**Report the status of the flag callEndingNow, which indicates if
+     the call is terminating under iax2 control  */
+  BOOL IsCallTerminating() { return callStatus & callTerminating; }
+  
  protected:
   
   /**Reference to the global variable of this program */
@@ -645,8 +652,9 @@ class IAX2Processor : public PThread
     callRegistered =  1 << 2,   /*!< registration with a remote asterisk server has been approved               */
     callAuthorised =  1 << 3,   /*!< we are waiting on password authentication at the remote endpoint           */
     callAccepted   =  1 << 4,   /*!< call has been accepted, which means that the new request has been approved */
-    callRinging 	 =  1 << 5,  /*!< Remote end has sent us advice the phone is ringing, awaiting answer        */
-    callAnswered   =  1 << 6   /*!< call setup complete, now do audio                                          */
+    callRinging    =  1 << 5,   /*!< Remote end has sent us advice the phone is ringing, awaiting answer        */
+    callAnswered   =  1 << 6,   /*!< call setup complete, now do audio                                          */
+    callTerminating = 1 << 7    /*!< Flag to indicate call is closing down after iax2 call end commands         */
   };
   
   /** A defined value which is the maximum time we will wait for an answer to our packets */
@@ -684,6 +692,10 @@ class IAX2Processor : public PThread
   /** Mark call status Answered (argument determines flag status) */
   void SetCallAnswered(BOOL newValue = TRUE) 
     { if (newValue) callStatus |= callAnswered; else callStatus &= ~callAnswered; }
+
+  /** Mark call status as terminated (is processing IAX2 hangup packets etc ) */
+  void SetCallTerminating(BOOL newValue = TRUE) 
+    { if (newValue) callStatus |= callTerminating; else callStatus &= ~callTerminating; }
   
   /** See if any of the flag bits are on, which indicate this call is actually active */
   BOOL IsCallHappening() { return callStatus > 0; }
@@ -708,6 +720,7 @@ class IAX2Processor : public PThread
   
   /** Get the current value of the call status flag callAnswered */
   BOOL IsCallAnswered() { return callStatus & callAnswered; }
+
   
   /** Advise the other end that we have picked up the phone */
   void SendAnswerMessageToRemoteNode();

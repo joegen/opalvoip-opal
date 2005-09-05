@@ -25,6 +25,10 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2con.h,v $
+ *  Revision 1.6  2005/09/05 01:19:43  dereksmithies
+ *  add patches from Adrian Sietsma to avoid multiple hangup packets at call end,
+ *  and stop the sending of ping/lagrq packets at call end. Many thanks.
+ *
  *  Revision 1.5  2005/08/26 03:07:38  dereksmithies
  *  Change naming convention, so all class names contain the string "IAX2"
  *
@@ -139,8 +143,7 @@ class IAX2Connection : public OpalConnection
   /**Cause the call to end now, but do not send any iax hangup frames etc */
   void EndCallNow(
       CallEndReason reason = EndedByLocalUser /// Reason for call clearing
-      ) 
-    { OpalConnection::ClearCall(reason); }
+      );
 
   /**Provided as a link between the iax endpoint and the iax processor */
   void SendDtmf(PString dtmf);
@@ -157,9 +160,8 @@ class IAX2Connection : public OpalConnection
   void AcceptIncomingCall();
   
   /**Report if this Connection is still active */
-  BOOL IsTerminated() { return iax2Processor->IsTerminated(); }
+  BOOL IsCallTerminating() { return iax2Processor->IsCallTerminating(); }
   
-
   /**Indicate to remote endpoint an alert is in progress.  If this is
      an incoming connection and the AnswerCallResponse is in a
      AnswerCallDeferred or AnswerCallPending state, then this function
@@ -393,7 +395,6 @@ class IAX2Connection : public OpalConnection
     
   /**The thread that processes the list of pending frames on this class */
   IAX2Processor * iax2Processor;
-
   //@}
 };
 
