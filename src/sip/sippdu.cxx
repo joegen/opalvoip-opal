@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2061  2005/08/25 18:51:43  dsandras
+ * Revision 1.2062  2005/09/06 06:42:16  csoutheren
+ * Fix for bug #1282276
+ * Changed to use "sip:" instead of "sip" when looking for SIP URLs
+ *
+ * Revision 2.60  2005/08/25 18:51:43  dsandras
  * Fixed bug. Added support for video in the SDP of INVITE's.
  *
  * Revision 2.59  2005/08/10 21:09:34  dsandras
@@ -376,7 +380,7 @@ SIPURL::SIPURL(const PString & name,
                const OpalTransportAddress & address,
                WORD listenerPort)
 {
-  if (strncmp(name, "sip", 3) == 0)
+  if (strncmp(name, "sip:", 4) == 0)
     Parse(name);
   else {
     PIPSocket::Address ip;
