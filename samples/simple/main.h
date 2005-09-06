@@ -22,7 +22,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2017  2005/07/30 07:42:15  csoutheren
+ * Revision 1.2018  2005/09/06 04:58:42  dereksmithies
+ * Add console input options. This is an initial release, and some "refinement"
+ * help immensely.
+ *
+ * Revision 2.16  2005/07/30 07:42:15  csoutheren
  * Added IAX2 functions
  *
  * Revision 2.15  2004/04/26 07:06:08  rjongbloed
@@ -153,6 +157,10 @@ class MyManager : public OpalManager
       const PString & value         /// String value of indication
     );
 
+    OpalConnection::AnswerCallResponse
+      OnAnswerCall(OpalConnection & connection,
+		   const PString & caller);
+
   protected:
     PString currentCallToken;
 
@@ -170,6 +178,13 @@ class MyManager : public OpalManager
 #if P_EXPAT
     OpalIVREndPoint  * ivrEP;
 #endif
+
+    void HangupCurrentCall();
+    void ListSpeedDials();
+    void StartCall(const PString & ostr);
+    void AnswerCall(OpalConnection::AnswerCallResponse response);
+    void NewSpeedDial(const PString & ostr);
+    void SendMessageToRemoteNode(const PString & ostr);
 };
 
 
