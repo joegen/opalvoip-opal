@@ -24,7 +24,10 @@
  * Contributor(s): 
  *
  * $Log: vidcodec.h,v $
- * Revision 1.2010  2005/09/04 06:23:38  rjongbloed
+ * Revision 1.2011  2005/09/06 12:44:49  rjongbloed
+ * Many fixes to finalise the video processing: merging remote media
+ *
+ * Revision 2.9  2005/09/04 06:23:38  rjongbloed
  * Added OpalMediaCommand mechanism (via PNotifier) for media streams
  *   and media transcoders to send commands back to remote.
  *
@@ -119,6 +122,18 @@ class OpalVideoTranscoder : public OpalTranscoder
 
   /**@name Operations */
   //@{
+    /**Update the output media format. This can be used to adjust the
+       parameters of a codec at run time. Note you cannot change the basic
+       media format, eg change GSM0610 to G.711, only options for that
+       format, eg 6k3 mode to 5k3 mode in G.723.1.
+
+       The default behaviour updates the outputMediaFormat member variable
+       and sets the outputMediaFormatUpdated flag.
+      */
+    virtual BOOL UpdateOutputMediaFormat(
+      const OpalMediaFormat & mediaFormat  /// New media format
+    );
+
     /**Execute the command specified to the transcoder. The commands are
        highly context sensitive, for example VideoFastUpdate would only apply
        to a video transcoder.
@@ -151,6 +166,8 @@ class OpalVideoTranscoder : public OpalTranscoder
     unsigned frameHeight;
     unsigned videoQuality;
     unsigned targetBitRate;
+    bool     dynamicVideoQuality;
+    bool     adaptivePacketDelay;
     unsigned fillLevel;
     bool     updatePicture;
 };

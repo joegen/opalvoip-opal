@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2019  2005/09/04 06:23:38  rjongbloed
+ * Revision 1.2020  2005/09/06 12:44:49  rjongbloed
+ * Many fixes to finalise the video processing: merging remote media
+ *
+ * Revision 2.18  2005/09/04 06:23:38  rjongbloed
  * Added OpalMediaCommand mechanism (via PNotifier) for media streams
  *   and media transcoders to send commands back to remote.
  *
@@ -358,8 +361,9 @@ class OpalTranscoder : public OpalMediaFormatPair
 
   protected:
     PINDEX    maxOutputSize;
-    BOOL      outputMediaFormatUpdated;
+    bool      outputMediaFormatUpdated;
     PNotifier commandNotifier;
+    PMutex    updateMutex;
 };
 
 

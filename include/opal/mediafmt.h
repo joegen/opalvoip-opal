@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2033  2005/08/31 13:19:25  rjongbloed
+ * Revision 1.2034  2005/09/06 12:44:49  rjongbloed
+ * Many fixes to finalise the video processing: merging remote media
+ *
+ * Revision 2.32  2005/08/31 13:19:25  rjongbloed
  * Added mechanism for controlling media (especially codecs) including
  *   changing the OpalMediaFormat option list (eg bit rate) and a completely
  *   new OpalMediaCommand abstraction for things like video fast update.
@@ -363,6 +366,9 @@ class OpalMediaOption : public PObject
     bool Merge(
       const OpalMediaOption & option
     );
+    virtual Comparison CompareValue(
+      const OpalMediaOption & option
+    ) const = 0;
     virtual void Assign(
       const OpalMediaOption & option
     ) = 0;
@@ -373,6 +379,7 @@ class OpalMediaOption : public PObject
     const PString & GetName() const { return m_name; }
 
     bool IsReadOnly() const { return m_readOnly; }
+    void SetReadOnly(bool readOnly) { m_readOnly = readOnly; }
 
     MergeType GetMerge() const { return m_merge; }
     void SetMerge(MergeType merge) { m_merge = merge; }
@@ -417,6 +424,7 @@ class OpalMediaOptionValue : public OpalMediaOption
     {
       strm << m_value;
     }
+
     virtual void ReadFrom(istream & strm)
     {
       T temp;
@@ -430,6 +438,17 @@ class OpalMediaOptionValue : public OpalMediaOption
 	   strm.setf(ios::badbit , ios::badbit);
 #endif
        }
+    }
+
+    virtual Comparison CompareValue(const OpalMediaOption & option) const {
+      const OpalMediaOptionValue * otherOption = PDownCast(const OpalMediaOptionValue, &option);
+      if (otherOption == NULL)
+        return GreaterThan;
+      if (m_value < otherOption->m_value)
+        return LessThan;
+      if (m_value > otherOption->m_value)
+        return GreaterThan;
+      return EqualTo;
     }
 
     virtual void Assign(
@@ -469,13 +488,11 @@ class OpalMediaOptionEnum : public OpalMediaOption
     );
 
     virtual PObject * Clone() const;
-    virtual Comparison Compare(const PObject & obj) const;
     virtual void PrintOn(ostream & strm) const;
     virtual void ReadFrom(istream & strm);
 
-    virtual void Assign(
-      const OpalMediaOption & option
-    );
+    virtual Comparison CompareValue(const OpalMediaOption & option) const;
+    virtual void Assign(const OpalMediaOption & option);
 
     PINDEX GetValue() const { return m_value; }
     void SetValue(PINDEX value);
@@ -501,13 +518,11 @@ class OpalMediaOptionString : public OpalMediaOption
     );
 
     virtual PObject * Clone() const;
-    virtual Comparison Compare(const PObject & obj) const;
     virtual void PrintOn(ostream & strm) const;
     virtual void ReadFrom(istream & strm);
 
-    virtual void Assign(
-      const OpalMediaOption & option
-    );
+    virtual Comparison CompareValue(const OpalMediaOption & option) const;
+    virtual void Assign(const OpalMediaOption & option);
 
     const PString & GetValue() const { return m_value; }
     void SetValue(const PString & value);
@@ -629,6 +644,20 @@ class OpalMediaFormat : public PCaselessString
       const PString & wildcard  /// Wildcard name to search for
     );
 
+    /**Merge with another media format. This will alter and validate
+       the options for this media format according to the merge rule for
+       each option. The parameter is typically a "capability" while the
+       current object isthe proposed channel format. This if the current
+       object has a tx number of frames of 3, but the parameter has a value
+       of 1, then the current object will be set to 1.
+
+       Returns FALSE if the media formats are incompatible and cannot be
+       merged.
+      */
+    virtual bool Merge(
+      const OpalMediaFormat & mediaFormat
+    );
+
     /**Get the RTP payload type that is to be used for this media format.
        This will either be an intrinsic one for the media format eg GSM or it
        will be automatically calculated as a dynamic media format that will be
@@ -668,8 +697,8 @@ class OpalMediaFormat : public PCaselessString
     PINDEX GetFrameSize() const { return GetOptionInteger(MaxFrameSizeOption); }
     static const char * const MaxFrameSizeOption;
 
-    /**Get the frame rate in RTP timestamp units. If this returns zero then
-       the media format is not real time and has no intrinsic timing eg
+    /**Get the frame time in RTP timestamp units. If this returns zero then
+       the media format is not real time and has no intrinsic timing eg T.120
       */
     unsigned GetFrameTime() const { return GetOptionInteger(FrameTimeOption); }
     static const char * const FrameTimeOption;
@@ -894,10 +923,14 @@ class OpalVideoFormat : public OpalMediaFormat
       unsigned bitRate          /// Maximum bits per second
     );
 
+    virtual bool Merge(const OpalMediaFormat & mediaFormat);
+
     static const char * const FrameWidthOption;
     static const char * const FrameHeightOption;
     static const char * const EncodingQualityOption;
     static const char * const TargetBitRateOption;
+    static const char * const DynamicVideoQualityOption;
+    static const char * const AdaptivePacketDelayOption;
 };
 
 

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2015  2005/08/31 13:19:25  rjongbloed
+ * Revision 1.2016  2005/09/06 12:44:49  rjongbloed
+ * Many fixes to finalise the video processing: merging remote media
+ *
+ * Revision 2.14  2005/08/31 13:19:25  rjongbloed
  * Added mechanism for controlling media (especially codecs) including
  *   changing the OpalMediaFormat option list (eg bit rate) and a completely
  *   new OpalMediaCommand abstraction for things like video fast update.
@@ -139,6 +142,8 @@ OpalTranscoder::OpalTranscoder(const OpalMediaFormat & inputMediaFormat,
 
 BOOL OpalTranscoder::UpdateOutputMediaFormat(const OpalMediaFormat & mediaFormat)
 {
+  PWaitAndSignal mutex(updateMutex);
+
   if (outputMediaFormat != mediaFormat)
     return FALSE;
 
@@ -174,7 +179,10 @@ BOOL OpalTranscoder::ConvertFrames(const RTP_DataFrame & input,
 OpalTranscoder * OpalTranscoder::Create(const OpalMediaFormat & srcFormat,
                                         const OpalMediaFormat & destFormat)
 {
-  return OpalTranscoderFactory::CreateInstance(OpalMediaFormatPair(srcFormat, destFormat));
+  OpalTranscoder * transcoder = OpalTranscoderFactory::CreateInstance(OpalMediaFormatPair(srcFormat, destFormat));
+  if (transcoder != NULL)
+    transcoder->UpdateOutputMediaFormat(destFormat);
+  return transcoder;
 }
 
 
