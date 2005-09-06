@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2049  2005/08/24 10:43:51  rjongbloed
+ * Revision 1.2050  2005/09/06 12:44:49  rjongbloed
+ * Many fixes to finalise the video processing: merging remote media
+ *
+ * Revision 2.48  2005/08/24 10:43:51  rjongbloed
  * Changed create video functions yet again so can return pointers that are not to be deleted.
  *
  * Revision 2.47  2005/08/23 12:45:09  rjongbloed
@@ -504,6 +507,13 @@ BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForm
            << ", could not find compatible media format:\n"
               "  source formats=" << setfill(',') << GetMediaFormats() << "\n"
               "   sink  formats=" << mediaFormats << setfill(' '));
+    return FALSE;
+  }
+
+  if (!sourceFormat.Merge(destinationFormat)) {
+    PTRACE(2, "OpalCon\tOpenSourceMediaStream session " << sessionID
+           << ", could not merge destination media format " << destinationFormat
+           << " into source " << sourceFormat);
     return FALSE;
   }
 

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vidcodec.cxx,v $
- * Revision 1.2009  2005/08/31 13:19:25  rjongbloed
+ * Revision 1.2010  2005/09/06 12:44:49  rjongbloed
+ * Many fixes to finalise the video processing: merging remote media
+ *
+ * Revision 2.8  2005/08/31 13:19:25  rjongbloed
  * Added mechanism for controlling media (especially codecs) including
  *   changing the OpalMediaFormat option list (eg bit rate) and a completely
  *   new OpalMediaCommand abstraction for things like video fast update.
@@ -118,12 +121,26 @@ OpalVideoTranscoder::OpalVideoTranscoder(const OpalMediaFormat & inputMediaForma
                                          const OpalMediaFormat & outputMediaFormat)
   : OpalTranscoder(inputMediaFormat, outputMediaFormat)
 {
+  UpdateOutputMediaFormat(outputMediaFormat);
+  fillLevel = 0;
+  updatePicture = false;
+}
+
+
+BOOL OpalVideoTranscoder::UpdateOutputMediaFormat(const OpalMediaFormat & mediaFormat)
+{
+  PWaitAndSignal mutex(updateMutex);
+
+  if (!OpalTranscoder::UpdateOutputMediaFormat(mediaFormat))
+    return FALSE;
+
   frameWidth = outputMediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption, PVideoDevice::CIFWidth);
   frameHeight = outputMediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption, PVideoDevice::CIFHeight);
   videoQuality = outputMediaFormat.GetOptionInteger(OpalVideoFormat::EncodingQualityOption, 15);
   targetBitRate = outputMediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption, 64000);
-  fillLevel = 0;
-  updatePicture = false;
+  dynamicVideoQuality = outputMediaFormat.GetOptionBoolean(OpalVideoFormat::DynamicVideoQualityOption, false);
+  adaptivePacketDelay = outputMediaFormat.GetOptionBoolean(OpalVideoFormat::AdaptivePacketDelayOption, false);
+  return TRUE;
 }
 
 

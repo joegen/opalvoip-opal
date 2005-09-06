@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.cxx,v $
- * Revision 1.2023  2005/09/04 06:23:39  rjongbloed
+ * Revision 1.2024  2005/09/06 12:44:49  rjongbloed
+ * Many fixes to finalise the video processing: merging remote media
+ *
+ * Revision 2.22  2005/09/04 06:23:39  rjongbloed
  * Added OpalMediaCommand mechanism (via PNotifier) for media streams
  *   and media transcoders to send commands back to remote.
  *
@@ -460,12 +463,15 @@ BOOL H323_H261Capability::OnReceivedPDU(const H245_VideoCapability & cap)
 Opal_H261_YUV420P::Opal_H261_YUV420P()
   : OpalVideoTranscoder(OpalH261_QCIF, OpalYUV420P)
 {
-  videoDecoder = NULL;
   expectedSequenceNumber = 0;
   nblk = ndblk = 0;
   rvts = NULL;
   now = 1;
   packetReceived = FALSE;
+
+  // Create the actual decoder
+  videoDecoder = new FullP64Decoder();
+  videoDecoder->marks(rvts);
 
   PTRACE(3, "Codec\tH261 decoder created");
 }
@@ -487,13 +493,9 @@ PINDEX Opal_H261_YUV420P::GetOptimalDataFrameSize(BOOL input) const
 
 BOOL Opal_H261_YUV420P::ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dst)
 {
-  dst.RemoveAll();
+  PWaitAndSignal mutex(updateMutex);
 
-  if (videoDecoder == NULL) {
-    // Create the actual decoder
-    videoDecoder = new FullP64Decoder();
-    videoDecoder->marks(rvts);
-  }
+  dst.RemoveAll();
 
   // Check for lost packets to help decoder
   BOOL lostPreviousPacket = FALSE;
@@ -564,7 +566,11 @@ BOOL Opal_H261_YUV420P::ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameLi
 Opal_YUV420P_H261::Opal_YUV420P_H261()
   : OpalVideoTranscoder(OpalYUV420P, OpalH261_QCIF)
 {
-  videoEncoder = NULL;
+  maxOutputSize = (frameWidth * frameHeight * 12) / 8;
+
+  videoEncoder = new P64Encoder(videoQuality, fillLevel);
+  videoEncoder->SetSize(frameWidth, frameHeight);
+
   PTRACE(3, "Codec\tH261 encoder created");
 }
 
@@ -583,6 +589,8 @@ PINDEX Opal_YUV420P_H261::GetOptimalDataFrameSize(BOOL input) const
 
 BOOL Opal_YUV420P_H261::ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dst)
 {
+  PWaitAndSignal mutex(updateMutex);
+
   dst.RemoveAll();
 
   if (src.GetPayloadSize() < sizeof(FrameHeader)) {
@@ -597,26 +605,14 @@ BOOL Opal_YUV420P_H261::ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameLi
     return FALSE;
   }
 
-  if (videoEncoder == NULL)
-    videoEncoder = new P64Encoder(videoQuality, fillLevel);
-
   if (frameWidth != header->width || frameHeight != header->height) {
     frameWidth = header->width;
     frameHeight = header->height;
-    videoEncoder->SetSize(header->width, header->height);
+    videoEncoder->SetSize(frameWidth, frameHeight);
   }
 
   // "grab" the frame
   memcpy(videoEncoder->GetFramePtr(), header->data, frameWidth*frameHeight*12/8);
-
-  // Check for changes in the encoding options
-  if (outputMediaFormatUpdated) {
-    frameWidth = outputMediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption, frameWidth);
-    frameHeight = outputMediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption, frameHeight);
-    videoQuality = outputMediaFormat.GetOptionInteger(OpalVideoFormat::EncodingQualityOption, videoQuality);
-    targetBitRate = outputMediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption, targetBitRate);
-    outputMediaFormatUpdated = false;
-  }
 
   if (updatePicture) {
     videoEncoder->FastUpdatePicture();
