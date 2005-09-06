@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2035  2005/09/02 14:49:21  csoutheren
+ * Revision 1.2036  2005/09/06 12:44:49  rjongbloed
+ * Many fixes to finalise the video processing: merging remote media
+ *
+ * Revision 2.34  2005/09/02 14:49:21  csoutheren
  * Fixed link problem in Linux
  *
  * Revision 2.33  2005/08/31 13:19:25  rjongbloed
@@ -280,20 +283,20 @@ bool OpalMediaOption::Merge(const OpalMediaOption & option)
 {
   switch (m_merge) {
     case MinMerge :
-      if (Compare(option) == GreaterThan)
+      if (CompareValue(option) == GreaterThan)
         Assign(option);
       break;
 
     case MaxMerge :
-      if (Compare(option) == LessThan)
+      if (CompareValue(option) == LessThan)
         Assign(option);
       break;
 
     case EqualMerge :
-      return Compare(option) == EqualTo;
+      return CompareValue(option) == EqualTo;
 
     case NotEqualMerge :
-      return Compare(option) != EqualTo;
+      return CompareValue(option) != EqualTo;
 
     default :
       break;
@@ -341,22 +344,6 @@ PObject * OpalMediaOptionEnum::Clone() const
 }
 
 
-PObject::Comparison OpalMediaOptionEnum::Compare(const PObject & obj) const
-{
-  const OpalMediaOptionEnum * otherOption = PDownCast(const OpalMediaOptionEnum, &obj);
-  if (otherOption == NULL)
-    return GreaterThan;
-
-  if (m_value < otherOption->m_value)
-    return LessThan;
-
-  if (m_value > otherOption->m_value)
-    return GreaterThan;
-
-  return EqualTo;
-}
-
-
 void OpalMediaOptionEnum::PrintOn(ostream & strm) const
 {
   if (m_value < m_enumerations.GetSize())
@@ -388,6 +375,22 @@ void OpalMediaOptionEnum::ReadFrom(istream & strm)
 #else
    strm.setf(ios::badbit , ios::badbit);
 #endif
+}
+
+
+PObject::Comparison OpalMediaOptionEnum::CompareValue(const OpalMediaOption & option) const
+{
+  const OpalMediaOptionEnum * otherOption = PDownCast(const OpalMediaOptionEnum, &option);
+  if (otherOption == NULL)
+    return GreaterThan;
+
+  if (m_value > otherOption->m_value)
+    return GreaterThan;
+
+  if (m_value < otherOption->m_value)
+    return LessThan;
+
+  return EqualTo;
 }
 
 
@@ -429,16 +432,6 @@ PObject * OpalMediaOptionString::Clone() const
 }
 
 
-PObject::Comparison OpalMediaOptionString::Compare(const PObject & obj) const
-{
-  const OpalMediaOptionString * otherOption = PDownCast(const OpalMediaOptionString, &obj);
-  if (otherOption == NULL)
-    return GreaterThan;
-
-  return m_value.Compare(otherOption->m_value);
-}
-
-
 void OpalMediaOptionString::PrintOn(ostream & strm) const
 {
   strm << m_value.ToLiteral();
@@ -473,6 +466,16 @@ void OpalMediaOptionString::ReadFrom(istream & strm)
 
     m_value = PString(PString::Literal, (const char *)str);
   }
+}
+
+
+PObject::Comparison OpalMediaOptionString::CompareValue(const OpalMediaOption & option) const
+{
+  const OpalMediaOptionString * otherOption = PDownCast(const OpalMediaOptionString, &option);
+  if (otherOption == NULL)
+    return GreaterThan;
+
+  return m_value.Compare(otherOption->m_value);
 }
 
 
@@ -561,13 +564,13 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
   if (nj)
     AddOption(new OpalMediaOptionBoolean(NeedsJitterOption, true, OpalMediaOption::OrMerge, true));
 
-  AddOption(new OpalMediaOptionInteger(MaxBitRateOption, true, OpalMediaOption::MinMerge, bw));
+  AddOption(new OpalMediaOptionInteger(MaxBitRateOption, true, OpalMediaOption::MinMerge, bw, 100));
 
   if (fs > 0)
     AddOption(new OpalMediaOptionInteger(MaxFrameSizeOption, true, OpalMediaOption::MinMerge, fs));
 
   if (ft > 0)
-    AddOption(new OpalMediaOptionInteger(FrameTimeOption, true, OpalMediaOption::EqualMerge, ft));
+    AddOption(new OpalMediaOptionInteger(FrameTimeOption, true, OpalMediaOption::NoMerge, ft));
 
   if (cr > 0)
     AddOption(new OpalMediaOptionInteger(ClockRateOption, true, OpalMediaOption::EqualMerge, cr));
@@ -637,6 +640,18 @@ OpalMediaFormat & OpalMediaFormat::operator=(const PString & wildcard)
     *this = OpalMediaFormat();
 
   return *this;
+}
+
+
+bool OpalMediaFormat::Merge(const OpalMediaFormat & mediaFormat)
+{
+  for (PINDEX i = 0; i < options.GetSize(); i++) {
+    OpalMediaOption * option = mediaFormat.FindOption(options[i].GetName());
+    if (option != NULL && !options[i].Merge(*option))
+      return false;
+  }
+
+  return true;
 }
 
 
@@ -876,6 +891,8 @@ const char * const OpalVideoFormat::FrameWidthOption = "Frame Width";
 const char * const OpalVideoFormat::FrameHeightOption = "Frame Height";
 const char * const OpalVideoFormat::EncodingQualityOption = "Encoding Quality";
 const char * const OpalVideoFormat::TargetBitRateOption = "Target Bit Rate";
+const char * const OpalVideoFormat::DynamicVideoQualityOption = "Dynamic Video Quality";
+const char * const OpalVideoFormat::AdaptivePacketDelayOption = "Adaptive Packet Delay";
 
 OpalVideoFormat::OpalVideoFormat(const char * fullName,
                                  RTP_DataFrame::PayloadTypes rtpPayloadType,
@@ -894,8 +911,31 @@ OpalVideoFormat::OpalVideoFormat(const char * fullName,
                     OpalMediaFormat::VideoClockRate/frameRate,
                     OpalMediaFormat::VideoClockRate)
 {
-  AddOption(new OpalMediaOptionInteger(FrameWidthOption, true, OpalMediaOption::MinMerge, frameWidth, 11, 32767));
-  AddOption(new OpalMediaOptionInteger(FrameHeightOption, true, OpalMediaOption::MinMerge, frameHeight, 9, 32767));
+  AddOption(new OpalMediaOptionInteger(FrameWidthOption,          true,  OpalMediaOption::MinMerge, frameWidth, 11, 32767));
+  AddOption(new OpalMediaOptionInteger(FrameHeightOption,         true,  OpalMediaOption::MinMerge, frameHeight, 9, 32767));
+  AddOption(new OpalMediaOptionInteger(EncodingQualityOption,     false, OpalMediaOption::MinMerge, 15,          1, 31));
+  AddOption(new OpalMediaOptionInteger(TargetBitRateOption,       false, OpalMediaOption::MinMerge, 64000,    1000));
+  AddOption(new OpalMediaOptionBoolean(DynamicVideoQualityOption, false, OpalMediaOption::NoMerge,  false));
+  AddOption(new OpalMediaOptionBoolean(AdaptivePacketDelayOption, false, OpalMediaOption::NoMerge,  false));
+
+  // For video the max bit rate and frame rate is adjustable by user
+  FindOption(MaxBitRateOption)->SetReadOnly(false);
+  FindOption(FrameTimeOption)->SetReadOnly(false);
+  FindOption(FrameTimeOption)->SetMerge(OpalMediaOption::MinMerge);
+}
+
+
+bool OpalVideoFormat::Merge(const OpalMediaFormat & mediaFormat)
+{
+  if (!OpalMediaFormat::Merge(mediaFormat))
+    return false;
+
+  unsigned maxBitRate = GetOptionInteger(MaxBitRateOption);
+  unsigned targetBitRate = GetOptionInteger(TargetBitRateOption);
+  if (targetBitRate > maxBitRate)
+    SetOptionInteger(TargetBitRateOption, maxBitRate);
+
+  return true;
 }
 
 

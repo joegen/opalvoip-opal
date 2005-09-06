@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2015  2005/09/04 06:23:39  rjongbloed
+ * Revision 1.2016  2005/09/06 12:44:49  rjongbloed
+ * Many fixes to finalise the video processing: merging remote media
+ *
+ * Revision 2.14  2005/09/04 06:23:39  rjongbloed
  * Added OpalMediaCommand mechanism (via PNotifier) for media streams
  *   and media transcoders to send commands back to remote.
  *
@@ -403,8 +406,6 @@ bool OpalMediaPatch::Sink::ExecuteCommand(const OpalMediaCommand & command)
 
 void OpalMediaPatch::Sink::SetCommandNotifier(const PNotifier & notifier)
 {
-  stream->SetCommandNotifier(notifier);
-
   if (secondaryCodec != NULL)
     secondaryCodec->SetCommandNotifier(notifier);
 
