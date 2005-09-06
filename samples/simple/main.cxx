@@ -22,7 +22,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2057  2005/08/20 09:03:10  rjongbloed
+ * Revision 1.2058  2005/09/06 04:58:42  dereksmithies
+ * Add console input options. This is an initial release, and some "refinement"
+ * help immensely.
+ *
+ * Revision 2.56  2005/08/20 09:03:10  rjongbloed
  * Some cosmetic fixes in output messages
  *
  * Revision 2.55  2005/08/13 09:16:18  rjongbloed
@@ -962,6 +966,54 @@ BOOL MyManager::Initialise(PArgList & args)
 }
 
 
+OpalConnection::AnswerCallResponse
+       MyManager::OnAnswerCall(OpalConnection & connection,
+                                  const PString & caller)
+{
+  cout << "incoming call from " << caller << endl;
+  cout << "Answer call (Y/N) " << endl;
+
+  return OpalConnection::AnswerCallPending;
+}
+
+void MyManager::AnswerCall(OpalConnection::AnswerCallResponse response)
+{
+  PSafePtr<OpalCall> call = FindCallWithLock(currentCallToken);
+  if (call == NULL) {
+    cout << "Could not find call for " << currentCallToken << " to answer" << endl;
+    return;
+  }
+
+  if (response != OpalConnection::AnswerCallNow) {
+    cout << "Clearing call " << *call << endl;
+    call->Clear();
+    return;
+  }
+
+  if (pcssEP != NULL && !pcssEP->incomingConnectionToken) 
+    pcssEP->AcceptIncomingConnection(pcssEP->incomingConnectionToken);
+}
+
+
+void MyManager::NewSpeedDial(const PString & ostr)
+{
+  PString str = ostr;
+  PINDEX idx = str.Find(' ');
+  if (str.IsEmpty() || (idx == P_MAX_INDEX)) {
+    cout << "Must specify speedial number and string" << endl;
+    return;
+  }
+ 
+  PString key  = str.Left(idx).Trim();
+  PString data = str.Mid(idx).Trim();
+ 
+  PConfig config("Speeddial");
+  config.SetString(key, data);
+ 
+  cout << "Speedial " << key << " set to " << data << endl;
+}
+ 
+
 void MyManager::Main(PArgList & args)
 {
   // See if making a call or just listening.
@@ -984,77 +1036,212 @@ void MyManager::Main(PArgList & args)
       break;
   }
 
-  cout << "Press X to exit." << endl;
+  cout << "Press ? for help." << endl;
 
-  // Simplest possible user interface
-  for (;;) {
-    cout << "OPAL> " << flush;
-    PCaselessString cmd;
-    cin >> cmd;
 
-    if (cmd == "x" || cmd == "exit" || cmd == "q" || cmd == "quit")
+ PStringStream help;
+
+   help << "Select:\n"
+          "  0-9 : send user indication message\n"
+          "  *,# : send user indication message\n"
+          "  M   : send text message to remote user\n"
+          "  C   : connect to remote host\n"
+          "  S   : Display statistics\n"
+          "  H   : Hang up phone\n"
+          "  L   : List speed dials\n"
+          "  D   : Create new speed dial\n"
+          "  {}  : Increase/reduce record volume\n"
+          "  []  : Increase/reduce playback volume\n"
+     "  V   : Display current volumes\n";
+   
+   PConsoleChannel console(PConsoleChannel::StandardInput);
+   for (;;) {
+     // display the prompt
+     cout << "Command ? " << flush;
+     
+     
+    // terminate the menu loop if console finished
+     char ch = (char)console.peek();
+     if (console.eof()) {
+      cout << "\nConsole gone - menu disabled" << endl;
+      goto endSimpleOPAL;
+     }
+     
+    console >> ch;
+    PTRACE(3, "console in audio test is " << ch);
+    switch (tolower(ch)) {
+    case 'x' :
+    case 'q' :
+      goto endSimpleOPAL;
+      break;
+    case '?' :       
+      cout << help ;
+      break;
+      
+    case 'y' :
+      AnswerCall(OpalConnection::AnswerCallNow);
+      console.ignore(INT_MAX, '\n');
+      break;
+      
+    case 'n' :
+      AnswerCall(OpalConnection::AnswerCallDenied);
+      console.ignore(INT_MAX, '\n');
       break;
 
-    if (pcssEP != NULL && !pcssEP->incomingConnectionToken) {
-      if (cmd == "n") {
-	PSafePtr<OpalConnection> con = pcssEP->GetConnectionWithLock(pcssEP->incomingConnectionToken);
-	if (con != NULL)
-	  con->GetCall().Clear(OpalConnection::EndedByRefusal);
-	else
-	  cout << "Sorry, could not reject incoming call" << endl;	
-      } else if (cmd == "y")
-        pcssEP->AcceptIncomingConnection(pcssEP->incomingConnectionToken);
+    case 'l' :
+      ListSpeedDials();
+      break;
+      
+    case 'd' :
+      {
+	PString str;
+	console >> str;
+	NewSpeedDial(str.Trim());
+      }
+      break;
+      
+    case 'h' :
+      HangupCurrentCall();
+      break;
+
+    case 'c' :
+      if (!currentCallToken.IsEmpty())
+	cout << "Cannot make call whilst call in progress\n";
+      else {
+	PString str;
+	console >> str;
+	StartCall(str.Trim());
+      }
+      break;
+
+    case 'r':
+      cout << " current call token is \"" << currentCallToken << "\" " << endl;
+      break;
+
+    case 'm' :
+      if (currentCallToken.IsEmpty())
+	cout << "Cannot send a message while no call in progress\n";
+      else {
+	PString str;
+	console >> str;
+	SendMessageToRemoteNode(str);
+      }
+      break;
+      
+
+    default:;
     }
-    
-    // Process commands
-    PStringArray params = cmd.Tokenise(" ", FALSE);
-    if (params.IsEmpty())
+     
+  }
+ endSimpleOPAL:
+   if (!currentCallToken.IsEmpty())
+     HangupCurrentCall();
+
+   cout << "Console finished " << endl;
+}
+
+void MyManager::HangupCurrentCall()
+{
+  PSafePtr<OpalCall> call = FindCallWithLock(currentCallToken);
+  if (call != NULL) {
+    cout << "Clearing call " << *call << endl;
+    call->Clear();
+    currentCallToken = PString();
+  }
+  else
+    cout << "Not in a call!\n";      
+}
+
+void MyManager::SendMessageToRemoteNode(const PString & ostr)
+{
+  PString str = ostr.Trim();
+  if (str.IsEmpty()) {
+    cout << "Must supply a message to send!\n";
+    return ;
+  }
+
+  for (PINDEX i = 0; i < endpoints.GetSize(); i++) {
+    PStringList res = endpoints[i].GetAllConnections();
+    if (res.GetSize() == 0)
       continue;
 
-    cmd = params[0];
-    if (cmd == "h" || cmd == "hangup") {
-      PSafePtr<OpalCall> call = FindCallWithLock(currentCallToken);
-      if (call != NULL) {
-        cout << "Clearing call " << *call << endl;
-        call->Clear();
-      }
-      else
-        cout << "Not in a call!\n";
-    }
-    else if (cmd == "c" || cmd == "call") {
-      if (!currentCallToken) {
-        cout << "Already in a call!\n";
-        continue;
-      }
-      switch (params.GetSize()) {
-        case 1 :
-          cout << "Call what?\n";
-          break;
-        case 2 :
-          cout << "Initiating call to \"" << params[1] << "\"\n";
-          if (potsEP != NULL)
-            SetUpCall("pots:*", params[1], currentCallToken);
-          else
-            SetUpCall("pc:*", params[1], currentCallToken);
-          break;
-        case 3 :
-          cout << "Initiating call from \"" << params[1] << "\"to \"" << params[2] << "\"\n";
-          SetUpCall(params[1], params[2], currentCallToken);
-          break;
-        default :
-          cout << "Usage: call address    or    call from-address to-address\n";
+    for(PINDEX j  = 0; j < res.GetSize(); j++) {
+      PSafePtr< OpalConnection >  conn = endpoints[i].GetConnectionWithLock (res[j]);
+      if (conn != NULL) {
+	conn->SendUserInputString(str);
+	cout << "Send \"" << str << "\" to " << res[j] << endl;
       }
     }
   }
+  return;
 }
 
+void MyManager::StartCall(const PString & ostr)
+{
+  PString str = ostr.Trim();
+  if (str.IsEmpty()) {
+    cout << "Must supply hostname to connect to!\n";
+    return ;
+  }
+
+  // check for speed dials, and match wild cards as we go
+  PString key, prefix;
+  if ((str.GetLength() > 1) && (str[str.GetLength()-1] == '#')) {
+ 
+    key = str.Left(str.GetLength()-1).Trim(); 
+    str = PString();
+    PConfig config("Speeddial");
+    PINDEX p;
+    for (p = key.GetLength(); p > 0; p--) {
+ 
+      PString newKey = key.Left(p);
+      prefix = newKey;
+      PINDEX q;
+ 
+      // look for wild cards
+      str = config.GetString(newKey + '*').Trim();
+      if (!str.IsEmpty())
+        break;
+ 
+      // look for digit matches
+      for (q = p; q < key.GetLength(); q++)
+        newKey += '?';
+      str = config.GetString(newKey).Trim();
+      if (!str.IsEmpty())
+        break;
+    }
+    if (str.IsEmpty()) {
+      cout << "Speed dial \"" << key << "\" not defined";
+      cout << endl;
+    }
+  }
+
+  if (!str.IsEmpty()) {
+    SetUpCall("pc:*", str, currentCallToken);
+  }
+
+  return;
+}
+
+void MyManager::ListSpeedDials()
+{
+  PConfig config("Speeddial");
+  PStringList keys = config.GetKeys();
+  if (keys.GetSize() == 0) {
+    cout << "No speed dials defined" << endl;
+    return;
+  }
+ 
+  PINDEX i;
+  for (i = 0; i < keys.GetSize(); i++)
+    cout << keys[i] << ":   " << config.GetString(keys[i]) << endl;
+}
 
 void MyManager::OnEstablishedCall(OpalCall & call)
 {
   currentCallToken = call.GetToken();
-  cout << "In call with " << call.GetPartyB() << " using " << call.GetPartyA() << endl;
+  cout << "In call with " << call.GetPartyB() << " using " << call.GetPartyA() << endl;  
 }
-
 
 void MyManager::OnClearedCall(OpalCall & call)
 {
