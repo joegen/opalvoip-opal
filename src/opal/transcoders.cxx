@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2016  2005/09/06 12:44:49  rjongbloed
+ * Revision 1.2017  2005/09/13 20:48:22  dominance
+ * minor cleanups needed to support mingw compilation. Thanks goes to Julien Puydt.
+ *
+ * Revision 2.15  2005/09/06 12:44:49  rjongbloed
  * Many fixes to finalise the video processing: merging remote media
  *
  * Revision 2.14  2005/08/31 13:19:25  rjongbloed
@@ -92,7 +95,7 @@
 #pragma implementation "transcoders.h"
 #endif
 
-#ifndef _WIN32
+#ifndef _MSC_VER
 #include <codec/allcodecs.h>
 #endif
 
