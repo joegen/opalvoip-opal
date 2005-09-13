@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.14  2005/09/13 20:48:22  dominance
+# minor cleanups needed to support mingw compilation. Thanks goes to Julien Puydt.
+#
 # Revision 1.13  2005/08/10 11:07:14  csoutheren
 # Fixed bug #1255554
 # Fixed dynamic linking on MacOSX
@@ -642,8 +645,12 @@ ifeq ($(P_SHAREDLIB),1)
      LDSOOPTS = -Bdynamic -G -h $(LIB_SONAME)
      LD = $(CPLUS)
   else
+    ifeq ($(OSTYPE),mingw)
+      LDSOOPTS += -Wl,--kill-at
+    else
     ifneq ($(OSTYPE),Darwin)
       LDSOOPTS += -Wl,-soname,$(LIB_SONAME)
+    endif
     endif
     LD = $(CPLUS)
   endif

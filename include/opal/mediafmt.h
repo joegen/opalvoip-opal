@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2034  2005/09/06 12:44:49  rjongbloed
+ * Revision 1.2035  2005/09/13 20:48:22  dominance
+ * minor cleanups needed to support mingw compilation. Thanks goes to Julien Puydt.
+ *
+ * Revision 2.33  2005/09/06 12:44:49  rjongbloed
  * Many fixes to finalise the video processing: merging remote media
  *
  * Revision 2.32  2005/08/31 13:19:25  rjongbloed
@@ -194,7 +197,7 @@
 #pragma interface
 #endif
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 #if _MSC_VER < 1300   
 #pragma warning(disable:4663)
 #endif
@@ -390,7 +393,7 @@ class OpalMediaOption : public PObject
     MergeType m_merge;
 };
 
-#if ! __USE_STL__
+#ifndef __USE_STL__
 __inline istream & operator>>(istream & strm, bool& b)
 {
    int i;strm >> i;b = i; return strm;
@@ -432,7 +435,7 @@ class OpalMediaOptionValue : public OpalMediaOption
       if (temp >= m_minimum && temp <= m_maximum)
         m_value = temp;
       else {
-#if __USE_STL__
+#ifdef __USE_STL__
 	   strm.setstate(ios::badbit);
 #else
 	   strm.setf(ios::badbit , ios::badbit);
@@ -993,7 +996,7 @@ extern const OpalMediaFormat & GetOpalRFC2833();
 #define OpalG711uLaw       OpalG711_ULAW_64K
 #define OpalG711ALaw       OpalG711_ALAW_64K
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 #if _MSC_VER < 1300
 #pragma warning(default:4663)
 #endif

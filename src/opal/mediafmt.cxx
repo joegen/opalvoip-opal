@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2036  2005/09/06 12:44:49  rjongbloed
+ * Revision 1.2037  2005/09/13 20:48:22  dominance
+ * minor cleanups needed to support mingw compilation. Thanks goes to Julien Puydt.
+ *
+ * Revision 2.35  2005/09/06 12:44:49  rjongbloed
  * Many fixes to finalise the video processing: merging remote media
  *
  * Revision 2.34  2005/09/02 14:49:21  csoutheren
@@ -370,7 +373,7 @@ void OpalMediaOptionEnum::ReadFrom(istream & strm)
 
   m_value = m_enumerations.GetSize();
 
-#if __USE_STL__
+#ifdef __USE_STL__
    strm.setstate(ios::badbit);
 #else
    strm.setf(ios::badbit , ios::badbit);
