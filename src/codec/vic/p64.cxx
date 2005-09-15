@@ -54,7 +54,10 @@
 /************ Change log
  *
  * $Log: p64.cxx,v $
- * Revision 1.2004  2005/08/31 13:16:02  rjongbloed
+ * Revision 1.2005  2005/09/15 18:00:38  dsandras
+ * Make sure qv_ is initialized when being used.
+ *
+ * Revision 2.3  2005/08/31 13:16:02  rjongbloed
  * Ported video fast update from OpenH323
  *
  * Revision 2.2  2005/08/15 01:47:27  csoutheren
@@ -138,11 +141,11 @@ void P64Decoder::err(const char* msg ...) const
 }
 
 P64Decoder::P64Decoder()
-	: fs_(0), front_(0), back_(0), 
+	: fs_(0), front_(0), back_(0), qt_(0),
           ngob_(0), maxgob_(0), ndblk_(0),
           gobquant_(0),  mt_(0), gob_(0), 
           mba_(0), mvdh_(0),  mvdv_(0),
-	  marks_(0),  mark_(0),
+	  marks_(0),  mark_(0), 
 	  bad_psc_(0), bad_bits_(0), bad_GOBno_(0), bad_fmt_(0) 
 {
 	fmt_ = IT_CIF;/*XXX*/
@@ -373,7 +376,7 @@ int P64Decoder::parse_block(short* blk, u_int* mask)
 			break;
 		}
 		r = COLZAG[k++];
-		blk[r] = qt[v & 0xff];
+		blk[r] = (qt?qt[v & 0xff]:0);
 		++nc;
 #ifdef INT_64
 		m0 |= (INT_64)1 << r;
