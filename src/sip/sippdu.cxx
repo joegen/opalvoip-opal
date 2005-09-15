@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2062  2005/09/06 06:42:16  csoutheren
+ * Revision 1.2063  2005/09/15 16:59:36  dsandras
+ * Add the video SDP part as soon as we can send or receive video.
+ *
+ * Revision 2.61  2005/09/06 06:42:16  csoutheren
  * Fix for bug #1282276
  * Changed to use "sip:" instead of "sip" when looking for SIP URLs
  *
@@ -1904,7 +1907,8 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport)
   mime.SetMaxForwards(70);                     // default
 
   connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
-  if (connection.GetEndPoint().GetManager().CanAutoStartTransmitVideo())
+  if (connection.GetEndPoint().GetManager().CanAutoStartTransmitVideo()
+      || connection.GetEndPoint().GetManager().CanAutoStartReceiveVideo())
     connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID);
 }
 
@@ -1918,7 +1922,8 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, RTP_
 
   rtpSessions = sm;
   connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
-  if (connection.GetEndPoint().GetManager().CanAutoStartTransmitVideo())
+  if (connection.GetEndPoint().GetManager().CanAutoStartTransmitVideo()
+      || connection.GetEndPoint().GetManager().CanAutoStartReceiveVideo())
     connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID);
 }
 
