@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2035  2005/08/04 17:22:17  dsandras
+ * Revision 1.2036  2005/09/15 17:05:32  dsandras
+ * Only open media streams for a session with media formats corresponding to that session. Check if the sink media stream can be opened on the other connection(s) before opening the source media stream.
+ *
+ * Revision 2.34  2005/08/04 17:22:17  dsandras
  * Added functions to close/remove the media streams of a call.
  *
  * Revision 2.33  2005/07/14 08:56:44  csoutheren
@@ -337,10 +340,8 @@ BOOL OpalCall::OnConnected(OpalConnection & connection)
     OpalMediaFormatList formats = GetMediaFormats(*conn, TRUE);
     if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultAudioSessionID))
       createdOne = TRUE;
-    if (manager.CanAutoStartTransmitVideo()) {
-      if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultVideoSessionID))
-        createdOne = TRUE;
-    }
+    if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultVideoSessionID))
+      createdOne = TRUE;
   }
 
   if (ok && createdOne) {
@@ -433,10 +434,21 @@ BOOL OpalCall::OpenSourceMediaStreams(const OpalConnection & connection,
 
   BOOL startedOne = FALSE;
 
-  OpalMediaFormatList adjustableMediaFormats = mediaFormats;
+  OpalMediaFormatList adjustableMediaFormats;
+  // Keep the media formats for the session ID
+  for (PINDEX i = 0; i < mediaFormats.GetSize(); i++) {
+    if (mediaFormats[i].GetDefaultSessionID() == sessionID)
+      adjustableMediaFormats += mediaFormats[i];
+  }
 
+  if (adjustableMediaFormats.GetSize() == 0)
+    return FALSE;
+  
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+    OpalConnection *currc = (OpalConnection *) &connection;
     if (conn != &connection) {
+      if (!conn->CanOpenSourceMediaStream(sessionID) || !currc->CanOpenSinkMediaStream(sessionID))
+	return TRUE;
       if (conn->OpenSourceMediaStream(adjustableMediaFormats, sessionID)) {
         startedOne = TRUE;
         // If opened the source stream, then reorder the media formats so we
