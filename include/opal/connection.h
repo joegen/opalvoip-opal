@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2044  2005/08/24 10:43:51  rjongbloed
+ * Revision 1.2045  2005/09/15 17:02:40  dsandras
+ * Added the possibility for a connection to prevent the opening of a sink/source media stream.
+ *
+ * Revision 2.43  2005/08/24 10:43:51  rjongbloed
  * Changed create video functions yet again so can return pointers that are not to be deleted.
  *
  * Revision 2.42  2005/08/23 12:45:09  rjongbloed
@@ -582,7 +585,21 @@ class OpalConnection : public PSafeObject
     virtual void AdjustMediaFormats(
       OpalMediaFormatList & mediaFormats  /// Media formats to use
     ) const;
+    
+    /**Returns TRUE if a source media stream can be created for this
+       connection.
+      */
+    virtual BOOL CanOpenSourceMediaStream(
+      unsigned sessionID		  /// Session to start stream on
+    );
 
+    /**Returns TRUE if a sink media stream can be created for this
+       connection.
+      */
+    virtual BOOL CanOpenSinkMediaStream(
+      unsigned sessionID		  /// Session to start stream on
+    );
+    
     /**Open source transmitter media stream for session.
       */
     virtual BOOL OpenSourceMediaStream(
