@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.cxx,v $
- * Revision 1.2025  2005/09/15 19:24:15  dsandras
+ * Revision 1.2026  2005/09/15 20:01:23  dsandras
+ * Allow dynamic quality adjustments.
+ *
+ * Revision 2.24  2005/09/15 19:24:15  dsandras
  * Backported adaptative packet delay algorithm from OpenH323.
  *
  * Revision 2.23  2005/09/06 12:44:49  rjongbloed
@@ -657,6 +660,9 @@ BOOL Opal_YUV420P_H261::ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameLi
     else
       newTime = currentTime + totalLength*8;
   }
+
+  if (videoEncoder)
+    videoEncoder->SetQualityLevel(videoQuality);
   
   return TRUE;
 }
