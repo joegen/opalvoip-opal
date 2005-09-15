@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2035  2005/08/25 18:49:52  dsandras
+ * Revision 1.2036  2005/09/15 17:08:36  dsandras
+ * Added support for CanOpen[Source|Sink]MediaStream.
+ *
+ * Revision 2.34  2005/08/25 18:49:52  dsandras
  * Added SIP Video support. Changed API of BuildSDP to allow it to be called
  * for both audio and video.
  *
@@ -244,6 +247,20 @@ class SIPConnection : public OpalConnection
     /**Get the data formats this endpoint is capable of operating in.
       */
     virtual OpalMediaFormatList GetMediaFormats() const;
+    
+    /**Returns TRUE if a source media stream can be created for this
+       connection.
+      */
+    virtual BOOL CanOpenSourceMediaStream(
+      unsigned sessionID		  /// Session to start stream on
+    );
+
+    /**Returns TRUE if a sink media stream can be created for this
+       connection.
+      */
+    virtual BOOL CanOpenSinkMediaStream(
+      unsigned sessionID		  /// Session to start stream on
+    );
 
     /**Open a new media stream.
        This will create a media stream of an appropriate subclass as required
@@ -264,6 +281,7 @@ class SIPConnection : public OpalConnection
       unsigned sessionID,                  /// Session number for stream
       BOOL isSource                        /// Is a source stream
     );
+
 
     /**Call back for answering an incoming call.
        This function is called from the OnReceivedSignalSetup() function
@@ -526,6 +544,7 @@ class SIPConnection : public OpalConnection
     PString           localPartyAddress;
     PString	          forwardParty;
     SIP_PDU         * originalInvite;
+    SDPSessionDescription remoteSDP;
     PStringList       routeSet;
     SIPURL            targetAddress;
     SIPAuthentication authentication;
