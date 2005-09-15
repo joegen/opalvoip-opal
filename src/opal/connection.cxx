@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2050  2005/09/06 12:44:49  rjongbloed
+ * Revision 1.2051  2005/09/15 17:02:40  dsandras
+ * Added the possibility for a connection to prevent the opening of a sink/source media stream.
+ *
+ * Revision 2.49  2005/09/06 12:44:49  rjongbloed
  * Many fixes to finalise the video processing: merging remote media
  *
  * Revision 2.48  2005/08/24 10:43:51  rjongbloed
@@ -485,9 +488,24 @@ void OpalConnection::AdjustMediaFormats(OpalMediaFormatList & mediaFormats) cons
 }
 
 
+BOOL OpalConnection::CanOpenSourceMediaStream(unsigned sessionID)
+{
+  return TRUE;
+}
+
+
+BOOL OpalConnection::CanOpenSinkMediaStream(unsigned sessionID)
+{
+  return TRUE;
+}
+
+
 BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats,
                                            unsigned sessionID)
 {
+  if (!CanOpenSourceMediaStream(sessionID))
+    return FALSE;
+  
   // See if already opened
   if (GetMediaStream(sessionID, TRUE) != NULL) {
     PTRACE(3, "OpalCon\tOpenSourceMediaStream (already opened) for session "
@@ -546,6 +564,10 @@ BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForm
 OpalMediaStream * OpalConnection::OpenSinkMediaStream(OpalMediaStream & source)
 {
   unsigned sessionID = source.GetSessionID();
+  
+  if (!CanOpenSinkMediaStream(sessionID))
+    return NULL;
+  
   PTRACE(3, "OpalCon\tOpenSinkMediaStream " << *this << " session=" << sessionID);
 
   OpalMediaFormat sourceFormat = source.GetMediaFormat();
