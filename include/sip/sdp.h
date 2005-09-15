@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2013  2005/07/14 08:52:19  csoutheren
+ * Revision 1.2014  2005/09/15 17:01:08  dsandras
+ * Added support for the direction attributes in the audio & video media descriptions and in the session.
+ *
+ * Revision 2.12  2005/07/14 08:52:19  csoutheren
  * Modified to output media desscription specific connection address if needed
  *
  * Revision 2.11  2005/04/28 20:22:52  dsandras
@@ -130,7 +133,6 @@ class SDPMediaFormat : public PObject
 
     void SetParameters(const PString & v)              { parameters = v; }
 
-    // used only for audio formats
     OpalMediaFormat GetMediaFormat() const;
 
   protected:
@@ -156,6 +158,14 @@ class SDPMediaDescription : public PObject
 {
   PCLASSINFO(SDPMediaDescription, PObject);
   public:
+    enum Direction {
+      RecvOnly,
+      SendOnly,
+      SendRecv,
+      Inactive,
+      Undefined
+    };
+    
     enum MediaType {
       Audio,
       Video,
@@ -182,7 +192,7 @@ class SDPMediaDescription : public PObject
     const SDPMediaFormatList & GetSDPMediaFormats() const
       { return formats; }
 
-    OpalMediaFormatList GetMediaFormats() const;
+    OpalMediaFormatList GetMediaFormats(unsigned) const;
 
     void AddSDPMediaFormat(SDPMediaFormat * sdpMediaFormat);
 
@@ -190,6 +200,9 @@ class SDPMediaDescription : public PObject
     void AddMediaFormats(const OpalMediaFormatList & mediaFormats, unsigned session);
 
     void SetAttribute(const PString & attr);
+
+    void SetDirection(const Direction & d) { direction = d; }
+    Direction GetDirection() const { return direction; }
 
     const OpalTransportAddress & GetTransportAddress() const { return transportAddress; }
 
@@ -207,6 +220,8 @@ class SDPMediaDescription : public PObject
     PCaselessString transport;
     OpalTransportAddress transportAddress;
 
+    Direction direction;
+
     SDPMediaFormatList formats;
     PINDEX packetTime;                  // ptime attribute, in milliseconds
 };
@@ -220,15 +235,6 @@ class SDPSessionDescription : public PObject
 {
   PCLASSINFO(SDPSessionDescription, PObject);
   public:
-    // the session streams direction
-    enum Direction {
-      RecvOnly,
-      SendOnly,
-      SendRecv,
-      Inactive,
-      Undefined
-    };
-    
     SDPSessionDescription(
       const OpalTransportAddress & address = OpalTransportAddress()
     );
@@ -249,9 +255,9 @@ class SDPSessionDescription : public PObject
       SDPMediaDescription::MediaType rtpMediaType
     ) const;
     void AddMediaDescription(SDPMediaDescription * md) { mediaDescriptions.Append(md); }
-
-    void SetDirection(const Direction & d) { direction = d; }
-    Direction GetDirection() const { return direction; }
+    
+    void SetDirection(const SDPMediaDescription::Direction & d) { direction = d; }
+    SDPMediaDescription::Direction GetDirection(unsigned) const;
 
     const OpalTransportAddress & GetDefaultConnectAddress() const { return defaultConnectAddress; }
     void SetDefaultConnectAddress(
@@ -263,11 +269,10 @@ class SDPSessionDescription : public PObject
     void ParseOwner(const PString & str);
 
     SDPMediaDescriptionList mediaDescriptions;
+    SDPMediaDescription::Direction direction;
 
     PINDEX protocolVersion;
     PString sessionName;
-
-    Direction direction;
 
     PString ownerUsername;
     unsigned ownerSessionId;
