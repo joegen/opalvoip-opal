@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.cxx,v $
- * Revision 1.2024  2005/09/06 12:44:49  rjongbloed
+ * Revision 1.2025  2005/09/15 19:24:15  dsandras
+ * Backported adaptative packet delay algorithm from OpenH323.
+ *
+ * Revision 2.23  2005/09/06 12:44:49  rjongbloed
  * Many fixes to finalise the video processing: merging remote media
  *
  * Revision 2.22  2005/09/04 06:23:39  rjongbloed
@@ -510,7 +513,7 @@ BOOL Opal_H261_YUV420P::ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameLi
   videoDecoder->mark(now);
   if (!videoDecoder->decode(src.GetPayloadPtr(), src.GetPayloadSize(), lostPreviousPacket)) {
     OpalVideoUpdatePicture updatePicture;
-    commandNotifier(updatePicture, 0);
+    //commandNotifier(updatePicture, 0); FIXME
     PTRACE (3, "H261\t Could not decode frame, sending VideoUpdatePicture in hope of an I-Frame.");
     return TRUE;
   }
@@ -589,6 +592,7 @@ PINDEX Opal_YUV420P_H261::GetOptimalDataFrameSize(BOOL input) const
 
 BOOL Opal_YUV420P_H261::ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dst)
 {
+  unsigned totalLength = 0;
   PWaitAndSignal mutex(updateMutex);
 
   dst.RemoveAll();
@@ -611,6 +615,7 @@ BOOL Opal_YUV420P_H261::ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameLi
     videoEncoder->SetSize(frameWidth, frameHeight);
   }
 
+
   // "grab" the frame
   memcpy(videoEncoder->GetFramePtr(), header->data, frameWidth*frameHeight*12/8);
 
@@ -622,16 +627,37 @@ BOOL Opal_YUV420P_H261::ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameLi
   videoEncoder->PreProcessOneFrame();
 
   while (videoEncoder->MoreToIncEncode()) {
+    unsigned length = 0;
     RTP_DataFrame * pkt = new RTP_DataFrame(2048);
-    unsigned length;
     videoEncoder->IncEncodeAndGetPacket(pkt->GetPayloadPtr(), length); //get next packet on list
     pkt->SetPayloadSize(length);
     pkt->SetTimestamp(src.GetTimestamp());
     pkt->SetPayloadType(RTP_DataFrame::H261);
     dst.Append(pkt);
+    totalLength += length;
   }
 
   dst[dst.GetSize()-1].SetMarker(TRUE);
+  
+  if (adaptivePacketDelay) {
+    
+    PTimeInterval waitBeforeSending;
+    PTimeInterval currentTime;
+
+    if (newTime != 0) { // calculate delay and wait
+      currentTime = PTimer::Tick();
+      waitBeforeSending = newTime - currentTime;
+      if (waitBeforeSending > 0) 
+	PThread::Current()->Sleep(waitBeforeSending);
+      currentTime = PTimer::Tick(); //re-acquire current time after wait
+    }
+    currentTime = PTimer::Tick(); 
+    if (targetBitRate/1000)
+      newTime = currentTime + totalLength*8/(targetBitRate/1000);
+    else
+      newTime = currentTime + totalLength*8;
+  }
+  
   return TRUE;
 }
 
