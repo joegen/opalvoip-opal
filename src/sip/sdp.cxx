@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2022  2005/08/25 18:50:55  dsandras
+ * Revision 1.2023  2005/09/15 17:01:08  dsandras
+ * Added support for the direction attributes in the audio & video media descriptions and in the session.
+ *
+ * Revision 2.21  2005/08/25 18:50:55  dsandras
  * Added support for clockrate based on the media format.
  *
  * Revision 2.20  2005/07/18 01:19:37  csoutheren
@@ -320,6 +323,7 @@ SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, M
   }
 
   transport = SDP_MEDIA_TRANSPORT;
+  direction = Undefined;
 }
 
 
@@ -380,7 +384,17 @@ void SDPMediaDescription::SetAttribute(const PString & ostr)
   // get the attribute type
   PINDEX pos = ostr.Find(":");
   if (pos == P_MAX_INDEX) {
-    PTRACE(2, "SDP\tMalformed media attribute " << ostr);
+
+    if (ostr *= "sendonly")
+      direction = SendOnly;
+    else if (ostr *= "recvonly")
+      direction = RecvOnly;
+    else if (ostr *= "sendrecv")
+      direction = SendRecv;
+    else if (ostr *= "inactive")
+      direction = Inactive;
+    else
+      PTRACE(2, "SDP\tMalformed media attribute " << ostr);
     return;
   }
   PString attr = ostr.Left(pos);
@@ -390,6 +404,7 @@ void SDPMediaDescription::SetAttribute(const PString & ostr)
       packetTime = str.AsUnsigned() ;
       return;
   }
+
   // extract the RTP payload type
   pos = str.Find(" ");
   if (pos == P_MAX_INDEX) {
@@ -486,14 +501,33 @@ void SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) 
     str << formats[i];
 
   if (packetTime)
-	  str << "a=ptime:" << packetTime << "\r\n";
+    str << "a=ptime:" << packetTime << "\r\n";
+  
+  // media format direction
+  switch (direction) {
+
+  case SDPMediaDescription::RecvOnly:
+    str << "a=recvonly" << "\r\n";
+    break;
+  case SDPMediaDescription::SendOnly:
+    str << "a=sendonly" << "\r\n";
+    break;
+  case SDPMediaDescription::SendRecv:
+    str << "a=sendrecv" << "\r\n";
+    break;
+  case SDPMediaDescription::Inactive:
+    str << "a=inactive" << "\r\n";
+    break;
+  default:
+    break;
+  }
 
   if (!connectString.IsEmpty())
     str << "c=" << connectString << "\r\n";
 }
 
 
-OpalMediaFormatList SDPMediaDescription::GetMediaFormats() const
+OpalMediaFormatList SDPMediaDescription::GetMediaFormats(unsigned sessionID) const
 {
   OpalMediaFormatList list;
 
@@ -503,8 +537,10 @@ OpalMediaFormatList SDPMediaDescription::GetMediaFormats() const
     if (opalFormat.IsEmpty())
       PTRACE(2, "SIP\tRTP payload type " << formats[i].GetPayloadType() << " not matched to audio codec");
     else {
-      PTRACE(2, "SIP\tRTP payload type " << formats[i].GetPayloadType() << " matched to audio codec " << opalFormat);
-      list += opalFormat;
+      if (opalFormat.GetDefaultSessionID() == sessionID) {
+	PTRACE(2, "SIP\tRTP payload type " << formats[i].GetPayloadType() << " matched to codec " << opalFormat);
+	list += opalFormat;
+      }
     }
   }
 
@@ -558,7 +594,7 @@ SDPSessionDescription::SDPSessionDescription(const OpalTransportAddress & addres
 {
   protocolVersion  = 0;
   ownerSessionId  = ownerVersion = PTime().GetTimeInSeconds();
-  direction = SDPSessionDescription::Undefined;
+  direction = SDPMediaDescription::Undefined;
 }
 
 
@@ -602,21 +638,21 @@ void SDPSessionDescription::PrintOn(ostream & str) const
   // used by FWD will reject the call with an SDP parse error. This does not seem to be 
   // required by the RFC so it is probably a bug in the proxy
   if (useCommonConnect)
-    str << "c=" << (direction == SDPSessionDescription::SendOnly?GetConnectAddressString("0"):GetConnectAddressString(connectionAddress)) << "\r\n";
+    str << "c=" << GetConnectAddressString(connectionAddress) << "\r\n";
   str << "t=" << "0 0" << "\r\n";
 
   switch (direction) {
-  
-  case SDPSessionDescription::RecvOnly:
+
+  case SDPMediaDescription::RecvOnly:
     str << "a=recvonly" << "\r\n";
     break;
-  case SDPSessionDescription::SendOnly:
+  case SDPMediaDescription::SendOnly:
     str << "a=sendonly" << "\r\n";
     break;
-  case SDPSessionDescription::SendRecv:
+  case SDPMediaDescription::SendRecv:
     str << "a=sendrecv" << "\r\n";
     break;
-  case SDPSessionDescription::Inactive:
+  case SDPMediaDescription::Inactive:
     str << "a=inactive" << "\r\n";
     break;
   default:
@@ -626,7 +662,7 @@ void SDPSessionDescription::PrintOn(ostream & str) const
   // encode media session information
   PINDEX i;
   for (i = 0; i < mediaDescriptions.GetSize(); i++) {
-    if (useCommonConnect)
+    if (useCommonConnect) 
       mediaDescriptions[i].PrintOn(connectionAddress, str);
     else
       str << mediaDescriptions[i];
@@ -701,9 +737,18 @@ BOOL SDPSessionDescription::Decode(const PString & str)
             case 'b' : // bandwidth information
             case 'z' : // time zone adjustments
             case 'k' : // encryption key
-            case 'a' : // zero or more session attribute lines
             case 'r' : // zero or more repeat times
               break;
+            case 'a' : // zero or more session attribute lines
+	      if (value *= "sendonly")
+		SetDirection (SDPMediaDescription::SendOnly);
+	      else if (value *= "recvonly")
+		SetDirection (SDPMediaDescription::RecvOnly);
+	      else if (value *= "sendrecv")
+		SetDirection (SDPMediaDescription::SendRecv);
+	      else if (value *= "inactive")
+		SetDirection (SDPMediaDescription::Inactive);
+	      break;
 
             default:
               PTRACE(1, "SDP\tUnknown session information key " << key[0]);
@@ -727,16 +772,7 @@ BOOL SDPSessionDescription::Decode(const PString & str)
               break;
 
             case 'a' : // zero or more media attribute lines
-	      if (value *= "sendonly")
-		SetDirection (SendOnly);
-	      else if (value *= "recvonly")
-		SetDirection (RecvOnly);
-	      else if (value *= "sendrecv")
-		SetDirection (SendRecv);
-	      else if (value *= "inactive")
-		SetDirection (Inactive);
-	      else
-		currentMedia->SetAttribute(value);
+	      currentMedia->SetAttribute(value);
               break;
 
             default:
@@ -780,5 +816,20 @@ SDPMediaDescription * SDPSessionDescription::GetMediaDescription(
   return NULL;
 }
 
+
+SDPMediaDescription::Direction SDPSessionDescription::GetDirection(unsigned sessionID) const
+{
+  PINDEX i;
+  for (i = 0; i < mediaDescriptions.GetSize(); i++) {
+    if ((mediaDescriptions[i].GetMediaType() == SDPMediaDescription::Video && sessionID == OpalMediaFormat::DefaultVideoSessionID) || (mediaDescriptions[i].GetMediaType() == SDPMediaDescription::Audio && sessionID == OpalMediaFormat::DefaultAudioSessionID)) {
+      if (mediaDescriptions[i].GetDirection() != SDPMediaDescription::Undefined)
+	return mediaDescriptions[i].GetDirection();
+      else
+	return direction;
+    }
+  }
+  
+  return direction;
+}
 
 // End of file ////////////////////////////////////////////////////////////////
