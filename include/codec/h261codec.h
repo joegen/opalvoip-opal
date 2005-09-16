@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.h,v $
- * Revision 1.2018  2005/09/02 14:31:41  csoutheren
+ * Revision 1.2019  2005/09/16 07:08:22  dsandras
+ * Forgot to commit that file yesterday. Declare new variable.
+ *
+ * Revision 2.17  2005/09/02 14:31:41  csoutheren
  * Use inline function to work around compiler foo in gcc
  *
  * Revision 2.16  2005/08/28 07:59:17  rjongbloed
@@ -397,6 +400,7 @@ class Opal_YUV420P_H261 : public OpalVideoTranscoder {
     virtual BOOL ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dst);
   protected:
     P64Encoder * videoEncoder;
+    PTimeInterval newTime;
 };
 
 
