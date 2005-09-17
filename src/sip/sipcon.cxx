@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2079  2005/09/15 17:07:47  dsandras
+ * Revision 1.2080  2005/09/17 20:54:16  dsandras
+ * Check for existing transport before using it.
+ *
+ * Revision 2.78  2005/09/15 17:07:47  dsandras
  * Fixed video support. Make use of BuildSDP when possible. Do not open the sink/source media streams if the remote or the local user have disabled audio/video transmission/reception by checking the direction media and session attributes.
  *
  * Revision 2.77  2005/08/25 18:49:52  dsandras
@@ -362,7 +365,8 @@ SIPConnection::SIPConnection(OpalCall & call,
     transport = NULL;
   else {
     transport = endpoint.CreateTransport(targetAddress.GetHostAddress());
-    transport->SetBufferSize(SIP_PDU::MaxSize); // Maximum possible PDU size
+    if (transport)
+      transport->SetBufferSize(SIP_PDU::MaxSize); // Maximum possible PDU size
   }
 
   originalInvite = NULL;
@@ -1186,7 +1190,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   if ((j = via.Find (';')) != P_MAX_INDEX)
     via = via.Left(j);
   OpalTransportAddress viaAddress(via, endpoint.GetDefaultSignalPort(), "udp$");
-  transport->SetRemoteAddress(viaAddress);
+  if (transport)
+    transport->SetRemoteAddress(viaAddress);
   PTRACE(4, "SIP\tOnReceivedINVITE Changed remote address of transport " << *transport);
 
   targetAddress = mime.GetFrom();
@@ -1263,12 +1268,14 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   // send trying with To: tag
   SendResponseToINVITE(SIP_PDU::Information_Trying);
 
+  
   // indicate the other is to start ringing
   if (!OnIncomingConnection()) {
     PTRACE(2, "SIP\tOnIncomingConnection failed for INVITE from " << request.GetURI() << " for " << *this);
     Release();
     return;
   }
+
 
   PTRACE(2, "SIP\tOnIncomingConnection succeeded for INVITE from " << request.GetURI() << " for " << *this);
   phase = SetUpPhase;
@@ -1277,12 +1284,14 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   AnsweringCall(OnAnswerCall(remotePartyAddress));
 }
 
+
 OpalConnection::AnswerCallResponse SIPConnection::OnAnswerCall(
       const PString & callerName      /// Name of caller
 )
 {
   return OpalConnection::OnAnswerCall(callerName);
 }
+
 
 void SIPConnection::AnsweringCall(AnswerCallResponse response)
 {
@@ -1325,6 +1334,7 @@ void SIPConnection::AnsweringCall(AnswerCallResponse response)
       break;
   }
 }
+
 
 void SIPConnection::OnReceivedACK(SIP_PDU & /*response*/)
 {
@@ -1767,7 +1777,8 @@ void SIPConnection::SendResponseToINVITE(SIP_PDU::StatusCodes code, const char *
   if (originalInvite != NULL) {
         
     SIP_PDU response(*originalInvite, code, NULL, extra);
-    response.Write(*transport);
+    if (transport)
+      response.Write(*transport);
   }
 }
 
