@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2048  2005/07/16 17:16:17  dsandras
+ * Revision 1.2049  2005/09/17 17:36:21  dsandras
+ * Close the old channel before creating the new socket.
+ *
+ * Revision 2.47  2005/07/16 17:16:17  dsandras
  * Moved code upward so that the local source port range is always taken into account when creating a transport.
  *
  * Revision 2.46  2005/06/08 17:35:10  dsandras
@@ -1834,6 +1837,7 @@ BOOL OpalTransportUDP::Connect()
       continue;
 
     // Not explicitly multicast
+    PIndirectChannel::Close();	//closing the channel and opening it with the new socket
     PUDPSocket * socket = new PUDPSocket;
     connectSockets.Append(socket);
 
