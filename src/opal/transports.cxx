@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2050  2005/09/18 18:41:01  dsandras
+ * Revision 1.2051  2005/09/18 20:32:57  dsandras
+ * New fix for the same problem that works.
+ *
+ * Revision 2.49  2005/09/18 18:41:01  dsandras
  * Reverted previous broken patch.
  *
  * Revision 2.48  2005/09/17 17:36:21  dsandras
@@ -1840,7 +1843,9 @@ BOOL OpalTransportUDP::Connect()
       continue;
 
     // Not explicitly multicast
+    PIndirectChannel::Close();	//closing the channel and opening it with the new socket
     PUDPSocket * socket = new PUDPSocket;
+    Open(socket);
     connectSockets.Append(socket);
 
     localPort = manager.GetNextUDPPort();
@@ -1849,7 +1854,7 @@ BOOL OpalTransportUDP::Connect()
       localPort = manager.GetNextUDPPort();
       if (localPort == firstPort) {
         PTRACE(1, "OpalUDP\tCould not bind to any port in range " <<
-                  manager.GetUDPPortBase() << " to " << manager.GetUDPPortMax());
+	       manager.GetUDPPortBase() << " to " << manager.GetUDPPortMax());
         return FALSE;
       }
     }
@@ -1870,8 +1875,8 @@ BOOL OpalTransportUDP::Connect()
   
   // check to make sure that we are not already connected. (thus, EndConnect() has been called)
   if(writeChannel && localAddress.IsValid()) {
-	  PTRACE(2, "OpalUDP\tConnect() to already connected channel");
-	  return TRUE;
+    PTRACE(2, "OpalUDP\tConnect() to already connected channel");
+    return TRUE;
   }
   
   // Skip over the OpalTransportUDP::Close to make sure PUDPSocket is deleted.
