@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.h,v $
- * Revision 1.2018  2005/01/16 23:07:33  csoutheren
+ * Revision 1.2019  2005/09/19 20:48:23  dsandras
+ * Added the "can reuse address" flag to the OpalTransportUDP class.
+ *
+ * Revision 2.17  2005/01/16 23:07:33  csoutheren
  * Fixed problem with IPv6 INADDR_ANY
  *
  * Revision 2.16  2004/03/22 11:39:44  rjongbloed
@@ -1099,6 +1102,7 @@ class OpalTransportUDP : public OpalTransportIP
     BOOL                 socketOwnedByListener;
     PBYTEArray           preReadPacket;
     PSocketList          connectSockets;
+    BOOL 		 reuseAddressFlag;
 };
 
 
