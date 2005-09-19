@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: frame.cxx,v $
+ *  Revision 1.11  2005/09/19 00:17:10  dereksmithies
+ *  lower verbosity of logging.
+ *
  *  Revision 1.10  2005/08/28 23:28:34  dereksmithies
  *  Add a good fix from Adrian Sietsma. Many thanks.
  *
@@ -1017,25 +1020,25 @@ PString IAX2FullFrameVoice::GetSubClassName(unsigned int testValue)
 unsigned short IAX2FullFrameVoice::OpalNameToIax2Value(const PString opalName)
 {
   if (opalName.Find("uLaw") != P_MAX_INDEX) {
-    PTRACE(3, "Codec supported "<< opalName);
+    PTRACE(5, "Codec supported "<< opalName);
     return g711ulaw;
   }
   
   if (opalName.Find("ALaw") != P_MAX_INDEX) {
-    PTRACE(3, "Codec supported " << opalName);
+    PTRACE(5, "Codec supported " << opalName);
     return  g711alaw;
   }
   
   if (opalName.Find("GSM-06.10") != P_MAX_INDEX) {
-    PTRACE(3, "Codec supported " << opalName);
+    PTRACE(5, "Codec supported " << opalName);
     return gsm;
   }
 
   if (opalName.Find("iLBC-13k3") != P_MAX_INDEX) {
-    PTRACE(3, "Codec supported " << opalName);
+    PTRACE(5, "Codec supported " << opalName);
     return ilbc; 
     }
-  PTRACE(3, "Codec " << opalName << " is not supported in IAX2");
+  PTRACE(5, "Codec " << opalName << " is not supported in IAX2");
   return 0;
 }
 
