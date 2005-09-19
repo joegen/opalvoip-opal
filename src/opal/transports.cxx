@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2051  2005/09/18 20:32:57  dsandras
+ * Revision 1.2052  2005/09/19 20:49:59  dsandras
+ * Following the API, a "reusable" address ends with '+', not something different than '+'.
+ * When a socket is created, reuse the "reusable" flag from the original socket.
+ *
+ * Revision 2.50  2005/09/18 20:32:57  dsandras
  * New fix for the same problem that works.
  *
  * Revision 2.49  2005/09/18 18:41:01  dsandras
@@ -841,7 +845,7 @@ static BOOL GetAdjustedIpAndPort(const OpalTransportAddress & address,
                                  WORD & port,
                                  BOOL & reuseAddr)
 {
-  reuseAddr = address[address.GetLength()-1] != '+';
+  reuseAddr = address[address.GetLength()-1] == '+';
 
   switch (option) {
     case OpalTransportAddress::NoBinding :
@@ -1679,6 +1683,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
 {
   promiscuousReads = AcceptFromRemoteOnly;
   socketOwnedByListener = FALSE;
+  reuseAddressFlag = reuseAddr;
 
   PUDPSocket * udp = new PUDPSocket;
   udp->Listen(binding, 0, port,
@@ -1697,10 +1702,12 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep, PUDPSocket & udp)
 {
   promiscuousReads = AcceptFromAnyAutoSet;
   socketOwnedByListener = TRUE;
+  reuseAddressFlag = FALSE;
 
   udp.GetLocalAddress(localAddress, localPort);
 
   Open(udp);
+
 
   PTRACE(3, "OpalUDP\tPre-bound to interface: " << localAddress << ':' << localPort);
 }
@@ -1850,7 +1857,7 @@ BOOL OpalTransportUDP::Connect()
 
     localPort = manager.GetNextUDPPort();
     WORD firstPort = localPort;
-    while (!socket->Listen(interfaceAddress, 0, localPort)) {
+    while (!socket->Listen(interfaceAddress, 0, localPort, reuseAddressFlag?PIPSocket::CanReuseAddress:PIPSocket::AddressIsExclusive)) {
       localPort = manager.GetNextUDPPort();
       if (localPort == firstPort) {
         PTRACE(1, "OpalUDP\tCould not bind to any port in range " <<
