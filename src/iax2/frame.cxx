@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: frame.cxx,v $
+ *  Revision 1.12  2005/09/20 07:22:54  csoutheren
+ *  Fixed compile warning on Windows
+ *
  *  Revision 1.11  2005/09/19 00:17:10  dereksmithies
  *  lower verbosity of logging.
  *
@@ -426,7 +429,7 @@ BOOL IAX2Frame::EncryptContents(IAX2Encryption &encryption)
   
   PBYTEArray working(eDataSize + padding);
   memset(working.GetPointer(), 0, 16);
-  working[15] = 0x0f & padding;
+  working[15] = (BYTE)(0x0f & padding);
   memcpy(working.GetPointer() + padding, data.GetPointer() + headerSize, eDataSize);
   
   PBYTEArray result(headerSize + eDataSize + padding);
