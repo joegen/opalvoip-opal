@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2063  2005/09/15 16:59:36  dsandras
+ * Revision 1.2064  2005/09/20 16:59:32  dsandras
+ * Added method that adjusts the VIA field of incoming requests accordingly to the SIP RFC and RFC 3581 if the transport address/port do not correspond to what is specified in the Via. Thanks Ted Szoczei for the feedback.
+ *
+ * Revision 2.62  2005/09/15 16:59:36  dsandras
  * Add the video SDP part as soon as we can send or receive video.
  *
  * Revision 2.61  2005/09/06 06:42:16  csoutheren
@@ -1423,6 +1426,47 @@ void SIP_PDU::SetAllow(void)
   mime.SetAllow(methods);
 }
 
+
+void SIP_PDU::AdjustVia(OpalTransport & transport)
+{
+  // Update the VIA field following RFC3261, 18.2.1 and RFC3581
+  PStringList viaList = mime.GetViaList();
+  PString via = viaList[0];
+  PString port, ip;
+  PINDEX j = 0;
+  
+  if ((j = via.FindLast (' ')) != P_MAX_INDEX)
+    via = via.Mid(j+1);
+  if ((j = via.Find (';')) != P_MAX_INDEX)
+    via = via.Left(j);
+  if ((j = via.Find (':')) != P_MAX_INDEX) {
+
+    ip = via.Left(j);
+    port = via.Mid(j+1);
+  }
+  else
+    ip = via;
+
+  PIPSocket::Address a (ip);
+  PIPSocket::Address remoteIp;
+  WORD remotePort;
+  if (transport.GetRemoteAddress().GetIpAndPort(remoteIp, remotePort)) {
+
+    if (mime.HasFieldParameter("rport", viaList[0]) && mime.GetFieldParameter("rport", viaList[0]).IsEmpty()) {
+      // fill in empty rport and received for RFC 3581
+      mime.SetFieldParameter("rport", viaList[0], remotePort);
+      mime.SetFieldParameter("received", viaList[0], remoteIp);
+    }
+    else if (remoteIp != a ) // set received when remote transport address different from Via address
+      mime.SetFieldParameter("received", viaList[0], remoteIp);
+  }
+  else if (!a.IsValid()) {
+    // Via address given has domain name
+    mime.SetFieldParameter("received", viaList[0], via);
+  }
+
+  mime.SetViaList(viaList);
+}
 
 
 void SIP_PDU::PrintOn(ostream & strm) const
