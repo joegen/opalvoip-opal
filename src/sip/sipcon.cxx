@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2083  2005/09/20 17:04:35  dsandras
+ * Revision 1.2084  2005/09/20 17:13:57  dsandras
+ * Fixed warning.
+ *
+ * Revision 2.82  2005/09/20 17:04:35  dsandras
  * Removed redundant call to SetBufferSize.
  *
  * Revision 2.81  2005/09/20 07:57:29  csoutheren
@@ -1334,6 +1337,7 @@ void SIPConnection::AnsweringCall(AnswerCallResponse response)
 
         case AnswerCallDeferred:
         case AnswerCallDeferredWithMedia:
+	case NumAnswerCallResponses:
           break;
       }
       break;
