@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2080  2005/09/17 20:54:16  dsandras
+ * Revision 1.2081  2005/09/20 07:24:05  csoutheren
+ * Removed assumption of UDP transport for SIP
+ *
+ * Revision 2.79  2005/09/17 20:54:16  dsandras
  * Check for existing transport before using it.
  *
  * Revision 2.78  2005/09/15 17:07:47  dsandras
@@ -1189,7 +1192,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     via = via.Mid(j+1);
   if ((j = via.Find (';')) != P_MAX_INDEX)
     via = via.Left(j);
-  OpalTransportAddress viaAddress(via, endpoint.GetDefaultSignalPort(), "udp$");
+  OpalTransportAddress viaAddress(via, endpoint.GetDefaultSignalPort(), (prot *= "TCP") ? "$tcp" : "udp$");
   if (transport)
     transport->SetRemoteAddress(viaAddress);
   PTRACE(4, "SIP\tOnReceivedINVITE Changed remote address of transport " << *transport);
