@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2081  2005/09/20 07:24:05  csoutheren
+ * Revision 1.2082  2005/09/20 07:57:29  csoutheren
+ * Fixed bug in previous commit
+ *
+ * Revision 2.80  2005/09/20 07:24:05  csoutheren
  * Removed assumption of UDP transport for SIP
  *
  * Revision 2.79  2005/09/17 20:54:16  dsandras
@@ -1192,9 +1195,17 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     via = via.Mid(j+1);
   if ((j = via.Find (';')) != P_MAX_INDEX)
     via = via.Left(j);
+
+  // get the protocol type from Via header
+  PString prot = viaList[0];
+  if ((j = prot.FindLast (' ')) != P_MAX_INDEX)
+    prot = prot.Left(j);
+  if ((j = prot.FindLast('/')) != P_MAX_INDEX)
+    prot = prot.Mid(j+1);
+
   OpalTransportAddress viaAddress(via, endpoint.GetDefaultSignalPort(), (prot *= "TCP") ? "$tcp" : "udp$");
-  if (transport)
-    transport->SetRemoteAddress(viaAddress);
+  transport->SetRemoteAddress(viaAddress);
+
   PTRACE(4, "SIP\tOnReceivedINVITE Changed remote address of transport " << *transport);
 
   targetAddress = mime.GetFrom();
