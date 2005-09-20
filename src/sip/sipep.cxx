@@ -19,12 +19,15 @@
  *
  * The Original Code is Open Phone Abstraction Library.
  *
- * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
+  The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2057  2005/08/04 17:13:53  dsandras
+ * Revision 1.2058  2005/09/20 17:02:57  dsandras
+ * Adjust via when receiving an incoming request.
+ *
+ * Revision 2.56  2005/08/04 17:13:53  dsandras
  * More implementation of blind transfer.
  *
  * Revision 2.55  2005/06/02 13:18:02  rjongbloed
@@ -588,6 +591,11 @@ BOOL SIPEndPoint::SetupTransfer(const PString & token,
 
 BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
 {
+  // Adjust the Via list 
+  if (pdu && pdu->GetMethod() != SIP_PDU::NumMethods)
+    pdu->AdjustVia(transport);
+
+  // Find a corresponding connection
   PSafePtr<SIPConnection> connection = GetSIPConnectionWithLock(pdu->GetMIME().GetCallID());
   if (connection != NULL) {
     SIPTransaction * transaction = connection->GetTransaction(pdu->GetTransactionID());
@@ -604,14 +612,9 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
 
     // Get response address from new request
     if (pdu->GetMethod() != SIP_PDU::NumMethods) {
+
       PStringList viaList = pdu->GetMIME().GetViaList();
       PString via = viaList[0];
-      PINDEX j = 0;
-      if ((j = via.FindLast (' ')) != P_MAX_INDEX)
-	      via = via.Mid(j+1);
-      if ((j = via.Find (';')) != P_MAX_INDEX)
-	      via = via.Left(j);
-      // sets return port to 5060 if none supplied and selects UDP transport
       OpalTransportAddress viaAddress(via, GetDefaultSignalPort(), "udp$");
       transport.SetRemoteAddress(viaAddress);
       PTRACE(4, "SIP\tTranport remote address change from Via: " << transport);
