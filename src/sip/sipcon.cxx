@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2082  2005/09/20 07:57:29  csoutheren
+ * Revision 1.2083  2005/09/20 17:04:35  dsandras
+ * Removed redundant call to SetBufferSize.
+ *
+ * Revision 2.81  2005/09/20 07:57:29  csoutheren
  * Fixed bug in previous commit
  *
  * Revision 2.80  2005/09/20 07:24:05  csoutheren
@@ -371,8 +374,7 @@ SIPConnection::SIPConnection(OpalCall & call,
     transport = NULL;
   else {
     transport = endpoint.CreateTransport(targetAddress.GetHostAddress());
-    if (transport)
-      transport->SetBufferSize(SIP_PDU::MaxSize); // Maximum possible PDU size
+
   }
 
   originalInvite = NULL;
@@ -1154,7 +1156,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 {
   BOOL isReinvite = FALSE;
-  
+ 
   // Ignore duplicate INVITEs
   if (originalInvite && (originalInvite->GetMIME().GetCSeq() == request.GetMIME().GetCSeq())) {
     PTRACE(2, "SIP\tIgnoring duplicate INVITE from " << request.GetURI());
