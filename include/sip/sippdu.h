@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2029  2005/08/10 19:34:34  dsandras
+ * Revision 1.2030  2005/09/20 16:59:32  dsandras
+ * Added method that adjusts the VIA field of incoming requests accordingly to the SIP RFC and RFC 3581 if the transport address/port do not correspond to what is specified in the Via. Thanks Ted Szoczei for the feedback.
+ *
+ * Revision 2.28  2005/08/10 19:34:34  dsandras
  * Added helper functions to get and set values of parameters in PDU fields.
  *
  * Revision 2.27  2005/06/04 12:44:36  dsandras
@@ -611,6 +614,10 @@ class SIP_PDU : public PObject
       */
     void SetAllow(void);
 
+    /**Update the VIA field following RFC3261, 18.2.1 and RFC3581.
+      */
+    void AdjustVia(OpalTransport & transport);
+    
     /**Read PDU from the specified transport.
       */
     BOOL Read(
