@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2042  2005/08/24 10:43:51  rjongbloed
+ * Revision 1.2043  2005/09/20 07:25:43  csoutheren
+ * Allow userdata to be passed from SetupCall through to Call and Connection constructors
+ *
+ * Revision 2.41  2005/08/24 10:43:51  rjongbloed
  * Changed create video functions yet again so can return pointers that are not to be deleted.
  *
  * Revision 2.40  2005/08/23 12:45:09  rjongbloed
@@ -271,7 +274,8 @@ class OpalManager : public PObject
     virtual BOOL SetUpCall(
       const PString & partyA,       /// The A party of call
       const PString & partyB,       /// The B party of call
-      PString & token               /// Token for call
+      PString & token,              /// Token for call
+      void * userData = NULL        /// user data passed to Call and Connection
     );
 
     /**A call back function whenever a call is completed.
@@ -379,6 +383,9 @@ class OpalManager : public PObject
        The default behavious returns an instance of OpalCall.
       */
     virtual OpalCall * CreateCall();
+    virtual OpalCall * CreateCall(
+      void * userData            /// user data passed to SetUpCall
+    );
 
     /**Destroy a call object.
        This gets called from background thread that garbage collects all calls
@@ -437,6 +444,11 @@ class OpalManager : public PObject
     virtual BOOL MakeConnection(
       OpalCall & call,        /// Owner of connection
       const PString & party   /// Party to call
+    );
+    virtual BOOL MakeConnection(
+      OpalCall & call,        /// Owner of connection
+      const PString & party,  /// Party to call
+      void * userData         /// user data to pass to connections
     );
 
     /**Call back for answering an incoming call.
