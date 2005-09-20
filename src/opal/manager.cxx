@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2054  2005/08/28 07:59:17  rjongbloed
+ * Revision 1.2055  2005/09/20 07:25:43  csoutheren
+ * Allow userdata to be passed from SetupCall through to Call and Connection constructors
+ *
+ * Revision 2.53  2005/08/28 07:59:17  rjongbloed
  * Converted OpalTranscoder to use factory, requiring sme changes in making sure
  *   OpalMediaFormat instances are initialised before use.
  *
@@ -407,7 +410,8 @@ OpalEndPoint * OpalManager::FindEndPoint(const PString & prefix)
 
 BOOL OpalManager::SetUpCall(const PString & partyA,
                             const PString & partyB,
-                            PString & token)
+                            PString & token,
+                            void * userData)
 {
   PTRACE(3, "OpalMan\tSet up call from " << partyA << " to " << partyB);
 
@@ -416,7 +420,7 @@ BOOL OpalManager::SetUpCall(const PString & partyA,
 
   call->SetPartyB(partyB);
 
-  if (MakeConnection(*call, partyA))
+  if (MakeConnection(*call, partyA, userData))
     return TRUE;
 
   call->Clear();
@@ -498,6 +502,11 @@ void OpalManager::OnClearedCall(OpalCall & PTRACE_PARAM(call))
 
 OpalCall * OpalManager::CreateCall()
 {
+  return CreateCall(NULL);
+}
+
+OpalCall * OpalManager::CreateCall(void * /*userData*/)
+{
   return new OpalCall(*this);
 }
 
@@ -517,8 +526,12 @@ PString OpalManager::GetNextCallToken()
   return token;
 }
 
-
 BOOL OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty)
+{
+  return MakeConnection(call, remoteParty, NULL);
+}
+
+BOOL OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty, void * userData)
 {
   PTRACE(3, "OpalMan\tSet up connection to \"" << remoteParty << '"');
 
@@ -531,7 +544,7 @@ BOOL OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty)
 
   for (PINDEX i = 0; i < endpoints.GetSize(); i++) {
     if (epname == endpoints[i].GetPrefixName()) {
-      if (endpoints[i].MakeConnection(call, remoteParty, NULL))
+      if (endpoints[i].MakeConnection(call, remoteParty, userData))
         return TRUE;
     }
   }
