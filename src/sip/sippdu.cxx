@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2064  2005/09/20 16:59:32  dsandras
+ * Revision 1.2065  2005/09/21 19:49:26  dsandras
+ * Added a function that returns the transport address where to send responses to incoming requests according to RFC3261 and RFC3581.
+ *
+ * Revision 2.63  2005/09/20 16:59:32  dsandras
  * Added method that adjusts the VIA field of incoming requests accordingly to the SIP RFC and RFC 3581 if the transport address/port do not correspond to what is specified in the Via. Thanks Ted Szoczei for the feedback.
  *
  * Revision 2.62  2005/09/15 16:59:36  dsandras
@@ -1466,6 +1469,48 @@ void SIP_PDU::AdjustVia(OpalTransport & transport)
   }
 
   mime.SetViaList(viaList);
+}
+
+
+OpalTransportAddress SIP_PDU::GetViaAddress(OpalEndPoint &ep)
+{
+  PStringList viaList = mime.GetViaList();
+  PString viaAddress = viaList[0];
+  PString proto = viaList[0];
+  PString viaPort = ep.GetDefaultSignalPort();
+  
+  PINDEX j = 0;
+  // get the address specified in the Via
+  if ((j = viaAddress.FindLast (' ')) != P_MAX_INDEX)
+    viaAddress = viaAddress.Mid(j+1);
+  if ((j = viaAddress.Find (';')) != P_MAX_INDEX)
+    viaAddress = viaAddress.Left(j);
+  if ((j = viaAddress.Find (':')) != P_MAX_INDEX) {
+    viaPort = viaAddress.Mid(j+1);
+    viaAddress = viaAddress.Left(j);
+  }
+
+  // get the protocol type from Via header
+  if ((j = proto.FindLast (' ')) != P_MAX_INDEX)
+    proto = proto.Left(j);
+  if ((j = proto.FindLast('/')) != P_MAX_INDEX)
+    proto = proto.Mid(j+1);
+
+  // maddr is present, no support for multicast yet
+  if (mime.HasFieldParameter("maddr", viaList[0])) 
+    viaAddress = mime.GetFieldParameter("maddr", viaList[0]);
+  // received and rport are present
+  else if (mime.HasFieldParameter("received", viaList[0]) && mime.HasFieldParameter("rport", viaList[0])) {
+    viaAddress = mime.GetFieldParameter("received", viaList[0]);
+    viaPort = mime.GetFieldParameter("rport", viaList[0]);
+  }
+  // received is present
+  else if (mime.HasFieldParameter("received", viaList[0]))
+    viaAddress = mime.GetFieldParameter("received", viaList[0]);
+
+  OpalTransportAddress address(viaAddress, ep.GetDefaultSignalPort(), (proto *= "TCP") ? "$tcp" : "udp$");
+
+  return address;
 }
 
 
