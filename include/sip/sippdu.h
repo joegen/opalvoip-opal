@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2030  2005/09/20 16:59:32  dsandras
+ * Revision 1.2031  2005/09/21 19:49:25  dsandras
+ * Added a function that returns the transport address where to send responses to incoming requests according to RFC3261 and RFC3581.
+ *
+ * Revision 2.29  2005/09/20 16:59:32  dsandras
  * Added method that adjusts the VIA field of incoming requests accordingly to the SIP RFC and RFC 3581 if the transport address/port do not correspond to what is specified in the Via. Thanks Ted Szoczei for the feedback.
  *
  * Revision 2.28  2005/08/10 19:34:34  dsandras
@@ -617,6 +620,11 @@ class SIP_PDU : public PObject
     /**Update the VIA field following RFC3261, 18.2.1 and RFC3581.
       */
     void AdjustVia(OpalTransport & transport);
+    
+    /**Return the address associated with the via field. That address
+     * should be used to send responses to incoming PDUs.
+     */
+    OpalTransportAddress GetViaAddress(OpalEndPoint &);
     
     /**Read PDU from the specified transport.
       */
