@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2084  2005/09/20 17:13:57  dsandras
+ * Revision 1.2085  2005/09/21 19:50:30  dsandras
+ * Cleaned code. Make use of the new SIP_PDU function that returns the correct address where to send responses to incoming requests.
+ *
+ * Revision 2.83  2005/09/20 17:13:57  dsandras
  * Fixed warning.
  *
  * Revision 2.82  2005/09/20 17:04:35  dsandras
@@ -1193,26 +1196,11 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   localPartyAddress  = mime.GetTo() + ";tag=" + GetTag(); // put a real random 
   mime.SetTo(localPartyAddress);
 
-  PStringList viaList = request.GetMIME().GetViaList();
-  PString via = viaList[0];
-  PINDEX j = 0;
-  if ((j = via.FindLast (' ')) != P_MAX_INDEX)
-    via = via.Mid(j+1);
-  if ((j = via.Find (';')) != P_MAX_INDEX)
-    via = via.Left(j);
-
-  // get the protocol type from Via header
-  PString prot = viaList[0];
-  if ((j = prot.FindLast (' ')) != P_MAX_INDEX)
-    prot = prot.Left(j);
-  if ((j = prot.FindLast('/')) != P_MAX_INDEX)
-    prot = prot.Mid(j+1);
-
-  OpalTransportAddress viaAddress(via, endpoint.GetDefaultSignalPort(), (prot *= "TCP") ? "$tcp" : "udp$");
-  transport->SetRemoteAddress(viaAddress);
-
-  PTRACE(4, "SIP\tOnReceivedINVITE Changed remote address of transport " << *transport);
-
+  if (!transport->IsReliable()) {
+    transport->SetRemoteAddress(request.GetViaAddress(endpoint));
+    PTRACE(4, "SIP\tOnReceivedINVITE Changed remote address of transport " << *transport);
+  }
+  
   targetAddress = mime.GetFrom();
   targetAddress.AdjustForRequestURI();
 

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2058  2005/09/20 17:02:57  dsandras
+ * Revision 1.2059  2005/09/21 19:50:30  dsandras
+ * Cleaned code. Make use of the new SIP_PDU function that returns the correct address where to send responses to incoming requests.
+ *
+ * Revision 2.57  2005/09/20 17:02:57  dsandras
  * Adjust via when receiving an incoming request.
  *
  * Revision 2.56  2005/08/04 17:13:53  dsandras
@@ -609,14 +612,9 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
 
   // PDUs outside of connection context
   if (!transport.IsReliable()) {
-
     // Get response address from new request
     if (pdu->GetMethod() != SIP_PDU::NumMethods) {
-
-      PStringList viaList = pdu->GetMIME().GetViaList();
-      PString via = viaList[0];
-      OpalTransportAddress viaAddress(via, GetDefaultSignalPort(), "udp$");
-      transport.SetRemoteAddress(viaAddress);
+      transport.SetRemoteAddress(pdu->GetViaAddress(*this));
       PTRACE(4, "SIP\tTranport remote address change from Via: " << transport);
     }
   }
