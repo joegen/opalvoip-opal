@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2085  2005/09/21 19:50:30  dsandras
+ * Revision 1.2086  2005/09/21 21:03:04  dsandras
+ * Fixed reINVITE support.
+ *
+ * Revision 2.84  2005/09/21 19:50:30  dsandras
  * Cleaned code. Make use of the new SIP_PDU function that returns the correct address where to send responses to incoming requests.
  *
  * Revision 2.83  2005/09/20 17:13:57  dsandras
@@ -574,7 +577,7 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   // if no matching media type, return FALSE
   SDPMediaDescription * incomingMedia = sdpIn.GetMediaDescription(rtpMediaType);
   if (incomingMedia == NULL) {
-    PTRACE(2, "SIP\tCould not find matching media type");
+    PTRACE(2, "SIP\tCould not find matching media type for session " << rtpSessionId);
     return FALSE;
   }
 
@@ -746,15 +749,15 @@ void SIPConnection::OnConnected ()
     for (int i = 0; i < mediaStreams.GetSize(); i++) {
       OpalMediaStream & mediaStream = mediaStreams[i];
       if (mediaStream.GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
-	      OpalMediaPatch * patch = mediaStream.GetPatch();
-	      if (patch != NULL) {
-	        if (mediaStream.IsSource()) {
-	          patch->AddFilter(rfc2833Handler->GetReceiveHandler(), mediaStream.GetMediaFormat());
-	        }
-	        else {
-	          patch->AddFilter(rfc2833Handler->GetTransmitHandler());
-	        }
-	      }
+	OpalMediaPatch * patch = mediaStream.GetPatch();
+	if (patch != NULL) {
+	  if (mediaStream.IsSource()) {
+	    patch->AddFilter(rfc2833Handler->GetReceiveHandler(), mediaStream.GetMediaFormat());
+	  }
+	  else {
+	    patch->AddFilter(rfc2833Handler->GetTransmitHandler());
+	  }
+	}
       }
     }
   }
@@ -1350,11 +1353,13 @@ void SIPConnection::OnReceivedACK(SIP_PDU & /*response*/)
 
   // If we receive an ACK in established phase, perhaps it
   // is a re-INVITE
-  if (phase == EstablishedPhase)
+  if (phase == EstablishedPhase) {
+    OpalConnection::OnConnected ();
     StartMediaStreams();
+  }
   
   // start all of the media threads for the connection
-  if (phase != ConnectedPhase) 
+  if (phase != ConnectedPhase)  
     return;
   
   releaseMethod = ReleaseWithBYE;
