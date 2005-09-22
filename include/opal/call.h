@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2022  2005/08/04 17:21:48  dsandras
+ * Revision 1.2023  2005/09/22 17:08:52  dsandras
+ * Added mutex to protect media streams access and prevent media streams for a call to be closed before they are all opened.
+ *
+ * Revision 2.21  2005/08/04 17:21:48  dsandras
  * Added functions to close/remove the media streams of a call.
  *
  * Revision 2.20  2005/07/11 01:52:23  csoutheren
@@ -422,6 +425,7 @@ class OpalCall : public PSafeObject
   protected:
     OpalManager & manager;
 
+    PMutex  streamsMutex;
     PString myToken;
 
     PString partyA;
