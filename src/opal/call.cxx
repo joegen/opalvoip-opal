@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2036  2005/09/15 17:05:32  dsandras
+ * Revision 1.2037  2005/09/22 17:08:52  dsandras
+ * Added mutex to protect media streams access and prevent media streams for a call to be closed before they are all opened.
+ *
+ * Revision 2.35  2005/09/15 17:05:32  dsandras
  * Only open media streams for a session with media formats corresponding to that session. Check if the sink media stream can be opened on the other connection(s) before opening the source media stream.
  *
  * Revision 2.34  2005/08/04 17:22:17  dsandras
@@ -431,6 +434,7 @@ BOOL OpalCall::OpenSourceMediaStreams(const OpalConnection & connection,
 {
   PTRACE(2, "Call\tOpenSourceMediaStreams for session " << sessionID
          << " with media " << setfill(',') << mediaFormats << setfill(' '));
+  PWaitAndSignal m(streamsMutex);
 
   BOOL startedOne = FALSE;
 
@@ -469,6 +473,7 @@ BOOL OpalCall::OpenSourceMediaStreams(const OpalConnection & connection,
 
 void OpalCall::CloseMediaStreams()
 {
+  PWaitAndSignal m(streamsMutex);
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) 
     conn->CloseMediaStreams();
 }
@@ -476,6 +481,7 @@ void OpalCall::CloseMediaStreams()
 
 void OpalCall::RemoveMediaStreams()
 {
+  PWaitAndSignal m(streamsMutex);
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) 
     conn->RemoveMediaStreams();
 }
