@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2053  2005/09/22 17:07:34  dsandras
+ * Revision 1.2054  2005/09/22 18:16:29  dsandras
+ * Definitely fixed the previous problem.
+ *
+ * Revision 2.52  2005/09/22 17:07:34  dsandras
  * Fixed bug leading to a crash when registering to a gatekeeper.
  *
  * Revision 2.51  2005/09/19 20:49:59  dsandras
@@ -1853,8 +1856,8 @@ BOOL OpalTransportUDP::Connect()
       continue;
 
     // Not explicitly multicast
-    PIndirectChannel::Close();	//closing the channel and opening it with the new socket
     PUDPSocket * socket = new PUDPSocket;
+    PIndirectChannel::Close();	//closing the channel and opening it with the new socket
     readAutoDelete = writeAutoDelete = FALSE;
     connectSockets.Append(socket);
 
@@ -1868,6 +1871,7 @@ BOOL OpalTransportUDP::Connect()
         return FALSE;
       }
     }
+    Open(socket);
 
 #ifndef __BEOS__
     if (remoteAddress == INADDR_BROADCAST) {
@@ -1880,6 +1884,7 @@ BOOL OpalTransportUDP::Connect()
     PTRACE(3, "RAS\tBroadcast option under BeOS is not implemented yet");
 #endif
 
+    socket->GetLocalAddress(localAddress, localPort);
     socket->SetSendAddress(remoteAddress, remotePort);
   }
   
