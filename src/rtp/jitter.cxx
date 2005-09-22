@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.cxx,v $
- * Revision 1.2009  2005/08/04 17:18:37  dsandras
+ * Revision 1.2010  2005/09/22 18:17:42  dsandras
+ * Fixed problems with jitter being restarted.
+ *
+ * Revision 2.8  2005/08/04 17:18:37  dsandras
  * Reinitialize frame pointers when the jitter is restarted.
  *
  * Revision 2.7  2004/02/19 10:47:06  rjongbloed
@@ -402,7 +405,8 @@ void RTP_JitterBuffer::Main()
     else {
       // We have a full jitter buffer, need a new frame so take the oldest one
       currentReadFrame = oldestFrame;
-      oldestFrame = oldestFrame->next;
+      if (oldestFrame != NULL)
+	oldestFrame = oldestFrame->next;
       if (oldestFrame != NULL)
         oldestFrame->prev = NULL;
       currentDepth--;
@@ -421,13 +425,19 @@ void RTP_JitterBuffer::Main()
       }
     }
 
+    if (currentReadFrame == NULL) {
+      bufferMutex.Signal();
+      return;
+    }
+
     currentReadFrame->next = NULL;
 
     bufferMutex.Signal();
 
     // Keep reading from the RTP transport frames
     if (!session.ReadData(*currentReadFrame)) {
-      delete currentReadFrame;  // Destructor won't delete this one, so do it here.
+      if (currentReadFrame != NULL)
+	delete currentReadFrame;  // Destructor won't delete this one, so do it here.
       shuttingDown = TRUE; // Flag to stop the reading side thread
       PTRACE(3, "RTP\tJitter RTP receive thread ended");
       return;
@@ -436,7 +446,7 @@ void RTP_JitterBuffer::Main()
     currentReadFrame->tick = PTimer::Tick();
 
     if (consecutiveMarkerBits < maxConsecutiveMarkerBits) {
-      if (currentReadFrame->GetMarker()) {
+      if (currentReadFrame != NULL && currentReadFrame->GetMarker()) {
         PTRACE(3, "RTP\tReceived start of talk burst: " << currentReadFrame->GetTimestamp());
         //preBuffering = TRUE;
         consecutiveMarkerBits++;
@@ -445,7 +455,7 @@ void RTP_JitterBuffer::Main()
         consecutiveMarkerBits = 0;
     }
     else {
-      if (currentReadFrame->GetMarker())
+      if (currentReadFrame != NULL && currentReadFrame->GetMarker())
         currentReadFrame->SetMarker(FALSE);
       if (consecutiveMarkerBits == maxConsecutiveMarkerBits) {
         PTRACE(3, "RTP\tEvery packet has Marker bit, ignoring them from this client!");
@@ -461,7 +471,7 @@ void RTP_JitterBuffer::Main()
     bufferMutex.Wait();
 
     // Have been reading a frame, put it into the queue now, at correct position
-    if (newestFrame == NULL)
+    if (newestFrame == NULL || oldestFrame == NULL)
       oldestFrame = newestFrame = currentReadFrame; // Was empty
     else {
       DWORD time = currentReadFrame->GetTimestamp();
