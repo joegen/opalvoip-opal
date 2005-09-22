@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2052  2005/09/19 20:49:59  dsandras
+ * Revision 1.2053  2005/09/22 17:07:34  dsandras
+ * Fixed bug leading to a crash when registering to a gatekeeper.
+ *
+ * Revision 2.51  2005/09/19 20:49:59  dsandras
  * Following the API, a "reusable" address ends with '+', not something different than '+'.
  * When a socket is created, reuse the "reusable" flag from the original socket.
  *
@@ -1852,7 +1855,7 @@ BOOL OpalTransportUDP::Connect()
     // Not explicitly multicast
     PIndirectChannel::Close();	//closing the channel and opening it with the new socket
     PUDPSocket * socket = new PUDPSocket;
-    Open(socket);
+    readAutoDelete = writeAutoDelete = FALSE;
     connectSockets.Append(socket);
 
     localPort = manager.GetNextUDPPort();
