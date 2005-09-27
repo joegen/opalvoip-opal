@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2036  2005/09/15 17:08:36  dsandras
+ * Revision 1.2037  2005/09/27 16:03:46  dsandras
+ * Removed SendResponseToInvite and added SendPDU function that will change the transport address right before sending the PDU. This operation is atomic.
+ *
+ * Revision 2.35  2005/09/15 17:08:36  dsandras
  * Added support for CanOpen[Source|Sink]MediaStream.
  *
  * Revision 2.34  2005/08/25 18:49:52  dsandras
@@ -474,7 +477,10 @@ class SIPConnection : public OpalConnection
       const PString & forwardParty   /// Party to forward call to.
     );
     
-    void SendResponseToINVITE(SIP_PDU::StatusCodes code, const char * str = NULL);
+    /**Send a PDU using the connection transport.
+     * The PDU is sent to the address given as argument.
+     */
+    BOOL SendPDU(SIP_PDU &, const OpalTransportAddress &);
 
     unsigned GetNextCSeq() { return ++lastSentCSeq; }
 
@@ -539,15 +545,16 @@ class SIPConnection : public OpalConnection
     SIPEndPoint   & endpoint;
     OpalTransport * transport;
 
-    BOOL	            local_hold;
-    BOOL	            remote_hold;
-    PString           localPartyAddress;
+    PMutex		  transportMutex;
+    BOOL	          local_hold;
+    BOOL	          remote_hold;
+    PString               localPartyAddress;
     PString	          forwardParty;
-    SIP_PDU         * originalInvite;
+    SIP_PDU             * originalInvite;
     SDPSessionDescription remoteSDP;
-    PStringList       routeSet;
-    SIPURL            targetAddress;
-    SIPAuthentication authentication;
+    PStringList           routeSet;
+    SIPURL                targetAddress;
+    SIPAuthentication     authentication;
 
     SIP_PDU_Queue pduQueue;
     PSemaphore    pduSemaphore;
