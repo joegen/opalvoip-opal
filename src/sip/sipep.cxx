@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2059  2005/09/21 19:50:30  dsandras
+ * Revision 1.2060  2005/09/27 16:17:36  dsandras
+ * Remove the media streams on transfer.
+ *
+ * Revision 2.58  2005/09/21 19:50:30  dsandras
  * Cleaned code. Make use of the new SIP_PDU function that returns the correct address where to send responses to incoming requests.
  *
  * Revision 2.57  2005/09/20 17:02:57  dsandras
@@ -572,7 +575,7 @@ BOOL SIPEndPoint::SetupTransfer(const PString & token,
   
   OpalCall & call = otherConnection->GetCall();
   
-  call.CloseMediaStreams();
+  call.RemoveMediaStreams();
   
   PStringStream callID;
   OpalGloballyUniqueID id;
