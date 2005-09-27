@@ -25,7 +25,16 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2031  2005/09/21 19:49:25  dsandras
+ * Revision 1.2032  2005/09/27 16:06:12  dsandras
+ * Added function that returns the address to which a request should be sent
+ * according to the RFC.
+ * Removed OnCompleted method for SIPInvite, the ACK is now
+ * sent from the SIPConnection class so that the response has been processed
+ * for Record Route headers.
+ * Added class for the ACK request to make the distinction between an ACK sent
+ * for a 2xx response (in a dialog request) and an ACK sent for a non-2xx response.
+ *
+ * Revision 2.30  2005/09/21 19:49:25  dsandras
  * Added a function that returns the transport address where to send responses to incoming requests according to RFC3261 and RFC3581.
  *
  * Revision 2.29  2005/09/20 16:59:32  dsandras
@@ -566,6 +575,8 @@ class SIP_PDU : public PObject
       unsigned cseq,
       const OpalTransportAddress & via
     );
+    /** Construct a Request message for requests in a dialog
+     */
     SIP_PDU(
       Methods method,
       SIPConnection & connection,
@@ -625,6 +636,12 @@ class SIP_PDU : public PObject
      * should be used to send responses to incoming PDUs.
      */
     OpalTransportAddress GetViaAddress(OpalEndPoint &);
+
+    
+    /**Return the address associated to which the request PDU should be sent
+     * according to the RFC, for a request in a dialog.
+     */
+    OpalTransportAddress GetSendAddress(SIPConnection &);
     
     /**Read PDU from the specified transport.
       */
@@ -692,6 +709,8 @@ class SIPTransaction : public SIP_PDU
       SIPEndPoint   & endpoint,
       OpalTransport & transport
     );
+    /** Construct a transaction for requests in a dialog
+     */
     SIPTransaction(
       SIPConnection & connection,
       OpalTransport & transport,
@@ -779,7 +798,6 @@ class SIPInvite : public SIPTransaction
     );
 
     virtual BOOL OnReceivedResponse(SIP_PDU & response);
-    virtual BOOL OnCompleted(SIP_PDU & response);
 
     RTP_SessionManager & GetSessionManager() { return rtpSessions; }
 
@@ -878,6 +896,31 @@ class SIPMessage : public SIPTransaction
 	       const SIPURL & address,
 	       const PString & body
     );
+};
+
+
+/////////////////////////////////////////////////////////////////////////
+
+/* This is the ACK request sent when receiving a response to an outgoing
+ * INVITE.
+ */
+class SIPAck : public SIP_PDU
+{
+    PCLASSINFO(SIPAck, SIP_PDU);
+  public:
+    // This ACK is sent for non-2xx responses
+    SIPAck(
+      SIPTransaction & invite,
+      SIP_PDU & response); 
+
+    // This ACK is sent for 2xx responses according to 17.1.1.3
+    SIPAck(
+      SIPTransaction & invite);
+
+  protected:
+    void Construct();
+
+    SIPTransaction & transaction;
 };
 
 #endif // __OPAL_SIPPDU_H
