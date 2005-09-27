@@ -24,7 +24,20 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2065  2005/09/21 19:49:26  dsandras
+ * Revision 1.2066  2005/09/27 16:13:23  dsandras
+ * - Use the targetAddress from the SIPConnection as request URI for a request
+ * in a dialog. The SIPConnection class will adjust the targetAddress according
+ * to the RFC, ie following the Contact field in a response and following the
+ * Route fields.
+ * - Added GetSendAddress that will return the OpalTransportAddress to use to
+ * send a request in a dialog according to the RFC.
+ * - Use SendPDU everywhere for requests in a dialog.
+ * - Removed the transmission of ACK from the SIPInvite class so that it can
+ * be done in the SIPConnectionc class after processing of the response in order
+ * to know the route.
+ * - Added the code for ACK requests sent for a 2xx response and for a non-2xx response.
+ *
+ * Revision 2.64  2005/09/21 19:49:26  dsandras
  * Added a function that returns the transport address where to send responses to incoming requests according to RFC3261 and RFC3581.
  *
  * Revision 2.63  2005/09/20 16:59:32  dsandras
@@ -1387,15 +1400,18 @@ void SIP_PDU::Construct(Methods meth,
   SIPURL contact(connection.GetLocalPartyName(), localAddress);
   mime.SetContact(contact);
 
+  SIPURL targetAddress = connection.GetTargetAddress();
+  targetAddress.AdjustForRequestURI(),
+
   Construct(meth,
-            connection.GetRemotePartyAddress(),
+            targetAddress,
             connection.GetRemotePartyAddress(),
             connection.GetLocalPartyAddress(),
             connection.GetToken(),
             connection.GetNextCSeq(),
             localAddress);
 
-  SetRoute(connection);
+  SetRoute(connection); // Possibly adjust the URI and the route
 }
 
 
@@ -1413,7 +1429,7 @@ BOOL SIP_PDU::SetRoute(SIPConnection & connection)
       uri.AdjustForRequestURI();
     }
     mime.SetRoute(routeSet);
-	return TRUE;
+    return TRUE;
   }
   return FALSE;
 }
@@ -1510,6 +1526,24 @@ OpalTransportAddress SIP_PDU::GetViaAddress(OpalEndPoint &ep)
 
   OpalTransportAddress address(viaAddress, ep.GetDefaultSignalPort(), (proto *= "TCP") ? "$tcp" : "udp$");
 
+  return address;
+}
+
+
+OpalTransportAddress SIP_PDU::GetSendAddress(SIPConnection & connection)
+{
+  OpalTransportAddress address;
+
+  PStringList routeSet = connection.GetRouteSet();
+  if (!routeSet.IsEmpty()) {
+
+    SIPURL firstRoute = routeSet[0];
+    if (firstRoute.GetParamVars().Contains("lr")) {
+      address = OpalTransportAddress(firstRoute.GetHostAddress());
+    }
+  }
+  else address = GetURI().GetHostAddress();
+  
   return address;
 }
 
@@ -1752,8 +1786,15 @@ BOOL SIPTransaction::Start()
   completionTimer = endpoint.GetNonInviteTimeout();
   localAddress = transport.GetLocalAddress();
 
-  if (Write(transport))
-    return TRUE;
+  if (connection != NULL) {
+    // Use the connection transport to send the request
+    if (connection->SendPDU(*this, this->GetSendAddress(*connection)))
+      return TRUE;
+  }
+  else {
+    if (Write(transport))
+      return TRUE;
+  }
 
   SetTerminated(Terminated_TransportError);
   return FALSE;
@@ -1844,13 +1885,13 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
   else {
     PTRACE(3, "SIP\tTransaction " << cseq << " completed.");
 
-    if (!OnCompleted(response))
-      return FALSE;
-
     if (state < Completed && connection != NULL)
       connection->OnReceivedResponse(*this, response);
     else
       endpoint.OnReceivedResponse(*this, response);
+
+    if (!OnCompleted(response))
+      return FALSE;
 
     state = Completed;
     retryTimer.Stop();
@@ -2037,54 +2078,6 @@ BOOL SIPInvite::OnReceivedResponse(SIP_PDU & response)
 }
 
 
-BOOL SIPInvite::OnCompleted(SIP_PDU & response)
-{
-  SIPURL targetAddress = this->GetURI();
-  
-  // Adjust "to" field for possible added tag in response
-  mime.SetTo(response.GetMIME().GetTo());
-
-  // Use Contact for request URI as specified in RFC 3261:12.1.2, 12.2.1.1
-  PString contact = response.GetMIME().GetContact();
-  if (!contact.IsEmpty())
-    targetAddress = contact;
-
-  // Build an ACK
-  SIP_PDU ack(Method_ACK,
-              targetAddress,
-              mime.GetTo(),
-              mime.GetFrom(),
-              mime.GetCallID(),
-              mime.GetCSeqIndex(),
-              localAddress);
-
-  BOOL targetChange = FALSE;
-  if (connection != NULL) {
-    // Add authentication if had any on INVITE
-    if (mime.Contains("Proxy-Authorization") || mime.Contains("Authorization"))
-      connection->GetAuthenticator().Authorise(ack);
-
-    if (ack.SetRoute(*connection) == FALSE)
-      targetChange = TRUE;
-  }
-  // In peer-to-peer the transport will have been sending to the called party.
-  // When calling thru proxy the transport will have been sending to the proxy.
-  // If the proxy does not want to handle signalling any more, there will
-  // be no Record-Route - to indicate that signalling should now be sent 
-  // directly to the called party. (RFC 3261:4)
-  if (targetChange) {
-    transport.SetRemoteAddress(targetAddress.GetHostAddress());
-    PTRACE(4, "SIP\tNon-recording proxy changed remote address of transport " << transport);
-  }
-  // Send the ACK
-  if (ack.Write(transport))
-    return TRUE;
-
-  SetTerminated(Terminated_TransportError);
-  return FALSE;
-}
-
-
 SIPRegister::SIPRegister(SIPEndPoint & ep,
                          OpalTransport & trans,
                          const SIPURL & address,
@@ -2112,10 +2105,6 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
     }
   }
 
-  // Find the correct From/To fields
-  // changed CRS 6/5/05
-  //PString addrStr = ep.GetRegisteredPartyName(address.GetHostName()).AsQuotedString();
-  //if (addrStr.IsEmpty())
   PString addrStr = address.AsQuotedString();
   SIP_PDU::Construct(Method_REGISTER,
                      "sip:"+address.GetHostName(),
@@ -2251,4 +2240,42 @@ SIPMessage::SIPMessage(SIPEndPoint & ep,
   entityBody = body;
 }
 
+
+/////////////////////////////////////////////////////////////////////////
+
+SIPAck::SIPAck(SIPTransaction & invite,
+	       SIP_PDU & response)
+  : SIP_PDU (SIP_PDU::Method_ACK,
+	     invite.GetURI(),
+	     response.GetMIME().GetTo(),
+	     transaction.GetMIME().GetFrom(),
+	     transaction.GetMIME().GetCallID(),
+	     transaction.GetMIME().GetCSeqIndex(),
+	     invite.GetTransport().GetLocalAddress()),
+  transaction(invite)
+{
+  Construct();
+}
+
+
+SIPAck::SIPAck(SIPTransaction & invite)
+  : SIP_PDU (SIP_PDU::Method_ACK,
+	     *invite.GetConnection(),
+	     invite.GetTransport()),
+  transaction(invite)
+{
+  mime.SetCSeq(PString(invite.GetMIME().GetCSeqIndex()) & MethodNames[Method_ACK]);
+  Construct();
+}
+
+
+void SIPAck::Construct()
+{
+  if (transaction.GetMIME().GetRoute().GetSize() > 0)
+    mime.SetRoute(transaction.GetMIME().GetRoute());
+
+  // Add authentication if had any on INVITE
+  if (transaction.GetMIME().Contains("Proxy-Authorization") || transaction.GetMIME().Contains("Authorization"))
+    transaction.GetConnection()->GetAuthenticator().Authorise(*this);
+}
 // End of file ////////////////////////////////////////////////////////////////
