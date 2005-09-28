@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2066  2005/09/27 16:13:23  dsandras
+ * Revision 1.2067  2005/09/28 20:35:41  dsandras
+ * Added support for the branch parameter in outgoing requests.
+ *
+ * Revision 2.65  2005/09/27 16:13:23  dsandras
  * - Use the targetAddress from the SIPConnection as request URI for a request
  * in a dialog. The SIPConnection class will adjust the targetAddress according
  * to the RFC, ie following the Contact field in a response and following the
@@ -1369,15 +1372,17 @@ void SIP_PDU::Construct(Methods meth,
   // construct Via:
   PINDEX dollar = via.Find('$');
 
+  OpalGloballyUniqueID branch;
   PStringStream str;
   str << "SIP/" << versionMajor << '.' << versionMinor << '/'
       << via.Left(dollar).ToUpper() << ' ';
   PIPSocket::Address ip;
   WORD port;
   if (via.GetIpAndPort(ip, port))
-    str << ip << ':' << port << ";rport";
+    str << ip << ':' << port;
   else
-    str << via.Mid(dollar+1) << ";rport";
+    str << via.Mid(dollar+1);
+  str << ";branch=z9hG4bK" << branch << ";rport";
 
   mime.SetVia(str);
 
@@ -1830,6 +1835,9 @@ BOOL SIPTransaction::ResendCANCEL()
 		 mime.GetCallID(),
 		 mime.GetCSeqIndex(),
 		 localAddress);
+  // Use the same branch ID as the request we cancel.
+  PStringList viaList = cancel.GetMIME().GetViaList();
+  cancel.GetMIME().SetFieldParameter("branch", viaList[0], mime.GetFieldParameter("branch", viaList[0]));
 
   if (!transport.SetLocalAddress(localAddress) || !cancel.Write(transport)) {
     SetTerminated(Terminated_TransportError);
@@ -2248,13 +2256,17 @@ SIPAck::SIPAck(SIPTransaction & invite,
   : SIP_PDU (SIP_PDU::Method_ACK,
 	     invite.GetURI(),
 	     response.GetMIME().GetTo(),
-	     transaction.GetMIME().GetFrom(),
-	     transaction.GetMIME().GetCallID(),
-	     transaction.GetMIME().GetCSeqIndex(),
+	     invite.GetMIME().GetFrom(),
+	     invite.GetMIME().GetCallID(),
+	     invite.GetMIME().GetCSeqIndex(),
 	     invite.GetTransport().GetLocalAddress()),
   transaction(invite)
 {
   Construct();
+  // Use the same branch parameter as the INVITE whose response
+  // we acknowledge
+  PStringList viaList = mime.GetViaList();
+  mime.SetFieldParameter("branch", viaList[0], invite.GetMIME().GetFieldParameter("branch", viaList[0]));
 }
 
 
