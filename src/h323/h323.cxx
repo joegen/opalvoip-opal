@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2087  2005/09/29 17:53:35  dsandras
+ * Revision 1.2088  2005/09/29 20:20:36  dsandras
+ * Added call to OnOpenMediaStream so that the stream can be added to the mediaStreams.
+ *
+ * Revision 2.86  2005/09/29 17:53:35  dsandras
  * Reverted the patch that removed the call to OnEstablished().
  * Moved call to SelectLogicalChannels up to fix problem with Fast Start disabled.
  *
@@ -4467,6 +4470,13 @@ BOOL H323Connection::OpenSourceMediaStream(const OpalMediaFormatList & /*mediaFo
 
   PTRACE(1, "H323\tOpenSourceMediaStream called: session " << sessionID);
   return TRUE;
+}
+
+
+BOOL H323Connection::OnOpenMediaStream(OpalMediaStream & stream)
+{
+  mediaStreams.Append(&stream);
+  return OpalConnection::OnOpenMediaStream(stream);
 }
 
 

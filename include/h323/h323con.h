@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2039  2005/09/04 06:23:38  rjongbloed
+ * Revision 1.2040  2005/09/29 20:20:36  dsandras
+ * Added call to OnOpenMediaStream so that the stream can be added to the mediaStreams.
+ *
+ * Revision 2.38  2005/09/04 06:23:38  rjongbloed
  * Added OpalMediaCommand mechanism (via PNotifier) for media streams
  *   and media transcoders to send commands back to remote.
  *
@@ -576,6 +579,21 @@ class H323Connection : public OpalConnection
     virtual BOOL OpenSourceMediaStream(
       const OpalMediaFormatList & mediaFormats, /// Optional media format to open
       unsigned sessionID                   /// Session to start stream on
+    );
+    
+    /**Call back when opening a media stream.
+       This function is called when a connection has created a new media
+       stream according to the logic of its underlying protocol.
+
+       The usual requirement is that media streams are created on all other
+       connections participating in the call and all of the media streams are
+       attached to an instance of an OpalMediaPatch object that will read from
+       one of the media streams passing data to the other media streams.
+
+       The default behaviour calls the OpalEndPoint function of the same name.
+      */
+    virtual BOOL OnOpenMediaStream(
+      OpalMediaStream & stream    /// New media stream being opened
     );
 
     /**Open a new media stream.
