@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2086  2005/09/04 06:23:39  rjongbloed
+ * Revision 1.2087  2005/09/29 17:53:35  dsandras
+ * Reverted the patch that removed the call to OnEstablished().
+ * Moved call to SelectLogicalChannels up to fix problem with Fast Start disabled.
+ *
+ * Revision 2.85  2005/09/04 06:23:39  rjongbloed
  * Added OpalMediaCommand mechanism (via PNotifier) for media streams
  *   and media transcoders to send commands back to remote.
  *
@@ -4419,15 +4423,16 @@ void H323Connection::InternalEstablishedConnectionCheck()
     }
     startT120 = FALSE;
   }
+  
+  // Check if we have already got a transmitter running, select one if not
+  if (FindChannel(OpalMediaFormat::DefaultAudioSessionID, FALSE) == NULL)
+    OnSelectLogicalChannels();
 
   switch (phase) {
     case ConnectedPhase :
-      // Check if we have already got a transmitter running, select one if not
-      if (FindChannel(OpalMediaFormat::DefaultAudioSessionID, FALSE) == NULL)
-        OnSelectLogicalChannels();
-
       connectionState = EstablishedConnection;
       phase = EstablishedPhase;
+      OnEstablished();
       break;
 
     case EstablishedPhase :
@@ -4473,8 +4478,7 @@ OpalMediaStream * H323Connection::CreateMediaStream(const OpalMediaFormat & medi
     return new OpalNullMediaStream(mediaFormat, sessionID, isSource);
 
   if (!isSource) {
-    if (transmitterMediaStream == NULL)
-      return NULL;
+
     OpalMediaStream * stream = transmitterMediaStream;
     transmitterMediaStream = NULL;
     return stream;
