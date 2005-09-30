@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2088  2005/09/29 20:20:36  dsandras
+ * Revision 1.2089  2005/09/30 13:25:57  dsandras
+ * Reverted part of yesterday's fix.
+ *
+ * Revision 2.87  2005/09/29 20:20:36  dsandras
  * Added call to OnOpenMediaStream so that the stream can be added to the mediaStreams.
  *
  * Revision 2.86  2005/09/29 17:53:35  dsandras
@@ -4427,14 +4430,17 @@ void H323Connection::InternalEstablishedConnectionCheck()
     startT120 = FALSE;
   }
   
-  // Check if we have already got a transmitter running, select one if not
-  if (FindChannel(OpalMediaFormat::DefaultAudioSessionID, FALSE) == NULL)
-    OnSelectLogicalChannels();
+  
 
   switch (phase) {
     case ConnectedPhase :
+      // Check if we have already got a transmitter running, select one if not
+      if (FindChannel(OpalMediaFormat::DefaultAudioSessionID, FALSE) == NULL)
+	OnSelectLogicalChannels();
+      
       connectionState = EstablishedConnection;
       phase = EstablishedPhase;
+
       OnEstablished();
       break;
 
