@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2038  2005/07/12 12:34:37  csoutheren
+ * Revision 1.2039  2005/10/01 13:19:57  dsandras
+ * Implemented back Blind Transfer.
+ *
+ * Revision 2.37  2005/07/12 12:34:37  csoutheren
  * Fixes for H.450 errors and return values
  * Thanks to Iker Perez San Roman
  *
@@ -1227,13 +1230,28 @@ BOOL H323EndPoint::SetupTransfer(const PString & oldToken,
                                  const PString & remoteParty,
                                  void * userData)
 {
+  // Make a new connection
+  PSafePtr<OpalConnection> otherConnection =
+    GetConnectionWithLock(oldToken, PSafeReference);
+  if (otherConnection == NULL) {
+    return FALSE;
+  }
+
+  OpalCall & call = otherConnection->GetCall();
+
+  call.RemoveMediaStreams();
+
   PTRACE(2, "H323\tTransferring call to: " << remoteParty);
-  return InternalMakeCall(*manager.CreateCall(),
-                          oldToken,
-                          callIdentity,
-                          UINT_MAX,
-                          remoteParty,
-                          userData);
+  BOOL ok = InternalMakeCall(call,
+			     oldToken,
+			     callIdentity,
+			     UINT_MAX,
+			     remoteParty,
+			     userData);
+  call.OnReleased(*otherConnection);
+  otherConnection->Release(OpalConnection::EndedByCallForwarded);
+
+  return ok;
 }
 
 
@@ -1273,24 +1291,6 @@ BOOL H323EndPoint::InternalMakeCall(OpalCall & call,
       newToken = psprintf("localhost/%u", Q931::GenerateCallReference());
     } while (connectionsActive.Contains(newToken));
   }
-  else {
-    PSafePtr<OpalConnection> otherConnection = GetConnectionWithLock(existingToken, PSafeReference);
-    if (otherConnection == NULL) {
-      PTRACE(1, "H225\tTransfer connection disappeared, aborting setup.");
-      return FALSE;
-    }
-    // Move old connection on token to new value and flag for removal
-    PString adjustedToken;
-    unsigned tieBreaker = 0;
-    do {
-      adjustedToken = newToken + "-replaced";
-      adjustedToken.sprintf("-%u", ++tieBreaker);
-    } while (connectionsActive.Contains(adjustedToken));
-    connectionsActive.RemoveAt(newToken);
-    connectionsActive.SetAt(adjustedToken, otherConnection);
-//    call.Release(connection);
-    PTRACE(3, "H323\tOverwriting call " << newToken << ", renamed to " << adjustedToken);
-  }
 
   H323Connection * connection = CreateConnection(call, newToken, userData, *transport, alias, address, NULL);
   if (connection == NULL) {
@@ -1316,7 +1316,7 @@ BOOL H323EndPoint::InternalMakeCall(OpalCall & call,
   PTRACE(3, "H323\tCreated new connection: " << newToken);
 
   // See if we are starting an outgoing connection as first in a call
-  if (call.GetConnection(0) == connection)
+  if (call.GetConnection(0) == connection || !existingToken.IsEmpty())
     connection->SetUpConnection();
 
   return TRUE;
