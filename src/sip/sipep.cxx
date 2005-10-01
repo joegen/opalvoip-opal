@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2060  2005/09/27 16:17:36  dsandras
+ * Revision 1.2061  2005/10/01 13:19:57  dsandras
+ * Implemented back Blind Transfer.
+ *
+ * Revision 2.59  2005/09/27 16:17:36  dsandras
  * Remove the media streams on transfer.
  *
  * Revision 2.58  2005/09/21 19:50:30  dsandras
@@ -590,6 +593,7 @@ BOOL SIPEndPoint::SetupTransfer(const PString & token,
   connection->SetUpConnection();
   
   call.OnReleased(*otherConnection);
+  otherConnection->Release(OpalConnection::EndedByCallForwarded);
 
   return TRUE;
 }
