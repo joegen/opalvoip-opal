@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2087  2005/09/27 16:17:12  dsandras
+ * Revision 1.2088  2005/10/02 17:49:08  dsandras
+ * Cleaned code to use the new GetContactAddress.
+ *
+ * Revision 2.86  2005/09/27 16:17:12  dsandras
  * - Added SendPDU method and use it everywhere for requests sent in the dialog
  * and to transmit responses to incoming requests.
  * - Fixed again re-INVITE support and 200 OK generation.
@@ -571,24 +574,6 @@ BOOL SIPConnection::SetConnected()
     Release(EndedByCapabilityExchange);
     return FALSE;
   }
-
-  // translate contact address
-  OpalTransportAddress contactAddress = transport->GetLocalAddress();
-  WORD contactPort = endpoint.GetDefaultSignalPort();
-  PIPSocket::Address localIP;
-  WORD localPort;
-  if (!endpoint.GetListeners().IsEmpty())
-    endpoint.GetListeners()[0].GetLocalAddress().GetIpAndPort(localIP, contactPort);
-  if (transport->GetLocalAddress().GetIpAndPort(localIP, localPort)) {
-    PIPSocket::Address remoteIP;
-    if (transport->GetRemoteAddress().GetIpAddress(remoteIP)) {
-      PIPSocket::Address _localIP(localIP);
-      endpoint.GetManager().TranslateIPAddress(localIP, remoteIP);
-      if (localIP != _localIP)
-	contactPort = localPort;
-      contactAddress = OpalTransportAddress(localIP, contactPort, "udp");
-    }
-  }
     
   // update the route set and the target address according to 12.1.1
   // requests in a dialog do not modify the route set according to 12.2
@@ -602,12 +587,13 @@ BOOL SIPConnection::SetConnected()
   }
 
   // send the 200 OK response
-  SIPURL contact(endpoint.GetRegisteredPartyName(SIPURL(remotePartyAddress).GetHostName()).GetUserName(), contactAddress, contactPort);
+  PString userName = endpoint.GetRegisteredPartyName(SIPURL(remotePartyAddress).GetHostName()).GetUserName();
+  SIPURL contact = endpoint.GetContactAddress(*transport, userName);
   SIP_PDU response(*originalInvite, SIP_PDU::Successful_OK, (const char *) contact.AsQuotedString());
   response.SetSDP(sdpOut);
   SendPDU(response, originalInvite->GetViaAddress(endpoint)); 
 
-  
+  // switch phase 
   phase = ConnectedPhase;
   connectedTime = PTime ();
   
@@ -1354,24 +1340,6 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     if (!IsConnectionOnHold())
       GetCall().RemoveMediaStreams();
     
-    // translate contact address to put it in the 200 OK response
-    OpalTransportAddress contactAddress = transport->GetLocalAddress();
-    WORD contactPort = endpoint.GetDefaultSignalPort();
-    PIPSocket::Address localIP;
-    WORD localPort;
-    if (!endpoint.GetListeners().IsEmpty())
-      endpoint.GetListeners()[0].GetLocalAddress().GetIpAndPort(localIP, contactPort);
-    if (transport->GetLocalAddress().GetIpAndPort(localIP, localPort)) {
-      PIPSocket::Address remoteIP;
-      if (transport->GetRemoteAddress().GetIpAddress(remoteIP)) {
-        PIPSocket::Address _localIP(localIP);
-        endpoint.GetManager().TranslateIPAddress(localIP, remoteIP);
-        if (localIP != _localIP)
-          contactPort = localPort;
-        contactAddress = OpalTransportAddress(localIP, contactPort, "udp");
-      }
-    }
-    
     BOOL failure = !OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut);
     failure = !OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut) && failure;
     if (failure) {
@@ -1380,7 +1348,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     }
 
     // send the 200 OK response
-    SIPURL contact(endpoint.GetRegisteredPartyName(SIPURL(remotePartyAddress).GetHostName()).GetUserName(), contactAddress, contactPort);
+    PString userName = endpoint.GetRegisteredPartyName(SIPURL(remotePartyAddress).GetHostName()).GetUserName();
+    SIPURL contact = endpoint.GetContactAddress(*transport, userName);
     SIP_PDU response(*originalInvite, SIP_PDU::Successful_OK, (const char *) contact.AsQuotedString ());
     response.SetSDP(sdpOut);
     SendPDU(response, originalInvite->GetViaAddress(endpoint));
