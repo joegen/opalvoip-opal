@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2032  2005/10/02 17:47:37  dsandras
+ * Revision 1.2033  2005/10/02 21:46:20  dsandras
+ * Added more doc.
+ *
+ * Revision 2.31  2005/10/02 17:47:37  dsandras
  * Added function to return the translated contact address of the endpoint.
  * Added some doc.
  *
@@ -645,7 +648,9 @@ class SIPEndPoint : public OpalEndPoint
      * that will be used as origin to send the PDU and the given
      * user name.
      *
-     * The URL is translated if required.
+     * The URL is translated if required. If IP translation or STUN
+     * are used for the remote address of the transport, then the contact
+     * port will be the transport port.
      */
     const SIPURL GetContactAddress(const OpalTransport &, const PString &);
 
