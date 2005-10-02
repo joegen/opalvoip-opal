@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2031  2005/05/23 20:14:05  dsandras
+ * Revision 1.2032  2005/10/02 17:47:37  dsandras
+ * Added function to return the translated contact address of the endpoint.
+ * Added some doc.
+ *
+ * Revision 2.30  2005/05/23 20:14:05  dsandras
  * Added preliminary support for basic instant messenging.
  *
  * Revision 2.29  2005/05/06 07:37:06  csoutheren
@@ -618,32 +622,65 @@ class SIPEndPoint : public OpalEndPoint
       SIPTransaction * transaction
     ) { transactions.SetAt(transaction->GetTransactionID(), NULL); }
 
+    
+    /**Return the next CSEQ for the next transaction.
+     */
     unsigned GetNextCSeq() { return ++lastSentCSeq; }
 
-   /**
-     * Return the SIPAuthentication for a specific realm.
+    
+    /**Return the SIPAuthentication for a specific realm.
      */
     BOOL GetAuthentication(const PString & authRealm, SIPAuthentication &); 
+    
 
-    /**
-     * Return the registered party name URL for the given host.
+    /**Return the registered party name URL for the given host.
      *
      * That URL can be used in the FORM field of the PDU's. 
      * The host part can be different from the registration domain.
      */
     const SIPURL GetRegisteredPartyName(const PString &);
 
+    
+    /**Return the contact address for the given transport 
+     * that will be used as origin to send the PDU and the given
+     * user name.
+     *
+     * The URL is translated if required.
+     */
+    const SIPURL GetContactAddress(const OpalTransport &, const PString &);
+
+    
+    /**Return the outbound proxy URL, if any.
+     */
     const SIPURL & GetProxy() const { return proxy; }
+
+    
+    /**Set the outbound proxy URL.
+     */
     void SetProxy(const SIPURL & url);
+    
+    
+    /**Set the outbound proxy URL.
+     */
     void SetProxy(
       const PString & hostname,
       const PString & username,
       const PString & password
     );
 
+    
+    /**Get the User Agent for this endpoint.
+     */
     virtual PString GetUserAgent() const;
+
+    
+    /**Set the User Agent for the endpoint.
+     */
     void SetUserAgent(const PString & str) { userAgentString = str; }
 
+    
+    /**Send a message to the given URL.
+     */
     BOOL SendMessage (const SIPURL & url, const PString & body);
 
   protected:
