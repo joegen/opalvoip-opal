@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2067  2005/09/28 20:35:41  dsandras
+ * Revision 1.2068  2005/10/02 17:49:08  dsandras
+ * Cleaned code to use the new GetContactAddress.
+ *
+ * Revision 2.66  2005/09/28 20:35:41  dsandras
  * Added support for the branch parameter in outgoing requests.
  *
  * Revision 2.65  2005/09/27 16:13:23  dsandras
@@ -2093,26 +2096,6 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
                          unsigned expires)
   : SIPTransaction(ep, trans)
 {
-  // translate contact address
-  PIPSocket::Address ip(PIPSocket::GetDefaultIpAny());
-  OpalTransportAddress contactAddress = transport.GetLocalAddress();
-  WORD contactPort = endpoint.GetDefaultSignalPort();
-  if (!ep.GetListeners().IsEmpty())
-    ep.GetListeners()[0].GetLocalAddress().GetIpAndPort(ip, contactPort);
-
-  PIPSocket::Address localIP;
-  WORD localPort;
-  if (transport.GetLocalAddress().GetIpAndPort(localIP, localPort)) {
-    PIPSocket::Address remoteIP;
-    if (transport.GetRemoteAddress().GetIpAddress(remoteIP)) {
-      PIPSocket::Address _localIP(localIP);
-      endpoint.GetManager().TranslateIPAddress(localIP, remoteIP);
-      if (localIP != _localIP)
-        contactPort = localPort;
-      contactAddress = OpalTransportAddress(localIP, contactPort, "udp");
-    }
-  }
-
   PString addrStr = address.AsQuotedString();
   SIP_PDU::Construct(Method_REGISTER,
                      "sip:"+address.GetHostName(),
@@ -2123,7 +2106,7 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
                      transport.GetLocalAddress());
 
   mime.SetUserAgent(ep); // normally 'OPAL/2.0'
-  SIPURL contact(address.GetUserName(), contactAddress, contactPort);
+  SIPURL contact = endpoint.GetContactAddress(trans, address.GetUserName());
   mime.SetContact(contact);
   mime.SetExpires(expires);
 }
@@ -2136,32 +2119,6 @@ SIPMWISubscribe::SIPMWISubscribe(SIPEndPoint & ep,
 				 unsigned expires)
   : SIPTransaction(ep, trans)
 {
-  // translate contact address
-  PIPSocket::Address ip(PIPSocket::GetDefaultIpAny());
-  OpalTransportAddress contactAddress = transport.GetLocalAddress();
-  WORD contactPort = endpoint.GetDefaultSignalPort();
-  if (!ep.GetListeners().IsEmpty())
-    ep.GetListeners()[0].GetLocalAddress().GetIpAndPort(ip, contactPort);
-
-  PIPSocket::Address localIP;
-  WORD localPort;
-  if (transport.GetLocalAddress().GetIpAndPort(localIP, localPort)) {
-    PIPSocket::Address remoteIP;
-    if (transport.GetRemoteAddress().GetIpAddress(remoteIP)) {
-      PIPSocket::Address _localIP(localIP);
-      endpoint.GetManager().TranslateIPAddress(localIP, remoteIP);
-      if (localIP != localIP)
-        contactPort = localPort;
-      contactAddress = OpalTransportAddress(localIP, contactPort, "udp");
-    }
-  }
-
-  // Find the correct From/To fields
-  // changed CRS 6/5/05
-  //PString addrStr = 
-  //  ep.GetRegisteredPartyName(address.GetHostName()).AsQuotedString();
-  //if (addrStr.IsEmpty())
-
   PString addrStr = address.AsQuotedString();
   SIP_PDU::Construct(Method_SUBSCRIBE,
                      "sip:"+address.GetUserName()+"@"+address.GetHostName(),
@@ -2171,7 +2128,7 @@ SIPMWISubscribe::SIPMWISubscribe(SIPEndPoint & ep,
                      endpoint.GetNextCSeq(),
                      transport.GetLocalAddress());
 
-  SIPURL contact(address.GetUserName(), contactAddress, contactPort);
+  SIPURL contact = endpoint.GetContactAddress(trans, address.GetUserName());
   mime.SetUserAgent(ep); // normally 'OPAL/2.0'
   mime.SetContact(contact);
   mime.SetAccept("application/simple-message-summary");
