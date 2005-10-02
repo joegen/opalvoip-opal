@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2062  2005/10/02 17:48:15  dsandras
+ * Revision 1.2063  2005/10/02 21:48:40  dsandras
+ * - Use the transport port when STUN is being used when returning the contact address. That allows SIP proxies to regularly ping the UA so that the binding stays alive. As the REGISTER transport stays open, it permits to receive incoming calls when being behind a type of NAT supported by STUN without the need to forward any port (even not the listening port).
+ * - Call OnFailed for other registration failure causes than 4xx.
+ *
+ * Revision 2.61  2005/10/02 17:48:15  dsandras
  * Added function to return the translated contact address of the endpoint.
  * Fixed GetRegisteredPartyName so that it returns a default SIPURL if we
  * have no registrations for the given host.
@@ -714,10 +718,8 @@ void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & res
     // Have a response to the INVITE, so end Connect mode on the transport
     transaction.GetTransport().EndConnect(transaction.GetLocalAddress());
 
-    // Failure, in the 4XX class, handle some cases to give feedback.
-    if (response.GetStatusCode()/100 == 4
-     && response.GetStatusCode() != SIP_PDU::Failure_UnAuthorised
-     && response.GetStatusCode() != SIP_PDU::Failure_ProxyAuthenticationRequired) {
+    // Failure, handle some cases to give feedback.
+    if ((response.GetStatusCode()/100 == 4 && response.GetStatusCode() != SIP_PDU::Failure_UnAuthorised && response.GetStatusCode() != SIP_PDU::Failure_ProxyAuthenticationRequired) || response.GetStatusCode()/100 != 2) {
       // Trigger the callback 
       info->OnFailed (response.GetStatusCode());
     }
@@ -1390,10 +1392,14 @@ const SIPURL SIPEndPoint::GetContactAddress(const OpalTransport &transport, cons
   PIPSocket::Address localIP;
   WORD localPort;
   
-  if (transport.GetLocalAddress().GetIpAndPort(localIP, localPort)) {
+  if (contactAddress.GetIpAndPort(localIP, localPort)) {
     PIPSocket::Address remoteIP;
     if (transport.GetRemoteAddress().GetIpAddress(remoteIP)) {
-      GetManager().TranslateIPAddress(localIP, remoteIP);
+      GetManager().TranslateIPAddress(localIP, remoteIP); 	 
+      PIPSocket::Address _localIP(localIP);
+      PSTUNClient * stun = manager.GetSTUN(remoteIP);
+      if (stun != NULL || localIP != _localIP)
+	contactPort = localPort;
       contactAddress = OpalTransportAddress(localIP, contactPort, "udp");
     }
   }
