@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2061  2005/10/01 13:19:57  dsandras
+ * Revision 1.2062  2005/10/02 17:48:15  dsandras
+ * Added function to return the translated contact address of the endpoint.
+ * Fixed GetRegisteredPartyName so that it returns a default SIPURL if we
+ * have no registrations for the given host.
+ *
+ * Revision 2.60  2005/10/01 13:19:57  dsandras
  * Implemented back Blind Transfer.
  *
  * Revision 2.59  2005/09/27 16:17:36  dsandras
@@ -293,7 +298,6 @@ SIPRegisterInfo::SIPRegisterInfo(SIPEndPoint & endpoint, const PString & name, c
 {
   expire = ep.GetRegistrarTimeToLive().GetSeconds();
   password = pass;
-  //authRealm = r;
 }
 
 
@@ -302,7 +306,7 @@ SIPTransaction * SIPRegisterInfo::CreateTransaction(OpalTransport &t, BOOL unreg
   authentication.SetUsername(registrationAddress.GetUserName());
   authentication.SetPassword(password);
   if (!authRealm.IsEmpty())
-    authentication.SetAuthRealm(authRealm);   // CRS 06/05/05 check added because zeroes realm in some cases
+    authentication.SetAuthRealm(authRealm);   
   
   if (unregister)
     SetExpire (0);
@@ -1360,10 +1364,43 @@ const SIPURL SIPEndPoint::GetRegisteredPartyName(const PString & host)
   PString realm;
   
   PSafePtr<SIPInfo> info = activeRegistrations.FindSIPInfoByDomain(host, SIP_PDU::Method_REGISTER, PSafeReadOnly);
-  if (info == NULL)
-    return SIPURL();
+  if (info == NULL) {
+   
+    PIPSocket::Address localIP(PIPSocket::GetDefaultIpAny());
+    WORD localPort;
+    if (!GetListeners().IsEmpty())
+      GetListeners()[0].GetLocalAddress().GetIpAndPort(localIP, localPort);
+    OpalTransportAddress address = OpalTransportAddress(localIP, localPort, "udp");
+    SIPURL party(GetManager().GetDefaultUserName(), address, localPort);
+    return party;
+  }
 
   return info->GetRegistrationAddress();
+}
+
+
+const SIPURL SIPEndPoint::GetContactAddress(const OpalTransport &transport, const PString & userName)
+{
+  PIPSocket::Address ip(PIPSocket::GetDefaultIpAny());
+  OpalTransportAddress contactAddress = transport.GetLocalAddress();
+  WORD contactPort = GetDefaultSignalPort();
+  if (!GetListeners().IsEmpty())
+    GetListeners()[0].GetLocalAddress().GetIpAndPort(ip, contactPort);
+
+  PIPSocket::Address localIP;
+  WORD localPort;
+  
+  if (transport.GetLocalAddress().GetIpAndPort(localIP, localPort)) {
+    PIPSocket::Address remoteIP;
+    if (transport.GetRemoteAddress().GetIpAddress(remoteIP)) {
+      GetManager().TranslateIPAddress(localIP, remoteIP);
+      contactAddress = OpalTransportAddress(localIP, contactPort, "udp");
+    }
+  }
+
+  SIPURL contact(userName, contactAddress, contactPort);
+
+  return contact;
 }
 
 
