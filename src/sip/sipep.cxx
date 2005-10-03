@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2063  2005/10/02 21:48:40  dsandras
+ * Revision 1.2064  2005/10/03 21:18:55  dsandras
+ * Prevent looping at exit by removing SUBSCRIBE's and failed REGISTER from
+ * the activeRegistrations.
+ *
+ * Revision 2.62  2005/10/02 21:48:40  dsandras
  * - Use the transport port when STUN is being used when returning the contact address. That allows SIP proxies to regularly ping the UA so that the binding stays alive. As the REGISTER transport stays open, it permits to receive incoming calls when being behind a type of NAT supported by STUN without the need to forward any port (even not the listening port).
  * - Call OnFailed for other registration failure causes than 4xx.
  *
@@ -409,8 +413,10 @@ SIPEndPoint::~SIPEndPoint()
     SIPURL url;
     SIPInfo *info = activeRegistrations.GetAt(0);
     url = info->GetRegistrationAddress ();
-    if (info->IsRegistered() && info->GetMethod() == SIP_PDU::Method_REGISTER)
+    if (info->GetMethod() == SIP_PDU::Method_REGISTER && info->IsRegistered()) 
       Unregister(url.GetHostName(), url.GetUserName());
+    else
+      activeRegistrations.Remove(info);
   }
 
   PTRACE(3, "SIP\tDeleted endpoint.");
@@ -464,6 +470,7 @@ OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & addres
     GetListeners()[0].GetLocalAddress().GetIpAndPort(ip, port);
 
   OpalTransport * transport;
+  
   if (ip.IsAny()) {
     // endpoint is listening to anything - attempt call using all interfaces
     transport = address.CreateTransport(*this, OpalTransportAddress::NoBinding);
