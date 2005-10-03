@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2068  2005/10/02 17:49:08  dsandras
+ * Revision 1.2069  2005/10/03 21:40:38  dsandras
+ * Use the port in the VIA, not the default signal port to answer to requests.
+ *
+ * Revision 2.67  2005/10/02 17:49:08  dsandras
  * Cleaned code to use the new GetContactAddress.
  *
  * Revision 2.66  2005/09/28 20:35:41  dsandras
@@ -1532,7 +1535,7 @@ OpalTransportAddress SIP_PDU::GetViaAddress(OpalEndPoint &ep)
   else if (mime.HasFieldParameter("received", viaList[0]))
     viaAddress = mime.GetFieldParameter("received", viaList[0]);
 
-  OpalTransportAddress address(viaAddress, ep.GetDefaultSignalPort(), (proto *= "TCP") ? "$tcp" : "udp$");
+  OpalTransportAddress address(viaAddress, viaPort, (proto *= "TCP") ? "$tcp" : "udp$");
 
   return address;
 }
