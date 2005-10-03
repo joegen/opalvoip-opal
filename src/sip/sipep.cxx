@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2064  2005/10/03 21:18:55  dsandras
+ * Revision 1.2065  2005/10/03 21:46:20  dsandras
+ * Fixed previous commit (sorry).
+ *
+ * Revision 2.63  2005/10/03 21:18:55  dsandras
  * Prevent looping at exit by removing SUBSCRIBE's and failed REGISTER from
  * the activeRegistrations.
  *
@@ -409,14 +412,15 @@ SIPEndPoint::~SIPEndPoint()
   listeners.RemoveAll();
 
   /* Unregister */
+  int i = 0;
   while (GetRegistrationsCount() > 0) {
     SIPURL url;
-    SIPInfo *info = activeRegistrations.GetAt(0);
+    SIPInfo *info = activeRegistrations.GetAt(i);
     url = info->GetRegistrationAddress ();
     if (info->GetMethod() == SIP_PDU::Method_REGISTER && info->IsRegistered()) 
       Unregister(url.GetHostName(), url.GetUserName());
     else
-      activeRegistrations.Remove(info);
+      i++;
   }
 
   PTRACE(3, "SIP\tDeleted endpoint.");
