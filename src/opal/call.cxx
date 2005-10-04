@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2037  2005/09/22 17:08:52  dsandras
+ * Revision 1.2038  2005/10/04 13:02:24  rjongbloed
+ * Removed CanOpenSourceMediaStream/CanOpenSinkMediaStream functions and
+ *   now use overides on OpenSourceMediaStream/OpenSinkMediaStream
+ *
+ * Revision 2.36  2005/09/22 17:08:52  dsandras
  * Added mutex to protect media streams access and prevent media streams for a call to be closed before they are all opened.
  *
  * Revision 2.35  2005/09/15 17:05:32  dsandras
@@ -449,10 +453,7 @@ BOOL OpalCall::OpenSourceMediaStreams(const OpalConnection & connection,
     return FALSE;
   
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-    OpalConnection *currc = (OpalConnection *) &connection;
     if (conn != &connection) {
-      if (!conn->CanOpenSourceMediaStream(sessionID) || !currc->CanOpenSinkMediaStream(sessionID))
-	return TRUE;
       if (conn->OpenSourceMediaStream(adjustableMediaFormats, sessionID)) {
         startedOne = TRUE;
         // If opened the source stream, then reorder the media formats so we
@@ -501,7 +502,9 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
     if (conn != &connection) {
       OpalMediaStream * sink = conn->OpenSinkMediaStream(source);
-      if (source.RequiresPatchThread() && (sink != NULL)) {
+      if (sink == NULL)
+        return FALSE;
+      if (source.RequiresPatchThread()) {
         if (patch == NULL) {
           patch = manager.CreateMediaPatch(source);
           if (patch == NULL)
