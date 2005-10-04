@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2089  2005/09/30 13:25:57  dsandras
+ * Revision 1.2090  2005/10/04 13:01:51  rjongbloed
+ * Moved addition of a media stream to list in OpalConnection to OnOpenMediaStream
+ *   so is consistent across protocols.
+ *
+ * Revision 2.88  2005/09/30 13:25:57  dsandras
  * Reverted part of yesterday's fix.
  *
  * Revision 2.87  2005/09/29 20:20:36  dsandras
@@ -4430,14 +4434,12 @@ void H323Connection::InternalEstablishedConnectionCheck()
     startT120 = FALSE;
   }
   
-  
-
   switch (phase) {
     case ConnectedPhase :
       // Check if we have already got a transmitter running, select one if not
       if (FindChannel(OpalMediaFormat::DefaultAudioSessionID, FALSE) == NULL)
-	OnSelectLogicalChannels();
-      
+        OnSelectLogicalChannels();
+
       connectionState = EstablishedConnection;
       phase = EstablishedPhase;
 
@@ -4479,13 +4481,6 @@ BOOL H323Connection::OpenSourceMediaStream(const OpalMediaFormatList & /*mediaFo
 }
 
 
-BOOL H323Connection::OnOpenMediaStream(OpalMediaStream & stream)
-{
-  mediaStreams.Append(&stream);
-  return OpalConnection::OnOpenMediaStream(stream);
-}
-
-
 OpalMediaStream * H323Connection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
                                                     unsigned sessionID,
                                                     BOOL isSource)
@@ -4494,7 +4489,6 @@ OpalMediaStream * H323Connection::CreateMediaStream(const OpalMediaFormat & medi
     return new OpalNullMediaStream(mediaFormat, sessionID, isSource);
 
   if (!isSource) {
-
     OpalMediaStream * stream = transmitterMediaStream;
     transmitterMediaStream = NULL;
     return stream;
