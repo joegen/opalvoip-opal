@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2088  2005/10/02 17:49:08  dsandras
+ * Revision 1.2089  2005/10/04 12:57:18  rjongbloed
+ * Removed CanOpenSourceMediaStream/CanOpenSinkMediaStream functions and
+ *   now use overides on OpenSourceMediaStream/OpenSinkMediaStream
+ *
+ * Revision 2.87  2005/10/02 17:49:08  dsandras
  * Cleaned code to use the new GetContactAddress.
  *
  * Revision 2.86  2005/09/27 16:17:12  dsandras
@@ -769,32 +773,32 @@ OpalMediaFormatList SIPConnection::GetMediaFormats() const
 }
 
 
-BOOL SIPConnection::CanOpenSourceMediaStream(unsigned sessionID)
+BOOL SIPConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats,
+                                          unsigned sessionID)
 {
-  // FALSE = We do not receive 
-  // The local user does not want to receive video
-  if (sessionID == OpalMediaFormat::DefaultVideoSessionID && !endpoint.GetManager().CanAutoStartReceiveVideo())
-    return FALSE;
-
   // The remote user is in recvonly mode or in inactive mode for that session
-  if (remoteSDP.GetDirection(sessionID) == SDPMediaDescription::Inactive || remoteSDP.GetDirection(sessionID) == SDPMediaDescription::RecvOnly)
-    return FALSE;
-  
-  return TRUE;
+  switch (remoteSDP.GetDirection(sessionID)) {
+    case SDPMediaDescription::Inactive :
+    case SDPMediaDescription::RecvOnly :
+      return FALSE;
+
+    default :
+      return OpalConnection::OpenSourceMediaStream(mediaFormats, sessionID);
+  }
 }
 
 
-BOOL SIPConnection::CanOpenSinkMediaStream(unsigned sessionID)
+OpalMediaStream * SIPConnection::OpenSinkMediaStream(OpalMediaStream & source)
 {
-  // FALSE = Receive but do not transmit
-  if (sessionID == OpalMediaFormat::DefaultVideoSessionID && !endpoint.GetManager().CanAutoStartTransmitVideo())
-    return FALSE;
-
   // The remote user is in sendonly mode or in inactive mode for that session
-  if (remoteSDP.GetDirection(sessionID) == SDPMediaDescription::Inactive || remoteSDP.GetDirection(sessionID) == SDPMediaDescription::SendOnly)
-    return FALSE;
-  
-  return TRUE;
+  switch (remoteSDP.GetDirection(source.GetSessionID())) {
+    case SDPMediaDescription::Inactive :
+    case SDPMediaDescription::SendOnly :
+      return NULL;
+
+    default :
+      return OpalConnection::OpenSinkMediaStream(source);
+  }
 }
 
 
