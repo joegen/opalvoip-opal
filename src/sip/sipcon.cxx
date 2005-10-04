@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2089  2005/10/04 12:57:18  rjongbloed
+ * Revision 1.2090  2005/10/04 16:32:25  dsandras
+ * Added back support for CanAutoStartReceiveVideo.
+ *
+ * Revision 2.88  2005/10/04 12:57:18  rjongbloed
  * Removed CanOpenSourceMediaStream/CanOpenSinkMediaStream functions and
  *   now use overides on OpenSourceMediaStream/OpenSinkMediaStream
  *
@@ -776,6 +779,9 @@ OpalMediaFormatList SIPConnection::GetMediaFormats() const
 BOOL SIPConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats,
                                           unsigned sessionID)
 {
+  if (sessionID == OpalMediaFormat::DefaultVideoSessionID && !endpoint.GetManager().CanAutoStartReceiveVideo())
+    return FALSE;
+       
   // The remote user is in recvonly mode or in inactive mode for that session
   switch (remoteSDP.GetDirection(sessionID)) {
     case SDPMediaDescription::Inactive :
@@ -790,6 +796,9 @@ BOOL SIPConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForma
 
 OpalMediaStream * SIPConnection::OpenSinkMediaStream(OpalMediaStream & source)
 {
+  if (source.GetSessionID() == OpalMediaFormat::DefaultVideoSessionID && !endpoint.GetManager().CanAutoStartTransmitVideo())
+    return FALSE;
+  
   // The remote user is in sendonly mode or in inactive mode for that session
   switch (remoteSDP.GetDirection(source.GetSessionID())) {
     case SDPMediaDescription::Inactive :
