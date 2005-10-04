@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2014  2005/09/15 17:01:08  dsandras
+ * Revision 1.2015  2005/10/04 18:31:01  dsandras
+ * Allow SetFMTP and GetFMTP to work with any option set for a=fmtp:.
+ *
+ * Revision 2.13  2005/09/15 17:01:08  dsandras
  * Added support for the direction attributes in the audio & video media descriptions and in the session.
  *
  * Revision 2.12  2005/07/14 08:52:19  csoutheren
@@ -145,6 +148,7 @@ class SDPMediaFormat : public PObject
     unsigned clockRate;
     PString encodingName;
     PString parameters;
+    PString fmtp;
 
     POrdinalSet nteSet;     // used for NTE formats only
 };

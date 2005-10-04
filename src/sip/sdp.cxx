@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2023  2005/09/15 17:01:08  dsandras
+ * Revision 1.2024  2005/10/04 18:31:01  dsandras
+ * Allow SetFMTP and GetFMTP to work with any option set for a=fmtp:.
+ *
+ * Revision 2.22  2005/09/15 17:01:08  dsandras
  * Added support for the direction attributes in the audio & video media descriptions and in the session.
  *
  * Revision 2.21  2005/08/25 18:50:55  dsandras
@@ -200,8 +203,9 @@ void SDPMediaFormat::SetFMTP(const PString & str)
     nteSet.RemoveAll();
     AddNTEString(str);
   }
-  else
-    PTRACE(2, "SDP\tAttempt to set fmtp attributes for unknown meda type " << encodingName);
+  else {
+    fmtp = str;
+  }
 }
 
 
@@ -209,8 +213,8 @@ PString SDPMediaFormat::GetFMTP() const
 {
   if (encodingName == OpalRFC2833.GetEncodingName())
     return GetNTEString();
-
-  return PString();
+  else
+    return fmtp;
 }
 
 
@@ -275,10 +279,10 @@ void SDPMediaFormat::PrintOn(ostream & strm) const
     strm << '/' << parameters;
   strm << "\r\n";
 
-  PString nteString = GetFMTP();
+  PString fmtpString = GetFMTP();
 
-  if (!nteString.IsEmpty())
-    strm << "a=fmtp:" << (int)payloadType << ' ' << nteString << "\r\n";
+  if (!fmtpString.IsEmpty())
+    strm << "a=fmtp:" << (int)payloadType << ' ' << fmtpString << "\r\n";
 }
 
 
