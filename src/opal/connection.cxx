@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2051  2005/09/15 17:02:40  dsandras
+ * Revision 1.2052  2005/10/04 12:59:28  rjongbloed
+ * Removed CanOpenSourceMediaStream/CanOpenSinkMediaStream functions and
+ *   now use overides on OpenSourceMediaStream/OpenSinkMediaStream
+ * Moved addition of a media stream to list in OpalConnection to OnOpenMediaStream
+ *   so is consistent across protocols.
+ *
+ * Revision 2.50  2005/09/15 17:02:40  dsandras
  * Added the possibility for a connection to prevent the opening of a sink/source media stream.
  *
  * Revision 2.49  2005/09/06 12:44:49  rjongbloed
@@ -488,24 +494,9 @@ void OpalConnection::AdjustMediaFormats(OpalMediaFormatList & mediaFormats) cons
 }
 
 
-BOOL OpalConnection::CanOpenSourceMediaStream(unsigned sessionID)
-{
-  return TRUE;
-}
-
-
-BOOL OpalConnection::CanOpenSinkMediaStream(unsigned sessionID)
-{
-  return TRUE;
-}
-
-
 BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats,
                                            unsigned sessionID)
 {
-  if (!CanOpenSourceMediaStream(sessionID))
-    return FALSE;
-  
   // See if already opened
   if (GetMediaStream(sessionID, TRUE) != NULL) {
     PTRACE(3, "OpalCon\tOpenSourceMediaStream (already opened) for session "
@@ -546,10 +537,8 @@ BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForm
   }
 
   if (stream->Open()) {
-    if (OnOpenMediaStream(*stream)) {
-      mediaStreams.Append(stream);
+    if (OnOpenMediaStream(*stream))
       return TRUE;
-    }
     PTRACE(2, "OpalCon\tSource media OnOpenMediaStream open of " << sourceFormat << " failed.");
   }
   else {
@@ -564,9 +553,6 @@ BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForm
 OpalMediaStream * OpalConnection::OpenSinkMediaStream(OpalMediaStream & source)
 {
   unsigned sessionID = source.GetSessionID();
-  
-  if (!CanOpenSinkMediaStream(sessionID))
-    return NULL;
   
   PTRACE(3, "OpalCon\tOpenSinkMediaStream " << *this << " session=" << sessionID);
 
@@ -605,10 +591,8 @@ OpalMediaStream * OpalConnection::OpenSinkMediaStream(OpalMediaStream & source)
   }
 
   if (stream->Open()) {
-    if (OnOpenMediaStream(*stream)) {
-      mediaStreams.Append(stream);
+    if (OnOpenMediaStream(*stream))
       return stream;
-    }
     PTRACE(2, "OpalCon\tSink media stream OnOpenMediaStream of " << destinationFormat << " failed.");
   }
   else {
@@ -688,6 +672,8 @@ BOOL OpalConnection::OnOpenMediaStream(OpalMediaStream & stream)
 {
   if (!endpoint.OnOpenMediaStream(*this, stream))
     return FALSE;
+
+  mediaStreams.Append(&stream);
 
   if (phase == ConnectedPhase) {
     phase = EstablishedPhase;
