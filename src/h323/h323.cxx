@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2090  2005/10/04 13:01:51  rjongbloed
+ * Revision 1.2091  2005/10/04 16:32:25  dsandras
+ * Added back support for CanAutoStartReceiveVideo.
+ *
+ * Revision 2.89  2005/10/04 13:01:51  rjongbloed
  * Moved addition of a media stream to list in OpalConnection to OnOpenMediaStream
  *   so is consistent across protocols.
  *
@@ -4470,6 +4473,9 @@ OpalMediaFormatList H323Connection::GetMediaFormats() const
 BOOL H323Connection::OpenSourceMediaStream(const OpalMediaFormatList & /*mediaFormats*/,
                                            unsigned sessionID)
 {
+  if (sessionID == OpalMediaFormat::DefaultVideoSessionID && !endpoint.GetManager().CanAutoStartReceiveVideo())
+    return FALSE;
+
   // Check if we have already got a transmitter running, select one if not
   if ((fastStartState == FastStartDisabled ||
        fastStartState == FastStartAcknowledged) &&
