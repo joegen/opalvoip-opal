@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2045  2005/09/15 17:02:40  dsandras
+ * Revision 1.2046  2005/10/04 12:57:18  rjongbloed
+ * Removed CanOpenSourceMediaStream/CanOpenSinkMediaStream functions and
+ *   now use overides on OpenSourceMediaStream/OpenSinkMediaStream
+ *
+ * Revision 2.44  2005/09/15 17:02:40  dsandras
  * Added the possibility for a connection to prevent the opening of a sink/source media stream.
  *
  * Revision 2.43  2005/08/24 10:43:51  rjongbloed
@@ -585,20 +589,6 @@ class OpalConnection : public PSafeObject
     virtual void AdjustMediaFormats(
       OpalMediaFormatList & mediaFormats  /// Media formats to use
     ) const;
-    
-    /**Returns TRUE if a source media stream can be created for this
-       connection.
-      */
-    virtual BOOL CanOpenSourceMediaStream(
-      unsigned sessionID		  /// Session to start stream on
-    );
-
-    /**Returns TRUE if a sink media stream can be created for this
-       connection.
-      */
-    virtual BOOL CanOpenSinkMediaStream(
-      unsigned sessionID		  /// Session to start stream on
-    );
     
     /**Open source transmitter media stream for session.
       */

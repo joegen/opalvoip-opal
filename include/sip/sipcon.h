@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2037  2005/09/27 16:03:46  dsandras
+ * Revision 1.2038  2005/10/04 12:57:18  rjongbloed
+ * Removed CanOpenSourceMediaStream/CanOpenSinkMediaStream functions and
+ *   now use overides on OpenSourceMediaStream/OpenSinkMediaStream
+ *
+ * Revision 2.36  2005/09/27 16:03:46  dsandras
  * Removed SendResponseToInvite and added SendPDU function that will change the transport address right before sending the PDU. This operation is atomic.
  *
  * Revision 2.35  2005/09/15 17:08:36  dsandras
@@ -251,18 +255,17 @@ class SIPConnection : public OpalConnection
       */
     virtual OpalMediaFormatList GetMediaFormats() const;
     
-    /**Returns TRUE if a source media stream can be created for this
-       connection.
+    /**Open source transmitter media stream for session.
       */
-    virtual BOOL CanOpenSourceMediaStream(
-      unsigned sessionID		  /// Session to start stream on
+    virtual BOOL OpenSourceMediaStream(
+      const OpalMediaFormatList & mediaFormats, /// Optional media format to open
+      unsigned sessionID                   /// Session to start stream on
     );
 
-    /**Returns TRUE if a sink media stream can be created for this
-       connection.
+    /**Open source transmitter media stream for session.
       */
-    virtual BOOL CanOpenSinkMediaStream(
-      unsigned sessionID		  /// Session to start stream on
+    virtual OpalMediaStream * OpenSinkMediaStream(
+      OpalMediaStream & source    /// Source media sink format to open to
     );
 
     /**Open a new media stream.
