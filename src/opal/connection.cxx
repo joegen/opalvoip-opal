@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2052  2005/10/04 12:59:28  rjongbloed
+ * Revision 1.2053  2005/10/04 20:31:30  dsandras
+ * Minor code cleanup.
+ *
+ * Revision 2.51  2005/10/04 12:59:28  rjongbloed
  * Removed CanOpenSourceMediaStream/CanOpenSinkMediaStream functions and
  *   now use overides on OpenSourceMediaStream/OpenSinkMediaStream
  * Moved addition of a media stream to list in OpalConnection to OnOpenMediaStream
@@ -435,10 +438,7 @@ void OpalConnection::OnReleased()
 {
   PTRACE(3, "OpalCon\tOnReleased " << *this);
 
-  for (PINDEX i = 0; i < mediaStreams.GetSize(); i++) {
-    OnClosedMediaStream(mediaStreams[i]);
-    mediaStreams[i].Close();
-  }
+  CloseMediaStreams();
 
   endpoint.OnReleased(*this);
 }
