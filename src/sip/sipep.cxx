@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2065  2005/10/03 21:46:20  dsandras
+ * Revision 1.2066  2005/10/05 20:54:54  dsandras
+ * Simplified some code.
+ *
+ * Revision 2.64  2005/10/03 21:46:20  dsandras
  * Fixed previous commit (sorry).
  *
  * Revision 2.63  2005/10/03 21:18:55  dsandras
@@ -702,7 +705,9 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
 
 void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
 {
-  if (transaction.GetMethod() == SIP_PDU::Method_MESSAGE) {
+  PSafePtr<SIPInfo> info = NULL;
+ 
+ if (transaction.GetMethod() == SIP_PDU::Method_MESSAGE) {
 
     // Failure, in the 4XX class, handle some cases to give feedback.
     if (response.GetStatusCode()/100 == 4)
@@ -720,20 +725,14 @@ void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & res
     // Have a response to the REGISTER or to the SUBSCRIBE, 
     // so CANCEL all the other REGISTER or SUBSCRIBE requests
     // sent to that host.
-    PSafePtr<SIPInfo> info = activeRegistrations.FindSIPInfoByCallID (callID, PSafeReadOnly);
+     info = activeRegistrations.FindSIPInfoByCallID (callID, PSafeReadOnly);
     if (info == NULL) 
       return;
 
     info->Cancel (transaction);
 
     // Have a response to the INVITE, so end Connect mode on the transport
-    transaction.GetTransport().EndConnect(transaction.GetLocalAddress());
-
-    // Failure, handle some cases to give feedback.
-    if ((response.GetStatusCode()/100 == 4 && response.GetStatusCode() != SIP_PDU::Failure_UnAuthorised && response.GetStatusCode() != SIP_PDU::Failure_ProxyAuthenticationRequired) || response.GetStatusCode()/100 != 2) {
-      // Trigger the callback 
-      info->OnFailed (response.GetStatusCode());
-    }
+    transaction.GetTransport().EndConnect(transaction.GetLocalAddress()); 
   }
   
   switch (response.GetStatusCode()) {
@@ -751,6 +750,10 @@ void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & res
           OnReceivedOK(transaction, response);
           break;
         default :
+	  if (info != NULL) {
+	    // Failure for a SUBSCRIBE/REGISTER, 
+	    info->OnFailed (response.GetStatusCode());
+	  }
           ;
       }
   }
