@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2090  2005/10/04 16:32:25  dsandras
+ * Revision 1.2091  2005/10/05 21:27:25  dsandras
+ * Having a source/sink stream is not opened because of sendonly/recvonly is not
+ * a stream opening failure. Fixed problems with streams direction.
+ *
+ * Revision 2.89  2005/10/04 16:32:25  dsandras
  * Added back support for CanAutoStartReceiveVideo.
  *
  * Revision 2.88  2005/10/04 12:57:18  rjongbloed
@@ -691,10 +695,8 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
     localAddress = GetLocalAddress(rtpSession->GetLocalDataPort());
   }
 
-  // look for matching codec in peer connection
   if (!ownerCall.OpenSourceMediaStreams(*this, remoteFormatList, rtpSessionId)) {
-    PTRACE(2, "SIP\tCould not find compatible codecs");
-    ReleaseSession(rtpSessionId);
+    PTRACE(2, "SIP\tCould not open media streams for " << rtpSessionId);
     return FALSE;
   }
 
@@ -780,13 +782,13 @@ BOOL SIPConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForma
                                           unsigned sessionID)
 {
   if (sessionID == OpalMediaFormat::DefaultVideoSessionID && !endpoint.GetManager().CanAutoStartReceiveVideo())
-    return FALSE;
+    return TRUE;
        
   // The remote user is in recvonly mode or in inactive mode for that session
   switch (remoteSDP.GetDirection(sessionID)) {
     case SDPMediaDescription::Inactive :
     case SDPMediaDescription::RecvOnly :
-      return FALSE;
+      return TRUE;
 
     default :
       return OpalConnection::OpenSourceMediaStream(mediaFormats, sessionID);
@@ -797,7 +799,7 @@ BOOL SIPConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForma
 OpalMediaStream * SIPConnection::OpenSinkMediaStream(OpalMediaStream & source)
 {
   if (source.GetSessionID() == OpalMediaFormat::DefaultVideoSessionID && !endpoint.GetManager().CanAutoStartTransmitVideo())
-    return FALSE;
+    return NULL;
   
   // The remote user is in sendonly mode or in inactive mode for that session
   switch (remoteSDP.GetDirection(source.GetSessionID())) {
@@ -1792,7 +1794,7 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
   AdjustMediaFormats(remoteFormatList);
   
   if (!ownerCall.OpenSourceMediaStreams(*this, remoteFormatList, rtpSessionId)) {
-    PTRACE(2, "SIP\tCould not open media streams for audio");
+    PTRACE(2, "SIP\tCould not open media streams for " << rtpSessionId);
     return FALSE;
   }
 
