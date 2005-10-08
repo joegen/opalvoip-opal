@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2028  2005/08/24 10:43:51  rjongbloed
+ * Revision 1.2029  2005/10/08 19:26:37  dsandras
+ * Added OnForwarded callback in case of call forwarding.
+ *
+ * Revision 2.27  2005/08/24 10:43:51  rjongbloed
  * Changed create video functions yet again so can return pointers that are not to be deleted.
  *
  * Revision 2.26  2005/08/23 12:45:09  rjongbloed
@@ -429,6 +432,15 @@ class OpalEndPoint : public PObject
       */
     void OnHold(
       OpalConnection & connection   /// Connection that was held
+    );
+
+    /**A call back function whenever a connection is forwarded.
+
+       The default behaviour does nothing.
+      */
+    virtual BOOL OnForwarded(
+      OpalConnection & connection,  /// Connection that was held
+      const PString & remoteParty         /// The new remote party
     );
 
     /**Clear a call.
