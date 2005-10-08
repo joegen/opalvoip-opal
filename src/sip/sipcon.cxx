@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2091  2005/10/05 21:27:25  dsandras
+ * Revision 1.2092  2005/10/08 19:27:26  dsandras
+ * Added support for OnForwarded.
+ *
+ * Revision 2.90  2005/10/05 21:27:25  dsandras
  * Having a source/sink stream is not opened because of sendonly/recvonly is not
  * a stream opening failure. Fixed problems with streams direction.
  *
@@ -1617,21 +1620,20 @@ void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
 }
 
 
-void SIPConnection::OnReceivedRedirection(SIP_PDU & /*response*/)
+void SIPConnection::OnReceivedRedirection(SIP_PDU & response)
 {
   // start with a new To tag
   // send a new INVITE
+  targetAddress = response.GetMIME().GetContact();
+  remotePartyAddress = targetAddress.AsQuotedString();
   PINDEX j;
   if ((j = remotePartyAddress.Find (';')) != P_MAX_INDEX)
     remotePartyAddress = remotePartyAddress.Left(j);
 
-  SIPTransaction * invite = new SIPInvite(*this, *transport);
-  if (invite->Start())
-    invitations.Append(invite);
-  else {
-    delete invite;
-    PTRACE(1, "SIP\tCould not restart INVITE for Redirection");
-  }
+  if (endpoint.OnForwarded(*this, remotePartyAddress))
+    SetUpConnection();
+  else 
+    Release(EndedByCallForwarded);
 }
 
 
