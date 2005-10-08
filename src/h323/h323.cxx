@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2092  2005/10/08 19:27:56  dsandras
+ * Revision 1.2093  2005/10/08 20:02:29  dsandras
+ * Added OnHold calls when there is a local hold, and pause the media streams.
+ *
+ * Revision 2.91  2005/10/08 19:27:56  dsandras
  * Fixed call forwarding and added support for OnForwarded.
  *
  * Revision 2.90  2005/10/04 16:32:25  dsandras
@@ -4074,12 +4077,18 @@ void H323Connection::OnConsultationTransferSuccess(H323Connection& /*secondaryCa
 void H323Connection::HoldConnection()
 {
   HoldCall(TRUE);
+  
+  // Signal the manager that there is a hold
+  endpoint.OnHold(*this);
 }
 
 
 void H323Connection::RetrieveConnection()
 {
   RetrieveCall();
+  
+  // Signal the manager that there is a retrieve 
+  endpoint.OnHold(*this);
 }
 
 
@@ -4145,20 +4154,24 @@ PChannel * H323Connection::SwapHoldMediaChannels(PChannel * newChannel)
       const H323ChannelNumber & channelNumber = channel->GetNumber();
 
       H323_RTPChannel * chan2 = reinterpret_cast<H323_RTPChannel*>(channel);
+      OpalMediaStream *stream = GetMediaStream (session_id, FALSE);
 
       if (!channelNumber.IsFromRemote()) { // Transmit channel
         if (IsMediaOnHold()) {
 //          H323Codec & codec = *channel->GetCodec();
 //          existingTransmitChannel = codec.GetRawDataChannel();
+	  //FIXME
         }
         else {
           // Enable/mute the transmit channel depending on whether the remote end is held
           chan2->SetPause(IsLocalHold());
+	  stream->SetPaused(IsLocalHold());
         }
       }
       else {
         // Enable/mute the receive channel depending on whether the remote endis held
         chan2->SetPause(IsLocalHold());
+	stream->SetPaused(IsLocalHold());
       }
     }
   }
