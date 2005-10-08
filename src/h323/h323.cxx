@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2091  2005/10/04 16:32:25  dsandras
+ * Revision 1.2092  2005/10/08 19:27:56  dsandras
+ * Fixed call forwarding and added support for OnForwarded.
+ *
+ * Revision 2.90  2005/10/04 16:32:25  dsandras
  * Added back support for CanAutoStartReceiveVideo.
  *
  * Revision 2.89  2005/10/04 13:01:51  rjongbloed
@@ -2620,6 +2623,11 @@ BOOL H323Connection::OnReceivedFacility(const H323SignalPDU & pdu)
     Release(EndedByCallForwarded);
     return FALSE;
   }
+  
+  if (!endpoint.OnForwarded(*this, address)) {
+    Release(EndedByCallForwarded);
+    return FALSE;
+  }
 
   if (!endpoint.CanAutoCallForward())
     return TRUE;
@@ -2627,10 +2635,6 @@ BOOL H323Connection::OnReceivedFacility(const H323SignalPDU & pdu)
   if (!endpoint.ForwardConnection(*this, address, pdu))
     return TRUE;
 
-  // This connection is on the way out and a new one has the same token now
-  // so change our token to make sure no accidents can happen clearing the
-  // wrong call
-  callToken += "-forwarded";
   return FALSE;
 }
 
