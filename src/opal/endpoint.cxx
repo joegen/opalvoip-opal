@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2032  2005/08/24 10:43:51  rjongbloed
+ * Revision 1.2033  2005/10/08 19:26:38  dsandras
+ * Added OnForwarded callback in case of call forwarding.
+ *
+ * Revision 2.31  2005/08/24 10:43:51  rjongbloed
  * Changed create video functions yet again so can return pointers that are not to be deleted.
  *
  * Revision 2.30  2005/08/23 12:45:09  rjongbloed
@@ -362,6 +365,14 @@ void OpalEndPoint::OnHold(OpalConnection & connection)
 {
   PTRACE(4, "OpalEP\tOnHold " << connection);
   manager.OnHold(connection);
+}
+
+
+BOOL OpalEndPoint::OnForwarded(OpalConnection & connection,
+			       const PString & forwardParty)
+{
+  PTRACE(4, "OpalEP\tOnForwarded " << connection);
+  return manager.OnForwarded(connection, forwardParty);
 }
 
 

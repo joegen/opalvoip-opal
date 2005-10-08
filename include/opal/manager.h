@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2043  2005/09/20 07:25:43  csoutheren
+ * Revision 1.2044  2005/10/08 19:26:38  dsandras
+ * Added OnForwarded callback in case of call forwarding.
+ *
+ * Revision 2.42  2005/09/20 07:25:43  csoutheren
  * Allow userdata to be passed from SetupCall through to Call and Connection constructors
  *
  * Revision 2.41  2005/08/24 10:43:51  rjongbloed
@@ -576,6 +579,14 @@ class OpalManager : public PObject
       OpalConnection & connection   /// Connection that was held
     );
 
+    /**A call back function whenever a connection is forwarded.
+
+       The default behaviour does nothing.
+      */
+    virtual BOOL OnForwarded(
+      OpalConnection & connection,  /// Connection that was held
+      const PString & remoteParty         /// The new remote party
+    );
   //@}
 
   /**@name Media Streams management */
