@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2055  2005/09/20 07:25:43  csoutheren
+ * Revision 1.2056  2005/10/08 19:26:38  dsandras
+ * Added OnForwarded callback in case of call forwarding.
+ *
+ * Revision 2.54  2005/09/20 07:25:43  csoutheren
  * Allow userdata to be passed from SetupCall through to Call and Connection constructors
  *
  * Revision 2.53  2005/08/28 07:59:17  rjongbloed
@@ -637,6 +640,14 @@ void OpalManager::OnReleased(OpalConnection & connection)
 void OpalManager::OnHold(OpalConnection & PTRACE_PARAM(connection))
 {
   PTRACE(3, "OpalMan\tOnHold " << connection);
+}
+
+
+BOOL OpalManager::OnForwarded(OpalConnection & PTRACE_PARAM(connection),
+			      const PString & /*forwardParty*/)
+{
+  PTRACE(4, "OpalEP\tOnForwarded " << connection);
+  return TRUE;
 }
 
 
