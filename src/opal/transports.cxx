@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2054  2005/09/22 18:16:29  dsandras
+ * Revision 1.2055  2005/10/09 15:12:38  dsandras
+ * Moved some code around.
+ *
+ * Revision 2.53  2005/09/22 18:16:29  dsandras
  * Definitely fixed the previous problem.
  *
  * Revision 2.52  2005/09/22 17:07:34  dsandras
@@ -1857,10 +1860,6 @@ BOOL OpalTransportUDP::Connect()
 
     // Not explicitly multicast
     PUDPSocket * socket = new PUDPSocket;
-    PIndirectChannel::Close();	//closing the channel and opening it with the new socket
-    readAutoDelete = writeAutoDelete = FALSE;
-    connectSockets.Append(socket);
-
     localPort = manager.GetNextUDPPort();
     WORD firstPort = localPort;
     while (!socket->Listen(interfaceAddress, 0, localPort, reuseAddressFlag?PIPSocket::CanReuseAddress:PIPSocket::AddressIsExclusive)) {
@@ -1871,6 +1870,9 @@ BOOL OpalTransportUDP::Connect()
         return FALSE;
       }
     }
+    PIndirectChannel::Close();	//closing the channel and opening it with the new socket
+    readAutoDelete = writeAutoDelete = FALSE;
+    connectSockets.Append(socket);
     Open(socket);
 
 #ifndef __BEOS__
