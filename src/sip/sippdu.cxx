@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2070  2005/10/03 21:42:54  dsandras
+ * Revision 1.2071  2005/10/09 19:09:34  dsandras
+ * Max-Forwards must be part of all requests.
+ *
+ * Revision 2.69  2005/10/03 21:42:54  dsandras
  * Fixed previous commit (sorry).
  *
  * Revision 2.68  2005/10/03 21:40:38  dsandras
@@ -1377,6 +1380,7 @@ void SIP_PDU::Construct(Methods meth,
   mime.SetFrom(from);
   mime.SetCallID(callID);
   mime.SetCSeq(PString(cseq) & MethodNames[method]);
+  mime.SetMaxForwards(70);  
 
   // construct Via:
   PINDEX dollar = via.Find('$');
@@ -2051,7 +2055,6 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport)
 {
   mime.SetDate() ;                             // now
   mime.SetUserAgent(connection.GetEndPoint()); // normally 'OPAL/2.0'
-  mime.SetMaxForwards(70);                     // default
 
   connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
   if (connection.GetEndPoint().GetManager().CanAutoStartTransmitVideo()
@@ -2065,7 +2068,6 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, RTP_
 {
   mime.SetDate() ;                             // now
   mime.SetUserAgent(connection.GetEndPoint()); // normally 'OPAL/2.0'
-  mime.SetMaxForwards(70);                     // default
 
   rtpSessions = sm;
   connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
