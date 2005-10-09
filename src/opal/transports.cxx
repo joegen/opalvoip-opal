@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2055  2005/10/09 15:12:38  dsandras
+ * Revision 1.2056  2005/10/09 15:18:12  dsandras
+ * Only add socket to the connectSockets when it is open.
+ *
+ * Revision 2.54  2005/10/09 15:12:38  dsandras
  * Moved some code around.
  *
  * Revision 2.53  2005/09/22 18:16:29  dsandras
@@ -1872,7 +1875,6 @@ BOOL OpalTransportUDP::Connect()
     }
     PIndirectChannel::Close();	//closing the channel and opening it with the new socket
     readAutoDelete = writeAutoDelete = FALSE;
-    connectSockets.Append(socket);
     Open(socket);
 
 #ifndef __BEOS__
@@ -1888,6 +1890,7 @@ BOOL OpalTransportUDP::Connect()
 
     socket->GetLocalAddress(localAddress, localPort);
     socket->SetSendAddress(remoteAddress, remotePort);
+    connectSockets.Append(socket);
   }
   
   // check to make sure that we are not already connected. (thus, EndConnect() has been called)
