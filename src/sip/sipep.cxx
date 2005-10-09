@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2066  2005/10/05 20:54:54  dsandras
+ * Revision 1.2067  2005/10/09 20:42:59  dsandras
+ * Creating the connection thread can take more than 200ms. Send a provisional
+ * response before creating it.
+ *
+ * Revision 2.65  2005/10/05 20:54:54  dsandras
  * Simplified some code.
  *
  * Revision 2.64  2005/10/03 21:46:20  dsandras
@@ -612,9 +616,9 @@ BOOL SIPEndPoint::SetupTransfer(const PString & token,
     return FALSE;
 
   connectionsActive.SetAt(callID, connection);
-  connection->SetUpConnection();
-  
   call.OnReleased(*otherConnection);
+  
+  connection->SetUpConnection();
   otherConnection->Release(OpalConnection::EndedByCallForwarded);
 
   return TRUE;
@@ -772,6 +776,10 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
     response.Write(transport);
     return FALSE;
   }
+  
+  // send provisional response
+  SIP_PDU response(*request, SIP_PDU::Information_Trying);
+  response.Write(transport);
 
   // ask the endpoint for a connection
   SIPConnection *connection = 
