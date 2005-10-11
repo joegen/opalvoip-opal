@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2093  2005/10/11 21:47:04  dsandras
+ * Revision 1.2094  2005/10/11 21:51:44  dsandras
+ * Reverted a previous patch.
+ *
+ * Revision 2.92  2005/10/11 21:47:04  dsandras
  * Fixed problem when sending the 200 OK response to an INVITE for which some media stream is 'sendonly'.
  *
  * Revision 2.91  2005/10/08 19:27:26  dsandras
@@ -791,13 +794,13 @@ BOOL SIPConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForma
                                           unsigned sessionID)
 {
   if (sessionID == OpalMediaFormat::DefaultVideoSessionID && !endpoint.GetManager().CanAutoStartReceiveVideo())
-    return TRUE;
+    return FALSE;
        
   // The remote user is in recvonly mode or in inactive mode for that session
   switch (remoteSDP.GetDirection(sessionID)) {
     case SDPMediaDescription::Inactive :
     case SDPMediaDescription::RecvOnly :
-      return TRUE;
+      return FALSE;
 
     default :
       return OpalConnection::OpenSourceMediaStream(mediaFormats, sessionID);
