@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2067  2005/10/09 20:42:59  dsandras
+ * Revision 1.2068  2005/10/11 20:53:35  dsandras
+ * Allow the expire field to be outside of the SIPURL formed by the contact field.
+ *
+ * Revision 2.66  2005/10/09 20:42:59  dsandras
  * Creating the connection thread can take more than 200ms. Send a provisional
  * response before creating it.
  *
@@ -408,7 +411,7 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   transactions.DisallowDeleteObjects();
 
   registrationTimer.SetNotifier(PCREATE_NOTIFIER(RegistrationRefresh));
-  registrationTimer.RunContinuous (PTimeInterval(0, 60));
+  registrationTimer.RunContinuous (PTimeInterval(0, 5));
 
   PTRACE(3, "SIP\tCreated endpoint.");
 }
@@ -912,9 +915,13 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
   // We were registering, update the expire field
   if (info->GetExpire() > 0) {
 
-    SIPURL contact = response.GetMIME().GetContact();
-    int sec = contact.GetParamVars()("expires", "3600").AsUnsigned()*9/10;  
-    info->SetExpire(sec);
+    PString contact = response.GetMIME().GetContact();
+    int sec = SIPURL(contact).GetParamVars()("expires").AsUnsigned();  
+    if (!sec && response.GetMIME().HasFieldParameter("expires", contact))
+      sec = response.GetMIME().GetFieldParameter("expires", contact).AsUnsigned();
+    if (!sec)
+      sec = 3600;
+    info->SetExpire(sec*9/10);
   }
   else
     activeRegistrations.Remove(info);
