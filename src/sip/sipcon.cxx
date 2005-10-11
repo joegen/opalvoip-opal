@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2092  2005/10/08 19:27:26  dsandras
+ * Revision 1.2093  2005/10/11 21:47:04  dsandras
+ * Fixed problem when sending the 200 OK response to an INVITE for which some media stream is 'sendonly'.
+ *
+ * Revision 2.91  2005/10/08 19:27:26  dsandras
  * Added support for OnForwarded.
  *
  * Revision 2.90  2005/10/05 21:27:25  dsandras
@@ -698,29 +701,32 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
     localAddress = GetLocalAddress(rtpSession->GetLocalDataPort());
   }
 
-  if (!ownerCall.OpenSourceMediaStreams(*this, remoteFormatList, rtpSessionId)) {
-    PTRACE(2, "SIP\tCould not open media streams for " << rtpSessionId);
-    return FALSE;
-  }
+  // Try opening streams 
+  ownerCall.OpenSourceMediaStreams(*this, remoteFormatList, rtpSessionId);
 
-  // find out what media stream was opened
-  // and get the payload type that was selected
-  if (mediaStreams.IsEmpty()) {
-    PTRACE(2, "SIP\tNo media streams opened");
-    ReleaseSession(rtpSessionId);
-    return FALSE;
-  }
-
-  // construct a new media session list with the selected format
+  // construct a new media session list 
   SDPMediaDescription * localMedia = new SDPMediaDescription(localAddress, rtpMediaType);
 
-  // Locate the opened media stream, add it to the reply and open the reverse direction
+  // Locate the opened media stream, add it to the reply 
+  // and open the reverse direction
   BOOL reverseStreamsFailed = TRUE;
   for (i = 0; i < mediaStreams.GetSize(); i++) {
     OpalMediaStream & mediaStream = mediaStreams[i];
     if (mediaStream.GetSessionID() == rtpSessionId) {
       OpalMediaFormat mediaFormat = mediaStream.GetMediaFormat();
       if (OpenSourceMediaStream(mediaFormat, rtpSessionId)) {
+	localMedia->AddMediaFormat(mediaFormat);
+	reverseStreamsFailed = FALSE;
+      }
+    }
+  }
+  // It is possible a source media stream could not be opened due
+  // to sendonly on the remote
+  OpalMediaFormatList formats = ownerCall.GetMediaFormats(*this, FALSE);
+  for (i = 0; i < formats.GetSize(); i++) {
+    OpalMediaFormat mediaFormat = formats[i];
+    if (mediaFormat.GetDefaultSessionID() == rtpSessionId) {
+     if (GetMediaStream(rtpSessionId, TRUE) == NULL && OpenSourceMediaStream(mediaFormat, rtpSessionId)) {
 	localMedia->AddMediaFormat(mediaFormat);
 	reverseStreamsFailed = FALSE;
       }
