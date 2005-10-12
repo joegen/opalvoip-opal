@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.h,v $
- * Revision 1.2014  2004/08/14 07:56:29  rjongbloed
+ * Revision 1.2015  2005/10/12 21:11:21  dsandras
+ * Control if the video streams are started or not from this class.
+ *
+ * Revision 2.13  2004/08/14 07:56:29  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.12  2004/07/11 12:42:10  rjongbloed
@@ -386,6 +389,19 @@ class OpalPCSSConnection : public OpalConnection
       */
     virtual BOOL OnOpenMediaStream(
       OpalMediaStream & stream    /// New media stream being opened
+    );
+
+    /**Open source transmitter media stream for session.
+      */
+    virtual BOOL OpenSourceMediaStream(
+      const OpalMediaFormatList & mediaFormats, /// Optional media format to open
+      unsigned sessionID                   /// Session to start stream on
+    );
+
+    /**Open source transmitter media stream for session.
+      */
+    virtual OpalMediaStream * OpenSinkMediaStream(
+      OpalMediaStream & source    /// Source media sink format to open to
     );
 
     /**Send a user input indication to the remote endpoint.

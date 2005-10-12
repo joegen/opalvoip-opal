@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2024  2005/07/24 07:28:29  rjongbloed
+ * Revision 1.2025  2005/10/12 21:11:21  dsandras
+ * Control if the video streams are started or not from this class.
+ *
+ * Revision 2.23  2005/07/24 07:28:29  rjongbloed
  * Fixed inclusion of silence detecter in media stream if is audio only.
  *
  * Revision 2.22  2005/02/19 22:44:41  dsandras
@@ -429,6 +432,25 @@ BOOL OpalPCSSConnection::OnOpenMediaStream(OpalMediaStream & mediaStream)
 }
 
 
+BOOL OpalPCSSConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats,
+					       unsigned sessionID)
+{
+  if (sessionID == OpalMediaFormat::DefaultVideoSessionID && !endpoint.GetManager().CanAutoStartTransmitVideo())
+    return FALSE;
+
+  return OpalConnection::OpenSourceMediaStream(mediaFormats, sessionID);
+}
+
+
+OpalMediaStream * OpalPCSSConnection::OpenSinkMediaStream(OpalMediaStream & source)
+{
+  if (source.GetSessionID() == OpalMediaFormat::DefaultVideoSessionID && !endpoint.GetManager().CanAutoStartReceiveVideo())
+    return NULL;
+
+  return OpalConnection::OpenSinkMediaStream(source);
+}
+
+
 PSoundChannel * OpalPCSSConnection::CreateSoundChannel(BOOL isSource)
 {
   return endpoint.CreateSoundChannel(*this, isSource);
@@ -487,6 +509,5 @@ void OpalPCSSConnection::AcceptIncoming()
 
   OnEstablished();
 }
-
 
 /////////////////////////////////////////////////////////////////////////////
