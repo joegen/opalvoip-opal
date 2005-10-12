@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2025  2005/08/11 22:47:17  rjongbloed
+ * Revision 1.2026  2005/10/12 21:14:32  dsandras
+ * Applied patch from Hannes Friederich to only call ConnectTo when required. Thanks!
+ *
+ * Revision 2.24  2005/08/11 22:47:17  rjongbloed
  * Fixed correct default gatekeeper address when doing auto-discovery
  *
  * Revision 2.23  2005/04/20 06:18:35  csoutheren
@@ -2070,12 +2073,15 @@ BOOL H323Gatekeeper::OnReceiveInfoRequest(const H225_InfoRequest & irq)
     return FALSE;
 
   H323TransportAddress oldAddress = transport->GetRemoteAddress();
+  if (!oldAddress.IsEquivalent(replyAddress)) {
 
-  BOOL ok = transport->ConnectTo(replyAddress) && WritePDU(response);
+    BOOL ok = transport->ConnectTo(replyAddress) && WritePDU(response);
+    transport->ConnectTo(oldAddress);
 
-  transport->ConnectTo(oldAddress);
-
-  return ok;
+    return ok;
+  }
+  else 
+    return WritePDU(response);
 }
 
 
