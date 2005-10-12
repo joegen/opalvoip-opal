@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2095  2005/10/12 08:53:42  dsandras
+ * Revision 1.2096  2005/10/12 17:55:18  dsandras
+ * Fixed previous commit.
+ *
+ * Revision 2.94  2005/10/12 08:53:42  dsandras
  * Committed cleanup patch.
  *
  * Revision 2.93  2005/10/11 21:51:44  dsandras
@@ -798,7 +801,7 @@ BOOL SIPConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForma
                                           unsigned sessionID)
 {
   if (sessionID == OpalMediaFormat::DefaultVideoSessionID && !endpoint.GetManager().CanAutoStartReceiveVideo())
-    return TRUE;
+    return FALSE;
        
   // The remote user is in recvonly mode or in inactive mode for that session
   switch (remoteSDP.GetDirection(sessionID)) {
