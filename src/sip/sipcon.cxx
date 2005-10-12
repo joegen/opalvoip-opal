@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2097  2005/10/12 21:10:39  dsandras
+ * Revision 1.2098  2005/10/12 21:32:08  dsandras
+ * Cleanup.
+ *
+ * Revision 2.96  2005/10/12 21:10:39  dsandras
  * Removed CanAutoStartTransmitVideo and CanAutoStartReceiveVideo from the SIPConnection class.
  *
  * Revision 2.95  2005/10/12 17:55:18  dsandras
@@ -741,19 +744,11 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
       if (mediaFormat.GetDefaultSessionID() == rtpSessionId) {
 	if (GetMediaStream(rtpSessionId, TRUE) == NULL && OpenSourceMediaStream(mediaFormat, rtpSessionId)) {
 	  localMedia->AddMediaFormat(mediaFormat);
-	  reverseStreamsFailed = FALSE;
 	}
       }
     }
   }
 
-/*  if (reverseStreamsFailed) {
-    PTRACE(2, "SIP\tNo reverse media streams opened");
-    delete localMedia;
-    ReleaseSession(rtpSessionId);
-    return FALSE;
-  }
-*/
   // Add in the RFC2833 handler, if used
   if (hasTelephoneEvent) {
     localMedia->AddSDPMediaFormat(new SDPMediaFormat("0-15", rfc2833Handler->GetPayloadType()));
