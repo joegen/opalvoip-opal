@@ -54,7 +54,10 @@
 /************ Change log
  *
  * $Log: p64.cxx,v $
- * Revision 1.2005  2005/09/15 18:00:38  dsandras
+ * Revision 1.2006  2005/10/12 21:20:25  dsandras
+ * Added check for buffLen to prevent potential crash thanks to Hannes Friederich.
+ *
+ * Revision 2.4  2005/09/15 18:00:38  dsandras
  * Make sure qv_ is initialized when being used.
  *
  * Revision 2.3  2005/08/31 13:16:02  rjongbloed
@@ -1110,6 +1113,9 @@ BOOL P64Decoder::decode(const unsigned char *hdrPtr, int buffLen,
   const u_char *bp;
   int cc, sbit, ebit, gob;
   h261hdr_t h261hdr;
+
+  if (buffLen == 0)
+    return FALSE;
 
   // get 32 bit H261 header
   h261hdr = ntohl(*(u_int*)hdrPtr);
