@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2098  2005/10/12 21:32:08  dsandras
+ * Revision 1.2099  2005/10/12 21:39:04  dsandras
+ * Small protection for the SDP.
+ *
+ * Revision 2.97  2005/10/12 21:32:08  dsandras
  * Cleanup.
  *
  * Revision 2.96  2005/10/12 21:10:39  dsandras
@@ -763,6 +766,11 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
       localMedia->SetDirection(SDPMediaDescription::SendOnly);
     else if (!endpoint.GetManager().CanAutoStartTransmitVideo() && endpoint.GetManager().CanAutoStartReceiveVideo())
       localMedia->SetDirection(SDPMediaDescription::RecvOnly);
+    else if (!endpoint.GetManager().CanAutoStartTransmitVideo() && !endpoint.GetManager().CanAutoStartReceiveVideo()) {
+
+      delete localMedia;
+      return FALSE;
+    }
   }
 
   sdpOut.AddMediaDescription(localMedia);
@@ -1056,6 +1064,11 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
       localMedia->SetDirection(SDPMediaDescription::SendOnly);
     else if (!endpoint.GetManager().CanAutoStartTransmitVideo() && endpoint.GetManager().CanAutoStartReceiveVideo())
       localMedia->SetDirection(SDPMediaDescription::RecvOnly);
+    else if (!endpoint.GetManager().CanAutoStartTransmitVideo() && !endpoint.GetManager().CanAutoStartReceiveVideo()) {
+
+      delete localMedia;
+      return FALSE;
+    }
   }
 
   // add in SDP records
