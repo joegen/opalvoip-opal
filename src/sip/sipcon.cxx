@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2096  2005/10/12 17:55:18  dsandras
+ * Revision 1.2097  2005/10/12 21:10:39  dsandras
+ * Removed CanAutoStartTransmitVideo and CanAutoStartReceiveVideo from the SIPConnection class.
+ *
+ * Revision 2.95  2005/10/12 17:55:18  dsandras
  * Fixed previous commit.
  *
  * Revision 2.94  2005/10/12 08:53:42  dsandras
@@ -744,13 +747,13 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
     }
   }
 
-  if (reverseStreamsFailed) {
+/*  if (reverseStreamsFailed) {
     PTRACE(2, "SIP\tNo reverse media streams opened");
     delete localMedia;
     ReleaseSession(rtpSessionId);
     return FALSE;
   }
-
+*/
   // Add in the RFC2833 handler, if used
   if (hasTelephoneEvent) {
     localMedia->AddSDPMediaFormat(new SDPMediaFormat("0-15", rfc2833Handler->GetPayloadType()));
@@ -800,9 +803,6 @@ OpalMediaFormatList SIPConnection::GetMediaFormats() const
 BOOL SIPConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats,
                                           unsigned sessionID)
 {
-  if (sessionID == OpalMediaFormat::DefaultVideoSessionID && !endpoint.GetManager().CanAutoStartReceiveVideo())
-    return FALSE;
-       
   // The remote user is in recvonly mode or in inactive mode for that session
   switch (remoteSDP.GetDirection(sessionID)) {
     case SDPMediaDescription::Inactive :
@@ -817,9 +817,6 @@ BOOL SIPConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForma
 
 OpalMediaStream * SIPConnection::OpenSinkMediaStream(OpalMediaStream & source)
 {
-  if (source.GetSessionID() == OpalMediaFormat::DefaultVideoSessionID && !endpoint.GetManager().CanAutoStartTransmitVideo())
-    return NULL;
-  
   // The remote user is in sendonly mode or in inactive mode for that session
   switch (remoteSDP.GetDirection(source.GetSessionID())) {
     case SDPMediaDescription::Inactive :
