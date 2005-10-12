@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2094  2005/10/11 21:51:44  dsandras
+ * Revision 1.2095  2005/10/12 08:53:42  dsandras
+ * Committed cleanup patch.
+ *
+ * Revision 2.93  2005/10/11 21:51:44  dsandras
  * Reverted a previous patch.
  *
  * Revision 2.92  2005/10/11 21:47:04  dsandras
@@ -725,20 +728,21 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   }
   // It is possible a source media stream could not be opened due
   // to sendonly on the remote
-  OpalMediaFormatList formats = ownerCall.GetMediaFormats(*this, FALSE);
-  for (i = 0; i < formats.GetSize(); i++) {
-    OpalMediaFormat mediaFormat = formats[i];
-    if (mediaFormat.GetDefaultSessionID() == rtpSessionId) {
-     if (GetMediaStream(rtpSessionId, TRUE) == NULL && OpenSourceMediaStream(mediaFormat, rtpSessionId)) {
-	localMedia->AddMediaFormat(mediaFormat);
-	reverseStreamsFailed = FALSE;
+  if (reverseStreamsFailed) {
+    OpalMediaFormatList formats = ownerCall.GetMediaFormats(*this, FALSE);
+    for (i = 0; i < formats.GetSize(); i++) {
+      OpalMediaFormat mediaFormat = formats[i];
+      if (mediaFormat.GetDefaultSessionID() == rtpSessionId) {
+	if (GetMediaStream(rtpSessionId, TRUE) == NULL && OpenSourceMediaStream(mediaFormat, rtpSessionId)) {
+	  localMedia->AddMediaFormat(mediaFormat);
+	  reverseStreamsFailed = FALSE;
+	}
       }
     }
   }
 
   if (reverseStreamsFailed) {
     PTRACE(2, "SIP\tNo reverse media streams opened");
-    mediaStreams.RemoveAll();
     delete localMedia;
     ReleaseSession(rtpSessionId);
     return FALSE;
@@ -794,7 +798,7 @@ BOOL SIPConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForma
                                           unsigned sessionID)
 {
   if (sessionID == OpalMediaFormat::DefaultVideoSessionID && !endpoint.GetManager().CanAutoStartReceiveVideo())
-    return FALSE;
+    return TRUE;
        
   // The remote user is in recvonly mode or in inactive mode for that session
   switch (remoteSDP.GetDirection(sessionID)) {
