@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2099  2005/10/12 21:39:04  dsandras
+ * Revision 1.2100  2005/10/13 18:14:45  dsandras
+ * Another try to get it right.
+ *
+ * Revision 2.98  2005/10/12 21:39:04  dsandras
  * Small protection for the SDP.
  *
  * Revision 2.97  2005/10/12 21:32:08  dsandras
@@ -727,31 +730,15 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
 
   // Locate the opened media stream, add it to the reply 
   // and open the reverse direction
-  BOOL reverseStreamsFailed = TRUE;
   for (i = 0; i < mediaStreams.GetSize(); i++) {
     OpalMediaStream & mediaStream = mediaStreams[i];
     if (mediaStream.GetSessionID() == rtpSessionId) {
       OpalMediaFormat mediaFormat = mediaStream.GetMediaFormat();
-      if (OpenSourceMediaStream(mediaFormat, rtpSessionId)) {
-	localMedia->AddMediaFormat(mediaFormat);
-	reverseStreamsFailed = FALSE;
-      }
+      OpenSourceMediaStream(mediaFormat, rtpSessionId);
+      localMedia->AddMediaFormat(mediaStream.GetMediaFormat());
     }
   }
-  // It is possible a source media stream could not be opened due
-  // to sendonly on the remote
-  if (reverseStreamsFailed) {
-    OpalMediaFormatList formats = ownerCall.GetMediaFormats(*this, FALSE);
-    for (i = 0; i < formats.GetSize(); i++) {
-      OpalMediaFormat mediaFormat = formats[i];
-      if (mediaFormat.GetDefaultSessionID() == rtpSessionId) {
-	if (GetMediaStream(rtpSessionId, TRUE) == NULL && OpenSourceMediaStream(mediaFormat, rtpSessionId)) {
-	  localMedia->AddMediaFormat(mediaFormat);
-	}
-      }
-    }
-  }
-
+  
   // Add in the RFC2833 handler, if used
   if (hasTelephoneEvent) {
     localMedia->AddSDPMediaFormat(new SDPMediaFormat("0-15", rfc2833Handler->GetPayloadType()));
