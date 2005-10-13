@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2038  2005/10/04 12:57:18  rjongbloed
+ * Revision 1.2039  2005/10/13 19:33:50  dsandras
+ * Added GetDirection to get the default direction for a media stream. Modified OnSendMediaDescription to call BuildSDP if no reverse streams can be opened.
+ *
+ * Revision 2.37  2005/10/04 12:57:18  rjongbloed
  * Removed CanOpenSourceMediaStream/CanOpenSinkMediaStream functions and
  *   now use overides on OpenSourceMediaStream/OpenSinkMediaStream
  *
@@ -543,6 +546,7 @@ class SIPConnection : public OpalConnection
       unsigned sessionId,
       SDPSessionDescription & sdpOut
     );
+    SDPMediaDescription::Direction GetDirection(unsigned sessionId);
     static BOOL WriteINVITE(OpalTransport & transport, void * param);
 
     SIPEndPoint   & endpoint;

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2100  2005/10/13 18:14:45  dsandras
+ * Revision 1.2101  2005/10/13 19:33:50  dsandras
+ * Added GetDirection to get the default direction for a media stream. Modified OnSendMediaDescription to call BuildSDP if no reverse streams can be opened.
+ *
+ * Revision 2.99  2005/10/13 18:14:45  dsandras
  * Another try to get it right.
  *
  * Revision 2.98  2005/10/12 21:39:04  dsandras
@@ -730,12 +733,15 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
 
   // Locate the opened media stream, add it to the reply 
   // and open the reverse direction
+  BOOL reverseStreamsFailed = TRUE;
   for (i = 0; i < mediaStreams.GetSize(); i++) {
     OpalMediaStream & mediaStream = mediaStreams[i];
     if (mediaStream.GetSessionID() == rtpSessionId) {
       OpalMediaFormat mediaFormat = mediaStream.GetMediaFormat();
-      OpenSourceMediaStream(mediaFormat, rtpSessionId);
-      localMedia->AddMediaFormat(mediaStream.GetMediaFormat());
+      if (OpenSourceMediaStream(mediaFormat, rtpSessionId)) {
+	localMedia->AddMediaFormat(mediaStream.GetMediaFormat());
+	reverseStreamsFailed = FALSE;
+      }
     }
   }
   
@@ -743,25 +749,39 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   if (hasTelephoneEvent) {
     localMedia->AddSDPMediaFormat(new SDPMediaFormat("0-15", rfc2833Handler->GetPayloadType()));
   }
-
-  // Answer with recvonly if it is a remote hold
-  if (remote_hold)
-    sdpOut.SetDirection(SDPMediaDescription::RecvOnly);
-  else if (rtpSessionId == OpalMediaFormat::DefaultVideoSessionID) {
-
-    if (endpoint.GetManager().CanAutoStartTransmitVideo() && !endpoint.GetManager().CanAutoStartReceiveVideo())
-      localMedia->SetDirection(SDPMediaDescription::SendOnly);
-    else if (!endpoint.GetManager().CanAutoStartTransmitVideo() && endpoint.GetManager().CanAutoStartReceiveVideo())
-      localMedia->SetDirection(SDPMediaDescription::RecvOnly);
-    else if (!endpoint.GetManager().CanAutoStartTransmitVideo() && !endpoint.GetManager().CanAutoStartReceiveVideo()) {
-
+  
+  // No stream opened for this session, use the default SDP
+  if (reverseStreamsFailed) {
+    cout << "ici" << endl << flush;
+    SDPSessionDescription *sdp = (SDPSessionDescription *) &sdpOut;
+    if (!BuildSDP(sdp, rtpSessions, rtpSessionId)) {
       delete localMedia;
       return FALSE;
     }
+    return TRUE;
   }
 
+  localMedia->SetDirection(GetDirection(rtpSessionId));
   sdpOut.AddMediaDescription(localMedia);
   return TRUE;
+}
+
+
+SDPMediaDescription::Direction SIPConnection::GetDirection(unsigned sessionId)
+{
+  if (remote_hold)
+    return SDPMediaDescription::RecvOnly;
+  else if (local_hold)
+    return SDPMediaDescription::SendOnly;
+  else if (sessionId == OpalMediaFormat::DefaultVideoSessionID) {
+
+    if (endpoint.GetManager().CanAutoStartTransmitVideo() && !endpoint.GetManager().CanAutoStartReceiveVideo())
+      return SDPMediaDescription::SendOnly;
+    else if (!endpoint.GetManager().CanAutoStartTransmitVideo() && endpoint.GetManager().CanAutoStartReceiveVideo())
+      return SDPMediaDescription::RecvOnly;
+  }
+  
+  return SDPMediaDescription::Undefined;
 }
 
 
@@ -972,6 +992,9 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
   OpalTransportAddress localAddress;
   RTP_DataFrame::PayloadTypes ntePayloadCode = RTP_DataFrame::IllegalPayloadType;
 
+  if (rtpSessionId == OpalMediaFormat::DefaultVideoSessionID && !endpoint.GetManager().CanAutoStartReceiveVideo() && !endpoint.GetManager().CanAutoStartTransmitVideo())
+    return FALSE;
+
   if (ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
     OpalConnection * otherParty = GetCall().GetOtherPartyConnection(*this);
     if (otherParty != NULL) {
@@ -1042,26 +1065,8 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
   OpalMediaFormatList formats = ownerCall.GetMediaFormats(*this, FALSE);
   localMedia->AddMediaFormats(formats, rtpSessionId);
 
-  // add the direction parameter
-  if (local_hold) 
-    sdp->SetDirection(SDPMediaDescription::SendOnly);
-  else if (rtpSessionId == OpalMediaFormat::DefaultVideoSessionID) {
-
-    if (endpoint.GetManager().CanAutoStartTransmitVideo() && !endpoint.GetManager().CanAutoStartReceiveVideo())
-      localMedia->SetDirection(SDPMediaDescription::SendOnly);
-    else if (!endpoint.GetManager().CanAutoStartTransmitVideo() && endpoint.GetManager().CanAutoStartReceiveVideo())
-      localMedia->SetDirection(SDPMediaDescription::RecvOnly);
-    else if (!endpoint.GetManager().CanAutoStartTransmitVideo() && !endpoint.GetManager().CanAutoStartReceiveVideo()) {
-
-      delete localMedia;
-      return FALSE;
-    }
-  }
-
-  // add in SDP records
+  localMedia->SetDirection(GetDirection(rtpSessionId));
   sdp->AddMediaDescription(localMedia);
- 
-
   return TRUE;
 }
 
