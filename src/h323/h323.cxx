@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2093  2005/10/08 20:02:29  dsandras
+ * Revision 1.2094  2005/10/15 13:49:28  dsandras
+ * Fixed best guess for the remote party callback url.
+ *
+ * Revision 2.92  2005/10/08 20:02:29  dsandras
  * Added OnHold calls when there is a local hold, and pause the media streams.
  *
  * Revision 2.91  2005/10/08 19:27:56  dsandras
@@ -2378,9 +2381,12 @@ const PString H323Connection::GetRemotePartyCallbackURL() const
     remote = signallingChannel->GetRemoteAddress();
 
     /* The address is formated the H.323 way */
-    j = remote.FindLast(":");
+    j = remote.FindLast("$");
     if (j != P_MAX_INDEX)
       remote = remote.Mid (j+1);
+    j = remote.FindLast(":");
+    if (j != P_MAX_INDEX)
+      remote = remote.Left (j);
   }
 
   remote = "h323:" + remote;
