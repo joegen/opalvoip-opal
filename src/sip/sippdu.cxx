@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2071  2005/10/09 19:09:34  dsandras
+ * Revision 1.2072  2005/10/17 21:27:22  dsandras
+ * Fixed VIA in CANCEL request.
+ *
+ * Revision 2.70  2005/10/09 19:09:34  dsandras
  * Max-Forwards must be part of all requests.
  *
  * Revision 2.69  2005/10/03 21:42:54  dsandras
@@ -1050,6 +1053,9 @@ PString SIPMIMEInfo::GetFieldParameter(const PString & param,
     if ((j = val.Find (' ')) != P_MAX_INDEX)
       val = val.Left(j);
     
+    if ((j = val.Find (',')) != P_MAX_INDEX)
+      val = val.Left(j);
+    
     if ((j = val.Find ('=')) != P_MAX_INDEX) 
       val = val.Mid(j+1);
     else
@@ -1848,9 +1854,9 @@ BOOL SIPTransaction::ResendCANCEL()
 		 mime.GetCallID(),
 		 mime.GetCSeqIndex(),
 		 localAddress);
-  // Use the same branch ID as the request we cancel.
-  PStringList viaList = cancel.GetMIME().GetViaList();
-  cancel.GetMIME().SetFieldParameter("branch", viaList[0], mime.GetFieldParameter("branch", viaList[0]));
+  // Use the topmost via header from the INVITE we cancel as per 9.1. 
+  PStringList viaList = mime.GetViaList();
+  cancel.GetMIME().SetVia(viaList[0]);
 
   if (!transport.SetLocalAddress(localAddress) || !cancel.Write(transport)) {
     SetTerminated(Terminated_TransportError);
