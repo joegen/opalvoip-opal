@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2101  2005/10/13 19:33:50  dsandras
+ * Revision 1.2102  2005/10/18 17:50:35  dsandras
+ * Fixed REFER so that it doesn't send a BYE but sends the NOTIFY. Fixed leak on exit if a REFER transaction was in progress while the connection is destroyed.
+ *
+ * Revision 2.100  2005/10/13 19:33:50  dsandras
  * Added GetDirection to get the default direction for a media stream. Modified OnSendMediaDescription to call BuildSDP if no reverse streams can be opened.
  *
  * Revision 2.99  2005/10/13 18:14:45  dsandras
@@ -463,6 +466,7 @@ SIPConnection::~SIPConnection()
 {
   delete originalInvite;
   delete transport;
+  delete referTransaction;
 
   PTRACE(3, "SIP\tDeleted connection.");
 }
@@ -1515,6 +1519,10 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & pdu)
     referTransaction->Wait();
     delete referTransaction;
     referTransaction = NULL;
+
+    // Release the connection
+    releaseMethod = ReleaseWithNothing;
+    Release(OpalConnection::EndedByCallForwarded);
   }
 
   // The REFER is not over yet, ignore the state of the REFER for now
@@ -1534,6 +1542,10 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & pdu)
     return;
   }    
 
+  SIP_PDU response(pdu, SIP_PDU::Successful_Accepted);
+  SendPDU(response, pdu.GetViaAddress(endpoint));
+  releaseMethod = ReleaseWithNothing;
+
   endpoint.SetupTransfer(GetToken(),  
 			 PString (), 
 			 referto,  
@@ -1542,6 +1554,8 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & pdu)
   // Send a Final NOTIFY,
   notifyTransaction = 
     new SIPReferNotify(*this, *transport, SIP_PDU::Successful_Accepted);
+  notifyTransaction->Start ();
+  delete notifyTransaction;
 }
 
 
