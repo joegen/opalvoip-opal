@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2072  2005/10/17 21:27:22  dsandras
+ * Revision 1.2073  2005/10/18 17:23:54  dsandras
+ * Fixed VIA in ACK request sent for a non-2xx response.
+ *
+ * Revision 2.71  2005/10/17 21:27:22  dsandras
  * Fixed VIA in CANCEL request.
  *
  * Revision 2.70  2005/10/09 19:09:34  dsandras
@@ -2234,10 +2237,9 @@ SIPAck::SIPAck(SIPTransaction & invite,
   transaction(invite)
 {
   Construct();
-  // Use the same branch parameter as the INVITE whose response
-  // we acknowledge
+  // Use the topmost via header from the INVITE we cancel as per 9.1. 
   PStringList viaList = mime.GetViaList();
-  mime.SetFieldParameter("branch", viaList[0], invite.GetMIME().GetFieldParameter("branch", viaList[0]));
+  mime.SetVia(viaList[0]);
 }
 
 
