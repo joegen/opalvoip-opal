@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2102  2005/10/18 17:50:35  dsandras
+ * Revision 1.2103  2005/10/18 20:50:13  dsandras
+ * Fixed tone playing in session progress.
+ *
+ * Revision 2.101  2005/10/18 17:50:35  dsandras
  * Fixed REFER so that it doesn't send a BYE but sends the NOTIFY. Fixed leak on exit if a REFER transaction was in progress while the connection is destroyed.
  *
  * Revision 2.100  2005/10/13 19:33:50  dsandras
@@ -1640,10 +1643,7 @@ void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
   }
 
   PTRACE(3, "SIP\tStarting receive media to annunciate remote progress tones");
-  for (PINDEX i = 0; i < mediaStreams.GetSize(); i++) {
-    if (mediaStreams[i].IsSource())
-      mediaStreams[i].Start();
-  }
+  OnConnected();                        // start media streams
 }
 
 
