@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2068  2005/10/11 20:53:35  dsandras
+ * Revision 1.2069  2005/10/20 20:26:22  dsandras
+ * Made the transactions handling thread-safe.
+ *
+ * Revision 2.67  2005/10/11 20:53:35  dsandras
  * Allow the expire field to be outside of the SIPURL formed by the contact field.
  *
  * Revision 2.66  2005/10/09 20:42:59  dsandras
@@ -287,6 +290,8 @@ SIPInfo::SIPInfo(SIPEndPoint &endpoint, const PString & adjustedUsername)
 
 SIPInfo::~SIPInfo() 
 {
+  registrations.RemoveAll();
+
   if (registrarTransport) 
     delete registrarTransport;
 }
@@ -433,6 +438,7 @@ SIPEndPoint::~SIPEndPoint()
       i++;
   }
 
+  PWaitAndSignal m(transactionsMutex);
   PTRACE(3, "SIP\tDeleted endpoint.");
 }
 
