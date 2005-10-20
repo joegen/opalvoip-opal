@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2021  2005/08/04 17:17:08  dsandras
+ * Revision 1.2022  2005/10/20 20:27:38  dsandras
+ * Better handling of dynamic RTP session IP address changes.
+ *
+ * Revision 2.20  2005/08/04 17:17:08  dsandras
  * Fixed remote address change of an established RTP Session.
  *
  * Revision 2.19  2005/04/11 17:34:57  dsandras
@@ -1719,9 +1722,9 @@ BOOL RTP_UDP::SetRemoteSocketInfo(PIPSocket::Address address, WORD port, BOOL is
 
   if (localAddress == address && remoteAddress == address && (isDataPort ? localDataPort : localControlPort) == port)
     return TRUE;
-
+  
   remoteAddress = address;
-
+  
   allowSyncSourceInChange = TRUE;
   allowRemoteTransmitAddressChange = TRUE;
   allowSequenceChange = TRUE;
@@ -1829,12 +1832,12 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(PUDPSocket & socket
 	
 	remoteTransmitAddress = addr;
       } 
-      else if (allowRemoteTransmitAddressChange && remoteTransmitAddress != addr && remoteTransmitAddress != remoteAddress) {
+      else if (allowRemoteTransmitAddressChange && remoteAddress == addr) {
 
-        remoteTransmitAddress = remoteAddress;
+	remoteTransmitAddress = addr;
 	allowRemoteTransmitAddressChange = FALSE;
       }
-      else if (remoteTransmitAddress != addr) {
+      else if (remoteTransmitAddress != addr && !allowRemoteTransmitAddressChange) {
 
 	PTRACE(1, "RTP_UDP\tSession " << sessionID << ", "
 	       << channelName << " PDU from incorrect host, "
