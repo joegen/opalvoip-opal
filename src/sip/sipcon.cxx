@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2103  2005/10/18 20:50:13  dsandras
+ * Revision 1.2104  2005/10/20 20:25:28  dsandras
+ * Update the RTP Session address when the new streams are started.
+ *
+ * Revision 2.102  2005/10/18 20:50:13  dsandras
  * Fixed tone playing in session progress.
  *
  * Revision 2.101  2005/10/18 17:50:35  dsandras
@@ -654,6 +657,9 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
                                               unsigned rtpSessionId,
                                               SDPSessionDescription & sdpOut)
 {
+  RTP_UDP * rtpSession = NULL;
+  BOOL updateAddress = FALSE;
+
   // if no matching media type, return FALSE
   SDPMediaDescription * incomingMedia = sdpIn.GetMediaDescription(rtpMediaType);
   if (incomingMedia == NULL) {
@@ -708,7 +714,7 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   else {
 
     // create an RTP session
-    RTP_UDP * rtpSession = (RTP_UDP *)UseSession(GetTransport(), rtpSessionId, NULL);
+    rtpSession = (RTP_UDP *)UseSession(GetTransport(), rtpSessionId, NULL);
     if (rtpSession == NULL)
       return FALSE;
 
@@ -717,16 +723,8 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
       // Set user data
       if (rtpSession->GetUserData() == NULL)
         rtpSession->SetUserData(new SIP_RTP_Session(*this));
-      
-      // set the remote addresses
-      PIPSocket::Address ip;
-      WORD port;
-      incomingMedia->GetTransportAddress().GetIpAndPort(ip, port);
-      if (!rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
-        PTRACE(1, "SIP\tCannot set remote ports on RTP session");
-        ReleaseSession(rtpSessionId);
-        return FALSE;
-      }
+
+      updateAddress = TRUE;
     }
 
     localAddress = GetLocalAddress(rtpSession->GetLocalDataPort());
@@ -759,7 +757,6 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   
   // No stream opened for this session, use the default SDP
   if (reverseStreamsFailed) {
-    cout << "ici" << endl << flush;
     SDPSessionDescription *sdp = (SDPSessionDescription *) &sdpOut;
     if (!BuildSDP(sdp, rtpSessions, rtpSessionId)) {
       delete localMedia;
@@ -770,6 +767,20 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
 
   localMedia->SetDirection(GetDirection(rtpSessionId));
   sdpOut.AddMediaDescription(localMedia);
+      
+  if (updateAddress) {
+    // set the remote address after the stream is opened
+    PIPSocket::Address ip;
+    WORD port;
+    incomingMedia->GetTransportAddress().GetIpAndPort(ip, port);
+    if (!rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
+      PTRACE(1, "SIP\tCannot set remote ports on RTP session");
+      ReleaseSession(rtpSessionId);
+      delete localMedia;
+      return FALSE;
+    }
+  }
+
   return TRUE;
 }
 
@@ -1517,6 +1528,10 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & pdu)
   }
 
   state = pdu.GetMIME().GetSubscriptionState();
+  
+  SIP_PDU response(pdu, SIP_PDU::Successful_OK);
+  SendPDU(response, pdu.GetViaAddress(endpoint));
+  
   // The REFER is over
   if (state.Find("terminated") != P_MAX_INDEX) {
     referTransaction->Wait();
@@ -1529,8 +1544,6 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & pdu)
   }
 
   // The REFER is not over yet, ignore the state of the REFER for now
-  SIP_PDU response(pdu, SIP_PDU::Successful_OK);
-  SendPDU(response, pdu.GetViaAddress(endpoint));
 }
 
 
