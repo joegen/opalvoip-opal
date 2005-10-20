@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2033  2005/10/02 21:46:20  dsandras
+ * Revision 1.2034  2005/10/20 20:26:58  dsandras
+ * Made the transactions handling thread-safe.
+ *
+ * Revision 2.32  2005/10/02 21:46:20  dsandras
  * Added more doc.
  *
  * Revision 2.31  2005/10/02 17:47:37  dsandras
@@ -225,11 +228,11 @@ class SIPInfo : public PSafeObject
       SIPURL             registrationAddress;
       PString            registrationID;
       SIPTransactionList registrations;
-      PTime		           registrationTime;
+      PTime	         registrationTime;
       BOOL               registered;
-      int		             expire;
-      PString		         authRealm;
-      PString 		       password;
+      int	         expire;
+      PString	         authRealm;
+      PString 	         password;
 };
 
 class SIPRegisterInfo : public SIPInfo
@@ -619,11 +622,11 @@ class SIPEndPoint : public OpalEndPoint
 
     void AddTransaction(
       SIPTransaction * transaction
-    ) { transactions.SetAt(transaction->GetTransactionID(), transaction); }
+    ) { PWaitAndSignal m(transactionsMutex); transactions.SetAt(transaction->GetTransactionID(), transaction); }
 
     void RemoveTransaction(
       SIPTransaction * transaction
-    ) { transactions.SetAt(transaction->GetTransactionID(), NULL); }
+    ) { PWaitAndSignal m(transactionsMutex); transactions.SetAt(transaction->GetTransactionID(), NULL); }
 
     
     /**Return the next CSEQ for the next transaction.
@@ -826,6 +829,8 @@ class SIPEndPoint : public OpalEndPoint
     PTimer registrationTimer; // Used to refresh the REGISTER and the SUBSCRIBE transactions.
     SIPTransactionList messages;
     SIPTransactionDict transactions;
+
+    PMutex	       transactionsMutex;
 
     unsigned           lastSentCSeq;
 };
