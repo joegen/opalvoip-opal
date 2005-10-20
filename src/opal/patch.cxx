@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2016  2005/09/06 12:44:49  rjongbloed
+ * Revision 1.2017  2005/10/20 20:28:18  dsandras
+ * Avoid the thread to keep the priority for a too long time.
+ *
+ * Revision 2.15  2005/09/06 12:44:49  rjongbloed
  * Many fixes to finalise the video processing: merging remote media
  *
  * Revision 2.14  2005/09/04 06:23:39  rjongbloed
@@ -170,6 +173,7 @@ void OpalMediaPatch::Main()
 
     PINDEX len = sinks.GetSize();
     inUse.Signal();
+    Sleep(5); // Permit to another thread to take the mutex
     if (len == 0)
       break;
   }
