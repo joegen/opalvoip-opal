@@ -24,7 +24,10 @@
  * Contributor(s): 
  *
  * $Log: vidcodec.h,v $
- * Revision 1.2011  2005/09/06 12:44:49  rjongbloed
+ * Revision 1.2012  2005/10/21 17:58:31  dsandras
+ * Applied patch from Hannes Friederich <hannesf AATT ee.ethz.ch> to fix OpalVideoUpdatePicture - PIsDescendant problems. Thanks!
+ *
+ * Revision 2.10  2005/09/06 12:44:49  rjongbloed
  * Many fixes to finalise the video processing: merging remote media
  *
  * Revision 2.9  2005/09/04 06:23:38  rjongbloed
@@ -179,11 +182,12 @@ OPAL_DEFINE_MEDIA_COMMAND(OpalVideoFreezePicture, "Freeze Picture");
 
 class OpalVideoUpdatePicture : public OpalMediaCommand
 {
+  PCLASSINFO(OpalVideoUpdatePicture, OpalMediaCommand);
   public:
     OpalVideoUpdatePicture(int firstGOB = -1, int firstMB = -1, int numBlocks = 0)
       : m_firstGOB(firstGOB), m_firstMB(firstMB), m_numBlocks(numBlocks) { }
 
-    virtual PString GetName() const { return "Update Picture"; }
+    virtual PString GetName() const;
 
     int GetFirstGOB() const { return m_firstGOB; }
     int GetFirstMB() const { return m_firstMB; }
@@ -198,10 +202,11 @@ class OpalVideoUpdatePicture : public OpalMediaCommand
 
 class OpalTemporalSpatialTradeOff : public OpalMediaCommand
 {
+  PCLASSINFO(OpalTemporalSpatialTradeOff, OpalMediaCommand);
   public:
     OpalTemporalSpatialTradeOff(int quality) : m_quality(quality) { }
 
-    virtual PString GetName() const { return "Temporal Spatial Trade Off"; }
+    virtual PString GetName() const;
 
     int GetQuality() const { return m_quality; }
 
@@ -269,7 +274,7 @@ class H323_UncompVideoCapability : public H323NonStandardVideoCapability
  */
 class OpalUncompVideoTranscoder : public OpalVideoTranscoder
 {
-    PCLASSINFO(OpalUncompVideoTranscoder, OpalVideoTranscoder);
+  PCLASSINFO(OpalUncompVideoTranscoder, OpalVideoTranscoder);
   public:
   /**@name Construction */
   //@{
@@ -316,12 +321,14 @@ class OpalUncompVideoTranscoder : public OpalVideoTranscoder
 
 
 class Opal_RGB24_RGB24 : public OpalUncompVideoTranscoder {
+  PCLASSINFO(Opal_RGB24_RGB24, OpalUncompVideoTranscoder);
   public:
     Opal_RGB24_RGB24() : OpalUncompVideoTranscoder(OpalRGB24, OpalRGB24) { }
 };
 
 
 class Opal_RGB32_RGB32 : public OpalUncompVideoTranscoder {
+  PCLASSINFO(Opal_RGB32_RGB32, OpalUncompVideoTranscoder);
   public:
     Opal_RGB32_RGB32() : OpalUncompVideoTranscoder(OpalRGB32, OpalRGB32) { }
 };
