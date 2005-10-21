@@ -40,7 +40,7 @@
   */
 class OpalMediaCommand : public PObject
 {
-    PCLASSINFO(OpalMediaCommand, PObject);
+  PCLASSINFO(OpalMediaCommand, PObject);
   public:
   /**@name Overrides from PObject */
   //@{
@@ -80,6 +80,7 @@ class OpalMediaCommand : public PObject
 #define OPAL_DEFINE_MEDIA_COMMAND(cls, name) \
   class cls : public OpalMediaCommand \
   { \
+	PCLASSINFO(cls, OpalMediaCommand) \
     public: \
       virtual PString GetName() const { return name; } \
   }

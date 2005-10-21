@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vidcodec.cxx,v $
- * Revision 1.2010  2005/09/06 12:44:49  rjongbloed
+ * Revision 1.2011  2005/10/21 17:58:31  dsandras
+ * Applied patch from Hannes Friederich <hannesf AATT ee.ethz.ch> to fix OpalVideoUpdatePicture - PIsDescendant problems. Thanks!
+ *
+ * Revision 2.9  2005/09/06 12:44:49  rjongbloed
  * Many fixes to finalise the video processing: merging remote media
  *
  * Revision 2.8  2005/08/31 13:19:25  rjongbloed
@@ -161,6 +164,15 @@ BOOL OpalVideoTranscoder::Convert(const RTP_DataFrame & /*input*/,
   return FALSE;
 }
 
+PString OpalVideoUpdatePicture::GetName() const
+{
+  return "Update Picture";
+}
+
+PString OpalTemporalSpatialTradeOff::GetName() const
+{
+  return "Temporal Spatial Trade Off";
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 
