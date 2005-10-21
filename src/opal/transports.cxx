@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2056  2005/10/09 15:18:12  dsandras
+ * Revision 1.2057  2005/10/21 17:57:00  dsandras
+ * Applied patch from Hannes Friederich <hannesf AATT ee.ethz.ch> to fix GK
+ * registration issues when there are multiple interfaces. Thanks!
+ *
+ * Revision 2.55  2005/10/09 15:18:12  dsandras
  * Only add socket to the connectSockets when it is open.
  *
  * Revision 2.54  2005/10/09 15:12:38  dsandras
@@ -1846,6 +1850,7 @@ BOOL OpalTransportUDP::Connect()
     PTRACE(4, "OpalUDP\tConnecting to interfaces:\n" << setfill('\n') << interfaces << setfill(' '));
   }
 
+  PIndirectChannel::Close();	//closing the channel and opening it with the new socket
   PINDEX i;
   for (i = 0; i < interfaces.GetSize(); i++) {
     PIPSocket::Address interfaceAddress = interfaces[i].GetAddress();
@@ -1873,9 +1878,9 @@ BOOL OpalTransportUDP::Connect()
         return FALSE;
       }
     }
-    PIndirectChannel::Close();	//closing the channel and opening it with the new socket
     readAutoDelete = writeAutoDelete = FALSE;
-    Open(socket);
+    if (!PIndirectChannel::IsOpen())
+      Open(socket);
 
 #ifndef __BEOS__
     if (remoteAddress == INADDR_BROADCAST) {
@@ -1893,16 +1898,7 @@ BOOL OpalTransportUDP::Connect()
     connectSockets.Append(socket);
   }
   
-  // check to make sure that we are not already connected. (thus, EndConnect() has been called)
-  if(writeChannel && localAddress.IsValid()) {
-    PTRACE(2, "OpalUDP\tConnect() to already connected channel");
-    return TRUE;
-  }
-  
-  // Skip over the OpalTransportUDP::Close to make sure PUDPSocket is deleted.
-  PIndirectChannel::Close();
   readAutoDelete = writeAutoDelete = FALSE;
-
 
   if (connectSockets.IsEmpty())
     return FALSE;
