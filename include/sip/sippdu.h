@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2032  2005/09/27 16:06:12  dsandras
+ * Revision 1.2033  2005/10/22 17:14:45  dsandras
+ * Send an OPTIONS request periodically when STUN is being used to maintain the registrations binding alive.
+ *
+ * Revision 2.31  2005/09/27 16:06:12  dsandras
  * Added function that returns the address to which a request should be sent
  * according to the RFC.
  * Removed OnCompleted method for SIPInvite, the ACK is now
@@ -922,6 +925,24 @@ class SIPAck : public SIP_PDU
 
     SIPTransaction & transaction;
 };
+
+
+/////////////////////////////////////////////////////////////////////////
+
+/* This is an OPTIONS request
+ */
+class SIPOptions : public SIPTransaction
+{
+    PCLASSINFO(SIPOptions, SIPTransaction);
+    
+  public:
+    SIPOptions(
+      SIPEndPoint & ep,
+      OpalTransport & trans,
+      const SIPURL & address
+    );
+};
+
 
 #endif // __OPAL_SIPPDU_H
 
