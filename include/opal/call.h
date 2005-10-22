@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2023  2005/09/22 17:08:52  dsandras
+ * Revision 1.2024  2005/10/22 12:16:05  dsandras
+ * Moved mutex preventing media streams to be opened before they are completely closed to the SIPConnection class.
+ *
+ * Revision 2.22  2005/09/22 17:08:52  dsandras
  * Added mutex to protect media streams access and prevent media streams for a call to be closed before they are all opened.
  *
  * Revision 2.21  2005/08/04 17:21:48  dsandras
@@ -425,7 +428,6 @@ class OpalCall : public PSafeObject
   protected:
     OpalManager & manager;
 
-    PMutex  streamsMutex;
     PString myToken;
 
     PString partyA;
