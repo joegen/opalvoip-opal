@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2106  2005/10/22 14:43:48  dsandras
+ * Revision 1.2107  2005/10/22 19:57:33  dsandras
+ * Added SIP failure cause.
+ *
+ * Revision 2.105  2005/10/22 14:43:48  dsandras
  * Little cleanup.
  *
  * Revision 2.104  2005/10/22 12:16:05  dsandras
@@ -1279,6 +1282,10 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
     case SIP_PDU::Failure_NotFound :
       Release(EndedByNoUser);
+      break;
+
+    case SIP_PDU::Failure_TemporarilyUnavailable :
+      Release(EndedByTemporaryFailure);
       break;
       
     case SIP_PDU::Failure_Forbidden :
