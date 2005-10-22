@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2105  2005/10/22 12:16:05  dsandras
+ * Revision 1.2106  2005/10/22 14:43:48  dsandras
+ * Little cleanup.
+ *
+ * Revision 2.104  2005/10/22 12:16:05  dsandras
  * Moved mutex preventing media streams to be opened before they are completely closed to the SIPConnection class.
  *
  * Revision 2.103  2005/10/20 20:25:28  dsandras
@@ -736,9 +739,8 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   }
 
   // Try opening streams 
-  streamsMutex.Wait();
+  PWaitAndSignal m(streamsMutex);
   ownerCall.OpenSourceMediaStreams(*this, remoteFormatList, rtpSessionId);
-  streamsMutex.Signal();
 
   // construct a new media session list 
   SDPMediaDescription * localMedia = new SDPMediaDescription(localAddress, rtpMediaType);
@@ -1394,9 +1396,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     // If it is a RE-INVITE that doesn't correspond to a HOLD, then
     // Close all media streams, they will be reopened.
     if (!IsConnectionOnHold()) {
-      streamsMutex.Wait();
+      PWaitAndSignal m(streamsMutex);
       GetCall().RemoveMediaStreams();
-      streamsMutex.Signal();
     }
     
     BOOL failure = !OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut);
@@ -1845,13 +1846,11 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
   remoteFormatList += mediaDescription->GetMediaFormats(rtpSessionId);
   AdjustMediaFormats(remoteFormatList);
   
-  streamsMutex.Wait();
+  PWaitAndSignal m(streamsMutex);
   if (!ownerCall.OpenSourceMediaStreams(*this, remoteFormatList, rtpSessionId)) {
     PTRACE(2, "SIP\tCould not open media streams for " << rtpSessionId);
-    streamsMutex.Signal();
     return FALSE;
   }
-  streamsMutex.Signal();
 
   // OPen the reverse streams
   for (PINDEX i = 0; i < mediaStreams.GetSize(); i++) {
