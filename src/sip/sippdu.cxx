@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2074  2005/10/22 17:14:44  dsandras
+ * Revision 1.2075  2005/10/22 18:01:21  dsandras
+ * Added tag to FROM field in MESSAGE/REGISTER/SUBSCRIBE requests.
+ *
+ * Revision 2.73  2005/10/22 17:14:44  dsandras
  * Send an OPTIONS request periodically when STUN is being used to maintain the registrations binding alive.
  *
  * Revision 2.72  2005/10/18 17:23:54  dsandras
@@ -2120,7 +2123,7 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
   SIP_PDU::Construct(Method_REGISTER,
                      "sip:"+address.GetHostName(),
                      addrStr,
-                     addrStr,
+                     addrStr+";tag="+OpalGloballyUniqueID().AsString(),
                      id,
                      endpoint.GetNextCSeq(),
                      transport.GetLocalAddress());
@@ -2143,7 +2146,7 @@ SIPMWISubscribe::SIPMWISubscribe(SIPEndPoint & ep,
   SIP_PDU::Construct(Method_SUBSCRIBE,
                      "sip:"+address.GetUserName()+"@"+address.GetHostName(),
                      addrStr,
-                     addrStr,
+                     addrStr+";tag="+OpalGloballyUniqueID().AsString(),
                      id,
                      endpoint.GetNextCSeq(),
                      transport.GetLocalAddress());
@@ -2216,7 +2219,7 @@ SIPMessage::SIPMessage(SIPEndPoint & ep,
   SIP_PDU::Construct(Method_MESSAGE,
                      "sip:"+address.GetUserName()+"@"+address.GetHostName(),
                      address.AsQuotedString(),
-                     myAddress.AsQuotedString(),
+                     myAddress.AsQuotedString()+";tag="+OpalGloballyUniqueID().AsString(),
                      id,
                      endpoint.GetNextCSeq(),
                      transport.GetLocalAddress());
@@ -2302,7 +2305,7 @@ SIPOptions::SIPOptions(SIPEndPoint & ep,
   SIP_PDU::Construct(Method_OPTIONS,
 		     requestURI,
                      address.AsQuotedString(),
-                     myAddress.AsQuotedString(),
+                     myAddress.AsQuotedString()+";tag="+OpalGloballyUniqueID().AsString(),
                      id,
                      endpoint.GetNextCSeq(),
                      transport.GetLocalAddress());
