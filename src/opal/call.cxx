@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2038  2005/10/04 13:02:24  rjongbloed
+ * Revision 1.2039  2005/10/22 12:16:05  dsandras
+ * Moved mutex preventing media streams to be opened before they are completely closed to the SIPConnection class.
+ *
+ * Revision 2.37  2005/10/04 13:02:24  rjongbloed
  * Removed CanOpenSourceMediaStream/CanOpenSinkMediaStream functions and
  *   now use overides on OpenSourceMediaStream/OpenSinkMediaStream
  *
@@ -438,7 +441,6 @@ BOOL OpalCall::OpenSourceMediaStreams(const OpalConnection & connection,
 {
   PTRACE(2, "Call\tOpenSourceMediaStreams for session " << sessionID
          << " with media " << setfill(',') << mediaFormats << setfill(' '));
-  PWaitAndSignal m(streamsMutex);
 
   BOOL startedOne = FALSE;
 
@@ -474,7 +476,6 @@ BOOL OpalCall::OpenSourceMediaStreams(const OpalConnection & connection,
 
 void OpalCall::CloseMediaStreams()
 {
-  PWaitAndSignal m(streamsMutex);
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) 
     conn->CloseMediaStreams();
 }
@@ -482,7 +483,6 @@ void OpalCall::CloseMediaStreams()
 
 void OpalCall::RemoveMediaStreams()
 {
-  PWaitAndSignal m(streamsMutex);
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) 
     conn->RemoveMediaStreams();
 }

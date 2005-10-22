@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2039  2005/10/13 19:33:50  dsandras
+ * Revision 1.2040  2005/10/22 12:16:05  dsandras
+ * Moved mutex preventing media streams to be opened before they are completely closed to the SIPConnection class.
+ *
+ * Revision 2.38  2005/10/13 19:33:50  dsandras
  * Added GetDirection to get the default direction for a media stream. Modified OnSendMediaDescription to call BuildSDP if no reverse streams can be opened.
  *
  * Revision 2.37  2005/10/04 12:57:18  rjongbloed
@@ -553,6 +556,7 @@ class SIPConnection : public OpalConnection
     OpalTransport * transport;
 
     PMutex		  transportMutex;
+    PMutex                streamsMutex;
     BOOL	          local_hold;
     BOOL	          remote_hold;
     PString               localPartyAddress;
