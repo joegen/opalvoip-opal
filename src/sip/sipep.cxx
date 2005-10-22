@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2069  2005/10/20 20:26:22  dsandras
+ * Revision 1.2070  2005/10/22 10:29:29  dsandras
+ * Increased refresh interval.
+ *
+ * Revision 2.68  2005/10/20 20:26:22  dsandras
  * Made the transactions handling thread-safe.
  *
  * Revision 2.67  2005/10/11 20:53:35  dsandras
@@ -416,7 +419,7 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   transactions.DisallowDeleteObjects();
 
   registrationTimer.SetNotifier(PCREATE_NOTIFIER(RegistrationRefresh));
-  registrationTimer.RunContinuous (PTimeInterval(0, 5));
+  registrationTimer.RunContinuous (PTimeInterval(0, 30));
 
   PTRACE(3, "SIP\tCreated endpoint.");
 }
