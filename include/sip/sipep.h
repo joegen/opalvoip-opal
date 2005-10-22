@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2034  2005/10/20 20:26:58  dsandras
+ * Revision 1.2035  2005/10/22 17:14:45  dsandras
+ * Send an OPTIONS request periodically when STUN is being used to maintain the registrations binding alive.
+ *
+ * Revision 2.33  2005/10/20 20:26:58  dsandras
  * Made the transactions handling thread-safe.
  *
  * Revision 2.32  2005/10/02 21:46:20  dsandras
@@ -240,13 +243,18 @@ class SIPRegisterInfo : public SIPInfo
   PCLASSINFO(SIPRegisterInfo, SIPInfo);
 
   public:
-    SIPRegisterInfo (SIPEndPoint & ep, const PString & adjustedUsername, const PString & password/*, const PString & authRealm*/);
-    virtual SIPTransaction * CreateTransaction (OpalTransport &, BOOL);
-    virtual SIP_PDU::Methods GetMethod ()
+    SIPRegisterInfo(SIPEndPoint & ep, const PString & adjustedUsername, const PString & password/*, const PString & authRealm*/);
+    ~SIPRegisterInfo();
+    virtual SIPTransaction * CreateTransaction(OpalTransport &, BOOL);
+    virtual SIP_PDU::Methods GetMethod()
     { return SIP_PDU::Method_REGISTER; }
 
-    virtual void OnSuccess ();
-    virtual void OnFailed (SIP_PDU::StatusCodes r);
+    virtual void OnSuccess();
+    virtual void OnFailed(SIP_PDU::StatusCodes r);
+  private:
+    PDECLARE_NOTIFIER(PTimer, SIPRegisterInfo, OnNATTimeout);
+    PTimer             natTimer;
+    SIPOptions       * natBindingOptions;
 };
 
 class SIPMWISubscribeInfo : public SIPInfo
