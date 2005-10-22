@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2070  2005/10/22 10:29:29  dsandras
+ * Revision 1.2071  2005/10/22 17:14:44  dsandras
+ * Send an OPTIONS request periodically when STUN is being used to maintain the registrations binding alive.
+ *
+ * Revision 2.69  2005/10/22 10:29:29  dsandras
  * Increased refresh interval.
  *
  * Revision 2.68  2005/10/20 20:26:22  dsandras
@@ -327,8 +330,17 @@ SIPRegisterInfo::SIPRegisterInfo(SIPEndPoint & endpoint, const PString & name, c
 {
   expire = ep.GetRegistrarTimeToLive().GetSeconds();
   password = pass;
+
+  natTimer.SetNotifier(PCREATE_NOTIFIER(OnNATTimeout));
+  natBindingOptions = NULL;
 }
 
+
+SIPRegisterInfo::~SIPRegisterInfo()
+{
+  if (natBindingOptions)
+    delete natBindingOptions;
+}
 
 SIPTransaction * SIPRegisterInfo::CreateTransaction(OpalTransport &t, BOOL unregister)
 {
@@ -355,6 +367,11 @@ void SIPRegisterInfo::OnSuccess ()
   ep.OnRegistered(registrationAddress.GetHostName(), 
 		  registrationAddress.GetUserName(),
 		  (expire > 0)); 
+  if (ep.GetManager().GetSTUN (registrationAddress.GetHostName()))
+    if (expire > 0)
+      natTimer.RunContinuous(PTimeInterval(60000));
+    else
+      natTimer.Stop();
 }
 
 void SIPRegisterInfo::OnFailed (SIP_PDU::StatusCodes r)
@@ -364,6 +381,19 @@ void SIPRegisterInfo::OnFailed (SIP_PDU::StatusCodes r)
 			   registrationAddress.GetUserName(),
 			   r,
 			   (expire > 0));
+}
+
+void SIPRegisterInfo::OnNATTimeout (PTimer &, INT)
+{
+  if (registrarTransport) {
+    if (natBindingOptions)
+      if (natBindingOptions->IsFinished())
+	delete natBindingOptions;
+      else
+	return;
+    natBindingOptions = new SIPOptions (ep, *registrarTransport, registrationAddress.GetHostName());
+    natBindingOptions->Start();
+  }
 }
 
 SIPMWISubscribeInfo::SIPMWISubscribeInfo (SIPEndPoint & endpoint, const PString & name)

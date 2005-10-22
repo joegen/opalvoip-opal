@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2073  2005/10/18 17:23:54  dsandras
+ * Revision 1.2074  2005/10/22 17:14:44  dsandras
+ * Send an OPTIONS request periodically when STUN is being used to maintain the registrations binding alive.
+ *
+ * Revision 2.72  2005/10/18 17:23:54  dsandras
  * Fixed VIA in ACK request sent for a non-2xx response.
  *
  * Revision 2.71  2005/10/17 21:27:22  dsandras
@@ -2262,5 +2265,47 @@ void SIPAck::Construct()
   // Add authentication if had any on INVITE
   if (transaction.GetMIME().Contains("Proxy-Authorization") || transaction.GetMIME().Contains("Authorization"))
     transaction.GetConnection()->GetAuthenticator().Authorise(*this);
+}
+
+
+/////////////////////////////////////////////////////////////////////////
+
+SIPOptions::SIPOptions(SIPEndPoint & ep,
+		       OpalTransport & trans,
+		       const SIPURL & address)
+  : SIPTransaction(ep, trans)
+{
+  PString requestURI;
+  PString id = OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
+    
+  // Build the correct From field
+  int port = 0;
+  PString displayName = ep.GetDefaultDisplayName();
+  PString localName = endpoint.GetRegisteredPartyName(SIPURL(address).GetHostName()).GetUserName(); 
+  PString domain = endpoint.GetRegisteredPartyName(SIPURL(address).GetHostName()).GetHostName();
+
+  // If no domain, use the local domain as default
+  if (domain.IsEmpty()) {
+    domain = trans.GetLocalAddress().GetHostName();
+    if (port != endpoint.GetDefaultSignalPort())
+      domain += psprintf(":%d", port);
+  }
+  if (localName.IsEmpty())
+    localName = ep.GetDefaultLocalPartyName ();
+
+  SIPURL myAddress("\"" + displayName + "\" <" + localName + "@" + domain + ">"); 
+  if (!address.GetUserName())
+    requestURI = "sip:" + address.GetHostName();
+  else
+    requestURI = "sip:"+address.GetUserName()+"@"+address.GetHostName(),
+  
+  SIP_PDU::Construct(Method_OPTIONS,
+		     requestURI,
+                     address.AsQuotedString(),
+                     myAddress.AsQuotedString(),
+                     id,
+                     endpoint.GetNextCSeq(),
+                     transport.GetLocalAddress());
+  mime.SetAccept("application/sdp");
 }
 // End of file ////////////////////////////////////////////////////////////////
