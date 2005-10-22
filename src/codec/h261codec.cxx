@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.cxx,v $
- * Revision 1.2026  2005/09/15 20:01:23  dsandras
+ * Revision 1.2027  2005/10/22 10:29:04  dsandras
+ * Removed FIXME.
+ *
+ * Revision 2.25  2005/09/15 20:01:23  dsandras
  * Allow dynamic quality adjustments.
  *
  * Revision 2.24  2005/09/15 19:24:15  dsandras
@@ -516,7 +519,7 @@ BOOL Opal_H261_YUV420P::ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameLi
   videoDecoder->mark(now);
   if (!videoDecoder->decode(src.GetPayloadPtr(), src.GetPayloadSize(), lostPreviousPacket)) {
     OpalVideoUpdatePicture updatePicture;
-    //commandNotifier(updatePicture, 0); FIXME
+    commandNotifier(updatePicture, 0); 
     PTRACE (3, "H261\t Could not decode frame, sending VideoUpdatePicture in hope of an I-Frame.");
     return TRUE;
   }
