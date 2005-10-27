@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2107  2005/10/22 19:57:33  dsandras
+ * Revision 1.2108  2005/10/27 20:53:36  dsandras
+ * Send a BYE when receiving a NOTIFY for a REFER we just sent.
+ *
+ * Revision 2.106  2005/10/22 19:57:33  dsandras
  * Added SIP failure cause.
  *
  * Revision 2.105  2005/10/22 14:43:48  dsandras
@@ -1557,7 +1560,7 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & pdu)
     referTransaction = NULL;
 
     // Release the connection
-    releaseMethod = ReleaseWithNothing;
+    releaseMethod = ReleaseWithBYE;
     Release(OpalConnection::EndedByCallForwarded);
   }
 
@@ -1588,7 +1591,7 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & pdu)
   // Send a Final NOTIFY,
   notifyTransaction = 
     new SIPReferNotify(*this, *transport, SIP_PDU::Successful_Accepted);
-  notifyTransaction->Start ();
+  notifyTransaction->Wait ();
   delete notifyTransaction;
 }
 
