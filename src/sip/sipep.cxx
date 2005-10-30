@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2071  2005/10/22 17:14:44  dsandras
+ * Revision 1.2072  2005/10/30 15:55:55  dsandras
+ * Added more calls to OnMessageFailed().
+ *
+ * Revision 2.70  2005/10/22 17:14:44  dsandras
  * Send an OPTIONS request periodically when STUN is being used to maintain the registrations binding alive.
  *
  * Revision 2.69  2005/10/22 10:29:29  dsandras
@@ -1504,8 +1507,14 @@ BOOL SIPEndPoint::SendMessage (const SIPURL & url,
 
   OpalTransportAddress transportAddress(hostname, port, "udp");
   transport = CreateTransport(transportAddress);
+  if (!transport) {
+      OnMessageFailed(url, SIP_PDU::Failure_BadGateway);
+      delete minfo;
+      return FALSE;
+  }
   if (transport != NULL && !transport->WriteConnect(WriteMESSAGE, &*minfo)) {
     PTRACE(1, "SIP\tCould not write to " << transportAddress << " - " << transport->GetErrorText());
+    OnMessageFailed(url, SIP_PDU::Failure_BadGateway);
     delete minfo;
     return FALSE;
   }
