@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2035  2005/10/22 17:14:45  dsandras
+ * Revision 1.2036  2005/10/30 23:01:29  dsandras
+ * Added possibility to have a body for SIPInfo. Moved MESSAGE sending to SIPInfo for more efficiency during conversations.
+ *
+ * Revision 2.34  2005/10/22 17:14:45  dsandras
  * Send an OPTIONS request periodically when STUN is being used to maintain the registrations binding alive.
  *
  * Revision 2.33  2005/10/20 20:26:58  dsandras
@@ -156,7 +159,9 @@ class SIPConnection;
 
 /////////////////////////////////////////////////////////////////////////
 
-/* Class to contain parameters about SIP requests such as INVITE and SUBSCRIBE
+/* Class to contain parameters about SIP requests which maintain a
+ * transport open such as REGISTER, SUBSCRIBE and MESSAGE.
+ * Required to support several concurrent registrations or conversations.
  */
 class SIPInfo : public PSafeObject 
 {
@@ -210,6 +215,9 @@ class SIPInfo : public PSafeObject
     
     virtual void SetAuthRealm(const PString & r)
     { authRealm = r;}
+    
+    virtual void SetBody(const PString & b)
+    { body = b;}
    
     virtual SIPTransaction * CreateTransaction(
       OpalTransport & t, 
@@ -236,6 +244,7 @@ class SIPInfo : public PSafeObject
       int	         expire;
       PString	         authRealm;
       PString 	         password;
+      PString		 body;
 };
 
 class SIPRegisterInfo : public SIPInfo
@@ -268,6 +277,19 @@ class SIPMWISubscribeInfo : public SIPInfo
     virtual void OnSuccess ();
     virtual void OnFailed (SIP_PDU::StatusCodes);
 };
+
+class SIPMessageInfo : public SIPInfo
+{
+  PCLASSINFO(SIPMessageInfo, SIPInfo);
+  public:
+    SIPMessageInfo (SIPEndPoint & ep, const PString & adjustedUsername, const PString & body);
+    virtual SIPTransaction * CreateTransaction (OpalTransport &, BOOL);
+    virtual SIP_PDU::Methods GetMethod ()
+    { return SIP_PDU::Method_MESSAGE; }
+    virtual void OnSuccess ();
+    virtual void OnFailed (SIP_PDU::StatusCodes);
+};
+
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -551,7 +573,7 @@ class SIPEndPoint : public OpalEndPoint
 
     /** Returns the number of registered accounts.
      */
-    unsigned GetRegistrationsCount () { return activeRegistrations.GetRegistrationsCount (); }
+    unsigned GetRegistrationsCount () { return activeSIPInfo.GetRegistrationsCount (); }
     
     
     /**Returns TRUE if subscribed to the given host for MWI.
@@ -752,9 +774,10 @@ class SIPEndPoint : public OpalEndPoint
 	     */
 	    SIPInfo *FindSIPInfoByUrl (const PString & url, SIP_PDU::Methods meth, PSafetyMode m)
 	    {
-	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
+	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info) {
 		      if (SIPURL(url) == info->GetRegistrationAddress() && meth == info->GetMethod())
 		        return info;
+	      }
 	      return NULL;
 	    }
 
@@ -778,37 +801,17 @@ class SIPEndPoint : public OpalEndPoint
 	    }
     };
 
-    class SIPMessageInfo : public PObject 
-    {
-      PCLASSINFO(SIPMessageInfo, PObject);
-      
-    public:
-      SIPMessageInfo(
-        SIPEndPoint & ep,
-        const SIPURL & url,
-        const PString & body
-      );
-
-      SIPEndPoint & ep;
-      const SIPURL & url;
-      const PString & body;
-    };
-    
-    static BOOL WriteMESSAGE(
-      OpalTransport & transport, 
-      void * message
-    );
-
     static BOOL WriteSIPInfo(
       OpalTransport & transport, 
       void * info
     );
 
-    BOOL TransmitSIPRegistrationInfo (
+    BOOL TransmitSIPInfo (
       const PString & host, 
       const PString & username, 
       const PString & password, 
       const PString & authRealm,
+      const PString & body,
       SIP_PDU::Methods method
     );
 
@@ -832,7 +835,7 @@ class SIPEndPoint : public OpalEndPoint
     PTimeInterval registrarTimeToLive;
     PTimeInterval notifierTimeToLive;
     
-    RegistrationList   activeRegistrations;
+    RegistrationList   activeSIPInfo;
 
     PTimer registrationTimer; // Used to refresh the REGISTER and the SUBSCRIBE transactions.
     SIPTransactionList messages;
