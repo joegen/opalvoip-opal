@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2073  2005/10/30 23:01:29  dsandras
+ * Revision 1.2074  2005/11/02 22:17:56  dsandras
+ * Take the port into account in TransmitSIPInfo. Added missing break statements.
+ *
+ * Revision 2.72  2005/10/30 23:01:29  dsandras
  * Added possibility to have a body for SIPInfo. Moved MESSAGE sending to SIPInfo for more efficiency during conversations.
  *
  * Revision 2.71  2005/10/30 15:55:55  dsandras
@@ -756,13 +759,17 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
       {
 	OnReceivedMESSAGE(transport, *pdu);
         SIP_PDU response(*pdu, SIP_PDU::Successful_OK);
+	PString username = SIPURL(response.GetMIME().GetTo()).GetUserName();
+	response.GetMIME().SetContact(GetContactAddress(transport, username));
         response.Write(transport);
+	break;
       }
    
     case SIP_PDU::Method_OPTIONS :
      {
        SIP_PDU response(*pdu, SIP_PDU::Successful_OK);
        response.Write(transport);
+       break;
      }
     case SIP_PDU::Method_ACK :
       {
@@ -1254,6 +1261,7 @@ BOOL SIPEndPoint::TransmitSIPInfo(const PString & host,
 {
   PSafePtr<SIPInfo> info = NULL;
   OpalTransport *transport = NULL;
+  SIPURL hosturl = SIPURL (host);
   
   if (listeners.IsEmpty() || host.IsEmpty())
     return FALSE;
@@ -1272,8 +1280,8 @@ BOOL SIPEndPoint::TransmitSIPInfo(const PString & host,
 
   if (proxy.IsEmpty()) {
     // Should do DNS SRV record lookup to get registrar address
-    hostname = host;
-    port = defaultSignalPort;
+    hostname = hosturl.GetHostName();
+    port = hosturl.GetPort();
   }
   else {
     hostname = proxy.GetHostName();
@@ -1490,7 +1498,7 @@ const SIPURL SIPEndPoint::GetContactAddress(const OpalTransport &transport, cons
 BOOL SIPEndPoint::SendMessage (const SIPURL & url, 
 			       const PString & body)
 {
-  return TransmitSIPInfo(url.GetHostName (), url.GetUserName(), "", "", body, SIP_PDU::Method_MESSAGE);
+  return TransmitSIPInfo(url.AsQuotedString(), url.GetUserName(), "", "", body, SIP_PDU::Method_MESSAGE);
 }
 
 
