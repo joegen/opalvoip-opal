@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2074  2005/11/02 22:17:56  dsandras
+ * Revision 1.2075  2005/11/04 13:40:52  dsandras
+ * Initialize localPort (thanks Craig for pointing this)
+ *
+ * Revision 2.73  2005/11/02 22:17:56  dsandras
  * Take the port into account in TransmitSIPInfo. Added missing break statements.
  *
  * Revision 2.72  2005/10/30 23:01:29  dsandras
@@ -1454,7 +1457,7 @@ const SIPURL SIPEndPoint::GetRegisteredPartyName(const PString & host)
   if (info == NULL) {
    
     PIPSocket::Address localIP(PIPSocket::GetDefaultIpAny());
-    WORD localPort;
+    WORD localPort = GetDefaultSignalPort();
     if (!GetListeners().IsEmpty())
       GetListeners()[0].GetLocalAddress().GetIpAndPort(localIP, localPort);
     OpalTransportAddress address = OpalTransportAddress(localIP, localPort, "udp");
