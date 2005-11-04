@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2075  2005/11/04 13:40:52  dsandras
+ * Revision 1.2076  2005/11/04 19:12:30  dsandras
+ * Fixed OnReceivedResponse for MESSAGE PDU's.
+ *
+ * Revision 2.74  2005/11/04 13:40:52  dsandras
  * Initialize localPort (thanks Craig for pointing this)
  *
  * Revision 2.73  2005/11/02 22:17:56  dsandras
@@ -815,7 +818,7 @@ void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & res
   }
   else if (transaction.GetMethod() == SIP_PDU::Method_MESSAGE) {
   
-    info = activeSIPInfo.FindSIPInfoByUrl(transaction.GetURI().AsString(), SIP_PDU::Method_MESSAGE, PSafeReadOnly);
+    info = activeSIPInfo.FindSIPInfoByUrl(SIPURL(transaction.GetMIME().GetTo()).AsString(), SIP_PDU::Method_MESSAGE, PSafeReadOnly);
   }
   
   switch (response.GetStatusCode()) {
@@ -837,7 +840,6 @@ void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & res
 	    // Failure for a SUBSCRIBE/REGISTER/MESSAGE 
 	    info->OnFailed (response.GetStatusCode());
 	  }
-          ;
       }
   }
 }
