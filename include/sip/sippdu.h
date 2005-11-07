@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2033  2005/10/22 17:14:45  dsandras
+ * Revision 1.2034  2005/11/07 06:34:53  csoutheren
+ * Changed PMutex to PTimedMutex
+ *
+ * Revision 2.32  2005/10/22 17:14:45  dsandras
  * Send an OPTIONS request periodically when STUN is being used to maintain the registrations binding alive.
  *
  * Revision 2.31  2005/09/27 16:06:12  dsandras
@@ -768,7 +771,7 @@ class SIPTransaction : public SIP_PDU
     PTimer   completionTimer;
 
     PSyncPoint finished;
-    PMutex     mutex;
+    PTimedMutex mutex;
 
     OpalTransportAddress localAddress;
 };
