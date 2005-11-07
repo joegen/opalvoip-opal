@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2058  2005/09/06 04:58:42  dereksmithies
+ * Revision 1.2059  2005/11/07 02:27:48  dereksmithies
+ * Get the answer call Y/N mechanism to work correctly.
+ *
+ * Revision 2.57  2005/09/06 04:58:42  dereksmithies
  * Add console input options. This is an initial release, and some "refinement"
  * help immensely.
  *
@@ -972,7 +975,7 @@ OpalConnection::AnswerCallResponse
 {
   cout << "incoming call from " << caller << endl;
   cout << "Answer call (Y/N) " << endl;
-
+  currentCallToken = connection.GetCall().GetToken();
   return OpalConnection::AnswerCallPending;
 }
 
