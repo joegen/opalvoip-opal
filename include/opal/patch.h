@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.h,v $
- * Revision 1.2009  2005/09/04 06:23:38  rjongbloed
+ * Revision 1.2010  2005/11/07 06:34:52  csoutheren
+ * Changed PMutex to PTimedMutex
+ *
+ * Revision 2.8  2005/09/04 06:23:38  rjongbloed
  * Added OpalMediaCommand mechanism (via PNotifier) for media streams
  *   and media transcoders to send commands back to remote.
  *
@@ -241,7 +244,7 @@ class OpalMediaPatch : public PThread
     };
     PList<Filter> filters;
 
-    mutable PMutex inUse;
+    mutable PTimedMutex inUse;
 };
 
 
