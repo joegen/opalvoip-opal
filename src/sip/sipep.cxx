@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2076  2005/11/04 19:12:30  dsandras
+ * Revision 1.2077  2005/11/07 21:44:49  dsandras
+ * Fixed origin of MESSAGE requests. Ignore refreshes for MESSAGE requests.
+ *
+ * Revision 2.75  2005/11/04 19:12:30  dsandras
  * Fixed OnReceivedResponse for MESSAGE PDU's.
  *
  * Revision 2.74  2005/11/04 13:40:52  dsandras
@@ -1121,7 +1124,11 @@ BOOL SIPEndPoint::OnReceivedNOTIFY (OpalTransport & transport, SIP_PDU & pdu)
 void SIPEndPoint::OnReceivedMESSAGE(OpalTransport & /*transport*/, 
 				    SIP_PDU & pdu)
 {
-  OnMessageReceived(pdu.GetMIME().GetFrom(), pdu.GetEntityBody());
+  PString from = pdu.GetMIME().GetFrom();
+  PINDEX j = from.Find (';');
+  if (j != P_MAX_INDEX)
+    from = from.Left(j); // Remove all parameters
+  OnMessageReceived(from, pdu.GetEntityBody());
 }
 
 
@@ -1189,6 +1196,7 @@ void SIPEndPoint::RegistrationRefresh(PTimer &, INT)
       // Need to refresh
       if (info->GetExpire() > 0 
 	  && info->GetTransport() != NULL 
+	  && info->GetMethod() != SIP_PDU::Method_MESSAGE
 	  && info->HasExpired()) {
 	PTRACE(2, "SIP\tStarting REGISTER/SUBSCRIBE for binding refresh");
 	info->SetRegistered(FALSE);
