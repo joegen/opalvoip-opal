@@ -28,6 +28,9 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.8  2005/11/15 19:45:20  dereksmithies
+ * Add fix from  Vyacheslav Frolov, to resolve a private variable access problem.
+ *
  * Revision 1.7  2005/09/05 01:19:43  dereksmithies
  * add patches from Adrian Sietsma to avoid multiple hangup packets at call end,
  * and stop the sending of ping/lagrq packets at call end. Many thanks.
@@ -88,7 +91,7 @@ IAX2EndPoint::IAX2EndPoint(OpalManager & mgr)
   transmitter = NULL;
   receiver = NULL;
   sock = NULL;
-  callsEstablished = 0;
+  callsEstablished.SetValue(0);
 
   Initialise();
   PTRACE(5, "IAX2\tCreated endpoint.");
