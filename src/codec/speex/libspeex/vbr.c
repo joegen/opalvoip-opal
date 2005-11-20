@@ -32,6 +32,10 @@
 
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "vbr.h"
 #include <math.h>
 
@@ -42,7 +46,7 @@
 #define NOISE_POW .3
 
 
-float vbr_nb_thresh[9][11]={
+const float vbr_nb_thresh[9][11]={
    {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0}, /*   CNG   */
    { 3.5,  2.5,  2.0,  1.2,  0.5,  0.0, -0.5, -0.7, -0.8, -0.9, -1.0}, /*  2 kbps */
    {10.0,  6.5,  5.2,  4.5,  3.9,  3.5,  3.0,  2.5,  2.3,  1.8,  1.0}, /*  6 kbps */
@@ -55,7 +59,7 @@ float vbr_nb_thresh[9][11]={
 };
 
 
-float vbr_hb_thresh[5][11]={
+const float vbr_hb_thresh[5][11]={
    {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0}, /* silence */
    {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0}, /*  2 kbps */
    {11.0, 11.0,  9.5,  8.5,  7.5,  6.0,  5.0,  3.9,  3.0,  2.0,  1.0}, /*  6 kbps */
@@ -63,7 +67,7 @@ float vbr_hb_thresh[5][11]={
    {11.0, 11.0, 11.0, 11.0, 11.0, 11.0, 11.0, 11.0,  9.8,  7.5,  5.5}  /* 18 kbps */ 
 };
 
-float vbr_uhb_thresh[2][11]={
+const float vbr_uhb_thresh[2][11]={
    {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0}, /* silence */
    { 3.9,  2.5,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, -1.0}  /*  2 kbps */
 };
@@ -116,7 +120,7 @@ void vbr_init(VBRState *vbr)
 
 */
 
-float vbr_analysis(VBRState *vbr, float *sig, int len, int pitch, float pitch_coef)
+float vbr_analysis(VBRState *vbr, spx_word16_t *sig, int len, int pitch, float pitch_coef)
 {
    int i;
    float ener=0, ener1=0, ener2=0;
@@ -128,10 +132,10 @@ float vbr_analysis(VBRState *vbr, float *sig, int len, int pitch, float pitch_co
    float pow_ener;
 
    for (i=0;i<len>>1;i++)
-      ener1 += sig[i]*sig[i];
+      ener1 += ((float)sig[i])*sig[i];
 
    for (i=len>>1;i<len;i++)
-      ener2 += sig[i]*sig[i];
+      ener2 += ((float)sig[i])*sig[i];
    ener=ener1+ener2;
 
    log_energy = log(ener+MIN_ENERGY);

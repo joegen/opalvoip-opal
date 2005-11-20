@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.15  2005/11/20 21:03:50  dsandras
+# Upgraded to Speex 1.1.10.
+#
 # Revision 1.14  2005/09/13 20:48:22  dominance
 # minor cleanups needed to support mingw compilation. Thanks goes to Julien Puydt.
 #
@@ -453,7 +456,13 @@ HEADER_FILES    += $(OPAL_INCDIR)/speexcodec.h \
 		   $(SPEEX_INCDIR)/speex.h \
                    $(SPEEX_INCDIR)/speex_bits.h \
                    $(SPEEX_INCDIR)/speex_header.h \
-                   $(SPEEX_INCDIR)/speex_callbacks.h
+                   $(SPEEX_INCDIR)/speex_callbacks.h \
+                   $(SPEEX_INCDIR)/speex_config_types.h \
+                   $(SPEEX_INCDIR)/speex_preprocess.h \
+                   $(SPEEX_INCDIR)/speex_stereo.h \
+                   $(SPEEX_INCDIR)/speex_types.h \
+                   $(SPEEX_INCDIR)/speex_jitter.h \
+                   $(SPEEX_INCDIR)/speex_echo.h 
 
 SOURCES 	+= $(OPAL_SRCDIR)/codec/speexcodec.cxx \
 		   $(SPEEX_SRCDIR)/nb_celp.c \
@@ -481,8 +490,11 @@ SOURCES 	+= $(OPAL_SRCDIR)/codec/speexcodec.cxx \
                    $(SPEEX_SRCDIR)/exc_20_32_table.c \
                    $(SPEEX_SRCDIR)/hexc_10_32_table.c \
                    $(SPEEX_SRCDIR)/misc.c \
+                   $(SPEEX_SRCDIR)/smallft.c \
+                   $(SPEEX_SRCDIR)/speex.c \
                    $(SPEEX_SRCDIR)/speex_header.c \
-                   $(SPEEX_SRCDIR)/speex_callbacks.c
+                   $(SPEEX_SRCDIR)/speex_callbacks.c \
+                   $(SPEEX_SRCDIR)/speex_preprocess.c 
 
 
 # iLBC
@@ -736,6 +748,17 @@ $(DEPDIR)/%.dep : $(LPC10_SRCDIR)/%.c
 	@printf %s $(OPAL_OBJDIR)/ > $@
 	$(CC) -I$(LPC10_INCDIR) $(CFLAGS) -M $< >> $@
 
+
+# Build rules for the Speex codec
+
+$(OPAL_OBJDIR)/%.o : $(SPEEX_SRCDIR)/%.c
+	@if [ ! -d $(OPAL_OBJDIR) ] ; then mkdir -p $(OPAL_OBJDIR) ; fi
+	$(CC) $(STDCCFLAGS) -I$(SPEEX_INCDIR) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
+
+$(DEPDIR)/%.dep : $(SPEEX_SRCDIR)/%.c
+	@if [ ! -d $(DEPDIR) ] ; then mkdir -p $(DEPDIR) ; fi
+	@printf %s $(OPAL_OBJDIR)/ > $@
+	$(CC) -I$(SPEEX_INCDIR) $(CFLAGS) -M $< >> $@
 
 ###############################################################################
 #### Subdirectories
