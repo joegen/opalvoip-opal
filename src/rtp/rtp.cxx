@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2022  2005/10/20 20:27:38  dsandras
+ * Revision 1.2023  2005/11/20 20:56:35  dsandras
+ * Allow UseSession to be used and fail without requiring a consecutive AddSession.
+ *
+ * Revision 2.21  2005/10/20 20:27:38  dsandras
  * Better handling of dynamic RTP session IP address changes.
  *
  * Revision 2.20  2005/08/04 17:17:08  dsandras
@@ -1452,9 +1455,11 @@ RTP_Session * RTP_SessionManager::UseSession(unsigned sessionID)
   mutex.Wait();
 
   RTP_Session * session = sessions.GetAt(sessionID);
-  if (session == NULL)
-    return NULL;  // Deliberately have not release mutex here! See AddSession.
-
+  if (session == NULL) {
+    mutex.Signal();
+    return NULL;  
+  }
+  
   PTRACE(3, "RTP\tFound existing session " << sessionID);
   session->IncrementReference();
 
@@ -1465,12 +1470,12 @@ RTP_Session * RTP_SessionManager::UseSession(unsigned sessionID)
 
 void RTP_SessionManager::AddSession(RTP_Session * session)
 {
+  mutex.Wait();
   if (session != NULL) {
     PTRACE(2, "RTP\tAdding session " << *session);
     sessions.SetAt(session->GetSessionID(), session);
   }
 
-  // The following is the mutex.Signal() that was not done in the UseSession()
   mutex.Signal();
 }
 
