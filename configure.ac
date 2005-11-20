@@ -104,11 +104,44 @@ dnl MSWIN_CHECK_DIR   vag729,c:\va_g729
 
 dnl ########################################################################
 dnl Look for system libspeex
-
 localspeex="xxx"
 AC_ARG_ENABLE(localspeex,
        [  --enable-localspeex     use local version of Speex library rather than system version],
        localspeex=$enableval)
+
+AC_CHECK_SIZEOF(short)
+AC_CHECK_SIZEOF(int)
+AC_CHECK_SIZEOF(long)
+AC_CHECK_SIZEOF(long long)
+
+if test x$has_char16 = "xyes" ; then
+	case 1 in
+		$ac_cv_sizeof_short) SIZE16="short";;
+		$ac_cv_sizeof_int) SIZE16="int";;
+	esac
+else
+	case 2 in
+		$ac_cv_sizeof_short) SIZE16="short";;
+		$ac_cv_sizeof_int) SIZE16="int";;
+	esac
+fi
+
+if test x$has_char16 = "xyes" ; then
+	case 2 in
+		$ac_cv_sizeof_int) SIZE32="int";;
+		$ac_cv_sizeof_long) SIZE32="long";;
+		$ac_cv_sizeof_short) SIZE32="short";;
+	esac
+else
+	case 4 in
+		$ac_cv_sizeof_int) SIZE32="int";;
+		$ac_cv_sizeof_long) SIZE32="long";;
+		$ac_cv_sizeof_short) SIZE32="short";;
+	esac
+fi
+
+AC_SUBST(SIZE16)
+AC_SUBST(SIZE32)
 
 if test "${localspeex}" = "yes" ; then
   AC_MSG_NOTICE(Forcing use of local Speex sources)
@@ -297,4 +330,4 @@ AC_CONFIG_FILES(opal_inc.mak)
 AC_CONFIG_FILES(Makefile)
 AC_CONFIG_HEADERS(include/opal/buildopts.h)
 
-AC_OUTPUT()
+AC_OUTPUT(src/codec/speex/libspeex/speex/speex_config_types.h)

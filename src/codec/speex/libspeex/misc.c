@@ -1,4 +1,4 @@
-/* Copyright (C) 2002 Jean-Marc Valin 
+/* Copyright (C) 2002-2005 Jean-Marc Valin 
    File: mics.c
    Various utility routines for Speex
 
@@ -30,10 +30,18 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "misc.h"
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "misc.h"
+
+#ifdef BFIN_ASM
+#include "misc_bfin.h"
+#endif
 
 #ifndef RELEASE
 void print_vec(float *vec, int len, char *name)
@@ -46,9 +54,14 @@ void print_vec(float *vec, int len, char *name)
 }
 #endif
 
-unsigned int be_int(unsigned int i)
+#ifdef FIXED_DEBUG
+long long spx_mips=0;
+#endif
+
+
+spx_uint32_t be_int(spx_uint32_t i)
 {
-   unsigned int ret=i;
+   spx_uint32_t ret=i;
 #ifndef WORDS_BIGENDIAN
    ret =  i>>24;
    ret += (i>>8)&0x0000ff00;
@@ -58,9 +71,9 @@ unsigned int be_int(unsigned int i)
    return ret;
 }
 
-unsigned int le_int(unsigned int i)
+spx_uint32_t le_int(spx_uint32_t i)
 {
-   unsigned int ret=i;
+   spx_uint32_t ret=i;
 #ifdef WORDS_BIGENDIAN
    ret =  i>>24;
    ret += (i>>8)&0x0000ff00;
@@ -70,27 +83,55 @@ unsigned int le_int(unsigned int i)
    return ret;
 }
 
-unsigned short be_short(unsigned short s)
+#if BYTES_PER_CHAR == 2
+void speex_memcpy_bytes(char *dst, char *src, int nbytes)
 {
-   unsigned short ret=s;
-#ifndef WORDS_BIGENDIAN
-   ret =  s>>8;
-   ret += s<<8;
-#endif
-   return ret;
+  int i;
+  int nchars = nbytes/BYTES_PER_CHAR;
+  for (i=0;i<nchars;i++)
+    dst[i]=src[i];
+  if (nbytes & 1) {
+    /* copy in the last byte */
+    int last_i = nchars;
+    char last_dst_char = dst[last_i];
+    char last_src_char = src[last_i];
+    last_dst_char &= 0xff00;
+    last_dst_char |= (last_src_char & 0x00ff);
+    dst[last_i] = last_dst_char;
+  }
 }
-
-unsigned short le_short(unsigned short s)
+void speex_memset_bytes(char *dst, char c, int nbytes)
 {
-   unsigned short ret=s;
-#ifdef WORDS_BIGENDIAN
-   ret =  s>>8;
-   ret += s<<8;
-#endif
-   return ret;
+  int i;
+  spx_int16_t cc = ((c << 8) | c);
+  int nchars = nbytes/BYTES_PER_CHAR;
+  for (i=0;i<nchars;i++)
+    dst[i]=cc;
+  if (nbytes & 1) {
+    /* copy in the last byte */
+    int last_i = nchars;
+    char last_dst_char = dst[last_i];
+    last_dst_char &= 0xff00;
+    last_dst_char |= (c & 0x00ff);
+    dst[last_i] = last_dst_char;
+  }
 }
+#else
+void speex_memcpy_bytes(char *dst, char *src, int nbytes)
+{
+  memcpy(dst, src, nbytes);
+}
+void speex_memset_bytes(char *dst, char src, int nbytes)
+{
+  memset(dst, src, nbytes);
+}
+#endif
 
 void *speex_alloc (int size)
+{
+   return calloc(size,1);
+}
+void *speex_alloc_scratch (int size)
 {
    return calloc(size,1);
 }
@@ -104,42 +145,68 @@ void speex_free (void *ptr)
 {
    free(ptr);
 }
+void speex_free_scratch (void *ptr)
+{
+   free(ptr);
+}
 
+#ifndef OVERRIDE_SPEEX_MOVE
 void *speex_move (void *dest, void *src, int n)
 {
    return memmove(dest,src,n);
 }
+#endif
 
-void speex_error(char *str)
+void speex_error(const char *str)
 {
    fprintf (stderr, "Fatal error: %s\n", str);
    exit(1);
 }
 
-void speex_warning(char *str)
+void speex_warning(const char *str)
 {
    fprintf (stderr, "warning: %s\n", str);
 }
 
-void speex_warning_int(char *str, int val)
+void speex_warning_int(const char *str, int val)
 {
    fprintf (stderr, "warning: %s %d\n", str, val);
 }
 
-void speex_rand_vec(float std, float *data, int len)
+#ifdef FIXED_POINT
+spx_word32_t speex_rand(spx_word16_t std, spx_int32_t *seed)
+{
+   *seed = 1664525 * *seed + 1013904223;
+   return MULT16_16(EXTRACT16(SHR32(*seed,16)),std);
+}
+#else
+spx_word16_t speex_rand(spx_word16_t std, spx_int32_t *seed)
+{
+   const unsigned int jflone = 0x3f800000;
+   const unsigned int jflmsk = 0x007fffff;
+   union {int i; float f;} ran;
+   *seed = 1664525 * *seed + 1013904223;
+   ran.i = jflone | (jflmsk & *seed);
+   ran.f -= 1;
+   return 1.7321*std*ran.f;
+}
+#endif
+
+void speex_rand_vec(float std, spx_sig_t *data, int len)
 {
    int i;
    for (i=0;i<len;i++)
-      data[i]+=3*std*((((float)rand())/RAND_MAX)-.5);
+      data[i]+=SIG_SCALING*3*std*((((float)rand())/RAND_MAX)-.5);
 }
 
-float speex_rand(float std)
+
+/*float speex_rand(float std)
 {
    return 3*std*((((float)rand())/RAND_MAX)-.5);
-}
+}*/
 
 void _speex_putc(int ch, void *file)
 {
    FILE *f = (FILE *)file;
-   fputc(ch, f);
+   fprintf(f, "%c", ch);
 }

@@ -35,29 +35,28 @@
 #ifndef MISC_H
 #define MISC_H
 
-#ifndef VERSION
-#define VERSION "speex-1.0"
+#ifndef SPEEX_VERSION
+#define SPEEX_MAJOR_VERSION 1
+#define SPEEX_MINOR_VERSION 1
+#define SPEEX_MICRO_VERSION 10
+#define SPEEX_EXTRA_VERSION ""
+#define SPEEX_VERSION "speex-1.1.10"
 #endif
 
-/*Disable some warnings on VC++*/
-#ifdef _MSC_VER
-#pragma warning(disable : 4244)
-#pragma warning(disable : 4305)
-#endif
+#include "arch.h"
 
 #ifndef RELEASE
 void print_vec(float *vec, int len, char *name);
 #endif
 
-unsigned int be_int(unsigned int i);
-unsigned int le_int(unsigned int i);
-
-
-unsigned short be_short(unsigned short s);
-unsigned short le_short(unsigned short s);
+spx_uint32_t be_int(spx_uint32_t i);
+spx_uint32_t le_int(spx_uint32_t i);
 
 /** Speex wrapper for calloc. To do your own dynamic allocation, all you need to do is replace this function, speex_realloc and speex_free */
 void *speex_alloc (int size);
+
+/** Same as speex_alloc, except that the area is only needed inside a Speex call (might cause problem with wideband though) */
+void *speex_alloc_scratch (int size);
 
 /** Speex wrapper for realloc. To do your own dynamic allocation, all you need to do is replace this function, speex_alloc and speex_free */
 void *speex_realloc (void *ptr, int size);
@@ -65,18 +64,24 @@ void *speex_realloc (void *ptr, int size);
 /** Speex wrapper for calloc. To do your own dynamic allocation, all you need to do is replace this function, speex_realloc and speex_alloc */
 void speex_free (void *ptr);
 
+/** Same as speex_alloc, except that the area is only needed inside a Speex call (might cause problem with wideband though) */
+void speex_free_scratch (void *ptr);
+
 /** Speex wrapper for mem_move */
 void *speex_move (void *dest, void *src, int n);
 
-void speex_error(char *str);
+void speex_memcpy_bytes(char *dst, char *src, int nbytes);
+void speex_memset_bytes(char *dst, char src, int nbytes);
 
-void speex_warning(char *str);
+void speex_error(const char *str);
 
-void speex_warning_int(char *str, int val);
+void speex_warning(const char *str);
 
-void speex_rand_vec(float std, float *data, int len);
+void speex_warning_int(const char *str, int val);
 
-float speex_rand(float std);
+void speex_rand_vec(float std, spx_sig_t *data, int len);
+
+spx_word32_t speex_rand(spx_word16_t std, spx_int32_t *seed);
 
 void _speex_putc(int ch, void *file);
 

@@ -34,6 +34,7 @@
 #define QUANT_LSP_H
 
 #include "speex_bits.h"
+#include "misc.h"
 
 #define MAX_LSP_SIZE 20
 
@@ -44,28 +45,37 @@
 #define NB_CDBK_SIZE_HIGH2 64
 
 /*Narrowband codebooks*/
-extern signed char cdbk_nb[];
-extern signed char cdbk_nb_low1[];
-extern signed char cdbk_nb_low2[];
-extern signed char cdbk_nb_high1[];
-extern signed char cdbk_nb_high2[];
+extern const signed char cdbk_nb[];
+extern const signed char cdbk_nb_low1[];
+extern const signed char cdbk_nb_low2[];
+extern const signed char cdbk_nb_high1[];
+extern const signed char cdbk_nb_high2[];
 
 /* Quantizes narrowband LSPs with 30 bits */
-void lsp_quant_nb(float *lsp, float *qlsp, int order, SpeexBits *bits);
+void lsp_quant_nb(spx_lsp_t *lsp, spx_lsp_t *qlsp, int order, SpeexBits *bits);
 
 /* Decodes quantized narrowband LSPs */
-void lsp_unquant_nb(float *lsp, int order, SpeexBits *bits);
+void lsp_unquant_nb(spx_lsp_t *lsp, int order, SpeexBits *bits);
 
 /* Quantizes low bit-rate narrowband LSPs with 18 bits */
-void lsp_quant_lbr(float *lsp, float *qlsp, int order, SpeexBits *bits);
+void lsp_quant_lbr(spx_lsp_t *lsp, spx_lsp_t *qlsp, int order, SpeexBits *bits);
 
 /* Decodes quantized low bit-rate narrowband LSPs */
-void lsp_unquant_lbr(float *lsp, int order, SpeexBits *bits);
+void lsp_unquant_lbr(spx_lsp_t *lsp, int order, SpeexBits *bits);
 
 /* Quantizes high-band LSPs with 12 bits */
-void lsp_quant_high(float *lsp, float *qlsp, int order, SpeexBits *bits);
+void lsp_quant_high(spx_lsp_t *lsp, spx_lsp_t *qlsp, int order, SpeexBits *bits);
 
 /* Decodes high-band LSPs */
-void lsp_unquant_high(float *lsp, int order, SpeexBits *bits);
+void lsp_unquant_high(spx_lsp_t *lsp, int order, SpeexBits *bits);
+
+#ifdef EPIC_48K
+/* Quantizes narrowband LSPs with 14 bits */
+void lsp_quant_48k(spx_lsp_t *lsp, spx_lsp_t *qlsp, int order, SpeexBits *bits);
+
+/* Decodes quantized narrowband LSPs (14 bits) */
+void lsp_unquant_48k(spx_lsp_t *lsp, int order, SpeexBits *bits);
+#endif
+
 
 #endif
