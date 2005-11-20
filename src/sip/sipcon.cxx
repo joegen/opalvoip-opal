@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2108  2005/10/27 20:53:36  dsandras
+ * Revision 1.2109  2005/11/20 20:55:55  dsandras
+ * End the connection when the session can not be created.
+ *
+ * Revision 2.107  2005/10/27 20:53:36  dsandras
  * Send a BYE when receiving a NOTIFY for a REFER we just sent.
  *
  * Revision 2.106  2005/10/22 19:57:33  dsandras
@@ -729,9 +732,11 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
 
     // create an RTP session
     rtpSession = (RTP_UDP *)UseSession(GetTransport(), rtpSessionId, NULL);
-    if (rtpSession == NULL)
+    if (rtpSession == NULL) {
+      Release(EndedByTransportFail);
       return FALSE;
-
+    }
+    
     if (!IsConnectionOnHold()) {
       
       // Set user data
@@ -1842,6 +1847,7 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
     RTP_UDP * rtpSession = (RTP_UDP *)UseSession(GetTransport(), rtpSessionId, NULL);
     if (rtpSession == NULL) {
       PTRACE(1, "SIP\tSession in response that we never offered!");
+      Release(EndedByTransportFail);
       return FALSE;
     }
 
