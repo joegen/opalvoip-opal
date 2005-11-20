@@ -12,7 +12,7 @@
  ********************************************************************
 
  function: #ifdef jail to whip a few platforms into the UNIX ideal.
- last mod: $Id: speex_types.h,v 1.3 2005/11/20 21:19:49 dsandras Exp $
+ last mod: $Id: speex_types.h,v 1.4 2005/11/20 21:22:21 dsandras Exp $
 
  ********************************************************************/
 #ifndef _SPEEX_TYPES_H
@@ -113,7 +113,7 @@
 
 #else
 
-#  include <speex/speex_config_types.h>
+#  include "speex_config_types.h"
 
 #endif
 
