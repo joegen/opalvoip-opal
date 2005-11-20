@@ -34,21 +34,27 @@
 #ifndef STACK_ALLOC_H
 #define STACK_ALLOC_H
 
-#if 0
+#ifdef USE_ALLOCA
+#include <alloca.h>
+#endif
 
+#ifdef ENABLE_VALGRIND
+
+#include <valgrind/memcheck.h>
 /*Aligns the stack to a 'size' boundary */
-#define ALIGN(stack, size) (stack=(void*)((((int)stack)+((size)-1)) & (-(size))))
-/*Aligns the stack to a 'size' boundary minus k */
-#define ALIGN_1(stack, size, k) (stack=(void*)(((((int)stack)+((size)-1+(k))) & (-(size)))-(k)))
+#define ALIGN(stack, size) ((stack) += ((size) - (long)(stack)) & ((size) - 1))
 
 /* Allocates 'size' elements of type 'type' on the stack */
-#define PUSH(stack, size, type) (ALIGN(stack,sizeof(type)),stack=(void*)(((int)stack)+((size)*sizeof(type))),(type*)(((int)stack)-((size)*sizeof(type))))
+#define PUSH(stack, size, type) (VALGRIND_MAKE_NOACCESS(stack, 1000),ALIGN((stack),sizeof(type)),VALGRIND_MAKE_WRITABLE(stack, ((size)*sizeof(type))),(stack)+=((size)*sizeof(type)),(type*)((stack)-((size)*sizeof(type))))
 
+/* Allocates a struct stack */
+#define PUSHS(stack, type) (VALGRIND_MAKE_NOACCESS(stack, 1000),ALIGN((stack),sizeof(long)),VALGRIND_MAKE_WRITABLE(stack, (sizeof(type))),(stack)+=(sizeof(type)),(type*)((stack)-(sizeof(type))))
 
 #else
 
+
 /*Aligns the stack to a 'size' boundary */
-#define ALIGN(stack, size) ((stack) += ((size) - (int)(stack)) & ((size) - 1))
+#define ALIGN(stack, size) ((stack) += ((size) - (long)(stack)) & ((size) - 1))
 
 /* Allocates 'size' elements of type 'type' on the stack */
 #define PUSH(stack, size, type) (ALIGN((stack),sizeof(type)),(stack)+=((size)*sizeof(type)),(type*)((stack)-((size)*sizeof(type))))
@@ -56,7 +62,18 @@
 /* Allocates a struct stack */
 #define PUSHS(stack, type) (ALIGN((stack),sizeof(long)),(stack)+=(sizeof(type)),(type*)((stack)-(sizeof(type))))
 
-
 #endif
+
+#if defined(VAR_ARRAYS)
+#define VARDECL(var) 
+#define ALLOC(var, size, type) type var[size]
+#elif defined(USE_ALLOCA)
+#define VARDECL(var) var
+#define ALLOC(var, size, type) var = alloca(sizeof(type)*size)
+#else
+#define VARDECL(var) var
+#define ALLOC(var, size, type) var = PUSH(stack, size, type)
+#endif
+
 
 #endif
