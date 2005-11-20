@@ -330,4 +330,4 @@ AC_CONFIG_FILES(opal_inc.mak)
 AC_CONFIG_FILES(Makefile)
 AC_CONFIG_HEADERS(include/opal/buildopts.h)
 
-AC_OUTPUT(src/codec/speex/libspeex/speex/speex_config_types.h)
+AC_OUTPUT(src/codec/speex/libspeex/speex_config_types.h)
