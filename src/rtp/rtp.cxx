@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2023  2005/11/20 20:56:35  dsandras
+ * Revision 1.2024  2005/11/22 22:37:57  dsandras
+ * Reverted the previous change as the bug was triggered by a change in PWLIB.
+ *
+ * Revision 2.22  2005/11/20 20:56:35  dsandras
  * Allow UseSession to be used and fail without requiring a consecutive AddSession.
  *
  * Revision 2.21  2005/10/20 20:27:38  dsandras
@@ -1455,10 +1458,8 @@ RTP_Session * RTP_SessionManager::UseSession(unsigned sessionID)
   mutex.Wait();
 
   RTP_Session * session = sessions.GetAt(sessionID);
-  if (session == NULL) {
-    mutex.Signal();
-    return NULL;  
-  }
+  if (session == NULL) 
+    return NULL; // Deliberately have not release mutex here! See AddSession. 
   
   PTRACE(3, "RTP\tFound existing session " << sessionID);
   session->IncrementReference();
@@ -1470,12 +1471,12 @@ RTP_Session * RTP_SessionManager::UseSession(unsigned sessionID)
 
 void RTP_SessionManager::AddSession(RTP_Session * session)
 {
-  mutex.Wait();
   if (session != NULL) {
     PTRACE(2, "RTP\tAdding session " << *session);
     sessions.SetAt(session->GetSessionID(), session);
   }
 
+  // The following is the mutex.Signal() that was not done in the UseSession()
   mutex.Signal();
 }
 
