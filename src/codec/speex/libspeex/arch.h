@@ -37,10 +37,10 @@
 
 #include "speex_types.h"
 
-#define ABS(x) ((x) < 0 ? (-(x)) : (x))
-#define ABS16(x) ((x) < 0 ? (-(x)) : (x))
-#define MAX16(a,b) ((a) > (b) ? (a) : (b))
-#define ABS32(x) ((x) < 0 ? (-(x)) : (x))
+#define ABS(x) ((x) < 0 ? (-(x)) : (x))      /**< Absolute integer value. */
+#define ABS16(x) ((x) < 0 ? (-(x)) : (x))    /**< Absolute 16-bit value.  */
+#define MAX16(a,b) ((a) > (b) ? (a) : (b))   /**< Maximum 16-bit value.   */
+#define ABS32(x) ((x) < 0 ? (-(x)) : (x))    /**< Absolute 32-bit value.  */
 
 #ifdef FIXED_POINT
 
@@ -48,6 +48,8 @@ typedef spx_int16_t spx_word16_t;
 typedef spx_int32_t   spx_word32_t;
 #ifdef _MSC_VER
 typedef __int64      spx_word64_t;
+#elif defined NO_LONGLONG
+typedef double    spx_word64_t;
 #else
 typedef long long    spx_word64_t;
 #endif
@@ -118,6 +120,9 @@ typedef float spx_word64_t;
 #define VERY_SMALL 1e-15f
 #define VERY_LARGE32 1e15f
 #define VERY_LARGE16 1e15f
+
+#define QCONST16(x,bits) (x)
+#define QCONST32(x,bits) (x)
 
 #define NEG16(x) (-(x))
 #define NEG32(x) (-(x))

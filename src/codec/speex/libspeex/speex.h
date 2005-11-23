@@ -94,10 +94,10 @@ extern "C" {
 /** Get current bit-rate used by the encoder or decoder */
 #define SPEEX_GET_BITRATE 19
 
-/**Define a handler function for in-band Speex request*/
+/** Define a handler function for in-band Speex request*/
 #define SPEEX_SET_HANDLER 20
 
-/**Define a handler function for in-band user-defined request*/
+/** Define a handler function for in-band user-defined request*/
 #define SPEEX_SET_USER_HANDLER 22
 
 /** Set sampling rate used in bit-rate computation */
@@ -129,7 +129,7 @@ extern "C" {
 
 /** Set submode encoding in each frame (1 for yes, 0 for no, setting to no breaks the standard) */
 #define SPEEX_SET_SUBMODE_ENCODING 36
-/** */
+/** Get submode encoding in each frame */
 #define SPEEX_GET_SUBMODE_ENCODING 37
 
 /*#define SPEEX_SET_LOOKAHEAD 38*/
@@ -170,10 +170,15 @@ extern "C" {
 
 
 
+/** Get major Speex version */
 #define SPEEX_LIB_GET_MAJOR_VERSION 1
+/** Get minor Speex version */
 #define SPEEX_LIB_GET_MINOR_VERSION 3
+/** Get micro Speex version */
 #define SPEEX_LIB_GET_MICRO_VERSION 5
+/** Get extra Speex version */
 #define SPEEX_LIB_GET_EXTRA_VERSION 7
+/** Get Speex version string */
 #define SPEEX_LIB_GET_VERSION_STRING 9
 
 /*#define SPEEX_LIB_SET_ALLOC_FUNC 10
@@ -301,6 +306,7 @@ void speex_encoder_destroy(void *state);
  @param state Encoder state
  @param in Frame that will be encoded with a +-2^15 range
  @param bits Bit-stream where the data will be written
+ @return 0 if frame needs not be transmitted (DTX only), 1 otherwise
  */
 int speex_encode(void *state, float *in, SpeexBits *bits);
 
@@ -309,6 +315,7 @@ int speex_encode(void *state, float *in, SpeexBits *bits);
  @param state Encoder state
  @param in Frame that will be encoded with a +-2^15 range
  @param bits Bit-stream where the data will be written
+ @return 0 if frame needs not be transmitted (DTX only), 1 otherwise
  */
 int speex_encode_int(void *state, spx_int16_t *in, SpeexBits *bits);
 
@@ -317,7 +324,7 @@ int speex_encode_int(void *state, spx_int16_t *in, SpeexBits *bits);
  * @param state Encoder state
  * @param request ioctl-type request (one of the SPEEX_* macros)
  * @param ptr Data exchanged to-from function
- * @return 0 if frame needs not be transmitted (DTX only), 1 otherwise
+ * @return 0 if no error, -1 if request in unknown
  */
 int speex_encoder_ctl(void *state, int request, void *ptr);
 
@@ -344,7 +351,7 @@ void speex_decoder_destroy(void *state);
  * @param state Decoder state
  * @param bits Bit-stream from which to decode the frame (NULL if the packet was lost)
  * @param out Where to write the decoded frame
- * @return return status (0 for no error, -1 for end of stream, -2 other)
+ * @return return status (0 for no error, -1 for end of stream, -2 corrupt stream)
  */
 int speex_decode(void *state, SpeexBits *bits, float *out);
 
@@ -354,7 +361,7 @@ int speex_decode(void *state, SpeexBits *bits, float *out);
  * @param state Decoder state
  * @param bits Bit-stream from which to decode the frame (NULL if the packet was lost)
  * @param out Where to write the decoded frame
- * @return return status (0 for no error, -1 for end of stream, -2 other)
+ * @return return status (0 for no error, -1 for end of stream, -2 corrupt stream)
  */
 int speex_decode_int(void *state, SpeexBits *bits, spx_int16_t *out);
 
@@ -363,7 +370,7 @@ int speex_decode_int(void *state, SpeexBits *bits, spx_int16_t *out);
  * @param state Decoder state
  * @param request ioctl-type request (one of the SPEEX_* macros)
  * @param ptr Data exchanged to-from function
- * @return 0 for no error, 1 if a terminator is reached, 2 for another error
+ * @return 0 if no error, -1 if request in unknown
  */
 int speex_decoder_ctl(void *state, int request, void *ptr);
 

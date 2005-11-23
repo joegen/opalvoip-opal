@@ -11,19 +11,23 @@
  ********************************************************************
 
  function: fft transform
- last mod: $Id: smallft.h,v 1.1 2005/11/20 21:03:50 dsandras Exp $
+ last mod: $Id: smallft.h,v 1.2 2005/11/23 21:57:52 dsandras Exp $
 
  ********************************************************************/
+/**
+   @file smallft.h
+   @brief Discrete Rotational Fourier Transform (DRFT)
+*/
 
 #ifndef _V_SMFT_H_
 #define _V_SMFT_H_
 
-/*#include "vorbis/codec.h"*/
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/** Discrete Rotational Fourier Transform lookup */
 struct drft_lookup{
   int n;
   float *trigcache;

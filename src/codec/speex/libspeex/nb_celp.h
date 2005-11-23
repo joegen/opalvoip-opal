@@ -42,6 +42,10 @@
 #include "vbr.h"
 #include "filters.h"
 
+#ifdef VORBIS_PSYCHO
+#include "vorbis_psy.h"
+#endif
+
 /**Structure representing the full state of the narrowband encoder*/
 typedef struct EncState {
    const SpeexMode *mode;       /**< Mode corresponding to the state */
@@ -64,10 +68,16 @@ typedef struct EncState {
    int    lbr_48k;
 #endif
 
+#ifdef VORBIS_PSYCHO
+   VorbisPsy *psy;
+   float *curve;
+   float *old_curve;
+#endif
+
    spx_word16_t  gamma1;         /**< Perceptual filter: A(z/gamma1) */
    spx_word16_t  gamma2;         /**< Perceptual filter: A(z/gamma2) */
    float  lag_factor;     /**< Lag windowing Gaussian width */
-   float  lpc_floor;      /**< Noise floor multiplier for A[0] in LPC analysis*/
+   spx_word16_t  lpc_floor;      /**< Noise floor multiplier for A[0] in LPC analysis*/
    char  *stack;          /**< Pseudo-stack allocation for temporary memory */
    spx_sig_t *inBuf;          /**< Input buffer (original signal) */
    spx_sig_t *frame;          /**< Start of original frame */
