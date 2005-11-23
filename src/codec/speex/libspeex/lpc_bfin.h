@@ -1,8 +1,10 @@
-/* Copyright (C) 2005 Analog Devices
-   Author: Jean-Marc Valin 
-   File: lpc_bfin.h
-   LPC stuff (Blackfin version)
-
+/* Copyright (C) 2005 Analog Devices */
+/**
+   @file lpc_bfin.h
+   @author Jean-Marc Valin 
+   @brief Functions for LPC (Linear Prediction Coefficients) analysis (Blackfin version)
+*/
+/*
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
    are met:
@@ -45,7 +47,7 @@ int          n
    spx_word32_t ac0=1;
    spx_word32_t ac32[11], *ac32top;
    int shift, ac_shift;
-   ac32top = ac32+10;
+   ac32top = ac32+lag-1;
    int lag_1, N_lag;
    int nshift;
    lag_1 = lag-1;

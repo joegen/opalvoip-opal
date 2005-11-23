@@ -53,7 +53,7 @@ typedef struct SBEncState {
    int    bufSize;             /**< Buffer size */
    int    first;               /**< First frame? */
    float  lag_factor;          /**< Lag-windowing control parameter */
-   float  lpc_floor;           /**< Controls LPC analysis noise floor */
+   spx_word16_t  lpc_floor;           /**< Controls LPC analysis noise floor */
    spx_word16_t  gamma1;              /**< Perceptual weighting coef 1 */
    spx_word16_t  gamma2;              /**< Perceptual weighting coef 2 */
 
@@ -66,7 +66,6 @@ typedef struct SBEncState {
 
    spx_sig_t *excBuf;              /**< High-band excitation */
    spx_sig_t *exc;                 /**< High-band excitation (for QMF only)*/
-   spx_sig_t *buf;                 /**< Temporary buffer */
    spx_sig_t *res;                 /**< Zero-input response (ringing) */
    spx_sig_t *sw;                  /**< Perceptually weighted signal */
    spx_sig_t *target;              /**< Weighted target signal (analysis by synthesis) */
@@ -136,6 +135,7 @@ typedef struct SBDecState {
 
    spx_mem_t *mem_sp;
    spx_word32_t *pi_gain;
+   spx_int32_t seed;
 
    int    encode_submode;
    const SpeexSubmode * const *submodes;

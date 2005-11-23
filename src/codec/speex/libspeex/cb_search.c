@@ -112,7 +112,10 @@ int   complexity,
 int   update_target
 )
 {
-   int i,j,m,n,q;
+   int i,j,m,q;
+#ifndef FIXED_POINT
+   int n;
+#endif
    VARDECL(spx_word16_t *resp);
 #ifdef _USE_SSE
    VARDECL(__m128 *resp2);
@@ -421,8 +424,6 @@ int   update_target
       }
       for (j=0;j<N;j++)
       {
-         //spx_word16_t *ct = ot[best_ntarget[j]];
-         
          /*previous target (we don't care what happened before*/
          for (m=(i+1)*subvect_size;m<nsf;m++)
             nt[j][m]=ot[best_ntarget[j]][m];

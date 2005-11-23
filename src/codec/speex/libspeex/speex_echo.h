@@ -1,8 +1,9 @@
-/* Copyright (C) Jean-Marc Valin
-
-   File: speex_echo.h
-
-
+/* Copyright (C) Jean-Marc Valin */
+/**
+   @file speex_echo.h
+   @brief Echo cancellation
+*/
+/*
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions are
    met:
@@ -39,40 +40,34 @@ extern "C" {
 
 struct drft_lookup;
 
+/** Speex echo cancellation state. */
 typedef struct SpeexEchoState {
    int frame_size;           /**< Number of samples processed each time */
    int window_size;
    int M;
    int cancel_count;
    int adapted;
-   float adapt_rate;
    float sum_adapt;
-   float Sey;
-   float Syy;
-   float See;
    
    float *x;
    float *X;
    float *d;
-   float *D;
    float *y;
-   float *y2;
    float *last_y;
    float *Yps;
    float *Y;
-   float *Y2;
    float *E;
    float *PHI;
-   float * W;
+   float *W;
    float *power;
    float *power_1;
-   float *grad;
    float *Rf;
    float *Yf;
    float *Xf;
-   float *fratio;
-   float *regul;
-
+   float *Eh;
+   float *Yh;
+   float Pey;
+   float Pyy;
    struct drft_lookup *fft_lookup;
 
 

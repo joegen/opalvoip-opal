@@ -88,20 +88,6 @@ static inline void spectral_mul_accum(float *X, float *Y, float *acc, int N)
    acc[i] += X[i]*Y[i];
 }
 
-/** Compute cross-power spectrum of a half-complex (packed) vector with conjugate */
-static inline void spectral_mul_conj(float *X, float *Y, float *prod, int N)
-{
-   int i;
-   prod[0] = X[0]*Y[0];
-   for (i=1;i<N-1;i+=2)
-   {
-      prod[i] = (X[i]*Y[i] + X[i+1]*Y[i+1]);
-      prod[i+1] = (-X[i+1]*Y[i] + X[i]*Y[i+1]);
-   }
-   prod[i] = X[i]*Y[i];
-}
-
-
 /** Compute weighted cross-power spectrum of a half-complex (packed) vector with conjugate */
 static inline void weighted_spectral_mul_conj(float *w, float *X, float *Y, float *prod, int N)
 {
@@ -119,7 +105,7 @@ static inline void weighted_spectral_mul_conj(float *w, float *X, float *Y, floa
 /** Creates a new echo canceller state */
 SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
 {
-   int i,j,N,M;
+   int i,N,M;
    SpeexEchoState *st = (SpeexEchoState *)speex_alloc(sizeof(SpeexEchoState));
 
    st->frame_size = frame_size;
@@ -127,11 +113,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    N = st->window_size;
    M = st->M = (filter_length+st->frame_size-1)/frame_size;
    st->cancel_count=0;
-   st->adapt_rate = .01f;
    st->sum_adapt = 0;
-   st->Sey = 0;
-   st->Syy = 0;
-   st->See = 0;
          
    st->fft_lookup = (struct drft_lookup*)speex_alloc(sizeof(struct drft_lookup));
    spx_drft_init(st->fft_lookup, N);
@@ -139,40 +121,29 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->x = (float*)speex_alloc(N*sizeof(float));
    st->d = (float*)speex_alloc(N*sizeof(float));
    st->y = (float*)speex_alloc(N*sizeof(float));
-   st->y2 = (float*)speex_alloc(N*sizeof(float));
    st->Yps = (float*)speex_alloc(N*sizeof(float));
    st->last_y = (float*)speex_alloc(N*sizeof(float));
    st->Yf = (float*)speex_alloc((st->frame_size+1)*sizeof(float));
    st->Rf = (float*)speex_alloc((st->frame_size+1)*sizeof(float));
    st->Xf = (float*)speex_alloc((st->frame_size+1)*sizeof(float));
-   st->fratio = (float*)speex_alloc((st->frame_size+1)*sizeof(float));
-   st->regul = (float*)speex_alloc(N*sizeof(float));
+   st->Yh = (float*)speex_alloc((st->frame_size+1)*sizeof(float));
+   st->Eh = (float*)speex_alloc((st->frame_size+1)*sizeof(float));
 
    st->X = (float*)speex_alloc(M*N*sizeof(float));
-   st->D = (float*)speex_alloc(N*sizeof(float));
    st->Y = (float*)speex_alloc(N*sizeof(float));
-   st->Y2 = (float*)speex_alloc(N*sizeof(float));
    st->E = (float*)speex_alloc(N*sizeof(float));
    st->W = (float*)speex_alloc(M*N*sizeof(float));
    st->PHI = (float*)speex_alloc(M*N*sizeof(float));
    st->power = (float*)speex_alloc((frame_size+1)*sizeof(float));
    st->power_1 = (float*)speex_alloc((frame_size+1)*sizeof(float));
-   st->grad = (float*)speex_alloc(N*M*sizeof(float));
    
    for (i=0;i<N*M;i++)
    {
       st->W[i] = st->PHI[i] = 0;
    }
-   
-   st->regul[0] = (.01+(10.)/((4.)*(4.)))/M;
-   for (i=1,j=1;i<N-1;i+=2,j++)
-   {
-      st->regul[i] = .01+((10.)/((j+4.)*(j+4.)))/M;
-      st->regul[i+1] = .01+((10.)/((j+4.)*(j+4.)))/M;
-   }
-   st->regul[i] = .01+((10.)/((j+4.)*(j+4.)))/M;
-         
+
    st->adapted = 0;
+   st->Pey = st->Pyy = 0;
    return st;
 }
 
@@ -181,7 +152,6 @@ void speex_echo_state_reset(SpeexEchoState *st)
 {
    int i, M, N;
    st->cancel_count=0;
-   st->adapt_rate = .01f;
    N = st->window_size;
    M = st->M;
    for (i=0;i<N*M;i++)
@@ -193,11 +163,8 @@ void speex_echo_state_reset(SpeexEchoState *st)
       st->power[i] = 0;
    
    st->adapted = 0;
-   st->adapt_rate = .01f;
    st->sum_adapt = 0;
-   st->Sey = 0;
-   st->Syy = 0;
-   st->See = 0;
+   st->Pey = st->Pyy = 0;
 
 }
 
@@ -214,41 +181,39 @@ void speex_echo_state_destroy(SpeexEchoState *st)
    speex_free(st->Yf);
    speex_free(st->Rf);
    speex_free(st->Xf);
-   speex_free(st->fratio);
-   speex_free(st->regul);
+   speex_free(st->Yh);
+   speex_free(st->Eh);
 
    speex_free(st->X);
-   speex_free(st->D);
    speex_free(st->Y);
    speex_free(st->E);
    speex_free(st->W);
    speex_free(st->PHI);
    speex_free(st->power);
    speex_free(st->power_1);
-   speex_free(st->grad);
 
    speex_free(st);
 }
 
-      
+
 /** Performs echo cancellation on a frame */
 void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, float *Yout)
 {
-   int i,j,m;
+   int i,j;
    int N,M;
    float scale;
-   float ESR;
-   float SER;
-   float Sry=0,Srr=0,Syy=0,Sey=0,See=0,Sxx=0;
+   float Syy=0,See=0;
    float leak_estimate;
-   
-   /*leak_estimate = .1+(.9/(1+2*st->sum_adapt));*/
-   leak_estimate = (.1 + (1-st->sum_adapt)*(1-st->sum_adapt))/(.9*st->sum_adapt*st->sum_adapt + .1);
-         
+   float ss;
+   float adapt_rate;
+
    N = st->window_size;
    M = st->M;
    scale = 1.0f/N;
    st->cancel_count++;
+   ss = 1.0f/st->cancel_count;
+   if (ss < .4/M)
+      ss=.4/M;
 
    /* Copy input data to buffer */
    for (i=0;i<st->frame_size;i++)
@@ -284,11 +249,6 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    for (i=0;i<N;i++)
       st->y[i] *= scale;
 
-   /* Transform d (reference signal) to frequency domain */
-   for (i=0;i<N;i++)
-      st->D[i]=st->d[i];
-   spx_drft_forward(st->fft_lookup, st->D);
-
    /* Compute error signal (signal with echo removed) */ 
    for (i=0;i<st->frame_size;i++)
    {
@@ -306,179 +266,91 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       out[i] = tmp_out;
    }
    
-   /* This bit of code is optional and provides faster adaptation by doing a projection 
-      of the previous gradient on the "MMSE surface" */
-   if (1)
-   {
-      float Sge, Sgg, Syy;
-      float gain;
-      Syy = inner_prod(st->y+st->frame_size, st->y+st->frame_size, st->frame_size);
-      for (i=0;i<N;i++)
-         st->Y2[i] = 0;
-      for (j=0;j<M;j++)
-         spectral_mul_accum(&st->X[j*N], &st->PHI[j*N], st->Y2, N);
-      for (i=0;i<N;i++)
-         st->y2[i] = st->Y2[i];
-      spx_drft_backward(st->fft_lookup, st->y2);
-      for (i=0;i<N;i++)
-         st->y2[i] *= scale;
-      Sge = inner_prod(st->y2+st->frame_size, st->E+st->frame_size, st->frame_size);
-      Sgg = inner_prod(st->y2+st->frame_size, st->y2+st->frame_size, st->frame_size);
-      /* Compute projection gain */
-      gain = Sge/(N+.03*Syy+Sgg);
-      if (gain>2)
-         gain = 2;
-      if (gain < -2)
-         gain = -2;
-      
-      /* Apply gain to weights, echo estimates, output */
-      for (i=0;i<N;i++)
-         st->Y[i] += gain*st->Y2[i];
-      for (i=0;i<st->frame_size;i++)
-      {
-         st->y[i+st->frame_size] += gain*st->y2[i+st->frame_size];
-         st->E[i+st->frame_size] -= gain*st->y2[i+st->frame_size];
-      }
-      for (i=0;i<M*N;i++)
-         st->W[i] += gain*st->PHI[i];
-   }
-
-   /* Compute power spectrum of output (D-Y) and filter response (Y) */
-   for (i=0;i<N;i++)
-      st->D[i] -= st->Y[i];
-   power_spectrum(st->D, st->Rf, N);
-   power_spectrum(st->Y, st->Yf, N);
-   
-   /* Compute frequency-domain adaptation mask */
-   for (j=0;j<=st->frame_size;j++)
-   {
-      float r;
-      r = leak_estimate*st->Yf[j] / (1+st->Rf[j]);
-      if (r>1)
-         r = 1;
-      st->fratio[j] = r;
-   }
-
    /* Compute a bunch of correlations */
-   Sry = inner_prod(st->y+st->frame_size, st->d+st->frame_size, st->frame_size);
-   Sey = inner_prod(st->y+st->frame_size, st->E+st->frame_size, st->frame_size);
    See = inner_prod(st->E+st->frame_size, st->E+st->frame_size, st->frame_size);
    Syy = inner_prod(st->y+st->frame_size, st->y+st->frame_size, st->frame_size);
-   Srr = inner_prod(st->d+st->frame_size, st->d+st->frame_size, st->frame_size);
-   Sxx = inner_prod(st->x+st->frame_size, st->x+st->frame_size, st->frame_size);
-
-   /* Compute smoothed cross-correlation and energy */   
-   st->Sey = .98*st->Sey + .02*Sey;
-   st->Syy = .98*st->Syy + .02*Syy;
-   st->See = .98*st->See + .02*See;
-   
-   /* Check if filter is completely mis-adapted (if so, reset filter) */
-   if (st->Sey/(1+st->Syy + .01*st->See) < -1)
-   {
-      /*fprintf (stderr, "reset at %d\n", st->cancel_count);*/
-      speex_echo_state_reset(st);
-      return;
-   }
-
-   SER = Srr / (1+Sxx);
-   ESR = leak_estimate*Syy / (1+See);
-   if (ESR>1)
-      ESR = 1;
-#if 1
-   /* If over-cancellation (creating echo with 180 phase) damp filter */
-   if (st->Sey/(1+st->Syy) < -.1 && (ESR > .3))
-   {
-      for (i=0;i<M*N;i++)
-         st->W[i] *= .95;
-      st->Sey *= .5;
-      st->sum_adapt*= .95;
-      /*fprintf (stderr, "corrected down\n");*/
-   }
-#endif
-#if 1
-   /* If under-cancellation (leaving echo with 0 phase) scale filter up */
-   if (st->Sey/(1+st->Syy) > .1 && (ESR > .1 || SER < 10))
-   {
-      for (i=0;i<M*N;i++)
-         st->W[i] *= 1.05;
-      st->Sey *= .5;
-      /*fprintf (stderr, "corrected up %d\n", st->cancel_count);*/
-   }
-#endif
-   
-   /* We consider that the filter is adapted if the following is true*/
-   if (ESR>.6 && st->sum_adapt > .7 && !st->adapted)
-   {
-      /*fprintf(stderr, "Adapted at %d %f\n", st->cancel_count, st->sum_adapt);*/
-      st->adapted = 1;
-   } else if (st->sum_adapt < .5 && st->adapted)
-   {
-      /*fprintf(stderr, "Un-adapted at %d %f\n", st->cancel_count, st->sum_adapt);*/
-      st->adapted = 0;
-   }
-   
-   /* Update frequency-dependent energy ratio with the total energy ratio */
-   for (i=0;i<=st->frame_size;i++)
-   {
-      st->fratio[i]  = (.2*ESR+.8*min(ESR,st->fratio[i]));
-   }   
-
-   if (st->adapted)
-   {
-      st->adapt_rate = .95f/(2+M);
-      /* How much have we adapted so far? */
-      st->sum_adapt = (1-st->adapt_rate)*st->sum_adapt + st->adapt_rate;
-   } else {
-      /* Temporary adaption rate if filter is not adapted correctly */
-      if (SER<.1)
-         st->adapt_rate =.5/(2+M);
-      else if (SER<1)
-         st->adapt_rate =.3/(2+M);
-      else if (SER<10)
-         st->adapt_rate =.2/(2+M);
-      else if (SER<30)
-         st->adapt_rate =.08/(2+M);
-      else
-         st->adapt_rate = 0;
-      /* How much have we adapted so far? */
-      st->sum_adapt = (1-ESR*st->adapt_rate)*st->sum_adapt + ESR*st->adapt_rate;
-   }
-   
-   /* How much have we adapted so far? */
-   /*st->sum_adapt += st->adapt_rate;*/
-
-   /* Compute echo power in each frequency bin */
-   {
-      float ss = 1.0f/st->cancel_count;
-      if (ss < .3/M)
-         ss=.3/M;
-      power_spectrum(&st->X[(M-1)*N], st->Xf, N);
-      /* Smooth echo energy estimate over time */
-      for (j=0;j<=st->frame_size;j++)
-         st->power[j] = (1-ss)*st->power[j] + ss*st->Xf[j];
-      
-      
-      /* Combine adaptation rate to the the inverse energy estimate */
-      if (st->adapted)
-      {
-         /* If filter is adapted, include the frequency-dependent ratio too */
-         for (i=0;i<=st->frame_size;i++)
-            st->power_1[i] = st->adapt_rate*st->fratio[i] /(1.f+st->power[i]);
-      } else {
-         for (i=0;i<=st->frame_size;i++)
-            st->power_1[i] = st->adapt_rate/(1.f+st->power[i]);
-      }
-   }
-
    
    /* Convert error to frequency domain */
    spx_drft_forward(st->fft_lookup, st->E);
-
-   /* Do some regularization (prevents problems when system is ill-conditoned) */
-   for (m=0;m<M;m++)
-      for (i=0;i<N;i++)
-         st->W[m*N+i] *= 1-st->regul[i]*ESR;
+   for (i=0;i<st->frame_size;i++)
+      st->y[i] = 0;
+   for (i=0;i<N;i++)
+      st->Y[i] = st->y[i];
+   spx_drft_forward(st->fft_lookup, st->Y);
    
+   /* Compute power spectrum of echo (X), error (E) and filter response (Y) */
+   power_spectrum(st->E, st->Rf, N);
+   power_spectrum(st->Y, st->Yf, N);
+   power_spectrum(&st->X[(M-1)*N], st->Xf, N);
+   
+   /* Smooth echo energy estimate over time */
+   for (j=0;j<=st->frame_size;j++)
+      st->power[j] = (1-ss)*st->power[j] + ss*st->Xf[j];
+
+   {
+      float Pey = 0, Pyy=0;
+      float alpha;
+      for (j=0;j<=st->frame_size;j++)
+      {
+         float E, Y, Eh, Yh;
+         E = (st->Rf[j]);
+         Y = (st->Yf[j]);
+         Eh = st->Eh[j] + E;
+         Yh = st->Yh[j] + Y;
+         Pey += Eh*Yh;
+         Pyy += Yh*Yh;
+         st->Eh[j] = .95*Eh - E;
+         st->Yh[j] = .95*Yh - Y;
+      }
+      alpha = .02*Syy / (1+See);
+      if (alpha > .02)
+         alpha = .02;
+      st->Pey = (1-alpha)*st->Pey + alpha*Pey;
+      st->Pyy = (1-alpha)*st->Pyy + alpha*Pyy;
+      if (st->Pey< .001*st->Pyy)
+         st->Pey = .001*st->Pyy;
+      leak_estimate = st->Pey / (1+st->Pyy);
+      if (leak_estimate > 1)
+         leak_estimate = 1;
+      /*printf ("%f\n", leak_estimate);*/
+   }
+   
+   if (!st->adapted)
+   {
+      float Sxx;
+      Sxx = inner_prod(st->x+st->frame_size, st->x+st->frame_size, st->frame_size);
+
+      /* We consider that the filter is adapted if the following is true*/
+      if (st->sum_adapt > 1)
+         st->adapted = 1;
+
+      /* Temporary adaption rate if filter is not adapted correctly */
+      adapt_rate = .2f * Sxx / (1e4+See);
+      if (adapt_rate>.2)
+         adapt_rate = .2;
+      adapt_rate /= M;
+      
+      /* How much have we adapted so far? */
+      st->sum_adapt += adapt_rate;
+   }
+
+   if (st->adapted)
+   {
+      adapt_rate = 1.f/M;
+      for (i=0;i<=st->frame_size;i++)
+      {
+         float r;
+         /* Compute frequency-domain adaptation mask */
+         r = leak_estimate*st->Yf[i] / (1+st->Rf[i]);
+         if (r>1)
+            r = 1;
+         st->power_1[i] = adapt_rate*r/(1.f+st->power[i]);
+      }
+   } else {
+      for (i=0;i<=st->frame_size;i++)
+         st->power_1[i] = adapt_rate/(1.f+st->power[i]);      
+   }
+
    /* Compute weight gradient */
    for (j=0;j<M;j++)
    {
@@ -493,7 +365,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    for (j=0;j<M;j++)
    {
       /* Remove the "if" to make this an MDF filter */
-      if (st->cancel_count%M == j)
+      if (j==M-1 || st->cancel_count%(M-1) == j)
       {
          spx_drft_backward(st->fft_lookup, &st->W[j*N]);
          for (i=0;i<N;i++)
@@ -532,7 +404,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       
       /* Estimate residual echo */
       for (i=0;i<=st->frame_size;i++)
-         Yout[i] = 2*leak_estimate*st->Yps[i];
+         Yout[i] = 2.f*leak_estimate*st->Yps[i];
    }
 
 }

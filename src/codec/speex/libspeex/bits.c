@@ -39,16 +39,18 @@
 #include "speex_bits.h"
 #include "misc.h"
 
-/** Maximum size of the bit-stream (for fixed-size allocation) */
-#define MAX_BYTES_PER_FRAME (2000/BYTES_PER_CHAR)
+/* Maximum size of the bit-stream (for fixed-size allocation) */
+#ifndef MAX_CHARS_PER_FRAME
+#define MAX_CHARS_PER_FRAME (2000/BYTES_PER_CHAR)
+#endif
 
 void speex_bits_init(SpeexBits *bits)
 {
-   bits->chars = (char*)speex_alloc(MAX_BYTES_PER_FRAME);
+   bits->chars = (char*)speex_alloc(MAX_CHARS_PER_FRAME);
    if (!bits->chars)
       return;
 
-   bits->buf_size = MAX_BYTES_PER_FRAME;
+   bits->buf_size = MAX_CHARS_PER_FRAME;
 
    bits->owner=1;
 
@@ -168,7 +170,7 @@ int speex_bits_write(SpeexBits *bits, char *chars, int max_nbytes)
    int i;
    int max_nchars = max_nbytes/BYTES_PER_CHAR;
    int charPtr, bitPtr, nbBits;
-   
+
    /* Insert terminator, but save the data so we can put it back after */
    bitPtr=bits->bitPtr;
    charPtr=bits->charPtr;
@@ -350,8 +352,8 @@ int speex_bits_nbytes(SpeexBits *bits)
 
 void speex_bits_insert_terminator(SpeexBits *bits)
 {
-   if (bits->bitPtr<BITS_PER_CHAR-1)
+   if (bits->bitPtr)
       speex_bits_pack(bits, 0, 1);
-   while (bits->bitPtr<BITS_PER_CHAR-1)
+   while (bits->bitPtr)
       speex_bits_pack(bits, 1, 1);
 }

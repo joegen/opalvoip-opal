@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.cxx,v $
- * Revision 1.2006  2005/08/28 07:59:17  rjongbloed
+ * Revision 1.2007  2005/11/23 21:57:52  dsandras
+ * Updated to Speex 1.1.11.
+ *
+ * Revision 2.5  2005/08/28 07:59:17  rjongbloed
  * Converted OpalTranscoder to use factory, requiring sme changes in making sure
  *   OpalMediaFormat instances are initialised before use.
  *
@@ -133,7 +136,7 @@
 #include <codec/speexcodec.h>
 
 extern "C" {
-#if H323_SYSTEM_SPEEX
+#if OPAL_SYSTEM_SPEEX
 #include <speex.h>
 #else
 #include "speex/libspeex/speex.h"
