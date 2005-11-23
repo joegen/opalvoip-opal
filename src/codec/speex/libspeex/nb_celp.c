@@ -48,6 +48,10 @@
 #include "misc.h"
 #include "speex_callbacks.h"
 
+#ifdef VORBIS_PSYCHO
+#include "vorbis_psy.h"
+#endif
+
 #ifndef M_PI
 #define M_PI           3.14159265358979323846  /* pi */
 #endif
@@ -135,6 +139,12 @@ void *nb_encoder_init(const SpeexMode *m)
    st->encode_submode = 1;
 #ifdef EPIC_48K
    st->lbr_48k=mode->lbr48k;
+#endif
+
+#ifdef VORBIS_PSYCHO
+   st->psy = vorbis_psy_init(8000, 128);
+   st->curve = speex_alloc(64*sizeof(float));
+   st->old_curve = speex_alloc(64*sizeof(float));
 #endif
 
    /* Allocating input buffer */
@@ -252,6 +262,12 @@ void nb_encoder_destroy(void *state)
    vbr_destroy(st->vbr);
    speex_free (st->vbr);
 
+#ifdef VORBIS_PSYCHO
+   vorbis_psy_destroy(st->psy);
+   speex_free (st->curve);
+   speex_free (st->old_curve);
+#endif
+
    /*Free state memory... should be last*/
    speex_free(st);
 }
@@ -297,7 +313,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       /* Compute auto-correlation */
       _spx_autocorr(w_sig, st->autocorr, st->lpcSize+1, st->windowSize);
    }
-   st->autocorr[0] = (spx_word16_t) (st->autocorr[0]*st->lpc_floor); /* Noise floor in auto-correlation domain */
+   st->autocorr[0] = ADD16(st->autocorr[0],MULT16_16_Q15(st->autocorr[0],st->lpc_floor)); /* Noise floor in auto-correlation domain */
 
    /* Lag windowing: equivalent to filtering in the power-spectrum domain */
    for (i=0;i<st->lpcSize+1;i++)
@@ -420,6 +436,13 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       }
 #endif
    }
+
+#ifdef VORBIS_PSYCHO
+   compute_curve(st->psy, st->frame+52, st->curve);
+   if (st->first)
+      for (i=0;i<64;i++)
+         st->old_curve[i] = st->curve[i];
+#endif
 
    /*VBR stuff*/
    if (st->vbr && (st->vbr_enabled||st->vad_enabled))
@@ -718,7 +741,15 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          st->pi_gain[sub] = pi_g;
       }
 
-
+#ifdef VORBIS_PSYCHO
+      {
+         float curr_curve[64];
+         float fact = ((float)sub+1.0f)/st->nbSubframes;
+         for (i=0;i<64;i++)
+            curr_curve[i] = (1.0f-fact)*st->old_curve[i] + fact*st->curve[i];
+         curve_to_lpc(st->psy, curr_curve, st->bw_lpc1, st->bw_lpc2, 10);
+      }
+#else
       /* Compute bandwidth-expanded (unquantized) LPCs for perceptual weighting */
       bw_lpc(st->gamma1, st->interp_lpc, st->bw_lpc1, st->lpcSize);
       if (st->gamma2>=0)
@@ -729,6 +760,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          for (i=1;i<=st->lpcSize;i++)
             st->bw_lpc2[i]=0;
       }
+#endif
 
       for (i=0;i<st->subframeSize;i++)
          real_exc[i] = exc[i];
@@ -909,7 +941,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
             SUBMODE(innovation_quant)(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
                                       SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
                                       innov2, syn_resp, bits, stack, st->complexity, 0);
-            signal_mul(innov2, innov2, (spx_word32_t) (ener*(1/2.2)), st->subframeSize);
+            signal_mul(innov2, innov2, (spx_word32_t) (ener*(1.f/2.2f)), st->subframeSize);
             for (i=0;i<st->subframeSize;i++)
                exc[i] = ADD32(exc[i],innov2[i]);
             stack = tmp_stack;
@@ -1084,6 +1116,7 @@ const spx_word16_t attenuation[10] = {1., 0.961, 0.852, 0.698, 0.527, 0.368, 0.2
 static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
 {
    int i, sub;
+   int pitch_val;
    VARDECL(spx_coef_t *awk1);
    VARDECL(spx_coef_t *awk2);
    VARDECL(spx_coef_t *awk3);
@@ -1103,13 +1136,13 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
    
 #ifdef FIXED_POINT
    pitch_gain = st->last_pitch_gain;
-   if (pitch_gain>62)
-      pitch_gain = 62;
+   if (pitch_gain>54)
+      pitch_gain = 54;
    pitch_gain = SHL(pitch_gain, 9);
 #else   
    pitch_gain = GAIN_SCALING_1*st->last_pitch_gain;
-   if (pitch_gain>.95)
-      pitch_gain=.95;
+   if (pitch_gain>.85)
+      pitch_gain=.85;
 #endif
 
    pitch_gain = MULT16_16_Q15(fact,pitch_gain) + VERY_SMALL;
@@ -1157,10 +1190,15 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
       /*if (pitch_gain>.95)
         pitch_gain=.95;*/
       innov_gain = compute_rms(st->innov, st->frameSize);
+      pitch_val = st->last_pitch + SHR32((spx_int32_t)speex_rand(1+st->count_lost, &st->seed),SIG_SHIFT);
+      if (pitch_val > st->max_pitch)
+         pitch_val = st->max_pitch;
+      if (pitch_val < st->min_pitch)
+         pitch_val = st->min_pitch;
       for (i=0;i<st->subframeSize;i++)
       {
-         exc[i]= MULT16_32_Q15(pitch_gain, (exc[i-st->last_pitch]+VERY_SMALL)) + 
-               MULT16_32_Q15(fact, MULT16_32_Q15(sqrt(SHL(Q15ONE,15)-SHL(pitch_gain,15)),speex_rand(innov_gain, &st->seed)));
+         exc[i]= MULT16_32_Q15(pitch_gain, (exc[i-pitch_val]+VERY_SMALL)) + 
+               MULT16_32_Q15(fact, MULT16_32_Q15(SHL(Q15ONE,15)-SHL(MULT16_16(pitch_gain,pitch_gain),1),speex_rand(innov_gain, &st->seed)));
       }
       
       for (i=0;i<st->subframeSize;i++)
@@ -1668,6 +1706,27 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
             stack = tmp_stack;
          }
 
+      }
+
+      /* If the last packet was lost, re-scale the excitation to obtain the same energy as encoded in ol_gain */
+      if (st->count_lost) 
+      {
+         spx_word16_t exc_ener;
+         spx_word32_t gain32;
+         spx_word16_t gain;
+         exc_ener = compute_rms (exc, st->subframeSize);
+         gain32 = DIV32(ol_gain, ADD16(exc_ener,1));
+#ifdef FIXED_POINT
+         if (gain32 > 32768)
+            gain32 = 32768;
+         gain = EXTRACT16(gain32);
+#else
+         if (gain32 > 2)
+            gain32=2;
+         gain = gain32;
+#endif
+         for (i=0;i<st->subframeSize;i++)
+            exc[i] = MULT16_32_Q14(gain, exc[i]);
       }
 
       for (i=0;i<st->subframeSize;i++)

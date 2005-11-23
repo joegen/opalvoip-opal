@@ -12,9 +12,13 @@
  ********************************************************************
 
  function: #ifdef jail to whip a few platforms into the UNIX ideal.
- last mod: $Id: speex_types.h,v 1.4 2005/11/20 21:22:21 dsandras Exp $
+ last mod: $Id: speex_types.h,v 1.5 2005/11/23 21:57:52 dsandras Exp $
 
  ********************************************************************/
+/**
+   @file speex_types.h
+   @brief Speex types
+*/
 #ifndef _SPEEX_TYPES_H
 #define _SPEEX_TYPES_H
 
@@ -110,6 +114,20 @@
    typedef signed int spx_int32_t;
    typedef unsigned int spx_uint32_t;
    typedef long long int spx_int64_t;
+
+#elif defined(CONFIG_TI_C54X) || defined (CONFIG_TI_C55X)
+
+   typedef short spx_int16_t;
+   typedef unsigned short spx_uint16_t;
+   typedef long spx_int32_t;
+   typedef unsigned long spx_uint32_t;
+
+#elif defined(CONFIG_TI_C5X)
+
+   typedef short spx_int16_t;
+   typedef unsigned short spx_uint16_t;
+   typedef int spx_int32_t;
+   typedef unsigned int spx_uint32_t;
 
 #else
 

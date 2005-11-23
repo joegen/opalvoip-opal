@@ -35,8 +35,8 @@
 #ifndef STEREO_H
 #define STEREO_H
 
-#include "speex_types.h"
-#include "speex_bits.h"
+#include "speex/speex_types.h"
+#include "speex/speex_bits.h"
 
 #ifdef __cplusplus
 extern "C" {
