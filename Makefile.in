@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.16  2005/11/23 21:58:33  dsandras
+# Fixed Makefile.in.
+#
 # Revision 1.15  2005/11/20 21:03:50  dsandras
 # Upgraded to Speex 1.1.10.
 #
@@ -359,7 +362,8 @@ SOURCES += $(OPAL_SRCDIR)/codec/g711codec.cxx \
            $(OPAL_SRCDIR)/codec/rfc2833.cxx \
            $(OPAL_SRCDIR)/codec/vidcodec.cxx \
            $(OPAL_SRCDIR)/codec/opalwavfile.cxx \
-	   $(OPAL_SRCDIR)/codec/silencedetect.cxx
+	   $(OPAL_SRCDIR)/codec/silencedetect.cxx \
+	   $(OPAL_SRCDIR)/codec/echocancel.cxx
 
 
 # G.726
@@ -489,6 +493,7 @@ SOURCES 	+= $(OPAL_SRCDIR)/codec/speexcodec.cxx \
                    $(SPEEX_SRCDIR)/exc_10_16_table.c \
                    $(SPEEX_SRCDIR)/exc_20_32_table.c \
                    $(SPEEX_SRCDIR)/hexc_10_32_table.c \
+                   $(SPEEX_SRCDIR)/mdf.c \
                    $(SPEEX_SRCDIR)/misc.c \
                    $(SPEEX_SRCDIR)/smallft.c \
                    $(SPEEX_SRCDIR)/speex.c \
