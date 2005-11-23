@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.17  2005/11/23 22:01:37  dsandras
+# Reverted previous change. echocancel.cxx is not ready to go in yet.
+#
 # Revision 1.16  2005/11/23 21:58:33  dsandras
 # Fixed Makefile.in.
 #
@@ -362,8 +365,7 @@ SOURCES += $(OPAL_SRCDIR)/codec/g711codec.cxx \
            $(OPAL_SRCDIR)/codec/rfc2833.cxx \
            $(OPAL_SRCDIR)/codec/vidcodec.cxx \
            $(OPAL_SRCDIR)/codec/opalwavfile.cxx \
-	   $(OPAL_SRCDIR)/codec/silencedetect.cxx \
-	   $(OPAL_SRCDIR)/codec/echocancel.cxx
+	   $(OPAL_SRCDIR)/codec/silencedetect.cxx 
 
 
 # G.726
