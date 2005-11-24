@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2046  2005/10/04 12:57:18  rjongbloed
+ * Revision 1.2047  2005/11/24 20:31:54  dsandras
+ * Added support for echo cancelation using Speex.
+ * Added possibility to add a filter to an OpalMediaPatch for all patches of a connection.
+ *
+ * Revision 2.45  2005/10/04 12:57:18  rjongbloed
  * Removed CanOpenSourceMediaStream/CanOpenSinkMediaStream functions and
  *   now use overides on OpenSourceMediaStream/OpenSinkMediaStream
  *
@@ -199,6 +203,7 @@
 class OpalEndPoint;
 class OpalCall;
 class OpalSilenceDetector;
+class OpalEchoCanceler;
 class OpalRFC2833Proto;
 class OpalRFC2833Info;
 class OpalT120Protocol;
@@ -661,6 +666,15 @@ class OpalConnection : public PSafeObject
     virtual void OnClosedMediaStream(
       const OpalMediaStream & stream     /// Media stream being closed
     );
+    
+    /**Call back when patching a media stream.
+       This function is called when a connection has created a new media
+       patch between two streams.
+      */
+    virtual void OnPatchMediaStream(
+      BOOL isSource,
+      OpalMediaPatch & patch    /// New patch
+    );
 
     /**Get a media stream.
        Locates a stream given a RTP session ID. Each session would usually
@@ -1031,9 +1045,13 @@ class OpalConnection : public PSafeObject
       unsigned maxDelay    // New maximum jitter buffer delay in milliseconds
     );
 
-    /**Get the silence detector activate on connection.
+    /**Get the silence detector active on connection.
      */
     OpalSilenceDetector * GetSilenceDetector() const { return silenceDetector; }
+    
+    /**Get the echo canceler active on connection.
+    */
+    OpalEchoCanceler * GetEchoCanceler() const { return echoCanceler; }
 
     /**Get the protocol-specific unique identifier for this connection.
      */
@@ -1079,6 +1097,7 @@ class OpalConnection : public PSafeObject
     PSyncPoint            userInputAvailable;
     BOOL                  detectInBandDTMF;
     OpalSilenceDetector * silenceDetector;
+    OpalEchoCanceler  * echoCanceler;
     OpalRFC2833Proto    * rfc2833Handler;
     OpalT120Protocol    * t120handler;
     OpalT38Protocol     * t38handler;

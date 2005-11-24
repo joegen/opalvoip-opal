@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.h,v $
- * Revision 1.2015  2005/10/12 21:11:21  dsandras
+ * Revision 1.2016  2005/11/24 20:31:54  dsandras
+ * Added support for echo cancelation using Speex.
+ * Added possibility to add a filter to an OpalMediaPatch for all patches of a connection.
+ *
+ * Revision 2.14  2005/10/12 21:11:21  dsandras
  * Control if the video streams are started or not from this class.
  *
  * Revision 2.13  2004/08/14 07:56:29  rjongbloed
@@ -389,6 +393,15 @@ class OpalPCSSConnection : public OpalConnection
       */
     virtual BOOL OnOpenMediaStream(
       OpalMediaStream & stream    /// New media stream being opened
+    );
+
+    /**Call back when patching a media stream.
+       This function is called when a connection has created a new media
+       patch between two streams.
+      */
+    virtual void OnPatchMediaStream(
+      BOOL isSource,
+      OpalMediaPatch & patch    /// New patch
     );
 
     /**Open source transmitter media stream for session.

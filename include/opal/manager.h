@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2044  2005/10/08 19:26:38  dsandras
+ * Revision 1.2045  2005/11/24 20:31:54  dsandras
+ * Added support for echo cancelation using Speex.
+ * Added possibility to add a filter to an OpalMediaPatch for all patches of a connection.
+ *
+ * Revision 2.43  2005/10/08 19:26:38  dsandras
  * Added OnForwarded callback in case of call forwarding.
  *
  * Revision 2.42  2005/09/20 07:25:43  csoutheren
@@ -183,6 +187,7 @@
 #include <opal/call.h>
 #include <opal/guid.h>
 #include <codec/silencedetect.h>
+#include <codec/echocancel.h>
 #include <ptclib/pstun.h>
 
 class OpalEndPoint;
@@ -1012,6 +1017,16 @@ class OpalManager : public PObject
     /**Get the default parameters for the silence detector.
      */
     const OpalSilenceDetector::Params & GetSilenceDetectParams() const { return silenceDetectParams; }
+    
+    /**Set the default parameters for the echo cancelation.
+     */
+    virtual void SetEchoCancelParams(
+      const OpalEchoCanceler::Params & params
+    ) { echoCancelParams = params; }
+
+    /**Get the default parameters for the silence detector.
+     */
+    const OpalEchoCanceler::Params & GetEchoCancelParams() const { return echoCancelParams; }
 
     /**Set the parameters for the video device to be used for input.
        If the name is not suitable for use with the PVideoInputDevice class
@@ -1110,6 +1125,7 @@ class OpalManager : public PObject
     PString       ilsServer;
 
     OpalSilenceDetector::Params silenceDetectParams;
+    OpalEchoCanceler::Params echoCancelParams;
 
     PVideoDevice::OpenArgs videoInputDevice;
     PVideoDevice::OpenArgs videoPreviewDevice;
