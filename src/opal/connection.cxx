@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2053  2005/10/04 20:31:30  dsandras
+ * Revision 1.2054  2005/11/24 20:31:55  dsandras
+ * Added support for echo cancelation using Speex.
+ * Added possibility to add a filter to an OpalMediaPatch for all patches of a connection.
+ *
+ * Revision 2.52  2005/10/04 20:31:30  dsandras
  * Minor code cleanup.
  *
  * Revision 2.51  2005/10/04 12:59:28  rjongbloed
@@ -217,6 +221,7 @@
 #include <opal/call.h>
 #include <opal/transcoders.h>
 #include <codec/silencedetect.h>
+#include <codec/echocancel.h>
 #include <codec/rfc2833.h>
 #include <rtp/rtp.h>
 #include <t120/t120proto.h>
@@ -324,6 +329,8 @@ OpalConnection::OpalConnection(OpalCall & call,
   bandwidthAvailable = endpoint.GetInitialBandwidth();
 
   silenceDetector = NULL;
+  echoCanceler = NULL;
+  
   rfc2833Handler = new OpalRFC2833Proto(PCREATE_NOTIFIER(OnUserInputInlineRFC2833));
 
   t120handler = NULL;
@@ -334,6 +341,7 @@ OpalConnection::OpalConnection(OpalCall & call,
 OpalConnection::~OpalConnection()
 {
   delete silenceDetector;
+  delete echoCanceler;
   delete rfc2833Handler;
   delete t120handler;
   delete t38handler;
@@ -690,6 +698,13 @@ void OpalConnection::OnClosedMediaStream(const OpalMediaStream & stream)
 }
 
 
+void OpalConnection::OnPatchMediaStream(BOOL isSource,
+					OpalMediaPatch & patch)
+{
+  PTRACE(3, "OpalCon\tNew patch created");
+}
+
+
 OpalMediaStream * OpalConnection::GetMediaStream(unsigned sessionId, BOOL source) const
 {
   for (PINDEX i = 0; i < mediaStreams.GetSize(); i++) {
@@ -707,6 +722,7 @@ BOOL OpalConnection::IsMediaBypassPossible(unsigned /*sessionID*/) const
   PTRACE(3, "OpalCon\tIsMediaBypassPossible: default returns FALSE");
   return FALSE;
 }
+
 
 BOOL OpalConnection::GetMediaInformation(unsigned sessionID,
                                          MediaInformation & info) const

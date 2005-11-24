@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2025  2005/10/12 21:11:21  dsandras
+ * Revision 1.2026  2005/11/24 20:31:55  dsandras
+ * Added support for echo cancelation using Speex.
+ * Added possibility to add a filter to an OpalMediaPatch for all patches of a connection.
+ *
+ * Revision 2.24  2005/10/12 21:11:21  dsandras
  * Control if the video streams are started or not from this class.
  *
  * Revision 2.23  2005/07/24 07:28:29  rjongbloed
@@ -124,6 +128,7 @@
 
 #include <ptlib/videoio.h>
 #include <codec/silencedetect.h>
+#include <codec/echocancel.h>
 #include <codec/vidcodec.h>
 #include <opal/call.h>
 #include <opal/patch.h>
@@ -331,6 +336,7 @@ OpalPCSSConnection::OpalPCSSConnection(OpalCall & call,
     soundChannelBuffers(ep.GetSoundChannelBufferDepth())
 {
   silenceDetector = new OpalPCM16SilenceDetector;
+  echoCanceler = new OpalEchoCanceler;
 
   PTRACE(3, "PCSS\tCreated PC sound system connection.");
 }
@@ -429,6 +435,17 @@ BOOL OpalPCSSConnection::OnOpenMediaStream(OpalMediaStream & mediaStream)
   }
 
   return TRUE;
+}
+
+
+void OpalPCSSConnection::OnPatchMediaStream(BOOL isSource,
+					    OpalMediaPatch & patch)
+{
+  PTRACE(3, "OpalCon\tNew patch created");
+  if (patch.GetSource().GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
+    echoCanceler->SetParameters(endpoint.GetManager().GetEchoCancelParams());
+    patch.AddFilter(isSource?echoCanceler->GetReceiveHandler():echoCanceler->GetSendHandler(), OpalPCM16);
+  }
 }
 
 
