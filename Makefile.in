@@ -22,6 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.18  2005/11/24 20:31:54  dsandras
+# Added support for echo cancelation using Speex.
+# Added possibility to add a filter to an OpalMediaPatch for all patches of a connection.
+#
 # Revision 1.17  2005/11/23 22:01:37  dsandras
 # Reverted previous change. echocancel.cxx is not ready to go in yet.
 #
@@ -365,7 +369,8 @@ SOURCES += $(OPAL_SRCDIR)/codec/g711codec.cxx \
            $(OPAL_SRCDIR)/codec/rfc2833.cxx \
            $(OPAL_SRCDIR)/codec/vidcodec.cxx \
            $(OPAL_SRCDIR)/codec/opalwavfile.cxx \
-	   $(OPAL_SRCDIR)/codec/silencedetect.cxx 
+	   $(OPAL_SRCDIR)/codec/silencedetect.cxx \
+	   $(OPAL_SRCDIR)/codec/echocancel.cxx
 
 
 # G.726
