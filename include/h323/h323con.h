@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2041  2005/10/04 13:01:51  rjongbloed
+ * Revision 1.2042  2005/11/24 04:46:41  dereksmithies
+ * Remove detectInBandDTMF, as it is already declared in the OpalConnection
+ * class. Thanks to valgrind on suse 10 for finding this one.
+ *
+ * Revision 2.40  2005/10/04 13:01:51  rjongbloed
  * Moved addition of a media stream to list in OpalConnection to OnOpenMediaStream
  *   so is consistent across protocols.
  *
@@ -2272,7 +2276,7 @@ class H323Connection : public OpalConnection
     BOOL       h245versionSet;
     BOOL doH245inSETUP;
     BOOL lastPDUWasH245inSETUP;
-    BOOL detectInBandDTMF;
+
     BOOL mustSendDRQ;
     BOOL mediaWaitForConnect;
     BOOL transmitterSidePaused;
