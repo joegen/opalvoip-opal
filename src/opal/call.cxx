@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2039  2005/10/22 12:16:05  dsandras
+ * Revision 1.2040  2005/11/24 20:31:55  dsandras
+ * Added support for echo cancelation using Speex.
+ * Added possibility to add a filter to an OpalMediaPatch for all patches of a connection.
+ *
+ * Revision 2.38  2005/10/22 12:16:05  dsandras
  * Moved mutex preventing media streams to be opened before they are completely closed to the SIPConnection class.
  *
  * Revision 2.37  2005/10/04 13:02:24  rjongbloed
@@ -515,6 +519,11 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
     }
   }
 
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+    if (patch)
+      conn->OnPatchMediaStream(conn == &connection, *patch);
+  }
+  
   return TRUE;
 }
 
