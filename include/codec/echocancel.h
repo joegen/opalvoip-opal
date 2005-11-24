@@ -18,11 +18,14 @@
  *
  * The Original Code is Open Phone Abstraction Library.
  *
- * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
+ * The author of this code is Damien Sandras
  *
  * Contributor(s): Miguel Rodriguez Perez
  *
  * $Log: echocancel.h,v $
+ * Revision 1.2  2005/11/24 20:34:44  dsandras
+ * Modified copyright.
+ *
  * Revision 1.1  2005/11/24 20:31:54  dsandras
  * Added support for echo cancelation using Speex.
  * Added possibility to add a filter to an OpalMediaPatch for all patches of a connection.
