@@ -54,7 +54,11 @@
 /************ Change log
  *
  * $Log: p64.cxx,v $
- * Revision 1.2006  2005/10/12 21:20:25  dsandras
+ * Revision 1.2007  2005/11/25 00:14:29  csoutheren
+ * Applied patch #1303543 from Hannes Friederich
+ * Added guard to weird conditions in H261 codec
+ *
+ * Revision 2.5  2005/10/12 21:20:25  dsandras
  * Added check for buffLen to prevent potential crash thanks to Hannes Friederich.
  *
  * Revision 2.4  2005/09/15 18:00:38  dsandras
@@ -1113,6 +1117,12 @@ BOOL P64Decoder::decode(const unsigned char *hdrPtr, int buffLen,
   const u_char *bp;
   int cc, sbit, ebit, gob;
   h261hdr_t h261hdr;
+  
+  // preventing accidential crashes
+  if(buffLen == 0)
+  {
+	  return FALSE;
+  }
 
   if (buffLen == 0)
     return FALSE;
