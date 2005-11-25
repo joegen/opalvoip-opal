@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2017  2005/10/20 20:28:18  dsandras
+ * Revision 1.2018  2005/11/25 21:02:19  dsandras
+ * Remove the filters when closing the OpalMediaPatch.
+ *
+ * Revision 2.16  2005/10/20 20:28:18  dsandras
  * Avoid the thread to keep the priority for a too long time.
  *
  * Revision 2.15  2005/09/06 12:44:49  rjongbloed
@@ -186,6 +189,7 @@ void OpalMediaPatch::Close()
 {
   PTRACE(3, "Patch\tClosing media patch " << *this);
 
+  filters.RemoveAll();
   source.Close();
 
   // This relies on the channel close doing a RemoveSink() call
