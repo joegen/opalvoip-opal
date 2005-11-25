@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2109  2005/11/20 20:55:55  dsandras
+ * Revision 1.2110  2005/11/25 21:02:52  dsandras
+ * Release the call if the SDP can not be built.
+ *
+ * Revision 2.108  2005/11/20 20:55:55  dsandras
  * End the connection when the session can not be created.
  *
  * Revision 2.107  2005/10/27 20:53:36  dsandras
@@ -1055,8 +1058,10 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
 
       // Not already there, so create one
       rtpSession = CreateSession(GetTransport(), rtpSessionId, NULL);
-      if (rtpSession == NULL)
-        return FALSE;
+      if (rtpSession == NULL) {
+	Release(OpalConnection::EndedByTransportFail);
+	return FALSE;
+      }
 
       rtpSession->SetUserData(new SIP_RTP_Session(*this));
 
