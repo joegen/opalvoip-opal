@@ -23,6 +23,9 @@
  * Contributor(s): Miguel Rodriguez Perez.
  *
  * $Log: echocancel.cxx,v $
+ * Revision 1.3  2005/11/25 21:00:37  dsandras
+ * Remove the DC or the algorithm is puzzled. Added several post-processing filters. Added missing declaration.
+ *
  * Revision 1.2  2005/11/24 20:34:44  dsandras
  * Modified copyright.
  *
@@ -67,12 +70,16 @@ OpalEchoCanceler::OpalEchoCanceler()
 
   e_buf = NULL;
   echo_buf = NULL;
+  ref_buf = NULL;
+  noise = NULL;
 
   echo_chan = new PQueueChannel();
   echo_chan->Open(10000);
   echo_chan->SetReadTimeout(2000);
   echo_chan->SetWriteTimeout(2000);
-  
+
+  mean = 0;
+
   PTRACE(3, "Echo Canceler\tHandler created");
 }
 
@@ -125,6 +132,7 @@ void OpalEchoCanceler::SentPacket(RTP_DataFrame& echo_frame, INT)
 void OpalEchoCanceler::ReceivedPacket(RTP_DataFrame& input_frame, INT)
 {
   int inputSize = 0;
+  int i = 1;
   
   if (param.m_mode == NoCancelation)
     return;
@@ -132,10 +140,13 @@ void OpalEchoCanceler::ReceivedPacket(RTP_DataFrame& input_frame, INT)
   inputSize = input_frame.GetPayloadSize(); // Size is in bytes
 
   if (echoState == NULL) 
-    echoState = speex_echo_state_init(inputSize/sizeof(short), 4*inputSize);
+    echoState = speex_echo_state_init(inputSize/sizeof(short), 8*inputSize);
   
-  if (preprocessState == NULL) 
+  if (preprocessState == NULL) { 
     preprocessState = speex_preprocess_state_init(inputSize/sizeof(short), 8000);
+    speex_preprocess_ctl(preprocessState, SPEEX_PREPROCESS_SET_DENOISE, &i);
+    speex_preprocess_ctl(preprocessState, SPEEX_PREPROCESS_SET_DEREVERB, &i);
+  }
 
   if (echo_buf == NULL)
     echo_buf = (short *) malloc(inputSize);
@@ -143,17 +154,28 @@ void OpalEchoCanceler::ReceivedPacket(RTP_DataFrame& input_frame, INT)
     noise = (float *) malloc((inputSize/sizeof(short)+1)*sizeof(float));
   if (e_buf == NULL)
     e_buf = (short *) malloc(inputSize);
-  
+  if (ref_buf == NULL)
+    ref_buf = (short *) malloc(inputSize);
+
   /* Read from the PQueueChannel a reference echo frame of the size
    * of the captured frame. */
   echo_chan->Read(echo_buf, input_frame.GetPayloadSize());
 
+  /* Remove the DC offset */
+  short *j = (short *) input_frame.GetPayloadPtr();
+  for (int i = 0 ; i < (int) inputSize/sizeof(short) ; i++) {
+    mean = 0.999*mean + 0.001*j[i];
+    ref_buf[i] = j[i] - (short) mean;
+  }
+   
   /* Cancel the echo in this frame */
-  speex_echo_cancel(echoState, (short *) input_frame.GetPayloadPtr(), echo_buf, e_buf, noise);
-
+  speex_echo_cancel(echoState, ref_buf, echo_buf, e_buf, noise);
+  
   /* Suppress the noise */
   speex_preprocess(preprocessState, e_buf, noise);
 
   /* Use the result of the echo cancelation as capture frame */
   memcpy(input_frame.GetPayloadPtr(), e_buf, input_frame.GetPayloadSize());
+  
+  BYTE * payload = input_frame.GetPayloadPtr();
 }
