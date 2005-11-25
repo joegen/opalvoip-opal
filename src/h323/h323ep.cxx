@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2039  2005/10/01 13:19:57  dsandras
+ * Revision 1.2040  2005/11/25 00:40:18  csoutheren
+ * Applied patch #1274826 from Paul Nader
+ * HandleFirstSignallingChannelPDU incomplete ReleaseComplete
+ *
+ * Revision 2.38  2005/10/01 13:19:57  dsandras
  * Implemented back Blind Transfer.
  *
  * Revision 2.37  2005/07/12 12:34:37  csoutheren
@@ -1185,11 +1189,27 @@ BOOL H323EndPoint::NewIncomingConnection(OpalTransport * transport)
     if (connection == NULL) {
       PTRACE(1, "H225\tEndpoint could not create connection, "
                 "sending release complete PDU: callRef=" << callReference);
-      Q931 reply;
-      reply.BuildReleaseComplete(callReference, TRUE);
-      PBYTEArray rawData;
-      reply.Encode(rawData);
-      transport->WritePDU(rawData);
+
+      H323SignalPDU releaseComplete;
+      Q931 &q931PDU = releaseComplete.GetQ931();
+      q931PDU.BuildReleaseComplete(callReference, TRUE);
+      releaseComplete.m_h323_uu_pdu.m_h323_message_body.SetTag(H225_H323_UU_PDU_h323_message_body::e_releaseComplete);
+
+      H225_ReleaseComplete_UUIE &release = releaseComplete.m_h323_uu_pdu.m_h323_message_body;
+      release.m_protocolIdentifier.SetValue(psprintf("0.0.8.2250.0.%u", H225_PROTOCOL_VERSION));
+
+      H225_Setup_UUIE &setup = pdu.m_h323_uu_pdu.m_h323_message_body;
+      if (setup.HasOptionalField(H225_Setup_UUIE::e_callIdentifier)) {
+        release.IncludeOptionalField(H225_Setup_UUIE::e_callIdentifier);
+        release.m_callIdentifier = setup.m_callIdentifier;
+      }
+
+      // Set the cause value
+      q931PDU.SetCause(Q931::TemporaryFailure);
+
+      // Send the PDU
+      releaseComplete.Write(*transport);
+
       return TRUE;
     }
 
