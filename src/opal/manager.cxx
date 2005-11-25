@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2056  2005/10/08 19:26:38  dsandras
+ * Revision 1.2057  2005/11/25 02:42:32  csoutheren
+ * Applied patch #1358862 ] by Frederich Heem
+ * SetUp call not removing calls in case of error
+ *
+ * Revision 2.55  2005/10/08 19:26:38  dsandras
  * Added OnForwarded callback in case of call forwarding.
  *
  * Revision 2.54  2005/09/20 07:25:43  csoutheren
@@ -423,10 +427,17 @@ BOOL OpalManager::SetUpCall(const PString & partyA,
 
   call->SetPartyB(partyB);
 
-  if (MakeConnection(*call, partyA, userData))
+  if (MakeConnection(*call, partyA, userData)) {
+    PTRACE(1, "SetUpCall succeeded");
     return TRUE;
+  }
 
   call->Clear();
+
+  if (!activeCalls.RemoveAt(token)) {
+    PTRACE(1, "SetUpCall could not remove call from active call list");
+  }
+
   return FALSE;
 }
 
