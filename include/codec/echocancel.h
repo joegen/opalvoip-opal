@@ -23,6 +23,9 @@
  * Contributor(s): Miguel Rodriguez Perez
  *
  * $Log: echocancel.h,v $
+ * Revision 1.3  2005/11/25 21:00:38  dsandras
+ * Remove the DC or the algorithm is puzzled. Added several post-processing filters. Added missing declaration.
+ *
  * Revision 1.2  2005/11/24 20:34:44  dsandras
  * Modified copyright.
  *
@@ -95,9 +98,12 @@ protected:
   Params param;
 
 private:
+
+  double mean;
+  PQueueChannel *echo_chan;
   SpeexEchoState *echoState;
   SpeexPreprocessState *preprocessState;
-  PQueueChannel *echo_chan;
+  short *ref_buf;
   short *echo_buf;
   short *e_buf;
   float *noise;
