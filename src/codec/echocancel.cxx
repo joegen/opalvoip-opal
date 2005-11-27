@@ -23,6 +23,9 @@
  * Contributor(s): Miguel Rodriguez Perez.
  *
  * $Log: echocancel.cxx,v $
+ * Revision 1.4  2005/11/27 20:48:05  dsandras
+ * Changed ReadTimeout, WriteTimeout in case the remote is not sending data. Fixed compilation warning.
+ *
  * Revision 1.3  2005/11/25 21:00:37  dsandras
  * Remove the DC or the algorithm is puzzled. Added several post-processing filters. Added missing declaration.
  *
@@ -75,8 +78,8 @@ OpalEchoCanceler::OpalEchoCanceler()
 
   echo_chan = new PQueueChannel();
   echo_chan->Open(10000);
-  echo_chan->SetReadTimeout(2000);
-  echo_chan->SetWriteTimeout(2000);
+  echo_chan->SetReadTimeout(10);
+  echo_chan->SetWriteTimeout(10);
 
   mean = 0;
 
@@ -163,7 +166,7 @@ void OpalEchoCanceler::ReceivedPacket(RTP_DataFrame& input_frame, INT)
 
   /* Remove the DC offset */
   short *j = (short *) input_frame.GetPayloadPtr();
-  for (int i = 0 ; i < (int) inputSize/sizeof(short) ; i++) {
+  for (int i = 0 ; i < (int) (inputSize/sizeof(short)) ; i++) {
     mean = 0.999*mean + 0.001*j[i];
     ref_buf[i] = j[i] - (short) mean;
   }
@@ -176,6 +179,4 @@ void OpalEchoCanceler::ReceivedPacket(RTP_DataFrame& input_frame, INT)
 
   /* Use the result of the echo cancelation as capture frame */
   memcpy(input_frame.GetPayloadPtr(), e_buf, input_frame.GetPayloadSize());
-  
-  BYTE * payload = input_frame.GetPayloadPtr();
 }
