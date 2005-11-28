@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2036  2005/10/30 23:01:29  dsandras
+ * Revision 1.2037  2005/11/28 19:07:56  dsandras
+ * Moved OnNATTimeout to SIPInfo and use it for active conversations too.
+ * Added E.164 support.
+ *
+ * Revision 2.35  2005/10/30 23:01:29  dsandras
  * Added possibility to have a body for SIPInfo. Moved MESSAGE sending to SIPInfo for more efficiency during conversations.
  *
  * Revision 2.34  2005/10/22 17:14:45  dsandras
@@ -245,6 +249,11 @@ class SIPInfo : public PSafeObject
       PString	         authRealm;
       PString 	         password;
       PString		 body;
+      PTimer             natTimer;
+      SIPOptions       * natBindingOptions;
+    
+    private:
+      PDECLARE_NOTIFIER(PTimer, SIPInfo, OnNATTimeout);
 };
 
 class SIPRegisterInfo : public SIPInfo
@@ -260,10 +269,6 @@ class SIPRegisterInfo : public SIPInfo
 
     virtual void OnSuccess();
     virtual void OnFailed(SIP_PDU::StatusCodes r);
-  private:
-    PDECLARE_NOTIFIER(PTimer, SIPRegisterInfo, OnNATTimeout);
-    PTimer             natTimer;
-    SIPOptions       * natBindingOptions;
 };
 
 class SIPMWISubscribeInfo : public SIPInfo
@@ -820,6 +825,10 @@ class SIPEndPoint : public OpalEndPoint
       const PString & username, 
       SIP_PDU::Methods method
     );
+    
+    void ParsePartyName(
+      const PString & remoteParty,     /// Party name string.
+      PString & party);                /// Parsed party name, after e164 lookup
 
     SIPURL            proxy;
     PString           userAgentString;
