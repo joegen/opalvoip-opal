@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2077  2005/11/07 21:44:49  dsandras
+ * Revision 1.2078  2005/11/28 19:07:56  dsandras
+ * Moved OnNATTimeout to SIPInfo and use it for active conversations too.
+ * Added E.164 support.
+ *
+ * Revision 2.76  2005/11/07 21:44:49  dsandras
  * Fixed origin of MESSAGE requests. Ignore refreshes for MESSAGE requests.
  *
  * Revision 2.75  2005/11/04 19:12:30  dsandras
@@ -281,6 +285,7 @@
  */
 
 #include <ptlib.h>
+#include <ptclib/enum.h>
 
 #ifdef __GNUC__
 #pragma implementation "sipep.h"
@@ -309,6 +314,8 @@ SIPInfo::SIPInfo(SIPEndPoint &endpoint, const PString & adjustedUsername)
   registrationAddress.Parse(adjustedUsername);
   registrationID = 
     OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
+  natTimer.SetNotifier(PCREATE_NOTIFIER(OnNATTimeout));
+  natBindingOptions = NULL;
 }
 
 
@@ -316,6 +323,9 @@ SIPInfo::~SIPInfo()
 {
   registrations.RemoveAll();
 
+  if (natBindingOptions)
+    delete natBindingOptions;
+  
   if (registrarTransport) 
     delete registrarTransport;
 }
@@ -345,21 +355,31 @@ void SIPInfo::Cancel (SIPTransaction & transaction)
 }
 
 
+void SIPInfo::OnNATTimeout (PTimer &, INT)
+{
+  if (registrarTransport) {
+    if (natBindingOptions)
+      if (natBindingOptions->IsFinished())
+	delete natBindingOptions;
+      else
+	return;
+    
+    natBindingOptions = new SIPOptions (ep, *registrarTransport, registrationAddress.GetHostName());
+    natBindingOptions->Start();
+  }
+}
+
+
 SIPRegisterInfo::SIPRegisterInfo(SIPEndPoint & endpoint, const PString & name, const PString & pass/*, const PString & r*/)
   :SIPInfo(endpoint, name)
 {
   expire = ep.GetRegistrarTimeToLive().GetSeconds();
   password = pass;
-
-  natTimer.SetNotifier(PCREATE_NOTIFIER(OnNATTimeout));
-  natBindingOptions = NULL;
 }
 
 
 SIPRegisterInfo::~SIPRegisterInfo()
 {
-  if (natBindingOptions)
-    delete natBindingOptions;
 }
 
 SIPTransaction * SIPRegisterInfo::CreateTransaction(OpalTransport &t, BOOL unregister)
@@ -403,18 +423,6 @@ void SIPRegisterInfo::OnFailed (SIP_PDU::StatusCodes r)
 			   (expire > 0));
 }
 
-void SIPRegisterInfo::OnNATTimeout (PTimer &, INT)
-{
-  if (registrarTransport) {
-    if (natBindingOptions)
-      if (natBindingOptions->IsFinished())
-	delete natBindingOptions;
-      else
-	return;
-    natBindingOptions = new SIPOptions (ep, *registrarTransport, registrationAddress.GetHostName());
-    natBindingOptions->Start();
-  }
-}
 
 SIPMWISubscribeInfo::SIPMWISubscribeInfo (SIPEndPoint & endpoint, const PString & name)
   :SIPInfo(endpoint, name)
@@ -440,6 +448,11 @@ SIPTransaction * SIPMWISubscribeInfo::CreateTransaction(OpalTransport &t, BOOL u
 void SIPMWISubscribeInfo::OnSuccess ()
 { 
   SetRegistered((expire == 0)?FALSE:TRUE);
+  if (ep.GetManager().GetSTUN (registrationAddress.GetHostName()))
+    if (expire > 0)
+      natTimer.RunContinuous(PTimeInterval(60000));
+    else
+      natTimer.Stop();
 }
 
 void SIPMWISubscribeInfo::OnFailed(SIP_PDU::StatusCodes /*reason*/)
@@ -465,6 +478,8 @@ SIPTransaction * SIPMessageInfo::CreateTransaction(OpalTransport &t, BOOL unregi
 
 void SIPMessageInfo::OnSuccess ()
 { 
+  if (ep.GetManager().GetSTUN (registrationAddress.GetHostName()))
+    natTimer.RunContinuous(PTimeInterval(60000));
 }
 
 void SIPMessageInfo::OnFailed(SIP_PDU::StatusCodes reason)
@@ -629,11 +644,15 @@ void SIPEndPoint::HandlePDU(OpalTransport & transport)
 
 
 BOOL SIPEndPoint::MakeConnection(OpalCall & call,
-                                 const PString & remoteParty,
+                                 const PString & _remoteParty,
                                  void * userData)
 {
-  if (remoteParty.Find("sip:") != 0)
+  PString remoteParty;
+  
+  if (_remoteParty.Find("sip:") != 0)
     return FALSE;
+  
+  ParsePartyName(_remoteParty, remoteParty);
 
   PStringStream callID;
   OpalGloballyUniqueID id;
@@ -679,9 +698,11 @@ SIPConnection * SIPEndPoint::CreateConnection(OpalCall & call,
 
 BOOL SIPEndPoint::SetupTransfer(const PString & token,  
 				const PString & /*callIdentity*/, 
-				const PString & remoteParty,  
+				const PString & _remoteParty,  
 				void * userData)
 {
+  PString remoteParty;
+  
   // Make a new connection
   PSafePtr<OpalConnection> otherConnection = 
     GetConnectionWithLock(token, PSafeReference);
@@ -693,6 +714,8 @@ BOOL SIPEndPoint::SetupTransfer(const PString & token,
   
   call.RemoveMediaStreams();
   
+  ParsePartyName(_remoteParty, remoteParty);
+
   PStringStream callID;
   OpalGloballyUniqueID id;
   callID << id << '@' << PIPSocket::GetHostName();
@@ -965,9 +988,9 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
   request = callid_info->CreateTransaction(transaction.GetTransport(), 
 					   (callid_info->GetExpire () == 0)); 
   if (!realm_info->GetAuthentication().Authorise(*request)) {
-    // don't REGISTER again if no authentication info available
+    // don't send again if no authentication info available
     delete request;
-	callid_info->OnFailed(SIP_PDU::Failure_UnAuthorised);
+    callid_info->OnFailed(SIP_PDU::Failure_UnAuthorised);
     return;
   }
   if (request->Start()) 
@@ -984,6 +1007,7 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
   PSafePtr<SIPInfo> info = NULL;
 
   if (transaction.GetMethod() != SIP_PDU::Method_REGISTER
+      && transaction.GetMethod() != SIP_PDU::Method_MESSAGE
       && transaction.GetMethod() != SIP_PDU::Method_SUBSCRIBE) {
     return;
   }
@@ -1414,6 +1438,35 @@ BOOL SIPEndPoint::TransmitSIPUnregistrationInfo(const PString & host, const PStr
   request->Wait ();
 
   return TRUE;
+}
+
+
+void SIPEndPoint::ParsePartyName(const PString & remoteParty,
+				 PString & party)
+{
+  party = remoteParty;
+  
+#if P_DNS
+  // if there is no '@', and then attempt to use ENUM
+  if (remoteParty.Find('@') == P_MAX_INDEX) {
+
+    // make sure the number has only digits
+    PString e164 = remoteParty;
+    if (e164.Left(4) *= "sip:")
+      e164 = e164.Mid(4);
+    PINDEX i;
+    for (i = 0; i < e164.GetLength(); ++i)
+      if (!isdigit(e164[i]) && (i != 0 || e164[0] != '+'))
+	break;
+    if (i >= e164.GetLength()) {
+      PString str;
+      if (PDNS::ENUMLookup(e164, "E2U+SIP", str)) {
+	PTRACE(4, "SIP\tENUM converted remote party " << remoteParty << " to " << str);
+	party = str;
+      }
+    }
+  }
+#endif
 }
 
 
