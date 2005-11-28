@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2040  2005/11/25 00:40:18  csoutheren
+ * Revision 1.2041  2005/11/28 19:08:26  dsandras
+ * Added E.164 support.
+ *
+ * Revision 2.39  2005/11/25 00:40:18  csoutheren
  * Applied patch #1274826 from Paul Nader
  * HandleFirstSignallingChannelPDU incomplete ReleaseComplete
  *
@@ -741,6 +744,7 @@
 #include <h323/h323pdu.h>
 #include <h323/gkclient.h>
 #include <ptclib/url.h>
+#include <ptclib/enum.h>
 #include <ptclib/pils.h>
 
 
@@ -1386,10 +1390,34 @@ void H323EndPoint::OnReceivedInitiateReturnError()
 {
 }
 
-BOOL H323EndPoint::ParsePartyName(const PString & remoteParty,
+BOOL H323EndPoint::ParsePartyName(const PString & _remoteParty,
                                   PString & alias,
                                   H323TransportAddress & address)
 {
+  PString remoteParty = _remoteParty;
+
+#if P_DNS
+  // if there is no gatekeeper, and there is no '@', and there is no URL scheme, then attempt to use ENUM
+  if ((remoteParty.Find('@') == P_MAX_INDEX) && (gatekeeper == NULL)) {
+
+    // make sure the number has only digits
+    PString e164 = remoteParty;
+    if (e164.Left(4) *= "h323:")
+      e164 = e164.Mid(4);
+    PINDEX i;
+    for (i = 0; i < e164.GetLength(); ++i)
+      if (!isdigit(e164[i]) && (i != 0 || e164[0] != '+'))
+	break;
+    if (i >= e164.GetLength()) {
+      PString str;
+      if (PDNS::ENUMLookup(e164, "E2U+h323", str)) {
+	PTRACE(4, "H323\tENUM converted remote party " << _remoteParty << " to " << str);
+	remoteParty = str;
+      }
+    }
+  }
+#endif
+
   PURL url(remoteParty, "h323");
 
   // Special adjustment if 
