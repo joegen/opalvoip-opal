@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2024  2005/11/22 22:37:57  dsandras
+ * Revision 1.2025  2005/11/29 11:50:20  dsandras
+ * Use PWaitAndSignal so that it works even if no AddSession follows the UseSession. Added missing ignoreOtherSources check.
+ *
+ * Revision 2.23  2005/11/22 22:37:57  dsandras
  * Reverted the previous change as the bug was triggered by a change in PWLIB.
  *
  * Revision 2.22  2005/11/20 20:56:35  dsandras
@@ -1455,29 +1458,27 @@ RTP_SessionManager & RTP_SessionManager::operator=(const RTP_SessionManager & sm
 
 RTP_Session * RTP_SessionManager::UseSession(unsigned sessionID)
 {
-  mutex.Wait();
+  PWaitAndSignal m(mutex);
 
   RTP_Session * session = sessions.GetAt(sessionID);
   if (session == NULL) 
-    return NULL; // Deliberately have not release mutex here! See AddSession. 
+    return NULL; 
   
   PTRACE(3, "RTP\tFound existing session " << sessionID);
   session->IncrementReference();
 
-  mutex.Signal();
   return session;
 }
 
 
 void RTP_SessionManager::AddSession(RTP_Session * session)
 {
+  PWaitAndSignal m(mutex);
+  
   if (session != NULL) {
     PTRACE(2, "RTP\tAdding session " << *session);
     sessions.SetAt(session->GetSessionID(), session);
   }
-
-  // The following is the mutex.Signal() that was not done in the UseSession()
-  mutex.Signal();
 }
 
 
@@ -1843,7 +1844,7 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(PUDPSocket & socket
 	remoteTransmitAddress = addr;
 	allowRemoteTransmitAddressChange = FALSE;
       }
-      else if (remoteTransmitAddress != addr && !allowRemoteTransmitAddressChange) {
+      else if (remoteTransmitAddress != addr && !allowRemoteTransmitAddressChange && !ignoreOtherSources) {
 
 	PTRACE(1, "RTP_UDP\tSession " << sessionID << ", "
 	       << channelName << " PDU from incorrect host, "
