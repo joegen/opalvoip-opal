@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2057  2005/10/21 17:57:00  dsandras
+ * Revision 1.2058  2005/11/29 11:49:35  dsandras
+ * socket is autodeleted, even in case of failure.
+ *
+ * Revision 2.56  2005/10/21 17:57:00  dsandras
  * Applied patch from Hannes Friederich <hannesf AATT ee.ethz.ch> to fix GK
  * registration issues when there are multiple interfaces. Thanks!
  *
@@ -967,7 +970,7 @@ void OpalListener::CloseWait()
 
   PAssert(PThread::Current() != thread, PLogicError);
   if (thread != NULL) {
-    PAssert(thread->WaitForTermination(1000), "Listener thread did not terminate");
+    PAssert(thread->WaitForTermination(10000), "Listener thread did not terminate");
     delete thread;
     thread = NULL;
   }
@@ -1211,6 +1214,7 @@ OpalTransport * OpalListenerTCP::Accept(const PTimeInterval & timeout)
 
     PTRACE(1, "Listen\tFailed to open transport, connection not started.");
     delete transport;
+    return NULL;
   }
   else if (socket->GetErrorCode() != PChannel::Interrupted) {
     PTRACE(1, "Listen\tAccept error:" << socket->GetErrorText());
