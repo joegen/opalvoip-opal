@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2037  2005/11/28 19:07:56  dsandras
+ * Revision 1.2038  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.36  2005/11/28 19:07:56  dsandras
  * Moved OnNATTimeout to SIPInfo and use it for active conversations too.
  * Added E.164 support.
  *
@@ -347,7 +350,7 @@ class SIPEndPoint : public OpalEndPoint
        The default behaviour does nothing.
       */
     virtual BOOL NewIncomingConnection(
-      OpalTransport * transport  /// Transport connection came in on
+      OpalTransport * transport  ///<  Transport connection came in on
     );
 
     /**Set up a connection to a remote party.
@@ -380,9 +383,9 @@ class SIPEndPoint : public OpalEndPoint
        The default behaviour is pure.
      */
     virtual BOOL MakeConnection(
-      OpalCall & call,        /// Owner of connection
-      const PString & party,  /// Remote party to call
-      void * userData = NULL  /// Arbitrary data to pass to connection
+      OpalCall & call,        ///<  Owner of connection
+      const PString & party,  ///<  Remote party to call
+      void * userData = NULL  ///<  Arbitrary data to pass to connection
     );
 
     /**Get the data formats this endpoint is capable of operating.
@@ -403,21 +406,21 @@ class SIPEndPoint : public OpalEndPoint
        The default implementation is to create a OpalSIPConnection.
       */
     virtual SIPConnection * CreateConnection(
-      OpalCall & call,            /// Owner of connection
-      const PString & token,      /// token used to identify connection
-      void * userData,            /// User data for connection
-      const SIPURL & destination, /// Destination for outgoing call
-      OpalTransport * transport,  /// Transport INVITE has been received on
-      SIP_PDU * invite            /// Original INVITE pdu
+      OpalCall & call,            ///<  Owner of connection
+      const PString & token,      ///<  token used to identify connection
+      void * userData,            ///<  User data for connection
+      const SIPURL & destination, ///<  Destination for outgoing call
+      OpalTransport * transport,  ///<  Transport INVITE has been received on
+      SIP_PDU * invite            ///<  Original INVITE pdu
     );
     
     /**Setup a connection transfer a connection for the SIP endpoint.
       */
     virtual BOOL SetupTransfer(
-      const PString & token,        /// Existing connection to be transferred
-      const PString & callIdentity, /// Call identity of the secondary call (if it exists)
-      const PString & remoteParty,  /// Remote party to transfer the existing call to
-      void * userData = NULL        /// user data to pass to CreateConnection
+      const PString & token,        ///<  Existing connection to be transferred
+      const PString & callIdentity, ///<  Call identity of the secondary call (if it exists)
+      const PString & remoteParty,  ///<  Remote party to transfer the existing call to
+      void * userData = NULL        ///<  user data to pass to CreateConnection
     );
 
   //@}
@@ -490,8 +493,8 @@ class SIPEndPoint : public OpalEndPoint
        The default behaviour does nothing.
       */
     virtual void OnRTPStatistics(
-      const SIPConnection & connection,  /// Connection for the channel
-      const RTP_Session & session         /// Session with statistics
+      const SIPConnection & connection,  ///<  Connection for the channel
+      const RTP_Session & session         ///<  Session with statistics
     ) const;
   //@}
  
@@ -501,7 +504,7 @@ class SIPEndPoint : public OpalEndPoint
        as provided by functions such as MakeConnection().
       */
     PSafePtr<SIPConnection> GetSIPConnectionWithLock(
-      const PString & token,     /// Token to identify connection
+      const PString & token,     ///<  Token to identify connection
       PSafetyMode mode = PSafeReadWrite
     ) { return PSafePtrCast<OpalConnection, SIPConnection>(GetConnectionWithLock(token, mode)); }
 
@@ -827,8 +830,8 @@ class SIPEndPoint : public OpalEndPoint
     );
     
     void ParsePartyName(
-      const PString & remoteParty,     /// Party name string.
-      PString & party);                /// Parsed party name, after e164 lookup
+      const PString & remoteParty,     ///<  Party name string.
+      PString & party);                ///<  Parsed party name, after e164 lookup
 
     SIPURL            proxy;
     PString           userAgentString;

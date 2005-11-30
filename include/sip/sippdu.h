@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2034  2005/11/07 06:34:53  csoutheren
+ * Revision 1.2035  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.33  2005/11/07 06:34:53  csoutheren
  * Changed PMutex to PTimedMutex
  *
  * Revision 2.32  2005/10/22 17:14:45  dsandras
@@ -179,15 +182,15 @@ class SIPURL : public PURL
     /** str goes straight to Parse()
       */
     SIPURL(
-      const char * cstr,    /// C string representation of the URL.
-      const char * defaultScheme = NULL /// Default scheme for URL
+      const char * cstr,    ///<  C string representation of the URL.
+      const char * defaultScheme = NULL ///<  Default scheme for URL
     );
 
     /** str goes straight to Parse()
       */
     SIPURL(
-      const PString & str,  /// String representation of the URL.
-      const char * defaultScheme = NULL /// Default scheme for URL
+      const PString & str,  ///<  String representation of the URL.
+      const char * defaultScheme = NULL ///<  Default scheme for URL
     );
 
     /** If name does not start with 'sip' then construct URI in the form

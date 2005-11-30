@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323trans.h,v $
- * Revision 1.2002  2004/02/19 10:46:44  rjongbloed
+ * Revision 1.2003  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.1  2004/02/19 10:46:44  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 1.15  2003/12/11 05:39:04  csoutheren
@@ -156,16 +159,16 @@ class H323Transactor : public PObject
     /**Create a new protocol handler.
      */
     H323Transactor(
-      H323EndPoint & endpoint,   /// Endpoint gatekeeper is associated with.
-      H323Transport * transport, /// Transport over which to communicate.
-      WORD localPort,                     /// Local port to listen on
-      WORD remotePort                     /// Remote port to connect on
+      H323EndPoint & endpoint,   ///<  Endpoint gatekeeper is associated with.
+      H323Transport * transport, ///<  Transport over which to communicate.
+      WORD localPort,                     ///<  Local port to listen on
+      WORD remotePort                     ///<  Remote port to connect on
     );
     H323Transactor(
-      H323EndPoint & endpoint,   /// Endpoint gatekeeper is associated with.
-      const H323TransportAddress & iface, /// Local interface over which to communicate.
-      WORD localPort,                     /// Local port to listen on
-      WORD remotePort                     /// Remote port to connect on
+      H323EndPoint & endpoint,   ///<  Endpoint gatekeeper is associated with.
+      const H323TransportAddress & iface, ///<  Local interface over which to communicate.
+      WORD localPort,                     ///<  Local port to listen on
+      WORD remotePort                     ///<  Remote port to connect on
     );
 
     /**Destroy protocol handler.
@@ -178,7 +181,7 @@ class H323Transactor : public PObject
     /**Print the name of the gatekeeper.
       */
     void PrintOn(
-      ostream & strm    /// Stream to print to.
+      ostream & strm    ///<  Stream to print to.
     ) const;
   //@}
 
@@ -187,15 +190,15 @@ class H323Transactor : public PObject
     /**Set a new transport for use by the transactor.
       */
     BOOL SetTransport(
-      const H323TransportAddress & iface // Local interface for transport
+      const H323TransportAddress & iface ///<  Local interface for transport
     );
 
     /**Return the list of addresses used for this peer element
       */
     H323TransportAddressArray GetInterfaceAddresses(
-      BOOL excludeLocalHost = TRUE,       /// Flag to exclude 127.0.0.1
+      BOOL excludeLocalHost = TRUE,       ///<  Flag to exclude 127.0.0.1
       H323Transport * associatedTransport = NULL
-                          /// Associated transport for precedence and translation
+                          ///<  Associated transport for precedence and translation
     );
 
     /**Start the channel processing transactions
@@ -251,7 +254,7 @@ class H323Transactor : public PObject
     /**Set flag to check all crypto tokens on responses.
       */
     void SetCheckResponseCryptoTokens(
-      BOOL value    /// New value for checking crypto tokens.
+      BOOL value    ///<  New value for checking crypto tokens.
     ) { checkResponseCryptoTokens = value; }
 
     /**Get flag to check all crypto tokens on responses.
@@ -487,7 +490,7 @@ class H323TransactionServer : public PObject
        Returns TRUE if at least one interface was successfully started.
       */
     BOOL AddListeners(
-      const H323TransportAddressArray & ifaces /// Interfaces to listen on.
+      const H323TransportAddressArray & ifaces ///<  Interfaces to listen on.
     );
 
     /**Add a gatekeeper listener to this gatekeeper server given the
@@ -526,7 +529,7 @@ class H323TransactionServer : public PObject
        maintain extra information on a interface by interface basis.
       */
     virtual H323Transactor * CreateListener(
-      H323Transport * transport  // Transport for listener
+      H323Transport * transport  ///<  Transport for listener
     ) = 0;
 
     /**Remove a gatekeeper listener from this gatekeeper server.

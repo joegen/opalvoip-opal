@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkserver.h,v $
- * Revision 1.2013  2004/06/04 06:54:02  csoutheren
+ * Revision 1.2014  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.12  2004/06/04 06:54:02  csoutheren
  * Migrated updates from OpenH323 1.14.1
  *
  * Revision 2.11  2004/04/25 02:53:29  rjongbloed
@@ -678,9 +681,9 @@ class H323GatekeeperCall : public PSafeObject
     /**Create a new gatekeeper call tracking record.
      */
     H323GatekeeperCall(
-      H323GatekeeperServer & server,               /// Owner gatekeeper server
-      const OpalGloballyUniqueID & callIdentifier, /// Unique call identifier
-      Direction direction                          /// Direction of call
+      H323GatekeeperServer & server,               ///<  Owner gatekeeper server
+      const OpalGloballyUniqueID & callIdentifier, ///<  Unique call identifier
+      Direction direction                          ///<  Direction of call
     );
 
     /**Destroy the call, removing itself from the endpoint.
@@ -693,13 +696,13 @@ class H323GatekeeperCall : public PSafeObject
     /**Compare two objects.
       */
     Comparison Compare(
-      const PObject & obj  /// Other object
+      const PObject & obj  ///<  Other object
     ) const;
 
     /**Print the name of the gatekeeper.
       */
     void PrintOn(
-      ostream & strm    /// Stream to print to.
+      ostream & strm    ///<  Stream to print to.
     ) const;
   //@}
 
@@ -718,7 +721,7 @@ class H323GatekeeperCall : public PSafeObject
        This sendsa DRQ to the endpoint(s) to close the call down.
       */
     virtual BOOL Disengage(
-      int reason = -1   // Reason for disengage
+      int reason = -1   ///<  Reason for disengage
     );
 
     /**Handle a disengage DRQ PDU.
@@ -892,8 +895,8 @@ class H323RegisteredEndPoint : public PSafeObject
     /**Create a new endpoint registration record.
      */
     H323RegisteredEndPoint(
-      H323GatekeeperServer & server, /// Gatekeeper server data
-      const PString & id             /// Identifier
+      H323GatekeeperServer & server, ///<  Gatekeeper server data
+      const PString & id             ///<  Identifier
     );
   //@}
 
@@ -902,13 +905,13 @@ class H323RegisteredEndPoint : public PSafeObject
     /**Compare two objects.
       */
     Comparison Compare(
-      const PObject & obj  /// Other object
+      const PObject & obj  ///<  Other object
     ) const;
 
     /**Print the name of the gatekeeper.
       */
     void PrintOn(
-      ostream & strm    /// Stream to print to.
+      ostream & strm    ///<  Stream to print to.
     ) const;
   //@}
 
@@ -989,7 +992,7 @@ class H323RegisteredEndPoint : public PSafeObject
        This sendsa URQ to the endpoint(s) to close the call down.
       */
     virtual BOOL Unregister(
-      int reason = -1   // Reason for unregistration
+      int reason = -1   ///<  Reason for unregistration
     );
 
     /**Handle an info request response IRR PDU.
@@ -1188,9 +1191,9 @@ class H323RegisteredEndPoint : public PSafeObject
       * If returns FALSE then the desriptor is not sent
       */
       virtual BOOL OnSendDescriptorForEndpoint(
-        H225_ArrayOf_AliasAddress & aliases,          // aliases for the enndpoint
-        H225_EndpointType & terminalType,             // terminal type
-        H225_ArrayOf_AliasAddress & transportAddresses  // transport addresses
+        H225_ArrayOf_AliasAddress & aliases,          ///<  aliases for the enndpoint
+        H225_EndpointType & terminalType,             ///<  terminal type
+        H225_ArrayOf_AliasAddress & transportAddresses  ///<  transport addresses
       );
   //@}
 
@@ -1236,10 +1239,10 @@ class H323GatekeeperListener : public H225_RAS
     /**Create a new gatekeeper listener.
      */
     H323GatekeeperListener(
-      H323EndPoint & endpoint,               /// Local endpoint
-      H323GatekeeperServer & server,         /// Database for gatekeeper
-      const PString & gatekeeperIdentifier,  /// Name of this gatekeeper
-      H323Transport * transport = NULL       /// Transport over which gatekeepers communicates.
+      H323EndPoint & endpoint,               ///<  Local endpoint
+      H323GatekeeperServer & server,         ///<  Database for gatekeeper
+      const PString & gatekeeperIdentifier,  ///<  Name of this gatekeeper
+      H323Transport * transport = NULL       ///<  Transport over which gatekeepers communicates.
     );
 
     /**Destroy gatekeeper listener.
@@ -1416,7 +1419,7 @@ class H323GatekeeperServer : public H323TransactionServer
        maintain extra information on a interface by interface basis.
       */
     virtual H323Transactor * CreateListener(
-      H323Transport * transport  // Transport for listener
+      H323Transport * transport  ///<  Transport for listener
     );
 
   //@}
@@ -1767,8 +1770,8 @@ class H323GatekeeperServer : public H323TransactionServer
        The default behavour does nothing and returns FALSE.
       */
     virtual BOOL GetAdmissionRequestAuthentication(
-      H323GatekeeperARQ & info,           /// ARQ being constructed
-      H235Authenticators & authenticators /// New authenticators for ARQ
+      H323GatekeeperARQ & info,           ///<  ARQ being constructed
+      H235Authenticators & authenticators ///<  New authenticators for ARQ
     );
 
     /**Get password for user if H.235 security active.
@@ -1918,10 +1921,10 @@ class H323GatekeeperServer : public H323TransactionServer
 
     // called when an endpoint needs to send a descriptor to the H.501 peer element
     virtual BOOL OnSendDescriptorForEndpoint(
-      H323RegisteredEndPoint & /*ep*/,                    // endpoint
-      H225_ArrayOf_AliasAddress & /*aliases*/,            // aliases for the enndpoint
-      H225_EndpointType & /*terminalType*/,               // terminal type
-      H225_ArrayOf_AliasAddress & /*transportAddresses*/  // transport addresses
+      H323RegisteredEndPoint & /*ep*/,                    ///<  endpoint
+      H225_ArrayOf_AliasAddress & /*aliases*/,            ///<  aliases for the enndpoint
+      H225_EndpointType & /*terminalType*/,               ///<  terminal type
+      H225_ArrayOf_AliasAddress & /*transportAddresses*/  ///<  transport addresses
     )
     { return TRUE; } 
 

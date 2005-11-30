@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2045  2005/11/24 20:31:54  dsandras
+ * Revision 1.2046  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.44  2005/11/24 20:31:54  dsandras
  * Added support for echo cancelation using Speex.
  * Added possibility to add a filter to an OpalMediaPatch for all patches of a connection.
  *
@@ -280,10 +283,10 @@ class OpalManager : public PObject
        to the call.
      */
     virtual BOOL SetUpCall(
-      const PString & partyA,       /// The A party of call
-      const PString & partyB,       /// The B party of call
-      PString & token,              /// Token for call
-      void * userData = NULL        /// user data passed to Call and Connection
+      const PString & partyA,       ///<  The A party of call
+      const PString & partyB,       ///<  The B party of call
+      PString & token,              ///<  Token for call
+      void * userData = NULL        ///<  user data passed to Call and Connection
     );
 
     /**A call back function whenever a call is completed.
@@ -295,7 +298,7 @@ class OpalManager : public PObject
        The default behaviour does nothing.
       */
     virtual void OnEstablishedCall(
-      OpalCall & call   /// Call that was completed
+      OpalCall & call   ///<  Call that was completed
     );
 
     /**Determine if a call is active.
@@ -304,7 +307,7 @@ class OpalManager : public PObject
        function returns TRUE.
       */
     virtual BOOL HasCall(
-      const PString & token  /// Token for identifying call
+      const PString & token  ///<  Token for identifying call
     ) { return activeCalls.FindWithLock(token, PSafeReference) != NULL; }
 
     /**Determine if a call is established.
@@ -314,7 +317,7 @@ class OpalManager : public PObject
        function returns TRUE.
       */
     virtual BOOL IsCallEstablished(
-      const PString & token  /// Token for identifying call
+      const PString & token  ///<  Token for identifying call
     );
 
     /**Find a call with the specified token.
@@ -326,7 +329,7 @@ class OpalManager : public PObject
        then a deadlock can occur.
       */
     PSafePtr<OpalCall> FindCallWithLock(
-      const PString & token,  /// Token to identify connection
+      const PString & token,  ///<  Token to identify connection
       PSafetyMode mode = PSafeReadWrite
     ) { return activeCalls.FindWithLock(token, mode); }
 
@@ -338,9 +341,9 @@ class OpalManager : public PObject
        to call this function from anywhere.
       */
     virtual BOOL ClearCall(
-      const PString & token,    /// Token for identifying connection
-      OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser, /// Reason for call clearing
-      PSyncPoint * sync = NULL  /// Sync point to wait on.
+      const PString & token,    ///<  Token for identifying connection
+      OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser, ///<  Reason for call clearing
+      PSyncPoint * sync = NULL  ///<  Sync point to wait on.
     );
 
     /**Clear a call.
@@ -351,8 +354,8 @@ class OpalManager : public PObject
        used as to when it is called as deadlocks may result.
       */
     virtual BOOL ClearCallSynchronous(
-      const PString & token,    /// Token for identifying connection
-      OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser /// Reason for call clearing
+      const PString & token,    ///<  Token for identifying connection
+      OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser ///<  Reason for call clearing
     );
 
     /**Clear all current calls.
@@ -361,8 +364,8 @@ class OpalManager : public PObject
        This function can not be called from several threads at the same time.
       */
     virtual void ClearAllCalls(
-      OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser, /// Reason for call clearing
-      BOOL wait = TRUE   /// Flag to wait for calls to e cleared.
+      OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser, ///<  Reason for call clearing
+      BOOL wait = TRUE   ///<  Flag to wait for calls to e cleared.
     );
 
     /**A call back function whenever a call is cleared.
@@ -379,7 +382,7 @@ class OpalManager : public PObject
        The default behaviour removes the call from the activeCalls dictionary.
       */
     virtual void OnClearedCall(
-      OpalCall & call   /// Connection that was established
+      OpalCall & call   ///<  Connection that was established
     );
 
     /**Create a call object.
@@ -392,7 +395,7 @@ class OpalManager : public PObject
       */
     virtual OpalCall * CreateCall();
     virtual OpalCall * CreateCall(
-      void * userData            /// user data passed to SetUpCall
+      void * userData            ///<  user data passed to SetUpCall
     );
 
     /**Destroy a call object.
@@ -450,13 +453,13 @@ class OpalManager : public PObject
        The default behaviour is pure.
      */
     virtual BOOL MakeConnection(
-      OpalCall & call,        /// Owner of connection
-      const PString & party   /// Party to call
+      OpalCall & call,        ///<  Owner of connection
+      const PString & party   ///<  Party to call
     );
     virtual BOOL MakeConnection(
-      OpalCall & call,        /// Owner of connection
-      const PString & party,  /// Party to call
-      void * userData         /// user data to pass to connections
+      OpalCall & call,        ///<  Owner of connection
+      const PString & party,  ///<  Party to call
+      void * userData         ///<  user data to pass to connections
     );
 
     /**Call back for answering an incoming call.
@@ -486,7 +489,7 @@ class OpalManager : public PObject
        AnswerCallNow is returned as a B party is not required.
      */
     virtual BOOL OnIncomingConnection(
-      OpalConnection & connection   /// Connection that is calling
+      OpalConnection & connection   ///<  Connection that is calling
     );
 
     /**Route a connection to another connection from an endpoint.
@@ -496,7 +499,7 @@ class OpalManager : public PObject
        variable.
       */
     virtual PString OnRouteConnection(
-      OpalConnection & connection  /// Connection being routed
+      OpalConnection & connection  ///<  Connection being routed
     );
 
     /**Call back for remote party being alerted on outgoing call.
@@ -516,7 +519,7 @@ class OpalManager : public PObject
        associated OpalCall object.
      */
     virtual void OnAlerting(
-      OpalConnection & connection   /// Connection that was established
+      OpalConnection & connection   ///<  Connection that was established
     );
 
     virtual OpalConnection::AnswerCallResponse
@@ -536,7 +539,7 @@ class OpalManager : public PObject
        associated OpalCall object.
       */
     virtual void OnConnected(
-      OpalConnection & connection   /// Connection that was established
+      OpalConnection & connection   ///<  Connection that was established
     );
 
     /**A call back function whenever a connection is "established".
@@ -552,7 +555,7 @@ class OpalManager : public PObject
        associated OpalCall object.
       */
     virtual void OnEstablished(
-      OpalConnection & connection   /// Connection that was established
+      OpalConnection & connection   ///<  Connection that was established
     );
 
     /**A call back function whenever a connection is released.
@@ -571,7 +574,7 @@ class OpalManager : public PObject
        connection and then returns TRUE.
       */
     virtual void OnReleased(
-      OpalConnection & connection   /// Connection that was established
+      OpalConnection & connection   ///<  Connection that was established
     );
     
     /**A call back function whenever a connection is "held" or "retrieved".
@@ -581,7 +584,7 @@ class OpalManager : public PObject
        The default behaviour does nothing.
       */
     virtual void OnHold(
-      OpalConnection & connection   /// Connection that was held
+      OpalConnection & connection   ///<  Connection that was held
     );
 
     /**A call back function whenever a connection is forwarded.
@@ -589,8 +592,8 @@ class OpalManager : public PObject
        The default behaviour does nothing.
       */
     virtual BOOL OnForwarded(
-      OpalConnection & connection,  /// Connection that was held
-      const PString & remoteParty         /// The new remote party
+      OpalConnection & connection,  ///<  Connection that was held
+      const PString & remoteParty         ///<  The new remote party
     );
   //@}
 
@@ -606,16 +609,16 @@ class OpalManager : public PObject
        member variables to adjust the mediaFormats list.
       */
     virtual void AdjustMediaFormats(
-      const OpalConnection & connection,  /// Connection that is about to use formats
-      OpalMediaFormatList & mediaFormats  /// Media formats to use
+      const OpalConnection & connection,  ///<  Connection that is about to use formats
+      OpalMediaFormatList & mediaFormats  ///<  Media formats to use
     ) const;
 
     /**See if the media can bypass the local host.
      */
     virtual BOOL IsMediaBypassPossible(
-      const OpalConnection & source,      /// Source connection
-      const OpalConnection & destination, /// Destination connection
-      unsigned sessionID                  /// Session ID for media channel
+      const OpalConnection & source,      ///<  Source connection
+      const OpalConnection & destination, ///<  Destination connection
+      unsigned sessionID                  ///<  Session ID for media channel
     ) const;
 
     /**Call back when opening a media stream.
@@ -634,8 +637,8 @@ class OpalManager : public PObject
        and codecs just produced.
       */
     virtual BOOL OnOpenMediaStream(
-      OpalConnection & connection,  /// Connection that owns the media stream
-      OpalMediaStream & stream    /// New media stream being opened
+      OpalConnection & connection,  ///<  Connection that owns the media stream
+      OpalMediaStream & stream    ///<  New media stream being opened
     );
 
     /**Call back for closed a media stream.
@@ -643,7 +646,7 @@ class OpalManager : public PObject
        The default behaviour does nothing.
       */
     virtual void OnClosedMediaStream(
-      const OpalMediaStream & stream     /// Stream being closed
+      const OpalMediaStream & stream     ///<  Stream being closed
     );
 
     /**Add video media formats available on a connection.
@@ -651,28 +654,28 @@ class OpalManager : public PObject
        The default behaviour calls the OpalEndPoint function of the same name.
       */
     virtual void AddVideoMediaFormats(
-      OpalMediaFormatList & mediaFormats, /// Media formats to use
-      const OpalConnection * connection = NULL  /// Optional connection that is using formats
+      OpalMediaFormatList & mediaFormats, ///<  Media formats to use
+      const OpalConnection * connection = NULL  ///<  Optional connection that is using formats
     ) const;
 
     /**Create a PVideoInputDevice for a source media stream.
       */
     virtual BOOL CreateVideoInputDevice(
-      const OpalConnection & connection,    // Connection needing created video device
-      const OpalMediaFormat & mediaFormat,  /// Media format for stream
-      PVideoInputDevice * & device,         /// Created device
-      BOOL & autoDelete                     /// Flag for auto delete device
+      const OpalConnection & connection,    ///<  Connection needing created video device
+      const OpalMediaFormat & mediaFormat,  ///<  Media format for stream
+      PVideoInputDevice * & device,         ///<  Created device
+      BOOL & autoDelete                     ///<  Flag for auto delete device
     );
 
     /**Create an PVideoOutputDevice for a sink media stream or the preview
        display for a source media stream.
       */
     virtual BOOL CreateVideoOutputDevice(
-      const OpalConnection & connection,    /// Connection needing created video device
-      const OpalMediaFormat & mediaFormat,  /// Media format for stream
-      BOOL preview,                         /// Flag indicating is a preview output
-      PVideoOutputDevice * & device,        /// Created device
-      BOOL & autoDelete                     /// Flag for auto delete device
+      const OpalConnection & connection,    ///<  Connection needing created video device
+      const OpalMediaFormat & mediaFormat,  ///<  Media format for stream
+      BOOL preview,                         ///<  Flag indicating is a preview output
+      PVideoOutputDevice * & device,        ///<  Created device
+      BOOL & autoDelete                     ///<  Flag for auto delete device
     );
 
     /**Create a OpalMediaPatch instance.
@@ -683,7 +686,7 @@ class OpalManager : public PObject
        The default behaviour returns an instance of OpalMediaPatch.
       */
     virtual OpalMediaPatch * CreateMediaPatch(
-      OpalMediaStream & source         /// Source media stream
+      OpalMediaStream & source         ///<  Source media stream
     );
 
     /**Destroy a OpalMediaPatch instance.
@@ -702,7 +705,7 @@ class OpalManager : public PObject
        The default behaviour simply returns TRUE.
       */
     virtual BOOL OnStartMediaPatch(
-      const OpalMediaPatch & patch     /// Media patch being started
+      const OpalMediaPatch & patch     ///<  Media patch being started
     );
   //@}
 
@@ -714,8 +717,8 @@ class OpalManager : public PObject
        saves the value so the GetUserInput() function can return it.
       */
     virtual void OnUserInputString(
-      OpalConnection & connection,  /// Connection input has come from
-      const PString & value         /// String value of indication
+      OpalConnection & connection,  ///<  Connection input has come from
+      const PString & value         ///<  String value of indication
     );
 
     /**Call back for remote enpoint has sent user input as tones.
@@ -725,9 +728,9 @@ class OpalManager : public PObject
        The default behaviour calls the OpalCall function of the same name.
       */
     virtual void OnUserInputTone(
-      OpalConnection & connection,  /// Connection input has come from
-      char tone,                    /// Tone received
-      int duration                  /// Duration of tone
+      OpalConnection & connection,  ///<  Connection input has come from
+      char tone,                    ///<  Tone received
+      int duration                  ///<  Duration of tone
     );
   //@}
 
@@ -744,7 +747,7 @@ class OpalManager : public PObject
        The default behavour returns NULL.
       */
     virtual OpalT120Protocol * CreateT120ProtocolHandler(
-      const OpalConnection & connection  /// Connection for which T.120 handler created
+      const OpalConnection & connection  ///<  Connection for which T.120 handler created
     ) const;
 
     /**Create an instance of the T.38 protocol handler.
@@ -758,7 +761,7 @@ class OpalManager : public PObject
        The default behavour returns NULL.
       */
     virtual OpalT38Protocol * CreateT38ProtocolHandler(
-      const OpalConnection & connection  /// Connection for which T.38 handler created
+      const OpalConnection & connection  ///<  Connection for which T.38 handler created
     ) const;
 
     class RouteEntry : public PObject
@@ -800,7 +803,7 @@ class OpalManager : public PObject
        Returns TRUE if an entry was added.
       */
     virtual BOOL AddRouteEntry(
-      const PString & spec  /// Specification string to add
+      const PString & spec  ///<  Specification string to add
     );
 
     /**Parse a route table specification list for the manager.
@@ -810,7 +813,7 @@ class OpalManager : public PObject
        Returns TRUE if at least one entry was added.
       */
     BOOL SetRouteTable(
-      const PStringArray & specs  /// Array of specification strings.
+      const PStringArray & specs  ///<  Array of specification strings.
     );
 
     /**Set a route table for the manager.
@@ -818,7 +821,7 @@ class OpalManager : public PObject
        reference.
       */
     void SetRouteTable(
-      const RouteTable & table  /// New table to set for routing
+      const RouteTable & table  ///<  New table to set for routing
     );
 
     /**Get the active route table for the manager.
@@ -988,8 +991,8 @@ class OpalManager : public PObject
     /**Set the maximum audio jitter delay parameter.
      */
     void SetAudioJitterDelay(
-      unsigned minDelay,   // New minimum jitter buffer delay in milliseconds
-      unsigned maxDelay    // New maximum jitter buffer delay in milliseconds
+      unsigned minDelay,   ///<  New minimum jitter buffer delay in milliseconds
+      unsigned maxDelay    ///<  New maximum jitter buffer delay in milliseconds
     );
 
     /**Get the default media format order.
@@ -1036,7 +1039,7 @@ class OpalManager : public PObject
        function.
      */
     virtual BOOL SetVideoInputDevice(
-      const PVideoDevice::OpenArgs & deviceArgs /// Full description of device
+      const PVideoDevice::OpenArgs & deviceArgs ///<  Full description of device
     );
 
     /**Get the parameters for the video device to be used for input.
@@ -1052,7 +1055,7 @@ class OpalManager : public PObject
        function.
      */
     virtual BOOL SetVideoPreviewDevice(
-      const PVideoDevice::OpenArgs & deviceArgs /// Full description of device
+      const PVideoDevice::OpenArgs & deviceArgs ///<  Full description of device
     );
 
     /**Get the parameters for the video device to be used for input.
@@ -1068,7 +1071,7 @@ class OpalManager : public PObject
        function.
      */
     virtual BOOL SetVideoOutputDevice(
-      const PVideoDevice::OpenArgs & deviceArgs /// Full description of device
+      const PVideoDevice::OpenArgs & deviceArgs ///<  Full description of device
     );
 
     /**Get the parameters for the video device to be used for input.
@@ -1082,7 +1085,7 @@ class OpalManager : public PObject
     /**Set the default H.245 tunneling mode.
       */
     void DisableDetectInBandDTMF(
-      BOOL mode /// New default mode
+      BOOL mode ///<  New default mode
     ) { disableDetectInBandDTMF = mode; } 
 
     /**Get the amount of time with no media that should cause a call to clear
@@ -1092,7 +1095,7 @@ class OpalManager : public PObject
     /**Set the amount of time with no media that should cause a call to clear
      */
     BOOL SetNoMediaTimeout(
-      const PTimeInterval & newInterval  /// New timeout for media
+      const PTimeInterval & newInterval  ///<  New timeout for media
     );
 
     /**Get the default ILS server to use for user lookup.

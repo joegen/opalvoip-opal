@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: guid.h,v $
- * Revision 1.2005  2004/03/11 06:54:27  csoutheren
+ * Revision 1.2006  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.4  2004/03/11 06:54:27  csoutheren
  * Added ability to disable SIP or H.323 stacks
  *
  * Revision 2.3  2002/11/10 11:33:17  robertj
@@ -93,17 +96,17 @@ class OpalGloballyUniqueID : public PBYTEArray
        function.
      */
     OpalGloballyUniqueID(
-      const char * cstr    /// C string to convert
+      const char * cstr    ///<  C string to convert
     );
     /**Create an ID from a PString of hex (as produced by AsString()).
      */
     OpalGloballyUniqueID(
-      const PString & str  /// String of hex to convert
+      const PString & str  ///<  String of hex to convert
     );
     /**Create an ID from an octet string in an ASN PDU.
      */
     OpalGloballyUniqueID(
-      const PASN_OctetString & ostr  /// Octet string from ASN to convert
+      const PASN_OctetString & ostr  ///<  Octet string from ASN to convert
     );
   //@}
 
@@ -114,7 +117,7 @@ class OpalGloballyUniqueID : public PBYTEArray
        polymorphically.
       */
     virtual void PrintOn(
-      ostream & strm    /// Stream to output text representation
+      ostream & strm    ///<  Stream to output text representation
     ) const;
 
     /**Standard stream read function.
@@ -122,7 +125,7 @@ class OpalGloballyUniqueID : public PBYTEArray
        polymorphically.
       */
     virtual void ReadFrom(
-      istream & strm    /// Stream to output text representation
+      istream & strm    ///<  Stream to output text representation
     );
 
     /**Create a clone of the ID.

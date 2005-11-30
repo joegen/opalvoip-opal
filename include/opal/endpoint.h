@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2029  2005/10/08 19:26:37  dsandras
+ * Revision 1.2030  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.28  2005/10/08 19:26:37  dsandras
  * Added OnForwarded callback in case of call forwarding.
  *
  * Revision 2.27  2005/08/24 10:43:51  rjongbloed
@@ -177,9 +180,9 @@ class OpalEndPoint : public PObject
     /**Create a new endpoint.
      */
     OpalEndPoint(
-      OpalManager & manager,          /// Manager of all endpoints.
-      const PCaselessString & prefix, /// Prefix for URL style address strings
-      unsigned attributes             /// Bit mask of attributes endpoint has
+      OpalManager & manager,          ///<  Manager of all endpoints.
+      const PCaselessString & prefix, ///<  Prefix for URL style address strings
+      unsigned attributes             ///<  Bit mask of attributes endpoint has
     );
 
     /**Destroy the endpoint.
@@ -194,7 +197,7 @@ class OpalEndPoint : public PObject
        polymorphically.
       */
     void PrintOn(
-      ostream & strm    /// Stream to output text representation
+      ostream & strm    ///<  Stream to output text representation
     ) const;
   //@}
 
@@ -208,7 +211,7 @@ class OpalEndPoint : public PObject
        If the list is empty then GetDefaultListeners() is used.
       */
     BOOL StartListeners(
-      const PStringArray & interfaces /// Address of interface to listen on.
+      const PStringArray & interfaces ///<  Address of interface to listen on.
     );
 
     /**Add a listener to the endoint.
@@ -219,7 +222,7 @@ class OpalEndPoint : public PObject
        If the address is empty then the first entry of GetDefaultListeners() is used.
       */
     BOOL StartListener(
-      const OpalTransportAddress & iface /// Address of interface to listen on.
+      const OpalTransportAddress & iface ///<  Address of interface to listen on.
     );
 
     /**Add a listener to the endoint.
@@ -228,7 +231,7 @@ class OpalEndPoint : public PObject
        have arrived and been successfully negotiated.
       */
     BOOL StartListener(
-      OpalListener * listener /// Transport dependent listener.
+      OpalListener * listener ///<  Transport dependent listener.
     );
 
     /**Get the default listeners for the endpoint type.
@@ -241,15 +244,15 @@ class OpalEndPoint : public PObject
        If the listener parameter is NULL then all listeners are removed.
       */
     BOOL RemoveListener(
-      OpalListener * listener /// Transport dependent listener.
+      OpalListener * listener ///<  Transport dependent listener.
     );
 
     /**Return a list of the transport addresses for all listeners on this endpoint
       */
     OpalTransportAddressArray GetInterfaceAddresses(
-      BOOL excludeLocalHost = TRUE,       /// Flag to exclude 127.0.0.1
+      BOOL excludeLocalHost = TRUE,       ///<  Flag to exclude 127.0.0.1
       OpalTransport * associatedTransport = NULL
-                          /// Associated transport for precedence and translation
+                          ///<  Associated transport for precedence and translation
     );
 
     /**Handle new incoming connection.
@@ -267,7 +270,7 @@ class OpalEndPoint : public PObject
        The default behaviour just returns TRUE.
       */
     virtual BOOL NewIncomingConnection(
-      OpalTransport * transport  /// Transport connection came in on
+      OpalTransport * transport  ///<  Transport connection came in on
     );
   //@}
 
@@ -303,9 +306,9 @@ class OpalEndPoint : public PObject
        The default behaviour is pure.
      */
     virtual BOOL MakeConnection(
-      OpalCall & call,        /// Owner of connection
-      const PString & party,  /// Remote party to call
-      void * userData         /// Arbitrary data to pass to connection
+      OpalCall & call,        ///<  Owner of connection
+      const PString & party,  ///<  Remote party to call
+      void * userData         ///<  Arbitrary data to pass to connection
     ) = 0;
 
     /**Call back for answering an incoming call.
@@ -330,7 +333,7 @@ class OpalEndPoint : public PObject
        The default behaviour calls the OpalManager function of the same name.
      */
     virtual BOOL OnIncomingConnection(
-      OpalConnection & connection   /// Connection that is calling
+      OpalConnection & connection   ///<  Connection that is calling
     );
 
     /**Call back for remote party being alerted.
@@ -349,7 +352,7 @@ class OpalEndPoint : public PObject
        The default behaviour calls the OpalManager function of the same name.
      */
     virtual void OnAlerting(
-      OpalConnection & connection   /// Connection that was established
+      OpalConnection & connection   ///<  Connection that was established
     );
 
     /**Call back for answering an incoming call.
@@ -369,8 +372,8 @@ class OpalEndPoint : public PObject
        The default behaviour simply returns AnswerNow.
      */
     virtual OpalConnection::AnswerCallResponse OnAnswerCall(
-      OpalConnection & connection,    // connection that is being answered
-       const PString & caller         // caller
+      OpalConnection & connection,    ///<  connection that is being answered
+       const PString & caller         ///<  caller
     );
 
     /**A call back function whenever a connection is "connected".
@@ -384,7 +387,7 @@ class OpalEndPoint : public PObject
        The default behaviour calls the OpalManager function of the same name.
       */
     virtual void OnConnected(
-      OpalConnection & connection   /// Connection that was established
+      OpalConnection & connection   ///<  Connection that was established
     );
 
     /**A call back function whenever a connection is established.
@@ -399,7 +402,7 @@ class OpalEndPoint : public PObject
        The default behaviour does nothing.
       */
     virtual void OnEstablished(
-      OpalConnection & connection   /// Connection that was established
+      OpalConnection & connection   ///<  Connection that was established
     );
 
     /**A call back function whenever a connection is broken.
@@ -421,7 +424,7 @@ class OpalEndPoint : public PObject
        and calls the OpalManager function of the same name.
       */
     virtual void OnReleased(
-      OpalConnection & connection   /// Connection that was established
+      OpalConnection & connection   ///<  Connection that was established
     );
 
     /**A call back function whenever a connection is "held" or "retrieved".
@@ -431,7 +434,7 @@ class OpalEndPoint : public PObject
        The default behaviour calls the OpalManager function of the same name.
       */
     void OnHold(
-      OpalConnection & connection   /// Connection that was held
+      OpalConnection & connection   ///<  Connection that was held
     );
 
     /**A call back function whenever a connection is forwarded.
@@ -439,8 +442,8 @@ class OpalEndPoint : public PObject
        The default behaviour does nothing.
       */
     virtual BOOL OnForwarded(
-      OpalConnection & connection,  /// Connection that was held
-      const PString & remoteParty         /// The new remote party
+      OpalConnection & connection,  ///<  Connection that was held
+      const PString & remoteParty         ///<  The new remote party
     );
 
     /**Clear a call.
@@ -451,9 +454,9 @@ class OpalEndPoint : public PObject
        safe to call this function from anywhere.
       */
     virtual BOOL ClearCall(
-      const PString & token,    /// Token for identifying connection
-      OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser, /// Reason for call clearing
-      PSyncPoint * sync = NULL  /// Sync point to wait on.
+      const PString & token,    ///<  Token for identifying connection
+      OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser, ///<  Reason for call clearing
+      PSyncPoint * sync = NULL  ///<  Sync point to wait on.
     );
 
     /**Clear a current connection.
@@ -461,9 +464,9 @@ class OpalEndPoint : public PObject
        are synchronous
       */
     virtual BOOL ClearCallSynchronous(
-      const PString & token,    /// Token for identifying connection
-      OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser, /// Reason for call clearing
-      PSyncPoint * sync = NULL  /// Sync point to wait on.
+      const PString & token,    ///<  Token for identifying connection
+      OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser, ///<  Reason for call clearing
+      PSyncPoint * sync = NULL  ///<  Sync point to wait on.
     );
 
     /**Clear all current connections.
@@ -473,8 +476,8 @@ class OpalEndPoint : public PObject
        the destructor for your descendant of H323EndPoint.
       */
     virtual void ClearAllCalls(
-      OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser, /// Reason for call clearing
-      BOOL wait = TRUE   /// Flag for wait for calls to e cleared.
+      OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser, ///<  Reason for call clearing
+      BOOL wait = TRUE   ///<  Flag for wait for calls to e cleared.
     );
 
     /**Find a connection that uses the specified token.
@@ -482,7 +485,7 @@ class OpalEndPoint : public PObject
        as provided by functions such as MakeConnection().
       */
     PSafePtr<OpalConnection> GetConnectionWithLock(
-      const PString & token,     /// Token to identify connection
+      const PString & token,     ///<  Token to identify connection
       PSafetyMode mode = PSafeReadWrite
     ) { return connectionsActive.FindWithLock(token, mode); }
 
@@ -493,13 +496,13 @@ class OpalEndPoint : public PObject
     /**Determine if a connection is active.
       */
     virtual BOOL HasConnection(
-      const PString & token   /// Token for identifying connection
+      const PString & token   ///<  Token for identifying connection
     );
 
     /**Destroy the connection.
       */
     virtual void DestroyConnection(
-      OpalConnection * connection  /// Connection to destroy
+      OpalConnection * connection  ///<  Connection to destroy
     );
   //@}
 
@@ -525,8 +528,8 @@ class OpalEndPoint : public PObject
        The default behaviour calls the OpalManager function of the same name.
       */
     virtual void AdjustMediaFormats(
-      const OpalConnection & connection,  /// Connection that is about to use formats
-      OpalMediaFormatList & mediaFormats  /// Media formats to use
+      const OpalConnection & connection,  ///<  Connection that is about to use formats
+      OpalMediaFormatList & mediaFormats  ///<  Media formats to use
     ) const;
 
     /**Call back when opening a media stream.
@@ -541,8 +544,8 @@ class OpalEndPoint : public PObject
        The default behaviour calls the OpalManager function of the same name.
       */
     virtual BOOL OnOpenMediaStream(
-      OpalConnection & connection,  /// Connection that owns the media stream
-      OpalMediaStream & stream      /// New media stream being opened
+      OpalConnection & connection,  ///<  Connection that owns the media stream
+      OpalMediaStream & stream      ///<  New media stream being opened
     );
 
     /**Call back for closed a media stream.
@@ -550,7 +553,7 @@ class OpalEndPoint : public PObject
        The default behaviour calls the OpalManager function of the same name.
       */
     virtual void OnClosedMediaStream(
-      const OpalMediaStream & stream     /// Media stream being closed
+      const OpalMediaStream & stream     ///<  Media stream being closed
     );
 
     /**Add video media formats available on a connection.
@@ -558,28 +561,28 @@ class OpalEndPoint : public PObject
        The default behaviour calls the OpalEndPoint function of the same name.
       */
     virtual void AddVideoMediaFormats(
-      OpalMediaFormatList & mediaFormats, /// Media formats to use
-      const OpalConnection * connection = NULL  /// Optional connection that is using formats
+      OpalMediaFormatList & mediaFormats, ///<  Media formats to use
+      const OpalConnection * connection = NULL  ///<  Optional connection that is using formats
     ) const;
 
     /**Create an PVideoInputDevice for a source media stream.
       */
     virtual BOOL CreateVideoInputDevice(
-      const OpalConnection & connection,    /// Connection needing created video device
-      const OpalMediaFormat & mediaFormat,  /// Media format for stream
-      PVideoInputDevice * & device,         /// Created device
-      BOOL & autoDelete                     /// Flag for auto delete device
+      const OpalConnection & connection,    ///<  Connection needing created video device
+      const OpalMediaFormat & mediaFormat,  ///<  Media format for stream
+      PVideoInputDevice * & device,         ///<  Created device
+      BOOL & autoDelete                     ///<  Flag for auto delete device
     );
 
     /**Create an PVideoOutputDevice for a sink media stream or the preview
        display for a source media stream.
       */
     virtual BOOL CreateVideoOutputDevice(
-      const OpalConnection & connection,    /// Connection needing created video device
-      const OpalMediaFormat & mediaFormat,  /// Media format for stream
-      BOOL preview,                         /// Flag indicating is a preview output
-      PVideoOutputDevice * & device,        /// Created device
-      BOOL & autoDelete                     /// Flag for auto delete device
+      const OpalConnection & connection,    ///<  Connection needing created video device
+      const OpalMediaFormat & mediaFormat,  ///<  Media format for stream
+      BOOL preview,                         ///<  Flag indicating is a preview output
+      PVideoOutputDevice * & device,        ///<  Created device
+      BOOL & autoDelete                     ///<  Flag for auto delete device
     );
   //@}
 
@@ -590,8 +593,8 @@ class OpalEndPoint : public PObject
        The default behaviour calls the OpalManager function of the same name.
       */
     virtual void OnUserInputString(
-      OpalConnection & connection,  /// Connection input has come from
-      const PString & value   /// String value of indication
+      OpalConnection & connection,  ///<  Connection input has come from
+      const PString & value   ///<  String value of indication
     );
 
     /**Call back for remote enpoint has sent user input.
@@ -601,9 +604,9 @@ class OpalEndPoint : public PObject
        The default behaviour calls the OpalManager function of the same name.
       */
     virtual void OnUserInputTone(
-      OpalConnection & connection,  /// Connection input has come from
-      char tone,                    /// Tone received
-      int duration                  /// Duration of tone
+      OpalConnection & connection,  ///<  Connection input has come from
+      char tone,                    ///<  Tone received
+      int duration                  ///<  Duration of tone
     );
   //@}
 
@@ -620,7 +623,7 @@ class OpalEndPoint : public PObject
        The default behavour calls the OpalManager function of the same name.
       */
     virtual OpalT120Protocol * CreateT120ProtocolHandler(
-      const OpalConnection & connection  /// Connection for which T.120 handler created
+      const OpalConnection & connection  ///<  Connection for which T.120 handler created
     ) const;
 
     /**Create an instance of the T.38 protocol handler.
@@ -634,7 +637,7 @@ class OpalEndPoint : public PObject
        The default behavour calls the OpalManager function of the same name.
       */
     virtual OpalT38Protocol * CreateT38ProtocolHandler(
-      const OpalConnection & connection  /// Connection for which T.38 handler created
+      const OpalConnection & connection  ///<  Connection for which T.38 handler created
     ) const;
 
   //@}

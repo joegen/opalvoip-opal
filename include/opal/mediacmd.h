@@ -49,7 +49,7 @@ class OpalMediaCommand : public PObject
        polymorphically.
       */
     void PrintOn(
-      ostream & strm    /// Stream to output text representation
+      ostream & strm    ///<  Stream to output text representation
     ) const { strm << GetName(); }
 
     /** Compare the two objects and return their relative rank. This function is
@@ -64,7 +64,7 @@ class OpalMediaCommand : public PObject
        according to the relative rank of the objects.
      */
     virtual Comparison Compare(
-      const PObject & obj   // Object to compare against.
+      const PObject & obj   ///<  Object to compare against.
     ) const { return GetName().Compare(PDownCast(const OpalMediaCommand, &obj)->GetName()); }
   //@}
 

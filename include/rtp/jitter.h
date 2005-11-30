@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.h,v $
- * Revision 1.2007  2004/02/19 10:47:01  rjongbloed
+ * Revision 1.2008  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.6  2004/02/19 10:47:01  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.5  2002/11/10 11:33:17  robertj
@@ -119,10 +122,10 @@ class RTP_JitterBuffer : public PThread
 
   public:
     RTP_JitterBuffer(
-      RTP_Session & session,   /// Associated RTP session tor ead data from
-      unsigned minJitterDelay, /// Minimum delay in RTP timestamp units
-      unsigned maxJitterDelay, /// Maximum delay in RTP timestamp units
-      PINDEX stackSize = 30000 /// Stack size for jitter thread
+      RTP_Session & session,   ///<  Associated RTP session tor ead data from
+      unsigned minJitterDelay, ///<  Minimum delay in RTP timestamp units
+      unsigned maxJitterDelay, ///<  Maximum delay in RTP timestamp units
+      PINDEX stackSize = 30000 ///<  Stack size for jitter thread
     );
     ~RTP_JitterBuffer();
 
@@ -130,8 +133,8 @@ class RTP_JitterBuffer : public PThread
     /**Set the maximum delay the jitter buffer will operate to.
       */
     void SetDelay(
-      unsigned minJitterDelay, /// Minimum delay in RTP timestamp units
-      unsigned maxJitterDelay  /// Maximum delay in RTP timestamp units
+      unsigned minJitterDelay, ///<  Minimum delay in RTP timestamp units
+      unsigned maxJitterDelay  ///<  Maximum delay in RTP timestamp units
     );
 
     void UseImmediateReduction(BOOL state) { doJitterReductionImmediately = state; }
@@ -142,8 +145,8 @@ class RTP_JitterBuffer : public PThread
        available or an error occurs.
       */
     virtual BOOL ReadData(
-      DWORD timestamp,        /// Timestamp to read from buffer.
-      RTP_DataFrame & frame   /// Frame read from the RTP session
+      DWORD timestamp,        ///<  Timestamp to read from buffer.
+      RTP_DataFrame & frame   ///<  Frame read from the RTP session
     );
 
     /**Get current delay for jitter buffer.

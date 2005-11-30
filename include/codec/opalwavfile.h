@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalwavfile.h,v $
- * Revision 1.2005  2004/07/15 12:19:22  rjongbloed
+ * Revision 1.2006  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.4  2004/07/15 12:19:22  rjongbloed
  * Various enhancements to the VXML code
  *
  * Revision 2.3  2002/11/10 11:33:16  robertj
@@ -85,7 +88,7 @@ class OpalWAVFile : public PWAVFile
   PCLASSINFO(OpalWAVFile, PWAVFile);
   public:
     OpalWAVFile(
-      unsigned format = fmt_PCM /// Type of WAV File to create
+      unsigned format = fmt_PCM ///<  Type of WAV File to create
     );
 
     /**Create a unique temporary file name, and open the file in the specified
@@ -101,9 +104,9 @@ class OpalWAVFile : public PWAVFile
        construction to determine if the file was successfully opened.
      */
     OpalWAVFile(
-      OpenMode mode,            /// Mode in which to open the file.
-      int opts = ModeDefault,   /// #OpenOptions enum# for open operation.
-      unsigned format = fmt_PCM /// Type of WAV File to create
+      OpenMode mode,            ///<  Mode in which to open the file.
+      int opts = ModeDefault,   ///<  #OpenOptions enum# for open operation.
+      unsigned format = fmt_PCM ///<  Type of WAV File to create
     );
 
     /**Create a WAV file object with the specified name and open it in
@@ -116,10 +119,10 @@ class OpalWAVFile : public PWAVFile
        construction to determine if the file was successfully opened.
      */
     OpalWAVFile(
-      const PFilePath & name,     /// Name of file to open.
-      OpenMode mode = ReadWrite,  /// Mode in which to open the file.
-      int opts = ModeDefault,     /// #OpenOptions enum# for open operation.
-      unsigned format = fmt_PCM /// Type of WAV File to create
+      const PFilePath & name,     ///<  Name of file to open.
+      OpenMode mode = ReadWrite,  ///<  Mode in which to open the file.
+      int opts = ModeDefault,     ///<  #OpenOptions enum# for open operation.
+      unsigned format = fmt_PCM ///<  Type of WAV File to create
     );
 };
 

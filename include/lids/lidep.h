@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.h,v $
- * Revision 1.2018  2004/10/06 13:03:41  rjongbloed
+ * Revision 1.2019  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.17  2004/10/06 13:03:41  rjongbloed
  * Added "configure" support for known LIDs
  * Changed LID GetName() function to be normalised against the GetAllNames()
  *   return values and fixed the pre-factory registration system.
@@ -122,9 +125,9 @@ class OpalLIDEndPoint : public OpalEndPoint
     /**Create a new endpoint.
      */
     OpalLIDEndPoint(
-      OpalManager & manager,  /// Manager of all endpoints.
-      const PString & prefix, /// Prefix for URL style address strings
-      unsigned attributes     /// Bit mask of attributes endpoint has
+      OpalManager & manager,  ///<  Manager of all endpoints.
+      const PString & prefix, ///<  Prefix for URL style address strings
+      unsigned attributes     ///<  Bit mask of attributes endpoint has
     );
 
     /// Make sure thread has stopped before exiting.
@@ -163,9 +166,9 @@ class OpalLIDEndPoint : public OpalEndPoint
        The default behaviour is pure.
      */
     virtual BOOL MakeConnection(
-      OpalCall & call,        /// Owner of connection
-      const PString & party,  /// Remote party to call
-      void * userData = NULL  /// Arbitrary data to pass to connection
+      OpalCall & call,        ///<  Owner of connection
+      const PString & party,  ///<  Remote party to call
+      void * userData = NULL  ///<  Arbitrary data to pass to connection
     );
 
     /**Get the data formats this endpoint is capable of operating.
@@ -183,10 +186,10 @@ class OpalLIDEndPoint : public OpalEndPoint
   /**@name Connection management */
   //@{
     OpalLineConnection * CreateConnection(
-      OpalCall & call,        /// Call that owns the connection
-      OpalLine & line,        /// Line connection is to use
-      void * userData,        /// Arbitrary user data from MakeConnection
-      const PString & number  /// Number to dial in outgoing call
+      OpalCall & call,        ///<  Call that owns the connection
+      OpalLine & line,        ///<  Line connection is to use
+      void * userData,        ///<  Arbitrary user data from MakeConnection
+      const PString & number  ///<  Number to dial in outgoing call
     );
   //@}
 
@@ -197,7 +200,7 @@ class OpalLIDEndPoint : public OpalEndPoint
        as provided by functions such as MakeConnection().
       */
     PSafePtr<OpalLineConnection> GetLIDConnectionWithLock(
-      const PString & token,     /// Token to identify connection
+      const PString & token,     ///<  Token to identify connection
       PSafetyMode mode = PSafeReadWrite
     ) { return PSafePtrCast<OpalConnection, OpalLineConnection>(GetConnectionWithLock(token, mode)); }
 
@@ -242,14 +245,14 @@ class OpalLIDEndPoint : public OpalEndPoint
        Returns TRUE if at least one line was added.
       */
     BOOL AddLinesFromDevice(
-      OpalLineInterfaceDevice & device  /// Device to add lines
+      OpalLineInterfaceDevice & device  ///<  Device to add lines
     );
 
     /**Remove all lines on a device from the endpoint.
        The lines are removed from the endpoints processing and deleted.
       */
     void RemoveLinesFromDevice(
-      OpalLineInterfaceDevice & device  /// Device to remove lines
+      OpalLineInterfaceDevice & device  ///<  Device to remove lines
     );
 
     /**Add a line interface devices to the endpoint by name.
@@ -258,7 +261,7 @@ class OpalLIDEndPoint : public OpalEndPoint
        Returns TRUE if at least one line from one device was added.
       */
     BOOL AddDeviceNames(
-      const PStringArray & descriptors  /// Device descritptions to add
+      const PStringArray & descriptors  ///<  Device descritptions to add
     );
 
     /**Add a line interface device to the endpoint by name.
@@ -271,7 +274,7 @@ class OpalLIDEndPoint : public OpalEndPoint
        already present.
       */
     BOOL AddDeviceName(
-      const PString & descriptor  /// Device descritption to add
+      const PString & descriptor  ///<  Device descritption to add
     );
 
     /**Add a line interface device to the endpoint.
@@ -286,14 +289,14 @@ class OpalLIDEndPoint : public OpalEndPoint
        Returns TRUE if at least one line was added.
       */
     BOOL AddDevice(
-      OpalLineInterfaceDevice * device    /// Device to add
+      OpalLineInterfaceDevice * device    ///<  Device to add
     );
 
     /**Remove the device and all its lines from the endpoint.
        The device will be automatically deleted.
       */
     void RemoveDevice(
-      OpalLineInterfaceDevice * device  /// Device to remove
+      OpalLineInterfaceDevice * device  ///<  Device to remove
     );
 
     /**Get the line by name.
@@ -304,15 +307,15 @@ class OpalLIDEndPoint : public OpalEndPoint
        effectively locks the line for exclusive use of the caller.
       */
     OpalLine * GetLine(
-      const PString & lineName,  /// Name of line to get.
-      BOOL enableAudio = FALSE   /// Flag to enable audio on the line.
+      const PString & lineName,  ///<  Name of line to get.
+      BOOL enableAudio = FALSE   ///<  Flag to enable audio on the line.
     ) const;
 
     /**Set the default line to be used on call.
        If the lineName is "*" then the first available line is used.
       */
     void SetDefaultLine(
-      const PString & lineName  /// Name of line to set to default.
+      const PString & lineName  ///<  Name of line to set to default.
     );
   //@}
 
@@ -343,8 +346,8 @@ class OpalPSTNEndPoint : public OpalLIDEndPoint
     /**Create a new endpoint.
      */
     OpalPSTNEndPoint(
-      OpalManager & manager,  /// Manager of all endpoints.
-      const char * prefix = "pstn" /// Prefix for URL style address strings
+      OpalManager & manager,  ///<  Manager of all endpoints.
+      const char * prefix = "pstn" ///<  Prefix for URL style address strings
     ) : OpalLIDEndPoint(manager, prefix, HasLineInterface) { }
   //@}
 };
@@ -364,8 +367,8 @@ class OpalPOTSEndPoint : public OpalLIDEndPoint
     /**Create a new endpoint.
      */
     OpalPOTSEndPoint(
-      OpalManager & manager,  /// Manager of all endpoints.
-      const char * prefix = "pots" /// Prefix for URL style address strings
+      OpalManager & manager,  ///<  Manager of all endpoints.
+      const char * prefix = "pots" ///<  Prefix for URL style address strings
     ) : OpalLIDEndPoint(manager, prefix, CanTerminateCall) { }
   //@}
 };
@@ -383,10 +386,10 @@ class OpalLineConnection : public OpalConnection
     /**Create a new connection.
      */
     OpalLineConnection(
-      OpalCall & call,              /// Owner calll for connection
-      OpalLIDEndPoint & endpoint,   /// Endpoint for LID connection
-      OpalLine & line,              /// Line to make connection on
-      const PString & number        /// Number to call on line
+      OpalCall & call,              ///<  Owner calll for connection
+      OpalLIDEndPoint & endpoint,   ///<  Endpoint for LID connection
+      OpalLine & line,              ///<  Line to make connection on
+      const PString & number        ///<  Number to call on line
     );
   //@}
 
@@ -411,8 +414,8 @@ class OpalLineConnection : public OpalConnection
        The default behaviour starts the ring back tone.
       */
     virtual BOOL SetAlerting(
-      const PString & calleeName,   /// Name of endpoint being alerted.
-      BOOL withMedia                /// Open media with alerting
+      const PString & calleeName,   ///<  Name of endpoint being alerted.
+      BOOL withMedia                ///<  Open media with alerting
     );
 
     /**Indicate to remote endpoint we are connected.
@@ -472,9 +475,9 @@ class OpalLineConnection : public OpalConnection
        The default behaviour is pure.
      */
     virtual OpalMediaStream * CreateMediaStream(
-      const OpalMediaFormat & mediaFormat, /// Media format for stream
-      unsigned sessionID,                  /// Session number for stream
-      BOOL isSource                        /// Is a source stream
+      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
+      unsigned sessionID,                  ///<  Session number for stream
+      BOOL isSource                        ///<  Is a source stream
     );
 
     /**Call back when opening a media stream.
@@ -490,7 +493,7 @@ class OpalLineConnection : public OpalConnection
        detector filter.
       */
     virtual BOOL OnOpenMediaStream(
-      OpalMediaStream & stream    /// New media stream being opened
+      OpalMediaStream & stream    ///<  New media stream being opened
     );
 
     /**Send a user input indication to the remote endpoint.
@@ -501,7 +504,7 @@ class OpalLineConnection : public OpalConnection
        The default behaviour plays the DTMF tones on the line.
       */
     virtual BOOL SendUserInputString(
-      const PString & value                   /// String value of indication
+      const PString & value                   ///<  String value of indication
     );
 
     /**Send a user input indication to the remote endpoint.
@@ -511,8 +514,8 @@ class OpalLineConnection : public OpalConnection
        The default behaviour plays the DTMF tone on the line.
       */
     virtual BOOL SendUserInputTone(
-      char tone,    /// DTMF tone code
-      int duration  /// Duration of tone in milliseconds
+      char tone,    ///<  DTMF tone code
+      int duration  ///<  Duration of tone in milliseconds
     );
 
     /**Play a prompt to the connection before rading user indication string.
@@ -522,7 +525,7 @@ class OpalLineConnection : public OpalConnection
        The default behaviour does nothing.
       */
     virtual BOOL PromptUserInput(
-      BOOL play   /// Flag to start or stop playing the prompt
+      BOOL play   ///<  Flag to start or stop playing the prompt
     );
   //@}
 
@@ -564,10 +567,10 @@ class OpalLineMediaStream : public OpalMediaStream
     /**Construct a new media stream for Line Interface Devices.
       */
     OpalLineMediaStream(
-      const OpalMediaFormat & mediaFormat, /// Media format for stream
-      unsigned sessionID,                  /// Session number for stream
-      BOOL isSource,                       /// Is a source stream
-      OpalLine & line                      /// LID line to stream to/from
+      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
+      unsigned sessionID,                  ///<  Session number for stream
+      BOOL isSource,                       ///<  Is a source stream
+      OpalLine & line                      ///<  LID line to stream to/from
     );
   //@}
 
@@ -590,18 +593,18 @@ class OpalLineMediaStream : public OpalMediaStream
        The default behaviour reads from the OpalLine object.
       */
     virtual BOOL ReadData(
-      BYTE * data,      /// Data buffer to read to
-      PINDEX size,      /// Size of buffer
-      PINDEX & length   /// Length of data actually read
+      BYTE * data,      ///<  Data buffer to read to
+      PINDEX size,      ///<  Size of buffer
+      PINDEX & length   ///<  Length of data actually read
     );
 
     /**Write raw media data to the sink media stream.
        The default behaviour writes to the OpalLine object.
       */
     virtual BOOL WriteData(
-      const BYTE * data,   /// Data to write
-      PINDEX length,       /// Length of data to read.
-      PINDEX & written     /// Length of data actually written
+      const BYTE * data,   ///<  Data to write
+      PINDEX length,       ///<  Length of data to read.
+      PINDEX & written     ///<  Length of data actually written
     );
 
     /**Indicate if the media stream is synchronous.
@@ -643,8 +646,8 @@ class OpalLineSilenceDetector : public OpalSilenceDetector
        average signal has no meaning for the stream.
       */
     virtual unsigned GetAverageSignalLevel(
-      const BYTE * buffer,  /// RTP payload being detected
-      PINDEX size           /// Size of payload buffer
+      const BYTE * buffer,  ///<  RTP payload being detected
+      PINDEX size           ///<  Size of payload buffer
     );
   //@}
 
