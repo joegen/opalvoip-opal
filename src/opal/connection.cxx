@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2054  2005/11/24 20:31:55  dsandras
+ * Revision 1.2055  2005/11/30 13:44:20  csoutheren
+ * Removed compile warnings on Windows
+ *
+ * Revision 2.53  2005/11/24 20:31:55  dsandras
  * Added support for echo cancelation using Speex.
  * Added possibility to add a filter to an OpalMediaPatch for all patches of a connection.
  *
@@ -698,8 +701,7 @@ void OpalConnection::OnClosedMediaStream(const OpalMediaStream & stream)
 }
 
 
-void OpalConnection::OnPatchMediaStream(BOOL isSource,
-					OpalMediaPatch & patch)
+void OpalConnection::OnPatchMediaStream(BOOL /*isSource*/, OpalMediaPatch & /*patch*/)
 {
   PTRACE(3, "OpalCon\tNew patch created");
 }
