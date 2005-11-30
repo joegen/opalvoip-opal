@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2040  2005/10/22 12:16:05  dsandras
+ * Revision 1.2041  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.39  2005/10/22 12:16:05  dsandras
  * Moved mutex preventing media streams to be opened before they are completely closed to the SIPConnection class.
  *
  * Revision 2.38  2005/10/13 19:33:50  dsandras
@@ -192,11 +195,11 @@ class SIPConnection : public OpalConnection
     /**Create a new connection.
      */
     SIPConnection(
-      OpalCall & call,            /// Owner call for connection
-      SIPEndPoint & endpoint,     /// Owner endpoint for connection
-      const PString & token,      /// token to identify the connection
-      const SIPURL & address,     /// Destination address for outgoing call
-      OpalTransport * transport   /// Transport INVITE came in on
+      OpalCall & call,            ///<  Owner call for connection
+      SIPEndPoint & endpoint,     ///<  Owner endpoint for connection
+      const PString & token,      ///<  token to identify the connection
+      const SIPURL & address,     ///<  Destination address for outgoing call
+      OpalTransport * transport   ///<  Transport INVITE came in on
     );
 
     /**Destroy connection.
@@ -218,9 +221,9 @@ class SIPConnection : public OpalConnection
        party.
      */
     virtual void TransferConnection(
-      const PString & remoteParty,   /// Remote party to transfer the existing call to
+      const PString & remoteParty,   ///<  Remote party to transfer the existing call to
       const PString & callIdentity = PString::Empty()
-                                    /// Call Identity of secondary call if present
+                                    ///<  Call Identity of secondary call if present
     );
 
     /**Put the current connection on hold, suspending all media streams.
@@ -247,7 +250,7 @@ class SIPConnection : public OpalConnection
        The default behaviour does nothing.
       */
     virtual BOOL SetAlerting(
-      const PString & calleeName,   /// Name of endpoint being alerted.
+      const PString & calleeName,   ///<  Name of endpoint being alerted.
       BOOL withMedia
     );
 
@@ -264,14 +267,14 @@ class SIPConnection : public OpalConnection
     /**Open source transmitter media stream for session.
       */
     virtual BOOL OpenSourceMediaStream(
-      const OpalMediaFormatList & mediaFormats, /// Optional media format to open
-      unsigned sessionID                   /// Session to start stream on
+      const OpalMediaFormatList & mediaFormats, ///<  Optional media format to open
+      unsigned sessionID                   ///<  Session to start stream on
     );
 
     /**Open source transmitter media stream for session.
       */
     virtual OpalMediaStream * OpenSinkMediaStream(
-      OpalMediaStream & source    /// Source media sink format to open to
+      OpalMediaStream & source    ///<  Source media sink format to open to
     );
 
     /**Open a new media stream.
@@ -289,9 +292,9 @@ class SIPConnection : public OpalConnection
        The default behaviour is pure.
      */
     virtual OpalMediaStream * CreateMediaStream(
-      const OpalMediaFormat & mediaFormat, /// Media format for stream
-      unsigned sessionID,                  /// Session number for stream
-      BOOL isSource                        /// Is a source stream
+      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
+      unsigned sessionID,                  ///<  Session number for stream
+      BOOL isSource                        ///<  Is a source stream
     );
 
 
@@ -311,7 +314,7 @@ class SIPConnection : public OpalConnection
        The default behaviour simply returns AnswerNow.
      */
     virtual OpalConnection::AnswerCallResponse OnAnswerCall(
-      const PString & callerName      /// Name of caller
+      const PString & callerName      ///<  Name of caller
     );
 
     /**Indicate the result of answering an incoming call.
@@ -325,7 +328,7 @@ class SIPConnection : public OpalConnection
        Sending a AnswerCallDeferred response would have no effect.
       */
     void AnsweringCall(
-      AnswerCallResponse response /// Answer response to incoming call
+      AnswerCallResponse response ///<  Answer response to incoming call
     );
 
 
@@ -348,7 +351,7 @@ class SIPConnection : public OpalConnection
        possible.
      */
     virtual BOOL IsMediaBypassPossible(
-      unsigned sessionID                  /// Session ID for media channel
+      unsigned sessionID                  ///<  Session ID for media channel
     ) const;
 
     /**Clean up the termination of the connection.
@@ -468,7 +471,7 @@ class SIPConnection : public OpalConnection
        The default behaviour does nothing.
       */
     virtual void OnRTPStatistics(
-      const RTP_Session & session         /// Session with statistics
+      const RTP_Session & session         ///<  Session with statistics
     ) const;
   //@}
 
@@ -483,7 +486,7 @@ class SIPConnection : public OpalConnection
        is cleared with the ended call code set to EndedByCallForwarded.
       */
     virtual BOOL ForwardCall(
-      const PString & forwardParty   /// Party to forward call to.
+      const PString & forwardParty   ///<  Party to forward call to.
     );
     
     /**Send a PDU using the connection transport.
@@ -598,7 +601,7 @@ class SIP_RTP_Session : public RTP_UserData
     /**Create a new channel.
      */
     SIP_RTP_Session(
-      const SIPConnection & connection  /// Owner of the RTP session
+      const SIPConnection & connection  ///<  Owner of the RTP session
     );
   //@}
 
@@ -611,7 +614,7 @@ class SIP_RTP_Session : public RTP_UserData
        The default behaviour calls H323Connection::OnRTPStatistics().
       */
     virtual void OnTxStatistics(
-      const RTP_Session & session   /// Session with statistics
+      const RTP_Session & session   ///<  Session with statistics
     ) const;
 
     /**Callback from the RTP session for receive statistics monitoring.
@@ -621,7 +624,7 @@ class SIP_RTP_Session : public RTP_UserData
        The default behaviour calls H323Connection::OnRTPStatistics().
       */
     virtual void OnRxStatistics(
-      const RTP_Session & session   /// Session with statistics
+      const RTP_Session & session   ///<  Session with statistics
     ) const;
   //@}
 

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2020  2005/04/11 17:34:57  dsandras
+ * Revision 1.2021  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.19  2005/04/11 17:34:57  dsandras
  * Added support for dynamic sequence changes in case of Re-INVITE.
  *
  * Revision 2.18  2005/04/10 20:50:16  dsandras
@@ -473,13 +476,13 @@ class RTP_ControlFrame : public PBYTEArray
     };
 
     SourceDescription & AddSourceDescription(
-      DWORD src   /// SSRC/CSRC identifier
+      DWORD src   ///<  SSRC/CSRC identifier
     );
 
     SourceDescription::Item & AddSourceDescriptionItem(
-      SourceDescription & sdes, /// SDES record to add item to
-      unsigned type,            /// Description type
-      const PString & data      /// Data for description
+      SourceDescription & sdes, ///<  SDES record to add item to
+      unsigned type,            ///<  Description type
+      const PString & data      ///<  Data for description
     );
 #pragma pack()
 
@@ -507,7 +510,7 @@ class RTP_UserData : public PObject
        The default behaviour does nothing.
       */
     virtual void OnTxStatistics(
-      const RTP_Session & session   /// Session with statistics
+      const RTP_Session & session   ///<  Session with statistics
     ) const;
 
     /**Callback from the RTP session for receive statistics monitoring.
@@ -517,7 +520,7 @@ class RTP_UserData : public PObject
        The default behaviour does nothing.
       */
     virtual void OnRxStatistics(
-      const RTP_Session & session   /// Session with statistics
+      const RTP_Session & session   ///<  Session with statistics
     ) const;
 };
 
@@ -534,9 +537,9 @@ class RTP_Session : public PObject
     /**Create a new RTP session.
      */
     RTP_Session(
-      unsigned id,                    /// Session ID for RTP channel
-      RTP_UserData * userData = NULL, /// Optional data for session.
-      BOOL autoDeleteUserData = TRUE  /// Delete optional data with session.
+      unsigned id,                    ///<  Session ID for RTP channel
+      RTP_UserData * userData = NULL, ///<  Optional data for session.
+      BOOL autoDeleteUserData = TRUE  ///<  Delete optional data with session.
     );
 
     /**Delete a session.
@@ -557,9 +560,9 @@ class RTP_Session : public PObject
        attached to this RTP session.
       */
     void SetJitterBufferSize(
-      unsigned minJitterDelay, /// Minimum jitter buffer delay in RTP timestamp units
-      unsigned maxJitterDelay, /// Maximum jitter buffer delay in RTP timestamp units
-      PINDEX stackSize = 30000 /// Stack size for jitter thread
+      unsigned minJitterDelay, ///<  Minimum jitter buffer delay in RTP timestamp units
+      unsigned maxJitterDelay, ///<  Maximum jitter buffer delay in RTP timestamp units
+      PINDEX stackSize = 30000 ///<  Stack size for jitter thread
     );
 
     /**Get current size of the jitter buffer.
@@ -579,8 +582,8 @@ class RTP_Session : public PObject
        generally use this in preference to directly calling ReadData().
       */
     BOOL ReadBufferedData(
-      DWORD timestamp,        /// Timestamp to read from buffer.
-      RTP_DataFrame & frame   /// Frame read from the RTP session
+      DWORD timestamp,        ///<  Timestamp to read from buffer.
+      RTP_DataFrame & frame   ///<  Frame read from the RTP session
     );
 
     /**Read a data frame from the RTP channel.
@@ -589,19 +592,19 @@ class RTP_Session : public PObject
        available or an error occurs.
       */
     virtual BOOL ReadData(
-      RTP_DataFrame & frame   /// Frame read from the RTP session
+      RTP_DataFrame & frame   ///<  Frame read from the RTP session
     ) = 0;
 
     /**Write a data frame from the RTP channel.
       */
     virtual BOOL WriteData(
-      RTP_DataFrame & frame   /// Frame to write to the RTP session
+      RTP_DataFrame & frame   ///<  Frame to write to the RTP session
     ) = 0;
 
     /**Write a control frame from the RTP channel.
       */
     virtual BOOL WriteControl(
-      RTP_ControlFrame & frame    /// Frame to write to the RTP session
+      RTP_ControlFrame & frame    ///<  Frame to write to the RTP session
     ) = 0;
 
     /**Write the RTCP reports.
@@ -611,7 +614,7 @@ class RTP_Session : public PObject
     /**Close down the RTP session.
       */
     virtual void Close(
-      BOOL reading    /// Closing the read side of the session
+      BOOL reading    ///<  Closing the read side of the session
     ) = 0;
 
    /**Reopens an existing session in the given direction.
@@ -715,8 +718,8 @@ class RTP_Session : public PObject
     /**Set the user data for the session.
       */
     void SetUserData(
-      RTP_UserData * data,            /// New user data to be used
-      BOOL autoDeleteUserData = TRUE  /// Delete optional data with session.
+      RTP_UserData * data,            ///<  New user data to be used
+      BOOL autoDeleteUserData = TRUE  ///<  Delete optional data with session.
     );
 
     /**Get the source output identifier.
@@ -738,7 +741,7 @@ class RTP_Session : public PObject
     /**Indicate if will ignore all but first received SSRC value.
       */
     void SetIgnoreOtherSources(
-      BOOL ignore   /// Flag for ignore other SSRC values
+      BOOL ignore   ///<  Flag for ignore other SSRC values
     ) { ignoreOtherSources = ignore; }
 
     /**Indicate if will ignore out of order packets.
@@ -748,7 +751,7 @@ class RTP_Session : public PObject
     /**Indicate if will ignore out of order packets.
       */
     void SetIgnoreOutOfOrderPackets(
-      BOOL ignore   /// Flag for ignore out of order packets
+      BOOL ignore   ///<  Flag for ignore out of order packets
     ) { ignoreOutOfOrderPackets = ignore; }
 
     /**Get the time interval for sending RTCP reports in the session.
@@ -758,7 +761,7 @@ class RTP_Session : public PObject
     /**Set the time interval for sending RTCP reports in the session.
       */
     void SetReportTimeInterval(
-      const PTimeInterval & interval /// New time interval for reports.
+      const PTimeInterval & interval ///<  New time interval for reports.
     )  { reportTimeInterval = interval; }
 
     /**Get the interval for transmitter statistics in the session.
@@ -768,7 +771,7 @@ class RTP_Session : public PObject
     /**Set the interval for transmitter statistics in the session.
       */
     void SetTxStatisticsInterval(
-      unsigned packets   /// Number of packets between callbacks
+      unsigned packets   ///<  Number of packets between callbacks
     );
 
     /**Get the interval for receiver statistics in the session.
@@ -778,7 +781,7 @@ class RTP_Session : public PObject
     /**Set the interval for receiver statistics in the session.
       */
     void SetRxStatisticsInterval(
-      unsigned packets   /// Number of packets between callbacks
+      unsigned packets   ///<  Number of packets between callbacks
     );
 
     /**Get total number of packets sent in session.
@@ -950,7 +953,7 @@ class RTP_SessionManager : public PObject
        and unlocks it automatically.
       */
     RTP_Session * UseSession(
-      unsigned sessionID    /// Session ID to use.
+      unsigned sessionID    ///<  Session ID to use.
     );
 
     /**Add an RTP session for the specified ID.
@@ -960,14 +963,14 @@ class RTP_SessionManager : public PObject
        function expects the mutex to be locked and unlocks it automatically.
       */
     void AddSession(
-      RTP_Session * session    /// Session to add.
+      RTP_Session * session    ///<  Session to add.
     );
 
     /**Release the session. If the session ID is not being used any more any
        clients via the UseSession() function, then the session is deleted.
      */
     void ReleaseSession(
-      unsigned sessionID    /// Session ID to release.
+      unsigned sessionID    ///<  Session ID to release.
     );
 
     /**Get a session for the specified ID.
@@ -975,7 +978,7 @@ class RTP_SessionManager : public PObject
        session so may be used to just gain a pointer to an RTP session.
      */
     RTP_Session * GetSession(
-      unsigned sessionID    /// Session ID to get.
+      unsigned sessionID    ///<  Session ID to get.
     ) const;
 
     /**Begin an enumeration of the RTP sessions.
@@ -1036,7 +1039,7 @@ class RTP_UDP : public RTP_Session
     /**Create a new RTP channel.
      */
     RTP_UDP(
-      unsigned id  /// Session ID for RTP channel
+      unsigned id  ///<  Session ID for RTP channel
     );
 
     /// Destroy the RTP
@@ -1063,7 +1066,7 @@ class RTP_UDP : public RTP_Session
     /**Close down the RTP session.
       */
     virtual void Close(
-      BOOL reading    /// Closing the read side of the session
+      BOOL reading    ///<  Closing the read side of the session
     );
 
     /**Get the session description name.
@@ -1080,12 +1083,12 @@ class RTP_UDP : public RTP_Session
     /**Open the UDP ports for the RTP session.
       */
     BOOL Open(
-      PIPSocket::Address localAddress,  /// Local interface to bind to
-      WORD portBase,                    /// Base of ports to search
-      WORD portMax,                     /// end of ports to search (inclusive)
-      BYTE ipTypeOfService,             /// Type of Service byte
-      PSTUNClient * stun = NULL,        /// STUN server to use createing sockets (or NULL if no STUN)
-      RTP_QOS * rtpqos = NULL           /// QOS spec (or NULL if no QoS)
+      PIPSocket::Address localAddress,  ///<  Local interface to bind to
+      WORD portBase,                    ///<  Base of ports to search
+      WORD portMax,                     ///<  end of ports to search (inclusive)
+      BYTE ipTypeOfService,             ///<  Type of Service byte
+      PSTUNClient * stun = NULL,        ///<  STUN server to use createing sockets (or NULL if no STUN)
+      RTP_QOS * rtpqos = NULL           ///<  QOS spec (or NULL if no QoS)
     );
   //@}
 
@@ -1137,9 +1140,9 @@ class RTP_UDP : public RTP_Session
     /**Set the remote address and port information for session.
       */
     BOOL SetRemoteSocketInfo(
-      PIPSocket::Address address,   /// Address of remote
-      WORD port,                    /// Port on remote
-      BOOL isDataPort               /// Flag for data or control channel
+      PIPSocket::Address address,   ///<  Address of remote
+      WORD port,                    ///<  Port on remote
+      BOOL isDataPort               ///<  Flag for data or control channel
     );
 
     /**Apply QOS - requires address to connect the socket on Windows platforms

@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vpblid.h,v $
- * Revision 1.2010  2004/10/06 13:03:41  rjongbloed
+ * Revision 1.2011  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.9  2004/10/06 13:03:41  rjongbloed
  * Added "configure" support for known LIDs
  * Changed LID GetName() function to be normalised against the GetAllNames()
  *   return values and fixed the pre-factory registration system.
@@ -167,7 +170,7 @@ class OpalVpbDevice : public OpalLineInterfaceDevice
     /**Open the device.
       */
     virtual BOOL Open(
-      const PString & device      /// Device identifier name.
+      const PString & device      ///<  Device identifier name.
     );
 
     /**Close the device.
@@ -201,30 +204,30 @@ class OpalVpbDevice : public OpalLineInterfaceDevice
        off hook (eg OffHook or LineBusy).
       */
     virtual BOOL IsLineOffHook(
-      unsigned line   /// Number of line
+      unsigned line   ///<  Number of line
     );
 
     /**Set the state of the line.
        Note that not be possible on a given line.
       */
     virtual BOOL SetLineOffHook(
-      unsigned line,        /// Number of line
-      BOOL newState = TRUE  /// New state to set
+      unsigned line,        ///<  Number of line
+      BOOL newState = TRUE  ///<  New state to set
     );
 
 
     /**Determine if line is ringing.
       */
     virtual BOOL IsLineRinging(
-      unsigned line,          /// Number of line
-      DWORD * cadence = NULL  /// Cadence of incoming ring
+      unsigned line,          ///<  Number of line
+      DWORD * cadence = NULL  ///<  Cadence of incoming ring
     );
 
     /**Determine if line has been disconnected from a call.
        return TRUE if a tone is detected.
       */
     virtual BOOL IsLineDisconnected(
-      unsigned line,   /// Number of line
+      unsigned line,   ///<  Number of line
       BOOL checkForWink = TRUE
     );
 
@@ -235,39 +238,39 @@ class OpalVpbDevice : public OpalLineInterfaceDevice
     /**Set the codec for reading.
       */
     virtual BOOL SetReadFormat(
-      unsigned line,    /// Number of line
-      const OpalMediaFormat & mediaFormat   /// Codec type
+      unsigned line,    ///<  Number of line
+      const OpalMediaFormat & mediaFormat   ///<  Codec type
     );
 
     /**Set the codec for writing.
       */
     virtual BOOL SetWriteFormat(
-      unsigned line,    /// Number of line
-      const OpalMediaFormat & mediaFormat   /// Codec type
+      unsigned line,    ///<  Number of line
+      const OpalMediaFormat & mediaFormat   ///<  Codec type
     );
 
     /**Get the media format (codec) for reading on the specified line.
       */
     virtual OpalMediaFormat GetReadFormat(
-      unsigned line    /// Number of line
+      unsigned line    ///<  Number of line
     );
 
     /**Get the media format (codec) for writing on the specified line.
       */
     virtual OpalMediaFormat GetWriteFormat(
-      unsigned line    /// Number of line
+      unsigned line    ///<  Number of line
     );
 
     /**Stop the read codec.
       */
     virtual BOOL StopReadCodec(
-      unsigned line   /// Number of line
+      unsigned line   ///<  Number of line
     );
 
     /**Stop the write codec.
       */
     virtual BOOL StopWriteCodec(
-      unsigned line   /// Number of line
+      unsigned line   ///<  Number of line
     );
 
     /**Set the read frame size in bytes.
@@ -275,8 +278,8 @@ class OpalVpbDevice : public OpalLineInterfaceDevice
        for I/O.
       */
     virtual BOOL SetReadFrameSize(
-      unsigned line,    /// Number of line
-      PINDEX frameSize  /// New frame size
+      unsigned line,    ///<  Number of line
+      PINDEX frameSize  ///<  New frame size
     );
 
     /**Set the write frame size in bytes.
@@ -284,39 +287,39 @@ class OpalVpbDevice : public OpalLineInterfaceDevice
        for I/O.
       */
     virtual BOOL SetWriteFrameSize(
-      unsigned line,    /// Number of line
-      PINDEX frameSize  /// New frame size
+      unsigned line,    ///<  Number of line
+      PINDEX frameSize  ///<  New frame size
     );
 
     /**Get the read frame size in bytes.
        All calls to ReadFrame() will return this number of bytes.
       */
     virtual PINDEX GetReadFrameSize(
-      unsigned line   /// Number of line
+      unsigned line   ///<  Number of line
     );
 
     /**Get the write frame size in bytes.
        All calls to WriteFrame() must be this number of bytes.
       */
     virtual PINDEX GetWriteFrameSize(
-      unsigned line   /// Number of line
+      unsigned line   ///<  Number of line
     );
 
     /**Low level read of a frame from the device.
      */
     virtual BOOL ReadFrame(
-      unsigned line,    /// Number of line
-      void * buf,   /// Pointer to a block of memory to receive the read bytes.
-      PINDEX & count    /// Number of bytes read, <= GetReadFrameSize()
+      unsigned line,    ///<  Number of line
+      void * buf,   ///<  Pointer to a block of memory to receive the read bytes.
+      PINDEX & count    ///<  Number of bytes read, <= GetReadFrameSize()
     );
 
     /**Low level write frame to the device.
      */
     virtual BOOL WriteFrame(
-      unsigned line,    /// Number of line
-      const void * buf, /// Pointer to a block of memory to write.
-      PINDEX count,     /// Number of bytes to write, <= GetWriteFrameSize()
-      PINDEX & written  /// Number of bytes written, <= GetWriteFrameSize()
+      unsigned line,    ///<  Number of line
+      const void * buf, ///<  Pointer to a block of memory to write.
+      PINDEX count,     ///<  Number of bytes to write, <= GetWriteFrameSize()
+      PINDEX & written  ///<  Number of bytes written, <= GetWriteFrameSize()
     );
 
 
@@ -325,8 +328,8 @@ class OpalVpbDevice : public OpalLineInterfaceDevice
        A value of 0 is the minimum volume possible for the hardware.
       */
     virtual BOOL SetRecordVolume(
-      unsigned line,    /// Number of line
-      unsigned volume   /// Volume level from 0 to 100%
+      unsigned line,    ///<  Number of line
+      unsigned volume   ///<  Volume level from 0 to 100%
     );
 
     /**Set volume level for playing.
@@ -334,14 +337,14 @@ class OpalVpbDevice : public OpalLineInterfaceDevice
        A value of 0 is the minimum volume possible for the hardware.
       */
     virtual BOOL SetPlayVolume(
-      unsigned line,    /// Number of line
-      unsigned volume   /// Volume level from 0 to 100%
+      unsigned line,    ///<  Number of line
+      unsigned volume   ///<  Volume level from 0 to 100%
     );
 
     /**Return line handle
       */
     int GetOSHandle(
-      unsigned line     /// Number of line
+      unsigned line     ///<  Number of line
     );
 
     /**Read a DTMF digit detected.
@@ -350,38 +353,38 @@ class OpalVpbDevice : public OpalLineInterfaceDevice
 
       */
     virtual char ReadDTMF(
-      unsigned line   /// Number of line
+      unsigned line   ///<  Number of line
     );
 
     /**Play a DTMF digit.
        Any characters that are not in the set 0-9, A-D, * or # will be ignored.
       */
     virtual BOOL PlayDTMF(
-      unsigned line,            /// Number of line
-      const char * digits,      /// DTMF digits to be played
-      DWORD onTime = 90,        /// Number of milliseconds to play each DTMF digit
-      DWORD offTime = 30        /// Number of milliseconds between digits
+      unsigned line,            ///<  Number of line
+      const char * digits,      ///<  DTMF digits to be played
+      DWORD onTime = 90,        ///<  Number of milliseconds to play each DTMF digit
+      DWORD offTime = 30        ///<  Number of milliseconds between digits
     );
 
 
     /**See if a tone is detected.
       */
     virtual unsigned IsToneDetected(
-      unsigned line   /// Number of line
+      unsigned line   ///<  Number of line
     );
 
     virtual BOOL PlayTone(
-      unsigned line,          /// Number of line
-      CallProgressTones tone  /// Tone to be played
+      unsigned line,          ///<  Number of line
+      CallProgressTones tone  ///<  Tone to be played
     );
 
     virtual BOOL StopTone(
-      unsigned line   /// Number of line
+      unsigned line   ///<  Number of line
     );
 	
     virtual BOOL PlayAudio(
-      unsigned line,            /// Number of line
-      const PString & filename  /// File Name
+      unsigned line,            ///<  Number of line
+      const PString & filename  ///<  File Name
     );
     
     virtual BOOL StopAudio(

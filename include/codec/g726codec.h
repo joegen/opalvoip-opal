@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g726codec.h,v $
- * Revision 1.2010  2005/08/28 07:59:17  rjongbloed
+ * Revision 1.2011  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.9  2005/08/28 07:59:17  rjongbloed
  * Converted OpalTranscoder to use factory, requiring sme changes in making sure
  *   OpalMediaFormat instances are initialised before use.
  *
@@ -112,8 +115,8 @@ class H323_G726_Capability : public H323NonStandardAudioCapability
     /**Create a new G.726 capability.
      */
     H323_G726_Capability(
-      const H323EndPoint & endpoint,  /// Endpoint to get NonStandardInfo from.
-      Speeds speed              /// Speed of encoding
+      const H323EndPoint & endpoint,  ///<  Endpoint to get NonStandardInfo from.
+      Speeds speed              ///<  Speed of encoding
     );
   //@}
 
@@ -141,8 +144,8 @@ class H323_G726_Capability : public H323NonStandardAudioCapability
        The default behaviour sets the data rate field in the PDU.
      */
     virtual BOOL OnSendingPDU(
-      H245_AudioCapability & pdu,  /// PDU to set information on
-      unsigned packetSize          /// Packet size to use in capability
+      H245_AudioCapability & pdu,  ///<  PDU to set information on
+      unsigned packetSize          ///<  Packet size to use in capability
     ) const;
 
     /**This function is called whenever and incoming TerminalCapabilitySet
@@ -153,8 +156,8 @@ class H323_G726_Capability : public H323NonStandardAudioCapability
        The default behaviour gets the data rate field from the PDU.
      */
     virtual BOOL OnReceivedPDU(
-      const H245_AudioCapability & pdu,  /// PDU to get information from
-      unsigned & packetSize              /// Packet size to use in capability
+      const H245_AudioCapability & pdu,  ///<  PDU to get information from
+      unsigned & packetSize              ///<  Packet size to use in capability
     );
   //@}
 
@@ -193,8 +196,8 @@ H323_STATIC_LOAD_REGISTER_CAPABILITY(H323_G726_16_Capability);
 class Opal_G726_Transcoder : public OpalStreamedTranscoder {
   public:
     Opal_G726_Transcoder(
-      const OpalMediaFormat & inputMediaFormat,  // Input media format
-      const OpalMediaFormat & outputMediaFormat, // Output media format
+      const OpalMediaFormat & inputMediaFormat,  ///<  Input media format
+      const OpalMediaFormat & outputMediaFormat, ///<  Output media format
       unsigned bits
     );
     ~Opal_G726_Transcoder();

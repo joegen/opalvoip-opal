@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.h,v $
- * Revision 1.2014  2005/09/04 06:23:38  rjongbloed
+ * Revision 1.2015  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.13  2005/09/04 06:23:38  rjongbloed
  * Added OpalMediaCommand mechanism (via PNotifier) for media streams
  *   and media transcoders to send commands back to remote.
  *
@@ -334,83 +337,83 @@ class H323SignalPDU : public H225_H323_UserInformation
     /**Build a SETUP message.
       */
     H225_Setup_UUIE & BuildSetup(
-      const H323Connection & connection,    /// Connection PDU is generated for
-      const H323TransportAddress & destAddr /// Destination address for packet
+      const H323Connection & connection,    ///<  Connection PDU is generated for
+      const H323TransportAddress & destAddr ///<  Destination address for packet
     );
 
     /**Build a CALL-PROCEEDING message.
       */
     H225_CallProceeding_UUIE & BuildCallProceeding(
-      const H323Connection & connection    /// Connection PDU is generated for
+      const H323Connection & connection    ///<  Connection PDU is generated for
     );
 
     /**Build a CONNECT message.
       */
     H225_Connect_UUIE & BuildConnect(
-      const H323Connection & connection    /// Connection PDU is generated for
+      const H323Connection & connection    ///<  Connection PDU is generated for
     );
 
     /**Build a CONNECT message with H.245 address.
       */
     H225_Connect_UUIE & BuildConnect(
-      const H323Connection & connection,    /// Connection PDU is generated for
-      const PIPSocket::Address & h245Address, /// H.245 IP address
-      WORD port                               /// H.245 TCP port
+      const H323Connection & connection,    ///<  Connection PDU is generated for
+      const PIPSocket::Address & h245Address, ///<  H.245 IP address
+      WORD port                               ///<  H.245 TCP port
     );
 
     /**Build an ALERTING message.
       */
     H225_Alerting_UUIE & BuildAlerting(
-      const H323Connection & connection    /// Connection PDU is generated for
+      const H323Connection & connection    ///<  Connection PDU is generated for
     );
 
     /**Build a INFORMATION message.
       */
     H225_Information_UUIE & BuildInformation(
-      const H323Connection & connection    /// Connection PDU is generated for
+      const H323Connection & connection    ///<  Connection PDU is generated for
     );
 
     /**Build a RELEASE-COMPLETE message.
       */
     H225_ReleaseComplete_UUIE & BuildReleaseComplete(
-      const H323Connection & connection    /// Connection PDU is generated for
+      const H323Connection & connection    ///<  Connection PDU is generated for
     );
 
     /**Build a FACILITY message.
       */
     H225_Facility_UUIE * BuildFacility(
-      const H323Connection & connection,  /// Connection PDU is generated for
-      BOOL empty                          /// Flag for empty facility message
+      const H323Connection & connection,  ///<  Connection PDU is generated for
+      BOOL empty                          ///<  Flag for empty facility message
     );
 
     /**Build a PROGRESS message.
       */
     H225_Progress_UUIE & BuildProgress(
-      const H323Connection & connection    /// Connection PDU is generated for
+      const H323Connection & connection    ///<  Connection PDU is generated for
     );
 
     /**Build a STATUS message.
       */
     H225_Status_UUIE & BuildStatus(
-      const H323Connection & connection    /// Connection PDU is generated for
+      const H323Connection & connection    ///<  Connection PDU is generated for
     );
 
     /**Build a STATUS-INQUIRY message.
       */
     H225_StatusInquiry_UUIE & BuildStatusInquiry(
-      const H323Connection & connection    /// Connection PDU is generated for
+      const H323Connection & connection    ///<  Connection PDU is generated for
     );
 
     /**Build a SETUP-ACKNOWLEDGE message.
       */
     H225_SetupAcknowledge_UUIE & BuildSetupAcknowledge(
-      const H323Connection & connection    /// Connection PDU is generated for
+      const H323Connection & connection    ///<  Connection PDU is generated for
     );
 
     /**Build a NOTIFY message.
       */
     H225_Notify_UUIE & BuildNotify(
-      const H323Connection & connection    /// Connection PDU is generated for
+      const H323Connection & connection    ///<  Connection PDU is generated for
     );
   //@}
 
@@ -426,13 +429,13 @@ class H323SignalPDU : public H225_H323_UserInformation
     /**Read PDU from the specified transport.
       */
     BOOL Read(
-      H323Transport & transport   /// Transport to read from
+      H323Transport & transport   ///<  Transport to read from
     );
 
     /**Write the PDU to the transport.
       */
     BOOL Write(
-      H323Transport & transport   /// Transport to write to
+      H323Transport & transport   ///<  Transport to write to
     );
 
     /**Get the Q.931 wrapper PDU for H.225 signalling PDU.
@@ -458,7 +461,7 @@ class H323SignalPDU : public H225_H323_UserInformation
        remote endpoint to identify it, eg phone number, display name etc etc
       */
     PString GetSourceAliases(
-      const H323Transport * transport = NULL  /// Transport PDU was read from.
+      const H323Transport * transport = NULL  ///<  Transport PDU was read from.
     ) const;
 
     /**Get the destination alias name(s) for the local endpoint.
@@ -466,7 +469,7 @@ class H323SignalPDU : public H225_H323_UserInformation
        incoming connection.
       */
     PString GetDestinationAlias(
-      BOOL firstAliasOnly = FALSE   /// Only return the first possible alias
+      BOOL firstAliasOnly = FALSE   ///<  Only return the first possible alias
     ) const;
 
     /**Get the source endpoints identification as a phone number.
@@ -474,7 +477,7 @@ class H323SignalPDU : public H225_H323_UserInformation
        field that indicated a valid e.164 telephone number.
       */
     BOOL GetSourceE164(
-      PString & number    /// String to receive number
+      PString & number    ///<  String to receive number
     ) const;
 
     /**Get the destiation  phone number.
@@ -482,7 +485,7 @@ class H323SignalPDU : public H225_H323_UserInformation
        field that indicated a valid e.164 telephone number.
       */
     BOOL GetDestinationE164(
-      PString & number    /// String to receive number
+      PString & number    ///<  String to receive number
     ) const;
 
     /**Get the distinctive ring code if present.
@@ -604,10 +607,10 @@ class H323ControlPDU : public H245_MultimediaSystemControlMessage
       const PString & value
     );
     H245_UserInputIndication & BuildUserInputIndication(
-      char tone,               /// DTMF tone code
-      unsigned duration,       /// Duration of tone in milliseconds
-      unsigned logicalChannel, /// Logical channel number for RTP sync.
-      unsigned rtpTimestamp    /// RTP timestamp in logical channel sync.
+      char tone,               ///<  DTMF tone code
+      unsigned duration,       ///<  Duration of tone in milliseconds
+      unsigned logicalChannel, ///<  Logical channel number for RTP sync.
+      unsigned rtpTimestamp    ///<  RTP timestamp in logical channel sync.
     );
 
     H245_MiscellaneousCommand & BuildMiscellaneousCommand(

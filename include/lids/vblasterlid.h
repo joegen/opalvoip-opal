@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vblasterlid.h,v $
- * Revision 1.2009  2004/10/06 13:03:41  rjongbloed
+ * Revision 1.2010  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.8  2004/10/06 13:03:41  rjongbloed
  * Added "configure" support for known LIDs
  * Changed LID GetName() function to be normalised against the GetAllNames()
  *   return values and fixed the pre-factory registration system.
@@ -225,7 +228,7 @@ class OpalVoipBlasterDevice : public OpalLineInterfaceDevice
     /**Open the VoIPBlaster device.
       */
     virtual BOOL Open(
-      const PString & device  /// Device identifier name.
+      const PString & device  ///<  Device identifier name.
     );
 
     /**Close the VoIPBlaster device.
@@ -258,15 +261,15 @@ class OpalVoipBlasterDevice : public OpalLineInterfaceDevice
     /**Get the type of the line.
       */
     virtual BOOL IsLineTerminal(
-      unsigned /*line*/   /// Number of line
+      unsigned /*line*/   ///<  Number of line
     ) { return TRUE; }
 
 
     /**Determine if a physical line is present on the logical line.
       */
     virtual BOOL IsLinePresent(
-      unsigned /*line*/,      /// Number of line
-      BOOL /*force*/ = FALSE  /// Force test, do not optimise
+      unsigned /*line*/,      ///<  Number of line
+      BOOL /*force*/ = FALSE  ///<  Force test, do not optimise
     )
       { return FALSE; }
 
@@ -276,38 +279,38 @@ class OpalVoipBlasterDevice : public OpalLineInterfaceDevice
        off hook (eg OffHook or LineBusy).
       */
     virtual BOOL IsLineOffHook(
-      unsigned line   /// Number of line
+      unsigned line   ///<  Number of line
     );
 
     /**Set the state of the line.
        Note that not be possible on a given line.
       */
     virtual BOOL SetLineOffHook(
-      unsigned line,        /// Number of line
-      BOOL newState = TRUE  /// New state to set
+      unsigned line,        ///<  Number of line
+      BOOL newState = TRUE  ///<  New state to set
     );
 
 
     /**Determine if line is ringing.
       */
     virtual BOOL IsLineRinging(
-      unsigned line,          /// Number of line
-      DWORD * cadence = NULL  /// Cadence of incoming ring
+      unsigned line,          ///<  Number of line
+      DWORD * cadence = NULL  ///<  Cadence of incoming ring
     );
 
     /**Begin ringing local phone set with specified cadence.
        If cadence is zero then stops ringing.
       */
     virtual BOOL RingLine(
-      unsigned line,    /// Number of line
-      DWORD cadence     /// Cadence bit map for ring pattern
+      unsigned line,    ///<  Number of line
+      DWORD cadence     ///<  Cadence bit map for ring pattern
     );
 
 
     /**Determine if line has been disconnected from a call.
       */
     virtual BOOL IsLineDisconnected(
-      unsigned line,   /// Number of line
+      unsigned line,   ///<  Number of line
       BOOL checkForWink = TRUE
     );
 
@@ -315,16 +318,16 @@ class OpalVoipBlasterDevice : public OpalLineInterfaceDevice
     /**Directly connect the two lines.
       */
     BOOL SetLineToLineDirect(
-      unsigned line1,   /// Number of first line
-      unsigned line2,   /// Number of second line
-      BOOL connect      /// Flag for connect/disconnect
+      unsigned line1,   ///<  Number of first line
+      unsigned line2,   ///<  Number of second line
+      BOOL connect      ///<  Flag for connect/disconnect
     );
 
     /**Determine if the two lines are directly connected.
       */
     BOOL IsLineToLineDirect(
-      unsigned line1,   /// Number of first line
-      unsigned line2    /// Number of second line
+      unsigned line1,   ///<  Number of first line
+      unsigned line2    ///<  Number of second line
     );
 
 
@@ -335,27 +338,27 @@ class OpalVoipBlasterDevice : public OpalLineInterfaceDevice
     /**Set the VoIPBlaster codec for reading.
       */
     virtual BOOL SetReadFormat(
-      unsigned line,    /// Number of line
-      const OpalMediaFormat & mediaFormat   /// Codec type
+      unsigned line,    ///<  Number of line
+      const OpalMediaFormat & mediaFormat   ///<  Codec type
     );
 
     /**Set the VoIPBlaster codec for writing.
       */
     virtual BOOL SetWriteFormat(
-      unsigned line,    /// Number of line
-      const OpalMediaFormat & mediaFormat   /// Codec type
+      unsigned line,    ///<  Number of line
+      const OpalMediaFormat & mediaFormat   ///<  Codec type
     );
 
     /**Get the media format (codec) for reading on the specified line.
       */
     virtual OpalMediaFormat GetReadFormat(
-      unsigned line    /// Number of line
+      unsigned line    ///<  Number of line
     );
 
     /**Get the media format (codec) for writing on the specified line.
       */
     virtual OpalMediaFormat GetWriteFormat(
-      unsigned line    /// Number of line
+      unsigned line    ///<  Number of line
     );
 
     /**Set the line codec for reading/writing raw PCM data.
@@ -369,32 +372,32 @@ class OpalVoipBlasterDevice : public OpalLineInterfaceDevice
        PCM data.
       */
     virtual BOOL SetRawCodec(
-      unsigned line    /// Number of line
+      unsigned line    ///<  Number of line
     );
 
     /**Stop the raw PCM mode codec.
       */
     virtual BOOL StopRawCodec(
-      unsigned line   /// Number of line
+      unsigned line   ///<  Number of line
     );
 
     /**Stop the read codec.
       */
     virtual BOOL StopReadCodec(
-      unsigned line   /// Number of line
+      unsigned line   ///<  Number of line
     );
 
     /**Stop the write codec.
       */
     virtual BOOL StopWriteCodec(
-      unsigned line   /// Number of line
+      unsigned line   ///<  Number of line
     );
 
     /**Get the read frame size in bytes.
        All calls to ReadFrame() will return this number of bytes.
       */
     virtual PINDEX GetReadFrameSize(
-      unsigned line   /// Number of line
+      unsigned line   ///<  Number of line
     );
 
     virtual BOOL SetReadFrameSize(unsigned, PINDEX);
@@ -403,7 +406,7 @@ class OpalVoipBlasterDevice : public OpalLineInterfaceDevice
        All calls to WriteFrame() must be this number of bytes.
       */
     virtual PINDEX GetWriteFrameSize(
-      unsigned line   /// Number of line
+      unsigned line   ///<  Number of line
     );
 
     virtual BOOL SetWriteFrameSize(unsigned, PINDEX);
@@ -411,32 +414,32 @@ class OpalVoipBlasterDevice : public OpalLineInterfaceDevice
     /**Low level read of a frame from the device.
      */
     virtual BOOL ReadFrame(
-      unsigned line,    /// Number of line
-      void * buf,       /// Pointer to a block of memory to receive data.
-      PINDEX & count    /// Number of bytes read, <= GetReadFrameSize()
+      unsigned line,    ///<  Number of line
+      void * buf,       ///<  Pointer to a block of memory to receive data.
+      PINDEX & count    ///<  Number of bytes read, <= GetReadFrameSize()
     );
 
     /**Low level write frame to the device.
      */
     virtual BOOL WriteFrame(
-      unsigned line,    /// Number of line
-      const void * buf, /// Pointer to a block of memory to write.
-      PINDEX count,     /// Number of bytes to write, <= GetWriteFrameSize()
-      PINDEX & written  /// Number of bytes written, <= GetWriteFrameSize()
+      unsigned line,    ///<  Number of line
+      const void * buf, ///<  Pointer to a block of memory to write.
+      PINDEX count,     ///<  Number of bytes to write, <= GetWriteFrameSize()
+      PINDEX & written  ///<  Number of bytes written, <= GetWriteFrameSize()
     );
 
     /**Get average signal level in last frame.
       */
     virtual unsigned GetAverageSignalLevel(
-      unsigned line,  /// Number of line
-      BOOL playback   /// Get average playback or record level.
+      unsigned line,  ///<  Number of line
+      BOOL playback   ///<  Get average playback or record level.
     );
 
 
     /**Enable audio for the line.
       */
     virtual BOOL EnableAudio(
-      unsigned line,      /// Number of line
+      unsigned line,      ///<  Number of line
       BOOL enable = TRUE
     );
 
@@ -446,8 +449,8 @@ class OpalVoipBlasterDevice : public OpalLineInterfaceDevice
        A value of 0 is the minimum volume possible for the hardware.
       */
     virtual BOOL SetRecordVolume(
-      unsigned line,    /// Number of line
-      unsigned volume   /// Volume level from 0 to 100%
+      unsigned line,    ///<  Number of line
+      unsigned volume   ///<  Volume level from 0 to 100%
     );
 
     /**Set volume level for playing.
@@ -455,8 +458,8 @@ class OpalVoipBlasterDevice : public OpalLineInterfaceDevice
        A value of 0 is the minimum volume possible for the hardware.
       */
     virtual BOOL SetPlayVolume(
-      unsigned line,    /// Number of line
-      unsigned volume   /// Volume level from 0 to 100%
+      unsigned line,    ///<  Number of line
+      unsigned volume   ///<  Volume level from 0 to 100%
     );
 
     /**Get volume level for recording.
@@ -464,8 +467,8 @@ class OpalVoipBlasterDevice : public OpalLineInterfaceDevice
        A value of 0 is the minimum volume possible for the hardware.
       */
     virtual BOOL GetRecordVolume(
-      unsigned line,      /// Number of line
-      unsigned & volume   /// Volume level from 0 to 100%
+      unsigned line,      ///<  Number of line
+      unsigned & volume   ///<  Volume level from 0 to 100%
     );
 
     /**Set volume level for playing.
@@ -473,22 +476,22 @@ class OpalVoipBlasterDevice : public OpalLineInterfaceDevice
        A value of 0 is the minimum volume possible for the hardware.
       */
     virtual BOOL GetPlayVolume(
-      unsigned line,      /// Number of line
-      unsigned & volume   /// Volume level from 0 to 100%
+      unsigned line,      ///<  Number of line
+      unsigned & volume   ///<  Volume level from 0 to 100%
     );
 
 
     /**Set acoustic echo cancellation.
       */
     AECLevels GetAEC(
-      unsigned line    /// Number of line
+      unsigned line    ///<  Number of line
     );
 
     /**Set acoustic echo cancellation.
       */
     BOOL SetAEC(
-      unsigned line,    /// Number of line
-      AECLevels level  /// AEC level
+      unsigned line,    ///<  Number of line
+      AECLevels level  ///<  AEC level
     );
 
 
@@ -496,15 +499,15 @@ class OpalVoipBlasterDevice : public OpalLineInterfaceDevice
        Note, not all devices, or selected codecs, may support this function.
       */
     virtual BOOL GetVAD(
-      unsigned line    /// Number of line
+      unsigned line    ///<  Number of line
     );
 
     /**Set voice activity detection.
        Note, not all devices, or selected codecs, may support this function.
       */
     virtual BOOL SetVAD(
-      unsigned line,    /// Number of line
-      BOOL enable       /// Flag for enabling VAD
+      unsigned line,    ///<  Number of line
+      BOOL enable       ///<  Flag for enabling VAD
     );
 
 
@@ -516,9 +519,9 @@ class OpalVoipBlasterDevice : public OpalLineInterfaceDevice
        time/date and the name field separated by tabs ('\t').
       */
     virtual BOOL GetCallerID(
-      unsigned line,      /// Number of line
-      PString & idString, /// ID string returned
-      BOOL full = FALSE   /// Get full information in idString
+      unsigned line,      ///<  Number of line
+      PString & idString, ///<  ID string returned
+      BOOL full = FALSE   ///<  Get full information in idString
     );
 
     /**Set Caller ID for use in next RingLine() call.
@@ -530,21 +533,21 @@ class OpalVoipBlasterDevice : public OpalLineInterfaceDevice
        so that no caller ID is sent on the next RingLine() call.
       */
     virtual BOOL SetCallerID(
-      unsigned line,            /// Number of line
-      const PString & idString  /// ID string to use
+      unsigned line,            ///<  Number of line
+      const PString & idString  ///<  ID string to use
     );
 
     /**Send Caller ID during call
      */
     virtual BOOL SendCallerIDOnCallWaiting(
-      unsigned line,            /// Number of line
-      const PString & idString  /// ID string to use
+      unsigned line,            ///<  Number of line
+      const PString & idString  ///<  ID string to use
     );
 
     /**Send a Visual Message Waiting Indicator
       */
     virtual BOOL SendVisualMessageWaitingIndicator(
-      unsigned line,            /// Number of line
+      unsigned line,            ///<  Number of line
       BOOL on
     );
 
@@ -554,10 +557,10 @@ class OpalVoipBlasterDevice : public OpalLineInterfaceDevice
        Any characters that are not in the set 0-9, A-D, * or # will be ignored.
       */
     virtual BOOL PlayDTMF(
-      unsigned line,            /// Number of line
-      const char * digits,      /// DTMF digits to be played
-      DWORD onTime = DefaultDTMFOnTime,  /// Number of milliseconds to play each DTMF digit
-      DWORD offTime = DefaultDTMFOffTime /// Number of milliseconds between digits
+      unsigned line,            ///<  Number of line
+      const char * digits,      ///<  DTMF digits to be played
+      DWORD onTime = DefaultDTMFOnTime,  ///<  Number of milliseconds to play each DTMF digit
+      DWORD offTime = DefaultDTMFOffTime ///<  Number of milliseconds between digits
     );
 
     /**Read a DTMF digit detected.
@@ -566,7 +569,7 @@ class OpalVoipBlasterDevice : public OpalLineInterfaceDevice
 
       */
     virtual char ReadDTMF(
-      unsigned line   /// Number of line
+      unsigned line   ///<  Number of line
     );
 
     /**Get DTMF removal mode.
@@ -574,7 +577,7 @@ class OpalVoipBlasterDevice : public OpalLineInterfaceDevice
        encoded data stream as returned by ReadFrame().
       */
     virtual BOOL GetRemoveDTMF(
-      unsigned line            /// Number of line
+      unsigned line            ///<  Number of line
     );
 
     /**Set DTMF removal mode.
@@ -582,34 +585,34 @@ class OpalVoipBlasterDevice : public OpalLineInterfaceDevice
        encoded data stream as returned by ReadFrame().
       */
     virtual BOOL SetRemoveDTMF(
-      unsigned line,            /// Number of line
-      BOOL removeTones   /// Flag for removing DTMF tones.
+      unsigned line,            ///<  Number of line
+      BOOL removeTones   ///<  Flag for removing DTMF tones.
     );
 
 
     /**See if a tone is detected.
       */
     virtual unsigned IsToneDetected(
-      unsigned line   /// Number of line
+      unsigned line   ///<  Number of line
     );
 
     /**Play a tone.
       */
     virtual BOOL PlayTone(
-      unsigned line,          /// Number of line
-      CallProgressTones tone  /// Tone to be played
+      unsigned line,          ///<  Number of line
+      CallProgressTones tone  ///<  Tone to be played
     );
 
     /**Determine if a tone is still playing
       */
     virtual BOOL IsTonePlaying(
-      unsigned line   /// Number of line
+      unsigned line   ///<  Number of line
     );
 
     /**Stop playing a tone.
       */
     virtual BOOL StopTone(
-      unsigned line   /// Number of line
+      unsigned line   ///<  Number of line
     );
 
    /**Return TRUE if a hook flash has been detected
@@ -622,7 +625,7 @@ class OpalVoipBlasterDevice : public OpalLineInterfaceDevice
        telephone network.
       */
     virtual BOOL SetCountryCode(
-      T35CountryCodes country   /// COuntry code for device
+      T35CountryCodes country   ///<  COuntry code for device
     );
 
 

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.h,v $
- * Revision 1.2009  2004/08/14 07:56:29  rjongbloed
+ * Revision 1.2010  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.8  2004/08/14 07:56:29  rjongbloed
  * Major revision to utilise the PSafeCollection classes for the connections and calls.
  *
  * Revision 2.7  2004/07/15 12:32:29  rjongbloed
@@ -81,8 +84,8 @@ class OpalIVREndPoint : public OpalEndPoint
     /**Create a new endpoint.
      */
     OpalIVREndPoint(
-      OpalManager & manager,  /// Manager of all endpoints.
-      const char * prefix = "ivr" /// Prefix for URL style address strings
+      OpalManager & manager,  ///<  Manager of all endpoints.
+      const char * prefix = "ivr" ///<  Prefix for URL style address strings
     );
 
     /**Destroy endpoint.
@@ -122,9 +125,9 @@ class OpalIVREndPoint : public OpalEndPoint
        The default behaviour is pure.
      */
     virtual BOOL MakeConnection(
-      OpalCall & call,        /// Owner of connection
-      const PString & party,  /// Remote party to call
-      void * userData = NULL  /// Arbitrary data to pass to connection
+      OpalCall & call,        ///<  Owner of connection
+      const PString & party,  ///<  Remote party to call
+      void * userData = NULL  ///<  Arbitrary data to pass to connection
     );
 
     /**Get the data formats this endpoint is capable of operating.
@@ -145,10 +148,10 @@ class OpalIVREndPoint : public OpalEndPoint
        The default implementation is to create a OpalPCSSConnection.
       */
     virtual OpalIVRConnection * CreateConnection(
-      OpalCall & call,        /// Owner of connection
-      const PString & token,  /// Call token for new connection
-      void * userData,        /// Arbitrary data to pass to connection
-      const PString & vxml    /// vxml to execute
+      OpalCall & call,        ///<  Owner of connection
+      const PString & token,  ///<  Call token for new connection
+      void * userData,        ///<  Arbitrary data to pass to connection
+      const PString & vxml    ///<  vxml to execute
     );
 
     /**Create a unique token for a new conection.
@@ -163,7 +166,7 @@ class OpalIVREndPoint : public OpalEndPoint
        as provided by functions such as MakeConnection().
       */
     PSafePtr<OpalIVRConnection> GetIVRConnectionWithLock(
-      const PString & token,     /// Token to identify connection
+      const PString & token,     ///<  Token to identify connection
       PSafetyMode mode = PSafeReadWrite
     ) { return PSafePtrCast<OpalConnection, OpalIVRConnection>(GetConnectionWithLock(token, mode)); }
 
@@ -202,11 +205,11 @@ class OpalIVRConnection : public OpalConnection
     /**Create a new endpoint.
      */
     OpalIVRConnection(
-      OpalCall & call,            /// Owner calll for connection
-      OpalIVREndPoint & endpoint, /// Owner endpoint for connection
-      const PString & token,      /// Token for connection
-      void * userData,            /// Arbitrary data to pass to connection
-      const PString & vxml        /// vxml to execute
+      OpalCall & call,            ///<  Owner calll for connection
+      OpalIVREndPoint & endpoint, ///<  Owner endpoint for connection
+      const PString & token,      ///<  Token for connection
+      void * userData,            ///<  Arbitrary data to pass to connection
+      const PString & vxml        ///<  vxml to execute
     );
 
     /**Destroy endpoint.
@@ -235,8 +238,8 @@ class OpalIVRConnection : public OpalConnection
        The default behaviour does nothing.
       */
     virtual BOOL SetAlerting(
-      const PString & calleeName,   /// Name of endpoint being alerted.
-      BOOL withMedia                /// Open media with alerting
+      const PString & calleeName,   ///<  Name of endpoint being alerted.
+      BOOL withMedia                ///<  Open media with alerting
     );
 
     /**Indicate to remote endpoint we are connected.
@@ -269,9 +272,9 @@ class OpalIVRConnection : public OpalConnection
        The default behaviour is pure.
      */
     virtual OpalMediaStream * CreateMediaStream(
-      const OpalMediaFormat & mediaFormat, /// Media format for stream
-      unsigned sessionID,                  /// Session number for stream
-      BOOL isSource                        /// Is a source stream
+      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
+      unsigned sessionID,                  ///<  Session number for stream
+      BOOL isSource                        ///<  Is a source stream
     );
 
     /**Send a user input indication to the remote endpoint.
@@ -282,7 +285,7 @@ class OpalIVRConnection : public OpalConnection
        The default behaviour plays the DTMF tones on the line.
       */
     virtual BOOL SendUserInputString(
-      const PString & value                   /// String value of indication
+      const PString & value                   ///<  String value of indication
     );
   //@}
 
@@ -310,10 +313,10 @@ class OpalIVRMediaStream : public OpalRawMediaStream
     /**Construct a new media stream for IVR session.
       */
     OpalIVRMediaStream(
-      const OpalMediaFormat & mediaFormat, /// Media format for stream
-      unsigned sessionID,                  /// Session number for stream
-      BOOL isSource,                       /// Is a source stream
-      PVXMLSession & vxml                  /// vxml session to use
+      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
+      unsigned sessionID,                  ///<  Session number for stream
+      BOOL isSource,                       ///<  Is a source stream
+      PVXMLSession & vxml                  ///<  vxml session to use
     );
   //@}
 

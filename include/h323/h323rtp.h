@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323rtp.h,v $
- * Revision 1.2006  2004/02/24 11:28:45  rjongbloed
+ * Revision 1.2007  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.5  2004/02/24 11:28:45  rjongbloed
  * Normalised RTP session management across protocols
  *
  * Revision 2.4  2004/02/19 10:46:44  rjongbloed
@@ -121,7 +124,7 @@ class H323_RTP_Session : public RTP_UserData
        The default behaviour calls H323Connection::OnRTPStatistics().
       */
     virtual void OnTxStatistics(
-      const RTP_Session & session   /// Session with statistics
+      const RTP_Session & session   ///<  Session with statistics
     ) const;
 
     /**Callback from the RTP session for receive statistics monitoring.
@@ -131,7 +134,7 @@ class H323_RTP_Session : public RTP_UserData
        The default behaviour calls H323Connection::OnRTPStatistics().
       */
     virtual void OnRxStatistics(
-      const RTP_Session & session   /// Session with statistics
+      const RTP_Session & session   ///<  Session with statistics
     ) const;
   //@}
 
@@ -140,16 +143,16 @@ class H323_RTP_Session : public RTP_UserData
     /**Fill out the OpenLogicalChannel PDU for the particular channel type.
      */
     virtual BOOL OnSendingPDU(
-      const H323_RTPChannel & channel,            /// Channel using this session.
-      H245_H2250LogicalChannelParameters & param  /// Open PDU to send.
+      const H323_RTPChannel & channel,            ///<  Channel using this session.
+      H245_H2250LogicalChannelParameters & param  ///<  Open PDU to send.
     ) const = 0;
 
     /**This is called when request to create a channel is received from a
        remote machine and is about to be acknowledged.
      */
     virtual void OnSendingAckPDU(
-      const H323_RTPChannel & channel,              /// Channel using this session.
-      H245_H2250LogicalChannelAckParameters & param /// Acknowledgement PDU
+      const H323_RTPChannel & channel,              ///<  Channel using this session.
+      H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
     ) const = 0;
 
     /**This is called after a request to create a channel occurs from the
@@ -157,9 +160,9 @@ class H323_RTP_Session : public RTP_UserData
        the request has been acknowledged by the remote endpoint.
      */
     virtual BOOL OnReceivedPDU(
-      H323_RTPChannel & channel,                  /// Channel using this session.
-      const H245_H2250LogicalChannelParameters & param, /// Acknowledgement PDU
-      unsigned & errorCode                              /// Error on failure
+      H323_RTPChannel & channel,                  ///<  Channel using this session.
+      const H245_H2250LogicalChannelParameters & param, ///<  Acknowledgement PDU
+      unsigned & errorCode                              ///<  Error on failure
     ) = 0;
 
     /**This is called after a request to create a channel occurs from the
@@ -167,8 +170,8 @@ class H323_RTP_Session : public RTP_UserData
        the request has been acknowledged by the remote endpoint.
      */
     virtual BOOL OnReceivedAckPDU(
-      H323_RTPChannel & channel,                  /// Channel using this session.
-      const H245_H2250LogicalChannelAckParameters & param /// Acknowledgement PDU
+      H323_RTPChannel & channel,                  ///<  Channel using this session.
+      const H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
     ) = 0;
 
     /**This is called when a gatekeeper wants to get status information from
@@ -178,7 +181,7 @@ class H323_RTP_Session : public RTP_UserData
        but does not do anything with the transport fields.
      */
     virtual void OnSendRasInfo(
-      H225_RTPSession & info  /// RTP session info PDU
+      H225_RTPSession & info  ///<  RTP session info PDU
     ) = 0;
   //@}
 
@@ -189,11 +192,11 @@ class H323_RTP_Session : public RTP_UserData
     /**Create a new channel.
      */
     H323_RTP_Session(
-      const H323Connection & connection  /// Owner of the RTP session
+      const H323Connection & connection  ///<  Owner of the RTP session
     );
   //@}
 
-    const H323Connection & connection; /// Owner of the RTP session
+    const H323Connection & connection; ///<  Owner of the RTP session
 };
 
 
@@ -209,8 +212,8 @@ class H323_RTP_UDP : public H323_RTP_Session
     /**Create a new RTP session H323 info.
      */
     H323_RTP_UDP(
-      const H323Connection & connection, /// Owner of the RTP session
-      RTP_UDP & rtp                      /// RTP session
+      const H323Connection & connection, ///<  Owner of the RTP session
+      RTP_UDP & rtp                      ///<  RTP session
     );
   //@}
 
@@ -219,16 +222,16 @@ class H323_RTP_UDP : public H323_RTP_Session
     /**Fill out the OpenLogicalChannel PDU for the particular channel type.
      */
     virtual BOOL OnSendingPDU(
-      const H323_RTPChannel & channel,            /// Channel using this session.
-      H245_H2250LogicalChannelParameters & param  /// Open PDU to send.
+      const H323_RTPChannel & channel,            ///<  Channel using this session.
+      H245_H2250LogicalChannelParameters & param  ///<  Open PDU to send.
     ) const;
 
     /**This is called when request to create a channel is received from a
        remote machine and is about to be acknowledged.
      */
     virtual void OnSendingAckPDU(
-      const H323_RTPChannel & channel,              /// Channel using this session.
-      H245_H2250LogicalChannelAckParameters & param /// Acknowledgement PDU
+      const H323_RTPChannel & channel,              ///<  Channel using this session.
+      H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
     ) const;
 
     /**This is called after a request to create a channel occurs from the
@@ -238,9 +241,9 @@ class H323_RTP_UDP : public H323_RTP_Session
        The default behaviour sets the remote ports to send UDP packets to.
      */
     virtual BOOL OnReceivedPDU(
-      H323_RTPChannel & channel,                  /// Channel using this session.
-      const H245_H2250LogicalChannelParameters & param, /// Acknowledgement PDU
-      unsigned & errorCode                              /// Error on failure
+      H323_RTPChannel & channel,                  ///<  Channel using this session.
+      const H245_H2250LogicalChannelParameters & param, ///<  Acknowledgement PDU
+      unsigned & errorCode                              ///<  Error on failure
     );
 
     /**This is called after a request to create a channel occurs from the
@@ -250,8 +253,8 @@ class H323_RTP_UDP : public H323_RTP_Session
        The default behaviour sets the remote ports to send UDP packets to.
      */
     virtual BOOL OnReceivedAckPDU(
-      H323_RTPChannel & channel,                  /// Channel using this session.
-      const H245_H2250LogicalChannelAckParameters & param /// Acknowledgement PDU
+      H323_RTPChannel & channel,                  ///<  Channel using this session.
+      const H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
     );
 
     /**This is called when a gatekeeper wants to get status information from
@@ -261,7 +264,7 @@ class H323_RTP_UDP : public H323_RTP_Session
        transport fields.
      */
     virtual void OnSendRasInfo(
-      H225_RTPSession & info  /// RTP session info PDU
+      H225_RTPSession & info  ///<  RTP session info PDU
     );
   //@}
 

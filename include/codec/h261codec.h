@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.h,v $
- * Revision 1.2019  2005/09/16 07:08:22  dsandras
+ * Revision 1.2020  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.18  2005/09/16 07:08:22  dsandras
  * Forgot to commit that file yesterday. Declare new variable.
  *
  * Revision 2.17  2005/09/02 14:31:41  csoutheren
@@ -294,7 +297,7 @@ class H323_H261Capability : public H323VideoCapability
        The default behaviour sets the data rate field in the PDU.
      */
     virtual BOOL OnSendingPDU(
-      H245_VideoCapability & pdu  /// PDU to set information on
+      H245_VideoCapability & pdu  ///<  PDU to set information on
     ) const;
 
     /**This function is called whenever and outgoing RequestMode
@@ -305,7 +308,7 @@ class H323_H261Capability : public H323VideoCapability
        The default behaviour sets the resolution and bit rate.
      */
     virtual BOOL OnSendingPDU(
-      H245_VideoMode & pdu  /// PDU to set information on
+      H245_VideoMode & pdu  ///<  PDU to set information on
     ) const;
 
     /**This function is called whenever and incoming TerminalCapabilitySet
@@ -316,7 +319,7 @@ class H323_H261Capability : public H323VideoCapability
        The default behaviour gets the data rate field from the PDU.
      */
     virtual BOOL OnReceivedPDU(
-      const H245_VideoCapability & pdu  /// PDU to set information on
+      const H245_VideoCapability & pdu  ///<  PDU to set information on
     );
 
     /** Get temporal/spatial tradeoff capabilty

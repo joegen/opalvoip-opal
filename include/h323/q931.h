@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q931.h,v $
- * Revision 1.2012  2004/02/19 10:46:44  rjongbloed
+ * Revision 1.2013  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.11  2004/02/19 10:46:44  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.10  2003/01/07 04:39:53  robertj
@@ -344,14 +347,14 @@ class Q931 : public PObject
 
     void SetBearerCapabilities(
       InformationTransferCapability capability,
-      unsigned transferRate,        // Number of 64k B channels
-      unsigned codingStandard = 0,  // 0 = ITU-T standardized coding
-      unsigned userInfoLayer1 = 5   // 5 = Recommendations H.221 and H.242
+      unsigned transferRate,        ///<  Number of 64k B channels
+      unsigned codingStandard = 0,  ///<  0 = ITU-T standardized coding
+      unsigned userInfoLayer1 = 5   ///<  5 = Recommendations H.221 and H.242
     );
 
     BOOL GetBearerCapabilities(
       InformationTransferCapability & capability,
-      unsigned & transferRate,        // Number of 64k B channels
+      unsigned & transferRate,        ///<  Number of 64k B channels
       unsigned * codingStandard = NULL,
       unsigned * userInfoLayer1 = NULL
     );
@@ -399,12 +402,12 @@ class Q931 : public PObject
 
     void SetCause(
       CauseValues value,
-      unsigned standard = 0,  // 0 = ITU-T standardized coding
-      unsigned location = 0   // 0 = User
+      unsigned standard = 0,  ///<  0 = ITU-T standardized coding
+      unsigned location = 0   ///<  0 = User
     );
     CauseValues GetCause(
-      unsigned * standard = NULL,  // 0 = ITU-T standardized coding
-      unsigned * location = NULL   // 0 = User
+      unsigned * standard = NULL,  ///<  0 = ITU-T standardized coding
+      unsigned * location = NULL   ///<  0 = User
     ) const;
 
     enum CallStates {
@@ -428,10 +431,10 @@ class Q931 : public PObject
     };
     void SetCallState(
       CallStates value,
-      unsigned standard = 0  // 0 = ITU-T standardized coding
+      unsigned standard = 0  ///<  0 = ITU-T standardized coding
     );
     CallStates GetCallState(
-      unsigned * standard = NULL  // 0 = ITU-T standardized coding
+      unsigned * standard = NULL  ///<  0 = ITU-T standardized coding
     ) const;
 
     enum SignalInfo {
@@ -509,71 +512,71 @@ class Q931 : public PObject
     };
 
     void SetCallingPartyNumber(
-      const PString & number, // Number string
-      unsigned plan = 1,      // 1 = ISDN/Telephony numbering system
-      unsigned type = 0,      // 0 = Unknown number type
-      int presentation = -1,  // 0 = presentation allowed, -1 = no octet3a
-      int screening = -1      //  0 = user provided, not screened
+      const PString & number, ///<  Number string
+      unsigned plan = 1,      ///<  1 = ISDN/Telephony numbering system
+      unsigned type = 0,      ///<  0 = Unknown number type
+      int presentation = -1,  ///<  0 = presentation allowed, -1 = no octet3a
+      int screening = -1      ///<   0 = user provided, not screened
     );
     BOOL GetCallingPartyNumber(
-      PString & number,               // Number string
-      unsigned * plan = NULL,         // ISDN/Telephony numbering system
-      unsigned * type = NULL,         // Number type
-      unsigned * presentation = NULL, // Presentation indicator
-      unsigned * screening = NULL,    // Screening indicator
-      unsigned defPresentation = 0,   // Default value if octet3a not present
-      unsigned defScreening = 0       // Default value if octet3a not present
+      PString & number,               ///<  Number string
+      unsigned * plan = NULL,         ///<  ISDN/Telephony numbering system
+      unsigned * type = NULL,         ///<  Number type
+      unsigned * presentation = NULL, ///<  Presentation indicator
+      unsigned * screening = NULL,    ///<  Screening indicator
+      unsigned defPresentation = 0,   ///<  Default value if octet3a not present
+      unsigned defScreening = 0       ///<  Default value if octet3a not present
     ) const;
 
     void SetCalledPartyNumber(
-      const PString & number, // Number string
-      unsigned plan = 1,      // 1 = ISDN/Telephony numbering system
-      unsigned type = 0       // 0 = Unknown number type
+      const PString & number, ///<  Number string
+      unsigned plan = 1,      ///<  1 = ISDN/Telephony numbering system
+      unsigned type = 0       ///<  0 = Unknown number type
     );
     BOOL GetCalledPartyNumber(
-      PString & number,       // Number string
-      unsigned * plan = NULL, // ISDN/Telephony numbering system
-      unsigned * type = NULL  // Number type
+      PString & number,       ///<  Number string
+      unsigned * plan = NULL, ///<  ISDN/Telephony numbering system
+      unsigned * type = NULL  ///<  Number type
     ) const;
 
     void SetRedirectingNumber(
-      const PString & number, // Number string
-      unsigned plan = 1,      // 1 = ISDN/Telephony numbering system
-      unsigned type = 0,      // 0 = Unknown number type
-      int presentation = -1,  // 0 = presentation allowed, -1 = no octet3a
-      int screening = -1,     // 0 = user provided, not screened
-      int reason = -1         // 0 = Unknown reason , -1 = no octet 3b
+      const PString & number, ///<  Number string
+      unsigned plan = 1,      ///<  1 = ISDN/Telephony numbering system
+      unsigned type = 0,      ///<  0 = Unknown number type
+      int presentation = -1,  ///<  0 = presentation allowed, -1 = no octet3a
+      int screening = -1,     ///<  0 = user provided, not screened
+      int reason = -1         ///<  0 = Unknown reason , -1 = no octet 3b
     );
     BOOL GetRedirectingNumber(
-      PString & number,               // Number string
-      unsigned * plan = NULL,         // ISDN/Telephony numbering system
-      unsigned * type = NULL,         // Number type
-      unsigned * presentation = NULL, // Presentation indicator
-      unsigned * screening = NULL,    // Screening indicator
-      unsigned * reason = NULL,       // Reason for redirection
-      unsigned defPresentation = 0,   // Default value if octet3a not present
-      unsigned defScreening = 0,      // Default value if octet3a not present
-      unsigned defReason =0           // Default value if octet 3b not present
+      PString & number,               ///<  Number string
+      unsigned * plan = NULL,         ///<  ISDN/Telephony numbering system
+      unsigned * type = NULL,         ///<  Number type
+      unsigned * presentation = NULL, ///<  Presentation indicator
+      unsigned * screening = NULL,    ///<  Screening indicator
+      unsigned * reason = NULL,       ///<  Reason for redirection
+      unsigned defPresentation = 0,   ///<  Default value if octet3a not present
+      unsigned defScreening = 0,      ///<  Default value if octet3a not present
+      unsigned defReason =0           ///<  Default value if octet 3b not present
     ) const;
 
     void SetConnectedNumber(
-      const PString & number, // Number string
-      unsigned plan = 1,      // 1 = ISDN/Telephony numbering system
-      unsigned type = 0,      // 0 = Unknown number type
-      int presentation = -1,  // 0 = presentation allowed, -1 = no octet3a
-      int screening = -1,     // 0 = user provided, not screened
-      int reason = -1         // 0 = Unknown reason , -1 = no octet 3b
+      const PString & number, ///<  Number string
+      unsigned plan = 1,      ///<  1 = ISDN/Telephony numbering system
+      unsigned type = 0,      ///<  0 = Unknown number type
+      int presentation = -1,  ///<  0 = presentation allowed, -1 = no octet3a
+      int screening = -1,     ///<  0 = user provided, not screened
+      int reason = -1         ///<  0 = Unknown reason , -1 = no octet 3b
     );
     BOOL GetConnectedNumber(
-      PString & number,               // Number string
-      unsigned * plan = NULL,         // ISDN/Telephony numbering system
-      unsigned * type = NULL,         // Number type
-      unsigned * presentation = NULL, // Presentation indicator
-      unsigned * screening = NULL,    // Screening indicator
-      unsigned * reason = NULL,       // Reason for redirection
-      unsigned defPresentation = 0,   // Default value if octet3a not present
-      unsigned defScreening = 0,      // Default value if octet3a not present
-      unsigned defReason =0           // Default value if octet 3b not present
+      PString & number,               ///<  Number string
+      unsigned * plan = NULL,         ///<  ISDN/Telephony numbering system
+      unsigned * type = NULL,         ///<  Number type
+      unsigned * presentation = NULL, ///<  Presentation indicator
+      unsigned * screening = NULL,    ///<  Screening indicator
+      unsigned * reason = NULL,       ///<  Reason for redirection
+      unsigned defPresentation = 0,   ///<  Default value if octet3a not present
+      unsigned defScreening = 0,      ///<  Default value if octet3a not present
+      unsigned defReason =0           ///<  Default value if octet 3b not present
     ) const;
 
     /**Set the limitations to ChannelIdentification.
@@ -583,17 +586,17 @@ class Q931 : public PObject
         - the coding standard is always ITU Q.931
       */
     void SetChannelIdentification(
-      unsigned interfaceType = 0,        //  0 = basic,     1 = other (e.g. primary)
-      unsigned preferredOrExclusive = 0, //  0 = preferred, 1 = exclusive
-      int      channelNumber = 1         // -1 = any,       0 = none/D, 1 = channel 1/B1, etc. 1-15,17-31
+      unsigned interfaceType = 0,        ///<   0 = basic,     1 = other (e.g. primary)
+      unsigned preferredOrExclusive = 0, ///<   0 = preferred, 1 = exclusive
+      int      channelNumber = 1         ///<  -1 = any,       0 = none/D, 1 = channel 1/B1, etc. 1-15,17-31
     );
 
     /**Get the limitations to ChannelIdentification.
       */
     BOOL GetChannelIdentification(
-      unsigned * interfaceType = NULL,        // Interface type
-      unsigned * preferredOrExclusive = NULL, // Channel negotiation preference
-      int      * channelNumber = NULL         // Channel number
+      unsigned * interfaceType = NULL,        ///<  Interface type
+      unsigned * preferredOrExclusive = NULL, ///<  Channel negotiation preference
+      int      * channelNumber = NULL         ///<  Channel number
     ) const;
 
   protected:

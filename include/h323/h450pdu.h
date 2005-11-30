@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h450pdu.h,v $
- * Revision 1.2010  2005/07/12 12:34:37  csoutheren
+ * Revision 1.2011  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.9  2005/07/12 12:34:37  csoutheren
  * Fixes for H.450 errors and return values
  * Thanks to Iker Perez San Roman
  *
@@ -185,9 +188,9 @@ class H450xHandler : public PObject
 
     virtual BOOL OnReceivedInvoke(
       int opcode,
-      int invokeId,                           /// InvokeId of operation (used in response)
-      int linkedId,                           /// InvokeId of associated operation (if any)
-      PASN_OctetString * argument             /// Parameters for the initiate operation
+      int invokeId,                           ///<  InvokeId of operation (used in response)
+      int linkedId,                           ///<  InvokeId of associated operation (if any)
+      PASN_OctetString * argument             ///<  Parameters for the initiate operation
     ) = 0;
 
     virtual BOOL OnReceivedReturnResult(
@@ -351,63 +354,63 @@ class H4502Handler : public H450xHandler
 
     virtual BOOL OnReceivedInvoke(
       int opcode,
-      int invokeId,                           /// InvokeId of operation (used in response)
-      int linkedId,                           /// InvokeId of associated operation (if any)
-      PASN_OctetString * argument             /// Parameters for the initiate operation
+      int invokeId,                           ///<  InvokeId of operation (used in response)
+      int linkedId,                           ///<  InvokeId of associated operation (if any)
+      PASN_OctetString * argument             ///<  Parameters for the initiate operation
     );
 
     /**Handle an incoming Call Transfer Identify operation.
      */
     virtual void OnReceivedCallTransferIdentify(
-      int linkedId                            /// InvokeId of associated operation (if any)
+      int linkedId                            ///<  InvokeId of associated operation (if any)
     );
 
     /**Handle an incoming Call Transfer Abandon operation.
      */
     virtual void OnReceivedCallTransferAbandon(
-      int linkedId                            /// InvokeId of associated operation (if any)
+      int linkedId                            ///<  InvokeId of associated operation (if any)
     );
 
     /**Handle an incoming Call Transfer Initiate operation.
      */
     virtual void OnReceivedCallTransferInitiate(
-      int linkedId,                           /// InvokeId of associated operation (if any)
-      PASN_OctetString * argument             /// Parameters for the initiate operation
+      int linkedId,                           ///<  InvokeId of associated operation (if any)
+      PASN_OctetString * argument             ///<  Parameters for the initiate operation
     );
 
     /**Handle an incoming Call Transfer Setup operation.
      */
     virtual void OnReceivedCallTransferSetup(
-      int linkedId,                           /// InvokeId of associated operation (if any)
-      PASN_OctetString * argument             /// Parameters for the setup operation
+      int linkedId,                           ///<  InvokeId of associated operation (if any)
+      PASN_OctetString * argument             ///<  Parameters for the setup operation
     );
 
     /**Handle an incoming Call Transfer Update operation.
      */
     virtual void OnReceivedCallTransferUpdate(
-      int linkedId,                           /// InvokeId of associated operation (if any)
-      PASN_OctetString * argument             /// Parameters for the update operation
+      int linkedId,                           ///<  InvokeId of associated operation (if any)
+      PASN_OctetString * argument             ///<  Parameters for the update operation
     );
 
     /**Handle an incoming Subaddress Transfer operation.
      */
     virtual void OnReceivedSubaddressTransfer(
-      int linkedId,                           /// InvokeId of associated operation (if any)
-      PASN_OctetString * argument             /// Parameters for the subaddress transfer operation
+      int linkedId,                           ///<  InvokeId of associated operation (if any)
+      PASN_OctetString * argument             ///<  Parameters for the subaddress transfer operation
     );
 
     /**Handle an incoming Call Transfer Complete operation.
      */
     virtual void OnReceivedCallTransferComplete(
-      int linkedId,                           /// InvokeId of associated operation (if any)
-      PASN_OctetString * argument             /// Parameters for the complete operation
+      int linkedId,                           ///<  InvokeId of associated operation (if any)
+      PASN_OctetString * argument             ///<  Parameters for the complete operation
     );
 
     /**Handle an incoming Call Transfer Active operation.
      */
     virtual void OnReceivedCallTransferActive(
-      int linkedId,                           /// InvokeId of associated operation (if any)
-      PASN_OctetString * argument             /// Parameters for the active operation
+      int linkedId,                           ///<  InvokeId of associated operation (if any)
+      PASN_OctetString * argument             ///<  Parameters for the active operation
     );
 
     virtual BOOL OnReceivedReturnResult(
@@ -443,7 +446,7 @@ class H4502Handler : public H450xHandler
        and it is not expected an application would use it. 
      */
     void OnReceivedInitiateReturnError(
-      const bool timerExpiry = false /// Flag to indicate expiry
+      const bool timerExpiry = false ///<  Flag to indicate expiry
     );
 
     /**Handle the reception of a callTransferSetup returnError or expiry of Call Transfer Timer CT-T4 
@@ -454,7 +457,7 @@ class H4502Handler : public H450xHandler
      */
     void OnReceivedSetupReturnError(
       int errorCode,
-      const bool timerExpiry = false /// Flag to indicate expiry
+      const bool timerExpiry = false ///<  Flag to indicate expiry
     );
 
     /**Handle the reception of a callTransferIdentify returnError or expiry of Call Transfer Timer CT-T1
@@ -462,7 +465,7 @@ class H4502Handler : public H450xHandler
        application would use it.
      */
     void OnReceivedIdentifyReturnError(
-      const bool timerExpiry = false /// Flag to indicate expiry
+      const bool timerExpiry = false ///<  Flag to indicate expiry
     );
 
     /**Initiate the transfer of an existing call (connection) to a new remote party
@@ -470,8 +473,8 @@ class H4502Handler : public H450xHandler
        A-Party (transferring endpoint) to the B-Party (transferred endpoint).
      */
     void TransferCall(
-      const PString & remoteParty,   /// Remote party to transfer the existing call to
-      const PString & callIdentity   /// Call Identity of secondary call if present  
+      const PString & remoteParty,   ///<  Remote party to transfer the existing call to
+      const PString & callIdentity   ///<  Call Identity of secondary call if present  
     );
 
     /**Transfer the call through consultation so the remote party in the primary call is connected to
@@ -479,14 +482,14 @@ class H4502Handler : public H450xHandler
        message from the A-Party (transferring endpoint) to the C-Party (transferred-to endpoint).
      */
     void ConsultationTransfer(
-      const PString & primaryCallToken   /// Primary call
+      const PString & primaryCallToken   ///<  Primary call
     );
 
     /**Handle the reception of a callTransferSetupInvoke APDU whilst a secondary call exists.
      */
     void HandleConsultationTransfer(
-      const PString & callIdentity,  /// Call Identity of secondary call
-      H323Connection& incoming       /// New incoming connection
+      const PString & callIdentity,  ///<  Call Identity of secondary call
+      H323Connection& incoming       ///<  New incoming connection
     );
 
     void AwaitSetupResponse(
@@ -523,7 +526,7 @@ class H4502Handler : public H450xHandler
     /**Handle the failure of a call transfer operation.
       */
     void HandleCallTransferFailure(
-      const int returnError    /// failure reason
+      const int returnError    ///<  failure reason
     );
 
     /** Start the Call Transfer Timer using the specified time interval.
@@ -586,42 +589,42 @@ class H4504Handler : public H450xHandler
 
     virtual BOOL OnReceivedInvoke(
       int opcode,
-      int invokeId,                           /// InvokeId of operation (used in response)
-      int linkedId,                           /// InvokeId of associated operation (if any)
-      PASN_OctetString * argument             /// Parameters for the initiate operation
+      int invokeId,                           ///<  InvokeId of operation (used in response)
+      int linkedId,                           ///<  InvokeId of associated operation (if any)
+      PASN_OctetString * argument             ///<  Parameters for the initiate operation
     );
 
     /**Handle an incoming Near-End Call Hold operation
     */
     virtual void OnReceivedLocalCallHold(
-      int linkedId                            /// InvokeId of associated operation (if any)
+      int linkedId                            ///<  InvokeId of associated operation (if any)
     );
 
     /**Handle an incoming Near-End Call Retrieve operation
     */
     virtual void OnReceivedLocalCallRetrieve(
-      int linkedId                            /// InvokeId of associated operation (if any)
+      int linkedId                            ///<  InvokeId of associated operation (if any)
     );
 
     /**Handle an incoming Remote Call Hold operation
     * TBD: Remote hold operations not yet implemented -- dcassel 4/01
     */
     virtual void OnReceivedRemoteCallHold(
-      int linkedId                            /// InvokeId of associated operation (if any)
+      int linkedId                            ///<  InvokeId of associated operation (if any)
     );
 
     /**Handle an incoming Remote Call Retrieve operation
     * TBD: Remote hold operations not yet implemented -- dcassel 4/01
     */
     virtual void OnReceivedRemoteCallRetrieve(
-      int linkedId                            /// InvokeId of associated operation (if any)
+      int linkedId                            ///<  InvokeId of associated operation (if any)
     );
 
     /**Place the call on hold, suspending all media channels (H.450.4)
     * NOTE: Only Local Hold is implemented so far. 
     */
     void HoldCall(
-      BOOL localHold   /// true for Local Hold, false for Remote Hold
+      BOOL localHold   ///<  true for Local Hold, false for Remote Hold
     );
 
     /**Retrieve the call from hold, activating all media channels (H.450.4)
@@ -658,9 +661,9 @@ class H4506Handler : public H450xHandler
 
     virtual BOOL OnReceivedInvoke(
       int opcode,
-      int invokeId,                           /// InvokeId of operation (used in response)
-      int linkedId,                           /// InvokeId of associated operation (if any)
-      PASN_OctetString * argument             /// Parameters for the initiate operation
+      int invokeId,                           ///<  InvokeId of operation (used in response)
+      int linkedId,                           ///<  InvokeId of associated operation (if any)
+      PASN_OctetString * argument             ///<  Parameters for the initiate operation
     );
 
     /**Handle an incoming Call Waiting Indication PDU
@@ -722,9 +725,9 @@ class H45011Handler : public H450xHandler
 
     virtual BOOL OnReceivedInvoke(
       int opcode,
-      int invokeId,                           /// InvokeId of operation (used in response)
-      int linkedId,                           /// InvokeId of associated operation (if any)
-      PASN_OctetString * argument             /// Parameters for the initiate operation
+      int invokeId,                           ///<  InvokeId of operation (used in response)
+      int linkedId,                           ///<  InvokeId of associated operation (if any)
+      PASN_OctetString * argument             ///<  Parameters for the initiate operation
     );
 
     /**Handle an incoming Call Intrusion operation
@@ -810,7 +813,7 @@ class H45011Handler : public H450xHandler
 
     BOOL OnReceivedInvokeReturnError (
       int errorCode,
-      const bool timerExpiry = false /// Flag to indicate expiry
+      const bool timerExpiry = false ///<  Flag to indicate expiry
     );
 
     void OnReceivedCIGetCIPLResult(
@@ -819,7 +822,7 @@ class H45011Handler : public H450xHandler
 
     BOOL OnReceivedGetCIPLReturnError(
       int errorCode,
-      const bool timerExpiry = false /// Flag to indicate expiry
+      const bool timerExpiry = false ///<  Flag to indicate expiry
     );
 
     void IntrudeCall(int CICL );

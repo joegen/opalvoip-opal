@@ -23,6 +23,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: silencedetect.h,v $
+ * Revision 1.4  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
  * Revision 1.3  2005/07/09 06:52:38  rjongbloed
  * Added print (operator<<) of silence detect mode enum.
  *
@@ -63,11 +66,11 @@ class OpalSilenceDetector : public PObject
 
     struct Params {
       Params(
-        Mode mode = AdaptiveSilenceDetection, /// New silence detection mode
-        unsigned threshold = 0,               /// Threshold value if FixedSilenceDetection
-        unsigned signalDeadband = 80,         /// 10 milliseconds of signal needed
-        unsigned silenceDeadband = 3200,      /// 400 milliseconds of silence needed
-        unsigned adaptivePeriod = 4800        /// 600 millisecond window for adaptive threshold
+        Mode mode = AdaptiveSilenceDetection, ///<  New silence detection mode
+        unsigned threshold = 0,               ///<  Threshold value if FixedSilenceDetection
+        unsigned signalDeadband = 80,         ///<  10 milliseconds of signal needed
+        unsigned silenceDeadband = 3200,      ///<  400 milliseconds of silence needed
+        unsigned adaptivePeriod = 4800        ///<  600 millisecond window for adaptive threshold
       )
         : m_mode(mode),
           m_threshold(threshold),
@@ -99,7 +102,7 @@ class OpalSilenceDetector : public PObject
        "agression". The deadband periods are in audio samples of 8kHz.
       */
     void SetParameters(
-      const Params & newParam /// New parameters for silence detector
+      const Params & newParam ///<  New parameters for silence detector
     );
 
     /**Get silence detection status
@@ -124,8 +127,8 @@ class OpalSilenceDetector : public PObject
        average signal has no meaning for the stream.
       */
     virtual unsigned GetAverageSignalLevel(
-      const BYTE * buffer,  /// RTP payload being detected
-      PINDEX size           /// Size of payload buffer
+      const BYTE * buffer,  ///<  RTP payload being detected
+      PINDEX size           ///<  Size of payload buffer
     ) = 0;
 
   protected:
@@ -161,8 +164,8 @@ class OpalPCM16SilenceDetector : public OpalSilenceDetector
        average signal has no meaning for the stream.
       */
     virtual unsigned GetAverageSignalLevel(
-      const BYTE * buffer,  /// RTP payload being detected
-      PINDEX size           /// Size of payload buffer
+      const BYTE * buffer,  ///<  RTP payload being detected
+      PINDEX size           ///<  Size of payload buffer
     );
   //@}
 };

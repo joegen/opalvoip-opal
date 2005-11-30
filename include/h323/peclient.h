@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: peclient.h,v $
- * Revision 1.2003  2004/06/04 06:54:17  csoutheren
+ * Revision 1.2004  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.2  2004/06/04 06:54:17  csoutheren
  * Migrated updates from OpenH323 1.14.1
  *
  * Revision 2.1  2004/02/19 10:46:44  rjongbloed
@@ -342,11 +345,11 @@ class H323PeerElement : public H323_AnnexG
     /**Create a new client.
      */
     H323PeerElement(
-      H323EndPoint & endpoint,  /// Endpoint gatekeeper is associated with.
+      H323EndPoint & endpoint,  ///<  Endpoint gatekeeper is associated with.
       H323Transport * transport = NULL
     );
     H323PeerElement(
-      H323EndPoint & endpoint,  /// Endpoint gatekeeper is associated with.
+      H323EndPoint & endpoint,  ///<  Endpoint gatekeeper is associated with.
       const H323TransportAddress & addr
     );
 
@@ -374,7 +377,7 @@ class H323PeerElement : public H323_AnnexG
     /**Print the name of the peer element.
       */
     void PrintOn(
-      ostream & strm    /// Stream to print to.
+      ostream & strm    ///<  Stream to print to.
     ) const;
   //@}
 

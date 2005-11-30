@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h225ras.h,v $
- * Revision 1.2009  2004/02/19 10:46:43  rjongbloed
+ * Revision 1.2010  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.8  2004/02/19 10:46:43  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.7  2003/01/07 04:39:52  robertj
@@ -252,8 +255,8 @@ class H225_RAS : public H323Transactor
     /**Create a new protocol handler.
      */
     H225_RAS(
-      H323EndPoint & endpoint,  /// Endpoint gatekeeper is associated with.
-      H323Transport * transport /// Transport over which gatekeepers communicates.
+      H323EndPoint & endpoint,  ///<  Endpoint gatekeeper is associated with.
+      H323Transport * transport ///<  Transport over which gatekeepers communicates.
     );
 
     /**Destroy protocol handler.
@@ -266,7 +269,7 @@ class H225_RAS : public H323Transactor
     /**Print the name of the gatekeeper.
       */
     void PrintOn(
-      ostream & strm    /// Stream to print to.
+      ostream & strm    ///<  Stream to print to.
     ) const;
   //@}
 
@@ -436,7 +439,7 @@ class H225_RAS : public H323Transactor
     /**Handle unknown PDU type.
       */
     virtual BOOL OnReceiveUnknown(
-      const H323RasPDU & pdu  /// PDU that was not handled.
+      const H323RasPDU & pdu  ///<  PDU that was not handled.
     );
   //@}
 

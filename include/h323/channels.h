@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.h,v $
- * Revision 1.2014  2005/09/04 06:23:38  rjongbloed
+ * Revision 1.2015  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.13  2005/09/04 06:23:38  rjongbloed
  * Added OpalMediaCommand mechanism (via PNotifier) for media streams
  *   and media transcoders to send commands back to remote.
  *
@@ -277,8 +280,8 @@ class H323Channel : public PObject
     /**Create a new channel.
      */
     H323Channel(
-      H323Connection & connection,        /// Connection to endpoint for channel
-      const H323Capability & capability   /// Capability channel is using
+      H323Connection & connection,        ///<  Connection to endpoint for channel
+      const H323Capability & capability   ///<  Capability channel is using
     );
 
     /**Destroy new channel.
@@ -327,8 +330,8 @@ class H323Channel : public PObject
        The default behaviour returns FALSE.
      */
     virtual BOOL GetMediaTransportAddress(
-      OpalTransportAddress & data,        /// Data channel address
-      OpalTransportAddress & control      /// Control channel address
+      OpalTransportAddress & data,        ///<  Data channel address
+      OpalTransportAddress & control      ///<  Control channel address
     ) const;
 
     /**Set the initial bandwidth for the channel.
@@ -366,7 +369,7 @@ class H323Channel : public PObject
     /**Fill out the OpenLogicalChannel PDU for the particular channel type.
      */
     virtual BOOL OnSendingPDU(
-      H245_OpenLogicalChannel & openPDU  /// Open PDU to send. 
+      H245_OpenLogicalChannel & openPDU  ///<  Open PDU to send. 
     ) const = 0;
 
     /**This is called when request to create a channel is received from a
@@ -375,8 +378,8 @@ class H323Channel : public PObject
        The default behaviour does nothing.
      */
     virtual void OnSendOpenAck(
-      const H245_OpenLogicalChannel & open,   /// Open PDU
-      H245_OpenLogicalChannelAck & ack        /// Acknowledgement PDU
+      const H245_OpenLogicalChannel & open,   ///<  Open PDU
+      H245_OpenLogicalChannelAck & ack        ///<  Acknowledgement PDU
     ) const;
 
     /**This is called after a request to create a channel occurs from the
@@ -386,8 +389,8 @@ class H323Channel : public PObject
        The default behaviour just returns TRUE.
      */
     virtual BOOL OnReceivedPDU(
-      const H245_OpenLogicalChannel & pdu,    /// Open PDU
-      unsigned & errorCode                    /// Error code on failure
+      const H245_OpenLogicalChannel & pdu,    ///<  Open PDU
+      unsigned & errorCode                    ///<  Error code on failure
     );
 
     /**This is called after a request to create a channel occurs from the
@@ -397,37 +400,37 @@ class H323Channel : public PObject
        The default behaviour just returns TRUE.
      */
     virtual BOOL OnReceivedAckPDU(
-      const H245_OpenLogicalChannelAck & pdu  /// Acknowledgement PDU
+      const H245_OpenLogicalChannelAck & pdu  ///<  Acknowledgement PDU
     );
 
     /**Limit bit flow for the logical channel.
        The default behaviour passes this on to the codec if not NULL.
      */
     virtual void OnFlowControl(
-      long bitRateRestriction   /// Bit rate limitation
+      long bitRateRestriction   ///<  Bit rate limitation
     );
 
     /**Process a miscellaneous command on the logical channel.
        The default behaviour passes this on to the codec if not NULL.
      */
     virtual void OnMiscellaneousCommand(
-      const H245_MiscellaneousCommand_type & type  /// Command to process
+      const H245_MiscellaneousCommand_type & type  ///<  Command to process
     );
 
     /**Process a miscellaneous indication on the logical channel.
        The default behaviour passes this on to the codec if not NULL.
      */
     virtual void OnMiscellaneousIndication(
-      const H245_MiscellaneousIndication_type & type  /// Indication to process
+      const H245_MiscellaneousIndication_type & type  ///<  Indication to process
     );
 
     /**Limit bit flow for the logical channel.
        The default behaviour does nothing.
      */
     virtual void OnJitterIndication(
-      DWORD jitter,           /// Estimated received jitter in microseconds
-      int skippedFrameCount,  /// Frames skipped by decodec
-      int additionalBuffer    /// Additional size of video decoder buffer
+      DWORD jitter,           ///<  Estimated received jitter in microseconds
+      int skippedFrameCount,  ///<  Frames skipped by decodec
+      int additionalBuffer    ///<  Additional size of video decoder buffer
     );
   //@}
 
@@ -456,7 +459,7 @@ class H323Channel : public PObject
     /**Get the bandwidth used by the channel in 100's of bits/sec.
      */
     BOOL SetBandwidthUsed(
-      unsigned bandwidth  /// New bandwidth
+      unsigned bandwidth  ///<  New bandwidth
     );
 
     /**Get the capability that created this channel.
@@ -482,7 +485,7 @@ class H323Channel : public PObject
        data, it is just that nothing is done with it.
       */
     void SetPause(
-      BOOL pause   /// New pause flag
+      BOOL pause   ///<  New pause flag
     ) { paused = pause; }
   //@}
 
@@ -521,9 +524,9 @@ class H323UnidirectionalChannel : public H323Channel
     /**Create a new channel.
      */
     H323UnidirectionalChannel(
-      H323Connection & connection,        /// Connection to endpoint for channel
-      const H323Capability & capability,  /// Capability channel is using
-      Directions direction                /// Direction of channel
+      H323Connection & connection,        ///<  Connection to endpoint for channel
+      const H323Capability & capability,  ///<  Capability channel is using
+      Directions direction                ///<  Direction of channel
     );
 
     /**Destroy the channel, deleting the associated media stream.
@@ -566,7 +569,7 @@ class H323UnidirectionalChannel : public H323Channel
        The default behaviour passes this on to the codec if not NULL.
      */
     virtual void OnMiscellaneousCommand(
-      const H245_MiscellaneousCommand_type & type  /// Command to process
+      const H245_MiscellaneousCommand_type & type  ///<  Command to process
     );
   //@}
 
@@ -602,8 +605,8 @@ class H323BidirectionalChannel : public H323Channel
     /**Create a new channel.
      */
     H323BidirectionalChannel(
-      H323Connection & connection,        /// Connection to endpoint for channel
-      const H323Capability & capability   /// Capability channel is using
+      H323Connection & connection,        ///<  Connection to endpoint for channel
+      const H323Capability & capability   ///<  Capability channel is using
     );
   //@}
 
@@ -638,9 +641,9 @@ class H323_RealTimeChannel : public H323UnidirectionalChannel
     /**Create a new channel.
      */
     H323_RealTimeChannel(
-      H323Connection & connection,        /// Connection to endpoint for channel
-      const H323Capability & capability,  /// Capability channel is using
-      Directions direction                /// Direction of channel
+      H323Connection & connection,        ///<  Connection to endpoint for channel
+      const H323Capability & capability,  ///<  Capability channel is using
+      Directions direction                ///<  Direction of channel
     );
   //@}
 
@@ -649,15 +652,15 @@ class H323_RealTimeChannel : public H323UnidirectionalChannel
     /**Fill out the OpenLogicalChannel PDU for the particular channel type.
      */
     virtual BOOL OnSendingPDU(
-      H245_OpenLogicalChannel & openPDU  /// Open PDU to send. 
+      H245_OpenLogicalChannel & openPDU  ///<  Open PDU to send. 
     ) const;
 
     /**This is called when request to create a channel is received from a
        remote machine and is about to be acknowledged.
      */
     virtual void OnSendOpenAck(
-      const H245_OpenLogicalChannel & open,   /// Open PDU
-      H245_OpenLogicalChannelAck & ack        /// Acknowledgement PDU
+      const H245_OpenLogicalChannel & open,   ///<  Open PDU
+      H245_OpenLogicalChannelAck & ack        ///<  Acknowledgement PDU
     ) const;
 
     /**This is called after a request to create a channel occurs from the
@@ -668,8 +671,8 @@ class H323_RealTimeChannel : public H323UnidirectionalChannel
        the PDU to the rtp session.
      */
     virtual BOOL OnReceivedPDU(
-      const H245_OpenLogicalChannel & pdu,    /// Open PDU
-      unsigned & errorCode                    /// Error code on failure
+      const H245_OpenLogicalChannel & pdu,    ///<  Open PDU
+      unsigned & errorCode                    ///<  Error code on failure
     );
 
     /**This is called after a request to create a channel occurs from the
@@ -680,7 +683,7 @@ class H323_RealTimeChannel : public H323UnidirectionalChannel
        the PDU to the rtp session.
      */
     virtual BOOL OnReceivedAckPDU(
-      const H245_OpenLogicalChannelAck & pdu /// Acknowledgement PDU
+      const H245_OpenLogicalChannelAck & pdu ///<  Acknowledgement PDU
     );
   //@}
 
@@ -689,14 +692,14 @@ class H323_RealTimeChannel : public H323UnidirectionalChannel
     /**Fill out the OpenLogicalChannel PDU for the particular channel type.
      */
     virtual BOOL OnSendingPDU(
-      H245_H2250LogicalChannelParameters & param  /// Open PDU to send.
+      H245_H2250LogicalChannelParameters & param  ///<  Open PDU to send.
     ) const = 0;
 
     /**This is called when request to create a channel is received from a
        remote machine and is about to be acknowledged.
      */
     virtual void OnSendOpenAck(
-      H245_H2250LogicalChannelAckParameters & param /// Acknowledgement PDU
+      H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
     ) const = 0;
 
     /**This is called after a request to create a channel occurs from the
@@ -706,8 +709,8 @@ class H323_RealTimeChannel : public H323UnidirectionalChannel
        The default behaviour sets the remote ports to send UDP packets to.
      */
     virtual BOOL OnReceivedPDU(
-      const H245_H2250LogicalChannelParameters & param, /// Acknowledgement PDU
-      unsigned & errorCode                              /// Error on failure
+      const H245_H2250LogicalChannelParameters & param, ///<  Acknowledgement PDU
+      unsigned & errorCode                              ///<  Error on failure
     ) = 0;
 
     /**This is called after a request to create a channel occurs from the
@@ -717,13 +720,13 @@ class H323_RealTimeChannel : public H323UnidirectionalChannel
        The default behaviour sets the remote ports to send UDP packets to.
      */
     virtual BOOL OnReceivedAckPDU(
-      const H245_H2250LogicalChannelAckParameters & param /// Acknowledgement PDU
+      const H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
     ) = 0;
 
     /**Set the dynamic payload type used by this channel.
       */
     virtual BOOL SetDynamicRTPPayloadType(
-      int newType  /// New RTP payload type number
+      int newType  ///<  New RTP payload type number
     );
 
     RTP_DataFrame::PayloadTypes GetDynamicRTPPayloadType() const { return rtpPayloadType; }
@@ -748,8 +751,8 @@ class H323_RTPChannel : public H323_RealTimeChannel
     /**Create a new channel.
      */
     H323_RTPChannel(
-      H323Connection & connection,        /// Connection to endpoint for channel
-      const H323Capability & capability,  /// Capability channel is using
+      H323Connection & connection,        ///<  Connection to endpoint for channel
+      const H323Capability & capability,  ///<  Capability channel is using
       Directions direction,               /// Direction of channel
       RTP_Session & rtp                   /// RTP session for channel
     );
@@ -772,14 +775,14 @@ class H323_RTPChannel : public H323_RealTimeChannel
     /**Fill out the OpenLogicalChannel PDU for the particular channel type.
      */
     virtual BOOL OnSendingPDU(
-      H245_H2250LogicalChannelParameters & param  /// Open PDU to send.
+      H245_H2250LogicalChannelParameters & param  ///<  Open PDU to send.
     ) const;
 
     /**This is called when request to create a channel is received from a
        remote machine and is about to be acknowledged.
      */
     virtual void OnSendOpenAck(
-      H245_H2250LogicalChannelAckParameters & param /// Acknowledgement PDU
+      H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
     ) const;
 
     /**This is called after a request to create a channel occurs from the
@@ -789,8 +792,8 @@ class H323_RTPChannel : public H323_RealTimeChannel
        The default behaviour sets the remote ports to send UDP packets to.
      */
     virtual BOOL OnReceivedPDU(
-      const H245_H2250LogicalChannelParameters & param, /// Acknowledgement PDU
-      unsigned & errorCode                              /// Error on failure
+      const H245_H2250LogicalChannelParameters & param, ///<  Acknowledgement PDU
+      unsigned & errorCode                              ///<  Error on failure
     );
 
     /**This is called after a request to create a channel occurs from the
@@ -800,7 +803,7 @@ class H323_RTPChannel : public H323_RealTimeChannel
        The default behaviour sets the remote ports to send UDP packets to.
      */
     virtual BOOL OnReceivedAckPDU(
-      const H245_H2250LogicalChannelAckParameters & param /// Acknowledgement PDU
+      const H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
     );
   //@}
 
@@ -825,30 +828,30 @@ class H323_ExternalRTPChannel : public H323_RealTimeChannel
     /**Create a new channel.
      */
     H323_ExternalRTPChannel(
-      H323Connection & connection,        /// Connection to endpoint for channel
-      const H323Capability & capability,  /// Capability channel is using
-      Directions direction,               /// Direction of channel
-      unsigned sessionID                  /// Session ID for channel
+      H323Connection & connection,        ///<  Connection to endpoint for channel
+      const H323Capability & capability,  ///<  Capability channel is using
+      Directions direction,               ///<  Direction of channel
+      unsigned sessionID                  ///<  Session ID for channel
     );
     /**Create a new channel.
      */
     H323_ExternalRTPChannel(
-      H323Connection & connection,        /// Connection to endpoint for channel
-      const H323Capability & capability,  /// Capability channel is using
-      Directions direction,               /// Direction of channel
-      unsigned sessionID,                 /// Session ID for channel
-      const H323TransportAddress & data,  /// Data address
-      const H323TransportAddress & control/// Control address
+      H323Connection & connection,        ///<  Connection to endpoint for channel
+      const H323Capability & capability,  ///<  Capability channel is using
+      Directions direction,               ///<  Direction of channel
+      unsigned sessionID,                 ///<  Session ID for channel
+      const H323TransportAddress & data,  ///<  Data address
+      const H323TransportAddress & control///<  Control address
     );
     /**Create a new channel.
      */
     H323_ExternalRTPChannel(
-      H323Connection & connection,        /// Connection to endpoint for channel
-      const H323Capability & capability,  /// Capability channel is using
-      Directions direction,               /// Direction of channel
-      unsigned sessionID,                 /// Session ID for channel
-      const PIPSocket::Address & ip,      /// IP address of media server
-      WORD dataPort                       /// Data port (control is dataPort+1)
+      H323Connection & connection,        ///<  Connection to endpoint for channel
+      const H323Capability & capability,  ///<  Capability channel is using
+      Directions direction,               ///<  Direction of channel
+      unsigned sessionID,                 ///<  Session ID for channel
+      const PIPSocket::Address & ip,      ///<  IP address of media server
+      WORD dataPort                       ///<  Data port (control is dataPort+1)
     );
   //@}
 
@@ -867,8 +870,8 @@ class H323_ExternalRTPChannel : public H323_RealTimeChannel
        The default behaviour returns FALSE.
      */
     virtual BOOL GetMediaTransportAddress(
-      OpalTransportAddress & data,        /// Data channel address
-      OpalTransportAddress & control      /// Control channel address
+      OpalTransportAddress & data,        ///<  Data channel address
+      OpalTransportAddress & control      ///<  Control channel address
     ) const;
 
     /**Start the channel.
@@ -897,14 +900,14 @@ class H323_ExternalRTPChannel : public H323_RealTimeChannel
     /**Fill out the OpenLogicalChannel PDU for the particular channel type.
      */
     virtual BOOL OnSendingPDU(
-      H245_H2250LogicalChannelParameters & param  /// Open PDU to send.
+      H245_H2250LogicalChannelParameters & param  ///<  Open PDU to send.
     ) const;
 
     /**This is called when request to create a channel is received from a
        remote machine and is about to be acknowledged.
      */
     virtual void OnSendOpenAck(
-      H245_H2250LogicalChannelAckParameters & param /// Acknowledgement PDU
+      H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
     ) const;
 
     /**This is called after a request to create a channel occurs from the
@@ -914,8 +917,8 @@ class H323_ExternalRTPChannel : public H323_RealTimeChannel
        The default behaviour sets the remote ports to send UDP packets to.
      */
     virtual BOOL OnReceivedPDU(
-      const H245_H2250LogicalChannelParameters & param, /// Acknowledgement PDU
-      unsigned & errorCode                              /// Error on failure
+      const H245_H2250LogicalChannelParameters & param, ///<  Acknowledgement PDU
+      unsigned & errorCode                              ///<  Error on failure
     );
 
     /**This is called after a request to create a channel occurs from the
@@ -925,13 +928,13 @@ class H323_ExternalRTPChannel : public H323_RealTimeChannel
        The default behaviour sets the remote ports to send UDP packets to.
      */
     virtual BOOL OnReceivedAckPDU(
-      const H245_H2250LogicalChannelAckParameters & param /// Acknowledgement PDU
+      const H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
     );
   //@}
 
     void SetExternalAddress(
-      const H323TransportAddress & data,  /// Data address
-      const H323TransportAddress & control/// Control address
+      const H323TransportAddress & data,  ///<  Data address
+      const H323TransportAddress & control///<  Control address
     );
 
     const H323TransportAddress & GetRemoteMediaAddress()        const { return remoteMediaAddress; }
@@ -971,10 +974,10 @@ class H323DataChannel : public H323UnidirectionalChannel
     /**Create a new channel.
      */
     H323DataChannel(
-      H323Connection & connection,        /// Connection to endpoint for channel
-      const H323Capability & capability,  /// Capability channel is using
-      Directions direction,               /// Direction of channel
-      unsigned sessionID                  /// Session ID for channel
+      H323Connection & connection,        ///<  Connection to endpoint for channel
+      const H323Capability & capability,  ///<  Capability channel is using
+      Directions direction,               ///<  Direction of channel
+      unsigned sessionID                  ///<  Session ID for channel
     );
 
     /**Destroy the channel.
@@ -997,15 +1000,15 @@ class H323DataChannel : public H323UnidirectionalChannel
     /**Fill out the OpenLogicalChannel PDU for the particular channel type.
      */
     virtual BOOL OnSendingPDU(
-      H245_OpenLogicalChannel & openPDU  /// Open PDU to send. 
+      H245_OpenLogicalChannel & openPDU  ///<  Open PDU to send. 
     ) const;
 
     /**This is called when request to create a channel is received from a
        remote machine and is about to be acknowledged.
      */
     virtual void OnSendOpenAck(
-      const H245_OpenLogicalChannel & open,   /// Open PDU
-      H245_OpenLogicalChannelAck & ack        /// Acknowledgement PDU
+      const H245_OpenLogicalChannel & open,   ///<  Open PDU
+      H245_OpenLogicalChannelAck & ack        ///<  Acknowledgement PDU
     ) const;
 
     /**This is called after a request to create a channel occurs from the
@@ -1016,8 +1019,8 @@ class H323DataChannel : public H323UnidirectionalChannel
        the PDU to the rtp session.
      */
     virtual BOOL OnReceivedPDU(
-      const H245_OpenLogicalChannel & pdu,    /// Open PDU
-      unsigned & errorCode                    /// Error code on failure
+      const H245_OpenLogicalChannel & pdu,    ///<  Open PDU
+      unsigned & errorCode                    ///<  Error code on failure
     );
 
     /**This is called after a request to create a channel occurs from the
@@ -1028,7 +1031,7 @@ class H323DataChannel : public H323UnidirectionalChannel
        the PDU to the rtp session.
      */
     virtual BOOL OnReceivedAckPDU(
-      const H245_OpenLogicalChannelAck & pdu /// Acknowledgement PDU
+      const H245_OpenLogicalChannelAck & pdu ///<  Acknowledgement PDU
     );
   //@}
 
