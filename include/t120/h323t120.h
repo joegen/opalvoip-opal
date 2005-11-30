@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t120.h,v $
- * Revision 1.2008  2002/11/10 11:33:17  robertj
+ * Revision 1.2009  2005/11/30 13:35:27  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.7  2002/11/10 11:33:17  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.6  2002/09/16 02:52:35  robertj
@@ -129,11 +132,11 @@ class H323_T120Capability : public H323DataCapability
     /**Create the channel instance, allocating resources as required.
      */
     virtual H323Channel * CreateChannel(
-      H323Connection & connection,    /// Owner connection for channel
-      H323Channel::Directions dir,    /// Direction of channel
-      unsigned sessionID,             /// Session ID for RTP channel
+      H323Connection & connection,    ///<  Owner connection for channel
+      H323Channel::Directions dir,    ///<  Direction of channel
+      unsigned sessionID,             ///<  Session ID for RTP channel
       const H245_H2250LogicalChannelParameters * param
-                                      /// Parameters for channel
+                                      ///<  Parameters for channel
     ) const;
   //@}
 
@@ -160,7 +163,7 @@ class H323_T120Capability : public H323DataCapability
        H245_DataProtocolCapability parameter.
      */
     virtual BOOL OnSendingPDU(
-      H245_DataMode & pdu  /// PDU to set information on
+      H245_DataMode & pdu  ///<  PDU to set information on
     ) const;
 
     /**This function is called whenever and outgoing PDU is being constructed
@@ -170,7 +173,7 @@ class H323_T120Capability : public H323DataCapability
        The default behaviour sets separate LAN stack.
      */
     virtual BOOL OnSendingPDU(
-      H245_DataProtocolCapability & pdu  /// PDU to set information on
+      H245_DataProtocolCapability & pdu  ///<  PDU to set information on
     ) const;
 
     /**This function is called whenever and incoming TerminalCapabilitySet
@@ -181,7 +184,7 @@ class H323_T120Capability : public H323DataCapability
        The default behaviour gets the data rate field from the PDU.
      */
     virtual BOOL OnReceivedPDU(
-      const H245_DataApplicationCapability & pdu  /// PDU to set information on
+      const H245_DataApplicationCapability & pdu  ///<  PDU to set information on
     );
   //@}
 
@@ -214,10 +217,10 @@ class H323_T120Channel : public H323DataChannel
     /**Create a new channel.
      */
     H323_T120Channel(
-      H323Connection & connection,        /// Connection to endpoint for channel
-      const H323Capability & capability,  /// Capability channel is using
-      Directions direction,               /// Direction of channel
-      unsigned sessionID                  /// Session ID for channel
+      H323Connection & connection,        ///<  Connection to endpoint for channel
+      const H323Capability & capability,  ///<  Capability channel is using
+      Directions direction,               ///<  Direction of channel
+      unsigned sessionID                  ///<  Session ID for channel
     );
   //@}
 
@@ -245,15 +248,15 @@ class H323_T120Channel : public H323DataChannel
     /**Fill out the OpenLogicalChannel PDU for the particular channel type.
      */
     virtual BOOL OnSendingPDU(
-      H245_OpenLogicalChannel & openPDU  /// Open PDU to send. 
+      H245_OpenLogicalChannel & openPDU  ///<  Open PDU to send. 
     ) const;
 
     /**This is called when request to create a channel is received from a
        remote machine and is about to be acknowledged.
      */
     virtual void OnSendOpenAck(
-      const H245_OpenLogicalChannel & open,   /// Open PDU
-      H245_OpenLogicalChannelAck & ack        /// Acknowledgement PDU
+      const H245_OpenLogicalChannel & open,   ///<  Open PDU
+      H245_OpenLogicalChannelAck & ack        ///<  Acknowledgement PDU
     ) const;
 
     /**This is called after a request to create a channel occurs from the
@@ -264,8 +267,8 @@ class H323_T120Channel : public H323DataChannel
        the PDU to the rtp session.
      */
     virtual BOOL OnReceivedPDU(
-      const H245_OpenLogicalChannel & pdu,    /// Open PDU
-      unsigned & errorCode                    /// Error code on failure
+      const H245_OpenLogicalChannel & pdu,    ///<  Open PDU
+      unsigned & errorCode                    ///<  Error code on failure
     );
 
     /**This is called after a request to create a channel occurs from the
@@ -276,7 +279,7 @@ class H323_T120Channel : public H323DataChannel
        the PDU to the rtp session.
      */
     virtual BOOL OnReceivedAckPDU(
-      const H245_OpenLogicalChannelAck & pdu /// Acknowledgement PDU
+      const H245_OpenLogicalChannelAck & pdu ///<  Acknowledgement PDU
     );
   //@}
 
