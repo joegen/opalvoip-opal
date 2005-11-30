@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.h,v $
- * Revision 1.2007  2005/08/28 07:59:17  rjongbloed
+ * Revision 1.2008  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.6  2005/08/28 07:59:17  rjongbloed
  * Converted OpalTranscoder to use factory, requiring sme changes in making sure
  *   OpalMediaFormat instances are initialised before use.
  *
@@ -219,10 +222,10 @@ H323_STATIC_LOAD_REGISTER_CAPABILITY(SpeexNarrow6AudioCapability);
 class Opal_Speex_Transcoder : public OpalFramedTranscoder {
   public:
     Opal_Speex_Transcoder(
-      const OpalMediaFormat & inputMediaFormat,  // Input media format
-      const OpalMediaFormat & outputMediaFormat, // Output media format
-      unsigned inputBytesPerFrame,  /// Number of bytes in an input frame
-      unsigned outputBytesPerFrame  /// Number of bytes in an output frame
+      const OpalMediaFormat & inputMediaFormat,  ///<  Input media format
+      const OpalMediaFormat & outputMediaFormat, ///<  Output media format
+      unsigned inputBytesPerFrame,  ///<  Number of bytes in an input frame
+      unsigned outputBytesPerFrame  ///<  Number of bytes in an output frame
     );
     ~Opal_Speex_Transcoder();
   protected:
@@ -235,7 +238,7 @@ class Opal_Speex_Transcoder : public OpalFramedTranscoder {
 class Opal_Speex_Decoder : public Opal_Speex_Transcoder {
   public:
     Opal_Speex_Decoder(
-      const OpalMediaFormat & inputMediaFormat,  // Input media format
+      const OpalMediaFormat & inputMediaFormat,  ///<  Input media format
       int mode
     );
     ~Opal_Speex_Decoder();
@@ -250,7 +253,7 @@ class Opal_Speex_Decoder : public Opal_Speex_Transcoder {
 class Opal_Speex_Encoder : public Opal_Speex_Transcoder {
   public:
     Opal_Speex_Encoder(
-      const OpalMediaFormat & outputMediaFormat, // Output media format
+      const OpalMediaFormat & outputMediaFormat, ///<  Output media format
       int mode
     );
     ~Opal_Speex_Encoder();

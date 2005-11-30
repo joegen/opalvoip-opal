@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transaddr.h,v $
- * Revision 1.2007  2004/02/19 10:46:44  rjongbloed
+ * Revision 1.2008  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.6  2004/02/19 10:46:44  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.5  2002/11/10 11:33:17  robertj
@@ -98,16 +101,16 @@ class H323TransportAddress : public OpalTransportAddress
 
     H323TransportAddress(
       const H225_TransportAddress & pdu,
-      const char * proto = NULL // Default to tcp
+      const char * proto = NULL ///<  Default to tcp
     );
     H323TransportAddress(
       const H245_TransportAddress & pdu,
-      const char * proto = NULL // default to udp
+      const char * proto = NULL ///<  default to udp
     );
 
     BOOL SetPDU(
-      H225_ArrayOf_TransportAddress & pdu,  /// List of transport addresses listening on
-      const OpalTransport & associatedTransport /// Associated transport for precendence and translation
+      H225_ArrayOf_TransportAddress & pdu,  ///<  List of transport addresses listening on
+      const OpalTransport & associatedTransport ///<  Associated transport for precendence and translation
     );
     BOOL SetPDU(H225_TransportAddress & pdu) const;
     BOOL SetPDU(H245_TransportAddress & pdu) const;
@@ -158,13 +161,13 @@ PDECLARE_ARRAY(H323TransportAddressArray, H323TransportAddress)
 /**Set the PDU field for the list of transport addresses
   */
 void H323SetTransportAddresses(
-  const H323Transport & associatedTransport,   /// Transport for NAT address translation
-  const H323TransportAddressArray & addresses, /// Addresses to set
-  H225_ArrayOf_TransportAddress & pdu          /// List of PDU transport addresses
+  const H323Transport & associatedTransport,   ///<  Transport for NAT address translation
+  const H323TransportAddressArray & addresses, ///<  Addresses to set
+  H225_ArrayOf_TransportAddress & pdu          ///<  List of PDU transport addresses
 );
 
 
-#endif // __H323_TRANSADDR_H
+#endif ///<  __H323_TRANSADDR_H
 
 
 /////////////////////////////////////////////////////////////////////////////

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2024  2005/10/22 12:16:05  dsandras
+ * Revision 1.2025  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.23  2005/10/22 12:16:05  dsandras
  * Moved mutex preventing media streams to be opened before they are completely closed to the SIPConnection class.
  *
  * Revision 2.22  2005/09/22 17:08:52  dsandras
@@ -150,7 +153,7 @@ class OpalCall : public PSafeObject
     /**Create a new call.
      */
     OpalCall(
-      OpalManager & manager   /// Manager for the opal system
+      OpalManager & manager   ///<  Manager for the opal system
     );
 
     /**Destroy call.
@@ -165,7 +168,7 @@ class OpalCall : public PSafeObject
        polymorphically.
       */
     void PrintOn(
-      ostream & strm    /// Stream to output text representation
+      ostream & strm    ///<  Stream to output text representation
     ) const;
   //@}
 
@@ -197,7 +200,7 @@ class OpalCall : public PSafeObject
        for the H323EndPoint::ClearCall() function to set the clearance reason.
       */
     void SetCallEndReason(
-      OpalConnection::CallEndReason reason   /// Reason for clearance of connection.
+      OpalConnection::CallEndReason reason   ///<  Reason for clearance of connection.
     );
 
     /**Clear call.
@@ -209,8 +212,8 @@ class OpalCall : public PSafeObject
        destructor for the OpalCall. Note only one thread may do this at a time.
      */
     void Clear(
-      OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser, /// Reason for call clearing
-      PSyncPoint * sync = NULL                                                 /// Sync point to signal on call destruction
+      OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser, ///<  Reason for call clearing
+      PSyncPoint * sync = NULL                                                 ///<  Sync point to signal on call destruction
     );
 
     /**Call back to indicate that the call has been cleared.
@@ -229,7 +232,7 @@ class OpalCall : public PSafeObject
        connections in the call.
       */
     virtual BOOL OnSetUp(
-      OpalConnection & connection   /// Connection that indicates it is alerting
+      OpalConnection & connection   ///<  Connection that indicates it is alerting
     );
 
     /**Call back for alerting.
@@ -238,7 +241,7 @@ class OpalCall : public PSafeObject
        connections in the call.
       */
     virtual BOOL OnAlerting(
-      OpalConnection & connection   /// Connection that indicates it is alerting
+      OpalConnection & connection   ///<  Connection that indicates it is alerting
     );
 
     virtual OpalConnection::AnswerCallResponse
@@ -247,7 +250,7 @@ class OpalCall : public PSafeObject
     );
 
     virtual void AnsweringCall(
-      OpalConnection::AnswerCallResponse response /// Answer response to incoming call
+      OpalConnection::AnswerCallResponse response ///<  Answer response to incoming call
     );
 
     /**A call back function whenever a connection is "connected".
@@ -262,7 +265,7 @@ class OpalCall : public PSafeObject
        connections in the call.
       */
     virtual BOOL OnConnected(
-      OpalConnection & connection   /// Connection that indicates it is alerting
+      OpalConnection & connection   ///<  Connection that indicates it is alerting
     );
 
     /**A call back function whenever a connection is "established".
@@ -279,7 +282,7 @@ class OpalCall : public PSafeObject
        OnEstablishedCall().
       */
     virtual BOOL OnEstablished(
-      OpalConnection & connection   /// Connection that indicates it is alerting
+      OpalConnection & connection   ///<  Connection that indicates it is alerting
     );
 
     /**A call back function whenever a connection is released.
@@ -288,7 +291,7 @@ class OpalCall : public PSafeObject
        only one left.
       */
     virtual void OnReleased(
-      OpalConnection & connection   /// Connection that was established
+      OpalConnection & connection   ///<  Connection that was established
     );
 
     /**Get the other party's connection object.
@@ -297,7 +300,7 @@ class OpalCall : public PSafeObject
        call. Usefull during certain stages during initial call set up.
       */
     PSafePtr<OpalConnection> GetOtherPartyConnection(
-      const OpalConnection & connection  /// Source requesting formats
+      const OpalConnection & connection  ///<  Source requesting formats
     ) const;
 
     /**Get the specified active connection in call.
@@ -319,8 +322,8 @@ class OpalCall : public PSafeObject
        transcoders registered.
       */
     OpalMediaFormatList GetMediaFormats(
-      const OpalConnection & connection,  /// Connection requesting formats
-      BOOL includeSpecifiedConnection     /// Include parameters media
+      const OpalConnection & connection,  ///<  Connection requesting formats
+      BOOL includeSpecifiedConnection     ///<  Include parameters media
     );
 
     /**Open transmitter media streams for each connection.
@@ -329,9 +332,9 @@ class OpalCall : public PSafeObject
        called which in turns starts the sink media stream on the connection.
       */
     virtual BOOL OpenSourceMediaStreams(
-      const OpalConnection & connection,        /// Connection requesting open
-      const OpalMediaFormatList & mediaFormats, /// Optional media format to open
-      unsigned sessionID                        /// Session to start streams on
+      const OpalConnection & connection,        ///<  Connection requesting open
+      const OpalMediaFormatList & mediaFormats, ///<  Optional media format to open
+      unsigned sessionID                        ///<  Session to start streams on
     );
 
     /**Connect up the media streams on the connections.
@@ -340,8 +343,8 @@ class OpalCall : public PSafeObject
        patch is a thread, but it is not started immediately.
      */
     virtual BOOL PatchMediaStreams(
-      const OpalConnection & connection, /// Source connection
-      OpalMediaStream & source           /// Source media stream to patch
+      const OpalConnection & connection, ///<  Source connection
+      OpalMediaStream & source           ///<  Source media stream to patch
     );
     
     /**Close the media streams on the connections.
@@ -355,8 +358,8 @@ class OpalCall : public PSafeObject
     /**See if the media can bypass the local host.
      */
     virtual BOOL IsMediaBypassPossible(
-      const OpalConnection & connection,  /// Source connection
-      unsigned sessionID                  /// Session ID for media channel
+      const OpalConnection & connection,  ///<  Source connection
+      unsigned sessionID                  ///<  Session ID for media channel
     ) const;
   //@}
 
@@ -368,8 +371,8 @@ class OpalCall : public PSafeObject
        saves the value so the GetUserInput() function can return it.
       */
     virtual void OnUserInputString(
-      OpalConnection & connection,  /// Connection input has come from
-      const PString & value         /// String value of indication
+      OpalConnection & connection,  ///<  Connection input has come from
+      const PString & value         ///<  String value of indication
     );
 
     /**Call back for remote enpoint has sent user input as tones.
@@ -381,9 +384,9 @@ class OpalCall : public PSafeObject
        SendUserInputTone() for each of the other connections in the call.
       */
     virtual void OnUserInputTone(
-      OpalConnection & connection,  /// Connection input has come from
-      char tone,                    /// Tone received
-      int duration                  /// Duration of tone in milliseconds
+      OpalConnection & connection,  ///<  Connection input has come from
+      char tone,                    ///<  Tone received
+      int duration                  ///<  Duration of tone in milliseconds
     );
   //@}
 

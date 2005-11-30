@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2030  2005/07/12 12:34:37  csoutheren
+ * Revision 1.2031  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.29  2005/07/12 12:34:37  csoutheren
  * Fixes for H.450 errors and return values
  * Thanks to Iker Perez San Roman
  *
@@ -421,9 +424,9 @@ class H323EndPoint : public OpalEndPoint
        The default behaviour is pure.
      */
     virtual BOOL MakeConnection(
-      OpalCall & call,        /// Owner of connection
-      const PString & party,  /// Remote party to call
-      void * userData = NULL  /// Arbitrary data to pass to connection
+      OpalCall & call,        ///<  Owner of connection
+      const PString & party,  ///<  Remote party to call
+      void * userData = NULL  ///<  Arbitrary data to pass to connection
     );
 
     /**Get the data formats this endpoint is capable of operating.
@@ -471,7 +474,7 @@ class H323EndPoint : public OpalEndPoint
        capability class however.
      */
     void AddCapability(
-      H323Capability * capability   /// New codec specification
+      H323Capability * capability   ///<  New codec specification
     );
 
     /**Set the capability descriptor lists. This is three tier set of
@@ -495,9 +498,9 @@ class H323EndPoint : public OpalEndPoint
        add that capability once.
      */
     PINDEX SetCapability(
-      PINDEX descriptorNum, /// The member of the capabilityDescriptor to add
-      PINDEX simultaneous,  /// The member of the SimultaneousCapabilitySet to add
-      H323Capability * cap  /// New capability specification
+      PINDEX descriptorNum, ///<  The member of the capabilityDescriptor to add
+      PINDEX simultaneous,  ///<  The member of the SimultaneousCapabilitySet to add
+      H323Capability * cap  ///<  New capability specification
     );
 
     /**Add all matching capabilities in list.
@@ -505,16 +508,16 @@ class H323EndPoint : public OpalEndPoint
        capabilities code for details on the matching algorithm.
       */
     PINDEX AddAllCapabilities(
-      PINDEX descriptorNum, /// The member of the capabilityDescriptor to add
-      PINDEX simultaneous,  /// The member of the SimultaneousCapabilitySet to add
-      const PString & name  /// New capabilities name, if using "known" one.
+      PINDEX descriptorNum, ///<  The member of the capabilityDescriptor to add
+      PINDEX simultaneous,  ///<  The member of the SimultaneousCapabilitySet to add
+      const PString & name  ///<  New capabilities name, if using "known" one.
     );
 
     /**Add all user input capabilities to this endpoints capability table.
       */
     void AddAllUserInputCapabilities(
-      PINDEX descriptorNum, /// The member of the capabilityDescriptor to add
-      PINDEX simultaneous   /// The member of the SimultaneousCapabilitySet to add
+      PINDEX descriptorNum, ///<  The member of the capabilityDescriptor to add
+      PINDEX simultaneous   ///<  The member of the SimultaneousCapabilitySet to add
     );
 
     /**Remove capabilites in table.
@@ -532,20 +535,20 @@ class H323EndPoint : public OpalEndPoint
     /**Find a capability that has been registered.
      */
     H323Capability * FindCapability(
-      const H245_Capability & cap  /// H245 capability table entry
+      const H245_Capability & cap  ///<  H245 capability table entry
     ) const;
 
     /**Find a capability that has been registered.
      */
     H323Capability * FindCapability(
-      const H245_DataType & dataType  /// H245 data type of codec
+      const H245_DataType & dataType  ///<  H245 data type of codec
     ) const;
 
     /**Find a capability that has been registered.
      */
     H323Capability * FindCapability(
-      H323Capability::MainTypes mainType,   /// Main type of codec
-      unsigned subType                      /// Subtype of codec
+      H323Capability::MainTypes mainType,   ///<  Main type of codec
+      unsigned subType                      ///<  Subtype of codec
     ) const;
   //@}
 
@@ -569,9 +572,9 @@ class H323EndPoint : public OpalEndPoint
        deleted (with unregistration) and new one created and registered to.
      */
     BOOL UseGatekeeper(
-      const PString & address = PString::Empty(),     /// Address of gatekeeper to use.
-      const PString & identifier = PString::Empty(),  /// Identifier of gatekeeper to use.
-      const PString & localAddress = PString::Empty() /// Local interface to use.
+      const PString & address = PString::Empty(),     ///<  Address of gatekeeper to use.
+      const PString & identifier = PString::Empty(),  ///<  Identifier of gatekeeper to use.
+      const PString & localAddress = PString::Empty() ///<  Local interface to use.
     );
 
     /**Select and register with an explicit gatekeeper.
@@ -585,8 +588,8 @@ class H323EndPoint : public OpalEndPoint
        is NULL then a H323TransportUDP is created.
      */
     BOOL SetGatekeeper(
-      const PString & address,          /// Address of gatekeeper to use.
-      H323Transport * transport = NULL  /// Transport over which to talk to gatekeeper.
+      const PString & address,          ///<  Address of gatekeeper to use.
+      H323Transport * transport = NULL  ///<  Transport over which to talk to gatekeeper.
     );
 
     /**Select and register with an explicit gatekeeper and zone.
@@ -604,9 +607,9 @@ class H323EndPoint : public OpalEndPoint
        is NULL then a H323TransportUDP is created.
      */
     BOOL SetGatekeeperZone(
-      const PString & address,          /// Address of gatekeeper to use.
-      const PString & identifier,       /// Identifier of gatekeeper to use.
-      H323Transport * transport = NULL  /// Transport over which to talk to gatekeeper.
+      const PString & address,          ///<  Address of gatekeeper to use.
+      const PString & identifier,       ///<  Identifier of gatekeeper to use.
+      H323Transport * transport = NULL  ///<  Transport over which to talk to gatekeeper.
     );
 
     /**Locate and select gatekeeper.
@@ -619,8 +622,8 @@ class H323EndPoint : public OpalEndPoint
        if transport is NULL then a H323TransportUDP is created.
      */
     BOOL LocateGatekeeper(
-      const PString & identifier,       /// Identifier of gatekeeper to locate.
-      H323Transport * transport = NULL  /// Transport over which to talk to gatekeeper.
+      const PString & identifier,       ///<  Identifier of gatekeeper to locate.
+      H323Transport * transport = NULL  ///<  Transport over which to talk to gatekeeper.
     );
 
     /**Discover and select gatekeeper.
@@ -632,7 +635,7 @@ class H323EndPoint : public OpalEndPoint
        if transport is NULL then a H323TransportUDP is created.
      */
     BOOL DiscoverGatekeeper(
-      H323Transport * transport = NULL  /// Transport over which to talk to gatekeeper.
+      H323Transport * transport = NULL  ///<  Transport over which to talk to gatekeeper.
     );
 
     /**Create a gatekeeper.
@@ -643,7 +646,7 @@ class H323EndPoint : public OpalEndPoint
        The default creates an instance of the H323Gatekeeper class.
      */
     virtual H323Gatekeeper * CreateGatekeeper(
-      H323Transport * transport  /// Transport over which gatekeepers communicates.
+      H323Transport * transport  ///<  Transport over which gatekeepers communicates.
     );
 
     /**Get the gatekeeper we are registered with.
@@ -660,7 +663,7 @@ class H323EndPoint : public OpalEndPoint
        instance deleted regardless of this error.
      */
     BOOL RemoveGatekeeper(
-      int reason = -1    /// Reason for gatekeeper removal
+      int reason = -1    ///<  Reason for gatekeeper removal
     );
 
     /**Set the H.235 password for the gatekeeper.
@@ -704,19 +707,19 @@ class H323EndPoint : public OpalEndPoint
     /**Handle new incoming connetion from listener.
       */
     virtual BOOL NewIncomingConnection(
-      OpalTransport * transport  /// Transport connection came in on
+      OpalTransport * transport  ///<  Transport connection came in on
     );
 
     /**Create a connection that uses the specified call.
       */
     virtual H323Connection * CreateConnection(
-      OpalCall & call,           /// Call object to attach the connection to
-      const PString & token,     /// Call token for new connection
-      void * userData,           /// Arbitrary user data from MakeConnection
-      OpalTransport & transport, /// Transport for connection
-      const PString & alias,     /// Alias for outgoing call
-      const H323TransportAddress & address,   /// Address for outgoing call
-      H323SignalPDU * setupPDU   /// Setup PDU for incoming call
+      OpalCall & call,           ///<  Call object to attach the connection to
+      const PString & token,     ///<  Call token for new connection
+      void * userData,           ///<  Arbitrary user data from MakeConnection
+      OpalTransport & transport, ///<  Transport for connection
+      const PString & alias,     ///<  Alias for outgoing call
+      const H323TransportAddress & address,   ///<  Address for outgoing call
+      H323SignalPDU * setupPDU   ///<  Setup PDU for incoming call
     );
 
     /**Setup the transfer of an existing call (connection) to a new remote party
@@ -735,10 +738,10 @@ class H323EndPoint : public OpalEndPoint
        the function and get the new call token of the forwarded call.
      */
     virtual BOOL SetupTransfer(
-      const PString & token,        /// Existing connection to be transferred
-      const PString & callIdentity, /// Call identity of the secondary call (if it exists)
-      const PString & remoteParty,  /// Remote party to transfer the existing call to
-      void * userData = NULL        /// user data to pass to CreateConnection
+      const PString & token,        ///<  Existing connection to be transferred
+      const PString & callIdentity, ///<  Call identity of the secondary call (if it exists)
+      const PString & remoteParty,  ///<  Remote party to transfer the existing call to
+      void * userData = NULL        ///<  user data to pass to CreateConnection
     );
 
     /**Initiate the transfer of an existing call (connection) to a new remote
@@ -747,10 +750,10 @@ class H323EndPoint : public OpalEndPoint
        (transferred endpoint).
      */
     void TransferCall(
-      const PString & token,        /// Existing connection to be transferred
-      const PString & remoteParty,  /// Remote party to transfer the existing call to
+      const PString & token,        ///<  Existing connection to be transferred
+      const PString & remoteParty,  ///<  Remote party to transfer the existing call to
       const PString & callIdentity = PString::Empty()
-                                    /// Call Identity of secondary call if present
+                                    ///<  Call Identity of secondary call if present
     );
 
     /**Transfer the call through consultation so the remote party in the
@@ -760,25 +763,25 @@ class H323EndPoint : public OpalEndPoint
        (transferred-to endpoint).
      */
     void ConsultationTransfer(
-      const PString & primaryCallToken,   /// Token of primary call
-      const PString & secondaryCallToken  /// Token of secondary call
+      const PString & primaryCallToken,   ///<  Token of primary call
+      const PString & secondaryCallToken  ///<  Token of secondary call
     );
 
     /**Place the call on hold, suspending all media channels (H.450.4)
     * NOTE: Only Local Hold is implemented so far. 
     */
     void HoldCall(
-      const PString & token,        /// Existing connection to be transferred
-      BOOL localHold   /// true for Local Hold, false for Remote Hold
+      const PString & token,        ///<  Existing connection to be transferred
+      BOOL localHold   ///<  true for Local Hold, false for Remote Hold
     );
 
     /** Initiate Call intrusion
         Designed similar to MakeCall function
       */
     BOOL IntrudeCall(
-      const PString & remoteParty,  /// Remote party to intrude call
-      unsigned capabilityLevel,     /// Capability level
-      void * userData = NULL        /// user data to pass to CreateConnection
+      const PString & remoteParty,  ///<  Remote party to intrude call
+      unsigned capabilityLevel,     ///<  Capability level
+      void * userData = NULL        ///<  user data to pass to CreateConnection
     );
 
     /**Parse a party address into alias and transport components.
@@ -788,9 +791,9 @@ class H323EndPoint : public OpalEndPoint
        is "ip" and the default port is 1720.
       */
     BOOL ParsePartyName(
-      const PString & party,          /// Party name string.
-      PString & alias,                /// Parsed alias name
-      H323TransportAddress & address  /// Parsed transport address
+      const PString & party,          ///<  Party name string.
+      PString & alias,                ///<  Parsed alias name
+      H323TransportAddress & address  ///<  Parsed transport address
     );
 
     /**Find a connection that uses the specified token.
@@ -804,7 +807,7 @@ class H323EndPoint : public OpalEndPoint
        then a deadlock can occur.
       */
     PSafePtr<H323Connection> FindConnectionWithLock(
-      const PString & token,     /// Token to identify connection
+      const PString & token,     ///<  Token to identify connection
       PSafetyMode mode = PSafeReadWrite
     );
 
@@ -820,9 +823,9 @@ class H323EndPoint : public OpalEndPoint
        The default behaviour simply returns TRUE.
      */
     virtual BOOL OnIncomingCall(
-      H323Connection & connection,    /// Connection that was established
-      const H323SignalPDU & setupPDU,   /// Received setup PDU
-      H323SignalPDU & alertingPDU       /// Alerting PDU to send
+      H323Connection & connection,    ///<  Connection that was established
+      const H323SignalPDU & setupPDU,   ///<  Received setup PDU
+      H323SignalPDU & alertingPDU       ///<  Alerting PDU to send
     );
 
     /**Called when an outgoing call connects
@@ -841,8 +844,8 @@ class H323EndPoint : public OpalEndPoint
        The default behaviour just returns TRUE.
       */
     virtual BOOL OnCallTransferInitiate(
-      H323Connection & connection,    /// Connection to transfer
-      const PString & remoteParty     /// Party transferring to.
+      H323Connection & connection,    ///<  Connection to transfer
+      const PString & remoteParty     ///<  Party transferring to.
     );
 
     /**Handle a transfer via consultation.
@@ -850,7 +853,7 @@ class H323EndPoint : public OpalEndPoint
        The default behaviour just returns TRUE.
       */
     virtual BOOL OnCallTransferIdentify(
-      H323Connection & connection    /// Connection to transfer
+      H323Connection & connection    ///<  Connection to transfer
     );
 
     /**Call back for answering an incoming call.
@@ -860,10 +863,10 @@ class H323EndPoint : public OpalEndPoint
        By default this calls OpalEndPoint::OnAnswerCall, which returns
      */
     virtual OpalConnection::AnswerCallResponse OnAnswerCall(
-      H323Connection & connection,    /// Connection that was established
-      const PString & callerName,       /// Name of caller
-      const H323SignalPDU & setupPDU,   /// Received setup PDU
-      H323SignalPDU & connectPDU        /// Connect PDU to send. 
+      H323Connection & connection,    ///<  Connection that was established
+      const PString & callerName,       ///<  Name of caller
+      const H323SignalPDU & setupPDU,   ///<  Received setup PDU
+      H323SignalPDU & connectPDU        ///<  Connect PDU to send. 
     );
     virtual OpalConnection::AnswerCallResponse OnAnswerCall(
        OpalConnection & connection,
@@ -881,9 +884,9 @@ class H323EndPoint : public OpalEndPoint
        The default behaviour simply returns TRUE.
      */
     virtual BOOL OnAlerting(
-      H323Connection & connection,    /// Connection that was established
-      const H323SignalPDU & alertingPDU,  /// Received Alerting PDU
-      const PString & user                /// Username of remote endpoint
+      H323Connection & connection,    ///<  Connection that was established
+      const H323SignalPDU & alertingPDU,  ///<  Received Alerting PDU
+      const PString & user                ///<  Username of remote endpoint
     );
 
     /**A call back function when a connection indicates it is to be forwarded.
@@ -895,9 +898,9 @@ class H323EndPoint : public OpalEndPoint
        call forwarding should take place. See ForwardConnection()
       */
     virtual BOOL OnConnectionForwarded(
-      H323Connection & connection,    /// Connection to be forwarded
-      const PString & forwardParty,   /// Remote party to forward to
-      const H323SignalPDU & pdu       /// Full PDU initiating forwarding
+      H323Connection & connection,    ///<  Connection to be forwarded
+      const PString & forwardParty,   ///<  Remote party to forward to
+      const H323SignalPDU & pdu       ///<  Full PDU initiating forwarding
     );
 
     /**Forward the call using the same token as the specified connection.
@@ -909,9 +912,9 @@ class H323EndPoint : public OpalEndPoint
        completely mad anew.
       */
     virtual BOOL ForwardConnection(
-      H323Connection & connection,    /// Connection to be forwarded
-      const PString & forwardParty,   /// Remote party to forward to
-      const H323SignalPDU & pdu       /// Full PDU initiating forwarding
+      H323Connection & connection,    ///<  Connection to be forwarded
+      const PString & forwardParty,   ///<  Remote party to forward to
+      const H323SignalPDU & pdu       ///<  Full PDU initiating forwarding
     );
 
     /**A call back function whenever a connection is established.
@@ -921,14 +924,14 @@ class H323EndPoint : public OpalEndPoint
        The default behaviour does nothing.
       */
     virtual void OnConnectionEstablished(
-      H323Connection & connection,    /// Connection that was established
-      const PString & token           /// Token for identifying connection
+      H323Connection & connection,    ///<  Connection that was established
+      const PString & token           ///<  Token for identifying connection
     );
 
     /**Determine if a connection is established.
       */
     virtual BOOL IsConnectionEstablished(
-      const PString & token   /// Token for identifying connection
+      const PString & token   ///<  Token for identifying connection
     );
 
     /**A call back function whenever a connection is broken.
@@ -938,8 +941,8 @@ class H323EndPoint : public OpalEndPoint
        The default behaviour does nothing.
       */
     virtual void OnConnectionCleared(
-      H323Connection & connection,    /// Connection that was established
-      const PString & token           /// Token for identifying connection
+      H323Connection & connection,    ///<  Connection that was established
+      const PString & token           ///<  Token for identifying connection
     );
   //@}
 
@@ -951,8 +954,8 @@ class H323EndPoint : public OpalEndPoint
        The default behaviour simply returns TRUE.
       */
     virtual BOOL OnStartLogicalChannel(
-      H323Connection & connection,    /// Connection for the channel
-      H323Channel & channel           /// Channel being started
+      H323Connection & connection,    ///<  Connection for the channel
+      H323Channel & channel           ///<  Channel being started
     );
 
     /**Call back for closed a logical channel.
@@ -960,8 +963,8 @@ class H323EndPoint : public OpalEndPoint
        The default behaviour does nothing.
       */
     virtual void OnClosedLogicalChannel(
-      H323Connection & connection,    /// Connection for the channel
-      const H323Channel & channel     /// Channel being started
+      H323Connection & connection,    ///<  Connection for the channel
+      const H323Channel & channel     ///<  Channel being started
     );
 
     /**Callback from the RTP session for statistics monitoring.
@@ -972,8 +975,8 @@ class H323EndPoint : public OpalEndPoint
        The default behaviour does nothing.
       */
     virtual void OnRTPStatistics(
-      const H323Connection & connection,  /// Connection for the channel
-      const RTP_Session & session         /// Session with statistics
+      const H323Connection & connection,  ///<  Connection for the channel
+      const RTP_Session & session         ///<  Session with statistics
     ) const;
   //@}
 
@@ -987,9 +990,9 @@ class H323EndPoint : public OpalEndPoint
        The default behaviour does nothing.
       */
     virtual void OnHTTPServiceControl(
-      unsigned operation,  /// Control operation
-      unsigned sessionId,  /// Session ID for HTTP page
-      const PString & url  /// URL to use.
+      unsigned operation,  ///<  Control operation
+      unsigned sessionId,  ///<  Session ID for HTTP page
+      const PString & url  ///<  URL to use.
     );
 
     /**Call back for call credit information.
@@ -1002,8 +1005,8 @@ class H323EndPoint : public OpalEndPoint
        The default behaviour does nothing.
       */
     virtual void OnCallCreditServiceControl(
-      const PString & amount,  /// UTF-8 string for amount, including currency.
-      BOOL mode          /// Flag indicating that calls will debit the account.
+      const PString & amount,  ///<  UTF-8 string for amount, including currency.
+      BOOL mode          ///<  Flag indicating that calls will debit the account.
     );
 
     /**Handle incoming service control session information.
@@ -1064,7 +1067,7 @@ class H323EndPoint : public OpalEndPoint
        function, however that list will be cleared when this function is used.
      */
     virtual void SetLocalUserName(
-      const PString & name  /// Local name of endpoint (prime alias)
+      const PString & name  ///<  Local name of endpoint (prime alias)
     );
 
     /**Get the user name to be used for the local end of any connections. This
@@ -1080,14 +1083,14 @@ class H323EndPoint : public OpalEndPoint
        Note that calling SetLocalUserName() will clear the alias list.
      */
     BOOL AddAliasName(
-      const PString & name  /// New alias name to add
+      const PString & name  ///<  New alias name to add
     );
 
     /**Remove an alias name used for the local end of any connections. 
        defaults to an empty list.
      */
     BOOL RemoveAliasName(
-      const PString & name  /// New alias namer to add
+      const PString & name  ///<  New alias namer to add
     );
 
     /**Get the user name to be used for the local end of any connections. This
@@ -1114,7 +1117,7 @@ class H323EndPoint : public OpalEndPoint
     /**Set the default fast start mode.
       */
     void DisableFastStart(
-      BOOL mode /// New default mode
+      BOOL mode ///<  New default mode
     ) { disableFastStart = mode; } 
 
     /**Get the default H.245 tunneling mode.
@@ -1125,7 +1128,7 @@ class H323EndPoint : public OpalEndPoint
     /**Set the default H.245 tunneling mode.
       */
     void DisableH245Tunneling(
-      BOOL mode /// New default mode
+      BOOL mode ///<  New default mode
     ) { disableH245Tunneling = mode; } 
 
     /**Get the default H.245 tunneling mode.
@@ -1136,7 +1139,7 @@ class H323EndPoint : public OpalEndPoint
     /**Set the default H.245 tunneling mode.
       */
     void DisableH245inSetup(
-      BOOL mode /// New default mode
+      BOOL mode ///<  New default mode
     ) { disableH245inSetup = mode; } 
 
     /**Get the flag indicating the endpoint can display an amount string.
@@ -1147,7 +1150,7 @@ class H323EndPoint : public OpalEndPoint
     /**Set the flag indicating the endpoint can display an amount string.
       */
     void SetCanDisplayAmountString(
-      BOOL mode /// New default mode
+      BOOL mode ///<  New default mode
     ) { canDisplayAmountString = mode; } 
 
     /**Get the flag indicating the call will automatically clear after a time.
@@ -1158,7 +1161,7 @@ class H323EndPoint : public OpalEndPoint
     /**Set the flag indicating the call will automatically clear after a time.
       */
     void SetCanEnforceDurationLimit(
-      BOOL mode /// New default mode
+      BOOL mode ///<  New default mode
     ) { canEnforceDurationLimit = mode; } 
 
     /**Get Call Intrusion Protection Level of the end point.
@@ -1168,7 +1171,7 @@ class H323EndPoint : public OpalEndPoint
     /**Set Call Intrusion Protection Level of the end point.
       */
     void SetCallIntrusionProtectionLevel(
-      unsigned level  // New level from 0 to 3
+      unsigned level  ///<  New level from 0 to 3
     ) { PAssert(level<=3, PInvalidParameter); callIntrusionProtectionLevel = level; }
 
     /**Called from H.450 OnReceivedInitiateReturnError
@@ -1260,8 +1263,8 @@ class H323EndPoint : public OpalEndPoint
     /**Set the maximum audio delay jitter parameter.
      */
     void SetAudioJitterDelay(
-      unsigned minDelay,   // New minimum jitter buffer delay in milliseconds
-      unsigned maxDelay    // New maximum jitter buffer delay in milliseconds
+      unsigned minDelay,   ///<  New minimum jitter buffer delay in milliseconds
+      unsigned maxDelay    ///<  New maximum jitter buffer delay in milliseconds
     ) { manager.SetAudioJitterDelay(minDelay, maxDelay); }
 
     /**Get the initial bandwidth parameter.
@@ -1407,7 +1410,7 @@ class H323EndPoint : public OpalEndPoint
     /**Set the amount of time with no media that should cause call to clear
      */
     BOOL SetNoMediaTimeout(
-      const PTimeInterval & newInterval  /// New timeout for media
+      const PTimeInterval & newInterval  ///<  New timeout for media
     ) { return manager.SetNoMediaTimeout(newInterval); }
 
     /**Get the default timeout for GatekeeperRequest and Gatekeeper discovery.
@@ -1490,11 +1493,11 @@ class H323EndPoint : public OpalEndPoint
     BOOL InternalRegisterGatekeeper(H323Gatekeeper * gk, BOOL discovered);
     BOOL InternalMakeCall(
       OpalCall & call,
-      const PString & existingToken,/// Existing connection to be transferred
-      const PString & callIdentity, /// Call identity of the secondary call (if it exists)
-      unsigned capabilityLevel,     /// Intrusion capability level
-      const PString & remoteParty,  /// Remote party to call
-      void * userData               /// user data to pass to CreateConnection
+      const PString & existingToken,///<  Existing connection to be transferred
+      const PString & callIdentity, ///<  Call identity of the secondary call (if it exists)
+      unsigned capabilityLevel,     ///<  Intrusion capability level
+      const PString & remoteParty,  ///<  Remote party to call
+      void * userData               ///<  user data to pass to CreateConnection
     );
 
     // Configuration variables, commonly changed

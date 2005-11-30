@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.h,v $
- * Revision 1.2015  2005/02/21 12:19:45  rjongbloed
+ * Revision 1.2016  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.14  2005/02/21 12:19:45  rjongbloed
  * Added new "options list" to the OpalMediaFormat class.
  *
  * Revision 2.13  2004/09/01 12:21:27  rjongbloed
@@ -324,8 +327,8 @@ class H323Capability : public PObject
        This uses the registration system to create the capability.
       */
     static H323Capability * Create(
-      const H323EndPoint & ep, /// EndPoint capability is created for.
-      const PString & name     /// Name of capability
+      const H323EndPoint & ep, ///<  EndPoint capability is created for.
+      const PString & name     ///<  Name of capability
     );
 
     /**Get the default RTP session.
@@ -347,7 +350,7 @@ class H323Capability : public PObject
        The default behaviour does nothing.
      */
     virtual void SetTxFramesInPacket(
-      unsigned frames   /// Number of frames per packet
+      unsigned frames   ///<  Number of frames per packet
     );
 
     /**Get the maximum size (in frames) of data that will be transmitted in a single PDU.
@@ -368,11 +371,11 @@ class H323Capability : public PObject
        this is taken from the fields in param.
      */
     virtual H323Channel * CreateChannel(
-      H323Connection & connection,    /// Owner connection for channel
-      H323Channel::Directions dir,    /// Direction of channel
-      unsigned sessionID,             /// Session ID for RTP channel
+      H323Connection & connection,    ///<  Owner connection for channel
+      H323Channel::Directions dir,    ///<  Direction of channel
+      unsigned sessionID,             ///<  Session ID for RTP channel
       const H245_H2250LogicalChannelParameters * param
-                                      /// Parameters for channel
+                                      ///<  Parameters for channel
     ) const = 0;
   //@}
 
@@ -386,7 +389,7 @@ class H323Capability : public PObject
        The default behaviour is pure.
      */
     virtual BOOL OnSendingPDU(
-      H245_Capability & pdu  /// PDU to set information on
+      H245_Capability & pdu  ///<  PDU to set information on
     ) const = 0;
 
     /**This function is called whenever and outgoing OpenLogicalChannel
@@ -397,7 +400,7 @@ class H323Capability : public PObject
        The default behaviour is pure.
      */
     virtual BOOL OnSendingPDU(
-      H245_DataType & pdu  /// PDU to set information on
+      H245_DataType & pdu  ///<  PDU to set information on
     ) const = 0;
 
     /**This function is called whenever and outgoing RequestMode
@@ -408,7 +411,7 @@ class H323Capability : public PObject
        The default behaviour is pure.
      */
     virtual BOOL OnSendingPDU(
-      H245_ModeElement & pdu  /// PDU to set information on
+      H245_ModeElement & pdu  ///<  PDU to set information on
     ) const = 0;
 
     /**This function is called whenever and incoming TerminalCapabilitySet
@@ -424,7 +427,7 @@ class H323Capability : public PObject
          important to call the ancestor function when overriding.
      */
     virtual BOOL OnReceivedPDU(
-      const H245_Capability & pdu /// PDU to get information from
+      const H245_Capability & pdu ///<  PDU to get information from
     );
 
     /**This function is called whenever and incoming OpenLogicalChannel
@@ -435,14 +438,14 @@ class H323Capability : public PObject
        The default behaviour is pure.
      */
     virtual BOOL OnReceivedPDU(
-      const H245_DataType & pdu,  /// PDU to get information from
-      BOOL receiver               /// Is receiver OLC
+      const H245_DataType & pdu,  ///<  PDU to get information from
+      BOOL receiver               ///<  Is receiver OLC
     ) = 0;
 
     /**Compare the nonStandardData part of the capability, if applicable.
       */
     virtual BOOL IsNonStandardMatch(
-      const H245_NonStandardParameter & param  /// Non standard field in PDU received
+      const H245_NonStandardParameter & param  ///<  Non standard field in PDU received
     ) const;
 
     /**Validate that the capability is usable given the connection.
@@ -475,7 +478,7 @@ class H323Capability : public PObject
     /**Set the direction for this capability.
       */
     void SetCapabilityDirection(
-      CapabilityDirection dir   /// New direction code
+      CapabilityDirection dir   ///<  New direction code
     ) { capabilityDirection = dir; }
 
     /// Get unique capability number.
@@ -530,19 +533,19 @@ class H323NonStandardCapabilityInfo
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardCapabilityInfo(
-      const H323EndPoint & endpoint,  /// Endpoint to get t35 information
-      const BYTE * dataBlock,         /// Non-Standard data for codec type
-      PINDEX dataSize,                /// Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
-      PINDEX comparisonOffset = 0,    /// Offset into dataBlock to compare
-      PINDEX comparisonLength = P_MAX_INDEX  /// Length of bytes to compare
+      const H323EndPoint & endpoint,  ///<  Endpoint to get t35 information
+      const BYTE * dataBlock,         ///<  Non-Standard data for codec type
+      PINDEX dataSize,                ///<  Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
+      PINDEX comparisonOffset = 0,    ///<  Offset into dataBlock to compare
+      PINDEX comparisonLength = P_MAX_INDEX  ///<  Length of bytes to compare
     );
 
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardCapabilityInfo(
       const PString & oid,
-      const BYTE * dataBlock,         /// Non-Standard data for codec type
-      PINDEX dataSize,                /// Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
+      const BYTE * dataBlock,         ///<  Non-Standard data for codec type
+      PINDEX dataSize,                ///<  Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
       PINDEX comparisonOffset = 0,
       PINDEX comparisonLength = P_MAX_INDEX
     );
@@ -550,13 +553,13 @@ class H323NonStandardCapabilityInfo
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardCapabilityInfo(
-      BYTE country,                  /// t35 information
-      BYTE extension,                /// t35 information
-      WORD maufacturer,              /// t35 information
-      const BYTE * dataBlock,         /// Non-Standard data for codec type
-      PINDEX dataSize,                /// Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
-      PINDEX comparisonOffset = 0,    /// Offset into dataBlock to compare
-      PINDEX comparisonLength = P_MAX_INDEX  /// Length of bytes to compare
+      BYTE country,                  ///<  t35 information
+      BYTE extension,                ///<  t35 information
+      WORD maufacturer,              ///<  t35 information
+      const BYTE * dataBlock,         ///<  Non-Standard data for codec type
+      PINDEX dataSize,                ///<  Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
+      PINDEX comparisonOffset = 0,    ///<  Offset into dataBlock to compare
+      PINDEX comparisonLength = P_MAX_INDEX  ///<  Length of bytes to compare
     );
 
     /**Destroy the capability information
@@ -568,7 +571,7 @@ class H323NonStandardCapabilityInfo
        The default behaviour sets data to fixedData.
       */
     virtual BOOL OnSendingPDU(
-      PBYTEArray & data  /// Data field in PDU to send
+      PBYTEArray & data  ///<  Data field in PDU to send
     ) const;
 
     /**This function validates and uses the non-standard data field.
@@ -576,7 +579,7 @@ class H323NonStandardCapabilityInfo
        The default behaviour returns TRUE if data is equal to fixedData.
       */
     virtual BOOL OnReceivedPDU(
-      const PBYTEArray & data  /// Data field in PDU received
+      const PBYTEArray & data  ///<  Data field in PDU received
     );
 
     PObject::Comparison CompareParam(
@@ -597,7 +600,7 @@ class H323NonStandardCapabilityInfo
       const H323NonStandardCapabilityInfo & obj
     ) const;
     PObject::Comparison CompareData(
-      const PBYTEArray & data  /// Data field in PDU received
+      const PBYTEArray & data  ///<  Data field in PDU received
     ) const;
 
     PString    oid;
@@ -626,11 +629,11 @@ class H323RealTimeCapability : public H323Capability
     /**Create the channel instance, allocating resources as required.
      */
     virtual H323Channel * CreateChannel(
-      H323Connection & connection,    /// Owner connection for channel
-      H323Channel::Directions dir,    /// Direction of channel
-      unsigned sessionID,             /// Session ID for RTP channel
+      H323Connection & connection,    ///<  Owner connection for channel
+      H323Channel::Directions dir,    ///<  Direction of channel
+      unsigned sessionID,             ///<  Session ID for RTP channel
       const H245_H2250LogicalChannelParameters * param
-                                      /// Parameters for channel
+                                      ///<  Parameters for channel
     ) const;
 
     H323RealTimeCapability();
@@ -691,7 +694,7 @@ class H323AudioCapability : public H323RealTimeCapability
        The default behaviour sets the txFramesInPacket variable.
      */
     virtual void SetTxFramesInPacket(
-      unsigned frames   /// Number of frames per packet
+      unsigned frames   ///<  Number of frames per packet
     );
 
     /**Get the maximum size (in frames) of data that will be transmitted in a
@@ -720,7 +723,7 @@ class H323AudioCapability : public H323RealTimeCapability
        specific PDU type.
      */
     virtual BOOL OnSendingPDU(
-      H245_Capability & pdu  /// PDU to set information on
+      H245_Capability & pdu  ///<  PDU to set information on
     ) const;
 
     /**This function is called whenever and outgoing OpenLogicalChannel
@@ -732,7 +735,7 @@ class H323AudioCapability : public H323RealTimeCapability
        specific PDU type.
      */
     virtual BOOL OnSendingPDU(
-      H245_DataType & pdu  /// PDU to set information on
+      H245_DataType & pdu  ///<  PDU to set information on
     ) const;
 
     /**This function is called whenever and outgoing RequestMode
@@ -744,7 +747,7 @@ class H323AudioCapability : public H323RealTimeCapability
        specific PDU type.
      */
     virtual BOOL OnSendingPDU(
-      H245_ModeElement & pdu  /// PDU to set information on
+      H245_ModeElement & pdu  ///<  PDU to set information on
     ) const;
 
     /**This function is called whenever and outgoing TerminalCapabilitySet
@@ -756,8 +759,8 @@ class H323AudioCapability : public H323RealTimeCapability
        per packet.
      */
     virtual BOOL OnSendingPDU(
-      H245_AudioCapability & pdu,  /// PDU to set information on
-      unsigned packetSize          /// Packet size to use in capability
+      H245_AudioCapability & pdu,  ///<  PDU to set information on
+      unsigned packetSize          ///<  Packet size to use in capability
     ) const;
 
     /**This function is called whenever and outgoing RequestMode
@@ -769,7 +772,7 @@ class H323AudioCapability : public H323RealTimeCapability
        function (translated to different enum).
      */
     virtual BOOL OnSendingPDU(
-      H245_AudioMode & pdu  /// PDU to set information on
+      H245_AudioMode & pdu  ///<  PDU to set information on
     ) const;
 
     /**This function is called whenever and incoming TerminalCapabilitySet
@@ -784,7 +787,7 @@ class H323AudioCapability : public H323RealTimeCapability
        H245_AudioCapability and clamps the txFramesInPacket.
      */
     virtual BOOL OnReceivedPDU(
-      const H245_Capability & pdu  /// PDU to get information from
+      const H245_Capability & pdu  ///<  PDU to get information from
     );
 
     /**This function is called whenever and incoming OpenLogicalChannel
@@ -797,8 +800,8 @@ class H323AudioCapability : public H323RealTimeCapability
        rxFramesInPacket.
      */
     virtual BOOL OnReceivedPDU(
-      const H245_DataType & pdu,  /// PDU to get information from
-      BOOL receiver               /// Is receiver OLC
+      const H245_DataType & pdu,  ///<  PDU to get information from
+      BOOL receiver               ///<  Is receiver OLC
     );
 
     /**This function is called whenever and incoming TerminalCapabilitySet
@@ -810,8 +813,8 @@ class H323AudioCapability : public H323RealTimeCapability
        per packet.
      */
     virtual BOOL OnReceivedPDU(
-      const H245_AudioCapability & pdu,  /// PDU to get information from
-      unsigned & packetSize              /// Packet size to use in capability
+      const H245_AudioCapability & pdu,  ///<  PDU to get information from
+      unsigned & packetSize              ///<  Packet size to use in capability
     );
   //@}
 };
@@ -835,33 +838,33 @@ class H323NonStandardAudioCapability : public H323AudioCapability,
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardAudioCapability(
-      const H323EndPoint & endpoint,  /// Endpoint to get t35 information
-      const BYTE * dataBlock = NULL,  /// Non-Standard data for codec type
-      PINDEX dataSize = 0,            /// Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
-      PINDEX comparisonOffset = 0,    /// Offset into dataBlock to compare
-      PINDEX comparisonLength = P_MAX_INDEX  /// Length of bytes to compare
+      const H323EndPoint & endpoint,  ///<  Endpoint to get t35 information
+      const BYTE * dataBlock = NULL,  ///<  Non-Standard data for codec type
+      PINDEX dataSize = 0,            ///<  Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
+      PINDEX comparisonOffset = 0,    ///<  Offset into dataBlock to compare
+      PINDEX comparisonLength = P_MAX_INDEX  ///<  Length of bytes to compare
      );
 
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardAudioCapability(
-      const PString & oid,            /// OID for indentification of codec
-      const BYTE * dataBlock = NULL,  /// Non-Standard data for codec type
-      PINDEX dataSize = 0,            /// Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
-      PINDEX comparisonOffset = 0,    /// Offset into dataBlock to compare
-      PINDEX comparisonLength = P_MAX_INDEX  /// Length of bytes to compare
+      const PString & oid,            ///<  OID for indentification of codec
+      const BYTE * dataBlock = NULL,  ///<  Non-Standard data for codec type
+      PINDEX dataSize = 0,            ///<  Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
+      PINDEX comparisonOffset = 0,    ///<  Offset into dataBlock to compare
+      PINDEX comparisonLength = P_MAX_INDEX  ///<  Length of bytes to compare
     );
 
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardAudioCapability(
-      BYTE country,                   /// t35 information
-      BYTE extension,                 /// t35 information
-      WORD maufacturer,               /// t35 information
-      const BYTE * dataBlock = NULL,  /// Non-Standard data for codec type
-      PINDEX dataSize = 0,            /// Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
-      PINDEX comparisonOffset = 0,    /// Offset into dataBlock to compare
-      PINDEX comparisonLength = P_MAX_INDEX  /// Length of bytes to compare
+      BYTE country,                   ///<  t35 information
+      BYTE extension,                 ///<  t35 information
+      WORD maufacturer,               ///<  t35 information
+      const BYTE * dataBlock = NULL,  ///<  Non-Standard data for codec type
+      PINDEX dataSize = 0,            ///<  Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
+      PINDEX comparisonOffset = 0,    ///<  Offset into dataBlock to compare
+      PINDEX comparisonLength = P_MAX_INDEX  ///<  Length of bytes to compare
     );
   //@}
 
@@ -894,8 +897,8 @@ class H323NonStandardAudioCapability : public H323AudioCapability,
        to handle the PDU.
      */
     virtual BOOL OnSendingPDU(
-      H245_AudioCapability & pdu,  /// PDU to set information on
-      unsigned packetSize          /// Packet size to use in capability
+      H245_AudioCapability & pdu,  ///<  PDU to set information on
+      unsigned packetSize          ///<  Packet size to use in capability
     ) const;
 
     /**This function is called whenever and outgoing RequestMode
@@ -907,7 +910,7 @@ class H323NonStandardAudioCapability : public H323AudioCapability,
        to handle the PDU.
      */
     virtual BOOL OnSendingPDU(
-      H245_AudioMode & pdu  /// PDU to set information on
+      H245_AudioMode & pdu  ///<  PDU to set information on
     ) const;
 
     /**This function is called whenever and incoming TerminalCapabilitySet
@@ -919,14 +922,14 @@ class H323NonStandardAudioCapability : public H323AudioCapability,
        to handle the provided PDU.
      */
     virtual BOOL OnReceivedPDU(
-      const H245_AudioCapability & pdu,  /// PDU to get information from
-      unsigned & packetSize              /// Packet size to use in capability
+      const H245_AudioCapability & pdu,  ///<  PDU to get information from
+      unsigned & packetSize              ///<  Packet size to use in capability
     );
 
     /**Compare the nonStandardData part of the capability, if applicable.
       */
     virtual BOOL IsNonStandardMatch(
-      const H245_NonStandardParameter & param  /// Non standard field in PDU received
+      const H245_NonStandardParameter & param  ///<  Non standard field in PDU received
     ) const;
   //@}
 };
@@ -975,7 +978,7 @@ class H323VideoCapability : public H323RealTimeCapability
        specific PDU type.
      */
     virtual BOOL OnSendingPDU(
-      H245_Capability & pdu  /// PDU to set information on
+      H245_Capability & pdu  ///<  PDU to set information on
     ) const;
 
     /**This function is called whenever and outgoing OpenLogicalChannel
@@ -987,7 +990,7 @@ class H323VideoCapability : public H323RealTimeCapability
        specific PDU type.
      */
     virtual BOOL OnSendingPDU(
-      H245_DataType & pdu  /// PDU to set information on
+      H245_DataType & pdu  ///<  PDU to set information on
     ) const;
 
     /**This function is called whenever and outgoing RequestMode
@@ -999,7 +1002,7 @@ class H323VideoCapability : public H323RealTimeCapability
        specific PDU type.
      */
     virtual BOOL OnSendingPDU(
-      H245_ModeElement & pdu  /// PDU to set information on
+      H245_ModeElement & pdu  ///<  PDU to set information on
     ) const;
 
     /**This function is called whenever and outgoing TerminalCapabilitySet
@@ -1010,7 +1013,7 @@ class H323VideoCapability : public H323RealTimeCapability
        The default behaviour is pure.
      */
     virtual BOOL OnSendingPDU(
-      H245_VideoCapability & pdu  /// PDU to set information on
+      H245_VideoCapability & pdu  ///<  PDU to set information on
     ) const = 0;
 
     /**This function is called whenever and outgoing RequestMode
@@ -1022,7 +1025,7 @@ class H323VideoCapability : public H323RealTimeCapability
        function (translated to different enum).
      */
     virtual BOOL OnSendingPDU(
-      H245_VideoMode & pdu  /// PDU to set information on
+      H245_VideoMode & pdu  ///<  PDU to set information on
     ) const = 0;
 
     /**This function is called whenever and incoming TerminalCapabilitySet
@@ -1035,7 +1038,7 @@ class H323VideoCapability : public H323RealTimeCapability
        returns TRUE.
      */
     virtual BOOL OnReceivedPDU(
-      const H245_Capability & pdu  /// PDU to get information from
+      const H245_Capability & pdu  ///<  PDU to get information from
     );
 
     /**This function is called whenever and incoming OpenLogicalChannel
@@ -1046,8 +1049,8 @@ class H323VideoCapability : public H323RealTimeCapability
        The default behaviour is pure.
      */
     virtual BOOL OnReceivedPDU(
-      const H245_DataType & pdu,  /// PDU to get information from
-      BOOL receiver               /// Is receiver OLC
+      const H245_DataType & pdu,  ///<  PDU to get information from
+      BOOL receiver               ///<  Is receiver OLC
     );
 
     /**This function is called whenever and incoming TerminalCapabilitySet
@@ -1058,7 +1061,7 @@ class H323VideoCapability : public H323RealTimeCapability
        The default behaviour is pure.
      */
     virtual BOOL OnReceivedPDU(
-      const H245_VideoCapability & pdu  /// PDU to set information on
+      const H245_VideoCapability & pdu  ///<  PDU to set information on
     ) = 0;
   //@}
 };
@@ -1082,33 +1085,33 @@ class H323NonStandardVideoCapability : public H323VideoCapability,
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardVideoCapability(
-      const H323EndPoint & endpoint,  /// Endpoint to get t35 information
-      const BYTE * dataBlock = NULL,  /// Non-Standard data for codec type
-      PINDEX dataSize = 0,            /// Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
-      PINDEX comparisonOffset = 0,    /// Offset into dataBlock to compare
-      PINDEX comparisonLength = P_MAX_INDEX  /// Length of bytes to compare
+      const H323EndPoint & endpoint,  ///<  Endpoint to get t35 information
+      const BYTE * dataBlock = NULL,  ///<  Non-Standard data for codec type
+      PINDEX dataSize = 0,            ///<  Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
+      PINDEX comparisonOffset = 0,    ///<  Offset into dataBlock to compare
+      PINDEX comparisonLength = P_MAX_INDEX  ///<  Length of bytes to compare
     );
 
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardVideoCapability(
-      const PString & oid,            /// OID for indentification of codec
-      const BYTE * dataBlock = NULL,  /// Non-Standard data for codec type
-      PINDEX dataSize = 0,            /// Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
-      PINDEX comparisonOffset = 0,    /// Offset into dataBlock to compare
-      PINDEX comparisonLength = P_MAX_INDEX  /// Length of bytes to compare
+      const PString & oid,            ///<  OID for indentification of codec
+      const BYTE * dataBlock = NULL,  ///<  Non-Standard data for codec type
+      PINDEX dataSize = 0,            ///<  Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
+      PINDEX comparisonOffset = 0,    ///<  Offset into dataBlock to compare
+      PINDEX comparisonLength = P_MAX_INDEX  ///<  Length of bytes to compare
     );
 
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardVideoCapability(
-      BYTE country,                   /// t35 information
-      BYTE extension,                 /// t35 information
-      WORD maufacturer,               /// t35 information
-      const BYTE * dataBlock = NULL,  /// Non-Standard data for codec type
-      PINDEX dataSize = 0,            /// Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
-      PINDEX comparisonOffset = 0,    /// Offset into dataBlock to compare
-      PINDEX comparisonLength = P_MAX_INDEX  /// Length of bytes to compare
+      BYTE country,                   ///<  t35 information
+      BYTE extension,                 ///<  t35 information
+      WORD maufacturer,               ///<  t35 information
+      const BYTE * dataBlock = NULL,  ///<  Non-Standard data for codec type
+      PINDEX dataSize = 0,            ///<  Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
+      PINDEX comparisonOffset = 0,    ///<  Offset into dataBlock to compare
+      PINDEX comparisonLength = P_MAX_INDEX  ///<  Length of bytes to compare
     );
   //@}
 
@@ -1142,7 +1145,7 @@ class H323NonStandardVideoCapability : public H323VideoCapability,
        to handle the PDU.
      */
     virtual BOOL OnSendingPDU(
-      H245_VideoCapability & pdu  /// PDU to set information on
+      H245_VideoCapability & pdu  ///<  PDU to set information on
     ) const;
 
     /**This function is called whenever and outgoing RequestMode
@@ -1154,7 +1157,7 @@ class H323NonStandardVideoCapability : public H323VideoCapability,
        to handle the PDU.
      */
     virtual BOOL OnSendingPDU(
-      H245_VideoMode & pdu  /// PDU to set information on
+      H245_VideoMode & pdu  ///<  PDU to set information on
     ) const;
 
     /**This function is called whenever and incoming TerminalCapabilitySet
@@ -1166,13 +1169,13 @@ class H323NonStandardVideoCapability : public H323VideoCapability,
        to handle the provided PDU.
      */
     virtual BOOL OnReceivedPDU(
-      const H245_VideoCapability & pdu  /// PDU to set information on
+      const H245_VideoCapability & pdu  ///<  PDU to set information on
     );
 
     /**Compare the nonStandardData part of the capability, if applicable.
       */
     virtual BOOL IsNonStandardMatch(
-      const H245_NonStandardParameter & param  /// Non standard field in PDU received
+      const H245_NonStandardParameter & param  ///<  Non standard field in PDU received
     ) const;
   //@}
 };
@@ -1194,7 +1197,7 @@ class H323DataCapability : public H323Capability
     /**Create a new data capability.
       */
     H323DataCapability(
-      unsigned maxBitRate = 0  /// Maximum bit rate for data in 100's b/s
+      unsigned maxBitRate = 0  ///<  Maximum bit rate for data in 100's b/s
     );
   //@}
 
@@ -1229,7 +1232,7 @@ class H323DataCapability : public H323Capability
        specific PDU type.
      */
     virtual BOOL OnSendingPDU(
-      H245_Capability & pdu  /// PDU to set information on
+      H245_Capability & pdu  ///<  PDU to set information on
     ) const;
 
     /**This function is called whenever and outgoing OpenLogicalChannel
@@ -1241,7 +1244,7 @@ class H323DataCapability : public H323Capability
        specific PDU type.
      */
     virtual BOOL OnSendingPDU(
-      H245_DataType & pdu  /// PDU to set information on
+      H245_DataType & pdu  ///<  PDU to set information on
     ) const;
 
     /**This function is called whenever and outgoing RequestMode
@@ -1253,7 +1256,7 @@ class H323DataCapability : public H323Capability
        specific PDU type.
      */
     virtual BOOL OnSendingPDU(
-      H245_ModeElement & pdu  /// PDU to set information on
+      H245_ModeElement & pdu  ///<  PDU to set information on
     ) const;
 
     /**This function is called whenever and outgoing TerminalCapabilitySet
@@ -1264,7 +1267,7 @@ class H323DataCapability : public H323Capability
        The default behaviour is pure.
      */
     virtual BOOL OnSendingPDU(
-      H245_DataApplicationCapability & pdu  /// PDU to set information on
+      H245_DataApplicationCapability & pdu  ///<  PDU to set information on
     ) const = 0;
 
     /**This function is called whenever and outgoing RequestMode
@@ -1276,7 +1279,7 @@ class H323DataCapability : public H323Capability
        function (translated to different enum).
      */
     virtual BOOL OnSendingPDU(
-      H245_DataMode & pdu  /// PDU to set information on
+      H245_DataMode & pdu  ///<  PDU to set information on
     ) const = 0;
 
     /**This function is called whenever and incoming TerminalCapabilitySet
@@ -1289,7 +1292,7 @@ class H323DataCapability : public H323Capability
        returns TRUE.
      */
     virtual BOOL OnReceivedPDU(
-      const H245_Capability & pdu  /// PDU to get information from
+      const H245_Capability & pdu  ///<  PDU to get information from
     );
 
     /**This function is called whenever and incoming OpenLogicalChannel
@@ -1300,8 +1303,8 @@ class H323DataCapability : public H323Capability
        The default behaviour is pure.
      */
     virtual BOOL OnReceivedPDU(
-      const H245_DataType & pdu,  /// PDU to get information from
-      BOOL receiver               /// Is receiver OLC
+      const H245_DataType & pdu,  ///<  PDU to get information from
+      BOOL receiver               ///<  Is receiver OLC
     );
 
     /**This function is called whenever and incoming TerminalCapabilitySet
@@ -1312,7 +1315,7 @@ class H323DataCapability : public H323Capability
        The default behaviour is pure.
      */
     virtual BOOL OnReceivedPDU(
-      const H245_DataApplicationCapability & pdu  /// PDU to set information on
+      const H245_DataApplicationCapability & pdu  ///<  PDU to set information on
     ) = 0;
   //@}
 
@@ -1339,36 +1342,36 @@ class H323NonStandardDataCapability : public H323DataCapability,
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardDataCapability(
-      unsigned maxBitRate,            /// Maximum bit rate for data in 100's b/s
-      const H323EndPoint & endpoint,  /// Endpoint to get t35 information
-      const BYTE * dataBlock = NULL,  /// Non-Standard data for codec type
-      PINDEX dataSize = 0,            /// Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
-      PINDEX comparisonOffset = 0,    /// Offset into dataBlock to compare
-      PINDEX comparisonLength = P_MAX_INDEX  /// Length of bytes to compare
+      unsigned maxBitRate,            ///<  Maximum bit rate for data in 100's b/s
+      const H323EndPoint & endpoint,  ///<  Endpoint to get t35 information
+      const BYTE * dataBlock = NULL,  ///<  Non-Standard data for codec type
+      PINDEX dataSize = 0,            ///<  Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
+      PINDEX comparisonOffset = 0,    ///<  Offset into dataBlock to compare
+      PINDEX comparisonLength = P_MAX_INDEX  ///<  Length of bytes to compare
     );
 
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardDataCapability(
-      unsigned maxBitRate,            /// Maximum bit rate for data in 100's b/s
-      const PString & oid,            /// OID for indentification of codec
-      const BYTE * dataBlock = NULL,  /// Non-Standard data for codec type
-      PINDEX dataSize = 0,            /// Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
-      PINDEX comparisonOffset = 0,    /// Offset into dataBlock to compare
-      PINDEX comparisonLength = P_MAX_INDEX  /// Length of bytes to compare
+      unsigned maxBitRate,            ///<  Maximum bit rate for data in 100's b/s
+      const PString & oid,            ///<  OID for indentification of codec
+      const BYTE * dataBlock = NULL,  ///<  Non-Standard data for codec type
+      PINDEX dataSize = 0,            ///<  Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
+      PINDEX comparisonOffset = 0,    ///<  Offset into dataBlock to compare
+      PINDEX comparisonLength = P_MAX_INDEX  ///<  Length of bytes to compare
     );
 
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardDataCapability(
-      unsigned maxBitRate,            /// Maximum bit rate for data in 100's b/s
-      BYTE country,                   /// t35 information
-      BYTE extension,                 /// t35 information
-      WORD maufacturer,               /// t35 information
-      const BYTE * dataBlock = NULL,  /// Non-Standard data for codec type
-      PINDEX dataSize = 0,            /// Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
-      PINDEX comparisonOffset = 0,    /// Offset into dataBlock to compare
-      PINDEX comparisonLength = P_MAX_INDEX  /// Length of bytes to compare
+      unsigned maxBitRate,            ///<  Maximum bit rate for data in 100's b/s
+      BYTE country,                   ///<  t35 information
+      BYTE extension,                 ///<  t35 information
+      WORD maufacturer,               ///<  t35 information
+      const BYTE * dataBlock = NULL,  ///<  Non-Standard data for codec type
+      PINDEX dataSize = 0,            ///<  Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
+      PINDEX comparisonOffset = 0,    ///<  Offset into dataBlock to compare
+      PINDEX comparisonLength = P_MAX_INDEX  ///<  Length of bytes to compare
     );
   //@}
 
@@ -1402,7 +1405,7 @@ class H323NonStandardDataCapability : public H323DataCapability,
        to handle the PDU.
      */
     virtual BOOL OnSendingPDU(
-      H245_DataApplicationCapability & pdu  /// PDU to set information on
+      H245_DataApplicationCapability & pdu  ///<  PDU to set information on
     ) const;
 
     /**This function is called whenever and outgoing RequestMode
@@ -1414,7 +1417,7 @@ class H323NonStandardDataCapability : public H323DataCapability,
        to handle the PDU.
      */
     virtual BOOL OnSendingPDU(
-      H245_DataMode & pdu  /// PDU to set information on
+      H245_DataMode & pdu  ///<  PDU to set information on
     ) const;
 
     /**This function is called whenever and incoming TerminalCapabilitySet
@@ -1426,13 +1429,13 @@ class H323NonStandardDataCapability : public H323DataCapability,
        to handle the provided PDU.
      */
     virtual BOOL OnReceivedPDU(
-      const H245_DataApplicationCapability & pdu  /// PDU to set information on
+      const H245_DataApplicationCapability & pdu  ///<  PDU to set information on
     );
 
     /**Compare the nonStandardData part of the capability, if applicable.
       */
     virtual BOOL IsNonStandardMatch(
-      const H245_NonStandardParameter & param  /// Non standard field in PDU received
+      const H245_NonStandardParameter & param  ///<  Non standard field in PDU received
     ) const;
   //@}
 };
@@ -1468,8 +1471,8 @@ class H323_G711Capability : public H323AudioCapability
     /**Create a new G.711 capability.
      */
     H323_G711Capability(
-      Mode mode = muLaw,    /// Type of encoding.
-      Speed speed = At64k   /// Encoding bit rate.
+      Mode mode = muLaw,    ///<  Type of encoding.
+      Speed speed = At64k   ///<  Encoding bit rate.
     );
   //@}
 
@@ -1596,7 +1599,7 @@ class H323_G7231Capability : public H323AudioCapability
     /**Create a new G.723.1 capability.
      */
     H323_G7231Capability(
-      BOOL allowSIDFrames = TRUE   /// Allow SID frames in data stream.
+      BOOL allowSIDFrames = TRUE   ///<  Allow SID frames in data stream.
     );
   //@}
 
@@ -1629,8 +1632,8 @@ class H323_G7231Capability : public H323AudioCapability
        The default behaviour sets the data rate field in the PDU.
      */
     virtual BOOL OnSendingPDU(
-      H245_AudioCapability & pdu,  /// PDU to set information on
-      unsigned packetSize          /// Packet size to use in capability
+      H245_AudioCapability & pdu,  ///<  PDU to set information on
+      unsigned packetSize          ///<  Packet size to use in capability
     ) const;
 
     /**This function is called whenever and incoming TerminalCapabilitySet
@@ -1641,8 +1644,8 @@ class H323_G7231Capability : public H323AudioCapability
        The default behaviour gets the data rate field from the PDU.
      */
     virtual BOOL OnReceivedPDU(
-      const H245_AudioCapability & pdu,  /// PDU to get information from
-      unsigned & packetSize              /// Packet size to use in capability
+      const H245_AudioCapability & pdu,  ///<  PDU to get information from
+      unsigned & packetSize              ///<  Packet size to use in capability
     );
   //@}
 
@@ -1695,7 +1698,7 @@ class H323_GSM0610Capability : public H323AudioCapability
        The default behaviour sets the txFramesInPacket variable.
      */
     virtual void SetTxFramesInPacket(
-      unsigned frames   /// Number of frames per packet
+      unsigned frames   ///<  Number of frames per packet
     );
   //@}
 
@@ -1709,8 +1712,8 @@ class H323_GSM0610Capability : public H323AudioCapability
        The default behaviour sets the data rate field in the PDU.
      */
     virtual BOOL OnSendingPDU(
-      H245_AudioCapability & pdu,  /// PDU to set information on
-      unsigned packetSize          /// Packet size to use in capability
+      H245_AudioCapability & pdu,  ///<  PDU to set information on
+      unsigned packetSize          ///<  Packet size to use in capability
     ) const;
 
     /**This function is called whenever and incoming TerminalCapabilitySet
@@ -1721,8 +1724,8 @@ class H323_GSM0610Capability : public H323AudioCapability
        The default behaviour gets the data rate field from the PDU.
      */
     virtual BOOL OnReceivedPDU(
-      const H245_AudioCapability & pdu,  /// PDU to get information from
-      unsigned & packetSize              /// Packet size to use in capability
+      const H245_AudioCapability & pdu,  ///<  PDU to get information from
+      unsigned & packetSize              ///<  Packet size to use in capability
     );
   //@}
 };
@@ -1793,11 +1796,11 @@ class H323_UserInputCapability : public H323Capability
        this is taken from the fields in param.
      */
     virtual H323Channel * CreateChannel(
-      H323Connection & connection,    /// Owner connection for channel
-      H323Channel::Directions dir,    /// Direction of channel
-      unsigned sessionID,             /// Session ID for RTP channel
+      H323Connection & connection,    ///<  Owner connection for channel
+      H323Channel::Directions dir,    ///<  Direction of channel
+      unsigned sessionID,             ///<  Session ID for RTP channel
       const H245_H2250LogicalChannelParameters * param
-                                      /// Parameters for channel
+                                      ///<  Parameters for channel
     ) const;
   //@}
 
@@ -1811,7 +1814,7 @@ class H323_UserInputCapability : public H323Capability
        The default behaviour is pure.
      */
     virtual BOOL OnSendingPDU(
-      H245_Capability & pdu  /// PDU to set information on
+      H245_Capability & pdu  ///<  PDU to set information on
     ) const;
 
     /**This function is called whenever and outgoing OpenLogicalChannel
@@ -1822,7 +1825,7 @@ class H323_UserInputCapability : public H323Capability
        The default behaviour is pure.
      */
     virtual BOOL OnSendingPDU(
-      H245_DataType & pdu  /// PDU to set information on
+      H245_DataType & pdu  ///<  PDU to set information on
     ) const;
 
     /**This function is called whenever and outgoing RequestMode
@@ -1834,7 +1837,7 @@ class H323_UserInputCapability : public H323Capability
        specific PDU type.
      */
     virtual BOOL OnSendingPDU(
-      H245_ModeElement & pdu  /// PDU to set information on
+      H245_ModeElement & pdu  ///<  PDU to set information on
     ) const;
 
     /**This function is called whenever and incoming TerminalCapabilitySet
@@ -1847,7 +1850,7 @@ class H323_UserInputCapability : public H323Capability
        returns TRUE.
      */
     virtual BOOL OnReceivedPDU(
-      const H245_Capability & pdu  /// PDU to get information from
+      const H245_Capability & pdu  ///<  PDU to get information from
     );
 
     /**This function is called whenever and incoming OpenLogicalChannel
@@ -1858,8 +1861,8 @@ class H323_UserInputCapability : public H323Capability
        The default behaviour is pure.
      */
     virtual BOOL OnReceivedPDU(
-      const H245_DataType & pdu,  /// PDU to get information from
-      BOOL receiver               /// Is receiver OLC
+      const H245_DataType & pdu,  ///<  PDU to get information from
+      BOOL receiver               ///<  Is receiver OLC
     );
 
     /**Validate that the capability is usable given the connection.
@@ -1876,9 +1879,9 @@ class H323_UserInputCapability : public H323Capability
   //@}
 
     static void AddAllCapabilities(
-      H323Capabilities & capabilities,        /// Table to add capabilities to
-      PINDEX descriptorNum,   /// The member of the capabilityDescriptor to add
-      PINDEX simultaneous     /// The member of the SimultaneousCapabilitySet to add
+      H323Capabilities & capabilities,        ///<  Table to add capabilities to
+      PINDEX descriptorNum,   ///<  The member of the capabilityDescriptor to add
+      PINDEX simultaneous     ///<  The member of the SimultaneousCapabilitySet to add
     );
 
   protected:
@@ -1928,8 +1931,8 @@ class H323Capabilities : public PObject
     /**Construct a capability set from the H.245 PDU provided.
       */
     H323Capabilities(
-      const H323Connection & connection,      /// Connection for capabilities
-      const H245_TerminalCapabilitySet & pdu  /// PDU to convert to a capability set.
+      const H323Connection & connection,      ///<  Connection for capabilities
+      const H245_TerminalCapabilitySet & pdu  ///<  PDU to convert to a capability set.
     );
 
     /**Construct a copy of a capability set.
@@ -1937,7 +1940,7 @@ class H323Capabilities : public PObject
        capability in the original set.
       */
     H323Capabilities(
-      const H323Capabilities & original /// Original capabilities to duplicate
+      const H323Capabilities & original ///<  Original capabilities to duplicate
     );
 
     /**Assign a copy of a capability set.
@@ -1945,7 +1948,7 @@ class H323Capabilities : public PObject
        capability in the original set.
       */
     H323Capabilities & operator=(
-      const H323Capabilities & original /// Original capabilities to duplicate
+      const H323Capabilities & original ///<  Original capabilities to duplicate
     );
   //@}
 
@@ -1954,7 +1957,7 @@ class H323Capabilities : public PObject
     /**Print out the object to the stream, virtual version of << operator.
      */
     void PrintOn(
-      ostream & strm    /// Stream to print out to.
+      ostream & strm    ///<  Stream to print out to.
     ) const;
   //@}
 
@@ -1989,9 +1992,9 @@ class H323Capabilities : public PObject
        add that capability once.
      */
     PINDEX SetCapability(
-      PINDEX descriptorNum, /// The member of the capabilityDescriptor to add
-      PINDEX simultaneous,  /// The member of the SimultaneousCapabilitySet to add
-      H323Capability * cap  /// New capability specification
+      PINDEX descriptorNum, ///<  The member of the capabilityDescriptor to add
+      PINDEX simultaneous,  ///<  The member of the SimultaneousCapabilitySet to add
+      H323Capability * cap  ///<  New capability specification
     );
 
     /**Add all matching capabilities to descriptor lists.
@@ -1999,10 +2002,10 @@ class H323Capabilities : public PObject
        form of the SetCapability() function.
       */
     PINDEX AddAllCapabilities(
-      const H323EndPoint & ep, /// The endpoint adding the capabilities.
-      PINDEX descriptorNum,    /// The member of the capabilityDescriptor to add
-      PINDEX simultaneous,     /// The member of the SimultaneousCapabilitySet to add
-      const PString & name     /// New capabilities name, if using "known" one.
+      const H323EndPoint & ep, ///<  The endpoint adding the capabilities.
+      PINDEX descriptorNum,    ///<  The member of the capabilityDescriptor to add
+      PINDEX simultaneous,     ///<  The member of the SimultaneousCapabilitySet to add
+      const PString & name     ///<  New capabilities name, if using "known" one.
     );
 
     /**Add a codec to the capabilities table. This will assure that the
@@ -2014,7 +2017,7 @@ class H323Capabilities : public PObject
        capability class however.
      */
     void Add(
-      H323Capability * capability   /// New capability specification
+      H323Capability * capability   ///<  New capability specification
     );
 
     /**Copy a codec to the capabilities table. This will make a clone of the
@@ -2024,7 +2027,7 @@ class H323Capabilities : public PObject
        Returns the copy that is put in the table.
      */
     H323Capability * Copy(
-      const H323Capability & capability   /// New capability specification
+      const H323Capability & capability   ///<  New capability specification
     );
 
     /**Remove a capability from the table. Note that the the parameter must be
@@ -2032,7 +2035,7 @@ class H323Capabilities : public PObject
        deleted when removed from the table.
       */
     void Remove(
-      H323Capability * capability   /// Existing capability specification
+      H323Capability * capability   ///<  Existing capability specification
     );
 
     /**Remove all capabilities matching the string. This uses FindCapability()
@@ -2040,14 +2043,14 @@ class H323Capabilities : public PObject
        for the argument.
       */
     void Remove(
-      const PString & formatName   /// Format name to search for.
+      const PString & formatName   ///<  Format name to search for.
     );
 
     /**Remove all capabilities matching any of the strings provided. This
        simply calls Remove() for each string in the list.
       */
     void Remove(
-      const PStringArray & formatNames  /// Array of format names to remove
+      const PStringArray & formatNames  ///<  Array of format names to remove
     );
 
     /**Remove all of the capabilities.
@@ -2081,9 +2084,9 @@ class H323Capabilities : public PObject
        NULL if no capability meeting the criteria was found
       */
     H323Capability * FindCapability(
-      const PString & formatName, /// Wildcard format name to search for
+      const PString & formatName, ///<  Wildcard format name to search for
       H323Capability::CapabilityDirection direction = H323Capability::e_Unknown
-            /// Optional direction to include into search criteria
+            ///<  Optional direction to include into search criteria
     ) const;
 
     /**Find the first capability in the table of the specified direction.
@@ -2092,7 +2095,7 @@ class H323Capabilities : public PObject
        NULL if no capability meeting the criteria was found
       */
     H323Capability * FindCapability(
-      H323Capability::CapabilityDirection direction /// Direction to search for
+      H323Capability::CapabilityDirection direction ///<  Direction to search for
     ) const;
 
     /**Find the capability given the capability. This does a value compare of
@@ -2103,7 +2106,7 @@ class H323Capabilities : public PObject
        NULL if no capability meeting the criteria was found
       */
     H323Capability * FindCapability(
-      const H323Capability & capability /// Capability to search for
+      const H323Capability & capability ///<  Capability to search for
     ) const;
 
     /**Find the capability given the H.245 capability PDU.
@@ -2112,7 +2115,7 @@ class H323Capabilities : public PObject
        NULL if no capability meeting the criteria was found
       */
     H323Capability * FindCapability(
-      const H245_Capability & cap  /// H245 capability table entry
+      const H245_Capability & cap  ///<  H245 capability table entry
     ) const;
 
     /**Find the capability given the H.245 data type PDU.
@@ -2121,7 +2124,7 @@ class H323Capabilities : public PObject
        NULL if no capability meeting the criteria was found
       */
     H323Capability * FindCapability(
-      const H245_DataType & dataType  /// H245 data type of codec
+      const H245_DataType & dataType  ///<  H245 data type of codec
     ) const;
 
     /**Find the capability given the H.245 data type PDU.
@@ -2130,7 +2133,7 @@ class H323Capabilities : public PObject
        NULL if no capability meeting the criteria was found
       */
     H323Capability * FindCapability(
-      const H245_ModeElement & modeElement  /// H245 data type of codec
+      const H245_ModeElement & modeElement  ///<  H245 data type of codec
     ) const;
 
     /**Find the capability given the sub-type info.
@@ -2139,9 +2142,9 @@ class H323Capabilities : public PObject
        NULL if no capability meeting the criteria was found
       */
     H323Capability * FindCapability(
-      H323Capability::MainTypes mainType, /// Main type to find
-      const PASN_Choice & subTypePDU,         /// Sub-type info
-      unsigned nonStandardTag             /// NOn-standard tag ID for sub-type
+      H323Capability::MainTypes mainType, ///<  Main type to find
+      const PASN_Choice & subTypePDU,         ///<  Sub-type info
+      unsigned nonStandardTag             ///<  NOn-standard tag ID for sub-type
     ) const;
 
     /**Find the capability given the type codecs.
@@ -2150,15 +2153,15 @@ class H323Capabilities : public PObject
        NULL if no capability meeting the criteria was found
       */
     H323Capability * FindCapability(
-      H323Capability::MainTypes mainType, /// Main type to find
-      unsigned subType = UINT_MAX         /// Sub-type to find (UINT_MAX=ignore)
+      H323Capability::MainTypes mainType, ///<  Main type to find
+      unsigned subType = UINT_MAX         ///<  Sub-type to find (UINT_MAX=ignore)
     ) const;
 
     /**Build a H.245 PDU from the information in the capability set.
       */
     void BuildPDU(
-      const H323Connection & connection,  /// Connection building PDU for
-      H245_TerminalCapabilitySet & pdu    /// PDU to build
+      const H323Connection & connection,  ///<  Connection building PDU for
+      H245_TerminalCapabilitySet & pdu    ///<  PDU to build
     ) const;
 
     /**Merge the capabilities into this set.
@@ -2174,7 +2177,7 @@ class H323Capabilities : public PObject
        The string matching rules are as for the FindCapability() function.
       */
     void Reorder(
-      const PStringArray & preferenceOrder  /// New order
+      const PStringArray & preferenceOrder  ///<  New order
     );
 
     /**Test if the capability is allowed.

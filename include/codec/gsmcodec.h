@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gsmcodec.h,v $
- * Revision 1.2007  2005/08/28 07:59:17  rjongbloed
+ * Revision 1.2008  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.6  2005/08/28 07:59:17  rjongbloed
  * Converted OpalTranscoder to use factory, requiring sme changes in making sure
  *   OpalMediaFormat instances are initialised before use.
  *
@@ -118,10 +121,10 @@ struct gsm_state;
 class Opal_GSM0610 : public OpalFramedTranscoder {
   public:
     Opal_GSM0610(
-      const OpalMediaFormat & inputMediaFormat,  // Input media format
-      const OpalMediaFormat & outputMediaFormat, // Output media format
-      unsigned inputBytesPerFrame,  /// Number of bytes in an input frame
-      unsigned outputBytesPerFrame  /// Number of bytes in an output frame
+      const OpalMediaFormat & inputMediaFormat,  ///<  Input media format
+      const OpalMediaFormat & outputMediaFormat, ///<  Output media format
+      unsigned inputBytesPerFrame,  ///<  Number of bytes in an input frame
+      unsigned outputBytesPerFrame  ///<  Number of bytes in an output frame
     );
     ~Opal_GSM0610();
   protected:

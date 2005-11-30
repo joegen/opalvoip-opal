@@ -60,12 +60,12 @@ class H323_AnnexG : public H323Transactor
     /**Create a new protocol handler.
      */
     H323_AnnexG(
-      H323EndPoint & endpoint,  /// Endpoint gatekeeper is associated with.
-      H323Transport * transport /// Transport over which gatekeepers communicates.
+      H323EndPoint & endpoint,  ///<  Endpoint gatekeeper is associated with.
+      H323Transport * transport ///<  Transport over which gatekeepers communicates.
     );
     H323_AnnexG(
-      H323EndPoint & endpoint,           /// Endpoint gatekeeper is associated with.
-      const H323TransportAddress & addr /// Transport over which gatekeepers communicates.
+      H323EndPoint & endpoint,           ///<  Endpoint gatekeeper is associated with.
+      const H323TransportAddress & addr ///<  Transport over which gatekeepers communicates.
     );
 
     /**Destroy protocol handler.
@@ -78,7 +78,7 @@ class H323_AnnexG : public H323Transactor
     /**Print the name of the gatekeeper.
       */
     void PrintOn(
-      ostream & strm    /// Stream to print to.
+      ostream & strm    ///<  Stream to print to.
     ) const;
   //@}
 

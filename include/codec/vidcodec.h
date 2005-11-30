@@ -24,7 +24,10 @@
  * Contributor(s): 
  *
  * $Log: vidcodec.h,v $
- * Revision 1.2012  2005/10/21 17:58:31  dsandras
+ * Revision 1.2013  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.11  2005/10/21 17:58:31  dsandras
  * Applied patch from Hannes Friederich <hannesf AATT ee.ethz.ch> to fix OpalVideoUpdatePicture - PIsDescendant problems. Thanks!
  *
  * Revision 2.10  2005/09/06 12:44:49  rjongbloed
@@ -118,8 +121,8 @@ class OpalVideoTranscoder : public OpalTranscoder
     /** Create a new video transcoder implementation.
       */
     OpalVideoTranscoder(
-      const OpalMediaFormat & inputMediaFormat,  // Input media format
-      const OpalMediaFormat & outputMediaFormat  // Output media format
+      const OpalMediaFormat & inputMediaFormat,  ///<  Input media format
+      const OpalMediaFormat & outputMediaFormat  ///<  Output media format
     );
   //@}
 
@@ -134,7 +137,7 @@ class OpalVideoTranscoder : public OpalTranscoder
        and sets the outputMediaFormatUpdated flag.
       */
     virtual BOOL UpdateOutputMediaFormat(
-      const OpalMediaFormat & mediaFormat  /// New media format
+      const OpalMediaFormat & mediaFormat  ///<  New media format
     );
 
     /**Execute the command specified to the transcoder. The commands are
@@ -145,7 +148,7 @@ class OpalVideoTranscoder : public OpalTranscoder
        updatePicture member variable if that is the command.
       */
     virtual BOOL ExecuteCommand(
-      const OpalMediaCommand & command    /// Command to execute.
+      const OpalMediaCommand & command    ///<  Command to execute.
     );
 
     /**Convert the data from one format to another.
@@ -159,8 +162,8 @@ class OpalVideoTranscoder : public OpalTranscoder
        Returns FALSE if the conversion fails.
       */
     virtual BOOL Convert(
-      const RTP_DataFrame & input,  /// Input data
-      RTP_DataFrame & output        /// Output data
+      const RTP_DataFrame & input,  ///<  Input data
+      RTP_DataFrame & output        ///<  Output data
     );
   //@}
 
@@ -231,8 +234,8 @@ class H323_UncompVideoCapability : public H323NonStandardVideoCapability
     /**Create a new uncompressed video Capability
      */
     H323_UncompVideoCapability(
-      const H323EndPoint & endpoint, /// Endpoint to get t35 information
-      const PString & colourFormat   /// Video colour format name
+      const H323EndPoint & endpoint, ///<  Endpoint to get t35 information
+      const PString & colourFormat   ///<  Video colour format name
     );
   //@}
 
@@ -281,8 +284,8 @@ class OpalUncompVideoTranscoder : public OpalVideoTranscoder
     /** Create a new video transcoder implementation.
       */
     OpalUncompVideoTranscoder(
-      const OpalMediaFormat & inputMediaFormat,  // Input media format
-      const OpalMediaFormat & outputMediaFormat  // Output media format
+      const OpalMediaFormat & inputMediaFormat,  ///<  Input media format
+      const OpalMediaFormat & outputMediaFormat  ///<  Output media format
     );
 
     /**Destroy the video transcoder cleaning up the colour converter.
@@ -299,7 +302,7 @@ class OpalUncompVideoTranscoder : public OpalVideoTranscoder
        must be able to handle any sized packets.
       */
     virtual PINDEX GetOptimalDataFrameSize(
-      BOOL input      /// Flag for input or output data size
+      BOOL input      ///<  Flag for input or output data size
     ) const;
 
     /**Convert the data from one format to another.
@@ -313,8 +316,8 @@ class OpalUncompVideoTranscoder : public OpalVideoTranscoder
        Returns FALSE if the conversion fails.
       */
     virtual BOOL ConvertFrames(
-      const RTP_DataFrame & input,  /// Input data
-      RTP_DataFrameList & output    /// Output data
+      const RTP_DataFrame & input,  ///<  Input data
+      RTP_DataFrameList & output    ///<  Output data
     );
   //@}
 };

@@ -23,7 +23,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc2833.h,v $
- * Revision 1.2005  2002/09/16 02:52:33  robertj
+ * Revision 1.2006  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.4  2002/09/16 02:52:33  robertj
  * Added #define so can select if #pragma interface/implementation is used on
  *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
  *
@@ -80,12 +83,12 @@ class OpalRFC2833Proto : public PObject {
     );
 
     virtual BOOL SendTone(
-      char tone,              /// DTMF tone code
-      unsigned duration       /// Duration of tone in milliseconds
+      char tone,              ///<  DTMF tone code
+      unsigned duration       ///<  Duration of tone in milliseconds
     );
 
     virtual BOOL BeginTransmit(
-      char tone  /// DTMF tone code
+      char tone  ///<  DTMF tone code
     );
     virtual BOOL EndTransmit();
 
@@ -101,7 +104,7 @@ class OpalRFC2833Proto : public PObject {
     RTP_DataFrame::PayloadTypes GetPayloadType() const { return payloadType; }
 
     void SetPayloadType(
-      RTP_DataFrame::PayloadTypes type /// new payload type
+      RTP_DataFrame::PayloadTypes type ///<  new payload type
     ) { payloadType = type; }
 
     const PNotifier & GetReceiveHandler() const { return receiveHandler; }

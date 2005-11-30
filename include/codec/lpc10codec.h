@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lpc10codec.h,v $
- * Revision 1.2010  2005/08/28 07:59:17  rjongbloed
+ * Revision 1.2011  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.9  2005/08/28 07:59:17  rjongbloed
  * Converted OpalTranscoder to use factory, requiring sme changes in making sure
  *   OpalMediaFormat instances are initialised before use.
  *
@@ -135,7 +138,7 @@ class H323_LPC10Capability : public H323NonStandardAudioCapability
     /**Create a new LPC-10 capability.
      */
     H323_LPC10Capability(
-      const H323EndPoint & endpoint   // Endpoint to get NonStandardInfo from.
+      const H323EndPoint & endpoint   ///<  Endpoint to get NonStandardInfo from.
     );
   //@}
 

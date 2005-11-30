@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2020  2005/09/06 12:44:49  rjongbloed
+ * Revision 1.2021  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.19  2005/09/06 12:44:49  rjongbloed
  * Many fixes to finalise the video processing: merging remote media
  *
  * Revision 2.18  2005/09/04 06:23:38  rjongbloed
@@ -132,8 +135,8 @@ class OpalMediaFormatPair : public PObject
     /** Create a new transcoder implementation.
       */
     OpalMediaFormatPair(
-      const OpalMediaFormat & inputMediaFormat,  // Input media format
-      const OpalMediaFormat & outputMediaFormat  // Output media format
+      const OpalMediaFormat & inputMediaFormat,  ///<  Input media format
+      const OpalMediaFormat & outputMediaFormat  ///<  Output media format
     );
   //@}
 
@@ -144,7 +147,7 @@ class OpalMediaFormatPair : public PObject
        polymorphically.
       */
     void PrintOn(
-      ostream & strm    /// Stream to output text representation
+      ostream & strm    ///<  Stream to output text representation
     ) const;
 
     /** Compare the two objects and return their relative rank. This function is
@@ -159,7 +162,7 @@ class OpalMediaFormatPair : public PObject
        according to the relative rank of the objects.
      */
     virtual Comparison Compare(
-      const PObject & obj   // Object to compare against.
+      const PObject & obj   ///<  Object to compare against.
     ) const;
   //@}
 
@@ -206,8 +209,8 @@ class OpalTranscoder : public OpalMediaFormatPair
     /** Create a new transcoder implementation.
       */
     OpalTranscoder(
-      const OpalMediaFormat & inputMediaFormat,  // Input media format
-      const OpalMediaFormat & outputMediaFormat  // Output media format
+      const OpalMediaFormat & inputMediaFormat,  ///<  Input media format
+      const OpalMediaFormat & outputMediaFormat  ///<  Output media format
     );
   //@}
 
@@ -222,7 +225,7 @@ class OpalTranscoder : public OpalMediaFormatPair
        and sets the outputMediaFormatUpdated flag.
       */
     virtual BOOL UpdateOutputMediaFormat(
-      const OpalMediaFormat & mediaFormat  /// New media format
+      const OpalMediaFormat & mediaFormat  ///<  New media format
     );
 
     /**Execute the command specified to the transcoder. The commands are
@@ -232,7 +235,7 @@ class OpalTranscoder : public OpalMediaFormatPair
        The default behaviour simply returns FALSE.
       */
     virtual BOOL ExecuteCommand(
-      const OpalMediaCommand & command    /// Command to execute.
+      const OpalMediaCommand & command    ///<  Command to execute.
     );
 
     /**Get the optimal size for data frames to be converted.
@@ -242,7 +245,7 @@ class OpalTranscoder : public OpalMediaFormatPair
        must be able to handle any sized packets.
       */
     virtual PINDEX GetOptimalDataFrameSize(
-      BOOL input      /// Flag for input or output data size
+      BOOL input      ///<  Flag for input or output data size
     ) const = 0;
 
     /**Convert the data from one format to another.
@@ -256,8 +259,8 @@ class OpalTranscoder : public OpalMediaFormatPair
        Returns FALSE if the conversion fails.
       */
     virtual BOOL ConvertFrames(
-      const RTP_DataFrame & input,  /// Input data
-      RTP_DataFrameList & output    /// Output data
+      const RTP_DataFrame & input,  ///<  Input data
+      RTP_DataFrameList & output    ///<  Output data
     );
 
     /**Convert the data from one format to another.
@@ -267,8 +270,8 @@ class OpalTranscoder : public OpalMediaFormatPair
        Returns FALSE if the conversion fails.
       */
     virtual BOOL Convert(
-      const RTP_DataFrame & input,  /// Input data
-      RTP_DataFrame & output        /// Output data
+      const RTP_DataFrame & input,  ///<  Input data
+      RTP_DataFrame & output        ///<  Output data
     ) = 0;
 
     /**Create an instance of a media conversion function.
@@ -276,8 +279,8 @@ class OpalTranscoder : public OpalMediaFormatPair
        named formats.
       */
     static OpalTranscoder * Create(
-      const OpalMediaFormat & srcFormat,  /// Name of source format
-      const OpalMediaFormat & dstFormat   /// Name of destination format
+      const OpalMediaFormat & srcFormat,  ///<  Name of source format
+      const OpalMediaFormat & dstFormat   ///<  Name of destination format
     );
 
     /**Find media format(s) for transcoders.
@@ -292,11 +295,11 @@ class OpalTranscoder : public OpalMediaFormatPair
        between the two named formats.
       */
     static BOOL SelectFormats(
-      unsigned sessionID,               /// Session ID for media formats
-      const OpalMediaFormatList & srcFormats, /// Names of possible source formats
-      const OpalMediaFormatList & dstFormats, /// Names of possible destination formats
-      OpalMediaFormat & srcFormat,      /// Selected source format to be used
-      OpalMediaFormat & dstFormat       /// Selected destination format to be used
+      unsigned sessionID,               ///<  Session ID for media formats
+      const OpalMediaFormatList & srcFormats, ///<  Names of possible source formats
+      const OpalMediaFormatList & dstFormats, ///<  Names of possible destination formats
+      OpalMediaFormat & srcFormat,      ///<  Selected source format to be used
+      OpalMediaFormat & dstFormat       ///<  Selected destination format to be used
     );
 
     /**Find media intermediate format for transcoders.
@@ -308,27 +311,27 @@ class OpalTranscoder : public OpalMediaFormatPair
        between the two named formats.
       */
     static BOOL FindIntermediateFormat(
-      const OpalMediaFormat & srcFormat,    /// Selected destination format to be used
-      const OpalMediaFormat & dstFormat,    /// Selected destination format to be used
-      OpalMediaFormat & intermediateFormat  /// Intermediate format that can be used
+      const OpalMediaFormat & srcFormat,    ///<  Selected destination format to be used
+      const OpalMediaFormat & dstFormat,    ///<  Selected destination format to be used
+      OpalMediaFormat & intermediateFormat  ///<  Intermediate format that can be used
     );
 
     /**Get a list of possible destination media formats for the destination.
       */
     static OpalMediaFormatList GetDestinationFormats(
-      const OpalMediaFormat & srcFormat    /// Selected source format
+      const OpalMediaFormat & srcFormat    ///<  Selected source format
     );
 
     /**Get a list of possible source media formats for the destination.
       */
     static OpalMediaFormatList GetSourceFormats(
-      const OpalMediaFormat & dstFormat    /// Selected destination format
+      const OpalMediaFormat & dstFormat    ///<  Selected destination format
     );
 
     /**Get a list of possible media formats that can do bi-directional media.
       */
     static OpalMediaFormatList GetPossibleFormats(
-      const OpalMediaFormatList & formats    /// Destination format list
+      const OpalMediaFormatList & formats    ///<  Destination format list
     );
   //@}
 
@@ -349,7 +352,7 @@ class OpalTranscoder : public OpalMediaFormatPair
        would only apply to a video transcoder.
       */
     void SetCommandNotifier(
-      const PNotifier & notifier    /// Command to execute.
+      const PNotifier & notifier    ///<  Command to execute.
     ) { commandNotifier = notifier; }
 
     /**Get the notifier to receive commands generated by the transcoder. The
@@ -383,10 +386,10 @@ class OpalFramedTranscoder : public OpalTranscoder
     /** Create a new framed transcoder implementation.
       */
     OpalFramedTranscoder(
-      const OpalMediaFormat & inputMediaFormat,  // Input media format
-      const OpalMediaFormat & outputMediaFormat, // Output media format
-      PINDEX inputBytesPerFrame,  /// Number of bytes in an input frame
-      PINDEX outputBytesPerFrame  /// Number of bytes in an output frame
+      const OpalMediaFormat & inputMediaFormat,  ///<  Input media format
+      const OpalMediaFormat & outputMediaFormat, ///<  Output media format
+      PINDEX inputBytesPerFrame,  ///<  Number of bytes in an input frame
+      PINDEX outputBytesPerFrame  ///<  Number of bytes in an output frame
     );
   //@}
 
@@ -399,7 +402,7 @@ class OpalFramedTranscoder : public OpalTranscoder
        must be able to handle any sized packets.
       */
     virtual PINDEX GetOptimalDataFrameSize(
-      BOOL input      /// Flag for input or output data size
+      BOOL input      ///<  Flag for input or output data size
     ) const;
 
     /**Convert the data from one format to another.
@@ -409,22 +412,22 @@ class OpalFramedTranscoder : public OpalTranscoder
        Returns FALSE if the conversion fails.
       */
     virtual BOOL Convert(
-      const RTP_DataFrame & input,  /// Input data
-      RTP_DataFrame & output        /// Output data
+      const RTP_DataFrame & input,  ///<  Input data
+      RTP_DataFrame & output        ///<  Output data
     );
 
     /**Convert a frame of data from one format to another.
        This function implicitly knows the input and output frame sizes.
       */
     virtual BOOL ConvertFrame(
-      const BYTE * input,   /// Input data
-      BYTE * output         /// Output data
+      const BYTE * input,   ///<  Input data
+      BYTE * output         ///<  Output data
     );
     virtual BOOL ConvertFrame(
-      const BYTE * input,   /// Input data
-      PINDEX & consumed,    /// number of input bytes consumed
-      BYTE * output,        /// Output data
-      PINDEX & created      /// number of output bytes created  
+      const BYTE * input,   ///<  Input data
+      PINDEX & consumed,    ///<  number of input bytes consumed
+      BYTE * output,        ///<  Output data
+      PINDEX & created      ///<  number of output bytes created  
     );
   //@}
 
@@ -452,11 +455,11 @@ class OpalStreamedTranscoder : public OpalTranscoder
     /** Create a new streamed transcoder implementation.
       */
     OpalStreamedTranscoder(
-      const OpalMediaFormat & inputMediaFormat,  // Input media format
-      const OpalMediaFormat & outputMediaFormat, // Output media format
-      unsigned inputBits,           /// Bits per sample in input data
-      unsigned outputBits,          /// Bits per sample in output data
-      PINDEX   optimalSamples       /// Optimal number of samples for read
+      const OpalMediaFormat & inputMediaFormat,  ///<  Input media format
+      const OpalMediaFormat & outputMediaFormat, ///<  Output media format
+      unsigned inputBits,           ///<  Bits per sample in input data
+      unsigned outputBits,          ///<  Bits per sample in output data
+      PINDEX   optimalSamples       ///<  Optimal number of samples for read
     );
   //@}
 
@@ -469,7 +472,7 @@ class OpalStreamedTranscoder : public OpalTranscoder
        must be able to handle any sized packets.
       */
     virtual PINDEX GetOptimalDataFrameSize(
-      BOOL input      /// Flag for input or output data size
+      BOOL input      ///<  Flag for input or output data size
     ) const;
 
     /**Convert the data from one format to another.
@@ -479,8 +482,8 @@ class OpalStreamedTranscoder : public OpalTranscoder
        Returns FALSE if the conversion fails.
       */
     virtual BOOL Convert(
-      const RTP_DataFrame & input,  /// Input data
-      RTP_DataFrame & output        /// Output data
+      const RTP_DataFrame & input,  ///<  Input data
+      RTP_DataFrame & output        ///<  Output data
     );
 
     /**Convert one sample from one format to another.

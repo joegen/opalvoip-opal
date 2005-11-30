@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.h,v $
- * Revision 1.2016  2005/11/24 20:31:54  dsandras
+ * Revision 1.2017  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.15  2005/11/24 20:31:54  dsandras
  * Added support for echo cancelation using Speex.
  * Added possibility to add a filter to an OpalMediaPatch for all patches of a connection.
  *
@@ -106,8 +109,8 @@ class OpalPCSSEndPoint : public OpalEndPoint
     /**Create a new endpoint.
      */
     OpalPCSSEndPoint(
-      OpalManager & manager,  /// Manager of all endpoints.
-      const char * prefix = "pc" /// Prefix for URL style address strings
+      OpalManager & manager,  ///<  Manager of all endpoints.
+      const char * prefix = "pc" ///<  Prefix for URL style address strings
     );
 
     /**Destroy endpoint.
@@ -147,9 +150,9 @@ class OpalPCSSEndPoint : public OpalEndPoint
        The default behaviour is pure.
      */
     virtual BOOL MakeConnection(
-      OpalCall & call,        /// Owner of connection
-      const PString & party,  /// Remote party to call
-      void * userData = NULL  /// Arbitrary data to pass to connection
+      OpalCall & call,        ///<  Owner of connection
+      const PString & party,  ///<  Remote party to call
+      void * userData = NULL  ///<  Arbitrary data to pass to connection
     );
 
     /**Get the data formats this endpoint is capable of operating.
@@ -170,17 +173,17 @@ class OpalPCSSEndPoint : public OpalEndPoint
        The default implementation is to create a OpalPCSSConnection.
       */
     virtual OpalPCSSConnection * CreateConnection(
-      OpalCall & call,    /// Owner of connection
-      const PString & playDevice, /// Sound channel play device
-      const PString & recordDevice, /// Sound channel record device
-      void * userData     /// Arbitrary data to pass to connection
+      OpalCall & call,    ///<  Owner of connection
+      const PString & playDevice, ///<  Sound channel play device
+      const PString & recordDevice, ///<  Sound channel record device
+      void * userData     ///<  Arbitrary data to pass to connection
     );
 
     /**Create an PSoundChannel based media stream.
       */
     virtual PSoundChannel * CreateSoundChannel(
-      const OpalPCSSConnection & connection, /// Connection needing created sound channel
-      BOOL isSource                          // Direction for channel
+      const OpalPCSSConnection & connection, ///<  Connection needing created sound channel
+      BOOL isSource                          ///<  Direction for channel
     );
   //@}
 
@@ -191,7 +194,7 @@ class OpalPCSSEndPoint : public OpalEndPoint
        as provided by functions such as MakeConnection().
       */
     PSafePtr<OpalPCSSConnection> GetPCSSConnectionWithLock(
-      const PString & token,     /// Token to identify connection
+      const PString & token,     ///<  Token to identify connection
       PSafetyMode mode = PSafeReadWrite
     ) { return PSafePtrCast<OpalConnection, OpalPCSSConnection>(GetConnectionWithLock(token, mode)); }
 
@@ -201,7 +204,7 @@ class OpalPCSSEndPoint : public OpalEndPoint
        The default implementation is pure.
       */
     virtual PString OnGetDestination(
-      const OpalPCSSConnection & connection /// Connection having event
+      const OpalPCSSConnection & connection ///<  Connection having event
     ) = 0;
 
     /**Call back to indicate that remote is ringing.
@@ -210,13 +213,13 @@ class OpalPCSSEndPoint : public OpalEndPoint
        The default implementation is pure.
       */
     virtual void OnShowIncoming(
-      const OpalPCSSConnection & connection /// Connection having event
+      const OpalPCSSConnection & connection ///<  Connection having event
     ) = 0;
 
     /**Accept the incoming connection.
       */
     virtual void AcceptIncomingConnection(
-      const PString & connectionToken /// Token of connection to accept call
+      const PString & connectionToken ///<  Token of connection to accept call
     );
 
     /**Call back to indicate that remote is ringing.
@@ -225,7 +228,7 @@ class OpalPCSSEndPoint : public OpalEndPoint
        The default implementation is pure.
       */
     virtual BOOL OnShowOutgoing(
-      const OpalPCSSConnection & connection /// Connection having event
+      const OpalPCSSConnection & connection ///<  Connection having event
     ) = 0;
 
     /**Call back to indicate that the remote user has indicated something.
@@ -234,7 +237,7 @@ class OpalPCSSEndPoint : public OpalEndPoint
        The default implementation does nothing.
       */
     virtual BOOL OnShowUserInput(
-      const OpalPCSSConnection & connection, /// Connection having event
+      const OpalPCSSConnection & connection, ///<  Connection having event
       const PString & indication
     );
   //@}
@@ -278,7 +281,7 @@ class OpalPCSSEndPoint : public OpalEndPoint
     /**Set the default sound channel buffer depth.
       */
     void SetSoundChannelBufferDepth(
-      unsigned depth    // New depth
+      unsigned depth    ///<  New depth
     );
   //@}
 
@@ -300,10 +303,10 @@ class OpalPCSSConnection : public OpalConnection
     /**Create a new endpoint.
      */
     OpalPCSSConnection(
-      OpalCall & call,              /// Owner calll for connection
-      OpalPCSSEndPoint & endpoint,  /// Owner endpoint for connection
-      const PString & playDevice,   /// Sound channel play device
-      const PString & recordDevice  /// Sound channel record device
+      OpalCall & call,              ///<  Owner calll for connection
+      OpalPCSSEndPoint & endpoint,  ///<  Owner endpoint for connection
+      const PString & playDevice,   ///<  Sound channel play device
+      const PString & recordDevice  ///<  Sound channel record device
     );
 
     /**Destroy endpoint.
@@ -332,8 +335,8 @@ class OpalPCSSConnection : public OpalConnection
        The default behaviour does nothing.
       */
     virtual BOOL SetAlerting(
-      const PString & calleeName,   /// Name of endpoint being alerted.
-      BOOL withMedia                /// Open media with alerting
+      const PString & calleeName,   ///<  Name of endpoint being alerted.
+      BOOL withMedia                ///<  Open media with alerting
     );
 
     /**Indicate to remote endpoint we are connected.
@@ -374,9 +377,9 @@ class OpalPCSSConnection : public OpalConnection
        The default behaviour is pure.
      */
     virtual OpalMediaStream * CreateMediaStream(
-      const OpalMediaFormat & mediaFormat, /// Media format for stream
-      unsigned sessionID,                  /// Session number for stream
-      BOOL isSource                        /// Is a source stream
+      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
+      unsigned sessionID,                  ///<  Session number for stream
+      BOOL isSource                        ///<  Is a source stream
     );
 
     /**Call back when opening a media stream.
@@ -392,7 +395,7 @@ class OpalPCSSConnection : public OpalConnection
        detector filter.
       */
     virtual BOOL OnOpenMediaStream(
-      OpalMediaStream & stream    /// New media stream being opened
+      OpalMediaStream & stream    ///<  New media stream being opened
     );
 
     /**Call back when patching a media stream.
@@ -401,20 +404,20 @@ class OpalPCSSConnection : public OpalConnection
       */
     virtual void OnPatchMediaStream(
       BOOL isSource,
-      OpalMediaPatch & patch    /// New patch
+      OpalMediaPatch & patch    ///<  New patch
     );
 
     /**Open source transmitter media stream for session.
       */
     virtual BOOL OpenSourceMediaStream(
-      const OpalMediaFormatList & mediaFormats, /// Optional media format to open
-      unsigned sessionID                   /// Session to start stream on
+      const OpalMediaFormatList & mediaFormats, ///<  Optional media format to open
+      unsigned sessionID                   ///<  Session to start stream on
     );
 
     /**Open source transmitter media stream for session.
       */
     virtual OpalMediaStream * OpenSinkMediaStream(
-      OpalMediaStream & source    /// Source media sink format to open to
+      OpalMediaStream & source    ///<  Source media sink format to open to
     );
 
     /**Send a user input indication to the remote endpoint.
@@ -425,7 +428,7 @@ class OpalPCSSConnection : public OpalConnection
        The default behaviour plays the DTMF tones on the line.
       */
     virtual BOOL SendUserInputString(
-      const PString & value                   /// String value of indication
+      const PString & value                   ///<  String value of indication
     );
   //@}
 
@@ -442,7 +445,7 @@ class OpalPCSSConnection : public OpalConnection
     /**Create an PSoundChannel based media stream.
       */
     virtual PSoundChannel * CreateSoundChannel(
-      BOOL isSource // Direction for channel
+      BOOL isSource ///<  Direction for channel
     );
   //@}
 

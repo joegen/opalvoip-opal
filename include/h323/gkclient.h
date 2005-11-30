@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.h,v $
- * Revision 1.2012  2004/02/19 10:46:43  rjongbloed
+ * Revision 1.2013  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.11  2004/02/19 10:46:43  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.10  2003/01/07 04:39:52  robertj
@@ -275,8 +278,8 @@ class H323Gatekeeper : public H225_RAS
     /**Create a new gatekeeper.
      */
     H323Gatekeeper(
-      H323EndPoint & endpoint,  /// Endpoint gatekeeper is associated with.
-      H323Transport * transport       /// Transport over which gatekeepers communicates.
+      H323EndPoint & endpoint,  ///<  Endpoint gatekeeper is associated with.
+      H323Transport * transport       ///<  Transport over which gatekeepers communicates.
     );
 
     /**Destroy gatekeeper.
@@ -315,7 +318,7 @@ class H323Gatekeeper : public H225_RAS
        to a broadcast is used.
      */
     BOOL DiscoverByName(
-      const PString & identifier  /// Gatekeeper identifier to find
+      const PString & identifier  ///<  Gatekeeper identifier to find
     );
 
     /**Discover a gatekeeper on the local network.
@@ -323,7 +326,7 @@ class H323Gatekeeper : public H225_RAS
        to a broadcast is used.
      */
     BOOL DiscoverByAddress(
-      const H323TransportAddress & address /// Address of gatekeeper.
+      const H323TransportAddress & address ///<  Address of gatekeeper.
     );
 
     /**Discover a gatekeeper on the local network.
@@ -337,27 +340,27 @@ class H323Gatekeeper : public H225_RAS
     /**Register with gatekeeper.
      */
     BOOL RegistrationRequest(
-      BOOL autoReregister = TRUE  /// Automatic register on unregister
+      BOOL autoReregister = TRUE  ///<  Automatic register on unregister
     );
 
     /**Unregister with gatekeeper.
      */
     BOOL UnregistrationRequest(
-      int reason      /// Reason for unregistration
+      int reason      ///<  Reason for unregistration
     );
 
     /**Location request to gatekeeper.
      */
     BOOL LocationRequest(
-      const PString & alias,          /// Alias name we wish to find.
-      H323TransportAddress & address  /// Resultant transport address.
+      const PString & alias,          ///<  Alias name we wish to find.
+      H323TransportAddress & address  ///<  Resultant transport address.
     );
 
     /**Location request to gatekeeper.
      */
     BOOL LocationRequest(
-      const PStringList & aliases,    /// Alias names we wish to find.
-      H323TransportAddress & address  /// Resultant transport address.
+      const PStringList & aliases,    ///<  Alias names we wish to find.
+      H323TransportAddress & address  ///<  Resultant transport address.
     );
 
     struct AdmissionResponse {
@@ -377,23 +380,23 @@ class H323Gatekeeper : public H225_RAS
     /**Admission request to gatekeeper.
      */
     BOOL AdmissionRequest(
-      H323Connection & connection,      /// Connection we wish to change.
-      AdmissionResponse & response,     /// Response parameters to ARQ
-      BOOL ignorePreGrantedARQ = FALSE  /// Flag to force ARQ to be sent
+      H323Connection & connection,      ///<  Connection we wish to change.
+      AdmissionResponse & response,     ///<  Response parameters to ARQ
+      BOOL ignorePreGrantedARQ = FALSE  ///<  Flag to force ARQ to be sent
     );
 
     /**Disengage request to gatekeeper.
      */
     BOOL DisengageRequest(
-      const H323Connection & connection,  /// Connection we wish admitted.
-      unsigned reason                     /// Reason code for disengage
+      const H323Connection & connection,  ///<  Connection we wish admitted.
+      unsigned reason                     ///<  Reason code for disengage
     );
 
     /**Bandwidth request to gatekeeper.
      */
     BOOL BandwidthRequest(
-      H323Connection & connection,    /// Connection we wish to change.
-      unsigned requestedBandwidth     /// New bandwidth wanted in 0.1kbps
+      H323Connection & connection,    ///<  Connection we wish to change.
+      unsigned requestedBandwidth     ///<  New bandwidth wanted in 0.1kbps
     );
 
     /**Send an unsolicited info response to the gatekeeper.
@@ -403,15 +406,15 @@ class H323Gatekeeper : public H225_RAS
     /**Send an unsolicited info response to the gatekeeper.
      */
     void InfoRequestResponse(
-      const H323Connection & connection  /// Connection to send info about
+      const H323Connection & connection  ///<  Connection to send info about
     );
 
     /**Send an unsolicited info response to the gatekeeper.
      */
     void InfoRequestResponse(
-      const H323Connection & connection,  /// Connection to send info about
-      const H225_H323_UU_PDU & pdu,       /// PDU that was sent or received
-      BOOL sent                           /// Flag for PDU was sent or received
+      const H323Connection & connection,  ///<  Connection to send info about
+      const H225_H323_UU_PDU & pdu,       ///<  PDU that was sent or received
+      BOOL sent                           ///<  Flag for PDU was sent or received
     );
 
     /**Handle incoming service control session information.
@@ -467,8 +470,8 @@ class H323Gatekeeper : public H225_RAS
        user name (ie first alias).
       */
     void SetPassword(
-      const PString & password,            /// New password
-      const PString & username = PString() /// Username for password
+      const PString & password,            ///<  New password
+      const PString & username = PString() ///<  Username for password
     );
   //@}
 

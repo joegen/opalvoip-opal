@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2042  2005/11/24 04:46:41  dereksmithies
+ * Revision 1.2043  2005/11/30 13:35:26  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 2.41  2005/11/24 04:46:41  dereksmithies
  * Remove detectInBandDTMF, as it is already declared in the OpalConnection
  * class. Thanks to valgrind on suse 10 for finding this one.
  *
@@ -500,12 +503,12 @@ class H323Connection : public OpalConnection
     /**Create a new connection.
      */
     H323Connection(
-      OpalCall & call,            /// Call object connection belongs to
-      H323EndPoint & endpoint,    /// H323 End Point object
-      const PString & token,      /// Token for new connection
-      const PString & alias,     /// Alias for outgoing call
-      const H323TransportAddress & address,   /// Address for outgoing call
-      unsigned options = 0        /// Connection option bits
+      OpalCall & call,            ///<  Call object connection belongs to
+      H323EndPoint & endpoint,    ///<  H323 End Point object
+      const PString & token,      ///<  Token for new connection
+      const PString & alias,     ///<  Alias for outgoing call
+      const H323TransportAddress & address,   ///<  Address for outgoing call
+      unsigned options = 0        ///<  Connection option bits
     );
 
     /**Destroy the connection
@@ -533,8 +536,8 @@ class H323Connection : public OpalConnection
        The default behaviour sends an ALERTING pdu.
       */
     virtual BOOL SetAlerting(
-      const PString & calleeName,   /// Name of endpoint being alerted.
-      BOOL withMedia                /// Open media with alerting
+      const PString & calleeName,   ///<  Name of endpoint being alerted.
+      BOOL withMedia                ///<  Open media with alerting
     );
 
     /**Indicate to remote endpoint we are connected.
@@ -585,8 +588,8 @@ class H323Connection : public OpalConnection
     /**Open source transmitter media stream for session.
       */
     virtual BOOL OpenSourceMediaStream(
-      const OpalMediaFormatList & mediaFormats, /// Optional media format to open
-      unsigned sessionID                   /// Session to start stream on
+      const OpalMediaFormatList & mediaFormats, ///<  Optional media format to open
+      unsigned sessionID                   ///<  Session to start stream on
     );
     
     /**Open a new media stream.
@@ -604,9 +607,9 @@ class H323Connection : public OpalConnection
        The default behaviour is pure.
      */
     virtual OpalMediaStream * CreateMediaStream(
-      const OpalMediaFormat & mediaFormat, /// Media format for stream
-      unsigned sessionID,                  /// Session number for stream
-      BOOL isSource                        /// Is a source stream
+      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
+      unsigned sessionID,                  ///<  Session number for stream
+      BOOL isSource                        ///<  Is a source stream
     );
 
     /**See if the media can bypass the local host.
@@ -614,7 +617,7 @@ class H323Connection : public OpalConnection
        The default behaviour returns TRUE if the session is audio or video.
      */
     virtual BOOL IsMediaBypassPossible(
-      unsigned sessionID                  /// Session ID for media channel
+      unsigned sessionID                  ///<  Session ID for media channel
     ) const;
 
     /**Get information on the media channel for the connection.
@@ -622,8 +625,8 @@ class H323Connection : public OpalConnection
        there is a media channel active for the sessionID.
      */
     virtual BOOL GetMediaInformation(
-      unsigned sessionID,     /// Session ID for media channel
-      MediaInformation & info /// Information on media channel
+      unsigned sessionID,     ///<  Session ID for media channel
+      MediaInformation & info ///<  Information on media channel
     ) const;
   //@}
 
@@ -658,15 +661,15 @@ class H323Connection : public OpalConnection
     /**Attach a transport to this connection as the signalling channel.
       */
     void AttachSignalChannel(
-      const PString & token,    /// New token to use to identify connection
-      H323Transport * channel,  /// Transport for the PDU's
-      BOOL answeringCall        /// Flag for if incoming/outgoing call.
+      const PString & token,    ///<  New token to use to identify connection
+      H323Transport * channel,  ///<  Transport for the PDU's
+      BOOL answeringCall        ///<  Flag for if incoming/outgoing call.
     );
 
     /**Write a PDU to the signalling channel.
       */
     BOOL WriteSignalPDU(
-      H323SignalPDU & pdu       /// PDU to write.
+      H323SignalPDU & pdu       ///<  PDU to write.
     );
 
     /**Handle reading PDU's from the signalling channel.
@@ -678,14 +681,14 @@ class H323Connection : public OpalConnection
        This is an internal function and is unlikely to be used by applications.
      */
     virtual BOOL HandleSignalPDU(
-      H323SignalPDU & pdu       /// PDU to handle.
+      H323SignalPDU & pdu       ///<  PDU to handle.
     );
 
     /**Handle Control PDU tunnelled in the signalling channel.
        This is an internal function and is unlikely to be used by applications.
      */
     virtual void HandleTunnelPDU(
-      H323SignalPDU * txPDU       /// PDU tunnel response into.
+      H323SignalPDU * txPDU       ///<  PDU tunnel response into.
     );
 
     /**Handle an incoming Q931 setup PDU.
@@ -696,7 +699,7 @@ class H323Connection : public OpalConnection
        PDU is sent.
      */
     virtual BOOL OnReceivedSignalSetup(
-      const H323SignalPDU & pdu   /// Received setup PDU
+      const H323SignalPDU & pdu   ///<  Received setup PDU
     );
 
     /**Handle an incoming Q931 setup acknowledge PDU.
@@ -706,7 +709,7 @@ class H323Connection : public OpalConnection
        The default behaviour does nothing.
      */
     virtual BOOL OnReceivedSignalSetupAck(
-      const H323SignalPDU & pdu   /// Received setup PDU
+      const H323SignalPDU & pdu   ///<  Received setup PDU
     );
 
     /**Handle an incoming Q931 information PDU.
@@ -716,7 +719,7 @@ class H323Connection : public OpalConnection
        The default behaviour does nothing.
      */
     virtual BOOL OnReceivedSignalInformation(
-      const H323SignalPDU & pdu   /// Received setup PDU
+      const H323SignalPDU & pdu   ///<  Received setup PDU
     );
 
     /**Handle an incoming Q931 call proceeding PDU.
@@ -728,7 +731,7 @@ class H323Connection : public OpalConnection
        returns TRUE.
      */
     virtual BOOL OnReceivedCallProceeding(
-      const H323SignalPDU & pdu   /// Received call proceeding PDU
+      const H323SignalPDU & pdu   ///<  Received call proceeding PDU
     );
 
     /**Handle an incoming Q931 progress PDU.
@@ -740,7 +743,7 @@ class H323Connection : public OpalConnection
        returns TRUE.
      */
     virtual BOOL OnReceivedProgress(
-      const H323SignalPDU & pdu   /// Received call proceeding PDU
+      const H323SignalPDU & pdu   ///<  Received call proceeding PDU
     );
 
     /**Handle an incoming Q931 alerting PDU.
@@ -750,7 +753,7 @@ class H323Connection : public OpalConnection
        The default behaviour obtains the display name and calls OnAlerting().
      */
     virtual BOOL OnReceivedAlerting(
-      const H323SignalPDU & pdu   /// Received connect PDU
+      const H323SignalPDU & pdu   ///<  Received connect PDU
     );
 
     /**Handle an incoming Q931 connect PDU.
@@ -762,7 +765,7 @@ class H323Connection : public OpalConnection
        If not present and there is no H245Tunneling then it returns FALSE.
      */
     virtual BOOL OnReceivedSignalConnect(
-      const H323SignalPDU & pdu   /// Received connect PDU
+      const H323SignalPDU & pdu   ///<  Received connect PDU
     );
 
     /**Handle an incoming Q931 facility PDU.
@@ -774,7 +777,7 @@ class H323Connection : public OpalConnection
        returns TRUE.
      */
     virtual BOOL OnReceivedFacility(
-      const H323SignalPDU & pdu   /// Received connect PDU
+      const H323SignalPDU & pdu   ///<  Received connect PDU
     );
 
     /**Handle an incoming Q931 Notify PDU.
@@ -784,7 +787,7 @@ class H323Connection : public OpalConnection
        The default behaviour simply returns TRUE.
      */
     virtual BOOL OnReceivedSignalNotify(
-      const H323SignalPDU & pdu   /// Received connect PDU
+      const H323SignalPDU & pdu   ///<  Received connect PDU
     );
 
     /**Handle an incoming Q931 Status PDU.
@@ -794,7 +797,7 @@ class H323Connection : public OpalConnection
        The default behaviour simply returns TRUE.
      */
     virtual BOOL OnReceivedSignalStatus(
-      const H323SignalPDU & pdu   /// Received connect PDU
+      const H323SignalPDU & pdu   ///<  Received connect PDU
     );
 
     /**Handle an incoming Q931 Status Enquiry PDU.
@@ -804,7 +807,7 @@ class H323Connection : public OpalConnection
        The default behaviour sends a Q931 Status PDU back.
      */
     virtual BOOL OnReceivedStatusEnquiry(
-      const H323SignalPDU & pdu   /// Received connect PDU
+      const H323SignalPDU & pdu   ///<  Received connect PDU
     );
 
     /**Handle an incoming Q931 Release Complete PDU.
@@ -812,7 +815,7 @@ class H323Connection : public OpalConnection
        Release Complete Cause field and the current connection state.
      */
     virtual void OnReceivedReleaseComplete(
-      const H323SignalPDU & pdu   /// Received connect PDU
+      const H323SignalPDU & pdu   ///<  Received connect PDU
     );
 
     /**This function is called from the HandleSignallingChannel() function
@@ -822,7 +825,7 @@ class H323Connection : public OpalConnection
        PDU is sent. The default behaviour returns TRUE.
      */
     virtual BOOL OnUnknownSignalPDU(
-      const H323SignalPDU & pdu  /// Received PDU
+      const H323SignalPDU & pdu  ///<  Received PDU
     );
 
     /**Call back for incoming call.
@@ -837,8 +840,8 @@ class H323Connection : public OpalConnection
        The default behaviour calls the endpoint function of the same name.
      */
     virtual BOOL OnIncomingCall(
-      const H323SignalPDU & setupPDU,   /// Received setup PDU
-      H323SignalPDU & alertingPDU       /// Alerting PDU to send
+      const H323SignalPDU & setupPDU,   ///<  Received setup PDU
+      H323SignalPDU & alertingPDU       ///<  Alerting PDU to send
     );
 
     /**Forward incoming call to specified address.
@@ -851,7 +854,7 @@ class H323Connection : public OpalConnection
        cleared with the ended call code of EndedByCallForwarded.
       */
     virtual BOOL ForwardCall(
-      const PString & forwardParty   /// Party to forward call to.
+      const PString & forwardParty   ///<  Party to forward call to.
     );
 
     /**Initiate the transfer of an existing call (connection) to a new remote party
@@ -859,9 +862,9 @@ class H323Connection : public OpalConnection
        A-Party (transferring endpoint) to the B-Party (transferred endpoint).
      */
     void TransferCall(
-      const PString & remoteParty,   /// Remote party to transfer the existing call to
+      const PString & remoteParty,   ///<  Remote party to transfer the existing call to
       const PString & callIdentity = PString::Empty()
-                                    /// Call Identity of secondary call if present
+                                    ///<  Call Identity of secondary call if present
     );
 
     /**Transfer the call through consultation so the remote party in the primary call is connected to
@@ -869,7 +872,7 @@ class H323Connection : public OpalConnection
        message from the A-Party (transferring endpoint) to the C-Party (transferred-to endpoint).
      */
     void ConsultationTransfer(
-      const PString & primaryCallToken  /// Primary call
+      const PString & primaryCallToken  ///<  Primary call
     );
 
     /**Handle the reception of a callTransferSetupInvoke APDU whilst a secondary call exists.  This 
@@ -881,7 +884,7 @@ class H323Connection : public OpalConnection
     virtual void HandleConsultationTransfer(
       const PString & callIdentity, /**Call Identity of secondary call 
                                        received in SETUP Message. */
-      H323Connection & incoming     /// Connection upon which SETUP PDU was received.
+      H323Connection & incoming     ///<  Connection upon which SETUP PDU was received.
     );
 
     /**Determine whether this connection is being transferred.
@@ -915,7 +918,7 @@ class H323Connection : public OpalConnection
        Expiry of Call Transfer timer CT-T4.
      */
     virtual void HandleCallTransferFailure(
-      const int returnError    /// Failure reason code
+      const int returnError    ///<  Failure reason code
     );
 
     /**Store the passed token on the current connection's H4502Handler.
@@ -923,7 +926,7 @@ class H323Connection : public OpalConnection
        it directly.
      */
     void SetAssociatedCallToken(
-      const PString & token  /// Associated token
+      const PString & token  ///<  Associated token
     );
 
     /**Callback to indicate a successful transfer through consultation.  The paramter passed is a
@@ -931,7 +934,7 @@ class H323Connection : public OpalConnection
        endpoint.
      */
     virtual void OnConsultationTransferSuccess(
-      H323Connection & secondaryCall  /// Secondary call for consultation
+      H323Connection & secondaryCall  ///<  Secondary call for consultation
     );
 
     /**Transfer the current connection to a new destination.
@@ -963,7 +966,7 @@ class H323Connection : public OpalConnection
        endpoint.  So far only Local Hold has been implemented. 
      */
     void HoldCall(
-      BOOL localHold   /// true for Local Hold, false for Remote Hold
+      BOOL localHold   ///<  true for Local Hold, false for Remote Hold
     );
 
     /**Retrieve the call from hold, activating all media channels (H.450.4).
@@ -1050,7 +1053,7 @@ class H323Connection : public OpalConnection
        attempting to reach the busy called user.
      */
     void SendCallWaitingIndication(
-      const unsigned nbOfAddWaitingCalls = 0   /// number of additional waiting calls at the served user
+      const unsigned nbOfAddWaitingCalls = 0   ///<  number of additional waiting calls at the served user
     );
 
     /**Call back for answering an incoming call.
@@ -1080,12 +1083,12 @@ class H323Connection : public OpalConnection
        which in turn will return AnswerCallNow.
      */
     virtual AnswerCallResponse OnAnswerCall(
-      const PString & callerName,       /// Name of caller
-      const H323SignalPDU & setupPDU,   /// Received setup PDU
-      H323SignalPDU & connectPDU        /// Connect PDU to send. 
+      const PString & callerName,       ///<  Name of caller
+      const H323SignalPDU & setupPDU,   ///<  Received setup PDU
+      H323SignalPDU & connectPDU        ///<  Connect PDU to send. 
     );
     virtual AnswerCallResponse OnAnswerCall(
-      const PString & callerName        /// Name of caller
+      const PString & callerName        ///<  Name of caller
     );
 
     /**Indicate the result of answering an incoming call.
@@ -1099,7 +1102,7 @@ class H323Connection : public OpalConnection
        Sending a AnswerCallDeferred response would have no effect.
       */
     void AnsweringCall(
-      AnswerCallResponse response /// Answer response to incoming call
+      AnswerCallResponse response ///<  Answer response to incoming call
     );
 
     /**Send first PDU in signalling channel.
@@ -1113,8 +1116,8 @@ class H323Connection : public OpalConnection
        if the call was successful to that point in the protocol.
      */
     virtual CallEndReason SendSignalSetup(
-      const PString & alias,                /// Name of remote party
-      const H323TransportAddress & address  /// Address of destination
+      const PString & alias,                ///<  Name of remote party
+      const H323TransportAddress & address  ///<  Address of destination
     );
 
     /**Adjust setup PDU being sent on initialisation of signal channel.
@@ -1129,7 +1132,7 @@ class H323Connection : public OpalConnection
        application make sure you call the ancestor function.
      */
     virtual BOOL OnSendSignalSetup(
-      H323SignalPDU & setupPDU   /// Setup PDU to send
+      H323SignalPDU & setupPDU   ///<  Setup PDU to send
     );
 
     /**Adjust call proceeding PDU being sent. This function is called from
@@ -1141,7 +1144,7 @@ class H323Connection : public OpalConnection
        The default behaviour simply returns TRUE.
      */
     virtual BOOL OnSendCallProceeding(
-      H323SignalPDU & callProceedingPDU   /// Call Proceeding PDU to send
+      H323SignalPDU & callProceedingPDU   ///<  Call Proceeding PDU to send
     );
 
     /**Call back for Release Complete being sent.
@@ -1156,7 +1159,7 @@ class H323Connection : public OpalConnection
        The default behaviour simply returns TRUE.
       */
     virtual BOOL OnSendReleaseComplete(
-      H323SignalPDU & releaseCompletePDU /// Release Complete PDU to send
+      H323SignalPDU & releaseCompletePDU ///<  Release Complete PDU to send
     );
 
     /**Call back for remote party being alerted.
@@ -1170,8 +1173,8 @@ class H323Connection : public OpalConnection
        The default behaviour calls the endpoint function of the same name.
      */
     virtual BOOL OnAlerting(
-      const H323SignalPDU & alertingPDU,  /// Received Alerting PDU
-      const PString & user                /// Username of remote endpoint
+      const H323SignalPDU & alertingPDU,  ///<  Received Alerting PDU
+      const PString & user                ///<  Username of remote endpoint
     );
 
     /**This function is called when insufficient digits have been entered.
@@ -1203,7 +1206,7 @@ class H323Connection : public OpalConnection
        The default behaviour simply returns TRUE.
      */
     virtual void SendMoreDigits(
-      const PString & digits    /// Extra digits
+      const PString & digits    ///<  Extra digits
     );
 
     /**This function is called from the SendSignalSetup() function after it
@@ -1216,7 +1219,7 @@ class H323Connection : public OpalConnection
        The default behaviour calls H323EndPoint::OnOutgoingCall
      */
     virtual BOOL OnOutgoingCall(
-      const H323SignalPDU & connectPDU   /// Received Connect PDU
+      const H323SignalPDU & connectPDU   ///<  Received Connect PDU
     );
 
     /**Send an the acknowldege of a fast start.
@@ -1231,7 +1234,7 @@ class H323Connection : public OpalConnection
        channels and adds then to the provided PDU.
      */
     virtual BOOL SendFastStartAcknowledge(
-      H225_ArrayOf_PASN_OctetString & array   /// Array of H245_OpenLogicalChannel
+      H225_ArrayOf_PASN_OctetString & array   ///<  Array of H245_OpenLogicalChannel
     );
 
     /**Handle the acknowldege of a fast start.
@@ -1246,7 +1249,7 @@ class H323Connection : public OpalConnection
        acknowledged in it.
      */
     virtual BOOL HandleFastStartAcknowledge(
-      const H225_ArrayOf_PASN_OctetString & array   /// Array of H245_OpenLogicalChannel
+      const H225_ArrayOf_PASN_OctetString & array   ///<  Array of H245_OpenLogicalChannel
     );
   //@}
 
@@ -1264,7 +1267,7 @@ class H323Connection : public OpalConnection
        channel.
      */
     virtual BOOL CreateOutgoingControlChannel(
-      const H225_TransportAddress & h245Address   /// H245 address
+      const H225_TransportAddress & h245Address   ///<  H245 address
     );
 
     /**Start a separate control channel.
@@ -1280,7 +1283,7 @@ class H323Connection : public OpalConnection
        channel.
       */
     virtual BOOL CreateIncomingControlChannel(
-      H225_TransportAddress & h245Address  /// PDU transport address to set
+      H225_TransportAddress & h245Address  ///<  PDU transport address to set
     );
 
     /**Write a PDU to the control channel.
@@ -1329,41 +1332,41 @@ class H323Connection : public OpalConnection
        the sender, and returns TRUE to continue operation.
      */
     virtual BOOL OnUnknownControlPDU(
-      const H323ControlPDU & pdu  /// Received PDU
+      const H323ControlPDU & pdu  ///<  Received PDU
     );
 
     /**Handle incoming request PDU's on the control channel.
        Dispatches them to the various virtuals off this class.
      */
     virtual BOOL OnH245Request(
-      const H323ControlPDU & pdu  /// Received PDU
+      const H323ControlPDU & pdu  ///<  Received PDU
     );
 
     /**Handle incoming response PDU's on the control channel.
        Dispatches them to the various virtuals off this class.
      */
     virtual BOOL OnH245Response(
-      const H323ControlPDU & pdu  /// Received PDU
+      const H323ControlPDU & pdu  ///<  Received PDU
     );
 
     /**Handle incoming command PDU's on the control channel.
        Dispatches them to the various virtuals off this class.
      */
     virtual BOOL OnH245Command(
-      const H323ControlPDU & pdu  /// Received PDU
+      const H323ControlPDU & pdu  ///<  Received PDU
     );
 
     /**Handle incoming indication PDU's on the control channel.
        Dispatches them to the various virtuals off this class.
      */
     virtual BOOL OnH245Indication(
-      const H323ControlPDU & pdu  /// Received PDU
+      const H323ControlPDU & pdu  ///<  Received PDU
     );
 
     /**Handle H245 command to send terminal capability set.
      */
     virtual BOOL OnH245_SendTerminalCapabilitySet(
-      const H245_SendTerminalCapabilitySet & pdu  /// Received PDU
+      const H245_SendTerminalCapabilitySet & pdu  ///<  Received PDU
     );
 
     /**Handle H245 command to control flow control.
@@ -1371,7 +1374,7 @@ class H323Connection : public OpalConnection
        bit rate restriction.
      */
     virtual BOOL OnH245_FlowControlCommand(
-      const H245_FlowControlCommand & pdu  /// Received PDU
+      const H245_FlowControlCommand & pdu  ///<  Received PDU
     );
 
     /**Handle H245 miscellaneous command.
@@ -1379,7 +1382,7 @@ class H323Connection : public OpalConnection
        defined by the pdu.
      */
     virtual BOOL OnH245_MiscellaneousCommand(
-      const H245_MiscellaneousCommand & pdu  /// Received PDU
+      const H245_MiscellaneousCommand & pdu  ///<  Received PDU
     );
 
     /**Handle H245 miscellaneous indication.
@@ -1387,7 +1390,7 @@ class H323Connection : public OpalConnection
        defined by the pdu.
      */
     virtual BOOL OnH245_MiscellaneousIndication(
-      const H245_MiscellaneousIndication & pdu  /// Received PDU
+      const H245_MiscellaneousIndication & pdu  ///<  Received PDU
     );
 
     /**Handle H245 indication of received jitter.
@@ -1395,7 +1398,7 @@ class H323Connection : public OpalConnection
        estimated jitter.
      */
     virtual BOOL OnH245_JitterIndication(
-      const H245_JitterIndication & pdu  /// Received PDU
+      const H245_JitterIndication & pdu  ///<  Received PDU
     );
 
     /**Error discriminator for the OnControlProtocolError() function.
@@ -1420,8 +1423,8 @@ class H323Connection : public OpalConnection
        returns TRUE.
      */
     virtual BOOL OnControlProtocolError(
-      ControlProtocolErrors errorSource,  // Source of the proptoerror
-      const void * errorData = NULL       // Data associated with error
+      ControlProtocolErrors errorSource,  ///<  Source of the proptoerror
+      const void * errorData = NULL       ///<  Data associated with error
     );
 
     /**This function is called from the HandleControlPDU() function when
@@ -1432,7 +1435,7 @@ class H323Connection : public OpalConnection
        some broken remote endpoints.
      */
     virtual void OnSendCapabilitySet(
-      H245_TerminalCapabilitySet & pdu  /// PDU to send
+      H245_TerminalCapabilitySet & pdu  ///<  PDU to send
     );
 
     /**This function is called when the remote endpoint sends its capability
@@ -1447,15 +1450,15 @@ class H323Connection : public OpalConnection
        returns TRUE if the remoteCodecs list is not empty.
      */
     virtual BOOL OnReceivedCapabilitySet(
-      const H323Capabilities & remoteCaps,      /// Capability combinations remote supports
-      const H245_MultiplexCapability * muxCap,  /// Transport capability, if present
-      H245_TerminalCapabilitySetReject & reject /// Rejection PDU (if return FALSE)
+      const H323Capabilities & remoteCaps,      ///<  Capability combinations remote supports
+      const H245_MultiplexCapability * muxCap,  ///<  Transport capability, if present
+      H245_TerminalCapabilitySetReject & reject ///<  Rejection PDU (if return FALSE)
     );
 
     /**Send a new capability set.
       */
     virtual void SendCapabilitySet(
-      BOOL empty  /// Send an empty set.
+      BOOL empty  ///<  Send an empty set.
     );
 
     /**Call back to set the local capabilities.
@@ -1525,24 +1528,24 @@ class H323Connection : public OpalConnection
     /**Select default logical channel for normal start.
       */
     virtual void SelectDefaultLogicalChannel(
-      unsigned sessionID    /// Session ID to find default logical channel.
+      unsigned sessionID    ///<  Session ID to find default logical channel.
     );
 
     /**Select default logical channel for fast start.
        Internal function, not for normal use.
       */
     virtual void SelectFastStartChannels(
-      unsigned sessionID,   /// Session ID to find default logical channel.
-      BOOL transmitter,     /// Whether to open transmitters
-      BOOL receiver         /// Whether to open receivers
+      unsigned sessionID,   ///<  Session ID to find default logical channel.
+      BOOL transmitter,     ///<  Whether to open transmitters
+      BOOL receiver         ///<  Whether to open receivers
     );
 
     /**Start a logical channel for fast start.
        Internal function, not for normal use.
       */
     virtual void StartFastStartChannel(
-      unsigned sessionID,               /// Session ID to find logical channel.
-      H323Channel::Directions direction /// Direction of channel to start
+      unsigned sessionID,               ///<  Session ID to find logical channel.
+      H323Channel::Directions direction ///<  Direction of channel to start
     );
 
     /**Open a new logical channel.
@@ -1560,9 +1563,9 @@ class H323Connection : public OpalConnection
        channel, ie fromRemote must be FALSE.
       */
     virtual BOOL OpenLogicalChannel(
-      const H323Capability & capability,  /// Capability to open channel with
-      unsigned sessionID,                 /// Session for the channel
-      H323Channel::Directions dir         /// Direction of channel
+      const H323Capability & capability,  ///<  Capability to open channel with
+      unsigned sessionID,                 ///<  Session for the channel
+      H323Channel::Directions dir         ///<  Direction of channel
     );
 
     /**This function is called when the remote endpoint want's to open
@@ -1575,9 +1578,9 @@ class H323Connection : public OpalConnection
        The default behaviour simply returns TRUE.
      */
     virtual BOOL OnOpenLogicalChannel(
-      const H245_OpenLogicalChannel & openPDU,  /// Received PDU for the channel open
-      H245_OpenLogicalChannelAck & ackPDU,      /// PDU to send for acknowledgement
-      unsigned & errorCode                      /// Error to return if refused
+      const H245_OpenLogicalChannel & openPDU,  ///<  Received PDU for the channel open
+      H245_OpenLogicalChannelAck & ackPDU,      ///<  PDU to send for acknowledgement
+      unsigned & errorCode                      ///<  Error to return if refused
     );
 
     /**Callback for when a logical channel conflict has occurred.
@@ -1588,7 +1591,7 @@ class H323Connection : public OpalConnection
        receiver that is being opened.
       */
     virtual BOOL OnConflictingLogicalChannel(
-      H323Channel & channel    /// Channel that conflicted
+      H323Channel & channel    ///<  Channel that conflicted
     );
 
     /**Create a new logical channel object.
@@ -1596,9 +1599,9 @@ class H323Connection : public OpalConnection
        logical channel.
       */
     virtual H323Channel * CreateLogicalChannel(
-      const H245_OpenLogicalChannel & open, /// Parameters for opening channel
-      BOOL startingFast,                    /// Flag for fast/slow starting.
-      unsigned & errorCode                  /// Reason for create failure
+      const H245_OpenLogicalChannel & open, ///<  Parameters for opening channel
+      BOOL startingFast,                    ///<  Flag for fast/slow starting.
+      unsigned & errorCode                  ///<  Reason for create failure
     );
 
     /**Create a new real time logical channel object.
@@ -1636,12 +1639,12 @@ class H323Connection : public OpalConnection
        media to the local host.
       */
     virtual H323Channel * CreateRealTimeLogicalChannel(
-      const H323Capability & capability, /// Capability creating channel
-      H323Channel::Directions dir,       /// Direction of channel
-      unsigned sessionID,                /// Session ID for RTP channel
+      const H323Capability & capability, ///<  Capability creating channel
+      H323Channel::Directions dir,       ///<  Direction of channel
+      unsigned sessionID,                ///<  Session ID for RTP channel
       const H245_H2250LogicalChannelParameters * param,
-                                         /// Parameters for channel
-      RTP_QOS * rtpqos = NULL            /// QoS for RTP
+                                         ///<  Parameters for channel
+      RTP_QOS * rtpqos = NULL            ///<  QoS for RTP
     );
 
     /**This function is called when the remote endpoint want's to create
@@ -1655,9 +1658,9 @@ class H323Connection : public OpalConnection
        is allowed to be opened with other channels that may already be open.
      */
     virtual BOOL OnCreateLogicalChannel(
-      const H323Capability & capability,  /// Capability for the channel open
-      H323Channel::Directions dir,        /// Direction of channel
-      unsigned & errorCode                /// Error to return if refused
+      const H323Capability & capability,  ///<  Capability for the channel open
+      H323Channel::Directions dir,        ///<  Direction of channel
+      unsigned & errorCode                ///<  Error to return if refused
     );
 
     /**Call back function when a logical channel thread begins.
@@ -1665,26 +1668,26 @@ class H323Connection : public OpalConnection
        The default behaviour does nothing and returns TRUE.
       */
     virtual BOOL OnStartLogicalChannel(
-      H323Channel & channel    /// Channel that has been started.
+      H323Channel & channel    ///<  Channel that has been started.
     );
 
     /**Close a logical channel.
       */
     virtual void CloseLogicalChannel(
-      unsigned number,    /// Channel number to close.
-      BOOL fromRemote     /// Indicates close request of remote channel
+      unsigned number,    ///<  Channel number to close.
+      BOOL fromRemote     ///<  Indicates close request of remote channel
     );
 
     /**Close a logical channel by number.
       */
     virtual void CloseLogicalChannelNumber(
-      const H323ChannelNumber & number    /// Channel number to close.
+      const H323ChannelNumber & number    ///<  Channel number to close.
     );
 
     /**Close a logical channel.
       */
     virtual void CloseAllLogicalChannels(
-      BOOL fromRemote     /// Indicates close request of remote channel
+      BOOL fromRemote     ///<  Indicates close request of remote channel
     );
 
     /**This function is called when the remote endpoint has closed down
@@ -1693,7 +1696,7 @@ class H323Connection : public OpalConnection
        The default behaviour does nothing.
      */
     virtual void OnClosedLogicalChannel(
-      const H323Channel & channel   /// Channel that was closed
+      const H323Channel & channel   ///<  Channel that was closed
     );
 
     /**This function is called when the remote endpoint request the close of
@@ -1705,7 +1708,7 @@ class H323Connection : public OpalConnection
        The default behaviour returns TRUE.
      */
     virtual BOOL OnClosingLogicalChannel(
-      H323Channel & channel   /// Channel that is to be closed
+      H323Channel & channel   ///<  Channel that is to be closed
     );
 
     /**This function is called when the remote endpoint wishes to limit the
@@ -1717,8 +1720,8 @@ class H323Connection : public OpalConnection
        H323Channel::OnFlowControl() on the specific channel.
      */
     virtual void OnLogicalChannelFlowControl(
-      H323Channel * channel,   /// Channel that is to be limited
-      long bitRateRestriction  /// Limit for channel
+      H323Channel * channel,   ///<  Channel that is to be limited
+      long bitRateRestriction  ///<  Limit for channel
     );
 
     /**This function is called when the remote endpoint indicates the level
@@ -1730,18 +1733,18 @@ class H323Connection : public OpalConnection
        H323Channel::OnJitter() on the specific channel.
      */
     virtual void OnLogicalChannelJitter(
-      H323Channel * channel,   /// Channel that is to be limited
-      DWORD jitter,            /// Estimated received jitter in microseconds
-      int skippedFrameCount,   /// Frames skipped by decodec
-      int additionalBuffer     /// Additional size of video decoder buffer
+      H323Channel * channel,   ///<  Channel that is to be limited
+      DWORD jitter,            ///<  Estimated received jitter in microseconds
+      int skippedFrameCount,   ///<  Frames skipped by decodec
+      int additionalBuffer     ///<  Additional size of video decoder buffer
     );
 
     /**Get a logical channel.
        Locates the specified channel number and returns a pointer to it.
       */
     H323Channel * GetLogicalChannel(
-      unsigned number,    /// Channel number to get.
-      BOOL fromRemote     /// Indicates get a remote channel
+      unsigned number,    ///<  Channel number to get.
+      BOOL fromRemote     ///<  Indicates get a remote channel
     ) const;
 
     /**Find a logical channel.
@@ -1750,8 +1753,8 @@ class H323Connection : public OpalConnection
        bay be used to distinguish which channel to return.
       */
     H323Channel * FindChannel(
-      unsigned sessionId,   /// Session ID to search for.
-      BOOL fromRemote       /// Indicates the direction of RTP data.
+      unsigned sessionId,   ///<  Session ID to search for.
+      BOOL fromRemote       ///<  Indicates the direction of RTP data.
     ) const;
   //@}
 
@@ -1762,8 +1765,8 @@ class H323Connection : public OpalConnection
        active logical channels to meet the new bandwidth requirement.
       */
     virtual BOOL SetBandwidthAvailable(
-      unsigned newBandwidth,    /// New bandwidth limit
-      BOOL force = FALSE        /// Force bandwidth limit
+      unsigned newBandwidth,    ///<  New bandwidth limit
+      BOOL force = FALSE        ///<  Force bandwidth limit
     );
 
     /**Get the bandwidth currently used.
@@ -1816,7 +1819,7 @@ class H323Connection : public OpalConnection
        SendUserInputAsSeparateRFC2833 is not yet supported.
       */
     virtual BOOL SendUserInputString(
-      const PString & value                   /// String value of indication
+      const PString & value                   ///<  String value of indication
     );
 
     /**Send a user input indication to the remote endpoint.
@@ -1844,8 +1847,8 @@ class H323Connection : public OpalConnection
        SendUserInputAsSeparateRFC2833 is not yet supported.
       */
     virtual BOOL SendUserInputTone(
-      char tone,             /// DTMF tone code
-      unsigned duration = 0  /// Duration of tone in milliseconds
+      char tone,             ///<  DTMF tone code
+      unsigned duration = 0  ///<  Duration of tone in milliseconds
     );
 
     /**Send a user input indication to the remote endpoint.
@@ -1855,7 +1858,7 @@ class H323Connection : public OpalConnection
        pdu sending the entire string in one go.
       */
     virtual BOOL SendUserInputIndicationQ931(
-      const PString & value                   /// String value of indication
+      const PString & value                   ///<  String value of indication
     );
 
     /**Send a user input indication to the remote endpoint.
@@ -1865,7 +1868,7 @@ class H323Connection : public OpalConnection
        entire string in one go.
       */
     virtual BOOL SendUserInputIndicationString(
-      const PString & value                   /// String value of indication
+      const PString & value                   ///<  String value of indication
     );
 
     /**Send a user input indication to the remote endpoint.
@@ -1873,10 +1876,10 @@ class H323Connection : public OpalConnection
        UserInputIndication pdu.
       */
     virtual BOOL SendUserInputIndicationTone(
-      char tone,                   /// DTMF tone code
-      unsigned duration = 0,       /// Duration of tone in milliseconds
-      unsigned logicalChannel = 0, /// Logical channel number for RTP sync.
-      unsigned rtpTimestamp = 0    /// RTP timestamp in logical channel sync.
+      char tone,                   ///<  DTMF tone code
+      unsigned duration = 0,       ///<  Duration of tone in milliseconds
+      unsigned logicalChannel = 0, ///<  Logical channel number for RTP sync.
+      unsigned rtpTimestamp = 0    ///<  RTP timestamp in logical channel sync.
     );
 
     /**Send a user input indication to the remote endpoint.
@@ -1888,7 +1891,7 @@ class H323Connection : public OpalConnection
        H245_UserInputIndication structure directly ans using this function.
       */
     virtual BOOL SendUserInputIndication(
-      const H245_UserInputIndication & pdu    /// Full user indication PDU
+      const H245_UserInputIndication & pdu    ///<  Full user indication PDU
     );
 
     /**Call back for remote enpoint has sent user input.
@@ -1896,7 +1899,7 @@ class H323Connection : public OpalConnection
        alphanumeric type, or OnUserInputTone() if of a tone type.
       */
     virtual void OnUserInputIndication(
-      const H245_UserInputIndication & pdu  /// Full user indication PDU
+      const H245_UserInputIndication & pdu  ///<  Full user indication PDU
     );
   //@}
 
@@ -1946,7 +1949,7 @@ class H323Connection : public OpalConnection
        The default behaviour calls H323EndPoint::OnRTPStatistics().
       */
     virtual void OnRTPStatistics(
-      const RTP_Session & session   /// Session with statistics
+      const RTP_Session & session   ///<  Session with statistics
     ) const;
 
     /**Get the names of the codecs in use for the RTP session.
@@ -1980,7 +1983,7 @@ class H323Connection : public OpalConnection
        change may be done at a time.
       */
     virtual BOOL RequestModeChange(
-      const PString & newModes  /// New modes to select
+      const PString & newModes  ///<  New modes to select
     );
 
     /**Make a request to mode change to remote.
@@ -1991,16 +1994,16 @@ class H323Connection : public OpalConnection
        change may be done at a time.
       */
     virtual BOOL RequestModeChange(
-      const H245_ArrayOf_ModeDescription & newModes  /// New modes to select
+      const H245_ArrayOf_ModeDescription & newModes  ///<  New modes to select
     );
 
     /**Received request for mode change from remote.
       */
     virtual BOOL OnRequestModeChange(
-      const H245_RequestMode & pdu,     /// Received PDU
-      H245_RequestModeAck & ack,        /// Ack PDU to send
-      H245_RequestModeReject & reject,  /// Reject PDU to send
-      PINDEX & selectedMode           /// Which mode was selected
+      const H245_RequestMode & pdu,     ///<  Received PDU
+      H245_RequestModeAck & ack,        ///<  Ack PDU to send
+      H245_RequestModeReject & reject,  ///<  Reject PDU to send
+      PINDEX & selectedMode           ///<  Which mode was selected
     );
 
     /**Completed request for mode change from remote.
@@ -2018,7 +2021,7 @@ class H323Connection : public OpalConnection
        the remote endpoint.
       */
     virtual void OnAcceptModeChange(
-      const H245_RequestModeAck & pdu  /// Received PDU
+      const H245_RequestModeAck & pdu  ///<  Received PDU
     );
 
     /**Received reject of last mode change request.
@@ -2026,7 +2029,7 @@ class H323Connection : public OpalConnection
        the remote endpoint.
       */
     virtual void OnRefusedModeChange(
-      const H245_RequestModeReject * pdu  /// Received PDU, if NULL is a timeout
+      const H245_RequestModeReject * pdu  ///<  Received PDU, if NULL is a timeout
     );
   //@}
 
@@ -2048,8 +2051,8 @@ class H323Connection : public OpalConnection
        The default behavour does nothing and returns FALSE.
       */
     virtual BOOL GetAdmissionRequestAuthentication(
-      const H225_AdmissionRequest & arq,  /// ARQ being constructed
-      H235Authenticators & authenticators /// New authenticators for ARQ
+      const H225_AdmissionRequest & arq,  ///<  ARQ being constructed
+      H235Authenticators & authenticators ///<  New authenticators for ARQ
     );
   //@}
 
@@ -2116,13 +2119,13 @@ class H323Connection : public OpalConnection
     /**Set the name/alias of remote end from information in the PDU.
       */
     void SetRemotePartyInfo(
-      const H323SignalPDU & pdu /// PDU from which to extract party info.
+      const H323SignalPDU & pdu ///<  PDU from which to extract party info.
     );
 
     /**Set the name/alias of remote end from information in the PDU.
       */
     void SetRemoteApplication(
-      const H225_EndpointType & pdu /// PDU from which to extract application info.
+      const H225_EndpointType & pdu ///<  PDU from which to extract application info.
     );
     
     /**Get the remote party address.
@@ -2205,7 +2208,7 @@ class H323Connection : public OpalConnection
        expires.
       */
     void SetEnforcedDurationLimit(
-      unsigned seconds  /// max duration of call in seconds
+      unsigned seconds  ///<  max duration of call in seconds
     );
   //@}
 
