@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2078  2005/11/28 19:07:56  dsandras
+ * Revision 1.2079  2005/11/30 13:44:20  csoutheren
+ * Removed compile warnings on Windows
+ *
+ * Revision 2.77  2005/11/28 19:07:56  dsandras
  * Moved OnNATTimeout to SIPInfo and use it for active conversations too.
  * Added E.164 support.
  *
@@ -469,7 +472,7 @@ SIPMessageInfo::SIPMessageInfo (SIPEndPoint & endpoint, const PString & name, co
 }
 
 
-SIPTransaction * SIPMessageInfo::CreateTransaction(OpalTransport &t, BOOL unregister)
+SIPTransaction * SIPMessageInfo::CreateTransaction(OpalTransport &t, BOOL /*unregister*/)
 { 
   SIPMessage * message = new SIPMessage(ep, t, registrationAddress, body);
   registrationID = message->GetMIME().GetCallID();
