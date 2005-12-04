@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2079  2005/11/30 13:44:20  csoutheren
+ * Revision 1.2080  2005/12/04 22:08:58  dsandras
+ * Added possibility to provide an expire time when registering, if not
+ * the default expire time for the endpoint will be used.
+ *
+ * Revision 2.78  2005/11/30 13:44:20  csoutheren
  * Removed compile warnings on Windows
  *
  * Revision 2.77  2005/11/28 19:07:56  dsandras
@@ -373,10 +377,12 @@ void SIPInfo::OnNATTimeout (PTimer &, INT)
 }
 
 
-SIPRegisterInfo::SIPRegisterInfo(SIPEndPoint & endpoint, const PString & name, const PString & pass/*, const PString & r*/)
+SIPRegisterInfo::SIPRegisterInfo(SIPEndPoint & endpoint, const PString & name, const PString & pass, int exp)
   :SIPInfo(endpoint, name)
 {
-  expire = ep.GetRegistrarTimeToLive().GetSeconds();
+  expire = exp;
+  if (expire == 0)
+    expire = ep.GetRegistrarTimeToLive().GetSeconds();
   password = pass;
 }
 
@@ -394,8 +400,6 @@ SIPTransaction * SIPRegisterInfo::CreateTransaction(OpalTransport &t, BOOL unreg
   
   if (unregister)
     SetExpire (0);
-  else
-    SetExpire (ep.GetRegistrarTimeToLive().GetSeconds());
 
   return new SIPRegister (ep, 
 			  t, 
@@ -427,10 +431,12 @@ void SIPRegisterInfo::OnFailed (SIP_PDU::StatusCodes r)
 }
 
 
-SIPMWISubscribeInfo::SIPMWISubscribeInfo (SIPEndPoint & endpoint, const PString & name)
+SIPMWISubscribeInfo::SIPMWISubscribeInfo (SIPEndPoint & endpoint, const PString & name, int exp)
   :SIPInfo(endpoint, name)
 {
-  expire = ep.GetNotifierTimeToLive().GetSeconds();
+  expire = exp;
+  if (expire == 0)
+    expire = ep.GetNotifierTimeToLive().GetSeconds();
 }
 
 
@@ -1266,9 +1272,10 @@ BOOL SIPEndPoint::WriteSIPInfo(OpalTransport & transport, void * _info)
 BOOL SIPEndPoint::Register(const PString & host,
                            const PString & username,
                            const PString & password,
-			   const PString & realm)
+			   const PString & realm,
+			   int timeout)
 {
-  return TransmitSIPInfo(host, username, password, realm, "", SIP_PDU::Method_REGISTER);
+  return TransmitSIPInfo(host, username, password, realm, "", timeout, SIP_PDU::Method_REGISTER);
 }
 
 
@@ -1286,9 +1293,9 @@ void SIPEndPoint::OnMWIReceived (const PString & /*remoteAddress*/,
 }
 
 
-BOOL SIPEndPoint::MWISubscribe(const PString & host, const PString & username)
+BOOL SIPEndPoint::MWISubscribe(const PString & host, const PString & username, int timeout)
 {
-  return TransmitSIPInfo (host, username, "", "", "", SIP_PDU::Method_SUBSCRIBE);
+  return TransmitSIPInfo (host, username, "", "", "", timeout, SIP_PDU::Method_SUBSCRIBE);
 }
 
 
@@ -1297,6 +1304,7 @@ BOOL SIPEndPoint::TransmitSIPInfo(const PString & host,
 				  const PString & password,
 				  const PString & realm,
 				  const PString & body,
+				  int timeout,
 				  SIP_PDU::Methods m)
 {
   PSafePtr<SIPInfo> info = NULL;
@@ -1343,13 +1351,14 @@ BOOL SIPEndPoint::TransmitSIPInfo(const PString & host,
       info->SetAuthRealm(realm);   // Adjust the realm if required 
     if (!body.IsEmpty())
       info->SetBody(body);         // Adjust the body if required 
+    info->SetExpire(timeout);      // Adjust the expire field
   } 
   // otherwise create a new request with this method type
   else {
     if (m == SIP_PDU::Method_REGISTER)
-      info = new SIPRegisterInfo(*this, adjustedUsername, password);
+      info = new SIPRegisterInfo(*this, adjustedUsername, password, timeout);
     else if (m == SIP_PDU::Method_SUBSCRIBE)
-      info = new SIPMWISubscribeInfo(*this, adjustedUsername);
+      info = new SIPMWISubscribeInfo(*this, adjustedUsername, timeout);
     else if (m == SIP_PDU::Method_MESSAGE)
       info = new SIPMessageInfo(*this, adjustedUsername, body);
     if (info == NULL) {
@@ -1567,7 +1576,7 @@ const SIPURL SIPEndPoint::GetContactAddress(const OpalTransport &transport, cons
 BOOL SIPEndPoint::SendMessage (const SIPURL & url, 
 			       const PString & body)
 {
-  return TransmitSIPInfo(url.AsQuotedString(), url.GetUserName(), "", "", body, SIP_PDU::Method_MESSAGE);
+  return TransmitSIPInfo(url.AsQuotedString(), url.GetUserName(), "", "", body, 0, SIP_PDU::Method_MESSAGE);
 }
 
 

@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2038  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2039  2005/12/04 22:08:58  dsandras
+ * Added possibility to provide an expire time when registering, if not
+ * the default expire time for the endpoint will be used.
+ *
+ * Revision 2.37  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.36  2005/11/28 19:07:56  dsandras
@@ -264,7 +268,7 @@ class SIPRegisterInfo : public SIPInfo
   PCLASSINFO(SIPRegisterInfo, SIPInfo);
 
   public:
-    SIPRegisterInfo(SIPEndPoint & ep, const PString & adjustedUsername, const PString & password/*, const PString & authRealm*/);
+    SIPRegisterInfo(SIPEndPoint & ep, const PString & adjustedUsername, const PString & password, int expire);
     ~SIPRegisterInfo();
     virtual SIPTransaction * CreateTransaction(OpalTransport &, BOOL);
     virtual SIP_PDU::Methods GetMethod()
@@ -278,7 +282,7 @@ class SIPMWISubscribeInfo : public SIPInfo
 {
   PCLASSINFO(SIPMWISubscribeInfo, SIPInfo);
   public:
-    SIPMWISubscribeInfo (SIPEndPoint & ep, const PString & adjustedUsername);
+    SIPMWISubscribeInfo (SIPEndPoint & ep, const PString & adjustedUsername, int expire);
     virtual SIPTransaction * CreateTransaction (OpalTransport &, BOOL);
     virtual SIP_PDU::Methods GetMethod ()
     { return SIP_PDU::Method_SUBSCRIBE; }
@@ -530,7 +534,8 @@ class SIPEndPoint : public OpalEndPoint
       const PString & host,
       const PString & username = PString::Empty(),
       const PString & password = PString::Empty(),
-      const PString & authRealm = PString::Empty()
+      const PString & authRealm = PString::Empty(),
+      int timeout = 0
     );
 
     /**Callback called when MWI is received
@@ -547,7 +552,8 @@ class SIPEndPoint : public OpalEndPoint
      */
     BOOL MWISubscribe(
       const PString & host,
-      const PString & username
+      const PString & username,
+      int timeout = 0
     );
    
     
@@ -820,6 +826,7 @@ class SIPEndPoint : public OpalEndPoint
       const PString & password, 
       const PString & authRealm,
       const PString & body,
+      int timeout,
       SIP_PDU::Methods method
     );
 
