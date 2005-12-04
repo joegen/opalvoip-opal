@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2110  2005/11/25 21:02:52  dsandras
+ * Revision 1.2111  2005/12/04 15:02:00  dsandras
+ * Fixed IP translation in the VIA field of most request PDUs.
+ *
+ * Revision 2.109  2005/11/25 21:02:52  dsandras
  * Release the call if the SDP can not be built.
  *
  * Revision 2.108  2005/11/20 20:55:55  dsandras
@@ -1259,7 +1262,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
       // ACK Constructed following 17.1.1.3
       if (response.GetStatusCode()/100 != 2) 
-	ack = SIPAck(transaction, response);
+	ack = SIPAck(endpoint, transaction, response);
       else 
 	ack = SIPAck(transaction);
 
