@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2035  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2036  2005/12/04 15:02:00  dsandras
+ * Fixed IP translation in the VIA field of most request PDUs.
+ *
+ * Revision 2.34  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.33  2005/11/07 06:34:53  csoutheren
@@ -641,13 +644,13 @@ class SIP_PDU : public PObject
       */
     void AdjustVia(OpalTransport & transport);
     
-    /**Return the address associated with the via field. That address
+    /**Return the address from the via field. That address
      * should be used to send responses to incoming PDUs.
      */
     OpalTransportAddress GetViaAddress(OpalEndPoint &);
 
     
-    /**Return the address associated to which the request PDU should be sent
+    /**Return the address to which the request PDU should be sent
      * according to the RFC, for a request in a dialog.
      */
     OpalTransportAddress GetSendAddress(SIPConnection &);
@@ -681,6 +684,15 @@ class SIP_PDU : public PObject
     void SetSDP(const SDPSessionDescription & s) { sdp = new SDPSessionDescription(s); }
 
   protected:
+    
+    /**Return the address to which responses from the remote should be sent.
+     * Translated if necessary.
+     */
+    OpalTransportAddress GetViaAddress(
+      OpalEndPoint & ep,
+      const OpalTransport & transport
+    ) const;
+    
     Methods     method;                 // Request type, ==NumMethods for Response
     StatusCodes statusCode;
     SIPURL      uri;                    // display name & URI, no tag
@@ -919,6 +931,7 @@ class SIPAck : public SIP_PDU
   public:
     // This ACK is sent for non-2xx responses
     SIPAck(
+      SIPEndPoint & ep,
       SIPTransaction & invite,
       SIP_PDU & response); 
 
