@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2039  2005/12/04 22:08:58  dsandras
+ * Revision 1.2040  2005/12/05 22:20:57  dsandras
+ * Update the transport when the computer is behind NAT, using STUN, the IP
+ * address has changed compared to the original transport and a registration
+ * refresh must occur.
+ *
+ * Revision 2.38  2005/12/04 22:08:58  dsandras
  * Added possibility to provide an expire time when registering, if not
  * the default expire time for the endpoint will be used.
  *
@@ -190,7 +195,7 @@ class SIPInfo : public PSafeObject
     virtual void Cancel(SIPTransaction & transaction);
 
     virtual OpalTransport *GetTransport()
-    { return registrarTransport; }
+    { PWaitAndSignal m(transportMutex); return registrarTransport; }
 
     virtual SIPAuthentication & GetAuthentication()
     { return authentication; }
@@ -258,6 +263,7 @@ class SIPInfo : public PSafeObject
       PString		 body;
       PTimer             natTimer;
       SIPOptions       * natBindingOptions;
+      PMutex             transportMutex;
     
     private:
       PDECLARE_NOTIFIER(PTimer, SIPInfo, OnNATTimeout);
