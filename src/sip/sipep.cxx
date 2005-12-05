@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2080  2005/12/04 22:08:58  dsandras
+ * Revision 1.2081  2005/12/05 22:20:57  dsandras
+ * Update the transport when the computer is behind NAT, using STUN, the IP
+ * address has changed compared to the original transport and a registration
+ * refresh must occur.
+ *
+ * Revision 2.79  2005/12/04 22:08:58  dsandras
  * Added possibility to provide an expire time when registering, if not
  * the default expire time for the endpoint will be used.
  *
@@ -340,8 +345,34 @@ SIPInfo::~SIPInfo()
 
 BOOL SIPInfo::CreateTransport (OpalTransportAddress & registrarAddress)
 {
-  if (registrarTransport == NULL)
+  PWaitAndSignal m(transportMutex);
+
+  OpalManager & manager = ep.GetManager();
+
+  if (registrarTransport != NULL) {
+
+    PSTUNClient * stun = manager.GetSTUN(registrarAddress);
+    if (stun != NULL && registrarTransport != NULL) {
+
+      PIPSocket::Address externalAddress;
+      OpalTransportAddress transportAddress;
+      PIPSocket::Address currentExternalAddress;
+
+      if (stun->GetExternalAddress(externalAddress, 0)) {
+	transportAddress = registrarTransport->GetLocalAddress();
+	if (transportAddress.GetIpAddress(currentExternalAddress)) {
+	  if (currentExternalAddress != externalAddress) {
+	    delete registrarTransport;
+	    registrarTransport = NULL;
+	  }
+	}
+      }
+    }
+  }
+
+  if (registrarTransport == NULL) {
     registrarTransport = ep.CreateTransport(registrarAddress);
+  }
   if (registrarTransport == NULL) {
     OnFailed(SIP_PDU::Failure_BadGateway);
     return FALSE;
@@ -416,7 +447,7 @@ void SIPRegisterInfo::OnSuccess ()
 		  (expire > 0)); 
   if (ep.GetManager().GetSTUN (registrationAddress.GetHostName()))
     if (expire > 0)
-      natTimer.RunContinuous(PTimeInterval(60000));
+      natTimer.RunContinuous(PTimeInterval(0, 60));
     else
       natTimer.Stop();
 }
@@ -459,7 +490,7 @@ void SIPMWISubscribeInfo::OnSuccess ()
   SetRegistered((expire == 0)?FALSE:TRUE);
   if (ep.GetManager().GetSTUN (registrationAddress.GetHostName()))
     if (expire > 0)
-      natTimer.RunContinuous(PTimeInterval(60000));
+      natTimer.RunContinuous(PTimeInterval(0, 60));
     else
       natTimer.Stop();
 }
@@ -592,7 +623,6 @@ OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & addres
     GetListeners()[0].GetLocalAddress().GetIpAndPort(ip, port);
 
   OpalTransport * transport;
-  
   if (ip.IsAny()) {
     // endpoint is listening to anything - attempt call using all interfaces
     transport = address.CreateTransport(*this, OpalTransportAddress::NoBinding);
@@ -1213,6 +1243,7 @@ BOOL SIPEndPoint::IsSubscribed(const PString & host, const PString & user)
 void SIPEndPoint::RegistrationRefresh(PTimer &, INT)
 {
   SIPTransaction *request = NULL;
+  OpalTransport *infoTransport = NULL;
 
   // Timer has elapsed
   for (PINDEX i = 0 ; i < activeSIPInfo.GetSize () ; i++) {
@@ -1233,14 +1264,25 @@ void SIPEndPoint::RegistrationRefresh(PTimer &, INT)
 	  && info->HasExpired()) {
 	PTRACE(2, "SIP\tStarting REGISTER/SUBSCRIBE for binding refresh");
 	info->SetRegistered(FALSE);
-	request = info->CreateTransaction(*info->GetTransport(), FALSE); 
+	infoTransport = info->GetTransport(); // Get current transport
+	OpalTransportAddress registrarAddress = infoTransport->GetRemoteAddress();
+	// Will update the transport if required. For example, if STUN
+	// is used, and the external IP changed. Otherwise, OPAL would
+	// keep registering the old IP.
+	if (info->CreateTransport(registrarAddress)) { 
+	  infoTransport = info->GetTransport();
+	  request = info->CreateTransaction(*infoTransport, FALSE); 
 
-	if (request->Start()) 
-	  info->AppendTransaction(request);
-	else {
-	  delete request;
-	  PTRACE(1, "SIP\tCould not start REGISTER/SUBSCRIBE for binding refresh");
+	  if (request->Start()) 
+	    info->AppendTransaction(request);
+	  else {
+	    delete request;
+	    PTRACE(1, "SIP\tCould not start REGISTER/SUBSCRIBE for binding refresh");
+	  }
 	}
+	else
+	  PTRACE(1, "SIP\tCould not start REGISTER/SUBSCRIBE for binding refresh: Transport creation failed");
+
       }
     }
   }
