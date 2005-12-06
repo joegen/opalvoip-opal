@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2094  2005/10/15 13:49:28  dsandras
+ * Revision 1.2095  2005/12/06 21:32:24  dsandras
+ * Applied patch from Frederic Heem <frederic.heem _Atttt_ telsey.it> to fix
+ * assert in PSyncPoint when OnReleased is called twice from different threads.
+ * Thanks! (Patch #1374240)
+ *
+ * Revision 2.93  2005/10/15 13:49:28  dsandras
  * Fixed best guess for the remote party callback url.
  *
  * Revision 2.92  2005/10/08 20:02:29  dsandras
@@ -1725,7 +1730,7 @@ void H323Connection::CleanUpOnCallEnd()
     }
   }
 
-  phase = ReleasedPhase;
+  SetPhase(ReleasedPhase);
 
   // Wait for control channel to be cleaned up (thread ended).
   if (controlChannel != NULL)
@@ -1852,7 +1857,7 @@ BOOL H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
   if (!safeLock.IsLocked())
     return FALSE;
 
-  if (phase >= ReleasingPhase) {
+  if (GetPhase() >= ReleasingPhase) {
     // Continue to look for endSession/releaseComplete pdus
     if (pdu.m_h323_uu_pdu.m_h245Tunneling) {
       for (PINDEX i = 0; i < pdu.m_h323_uu_pdu.m_h245Control.GetSize(); i++) {
@@ -2318,7 +2323,7 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
       else {
         // call the application callback to determine if to answer the call or not
         connectionState = AwaitingLocalAnswer;
-        phase = AlertingPhase;
+        SetPhase(AlertingPhase);
         AnsweringCall(OnAnswerCall(remotePartyName, setupPDU, *connectPDU));
       }
     }
@@ -2493,7 +2498,7 @@ BOOL H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   if (connectionState == ShuttingDownConnection)
     return FALSE;
   connectionState = HasExecutedSignalConnect;
-  phase = ConnectedPhase;
+  SetPhase(ConnectedPhase);
 
   if (pdu.m_h323_uu_pdu.m_h323_message_body.GetTag() != H225_H323_UU_PDU_h323_message_body::e_connect)
     return FALSE;
@@ -2781,7 +2786,7 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
   PTRACE(2, "H323\tAnswering call: " << response);
 
   PSafeLockReadWrite safeLock(*this);
-  if (!safeLock.IsLocked() || phase >= ReleasingPhase)
+  if (!safeLock.IsLocked() || GetPhase() >= ReleasingPhase)
     return;
 
   switch (response) {
@@ -2894,7 +2899,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
 
   // Start the call, first state is asking gatekeeper
   connectionState = AwaitingGatekeeperAdmission;
-  phase = SetUpPhase;
+  SetPhase(SetUpPhase);
 
   // Start building the setup PDU to get various ID's
   H323SignalPDU setupPDU;
@@ -2949,7 +2954,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
         digitsWaitFlag.Wait();
         if (!LockReadWrite()) // Lock while checking for shutting down.
           return EndedByCallerAbort;
-        if (phase >= ReleasingPhase)
+        if (GetPhase() >= ReleasingPhase)
           return EndedByCallerAbort;
       }
     }
@@ -3001,7 +3006,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
 
   // Do the transport connect
   connectionState = AwaitingTransportConnect;
-  phase = SetUpPhase;
+  SetPhase(SetUpPhase);
 
   // Release the mutex as can deadlock trying to clear call during connect.
   safeLock.Unlock();
@@ -3012,13 +3017,13 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   if (!safeLock.Lock())
     return EndedByCallerAbort;
 
-  if (phase >= ReleasingPhase)
+  if (GetPhase() >= ReleasingPhase)
     return EndedByCallerAbort;
 
   // See if transport connect failed, abort if so.
   if (connectFailed) {
     connectionState = NoConnectionActive;
-    phase = UninitialisedPhase;
+    SetPhase(UninitialisedPhase);
     switch (signallingChannel->GetErrorNumber()) {
       case ENETUNREACH :
         return EndedByUnreachable;
@@ -3118,7 +3123,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   signallingChannel->SetReadTimeout(endpoint.GetSignallingChannelCallTimeout());
 
   connectionState = AwaitingSignalConnect;
-  phase = AlertingPhase;
+  SetPhase(AlertingPhase);
 
   return NumCallEndReasons;
 }
@@ -3208,7 +3213,7 @@ BOOL H323Connection::SetConnected()
 
   // Set flag that we are up to CONNECT stage
   connectionState = HasExecutedSignalConnect;
-  phase = ConnectedPhase;
+  SetPhase(ConnectedPhase);
 
   h450dispatcher->AttachToConnect(*connectPDU);
 
@@ -3625,7 +3630,7 @@ void H323Connection::HandleControlChannel()
       if (ok) {
         // Process the received PDU
         PTRACE(4, "H245\tReceived TPKT: " << strm);
-        if (phase < ReleasingPhase)
+        if (GetPhase() < ReleasingPhase)
           ok = HandleControlData(strm);
         else
           ok = InternalEndSessionCheck(strm);
@@ -4315,7 +4320,7 @@ BOOL H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remoteCaps
     if (transmitterSidePaused) {
       transmitterSidePaused = FALSE;
       connectionState = HasExecutedSignalConnect;
-      phase = ConnectedPhase;
+      SetPhase(ConnectedPhase);
       capabilityExchangeProcedure->Start(TRUE);
     }
     else {
@@ -4404,7 +4409,7 @@ BOOL H323Connection::IsH245Master() const
 void H323Connection::StartRoundTripDelay()
 {
   if (LockReadWrite()) {
-    if (phase < ReleasingPhase &&
+    if (GetPhase() < ReleasingPhase &&
         masterSlaveDeterminationProcedure->IsDetermined() &&
         capabilityExchangeProcedure->HasSentCapabilities()) {
       if (roundTripDelayProcedure->IsRemoteOffline()) {
@@ -4467,7 +4472,7 @@ void H323Connection::InternalEstablishedConnectionCheck()
         OnSelectLogicalChannels();
 
       connectionState = EstablishedConnection;
-      phase = EstablishedPhase;
+      SetPhase(EstablishedPhase);
 
       OnEstablished();
       break;
@@ -5475,7 +5480,7 @@ void H323Connection::MonitorCallStatus()
   if (!safeLock.IsLocked())
     return;
 
-  if (phase >= ReleasingPhase)
+  if (GetPhase() >= ReleasingPhase)
     return;
 
   if (endpoint.GetRoundTripDelayRate() > 0 && !roundTripDelayTimer.IsRunning()) {
