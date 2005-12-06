@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: buildopts.h.in,v $
+ * Revision 1.8  2005/12/06 06:34:10  csoutheren
+ * Added configure support for Sangoma and empty LID source and header files
+ *
  * Revision 1.7  2005/07/30 07:39:26  csoutheren
  * Added support for compiling new IAX2 code
  *
@@ -146,6 +149,12 @@
 
 #endif
 #endif
+
+/////////////////////////////////////////////////
+//
+// Sangoma support
+//
+#undef HAS_SANGOMA
 
 
 /////////////////////////////////////////////////

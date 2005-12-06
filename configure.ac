@@ -316,6 +316,37 @@ dnl MSWIN_CHECK_DIR   vpb,c:\vpb-driver
 
 
 dnl ########################################################################
+dnl
+dnl Sangoma libraries
+dnl 
+
+OLD_CPPFLAGS=$CPPFLAGS
+CPPFLAGS=-D__LINUX__
+
+HAS_SANGOMA=
+AC_CHECK_HEADERS(/usr/local/include/libpri.h, HAS_SANGOMA=1)
+if test "x$HAS_SANGOMA" != "x" ; then
+  AC_CHECK_HEADERS(/usr/local/include/libsangoma.h, HAS_SANGOMA=1)
+  if test "x$HAS_SANGOMA" != "x" ; then
+
+    OLD_LDFLAGS=$LDFLAGS
+    LDFLAGS=-L/usr/local/lib
+
+    AC_CHECK_LIB(sangoma, sangoma_create_socket, HAS_SANGOMA=1)
+    if test "x$HAS_SANGOMA" != "x" ; then
+      AC_DEFINE(HAS_SANGOMA, 1)
+      HAS_SANGOMA=1
+    fi
+
+    LD_FLAGS=$OLD_LDFLAGS
+  fi
+fi
+AC_SUBST(HAS_SANGOMA)
+
+CPPFLAGS=$OLD_CPPFLAGS
+
+
+dnl ########################################################################
 dnl output make directives
 
 AC_SUBST(STDCCFLAGS)
