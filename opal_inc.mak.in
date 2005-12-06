@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: opal_inc.mak.in,v $
+# Revision 1.6  2005/12/06 06:34:10  csoutheren
+# Added configure support for Sangoma and empty LID source and header files
+#
 # Revision 1.5  2005/07/30 07:39:26  csoutheren
 # Added support for compiling new IAX2 code
 #
@@ -55,6 +58,7 @@
 #
 
 HAS_IXJ=@HAS_IXJ@
+HAS_SANGOMA=@HAS_SANGOMA@
 
 
 OPALDIR=@OPALDIR@
