@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2048  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2049  2005/12/06 21:32:24  dsandras
+ * Applied patch from Frederic Heem <frederic.heem _Atttt_ telsey.it> to fix
+ * assert in PSyncPoint when OnReleased is called twice from different threads.
+ * Thanks! (Patch #1374240)
+ *
+ * Revision 2.47  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.46  2005/11/24 20:31:54  dsandras
@@ -329,7 +334,7 @@ class OpalConnection : public PSafeObject
        This indicates the current phase of the connection sequence. Whether
        all phases and the transitions between phases is protocol dependent.
       */
-    Phases GetPhase() const { return phase; }
+    inline Phases GetPhase() const { return phase; }
 
     /**Get the call clearand reason for this connection shutting down.
        Note that this function is only generally useful in the
@@ -1116,6 +1121,11 @@ class OpalConnection : public PSafeObject
     // The In-Band DTMF detector. This is used inside an audio filter which is
     // added to the audio channel.
     PDTMFDecoder        dtmfDecoder;
+
+    /**Set the phase of the connection.
+       @param phaseToSet the phase to set
+      */
+    void SetPhase(Phases phaseToSet);
 
 #if PTRACING
     friend ostream & operator<<(ostream & o, Phases p);
