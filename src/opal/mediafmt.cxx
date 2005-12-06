@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2037  2005/09/13 20:48:22  dominance
+ * Revision 1.2038  2005/12/06 21:38:16  dsandras
+ * Fixed SetMediaFormatMask thanks for Frederic Heem <frederic.heem _Atttt_ telsey.it>. Thanks! (Patch #1368040).
+ *
+ * Revision 2.36  2005/09/13 20:48:22  dominance
  * minor cleanups needed to support mingw compilation. Thanks goes to Julien Puydt.
  *
  * Revision 2.35  2005/09/06 12:44:49  rjongbloed
@@ -1003,8 +1006,9 @@ void OpalMediaFormatList::Remove(const PStringArray & mask)
   PINDEX i;
   for (i = 0; i < mask.GetSize(); i++) {
     PINDEX idx;
-    while ((idx = FindFormat(mask[i])) != P_MAX_INDEX)
+    if((idx = FindFormat(mask[i])) != P_MAX_INDEX){
       RemoveAt(idx);
+    }  
   }
 }
 
