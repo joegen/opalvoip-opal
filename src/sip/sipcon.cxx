@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2111  2005/12/04 15:02:00  dsandras
+ * Revision 1.2112  2005/12/06 21:32:25  dsandras
+ * Applied patch from Frederic Heem <frederic.heem _Atttt_ telsey.it> to fix
+ * assert in PSyncPoint when OnReleased is called twice from different threads.
+ * Thanks! (Patch #1374240)
+ *
+ * Revision 2.110  2005/12/04 15:02:00  dsandras
  * Fixed IP translation in the VIA field of most request PDUs.
  *
  * Revision 2.109  2005/11/25 21:02:52  dsandras
@@ -501,7 +506,14 @@ SIPConnection::~SIPConnection()
 
 void SIPConnection::OnReleased()
 {
-  PTRACE(3, "SIP\tOnReleased: " << *this);
+  PTRACE(3, "SIP\tOnReleased: " << *this << ", phase = " << phase);
+  /* OpalConnection::Release sets the phase to Releasing in the SIP Handler thread */
+  if(GetPhase() >= ReleasedPhase){
+    PTRACE(2, "SIP\tOnReleased: already released");
+    return;
+  };
+
+  SetPhase(ReleasingPhase);
 
   SIP_PDU response;
   SIPTransaction * byeTransaction = NULL;
@@ -582,7 +594,7 @@ void SIPConnection::OnReleased()
     delete byeTransaction;
   }
 
-  phase = ReleasedPhase;
+  SetPhase(ReleasedPhase);
 
   if (pduHandler != NULL) {
     pduSemaphore.Signal();

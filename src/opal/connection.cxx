@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2055  2005/11/30 13:44:20  csoutheren
+ * Revision 1.2056  2005/12/06 21:32:25  dsandras
+ * Applied patch from Frederic Heem <frederic.heem _Atttt_ telsey.it> to fix
+ * assert in PSyncPoint when OnReleased is called twice from different threads.
+ * Thanks! (Patch #1374240)
+ *
+ * Revision 2.54  2005/11/30 13:44:20  csoutheren
  * Removed compile warnings on Windows
  *
  * Revision 2.53  2005/11/24 20:31:55  dsandras
@@ -243,6 +248,7 @@ ostream & operator<<(ostream & out, OpalConnection::Phases phase)
     "AlertingPhase",
     "ConnectedPhase",
     "EstablishedPhase",
+    "ReleasingPhase",
     "ReleasedPhase"
   };
   return out << names[phase];
@@ -423,7 +429,7 @@ void OpalConnection::Release(CallEndReason reason)
 
   // Now set reason for the connection close
   SetCallEndReason(reason);
-  phase = ReleasingPhase;
+  SetPhase(ReleasingPhase);
 
   // Add a reference for the thread we are about to start
   SafeReference();
@@ -687,7 +693,7 @@ BOOL OpalConnection::OnOpenMediaStream(OpalMediaStream & stream)
   mediaStreams.Append(&stream);
 
   if (phase == ConnectedPhase) {
-    phase = EstablishedPhase;
+    SetPhase(EstablishedPhase);
     OnEstablished();
   }
 
@@ -1067,4 +1073,9 @@ void OpalConnection::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
   maxAudioJitterDelay = maxDelay;
 }
 
+void OpalConnection::SetPhase(Phases phaseToSet)
+{
+    PTRACE(3, "OpalCon\tSetPhase from " << phase << " to " << phaseToSet);
+    phase = phaseToSet;
+}
 /////////////////////////////////////////////////////////////////////////////
