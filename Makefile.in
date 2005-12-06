@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.19  2005/12/06 06:34:10  csoutheren
+# Added configure support for Sangoma and empty LID source and header files
+#
 # Revision 1.18  2005/11/24 20:31:54  dsandras
 # Added support for echo cancelation using Speex.
 # Added possibility to add a filter to an OpalMediaPatch for all patches of a connection.
@@ -358,6 +361,10 @@ endif
 
 ifdef HAS_VPB
 SOURCES += $(OPAL_SRCDIR)/lids/vpblid.cxx
+endif
+
+ifdef HAS_SANGOMA
+SOURCES += $(OPAL_SRCDIR)/lids/sangomalid.cxx
 endif
 
 
