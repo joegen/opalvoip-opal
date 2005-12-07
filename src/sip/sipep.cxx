@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2081  2005/12/05 22:20:57  dsandras
+ * Revision 1.2082  2005/12/07 11:50:46  dsandras
+ * Signal the registration failed in OnAuthenticationRequired with it happens
+ * for a REGISTER or a SUBSCRIBE.
+ *
+ * Revision 2.80  2005/12/05 22:20:57  dsandras
  * Update the transport when the computer is behind NAT, using STUN, the IP
  * address has changed compared to the original transport and a registration
  * refresh must occur.
@@ -972,15 +976,6 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
     PTRACE(1, "SIP\tCannot do " << proxyTrace << "Authentication Required for non REGISTER, SUBSCRIBE or MESSAGE");
     return;
   }
-  
-  // Received authentication required response, try to find authentication
-  // for the given realm
-  if (!auth.Parse(response.GetMIME()(isProxy 
-				     ? "Proxy-Authenticate"
-				     : "WWW-Authenticate"),
-		  isProxy)) {
-    return;
-  }
 
   // Try to find authentication information for the requested realm
   // That realm is specified when registering
@@ -1005,11 +1000,22 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
     lastUsername = realm_info->GetAuthentication().GetUsername();
     lastNonce = realm_info->GetAuthentication().GetNonce();
   }
+  
+  // Received authentication required response, try to find authentication
+  // for the given realm
+  if (!auth.Parse(response.GetMIME()(isProxy 
+				     ? "Proxy-Authenticate"
+				     : "WWW-Authenticate"),
+		  isProxy)) {
+    callid_info->OnFailed(SIP_PDU::Failure_UnAuthorised);
+    return;
+  }
 
   if (!realm_info->GetAuthentication().Parse(response.GetMIME()(isProxy 
 								? "Proxy-Authenticate"
 								: "WWW-Authenticate"),
 					     isProxy)) {
+    callid_info->OnFailed(SIP_PDU::Failure_UnAuthorised);
     return;
   }
   
