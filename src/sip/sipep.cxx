@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2082  2005/12/07 11:50:46  dsandras
+ * Revision 1.2083  2005/12/07 12:19:17  dsandras
+ * Improved previous commit.
+ *
+ * Revision 2.81  2005/12/07 11:50:46  dsandras
  * Signal the registration failed in OnAuthenticationRequired with it happens
  * for a REGISTER or a SUBSCRIBE.
  *
@@ -976,30 +979,12 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
     PTRACE(1, "SIP\tCannot do " << proxyTrace << "Authentication Required for non REGISTER, SUBSCRIBE or MESSAGE");
     return;
   }
-
-  // Try to find authentication information for the requested realm
-  // That realm is specified when registering
-  realm_info = activeSIPInfo.FindSIPInfoByAuthRealm(auth.GetAuthRealm(), PSafeReadWrite);
-
+  
   // Try to find authentication information for the given call ID
   callid_info = activeSIPInfo.FindSIPInfoByCallID(response.GetMIME().GetCallID(), PSafeReadWrite);
-  
-  // No authentication information found for the realm, 
-  // use what we have for the given CallID
-  if (realm_info == NULL)
-    realm_info = callid_info;
-  
-  // No realm info, no call ID info, weird
-  if (realm_info == NULL || callid_info == NULL) {
-    PTRACE(2, "SIP\tNo Authentication info found for that realm, authentication impossible");
+
+  if (!callid_info)
     return;
-  }
-  
-  if (realm_info->GetAuthentication().IsValid()) {
-    lastRealm = realm_info->GetAuthentication().GetAuthRealm();
-    lastUsername = realm_info->GetAuthentication().GetUsername();
-    lastNonce = realm_info->GetAuthentication().GetNonce();
-  }
   
   // Received authentication required response, try to find authentication
   // for the given realm
@@ -1009,6 +994,27 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
 		  isProxy)) {
     callid_info->OnFailed(SIP_PDU::Failure_UnAuthorised);
     return;
+  }
+
+  // Try to find authentication information for the requested realm
+  // That realm is specified when registering
+  realm_info = activeSIPInfo.FindSIPInfoByAuthRealm(auth.GetAuthRealm(), PSafeReadWrite);
+
+  // No authentication information found for the realm, 
+  // use what we have for the given CallID
+  if (realm_info == NULL)
+    realm_info = callid_info;
+  
+  // No realm info, weird
+  if (realm_info == NULL) {
+    PTRACE(2, "SIP\tNo Authentication info found for that realm, authentication impossible");
+    return;
+  }
+  
+  if (realm_info->GetAuthentication().IsValid()) {
+    lastRealm = realm_info->GetAuthentication().GetAuthRealm();
+    lastUsername = realm_info->GetAuthentication().GetUsername();
+    lastNonce = realm_info->GetAuthentication().GetNonce();
   }
 
   if (!realm_info->GetAuthentication().Parse(response.GetMIME()(isProxy 
