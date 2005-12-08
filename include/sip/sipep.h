@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2040  2005/12/05 22:20:57  dsandras
+ * Revision 1.2041  2005/12/08 21:14:54  dsandras
+ * Added function allowing to change the nat binding refresh timeout.
+ *
+ * Revision 2.39  2005/12/05 22:20:57  dsandras
  * Update the transport when the computer is behind NAT, using STUN, the IP
  * address has changed compared to the original transport and a registration
  * refresh must occur.
@@ -669,6 +672,12 @@ class SIPEndPoint : public OpalEndPoint
       const PTimeInterval & t
     ) { notifierTimeToLive = t; }
     const PTimeInterval & GetNotifierTimeToLive() const { return notifierTimeToLive; }
+    
+    void SetNATBindingTimeout(
+      const PTimeInterval & t
+    ) { natBindingTimeout = t; }
+    const PTimeInterval & GetNATBindingTimeout() const { return natBindingTimeout; }
+
 
     void AddTransaction(
       SIPTransaction * transaction
@@ -859,6 +868,7 @@ class SIPEndPoint : public OpalEndPoint
     PTimeInterval ackTimeout;
     PTimeInterval registrarTimeToLive;
     PTimeInterval notifierTimeToLive;
+    PTimeInterval natBindingTimeout;
     
     RegistrationList   activeSIPInfo;
 

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2083  2005/12/07 12:19:17  dsandras
+ * Revision 1.2084  2005/12/08 21:14:54  dsandras
+ * Added function allowing to change the nat binding refresh timeout.
+ *
+ * Revision 2.82  2005/12/07 12:19:17  dsandras
  * Improved previous commit.
  *
  * Revision 2.81  2005/12/07 11:50:46  dsandras
@@ -454,7 +457,7 @@ void SIPRegisterInfo::OnSuccess ()
 		  (expire > 0)); 
   if (ep.GetManager().GetSTUN (registrationAddress.GetHostName()))
     if (expire > 0)
-      natTimer.RunContinuous(PTimeInterval(0, 60));
+      natTimer.RunContinuous(PMAX (PTimeInterval(0, 20), ep.GetNATBindingTimeout()));
     else
       natTimer.Stop();
 }
@@ -497,7 +500,7 @@ void SIPMWISubscribeInfo::OnSuccess ()
   SetRegistered((expire == 0)?FALSE:TRUE);
   if (ep.GetManager().GetSTUN (registrationAddress.GetHostName()))
     if (expire > 0)
-      natTimer.RunContinuous(PTimeInterval(0, 60));
+      natTimer.RunContinuous(PMAX (PTimeInterval(0, 20), ep.GetNATBindingTimeout()));
     else
       natTimer.Stop();
 }
@@ -545,7 +548,8 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
     inviteTimeout(0, 32),     // 32 seconds
     ackTimeout(0, 32),        // 32 seconds
     registrarTimeToLive(0, 0, 0, 1), // 1 hour
-    notifierTimeToLive(0, 0, 0, 1) // 1 hour
+    notifierTimeToLive(0, 0, 0, 1), // 1 hour
+    natBindingTimeout(0, 0, 1) // 1 minute
 {
   defaultSignalPort = 5060;
   mimeForm = FALSE;
