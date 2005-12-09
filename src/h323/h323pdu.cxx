@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.cxx,v $
- * Revision 1.2018  2005/09/04 06:23:39  rjongbloed
+ * Revision 1.2019  2005/12/09 05:41:10  csoutheren
+ * Added ability to set explicit Q.931 cause code on call end
+ *
+ * Revision 2.17  2005/09/04 06:23:39  rjongbloed
  * Added OpalMediaCommand mechanism (via PNotifier) for media streams
  *   and media transcoders to send commands back to remote.
  *
@@ -1115,7 +1118,9 @@ H225_ReleaseComplete_UUIE &
   SetH225Version(connection, release.m_protocolIdentifier);
   release.m_callIdentifier.m_guid = connection.GetCallIdentifier();
 
-  Q931::CauseValues cause = H323TranslateFromCallEndReason(connection, release.m_reason);
+  Q931::CauseValues cause = (Q931::CauseValues)connection.GetQ931Cause();
+  if (cause == Q931::ErrorInCauseIE)
+    cause = H323TranslateFromCallEndReason(connection, release.m_reason);
   if (cause != Q931::ErrorInCauseIE)
     q931pdu.SetCause(cause);
   else
