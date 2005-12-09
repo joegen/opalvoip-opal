@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2043  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2044  2005/12/09 05:41:10  csoutheren
+ * Added ability to set explicit Q.931 cause code on call end
+ *
+ * Revision 2.42  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.41  2005/11/24 04:46:41  dereksmithies
@@ -2074,6 +2077,11 @@ class H323Connection : public OpalConnection
        See Q931::CauseValues for common values.
      */
     unsigned GetQ931Cause() const { return q931Cause; }
+
+    /**Set the outgoing Q.931 cause code (Q.850) that is sent for this call
+       See Q931::CauseValues for common values.
+     */
+    void SetQ931Cause(unsigned v) { q931Cause = v; }
 
     /**Get the distinctive ring code for incoming call.
        This returns an integer from 0 to 7 that may indicate to an application
