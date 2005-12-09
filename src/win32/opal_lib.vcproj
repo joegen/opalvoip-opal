@@ -3,6 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="OPAL_lib"
+	ProjectGUID="{0C3AF508-06FF-47EF-BE5A-F72F41759246}"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>
@@ -1057,6 +1058,9 @@
 				Name="Codec Sources"
 				Filter="">
 				<File
+					RelativePath="..\codec\echocancel.cxx">
+				</File>
+				<File
 					RelativePath="..\codec\g711.c">
 					<FileConfiguration
 						Name="Debug|Win32">
@@ -1843,7 +1847,7 @@
 						CommandLine="cd ..\..
 .\configure
 "
-						AdditionalDependencies="..\..\configure.in;..\..\configure.exe;"
+						AdditionalDependencies="..\..\configure.ac;..\..\configure.exe;"
 						Outputs="$(InputDir)buildopts.h"/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -1981,6 +1985,9 @@
 				Filter="">
 				<File
 					RelativePath="..\..\include\codec\allcodecs.h">
+				</File>
+				<File
+					RelativePath="..\..\include\codec\echocancel.h">
 				</File>
 				<File
 					RelativePath="..\..\include\codec\g711codec.h">
@@ -6324,6 +6331,21 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\codec\speex\libspeex\mdf.c">
+					<FileConfiguration
+						Name="Debug|Win32">
+						<Tool
+							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32">
+						<Tool
+							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="..\codec\speex\libspeex\misc.c">
 					<FileConfiguration
 						Name="Debug|Win32">
@@ -6479,6 +6501,36 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\codec\speex\libspeex\smallft.c">
+					<FileConfiguration
+						Name="Debug|Win32">
+						<Tool
+							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32">
+						<Tool
+							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\codec\speex\libspeex\speex.c">
+					<FileConfiguration
+						Name="Debug|Win32">
+						<Tool
+							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32">
+						<Tool
+							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="..\codec\speex\libspeex\speex_callbacks.c">
 					<FileConfiguration
 						Name="Debug|Win32">
@@ -6538,6 +6590,21 @@
 							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
 							UsePrecompiledHeader="0"
 							WarningLevel="1"/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\codec\speex\libspeex\speex_preprocess.c">
+					<FileConfiguration
+						Name="Debug|Win32">
+						<Tool
+							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32">
+						<Tool
+							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 				</File>
 				<File
