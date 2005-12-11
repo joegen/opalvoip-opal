@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2084  2005/12/08 21:14:54  dsandras
+ * Revision 1.2085  2005/12/11 12:23:37  dsandras
+ * Removed unused variable.
+ *
+ * Revision 2.83  2005/12/08 21:14:54  dsandras
  * Added function allowing to change the nat binding refresh timeout.
  *
  * Revision 2.82  2005/12/07 12:19:17  dsandras
@@ -967,7 +970,6 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
   
   BOOL isProxy = 
     response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
-  PString lastRealm;
   PString lastNonce;
   PString lastUsername;
   
@@ -1016,7 +1018,6 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
   }
   
   if (realm_info->GetAuthentication().IsValid()) {
-    lastRealm = realm_info->GetAuthentication().GetAuthRealm();
     lastUsername = realm_info->GetAuthentication().GetUsername();
     lastNonce = realm_info->GetAuthentication().GetNonce();
   }
