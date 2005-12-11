@@ -22,7 +22,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2059  2005/11/07 02:27:48  dereksmithies
+ * Revision 1.2060  2005/12/11 19:14:21  dsandras
+ * Added support for setting a different user name and authentication user name
+ * as required by some providers like digisip.
+ *
+ * Revision 2.58  2005/11/07 02:27:48  dereksmithies
  * Get the answer call Y/N mechanism to work correctly.
  *
  * Revision 2.57  2005/09/06 04:58:42  dereksmithies
@@ -882,7 +886,7 @@ BOOL MyManager::Initialise(PArgList & args)
     if (args.HasOption('r')) {
       PString registrar = args.GetOptionString('r');
       cout << "Using SIP registrar " << registrar << " ... " << flush;
-      if (sipEP->Register(registrar, args.GetOptionString('u'), args.GetOptionString('p'), args.GetOptionString("sip-domain")))
+      if (sipEP->Register(registrar, args.GetOptionString('u'), args.GetOptionString('u'), args.GetOptionString('p'), args.GetOptionString("sip-domain")))
         cout << "done.";
       else
         cout << "failed!";

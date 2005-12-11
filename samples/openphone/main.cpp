@@ -25,6 +25,10 @@
  * Contributor(s): 
  *
  * $Log: main.cpp,v $
+ * Revision 1.34  2005/12/11 19:14:21  dsandras
+ * Added support for setting a different user name and authentication user name
+ * as required by some providers like digisip.
+ *
  * Revision 1.33  2005/08/31 13:21:20  rjongbloed
  * Moved some video options to be in the options list from OpalMediaFormat
  * Added selection of video grabber preview window.
@@ -1288,7 +1292,7 @@ bool MyManager::StartGatekeeper()
 bool MyManager::StartRegistrar()
 {
   if (m_registrarUsed) {
-    if (!sipEP->Register(m_registrarName, m_registrarUser, m_registrarPassword))
+    if (!sipEP->Register(m_registrarName, m_registrarUser, m_registrarUser, m_registrarPassword))
       return false;
 
     LogWindow << "SIP registration started for " << m_registrarUser << '@' << m_registrarName << endl;
