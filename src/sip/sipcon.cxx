@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2112  2005/12/06 21:32:25  dsandras
+ * Revision 1.2113  2005/12/11 12:23:01  dsandras
+ * Prevent loop of authenticating when it fails by storing the last parameters
+ * before they are updated.
+ *
+ * Revision 2.111  2005/12/06 21:32:25  dsandras
  * Applied patch from Frederic Heem <frederic.heem _Atttt_ telsey.it> to fix
  * assert in PSyncPoint when OnReleased is called twice from different threads.
  * Thanks! (Patch #1374240)
@@ -1728,7 +1732,6 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
 {
   BOOL isProxy = response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
   SIPAuthentication auth;
-  PString lastRealm;
   PString lastUsername;
   PString lastNonce;
 
@@ -1753,6 +1756,12 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
     return;
   }
 
+  // Save the username, realm and nonce
+  if (authentication.IsValid()) {
+    lastUsername = authentication.GetUsername();
+    lastNonce = authentication.GetNonce();
+  }
+  
   // Try to find authentication parameters for the given realm,
   // if not, use the proxy authentication parameters (if any)
   if (!endpoint.GetAuthentication(auth.GetAuthRealm(), authentication)) {
@@ -1766,13 +1775,6 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
       return;
     }
   }
-  
-  // Save the username, realm and nonce
-  if (authentication.IsValid()) {
-    lastRealm = authentication.GetAuthRealm();
-    lastUsername = authentication.GetUsername();
-    lastNonce = authentication.GetNonce();
-  }
 
   if (!authentication.Parse(response.GetMIME()(isProxy 
 					       ? "Proxy-Authenticate"
@@ -1783,7 +1785,6 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
   }
   
   if (authentication.IsValid()
-      && lastRealm    == authentication.GetAuthRealm ()
       && lastUsername == authentication.GetUsername ()
       && lastNonce    == authentication.GetNonce ()) {
 
