@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2085  2005/12/11 12:23:37  dsandras
+ * Revision 1.2086  2005/12/11 19:14:20  dsandras
+ * Added support for setting a different user name and authentication user name
+ * as required by some providers like digisip.
+ *
+ * Revision 2.84  2005/12/11 12:23:37  dsandras
  * Removed unused variable.
  *
  * Revision 2.83  2005/12/08 21:14:54  dsandras
@@ -421,13 +425,14 @@ void SIPInfo::OnNATTimeout (PTimer &, INT)
 }
 
 
-SIPRegisterInfo::SIPRegisterInfo(SIPEndPoint & endpoint, const PString & name, const PString & pass, int exp)
+SIPRegisterInfo::SIPRegisterInfo(SIPEndPoint & endpoint, const PString & name, const PString & authName, const PString & pass, int exp)
   :SIPInfo(endpoint, name)
 {
   expire = exp;
   if (expire == 0)
     expire = ep.GetRegistrarTimeToLive().GetSeconds();
   password = pass;
+  authUser = authName;
 }
 
 
@@ -437,7 +442,7 @@ SIPRegisterInfo::~SIPRegisterInfo()
 
 SIPTransaction * SIPRegisterInfo::CreateTransaction(OpalTransport &t, BOOL unregister)
 {
-  authentication.SetUsername(registrationAddress.GetUserName());
+  authentication.SetUsername(authUser);
   authentication.SetPassword(password);
   if (!authRealm.IsEmpty())
     authentication.SetAuthRealm(authRealm);   
@@ -1330,11 +1335,12 @@ BOOL SIPEndPoint::WriteSIPInfo(OpalTransport & transport, void * _info)
 
 BOOL SIPEndPoint::Register(const PString & host,
                            const PString & username,
+			   const PString & authName,
                            const PString & password,
 			   const PString & realm,
 			   int timeout)
 {
-  return TransmitSIPInfo(host, username, password, realm, "", timeout, SIP_PDU::Method_REGISTER);
+  return TransmitSIPInfo(SIP_PDU::Method_REGISTER, host, username, authName, password, realm, timeout);
 }
 
 
@@ -1354,17 +1360,18 @@ void SIPEndPoint::OnMWIReceived (const PString & /*remoteAddress*/,
 
 BOOL SIPEndPoint::MWISubscribe(const PString & host, const PString & username, int timeout)
 {
-  return TransmitSIPInfo (host, username, "", "", "", timeout, SIP_PDU::Method_SUBSCRIBE);
+  return TransmitSIPInfo (SIP_PDU::Method_SUBSCRIBE, host, username, timeout);
 }
 
 
-BOOL SIPEndPoint::TransmitSIPInfo(const PString & host,
+BOOL SIPEndPoint::TransmitSIPInfo(SIP_PDU::Methods m,
+				  const PString & host,
 				  const PString & username,
+				  const PString & authName,
 				  const PString & password,
 				  const PString & realm,
 				  const PString & body,
-				  int timeout,
-				  SIP_PDU::Methods m)
+				  int timeout)
 {
   PSafePtr<SIPInfo> info = NULL;
   OpalTransport *transport = NULL;
@@ -1408,6 +1415,8 @@ BOOL SIPEndPoint::TransmitSIPInfo(const PString & host,
       info->SetPassword(password); // Adjust the password if required 
     if (!realm.IsEmpty())
       info->SetAuthRealm(realm);   // Adjust the realm if required 
+    if (!authName.IsEmpty())
+      info->SetAuthUser(authName); // Adjust the authUser if required 
     if (!body.IsEmpty())
       info->SetBody(body);         // Adjust the body if required 
     info->SetExpire(timeout);      // Adjust the expire field
@@ -1415,7 +1424,7 @@ BOOL SIPEndPoint::TransmitSIPInfo(const PString & host,
   // otherwise create a new request with this method type
   else {
     if (m == SIP_PDU::Method_REGISTER)
-      info = new SIPRegisterInfo(*this, adjustedUsername, password, timeout);
+      info = new SIPRegisterInfo(*this, adjustedUsername, authName, password, timeout);
     else if (m == SIP_PDU::Method_SUBSCRIBE)
       info = new SIPMWISubscribeInfo(*this, adjustedUsername, timeout);
     else if (m == SIP_PDU::Method_MESSAGE)
@@ -1635,7 +1644,7 @@ const SIPURL SIPEndPoint::GetContactAddress(const OpalTransport &transport, cons
 BOOL SIPEndPoint::SendMessage (const SIPURL & url, 
 			       const PString & body)
 {
-  return TransmitSIPInfo(url.AsQuotedString(), url.GetUserName(), "", "", body, 0, SIP_PDU::Method_MESSAGE);
+  return TransmitSIPInfo(SIP_PDU::Method_MESSAGE, url.AsQuotedString(), url.GetUserName(), "", "", body);
 }
 
 
