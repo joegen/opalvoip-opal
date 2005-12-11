@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2041  2005/12/08 21:14:54  dsandras
+ * Revision 1.2042  2005/12/11 19:14:20  dsandras
+ * Added support for setting a different user name and authentication user name
+ * as required by some providers like digisip.
+ *
+ * Revision 2.40  2005/12/08 21:14:54  dsandras
  * Added function allowing to change the nat binding refresh timeout.
  *
  * Revision 2.39  2005/12/05 22:20:57  dsandras
@@ -229,6 +233,9 @@ class SIPInfo : public PSafeObject
     virtual BOOL HasExpired()
     { return ((PTime () - registrationTime) >= PTimeInterval (0, expire)); }
 
+    virtual void SetAuthUser(const PString & u)
+    { authUser = u;}
+    
     virtual void SetPassword(const PString & p)
     { password = p;}
     
@@ -262,6 +269,7 @@ class SIPInfo : public PSafeObject
       BOOL               registered;
       int	         expire;
       PString	         authRealm;
+      PString            authUser;
       PString 	         password;
       PString		 body;
       PTimer             natTimer;
@@ -277,7 +285,7 @@ class SIPRegisterInfo : public SIPInfo
   PCLASSINFO(SIPRegisterInfo, SIPInfo);
 
   public:
-    SIPRegisterInfo(SIPEndPoint & ep, const PString & adjustedUsername, const PString & password, int expire);
+    SIPRegisterInfo(SIPEndPoint & ep, const PString & adjustedUsername, const PString & authName, const PString & password, int expire);
     ~SIPRegisterInfo();
     virtual SIPTransaction * CreateTransaction(OpalTransport &, BOOL);
     virtual SIP_PDU::Methods GetMethod()
@@ -542,6 +550,7 @@ class SIPEndPoint : public OpalEndPoint
     BOOL Register(
       const PString & host,
       const PString & username = PString::Empty(),
+      const PString & autName = PString::Empty(),
       const PString & password = PString::Empty(),
       const PString & authRealm = PString::Empty(),
       int timeout = 0
@@ -836,13 +845,14 @@ class SIPEndPoint : public OpalEndPoint
     );
 
     BOOL TransmitSIPInfo (
+      SIP_PDU::Methods method,
       const PString & host, 
       const PString & username, 
-      const PString & password, 
-      const PString & authRealm,
-      const PString & body,
-      int timeout,
-      SIP_PDU::Methods method
+      const PString & authName = PString::Empty(),
+      const PString & password = PString::Empty(), 
+      const PString & authRealm = PString::Empty(),
+      const PString & body = PString::Empty(),
+      int timeout = 0
     );
 
     BOOL TransmitSIPUnregistrationInfo (
