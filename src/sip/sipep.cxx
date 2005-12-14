@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2086  2005/12/11 19:14:20  dsandras
+ * Revision 1.2087  2005/12/14 17:59:50  dsandras
+ * Added ForwardConnection executed when the remote asks for a call forwarding.
+ * Similar to what is done in the H.323 part with the method of the same name.
+ *
+ * Revision 2.85  2005/12/11 19:14:20  dsandras
  * Added support for setting a different user name and authentication user name
  * as required by some providers like digisip.
  *
@@ -788,6 +792,30 @@ BOOL SIPEndPoint::SetupTransfer(const PString & token,
   
   connection->SetUpConnection();
   otherConnection->Release(OpalConnection::EndedByCallForwarded);
+
+  return TRUE;
+}
+
+
+BOOL SIPEndPoint::ForwardConnection(SIPConnection & connection,  
+				    const PString & forwardParty)
+{
+  OpalCall & call = connection.GetCall();
+  
+  PStringStream callID;
+  OpalGloballyUniqueID id;
+  callID << id << '@' << PIPSocket::GetHostName();
+  SIPConnection * conn = 
+    CreateConnection(call, callID, NULL, forwardParty, NULL, NULL);
+  
+  if (conn == NULL)
+    return FALSE;
+
+  connectionsActive.SetAt(callID, conn);
+  call.OnReleased(connection);
+  
+  conn->SetUpConnection();
+  connection.Release(OpalConnection::EndedByCallForwarded);
 
   return TRUE;
 }

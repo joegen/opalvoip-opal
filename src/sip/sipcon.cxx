@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2113  2005/12/11 12:23:01  dsandras
+ * Revision 1.2114  2005/12/14 17:59:50  dsandras
+ * Added ForwardConnection executed when the remote asks for a call forwarding.
+ * Similar to what is done in the H.323 part with the method of the same name.
+ *
+ * Revision 2.112  2005/12/11 12:23:01  dsandras
  * Prevent loop of authenticating when it fails by storing the last parameters
  * before they are updated.
  *
@@ -1712,18 +1716,13 @@ void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
 
 void SIPConnection::OnReceivedRedirection(SIP_PDU & response)
 {
-  // start with a new To tag
-  // send a new INVITE
   targetAddress = response.GetMIME().GetContact();
   remotePartyAddress = targetAddress.AsQuotedString();
   PINDEX j;
   if ((j = remotePartyAddress.Find (';')) != P_MAX_INDEX)
     remotePartyAddress = remotePartyAddress.Left(j);
 
-  if (endpoint.OnForwarded(*this, remotePartyAddress))
-    SetUpConnection();
-  else 
-    Release(EndedByCallForwarded);
+  endpoint.ForwardConnection (*this, remotePartyAddress);
 }
 
 

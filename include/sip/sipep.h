@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2042  2005/12/11 19:14:20  dsandras
+ * Revision 1.2043  2005/12/14 17:59:50  dsandras
+ * Added ForwardConnection executed when the remote asks for a call forwarding.
+ * Similar to what is done in the H.323 part with the method of the same name.
+ *
+ * Revision 2.41  2005/12/11 19:14:20  dsandras
  * Added support for setting a different user name and authentication user name
  * as required by some providers like digisip.
  *
@@ -442,6 +446,14 @@ class SIPEndPoint : public OpalEndPoint
       const PString & callIdentity, ///<  Call identity of the secondary call (if it exists)
       const PString & remoteParty,  ///<  Remote party to transfer the existing call to
       void * userData = NULL        ///<  user data to pass to CreateConnection
+    );
+    
+    /**Forward the connection using the same token as the specified connection.
+       Return TRUE if the connection is being redirected.
+      */
+    virtual BOOL ForwardConnection(
+      SIPConnection & connection,     ///<  Connection to be forwarded
+      const PString & forwardParty    ///<  Remote party to forward to
     );
 
   //@}
