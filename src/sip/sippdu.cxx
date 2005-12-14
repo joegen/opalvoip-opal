@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2076  2005/12/04 15:01:59  dsandras
+ * Revision 1.2077  2005/12/14 18:01:00  dsandras
+ * Fixed comment.
+ *
+ * Revision 2.75  2005/12/04 15:01:59  dsandras
  * Fixed IP translation in the VIA field of most request PDUs.
  *
  * Revision 2.74  2005/10/22 18:01:21  dsandras
@@ -2269,7 +2272,7 @@ SIPAck::SIPAck(SIPEndPoint & ep,
   transaction(invite)
 {
   Construct();
-  // Use the topmost via header from the INVITE we cancel as per 9.1. 
+  // Use the topmost via header from the INVITE we ACK as per 9.1. 
   PStringList viaList = mime.GetViaList();
   mime.SetVia(viaList[0]);
 }
