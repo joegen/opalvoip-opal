@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjlid.h,v $
- * Revision 1.2011  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2012  2005/12/15 21:15:44  dsandras
+ * Fixed compilation with gcc 4.1.
+ *
+ * Revision 2.10  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.9  2004/10/06 13:03:41  rjongbloed
@@ -876,7 +879,7 @@ class OpalIxJDevice : public OpalLineInterfaceDevice
     };
 
     static void SignalHandler(int sig);
-    ExceptionInfo * OpalIxJDevice::GetException();
+    ExceptionInfo * GetException();
     int GetOSHandle() { return os_handle; }
 
   protected:

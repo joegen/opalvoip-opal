@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mscodecs.h,v $
- * Revision 1.2010  2005/08/28 07:59:17  rjongbloed
+ * Revision 1.2011  2005/12/15 21:15:44  dsandras
+ * Fixed compilation with gcc 4.1.
+ *
+ * Revision 2.9  2005/08/28 07:59:17  rjongbloed
  * Converted OpalTranscoder to use factory, requiring sme changes in making sure
  *   OpalMediaFormat instances are initialised before use.
  *
@@ -150,8 +153,8 @@ class MicrosoftGSMAudioCapability : public MicrosoftNonStandardAudioCapability
 
   public:
     MicrosoftGSMAudioCapability();
-    PObject * MicrosoftGSMAudioCapability::Clone() const;
-    PString MicrosoftGSMAudioCapability::GetFormatName() const;
+    PObject * Clone() const;
+    PString GetFormatName() const;
     void SetTxFramesInPacket(unsigned /*frames*/);
 };
 
@@ -164,8 +167,8 @@ class MicrosoftIMAAudioCapability : public MicrosoftNonStandardAudioCapability
 
   public:
     MicrosoftIMAAudioCapability();
-    PObject * MicrosoftIMAAudioCapability::Clone() const;
-    PString MicrosoftIMAAudioCapability::GetFormatName() const;
+    PObject * Clone() const;
+    PString GetFormatName() const;
 };
 
 
