@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2015  2005/10/04 18:31:01  dsandras
+ * Revision 1.2016  2005/12/15 21:15:44  dsandras
+ * Fixed compilation with gcc 4.1.
+ *
+ * Revision 2.14  2005/10/04 18:31:01  dsandras
  * Allow SetFMTP and GetFMTP to work with any option set for a=fmtp:.
  *
  * Revision 2.13  2005/09/15 17:01:08  dsandras
@@ -112,7 +115,7 @@ class SDPMediaFormat : public PObject
       Flash  = 16
     };
     
-    SDPMediaFormat::SDPMediaFormat(
+    SDPMediaFormat(
       RTP_DataFrame::PayloadTypes payloadType,
       const char * name = "-",
       unsigned rate = 8000,
