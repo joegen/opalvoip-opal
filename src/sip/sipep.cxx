@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2087  2005/12/14 17:59:50  dsandras
+ * Revision 1.2088  2005/12/17 21:14:12  dsandras
+ * Prevent loop when exiting if unregistration fails forever.
+ *
+ * Revision 2.86  2005/12/14 17:59:50  dsandras
  * Added ForwardConnection executed when the remote asks for a call forwarding.
  * Similar to what is done in the H.323 part with the method of the same name.
  *
@@ -588,8 +591,10 @@ SIPEndPoint::~SIPEndPoint()
     SIPURL url;
     SIPInfo *info = activeSIPInfo.GetAt(i);
     url = info->GetRegistrationAddress ();
-    if (info->GetMethod() == SIP_PDU::Method_REGISTER && info->IsRegistered()) 
+    if (info->GetMethod() == SIP_PDU::Method_REGISTER && info->IsRegistered()) {
       Unregister(url.GetHostName(), url.GetUserName());
+      info->SetRegistered(FALSE); // Prevent loop in case it would faild
+    }
     else
       i++;
   }
