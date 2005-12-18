@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2043  2005/12/14 17:59:50  dsandras
+ * Revision 1.2044  2005/12/18 21:06:56  dsandras
+ * Added function to clean up the registrations object. Moved DeleteObjectsToBeRemoved call outside of the loop.
+ *
+ * Revision 2.42  2005/12/14 17:59:50  dsandras
  * Added ForwardConnection executed when the remote asks for a call forwarding.
  * Similar to what is done in the H.323 part with the method of the same name.
  *
@@ -216,6 +219,9 @@ class SIPInfo : public PSafeObject
     
     virtual void AppendTransaction(SIPTransaction * transaction) 
     { registrations.Append (transaction); }
+    
+    virtual void RemoveTransactions() 
+    { registrations.RemoveAll (); }
 
     virtual BOOL IsRegistered() 
     { return registered; }
