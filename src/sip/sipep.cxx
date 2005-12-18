@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2088  2005/12/17 21:14:12  dsandras
+ * Revision 1.2089  2005/12/18 19:18:18  dsandras
+ * Regularly clean activeSIPInfo.
+ * Fixed problem with Register ignoring the timeout parameter.
+ *
+ * Revision 2.87  2005/12/17 21:14:12  dsandras
  * Prevent loop when exiting if unregistration fails forever.
  *
  * Revision 2.86  2005/12/14 17:59:50  dsandras
@@ -573,6 +577,7 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   userAgentString = "OPAL/2.0";
 
   transactions.DisallowDeleteObjects();
+  activeSIPInfo.AllowDeleteObjects();
 
   registrationTimer.SetNotifier(PCREATE_NOTIFIER(RegistrationRefresh));
   registrationTimer.RunContinuous (PTimeInterval(0, 30));
@@ -1305,8 +1310,9 @@ void SIPEndPoint::RegistrationRefresh(PTimer &, INT)
 
     PSafePtr<SIPInfo> info = activeSIPInfo.GetAt (i);
 
-    if (info->GetExpire() == -1) 
+    if (info->GetExpire() == -1) {
       activeSIPInfo.Remove(info); // Was invalid the last time, delete it
+    }
     else {
 
       if (info->GetExpire() > 0 && !info->IsRegistered ())
@@ -1340,6 +1346,8 @@ void SIPEndPoint::RegistrationRefresh(PTimer &, INT)
 
       }
     }
+
+    activeSIPInfo.DeleteObjectsToBeRemoved();
   }
 }
 
@@ -1373,7 +1381,7 @@ BOOL SIPEndPoint::Register(const PString & host,
 			   const PString & realm,
 			   int timeout)
 {
-  return TransmitSIPInfo(SIP_PDU::Method_REGISTER, host, username, authName, password, realm, timeout);
+  return TransmitSIPInfo(SIP_PDU::Method_REGISTER, host, username, authName, password, realm, PString::Empty(), timeout);
 }
 
 
@@ -1458,8 +1466,9 @@ BOOL SIPEndPoint::TransmitSIPInfo(SIP_PDU::Methods m,
   else {
     if (m == SIP_PDU::Method_REGISTER)
       info = new SIPRegisterInfo(*this, adjustedUsername, authName, password, timeout);
-    else if (m == SIP_PDU::Method_SUBSCRIBE)
+    else if (m == SIP_PDU::Method_SUBSCRIBE) {
       info = new SIPMWISubscribeInfo(*this, adjustedUsername, timeout);
+    }
     else if (m == SIP_PDU::Method_MESSAGE)
       info = new SIPMessageInfo(*this, adjustedUsername, body);
     if (info == NULL) {
