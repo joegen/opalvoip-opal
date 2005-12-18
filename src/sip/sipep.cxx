@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2089  2005/12/18 19:18:18  dsandras
+ * Revision 1.2090  2005/12/18 21:06:55  dsandras
+ * Added function to clean up the registrations object. Moved DeleteObjectsToBeRemoved call outside of the loop.
+ *
+ * Revision 2.88  2005/12/18 19:18:18  dsandras
  * Regularly clean activeSIPInfo.
  * Fixed problem with Register ignoring the timeout parameter.
  *
@@ -941,6 +944,11 @@ void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & res
   else if (transaction.GetMethod() == SIP_PDU::Method_MESSAGE) {
   
     info = activeSIPInfo.FindSIPInfoByUrl(SIPURL(transaction.GetMIME().GetTo()).AsString(), SIP_PDU::Method_MESSAGE, PSafeReadOnly);
+
+    if (info == NULL) 
+      return;
+
+    info->Cancel (transaction);
   }
   
   switch (response.GetStatusCode()) {
@@ -1332,6 +1340,7 @@ void SIPEndPoint::RegistrationRefresh(PTimer &, INT)
 	// keep registering the old IP.
 	if (info->CreateTransport(registrarAddress)) { 
 	  infoTransport = info->GetTransport();
+	  info->RemoveTransactions();
 	  request = info->CreateTransaction(*infoTransport, FALSE); 
 
 	  if (request->Start()) 
@@ -1346,9 +1355,9 @@ void SIPEndPoint::RegistrationRefresh(PTimer &, INT)
 
       }
     }
-
-    activeSIPInfo.DeleteObjectsToBeRemoved();
   }
+
+  activeSIPInfo.DeleteObjectsToBeRemoved();
 }
 
 
