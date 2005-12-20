@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.cxx,v $
- * Revision 1.2007  2005/11/23 21:57:52  dsandras
+ * Revision 1.2008  2005/12/20 20:41:16  dsandras
+ * Fixed encoding name used by SIP.
+ *
+ * Revision 2.6  2005/11/23 21:57:52  dsandras
  * Updated to Speex 1.1.11.
  *
  * Revision 2.5  2005/08/28 07:59:17  rjongbloed
@@ -179,7 +182,7 @@ const OpalAudioFormat & GetOpalSpeexNarrow_5k95()
   static const OpalAudioFormat SpeexNarrow_5k95(
     OPAL_SPEEX_NARROW_5k95,
     RTP_DataFrame::DynamicBase,
-    OPAL_SPEEX_NARROW_5k95,
+    "SPEEX",
     Speex_Bytes_Per_Frame(2),
     SAMPLES_PER_FRAME, // 20 milliseconds
     1, 1);
@@ -191,7 +194,7 @@ const OpalAudioFormat & GetOpalSpeexNarrow_8k()
   static const OpalAudioFormat SpeexNarrow_8k(
     OPAL_SPEEX_NARROW_8k,
     RTP_DataFrame::DynamicBase,
-    OPAL_SPEEX_NARROW_8k,
+    "SPEEX",
     Speex_Bytes_Per_Frame(3),
     SAMPLES_PER_FRAME, // 20 milliseconds
     1, 1);
@@ -203,7 +206,7 @@ const OpalAudioFormat & GetOpalSpeexNarrow_11k()
   static const OpalAudioFormat SpeexNarrow_11k(
     OPAL_SPEEX_NARROW_11k,
     RTP_DataFrame::DynamicBase,
-    OPAL_SPEEX_NARROW_11k,
+    "SPEEX",
     Speex_Bytes_Per_Frame(4),
     SAMPLES_PER_FRAME, // 20 milliseconds
     1, 1);
@@ -215,7 +218,7 @@ const OpalAudioFormat & GetOpalSpeexNarrow_15k()
   static const OpalAudioFormat SpeexNarrow_15k(
     OPAL_SPEEX_NARROW_15k,
     RTP_DataFrame::DynamicBase,
-    OPAL_SPEEX_NARROW_15k,
+    "SPEEX",
     Speex_Bytes_Per_Frame(5),
     SAMPLES_PER_FRAME, // 20 milliseconds
     1, 1);
@@ -227,7 +230,7 @@ const OpalAudioFormat & GetOpalSpeexNarrow_18k2()
   static const OpalAudioFormat SpeexNarrow_18k2(
     OPAL_SPEEX_NARROW_18k2,
     RTP_DataFrame::DynamicBase,
-    OPAL_SPEEX_NARROW_18k2,
+    "SPEEX",
     Speex_Bytes_Per_Frame(6),
     SAMPLES_PER_FRAME, // 20 milliseconds
     1, 1);
