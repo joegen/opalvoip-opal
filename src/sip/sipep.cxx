@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2090  2005/12/18 21:06:55  dsandras
+ * Revision 1.2091  2005/12/20 20:40:47  dsandras
+ * Added missing parameter.
+ *
+ * Revision 2.89  2005/12/18 21:06:55  dsandras
  * Added function to clean up the registrations object. Moved DeleteObjectsToBeRemoved call outside of the loop.
  *
  * Revision 2.88  2005/12/18 19:18:18  dsandras
@@ -1695,7 +1698,7 @@ const SIPURL SIPEndPoint::GetContactAddress(const OpalTransport &transport, cons
 BOOL SIPEndPoint::SendMessage (const SIPURL & url, 
 			       const PString & body)
 {
-  return TransmitSIPInfo(SIP_PDU::Method_MESSAGE, url.AsQuotedString(), url.GetUserName(), "", "", body);
+  return TransmitSIPInfo(SIP_PDU::Method_MESSAGE, url.AsQuotedString(), url.GetUserName(), "", "", "", body);
 }
 
 
