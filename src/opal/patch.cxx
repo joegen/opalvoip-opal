@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2018  2005/11/25 21:02:19  dsandras
+ * Revision 1.2019  2005/12/21 20:39:15  dsandras
+ * Prevent recursion when executing a command on a stream.
+ *
+ * Revision 2.17  2005/11/25 21:02:19  dsandras
  * Remove the filters when closing the OpalMediaPatch.
  *
  * Revision 2.16  2005/10/20 20:28:18  dsandras
@@ -400,7 +403,7 @@ bool OpalMediaPatch::Sink::UpdateMediaFormat(const OpalMediaFormat & mediaFormat
 
 bool OpalMediaPatch::Sink::ExecuteCommand(const OpalMediaCommand & command)
 {
-  BOOL atLeastOne = stream->ExecuteCommand(command);
+  BOOL atLeastOne = FALSE;
 
   if (secondaryCodec != NULL)
     atLeastOne = secondaryCodec->ExecuteCommand(command) || atLeastOne;
