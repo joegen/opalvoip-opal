@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2038  2005/12/06 21:38:16  dsandras
+ * Revision 1.2039  2005/12/24 17:50:20  dsandras
+ * Added clockRate parameter support to allow wideband audio codecs.
+ *
+ * Revision 2.37  2005/12/06 21:38:16  dsandras
  * Fixed SetMediaFormatMask thanks for Frederic Heem <frederic.heem _Atttt_ telsey.it>. Thanks! (Patch #1368040).
  *
  * Revision 2.36  2005/09/13 20:48:22  dominance
@@ -875,19 +878,21 @@ OpalAudioFormat::OpalAudioFormat(const char * fullName,
                                  unsigned frameTime,
                                  unsigned rxFrames,
                                  unsigned txFrames,
-                                 unsigned maxFrames)
+                                 unsigned maxFrames,
+				 unsigned clockRate)
   : OpalMediaFormat(fullName,
                     OpalMediaFormat::DefaultAudioSessionID,
                     rtpPayloadType,
                     encodingName,
                     TRUE,
-                    8*frameSize*8000/frameTime,
+                    8*frameSize*clockRate/frameTime,
                     frameSize,
                     frameTime,
-                    OpalMediaFormat::AudioClockRate)
+                    clockRate)
 {
   AddOption(new OpalMediaOptionInteger(RxFramesPerPacketOption, false, OpalMediaOption::MinMerge, rxFrames, 1, maxFrames));
   AddOption(new OpalMediaOptionInteger(TxFramesPerPacketOption, false, OpalMediaOption::MinMerge, txFrames, 1, maxFrames));
+  AddOption(new OpalMediaOptionInteger(ClockRateOption, false, OpalMediaOption::MinMerge, clockRate, 1, 16000));
 }
 
 
