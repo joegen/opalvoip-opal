@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2036  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2037  2005/12/24 17:51:02  dsandras
+ * Added clockRate parameter to allow wideband audio codecs.
+ *
+ * Revision 2.35  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.34  2005/09/13 20:48:22  dominance
@@ -907,7 +910,8 @@ class OpalAudioFormat : public OpalMediaFormat
       unsigned frameTime,       ///<  Time for frame in RTP units (if applicable)
       unsigned rxFrames,        ///<  Maximum number of frames per packet we can receive
       unsigned txFrames,        ///<  Desired number of frames per packet we transmit
-      unsigned maxFrames = 256  ///<  Maximum possible frames per packet
+      unsigned maxFrames = 256, ///<  Maximum possible frames per packet
+      unsigned clockRate = 8000 ///<  Clock Rate 
     );
 
     static const char * const RxFramesPerPacketOption;
