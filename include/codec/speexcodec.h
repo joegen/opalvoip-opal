@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.h,v $
- * Revision 1.2008  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2009  2005/12/24 17:52:08  dsandras
+ * Fixed calls to speex_encoder_ctl so that the correct mode is used. Added support for the mode 6 wideband codec.
+ *
+ * Revision 2.7  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.6  2005/08/28 07:59:17  rjongbloed
@@ -109,18 +112,21 @@
 #define OPAL_SPEEX_NARROW_11k  "SpeexNarrow-11k"
 #define OPAL_SPEEX_NARROW_15k  "SpeexNarrow-15k"
 #define OPAL_SPEEX_NARROW_18k2 "SpeexNarrow-18.2k"
+#define OPAL_SPEEX_WIDE_20k6   "SpeexWide-20.6k"
 
 extern const OpalAudioFormat & GetOpalSpeexNarrow_5k95();
 extern const OpalAudioFormat & GetOpalSpeexNarrow_8k();
 extern const OpalAudioFormat & GetOpalSpeexNarrow_11k();
 extern const OpalAudioFormat & GetOpalSpeexNarrow_15k();
 extern const OpalAudioFormat & GetOpalSpeexNarrow_18k2();
+extern const OpalAudioFormat & GetOpalSpeexWide_20k6();
 
 #define OpalSpeexNarrow_5k95 GetOpalSpeexNarrow_5k95()
 #define OpalSpeexNarrow_8k   GetOpalSpeexNarrow_8k()
 #define OpalSpeexNarrow_11k  GetOpalSpeexNarrow_11k()
 #define OpalSpeexNarrow_15k  GetOpalSpeexNarrow_15k()
 #define OpalSpeexNarrow_18k2 GetOpalSpeexNarrow_18k2()
+#define OpalSpeexWide_20k6   GetOpalSpeexWide_20k6()
 
 
 struct SpeexBits;
@@ -137,7 +143,8 @@ class SpeexNonStandardAudioCapability : public H323NonStandardAudioCapability
   PCLASSINFO(SpeexNonStandardAudioCapability, H323NonStandardAudioCapability);
 
   public:
-    SpeexNonStandardAudioCapability(int mode);
+    SpeexNonStandardAudioCapability(int mode, 
+				    int sampleRate);
 };
 
 /////////////////////////////////////////////////////////////////////////
@@ -192,6 +199,16 @@ class SpeexNarrow6AudioCapability : public SpeexNonStandardAudioCapability
     PString GetFormatName() const;
 };
 
+class SpeexWide6AudioCapability : public SpeexNonStandardAudioCapability
+{
+  PCLASSINFO(SpeexWide6AudioCapability, SpeexNonStandardAudioCapability);
+
+  public:
+    SpeexWide6AudioCapability();
+    PObject * Clone() const;
+    PString GetFormatName() const;
+};
+
 
 #ifdef H323_STATIC_LIB
 H323_STATIC_LOAD_REGISTER_CAPABILITY(SpeexNarrow2AudioCapability);
@@ -199,6 +216,7 @@ H323_STATIC_LOAD_REGISTER_CAPABILITY(SpeexNarrow3AudioCapability);
 H323_STATIC_LOAD_REGISTER_CAPABILITY(SpeexNarrow4AudioCapability);
 H323_STATIC_LOAD_REGISTER_CAPABILITY(SpeexNarrow5AudioCapability);
 H323_STATIC_LOAD_REGISTER_CAPABILITY(SpeexNarrow6AudioCapability);
+H323_STATIC_LOAD_REGISTER_CAPABILITY(SpeexWide6AudioCapability);
 #endif
 
 
@@ -207,7 +225,8 @@ H323_STATIC_LOAD_REGISTER_CAPABILITY(SpeexNarrow6AudioCapability);
           H323_REGISTER_CAPABILITY(SpeexNarrow3AudioCapability, OPAL_SPEEX_NARROW_8k) \
           H323_REGISTER_CAPABILITY(SpeexNarrow4AudioCapability, OPAL_SPEEX_NARROW_11k) \
           H323_REGISTER_CAPABILITY(SpeexNarrow5AudioCapability, OPAL_SPEEX_NARROW_15k) \
-          H323_REGISTER_CAPABILITY(SpeexNarrow6AudioCapability, OPAL_SPEEX_NARROW_18k2)
+          H323_REGISTER_CAPABILITY(SpeexNarrow6AudioCapability, OPAL_SPEEX_NARROW_18k2) \
+          H323_REGISTER_CAPABILITY(SpeexWide6AudioCapability, OPAL_SPEEX_WIDE_20k6) 
 
 
 #else // ifndef NO_H323
@@ -239,12 +258,14 @@ class Opal_Speex_Decoder : public Opal_Speex_Transcoder {
   public:
     Opal_Speex_Decoder(
       const OpalMediaFormat & inputMediaFormat,  ///<  Input media format
-      int mode
+      int mode,
+      int sampleRate
     );
     ~Opal_Speex_Decoder();
     virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
   protected:
     void * decoder;
+    int    samples_per_frame;
 };
 
 
@@ -254,13 +275,15 @@ class Opal_Speex_Encoder : public Opal_Speex_Transcoder {
   public:
     Opal_Speex_Encoder(
       const OpalMediaFormat & outputMediaFormat, ///<  Output media format
-      int mode
+      int mode,
+      int sampleRate
     );
     ~Opal_Speex_Encoder();
     virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
   protected:
     void   * encoder;
     unsigned encoder_frame_size;
+    int      samples_per_frame;
 };
 
 
@@ -334,6 +357,21 @@ class Opal_PCM_Speex_18k2 : public Opal_Speex_Encoder {
 };
 
 
+
+///////////////////////////////////////////////////////////////////////////////
+
+class Opal_Speex_20k6_PCM : public Opal_Speex_Decoder {
+  public:
+    Opal_Speex_20k6_PCM();
+};
+
+
+class Opal_PCM_Speex_20k6 : public Opal_Speex_Encoder {
+  public:
+    Opal_PCM_Speex_20k6();
+};
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 #define OPAL_REGISTER_SPEEX() \
@@ -347,7 +385,10 @@ class Opal_PCM_Speex_18k2 : public Opal_Speex_Encoder {
           OPAL_REGISTER_TRANSCODER(Opal_Speex_15k_PCM,  OpalSpeexNarrow_15k,  OpalPCM16); \
           OPAL_REGISTER_TRANSCODER(Opal_PCM_Speex_15k,  OpalPCM16,            OpalSpeexNarrow_15k); \
           OPAL_REGISTER_TRANSCODER(Opal_Speex_18k2_PCM, OpalSpeexNarrow_18k2, OpalPCM16); \
-          OPAL_REGISTER_TRANSCODER(Opal_PCM_Speex_18k2, OpalPCM16,            OpalSpeexNarrow_18k2)
+          OPAL_REGISTER_TRANSCODER(Opal_PCM_Speex_18k2, OpalPCM16,            OpalSpeexNarrow_18k2); \
+          OPAL_REGISTER_TRANSCODER(Opal_Speex_20k6_PCM, OpalSpeexWide_20k6, OpalPCM16); \
+          OPAL_REGISTER_TRANSCODER(Opal_PCM_Speex_20k6, OpalPCM16,            OpalSpeexWide_20k6)
+
 
 
 #endif // __OPAL_SPEEXCODEC_H
