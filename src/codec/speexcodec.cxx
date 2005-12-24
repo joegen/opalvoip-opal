@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.cxx,v $
- * Revision 1.2008  2005/12/20 20:41:16  dsandras
+ * Revision 1.2009  2005/12/24 17:52:09  dsandras
+ * Fixed calls to speex_encoder_ctl so that the correct mode is used. Added support for the mode 6 wideband codec.
+ *
+ * Revision 2.7  2005/12/20 20:41:16  dsandras
  * Fixed encoding name used by SIP.
  *
  * Revision 2.6  2005/11/23 21:57:52  dsandras
@@ -153,7 +156,8 @@ extern "C" {
 #define EQUIVALENCE_T35EXTENSION       0
 #define EQUIVALENCE_MANUFACTURER_CODE  61 // Allocated by Australian Communications Authority, Oct 2000
 
-#define SAMPLES_PER_FRAME        160
+#define NARROW_SAMPLES_PER_FRAME        160
+#define WIDE_SAMPLES_PER_FRAME          320
 
 const float MaxSampleValue   = 32767.0;
 const float MinSampleValue   = -32767.0;
@@ -161,18 +165,21 @@ const float MinSampleValue   = -32767.0;
 
 /////////////////////////////////////////////////////////////////////////
 
-static int Speex_Bits_Per_Second(int mode) {
+static int Speex_Bits_Per_Second(int mode, int sampleRate) {
     void *tmp_coder_state;
     int bitrate;
-    tmp_coder_state = speex_encoder_init(&speex_nb_mode);
-    speex_encoder_ctl(tmp_coder_state, SPEEX_SET_QUALITY, &mode);
+    if (sampleRate == 8000)
+      tmp_coder_state = speex_encoder_init(&speex_nb_mode);
+    else
+      tmp_coder_state = speex_encoder_init(&speex_wb_mode);
+    speex_encoder_ctl(tmp_coder_state, SPEEX_SET_MODE, &mode);
     speex_encoder_ctl(tmp_coder_state, SPEEX_GET_BITRATE, &bitrate);
     speex_encoder_destroy(tmp_coder_state); 
     return bitrate;
 }
 
-static int Speex_Bytes_Per_Frame(int mode) {
-    int bits_per_frame = Speex_Bits_Per_Second(mode) / 50; // (20ms frame size)
+static int Speex_Bytes_Per_Frame(int mode, int sampleRate) {
+    int bits_per_frame = Speex_Bits_Per_Second(mode, sampleRate) / 50; // (20ms frame size)
     return ((bits_per_frame+7)/8); // round up
 }
 
@@ -183,8 +190,8 @@ const OpalAudioFormat & GetOpalSpeexNarrow_5k95()
     OPAL_SPEEX_NARROW_5k95,
     RTP_DataFrame::DynamicBase,
     "SPEEX",
-    Speex_Bytes_Per_Frame(2),
-    SAMPLES_PER_FRAME, // 20 milliseconds
+    Speex_Bytes_Per_Frame(2, 8000),
+    NARROW_SAMPLES_PER_FRAME, // 20 milliseconds
     1, 1);
   return SpeexNarrow_5k95;
 }
@@ -195,8 +202,8 @@ const OpalAudioFormat & GetOpalSpeexNarrow_8k()
     OPAL_SPEEX_NARROW_8k,
     RTP_DataFrame::DynamicBase,
     "SPEEX",
-    Speex_Bytes_Per_Frame(3),
-    SAMPLES_PER_FRAME, // 20 milliseconds
+    Speex_Bytes_Per_Frame(3, 8000),
+    NARROW_SAMPLES_PER_FRAME, // 20 milliseconds
     1, 1);
   return SpeexNarrow_8k;
 }
@@ -207,8 +214,8 @@ const OpalAudioFormat & GetOpalSpeexNarrow_11k()
     OPAL_SPEEX_NARROW_11k,
     RTP_DataFrame::DynamicBase,
     "SPEEX",
-    Speex_Bytes_Per_Frame(4),
-    SAMPLES_PER_FRAME, // 20 milliseconds
+    Speex_Bytes_Per_Frame(4, 8000),
+    NARROW_SAMPLES_PER_FRAME, // 20 milliseconds
     1, 1);
   return SpeexNarrow_11k;
 }
@@ -219,8 +226,8 @@ const OpalAudioFormat & GetOpalSpeexNarrow_15k()
     OPAL_SPEEX_NARROW_15k,
     RTP_DataFrame::DynamicBase,
     "SPEEX",
-    Speex_Bytes_Per_Frame(5),
-    SAMPLES_PER_FRAME, // 20 milliseconds
+    Speex_Bytes_Per_Frame(5, 8000),
+    NARROW_SAMPLES_PER_FRAME, // 20 milliseconds
     1, 1);
   return SpeexNarrow_15k;
 }
@@ -231,25 +238,42 @@ const OpalAudioFormat & GetOpalSpeexNarrow_18k2()
     OPAL_SPEEX_NARROW_18k2,
     RTP_DataFrame::DynamicBase,
     "SPEEX",
-    Speex_Bytes_Per_Frame(6),
-    SAMPLES_PER_FRAME, // 20 milliseconds
+    Speex_Bytes_Per_Frame(6, 8000),
+    NARROW_SAMPLES_PER_FRAME, // 20 milliseconds
     1, 1);
   return SpeexNarrow_18k2;
 }
 
+const OpalAudioFormat & GetOpalSpeexWide_20k6()
+{
+  static const OpalAudioFormat SpeexWide_20k6(
+    OPAL_SPEEX_WIDE_20k6,
+    RTP_DataFrame::DynamicBase,
+    "SPEEX",
+    Speex_Bytes_Per_Frame(6, 16000),
+    WIDE_SAMPLES_PER_FRAME, // 20 milliseconds
+    1, 1,
+    256,
+    16000);
+  return SpeexWide_20k6;
+}
 
 /////////////////////////////////////////////////////////////////////////
 
 #ifndef NO_H323
 
-SpeexNonStandardAudioCapability::SpeexNonStandardAudioCapability(int mode)
+SpeexNonStandardAudioCapability::SpeexNonStandardAudioCapability(int mode,
+								 int sampleRate)
   : H323NonStandardAudioCapability(EQUIVALENCE_COUNTRY_CODE,
                                    EQUIVALENCE_T35EXTENSION,
                                    EQUIVALENCE_MANUFACTURER_CODE,
                                    NULL, 0, 0, P_MAX_INDEX)
 {
   PStringStream s;
-  s << "Speex bs" << speex_nb_mode.bitstream_version << " Narrow" << mode;
+  if (sampleRate == 8000)
+    s << "Speex bs" << speex_nb_mode.bitstream_version << " Narrow" << mode;
+  else
+    s << "Speex bs" << speex_nb_mode.bitstream_version << " Wide" << mode;
   PINDEX len = s.GetLength();
   memcpy(nonStandardData.GetPointer(len), (const char *)s, len);
 }
@@ -258,7 +282,7 @@ SpeexNonStandardAudioCapability::SpeexNonStandardAudioCapability(int mode)
 /////////////////////////////////////////////////////////////////////////
 
 SpeexNarrow2AudioCapability::SpeexNarrow2AudioCapability()
-  : SpeexNonStandardAudioCapability(2) 
+  : SpeexNonStandardAudioCapability(2, 8000) 
 {
 }
 
@@ -278,7 +302,7 @@ PString SpeexNarrow2AudioCapability::GetFormatName() const
 /////////////////////////////////////////////////////////////////////////
 
 SpeexNarrow3AudioCapability::SpeexNarrow3AudioCapability()
-  : SpeexNonStandardAudioCapability(3) 
+  : SpeexNonStandardAudioCapability(3, 8000) 
 {
 }
 
@@ -298,7 +322,7 @@ PString SpeexNarrow3AudioCapability::GetFormatName() const
 /////////////////////////////////////////////////////////////////////////
 
 SpeexNarrow4AudioCapability::SpeexNarrow4AudioCapability()
-  : SpeexNonStandardAudioCapability(4) 
+  : SpeexNonStandardAudioCapability(4, 8000) 
 {
 }
 
@@ -318,7 +342,7 @@ PString SpeexNarrow4AudioCapability::GetFormatName() const
 /////////////////////////////////////////////////////////////////////////
 
 SpeexNarrow5AudioCapability::SpeexNarrow5AudioCapability()
-  : SpeexNonStandardAudioCapability(5) 
+  : SpeexNonStandardAudioCapability(5, 8000) 
 {
 }
 
@@ -338,7 +362,7 @@ PString SpeexNarrow5AudioCapability::GetFormatName() const
 /////////////////////////////////////////////////////////////////////////
 
 SpeexNarrow6AudioCapability::SpeexNarrow6AudioCapability()
-  : SpeexNonStandardAudioCapability(6) 
+  : SpeexNonStandardAudioCapability(6, 8000) 
 {
 }
 
@@ -353,6 +377,27 @@ PString SpeexNarrow6AudioCapability::GetFormatName() const
 {
   return OpalSpeexNarrow_18k2;
 }
+
+
+/////////////////////////////////////////////////////////////////////////
+
+SpeexWide6AudioCapability::SpeexWide6AudioCapability()
+  : SpeexNonStandardAudioCapability(6, 16000) 
+{
+}
+
+
+PObject * SpeexWide6AudioCapability::Clone() const
+{
+  return new SpeexWide6AudioCapability(*this);
+}
+
+
+PString SpeexWide6AudioCapability::GetFormatName() const
+{
+  return OpalSpeexWide_20k6;
+}
+
 
 #endif
 
@@ -379,10 +424,14 @@ Opal_Speex_Transcoder::~Opal_Speex_Transcoder()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Opal_Speex_Decoder::Opal_Speex_Decoder(const OpalMediaFormat & inputMediaFormat, int mode)
-  : Opal_Speex_Transcoder(inputMediaFormat, OpalPCM16, Speex_Bytes_Per_Frame(mode), SAMPLES_PER_FRAME*2)
+Opal_Speex_Decoder::Opal_Speex_Decoder(const OpalMediaFormat & inputMediaFormat, int mode, int sampleRate)
+  : Opal_Speex_Transcoder(inputMediaFormat, OpalPCM16, Speex_Bytes_Per_Frame(mode, sampleRate), (sampleRate == 8000)?NARROW_SAMPLES_PER_FRAME*2:WIDE_SAMPLES_PER_FRAME*2)
 {
-  decoder = speex_decoder_init(&speex_nb_mode);
+  if (sampleRate == 8000)
+    decoder = speex_decoder_init(&speex_nb_mode);
+  else
+    decoder = speex_decoder_init(&speex_wb_mode);
+  samples_per_frame = (sampleRate == 8000)?NARROW_SAMPLES_PER_FRAME:WIDE_SAMPLES_PER_FRAME;
 }
 
 
@@ -395,7 +444,7 @@ Opal_Speex_Decoder::~Opal_Speex_Decoder()
 
 BOOL Opal_Speex_Decoder::ConvertFrame(const BYTE * src, BYTE * dst)
 {
-  float floatData[SAMPLES_PER_FRAME];
+  float floatData[samples_per_frame];
 
   // decode Speex data to floats
   speex_bits_read_from(bits, (char *)src, inputBytesPerFrame); 
@@ -403,7 +452,7 @@ BOOL Opal_Speex_Decoder::ConvertFrame(const BYTE * src, BYTE * dst)
 
   // convert float to PCM
   PINDEX i;
-  for (i = 0; i < SAMPLES_PER_FRAME; i++) {
+  for (i = 0; i < samples_per_frame; i++) {
     float sample = floatData[i];
     if (sample < MinSampleValue)
       sample = MinSampleValue;
@@ -418,12 +467,16 @@ BOOL Opal_Speex_Decoder::ConvertFrame(const BYTE * src, BYTE * dst)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Opal_Speex_Encoder::Opal_Speex_Encoder(const OpalMediaFormat & outputMediaFormat, int mode)
-  : Opal_Speex_Transcoder(OpalPCM16, outputMediaFormat, SAMPLES_PER_FRAME*2, Speex_Bytes_Per_Frame(mode))
+Opal_Speex_Encoder::Opal_Speex_Encoder(const OpalMediaFormat & outputMediaFormat, int mode, int sampleRate)
+  : Opal_Speex_Transcoder(OpalPCM16, outputMediaFormat, (sampleRate == 8000)?NARROW_SAMPLES_PER_FRAME*2:WIDE_SAMPLES_PER_FRAME, Speex_Bytes_Per_Frame(mode, sampleRate))
 {
-  encoder = speex_encoder_init(&speex_nb_mode);
+  if (sampleRate == 8000)
+    encoder = speex_encoder_init(&speex_nb_mode);
+  else
+    encoder = speex_encoder_init(&speex_wb_mode);
+  speex_encoder_ctl(encoder, SPEEX_SET_MODE, &mode);
   speex_encoder_ctl(encoder, SPEEX_GET_FRAME_SIZE, &encoder_frame_size);
-  speex_encoder_ctl(encoder, SPEEX_SET_QUALITY,    &mode);
+  samples_per_frame = (sampleRate == 8000)?NARROW_SAMPLES_PER_FRAME:WIDE_SAMPLES_PER_FRAME;
   PTRACE(3, "Codec\tSpeex encoder created");
 }
 
@@ -438,9 +491,9 @@ Opal_Speex_Encoder::~Opal_Speex_Encoder()
 BOOL Opal_Speex_Encoder::ConvertFrame(const BYTE * src, BYTE * dst)
 {
   // convert PCM to float
-  float floatData[SAMPLES_PER_FRAME];
+  float floatData[samples_per_frame];
   PINDEX i;
-  for (i = 0; i < SAMPLES_PER_FRAME; i++)
+  for (i = 0; i < samples_per_frame; i++)
     floatData[i] = ((short *)src)[i];
 
   // encode PCM data in sampleBuffer to buffer
@@ -456,61 +509,73 @@ BOOL Opal_Speex_Encoder::ConvertFrame(const BYTE * src, BYTE * dst)
 ///////////////////////////////////////////////////////////////////////////////
 
 Opal_Speex_5k95_PCM::Opal_Speex_5k95_PCM()
-  : Opal_Speex_Decoder(OpalSpeexNarrow_5k95, 2)
+  : Opal_Speex_Decoder(OpalSpeexNarrow_5k95, 2, 8000)
 {
 }
 
 
 Opal_PCM_Speex_5k95::Opal_PCM_Speex_5k95()
-  : Opal_Speex_Encoder(OpalSpeexNarrow_5k95, 2)
+  : Opal_Speex_Encoder(OpalSpeexNarrow_5k95, 2, 8000)
 {
 }
 
 
 Opal_Speex_8k_PCM::Opal_Speex_8k_PCM()
-  : Opal_Speex_Decoder(OpalSpeexNarrow_8k, 3)
+  : Opal_Speex_Decoder(OpalSpeexNarrow_8k, 3, 8000)
 {
 }
 
 
 Opal_PCM_Speex_8k::Opal_PCM_Speex_8k()
-  : Opal_Speex_Encoder(OpalSpeexNarrow_8k, 3)
+  : Opal_Speex_Encoder(OpalSpeexNarrow_8k, 3, 8000)
 {
 }
 
 
 Opal_Speex_11k_PCM::Opal_Speex_11k_PCM()
-  : Opal_Speex_Decoder(OpalSpeexNarrow_11k, 4)
+  : Opal_Speex_Decoder(OpalSpeexNarrow_11k, 4, 8000)
 {
 }
 
 
 Opal_PCM_Speex_11k::Opal_PCM_Speex_11k()
-  : Opal_Speex_Encoder(OpalSpeexNarrow_11k, 4)
+  : Opal_Speex_Encoder(OpalSpeexNarrow_11k, 4, 8000)
 {
 }
 
 
 Opal_Speex_15k_PCM::Opal_Speex_15k_PCM()
-  : Opal_Speex_Decoder(OpalSpeexNarrow_15k, 5)
+  : Opal_Speex_Decoder(OpalSpeexNarrow_15k, 5, 8000)
 {
 }
 
 
 Opal_PCM_Speex_15k::Opal_PCM_Speex_15k()
-  : Opal_Speex_Encoder(OpalSpeexNarrow_15k, 5)
+  : Opal_Speex_Encoder(OpalSpeexNarrow_15k, 5, 8000)
 {
 }
 
 
 Opal_Speex_18k2_PCM::Opal_Speex_18k2_PCM()
-  : Opal_Speex_Decoder(OpalSpeexNarrow_18k2, 6)
+  : Opal_Speex_Decoder(OpalSpeexNarrow_18k2, 6, 8000)
 {
 }
 
 
 Opal_PCM_Speex_18k2::Opal_PCM_Speex_18k2()
-  : Opal_Speex_Encoder(OpalSpeexNarrow_18k2, 6)
+  : Opal_Speex_Encoder(OpalSpeexNarrow_18k2, 6, 8000)
+{
+}
+
+
+Opal_Speex_20k6_PCM::Opal_Speex_20k6_PCM()
+  : Opal_Speex_Decoder(OpalSpeexWide_20k6, 6, 16000)
+{
+}
+
+
+Opal_PCM_Speex_20k6::Opal_PCM_Speex_20k6()
+  : Opal_Speex_Encoder(OpalSpeexWide_20k6, 6, 16000)
 {
 }
 
