@@ -23,6 +23,9 @@
  * Contributor(s): Miguel Rodriguez Perez.
  *
  * $Log: echocancel.cxx,v $
+ * Revision 1.5  2005/12/25 11:49:01  dsandras
+ * Return if Read is unsuccessful.
+ *
  * Revision 1.4  2005/11/27 20:48:05  dsandras
  * Changed ReadTimeout, WriteTimeout in case the remote is not sending data. Fixed compilation warning.
  *
@@ -124,9 +127,6 @@ void OpalEchoCanceler::SetParameters(const Params& newParam)
 
 void OpalEchoCanceler::SentPacket(RTP_DataFrame& echo_frame, INT)
 {
-  if (param.m_mode == NoCancelation)
-    return;
-
   /* Write to the soundcard, and write the frame to the PQueueChannel */
   echo_chan->Write(echo_frame.GetPayloadPtr(), echo_frame.GetPayloadSize());
 }
@@ -162,7 +162,8 @@ void OpalEchoCanceler::ReceivedPacket(RTP_DataFrame& input_frame, INT)
 
   /* Read from the PQueueChannel a reference echo frame of the size
    * of the captured frame. */
-  echo_chan->Read(echo_buf, input_frame.GetPayloadSize());
+  if (!echo_chan->Read(echo_buf, input_frame.GetPayloadSize()))
+    return;
 
   /* Remove the DC offset */
   short *j = (short *) input_frame.GetPayloadPtr();
