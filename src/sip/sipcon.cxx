@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2114  2005/12/14 17:59:50  dsandras
+ * Revision 1.2115  2005/12/26 20:53:37  dsandras
+ * Small fix.
+ *
+ * Revision 2.113  2005/12/14 17:59:50  dsandras
  * Added ForwardConnection executed when the remote asks for a call forwarding.
  * Similar to what is done in the H.323 part with the method of the same name.
  *
@@ -718,18 +721,11 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
     ReleaseSession(rtpSessionId);
     return FALSE;
   }
-  PINDEX i;
-  for (i = 0; i < remoteFormatList.GetSize(); i++) {
-    if (remoteFormatList[i].GetDefaultSessionID() == rtpSessionId) {
-      remoteFormatList = remoteFormatList[i];
-      break;
-    }
-  }
 
   // find the payload type used for telephone-event, if present
   const SDPMediaFormatList & sdpMediaList = incomingMedia->GetSDPMediaFormats();
-
   BOOL hasTelephoneEvent = FALSE;
+  PINDEX i;
   for (i = 0; !hasTelephoneEvent && (i < sdpMediaList.GetSize()); i++) {
     if (sdpMediaList[i].GetEncodingName() == "telephone-event") {
       rfc2833Handler->SetPayloadType(sdpMediaList[i].GetPayloadType());
@@ -801,6 +797,19 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
     localMedia->AddSDPMediaFormat(new SDPMediaFormat("0-15", rfc2833Handler->GetPayloadType()));
   }
   
+  // set the remote address after the stream is opened
+  if (updateAddress) {
+    PIPSocket::Address ip;
+    WORD port;
+    incomingMedia->GetTransportAddress().GetIpAndPort(ip, port);
+    if (!rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
+      PTRACE(1, "SIP\tCannot set remote ports on RTP session");
+      ReleaseSession(rtpSessionId);
+      delete localMedia;
+      return FALSE;
+    }
+  }
+  
   // No stream opened for this session, use the default SDP
   if (reverseStreamsFailed) {
     SDPSessionDescription *sdp = (SDPSessionDescription *) &sdpOut;
@@ -813,19 +822,6 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
 
   localMedia->SetDirection(GetDirection(rtpSessionId));
   sdpOut.AddMediaDescription(localMedia);
-      
-  if (updateAddress) {
-    // set the remote address after the stream is opened
-    PIPSocket::Address ip;
-    WORD port;
-    incomingMedia->GetTransportAddress().GetIpAndPort(ip, port);
-    if (!rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
-      PTRACE(1, "SIP\tCannot set remote ports on RTP session");
-      ReleaseSession(rtpSessionId);
-      delete localMedia;
-      return FALSE;
-    }
-  }
 
   return TRUE;
 }
