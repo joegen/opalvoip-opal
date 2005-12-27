@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2024  2005/10/04 18:31:01  dsandras
+ * Revision 1.2025  2005/12/27 20:51:20  dsandras
+ * Added clockRate parameter support.
+ *
+ * Revision 2.23  2005/10/04 18:31:01  dsandras
  * Allow SetFMTP and GetFMTP to work with any option set for a=fmtp:.
  *
  * Revision 2.22  2005/09/15 17:01:08  dsandras
@@ -288,7 +291,7 @@ void SDPMediaFormat::PrintOn(ostream & strm) const
 
 OpalMediaFormat SDPMediaFormat::GetMediaFormat() const
 {
-  return OpalMediaFormat(payloadType, encodingName);
+  return OpalMediaFormat(payloadType, clockRate, encodingName);
 }
 
 
