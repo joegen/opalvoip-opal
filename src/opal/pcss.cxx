@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2026  2005/11/24 20:31:55  dsandras
+ * Revision 1.2027  2005/12/27 20:48:43  dsandras
+ * Added media format parameter when opening the sound channel so that its
+ * parameters can be used in the body of the method.
+ * Added wideband support when opening the channel.
+ *
+ * Revision 2.25  2005/11/24 20:31:55  dsandras
  * Added support for echo cancelation using Speex.
  * Added possibility to add a filter to an OpalMediaPatch for all patches of a connection.
  *
@@ -262,6 +267,7 @@ OpalPCSSConnection * OpalPCSSEndPoint::CreateConnection(OpalCall & call,
 
 
 PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & connection,
+						     const OpalMediaFormat & mediaFormat,
                                                      BOOL isSource)
 {
   PString deviceName;
@@ -275,7 +281,7 @@ PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & 
   if (soundChannel->Open(deviceName,
                          isSource ? PSoundChannel::Recorder
                                   : PSoundChannel::Player,
-                         1, 8000, 16)) {
+                         1, mediaFormat.GetClockRate(), 16)) {
     PTRACE(3, "PCSS\tOpened sound channel \"" << deviceName
            << "\" for " << (isSource ? "record" : "play") << "ing.");
     return soundChannel;
@@ -413,7 +419,7 @@ OpalMediaStream * OpalPCSSConnection::CreateMediaStream(const OpalMediaFormat & 
   if (sessionID != OpalMediaFormat::DefaultAudioSessionID)
     return OpalConnection::CreateMediaStream(mediaFormat, sessionID, isSource);
 
-  PSoundChannel * soundChannel = CreateSoundChannel(isSource);
+  PSoundChannel * soundChannel = CreateSoundChannel(mediaFormat, isSource);
   if (soundChannel == NULL)
     return NULL;
 
@@ -468,9 +474,9 @@ OpalMediaStream * OpalPCSSConnection::OpenSinkMediaStream(OpalMediaStream & sour
 }
 
 
-PSoundChannel * OpalPCSSConnection::CreateSoundChannel(BOOL isSource)
+PSoundChannel * OpalPCSSConnection::CreateSoundChannel(const OpalMediaFormat & mediaFormat, BOOL isSource)
 {
-  return endpoint.CreateSoundChannel(*this, isSource);
+  return endpoint.CreateSoundChannel(*this, mediaFormat, isSource);
 }
 
 
