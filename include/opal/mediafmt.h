@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2037  2005/12/24 17:51:02  dsandras
+ * Revision 1.2038  2005/12/27 20:46:09  dsandras
+ * Added clockRate to the media format. Added "AlwaysMerge" method for merging
+ * media format options.
+ *
+ * Revision 2.36  2005/12/24 17:51:02  dsandras
  * Added clockRate parameter to allow wideband audio codecs.
  *
  * Revision 2.35  2005/11/30 13:35:26  csoutheren
@@ -288,7 +292,8 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
       */
     PINDEX FindFormat(
       RTP_DataFrame::PayloadTypes rtpPayloadType, ///<  RTP payload type code
-      const char * rtpEncodingName = NULL          ///<  RTP payload type name
+      const unsigned clockRate,                   ///<  clock rate
+      const char * rtpEncodingName = NULL         ///<  RTP payload type name
     ) const;
 
     /**Get a format position in the list matching the wildcard.
@@ -354,6 +359,7 @@ class OpalMediaOption : public PObject
       MaxMerge,
       EqualMerge,
       NotEqualMerge,
+      AlwaysMerge,
 
       // Synonyms
       AndMerge = MaxMerge,
@@ -595,7 +601,8 @@ class OpalMediaFormat : public PCaselessString
       */
     OpalMediaFormat(
       RTP_DataFrame::PayloadTypes rtpPayloadType, ///<  RTP payload type code
-      const char * rtpEncodingName = NULL          ///<  RTP payload type name
+      unsigned clockRate,                         ///<  clock rate
+      const char * rtpEncodingName = NULL         ///<  RTP payload type name
     );
 
     /**Construct a media format, searching database for information.
