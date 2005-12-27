@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.h,v $
- * Revision 1.2017  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2018  2005/12/27 20:48:01  dsandras
+ * Added media format parameter when opening the sound channel so that its
+ * parameters can be used in the body of the method.
+ *
+ * Revision 2.16  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.15  2005/11/24 20:31:54  dsandras
@@ -183,6 +187,7 @@ class OpalPCSSEndPoint : public OpalEndPoint
       */
     virtual PSoundChannel * CreateSoundChannel(
       const OpalPCSSConnection & connection, ///<  Connection needing created sound channel
+      const OpalMediaFormat & mediaFormat,   ///<  Media format for the connection
       BOOL isSource                          ///<  Direction for channel
     );
   //@}
@@ -445,7 +450,8 @@ class OpalPCSSConnection : public OpalConnection
     /**Create an PSoundChannel based media stream.
       */
     virtual PSoundChannel * CreateSoundChannel(
-      BOOL isSource ///<  Direction for channel
+      const OpalMediaFormat & mediaFormat, ///<  Media format for the connection
+      BOOL isSource                        ///<  Direction for channel
     );
   //@}
 
