@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2039  2005/12/24 17:50:20  dsandras
+ * Revision 1.2040  2005/12/27 20:50:46  dsandras
+ * Added clockRate parameter to the media format. Added new merging method that
+ * merges the parameter option from the source into the destination.
+ *
+ * Revision 2.38  2005/12/24 17:50:20  dsandras
  * Added clockRate parameter support to allow wideband audio codecs.
  *
  * Revision 2.37  2005/12/06 21:38:16  dsandras
@@ -306,6 +310,10 @@ bool OpalMediaOption::Merge(const OpalMediaOption & option)
 
     case NotEqualMerge :
       return CompareValue(option) != EqualTo;
+      
+    case AlwaysMerge :
+      Assign(option);
+      break;
 
     default :
       break;
@@ -521,12 +529,12 @@ OpalMediaFormat::OpalMediaFormat()
 }
 
 
-OpalMediaFormat::OpalMediaFormat(RTP_DataFrame::PayloadTypes pt, const char * name)
+OpalMediaFormat::OpalMediaFormat(RTP_DataFrame::PayloadTypes pt, unsigned clockRate, const char * name)
 {
   PWaitAndSignal mutex(GetMediaFormatsListMutex());
   const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
 
-  PINDEX idx = registeredFormats.FindFormat(pt, name);
+  PINDEX idx = registeredFormats.FindFormat(pt, clockRate, name);
   if (idx != P_MAX_INDEX)
     *this = registeredFormats[idx];
   else
@@ -582,7 +590,7 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
     AddOption(new OpalMediaOptionInteger(FrameTimeOption, true, OpalMediaOption::NoMerge, ft));
 
   if (cr > 0)
-    AddOption(new OpalMediaOptionInteger(ClockRateOption, true, OpalMediaOption::EqualMerge, cr));
+    AddOption(new OpalMediaOptionInteger(ClockRateOption, true, OpalMediaOption::AlwaysMerge, cr));
 
   // assume non-dynamic payload types are correct and do not need deconflicting
   if (rtpPayloadType < RTP_DataFrame::DynamicBase || rtpPayloadType == RTP_DataFrame::MaxPayloadType) {
@@ -892,7 +900,6 @@ OpalAudioFormat::OpalAudioFormat(const char * fullName,
 {
   AddOption(new OpalMediaOptionInteger(RxFramesPerPacketOption, false, OpalMediaOption::MinMerge, rxFrames, 1, maxFrames));
   AddOption(new OpalMediaOptionInteger(TxFramesPerPacketOption, false, OpalMediaOption::MinMerge, txFrames, 1, maxFrames));
-  AddOption(new OpalMediaOptionInteger(ClockRateOption, false, OpalMediaOption::MinMerge, clockRate, 1, 16000));
 }
 
 
@@ -1018,7 +1025,7 @@ void OpalMediaFormatList::Remove(const PStringArray & mask)
 }
 
 
-PINDEX OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt, const char * name) const
+PINDEX OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt, unsigned clockRate, const char * name) const
 {
   for (PINDEX idx = 0; idx < GetSize(); idx++) {
     OpalMediaFormat & mediaFormat = (*this)[idx];
@@ -1028,7 +1035,8 @@ PINDEX OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt, const cha
 
     if (name != NULL && *name != '\0') {
       const char * otherName = mediaFormat.GetEncodingName();
-      if (otherName != NULL && strcasecmp(otherName, name) == 0)
+      if (otherName != NULL && strcasecmp(otherName, name) == 0
+	  && mediaFormat.GetClockRate() == clockRate)
         return idx;
     }
   }
