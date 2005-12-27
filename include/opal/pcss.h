@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.h,v $
- * Revision 1.2018  2005/12/27 20:48:01  dsandras
+ * Revision 1.2019  2005/12/27 22:25:55  dsandras
+ * Added propagation of the callback to the pcss endpoint.
+ *
+ * Revision 2.17  2005/12/27 20:48:01  dsandras
  * Added media format parameter when opening the sound channel so that its
  * parameters can be used in the body of the method.
  *
@@ -245,6 +248,17 @@ class OpalPCSSEndPoint : public OpalEndPoint
       const OpalPCSSConnection & connection, ///<  Connection having event
       const PString & indication
     );
+
+    
+    /**Call back when patching a media stream.
+       This function is called when a connection has created a new media
+       patch between two streams.
+      */
+    virtual void OnPatchMediaStream(
+      const OpalPCSSConnection & connection, ///<  Connection having new patch
+      BOOL isSource,                         ///<  Source patch
+      OpalMediaPatch & patch                 ///<  New patch
+    );
   //@}
 
   /**@name Member variable access */
@@ -406,6 +420,8 @@ class OpalPCSSConnection : public OpalConnection
     /**Call back when patching a media stream.
        This function is called when a connection has created a new media
        patch between two streams.
+       Add the echo canceler patch and call the endpoint function of
+       the same name.
       */
     virtual void OnPatchMediaStream(
       BOOL isSource,
