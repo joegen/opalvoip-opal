@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.cxx,v $
- * Revision 1.2009  2005/12/24 17:52:09  dsandras
+ * Revision 1.2010  2005/12/27 20:52:22  dsandras
+ * Use SPEEX encoding name only for the default versions of Speex defined
+ * in the draft.
+ *
+ * Revision 2.8  2005/12/24 17:52:09  dsandras
  * Fixed calls to speex_encoder_ctl so that the correct mode is used. Added support for the mode 6 wideband codec.
  *
  * Revision 2.7  2005/12/20 20:41:16  dsandras
@@ -189,7 +193,7 @@ const OpalAudioFormat & GetOpalSpeexNarrow_5k95()
   static const OpalAudioFormat SpeexNarrow_5k95(
     OPAL_SPEEX_NARROW_5k95,
     RTP_DataFrame::DynamicBase,
-    "SPEEX",
+    OPAL_SPEEX_NARROW_5k95,
     Speex_Bytes_Per_Frame(2, 8000),
     NARROW_SAMPLES_PER_FRAME, // 20 milliseconds
     1, 1);
@@ -213,7 +217,7 @@ const OpalAudioFormat & GetOpalSpeexNarrow_11k()
   static const OpalAudioFormat SpeexNarrow_11k(
     OPAL_SPEEX_NARROW_11k,
     RTP_DataFrame::DynamicBase,
-    "SPEEX",
+    OPAL_SPEEX_NARROW_11k,
     Speex_Bytes_Per_Frame(4, 8000),
     NARROW_SAMPLES_PER_FRAME, // 20 milliseconds
     1, 1);
@@ -225,7 +229,7 @@ const OpalAudioFormat & GetOpalSpeexNarrow_15k()
   static const OpalAudioFormat SpeexNarrow_15k(
     OPAL_SPEEX_NARROW_15k,
     RTP_DataFrame::DynamicBase,
-    "SPEEX",
+    OPAL_SPEEX_NARROW_15k,
     Speex_Bytes_Per_Frame(5, 8000),
     NARROW_SAMPLES_PER_FRAME, // 20 milliseconds
     1, 1);
@@ -237,7 +241,7 @@ const OpalAudioFormat & GetOpalSpeexNarrow_18k2()
   static const OpalAudioFormat SpeexNarrow_18k2(
     OPAL_SPEEX_NARROW_18k2,
     RTP_DataFrame::DynamicBase,
-    "SPEEX",
+    OPAL_SPEEX_NARROW_18k2,
     Speex_Bytes_Per_Frame(6, 8000),
     NARROW_SAMPLES_PER_FRAME, // 20 milliseconds
     1, 1);
