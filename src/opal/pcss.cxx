@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2027  2005/12/27 20:48:43  dsandras
+ * Revision 1.2028  2005/12/27 22:25:55  dsandras
+ * Added propagation of the callback to the pcss endpoint.
+ *
+ * Revision 2.26  2005/12/27 20:48:43  dsandras
  * Added media format parameter when opening the sound channel so that its
  * parameters can be used in the body of the method.
  * Added wideband support when opening the channel.
@@ -310,6 +313,11 @@ BOOL OpalPCSSEndPoint::OnShowUserInput(const OpalPCSSConnection &, const PString
 }
 
 
+void OpalPCSSEndPoint::OnPatchMediaStream(const OpalPCSSConnection & /*connection*/, BOOL /*isSource*/, OpalMediaPatch & /*patch*/)
+{
+}
+
+
 BOOL OpalPCSSEndPoint::SetSoundChannelPlayDevice(const PString & name)
 {
   return SetDeviceName(name, PSoundChannel::Player, soundChannelPlayDevice);
@@ -452,6 +460,8 @@ void OpalPCSSConnection::OnPatchMediaStream(BOOL isSource,
     echoCanceler->SetParameters(endpoint.GetManager().GetEchoCancelParams());
     patch.AddFilter(isSource?echoCanceler->GetReceiveHandler():echoCanceler->GetSendHandler(), OpalPCM16);
   }
+
+  endpoint.OnPatchMediaStream(*this, isSource, patch);
 }
 
 
