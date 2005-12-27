@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ilbccodec.cxx,v $
- * Revision 1.2008  2005/11/20 21:03:10  dsandras
+ * Revision 1.2009  2005/12/27 20:44:30  dsandras
+ * Use the encoding name only for the default version of the codec.
+ *
+ * Revision 2.7  2005/11/20 21:03:10  dsandras
  * Fixed format name.
  *
  * Revision 2.6  2005/08/28 07:59:17  rjongbloed
@@ -92,7 +95,7 @@ const OpalAudioFormat & GetOpal_iLBC_15k2()
   static const OpalAudioFormat iLBC_15k2(
     OPAL_ILBC_15k2,
     RTP_DataFrame::DynamicBase,
-    "iLBC",
+    OPAL_ILBC_15k2,
     NO_OF_BYTES_20MS,
     BLOCKL_20MS,
     7, 4);
