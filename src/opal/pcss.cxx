@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2028  2005/12/27 22:25:55  dsandras
+ * Revision 1.2029  2005/12/28 20:03:00  dsandras
+ * Attach the silence detector in OnPatchMediaStream so that it can be attached
+ * before the echo cancellation filter.
+ *
+ * Revision 2.27  2005/12/27 22:25:55  dsandras
  * Added propagation of the callback to the pcss endpoint.
  *
  * Revision 2.26  2005/12/27 20:48:43  dsandras
@@ -435,28 +439,16 @@ OpalMediaStream * OpalPCSSConnection::CreateMediaStream(const OpalMediaFormat & 
 }
 
 
-BOOL OpalPCSSConnection::OnOpenMediaStream(OpalMediaStream & mediaStream)
-{
-  if (!OpalConnection::OnOpenMediaStream(mediaStream))
-    return FALSE;
-
-  if (mediaStream.IsSource()) {
-    OpalMediaPatch * patch = mediaStream.GetPatch();
-    if (patch != NULL && mediaStream.GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
-      silenceDetector->SetParameters(endpoint.GetManager().GetSilenceDetectParams());
-      patch->AddFilter(silenceDetector->GetReceiveHandler(), OpalPCM16);
-    }
-  }
-
-  return TRUE;
-}
-
-
 void OpalPCSSConnection::OnPatchMediaStream(BOOL isSource,
 					    OpalMediaPatch & patch)
 {
   PTRACE(3, "OpalCon\tNew patch created");
   if (patch.GetSource().GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
+    if (isSource) {
+
+      silenceDetector->SetParameters(endpoint.GetManager().GetSilenceDetectParams());
+      patch.AddFilter(silenceDetector->GetReceiveHandler(), OpalPCM16);
+    }
     echoCanceler->SetParameters(endpoint.GetManager().GetEchoCancelParams());
     patch.AddFilter(isSource?echoCanceler->GetReceiveHandler():echoCanceler->GetSendHandler(), OpalPCM16);
   }

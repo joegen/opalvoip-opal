@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.h,v $
- * Revision 1.2019  2005/12/27 22:25:55  dsandras
+ * Revision 1.2020  2005/12/28 20:03:00  dsandras
+ * Attach the silence detector in OnPatchMediaStream so that it can be attached
+ * before the echo cancellation filter.
+ *
+ * Revision 2.18  2005/12/27 22:25:55  dsandras
  * Added propagation of the callback to the pcss endpoint.
  *
  * Revision 2.17  2005/12/27 20:48:01  dsandras
@@ -401,27 +405,12 @@ class OpalPCSSConnection : public OpalConnection
       BOOL isSource                        ///<  Is a source stream
     );
 
-    /**Call back when opening a media stream.
-       This function is called when a connection has created a new media
-       stream according to the logic of its underlying protocol.
-
-       The usual requirement is that media streams are created on all other
-       connections participating in the call and all of the media streams are
-       attached to an instance of an OpalMediaPatch object that will read from
-       one of the media streams passing data to the other media streams.
-
-       The default behaviour calls the ancestor and adds a PCM silence
-       detector filter.
-      */
-    virtual BOOL OnOpenMediaStream(
-      OpalMediaStream & stream    ///<  New media stream being opened
-    );
-
     /**Call back when patching a media stream.
        This function is called when a connection has created a new media
        patch between two streams.
        Add the echo canceler patch and call the endpoint function of
        the same name.
+       Add a PCM silence detector filter.
       */
     virtual void OnPatchMediaStream(
       BOOL isSource,
