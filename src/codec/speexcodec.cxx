@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.cxx,v $
- * Revision 1.2011  2005/12/28 16:05:24  dsandras
+ * Revision 1.2012  2005/12/28 20:01:52  dsandras
+ * Reverted mode to mode 6. Get rid of encoder_frame_size.
+ *
+ * Revision 2.10  2005/12/28 16:05:24  dsandras
  * Changed speex mode to 8.
  *
  * Revision 2.9  2005/12/27 20:52:22  dsandras
@@ -482,7 +485,6 @@ Opal_Speex_Encoder::Opal_Speex_Encoder(const OpalMediaFormat & outputMediaFormat
   else
     encoder = speex_encoder_init(&speex_wb_mode);
   speex_encoder_ctl(encoder, SPEEX_SET_MODE, &mode);
-  speex_encoder_ctl(encoder, SPEEX_GET_FRAME_SIZE, &encoder_frame_size);
   samples_per_frame = (sampleRate == 8000)?NARROW_SAMPLES_PER_FRAME:WIDE_SAMPLES_PER_FRAME;
   PTRACE(3, "Codec\tSpeex encoder created");
 }
@@ -507,7 +509,7 @@ BOOL Opal_Speex_Encoder::ConvertFrame(const BYTE * src, BYTE * dst)
   speex_bits_reset(bits); 
   speex_encode(encoder, floatData, bits); 
 
-  speex_bits_write(bits, (char *)dst, encoder_frame_size); 
+  speex_bits_write(bits, (char *)dst, outputBytesPerFrame); 
 
   return TRUE;
 }
@@ -576,13 +578,13 @@ Opal_PCM_Speex_18k2::Opal_PCM_Speex_18k2()
 
 
 Opal_Speex_20k6_PCM::Opal_Speex_20k6_PCM()
-  : Opal_Speex_Decoder(OpalSpeexWide_20k6, 8, 16000)
+  : Opal_Speex_Decoder(OpalSpeexWide_20k6, 6, 16000)
 {
 }
 
 
 Opal_PCM_Speex_20k6::Opal_PCM_Speex_20k6()
-  : Opal_Speex_Encoder(OpalSpeexWide_20k6, 8, 16000)
+  : Opal_Speex_Encoder(OpalSpeexWide_20k6, 6, 16000)
 {
 }
 

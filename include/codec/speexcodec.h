@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.h,v $
- * Revision 1.2009  2005/12/24 17:52:08  dsandras
+ * Revision 1.2010  2005/12/28 20:01:52  dsandras
+ * Reverted mode to mode 6. Get rid of encoder_frame_size.
+ *
+ * Revision 2.8  2005/12/24 17:52:08  dsandras
  * Fixed calls to speex_encoder_ctl so that the correct mode is used. Added support for the mode 6 wideband codec.
  *
  * Revision 2.7  2005/11/30 13:35:26  csoutheren
@@ -282,7 +285,6 @@ class Opal_Speex_Encoder : public Opal_Speex_Transcoder {
     virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
   protected:
     void   * encoder;
-    unsigned encoder_frame_size;
     int      samples_per_frame;
 };
 
