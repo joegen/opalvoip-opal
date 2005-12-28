@@ -23,6 +23,9 @@
  * Contributor(s): Miguel Rodriguez Perez.
  *
  * $Log: echocancel.cxx,v $
+ * Revision 1.6  2005/12/28 20:03:36  dsandras
+ * Do not cancel echo when the frame is silent.
+ *
  * Revision 1.5  2005/12/25 11:49:01  dsandras
  * Return if Read is unsuccessful.
  *
@@ -127,6 +130,12 @@ void OpalEchoCanceler::SetParameters(const Params& newParam)
 
 void OpalEchoCanceler::SentPacket(RTP_DataFrame& echo_frame, INT)
 {
+  if (echo_frame.GetPayloadSize() == 0)
+    return;
+
+  if (param.m_mode == NoCancelation)
+    return;
+
   /* Write to the soundcard, and write the frame to the PQueueChannel */
   echo_chan->Write(echo_frame.GetPayloadPtr(), echo_frame.GetPayloadSize());
 }
@@ -136,6 +145,9 @@ void OpalEchoCanceler::ReceivedPacket(RTP_DataFrame& input_frame, INT)
 {
   int inputSize = 0;
   int i = 1;
+  
+  if (input_frame.GetPayloadSize() == 0)
+    return;
   
   if (param.m_mode == NoCancelation)
     return;
