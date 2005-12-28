@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.cxx,v $
- * Revision 1.2010  2005/12/27 20:52:22  dsandras
+ * Revision 1.2011  2005/12/28 16:05:24  dsandras
+ * Changed speex mode to 8.
+ *
+ * Revision 2.9  2005/12/27 20:52:22  dsandras
  * Use SPEEX encoding name only for the default versions of Speex defined
  * in the draft.
  *
@@ -573,13 +576,13 @@ Opal_PCM_Speex_18k2::Opal_PCM_Speex_18k2()
 
 
 Opal_Speex_20k6_PCM::Opal_Speex_20k6_PCM()
-  : Opal_Speex_Decoder(OpalSpeexWide_20k6, 6, 16000)
+  : Opal_Speex_Decoder(OpalSpeexWide_20k6, 8, 16000)
 {
 }
 
 
 Opal_PCM_Speex_20k6::Opal_PCM_Speex_20k6()
-  : Opal_Speex_Encoder(OpalSpeexWide_20k6, 6, 16000)
+  : Opal_Speex_Encoder(OpalSpeexWide_20k6, 8, 16000)
 {
 }
 
