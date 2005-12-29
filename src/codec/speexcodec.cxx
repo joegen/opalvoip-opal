@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.cxx,v $
- * Revision 1.2012  2005/12/28 20:01:52  dsandras
+ * Revision 1.2013  2005/12/29 16:22:33  dsandras
+ * Simplified code and fixed wideband support.
+ *
+ * Revision 2.11  2005/12/28 20:01:52  dsandras
  * Reverted mode to mode 6. Get rid of encoder_frame_size.
  *
  * Revision 2.10  2005/12/28 16:05:24  dsandras
@@ -283,7 +286,7 @@ SpeexNonStandardAudioCapability::SpeexNonStandardAudioCapability(int mode,
   if (sampleRate == 8000)
     s << "Speex bs" << speex_nb_mode.bitstream_version << " Narrow" << mode;
   else
-    s << "Speex bs" << speex_nb_mode.bitstream_version << " Wide" << mode;
+    s << "Speex bs" << speex_wb_mode.bitstream_version << " Wide" << mode;
   PINDEX len = s.GetLength();
   memcpy(nonStandardData.GetPointer(len), (const char *)s, len);
 }
@@ -454,22 +457,9 @@ Opal_Speex_Decoder::~Opal_Speex_Decoder()
 
 BOOL Opal_Speex_Decoder::ConvertFrame(const BYTE * src, BYTE * dst)
 {
-  float floatData[samples_per_frame];
-
-  // decode Speex data to floats
+  speex_bits_reset(bits);
   speex_bits_read_from(bits, (char *)src, inputBytesPerFrame); 
-  speex_decode(decoder, bits, floatData); 
-
-  // convert float to PCM
-  PINDEX i;
-  for (i = 0; i < samples_per_frame; i++) {
-    float sample = floatData[i];
-    if (sample < MinSampleValue)
-      sample = MinSampleValue;
-    else if (sample > MaxSampleValue)
-      sample = MaxSampleValue;
-    ((short*)dst)[i] = (short)sample;
-  }
+  speex_decode_int(decoder, bits, (short *) dst); 
 
   return TRUE;
 }
@@ -478,7 +468,7 @@ BOOL Opal_Speex_Decoder::ConvertFrame(const BYTE * src, BYTE * dst)
 ///////////////////////////////////////////////////////////////////////////////
 
 Opal_Speex_Encoder::Opal_Speex_Encoder(const OpalMediaFormat & outputMediaFormat, int mode, int sampleRate)
-  : Opal_Speex_Transcoder(OpalPCM16, outputMediaFormat, (sampleRate == 8000)?NARROW_SAMPLES_PER_FRAME*2:WIDE_SAMPLES_PER_FRAME, Speex_Bytes_Per_Frame(mode, sampleRate))
+  : Opal_Speex_Transcoder(OpalPCM16, outputMediaFormat, (sampleRate == 8000)?NARROW_SAMPLES_PER_FRAME*2:WIDE_SAMPLES_PER_FRAME*2, Speex_Bytes_Per_Frame(mode, sampleRate))
 {
   if (sampleRate == 8000)
     encoder = speex_encoder_init(&speex_nb_mode);
@@ -499,15 +489,8 @@ Opal_Speex_Encoder::~Opal_Speex_Encoder()
 
 BOOL Opal_Speex_Encoder::ConvertFrame(const BYTE * src, BYTE * dst)
 {
-  // convert PCM to float
-  float floatData[samples_per_frame];
-  PINDEX i;
-  for (i = 0; i < samples_per_frame; i++)
-    floatData[i] = ((short *)src)[i];
-
-  // encode PCM data in sampleBuffer to buffer
   speex_bits_reset(bits); 
-  speex_encode(encoder, floatData, bits); 
+  speex_encode_int(encoder, (short *) src, bits); 
 
   speex_bits_write(bits, (char *)dst, outputBytesPerFrame); 
 
