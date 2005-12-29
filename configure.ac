@@ -171,7 +171,6 @@ C_FILE
       AC_MSG_RESULT(cannot determine - using library version)
     else
       SYSVER=`./t`
-      rm -f t t.c
       AC_MSG_RESULT($SYSVER)
       AC_MSG_CHECKING(library Speex version)
       LIBVER=`grep "#define VERSION" ./src/codec/speex/libspeex/misc.h | sed -e 's/^.*[Ss][Pp][Ee][Ee][Xx]\-//' -e 's/\"//'`
@@ -211,6 +210,7 @@ P_FILE
         AC_SUBST(OPAL_SYSTEM_SPEEX, 1)
       fi
     fi
+    rm -f t t.c
   fi
 fi
 
