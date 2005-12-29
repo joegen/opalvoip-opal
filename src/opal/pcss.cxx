@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2029  2005/12/28 20:03:00  dsandras
+ * Revision 1.2030  2005/12/29 16:23:09  dsandras
+ * Use the correct clock rate for the canceller.
+ *
+ * Revision 2.28  2005/12/28 20:03:00  dsandras
  * Attach the silence detector in OnPatchMediaStream so that it can be attached
  * before the echo cancellation filter.
  *
@@ -443,13 +446,15 @@ void OpalPCSSConnection::OnPatchMediaStream(BOOL isSource,
 					    OpalMediaPatch & patch)
 {
   PTRACE(3, "OpalCon\tNew patch created");
+  int clockRate;
   if (patch.GetSource().GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
     if (isSource) {
-
       silenceDetector->SetParameters(endpoint.GetManager().GetSilenceDetectParams());
       patch.AddFilter(silenceDetector->GetReceiveHandler(), OpalPCM16);
     }
+    clockRate = patch.GetSource().GetMediaFormat().GetClockRate();
     echoCanceler->SetParameters(endpoint.GetManager().GetEchoCancelParams());
+    echoCanceler->SetClockRate(clockRate);
     patch.AddFilter(isSource?echoCanceler->GetReceiveHandler():echoCanceler->GetSendHandler(), OpalPCM16);
   }
 
