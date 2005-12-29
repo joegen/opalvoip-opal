@@ -23,6 +23,9 @@
  * Contributor(s): Miguel Rodriguez Perez
  *
  * $Log: echocancel.h,v $
+ * Revision 1.4  2005/12/29 16:20:53  dsandras
+ * Added wideband support to the echo canceller.
+ *
  * Revision 1.3  2005/11/25 21:00:38  dsandras
  * Remove the DC or the algorithm is puzzled. Added several post-processing filters. Added missing declaration.
  *
@@ -75,17 +78,24 @@ public:
   ~OpalEchoCanceler();
   //@}
 
+
   /**@@name Basic operations */
   //@{
     const PNotifier & GetReceiveHandler() const { return receiveHandler; }
     const PNotifier & GetSendHandler() const {return sendHandler; }
 
+    
     /**Set the silence detector parameters.
-       This enables, disables the silence detector as well as adjusting its
-       "agression". The deadband periods are in audio samples of 8kHz.
       */
     void SetParameters(
-      const Params & newParam /// New parameters for silence detector
+      const Params & newParam ///> New parameters for silence detector
+    );
+
+
+    /**Set the clock rate for the preprocessor
+     */
+    void SetClockRate(
+      const int clockRate     ///> Clock Rate for the preprocessor
     );
 
 protected:
@@ -100,6 +110,7 @@ protected:
 private:
 
   double mean;
+  int clockRate;
   PQueueChannel *echo_chan;
   SpeexEchoState *echoState;
   SpeexPreprocessState *preprocessState;

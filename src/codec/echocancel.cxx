@@ -23,6 +23,9 @@
  * Contributor(s): Miguel Rodriguez Perez.
  *
  * $Log: echocancel.cxx,v $
+ * Revision 1.7  2005/12/29 16:20:53  dsandras
+ * Added wideband support to the echo canceller.
+ *
  * Revision 1.6  2005/12/28 20:03:36  dsandras
  * Do not cancel echo when the frame is silent.
  *
@@ -88,6 +91,7 @@ OpalEchoCanceler::OpalEchoCanceler()
   echo_chan->SetWriteTimeout(10);
 
   mean = 0;
+  clockRate = 8000;
 
   PTRACE(3, "Echo Canceler\tHandler created");
 }
@@ -128,6 +132,12 @@ void OpalEchoCanceler::SetParameters(const Params& newParam)
 }
 
 
+void OpalEchoCanceler::SetClockRate(const int rate)
+{
+  clockRate = rate;
+}
+
+
 void OpalEchoCanceler::SentPacket(RTP_DataFrame& echo_frame, INT)
 {
   if (echo_frame.GetPayloadSize() == 0)
@@ -158,7 +168,7 @@ void OpalEchoCanceler::ReceivedPacket(RTP_DataFrame& input_frame, INT)
     echoState = speex_echo_state_init(inputSize/sizeof(short), 8*inputSize);
   
   if (preprocessState == NULL) { 
-    preprocessState = speex_preprocess_state_init(inputSize/sizeof(short), 8000);
+    preprocessState = speex_preprocess_state_init(inputSize/sizeof(short), clockRate);
     speex_preprocess_ctl(preprocessState, SPEEX_PREPROCESS_SET_DENOISE, &i);
     speex_preprocess_ctl(preprocessState, SPEEX_PREPROCESS_SET_DEREVERB, &i);
   }
