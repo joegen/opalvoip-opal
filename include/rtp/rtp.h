@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2021  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2022  2005/12/30 14:29:15  dsandras
+ * Removed the assumption that the jitter will contain a 8 kHz signal.
+ *
+ * Revision 2.20  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.19  2005/04/11 17:34:57  dsandras
@@ -562,6 +565,7 @@ class RTP_Session : public PObject
     void SetJitterBufferSize(
       unsigned minJitterDelay, ///<  Minimum jitter buffer delay in RTP timestamp units
       unsigned maxJitterDelay, ///<  Maximum jitter buffer delay in RTP timestamp units
+      unsigned timeUnits = 8,  ///<  Time Units
       PINDEX stackSize = 30000 ///<  Stack size for jitter thread
     );
 
@@ -571,6 +575,10 @@ class RTP_Session : public PObject
        the SetJitterBufferSize() function.
       */
     unsigned GetJitterBufferSize() const;
+    
+    /**Get current time units of the jitter buffer.
+     */
+    unsigned GetJitterTimeUnits() const;
 
     /**Modifies the QOS specifications for this RTP session*/
     virtual BOOL ModifyQOS(RTP_QOS * )

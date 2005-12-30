@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.h,v $
- * Revision 1.2008  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2009  2005/12/30 14:29:15  dsandras
+ * Removed the assumption that the jitter will contain a 8 kHz signal.
+ *
+ * Revision 2.7  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.6  2004/02/19 10:47:01  rjongbloed
@@ -125,6 +128,7 @@ class RTP_JitterBuffer : public PThread
       RTP_Session & session,   ///<  Associated RTP session tor ead data from
       unsigned minJitterDelay, ///<  Minimum delay in RTP timestamp units
       unsigned maxJitterDelay, ///<  Maximum delay in RTP timestamp units
+      unsigned timeUnits = 8,  ///<  Time units, usually 8 or 16
       PINDEX stackSize = 30000 ///<  Stack size for jitter thread
     );
     ~RTP_JitterBuffer();
@@ -153,6 +157,10 @@ class RTP_JitterBuffer : public PThread
       */
     DWORD GetJitterTime() const { return currentJitterTime; }
 
+    /**Get time units.
+      */
+    unsigned GetTimeUnits() const { return timeUnits; }
+    
     /**Get total number received packets too late to go into jitter buffer.
       */
     DWORD GetPacketsTooLate() const { return packetsTooLate; }
@@ -187,6 +195,7 @@ class RTP_JitterBuffer : public PThread
     DWORD         maxJitterTime;
     DWORD         maxConsecutiveMarkerBits;
 
+    unsigned timeUnits;
     unsigned currentDepth;
     DWORD    currentJitterTime;
     DWORD    packetsTooLate;

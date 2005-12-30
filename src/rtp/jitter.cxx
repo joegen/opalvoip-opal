@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.cxx,v $
- * Revision 1.2010  2005/09/22 18:17:42  dsandras
+ * Revision 1.2011  2005/12/30 14:29:15  dsandras
+ * Removed the assumption that the jitter will contain a 8 kHz signal.
+ *
+ * Revision 2.9  2005/09/22 18:17:42  dsandras
  * Fixed problems with jitter being restarted.
  *
  * Revision 2.8  2005/08/04 17:18:37  dsandras
@@ -232,6 +235,7 @@ class RTP_JitterBufferAnalyser : public PObject
 RTP_JitterBuffer::RTP_JitterBuffer(RTP_Session & sess,
                                    unsigned minJitterDelay,
                                    unsigned maxJitterDelay,
+				   unsigned time,
                                    PINDEX stackSize)
   : PThread(stackSize, NoAutoDeleteThread, HighestPriority, "RTP Jitter:%x"),
     session(sess)
@@ -247,10 +251,11 @@ RTP_JitterBuffer::RTP_JitterBuffer(RTP_Session & sess,
   maxJitterTime = maxJitterDelay;
   currentJitterTime = minJitterDelay;
   targetJitterTime = currentJitterTime;
+  timeUnits = time;
 
   // Calculate number of frames to allocate, we make the assumption that the
-  // smallest packet we can possibly get is 5ms long (assuming audio 8kHz unit).
-  bufferSize = maxJitterTime/40+1;
+  // smallest packet we can possibly get is 5ms long.
+  bufferSize = maxJitterTime/(5*timeUnits)+1;
 
   // Nothing in the buffer so far
   currentDepth = 0;
@@ -287,7 +292,7 @@ RTP_JitterBuffer::RTP_JitterBuffer(RTP_Session & sess,
   PTRACE(2, "RTP\tJitter buffer created:"
             " size=" << bufferSize <<
             " delay=" << minJitterTime << '-' << maxJitterTime << '/' << currentJitterTime <<
-            " (" << (currentJitterTime/8) << "ms)"
+            " (" << (currentJitterTime/timeUnits) << "ms)"
             " obj=" << this);
 
 #if PTRACING && !defined(NO_ANALYSER)
@@ -372,7 +377,7 @@ void RTP_JitterBuffer::SetDelay(unsigned minJitterDelay, unsigned maxJitterDelay
     PTRACE(2, "RTP\tJitter buffer restarted:"
               " size=" << bufferSize <<
               " delay=" << minJitterTime << '-' << maxJitterTime << '/' << currentJitterTime <<
-              " (" << (currentJitterTime/8) << "ms)");
+              " (" << (currentJitterTime/timeUnits) << "ms)");
     Restart();
   }
 
@@ -566,7 +571,7 @@ BOOL RTP_JitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
                           targetJitterTime : (newestTimestamp - oldestTimestamp);
 
     PTRACE(3, "RTP\tJitter buffer size decreased to "
-           << currentJitterTime << " (" << (currentJitterTime/8) << "ms)");
+           << currentJitterTime << " (" << (currentJitterTime/timeUnits) << "ms)");
   }
 
   /* See if time for this packet, if our oldest frame is older than the
@@ -590,7 +595,7 @@ BOOL RTP_JitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
     */
 
     // If oldest frame has not been in the buffer long enough, don't return anything yet
-    if ((PTimer::Tick() - oldestFrame->tick).GetInterval() * 8
+    if ((PTimer::Tick() - oldestFrame->tick).GetInterval() * timeUnits
          < currentJitterTime / 2) {
 #if PTRACING && !defined(NO_ANALYSER)
       analyser->Out(oldestTimestamp, currentDepth, "PreBuf");
@@ -607,7 +612,7 @@ BOOL RTP_JitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
   BOOL shortSilence = FALSE;
   if (consecutiveMarkerBits < maxConsecutiveMarkerBits) {
       if (oldestFrame->GetMarker() &&
-          (PTimer::Tick() - oldestFrame->tick).GetInterval()* 8 < currentJitterTime / 2)
+          (PTimer::Tick() - oldestFrame->tick).GetInterval()* timeUnits < currentJitterTime / 2)
         shortSilence = TRUE;
   }
   else if (timestamp < oldestTimestamp && timestamp > (newestTimestamp - currentJitterTime))
@@ -652,7 +657,7 @@ BOOL RTP_JitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
     }
     else {  
       thisJitter = (currentWriteFrame->tick -
-                   lastWriteTick).GetInterval()*8 +
+                   lastWriteTick).GetInterval()*timeUnits +
                    lastWriteTimestamp -
                    currentWriteFrame->GetTimestamp();
     }
@@ -678,7 +683,7 @@ BOOL RTP_JitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
       if (thisJitter > (int) targetJitterTime * LOWER_JITTER_MAX_PCNT / 100) {
         targetJitterTime = thisJitter * 100 / LOWER_JITTER_MAX_PCNT;
         PTRACE(3, "RTP\tJitter buffer target size increased to "
-                   << targetJitterTime << " (" << (targetJitterTime/8) << "ms)");
+                   << targetJitterTime << " (" << (targetJitterTime/timeUnits) << "ms)");
       }
 
     }
@@ -768,7 +773,7 @@ BOOL RTP_JitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
 
       targetJitterTime = currentJitterTime;
       PTRACE(3, "RTP\tJitter buffer size increased to "
-             << currentJitterTime << " (" << (currentJitterTime/8) << "ms)");
+             << currentJitterTime << " (" << (currentJitterTime/timeUnits) << "ms)");
     }
   }
 
@@ -779,7 +784,7 @@ BOOL RTP_JitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
     if (jitterCalc < minJitterTime) jitterCalc = minJitterTime;
     targetJitterTime = jitterCalc;
     PTRACE(3, "RTP\tJitter buffer target size decreased to "
-               << targetJitterTime << " (" << (targetJitterTime/8) << "ms)");
+               << targetJitterTime << " (" << (targetJitterTime/timeUnits) << "ms)");
     jitterCalc = 0;
     jitterCalcPacketCount = 0;
     consecutiveEarlyPacketStartTime = PTimer::Tick();
@@ -818,7 +823,7 @@ BOOL RTP_JitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
 
     currentJitterTime = targetJitterTime;
     PTRACE(3, "RTP\tJitter buffer size decreased to "
-        << currentJitterTime << " (" << (currentJitterTime/8) << "ms)");
+        << currentJitterTime << " (" << (currentJitterTime/timeUnits) << "ms)");
 
   }
 
