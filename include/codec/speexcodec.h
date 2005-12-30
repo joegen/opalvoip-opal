@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.h,v $
- * Revision 1.2010  2005/12/28 20:01:52  dsandras
+ * Revision 1.2011  2005/12/30 14:33:12  dsandras
+ * Added support for Packet Loss Concealment frames for framed codecs supporting it similarly to what was done for OpenH323.
+ *
+ * Revision 2.9  2005/12/28 20:01:52  dsandras
  * Reverted mode to mode 6. Get rid of encoder_frame_size.
  *
  * Revision 2.8  2005/12/24 17:52:08  dsandras
@@ -266,6 +269,7 @@ class Opal_Speex_Decoder : public Opal_Speex_Transcoder {
     );
     ~Opal_Speex_Decoder();
     virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
+    virtual BOOL ConvertSilentFrame(BYTE * dst);
   protected:
     void * decoder;
     int    samples_per_frame;
