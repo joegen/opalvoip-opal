@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2019  2005/12/21 20:39:15  dsandras
+ * Revision 1.2020  2005/12/30 14:33:12  dsandras
+ * Added support for Packet Loss Concealment frames for framed codecs supporting it similarly to what was done for OpenH323.
+ *
+ * Revision 2.18  2005/12/21 20:39:15  dsandras
  * Prevent recursion when executing a command on a stream.
  *
  * Revision 2.17  2005/11/25 21:02:19  dsandras
@@ -430,13 +433,16 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
   if (!writeSuccessful)
     return false;
 
-  if (primaryCodec == NULL || sourceFrame.GetPayloadSize() == 0)
+  if (primaryCodec == NULL)
     return writeSuccessful = stream->WritePacket(sourceFrame);
 
   if (!primaryCodec->ConvertFrames(sourceFrame, intermediateFrames)) {
     PTRACE(1, "Patch\tMedia conversion (primary) failed");
     return false;
   }
+
+  if (sourceFrame.GetPayloadSize() == 0)
+    return writeSuccessful = stream->WritePacket(sourceFrame);
 
   for (PINDEX i = 0; i < intermediateFrames.GetSize(); i++) {
     RTP_DataFrame & intermediateFrame = intermediateFrames[i];
