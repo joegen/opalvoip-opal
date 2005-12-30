@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2021  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2022  2005/12/30 14:33:12  dsandras
+ * Added support for Packet Loss Concealment frames for framed codecs supporting it similarly to what was done for OpenH323.
+ *
+ * Revision 2.20  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.19  2005/09/06 12:44:49  rjongbloed
@@ -428,6 +431,9 @@ class OpalFramedTranscoder : public OpalTranscoder
       PINDEX & consumed,    ///<  number of input bytes consumed
       BYTE * output,        ///<  Output data
       PINDEX & created      ///<  number of output bytes created  
+    );
+    virtual BOOL ConvertSilentFrame(
+      BYTE * output         ///<  Output data
     );
   //@}
 

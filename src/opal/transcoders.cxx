@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2017  2005/09/13 20:48:22  dominance
+ * Revision 1.2018  2005/12/30 14:33:12  dsandras
+ * Added support for Packet Loss Concealment frames for framed codecs supporting it similarly to what was done for OpenH323.
+ *
+ * Revision 2.16  2005/09/13 20:48:22  dominance
  * minor cleanups needed to support mingw compilation. Thanks goes to Julien Puydt.
  *
  * Revision 2.15  2005/09/06 12:44:49  rjongbloed
@@ -334,8 +337,14 @@ BOOL OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFrame & 
 {
   const BYTE * inputPtr = input.GetPayloadPtr();
   PINDEX inputLength = input.GetPayloadSize();
-  output.SetPayloadSize(inputLength/inputBytesPerFrame*outputBytesPerFrame);
   BYTE * outputPtr = output.GetPayloadPtr();
+
+  if (inputLength == 0) {
+    output.SetPayloadSize(outputBytesPerFrame);
+    return ConvertSilentFrame (outputPtr);
+  }
+
+  output.SetPayloadSize(inputLength/inputBytesPerFrame*outputBytesPerFrame);
 
   while (inputLength > 0) {
     PINDEX consumed = inputBytesPerFrame;
@@ -349,6 +358,7 @@ BOOL OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFrame & 
     inputLength -= consumed;
   }
 
+
   return TRUE;
 }
 
@@ -360,6 +370,12 @@ BOOL OpalFramedTranscoder::ConvertFrame(const BYTE * inputPtr, PINDEX & /*consum
 BOOL OpalFramedTranscoder::ConvertFrame(const BYTE * /*inputPtr*/, BYTE * /*outputPtr*/)
 {
   return FALSE;
+}
+
+BOOL OpalFramedTranscoder::ConvertSilentFrame(BYTE *dst)
+{
+  memset(dst, 0, outputBytesPerFrame);
+  return TRUE;
 }
 
 /////////////////////////////////////////////////////////////////////////////
