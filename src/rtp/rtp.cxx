@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2025  2005/11/29 11:50:20  dsandras
+ * Revision 1.2026  2005/12/30 14:29:15  dsandras
+ * Removed the assumption that the jitter will contain a 8 kHz signal.
+ *
+ * Revision 2.24  2005/11/29 11:50:20  dsandras
  * Use PWaitAndSignal so that it works even if no AddSession follows the UseSession. Added missing ignoreOtherSources check.
  *
  * Revision 2.23  2005/11/22 22:37:57  dsandras
@@ -858,6 +861,7 @@ void RTP_Session::SetUserData(RTP_UserData * data, BOOL autoDelete)
 
 void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
 				      unsigned maxJitterDelay,
+				      unsigned timeUnits,
 				      PINDEX stackSize)
 {
   if (minJitterDelay == 0 && maxJitterDelay == 0) {
@@ -868,7 +872,7 @@ void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
     jitter->SetDelay(minJitterDelay, maxJitterDelay);
   else {
     SetIgnoreOutOfOrderPackets(FALSE);
-    jitter = new RTP_JitterBuffer(*this, minJitterDelay, maxJitterDelay, stackSize);
+    jitter = new RTP_JitterBuffer(*this, minJitterDelay, maxJitterDelay, timeUnits, stackSize);
   }
 }
 
@@ -876,6 +880,11 @@ void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
 unsigned RTP_Session::GetJitterBufferSize() const
 {
   return jitter != NULL ? jitter->GetJitterTime() : 0;
+}
+
+unsigned RTP_Session::GetJitterTimeUnits() const
+{
+  return jitter != NULL ? jitter->GetTimeUnits() : 0;
 }
 
 
