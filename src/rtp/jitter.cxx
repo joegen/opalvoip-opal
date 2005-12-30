@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.cxx,v $
- * Revision 1.2011  2005/12/30 14:29:15  dsandras
+ * Revision 1.2012  2005/12/30 15:22:40  dsandras
+ * Synchronized with MIMAS OpenH323 version.
+ *
+ * Revision 2.10  2005/12/30 14:29:15  dsandras
  * Removed the assumption that the jitter will contain a 8 kHz signal.
  *
  * Revision 2.9  2005/09/22 18:17:42  dsandras
@@ -519,8 +522,8 @@ BOOL RTP_JitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
   /*Free the frame just written to codec, putting it back into
     the free list and clearing the parking spot for it.
    */
+  bufferMutex.Wait();
   if (currentWriteFrame != NULL) {
-    bufferMutex.Wait();
 
     // Move frame from current to free list
     currentWriteFrame->next = freeFrames;
@@ -529,9 +532,8 @@ BOOL RTP_JitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
     freeFrames = currentWriteFrame;
 
     currentWriteFrame = NULL;
-
-    bufferMutex.Signal();
   }
+  bufferMutex.Signal();
 
 
   // Default response is an empty frame, ie silence
