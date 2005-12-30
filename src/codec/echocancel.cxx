@@ -23,6 +23,9 @@
  * Contributor(s): Miguel Rodriguez Perez.
  *
  * $Log: echocancel.cxx,v $
+ * Revision 1.8  2005/12/30 14:33:47  dsandras
+ * Denoise the signal even when there is no echo to remove in it.
+ *
  * Revision 1.7  2005/12/29 16:20:53  dsandras
  * Added wideband support to the echo canceller.
  *
@@ -182,16 +185,24 @@ void OpalEchoCanceler::ReceivedPacket(RTP_DataFrame& input_frame, INT)
   if (ref_buf == NULL)
     ref_buf = (short *) malloc(inputSize);
 
-  /* Read from the PQueueChannel a reference echo frame of the size
-   * of the captured frame. */
-  if (!echo_chan->Read(echo_buf, input_frame.GetPayloadSize()))
-    return;
-
   /* Remove the DC offset */
   short *j = (short *) input_frame.GetPayloadPtr();
   for (int i = 0 ; i < (int) (inputSize/sizeof(short)) ; i++) {
     mean = 0.999*mean + 0.001*j[i];
     ref_buf[i] = j[i] - (short) mean;
+  }
+  
+  /* Read from the PQueueChannel a reference echo frame of the size
+   * of the captured frame. */
+  if (!echo_chan->Read(echo_buf, input_frame.GetPayloadSize())) {
+    
+    /* Nothing to read from the speaker signal, only suppress the noise
+     * and return.
+     */
+    speex_preprocess(preprocessState, e_buf, NULL);
+    memcpy(input_frame.GetPayloadPtr(), e_buf, input_frame.GetPayloadSize());
+
+    return;
   }
    
   /* Cancel the echo in this frame */
