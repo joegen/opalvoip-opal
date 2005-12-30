@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2039  2005/09/06 12:44:49  rjongbloed
+ * Revision 1.2040  2005/12/30 14:30:02  dsandras
+ * Removed the assumption that the jitter will contain a 8 kHz signal.
+ *
+ * Revision 2.38  2005/09/06 12:44:49  rjongbloed
  * Many fixes to finalise the video processing: merging remote media
  *
  * Revision 2.37  2005/09/04 06:23:39  rjongbloed
@@ -609,7 +612,8 @@ void OpalRTPMediaStream::EnableJitterBuffer() const
 {
   if (mediaFormat.NeedsJitterBuffer())
     rtpSession.SetJitterBufferSize(minAudioJitterDelay*mediaFormat.GetTimeUnits(),
-                                   maxAudioJitterDelay*mediaFormat.GetTimeUnits());
+                                   maxAudioJitterDelay*mediaFormat.GetTimeUnits(),
+				   mediaFormat.GetTimeUnits());
 }
 
 
