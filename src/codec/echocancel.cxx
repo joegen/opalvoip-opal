@@ -23,6 +23,9 @@
  * Contributor(s): Miguel Rodriguez Perez.
  *
  * $Log: echocancel.cxx,v $
+ * Revision 1.9  2005/12/30 17:13:34  dsandras
+ * Fixed typo.
+ *
  * Revision 1.8  2005/12/30 14:33:47  dsandras
  * Denoise the signal even when there is no echo to remove in it.
  *
@@ -199,8 +202,8 @@ void OpalEchoCanceler::ReceivedPacket(RTP_DataFrame& input_frame, INT)
     /* Nothing to read from the speaker signal, only suppress the noise
      * and return.
      */
-    speex_preprocess(preprocessState, e_buf, NULL);
-    memcpy(input_frame.GetPayloadPtr(), e_buf, input_frame.GetPayloadSize());
+    speex_preprocess(preprocessState, ref_buf, NULL);
+    memcpy(input_frame.GetPayloadPtr(), ref_buf, input_frame.GetPayloadSize());
 
     return;
   }
