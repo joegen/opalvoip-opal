@@ -23,6 +23,9 @@
  * Contributor(s): Miguel Rodriguez Perez.
  *
  * $Log: echocancel.cxx,v $
+ * Revision 1.10  2005/12/31 09:18:44  dsandras
+ * Some fine-tuning.
+ *
  * Revision 1.9  2005/12/30 17:13:34  dsandras
  * Fixed typo.
  *
@@ -171,12 +174,11 @@ void OpalEchoCanceler::ReceivedPacket(RTP_DataFrame& input_frame, INT)
   inputSize = input_frame.GetPayloadSize(); // Size is in bytes
 
   if (echoState == NULL) 
-    echoState = speex_echo_state_init(inputSize/sizeof(short), 8*inputSize);
+    echoState = speex_echo_state_init(inputSize/sizeof(short), 32*inputSize);
   
   if (preprocessState == NULL) { 
     preprocessState = speex_preprocess_state_init(inputSize/sizeof(short), clockRate);
     speex_preprocess_ctl(preprocessState, SPEEX_PREPROCESS_SET_DENOISE, &i);
-    speex_preprocess_ctl(preprocessState, SPEEX_PREPROCESS_SET_DEREVERB, &i);
   }
 
   if (echo_buf == NULL)
