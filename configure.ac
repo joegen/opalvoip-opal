@@ -103,6 +103,40 @@ dnl MSWIN_CHECK_DIR   vag729,c:\va_g729
 
 
 dnl ########################################################################
+dnl Look for H263 codec
+AC_ARG_ENABLE(h263avcodec,
+		[  --enable-h263avcodec    specify RFC 2190 compatible avcodec
+		headers],
+		RFC2190_AVCODEC_DIR=$enableval)
+
+if test "${RFC2190_AVCODEC_DIR}x" = "x" ; then
+	AC_MSG_NOTICE(Skipping tests for RFC 2190 H.263 support)
+else
+	AC_MSG_NOTICE(Searching for standard RFC2190 compliant H.263 codec)
+
+	dnl ################################################################
+	dnl look for avcodec compatible with RFC 2190
+
+	dnl MSWIN_DISPLAY    h263avcodec,ffmpeg RFC2190 Library
+	dnl MSWIN_CHECK_FILE h263avcodec,avcodec_rfc2190.h,RFC2190_AVCODEC=1
+	dnl MSWIN_DIR_SYMBOL h263avcodec,RFC2190_AVCODEC_DIR
+	dnl MSWIN_CHECK_DIR  h263avcodec,..\ffmpeg\libavcodec\
+	dnl MSWIN_CHECK_DIR  h263avcodec,..\external\ffmpeg\libavcodec\
+	dnl MSWIN_CHECK_DIR  h263avcodec,\ffmpeg\libavcodec\
+	dnl MSWIN_CHECK_DIR  h263avcodec,c:\ffmpeg\libavcodec\
+
+	AC_CHECK_HEADER(${RFC2190_AVCODEC_DIR}/avcodec.h, RFC2190_AVCODEC=1)
+	if test "${RFC2190_AVCODEC}" == "1" ; then
+		AC_SUBST(RFC2190_AVCODEC, 1)
+		AC_DEFINE(RFC2190_AVCODEC, 1, "FFMPEG standard, RFC2190 compliant H.263 codec found")
+		AC_SUBST(RFC2190_AVCODEC_DIR, ${RFC2190_AVCODEC_DIR})
+		STDCCFLAGS="${STDCCFLAGS} -I${RFC2190_AVCODEC_DIR}"
+	fi
+	AC_SUBST(RFC2190_AVCODEC)
+fi
+
+
+dnl ########################################################################
 dnl Look for system libspeex
 localspeex="xxx"
 AC_ARG_ENABLE(localspeex,

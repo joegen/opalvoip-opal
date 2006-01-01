@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.20  2006/01/01 19:19:32  dsandras
+# Added RFC2190 H.263 codec thanks to Salyens. Many thanks!
+#
 # Revision 1.19  2005/12/06 06:34:10  csoutheren
 # Added configure support for Sangoma and empty LID source and header files
 #
@@ -209,6 +212,8 @@ endif
 OBJDIR	=	$(OPAL_OBJDIR)
 LIBDIR  =	$(OPAL_LIBDIR)
 TARGET	=	$(OPAL_LIBDIR)/$(OPAL_FILE)
+
+STDCCFLAGS += @STDCCFLAGS@
 
 ifdef NOTRACE
 STDCCFLAGS += -DPASN_NOPRINTON
@@ -585,8 +590,8 @@ SOURCES += $(OPAL_SRCDIR)/codec/h261codec.c \
            $(VIC_DIR)/encoder-h261.cxx \
            $(VIC_DIR)/p64encoder.cxx \
            $(VIC_DIR)/transmitter.cxx \
-           $(VIC_DIR)/vid_coder.cxx 
-
+           $(VIC_DIR)/vid_coder.cxx \
+	   $(OPAL_SRCDIR)/codec/h263codec.c 
 
 #
 # Files to be cleaned during make clean

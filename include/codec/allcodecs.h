@@ -23,7 +23,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: allcodecs.h,v $
- * Revision 1.2009  2004/05/15 12:53:40  rjongbloed
+ * Revision 1.2010  2006/01/01 19:19:32  dsandras
+ * Added RFC2190 H.263 codec thanks to Salyens. Many thanks!
+ *
+ * Revision 2.8  2004/05/15 12:53:40  rjongbloed
  * Fixed incorrect laoding of H.323 capability for G.726
  *
  * Revision 2.7  2004/02/19 10:46:43  rjongbloed
@@ -81,13 +84,16 @@ OPAL_REGISTER_SPEEX();
 #include <codec/ilbccodec.h>
 OPAL_REGISTER_iLBC();
 
-
 #include <codec/vidcodec.h>
 OPAL_REGISTER_UNCOMPRESSED_VIDEO();
 
 #include <codec/h261codec.h>
 OPAL_REGISTER_H261();
 
+#ifdef RFC2190_AVCODEC
+#include <codec/h263codec.h>
+OPAL_REGISTER_H263();
+#endif // RFC2190_AVCODEC
 
 #endif // __CODEC_ALLCODECS_H
 
