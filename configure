@@ -309,7 +309,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX EXEEXT OBJEXT OPALDIR INSTALLPREFIX LIBDIR PTLIB_CONFIG PWLIBDIR CC CFLAGS ac_ct_CC CPP EGREP SIZE16 SIZE32 OPAL_SYSTEM_SPEEX OPAL_SIP OPAL_H323 OPAL_IAX2 HAS_IXJ HAS_SANGOMA STDCCFLAGS ENDLDLIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX EXEEXT OBJEXT OPALDIR INSTALLPREFIX LIBDIR PTLIB_CONFIG PWLIBDIR CC CFLAGS ac_ct_CC CPP EGREP RFC2190_AVCODEC RFC2190_AVCODEC_DIR SIZE16 SIZE32 OPAL_SYSTEM_SPEEX OPAL_SIP OPAL_H323 OPAL_IAX2 HAS_IXJ HAS_SANGOMA STDCCFLAGS ENDLDLIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -848,6 +848,8 @@ if test -n "$ac_init_help"; then
 Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+  --enable-h263avcodec    specify RFC 2190 compatible avcodec
+		headers
   --enable-localspeex     use local version of Speex library rather than system version
   --disable-sip           disable SIP protocol support
   --disable-h323          disable H.323 protocol support
@@ -2127,14 +2129,22 @@ echo "PWLib prefix set to.... $PWLIBDIR"
 
 
 
-localspeex="xxx"
-# Check whether --enable-localspeex or --disable-localspeex was given.
-if test "${enable_localspeex+set}" = set; then
-  enableval="$enable_localspeex"
-  localspeex=$enableval
+# Check whether --enable-h263avcodec or --disable-h263avcodec was given.
+if test "${enable_h263avcodec+set}" = set; then
+  enableval="$enable_h263avcodec"
+  RFC2190_AVCODEC_DIR=$enableval
 fi;
 
-ac_ext=c
+if test "${RFC2190_AVCODEC_DIR}x" = "x" ; then
+	{ echo "$as_me:$LINENO: Skipping tests for RFC 2190 H.263 support" >&5
+echo "$as_me: Skipping tests for RFC 2190 H.263 support" >&6;}
+else
+	{ echo "$as_me:$LINENO: Searching for standard RFC2190 compliant H.263 codec" >&5
+echo "$as_me: Searching for standard RFC2190 compliant H.263 codec" >&6;}
+
+
+
+	ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
@@ -3343,6 +3353,171 @@ fi
 
 done
 
+
+as_ac_Header=`echo "ac_cv_header_${RFC2190_AVCODEC_DIR}/avcodec.h" | $as_tr_sh`
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo "$as_me:$LINENO: checking for ${RFC2190_AVCODEC_DIR}/avcodec.h" >&5
+echo $ECHO_N "checking for ${RFC2190_AVCODEC_DIR}/avcodec.h... $ECHO_C" >&6
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Header'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_Header'}'`" >&6
+else
+  # Is the header compilable?
+echo "$as_me:$LINENO: checking ${RFC2190_AVCODEC_DIR}/avcodec.h usability" >&5
+echo $ECHO_N "checking ${RFC2190_AVCODEC_DIR}/avcodec.h usability... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <${RFC2190_AVCODEC_DIR}/avcodec.h>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_header_compiler=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6
+
+# Is the header present?
+echo "$as_me:$LINENO: checking ${RFC2190_AVCODEC_DIR}/avcodec.h presence" >&5
+echo $ECHO_N "checking ${RFC2190_AVCODEC_DIR}/avcodec.h presence... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <${RFC2190_AVCODEC_DIR}/avcodec.h>
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_c_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_c_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+rm -f conftest.err conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: ${RFC2190_AVCODEC_DIR}/avcodec.h: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: ${RFC2190_AVCODEC_DIR}/avcodec.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: ${RFC2190_AVCODEC_DIR}/avcodec.h: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: ${RFC2190_AVCODEC_DIR}/avcodec.h: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: ${RFC2190_AVCODEC_DIR}/avcodec.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: ${RFC2190_AVCODEC_DIR}/avcodec.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: ${RFC2190_AVCODEC_DIR}/avcodec.h:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: ${RFC2190_AVCODEC_DIR}/avcodec.h:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: ${RFC2190_AVCODEC_DIR}/avcodec.h: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: ${RFC2190_AVCODEC_DIR}/avcodec.h: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: ${RFC2190_AVCODEC_DIR}/avcodec.h:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: ${RFC2190_AVCODEC_DIR}/avcodec.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: ${RFC2190_AVCODEC_DIR}/avcodec.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: ${RFC2190_AVCODEC_DIR}/avcodec.h: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: ${RFC2190_AVCODEC_DIR}/avcodec.h: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: ${RFC2190_AVCODEC_DIR}/avcodec.h: in the future, the compiler will take precedence" >&2;}
+    (
+      cat <<\_ASBOX
+## ------------------------------------------ ##
+## Report this to the AC_PACKAGE_NAME lists.  ##
+## ------------------------------------------ ##
+_ASBOX
+    ) |
+      sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+echo "$as_me:$LINENO: checking for ${RFC2190_AVCODEC_DIR}/avcodec.h" >&5
+echo $ECHO_N "checking for ${RFC2190_AVCODEC_DIR}/avcodec.h... $ECHO_C" >&6
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  eval "$as_ac_Header=\$ac_header_preproc"
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Header'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_Header'}'`" >&6
+
+fi
+if test `eval echo '${'$as_ac_Header'}'` = yes; then
+  RFC2190_AVCODEC=1
+fi
+
+
+	if test "${RFC2190_AVCODEC}" == "1" ; then
+		RFC2190_AVCODEC=1
+
+
+cat >>confdefs.h <<\_ACEOF
+#define RFC2190_AVCODEC 1
+_ACEOF
+
+		RFC2190_AVCODEC_DIR=${RFC2190_AVCODEC_DIR}
+
+		STDCCFLAGS="${STDCCFLAGS} -I${RFC2190_AVCODEC_DIR}"
+	fi
+
+fi
+
+
+localspeex="xxx"
+# Check whether --enable-localspeex or --disable-localspeex was given.
+if test "${enable_localspeex+set}" = set; then
+  enableval="$enable_localspeex"
+  localspeex=$enableval
+fi;
 
 echo "$as_me:$LINENO: checking for short" >&5
 echo $ECHO_N "checking for short... $ECHO_C" >&6
@@ -6593,6 +6768,8 @@ s,@CFLAGS@,$CFLAGS,;t t
 s,@ac_ct_CC@,$ac_ct_CC,;t t
 s,@CPP@,$CPP,;t t
 s,@EGREP@,$EGREP,;t t
+s,@RFC2190_AVCODEC@,$RFC2190_AVCODEC,;t t
+s,@RFC2190_AVCODEC_DIR@,$RFC2190_AVCODEC_DIR,;t t
 s,@SIZE16@,$SIZE16,;t t
 s,@SIZE32@,$SIZE32,;t t
 s,@OPAL_SYSTEM_SPEEX@,$OPAL_SYSTEM_SPEEX,;t t
