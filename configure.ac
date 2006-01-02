@@ -143,36 +143,8 @@ AC_ARG_ENABLE(localspeex,
        [  --enable-localspeex     use local version of Speex library rather than system version],
        localspeex=$enableval)
 
-AC_CHECK_SIZEOF(short)
-AC_CHECK_SIZEOF(int)
-AC_CHECK_SIZEOF(long)
-AC_CHECK_SIZEOF(long long)
-
-if test x$has_char16 = "xyes" ; then
-	case 1 in
-		$ac_cv_sizeof_short) SIZE16="short";;
-		$ac_cv_sizeof_int) SIZE16="int";;
-	esac
-else
-	case 2 in
-		$ac_cv_sizeof_short) SIZE16="short";;
-		$ac_cv_sizeof_int) SIZE16="int";;
-	esac
-fi
-
-if test x$has_char16 = "xyes" ; then
-	case 2 in
-		$ac_cv_sizeof_int) SIZE32="int";;
-		$ac_cv_sizeof_long) SIZE32="long";;
-		$ac_cv_sizeof_short) SIZE32="short";;
-	esac
-else
-	case 4 in
-		$ac_cv_sizeof_int) SIZE32="int";;
-		$ac_cv_sizeof_long) SIZE32="long";;
-		$ac_cv_sizeof_short) SIZE32="short";;
-	esac
-fi
+SIZE16="short";
+SIZE32="int";
 
 AC_SUBST(SIZE16)
 AC_SUBST(SIZE32)
