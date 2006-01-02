@@ -143,8 +143,21 @@ AC_ARG_ENABLE(localspeex,
        [  --enable-localspeex     use local version of Speex library rather than system version],
        localspeex=$enableval)
 
-SIZE16="short";
-SIZE32="int";
+AC_CHECK_SIZEOF(short)
+AC_CHECK_SIZEOF(int)
+AC_CHECK_SIZEOF(long)
+AC_CHECK_SIZEOF(long long)
+
+case 2 in
+	$ac_cv_sizeof_short) SIZE16="short";;
+	$ac_cv_sizeof_int) SIZE16="int";;
+esac
+
+case 4 in
+	$ac_cv_sizeof_int) SIZE32="int";;
+	$ac_cv_sizeof_long) SIZE32="long";;
+	$ac_cv_sizeof_short) SIZE32="short";;
+esac
 
 AC_SUBST(SIZE16)
 AC_SUBST(SIZE32)
