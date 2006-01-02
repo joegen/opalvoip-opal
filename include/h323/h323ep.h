@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2031  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2032  2006/01/02 15:52:38  dsandras
+ * Added what was required to merge changes from OpenH323 Altas_devel_2 in gkclient.cxx, gkserver.cxx and channels.cxx.
+ *
+ * Revision 2.30  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.29  2005/07/12 12:34:37  csoutheren
@@ -856,6 +859,15 @@ class H323EndPoint : public OpalEndPoint
       H323Connection & connection    ///<  Connection to transfer
     );
 
+    /**
+      * Callback for ARQ send to a gatekeeper. This allows the endpoint
+      * to change or check fields in the ARQ before it is sent.
+      */
+    virtual void OnSendARQ(
+      H323Connection & conn,
+      H225_AdmissionRequest & arq
+    );
+
     /**Call back for answering an incoming call.
        This function is a H.323 specific version of OpalEndPoint::OnAnswerCall
        that contains additional information that applies only to H.323.
@@ -978,6 +990,17 @@ class H323EndPoint : public OpalEndPoint
       const H323Connection & connection,  ///<  Connection for the channel
       const RTP_Session & session         ///<  Session with statistics
     ) const;
+
+    /**Call back from GK admission confirm to notify the 
+     * Endpoint it is behind a NAT (GNUGK Gatekeeper).
+     * The default does nothing. 
+     * Override this to notify the user they are behind a NAT.
+     */
+    virtual void OnGatekeeperNATDetect(
+      PIPSocket::Address publicAddr,         ///> Public address as returned by the Gatekeeper
+      PString & gkIdentifier,                ///> Identifier at the gatekeeper
+      H323TransportAddress & gkRouteAddress  ///> Gatekeeper Route Address
+    );
   //@}
 
   /**@name Service Control */
