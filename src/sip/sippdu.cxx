@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2077  2005/12/14 18:01:00  dsandras
+ * Revision 1.2078  2006/01/02 11:28:07  dsandras
+ * Some documentation. Various code cleanups to prevent duplicate code.
+ *
+ * Revision 2.76  2005/12/14 18:01:00  dsandras
  * Fixed comment.
  *
  * Revision 2.75  2005/12/04 15:01:59  dsandras
@@ -1428,15 +1431,9 @@ void SIP_PDU::Construct(Methods meth,
                         SIPConnection & connection,
                         const OpalTransport & transport)
 {
-  PIPSocket::Address ip;
-  WORD port;
-  if (transport.IsRunning())
-    transport.GetLocalAddress().GetIpAndPort(ip, port);
-  else
-    connection.GetEndPoint().GetListeners()[0].GetLocalAddress().GetIpAndPort(ip, port);
-
-  OpalTransportAddress localAddress = connection.GetLocalAddress(port);
-  SIPURL contact(connection.GetLocalPartyName(), localAddress);
+  SIPEndPoint & endpoint = connection.GetEndPoint();
+  PString localPartyName = connection.GetLocalPartyName();
+  SIPURL contact = endpoint.GetLocalURL(transport, localPartyName);
   mime.SetContact(contact);
 
   SIPURL targetAddress = connection.GetTargetAddress();
@@ -1448,7 +1445,7 @@ void SIP_PDU::Construct(Methods meth,
             connection.GetLocalPartyAddress(),
             connection.GetToken(),
             connection.GetNextCSeq(),
-            localAddress);
+            contact.GetHostAddress());
 
   SetRoute(connection); // Possibly adjust the URI and the route
 }
@@ -1750,25 +1747,6 @@ PString SIP_PDU::GetTransactionID() const
   // sometimes peers put <> around address, use GetHostAddress on GetFrom to handle all cases
   SIPURL fromURL(mime.GetFrom());
   return fromURL.GetHostAddress().ToLower() + PString(mime.GetCSeq());
-}
-
-    
-OpalTransportAddress SIP_PDU::GetViaAddress(OpalEndPoint & ep,
-					    const OpalTransport & transport) const
-{
-  OpalTransportAddress viaAddress;
-  PIPSocket::Address localIP;
-  WORD localPort;
-  
-  if (transport.GetLocalAddress().GetIpAndPort(localIP, localPort)) {
-    PIPSocket::Address remoteIP;
-    if (transport.GetRemoteAddress().GetIpAddress(remoteIP)) {
-      ep.GetManager().TranslateIPAddress(localIP, remoteIP); 	 
-      viaAddress = OpalTransportAddress(localIP, localPort, "udp");
-    }
-  }
-  
-  return viaAddress;
 }
 
 
@@ -2145,7 +2123,7 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
   : SIPTransaction(ep, trans)
 {
   PString addrStr = address.AsQuotedString();
-  OpalTransportAddress viaAddress = SIP_PDU::GetViaAddress (ep, transport);
+  OpalTransportAddress viaAddress = ep.GetLocalURL(transport).GetHostAddress();
   SIP_PDU::Construct(Method_REGISTER,
                      "sip:"+address.GetHostName(),
                      addrStr,
@@ -2155,7 +2133,7 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
                      viaAddress);
 
   mime.SetUserAgent(ep); // normally 'OPAL/2.0'
-  SIPURL contact = endpoint.GetContactAddress(trans, address.GetUserName());
+  SIPURL contact = endpoint.GetLocalURL(trans, address.GetUserName());
   mime.SetContact(contact);
   mime.SetExpires(expires);
 }
@@ -2169,7 +2147,7 @@ SIPMWISubscribe::SIPMWISubscribe(SIPEndPoint & ep,
   : SIPTransaction(ep, trans)
 {
   PString addrStr = address.AsQuotedString();
-  OpalTransportAddress viaAddress = SIP_PDU::GetViaAddress (ep, transport);
+  OpalTransportAddress viaAddress = ep.GetLocalURL(transport).GetHostAddress();
   SIP_PDU::Construct(Method_SUBSCRIBE,
                      "sip:"+address.GetUserName()+"@"+address.GetHostName(),
                      addrStr,
@@ -2178,7 +2156,7 @@ SIPMWISubscribe::SIPMWISubscribe(SIPEndPoint & ep,
                      endpoint.GetNextCSeq(),
                      viaAddress);
 
-  SIPURL contact = endpoint.GetContactAddress(trans, address.GetUserName());
+  SIPURL contact = endpoint.GetLocalURL(trans, address.GetUserName());
   mime.SetUserAgent(ep); // normally 'OPAL/2.0'
   mime.SetContact(contact);
   mime.SetAccept("application/simple-message-summary");
@@ -2225,7 +2203,7 @@ SIPMessage::SIPMessage(SIPEndPoint & ep,
   : SIPTransaction(ep, trans)
 {
   PString id = OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
-  OpalTransportAddress viaAddress = SIP_PDU::GetViaAddress (ep, transport);
+  OpalTransportAddress viaAddress = ep.GetLocalURL(transport).GetHostAddress();
     
   // Build the correct From field
   int port = 0;
@@ -2268,7 +2246,7 @@ SIPAck::SIPAck(SIPEndPoint & ep,
 	     invite.GetMIME().GetFrom(),
 	     invite.GetMIME().GetCallID(),
 	     invite.GetMIME().GetCSeqIndex(),
-	     SIP_PDU::GetViaAddress(ep, invite.GetTransport())),
+	     ep.GetLocalURL(invite.GetTransport()).GetHostAddress()),
   transaction(invite)
 {
   Construct();
@@ -2309,7 +2287,7 @@ SIPOptions::SIPOptions(SIPEndPoint & ep,
 {
   PString requestURI;
   PString id = OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
-  OpalTransportAddress viaAddress = SIP_PDU::GetViaAddress (ep, transport);
+  OpalTransportAddress viaAddress = ep.GetLocalURL(transport).GetHostAddress();
     
   // Build the correct From field
   int port = 0;
