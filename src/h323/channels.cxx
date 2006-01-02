@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2030  2005/09/04 06:51:52  rjongbloed
+ * Revision 1.2031  2006/01/02 15:51:44  dsandras
+ * Merged changes from OpenH323 Atlas_devel_2.
+ *
+ * Revision 2.29  2005/09/04 06:51:52  rjongbloed
  * Added OpalMediaCommand mechanism (via PNotifier) for media streams
  *   and media transcoders to send commands back to remote.
  *
@@ -1368,14 +1371,10 @@ BOOL H323_ExternalRTPChannel::OnReceivedPDU(const H245_H2250LogicalChannelParame
 
 BOOL H323_ExternalRTPChannel::OnReceivedAckPDU(const H245_H2250LogicalChannelAckParameters & param)
 {
-  if (!param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_sessionID)) {
-    PTRACE(1, "LogChan\tNo session specified");
-    return FALSE;
+   if (param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_sessionID) && (param.m_sessionID != sessionID)) {
+     PTRACE(1, "LogChan\twarning: Ack for invalid session: " << param.m_sessionID);
   }
 
-  if (param.m_sessionID != sessionID) {
-    PTRACE(1, "LogChan\tAck for invalid session: " << param.m_sessionID);
-  }
 
   if (!param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaControlChannel)) {
     PTRACE(1, "LogChan\tNo mediaControlChannel specified");
