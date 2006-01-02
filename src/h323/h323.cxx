@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2095  2005/12/06 21:32:24  dsandras
+ * Revision 1.2096  2006/01/02 15:52:39  dsandras
+ * Added what was required to merge changes from OpenH323 Altas_devel_2 in gkclient.cxx, gkserver.cxx and channels.cxx.
+ *
+ * Revision 2.94  2005/12/06 21:32:24  dsandras
  * Applied patch from Frederic Heem <frederic.heem _Atttt_ telsey.it> to fix
  * assert in PSyncPoint when OnReleased is called twice from different threads.
  * Thanks! (Patch #1374240)
@@ -2079,6 +2082,11 @@ void H323Connection::OnEstablished()
 {
   endpoint.OnConnectionEstablished(*this, callToken);
   endpoint.OnEstablished(*this);
+}
+
+void H323Connection::OnSendARQ(H225_AdmissionRequest & arq)
+{
+  endpoint.OnSendARQ(*this, arq);
 }
 
 void H323Connection::OnCleared()
