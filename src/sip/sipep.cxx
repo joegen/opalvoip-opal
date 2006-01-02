@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2091  2005/12/20 20:40:47  dsandras
+ * Revision 1.2092  2006/01/02 11:28:07  dsandras
+ * Some documentation. Various code cleanups to prevent duplicate code.
+ *
+ * Revision 2.90  2005/12/20 20:40:47  dsandras
  * Added missing parameter.
  *
  * Revision 2.89  2005/12/18 21:06:55  dsandras
@@ -894,7 +897,7 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
 	OnReceivedMESSAGE(transport, *pdu);
         SIP_PDU response(*pdu, SIP_PDU::Successful_OK);
 	PString username = SIPURL(response.GetMIME().GetTo()).GetUserName();
-	response.GetMIME().SetContact(GetContactAddress(transport, username));
+	response.GetMIME().SetContact(GetLocalURL(transport, username));
         response.Write(transport);
 	break;
       }
@@ -1666,12 +1669,14 @@ const SIPURL SIPEndPoint::GetRegisteredPartyName(const PString & host)
 }
 
 
-const SIPURL SIPEndPoint::GetContactAddress(const OpalTransport &transport, const PString & userName)
+const SIPURL SIPEndPoint::GetLocalURL(const OpalTransport &transport, const PString & userName)
 {
   PIPSocket::Address ip(PIPSocket::GetDefaultIpAny());
   OpalTransportAddress contactAddress = transport.GetLocalAddress();
   WORD contactPort = GetDefaultSignalPort();
-  if (!GetListeners().IsEmpty())
+  if (transport.IsRunning())
+    transport.GetLocalAddress().GetIpAndPort(ip, contactPort);
+  else if (!GetListeners().IsEmpty())
     GetListeners()[0].GetLocalAddress().GetIpAndPort(ip, contactPort);
 
   PIPSocket::Address localIP;

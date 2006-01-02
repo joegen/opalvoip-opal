@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2115  2005/12/26 20:53:37  dsandras
+ * Revision 1.2116  2006/01/02 11:28:07  dsandras
+ * Some documentation. Various code cleanups to prevent duplicate code.
+ *
+ * Revision 2.114  2005/12/26 20:53:37  dsandras
  * Small fix.
  *
  * Revision 2.113  2005/12/14 17:59:50  dsandras
@@ -471,24 +474,22 @@ SIPConnection::SIPConnection(OpalCall & call,
     targetAddress.SetParamVar("proxy", PString::Empty());
   }
 
-  remotePartyAddress = targetAddress.AsQuotedString();
-  SIPURL url(remotePartyAddress);
-  remotePartyName = url.GetDisplayName ();
-
   if (proxy.IsEmpty())
     proxy = endpoint.GetProxy();
 
-  // Default routeSet
-  if (!proxy.IsEmpty()) {
+  // Default routeSet if there is a proxy
+  if (!proxy.IsEmpty()) 
     routeSet += proxy.GetHostName() + ':' + PString(proxy.GetPort()) + ";lr=on";
-  }
+  
+  // Update remote party parameters
+  remotePartyAddress = targetAddress.AsQuotedString();
+  remotePartyName = SIPURL (remotePartyAddress).GetDisplayName ();
 
+  // Create the transport
   if (inviteTransport == NULL)
     transport = NULL;
-  else {
+  else 
     transport = endpoint.CreateTransport(targetAddress.GetHostAddress());
-
-  }
 
   originalInvite = NULL;
   pduHandler = NULL;
@@ -518,7 +519,9 @@ SIPConnection::~SIPConnection()
 void SIPConnection::OnReleased()
 {
   PTRACE(3, "SIP\tOnReleased: " << *this << ", phase = " << phase);
-  /* OpalConnection::Release sets the phase to Releasing in the SIP Handler thread */
+  
+  // OpalConnection::Release sets the phase to Releasing in the SIP Handler 
+  // thread
   if(GetPhase() >= ReleasedPhase){
     PTRACE(2, "SIP\tOnReleased: already released");
     return;
@@ -534,6 +537,8 @@ void SIPConnection::OnReleased()
     break;
 
   case ReleaseWithResponse :
+    // Build the response from the invite and send it to the correct
+    // destination specified in the Via field
     switch (callEndReason) {
     case EndedByAnswerDenied :
 	{
@@ -556,7 +561,6 @@ void SIPConnection::OnReleased()
 	}
       break;
 
-      // call ended by no codec match or stream open failure
     case EndedByCapabilityExchange :
 	{
 	  SIP_PDU response(*originalInvite, SIP_PDU::Failure_UnsupportedMediaType);
@@ -620,14 +624,14 @@ void SIPConnection::OnReleased()
   OpalConnection::OnReleased();
 }
 
+
 void SIPConnection::TransferConnection(const PString & remoteParty, const PString & /*callIdentity*/)
 {
+  // There is still an ongoing REFER transaction 
   if (referTransaction != NULL) 
-    /* There is still an ongoing REFER transaction */
     return;
  
-  referTransaction = 
-    new SIPRefer(*this, *transport, remoteParty);
+  referTransaction = new SIPRefer(*this, *transport, remoteParty);
   referTransaction->Start ();
 }
 
@@ -685,7 +689,7 @@ BOOL SIPConnection::SetConnected()
 
   // send the 200 OK response
   PString userName = endpoint.GetRegisteredPartyName(SIPURL(remotePartyAddress).GetHostName()).GetUserName();
-  SIPURL contact = endpoint.GetContactAddress(*transport, userName);
+  SIPURL contact = endpoint.GetLocalURL(*transport, userName);
   SIP_PDU response(*originalInvite, SIP_PDU::Successful_OK, (const char *) contact.AsQuotedString());
   response.SetSDP(sdpOut);
   SendPDU(response, originalInvite->GetViaAddress(endpoint)); 
@@ -1448,7 +1452,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
     // send the 200 OK response
     PString userName = endpoint.GetRegisteredPartyName(SIPURL(remotePartyAddress).GetHostName()).GetUserName();
-    SIPURL contact = endpoint.GetContactAddress(*transport, userName);
+    SIPURL contact = endpoint.GetLocalURL(*transport, userName);
     SIP_PDU response(*originalInvite, SIP_PDU::Successful_OK, (const char *) contact.AsQuotedString ());
     response.SetSDP(sdpOut);
     SendPDU(response, originalInvite->GetViaAddress(endpoint));
