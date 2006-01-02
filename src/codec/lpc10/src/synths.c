@@ -1,7 +1,10 @@
 /*
 
 $Log: synths.c,v $
-Revision 1.2004  2006/01/02 11:27:29  dsandras
+Revision 1.2005  2006/01/02 14:46:40  dsandras
+Another try to remove inline comments in the ChangeLog.
+
+Revision 2.3  2006/01/02 11:27:29  dsandras
 Fixed warnings.
 
 Revision 2.2  2005/08/08 03:28:42  dereksmithies
@@ -64,7 +67,10 @@ static real c_b2 = .7f;
 /* 	SYNTHS Version 54 
 
  * $Log: synths.c,v $
- * Revision 1.2004  2006/01/02 11:27:29  dsandras
+ * Revision 1.2005  2006/01/02 14:46:40  dsandras
+ * Another try to remove inline comments in the ChangeLog.
+ *
+ * Revision 2.3  2006/01/02 11:27:29  dsandras
  * Fixed warnings.
  *
  * Revision 2.2  2005/08/08 03:28:42  dereksmithies
@@ -189,10 +195,15 @@ static real c_b2 = .7f;
 	    integer *, real *, struct lpc10_decoder_state *);
     real rci[160]	/* was [10][16] */;
 
-/* $Log: synths.c,v $
- * Revision 1.2004  2006/01/02 11:27:29  dsandras
- * Fixed warnings.
+/* 
+ * 
+ * $Log: synths.c,v $
+ * Revision 1.2005  2006/01/02 14:46:40  dsandras
+ * Another try to remove inline comments in the ChangeLog.
  *
+ * Revision 2.3  2006/01/02 11:27:29  dsandras
+ * Fixed warnings.
+ * 
  * Revision 2.2  2005/08/08 03:28:42  dereksmithies
  * Eradicate all "/ * within comments" messages from GCC compilations.
  *
@@ -227,7 +238,10 @@ static real c_b2 = .7f;
 /* Frame size, Prediction order, Pitch period */
 /*       Arguments 
  * $Log: synths.c,v $
- * Revision 1.2004  2006/01/02 11:27:29  dsandras
+ * Revision 1.2005  2006/01/02 14:46:40  dsandras
+ * Another try to remove inline comments in the ChangeLog.
+ *
+ * Revision 2.3  2006/01/02 11:27:29  dsandras
  * Fixed warnings.
  *
  * Revision 2.2  2005/08/08 03:28:42  dereksmithies
