@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2044  2005/12/09 05:41:10  csoutheren
+ * Revision 1.2045  2006/01/02 15:52:38  dsandras
+ * Added what was required to merge changes from OpenH323 Altas_devel_2 in gkclient.cxx, gkserver.cxx and channels.cxx.
+ *
+ * Revision 2.43  2005/12/09 05:41:10  csoutheren
  * Added ability to set explicit Q.931 cause code on call end
  *
  * Revision 2.42  2005/11/30 13:35:26  csoutheren
@@ -548,6 +551,16 @@ class H323Connection : public OpalConnection
        The default behaviour sends a CONNECT pdu.
       */
     virtual BOOL SetConnected();
+
+    /**
+      * called when an ARQ needs to be sent to a gatekeeper. This allows the connection
+      * to change or check fields in the ARQ before it is sent.
+      *
+      * By default, this calls the matching function on the endpoint
+      */
+    virtual void OnSendARQ(
+      H225_AdmissionRequest & arq
+    );
 
     /** Called when a connection is established.
         Default behaviour is to call H323EndPoint::OnConnectionEstablished
