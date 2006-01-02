@@ -1,7 +1,10 @@
 /*
 
 $Log: synths.c,v $
-Revision 1.2003  2005/08/08 03:28:42  dereksmithies
+Revision 1.2004  2006/01/02 11:27:29  dsandras
+Fixed warnings.
+
+Revision 2.2  2005/08/08 03:28:42  dereksmithies
 Eradicate all "/ * within comments" messages from GCC compilations.
 
 Revision 2.1  2003/03/14 09:53:27  robertj
@@ -61,7 +64,10 @@ static real c_b2 = .7f;
 /* 	SYNTHS Version 54 
 
  * $Log: synths.c,v $
- * Revision 1.2003  2005/08/08 03:28:42  dereksmithies
+ * Revision 1.2004  2006/01/02 11:27:29  dsandras
+ * Fixed warnings.
+ *
+ * Revision 2.2  2005/08/08 03:28:42  dereksmithies
  * Eradicate all "/ * within comments" messages from GCC compilations.
  *
  * Revision 2.1  2003/03/14 09:53:27  robertj
@@ -173,7 +179,7 @@ static real c_b2 = .7f;
     extern /* Subroutine */ int deemp_(real *, integer *, struct lpc10_decoder_state *);
     real ratio;
     integer ipiti[16];
-    extern /* Subroutine */ bsynz_(real *, integer *, 
+    extern /* Subroutine */ int bsynz_(real *, integer *, 
 	    integer *, real *, real *, real *, real *, struct lpc10_decoder_state *), irc2pc_(real *, real *
 	    , integer *, real *, real *);
     real g2pass;
@@ -184,7 +190,10 @@ static real c_b2 = .7f;
     real rci[160]	/* was [10][16] */;
 
 /* $Log: synths.c,v $
- * Revision 1.2003  2005/08/08 03:28:42  dereksmithies
+ * Revision 1.2004  2006/01/02 11:27:29  dsandras
+ * Fixed warnings.
+ *
+ * Revision 2.2  2005/08/08 03:28:42  dereksmithies
  * Eradicate all "/ * within comments" messages from GCC compilations.
  *
  * Revision 2.1  2003/03/14 09:53:27  robertj
@@ -218,7 +227,10 @@ static real c_b2 = .7f;
 /* Frame size, Prediction order, Pitch period */
 /*       Arguments 
  * $Log: synths.c,v $
- * Revision 1.2003  2005/08/08 03:28:42  dereksmithies
+ * Revision 1.2004  2006/01/02 11:27:29  dsandras
+ * Fixed warnings.
+ *
+ * Revision 2.2  2005/08/08 03:28:42  dereksmithies
  * Eradicate all "/ * within comments" messages from GCC compilations.
  *
  * Revision 2.1  2003/03/14 09:53:27  robertj
