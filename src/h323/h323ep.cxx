@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2041  2005/11/28 19:08:26  dsandras
+ * Revision 1.2042  2006/01/02 15:52:39  dsandras
+ * Added what was required to merge changes from OpenH323 Altas_devel_2 in gkclient.cxx, gkserver.cxx and channels.cxx.
+ *
+ * Revision 2.40  2005/11/28 19:08:26  dsandras
  * Added E.164 support.
  *
  * Revision 2.39  2005/11/25 00:40:18  csoutheren
@@ -1138,11 +1141,10 @@ H235Authenticators H323EndPoint::CreateAuthenticators()
 {
   H235Authenticators authenticators;
 
-#if P_SSL
-  authenticators.Append(new H235AuthProcedure1);
-#endif
-  authenticators.Append(new H235AuthSimpleMD5);
-  authenticators.Append(new H235AuthCAT);
+  PFactory<H235Authenticator>::KeyList_T keyList = PFactory<H235Authenticator>::GetKeyList();
+  PFactory<H235Authenticator>::KeyList_T::const_iterator r;
+  for (r = keyList.begin(); r != keyList.end(); ++r)
+    authenticators.Append(PFactory<H235Authenticator>::CreateInstance(*r));
 
   return authenticators;
 }
@@ -1414,6 +1416,8 @@ BOOL H323EndPoint::ParsePartyName(const PString & _remoteParty,
 	PTRACE(4, "H323\tENUM converted remote party " << _remoteParty << " to " << str);
 	remoteParty = str;
       }
+      else
+	return FALSE;
     }
   }
 #endif
@@ -1612,6 +1616,11 @@ BOOL H323EndPoint::OnCallTransferIdentify(H323Connection & /*connection*/)
 }
 
 
+void H323EndPoint::OnSendARQ(H323Connection & /*conn*/, H225_AdmissionRequest & /*arq*/)
+{
+}
+
+
 OpalConnection::AnswerCallResponse
        H323EndPoint::OnAnswerCall(H323Connection & connection,
                                   const PString & caller,
@@ -1738,6 +1747,13 @@ void H323EndPoint::OnClosedLogicalChannel(H323Connection & /*connection*/,
 
 void H323EndPoint::OnRTPStatistics(const H323Connection & /*connection*/,
                                    const RTP_Session & /*session*/) const
+{
+}
+
+
+void H323EndPoint::OnGatekeeperNATDetect(PIPSocket::Address /* publicAddr*/,
+					 PString & /*gkIdentifier*/,
+					 H323TransportAddress & /*gkRouteAddress*/)
 {
 }
 
