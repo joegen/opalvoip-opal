@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.cxx,v $
- * Revision 1.2027  2005/10/22 10:29:04  dsandras
+ * Revision 1.2028  2006/01/02 16:34:24  dsandras
+ * Fixed compilation warning.
+ *
+ * Revision 2.26  2005/10/22 10:29:04  dsandras
  * Removed FIXME.
  *
  * Revision 2.25  2005/09/15 20:01:23  dsandras
@@ -603,7 +606,7 @@ BOOL Opal_YUV420P_H261::ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameLi
 
   dst.RemoveAll();
 
-  if (src.GetPayloadSize() < sizeof(FrameHeader)) {
+  if ((unsigned) src.GetPayloadSize() < sizeof(FrameHeader)) {
     PTRACE(1,"H261\t Video grab too small, Close down video transmission thread.");
     return FALSE;
   } 
