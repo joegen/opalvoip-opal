@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2026  2005/12/29 16:23:38  dsandras
+ * Revision 1.2027  2006/01/02 11:28:07  dsandras
+ * Some documentation. Various code cleanups to prevent duplicate code.
+ *
+ * Revision 2.25  2005/12/29 16:23:38  dsandras
  * Media formats with different clock rates are not identical.
  *
  * Revision 2.24  2005/12/27 20:51:20  dsandras
@@ -568,7 +571,7 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
 {
   RTP_DataFrame::PayloadTypes payloadType = mediaFormat.GetPayloadType();
   const char * encodingName = mediaFormat.GetEncodingName();
-  int clockRate = mediaFormat.GetClockRate();
+  unsigned clockRate = mediaFormat.GetClockRate();
 
   if (payloadType >= RTP_DataFrame::MaxPayloadType || encodingName == NULL || *encodingName == '\0')
     return;

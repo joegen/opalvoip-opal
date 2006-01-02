@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2036  2005/12/04 15:02:00  dsandras
+ * Revision 1.2037  2006/01/02 11:28:07  dsandras
+ * Some documentation. Various code cleanups to prevent duplicate code.
+ *
+ * Revision 2.35  2005/12/04 15:02:00  dsandras
  * Fixed IP translation in the VIA field of most request PDUs.
  *
  * Revision 2.34  2005/11/30 13:35:26  csoutheren
@@ -648,7 +651,6 @@ class SIP_PDU : public PObject
      * should be used to send responses to incoming PDUs.
      */
     OpalTransportAddress GetViaAddress(OpalEndPoint &);
-
     
     /**Return the address to which the request PDU should be sent
      * according to the RFC, for a request in a dialog.
@@ -684,14 +686,6 @@ class SIP_PDU : public PObject
     void SetSDP(const SDPSessionDescription & s) { sdp = new SDPSessionDescription(s); }
 
   protected:
-    
-    /**Return the address to which responses from the remote should be sent.
-     * Translated if necessary.
-     */
-    OpalTransportAddress GetViaAddress(
-      OpalEndPoint & ep,
-      const OpalTransport & transport
-    ) const;
     
     Methods     method;                 // Request type, ==NumMethods for Response
     StatusCodes statusCode;
@@ -730,7 +724,8 @@ class SIPTransaction : public SIP_PDU
       SIPEndPoint   & endpoint,
       OpalTransport & transport
     );
-    /** Construct a transaction for requests in a dialog
+    /** Construct a transaction for requests in a dialog.
+     *  The transport is used to determine the local address
      */
     SIPTransaction(
       SIPConnection & connection,

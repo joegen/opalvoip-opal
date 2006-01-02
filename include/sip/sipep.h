@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2044  2005/12/18 21:06:56  dsandras
+ * Revision 1.2045  2006/01/02 11:28:07  dsandras
+ * Some documentation. Various code cleanups to prevent duplicate code.
+ *
+ * Revision 2.43  2005/12/18 21:06:56  dsandras
  * Added function to clean up the registrations object. Moved DeleteObjectsToBeRemoved call outside of the loop.
  *
  * Revision 2.42  2005/12/14 17:59:50  dsandras
@@ -731,18 +734,22 @@ class SIPEndPoint : public OpalEndPoint
      * The host part can be different from the registration domain.
      */
     const SIPURL GetRegisteredPartyName(const PString &);
-
     
-    /**Return the contact address for the given transport 
-     * that will be used as origin to send the PDU and the given
-     * user name.
-     *
-     * The URL is translated if required. If IP translation or STUN
-     * are used for the remote address of the transport, then the contact
-     * port will be the transport port.
-     */
-    const SIPURL GetContactAddress(const OpalTransport &, const PString &);
 
+    /**Return the local URL for the given transport and user name.
+     * That URL can be used as via address, and as contact field in outgoing
+     * requests.
+     *
+     * The URL is translated if required.
+     *
+     * If the transport is not running, the first listener transport
+     * will be used, if any.
+     */
+    const SIPURL GetLocalURL(
+       const OpalTransport & transport,             ///< Transport on which we can receive new requests
+       const PString & userName = PString::Empty()  ///< The user name part of the contact field
+    );
+    
     
     /**Return the outbound proxy URL, if any.
      */
