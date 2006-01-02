@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkserver.cxx,v $
- * Revision 1.2016  2004/06/04 06:54:18  csoutheren
+ * Revision 1.2017  2006/01/02 15:51:44  dsandras
+ * Merged changes from OpenH323 Atlas_devel_2.
+ *
+ * Revision 2.15  2004/06/04 06:54:18  csoutheren
  * Migrated updates from OpenH323 1.14.1
  *
  * Revision 2.14  2004/04/25 02:53:29  rjongbloed
@@ -1423,14 +1426,14 @@ void H323GatekeeperCall::PrintOn(ostream & strm) const
   strm << callIdentifier;
 
   switch (direction) {
-    case AnsweringCall :
-      strm << AnswerCallStr;
-      break;
-    case OriginatingCall :
-      strm << OriginateCallStr;
-      break;
-    default :
-      break;
+  case AnsweringCall :
+    strm << AnswerCallStr;
+    break;
+  case OriginatingCall :
+    strm << OriginateCallStr;
+    break;
+  default :
+    break;
   }
 }
 
@@ -1469,7 +1472,7 @@ H323GatekeeperRequest::Response H323GatekeeperCall::OnAdmission(H323GatekeeperAR
   srcNumber = H323GetAliasAddressE164(info.arq.m_srcInfo);
 
   if (!endpoint->IsBehindNAT() &&
-          info.arq.HasOptionalField(H225_AdmissionRequest::e_srcCallSignalAddress))
+      info.arq.HasOptionalField(H225_AdmissionRequest::e_srcCallSignalAddress))
     srcHost = info.arq.m_srcCallSignalAddress;
   else
     srcHost = info.GetReplyAddress();
@@ -1478,7 +1481,7 @@ H323GatekeeperRequest::Response H323GatekeeperCall::OnAdmission(H323GatekeeperAR
     for (i = 0; i < info.arq.m_destinationInfo.GetSize(); i++) {
       PString alias = H323GetAliasAddressString(info.arq.m_destinationInfo[i]);
       if (dstAliases.GetValuesIndex(alias) == P_MAX_INDEX)
-        dstAliases += alias;
+	dstAliases += alias;
     }
 
     dstNumber = H323GetAliasAddressE164(info.arq.m_destinationInfo);
@@ -1489,19 +1492,21 @@ H323GatekeeperRequest::Response H323GatekeeperCall::OnAdmission(H323GatekeeperAR
 
   UnlockReadWrite();
 
+  BOOL isGKRouted = gatekeeper.IsGatekeeperRouted();
+
   if (direction == AnsweringCall) {
     // See if our policies allow the call
     BOOL denied = TRUE;
     for (i = 0; i < info.arq.m_srcInfo.GetSize(); i++) {
       if (gatekeeper.CheckAliasAddressPolicy(*endpoint, info.arq, info.arq.m_srcInfo[i])) {
-        denied = FALSE;
-        break;
+	denied = FALSE;
+	break;
       }
     }
 
     if (info.arq.HasOptionalField(H225_AdmissionRequest::e_srcCallSignalAddress)) {
       if (gatekeeper.CheckSignalAddressPolicy(*endpoint, info.arq, info.arq.m_srcCallSignalAddress))
-        denied = FALSE;
+	denied = FALSE;
     }
 
     if (denied) {
@@ -1513,73 +1518,102 @@ H323GatekeeperRequest::Response H323GatekeeperCall::OnAdmission(H323GatekeeperAR
   else {
     PSafePtr<H323RegisteredEndPoint> destEP;
 
-    // Do lookup by alias
-    if (info.arq.HasOptionalField(H225_AdmissionRequest::e_destinationInfo)) {
+    BOOL denied = TRUE;
+    BOOL noAddress = TRUE;
 
-      // Have provided an alias, see if we can route it.
-      BOOL denied = TRUE;
-      BOOL noAddress = TRUE;
-      for (i = 0; i < info.arq.m_destinationInfo.GetSize(); i++) {
-        if (gatekeeper.CheckAliasAddressPolicy(*endpoint, info.arq, info.arq.m_destinationInfo[i])) {
-          denied = FALSE;
-          H323TransportAddress destAddr;
-          if (TranslateAliasAddress(info.arq.m_destinationInfo[i],
-                                    info.acf.m_destinationInfo,
-                                    destAddr)) {
-            if (info.acf.m_destinationInfo.GetSize())
-              info.acf.IncludeOptionalField(H225_AdmissionConfirm::e_destinationInfo);
+    // if no alias, convert signalling address to an alias
+    if (!info.arq.HasOptionalField(H225_AdmissionRequest::e_destinationInfo) && info.arq.HasOptionalField(H225_AdmissionRequest::e_destCallSignalAddress)) {
 
-            destEP = gatekeeper.FindEndPointByAliasAddress(info.arq.m_destinationInfo[i]);
-            if (!LockReadWrite()) {
-              PTRACE(1, "RAS\tARQ rejected, lock failed on call " << *this);
-              return H323GatekeeperRequest::Reject;
-            }
-            dstHost = destAddr;
-            UnlockReadWrite();
-            noAddress = FALSE;
-            break;
-          }
-        }
-      }
+      H323TransportAddress origTransAddr(info.arq.m_destCallSignalAddress);
+      H225_AliasAddress transportAlias;
+      H323SetAliasAddress(origTransAddr, transportAlias);
 
-      if (denied) {
-        info.SetRejectReason(H225_AdmissionRejectReason::e_securityDenial);
-        PTRACE(2, "RAS\tARQ rejected, not allowed to make call");
-        return H323GatekeeperRequest::Reject;
-      }
+      if (gatekeeper.CheckAliasAddressPolicy(*endpoint, info.arq, transportAlias)) {
+	denied = FALSE;
+	H323TransportAddress destAddr;
+	if (TranslateAliasAddress(transportAlias,
+				  info.acf.m_destinationInfo,
+				  destAddr,
+				  isGKRouted)) {
+	  if (info.acf.m_destinationInfo.GetSize())
+	    info.acf.IncludeOptionalField(H225_AdmissionConfirm::e_destinationInfo);
 
-      if (noAddress) {
-        info.SetRejectReason(H225_AdmissionRejectReason::e_calledPartyNotRegistered);
-        PTRACE(2, "RAS\tARQ rejected, destination alias not registered");
-        return H323GatekeeperRequest::Reject;
-      }
-
-      if (destEP != NULL) {
-        destEP.SetSafetyMode(PSafeReadOnly);
-        if (!LockReadWrite()) {
-          PTRACE(1, "RAS\tARQ rejected, lock failed on call " << *this);
-          return H323GatekeeperRequest::Reject;
-        }
-        dstAliases.RemoveAll();
-        dstNumber = PString::Empty();
-        for (i = 0; i < destEP->GetAliasCount(); i++) {
-          PString alias = destEP->GetAlias(i);
-          dstAliases += alias;
-          if (strspn(alias, "0123456789*#") == strlen(alias))
-            dstNumber = alias;
-        }
-        UnlockReadWrite();
-        destEP.SetSafetyMode(PSafeReference);
+	  destEP = gatekeeper.FindEndPointByAliasAddress(transportAlias);
+	  if (!LockReadWrite()) {
+	    PTRACE(1, "RAS\tARQ rejected, lock failed on call " << *this);
+	    return H323GatekeeperRequest::Reject;
+	  }
+	  dstHost = destAddr;
+	  UnlockReadWrite();
+	  noAddress = FALSE;
+	}
       }
     }
 
-    // Has provided an alias and signal address, see if agree
-    if (destEP != NULL && info.arq.HasOptionalField(H225_AdmissionRequest::e_destCallSignalAddress)) {
-      // Note nested if's used because some compilers (Tornado 2) cannot handle it
-      if (gatekeeper.FindEndPointBySignalAddress(info.arq.m_destCallSignalAddress) != destEP) {
-        info.SetRejectReason(H225_AdmissionRejectReason::e_aliasesInconsistent);
-        PTRACE(2, "RAS\tARQ rejected, destination address not for specified alias");
-        return H323GatekeeperRequest::Reject;
+    // if alias(es) specified, check them
+    else {
+      for (i = 0; i < info.arq.m_destinationInfo.GetSize(); i++) {
+	if (gatekeeper.CheckAliasAddressPolicy(*endpoint, info.arq, info.arq.m_destinationInfo[i])) {
+	  denied = FALSE;
+	  H323TransportAddress destAddr;
+	  if (TranslateAliasAddress(info.arq.m_destinationInfo[i],
+				    info.acf.m_destinationInfo,
+				    destAddr,
+				    isGKRouted)) {
+	    if (info.acf.m_destinationInfo.GetSize())
+	      info.acf.IncludeOptionalField(H225_AdmissionConfirm::e_destinationInfo);
+
+	    destEP = gatekeeper.FindEndPointByAliasAddress(info.arq.m_destinationInfo[i]);
+	    if (!LockReadWrite()) {
+	      PTRACE(1, "RAS\tARQ rejected, lock failed on call " << *this);
+	      return H323GatekeeperRequest::Reject;
+	    }
+	    dstHost = destAddr;
+	    UnlockReadWrite();
+	    noAddress = FALSE;
+	    break;
+	  }
+	}
+      }
+
+      if (denied) {
+	info.SetRejectReason(H225_AdmissionRejectReason::e_securityDenial);
+	PTRACE(2, "RAS\tARQ rejected, not allowed to make call");
+	return H323GatekeeperRequest::Reject;
+      }
+
+      if (noAddress) {
+	info.SetRejectReason(H225_AdmissionRejectReason::e_calledPartyNotRegistered);
+	PTRACE(2, "RAS\tARQ rejected, destination alias not registered");
+	return H323GatekeeperRequest::Reject;
+      }
+
+      if (destEP != NULL) {
+	destEP.SetSafetyMode(PSafeReadOnly);
+	if (!LockReadWrite()) {
+	  PTRACE(1, "RAS\tARQ rejected, lock failed on call " << *this);
+	  return H323GatekeeperRequest::Reject;
+	}
+	dstAliases.RemoveAll();
+	dstNumber = PString::Empty();
+	for (i = 0; i < destEP->GetAliasCount(); i++) {
+	  PString alias = destEP->GetAlias(i);
+	  dstAliases += alias;
+	  if (strspn(alias, "0123456789*#") == strlen(alias))
+	    dstNumber = alias;
+	}
+	UnlockReadWrite();
+	destEP.SetSafetyMode(PSafeReference);
+      }
+
+      // Has provided an alias and signal address, see if agree
+      if (destEP != NULL && info.arq.HasOptionalField(H225_AdmissionRequest::e_destCallSignalAddress)) {
+	// Note nested if's used because some compilers (Tornado 2) cannot handle it
+	if (gatekeeper.FindEndPointBySignalAddress(info.arq.m_destCallSignalAddress) != destEP) {
+	  info.SetRejectReason(H225_AdmissionRejectReason::e_aliasesInconsistent);
+	  PTRACE(2, "RAS\tARQ rejected, destination address not for specified alias");
+	  return H323GatekeeperRequest::Reject;
+	}
       }
     }
 
@@ -1621,7 +1655,7 @@ H323GatekeeperRequest::Response H323GatekeeperCall::OnAdmission(H323GatekeeperAR
   info.acf.m_willRespondToIRR = TRUE;
 
   // Set the destination to fixed value of gk routed
-  if (gatekeeper.IsGatekeeperRouted())
+  if (isGKRouted)
     info.acf.m_callModel.SetTag(H225_CallModel::e_gatekeeperRouted);
   dstHost.SetPDU(info.acf.m_destCallSignalAddress);
 
@@ -1740,7 +1774,7 @@ H323GatekeeperRequest::Response H323GatekeeperCall::OnBandwidth(H323GatekeeperBR
 
 
 H323GatekeeperRequest::Response H323GatekeeperCall::OnInfoResponse(H323GatekeeperIRR &,
-                                                                   H225_InfoRequestResponse_perCallInfo_subtype & info)
+								   H225_InfoRequestResponse_perCallInfo_subtype & info)
 {
   PTRACE_BLOCK("H323GatekeeperCall::OnInfoResponse");
 
@@ -1760,18 +1794,18 @@ H323GatekeeperRequest::Response H323GatekeeperCall::OnInfoResponse(H323Gatekeepe
       info.m_nonStandardData.m_nonStandardIdentifier.GetTag() == H225_NonStandardIdentifier::e_h221NonStandard) {
     H225_H221NonStandard & id = info.m_nonStandardData.m_nonStandardIdentifier;
     if (id.m_t35CountryCode == 181 && id.m_t35Extension == 0 && id.m_manufacturerCode == 18 && // Cisco
-        info.m_nonStandardData.m_data.GetSize() == 5 && info.m_nonStandardData.m_data[0] == 0x70) {
+	info.m_nonStandardData.m_data.GetSize() == 5 && info.m_nonStandardData.m_data[0] == 0x70) {
       PTime theConnectedTime((info.m_nonStandardData.m_data[1] << 24)|
-                            (info.m_nonStandardData.m_data[2] << 16)|
-                            (info.m_nonStandardData.m_data[3] << 8 )|
-                             info.m_nonStandardData.m_data[4]        );
+			     (info.m_nonStandardData.m_data[2] << 16)|
+			     (info.m_nonStandardData.m_data[3] << 8 )|
+			     info.m_nonStandardData.m_data[4]        );
       if (theConnectedTime > now || theConnectedTime < callStartTime) {
-        connectedTime = now;
-        OnConnected();
+	connectedTime = now;
+	OnConnected();
       }
       else {
-        connectedTime = theConnectedTime;
-        OnConnected();
+	connectedTime = theConnectedTime;
+	OnConnected();
       }
     }
   }
@@ -1840,7 +1874,7 @@ BOOL H323GatekeeperCall::OnHeartbeat()
   // otherwise did not get a response from client so return FALSE and
   // (probably) disengage the call.
   BOOL response = CheckTimeSince(lastInfoResponse, infoResponseRate); 
-  
+
   UnlockReadOnly();
 
   return response;
@@ -1851,7 +1885,7 @@ PString H323GatekeeperCall::GetCallCreditAmount() const
 {
   if (endpoint != NULL)
     return endpoint->GetCallCreditAmount();
-  
+
   return PString::Empty();
 }
 
@@ -1928,8 +1962,8 @@ BOOL H323GatekeeperCall::SetBandwidthUsed(unsigned newBandwidth)
 
 
 static PString MakeAddress(const PString & number,
-                           const PStringArray aliases,
-                           const H323TransportAddress & host)
+			   const PStringArray aliases,
+			   const H323TransportAddress & host)
 {
   PStringStream addr;
 
@@ -1977,7 +2011,7 @@ void H323GatekeeperCall::SetUsageInfo(const H225_RasUsageInformation & usage)
   PTime now;
 
   if (!alertingTime.IsValid() &&
-       usage.HasOptionalField(H225_RasUsageInformation::e_alertingTime)) {
+      usage.HasOptionalField(H225_RasUsageInformation::e_alertingTime)) {
     PTime theAlertingTime((unsigned)usage.m_alertingTime);
     if (theAlertingTime > now || theAlertingTime < callStartTime) {
       alertingTime = now;
@@ -1990,7 +2024,7 @@ void H323GatekeeperCall::SetUsageInfo(const H225_RasUsageInformation & usage)
   }
 
   if (!connectedTime.IsValid() &&
-       usage.HasOptionalField(H225_RasUsageInformation::e_connectTime)) {
+      usage.HasOptionalField(H225_RasUsageInformation::e_connectTime)) {
     PTime theConnectedTime((unsigned)usage.m_connectTime);
     if (theConnectedTime > now || theConnectedTime < callStartTime) {
       connectedTime = now;
@@ -2003,12 +2037,12 @@ void H323GatekeeperCall::SetUsageInfo(const H225_RasUsageInformation & usage)
   }
 
   if (!callEndTime.IsValid() &&
-       usage.HasOptionalField(H225_RasUsageInformation::e_endTime)) {
+      usage.HasOptionalField(H225_RasUsageInformation::e_endTime)) {
     PTime theCallEndTime = PTime((unsigned)usage.m_endTime);
     if (theCallEndTime > now ||
-       (alertingTime.IsValid() && theCallEndTime < alertingTime) ||
-       (connectedTime.IsValid() && theCallEndTime < connectedTime) ||
-        theCallEndTime < callStartTime)
+	(alertingTime.IsValid() && theCallEndTime < alertingTime) ||
+	(connectedTime.IsValid() && theCallEndTime < connectedTime) ||
+	theCallEndTime < callStartTime)
       callEndTime = now;
     else
       callEndTime = theCallEndTime;
@@ -2016,12 +2050,13 @@ void H323GatekeeperCall::SetUsageInfo(const H225_RasUsageInformation & usage)
 }
 
 BOOL H323GatekeeperCall::TranslateAliasAddress(
-      const H225_AliasAddress & alias,
-      H225_ArrayOf_AliasAddress & aliases,
-      H323TransportAddress & address
+					       const H225_AliasAddress & alias,
+					       H225_ArrayOf_AliasAddress & aliases,
+					       H323TransportAddress & address,
+      BOOL & gkRouted
     )
 {
-  return gatekeeper.TranslateAliasAddress(alias, aliases, address);
+  return gatekeeper.TranslateAliasAddress(alias, aliases, address, gkRouted);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -3898,11 +3933,14 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnLocation(H323GatekeeperL
     }
   }
 
+  BOOL isGKRouted = IsGatekeeperRouted();
+
   for (i = 0; i < info.lrq.m_destinationInfo.GetSize(); i++) {
     H323TransportAddress address;
     if (TranslateAliasAddress(info.lrq.m_destinationInfo[i],
                               info.lcf.m_destinationInfo,
-                              address)) {
+                              address,
+			      isGKRouted)) {
       address.SetPDU(info.lcf.m_callSignalAddress);
       if (info.lcf.m_destinationInfo.GetSize() > 0)
         info.lcf.IncludeOptionalField(H225_LocationConfirm::e_destinationInfo);
@@ -3921,7 +3959,8 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnLocation(H323GatekeeperL
 
 BOOL H323GatekeeperServer::TranslateAliasAddress(const H225_AliasAddress & alias,
                                                  H225_ArrayOf_AliasAddress & aliases,
-                                                 H323TransportAddress & address)
+                                                 H323TransportAddress & address,
+						 BOOL & /*isGKRouted*/)
 {
   if (!TranslateAliasAddressToSignalAddress(alias, address)) {
     H225_AliasAddress transportAlias;

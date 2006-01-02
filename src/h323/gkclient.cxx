@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2026  2005/10/12 21:14:32  dsandras
+ * Revision 1.2027  2006/01/02 15:51:44  dsandras
+ * Merged changes from OpenH323 Atlas_devel_2.
+ *
+ * Revision 2.25  2005/10/12 21:14:32  dsandras
  * Applied patch from Hannes Friederich to only call ConnectTo when required. Thanks!
  *
  * Revision 2.24  2005/08/11 22:47:17  rjongbloed
@@ -1122,6 +1125,13 @@ BOOL H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationConfirm
   if (rcf.HasOptionalField(H225_RegistrationConfirm::e_serviceControl))
     OnServiceControlSessions(rcf.m_serviceControl, NULL);
 
+  // NAT Detection with GNUGK
+  if (rcf.HasOptionalField(H225_RegistrationConfirm::e_nonStandardData)) {
+    PString NATaddr = rcf.m_nonStandardData.m_data.AsString();
+    if ((!NATaddr.IsEmpty()) && (NATaddr.Left(4) == "NAT="))
+      endpoint.OnGatekeeperNATDetect(NATaddr.Right(NATaddr.GetLength()-4),endpointIdentifier,gkRouteAddress);
+  }
+  
   endpoint.OnRegistrationConfirm();
 
   return TRUE;
@@ -1342,7 +1352,13 @@ BOOL H323Gatekeeper::LocationRequest(const PStringList & aliases,
 
   Request request(lrq.m_requestSeqNum, pdu);
   request.responseInfo = &address;
-  return MakeRequest(request);
+  if (!MakeRequest(request))
+    return FALSE;
+
+  // sanity check the address - some Gks return address 0.0.0.0 and port 0
+  PIPSocket::Address ipAddr;
+  WORD port;
+  return address.GetIpAndPort(ipAddr, port) && (port != 0);
 }
 
 
@@ -1467,6 +1483,8 @@ BOOL H323Gatekeeper::AdmissionRequest(H323Connection & connection,
     info.accessTokenOID2 = info.accessTokenOID1.Mid(comma+1);
     info.accessTokenOID1.Delete(comma, P_MAX_INDEX);
   }
+
+  connection.OnSendARQ(arq);
 
   Request request(arq.m_requestSeqNum, pdu);
   request.responseInfo = &info;

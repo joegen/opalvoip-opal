@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkserver.h,v $
- * Revision 1.2014  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2015  2006/01/02 15:51:44  dsandras
+ * Merged changes from OpenH323 Atlas_devel_2.
+ *
+ * Revision 2.13  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.12  2004/06/04 06:54:02  csoutheren
@@ -820,7 +823,8 @@ class H323GatekeeperCall : public PSafeObject
     virtual BOOL TranslateAliasAddress(
       const H225_AliasAddress & alias,
       H225_ArrayOf_AliasAddress & aliases,
-      H323TransportAddress & address
+      H323TransportAddress & address,
+      BOOL & gkRouted
     );
 
   //@}
@@ -1666,7 +1670,8 @@ class H323GatekeeperServer : public H323TransactionServer
     virtual BOOL TranslateAliasAddress(
       const H225_AliasAddress & alias,
       H225_ArrayOf_AliasAddress & aliases,
-      H323TransportAddress & address
+      H323TransportAddress & address,
+      BOOL & isGKRouted
     );
 
     /**Translate a given alias to a signal address.
