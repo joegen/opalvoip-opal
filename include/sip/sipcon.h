@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2041  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2042  2006/01/02 14:47:28  dsandras
+ * More code cleanups.
+ *
+ * Revision 2.40  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.39  2005/10/22 12:16:05  dsandras
@@ -540,6 +543,11 @@ class SIPConnection : public OpalConnection
 
   protected:
     PDECLARE_NOTIFIER(PThread, SIPConnection, HandlePDUsThreadMain);
+    virtual RTP_UDP *OnUseRTPSession(
+      const unsigned rtpSessionId,
+      const OpalTransportAddress & mediaAddress,
+      OpalTransportAddress & localAddress
+    );
     virtual void OnReceivedSDP(SIP_PDU & pdu);
     virtual BOOL OnReceivedSDPMediaDescription(
       SDPSessionDescription & sdp,
@@ -551,6 +559,11 @@ class SIPConnection : public OpalConnection
       SDPMediaDescription::MediaType mediaType,
       unsigned sessionId,
       SDPSessionDescription & sdpOut
+    );
+    virtual BOOL OnOpenSourceMediaStreams(
+      const OpalMediaFormatList & remoteFormatList,
+      unsigned sessionId,
+      SDPMediaDescription *localMedia
     );
     SDPMediaDescription::Direction GetDirection(unsigned sessionId);
     static BOOL WriteINVITE(OpalTransport & transport, void * param);

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2116  2006/01/02 11:28:07  dsandras
+ * Revision 1.2117  2006/01/02 14:47:28  dsandras
+ * More code cleanups.
+ *
+ * Revision 2.115  2006/01/02 11:28:07  dsandras
  * Some documentation. Various code cleanups to prevent duplicate code.
  *
  * Revision 2.114  2005/12/26 20:53:37  dsandras
@@ -702,13 +705,49 @@ BOOL SIPConnection::SetConnected()
 }
 
 
+RTP_UDP *SIPConnection::OnUseRTPSession(const unsigned rtpSessionId, const OpalTransportAddress & mediaAddress, OpalTransportAddress & localAddress)
+{
+  RTP_UDP *rtpSession = NULL;
+  RTP_DataFrame::PayloadTypes ntePayloadCode = RTP_DataFrame::IllegalPayloadType;
+
+  // if doing media bypass, we need to set the local address
+  // otherwise create an RTP session
+  if (ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
+    OpalConnection * otherParty = GetCall().GetOtherPartyConnection(*this);
+    if (otherParty != NULL) {
+      MediaInformation info;
+      if (otherParty->GetMediaInformation(rtpSessionId, info)) {
+        localAddress = info.data;
+        ntePayloadCode = info.rfc2833;
+      }
+    }
+    mediaTransportAddresses.SetAt(rtpSessionId, new OpalTransportAddress(mediaAddress));
+  }
+  else {
+    // create an RTP session
+    rtpSession = (RTP_UDP *)UseSession(GetTransport(), rtpSessionId, NULL);
+    if (rtpSession == NULL) {
+      return NULL;
+    }
+    
+    // Set user data
+    if (rtpSession->GetUserData() == NULL)
+      rtpSession->SetUserData(new SIP_RTP_Session(*this));
+
+    // Local Address of the session
+    localAddress = GetLocalAddress(rtpSession->GetLocalDataPort());
+  }
+
+  return rtpSession;
+}
+
+
 BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpIn,
                                               SDPMediaDescription::MediaType rtpMediaType,
                                               unsigned rtpSessionId,
                                               SDPSessionDescription & sdpOut)
 {
   RTP_UDP * rtpSession = NULL;
-  BOOL updateAddress = FALSE;
 
   // if no matching media type, return FALSE
   SDPMediaDescription * incomingMedia = sdpIn.GetMediaDescription(rtpMediaType);
@@ -738,63 +777,21 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
     }
   }
 
+  // Create the RTPSession if required
   OpalTransportAddress localAddress;
-  RTP_DataFrame::PayloadTypes ntePayloadCode = RTP_DataFrame::IllegalPayloadType;
-
-  // if doing media bypass, we need to set the local address
-  // otherwise create an RTP session
-  if (ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
-    OpalConnection * otherParty = GetCall().GetOtherPartyConnection(*this);
-    if (otherParty != NULL) {
-      MediaInformation info;
-      if (otherParty->GetMediaInformation(rtpSessionId, info)) {
-        localAddress = info.data;
-        ntePayloadCode = info.rfc2833;
-      }
-    }
-    mediaTransportAddresses.SetAt(rtpSessionId, new OpalTransportAddress(incomingMedia->GetTransportAddress()));
-  }
-  else {
-
-    // create an RTP session
-    rtpSession = (RTP_UDP *)UseSession(GetTransport(), rtpSessionId, NULL);
-    if (rtpSession == NULL) {
+  OpalTransportAddress mediaAddress = incomingMedia->GetTransportAddress();
+  rtpSession = OnUseRTPSession(rtpSessionId, mediaAddress, localAddress);
+  if (rtpSession == NULL) {
       Release(EndedByTransportFail);
       return FALSE;
-    }
-    
-    if (!IsConnectionOnHold()) {
-      
-      // Set user data
-      if (rtpSession->GetUserData() == NULL)
-        rtpSession->SetUserData(new SIP_RTP_Session(*this));
-
-      updateAddress = TRUE;
-    }
-
-    localAddress = GetLocalAddress(rtpSession->GetLocalDataPort());
   }
-
-  // Try opening streams 
-  PWaitAndSignal m(streamsMutex);
-  ownerCall.OpenSourceMediaStreams(*this, remoteFormatList, rtpSessionId);
 
   // construct a new media session list 
   SDPMediaDescription * localMedia = new SDPMediaDescription(localAddress, rtpMediaType);
 
-  // Locate the opened media stream, add it to the reply 
-  // and open the reverse direction
+  // Open the streams and the reverse media streams
   BOOL reverseStreamsFailed = TRUE;
-  for (i = 0; i < mediaStreams.GetSize(); i++) {
-    OpalMediaStream & mediaStream = mediaStreams[i];
-    if (mediaStream.GetSessionID() == rtpSessionId) {
-      OpalMediaFormat mediaFormat = mediaStream.GetMediaFormat();
-      if (OpenSourceMediaStream(mediaFormat, rtpSessionId)) {
-	localMedia->AddMediaFormat(mediaStream.GetMediaFormat());
-	reverseStreamsFailed = FALSE;
-      }
-    }
-  }
+  reverseStreamsFailed = OnOpenSourceMediaStreams(remoteFormatList, rtpSessionId, localMedia);
   
   // Add in the RFC2833 handler, if used
   if (hasTelephoneEvent) {
@@ -802,16 +799,14 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   }
   
   // set the remote address after the stream is opened
-  if (updateAddress) {
-    PIPSocket::Address ip;
-    WORD port;
-    incomingMedia->GetTransportAddress().GetIpAndPort(ip, port);
-    if (!rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
-      PTRACE(1, "SIP\tCannot set remote ports on RTP session");
-      ReleaseSession(rtpSessionId);
-      delete localMedia;
-      return FALSE;
-    }
+  PIPSocket::Address ip;
+  WORD port;
+  incomingMedia->GetTransportAddress().GetIpAndPort(ip, port);
+  if (!rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
+    PTRACE(1, "SIP\tCannot set remote ports on RTP session");
+    ReleaseSession(rtpSessionId);
+    delete localMedia;
+    return FALSE;
   }
   
   // No stream opened for this session, use the default SDP
@@ -828,6 +823,28 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   sdpOut.AddMediaDescription(localMedia);
 
   return TRUE;
+}
+    
+
+BOOL SIPConnection::OnOpenSourceMediaStreams(const OpalMediaFormatList & remoteFormatList, unsigned sessionId, SDPMediaDescription *localMedia)
+{
+  BOOL reverseStreamsFailed = TRUE;
+  
+  PWaitAndSignal m(streamsMutex);
+  ownerCall.OpenSourceMediaStreams(*this, remoteFormatList, sessionId);
+
+  for (PINDEX i = 0; i < mediaStreams.GetSize(); i++) {
+    OpalMediaStream & mediaStream = mediaStreams[i];
+    if (mediaStream.GetSessionID() == sessionId) {
+      OpalMediaFormat mediaFormat = mediaStream.GetMediaFormat();
+      if (OpenSourceMediaStream(mediaFormat, sessionId) && localMedia) {
+	localMedia->AddMediaFormat(mediaStream.GetMediaFormat());
+	reverseStreamsFailed = FALSE;
+      }
+    }
+  }
+
+  return reverseStreamsFailed;
 }
 
 
@@ -1849,52 +1866,29 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
                                                   SDPMediaDescription::MediaType mediaType,
                                                   unsigned rtpSessionId)
 {
+  RTP_UDP *rtpSession = NULL;
   SDPMediaDescription * mediaDescription = sdp.GetMediaDescription(mediaType);
+  
   if (mediaDescription == NULL) {
     PTRACE(1, "SIP\tCould not find SDP media description for " << mediaType);
     return FALSE;
   }
 
+  // Create the RTPSession
+  OpalTransportAddress localAddress;
   OpalTransportAddress address = mediaDescription->GetTransportAddress();
-  if (ownerCall.IsMediaBypassPossible(*this, rtpSessionId))
-    mediaTransportAddresses.SetAt(rtpSessionId, new OpalTransportAddress(address));
-  else {
-
-    PIPSocket::Address ip;
-    WORD port;
-    address.GetIpAndPort(ip, port);
-
-    RTP_UDP * rtpSession = (RTP_UDP *)UseSession(GetTransport(), rtpSessionId, NULL);
-    if (rtpSession == NULL) {
-      PTRACE(1, "SIP\tSession in response that we never offered!");
-      Release(EndedByTransportFail);
-      return FALSE;
-    }
-
-    rtpSession->SetUserData(new SIP_RTP_Session(*this));
-
-    if (!rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
-      PTRACE(1, "SIP\tCould not set RTP remote socket");
-      return FALSE;
-    }
-  }
-
-  remoteFormatList += mediaDescription->GetMediaFormats(rtpSessionId);
-  AdjustMediaFormats(remoteFormatList);
-  
-  PWaitAndSignal m(streamsMutex);
-  if (!ownerCall.OpenSourceMediaStreams(*this, remoteFormatList, rtpSessionId)) {
-    PTRACE(2, "SIP\tCould not open media streams for " << rtpSessionId);
+  rtpSession = OnUseRTPSession(rtpSessionId, address, localAddress);
+  if (rtpSession == NULL) {
+    Release(EndedByTransportFail);
     return FALSE;
   }
 
-  // OPen the reverse streams
-  for (PINDEX i = 0; i < mediaStreams.GetSize(); i++) {
-    OpalMediaStream & mediaStream = mediaStreams[i];
-    if (mediaStream.GetSessionID() == rtpSessionId) {
-      OpenSourceMediaStream(mediaStream.GetMediaFormat(), rtpSessionId);
-    }
-  }
+  // Adjust the remote formats list
+  remoteFormatList += mediaDescription->GetMediaFormats(rtpSessionId);
+  AdjustMediaFormats(remoteFormatList);
+  
+  // Open the streams and the reverse streams
+  OnOpenSourceMediaStreams(remoteFormatList, rtpSessionId, NULL);
 
   return TRUE;
 }
