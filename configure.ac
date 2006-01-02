@@ -1,5 +1,6 @@
 AC_INIT(include/opal/manager.h)
 
+AC_PROG_CC
 AC_PROG_CXX
 
 dnl ########################################################################
