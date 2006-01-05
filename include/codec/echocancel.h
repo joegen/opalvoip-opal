@@ -23,6 +23,9 @@
  * Contributor(s): Miguel Rodriguez Perez
  *
  * $Log: echocancel.h,v $
+ * Revision 1.5  2006/01/05 12:02:31  rjongbloed
+ * Fixed DevStudio compile errors
+ *
  * Revision 1.4  2005/12/29 16:20:53  dsandras
  * Added wideband support to the echo canceller.
  *
@@ -48,8 +51,8 @@
 #include <rtp/rtp.h>
 #include <ptclib/qchannel.h>
 
-class SpeexEchoState;
-class SpeexPreprocessState;
+struct SpeexEchoState;
+struct SpeexPreprocessState;
 
 ///////////////////////////////////////////////////////////////////////////////
 class OpalEchoCanceler : public PObject
