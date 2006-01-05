@@ -1217,6 +1217,9 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\codec\h263codec.cxx">
+				</File>
+				<File
 					RelativePath="..\codec\ilbccodec.cxx">
 					<FileConfiguration
 						Name="Debug|Win32">
@@ -6620,6 +6623,12 @@
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32">
+						<Tool
+							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="No Trace|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
 							UsePrecompiledHeader="0"/>
