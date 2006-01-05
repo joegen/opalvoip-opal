@@ -19,7 +19,7 @@
     *  calculation of auto correlation
     *---------------------------------------------------------------*/
 
-   void autocorr(
+   void ilbc_autocorr(
        float *r,       /* (o) autocorrelation vector */
        const float *x, /* (i) data vector */
        int N,          /* (i) length of data vector */
