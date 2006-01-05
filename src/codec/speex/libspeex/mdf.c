@@ -54,7 +54,7 @@
 #define max(a,b) ((a)>(b) ? (a) : (b))
 
 /** Compute inner product of two real vectors */
-static inline float inner_prod(float *x, float *y, int N)
+static float inner_prod(float *x, float *y, int N)
 {
    int i;
    float ret=0;
@@ -64,7 +64,7 @@ static inline float inner_prod(float *x, float *y, int N)
 }
 
 /** Compute power spectrum of a half-complex (packed) vector */
-static inline void power_spectrum(float *X, float *ps, int N)
+static void power_spectrum(float *X, float *ps, int N)
 {
    int i, j;
    ps[0]=X[0]*X[0];
@@ -76,7 +76,7 @@ static inline void power_spectrum(float *X, float *ps, int N)
 }
 
 /** Compute cross-power spectrum of a half-complex (packed) vectors and add to acc */
-static inline void spectral_mul_accum(float *X, float *Y, float *acc, int N)
+static void spectral_mul_accum(float *X, float *Y, float *acc, int N)
 {
    int i;
    acc[0] += X[0]*Y[0];
@@ -89,7 +89,7 @@ static inline void spectral_mul_accum(float *X, float *Y, float *acc, int N)
 }
 
 /** Compute weighted cross-power spectrum of a half-complex (packed) vector with conjugate */
-static inline void weighted_spectral_mul_conj(float *w, float *X, float *Y, float *prod, int N)
+static void weighted_spectral_mul_conj(float *w, float *X, float *Y, float *prod, int N)
 {
    int i, j;
    prod[0] = w[0]*X[0]*Y[0];

@@ -93,7 +93,7 @@ static void conj_window(float *w, int len)
    which multiplied by xi/(1+xi) is the optimal gain
    in the loudness domain ( sqrt[amplitude] )
 */
-static inline float hypergeom_gain(float x)
+static float hypergeom_gain(float x)
 {
    int ind;
    float integer, frac;
@@ -112,7 +112,7 @@ static inline float hypergeom_gain(float x)
    return ((1-frac)*table[ind] + frac*table[ind+1])/sqrt(x+.0001f);
 }
 
-static inline float qcurve(float x)
+static float qcurve(float x)
 {
    return 1.f/(1.f+.1f/(x*x));
 }
