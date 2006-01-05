@@ -55,7 +55,7 @@
                    iLBCenc_inst->lpc_buffer + is, BLOCKL_MAX);
            }
 
-           autocorr(r, temp, BLOCKL_MAX, LPC_FILTERORDER);
+           ilbc_autocorr(r, temp, BLOCKL_MAX, LPC_FILTERORDER);
            window(r, r, lpc_lagwinTbl, LPC_FILTERORDER + 1);
 
            levdurb(lp, temp, r, LPC_FILTERORDER);
