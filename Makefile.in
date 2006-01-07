@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.21  2006/01/07 17:37:50  dsandras
+# Updated to speex 1.1.11.2 to fix divergeance issues.
+#
 # Revision 1.20  2006/01/01 19:19:32  dsandras
 # Added RFC2190 H.263 codec thanks to Salyens. Many thanks!
 #
@@ -511,6 +514,10 @@ SOURCES 	+= $(OPAL_SRCDIR)/codec/speexcodec.cxx \
                    $(SPEEX_SRCDIR)/exc_10_32_table.c \
                    $(SPEEX_SRCDIR)/exc_10_16_table.c \
                    $(SPEEX_SRCDIR)/exc_20_32_table.c \
+                   $(SPEEX_SRCDIR)/math_approx.c \
+                   $(SPEEX_SRCDIR)/kiss_fft.c \
+                   $(SPEEX_SRCDIR)/kiss_fftr.c \
+                   $(SPEEX_SRCDIR)/fftwrap.c \
                    $(SPEEX_SRCDIR)/hexc_10_32_table.c \
                    $(SPEEX_SRCDIR)/mdf.c \
                    $(SPEEX_SRCDIR)/misc.c \

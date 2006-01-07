@@ -1,7 +1,8 @@
+/* Copyright (C) 2004 CSIRO Australia */
 /* Copyright (C) 2002 Jean-Marc Valin*/
 /**
-   @file speex_stereo.h
-   @brief Describes the handling for intensity stereo
+  @file speex_noglobals.h
+  @brief Dynamically allocates the different modes of the codec
 */
 /*
    Redistribution and use in source and binary forms, with or without
@@ -30,45 +31,26 @@
    LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
    NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 */
 
-#ifndef STEREO_H
-#define STEREO_H
+#ifndef SPEEX_NOGLOBALS_H
+#define SPEEX_NOGLOBALS_H
 
-#include "speex_types.h"
-#include "speex_bits.h"
+/* See README.symbian in the Speex source distribution for information
+ * on using this API */
+
+typedef struct SpeexMode SpeexMode;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** State used for decoding (intensity) stereo information */
-typedef struct SpeexStereoState {
-   float balance;      /**< Left/right balance info */
-   float e_ratio;      /**< Ratio of energies: E(left+right)/[E(left)+E(right)]  */
-   float smooth_left;  /**< Smoothed left channel gain */
-   float smooth_right; /**< Smoothed right channel gain */
-   float reserved1;    /**< Reserved for future use */
-   float reserved2;    /**< Reserved for future use */
-} SpeexStereoState;
+/** Instantiate a mode */
+const SpeexMode * speex_mode_new (int modeID);
 
-/** Initialization value for a stereo state */
-#define SPEEX_STEREO_STATE_INIT {1,.5,1,1}
-
-/** Transforms a stereo frame into a mono frame and stores intensity stereo info in 'bits' */
-void speex_encode_stereo(float *data, int frame_size, SpeexBits *bits);
-
-/** Transforms a stereo frame into a mono frame and stores intensity stereo info in 'bits' */
-void speex_encode_stereo_int(spx_int16_t *data, int frame_size, SpeexBits *bits);
-
-/** Transforms a mono frame into a stereo frame using intensity stereo info */
-void speex_decode_stereo(float *data, int frame_size, SpeexStereoState *stereo);
-
-/** Transforms a mono frame into a stereo frame using intensity stereo info */
-void speex_decode_stereo_int(spx_int16_t *data, int frame_size, SpeexStereoState *stereo);
-
-/** Callback handler for intensity stereo info */
-int speex_std_stereo_request_handler(SpeexBits *bits, void *state, void *data);
+/** Destroy a mode */
+void speex_mode_destroy (const SpeexMode * mode);
 
 #ifdef __cplusplus
 }
