@@ -8,8 +8,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include "speex/speex_echo.h"
-#include "speex/speex_preprocess.h"
+#include "speex_echo.h"
+#include "speex_preprocess.h"
 
 
 #define NN 160
@@ -17,7 +17,7 @@
 int main(int argc, char **argv)
 {
    int echo_fd, ref_fd, e_fd;
-   float noise[NN+1];
+   spx_int32_t noise[NN+1];
    short echo_buf[NN], ref_buf[NN], e_buf[NN];
    SpeexEchoState *st;
    SpeexPreprocessState *den;
