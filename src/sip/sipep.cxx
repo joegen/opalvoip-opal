@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2092  2006/01/02 11:28:07  dsandras
+ * Revision 1.2093  2006/01/07 18:29:44  dsandras
+ * Fixed exit problems in case of unregistration failure.
+ *
+ * Revision 2.91  2006/01/02 11:28:07  dsandras
  * Some documentation. Various code cleanups to prevent duplicate code.
  *
  * Revision 2.90  2005/12/20 20:40:47  dsandras
@@ -599,15 +602,19 @@ SIPEndPoint::~SIPEndPoint()
 {
   listeners.RemoveAll();
 
+  int unregistered = 0;
+  int registrationsNumber = GetRegistrationsCount();
+
   /* Unregister */
   int i = 0;
-  while (GetRegistrationsCount() > 0) {
+  while (unregistered < registrationsNumber) {
     SIPURL url;
     SIPInfo *info = activeSIPInfo.GetAt(i);
     url = info->GetRegistrationAddress ();
     if (info->GetMethod() == SIP_PDU::Method_REGISTER && info->IsRegistered()) {
       Unregister(url.GetHostName(), url.GetUserName());
-      info->SetRegistered(FALSE); // Prevent loop in case it would faild
+      info->SetRegistered(FALSE);
+      unregistered++;
     }
     else
       i++;
