@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2093  2006/01/07 18:29:44  dsandras
+ * Revision 1.2094  2006/01/07 18:30:20  dsandras
+ * Further simplification.
+ *
+ * Revision 2.92  2006/01/07 18:29:44  dsandras
  * Fixed exit problems in case of unregistration failure.
  *
  * Revision 2.91  2006/01/02 11:28:07  dsandras
@@ -613,7 +616,6 @@ SIPEndPoint::~SIPEndPoint()
     url = info->GetRegistrationAddress ();
     if (info->GetMethod() == SIP_PDU::Method_REGISTER && info->IsRegistered()) {
       Unregister(url.GetHostName(), url.GetUserName());
-      info->SetRegistered(FALSE);
       unregistered++;
     }
     else
