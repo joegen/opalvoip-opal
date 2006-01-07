@@ -23,6 +23,9 @@
  * Contributor(s): Miguel Rodriguez Perez.
  *
  * $Log: echocancel.cxx,v $
+ * Revision 1.11  2006/01/07 17:37:50  dsandras
+ * Updated to speex 1.1.11.2 to fix divergeance issues.
+ *
  * Revision 1.10  2005/12/31 09:18:44  dsandras
  * Some fine-tuning.
  *
@@ -62,8 +65,6 @@
 #pragma implementation "echocancel.h"
 #endif
 
-#include <codec/echocancel.h>
-
 extern "C" {
 #if OPAL_SYSTEM_SPEEX
 #include <speex_echo.h>
@@ -73,6 +74,8 @@ extern "C" {
 #include "../src/codec/speex/libspeex/speex_preprocess.h"
 #endif
 };
+
+#include <codec/echocancel.h>
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -184,7 +187,7 @@ void OpalEchoCanceler::ReceivedPacket(RTP_DataFrame& input_frame, INT)
   if (echo_buf == NULL)
     echo_buf = (short *) malloc(inputSize);
   if (noise == NULL)
-    noise = (float *) malloc((inputSize/sizeof(short)+1)*sizeof(float));
+    noise = (spx_int32_t *) malloc((inputSize/sizeof(short)+1)*sizeof(spx_int32_t));
   if (e_buf == NULL)
     e_buf = (short *) malloc(inputSize);
   if (ref_buf == NULL)
@@ -199,7 +202,7 @@ void OpalEchoCanceler::ReceivedPacket(RTP_DataFrame& input_frame, INT)
   
   /* Read from the PQueueChannel a reference echo frame of the size
    * of the captured frame. */
-  if (!echo_chan->Read(echo_buf, input_frame.GetPayloadSize())) {
+  if (!echo_chan->Read((short *) echo_buf, input_frame.GetPayloadSize())) {
     
     /* Nothing to read from the speaker signal, only suppress the noise
      * and return.
@@ -211,10 +214,10 @@ void OpalEchoCanceler::ReceivedPacket(RTP_DataFrame& input_frame, INT)
   }
    
   /* Cancel the echo in this frame */
-  speex_echo_cancel(echoState, ref_buf, echo_buf, e_buf, noise);
+  speex_echo_cancel(echoState, ref_buf, echo_buf, e_buf, (spx_int32_t *) noise);
   
   /* Suppress the noise */
-  speex_preprocess(preprocessState, e_buf, noise);
+  speex_preprocess(preprocessState, e_buf, (spx_int32_t *) noise);
 
   /* Use the result of the echo cancelation as capture frame */
   memcpy(input_frame.GetPayloadPtr(), e_buf, input_frame.GetPayloadSize());
