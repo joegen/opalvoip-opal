@@ -23,6 +23,9 @@
  * Contributor(s): Miguel Rodriguez Perez
  *
  * $Log: echocancel.h,v $
+ * Revision 1.6  2006/01/07 17:37:50  dsandras
+ * Updated to speex 1.1.11.2 to fix divergeance issues.
+ *
  * Revision 1.5  2006/01/05 12:02:31  rjongbloed
  * Fixed DevStudio compile errors
  *
@@ -51,8 +54,14 @@
 #include <rtp/rtp.h>
 #include <ptclib/qchannel.h>
 
+#ifndef SPEEX_ECHO_H
 struct SpeexEchoState;
+#endif
+
+#ifndef SPEEX_PREPROCESS_H
 struct SpeexPreprocessState;
+#endif 
+
 
 ///////////////////////////////////////////////////////////////////////////////
 class OpalEchoCanceler : public PObject
@@ -120,7 +129,7 @@ private:
   short *ref_buf;
   short *echo_buf;
   short *e_buf;
-  float *noise;
+  void *noise;
 };
 
 #endif // __OPAL_ECHOCANCEL_H

@@ -43,7 +43,7 @@
 #include "misc.h"
 #include "speex.h"
 #include "speex_bits.h"
-#include "speex_jitter.h"
+#include <speex_jitter.h>
 #include <stdio.h>
 
 #define LATE_BINS 4
@@ -74,6 +74,7 @@ void speex_jitter_init(SpeexJitter *jitter, void *decoder, int sampling_rate)
 
 void speex_jitter_destroy(SpeexJitter *jitter)
 {
+   speex_bits_destroy(&jitter->current_packet);
 }
 
 
