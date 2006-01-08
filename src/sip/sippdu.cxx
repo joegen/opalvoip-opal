@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2078  2006/01/02 11:28:07  dsandras
+ * Revision 1.2079  2006/01/08 14:42:49  dsandras
+ * Added guards against closed transport.
+ *
+ * Revision 2.77  2006/01/02 11:28:07  dsandras
  * Some documentation. Various code cleanups to prevent duplicate code.
  *
  * Revision 2.76  2005/12/14 18:01:00  dsandras
@@ -1608,6 +1611,9 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
 #endif                  
     transport.clear(ios::badbit);
 
+  if (!transport.IsOpen())
+    return FALSE;
+
   // get the message from transport into cmd and parse MIME
   transport.clear();
   PString cmd;
@@ -1704,6 +1710,9 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
 
 BOOL SIP_PDU::Write(OpalTransport & transport)
 {
+  if (!transport.IsOpen())
+    return FALSE;
+
   if (sdp != NULL) {
     entityBody = sdp->Encode();
     mime.SetContentType("application/sdp");
