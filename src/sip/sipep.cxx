@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2094  2006/01/07 18:30:20  dsandras
+ * Revision 1.2095  2006/01/08 14:43:47  dsandras
+ * Improved the NAT binding refresh methods so that it works with all endpoint
+ * created transports that require it and so that it can work by sending
+ * SIP Options, or empty SIP requests. More methods can be added later.
+ *
+ * Revision 2.93  2006/01/07 18:30:20  dsandras
  * Further simplification.
  *
  * Revision 2.92  2006/01/07 18:29:44  dsandras
@@ -369,8 +374,6 @@ SIPInfo::SIPInfo(SIPEndPoint &endpoint, const PString & adjustedUsername)
   registrationAddress.Parse(adjustedUsername);
   registrationID = 
     OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
-  natTimer.SetNotifier(PCREATE_NOTIFIER(OnNATTimeout));
-  natBindingOptions = NULL;
 }
 
 
@@ -378,9 +381,6 @@ SIPInfo::~SIPInfo()
 {
   registrations.RemoveAll();
 
-  if (natBindingOptions)
-    delete natBindingOptions;
-  
   if (registrarTransport) 
     delete registrarTransport;
 }
@@ -436,21 +436,6 @@ void SIPInfo::Cancel (SIPTransaction & transaction)
 }
 
 
-void SIPInfo::OnNATTimeout (PTimer &, INT)
-{
-  if (registrarTransport) {
-    if (natBindingOptions)
-      if (natBindingOptions->IsFinished())
-	delete natBindingOptions;
-      else
-	return;
-    
-    natBindingOptions = new SIPOptions (ep, *registrarTransport, registrationAddress.GetHostName());
-    natBindingOptions->Start();
-  }
-}
-
-
 SIPRegisterInfo::SIPRegisterInfo(SIPEndPoint & endpoint, const PString & name, const PString & authName, const PString & pass, int exp)
   :SIPInfo(endpoint, name)
 {
@@ -489,11 +474,6 @@ void SIPRegisterInfo::OnSuccess ()
   ep.OnRegistered(registrationAddress.GetHostName(), 
 		  registrationAddress.GetUserName(),
 		  (expire > 0)); 
-  if (ep.GetManager().GetSTUN (registrationAddress.GetHostName()))
-    if (expire > 0)
-      natTimer.RunContinuous(PMAX (PTimeInterval(0, 20), ep.GetNATBindingTimeout()));
-    else
-      natTimer.Stop();
 }
 
 void SIPRegisterInfo::OnFailed (SIP_PDU::StatusCodes r)
@@ -532,11 +512,6 @@ SIPTransaction * SIPMWISubscribeInfo::CreateTransaction(OpalTransport &t, BOOL u
 void SIPMWISubscribeInfo::OnSuccess ()
 { 
   SetRegistered((expire == 0)?FALSE:TRUE);
-  if (ep.GetManager().GetSTUN (registrationAddress.GetHostName()))
-    if (expire > 0)
-      natTimer.RunContinuous(PMAX (PTimeInterval(0, 20), ep.GetNATBindingTimeout()));
-    else
-      natTimer.Stop();
 }
 
 void SIPMWISubscribeInfo::OnFailed(SIP_PDU::StatusCodes /*reason*/)
@@ -560,10 +535,8 @@ SIPTransaction * SIPMessageInfo::CreateTransaction(OpalTransport &t, BOOL /*unre
   return message;
 }
 
-void SIPMessageInfo::OnSuccess ()
+void SIPMessageInfo::OnSuccess()
 { 
-  if (ep.GetManager().GetSTUN (registrationAddress.GetHostName()))
-    natTimer.RunContinuous(PTimeInterval(60000));
 }
 
 void SIPMessageInfo::OnFailed(SIP_PDU::StatusCodes reason)
@@ -591,11 +564,17 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   lastSentCSeq = 0;
   userAgentString = "OPAL/2.0";
 
+  natTransports.DisallowDeleteObjects();
   transactions.DisallowDeleteObjects();
   activeSIPInfo.AllowDeleteObjects();
 
   registrationTimer.SetNotifier(PCREATE_NOTIFIER(RegistrationRefresh));
   registrationTimer.RunContinuous (PTimeInterval(0, 30));
+  
+  natBindingTimer.SetNotifier(PCREATE_NOTIFIER(NATBindingRefresh));
+  natBindingTimer.RunContinuous (natBindingTimeout);
+
+  natMethod = None;
 
   PTRACE(3, "SIP\tCreated endpoint.");
 }
@@ -655,15 +634,68 @@ BOOL SIPEndPoint::NewIncomingConnection(OpalTransport * transport)
 void SIPEndPoint::TransportThreadMain(PThread &, INT param)
 {
   PTRACE(2, "SIP\tRead thread started.");
-
   OpalTransport * transport = (OpalTransport *)param;
+
+  BOOL stunTransport = FALSE;
+
+  stunTransport = (!transport->IsReliable() && GetManager().GetSTUN(transport->GetRemoteAddress().GetHostName()));
+
+  if (stunTransport) {
+    natTransportMutex.Wait();
+    natTransports.Append(transport);
+    natTransportMutex.Signal();
+  }
 
   do {
     HandlePDU(*transport);
   } while (transport->IsOpen());
-
+  
+  if (stunTransport) {
+    natTransportMutex.Wait();
+    natTransports.Remove(transport);
+    natTransportMutex.Signal();
+  }
+  
   PTRACE(2, "SIP\tRead thread finished.");
 }
+
+
+void SIPEndPoint::NATBindingRefresh(PTimer &, INT param)
+{
+  PTRACE(5, "SIP\tNAT Binding refresh started.");
+
+  if (natMethod != None) {
+    
+    for (PINDEX i = 0 ; i < natTransports.GetSize() ; i++) {
+      PWaitAndSignal m(natTransportMutex);
+
+      OpalTransport *transport = (OpalTransport *) natTransports.GetAt(i);
+      if (transport && transport->IsOpen()) {
+	switch (natMethod) {
+
+	case Options: 
+	    {
+	      SIPOptions options(*this, *transport, transport->GetRemoteAddress());
+	      options.Write(*transport);
+	      break;
+	    }
+
+	case EmptyRequest:
+	    {
+	      transport->Write("\r\n", 2);
+	      break;
+	    }
+
+	default:
+	  break;
+	}
+      }
+    }
+  }
+
+  PTRACE(5, "SIP\tNAT Binding refresh finished.");
+}
+
 
 
 OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & address)
@@ -708,7 +740,6 @@ OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & addres
                                             PThread::NoAutoDeleteThread,
                                             PThread::NormalPriority,
                                             "SIP Transport:%x"));
-
   return transport;
 }
 
