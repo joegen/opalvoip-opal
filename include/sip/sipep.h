@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2046  2006/01/08 14:43:46  dsandras
+ * Revision 1.2047  2006/01/08 21:53:40  dsandras
+ * Changed IsRegistered so that it takes the registration url as argument,
+ * allowing it to work when there are several accounts on the same server.
+ *
+ * Revision 2.45  2006/01/08 14:43:46  dsandras
  * Improved the NAT binding refresh methods so that it works with all endpoint
  * created transports that require it and so that it can work by sending
  * SIP Options, or empty SIP requests. More methods can be added later.
@@ -619,9 +623,8 @@ class SIPEndPoint : public OpalEndPoint
       BOOL wasRegistering);
 
     
-    /**Returns TRUE if registered to the given host.
-     * The hostname is the one used in the Register function,
-     * it can also be the realm.
+    /**Returns TRUE if the given URL has been registered 
+     * (e.g.: 6001@seconix.com).
      */
     BOOL IsRegistered(const PString & host);
 
@@ -865,7 +868,7 @@ class SIPEndPoint : public OpalEndPoint
 	    /**
 	     * Find the SIPInfo object with the specified registration host.
 	     * For example, in the above case, the name parameter
-	     * could be "sip.seconix.com" and "seconix.com"
+	     * could be "sip.seconix.com".
 	     */
 	    SIPInfo *FindSIPInfoByDomain (const PString & name, SIP_PDU::Methods meth, PSafetyMode m)
 	    {
@@ -873,7 +876,6 @@ class SIPEndPoint : public OpalEndPoint
       		if (
               (
                 name == info->GetRegistrationAddress().GetHostName() 
-                /*|| name == info->GetAuthentication().GetRealm() */
                )
 		           && meth == info->GetMethod()
              )
