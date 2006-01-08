@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2045  2006/01/02 11:28:07  dsandras
+ * Revision 1.2046  2006/01/08 14:43:46  dsandras
+ * Improved the NAT binding refresh methods so that it works with all endpoint
+ * created transports that require it and so that it can work by sending
+ * SIP Options, or empty SIP requests. More methods can be added later.
+ *
+ * Revision 2.44  2006/01/02 11:28:07  dsandras
  * Some documentation. Various code cleanups to prevent duplicate code.
  *
  * Revision 2.43  2005/12/18 21:06:56  dsandras
@@ -186,7 +191,7 @@
 
 #include <opal/endpoint.h>
 #include <sip/sippdu.h>
-
+ 
 
 class SIPConnection;
 
@@ -285,12 +290,9 @@ class SIPInfo : public PSafeObject
       PString            authUser;
       PString 	         password;
       PString		 body;
-      PTimer             natTimer;
-      SIPOptions       * natBindingOptions;
       PMutex             transportMutex;
     
     private:
-      PDECLARE_NOTIFIER(PTimer, SIPInfo, OnNATTimeout);
 };
 
 class SIPRegisterInfo : public SIPInfo
@@ -705,9 +707,8 @@ class SIPEndPoint : public OpalEndPoint
     
     void SetNATBindingTimeout(
       const PTimeInterval & t
-    ) { natBindingTimeout = t; }
+    ) { natBindingTimeout = t; natBindingTimer.RunContinuous (natBindingTimeout); }
     const PTimeInterval & GetNATBindingTimeout() const { return natBindingTimeout; }
-
 
     void AddTransaction(
       SIPTransaction * transaction
@@ -783,9 +784,26 @@ class SIPEndPoint : public OpalEndPoint
     /**Send a message to the given URL.
      */
     BOOL SendMessage (const SIPURL & url, const PString & body);
+    
+
+    /**NAT Binding Refresh Method
+     */
+    enum NATBindingRefreshMethod{
+      None,
+      Options,
+      EmptyRequest,
+      NumMethods
+    };
+
+
+    /**Set the NAT Binding Refresh Method
+     */
+    void SetNATBindingRefreshMethod(const NATBindingRefreshMethod m) { natMethod = m; }
+
 
   protected:
     PDECLARE_NOTIFIER(PThread, SIPEndPoint, TransportThreadMain);
+    PDECLARE_NOTIFIER(PTimer, SIPEndPoint, NATBindingRefresh);
     PDECLARE_NOTIFIER(PTimer, SIPEndPoint, RegistrationRefresh);
 
     /** This dictionary is used both to contain the active and successful
@@ -911,7 +929,12 @@ class SIPEndPoint : public OpalEndPoint
     SIPTransactionList messages;
     SIPTransactionDict transactions;
 
-    PMutex	       transactionsMutex;
+    PMutex                  natTransportMutex;
+    PTimer                  natBindingTimer;
+    NATBindingRefreshMethod natMethod;
+    PList<OpalTransport>    natTransports;
+
+    PMutex             transactionsMutex;
 
     unsigned           lastSentCSeq;
 };
