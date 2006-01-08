@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2095  2006/01/08 14:43:47  dsandras
+ * Revision 1.2096  2006/01/08 21:53:41  dsandras
+ * Changed IsRegistered so that it takes the registration url as argument,
+ * allowing it to work when there are several accounts on the same server.
+ *
+ * Revision 2.94  2006/01/08 14:43:47  dsandras
  * Improved the NAT binding refresh methods so that it works with all endpoint
  * created transports that require it and so that it can work by sending
  * SIP Options, or empty SIP requests. More methods can be added later.
@@ -1324,9 +1328,9 @@ void SIPEndPoint::OnRegistered(const PString & /*host*/,
 }
 
 
-BOOL SIPEndPoint::IsRegistered(const PString & host) 
+BOOL SIPEndPoint::IsRegistered(const PString & url) 
 {
-  PSafePtr<SIPInfo> info = activeSIPInfo.FindSIPInfoByDomain(host, SIP_PDU::Method_REGISTER, PSafeReadOnly);
+  PSafePtr<SIPInfo> info = activeSIPInfo.FindSIPInfoByUrl(url, SIP_PDU::Method_REGISTER, PSafeReadOnly);
 
   if (info == NULL)
     return FALSE;
