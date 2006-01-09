@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2097  2006/01/09 12:19:07  csoutheren
+ * Revision 1.2098  2006/01/09 12:55:13  csoutheren
+ * Fixed default calledDestinationName
+ *
+ * Revision 2.96  2006/01/09 12:19:07  csoutheren
  * Added member variables to capture incoming destination addresses
  *
  * Revision 2.95  2006/01/02 15:52:39  dsandras
@@ -2171,7 +2174,7 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
 
   // get the destination number and name, just in case we are a gateway
   if (setup.m_destinationAddress.GetSize() == 0)
-    calledDestinationName = signallingChannel->GetRemoteAddress();
+    calledDestinationName = signallingChannel->GetLocalAddress();
   else 
     calledDestinationName = H323GetAliasAddressString(setup.m_destinationAddress[0]);
   setupPDU.GetQ931().GetCalledPartyNumber(calledDestinationNumber);
