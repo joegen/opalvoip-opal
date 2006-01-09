@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2096  2006/01/02 15:52:39  dsandras
+ * Revision 1.2097  2006/01/09 12:19:07  csoutheren
+ * Added member variables to capture incoming destination addresses
+ *
+ * Revision 2.95  2006/01/02 15:52:39  dsandras
  * Added what was required to merge changes from OpenH323 Altas_devel_2 in gkclient.cxx, gkserver.cxx and channels.cxx.
  *
  * Revision 2.94  2005/12/06 21:32:24  dsandras
@@ -2165,6 +2168,13 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
   // Determine the remote parties name/number/address as best we can
   setupPDU.GetQ931().GetCallingPartyNumber(remotePartyNumber);
   remotePartyName = setupPDU.GetSourceAliases(signallingChannel);
+
+  // get the destination number and name, just in case we are a gateway
+  if (setup.m_destinationAddress.GetSize() == 0)
+    calledDestinationName = signallingChannel->GetRemoteAddress();
+  else 
+    calledDestinationName = H323GetAliasAddressString(setup.m_destinationAddress[0]);
+  setupPDU.GetQ931().GetCalledPartyNumber(calledDestinationNumber);
 
   // get the peer address
   remotePartyAddress = signallingChannel->GetRemoteAddress();
