@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2049  2005/12/06 21:32:24  dsandras
+ * Revision 1.2050  2006/01/09 12:19:06  csoutheren
+ * Added member variables to capture incoming destination addresses
+ *
+ * Revision 2.48  2005/12/06 21:32:24  dsandras
  * Applied patch from Frederic Heem <frederic.heem _Atttt_ telsey.it> to fix
  * assert in PSyncPoint when OnReleased is called twice from different threads.
  * Thanks! (Patch #1374240)
@@ -1036,6 +1039,17 @@ class OpalConnection : public PSafeObject
       */
     virtual const PString GetRemotePartyCallbackURL() const { return remotePartyAddress; }
 
+
+    /**Get the called number (for incoming calls). This is useful for gateway
+       applications where the destination number may not be the same as the local number
+      */
+    virtual const PString & GetCalledDestinationNumber() const { return calledDestinationNumber; }
+
+    /**Get the called name (for incoming calls). This is useful for gateway
+       applications where the destination name may not be the same as the local username
+      */
+    virtual const PString & GetCalledDestinationName() const { return calledDestinationName; }
+
     /**Get the default maximum audio jitter delay parameter.
        Defaults to 50ms
      */
@@ -1099,6 +1113,8 @@ class OpalConnection : public PSafeObject
     PString              remotePartyNumber;
     PString              remotePartyAddress;
     CallEndReason        callEndReason;
+    PString              calledDestinationNumber;
+    PString              calledDestinationName;
 
     PString               userInputString;
     PMutex                userInputMutex;
