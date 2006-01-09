@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2117  2006/01/02 14:47:28  dsandras
+ * Revision 1.2118  2006/01/09 11:49:46  dsandras
+ * Call SetRemoteSocketInfo to update the remote address when doing calls.
+ *
+ * Revision 2.116  2006/01/02 14:47:28  dsandras
  * More code cleanups.
  *
  * Revision 2.115  2006/01/02 11:28:07  dsandras
@@ -801,7 +804,7 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   // set the remote address after the stream is opened
   PIPSocket::Address ip;
   WORD port;
-  incomingMedia->GetTransportAddress().GetIpAndPort(ip, port);
+  mediaAddress.GetIpAndPort(ip, port);
   if (!rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
     PTRACE(1, "SIP\tCannot set remote ports on RTP session");
     ReleaseSession(rtpSessionId);
@@ -1889,6 +1892,16 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
   
   // Open the streams and the reverse streams
   OnOpenSourceMediaStreams(remoteFormatList, rtpSessionId, NULL);
+
+  // set the remote address after the stream is opened
+  PIPSocket::Address ip;
+  WORD port;
+  address.GetIpAndPort(ip, port);
+  if (!rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
+    PTRACE(1, "SIP\tCannot set remote ports on RTP session");
+    ReleaseSession(rtpSessionId);
+    return FALSE;
+  }
 
   return TRUE;
 }
