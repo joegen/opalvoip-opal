@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2096  2006/01/08 21:53:41  dsandras
+ * Revision 1.2097  2006/01/09 12:15:42  csoutheren
+ * Fixed warning under VS.net 2003
+ *
+ * Revision 2.95  2006/01/08 21:53:41  dsandras
  * Changed IsRegistered so that it takes the registration url as argument,
  * allowing it to work when there are several accounts on the same server.
  *
@@ -664,7 +667,7 @@ void SIPEndPoint::TransportThreadMain(PThread &, INT param)
 }
 
 
-void SIPEndPoint::NATBindingRefresh(PTimer &, INT param)
+void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
 {
   PTRACE(5, "SIP\tNAT Binding refresh started.");
 
