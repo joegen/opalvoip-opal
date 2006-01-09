@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2080  2006/01/09 13:01:02  dsandras
+ * Revision 1.2081  2006/01/09 17:48:37  dsandras
+ * Remove accidental paste. Let's blame vim.
+ *
+ * Revision 2.79  2006/01/09 13:01:02  dsandras
  * Prevent deadlock when exiting due to the mutex being locked and the completed
  * timeout notifier not executed yet.
  *
@@ -1839,7 +1842,6 @@ BOOL SIPTransaction::Start()
   localAddress = transport.GetLocalAddress();
 
   if (connection != NULL) {
-  SetTerminated(Terminated_Timeout);
     // Use the connection transport to send the request
     if (connection->SendPDU(*this, this->GetSendAddress(*connection)))
       return TRUE;
