@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2079  2006/01/08 14:42:49  dsandras
+ * Revision 1.2080  2006/01/09 13:01:02  dsandras
+ * Prevent deadlock when exiting due to the mutex being locked and the completed
+ * timeout notifier not executed yet.
+ *
+ * Revision 2.78  2006/01/08 14:42:49  dsandras
  * Added guards against closed transport.
  *
  * Revision 2.77  2006/01/02 11:28:07  dsandras
@@ -1803,6 +1807,9 @@ SIPTransaction::~SIPTransaction()
     PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " aborted.");
     connection->RemoveTransaction(this);
   }
+  if (state > NotStarted && state < Terminated_Success) 
+    finished.Signal();
+  
   PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " destroyed.");
 }
 
@@ -1832,6 +1839,7 @@ BOOL SIPTransaction::Start()
   localAddress = transport.GetLocalAddress();
 
   if (connection != NULL) {
+  SetTerminated(Terminated_Timeout);
     // Use the connection transport to send the request
     if (connection->SendPDU(*this, this->GetSendAddress(*connection)))
       return TRUE;
