@@ -134,7 +134,7 @@ struct SpeexEchoState_ {
    spx_word16_t preemph;
 };
 
-static inline spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int len)
+static spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int len)
 {
    spx_word32_t sum=0;
    len >>= 2;
@@ -152,7 +152,7 @@ static inline spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t 
 }
 
 /** Compute power spectrum of a half-complex (packed) vector */
-static inline void power_spectrum(spx_word16_t *X, spx_word32_t *ps, int N)
+static void power_spectrum(spx_word16_t *X, spx_word32_t *ps, int N)
 {
    int i, j;
    ps[0]=MULT16_16(X[0],X[0]);
@@ -193,7 +193,7 @@ static inline void spectral_mul_accum(spx_word16_t *X, spx_word32_t *Y, spx_word
    acc[N-1] = PSHR32(tmp1,WEIGHT_SHIFT);
 }
 #else
-static inline void spectral_mul_accum(spx_word16_t *X, spx_word32_t *Y, spx_word16_t *acc, int N, int M)
+static void spectral_mul_accum(spx_word16_t *X, spx_word32_t *Y, spx_word16_t *acc, int N, int M)
 {
    int i,j;
    for (i=0;i<N;i++)
@@ -214,7 +214,7 @@ static inline void spectral_mul_accum(spx_word16_t *X, spx_word32_t *Y, spx_word
 #endif
 
 /** Compute weighted cross-power spectrum of a half-complex (packed) vector with conjugate */
-static inline void weighted_spectral_mul_conj(spx_float_t *w, spx_word16_t *X, spx_word16_t *Y, spx_word32_t *prod, int N)
+static void weighted_spectral_mul_conj(spx_float_t *w, spx_word16_t *X, spx_word16_t *Y, spx_word32_t *prod, int N)
 {
    int i, j;
    prod[0] = FLOAT_MUL32(w[0],MULT16_16(X[0],Y[0]));
@@ -353,7 +353,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    spx_word16_t leak_estimate;
    spx_word16_t ss, ss_1;
    spx_float_t Pey = FLOAT_ONE, Pyy=FLOAT_ONE;
-   spx_float_t alpha;
+   spx_float_t alpha, alpha_1;
    spx_word16_t RER;
    spx_word32_t tmp32;
    spx_word16_t M_1;
@@ -486,7 +486,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    if (tmp32 > MULT16_32_Q15(st->beta_max,See))
       tmp32 = MULT16_32_Q15(st->beta_max,See);
    alpha = FLOAT_DIV32(tmp32, See);
-   spx_float_t alpha_1 = FLOAT_SUB(FLOAT_ONE, alpha);
+   alpha_1 = FLOAT_SUB(FLOAT_ONE, alpha);
    /* Update correlations (recursive average) */
    st->Pey = FLOAT_ADD(FLOAT_MULT(alpha_1,st->Pey) , FLOAT_MULT(alpha,Pey));
    st->Pyy = FLOAT_ADD(FLOAT_MULT(alpha_1,st->Pyy) , FLOAT_MULT(alpha,Pyy));
@@ -588,7 +588,11 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       /* Remove the "if" to make this an MDF filter */
       if (j==M-1 || st->cancel_count%(M-1) == j)
       {
+#ifdef _WIN32
+         spx_word16_t * w = (spx_word16_t *)_alloca(N * sizeof(spx_word16_t));
+#else
          spx_word16_t w[N];
+#endif
 #ifdef FIXED_POINT
          spx_word16_t w2[N];
          for (i=0;i<N;i++)

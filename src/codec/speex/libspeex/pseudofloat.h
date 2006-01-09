@@ -84,7 +84,7 @@ static inline float REALFLOAT(spx_float_t a)
    return a.m * pow(2,a.e);
 }
 
-static inline spx_float_t FLOAT_ADD(spx_float_t a, spx_float_t b)
+static spx_float_t FLOAT_ADD(spx_float_t a, spx_float_t b)
 {
    if (a.m==0)
       return b;
@@ -109,7 +109,7 @@ static inline spx_float_t FLOAT_ADD(spx_float_t a, spx_float_t b)
    return r;
 }
 
-static inline spx_float_t FLOAT_SUB(spx_float_t a, spx_float_t b)
+static spx_float_t FLOAT_SUB(spx_float_t a, spx_float_t b)
 {
    if (a.m==0)
       return b;
