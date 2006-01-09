@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2118  2006/01/09 11:49:46  dsandras
+ * Revision 1.2119  2006/01/09 12:19:07  csoutheren
+ * Added member variables to capture incoming destination addresses
+ *
+ * Revision 2.117  2006/01/09 11:49:46  dsandras
  * Call SetRemoteSocketInfo to update the remote address when doing calls.
  *
  * Revision 2.116  2006/01/02 14:47:28  dsandras
@@ -1418,6 +1421,10 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   remoteApplication.Replace ('/', '\t'); 
   localPartyAddress  = mime.GetTo() + ";tag=" + GetTag(); // put a real random 
   mime.SetTo(localPartyAddress);
+
+  // get the called destination
+  calledDestinationName   = originalInvite->GetURI().GetDisplayName();
+  calledDestinationNumber = originalInvite->GetURI().GetUserName();
 
   // update the target address
   targetAddress = mime.GetFrom();
