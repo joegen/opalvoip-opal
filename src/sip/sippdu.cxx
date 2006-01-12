@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2081  2006/01/09 17:48:37  dsandras
+ * Revision 1.2082  2006/01/12 20:23:44  dsandras
+ * Reorganized things to prevent crashes when calling itself.
+ *
+ * Revision 2.80  2006/01/09 17:48:37  dsandras
  * Remove accidental paste. Let's blame vim.
  *
  * Revision 2.79  2006/01/09 13:01:02  dsandras
@@ -1806,12 +1809,15 @@ SIPTransaction::~SIPTransaction()
   retryTimer.Stop();
   completionTimer.Stop();
 
+  if (state > NotStarted && state < Terminated_Success) 
+    finished.Signal();
+  
+  PWaitAndSignal m(mutex);
+  
   if (connection != NULL && state > NotStarted && state < Terminated_Success) {
     PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " aborted.");
     connection->RemoveTransaction(this);
   }
-  if (state > NotStarted && state < Terminated_Success) 
-    finished.Signal();
   
   PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " destroyed.");
 }
