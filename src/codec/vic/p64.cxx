@@ -54,7 +54,10 @@
 /************ Change log
  *
  * $Log: p64.cxx,v $
- * Revision 1.2007  2005/11/25 00:14:29  csoutheren
+ * Revision 1.2008  2006/01/12 17:56:37  dsandras
+ * Added initialization as in Mimas branch of openh323.
+ *
+ * Revision 2.6  2005/11/25 00:14:29  csoutheren
  * Applied patch #1303543 from Hannes Friederich
  * Added guard to weird conditions in H261 codec
  *
@@ -498,7 +501,7 @@ void P64Decoder::filter(u_char* in, u_char* out, u_int stride)
 	u_int r11 = in[4] << 24 | in[5] << 16 | in[6] << 8 | in[7];
 	in += stride;
 
-	u_int r20, r21;
+	u_int r20 = 0, r21 = 0;
 	u_int mask = 0xff00ff;
 	for (int k = 6; --k >= 0; ) {
 		/* load next row */
@@ -1119,11 +1122,6 @@ BOOL P64Decoder::decode(const unsigned char *hdrPtr, int buffLen,
   h261hdr_t h261hdr;
   
   // preventing accidential crashes
-  if(buffLen == 0)
-  {
-	  return FALSE;
-  }
-
   if (buffLen == 0)
     return FALSE;
 
