@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2119  2006/01/09 12:19:07  csoutheren
+ * Revision 1.2120  2006/01/12 20:23:44  dsandras
+ * Reorganized things to prevent crashes when calling itself.
+ *
+ * Revision 2.118  2006/01/09 12:19:07  csoutheren
  * Added member variables to capture incoming destination addresses
  *
  * Revision 2.117  2006/01/09 11:49:46  dsandras
@@ -609,9 +612,6 @@ void SIPConnection::OnReleased()
   CloseMediaStreams();
   streamsMutex.Signal();
 
-  // Remove all INVITEs
-  invitations.RemoveAll();
-
   // Sent a BYE, wait for it to complete
   if (byeTransaction != NULL) {
     byeTransaction->Wait();
@@ -631,6 +631,9 @@ void SIPConnection::OnReleased()
     transport->CloseWait();
 
   OpalConnection::OnReleased();
+  
+  // Remove all INVITEs
+  invitations.RemoveAll();
 }
 
 
