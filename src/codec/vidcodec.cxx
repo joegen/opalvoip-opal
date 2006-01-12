@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vidcodec.cxx,v $
- * Revision 1.2011  2005/10/21 17:58:31  dsandras
+ * Revision 1.2012  2006/01/12 17:55:22  dsandras
+ * Initialize the fillLevel to a saner value.
+ *
+ * Revision 2.10  2005/10/21 17:58:31  dsandras
  * Applied patch from Hannes Friederich <hannesf AATT ee.ethz.ch> to fix OpalVideoUpdatePicture - PIsDescendant problems. Thanks!
  *
  * Revision 2.9  2005/09/06 12:44:49  rjongbloed
@@ -125,7 +128,7 @@ OpalVideoTranscoder::OpalVideoTranscoder(const OpalMediaFormat & inputMediaForma
   : OpalTranscoder(inputMediaFormat, outputMediaFormat)
 {
   UpdateOutputMediaFormat(outputMediaFormat);
-  fillLevel = 0;
+  fillLevel = 5;
   updatePicture = false;
 }
 
