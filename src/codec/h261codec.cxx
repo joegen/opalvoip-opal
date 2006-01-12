@@ -25,7 +25,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.cxx,v $
- * Revision 1.2028  2006/01/02 16:34:24  dsandras
+ * Revision 1.2029  2006/01/12 17:54:01  dsandras
+ * Added check for commandNotifier before calling it, prevents assert.
+ *
+ * Revision 2.27  2006/01/02 16:34:24  dsandras
  * Fixed compilation warning.
  *
  * Revision 2.26  2005/10/22 10:29:04  dsandras
@@ -520,7 +523,7 @@ BOOL Opal_H261_YUV420P::ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameLi
   expectedSequenceNumber = (WORD)(src.GetSequenceNumber()+1);
 
   videoDecoder->mark(now);
-  if (!videoDecoder->decode(src.GetPayloadPtr(), src.GetPayloadSize(), lostPreviousPacket)) {
+  if (!videoDecoder->decode(src.GetPayloadPtr(), src.GetPayloadSize(), lostPreviousPacket) && commandNotifier != PNotifier()) {
     OpalVideoUpdatePicture updatePicture;
     commandNotifier(updatePicture, 0); 
     PTRACE (3, "H261\t Could not decode frame, sending VideoUpdatePicture in hope of an I-Frame.");
