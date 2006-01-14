@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.cxx,v $
- * Revision 1.2014  2005/12/30 14:33:12  dsandras
+ * Revision 1.2015  2006/01/14 10:40:16  dsandras
+ * Applied typecast patch thanks to Dennis White <denniswhite98 ___AT_ yahoo.com>
+ *
+ * Revision 2.13  2005/12/30 14:33:12  dsandras
  * Added support for Packet Loss Concealment frames for framed codecs supporting it similarly to what was done for OpenH323.
  *
  * Revision 2.12  2005/12/29 16:22:33  dsandras
@@ -462,7 +465,7 @@ BOOL Opal_Speex_Decoder::ConvertFrame(const BYTE * src, BYTE * dst)
 {
   speex_bits_reset(bits);
   speex_bits_read_from(bits, (char *)src, inputBytesPerFrame); 
-  speex_decode_int(decoder, bits, (short *) dst); 
+  speex_decode_int(decoder, bits, (spx_int16_t *) dst); 
 
   return TRUE;
 }
@@ -501,7 +504,7 @@ Opal_Speex_Encoder::~Opal_Speex_Encoder()
 BOOL Opal_Speex_Encoder::ConvertFrame(const BYTE * src, BYTE * dst)
 {
   speex_bits_reset(bits); 
-  speex_encode_int(encoder, (short *) src, bits); 
+  speex_encode_int(encoder, (spx_int16_t *) src, bits); 
 
   speex_bits_write(bits, (char *)dst, outputBytesPerFrame); 
 
