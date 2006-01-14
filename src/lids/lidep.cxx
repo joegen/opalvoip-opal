@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2026  2004/10/06 13:03:42  rjongbloed
+ * Revision 1.2027  2006/01/14 10:43:06  dsandras
+ * Applied patch from Brian Lu <Brian.Lu _AT_____ sun.com> to allow compilation
+ * with OpenSolaris compiler. Many thanks !!!
+ *
+ * Revision 2.25  2004/10/06 13:03:42  rjongbloed
  * Added "configure" support for known LIDs
  * Changed LID GetName() function to be normalised against the GetAllNames()
  *   return values and fixed the pre-factory registration system.
@@ -195,7 +199,7 @@ BOOL OpalLIDEndPoint::MakeConnection(OpalCall & call,
   // If we are the A-party then need to initiate a call now in this thread. If
   // we are the B-Party then SetUpConnection() gets called in the context of
   // the A-party thread.
-  if (call.GetConnection(0) == connection)
+  if (call.GetConnection(0) == (OpalConnection*)connection)
     connection->SetUpConnection();
 
   return TRUE;

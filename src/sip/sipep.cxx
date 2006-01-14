@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2097  2006/01/09 12:15:42  csoutheren
+ * Revision 1.2098  2006/01/14 10:43:06  dsandras
+ * Applied patch from Brian Lu <Brian.Lu _AT_____ sun.com> to allow compilation
+ * with OpenSolaris compiler. Many thanks !!!
+ *
+ * Revision 2.96  2006/01/09 12:15:42  csoutheren
  * Fixed warning under VS.net 2003
  *
  * Revision 2.95  2006/01/08 21:53:41  dsandras
@@ -794,7 +798,7 @@ BOOL SIPEndPoint::MakeConnection(OpalCall & call,
   // If we are the A-party then need to initiate a call now in this thread. If
   // we are the B-Party then SetUpConnection() gets called in the context of
   // the A-party thread.
-  if (call.GetConnection(0) == connection)
+  if (call.GetConnection(0) == (OpalConnection*)connection)
     connection->SetUpConnection();
 
   return TRUE;
