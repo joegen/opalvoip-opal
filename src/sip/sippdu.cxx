@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2082  2006/01/12 20:23:44  dsandras
+ * Revision 1.2083  2006/01/14 10:43:06  dsandras
+ * Applied patch from Brian Lu <Brian.Lu _AT_____ sun.com> to allow compilation
+ * with OpenSolaris compiler. Many thanks !!!
+ *
+ * Revision 2.81  2006/01/12 20:23:44  dsandras
  * Reorganized things to prevent crashes when calling itself.
  *
  * Revision 2.80  2006/01/09 17:48:37  dsandras
@@ -1614,7 +1618,7 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
   // Do this to force a Read() by the PChannelBuffer outside of the
   // ios::lock() mutex which would prevent simultaneous reads and writes.
   transport.SetReadTimeout(PMaxTimeInterval);
-#if defined(__MWERKS__) || (__GNUC__ >= 3) || (_MSC_VER >= 1300)
+#if defined(__MWERKS__) || (__GNUC__ >= 3) || (_MSC_VER >= 1300) || defined(SOLARIS)
   if (transport.rdbuf()->pubseekoff(0, ios_base::cur) == streampos(_BADOFF))
 #else
   if (transport.rdbuf()->seekoff(0, ios::cur, ios::in) == EOF)

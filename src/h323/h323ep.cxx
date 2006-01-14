@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2042  2006/01/02 15:52:39  dsandras
+ * Revision 1.2043  2006/01/14 10:43:06  dsandras
+ * Applied patch from Brian Lu <Brian.Lu _AT_____ sun.com> to allow compilation
+ * with OpenSolaris compiler. Many thanks !!!
+ *
+ * Revision 2.41  2006/01/02 15:52:39  dsandras
  * Added what was required to merge changes from OpenH323 Altas_devel_2 in gkclient.cxx, gkserver.cxx and channels.cxx.
  *
  * Revision 2.40  2005/11/28 19:08:26  dsandras
@@ -1342,7 +1346,7 @@ BOOL H323EndPoint::InternalMakeCall(OpalCall & call,
   PTRACE(3, "H323\tCreated new connection: " << newToken);
 
   // See if we are starting an outgoing connection as first in a call
-  if (call.GetConnection(0) == connection || !existingToken.IsEmpty())
+  if (call.GetConnection(0) == (OpalConnection*)connection || !existingToken.IsEmpty())
     connection->SetUpConnection();
 
   return TRUE;
