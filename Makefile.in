@@ -22,6 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.22  2006/01/14 10:43:06  dsandras
+# Applied patch from Brian Lu <Brian.Lu _AT_____ sun.com> to allow compilation
+# with OpenSolaris compiler. Many thanks !!!
+#
 # Revision 1.21  2006/01/07 17:37:50  dsandras
 # Updated to speex 1.1.11.2 to fix divergeance issues.
 #
@@ -205,6 +209,10 @@ exec_prefix = ${PREFIX}
 
 ifndef PREFIX
 PREFIX=/usr/local
+endif
+
+ifeq ($(USE_GCC),yes)
+ANSI_FLAG = -ansi
 endif
 
 OPAL_OBJDIR = $(OPAL_LIBDIR)/$(PT_OBJBASE)
@@ -748,12 +756,12 @@ $(DEPDIR)/%.dep : $(VIC_DIR)/%.cxx
 
 $(OPAL_OBJDIR)/%.o : $(GSM_SRCDIR)/%.c
 	@if [ ! -d $(OPAL_OBJDIR) ] ; then mkdir -p $(OPAL_OBJDIR) ; fi
-	$(CC) $(STDCCFLAGS) -ansi -I$(GSM_INCDIR) -DWAV49 -DNeedFunctionPrototypes=1 $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
+	$(CC) $(STDCCFLAGS) $(ANSI_FLAG) -I$(GSM_INCDIR) -DWAV49 -DNeedFunctionPrototypes=1 $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
 
 $(DEPDIR)/%.dep : $(GSM_SRCDIR)/%.c
 	@if [ ! -d $(DEPDIR) ] ; then mkdir -p $(DEPDIR) ; fi
 	@printf %s $(OPAL_OBJDIR)/ > $@
-	$(CC) -ansi -I$(GSM_INCDIR) -DWAV49 -DNeedFunctionPrototypes=1 $(CFLAGS) -M $< >> $@
+	$(CC) $(ANSI_FLAG) -I$(GSM_INCDIR) -DWAV49 -DNeedFunctionPrototypes=1 $(CFLAGS) -M $< >> $@
 
 
 # Build rules for the G.726 codec

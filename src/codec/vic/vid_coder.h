@@ -42,7 +42,11 @@
 /************ Change log
  *
  * $Log: vid_coder.h,v $
- * Revision 1.2003  2005/08/31 13:16:02  rjongbloed
+ * Revision 1.2004  2006/01/14 10:43:06  dsandras
+ * Applied patch from Brian Lu <Brian.Lu _AT_____ sun.com> to allow compilation
+ * with OpenSolaris compiler. Many thanks !!!
+ *
+ * Revision 2.2  2005/08/31 13:16:02  rjongbloed
  * Ported video fast update from OpenH323
  *
  * Revision 2.1  2003/03/15 23:43:00  robertj
@@ -100,7 +104,7 @@ extern "C" {
 #include "crdef.h"
 #include "videoframe.h"
 
-#if defined(sun) && !defined(__svr4__)
+#if !defined(SOLARIS) && defined(sun) && !defined(__svr4__)
 extern "C" int gettimeofday(struct timeval*, struct timezone*);
 #endif
 
