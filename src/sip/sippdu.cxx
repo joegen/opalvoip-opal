@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2083  2006/01/14 10:43:06  dsandras
+ * Revision 1.2084  2006/01/16 23:06:20  dsandras
+ * Added old-style proxies support (those that do not support working as
+ * outbound proxies thanks to an initial routeset).
+ *
+ * Revision 2.82  2006/01/14 10:43:06  dsandras
  * Applied patch from Brian Lu <Brian.Lu _AT_____ sun.com> to allow compilation
  * with OpenSolaris compiler. Many thanks !!!
  *
@@ -1595,8 +1599,11 @@ OpalTransportAddress SIP_PDU::GetSendAddress(SIPConnection & connection)
       address = OpalTransportAddress(firstRoute.GetHostAddress());
     }
   }
-  else address = GetURI().GetHostAddress();
-  
+  else if (!connection.GetEndPoint().GetProxy().IsEmpty()) // Old style proxies
+    address = connection.GetEndPoint().GetProxy().GetHostAddress();
+  else
+    address = GetURI().GetHostAddress();
+
   return address;
 }
 
@@ -2280,7 +2287,7 @@ SIPAck::SIPAck(SIPEndPoint & ep,
 {
   Construct();
   // Use the topmost via header from the INVITE we ACK as per 9.1. 
-  PStringList viaList = mime.GetViaList();
+  PStringList viaList = invite.GetMIME().GetViaList();
   mime.SetVia(viaList[0]);
 }
 
