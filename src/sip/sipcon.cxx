@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2120  2006/01/12 20:23:44  dsandras
+ * Revision 1.2121  2006/01/16 23:05:09  dsandras
+ * Minor fixes. Reset the route set to the proxy (if any), when authenticating
+ * invite.
+ *
+ * Revision 2.119  2006/01/12 20:23:44  dsandras
  * Reorganized things to prevent crashes when calling itself.
  *
  * Revision 2.118  2006/01/09 12:19:07  csoutheren
@@ -1760,6 +1764,7 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
                                                      SIP_PDU & response)
 {
   BOOL isProxy = response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
+  SIPURL proxy;
   SIPAuthentication auth;
   PString lastUsername;
   PString lastNonce;
@@ -1786,11 +1791,9 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
   }
 
   // Save the username, realm and nonce
-  if (authentication.IsValid()) {
-    lastUsername = authentication.GetUsername();
-    lastNonce = authentication.GetNonce();
-  }
-  
+  lastUsername = auth.GetUsername();
+  lastNonce = auth.GetNonce();
+
   // Try to find authentication parameters for the given realm,
   // if not, use the proxy authentication parameters (if any)
   if (!endpoint.GetAuthentication(auth.GetAuthRealm(), authentication)) {
@@ -1813,9 +1816,10 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
     return;
   }
   
-  if (authentication.IsValid()
-      && lastUsername == authentication.GetUsername ()
-      && lastNonce    == authentication.GetNonce ()) {
+  if (!authentication.IsValid() 
+      || (authentication.IsValid()
+	  && lastUsername == authentication.GetUsername ()
+	  && lastNonce    == authentication.GetNonce ())) {
 
     PTRACE(1, "SIP\tAlready done INVITE for " << proxyTrace << "Authentication Required");
     Release(EndedBySecurityDenial);
@@ -1827,6 +1831,13 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
   PINDEX j;
   if ((j = remotePartyAddress.Find (';')) != P_MAX_INDEX)
     remotePartyAddress = remotePartyAddress.Left(j);
+  
+  if (proxy.IsEmpty())
+    proxy = endpoint.GetProxy();
+
+  // Default routeSet if there is a proxy
+  if (!proxy.IsEmpty()) 
+    routeSet += proxy.GetHostName() + ':' + PString(proxy.GetPort()) + ";lr=on";
 
   SIPTransaction * invite = new SIPInvite(*this, *transport);
   if (invite->Start())
