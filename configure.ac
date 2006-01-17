@@ -193,7 +193,7 @@ C_FILE
       SYSVER=`./t`
       AC_MSG_RESULT($SYSVER)
       AC_MSG_CHECKING(library Speex version)
-      LIBVER=`grep "#define VERSION" ./src/codec/speex/libspeex/misc.h | sed -e 's/^.*[Ss][Pp][Ee][Ee][Xx]\-//' -e 's/\"//'`
+      LIBVER=`grep "#define SPEEX_VERSION" ./src/codec/speex/libspeex/misc.h | sed -e 's/^.*[Ss][Pp][Ee][Ee][Xx]\-//' -e 's/\"//' -e 's/\/.*//'`
       AC_MSG_RESULT($LIBVER)
       AC_MSG_CHECKING(Speex versions)
       cat > t.pl <<P_FILE
@@ -210,8 +210,7 @@ C_FILE
       }
       \$i = 0;
       while (\$i < 3) {
-        print "comparing " . @sys[\$i] . " and " . @lib[\$i] . "\n";
-        if (\@sys[\$i] < @lib[\$i]) {
+        if (@sys[\$i] < @lib[\$i]) {
           print "0";
           die;
         }
@@ -222,7 +221,7 @@ C_FILE
 P_FILE
       SPEEX=`perl t.pl $SYSVER $LIBVER`
       rm t.pl
-      if test "x$SPEEX" = "x" ; then
+      if test "x$SPEEX" = "x0" ; then
         AC_MSG_RESULT(library version is more recent)
       else
         AC_MSG_RESULT(system version is more recent)
