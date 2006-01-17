@@ -5265,7 +5265,7 @@ echo "${ECHO_T}cannot determine - using library version" >&6
 echo "${ECHO_T}$SYSVER" >&6
       echo "$as_me:$LINENO: checking library Speex version" >&5
 echo $ECHO_N "checking library Speex version... $ECHO_C" >&6
-      LIBVER=`grep "#define VERSION" ./src/codec/speex/libspeex/misc.h | sed -e 's/^.*[Ss][Pp][Ee][Ee][Xx]\-//' -e 's/\"//'`
+      LIBVER=`grep "#define SPEEX_VERSION" ./src/codec/speex/libspeex/misc.h | sed -e 's/^.*[Ss][Pp][Ee][Ee][Xx]\-//' -e 's/\"//' -e 's/\/.*//'`
       echo "$as_me:$LINENO: result: $LIBVER" >&5
 echo "${ECHO_T}$LIBVER" >&6
       echo "$as_me:$LINENO: checking Speex versions" >&5
@@ -5284,8 +5284,7 @@ echo $ECHO_N "checking Speex versions... $ECHO_C" >&6
       }
       \$i = 0;
       while (\$i < 3) {
-        print "comparing " . @sys[\$i] . " and " . @lib[\$i] . "\n";
-        if (\@sys[\$i] < @lib[\$i]) {
+        if (@sys[\$i] < @lib[\$i]) {
           print "0";
           die;
         }
@@ -5296,7 +5295,7 @@ echo $ECHO_N "checking Speex versions... $ECHO_C" >&6
 P_FILE
       SPEEX=`perl t.pl $SYSVER $LIBVER`
       rm t.pl
-      if test "x$SPEEX" = "x" ; then
+      if test "x$SPEEX" = "x0" ; then
         echo "$as_me:$LINENO: result: library version is more recent" >&5
 echo "${ECHO_T}library version is more recent" >&6
       else
