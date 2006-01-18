@@ -22,8 +22,8 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
-# Revision 1.23  2006/01/17 18:50:56  dsandras
-# Minor change.
+# Revision 1.24  2006/01/18 11:26:29  dsandras
+# Reverted previous change.
 #
 # Revision 1.22  2006/01/14 10:43:06  dsandras
 # Applied patch from Brian Lu <Brian.Lu _AT_____ sun.com> to allow compilation
@@ -209,7 +209,6 @@ include $(OPALDIR)/opal_inc.mak
 
 PREFIX=@INSTALLPREFIX@/
 exec_prefix = ${PREFIX}
-LIBDIR=@LIBDIR@
 
 ifndef PREFIX
 PREFIX=/usr/local
@@ -814,8 +813,8 @@ test:
 
 #### Install targets
 install:
-	mkdir -p $(DESTDIR)$(LIBDIR)
-	( for dir in $(DESTDIR)$(LIBDIR) \
+	mkdir -p $(DESTDIR)@LIBDIR@
+	( for dir in $(DESTDIR)@LIBDIR@ \
 		     $(DESTDIR)$(PREFIX)/include/opal/asn \
 		     $(DESTDIR)$(PREFIX)/include/opal/codec \
 		     $(DESTDIR)$(PREFIX)/include/opal/h323 \
@@ -828,15 +827,15 @@ install:
 		     $(DESTDIR)$(PREFIX)/share/opal ;\
 		do mkdir -p $$dir ; chmod 755 $$dir ; \
 	done)
-	$(INSTALL) -m 755 lib/$(LIBNAME_PAT) $(DESTDIR)$(LIBDIR)
+	$(INSTALL) -m 755 lib/$(LIBNAME_PAT) $(DESTDIR)@LIBDIR@
 	ln -snf $(LIBNAME_PAT) \
-		$(DESTDIR)$(LIBDIR)/$(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION)
+		$(DESTDIR)@LIBDIR@/$(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION)
 	ln -snf $(LIBNAME_PAT) \
-		$(DESTDIR)$(LIBDIR)/$(OPAL_FILE).$(MAJOR_VERSION)
+		$(DESTDIR)@LIBDIR@/$(OPAL_FILE).$(MAJOR_VERSION)
 	ln -snf $(LIBNAME_PAT) \
-		$(DESTDIR)$(LIBDIR)/$(OPAL_FILE)
+		$(DESTDIR)@LIBDIR@/$(OPAL_FILE)
 	ln -snf $(LIBNAME_PAT) \
-		$(DESTDIR)$(LIBDIR)/libopal.so
+		$(DESTDIR)@LIBDIR@/libopal.so
 	( for fn in include/asn/*.h ; do \
 		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/asn ; \
 	done)
@@ -869,11 +868,11 @@ install:
 uninstall:
 	rm -rf $(DESTDIR)$(PREFIX)/include/opal \
 	       $(DESTDIR)$(PREFIX)/share/opal
-	rm -f $(DESTDIR)$(LIBDIR)/$(OPAL_FILE) \
-	      $(DESTDIR)$(LIBDIR)/libopal.so \
-	      $(DESTDIR)$(LIBDIR)/$(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION) \
-	      $(DESTDIR)$(LIBDIR)/$(OPAL_FILE).$(MAJOR_VERSION) \
-	      $(DESTDIR)$(LIBDIR)/$(LIBNAME_PAT)
+	rm -f $(DESTDIR)@LIBDIR@/$(OPAL_FILE) \
+	      $(DESTDIR)@LIBDIR@/libopal.so \
+	      $(DESTDIR)@LIBDIR@/$(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION) \
+	      $(DESTDIR)@LIBDIR@/$(OPAL_FILE).$(MAJOR_VERSION) \
+	      $(DESTDIR)@LIBDIR@/$(LIBNAME_PAT)
  
 docs:
 	doxygen opal_cfg.dxy
