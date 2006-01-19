@@ -22,6 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.25  2006/01/19 22:40:33  dereksmithies
+# Add iax2 to the list of instal directories. Thanks to Damien Sandras
+# for reporting the bug in iax2 compilation.
+#
 # Revision 1.24  2006/01/18 11:26:29  dsandras
 # Reverted previous change.
 #
@@ -818,6 +822,7 @@ install:
 		     $(DESTDIR)$(PREFIX)/include/opal/asn \
 		     $(DESTDIR)$(PREFIX)/include/opal/codec \
 		     $(DESTDIR)$(PREFIX)/include/opal/h323 \
+		     $(DESTDIR)$(PREFIX)/include/opal/iax2 \
 		     $(DESTDIR)$(PREFIX)/include/opal/lids \
 		     $(DESTDIR)$(PREFIX)/include/opal/opal \
 		     $(DESTDIR)$(PREFIX)/include/opal/rtp \
@@ -844,6 +849,9 @@ install:
 	done)
 	( for fn in include/h323/*.h ; do \
 		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/h323 ; \
+	done)
+	( for fn in include/iax2/*.h ; do \
+		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/iax2 ; \
 	done)
 	( for fn in include/lids/*.h ; do \
 		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/lids ; \
