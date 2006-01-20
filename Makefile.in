@@ -22,6 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.26  2006/01/20 00:00:59  csoutheren
+# Added protected against some source directories not being present
+# even wen configuration says they should be
+#
 # Revision 1.25  2006/01/19 22:40:33  dereksmithies
 # Add iax2 to the list of instal directories. Thanks to Damien Sandras
 # for reporting the bug in iax2 compilation.
@@ -241,16 +245,26 @@ endif
 
 VPATH_CXX := $(OPAL_SRCDIR)/opal \
 	     $(OPAL_SRCDIR)/rtp \
-	     $(OPAL_SRCDIR)/h323 \
-	     $(OPAL_SRCDIR)/iax2 \
 	     $(OPAL_SRCDIR)/lids \
-	     $(OPAL_SRCDIR)/codec \
+	     $(OPAL_SRCDIR)/codec 
+
+ifneq (,$(wildcard src/iax2))
+IAX2_AVAIL = 1
+VPATH_CXX += $(OPAL_SRCDIR)/iax2 
+endif
+
+ifneq (,$(wildcard src/sip))
+SIP_AVAIL = 1
+VPATH_CXX += $(OPAL_SRCDIR)/sip
+endif
+
+ifneq (,$(wildcard src/h323))
+H323_AVAIL = 1
+VPATH_CXX += $(OPAL_SRCDIR)/h323 \
 	     $(OPAL_SRCDIR)/t120 \
 	     $(OPAL_SRCDIR)/t38 \
-	     $(OPAL_SRCDIR)/sip \
 	     $(OPAL_SRCDIR)/asn 
-
-
+endif
 
 VPATH_C := $(OPAL_SRCDIR)/codec
 
@@ -278,6 +292,7 @@ SOURCES := $(OPAL_SRCDIR)/opal/manager.cxx \
 # H.323 files
 
 ifeq ($(OPAL_H323),1)
+ifdef H323_AVAIL
 
 ASN_SRCDIR := $(OPAL_SRCDIR)/asn
 ASN_INCDIR := $(OPAL_INCDIR)/asn
@@ -339,11 +354,13 @@ SOURCES += $(OPAL_SRCDIR)/t120/t120proto.cxx \
 
 
 endif
+endif
 
 ##################
 # IAX2 files
 
 ifeq ($(OPAL_IAX2),1)
+ifdef IAX2_AVAIL
 
 SOURCES += \
            $(OPAL_SRCDIR)/iax2/frame.cxx \
@@ -359,17 +376,20 @@ SOURCES += \
            $(OPAL_SRCDIR)/iax2/sound.cxx \
            $(OPAL_SRCDIR)/iax2/transmit.cxx 
 endif
+endif
 
 ################################################################################
 # SIP files
 
 ifeq ($(OPAL_SIP),1)
+ifdef SIP_AVAIL
 
 SOURCES += $(OPAL_SRCDIR)/sip/sipep.cxx \
            $(OPAL_SRCDIR)/sip/sipcon.cxx \
            $(OPAL_SRCDIR)/sip/sippdu.cxx \
            $(OPAL_SRCDIR)/sip/sdp.cxx \
 
+endif
 endif
 
 ##################
