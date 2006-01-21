@@ -23,6 +23,9 @@
  * Contributor(s): Miguel Rodriguez Perez.
  *
  * $Log: echocancel.cxx,v $
+ * Revision 1.13  2006/01/21 23:33:36  csoutheren
+ * Fixed error again :)
+ *
  * Revision 1.12  2006/01/21 23:27:06  csoutheren
  * Fixed error under MSVC 6
  *
@@ -198,7 +201,6 @@ void OpalEchoCanceler::ReceivedPacket(RTP_DataFrame& input_frame, INT)
 
   /* Remove the DC offset */
   short *j = (short *) input_frame.GetPayloadPtr();
-  int i;
   for (i = 0 ; i < (int) (inputSize/sizeof(short)) ; i++) {
     mean = 0.999*mean + 0.001*j[i];
     ref_buf[i] = j[i] - (short) mean;
