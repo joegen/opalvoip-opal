@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2121  2006/01/16 23:05:09  dsandras
+ * Revision 1.2122  2006/01/21 13:55:02  dsandras
+ * Fixed default route set when an outbound proxy is being used thanks to Vincent
+ * Untz <vuntz gnome org>. Thanks!
+ *
+ * Revision 2.120  2006/01/16 23:05:09  dsandras
  * Minor fixes. Reset the route set to the proxy (if any), when authenticating
  * invite.
  *
@@ -495,7 +499,7 @@ SIPConnection::SIPConnection(OpalCall & call,
 
   // Default routeSet if there is a proxy
   if (!proxy.IsEmpty()) 
-    routeSet += proxy.GetHostName() + ':' + PString(proxy.GetPort()) + ";lr=on";
+    routeSet += "sip:" + proxy.GetHostName() + ':' + PString(proxy.GetPort()) + ";lr";
   
   // Update remote party parameters
   remotePartyAddress = targetAddress.AsQuotedString();
@@ -1837,7 +1841,7 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
 
   // Default routeSet if there is a proxy
   if (!proxy.IsEmpty()) 
-    routeSet += proxy.GetHostName() + ':' + PString(proxy.GetPort()) + ";lr=on";
+    routeSet += "sip:" + proxy.GetHostName() + ':' + PString(proxy.GetPort()) + ";lr";
 
   SIPTransaction * invite = new SIPInvite(*this, *transport);
   if (invite->Start())
