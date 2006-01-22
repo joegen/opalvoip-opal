@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2026  2005/12/30 14:29:15  dsandras
+ * Revision 1.2027  2006/01/22 21:53:23  dsandras
+ * Fail when STUN needs to be used and can not be used.
+ *
+ * Revision 2.25  2005/12/30 14:29:15  dsandras
  * Removed the assumption that the jitter will contain a 8 kHz signal.
  *
  * Revision 2.24  2005/11/29 11:50:20  dsandras
@@ -1643,8 +1646,10 @@ BOOL RTP_UDP::Open(PIPSocket::Address _localAddress,
       dataSocket->GetLocalAddress(localAddress, localDataPort);
       controlSocket->GetLocalAddress(localAddress, localControlPort);
     }
-    else
+    else {
       PTRACE(1, "RTP\tSTUN could not create socket pair!");
+      return FALSE;
+    }
   }
 
   if (dataSocket == NULL || controlSocket == NULL) {
