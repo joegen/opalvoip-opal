@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2122  2006/01/21 13:55:02  dsandras
+ * Revision 1.2123  2006/01/22 22:18:36  dsandras
+ * Added a failure case.
+ *
+ * Revision 2.121  2006/01/21 13:55:02  dsandras
  * Fixed default route set when an outbound proxy is being used thanks to Vincent
  * Untz <vuntz gnome org>. Thanks!
  *
@@ -1354,6 +1357,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
       Release(EndedByNoUser);
       break;
 
+    case SIP_PDU::Failure_RequestTimeout :
     case SIP_PDU::Failure_TemporarilyUnavailable :
       Release(EndedByTemporaryFailure);
       break;
