@@ -22,7 +22,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2018  2005/09/06 04:58:42  dereksmithies
+ * Revision 1.2019  2006/01/23 22:56:57  csoutheren
+ * Added 2 second pause before dialling outgoing SIP calls from command line args when
+ *  registrar used
+ *
+ * Revision 2.17  2005/09/06 04:58:42  dereksmithies
  * Add console input options. This is an initial release, and some "refinement"
  * help immensely.
  *
@@ -178,6 +182,8 @@ class MyManager : public OpalManager
 #if P_EXPAT
     OpalIVREndPoint  * ivrEP;
 #endif
+
+    BOOL pauseBeforeDialing;
 
     void HangupCurrentCall();
     void ListSpeedDials();
