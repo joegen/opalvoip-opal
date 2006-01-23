@@ -11,7 +11,7 @@
  ********************************************************************
 
  function: *unnormalized* fft transform
- last mod: $Id: smallft.c,v 1.3 2006/01/07 17:37:50 dsandras Exp $
+ last mod: $Id: smallft.c,v 1.4 2006/01/23 22:51:43 csoutheren Exp $
 
  ********************************************************************/
 
@@ -30,6 +30,10 @@
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
+
+#ifdef _WIN32
+#pragma warning(disable:4244)
 #endif
 
 #include <math.h>
