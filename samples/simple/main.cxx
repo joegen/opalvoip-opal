@@ -22,7 +22,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2060  2005/12/11 19:14:21  dsandras
+ * Revision 1.2061  2006/01/23 22:56:57  csoutheren
+ * Added 2 second pause before dialling outgoing SIP calls from command line args when
+ *  registrar used
+ *
+ * Revision 2.59  2005/12/11 19:14:21  dsandras
  * Added support for setting a different user name and authentication user name
  * as required by some providers like digisip.
  *
@@ -572,6 +576,8 @@ MyManager::MyManager()
 #if P_EXPAT
   ivrEP  = NULL;
 #endif
+
+  pauseBeforeDialing = FALSE;
 }
 
 
@@ -891,6 +897,7 @@ BOOL MyManager::Initialise(PArgList & args)
       else
         cout << "failed!";
       cout << endl;
+      pauseBeforeDialing = TRUE;
     }
   }
 
@@ -1030,6 +1037,12 @@ void MyManager::Main(PArgList & args)
       break;
 
     case 1 :
+      if (pauseBeforeDialing) {
+        cout << "Pausing to allow registration to occur..." << flush;
+        PThread::Sleep(2000);
+        cout << "done" << endl;
+      }
+
       cout << "Initiating call to \"" << args[0] << "\"\n";
       if (potsEP != NULL)
         SetUpCall("pots:*", args[0], currentCallToken);
