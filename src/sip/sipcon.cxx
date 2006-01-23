@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2123  2006/01/22 22:18:36  dsandras
+ * Revision 1.2124  2006/01/23 22:11:06  dsandras
+ * Only rebuild the routeSet if we have an outbound proxy and the routeSet is
+ * empty.
+ *
+ * Revision 2.122  2006/01/22 22:18:36  dsandras
  * Added a failure case.
  *
  * Revision 2.121  2006/01/21 13:55:02  dsandras
@@ -1844,7 +1848,7 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
     proxy = endpoint.GetProxy();
 
   // Default routeSet if there is a proxy
-  if (!proxy.IsEmpty()) 
+  if (!proxy.IsEmpty() && routeSet.GetSize() == 0) 
     routeSet += "sip:" + proxy.GetHostName() + ':' + PString(proxy.GetPort()) + ";lr";
 
   SIPTransaction * invite = new SIPInvite(*this, *transport);
