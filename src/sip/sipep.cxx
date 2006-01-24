@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2099  2006/01/24 19:49:29  dsandras
+ * Revision 1.2100  2006/01/24 22:24:48  dsandras
+ * Fixed possible bug with wait called on non existing SIPInfo.
+ *
+ * Revision 2.98  2006/01/24 19:49:29  dsandras
  * Simplified code, always recreate the transport.
  *
  * Revision 2.97  2006/01/14 10:43:06  dsandras
@@ -1610,10 +1613,10 @@ BOOL SIPEndPoint::TransmitSIPUnregistrationInfo(const PString & host, const PStr
         return FALSE;
       }
       info->AppendTransaction(request);
+      
+      // Do this synchronously
+      request->Wait ();
     }
-
-  // Do this synchronously
-  request->Wait ();
 
   return TRUE;
 }
