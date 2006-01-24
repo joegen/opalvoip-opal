@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2027  2006/01/22 21:53:23  dsandras
+ * Revision 1.2028  2006/01/24 23:31:07  dsandras
+ * Fixed bug.
+ *
+ * Revision 2.26  2006/01/22 21:53:23  dsandras
  * Fail when STUN needs to be used and can not be used.
  *
  * Revision 2.25  2005/12/30 14:29:15  dsandras
@@ -1042,7 +1045,7 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(const RTP_DataFrame & 
 	   << " ccnt=" << frame.GetContribSrcCount());
   }
   else {
-    if (ignoreOtherSources && frame.GetSyncSource() != syncSourceIn) {
+    if (!ignoreOtherSources && frame.GetSyncSource() != syncSourceIn) {
 
       if (allowSyncSourceInChange) {
 
