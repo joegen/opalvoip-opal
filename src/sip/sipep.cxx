@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2098  2006/01/14 10:43:06  dsandras
+ * Revision 1.2099  2006/01/24 19:49:29  dsandras
+ * Simplified code, always recreate the transport.
+ *
+ * Revision 2.97  2006/01/14 10:43:06  dsandras
  * Applied patch from Brian Lu <Brian.Lu _AT_____ sun.com> to allow compilation
  * with OpenSolaris compiler. Many thanks !!!
  *
@@ -391,6 +394,7 @@ SIPInfo::SIPInfo(SIPEndPoint &endpoint, const PString & adjustedUsername)
 SIPInfo::~SIPInfo() 
 {
   registrations.RemoveAll();
+  PWaitAndSignal m(transportMutex);
 
   if (registrarTransport) 
     delete registrarTransport;
@@ -405,28 +409,14 @@ BOOL SIPInfo::CreateTransport (OpalTransportAddress & registrarAddress)
 
   if (registrarTransport != NULL) {
 
-    PSTUNClient * stun = manager.GetSTUN(registrarAddress);
-    if (stun != NULL && registrarTransport != NULL) {
-
-      PIPSocket::Address externalAddress;
-      OpalTransportAddress transportAddress;
-      PIPSocket::Address currentExternalAddress;
-
-      if (stun->GetExternalAddress(externalAddress, 0)) {
-	transportAddress = registrarTransport->GetLocalAddress();
-	if (transportAddress.GetIpAddress(currentExternalAddress)) {
-	  if (currentExternalAddress != externalAddress) {
-	    delete registrarTransport;
-	    registrarTransport = NULL;
-	  }
-	}
-      }
-    }
+    delete registrarTransport;
+    registrarTransport = NULL;
   }
 
   if (registrarTransport == NULL) {
     registrarTransport = ep.CreateTransport(registrarAddress);
   }
+  
   if (registrarTransport == NULL) {
     OnFailed(SIP_PDU::Failure_BadGateway);
     return FALSE;
