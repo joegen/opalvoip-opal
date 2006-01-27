@@ -23,6 +23,12 @@
  * Contributor(s): Miguel Rodriguez Perez
  *
  * $Log: echocancel.h,v $
+ * Revision 1.6.2.1  2006/01/27 05:07:11  csoutheren
+ * Backports from CVS head
+ *
+ * Revision 1.7  2006/01/23 23:01:19  dsandras
+ * Protect internal speex state changes with a mutex.
+ *
  * Revision 1.6  2006/01/07 17:37:50  dsandras
  * Updated to speex 1.1.11.2 to fix divergeance issues.
  *
@@ -124,6 +130,7 @@ private:
   double mean;
   int clockRate;
   PQueueChannel *echo_chan;
+  PMutex stateMutex;
   SpeexEchoState *echoState;
   SpeexPreprocessState *preprocessState;
   short *ref_buf;
