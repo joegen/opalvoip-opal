@@ -22,8 +22,19 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
-# Revision 1.23  2006/01/17 18:50:56  dsandras
-# Minor change.
+# Revision 1.23.2.1  2006/01/27 05:07:09  csoutheren
+# Backports from CVS head
+#
+# Revision 1.26  2006/01/20 00:00:59  csoutheren
+# Added protected against some source directories not being present
+# even wen configuration says they should be
+#
+# Revision 1.25  2006/01/19 22:40:33  dereksmithies
+# Add iax2 to the list of instal directories. Thanks to Damien Sandras
+# for reporting the bug in iax2 compilation.
+#
+# Revision 1.24  2006/01/18 11:26:29  dsandras
+# Reverted previous change.
 #
 # Revision 1.22  2006/01/14 10:43:06  dsandras
 # Applied patch from Brian Lu <Brian.Lu _AT_____ sun.com> to allow compilation
@@ -209,7 +220,6 @@ include $(OPALDIR)/opal_inc.mak
 
 PREFIX=@INSTALLPREFIX@/
 exec_prefix = ${PREFIX}
-LIBDIR=@LIBDIR@
 
 ifndef PREFIX
 PREFIX=/usr/local
@@ -238,16 +248,26 @@ endif
 
 VPATH_CXX := $(OPAL_SRCDIR)/opal \
 	     $(OPAL_SRCDIR)/rtp \
-	     $(OPAL_SRCDIR)/h323 \
-	     $(OPAL_SRCDIR)/iax2 \
 	     $(OPAL_SRCDIR)/lids \
-	     $(OPAL_SRCDIR)/codec \
+	     $(OPAL_SRCDIR)/codec 
+
+ifneq (,$(wildcard src/iax2))
+IAX2_AVAIL = 1
+VPATH_CXX += $(OPAL_SRCDIR)/iax2 
+endif
+
+ifneq (,$(wildcard src/sip))
+SIP_AVAIL = 1
+VPATH_CXX += $(OPAL_SRCDIR)/sip
+endif
+
+ifneq (,$(wildcard src/h323))
+H323_AVAIL = 1
+VPATH_CXX += $(OPAL_SRCDIR)/h323 \
 	     $(OPAL_SRCDIR)/t120 \
 	     $(OPAL_SRCDIR)/t38 \
-	     $(OPAL_SRCDIR)/sip \
 	     $(OPAL_SRCDIR)/asn 
-
-
+endif
 
 VPATH_C := $(OPAL_SRCDIR)/codec
 
@@ -275,6 +295,7 @@ SOURCES := $(OPAL_SRCDIR)/opal/manager.cxx \
 # H.323 files
 
 ifeq ($(OPAL_H323),1)
+ifdef H323_AVAIL
 
 ASN_SRCDIR := $(OPAL_SRCDIR)/asn
 ASN_INCDIR := $(OPAL_INCDIR)/asn
@@ -336,11 +357,13 @@ SOURCES += $(OPAL_SRCDIR)/t120/t120proto.cxx \
 
 
 endif
+endif
 
 ##################
 # IAX2 files
 
 ifeq ($(OPAL_IAX2),1)
+ifdef IAX2_AVAIL
 
 SOURCES += \
            $(OPAL_SRCDIR)/iax2/frame.cxx \
@@ -356,17 +379,20 @@ SOURCES += \
            $(OPAL_SRCDIR)/iax2/sound.cxx \
            $(OPAL_SRCDIR)/iax2/transmit.cxx 
 endif
+endif
 
 ################################################################################
 # SIP files
 
 ifeq ($(OPAL_SIP),1)
+ifdef SIP_AVAIL
 
 SOURCES += $(OPAL_SRCDIR)/sip/sipep.cxx \
            $(OPAL_SRCDIR)/sip/sipcon.cxx \
            $(OPAL_SRCDIR)/sip/sippdu.cxx \
            $(OPAL_SRCDIR)/sip/sdp.cxx \
 
+endif
 endif
 
 ##################
@@ -814,11 +840,12 @@ test:
 
 #### Install targets
 install:
-	mkdir -p $(DESTDIR)$(LIBDIR)
-	( for dir in $(DESTDIR)$(LIBDIR) \
+	mkdir -p $(DESTDIR)@LIBDIR@
+	( for dir in $(DESTDIR)@LIBDIR@ \
 		     $(DESTDIR)$(PREFIX)/include/opal/asn \
 		     $(DESTDIR)$(PREFIX)/include/opal/codec \
 		     $(DESTDIR)$(PREFIX)/include/opal/h323 \
+		     $(DESTDIR)$(PREFIX)/include/opal/iax2 \
 		     $(DESTDIR)$(PREFIX)/include/opal/lids \
 		     $(DESTDIR)$(PREFIX)/include/opal/opal \
 		     $(DESTDIR)$(PREFIX)/include/opal/rtp \
@@ -828,15 +855,15 @@ install:
 		     $(DESTDIR)$(PREFIX)/share/opal ;\
 		do mkdir -p $$dir ; chmod 755 $$dir ; \
 	done)
-	$(INSTALL) -m 755 lib/$(LIBNAME_PAT) $(DESTDIR)$(LIBDIR)
+	$(INSTALL) -m 755 lib/$(LIBNAME_PAT) $(DESTDIR)@LIBDIR@
 	ln -snf $(LIBNAME_PAT) \
-		$(DESTDIR)$(LIBDIR)/$(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION)
+		$(DESTDIR)@LIBDIR@/$(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION)
 	ln -snf $(LIBNAME_PAT) \
-		$(DESTDIR)$(LIBDIR)/$(OPAL_FILE).$(MAJOR_VERSION)
+		$(DESTDIR)@LIBDIR@/$(OPAL_FILE).$(MAJOR_VERSION)
 	ln -snf $(LIBNAME_PAT) \
-		$(DESTDIR)$(LIBDIR)/$(OPAL_FILE)
+		$(DESTDIR)@LIBDIR@/$(OPAL_FILE)
 	ln -snf $(LIBNAME_PAT) \
-		$(DESTDIR)$(LIBDIR)/libopal.so
+		$(DESTDIR)@LIBDIR@/libopal.so
 	( for fn in include/asn/*.h ; do \
 		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/asn ; \
 	done)
@@ -845,6 +872,9 @@ install:
 	done)
 	( for fn in include/h323/*.h ; do \
 		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/h323 ; \
+	done)
+	( for fn in include/iax2/*.h ; do \
+		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/iax2 ; \
 	done)
 	( for fn in include/lids/*.h ; do \
 		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/lids ; \
@@ -869,11 +899,11 @@ install:
 uninstall:
 	rm -rf $(DESTDIR)$(PREFIX)/include/opal \
 	       $(DESTDIR)$(PREFIX)/share/opal
-	rm -f $(DESTDIR)$(LIBDIR)/$(OPAL_FILE) \
-	      $(DESTDIR)$(LIBDIR)/libopal.so \
-	      $(DESTDIR)$(LIBDIR)/$(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION) \
-	      $(DESTDIR)$(LIBDIR)/$(OPAL_FILE).$(MAJOR_VERSION) \
-	      $(DESTDIR)$(LIBDIR)/$(LIBNAME_PAT)
+	rm -f $(DESTDIR)@LIBDIR@/$(OPAL_FILE) \
+	      $(DESTDIR)@LIBDIR@/libopal.so \
+	      $(DESTDIR)@LIBDIR@/$(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION) \
+	      $(DESTDIR)@LIBDIR@/$(OPAL_FILE).$(MAJOR_VERSION) \
+	      $(DESTDIR)@LIBDIR@/$(LIBNAME_PAT)
  
 docs:
 	doxygen opal_cfg.dxy
