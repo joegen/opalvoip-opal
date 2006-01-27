@@ -36,6 +36,10 @@
 #include "config.h"
 #endif
 
+#ifdef _WIN32
+#pragma warning(disable:4244)
+#endif
+
 /*#define USE_SMALLFT*/
 #define USE_KISS_FFT
 

@@ -27,7 +27,16 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2026  2005/12/30 14:29:15  dsandras
+ * Revision 1.2026.2.1  2006/01/27 05:07:14  csoutheren
+ * Backports from CVS head
+ *
+ * Revision 2.27  2006/01/24 23:31:07  dsandras
+ * Fixed bug.
+ *
+ * Revision 2.26  2006/01/22 21:53:23  dsandras
+ * Fail when STUN needs to be used and can not be used.
+ *
+ * Revision 2.25  2005/12/30 14:29:15  dsandras
  * Removed the assumption that the jitter will contain a 8 kHz signal.
  *
  * Revision 2.24  2005/11/29 11:50:20  dsandras
@@ -1039,7 +1048,7 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(const RTP_DataFrame & 
 	   << " ccnt=" << frame.GetContribSrcCount());
   }
   else {
-    if (ignoreOtherSources && frame.GetSyncSource() != syncSourceIn) {
+    if (!ignoreOtherSources && frame.GetSyncSource() != syncSourceIn) {
 
       if (allowSyncSourceInChange) {
 
@@ -1643,8 +1652,10 @@ BOOL RTP_UDP::Open(PIPSocket::Address _localAddress,
       dataSocket->GetLocalAddress(localAddress, localDataPort);
       controlSocket->GetLocalAddress(localAddress, localControlPort);
     }
-    else
+    else {
       PTRACE(1, "RTP\tSTUN could not create socket pair!");
+      return FALSE;
+    }
   }
 
   if (dataSocket == NULL || controlSocket == NULL) {

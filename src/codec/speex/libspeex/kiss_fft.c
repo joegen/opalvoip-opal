@@ -17,6 +17,12 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include "config.h"
 #endif
 
+#ifdef _WIN32
+#pragma warning(disable:4018)
+#pragma warning(disable:4127)
+#pragma warning(disable:4244)
+#endif
+
 #include "_kiss_fft_guts.h"
 #include "misc.h"
 
