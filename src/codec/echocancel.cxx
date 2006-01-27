@@ -23,6 +23,18 @@
  * Contributor(s): Miguel Rodriguez Perez.
  *
  * $Log: echocancel.cxx,v $
+ * Revision 1.11.2.1  2006/01/27 05:07:14  csoutheren
+ * Backports from CVS head
+ *
+ * Revision 1.14  2006/01/23 23:01:19  dsandras
+ * Protect internal speex state changes with a mutex.
+ *
+ * Revision 1.13  2006/01/21 23:33:36  csoutheren
+ * Fixed error again :)
+ *
+ * Revision 1.12  2006/01/21 23:27:06  csoutheren
+ * Fixed error under MSVC 6
+ *
  * Revision 1.11  2006/01/07 17:37:50  dsandras
  * Updated to speex 1.1.11.2 to fix divergeance issues.
  *
@@ -111,10 +123,16 @@ OpalEchoCanceler::OpalEchoCanceler()
 
 OpalEchoCanceler::~OpalEchoCanceler()
 {
-  if (echoState)
+  PWaitAndSignal m(stateMutex);
+  if (echoState) {
     speex_echo_state_destroy(echoState);
-  if (preprocessState)
+    echoState = NULL;
+  }
+  
+  if (preprocessState) {
     speex_preprocess_state_destroy(preprocessState);
+    preprocessState = NULL;
+  }
 
   if (e_buf)
     free(e_buf);
@@ -130,6 +148,7 @@ OpalEchoCanceler::~OpalEchoCanceler()
 
 void OpalEchoCanceler::SetParameters(const Params& newParam)
 {
+  PWaitAndSignal m(stateMutex);
   param = newParam;
 
   if (echoState) {
@@ -176,6 +195,8 @@ void OpalEchoCanceler::ReceivedPacket(RTP_DataFrame& input_frame, INT)
 
   inputSize = input_frame.GetPayloadSize(); // Size is in bytes
 
+  PWaitAndSignal m(stateMutex);
+
   if (echoState == NULL) 
     echoState = speex_echo_state_init(inputSize/sizeof(short), 32*inputSize);
   
@@ -195,7 +216,7 @@ void OpalEchoCanceler::ReceivedPacket(RTP_DataFrame& input_frame, INT)
 
   /* Remove the DC offset */
   short *j = (short *) input_frame.GetPayloadPtr();
-  for (int i = 0 ; i < (int) (inputSize/sizeof(short)) ; i++) {
+  for (i = 0 ; i < (int) (inputSize/sizeof(short)) ; i++) {
     mean = 0.999*mean + 0.001*j[i];
     ref_buf[i] = j[i] - (short) mean;
   }

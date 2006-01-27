@@ -24,7 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2040  2005/12/27 20:50:46  dsandras
+ * Revision 1.2040.2.1  2006/01/27 05:07:14  csoutheren
+ * Backports from CVS head
+ *
+ * Revision 2.40  2006/01/23 22:53:14  csoutheren
+ * Reverted previous change that prevents multiple codecs from being removed using the
+ *  removeMask
+ *
+ * Revision 2.39  2005/12/27 20:50:46  dsandras
  * Added clockRate parameter to the media format. Added new merging method that
  * merges the parameter option from the source into the destination.
  *
@@ -1018,12 +1025,10 @@ void OpalMediaFormatList::Remove(const PStringArray & mask)
   PINDEX i;
   for (i = 0; i < mask.GetSize(); i++) {
     PINDEX idx;
-    if((idx = FindFormat(mask[i])) != P_MAX_INDEX){
+    while ((idx = FindFormat(mask[i])) != P_MAX_INDEX)
       RemoveAt(idx);
-    }  
   }
 }
-
 
 PINDEX OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt, unsigned clockRate, const char * name) const
 {

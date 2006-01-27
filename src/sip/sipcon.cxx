@@ -24,7 +24,24 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2121  2006/01/16 23:05:09  dsandras
+ * Revision 1.2121.2.1  2006/01/27 05:07:14  csoutheren
+ * Backports from CVS head
+ *
+ * Revision 2.124  2006/01/23 22:54:57  csoutheren
+ * Ensure codec remove mask is applied on outgoing SIP calls
+ *
+ * Revision 2.123  2006/01/23 22:11:06  dsandras
+ * Only rebuild the routeSet if we have an outbound proxy and the routeSet is
+ * empty.
+ *
+ * Revision 2.122  2006/01/22 22:18:36  dsandras
+ * Added a failure case.
+ *
+ * Revision 2.121  2006/01/21 13:55:02  dsandras
+ * Fixed default route set when an outbound proxy is being used thanks to Vincent
+ * Untz <vuntz gnome org>. Thanks!
+ *
+ * Revision 2.120  2006/01/16 23:05:09  dsandras
  * Minor fixes. Reset the route set to the proxy (if any), when authenticating
  * invite.
  *
@@ -495,7 +512,7 @@ SIPConnection::SIPConnection(OpalCall & call,
 
   // Default routeSet if there is a proxy
   if (!proxy.IsEmpty()) 
-    routeSet += proxy.GetHostName() + ':' + PString(proxy.GetPort()) + ";lr=on";
+    routeSet += "sip:" + proxy.GetHostName() + ':' + PString(proxy.GetPort()) + ";lr";
   
   // Update remote party parameters
   remotePartyAddress = targetAddress.AsQuotedString();
@@ -1112,8 +1129,8 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
       // Not already there, so create one
       rtpSession = CreateSession(GetTransport(), rtpSessionId, NULL);
       if (rtpSession == NULL) {
-	Release(OpalConnection::EndedByTransportFail);
-	return FALSE;
+	      Release(OpalConnection::EndedByTransportFail);
+	      return FALSE;
       }
 
       rtpSession->SetUserData(new SIP_RTP_Session(*this));
@@ -1140,17 +1157,17 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
     else {
       ntePayloadCode = rfc2833Handler->GetPayloadType();
       if (ntePayloadCode == RTP_DataFrame::IllegalPayloadType) {
-	ntePayloadCode = OpalRFC2833.GetPayloadType();
+	      ntePayloadCode = OpalRFC2833.GetPayloadType();
       }
 
       if (ntePayloadCode != RTP_DataFrame::IllegalPayloadType) {
-	PTRACE(3, "SIP\tUsing RTP payload " << ntePayloadCode << " for NTE");
+	      PTRACE(3, "SIP\tUsing RTP payload " << ntePayloadCode << " for NTE");
 
-	// create and add the NTE media format
-	localMedia->AddSDPMediaFormat(new SDPMediaFormat("0-15", ntePayloadCode));
+	      // create and add the NTE media format
+	      localMedia->AddSDPMediaFormat(new SDPMediaFormat("0-15", ntePayloadCode));
       }
       else {
-	PTRACE(2, "SIP\tCould not allocate dynamic RTP payload for NTE");
+      	PTRACE(2, "SIP\tCould not allocate dynamic RTP payload for NTE");
       }
     }
 
@@ -1159,6 +1176,8 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
   
   // add the formats
   OpalMediaFormatList formats = ownerCall.GetMediaFormats(*this, FALSE);
+  formats.Remove(endpoint.GetManager().GetMediaFormatMask());
+
   localMedia->AddMediaFormats(formats, rtpSessionId);
 
   localMedia->SetDirection(GetDirection(rtpSessionId));
@@ -1350,6 +1369,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
       Release(EndedByNoUser);
       break;
 
+    case SIP_PDU::Failure_RequestTimeout :
     case SIP_PDU::Failure_TemporarilyUnavailable :
       Release(EndedByTemporaryFailure);
       break;
@@ -1836,8 +1856,8 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
     proxy = endpoint.GetProxy();
 
   // Default routeSet if there is a proxy
-  if (!proxy.IsEmpty()) 
-    routeSet += proxy.GetHostName() + ':' + PString(proxy.GetPort()) + ";lr=on";
+  if (!proxy.IsEmpty() && routeSet.GetSize() == 0) 
+    routeSet += "sip:" + proxy.GetHostName() + ':' + PString(proxy.GetPort()) + ";lr";
 
   SIPTransaction * invite = new SIPInvite(*this, *transport);
   if (invite->Start())

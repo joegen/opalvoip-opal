@@ -61,6 +61,16 @@
 #include "config.h"
 #endif
 
+#ifdef _WIN32
+#pragma warning(disable:4305)
+#pragma warning(disable:4127)
+#endif
+
+
+#ifdef _WIN32
+#pragma warning(disable:4244)
+#endif
+
 #include "misc.h"
 #include "speex_echo.h"
 #include "smallft.h"

@@ -35,6 +35,12 @@
 #include "config.h"
 #endif
 
+#ifdef _WIN32
+#pragma warning(disable:4100)
+#pragma warning(disable:4244)
+#pragma warning(disable:4305)
+#endif
+
 #include <math.h>
 #include "speex_preprocess.h"
 #include "misc.h"
