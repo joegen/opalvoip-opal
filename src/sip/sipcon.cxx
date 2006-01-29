@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2125  2006/01/23 22:54:57  csoutheren
+ * Revision 1.2126  2006/01/29 20:55:32  dsandras
+ * Allow using a simple username or a fill url when registering.
+ *
+ * Revision 2.124  2006/01/23 22:54:57  csoutheren
  * Ensure codec remove mask is applied on outgoing SIP calls
  *
  * Revision 2.123  2006/01/23 22:11:06  dsandras
@@ -1191,7 +1194,7 @@ void SIPConnection::SetLocalPartyAddress()
   taddr.GetIpAndPort(addr, port);
   PString displayName = endpoint.GetDefaultDisplayName();
   PString localName = endpoint.GetRegisteredPartyName(SIPURL(remotePartyAddress).GetHostName()).GetUserName(); 
-  PString domain = SIPURL(remotePartyAddress).GetHostName(); // //endpoint.GetRegisteredPartyName(SIPURL(remotePartyAddress).GetHostName()).GetHostName();
+  PString domain = endpoint.GetRegisteredPartyName(SIPURL(remotePartyAddress).GetHostName()).GetHostName();
 
   // If no domain, use the local domain as default
   if (domain.IsEmpty()) {
