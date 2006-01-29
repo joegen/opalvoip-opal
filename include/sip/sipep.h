@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2047  2006/01/08 21:53:40  dsandras
+ * Revision 1.2047.2.1  2006/01/29 21:01:40  dsandras
+ * Backports from CVS HEAD.
+ *
+ * Revision 2.47  2006/01/29 20:55:32  dsandras
+ * Allow using a simple username or a fill url when registering.
+ *
+ * Revision 2.46  2006/01/08 21:53:40  dsandras
  * Changed IsRegistered so that it takes the registration url as argument,
  * allowing it to work when there are several accounts on the same server.
  *
@@ -569,6 +575,9 @@ class SIPEndPoint : public OpalEndPoint
      * several registrations to occur at the same time. It can be
      * called several times for different hosts and users.
      * 
+     * The username can be of the form user@domain. In that case,
+     * the From field will be set to that value.
+     * 
      * The realm can be specified when registering, this will
      * allow to find the correct authentication information when being
      * requested. If no realm is specified, authentication will
@@ -855,6 +864,8 @@ class SIPEndPoint : public OpalEndPoint
 	     * Find the SIPInfo object with the specified URL. The url is
 	     * the registration address, for example, 6001@sip.seconix.com
 	     * when registering 6001 to sip.seconix.com with realm seconix.com
+	     * or 6001@seconix.com when registering 6001@seconix.com to
+	     * sip.seconix.com
 	     */
 	    SIPInfo *FindSIPInfoByUrl (const PString & url, SIP_PDU::Methods meth, PSafetyMode m)
 	    {
@@ -868,18 +879,14 @@ class SIPEndPoint : public OpalEndPoint
 	    /**
 	     * Find the SIPInfo object with the specified registration host.
 	     * For example, in the above case, the name parameter
-	     * could be "sip.seconix.com".
+	     * could be "sip.seconix.com" or "seconix.com".
 	     */
 	    SIPInfo *FindSIPInfoByDomain (const PString & name, SIP_PDU::Methods meth, PSafetyMode m)
 	    {
+	      OpalTransportAddress addr = name;
 	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
-      		if (
-              (
-                name == info->GetRegistrationAddress().GetHostName() 
-               )
-		           && meth == info->GetMethod()
-             )
-		        return info;
+      		      if ((addr.GetHostName() == info->GetRegistrationAddress().GetHostName() || (info->GetTransport() && addr.GetHostName() == info->GetTransport()->GetRemoteAddress().GetHostName()) && meth == info->GetMethod()))
+			return info;
 	      return NULL;
 	    }
     };
