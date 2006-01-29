@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2098.2.3  2006/01/29 21:02:55  dsandras
+ * Revision 1.2098.2.4  2006/01/29 21:04:07  dsandras
+ * Removed cout.
+ *
+ * Revision 2.97.2.3  2006/01/29 21:02:55  dsandras
  * Backports from CVS HEAD.
  *
  * Revision 2.101  2006/01/29 20:55:33  dsandras
@@ -1706,7 +1709,6 @@ const SIPURL SIPEndPoint::GetRegisteredPartyName(const PString & host)
   PString contactDomain;
   PString realm;
   
-  cout << "Looking for " << host << endl << flush;
   PSafePtr<SIPInfo> info = activeSIPInfo.FindSIPInfoByDomain(host, SIP_PDU::Method_REGISTER, PSafeReadOnly);
   if (info == NULL) {
    
@@ -1718,7 +1720,6 @@ const SIPURL SIPEndPoint::GetRegisteredPartyName(const PString & host)
     SIPURL party(GetManager().GetDefaultUserName(), address, localPort);
     return party;
   }
-  cout << "Found " << info->GetRegistrationAddress() << endl << flush;
 
   return info->GetRegistrationAddress();
 }
