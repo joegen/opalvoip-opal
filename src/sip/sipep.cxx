@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2100  2006/01/24 22:24:48  dsandras
+ * Revision 1.2101  2006/01/29 17:09:48  dsandras
+ * Added guards against timeout of 0 when registering or subscribing.
+ * Make sure activeSIPInfo is empty and destroyed before exiting.
+ *
+ * Revision 2.99  2006/01/24 22:24:48  dsandras
  * Fixed possible bug with wait called on non existing SIPInfo.
  *
  * Revision 2.98  2006/01/24 19:49:29  dsandras
@@ -399,8 +403,10 @@ SIPInfo::~SIPInfo()
   registrations.RemoveAll();
   PWaitAndSignal m(transportMutex);
 
-  if (registrarTransport) 
+  if (registrarTransport) { 
     delete registrarTransport;
+    registrarTransport = NULL;
+  }
 }
 
 
@@ -588,21 +594,16 @@ SIPEndPoint::~SIPEndPoint()
 {
   listeners.RemoveAll();
 
-  int unregistered = 0;
-  int registrationsNumber = GetRegistrationsCount();
-
-  /* Unregister */
-  int i = 0;
-  while (unregistered < registrationsNumber) {
+  while (activeSIPInfo.GetSize()>0) {
     SIPURL url;
-    SIPInfo *info = activeSIPInfo.GetAt(i);
+    SIPInfo *info = activeSIPInfo.GetAt(0);
     url = info->GetRegistrationAddress ();
-    if (info->GetMethod() == SIP_PDU::Method_REGISTER && info->IsRegistered()) {
+    if (info->GetMethod() == SIP_PDU::Method_REGISTER && info->IsRegistered()) 
       Unregister(url.GetHostName(), url.GetUserName());
-      unregistered++;
-    }
-    else
-      i++;
+    else 
+      activeSIPInfo.Remove(info);
+   
+    activeSIPInfo.DeleteObjectsToBeRemoved();
   }
 
   PWaitAndSignal m(transactionsMutex);
@@ -645,9 +646,8 @@ void SIPEndPoint::TransportThreadMain(PThread &, INT param)
   stunTransport = (!transport->IsReliable() && GetManager().GetSTUN(transport->GetRemoteAddress().GetHostName()));
 
   if (stunTransport) {
-    natTransportMutex.Wait();
+    PWaitAndSignal m(natTransportMutex);
     natTransports.Append(transport);
-    natTransportMutex.Signal();
   }
 
   do {
@@ -655,9 +655,8 @@ void SIPEndPoint::TransportThreadMain(PThread &, INT param)
   } while (transport->IsOpen());
   
   if (stunTransport) {
-    natTransportMutex.Wait();
+    PWaitAndSignal m(natTransportMutex);
     natTransports.Remove(transport);
-    natTransportMutex.Signal();
   }
   
   PTRACE(2, "SIP\tRead thread finished.");
@@ -1185,7 +1184,7 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
       sec = 3600;
     info->SetExpire(sec*9/10);
   }
-  else
+  else 
     activeSIPInfo.Remove(info);
 
   // Callback
@@ -1440,6 +1439,8 @@ BOOL SIPEndPoint::Register(const PString & host,
 			   const PString & realm,
 			   int timeout)
 {
+  if (timeout = 0)
+    timeout = GetRegistrarTimeToLive().GetSeconds(); 
   return TransmitSIPInfo(SIP_PDU::Method_REGISTER, host, username, authName, password, realm, PString::Empty(), timeout);
 }
 
@@ -1460,6 +1461,8 @@ void SIPEndPoint::OnMWIReceived (const PString & /*remoteAddress*/,
 
 BOOL SIPEndPoint::MWISubscribe(const PString & host, const PString & username, int timeout)
 {
+  if (timeout = 0)
+    timeout = GetNotifierTimeToLive().GetSeconds(); 
   return TransmitSIPInfo (SIP_PDU::Method_SUBSCRIBE, host, username, timeout);
 }
 
