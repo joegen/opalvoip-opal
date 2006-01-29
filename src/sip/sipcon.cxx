@@ -24,8 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2121.2.1  2006/01/27 05:07:14  csoutheren
- * Backports from CVS head
+ * Revision 1.2121.2.2  2006/01/29 21:02:55  dsandras
+ * Backports from CVS HEAD.
+ *
+ * Revision 2.125  2006/01/29 20:55:32  dsandras
+ * Allow using a simple username or a fill url when registering.
  *
  * Revision 2.124  2006/01/23 22:54:57  csoutheren
  * Ensure codec remove mask is applied on outgoing SIP calls
@@ -1194,7 +1197,7 @@ void SIPConnection::SetLocalPartyAddress()
   taddr.GetIpAndPort(addr, port);
   PString displayName = endpoint.GetDefaultDisplayName();
   PString localName = endpoint.GetRegisteredPartyName(SIPURL(remotePartyAddress).GetHostName()).GetUserName(); 
-  PString domain = SIPURL(remotePartyAddress).GetHostName(); // //endpoint.GetRegisteredPartyName(SIPURL(remotePartyAddress).GetHostName()).GetHostName();
+  PString domain = endpoint.GetRegisteredPartyName(SIPURL(remotePartyAddress).GetHostName()).GetHostName();
 
   // If no domain, use the local domain as default
   if (domain.IsEmpty()) {
