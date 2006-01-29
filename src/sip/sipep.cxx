@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2102  2006/01/29 20:55:33  dsandras
+ * Revision 1.2103  2006/01/29 21:03:32  dsandras
+ * Removed cout.
+ *
+ * Revision 2.101  2006/01/29 20:55:33  dsandras
  * Allow using a simple username or a fill url when registering.
  *
  * Revision 2.100  2006/01/29 17:09:48  dsandras
@@ -1703,7 +1706,6 @@ const SIPURL SIPEndPoint::GetRegisteredPartyName(const PString & host)
   PString contactDomain;
   PString realm;
   
-  cout << "Looking for " << host << endl << flush;
   PSafePtr<SIPInfo> info = activeSIPInfo.FindSIPInfoByDomain(host, SIP_PDU::Method_REGISTER, PSafeReadOnly);
   if (info == NULL) {
    
@@ -1715,7 +1717,6 @@ const SIPURL SIPEndPoint::GetRegisteredPartyName(const PString & host)
     SIPURL party(GetManager().GetDefaultUserName(), address, localPort);
     return party;
   }
-  cout << "Found " << info->GetRegistrationAddress() << endl << flush;
 
   return info->GetRegistrationAddress();
 }
