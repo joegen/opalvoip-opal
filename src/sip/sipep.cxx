@@ -24,15 +24,15 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2098.2.2  2006/01/29 17:11:38  dsandras
+ * Revision 1.2098.2.3  2006/01/29 21:02:55  dsandras
  * Backports from CVS HEAD.
+ *
+ * Revision 2.101  2006/01/29 20:55:33  dsandras
+ * Allow using a simple username or a fill url when registering.
  *
  * Revision 2.100  2006/01/29 17:09:48  dsandras
  * Added guards against timeout of 0 when registering or subscribing.
  * Make sure activeSIPInfo is empty and destroyed before exiting.
- *
- * Revision 2.97.2.1  2006/01/27 05:07:14  csoutheren
- * Backports from CVS head
  *
  * Revision 2.99  2006/01/24 22:24:48  dsandras
  * Fixed possible bug with wait called on non existing SIPInfo.
@@ -1706,6 +1706,7 @@ const SIPURL SIPEndPoint::GetRegisteredPartyName(const PString & host)
   PString contactDomain;
   PString realm;
   
+  cout << "Looking for " << host << endl << flush;
   PSafePtr<SIPInfo> info = activeSIPInfo.FindSIPInfoByDomain(host, SIP_PDU::Method_REGISTER, PSafeReadOnly);
   if (info == NULL) {
    
@@ -1717,6 +1718,7 @@ const SIPURL SIPEndPoint::GetRegisteredPartyName(const PString & host)
     SIPURL party(GetManager().GetDefaultUserName(), address, localPort);
     return party;
   }
+  cout << "Found " << info->GetRegistrationAddress() << endl << flush;
 
   return info->GetRegistrationAddress();
 }
