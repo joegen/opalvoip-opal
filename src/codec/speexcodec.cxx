@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.cxx,v $
- * Revision 1.2016  2006/01/30 02:23:16  csoutheren
+ * Revision 1.2017  2006/01/30 02:47:22  csoutheren
+ * Fixed use of system speex library on systems with includes in strange places
+ *
+ * Revision 2.15  2006/01/30 02:23:16  csoutheren
  * First cut at fixing problem with speex libraries
  *
  * Revision 2.14  2006/01/14 10:40:16  dsandras
@@ -165,10 +168,14 @@
 
 extern "C" {
 #if OPAL_SYSTEM_SPEEX
-#include "speex/libspeex/speex_config_types.h"
-#include <speex.h>
+#  include "speex/libspeex/speex_config_types.h"
+#  if OPAL_HAVE_SPEEX_SPEEX_H
+#    include <speex/speex.h>
+#  else
+    #include <speex.h>
+#  endif
 #else
-#include "speex/libspeex/speex.h"
+#  include "speex/libspeex/speex.h"
 #endif
 };
 
