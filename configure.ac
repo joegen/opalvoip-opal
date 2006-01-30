@@ -163,21 +163,36 @@ esac
 AC_SUBST(SIZE16)
 AC_SUBST(SIZE32)
 
+HAVE_SPEEX_H=
+HAVE_SPEEX_SPEEX_H=
+AC_CHECK_HEADERS("speex.h", HAVE_SPEEX_H=1)
+if test "${HAVE_SPEEX_H}x" = "x" ; then
+  AC_CHECK_HEADERS("speex/speex.h", HAVE_SPEEX_SPEEX_H=1)
+fi
+
 if test "${localspeex}" = "yes" ; then
-  AC_MSG_NOTICE(Forcing use of local Speex sources)
+  AC_MSG_NOTICE(Forcing use of OPAL Speex sources)
 elif test "${localspeex}" = "no" ; then
   AC_MSG_NOTICE(Forcing use of system Speex library)
   AC_DEFINE(OPAL_SYSTEM_SPEEX, 1)
   AC_SUBST(OPAL_SYSTEM_SPEEX, 1)
 else
   AC_CHECK_LIB(speex, speex_encoder_destroy, SPEEX=1)
-  if test "x$SPEEX" = "x"; then
-    AC_MSG_NOTICE(Forcing use of local Speex library)
+  if test "${SPEEX}x" != "x" ; then
+    AC_CHECK_LIB(speex, speex_encode_int, SPEEX=1, unset SPEEX)
+  fi
+  if test "x$SPEEX" = "x" -o \( "${HAVE_SPEEX_H}x" = "x" -a "${HAVE_SPEEX_SPEEX_H}x" = "x" \); then
+    AC_MSG_NOTICE(Forcing use of OPAL Speex library)
   else
     AC_MSG_CHECKING(system Speex version)
-    cat > t.c <<C_FILE
-    #include <speex.h>
-    #include <speex_header.h>
+    if test "${HAVE_SPEEX_H}x" != "x" ; then
+      echo "#include <speex.h>" > t.c 
+      echo "#include <speex_header.h>" >> t.c
+    else
+      echo "#include <speex/speex.h>" > t.c 
+      echo "#include <speex/speex_header.h>" >> t.c
+    fi
+    cat >> t.c <<C_FILE
     #include <stdio.h>
     int main(int argc,char *argv[])
     {
@@ -188,7 +203,7 @@ else
 C_FILE
     cc -o t t.c -lspeex > /dev/null 2>&1
     if test \! -x t ; then
-      AC_MSG_RESULT(cannot determine - using library version)
+      AC_MSG_RESULT(cannot determine - using OPAL version)
     else
       SYSVER=`./t`
       AC_MSG_RESULT($SYSVER)
@@ -222,7 +237,7 @@ P_FILE
       SPEEX=`perl t.pl $SYSVER $LIBVER`
       rm t.pl
       if test "x$SPEEX" = "x0" ; then
-        AC_MSG_RESULT(library version is more recent)
+        AC_MSG_RESULT(OPAL version is more recent)
       else
         AC_MSG_RESULT(system version is more recent)
         AC_DEFINE(OPAL_SYSTEM_SPEEX, 1)
@@ -347,17 +362,16 @@ AC_CHECK_HEADERS(/usr/local/include/libpri.h, HAS_SANGOMA=1)
 if test "x$HAS_SANGOMA" != "x" ; then
   AC_CHECK_HEADERS(/usr/local/include/libsangoma.h, HAS_SANGOMA=1)
   if test "x$HAS_SANGOMA" != "x" ; then
-
-    OLD_LDFLAGS=$LDFLAGS
-    LDFLAGS=-L/usr/local/lib
-
-    AC_CHECK_LIB(sangoma, sangoma_create_socket, HAS_SANGOMA=1)
-    if test "x$HAS_SANGOMA" != "x" ; then
-      AC_DEFINE(HAS_SANGOMA, 1)
-      HAS_SANGOMA=1
+    AC_CHECK_LIB(pri, pri_new_cb, HAS_SANGOMA=1)
+    if test "x$HAS_SANGOMA" = "x" ; then
+      AC_MSG_NOTICE(*** If the latest libri is installed in /usr/local/lib, ensure it is not obscured by an older version in /usr/lib)
+    else
+      AC_CHECK_LIB(sangoma, sangoma_create_socket, HAS_SANGOMA=1)
+      if test "x$HAS_SANGOMA" != "x" ; then
+        AC_DEFINE(HAS_SANGOMA, 1)
+        HAS_SANGOMA=1
+      fi
     fi
-
-    LD_FLAGS=$OLD_LDFLAGS
   fi
 fi
 AC_SUBST(HAS_SANGOMA)

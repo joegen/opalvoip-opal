@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.cxx,v $
- * Revision 1.2015  2006/01/14 10:40:16  dsandras
+ * Revision 1.2016  2006/01/30 02:23:16  csoutheren
+ * First cut at fixing problem with speex libraries
+ *
+ * Revision 2.14  2006/01/14 10:40:16  dsandras
  * Applied typecast patch thanks to Dennis White <denniswhite98 ___AT_ yahoo.com>
  *
  * Revision 2.13  2005/12/30 14:33:12  dsandras
@@ -162,6 +165,7 @@
 
 extern "C" {
 #if OPAL_SYSTEM_SPEEX
+#include "speex/libspeex/speex_config_types.h"
 #include <speex.h>
 #else
 #include "speex/libspeex/speex.h"
