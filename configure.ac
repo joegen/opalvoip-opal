@@ -163,11 +163,16 @@ esac
 AC_SUBST(SIZE16)
 AC_SUBST(SIZE32)
 
-HAVE_SPEEX_H=
-HAVE_SPEEX_SPEEX_H=
-AC_CHECK_HEADERS("speex.h", HAVE_SPEEX_H=1)
-if test "${HAVE_SPEEX_H}x" = "x" ; then
-  AC_CHECK_HEADERS("speex/speex.h", HAVE_SPEEX_SPEEX_H=1)
+OPAL_HAVE_SPEEX_H=
+OPAL_HAVE_SPEEX_SPEEX_H=
+AC_CHECK_HEADERS("speex.h", OPAL_HAVE_SPEEX_H=1)
+if test "${OPAL_HAVE_SPEEX_H}x" != "x" ; then
+  AC_DEFINE(OPAL_HAVE_SPEEX_H)
+else
+  AC_CHECK_HEADERS("speex/speex.h", OPAL_HAVE_SPEEX_SPEEX_H=1)
+  if test "${OPAL_HAVE_SPEEX_SPEEX_H}x" != "x" ; then
+    AC_DEFINE(OPAL_HAVE_SPEEX_SPEEX_H)
+  fi
 fi
 
 if test "${localspeex}" = "yes" ; then
@@ -181,11 +186,11 @@ else
   if test "${SPEEX}x" != "x" ; then
     AC_CHECK_LIB(speex, speex_encode_int, SPEEX=1, unset SPEEX)
   fi
-  if test "x$SPEEX" = "x" -o \( "${HAVE_SPEEX_H}x" = "x" -a "${HAVE_SPEEX_SPEEX_H}x" = "x" \); then
+  if test "x$SPEEX" = "x" -o \( "${OPAL_HAVE_SPEEX_H}x" = "x" -a "${OPAL_HAVE_SPEEX_SPEEX_H}x" = "x" \); then
     AC_MSG_NOTICE(Forcing use of OPAL Speex library)
   else
     AC_MSG_CHECKING(system Speex version)
-    if test "${HAVE_SPEEX_H}x" != "x" ; then
+    if test "${OPAL_HAVE_SPEEX_H}x" != "x" ; then
       echo "#include <speex.h>" > t.c 
       echo "#include <speex_header.h>" >> t.c
     else
@@ -248,6 +253,7 @@ P_FILE
   fi
 fi
 
+AC_SUBST(OPAL_HAVE_SPEEX_SPEEX_H)
 
 dnl ########################################################################
 dnl check if SIP, H.323 and IAX2 are enabled
