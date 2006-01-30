@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: buildopts.h.in,v $
+ * Revision 1.10  2006/01/30 23:23:24  csoutheren
+ * Added define for SPEEX
+ *
  * Revision 1.9  2006/01/01 19:19:33  dsandras
  * Added RFC2190 H.263 codec thanks to Salyens. Many thanks!
  *
@@ -107,6 +110,7 @@
 // use system Speex
 
 #undef	OPAL_SYSTEM_SPEEX
+#undef  OPAL_HAVE_SPEEX_SPEEX_H
 
 
 /////////////////////////////////////////////////
