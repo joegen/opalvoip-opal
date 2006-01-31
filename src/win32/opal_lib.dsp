@@ -260,6 +260,10 @@ SOURCE=..\h323\transaddr.cxx
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\codec\echocancel.cxx
+# End Source File
+# Begin Source File
+
 SOURCE=..\codec\g711.c
 # ADD CPP /W1
 # SUBTRACT CPP /D "PTRACING" /YX /Yc /Yu
@@ -283,6 +287,10 @@ SOURCE=..\codec\gsmcodec.cxx
 # Begin Source File
 
 SOURCE=..\codec\h261codec.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\h263codec.cxx
 # End Source File
 # Begin Source File
 
@@ -603,6 +611,10 @@ SOURCE=..\..\include\codec\allcodecs.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\include\codec\echocancel.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\include\codec\g711codec.h
 # End Source File
 # Begin Source File
@@ -822,7 +834,7 @@ SOURCE=..\..\include\opal\buildopts.h.in
 
 USERDEP__BUILD="..\..\configure.ac"	"..\..\configure.exe"	
 # Begin Custom Build - Configuring Build Options
-InputDir=\Work\opal\include\opal
+InputDir=\opal\include\opal
 InputPath=..\..\include\opal\buildopts.h.in
 
 "$(InputDir)\buildopts.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
@@ -835,7 +847,7 @@ InputPath=..\..\include\opal\buildopts.h.in
 
 USERDEP__BUILD="..\..\configure.ac"	"..\..\configure.exe"	
 # Begin Custom Build - Configuring Build Options
-InputDir=\Work\opal\include\opal
+InputDir=\opal\include\opal
 InputPath=..\..\include\opal\buildopts.h.in
 
 "$(InputDir)\buildopts.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
@@ -848,7 +860,7 @@ InputPath=..\..\include\opal\buildopts.h.in
 
 USERDEP__BUILD="..\..\configure.ac"	"..\..\configure.exe"	
 # Begin Custom Build - Configuring Build Options
-InputDir=\Work\opal\include\opal
+InputDir=\opal\include\opal
 InputPath=..\..\include\opal\buildopts.h.in
 
 "$(InputDir)\buildopts.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
@@ -2290,6 +2302,10 @@ SOURCE=..\codec\speex\libspeex\speex_header.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\codec\speex\libspeex\speex_preprocess.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\codec\speex\libspeex\stack_alloc.h
 # End Source File
 # Begin Source File
@@ -2465,6 +2481,11 @@ SOURCE=..\codec\speex\libspeex\exc_8_128_table.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\codec\speex\libspeex\fftwrap.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
 SOURCE=..\codec\speex\libspeex\filters.c
 
 !IF  "$(CFG)" == "OPAL_lib - Win32 Release"
@@ -2597,6 +2618,16 @@ SOURCE=..\codec\speex\libspeex\high_lsp_tables.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\codec\speex\libspeex\kiss_fft.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\kiss_fftr.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
 SOURCE=..\codec\speex\libspeex\lpc.c
 
 !IF  "$(CFG)" == "OPAL_lib - Win32 Release"
@@ -2682,6 +2713,16 @@ SOURCE=..\codec\speex\libspeex\ltp.c
 
 !ENDIF 
 
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\math_approx.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\mdf.c
+# SUBTRACT CPP /YX /Yc /Yu
 # End Source File
 # Begin Source File
 
@@ -2795,6 +2836,16 @@ SOURCE=..\codec\speex\libspeex\sb_celp.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\codec\speex\libspeex\smallft.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\speex.c
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
 SOURCE=..\codec\speex\libspeex\speex_callbacks.c
 
 !IF  "$(CFG)" == "OPAL_lib - Win32 Release"
@@ -2836,6 +2887,11 @@ SOURCE=..\codec\speex\libspeex\speex_header.c
 
 !ENDIF 
 
+# End Source File
+# Begin Source File
+
+SOURCE=..\codec\speex\libspeex\speex_preprocess.c
+# SUBTRACT CPP /YX /Yc /Yu
 # End Source File
 # Begin Source File
 
