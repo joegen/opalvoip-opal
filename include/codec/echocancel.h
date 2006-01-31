@@ -23,9 +23,19 @@
  * Contributor(s): Miguel Rodriguez Perez
  *
  * $Log: echocancel.h,v $
+ * Revision 1.6.2.2  2006/01/31 08:58:14  csoutheren
+ * More backports
+ *
  * Revision 1.6.2.1  2006/01/27 05:07:11  csoutheren
  * Backports from CVS head
  *
+ * Revision 1.9  2006/01/31 08:32:34  csoutheren
+ * Fixed problem with speex includes. Again
+ *
+ * Revision 1.8  2006/01/31 03:28:03  csoutheren
+ * Changed to compile on MSVC 6
+ *
+>>>>>>> 1.9
  * Revision 1.7  2006/01/23 23:01:19  dsandras
  * Protect internal speex state changes with a mutex.
  *
@@ -57,8 +67,25 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
+
 #include <rtp/rtp.h>
 #include <ptclib/qchannel.h>
+
+extern "C" {
+#if OPAL_SYSTEM_SPEEX
+#if OPAL_HAVE_SPEEX_SPEEX_H
+#include <speex/speex_echo.h>
+#include <speex/speex_preprocess.h>
+#else
+#include <speex_echo.h>
+#include <speex_preprocess.h>
+#endif
+#else
+#include "../src/codec/speex/libspeex/speex_echo.h"
+#include "../src/codec/speex/libspeex/speex_preprocess.h"
+#endif
+};
 
 #ifndef SPEEX_ECHO_H
 struct SpeexEchoState;
@@ -133,9 +160,9 @@ private:
   PMutex stateMutex;
   SpeexEchoState *echoState;
   SpeexPreprocessState *preprocessState;
-  short *ref_buf;
-  short *echo_buf;
-  short *e_buf;
+  spx_int16_t * ref_buf;
+  spx_int16_t * echo_buf;
+  spx_int16_t * e_buf;
   void *noise;
 };
 

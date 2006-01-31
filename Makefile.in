@@ -22,8 +22,14 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.23.2.2  2006/01/31 08:58:14  csoutheren
+# More backports
+#
 # Revision 1.23.2.1  2006/01/27 05:07:09  csoutheren
 # Backports from CVS head
+#
+# Revision 1.27  2006/01/30 02:23:15  csoutheren
+# First cut at fixing problem with speex libraries
 #
 # Revision 1.26  2006/01/20 00:00:59  csoutheren
 # Added protected against some source directories not being present
@@ -506,18 +512,27 @@ SOURCES += $(OPAL_SRCDIR)/codec/lpc10codec.cxx \
            $(LPC10_SRCDIR)/voicin.c \
            $(LPC10_SRCDIR)/vparms.c \
 
-
 # Speex
 
 SPEEX_DIR       = $(OPAL_SRCDIR)/codec/speex
+
+HEADER_FILES    += $(OPAL_INCDIR)/speexcodec.h 
+
+SOURCES 	+= $(OPAL_SRCDIR)/codec/speexcodec.cxx 
+
+ifdef OPAL_SYSTEM_SPEEX
+
+ENDLDLIBS    	:= -lspeex $(ENDLDLIBS)
+
+else
+
 SPEEX_INCDIR    = $(SPEEX_DIR)/libspeex
 SPEEX_SRCDIR    = $(SPEEX_DIR)/libspeex
 
 VPATH_C		+= $(SPEEX_SRCDIR)
 VPATH_CXX	+= $(SPEEX_SRCDIR)
 
-HEADER_FILES    += $(OPAL_INCDIR)/speexcodec.h \
-		   $(SPEEX_INCDIR)/speex.h \
+HEADER_FILES    += $(SPEEX_INCDIR)/speex.h \
                    $(SPEEX_INCDIR)/speex_bits.h \
                    $(SPEEX_INCDIR)/speex_header.h \
                    $(SPEEX_INCDIR)/speex_callbacks.h \
@@ -528,8 +543,7 @@ HEADER_FILES    += $(OPAL_INCDIR)/speexcodec.h \
                    $(SPEEX_INCDIR)/speex_jitter.h \
                    $(SPEEX_INCDIR)/speex_echo.h 
 
-SOURCES 	+= $(OPAL_SRCDIR)/codec/speexcodec.cxx \
-		   $(SPEEX_SRCDIR)/nb_celp.c \
+SOURCES 	+= $(SPEEX_SRCDIR)/nb_celp.c \
                    $(SPEEX_SRCDIR)/sb_celp.c \
                    $(SPEEX_SRCDIR)/lpc.c \
                    $(SPEEX_SRCDIR)/ltp.c \
@@ -564,6 +578,8 @@ SOURCES 	+= $(OPAL_SRCDIR)/codec/speexcodec.cxx \
                    $(SPEEX_SRCDIR)/speex_header.c \
                    $(SPEEX_SRCDIR)/speex_callbacks.c \
                    $(SPEEX_SRCDIR)/speex_preprocess.c 
+
+endif # OPAL_SYSTEM_SPEEX
 
 
 # iLBC
