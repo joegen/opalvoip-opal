@@ -247,6 +247,33 @@ P_FILE
         AC_MSG_RESULT(system version is more recent)
         AC_DEFINE(OPAL_SYSTEM_SPEEX, 1)
         AC_SUBST(OPAL_SYSTEM_SPEEX, 1)
+        AC_DEFINE(OPAL_SYSTEM_SPEEX, 1)
+        AC_SUBST(OPAL_SYSTEM_SPEEX, 1)
+        AC_MSG_CHECKING(Speex noise type)
+        if test "${OPAL_HAVE_SPEEX_H}x" != "x" ; then
+          echo "#include <speex.h>" > t.c
+          echo "#include <speex_header.h>" >> t.c
+        else
+          echo "#include <speex/speex.h>" > t.c
+          echo "#include <speex/speex_header.h>" >> t.c
+        fi
+        cat >> t.c <<C_FILE
+          #include <stdio.h>
+          int main(int argc,char *argv[])
+	  {
+	     SpeexPreprocessState *st;
+  	     spx_int16_t *x;
+	     float *echo;
+	     speex_preprocess(st, x, echo);
+	  }
+C_FILE
+        cc -o t t.c -lspeex > /dev/null 2>&1
+        if test \! -x t ; then
+          AC_MSG_RESULT(spx_int32_t)
+        else
+	  AC_MSG_RESULT(float)
+	  AC_DEFINE(OPAL_SPEEX_FLOAT_NOISE)
+	fi
       fi
     fi
     rm -f t t.c
