@@ -24,7 +24,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.cxx,v $
- * Revision 1.2015  2006/01/14 10:40:16  dsandras
+ * Revision 1.2015.2.1  2006/01/31 08:10:37  csoutheren
+ * Backported from CVS head
+ *
+ * Revision 2.17  2006/01/31 03:28:04  csoutheren
+ * Changed to compile on MSVC 6
+ *
+ * Revision 2.16  2006/01/30 02:47:22  csoutheren
+ * Fixed use of system speex library on systems with includes in strange places
+ *
+ * Revision 2.15  2006/01/30 02:23:16  csoutheren
+ * First cut at fixing problem with speex libraries
+ *
+ * Revision 2.14  2006/01/14 10:40:16  dsandras
  * Applied typecast patch thanks to Dennis White <denniswhite98 ___AT_ yahoo.com>
  *
  * Revision 2.13  2005/12/30 14:33:12  dsandras
@@ -162,9 +174,14 @@
 
 extern "C" {
 #if OPAL_SYSTEM_SPEEX
-#include <speex.h>
+#  include "speex/libspeex/speex_config_types.h"
+#  if OPAL_HAVE_SPEEX_SPEEX_H
+#    include <speex/speex.h>
+#  else
+    #include <speex.h>
+#  endif
 #else
-#include "speex/libspeex/speex.h"
+#  include "speex/libspeex/speex.h"
 #endif
 };
 
@@ -473,7 +490,7 @@ BOOL Opal_Speex_Decoder::ConvertFrame(const BYTE * src, BYTE * dst)
 
 BOOL Opal_Speex_Decoder::ConvertSilentFrame(BYTE * dst)
 {
-  speex_decode_int(decoder, NULL, (short *) dst);
+  speex_decode_int(decoder, NULL, (spx_int16_t *) dst);
 
   return TRUE;
 }
