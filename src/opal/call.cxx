@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2040  2005/11/24 20:31:55  dsandras
+ * Revision 1.2041  2006/01/31 03:29:46  csoutheren
+ * Removed compiler warning
+ *
+ * Revision 2.39  2005/11/24 20:31:55  dsandras
  * Added support for echo cancelation using Speex.
  * Added possibility to add a filter to an OpalMediaPatch for all patches of a connection.
  *
@@ -503,25 +506,29 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
 
   OpalMediaPatch * patch = NULL;
 
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-    if (conn != &connection) {
-      OpalMediaStream * sink = conn->OpenSinkMediaStream(source);
-      if (sink == NULL)
-        return FALSE;
-      if (source.RequiresPatchThread()) {
-        if (patch == NULL) {
-          patch = manager.CreateMediaPatch(source);
-          if (patch == NULL)
-            return FALSE;
+  {
+    for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+      if (conn != &connection) {
+        OpalMediaStream * sink = conn->OpenSinkMediaStream(source);
+        if (sink == NULL)
+          return FALSE;
+        if (source.RequiresPatchThread()) {
+          if (patch == NULL) {
+            patch = manager.CreateMediaPatch(source);
+            if (patch == NULL)
+              return FALSE;
+          }
+          patch->AddSink(sink);
         }
-        patch->AddSink(sink);
       }
     }
   }
 
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-    if (patch)
-      conn->OnPatchMediaStream(conn == &connection, *patch);
+  {
+    for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+      if (patch)
+        conn->OnPatchMediaStream(conn == &connection, *patch);
+    }
   }
   
   return TRUE;
