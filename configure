@@ -5697,6 +5697,43 @@ _ACEOF
 
         OPAL_SYSTEM_SPEEX=1
 
+        cat >>confdefs.h <<\_ACEOF
+#define OPAL_SYSTEM_SPEEX 1
+_ACEOF
+
+        OPAL_SYSTEM_SPEEX=1
+
+        echo "$as_me:$LINENO: checking Speex noise type" >&5
+echo $ECHO_N "checking Speex noise type... $ECHO_C" >&6
+        if test "${OPAL_HAVE_SPEEX_H}x" != "x" ; then
+          echo "#include <speex.h>" > t.c
+          echo "#include <speex_header.h>" >> t.c
+        else
+          echo "#include <speex/speex.h>" > t.c
+          echo "#include <speex/speex_header.h>" >> t.c
+        fi
+        cat >> t.c <<C_FILE
+          #include <stdio.h>
+          int main(int argc,char *argv)
+	  {
+	     SpeexPreprocessState *st;
+  	     spx_int16_t *x;
+	     float *echo;
+	     speex_preprocess(st, x, echo);
+	  }
+C_FILE
+        cc -o t t.c -lspeex > /dev/null 2>&1
+        if test \! -x t ; then
+          echo "$as_me:$LINENO: result: spx_int32_t" >&5
+echo "${ECHO_T}spx_int32_t" >&6
+        else
+	  echo "$as_me:$LINENO: result: float" >&5
+echo "${ECHO_T}float" >&6
+	  cat >>confdefs.h <<\_ACEOF
+#define OPAL_SPEEX_FLOAT_NOISE 1
+_ACEOF
+
+	fi
       fi
     fi
     rm -f t t.c
