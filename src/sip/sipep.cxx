@@ -24,12 +24,23 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2098.2.4  2006/01/29 21:04:07  dsandras
+ * Revision 1.2098.2.5  2006/01/31 08:58:15  csoutheren
+ * More backports
+ *
+ * Revision 2.97.2.4  2006/01/29 21:04:07  dsandras
  * Removed cout.
  *
  * Revision 2.97.2.3  2006/01/29 21:02:55  dsandras
  * Backports from CVS HEAD.
  *
+ * Revision 2.103  2006/01/31 03:27:19  csoutheren
+ * Removed unused variable
+ * Fixed typo in comparison
+ *
+ * Revision 2.102  2006/01/29 21:03:32  dsandras
+ * Removed cout.
+ *
+>>>>>>> 2.103
  * Revision 2.101  2006/01/29 20:55:33  dsandras
  * Allow using a simple username or a fill url when registering.
  *
@@ -422,8 +433,6 @@ SIPInfo::~SIPInfo()
 BOOL SIPInfo::CreateTransport (OpalTransportAddress & registrarAddress)
 {
   PWaitAndSignal m(transportMutex);
-
-  OpalManager & manager = ep.GetManager();
 
   if (registrarTransport != NULL) {
 
@@ -1448,7 +1457,7 @@ BOOL SIPEndPoint::Register(const PString & host,
 			   const PString & realm,
 			   int timeout)
 {
-  if (timeout = 0)
+  if (timeout == 0)
     timeout = GetRegistrarTimeToLive().GetSeconds(); 
   return TransmitSIPInfo(SIP_PDU::Method_REGISTER, host, username, authName, password, realm, PString::Empty(), timeout);
 }
@@ -1470,7 +1479,7 @@ void SIPEndPoint::OnMWIReceived (const PString & /*remoteAddress*/,
 
 BOOL SIPEndPoint::MWISubscribe(const PString & host, const PString & username, int timeout)
 {
-  if (timeout = 0)
+  if (timeout == 0)
     timeout = GetNotifierTimeToLive().GetSeconds(); 
   return TransmitSIPInfo (SIP_PDU::Method_SUBSCRIBE, host, username, timeout);
 }
