@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2103  2006/01/29 21:03:32  dsandras
+ * Revision 1.2104  2006/01/31 03:27:19  csoutheren
+ * Removed unused variable
+ * Fixed typo in comparison
+ *
+ * Revision 2.102  2006/01/29 21:03:32  dsandras
  * Removed cout.
  *
  * Revision 2.101  2006/01/29 20:55:33  dsandras
@@ -419,8 +423,6 @@ SIPInfo::~SIPInfo()
 BOOL SIPInfo::CreateTransport (OpalTransportAddress & registrarAddress)
 {
   PWaitAndSignal m(transportMutex);
-
-  OpalManager & manager = ep.GetManager();
 
   if (registrarTransport != NULL) {
 
@@ -1445,7 +1447,7 @@ BOOL SIPEndPoint::Register(const PString & host,
 			   const PString & realm,
 			   int timeout)
 {
-  if (timeout = 0)
+  if (timeout == 0)
     timeout = GetRegistrarTimeToLive().GetSeconds(); 
   return TransmitSIPInfo(SIP_PDU::Method_REGISTER, host, username, authName, password, realm, PString::Empty(), timeout);
 }
@@ -1467,7 +1469,7 @@ void SIPEndPoint::OnMWIReceived (const PString & /*remoteAddress*/,
 
 BOOL SIPEndPoint::MWISubscribe(const PString & host, const PString & username, int timeout)
 {
-  if (timeout = 0)
+  if (timeout == 0)
     timeout = GetNotifierTimeToLive().GetSeconds(); 
   return TransmitSIPInfo (SIP_PDU::Method_SUBSCRIBE, host, username, timeout);
 }
