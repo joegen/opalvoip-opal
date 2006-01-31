@@ -23,6 +23,9 @@
  * Contributor(s): Miguel Rodriguez Perez
  *
  * $Log: echocancel.h,v $
+ * Revision 1.8  2006/01/31 03:28:03  csoutheren
+ * Changed to compile on MSVC 6
+ *
  * Revision 1.7  2006/01/23 23:01:19  dsandras
  * Protect internal speex state changes with a mutex.
  *
@@ -56,6 +59,16 @@
 
 #include <rtp/rtp.h>
 #include <ptclib/qchannel.h>
+
+extern "C" {
+#if OPAL_SYSTEM_SPEEX
+#include <speex_echo.h>
+#include <speex_preprocess.h>
+#else
+#include "../src/codec/speex/libspeex/speex_echo.h"
+#include "../src/codec/speex/libspeex/speex_preprocess.h"
+#endif
+};
 
 #ifndef SPEEX_ECHO_H
 struct SpeexEchoState;
@@ -130,9 +143,9 @@ private:
   PMutex stateMutex;
   SpeexEchoState *echoState;
   SpeexPreprocessState *preprocessState;
-  short *ref_buf;
-  short *echo_buf;
-  short *e_buf;
+  spx_int16_t * ref_buf;
+  spx_int16_t * echo_buf;
+  spx_int16_t * e_buf;
   void *noise;
 };
 
