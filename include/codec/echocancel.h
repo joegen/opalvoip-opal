@@ -23,6 +23,9 @@
  * Contributor(s): Miguel Rodriguez Perez
  *
  * $Log: echocancel.h,v $
+ * Revision 1.6.2.4  2006/01/31 11:00:17  csoutheren
+ * Backported handling for variants of Speex 1.1.11.1
+ *
  * Revision 1.6.2.3  2006/01/31 08:59:09  csoutheren
  * More backports
  *
@@ -31,6 +34,9 @@
  *
  * Revision 1.6.2.1  2006/01/27 05:07:11  csoutheren
  * Backports from CVS head
+ *
+ * Revision 1.10  2006/01/31 10:28:03  csoutheren
+ * Added detection for variants to speex 1.11.11.1
  *
  * Revision 1.9  2006/01/31 08:32:34  csoutheren
  * Fixed problem with speex includes. Again
@@ -165,7 +171,11 @@ private:
   spx_int16_t * ref_buf;
   spx_int16_t * echo_buf;
   spx_int16_t * e_buf;
-  void *noise;
+#if OPAL_SPEEX_FLOAT_NOISE
+  float * noise;
+#else
+  spx_int32_t * noise;
+#endif
 };
 
 #endif // __OPAL_ECHOCANCEL_H
