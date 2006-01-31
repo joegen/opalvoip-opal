@@ -247,8 +247,6 @@ P_FILE
         AC_MSG_RESULT(system version is more recent)
         AC_DEFINE(OPAL_SYSTEM_SPEEX, 1)
         AC_SUBST(OPAL_SYSTEM_SPEEX, 1)
-        AC_DEFINE(OPAL_SYSTEM_SPEEX, 1)
-        AC_SUBST(OPAL_SYSTEM_SPEEX, 1)
         AC_MSG_CHECKING(Speex noise type)
         if test "${OPAL_HAVE_SPEEX_H}x" != "x" ; then
           echo "#include <speex.h>" > t.c
