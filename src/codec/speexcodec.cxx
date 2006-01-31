@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.cxx,v $
- * Revision 1.2017  2006/01/30 02:47:22  csoutheren
+ * Revision 1.2018  2006/01/31 03:28:04  csoutheren
+ * Changed to compile on MSVC 6
+ *
+ * Revision 2.16  2006/01/30 02:47:22  csoutheren
  * Fixed use of system speex library on systems with includes in strange places
  *
  * Revision 2.15  2006/01/30 02:23:16  csoutheren
@@ -484,7 +487,7 @@ BOOL Opal_Speex_Decoder::ConvertFrame(const BYTE * src, BYTE * dst)
 
 BOOL Opal_Speex_Decoder::ConvertSilentFrame(BYTE * dst)
 {
-  speex_decode_int(decoder, NULL, (short *) dst);
+  speex_decode_int(decoder, NULL, (spx_int16_t *) dst);
 
   return TRUE;
 }
