@@ -23,6 +23,9 @@
  * Contributor(s): Miguel Rodriguez Perez
  *
  * $Log: echocancel.h,v $
+ * Revision 1.9  2006/01/31 08:32:34  csoutheren
+ * Fixed problem with speex includes. Again
+ *
  * Revision 1.8  2006/01/31 03:28:03  csoutheren
  * Changed to compile on MSVC 6
  *
@@ -57,13 +60,20 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
+
 #include <rtp/rtp.h>
 #include <ptclib/qchannel.h>
 
 extern "C" {
 #if OPAL_SYSTEM_SPEEX
+#if OPAL_HAVE_SPEEX_SPEEX_H
+#include <speex/speex_echo.h>
+#include <speex/speex_preprocess.h>
+#else
 #include <speex_echo.h>
 #include <speex_preprocess.h>
+#endif
 #else
 #include "../src/codec/speex/libspeex/speex_echo.h"
 #include "../src/codec/speex/libspeex/speex_preprocess.h"
