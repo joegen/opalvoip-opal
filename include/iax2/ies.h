@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: ies.h,v $
+ *  Revision 1.4  2006/01/31 03:28:47  csoutheren
+ *  Removed compile warnings and changed functions args to const refs
+ *
  *  Revision 1.3  2005/08/26 03:07:38  dereksmithies
  *  Change naming convention, so all class names contain the string "IAX2"
  *
@@ -499,7 +502,7 @@ class IAX2IeString : public IAX2Ie
   IAX2IeString(BYTE length, BYTE *srcData);     
   
   /**Construct to an initialised value */
-  IAX2IeString(PString & newValue) : IAX2Ie() { SetData(newValue); }
+  IAX2IeString(const PString & newValue) : IAX2Ie() { SetData(newValue); }
   
   /**Construct to an initialised value */
   IAX2IeString(const char * newValue) : IAX2Ie() { SetData(newValue); }
@@ -517,7 +520,7 @@ class IAX2IeString : public IAX2Ie
   void PrintOn(ostream & str) const;
   
   /**Take the supplied data and copy contents into this IE */
-  void SetData(PString & newData);
+  void SetData(const PString & newData);
   
   /**Take the supplied data and copy contents into this IE */
   void SetData(const char * newData);
@@ -548,7 +551,7 @@ class IAX2IeDateAndTime : public IAX2Ie
   IAX2IeDateAndTime(BYTE length, BYTE *srcData);     
   
   /**Construct to an initialized value */
-  IAX2IeDateAndTime(PTime & newValue) : IAX2Ie() { SetData(newValue); }
+  IAX2IeDateAndTime(const PTime & newValue) : IAX2Ie() { SetData(newValue); }
   
   /**Constructor to an invalid and empty result*/
   IAX2IeDateAndTime() : IAX2Ie() {}
@@ -563,7 +566,7 @@ class IAX2IeDateAndTime : public IAX2Ie
   virtual BYTE GetLengthOfData() { return 4; }
   
   /**Take the supplied data and copy contents into this IE */
-  void SetData(PTime & newData) { dataValue = newData; validData = TRUE; }
+  void SetData(const PTime & newData) { dataValue = newData; validData = TRUE; }
   
   /**Report the value of the stored data for this class */
   PTime ReadData() { return dataValue; }
@@ -590,7 +593,7 @@ class IAX2IeBlockOfData : public IAX2Ie
   IAX2IeBlockOfData(BYTE length, BYTE *srcData);     
   
   /**Construct to an initialized value */
-  IAX2IeBlockOfData(PBYTEArray & newData) : IAX2Ie() { SetData(newData); }
+  IAX2IeBlockOfData(const PBYTEArray & newData) : IAX2Ie() { SetData(newData); }
   
   /**Constructor to an invalid and empty result*/
   IAX2IeBlockOfData() : IAX2Ie() {}
@@ -605,7 +608,7 @@ class IAX2IeBlockOfData : public IAX2Ie
   virtual BYTE GetLengthOfData() { return (BYTE)dataValue.GetSize(); }
   
   /**Take the supplied data and copy contents into this IE */
-  void SetData(PBYTEArray newData) { dataValue = newData; validData = TRUE; }
+  void SetData(const PBYTEArray & newData) { dataValue = newData; validData = TRUE; }
   
   /**Report the value of the stored data for this class */
   PBYTEArray ReadData() { return dataValue; }
@@ -633,7 +636,7 @@ class IAX2IeSockaddrIn : public IAX2Ie
   IAX2IeSockaddrIn(BYTE length, BYTE *srcData);     
   
   /**Construct to an initialized value */
-  IAX2IeSockaddrIn(PIPSocket::Address &addr, PINDEX port) : IAX2Ie() { SetData(addr, port); }
+  IAX2IeSockaddrIn(const PIPSocket::Address & addr, PINDEX port) : IAX2Ie() { SetData(addr, port); }
   
   /**Constructor to an invalid and empty result*/
   IAX2IeSockaddrIn() : IAX2Ie() {}
@@ -652,7 +655,7 @@ class IAX2IeSockaddrIn : public IAX2Ie
   
   
   /**Take the supplied data and copy contents into this IE */
-  void SetData(PIPSocket::Address & newAddr, PINDEX newPort) 
+  void SetData(const PIPSocket::Address & newAddr, PINDEX newPort) 
     { dataValue = newAddr; portNumber = newPort; validData = TRUE; }
   
   /**Report the value of the stored data for this class */
@@ -682,7 +685,7 @@ class IAX2IeCalledNumber : public IAX2IeString
   IAX2IeCalledNumber(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) {};
   
   /**Initialise to the supplied string value */
-  IAX2IeCalledNumber(PString newValue) { SetData(newValue); }
+  IAX2IeCalledNumber(const PString & newValue) { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -707,7 +710,7 @@ class IAX2IeCallingNumber : public IAX2IeString
   IAX2IeCallingNumber(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**Initialise to the supplied string value */
-  IAX2IeCallingNumber(PString newValue)  { SetData(newValue); } 
+  IAX2IeCallingNumber(const PString & newValue)  { SetData(newValue); } 
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -733,7 +736,7 @@ class IAX2IeCallingAni : public IAX2IeString
   IAX2IeCallingAni(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**Initialise to the supplied string value */
-  IAX2IeCallingAni(PString newValue) { SetData(newValue); }
+  IAX2IeCallingAni(const PString & newValue) { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -759,7 +762,7 @@ class IAX2IeCallingName : public IAX2IeString
   IAX2IeCallingName(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**Initialise to the supplied string value */
-  IAX2IeCallingName(PString newValue) { SetData(newValue); }
+  IAX2IeCallingName(const PString & newValue) { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -785,7 +788,7 @@ class IAX2IeCalledContext : public IAX2IeString
   IAX2IeCalledContext(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**Initialise to the supplied string value */
-  IAX2IeCalledContext(PString newValue) { SetData(newValue); }
+  IAX2IeCalledContext(const PString & newValue) { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -811,7 +814,7 @@ class IAX2IeUserName : public IAX2IeString
   IAX2IeUserName(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**Initialise to the supplied string value */
-  IAX2IeUserName(PString newValue)  { SetData(newValue); }
+  IAX2IeUserName(const PString & newValue)  { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -837,7 +840,7 @@ class IAX2IePassword : public IAX2IeString
   IAX2IePassword(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**Initialise to the supplied string value */
-  IAX2IePassword(PString newValue) { SetData(newValue); }
+  IAX2IePassword(const PString & newValue) { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -915,7 +918,7 @@ class IAX2IeLanguage : public IAX2IeString
   IAX2IeLanguage(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**Initialise to the supplied string value */
-  IAX2IeLanguage(PString newValue) { SetData(newValue); }
+  IAX2IeLanguage(const PString & newValue) { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -990,7 +993,7 @@ class IAX2IeDnid : public IAX2IeString
   IAX2IeDnid(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**Initialise to the supplied string value */
-  IAX2IeDnid(PString newValue)  { SetData(newValue); }
+  IAX2IeDnid(const PString & newValue)  { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1070,7 +1073,7 @@ class IAX2IeChallenge : public IAX2IeString
   IAX2IeChallenge(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**Initialise to the supplied string value */
-  IAX2IeChallenge(PString newValue) { SetData(newValue); }
+  IAX2IeChallenge(const PString & newValue) { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1096,16 +1099,16 @@ class IAX2IeMd5Result : public IAX2IeString
   IAX2IeMd5Result(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**Initialise to the supplied string value */
-  IAX2IeMd5Result(PString newValue) { SetData(newValue); }
+  IAX2IeMd5Result(const PString & newValue) { SetData(newValue); }
   
   /**Take the challenge and password, calculate the result, and store */
-  IAX2IeMd5Result(PString &challenge, PString &password);
+  IAX2IeMd5Result(const PString & challenge, const PString & password);
   
   /**Take the supplied Iax2Encrption arguement, calculate the result, and store */
   IAX2IeMd5Result(IAX2Encryption & encryption);
   
   /**Initialize the internal structurees */
-  void InitializeChallengePassword(const PString &newChallenge, const PString &newPassword);
+  void InitializeChallengePassword(const PString & newChallenge, const PString & newPassword);
 
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1139,7 +1142,7 @@ class IAX2IeRsaResult : public IAX2IeString
   IAX2IeRsaResult(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**Initialise to the supplied string value */
-  IAX2IeRsaResult(PString newValue) { SetData(newValue); }
+  IAX2IeRsaResult(const PString & newValue) { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1260,7 +1263,7 @@ class IAX2IeCause : public IAX2IeString
   IAX2IeCause(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**Construct with a predefined value (Typically used prior to transmission)*/
-  IAX2IeCause(PString & newValue) : IAX2IeString(newValue) { }
+  IAX2IeCause(const PString & newValue) : IAX2IeString(newValue) { }
   
   /**Construct with a predefined value (Typically used prior to transmission)*/
   IAX2IeCause(const char *newValue) : IAX2IeString(newValue) { }
@@ -1965,19 +1968,19 @@ class IAX2IeList : public IAX2Ie *
   void DeleteAt(PINDEX idex);
   
   /**Test to see if list is empty - returns TRUE if no elements stored in this list */
-  BOOL Empty() { return GetSize() == 0; }
+  BOOL Empty() const { return GetSize() == 0; }
   
   /**Test to see if list is empty - returns TRUE if no elements stored in this list */
-  BOOL IsEmpty() { return GetSize() == 0; }
+  BOOL IsEmpty() const { return GetSize() == 0; }
   
   /**Add a new IAX2Ie to the list */
   void AppendIe(IAX2Ie *newMember) { Append(newMember);}
   
   /**Get the number of bytes to store all these IAX2Ie's in a network packet */
-  int GetBinaryDataSize();
+  int GetBinaryDataSize() const;
   
   /**Get a pointer to the IAX2Ie which is stored at index i*/
-  IAX2Ie *GetIeAt(int i); 
+  IAX2Ie * GetIeAt(int i) const;
   
  protected:
   
