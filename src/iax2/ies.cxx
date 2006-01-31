@@ -27,6 +27,9 @@
  *
  *
  * $Log: ies.cxx,v $
+ * Revision 1.4  2006/01/31 03:28:48  csoutheren
+ * Removed compile warnings and changed functions args to const refs
+ *
  * Revision 1.3  2005/08/26 03:07:38  dereksmithies
  * Change naming convention, so all class names contain the string "IAX2"
  *
@@ -395,7 +398,7 @@ BYTE IAX2IeString::GetLengthOfData()
     return (BYTE)(dataValue.GetSize() - 1); 
 }
 
-void IAX2IeString::SetData(PString & newData) 
+void IAX2IeString::SetData(const PString & newData) 
 { 
   dataValue = newData; 
   validData = TRUE; 
@@ -501,16 +504,16 @@ void IAX2IeList::DeleteAt(PINDEX idex)
   delete obj;
 }
 
-int IAX2IeList::GetBinaryDataSize()
+int IAX2IeList::GetBinaryDataSize() const
 {
   PINDEX totalSize = 0;
-  for(PINDEX i = 0; i < PAbstractList::GetSize(); i++)
+  for (PINDEX i = 0; i < PAbstractList::GetSize(); i++)
     totalSize += GetIeAt(i)->GetBinarySize();
   
   return totalSize;
 }
 
-IAX2Ie *IAX2IeList::GetIeAt(int i)
+IAX2Ie *IAX2IeList::GetIeAt(int i) const
 {
   if (i >= GetSize())
     return NULL;
@@ -660,13 +663,13 @@ IAX2IeMd5Result::IAX2IeMd5Result(IAX2Encryption & encryption)
   InitializeChallengePassword(encryption.ChallengeKey(), encryption.EncryptionKey());
 }
 
-IAX2IeMd5Result::IAX2IeMd5Result(PString &challenge, PString &password)
+IAX2IeMd5Result::IAX2IeMd5Result(const PString & challenge, const PString &password)
 {
   InitializeChallengePassword(challenge, password);
 }
 
 
-void IAX2IeMd5Result::InitializeChallengePassword(const PString &newChallenge, const PString &newPassword)
+void IAX2IeMd5Result::InitializeChallengePassword(const PString &newChallenge, const PString & newPassword)
 {
   PMessageDigest5 stomach;
   stomach.Process(newChallenge);
