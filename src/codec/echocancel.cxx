@@ -23,11 +23,17 @@
  * Contributor(s): Miguel Rodriguez Perez.
  *
  * $Log: echocancel.cxx,v $
+ * Revision 1.11.2.3  2006/01/31 11:00:18  csoutheren
+ * Backported handling for variants of Speex 1.1.11.1
+ *
  * Revision 1.11.2.2  2006/01/31 08:58:14  csoutheren
  * More backports
  *
  * Revision 1.11.2.1  2006/01/27 05:07:14  csoutheren
  * Backports from CVS head
+ *
+ * Revision 1.16  2006/01/31 10:28:04  csoutheren
+ * Added detection for variants to speex 1.11.11.1
  *
  * Revision 1.15  2006/01/31 03:28:03  csoutheren
  * Changed to compile on MSVC 6
@@ -204,7 +210,11 @@ void OpalEchoCanceler::ReceivedPacket(RTP_DataFrame& input_frame, INT)
   if (echo_buf == NULL)
     echo_buf = (spx_int16_t *) malloc(inputSize);
   if (noise == NULL)
+#if OPAL_SPEEX_FLOAT_NOISE
+    noise = (float *) malloc((inputSize/sizeof(short)+1)*sizeof(float));
+#else
     noise = (spx_int32_t *) malloc((inputSize/sizeof(short)+1)*sizeof(spx_int32_t));
+#endif
   if (e_buf == NULL)
     e_buf = (spx_int16_t *) malloc(inputSize);
   if (ref_buf == NULL)
@@ -231,10 +241,10 @@ void OpalEchoCanceler::ReceivedPacket(RTP_DataFrame& input_frame, INT)
   }
    
   /* Cancel the echo in this frame */
-  speex_echo_cancel(echoState, (short *)ref_buf, (short *)echo_buf, (short *)e_buf, (spx_int32_t *) noise);
+  speex_echo_cancel(echoState, (short *)ref_buf, (short *)echo_buf, (short *)e_buf, noise);
   
   /* Suppress the noise */
-  speex_preprocess(preprocessState, e_buf, (spx_int32_t *) noise);
+  speex_preprocess(preprocessState, e_buf, noise);
 
   /* Use the result of the echo cancelation as capture frame */
   memcpy(input_frame.GetPayloadPtr(), e_buf, input_frame.GetPayloadSize());
