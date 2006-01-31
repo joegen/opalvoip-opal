@@ -23,6 +23,9 @@
  * Contributor(s): Miguel Rodriguez Perez.
  *
  * $Log: echocancel.cxx,v $
+ * Revision 1.15  2006/01/31 03:28:03  csoutheren
+ * Changed to compile on MSVC 6
+ *
  * Revision 1.14  2006/01/23 23:01:19  dsandras
  * Protect internal speex state changes with a mutex.
  *
@@ -73,16 +76,6 @@
 #ifdef __GNUC__
 #pragma implementation "echocancel.h"
 #endif
-
-extern "C" {
-#if OPAL_SYSTEM_SPEEX
-#include <speex_echo.h>
-#include <speex_preprocess.h>
-#else
-#include "../src/codec/speex/libspeex/speex_echo.h"
-#include "../src/codec/speex/libspeex/speex_preprocess.h"
-#endif
-};
 
 #include <codec/echocancel.h>
 
@@ -203,13 +196,13 @@ void OpalEchoCanceler::ReceivedPacket(RTP_DataFrame& input_frame, INT)
   }
 
   if (echo_buf == NULL)
-    echo_buf = (short *) malloc(inputSize);
+    echo_buf = (spx_int16_t *) malloc(inputSize);
   if (noise == NULL)
     noise = (spx_int32_t *) malloc((inputSize/sizeof(short)+1)*sizeof(spx_int32_t));
   if (e_buf == NULL)
-    e_buf = (short *) malloc(inputSize);
+    e_buf = (spx_int16_t *) malloc(inputSize);
   if (ref_buf == NULL)
-    ref_buf = (short *) malloc(inputSize);
+    ref_buf = (spx_int16_t *) malloc(inputSize);
 
   /* Remove the DC offset */
   short *j = (short *) input_frame.GetPayloadPtr();
@@ -232,7 +225,7 @@ void OpalEchoCanceler::ReceivedPacket(RTP_DataFrame& input_frame, INT)
   }
    
   /* Cancel the echo in this frame */
-  speex_echo_cancel(echoState, ref_buf, echo_buf, e_buf, (spx_int32_t *) noise);
+  speex_echo_cancel(echoState, (short *)ref_buf, (short *)echo_buf, (short *)e_buf, (spx_int32_t *) noise);
   
   /* Suppress the noise */
   speex_preprocess(preprocessState, e_buf, (spx_int32_t *) noise);
