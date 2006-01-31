@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: buildopts.h.in,v $
+ * Revision 1.11  2006/01/31 10:28:04  csoutheren
+ * Added detection for variants to speex 1.11.11.1
+ *
  * Revision 1.10  2006/01/30 23:23:24  csoutheren
  * Added define for SPEEX
  *
@@ -111,6 +114,7 @@
 
 #undef	OPAL_SYSTEM_SPEEX
 #undef  OPAL_HAVE_SPEEX_SPEEX_H
+#undef  OPAL_SPEEX_FLOAT_NOISE
 
 
 /////////////////////////////////////////////////
