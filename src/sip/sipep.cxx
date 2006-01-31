@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2098.2.5  2006/01/31 08:58:15  csoutheren
+ * Revision 1.2098.2.6  2006/01/31 08:59:09  csoutheren
+ * More backports
+ *
+ * Revision 2.97.2.5  2006/01/31 08:58:15  csoutheren
  * More backports
  *
  * Revision 2.97.2.4  2006/01/29 21:04:07  dsandras
@@ -40,7 +43,6 @@
  * Revision 2.102  2006/01/29 21:03:32  dsandras
  * Removed cout.
  *
->>>>>>> 2.103
  * Revision 2.101  2006/01/29 20:55:33  dsandras
  * Allow using a simple username or a fill url when registering.
  *

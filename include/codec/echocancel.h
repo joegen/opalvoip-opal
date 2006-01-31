@@ -23,6 +23,9 @@
  * Contributor(s): Miguel Rodriguez Perez
  *
  * $Log: echocancel.h,v $
+ * Revision 1.6.2.3  2006/01/31 08:59:09  csoutheren
+ * More backports
+ *
  * Revision 1.6.2.2  2006/01/31 08:58:14  csoutheren
  * More backports
  *
@@ -35,7 +38,6 @@
  * Revision 1.8  2006/01/31 03:28:03  csoutheren
  * Changed to compile on MSVC 6
  *
->>>>>>> 1.9
  * Revision 1.7  2006/01/23 23:01:19  dsandras
  * Protect internal speex state changes with a mutex.
  *
