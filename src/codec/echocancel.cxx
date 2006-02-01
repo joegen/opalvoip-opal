@@ -23,6 +23,9 @@
  * Contributor(s): Miguel Rodriguez Perez.
  *
  * $Log: echocancel.cxx,v $
+ * Revision 1.11.2.4  2006/02/01 05:31:23  csoutheren
+ * Fixed more speex compile problems
+ *
  * Revision 1.11.2.3  2006/01/31 11:00:18  csoutheren
  * Backported handling for variants of Speex 1.1.11.1
  *
@@ -88,6 +91,23 @@
 #ifdef __GNUC__
 #pragma implementation "echocancel.h"
 #endif
+
+#include <opal/buildopts.h>
+
+extern "C" {
+#if OPAL_SYSTEM_SPEEX
+#if OPAL_HAVE_SPEEX_SPEEX_H
+#include <speex/speex_echo.h>
+#include <speex/speex_preprocess.h>
+#else
+#include <speex_echo.h>
+#include <speex_preprocess.h>
+#endif
+#else
+#include "../src/codec/speex/libspeex/speex_echo.h"
+#include "../src/codec/speex/libspeex/speex_preprocess.h"
+#endif
+};
 
 #include <codec/echocancel.h>
 
@@ -211,9 +231,9 @@ void OpalEchoCanceler::ReceivedPacket(RTP_DataFrame& input_frame, INT)
     echo_buf = (spx_int16_t *) malloc(inputSize);
   if (noise == NULL)
 #if OPAL_SPEEX_FLOAT_NOISE
-    noise = (float *) malloc((inputSize/sizeof(short)+1)*sizeof(float));
+    noise = malloc((inputSize/sizeof(short)+1)*sizeof(float));
 #else
-    noise = (spx_int32_t *) malloc((inputSize/sizeof(short)+1)*sizeof(spx_int32_t));
+    noise = malloc((inputSize/sizeof(short)+1)*sizeof(spx_int32_t));
 #endif
   if (e_buf == NULL)
     e_buf = (spx_int16_t *) malloc(inputSize);
@@ -224,7 +244,7 @@ void OpalEchoCanceler::ReceivedPacket(RTP_DataFrame& input_frame, INT)
   short *j = (short *) input_frame.GetPayloadPtr();
   for (i = 0 ; i < (int) (inputSize/sizeof(short)) ; i++) {
     mean = 0.999*mean + 0.001*j[i];
-    ref_buf[i] = j[i] - (short) mean;
+    ((spx_int16_t *)ref_buf)[i] = j[i] - (short) mean;
   }
   
   /* Read from the PQueueChannel a reference echo frame of the size
@@ -234,17 +254,25 @@ void OpalEchoCanceler::ReceivedPacket(RTP_DataFrame& input_frame, INT)
     /* Nothing to read from the speaker signal, only suppress the noise
      * and return.
      */
-    speex_preprocess(preprocessState, ref_buf, NULL);
-    memcpy(input_frame.GetPayloadPtr(), ref_buf, input_frame.GetPayloadSize());
+    speex_preprocess(preprocessState, (spx_int16_t *)ref_buf, NULL);
+    memcpy(input_frame.GetPayloadPtr(), (spx_int16_t *)ref_buf, input_frame.GetPayloadSize());
 
     return;
   }
    
   /* Cancel the echo in this frame */
-  speex_echo_cancel(echoState, (short *)ref_buf, (short *)echo_buf, (short *)e_buf, noise);
+#if OPAL_SPEEX_FLOAT_NOISE
+  speex_echo_cancel(echoState, (short *)ref_buf, (short *)echo_buf, (short *)e_buf, (float *)noise);
+#else
+  speex_echo_cancel(echoState, (short *)ref_buf, (short *)echo_buf, (short *)e_buf, (spx_int32_t *)noise);
+#endif
   
   /* Suppress the noise */
-  speex_preprocess(preprocessState, e_buf, noise);
+#if OPAL_SPEEX_FLOAT_NOISE
+  speex_preprocess(preprocessState, (spx_int16_t *)e_buf, (float *)noise);
+#else
+  speex_preprocess(preprocessState, (spx_int16_t *)e_buf, (spx_int32_t *)noise);
+#endif
 
   /* Use the result of the echo cancelation as capture frame */
   memcpy(input_frame.GetPayloadPtr(), e_buf, input_frame.GetPayloadSize());
