@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.28  2006/02/01 22:42:55  dominance
+# ensure we have the full disctinct SONAME instead of just the major number version.
+#
 # Revision 1.27  2006/01/30 02:23:15  csoutheren
 # First cut at fixing problem with speex libraries
 #
@@ -680,7 +683,7 @@ else
   endif
 endif
 
-LIB_SONAME	= $(LIBNAME_MAJ)
+LIB_SONAME	= $(LIBNAME_MIN)
 
 CLEAN_FILES += $(LIBDIR)/$(LIBNAME_PAT) $(LIBDIR)/$(OPAL_FILE) $(LIBDIR)/$(LIBNAME_MAJ) $(LIBDIR)/$(LIBNAME_MIN)
 
