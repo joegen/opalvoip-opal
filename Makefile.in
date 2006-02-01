@@ -22,6 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.23.2.3  2006/02/01 22:45:40  dominance
+# Backport fix from CVS HEAD to make the SONAME be the fully distict version
+# rather than the major only.
+#
 # Revision 1.23.2.2  2006/01/31 08:58:14  csoutheren
 # More backports
 #
@@ -686,7 +690,7 @@ else
   endif
 endif
 
-LIB_SONAME	= $(LIBNAME_MAJ)
+LIB_SONAME	= $(LIBNAME_MIN)
 
 CLEAN_FILES += $(LIBDIR)/$(LIBNAME_PAT) $(LIBDIR)/$(OPAL_FILE) $(LIBDIR)/$(LIBNAME_MAJ) $(LIBDIR)/$(LIBNAME_MIN)
 
