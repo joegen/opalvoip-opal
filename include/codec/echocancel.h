@@ -23,6 +23,9 @@
  * Contributor(s): Miguel Rodriguez Perez
  *
  * $Log: echocancel.h,v $
+ * Revision 1.6.2.5  2006/02/01 05:31:22  csoutheren
+ * Fixed more speex compile problems
+ *
  * Revision 1.6.2.4  2006/01/31 11:00:17  csoutheren
  * Backported handling for variants of Speex 1.1.11.1
  *
@@ -75,25 +78,8 @@
 #pragma interface
 #endif
 
-#include <opal/buildopts.h>
-
 #include <rtp/rtp.h>
 #include <ptclib/qchannel.h>
-
-extern "C" {
-#if OPAL_SYSTEM_SPEEX
-#if OPAL_HAVE_SPEEX_SPEEX_H
-#include <speex/speex_echo.h>
-#include <speex/speex_preprocess.h>
-#else
-#include <speex_echo.h>
-#include <speex_preprocess.h>
-#endif
-#else
-#include "../src/codec/speex/libspeex/speex_echo.h"
-#include "../src/codec/speex/libspeex/speex_preprocess.h"
-#endif
-};
 
 #ifndef SPEEX_ECHO_H
 struct SpeexEchoState;
@@ -168,14 +154,12 @@ private:
   PMutex stateMutex;
   SpeexEchoState *echoState;
   SpeexPreprocessState *preprocessState;
-  spx_int16_t * ref_buf;
-  spx_int16_t * echo_buf;
-  spx_int16_t * e_buf;
-#if OPAL_SPEEX_FLOAT_NOISE
-  float * noise;
-#else
-  spx_int32_t * noise;
-#endif
+
+  // the following types are all void * to avoid including Speex header files
+  void * ref_buf;
+  void * echo_buf;
+  void * e_buf;
+  void * noise;
 };
 
 #endif // __OPAL_ECHOCANCEL_H
