@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2050  2006/01/09 12:19:06  csoutheren
+ * Revision 1.2051  2006/02/02 07:02:56  csoutheren
+ * Added RTP payload map to transcoders and connections to allow remote SIP endpoints
+ * to change the payload type used for outgoing RTP.
+ *
+ * Revision 2.49  2006/01/09 12:19:06  csoutheren
  * Added member variables to capture incoming destination addresses
  *
  * Revision 2.48  2005/12/06 21:32:24  dsandras
@@ -209,7 +213,7 @@
 #include <opal/transports.h>
 #include <ptclib/dtmf.h>
 #include <ptlib/safecoll.h>
-
+#include <rtp/rtp.h>
 
 class OpalEndPoint;
 class OpalCall;
@@ -1089,6 +1093,9 @@ class OpalConnection : public PSafeObject
 
   //@}
 
+    const RTP_DataFrame::PayloadMapType & GetRTPPayloadMap() const
+    { return rtpPayloadMap; }
+
   protected:
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnUserInputInBandDTMF);
@@ -1133,6 +1140,8 @@ class OpalConnection : public PSafeObject
     unsigned            minAudioJitterDelay;
     unsigned            maxAudioJitterDelay;
     unsigned            bandwidthAvailable;
+
+    RTP_DataFrame::PayloadMapType rtpPayloadMap;
 
     // The In-Band DTMF detector. This is used inside an audio filter which is
     // added to the audio channel.
