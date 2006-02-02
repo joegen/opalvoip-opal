@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2022  2005/12/30 14:33:12  dsandras
+ * Revision 1.2023  2006/02/02 07:02:57  csoutheren
+ * Added RTP payload map to transcoders and connections to allow remote SIP endpoints
+ * to change the payload type used for outgoing RTP.
+ *
+ * Revision 2.21  2005/12/30 14:33:12  dsandras
  * Added support for Packet Loss Concealment frames for framed codecs supporting it similarly to what was done for OpenH323.
  *
  * Revision 2.20  2005/11/30 13:35:26  csoutheren
@@ -119,6 +123,7 @@
 #include <opal/mediafmt.h>
 #include <opal/mediacmd.h>
 
+#include <rtp/rtp.h>
 
 class RTP_DataFrame;
 class OpalTranscoder;
@@ -370,6 +375,15 @@ class OpalTranscoder : public OpalMediaFormatPair
     bool      outputMediaFormatUpdated;
     PNotifier commandNotifier;
     PMutex    updateMutex;
+
+    RTP_DataFrame::PayloadMapType payloadTypeMap;
+
+  public:
+    void SetRTPPayloadMap(const RTP_DataFrame::PayloadMapType & v)
+    { payloadTypeMap = v; }
+
+    void AddRTPPayloadMapping(RTP_DataFrame::PayloadTypes from, RTP_DataFrame::PayloadTypes to)
+    { payloadTypeMap.insert(RTP_DataFrame::PayloadMapType::value_type(from, to)); }
 };
 
 
