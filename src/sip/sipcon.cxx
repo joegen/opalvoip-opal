@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2126  2006/01/29 20:55:32  dsandras
+ * Revision 1.2127  2006/02/02 07:02:58  csoutheren
+ * Added RTP payload map to transcoders and connections to allow remote SIP endpoints
+ * to change the payload type used for outgoing RTP.
+ *
+ * Revision 2.125  2006/01/29 20:55:32  dsandras
  * Allow using a simple username or a fill url when registering.
  *
  * Revision 2.124  2006/01/23 22:54:57  csoutheren
@@ -1930,6 +1934,9 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
   // Adjust the remote formats list
   remoteFormatList += mediaDescription->GetMediaFormats(rtpSessionId);
   AdjustMediaFormats(remoteFormatList);
+
+  // create map for RTP payloads
+  mediaDescription->CreateRTPMap(rtpSessionId, rtpPayloadMap);
   
   // Open the streams and the reverse streams
   OnOpenSourceMediaStreams(remoteFormatList, rtpSessionId, NULL);

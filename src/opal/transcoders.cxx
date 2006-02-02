@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2018  2005/12/30 14:33:12  dsandras
+ * Revision 1.2019  2006/02/02 07:02:58  csoutheren
+ * Added RTP payload map to transcoders and connections to allow remote SIP endpoints
+ * to change the payload type used for outgoing RTP.
+ *
+ * Revision 2.17  2005/12/30 14:33:12  dsandras
  * Added support for Packet Loss Concealment frames for framed codecs supporting it similarly to what was done for OpenH323.
  *
  * Revision 2.16  2005/09/13 20:48:22  dominance
@@ -175,7 +179,15 @@ BOOL OpalTranscoder::ConvertFrames(const RTP_DataFrame & input,
       output.RemoveAt(1);
   }
 
-  output[0].SetPayloadType(outputMediaFormat.GetPayloadType());
+  if (payloadTypeMap.size() == 0)
+    output[0].SetPayloadType(outputMediaFormat.GetPayloadType());
+  else {
+    RTP_DataFrame::PayloadMapType::iterator r = payloadTypeMap.find(outputMediaFormat.GetPayloadType());
+    if (r != payloadTypeMap.end())
+      output[0].SetPayloadType(r->second);
+    else
+      output[0].SetPayloadType(outputMediaFormat.GetPayloadType());
+  }
   output[0].SetTimestamp(input.GetTimestamp());
   output[0].SetMarker(input.GetMarker());
   return Convert(input, output[0]);
