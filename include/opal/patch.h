@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.h,v $
- * Revision 1.2011  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2012  2006/02/02 07:02:57  csoutheren
+ * Added RTP payload map to transcoders and connections to allow remote SIP endpoints
+ * to change the payload type used for outgoing RTP.
+ *
+ * Revision 2.10  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.9  2005/11/07 06:34:52  csoutheren
@@ -139,7 +143,8 @@ class OpalMediaPatch : public PThread
        able to write to it.
       */
     BOOL AddSink(
-      OpalMediaStream * stream         ///<  Media stream to add.
+      OpalMediaStream * stream,                     ///< Media stream to add.
+      const RTP_DataFrame::PayloadMapType & rtpMap  ///< Outgoing RTP type map
     );
 
     /**Add existing "sink" OpalMediaStream to patch.

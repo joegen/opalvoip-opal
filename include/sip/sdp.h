@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2016  2005/12/15 21:15:44  dsandras
+ * Revision 1.2017  2006/02/02 07:02:57  csoutheren
+ * Added RTP payload map to transcoders and connections to allow remote SIP endpoints
+ * to change the payload type used for outgoing RTP.
+ *
+ * Revision 2.15  2005/12/15 21:15:44  dsandras
  * Fixed compilation with gcc 4.1.
  *
  * Revision 2.14  2005/10/04 18:31:01  dsandras
@@ -200,6 +204,7 @@ class SDPMediaDescription : public PObject
       { return formats; }
 
     OpalMediaFormatList GetMediaFormats(unsigned) const;
+    void CreateRTPMap(unsigned sessionID, RTP_DataFrame::PayloadMapType & map) const;
 
     void AddSDPMediaFormat(SDPMediaFormat * sdpMediaFormat);
 

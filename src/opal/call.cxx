@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2041  2006/01/31 03:29:46  csoutheren
+ * Revision 1.2042  2006/02/02 07:02:57  csoutheren
+ * Added RTP payload map to transcoders and connections to allow remote SIP endpoints
+ * to change the payload type used for outgoing RTP.
+ *
+ * Revision 2.40  2006/01/31 03:29:46  csoutheren
  * Removed compiler warning
  *
  * Revision 2.39  2005/11/24 20:31:55  dsandras
@@ -518,7 +522,7 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
             if (patch == NULL)
               return FALSE;
           }
-          patch->AddSink(sink);
+          patch->AddSink(sink, conn->GetRTPPayloadMap());
         }
       }
     }
