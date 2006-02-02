@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2027  2006/01/02 11:28:07  dsandras
+ * Revision 1.2028  2006/02/02 07:02:58  csoutheren
+ * Added RTP payload map to transcoders and connections to allow remote SIP endpoints
+ * to change the payload type used for outgoing RTP.
+ *
+ * Revision 2.26  2006/01/02 11:28:07  dsandras
  * Some documentation. Various code cleanups to prevent duplicate code.
  *
  * Revision 2.25  2005/12/29 16:23:38  dsandras
@@ -551,8 +555,8 @@ OpalMediaFormatList SDPMediaDescription::GetMediaFormats(unsigned sessionID) con
       PTRACE(2, "SIP\tRTP payload type " << formats[i].GetPayloadType() << " not matched to audio codec");
     else {
       if (opalFormat.GetDefaultSessionID() == sessionID) {
-	PTRACE(2, "SIP\tRTP payload type " << formats[i].GetPayloadType() << " matched to codec " << opalFormat);
-	list += opalFormat;
+        PTRACE(2, "SIP\tRTP payload type " << formats[i].GetPayloadType() << " matched to codec " << opalFormat);
+	      list += opalFormat;
       }
     }
   }
@@ -560,6 +564,21 @@ OpalMediaFormatList SDPMediaDescription::GetMediaFormats(unsigned sessionID) con
   return list;
 }
 
+void SDPMediaDescription::CreateRTPMap(unsigned sessionID, RTP_DataFrame::PayloadMapType & map) const
+{
+  OpalMediaFormatList list;
+
+  PINDEX i;
+  for (i = 0; i < formats.GetSize(); i++) {
+    OpalMediaFormat opalFormat = formats[i].GetMediaFormat();
+    if (!opalFormat.IsEmpty() && 
+         opalFormat.GetDefaultSessionID() == sessionID &&
+         opalFormat.GetPayloadType() != formats[i].GetPayloadType()) {
+      map.insert(RTP_DataFrame::PayloadMapType::value_type(opalFormat.GetPayloadType(), formats[i].GetPayloadType()));
+      PTRACE(2, "SIP\tAdding RTP translation from " << opalFormat.GetPayloadType() << " to " << formats[i].GetPayloadType());
+    }
+  }
+}
 
 void SDPMediaDescription::AddSDPMediaFormat(SDPMediaFormat * sdpMediaFormat)
 {
