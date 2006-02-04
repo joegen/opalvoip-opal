@@ -23,6 +23,11 @@
  * Contributor(s): Miguel Rodriguez Perez.
  *
  * $Log: echocancel.cxx,v $
+ * Revision 1.11.2.5  2006/02/04 14:30:39  dsandras
+ * Backport from CVS HEAD.
+ *
+ * Revision 1.18  2006/02/04 14:27:18  dsandras
+ * Fixed leak.
  * Revision 1.11.2.4  2006/02/01 05:31:23  csoutheren
  * Fixed more speex compile problems
  *
@@ -156,6 +161,8 @@ OpalEchoCanceler::~OpalEchoCanceler()
     preprocessState = NULL;
   }
 
+  if (ref_buf)
+    free(ref_buf);
   if (e_buf)
     free(e_buf);
   if (echo_buf)
