@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2128  2006/02/04 16:06:24  dsandras
+ * Revision 1.2129  2006/02/04 16:22:38  dsandras
+ * Fixed recently introduced bug reported by Guillaume Fraysse. Thanks!
+ *
+ * Revision 2.127  2006/02/04 16:06:24  dsandras
  * Fixed problems with media formats being used when calling and when the remote
  * has a different prefered order than ours.
  *
@@ -821,9 +824,9 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   OpalTransportAddress localAddress;
   OpalTransportAddress mediaAddress = incomingMedia->GetTransportAddress();
   rtpSession = OnUseRTPSession(rtpSessionId, mediaAddress, localAddress);
-  if (rtpSession == NULL) {
-      Release(EndedByTransportFail);
-      return FALSE;
+  if (rtpSession == NULL && !ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
+    Release(EndedByTransportFail);
+    return FALSE;
   }
 
   // construct a new media session list 
@@ -1932,7 +1935,7 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
   OpalTransportAddress localAddress;
   OpalTransportAddress address = mediaDescription->GetTransportAddress();
   rtpSession = OnUseRTPSession(rtpSessionId, address, localAddress);
-  if (rtpSession == NULL) {
+  if (rtpSession == NULL && !ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
     Release(EndedByTransportFail);
     return FALSE;
   }
