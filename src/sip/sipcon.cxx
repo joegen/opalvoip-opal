@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2127  2006/02/02 07:02:58  csoutheren
+ * Revision 1.2128  2006/02/04 16:06:24  dsandras
+ * Fixed problems with media formats being used when calling and when the remote
+ * has a different prefered order than ours.
+ *
+ * Revision 2.126  2006/02/02 07:02:58  csoutheren
  * Added RTP payload map to transcoders and connections to allow remote SIP endpoints
  * to change the payload type used for outgoing RTP.
  *
@@ -790,10 +794,12 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
     return FALSE;
   }
 
-  // create the list of Opal format names for the remote end
-  // we will answer with the media format that will be opened
+  // Create the list of Opal format names for the remote end.
+  // We will answer with the media format that will be opened.
+  // When sending an answer SDP, reorder the remote formats using our 
+  // prefered order, and remove media formats that we do not support.
   remoteFormatList += incomingMedia->GetMediaFormats(rtpSessionId);
-  remoteFormatList.Remove(endpoint.GetManager().GetMediaFormatMask());
+  AdjustMediaFormats(remoteFormatList);
   if (remoteFormatList.GetSize() == 0) {
     ReleaseSession(rtpSessionId);
     return FALSE;
@@ -1180,7 +1186,7 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
   
   // add the formats
   OpalMediaFormatList formats = ownerCall.GetMediaFormats(*this, FALSE);
-  formats.Remove(endpoint.GetManager().GetMediaFormatMask());
+  AdjustMediaFormats(formats);
 
   localMedia->AddMediaFormats(formats, rtpSessionId);
 
@@ -1931,9 +1937,10 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
     return FALSE;
   }
 
-  // Adjust the remote formats list
+  // When receiving an answer SDP, keep the remote SDP media formats order
+  // but remove the media formats we do not support.
   remoteFormatList += mediaDescription->GetMediaFormats(rtpSessionId);
-  AdjustMediaFormats(remoteFormatList);
+  remoteFormatList.Remove(endpoint.GetManager().GetMediaFormatMask());
 
   // create map for RTP payloads
   mediaDescription->CreateRTPMap(rtpSessionId, rtpPayloadMap);
