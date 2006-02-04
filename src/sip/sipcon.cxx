@@ -24,7 +24,17 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2121.2.2  2006/01/29 21:02:55  dsandras
+ * Revision 1.2121.2.3  2006/02/04 16:24:43  dsandras
+ * Backports from CVS HEAD.
+ *
+ * Revision 2.128  2006/02/04 16:22:38  dsandras
+ * Fixed recently introduced bug reported by Guillaume Fraysse. Thanks!
+ *
+ * Revision 2.127  2006/02/04 16:06:24  dsandras
+ * Fixed problems with media formats being used when calling and when the remote
+ * has a different prefered order than ours.
+ *
+ * Revision 2.120.2.2  2006/01/29 21:02:55  dsandras
  * Backports from CVS HEAD.
  *
  * Revision 2.125  2006/01/29 20:55:32  dsandras
@@ -789,10 +799,12 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
     return FALSE;
   }
 
-  // create the list of Opal format names for the remote end
-  // we will answer with the media format that will be opened
+  // Create the list of Opal format names for the remote end.
+  // We will answer with the media format that will be opened.
+  // When sending an answer SDP, reorder the remote formats using our 
+  // prefered order, and remove media formats that we do not support.
   remoteFormatList += incomingMedia->GetMediaFormats(rtpSessionId);
-  remoteFormatList.Remove(endpoint.GetManager().GetMediaFormatMask());
+  AdjustMediaFormats(remoteFormatList);
   if (remoteFormatList.GetSize() == 0) {
     ReleaseSession(rtpSessionId);
     return FALSE;
@@ -814,9 +826,9 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   OpalTransportAddress localAddress;
   OpalTransportAddress mediaAddress = incomingMedia->GetTransportAddress();
   rtpSession = OnUseRTPSession(rtpSessionId, mediaAddress, localAddress);
-  if (rtpSession == NULL) {
-      Release(EndedByTransportFail);
-      return FALSE;
+  if (rtpSession == NULL && !ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
+    Release(EndedByTransportFail);
+    return FALSE;
   }
 
   // construct a new media session list 
@@ -1179,7 +1191,7 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
   
   // add the formats
   OpalMediaFormatList formats = ownerCall.GetMediaFormats(*this, FALSE);
-  formats.Remove(endpoint.GetManager().GetMediaFormatMask());
+  AdjustMediaFormats(formats);
 
   localMedia->AddMediaFormats(formats, rtpSessionId);
 
@@ -1925,15 +1937,16 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
   OpalTransportAddress localAddress;
   OpalTransportAddress address = mediaDescription->GetTransportAddress();
   rtpSession = OnUseRTPSession(rtpSessionId, address, localAddress);
-  if (rtpSession == NULL) {
+  if (rtpSession == NULL && !ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
     Release(EndedByTransportFail);
     return FALSE;
   }
 
-  // Adjust the remote formats list
+  // When receiving an answer SDP, keep the remote SDP media formats order
+  // but remove the media formats we do not support.
   remoteFormatList += mediaDescription->GetMediaFormats(rtpSessionId);
-  AdjustMediaFormats(remoteFormatList);
-  
+  remoteFormatList.Remove(endpoint.GetManager().GetMediaFormatMask());
+
   // Open the streams and the reverse streams
   OnOpenSourceMediaStreams(remoteFormatList, rtpSessionId, NULL);
 
