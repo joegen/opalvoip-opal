@@ -23,6 +23,9 @@
  * Contributor(s): Miguel Rodriguez Perez.
  *
  * $Log: echocancel.cxx,v $
+ * Revision 1.18  2006/02/04 14:27:18  dsandras
+ * Fixed leak.
+ *
  * Revision 1.17  2006/02/01 09:00:46  csoutheren
  * Changes to remove dependencies in Speex code accidentally introduced
  *
@@ -147,6 +150,8 @@ OpalEchoCanceler::~OpalEchoCanceler()
     preprocessState = NULL;
   }
 
+  if (ref_buf)
+    free(ref_buf);
   if (e_buf)
     free(e_buf);
   if (echo_buf)
