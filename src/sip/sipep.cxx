@@ -24,15 +24,22 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2098.2.6  2006/01/31 08:59:09  csoutheren
- * More backports
+ * Revision 1.2098.2.7  2006/02/05 22:22:23  dsandras
+ * More backports from HEAD.
  *
+ * Revision 2.104  2006/02/05 22:19:18  dsandras
+ * Only refresh registered accounts. In case of timeout of a previously
+ * registered account, retry regularly.
+ *
+ * Revision 2.97.2.6  2006/01/31 08:59:09  csoutheren
+ * More backports
+ *   
  * Revision 2.97.2.5  2006/01/31 08:58:15  csoutheren
  * More backports
- *
+ *   
  * Revision 2.97.2.4  2006/01/29 21:04:07  dsandras
  * Removed cout.
- *
+ *  
  * Revision 2.97.2.3  2006/01/29 21:02:55  dsandras
  * Backports from CVS HEAD.
  *
@@ -1397,11 +1404,11 @@ void SIPEndPoint::RegistrationRefresh(PTimer &, INT)
 
       // Need to refresh
       if (info->GetExpire() > 0 
+	  && info->IsRegistered()
 	  && info->GetTransport() != NULL 
 	  && info->GetMethod() != SIP_PDU::Method_MESSAGE
 	  && info->HasExpired()) {
 	PTRACE(2, "SIP\tStarting REGISTER/SUBSCRIBE for binding refresh");
-	info->SetRegistered(FALSE);
 	infoTransport = info->GetTransport(); // Get current transport
 	OpalTransportAddress registrarAddress = infoTransport->GetRemoteAddress();
 	// Will update the transport if required. For example, if STUN
