@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2129  2006/02/04 16:22:38  dsandras
+ * Revision 1.2130  2006/02/06 22:40:11  dsandras
+ * Added additional check for rtpSession thanks to Guillaume Fraysse.
+ *
+ * Revision 2.128  2006/02/04 16:22:38  dsandras
  * Fixed recently introduced bug reported by Guillaume Fraysse. Thanks!
  *
  * Revision 2.127  2006/02/04 16:06:24  dsandras
@@ -845,7 +848,7 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   PIPSocket::Address ip;
   WORD port;
   mediaAddress.GetIpAndPort(ip, port);
-  if (!rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
+  if (rtpSession && !rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
     PTRACE(1, "SIP\tCannot set remote ports on RTP session");
     ReleaseSession(rtpSessionId);
     delete localMedia;
@@ -1955,7 +1958,7 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
   PIPSocket::Address ip;
   WORD port;
   address.GetIpAndPort(ip, port);
-  if (!rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
+  if (rtpSession && !rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
     PTRACE(1, "SIP\tCannot set remote ports on RTP session");
     ReleaseSession(rtpSessionId);
     return FALSE;
