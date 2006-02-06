@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2121.2.4  2006/02/06 04:38:38  csoutheren
+ * Revision 1.2121.2.5  2006/02/06 22:51:46  dsandras
+ * Backported changes from CVS HEAD.
+ *
+ * Revision 2.129  2006/02/06 22:40:11  dsandras
+ * Added additional check for rtpSession thanks to Guillaume Fraysse.
+ *
+ * Revision 2.120.2.4  2006/02/06 04:38:38  csoutheren
  * Backported RTP payload mapping fixes from CVS head
  *
  * Revision 2.120.2.3  2006/02/04 16:24:43  dsandras
@@ -854,7 +860,7 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   PIPSocket::Address ip;
   WORD port;
   mediaAddress.GetIpAndPort(ip, port);
-  if (!rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
+  if (rtpSession && !rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
     PTRACE(1, "SIP\tCannot set remote ports on RTP session");
     ReleaseSession(rtpSessionId);
     delete localMedia;
@@ -1964,7 +1970,7 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
   PIPSocket::Address ip;
   WORD port;
   address.GetIpAndPort(ip, port);
-  if (!rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
+  if (rtpSession && !rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
     PTRACE(1, "SIP\tCannot set remote ports on RTP session");
     ReleaseSession(rtpSessionId);
     return FALSE;
