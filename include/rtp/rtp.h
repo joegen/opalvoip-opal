@@ -27,7 +27,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2022  2005/12/30 14:29:15  dsandras
+ * Revision 1.2022.2.1  2006/02/06 04:38:37  csoutheren
+ * Backported RTP payload mapping fixes from CVS head
+ *
+ * Revision 2.22  2006/02/02 07:02:57  csoutheren
+ * Added RTP payload map to transcoders and connections to allow remote SIP endpoints
+ * to change the payload type used for outgoing RTP.
+ *
+ * Revision 2.21  2005/12/30 14:29:15  dsandras
  * Removed the assumption that the jitter will contain a 8 kHz signal.
  *
  * Revision 2.20  2005/11/30 13:35:26  csoutheren
@@ -347,6 +354,8 @@ class RTP_DataFrame : public PBYTEArray
       MaxPayloadType = 127,
       IllegalPayloadType
     };
+
+    typedef std::map<PayloadTypes, PayloadTypes> PayloadMapType;
 
     unsigned GetVersion() const { return (theArray[0]>>6)&3; }
 
