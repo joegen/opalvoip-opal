@@ -25,7 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2020  2005/12/30 14:33:12  dsandras
+ * Revision 1.2020.2.1  2006/02/06 04:38:37  csoutheren
+ * Backported RTP payload mapping fixes from CVS head
+ *
+ * Revision 2.20  2006/02/02 07:02:58  csoutheren
+ * Added RTP payload map to transcoders and connections to allow remote SIP endpoints
+ * to change the payload type used for outgoing RTP.
+ *
+ * Revision 2.19  2005/12/30 14:33:12  dsandras
  * Added support for Packet Loss Concealment frames for framed codecs supporting it similarly to what was done for OpenH323.
  *
  * Revision 2.18  2005/12/21 20:39:15  dsandras
@@ -213,7 +220,7 @@ void OpalMediaPatch::Close()
 }
 
 
-BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream)
+BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::PayloadMapType & rtpMap)
 {
   if (PAssertNULL(stream) == NULL)
     return FALSE;
@@ -238,6 +245,7 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream)
 
   sink->primaryCodec = OpalTranscoder::Create(sourceFormat, destinationFormat);
   if (sink->primaryCodec != NULL) {
+    sink->primaryCodec->SetRTPPayloadMap(rtpMap);
     sink->primaryCodec->SetMaxOutputSize(stream->GetDataSize());
 
     if (!stream->SetDataSize(sink->primaryCodec->GetOptimalDataFrameSize(FALSE))) {
