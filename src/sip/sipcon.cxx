@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2121.2.3  2006/02/04 16:24:43  dsandras
+ * Revision 1.2121.2.4  2006/02/06 04:38:38  csoutheren
+ * Backported RTP payload mapping fixes from CVS head
+ *
+ * Revision 2.120.2.3  2006/02/04 16:24:43  dsandras
  * Backports from CVS HEAD.
  *
  * Revision 2.128  2006/02/04 16:22:38  dsandras
@@ -36,6 +39,10 @@
  *
  * Revision 2.120.2.2  2006/01/29 21:02:55  dsandras
  * Backports from CVS HEAD.
+ *
+ * Revision 2.126  2006/02/02 07:02:58  csoutheren
+ * Added RTP payload map to transcoders and connections to allow remote SIP endpoints
+ * to change the payload type used for outgoing RTP.
  *
  * Revision 2.125  2006/01/29 20:55:32  dsandras
  * Allow using a simple username or a fill url when registering.
@@ -1947,6 +1954,9 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
   remoteFormatList += mediaDescription->GetMediaFormats(rtpSessionId);
   remoteFormatList.Remove(endpoint.GetManager().GetMediaFormatMask());
 
+  // create map for RTP payloads
+  mediaDescription->CreateRTPMap(rtpSessionId, rtpPayloadMap);
+  
   // Open the streams and the reverse streams
   OnOpenSourceMediaStreams(remoteFormatList, rtpSessionId, NULL);
 

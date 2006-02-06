@@ -27,8 +27,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2026.2.1  2006/01/27 05:07:14  csoutheren
+ * Revision 1.2026.2.2  2006/02/06 04:38:38  csoutheren
+ * Backported RTP payload mapping fixes from CVS head
+ *
+ * Revision 2.25.2.1  2006/01/27 05:07:14  csoutheren
  * Backports from CVS head
+ *
+ * Revision 2.28  2006/02/02 07:03:44  csoutheren
+ * Added extra logging of first outgoing RTP packet
  *
  * Revision 2.27  2006/01/24 23:31:07  dsandras
  * Fixed bug.
@@ -964,6 +970,17 @@ RTP_Session::SendReceiveStatus RTP_Session::OnSendData(RTP_DataFrame & frame)
   frame.SetSequenceNumber(++lastSentSequenceNumber);
   frame.SetSyncSource(syncSourceOut);
 
+  PTRACE_IF(2, packetsSent == 0, "RTP\tFirst sent data:"
+	   " ver=" << frame.GetVersion()
+	   << " pt=" << frame.GetPayloadType()
+	   << " psz=" << frame.GetPayloadSize()
+	   << " m=" << frame.GetMarker()
+	   << " x=" << frame.GetExtension()
+	   << " seq=" << frame.GetSequenceNumber()
+	   << " ts=" << frame.GetTimestamp()
+	   << " src=" << frame.GetSyncSource()
+	   << " ccnt=" << frame.GetContribSrcCount());
+
   if (packetsSent != 0 && !frame.GetMarker()) {
     // Only do statistics on subsequent packets
     DWORD diff = (tick - lastSentPacketTime).GetInterval();
@@ -1036,7 +1053,7 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(const RTP_DataFrame & 
   // Check packet sequence numbers
   if (packetsReceived == 0) {
     expectedSequenceNumber = (WORD)(frame.GetSequenceNumber() + 1);
-    PTRACE(2, "RTP\tFirst data:"
+    PTRACE(2, "RTP\tFirst receive data:"
 	   " ver=" << frame.GetVersion()
 	   << " pt=" << frame.GetPayloadType()
 	   << " psz=" << frame.GetPayloadSize()
@@ -1049,17 +1066,13 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(const RTP_DataFrame & 
   }
   else {
     if (!ignoreOtherSources && frame.GetSyncSource() != syncSourceIn) {
-
       if (allowSyncSourceInChange) {
-
-	syncSourceIn = frame.GetSyncSource();
-	allowSyncSourceInChange = FALSE;
+	      syncSourceIn = frame.GetSyncSource();
+	      allowSyncSourceInChange = FALSE;
       }
       else {
-
-	PTRACE(2, "RTP\tPacket from SSRC=" << frame.GetSyncSource()
-	       << " ignored, expecting SSRC=" << syncSourceIn);
-	return e_IgnorePacket; // Non fatal error, just ignore
+      	PTRACE(2, "RTP\tPacket from SSRC=" << frame.GetSyncSource() << " ignored, expecting SSRC=" << syncSourceIn);
+	      return e_IgnorePacket; // Non fatal error, just ignore
       }
     }
 
@@ -1069,33 +1082,31 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(const RTP_DataFrame & 
       consecutiveOutOfOrderPackets = 0;
       // Only do statistics on packets after first received in talk burst
       if (!frame.GetMarker()) {
-	DWORD diff = (tick - lastReceivedPacketTime).GetInterval();
+	      DWORD diff = (tick - lastReceivedPacketTime).GetInterval();
 
-	averageReceiveTimeAccum += diff;
-	if (diff > maximumReceiveTimeAccum)
-	  maximumReceiveTimeAccum = diff;
-	if (diff < minimumReceiveTimeAccum)
-	  minimumReceiveTimeAccum = diff;
-	rxStatisticsCount++;
+	      averageReceiveTimeAccum += diff;
+	      if (diff > maximumReceiveTimeAccum)
+	        maximumReceiveTimeAccum = diff;
+	      if (diff < minimumReceiveTimeAccum)
+	        minimumReceiveTimeAccum = diff;
+	      rxStatisticsCount++;
 
-	// The following has the implicit assumption that something that has jitter
-	// is an audio codec and thus is in 8kHz timestamp units.
-	diff *= 8;
-	long variance = diff - lastTransitTime;
-	lastTransitTime = diff;
-	if (variance < 0)
-	  variance = -variance;
-	jitterLevel += variance - ((jitterLevel+8) >> 4);
-	if (jitterLevel > maximumJitterLevel)
-	  maximumJitterLevel = jitterLevel;
+	      // The following has the implicit assumption that something that has jitter
+	      // is an audio codec and thus is in 8kHz timestamp units.
+	      diff *= 8;
+	      long variance = diff - lastTransitTime;
+	      lastTransitTime = diff;
+	      if (variance < 0)
+	        variance = -variance;
+	      jitterLevel += variance - ((jitterLevel+8) >> 4);
+	      if (jitterLevel > maximumJitterLevel)
+	        maximumJitterLevel = jitterLevel;
       }
     }
     else if (allowSequenceChange) {
-
       expectedSequenceNumber = (WORD) (sequenceNumber + 1);
     }
     else if (sequenceNumber < expectedSequenceNumber) {
-
       PTRACE(3, "RTP\tOut of order packet, received "
 	     << sequenceNumber << " expected " << expectedSequenceNumber
 	     << " ssrc=" << syncSourceIn);
@@ -1104,13 +1115,12 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(const RTP_DataFrame & 
       // Check for Cisco bug where sequence numbers suddenly start incrementing
       // from a different base.
       if (++consecutiveOutOfOrderPackets > 10) {
-	expectedSequenceNumber = (WORD)(sequenceNumber + 1);
-	PTRACE(1, "RTP\tAbnormal change of sequence numbers, adjusting to expect "
-	       << expectedSequenceNumber << " ssrc=" << syncSourceIn);
+        expectedSequenceNumber = (WORD)(sequenceNumber + 1);
+	      PTRACE(1, "RTP\tAbnormal change of sequence numbers, adjusting to expect " << expectedSequenceNumber << " ssrc=" << syncSourceIn);
       }
 
       if (ignoreOutOfOrderPackets)
-	return e_IgnorePacket; // Non fatal error, just ignore
+	      return e_IgnorePacket; // Non fatal error, just ignore
     }
     else {
       unsigned dropped = sequenceNumber - expectedSequenceNumber;
@@ -1274,74 +1284,74 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveControl(RTP_ControlFrame & 
     switch (frame.GetPayloadType()) {
     case RTP_ControlFrame::e_SenderReport :
       if (size >= sizeof(RTP_ControlFrame::SenderReport)) {
-	SenderReport sender;
-	const RTP_ControlFrame::SenderReport & sr = *(const RTP_ControlFrame::SenderReport *)payload;
-	sender.sourceIdentifier = sr.ssrc;
-	sender.realTimestamp = PTime(sr.ntp_sec-SecondsFrom1900to1970, sr.ntp_frac/4294);
-	sender.rtpTimestamp = sr.rtp_ts;
-	sender.packetsSent = sr.psent;
-	sender.octetsSent = sr.osent;
-	OnRxSenderReport(sender,
-			 BuildReceiverReportArray(frame, sizeof(RTP_ControlFrame::SenderReport)));
+	      SenderReport sender;
+	      const RTP_ControlFrame::SenderReport & sr = *(const RTP_ControlFrame::SenderReport *)payload;
+	      sender.sourceIdentifier = sr.ssrc;
+	      sender.realTimestamp = PTime(sr.ntp_sec-SecondsFrom1900to1970, sr.ntp_frac/4294);
+	      sender.rtpTimestamp = sr.rtp_ts;
+	      sender.packetsSent = sr.psent;
+	      sender.octetsSent = sr.osent;
+	      OnRxSenderReport(sender,
+			  BuildReceiverReportArray(frame, sizeof(RTP_ControlFrame::SenderReport)));
       }
       else {
-	PTRACE(2, "RTP\tSenderReport packet truncated");
+	      PTRACE(2, "RTP\tSenderReport packet truncated");
       }
       break;
 
     case RTP_ControlFrame::e_ReceiverReport :
       if (size >= 4)
-	OnRxReceiverReport(*(const PUInt32b *)payload,
-			   BuildReceiverReportArray(frame, sizeof(PUInt32b)));
+	      OnRxReceiverReport(*(const PUInt32b *)payload,
+			  BuildReceiverReportArray(frame, sizeof(PUInt32b)));
       else {
-	PTRACE(2, "RTP\tReceiverReport packet truncated");
+	      PTRACE(2, "RTP\tReceiverReport packet truncated");
       }
       break;
 
     case RTP_ControlFrame::e_SourceDescription :
       if (size >= frame.GetCount()*sizeof(RTP_ControlFrame::SourceDescription)) {
-	SourceDescriptionArray descriptions;
-	const RTP_ControlFrame::SourceDescription * sdes = (const RTP_ControlFrame::SourceDescription *)payload;
-	for (PINDEX srcIdx = 0; srcIdx < (PINDEX)frame.GetCount(); srcIdx++) {
-	  descriptions.SetAt(srcIdx, new SourceDescription(sdes->src));
-	  const RTP_ControlFrame::SourceDescription::Item * item = sdes->item;
-	  while (item->type != RTP_ControlFrame::e_END) {
-	    descriptions[srcIdx].items.SetAt(item->type, PString(item->data, item->length));
-	    item = item->GetNextItem();
-	  }
-	  sdes = (const RTP_ControlFrame::SourceDescription *)item->GetNextItem();
-	}
-	OnRxSourceDescription(descriptions);
+      	SourceDescriptionArray descriptions;
+	      const RTP_ControlFrame::SourceDescription * sdes = (const RTP_ControlFrame::SourceDescription *)payload;
+	      for (PINDEX srcIdx = 0; srcIdx < (PINDEX)frame.GetCount(); srcIdx++) {
+	        descriptions.SetAt(srcIdx, new SourceDescription(sdes->src));
+	        const RTP_ControlFrame::SourceDescription::Item * item = sdes->item;
+	        while (item->type != RTP_ControlFrame::e_END) {
+	          descriptions[srcIdx].items.SetAt(item->type, PString(item->data, item->length));
+	          item = item->GetNextItem();
+	        }
+	        sdes = (const RTP_ControlFrame::SourceDescription *)item->GetNextItem();
+	      }
+	      OnRxSourceDescription(descriptions);
       }
       else {
-	PTRACE(2, "RTP\tSourceDescription packet truncated");
+	      PTRACE(2, "RTP\tSourceDescription packet truncated");
       }
       break;
 
     case RTP_ControlFrame::e_Goodbye :
       if (size >= 4) {
-	PString str;
-	unsigned count = frame.GetCount()*4;
-	if (size > count)
-	  str = PString((const char *)(payload+count+1), payload[count]);
-	PDWORDArray sources(count);
-	for (PINDEX i = 0; i < (PINDEX)count; i++)
-	  sources[i] = ((const PUInt32b *)payload)[i];
-	OnRxGoodbye(sources, str);
+	      PString str;
+	      unsigned count = frame.GetCount()*4;
+	      if (size > count)
+	        str = PString((const char *)(payload+count+1), payload[count]);
+	      PDWORDArray sources(count);
+	      for (PINDEX i = 0; i < (PINDEX)count; i++)
+	        sources[i] = ((const PUInt32b *)payload)[i];
+	      OnRxGoodbye(sources, str);
       }
       else {
-	PTRACE(2, "RTP\tGoodbye packet truncated");
+	      PTRACE(2, "RTP\tGoodbye packet truncated");
       }
       break;
 
     case RTP_ControlFrame::e_ApplDefined :
       if (size >= 4) {
-	PString str((const char *)(payload+4), 4);
-	OnRxApplDefined(str, frame.GetCount(), *(const PUInt32b *)payload,
-			payload+8, frame.GetPayloadSize()-8);
+	      PString str((const char *)(payload+4), 4);
+	      OnRxApplDefined(str, frame.GetCount(), *(const PUInt32b *)payload,
+			  payload+8, frame.GetPayloadSize()-8);
       }
       else {
-	PTRACE(2, "RTP\tApplDefined packet truncated");
+	      PTRACE(2, "RTP\tApplDefined packet truncated");
       }
       break;
 
