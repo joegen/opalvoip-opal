@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2019  2006/02/02 07:02:58  csoutheren
+ * Revision 1.2020  2006/02/08 04:00:19  csoutheren
+ * Fixed for G.726 codec
+ * Thanks to Michael Tinglof
+ *
+ * Revision 2.18  2006/02/02 07:02:58  csoutheren
  * Added RTP payload map to transcoders and connections to allow remote SIP endpoints
  * to change the payload type used for outgoing RTP.
  *
@@ -488,7 +492,7 @@ BOOL OpalStreamedTranscoder::Convert(const RTP_DataFrame & input,
             if ((i&1) == 0)
               *outputWords++ = (short)ConvertOne(*inputBytes & 15);
             else
-              *outputWords++ |= (short)ConvertOne(*inputBytes++ >> 4);
+              *outputWords++ = (short)ConvertOne(*inputBytes++ >> 4);
           break;
 
         case 8 :
@@ -496,7 +500,7 @@ BOOL OpalStreamedTranscoder::Convert(const RTP_DataFrame & input,
             if ((i&1) == 0)
               *outputBytes++ = (BYTE)ConvertOne(*inputBytes & 15);
             else
-              *outputBytes++ |= (BYTE)ConvertOne(*inputBytes++ >> 4);
+              *outputBytes++ = (BYTE)ConvertOne(*inputBytes++ >> 4);
           break;
 
         case 4 :
