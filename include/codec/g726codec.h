@@ -24,7 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g726codec.h,v $
- * Revision 1.2011  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2011.2.1  2006/02/09 00:32:11  csoutheren
+ * Backported G.726 fixes from CVS head
+ *
+ * Revision 2.11  2006/02/08 04:00:17  csoutheren
+ * Fixed for G.726 codec
+ * Thanks to Michael Tinglof
+ *
+ * Revision 2.10  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.9  2005/08/28 07:59:17  rjongbloed
@@ -88,7 +95,6 @@ extern const OpalAudioFormat & GetOpalG726_16();
 #define OpalG726_32 GetOpalG726_32()
 #define OpalG726_24 GetOpalG726_24()
 #define OpalG726_16 GetOpalG726_16()
-
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -198,7 +204,8 @@ class Opal_G726_Transcoder : public OpalStreamedTranscoder {
     Opal_G726_Transcoder(
       const OpalMediaFormat & inputMediaFormat,  ///<  Input media format
       const OpalMediaFormat & outputMediaFormat, ///<  Output media format
-      unsigned bits
+      unsigned in_bits,
+	  unsigned out_bits
     );
     ~Opal_G726_Transcoder();
   protected:
