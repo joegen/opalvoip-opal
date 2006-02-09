@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gsmcodec.h,v $
- * Revision 1.2008  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2009  2006/02/09 22:48:40  csoutheren
+ * Experimental fix for receiving MSGSM in GSM codec
+ *
+ * Revision 2.7  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.6  2005/08/28 07:59:17  rjongbloed
@@ -137,7 +140,8 @@ class Opal_GSM0610 : public OpalFramedTranscoder {
 class Opal_GSM0610_PCM : public Opal_GSM0610 {
   public:
     Opal_GSM0610_PCM();
-    virtual BOOL ConvertFrame(const BYTE * src, BYTE * dst);
+    BOOL Convert(const RTP_DataFrame & input, RTP_DataFrame & output);
+    BOOL ConvertFrame(const BYTE * src, BYTE * dst);
 };
 
 

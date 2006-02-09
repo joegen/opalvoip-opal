@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gsmcodec.cxx,v $
- * Revision 1.2005  2005/08/28 07:59:17  rjongbloed
+ * Revision 1.2006  2006/02/09 22:48:40  csoutheren
+ * Experimental fix for receiving MSGSM in GSM codec
+ *
+ * Revision 2.4  2005/08/28 07:59:17  rjongbloed
  * Converted OpalTranscoder to use factory, requiring sme changes in making sure
  *   OpalMediaFormat instances are initialised before use.
  *
@@ -162,6 +165,44 @@ Opal_GSM0610_PCM::Opal_GSM0610_PCM()
   PTRACE(3, "Codec\tGSM0610 decoder created");
 }
 
+/*
+ * this code attempts to detect the type of the incoming frame, i.e. whether it is formatted as a GSM packets
+ * or whether it uses the MS-GSM packetization (also knows as WAV49)
+ */
+BOOL Opal_GSM0610_PCM::Convert(const RTP_DataFrame & input, RTP_DataFrame & output)
+{
+  const BYTE * inputPtr = input.GetPayloadPtr();
+  PINDEX inputLength = input.GetPayloadSize();
+  BYTE * outputPtr = output.GetPayloadPtr();
+
+  if (inputLength == 0) {
+    output.SetPayloadSize(outputBytesPerFrame);
+    return ConvertSilentFrame (outputPtr);
+  }
+
+  // Unless the packet is 65 bytes long, it must be normal GSM
+  if (inputLength != 65) {
+    int opt = 0;
+    gsm_option(gsm, GSM_OPT_WAV49, &opt);
+    return OpalFramedTranscoder::Convert(input, output);
+  }
+
+  // MS-GSM packets are always 65 bytes long, and consists of two GSM packets
+
+  // put encoder into WAV49 mode
+  int opt = 1;
+  gsm_option(gsm, GSM_OPT_WAV49, &opt);
+  
+  output.SetPayloadSize(2*outputBytesPerFrame);
+
+  // decode the first frame 
+  gsm_decode(gsm, (gsm_byte *)inputPtr,    (gsm_signal *)outputPtr);
+
+  // decode the second frame 
+  gsm_decode(gsm, (gsm_byte *)inputPtr+33, (gsm_signal *)outputPtr+outputBytesPerFrame);
+
+  return TRUE;
+}
 
 BOOL Opal_GSM0610_PCM::ConvertFrame(const BYTE * src, BYTE * dst)
 {
