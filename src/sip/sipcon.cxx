@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2130  2006/02/06 22:40:11  dsandras
+ * Revision 1.2131  2006/02/10 23:44:04  csoutheren
+ * Applied fix for SetConnection and RFC2833 startup
+ *
+ * Revision 2.129  2006/02/06 22:40:11  dsandras
  * Added additional check for rtpSession thanks to Guillaume Fraysse.
  *
  * Revision 2.128  2006/02/04 16:22:38  dsandras
@@ -741,6 +744,9 @@ BOOL SIPConnection::SetConnected()
   response.SetSDP(sdpOut);
   SendPDU(response, originalInvite->GetViaAddress(endpoint)); 
 
+  // init DTMF handler
+  InitRFC2833Handler();
+
   // switch phase 
   phase = ConnectedPhase;
   connectedTime = PTime ();
@@ -983,7 +989,7 @@ OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & media
 }
 
 
-void SIPConnection::OnConnected ()
+void SIPConnection::InitRFC2833Handler()
 {
   if (rfc2833Handler != NULL) {
     for (int i = 0; i < mediaStreams.GetSize(); i++) {
@@ -999,12 +1005,18 @@ void SIPConnection::OnConnected ()
 	  }
 	}
       }
-    }
+	}
   }
+}
+
+
+void SIPConnection::OnConnected ()
+{
+  InitRFC2833Handler();
 
   OpalConnection::OnConnected ();
 }
-	
+
 
 BOOL SIPConnection::IsMediaBypassPossible(unsigned sessionID) const
 {
