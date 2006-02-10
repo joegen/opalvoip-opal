@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2042  2006/01/02 14:47:28  dsandras
+ * Revision 1.2043  2006/02/10 23:44:03  csoutheren
+ * Applied fix for SetConnection and RFC2833 startup
+ *
+ * Revision 2.41  2006/01/02 14:47:28  dsandras
  * More code cleanups.
  *
  * Revision 2.40  2005/11/30 13:35:26  csoutheren
@@ -567,6 +570,8 @@ class SIPConnection : public OpalConnection
     );
     SDPMediaDescription::Direction GetDirection(unsigned sessionId);
     static BOOL WriteINVITE(OpalTransport & transport, void * param);
+
+    void InitRFC2833Handler();
 
     SIPEndPoint   & endpoint;
     OpalTransport * transport;
