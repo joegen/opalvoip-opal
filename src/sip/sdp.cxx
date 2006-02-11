@@ -24,8 +24,18 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2027.2.1  2006/02/06 04:38:38  csoutheren
+ * Revision 1.2027.2.2  2006/02/11 13:32:24  csoutheren
+ * Backported fixed from CVS head
+ *
+ * Revision 2.26.2.1  2006/02/06 04:38:38  csoutheren
  * Backported RTP payload mapping fixes from CVS head
+ *
+ * Revision 2.27  2006/02/02 07:02:58  csoutheren
+ * Added RTP payload map to transcoders and connections to allow remote SIP endpoints
+ * to change the payload type used for outgoing RTP.
+ *
+ * Revision 2.28  2006/02/08 04:51:58  csoutheren
+ * Don't output media description when no formats to output
  *
  * Revision 2.27  2006/02/02 07:02:58  csoutheren
  * Added RTP payload map to transcoders and connections to allow remote SIP endpoints
@@ -500,6 +510,9 @@ void SDPMediaDescription::PrintOn(ostream & str) const
 
 void SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) const
 {
+  if (formats.GetSize() == 0)
+    return;
+
   PIPSocket::Address ip;
   WORD port;
   transportAddress.GetIpAndPort(ip, port);

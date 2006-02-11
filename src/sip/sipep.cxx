@@ -24,8 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2098.2.7  2006/02/05 22:22:23  dsandras
+ * Revision 1.2098.2.8  2006/02/11 13:32:24  csoutheren
+ * Backported fixed from CVS head
+ *
+ * Revision 2.97.2.7  2006/02/05 22:22:23  dsandras
  * More backports from HEAD.
+ *
+ * Revision 2.105  2006/02/08 04:51:19  csoutheren
+ * Adde trace message when sending 502
  *
  * Revision 2.104  2006/02/05 22:19:18  dsandras
  * Only refresh registered accounts. In case of timeout of a previously
@@ -444,7 +450,6 @@ BOOL SIPInfo::CreateTransport (OpalTransportAddress & registrarAddress)
   PWaitAndSignal m(transportMutex);
 
   if (registrarTransport != NULL) {
-
     delete registrarTransport;
     registrarTransport = NULL;
   }
@@ -454,6 +459,7 @@ BOOL SIPInfo::CreateTransport (OpalTransportAddress & registrarAddress)
   }
   
   if (registrarTransport == NULL) {
+    PTRACE(2, "SIP\tUnable to create transport for registrar");
     OnFailed(SIP_PDU::Failure_BadGateway);
     return FALSE;
   }
