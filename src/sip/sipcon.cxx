@@ -24,7 +24,15 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2121.2.6  2006/02/11 13:32:24  csoutheren
+ * Revision 1.2121.2.7  2006/02/11 15:53:15  dsandras
+ * Backports from CVS HEAD.
+ *
+ * Revision 2.131  2006/02/11 15:47:41  dsandras
+ * When receiving an invite, try using the remote prefered codec. The targetAddress
+ * should be initialized to the contact field value of the incoming invite
+ * when receiving a call.
+ *
+ * Revision 2.120.2.6  2006/02/11 13:32:24  csoutheren
  * Backported fixed from CVS head
  *
  * Revision 2.120.2.5  2006/02/06 22:51:46  dsandras
@@ -820,13 +828,12 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
     PTRACE(2, "SIP\tCould not find matching media type for session " << rtpSessionId);
     return FALSE;
   }
-
+  
   // Create the list of Opal format names for the remote end.
   // We will answer with the media format that will be opened.
-  // When sending an answer SDP, reorder the remote formats using our 
-  // prefered order, and remove media formats that we do not support.
+  // When sending an answer SDP, remove media formats that we do not support.
   remoteFormatList += incomingMedia->GetMediaFormats(rtpSessionId);
-  AdjustMediaFormats(remoteFormatList);
+  remoteFormatList.Remove(endpoint.GetManager().GetMediaFormatMask());
   if (remoteFormatList.GetSize() == 0) {
     ReleaseSession(rtpSessionId);
     return FALSE;
@@ -1497,8 +1504,11 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   calledDestinationNumber = originalInvite->GetURI().GetUserName();
 
   // update the target address
-  targetAddress = mime.GetFrom();
+  PString contact = mime.GetContact();
+  if (!contact.IsEmpty()) 
+    targetAddress = contact;
   targetAddress.AdjustForRequestURI();
+  PTRACE(4, "SIP\tSet targetAddress to " << targetAddress);
   
   // send trying with To: tag
   SIP_PDU response(*originalInvite, SIP_PDU::Information_Trying);
