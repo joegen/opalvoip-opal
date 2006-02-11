@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2121.2.7  2006/02/11 15:53:15  dsandras
+ * Revision 1.2121.2.8  2006/02/11 21:07:02  dsandras
+ * More backports from CVS HEAD.
+ *
+ * Revision 2.132  2006/02/11 21:05:27  dsandras
+ * Release the call when something goes wrong.
+ *
+ * Revision 2.120.2.7  2006/02/11 15:53:15  dsandras
  * Backports from CVS HEAD.
  *
  * Revision 2.131  2006/02/11 15:47:41  dsandras
@@ -835,7 +841,7 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   remoteFormatList += incomingMedia->GetMediaFormats(rtpSessionId);
   remoteFormatList.Remove(endpoint.GetManager().GetMediaFormatMask());
   if (remoteFormatList.GetSize() == 0) {
-    ReleaseSession(rtpSessionId);
+    Release(EndedByTransportFail);
     return FALSE;
   }
 
@@ -878,7 +884,7 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   mediaAddress.GetIpAndPort(ip, port);
   if (rtpSession && !rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
     PTRACE(1, "SIP\tCannot set remote ports on RTP session");
-    ReleaseSession(rtpSessionId);
+    Release(EndedByTransportFail);
     delete localMedia;
     return FALSE;
   }
@@ -1997,7 +2003,7 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
   address.GetIpAndPort(ip, port);
   if (rtpSession && !rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
     PTRACE(1, "SIP\tCannot set remote ports on RTP session");
-    ReleaseSession(rtpSessionId);
+    Release(EndedByTransportFail);
     return FALSE;
   }
 
