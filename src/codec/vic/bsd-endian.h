@@ -36,7 +36,10 @@
 /************ Change log
  *
  * $Log: bsd-endian.h,v $
- * Revision 1.2002  2003/03/15 23:42:59  robertj
+ * Revision 1.2003  2006/02/11 21:09:28  dsandras
+ * More OpenSolaris fixes thanks to Brian Lu <brian lu sun com>. Thanks!
+ *
+ * Revision 2.1  2003/03/15 23:42:59  robertj
  * Update to OpenH323 v1.11.7
  *
  * Revision 1.8  2003/03/14 07:25:55  robertj
@@ -81,7 +84,7 @@
 #ifndef BYTE_ORDER
 #define LITTLE_ENDIAN 1234
 #define BIG_ENDIAN 4321
-#if defined(ultrix) || defined(__alpha) || defined(__i386__) || defined(__i486__) || defined(_X86_) || defined(_ARM_) 
+#if defined(ultrix) || defined(__alpha) || defined(__i386__) || defined (i386) || defined(__i486__) || defined(_X86_) || defined(_ARM_) 
 #define BYTE_ORDER LITTLE_ENDIAN
 #else
 #define BYTE_ORDER BIG_ENDIAN
