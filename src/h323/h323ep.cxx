@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2043  2006/01/14 10:43:06  dsandras
+ * Revision 1.2044  2006/02/13 11:09:56  csoutheren
+ * Multiple fixes for H235 authenticators
+ *
+ * Revision 2.42  2006/01/14 10:43:06  dsandras
  * Applied patch from Brian Lu <Brian.Lu _AT_____ sun.com> to allow compilation
  * with OpenSolaris compiler. Many thanks !!!
  *
@@ -1149,6 +1152,8 @@ H235Authenticators H323EndPoint::CreateAuthenticators()
   PFactory<H235Authenticator>::KeyList_T::const_iterator r;
   for (r = keyList.begin(); r != keyList.end(); ++r)
     authenticators.Append(PFactory<H235Authenticator>::CreateInstance(*r));
+
+  PTRACE(1, "Authenticator list is size " << (int)authenticators.GetSize());
 
   return authenticators;
 }

@@ -24,7 +24,10 @@
  * Contributor(s): Fürbass Franz <franz.fuerbass@infonova.at>
  *
  * $Log: h235auth1.cxx,v $
- * Revision 1.2010  2006/02/13 03:46:17  csoutheren
+ * Revision 1.2011  2006/02/13 11:09:56  csoutheren
+ * Multiple fixes for H235 authenticators
+ *
+ * Revision 2.9  2006/02/13 03:46:17  csoutheren
  * Added initialisation stuff to make sure that everything works OK
  *
  * Revision 2.8  2004/02/19 10:47:04  rjongbloed
@@ -229,6 +232,8 @@ static void hmac_sha (const unsigned char*    k,      /* secret key */
 
 
 /////////////////////////////////////////////////////////////////////////////
+
+static PFactory<H235Authenticator>::Worker<H235AuthProcedure1> factoryH235AuthProcedure1("H235Procedure1");
 
 H235AuthProcedure1::H235AuthProcedure1()
 {
