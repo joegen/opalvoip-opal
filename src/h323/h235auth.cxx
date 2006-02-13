@@ -24,7 +24,10 @@
  * Contributor(s): __________________________________
  *
  * $Log: h235auth.cxx,v $
- * Revision 1.2010  2004/02/19 10:47:04  rjongbloed
+ * Revision 1.2011  2006/02/13 03:46:17  csoutheren
+ * Added initialisation stuff to make sure that everything works OK
+ *
+ * Revision 2.9  2004/02/19 10:47:04  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.8  2003/01/07 04:39:53  robertj
@@ -150,6 +153,9 @@
 
 #define new PNEW
 
+namespace PWLibStupidLinkerHacks {
+  int h235AuthLoader;
+};
 
 /////////////////////////////////////////////////////////////////////////////
 

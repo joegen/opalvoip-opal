@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkserver.cxx,v $
- * Revision 1.2017  2006/01/02 15:51:44  dsandras
+ * Revision 1.2018  2006/02/13 03:46:17  csoutheren
+ * Added initialisation stuff to make sure that everything works OK
+ *
+ * Revision 2.16  2006/01/02 15:51:44  dsandras
  * Merged changes from OpenH323 Atlas_devel_2.
  *
  * Revision 2.15  2004/06/04 06:54:18  csoutheren
@@ -3233,12 +3236,17 @@ H323GatekeeperServer::H323GatekeeperServer(H323EndPoint & ep)
   totalCalls = 0;
   rejectedCalls = 0;
 
+  peerElement = NULL;
+
+  PWLibStupidLinkerHacks::h235AuthLoader = 1;
+#if P_SSL
+  PWLibStupidLinkerHacks::h235AuthProcedure1Loader = 1;
+#endif
+
   monitorThread = PThread::Create(PCREATE_NOTIFIER(MonitorMain), 0,
                                   PThread::NoAutoDeleteThread,
                                   PThread::NormalPriority,
                                   "GkSrv Monitor");
-
-  peerElement = NULL;
 }
 
 

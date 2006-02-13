@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2041  2006/01/23 22:53:14  csoutheren
+ * Revision 1.2042  2006/02/13 03:46:17  csoutheren
+ * Added initialisation stuff to make sure that everything works OK
+ *
+ * Revision 2.40  2006/01/23 22:53:14  csoutheren
  * Reverted previous change that prevents multiple codecs from being removed using the
  *  removeMask
  *
@@ -213,10 +216,29 @@
 
 #include <opal/mediafmt.h>
 #include <opal/mediacmd.h>
-
+#include <codec/opalwavfile.h>
+#include <codec/h263codec.h>
 
 #define new PNEW
 
+namespace PWLibStupidLinkerHacks {
+  int h323Loader;
+};
+
+static class PMediaFormatInstantiateMe
+{
+  public:
+    PMediaFormatInstantiateMe()
+    { 
+      PWLibStupidLinkerHacks::h323Loader = 1; 
+      PWLibStupidLinkerHacks::opalwavfileLoader =1;
+#ifndef NO_OPAL_VIDEO
+#ifdef RFC2190_AVCODEC
+      PWLibStupidLinkerHacks::rfc2190h263Loader =1;
+#endif
+#endif
+    }
+} instance;
 
 /////////////////////////////////////////////////////////////////////////////
 

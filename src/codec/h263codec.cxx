@@ -25,6 +25,9 @@
  * Contributor(s): Guilhem Tardy (gtardy@salyens.com)
  *
  * $Log: h263codec.cxx,v $
+ * Revision 1.2  2006/02/13 03:46:17  csoutheren
+ * Added initialisation stuff to make sure that everything works OK
+ *
  * Revision 1.1  2006/01/01 19:19:33  dsandras
  * Added RFC2190 H.263 codec thanks to Salyens. Many thanks!
  *
@@ -58,6 +61,10 @@ extern void avcodec_set_print_fn(void (*print_fn)(char *));
 };
 
 #define new PNEW
+
+namespace PWLibStupidLinkerHacks {
+  int rfc2190h263Loader;
+};
 
 const OpalVideoFormat & GetOpalH263()
 {
