@@ -24,7 +24,16 @@
  * Contributor(s): Fürbass Franz <franz.fuerbass@infonova.at>
  *
  * $Log: h235auth1.cxx,v $
- * Revision 1.2009  2004/02/19 10:47:04  rjongbloed
+ * Revision 1.2009.2.1  2006/02/13 11:49:29  csoutheren
+ * Backported H.235 and initialisation fixes from CVS head
+ *
+ * Revision 2.10  2006/02/13 11:09:56  csoutheren
+ * Multiple fixes for H235 authenticators
+ *
+ * Revision 2.9  2006/02/13 03:46:17  csoutheren
+ * Added initialisation stuff to make sure that everything works OK
+ *
+ * Revision 2.8  2004/02/19 10:47:04  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.7  2002/09/04 06:01:48  robertj
@@ -105,6 +114,9 @@
 #include <h323/h235auth.h>
 #include <h323/h323pdu.h>
 
+namespace PWLibStupidLinkerHacks {
+  int h235AuthProcedure1Loader;
+};
 
 #ifdef _MSC_VER
 #pragma comment(lib, P_SSL_LIB1)
@@ -223,6 +235,8 @@ static void hmac_sha (const unsigned char*    k,      /* secret key */
 
 
 /////////////////////////////////////////////////////////////////////////////
+
+static PFactory<H235Authenticator>::Worker<H235AuthProcedure1> factoryH235AuthProcedure1("H235Procedure1");
 
 H235AuthProcedure1::H235AuthProcedure1()
 {

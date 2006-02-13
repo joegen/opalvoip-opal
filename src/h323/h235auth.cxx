@@ -24,7 +24,16 @@
  * Contributor(s): __________________________________
  *
  * $Log: h235auth.cxx,v $
- * Revision 1.2010  2004/02/19 10:47:04  rjongbloed
+ * Revision 1.2010.2.1  2006/02/13 11:49:29  csoutheren
+ * Backported H.235 and initialisation fixes from CVS head
+ *
+ * Revision 2.11  2006/02/13 11:09:56  csoutheren
+ * Multiple fixes for H235 authenticators
+ *
+ * Revision 2.10  2006/02/13 03:46:17  csoutheren
+ * Added initialisation stuff to make sure that everything works OK
+ *
+ * Revision 2.9  2004/02/19 10:47:04  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.8  2003/01/07 04:39:53  robertj
@@ -150,6 +159,9 @@
 
 #define new PNEW
 
+namespace PWLibStupidLinkerHacks {
+  int h235AuthLoader;
+};
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -421,6 +433,8 @@ H235Authenticator::ValidationResult
 
 ///////////////////////////////////////////////////////////////////////////////
 
+static PFactory<H235Authenticator>::Worker<H235AuthSimpleMD5> factoryH235AuthSimpleMD5("SimpleMD5");
+
 static const char OID_MD5[] = "1.2.840.113549.2.5";
 
 H235AuthSimpleMD5::H235AuthSimpleMD5()
@@ -588,6 +602,8 @@ BOOL H235AuthSimpleMD5::IsSecuredPDU(unsigned rasPDU, BOOL received) const
 
 
 ///////////////////////////////////////////////////////////////////////////////
+
+static PFactory<H235Authenticator>::Worker<H235AuthCAT> factoryH235AuthCAT("SimpleCAT");
 
 static const char OID_CAT[] = "1.2.840.113548.10.1.2.1";
 

@@ -27,7 +27,16 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2027  2006/01/02 15:51:44  dsandras
+ * Revision 1.2027.2.1  2006/02/13 11:49:29  csoutheren
+ * Backported H.235 and initialisation fixes from CVS head
+ *
+ * Revision 2.28  2006/02/13 11:31:20  csoutheren
+ * Removed debug
+ *
+ * Revision 2.27  2006/02/13 11:09:56  csoutheren
+ * Multiple fixes for H235 authenticators
+ *
+ * Revision 2.26  2006/01/02 15:51:44  dsandras
  * Merged changes from OpenH323 Atlas_devel_2.
  *
  * Revision 2.25  2005/10/12 21:14:32  dsandras
@@ -623,9 +632,19 @@
 #include <h323/h323pdu.h>
 #include <h323/h323rtp.h>
 
-
 #define new PNEW
 
+static class PAuthInitialiseInstantiateMe
+{
+  public:
+    PAuthInitialiseInstantiateMe()
+    {
+      PWLibStupidLinkerHacks::h235AuthLoader = 1;
+#if P_SSL
+      PWLibStupidLinkerHacks::h235AuthProcedure1Loader = 1;
+#endif
+    }
+} instance;
 
 static PTimeInterval AdjustTimeout(unsigned seconds)
 {
