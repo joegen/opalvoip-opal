@@ -25,7 +25,10 @@
  * Contributor(s): Guilhem Tardy (gtardy@salyens.com)
  *
  * $Log: h263codec.h,v $
- * Revision 1.2002  2006/01/01 19:19:33  dsandras
+ * Revision 1.2003  2006/02/13 03:46:16  csoutheren
+ * Added initialisation stuff to make sure that everything works OK
+ *
+ * Revision 2.1  2006/01/01 19:19:33  dsandras
  * Added RFC2190 H.263 codec thanks to Salyens. Many thanks!
  *
  * Revision 1.1  2005/12/30 12:30:03  guilhem
@@ -70,6 +73,9 @@ struct AVCodec;
 struct AVCodecContext;
 struct AVFrame;
 
+namespace PWLibStupidLinkerHacks {
+  extern int rfc2190h263Loader;
+};
 ///////////////////////////////////////////////////////////////////////////////
 
 #ifndef NO_H323
