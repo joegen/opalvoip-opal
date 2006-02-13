@@ -22,7 +22,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalwavfile.h,v $
- * Revision 1.2006  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2006.2.1  2006/02/13 11:49:28  csoutheren
+ * Backported H.235 and initialisation fixes from CVS head
+ *
+ * Revision 2.6  2006/02/13 03:46:16  csoutheren
+ * Added initialisation stuff to make sure that everything works OK
+ *
+ * Revision 2.5  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.4  2004/07/15 12:19:22  rjongbloed
@@ -73,7 +79,9 @@
 
 #include <ptclib/pwavfile.h>
 
-
+namespace PWLibStupidLinkerHacks {
+  extern int opalwavfileLoader;
+};
 
 /**This class is similar to the PWavFile class found in the PWlib
    components library. However, it will tranparently convert all data
