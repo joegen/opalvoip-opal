@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalwavfile.cxx,v $
- * Revision 1.2004  2004/07/15 12:19:23  rjongbloed
+ * Revision 1.2005  2006/02/13 03:46:17  csoutheren
+ * Added initialisation stuff to make sure that everything works OK
+ *
+ * Revision 2.3  2004/07/15 12:19:23  rjongbloed
  * Various enhancements to the VXML code
  *
  * Revision 2.2  2004/02/19 10:53:04  rjongbloed
@@ -179,6 +182,9 @@ class PWAVFileConverterALaw : public PWAVFileConverterXLaw
 PWAVFileConverterFactory::Worker<PWAVFileConverterULaw> uLawConverter(PWAVFile::fmt_uLaw, true);
 PWAVFileConverterFactory::Worker<PWAVFileConverterALaw> ALawConverter(PWAVFile::fmt_ALaw, true);
 
+namespace PWLibStupidLinkerHacks {
+  int opalwavfileLoader;
+};
 
 ///////////////////////////////////////////////////////////////////////
 
