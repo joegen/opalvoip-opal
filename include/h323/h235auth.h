@@ -24,7 +24,10 @@
  * Contributor(s): Fürbass Franz <franz.fuerbass@infonova.at>
  *
  * $Log: h235auth.h,v $
- * Revision 1.2009  2004/02/19 10:46:43  rjongbloed
+ * Revision 1.2010  2006/02/13 03:46:17  csoutheren
+ * Added initialisation stuff to make sure that everything works OK
+ *
+ * Revision 2.8  2004/02/19 10:46:43  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.7  2002/11/10 11:33:16  robertj
@@ -123,6 +126,9 @@ class PASN_ObjectId;
 class PASN_Sequence;
 class PASN_Array;
 
+namespace PWLibStupidLinkerHacks {
+extern int h235AuthLoader;
+};
 
 /** This abtract class embodies an H.235 authentication mechanism.
     NOTE: descendants must have a Clone() function for correct operation.
@@ -334,6 +340,10 @@ class H235AuthCAT : public H235Authenticator
 
 
 #if P_SSL
+
+namespace PWLibStupidLinkerHacks {
+  extern int h235AuthProcedure1Loader;
+};
 
 /** This class embodies the H.235 "base line Procedure 1" from Annex D.
 */
