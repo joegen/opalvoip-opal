@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2098.2.8  2006/02/11 13:32:24  csoutheren
+ * Revision 1.2098.2.9  2006/02/14 19:09:32  dsandras
+ * Backported fix from HEAD.
+ *
+ * Revision 2.106  2006/02/14 19:04:07  dsandras
+ * Fixed problem when the voice-message field is not mentionned in the NOTIFY.
+ *
+ * Revision 2.97.2.8  2006/02/11 13:32:24  csoutheren
  * Backported fixed from CVS head
  *
  * Revision 2.97.2.7  2006/02/05 22:22:23  dsandras
@@ -1312,9 +1318,9 @@ BOOL SIPEndPoint::OnReceivedNOTIFY (OpalTransport & transport, SIP_PDU & pdu)
     SIPURL url_to (pdu.GetMIME().GetTo());
     for (int z = 0 ; validMessageClasses [z] != NULL ; z++) {
       
-      for (int i = 0 ; i <= bodylines.GetSize () ; i++) {
+      for (int i = 0 ; i < bodylines.GetSize () ; i++) {
 
-	PCaselessString line = bodylines [i];
+	PCaselessString line (bodylines [i]);
 	PINDEX j = line.FindLast(validMessageClasses [z]);
 	if (j != P_MAX_INDEX) {
 	  line.Replace (validMessageClasses[z], "");
@@ -1326,6 +1332,11 @@ BOOL SIPEndPoint::OnReceivedNOTIFY (OpalTransport & transport, SIP_PDU & pdu)
 			 msgs);
 	  return TRUE;
 	}
+	else
+	  OnMWIReceived (url_from.GetHostName(),
+			 url_to.GetUserName(), 
+			 (SIPMWISubscribe::MWIType) 0, 
+			 "0/0");
       }
     }
   } 
