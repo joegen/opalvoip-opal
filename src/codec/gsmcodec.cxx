@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gsmcodec.cxx,v $
- * Revision 1.2006  2006/02/09 22:48:40  csoutheren
+ * Revision 1.2007  2006/02/14 22:37:14  csoutheren
+ * Fixed error in adpative GSM calcs
+ *
+ * Revision 2.5  2006/02/09 22:48:40  csoutheren
  * Experimental fix for receiving MSGSM in GSM codec
  *
  * Revision 2.4  2005/08/28 07:59:17  rjongbloed
@@ -199,7 +202,7 @@ BOOL Opal_GSM0610_PCM::Convert(const RTP_DataFrame & input, RTP_DataFrame & outp
   gsm_decode(gsm, (gsm_byte *)inputPtr,    (gsm_signal *)outputPtr);
 
   // decode the second frame 
-  gsm_decode(gsm, (gsm_byte *)inputPtr+33, (gsm_signal *)outputPtr+outputBytesPerFrame);
+  gsm_decode(gsm, (gsm_byte *)inputPtr+33, (gsm_signal *)outputPtr+GSM_SAMPLES_PER_FRAME);
 
   return TRUE;
 }
