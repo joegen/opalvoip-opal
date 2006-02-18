@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2058  2005/11/29 11:49:35  dsandras
+ * Revision 1.2059  2006/02/18 19:00:38  dsandras
+ * Added PTRACE statements.
+ *
+ * Revision 2.57  2005/11/29 11:49:35  dsandras
  * socket is autodeleted, even in case of failure.
  *
  * Revision 2.56  2005/10/21 17:57:00  dsandras
@@ -1527,6 +1530,7 @@ OpalTransportTCP::OpalTransportTCP(OpalEndPoint & ep, PTCPSocket * socket)
 OpalTransportTCP::~OpalTransportTCP()
 {
   CloseWait();
+  PTRACE(4,"Opal\tDeleted transport " << *this);
 }
 
 
@@ -1761,6 +1765,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
 OpalTransportUDP::~OpalTransportUDP()
 {
   CloseWait();
+  PTRACE(4,"Opal\tDeleted transport " << *this);
 }
 
 
