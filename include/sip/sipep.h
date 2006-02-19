@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2047.2.1  2006/01/29 21:01:40  dsandras
+ * Revision 1.2047.2.2  2006/02/19 11:53:22  dsandras
+ * More backports from HEAD.
+ *
+ * Revision 2.48  2006/02/19 11:51:46  dsandras
+ * Fixed FindSIPInfoByDomain.
+ *
+ * Revision 2.46.2.1  2006/01/29 21:01:40  dsandras
  * Backports from CVS HEAD.
  *
  * Revision 2.47  2006/01/29 20:55:32  dsandras
@@ -884,9 +890,10 @@ class SIPEndPoint : public OpalEndPoint
 	    SIPInfo *FindSIPInfoByDomain (const PString & name, SIP_PDU::Methods meth, PSafetyMode m)
 	    {
 	      OpalTransportAddress addr = name;
-	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
-      		      if ((addr.GetHostName() == info->GetRegistrationAddress().GetHostName() || (info->GetTransport() && addr.GetHostName() == info->GetTransport()->GetRemoteAddress().GetHostName()) && meth == info->GetMethod()))
+	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info) {
+		      if ((name == info->GetRegistrationAddress().GetHostName() || (info->GetTransport() && addr.GetHostName() == info->GetTransport()->GetRemoteAddress().GetHostName()) && meth == info->GetMethod()))
 			return info;
+	      }
 	      return NULL;
 	    }
     };
