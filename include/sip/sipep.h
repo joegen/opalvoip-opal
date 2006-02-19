@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2048  2006/01/29 20:55:32  dsandras
+ * Revision 1.2049  2006/02/19 11:51:46  dsandras
+ * Fixed FindSIPInfoByDomain.
+ *
+ * Revision 2.47  2006/01/29 20:55:32  dsandras
  * Allow using a simple username or a fill url when registering.
  *
  * Revision 2.46  2006/01/08 21:53:40  dsandras
@@ -881,9 +884,10 @@ class SIPEndPoint : public OpalEndPoint
 	    SIPInfo *FindSIPInfoByDomain (const PString & name, SIP_PDU::Methods meth, PSafetyMode m)
 	    {
 	      OpalTransportAddress addr = name;
-	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
-      		      if ((addr.GetHostName() == info->GetRegistrationAddress().GetHostName() || (info->GetTransport() && addr.GetHostName() == info->GetTransport()->GetRemoteAddress().GetHostName()) && meth == info->GetMethod()))
+	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info) {
+		      if ((name == info->GetRegistrationAddress().GetHostName() || (info->GetTransport() && addr.GetHostName() == info->GetTransport()->GetRemoteAddress().GetHostName()) && meth == info->GetMethod()))
 			return info;
+	      }
 	      return NULL;
 	    }
     };
