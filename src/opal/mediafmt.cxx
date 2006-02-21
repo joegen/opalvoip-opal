@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2042  2006/02/13 03:46:17  csoutheren
+ * Revision 1.2043  2006/02/21 09:38:28  csoutheren
+ * Fix problem with incorrect timestamps for uLaw and ALaw
+ *
+ * Revision 2.41  2006/02/13 03:46:17  csoutheren
  * Added initialisation stuff to make sure that everything works OK
  *
  * Revision 2.40  2006/01/23 22:53:14  csoutheren
@@ -610,7 +613,7 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
   AddOption(new OpalMediaOptionInteger(MaxBitRateOption, true, OpalMediaOption::MinMerge, bw, 100));
 
   if (fs > 0)
-    AddOption(new OpalMediaOptionInteger(MaxFrameSizeOption, true, OpalMediaOption::MinMerge, fs));
+    AddOption(new OpalMediaOptionInteger(MaxFrameSizeOption, true, OpalMediaOption::NoMerge, fs));
 
   if (ft > 0)
     AddOption(new OpalMediaOptionInteger(FrameTimeOption, true, OpalMediaOption::NoMerge, ft));
