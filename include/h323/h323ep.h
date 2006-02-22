@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2032  2006/01/02 15:52:38  dsandras
+ * Revision 1.2033  2006/02/22 10:29:09  csoutheren
+ * Applied patch #1374470 from Frederic Heem
+ * Add ability to disable H.245 negotiation
+ *
+ * Revision 2.31  2006/01/02 15:52:38  dsandras
  * Added what was required to merge changes from OpenH323 Altas_devel_2 in gkclient.cxx, gkserver.cxx and channels.cxx.
  *
  * Revision 2.30  2005/11/30 13:35:26  csoutheren
@@ -1165,6 +1169,17 @@ class H323EndPoint : public OpalEndPoint
       BOOL mode ///<  New default mode
     ) { disableH245inSetup = mode; } 
 
+    /** find out if h245 is disabled or enabled 
+      * @return TRUE if h245 is disabled 
+      */
+    BOOL IsH245Disabled() const
+    { return m_bH245Disabled; }
+
+    /**Disable/Enable H.245, used at least for h450.7 calls
+     * @param  bH245Disabled TRUE if h245 has to be disabled 
+     */
+    void DisableH245(BOOL bH245Disabled) { m_bH245Disabled = bH245Disabled; } 
+    
     /**Get the flag indicating the endpoint can display an amount string.
       */
     BOOL CanDisplayAmountString() const
@@ -1531,6 +1546,7 @@ class H323EndPoint : public OpalEndPoint
     BOOL        disableFastStart;
     BOOL        disableH245Tunneling;
     BOOL        disableH245inSetup;
+    BOOL        m_bH245Disabled; /* enabled or disabled h245 */
     BOOL        canDisplayAmountString;
     BOOL        canEnforceDurationLimit;
     unsigned    callIntrusionProtectionLevel;

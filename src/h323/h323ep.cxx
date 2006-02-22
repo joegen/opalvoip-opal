@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2044  2006/02/13 11:09:56  csoutheren
+ * Revision 1.2045  2006/02/22 10:29:09  csoutheren
+ * Applied patch #1374470 from Frederic Heem
+ * Add ability to disable H.245 negotiation
+ *
+ * Revision 2.43  2006/02/13 11:09:56  csoutheren
  * Multiple fixes for H235 authenticators
  *
  * Revision 2.42  2006/01/14 10:43:06  dsandras
@@ -794,7 +798,8 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
     callIntrusionT4(0,30),                  // Seconds
     callIntrusionT5(0,10),                  // Seconds
     callIntrusionT6(0,10),                  // Seconds
-    nextH450CallIdentity(0)
+    nextH450CallIdentity(0),
+    m_bH245Disabled(FALSE)
 {
   // Set port in OpalEndPoint class
   defaultSignalPort = DefaultTcpPort;
