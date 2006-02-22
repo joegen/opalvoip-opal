@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2100  2006/02/22 10:40:10  csoutheren
+ * Revision 1.2101  2006/02/22 10:48:47  csoutheren
+ * Applied patch #1375144 from Frederic Heem
+ * Initialize detectInBandDTMF
+ *
+ * Revision 2.99  2006/02/22 10:40:10  csoutheren
  * Added patch #1374583 from Frederic Heem
  * Added additional H.323 virtual function
  *
@@ -1631,6 +1635,7 @@ H323Connection::H323Connection(OpalCall & call,
       break;
 
     default :
+      detectInBandDTMF = FALSE;
       break;
   }
 
