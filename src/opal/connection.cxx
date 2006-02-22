@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2056  2005/12/06 21:32:25  dsandras
+ * Revision 1.2057  2006/02/22 10:40:10  csoutheren
+ * Added patch #1374583 from Frederic Heem
+ * Added additional H.323 virtual function
+ *
+ * Revision 2.55  2005/12/06 21:32:25  dsandras
  * Applied patch from Frederic Heem <frederic.heem _Atttt_ telsey.it> to fix
  * assert in PSyncPoint when OnReleased is called twice from different threads.
  * Thanks! (Patch #1374240)
@@ -366,6 +370,11 @@ void OpalConnection::PrintOn(ostream & strm) const
   strm << ownerCall << '-'<< endpoint << '[' << callToken << ']';
 }
 
+BOOL OpalConnection::OnSetUpConnection()
+{
+  PTRACE(3, "OpalCon\tOnSetUpConnection" << *this);
+  return endpoint.OnSetUpConnection(*this);
+}
 
 void OpalConnection::HoldConnection()
 {
