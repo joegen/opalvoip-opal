@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2029  2006/02/13 11:31:20  csoutheren
+ * Revision 1.2030  2006/02/22 10:52:30  csoutheren
+ * Applied patch #1375161 from Frederic Heem
+ * Add srcInfo to ARQ
+ *
+ * Revision 2.28  2006/02/13 11:31:20  csoutheren
  * Removed debug
  *
  * Revision 2.27  2006/02/13 11:09:56  csoutheren
@@ -1465,9 +1469,11 @@ BOOL H323Gatekeeper::AdmissionRequest(H323Connection & connection,
     }
   }
 
+  PTRACE(3, "RAS\tAdmissionRequest answering = " << answeringCall << " local alias name " << connection.GetLocalAliasNames());
+
   const H323Transport * signallingChannel = connection.GetSignallingChannel();
-  arq.IncludeOptionalField(H225_AdmissionRequest::e_srcCallSignalAddress);
   if (answeringCall) {
+    arq.IncludeOptionalField(H225_AdmissionRequest::e_srcCallSignalAddress);
     H323TransportAddress signalAddress = signallingChannel->GetRemoteAddress();
     signalAddress.SetPDU(arq.m_srcCallSignalAddress);
     signalAddress = signallingChannel->GetLocalAddress();
@@ -1476,6 +1482,7 @@ BOOL H323Gatekeeper::AdmissionRequest(H323Connection & connection,
   }
   else {
     if (signallingChannel != NULL && signallingChannel->IsOpen()) {
+      arq.IncludeOptionalField(H225_AdmissionRequest::e_srcCallSignalAddress);
       H323TransportAddress signalAddress = signallingChannel->GetLocalAddress();
       signalAddress.SetPDU(arq.m_srcCallSignalAddress);
     }
