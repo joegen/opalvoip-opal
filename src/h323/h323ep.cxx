@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2046  2006/02/22 10:37:48  csoutheren
+ * Revision 1.2047  2006/02/22 10:40:10  csoutheren
+ * Added patch #1374583 from Frederic Heem
+ * Added additional H.323 virtual function
+ *
+ * Revision 2.45  2006/02/22 10:37:48  csoutheren
  * Fixed warning on Linux
  *
  * Revision 2.44  2006/02/22 10:29:09  csoutheren
@@ -1405,6 +1409,26 @@ BOOL H323EndPoint::IntrudeCall(const PString & remoteParty,
                           userData);
 }
 
+BOOL H323EndPoint::OnSendSignalSetup(H323Connection & /*connection*/,
+                                     H323SignalPDU & /*setupPDU*/)
+{
+  return TRUE;
+}
+
+BOOL H323EndPoint::OnSendCallProceeding(H323Connection & /*connection*/,
+                                        H323SignalPDU & /*callProceedingPDU*/
+                                       )
+{
+  return TRUE;
+}
+
+BOOL H323EndPoint::OnSendConnect(H323Connection & /*connection*/,
+                                 H323SignalPDU & /*connectPDU*/
+                                )
+{
+  return TRUE;
+}
+
 void H323EndPoint::OnReceivedInitiateReturnError()
 {
 }
@@ -1664,6 +1688,21 @@ BOOL H323EndPoint::OnAlerting(H323Connection & connection,
   return TRUE;
 }
 
+BOOL H323EndPoint::OnSendAlerting(H323Connection & connection,
+                                  H323SignalPDU & alerting,
+                                  const PString & calleeName,   /// Name of endpoint being alerted.
+                                  BOOL withMedia                /// Open media with alerting
+                                  )
+{
+  PTRACE(3, "H225\tOnSendAlerting conn = " << connection);
+  return TRUE;
+}
+
+BOOL H323EndPoint::OnSentAlerting(H323Connection & connection)
+{
+  PTRACE(3, "H225\tOnSentAlerting conn = " << connection);
+  return TRUE;
+}
 
 BOOL H323EndPoint::OnConnectionForwarded(H323Connection & /*connection*/,
                                          const PString & /*forwardParty*/,
