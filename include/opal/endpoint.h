@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2030  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2031  2006/02/22 10:40:09  csoutheren
+ * Added patch #1374583 from Frederic Heem
+ * Added additional H.323 virtual function
+ *
+ * Revision 2.29  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.28  2005/10/08 19:26:37  dsandras
@@ -311,6 +315,11 @@ class OpalEndPoint : public PObject
       void * userData         ///<  Arbitrary data to pass to connection
     ) = 0;
 
+    /**Callback for outgoing connection, it is invoked after OpalLineConnection::SetUpConnection
+       This function allows the application to set up some parameters or to log some messages
+       */
+    virtual BOOL OnSetUpConnection(OpalConnection &connection);
+    
     /**Call back for answering an incoming call.
        This function is used for an application to control the answering of
        incoming calls.

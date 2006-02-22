@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2033  2006/02/22 10:29:09  csoutheren
+ * Revision 1.2034  2006/02/22 10:40:09  csoutheren
+ * Added patch #1374583 from Frederic Heem
+ * Added additional H.323 virtual function
+ *
+ * Revision 2.32  2006/02/22 10:29:09  csoutheren
  * Applied patch #1374470 from Frederic Heem
  * Add ability to disable H.245 negotiation
  *
@@ -818,6 +822,46 @@ class H323EndPoint : public OpalEndPoint
       PSafetyMode mode = PSafeReadWrite
     );
 
+    /** OnSetupSent is a hook for the appliation to attach H450 info in setup, 
+        for instance, H450.7 Activate or Deactivate 
+        @param connection the connection associated to the setup
+        @param pduSetup the setup message to modify
+        @return if false, do no send the setup pdu
+      */
+      
+    virtual BOOL OnSendSignalSetup(H323Connection & connection,
+                                   H323SignalPDU & setupPDU);
+
+    /**Adjust call proceeding PDU being sent. This function is called from
+    the OnReceivedSignalSetup() function before it sends the Call
+    Proceeding PDU. It gives an opportunity for an application to alter
+    the request before transmission to the other endpoint. If this function
+    returns FALSE then the Call Proceeding PDU is not sent at all.
+
+    The default behaviour simply returns TRUE.
+    @param connection the connection associated to the call proceeding
+    @param callProceedingPDU the call processding to modify
+    @return if false, do no send the connect pdu  
+     */
+    virtual BOOL OnSendCallProceeding(H323Connection & connection,
+                                      H323SignalPDU & callProceedingPDU
+                                     );
+    
+    /**Adjust call connect PDU being sent. This function is called from
+    the H323Connection::SetConnected function before it sends the connect  PDU. 
+    It gives an opportunity for an application to alter
+    the request before transmission to the other endpoint. If this function
+    returns FALSE then the connect PDU is not sent at all.
+
+    The default behaviour simply returns TRUE.
+    @param connection the connection associated to the connect
+    @param connectPDU the connect to modify
+    @return if false, do no send the connect pdu  
+     */
+    virtual BOOL OnSendConnect(H323Connection & connection,
+                               H323SignalPDU & connectPDU
+                              );
+    
     /**Call back for incoming call.
        This function is called from the OnReceivedSignalSetup() function
        before it sends the Alerting PDU. It gives an opportunity for an
@@ -905,6 +949,23 @@ class H323EndPoint : public OpalEndPoint
       const PString & user                ///<  Username of remote endpoint
     );
 
+    /** A call back function when the alerting is about to be sent, 
+        can be used by the application to alter the alerting Pdu
+        @return if FALSE, then the alerting is not sent
+     */
+      
+    virtual BOOL OnSendAlerting(H323Connection & connection,  ///< onnection that was established
+                                H323SignalPDU & alerting,     ///< Alerting PDU to modify
+                                const PString & calleeName,   ///< Name of endpoint being alerted.
+                                BOOL withMedia                ///< Open media with alerting
+                               );
+        
+    /** A call back function when the alerting has been sent, can be used by the application 
+        to send the connect as soon as the alerting has been sent.
+     */
+      
+    virtual BOOL OnSentAlerting(H323Connection & connection);
+    
     /**A call back function when a connection indicates it is to be forwarded.
        An H323 application may handle this call back so it can make
        complicated decisions on if the call forward ius to take place. If it
