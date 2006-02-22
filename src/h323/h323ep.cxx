@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2045  2006/02/22 10:29:09  csoutheren
+ * Revision 1.2046  2006/02/22 10:37:48  csoutheren
+ * Fixed warning on Linux
+ *
+ * Revision 2.44  2006/02/22 10:29:09  csoutheren
  * Applied patch #1374470 from Frederic Heem
  * Add ability to disable H.245 negotiation
  *
@@ -798,8 +801,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
     callIntrusionT4(0,30),                  // Seconds
     callIntrusionT5(0,10),                  // Seconds
     callIntrusionT6(0,10),                  // Seconds
-    nextH450CallIdentity(0),
-    m_bH245Disabled(FALSE)
+    nextH450CallIdentity(0)
 {
   // Set port in OpalEndPoint class
   defaultSignalPort = DefaultTcpPort;
@@ -808,6 +810,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
 
   autoStartReceiveFax = autoStartTransmitFax = FALSE;
 
+  m_bH245Disabled = FALSE;
   autoCallForward = TRUE;
   disableFastStart = FALSE;
   disableH245Tunneling = FALSE;
