@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2101  2006/02/22 10:48:47  csoutheren
+ * Revision 1.2102  2006/02/22 10:54:55  csoutheren
+ * Appled patch #1375120 from Frederic Heem
+ * Add ARQ srcCallSignalAddress only when needed
+ *
+ * Revision 2.100  2006/02/22 10:48:47  csoutheren
  * Applied patch #1375144 from Frederic Heem
  * Initialize detectInBandDTMF
  *
@@ -1540,6 +1544,9 @@ H323Connection::H323Connection(OpalCall & call,
     remotePartyAddress = alias + '@' + address;
   }
 
+  /* Add the local alias name in the ARQ, TODO: overwrite alias name from partyB */
+  localAliasNames = ep.GetAliasNames();
+  
   mediaStreams.DisallowDeleteObjects();
 
   gatekeeperRouted = FALSE;
