@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2099  2006/02/22 10:29:09  csoutheren
+ * Revision 1.2100  2006/02/22 10:40:10  csoutheren
+ * Added patch #1374583 from Frederic Heem
+ * Added additional H.323 virtual function
+ *
+ * Revision 2.98  2006/02/22 10:29:09  csoutheren
  * Applied patch #1374470 from Frederic Heem
  * Add ability to disable H.245 negotiation
  *
@@ -3159,15 +3163,15 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
 }
 
 
-BOOL H323Connection::OnSendSignalSetup(H323SignalPDU & /*setupPDU*/)
+BOOL H323Connection::OnSendSignalSetup(H323SignalPDU & pdu)
 {
-  return TRUE;
+  return endpoint.OnSendSignalSetup(*this, pdu);
 }
 
 
-BOOL H323Connection::OnSendCallProceeding(H323SignalPDU & /*callProceedingPDU*/)
+BOOL H323Connection::OnSendCallProceeding(H323SignalPDU & callProceedingPDU)
 {
-  return TRUE;
+  return endpoint.OnSendCallProceeding(*this, callProceedingPDU);
 }
 
 
@@ -3184,7 +3188,7 @@ BOOL H323Connection::OnAlerting(const H323SignalPDU & alertingPDU,
 }
 
 
-BOOL H323Connection::SetAlerting(const PString & /*calleeName*/, BOOL withMedia)
+BOOL H323Connection::SetAlerting(const PString & calleeName, BOOL withMedia)
 {
   PTRACE(3, "H323\tSetAlerting " << *this);
   if (alertingPDU == NULL)
@@ -3215,9 +3219,21 @@ BOOL H323Connection::SetAlerting(const PString & /*calleeName*/, BOOL withMedia)
 
   h450dispatcher->AttachToAlerting(*alertingPDU);
 
+  if (!endpoint.OnSendAlerting(*this, *alertingPDU, calleeName, withMedia)){
+    /* let the application to avoid sending the alerting, mainly for testing other endpoints*/
+    PTRACE(3, "H323CON\tSetAlerting Alerting not sent");
+    return TRUE;
+  }
+  
   // send Q931 Alerting PDU
-  PTRACE(3, "H225\tSending Alerting PDU");
-  return WriteSignalPDU(*alertingPDU);
+  PTRACE(3, "H323CON\tSetAlerting sending Alerting PDU");
+  
+  BOOL bOk = WriteSignalPDU(*alertingPDU);
+  if (!endpoint.OnSentAlerting(*this)){
+    /* let the application to know that the alerting has been sent */
+    /* do nothing for now, at least check for the return value */
+  }
+  return bOk;
 }
 
 
@@ -3225,10 +3241,17 @@ BOOL H323Connection::SetConnected()
 {
   mediaWaitForConnect = FALSE;
 
-  PTRACE(3, "H323\tSetConnected " << *this);
-  if (connectPDU == NULL)
+  PTRACE(3, "H323CON\tSetConnected " << *this);
+  if (connectPDU == NULL){
+    PTRACE(2, "H323CON\tSetConnected connectPDU is null" << *this);
     return FALSE;
+  }  
 
+  if (!endpoint.OnSendConnect(*this, *connectPDU)){
+    /* let the application to avoid sending the connect, mainly for testing other endpoints*/
+    PTRACE(3, "H323CON\tSetConnected connect not sent");
+    return TRUE;
+  }  
   // Assure capabilities are set to other connections media list (if not already)
   OnSetLocalCapabilities();
 

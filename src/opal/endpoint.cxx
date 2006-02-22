@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2033  2005/10/08 19:26:38  dsandras
+ * Revision 1.2034  2006/02/22 10:40:10  csoutheren
+ * Added patch #1374583 from Frederic Heem
+ * Added additional H.323 virtual function
+ *
+ * Revision 2.32  2005/10/08 19:26:38  dsandras
  * Added OnForwarded callback in case of call forwarding.
  *
  * Revision 2.31  2005/08/24 10:43:51  rjongbloed
@@ -322,6 +326,11 @@ void OpalEndPoint::DestroyConnection(OpalConnection * connection)
   delete connection;
 }
 
+BOOL OpalEndPoint::OnSetUpConnection(OpalConnection &connection)
+{
+  PTRACE(3, "OpalEP\tOnSetUpConnection");
+  return TRUE;
+}
 
 BOOL OpalEndPoint::OnIncomingConnection(OpalConnection & connection)
 {
