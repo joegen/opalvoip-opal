@@ -25,7 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2033  2005/10/08 19:26:38  dsandras
+ * Revision 1.2033.2.1  2006/02/22 12:15:28  csoutheren
+ * Backports from CVS head
+ *
+ * Revision 2.34  2006/02/22 10:45:11  csoutheren
+ * Added patch #1375116 from Frederic Heem
+ * Set default bandwith to a sensible value
+ *
+ * Revision 2.32  2005/10/08 19:26:38  dsandras
  * Added OnForwarded callback in case of call forwarding.
  *
  * Revision 2.31  2005/08/24 10:43:51  rjongbloed
@@ -150,9 +157,13 @@
 #include <opal/manager.h>
 #include <opal/call.h>
 
+//
+// TODO find the correct value, usually the bandwidth for pure audio call is 1280 kb/sec 
+// Set the bandwidth to 10Mbits, as setting the bandwith to UINT_MAX causes problems with cisco gatekeepers 
+//
+#define BANDWITH_DEFAULT_INITIAL 10000
 
 #define new PNEW
-
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -168,7 +179,8 @@ OpalEndPoint::OpalEndPoint(OpalManager & mgr,
   manager.AttachEndPoint(this);
 
   defaultSignalPort = 0;
-  initialBandwidth = UINT_MAX; // Infinite bandwidth
+
+  initialBandwidth = BANDWITH_DEFAULT_INITIAL;
 
   if (defaultLocalPartyName.IsEmpty())
     defaultLocalPartyName = PProcess::Current().GetName() & "User";
