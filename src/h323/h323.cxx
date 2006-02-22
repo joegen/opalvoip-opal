@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2098  2006/01/09 12:55:13  csoutheren
+ * Revision 1.2099  2006/02/22 10:29:09  csoutheren
+ * Applied patch #1374470 from Frederic Heem
+ * Add ability to disable H.245 negotiation
+ *
+ * Revision 2.97  2006/01/09 12:55:13  csoutheren
  * Fixed default calledDestinationName
  *
  * Revision 2.96  2006/01/09 12:19:07  csoutheren
@@ -2551,7 +2555,7 @@ BOOL H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
 
   // Check that it has the H.245 channel connection info
   if (connect.HasOptionalField(H225_Connect_UUIE::e_h245Address)) {
-    if (!CreateOutgoingControlChannel(connect.m_h245Address)) {
+    if (!endpoint.IsH245Disabled() && (!CreateOutgoingControlChannel(connect.m_h245Address))) {
       if (fastStartState != FastStartAcknowledged)
         return FALSE;
     }
@@ -2573,6 +2577,11 @@ BOOL H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   OnConnected();
   InternalEstablishedConnectionCheck();
 
+  /* do not start h245 negotiation if it is disabled */
+  if (endpoint.IsH245Disabled()){
+    PTRACE(3, "H245\tOnReceivedSignalConnect: h245 is disabled, do not start negotiation");
+    return TRUE;
+  }  
   // If we have a H.245 channel available, bring it up. We either have media
   // and this is just so user indications work, or we don't have media and
   // desperately need it!
@@ -2833,7 +2842,7 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
           H225_Facility_UUIE & fac = *want245PDU.BuildFacility(*this, FALSE);
           fac.m_reason.SetTag(H225_FacilityReason::e_startH245);
           earlyStart = TRUE;
-          if (!h245Tunneling && (controlChannel == NULL)) {
+          if (!h245Tunneling && (controlChannel == NULL) && !endpoint.IsH245Disabled()) {
             if (!CreateIncomingControlChannel(fac.m_h245Address))
               break;
 
@@ -3109,7 +3118,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   fastStartState = FastStartDisabled;
   BOOL set_lastPDUWasH245inSETUP = FALSE;
 
-  if (h245Tunneling && doH245inSETUP) {
+  if (h245Tunneling && doH245inSETUP && !endpoint.IsH245Disabled()) {
     h245TunnelTxPDU = &setupPDU;
 
     // Try and start the master/slave and capability exchange through the tunnel
@@ -3192,7 +3201,7 @@ BOOL H323Connection::SetAlerting(const PString & /*calleeName*/, BOOL withMedia)
 
       // Do early H.245 start
       earlyStart = TRUE;
-      if (!h245Tunneling && (controlChannel == NULL)) {
+      if (!h245Tunneling && (controlChannel == NULL) && !endpoint.IsH245Disabled()) {
         if (!CreateIncomingControlChannel(alerting.m_h245Address))
           return FALSE;
         alerting.IncludeOptionalField(H225_Alerting_UUIE::e_h245Address);
@@ -3238,22 +3247,24 @@ BOOL H323Connection::SetConnected()
 
   h450dispatcher->AttachToConnect(*connectPDU);
 
-  if (h245Tunneling) {
-    HandleTunnelPDU(connectPDU);
-
-    // If no channels selected (or never provided) do traditional H245 start
-    if (fastStartState == FastStartDisabled) {
-      h245TunnelTxPDU = connectPDU; // Piggy back H245 on this reply
-      BOOL ok = StartControlNegotiations();
-      h245TunnelTxPDU = NULL;
-      if (!ok)
-        return FALSE;
+  if (!endpoint.IsH245Disabled()){
+    if (h245Tunneling) {
+      HandleTunnelPDU(connectPDU);
+  
+      // If no channels selected (or never provided) do traditional H245 start
+      if (fastStartState == FastStartDisabled) {
+        h245TunnelTxPDU = connectPDU; // Piggy back H245 on this reply
+        BOOL ok = StartControlNegotiations();
+        h245TunnelTxPDU = NULL;
+        if (!ok)
+          return FALSE;
+      }
     }
-  }
-  else if (!controlChannel) { // Start separate H.245 channel if not tunneling.
-    if (!CreateIncomingControlChannel(connect.m_h245Address))
-      return FALSE;
-    connect.IncludeOptionalField(H225_Connect_UUIE::e_h245Address);
+    else if (!controlChannel) { // Start separate H.245 channel if not tunneling.
+      if (!CreateIncomingControlChannel(connect.m_h245Address))
+        return FALSE;
+      connect.IncludeOptionalField(H225_Connect_UUIE::e_h245Address);
+    }
   }
 
   if (!WriteSignalPDU(*connectPDU)) // Send H323 Connect PDU
@@ -3461,6 +3472,12 @@ BOOL H323Connection::OnUnknownSignalPDU(const H323SignalPDU & PTRACE_pdu)
 
 BOOL H323Connection::CreateOutgoingControlChannel(const H225_TransportAddress & h245Address)
 {
+  PTRACE(3, "H225\tCreateOutgoingControlChannel h245Address = " << h245Address);
+  if (endpoint.IsH245Disabled()){
+    PTRACE(1, "H225\tCreateOutgoingControlChannel h245 is disabled, do nothing");
+    /* return TRUE to act as if it was succeded*/
+    return TRUE;
+  }
   // Already have the H245 channel up.
   if (controlChannel != NULL)
     return TRUE;
@@ -3512,6 +3529,11 @@ BOOL H323Connection::CreateIncomingControlChannel(H225_TransportAddress & h245Ad
 {
   PAssert(controlChannel == NULL, PLogicError);
 
+  if (endpoint.IsH245Disabled()){
+    PTRACE(1, "H225\tCreateIncomingControlChannel: do not create channel because h245 is disabled");
+    return FALSE;
+  }
+  
   H323TransportAddress localSignallingInterface = signallingChannel->GetLocalAddress();
   if (controlListener == NULL) {
     controlListener = localSignallingInterface.CreateListener(
@@ -3599,6 +3621,11 @@ BOOL H323Connection::StartControlNegotiations()
 {
   PTRACE(2, "H245\tStarted control channel");
 
+ 
+  if (endpoint.IsH245Disabled()){
+    PTRACE(2, "H245\tStartControlNegotiations h245 is disabled, do not start negotiation");
+    return FALSE;
+  }
   // Get the local capabilities before fast start is handled
   OnSetLocalCapabilities();
 
