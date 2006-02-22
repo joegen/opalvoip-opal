@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2051  2006/02/02 07:02:56  csoutheren
+ * Revision 1.2052  2006/02/22 10:40:09  csoutheren
+ * Added patch #1374583 from Frederic Heem
+ * Added additional H.323 virtual function
+ *
+ * Revision 2.50  2006/02/02 07:02:56  csoutheren
  * Added RTP payload map to transcoders and connections to allow remote SIP endpoints
  * to change the payload type used for outgoing RTP.
  *
@@ -435,6 +439,12 @@ class OpalConnection : public PSafeObject
       */
     virtual BOOL SetUpConnection() = 0;
 
+    /**Callback for outgoing connection, it is invoked after SetUpConnection
+       This function allows the application to set up some parameters or to log some messages
+     */
+    virtual BOOL OnSetUpConnection();
+
+    
     /**Call back for remote party being alerted.
        This function is called after the connection is informed that the
        remote endpoint is "ringing". Generally some time after the
