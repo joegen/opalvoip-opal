@@ -5,7 +5,10 @@
 #include <stdio.h>
 #include <math.h>
 #include <memory.h>
-#include <malloc.h>
+
+#ifndef P_MACOSX
+#include <malloc.h>   // RMF
+#endif
 
 #ifdef __cplusplus
 extern "C" {
