@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2107  2006/02/14 19:04:07  dsandras
+ * Revision 1.2108  2006/02/28 19:18:24  dsandras
+ * Reset the expire time to its initial value accepted by the server when
+ * refreshing the registration. Have a default value of 1 for voicemail
+ * notifications.
+ *
+ * Revision 2.106  2006/02/14 19:04:07  dsandras
  * Fixed problem when the voice-message field is not mentionned in the NOTIFY.
  *
  * Revision 2.105  2006/02/08 04:51:19  csoutheren
@@ -1315,7 +1320,7 @@ BOOL SIPEndPoint::OnReceivedNOTIFY (OpalTransport & transport, SIP_PDU & pdu)
 	  OnMWIReceived (url_from.GetHostName(),
 			 url_to.GetUserName(), 
 			 (SIPMWISubscribe::MWIType) 0, 
-			 "0/0");
+			 "1/0");
       }
     }
   } 
@@ -1413,6 +1418,7 @@ void SIPEndPoint::RegistrationRefresh(PTimer &, INT)
 	if (info->CreateTransport(registrarAddress)) { 
 	  infoTransport = info->GetTransport();
 	  info->RemoveTransactions();
+	  info->SetExpire(info->GetExpire()*10/9);
 	  request = info->CreateTransaction(*infoTransport, FALSE); 
 
 	  if (request->Start()) 
