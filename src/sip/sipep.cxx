@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2108  2006/02/28 19:18:24  dsandras
+ * Revision 1.2109  2006/03/06 12:56:03  csoutheren
+ * Added experimental support for SIP SRV lookups
+ *
+ * Revision 2.107  2006/02/28 19:18:24  dsandras
  * Reset the expire time to its initial value accepted by the server when
  * refreshing the registration. Have a default value of 1 for voicemail
  * notifications.
@@ -789,6 +792,23 @@ void SIPEndPoint::HandlePDU(OpalTransport & transport)
   delete pdu;
 }
 
+#if P_DNS
+
+static BOOL LookupSIPSRV(const PURL & url, OpalTransportAddress & transportAddr)
+{
+  PIPSocketAddressAndPortVector addrs;
+  if (!PDNS::LookupSRV(url.GetHostName(), "_sip._udp", url.GetPort(), addrs))
+    transportAddr = OpalTransportAddress(addrs[0].address, addrs[0].port);
+  else {
+    PIPSocket::Address addr;
+    if (!PIPSocket::GetHostAddress(url.GetHostName(), addr))
+      return FALSE;
+    transportAddr = OpalTransportAddress(addr, url.GetPort());
+  }
+  return TRUE;
+}
+
+#endif
 
 BOOL SIPEndPoint::MakeConnection(OpalCall & call,
                                  const PString & _remoteParty,
@@ -800,11 +820,16 @@ BOOL SIPEndPoint::MakeConnection(OpalCall & call,
     return FALSE;
   
   ParsePartyName(_remoteParty, remoteParty);
+  OpalTransportAddress remotePartyAddress;
+  if (!LookupSIPSRV(remoteParty,  remotePartyAddress)) {
+    PTRACE(1, "SIP\tCannot resolve SIP domain for new connection " << remoteParty);
+    return FALSE;
+  }
 
   PStringStream callID;
   OpalGloballyUniqueID id;
   callID << id << '@' << PIPSocket::GetHostName();
-  SIPConnection * connection = CreateConnection(call, callID, userData, remoteParty, NULL, NULL);
+  SIPConnection * connection = CreateConnection(call, callID, userData, remoteParty, remotePartyAddress, NULL, NULL);
   if (connection == NULL)
     return FALSE;
 
@@ -836,10 +861,11 @@ SIPConnection * SIPEndPoint::CreateConnection(OpalCall & call,
                                               const PString & token,
                                               void * /*userData*/,
                                               const SIPURL & destination,
+                                              const OpalTransportAddress & destinationAddress, 
                                               OpalTransport * transport,
                                               SIP_PDU * /*invite*/)
 {
-  return new SIPConnection(call, *this, token, destination, transport);
+  return new SIPConnection(call, *this, token, destination, destinationAddress, transport);
 }
 
 
@@ -848,8 +874,6 @@ BOOL SIPEndPoint::SetupTransfer(const PString & token,
 				const PString & _remoteParty,  
 				void * userData)
 {
-  PString remoteParty;
-  
   // Make a new connection
   PSafePtr<OpalConnection> otherConnection = 
     GetConnectionWithLock(token, PSafeReference);
@@ -861,13 +885,15 @@ BOOL SIPEndPoint::SetupTransfer(const PString & token,
   
   call.RemoveMediaStreams();
   
+  PString remoteParty;
+  OpalTransportAddress remotePartyAddress;
   ParsePartyName(_remoteParty, remoteParty);
 
   PStringStream callID;
   OpalGloballyUniqueID id;
   callID << id << '@' << PIPSocket::GetHostName();
   SIPConnection * connection = 
-    CreateConnection(call, callID, userData, remoteParty, NULL, NULL);
+    CreateConnection(call, callID, userData, remoteParty, remotePartyAddress, NULL, NULL);
   
   if (connection == NULL)
     return FALSE;
@@ -890,8 +916,15 @@ BOOL SIPEndPoint::ForwardConnection(SIPConnection & connection,
   PStringStream callID;
   OpalGloballyUniqueID id;
   callID << id << '@' << PIPSocket::GetHostName();
+
+  OpalTransportAddress forwardPartyAddress;
+  if (!LookupSIPSRV(forwardParty, forwardPartyAddress)) {
+    PTRACE(1, "SIP\tCannot resolve SIP domain for forwarded connection " << forwardParty);
+    return FALSE;
+  }
+
   SIPConnection * conn = 
-    CreateConnection(call, callID, NULL, forwardParty, NULL, NULL);
+    CreateConnection(call, callID, NULL, forwardParty, forwardPartyAddress, NULL, NULL);
   
   if (conn == NULL)
     return FALSE;
@@ -1065,9 +1098,15 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
   response.Write(transport);
 
   // ask the endpoint for a connection
+  OpalTransportAddress uriAddress;
+  if (!LookupSIPSRV(request->GetURI(), uriAddress)) {
+    PTRACE(1, "SIP\tCannot resolve SIP domain for invited connection " << request->GetURI());
+    return FALSE;
+  }
+
   SIPConnection *connection = 
     CreateConnection(*GetManager().CreateCall(), mime.GetCallID(),
-		     NULL, request->GetURI(), &transport, request);
+		     NULL, request->GetURI(), uriAddress, &transport, request);
   if (connection == NULL) {
     PTRACE(2, "SIP\tFailed to create SIPConnection for INVITE from " << request->GetURI() << " for " << toAddr);
     SIP_PDU response(*request, SIP_PDU::Failure_NotFound);
@@ -1654,8 +1693,7 @@ BOOL SIPEndPoint::TransmitSIPUnregistrationInfo(const PString & host, const PStr
 }
 
 
-void SIPEndPoint::ParsePartyName(const PString & remoteParty,
-				 PString & party)
+void SIPEndPoint::ParsePartyName(const PString & remoteParty, PString & party)
 {
   party = remoteParty;
   
@@ -1670,18 +1708,17 @@ void SIPEndPoint::ParsePartyName(const PString & remoteParty,
     PINDEX i;
     for (i = 0; i < e164.GetLength(); ++i)
       if (!isdigit(e164[i]) && (i != 0 || e164[0] != '+'))
-	break;
+	      break;
     if (i >= e164.GetLength()) {
       PString str;
       if (PDNS::ENUMLookup(e164, "E2U+SIP", str)) {
-	PTRACE(4, "SIP\tENUM converted remote party " << remoteParty << " to " << str);
-	party = str;
+	      PTRACE(4, "SIP\tENUM converted remote party " << remoteParty << " to " << str);
+	      party = str;
       }
     }
   }
 #endif
 }
-
 
 void SIPEndPoint::SetProxy(const PString & hostname,
                            const PString & username,
