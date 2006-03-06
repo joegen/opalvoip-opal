@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2044  2006/03/06 12:56:02  csoutheren
+ * Revision 1.2045  2006/03/06 22:52:59  csoutheren
+ * Reverted experimental SRV patch due to unintended side effects
+ *
+ * Revision 2.43  2006/03/06 12:56:02  csoutheren
  * Added experimental support for SIP SRV lookups
  *
  * Revision 2.42  2006/02/10 23:44:03  csoutheren
@@ -208,7 +211,6 @@ class SIPConnection : public OpalConnection
       SIPEndPoint & endpoint,     ///<  Owner endpoint for connection
       const PString & token,      ///<  token to identify the connection
       const SIPURL & address,     ///<  Destination address for outgoing call
-      const OpalTransportAddress & destinationAddress, ///< actual destination transport address
       OpalTransport * transport   ///<  Transport INVITE came in on
     );
 
