@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2051  2006/03/06 19:01:30  dsandras
+ * Revision 1.2052  2006/03/06 22:52:59  csoutheren
+ * Reverted experimental SRV patch due to unintended side effects
+ *
+ * Revision 2.50  2006/03/06 19:01:30  dsandras
  * Allow registering several accounts with the same realm but different
  * user names to the same provider. Fixed possible crash due to transport
  * deletion before the transaction is over.
@@ -464,7 +467,6 @@ class SIPEndPoint : public OpalEndPoint
       const PString & token,      ///<  token used to identify connection
       void * userData,            ///<  User data for connection
       const SIPURL & destination, ///<  Destination for outgoing call
-      const OpalTransportAddress & destinationAddress, ///< destination transport address
       OpalTransport * transport,  ///<  Transport INVITE has been received on
       SIP_PDU * invite            ///<  Original INVITE pdu
     );
