@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2109  2006/03/06 12:56:03  csoutheren
+ * Revision 1.2110  2006/03/06 19:01:47  dsandras
+ * Allow registering several accounts with the same realm but different
+ * user names to the same provider. Fixed possible crash due to transport
+ * deletion before the transaction is over.
+ *
+ * Revision 2.108  2006/03/06 12:56:03  csoutheren
  * Added experimental support for SIP SRV lookups
  *
  * Revision 2.107  2006/02/28 19:18:24  dsandras
@@ -442,7 +447,8 @@ BOOL SIPInfo::CreateTransport (OpalTransportAddress & registrarAddress)
 {
   PWaitAndSignal m(transportMutex);
 
-  if (registrarTransport != NULL) {
+  // Only delete if we are refreshing
+  if (registrarTransport != NULL && HasExpired()) {
     delete registrarTransport;
     registrarTransport = NULL;
   }
@@ -1166,7 +1172,7 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
 
   // Try to find authentication information for the requested realm
   // That realm is specified when registering
-  realm_info = activeSIPInfo.FindSIPInfoByAuthRealm(auth.GetAuthRealm(), PSafeReadWrite);
+  realm_info = activeSIPInfo.FindSIPInfoByAuthRealm(auth.GetAuthRealm(), auth.GetUsername().IsEmpty()?SIPURL(response.GetMIME().GetFrom()).GetUserName():auth.GetUsername(), PSafeReadWrite);
 
   // No authentication information found for the realm, 
   // use what we have for the given CallID
@@ -1439,9 +1445,6 @@ void SIPEndPoint::RegistrationRefresh(PTimer &, INT)
     }
     else {
 
-      if (info->GetExpire() > 0 && !info->IsRegistered ())
-	info->SetExpire(-1); // Mark it as invalid, REGISTER/SUBSCRIBE not successful
-
       // Need to refresh
       if (info->GetExpire() > 0 
 	  && info->IsRegistered()
@@ -1465,12 +1468,16 @@ void SIPEndPoint::RegistrationRefresh(PTimer &, INT)
 	  else {
 	    delete request;
 	    PTRACE(1, "SIP\tCould not start REGISTER/SUBSCRIBE for binding refresh");
+	    info->SetExpire(-1); // Mark as Invalid
 	  }
 	}
-	else
+	else {
 	  PTRACE(1, "SIP\tCould not start REGISTER/SUBSCRIBE for binding refresh: Transport creation failed");
-
+	  info->SetExpire(-1); // Mark as Invalid
+	}
       }
+      else if (info->HasExpired())
+	info->SetExpire(-1); // Mark as Invalid
     }
   }
 
@@ -1750,7 +1757,7 @@ PString SIPEndPoint::GetUserAgent() const
 
 BOOL SIPEndPoint::GetAuthentication(const PString & realm, SIPAuthentication &auth) 
 {
-  PSafePtr<SIPInfo> info = activeSIPInfo.FindSIPInfoByAuthRealm(realm, PSafeReadOnly);
+  PSafePtr<SIPInfo> info = activeSIPInfo.FindSIPInfoByAuthRealm(realm, PString::Empty(), PSafeReadOnly);
   if (info == NULL)
     return FALSE;
 
