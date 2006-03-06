@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2043  2006/02/10 23:44:03  csoutheren
+ * Revision 1.2044  2006/03/06 12:56:02  csoutheren
+ * Added experimental support for SIP SRV lookups
+ *
+ * Revision 2.42  2006/02/10 23:44:03  csoutheren
  * Applied fix for SetConnection and RFC2833 startup
  *
  * Revision 2.41  2006/01/02 14:47:28  dsandras
@@ -205,6 +208,7 @@ class SIPConnection : public OpalConnection
       SIPEndPoint & endpoint,     ///<  Owner endpoint for connection
       const PString & token,      ///<  token to identify the connection
       const SIPURL & address,     ///<  Destination address for outgoing call
+      const OpalTransportAddress & destinationAddress, ///< actual destination transport address
       OpalTransport * transport   ///<  Transport INVITE came in on
     );
 
