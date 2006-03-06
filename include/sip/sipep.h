@@ -25,7 +25,15 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2047.2.2  2006/02/19 11:53:22  dsandras
+ * Revision 1.2047.2.3  2006/03/06 19:04:39  dsandras
+ * Backports from HEAD.
+ *
+ * Revision 2.50  2006/03/06 19:01:30  dsandras
+ * Allow registering several accounts with the same realm but different
+ * user names to the same provider. Fixed possible crash due to transport
+ * deletion before the transaction is over.
+ *
+ * Revision 2.46.2.2  2006/02/19 11:53:22  dsandras
  * More backports from HEAD.
  *
  * Revision 2.48  2006/02/19 11:51:46  dsandras
@@ -265,7 +273,7 @@ class SIPInfo : public PSafeObject
     { return registrationID; }
 
     virtual BOOL HasExpired()
-    { return ((PTime () - registrationTime) >= PTimeInterval (0, expire)); }
+    { return (registered && (PTime () - registrationTime) >= PTimeInterval (0, expire)); }
 
     virtual void SetAuthUser(const PString & u)
     { authUser = u;}
@@ -858,10 +866,10 @@ class SIPEndPoint : public OpalEndPoint
 	    /**
 	     * Find the SIPInfo object with the specified authRealm
 	     */
-	    SIPInfo *FindSIPInfoByAuthRealm (const PString & authRealm, PSafetyMode m)
+	    SIPInfo *FindSIPInfoByAuthRealm (const PString & authRealm, const PString & userName, PSafetyMode m)
 	    {
 	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
-		      if (authRealm == info->GetAuthentication().GetAuthRealm())
+		      if (authRealm == info->GetAuthentication().GetAuthRealm() && (userName.IsEmpty() || userName == info->GetAuthentication().GetUsername()))
 		        return info;
 	      return NULL;
 	    }
