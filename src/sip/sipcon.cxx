@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2133  2006/02/11 21:05:27  dsandras
+ * Revision 1.2134  2006/03/06 12:56:02  csoutheren
+ * Added experimental support for SIP SRV lookups
+ *
+ * Revision 2.132  2006/02/11 21:05:27  dsandras
  * Release the call when something goes wrong.
  *
  * Revision 2.131  2006/02/11 15:47:41  dsandras
@@ -517,6 +520,7 @@ SIPConnection::SIPConnection(OpalCall & call,
 			     SIPEndPoint & ep,
 			     const PString & token,
 			     const SIPURL & destination,
+           const OpalTransportAddress & destinationAddress,
 			     OpalTransport * inviteTransport)
   : OpalConnection(call, ep, token),
     endpoint(ep),
@@ -530,6 +534,14 @@ SIPConnection::SIPConnection(OpalCall & call,
   if (params.Contains("proxy")) {
     proxy.Parse(params("proxy"));
     targetAddress.SetParamVar("proxy", PString::Empty());
+  }
+  else {
+    PIPSocket::Address addr;
+    WORD port;
+    if (destinationAddress.GetIpAndPort(addr, port)) {
+      targetAddress.SetHostName(addr);
+      targetAddress.SetPort(port);
+    }
   }
 
   if (proxy.IsEmpty())

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2049  2006/02/19 11:51:46  dsandras
+ * Revision 1.2050  2006/03/06 12:56:02  csoutheren
+ * Added experimental support for SIP SRV lookups
+ *
+ * Revision 2.48  2006/02/19 11:51:46  dsandras
  * Fixed FindSIPInfoByDomain.
  *
  * Revision 2.47  2006/01/29 20:55:32  dsandras
@@ -456,6 +459,7 @@ class SIPEndPoint : public OpalEndPoint
       const PString & token,      ///<  token used to identify connection
       void * userData,            ///<  User data for connection
       const SIPURL & destination, ///<  Destination for outgoing call
+      const OpalTransportAddress & destinationAddress, ///< destination transport address
       OpalTransport * transport,  ///<  Transport INVITE has been received on
       SIP_PDU * invite            ///<  Original INVITE pdu
     );
