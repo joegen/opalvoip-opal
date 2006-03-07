@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2061  2006/01/23 22:56:57  csoutheren
+ * Revision 1.2062  2006/03/07 11:24:15  csoutheren
+ * Add --disable-grq flag
+ *
+ * Revision 2.60  2006/01/23 22:56:57  csoutheren
  * Added 2 second pause before dialling outgoing SIP calls from command line args when
  *  registrar used
  *
@@ -329,6 +332,7 @@ void SimpleOpalProcess::Main()
              "g-gatekeeper:"
              "G-gk-id:"
              "-gk-token:"
+             "-disable-grq."
              "h-help."
              "H-no-h323."
              "-h323-listen:"
@@ -440,6 +444,7 @@ void SimpleOpalProcess::Main()
             "  -T --h245tunneldisable  : Disable H245 tunnelling.\n"
             "     --h323-listen iface  : Interface/port(s) to listen for H.323 requests\n"
             "                          : '*' is all interfaces, (default tcp$:*:1720)\n"
+            " --disable-grq            : Do not send GRQ when registering with GK\n"
 #endif
 
             "\n"
@@ -756,6 +761,7 @@ BOOL MyManager::Initialise(PArgList & args)
 
     h323EP->DisableFastStart(args.HasOption('f'));
     h323EP->DisableH245Tunneling(args.HasOption('T'));
+    h323EP->SetSendGRQ(!args.HasOption("disable-grq"));
 
     // Get local username, multiple uses of -u indicates additional aliases
     if (args.HasOption('u')) {
