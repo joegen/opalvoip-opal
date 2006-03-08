@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2111  2006/03/06 22:52:59  csoutheren
+ * Revision 1.2112  2006/03/08 18:34:41  dsandras
+ * Added DNS SRV lookup.
+ *
+ * Revision 2.110  2006/03/06 22:52:59  csoutheren
  * Reverted experimental SRV patch due to unintended side effects
  *
  * Revision 2.109  2006/03/06 19:01:47  dsandras
@@ -1538,9 +1541,20 @@ BOOL SIPEndPoint::TransmitSIPInfo(SIP_PDU::Methods m,
   WORD port;
 
   if (proxy.IsEmpty()) {
-    // Should do DNS SRV record lookup to get registrar address
-    hostname = hosturl.GetHostName();
-    port = hosturl.GetPort();
+    // Do a DNS SRV lookup
+#if P_DNS
+    PIPSocketAddressAndPortVector addrs;
+    if (PDNS::LookupSRV(hosturl.GetHostName(), "_sip._udp", hosturl.GetPort(), addrs)) {
+      hostname = addrs[0].address.AsString();
+      port = addrs [0].port;
+    }
+    else { 
+#endif
+      hostname = hosturl.GetHostName();
+      port = hosturl.GetPort();
+#if P_DNS
+    }
+#endif
   }
   else {
     hostname = proxy.GetHostName();
