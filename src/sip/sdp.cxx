@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2029  2006/02/08 04:51:58  csoutheren
+ * Revision 1.2030  2006/03/08 10:59:03  csoutheren
+ * Applied patch #1444783 - Add 'image' SDP meda type and 'udptl' transport protocol
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.28  2006/02/08 04:51:58  csoutheren
  * Don't output media description when no formats to output
  *
  * Revision 2.27  2006/02/02 07:02:58  csoutheren
@@ -135,7 +139,7 @@
 
 #define SIP_DEFAULT_SESSION_NAME  "Opal SIP Session"
 #define	SDP_MEDIA_TRANSPORT       "RTP/AVP"
-
+#define	SDP_MEDIA_TRANSPORT_UDPTL "udptl"
 
 #define new PNEW
 
@@ -314,7 +318,7 @@ OpalMediaFormat SDPMediaFormat::GetMediaFormat() const
 ostream & operator<<(ostream & out, SDPMediaDescription::MediaType type)
 {
   static const char * const MediaTypeNames[SDPMediaDescription::NumMediaTypes] = {
-    "Audio", "Video", "Application", "Unknown"
+    "Audio", "Video", "Application", "Image", "Unknown"
   };
 
   if (type < PARRAYSIZE(MediaTypeNames) && MediaTypeNames[type] != NULL)
@@ -338,11 +342,14 @@ SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, M
     case Video:
       media = "video";
       break;
+    case Image:
+      media = "image";
+      break;
     default:
       break;
   }
 
-  transport = SDP_MEDIA_TRANSPORT;
+  transport = (mediaType == Image) ? SDP_MEDIA_TRANSPORT_UDPTL : SDP_MEDIA_TRANSPORT;
   direction = Undefined;
 }
 
@@ -361,6 +368,8 @@ BOOL SDPMediaDescription::Decode(const PString & str)
     mediaType = Video;
   else if (media == "audio")
     mediaType = Audio;
+  else if (media == "image")
+    mediaType = Image;
   else {
     PTRACE(1, "SDP\tUnknown media type " << media);
     mediaType = Unknown;
@@ -381,7 +390,7 @@ BOOL SDPMediaDescription::Decode(const PString & str)
   unsigned port = portStr.AsUnsigned();
   PTRACE(4, "SDP\tMedia session port=" << port);
 
-  if (transport != SDP_MEDIA_TRANSPORT) {
+  if ((transport != SDP_MEDIA_TRANSPORT) && (transport != SDP_MEDIA_TRANSPORT_UDPTL)) {
     PTRACE(1, "SDP\tMedia session has only " << tokens.GetSize() << " elements");
     return FALSE;
   }
@@ -392,8 +401,12 @@ BOOL SDPMediaDescription::Decode(const PString & str)
 
   // create the format list
   PINDEX i;
-  for (i = 3; i < tokens.GetSize(); i++)
-    formats.Append(new SDPMediaFormat((RTP_DataFrame::PayloadTypes)tokens[i].AsUnsigned()));
+  for (i = 3; i < tokens.GetSize(); i++) {
+    if (mediaType == Image)
+      formats.Append(new SDPMediaFormat((RTP_DataFrame::PayloadTypes)RTP_DataFrame::DynamicBase, tokens[i], 0));
+    else
+      formats.Append(new SDPMediaFormat((RTP_DataFrame::PayloadTypes)tokens[i].AsUnsigned()));
+  }
 
   return TRUE;
 }
@@ -500,7 +513,12 @@ void SDPMediaDescription::PrintOn(ostream & str) const
 
 void SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) const
 {
-  if (formats.GetSize() == 0)
+  //
+  // if no media formats, then do not output the media header
+  // this avoids displaying an empty media header with no payload types
+  // when (for example) video has been disabled
+  //
+  if ((transport == SDP_MEDIA_TRANSPORT) && (formats.GetSize() == 0))
     return;
 
   PIPSocket::Address ip;
@@ -513,36 +531,45 @@ void SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) 
       << port << " "
       << transport;
 
-  // output RTP payload types
-  PINDEX i;
-  for (i = 0; i < formats.GetSize(); i++)
-    str << ' ' << (int)formats[i].GetPayloadType();
-  str << "\r\n";
-  
-  // output attributes for each payload type
-  for (i = 0; i < formats.GetSize(); i++)
-    str << formats[i];
+  if (transport == SDP_MEDIA_TRANSPORT) {
 
-  if (packetTime)
-    str << "a=ptime:" << packetTime << "\r\n";
-  
-  // media format direction
-  switch (direction) {
+    // output RTP payload types
+    PINDEX i;
+    for (i = 0; i < formats.GetSize(); i++)
+      str << ' ' << (int)formats[i].GetPayloadType();
+    str << "\r\n";
 
-  case SDPMediaDescription::RecvOnly:
-    str << "a=recvonly" << "\r\n";
-    break;
-  case SDPMediaDescription::SendOnly:
-    str << "a=sendonly" << "\r\n";
-    break;
-  case SDPMediaDescription::SendRecv:
-    str << "a=sendrecv" << "\r\n";
-    break;
-  case SDPMediaDescription::Inactive:
-    str << "a=inactive" << "\r\n";
-    break;
-  default:
-    break;
+    // output attributes for each payload type
+    for (i = 0; i < formats.GetSize(); i++)
+      str << formats[i];
+
+    if (packetTime)
+      str << "a=ptime:" << packetTime << "\r\n";
+
+    // media format direction
+    switch (direction) {
+      case SDPMediaDescription::RecvOnly:
+        str << "a=recvonly" << "\r\n";
+        break;
+      case SDPMediaDescription::SendOnly:
+        str << "a=sendonly" << "\r\n";
+        break;
+      case SDPMediaDescription::SendRecv:
+        str << "a=sendrecv" << "\r\n";
+        break;
+      case SDPMediaDescription::Inactive:
+        str << "a=inactive" << "\r\n";
+        break;
+      default:
+        break;
+    }
+  }
+
+  else {
+    PINDEX i;
+    for (i = 0; i < formats.GetSize(); i++)
+      str << ' ' << formats[i].GetEncodingName();
+    str << "\r\n";
   }
 
   if (!connectString.IsEmpty())
