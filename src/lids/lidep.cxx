@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2027  2006/01/14 10:43:06  dsandras
+ * Revision 1.2028  2006/03/08 10:38:01  csoutheren
+ * Applied patch #1441139 - virtualise LID functions and kill monitorlines correctly
+ * Thanks to Martin Yarwood
+ *
+ * Revision 2.26  2006/01/14 10:43:06  dsandras
  * Applied patch from Brian Lu <Brian.Lu _AT_____ sun.com> to allow compilation
  * with OpenSolaris compiler. Many thanks !!!
  *
@@ -152,11 +156,14 @@ OpalLIDEndPoint::OpalLIDEndPoint(OpalManager & mgr,
 
 OpalLIDEndPoint::~OpalLIDEndPoint()
 {
-  PTRACE(3, "LID EP\tAwaiting monitor thread termination " << GetPrefixName());
-  exitFlag.Signal();
-  monitorThread->WaitForTermination();
-  delete monitorThread;
-  monitorThread = NULL;
+  if(NULL != monitorThread)
+  {
+     PTRACE(3, "LID EP\tAwaiting monitor thread termination " << GetPrefixName());
+     exitFlag.Signal();
+     monitorThread->WaitForTermination();
+     delete monitorThread;
+     monitorThread = NULL;
+  }
 }
 
 
@@ -537,6 +544,20 @@ PString OpalLineConnection::GetDestinationAddress()
 
 BOOL OpalLineConnection::SetAlerting(const PString & calleeName, BOOL)
 {
+  if (IsOriginating()) {
+    PTRACE(3, "LID Con\tSetAlerting ignored on call we originated.");
+    return TRUE;
+  }
+  
+  PTRACE(3, "LID Con\tSetAlerting " << *this);
+
+  if (GetPhase() != SetUpPhase) 
+    return FALSE;
+
+  // switch phase 
+  phase = AlertingPhase;
+  alertingTime = PTime();
+
   line.SetCallerID(calleeName);
   return line.PlayTone(OpalLineInterfaceDevice::RingTone);
 }
@@ -544,9 +565,21 @@ BOOL OpalLineConnection::SetAlerting(const PString & calleeName, BOOL)
 
 BOOL OpalLineConnection::SetConnected()
 {
+  if (IsOriginating()) {
+    PTRACE(3, "LID Con\tSetConnected ignored on call we originated.");
+    return TRUE;
+  }
+  
   PTRACE(3, "LID Con\tSetConnected " << *this);
 
-  return line.StopTone();
+  if (GetPhase() < ConnectedPhase) {
+      // switch phase 
+      phase = ConnectedPhase;
+      connectedTime = PTime();
+
+      return line.StopTone();
+  }
+  return FALSE;
 }
 
 
@@ -627,9 +660,11 @@ void OpalLineConnection::Monitor(BOOL offHook)
   if (offHook) {
     PTRACE_IF(3, !wasOffHook, "LID Con\tConnection " << callToken << " off hook: phase=" << phase);
 
-    if (phase == AlertingPhase) {
-      phase = ConnectedPhase;
-      OnConnected();
+    if(IsOriginating()){ 
+       if (phase == AlertingPhase) {
+         phase = ConnectedPhase;
+         OnConnected();
+       }
     }
 
     char tone;
