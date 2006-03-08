@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2045  2006/03/06 22:52:59  csoutheren
+ * Revision 1.2046  2006/03/08 21:54:54  dsandras
+ * Forgot to commit this file.
+ *
+ * Revision 2.44  2006/03/06 22:52:59  csoutheren
  * Reverted experimental SRV patch due to unintended side effects
  *
  * Revision 2.43  2006/03/06 12:56:02  csoutheren
@@ -579,8 +582,9 @@ class SIPConnection : public OpalConnection
 
     void InitRFC2833Handler();
 
-    SIPEndPoint   & endpoint;
-    OpalTransport * transport;
+    SIPEndPoint         & endpoint;
+    OpalTransport       * transport;
+    OpalTransportAddress  lastTransportAddress;
 
     PMutex		  transportMutex;
     PMutex                streamsMutex;
