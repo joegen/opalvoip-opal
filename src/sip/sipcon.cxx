@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2121.2.8  2006/02/11 21:07:02  dsandras
+ * Revision 1.2121.2.9  2006/03/08 18:40:46  dsandras
+ * Backports from HEAD.
+ *
+ * Revision 2.135  2006/03/08 18:34:41  dsandras
+ * Added DNS SRV lookup.
+ *
+ * Revision 2.120.2.8  2006/02/11 21:07:02  dsandras
  * More backports from CVS HEAD.
  *
  * Revision 2.132  2006/02/11 21:05:27  dsandras
@@ -524,6 +530,7 @@
 #include <opal/call.h>
 #include <opal/patch.h>
 #include <ptclib/random.h>              // for local dialog tag
+#include <ptclib/pdns.h>
 
 
 typedef void (SIPConnection::* SIPMethodFunction)(SIP_PDU & pdu);
@@ -2078,11 +2085,33 @@ BOOL SIPConnection::ForwardCall (const PString & fwdParty)
 
 BOOL SIPConnection::SendPDU(SIP_PDU & pdu, const OpalTransportAddress & address)
 {
-  if (transport) {
+  SIPURL hosturl;
 
-    PWaitAndSignal m(transportMutex);
-    PTRACE(3, "SIP\tAdjusting transport to address " << address);
-    transport->SetRemoteAddress(address);
+  if (transport) {
+    
+    if (lastTransportAddress != address) {
+
+      // skip transport identifier
+      PINDEX pos = address.Find('$');
+      if (pos == P_MAX_INDEX)
+	return FALSE;
+
+      hosturl = address.Mid(pos+1);
+
+      // Do a DNS SRV lookup
+#if P_DNS
+      PIPSocketAddressAndPortVector addrs;
+      if (PDNS::LookupSRV(hosturl.GetHostName(), "_sip._udp", hosturl.GetPort(), addrs)) 
+	lastTransportAddress = OpalTransportAddress(addrs[0].address, addrs[0].port, "udp$");
+      else  
+#endif
+	lastTransportAddress = hosturl.GetHostAddress();
+
+      PWaitAndSignal m(transportMutex);
+      PTRACE(3, "SIP\tAdjusting transport to address " << lastTransportAddress);
+      transport->SetRemoteAddress(lastTransportAddress);
+    }
+    
     return (pdu.Write(*transport));
   }
 
