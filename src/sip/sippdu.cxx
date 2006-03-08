@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2084  2006/01/16 23:06:20  dsandras
+ * Revision 1.2085  2006/03/08 18:34:41  dsandras
+ * Added DNS SRV lookup.
+ *
+ * Revision 2.83  2006/01/16 23:06:20  dsandras
  * Added old-style proxies support (those that do not support working as
  * outbound proxies thanks to an initial routeset).
  *
@@ -1854,8 +1857,6 @@ BOOL SIPTransaction::Start()
 
   state = Trying;
   retry = 0;
-  retryTimer = endpoint.GetRetryTimeoutMin();
-  completionTimer = endpoint.GetNonInviteTimeout();
   localAddress = transport.GetLocalAddress();
 
   if (connection != NULL) {
@@ -1867,6 +1868,8 @@ BOOL SIPTransaction::Start()
     if (Write(transport))
       return TRUE;
   }
+  retryTimer = endpoint.GetRetryTimeoutMin();
+  completionTimer = endpoint.GetNonInviteTimeout();
 
   SetTerminated(Terminated_TransportError);
   return FALSE;
