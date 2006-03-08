@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2113  2006/03/08 18:55:04  dsandras
+ * Revision 1.2114  2006/03/08 20:10:12  dsandras
+ * Fixed logic error when receiving an incomplete MWI NOTIFY PDU.
+ *
+ * Revision 2.112  2006/03/08 18:55:04  dsandras
  * Added missing return TRUE.
  *
  * Revision 2.111  2006/03/08 18:34:41  dsandras
@@ -1334,15 +1337,14 @@ BOOL SIPEndPoint::OnReceivedNOTIFY (OpalTransport & transport, SIP_PDU & pdu)
 			 msgs);
 	  return TRUE;
 	}
-	else {
-	  OnMWIReceived (url_from.GetHostName(),
-			 url_to.GetUserName(), 
-			 (SIPMWISubscribe::MWIType) 0, 
-			 "1/0");
-	  return TRUE;
-	}
       }
     }
+
+    // Received MWI, unknown messages number
+    OnMWIReceived (url_from.GetHostName(),
+		   url_to.GetUserName(), 
+		   (SIPMWISubscribe::MWIType) 0, 
+		   "1/0");
   } 
 
   return TRUE;
