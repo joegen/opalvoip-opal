@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2035  2006/02/22 10:45:11  csoutheren
+ * Revision 1.2036  2006/03/12 06:36:57  rjongbloed
+ * Fixed DevStudio warning
+ *
+ * Revision 2.34  2006/02/22 10:45:11  csoutheren
  * Added patch #1375116 from Frederic Heem
  * Set default bandwith to a sensible value
  *
@@ -335,9 +338,9 @@ void OpalEndPoint::DestroyConnection(OpalConnection * connection)
   delete connection;
 }
 
-BOOL OpalEndPoint::OnSetUpConnection(OpalConnection &connection)
+BOOL OpalEndPoint::OnSetUpConnection(OpalConnection & PTRACE_PARAM(connection))
 {
-  PTRACE(3, "OpalEP\tOnSetUpConnection");
+  PTRACE(3, "OpalEP\tOnSetUpConnection " << connection);
   return TRUE;
 }
 
