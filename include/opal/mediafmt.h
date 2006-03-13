@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2038  2005/12/27 20:46:09  dsandras
+ * Revision 1.2038.4.1  2006/03/13 07:20:28  csoutheren
+ * Added OpalMediaFormat clone function
+ *
+ * Revision 2.37  2005/12/27 20:46:09  dsandras
  * Added clockRate to the media format. Added "AlwaysMerge" method for merging
  * media format options.
  *
@@ -874,6 +877,8 @@ class OpalMediaFormat : public PCaselessString
     static bool SetRegisteredMediaFormat(
       const OpalMediaFormat & mediaFormat  ///<  Media format to copy to master list
     );
+
+    PObject * Clone() const;
 
   protected:
     bool AddOption(

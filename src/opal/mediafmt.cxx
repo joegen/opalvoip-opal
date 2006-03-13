@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2043  2006/02/21 09:38:28  csoutheren
+ * Revision 1.2043.2.1  2006/03/13 07:20:28  csoutheren
+ * Added OpalMediaFormat clone function
+ *
+ * Revision 2.42  2006/02/21 09:38:28  csoutheren
  * Fix problem with incorrect timestamps for uLaw and ALaw
  *
  * Revision 2.41  2006/02/13 03:46:17  csoutheren
@@ -652,6 +655,13 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
 
   registeredFormats.OpalMediaFormatBaseList::Append(this);
 }
+
+PObject * OpalMediaFormat::Clone() const
+{
+  OpalMediaFormat * clone = new OpalMediaFormat(*this);
+  return clone;
+}
+
 
 
 OpalMediaFormat & OpalMediaFormat::operator=(RTP_DataFrame::PayloadTypes pt)
