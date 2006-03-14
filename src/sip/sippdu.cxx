@@ -24,8 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2084.2.1  2006/03/08 18:41:14  dsandras
- * Backports from HEAD.
+ * Revision 1.2084.2.2  2006/03/14 10:41:04  csoutheren
+ * Backport from CVS head
+ *
+ * Revision 2.85  2006/03/14 10:26:34  dsandras
+ * Reverted accidental previous change that was breaking retransmissions.
  *
  * Revision 2.84  2006/03/08 18:34:41  dsandras
  * Added DNS SRV lookup.
@@ -1860,6 +1863,8 @@ BOOL SIPTransaction::Start()
 
   state = Trying;
   retry = 0;
+  retryTimer = endpoint.GetRetryTimeoutMin();
+  completionTimer = endpoint.GetNonInviteTimeout();
   localAddress = transport.GetLocalAddress();
 
   if (connection != NULL) {
@@ -1871,8 +1876,6 @@ BOOL SIPTransaction::Start()
     if (Write(transport))
       return TRUE;
   }
-  retryTimer = endpoint.GetRetryTimeoutMin();
-  completionTimer = endpoint.GetNonInviteTimeout();
 
   SetTerminated(Terminated_TransportError);
   return FALSE;
