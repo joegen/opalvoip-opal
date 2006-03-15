@@ -6,7 +6,7 @@
 #include <math.h>
 #include <memory.h>
 
-#ifndef P_MACOSX
+#if !(defined(P_MACOSX) || defined(P_FREEBSD))
 #include <malloc.h>   // RMF
 #endif
 
