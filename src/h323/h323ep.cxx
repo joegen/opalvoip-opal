@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2047  2006/02/22 10:40:10  csoutheren
+ * Revision 1.2047.2.1  2006/03/16 07:07:24  csoutheren
+ * Removed warning on Windows
+ *
+ * Revision 2.46  2006/02/22 10:40:10  csoutheren
  * Added patch #1374583 from Frederic Heem
  * Added additional H.323 virtual function
  *
@@ -1689,9 +1692,9 @@ BOOL H323EndPoint::OnAlerting(H323Connection & connection,
 }
 
 BOOL H323EndPoint::OnSendAlerting(H323Connection & connection,
-                                  H323SignalPDU & alerting,
-                                  const PString & calleeName,   /// Name of endpoint being alerted.
-                                  BOOL withMedia                /// Open media with alerting
+                                  H323SignalPDU & /*alerting*/,
+                                  const PString & /*calleeName*/,   /// Name of endpoint being alerted.
+                                  BOOL /*withMedia*/                /// Open media with alerting
                                   )
 {
   PTRACE(3, "H225\tOnSendAlerting conn = " << connection);
