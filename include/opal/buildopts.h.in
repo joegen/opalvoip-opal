@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: buildopts.h.in,v $
+ * Revision 1.11.2.2  2006/03/16 12:09:31  csoutheren
+ * Remove ambiguity with OPAL_T38 symbol
+ *
  * Revision 1.11.2.1  2006/03/16 07:06:00  csoutheren
  * Initial support for audio plugins
  *
@@ -96,7 +99,7 @@
 
 #undef  OPAL_AUDIO
 #undef  OPAL_VIDEO
-#undef  OPAL_T38
+#undef  OPAL_T38FAX
 
 #ifndef OPAL_AUDIO
 #define NO_OPAL_AUDIO
@@ -107,7 +110,7 @@
 #endif
 
 #ifndef OPAL_T38
-#define NO_OPAL_T38
+#define NO_OPAL_T38FAX
 #endif
 
 

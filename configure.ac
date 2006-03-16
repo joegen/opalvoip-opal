@@ -292,9 +292,9 @@ dnl MSWIN_DEFINE  video,OPAL_VIDEO
 AC_SUBST(OPAL_VIDEO, 1)
 AC_DEFINE(OPAL_VIDEO)
 
-dnl MSWIN_DEFINE  t38,OPAL_T38
-AC_SUBST(OPAL_T38, 1)
-AC_DEFINE(OPAL_T38)
+dnl MSWIN_DEFINE  t38,OPAL_T38FAX
+AC_SUBST(OPAL_T38FAX, 1)
+AC_DEFINE(OPAL_T38FAX)
 
 
 dnl ########################################################################
