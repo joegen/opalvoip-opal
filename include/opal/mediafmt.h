@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2038.4.1  2006/03/13 07:20:28  csoutheren
+ * Revision 1.2038.4.2  2006/03/16 07:06:00  csoutheren
+ * Initial support for audio plugins
+ *
+ * Revision 2.37.4.1  2006/03/13 07:20:28  csoutheren
  * Added OpalMediaFormat clone function
  *
  * Revision 2.37  2005/12/27 20:46:09  dsandras
@@ -240,7 +243,7 @@ PLIST(OpalMediaFormatBaseList, OpalMediaFormat);
   */
 class OpalMediaFormatList : public OpalMediaFormatBaseList
 {
-    PCLASSINFO(OpalMediaFormatList, OpalMediaFormatBaseList);
+  PCLASSINFO(OpalMediaFormatList, OpalMediaFormatBaseList);
   public:
   /**@name Construction */
   //@{
@@ -582,15 +585,16 @@ class OpalMediaFormat : public PCaselessString
        long. If zero then there is no intrinsic maximum, eg G.711.
       */
     OpalMediaFormat(
-      const char * fullName,  ///<  Full name of media format
+      const char * fullName,      ///<  Full name of media format
       unsigned defaultSessionID,  ///<  Default session for codec type
       RTP_DataFrame::PayloadTypes rtpPayloadType, ///<  RTP payload type code
-      const char * encodingName, ///<  RTP encoding name
-      BOOL     needsJitter,   ///<  Indicate format requires a jitter buffer
-      unsigned bandwidth,     ///<  Bandwidth in bits/second
-      PINDEX   frameSize, ///<  Size of frame in bytes (if applicable)
-      unsigned frameTime, ///<  Time for frame in RTP units (if applicable)
-      unsigned clockRate  ///<  Clock rate for data (if applicable)
+      const char * encodingName,  ///<  RTP encoding name
+      BOOL     needsJitter,       ///<  Indicate format requires a jitter buffer
+      unsigned bandwidth,         ///<  Bandwidth in bits/second
+      PINDEX   frameSize,         ///<  Size of frame in bytes (if applicable)
+      unsigned frameTime,         ///<  Time for frame in RTP units (if applicable)
+      unsigned clockRate,         ///<  Clock rate for data (if applicable)
+      time_t timeStamp = 0        ///<  timestamp (for versioning)
     );
 
     /**Construct a media format, searching database for information.
@@ -641,6 +645,12 @@ class OpalMediaFormat : public PCaselessString
     OpalMediaFormat(
       const PString & wildcard  ///<  Wildcard name to search for
     );
+
+    /**Return TRUE if media format info is valid. This may be used if the
+       single string constructor is used to check that it matched something
+       in the registered media formats database.
+      */
+    virtual BOOL IsValid() const { return rtpPayloadType <= RTP_DataFrame::MaxPayloadType; }
 
     /**Search for the specified format type.
        This is equivalent to going fmt = OpalMediaFormat(rtpPayloadType);
@@ -893,8 +903,9 @@ class OpalMediaFormat : public PCaselessString
     const char *                 rtpEncodingName;
     unsigned                     defaultSessionID;
     PSortedList<OpalMediaOption> options;
+    time_t codecBaseTime;
 
-  friend class OpalMediaFormatList;
+    friend class OpalMediaFormatList;
 };
 
 
@@ -1014,6 +1025,9 @@ extern const OpalMediaFormat & GetOpalRFC2833();
 #define OpalL16Mono16kHz   OpalL16_MONO_16KHZ
 #define OpalG711uLaw       OpalG711_ULAW_64K
 #define OpalG711ALaw       OpalG711_ALAW_64K
+
+
+typedef PFactory<OpalMediaFormat> OpalMediaFormatFactory;
 
 #ifdef _MSC_VER
 #if _MSC_VER < 1300

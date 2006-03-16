@@ -282,6 +282,22 @@ fi
 AC_SUBST(OPAL_HAVE_SPEEX_SPEEX_H)
 
 dnl ########################################################################
+dnl enable audio, video, T.38
+
+dnl MSWIN_DEFINE  audio,OPAL_AUDIO
+AC_SUBST(OPAL_AUDIO, 1)
+AC_DEFINE(OPAL_AUDIO)
+
+dnl MSWIN_DEFINE  video,OPAL_VIDEO
+AC_SUBST(OPAL_VIDEO, 1)
+AC_DEFINE(OPAL_VIDEO)
+
+dnl MSWIN_DEFINE  t38,OPAL_T38
+AC_SUBST(OPAL_T38, 1)
+AC_DEFINE(OPAL_T38)
+
+
+dnl ########################################################################
 dnl check if SIP, H.323 and IAX2 are enabled
 
 dnl MSWIN_DISPLAY sip,SIP support

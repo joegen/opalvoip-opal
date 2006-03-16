@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2043.2.1  2006/03/13 07:20:28  csoutheren
+ * Revision 1.2043.2.2  2006/03/16 07:06:00  csoutheren
+ * Initial support for audio plugins
+ *
+ * Revision 2.42.2.1  2006/03/13 07:20:28  csoutheren
  * Added OpalMediaFormat clone function
  *
  * Revision 2.42  2006/02/21 09:38:28  csoutheren
@@ -228,23 +231,18 @@
 #define new PNEW
 
 namespace PWLibStupidLinkerHacks {
-  int h323Loader;
-};
+extern int opalLoader;
 
-static class PMediaFormatInstantiateMe
+static class InstantiateMe
 {
   public:
-    PMediaFormatInstantiateMe()
+    InstantiateMe()
     { 
-      PWLibStupidLinkerHacks::h323Loader = 1; 
-      PWLibStupidLinkerHacks::opalwavfileLoader =1;
-#ifndef NO_OPAL_VIDEO
-#ifdef RFC2190_AVCODEC
-      PWLibStupidLinkerHacks::rfc2190h263Loader =1;
-#endif
-#endif
+      opalLoader = 1; 
     }
 } instance;
+
+}; // namespace PWLibStupidLinkerHacks
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -594,9 +592,12 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
                                  unsigned bw,
                                  PINDEX   fs,
                                  unsigned ft,
-                                 unsigned cr)
+                                 unsigned cr,
+                                 time_t ts)
   : PCaselessString(fullName)
 {
+  codecBaseTime = ts;
+
   PINDEX i;
   PWaitAndSignal mutex(GetMediaFormatsListMutex());
   OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
