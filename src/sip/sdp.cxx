@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2029  2006/02/08 04:51:58  csoutheren
+ * Revision 1.2029.2.1  2006/03/16 07:06:00  csoutheren
+ * Initial support for audio plugins
+ *
+ * Revision 2.28  2006/02/08 04:51:58  csoutheren
  * Don't output media description when no formats to output
  *
  * Revision 2.27  2006/02/02 07:02:58  csoutheren
@@ -604,8 +607,9 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
   PINDEX i;
   for (i = 0; i < formats.GetSize(); i++) {
     if (formats[i].GetPayloadType() == payloadType ||
-        (strcasecmp(formats[i].GetEncodingName(), encodingName) == 0 
-	 && formats[i].GetClockRate() == clockRate))
+        (encodingName != NULL && 
+         strcasecmp(formats[i].GetEncodingName(), encodingName) == 0 &&
+	       formats[i].GetClockRate() == clockRate))
       return;
   }
 

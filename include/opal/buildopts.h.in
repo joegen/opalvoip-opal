@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: buildopts.h.in,v $
+ * Revision 1.11.2.1  2006/03/16 07:06:00  csoutheren
+ * Initial support for audio plugins
+ *
  * Revision 1.11  2006/01/31 10:28:04  csoutheren
  * Added detection for variants to speex 1.11.11.1
  *
@@ -86,10 +89,27 @@
 #undef	OPAL_SIP
 #undef	OPAL_H323
 
-#if !defined(OPAL_H323) || !OPAL_H323
-#define NO_H323
-#define NO_H323_AUDIO
+/////////////////////////////////////////////////
+//
+// Media support
+//
+
+#undef  OPAL_AUDIO
+#undef  OPAL_VIDEO
+#undef  OPAL_T38
+
+#ifndef OPAL_AUDIO
+#define NO_OPAL_AUDIO
 #endif
+
+#ifndef OPAL_VIDEO
+#define NO_OPAL_VIDEO
+#endif
+
+#ifndef OPAL_T38
+#define NO_OPAL_T38
+#endif
+
 
 /////////////////////////////////////////////////
 //

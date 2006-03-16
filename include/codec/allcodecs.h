@@ -23,7 +23,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: allcodecs.h,v $
- * Revision 1.2010  2006/01/01 19:19:32  dsandras
+ * Revision 1.2010.4.1  2006/03/16 07:06:00  csoutheren
+ * Initial support for audio plugins
+ *
+ * Revision 2.9  2006/01/01 19:19:32  dsandras
  * Added RFC2190 H.263 codec thanks to Salyens. Many thanks!
  *
  * Revision 2.8  2004/05/15 12:53:40  rjongbloed
@@ -61,31 +64,31 @@
 #include <codec/g711codec.h>
 OPAL_REGISTER_G711();
 
-#if VOICE_AGE_G729A
-#include <codec/g729codec.h>
-OPAL_REGISTER_G729();
-#endif
+//#if VOICE_AGE_G729A
+//#include <codec/g729codec.h>
+//OPAL_REGISTER_G729();
+//#endif
 
-#include <codec/gsmcodec.h>
-OPAL_REGISTER_GSM0610();
+//#include <codec/gsmcodec.h>
+//OPAL_REGISTER_GSM0610();
 
-#include <codec/g726codec.h>
-OPAL_REGISTER_G726();
+//#include <codec/g726codec.h>
+//OPAL_REGISTER_G726();
 
-#include <codec/mscodecs.h>
-OPAL_REGISTER_MSCODECS();
+//#include <codec/mscodecs.h>
+//OPAL_REGISTER_MSCODECS();
 
-#include <codec/lpc10codec.h>
-OPAL_REGISTER_LPC10();
+//#include <codec/lpc10codec.h>
+//OPAL_REGISTER_LPC10();
 
-#include <codec/speexcodec.h>
-OPAL_REGISTER_SPEEX();
+//#include <codec/speexcodec.h>
+//OPAL_REGISTER_SPEEX();
 
-#include <codec/ilbccodec.h>
-OPAL_REGISTER_iLBC();
+//#include <codec/ilbccodec.h>
+//OPAL_REGISTER_iLBC();
 
-#include <codec/vidcodec.h>
-OPAL_REGISTER_UNCOMPRESSED_VIDEO();
+//#include <codec/vidcodec.h>
+//OPAL_REGISTER_UNCOMPRESSED_VIDEO();
 
 #include <codec/h261codec.h>
 OPAL_REGISTER_H261();
