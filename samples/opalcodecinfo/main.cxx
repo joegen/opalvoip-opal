@@ -22,6 +22,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.1.2.1  2006/03/16 07:06:27  csoutheren
+ * Update for new code
+ *
  * Revision 1.1  2006/03/13 06:56:37  csoutheren
  * Initial version
  *
@@ -31,6 +34,7 @@
 
 #include <codec/allcodecs.h>
 #include <codec/opalplugin.h>
+#include <codec/opalpluginmgr.h>
 #include <opal/transcoders.h>
 
 class OpalCodecInfo : public PProcess
@@ -361,12 +365,12 @@ void OpalCodecInfo::Main()
              "o-output:"
              "m-mediaformats."
              "T-trancoders."
+             "p-pluginlist."
+             "c-codecs."
+             "i-info:"
 
              "h-help."
 
-             //"c-codecs."
-             //"i-info:"
-             //"p-pluginlist."
              //"a-capabilities:"
              //"C-caps:"
              //"f-factory"
@@ -376,14 +380,11 @@ void OpalCodecInfo::Main()
                      args.HasOption('o') ? (const char *)args.GetOptionString('o') : NULL,
          PTrace::Blocks | PTrace::Timestamp | PTrace::Thread | PTrace::FileAndLine);
 
-  OpalMediaFormatList mediaList = OpalMediaFormat::GetAllRegisteredMediaFormats();
-
-  //H323PluginCodecManager & codecMgr = *(H323PluginCodecManager *)PFactory<PPluginModuleManager>::CreateInstance("H323PluginCodecManager");
-  //PPluginModuleManager::PluginListType pluginList = codecMgr.GetPluginList();
-  //OpalMediaFormat::List stdCodecList = H323PluginCodecManager::GetMediaFormats();
-  //H323CapabilityFactory::KeyList_T keyList = H323CapabilityFactory::GetKeyList();
+  OPALPluginCodecManager & codecMgr = *(OPALPluginCodecManager *)PFactory<PPluginModuleManager>::CreateInstance("OPALPluginCodecManager");
+  PPluginModuleManager::PluginListType pluginList = codecMgr.GetPluginList();
 
   //if (args.HasOption('a')) {
+  //  H323CapabilityFactory::KeyList_T keyList = H323CapabilityFactory::GetKeyList();
   //  cout << "Registered capabilities:" << endl
   //       << setfill(',') << PStringArray(keyList) << setfill(' ')
   //       << endl;
@@ -403,13 +404,15 @@ void OpalCodecInfo::Main()
   //}
 
 
-  //if (args.HasOption('c')) {
-  //  cout << "Standard codecs:" << endl;
-  //  DisplayMediaFormats(stdCodecList);
-  //  return;
-  //}
+  if (args.HasOption('c')) {
+    OpalMediaFormatList stdCodecList = OPALPluginCodecManager::GetMediaFormats();
+    cout << "Standard codecs:" << endl;
+    DisplayMediaFormats(stdCodecList);
+    return;
+  }
 
   if (args.HasOption('m')) {
+    OpalMediaFormatList mediaList = OpalMediaFormat::GetAllRegisteredMediaFormats();
     cout << "Registered media formats:" << endl;
     DisplayMediaFormats(mediaList);
     return;
@@ -427,15 +430,14 @@ void OpalCodecInfo::Main()
     return;
   }
 
-  //if (args.HasOption('p')) {
-  //  cout << "Plugin codecs:" << endl;
-  //  for (int i = 0; i < pluginList.GetSize(); i++) {
-  //    cout << "   " << pluginList.GetKeyAt(i) << endl;
-  //  }
-  //  return;
-  //}
+  if (args.HasOption('p')) {
+    cout << "Plugin codecs:" << endl;
+    for (int i = 0; i < pluginList.GetSize(); i++) {
+      cout << "   " << pluginList.GetKeyAt(i) << endl;
+    }
+    return;
+  }
 
-#if 0
   if (args.HasOption('i')) {
     PString name = args.GetOptionString('i');
     if (name.IsEmpty()) {
@@ -468,7 +470,6 @@ void OpalCodecInfo::Main()
     cout << "error: plugin \"" << name << "\" not found" << endl;
     return;
   }
-#endif
 
 #if 0
   if (args.HasOption('f')) {
