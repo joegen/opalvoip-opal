@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2086  2006/03/14 10:26:34  dsandras
+ * Revision 1.2087  2006/03/18 21:56:07  dsandras
+ * Remove REGISTER and SUBSCRIBE from the Allow field. Fixes Ekiga report
+ * #334979.
+ *
+ * Revision 2.85  2006/03/14 10:26:34  dsandras
  * Reverted accidental previous change that was breaking retransmissions.
  *
  * Revision 2.84  2006/03/08 18:34:41  dsandras
@@ -1500,12 +1504,19 @@ BOOL SIP_PDU::SetRoute(SIPConnection & connection)
 
 void SIP_PDU::SetAllow(void)
 {
-  PString methods;
-  methods = MethodNames [0];
-  for (PINDEX i = 1 ; i < SIP_PDU::NumMethods ; i++)
-    methods = methods + ", " + MethodNames[i];
+  PStringStream str;
+  PStringList methods;
+  
+  for (PINDEX i = 0 ; i < SIP_PDU::NumMethods ; i++) {
+  
+    if (PString(MethodNames[i]).Find("SUBSCRIBE") == P_MAX_INDEX
+	&& PString(MethodNames[i]).Find("REGISTER") == P_MAX_INDEX)
+    methods += MethodNames[i];
+  }
+  
+  str << setfill(',') << methods << setfill(' ');
 
-  mime.SetAllow(methods);
+  mime.SetAllow(str);
 }
 
 
