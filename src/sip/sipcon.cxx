@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2136  2006/03/08 18:34:41  dsandras
+ * Revision 1.2137  2006/03/18 21:45:28  dsandras
+ * Do an SRV lookup when creating the connection. Some domains to which
+ * INVITEs are sent do not have an A record, which makes the transport creation
+ * and the connection fail. Fixes Ekiga report #334994.
+ *
+ * Revision 2.135  2006/03/08 18:34:41  dsandras
  * Added DNS SRV lookup.
  *
  * Revision 2.134  2006/03/06 22:52:59  csoutheren
@@ -552,12 +557,23 @@ SIPConnection::SIPConnection(OpalCall & call,
   // Update remote party parameters
   remotePartyAddress = targetAddress.AsQuotedString();
   remotePartyName = SIPURL (remotePartyAddress).GetDisplayName ();
+  
+  // Do a DNS SRV lookup
+#if P_DNS
+    PIPSocketAddressAndPortVector addrs;
+    if (PDNS::LookupSRV(destination.GetHostName(), "_sip._udp", destination.GetPort(), addrs)) {
+      targetAddress.SetHostName(addrs[0].address.AsString());
+      targetAddress.SetPort(addrs [0].port);
+    }
+#endif
 
   // Create the transport
   if (inviteTransport == NULL)
     transport = NULL;
   else 
     transport = endpoint.CreateTransport(targetAddress.GetHostAddress());
+
+  lastTransportAddress = targetAddress.GetHostAddress();
 
   originalInvite = NULL;
   pduHandler = NULL;
@@ -2083,7 +2099,7 @@ BOOL SIPConnection::SendPDU(SIP_PDU & pdu, const OpalTransportAddress & address)
       // Do a DNS SRV lookup
 #if P_DNS
       PIPSocketAddressAndPortVector addrs;
-      if (PDNS::LookupSRV(hosturl.GetHostName(), "_sip._udp", hosturl.GetPort(), addrs)) 
+      if (PDNS::LookupSRV(hosturl.GetHostName(), "_sip._udp", hosturl.GetPort(), addrs))  
 	lastTransportAddress = OpalTransportAddress(addrs[0].address, addrs[0].port, "udp$");
       else  
 #endif
