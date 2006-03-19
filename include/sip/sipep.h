@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2052  2006/03/06 22:52:59  csoutheren
+ * Revision 1.2053  2006/03/19 11:45:47  dsandras
+ * The remote address of the registrar transport might have changed due
+ * to the Via field. This affected unregistering which was reusing
+ * the exact same transport to unregister. Fixed Ekiga report #334999.
+ *
+ * Revision 2.51  2006/03/06 22:52:59  csoutheren
  * Reverted experimental SRV patch due to unintended side effects
  *
  * Revision 2.50  2006/03/06 19:01:30  dsandras
@@ -243,6 +248,9 @@ class SIPInfo : public PSafeObject
     virtual SIPAuthentication & GetAuthentication()
     { return authentication; }
 
+    virtual const OpalTransportAddress & GetRegistrarAddress()
+    { return registrarAddress; }
+
     virtual const SIPURL & GetRegistrationAddress()
     { return registrationAddress; }
     
@@ -301,6 +309,7 @@ class SIPInfo : public PSafeObject
       SIPEndPoint      & ep;
       SIPAuthentication  authentication;
       OpalTransport    * registrarTransport;
+      OpalTransportAddress registrarAddress;
       SIPURL             registrationAddress;
       PString            registrationID;
       SIPTransactionList registrations;
