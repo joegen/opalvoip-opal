@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2047.2.4  2006/03/19 18:15:59  dsandras
+ * Revision 1.2047.2.5  2006/03/19 18:59:02  dsandras
+ * More backports from HEAD.
+ *
+ * Revision 2.55  2006/03/19 18:57:06  dsandras
+ * More work on Ekiga report #334999.
+ *
+ * Revision 2.46.2.4  2006/03/19 18:15:59  dsandras
  * Backports from HEAD.
  *
  * Revision 2.54  2006/03/19 17:26:15  dsandras
@@ -970,10 +976,8 @@ class SIPEndPoint : public OpalEndPoint
     SIPTransactionList messages;
     SIPTransactionDict transactions;
 
-    PMutex                  natTransportMutex;
     PTimer                  natBindingTimer;
     NATBindingRefreshMethod natMethod;
-    PList<OpalTransport>    natTransports;
 
     PMutex             transactionsMutex;
 
