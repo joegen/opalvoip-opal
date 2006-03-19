@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2088  2006/03/19 12:23:55  dsandras
+ * Revision 1.2089  2006/03/19 13:15:12  dsandras
+ * Removed cout.
+ *
+ * Revision 2.87  2006/03/19 12:23:55  dsandras
  * Fixed rport support. Fixes Ekiga report #335002.
  *
  * Revision 2.86  2006/03/18 21:56:07  dsandras
@@ -1572,7 +1575,6 @@ OpalTransportAddress SIP_PDU::GetViaAddress(OpalEndPoint &ep)
   PString proto = viaList[0];
   PString viaPort = ep.GetDefaultSignalPort();
   
-  cout << viaAddress << endl << flush;
   PINDEX j = 0;
   // get the address specified in the Via
   if ((j = viaAddress.FindLast (' ')) != P_MAX_INDEX)
@@ -1583,7 +1585,6 @@ OpalTransportAddress SIP_PDU::GetViaAddress(OpalEndPoint &ep)
     viaPort = viaAddress.Mid(j+1);
     viaAddress = viaAddress.Left(j);
   }
-  cout << "2" << viaAddress << endl << flush;
 
   // get the protocol type from Via header
   if ((j = proto.FindLast (' ')) != P_MAX_INDEX)
@@ -1603,7 +1604,6 @@ OpalTransportAddress SIP_PDU::GetViaAddress(OpalEndPoint &ep)
   else if (mime.HasFieldParameter("received", viaList[0]))
     viaAddress = mime.GetFieldParameter("received", viaList[0]);
 
-  cout << "3 " << viaAddress << " " << viaPort << endl << flush; 
   OpalTransportAddress address(viaAddress+":"+viaPort, ep.GetDefaultSignalPort(), (proto *= "TCP") ? "$tcp" : "udp$");
 
   return address;
