@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2137  2006/03/18 21:45:28  dsandras
+ * Revision 1.2138  2006/03/19 16:05:00  dsandras
+ * Improved CANCEL handling. Ignore missing transport type.
+ *
+ * Revision 2.136  2006/03/18 21:45:28  dsandras
  * Do an SRV lookup when creating the connection. Some domains to which
  * INVITEs are sent do not have an A record, which makes the transport creation
  * and the connection fail. Fixes Ekiga report #334994.
@@ -1777,11 +1780,10 @@ void SIPConnection::OnReceivedCANCEL(SIP_PDU & request)
     origTo = originalInvite->GetMIME().GetTo();
     origFrom = originalInvite->GetMIME().GetFrom();
     origTo.Replace (";tag=" + GetTag (), "");
-    origFrom.Replace (";tag=" + GetTag (), "");
   }
-  if (originalInvite == NULL ||
-      request.GetMIME().GetTo() != origTo ||
-      request.GetMIME().GetFrom() != origFrom ||
+  if (originalInvite == NULL || 
+      request.GetMIME().GetTo() != origTo || 
+      request.GetMIME().GetFrom() != origFrom || 
       request.GetMIME().GetCSeqIndex() != originalInvite->GetMIME().GetCSeqIndex()) {
     PTRACE(1, "SIP\tUnattached " << request << " received for " << *this);
     SIP_PDU response(request, SIP_PDU::Failure_TransactionDoesNotExist);
@@ -2091,8 +2093,10 @@ BOOL SIPConnection::SendPDU(SIP_PDU & pdu, const OpalTransportAddress & address)
 
       // skip transport identifier
       PINDEX pos = address.Find('$');
-      if (pos == P_MAX_INDEX)
-	return FALSE;
+      if (pos != P_MAX_INDEX)
+	hosturl = address.Mid(pos+1);
+      else
+	hosturl = address;
 
       hosturl = address.Mid(pos+1);
 
