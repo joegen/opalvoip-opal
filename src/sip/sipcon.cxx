@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2140  2006/03/19 16:59:00  dsandras
+ * Revision 1.2141  2006/03/19 17:18:46  dsandras
+ * Fixed SRV handling.
+ *
+ * Revision 2.139  2006/03/19 16:59:00  dsandras
  * Removed cout again.
  *
  * Revision 2.138  2006/03/19 16:58:19  dsandras
@@ -546,6 +549,7 @@ SIPConnection::SIPConnection(OpalCall & call,
     endpoint(ep),
     pduSemaphore(0, P_MAX_INDEX)
 {
+  SIPURL transportAddress = destination;
   targetAddress = destination;
 
   // Look for a "proxy" parameter to override default proxy
@@ -571,8 +575,8 @@ SIPConnection::SIPConnection(OpalCall & call,
 #if P_DNS
     PIPSocketAddressAndPortVector addrs;
     if (PDNS::LookupSRV(destination.GetHostName(), "_sip._udp", destination.GetPort(), addrs)) {
-      targetAddress.SetHostName(addrs[0].address.AsString());
-      targetAddress.SetPort(addrs [0].port);
+      transportAddress.SetHostName(addrs[0].address.AsString());
+      transportAddress.SetPort(addrs [0].port);
     }
 #endif
 
@@ -580,9 +584,9 @@ SIPConnection::SIPConnection(OpalCall & call,
   if (inviteTransport == NULL)
     transport = NULL;
   else 
-    transport = endpoint.CreateTransport(targetAddress.GetHostAddress());
+    transport = endpoint.CreateTransport(transportAddress.GetHostAddress());
 
-  lastTransportAddress = targetAddress.GetHostAddress();
+  lastTransportAddress = transportAddress.GetHostAddress();
 
   originalInvite = NULL;
   pduHandler = NULL;
@@ -1088,12 +1092,23 @@ BOOL SIPConnection::WriteINVITE(OpalTransport & transport, void * param)
 
 BOOL SIPConnection::SetUpConnection()
 {
+  SIPURL transportAddress = targetAddress;
+
   PTRACE(2, "SIP\tSetUpConnection: " << remotePartyAddress);
+  // Do a DNS SRV lookup
+#if P_DNS
+    PIPSocketAddressAndPortVector addrs;
+    if (PDNS::LookupSRV(targetAddress.GetHostName(), "_sip._udp", targetAddress.GetPort(), addrs)) {
+      transportAddress.SetHostName(addrs[0].address.AsString());
+      transportAddress.SetPort(addrs [0].port);
+    }
+#endif
 
   originating = TRUE;
 
   delete transport;
-  transport = endpoint.CreateTransport(targetAddress.GetHostAddress());
+  transport = endpoint.CreateTransport(transportAddress.GetHostAddress());
+  lastTransportAddress = transportAddress.GetHostAddress();
   if (transport == NULL) {
     Release(EndedByTransportFail);
     return FALSE;
