@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2054  2006/03/19 12:32:05  dsandras
+ * Revision 1.2055  2006/03/19 17:26:15  dsandras
+ * Fixed FindSIPInfoByDomain so that it doesn't return unregistered accounts.
+ * Fixes Ekiga report #335006.
+ *
+ * Revision 2.53  2006/03/19 12:32:05  dsandras
  * RFC3261 says that "CANCEL messages "SHOULD NOT" be sent for anything but INVITE
  * requests". Fixes Ekiga report #334985.
  *
@@ -907,7 +911,7 @@ class SIPEndPoint : public OpalEndPoint
 	    {
 	      OpalTransportAddress addr = name;
 	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info) {
-		      if ((name == info->GetRegistrationAddress().GetHostName() || (info->GetTransport() && addr.GetHostName() == info->GetTransport()->GetRemoteAddress().GetHostName()) && meth == info->GetMethod()))
+		      if (info->IsRegistered() && (name == info->GetRegistrationAddress().GetHostName() || (info->GetTransport() && addr.GetHostName() == info->GetTransport()->GetRemoteAddress().GetHostName()) && meth == info->GetMethod()))
 			return info;
 	      }
 	      return NULL;
