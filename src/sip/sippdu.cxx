@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2084.2.3  2006/03/19 18:17:55  dsandras
+ * Revision 1.2084.2.4  2006/03/19 19:39:56  dsandras
+ * Backports from HEAD.
+ *
+ * Revision 2.89  2006/03/19 19:38:25  dsandras
+ * Use full host when reporting a registration timeout.
+ *
+ * Revision 2.83.2.3  2006/03/19 18:17:55  dsandras
  * Backports from HEAD.
  *
  * Revision 2.88  2006/03/19 13:15:12  dsandras
@@ -2112,8 +2118,14 @@ void SIPTransaction::SetTerminated(States newState)
     if (GetMethod() == SIP_PDU::Method_REGISTER) {
       
       SIPURL url (GetMIME().GetFrom ());
-
-      endpoint.OnRegistrationFailed(url.GetHostName(), 
+      PString hosturl;
+      // skip transport identifier
+      PINDEX pos = url.GetHostAddress().Find('$');
+      if (pos != P_MAX_INDEX)
+	hosturl = url.GetHostAddress().Mid(pos+1);
+      else
+	hosturl = url.GetHostAddress();
+      endpoint.OnRegistrationFailed(hosturl, 
 				    url.GetUserName(),
 				    SIP_PDU::Failure_RequestTimeout,
 				    (GetMIME().GetExpires(0) > 0));
