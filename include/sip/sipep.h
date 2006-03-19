@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2055  2006/03/19 17:26:15  dsandras
+ * Revision 1.2056  2006/03/19 18:57:06  dsandras
+ * More work on Ekiga report #334999.
+ *
+ * Revision 2.54  2006/03/19 17:26:15  dsandras
  * Fixed FindSIPInfoByDomain so that it doesn't return unregistered accounts.
  * Fixes Ekiga report #335006.
  *
@@ -965,10 +968,8 @@ class SIPEndPoint : public OpalEndPoint
     SIPTransactionList messages;
     SIPTransactionDict transactions;
 
-    PMutex                  natTransportMutex;
     PTimer                  natBindingTimer;
     NATBindingRefreshMethod natMethod;
-    PList<OpalTransport>    natTransports;
 
     PMutex             transactionsMutex;
 
