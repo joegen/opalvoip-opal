@@ -24,7 +24,20 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2084.2.2  2006/03/14 10:41:04  csoutheren
+ * Revision 1.2084.2.3  2006/03/19 18:17:55  dsandras
+ * Backports from HEAD.
+ *
+ * Revision 2.88  2006/03/19 13:15:12  dsandras
+ * Removed cout.
+ *
+ * Revision 2.87  2006/03/19 12:23:55  dsandras
+ * Fixed rport support. Fixes Ekiga report #335002.
+ *
+ * Revision 2.86  2006/03/18 21:56:07  dsandras
+ * Remove REGISTER and SUBSCRIBE from the Allow field. Fixes Ekiga report
+ * #334979.
+ *
+ * Revision 2.83.2.2  2006/03/14 10:41:04  csoutheren
  * Backport from CVS head
  *
  * Revision 2.85  2006/03/14 10:26:34  dsandras
@@ -1503,12 +1516,19 @@ BOOL SIP_PDU::SetRoute(SIPConnection & connection)
 
 void SIP_PDU::SetAllow(void)
 {
-  PString methods;
-  methods = MethodNames [0];
-  for (PINDEX i = 1 ; i < SIP_PDU::NumMethods ; i++)
-    methods = methods + ", " + MethodNames[i];
+  PStringStream str;
+  PStringList methods;
+  
+  for (PINDEX i = 0 ; i < SIP_PDU::NumMethods ; i++) {
+  
+    if (PString(MethodNames[i]).Find("SUBSCRIBE") == P_MAX_INDEX
+	&& PString(MethodNames[i]).Find("REGISTER") == P_MAX_INDEX)
+    methods += MethodNames[i];
+  }
+  
+  str << setfill(',') << methods << setfill(' ');
 
-  mime.SetAllow(methods);
+  mime.SetAllow(str);
 }
 
 
@@ -1535,7 +1555,7 @@ void SIP_PDU::AdjustVia(OpalTransport & transport)
   PIPSocket::Address a (ip);
   PIPSocket::Address remoteIp;
   WORD remotePort;
-  if (transport.GetRemoteAddress().GetIpAndPort(remoteIp, remotePort)) {
+  if (transport.GetLastReceivedAddress().GetIpAndPort(remoteIp, remotePort)) {
 
     if (mime.HasFieldParameter("rport", viaList[0]) && mime.GetFieldParameter("rport", viaList[0]).IsEmpty()) {
       // fill in empty rport and received for RFC 3581
