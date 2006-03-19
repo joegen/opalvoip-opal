@@ -25,7 +25,22 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2047.2.3  2006/03/06 19:04:39  dsandras
+ * Revision 1.2047.2.4  2006/03/19 18:15:59  dsandras
+ * Backports from HEAD.
+ *
+ * Revision 2.54  2006/03/19 17:26:15  dsandras
+ * Fixed FindSIPInfoByDomain so that it doesn't return unregistered accounts.
+ * Fixes Ekiga report #335006.
+ *
+ * Revision 2.53  2006/03/19 12:32:05  dsandras
+ * RFC3261 says that "CANCEL messages "SHOULD NOT" be sent for anything but INVITE
+ * requests". Fixes Ekiga report #334985.
+ *
+ * Revision 2.52  2006/03/19 11:45:47  dsandras
+ * The remote address of the registrar transport might have changed due
+ * to the Via field. This affected unregistering which was reusing
+ * the exact same transport to unregister. Fixed Ekiga report #334999.
+ * Revision 2.46.2.3  2006/03/06 19:04:39  dsandras
  * Backports from HEAD.
  *
  * Revision 2.50  2006/03/06 19:01:30  dsandras
@@ -238,13 +253,14 @@ class SIPInfo : public PSafeObject
   
     virtual BOOL CreateTransport(OpalTransportAddress & addr);
 
-    virtual void Cancel(SIPTransaction & transaction);
-
     virtual OpalTransport *GetTransport()
     { PWaitAndSignal m(transportMutex); return registrarTransport; }
 
     virtual SIPAuthentication & GetAuthentication()
     { return authentication; }
+
+    virtual const OpalTransportAddress & GetRegistrarAddress()
+    { return registrarAddress; }
 
     virtual const SIPURL & GetRegistrationAddress()
     { return registrationAddress; }
@@ -304,6 +320,7 @@ class SIPInfo : public PSafeObject
       SIPEndPoint      & ep;
       SIPAuthentication  authentication;
       OpalTransport    * registrarTransport;
+      OpalTransportAddress registrarAddress;
       SIPURL             registrationAddress;
       PString            registrationID;
       SIPTransactionList registrations;
@@ -899,7 +916,7 @@ class SIPEndPoint : public OpalEndPoint
 	    {
 	      OpalTransportAddress addr = name;
 	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info) {
-		      if ((name == info->GetRegistrationAddress().GetHostName() || (info->GetTransport() && addr.GetHostName() == info->GetTransport()->GetRemoteAddress().GetHostName()) && meth == info->GetMethod()))
+		      if (info->IsRegistered() && (name == info->GetRegistrationAddress().GetHostName() || (info->GetTransport() && addr.GetHostName() == info->GetTransport()->GetRemoteAddress().GetHostName()) && meth == info->GetMethod()))
 			return info;
 	      }
 	      return NULL;
