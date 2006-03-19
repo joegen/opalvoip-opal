@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2138  2006/03/19 16:05:00  dsandras
+ * Revision 1.2139  2006/03/19 16:58:19  dsandras
+ * Do not release a call we are originating when receiving CANCEL.
+ *
+ * Revision 2.137  2006/03/19 16:05:00  dsandras
  * Improved CANCEL handling. Ignore missing transport type.
  *
  * Revision 2.136  2006/03/18 21:45:28  dsandras
@@ -695,6 +698,7 @@ void SIPConnection::OnReleased()
 
   SetPhase(ReleasedPhase);
 
+  cout << "ici" << endl << flush;
   if (pduHandler != NULL) {
     pduSemaphore.Signal();
     pduHandler->WaitForTermination();
@@ -1771,7 +1775,7 @@ void SIPConnection::OnReceivedCANCEL(SIP_PDU & request)
 {
   PString origTo;
   PString origFrom;
-  
+
   // Currently only handle CANCEL requests for the original INVITE that
   // created this connection, all else ignored
   // Ignore the tag added by OPAL
@@ -1795,7 +1799,9 @@ void SIPConnection::OnReceivedCANCEL(SIP_PDU & request)
 
   SIP_PDU response(request, SIP_PDU::Successful_OK);
   SendPDU(response, request.GetViaAddress(endpoint));
-  Release(EndedByCallerAbort);
+  
+  if (!IsOriginating())
+    Release(EndedByCallerAbort);
 }
 
 
