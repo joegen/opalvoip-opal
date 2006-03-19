@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2117  2006/03/19 13:17:15  dsandras
+ * Revision 1.2118  2006/03/19 18:14:11  dsandras
+ * Removed unused variable.
+ *
+ * Revision 2.116  2006/03/19 13:17:15  dsandras
  * Ignore failures when unregistering and leaving. Fixes Ekiga #334997.
  *
  * Revision 2.115  2006/03/19 12:32:05  dsandras
@@ -875,6 +878,7 @@ BOOL SIPEndPoint::SetupTransfer(const PString & token,
 				const PString & _remoteParty,  
 				void * userData)
 {
+  PString remoteParty;
   // Make a new connection
   PSafePtr<OpalConnection> otherConnection = 
     GetConnectionWithLock(token, PSafeReference);
@@ -886,8 +890,6 @@ BOOL SIPEndPoint::SetupTransfer(const PString & token,
   
   call.RemoveMediaStreams();
   
-  PString remoteParty;
-  OpalTransportAddress remotePartyAddress;
   ParsePartyName(_remoteParty, remoteParty);
 
   PStringStream callID;
