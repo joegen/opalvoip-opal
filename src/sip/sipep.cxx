@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2116  2006/03/19 12:32:05  dsandras
+ * Revision 1.2117  2006/03/19 13:17:15  dsandras
+ * Ignore failures when unregistering and leaving. Fixes Ekiga #334997.
+ *
+ * Revision 2.115  2006/03/19 12:32:05  dsandras
  * RFC3261 says that "CANCEL messages "SHOULD NOT" be sent for anything but INVITE
  * requests". Fixes Ekiga report #334985.
  *
@@ -644,8 +647,10 @@ SIPEndPoint::~SIPEndPoint()
     SIPURL url;
     SIPInfo *info = activeSIPInfo.GetAt(0);
     url = info->GetRegistrationAddress ();
-    if (info->GetMethod() == SIP_PDU::Method_REGISTER && info->IsRegistered()) 
+    if (info->GetMethod() == SIP_PDU::Method_REGISTER && info->IsRegistered()) { 
       Unregister(url.GetHostName(), url.GetUserName());
+      info->SetRegistered(FALSE);
+    }
     else 
       activeSIPInfo.Remove(info);
    
