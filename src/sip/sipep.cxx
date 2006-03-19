@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2115  2006/03/19 11:45:48  dsandras
+ * Revision 1.2116  2006/03/19 12:32:05  dsandras
+ * RFC3261 says that "CANCEL messages "SHOULD NOT" be sent for anything but INVITE
+ * requests". Fixes Ekiga report #334985.
+ *
+ * Revision 2.114  2006/03/19 11:45:48  dsandras
  * The remote address of the registrar transport might have changed due
  * to the Via field. This affected unregistering which was reusing
  * the exact same transport to unregister. Fixed Ekiga report #334999.
@@ -485,15 +489,6 @@ BOOL SIPInfo::CreateTransport (OpalTransportAddress & transportAddress)
   PTRACE (1, "SIP\tCreated Transport for Registrar " << *registrarTransport);
 
   return TRUE;
-}
-
-
-void SIPInfo::Cancel (SIPTransaction & transaction)
-{
-  for (PINDEX i = 0; i < registrations.GetSize(); i++) {
-    if (&registrations[i] != &transaction) 
-      registrations[i].SendCANCEL();
-  }
 }
 
 
@@ -1030,13 +1025,9 @@ void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & res
     PString callID = transaction.GetMIME().GetCallID ();
 
     // Have a response to the REGISTER/SUBSCRIBE/MESSAGE, 
-    // so CANCEL all the other REGISTER/MESSAGE/SUBSCRIBE requests
-    // sent to that host.
     info = activeSIPInfo.FindSIPInfoByCallID (callID, PSafeReadOnly);
     if (info == NULL) 
       return;
-
-    info->Cancel (transaction);
 
     // Have a response, so end Connect mode on the transport
     transaction.GetTransport().EndConnect(transaction.GetLocalAddress()); 
@@ -1047,8 +1038,6 @@ void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & res
 
     if (info == NULL) 
       return;
-
-    info->Cancel (transaction);
   }
   
   switch (response.GetStatusCode()) {

@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2053  2006/03/19 11:45:47  dsandras
+ * Revision 1.2054  2006/03/19 12:32:05  dsandras
+ * RFC3261 says that "CANCEL messages "SHOULD NOT" be sent for anything but INVITE
+ * requests". Fixes Ekiga report #334985.
+ *
+ * Revision 2.52  2006/03/19 11:45:47  dsandras
  * The remote address of the registrar transport might have changed due
  * to the Via field. This affected unregistering which was reusing
  * the exact same transport to unregister. Fixed Ekiga report #334999.
@@ -239,8 +243,6 @@ class SIPInfo : public PSafeObject
     ~SIPInfo();
   
     virtual BOOL CreateTransport(OpalTransportAddress & addr);
-
-    virtual void Cancel(SIPTransaction & transaction);
 
     virtual OpalTransport *GetTransport()
     { PWaitAndSignal m(transportMutex); return registrarTransport; }
