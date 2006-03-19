@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2139  2006/03/19 16:58:19  dsandras
+ * Revision 1.2140  2006/03/19 16:59:00  dsandras
+ * Removed cout again.
+ *
+ * Revision 2.138  2006/03/19 16:58:19  dsandras
  * Do not release a call we are originating when receiving CANCEL.
  *
  * Revision 2.137  2006/03/19 16:05:00  dsandras
@@ -698,7 +701,6 @@ void SIPConnection::OnReleased()
 
   SetPhase(ReleasedPhase);
 
-  cout << "ici" << endl << flush;
   if (pduHandler != NULL) {
     pduSemaphore.Signal();
     pduHandler->WaitForTermination();
