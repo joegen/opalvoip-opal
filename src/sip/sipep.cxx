@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2098.2.15  2006/03/19 18:14:57  dsandras
+ * Revision 1.2098.2.16  2006/03/19 18:59:02  dsandras
+ * More backports from HEAD.
+ *
+ * Revision 2.118  2006/03/19 18:57:06  dsandras
+ * More work on Ekiga report #334999.
+ *
+ * Revision 2.97.2.15  2006/03/19 18:14:57  dsandras
  * Backports from HEAD.
  *
  * Revision 2.116  2006/03/19 13:17:15  dsandras
@@ -656,7 +662,6 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   lastSentCSeq = 0;
   userAgentString = "OPAL/2.0";
 
-  natTransports.DisallowDeleteObjects();
   transactions.DisallowDeleteObjects();
   activeSIPInfo.AllowDeleteObjects();
 
@@ -725,23 +730,9 @@ void SIPEndPoint::TransportThreadMain(PThread &, INT param)
   PTRACE(2, "SIP\tRead thread started.");
   OpalTransport * transport = (OpalTransport *)param;
 
-  BOOL stunTransport = FALSE;
-
-  stunTransport = (!transport->IsReliable() && GetManager().GetSTUN(transport->GetRemoteAddress().GetHostName()));
-
-  if (stunTransport) {
-    PWaitAndSignal m(natTransportMutex);
-    natTransports.Append(transport);
-  }
-
   do {
     HandlePDU(*transport);
   } while (transport->IsOpen());
-  
-  if (stunTransport) {
-    PWaitAndSignal m(natTransportMutex);
-    natTransports.Remove(transport);
-  }
   
   PTRACE(2, "SIP\tRead thread finished.");
 }
@@ -751,31 +742,37 @@ void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
 {
   PTRACE(5, "SIP\tNAT Binding refresh started.");
 
-  if (natMethod != None) {
-    
-    for (PINDEX i = 0 ; i < natTransports.GetSize() ; i++) {
-      PWaitAndSignal m(natTransportMutex);
+  if (natMethod == None)
+    return;
 
-      OpalTransport *transport = (OpalTransport *) natTransports.GetAt(i);
-      if (transport && transport->IsOpen()) {
-	switch (natMethod) {
+  for (PSafePtr<SIPInfo> info(activeSIPInfo, PSafeReadWrite); info != NULL; ++info) {
 
-	case Options: 
-	    {
-	      SIPOptions options(*this, *transport, transport->GetRemoteAddress());
-	      options.Write(*transport);
-	      break;
-	    }
+    OpalTransport *transport = info->GetTransport();
+    if (transport && transport->SetRemoteAddress(info->GetRegistrarAddress())) {
+      BOOL stunTransport = FALSE;
 
-	case EmptyRequest:
-	    {
-	      transport->Write("\r\n", 2);
-	      break;
-	    }
+      stunTransport = (!transport->IsReliable() && GetManager().GetSTUN(transport->GetRemoteAddress().GetHostName()));
 
-	default:
-	  break;
-	}
+      if (!stunTransport) 
+	return;
+
+      switch (natMethod) {
+
+      case Options: 
+	  {
+	    SIPOptions options(*this, *transport, transport->GetRemoteAddress());
+	    options.Write(*transport);
+	    break;
+	  }
+
+      case EmptyRequest:
+	  {
+	    transport->Write("\r\n", 2);
+	    break;
+	  }
+
+      default:
+	break;
       }
     }
   }
