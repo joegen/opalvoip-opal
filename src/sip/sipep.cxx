@@ -24,7 +24,22 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2098.2.14  2006/03/08 20:11:31  dsandras
+ * Revision 1.2098.2.15  2006/03/19 18:14:57  dsandras
+ * Backports from HEAD.
+ *
+ * Revision 2.116  2006/03/19 13:17:15  dsandras
+ * Ignore failures when unregistering and leaving. Fixes Ekiga #334997.
+ *
+ * Revision 2.115  2006/03/19 12:32:05  dsandras
+ * RFC3261 says that "CANCEL messages "SHOULD NOT" be sent for anything but INVITE
+ * requests". Fixes Ekiga report #334985.
+ *
+ * Revision 2.114  2006/03/19 11:45:48  dsandras
+ * The remote address of the registrar transport might have changed due
+ * to the Via field. This affected unregistering which was reusing
+ * the exact same transport to unregister. Fixed Ekiga report #334999.
+ *
+ * Revision 2.97.2.14  2006/03/08 20:11:31  dsandras
  * More backports from HEAD.
  *
  * Revision 2.113  2006/03/08 20:10:12  dsandras
@@ -485,10 +500,12 @@ SIPInfo::~SIPInfo()
 }
 
 
-BOOL SIPInfo::CreateTransport (OpalTransportAddress & registrarAddress)
+BOOL SIPInfo::CreateTransport (OpalTransportAddress & transportAddress)
 {
   PWaitAndSignal m(transportMutex);
 
+  registrarAddress = transportAddress;
+  
   // Only delete if we are refreshing
   if (registrarTransport != NULL && HasExpired()) {
     delete registrarTransport;
@@ -508,15 +525,6 @@ BOOL SIPInfo::CreateTransport (OpalTransportAddress & registrarAddress)
   PTRACE (1, "SIP\tCreated Transport for Registrar " << *registrarTransport);
 
   return TRUE;
-}
-
-
-void SIPInfo::Cancel (SIPTransaction & transaction)
-{
-  for (PINDEX i = 0; i < registrations.GetSize(); i++) {
-    if (&registrations[i] != &transaction) 
-      registrations[i].SendCANCEL();
-  }
 }
 
 
@@ -672,8 +680,10 @@ SIPEndPoint::~SIPEndPoint()
     SIPURL url;
     SIPInfo *info = activeSIPInfo.GetAt(0);
     url = info->GetRegistrationAddress ();
-    if (info->GetMethod() == SIP_PDU::Method_REGISTER && info->IsRegistered()) 
+    if (info->GetMethod() == SIP_PDU::Method_REGISTER && info->IsRegistered()) {
       Unregister(url.GetHostName(), url.GetUserName());
+      info->SetRegistered(FALSE);
+    }
     else 
       activeSIPInfo.Remove(info);
    
@@ -1053,13 +1063,9 @@ void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & res
     PString callID = transaction.GetMIME().GetCallID ();
 
     // Have a response to the REGISTER/SUBSCRIBE/MESSAGE, 
-    // so CANCEL all the other REGISTER/MESSAGE/SUBSCRIBE requests
-    // sent to that host.
     info = activeSIPInfo.FindSIPInfoByCallID (callID, PSafeReadOnly);
     if (info == NULL) 
       return;
-
-    info->Cancel (transaction);
 
     // Have a response, so end Connect mode on the transport
     transaction.GetTransport().EndConnect(transaction.GetLocalAddress()); 
@@ -1070,8 +1076,6 @@ void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & res
 
     if (info == NULL) 
       return;
-
-    info->Cancel (transaction);
   }
   
   switch (response.GetStatusCode()) {
@@ -1676,6 +1680,7 @@ void SIPEndPoint::OnMessageFailed(const SIPURL & /* messageUrl */,
 
 BOOL SIPEndPoint::TransmitSIPUnregistrationInfo(const PString & host, const PString & username, SIP_PDU::Methods method)
 {
+  OpalTransport *registrarTransport = NULL;
   SIPTransaction *request = NULL;
 
   // Adjusted user name
@@ -1694,13 +1699,15 @@ BOOL SIPEndPoint::TransmitSIPUnregistrationInfo(const PString & host, const PStr
         return FALSE;
       }
       
-      if (!info->IsRegistered() || info->GetTransport() == NULL) {
+      registrarTransport = info->GetTransport();
+      if (!info->IsRegistered() || registrarTransport == NULL) {
         PTRACE(1, "SIP\tRemoving local registration/subscription info for apparently unregistered/subscribed " << adjustedUsername);
         activeSIPInfo.Remove(info);
         return FALSE;
       }
 
-      request = info->CreateTransaction(*info->GetTransport(), TRUE);
+      registrarTransport->SetRemoteAddress(info->GetRegistrarAddress());
+      request = info->CreateTransaction(*registrarTransport, TRUE);
 
       if (!request->Start()) {
         PTRACE(1, "SIP\tCould not start UNREGISTER/UNSUBSCRIBE transaction");
