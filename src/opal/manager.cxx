@@ -25,7 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2057  2005/11/25 02:42:32  csoutheren
+ * Revision 1.2057.2.1  2006/03/20 10:48:34  csoutheren
+ * Backport from CVS head
+ *
+ * Revision 2.57  2006/03/20 10:37:47  csoutheren
+ * Applied patch #1453753 - added locking on media stream manipulation
+ * Thanks to Dinis Rosario
+ *
+ * Revision 2.56  2005/11/25 02:42:32  csoutheren
  * Applied patch #1358862 ] by Frederich Heem
  * SetUp call not removing calls in case of error
  *
@@ -553,6 +560,7 @@ BOOL OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty, v
     return FALSE;
 
   PCaselessString epname = remoteParty.Left(remoteParty.Find(':'));
+  PWaitAndSignal mutex(inUseFlag);
   if (epname.IsEmpty())
     epname = endpoints[0].GetPrefixName();
 
@@ -1157,6 +1165,7 @@ BOOL OpalManager::SetNoMediaTimeout(const PTimeInterval & newInterval)
 void OpalManager::GarbageCollection()
 {
   BOOL allCleared = activeCalls.DeleteObjectsToBeRemoved();
+  PWaitAndSignal mutex(inUseFlag);
   for (PINDEX i = 0; i < endpoints.GetSize(); i++) {
     if (!endpoints[i].connectionsActive.DeleteObjectsToBeRemoved())
       allCleared = FALSE;

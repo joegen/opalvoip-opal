@@ -25,11 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2040.2.2  2006/02/06 04:38:37  csoutheren
- * Backported RTP payload mapping fixes from CVS head
+ * Revision 1.2040.2.3  2006/03/20 10:48:34  csoutheren
+ * Backport from CVS head
  *
- * Revision 2.39.2.1  2006/01/31 08:10:37  csoutheren
- * Backported from CVS head
+ * Revision 2.42  2006/03/20 10:37:47  csoutheren
+ * Applied patch #1453753 - added locking on media stream manipulation
+ * Thanks to Dinis Rosario
  *
  * Revision 2.41  2006/02/02 07:02:57  csoutheren
  * Added RTP payload map to transcoders and connections to allow remote SIP endpoints
@@ -316,6 +317,7 @@ BOOL OpalCall::OnAlerting(OpalConnection & connection)
 
   UnlockReadWrite();
 
+
   BOOL hasMedia = connection.GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, TRUE) != NULL;
 
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
@@ -477,6 +479,7 @@ BOOL OpalCall::OpenSourceMediaStreams(const OpalConnection & connection,
         startedOne = TRUE;
         // If opened the source stream, then reorder the media formats so we
         // have a preference for symmetric codecs on subsequent connection(s)
+        PWaitAndSignal m(conn->GetMediaStreamMutex());
         OpalMediaStream * otherStream = conn->GetMediaStream(sessionID, TRUE);
         if (otherStream != NULL && adjustableMediaFormats[0] != otherStream->GetMediaFormat()) {
           adjustableMediaFormats.Reorder(otherStream->GetMediaFormat());
