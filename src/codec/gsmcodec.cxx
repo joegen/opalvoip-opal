@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gsmcodec.cxx,v $
- * Revision 1.2007  2006/02/14 22:37:14  csoutheren
+ * Revision 1.2007.2.1  2006/03/20 05:20:55  csoutheren
+ * *** empty log message ***
+ *
+ * Revision 2.6  2006/02/14 22:37:14  csoutheren
  * Fixed error in adpative GSM calcs
  *
  * Revision 2.5  2006/02/09 22:48:40  csoutheren

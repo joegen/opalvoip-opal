@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ilbccodec.cxx,v $
- * Revision 1.2009  2005/12/27 20:44:30  dsandras
+ * Revision 1.2009.4.1  2006/03/20 05:20:55  csoutheren
+ * *** empty log message ***
+ *
+ * Revision 2.8  2005/12/27 20:44:30  dsandras
  * Use the encoding name only for the default version of the codec.
  *
  * Revision 2.7  2005/11/20 21:03:10  dsandras
