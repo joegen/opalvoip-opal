@@ -22,6 +22,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.1.2.2  2006/03/20 05:04:54  csoutheren
+ * Add check to ensure codec can be instantiated
+ *
  * Revision 1.1.2.1  2006/03/16 07:06:27  csoutheren
  * Update for new code
  *
@@ -426,6 +429,12 @@ void OpalCodecInfo::Main()
       cout << "Name: " << transcoder << "\n"
            << "  Input:  " << transcoder.GetInputFormat() << "\n"
            << "  Output: " << transcoder.GetOutputFormat() << "\n";
+
+      OpalTranscoder * xcoder = OpalTranscoder::Create(transcoder.GetInputFormat(), transcoder.GetOutputFormat());
+      if (xcoder == NULL)
+        cout << "  CANNOT BE INSTANTIATED\n";
+      else
+        delete xcoder;
     }
     return;
   }
