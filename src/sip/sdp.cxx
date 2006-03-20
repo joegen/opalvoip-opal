@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2030  2006/03/08 10:59:03  csoutheren
+ * Revision 1.2031  2006/03/20 00:20:15  csoutheren
+ * Fixed problem with output empty image media formats
+ *
+ * Revision 2.29  2006/03/08 10:59:03  csoutheren
  * Applied patch #1444783 - Add 'image' SDP meda type and 'udptl' transport protocol
  * Thanks to Drazen Dimoti
  *
@@ -518,7 +521,7 @@ void SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) 
   // this avoids displaying an empty media header with no payload types
   // when (for example) video has been disabled
   //
-  if ((transport == SDP_MEDIA_TRANSPORT) && (formats.GetSize() == 0))
+  if (formats.GetSize() == 0))
     return;
 
   PIPSocket::Address ip;
