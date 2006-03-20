@@ -27,7 +27,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2030  2006/02/22 10:52:30  csoutheren
+ * Revision 1.2030.2.1  2006/03/20 02:25:27  csoutheren
+ * Backports from CVS head
+ *
+ * Revision 2.30  2006/03/07 11:23:46  csoutheren
+ * Add ability to disable GRQ on GK registration
+ *
+ * Revision 2.29  2006/02/22 10:52:30  csoutheren
  * Applied patch #1375161 from Frederic Heem
  * Add srcInfo to ARQ
  *
@@ -773,6 +779,13 @@ BOOL H323Gatekeeper::StartDiscovery(const H323TransportAddress & initialAddress)
 
   if (!transport->ConnectTo(address))
     return FALSE;
+
+  /// don't send GRQ if not requested
+  if (!endpoint.GetSendGRQ() && !initialAddress.IsEmpty()) {
+    StartChannel();
+    PTRACE(2, "RAS\tSkipping gatekeeper discovery for " << initialAddress);
+    return TRUE;
+  }
 
   discoveryComplete = FALSE;
 

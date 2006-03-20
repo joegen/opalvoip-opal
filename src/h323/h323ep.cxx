@@ -27,8 +27,17 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2047.2.1  2006/03/16 07:07:24  csoutheren
+ * Revision 1.2047.2.2  2006/03/20 02:25:27  csoutheren
+ * Backports from CVS head
+ *
+ * Revision 2.46.2.1  2006/03/16 07:07:24  csoutheren
  * Removed warning on Windows
+ *
+ * Revision 2.48  2006/03/12 06:36:57  rjongbloed
+ * Fixed DevStudio warning
+ *
+ * Revision 2.47  2006/03/07 11:23:46  csoutheren
+ * Add ability to disable GRQ on GK registration
  *
  * Revision 2.46  2006/02/22 10:40:10  csoutheren
  * Added patch #1374583 from Frederic Heem
@@ -837,6 +846,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   masterSlaveDeterminationRetries = 10;
   gatekeeperRequestRetries = 2;
   rasRequestRetries = 2;
+  sendGRQ = TRUE;
 
   gatekeeper = NULL;
 
@@ -1691,7 +1701,7 @@ BOOL H323EndPoint::OnAlerting(H323Connection & connection,
   return TRUE;
 }
 
-BOOL H323EndPoint::OnSendAlerting(H323Connection & connection,
+BOOL H323EndPoint::OnSendAlerting(H323Connection & PTRACE_PARAM(connection),
                                   H323SignalPDU & /*alerting*/,
                                   const PString & /*calleeName*/,   /// Name of endpoint being alerted.
                                   BOOL /*withMedia*/                /// Open media with alerting
@@ -1701,7 +1711,7 @@ BOOL H323EndPoint::OnSendAlerting(H323Connection & connection,
   return TRUE;
 }
 
-BOOL H323EndPoint::OnSentAlerting(H323Connection & connection)
+BOOL H323EndPoint::OnSentAlerting(H323Connection & PTRACE_PARAM(connection))
 {
   PTRACE(3, "H225\tOnSentAlerting conn = " << connection);
   return TRUE;
