@@ -27,7 +27,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2034  2006/02/22 10:40:09  csoutheren
+ * Revision 1.2034.2.1  2006/03/20 02:25:23  csoutheren
+ * Backports from CVS head
+ *
+ * Revision 2.34  2006/03/07 11:23:46  csoutheren
+ * Add ability to disable GRQ on GK registration
+ *
+ * Revision 2.33  2006/02/22 10:40:09  csoutheren
  * Added patch #1374583 from Frederic Heem
  * Added additional H.323 virtual function
  *
@@ -1546,6 +1552,16 @@ class H323EndPoint : public OpalEndPoint
      */
     void SetGkAccessTokenOID(const PString & token) { gkAccessTokenOID = token; }
 
+    /**Get flag to indicate whether to send GRQ on gatekeeper registration
+     */
+    BOOL GetSendGRQ() const
+    { return sendGRQ; }
+
+    /**Sent flag to indicate whether to send GRQ on gatekeeper registration
+     */
+    void SetSendGRQ(BOOL v) 
+    { sendGRQ = v; }
+
     /**Get the default timeout for Call Transfer Timer CT-T1.
      */
     const PTimeInterval & GetCallTransferT1() const { return callTransferT1; }
@@ -1638,6 +1654,7 @@ class H323EndPoint : public OpalEndPoint
     PTimeInterval registrationTimeToLive;
 
     PString       gkAccessTokenOID;
+    BOOL          sendGRQ;
 
     /* Protect against absence of a response to the ctIdentify reqest
        (Transferring Endpoint - Call Transfer with a secondary Call) */
