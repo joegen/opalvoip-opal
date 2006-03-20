@@ -22,7 +22,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2019  2006/01/23 22:56:57  csoutheren
+ * Revision 1.2019.2.1  2006/03/20 02:25:26  csoutheren
+ * Backports from CVS head
+ *
+ * Revision 2.19  2006/03/07 11:24:15  csoutheren
+ * Add --disable-grq flag
+ *
+ * Revision 2.18  2006/01/23 22:56:57  csoutheren
  * Added 2 second pause before dialling outgoing SIP calls from command line args when
  *  registrar used
  *
@@ -131,6 +137,7 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
 
     PString destinationAddress;
     PString incomingConnectionToken;
+	PString remoteConnectionToken;
     BOOL    autoAnswer;
 };
 

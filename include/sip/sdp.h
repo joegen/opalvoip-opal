@@ -25,7 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2017  2006/02/02 07:02:57  csoutheren
+ * Revision 1.2017.2.1  2006/03/20 02:25:26  csoutheren
+ * Backports from CVS head
+ *
+ * Revision 2.17  2006/03/08 10:59:02  csoutheren
+ * Applied patch #1444783 - Add 'image' SDP meda type and 'udptl' transport protocol
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.16  2006/02/02 07:02:57  csoutheren
  * Added RTP payload map to transcoders and connections to allow remote SIP endpoints
  * to change the payload type used for outgoing RTP.
  *
@@ -181,6 +188,7 @@ class SDPMediaDescription : public PObject
       Audio,
       Video,
       Application,
+      Image,
       Unknown,
       NumMediaTypes
     };

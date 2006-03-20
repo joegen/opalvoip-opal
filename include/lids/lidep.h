@@ -27,7 +27,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.h,v $
- * Revision 1.2019  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2019.4.1  2006/03/20 02:25:26  csoutheren
+ * Backports from CVS head
+ *
+ * Revision 2.19  2006/03/08 10:38:01  csoutheren
+ * Applied patch #1441139 - virtualise LID functions and kill monitorlines correctly
+ * Thanks to Martin Yarwood
+ *
+ * Revision 2.18  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.17  2004/10/06 13:03:41  rjongbloed
@@ -185,7 +192,7 @@ class OpalLIDEndPoint : public OpalEndPoint
 
   /**@name Connection management */
   //@{
-    OpalLineConnection * CreateConnection(
+    virtual OpalLineConnection * CreateConnection(
       OpalCall & call,        ///<  Call that owns the connection
       OpalLine & line,        ///<  Line connection is to use
       void * userData,        ///<  Arbitrary user data from MakeConnection
@@ -244,7 +251,7 @@ class OpalLIDEndPoint : public OpalEndPoint
 
        Returns TRUE if at least one line was added.
       */
-    BOOL AddLinesFromDevice(
+    virtual BOOL AddLinesFromDevice(
       OpalLineInterfaceDevice & device  ///<  Device to add lines
     );
 
@@ -288,7 +295,7 @@ class OpalLIDEndPoint : public OpalEndPoint
 
        Returns TRUE if at least one line was added.
       */
-    BOOL AddDevice(
+    virtual BOOL AddDevice(
       OpalLineInterfaceDevice * device    ///<  Device to add
     );
 
@@ -537,7 +544,7 @@ class OpalLineConnection : public OpalConnection
 
     /**Check for line hook state, DTMF tone for user indication etc.
       */
-    void Monitor(
+    virtual void Monitor(
       BOOL offHook
     );
   //@}
