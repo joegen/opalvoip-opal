@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2090  2006/03/19 19:38:25  dsandras
+ * Revision 1.2091  2006/03/20 00:25:36  csoutheren
+ * Applied patch #1446482
+ * Thanks to Adam Butcher
+ *
+ * Revision 2.89  2006/03/19 19:38:25  dsandras
  * Use full host when reporting a registration timeout.
  *
  * Revision 2.88  2006/03/19 13:15:12  dsandras
@@ -1652,7 +1656,7 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
   // ios::lock() mutex which would prevent simultaneous reads and writes.
   transport.SetReadTimeout(PMaxTimeInterval);
 #if defined(__MWERKS__) || (__GNUC__ >= 3) || (_MSC_VER >= 1300) || defined(SOLARIS)
-  if (transport.rdbuf()->pubseekoff(0, ios_base::cur) == streampos(_BADOFF))
+  if (transport.rdbuf()->pubseekoff(0, ios_base::cur) == streampos(-1))
 #else
   if (transport.rdbuf()->seekoff(0, ios::cur, ios::in) == EOF)
 #endif                  
