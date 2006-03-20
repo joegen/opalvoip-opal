@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.h,v $
- * Revision 1.2011  2005/12/30 14:33:12  dsandras
+ * Revision 1.2011.4.1  2006/03/20 05:24:30  csoutheren
+ * *** empty log message ***
+ *
+ * Revision 2.10  2005/12/30 14:33:12  dsandras
  * Added support for Packet Loss Concealment frames for framed codecs supporting it similarly to what was done for OpenH323.
  *
  * Revision 2.9  2005/12/28 20:01:52  dsandras

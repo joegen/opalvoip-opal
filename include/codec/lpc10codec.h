@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lpc10codec.h,v $
- * Revision 1.2011  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2011.4.1  2006/03/20 05:24:30  csoutheren
+ * *** empty log message ***
+ *
+ * Revision 2.10  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.9  2005/08/28 07:59:17  rjongbloed

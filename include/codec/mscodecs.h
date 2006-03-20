@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mscodecs.h,v $
- * Revision 1.2011  2005/12/15 21:15:44  dsandras
+ * Revision 1.2011.4.1  2006/03/20 05:24:30  csoutheren
+ * *** empty log message ***
+ *
+ * Revision 2.10  2005/12/15 21:15:44  dsandras
  * Fixed compilation with gcc 4.1.
  *
  * Revision 2.9  2005/08/28 07:59:17  rjongbloed

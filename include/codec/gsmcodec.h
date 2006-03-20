@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gsmcodec.h,v $
- * Revision 1.2009  2006/02/09 22:48:40  csoutheren
+ * Revision 1.2009.2.1  2006/03/20 05:24:30  csoutheren
+ * *** empty log message ***
+ *
+ * Revision 2.8  2006/02/09 22:48:40  csoutheren
  * Experimental fix for receiving MSGSM in GSM codec
  *
  * Revision 2.7  2005/11/30 13:35:26  csoutheren
