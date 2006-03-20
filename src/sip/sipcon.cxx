@@ -24,7 +24,36 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2133  2006/02/11 21:05:27  dsandras
+ * Revision 1.2133.2.1  2006/03/20 02:25:27  csoutheren
+ * Backports from CVS head
+ *
+ * Revision 2.140  2006/03/19 17:18:46  dsandras
+ * Fixed SRV handling.
+ *
+ * Revision 2.139  2006/03/19 16:59:00  dsandras
+ * Removed cout again.
+ *
+ * Revision 2.138  2006/03/19 16:58:19  dsandras
+ * Do not release a call we are originating when receiving CANCEL.
+ *
+ * Revision 2.137  2006/03/19 16:05:00  dsandras
+ * Improved CANCEL handling. Ignore missing transport type.
+ *
+ * Revision 2.136  2006/03/18 21:45:28  dsandras
+ * Do an SRV lookup when creating the connection. Some domains to which
+ * INVITEs are sent do not have an A record, which makes the transport creation
+ * and the connection fail. Fixes Ekiga report #334994.
+ *
+ * Revision 2.135  2006/03/08 18:34:41  dsandras
+ * Added DNS SRV lookup.
+ *
+ * Revision 2.134  2006/03/06 22:52:59  csoutheren
+ * Reverted experimental SRV patch due to unintended side effects
+ *
+ * Revision 2.133  2006/03/06 12:56:02  csoutheren
+ * Added experimental support for SIP SRV lookups
+ *
+ * Revision 2.132  2006/02/11 21:05:27  dsandras
  * Release the call when something goes wrong.
  *
  * Revision 2.131  2006/02/11 15:47:41  dsandras
@@ -503,6 +532,7 @@
 #include <opal/call.h>
 #include <opal/patch.h>
 #include <ptclib/random.h>              // for local dialog tag
+#include <ptclib/pdns.h>
 
 
 typedef void (SIPConnection::* SIPMethodFunction)(SIP_PDU & pdu);
@@ -522,6 +552,7 @@ SIPConnection::SIPConnection(OpalCall & call,
     endpoint(ep),
     pduSemaphore(0, P_MAX_INDEX)
 {
+  SIPURL transportAddress = destination;
   targetAddress = destination;
 
   // Look for a "proxy" parameter to override default proxy
@@ -542,12 +573,23 @@ SIPConnection::SIPConnection(OpalCall & call,
   // Update remote party parameters
   remotePartyAddress = targetAddress.AsQuotedString();
   remotePartyName = SIPURL (remotePartyAddress).GetDisplayName ();
+  
+  // Do a DNS SRV lookup
+#if P_DNS
+    PIPSocketAddressAndPortVector addrs;
+    if (PDNS::LookupSRV(destination.GetHostName(), "_sip._udp", destination.GetPort(), addrs)) {
+      transportAddress.SetHostName(addrs[0].address.AsString());
+      transportAddress.SetPort(addrs [0].port);
+    }
+#endif
 
   // Create the transport
   if (inviteTransport == NULL)
     transport = NULL;
   else 
-    transport = endpoint.CreateTransport(targetAddress.GetHostAddress());
+    transport = endpoint.CreateTransport(transportAddress.GetHostAddress());
+
+  lastTransportAddress = transportAddress.GetHostAddress();
 
   originalInvite = NULL;
   pduHandler = NULL;
@@ -1053,12 +1095,23 @@ BOOL SIPConnection::WriteINVITE(OpalTransport & transport, void * param)
 
 BOOL SIPConnection::SetUpConnection()
 {
+  SIPURL transportAddress = targetAddress;
+
   PTRACE(2, "SIP\tSetUpConnection: " << remotePartyAddress);
+  // Do a DNS SRV lookup
+#if P_DNS
+    PIPSocketAddressAndPortVector addrs;
+    if (PDNS::LookupSRV(targetAddress.GetHostName(), "_sip._udp", targetAddress.GetPort(), addrs)) {
+      transportAddress.SetHostName(addrs[0].address.AsString());
+      transportAddress.SetPort(addrs [0].port);
+    }
+#endif
 
   originating = TRUE;
 
   delete transport;
-  transport = endpoint.CreateTransport(targetAddress.GetHostAddress());
+  transport = endpoint.CreateTransport(transportAddress.GetHostAddress());
+  lastTransportAddress = transportAddress.GetHostAddress();
   if (transport == NULL) {
     Release(EndedByTransportFail);
     return FALSE;
@@ -1742,7 +1795,7 @@ void SIPConnection::OnReceivedCANCEL(SIP_PDU & request)
 {
   PString origTo;
   PString origFrom;
-  
+
   // Currently only handle CANCEL requests for the original INVITE that
   // created this connection, all else ignored
   // Ignore the tag added by OPAL
@@ -1751,11 +1804,10 @@ void SIPConnection::OnReceivedCANCEL(SIP_PDU & request)
     origTo = originalInvite->GetMIME().GetTo();
     origFrom = originalInvite->GetMIME().GetFrom();
     origTo.Replace (";tag=" + GetTag (), "");
-    origFrom.Replace (";tag=" + GetTag (), "");
   }
-  if (originalInvite == NULL ||
-      request.GetMIME().GetTo() != origTo ||
-      request.GetMIME().GetFrom() != origFrom ||
+  if (originalInvite == NULL || 
+      request.GetMIME().GetTo() != origTo || 
+      request.GetMIME().GetFrom() != origFrom || 
       request.GetMIME().GetCSeqIndex() != originalInvite->GetMIME().GetCSeqIndex()) {
     PTRACE(1, "SIP\tUnattached " << request << " received for " << *this);
     SIP_PDU response(request, SIP_PDU::Failure_TransactionDoesNotExist);
@@ -1767,7 +1819,9 @@ void SIPConnection::OnReceivedCANCEL(SIP_PDU & request)
 
   SIP_PDU response(request, SIP_PDU::Successful_OK);
   SendPDU(response, request.GetViaAddress(endpoint));
-  Release(EndedByCallerAbort);
+  
+  if (!IsOriginating())
+    Release(EndedByCallerAbort);
 }
 
 
@@ -2057,11 +2111,35 @@ BOOL SIPConnection::ForwardCall (const PString & fwdParty)
 
 BOOL SIPConnection::SendPDU(SIP_PDU & pdu, const OpalTransportAddress & address)
 {
-  if (transport) {
+  SIPURL hosturl;
 
-    PWaitAndSignal m(transportMutex);
-    PTRACE(3, "SIP\tAdjusting transport to address " << address);
-    transport->SetRemoteAddress(address);
+  if (transport) {
+    
+    if (lastTransportAddress != address) {
+
+      // skip transport identifier
+      PINDEX pos = address.Find('$');
+      if (pos != P_MAX_INDEX)
+	hosturl = address.Mid(pos+1);
+      else
+	hosturl = address;
+
+      hosturl = address.Mid(pos+1);
+
+      // Do a DNS SRV lookup
+#if P_DNS
+      PIPSocketAddressAndPortVector addrs;
+      if (PDNS::LookupSRV(hosturl.GetHostName(), "_sip._udp", hosturl.GetPort(), addrs))  
+	lastTransportAddress = OpalTransportAddress(addrs[0].address, addrs[0].port, "udp$");
+      else  
+#endif
+	lastTransportAddress = hosturl.GetHostAddress();
+
+      PWaitAndSignal m(transportMutex);
+      PTRACE(3, "SIP\tAdjusting transport to address " << lastTransportAddress);
+      transport->SetRemoteAddress(lastTransportAddress);
+    }
+    
     return (pdu.Write(*transport));
   }
 

@@ -25,8 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2035.2.1  2006/03/16 07:07:24  csoutheren
+ * Revision 1.2035.2.2  2006/03/20 02:25:27  csoutheren
+ * Backports from CVS head
+ *
+ * Revision 2.34.2.1  2006/03/16 07:07:24  csoutheren
  * Removed warning on Windows
+ *
+ * Revision 2.35  2006/03/12 06:36:57  rjongbloed
+ * Fixed DevStudio warning
  *
  * Revision 2.34  2006/02/22 10:45:11  csoutheren
  * Added patch #1375116 from Frederic Heem
@@ -338,9 +344,13 @@ void OpalEndPoint::DestroyConnection(OpalConnection * connection)
   delete connection;
 }
 
+<<<<<<< endpoint.cxx
 BOOL OpalEndPoint::OnSetUpConnection(OpalConnection & /*connection*/)
+=======
+BOOL OpalEndPoint::OnSetUpConnection(OpalConnection & PTRACE_PARAM(connection))
+>>>>>>> 2.35
 {
-  PTRACE(3, "OpalEP\tOnSetUpConnection");
+  PTRACE(3, "OpalEP\tOnSetUpConnection " << connection);
   return TRUE;
 }
 
