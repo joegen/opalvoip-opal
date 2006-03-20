@@ -24,7 +24,33 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2084  2006/01/16 23:06:20  dsandras
+ * Revision 1.2084.4.1  2006/03/20 02:25:28  csoutheren
+ * Backports from CVS head
+ *
+ * Revision 2.90  2006/03/20 00:25:36  csoutheren
+ * Applied patch #1446482
+ * Thanks to Adam Butcher
+ *
+ * Revision 2.89  2006/03/19 19:38:25  dsandras
+ * Use full host when reporting a registration timeout.
+ *
+ * Revision 2.88  2006/03/19 13:15:12  dsandras
+ * Removed cout.
+ *
+ * Revision 2.87  2006/03/19 12:23:55  dsandras
+ * Fixed rport support. Fixes Ekiga report #335002.
+ *
+ * Revision 2.86  2006/03/18 21:56:07  dsandras
+ * Remove REGISTER and SUBSCRIBE from the Allow field. Fixes Ekiga report
+ * #334979.
+ *
+ * Revision 2.85  2006/03/14 10:26:34  dsandras
+ * Reverted accidental previous change that was breaking retransmissions.
+ *
+ * Revision 2.84  2006/03/08 18:34:41  dsandras
+ * Added DNS SRV lookup.
+ *
+ * Revision 2.83  2006/01/16 23:06:20  dsandras
  * Added old-style proxies support (those that do not support working as
  * outbound proxies thanks to an initial routeset).
  *
@@ -1494,12 +1520,19 @@ BOOL SIP_PDU::SetRoute(SIPConnection & connection)
 
 void SIP_PDU::SetAllow(void)
 {
-  PString methods;
-  methods = MethodNames [0];
-  for (PINDEX i = 1 ; i < SIP_PDU::NumMethods ; i++)
-    methods = methods + ", " + MethodNames[i];
+  PStringStream str;
+  PStringList methods;
+  
+  for (PINDEX i = 0 ; i < SIP_PDU::NumMethods ; i++) {
+  
+    if (PString(MethodNames[i]).Find("SUBSCRIBE") == P_MAX_INDEX
+	&& PString(MethodNames[i]).Find("REGISTER") == P_MAX_INDEX)
+    methods += MethodNames[i];
+  }
+  
+  str << setfill(',') << methods << setfill(' ');
 
-  mime.SetAllow(methods);
+  mime.SetAllow(str);
 }
 
 
@@ -1526,7 +1559,7 @@ void SIP_PDU::AdjustVia(OpalTransport & transport)
   PIPSocket::Address a (ip);
   PIPSocket::Address remoteIp;
   WORD remotePort;
-  if (transport.GetRemoteAddress().GetIpAndPort(remoteIp, remotePort)) {
+  if (transport.GetLastReceivedAddress().GetIpAndPort(remoteIp, remotePort)) {
 
     if (mime.HasFieldParameter("rport", viaList[0]) && mime.GetFieldParameter("rport", viaList[0]).IsEmpty()) {
       // fill in empty rport and received for RFC 3581
@@ -1626,7 +1659,7 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
   // ios::lock() mutex which would prevent simultaneous reads and writes.
   transport.SetReadTimeout(PMaxTimeInterval);
 #if defined(__MWERKS__) || (__GNUC__ >= 3) || (_MSC_VER >= 1300) || defined(SOLARIS)
-  if (transport.rdbuf()->pubseekoff(0, ios_base::cur) == streampos(_BADOFF))
+  if (transport.rdbuf()->pubseekoff(0, ios_base::cur) == streampos(-1))
 #else
   if (transport.rdbuf()->seekoff(0, ios::cur, ios::in) == EOF)
 #endif                  
@@ -2083,8 +2116,14 @@ void SIPTransaction::SetTerminated(States newState)
     if (GetMethod() == SIP_PDU::Method_REGISTER) {
       
       SIPURL url (GetMIME().GetFrom ());
-
-      endpoint.OnRegistrationFailed(url.GetHostName(), 
+      PString hosturl;
+      // skip transport identifier
+      PINDEX pos = url.GetHostAddress().Find('$');
+      if (pos != P_MAX_INDEX)
+	hosturl = url.GetHostAddress().Mid(pos+1);
+      else
+	hosturl = url.GetHostAddress();
+      endpoint.OnRegistrationFailed(hosturl, 
 				    url.GetUserName(),
 				    SIP_PDU::Failure_RequestTimeout,
 				    (GetMIME().GetExpires(0) > 0));
