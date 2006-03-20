@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
+ * Revision 1.1.2.2  2006/03/20 05:03:23  csoutheren
+ * Changes to make audio plugins work with SIP
+ *
  * Revision 1.1.2.1  2006/03/16 07:06:00  csoutheren
  * Initial support for audio plugins
  *
@@ -87,6 +90,7 @@ static PString CreateCodecName(PluginCodec_Definition * codec, BOOL addSW)
   return str;
 }
 
+#if 0
 static PString CreateCodecName(const PString & baseName, BOOL addSW)
 {
   PString str(baseName);
@@ -94,6 +98,7 @@ static PString CreateCodecName(const PString & baseName, BOOL addSW)
     str += "{sw}";
   return str;
 }
+#endif
 
 class OpalPluginMediaFormat : public OpalMediaFormat
 {
@@ -266,11 +271,6 @@ static H323CodecPluginCapabilityMapEntry videoMaps[] = {
 
 //////////////////////////////////////////////////////////////////////////////
 
-static int CallCodecControl(PluginCodec_Definition * codec, void * context, const char * name,
-                            void * parm = NULL, unsigned int * parmLen = NULL);
-
-/////////////////////////////////////////////////////////////////////////////
-
 template<class TranscoderClass>
 class OPALPluginAudioTranscoderFactory : public OpalTranscoderFactory
 {
@@ -283,7 +283,7 @@ class OPALPluginAudioTranscoderFactory : public OpalTranscoderFactory
         { OpalTranscoderFactory::Register(key, this); }
 
       protected:
-        virtual OpalTranscoder * Create(const PString &) const
+        virtual OpalTranscoder * Create(const OpalMediaFormatPair &) const
         { return new TranscoderClass(codecDefn); }
 
         PluginCodec_Definition * codecDefn;
@@ -309,7 +309,7 @@ class OpalPluginFramedAudioTranscoderFactory : public OpalTranscoderFactory
         { OpalTranscoderFactory::Register(key, this); }
 
       protected:
-        virtual OpalTranscoder * Create(const PString &) const
+        virtual OpalTranscoder * Create(const OpalMediaFormatPair &) const
         { return new TranscoderClass(codecDefn, isEncoder); }
 
         PluginCodec_Definition * codecDefn;
@@ -322,7 +322,8 @@ class OpalPluginFramedAudioTranscoder : public OpalFramedTranscoder
   PCLASSINFO(OpalPluginFramedAudioTranscoder, OpalFramedTranscoder);
   public:
     OpalPluginFramedAudioTranscoder(PluginCodec_Definition * _codec, BOOL _isEncoder)
-      : OpalFramedTranscoder(_codec->sourceFormat, _codec->destFormat, 
+      : OpalFramedTranscoder( (strcmp(_codec->sourceFormat, "L16") == 0) ? "PCM-16" : _codec->sourceFormat,
+                              (strcmp(_codec->destFormat, "L16") == 0)   ? "PCM-16" : _codec->destFormat,
                              _isEncoder ? _codec->samplesPerFrame*2 : _codec->bytesPerFrame,
                              _isEncoder ? _codec->bytesPerFrame     : _codec->samplesPerFrame*2),
         codec(_codec), isEncoder(_isEncoder)
@@ -399,7 +400,9 @@ class OPALStreamedPluginAudioTranscoder : public OpalStreamedTranscoder
   PCLASSINFO(OPALStreamedPluginAudioTranscoder, OpalStreamedTranscoder);
   public:
     OPALStreamedPluginAudioTranscoder(PluginCodec_Definition * _codec, unsigned inputBits, unsigned outputBits, PINDEX optimalBits)
-      : OpalStreamedTranscoder(_codec->sourceFormat, _codec->destFormat, inputBits, outputBits, optimalBits), 
+      : OpalStreamedTranscoder((strcmp(_codec->sourceFormat, "L16") == 0) ? "PCM-16" : _codec->sourceFormat,
+                               (strcmp(_codec->destFormat, "L16") == 0) ? "PCM-16" : _codec->destFormat,
+                               inputBits, outputBits, optimalBits), 
         codec(_codec)
     { 
       if (codec != NULL && codec->createCodec != NULL) 
@@ -482,6 +485,29 @@ class OPALStreamedPluginAudioDecoder : public OPALStreamedPluginAudioTranscoder
 //
 
 #if 0 // OPAL_VIDEO
+
+static int CallCodecControl(PluginCodec_Definition * codec, 
+                                       void * context,
+                                 const char * name,
+                                       void * parm, 
+                               unsigned int * parmLen)
+{
+  PluginCodec_ControlDefn * codecControls = codec->codecControls;
+  if (codecControls == NULL)
+    return 0;
+
+  while (codecControls->name != NULL) {
+    if (strcmp(codecControls->name, name) == 0)
+      return (*codecControls->control)(codec, context, name, parm, parmLen);
+    codecControls++;
+  }
+
+  return 0;
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
 
 class H323PluginVideoCodec : public H323VideoCodec
 {
@@ -882,27 +908,6 @@ class H323H261PluginCapability : public H323PluginCapability
 
 /////////////////////////////////////////////////////////////////////////////
 
-static int CallCodecControl(PluginCodec_Definition * codec, 
-                                       void * context,
-                                 const char * name,
-                                       void * parm, 
-                               unsigned int * parmLen)
-{
-  PluginCodec_ControlDefn * codecControls = codec->codecControls;
-  if (codecControls == NULL)
-    return 0;
-
-  while (codecControls->name != NULL) {
-    if (strcmp(codecControls->name, name) == 0)
-      return (*codecControls->control)(codec, context, name, parm, parmLen);
-    codecControls++;
-  }
-
-  return 0;
-}
-
-/////////////////////////////////////////////////////////////////////////////
-
 class H323StaticPluginCodec
 {
   public:
@@ -1109,7 +1114,7 @@ void OPALPluginCodecManager::RegisterPluginPair(
   unsigned defaultSessionID = 0;
   BOOL jitter = FALSE;
   unsigned frameTime = 0;
-  unsigned timeUnits = 0;
+  unsigned clockRate = 0;
   switch (encoderCodec->flags & PluginCodec_MediaTypeMask) {
     case PluginCodec_MediaTypeVideo:
       defaultSessionID = OpalMediaFormat::DefaultVideoSessionID;
@@ -1120,7 +1125,7 @@ void OPALPluginCodecManager::RegisterPluginPair(
       defaultSessionID = OpalMediaFormat::DefaultAudioSessionID;
       jitter = TRUE;
       frameTime = (8 * encoderCodec->nsPerFrame) / 1000;
-      timeUnits = encoderCodec->sampleRate / 1000; // OpalMediaFormat::AudioTimeUnits;
+      clockRate = encoderCodec->sampleRate;
       break;
     default:
       break;
@@ -1145,7 +1150,7 @@ void OPALPluginCodecManager::RegisterPluginPair(
                                    encoderCodec->sdpFormat,
                                    jitter,
                                    frameTime,
-                                   timeUnits,
+                                   clockRate,
                                    timeStamp);
 
       // if the codec has been flagged to use a shared RTP payload type, then find a codec with the same SDP name
@@ -1729,7 +1734,7 @@ void OPALPluginCodecManager::Bootstrap()
     return;
 
 #if defined(OPAL_AUDIO) || defined(OPAL_VIDEO)
-  OpalMediaFormatList & mediaFormatList = OPALPluginCodecManager::GetMediaFormatList();
+//  OpalMediaFormatList & mediaFormatList = OPALPluginCodecManager::GetMediaFormatList();
 #endif
 
 #if OPAL_AUDIO
