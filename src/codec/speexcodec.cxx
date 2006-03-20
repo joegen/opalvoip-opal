@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.cxx,v $
- * Revision 1.2018  2006/01/31 03:28:04  csoutheren
+ * Revision 1.2018.2.1  2006/03/20 05:20:55  csoutheren
+ * *** empty log message ***
+ *
+ * Revision 2.17  2006/01/31 03:28:04  csoutheren
  * Changed to compile on MSVC 6
  *
  * Revision 2.16  2006/01/30 02:47:22  csoutheren

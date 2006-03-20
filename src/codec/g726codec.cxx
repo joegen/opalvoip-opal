@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g726codec.cxx,v $
- * Revision 1.2010  2006/02/08 04:00:19  csoutheren
+ * Revision 1.2010.2.1  2006/03/20 05:20:55  csoutheren
+ * *** empty log message ***
+ *
+ * Revision 2.9  2006/02/08 04:00:19  csoutheren
  * Fixed for G.726 codec
  * Thanks to Michael Tinglof
  *

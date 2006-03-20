@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g729codec.cxx,v $
- * Revision 1.2007  2005/08/28 07:59:17  rjongbloed
+ * Revision 1.2007.4.1  2006/03/20 05:20:55  csoutheren
+ * *** empty log message ***
+ *
+ * Revision 2.6  2005/08/28 07:59:17  rjongbloed
  * Converted OpalTranscoder to use factory, requiring sme changes in making sure
  *   OpalMediaFormat instances are initialised before use.
  *
