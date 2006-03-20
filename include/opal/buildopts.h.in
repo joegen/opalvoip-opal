@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: buildopts.h.in,v $
+ * Revision 1.11.2.3  2006/03/20 05:04:21  csoutheren
+ * Fixed more usages of OPAL_T38FAX
+ *
  * Revision 1.11.2.2  2006/03/16 12:09:31  csoutheren
  * Remove ambiguity with OPAL_T38 symbol
  *
@@ -109,7 +112,7 @@
 #define NO_OPAL_VIDEO
 #endif
 
-#ifndef OPAL_T38
+#ifndef OPAL_T38FAX
 #define NO_OPAL_T38FAX
 #endif
 
