@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2035.2.2  2006/03/20 02:25:27  csoutheren
+ * Revision 1.2035.2.3  2006/03/20 05:01:47  csoutheren
+ * Removed change markers
+ *
+ * Revision 2.34.2.2  2006/03/20 02:25:27  csoutheren
  * Backports from CVS head
  *
  * Revision 2.34.2.1  2006/03/16 07:07:24  csoutheren
@@ -344,11 +347,7 @@ void OpalEndPoint::DestroyConnection(OpalConnection * connection)
   delete connection;
 }
 
-<<<<<<< endpoint.cxx
-BOOL OpalEndPoint::OnSetUpConnection(OpalConnection & /*connection*/)
-=======
 BOOL OpalEndPoint::OnSetUpConnection(OpalConnection & PTRACE_PARAM(connection))
->>>>>>> 2.35
 {
   PTRACE(3, "OpalEP\tOnSetUpConnection " << connection);
   return TRUE;
