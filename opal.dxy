@@ -184,6 +184,8 @@ The remaining Opal classes are listed below.
 \li Opal_YUV420P_RGB24 
 \li Opal_YUV420P_RGB32 
 
+Additional information on the working of the IAX2 is \ref pageIAX2Protocol.
+
 \subsection history History
 
 \li 28 February 2005 -  Converted from Doc++ to Doxygen format by Derek Smithies
@@ -191,4 +193,6 @@ The remaining Opal classes are listed below.
 \li 10 May 2005     - Added some comments to explain data flow in a RTP classes
 
 \li 12 May 2005     - Changed main page to list only the Opal classes.
+
+\li 11 March 2006   - Add link to description of the IAX2 code.
 */
