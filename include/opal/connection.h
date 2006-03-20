@@ -25,8 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2050.2.1  2006/02/06 04:38:37  csoutheren
+ * Revision 1.2050.2.2  2006/03/20 10:48:34  csoutheren
+ * Backport from CVS head
+ *
+ * Revision 2.49.2.1  2006/02/06 04:38:37  csoutheren
  * Backported RTP payload mapping fixes from CVS head
+ * Revision 2.52  2006/03/20 10:37:47  csoutheren
+ * Applied patch #1453753 - added locking on media stream manipulation
+ * Thanks to Dinis Rosario
  *
  * Revision 2.50  2006/02/02 07:02:56  csoutheren
  * Added RTP payload map to transcoders and connections to allow remote SIP endpoints
@@ -1099,6 +1105,8 @@ class OpalConnection : public PSafeObject
     const RTP_DataFrame::PayloadMapType & GetRTPPayloadMap() const
     { return rtpPayloadMap; }
 
+    PMutex & GetMediaStreamMutex() { return mediaStreamMutex; }
+
   protected:
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnUserInputInBandDTMF);
@@ -1138,6 +1146,7 @@ class OpalConnection : public PSafeObject
 
 
     MediaAddressesDict  mediaTransportAddresses;
+    PMutex              mediaStreamMutex;
     OpalMediaStreamList mediaStreams;
     RTP_SessionManager  rtpSessions;
     unsigned            minAudioJitterDelay;

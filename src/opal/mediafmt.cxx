@@ -24,11 +24,20 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2040.2.3  2006/02/21 09:36:45  csoutheren
+ * Revision 1.2040.2.4  2006/03/20 10:48:34  csoutheren
+ * Backport from CVS head
+ *
+ * Revision 2.39.2.3  2006/02/21 09:36:45  csoutheren
  * Fixed problem with uLaw and aLaw having wrong timestamp
  *
  * Revision 2.39.2.2  2006/02/13 11:49:29  csoutheren
  * Backported H.235 and initialisation fixes from CVS head
+ * Revision 2.43  2006/03/20 10:37:47  csoutheren
+ * Applied patch #1453753 - added locking on media stream manipulation
+ * Thanks to Dinis Rosario
+ *
+ * Revision 2.42  2006/02/21 09:38:28  csoutheren
+ * Fix problem with incorrect timestamps for uLaw and ALaw
  *
  * Revision 2.41  2006/02/13 03:46:17  csoutheren
  * Added initialisation stuff to make sure that everything works OK
@@ -694,6 +703,7 @@ OpalMediaFormat & OpalMediaFormat::operator=(const PString & wildcard)
 
 bool OpalMediaFormat::Merge(const OpalMediaFormat & mediaFormat)
 {
+  PWaitAndSignal auto_signal(GetMediaFormatsListMutex());
   for (PINDEX i = 0; i < options.GetSize(); i++) {
     OpalMediaOption * option = mediaFormat.FindOption(options[i].GetName());
     if (option != NULL && !options[i].Merge(*option))
@@ -844,6 +854,7 @@ bool OpalMediaFormat::SetOptionString(const PString & name, const PString & valu
 
 bool OpalMediaFormat::AddOption(OpalMediaOption * option)
 {
+  PWaitAndSignal auto_signal(GetMediaFormatsListMutex());
   if (PAssertNULL(option) == NULL)
     return false;
 
@@ -859,6 +870,7 @@ bool OpalMediaFormat::AddOption(OpalMediaOption * option)
 
 OpalMediaOption * OpalMediaFormat::FindOption(const PString & name) const
 {
+  PWaitAndSignal auto_signal(GetMediaFormatsListMutex());
   OpalMediaOptionString search(name, false);
   PINDEX index = options.GetValuesIndex(search);
   if (index == P_MAX_INDEX)
