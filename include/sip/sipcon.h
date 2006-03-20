@@ -25,7 +25,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2043  2006/02/10 23:44:03  csoutheren
+ * Revision 1.2043.2.1  2006/03/20 02:25:26  csoutheren
+ * Backports from CVS head
+ *
+ * Revision 2.45  2006/03/08 21:54:54  dsandras
+ * Forgot to commit this file.
+ *
+ * Revision 2.44  2006/03/06 22:52:59  csoutheren
+ * Reverted experimental SRV patch due to unintended side effects
+ *
+ * Revision 2.43  2006/03/06 12:56:02  csoutheren
+ * Added experimental support for SIP SRV lookups
+ *
+ * Revision 2.42  2006/02/10 23:44:03  csoutheren
  * Applied fix for SetConnection and RFC2833 startup
  *
  * Revision 2.41  2006/01/02 14:47:28  dsandras
@@ -573,8 +585,9 @@ class SIPConnection : public OpalConnection
 
     void InitRFC2833Handler();
 
-    SIPEndPoint   & endpoint;
-    OpalTransport * transport;
+    SIPEndPoint         & endpoint;
+    OpalTransport       * transport;
+    OpalTransportAddress  lastTransportAddress;
 
     PMutex		  transportMutex;
     PMutex                streamsMutex;

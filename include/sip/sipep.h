@@ -25,7 +25,37 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2049  2006/02/19 11:51:46  dsandras
+ * Revision 1.2049.2.1  2006/03/20 02:25:26  csoutheren
+ * Backports from CVS head
+ *
+ * Revision 2.55  2006/03/19 18:57:06  dsandras
+ * More work on Ekiga report #334999.
+ *
+ * Revision 2.54  2006/03/19 17:26:15  dsandras
+ * Fixed FindSIPInfoByDomain so that it doesn't return unregistered accounts.
+ * Fixes Ekiga report #335006.
+ *
+ * Revision 2.53  2006/03/19 12:32:05  dsandras
+ * RFC3261 says that "CANCEL messages "SHOULD NOT" be sent for anything but INVITE
+ * requests". Fixes Ekiga report #334985.
+ *
+ * Revision 2.52  2006/03/19 11:45:47  dsandras
+ * The remote address of the registrar transport might have changed due
+ * to the Via field. This affected unregistering which was reusing
+ * the exact same transport to unregister. Fixed Ekiga report #334999.
+ *
+ * Revision 2.51  2006/03/06 22:52:59  csoutheren
+ * Reverted experimental SRV patch due to unintended side effects
+ *
+ * Revision 2.50  2006/03/06 19:01:30  dsandras
+ * Allow registering several accounts with the same realm but different
+ * user names to the same provider. Fixed possible crash due to transport
+ * deletion before the transaction is over.
+ *
+ * Revision 2.49  2006/03/06 12:56:02  csoutheren
+ * Added experimental support for SIP SRV lookups
+ *
+ * Revision 2.48  2006/02/19 11:51:46  dsandras
  * Fixed FindSIPInfoByDomain.
  *
  * Revision 2.47  2006/01/29 20:55:32  dsandras
@@ -224,13 +254,14 @@ class SIPInfo : public PSafeObject
   
     virtual BOOL CreateTransport(OpalTransportAddress & addr);
 
-    virtual void Cancel(SIPTransaction & transaction);
-
     virtual OpalTransport *GetTransport()
     { PWaitAndSignal m(transportMutex); return registrarTransport; }
 
     virtual SIPAuthentication & GetAuthentication()
     { return authentication; }
+
+    virtual const OpalTransportAddress & GetRegistrarAddress()
+    { return registrarAddress; }
 
     virtual const SIPURL & GetRegistrationAddress()
     { return registrationAddress; }
@@ -259,7 +290,7 @@ class SIPInfo : public PSafeObject
     { return registrationID; }
 
     virtual BOOL HasExpired()
-    { return ((PTime () - registrationTime) >= PTimeInterval (0, expire)); }
+    { return (registered && (PTime () - registrationTime) >= PTimeInterval (0, expire)); }
 
     virtual void SetAuthUser(const PString & u)
     { authUser = u;}
@@ -290,6 +321,7 @@ class SIPInfo : public PSafeObject
       SIPEndPoint      & ep;
       SIPAuthentication  authentication;
       OpalTransport    * registrarTransport;
+      OpalTransportAddress registrarAddress;
       SIPURL             registrationAddress;
       PString            registrationID;
       SIPTransactionList registrations;
@@ -852,10 +884,10 @@ class SIPEndPoint : public OpalEndPoint
 	    /**
 	     * Find the SIPInfo object with the specified authRealm
 	     */
-	    SIPInfo *FindSIPInfoByAuthRealm (const PString & authRealm, PSafetyMode m)
+	    SIPInfo *FindSIPInfoByAuthRealm (const PString & authRealm, const PString & userName, PSafetyMode m)
 	    {
 	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
-		      if (authRealm == info->GetAuthentication().GetAuthRealm())
+		      if (authRealm == info->GetAuthentication().GetAuthRealm() && (userName.IsEmpty() || userName == info->GetAuthentication().GetUsername()))
 		        return info;
 	      return NULL;
 	    }
@@ -885,7 +917,7 @@ class SIPEndPoint : public OpalEndPoint
 	    {
 	      OpalTransportAddress addr = name;
 	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info) {
-		      if ((name == info->GetRegistrationAddress().GetHostName() || (info->GetTransport() && addr.GetHostName() == info->GetTransport()->GetRemoteAddress().GetHostName()) && meth == info->GetMethod()))
+		      if (info->IsRegistered() && (name == info->GetRegistrationAddress().GetHostName() || (info->GetTransport() && addr.GetHostName() == info->GetTransport()->GetRemoteAddress().GetHostName()) && meth == info->GetMethod()))
 			return info;
 	      }
 	      return NULL;
@@ -939,10 +971,8 @@ class SIPEndPoint : public OpalEndPoint
     SIPTransactionList messages;
     SIPTransactionDict transactions;
 
-    PMutex                  natTransportMutex;
     PTimer                  natBindingTimer;
     NATBindingRefreshMethod natMethod;
-    PList<OpalTransport>    natTransports;
 
     PMutex             transactionsMutex;
 

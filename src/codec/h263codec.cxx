@@ -25,6 +25,12 @@
  * Contributor(s): Guilhem Tardy (gtardy@salyens.com)
  *
  * $Log: h263codec.cxx,v $
+ * Revision 1.2.2.1  2006/03/20 02:25:26  csoutheren
+ * Backports from CVS head
+ *
+ * Revision 1.3  2006/03/12 06:36:57  rjongbloed
+ * Fixed DevStudio warning
+ *
  * Revision 1.2  2006/02/13 03:46:17  csoutheren
  * Added initialisation stuff to make sure that everything works OK
  *
@@ -243,32 +249,28 @@ FFmpegLink::~FFmpegLink()
 AVCodec *FFmpegLink::AvcodecFindEncoder(enum CodecID id)
 {
   AVCodec *res = Favcodec_find_encoder(id);
-  if (res)
-    PTRACE(6, "FFLINK\tFound encoder " << res->name << " @ " << ::hex << (int)res << ::dec);
+  PTRACE_IF(6, res, "FFLINK\tFound encoder " << res->name << " @ " << ::hex << (int)res << ::dec);
   return res;
 }
 
 AVCodec *FFmpegLink::AvcodecFindDecoder(enum CodecID id)
 {
   AVCodec *res = Favcodec_find_decoder(id);
-  if (res)
-    PTRACE(6, "FFLINK\tFound decoder " << res->name << " @ " << ::hex << (int)res << ::dec);
+  PTRACE_IF(6, res, "FFLINK\tFound decoder " << res->name << " @ " << ::hex << (int)res << ::dec);
   return res;
 }
 
 AVCodecContext *FFmpegLink::AvcodecAllocContext(void)
 {
   AVCodecContext *res = Favcodec_alloc_context();
-  if (res)
-    PTRACE(6, "FFLINK\tAllocated context @ " << ::hex << (int)res << ::dec);
+  PTRACE_IF(6, res, "FFLINK\tAllocated context @ " << ::hex << (int)res << ::dec);
   return res;
 }
 
 AVFrame *FFmpegLink::AvcodecAllocFrame(void)
 {
   AVFrame *res = Favcodec_alloc_frame();
-  if (res)
-    PTRACE(6, "FFLINK\tAllocated frame @ " << ::hex << (int)res << ::dec);
+  PTRACE_IF(6, res, "FFLINK\tAllocated frame @ " << ::hex << (int)res << ::dec);
   return res;
 }
 
@@ -990,12 +992,12 @@ BOOL Opal_YUV420P_H263::ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameLi
   picture->data[1] = picture->data[0] + size;
   picture->data[2] = picture->data[1] + (size / 4);
 
+PTRACE(1, "Now encode video for ctxt @ " << ::hex << (int)context << ", pict @ " << (int)picture << ", buf @ " << (int)encFrameBuffer.GetPointer() << ::dec << " (" << encFrameLen << " bytes)");
 #if PTRACING
   PTime encTime;
+  int out_size =  
 #endif
-
-PTRACE(1, "Now encode video for ctxt @ " << ::hex << (int)context << ", pict @ " << (int)picture << ", buf @ " << (int)encFrameBuffer.GetPointer() << ::dec << " (" << encFrameLen << " bytes)");
-  int out_size =  ff.AvcodecEncodeVideo(context, encFrameBuffer.GetPointer(), encFrameLen, picture);
+  ff.AvcodecEncodeVideo(context, encFrameBuffer.GetPointer(), encFrameLen, picture);
 
 #if PTRACING
   PTRACE(5, "H263\tEncoded " << out_size << " bytes from " << frameWidth << "x" << frameHeight
