@@ -166,7 +166,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wsock32.lib mpr.lib"
+				AdditionalDependencies="opalsd.lib ptclibd.lib ptlibsd.lib wsock32.lib mpr.lib"
 				OutputFile=".\Debug/opalcodecinfo.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"

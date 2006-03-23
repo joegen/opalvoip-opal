@@ -22,6 +22,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.1.2.3  2006/03/23 07:55:54  csoutheren
+ * Added in options for capability handling
+ *
  * Revision 1.1.2.2  2006/03/20 05:04:54  csoutheren
  * Add check to ensure codec can be instantiated
  *
@@ -374,9 +377,8 @@ void OpalCodecInfo::Main()
 
              "h-help."
 
-             //"a-capabilities:"
-             //"C-caps:"
-             //"f-factory"
+             "a-capabilities:"
+             "C-caps:"
              , FALSE);
 
   PTrace::Initialise(args.GetOptionCount('t'),
@@ -386,26 +388,26 @@ void OpalCodecInfo::Main()
   OPALPluginCodecManager & codecMgr = *(OPALPluginCodecManager *)PFactory<PPluginModuleManager>::CreateInstance("OPALPluginCodecManager");
   PPluginModuleManager::PluginListType pluginList = codecMgr.GetPluginList();
 
-  //if (args.HasOption('a')) {
-  //  H323CapabilityFactory::KeyList_T keyList = H323CapabilityFactory::GetKeyList();
-  //  cout << "Registered capabilities:" << endl
-  //       << setfill(',') << PStringArray(keyList) << setfill(' ')
-  //       << endl;
-  //  return;
-  //}
+  if (args.HasOption('a')) {
+    H323CapabilityFactory::KeyList_T keyList = H323CapabilityFactory::GetKeyList();
+    cout << "Registered capabilities:" << endl
+         << setfill(',') << PStringArray(keyList) << setfill(' ')
+         << endl;
+    return;
+  }
 
-  //if (args.HasOption('C')) {
-  //  PString spec = args.GetOptionString('C');
-  //  H323Capabilities caps;
-  //  caps.AddAllCapabilities(0, 0, spec);
-  //  cout << "Standard capability set:" << caps << endl;
-  //  for (PINDEX i = 0; i < stdCodecList.GetSize(); i++) {
-  //    PString fmt = stdCodecList[i];
-  //    caps.FindCapability(fmt);
-  //  }
-  //  return;
-  //}
-
+  if (args.HasOption('C')) {
+    PString spec = args.GetOptionString('C');
+    OpalMediaFormatList stdCodecList = OPALPluginCodecManager::GetMediaFormats();
+    H323Capabilities caps;
+    caps.AddAllCapabilities(0, 0, spec);
+    cout << "Standard capability set:" << caps << endl;
+    for (PINDEX i = 0; i < stdCodecList.GetSize(); i++) {
+      PString fmt = stdCodecList[i];
+      caps.FindCapability(fmt);
+    }
+    return;
+  }
 
   if (args.HasOption('c')) {
     OpalMediaFormatList stdCodecList = OPALPluginCodecManager::GetMediaFormats();
@@ -479,17 +481,6 @@ void OpalCodecInfo::Main()
     cout << "error: plugin \"" << name << "\" not found" << endl;
     return;
   }
-
-#if 0
-  if (args.HasOption('f')) {
-    PFactory<OpalFactoryCodec>::KeyList_T list = PFactory<OpalFactoryCodec>::GetKeyList();
-    cout << "Codec factories:" << endl;
-    for (PFactory<OpalFactoryCodec>::KeyList_T::const_iterator r = list.begin(); r != list.end(); ++r)
-      cout << *r << endl;
-    PFactory<OpalFactoryCodec>::CreateInstance("G.711-uLaw-64k|L16");
-    return;
-  }
-#endif
 
   cout << "available options:" << endl
        << "  -c --codecs         display standard codecs\n"
