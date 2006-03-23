@@ -92,18 +92,6 @@ AC_SUBST(PWLIBDIR)
 
 
 dnl ########################################################################
-dnl Look for G.729 codec
-
-dnl MSWIN_DISPLAY     vag729,Voice Age G.729A
-dnl MSWIN_CHECK_FILE  vag729,va_g729a.h,VOICE_AGE_G729A=1
-dnl MSWIN_DIR_SYMBOL  vag729,VOICE_AGE_DIR
-dnl MSWIN_CHECK_DIR   vag729,..\va_g729\
-dnl MSWIN_CHECK_DIR   vag729,..\external\va_g729
-dnl MSWIN_CHECK_DIR   vag729,\va_g729
-dnl MSWIN_CHECK_DIR   vag729,c:\va_g729
-
-
-dnl ########################################################################
 dnl Look for H263 codec
 AC_ARG_ENABLE(h263avcodec,
 		[  --enable-h263avcodec    specify RFC 2190 compatible avcodec
@@ -292,13 +280,8 @@ dnl MSWIN_DEFINE  video,OPAL_VIDEO
 AC_SUBST(OPAL_VIDEO, 1)
 AC_DEFINE(OPAL_VIDEO)
 
-dnl MSWIN_DEFINE  t38,OPAL_T38FAX
-AC_SUBST(OPAL_T38FAX, 1)
-AC_DEFINE(OPAL_T38FAX)
-
-
 dnl ########################################################################
-dnl check if SIP, H.323 and IAX2 are enabled
+dnl check if SIP, H.323, IAX2 and T.38 are enabled
 
 dnl MSWIN_DISPLAY sip,SIP support
 dnl MSWIN_DEFINE  sip,OPAL_SIP
@@ -319,8 +302,11 @@ fi
 
 dnl MSWIN_DISPLAY h323,H.323 support
 dnl MSWIN_DEFINE  h323,OPAL_H323
+dnl MSWIN_DEFINE  t38,OPAL_T38FAX
+dnl MSWIN_IF_FEATURE t38,h323
 
 h323=yes
+t38=yes
 AC_ARG_ENABLE(h323,
        [  --disable-h323          disable H.323 protocol support],
        h323=$enableval)
@@ -331,9 +317,25 @@ if test "$h323" = "yes" ; then
   AC_MSG_RESULT(enabled)
 else
   AC_SUBST(OPAL_H323, 0)
-  AC_MSG_RESULT(disabled)
+  AC_MSG_RESULT(disabled (T.38 also disabled))
+  t38=no
 fi
 AC_SUBST(OPAL_H323, $OPAL_H323)
+
+if test "$t38" = "yes" ; then
+  AC_ARG_ENABLE(t38,
+         [  --disable-t38           disable T.38 protocol support],
+         t38=$enableval)
+  AC_MSG_CHECKING(T.38 protocol)
+  if test "$t38" = "yes" ; then
+    AC_SUBST(OPAL_T38FAX, 1)
+    AC_DEFINE(OPAL_T38FAX)
+    AC_MSG_RESULT(enabled)
+  else
+    AC_SUBST(OPAL_T38FAX, 0)
+    AC_MSG_RESULT(disabled)
+  fi
+fi
 
 dnl MSWIN_DISPLAY iax2,IAX2 support
 dnl MSWIN_DEFINE  iax2,OPAL_IAX2
