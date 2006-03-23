@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2141  2006/03/19 17:18:46  dsandras
+ * Revision 1.2142  2006/03/23 00:24:49  csoutheren
+ * Detect if ClearCall is used within OnIncomingConnection
+ *
+ * Revision 2.140  2006/03/19 17:18:46  dsandras
  * Fixed SRV handling.
  *
  * Revision 2.139  2006/03/19 16:59:00  dsandras
@@ -1607,6 +1610,10 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   if (!OnIncomingConnection()) {
     PTRACE(2, "SIP\tOnIncomingConnection failed for INVITE from " << request.GetURI() << " for " << *this);
     Release();
+    return;
+  }
+  if ((phase == ReleasingPhase) || (phase == ReleasedPhase)) {
+    PTRACE(1, "H225\tApplication called ClearCall during OnIncomingCall");
     return;
   }
 
