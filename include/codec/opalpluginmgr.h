@@ -24,6 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.h,v $
+ * Revision 1.1.2.2  2006/03/23 07:55:18  csoutheren
+ * Audio plugin H.323 capability merging completed.
+ * GSM, LBC, G.711 working. Speex and LPC-10 are not
+ *
  * Revision 1.1.2.1  2006/03/16 07:06:00  csoutheren
  * Initial support for audio plugins
  *
@@ -41,8 +45,11 @@
 #include <ptlib/pluginmgr.h>
 #include <ptlib/pfactory.h>
 #include <opalplugin.h>
-
 #include <opal/mediafmt.h>
+
+#if OPAL_H323
+#include <h323/h323caps.h>
+#endif
 
 class H323Capability;
 
@@ -65,14 +72,14 @@ class OPALPluginCodecManager : public PPluginModuleManager
 
     static void Bootstrap();
 
-    /*
+#if OPAL_H323
     H323Capability * CreateCapability(
           const PString & _mediaFormat, 
           const PString & _baseName,
                  unsigned maxFramesPerPacket, 
                  unsigned recommendedFramesPerPacket,
                  unsigned _pluginSubType);
-    */
+#endif
 
   protected:
     void RegisterPluginPair(

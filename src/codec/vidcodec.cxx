@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vidcodec.cxx,v $
- * Revision 1.2012  2006/01/12 17:55:22  dsandras
+ * Revision 1.2012.4.1  2006/03/23 07:55:18  csoutheren
+ * Audio plugin H.323 capability merging completed.
+ * GSM, LBC, G.711 working. Speex and LPC-10 are not
+ *
+ * Revision 2.11  2006/01/12 17:55:22  dsandras
  * Initialize the fillLevel to a saner value.
  *
  * Revision 2.10  2005/10/21 17:58:31  dsandras
@@ -69,6 +73,10 @@
 #ifdef __GNUC__
 #pragma implementation "vidcodec.h"
 #endif
+
+#include <opal/buildopts.h>
+
+#if OPAL_VIDEO
 
 #include <codec/vidcodec.h>
 
@@ -119,7 +127,6 @@ const OpalVideoFormat & GetOpalYUV420P()
 
 
 #define new PNEW
-
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -179,12 +186,11 @@ PString OpalTemporalSpatialTradeOff::GetName() const
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef NO_H323
+#if OPAL_H323
 
-H323_UncompVideoCapability::H323_UncompVideoCapability(const H323EndPoint & endpoint,
+H323_UncompVideoCapability::H323_UncompVideoCapability(const H323EndPoint & /*endpoint*/,
                                                        const PString & colourFmt)
-  : H323NonStandardVideoCapability(endpoint,
-                                   (const BYTE *)(const char *)colourFmt,
+  : H323NonStandardVideoCapability((const BYTE *)(const char *)colourFmt,
                                    colourFmt.GetLength()),
     colourFormat(colourFmt)
 {
@@ -202,7 +208,7 @@ PString H323_UncompVideoCapability::GetFormatName() const
   return colourFormat;
 }
 
-#endif // ifndef NO_H323
+#endif // OPAL_H323
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -274,5 +280,6 @@ BOOL OpalUncompVideoTranscoder::ConvertFrames(const RTP_DataFrame & input,
   return TRUE;
 }
 
+#endif // OPAL_VIDEO
 
 /////////////////////////////////////////////////////////////////////////////
