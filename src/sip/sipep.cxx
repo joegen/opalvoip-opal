@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2119  2006/03/19 18:57:06  dsandras
+ * Revision 1.2120  2006/03/23 21:23:08  dsandras
+ * Fixed SIP Options request sent when refreshint NAT bindings.
+ *
+ * Revision 2.118  2006/03/19 18:57:06  dsandras
  * More work on Ekiga report #334999.
  *
  * Revision 2.117  2006/03/19 18:14:11  dsandras
@@ -727,7 +730,7 @@ void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
 
       case Options: 
 	  {
-	    SIPOptions options(*this, *transport, transport->GetRemoteAddress());
+	    SIPOptions options(*this, *transport, SIPURL(info->GetRegistrationAddress()).GetHostName());
 	    options.Write(*transport);
 	    break;
 	  }
