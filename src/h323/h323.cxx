@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2102  2006/02/22 10:54:55  csoutheren
+ * Revision 1.2103  2006/03/23 00:24:49  csoutheren
+ * Detect if ClearCall is used within OnIncomingConnection
+ *
+ * Revision 2.101  2006/02/22 10:54:55  csoutheren
  * Appled patch #1375120 from Frederic Heem
  * Add ARQ srcCallSignalAddress only when needed
  *
@@ -2260,6 +2263,10 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
     if (!OnIncomingCall(setupPDU, *alertingPDU) && (!isCallIntrusion)) {
       Release(EndedByNoAccept);
       PTRACE(1, "H225\tApplication not accepting calls");
+      return FALSE;
+    }
+    if ((phase == ReleasingPhase) || (phase == ReleasedPhase)) {
+      PTRACE(1, "H225\tApplication called ClearCall during OnIncomingCall");
       return FALSE;
     }
 
