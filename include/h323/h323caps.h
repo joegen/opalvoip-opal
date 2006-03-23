@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.h,v $
- * Revision 1.2016  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2016.4.1  2006/03/23 07:55:18  csoutheren
+ * Audio plugin H.323 capability merging completed.
+ * GSM, LBC, G.711 working. Speex and LPC-10 are not
+ *
+ * Revision 2.15  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.14  2005/02/21 12:19:45  rjongbloed
@@ -247,8 +251,9 @@ class H245_TerminalCapabilitySet;
 class H245_NonStandardParameter;
 class H323Connection;
 class H323Capabilities;
-
-
+class H245_CapabilityIdentifier;
+class H245_GenericCapability;
+class H245_GenericParameter;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -327,7 +332,6 @@ class H323Capability : public PObject
        This uses the registration system to create the capability.
       */
     static H323Capability * Create(
-      const H323EndPoint & ep, ///<  EndPoint capability is created for.
       const PString & name     ///<  Name of capability
     );
 
@@ -530,10 +534,19 @@ class H323Capability : public PObject
 class H323NonStandardCapabilityInfo
 {
   public:
+    typedef PObject::Comparison (*CompareFuncType)(struct PluginCodec_H323NonStandardCodecData *);
+
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardCapabilityInfo(
-      const H323EndPoint & endpoint,  ///<  Endpoint to get t35 information
+      CompareFuncType compareFunc,
+      const BYTE * dataBlock,         ///< Non-Standard data for codec type
+      PINDEX dataSize                 ///< Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
+    );
+
+    /**Create a new set of information about a non-standard codec.
+      */
+    H323NonStandardCapabilityInfo(
       const BYTE * dataBlock,         ///<  Non-Standard data for codec type
       PINDEX dataSize,                ///<  Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
       PINDEX comparisonOffset = 0,    ///<  Offset into dataBlock to compare
@@ -610,8 +623,59 @@ class H323NonStandardCapabilityInfo
     PBYTEArray nonStandardData;
     PINDEX     comparisonOffset;
     PINDEX     comparisonLength;
+    CompareFuncType compareFunc;
 };
 
+/**This class describes the interface to a generic codec used to
+   transfer data via the logical channels opened and managed by the H323
+   control channel.
+
+   It is expected that an application makes a descendent off
+   H323GenericAudioCapability or H323GenericVideoCapability which
+   multiply inherit from this class.
+ */
+
+class H323GenericCapabilityInfo
+{
+  public:
+    H323GenericCapabilityInfo(
+        const PString &capabilityId,	///< generic codec identifier
+        PINDEX maxBitRate = 0	      ///< maxBitRate parameter for the GenericCapability
+        );
+    H323GenericCapabilityInfo(const H323GenericCapabilityInfo &obj);
+    virtual ~H323GenericCapabilityInfo();
+
+    /**Compare the genericCapability part of the capability, if applicable.
+     */
+    virtual BOOL IsGenericMatch(
+      const H245_GenericCapability & param  ///< Non standard field in PDU received
+    ) const;
+
+    /** Add a parameter which will be used in the TerminalCapabilitySet and
+     * OpenLogicalChannel messages */
+    virtual BOOL AddIntegerGenericParameter(
+	    BOOL collapsing,
+	    int standardId,
+	    int type, ///< should be one of opalplugin.h:PluginCodec_H323GenericParameterType
+	    long int value 
+    );
+    
+  protected:
+    virtual BOOL OnSendingGenericPDU(H245_GenericCapability & pdu) const;
+    virtual BOOL OnReceivedGenericPDU(const H245_GenericCapability &pdu);
+
+    PObject::Comparison CompareInfo(
+    	const H323GenericCapabilityInfo & obj
+	  ) const;
+
+    PINDEX maxBitRate;
+    H245_CapabilityIdentifier *capId;
+
+    /* parameters sent in the TerminalCapabilitySet and OpenLogicalChannel
+       messages */
+    PList<H245_GenericParameter> collapsingParameters;
+    PList<H245_GenericParameter> nonCollapsingParameters;
+};
 
 /**This class describes the interface to a codec that has channels based on
    the RTP protocol.
@@ -646,6 +710,7 @@ class H323RealTimeCapability : public H323Capability
   //@}
 };
 
+#if OPAL_AUDIO
 
 /**This class describes the interface to an audio codec used to transfer data
    via the logical channels opened and managed by the H323 control channel.
@@ -835,10 +900,14 @@ class H323NonStandardAudioCapability : public H323AudioCapability,
   public:
   /**@name Construction */
   //@{
+    H323NonStandardAudioCapability(
+      H323NonStandardCapabilityInfo::CompareFuncType compareFunc,
+      const BYTE * dataBlock,         ///< Non-Standard data for codec type
+      PINDEX dataSize                 ///< Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
+    );
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardAudioCapability(
-      const H323EndPoint & endpoint,  ///<  Endpoint to get t35 information
       const BYTE * dataBlock = NULL,  ///<  Non-Standard data for codec type
       PINDEX dataSize = 0,            ///<  Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
       PINDEX comparisonOffset = 0,    ///<  Offset into dataBlock to compare
@@ -934,6 +1003,88 @@ class H323NonStandardAudioCapability : public H323AudioCapability,
   //@}
 };
 
+/**This class describes the interface to a generic audio codec used to
+   transfer data via the logical channels opened and managed by the H323
+   control channel.
+
+   An application may create a descendent off this class and override
+   functions as required for descibing the codec.
+ */
+class H323GenericAudioCapability : public H323AudioCapability,
+				                           public H323GenericCapabilityInfo
+{
+  PCLASSINFO(H323NonStandardAudioCapability, H323AudioCapability);
+
+  public:
+  /**@name Construction */
+  //@{
+    /**Create a new set of information about a non-standard codec.
+      */
+    H323GenericAudioCapability(
+      const PString & capabilityId,    ///< generic codec identifier
+      PINDEX maxBitRate = 0	           ///< maxBitRate parameter for the GenericCapability
+      );
+
+  //@}
+
+  /**@name Overrides from class PObject */
+  //@{
+    /**Compare two capability instances. This compares the main and sub-types
+       of the capability.
+     */
+    Comparison Compare(const PObject & obj) const;
+  //@}
+
+  /**@name Identification functions */
+  //@{
+    /**Get the sub-type of the capability. This is a code dependent on the
+       main type of the capability.
+
+       This returns H245_AudioCapability::e_genericCapability.
+     */
+    virtual unsigned GetSubType() const;
+  //@}
+
+  /**@name Protocol manipulation */
+  //@{
+    /**This function is called whenever and outgoing TerminalCapabilitySet
+       or OpenLogicalChannel PDU is being constructed for the control channel.
+       It allows the capability to set the PDU fields from information in
+       members specific to the class.
+
+       The default behaviour calls H323GenericCapabilityinfo::OnSendingPDU()
+       to handle the PDU.
+     */
+    virtual BOOL OnSendingPDU(
+      H245_AudioCapability & pdu,  ///< PDU to set information on
+      unsigned packetSize          ///< Packet size to use in capability
+    ) const;
+
+    /**This function is called whenever and incoming TerminalCapabilitySet
+       or OpenLogicalChannel PDU has been used to construct the control
+       channel. It allows the capability to set from the PDU fields,
+       information in members specific to the class.
+
+       The default behaviour calls H323GenericCapabilityinfo::OnReceivedPDU()
+       to handle the provided PDU.
+     */
+    virtual BOOL OnReceivedPDU(
+      const H245_AudioCapability & pdu,  ///< PDU to get information from
+      unsigned & packetSize              ///< Packet size to use in capability
+    );
+
+    /**Compare the generic part of the capability, if applicable.
+     */
+    virtual BOOL IsGenericMatch(
+      const H245_GenericCapability & param  ///< Generic field in PDU received
+      ) const { return H323GenericCapabilityInfo::IsGenericMatch(param); }
+
+  //@}
+};
+
+#endif  // OPAL_AUDIO
+
+#if OPAL_VIDEO
 
 /**This class describes the interface to a video codec used to transfer data
    via the logical channels opened and managed by the H323 control channel.
@@ -1085,7 +1236,6 @@ class H323NonStandardVideoCapability : public H323VideoCapability,
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardVideoCapability(
-      const H323EndPoint & endpoint,  ///<  Endpoint to get t35 information
       const BYTE * dataBlock = NULL,  ///<  Non-Standard data for codec type
       PINDEX dataSize = 0,            ///<  Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
       PINDEX comparisonOffset = 0,    ///<  Offset into dataBlock to compare
@@ -1180,6 +1330,7 @@ class H323NonStandardVideoCapability : public H323VideoCapability,
   //@}
 };
 
+#endif  // OPAL_VIDEO
 
 /**This class describes the interface to a data channel used to transfer data
    via the logical channels opened and managed by the H323 control channel.
@@ -1343,7 +1494,6 @@ class H323NonStandardDataCapability : public H323DataCapability,
       */
     H323NonStandardDataCapability(
       unsigned maxBitRate,            ///<  Maximum bit rate for data in 100's b/s
-      const H323EndPoint & endpoint,  ///<  Endpoint to get t35 information
       const BYTE * dataBlock = NULL,  ///<  Non-Standard data for codec type
       PINDEX dataSize = 0,            ///<  Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
       PINDEX comparisonOffset = 0,    ///<  Offset into dataBlock to compare
@@ -1503,6 +1653,7 @@ class H323_G711Capability : public H323AudioCapability
     Speed    speed;
 };
 
+#if 0
 
 /**This class describes the G.728 codec capability.
  */
@@ -1729,6 +1880,8 @@ class H323_GSM0610Capability : public H323AudioCapability
     );
   //@}
 };
+
+#endif
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2002,11 +2155,19 @@ class H323Capabilities : public PObject
        form of the SetCapability() function.
       */
     PINDEX AddAllCapabilities(
-      const H323EndPoint & ep, ///<  The endpoint adding the capabilities.
       PINDEX descriptorNum,    ///<  The member of the capabilityDescriptor to add
       PINDEX simultaneous,     ///<  The member of the SimultaneousCapabilitySet to add
       const PString & name     ///<  New capabilities name, if using "known" one.
     );
+
+    // this function is retained for backwards compatibility
+    PINDEX AddAllCapabilities(
+      const H323EndPoint &,    ///<  The endpoint adding the capabilities.
+      PINDEX descriptorNum,    ///<  The member of the capabilityDescriptor to add
+      PINDEX simultaneous,     ///<  The member of the SimultaneousCapabilitySet to add
+      const PString & name     ///<  New capabilities name, if using "known" one.
+    )
+    { return AddAllCapabilities(descriptorNum, simultaneous, name); }
 
     /**Add a codec to the capabilities table. This will assure that the
        assignedCapabilityNumber field in the capability is unique for all
@@ -2223,6 +2384,7 @@ class H323Capabilities : public PObject
    Exactly one static instance of this class is created so that the system can
    create the approriate H323Capability descendant given a string name.
   */
+/*
 class H323CapabilityRegistration : public PCaselessString
 {
     PCLASSINFO(H323CapabilityRegistration, PCaselessString);
@@ -2242,9 +2404,10 @@ class H323CapabilityRegistration : public PCaselessString
   friend class H323Capabilities;
   friend class OpalDynaCodecDLL;
 };
+#endif
 
-
-
+/*
+Old capability registration macros based on list
 
 #define H323_REGISTER_CAPABILITY_FUNCTION(cls, name, epvar) \
 class cls##_Registration : public H323CapabilityRegistration { \
@@ -2269,6 +2432,41 @@ H323Capability * cls##_Registration::Create(const H323EndPoint & epvar) const
   class cls##_Registration; \
   extern cls##_Registration cls##_Registration_Instance; \
   static cls##_Registration * cls##_Registration_Static_Library_Loader = &cls##_Registration_Instance
+
+*/
+
+/*
+New capability registration macros based on abstract factories
+*/
+typedef PFactory<H323Capability> H323CapabilityFactory;
+
+#define H323_REGISTER_CAPABILITY(cls, capName)   static H323CapabilityFactory::Worker<cls> cls##Factory(capName, true); \
+
+#define H323_DECLARE_CAPABILITY_CLASS(cls, anc) \
+  class cls : public anc \
+  { \
+    public: \
+      cls() \
+
+
+//#define H323_DEFINE_CAPABILITY(cls, capName, fmtName) \
+//class cls : public H323Capability { \
+//  public: \
+//    cls() : H323Capability() { } \
+//    PString GetFormatName() const \
+//    { return fmtName; } \
+//}; \
+//H323_REGISTER_CAPABILITY(cls, capName) \
+
+//#define H323_DEFINE_CAPABILITY_FROM(cls, ancestor, capName, fmtName) \
+//class cls : public ancestor { \
+//  public: \
+//    cls() : ancestor() { } \
+//    PString GetFormatName() const \
+//    { return fmtName; } \
+//}; \
+//H323_REGISTER_CAPABILITY(cls, capName) \
+
 
 
 #endif // __OPAL_H323CAPS_H

@@ -24,6 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
+ * Revision 1.1.2.3  2006/03/23 07:55:18  csoutheren
+ * Audio plugin H.323 capability merging completed.
+ * GSM, LBC, G.711 working. Speex and LPC-10 are not
+ *
  * Revision 1.1.2.2  2006/03/20 05:03:23  csoutheren
  * Changes to make audio plugins work with SIP
  *
@@ -44,11 +48,11 @@
 #include <opal/transcoders.h>
 #include <codec/opalpluginmgr.h>
 #include <codec/opalplugin.h>
+#include <h323/h323caps.h>
+#include <asn/h245.h>
 
 //#include <h323.h>
 //#include <opalwavfile.h>
-//#include <h323caps.h>
-//#include <h245.h>
 //#include <rtp.h>
 //#include <mediafmt.h>
 
@@ -78,27 +82,20 @@ class OpalFixedCodecFactory : public PFactory<OpalFactoryCodec>
 };
 
 
-static PString CreateCodecName(PluginCodec_Definition * codec, BOOL addSW)
+static PString CreateCodecName(PluginCodec_Definition * codec, BOOL /*addSW*/)
 {
   PString str;
   if (codec->destFormat != NULL)
     str = codec->destFormat;
   else
     str = PString(codec->descr);
-  if (addSW)
-    str += "{sw}";
   return str;
 }
 
-#if 0
-static PString CreateCodecName(const PString & baseName, BOOL addSW)
+static PString CreateCodecName(const PString & baseName, BOOL /*addSW*/)
 {
-  PString str(baseName);
-  if (addSW)
-    str += "{sw}";
-  return str;
+  return baseName;
 }
-#endif
 
 class OpalPluginMediaFormat : public OpalMediaFormat
 {
@@ -208,7 +205,7 @@ class H323CodecPluginCapabilityRegistration : public PObject
 
 ////////////////////////////////////////////////////////////////////
 
-#if 0 // OPAL_H323
+#if OPAL_H323
 
 class H323CodecPluginCapabilityMapEntry {
   public:
@@ -570,7 +567,7 @@ class H323PluginVideoCodec : public H323VideoCodec
 
 #endif // OPAL_VIDEO
 
-#if 0 // OPAL_H323
+#if OPAL_H323
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -589,7 +586,7 @@ class H323PluginCapabilityInfo
     const PString & GetFormatName() const
     { return capabilityFormatName; }
 
-    H323Codec * CreateCodec(H323Codec::Direction direction) const;
+    //H323Codec * CreateCodec(H323Codec::Direction direction) const;
 
   protected:
     PluginCodec_Definition * encoderCodec;
@@ -611,16 +608,19 @@ class H323PluginCapability : public H323AudioCapability,
     H323PluginCapability(PluginCodec_Definition * _encoderCodec,
                          PluginCodec_Definition * _decoderCodec,
                          unsigned _pluginSubType)
-      : H323AudioCapability(_decoderCodec->maxFramesPerPacket, _encoderCodec->recommendedFramesPerPacket), 
+      : H323AudioCapability(), 
         H323PluginCapabilityInfo(_encoderCodec, _decoderCodec),
         pluginSubType(_pluginSubType)
-      { }
+      { 
+        SetTxFramesInPacket(_decoderCodec->maxFramesPerPacket);
+        // _encoderCodec->recommendedFramesPerPacket
+      }
 
     // this constructor is only used when creating a capability without a codec
     H323PluginCapability(const PString & _mediaFormat, const PString & _baseName,
-                         unsigned maxFramesPerPacket, unsigned recommendedFramesPerPacket,
+                         unsigned maxFramesPerPacket, unsigned /*recommendedFramesPerPacket*/,
                          unsigned _pluginSubType)
-      : H323AudioCapability(maxFramesPerPacket, recommendedFramesPerPacket), 
+      : H323AudioCapability(), 
         H323PluginCapabilityInfo(_mediaFormat, _baseName),
         pluginSubType(_pluginSubType)
       { 
@@ -631,6 +631,8 @@ class H323PluginCapability : public H323AudioCapability,
           }
         }
         rtpPayloadType = OpalMediaFormat(_mediaFormat).GetPayloadType();
+        SetTxFramesInPacket(maxFramesPerPacket);
+        // recommendedFramesPerPacket
       }
 
     virtual PObject * Clone() const
@@ -639,8 +641,8 @@ class H323PluginCapability : public H323AudioCapability,
     virtual PString GetFormatName() const
     { return H323PluginCapabilityInfo::GetFormatName();}
 
-    virtual H323Codec * CreateCodec(H323Codec::Direction direction) const
-    { return H323PluginCapabilityInfo::CreateCodec(direction); }
+    //virtual H323Codec * CreateCodec(H323Codec::Direction direction) const
+    //{ return H323PluginCapabilityInfo::CreateCodec(direction); }
 
     virtual unsigned GetSubType() const
     { return pluginSubType; }
@@ -679,8 +681,8 @@ class H323CodecPluginNonStandardAudioCapability : public H323NonStandardAudioCap
     virtual PString GetFormatName() const
     { return H323PluginCapabilityInfo::GetFormatName();}
 
-    virtual H323Codec * CreateCodec(H323Codec::Direction direction) const
-    { return H323PluginCapabilityInfo::CreateCodec(direction); }
+    //virtual H323Codec * CreateCodec(H323Codec::Direction direction) const
+    //{ return H323PluginCapabilityInfo::CreateCodec(direction); }
 };
 
 
@@ -690,7 +692,7 @@ class H323CodecPluginNonStandardAudioCapability : public H323NonStandardAudioCap
 //
 
 class H323CodecPluginGenericAudioCapability : public H323GenericAudioCapability,
-					      public H323PluginCapabilityInfo
+					                                    public H323PluginCapabilityInfo
 {
   PCLASSINFO(H323CodecPluginGenericAudioCapability, H323GenericAudioCapability);
   public:
@@ -707,8 +709,8 @@ class H323CodecPluginGenericAudioCapability : public H323GenericAudioCapability,
     virtual PString GetFormatName() const
     { return H323PluginCapabilityInfo::GetFormatName();}
 
-    virtual H323Codec * CreateCodec(H323Codec::Direction direction) const
-    { return H323PluginCapabilityInfo::CreateCodec(direction); }
+    //virtual H323Codec * CreateCodec(H323Codec::Direction direction) const
+    //{ return H323PluginCapabilityInfo::CreateCodec(direction); }
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -847,8 +849,6 @@ class H323CodecPluginNonStandardVideoCapability : public H323NonStandardVideoCap
     { return H323PluginCapabilityInfo::CreateCodec(direction); }
 };
 
-#endif // 0
-
 //////////////////////////////////////////////////////////////////////////////
 //
 // Class for handling H.261 plugin capabilities
@@ -888,8 +888,8 @@ class H323H261PluginCapability : public H323PluginCapability
       const H245_VideoCapability & pdu  /// PDU to get information from
     );
 
-    H323Codec * CreateCodec(H323Codec::Direction direction) const
-    { return H323PluginCapabilityInfo::CreateCodec(direction); }
+    //H323Codec * CreateCodec(H323Codec::Direction direction) const
+    //{ return H323PluginCapabilityInfo::CreateCodec(direction); }
 
   protected:
     unsigned qcifMPI;                   // 1..4 units 1/29.97 Hz
@@ -898,6 +898,8 @@ class H323H261PluginCapability : public H323PluginCapability
     unsigned maxBitRate;                // units of 100 bit/s
     BOOL     stillImageTransmission;    // Annex D of H.261
 };
+
+#endif // 0
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -1203,7 +1205,7 @@ void OPALPluginCodecManager::RegisterPluginPair(
       break;
   }
 
-#if 0 // OPAL_H323
+#if OPAL_H323
 
   // add the capability
   H323CodecPluginCapabilityMapEntry * map = NULL;
@@ -1214,13 +1216,13 @@ void OPALPluginCodecManager::RegisterPluginPair(
     case PluginCodec_MediaTypeAudioStreamed:
       map = audioMaps;
       break;
-#endif
+#endif // OPAL_AUDIO
 
 #if OPAL_VIDEO
     case PluginCodec_MediaTypeVideo:
       map = videoMaps;
       break;
-#endif
+#endif // OPAL_VIDEO
 
     default:
       break;
@@ -1256,7 +1258,8 @@ void OPALPluginCodecManager::AddFormat(const OpalMediaFormat & fmt)
 
 /////////////////////////////////////////////////////////////////////////////
 
-#if 0 // OPAL_H323
+#if OPAL_H323
+
 H323Capability * OPALPluginCodecManager::CreateCapability(
           const PString & _mediaFormat, 
           const PString & _baseName,
@@ -1364,6 +1367,7 @@ H323Capability * CreateH261Cap(
 
 /////////////////////////////////////////////////////////////////////////////
 
+#if 0
 H323Codec * H323PluginCapabilityInfo::CreateCodec(H323Codec::Direction direction) const
 {  
   // allow use of this class for external codec capabilities
@@ -1434,6 +1438,7 @@ H323Codec * H323PluginCapabilityInfo::CreateCodec(H323Codec::Direction direction
   PTRACE(3, "H323PLUGIN\tCannot create codec for unknown plugin codec media format " << (int)(codec->flags & PluginCodec_MediaTypeMask));
   return NULL;
 }
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -1463,12 +1468,11 @@ H323CodecPluginNonStandardAudioCapability::H323CodecPluginNonStandardAudioCapabi
     PluginCodec_Definition * _decoderCodec,
     H323NonStandardCapabilityInfo::CompareFuncType compareFunc,
     const unsigned char * data, unsigned dataLen)
- : H323NonStandardAudioCapability(_decoderCodec->maxFramesPerPacket,
-                                  _encoderCodec->maxFramesPerPacket,
-                                  compareFunc,
-                                  data, dataLen), 
+ : H323NonStandardAudioCapability(compareFunc,data, dataLen), 
    H323PluginCapabilityInfo(_encoderCodec, _decoderCodec)
 {
+  SetTxFramesInPacket(_decoderCodec->maxFramesPerPacket);
+
   PluginCodec_H323NonStandardCodecData * nonStdData = (PluginCodec_H323NonStandardCodecData *)_encoderCodec->h323CapabilityData;
   if (nonStdData->objectId != NULL) {
     oid = PString(nonStdData->objectId);
@@ -1483,11 +1487,10 @@ H323CodecPluginNonStandardAudioCapability::H323CodecPluginNonStandardAudioCapabi
     PluginCodec_Definition * _encoderCodec,
     PluginCodec_Definition * _decoderCodec,
     const unsigned char * data, unsigned dataLen)
- : H323NonStandardAudioCapability(_decoderCodec->maxFramesPerPacket,
-                                  _encoderCodec->maxFramesPerPacket,
-                                  data, dataLen), 
+ : H323NonStandardAudioCapability(data, dataLen), 
    H323PluginCapabilityInfo(_encoderCodec, _decoderCodec)
 {
+  SetTxFramesInPacket(_decoderCodec->maxFramesPerPacket);
   PluginCodec_H323NonStandardCodecData * nonStdData = (PluginCodec_H323NonStandardCodecData *)_encoderCodec->h323CapabilityData;
   if (nonStdData->objectId != NULL) {
     oid = PString(nonStdData->objectId);
@@ -1504,35 +1507,32 @@ H323CodecPluginGenericAudioCapability::H323CodecPluginGenericAudioCapability(
     const PluginCodec_Definition * _encoderCodec,
     const PluginCodec_Definition * _decoderCodec,
     const PluginCodec_H323GenericCodecData *data )
-	: H323GenericAudioCapability(_decoderCodec->maxFramesPerPacket,
-				     _encoderCodec->maxFramesPerPacket,
-				     data -> standardIdentifier, data -> maxBitRate),
-	  H323PluginCapabilityInfo((PluginCodec_Definition *)_encoderCodec,
-				   (PluginCodec_Definition *) _decoderCodec)
+	: H323GenericAudioCapability(data -> standardIdentifier, data -> maxBitRate),
+	  H323PluginCapabilityInfo((PluginCodec_Definition *)_encoderCodec, (PluginCodec_Definition *) _decoderCodec)
 {
-    const PluginCodec_H323GenericParameterDefinition *ptr = data -> params;
+  SetTxFramesInPacket(_decoderCodec->maxFramesPerPacket);
+  const PluginCodec_H323GenericParameterDefinition *ptr = data -> params;
 
-    for( unsigned i=0; i < data -> nParameters; i++ ) {
-	switch(ptr->type) {
+  unsigned i;
+  for (i = 0; i < data -> nParameters; i++) {
+    switch(ptr->type) {
 	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_ShortMin:
 	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_ShortMax:
 	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_LongMin:
 	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_LongMax:
-		AddIntegerGenericParameter(ptr->collapsing,ptr->id,ptr->type,
-					   ptr->value.integer);
-		break;
-		
+	      AddIntegerGenericParameter(ptr->collapsing,ptr->id,ptr->type, ptr->value.integer);
+	      break;
+	
 	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_Logical:
 	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_Bitfield:
 	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_OctetString:
 	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_GenericParameter:
 	    default:
-		PTRACE(1,"Unsupported Generic parameter type "<< ptr->type
-		       << " for generic codec " << _encoderCodec->descr );
-		break;
-	}
-	ptr++;
+	      PTRACE(1,"Unsupported Generic parameter type "<< ptr->type << " for generic codec " << _encoderCodec->descr );
+	      break;
     }
+    ptr++;
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1584,7 +1584,7 @@ BOOL H323GSMPluginCapability::OnReceivedPDU(const H245_AudioCapability & cap, un
 
 #endif   // OPAL_AUDIO
 
-#if OPAL_VIDEO
+#if 0 // OPAL_VIDEO
 
 /////////////////////////////////////////////////////////////////////////////
 
