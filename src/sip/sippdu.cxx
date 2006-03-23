@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2091  2006/03/20 00:25:36  csoutheren
+ * Revision 1.2092  2006/03/23 21:25:14  dsandras
+ * Fixed parameter of callback called on registration timeout.
+ * Simplified SIPOptions code.
+ *
+ * Revision 2.90  2006/03/20 00:25:36  csoutheren
  * Applied patch #1446482
  * Thanks to Adam Butcher
  *
@@ -2115,11 +2119,11 @@ void SIPTransaction::SetTerminated(States newState)
       SIPURL url (GetMIME().GetFrom ());
       PString hosturl;
       // skip transport identifier
-      PINDEX pos = url.GetHostAddress().Find('$');
+      PINDEX pos = url.GetHostName().Find('$');
       if (pos != P_MAX_INDEX)
-	hosturl = url.GetHostAddress().Mid(pos+1);
+	hosturl = url.GetHostName().Mid(pos+1);
       else
-	hosturl = url.GetHostAddress();
+	hosturl = url.GetHostName();
       endpoint.OnRegistrationFailed(hosturl, 
 				    url.GetUserName(),
 				    SIP_PDU::Failure_RequestTimeout,
@@ -2129,8 +2133,7 @@ void SIPTransaction::SetTerminated(States newState)
 
       SIPURL url (GetMIME().GetTo ());
 
-      endpoint.OnMessageFailed(url,
-			       SIP_PDU::Failure_RequestTimeout);
+      endpoint.OnMessageFailed(url, SIP_PDU::Failure_RequestTimeout);
     }
   }
 
@@ -2358,6 +2361,7 @@ SIPOptions::SIPOptions(SIPEndPoint & ep,
   : SIPTransaction(ep, trans)
 {
   PString requestURI;
+  PString hosturl;
   PString id = OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
   OpalTransportAddress viaAddress = ep.GetLocalURL(transport).GetHostAddress();
     
@@ -2377,10 +2381,8 @@ SIPOptions::SIPOptions(SIPEndPoint & ep,
     localName = ep.GetDefaultLocalPartyName ();
 
   SIPURL myAddress("\"" + displayName + "\" <" + localName + "@" + domain + ">"); 
-  if (!address.GetUserName())
-    requestURI = "sip:" + address.GetHostName();
-  else
-    requestURI = "sip:"+address.GetUserName()+"@"+address.GetHostName(),
+
+  requestURI = "sip:" + address.AsQuotedString();
   
   SIP_PDU::Construct(Method_OPTIONS,
 		     requestURI,
