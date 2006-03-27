@@ -207,8 +207,6 @@ EXPORTS
     ??0?$PList@VOpalMediaFormat@@@@QAE@XZ @97 NONAME
     ??0?$PList@VOpalMediaStream@@@@IAE@HPBV0@@Z @98 NONAME
     ??0?$PList@VOpalMediaStream@@@@QAE@XZ @99 NONAME
-    ??0?$PList@VOpalTransport@@@@IAE@HPBV0@@Z @33523 NONAME
-    ??0?$PList@VOpalTransport@@@@QAE@XZ @33524 NONAME
     ??0?$PList@VPBYTEArray@@@@IAE@HPBV0@@Z @100 NONAME
     ??0?$PList@VPBYTEArray@@@@QAE@XZ @101 NONAME
     ??0?$PList@VRouteEntry@OpalManager@@@@IAE@HPBV0@@Z @102 NONAME
@@ -4146,7 +4144,6 @@ EXPORTS
     ??1?$PList@VOpalListener@@@@UAE@XZ @3636 NONAME
     ??1?$PList@VOpalMediaFormat@@@@UAE@XZ @3637 NONAME
     ??1?$PList@VOpalMediaStream@@@@UAE@XZ @3638 NONAME
-    ??1?$PList@VOpalTransport@@@@UAE@XZ @33558 NONAME
     ??1?$PList@VPBYTEArray@@@@UAE@XZ @3639 NONAME
     ??1?$PList@VRouteEntry@OpalManager@@@@UAE@XZ @3640 NONAME
     ??1?$PList@VRTP_DataFrame@@@@UAE@XZ @3641 NONAME
@@ -8682,7 +8679,6 @@ EXPORTS
     ??_7?$PList@VOpalListener@@@@6B@ @7707 NONAME
     ??_7?$PList@VOpalMediaFormat@@@@6B@ @7708 NONAME
     ??_7?$PList@VOpalMediaStream@@@@6B@ @7709 NONAME
-    ??_7?$PList@VOpalTransport@@@@6B@ @33589 NONAME
     ??_7?$PList@VPBYTEArray@@@@6B@ @7710 NONAME
     ??_7?$PList@VRouteEntry@OpalManager@@@@6B@ @7711 NONAME
     ??_7?$PList@VRTP_DataFrame@@@@6B@ @7712 NONAME
@@ -10825,7 +10821,6 @@ EXPORTS
     ??_R0?AV?$PList@VOpalListener@@@@@8 @9630 NONAME
     ??_R0?AV?$PList@VOpalMediaFormat@@@@@8 @9631 NONAME
     ??_R0?AV?$PList@VOpalMediaStream@@@@@8 @9632 NONAME
-    ??_R0?AV?$PList@VOpalTransport@@@@@8 @33595 NONAME
     ??_R0?AV?$PList@VPBYTEArray@@@@@8 @9633 NONAME
     ??_R0?AV?$PList@VRouteEntry@OpalManager@@@@@8 @9634 NONAME
     ??_R0?AV?$PList@VRTP_DataFrame@@@@@8 @9635 NONAME
@@ -12883,7 +12878,6 @@ EXPORTS
     ??_R1A@?0A@A@?$PList@VOpalListener@@@@8 @11465 NONAME
     ??_R1A@?0A@A@?$PList@VOpalMediaFormat@@@@8 @11466 NONAME
     ??_R1A@?0A@A@?$PList@VOpalMediaStream@@@@8 @11467 NONAME
-    ??_R1A@?0A@A@?$PList@VOpalTransport@@@@8 @33602 NONAME
     ??_R1A@?0A@A@?$PList@VPBYTEArray@@@@8 @11468 NONAME
     ??_R1A@?0A@A@?$PList@VRouteEntry@OpalManager@@@@8 @11469 NONAME
     ??_R1A@?0A@A@?$PList@VRTP_DataFrame@@@@8 @11470 NONAME
@@ -14968,7 +14962,6 @@ EXPORTS
     ??_R2?$PList@VOpalListener@@@@8 @13330 NONAME
     ??_R2?$PList@VOpalMediaFormat@@@@8 @13331 NONAME
     ??_R2?$PList@VOpalMediaStream@@@@8 @13332 NONAME
-    ??_R2?$PList@VOpalTransport@@@@8 @33608 NONAME
     ??_R2?$PList@VPBYTEArray@@@@8 @13333 NONAME
     ??_R2?$PList@VRouteEntry@OpalManager@@@@8 @13334 NONAME
     ??_R2?$PList@VRTP_DataFrame@@@@8 @13335 NONAME
@@ -17038,7 +17031,6 @@ EXPORTS
     ??_R3?$PList@VOpalListener@@@@8 @15181 NONAME
     ??_R3?$PList@VOpalMediaFormat@@@@8 @15182 NONAME
     ??_R3?$PList@VOpalMediaStream@@@@8 @15183 NONAME
-    ??_R3?$PList@VOpalTransport@@@@8 @33614 NONAME
     ??_R3?$PList@VPBYTEArray@@@@8 @15184 NONAME
     ??_R3?$PList@VRouteEntry@OpalManager@@@@8 @15185 NONAME
     ??_R3?$PList@VRTP_DataFrame@@@@8 @15186 NONAME
@@ -19108,7 +19100,6 @@ EXPORTS
     ??_R4?$PList@VOpalListener@@@@6B@ @17032 NONAME
     ??_R4?$PList@VOpalMediaFormat@@@@6B@ @17033 NONAME
     ??_R4?$PList@VOpalMediaStream@@@@6B@ @17034 NONAME
-    ??_R4?$PList@VOpalTransport@@@@6B@ @33620 NONAME
     ??_R4?$PList@VPBYTEArray@@@@6B@ @17035 NONAME
     ??_R4?$PList@VRouteEntry@OpalManager@@@@6B@ @17036 NONAME
     ??_R4?$PList@VRTP_DataFrame@@@@6B@ @17037 NONAME
@@ -21529,7 +21520,6 @@ EXPORTS
     ?CanAutoStartTransmitFax@H323EndPoint@@QBEHXZ @19160 NONAME
     ?CanAutoStartTransmitVideo@H323EndPoint@@QBEHXZ @19161 NONAME
     ?CanAutoStartTransmitVideo@OpalManager@@QBEHXZ @19162 NONAME
-    ?Cancel@SIPInfo@@UAEXAAVSIPTransaction@@@Z @29633 NONAME
     ?CanDisplayAmountString@H323EndPoint@@QBEHXZ @19163 NONAME
     ?CanDisplayAmountString@H323RegisteredEndPoint@@QBEHXZ @19164 NONAME
     ?CanEnforceDurationLimit@H323EndPoint@@QBEHXZ @19165 NONAME
@@ -21591,7 +21581,6 @@ EXPORTS
     ?Class@?$PList@VOpalListener@@@@SAPBDXZ @19212 NONAME
     ?Class@?$PList@VOpalMediaFormat@@@@SAPBDXZ @19213 NONAME
     ?Class@?$PList@VOpalMediaStream@@@@SAPBDXZ @19214 NONAME
-    ?Class@?$PList@VOpalTransport@@@@SAPBDXZ @33634 NONAME
     ?Class@?$PList@VPBYTEArray@@@@SAPBDXZ @19215 NONAME
     ?Class@?$PList@VRouteEntry@OpalManager@@@@SAPBDXZ @19216 NONAME
     ?Class@?$PList@VRTP_DataFrame@@@@SAPBDXZ @19217 NONAME
@@ -22048,7 +22037,6 @@ EXPORTS
     ?Clone@?$PList@VOpalListener@@@@UBEPAVPObject@@XZ @19515 NONAME
     ?Clone@?$PList@VOpalMediaFormat@@@@UBEPAVPObject@@XZ @19516 NONAME
     ?Clone@?$PList@VOpalMediaStream@@@@UBEPAVPObject@@XZ @19517 NONAME
-    ?Clone@?$PList@VOpalTransport@@@@UBEPAVPObject@@XZ @33636 NONAME
     ?Clone@?$PList@VPBYTEArray@@@@UBEPAVPObject@@XZ @19518 NONAME
     ?Clone@?$PList@VRouteEntry@OpalManager@@@@UBEPAVPObject@@XZ @19519 NONAME
     ?Clone@?$PList@VRTP_DataFrame@@@@UBEPAVPObject@@XZ @19520 NONAME
@@ -24428,7 +24416,6 @@ EXPORTS
     ?CompareObjectMemoryDirect@?$PList@VOpalListener@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @21798 NONAME
     ?CompareObjectMemoryDirect@?$PList@VOpalMediaFormat@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @21799 NONAME
     ?CompareObjectMemoryDirect@?$PList@VOpalMediaStream@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @21800 NONAME
-    ?CompareObjectMemoryDirect@?$PList@VOpalTransport@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @33637 NONAME
     ?CompareObjectMemoryDirect@?$PList@VPBYTEArray@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @21801 NONAME
     ?CompareObjectMemoryDirect@?$PList@VRouteEntry@OpalManager@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @21802 NONAME
     ?CompareObjectMemoryDirect@?$PList@VRTP_DataFrame@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @21803 NONAME
@@ -27490,7 +27477,6 @@ EXPORTS
     ?GetClass@?$PList@VOpalListener@@@@UBEPBDI@Z @24468 NONAME
     ?GetClass@?$PList@VOpalMediaFormat@@@@UBEPBDI@Z @24469 NONAME
     ?GetClass@?$PList@VOpalMediaStream@@@@UBEPBDI@Z @24470 NONAME
-    ?GetClass@?$PList@VOpalTransport@@@@UBEPBDI@Z @33659 NONAME
     ?GetClass@?$PList@VPBYTEArray@@@@UBEPBDI@Z @24471 NONAME
     ?GetClass@?$PList@VRouteEntry@OpalManager@@@@UBEPBDI@Z @24472 NONAME
     ?GetClass@?$PList@VRTP_DataFrame@@@@UBEPBDI@Z @24473 NONAME
@@ -29041,6 +29027,7 @@ EXPORTS
     ?GetMediaInformation@OpalConnection@@UBEHIAAUMediaInformation@1@@Z @25703 NONAME
     ?GetMediaStream@H323UnidirectionalChannel@@UBEPAVOpalMediaStream@@XZ @25704 NONAME
     ?GetMediaStream@OpalConnection@@QBEPAVOpalMediaStream@@IH@Z @25705 NONAME
+    ?GetMediaStreamMutex@OpalConnection@@QAEAAVPCriticalSection@@XZ @34566 NONAME
     ?GetMediaTransportAddress@H323Channel@@UBEHAAVOpalTransportAddress@@0@Z @25706 NONAME
     ?GetMediaTransportAddress@H323_ExternalRTPChannel@@UBEHAAVOpalTransportAddress@@0@Z @25707 NONAME
     ?GetMediaTransportAddresses@OpalConnection@@QAEAAV?$PDictionary@VPOrdinalKey@@VOpalTransportAddress@@@@XZ @32436 NONAME
@@ -29227,6 +29214,7 @@ EXPORTS
     ?GetRegisteredEndPointRejectTag@H323GatekeeperRRQ@@UBEIXZ @25819 NONAME
     ?GetRegisteredEndPointRejectTag@H323GatekeeperURQ@@UBEIXZ @25820 NONAME
     ?GetRegisteredPartyName@SIPEndPoint@@QAE?BVSIPURL@@ABVPString@@@Z @29734 NONAME
+    ?GetRegistrarAddress@SIPInfo@@UAEABVOpalTransportAddress@@XZ @34569 NONAME
     ?GetRegistrarTimeToLive@SIPEndPoint@@QBEABVPTimeInterval@@XZ @29735 NONAME
     ?GetRegistrationAddress@SIPInfo@@UAEABVSIPURL@@XZ @29736 NONAME
     ?GetRegistrationID@SIPInfo@@UAE?AVPString@@XZ @29737 NONAME
@@ -29675,7 +29663,6 @@ EXPORTS
     ?InternalIsDescendant@?$PList@VOpalListener@@@@UBEHPBD@Z @26162 NONAME
     ?InternalIsDescendant@?$PList@VOpalMediaFormat@@@@UBEHPBD@Z @26163 NONAME
     ?InternalIsDescendant@?$PList@VOpalMediaStream@@@@UBEHPBD@Z @26164 NONAME
-    ?InternalIsDescendant@?$PList@VOpalTransport@@@@UBEHPBD@Z @33670 NONAME
     ?InternalIsDescendant@?$PList@VPBYTEArray@@@@UBEHPBD@Z @26165 NONAME
     ?InternalIsDescendant@?$PList@VRouteEntry@OpalManager@@@@UBEHPBD@Z @26166 NONAME
     ?InternalIsDescendant@?$PList@VRTP_DataFrame@@@@UBEHPBD@Z @26167 NONAME
