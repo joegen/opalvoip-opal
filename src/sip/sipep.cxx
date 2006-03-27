@@ -24,7 +24,15 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2098.2.17  2006/03/23 21:28:42  dsandras
+ * Revision 1.2098.2.18  2006/03/27 20:29:56  dsandras
+ * Backports from HEAD.
+ *
+ * Revision 2.120  2006/03/27 20:28:18  dsandras
+ * Added mutex to fix concurrency issues between OnReceivedPDU which checks
+ * if a connection is in the list, and OnReceivedINVITE, which adds it to the
+ * list. Fixes Ekiga report #334847. Thanks Robert for your input on this!
+ *
+ * Revision 2.97.2.17  2006/03/23 21:28:42  dsandras
  * Backports from HEAD.
  *
  * Revision 2.119  2006/03/23 21:23:08  dsandras
@@ -977,8 +985,10 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
     pdu->AdjustVia(transport);
 
   // Find a corresponding connection
+  connectionsActiveInUse.Wait();
   PSafePtr<SIPConnection> connection = GetSIPConnectionWithLock(pdu->GetMIME().GetCallID());
   if (connection != NULL) {
+    connectionsActiveInUse.Signal();
     SIPTransaction * transaction = connection->GetTransaction(pdu->GetTransactionID());
     if (transaction != NULL && transaction->GetMethod() == SIP_PDU::Method_INVITE) {
       // Have a response to the INVITE, so end Connect mode on the transport
@@ -987,6 +997,9 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
     connection->QueuePDU(pdu);
     return TRUE;
   }
+
+  if (pdu->GetMethod() != SIP_PDU::Method_INVITE)
+    connectionsActiveInUse.Signal();
 
   // PDUs outside of connection context
   if (!transport.IsReliable()) {
@@ -1135,6 +1148,7 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
 
   // add the connection to the endpoint list
   connectionsActive.SetAt(connection->GetToken(), connection);
+  connectionsActiveInUse.Signal();
   
   // Get the connection to handle the rest of the INVITE
   connection->QueuePDU(request);
