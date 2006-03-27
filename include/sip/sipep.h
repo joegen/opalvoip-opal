@@ -25,7 +25,15 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2047.2.5  2006/03/19 18:59:02  dsandras
+ * Revision 1.2047.2.6  2006/03/27 20:29:55  dsandras
+ * Backports from HEAD.
+ *
+ * Revision 2.56  2006/03/27 20:28:18  dsandras
+ * Added mutex to fix concurrency issues between OnReceivedPDU which checks
+ * if a connection is in the list, and OnReceivedINVITE, which adds it to the
+ * list. Fixes Ekiga report #334847. Thanks Robert for your input on this!
+ * 
+ * Revision 2.46.2.5  2006/03/19 18:59:02  dsandras
  * More backports from HEAD.
  *
  * Revision 2.55  2006/03/19 18:57:06  dsandras
@@ -980,6 +988,7 @@ class SIPEndPoint : public OpalEndPoint
     NATBindingRefreshMethod natMethod;
 
     PMutex             transactionsMutex;
+    PMutex             connectionsActiveInUse;
 
     unsigned           lastSentCSeq;
 };
