@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2029  2006/02/02 07:03:44  csoutheren
+ * Revision 1.2030  2006/03/28 11:20:22  dsandras
+ * If STUN can not create a socket pair for RTP/RTCP, create separate sockets
+ * and continue. At worse, RTCP won't be received. The SIP part could reuse
+ * the RTCP port (different from RTP port + 1) in its SDP if required.
+ *
+ * Revision 2.28  2006/02/02 07:03:44  csoutheren
  * Added extra logging of first outgoing RTP packet
  *
  * Revision 2.27  2006/01/24 23:31:07  dsandras
@@ -1657,8 +1662,17 @@ BOOL RTP_UDP::Open(PIPSocket::Address _localAddress,
       controlSocket->GetLocalAddress(localAddress, localControlPort);
     }
     else {
-      PTRACE(1, "RTP\tSTUN could not create socket pair!");
-      return FALSE;
+      PTRACE(1, "RTP\tSTUN could not create RTP/RTCP socket pair; trying to create RTP socket anyway.");
+      if (stun->CreateSocket(dataSocket)) {
+	dataSocket->GetLocalAddress(localAddress, localDataPort);
+      }
+      else {
+	PTRACE(1, "RTP\tSTUN could not create RTP socket either.");
+	return FALSE;
+      }
+      if (stun->CreateSocket(controlSocket)) {
+	controlSocket->GetLocalAddress(localAddress, localControlPort);
+      }
     }
   }
 
