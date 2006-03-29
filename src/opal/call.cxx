@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2043  2006/03/20 10:37:47  csoutheren
+ * Revision 1.2044  2006/03/29 23:53:03  csoutheren
+ * Added call to OpalCall::OnSetUpConnection
+ *
+ * Revision 2.42  2006/03/20 10:37:47  csoutheren
  * Applied patch #1453753 - added locking on media stream manipulation
  * Thanks to Dinis Rosario
  *
@@ -292,8 +295,9 @@ BOOL OpalCall::OnSetUp(OpalConnection & connection)
 
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
     if (conn != &connection) {
-      if (conn->SetUpConnection())
-        ok = TRUE;
+      if (conn->SetUpConnection()) {
+        ok = conn->OnSetUpConnection();
+      }
     }
   }
 
