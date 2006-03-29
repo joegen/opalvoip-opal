@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2032  2006/03/20 00:41:43  csoutheren
+ * Revision 1.2033  2006/03/29 23:53:54  csoutheren
+ * Make sure OpalTransportAddresses that are parsed from SDP are always udp$ and not
+ *  tcp$
+ *
+ * Revision 2.31  2006/03/20 00:41:43  csoutheren
  * Fixed typo in last submit
  *
  * Revision 2.30  2006/03/20 00:20:15  csoutheren
@@ -157,7 +161,7 @@ static OpalTransportAddress ParseConnectAddress(const PStringArray & tokens, PIN
   if (tokens.GetSize() == offset+3) {
     if (tokens[offset] *= "IN") {
       if (tokens[offset+1] *= "IP4")
-        return tokens[offset+2];
+        return OpalTransportAddress(tokens[offset+2], 0, "udp");
       else {
         PTRACE(1, "SDP\tConnect address has invalid address type \"" << tokens[offset+1] << '"');
       }
