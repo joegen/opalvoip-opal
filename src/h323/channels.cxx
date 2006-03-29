@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2031  2006/01/02 15:51:44  dsandras
+ * Revision 1.2032  2006/03/29 23:57:52  csoutheren
+ * Added patches from Paul Caswell to provide correct operation when using
+ * external RTP with H.323
+ *
+ * Revision 2.30  2006/01/02 15:51:44  dsandras
  * Merged changes from OpenH323 Atlas_devel_2.
  *
  * Revision 2.29  2005/09/04 06:51:52  rjongbloed
@@ -1393,6 +1397,10 @@ BOOL H323_ExternalRTPChannel::OnReceivedAckPDU(const H245_H2250LogicalChannelAck
   remoteMediaAddress = param.m_mediaChannel;
   if (remoteMediaAddress.IsEmpty())
     return FALSE;
+
+  unsigned id = param.m_sessionID;
+  if (!remoteMediaAddress.IsEmpty() && (connection.GetMediaTransportAddresses().GetAt(id) == NULL))
+    connection.GetMediaTransportAddresses().SetAt(id, new OpalTransportAddress(remoteMediaAddress));
 
   return TRUE;
 }

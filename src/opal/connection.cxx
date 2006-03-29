@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2058  2006/03/20 10:37:47  csoutheren
+ * Revision 1.2059  2006/03/29 23:57:52  csoutheren
+ * Added patches from Paul Caswell to provide correct operation when using
+ * external RTP with H.323
+ *
+ * Revision 2.57  2006/03/20 10:37:47  csoutheren
  * Applied patch #1453753 - added locking on media stream manipulation
  * Thanks to Dinis Rosario
  *
@@ -715,10 +719,10 @@ BOOL OpalConnection::OnOpenMediaStream(OpalMediaStream & stream)
     mediaStreams.Append(&stream);
   }
 
-  if (phase == ConnectedPhase) {
-    SetPhase(EstablishedPhase);
-    OnEstablished();
-  }
+  //if (phase == ConnectedPhase) {
+  //  SetPhase(EstablishedPhase);
+  //  OnEstablished();
+  //}
 
   return TRUE;
 }
