@@ -325,6 +325,9 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\..\include\opal\ivr.h">
+				</File>
+				<File
 					RelativePath="..\opal\manager.cxx">
 					<FileConfiguration
 						Name="Debug|Win32">
@@ -398,6 +401,9 @@
 							Optimization="1"
 							PreprocessorDefinitions=""/>
 					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\opal\opalglobalstatics.cxx">
 				</File>
 				<File
 					RelativePath="..\opal\opalvxml.cxx">
@@ -1117,182 +1123,16 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\codec\g726codec.cxx">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							BrowseInformation="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\g729codec.cxx">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							BrowseInformation="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\gsmcodec.cxx">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							BrowseInformation="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\h261codec.cxx">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							BrowseInformation="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""/>
-					</FileConfiguration>
-				</File>
-				<File
 					RelativePath="..\codec\h263codec.cxx">
-				</File>
-				<File
-					RelativePath="..\codec\ilbccodec.cxx">
 					<FileConfiguration
-						Name="Debug|Win32">
+						Name="Debug|Win32"
+						ExcludedFromBuild="TRUE">
 						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							BrowseInformation="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""/>
+							Name="VCCLCompilerTool"/>
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\codec\lpc10codec.cxx">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							BrowseInformation="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\mscodecs.cxx">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							BrowseInformation="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""/>
-					</FileConfiguration>
+					RelativePath="..\codec\opalpluginmgr.cxx">
 				</File>
 				<File
 					RelativePath="..\codec\rfc2833.cxx">
@@ -1321,31 +1161,6 @@
 				</File>
 				<File
 					RelativePath="..\codec\silencedetect.cxx">
-				</File>
-				<File
-					RelativePath="..\codec\speexcodec.cxx">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							BrowseInformation="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""/>
-					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\codec\vidcodec.cxx">
@@ -1892,9 +1707,6 @@
 					RelativePath="..\..\include\opal\guid.h">
 				</File>
 				<File
-					RelativePath="..\..\include\opal\ivr.h">
-				</File>
-				<File
 					RelativePath="..\..\include\opal\manager.h">
 				</File>
 				<File
@@ -1996,28 +1808,16 @@
 					RelativePath="..\..\include\codec\g711codec.h">
 				</File>
 				<File
-					RelativePath="..\..\include\codec\g7231codec.h">
-				</File>
-				<File
-					RelativePath="..\..\include\codec\g726codec.h">
-				</File>
-				<File
-					RelativePath="..\..\include\codec\g729codec.h">
-				</File>
-				<File
 					RelativePath="..\..\include\codec\gsmcodec.h">
 				</File>
 				<File
 					RelativePath="..\..\include\codec\h261codec.h">
 				</File>
 				<File
-					RelativePath="..\..\include\codec\ilbccodec.h">
+					RelativePath="..\..\include\codec\h263codec.h">
 				</File>
 				<File
-					RelativePath="..\..\include\codec\lpc10codec.h">
-				</File>
-				<File
-					RelativePath="..\..\include\codec\mscodecs.h">
+					RelativePath="..\..\include\codec\opalpluginmgr.h">
 				</File>
 				<File
 					RelativePath="..\..\include\codec\opalwavfile.h">
@@ -3419,2305 +3219,6 @@
 			</Filter>
 		</Filter>
 		<Filter
-			Name="GSM Files"
-			Filter=".c">
-			<Filter
-				Name="GSM Headers"
-				Filter="">
-				<File
-					RelativePath="..\codec\gsm\inc\config.h">
-				</File>
-				<File
-					RelativePath="..\codec\gsm\inc\gsm.h">
-				</File>
-				<File
-					RelativePath="..\codec\gsm\inc\private.h">
-				</File>
-				<File
-					RelativePath="..\codec\gsm\inc\proto.h">
-				</File>
-				<File
-					RelativePath="..\codec\gsm\inc\unproto.h">
-				</File>
-			</Filter>
-			<Filter
-				Name="GSM Sources"
-				Filter="">
-				<File
-					RelativePath="..\codec\gsm\src\add.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="0"
-							DebugInformationFormat="3"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\gsm\src\code.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="0"
-							DebugInformationFormat="3"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\gsm\src\decode.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="0"
-							DebugInformationFormat="3"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\gsm\src\gsm_create.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="0"
-							DebugInformationFormat="3"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\gsm\src\gsm_decode.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="0"
-							DebugInformationFormat="3"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\gsm\src\gsm_destroy.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="0"
-							DebugInformationFormat="3"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\gsm\src\gsm_encode.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="0"
-							DebugInformationFormat="3"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\gsm\src\gsm_lpc.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="0"
-							DebugInformationFormat="3"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\gsm\src\gsm_option.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="0"
-							DebugInformationFormat="3"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\gsm\src\long_term.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="0"
-							DebugInformationFormat="3"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\gsm\src\preprocess.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="0"
-							DebugInformationFormat="3"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\gsm\src\rpe.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="0"
-							DebugInformationFormat="3"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\gsm\src\short_term.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="0"
-							DebugInformationFormat="3"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\gsm\src\table.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="0"
-							DebugInformationFormat="3"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="..\codec\gsm\inc"
-							PreprocessorDefinitions="NeedFunctionPrototypes=1;WAV49"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-			</Filter>
-		</Filter>
-		<Filter
-			Name="VIC Files"
-			Filter="">
-			<Filter
-				Name="C Files"
-				Filter="">
-				<File
-					RelativePath="..\codec\vic\bv.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions="_DEBUG;WIN32;$(NoInherit)"
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="WIN32"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions="WIN32"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\vic\huffcode.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions="_DEBUG;WIN32;$(NoInherit)"
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="WIN32"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions="WIN32"
-							UsePrecompiledHeader="0"
-							WarningLevel="0"/>
-					</FileConfiguration>
-				</File>
-			</Filter>
-			<Filter
-				Name="CXX Files"
-				Filter="">
-				<File
-					RelativePath="..\codec\vic\dct.cxx">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions="_DEBUG;WIN32;$(NoInherit)"
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="WIN32"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions="WIN32"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\vic\encoder-h261.cxx">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\vic\p64.cxx">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions="_DEBUG;WIN32;$(NoInherit)"
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="WIN32"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions="WIN32"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\vic\p64encoder.cxx">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\vic\transmitter.cxx">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\vic\vid_coder.cxx">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-			</Filter>
-			<Filter
-				Name="H Files"
-				Filter="">
-				<File
-					RelativePath="src\codec\vic\bsd-endian.h">
-				</File>
-				<File
-					RelativePath="src\codec\vic\config.h">
-				</File>
-				<File
-					RelativePath="src\codec\vic\dct.h">
-				</File>
-				<File
-					RelativePath="src\codec\vic\encoder-h261.h">
-				</File>
-				<File
-					RelativePath="src\codec\vic\grabber.h">
-				</File>
-				<File
-					RelativePath="src\codec\vic\p64-huff.h">
-				</File>
-				<File
-					RelativePath="src\codec\vic\p64.h">
-				</File>
-				<File
-					RelativePath="src\codec\vic\p64encoder.h">
-				</File>
-				<File
-					RelativePath="src\codec\vic\transmitter.h">
-				</File>
-				<File
-					RelativePath="src\codec\vic\vid_coder.h">
-				</File>
-			</Filter>
-		</Filter>
-		<Filter
-			Name="LPC10 Files"
-			Filter="">
-			<Filter
-				Name="LPC10 Headers"
-				Filter="">
-				<File
-					RelativePath="..\codec\lpc10\lpc10.h">
-				</File>
-			</Filter>
-			<Filter
-				Name="LPC10 Sources"
-				Filter="">
-				<File
-					RelativePath="..\codec\lpc10\src\analys.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\bsynz.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\chanwr.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\dcbias.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\decode_.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\deemp.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\difmag.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\dyptrk.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\encode_.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\energy.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\f2clib.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\ham84.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\hp100.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\invert.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\irc2pc.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\ivfilt.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\lpcdec.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\lpcenc.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\lpcini.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\lpfilt.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\median.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\mload.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\onset.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\pitsyn.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\placea.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\placev.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\preemp.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\prepro.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\random.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\rcchk.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\synths.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\tbdm.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\voicin.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\lpc10\src\vparms.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							AdditionalIncludeDirectories="../codec/lpc10"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-							CompileAs="0"/>
-					</FileConfiguration>
-				</File>
-			</Filter>
-		</Filter>
-		<Filter
-			Name="G.726 Files"
-			Filter="">
-			<Filter
-				Name="G.726 Headers"
-				Filter="">
-				<File
-					RelativePath="..\codec\g726\g72x.h">
-				</File>
-				<File
-					RelativePath="..\codec\g726\private.h">
-				</File>
-			</Filter>
-			<Filter
-				Name="G.726 Sources"
-				Filter="">
-				<File
-					RelativePath="..\codec\g726\g726_16.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\g726\g726_24.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\g726\g726_32.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\g726\g726_40.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\g726\g72x.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-			</Filter>
-		</Filter>
-		<Filter
 			Name="Speex Files"
 			Filter="">
 			<Filter
@@ -5784,29 +3285,19 @@
 						Name="Debug|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="No Trace|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 				</File>
 				<File
@@ -5815,29 +3306,19 @@
 						Name="Debug|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="No Trace|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 				</File>
 				<File
@@ -5846,29 +3327,19 @@
 						Name="Debug|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="No Trace|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 				</File>
 				<File
@@ -5877,29 +3348,19 @@
 						Name="Debug|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="No Trace|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 				</File>
 				<File
@@ -5908,25 +3369,18 @@
 						Name="Debug|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
 							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="No Trace|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
 							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 				</File>
@@ -5936,29 +3390,19 @@
 						Name="Debug|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="No Trace|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 				</File>
 				<File
@@ -5967,29 +3411,19 @@
 						Name="Debug|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="No Trace|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 				</File>
 				<File
@@ -5998,29 +3432,19 @@
 						Name="Debug|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="No Trace|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 				</File>
 				<File
@@ -6050,29 +3474,19 @@
 						Name="Debug|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="No Trace|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 				</File>
 				<File
@@ -6081,29 +3495,19 @@
 						Name="Debug|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="No Trace|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 				</File>
 				<File
@@ -6112,29 +3516,19 @@
 						Name="Debug|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="No Trace|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 				</File>
 				<File
@@ -6143,29 +3537,19 @@
 						Name="Debug|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="No Trace|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 				</File>
 				<File
@@ -6174,29 +3558,19 @@
 						Name="Debug|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="No Trace|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 				</File>
 				<File
@@ -6205,29 +3579,19 @@
 						Name="Debug|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="No Trace|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 				</File>
 				<File
@@ -6278,29 +3642,19 @@
 						Name="Debug|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="No Trace|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 				</File>
 				<File
@@ -6309,29 +3663,19 @@
 						Name="Debug|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="No Trace|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 				</File>
 				<File
@@ -6340,29 +3684,19 @@
 						Name="Debug|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="No Trace|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 				</File>
 				<File
@@ -6371,29 +3705,19 @@
 						Name="Debug|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="No Trace|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 				</File>
 				<File
@@ -6444,29 +3768,19 @@
 						Name="Debug|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="No Trace|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 				</File>
 				<File
@@ -6475,29 +3789,19 @@
 						Name="Debug|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="No Trace|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 				</File>
 				<File
@@ -6506,29 +3810,19 @@
 						Name="Debug|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="No Trace|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 				</File>
 				<File
@@ -6537,29 +3831,19 @@
 						Name="Debug|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="No Trace|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 				</File>
 				<File
@@ -6568,29 +3852,19 @@
 						Name="Debug|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="No Trace|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 				</File>
 				<File
@@ -6641,29 +3915,19 @@
 						Name="Debug|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="No Trace|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 				</File>
 				<File
@@ -6672,29 +3936,19 @@
 						Name="Debug|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="No Trace|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 				</File>
 				<File
@@ -6724,29 +3978,19 @@
 						Name="Debug|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="No Trace|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 				</File>
 				<File
@@ -6755,826 +3999,19 @@
 						Name="Debug|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 					<FileConfiguration
 						Name="No Trace|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="syn_filt=speex_syn_filt;autocorr=speex_autocorr"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-			</Filter>
-		</Filter>
-		<Filter
-			Name="iLBC Files"
-			Filter="">
-			<Filter
-				Name="iLBC Headers"
-				Filter="">
-				<File
-					RelativePath="..\codec\iLBC\anaFilter.h">
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\constants.h">
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\createCB.h">
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\doCPLC.h">
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\enhancer.h">
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\filter.h">
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\FrameClassify.h">
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\gainquant.h">
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\getCBvec.h">
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\helpfun.h">
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\hpInput.h">
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\hpOutput.h">
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\iCBConstruct.h">
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\iCBSearch.h">
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\iLBC_decode.h">
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\iLBC_define.h">
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\iLBC_encode.h">
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\LPCdecode.h">
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\LPCencode.h">
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\lsf.h">
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\packing.h">
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\StateConstructW.h">
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\StateSearchW.h">
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\syntFilter.h">
-				</File>
-			</Filter>
-			<Filter
-				Name="iLBC Sources"
-				Filter="">
-				<File
-					RelativePath="..\codec\iLBC\anaFilter.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\constants.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\createCB.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\doCPLC.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\enhancer.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\filter.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\FrameClassify.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\gainquant.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\getCBvec.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\helpfun.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\hpInput.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\hpOutput.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\iCBConstruct.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\iCBSearch.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\iLBC_decode.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\iLBC_encode.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\LPCdecode.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\LPCencode.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\lsf.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\packing.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\StateConstructW.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\StateSearchW.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\codec\iLBC\syntFilter.c">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							BrowseInformation="1"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-							UsePrecompiledHeader="0"
-							WarningLevel="1"/>
+							UsePrecompiledHeader="0"/>
 					</FileConfiguration>
 				</File>
 			</Filter>

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2133.2.1  2006/03/20 02:25:27  csoutheren
+ * Revision 1.2133.2.2  2006/04/06 01:21:21  csoutheren
+ * More implementation of video codec plugins
+ *
+ * Revision 2.132.2.1  2006/03/20 02:25:27  csoutheren
  * Backports from CVS head
  *
  * Revision 2.140  2006/03/19 17:18:46  dsandras
@@ -939,8 +942,8 @@ BOOL SIPConnection::OnOpenSourceMediaStreams(const OpalMediaFormatList & remoteF
     if (mediaStream.GetSessionID() == sessionId) {
       OpalMediaFormat mediaFormat = mediaStream.GetMediaFormat();
       if (OpenSourceMediaStream(mediaFormat, sessionId) && localMedia) {
-	localMedia->AddMediaFormat(mediaStream.GetMediaFormat());
-	reverseStreamsFailed = FALSE;
+	      localMedia->AddMediaFormat(mediaStream.GetMediaFormat());
+	      reverseStreamsFailed = FALSE;
       }
     }
   }
@@ -1606,13 +1609,16 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   }
   
   
-  // indicate the other is to start ringing
+  // indicate the other is to start ringing (but look out for clear calls)
   if (!OnIncomingConnection()) {
     PTRACE(2, "SIP\tOnIncomingConnection failed for INVITE from " << request.GetURI() << " for " << *this);
     Release();
     return;
   }
-
+  if ((phase == ReleasingPhase) || (phase == ReleasedPhase)) {
+    PTRACE(1, "H225\tApplication called ClearCall during OnIncomingCall");
+    return;
+  }
 
   PTRACE(2, "SIP\tOnIncomingConnection succeeded for INVITE from " << request.GetURI() << " for " << *this);
   phase = SetUpPhase;
@@ -1655,7 +1661,7 @@ void SIPConnection::AnsweringCall(AnswerCallResponse response)
 
         case AnswerCallDeferred:
         case AnswerCallDeferredWithMedia:
-	case NumAnswerCallResponses:
+	      case NumAnswerCallResponses:
           break;
       }
       break;
