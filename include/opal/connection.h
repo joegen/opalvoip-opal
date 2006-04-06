@@ -25,7 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2052  2006/02/22 10:40:09  csoutheren
+ * Revision 1.2052.2.1  2006/04/06 05:33:07  csoutheren
+ * Backports from CVS head up to Plugin_Merge2
+ *
+ * Revision 2.52  2006/03/20 10:37:47  csoutheren
+ * Applied patch #1453753 - added locking on media stream manipulation
+ * Thanks to Dinis Rosario
+ *
+ * Revision 2.51  2006/02/22 10:40:09  csoutheren
  * Added patch #1374583 from Frederic Heem
  * Added additional H.323 virtual function
  *
@@ -1106,6 +1113,8 @@ class OpalConnection : public PSafeObject
     const RTP_DataFrame::PayloadMapType & GetRTPPayloadMap() const
     { return rtpPayloadMap; }
 
+    PMutex & GetMediaStreamMutex() { return mediaStreamMutex; }
+
   protected:
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnUserInputInBandDTMF);
@@ -1145,6 +1154,7 @@ class OpalConnection : public PSafeObject
 
 
     MediaAddressesDict  mediaTransportAddresses;
+    PMutex              mediaStreamMutex;
     OpalMediaStreamList mediaStreams;
     RTP_SessionManager  rtpSessions;
     unsigned            minAudioJitterDelay;
