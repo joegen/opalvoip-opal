@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalplugin.h,v $
+ * Revision 1.1.2.2  2006/04/06 01:21:16  csoutheren
+ * More implementation of video codec plugins
+ *
  * Revision 1.1.2.1  2006/03/16 07:06:00  csoutheren
  * Initial support for audio plugins
  *
@@ -118,6 +121,7 @@ extern "C" {
 
 #define	PLUGIN_CODEC_VERSION		         1    // initial version
 #define	PLUGIN_CODEC_VERSION_WIDEBAND		 2    // added wideband
+#define	PLUGIN_CODEC_VERSION_VIDEO		   3    // added video
 
 #define PLUGIN_CODEC_API_VER_FN       PWLibPlugin_GetAPIVersion
 #define PLUGIN_CODEC_API_VER_FN_STR   "PWLibPlugin_GetAPIVersion"
@@ -199,7 +203,14 @@ enum PluginCodec_Flags {
 };
 
 enum PluginCodec_CoderFlags {
-  PluginCodec_CoderSilenceFrame      = 1
+  PluginCodec_CoderSilenceFrame      = 1,    // request audio codec to create silence frame
+  PluginCodec_CoderForceIFrame       = 2     // request video codec to force I frame
+};
+
+enum PluginCodec_ReturnCoderFlags {
+  PluginCodec_ReturnCoderLastFrame     = 1,    // indicates when video codec returns last data for frame
+  PluginCodec_ReturnCoderIFrame        = 2,    // indicates when video returns I frame
+  PluginCodec_ReturnCoderRequestIFrame = 4     // indicates when video decoder request I frame for resync
 };
 
 struct PluginCodec_Definition;
@@ -232,11 +243,12 @@ struct PluginCodec_Definition {
 
   unsigned int sampleRate;                 // samples per second
   unsigned int bitsPerSec;     		         // raw bits per second
+
   unsigned int nsPerFrame;                 // nanoseconds per frame
-  unsigned int samplesPerFrame;		         // samples per frame
-  unsigned int bytesPerFrame;              // max bytes per frame
-  unsigned int recommendedFramesPerPacket; // recommended number of frames per packet
-  unsigned int maxFramesPerPacket;         // maximum number of frames per packet
+  unsigned int samplesPerFrame;		         // audio: samples per frame,                      video: frame width
+  unsigned int bytesPerFrame;              // audio: max bytes per frame,                    video: frame height
+  unsigned int recommendedFramesPerPacket; // audio: recommended number of frames per packet video: recommended frame rate
+  unsigned int maxFramesPerPacket;         // audio: maximum number of frames per packet     video: max frame rate
 
   unsigned char rtpPayload;    		         // IANA RTP payload code (if defined)
   const char * sdpFormat;                  // SDP format string (or NULL, if no SDP format)
@@ -340,13 +352,39 @@ struct  PluginCodec_H323AudioG7231AnnexC {
 
 struct PluginCodec_H323VideoH261
 {
-  int qcifMPI:2;                         //	INTEGER (1..4) OPTIONAL,	-- units 1/29.97 Hz
-  int cifMPI:2;		                       // INTEGER (1..4) OPTIONAL,	-- units 1/29.97 Hz
-	int temporalSpatialTradeOffCapability; //	BOOLEAN,
-	int maxBitRate;                        //	INTEGER (1..19200),	-- units of 100 bit/s
-  int stillImageTransmission:1;          //	BOOLEAN,	-- Annex D of H.261
-  int videoBadMBsCap:1;                  //	BOOLEAN
-  const struct PluginCodec_H323CapabilityExtension * extensions;
+  unsigned char qcifMPI;                           //	INTEGER (1..4) OPTIONAL,	-- units 1/29.97 Hz (0 if not present)
+  unsigned char cifMPI;		                         // INTEGER (1..4) OPTIONAL,	-- units 1/29.97 Hz (0 if not present)
+	unsigned char temporalSpatialTradeOffCapability; //	BOOLEAN,
+  unsigned char stillImageTransmission;            //	BOOLEAN,	-- Annex D of H.261
+	int maxBitRate;                                  //	INTEGER (1..19200),	-- units of 100 bit/s
+  unsigned char videoBadMBsCap;                    //	BOOLEAN
+};
+
+struct PluginCodec_H323VideoH263
+{
+	unsigned char sqcifMPI;                          // INTEGER (1..32) OPTIONAL, -- units 1/29.97 Hz (0 if not present)
+	unsigned char qcifMPI;                           // INTEGER (1..32) OPTIONAL, -- units 1/29.97 Hz (0 if not present)
+	unsigned char cifMPI;                            // INTEGER (1..32) OPTIONAL, -- units 1/29.97 Hz (0 if not present)
+	unsigned char cif4MPI;                           // INTEGER (1..32) OPTIONAL, -- units 1/29.97 Hz (0 if not present)
+	unsigned char cif16MPI;                          // INTEGER (1..32) OPTIONAL, -- units 1/29.97 Hz (0 if not present)
+	unsigned int maxBitRate;                         // INTEGER (1..192400) units 100 bit/s
+	unsigned char unrestrictedVector;                //	BOOLEAN
+	unsigned char arithmeticCoding;                  //	BOOLEAN,
+	unsigned char advancedPrediction;                //	BOOLEAN,
+	unsigned char pbFrames;                          //	BOOLEAN,
+	unsigned char temporalSpatialTradeOffCapability; //	BOOLEAN,
+	int hrdB;                                        // INTEGER (0..524287) OPTIONAL, -- units 128 bits (-1 if not present)
+	int bppMaxKb;                                    // INTEGER (0..65535) OPTIONAL, -- units 1024 bits (-1 if not present)
+
+	unsigned int slowSqcifMPI;                       // INTEGER (1..3600) OPTIONAL, --  units seconds/frame (0 if not present)
+	unsigned int slowQcifMPI;                        //	INTEGER (1..3600) OPTIONAL, -- units seconds/frame (0 if not present)
+	unsigned int slowCifMPI;                         //	INTEGER (1..3600) OPTIONAL, -- units seconds/frame (0 if not present)
+	unsigned int slowCif4MPI;                        //	INTEGER (1..3600) OPTIONAL, -- units seconds/frame (0 if not present)
+	unsigned int slowCif16MPI;                       //	INTEGER (1..3600) OPTIONAL, -- units seconds/frame (0 if not present)
+	unsigned char errorCompensation;                 // BOOLEAN,
+
+	void * enhancementLayerInfo;                     // not yet supported (NULL if not present)
+	void * h263Options;                              // not yet support (NULL if not present)
 };
 
 enum {
@@ -384,7 +422,29 @@ enum {
   PluginCodec_H323VideoCodec_is11172,             // not yet implemented
 };
 
+/////////////////
+//
+// video specific definitions
+//
 
+struct PluginCodec_Video_FrameHeader {
+  unsigned int  x;
+  unsigned int  y;
+  unsigned int  width;
+  unsigned int  height;
+  unsigned char data[1];
+};
+
+#define PLUGIN_CODEC_VIDEO_SET_FRAME_SIZE_FN    "set_frame_size"    // argument is struct PluginCodec_VideoSetFrameInfo
+struct PluginCodec_Video_SetFrameInfo {
+  int width;
+  int height;
+};
+
+/////////////////
+//
+// experimental definitions for statically linking codecs
+//
 
 #ifdef OPAL_STATIC_CODEC
 
@@ -410,6 +470,7 @@ PLUGIN_CODEC_DLL_API unsigned int PLUGIN_CODEC_API_VER_FN() \
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
+//
 //  LID/HID Plugins
 
 #ifdef _WIN32   // Only Support Win32 at the moment

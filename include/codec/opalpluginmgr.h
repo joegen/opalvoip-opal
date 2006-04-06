@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.h,v $
+ * Revision 1.1.2.3  2006/04/06 01:21:16  csoutheren
+ * More implementation of video codec plugins
+ *
  * Revision 1.1.2.2  2006/03/23 07:55:18  csoutheren
  * Audio plugin H.323 capability merging completed.
  * GSM, LBC, G.711 working. Speex and LPC-10 are not
@@ -44,7 +47,7 @@
 
 #include <ptlib/pluginmgr.h>
 #include <ptlib/pfactory.h>
-#include <opalplugin.h>
+#include <codec/opalplugin.h>
 #include <opal/mediafmt.h>
 
 #if OPAL_H323
@@ -53,12 +56,12 @@
 
 class H323Capability;
 
-class OPALPluginCodecManager : public PPluginModuleManager
+class OpalPluginCodecManager : public PPluginModuleManager
 {
-  PCLASSINFO(OPALPluginCodecManager, PPluginModuleManager);
+  PCLASSINFO(OpalPluginCodecManager, PPluginModuleManager);
   public:
-    OPALPluginCodecManager(PPluginManager * pluginMgr = NULL);
-    ~OPALPluginCodecManager();
+    OpalPluginCodecManager(PPluginManager * pluginMgr = NULL);
+    ~OpalPluginCodecManager();
 
     void RegisterStaticCodec(const char * name,
                              PluginCodec_GetAPIVersionFunction getApiVerFn,

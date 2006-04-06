@@ -24,7 +24,10 @@
  * Contributor(s): 
  *
  * $Log: vidcodec.h,v $
- * Revision 1.2013  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2013.4.1  2006/04/06 01:21:16  csoutheren
+ * More implementation of video codec plugins
+ *
+ * Revision 2.12  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.11  2005/10/21 17:58:31  dsandras
@@ -82,6 +85,8 @@
 #include <h323/h323caps.h>
 #endif
 
+#include <codec/opalplugin.h>
+
 
 #define OPAL_RGB24   "RGB24"
 #define OPAL_RGB32   "RGB32"
@@ -108,13 +113,7 @@ class OpalVideoTranscoder : public OpalTranscoder
 {
     PCLASSINFO(OpalVideoTranscoder, OpalTranscoder);
   public:
-    struct FrameHeader {
-      PInt32l  x;
-      PInt32l  y;
-      PUInt32l width;
-      PUInt32l height;
-      BYTE     data[1];
-    };
+    typedef PluginCodec_Video_FrameHeader FrameHeader;
 
   /**@name Construction */
   //@{
