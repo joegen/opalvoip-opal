@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2020  2006/02/08 04:00:19  csoutheren
+ * Revision 1.2020.2.1  2006/04/06 01:21:20  csoutheren
+ * More implementation of video codec plugins
+ *
+ * Revision 2.19  2006/02/08 04:00:19  csoutheren
  * Fixed for G.726 codec
  * Thanks to Michael Tinglof
  *
@@ -301,6 +304,8 @@ OpalMediaFormatList OpalTranscoder::GetSourceFormats(const OpalMediaFormat & dst
 
   OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
   for (OpalTranscoderIterator find = availableTranscoders.begin(); find != availableTranscoders.end(); ++find) {
+    PString s = find->GetInputFormat();
+    PString d = find->GetOutputFormat();
     if (find->GetOutputFormat() == dstFormat)
       list += find->GetInputFormat();
   }

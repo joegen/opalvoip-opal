@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2029  2006/02/02 07:03:44  csoutheren
+ * Revision 1.2029.2.1  2006/04/06 01:21:20  csoutheren
+ * More implementation of video codec plugins
+ *
+ * Revision 2.28  2006/02/02 07:03:44  csoutheren
  * Added extra logging of first outgoing RTP packet
  *
  * Revision 2.27  2006/01/24 23:31:07  dsandras
@@ -1860,20 +1863,18 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(PUDPSocket & socket
       }
 
       if (!remoteTransmitAddress.IsValid()) {
-	
-	remoteTransmitAddress = addr;
+		      remoteTransmitAddress = addr;
       } 
       else if (allowRemoteTransmitAddressChange && remoteAddress == addr) {
-
-	remoteTransmitAddress = addr;
-	allowRemoteTransmitAddressChange = FALSE;
+	      remoteTransmitAddress = addr;
+    	  allowRemoteTransmitAddressChange = FALSE;
       }
       else if (remoteTransmitAddress != addr && !allowRemoteTransmitAddressChange && !ignoreOtherSources) {
 
-	PTRACE(1, "RTP_UDP\tSession " << sessionID << ", "
-	       << channelName << " PDU from incorrect host, "
-	       " is " << addr << " should be " << remoteTransmitAddress);
-	return RTP_Session::e_IgnorePacket;
+	      PTRACE(1, "RTP_UDP\tSession " << sessionID << ", "
+	             << channelName << " PDU from incorrect host, "
+	              " is " << addr << " should be " << remoteTransmitAddress);
+	              return RTP_Session::e_IgnorePacket;
       }
     }
 
