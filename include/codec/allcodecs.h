@@ -23,7 +23,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: allcodecs.h,v $
- * Revision 1.2010.4.1  2006/03/16 07:06:00  csoutheren
+ * Revision 1.2010.4.2  2006/04/06 01:21:16  csoutheren
+ * More implementation of video codec plugins
+ *
+ * Revision 2.9.4.1  2006/03/16 07:06:00  csoutheren
  * Initial support for audio plugins
  *
  * Revision 2.9  2006/01/01 19:19:32  dsandras
@@ -90,13 +93,13 @@ OPAL_REGISTER_G711();
 //#include <codec/vidcodec.h>
 //OPAL_REGISTER_UNCOMPRESSED_VIDEO();
 
-#include <codec/h261codec.h>
-OPAL_REGISTER_H261();
+//#include <codec/h261codec.h>
+//OPAL_REGISTER_H261();
 
-#ifdef RFC2190_AVCODEC
-#include <codec/h263codec.h>
-OPAL_REGISTER_H263();
-#endif // RFC2190_AVCODEC
+//#ifdef RFC2190_AVCODEC
+//#include <codec/h263codec.h>
+//OPAL_REGISTER_H263();
+//#endif // RFC2190_AVCODEC
 
 #endif // __CODEC_ALLCODECS_H
 
