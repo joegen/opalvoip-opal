@@ -25,7 +25,18 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2057  2006/02/22 10:40:10  csoutheren
+ * Revision 1.2057.2.1  2006/04/06 05:33:08  csoutheren
+ * Backports from CVS head up to Plugin_Merge2
+ *
+ * Revision 2.58  2006/03/29 23:57:52  csoutheren
+ * Added patches from Paul Caswell to provide correct operation when using
+ * external RTP with H.323
+ *
+ * Revision 2.57  2006/03/20 10:37:47  csoutheren
+ * Applied patch #1453753 - added locking on media stream manipulation
+ * Thanks to Dinis Rosario
+ *
+ * Revision 2.56  2006/02/22 10:40:10  csoutheren
  * Added patch #1374583 from Frederic Heem
  * Added additional H.323 virtual function
  *
@@ -590,10 +601,13 @@ OpalMediaStream * OpalConnection::OpenSinkMediaStream(OpalMediaStream & source)
   PStringArray order = sourceFormat;
   // Second preference is given to the previous media stream already
   // opened to maintain symmetric codecs, if possible.
-  OpalMediaStream * otherStream = GetMediaStream(sessionID, TRUE);
-  if (otherStream != NULL)
-    order += otherStream->GetMediaFormat();
-  destinationFormats.Reorder(order);
+  {
+    PWaitAndSignal m(mediaStreamMutex);
+    OpalMediaStream * otherStream = GetMediaStream(sessionID, TRUE);
+    if (otherStream != NULL)
+      order += otherStream->GetMediaFormat();
+    destinationFormats.Reorder(order);
+  }
 
   OpalMediaFormat destinationFormat;
   if (!OpalTranscoder::SelectFormats(sessionID,
@@ -632,6 +646,7 @@ OpalMediaStream * OpalConnection::OpenSinkMediaStream(OpalMediaStream & source)
 
 void OpalConnection::StartMediaStreams()
 {
+  PWaitAndSignal mutex(mediaStreamMutex);
   for (PINDEX i = 0; i < mediaStreams.GetSize(); i++)
     mediaStreams[i].Start();
   PTRACE(2, "OpalCon\tMedia stream threads started.");
@@ -640,6 +655,7 @@ void OpalConnection::StartMediaStreams()
 
 void OpalConnection::CloseMediaStreams()
 {
+  PWaitAndSignal mutex(mediaStreamMutex);
   for (PINDEX i = 0; i < mediaStreams.GetSize(); i++) {
     if (mediaStreams[i].IsOpen()) {
       OnClosedMediaStream(mediaStreams[i]);
@@ -654,6 +670,7 @@ void OpalConnection::CloseMediaStreams()
 void OpalConnection::RemoveMediaStreams()
 {
   CloseMediaStreams();
+  PWaitAndSignal mutex(mediaStreamMutex);
   mediaStreams.RemoveAll();
   
   PTRACE(2, "OpalCon\tMedia stream threads removed from session.");
@@ -662,6 +679,7 @@ void OpalConnection::RemoveMediaStreams()
 
 void OpalConnection::PauseMediaStreams(BOOL paused)
 {
+  PWaitAndSignal mutex(mediaStreamMutex);
   for (PINDEX i = 0; i < mediaStreams.GetSize(); i++)
     mediaStreams[i].SetPaused(paused);
 }
@@ -699,12 +717,15 @@ BOOL OpalConnection::OnOpenMediaStream(OpalMediaStream & stream)
   if (!endpoint.OnOpenMediaStream(*this, stream))
     return FALSE;
 
-  mediaStreams.Append(&stream);
-
-  if (phase == ConnectedPhase) {
-    SetPhase(EstablishedPhase);
-    OnEstablished();
+  {
+    PWaitAndSignal m(mediaStreamMutex);
+    mediaStreams.Append(&stream);
   }
+
+  //if (phase == ConnectedPhase) {
+  //  SetPhase(EstablishedPhase);
+  //  OnEstablished();
+  //}
 
   return TRUE;
 }
@@ -724,6 +745,7 @@ void OpalConnection::OnPatchMediaStream(BOOL /*isSource*/, OpalMediaPatch & /*pa
 
 OpalMediaStream * OpalConnection::GetMediaStream(unsigned sessionId, BOOL source) const
 {
+  PWaitAndSignal mutex(mediaStreamMutex);
   for (PINDEX i = 0; i < mediaStreams.GetSize(); i++) {
     if (mediaStreams[i].GetSessionID() == sessionId &&
         mediaStreams[i].IsSource() == source)

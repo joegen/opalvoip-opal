@@ -25,7 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2021  2006/02/02 07:02:58  csoutheren
+ * Revision 1.2021.2.1  2006/04/06 05:33:08  csoutheren
+ * Backports from CVS head up to Plugin_Merge2
+ *
+ * Revision 2.21  2006/03/20 10:37:47  csoutheren
+ * Applied patch #1453753 - added locking on media stream manipulation
+ * Thanks to Dinis Rosario
+ *
+ * Revision 2.20  2006/02/02 07:02:58  csoutheren
  * Added RTP payload map to transcoders and connections to allow remote SIP endpoints
  * to change the payload type used for outgoing RTP.
  *
@@ -161,8 +168,8 @@ void OpalMediaPatch::PrintOn(ostream & strm) const
 void OpalMediaPatch::Main()
 {
   PTRACE(3, "Patch\tThread started for " << *this);
-
   PINDEX i;
+  BOOL readOK = TRUE;
 
   inUse.Wait();
   if (!source.IsSynchronous()) {
@@ -173,11 +180,17 @@ void OpalMediaPatch::Main()
       }
     }
   }
-  inUse.Signal();
 
   RTP_DataFrame sourceFrame(source.GetDataSize());
-  while (source.ReadPacket(sourceFrame)) {
+  inUse.Signal();
+  while (readOK) {
     inUse.Wait();
+    readOK = source.ReadPacket(sourceFrame);
+    if(!readOK)
+	  {
+      inUse.Signal();
+      break;
+    }
 
     FilterFrame(sourceFrame, source.GetMediaFormat());
 
@@ -199,11 +212,11 @@ void OpalMediaPatch::Close()
 {
   PTRACE(3, "Patch\tClosing media patch " << *this);
 
+  inUse.Wait();
   filters.RemoveAll();
   source.Close();
 
   // This relies on the channel close doing a RemoveSink() call
-  inUse.Wait();
   while (sinks.GetSize() > 0) {
     OpalMediaStream * stream = sinks[0].stream;
     inUse.Signal();
@@ -346,6 +359,7 @@ BOOL OpalMediaPatch::RemoveFilter(const PNotifier & filter, const OpalMediaForma
 void OpalMediaPatch::FilterFrame(RTP_DataFrame & frame,
                                  const OpalMediaFormat & mediaFormat)
 {
+  PWaitAndSignal mutex(inUse);
   for (PINDEX f = 0; f < filters.GetSize(); f++) {
     Filter & filter = filters[f];
     if (filter.stage.IsEmpty() || filter.stage == mediaFormat)
