@@ -24,11 +24,18 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2029.2.2  2006/03/20 02:25:27  csoutheren
+ * Revision 1.2029.2.3  2006/04/06 05:33:09  csoutheren
+ * Backports from CVS head up to Plugin_Merge2
+ *
+ * Revision 2.28.2.2  2006/03/20 02:25:27  csoutheren
  * Backports from CVS head
  *
  * Revision 2.28.2.1  2006/03/16 07:06:00  csoutheren
  * Initial support for audio plugins
+ *
+ * Revision 2.32  2006/03/29 23:53:54  csoutheren
+ * Make sure OpalTransportAddresses that are parsed from SDP are always udp$ and not
+ *  tcp$
  *
  * Revision 2.31  2006/03/20 00:41:43  csoutheren
  * Fixed typo in last submit
@@ -163,7 +170,7 @@ static OpalTransportAddress ParseConnectAddress(const PStringArray & tokens, PIN
   if (tokens.GetSize() == offset+3) {
     if (tokens[offset] *= "IN") {
       if (tokens[offset+1] *= "IP4")
-        return tokens[offset+2];
+        return OpalTransportAddress(tokens[offset+2], 0, "udp");
       else {
         PTRACE(1, "SDP\tConnect address has invalid address type \"" << tokens[offset+1] << '"');
       }
