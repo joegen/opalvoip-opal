@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
+ * Revision 1.1.2.5  2006/04/06 05:48:08  csoutheren
+ * Fixed last minute edits to allow compilation
+ *
  * Revision 1.1.2.4  2006/04/06 01:21:18  csoutheren
  * More implementation of video codec plugins
  *
@@ -508,7 +511,7 @@ static BOOL CallCodecControl(PluginCodec_Definition * codec,
                                                void * context,
                                          const char * name,
                                                void * parm, 
-                                       unsigned int * parmLen
+                                       unsigned int * parmLen,
                                                 int & retVal)
 {
   PluginCodec_ControlDefn * codecControls = codec->codecControls;
@@ -1499,14 +1502,14 @@ void OpalPluginCodecManager::RegisterPluginPair(
 #endif
           {
             char fmtpBuffer[1024];
-            fmtBuffer[0] - '\0';
-            int len = sizeof(fmtpBuffer)-1;
+            fmtpBuffer[0] = '\0';
+            unsigned int len = sizeof(fmtpBuffer)-1;
+            int retVal = 0;
             if (CallCodecControl(encoderCodec, NULL, "get_fmtp", fmtpBuffer, &len, retVal)) {
-              if (retVal > 0 && (strlen(fmtpBuffer) > 0)
+              if (retVal > 0 && (strlen(fmtpBuffer) > 0))
                 mediaFormat->SetOptionString("fmtp", fmtpBuffer);
             }
           }
-          mediaFormat->
         }
       }
 
