@@ -24,8 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2102.2.1  2006/04/06 01:21:18  csoutheren
+ * Revision 1.2102.2.2  2006/04/06 05:33:08  csoutheren
+ * Backports from CVS head up to Plugin_Merge2
+ *
+ * Revision 2.101.2.1  2006/04/06 01:21:18  csoutheren
  * More implementation of video codec plugins
+ *
+ * Revision 2.102  2006/03/23 00:24:49  csoutheren
+ * Detect if ClearCall is used within OnIncomingConnection
  *
  * Revision 2.101  2006/02/22 10:54:55  csoutheren
  * Appled patch #1375120 from Frederic Heem
