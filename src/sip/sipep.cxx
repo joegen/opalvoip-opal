@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2121  2006/03/27 20:28:18  dsandras
+ * Revision 1.2122  2006/04/06 20:39:41  dsandras
+ * Keep the same From header when sending authenticated requests than in the
+ * original request. Fixes Ekiga report #336762.
+ *
+ * Revision 2.120  2006/03/27 20:28:18  dsandras
  * Added mutex to fix concurrency issues between OnReceivedPDU which checks
  * if a connection is in the list, and OnReceivedINVITE, which adds it to the
  * list. Fixes Ekiga report #334847. Thanks Robert for your input on this!
@@ -1204,6 +1208,9 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
     callid_info->OnFailed(SIP_PDU::Failure_UnAuthorised);
     return;
   }
+  // Section 8.1.3.5 of RFC3261 tells that the authenticated
+  // request SHOULD have the same value of the Call-ID, To and From.
+  request->GetMIME().SetFrom(transaction.GetMIME().GetFrom());
   if (request->Start()) 
     callid_info->AppendTransaction(request);
   else {
