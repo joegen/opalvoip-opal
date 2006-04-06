@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.cxx,v $
- * Revision 1.2012  2005/12/30 15:22:40  dsandras
+ * Revision 1.2012.4.1  2006/04/06 01:21:20  csoutheren
+ * More implementation of video codec plugins
+ *
+ * Revision 2.11  2005/12/30 15:22:40  dsandras
  * Synchronized with MIMAS OpenH323 version.
  *
  * Revision 2.10  2005/12/30 14:29:15  dsandras
@@ -445,7 +448,7 @@ void RTP_JitterBuffer::Main()
     // Keep reading from the RTP transport frames
     if (!session.ReadData(*currentReadFrame)) {
       if (currentReadFrame != NULL)
-	delete currentReadFrame;  // Destructor won't delete this one, so do it here.
+	      delete currentReadFrame;  // Destructor won't delete this one, so do it here.
       shuttingDown = TRUE; // Flag to stop the reading side thread
       PTRACE(3, "RTP\tJitter RTP receive thread ended");
       return;

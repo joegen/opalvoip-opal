@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2043.2.2  2006/03/16 07:06:00  csoutheren
+ * Revision 1.2043.2.3  2006/04/06 01:21:20  csoutheren
+ * More implementation of video codec plugins
+ *
+ * Revision 2.42.2.2  2006/03/16 07:06:00  csoutheren
  * Initial support for audio plugins
  *
  * Revision 2.42.2.1  2006/03/13 07:20:28  csoutheren
@@ -927,7 +930,8 @@ OpalAudioFormat::OpalAudioFormat(const char * fullName,
                                  unsigned rxFrames,
                                  unsigned txFrames,
                                  unsigned maxFrames,
-				 unsigned clockRate)
+				                         unsigned clockRate,
+                                   time_t timeStamp)
   : OpalMediaFormat(fullName,
                     OpalMediaFormat::DefaultAudioSessionID,
                     rtpPayloadType,
@@ -936,7 +940,8 @@ OpalAudioFormat::OpalAudioFormat(const char * fullName,
                     8*frameSize*clockRate/frameTime,
                     frameSize,
                     frameTime,
-                    clockRate)
+                    clockRate,
+                    timeStamp)
 {
   AddOption(new OpalMediaOptionInteger(RxFramesPerPacketOption, false, OpalMediaOption::MinMerge, rxFrames, 1, maxFrames));
   AddOption(new OpalMediaOptionInteger(TxFramesPerPacketOption, false, OpalMediaOption::MinMerge, txFrames, 1, maxFrames));
@@ -958,7 +963,8 @@ OpalVideoFormat::OpalVideoFormat(const char * fullName,
                                  unsigned frameWidth,
                                  unsigned frameHeight,
                                  unsigned frameRate,
-                                 unsigned bitRate)
+                                 unsigned bitRate,
+                                   time_t timeStamp)
   : OpalMediaFormat(fullName,
                     OpalMediaFormat::DefaultVideoSessionID,
                     rtpPayloadType,
@@ -967,7 +973,8 @@ OpalVideoFormat::OpalVideoFormat(const char * fullName,
                     bitRate,
                     0,
                     OpalMediaFormat::VideoClockRate/frameRate,
-                    OpalMediaFormat::VideoClockRate)
+                    OpalMediaFormat::VideoClockRate,
+                    timeStamp)
 {
   AddOption(new OpalMediaOptionInteger(FrameWidthOption,          true,  OpalMediaOption::MinMerge, frameWidth, 11, 32767));
   AddOption(new OpalMediaOptionInteger(FrameHeightOption,         true,  OpalMediaOption::MinMerge, frameHeight, 9, 32767));

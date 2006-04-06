@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2035.2.3  2006/03/20 05:01:47  csoutheren
+ * Revision 1.2035.2.4  2006/04/06 01:21:20  csoutheren
+ * More implementation of video codec plugins
+ *
+ * Revision 2.34.2.3  2006/03/20 05:01:47  csoutheren
  * Removed change markers
  *
  * Revision 2.34.2.2  2006/03/20 02:25:27  csoutheren
@@ -174,7 +177,7 @@
 // TODO find the correct value, usually the bandwidth for pure audio call is 1280 kb/sec 
 // Set the bandwidth to 10Mbits, as setting the bandwith to UINT_MAX causes problems with cisco gatekeepers 
 //
-#define BANDWITH_DEFAULT_INITIAL 10000
+#define BANDWITH_DEFAULT_INITIAL 100000
 
 #define new PNEW
 
