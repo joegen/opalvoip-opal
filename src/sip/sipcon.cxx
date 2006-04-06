@@ -24,7 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2121.2.10  2006/03/19 18:06:51  dsandras
+ * Revision 1.2121.2.11  2006/04/06 20:41:05  dsandras
+ * Backported change from HEAD.
+ *
+ * Revision 2.142  2006/04/06 20:39:41  dsandras
+ * Keep the same From header when sending authenticated requests than in the
+ * original request. Fixes Ekiga report #336762.
+ *
+ * Revision 2.120.2.10  2006/03/19 18:06:51  dsandras
  * Backports from HEAD.
  *
  * Revision 2.140  2006/03/19 17:18:46  dsandras
@@ -1957,6 +1964,8 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
 
   // Restart the transaction with new authentication info
   // and start with a fresh To tag
+  // Section 8.1.3.5 of RFC3261 tells that the authenticated
+  // request SHOULD have the same value of the Call-ID, To and From.
   PINDEX j;
   if ((j = remotePartyAddress.Find (';')) != P_MAX_INDEX)
     remotePartyAddress = remotePartyAddress.Left(j);

@@ -24,7 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2098.2.18  2006/03/27 20:29:56  dsandras
+ * Revision 1.2098.2.19  2006/04/06 20:41:05  dsandras
+ * Backported change from HEAD.
+ *
+ * Revision 2.121  2006/04/06 20:39:41  dsandras
+ * Keep the same From header when sending authenticated requests than in the
+ * original request. Fixes Ekiga report #336762.
+ *
+ * Revision 2.97.2.18  2006/03/27 20:29:56  dsandras
  * Backports from HEAD.
  *
  * Revision 2.120  2006/03/27 20:28:18  dsandras
@@ -1244,6 +1251,9 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
     callid_info->OnFailed(SIP_PDU::Failure_UnAuthorised);
     return;
   }
+  // Section 8.1.3.5 of RFC3261 tells that the authenticated
+  // request SHOULD have the same value of the Call-ID, To and From.
+  request->GetMIME().SetFrom(transaction.GetMIME().GetFrom());
   if (request->Start()) 
     callid_info->AppendTransaction(request);
   else {
