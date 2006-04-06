@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2142  2006/03/23 00:24:49  csoutheren
+ * Revision 1.2143  2006/04/06 20:39:41  dsandras
+ * Keep the same From header when sending authenticated requests than in the
+ * original request. Fixes Ekiga report #336762.
+ *
+ * Revision 2.141  2006/03/23 00:24:49  csoutheren
  * Detect if ClearCall is used within OnIncomingConnection
  *
  * Revision 2.140  2006/03/19 17:18:46  dsandras
@@ -1944,6 +1948,8 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
 
   // Restart the transaction with new authentication info
   // and start with a fresh To tag
+  // Section 8.1.3.5 of RFC3261 tells that the authenticated
+  // request SHOULD have the same value of the Call-ID, To and From.
   PINDEX j;
   if ((j = remotePartyAddress.Find (';')) != P_MAX_INDEX)
     remotePartyAddress = remotePartyAddress.Left(j);
