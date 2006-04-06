@@ -24,8 +24,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2108.2.1  2006/03/20 02:25:27  csoutheren
+ * Revision 1.2108.2.2  2006/04/06 05:33:09  csoutheren
+ * Backports from CVS head up to Plugin_Merge2
+ *
+ * Revision 2.107.2.1  2006/03/20 02:25:27  csoutheren
  * Backports from CVS head
+ *
+ * Revision 2.120  2006/03/27 20:28:18  dsandras
+ * Added mutex to fix concurrency issues between OnReceivedPDU which checks
+ * if a connection is in the list, and OnReceivedINVITE, which adds it to the
+ * list. Fixes Ekiga report #334847. Thanks Robert for your input on this!
+ *
+ * Revision 2.119  2006/03/23 21:23:08  dsandras
+ * Fixed SIP Options request sent when refreshint NAT bindings.
  *
  * Revision 2.118  2006/03/19 18:57:06  dsandras
  * More work on Ekiga report #334999.
@@ -730,7 +741,7 @@ void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
 
       case Options: 
 	  {
-	    SIPOptions options(*this, *transport, transport->GetRemoteAddress());
+	    SIPOptions options(*this, *transport, SIPURL(info->GetRegistrationAddress()).GetHostName());
 	    options.Write(*transport);
 	    break;
 	  }
@@ -940,8 +951,10 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
     pdu->AdjustVia(transport);
 
   // Find a corresponding connection
+  connectionsActiveInUse.Wait();
   PSafePtr<SIPConnection> connection = GetSIPConnectionWithLock(pdu->GetMIME().GetCallID());
   if (connection != NULL) {
+    connectionsActiveInUse.Signal();
     SIPTransaction * transaction = connection->GetTransaction(pdu->GetTransactionID());
     if (transaction != NULL && transaction->GetMethod() == SIP_PDU::Method_INVITE) {
       // Have a response to the INVITE, so end Connect mode on the transport
@@ -950,6 +963,9 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
     connection->QueuePDU(pdu);
     return TRUE;
   }
+
+  if (pdu->GetMethod() != SIP_PDU::Method_INVITE)
+    connectionsActiveInUse.Signal();
 
   // PDUs outside of connection context
   if (!transport.IsReliable()) {
@@ -1098,6 +1114,7 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
 
   // add the connection to the endpoint list
   connectionsActive.SetAt(connection->GetToken(), connection);
+  connectionsActiveInUse.Signal();
   
   // Get the connection to handle the rest of the INVITE
   connection->QueuePDU(request);

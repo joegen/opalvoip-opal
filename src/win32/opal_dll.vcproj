@@ -39,7 +39,8 @@
 			<Tool
 				Name="VCCustomBuildTool"
 				Description="Extracting debug symbols"
-				CommandLine="rebase -b 0x10000000 -x . &quot;$(TargetPath)&quot;"
+				CommandLine="rebase -b 0x10000000 -x . &quot;$(TargetPath)&quot;
+"
 				Outputs="$(OutDir)\$(TargetName).dbg"/>
 			<Tool
 				Name="VCLinkerTool"
@@ -174,7 +175,8 @@
 			<Tool
 				Name="VCCustomBuildTool"
 				Description="Extracting debug symbols"
-				CommandLine="rebase -b 0x30000000 -x . &quot;$(TargetPath)&quot;"
+				CommandLine="rebase -b 0x30000000 -x . &quot;$(TargetPath)&quot;
+"
 				Outputs="$(OutDir)\$(TargetName).dbg"/>
 			<Tool
 				Name="VCLinkerTool"
@@ -372,7 +374,7 @@ copy &quot;$(InputPath)&quot;+nul &quot;$(IntDir)\$(TargetName).def&quot;  &gt; 
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Merging exported library symbols"
-					CommandLine="MergeSym -I &quot;$(INCLUDE)&quot; -x ptlib\msos\ptlibn_2003.dtf -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsn.lib&quot; &quot;$(InputPath)&quot;
+					CommandLine="MergeSym -I &quot;$(INCLUDE)&quot; -x ptlib\msos\ptlib_2003.dtf -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsn.lib&quot; &quot;$(InputPath)&quot;
 copy &quot;$(InputPath)&quot;+nul &quot;$(IntDir)\$(TargetName).def&quot;  &gt; nul
 "
 					AdditionalDependencies="$(OutDir)\opalsn.lib;$(InputDir)Private.def;"
