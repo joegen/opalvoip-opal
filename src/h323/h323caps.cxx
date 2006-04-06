@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2024.4.1  2006/03/23 07:55:18  csoutheren
+ * Revision 1.2024.4.2  2006/04/06 01:21:18  csoutheren
+ * More implementation of video codec plugins
+ *
+ * Revision 2.23.4.1  2006/03/23 07:55:18  csoutheren
  * Audio plugin H.323 capability merging completed.
  * GSM, LBC, G.711 working. Speex and LPC-10 are not
  *
@@ -905,48 +908,9 @@ BOOL H323GenericCapabilityInfo::IsGenericMatch(const H245_GenericCapability & ca
     return otherId == *capId;
 }
 
-
-H323GenericAudioCapability::H323GenericAudioCapability(const PString &standardId, PINDEX maxBitRate)
-  : H323AudioCapability(),
-    H323GenericCapabilityInfo(standardId, maxBitRate)
-{
-}
-
-PObject::Comparison H323GenericAudioCapability::Compare(const PObject & obj) const
-{
-  if (!PIsDescendant(&obj, H323GenericAudioCapability))
-    return LessThan;
-
-  return CompareInfo((const H323GenericAudioCapability &)obj);
-}
-
-
-unsigned H323GenericAudioCapability::GetSubType() const
-{
-  return H245_AudioCapability::e_genericAudioCapability;
-}
-
-
-BOOL H323GenericAudioCapability::OnSendingPDU(H245_AudioCapability & pdu,
-                                                  unsigned) const
-{
-    pdu.SetTag(H245_AudioCapability::e_genericAudioCapability);
-    H245_GenericCapability &generic = (H245_GenericCapability &)pdu;
-    return OnSendingGenericPDU(generic);
-}
-
-
-BOOL H323GenericAudioCapability::OnReceivedPDU(const H245_AudioCapability & pdu,
-                                                   unsigned &)
-{
-    if( pdu.GetTag() != H245_AudioCapability::e_genericAudioCapability)
-	return FALSE;
-    return OnReceivedGenericPDU((const H245_GenericCapability &)pdu);
-}
+#if OPAL_AUDIO
 
 /////////////////////////////////////////////////////////////////////////////
-
-#if OPAL_AUDIO
 
 H323AudioCapability::H323AudioCapability()
 {
@@ -1121,6 +1085,46 @@ BOOL H323AudioCapability::OnReceivedPDU(const H245_AudioCapability & pdu,
 
 /////////////////////////////////////////////////////////////////////////////
 
+H323GenericAudioCapability::H323GenericAudioCapability(const PString &standardId, PINDEX maxBitRate)
+  : H323AudioCapability(),
+    H323GenericCapabilityInfo(standardId, maxBitRate)
+{
+}
+
+PObject::Comparison H323GenericAudioCapability::Compare(const PObject & obj) const
+{
+  if (!PIsDescendant(&obj, H323GenericAudioCapability))
+    return LessThan;
+
+  return CompareInfo((const H323GenericAudioCapability &)obj);
+}
+
+
+unsigned H323GenericAudioCapability::GetSubType() const
+{
+  return H245_AudioCapability::e_genericAudioCapability;
+}
+
+
+BOOL H323GenericAudioCapability::OnSendingPDU(H245_AudioCapability & pdu,
+                                                  unsigned) const
+{
+  pdu.SetTag(H245_AudioCapability::e_genericAudioCapability);
+  H245_GenericCapability &generic = (H245_GenericCapability &)pdu;
+  return OnSendingGenericPDU(generic);
+}
+
+
+BOOL H323GenericAudioCapability::OnReceivedPDU(const H245_AudioCapability & pdu,
+                                                   unsigned &)
+{
+  if( pdu.GetTag() != H245_AudioCapability::e_genericAudioCapability)
+    return FALSE;
+  return OnReceivedGenericPDU((const H245_GenericCapability &)pdu);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
 H323NonStandardAudioCapability::H323NonStandardAudioCapability(
       H323NonStandardCapabilityInfo::CompareFuncType compareFunc,
       const BYTE * fixedData,
@@ -1264,6 +1268,15 @@ unsigned H323VideoCapability::GetDefaultSessionID() const
 
 /////////////////////////////////////////////////////////////////////////////
 
+H323NonStandardVideoCapability::H323NonStandardVideoCapability(
+      H323NonStandardCapabilityInfo::CompareFuncType compareFunc,
+      const BYTE * fixedData,
+      PINDEX dataSize)
+  : H323VideoCapability(),
+    H323NonStandardCapabilityInfo(compareFunc, fixedData, dataSize)
+{
+}
+
 H323NonStandardVideoCapability::H323NonStandardVideoCapability(const BYTE * fixedData,
                                                                PINDEX dataSize,
                                                                PINDEX offset,
@@ -1333,8 +1346,52 @@ BOOL H323NonStandardVideoCapability::IsNonStandardMatch(const H245_NonStandardPa
   return CompareParam(param) == EqualTo && CompareData(param.m_data) == EqualTo;
 }
 
-#endif // OPAL_VIDEO
+/////////////////////////////////////////////////////////////////////////////
 
+H323GenericVideoCapability::H323GenericVideoCapability(const PString &standardId, PINDEX maxBitRate)
+  : H323VideoCapability(),
+    H323GenericCapabilityInfo(standardId, maxBitRate)
+{
+}
+
+PObject::Comparison H323GenericVideoCapability::Compare(const PObject & obj) const
+{
+  if (!PIsDescendant(&obj, H323GenericVideoCapability))
+    return LessThan;
+
+  return CompareInfo((const H323GenericVideoCapability &)obj);
+}
+
+
+unsigned H323GenericVideoCapability::GetSubType() const
+{
+  return H245_VideoCapability::e_genericVideoCapability;
+}
+
+
+BOOL H323GenericVideoCapability::OnSendingPDU(H245_VideoCapability & pdu) const
+{
+  pdu.SetTag(H245_VideoCapability::e_genericVideoCapability);
+  H245_GenericCapability &generic = (H245_GenericCapability &)pdu;
+  return OnSendingGenericPDU(generic);
+}
+
+BOOL H323GenericVideoCapability::OnSendingPDU(H245_VideoMode & pdu) const
+{
+  //pdu.SetTag(H245_VideoMode::e::e_genericVideoCapability);
+  //H245_GenericCapability &generic = (H245_GenericCapability &)pdu;
+  //return OnSendingGenericPDU(generic);
+  return FALSE;
+}
+
+BOOL H323GenericVideoCapability::OnReceivedPDU(const H245_VideoCapability & pdu)
+{
+  if (pdu.GetTag() != H245_VideoCapability::e_genericVideoCapability)
+    return FALSE;
+  return OnReceivedGenericPDU((const H245_GenericCapability &)pdu);
+}
+
+#endif // OPAL_VIDEO
 
 /////////////////////////////////////////////////////////////////////////////
 
