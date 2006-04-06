@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2133.2.3  2006/04/06 05:33:09  csoutheren
+ * Revision 1.2133.2.4  2006/04/06 05:34:16  csoutheren
+ * Backports from CVS head up to Plugin_Merge2
+ *
+ * Revision 2.132.2.3  2006/04/06 05:33:09  csoutheren
  * Backports from CVS head up to Plugin_Merge2
  *
  * Revision 2.132.2.2  2006/04/06 01:21:21  csoutheren
@@ -1621,18 +1624,10 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     Release();
     return;
   }
-<<<<<<< sipcon.cxx
   if ((phase == ReleasingPhase) || (phase == ReleasedPhase)) {
     PTRACE(1, "H225\tApplication called ClearCall during OnIncomingCall");
     return;
   }
-=======
-  if ((phase == ReleasingPhase) || (phase == ReleasedPhase)) {
-    PTRACE(1, "H225\tApplication called ClearCall during OnIncomingCall");
-    return;
-  }
-
->>>>>>> 2.141
 
   PTRACE(2, "SIP\tOnIncomingConnection succeeded for INVITE from " << request.GetURI() << " for " << *this);
   phase = SetUpPhase;
