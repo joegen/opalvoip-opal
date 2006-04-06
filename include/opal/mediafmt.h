@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2038.4.2  2006/03/16 07:06:00  csoutheren
+ * Revision 1.2038.4.3  2006/04/06 01:21:17  csoutheren
+ * More implementation of video codec plugins
+ *
+ * Revision 2.37.4.2  2006/03/16 07:06:00  csoutheren
  * Initial support for audio plugins
  *
  * Revision 2.37.4.1  2006/03/13 07:20:28  csoutheren
@@ -564,6 +567,7 @@ class OpalMediaOptionString : public OpalMediaOption
   */
 class OpalMediaFormat : public PCaselessString
 {
+  friend class OpalPluginCodecManager;
   PCLASSINFO(OpalMediaFormat, PCaselessString);
 
   public:
@@ -920,9 +924,10 @@ const class name##_Class : public OpalMediaFormat \
 name##_Class::name##_Class() \
       : OpalMediaFormat(fullName, defaultSessionID, rtpPayloadType, encodingName, needsJitter, bandwidth, frameSize, frameTime, timeUnits) \
 
-
+#if OPAL_AUDIO
 class OpalAudioFormat : public OpalMediaFormat
 {
+  friend class OpalPluginCodecManager;
     PCLASSINFO(OpalAudioFormat, OpalMediaFormat);
   public:
     OpalAudioFormat(
@@ -934,16 +939,19 @@ class OpalAudioFormat : public OpalMediaFormat
       unsigned rxFrames,        ///<  Maximum number of frames per packet we can receive
       unsigned txFrames,        ///<  Desired number of frames per packet we transmit
       unsigned maxFrames = 256, ///<  Maximum possible frames per packet
-      unsigned clockRate = 8000 ///<  Clock Rate 
+      unsigned clockRate = 8000, ///<  Clock Rate 
+      time_t timeStamp = 0       ///<  timestamp (for versioning)
     );
 
     static const char * const RxFramesPerPacketOption;
     static const char * const TxFramesPerPacketOption;
 };
+#endif
 
-
+#if OPAL_VIDEO
 class OpalVideoFormat : public OpalMediaFormat
 {
+  friend class OpalPluginCodecManager;
     PCLASSINFO(OpalVideoFormat, OpalMediaFormat);
   public:
     OpalVideoFormat(
@@ -953,7 +961,8 @@ class OpalVideoFormat : public OpalMediaFormat
       unsigned frameWidth,      ///<  Width of video frame
       unsigned frameHeight,     ///<  Height of video frame
       unsigned frameRate,       ///<  Number of frames per second
-      unsigned bitRate          ///<  Maximum bits per second
+      unsigned bitRate,         ///<  Maximum bits per second
+      time_t timeStamp = 0        ///<  timestamp (for versioning)
     );
 
     virtual bool Merge(const OpalMediaFormat & mediaFormat);
@@ -965,7 +974,7 @@ class OpalVideoFormat : public OpalMediaFormat
     static const char * const DynamicVideoQualityOption;
     static const char * const AdaptivePacketDelayOption;
 };
-
+#endif
 
 // List of known media formats
 

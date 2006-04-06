@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.h,v $
- * Revision 1.2016.4.1  2006/03/23 07:55:18  csoutheren
+ * Revision 1.2016.4.2  2006/04/06 01:21:17  csoutheren
+ * More implementation of video codec plugins
+ *
+ * Revision 2.15.4.1  2006/03/23 07:55:18  csoutheren
  * Audio plugin H.323 capability merging completed.
  * GSM, LBC, G.711 working. Speex and LPC-10 are not
  *
@@ -1233,6 +1236,11 @@ class H323NonStandardVideoCapability : public H323VideoCapability,
   public:
   /**@name Construction */
   //@{
+    H323NonStandardVideoCapability(
+      H323NonStandardCapabilityInfo::CompareFuncType compareFunc,
+      const BYTE * dataBlock,         ///< Non-Standard data for codec type
+      PINDEX dataSize                 ///< Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
+    );
     /**Create a new set of information about a non-standard codec.
       */
     H323NonStandardVideoCapability(
@@ -1327,6 +1335,95 @@ class H323NonStandardVideoCapability : public H323VideoCapability,
     virtual BOOL IsNonStandardMatch(
       const H245_NonStandardParameter & param  ///<  Non standard field in PDU received
     ) const;
+  //@}
+};
+
+/**This class describes the interface to a generic video codec used to
+   transfer data via the logical channels opened and managed by the H323
+   control channel.
+
+   An application may create a descendent off this class and override
+   functions as required for descibing the codec.
+ */
+class H323GenericVideoCapability : public H323VideoCapability,
+				                           public H323GenericCapabilityInfo
+{
+  PCLASSINFO(H323GenericVideoCapability, H323VideoCapability);
+
+  public:
+  /**@name Construction */
+  //@{
+    /**Create a new set of information about a non-standard codec.
+      */
+    H323GenericVideoCapability(
+      const PString & capabilityId,    ///< generic codec identifier
+      PINDEX maxBitRate = 0	           ///< maxBitRate parameter for the GenericCapability
+      );
+
+  //@}
+
+  /**@name Overrides from class PObject */
+  //@{
+    /**Compare two capability instances. This compares the main and sub-types
+       of the capability.
+     */
+    Comparison Compare(const PObject & obj) const;
+  //@}
+
+  /**@name Identification functions */
+  //@{
+    /**Get the sub-type of the capability. This is a code dependent on the
+       main type of the capability.
+
+       This returns H245_VideoCapability::e_genericCapability.
+     */
+    virtual unsigned GetSubType() const;
+  //@}
+
+  /**@name Protocol manipulation */
+  //@{
+    /**This function is called whenever and outgoing TerminalCapabilitySet
+       or OpenLogicalChannel PDU is being constructed for the control channel.
+       It allows the capability to set the PDU fields from information in
+       members specific to the class.
+
+       The default behaviour calls H323GenericCapabilityinfo::OnSendingPDU()
+       to handle the PDU.
+     */
+    virtual BOOL OnSendingPDU(
+      H245_VideoCapability & pdu  ///< PDU to set information on
+    ) const;
+
+    /**This function is called whenever and outgoing RequestMode
+       PDU is being constructed for the control channel. It allows the
+       capability to set the PDU fields from information in members specific
+       to the class.
+
+       The default behaviour sets the PDUs tag according to the GetSubType()
+       function (translated to different enum).
+     */
+    virtual BOOL OnSendingPDU(
+      H245_VideoMode & pdu  ///<  PDU to set information on
+    ) const;
+
+    /**This function is called whenever and incoming TerminalCapabilitySet
+       or OpenLogicalChannel PDU has been used to construct the control
+       channel. It allows the capability to set from the PDU fields,
+       information in members specific to the class.
+
+       The default behaviour calls H323GenericCapabilityinfo::OnReceivedPDU()
+       to handle the provided PDU.
+     */
+    virtual BOOL OnReceivedPDU(
+      const H245_VideoCapability & pdu  ///< PDU to get information from
+    );
+
+    /**Compare the generic part of the capability, if applicable.
+     */
+    virtual BOOL IsGenericMatch(
+      const H245_GenericCapability & param  ///< Generic field in PDU received
+      ) const { return H323GenericCapabilityInfo::IsGenericMatch(param); }
+
   //@}
 };
 
