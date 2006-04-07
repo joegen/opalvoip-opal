@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2023  2006/02/02 07:02:57  csoutheren
+ * Revision 1.2023.2.1  2006/04/07 07:57:20  csoutheren
+ * Halfway through media format changes - not working, but closer
+ *
+ * Revision 2.22  2006/02/02 07:02:57  csoutheren
  * Added RTP payload map to transcoders and connections to allow remote SIP endpoints
  * to change the payload type used for outgoing RTP.
  *
@@ -302,11 +305,26 @@ class OpalTranscoder : public OpalMediaFormatPair
        Returns FALSE if there is no registered media transcoder that can be used
        between the two named formats.
       */
-    static BOOL SelectFormats(
+    static BOOL SelectSingleFormat(
       unsigned sessionID,               ///<  Session ID for media formats
       const OpalMediaFormatList & srcFormats, ///<  Names of possible source formats
       const OpalMediaFormatList & dstFormats, ///<  Names of possible destination formats
       OpalMediaFormat & srcFormat,      ///<  Selected source format to be used
+      OpalMediaFormat & dstFormat       ///<  Selected destination format to be used
+    );
+    static BOOL SelectTranscoderFormat(
+      unsigned sessionID,               ///<  Session ID for media formats
+      const OpalMediaFormatList & srcFormats, ///<  Names of possible source formats
+      const OpalMediaFormatList & dstFormats, ///<  Names of possible destination formats
+      OpalMediaFormat & srcFormat,      ///<  Selected source format to be used
+      OpalMediaFormat & dstFormat       ///<  Selected destination format to be used
+    );
+    static BOOL SelectDoubleTranscoderFormat(
+      unsigned sessionID,               ///<  Session ID for media formats
+      const OpalMediaFormatList & srcFormats, ///<  Names of possible source formats
+      const OpalMediaFormatList & dstFormats, ///<  Names of possible destination formats
+      OpalMediaFormat & srcFormat,      ///<  Selected source format to be used
+      OpalMediaFormat & intermediateFormat,      ///<  Selected intermediate format to be used
       OpalMediaFormat & dstFormat       ///<  Selected destination format to be used
     );
 

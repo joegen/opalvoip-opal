@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2021.2.1  2006/04/06 05:33:08  csoutheren
+ * Revision 1.2021.2.2  2006/04/07 07:57:20  csoutheren
+ * Halfway through media format changes - not working, but closer
+ *
+ * Revision 2.20.2.1  2006/04/06 05:33:08  csoutheren
  * Backports from CVS head up to Plugin_Merge2
  *
  * Revision 2.21  2006/03/20 10:37:47  csoutheren
@@ -230,7 +233,7 @@ void OpalMediaPatch::Close()
 }
 
 
-BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::PayloadMapType & rtpMap)
+BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, OpalTranscoder * sourceTranscoder, const RTP_DataFrame::PayloadMapType & rtpMap)
 {
   if (PAssertNULL(stream) == NULL)
     return FALSE;
@@ -252,6 +255,23 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::Payl
     PTRACE(3, "Patch\tAdded direct media stream sink " << *stream);
     return TRUE;
   }
+
+  sink->primaryCodec = sourceTranscoder;
+  if (sink->primaryCodec != NULL) {
+    sink->primaryCodec->SetRTPPayloadMap(rtpMap);
+    sink->primaryCodec->SetMaxOutputSize(stream->GetDataSize());
+
+    if (!stream->SetDataSize(sink->primaryCodec->GetOptimalDataFrameSize(FALSE))) {
+      PTRACE(2, "Patch\tSink stream " << *stream << " cannot support data size "
+              << sink->primaryCodec->GetOptimalDataFrameSize(FALSE));
+      return FALSE;
+    }
+
+    PTRACE(3, "Patch\tAdded media stream sink " << *stream
+           << " using transcoder " << *sink->primaryCodec);
+  }
+
+#if 0
 
   sink->primaryCodec = OpalTranscoder::Create(sourceFormat, destinationFormat);
   if (sink->primaryCodec != NULL) {
@@ -290,6 +310,8 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::Payl
            << " using transcoders " << *sink->primaryCodec
            << " and " << *sink->secondaryCodec);
   }
+
+#endif
 
   source.SetDataSize(sink->primaryCodec->GetOptimalDataFrameSize(TRUE));
   return TRUE;

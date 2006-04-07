@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2020.2.1  2006/04/06 01:21:20  csoutheren
+ * Revision 1.2020.2.2  2006/04/07 07:57:20  csoutheren
+ * Halfway through media format changes - not working, but closer
+ *
+ * Revision 2.19.2.1  2006/04/06 01:21:20  csoutheren
  * More implementation of video codec plugins
  *
  * Revision 2.19  2006/02/08 04:00:19  csoutheren
@@ -211,11 +214,11 @@ OpalTranscoder * OpalTranscoder::Create(const OpalMediaFormat & srcFormat,
 }
 
 
-BOOL OpalTranscoder::SelectFormats(unsigned sessionID,
-                                   const OpalMediaFormatList & srcFormats,
-                                   const OpalMediaFormatList & dstFormats,
-                                   OpalMediaFormat & srcFormat,
-                                   OpalMediaFormat & dstFormat)
+BOOL OpalTranscoder::SelectSingleFormat(unsigned sessionID,
+                                        const OpalMediaFormatList & srcFormats,
+                                        const OpalMediaFormatList & dstFormats,
+                                        OpalMediaFormat & srcFormat,
+                                        OpalMediaFormat & dstFormat)
 {
   PINDEX s, d;
 
@@ -232,28 +235,54 @@ BOOL OpalTranscoder::SelectFormats(unsigned sessionID,
     }
   }
 
+  return FALSE;
+}
+
+BOOL OpalTranscoder::SelectTranscoderFormat(unsigned sessionID,
+                                            const OpalMediaFormatList & srcFormats,
+                                            const OpalMediaFormatList & dstFormats,
+                                            OpalMediaFormat & srcFormat,
+                                            OpalMediaFormat & dstFormat)
+{
+  PINDEX s, d;
+
   // Search for a single transcoder to get from a to b
   for (d = 0; d < dstFormats.GetSize(); d++) {
     dstFormat = dstFormats[d];
-    for (s = 0; s < srcFormats.GetSize(); s++) {
-      srcFormat = srcFormats[s];
-      OpalMediaFormatPair search(srcFormat, dstFormat);
-      OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
-      for (OpalTranscoderIterator i = availableTranscoders.begin(); i != availableTranscoders.end(); ++i) {
-        if (search == *i)
-          return TRUE;
+    if (dstFormat.GetDefaultSessionID() == sessionID) {
+      for (s = 0; s < srcFormats.GetSize(); s++) {
+        srcFormat = srcFormats[s];
+        OpalMediaFormatPair search(srcFormat, dstFormat);
+        OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
+        for (OpalTranscoderIterator i = availableTranscoders.begin(); i != availableTranscoders.end(); ++i) {
+          if (search == *i)
+            return TRUE;
+        }
       }
     }
   }
 
+  return FALSE;
+}
+
+BOOL OpalTranscoder::SelectDoubleTranscoderFormat(unsigned sessionID,
+                                                  const OpalMediaFormatList & srcFormats,
+                                                  const OpalMediaFormatList & dstFormats,
+                                                  OpalMediaFormat & srcFormat,
+                                                  OpalMediaFormat & midFormat,
+                                                  OpalMediaFormat & dstFormat)
+{
+  PINDEX s, d;
+
   // Last gasp search for a double transcoder to get from a to b
   for (d = 0; d < dstFormats.GetSize(); d++) {
     dstFormat = dstFormats[d];
-    for (s = 0; s < srcFormats.GetSize(); s++) {
-      srcFormat = srcFormats[s];
-      OpalMediaFormat intermediateFormat;
-      if (FindIntermediateFormat(srcFormat, dstFormat, intermediateFormat))
-        return TRUE;
+    if (dstFormat.GetDefaultSessionID() == sessionID) {
+      for (s = 0; s < srcFormats.GetSize(); s++) {
+        srcFormat = srcFormats[s];
+        if (FindIntermediateFormat(srcFormat, dstFormat, midFormat))
+          return TRUE;
+      }
     }
   }
 
