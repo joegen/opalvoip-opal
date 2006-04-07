@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2052.2.1  2006/04/06 05:33:07  csoutheren
+ * Revision 1.2052.2.2  2006/04/07 07:57:20  csoutheren
+ * Halfway through media format changes - not working, but closer
+ *
+ * Revision 2.51.2.1  2006/04/06 05:33:07  csoutheren
  * Backports from CVS head up to Plugin_Merge2
  *
  * Revision 2.52  2006/03/20 10:37:47  csoutheren
@@ -234,7 +237,7 @@ class OpalRFC2833Proto;
 class OpalRFC2833Info;
 class OpalT120Protocol;
 class OpalT38Protocol;
-
+class OpalTranscoder;
 
 /**This is the base class for connections to an endpoint.
    A particular protocol will have a descendant class from this to implement
@@ -1115,6 +1118,9 @@ class OpalConnection : public PSafeObject
 
     PMutex & GetMediaStreamMutex() { return mediaStreamMutex; }
 
+    OpalTranscoder * GetSourceTranscoder() const
+    { return sourceTranscoder; }
+
   protected:
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnUserInputInBandDTMF);
@@ -1152,6 +1158,7 @@ class OpalConnection : public PSafeObject
     OpalT120Protocol    * t120handler;
     OpalT38Protocol     * t38handler;
 
+    OpalTranscoder      * sourceTranscoder;
 
     MediaAddressesDict  mediaTransportAddresses;
     PMutex              mediaStreamMutex;

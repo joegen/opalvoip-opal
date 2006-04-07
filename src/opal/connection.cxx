@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2057.2.1  2006/04/06 05:33:08  csoutheren
+ * Revision 1.2057.2.2  2006/04/07 07:57:20  csoutheren
+ * Halfway through media format changes - not working, but closer
+ *
+ * Revision 2.56.2.1  2006/04/06 05:33:08  csoutheren
  * Backports from CVS head up to Plugin_Merge2
  *
  * Revision 2.58  2006/03/29 23:57:52  csoutheren
@@ -337,7 +340,8 @@ OpalConnection::OpalConnection(OpalCall & call,
     callEndTime(0),
     localPartyName(ep.GetDefaultLocalPartyName()),
     displayName(ep.GetDefaultDisplayName()),
-    remotePartyName(token)
+    remotePartyName(token),
+    sourceTranscoder(NULL)
 {
   PTRACE(3, "OpalCon\tCreated connection " << *this);
 
@@ -531,8 +535,7 @@ void OpalConnection::AdjustMediaFormats(OpalMediaFormatList & mediaFormats) cons
 }
 
 
-BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats,
-                                           unsigned sessionID)
+BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats, unsigned sessionID)
 {
   // See if already opened
   if (GetMediaStream(sessionID, TRUE) != NULL) {
@@ -544,27 +547,68 @@ BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForm
   PTRACE(3, "OpalCon\tOpenSourceMediaStream for session " << sessionID << " on " << *this);
 
   OpalMediaFormat sourceFormat, destinationFormat;
-  if (!OpalTranscoder::SelectFormats(sessionID,
-                                     GetMediaFormats(),
-                                     mediaFormats,
-                                     sourceFormat,
-                                     destinationFormat)) {
+  if (OpalTranscoder::SelectSingleFormat(sessionID,
+                                         GetMediaFormats(),
+                                         mediaFormats,
+                                         sourceFormat,
+                                         destinationFormat)) 
+  {
+    if (!sourceFormat.Merge(destinationFormat)) 
+    {
+      PTRACE(2, "OpalCon\tOpenSourceMediaStream session " << sessionID
+            << ", could not merge destination media format " << destinationFormat
+            << " into source " << sourceFormat);
+      return FALSE;
+    }
+    PTRACE(3, "OpalCon\tSelected direct media stream " << sourceFormat << " -> " << destinationFormat);
+  }
+  else if (OpalTranscoder::SelectTranscoderFormat(sessionID,
+                                                  GetMediaFormats(),
+                                                  mediaFormats,
+                                                  sourceFormat,
+                                                  destinationFormat)) 
+  {
+    // create the transcoder
+    sourceTranscoder = OpalTranscoder::Create(sourceFormat, destinationFormat);
+    if (sourceTranscoder == NULL) {
+      PTRACE(2, "OpalCon\tOpenSourceMediaStream session " << sessionID
+            << ", could not create transcoder from " << sourceFormat << " to " << destinationFormat);
+      return FALSE;
+    }
+
+    const OpalMediaFormat & xcoderSrcFormat = sourceTranscoder->GetInputFormat();
+    if (!sourceFormat.Merge(xcoderSrcFormat)) {
+      PTRACE(2, "OpalCon\tOpenSourceMediaStream session " << sessionID
+            << ", could not merge source media format " << sourceFormat
+            << " into codec source media format " << xcoderSrcFormat);
+      delete sourceTranscoder;
+      sourceTranscoder = NULL;
+      return FALSE;
+    }
+    const OpalMediaFormat & xcoderDstFormat = sourceTranscoder->GetOutputFormat();
+    if (!destinationFormat.Merge(xcoderDstFormat)) {
+      PTRACE(2, "OpalCon\tOpenSourceMediaStream session " << sessionID
+            << ", could not merge destination media format " << destinationFormat
+            << " into codec source media format " << xcoderDstFormat);
+      delete sourceTranscoder;
+      sourceTranscoder = NULL;
+      return FALSE;
+    }
+    PTRACE(3, "OpalCon\tSelected transcoder media stream " << sourceFormat << " -> " << destinationFormat);
+  }
+
+  /*
+  TODO: add in call to SelectDoubleTranscoderFormat at some point
+  else
+  */
+
+  else {
     PTRACE(2, "OpalCon\tOpenSourceMediaStream session " << sessionID
            << ", could not find compatible media format:\n"
               "  source formats=" << setfill(',') << GetMediaFormats() << "\n"
               "   sink  formats=" << mediaFormats << setfill(' '));
     return FALSE;
   }
-
-  if (!sourceFormat.Merge(destinationFormat)) {
-    PTRACE(2, "OpalCon\tOpenSourceMediaStream session " << sessionID
-           << ", could not merge destination media format " << destinationFormat
-           << " into source " << sourceFormat);
-    return FALSE;
-  }
-
-  PTRACE(3, "OpalCon\tSelected media stream "
-         << sourceFormat << " -> " << destinationFormat);
   
   OpalMediaStream *stream = CreateMediaStream(sourceFormat, sessionID, TRUE);
   if (stream == NULL) {
@@ -610,19 +654,35 @@ OpalMediaStream * OpalConnection::OpenSinkMediaStream(OpalMediaStream & source)
   }
 
   OpalMediaFormat destinationFormat;
-  if (!OpalTranscoder::SelectFormats(sessionID,
-                                     sourceFormat, // Only use selected format on source
-                                     destinationFormats,
-                                     sourceFormat,
-                                     destinationFormat)) {
-    PTRACE(2, "OpalCon\tOpenSinkMediaStream, could not find compatible media format:\n"
+  if (OpalTranscoder::SelectSingleFormat(sessionID,
+                                         sourceFormat, // Only use selected format on source
+                                         destinationFormats,
+                                         sourceFormat,
+                                         destinationFormat)) 
+  {
+    PTRACE(3, "OpalCon\tOpenSinkMediaStream, selected direct conversion "
+         << sourceFormat << " -> " << destinationFormat);
+  }
+  else if (OpalTranscoder::SelectTranscoderFormat(sessionID,
+                                                  sourceFormat, // Only use selected format on source
+                                                  destinationFormats,
+                                                  sourceFormat,
+                                                  destinationFormat)) 
+  {
+    PTRACE(3, "OpalCon\tOpenSinkMediaStream, selected transcoder conversion "
+         << sourceFormat << " -> " << destinationFormat);
+  }
+  // TODO: add in double conversion check
+/*
+  else {
+  }
+*/
+  else {
+    PTRACE(2, "OpalCon\tOpenSinkMediaStream, could not find compatible direct media format:\n"
               "  source formats=" << setfill(',') << source.GetMediaFormat() << "\n"
               "   sink  formats=" << destinationFormats << setfill(' '));
     return NULL;
   }
-
-  PTRACE(3, "OpalCon\tOpenSinkMediaStream, selected "
-         << sourceFormat << " -> " << destinationFormat);
 
   OpalMediaStream * stream = CreateMediaStream(destinationFormat, sessionID, FALSE);
   if (stream == NULL) {

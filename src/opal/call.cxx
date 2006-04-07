@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2042.2.1  2006/04/06 05:33:08  csoutheren
+ * Revision 1.2042.2.2  2006/04/07 07:57:20  csoutheren
+ * Halfway through media format changes - not working, but closer
+ *
+ * Revision 2.41.2.1  2006/04/06 05:33:08  csoutheren
  * Backports from CVS head up to Plugin_Merge2
  *
  * Revision 2.43  2006/03/29 23:53:03  csoutheren
@@ -535,7 +538,7 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
             if (patch == NULL)
               return FALSE;
           }
-          patch->AddSink(sink, conn->GetRTPPayloadMap());
+          patch->AddSink(sink, connection.GetSourceTranscoder(), conn->GetRTPPayloadMap());
         }
       }
     }
