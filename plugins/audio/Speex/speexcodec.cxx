@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.cxx,v $
+ * Revision 1.1.2.2  2006/04/08 06:09:09  rjongbloed
+ * Fix correct directory for OPAL headers
+ *
  * Revision 1.1.2.1  2006/04/06 01:20:05  csoutheren
  * Ported audio codec plugins from OpenH323 to OPAL
  *
@@ -79,7 +82,7 @@
  *
  */
 
-#include <opalplugin.h>
+#include <codec/opalplugin.h>
 
 extern "C" {
 PLUGIN_CODEC_IMPLEMENT("Speex")
