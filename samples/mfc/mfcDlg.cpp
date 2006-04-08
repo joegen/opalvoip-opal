@@ -194,12 +194,11 @@ void CMfcDlg::OnAnswer()
   m_hangup.EnableWindow(FALSE);
   m_call.EnableWindow();
 
-  OpalCall * call = m_manager.FindCallWithLock(m_token);
+  PSafePtr<OpalCall> call = m_manager.FindCallWithLock(m_token);
   if (call == NULL)
     m_call.EnableWindow();
   else {
 //    call->AnsweringCall(H323Connection::AnswerCallNow);
-    call->Unlock();
   }
 }
 
@@ -210,12 +209,11 @@ void CMfcDlg::OnRefuse()
   m_refuse.EnableWindow(FALSE);
   m_hangup.EnableWindow(FALSE);
 
-  OpalCall * call = m_manager.FindCallWithLock(m_token);
+  PSafePtr<OpalCall> call = m_manager.FindCallWithLock(m_token);
   if (call == NULL)
     m_call.EnableWindow();
   else {
 //    call->AnsweringCall(H323Connection::AnswerCallDenied);
-    call->Unlock();
   }
 }
 
