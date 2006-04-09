@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2020  2006/02/08 04:00:19  csoutheren
+ * Revision 1.2021  2006/04/09 12:12:54  rjongbloed
+ * Changed the media format option merging to include the transcoder formats.
+ *
+ * Revision 2.19  2006/02/08 04:00:19  csoutheren
  * Fixed for G.726 codec
  * Thanks to Michael Tinglof
  *
@@ -224,7 +227,7 @@ BOOL OpalTranscoder::SelectFormats(unsigned sessionID,
       for (s = 0; s < srcFormats.GetSize(); s++) {
         srcFormat = srcFormats[s];
         if (srcFormat == dstFormat)
-          return TRUE;
+          return srcFormat.Merge(dstFormat) && dstFormat.Merge(srcFormat);
       }
     }
   }
@@ -238,7 +241,9 @@ BOOL OpalTranscoder::SelectFormats(unsigned sessionID,
       OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
       for (OpalTranscoderIterator i = availableTranscoders.begin(); i != availableTranscoders.end(); ++i) {
         if (search == *i)
-          return TRUE;
+          return srcFormat.Merge(i->GetInputFormat()) &&
+                 dstFormat.Merge(i->GetOutputFormat()) &&
+                 srcFormat.Merge(dstFormat);
       }
     }
   }
@@ -258,8 +263,8 @@ BOOL OpalTranscoder::SelectFormats(unsigned sessionID,
 }
 
 
-BOOL OpalTranscoder::FindIntermediateFormat(const OpalMediaFormat & srcFormat,
-                                            const OpalMediaFormat & dstFormat,
+BOOL OpalTranscoder::FindIntermediateFormat(OpalMediaFormat & srcFormat,
+                                            OpalMediaFormat & dstFormat,
                                             OpalMediaFormat & intermediateFormat)
 {
   intermediateFormat = OpalMediaFormat();
@@ -267,11 +272,13 @@ BOOL OpalTranscoder::FindIntermediateFormat(const OpalMediaFormat & srcFormat,
   OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
   for (OpalTranscoderIterator find1 = availableTranscoders.begin(); find1 != availableTranscoders.end(); ++find1) {
     if (find1->GetInputFormat() == srcFormat) {
-      intermediateFormat = find1->GetOutputFormat();
       for (OpalTranscoderIterator find2 = availableTranscoders.begin(); find2 != availableTranscoders.end(); ++find2) {
         if (find2->GetInputFormat() == find1->GetOutputFormat() && find2->GetOutputFormat() == dstFormat) {
           intermediateFormat = find1->GetOutputFormat();
-          return TRUE;
+          intermediateFormat.Merge(find2->GetInputFormat());
+          return srcFormat.Merge(find1->GetInputFormat()) &&
+                 dstFormat.Merge(find2->GetOutputFormat()) &&
+                 srcFormat.Merge(dstFormat);
         }
       }
     }
