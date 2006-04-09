@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2022  2006/03/20 10:37:47  csoutheren
+ * Revision 1.2023  2006/04/09 12:12:54  rjongbloed
+ * Changed the media format option merging to include the transcoder formats.
+ *
+ * Revision 2.21  2006/03/20 10:37:47  csoutheren
  * Applied patch #1453753 - added locking on media stream manipulation
  * Thanks to Dinis Rosario
  *
@@ -244,6 +247,21 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::Payl
   // Find the media formats than can be used to get from source to sink
   OpalMediaFormat sourceFormat = source.GetMediaFormat();
   OpalMediaFormat destinationFormat = stream->GetMediaFormat();
+#if PTRACING
+  ostream & traceStream = PTrace::Begin(4, __FILE__, __LINE__);
+  traceStream << "Patch\tAdded sink\n  from " << sourceFormat << '\n';
+  for (PINDEX i = 0; i < sourceFormat.GetOptionCount(); i++) {
+    const OpalMediaOption & option = sourceFormat.GetOption(i);
+    traceStream << "         " << option.GetName() << " = " << option.AsString() << '\n';
+  }
+  traceStream << "    to " << destinationFormat << '\n';
+  for (PINDEX i = 0; i < destinationFormat.GetOptionCount(); i++) {
+    const OpalMediaOption & option = destinationFormat.GetOption(i);
+    traceStream << "         " << option.GetName() << " = " << option.AsString() << '\n';
+  }
+  traceStream << PTrace::End;
+#endif
+
 
   if (sourceFormat == destinationFormat && source.GetDataSize() <= stream->GetDataSize()) {
     PTRACE(3, "Patch\tAdded direct media stream sink " << *stream);
