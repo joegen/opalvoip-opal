@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2044  2006/03/20 10:37:47  csoutheren
+ * Revision 1.2045  2006/04/09 12:01:44  rjongbloed
+ * Added missing Clone() functions so media options propagate correctly.
+ *
+ * Revision 2.43  2006/03/20 10:37:47  csoutheren
  * Applied patch #1453753 - added locking on media stream manipulation
  * Thanks to Dinis Rosario
  *
@@ -693,6 +696,12 @@ OpalMediaFormat & OpalMediaFormat::operator=(const PString & wildcard)
 }
 
 
+PObject * OpalMediaFormat::Clone() const
+{
+  return new OpalMediaFormat(*this);
+}
+
+
 bool OpalMediaFormat::Merge(const OpalMediaFormat & mediaFormat)
 {
   PWaitAndSignal auto_signal(GetMediaFormatsListMutex());
@@ -976,6 +985,12 @@ OpalVideoFormat::OpalVideoFormat(const char * fullName,
   FindOption(MaxBitRateOption)->SetReadOnly(false);
   FindOption(FrameTimeOption)->SetReadOnly(false);
   FindOption(FrameTimeOption)->SetMerge(OpalMediaOption::MinMerge);
+}
+
+
+PObject * OpalVideoFormat::Clone() const
+{
+  return new OpalVideoFormat(*this);
 }
 
 
