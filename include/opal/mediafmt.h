@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2038  2005/12/27 20:46:09  dsandras
+ * Revision 1.2039  2006/04/09 12:01:43  rjongbloed
+ * Added missing Clone() functions so media options propagate correctly.
+ *
+ * Revision 2.37  2005/12/27 20:46:09  dsandras
  * Added clockRate to the media format. Added "AlwaysMerge" method for merging
  * media format options.
  *
@@ -660,6 +663,10 @@ class OpalMediaFormat : public PCaselessString
       const PString & wildcard  ///<  Wildcard name to search for
     );
 
+    /**Create a copy of the media format.
+      */
+    virtual PObject * Clone() const;
+
     /**Merge with another media format. This will alter and validate
        the options for this media format according to the merge rule for
        each option. The parameter is typically a "capability" while the
@@ -939,6 +946,8 @@ class OpalVideoFormat : public OpalMediaFormat
       unsigned frameRate,       ///<  Number of frames per second
       unsigned bitRate          ///<  Maximum bits per second
     );
+
+    virtual PObject * Clone() const;
 
     virtual bool Merge(const OpalMediaFormat & mediaFormat);
 
