@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2059  2006/03/29 23:57:52  csoutheren
+ * Revision 1.2060  2006/04/09 12:12:54  rjongbloed
+ * Changed the media format option merging to include the transcoder formats.
+ *
+ * Revision 2.58  2006/03/29 23:57:52  csoutheren
  * Added patches from Paul Caswell to provide correct operation when using
  * external RTP with H.323
  *
@@ -553,15 +556,7 @@ BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForm
     return FALSE;
   }
 
-  if (!sourceFormat.Merge(destinationFormat)) {
-    PTRACE(2, "OpalCon\tOpenSourceMediaStream session " << sessionID
-           << ", could not merge destination media format " << destinationFormat
-           << " into source " << sourceFormat);
-    return FALSE;
-  }
-
-  PTRACE(3, "OpalCon\tSelected media stream "
-         << sourceFormat << " -> " << destinationFormat);
+  PTRACE(3, "OpalCon\tSelected media stream " << sourceFormat << " -> " << destinationFormat);
   
   OpalMediaStream *stream = CreateMediaStream(sourceFormat, sessionID, TRUE);
   if (stream == NULL) {
@@ -613,13 +608,15 @@ OpalMediaStream * OpalConnection::OpenSinkMediaStream(OpalMediaStream & source)
                                      sourceFormat,
                                      destinationFormat)) {
     PTRACE(2, "OpalCon\tOpenSinkMediaStream, could not find compatible media format:\n"
-              "  source formats=" << setfill(',') << source.GetMediaFormat() << "\n"
+              "  source formats=" << setfill(',') << sourceFormat << "\n"
               "   sink  formats=" << destinationFormats << setfill(' '));
     return NULL;
   }
 
-  PTRACE(3, "OpalCon\tOpenSinkMediaStream, selected "
-         << sourceFormat << " -> " << destinationFormat);
+  /*
+   */
+
+  PTRACE(3, "OpalCon\tOpenSinkMediaStream, selected " << sourceFormat << " -> " << destinationFormat);
 
   OpalMediaStream * stream = CreateMediaStream(destinationFormat, sessionID, FALSE);
   if (stream == NULL) {

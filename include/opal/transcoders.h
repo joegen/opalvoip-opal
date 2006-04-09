@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2023  2006/02/02 07:02:57  csoutheren
+ * Revision 1.2024  2006/04/09 12:12:54  rjongbloed
+ * Changed the media format option merging to include the transcoder formats.
+ *
+ * Revision 2.22  2006/02/02 07:02:57  csoutheren
  * Added RTP payload map to transcoders and connections to allow remote SIP endpoints
  * to change the payload type used for outgoing RTP.
  *
@@ -319,8 +322,8 @@ class OpalTranscoder : public OpalMediaFormatPair
        between the two named formats.
       */
     static BOOL FindIntermediateFormat(
-      const OpalMediaFormat & srcFormat,    ///<  Selected destination format to be used
-      const OpalMediaFormat & dstFormat,    ///<  Selected destination format to be used
+      OpalMediaFormat & srcFormat,          ///<  Selected destination format to be used
+      OpalMediaFormat & dstFormat,          ///<  Selected destination format to be used
       OpalMediaFormat & intermediateFormat  ///<  Intermediate format that can be used
     );
 
