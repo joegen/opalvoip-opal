@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cpp,v $
+ * Revision 1.35  2006/04/09 12:15:30  rjongbloed
+ * Added extra trace log to dump all known media formats and their options.
+ *
  * Revision 1.34  2005/12/11 19:14:21  dsandras
  * Added support for setting a different user name and authentication user name
  * as required by some providers like digisip.
@@ -631,6 +634,20 @@ bool MyManager::Initialise()
     }
     m_mediaInfo.sort();
   }
+
+#if PTRACING
+  mediaFormats = OpalMediaFormat::GetAllRegisteredMediaFormats();
+  ostream & traceStream = PTrace::Begin(1, __FILE__, __LINE__);
+  traceStream << "OpenPhone\tRegistered media formats:\n";
+  for (PINDEX i = 0; i < mediaFormats.GetSize(); i++) {
+    traceStream << "    " << mediaFormats[i] << '\n';
+    for (PINDEX j = 0; j < mediaFormats[i].GetOptionCount(); j++) {
+      const OpalMediaOption & option = mediaFormats[i].GetOption(j);
+      traceStream << "        " << option.GetName() << " = " << option.AsString() << '\n';
+    }
+  }
+  traceStream << PTrace::End;
+#endif
 
   ////////////////////////////////////////
   // H.323 fields
