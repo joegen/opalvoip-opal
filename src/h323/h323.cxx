@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2103  2006/03/23 00:24:49  csoutheren
+ * Revision 1.2104  2006/04/10 05:17:47  csoutheren
+ * Use locking version of GetOtherConnection rather than unlocked version
+ *
+ * Revision 2.102  2006/03/23 00:24:49  csoutheren
  * Detect if ClearCall is used within OnIncomingConnection
  *
  * Revision 2.101  2006/02/22 10:54:55  csoutheren
@@ -4478,7 +4481,7 @@ void H323Connection::OnSetLocalCapabilities()
   H323Capability * capability = localCapabilities.FindCapability(OpalRFC2833);
   if (capability != NULL) {
     MediaInformation info;
-    OpalConnection * otherParty = GetCall().GetOtherPartyConnection(*this);
+    PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
     if (otherParty != NULL &&
         otherParty->GetMediaInformation(OpalMediaFormat::DefaultAudioSessionID, info))
       capability->SetPayloadType(info.rfc2833);
@@ -4985,7 +4988,7 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
 {
   if (ownerCall.IsMediaBypassPossible(*this, sessionID)) {
     MediaInformation info;
-    OpalConnection * otherParty = GetCall().GetOtherPartyConnection(*this);
+    PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
     if ((otherParty == NULL) || !otherParty->GetMediaInformation(OpalMediaFormat::DefaultAudioSessionID, info))
       return NULL;
 
