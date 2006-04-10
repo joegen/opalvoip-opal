@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2032  2006/03/29 23:57:52  csoutheren
+ * Revision 1.2033  2006/04/10 05:16:09  csoutheren
+ * Populate media stream info even when OLCack only contains media control information
+ *
+ * Revision 2.31  2006/03/29 23:57:52  csoutheren
  * Added patches from Paul Caswell to provide correct operation when using
  * external RTP with H.323
  *
@@ -1363,6 +1366,13 @@ BOOL H323_ExternalRTPChannel::OnReceivedPDU(const H245_H2250LogicalChannelParame
     remoteMediaAddress = param.m_mediaChannel;
     if (remoteMediaAddress.IsEmpty())
       return FALSE;
+  }
+  else {
+    PIPSocket::Address addr;
+    WORD port;
+    if (!remoteMediaControlAddress.GetIpAndPort(addr, port))
+      return FALSE;
+    remoteMediaAddress = OpalTransportAddress(addr, port-1);
   }
 
   unsigned id = param.m_sessionID;
