@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2143  2006/04/06 20:39:41  dsandras
+ * Revision 1.2144  2006/04/10 05:18:41  csoutheren
+ * Fix problem where reverse channel is opened using wrong media format list
+ *
+ * Revision 2.142  2006/04/06 20:39:41  dsandras
  * Keep the same From header when sending authenticated requests than in the
  * original request. Fixes Ekiga report #336762.
  *
@@ -938,13 +941,22 @@ BOOL SIPConnection::OnOpenSourceMediaStreams(const OpalMediaFormatList & remoteF
   PWaitAndSignal m(streamsMutex);
   ownerCall.OpenSourceMediaStreams(*this, remoteFormatList, sessionId);
 
+  OpalMediaFormatList otherList;
+  {
+    PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
+    if (otherParty == NULL) {
+      PTRACE(1, "SIP\tCannot get other connection");
+      return FALSE;
+    }
+    otherList = otherParty->GetMediaFormats();
+  }
+
   for (PINDEX i = 0; i < mediaStreams.GetSize(); i++) {
     OpalMediaStream & mediaStream = mediaStreams[i];
     if (mediaStream.GetSessionID() == sessionId) {
-      OpalMediaFormat mediaFormat = mediaStream.GetMediaFormat();
-      if (OpenSourceMediaStream(mediaFormat, sessionId) && localMedia) {
-	localMedia->AddMediaFormat(mediaStream.GetMediaFormat());
-	reverseStreamsFailed = FALSE;
+      if (OpenSourceMediaStream(otherList, sessionId) && localMedia) {
+	      localMedia->AddMediaFormat(mediaStream.GetMediaFormat());
+        reverseStreamsFailed = FALSE;
       }
     }
   }
