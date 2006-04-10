@@ -27,8 +27,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2031.4.1  2006/04/06 05:33:08  csoutheren
+ * Revision 1.2031.4.2  2006/04/10 06:24:30  csoutheren
+ * Backport from CVS head up to Plugin_Merge3
+ *
+ * Revision 2.30.4.1  2006/04/06 05:33:08  csoutheren
  * Backports from CVS head up to Plugin_Merge2
+ *
+ * Revision 2.32  2006/04/10 05:16:09  csoutheren
+ * Populate media stream info even when OLCack only contains media control information
  *
  * Revision 2.31  2006/03/29 23:57:52  csoutheren
  * Added patches from Paul Caswell to provide correct operation when using
@@ -1366,6 +1372,13 @@ BOOL H323_ExternalRTPChannel::OnReceivedPDU(const H245_H2250LogicalChannelParame
     remoteMediaAddress = param.m_mediaChannel;
     if (remoteMediaAddress.IsEmpty())
       return FALSE;
+  }
+  else {
+    PIPSocket::Address addr;
+    WORD port;
+    if (!remoteMediaControlAddress.GetIpAndPort(addr, port))
+      return FALSE;
+    remoteMediaAddress = OpalTransportAddress(addr, port-1);
   }
 
   unsigned id = param.m_sessionID;

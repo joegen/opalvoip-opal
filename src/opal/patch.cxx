@@ -25,11 +25,17 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2021.2.2  2006/04/07 07:57:20  csoutheren
+ * Revision 1.2021.2.3  2006/04/10 06:24:30  csoutheren
+ * Backport from CVS head up to Plugin_Merge3
+ *
+ * Revision 2.20.2.2  2006/04/07 07:57:20  csoutheren
  * Halfway through media format changes - not working, but closer
  *
  * Revision 2.20.2.1  2006/04/06 05:33:08  csoutheren
  * Backports from CVS head up to Plugin_Merge2
+ *
+ * Revision 2.22  2006/04/09 12:12:54  rjongbloed
+ * Changed the media format option merging to include the transcoder formats.
  *
  * Revision 2.21  2006/03/20 10:37:47  csoutheren
  * Applied patch #1453753 - added locking on media stream manipulation
@@ -250,6 +256,21 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, OpalTranscoder * sourceTr
   // Find the media formats than can be used to get from source to sink
   OpalMediaFormat sourceFormat = source.GetMediaFormat();
   OpalMediaFormat destinationFormat = stream->GetMediaFormat();
+#if PTRACING
+  ostream & traceStream = PTrace::Begin(4, __FILE__, __LINE__);
+  traceStream << "Patch\tAdded sink\n  from " << sourceFormat << '\n';
+  for (PINDEX i = 0; i < sourceFormat.GetOptionCount(); i++) {
+    const OpalMediaOption & option = sourceFormat.GetOption(i);
+    traceStream << "         " << option.GetName() << " = " << option.AsString() << '\n';
+  }
+  traceStream << "    to " << destinationFormat << '\n';
+  for (PINDEX i = 0; i < destinationFormat.GetOptionCount(); i++) {
+    const OpalMediaOption & option = destinationFormat.GetOption(i);
+    traceStream << "         " << option.GetName() << " = " << option.AsString() << '\n';
+  }
+  traceStream << PTrace::End;
+#endif
+
 
   if (sourceFormat == destinationFormat && source.GetDataSize() <= stream->GetDataSize()) {
     PTRACE(3, "Patch\tAdded direct media stream sink " << *stream);

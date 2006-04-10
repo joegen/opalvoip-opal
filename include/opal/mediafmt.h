@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2038.4.3  2006/04/06 01:21:17  csoutheren
+ * Revision 1.2038.4.4  2006/04/10 06:24:30  csoutheren
+ * Backport from CVS head up to Plugin_Merge3
+ *
+ * Revision 2.37.4.3  2006/04/06 01:21:17  csoutheren
  * More implementation of video codec plugins
  *
  * Revision 2.37.4.2  2006/03/16 07:06:00  csoutheren
@@ -33,6 +36,13 @@
  *
  * Revision 2.37.4.1  2006/03/13 07:20:28  csoutheren
  * Added OpalMediaFormat clone function
+ *
+ * $Log: mediafmt.h,v $
+ * Revision 1.2038.4.4  2006/04/10 06:24:30  csoutheren
+ * Backport from CVS head up to Plugin_Merge3
+ *
+ * Revision 2.38  2006/04/09 12:01:43  rjongbloed
+ * Added missing Clone() functions so media options propagate correctly.
  *
  * Revision 2.37  2005/12/27 20:46:09  dsandras
  * Added clockRate to the media format. Added "AlwaysMerge" method for merging
@@ -677,6 +687,10 @@ class OpalMediaFormat : public PCaselessString
       const PString & wildcard  ///<  Wildcard name to search for
     );
 
+    /**Create a copy of the media format.
+      */
+    virtual PObject * Clone() const;
+
     /**Merge with another media format. This will alter and validate
        the options for this media format according to the merge rule for
        each option. The parameter is typically a "capability" while the
@@ -892,8 +906,6 @@ class OpalMediaFormat : public PCaselessString
       const OpalMediaFormat & mediaFormat  ///<  Media format to copy to master list
     );
 
-    PObject * Clone() const;
-
   protected:
     bool AddOption(
       OpalMediaOption * option
@@ -964,6 +976,8 @@ class OpalVideoFormat : public OpalMediaFormat
       unsigned bitRate,         ///<  Maximum bits per second
       time_t timeStamp = 0        ///<  timestamp (for versioning)
     );
+
+    virtual PObject * Clone() const;
 
     virtual bool Merge(const OpalMediaFormat & mediaFormat);
 

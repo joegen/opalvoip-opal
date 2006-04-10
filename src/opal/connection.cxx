@@ -25,11 +25,17 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2057.2.2  2006/04/07 07:57:20  csoutheren
+ * Revision 1.2057.2.3  2006/04/10 06:24:30  csoutheren
+ * Backport from CVS head up to Plugin_Merge3
+ *
+ * Revision 2.56.2.2  2006/04/07 07:57:20  csoutheren
  * Halfway through media format changes - not working, but closer
  *
  * Revision 2.56.2.1  2006/04/06 05:33:08  csoutheren
  * Backports from CVS head up to Plugin_Merge2
+ *
+ * Revision 2.59  2006/04/09 12:12:54  rjongbloed
+ * Changed the media format option merging to include the transcoder formats.
  *
  * Revision 2.58  2006/03/29 23:57:52  csoutheren
  * Added patches from Paul Caswell to provide correct operation when using
@@ -609,6 +615,8 @@ BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForm
               "   sink  formats=" << mediaFormats << setfill(' '));
     return FALSE;
   }
+
+  PTRACE(3, "OpalCon\tSelected media stream " << sourceFormat << " -> " << destinationFormat);
   
   OpalMediaStream *stream = CreateMediaStream(sourceFormat, sessionID, TRUE);
   if (stream == NULL) {
@@ -673,16 +681,30 @@ OpalMediaStream * OpalConnection::OpenSinkMediaStream(OpalMediaStream & source)
          << sourceFormat << " -> " << destinationFormat);
   }
   // TODO: add in double conversion check
-/*
-  else {
-  }
-*/
   else {
     PTRACE(2, "OpalCon\tOpenSinkMediaStream, could not find compatible direct media format:\n"
               "  source formats=" << setfill(',') << source.GetMediaFormat() << "\n"
+              "  dest formats=" << setfill(',') << destinationFormats << "\n");
+    return NULL;
+  }
+
+/*
+
+  Old code
+
+  if (!OpalTranscoder::SelectFormats(sessionID,
+                                     sourceFormat, // Only use selected format on source
+                                     destinationFormats,
+                                     sourceFormat,
+                                     destinationFormat)) {
+    PTRACE(2, "OpalCon\tOpenSinkMediaStream, could not find compatible media format:\n"
+              "  source formats=" << setfill(',') << sourceFormat << "\n"
               "   sink  formats=" << destinationFormats << setfill(' '));
     return NULL;
   }
+*/
+
+  PTRACE(3, "OpalCon\tOpenSinkMediaStream, selected " << sourceFormat << " -> " << destinationFormat);
 
   OpalMediaStream * stream = CreateMediaStream(destinationFormat, sessionID, FALSE);
   if (stream == NULL) {
@@ -941,8 +963,7 @@ RTP_Session * OpalConnection::CreateSession(const OpalTransport & transport,
 
 BOOL OpalConnection::SetBandwidthAvailable(unsigned newBandwidth, BOOL force)
 {
-  PTRACE(3, "OpalCon\tSetting bandwidth to "
-         << newBandwidth << "00b/s on connection " << *this);
+  PTRACE(3, "OpalCon\tSetting bandwidth to " << newBandwidth << "00b/s on connection " << *this);
 
   unsigned used = GetBandwidthUsed();
   if (used > newBandwidth) {

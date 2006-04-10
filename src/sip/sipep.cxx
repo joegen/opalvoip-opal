@@ -24,11 +24,18 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2108.2.2  2006/04/06 05:33:09  csoutheren
+ * Revision 1.2108.2.3  2006/04/10 06:24:30  csoutheren
+ * Backport from CVS head up to Plugin_Merge3
+ *
+ * Revision 2.107.2.2  2006/04/06 05:33:09  csoutheren
  * Backports from CVS head up to Plugin_Merge2
  *
  * Revision 2.107.2.1  2006/03/20 02:25:27  csoutheren
  * Backports from CVS head
+ *
+ * Revision 2.121  2006/04/06 20:39:41  dsandras
+ * Keep the same From header when sending authenticated requests than in the
+ * original request. Fixes Ekiga report #336762.
  *
  * Revision 2.120  2006/03/27 20:28:18  dsandras
  * Added mutex to fix concurrency issues between OnReceivedPDU which checks
@@ -1210,6 +1217,9 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
     callid_info->OnFailed(SIP_PDU::Failure_UnAuthorised);
     return;
   }
+  // Section 8.1.3.5 of RFC3261 tells that the authenticated
+  // request SHOULD have the same value of the Call-ID, To and From.
+  request->GetMIME().SetFrom(transaction.GetMIME().GetFrom());
   if (request->Start()) 
     callid_info->AppendTransaction(request);
   else {

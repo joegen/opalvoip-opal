@@ -23,8 +23,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: mediafmt.cxx,v $
- * Revision 1.2043.2.4  2006/04/06 05:33:08  csoutheren
+ * Revision 2.42.2.4  2006/04/06 05:33:08  csoutheren
  * Backports from CVS head up to Plugin_Merge2
  *
  * Revision 2.42.2.3  2006/04/06 01:21:20  csoutheren
@@ -35,6 +34,9 @@
  *
  * Revision 2.42.2.1  2006/03/13 07:20:28  csoutheren
  * Added OpalMediaFormat clone function
+ *
+ * Revision 2.44  2006/04/09 12:01:44  rjongbloed
+ * Added missing Clone() functions so media options propagate correctly.
  *
  * Revision 2.43  2006/03/20 10:37:47  csoutheren
  * Applied patch #1453753 - added locking on media stream manipulation
@@ -667,13 +669,6 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
   registeredFormats.OpalMediaFormatBaseList::Append(this);
 }
 
-PObject * OpalMediaFormat::Clone() const
-{
-  OpalMediaFormat * clone = new OpalMediaFormat(*this);
-  return clone;
-}
-
-
 
 OpalMediaFormat & OpalMediaFormat::operator=(RTP_DataFrame::PayloadTypes pt)
 {
@@ -707,6 +702,12 @@ OpalMediaFormat & OpalMediaFormat::operator=(const PString & wildcard)
     *this = OpalMediaFormat();
 
   return *this;
+}
+
+
+PObject * OpalMediaFormat::Clone() const
+{
+  return new OpalMediaFormat(*this);
 }
 
 
@@ -997,6 +998,12 @@ OpalVideoFormat::OpalVideoFormat(const char * fullName,
   FindOption(MaxBitRateOption)->SetReadOnly(false);
   FindOption(FrameTimeOption)->SetReadOnly(false);
   FindOption(FrameTimeOption)->SetMerge(OpalMediaOption::MinMerge);
+}
+
+
+PObject * OpalVideoFormat::Clone() const
+{
+  return new OpalVideoFormat(*this);
 }
 
 
