@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
+ * Revision 1.1.2.6  2006/04/10 08:53:39  csoutheren
+ * Fix problem with audio code parameters
+ *
  * Revision 1.1.2.5  2006/04/06 05:48:08  csoutheren
  * Fixed last minute edits to allow compilation
  *
@@ -114,10 +117,12 @@ class OpalPluginAudioMediaFormat : public OpalAudioFormat
       CreateCodecName(_encoderCodec, FALSE),
       (RTP_DataFrame::PayloadTypes)(((_encoderCodec->flags & PluginCodec_RTPTypeMask) == PluginCodec_RTPTypeDynamic) ? RTP_DataFrame::DynamicBase : _encoderCodec->rtpPayload),
       rtpEncodingName,
-      _encoderCodec->bitsPerSec,
       _encoderCodec->bytesPerFrame,
       frameTime,
-      timeUnits,
+      _encoderCodec->recommendedFramesPerPacket,
+      _encoderCodec->recommendedFramesPerPacket,
+      _encoderCodec->maxFramesPerPacket,
+      _encoderCodec->sampleRate,
       timeStamp  
     )
     , encoderCodec(_encoderCodec)
@@ -177,7 +182,7 @@ class OpalPluginVideoMediaFormat : public OpalVideoFormat
       _encoderCodec->samplesPerFrame,      // actually frame width
       _encoderCodec->bytesPerFrame,        // actually frame height,
       _encoderCodec->maxFramesPerPacket,   // actually max frameRate
-      _encoderCodec->bitsPerSec,
+      _encoderCodec->bitsPerSec/100,
       timeStamp  
     )
     , encoderCodec(_encoderCodec)
