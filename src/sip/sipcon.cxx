@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2133.2.5  2006/04/10 05:24:42  csoutheren
+ * Revision 1.2133.2.6  2006/04/10 06:24:30  csoutheren
+ * Backport from CVS head up to Plugin_Merge3
+ *
+ * Revision 2.132.2.5  2006/04/10 05:24:42  csoutheren
  * Backport from CVS head
  *
  * Revision 2.132.2.4  2006/04/06 05:34:16  csoutheren
@@ -38,6 +41,13 @@
  *
  * Revision 2.132.2.1  2006/03/20 02:25:27  csoutheren
  * Backports from CVS head
+ *
+ * Revision 2.143  2006/04/10 05:18:41  csoutheren
+ * Fix problem where reverse channel is opened using wrong media format list
+ *
+ * Revision 2.142  2006/04/06 20:39:41  dsandras
+ * Keep the same From header when sending authenticated requests than in the
+ * original request. Fixes Ekiga report #336762.
  *
  * Revision 2.141  2006/03/23 00:24:49  csoutheren
  * Detect if ClearCall is used within OnIncomingConnection
@@ -963,8 +973,8 @@ BOOL SIPConnection::OnOpenSourceMediaStreams(const OpalMediaFormatList & remoteF
     OpalMediaStream & mediaStream = mediaStreams[i];
     if (mediaStream.GetSessionID() == sessionId) {
       if (OpenSourceMediaStream(otherList, sessionId) && localMedia) {
-	      localMedia->AddMediaFormat(mediaStream.GetMediaFormat());
-	      reverseStreamsFailed = FALSE;
+        localMedia->AddMediaFormat(mediaStream.GetMediaFormat());
+        reverseStreamsFailed = FALSE;
       }
     }
   }
@@ -1967,6 +1977,8 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
 
   // Restart the transaction with new authentication info
   // and start with a fresh To tag
+  // Section 8.1.3.5 of RFC3261 tells that the authenticated
+  // request SHOULD have the same value of the Call-ID, To and From.
   PINDEX j;
   if ((j = remotePartyAddress.Find (';')) != P_MAX_INDEX)
     remotePartyAddress = remotePartyAddress.Left(j);

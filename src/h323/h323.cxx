@@ -24,11 +24,17 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2102.2.2  2006/04/06 05:33:08  csoutheren
+ * Revision 1.2102.2.3  2006/04/10 06:24:30  csoutheren
+ * Backport from CVS head up to Plugin_Merge3
+ *
+ * Revision 2.101.2.2  2006/04/06 05:33:08  csoutheren
  * Backports from CVS head up to Plugin_Merge2
  *
  * Revision 2.101.2.1  2006/04/06 01:21:18  csoutheren
  * More implementation of video codec plugins
+ *
+ * Revision 2.103  2006/04/10 05:17:47  csoutheren
+ * Use locking version of GetOtherConnection rather than unlocked version
  *
  * Revision 2.102  2006/03/23 00:24:49  csoutheren
  * Detect if ClearCall is used within OnIncomingConnection
@@ -4484,7 +4490,7 @@ void H323Connection::OnSetLocalCapabilities()
   H323Capability * capability = localCapabilities.FindCapability(OpalRFC2833);
   if (capability != NULL) {
     MediaInformation info;
-    OpalConnection * otherParty = GetCall().GetOtherPartyConnection(*this);
+    PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
     if (otherParty != NULL &&
         otherParty->GetMediaInformation(OpalMediaFormat::DefaultAudioSessionID, info))
       capability->SetPayloadType(info.rfc2833);
@@ -4991,7 +4997,7 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
 {
   if (ownerCall.IsMediaBypassPossible(*this, sessionID)) {
     MediaInformation info;
-    OpalConnection * otherParty = GetCall().GetOtherPartyConnection(*this);
+    PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
     if ((otherParty == NULL) || !otherParty->GetMediaInformation(OpalMediaFormat::DefaultAudioSessionID, info))
       return NULL;
 
