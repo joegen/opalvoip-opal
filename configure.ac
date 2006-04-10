@@ -272,10 +272,12 @@ AC_SUBST(OPAL_HAVE_SPEEX_SPEEX_H)
 dnl ########################################################################
 dnl enable audio, video, T.38
 
+dnl MSWIN_DISPLAY audio,Audio
 dnl MSWIN_DEFINE  audio,OPAL_AUDIO
 AC_SUBST(OPAL_AUDIO, 1)
 AC_DEFINE(OPAL_AUDIO)
 
+dnl MSWIN_DISPLAY video,Video
 dnl MSWIN_DEFINE  video,OPAL_VIDEO
 AC_SUBST(OPAL_VIDEO, 1)
 AC_DEFINE(OPAL_VIDEO)
@@ -303,6 +305,10 @@ fi
 dnl MSWIN_DISPLAY h323,H.323 support
 dnl MSWIN_DEFINE  h323,OPAL_H323
 dnl MSWIN_DEFINE  t38,OPAL_T38FAX
+dnl MSWIN_IF_FEATURE t38,h323
+
+dnl MSWIN_DISPLAY    t38,T.38
+dnl MSWIN_DEFINE     t38,OPAL_T38FAX
 dnl MSWIN_IF_FEATURE t38,h323
 
 h323=yes
