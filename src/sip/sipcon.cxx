@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2133.2.4  2006/04/06 05:34:16  csoutheren
+ * Revision 1.2133.2.5  2006/04/10 05:24:42  csoutheren
+ * Backport from CVS head
+ *
+ * Revision 2.132.2.4  2006/04/06 05:34:16  csoutheren
  * Backports from CVS head up to Plugin_Merge2
  *
  * Revision 2.132.2.3  2006/04/06 05:33:09  csoutheren
@@ -946,11 +949,20 @@ BOOL SIPConnection::OnOpenSourceMediaStreams(const OpalMediaFormatList & remoteF
   PWaitAndSignal m(streamsMutex);
   ownerCall.OpenSourceMediaStreams(*this, remoteFormatList, sessionId);
 
+  OpalMediaFormatList otherList;
+  {
+    PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
+    if (otherParty == NULL) {
+      PTRACE(1, "SIP\tCannot get other connection");
+      return FALSE;
+    }
+    otherList = otherParty->GetMediaFormats();
+  }
+
   for (PINDEX i = 0; i < mediaStreams.GetSize(); i++) {
     OpalMediaStream & mediaStream = mediaStreams[i];
     if (mediaStream.GetSessionID() == sessionId) {
-      OpalMediaFormat mediaFormat = mediaStream.GetMediaFormat();
-      if (OpenSourceMediaStream(mediaFormat, sessionId) && localMedia) {
+      if (OpenSourceMediaStream(otherList, sessionId) && localMedia) {
 	      localMedia->AddMediaFormat(mediaStream.GetMediaFormat());
 	      reverseStreamsFailed = FALSE;
       }
