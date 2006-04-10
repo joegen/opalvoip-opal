@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2061.2.1  2006/03/20 02:25:26  csoutheren
+ * Revision 1.2061.2.2  2006/04/10 08:54:11  csoutheren
+ * Fix problem when H323 disabled
+ *
+ * Revision 2.60.2.1  2006/03/20 02:25:26  csoutheren
  * Backports from CVS head
  *
  * Revision 2.61  2006/03/07 11:24:15  csoutheren
@@ -942,9 +945,6 @@ BOOL MyManager::Initialise(PArgList & args)
       AddRouteEntry("pots:.*           = sip:<da>");
       AddRouteEntry("pc:.*             = sip:<da>");
     }
-#if OPAL_H323
-    else
-#endif
 #endif
 
 #if OPAL_H323
