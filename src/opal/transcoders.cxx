@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2020.2.3  2006/04/10 06:24:30  csoutheren
+ * Revision 1.2020.2.4  2006/04/11 05:12:25  csoutheren
+ * Updated to current OpalMediaFormat changes
+ *
+ * Revision 2.19.2.3  2006/04/10 06:24:30  csoutheren
  * Backport from CVS head up to Plugin_Merge3
  *
  * Revision 2.19.2.2  2006/04/07 07:57:20  csoutheren
@@ -220,11 +223,11 @@ OpalTranscoder * OpalTranscoder::Create(const OpalMediaFormat & srcFormat,
 }
 
 
-BOOL OpalTranscoder::SelectSingleFormat(unsigned sessionID,
-                                        const OpalMediaFormatList & srcFormats,
-                                        const OpalMediaFormatList & dstFormats,
-                                        OpalMediaFormat & srcFormat,
-                                        OpalMediaFormat & dstFormat)
+BOOL OpalTranscoder::SelectFormats(unsigned sessionID,
+                                   const OpalMediaFormatList & srcFormats,
+                                   const OpalMediaFormatList & dstFormats,
+                                   OpalMediaFormat & srcFormat,
+                                   OpalMediaFormat & dstFormat)
 {
   PINDEX s, d;
 
@@ -241,54 +244,30 @@ BOOL OpalTranscoder::SelectSingleFormat(unsigned sessionID,
     }
   }
 
-  return FALSE;
-}
-
-BOOL OpalTranscoder::SelectTranscoderFormat(unsigned sessionID,
-                                            const OpalMediaFormatList & srcFormats,
-                                            const OpalMediaFormatList & dstFormats,
-                                            OpalMediaFormat & srcFormat,
-                                            OpalMediaFormat & dstFormat)
-{
-  PINDEX s, d;
-
   // Search for a single transcoder to get from a to b
   for (d = 0; d < dstFormats.GetSize(); d++) {
     dstFormat = dstFormats[d];
-    if (dstFormat.GetDefaultSessionID() == sessionID) {
-      for (s = 0; s < srcFormats.GetSize(); s++) {
-        srcFormat = srcFormats[s];
-        OpalMediaFormatPair search(srcFormat, dstFormat);
-        OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
-        for (OpalTranscoderIterator i = availableTranscoders.begin(); i != availableTranscoders.end(); ++i) {
-          if (search == *i)
-            return TRUE;
-        }
+    for (s = 0; s < srcFormats.GetSize(); s++) {
+      srcFormat = srcFormats[s];
+      OpalMediaFormatPair search(srcFormat, dstFormat);
+      OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
+      for (OpalTranscoderIterator i = availableTranscoders.begin(); i != availableTranscoders.end(); ++i) {
+        if (search == *i)
+          return srcFormat.Merge(i->GetInputFormat()) &&
+                 dstFormat.Merge(i->GetOutputFormat()) &&
+                 srcFormat.Merge(dstFormat);
       }
     }
   }
 
-  return FALSE;
-}
-
-BOOL OpalTranscoder::SelectDoubleTranscoderFormat(unsigned sessionID,
-                                                  const OpalMediaFormatList & srcFormats,
-                                                  const OpalMediaFormatList & dstFormats,
-                                                  OpalMediaFormat & srcFormat,
-                                                  OpalMediaFormat & midFormat,
-                                                  OpalMediaFormat & dstFormat)
-{
-  PINDEX s, d;
-
   // Last gasp search for a double transcoder to get from a to b
   for (d = 0; d < dstFormats.GetSize(); d++) {
     dstFormat = dstFormats[d];
-    if (dstFormat.GetDefaultSessionID() == sessionID) {
-      for (s = 0; s < srcFormats.GetSize(); s++) {
-        srcFormat = srcFormats[s];
-        if (FindIntermediateFormat(srcFormat, dstFormat, midFormat))
-          return TRUE;
-      }
+    for (s = 0; s < srcFormats.GetSize(); s++) {
+      srcFormat = srcFormats[s];
+      OpalMediaFormat intermediateFormat;
+      if (FindIntermediateFormat(srcFormat, dstFormat, intermediateFormat))
+        return TRUE;
     }
   }
 

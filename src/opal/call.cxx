@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2042.2.2  2006/04/07 07:57:20  csoutheren
+ * Revision 1.2042.2.3  2006/04/11 05:12:25  csoutheren
+ * Updated to current OpalMediaFormat changes
+ *
+ * Revision 2.41.2.2  2006/04/07 07:57:20  csoutheren
  * Halfway through media format changes - not working, but closer
  *
  * Revision 2.41.2.1  2006/04/06 05:33:08  csoutheren
@@ -538,7 +541,7 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
             if (patch == NULL)
               return FALSE;
           }
-          patch->AddSink(sink, connection.GetSourceTranscoder(), conn->GetRTPPayloadMap());
+          patch->AddSink(sink, conn->GetRTPPayloadMap());
         }
       }
     }
