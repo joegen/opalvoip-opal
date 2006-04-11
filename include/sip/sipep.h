@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2057  2006/03/27 20:28:18  dsandras
+ * Revision 1.2058  2006/04/11 21:58:25  dsandras
+ * Various cleanups and fixes. Fixes Ekiga report #336444.
+ *
+ * Revision 2.56  2006/03/27 20:28:18  dsandras
  * Added mutex to fix concurrency issues between OnReceivedPDU which checks
  * if a connection is in the list, and OnReceivedINVITE, which adds it to the
  * list. Fixes Ekiga report #334847. Thanks Robert for your input on this!
@@ -919,7 +922,7 @@ class SIPEndPoint : public OpalEndPoint
 	    {
 	      OpalTransportAddress addr = name;
 	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info) {
-		      if (info->IsRegistered() && (name == info->GetRegistrationAddress().GetHostName() || (info->GetTransport() && addr.GetHostName() == info->GetTransport()->GetRemoteAddress().GetHostName()) && meth == info->GetMethod()))
+		      if (info->IsRegistered() && (name == info->GetRegistrationAddress().GetHostName() || (info->GetTransport() && addr.GetHostName() == info->GetTransport()->GetRemoteAddress().GetHostName())) && meth == info->GetMethod())
 			return info;
 	      }
 	      return NULL;
