@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2047.2.6  2006/03/27 20:29:55  dsandras
+ * Revision 1.2047.2.7  2006/04/11 21:59:46  dsandras
+ * More backports from HEAD.
+ *
+ * Revision 2.57  2006/04/11 21:58:25  dsandras
+ * Various cleanups and fixes. Fixes Ekiga report #336444.
+ *
+ * Revision 2.46.2.6  2006/03/27 20:29:55  dsandras
  * Backports from HEAD.
  *
  * Revision 2.56  2006/03/27 20:28:18  dsandras
@@ -930,7 +936,7 @@ class SIPEndPoint : public OpalEndPoint
 	    {
 	      OpalTransportAddress addr = name;
 	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info) {
-		      if (info->IsRegistered() && (name == info->GetRegistrationAddress().GetHostName() || (info->GetTransport() && addr.GetHostName() == info->GetTransport()->GetRemoteAddress().GetHostName()) && meth == info->GetMethod()))
+		      if (info->IsRegistered() && (name == info->GetRegistrationAddress().GetHostName() || (info->GetTransport() && addr.GetHostName() == info->GetTransport()->GetRemoteAddress().GetHostName())) && meth == info->GetMethod())
 			return info;
 	      }
 	      return NULL;
