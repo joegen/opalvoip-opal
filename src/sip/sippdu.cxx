@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2092  2006/03/23 21:25:14  dsandras
+ * Revision 1.2093  2006/04/11 21:58:25  dsandras
+ * Various cleanups and fixes. Fixes Ekiga report #336444.
+ *
+ * Revision 2.91  2006/03/23 21:25:14  dsandras
  * Fixed parameter of callback called on registration timeout.
  * Simplified SIPOptions code.
  *
@@ -2281,21 +2284,10 @@ SIPMessage::SIPMessage(SIPEndPoint & ep,
   OpalTransportAddress viaAddress = ep.GetLocalURL(transport).GetHostAddress();
     
   // Build the correct From field
-  int port = 0;
   PString displayName = ep.GetDefaultDisplayName();
-  PString localName = endpoint.GetRegisteredPartyName(SIPURL(address).GetHostName()).GetUserName(); 
-  PString domain = endpoint.GetRegisteredPartyName(SIPURL(address).GetHostName()).GetHostName();
+  PString partyName = endpoint.GetRegisteredPartyName(SIPURL(address).GetHostName()).AsString(); 
 
-  // If no domain, use the local domain as default
-  if (domain.IsEmpty()) {
-    domain = trans.GetLocalAddress().GetHostName();
-    if (port != endpoint.GetDefaultSignalPort())
-      domain += psprintf(":%d", port);
-  }
-  if (localName.IsEmpty())
-    localName = ep.GetDefaultLocalPartyName ();
-
-  SIPURL myAddress("\"" + displayName + "\" <" + localName + "@" + domain + ">"); 
+  SIPURL myAddress("\"" + displayName + "\" <" + partyName + ">"); 
   
   SIP_PDU::Construct(Method_MESSAGE,
                      "sip:"+address.GetUserName()+"@"+address.GetHostName(),
@@ -2366,21 +2358,10 @@ SIPOptions::SIPOptions(SIPEndPoint & ep,
   OpalTransportAddress viaAddress = ep.GetLocalURL(transport).GetHostAddress();
     
   // Build the correct From field
-  int port = 0;
   PString displayName = ep.GetDefaultDisplayName();
-  PString localName = endpoint.GetRegisteredPartyName(SIPURL(address).GetHostName()).GetUserName(); 
-  PString domain = endpoint.GetRegisteredPartyName(SIPURL(address).GetHostName()).GetHostName();
+  PString partyName = endpoint.GetRegisteredPartyName(SIPURL(address).GetHostName()).AsString();
 
-  // If no domain, use the local domain as default
-  if (domain.IsEmpty()) {
-    domain = trans.GetLocalAddress().GetHostName();
-    if (port != endpoint.GetDefaultSignalPort())
-      domain += psprintf(":%d", port);
-  }
-  if (localName.IsEmpty())
-    localName = ep.GetDefaultLocalPartyName ();
-
-  SIPURL myAddress("\"" + displayName + "\" <" + localName + "@" + domain + ">"); 
+  SIPURL myAddress("\"" + displayName + "\" <" + partyName + ">"); 
 
   requestURI = "sip:" + address.AsQuotedString();
   
