@@ -24,7 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2098.2.19  2006/04/06 20:41:05  dsandras
+ * Revision 1.2098.2.20  2006/04/11 21:15:51  dsandras
+ * More backports.
+ *
+ * Revision 2.122  2006/04/11 21:13:57  dsandras
+ * Modified GetRegisteredPartyName so that the DefaultLocalPartyName can be
+ * used as result if no match is found for the called domain.
+ *
+ * Revision 2.97.2.19  2006/04/06 20:41:05  dsandras
  * Backported change from HEAD.
  *
  * Revision 2.121  2006/04/06 20:39:41  dsandras
@@ -1823,19 +1830,19 @@ BOOL SIPEndPoint::GetAuthentication(const PString & realm, SIPAuthentication &au
 
 const SIPURL SIPEndPoint::GetRegisteredPartyName(const PString & host)
 {
-  PString partyName;
-  PString contactDomain;
-  PString realm;
-  
   PSafePtr<SIPInfo> info = activeSIPInfo.FindSIPInfoByDomain(host, SIP_PDU::Method_REGISTER, PSafeReadOnly);
   if (info == NULL) {
+
+    PString partyName = GetDefaultLocalPartyName();
+    if (partyName.Find('@') != P_MAX_INDEX)
+      return partyName;
    
     PIPSocket::Address localIP(PIPSocket::GetDefaultIpAny());
     WORD localPort = GetDefaultSignalPort();
     if (!GetListeners().IsEmpty())
       GetListeners()[0].GetLocalAddress().GetIpAndPort(localIP, localPort);
     OpalTransportAddress address = OpalTransportAddress(localIP, localPort, "udp");
-    SIPURL party(GetManager().GetDefaultUserName(), address, localPort);
+    SIPURL party(partyName, address, localPort);
     return party;
   }
 
