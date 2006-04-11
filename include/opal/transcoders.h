@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2023.2.2  2006/04/10 06:24:30  csoutheren
+ * Revision 1.2023.2.3  2006/04/11 05:12:25  csoutheren
+ * Updated to current OpalMediaFormat changes
+ *
+ * Revision 2.22.2.2  2006/04/10 06:24:30  csoutheren
  * Backport from CVS head up to Plugin_Merge3
  *
  * Revision 2.22.2.1  2006/04/07 07:57:20  csoutheren
@@ -311,26 +314,11 @@ class OpalTranscoder : public OpalMediaFormatPair
        Returns FALSE if there is no registered media transcoder that can be used
        between the two named formats.
       */
-    static BOOL SelectSingleFormat(
+    static BOOL SelectFormats(
       unsigned sessionID,               ///<  Session ID for media formats
       const OpalMediaFormatList & srcFormats, ///<  Names of possible source formats
       const OpalMediaFormatList & dstFormats, ///<  Names of possible destination formats
       OpalMediaFormat & srcFormat,      ///<  Selected source format to be used
-      OpalMediaFormat & dstFormat       ///<  Selected destination format to be used
-    );
-    static BOOL SelectTranscoderFormat(
-      unsigned sessionID,               ///<  Session ID for media formats
-      const OpalMediaFormatList & srcFormats, ///<  Names of possible source formats
-      const OpalMediaFormatList & dstFormats, ///<  Names of possible destination formats
-      OpalMediaFormat & srcFormat,      ///<  Selected source format to be used
-      OpalMediaFormat & dstFormat       ///<  Selected destination format to be used
-    );
-    static BOOL SelectDoubleTranscoderFormat(
-      unsigned sessionID,               ///<  Session ID for media formats
-      const OpalMediaFormatList & srcFormats, ///<  Names of possible source formats
-      const OpalMediaFormatList & dstFormats, ///<  Names of possible destination formats
-      OpalMediaFormat & srcFormat,      ///<  Selected source format to be used
-      OpalMediaFormat & intermediateFormat,      ///<  Selected intermediate format to be used
       OpalMediaFormat & dstFormat       ///<  Selected destination format to be used
     );
 

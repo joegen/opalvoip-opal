@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.h,v $
- * Revision 1.2012.2.1  2006/04/07 07:57:20  csoutheren
+ * Revision 1.2012.2.2  2006/04/11 05:12:25  csoutheren
+ * Updated to current OpalMediaFormat changes
+ *
+ * Revision 2.11.2.1  2006/04/07 07:57:20  csoutheren
  * Halfway through media format changes - not working, but closer
  *
  * Revision 2.11  2006/02/02 07:02:57  csoutheren
@@ -147,7 +150,6 @@ class OpalMediaPatch : public PThread
       */
     BOOL AddSink(
       OpalMediaStream * stream,                     ///< Media stream to add.
-      OpalTranscoder * transcoder,                  ///< transcoder instance to use
       const RTP_DataFrame::PayloadMapType & rtpMap  ///< Outgoing RTP type map
     );
 

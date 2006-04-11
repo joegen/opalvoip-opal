@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2052.2.2  2006/04/07 07:57:20  csoutheren
+ * Revision 1.2052.2.3  2006/04/11 05:12:25  csoutheren
+ * Updated to current OpalMediaFormat changes
+ *
+ * Revision 2.51.2.2  2006/04/07 07:57:20  csoutheren
  * Halfway through media format changes - not working, but closer
  *
  * Revision 2.51.2.1  2006/04/06 05:33:07  csoutheren
@@ -1118,9 +1121,6 @@ class OpalConnection : public PSafeObject
 
     PMutex & GetMediaStreamMutex() { return mediaStreamMutex; }
 
-    OpalTranscoder * GetSourceTranscoder() const
-    { return sourceTranscoder; }
-
   protected:
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnUserInputInBandDTMF);
@@ -1157,8 +1157,6 @@ class OpalConnection : public PSafeObject
     OpalRFC2833Proto    * rfc2833Handler;
     OpalT120Protocol    * t120handler;
     OpalT38Protocol     * t38handler;
-
-    OpalTranscoder      * sourceTranscoder;
 
     MediaAddressesDict  mediaTransportAddresses;
     PMutex              mediaStreamMutex;
