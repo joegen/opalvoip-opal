@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2122  2006/04/06 20:39:41  dsandras
+ * Revision 1.2123  2006/04/11 21:13:57  dsandras
+ * Modified GetRegisteredPartyName so that the DefaultLocalPartyName can be
+ * used as result if no match is found for the called domain.
+ *
+ * Revision 2.121  2006/04/06 20:39:41  dsandras
  * Keep the same From header when sending authenticated requests than in the
  * original request. Fixes Ekiga report #336762.
  *
@@ -1778,19 +1782,19 @@ BOOL SIPEndPoint::GetAuthentication(const PString & realm, SIPAuthentication &au
 
 const SIPURL SIPEndPoint::GetRegisteredPartyName(const PString & host)
 {
-  PString partyName;
-  PString contactDomain;
-  PString realm;
-  
   PSafePtr<SIPInfo> info = activeSIPInfo.FindSIPInfoByDomain(host, SIP_PDU::Method_REGISTER, PSafeReadOnly);
   if (info == NULL) {
+
+    PString partyName = GetDefaultLocalPartyName();
+    if (partyName.Find('@') != P_MAX_INDEX)
+      return partyName;
    
     PIPSocket::Address localIP(PIPSocket::GetDefaultIpAny());
     WORD localPort = GetDefaultSignalPort();
     if (!GetListeners().IsEmpty())
       GetListeners()[0].GetLocalAddress().GetIpAndPort(localIP, localPort);
     OpalTransportAddress address = OpalTransportAddress(localIP, localPort, "udp");
-    SIPURL party(GetManager().GetDefaultUserName(), address, localPort);
+    SIPURL party(partyName, address, localPort);
     return party;
   }
 
