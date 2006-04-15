@@ -3788,6 +3788,7 @@ EXPORTS
     ??0OpalTransportUDP@@QAE@AAVOpalEndPoint@@VAddress@PIPSocket@@ABVPBYTEArray@@1G@Z @3338 NONAME
     ??0OpalTransportUDP@@QAE@AAVOpalEndPoint@@VAddress@PIPSocket@@GH@Z @3339 NONAME
     ??0OpalUncompVideoTranscoder@@QAE@ABVOpalMediaFormat@@0@Z @37266 NONAME
+    ??0OpalVideoFormat@@QAE@ABV0@@Z @40781 NONAME
     ??0OpalVideoFormat@@QAE@PBDW4PayloadTypes@RTP_DataFrame@@0IIII@Z @37267 NONAME
     ??0OpalVideoFreezePicture@@QAE@XZ @37268 NONAME
     ??0OpalVideoMediaStream@@QAE@ABVOpalMediaFormat@@IPAVPVideoInputDevice@@PAVPVideoOutputDevice@@H@Z @3341 NONAME
@@ -3806,7 +3807,6 @@ EXPORTS
     ??0Opal_G726_32_PCM@@QAE@XZ @37275 NONAME
     ??0Opal_G726_40_PCM@@QAE@XZ @37276 NONAME
     ??0Opal_G726_Transcoder@@QAE@ABVOpalMediaFormat@@0II@Z @40598 NONAME
-    ??0Opal_G729_PCM@@QAE@XZ @37278 NONAME
     ??0Opal_GSM0610@@QAE@ABVOpalMediaFormat@@0II@Z @37279 NONAME
     ??0Opal_GSM0610_PCM@@QAE@XZ @37280 NONAME
     ??0Opal_H261_YUV420P@@QAE@XZ @37281 NONAME
@@ -3825,7 +3825,6 @@ EXPORTS
     ??0Opal_PCM_G726_24@@QAE@XZ @37293 NONAME
     ??0Opal_PCM_G726_32@@QAE@XZ @37294 NONAME
     ??0Opal_PCM_G726_40@@QAE@XZ @37295 NONAME
-    ??0Opal_PCM_G729@@QAE@XZ @37296 NONAME
     ??0Opal_PCM_GSM0610@@QAE@XZ @37297 NONAME
     ??0Opal_PCM_iLBC_13k3@@QAE@XZ @37298 NONAME
     ??0Opal_PCM_iLBC_15k2@@QAE@XZ @37299 NONAME
@@ -5975,7 +5974,6 @@ EXPORTS
     ??1Opal_G726_32_PCM@@UAE@XZ @5275 NONAME
     ??1Opal_G726_40_PCM@@UAE@XZ @5276 NONAME
     ??1Opal_G726_Transcoder@@UAE@XZ @5277 NONAME
-    ??1Opal_G729_PCM@@UAE@XZ @5278 NONAME
     ??1Opal_GSM0610@@UAE@XZ @5279 NONAME
     ??1Opal_GSM0610_PCM@@UAE@XZ @5280 NONAME
     ??1Opal_H261_YUV420P@@UAE@XZ @5281 NONAME
@@ -5994,7 +5992,6 @@ EXPORTS
     ??1Opal_PCM_G726_24@@UAE@XZ @5293 NONAME
     ??1Opal_PCM_G726_32@@UAE@XZ @5294 NONAME
     ??1Opal_PCM_G726_40@@UAE@XZ @5295 NONAME
-    ??1Opal_PCM_G729@@UAE@XZ @5296 NONAME
     ??1Opal_PCM_GSM0610@@UAE@XZ @5297 NONAME
     ??1Opal_PCM_iLBC_13k3@@UAE@XZ @5298 NONAME
     ??1Opal_PCM_iLBC_15k2@@UAE@XZ @5299 NONAME
@@ -10541,7 +10538,6 @@ EXPORTS
     ??_7Opal_G726_32_PCM@@6B@ @9383 NONAME
     ??_7Opal_G726_40_PCM@@6B@ @9384 NONAME
     ??_7Opal_G726_Transcoder@@6B@ @9385 NONAME
-    ??_7Opal_G729_PCM@@6B@ @9386 NONAME
     ??_7Opal_GSM0610@@6B@ @9387 NONAME
     ??_7Opal_GSM0610_PCM@@6B@ @9388 NONAME
     ??_7Opal_H261_YUV420P@@6B@ @9389 NONAME
@@ -10560,7 +10556,6 @@ EXPORTS
     ??_7Opal_PCM_G726_24@@6B@ @9401 NONAME
     ??_7Opal_PCM_G726_32@@6B@ @9402 NONAME
     ??_7Opal_PCM_G726_40@@6B@ @9403 NONAME
-    ??_7Opal_PCM_G729@@6B@ @9404 NONAME
     ??_7Opal_PCM_GSM0610@@6B@ @9405 NONAME
     ??_7Opal_PCM_iLBC_13k3@@6B@ @9406 NONAME
     ??_7Opal_PCM_iLBC_15k2@@6B@ @9407 NONAME
@@ -12664,7 +12659,6 @@ EXPORTS
     ??_R0?AVOpal_G726_32_PCM@@@8 @11288 NONAME
     ??_R0?AVOpal_G726_40_PCM@@@8 @11289 NONAME
     ??_R0?AVOpal_G726_Transcoder@@@8 @11290 NONAME
-    ??_R0?AVOpal_G729_PCM@@@8 @11291 NONAME
     ??_R0?AVOpal_GSM0610@@@8 @11292 NONAME
     ??_R0?AVOpal_GSM0610_PCM@@@8 @11293 NONAME
     ??_R0?AVOpal_H261_YUV420P@@@8 @11294 NONAME
@@ -12683,7 +12677,6 @@ EXPORTS
     ??_R0?AVOpal_PCM_G726_24@@@8 @11306 NONAME
     ??_R0?AVOpal_PCM_G726_32@@@8 @11307 NONAME
     ??_R0?AVOpal_PCM_G726_40@@@8 @11308 NONAME
-    ??_R0?AVOpal_PCM_G729@@@8 @11309 NONAME
     ??_R0?AVOpal_PCM_GSM0610@@@8 @11310 NONAME
     ??_R0?AVOpal_PCM_iLBC_13k3@@@8 @11311 NONAME
     ??_R0?AVOpal_PCM_iLBC_15k2@@@8 @11312 NONAME
@@ -14722,7 +14715,6 @@ EXPORTS
     ??_R1A@?0A@A@Opal_G726_32_PCM@@8 @13124 NONAME
     ??_R1A@?0A@A@Opal_G726_40_PCM@@8 @13125 NONAME
     ??_R1A@?0A@A@Opal_G726_Transcoder@@8 @13126 NONAME
-    ??_R1A@?0A@A@Opal_G729_PCM@@8 @13127 NONAME
     ??_R1A@?0A@A@Opal_GSM0610@@8 @13128 NONAME
     ??_R1A@?0A@A@Opal_GSM0610_PCM@@8 @13129 NONAME
     ??_R1A@?0A@A@Opal_H261_YUV420P@@8 @13130 NONAME
@@ -14741,7 +14733,6 @@ EXPORTS
     ??_R1A@?0A@A@Opal_PCM_G726_24@@8 @13142 NONAME
     ??_R1A@?0A@A@Opal_PCM_G726_32@@8 @13143 NONAME
     ??_R1A@?0A@A@Opal_PCM_G726_40@@8 @13144 NONAME
-    ??_R1A@?0A@A@Opal_PCM_G729@@8 @13145 NONAME
     ??_R1A@?0A@A@Opal_PCM_GSM0610@@8 @13146 NONAME
     ??_R1A@?0A@A@Opal_PCM_iLBC_13k3@@8 @13147 NONAME
     ??_R1A@?0A@A@Opal_PCM_iLBC_15k2@@8 @13148 NONAME
@@ -16807,7 +16798,6 @@ EXPORTS
     ??_R2Opal_G726_32_PCM@@8 @14990 NONAME
     ??_R2Opal_G726_40_PCM@@8 @14991 NONAME
     ??_R2Opal_G726_Transcoder@@8 @14992 NONAME
-    ??_R2Opal_G729_PCM@@8 @14993 NONAME
     ??_R2Opal_GSM0610@@8 @14994 NONAME
     ??_R2Opal_GSM0610_PCM@@8 @14995 NONAME
     ??_R2Opal_H261_YUV420P@@8 @14996 NONAME
@@ -16826,7 +16816,6 @@ EXPORTS
     ??_R2Opal_PCM_G726_24@@8 @15008 NONAME
     ??_R2Opal_PCM_G726_32@@8 @15009 NONAME
     ??_R2Opal_PCM_G726_40@@8 @15010 NONAME
-    ??_R2Opal_PCM_G729@@8 @15011 NONAME
     ??_R2Opal_PCM_GSM0610@@8 @15012 NONAME
     ??_R2Opal_PCM_iLBC_13k3@@8 @15013 NONAME
     ??_R2Opal_PCM_iLBC_15k2@@8 @15014 NONAME
@@ -18877,7 +18866,6 @@ EXPORTS
     ??_R3Opal_G726_32_PCM@@8 @16842 NONAME
     ??_R3Opal_G726_40_PCM@@8 @16843 NONAME
     ??_R3Opal_G726_Transcoder@@8 @16844 NONAME
-    ??_R3Opal_G729_PCM@@8 @16845 NONAME
     ??_R3Opal_GSM0610@@8 @16846 NONAME
     ??_R3Opal_GSM0610_PCM@@8 @16847 NONAME
     ??_R3Opal_H261_YUV420P@@8 @16848 NONAME
@@ -18896,7 +18884,6 @@ EXPORTS
     ??_R3Opal_PCM_G726_24@@8 @16860 NONAME
     ??_R3Opal_PCM_G726_32@@8 @16861 NONAME
     ??_R3Opal_PCM_G726_40@@8 @16862 NONAME
-    ??_R3Opal_PCM_G729@@8 @16863 NONAME
     ??_R3Opal_PCM_GSM0610@@8 @16864 NONAME
     ??_R3Opal_PCM_iLBC_13k3@@8 @16865 NONAME
     ??_R3Opal_PCM_iLBC_15k2@@8 @16866 NONAME
@@ -20967,7 +20954,6 @@ EXPORTS
     ??_R4Opal_G726_32_PCM@@6B@ @18713 NONAME
     ??_R4Opal_G726_40_PCM@@6B@ @18714 NONAME
     ??_R4Opal_G726_Transcoder@@6B@ @18715 NONAME
-    ??_R4Opal_G729_PCM@@6B@ @18716 NONAME
     ??_R4Opal_GSM0610@@6B@ @18717 NONAME
     ??_R4Opal_GSM0610_PCM@@6B@ @18718 NONAME
     ??_R4Opal_H261_YUV420P@@6B@ @18719 NONAME
@@ -20986,7 +20972,6 @@ EXPORTS
     ??_R4Opal_PCM_G726_24@@6B@ @18731 NONAME
     ??_R4Opal_PCM_G726_32@@6B@ @18732 NONAME
     ??_R4Opal_PCM_G726_40@@6B@ @18733 NONAME
-    ??_R4Opal_PCM_G729@@6B@ @18734 NONAME
     ??_R4Opal_PCM_GSM0610@@6B@ @18735 NONAME
     ??_R4Opal_PCM_iLBC_13k3@@6B@ @18736 NONAME
     ??_R4Opal_PCM_iLBC_15k2@@6B@ @18737 NONAME
@@ -25038,9 +25023,11 @@ EXPORTS
     ?Clone@MicrosoftGSMAudioCapability@@UBEPAVPObject@@XZ @22426 NONAME
     ?Clone@MicrosoftIMAAudioCapability@@UBEPAVPObject@@XZ @22427 NONAME
     ?Clone@OpalGloballyUniqueID@@UBEPAVPObject@@XZ @22428 NONAME
+    ?Clone@OpalMediaFormat@@UBEPAVPObject@@XZ @40782 NONAME
     ?Clone@OpalMediaOptionEnum@@UBEPAVPObject@@XZ @36414 NONAME
     ?Clone@OpalMediaOptionString@@UBEPAVPObject@@XZ @36415 NONAME
     ?Clone@OpalTransportAddressArray@@UBEPAVPObject@@XZ @22429 NONAME
+    ?Clone@OpalVideoFormat@@UBEPAVPObject@@XZ @40783 NONAME
     ?Clone@PMIMEInfo@@UBEPAVPObject@@XZ @22430 NONAME
     ?Clone@SpeexNarrow2AudioCapability@@UBEPAVPObject@@XZ @22431 NONAME
     ?Clone@SpeexNarrow3AudioCapability@@UBEPAVPObject@@XZ @22432 NONAME
@@ -27846,14 +27833,12 @@ EXPORTS
     ?Convert@Opal_GSM0610_PCM@@UAEHABVRTP_DataFrame@@AAV2@@Z @40686 NONAME
     ?ConvertFrame@OpalFramedTranscoder@@UAEHPBEAAHPAE1@Z @36437 NONAME
     ?ConvertFrame@OpalFramedTranscoder@@UAEHPBEPAE@Z @36438 NONAME
-    ?ConvertFrame@Opal_G729_PCM@@UAEHPBEPAE@Z @24990 NONAME
     ?ConvertFrame@Opal_GSM0610_PCM@@UAEHPBEPAE@Z @24991 NONAME
     ?ConvertFrame@Opal_iLBC_Decoder@@UAEHPBEPAE@Z @24992 NONAME
     ?ConvertFrame@Opal_iLBC_Encoder@@UAEHPBEPAE@Z @24993 NONAME
     ?ConvertFrame@Opal_LPC10_PCM@@UAEHPBEPAE@Z @24994 NONAME
     ?ConvertFrame@Opal_MSGSM_PCM@@UAEHPBEPAE@Z @24995 NONAME
     ?ConvertFrame@Opal_MSIMA_PCM@@UAEHPBEPAE@Z @24996 NONAME
-    ?ConvertFrame@Opal_PCM_G729@@UAEHPBEPAE@Z @24997 NONAME
     ?ConvertFrame@Opal_PCM_GSM0610@@UAEHPBEPAE@Z @24998 NONAME
     ?ConvertFrame@Opal_PCM_LPC10@@UAEHPBEPAE@Z @24999 NONAME
     ?ConvertFrame@Opal_PCM_MSGSM@@UAEHPBEPAE@Z @25000 NONAME
@@ -30273,7 +30258,7 @@ EXPORTS
     ?FindEndPointBySignalAddresses@H323GatekeeperServer@@UAE?AV?$PSafePtr@VH323RegisteredEndPoint@@@@ABVH225_ArrayOf_TransportAddress@@W4PSafetyMode@@@Z @27226 NONAME
     ?FindFormat@OpalMediaFormatList@@QBEHABVPString@@@Z @27227 NONAME
     ?FindFormat@OpalMediaFormatList@@QBEHW4PayloadTypes@RTP_DataFrame@@IPBD@Z @40288 NONAME
-    ?FindIntermediateFormat@OpalTranscoder@@SAHABVOpalMediaFormat@@0AAV2@@Z @27229 NONAME
+    ?FindIntermediateFormat@OpalTranscoder@@SAHAAVOpalMediaFormat@@00@Z @40784 NONAME
     ?FindNegLogicalChannel@H245NegLogicalChannels@@QAEPAVH245NegLogicalChannel@@IH@Z @27230 NONAME
     ?FindOption@OpalMediaFormat@@IBEPAVOpalMediaOption@@ABVPString@@@Z @36442 NONAME
     ?FindSIPInfoByAuthRealm@RegistrationList@SIPEndPoint@@QAEPAVSIPInfo@@ABVPString@@0W4PSafetyMode@@@Z @40702 NONAME
@@ -33600,7 +33585,9 @@ EXPORTS
     ?GetOptimalDataFrameSize@Opal_H263_YUV420P@@UBEHH@Z @40531 NONAME
     ?GetOptimalDataFrameSize@Opal_YUV420P_H261@@UBEHH@Z @30108 NONAME
     ?GetOptimalDataFrameSize@Opal_YUV420P_H263@@UBEHH@Z @40532 NONAME
+    ?GetOption@OpalMediaFormat@@QAEABVOpalMediaOption@@H@Z @40785 NONAME
     ?GetOptionBoolean@OpalMediaFormat@@QBE_NABVPString@@_N@Z @36484 NONAME
+    ?GetOptionCount@OpalMediaFormat@@QBEHXZ @40786 NONAME
     ?GetOptionEnum@OpalMediaFormat@@QBEHABVPString@@H@Z @36485 NONAME
     ?GetOptionInteger@OpalMediaFormat@@QBEHABVPString@@H@Z @36486 NONAME
     ?GetOptionReal@OpalMediaFormat@@QBENABVPString@@N@Z @36487 NONAME
