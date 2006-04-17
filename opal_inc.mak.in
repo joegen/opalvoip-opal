@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: opal_inc.mak.in,v $
+# Revision 1.8  2006/04/17 00:06:27  csoutheren
+# Allow ILBC codec to be disabled and detect if not present
+#
 # Revision 1.7  2006/01/30 02:23:16  csoutheren
 # First cut at fixing problem with speex libraries
 #
@@ -89,6 +92,7 @@ OPAL_SIP          = @OPAL_SIP@
 OPAL_H323         = @OPAL_H323@
 OPAL_IAX2         = @OPAL_IAX2@
 OPAL_SYSTEM_SPEEX = @OPAL_SYSTEM_SPEEX@
+OPAL_ILBC	  = @OPAL_ILBC@
 
 ifdef NOTRACE
 STDCCFLAGS += -DPASN_NOPRINTON -DPASN_LEANANDMEAN
