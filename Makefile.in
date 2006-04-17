@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.29  2006/04/17 00:06:26  csoutheren
+# Allow ILBC codec to be disabled and detect if not present
+#
 # Revision 1.28  2006/02/01 22:42:55  dominance
 # ensure we have the full disctinct SONAME instead of just the major number version.
 #
@@ -579,6 +582,7 @@ SOURCES 	+= $(SPEEX_SRCDIR)/nb_celp.c \
 endif # OPAL_SYSTEM_SPEEX
 
 
+ifdef OPAL_ILBC
 # iLBC
 
 ILBC_DIR 	= $(OPAL_SRCDIR)/codec/iLBC
@@ -636,6 +640,8 @@ HEADER_FILES	+= $(ILBC_DIR)/packing.h
 SOURCES		+= $(ILBC_DIR)/packing.c
 HEADER_FILES	+= $(ILBC_DIR)/syntFilter.h
 SOURCES		+= $(ILBC_DIR)/syntFilter.c
+
+endif  # OPAL_ILBC
 
 
 VIC_DIR = $(OPAL_SRCDIR)/codec/vic
