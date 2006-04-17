@@ -270,6 +270,34 @@ fi
 AC_SUBST(OPAL_HAVE_SPEEX_SPEEX_H)
 
 dnl ########################################################################
+dnl
+dnl Allow iLBC to be disabled for Debian compatibility
+dnl
+dnl MSWIN_DISPLAY ilbc,iLBC support
+dnl MSWIN_DEFINE  ilbc,OPAL_ILBC
+
+ilbc=yes
+AC_ARG_ENABLE(ilbc,
+       [  --disable-ilbc          disable iLBC codec support],
+       ilbc=$enableval)
+AC_MSG_CHECKING(iLBC codec)
+if test "$ilbc" != "yes" ; then
+  ilbc=no
+  AC_MSG_RESULT(disabled)
+elif test -f src/codec/ilbccodec.cxx && test -f src/codec/iLBC/iLBC_encode.c ; then
+  ilbc=yes
+  AC_MSG_RESULT(enabled)
+else
+  ilbc=no
+  AC_MSG_RESULT(not present)
+fi
+
+if test "$ilbc" = "yes" ; then
+  AC_SUBST(OPAL_ILBC, 1)
+  AC_DEFINE(OPAL_ILBC)
+fi
+
+dnl ########################################################################
 dnl enable audio, video, T.38
 
 dnl MSWIN_DISPLAY audio,Audio
@@ -298,7 +326,6 @@ if test "$sip" = "yes" ; then
   AC_DEFINE(OPAL_SIP)
   AC_MSG_RESULT(enabled)
 else
-  AC_SUBST(OPAL_SIP, 0)
   AC_MSG_RESULT(disabled)
 fi
 
@@ -320,7 +347,6 @@ if test "$h323" = "yes" ; then
   AC_DEFINE(OPAL_H323)
   AC_MSG_RESULT(enabled)
 else
-  AC_SUBST(OPAL_H323, 0)
   AC_MSG_RESULT(disabled (T.38 also disabled))
   t38=no
 fi
@@ -336,7 +362,6 @@ if test "$t38" = "yes" ; then
     AC_DEFINE(OPAL_T38FAX)
     AC_MSG_RESULT(enabled)
   else
-    AC_SUBST(OPAL_T38FAX, 0)
     AC_MSG_RESULT(disabled)
   fi
 fi
@@ -354,7 +379,6 @@ if test "$iax" = "yes" ; then
   AC_DEFINE(OPAL_IAX2)
   AC_MSG_RESULT(enabled)
 else
-  AC_SUBST(OPAL_IAX2, 0)
   AC_MSG_RESULT(disabled)
 fi
 
