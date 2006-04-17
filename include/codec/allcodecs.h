@@ -23,7 +23,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: allcodecs.h,v $
- * Revision 1.2010  2006/01/01 19:19:32  dsandras
+ * Revision 1.2011  2006/04/17 00:06:27  csoutheren
+ * Allow ILBC codec to be disabled and detect if not present
+ *
+ * Revision 2.9  2006/01/01 19:19:32  dsandras
  * Added RFC2190 H.263 codec thanks to Salyens. Many thanks!
  *
  * Revision 2.8  2004/05/15 12:53:40  rjongbloed
@@ -81,8 +84,10 @@ OPAL_REGISTER_LPC10();
 #include <codec/speexcodec.h>
 OPAL_REGISTER_SPEEX();
 
+#ifdef OPAL_ILBC
 #include <codec/ilbccodec.h>
 OPAL_REGISTER_iLBC();
+#endif
 
 #include <codec/vidcodec.h>
 OPAL_REGISTER_UNCOMPRESSED_VIDEO();
