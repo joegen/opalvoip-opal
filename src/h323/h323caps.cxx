@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2024.4.2  2006/04/06 01:21:18  csoutheren
+ * Revision 1.2024.4.3  2006/04/19 04:58:56  csoutheren
+ * Debugging and testing of new video plugins
+ * H.261 working in both CIF and QCIF modes in H.323
+ *
+ * Revision 2.23.4.2  2006/04/06 01:21:18  csoutheren
  * More implementation of video codec plugins
  *
  * Revision 2.23.4.1  2006/03/23 07:55:18  csoutheren
@@ -1376,7 +1380,7 @@ BOOL H323GenericVideoCapability::OnSendingPDU(H245_VideoCapability & pdu) const
   return OnSendingGenericPDU(generic);
 }
 
-BOOL H323GenericVideoCapability::OnSendingPDU(H245_VideoMode & pdu) const
+BOOL H323GenericVideoCapability::OnSendingPDU(H245_VideoMode & /*pdu*/) const
 {
   //pdu.SetTag(H245_VideoMode::e::e_genericVideoCapability);
   //H245_GenericCapability &generic = (H245_GenericCapability &)pdu;
