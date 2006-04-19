@@ -26,6 +26,9 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261vic.cxx,v $
+ * Revision 1.1.2.3  2006/04/19 05:56:23  csoutheren
+ * Fix marker bits on outgoing video
+ *
  * Revision 1.1.2.2  2006/04/19 04:59:29  csoutheren
  * Allow specification of CIF and QCIF capabilities
  *
@@ -329,8 +332,10 @@ class H261EncoderContext
         unsigned payloadLength = 0;
         videoEncoder->IncEncodeAndGetPacket((u_char *)dstRTP.GetPayloadPtr(), payloadLength); //get next packet on list
         dstRTP.SetPayloadSize(payloadLength);
+        dstRTP.SetMarker(FALSE);
         dstLen = dstRTP.GetPacketLen();
         flags = videoEncoder->MoreToIncEncode() ? 0 : PluginCodec_ReturnCoderLastFrame;
+        dstRTP.SetMarker(!videoEncoder->MoreToIncEncode());
         return 1;
       }
 
@@ -390,32 +395,9 @@ class H261EncoderContext
         dstLen = dstRTP.GetPacketLen();
       }
 
-      // marker bit is always set on first packet of new frame
-      dstRTP.SetMarker(TRUE);
-      
-#if 0
-      if (adaptivePacketDelay) {
-        
-        PTimeInterval waitBeforeSending;
-        PTimeInterval currentTime;
-
-        if (newTime != 0) { // calculate delay and wait
-          currentTime = PTimer::Tick();
-          waitBeforeSending = newTime - currentTime;
-          if (waitBeforeSending > 0) 
-	          PThread::Current()->Sleep(waitBeforeSending);
-          currentTime = PTimer::Tick(); //re-acquire current time after wait
-        }
-        currentTime = PTimer::Tick(); 
-        if (targetBitRate/1000)
-          newTime = currentTime + totalLength*8/(targetBitRate/1000);
-        else
-          newTime = currentTime + totalLength*8;
-      }
-#endif
-
-      // flag not last frame of video
+      // marker flag set on last frame of video
       flags = videoEncoder->MoreToIncEncode() ? 0 : PluginCodec_ReturnCoderLastFrame;
+      dstRTP.SetMarker(!videoEncoder->MoreToIncEncode());
      
       return 1;
     }
@@ -428,12 +410,12 @@ static void * create_encoder(const struct PluginCodec_Definition * /*codec*/)
 
 static int encoder_set_options(
       const PluginCodec_Definition * , 
-      void * _context, 
+      void *, 
       const char * , 
-      void * parm, 
-      unsigned * parmLen)
+      void *, 
+      unsigned * )
 {
-  H261EncoderContext * context = (H261EncoderContext *)_context;
+  //H261EncoderContext * context = (H261EncoderContext *)_context;
   return 1;
 }
 
@@ -598,9 +580,9 @@ static void * create_decoder(const struct PluginCodec_Definition * /*codec*/)
 }
 
 static int decoder_set_options(
-      const struct PluginCodec_Definition * codec, 
+      const struct PluginCodec_Definition *, 
       void * _context, 
-      const char * name, 
+      const char *, 
       void * parm, 
       unsigned * parmLen)
 {
