@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2029.2.3  2006/04/06 05:33:09  csoutheren
+ * Revision 1.2029.2.4  2006/04/19 07:52:30  csoutheren
+ * Add ability to have SIP-only and H.323-only codecs, and implement for H.261
+ *
+ * Revision 2.28.2.3  2006/04/06 05:33:09  csoutheren
  * Backports from CVS head up to Plugin_Merge2
  *
  * Revision 2.28.2.2  2006/03/20 02:25:27  csoutheren
@@ -642,6 +645,9 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
 {
   RTP_DataFrame::PayloadTypes payloadType = mediaFormat.GetPayloadType();
   const char * encodingName = mediaFormat.GetEncodingName();
+  if (encodingName == NULL)
+    return;
+
   unsigned clockRate = mediaFormat.GetClockRate();
 
   if (payloadType >= RTP_DataFrame::MaxPayloadType || encodingName == NULL || *encodingName == '\0')
@@ -650,9 +656,8 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
   PINDEX i;
   for (i = 0; i < formats.GetSize(); i++) {
     if (formats[i].GetPayloadType() == payloadType ||
-        (encodingName != NULL && 
-         strcasecmp(formats[i].GetEncodingName(), encodingName) == 0 &&
-	       formats[i].GetClockRate() == clockRate))
+        ((formats[i].GetEncodingName() *= encodingName) && formats[i].GetClockRate() == clockRate)
+        )
       return;
   }
 

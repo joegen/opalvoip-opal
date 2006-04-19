@@ -24,7 +24,10 @@
  * Contributor(s): 
  *
  * $Log: vidcodec.h,v $
- * Revision 1.2013.4.1  2006/04/06 01:21:16  csoutheren
+ * Revision 1.2013.4.2  2006/04/19 07:52:30  csoutheren
+ * Add ability to have SIP-only and H.323-only codecs, and implement for H.261
+ *
+ * Revision 2.12.4.1  2006/04/06 01:21:16  csoutheren
  * More implementation of video codec plugins
  *
  * Revision 2.12  2005/11/30 13:35:26  csoutheren
@@ -174,7 +177,7 @@ class OpalVideoTranscoder : public OpalTranscoder
     bool     dynamicVideoQuality;
     bool     adaptivePacketDelay;
     unsigned fillLevel;
-    bool     updatePicture;
+    PAtomicInteger updatePictureCount;
 };
 
 

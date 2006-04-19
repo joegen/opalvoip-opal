@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
+ * Revision 1.1.2.9  2006/04/19 07:52:30  csoutheren
+ * Add ability to have SIP-only and H.323-only codecs, and implement for H.261
+ *
  * Revision 1.1.2.8  2006/04/19 04:58:56  csoutheren
  * Debugging and testing of new video plugins
  * H.261 working in both CIF and QCIF modes in H.323
@@ -754,9 +757,14 @@ BOOL OpalPluginVideoTranscoder::CallCodecControl(const char * name,
   return FALSE;
 }
 
-BOOL OpalPluginVideoTranscoder::ExecuteCommand(const OpalMediaCommand & /*command*/)
+BOOL OpalPluginVideoTranscoder::ExecuteCommand(const OpalMediaCommand & command)
 {
-  return FALSE;
+  if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
+    ++updatePictureCount;
+    return TRUE;
+  }
+
+  return OpalTranscoder::ExecuteCommand(command);
 }
 
 PINDEX OpalPluginVideoTranscoder::GetOptimalDataFrameSize(BOOL /*input*/) const
@@ -792,11 +800,16 @@ BOOL OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Dat
       // call the codec function
       unsigned int fromLen = src.GetSize();
       unsigned int toLen = dst->GetSize();
-      flags = 0;
+      BOOL forceIFrame = updatePictureCount > 0;
+      flags = forceIFrame ? PluginCodec_CoderForceIFrame : 0;
+
       BOOL stat = (codec->codecFunction)(codec, context, 
                                         (const BYTE *)src, &fromLen,
                                         dst->GetPointer(), &toLen,
                                         &flags) != 0;
+
+      if (forceIFrame && ((flags & PluginCodec_ReturnCoderIFrame) != 0))
+        --updatePictureCount;
 
       if (!stat) {
         delete dst;
@@ -828,8 +841,8 @@ BOOL OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Dat
 
     if ((flags & PluginCodec_ReturnCoderRequestIFrame) != 0) {
       if (commandNotifier != PNotifier()) {
-        OpalVideoUpdatePicture updatePicture;
-        commandNotifier(updatePicture, 0); 
+        OpalVideoUpdatePicture updatePictureCommand;
+        commandNotifier(updatePictureCommand, 0); 
         PTRACE (3, "H261\t Could not decode frame, sending VideoUpdatePicture in hope of an I-Frame.");
       }
       return TRUE;
@@ -1651,6 +1664,11 @@ void OpalPluginCodecManager::RegisterPluginPair(
 #endif
     default:
       break;
+  }
+
+  if (encoderCodec->h323CapabilityType == PluginCodec_H323Codec_NoH323) {
+    PTRACE(3, "H323PLUGIN\tNot adding H.323 capability for plugin codec " << encoderCodec->destFormat << " as this has been specifically disabled");
+    return;
   }
 
 #if OPAL_H323
