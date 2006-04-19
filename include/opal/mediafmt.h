@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2038.4.4  2006/04/10 06:24:30  csoutheren
+ * Revision 1.2038.4.5  2006/04/19 04:58:56  csoutheren
+ * Debugging and testing of new video plugins
+ * H.261 working in both CIF and QCIF modes in H.323
+ *
+ * Revision 2.37.4.4  2006/04/10 06:24:30  csoutheren
  * Backport from CVS head up to Plugin_Merge3
  *
  * Revision 2.37.4.3  2006/04/06 01:21:17  csoutheren
@@ -38,7 +42,11 @@
  * Added OpalMediaFormat clone function
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2038.4.4  2006/04/10 06:24:30  csoutheren
+ * Revision 1.2038.4.5  2006/04/19 04:58:56  csoutheren
+ * Debugging and testing of new video plugins
+ * H.261 working in both CIF and QCIF modes in H.323
+ *
+ * Revision 2.37.4.4  2006/04/10 06:24:30  csoutheren
  * Backport from CVS head up to Plugin_Merge3
  *
  * Revision 2.38  2006/04/09 12:01:43  rjongbloed
@@ -773,7 +781,7 @@ class OpalMediaFormat : public PCaselessString
       */
     const OpalMediaOption & GetOption(
       PINDEX index   ///<  Index of option in list to get
-    ) { return options[index]; }
+    ) const { return options[index]; }
 
     /**Get the option value of the specified name as a string.
 
@@ -906,10 +914,11 @@ class OpalMediaFormat : public PCaselessString
       const OpalMediaFormat & mediaFormat  ///<  Media format to copy to master list
     );
 
-  protected:
     bool AddOption(
       OpalMediaOption * option
     );
+
+  protected:
 
     OpalMediaOption * FindOption(
       const PString & name

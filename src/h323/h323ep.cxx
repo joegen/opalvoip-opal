@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2047.2.2  2006/03/20 02:25:27  csoutheren
+ * Revision 1.2047.2.3  2006/04/19 04:58:56  csoutheren
+ * Debugging and testing of new video plugins
+ * H.261 working in both CIF and QCIF modes in H.323
+ *
+ * Revision 2.46.2.2  2006/03/20 02:25:27  csoutheren
  * Backports from CVS head
  *
  * Revision 2.46.2.1  2006/03/16 07:07:24  csoutheren
@@ -830,7 +834,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   autoCallForward = TRUE;
   disableFastStart = FALSE;
   disableH245Tunneling = FALSE;
-  disableH245inSetup = FALSE;
+  disableH245inSetup = TRUE;
   canDisplayAmountString = FALSE;
   canEnforceDurationLimit = TRUE;
   callIntrusionProtectionLevel = 3; //H45011_CIProtectionLevel::e_fullProtection;
