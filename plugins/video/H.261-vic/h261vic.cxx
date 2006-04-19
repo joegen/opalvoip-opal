@@ -26,6 +26,9 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261vic.cxx,v $
+ * Revision 1.1.2.4  2006/04/19 07:52:30  csoutheren
+ * Add ability to have SIP-only and H.323-only codecs, and implement for H.261
+ *
  * Revision 1.1.2.3  2006/04/19 05:56:23  csoutheren
  * Fix marker bits on outgoing video
  *
@@ -278,6 +281,17 @@ static int coder_get_qcif_options(
   return get_xcif_options(context, parm, parmLen, &default_qcif_h261_options[0][0]);
 }
 
+static int coder_get_sip_options(
+      const PluginCodec_Definition * , 
+      void * , 
+      const char * , 
+      void * , 
+      unsigned * )
+{
+  return 1;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 class H261EncoderContext 
@@ -291,6 +305,7 @@ class H261EncoderContext
     bool forceIFrame;
     int videoQuality;
     CriticalSection updateMutex;
+    unsigned long lastTimeStamp;
 
     H261EncoderContext()
     {
@@ -324,9 +339,6 @@ class H261EncoderContext
       // create RTP frame from destination buffer
       RTPFrame dstRTP(dst, dstLen, H261_PAYLOAD);
 
-      // set destination timestamp 
-      dstRTP.SetTimestamp(srcRTP.GetTimestamp());
-
       // return more pending data frames, if any
       if (videoEncoder->MoreToIncEncode()) {
         unsigned payloadLength = 0;
@@ -334,8 +346,13 @@ class H261EncoderContext
         dstRTP.SetPayloadSize(payloadLength);
         dstRTP.SetMarker(FALSE);
         dstLen = dstRTP.GetPacketLen();
-        flags = videoEncoder->MoreToIncEncode() ? 0 : PluginCodec_ReturnCoderLastFrame;
+
+        flags = 0;
+        flags |= videoEncoder->MoreToIncEncode() ? 0 : PluginCodec_ReturnCoderLastFrame;  // marker bit on last frame of video
+        flags |= PluginCodec_ReturnCoderIFrame;                                           // sadly, this encoder *always* returns I-frames :(
+
         dstRTP.SetMarker(!videoEncoder->MoreToIncEncode());
+        dstRTP.SetTimestamp(lastTimeStamp);
         return 1;
       }
 
@@ -343,14 +360,11 @@ class H261EncoderContext
       // from here on, this is encoding a new frame
       //
 
+      // get the timestamp we will be using for the rest of the frame
+      lastTimeStamp = srcRTP.GetTimestamp();
+
       // update the video quality
       videoEncoder->SetQualityLevel(videoQuality);
-
-      // if fast update flag is set, do the fast update
-      if ((flags & PluginCodec_CoderForceIFrame) != 0 || forceIFrame) {
-        videoEncoder->FastUpdatePicture();
-        forceIFrame = false;
-      }
 
       // get and validate header
       if (srcRTP.GetPayloadSize() < sizeof(PluginCodec_Video_FrameHeader)) {
@@ -382,6 +396,12 @@ class H261EncoderContext
       // "grab" the frame
       memcpy(videoEncoder->GetFramePtr(), header->data, frameWidth*frameHeight*12/8);
 
+      // force I-frame, if requested
+      if (forceIFrame || (flags & PluginCodec_CoderForceIFrame) != 0) {
+        videoEncoder->FastUpdatePicture();
+        forceIFrame = FALSE;
+      }
+
       // preprocess the data
       videoEncoder->PreProcessOneFrame();
 
@@ -395,9 +415,13 @@ class H261EncoderContext
         dstLen = dstRTP.GetPacketLen();
       }
 
-      // marker flag set on last frame of video
-      flags = videoEncoder->MoreToIncEncode() ? 0 : PluginCodec_ReturnCoderLastFrame;
+      
+      flags = 0;
+      flags |= videoEncoder->MoreToIncEncode() ? 0 : PluginCodec_ReturnCoderLastFrame;  // marker flag set on last frame of video
+      flags |= PluginCodec_ReturnCoderIFrame;                                           // sadly, this encoder *always* returns I-frames :(
+
       dstRTP.SetMarker(!videoEncoder->MoreToIncEncode());
+      dstRTP.SetTimestamp(lastTimeStamp);
      
       return 1;
     }
@@ -452,6 +476,13 @@ static PluginCodec_ControlDefn cifEncoderControls[] = {
 
 static PluginCodec_ControlDefn qcifEncoderControls[] = {
   { "get_codec_options",    coder_get_qcif_options },
+  { "set_codec_options",    encoder_set_options },
+  { "get_output_data_size", encoder_get_output_data_size },
+  { NULL }
+};
+
+static PluginCodec_ControlDefn sipEncoderControls[] = {
+  { "get_codec_options",    coder_get_sip_options },
   { "set_codec_options",    encoder_set_options },
   { "get_output_data_size", encoder_get_output_data_size },
   { NULL }
@@ -569,12 +600,12 @@ class H261DecoderContext
       videoDecoder->resetndblk();
 
       dstLen = dstRTP.GetPacketLen();
-      flags = PluginCodec_ReturnCoderLastFrame;
+      flags = PluginCodec_ReturnCoderIFrame;   // THIS NEEDS TO BE CHANGED TO DO CORRECT I-FRAME DETECTION
       return TRUE;
     }
 };
 
-static void * create_decoder(const struct PluginCodec_Definition * /*codec*/)
+static void * create_decoder(const struct PluginCodec_Definition *)
 {
   return new H261DecoderContext;
 }
@@ -591,24 +622,16 @@ static int decoder_set_options(
   if (parmLen == NULL || *parmLen != sizeof(const char **))
     return 0;
 
+  // get the "frame width" media format parameter to use as a hint for the encoder to start off
   if (parm != NULL) {
     const char ** options = (const char **)parm;
-
-    bool qcifEnabled = false;
-    bool cifEnabled = false;
-
     int i;
+    int frameWidth = 0;
     for (i = 0; options[i] != NULL; i += 2) {
-      if (strcmpi(options[i], "h323_qcifMPI") == 0)
-        qcifEnabled = true;
-      else if (strcmpi(options[i], "h323_cifMPI") == 0)
-        cifEnabled = true;
+      if (strcmpi(options[i], "Frame Width") == 0)
+        frameWidth = atoi(options[i+1]);
     }
-
-    if (qcifEnabled) 
-      context->videoDecoder->fmt_ = IT_QCIF;
-    else
-      context->videoDecoder->fmt_ = IT_CIF;
+    context->videoDecoder->fmt_ = (frameWidth == QCIF_WIDTH) ? IT_QCIF : IT_CIF;
     context->videoDecoder->init();
   }
 
@@ -653,6 +676,13 @@ static PluginCodec_ControlDefn qcifDecoderControls[] = {
   { NULL }
 };
 
+static PluginCodec_ControlDefn sipDecoderControls[] = {
+  { "get_codec_options",    coder_get_sip_options },
+  { "set_codec_options",    decoder_set_options },
+  { "get_output_data_size", decoder_get_output_data_size },
+  { NULL }
+};
+
 /////////////////////////////////////////////////////////////////////////////
 
 
@@ -683,24 +713,16 @@ static const char YUV420PDesc[]  = { "YUV420P" };
 
 static const char h261QCIFDesc[]  = { "H.261-QCIF" };
 static const char h261CIFDesc[]   = { "H.261-CIF" };
+static const char h261Desc[]      = { "H.261" };
 
 static const char sdpH261[]   = { "h261" };
 
 /////////////////////////////////////////////////////////////////////////////
 
-static PluginCodec_H323VideoH261 h261Caps = {
-  0,               // qcifMPI;                           //	INTEGER (1..4) OPTIONAL,	-- units 1/29.97 Hz (0 if not present)
-  4,               // cifMPI;		                         // INTEGER (1..4) OPTIONAL,	-- units 1/29.97 Hz (0 if not present)
-	FALSE,           // temporalSpatialTradeOffCapability; //	BOOLEAN,
-  FALSE,           // stillImageTransmission:1;          //	BOOLEAN,	-- Annex D of H.261
-	6217,            // maxBitRate;                        //	INTEGER (1..19200),	-- units of 100 bit/s
-  FALSE            // videoBadMBsCap:1;                  //	BOOLEAN
-};
-
-static struct PluginCodec_Definition h261CodecDefn[4] = {
+static struct PluginCodec_Definition h261CodecDefn[6] = {
 
 { 
-  // CIF encoder
+  // H.323 CIF encoder
   PLUGIN_CODEC_VERSION_VIDEO,         // codec API version
   &licenseInfo,                       // license information
 
@@ -720,9 +742,9 @@ static struct PluginCodec_Definition h261CodecDefn[4] = {
   CIF_WIDTH,                          // frame width
   CIF_HEIGHT,                         // frame height
   10,                                 // recommended frame rate
-  60,                                 // maximum number of frames per packe
+  60,                                 // maximum frame rate
   H261_PAYLOAD,                       // IANA RTP payload code
-  sdpH261,                            // RTP payload name
+  NULL,                               // RTP payload name
 
   create_encoder,                     // create codec function
   destroy_encoder,                    // destroy codec
@@ -730,10 +752,10 @@ static struct PluginCodec_Definition h261CodecDefn[4] = {
   cifEncoderControls,                 // codec controls
 
   PluginCodec_H323VideoCodec_h261,    // h323CapabilityType 
-  &h261Caps                           // h323CapabilityData
+  NULL                                // h323CapabilityData
 },
 { 
-  // CIF decoder
+  // H.323 CIF decoder
   PLUGIN_CODEC_VERSION_VIDEO,         // codec API version
   &licenseInfo,                       // license information
 
@@ -753,9 +775,9 @@ static struct PluginCodec_Definition h261CodecDefn[4] = {
   CIF_WIDTH,                          // frame width
   CIF_HEIGHT,                         // frame height
   10,                                 // recommended frame rate
-  60,                                 // maximum number of frames per packe
+  60,                                 // maximum frame rate
   H261_PAYLOAD,                       // IANA RTP payload code
-  sdpH261,                            // RTP payload name
+  NULL,                               // RTP payload name
 
   create_decoder,                     // create codec function
   destroy_decoder,                    // destroy codec
@@ -763,11 +785,11 @@ static struct PluginCodec_Definition h261CodecDefn[4] = {
   cifDecoderControls,                 // codec controls
 
   PluginCodec_H323VideoCodec_h261,    // h323CapabilityType 
-  &h261Caps                           // h323CapabilityData
+  NULL                                // h323CapabilityData
 },
 
 { 
-  // QCIF encoder
+  // H.323 QCIF encoder
   PLUGIN_CODEC_VERSION_VIDEO,         // codec API version
   &licenseInfo,                       // license information
 
@@ -785,11 +807,11 @@ static struct PluginCodec_Definition h261CodecDefn[4] = {
   20000,                              // nanoseconds per frame
 
   QCIF_WIDTH,                         // frame width
-  QCIF_HEIGHT,                         // frame height
+  QCIF_HEIGHT,                        // frame height
   10,                                 // recommended frame rate
-  60,                                 // maximum number of frames per packe
+  60,                                 // maximum frame rate
   H261_PAYLOAD,                       // IANA RTP payload code
-  sdpH261,                            // RTP payload name
+  NULL,                               // RTP payload name
 
   create_encoder,                     // create codec function
   destroy_encoder,                    // destroy codec
@@ -797,10 +819,10 @@ static struct PluginCodec_Definition h261CodecDefn[4] = {
   qcifEncoderControls,                // codec controls
 
   PluginCodec_H323VideoCodec_h261,    // h323CapabilityType 
-  &h261Caps                           // h323CapabilityData
+  NULL                                // h323CapabilityData
 },
 { 
-  // QCIF decoder
+  // H.323 QCIF decoder
   PLUGIN_CODEC_VERSION_VIDEO,         // codec API version
   &licenseInfo,                       // license information
 
@@ -820,9 +842,9 @@ static struct PluginCodec_Definition h261CodecDefn[4] = {
   QCIF_WIDTH,                         // frame width
   QCIF_HEIGHT,                        // frame height
   10,                                 // recommended frame rate
-  60,                                 // maximum number of frames per packe
+  60,                                 // maximum frame rate
   H261_PAYLOAD,                       // IANA RTP payload code
-  sdpH261,                            // RTP payload name
+  NULL,                               // RTP payload name
 
   create_decoder,                     // create codec function
   destroy_decoder,                    // destroy codec
@@ -830,7 +852,74 @@ static struct PluginCodec_Definition h261CodecDefn[4] = {
   qcifDecoderControls,                // codec controls
 
   PluginCodec_H323VideoCodec_h261,    // h323CapabilityType 
-  &h261Caps                           // h323CapabilityData
+  NULL                                // h323CapabilityData
+},
+
+{ 
+  // SIP encoder
+  PLUGIN_CODEC_VERSION_VIDEO,         // codec API version
+  &licenseInfo,                       // license information
+
+  PluginCodec_MediaTypeVideo |        // audio codec
+  PluginCodec_RTPTypeExplicit,        // specified RTP type
+
+  h261Desc,                           // text decription
+  YUV420PDesc,                        // source format
+  h261Desc,                           // destination format
+
+  0,                                  // user data 
+
+  H261_CLOCKRATE,                     // samples per second
+  H261_BITRATE,                       // raw bits per second
+  20000,                              // nanoseconds per frame
+
+  CIF_WIDTH,                          // frame width
+  CIF_HEIGHT,                         // frame height
+  10,                                 // recommended frame rate
+  60,                                 // maximum frame rate
+  H261_PAYLOAD,                       // IANA RTP payload code
+  sdpH261,                            // RTP payload name
+
+  create_encoder,                     // create codec function
+  destroy_encoder,                    // destroy codec
+  codec_encoder,                      // encode/decode
+  sipEncoderControls,                 // codec controls
+
+  PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
+  NULL                                // h323CapabilityData
+},
+{ 
+  // SIP decoder
+  PLUGIN_CODEC_VERSION_VIDEO,         // codec API version
+  &licenseInfo,                       // license information
+
+  PluginCodec_MediaTypeVideo |        // audio codec
+  PluginCodec_RTPTypeExplicit,        // specified RTP type
+
+  h261Desc,                           // text decription
+  h261Desc,                           // source format
+  YUV420PDesc,                        // destination format
+
+  0,                                  // user data 
+
+  H261_CLOCKRATE,                     // samples per second
+  H261_BITRATE,                       // raw bits per second
+  20000,                              // nanoseconds per frame
+
+  CIF_WIDTH,                          // frame width
+  CIF_HEIGHT,                         // frame height
+  10,                                 // recommended frame rate
+  60,                                 // maximum frame rate
+  H261_PAYLOAD,                       // IANA RTP payload code
+  sdpH261,                            // RTP payload name
+
+  create_decoder,                     // create codec function
+  destroy_decoder,                    // destroy codec
+  codec_decoder,                      // encode/decode
+  sipDecoderControls,                 // codec controls
+
+  PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
+  NULL                                // h323CapabilityData
 },
 
 };

@@ -22,6 +22,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.1.2.5  2006/04/19 07:52:30  csoutheren
+ * Add ability to have SIP-only and H.323-only codecs, and implement for H.261
+ *
  * Revision 1.1.2.4  2006/04/06 01:21:18  csoutheren
  * More implementation of video codec plugins
  *
@@ -238,7 +241,8 @@ void DisplayCodecDefn(PluginCodec_Definition & defn)
     "H.261",
     "H.262",
     "H.263",
-    "is11172"
+    "is11172",
+    "NoH323"
   };
 
   cout << "  Capability type:     ";
@@ -327,30 +331,20 @@ void DisplayCodecDefn(PluginCodec_Definition & defn)
       break;
 
     case PluginCodec_H323VideoCodec_h261:
-      if (defn.h323CapabilityData == NULL)
-        cout << ", no data -> default comfortNoise=0, scrambled=0" << endl;
-      else {
-        struct PluginCodec_H323VideoH261 * data =
-            (struct PluginCodec_H323VideoH261 *)defn.h323CapabilityData;
-        cout << ",qcifMPI=" << (int)data->qcifMPI 
-             << ",cifMPI=" << (int)data->cifMPI 
-             << ",tsTradeoff=" << (int)data->temporalSpatialTradeOffCapability
-             << ",stillImageTransmission=" << (int)data->stillImageTransmission
-             << ",maxBitRate=" << data->maxBitRate
-             << ",videoBadMBsCap=" << (int)data->videoBadMBsCap;
-        cout << endl;
-      }
-      break;
-    case PluginCodec_H323VideoCodec_h262:
     case PluginCodec_H323VideoCodec_h263:
+      if (defn.h323CapabilityData != NULL)
+        cout << ", warning-non-NULL h323capData";
+      cout << ", TODO: adding in codec control here" << endl;
+      break;
+
+    case PluginCodec_H323VideoCodec_h262:
     case PluginCodec_H323VideoCodec_is11172:
-      if (defn.h323CapabilityData == NULL)
-        cout << ", no data" << endl;
-      else 
-        cout << " not supported" << endl;
+      if (defn.h323CapabilityData != NULL)
+        cout << ", warning-non-NULL h323capData" << endl;
       break;
 
     default:
+        cout << " not supported" << endl;
       break;
   }
 }

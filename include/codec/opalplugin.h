@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalplugin.h,v $
+ * Revision 1.1.2.3  2006/04/19 07:52:30  csoutheren
+ * Add ability to have SIP-only and H.323-only codecs, and implement for H.261
+ *
  * Revision 1.1.2.2  2006/04/06 01:21:16  csoutheren
  * More implementation of video codec plugins
  *
@@ -350,6 +353,8 @@ struct  PluginCodec_H323AudioG7231AnnexC {
   int	sidMode1:4;		            // INTEGER (6..17),	-- units octets
 };
 
+/* Following H.261 structure is no longer used */
+/*
 struct PluginCodec_H323VideoH261
 {
   unsigned char qcifMPI;                           //	INTEGER (1..4) OPTIONAL,	-- units 1/29.97 Hz (0 if not present)
@@ -359,7 +364,10 @@ struct PluginCodec_H323VideoH261
 	int maxBitRate;                                  //	INTEGER (1..19200),	-- units of 100 bit/s
   unsigned char videoBadMBsCap;                    //	BOOLEAN
 };
+*/
 
+/* Following H.263 structure is no longer used */
+/*
 struct PluginCodec_H323VideoH263
 {
 	unsigned char sqcifMPI;                          // INTEGER (1..32) OPTIONAL, -- units 1/29.97 Hz (0 if not present)
@@ -386,6 +394,7 @@ struct PluginCodec_H323VideoH263
 	void * enhancementLayerInfo;                     // not yet supported (NULL if not present)
 	void * h263Options;                              // not yet support (NULL if not present)
 };
+*/
 
 enum {
   PluginCodec_H323Codec_undefined,			// must be zero, so empty struct is undefined
@@ -416,10 +425,13 @@ enum {
   PluginCodec_H323AudioCodec_g729Extensions,      // not yet implemented
 
   // video codecs
-  PluginCodec_H323VideoCodec_h261,                // not yet implemented 
+  PluginCodec_H323VideoCodec_h261,                // implemented 
   PluginCodec_H323VideoCodec_h262,                // not yet implemented
   PluginCodec_H323VideoCodec_h263,                // not yet implemented
   PluginCodec_H323VideoCodec_is11172,             // not yet implemented
+
+  // special codes
+  PluginCodec_H323Codec_NoH323 = 0xff,            // used for SIP-only codecs
 };
 
 /////////////////

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vidcodec.cxx,v $
- * Revision 1.2012.4.1  2006/03/23 07:55:18  csoutheren
+ * Revision 1.2012.4.2  2006/04/19 07:52:30  csoutheren
+ * Add ability to have SIP-only and H.323-only codecs, and implement for H.261
+ *
+ * Revision 2.11.4.1  2006/03/23 07:55:18  csoutheren
  * Audio plugin H.323 capability merging completed.
  * GSM, LBC, G.711 working. Speex and LPC-10 are not
  *
@@ -136,7 +139,7 @@ OpalVideoTranscoder::OpalVideoTranscoder(const OpalMediaFormat & inputMediaForma
 {
   UpdateOutputMediaFormat(outputMediaFormat);
   fillLevel = 5;
-  updatePicture = false;
+  updatePictureCount = 0;
 }
 
 
@@ -160,7 +163,7 @@ BOOL OpalVideoTranscoder::UpdateOutputMediaFormat(const OpalMediaFormat & mediaF
 BOOL OpalVideoTranscoder::ExecuteCommand(const OpalMediaCommand & command)
 {
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
-    updatePicture = true;
+    ++updatePictureCount;
     return TRUE;
   }
 
