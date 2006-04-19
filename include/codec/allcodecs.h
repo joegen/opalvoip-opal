@@ -23,7 +23,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: allcodecs.h,v $
- * Revision 1.2010.4.2  2006/04/06 01:21:16  csoutheren
+ * Revision 1.2010.4.3  2006/04/19 04:58:55  csoutheren
+ * Debugging and testing of new video plugins
+ * H.261 working in both CIF and QCIF modes in H.323
+ *
+ * Revision 2.9.4.2  2006/04/06 01:21:16  csoutheren
  * More implementation of video codec plugins
  *
  * Revision 2.9.4.1  2006/03/16 07:06:00  csoutheren
@@ -64,8 +68,8 @@
 
 #include <opal/buildopts.h>
 
-#include <codec/g711codec.h>
-OPAL_REGISTER_G711();
+//#include <codec/g711codec.h>
+//OPAL_REGISTER_G711();
 
 //#if VOICE_AGE_G729A
 //#include <codec/g729codec.h>
