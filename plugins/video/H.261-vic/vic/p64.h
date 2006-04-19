@@ -35,6 +35,9 @@
 /************ Change log
  *
  * $Log: p64.h,v $
+ * Revision 1.1.2.2  2006/04/19 04:59:29  csoutheren
+ * Allow specification of CIF and QCIF capabilities
+ *
  * Revision 1.1.2.1  2006/04/06 01:17:17  csoutheren
  * Initial version of H.261 video codec plugin for OPAL
  *
@@ -87,6 +90,7 @@ struct huffcode;
 
 class P64Decoder{
     public:
+	P64Decoder();
 	virtual ~P64Decoder();
 	u_char* GetFramePtr() const { return (back_); }
 	inline int ndblk() const { return (ndblk_); }
@@ -114,9 +118,13 @@ class P64Decoder{
 
 	inline void marks(u_char* p) { marks_ = p; }
 	inline void mark(int v) { mark_ = v; }
-    protected:
-	P64Decoder();
+
+#define IT_QCIF	0
+#define IT_CIF	1
+	int fmt_;		/* image format (CIF/QCIF) */
 	void init();
+
+    protected:
 	virtual void allocate() = 0;
 	void inithuff();
 	void initquant();
@@ -171,9 +179,6 @@ class P64Decoder{
 	u_int width_;		/* width of Y component */
 	u_int height_;		/* height of Y component */
 	
-#define IT_QCIF	0
-#define IT_CIF	1
-	int fmt_;		/* image format (CIF/QCIF) */
 	int ngob_;		/* number of gobs (12 for CIF, 3 for QCIF) */
 	int maxgob_;		/* max gob seen this frame */
 	int ndblk_;		/* # of decoded macroblocks */
