@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2104  2006/04/10 05:17:47  csoutheren
+ * Revision 1.2105  2006/04/20 16:52:22  hfriederich
+ * Adding support for H.224/H.281
+ *
+ * Revision 2.103  2006/04/10 05:17:47  csoutheren
  * Use locking version of GetOtherConnection rather than unlocked version
  *
  * Revision 2.102  2006/03/23 00:24:49  csoutheren
@@ -1477,7 +1480,7 @@
 #include <opal/call.h>
 #include <opal/patch.h>
 #include <codec/rfc2833.h>
-
+#include <h224/h323h224.h>
 
 const PTimeInterval MonitorCallStatusTime(0, 10); // Seconds
 
@@ -1619,6 +1622,7 @@ H323Connection::H323Connection(OpalCall & call,
   mustSendDRQ = FALSE;
   earlyStart = FALSE;
   startT120 = TRUE;
+  startH224 = ep.IsH224Enabled();
   lastPDUWasH245inSETUP = FALSE;
   endSessionNeeded = FALSE;
 
@@ -4474,6 +4478,13 @@ void H323Connection::OnSetLocalCapabilities()
         simultaneous = localCapabilities.AddAllCapabilities(endpoint, 0, simultaneous, format);
     }
   }
+  
+#ifdef OPAL_H224
+  // If H.224 is enabled, add the corresponding capabilities
+  if(GetEndPoint().IsH224Enabled()) {
+    localCapabilities.SetCapability(0, P_MAX_INDEX, new H323_H224Capability());
+  }
+#endif
 
   H323_UserInputCapability::AddAllCapabilities(localCapabilities, 0, P_MAX_INDEX);
 
@@ -4576,6 +4587,23 @@ void H323Connection::InternalEstablishedConnectionCheck()
 
     default :
       break;
+  }
+  
+  if(h245_available && startH224) {
+    if(remoteCapabilities.FindCapability(OPAL_H224_CAPABILITY_NAME) != NULL) {
+      H323Capability * capability = localCapabilities.FindCapability(OPAL_H224_CAPABILITY_NAME);
+      if(capability != NULL) {
+	    if(logicalChannels->Open(*capability, OpalMediaFormat::DefaultH224SessionID)) {
+		  H323Channel * channel = capability->CreateChannel(*this, H323Channel::IsTransmitter, OpalMediaFormat::DefaultH224SessionID, NULL);
+          if(channel != NULL) {
+			channel->SetNumber(logicalChannels->GetNextChannelNumber());
+			fastStartChannels.Append(channel);
+          }
+        }
+      }
+    }
+	   
+	startH224 = FALSE;
   }
 }
 

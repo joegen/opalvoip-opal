@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2035  2006/03/07 11:23:46  csoutheren
+ * Revision 1.2036  2006/04/20 16:52:22  hfriederich
+ * Adding support for H.224/H.281
+ *
+ * Revision 2.34  2006/03/07 11:23:46  csoutheren
  * Add ability to disable GRQ on GK registration
  *
  * Revision 2.33  2006/02/22 10:40:09  csoutheren
@@ -1303,6 +1306,14 @@ class H323EndPoint : public OpalEndPoint
     /**See if should auto-start transmit fax channels on connection.
      */
     BOOL CanAutoStartTransmitFax() const { return autoStartTransmitFax; }
+	
+    /** Returns whether H.224 is enabled or not
+     */
+    BOOL IsH224Enabled() const { return isH224Enabled; }
+	
+    /** Enables / disables H.224
+	 */
+    void SetIsH224Enabled(BOOL flag) { isH224Enabled = flag; }
 
     /**See if should automatically do call forward of connection.
      */
@@ -1616,6 +1627,7 @@ class H323EndPoint : public OpalEndPoint
     PStringList localAliasNames;
     BOOL        autoStartReceiveFax;
     BOOL        autoStartTransmitFax;
+    BOOL        isH224Enabled;
     BOOL        autoCallForward;
     BOOL        disableFastStart;
     BOOL        disableH245Tunneling;
