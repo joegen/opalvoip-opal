@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2053  2006/03/20 10:37:47  csoutheren
+ * Revision 1.2054  2006/04/20 16:52:22  hfriederich
+ * Adding support for H.224/H.281
+ *
+ * Revision 2.52  2006/03/20 10:37:47  csoutheren
  * Applied patch #1453753 - added locking on media stream manipulation
  * Thanks to Dinis Rosario
  *
@@ -231,7 +234,8 @@ class OpalRFC2833Proto;
 class OpalRFC2833Info;
 class OpalT120Protocol;
 class OpalT38Protocol;
-
+class OpalH224Handler;
+class OpalH281Handler;
 
 /**This is the base class for connections to an endpoint.
    A particular protocol will have a descendant class from this to implement
@@ -980,6 +984,35 @@ class OpalConnection : public PSafeObject
        while keeping track of that variable for autmatic deletion.
       */
     virtual OpalT38Protocol * CreateT38ProtocolHandler();
+	
+	/** Create an instance of the H.224 protocol handler.
+	    This is called when the subsystem requires that a H.224 channel be established.
+		
+	    Note that if the application overrides this it should return a pointer
+	    to a heap variable (using new) as it will be automatically deleted when
+	    the OpalConnection is deleted.
+	
+	    The default behaviour calls the OpalEndpoint function of the same name if
+        there is not already a H.224 handler associated with this connection. If there
+        is already such a H.224 handler associated, this instance is returned instead.
+	  */
+	virtual OpalH224Handler *CreateH224ProtocolHandler(unsigned sessionID);
+	
+	/** Create an instance of the H.281 protocol handler.
+		This is called when the subsystem requires that a H.224 channel be established.
+		
+		Note that if the application overrides this it should return a pointer
+		to a heap variable (using new) as it will be automatically deleted when
+		the associated H.224 handler is deleted.
+		
+		The default behaviour calls the OpalEndpoint function of the same name.
+	*/
+	virtual OpalH281Handler *CreateH281ProtocolHandler(OpalH224Handler & h224Handler);
+	
+    /** Returns the H.224 handler associated with this connection or NULL if no
+		handler was created
+	  */
+	OpalH224Handler * GetH224Handler() const { return  h224Handler; }
 
   //@}
 
@@ -1148,6 +1181,7 @@ class OpalConnection : public PSafeObject
     OpalRFC2833Proto    * rfc2833Handler;
     OpalT120Protocol    * t120handler;
     OpalT38Protocol     * t38handler;
+	OpalH224Handler		* h224Handler;
 
 
     MediaAddressesDict  mediaTransportAddresses;

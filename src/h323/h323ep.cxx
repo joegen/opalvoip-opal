@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2049  2006/03/12 06:36:57  rjongbloed
+ * Revision 1.2050  2006/04/20 16:52:22  hfriederich
+ * Adding support for H.224/H.281
+ *
+ * Revision 2.48  2006/03/12 06:36:57  rjongbloed
  * Fixed DevStudio warning
  *
  * Revision 2.47  2006/03/07 11:23:46  csoutheren
@@ -819,6 +822,8 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   localAliasNames.AppendString(defaultLocalPartyName);
 
   autoStartReceiveFax = autoStartTransmitFax = FALSE;
+  
+  isH224Enabled = FALSE;
 
   m_bH245Disabled = FALSE;
   autoCallForward = TRUE;

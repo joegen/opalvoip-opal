@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2045  2006/01/02 15:52:38  dsandras
+ * Revision 1.2046  2006/04/20 16:52:22  hfriederich
+ * Adding support for H.224/H.281
+ *
+ * Revision 2.44  2006/01/02 15:52:38  dsandras
  * Added what was required to merge changes from OpenH323 Altas_devel_2 in gkclient.cxx, gkserver.cxx and channels.cxx.
  *
  * Revision 2.43  2005/12/09 05:41:10  csoutheren
@@ -2306,6 +2309,7 @@ class H323Connection : public OpalConnection
     BOOL transmitterSidePaused;
     BOOL earlyStart;
     BOOL startT120;
+	BOOL startH224;
     PString    t38ModeChangeCapabilities;
     PSyncPoint digitsWaitFlag;
     BOOL       endSessionNeeded;

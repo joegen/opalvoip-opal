@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2039  2006/04/09 12:01:43  rjongbloed
+ * Revision 1.2040  2006/04/20 16:52:22  hfriederich
+ * Adding support for H.224/H.281
+ *
+ * Revision 2.38  2006/04/09 12:01:43  rjongbloed
  * Added missing Clone() functions so media options propagate correctly.
  *
  * Revision 2.37  2005/12/27 20:46:09  dsandras
@@ -695,7 +698,8 @@ class OpalMediaFormat : public PCaselessString
     enum {
       DefaultAudioSessionID = 1,
       DefaultVideoSessionID = 2,
-      DefaultDataSessionID  = 3
+      DefaultDataSessionID  = 3,
+      DefaultH224SessionID  = 4
     };
 
     /**Get the default session ID for media format.

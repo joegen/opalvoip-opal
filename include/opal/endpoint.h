@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2031  2006/02/22 10:40:09  csoutheren
+ * Revision 1.2032  2006/04/20 16:52:22  hfriederich
+ * Adding support for H.224/H.281
+ *
+ * Revision 2.30  2006/02/22 10:40:09  csoutheren
  * Added patch #1374583 from Frederic Heem
  * Added additional H.323 virtual function
  *
@@ -149,6 +152,8 @@
 
 class OpalCall;
 class OpalMediaStream;
+class OpalH224Handler;
+class OpalH281Handler;
 
 
 /**This class describes an endpoint base class.
@@ -647,6 +652,33 @@ class OpalEndPoint : public PObject
       */
     virtual OpalT38Protocol * CreateT38ProtocolHandler(
       const OpalConnection & connection  ///<  Connection for which T.38 handler created
+    ) const;
+	
+	/** Create an instance of the H.224 protocol handler.
+        This is called when the subsystem requires that a H.224 channel be established.
+		
+        Note that if the application overrides this it should return a pointer to a
+        heap variable (using new) as it will be automatically deleted when the Connection
+        is deleted.
+		
+        The default behaviour calls the OpalManager function of the same name.
+      */
+    virtual OpalH224Handler * CreateH224ProtocolHandler(
+      OpalConnection & connection, 
+      unsigned sessionID
+    ) const;
+	
+    /** Create an instance of the H.224 protocol handler.
+        This is called when the subsystem requires that a H.224 channel be established.
+		
+        Note that if the application overrides this it should return a pointer to a
+        heap variable (using new) as it will be automatically deleted when the Connection
+        is deleted.
+		
+        The default behaviour calls the OpalManager function of the same name
+      */
+    virtual OpalH281Handler * CreateH281ProtocolHandler(
+      OpalH224Handler & h224Handler
     ) const;
 
   //@}

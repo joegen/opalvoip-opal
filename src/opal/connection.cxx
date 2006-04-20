@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2060  2006/04/09 12:12:54  rjongbloed
+ * Revision 1.2061  2006/04/20 16:52:22  hfriederich
+ * Adding support for H.224/H.281
+ *
+ * Revision 2.59  2006/04/09 12:12:54  rjongbloed
  * Changed the media format option merging to include the transcoder formats.
  *
  * Revision 2.58  2006/03/29 23:57:52  csoutheren
@@ -249,7 +252,7 @@
 #include <rtp/rtp.h>
 #include <t120/t120proto.h>
 #include <t38/t38proto.h>
-
+#include <h224/h224handler.h>
 
 #define new PNEW
 
@@ -359,6 +362,7 @@ OpalConnection::OpalConnection(OpalCall & call,
 
   t120handler = NULL;
   t38handler = NULL;
+  h224Handler = NULL;
 }
 
 
@@ -369,6 +373,7 @@ OpalConnection::~OpalConnection()
   delete rfc2833Handler;
   delete t120handler;
   delete t38handler;
+  delete h224Handler;
 
   ownerCall.SafeDereference();
 
@@ -1076,6 +1081,20 @@ OpalT38Protocol * OpalConnection::CreateT38ProtocolHandler()
   if (t38handler == NULL)
     t38handler = endpoint.CreateT38ProtocolHandler(*this);
   return t38handler;
+}
+
+
+OpalH224Handler * OpalConnection::CreateH224ProtocolHandler(unsigned sessionID)
+{
+  if(h224Handler == NULL)
+    h224Handler = endpoint.CreateH224ProtocolHandler(*this, sessionID);
+	
+  return h224Handler;
+}
+
+OpalH281Handler * OpalConnection::CreateH281ProtocolHandler(OpalH224Handler & h224Handler)
+{
+  return endpoint.CreateH281ProtocolHandler(h224Handler);
 }
 
 
