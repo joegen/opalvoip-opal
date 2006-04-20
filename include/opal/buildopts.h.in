@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: buildopts.h.in,v $
+ * Revision 1.13  2006/04/20 16:56:41  hfriederich
+ * Changes to allow compilation of H.224/H.281 code as well as to disable H.224 entirely
+ *
  * Revision 1.12  2006/04/17 00:06:27  csoutheren
  * Allow ILBC codec to be disabled and detect if not present
  *
@@ -88,6 +91,7 @@
 #undef  OPAL_IAX2
 #undef	OPAL_SIP
 #undef	OPAL_H323
+#undef  OPAL_H224
 
 #if !defined(OPAL_H323) || !OPAL_H323
 #define NO_H323
