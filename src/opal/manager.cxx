@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2058  2006/03/20 10:37:47  csoutheren
+ * Revision 1.2059  2006/04/20 16:52:22  hfriederich
+ * Adding support for H.224/H.281
+ *
+ * Revision 2.57  2006/03/20 10:37:47  csoutheren
  * Applied patch #1453753 - added locking on media stream manipulation
  * Thanks to Dinis Rosario
  *
@@ -230,6 +233,8 @@
 #include <opal/patch.h>
 #include <opal/mediastrm.h>
 #include <codec/vidcodec.h>
+#include <h224/h224handler.h>
+#include <h224/h281handler.h>
 
 #include "../../version.h"
 
@@ -801,6 +806,28 @@ OpalT38Protocol * OpalManager::CreateT38ProtocolHandler(const OpalConnection & )
 {
   return NULL;
 }
+
+
+OpalH224Handler * OpalManager::CreateH224ProtocolHandler(OpalConnection & connection,
+														 unsigned sessionID) const
+{
+#ifdef OPAL_H224
+  return new OpalH224Handler(connection, sessionID);
+#else
+  return NULL;
+#endif
+}
+
+
+OpalH281Handler * OpalManager::CreateH281ProtocolHandler(OpalH224Handler & h224Handler) const
+{
+#ifdef OPAL_H224
+  return new OpalH281Handler(h224Handler);
+#else
+  return NULL;
+#endif
+}
+
 
 OpalManager::RouteEntry::RouteEntry(const PString & pat, const PString & dest)
   : pattern(pat),

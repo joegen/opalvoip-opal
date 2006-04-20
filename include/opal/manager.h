@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2046  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2047  2006/04/20 16:52:22  hfriederich
+ * Adding support for H.224/H.281
+ *
+ * Revision 2.45  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.44  2005/11/24 20:31:54  dsandras
@@ -195,7 +198,8 @@
 
 class OpalEndPoint;
 class OpalMediaPatch;
-
+class OpalH224Handler;
+class OpalH281Handler;
 
 /**This class is the central manager for OPAL.
    The OpalManager embodies the root of the tree of objects that constitute an
@@ -762,6 +766,32 @@ class OpalManager : public PObject
       */
     virtual OpalT38Protocol * CreateT38ProtocolHandler(
       const OpalConnection & connection  ///<  Connection for which T.38 handler created
+    ) const;
+	
+    /** Create an instance of the H.224 protocol handler.
+        This is called when the call subsystem requires that a H.224 channel be established.
+		
+        Note that if the application overrides this it should return a pointer
+        to a heap variable (using new) as it will be automatically deleted when
+        the OpalConnection is deleted.
+		
+        The default behaviour creates a standard OpalH224Handler instance
+      */
+	virtual OpalH224Handler * CreateH224ProtocolHandler(
+      OpalConnection & connection, unsigned sessionID
+    ) const;
+	
+    /** Create an instance of the H.281 protocol handler.
+        This is called when a H.224 channel is established.
+		
+        Note that if the application overrides this it should return a pointer
+        to a heap variable (using new) as it will be automatically deleted when
+        the OpalConnection is deleted.
+		
+        The default behaviour creates a standard OpalH281Handler instance
+      */
+	virtual OpalH281Handler * CreateH281ProtocolHandler(
+      OpalH224Handler & h224Handler
     ) const;
 
     class RouteEntry : public PObject

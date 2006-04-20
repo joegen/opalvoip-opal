@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2036  2006/03/12 06:36:57  rjongbloed
+ * Revision 1.2037  2006/04/20 16:52:22  hfriederich
+ * Adding support for H.224/H.281
+ *
+ * Revision 2.35  2006/03/12 06:36:57  rjongbloed
  * Fixed DevStudio warning
  *
  * Revision 2.34  2006/02/22 10:45:11  csoutheren
@@ -507,6 +510,19 @@ OpalT120Protocol * OpalEndPoint::CreateT120ProtocolHandler(const OpalConnection 
 OpalT38Protocol * OpalEndPoint::CreateT38ProtocolHandler(const OpalConnection & connection) const
 {
   return manager.CreateT38ProtocolHandler(connection);
+}
+
+
+OpalH224Handler * OpalEndPoint::CreateH224ProtocolHandler(OpalConnection & connection, 
+														  unsigned sessionID) const
+{
+  return manager.CreateH224ProtocolHandler(connection, sessionID);
+}
+
+
+OpalH281Handler * OpalEndPoint::CreateH281ProtocolHandler(OpalH224Handler & h224Handler) const
+{
+  return manager.CreateH281ProtocolHandler(h224Handler);
 }
 
 /////////////////////////////////////////////////////////////////////////////
