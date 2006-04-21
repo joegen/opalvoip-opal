@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2033  2006/03/29 23:53:54  csoutheren
+ * Revision 1.2034  2006/04/21 14:36:51  hfriederich
+ * Adding ability to parse and transmit simple bandwidth information
+ *
+ * Revision 2.32  2006/03/29 23:53:54  csoutheren
  * Make sure OpalTransportAddresses that are parsed from SDP are always udp$ and not
  *  tcp$
  *
@@ -663,6 +666,9 @@ void SDPMediaDescription::AddMediaFormats(const OpalMediaFormatList & mediaForma
 
 //////////////////////////////////////////////////////////////////////////////
 
+const char * const SDPSessionDescription::ConferenceTotalBandwidthModifier = "CT";
+const char * const SDPSessionDescription::ApplicationSpecificBandwidthModifier = "AS";
+
 SDPSessionDescription::SDPSessionDescription(const OpalTransportAddress & address)
   : sessionName(SIP_DEFAULT_SESSION_NAME),
     ownerUsername('-'),
@@ -672,6 +678,9 @@ SDPSessionDescription::SDPSessionDescription(const OpalTransportAddress & addres
   protocolVersion  = 0;
   ownerSessionId  = ownerVersion = PTime().GetTimeInSeconds();
   direction = SDPMediaDescription::Undefined;
+  
+  bandwidthModifier = "";
+  bandwidthValue = 0;
 }
 
 
@@ -716,6 +725,11 @@ void SDPSessionDescription::PrintOn(ostream & str) const
   // required by the RFC so it is probably a bug in the proxy
   if (useCommonConnect)
     str << "c=" << GetConnectAddressString(connectionAddress) << "\r\n";
+  
+  if(bandwidthModifier != "" && bandwidthValue != 0) {
+	  str << "b=" << bandwidthModifier << ":" << bandwidthValue << "\r\n";
+  }
+  
   str << "t=" << "0 0" << "\r\n";
 
   switch (direction) {
@@ -811,7 +825,14 @@ BOOL SDPSessionDescription::Decode(const PString & str)
             case 'u' : // URI of description
             case 'e' : // email address
             case 'p' : // phone number
+				break;
             case 'b' : // bandwidth information
+				PINDEX thePos = value.Find(':');
+				if(thePos != P_MAX_INDEX) {
+					bandwidthModifier = value.Left(thePos);
+					bandwidthValue = value.Mid(thePos+1).AsInteger();
+				}
+				break;
             case 'z' : // time zone adjustments
             case 'k' : // encryption key
             case 'r' : // zero or more repeat times
