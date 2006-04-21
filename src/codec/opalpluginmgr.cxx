@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
+ * Revision 1.1.2.10  2006/04/21 05:42:52  csoutheren
+ * Checked in forgotten changes to fix iFrame requests
+ *
  * Revision 1.1.2.9  2006/04/19 07:52:30  csoutheren
  * Add ability to have SIP-only and H.323-only codecs, and implement for H.261
  *
@@ -845,7 +848,6 @@ BOOL OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Dat
         commandNotifier(updatePictureCommand, 0); 
         PTRACE (3, "H261\t Could not decode frame, sending VideoUpdatePicture in hope of an I-Frame.");
       }
-      return TRUE;
     }
 
     if ((flags & PluginCodec_ReturnCoderLastFrame) != 0) {
