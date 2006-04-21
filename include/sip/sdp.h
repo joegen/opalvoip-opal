@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2018  2006/03/08 10:59:02  csoutheren
+ * Revision 1.2019  2006/04/21 14:36:51  hfriederich
+ * Adding ability to parse and transmit simple bandwidth information
+ *
+ * Revision 2.17  2006/03/08 10:59:02  csoutheren
  * Applied patch #1444783 - Add 'image' SDP meda type and 'udptl' transport protocol
  * Thanks to Drazen Dimoti
  *
@@ -280,7 +283,15 @@ class SDPSessionDescription : public PObject
     void SetDefaultConnectAddress(
       const OpalTransportAddress & address
     ) { defaultConnectAddress = address; }
+	
+	const PString & GetBandwidthModifier() const { return bandwidthModifier; }
+	void SetBandwidthModifier(const PString & modifier) { bandwidthModifier = modifier; }
+	
+	PINDEX GetBandwidthValue() const { return bandwidthValue; }
+	void SetBandwidthValue(PINDEX value) { bandwidthValue = value; }
 
+	static const char * const ConferenceTotalBandwidthModifier;
+	static const char * const ApplicationSpecificBandwidthModifier;
 
   protected:
     void ParseOwner(const PString & str);
@@ -296,6 +307,9 @@ class SDPSessionDescription : public PObject
     unsigned ownerVersion;
     OpalTransportAddress ownerAddress;
     OpalTransportAddress defaultConnectAddress;
+	
+	PString bandwidthModifier;
+	PINDEX bandwidthValue;
 };
 
 /////////////////////////////////////////////////////////
