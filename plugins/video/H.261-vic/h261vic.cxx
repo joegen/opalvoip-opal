@@ -26,6 +26,9 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261vic.cxx,v $
+ * Revision 1.1.2.5  2006/04/21 05:42:49  csoutheren
+ * Checked in forgotten changes to fix iFrame requests
+ *
  * Revision 1.1.2.4  2006/04/19 07:52:30  csoutheren
  * Add ability to have SIP-only and H.323-only codecs, and implement for H.261
  *
@@ -600,7 +603,7 @@ class H261DecoderContext
       videoDecoder->resetndblk();
 
       dstLen = dstRTP.GetPacketLen();
-      flags = PluginCodec_ReturnCoderIFrame;   // THIS NEEDS TO BE CHANGED TO DO CORRECT I-FRAME DETECTION
+      flags = PluginCodec_ReturnCoderLastFrame | PluginCodec_ReturnCoderIFrame;   // THIS NEEDS TO BE CHANGED TO DO CORRECT I-FRAME DETECTION
       return TRUE;
     }
 };
