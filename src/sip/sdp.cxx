@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2034  2006/04/21 14:36:51  hfriederich
+ * Revision 1.2035  2006/04/22 09:32:18  dsandras
+ * Fixed compilation error with GCC on Linux.
+ *
+ * Revision 2.33  2006/04/21 14:36:51  hfriederich
  * Adding ability to parse and transmit simple bandwidth information
  *
  * Revision 2.32  2006/03/29 23:53:54  csoutheren
@@ -803,6 +806,7 @@ BOOL SDPSessionDescription::Decode(const PString & str)
         /////////////////////////////////
 	  
         else if (currentMedia == NULL) {
+	  PINDEX thePos;
           switch (key[0]) {
             case 'v' : // protocol version (mandatory)
               protocolVersion = value.AsInteger();
@@ -825,14 +829,14 @@ BOOL SDPSessionDescription::Decode(const PString & str)
             case 'u' : // URI of description
             case 'e' : // email address
             case 'p' : // phone number
-				break;
+	      break;
             case 'b' : // bandwidth information
-				PINDEX thePos = value.Find(':');
-				if(thePos != P_MAX_INDEX) {
-					bandwidthModifier = value.Left(thePos);
-					bandwidthValue = value.Mid(thePos+1).AsInteger();
-				}
-				break;
+	      thePos = value.Find(':');
+	      if (thePos != P_MAX_INDEX) {
+		bandwidthModifier = value.Left(thePos);
+		bandwidthValue = value.Mid(thePos+1).AsInteger();
+	      }
+	      break;
             case 'z' : // time zone adjustments
             case 'k' : // encryption key
             case 'r' : // zero or more repeat times
