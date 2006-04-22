@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2145  2006/04/22 10:48:14  dsandras
+ * Revision 1.2146  2006/04/22 19:49:33  dsandras
+ * Immediately initialize the transport with the proxy address (if any) when
+ * doing the connection setup. Fixed Ekiga report #334455.
+ *
+ * Revision 2.144  2006/04/22 10:48:14  dsandras
  * Added support for SDP offers in the OK response, and SDP answer in the ACK
  * request.
  *
@@ -1131,6 +1135,9 @@ BOOL SIPConnection::SetUpConnection()
       transportAddress.SetPort(addrs [0].port);
     }
 #endif
+  PStringList routeSet = GetRouteSet();
+  if (!routeSet.IsEmpty()) 
+    transportAddress = routeSet[0];
 
   originating = TRUE;
 
