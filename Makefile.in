@@ -22,6 +22,11 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.31  2006/04/22 14:05:47  dsandras
+# When building a shared library x that references symbols in libraries y,
+# the y libraries need to be added to the linker command always. Thanks to
+# Vitaly Lipatov. (Fixes Ekiga report #338310).
+#
 # Revision 1.30  2006/04/20 16:56:41  hfriederich
 # Changes to allow compilation of H.224/H.281 code as well as to disable H.224 entirely
 #
@@ -729,17 +734,14 @@ $(LIBDIR)/$(OPAL_FILE) : $(TARGETLIB)
 
 ifeq ($(P_SHAREDLIB),1)
 
+  SYSLIBS += -L$(PW_LIBDIR) -l$(PTLIB_BASE)$(LIB_TYPE)
   ifeq ($(OSTYPE),beos)
     # BeOS requires different options when building shared libraries
-    # Also, when building a shared library x that references symbols in libraries y,
-    # the y libraries need to be added to the linker command
     LDSOOPTS = -nostdlib -nostart
     EXTLIBS = -lstdc++.r4
-    SYSLIBS += -L$(PW_LIBDIR) -l$(PTLIB_BASE)$(LIB_TYPE)
   else
     ifeq ($(OSTYPE),Darwin)
       LDSOOPTS = -dynamiclib
-      SYSLIBS += -l$(PTLIB_BASE)$(LIB_TYPE)
     else
       LDSOOPTS = -shared
     endif
