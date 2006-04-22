@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2144  2006/04/10 05:18:41  csoutheren
+ * Revision 1.2145  2006/04/22 10:48:14  dsandras
+ * Added support for SDP offers in the OK response, and SDP answer in the ACK
+ * request.
+ *
+ * Revision 2.143  2006/04/10 05:18:41  csoutheren
  * Fix problem where reverse channel is opened using wrong media format list
  *
  * Revision 2.142  2006/04/06 20:39:41  dsandras
@@ -779,8 +783,13 @@ BOOL SIPConnection::SetConnected()
   BOOL failure = !OnSendSDPMediaDescription(remoteSDP, SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut);
   failure = !OnSendSDPMediaDescription(remoteSDP, SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut) && failure;
   if (failure) {
-    Release(EndedByCapabilityExchange);
-    return FALSE;
+    SDPSessionDescription *sdp = (SDPSessionDescription *) &sdpOut;
+    failure = !BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
+    failure = !BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID) && failure;
+    if (failure) {
+      Release(EndedByCapabilityExchange);
+      return FALSE;
+    }
   }
     
   // update the route set and the target address according to 12.1.1
@@ -1540,7 +1549,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     delete originalInvite;
 
   originalInvite = new SIP_PDU(request);
-  remoteSDP = request.GetSDP();
+  if (request.HasSDP())
+    remoteSDP = request.GetSDP();
   if (!isReinvite)
     releaseMethod = ReleaseWithResponse;
 
@@ -1694,9 +1704,11 @@ void SIPConnection::AnsweringCall(AnswerCallResponse response)
 }
 
 
-void SIPConnection::OnReceivedACK(SIP_PDU & /*response*/)
+void SIPConnection::OnReceivedACK(SIP_PDU & response)
 {
   PTRACE(2, "SIP\tACK received: " << phase);
+  
+  OnReceivedSDP(response);
 
   // If we receive an ACK in established phase, perhaps it
   // is a re-INVITE
