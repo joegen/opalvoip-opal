@@ -24,7 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2121.2.12  2006/04/22 10:49:49  dsandras
+ * Revision 1.2121.2.13  2006/04/22 19:50:53  dsandras
+ * Backport from HEAD.
+ *
+ * Revision 2.145  2006/04/22 19:49:33  dsandras
+ * Immediately initialize the transport with the proxy address (if any) when
+ * doing the connection setup. Fixed Ekiga report #334455.
+ *
+ * Revision 2.120.2.12  2006/04/22 10:49:49  dsandras
  * Backport from HEAD.
  *
  * Revision 2.144  2006/04/22 10:48:14  dsandras
@@ -1131,6 +1138,9 @@ BOOL SIPConnection::WriteINVITE(OpalTransport & transport, void * param)
 
 BOOL SIPConnection::SetUpConnection()
 {
+  PStringList routeSet = GetRouteSet();
+  if (!routeSet.IsEmpty()) 
+    transportAddress = routeSet[0];
   SIPURL transportAddress = targetAddress;
 
   PTRACE(2, "SIP\tSetUpConnection: " << remotePartyAddress);
