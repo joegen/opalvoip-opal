@@ -24,7 +24,15 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2121.2.13  2006/04/22 19:50:53  dsandras
+ * Revision 1.2121.2.14  2006/04/23 20:17:10  dsandras
+ * Backport from HEAD.
+ *
+ * Revision 2.146  2006/04/23 20:12:52  dsandras
+ * The RFC tells that the SDP answer SHOULD have the same payload type than the
+ * SDP offer. Added rtpmap support to allow this. Fixes problems with Asterisk,
+ * and Ekiga report #337456.
+ *
+ * Revision 2.120.2.13  2006/04/22 19:50:53  dsandras
  * Backport from HEAD.
  *
  * Revision 2.145  2006/04/22 19:49:33  dsandras
@@ -932,6 +940,9 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
 
   // construct a new media session list 
   SDPMediaDescription * localMedia = new SDPMediaDescription(localAddress, rtpMediaType);
+  
+  // create map for RTP payloads
+  incomingMedia->CreateRTPMap(rtpSessionId, rtpPayloadMap);
 
   // Open the streams and the reverse media streams
   BOOL reverseStreamsFailed = TRUE;
@@ -982,7 +993,7 @@ BOOL SIPConnection::OnOpenSourceMediaStreams(const OpalMediaFormatList & remoteF
     if (mediaStream.GetSessionID() == sessionId) {
       OpalMediaFormat mediaFormat = mediaStream.GetMediaFormat();
       if (OpenSourceMediaStream(mediaFormat, sessionId) && localMedia) {
-	localMedia->AddMediaFormat(mediaStream.GetMediaFormat());
+        localMedia->AddMediaFormat(mediaStream.GetMediaFormat(), rtpPayloadMap);
 	reverseStreamsFailed = FALSE;
       }
     }
@@ -1312,7 +1323,7 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
   OpalMediaFormatList formats = ownerCall.GetMediaFormats(*this, FALSE);
   AdjustMediaFormats(formats);
 
-  localMedia->AddMediaFormats(formats, rtpSessionId);
+  localMedia->AddMediaFormats(formats, rtpSessionId, rtpPayloadMap);
 
   localMedia->SetDirection(GetDirection(rtpSessionId));
   sdp->AddMediaDescription(localMedia);
