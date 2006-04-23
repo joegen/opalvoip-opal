@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2019  2006/04/21 14:36:51  hfriederich
+ * Revision 1.2020  2006/04/23 20:12:52  dsandras
+ * The RFC tells that the SDP answer SHOULD have the same payload type than the
+ * SDP offer. Added rtpmap support to allow this. Fixes problems with Asterisk,
+ * and Ekiga report #337456.
+ *
+ * Revision 2.18  2006/04/21 14:36:51  hfriederich
  * Adding ability to parse and transmit simple bandwidth information
  *
  * Revision 2.17  2006/03/08 10:59:02  csoutheren
@@ -216,8 +221,8 @@ class SDPMediaDescription : public PObject
 
     void AddSDPMediaFormat(SDPMediaFormat * sdpMediaFormat);
 
-    void AddMediaFormat(const OpalMediaFormat & mediaFormat);
-    void AddMediaFormats(const OpalMediaFormatList & mediaFormats, unsigned session);
+    void AddMediaFormat(const OpalMediaFormat & mediaFormat, const RTP_DataFrame::PayloadMapType & map);
+    void AddMediaFormats(const OpalMediaFormatList & mediaFormats, unsigned session, const RTP_DataFrame::PayloadMapType & map);
 
     void SetAttribute(const PString & attr);
 
