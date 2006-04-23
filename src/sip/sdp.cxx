@@ -24,7 +24,15 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2027.2.2  2006/02/11 13:32:24  csoutheren
+ * Revision 1.2027.2.3  2006/04/23 20:17:10  dsandras
+ * Backport from HEAD.
+ *
+ * Revision 2.35  2006/04/23 20:12:52  dsandras
+ * The RFC tells that the SDP answer SHOULD have the same payload type than the
+ * SDP offer. Added rtpmap support to allow this. Fixes problems with Asterisk,
+ * and Ekiga report #337456.
+ *
+ * Revision 2.26.2.2  2006/02/11 13:32:24  csoutheren
  * Backported fixed from CVS head
  *
  * Revision 2.26.2.1  2006/02/06 04:38:38  csoutheren
@@ -602,12 +610,19 @@ void SDPMediaDescription::AddSDPMediaFormat(SDPMediaFormat * sdpMediaFormat)
 }
 
 
-void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
+void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat, const RTP_DataFrame::PayloadMapType & map)
 {
   RTP_DataFrame::PayloadTypes payloadType = mediaFormat.GetPayloadType();
   const char * encodingName = mediaFormat.GetEncodingName();
   unsigned clockRate = mediaFormat.GetClockRate();
 
+  RTP_DataFrame::PayloadMapType payloadTypeMap = map;
+  if (payloadTypeMap.size() != 0) {
+    RTP_DataFrame::PayloadMapType::iterator r = payloadTypeMap.find(payloadType);
+    if (r != payloadTypeMap.end())
+      payloadType = r->second;
+  }
+      
   if (payloadType >= RTP_DataFrame::MaxPayloadType || encodingName == NULL || *encodingName == '\0')
     return;
 
@@ -623,13 +638,13 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
 }
 
 
-void SDPMediaDescription::AddMediaFormats(const OpalMediaFormatList & mediaFormats, unsigned session)
+void SDPMediaDescription::AddMediaFormats(const OpalMediaFormatList & mediaFormats, unsigned session, const RTP_DataFrame::PayloadMapType & map)
 {
   for (PINDEX i = 0; i < mediaFormats.GetSize(); i++) {
     OpalMediaFormat mediaFormat = mediaFormats[i];
     if (mediaFormat.GetDefaultSessionID() == session &&
         mediaFormat.GetPayloadType() != RTP_DataFrame::IllegalPayloadType)
-      AddMediaFormat(mediaFormat);
+      AddMediaFormat(mediaFormat, map);
   }
 }
 
