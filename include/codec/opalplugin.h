@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalplugin.h,v $
+ * Revision 1.1.2.4  2006/04/24 09:09:37  csoutheren
+ * Added LGPL license
+ *
  * Revision 1.1.2.3  2006/04/19 07:52:30  csoutheren
  * Add ability to have SIP-only and H.323-only codecs, and implement for H.261
  *
@@ -144,6 +147,7 @@ enum {
   PluginCodec_License_Freeware                       = 3,
   PluginCodec_License_ResearchAndDevelopmentUseOnly  = 4,
   PluginCodec_License_BSD                            = 5,
+  PluginCodec_License_LGPL                           = 6,
 
   PluginCodec_License_NoRoyalties                    = 0x7f,
 
