@@ -19,10 +19,15 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q922.cxx,v $
+ * Revision 1.2  2006/04/24 12:53:50  rjongbloed
+ * Port of H.224 Far End Camera Control to DevStudio/Windows
+ *
  * Revision 1.1  2006/04/20 16:48:17  hfriederich
  * Initial version of H.224/H.281 implementation.
  *
  */
+
+#include <ptlib.h>
 
 #include <h224/q922.h>
 
@@ -90,8 +95,7 @@ void Q922_Frame::SetInformationFieldSize(PINDEX size)
 }
 
 
-BOOL Q922_Frame::Decode(const BYTE *data, 
-						PINDEX size)
+BOOL Q922_Frame::Decode(const BYTE *data, PINDEX size)
 {	
   // a valid frame must contain at least 2xFLAG, 3 octets Q922 header,
   // 2 octets FCS and at least 1 octet information
@@ -128,15 +132,7 @@ BOOL Q922_Frame::Decode(const BYTE *data,
 		
       // Found end flag
       // FCS is contained in firstOctet and secondOctet.
-      WORD fcs = 0;
-			
-#if PBYTE_ORDER == PLITTLE_ENDIAN
-      fcs = (firstOctet << 8);
-      fcs |= secondOctet;
-#elif PBYTE_ORDER == PBIG_ENDIAN
-      fcs = (secondOctet << 8);
-      fcs |= firstOctet;
-#endif
+      WORD fcs = (firstOctet << 8) | secondOctet;
 			
       // Calculate FCS from data to check
       WORD calculatedFCS = CalculateFCS((const BYTE *)theArray, arrayIndex);
@@ -185,16 +181,13 @@ PINDEX Q922_Frame::GetEncodedSize() const
   return 3+2*dataSize+3;
 }
 
-BOOL Q922_Frame::Encode(BYTE *buffer, 
-						PINDEX & size) const
+BOOL Q922_Frame::Encode(BYTE *buffer, PINDEX & size) const
 {
   BYTE bitIndex = 7;
   return Encode(buffer, size, bitIndex);
 }
 
-BOOL Q922_Frame::Encode(BYTE *buffer, 
-						PINDEX & size, 
-						BYTE & theBitIndex) const
+BOOL Q922_Frame::Encode(BYTE *buffer, PINDEX & size, BYTE & theBitIndex) const
 {
   if(informationFieldSize == 0)	{
     return FALSE;
@@ -220,16 +213,6 @@ BOOL Q922_Frame::Encode(BYTE *buffer,
   // calculating the FCS
   PINDEX dataSize = GetInformationFieldSize() + Q922_HEADER_SIZE;
   WORD fcs = CalculateFCS((const BYTE *)theArray, dataSize);
-  BYTE fcs1 = 0;
-  BYTE fcs2 = 0;
-	
-#if PBYTE_ORDER == PLITTLE_ENDIAN
-  fcs1 = (fcs >> 8) & 0x00ff;
-  fcs2 = fcs & 0x00ff;
-#elif PBYTE_ORDER == PBIG_ENDIAN
-  fcs1 = fcs & 0x00ff;
-  fcs2 = (fcs >> 8) & 0x00ff;
-#endif
 	
   // Encoding the data byte-by-byte
   PINDEX i;
@@ -239,8 +222,8 @@ BOOL Q922_Frame::Encode(BYTE *buffer,
   }
 	
   // Encoding the FCS
-  EncodeOctet(fcs1, buffer, octetIndex, bitIndex, onesCounter);
-  EncodeOctet(fcs2, buffer, octetIndex, bitIndex, onesCounter);
+  EncodeOctet((BYTE)(fcs >> 8), buffer, octetIndex, bitIndex, onesCounter);
+  EncodeOctet((BYTE)fcs, buffer, octetIndex, bitIndex, onesCounter);
 	
   // Appending three FLAG sequences to the buffer
   // the buffer is not necessary byte aligned!
@@ -443,7 +426,7 @@ void Q922_Frame::EncodeOctet(BYTE octet, BYTE *buffer,
   PINDEX i;
   for(i = 0; i < 8; i++) {
     // reading one bit from the octet and write it to the buffer
-    BYTE bit = (octet >> i) & 0x01;
+    BYTE bit = (BYTE)((octet >> i) & 0x01);
 		
     EncodeBit(bit, buffer, octetIndex, bitIndex);
 		
@@ -472,7 +455,7 @@ void Q922_Frame::EncodeOctetNoEscape(BYTE octet,
   PINDEX i;
   for(i = 0; i < 8; i++) {
     // reating one bit from the octet and write it to the buffer
-    BYTE bit = (octet >> i) & 0x01;
+    BYTE bit = (BYTE)((octet >> i) & 0x01);
 		
     EncodeBit(bit, buffer, octetIndex, bitIndex);
   }
