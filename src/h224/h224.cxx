@@ -19,14 +19,20 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h224.cxx,v $
+ * Revision 1.2  2006/04/24 12:53:50  rjongbloed
+ * Port of H.224 Far End Camera Control to DevStudio/Windows
+ *
  * Revision 1.1  2006/04/20 16:48:17  hfriederich
  * Initial version of H.224/H.281 implementation.
  *
  */
 
+#include <ptlib.h>
+
 #include <h224/h224.h>
 #include <h224/h224handler.h>
-#include <h323/h323con.h>s
+#include <h323/h323con.h>
+
 
 H224_Frame::H224_Frame(PINDEX size)
 : Q922_Frame(H224_HEADER_SIZE + size)
@@ -68,59 +74,27 @@ void H224_Frame::SetHighPriority(BOOL flag)
 WORD H224_Frame::GetDestinationTerminalAddress() const
 {
   BYTE *data = GetInformationFieldPtr();
-	
-#if PBYTE_ORDER == PLITTLE_ENDIAN
-  WORD address = data[1] << 8;
-  address |= data[0];
-#elif PBYTE_ORDER == PBIG_ENDIAN
-  WORD address = data[0] << 8;
-  address |= data[1];
-#endif
-	
-  return address;
+  return (WORD)((data[0] << 8) | data[1]);
 }
 
 void H224_Frame::SetDestinationTerminalAddress(WORD address)
 {
   BYTE *data = GetInformationFieldPtr();
-	
-#if PBYTE_ORDER == PLITTLE_ENDIAN
-  data[0] = (address & 0x00ff);
-  data[1] = (address >> 8);
-#elif PBYTE_ORDER == PBIG_ENDIAN
-  data[0] = (address >> 8);
-  data[1] = (address & 0x00ff);
-#endif
-
+  data[0] = (BYTE)(address >> 8);
+  data[1] = (BYTE) address;
 }
 
 WORD H224_Frame::GetSourceTerminalAddress() const
 {
   BYTE *data = GetInformationFieldPtr();
-	
-#if PBYTE_ORDER == PLITTLE_ENDIAN
-  WORD address = data[3] << 8;
-  address |= data[2];
-#elif PBYTE_ORDER == PBIG_ENDIAN
-  WORD address = data[2] << 8;
-  address |= data[3];
-#endif
-	
-  return address;
+  return (WORD)((data[2] << 8) | data[3]);
 }
 
 void H224_Frame::SetSourceTerminalAddress(WORD address)
 {
   BYTE *data = GetInformationFieldPtr();
-	
-#if PBYTE_ORDER == PLITTLE_ENDIAN
-  data[2] = (address & 0x00ff);
-  data[3] = (address >> 8);
-#elif PBYTE_ORDER == PBIG_ENDIAN
-  data[2] = (address >> 8);
-  data[3] = (address & 0x00ff);
-#endif
-	
+  data[2] = (BYTE)(address >> 8);
+  data[3] = (BYTE) address;
 }
 
 BYTE H224_Frame::GetClientID() const
@@ -621,7 +595,7 @@ void OpalH224Handler::TransmitFrame(H224_Frame & frame)
   // determining correct timestamp
   PTime currentTime = PTime();
   PTimeInterval timePassed = currentTime - *transmitStartTime;
-  transmitFrame->SetTimestamp(timePassed.GetMilliSeconds() * 8);
+  transmitFrame->SetTimestamp((DWORD)timePassed.GetMilliSeconds() * 8);
   
   transmitFrame->SetPayloadSize(size);
   transmitFrame->SetMarker(TRUE);
@@ -651,7 +625,7 @@ void OpalH224ReceiverThread::Main()
   RTP_DataFrame packet = RTP_DataFrame(300);
   H224_Frame h224Frame = H224_Frame();
 	
-  while(TRUE) {
+  for (;;) {
 	  
     inUse.Wait();
 		

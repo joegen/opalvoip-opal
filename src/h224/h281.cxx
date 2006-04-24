@@ -19,10 +19,15 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h281.cxx,v $
+ * Revision 1.2  2006/04/24 12:53:50  rjongbloed
+ * Port of H.224 Far End Camera Control to DevStudio/Windows
+ *
  * Revision 1.1  2006/04/20 16:48:17  hfriederich
  * Initial version of H.224/H.281 implementation.
  *
  */
+
+#include <ptlib.h>
 
 #include <h224/h281.h>
 #include <h224/h281handler.h>
@@ -444,10 +449,9 @@ OpalH281Handler::OpalH281Handler(OpalH224Handler & theH224Handler)
   remoteNumberOfPresets = 0;
 	
   // set correct video source numbers
-  for(PINDEX i = 0; i < 6; i++) {
-	  
-    localVideoSources[i].SetVideoSourceNumber(i);
-	remoteVideoSources[i].SetVideoSourceNumber(i);
+  for(BYTE srcnum = 0; srcnum < 6; srcnum++) {	  
+    localVideoSources[srcnum].SetVideoSourceNumber(srcnum);
+    remoteVideoSources[srcnum].SetVideoSourceNumber(srcnum);
   }
 	
   // initiate the local cameras so that the main camera is enabled
@@ -490,35 +494,35 @@ H281VideoSource & OpalH281Handler::GetRemoteVideoSource(VideoSource source)
 }
 
 void OpalH281Handler::StartAction(H281_Frame::PanDirection panDirection,
-							  H281_Frame::TiltDirection tiltDirection,
-							  H281_Frame::ZoomDirection zoomDirection,
-							  H281_Frame::FocusDirection focusDirection)
+                                  H281_Frame::TiltDirection tiltDirection,
+                                  H281_Frame::ZoomDirection zoomDirection,
+                                  H281_Frame::FocusDirection focusDirection)
 {
   PWaitAndSignal m(h224Handler.GetTransmitMutex());
-	
+
   if(transmitFrame.GetRequestType() != H281_Frame::IllegalRequest) {
-	
-    if(transmitFrame.GetPanDirection() == panDirection &&
-	   transmitFrame.GetTiltDirection() == tiltDirection &&
-	   transmitFrame.GetZoomDirection() == zoomDirection &&
-	   transmitFrame.GetFocusDirection() == focusDirection)
-	{
-	  // same request as before, simply continuing
-	  return;
-	}
-		
-	StopAction();
+
+    if (transmitFrame.GetPanDirection() == panDirection &&
+        transmitFrame.GetTiltDirection() == tiltDirection &&
+        transmitFrame.GetZoomDirection() == zoomDirection &&
+        transmitFrame.GetFocusDirection() == focusDirection)
+    {
+      // same request as before, simply continuing
+      return;
+    }
+
+    StopAction();
   }
-	
+
   transmitFrame.SetRequestType(H281_Frame::StartAction);
   transmitFrame.SetPanDirection(panDirection);
   transmitFrame.SetTiltDirection(tiltDirection);
   transmitFrame.SetZoomDirection(zoomDirection);
   transmitFrame.SetFocusDirection(focusDirection);
   transmitFrame.SetTimeout(0); //800msec
-	
+
   h224Handler.TransmitClientFrame(H281_CLIENT_ID, transmitFrame);
-	
+
   // send a ContinueAction every 400msec
   transmitTimer.RunContinuous(400);
 }
@@ -726,10 +730,10 @@ void OpalH281Handler::OnRemoteCapabilitiesUpdated()
 {
 }
 
-void OpalH281Handler::OnStartAction(H281_Frame::PanDirection panDirection,
-									H281_Frame::TiltDirection tiltDirection,
-									H281_Frame::ZoomDirection zoomDirection,
-									H281_Frame::FocusDirection focusDirection)
+void OpalH281Handler::OnStartAction(H281_Frame::PanDirection /*panDirection*/,
+                                    H281_Frame::TiltDirection /*tiltDirection*/,
+                                    H281_Frame::ZoomDirection /*zoomDirection*/,
+                                    H281_Frame::FocusDirection /*focusDirection*/)
 {
   // not handled
 }
@@ -739,17 +743,17 @@ void OpalH281Handler::OnStopAction()
   // not handled
 }
 
-void OpalH281Handler::OnSelectVideoSource(BYTE videoSourceNumber, H281_Frame::VideoMode videoMode)
+void OpalH281Handler::OnSelectVideoSource(BYTE /*videoSourceNumber*/, H281_Frame::VideoMode /*videoMode*/)
 {
   // not handled
 }
 
-void OpalH281Handler::OnStoreAsPreset(BYTE presetNumber)
+void OpalH281Handler::OnStoreAsPreset(BYTE /*presetNumber*/)
 {
   // not handled
 }
 
-void OpalH281Handler::OnActivatePreset(BYTE presetNumber)
+void OpalH281Handler::OnActivatePreset(BYTE /*presetNumber*/)
 {
   // not handled
 }
