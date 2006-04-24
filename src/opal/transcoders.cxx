@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2020.2.4  2006/04/11 05:12:25  csoutheren
+ * Revision 1.2020.2.5  2006/04/24 01:50:00  csoutheren
+ * Fixed problem with selecting codecs from wrong sessions
+ *
+ * Revision 2.19.2.4  2006/04/11 05:12:25  csoutheren
  * Updated to current OpalMediaFormat changes
  *
  * Revision 2.19.2.3  2006/04/10 06:24:30  csoutheren
@@ -247,15 +250,20 @@ BOOL OpalTranscoder::SelectFormats(unsigned sessionID,
   // Search for a single transcoder to get from a to b
   for (d = 0; d < dstFormats.GetSize(); d++) {
     dstFormat = dstFormats[d];
-    for (s = 0; s < srcFormats.GetSize(); s++) {
-      srcFormat = srcFormats[s];
-      OpalMediaFormatPair search(srcFormat, dstFormat);
-      OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
-      for (OpalTranscoderIterator i = availableTranscoders.begin(); i != availableTranscoders.end(); ++i) {
-        if (search == *i)
-          return srcFormat.Merge(i->GetInputFormat()) &&
-                 dstFormat.Merge(i->GetOutputFormat()) &&
-                 srcFormat.Merge(dstFormat);
+    if (dstFormat.GetDefaultSessionID() == sessionID) {
+      for (s = 0; s < srcFormats.GetSize(); s++) {
+        srcFormat = srcFormats[s];
+        if (srcFormat.GetDefaultSessionID() == sessionID) {
+          OpalMediaFormatPair search(srcFormat, dstFormat);
+          OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
+          for (OpalTranscoderIterator i = availableTranscoders.begin(); i != availableTranscoders.end(); ++i) {
+            OpalMediaFormatPair & target = *i;
+            if (search == target)
+              return srcFormat.Merge(target.GetInputFormat()) &&
+                     dstFormat.Merge(target.GetOutputFormat()) &&
+                     srcFormat.Merge(dstFormat);
+          }
+        }
       }
     }
   }
@@ -263,11 +271,15 @@ BOOL OpalTranscoder::SelectFormats(unsigned sessionID,
   // Last gasp search for a double transcoder to get from a to b
   for (d = 0; d < dstFormats.GetSize(); d++) {
     dstFormat = dstFormats[d];
-    for (s = 0; s < srcFormats.GetSize(); s++) {
-      srcFormat = srcFormats[s];
-      OpalMediaFormat intermediateFormat;
-      if (FindIntermediateFormat(srcFormat, dstFormat, intermediateFormat))
-        return TRUE;
+    if (dstFormat.GetDefaultSessionID() == sessionID) {
+      for (s = 0; s < srcFormats.GetSize(); s++) {
+        srcFormat = srcFormats[s];
+        if (srcFormat.GetDefaultSessionID() == sessionID) {
+          OpalMediaFormat intermediateFormat;
+          if (FindIntermediateFormat(srcFormat, dstFormat, intermediateFormat))
+            return TRUE;
+        }
+      }
     }
   }
 
