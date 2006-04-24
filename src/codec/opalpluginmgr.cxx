@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
+ * Revision 1.1.2.11  2006/04/24 09:09:13  csoutheren
+ * Added H.263 codec definitions
+ *
  * Revision 1.1.2.10  2006/04/21 05:42:52  csoutheren
  * Checked in forgotten changes to fix iFrame requests
  *
@@ -87,6 +90,41 @@ static const char GET_CODEC_OPTIONS_CONTROL[]    = "get_codec_options";
 static const char FREE_CODEC_OPTIONS_CONTROL[]   = "free_codec_options";
 static const char GET_OUTPUT_DATA_SIZE_CONTROL[] = "get_output_data_size";
 static const char SET_CODEC_OPTIONS_CONTROL[]    = "set_codec_options";
+
+
+#if OPAL_VIDEO
+#if OPAL_H323
+
+// H.261 only
+static const char * h323_stillImageTransmission_tag            = H323CAP_TAG_PREFIX "_stillImageTransmission";
+
+// H.261/H.263 tags
+static const char * h323_qcifMPI_tag                           = H323CAP_TAG_PREFIX "_qcifMPI";
+static const char * h323_cifMPI_tag                            = H323CAP_TAG_PREFIX "_cifMPI";
+static const char * h323_maxBitRate_tag                        = H323CAP_TAG_PREFIX "_maxBitRate";
+
+// H.263 only
+static const char * h323_sqcifMPI_tag                          = H323CAP_TAG_PREFIX "_sqcifMPI";
+static const char * h323_cif4MPI_tag                           = H323CAP_TAG_PREFIX "_cif4MPI";
+static const char * h323_cif16MPI_tag                          = H323CAP_TAG_PREFIX "_cif16MPI";
+static const char * h323_slowSqcifMPI_tag                      = H323CAP_TAG_PREFIX "_slowSqcifMPI";
+static const char * h323_slowQcifMPI_tag                       = H323CAP_TAG_PREFIX "_slowQcifMPI";
+static const char * h323_slowCifMPI_tag                        = H323CAP_TAG_PREFIX "slowCifMPI";
+static const char * h323_slowCif4MPI_tag                       = H323CAP_TAG_PREFIX "_slowCif4MPI";
+static const char * h323_slowCif16MPI_tag                      = H323CAP_TAG_PREFIX "_slowCif16MPI";
+static const char * h323_temporalSpatialTradeOffCapability_tag = H323CAP_TAG_PREFIX "_temporalSpatialTradeOffCapability";
+static const char * h323_unrestrictedVector_tag                = H323CAP_TAG_PREFIX "_unrestrictedVector";
+static const char * h323_arithmeticCoding_tag                  = H323CAP_TAG_PREFIX "_arithmeticCoding";      
+static const char * h323_advancedPrediction_tag                = H323CAP_TAG_PREFIX "_advancedPrediction";
+static const char * h323_pbFrames_tag                          = H323CAP_TAG_PREFIX "_pbFrames";
+static const char * h323_hrdB_tag                              = H323CAP_TAG_PREFIX "_hrdB";
+static const char * h323_bppMaxKb_tag                          = H323CAP_TAG_PREFIX "_bppMaxKb";
+static const char * h323_errorCompensation_tag                 = H323CAP_TAG_PREFIX "_errorCompensation";
+
+#endif // OPAL_H323
+#endif // OPAL_VIDEO
+
+
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -370,43 +408,13 @@ static H323Capability * CreateH261Cap(
   int subType
 );
 
-//static H323Capability * CreateH263Cap(
-//  PluginCodec_Definition * encoderCodec, 
-//  PluginCodec_Definition * decoderCodec,
-//  int subType
-//);
+static H323Capability * CreateH263Cap(
+  PluginCodec_Definition * encoderCodec, 
+  PluginCodec_Definition * decoderCodec,
+  int subType
+);
 
 #endif // OPAL_VIDEO
-
-
-/*
-//////////////////////////////////////////////////////////////////////////////
-//
-// Class to auto-register plugin capabilities
-//
-
-class H323CodecPluginCapabilityRegistration : public PObject
-{
-  public:
-    H323CodecPluginCapabilityRegistration(
-       PluginCodec_Definition * _encoderCodec,
-       PluginCodec_Definition * _decoderCodec
-    );
-
-    H323Capability * Create(H323EndPoint & ep) const;
-  
-    static H323Capability * CreateG7231Cap           (H323EndPoint & ep, int subType) const;
-    static H323Capability * CreateNonStandardAudioCap(H323EndPoint & ep, int subType) const;
-    //H323Capability * CreateNonStandardVideoCap(H323EndPoint & ep, int subType) const;
-    static H323Capability * CreateGSMCap             (H323EndPoint & ep, int subType) const;
-    static H323Capability * CreateH261Cap            (H323EndPoint & ep, int subType) const;
-
-  protected:
-    PluginCodec_Definition * encoderCodec;
-    PluginCodec_Definition * decoderCodec;
-};
-
-*/
 
 ////////////////////////////////////////////////////////////////////
 
@@ -458,7 +466,7 @@ static H323CodecPluginCapabilityMapEntry videoMaps[] = {
   // video codecs
   { PluginCodec_H323Codec_nonStandard,              H245_VideoCapability::e_nonStandard,            &CreateNonStandardVideoCap },
   { PluginCodec_H323VideoCodec_h261,                H245_VideoCapability::e_h261VideoCapability,    &CreateH261Cap },
-  //{ PluginCodec_H323VideoCodec_h263,                H245_VideoCapability::e_h263VideoCapability,    &CreateH263Cap },
+  { PluginCodec_H323VideoCodec_h263,                H245_VideoCapability::e_h263VideoCapability,    &CreateH263Cap },
   { PluginCodec_H323Codec_generic,                  H245_AudioCapability::e_genericAudioCapability, &CreateGenericVideoCap },
 /*
   PluginCodec_H323VideoCodec_h262,                // not yet implemented
@@ -1229,13 +1237,6 @@ class H323H261PluginCapability : public H323VideoPluginCapability
     virtual BOOL OnReceivedPDU(
       const H245_VideoCapability & pdu  /// PDU to get information from
     );
-
-  protected:
-    //unsigned qcifMPI;                   // 1..4 units 1/29.97 Hz
-    //unsigned cifMPI;                    // 1..4 units 1/29.97 Hz
-    //BOOL     temporalSpatialTradeOffCapability;
-    //unsigned maxBitRate;                // units of 100 bit/s
-    //BOOL     stillImageTransmission;    // Annex D of H.261
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1243,35 +1244,12 @@ class H323H261PluginCapability : public H323VideoPluginCapability
 // Class for handling H.263 plugin capabilities
 //
 
-/*
-class H323H263PluginCapability : public H323PluginCapability
+class H323H263PluginCapability : public H323VideoPluginCapability
 {
-  PCLASSINFO(H323H263PluginCapability, H323PluginCapability);
+  PCLASSINFO(H323H263PluginCapability, H323VideoPluginCapability);
   public:
     H323H263PluginCapability(PluginCodec_Definition * _encoderCodec,
-                             PluginCodec_Definition * _decoderCodec,
-                             PluginCodec_H323VideoH263 * capData)
-      : H323PluginCapability(_encoderCodec, _decoderCodec, H245_VideoCapability::e_h263VideoCapability),
-        sqcifMPI(capData->sqcifMPI),
-        qcifMPI(capData->qcifMPI),
-        cifMPI(capData->cifMPI),
-        cif4MPI(capData->cif4MPI),
-        cif16MPI(capData->cif16MPI),
-        maxBitRate(capData->maxBitRate),
-        unrestrictedVector(capData->unrestrictedVector),
-        arithmeticCoding(capData->arithmeticCoding),
-        advancedPrediction(capData->advancedPrediction),
-        pbFrames(capData->pbFrames),
-        temporalSpatialTradeOffCapability(capData->temporalSpatialTradeOffCapability),
-        hrdB(capData->hrdB),
-        bppMaxKb(capData->bppMaxKb),
-        slowSqcifMPI(capData->slowSqcifMPI),
-        slowQcifMPI(capData->slowQcifMPI),
-        slowCifMPI(capData->slowCifMPI),
-        slowCif4MPI(capData->slowCif4MPI),
-        slowCif16MPI(capData->slowCif16MPI),
-        errorCompensation(capData->errorCompensation)
-    { }
+                             PluginCodec_Definition * _decoderCodec);
 
     Comparison Compare(const PObject & obj) const;
 
@@ -1291,31 +1269,7 @@ class H323H263PluginCapability : public H323PluginCapability
     virtual BOOL OnReceivedPDU(
       const H245_VideoCapability & pdu  /// PDU to get information from
     );
-
-  protected:
-    unsigned char sqcifMPI;                          // INTEGER (1..32) OPTIONAL, -- units 1/29.97 Hz (0 if not present)
-    unsigned char qcifMPI;                           // INTEGER (1..32) OPTIONAL, -- units 1/29.97 Hz (0 if not present)
-    unsigned char cifMPI;                            // INTEGER (1..32) OPTIONAL, -- units 1/29.97 Hz (0 if not present)
-    unsigned char cif4MPI;                           // INTEGER (1..32) OPTIONAL, -- units 1/29.97 Hz (0 if not present)
-    unsigned char cif16MPI;                          // INTEGER (1..32) OPTIONAL, -- units 1/29.97 Hz (0 if not present)
-    unsigned int maxBitRate;                         // INTEGER (1..192400) units 100 bit/s
-    unsigned char unrestrictedVector;                //	BOOLEAN
-    unsigned char arithmeticCoding;                  //	BOOLEAN,
-    unsigned char advancedPrediction;                //	BOOLEAN,
-    unsigned char pbFrames;                          //	BOOLEAN,
-    unsigned char temporalSpatialTradeOffCapability; //	BOOLEAN,
-    int hrdB;                                        // INTEGER (0..524287) OPTIONAL, -- units 128 bits (-1 if not present)
-    int bppMaxKb;                                    // INTEGER (0..65535) OPTIONAL, -- units 1024 bits (-1 if not present)
-
-    unsigned int slowSqcifMPI;                       // INTEGER (1..3600) OPTIONAL, --  units seconds/frame (0 if not present)
-    unsigned int slowQcifMPI;                        //	INTEGER (1..3600) OPTIONAL, -- units seconds/frame (0 if not present)
-    unsigned int slowCifMPI;                         //	INTEGER (1..3600) OPTIONAL, -- units seconds/frame (0 if not present)
-    unsigned int slowCif4MPI;                        //	INTEGER (1..3600) OPTIONAL, -- units seconds/frame (0 if not present)
-    unsigned int slowCif16MPI;                       //	INTEGER (1..3600) OPTIONAL, -- units seconds/frame (0 if not present)
-    unsigned char errorCompensation;                 // BOOLEAN,
 };
-
-*/
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -1867,82 +1821,17 @@ H323Capability * CreateH261Cap(
   return new H323H261PluginCapability(encoderCodec, decoderCodec);
 }
 
+H323Capability * CreateH263Cap(
+  PluginCodec_Definition * encoderCodec, 
+  PluginCodec_Definition * decoderCodec,
+  int /*subType*/) 
+{
+  return new H323H263PluginCapability(encoderCodec, decoderCodec);
+}
+
 #endif // OPAL_VIDEO
 
 /////////////////////////////////////////////////////////////////////////////
-
-#if 0
-H323Codec * H323PluginCapabilityInfo::CreateCodec(H323Codec::Direction direction) const
-{  
-  // allow use of this class for external codec capabilities
-  if (encoderCodec == NULL || decoderCodec == NULL)
-    return NULL;
-
-  PluginCodec_Definition * codec = (direction == H323Codec::Encoder) ? encoderCodec : decoderCodec;
-
-  switch (codec->flags & PluginCodec_MediaTypeMask) {
-
-    case PluginCodec_MediaTypeAudio:
-#if OPAL_AUDIO
-      PTRACE(3, "H323PLUGIN\tCreating framed audio codec " << mediaFormat << " from plugin");
-      return new H323PluginFramedAudioCodec(mediaFormat, direction, codec);
-#endif  // OPAL_AUDIO
-
-    case PluginCodec_MediaTypeAudioStreamed:
-#if OPAL_AUDIO
-      PTRACE(3, "H323PLUGIN\tAudio plugins disabled");
-      return NULL;
-#else
-      {
-        PTRACE(3, "H323PLUGIN\tCreating audio codec " << mediaFormat << " from plugin");
-        int bitsPerSample = (codec->flags & PluginCodec_BitsPerSampleMask) >> PluginCodec_BitsPerSamplePos;
-        if (bitsPerSample == 0)
-          bitsPerSample = 16;
-        return new H323StreamedPluginAudioCodec(
-                                mediaFormat, 
-                                direction, 
-                                codec->samplesPerFrame,
-                                bitsPerSample,
-                                codec);
-      }
-#endif  // OPAL_AUDIO
-
-    case PluginCodec_MediaTypeVideo:
-#if OPAL_VIDEO
-      PTRACE(3, "H323PLUGIN\tVideo plugins disabled");
-      return NULL;
-#else
-      if (
-           (
-             (direction == H323Codec::Encoder) &&
-             (
-               ((codec->flags & PluginCodec_InputTypeMask) != PluginCodec_InputTypeRaw) ||
-               ((codec->flags & PluginCodec_OutputTypeMask) != PluginCodec_OutputTypeRTP)
-             )
-           )
-           ||
-           (
-             (direction != H323Codec::Encoder) &&
-             (
-               ((codec->flags & PluginCodec_InputTypeMask) != PluginCodec_InputTypeRTP) ||
-               ((codec->flags & PluginCodec_OutputTypeMask) != PluginCodec_OutputTypeRaw)
-             )
-           )
-         ) {
-          PTRACE(3, "H323PLUGIN\tVideo codec " << mediaFormat << " has incorrect input/output types");
-          return NULL;
-      }
-      PTRACE(3, "H323PLUGIN\tCreating video codec " << mediaFormat << "from plugin");
-      return new H323PluginVideoCodec(mediaFormat, direction, codec);
-#endif // OPAL_VIDEO
-    default:
-      break;
-  }
-
-  PTRACE(3, "H323PLUGIN\tCannot create codec for unknown plugin codec media format " << (int)(codec->flags & PluginCodec_MediaTypeMask));
-  return NULL;
-}
-#endif
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -2090,12 +1979,6 @@ BOOL H323GSMPluginCapability::OnReceivedPDU(const H245_AudioCapability & cap, un
 
 /////////////////////////////////////////////////////////////////////////////
 
-static const char * h323_qcifMPI_tag                           = H323CAP_TAG_PREFIX "_qcifMPI";
-static const char * h323_cifMPI_tag                            = H323CAP_TAG_PREFIX "_cifMPI";
-static const char * h323_maxBitRate_tag                        = H323CAP_TAG_PREFIX "_maxBitRate";
-static const char * h323_temporalSpatialTradeOffCapability_tag = H323CAP_TAG_PREFIX "_temporalSpatialTradeOffCapability";
-static const char * h323_stillImageTransmission_tag            = H323CAP_TAG_PREFIX "_stillImageTransmission";
-
 H323H261PluginCapability::H323H261PluginCapability(PluginCodec_Definition * _encoderCodec,
                                                    PluginCodec_Definition * _decoderCodec)
   : H323VideoPluginCapability(_encoderCodec, _decoderCodec, H245_VideoCapability::e_h261VideoCapability)
@@ -2140,6 +2023,7 @@ BOOL H323H261PluginCapability::OnSendingPDU(H245_VideoCapability & cap) const
 
   const OpalMediaFormat & mediaFormat = GetMediaFormat();
 
+  /*
 #if PTRACING
   ostream & traceStream = PTrace::Begin(4, __FILE__, __LINE__);
   traceStream << "H.261 extracting options from\n";
@@ -2149,6 +2033,8 @@ BOOL H323H261PluginCapability::OnSendingPDU(H245_VideoCapability & cap) const
   }
   traceStream << PTrace::End;
 #endif
+  */
+
   int qcifMPI = mediaFormat.GetOptionInteger(h323_qcifMPI_tag);
   if (qcifMPI > 0) {
     h261.IncludeOptionalField(H245_H261VideoCapability::e_qcifMPI);
@@ -2160,9 +2046,9 @@ BOOL H323H261PluginCapability::OnSendingPDU(H245_VideoCapability & cap) const
     h261.m_cifMPI = cifMPI;
   }
 
-  h261.m_temporalSpatialTradeOffCapability = mediaFormat.GetOptionBoolean(h323_temporalSpatialTradeOffCapability_tag);
+  h261.m_temporalSpatialTradeOffCapability = mediaFormat.GetOptionBoolean(h323_temporalSpatialTradeOffCapability_tag, FALSE);
   h261.m_maxBitRate                        = mediaFormat.GetOptionInteger(h323_maxBitRate_tag);
-  h261.m_stillImageTransmission            = mediaFormat.GetOptionBoolean(h323_stillImageTransmission_tag);
+  h261.m_stillImageTransmission            = mediaFormat.GetOptionBoolean(h323_stillImageTransmission_tag, FALSE);
 
   return TRUE;
 }
@@ -2181,7 +2067,7 @@ BOOL H323H261PluginCapability::OnSendingPDU(H245_VideoMode & pdu) const
                                       : H245_H261VideoMode_resolution::e_qcif);
 
   mode.m_bitRate                = mediaFormat.GetOptionInteger(h323_maxBitRate_tag);
-  mode.m_stillImageTransmission = mediaFormat.GetOptionBoolean(h323_stillImageTransmission_tag);
+  mode.m_stillImageTransmission = mediaFormat.GetOptionBoolean(h323_stillImageTransmission_tag, FALSE);
 
   return TRUE;
 }
@@ -2216,6 +2102,238 @@ BOOL H323H261PluginCapability::OnReceivedPDU(const H245_VideoCapability & cap)
 
   mediaFormat.SetOptionBoolean(h323_temporalSpatialTradeOffCapability_tag, h261.m_temporalSpatialTradeOffCapability);
   mediaFormat.SetOptionBoolean(h323_stillImageTransmission_tag,            h261.m_stillImageTransmission);
+
+  return TRUE;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+H323H263PluginCapability::H323H263PluginCapability(PluginCodec_Definition * _encoderCodec,
+                                                   PluginCodec_Definition * _decoderCodec)
+  : H323VideoPluginCapability(_encoderCodec, _decoderCodec, H245_VideoCapability::e_h263VideoCapability)
+{ 
+}
+
+PObject::Comparison H323H263PluginCapability::Compare(const PObject & obj) const
+{
+  if (!PIsDescendant(&obj, H323H263PluginCapability))
+    return LessThan;
+
+  Comparison result = H323Capability::Compare(obj);
+  if (result != EqualTo)
+    return result;
+
+  const H323H263PluginCapability & other = (const H323H263PluginCapability &)obj;
+
+  const OpalMediaFormat & mediaFormat = GetMediaFormat();
+
+  int sqcifMPI = mediaFormat.GetOptionInteger(h323_sqcifMPI_tag);
+  int qcifMPI  = mediaFormat.GetOptionInteger(h323_qcifMPI_tag);
+  int cifMPI   = mediaFormat.GetOptionInteger(h323_cifMPI_tag);
+  int cif4MPI  = mediaFormat.GetOptionInteger(h323_cif4MPI_tag);
+  int cif16MPI = mediaFormat.GetOptionInteger(h323_cif16MPI_tag);
+
+  int other_sqcifMPI = other.GetMediaFormat().GetOptionInteger(h323_sqcifMPI_tag);
+  int other_qcifMPI  = other.GetMediaFormat().GetOptionInteger(h323_qcifMPI_tag);
+  int other_cifMPI   = other.GetMediaFormat().GetOptionInteger(h323_cifMPI_tag);
+  int other_cif4MPI  = other.GetMediaFormat().GetOptionInteger(h323_cif4MPI_tag);
+  int other_cif16MPI = other.GetMediaFormat().GetOptionInteger(h323_cif16MPI_tag);
+
+  if ((sqcifMPI && other_sqcifMPI) ||
+      (qcifMPI && other_qcifMPI) ||
+      (cifMPI && other_cifMPI) ||
+      (cif4MPI && other_cif4MPI) ||
+      (cif16MPI && other_cif16MPI))
+    return EqualTo;
+
+  if ((!cif16MPI && other_cif16MPI) ||
+      (!cif4MPI && other_cif4MPI) ||
+      (!cifMPI && other_cifMPI) ||
+      (!qcifMPI && other_qcifMPI) ||
+      (!sqcifMPI && other_sqcifMPI))
+    return LessThan;
+
+  return GreaterThan;
+}
+
+
+BOOL H323H263PluginCapability::OnSendingPDU(H245_VideoCapability & cap) const
+{
+  cap.SetTag(H245_VideoCapability::e_h263VideoCapability);
+  H245_H263VideoCapability & h263 = cap;
+
+  const OpalMediaFormat & mediaFormat = GetMediaFormat();
+
+  {
+    int sqcifMPI = mediaFormat.GetOptionInteger(h323_sqcifMPI_tag);
+    if (sqcifMPI > 0) {
+      h263.IncludeOptionalField(H245_H263VideoCapability::e_sqcifMPI);
+      h263.m_sqcifMPI = sqcifMPI;
+    }
+    else if (sqcifMPI < 0) {
+      h263.IncludeOptionalField(H245_H263VideoCapability::e_slowSqcifMPI);
+      h263.m_slowSqcifMPI = -sqcifMPI;
+    }
+  }
+
+  {
+    int qcifMPI = mediaFormat.GetOptionInteger(h323_qcifMPI_tag);
+    if (qcifMPI > 0) {
+      h263.IncludeOptionalField(H245_H263VideoCapability::e_qcifMPI);
+      h263.m_qcifMPI = qcifMPI;
+    }
+    else if (qcifMPI < 0) {
+      h263.IncludeOptionalField(H245_H263VideoCapability::e_slowQcifMPI);
+      h263.m_slowQcifMPI = -qcifMPI;
+    }
+  }
+
+  {
+    int cifMPI = mediaFormat.GetOptionInteger(h323_cifMPI_tag);
+    if (cifMPI > 0) {
+      h263.IncludeOptionalField(H245_H263VideoCapability::e_cifMPI);
+      h263.m_cifMPI = cifMPI;
+    }
+    else if (cifMPI < 0) {
+      h263.IncludeOptionalField(H245_H263VideoCapability::e_slowCifMPI);
+      h263.m_slowCifMPI = -cifMPI;
+    }
+  }
+
+  {
+    int cif4MPI = mediaFormat.GetOptionInteger(h323_cif4MPI_tag);
+    if (cif4MPI > 0) {
+      h263.IncludeOptionalField(H245_H263VideoCapability::e_cif4MPI);
+      h263.m_cif4MPI = cif4MPI;
+    } else if (cif4MPI < 0) {
+      h263.IncludeOptionalField(H245_H263VideoCapability::e_slowCif4MPI);
+      h263.m_slowCif4MPI = -cif4MPI;
+    }
+  }
+
+  {
+    int cif16MPI = mediaFormat.GetOptionInteger(h323_cif16MPI_tag);
+    if (cif16MPI > 0) {
+      h263.IncludeOptionalField(H245_H263VideoCapability::e_cif16MPI);
+      h263.m_cif16MPI = cif16MPI;
+    }
+    else if (cif16MPI < 0) {
+      h263.IncludeOptionalField(H245_H263VideoCapability::e_slowCif16MPI);
+      h263.m_slowCif16MPI = -cif16MPI;
+    }
+  }
+
+  h263.m_maxBitRate                        = mediaFormat.GetOptionInteger(h323_maxBitRate_tag);
+  h263.m_temporalSpatialTradeOffCapability = mediaFormat.GetOptionBoolean(h323_temporalSpatialTradeOffCapability_tag, FALSE);
+	h263.m_unrestrictedVector	               = mediaFormat.GetOptionBoolean(h323_unrestrictedVector_tag, FALSE);
+	h263.m_arithmeticCoding	                 = mediaFormat.GetOptionBoolean(h323_arithmeticCoding_tag, FALSE);
+	h263.m_advancedPrediction	               = mediaFormat.GetOptionBoolean(h323_advancedPrediction_tag, FALSE);
+	h263.m_pbFrames	                         = mediaFormat.GetOptionBoolean(h323_pbFrames_tag, FALSE);
+	h263.m_errorCompensation                 = mediaFormat.GetOptionBoolean(h323_errorCompensation_tag, FALSE);
+
+  {
+    int hrdB = mediaFormat.GetOptionInteger(h323_hrdB_tag, -1);
+    if (hrdB >= 0) {
+      h263.IncludeOptionalField(H245_H263VideoCapability::e_hrd_B);
+	    h263.m_hrd_B = hrdB;
+    }
+  }
+
+  {
+    int bppMaxKb = mediaFormat.GetOptionInteger(h323_bppMaxKb_tag, -1);
+    if (bppMaxKb >= 0) {
+      h263.IncludeOptionalField(H245_H263VideoCapability::e_bppMaxKb);
+	    h263.m_bppMaxKb = bppMaxKb;
+    }
+  }
+
+  return TRUE;
+}
+
+
+BOOL H323H263PluginCapability::OnSendingPDU(H245_VideoMode & pdu) const
+{
+  pdu.SetTag(H245_VideoMode::e_h263VideoMode);
+  H245_H263VideoMode & mode = pdu;
+
+  const OpalMediaFormat & mediaFormat = GetMediaFormat();
+
+  int qcifMPI  = mediaFormat.GetOptionInteger(h323_qcifMPI_tag);
+  int cifMPI   = mediaFormat.GetOptionInteger(h323_cifMPI_tag);
+  int cif4MPI  = mediaFormat.GetOptionInteger(h323_cif4MPI_tag);
+  int cif16MPI = mediaFormat.GetOptionInteger(h323_cif16MPI_tag);
+
+  mode.m_resolution.SetTag(cif16MPI ? H245_H263VideoMode_resolution::e_cif16
+			  :(cif4MPI ? H245_H263VideoMode_resolution::e_cif4
+			   :(cifMPI ? H245_H263VideoMode_resolution::e_cif
+			    :(qcifMPI ? H245_H263VideoMode_resolution::e_qcif
+            : H245_H263VideoMode_resolution::e_sqcif))));
+
+  mode.m_bitRate              = mediaFormat.GetOptionInteger(h323_maxBitRate_tag);
+  mode.m_unrestrictedVector   = mediaFormat.GetOptionBoolean(h323_unrestrictedVector_tag, FALSE);
+  mode.m_arithmeticCoding     = mediaFormat.GetOptionBoolean(h323_arithmeticCoding_tag, FALSE);
+  mode.m_advancedPrediction   = mediaFormat.GetOptionBoolean(h323_advancedPrediction_tag, FALSE);
+  mode.m_pbFrames             = mediaFormat.GetOptionBoolean(h323_pbFrames_tag, FALSE);
+  mode.m_errorCompensation    = mediaFormat.GetOptionBoolean(h323_errorCompensation_tag, FALSE);
+
+  return TRUE;
+}
+
+BOOL H323H263PluginCapability::OnReceivedPDU(const H245_VideoCapability & cap)
+{
+  if (cap.GetTag() != H245_VideoCapability::e_h263VideoCapability)
+    return FALSE;
+
+  OpalMediaFormat & mediaFormat = GetWritableMediaFormat();
+
+  const H245_H263VideoCapability & h263 = cap;
+  if (h263.HasOptionalField(H245_H263VideoCapability::e_sqcifMPI))
+    mediaFormat.SetOptionInteger(h323_sqcifMPI_tag, h263.m_sqcifMPI);
+  else if (h263.HasOptionalField(H245_H263VideoCapability::e_slowSqcifMPI))
+    mediaFormat.SetOptionInteger(h323_sqcifMPI_tag, -(signed)h263.m_slowSqcifMPI);
+  else
+    mediaFormat.SetOptionInteger(h323_sqcifMPI_tag, 0);
+
+  if (h263.HasOptionalField(H245_H263VideoCapability::e_qcifMPI))
+    mediaFormat.SetOptionInteger(h323_qcifMPI_tag, h263.m_qcifMPI);
+  else if (h263.HasOptionalField(H245_H263VideoCapability::e_slowQcifMPI))
+    mediaFormat.SetOptionInteger(h323_qcifMPI_tag, -(signed)h263.m_slowQcifMPI);
+  else
+    mediaFormat.SetOptionInteger(h323_qcifMPI_tag, 0);
+
+  if (h263.HasOptionalField(H245_H263VideoCapability::e_cifMPI))
+    mediaFormat.SetOptionInteger(h323_cifMPI_tag, h263.m_cifMPI);
+  else if (h263.HasOptionalField(H245_H263VideoCapability::e_slowCifMPI))
+    mediaFormat.SetOptionInteger(h323_cifMPI_tag, -(signed)h263.m_slowCifMPI);
+  else
+    mediaFormat.SetOptionInteger(h323_cifMPI_tag, 0);
+
+  if (h263.HasOptionalField(H245_H263VideoCapability::e_cif4MPI))
+    mediaFormat.SetOptionInteger(h323_cif4MPI_tag, h263.m_cif4MPI);
+  else if (h263.HasOptionalField(H245_H263VideoCapability::e_slowCif4MPI))
+    mediaFormat.SetOptionInteger(h323_cif4MPI_tag, -(signed)h263.m_slowCif4MPI);
+  else
+    mediaFormat.SetOptionInteger(h323_cif4MPI_tag, 0);
+
+  if (h263.HasOptionalField(H245_H263VideoCapability::e_cif16MPI))
+    mediaFormat.SetOptionInteger(h323_cif16MPI_tag, h263.m_cif16MPI);
+  else if (h263.HasOptionalField(H245_H263VideoCapability::e_slowCif16MPI))
+    mediaFormat.SetOptionInteger(h323_cif16MPI_tag, -(signed)h263.m_slowCif16MPI);
+  else
+    mediaFormat.SetOptionInteger(h323_cif16MPI_tag, 0);
+
+  mediaFormat.SetOptionInteger(h323_maxBitRate_tag,              h263.m_maxBitRate);
+  mediaFormat.SetOptionBoolean(h323_unrestrictedVector_tag,      h263.m_unrestrictedVector);
+  mediaFormat.SetOptionBoolean(h323_arithmeticCoding_tag,        h263.m_arithmeticCoding);
+  mediaFormat.SetOptionBoolean(h323_advancedPrediction_tag,      h263.m_advancedPrediction);
+  mediaFormat.SetOptionBoolean(h323_pbFrames_tag,                h263.m_pbFrames);
+  mediaFormat.SetOptionBoolean(h323_errorCompensation_tag,       h263.m_errorCompensation);
+
+  if (h263.HasOptionalField(H245_H263VideoCapability::e_hrd_B))
+    mediaFormat.SetOptionInteger(h323_hrdB_tag, h263.m_hrd_B);
+
+  if (h263.HasOptionalField(H245_H263VideoCapability::e_bppMaxKb))
+    mediaFormat.SetOptionInteger(h323_bppMaxKb_tag, h263.m_bppMaxKb);
 
   return TRUE;
 }
