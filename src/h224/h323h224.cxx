@@ -20,10 +20,15 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323h224.cxx,v $
+ * Revision 1.2  2006/04/24 12:53:50  rjongbloed
+ * Port of H.224 Far End Camera Control to DevStudio/Windows
+ *
  * Revision 1.1  2006/04/20 16:48:17  hfriederich
  * Initial version of H.224/H.281 implementation.
  *
  */
+
+#include <ptlib.h>
 
 #include <h224/h323h224.h>
 
@@ -73,9 +78,9 @@ PString H323_H224Capability::GetFormatName() const
 }
 
 H323Channel * H323_H224Capability::CreateChannel(H323Connection & connection,
-												 H323Channel::Directions direction,
-												 unsigned int sessionID,
-												 const H245_H2250LogicalChannelParameters * params) const
+                                                 H323Channel::Directions direction,
+                                                 unsigned int sessionID,
+                                                 const H245_H2250LogicalChannelParameters * /*params*/) const
 {
   RTP_Session & session = *connection.UseSession(connection.GetTransport(), sessionID);
 	
@@ -101,16 +106,16 @@ BOOL H323_H224Capability::OnSendingPDU(H245_DataMode & pdu) const
   return TRUE;
 }
 
-BOOL H323_H224Capability::OnReceivedPDU(const H245_DataApplicationCapability & pdu)
+BOOL H323_H224Capability::OnReceivedPDU(const H245_DataApplicationCapability & /*pdu*/)
 {
   return TRUE;
 }
 
 H323_H224Channel::H323_H224Channel(H323Connection & connection,
-								   const H323Capability & capability,
-								   H323Channel::Directions theDirection,
-								   RTP_UDP & theSession,
-								   unsigned theSessionID)
+                                   const H323Capability & capability,
+                                   H323Channel::Directions theDirection,
+                                   RTP_UDP & theSession,
+                                   unsigned theSessionID)
 : H323Channel(connection, capability),
   rtpSession(theSession),
   rtpCallbacks(*(H323_RTP_Session *)theSession.GetUserData())
