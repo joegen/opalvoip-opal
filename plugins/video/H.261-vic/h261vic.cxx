@@ -26,6 +26,9 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261vic.cxx,v $
+ * Revision 1.1.2.6  2006/04/24 09:08:49  csoutheren
+ * Cleanups
+ *
  * Revision 1.1.2.5  2006/04/21 05:42:49  csoutheren
  * Checked in forgotten changes to fix iFrame requests
  *
@@ -41,6 +44,25 @@
  * Revision 1.1.2.1  2006/04/06 01:17:16  csoutheren
  * Initial version of H.261 video codec plugin for OPAL
  *
+ */
+
+/*
+  Notes
+  -----
+
+  This codec implements a H.261 encoder and decoder with RTP packaging as per 
+  RFC 2032 "RTP Payload Format for H.261 Video Streams". As per this specification,
+  The RTP payload code is always set to 31
+
+  The encoder only creates I-frames
+
+  The decoder can accept either I-frames or P-frames
+
+  There are seperate encoder/decoder pairs for H.323, which ensures that the decoder always knows
+  whether it will be receiving CIF or QCIF data
+
+  There is a seperate encoder/decoder pair for SIP
+
  */
 
 #include <codec/opalplugin.h>
@@ -65,18 +87,23 @@ PLUGIN_CODEC_IMPLEMENT(VIC_H261)
 
 #define DEFAULT_FILL_LEVEL     5
 
-#define H261_PAYLOAD    31
+#define RTP_RFC2032_PAYLOAD   31
+#define RTP_DYNAMIC_PAYLOAD   96
 
 #define H261_CLOCKRATE    90000
 #define H261_BITRATE      128000
 
 typedef unsigned char u_char;
-//typedef int BOOL;
 typedef unsigned short u_short;
 typedef unsigned int u_int;
 
 #include "vic/p64.h"
 #include "vic/p64encoder.h"
+
+/////////////////////////////////////////////////////////////////
+//
+// define a class to implement a critical section mutex
+// based on PCriticalSection from PWLib
 
 class CriticalSection
 {
@@ -233,6 +260,15 @@ class RTPFrame
 
 /////////////////////////////////////////////////////////////////////////////
 
+static const char * default_cif_options[][3] = {
+  { "h323_cifMPI",                               "<4" ,    "i" },
+  { "h323_qcifMPI",                              "<2" ,    "i" },
+  { "h323_maxBitRate",                           "<6217" , "i" },
+  { "h323_temporalSpatialTradeOffCapability",    "<f" ,    "b" },
+  { "h323_stillImageTransmission",               "<f" ,    "b" },
+  { NULL, NULL, NULL }
+};
+
 static const char * default_cif_h261_options[][3] = {
   { "h323_cifMPI",                               "<4" ,    "i" },
   { "h323_maxBitRate",                           "<6217" , "i" },
@@ -286,12 +322,12 @@ static int coder_get_qcif_options(
 
 static int coder_get_sip_options(
       const PluginCodec_Definition * , 
-      void * , 
+      void * context , 
       const char * , 
-      void * , 
-      unsigned * )
+      void * parm , 
+      unsigned * parmLen)
 {
-  return 1;
+  return get_xcif_options(context, parm, parmLen, &default_cif_options[0][0]);
 }
 
 
@@ -307,9 +343,9 @@ class H261EncoderContext
     unsigned maxOutputSize;
     bool forceIFrame;
     int videoQuality;
-    CriticalSection updateMutex;
     unsigned long lastTimeStamp;
-
+    CriticalSection mutex;
+  
     H261EncoderContext()
     {
       frameWidth = frameHeight = 0;
@@ -334,13 +370,13 @@ class H261EncoderContext
 
     int EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags)
     {
-      WaitAndSignal mutex(updateMutex);
+      WaitAndSignal m(mutex);
 
       // create RTP frame from source buffer
       RTPFrame srcRTP(src, srcLen);
 
       // create RTP frame from destination buffer
-      RTPFrame dstRTP(dst, dstLen, H261_PAYLOAD);
+      RTPFrame dstRTP(dst, dstLen, RTP_RFC2032_PAYLOAD);
 
       // return more pending data frames, if any
       if (videoEncoder->MoreToIncEncode()) {
@@ -501,7 +537,7 @@ class H261DecoderContext
     BYTE * rvts;
     int ndblk, nblk;
     int now;
-    BOOL packetReceived;
+    bool packetReceived;
     unsigned frameWidth;
     unsigned frameHeight;
 
@@ -533,6 +569,9 @@ class H261DecoderContext
     {
       WaitAndSignal mutex(mutex);
 
+      dstLen = 0;
+      flags = 0;
+
       // create RTP frame from source buffer
       RTPFrame srcRTP(src, srcLen);
 
@@ -551,7 +590,6 @@ class H261DecoderContext
 
       videoDecoder->mark(now);
       if (!videoDecoder->decode(srcRTP.GetPayloadPtr(), srcRTP.GetPayloadSize(), lostPreviousPacket)) {
-        dstLen = 0;
         flags = PluginCodec_ReturnCoderRequestIFrame;
         return 1;
       }
@@ -571,11 +609,8 @@ class H261DecoderContext
       }
 
       // Have not built an entire frame yet
-      if (!srcRTP.GetMarker()) {
-        dstLen = 0;
-        flags = 0;
-        return TRUE;
-      }
+      if (!srcRTP.GetMarker())
+        return 1;
 
       videoDecoder->sync();
       ndblk = videoDecoder->ndblk();
@@ -592,6 +627,7 @@ class H261DecoderContext
 
       int frameBytes = (frameWidth * frameHeight * 12) / 8;
       dstRTP.SetPayloadSize(sizeof(PluginCodec_Video_FrameHeader) + frameBytes);
+      dstRTP.SetPayloadType(RTP_DYNAMIC_PAYLOAD);
       dstRTP.SetMarker(true);
 
       PluginCodec_Video_FrameHeader * frameHeader = (PluginCodec_Video_FrameHeader *)dstRTP.GetPayloadPtr();
@@ -604,7 +640,7 @@ class H261DecoderContext
 
       dstLen = dstRTP.GetPacketLen();
       flags = PluginCodec_ReturnCoderLastFrame | PluginCodec_ReturnCoderIFrame;   // THIS NEEDS TO BE CHANGED TO DO CORRECT I-FRAME DETECTION
-      return TRUE;
+      return 1;
     }
 };
 
@@ -746,7 +782,7 @@ static struct PluginCodec_Definition h261CodecDefn[6] = {
   CIF_HEIGHT,                         // frame height
   10,                                 // recommended frame rate
   60,                                 // maximum frame rate
-  H261_PAYLOAD,                       // IANA RTP payload code
+  RTP_RFC2032_PAYLOAD,                // IANA RTP payload code
   NULL,                               // RTP payload name
 
   create_encoder,                     // create codec function
@@ -779,7 +815,7 @@ static struct PluginCodec_Definition h261CodecDefn[6] = {
   CIF_HEIGHT,                         // frame height
   10,                                 // recommended frame rate
   60,                                 // maximum frame rate
-  H261_PAYLOAD,                       // IANA RTP payload code
+  RTP_RFC2032_PAYLOAD,                // IANA RTP payload code
   NULL,                               // RTP payload name
 
   create_decoder,                     // create codec function
@@ -813,7 +849,7 @@ static struct PluginCodec_Definition h261CodecDefn[6] = {
   QCIF_HEIGHT,                        // frame height
   10,                                 // recommended frame rate
   60,                                 // maximum frame rate
-  H261_PAYLOAD,                       // IANA RTP payload code
+  RTP_RFC2032_PAYLOAD,                // IANA RTP payload code
   NULL,                               // RTP payload name
 
   create_encoder,                     // create codec function
@@ -846,7 +882,7 @@ static struct PluginCodec_Definition h261CodecDefn[6] = {
   QCIF_HEIGHT,                        // frame height
   10,                                 // recommended frame rate
   60,                                 // maximum frame rate
-  H261_PAYLOAD,                       // IANA RTP payload code
+  RTP_RFC2032_PAYLOAD,                // IANA RTP payload code
   NULL,                               // RTP payload name
 
   create_decoder,                     // create codec function
@@ -880,7 +916,7 @@ static struct PluginCodec_Definition h261CodecDefn[6] = {
   CIF_HEIGHT,                         // frame height
   10,                                 // recommended frame rate
   60,                                 // maximum frame rate
-  H261_PAYLOAD,                       // IANA RTP payload code
+  RTP_RFC2032_PAYLOAD,                // IANA RTP payload code
   sdpH261,                            // RTP payload name
 
   create_encoder,                     // create codec function
@@ -913,7 +949,7 @@ static struct PluginCodec_Definition h261CodecDefn[6] = {
   CIF_HEIGHT,                         // frame height
   10,                                 // recommended frame rate
   60,                                 // maximum frame rate
-  H261_PAYLOAD,                       // IANA RTP payload code
+  RTP_RFC2032_PAYLOAD,                // IANA RTP payload code
   sdpH261,                            // RTP payload name
 
   create_decoder,                     // create codec function
