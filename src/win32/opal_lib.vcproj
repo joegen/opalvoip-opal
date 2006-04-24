@@ -1833,6 +1833,22 @@
 					RelativePath="..\iax2\transmit.cxx">
 				</File>
 			</Filter>
+			<Filter
+				Name="H.224 Sources"
+				Filter="">
+				<File
+					RelativePath="..\h224\h224.cxx">
+				</File>
+				<File
+					RelativePath="..\h224\h281.cxx">
+				</File>
+				<File
+					RelativePath="..\h224\h323h224.cxx">
+				</File>
+				<File
+					RelativePath="..\h224\q922.cxx">
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -2153,6 +2169,28 @@
 				</File>
 				<File
 					RelativePath="..\..\include\iax2\version.h">
+				</File>
+			</Filter>
+			<Filter
+				Name="H.224 Headers"
+				Filter="">
+				<File
+					RelativePath="..\..\include\h224\h224.h">
+				</File>
+				<File
+					RelativePath="..\..\include\h224\h224handler.h">
+				</File>
+				<File
+					RelativePath="..\..\include\h224\h281.h">
+				</File>
+				<File
+					RelativePath="..\..\include\h224\h281handler.h">
+				</File>
+				<File
+					RelativePath="..\..\include\h224\h323h224.h">
+				</File>
+				<File
+					RelativePath="..\..\include\h224\q922.h">
 				</File>
 			</Filter>
 		</Filter>
