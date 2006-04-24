@@ -6,6 +6,8 @@
 #include <math.h>
 #include <memory.h>
 
+#include <ptbuildopts.h>
+
 #if !(defined(P_MACOSX) || defined(P_FREEBSD))
 #include <malloc.h>   // RMF
 #endif
