@@ -21268,7 +21268,8 @@ EXPORTS
     ?AddAllCapabilities@H323EndPoint@@QAEHHHABVPString@@@Z @18906 NONAME
     ?AddAllCapabilities@H323_UserInputCapability@@SAXAAVH323Capabilities@@HH@Z @18907 NONAME
     ?AddAllUserInputCapabilities@H323EndPoint@@QAEXHH@Z @18908 NONAME
-    ?AddCall@H323RegisteredEndPoint@@QAEXPAVH323GatekeeperCall@@@Z @18909 NONAME
+    ?AddCall@H323GatekeeperServer@@UAEXPAVH323GatekeeperCall@@@Z @41026 NONAME
+    ?AddCall@H323RegisteredEndPoint@@UAEXPAVH323GatekeeperCall@@@Z @41027 NONAME
     ?AddCallCreditServiceControl@H323GatekeeperCall@@QBEHAAVH225_ArrayOf_ServiceControlSession@@@Z @18910 NONAME
     ?AddCapability@H235Authenticator@@IAEHIABVPString@@AAVH225_ArrayOf_AuthenticationMechanism@@AAVH225_ArrayOf_PASN_ObjectId@@@Z @18911 NONAME
     ?AddCapability@H323EndPoint@@QAEXPAVH323Capability@@@Z @18912 NONAME
@@ -36824,6 +36825,8 @@ EXPORTS
     ?OnReceivedStatusEnquiry@H323Connection@@UAEHABVH323SignalPDU@@@Z @32697 NONAME
     ?OnReceivedSubaddressTransfer@H4502Handler@@UAEXHPAVPASN_OctetString@@@Z @32698 NONAME
     ?OnReceivedTrying@SIPConnection@@UAEXAAVSIP_PDU@@@Z @32699 NONAME
+    ?OnReceiveFeatureSet@H323GatekeeperListener@@UBEXIABVH225_FeatureSet@@@Z @41028 NONAME
+    ?OnReceiveFeatureSet@H323GatekeeperServer@@UBEXIABVH225_FeatureSet@@@Z @41029 NONAME
     ?OnReceiveGatekeeperConfirm@H225_RAS@@UAEHABVH225_GatekeeperConfirm@@@Z @32700 NONAME
     ?OnReceiveGatekeeperConfirm@H225_RAS@@UAEHABVH323RasPDU@@ABVH225_GatekeeperConfirm@@@Z @32701 NONAME
     ?OnReceiveGatekeeperConfirm@H323Gatekeeper@@UAEHABVH225_GatekeeperConfirm@@@Z @32702 NONAME
@@ -36978,6 +36981,8 @@ EXPORTS
     ?OnSendDisengageReject@H225_RAS@@UAEXAAVH323RasPDU@@AAVH225_DisengageReject@@@Z @32837 NONAME
     ?OnSendDisengageRequest@H225_RAS@@UAEXAAVH225_DisengageRequest@@@Z @32838 NONAME
     ?OnSendDisengageRequest@H225_RAS@@UAEXAAVH323RasPDU@@AAVH225_DisengageRequest@@@Z @32839 NONAME
+    ?OnSendFeatureSet@H323GatekeeperListener@@UBEHIAAVH225_FeatureSet@@@Z @41030 NONAME
+    ?OnSendFeatureSet@H323GatekeeperServer@@UBEHIAAVH225_FeatureSet@@@Z @41031 NONAME
     ?OnSendGatekeeperConfirm@H225_RAS@@UAEXAAVH225_GatekeeperConfirm@@@Z @32840 NONAME
     ?OnSendGatekeeperConfirm@H225_RAS@@UAEXAAVH323RasPDU@@AAVH225_GatekeeperConfirm@@@Z @32841 NONAME
     ?OnSendGatekeeperReject@H225_RAS@@UAEXAAVH225_GatekeeperReject@@@Z @32842 NONAME
@@ -38363,7 +38368,7 @@ EXPORTS
     ?RemoveAt@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalConnection@@@@VPString@@VOpalConnection@@@@UAEHABVPString@@@Z @36060 NONAME
     ?RemoveAt@?$PStringDictionary@VPCaselessString@@@@UAEPAVPString@@ABVPCaselessString@@@Z @34001 NONAME
     ?RemoveCall@H323GatekeeperServer@@UAEXPAVH323GatekeeperCall@@@Z @34002 NONAME
-    ?RemoveCall@H323RegisteredEndPoint@@QAEHPAVH323GatekeeperCall@@@Z @34003 NONAME
+    ?RemoveCall@H323RegisteredEndPoint@@UAEHPAVH323GatekeeperCall@@@Z @41032 NONAME
     ?RemoveCapabilities@H323EndPoint@@QAEXABVPStringArray@@@Z @34004 NONAME
     ?RemoveDescriptorInformation@H323PeerElement@@IAEXABVH501_ArrayOf_AddressTemplate@@@Z @34005 NONAME
     ?RemoveDevice@OpalLIDEndPoint@@QAEXPAVOpalLineInterfaceDevice@@@Z @34006 NONAME
@@ -39101,7 +39106,7 @@ EXPORTS
     ?TransferConnection@OpalConnection@@UAEXABVPString@@0@Z @36959 NONAME
     ?TransferConnection@SIPConnection@@UAEXABVPString@@0@Z @36960 NONAME
     ?TranslateAliasAddress@H323GatekeeperCall@@UAEHABVH225_AliasAddress@@AAVH225_ArrayOf_AliasAddress@@AAVH323TransportAddress@@AAH@Z @40484 NONAME
-    ?TranslateAliasAddress@H323GatekeeperServer@@UAEHABVH225_AliasAddress@@AAVH225_ArrayOf_AliasAddress@@AAVH323TransportAddress@@AAH@Z @40485 NONAME
+    ?TranslateAliasAddress@H323GatekeeperServer@@UAEHABVH225_AliasAddress@@AAVH225_ArrayOf_AliasAddress@@AAVH323TransportAddress@@AAHPAVH323GatekeeperCall@@@Z @41033 NONAME
     ?TranslateAliasAddressToSignalAddress@H323GatekeeperServer@@UAEHABVH225_AliasAddress@@AAVH323TransportAddress@@@Z @34493 NONAME
     ?TranslateIPAddress@OpalManager@@UAEHAAVAddress@PIPSocket@@ABV23@@Z @34494 NONAME
     ?TranslateTCPAddress@H323EndPoint@@UAEXAAVAddress@PIPSocket@@ABV23@@Z @34495 NONAME
