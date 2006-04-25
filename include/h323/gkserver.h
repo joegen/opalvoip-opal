@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkserver.h,v $
- * Revision 1.2015  2006/01/02 15:51:44  dsandras
+ * Revision 1.2016  2006/04/25 07:48:07  rjongbloed
+ * Ported changes from OpenH323 gatekeeper server to OPAL code base.
+ *
+ * Revision 2.14  2006/01/02 15:51:44  dsandras
  * Merged changes from OpenH323 Atlas_devel_2.
  *
  * Revision 2.13  2005/11/30 13:35:26  csoutheren
@@ -72,6 +75,46 @@
  *
  * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.87  2005/11/30 13:05:01  csoutheren
+ * Changed tags for Doxygen
+ *
+ * Revision 1.86  2005/01/03 14:03:19  csoutheren
+ * Added new configure options and ability to disable/enable modules
+ *
+ * Revision 1.85  2005/01/03 06:25:52  csoutheren
+ * Added extensive support for disabling code modules at compile time
+ *
+ * Revision 1.84  2004/12/14 06:22:20  csoutheren
+ * More OSP implementation
+ *
+ * Revision 1.83  2004/09/03 01:06:08  csoutheren
+ * Added initial hooks for H.460 GEF
+ * Thanks to Simon Horne and ISVO (Asia) Pte Ltd. for this contribution
+ *
+ * Revision 1.82  2004/08/03 07:00:13  csoutheren
+ * Added isGKRouted hint to TranslateAliasAddress as this is needed for the reply ACF
+ *
+ * Revision 1.81  2004/06/15 03:30:45  csoutheren
+ * Adde guard to function to prevent crash if no aliases on an endpoint
+ *
+ * Revision 1.80  2004/06/04 07:05:07  csoutheren
+ * Fixed obvious typos
+ *
+ * Revision 1.79  2004/04/25 01:52:46  rjongbloed
+ * Fixed GCC 3.4 warnings
+ *
+ * Revision 1.78  2004/04/21 01:39:05  csoutheren
+ * Added new overrides to GatekeeperServer to provide virtuals when calls and endpoints are created and destroyed
+ *
+ * Revision 1.77  2004/04/15 07:43:36  csoutheren
+ * Allow gatekeeper to make a decision on multiple alias registrations for each registration
+ *
+ * Revision 1.76  2004/04/14 01:41:59  csoutheren
+ * Added access to endpoint information for GetUserPassword
+ *
+ * Revision 1.75  2004/03/31 07:16:22  csoutheren
+ * Added virtual to provide access to H.501 descriptor sent by GK
  *
  * Revision 1.74  2004/02/15 03:36:30  rjongbloed
  * Fixed bug in removing prefixes, plus added ability to have multiple endpoints
@@ -824,7 +867,7 @@ class H323GatekeeperCall : public PSafeObject
       const H225_AliasAddress & alias,
       H225_ArrayOf_AliasAddress & aliases,
       H323TransportAddress & address,
-      BOOL & gkRouted
+      BOOL & isGkRouted
     );
 
   //@}
@@ -925,7 +968,7 @@ class H323RegisteredEndPoint : public PSafeObject
        This is largely an internal routine, it is not expected the user would
        need to deal with this function.
       */
-    void AddCall(
+    virtual void AddCall(
       H323GatekeeperCall * call
     );
 
@@ -933,7 +976,7 @@ class H323RegisteredEndPoint : public PSafeObject
        This is largely an internal routine, it is not expected the user would
        need to deal with this function.
       */
-    BOOL RemoveCall(
+    virtual BOOL RemoveCall(
       H323GatekeeperCall * call
     );
 
@@ -1131,7 +1174,7 @@ class H323RegisteredEndPoint : public PSafeObject
       */
     PString GetAlias(
       PINDEX idx
-    ) const { return aliases[idx]; }
+    ) const { if (idx < aliases.GetSize()) return aliases[idx]; return PString::Empty(); }
 
     /** Remove an alias that this endpoint may be identified by.
       * If this was the last alias, then endpoint will be deleted soon
@@ -1370,6 +1413,8 @@ class H323GatekeeperListener : public H225_RAS
     virtual BOOL OnReceiveLocationRequest(const H323RasPDU &, const H225_LocationRequest &);
     virtual BOOL OnReceiveInfoRequestResponse(const H323RasPDU &, const H225_InfoRequestResponse &);
     virtual BOOL OnReceiveResourcesAvailableConfirm(const H225_ResourcesAvailableConfirm &);
+    virtual BOOL OnSendFeatureSet(unsigned, H225_FeatureSet & features) const;
+    virtual void OnReceiveFeatureSet(unsigned, const H225_FeatureSet & features) const;
   //@}
 
   /**@name Member access */
@@ -1608,7 +1653,12 @@ class H323GatekeeperServer : public H323TransactionServer
       H323GatekeeperCall::Direction direction
     );
 
-    /**Remove a call from the server database.
+    /** Called whenever a new call is started
+      */
+    virtual void AddCall(H323GatekeeperCall *) 
+    { }
+
+    /** Called whenever call is ended. By default, removes the call from the call list
       */
     virtual void RemoveCall(
       H323GatekeeperCall * call
@@ -1665,13 +1715,15 @@ class H323GatekeeperServer : public H323TransactionServer
        It is expected that a user would override this function to implement
        application specified look up algorithms.
 
-       The default behaviour calls TranslateAliasAddressToSignalAddress().
+       The default behaviour calls TranslateAliasAddressToSignalAddress() which
+       is provided only for backwards compatibility.
       */
     virtual BOOL TranslateAliasAddress(
       const H225_AliasAddress & alias,
       H225_ArrayOf_AliasAddress & aliases,
       H323TransportAddress & address,
-      BOOL & isGKRouted
+      BOOL & isGkRouted,
+      H323GatekeeperCall * call
     );
 
     /**Translate a given alias to a signal address.
@@ -1935,6 +1987,9 @@ class H323GatekeeperServer : public H323TransactionServer
 
     virtual BOOL AllowDuplicateAlias(const H225_ArrayOf_AliasAddress & /*aliases*/)
     { return canHaveDuplicateAlias; }
+
+    virtual BOOL OnSendFeatureSet(unsigned, H225_FeatureSet & features) const;
+    virtual void OnReceiveFeatureSet(unsigned, const H225_FeatureSet & features) const;
 
   protected:
 

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkserver.cxx,v $
- * Revision 1.2019  2006/02/13 11:09:56  csoutheren
+ * Revision 1.2020  2006/04/25 07:48:07  rjongbloed
+ * Ported changes from OpenH323 gatekeeper server to OPAL code base.
+ *
+ * Revision 2.18  2006/02/13 11:09:56  csoutheren
  * Multiple fixes for H235 authenticators
  *
  * Revision 2.17  2006/02/13 03:46:17  csoutheren
@@ -84,6 +87,55 @@
  *
  * Revision 2.0  2001/07/27 15:48:25  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+ *
+ * Revision 1.171  2006/01/26 03:33:19  shorne
+ * Added TranslateTCPPort
+ *
+ * Revision 1.170  2005/01/03 06:25:54  csoutheren
+ * Added extensive support for disabling code modules at compile time
+ *
+ * Revision 1.169  2004/12/14 06:22:21  csoutheren
+ * More OSP implementation
+ *
+ * Revision 1.168  2004/12/08 02:21:26  csoutheren
+ * Fix spelling mistake
+ *
+ * Revision 1.167  2004/11/25 07:38:58  csoutheren
+ * Ensured that external TCP address translation is performed when using STUN to handle UDP
+ *
+ * Revision 1.166  2004/09/03 01:06:10  csoutheren
+ * Added initial hooks for H.460 GEF
+ * Thanks to Simon Horne and ISVO (Asia) Pte Ltd. for this contribution
+ *
+ * Revision 1.165  2004/08/03 07:00:13  csoutheren
+ * Added isGKRouted hint to TranslateAliasAddress as this is needed for the reply ACF
+ *
+ * Revision 1.164  2004/05/05 14:11:17  csoutheren
+ * Fixed problems with AccessRequest returning wildcards
+ *
+ * Revision 1.163  2004/04/24 23:58:04  rjongbloed
+ * Fixed GCC 3.4 warning about PAssertNULL
+ *
+ * Revision 1.162  2004/04/21 04:52:12  csoutheren
+ * Fixed problem wil using the incorrect call for AddCall
+ *
+ * Revision 1.161  2004/04/21 01:39:05  csoutheren
+ * Added new overrides to GatekeeperServer to provide virtuals when calls and endpoints are created and destroyed
+ *
+ * Revision 1.160  2004/04/15 07:43:37  csoutheren
+ * Allow gatekeeper to make a decision on multiple alias registrations for each registration
+ *
+ * Revision 1.159  2004/04/14 01:41:59  csoutheren
+ * Added access to endpoint information for GetUserPassword
+ *
+ * Revision 1.157  2004/04/03 08:28:06  csoutheren
+ * Remove pseudo-RTTI and replaced with real RTTI
+ *
+ * Revision 1.156  2004/04/01 04:44:15  csoutheren
+ * Corrected sense of the check for descriptor translation
+ *
+ * Revision 1.155  2004/03/31 07:16:22  csoutheren
+ * Added virtual to provide access to H.501 descriptor sent by GK
  *
  * Revision 1.154  2004/02/15 03:36:31  rjongbloed
  * Fixed bug in removing prefixes, plus added ability to have multiple endpoints
@@ -652,17 +704,6 @@ const char OriginateCallStr[] = "-Originate";
 
 #define new PNEW
 
-static class PAuthInitialiseInstantiateMe
-{
-  public:
-    PAuthInitialiseInstantiateMe()
-    {
-      PWLibStupidLinkerHacks::h235AuthLoader = 1;
-#if P_SSL
-      PWLibStupidLinkerHacks::h235AuthProcedure1Loader = 1;
-#endif
-    }
-} instance;
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -2073,7 +2114,7 @@ BOOL H323GatekeeperCall::TranslateAliasAddress(
       BOOL & gkRouted
     )
 {
-  return gatekeeper.TranslateAliasAddress(alias, aliases, address, gkRouted);
+  return gatekeeper.TranslateAliasAddress(alias, aliases, address, gkRouted, this);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2422,7 +2463,7 @@ H323GatekeeperRequest::Response H323RegisteredEndPoint::OnSecureRegistration(H32
 {
   for (PINDEX i = 0; i < aliases.GetSize(); i++) {
     PString password;
-    if (gatekeeper.GetUsersPassword(aliases[i], password)) {
+    if (gatekeeper.GetUsersPassword(aliases[i], password, *this)) {
       PTRACE(3, "RAS\tFound user " << aliases[i] << " for H.235 security.");
       if (!password)
         SetPassword(password, aliases[i]);
@@ -2739,7 +2780,7 @@ H323GatekeeperRequest::Response H323GatekeeperListener::OnDiscovery(H323Gatekeep
   WORD localPort;
   transport->GetLocalAddress().GetIpAndPort(localAddr, localPort);
   H323TransportAddress(info.grq.m_rasAddress).GetIpAddress(remoteAddr);
-  endpoint.TranslateTCPAddress(localAddr, remoteAddr);
+  endpoint.GetManager().TranslateIPAddress(localAddr, remoteAddr);
   H323TransportAddress newAddr = H323TransportAddress(localAddr, localPort);
 
   H225_TransportAddress & pdu = info.gcf.m_rasAddress;
@@ -3216,6 +3257,15 @@ BOOL H323GatekeeperListener::OnReceiveResourcesAvailableConfirm(const H225_Resou
   return TRUE;
 }
 
+BOOL H323GatekeeperListener::OnSendFeatureSet(unsigned pduType, H225_FeatureSet & set) const
+{
+  return gatekeeper.OnSendFeatureSet(pduType, set);
+}
+
+void H323GatekeeperListener::OnReceiveFeatureSet(unsigned pduType, const H225_FeatureSet & set) const
+{
+  gatekeeper.OnReceiveFeatureSet(pduType, set);
+}
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -3264,6 +3314,7 @@ H323GatekeeperServer::~H323GatekeeperServer()
   monitorExit.Signal();
   PAssert(monitorThread->WaitForTermination(10000), "Gatekeeper monitor thread did not terminate!");
   delete monitorThread;
+  delete peerElement;
 }
 
 
@@ -3767,6 +3818,8 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnAdmission(H323Gatekeeper
 
       PTRACE(2, "RAS\tAdded new call (total=" << activeCalls.GetSize() << ") " << *newCall);
       mutex.Signal();
+
+      AddCall(oldCall);
     }
   }
 
@@ -3957,7 +4010,8 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnLocation(H323GatekeeperL
     if (TranslateAliasAddress(info.lrq.m_destinationInfo[i],
                               info.lcf.m_destinationInfo,
                               address,
-			      isGKRouted)) {
+                              isGKRouted,
+                              NULL)) {
       address.SetPDU(info.lcf.m_callSignalAddress);
       if (info.lcf.m_destinationInfo.GetSize() > 0)
         info.lcf.IncludeOptionalField(H225_LocationConfirm::e_destinationInfo);
@@ -3977,7 +4031,8 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnLocation(H323GatekeeperL
 BOOL H323GatekeeperServer::TranslateAliasAddress(const H225_AliasAddress & alias,
                                                  H225_ArrayOf_AliasAddress & aliases,
                                                  H323TransportAddress & address,
-						 BOOL & /*isGKRouted*/)
+                                                 BOOL & /*isGKRouted*/,
+                                                 H323GatekeeperCall * /*call*/)
 {
   if (!TranslateAliasAddressToSignalAddress(alias, address)) {
     H225_AliasAddress transportAlias;
@@ -4157,6 +4212,15 @@ void H323GatekeeperServer::MonitorMain(PThread &, INT)
 
     activeCalls.DeleteObjectsToBeRemoved();
   }
+}
+
+BOOL H323GatekeeperServer::OnSendFeatureSet(unsigned, H225_FeatureSet &) const
+{
+  return FALSE;
+}
+
+void H323GatekeeperServer::OnReceiveFeatureSet(unsigned, const H225_FeatureSet &) const
+{
 }
 
 
