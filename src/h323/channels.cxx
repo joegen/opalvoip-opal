@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2031.4.2  2006/04/10 06:24:30  csoutheren
+ * Revision 1.2031.4.3  2006/04/25 04:06:12  csoutheren
+ * Disable command execution for now
+ *
+ * Revision 2.30.4.2  2006/04/10 06:24:30  csoutheren
  * Backport from CVS head up to Plugin_Merge3
  *
  * Revision 2.30.4.1  2006/04/06 05:33:08  csoutheren
@@ -880,7 +883,7 @@ BOOL H323UnidirectionalChannel::Start()
   if (!mediaStream->Start())
     return FALSE;
 
-  mediaStream->SetCommandNotifier(PCREATE_NOTIFIER(OnMediaCommand));
+  //mediaStream->SetCommandNotifier(PCREATE_NOTIFIER(OnMediaCommand));   /// TODO: HERE
 
   paused = FALSE;
   return TRUE;
