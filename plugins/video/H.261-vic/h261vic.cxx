@@ -26,6 +26,9 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261vic.cxx,v $
+ * Revision 1.1.2.7  2006/04/25 01:07:00  csoutheren
+ * Rename SIP options
+ *
  * Revision 1.1.2.6  2006/04/24 09:08:49  csoutheren
  * Cleanups
  *
@@ -260,7 +263,7 @@ class RTPFrame
 
 /////////////////////////////////////////////////////////////////////////////
 
-static const char * default_cif_options[][3] = {
+static const char * default_sip_options[][3] = {
   { "h323_cifMPI",                               "<4" ,    "i" },
   { "h323_qcifMPI",                              "<2" ,    "i" },
   { "h323_maxBitRate",                           "<6217" , "i" },
@@ -327,7 +330,7 @@ static int coder_get_sip_options(
       void * parm , 
       unsigned * parmLen)
 {
-  return get_xcif_options(context, parm, parmLen, &default_cif_options[0][0]);
+  return get_xcif_options(context, parm, parmLen, &default_sip_options[0][0]);
 }
 
 
