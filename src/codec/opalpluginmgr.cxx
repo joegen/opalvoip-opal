@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
+ * Revision 1.1.2.12  2006/04/25 01:14:54  csoutheren
+ * Added H.263 capabilities
+ *
  * Revision 1.1.2.11  2006/04/24 09:09:13  csoutheren
  * Added H.263 codec definitions
  *
@@ -557,19 +560,44 @@ class OpalPluginFramedAudioTranscoder : public OpalFramedTranscoder
 
     virtual BOOL ConvertSilentFrame(BYTE * buffer)
     { 
-      if (codec == NULL || isEncoder)
+      if (codec == NULL)
         return FALSE;
 
-      unsigned int length = codec->bytesPerFrame;
+      // for a decoder, this mean that we need to create a silence frame
+      // which is easy - ask the decoder, or just create silence
+      if (!isEncoder) {
+        unsigned int length = codec->bytesPerFrame;
+        if ((codec->flags & PluginCodec_DecodeSilence) == 0)
+          memset(buffer, 0, length); 
+        else {
+          unsigned flags = PluginCodec_CoderSilenceFrame;
+          (codec->codecFunction)(codec, context, 
+                                 NULL, NULL,
+                                 buffer, &length,
+                                 &flags);
+        }
+      }
 
-      if ((codec->flags & PluginCodec_DecodeSilence) == 0)
-        memset(buffer, 0, length); 
+      // for an encoder, we encode silence but set the flag so it can do something special if need be
       else {
-        unsigned flags = PluginCodec_CoderSilenceFrame;
-        (codec->codecFunction)(codec, context, 
-                               NULL, NULL,
-                               buffer, &length,
-                               &flags);
+        unsigned int length = codec->bytesPerFrame;
+        if ((codec->flags & PluginCodec_DecodeSilence) == 0) {
+          PShortArray silence(codec->samplesPerFrame);
+          memset(silence.GetPointer(), 0, codec->samplesPerFrame*sizeof(short));
+          unsigned silenceLen = codec->samplesPerFrame * sizeof(short);
+          unsigned flags = 0;
+          (codec->codecFunction)(codec, context, 
+                                 silence, &silenceLen,
+                                 buffer, &length,
+                                 &flags);
+        }
+        else {
+          unsigned flags = PluginCodec_CoderSilenceFrame;
+          (codec->codecFunction)(codec, context, 
+                                 NULL, NULL,
+                                 buffer, &length,
+                                 &flags);
+        }
       }
 
       return TRUE;
@@ -852,8 +880,8 @@ BOOL OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Dat
 
     if ((flags & PluginCodec_ReturnCoderRequestIFrame) != 0) {
       if (commandNotifier != PNotifier()) {
-        OpalVideoUpdatePicture updatePictureCommand;
-        commandNotifier(updatePictureCommand, 0); 
+        //OpalVideoUpdatePicture updatePictureCommand;
+        //commandNotifier(updatePictureCommand, 0); 
         PTRACE (3, "H261\t Could not decode frame, sending VideoUpdatePicture in hope of an I-Frame.");
       }
     }
@@ -2081,20 +2109,32 @@ BOOL H323H261PluginCapability::OnReceivedPDU(const H245_VideoCapability & cap)
 
   const H245_H261VideoCapability & h261 = cap;
   if (h261.HasOptionalField(H245_H261VideoCapability::e_qcifMPI)) {
-    mediaFormat.SetOptionInteger(h323_qcifMPI_tag, h261.m_qcifMPI);
+    if (!mediaFormat.SetOptionInteger(h323_qcifMPI_tag, h261.m_qcifMPI))
+      return FALSE;
 
-    mediaFormat.SetOptionInteger(OpalMediaFormat::FrameTimeOption, OpalMediaFormat::VideoClockRate*100*h261.m_qcifMPI/2997);
-    mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption, 176);
-    mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption, 144);
+    if (!mediaFormat.SetOptionInteger(OpalMediaFormat::FrameTimeOption, OpalMediaFormat::VideoClockRate*100*h261.m_qcifMPI/2997))
+      return FALSE;
 
+    if (!mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption, 176))
+      return FALSE;
+
+    if (!mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption, 144))
+      return FALSE;
   }
 
   if (h261.HasOptionalField(H245_H261VideoCapability::e_cifMPI)) {
-    mediaFormat.SetOptionInteger(h323_cifMPI_tag, h261.m_cifMPI);
+    if (!mediaFormat.SetOptionInteger(h323_cifMPI_tag, h261.m_cifMPI))
+      return FALSE;
 
-    mediaFormat.SetOptionInteger(OpalMediaFormat::FrameTimeOption, OpalMediaFormat::VideoClockRate*100*h261.m_cifMPI/2997);
-    mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption, 352);
-    mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption, 288);
+    if (!mediaFormat.SetOptionInteger(OpalMediaFormat::FrameTimeOption, OpalMediaFormat::VideoClockRate*100*h261.m_cifMPI/2997))
+      return FALSE;
+
+    if (!mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption, 352))
+      return FALSE;
+
+    if (!mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption, 288))
+      return FALSE;
+
   }
 
   mediaFormat.SetOptionInteger(h323_maxBitRate_tag, h261.m_maxBitRate);
@@ -2287,53 +2327,76 @@ BOOL H323H263PluginCapability::OnReceivedPDU(const H245_VideoCapability & cap)
   OpalMediaFormat & mediaFormat = GetWritableMediaFormat();
 
   const H245_H263VideoCapability & h263 = cap;
-  if (h263.HasOptionalField(H245_H263VideoCapability::e_sqcifMPI))
-    mediaFormat.SetOptionInteger(h323_sqcifMPI_tag, h263.m_sqcifMPI);
-  else if (h263.HasOptionalField(H245_H263VideoCapability::e_slowSqcifMPI))
-    mediaFormat.SetOptionInteger(h323_sqcifMPI_tag, -(signed)h263.m_slowSqcifMPI);
-  else
-    mediaFormat.SetOptionInteger(h323_sqcifMPI_tag, 0);
+  if (h263.HasOptionalField(H245_H263VideoCapability::e_sqcifMPI)) {
+    if (!mediaFormat.SetOptionInteger(h323_sqcifMPI_tag, h263.m_sqcifMPI))
+      return FALSE;
+  } else if (h263.HasOptionalField(H245_H263VideoCapability::e_slowSqcifMPI)) {
+    if (!mediaFormat.SetOptionInteger(h323_sqcifMPI_tag, -(signed)h263.m_slowSqcifMPI))
+      return FALSE;
+  } else if (!mediaFormat.SetOptionInteger(h323_sqcifMPI_tag, 0))
+    return FALSE;
 
-  if (h263.HasOptionalField(H245_H263VideoCapability::e_qcifMPI))
-    mediaFormat.SetOptionInteger(h323_qcifMPI_tag, h263.m_qcifMPI);
-  else if (h263.HasOptionalField(H245_H263VideoCapability::e_slowQcifMPI))
-    mediaFormat.SetOptionInteger(h323_qcifMPI_tag, -(signed)h263.m_slowQcifMPI);
-  else
-    mediaFormat.SetOptionInteger(h323_qcifMPI_tag, 0);
+  if (h263.HasOptionalField(H245_H263VideoCapability::e_qcifMPI)) {
+    if (!mediaFormat.SetOptionInteger(h323_qcifMPI_tag, h263.m_qcifMPI))
+      return FALSE;
+  } else if (h263.HasOptionalField(H245_H263VideoCapability::e_slowQcifMPI)) {
+    if (!mediaFormat.SetOptionInteger(h323_qcifMPI_tag, -(signed)h263.m_slowQcifMPI))
+      return FALSE;
+  } else if (!mediaFormat.SetOptionInteger(h323_qcifMPI_tag, 0))
+    return FALSE;
 
-  if (h263.HasOptionalField(H245_H263VideoCapability::e_cifMPI))
-    mediaFormat.SetOptionInteger(h323_cifMPI_tag, h263.m_cifMPI);
-  else if (h263.HasOptionalField(H245_H263VideoCapability::e_slowCifMPI))
-    mediaFormat.SetOptionInteger(h323_cifMPI_tag, -(signed)h263.m_slowCifMPI);
-  else
-    mediaFormat.SetOptionInteger(h323_cifMPI_tag, 0);
+  if (h263.HasOptionalField(H245_H263VideoCapability::e_cifMPI)) {
+    if (!mediaFormat.SetOptionInteger(h323_cifMPI_tag, h263.m_cifMPI))
+      return FALSE;
+  } else if (h263.HasOptionalField(H245_H263VideoCapability::e_slowCifMPI)) {
+    if (!mediaFormat.SetOptionInteger(h323_cifMPI_tag, -(signed)h263.m_slowCifMPI))
+      return FALSE;
+  } else if (!mediaFormat.SetOptionInteger(h323_cifMPI_tag, 0))
+    return FALSE;
 
-  if (h263.HasOptionalField(H245_H263VideoCapability::e_cif4MPI))
-    mediaFormat.SetOptionInteger(h323_cif4MPI_tag, h263.m_cif4MPI);
-  else if (h263.HasOptionalField(H245_H263VideoCapability::e_slowCif4MPI))
-    mediaFormat.SetOptionInteger(h323_cif4MPI_tag, -(signed)h263.m_slowCif4MPI);
-  else
-    mediaFormat.SetOptionInteger(h323_cif4MPI_tag, 0);
+  if (h263.HasOptionalField(H245_H263VideoCapability::e_cif4MPI)) {
+    if (!mediaFormat.SetOptionInteger(h323_cif4MPI_tag, h263.m_cif4MPI))
+      return FALSE;
+  } else if (h263.HasOptionalField(H245_H263VideoCapability::e_slowCif4MPI)) {
+    if (!mediaFormat.SetOptionInteger(h323_cif4MPI_tag, -(signed)h263.m_slowCif4MPI))
+      return FALSE;
+  } else if (!mediaFormat.SetOptionInteger(h323_cif4MPI_tag, 0))
+    return FALSE;
 
-  if (h263.HasOptionalField(H245_H263VideoCapability::e_cif16MPI))
-    mediaFormat.SetOptionInteger(h323_cif16MPI_tag, h263.m_cif16MPI);
-  else if (h263.HasOptionalField(H245_H263VideoCapability::e_slowCif16MPI))
-    mediaFormat.SetOptionInteger(h323_cif16MPI_tag, -(signed)h263.m_slowCif16MPI);
-  else
-    mediaFormat.SetOptionInteger(h323_cif16MPI_tag, 0);
+  if (h263.HasOptionalField(H245_H263VideoCapability::e_cif16MPI)) {
+    if (!mediaFormat.SetOptionInteger(h323_cif16MPI_tag, h263.m_cif16MPI))
+      return FALSE;
+  } else if (h263.HasOptionalField(H245_H263VideoCapability::e_slowCif16MPI)) {
+    if (!mediaFormat.SetOptionInteger(h323_cif16MPI_tag, -(signed)h263.m_slowCif16MPI))
+      return FALSE;
+  } else if (!mediaFormat.SetOptionInteger(h323_cif16MPI_tag, 0))
+    return FALSE;
 
-  mediaFormat.SetOptionInteger(h323_maxBitRate_tag,              h263.m_maxBitRate);
-  mediaFormat.SetOptionBoolean(h323_unrestrictedVector_tag,      h263.m_unrestrictedVector);
-  mediaFormat.SetOptionBoolean(h323_arithmeticCoding_tag,        h263.m_arithmeticCoding);
-  mediaFormat.SetOptionBoolean(h323_advancedPrediction_tag,      h263.m_advancedPrediction);
-  mediaFormat.SetOptionBoolean(h323_pbFrames_tag,                h263.m_pbFrames);
-  mediaFormat.SetOptionBoolean(h323_errorCompensation_tag,       h263.m_errorCompensation);
+  if (!mediaFormat.SetOptionInteger(h323_maxBitRate_tag,              h263.m_maxBitRate))
+    return FALSE;
+
+  if (!mediaFormat.SetOptionBoolean(h323_unrestrictedVector_tag,      h263.m_unrestrictedVector))
+    return FALSE;
+
+  if (!mediaFormat.SetOptionBoolean(h323_arithmeticCoding_tag,        h263.m_arithmeticCoding))
+    return FALSE;
+
+  if (!mediaFormat.SetOptionBoolean(h323_advancedPrediction_tag,      h263.m_advancedPrediction))
+    return FALSE;
+
+  if (!mediaFormat.SetOptionBoolean(h323_pbFrames_tag,                h263.m_pbFrames))
+    return FALSE;
+
+  if (!mediaFormat.SetOptionBoolean(h323_errorCompensation_tag,       h263.m_errorCompensation))
+    return FALSE;
 
   if (h263.HasOptionalField(H245_H263VideoCapability::e_hrd_B))
-    mediaFormat.SetOptionInteger(h323_hrdB_tag, h263.m_hrd_B);
+    if (!mediaFormat.SetOptionInteger(h323_hrdB_tag, h263.m_hrd_B))
+      return FALSE;
 
   if (h263.HasOptionalField(H245_H263VideoCapability::e_bppMaxKb))
-    mediaFormat.SetOptionInteger(h323_bppMaxKb_tag, h263.m_bppMaxKb);
+    if (!mediaFormat.SetOptionInteger(h323_bppMaxKb_tag, h263.m_bppMaxKb))
+      return FALSE;
 
   return TRUE;
 }
