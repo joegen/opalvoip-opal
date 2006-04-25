@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2133.2.6  2006/04/10 06:24:30  csoutheren
+ * Revision 1.2133.2.7  2006/04/25 01:06:22  csoutheren
+ * Allow SIP-only codecs
+ *
+ * Revision 2.132.2.6  2006/04/10 06:24:30  csoutheren
  * Backport from CVS head up to Plugin_Merge3
  *
  * Revision 2.132.2.5  2006/04/10 05:24:42  csoutheren
@@ -955,9 +958,11 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
 BOOL SIPConnection::OnOpenSourceMediaStreams(const OpalMediaFormatList & remoteFormatList, unsigned sessionId, SDPMediaDescription *localMedia)
 {
   BOOL reverseStreamsFailed = TRUE;
-  
-  PWaitAndSignal m(streamsMutex);
-  ownerCall.OpenSourceMediaStreams(*this, remoteFormatList, sessionId);
+
+  {
+    PWaitAndSignal m(streamsMutex);
+    ownerCall.OpenSourceMediaStreams(*this, remoteFormatList, sessionId);
+  }
 
   OpalMediaFormatList otherList;
   {
