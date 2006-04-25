@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2042.2.3  2006/04/11 05:12:25  csoutheren
+ * Revision 1.2042.2.4  2006/04/25 01:06:22  csoutheren
+ * Allow SIP-only codecs
+ *
+ * Revision 2.41.2.3  2006/04/11 05:12:25  csoutheren
  * Updated to current OpalMediaFormat changes
  *
  * Revision 2.41.2.2  2006/04/07 07:57:20  csoutheren
@@ -370,21 +373,23 @@ BOOL OpalCall::OnConnected(OpalConnection & connection)
 
   BOOL createdOne = FALSE;
 
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-    if (conn != &connection) {
-      if (conn->SetConnected())
-        ok = TRUE;
-    }
+  {
+    for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+      if (conn != &connection) {
+        if (conn->SetConnected())
+          ok = TRUE;
+      }
 
-    OpalMediaFormatList formats = GetMediaFormats(*conn, TRUE);
-    if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultAudioSessionID))
-      createdOne = TRUE;
-    if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultVideoSessionID))
-      createdOne = TRUE;
+      OpalMediaFormatList formats = GetMediaFormats(*conn, TRUE);
+      if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultAudioSessionID))
+        createdOne = TRUE;
+      if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultVideoSessionID))
+        createdOne = TRUE;
+    }
   }
 
   if (ok && createdOne) {
-    for (PSafePtr<OpalConnection> conn = connectionsActive; conn != NULL; ++conn)
+    for (PSafePtr<OpalConnection> conn(connectionsActive); conn != NULL; ++conn)
       conn->StartMediaStreams();
   }
 

@@ -1092,15 +1092,17 @@ PINDEX OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt, unsigned 
   for (PINDEX idx = 0; idx < GetSize(); idx++) {
     OpalMediaFormat & mediaFormat = (*this)[idx];
 
-    if (pt < RTP_DataFrame::DynamicBase && mediaFormat.GetPayloadType() == pt)
-      return idx;
+    if (clockRate != 0 && clockRate != mediaFormat.GetClockRate())
+      continue;
 
+    const char * otherName = mediaFormat.GetEncodingName();
     if (name != NULL && *name != '\0') {
-      const char * otherName = mediaFormat.GetEncodingName();
-      if (otherName != NULL && strcasecmp(otherName, name) == 0
-	  && mediaFormat.GetClockRate() == clockRate)
-        return idx;
+      if (otherName == NULL || otherName[0] == '\0' || strcasecmp(otherName, name) != 0)
+        continue;
     }
+
+    if (RTP_DataFrame::IllegalPayloadType == pt || mediaFormat.GetPayloadType() == pt)
+      return idx;
   }
 
   return P_MAX_INDEX;

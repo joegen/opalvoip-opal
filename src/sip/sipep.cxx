@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2108.2.3  2006/04/10 06:24:30  csoutheren
+ * Revision 1.2108.2.4  2006/04/25 01:06:22  csoutheren
+ * Allow SIP-only codecs
+ *
+ * Revision 2.107.2.3  2006/04/10 06:24:30  csoutheren
  * Backport from CVS head up to Plugin_Merge3
  *
  * Revision 2.107.2.2  2006/04/06 05:33:09  csoutheren
@@ -895,8 +898,7 @@ BOOL SIPEndPoint::SetupTransfer(const PString & token,
 {
   PString remoteParty;
   // Make a new connection
-  PSafePtr<OpalConnection> otherConnection = 
-    GetConnectionWithLock(token, PSafeReference);
+  PSafePtr<OpalConnection> otherConnection = GetConnectionWithLock(token, PSafeReference);
   if (otherConnection == NULL) {
     return FALSE;
   }
@@ -959,16 +961,18 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
 
   // Find a corresponding connection
   connectionsActiveInUse.Wait();
-  PSafePtr<SIPConnection> connection = GetSIPConnectionWithLock(pdu->GetMIME().GetCallID());
-  if (connection != NULL) {
-    connectionsActiveInUse.Signal();
-    SIPTransaction * transaction = connection->GetTransaction(pdu->GetTransactionID());
-    if (transaction != NULL && transaction->GetMethod() == SIP_PDU::Method_INVITE) {
-      // Have a response to the INVITE, so end Connect mode on the transport
-      transport.EndConnect(transaction->GetLocalAddress());
+  {
+    PSafePtr<SIPConnection> connection = GetSIPConnectionWithLock(pdu->GetMIME().GetCallID());
+    if (connection != NULL) {
+      connectionsActiveInUse.Signal();
+      SIPTransaction * transaction = connection->GetTransaction(pdu->GetTransactionID());
+      if (transaction != NULL && transaction->GetMethod() == SIP_PDU::Method_INVITE) {
+        // Have a response to the INVITE, so end Connect mode on the transport
+        transport.EndConnect(transaction->GetLocalAddress());
+      }
+      connection->QueuePDU(pdu);
+      return TRUE;
     }
-    connection->QueuePDU(pdu);
-    return TRUE;
   }
 
   if (pdu->GetMethod() != SIP_PDU::Method_INVITE)

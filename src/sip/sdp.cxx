@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2029.2.4  2006/04/19 07:52:30  csoutheren
+ * Revision 1.2029.2.5  2006/04/25 01:06:22  csoutheren
+ * Allow SIP-only codecs
+ *
+ * Revision 2.28.2.4  2006/04/19 07:52:30  csoutheren
  * Add ability to have SIP-only and H.323-only codecs, and implement for H.261
  *
  * Revision 2.28.2.3  2006/04/06 05:33:09  csoutheren
@@ -609,7 +612,8 @@ OpalMediaFormatList SDPMediaDescription::GetMediaFormats(unsigned sessionID) con
     if (opalFormat.IsEmpty())
       PTRACE(2, "SIP\tRTP payload type " << formats[i].GetPayloadType() << " not matched to audio codec");
     else {
-      if (opalFormat.GetDefaultSessionID() == sessionID) {
+      if (opalFormat.GetDefaultSessionID() == sessionID && 
+          opalFormat.GetEncodingName() != NULL) {
         PTRACE(2, "SIP\tRTP payload type " << formats[i].GetPayloadType() << " matched to codec " << opalFormat);
 	      list += opalFormat;
       }
@@ -670,6 +674,7 @@ void SDPMediaDescription::AddMediaFormats(const OpalMediaFormatList & mediaForma
   for (PINDEX i = 0; i < mediaFormats.GetSize(); i++) {
     OpalMediaFormat mediaFormat = mediaFormats[i];
     if (mediaFormat.GetDefaultSessionID() == session &&
+        mediaFormat.GetEncodingName() != NULL &&
         mediaFormat.GetPayloadType() != RTP_DataFrame::IllegalPayloadType)
       AddMediaFormat(mediaFormat);
   }
@@ -832,15 +837,15 @@ BOOL SDPSessionDescription::Decode(const PString & str)
             case 'r' : // zero or more repeat times
               break;
             case 'a' : // zero or more session attribute lines
-	      if (value *= "sendonly")
-		SetDirection (SDPMediaDescription::SendOnly);
-	      else if (value *= "recvonly")
-		SetDirection (SDPMediaDescription::RecvOnly);
-	      else if (value *= "sendrecv")
-		SetDirection (SDPMediaDescription::SendRecv);
-	      else if (value *= "inactive")
-		SetDirection (SDPMediaDescription::Inactive);
-	      break;
+              if (value *= "sendonly")
+		            SetDirection (SDPMediaDescription::SendOnly);
+	            else if (value *= "recvonly")
+		            SetDirection (SDPMediaDescription::RecvOnly);
+	            else if (value *= "sendrecv")
+		            SetDirection (SDPMediaDescription::SendRecv);
+	            else if (value *= "inactive")
+		            SetDirection (SDPMediaDescription::Inactive);
+	            break;
 
             default:
               PTRACE(1, "SDP\tUnknown session information key " << key[0]);
