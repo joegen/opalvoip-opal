@@ -26,6 +26,9 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261vic.cxx,v $
+ * Revision 1.1.2.9  2006/04/26 08:03:57  csoutheren
+ * H.263 encoding and decoding now working from plugin for both SIP and H.323
+ *
  * Revision 1.1.2.8  2006/04/26 05:09:57  csoutheren
  * Cleanup bit rate settings
  *
@@ -377,21 +380,13 @@ class H261EncoderContext
 
       // create RTP frame from destination buffer
       RTPFrame dstRTP(dst, dstLen, RTP_RFC2032_PAYLOAD);
+      dstLen = 0;
 
       // return more pending data frames, if any
       if (videoEncoder->MoreToIncEncode()) {
         unsigned payloadLength = 0;
         videoEncoder->IncEncodeAndGetPacket((u_char *)dstRTP.GetPayloadPtr(), payloadLength); //get next packet on list
-        dstRTP.SetPayloadSize(payloadLength);
-        dstRTP.SetMarker(FALSE);
-        dstLen = dstRTP.GetPacketLen();
-
-        flags = 0;
-        flags |= videoEncoder->MoreToIncEncode() ? 0 : PluginCodec_ReturnCoderLastFrame;  // marker bit on last frame of video
-        flags |= PluginCodec_ReturnCoderIFrame;                                           // sadly, this encoder *always* returns I-frames :(
-
-        dstRTP.SetMarker(!videoEncoder->MoreToIncEncode());
-        dstRTP.SetTimestamp(lastTimeStamp);
+        dstLen = SetEncodedPacket(dstRTP, !videoEncoder->MoreToIncEncode(), RTP_RFC2032_PAYLOAD, lastTimeStamp, payloadLength, flags);
         return 1;
       }
 
@@ -408,20 +403,18 @@ class H261EncoderContext
       // get and validate header
       if (srcRTP.GetPayloadSize() < sizeof(PluginCodec_Video_FrameHeader)) {
         //PTRACE(1,"H261\tVideo grab too small");
-        dstLen = 0;
         return 0;
       } 
+
       PluginCodec_Video_FrameHeader * header = (PluginCodec_Video_FrameHeader *)srcRTP.GetPayloadPtr();
       if (header->x != 0 && header->y != 0) {
         //PTRACE(1,"H261\tVideo grab of partial frame unsupported");
-        dstLen = 0;
         return 0;
       }
 
       // make sure the incoming frame is big enough for the specified frame size
       if (srcRTP.GetPayloadSize() < (int)(sizeof(PluginCodec_Video_FrameHeader) + frameWidth*frameHeight*12/8)) {
         //PTRACE(1,"H261\tPayload of grabbed frame too small for full frame");
-        dstLen = 0;
         return 0;
       }
 
@@ -446,25 +439,35 @@ class H261EncoderContext
 
       // get next frame from list created by preprocessor
       if (!videoEncoder->MoreToIncEncode())
-        dstRTP.SetPayloadSize(0);
+        dstLen = 0;
       else {
         unsigned payloadLength = 0;
         videoEncoder->IncEncodeAndGetPacket((u_char *)dstRTP.GetPayloadPtr(), payloadLength); 
-        dstRTP.SetPayloadSize(payloadLength);
-        dstLen = dstRTP.GetPacketLen();
+        dstLen = SetEncodedPacket(dstRTP, !videoEncoder->MoreToIncEncode(), RTP_RFC2032_PAYLOAD, lastTimeStamp, payloadLength, flags);
       }
 
-      
-      flags = 0;
-      flags |= videoEncoder->MoreToIncEncode() ? 0 : PluginCodec_ReturnCoderLastFrame;  // marker flag set on last frame of video
-      flags |= PluginCodec_ReturnCoderIFrame;                                           // sadly, this encoder *always* returns I-frames :(
-
-      dstRTP.SetMarker(!videoEncoder->MoreToIncEncode());
-      dstRTP.SetTimestamp(lastTimeStamp);
-     
       return 1;
     }
+
+  protected:
+    unsigned SetEncodedPacket(RTPFrame & dstRTP, bool isLast, unsigned char payloadCode, unsigned long lastTimeStamp, unsigned payloadLength, unsigned & flags);
 };
+
+
+
+unsigned H261EncoderContext::SetEncodedPacket(RTPFrame & dstRTP, bool isLast, unsigned char payloadCode, unsigned long lastTimeStamp, unsigned payloadLength, unsigned & flags)
+{
+  dstRTP.SetPayloadSize(payloadLength);
+  dstRTP.SetMarker(isLast);
+  dstRTP.SetPayloadType(payloadCode);
+  dstRTP.SetTimestamp(lastTimeStamp);
+
+  flags = 0;
+  flags |= isLast ? PluginCodec_ReturnCoderLastFrame : 0;  // marker bit on last frame of video
+  flags |= PluginCodec_ReturnCoderIFrame;                       // sadly, this encoder *always* returns I-frames :(
+
+  return dstRTP.GetPacketLen();
+}
 
 static void * create_encoder(const struct PluginCodec_Definition * /*codec*/)
 {
@@ -569,14 +572,13 @@ class H261DecoderContext
     {
       WaitAndSignal mutex(mutex);
 
-      dstLen = 0;
-      flags = 0;
-
       // create RTP frame from source buffer
       RTPFrame srcRTP(src, srcLen);
 
       // create RTP frame from destination buffer
       RTPFrame dstRTP(dst, dstLen, 0);
+      dstLen = 0;
+      flags = 0;
 
       // Check for lost packets to help decoder
       bool lostPreviousPacket = FALSE;
@@ -639,7 +641,7 @@ class H261DecoderContext
       videoDecoder->resetndblk();
 
       dstLen = dstRTP.GetPacketLen();
-      flags = PluginCodec_ReturnCoderLastFrame | PluginCodec_ReturnCoderIFrame;   // THIS NEEDS TO BE CHANGED TO DO CORRECT I-FRAME DETECTION
+      flags = PluginCodec_ReturnCoderLastFrame | PluginCodec_ReturnCoderIFrame;   // TODO: THIS NEEDS TO BE CHANGED TO DO CORRECT I-FRAME DETECTION
       return 1;
     }
 };
