@@ -22,6 +22,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.1.2.6  2006/04/26 05:09:57  csoutheren
+ * Cleanup bit rate settings
+ *
  * Revision 1.1.2.5  2006/04/19 07:52:30  csoutheren
  * Add ability to have SIP-only and H.323-only codecs, and implement for H.261
  *
@@ -90,6 +93,9 @@ PString DisplayLicenseType(int type)
       break;
     case PluginCodec_License_BSD:
       str = "BSD";
+      break;
+    case PluginCodec_License_LGPL:
+      str = "LGPL";
       break;
     default:
       if (type <= PluginCodec_License_NoRoyalties)
@@ -241,8 +247,7 @@ void DisplayCodecDefn(PluginCodec_Definition & defn)
     "H.261",
     "H.262",
     "H.263",
-    "is11172",
-    "NoH323"
+    "is11172"
   };
 
   cout << "  Capability type:     ";
@@ -343,8 +348,12 @@ void DisplayCodecDefn(PluginCodec_Definition & defn)
         cout << ", warning-non-NULL h323capData" << endl;
       break;
 
+    case PluginCodec_H323Codec_NoH323:
+      cout << "H323 capability not created" << endl;
+      break;
+
     default:
-        cout << " not supported" << endl;
+      cout << " unknown code (" << (int)defn.h323CapabilityType << endl;
       break;
   }
 }
@@ -364,10 +373,10 @@ void DisplayMediaFormats(const OpalMediaFormatList & mediaList)
     cout << setw(max_len+2) << fmt << "  ";
     switch (fmt.GetDefaultSessionID()) {
       case OpalMediaFormat::DefaultAudioSessionID:
-        cout << "audio, rate=" << fmt.GetBandwidth() << ", RTP=" << fmt.GetPayloadType() << endl;
+        cout << "audio, bandwidth=" << fmt.GetBandwidth() << ", RTP=" << fmt.GetPayloadType() << endl;
         break;
       case OpalMediaFormat::DefaultVideoSessionID:
-        cout << "video, rate=" << fmt.GetBandwidth() << ", RTP=" << fmt.GetPayloadType() << endl;
+        cout << "video, bandwidth=" << fmt.GetBandwidth() << ", RTP=" << fmt.GetPayloadType() << endl;
         break;
       case OpalMediaFormat::DefaultDataSessionID:
         cout << "data" << endl;;
@@ -489,7 +498,7 @@ void OpalCodecInfo::Main()
           return;
         }
         unsigned int count;
-        PluginCodec_Definition * codecs = (*getCodecs)(&count, PLUGIN_CODEC_VERSION);
+        PluginCodec_Definition * codecs = (*getCodecs)(&count, PLUGIN_CODEC_VERSION_VIDEO);
         if (codecs == NULL || count == 0) {
           cout << "error: " << name << " does not define any codecs for this version of the plugin API" << endl;
           return;
@@ -514,6 +523,6 @@ void OpalCodecInfo::Main()
        << "  -m --mediaformats   display media formats\n"
        << "  -p --pluginlist     display codec plugins\n"
        << "  -C --caps spec      display capabilities that match the specification\n"
-       << "  -f --factory        display codec conversion factories\n"
+       //<< "  -f --factory        display codec conversion factories\n"
   ;
 }

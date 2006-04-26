@@ -26,6 +26,9 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261vic.cxx,v $
+ * Revision 1.1.2.8  2006/04/26 05:09:57  csoutheren
+ * Cleanup bit rate settings
+ *
  * Revision 1.1.2.7  2006/04/25 01:07:00  csoutheren
  * Rename SIP options
  *
@@ -94,7 +97,7 @@ PLUGIN_CODEC_IMPLEMENT(VIC_H261)
 #define RTP_DYNAMIC_PAYLOAD   96
 
 #define H261_CLOCKRATE    90000
-#define H261_BITRATE      128000
+#define H261_BITRATE      621700
 
 typedef unsigned char u_char;
 typedef unsigned short u_short;
@@ -264,27 +267,21 @@ class RTPFrame
 /////////////////////////////////////////////////////////////////////////////
 
 static const char * default_sip_options[][3] = {
-  { "h323_cifMPI",                               "<4" ,    "i" },
-  { "h323_qcifMPI",                              "<2" ,    "i" },
-  { "h323_maxBitRate",                           "<6217" , "i" },
-  { "h323_temporalSpatialTradeOffCapability",    "<f" ,    "b" },
-  { "h323_stillImageTransmission",               "<f" ,    "b" },
+  { "h323_cifMPI",                               "<4" ,      "i" },
+  { "h323_qcifMPI",                              "<2" ,      "i" },
+//  { "Max Bit Rate",                              "<621700" , "i" },
   { NULL, NULL, NULL }
 };
 
 static const char * default_cif_h261_options[][3] = {
-  { "h323_cifMPI",                               "<4" ,    "i" },
-  { "h323_maxBitRate",                           "<6217" , "i" },
-  { "h323_temporalSpatialTradeOffCapability",    "<f" ,    "b" },
-  { "h323_stillImageTransmission",               "<f" ,    "b" },
+  { "h323_cifMPI",                               "<4" ,      "i" },
+//  { "Max Bit Rate",                              "<621700" , "i" },
   { NULL, NULL, NULL }
 };
 
 static const char * default_qcif_h261_options[][3] = {
-  { "h323_qcifMPI",                              "<2" ,    "i" },
-  { "h323_maxBitRate",                           "<6217" , "i" },
-  { "h323_temporalSpatialTradeOffCapability",    "<f" ,    "b" },
-  { "h323_stillImageTransmission",               "<f" ,    "b" },
+  { "h323_qcifMPI",                              "<2" ,      "i" },
+//  { "Max Bit Rate",                              "<621700" , "i" },
   { NULL, NULL, NULL }
 };
 
