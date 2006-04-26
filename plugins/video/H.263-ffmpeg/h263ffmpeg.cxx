@@ -28,6 +28,9 @@
  *                 Craig Southeren (craigs@postincrement.com)
  *
  * $Log: h263ffmpeg.cxx,v $
+ * Revision 1.1.2.2  2006/04/26 05:05:59  csoutheren
+ * H.263 decoding working via codec plugin
+ *
  * Revision 1.1.2.1  2006/04/24 09:07:34  csoutheren
  * Initial implementation of H.263 codec plugin using ffmpeg.
  * Not yet tested - decoder only implemented
@@ -74,7 +77,7 @@ extern "C" {
 #define RTP_DYNAMIC_PAYLOAD  96
 
 #define H263_CLOCKRATE    90000
-#define H263_BITRATE      180000
+#define H263_BITRATE      327600
 
 #define CIF_WIDTH     352
 #define CIF_HEIGHT    288
@@ -311,8 +314,10 @@ FFMPEGLibrary::FFMPEGLibrary()
 bool FFMPEGLibrary::Load()
 {
   if (!DynaLink::Open("avcodec")
-#if !defined(WIN32)
-      && !PDynaLink::Open("libavcodec.so")
+#if defined(WIN32)
+      && !DynaLink::Open("libavcodec")
+#else
+      && !DynaLink::Open("libavcodec.so")
 #endif
     ) {
     //cerr << "FFLINK\tFailed to load a library, some codecs won't operate correctly;" << endl;
@@ -600,23 +605,20 @@ class RTPFrame
 /////////////////////////////////////////////////////////////////////////////
 
 static const char * default_cif_h263_options[][3] = {
-  { "h323_cifMPI",                               "<2" ,    "i" },
-  { "h323_maxBitRate",                           "<6217" , "i" },
-  { "h323_temporalSpatialTradeOffCapability",    "<f" ,    "b" },
+  { "h323_cifMPI",                               "<2" ,      "i" },
+//  { "Max Bit Rate",                              "<327600" , "i" },
   { NULL, NULL, NULL }
 };
 
 static const char * default_qcif_h263_options[][3] = {
-  { "h323_qcifMPI",                              "<1" ,    "i" },
-  { "h323_maxBitRate",                           "<6217" , "i" },
-  { "h323_temporalSpatialTradeOffCapability",    "<f" ,    "b" },
+  { "h323_qcifMPI",                              "<1" ,      "i" },
+//  { "Max Bit Rate",                              "<327600" , "i" },
   { NULL, NULL, NULL }
 };
 
 static const char * default_sip_h263_options[][3] = {
-  { "h323_qcifMPI",                              "<1" ,    "i" },
-  { "h323_maxBitRate",                           "<6217" , "i" },
-  { "h323_temporalSpatialTradeOffCapability",    "<f" ,    "b" },
+  { "h323_qcifMPI",                              "<1" ,      "i" },
+//  { "Max Bit Rate",                              "<327600" , "i" },
   { NULL, NULL, NULL }
 };
 
@@ -948,14 +950,18 @@ bool H263DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE 
     }
   }
 
-  dstRTP.SetPayloadSize(frameBytes);
+  dstRTP.SetPayloadSize(sizeof(PluginCodec_Video_FrameHeader) + frameBytes);
   dstRTP.SetPayloadType(RTP_DYNAMIC_PAYLOAD);
   dstRTP.SetTimestamp(srcRTP.GetTimestamp());
   dstRTP.SetMarker(TRUE);
 
+  dstLen = dstRTP.GetPacketLen();
+
+  flags = PluginCodec_ReturnCoderLastFrame ;   // THIS NEEDS TO BE CHANGED TO DO CORRECT I-FRAME DETECTION
+
   frameNum++;
 
-  return TRUE;
+  return 1;
 }
 
 
@@ -1108,7 +1114,7 @@ static struct PluginCodec_Definition h263CodecDefn[6] = {
   codec_encoder,                      // encode/decode
   cifEncoderControls,                 // codec controls
 
-  PluginCodec_H323VideoCodec_h261,    // h323CapabilityType 
+  PluginCodec_H323VideoCodec_h263,    // h323CapabilityType 
   NULL                                // h323CapabilityData
 },
 { 
@@ -1141,7 +1147,7 @@ static struct PluginCodec_Definition h263CodecDefn[6] = {
   codec_decoder,                      // encode/decode
   cifDecoderControls,                 // codec controls
 
-  PluginCodec_H323VideoCodec_h261,    // h323CapabilityType 
+  PluginCodec_H323VideoCodec_h263,    // h323CapabilityType 
   NULL                                // h323CapabilityData
 },
 
@@ -1175,7 +1181,7 @@ static struct PluginCodec_Definition h263CodecDefn[6] = {
   codec_encoder,                      // encode/decode
   qcifEncoderControls,                // codec controls
 
-  PluginCodec_H323VideoCodec_h261,    // h323CapabilityType 
+  PluginCodec_H323VideoCodec_h263,    // h323CapabilityType 
   NULL                                // h323CapabilityData
 },
 { 
@@ -1208,7 +1214,7 @@ static struct PluginCodec_Definition h263CodecDefn[6] = {
   codec_decoder,                      // encode/decode
   qcifDecoderControls,                // codec controls
 
-  PluginCodec_H323VideoCodec_h261,    // h323CapabilityType 
+  PluginCodec_H323VideoCodec_h263,    // h323CapabilityType 
   NULL                                // h323CapabilityData
 },
 
