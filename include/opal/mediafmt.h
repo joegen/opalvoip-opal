@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2038.4.5  2006/04/19 04:58:56  csoutheren
+ * Revision 1.2038.4.6  2006/04/26 05:05:59  csoutheren
+ * H.263 decoding working via codec plugin
+ *
+ * Revision 2.37.4.5  2006/04/19 04:58:56  csoutheren
  * Debugging and testing of new video plugins
  * H.261 working in both CIF and QCIF modes in H.323
  *
@@ -42,7 +45,10 @@
  * Added OpalMediaFormat clone function
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2038.4.5  2006/04/19 04:58:56  csoutheren
+ * Revision 1.2038.4.6  2006/04/26 05:05:59  csoutheren
+ * H.263 decoding working via codec plugin
+ *
+ * Revision 2.37.4.5  2006/04/19 04:58:56  csoutheren
  * Debugging and testing of new video plugins
  * H.261 working in both CIF and QCIF modes in H.323
  *
@@ -914,12 +920,17 @@ class OpalMediaFormat : public PCaselessString
       const OpalMediaFormat & mediaFormat  ///<  Media format to copy to master list
     );
 
+    /**
+      * Add a new option to this media format
+      */
     bool AddOption(
       OpalMediaOption * option
     );
 
-  protected:
+    bool HasOption(const PString & name) const
+    { return FindOption(name) != NULL; }
 
+  protected:
     OpalMediaOption * FindOption(
       const PString & name
     ) const;
