@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
+ * Revision 1.1.2.14  2006/04/26 08:03:58  csoutheren
+ * H.263 encoding and decoding now working from plugin for both SIP and H.323
+ *
  * Revision 1.1.2.13  2006/04/26 05:05:59  csoutheren
  * H.263 decoding working via codec plugin
  *
@@ -511,7 +514,7 @@ class OpalPluginTranscoderFactory : public OpalTranscoderFactory
     {
       public:
         Worker(const OpalMediaFormatPair & key, PluginCodec_Definition * _codecDefn, BOOL _isEncoder)
-          : OpalTranscoderFactory::WorkerBase(TRUE), codecDefn(_codecDefn), isEncoder(_isEncoder)
+          : OpalTranscoderFactory::WorkerBase(), codecDefn(_codecDefn), isEncoder(_isEncoder)
         { OpalTranscoderFactory::Register(key, this); }
 
       protected:
@@ -872,8 +875,11 @@ BOOL OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Dat
         delete dst;
         return FALSE;
       }
-      dst->SetPayloadSize(toLen - dst->GetHeaderSize());
-      dstList.Append(dst);
+
+      if (toLen > 0) {
+        dst->SetPayloadSize(toLen - dst->GetHeaderSize());
+        dstList.Append(dst);
+      }
 
     } while ((flags & PluginCodec_ReturnCoderLastFrame) == 0);
   }

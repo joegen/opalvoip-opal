@@ -28,6 +28,9 @@
  *                 Craig Southeren (craigs@postincrement.com)
  *
  * $Log: h263ffmpeg.cxx,v $
+ * Revision 1.1.2.3  2006/04/26 08:03:58  csoutheren
+ * H.263 encoding and decoding now working from plugin for both SIP and H.323
+ *
  * Revision 1.1.2.2  2006/04/26 05:05:59  csoutheren
  * H.263 decoding working via codec plugin
  *
@@ -66,6 +69,8 @@ extern "C" {
 #include "ffmpeg/avcodec.h"
 };
 
+#include <vector>
+
 // if defined, the FFMPEG code is access via another DLL
 // otherwise, the FFMPEG code is assumed to be statically linked into this plugin
 
@@ -79,11 +84,23 @@ extern "C" {
 #define H263_CLOCKRATE    90000
 #define H263_BITRATE      327600
 
-#define CIF_WIDTH     352
-#define CIF_HEIGHT    288
+#define CIF_WIDTH       352
+#define CIF_HEIGHT      288
+
+#define CIF4_WIDTH      (CIF_WIDTH*2)
+#define CIF4_HEIGHT     (CIF_HEIGHT*2)
+
+#define CIF16_WIDTH     (CIF_WIDTH*4)
+#define CIF16_HEIGHT    (CIF_HEIGHT*4)
 
 #define QCIF_WIDTH     (CIF_WIDTH/2)
 #define QCIF_HEIGHT    (CIF_HEIGHT/2)
+
+#define SQCIF_WIDTH     128
+#define SQCIF_HEIGHT    96
+
+#define MAX_H263_PACKET_SIZE     2048
+#define MAX_YUV420P_PACKET_SIZE (((CIF16_WIDTH * CIF16_HEIGHT * 3) / 2) + FF_INPUT_BUFFER_PADDING_SIZE)
 
 /////////////////////////////////////////////////////////////////
 //
@@ -523,27 +540,27 @@ bool FFMPEGLibrary::IsLoaded()
 class RTPFrame
 {
   public:
-    RTPFrame(const unsigned char * _packet, int _packetLen)
-      : packet((unsigned char *)_packet), packetLen(_packetLen)
+    RTPFrame(const unsigned char * _packet, int _maxPacketLen)
+      : packet((unsigned char *)_packet), maxPacketLen(_maxPacketLen), packetLen(_maxPacketLen)
     {
     }
 
-    RTPFrame(unsigned char * _packet, int _packetLen, unsigned char payloadType)
-      : packet(_packet), packetLen(_packetLen)
+    RTPFrame(unsigned char * _packet, int _maxPacketLen, unsigned char payloadType)
+      : packet(_packet), maxPacketLen(_maxPacketLen), packetLen(_maxPacketLen)
     { 
       if (packetLen > 0)
         packet[0] = 0x80;    // set version, no extensions, zero contrib count
       SetPayloadType(payloadType);
     }
 
-    inline unsigned long GetLong(int offs) const
+    inline unsigned long GetLong(unsigned offs) const
     {
       if (offs + 4 > packetLen)
         return 0;
       return (packet[offs + 0] << 24) + (packet[offs+1] << 16) + (packet[offs+2] << 8) + packet[offs+3]; 
     }
 
-    inline void SetLong(int offs, unsigned long n)
+    inline void SetLong(unsigned offs, unsigned long n)
     {
       if (offs + 4 <= packetLen) {
         packet[offs + 0] = (BYTE)((n >> 24) & 0xff);
@@ -553,14 +570,14 @@ class RTPFrame
       }
     }
 
-    inline unsigned short GetShort(int offs) const
+    inline unsigned short GetShort(unsigned offs) const
     { 
       if (offs + 2 > packetLen)
         return 0;
       return (packet[offs + 0] << 8) + packet[offs + 1]; 
     }
 
-    inline void SetShort(int offs, unsigned short n) 
+    inline void SetShort(unsigned offs, unsigned short n) 
     { 
       if (offs + 2 <= packetLen) {
         packet[offs + 0] = (BYTE)((n >> 8) & 0xff);
@@ -569,6 +586,7 @@ class RTPFrame
     }
 
     inline int GetPacketLen() const                    { return packetLen; }
+    inline int GetMaxPacketLen() const                 { return maxPacketLen; }
     inline unsigned GetVersion() const                 { return (packetLen < 1) ? 0 : (packet[0]>>6)&3; }
     inline bool GetExtension() const                   { return (packetLen < 1) ? 0 : (packet[0]&0x10) != 0; }
     inline bool GetMarker()  const                     { return (packetLen < 2) ? FALSE : ((packet[1]&0x80) != 0); }
@@ -580,7 +598,7 @@ class RTPFrame
     inline int GetExtensionSize() const                { return !GetExtension() ? 0  : GetShort(RTP_MIN_HEADER_SIZE + 4*GetContribSrcCount() + 2); }
     inline int GetExtensionType() const                { return !GetExtension() ? -1 : GetShort(RTP_MIN_HEADER_SIZE + 4*GetContribSrcCount()); }
     inline int GetPayloadSize() const                  { return packetLen - GetHeaderSize(); }
-    inline const unsigned char * GetPayloadPtr() const { return packet + GetHeaderSize(); }
+    inline unsigned char * GetPayloadPtr() const       { return packet + GetHeaderSize(); }
 
     inline unsigned int GetHeaderSize() const    
     { 
@@ -595,11 +613,19 @@ class RTPFrame
     inline void SetSequenceNumber(unsigned short v)  { SetShort(2, v); }
     inline void SetTimestamp(unsigned long n)        { SetLong(4, n); }
     inline void SetSyncSource(unsigned long n)       { SetLong(8, n); }
-    inline void SetPayloadSize(int payloadSize)      { packetLen = GetHeaderSize() + payloadSize; }
+
+    inline bool SetPayloadSize(int payloadSize)      
+    { 
+      if (GetHeaderSize() + payloadSize > maxPacketLen)
+        return true; 
+      packetLen = GetHeaderSize() + payloadSize;
+      return true;
+    }
 
   protected:
     unsigned char * packet;
-    int packetLen;
+    unsigned maxPacketLen;
+    unsigned packetLen;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -669,12 +695,361 @@ static int coder_get_sip_options(
 
 /////////////////////////////////////////////////////////////////////////////
 
+class H263Packet
+{
+  public:
+    H263Packet() { data_size = hdr_size = 0; hdr = data = NULL; };
+    ~H263Packet() {};
+
+    void Store(void * _data, int _data_size, void * _hdr, int _hdr_size)
+    {
+      data      = _data;
+      data_size = _data_size;
+      hdr       = _hdr;
+      hdr_size  = _hdr_size;
+    }
+
+    bool Read(RTPFrame & frame)
+    {
+      if (!frame.SetPayloadSize(hdr_size + data_size)) {
+        //PTRACE(1, "H263Pck\tNot enough memory for packet of " << length << " bytes");
+        return false;
+      }
+      memcpy(frame.GetPayloadPtr(), hdr, hdr_size);
+      memcpy(frame.GetPayloadPtr() + hdr_size, data, data_size);
+
+      data = NULL;
+      hdr = NULL;
+
+      return true;
+    }
+
+  private:
+    void *data;
+    int data_size;
+    void *hdr;
+    int hdr_size;
+};
+
 class H263EncoderContext
 {
   public:
-    H263EncoderContext() 
-    { }
+    typedef std::vector<H263Packet *> H263PacketList;
+    static void RtpCallback(void *data, int data_size,
+                            void *hdr, int hdr_size, void *priv_data);
+
+    H263EncoderContext();
+    ~H263EncoderContext();
+    int EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags);
+
+  protected:
+    BOOL OpenCodec();
+    void CloseCodec();
+
+    unsigned GetNextEncodedPacket(RTPFrame & dstRTP, unsigned char payloadCode, unsigned long lastTimeStamp, unsigned & flags);
+
+    H263PacketList encodedPackets;
+    H263PacketList unusedPackets;
+
+    unsigned char encFrameBuffer[MAX_YUV420P_PACKET_SIZE];
+    int encFrameLen;
+
+    unsigned char rawFrameBuffer[MAX_YUV420P_PACKET_SIZE];
+    int rawFrameLen;
+
+    AVCodec        *avcodec;
+    AVCodecContext *avcontext;
+    AVFrame        *avpicture;
+
+    int videoQMax, videoQMin; // dynamic video quality min/max limits, 1..31
+    int videoQuality; // current video encode quality setting, 1..31
+    int frameNum;
+    unsigned frameWidth, frameHeight;
+    unsigned long lastTimeStamp;
+
+    enum StdSize { 
+      SQCIF, 
+      QCIF, 
+      CIF, 
+      CIF4, 
+      CIF16, 
+      NumStdSizes,
+      UnknownStdSize = NumStdSizes
+    };
+
+    static int GetStdSize(int width, int height)
+    {
+      static struct { 
+        int width; 
+        int height; 
+      } StandardVideoSizes[NumStdSizes] = {
+        {  128,   96}, // SQCIF
+        {  176,  144}, // QCIF
+        {  352,  288}, // CIF
+        {  704,  576}, // 4CIF
+        { 1408, 1152}, // 16CIF
+      };
+
+      int sizeIndex;
+      for (sizeIndex = 0; sizeIndex < NumStdSizes; ++sizeIndex )
+        if (StandardVideoSizes[sizeIndex].width == width && StandardVideoSizes[sizeIndex].height == height )
+          return sizeIndex;
+      return UnknownStdSize;
+    }
 };
+
+H263EncoderContext::H263EncoderContext() 
+{ 
+  if (!FFMPEGLibraryInstance.IsLoaded())
+    return;
+
+  if ((avcodec = FFMPEGLibraryInstance.AvcodecFindEncoder(CODEC_ID_H263)) == NULL) {
+    //PTRACE(1, "H263\tCodec not found for encoder");
+    return;
+  }
+
+  frameWidth  = CIF_WIDTH;
+  frameHeight = CIF_HEIGHT;
+  rawFrameLen = (CIF_HEIGHT * CIF_WIDTH * 3) / 2;
+
+  avcontext = FFMPEGLibraryInstance.AvcodecAllocContext();
+  if (avcontext == NULL) {
+    //PTRACE(1, "H263\tFailed to allocate context for encoder");
+    return;
+  }
+
+  avpicture = FFMPEGLibraryInstance.AvcodecAllocFrame();
+  if (avpicture == NULL) {
+    //PTRACE(1, "H263\tFailed to allocate frame for encoder");
+    return;
+  }
+
+  avcontext->codec = NULL;
+
+  // set some reasonable values for quality as default
+  videoQuality = 10; 
+  videoQMin = 4;
+  videoQMax = 24;
+
+  frameNum = 0;
+
+  //PTRACE(3, "Codec\tH263 encoder created");
+}
+
+H263EncoderContext::~H263EncoderContext()
+{
+  if (FFMPEGLibraryInstance.IsLoaded()) {
+    CloseCodec();
+
+    FFMPEGLibraryInstance.AvcodecFree(avcontext);
+    FFMPEGLibraryInstance.AvcodecFree(avpicture);
+
+    while (encodedPackets.size() > 0) {
+      delete *encodedPackets.begin();
+      encodedPackets.erase(encodedPackets.begin());
+    }
+    while (unusedPackets.size() > 0) {
+      delete *unusedPackets.begin();
+      unusedPackets.erase(unusedPackets.begin());
+    }
+  }
+}
+
+BOOL H263EncoderContext::OpenCodec()
+{
+  // avoid copying input/output
+  avcontext->flags |= CODEC_FLAG_INPUT_PRESERVED; // we guarantee to preserve input for max_b_frames+1 frames
+  avcontext->flags |= CODEC_FLAG_EMU_EDGE; // don't draw edges
+
+  avcontext->width  = frameWidth;
+  avcontext->height = frameHeight;
+
+  avpicture->linesize[0] = frameWidth;
+  avpicture->linesize[1] = frameWidth / 2;
+  avpicture->linesize[2] = frameWidth / 2;
+  avpicture->quality = (float)videoQuality;
+
+  int bitRate = 256000;
+  avcontext->bit_rate = (bitRate * 3) >> 2; // average bit rate
+  avcontext->bit_rate_tolerance = bitRate << 3;
+  avcontext->rc_min_rate = 0; // minimum bitrate
+  avcontext->rc_max_rate = bitRate; // maximum bitrate
+  avcontext->mb_qmin = avcontext->qmin = videoQMin;
+  avcontext->mb_qmax = avcontext->qmax = videoQMax;
+  avcontext->max_qdiff = 3; // max q difference between frames
+  avcontext->rc_qsquish = 0; // limit q by clipping
+  avcontext->rc_eq= "tex^qComp"; // rate control equation
+  avcontext->qcompress = 0.5; // qscale factor between easy & hard scenes (0.0-1.0)
+  avcontext->i_quant_factor = (float)-0.6; // qscale factor between p and i frames
+  avcontext->i_quant_offset = (float)0.0; // qscale offset between p and i frames
+  // context->b_quant_factor = (float)1.25; // qscale factor between ip and b frames
+  // context->b_quant_offset = (float)1.25; // qscale offset between ip and b frames
+
+  avcontext->flags |= CODEC_FLAG_PASS1;
+
+  avcontext->mb_decision = FF_MB_DECISION_SIMPLE; // choose only one MB type at a time
+  avcontext->me_method = ME_EPZS;
+  avcontext->me_subpel_quality = 8;
+
+  avcontext->frame_rate_base = 1;
+  avcontext->frame_rate = 15;
+
+  avcontext->gop_size = 64;
+
+  avcontext->flags &= ~CODEC_FLAG_H263P_UMV;
+  avcontext->flags &= ~CODEC_FLAG_4MV;
+  avcontext->max_b_frames = 0;
+  avcontext->flags &= ~CODEC_FLAG_H263P_AIC; // advanced intra coding (not handled by H323_FFH263Capability)
+
+  avcontext->flags |= CODEC_FLAG_RFC2190;
+
+  avcontext->rtp_mode = 1;
+  avcontext->rtp_payload_size = 750;
+  avcontext->rtp_callback = &H263EncoderContext::RtpCallback;
+  avcontext->opaque = this; // used to separate out packets from different encode threads
+
+  return FFMPEGLibraryInstance.AvcodecOpen(avcontext, avcodec) == 0;
+}
+
+void H263EncoderContext::CloseCodec()
+{
+  if (avcontext != NULL) {
+    if (avcontext->codec != NULL) {
+      FFMPEGLibraryInstance.AvcodecClose(avcontext);
+      //PTRACE(5, "H263\tClosed H.263 encoder" );
+    }
+  }
+}
+
+void H263EncoderContext::RtpCallback(void *data, int data_size, void *hdr, int hdr_size, void *priv_data)
+{
+  H263EncoderContext *c = (H263EncoderContext *) priv_data;
+  H263Packet *p;
+  if (c->unusedPackets.size() == 0)
+    p = new H263Packet();
+  else {
+    p = *c->unusedPackets.begin();
+    c->unusedPackets.erase(c->unusedPackets.begin());
+  }
+  p->Store(data, data_size, hdr, hdr_size);
+  c->encodedPackets.push_back(p);
+}
+
+unsigned int H263EncoderContext::GetNextEncodedPacket(RTPFrame & dstRTP, unsigned char payloadCode, unsigned long lastTimeStamp, unsigned & flags)
+{
+  if (encodedPackets.size() == 0)
+    return 0;
+
+  // get the next packet from the unencoded list
+  H263Packet *p = *encodedPackets.begin();
+  encodedPackets.erase(encodedPackets.begin());
+
+  // this packet will be shortly unused
+  unusedPackets.push_back(p);
+
+  // if the packet is too long, throw it away
+  if (!p->Read(dstRTP))
+    return 0;
+
+  dstRTP.SetMarker(encodedPackets.size() == 0);
+  dstRTP.SetPayloadType(payloadCode);
+  dstRTP.SetTimestamp(lastTimeStamp);
+
+  flags = 0;
+  flags |= (encodedPackets.size() == 0) ? PluginCodec_ReturnCoderLastFrame : 0;  // marker bit on last frame of video
+  flags |= PluginCodec_ReturnCoderIFrame;                       // sadly, this encoder *always* returns I-frames :(
+
+  return dstRTP.GetPacketLen();
+}
+
+int H263EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags)
+{
+  if (!FFMPEGLibraryInstance.IsLoaded())
+    return 0;
+
+  // create RTP frame from source buffer
+  RTPFrame srcRTP(src, srcLen);
+
+  // create RTP frame from destination buffer
+  RTPFrame dstRTP(dst, dstLen, RTP_RFC2190_PAYLOAD);
+  dstLen = 0;
+  flags = 0;
+
+  //WaitAndSignal mutex(updateMutex);
+
+  // if there are RTP packets to return, return them
+  if (encodedPackets.size() > 0) {
+    dstLen = GetNextEncodedPacket(dstRTP, RTP_RFC2190_PAYLOAD, lastTimeStamp, flags);
+    return 1;
+  }
+
+  // from here, we are encoding a new frame
+  lastTimeStamp = srcRTP.GetTimestamp();
+
+  if (srcRTP.GetPayloadSize() < sizeof(PluginCodec_Video_FrameHeader)) {
+    //PTRACE(1,"H263\tVideo grab too small, Close down video transmission thread.");
+    return 0;
+  }
+
+  PluginCodec_Video_FrameHeader * header = (PluginCodec_Video_FrameHeader *)srcRTP.GetPayloadPtr();
+  if (header->x != 0 || header->y != 0) {
+    //PTRACE(1,"H263\tVideo grab of partial frame unsupported, Close down video transmission thread.");
+    return FALSE;
+  }
+
+  // if this is the first frame, or the frame size has changed, deal wth it
+  if (frameNum == 0 || 
+      frameWidth != header->width || 
+      frameHeight != header->height) {
+
+    int sizeIndex = GetStdSize(header->width, header->height);
+    if (sizeIndex == UnknownStdSize) {
+      //PTRACE(3, "H263\tCannot resize to " << header->width << "x" << header->height << " (non-standard format), Close down video transmission thread.");
+      return FALSE;
+    }
+
+    frameWidth  = header->width;
+    frameHeight = header->height;
+
+    rawFrameLen = (frameWidth * frameHeight * 12) / 8;
+    memset(rawFrameBuffer + rawFrameLen, 0, FF_INPUT_BUFFER_PADDING_SIZE);
+
+    encFrameLen = rawFrameLen; // this could be set to some lower value
+
+    CloseCodec();
+    if (!OpenCodec())
+      return FALSE;
+  }
+
+  unsigned char * payload;
+
+  // get payload and ensure correct padding
+  if (srcRTP.GetHeaderSize() + (unsigned)(srcRTP.GetPayloadSize() + FF_INPUT_BUFFER_PADDING_SIZE <= srcRTP.GetMaxPacketLen()))
+    payload = header->data;
+  else {
+    payload = rawFrameBuffer;
+    memcpy(payload, header->data, rawFrameLen);
+  }
+
+  int size = frameWidth * frameHeight;
+  avpicture->data[0] = payload;
+  avpicture->data[1] = avpicture->data[0] + size;
+  avpicture->data[2] = avpicture->data[1] + (size / 4);
+
+  FFMPEGLibraryInstance.AvcodecEncodeVideo(avcontext, encFrameBuffer, encFrameLen, avpicture);
+  frameNum++; // increment the number of frames encoded
+
+  if (encodedPackets.size() == 0) {
+    //PTRACE(1, "H263\tEncoder internal error - there should be outstanding packets at this point");
+    return 1;
+  }
+
+  dstLen = GetNextEncodedPacket(dstRTP, RTP_RFC2190_PAYLOAD, lastTimeStamp, flags);
+
+  //PTRACE(6, "H263\tEncoded " << src.GetPayloadSize() << " bytes of YUV420P raw data into " << dst.GetSize() << " RTP frame(s)");
+
+  return 1;
+}
 
 
 static void * create_encoder(const struct PluginCodec_Definition * /*codec*/)
@@ -708,7 +1083,7 @@ static int codec_encoder(const struct PluginCodec_Definition * ,
                                    unsigned int * flag)
 {
   H263EncoderContext * context = (H263EncoderContext *)_context;
-  return 0;
+  return context->EncodeFrames((const BYTE *)from, *fromLen, (BYTE *)to, *toLen, *flag);
 }
 
 static int encoder_get_output_data_size(const PluginCodec_Definition * codec, void *, const char *, void *, unsigned *)
@@ -752,7 +1127,7 @@ class H263DecoderContext
     bool OpenCodec();
     void CloseCodec();
 
-    unsigned char encFrameBuffer[1500];
+    unsigned char encFrameBuffer[MAX_H263_PACKET_SIZE];
 
     AVCodec        *avcodec;
     AVCodecContext *avcontext;
@@ -844,14 +1219,13 @@ bool H263DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE 
   if (!FFMPEGLibraryInstance.IsLoaded())
     return 0;
 
-  dstLen = 0;
-  flags = 0;
-
   // create RTP frame from source buffer
   RTPFrame srcRTP(src, srcLen);
 
   // create RTP frame from destination buffer
   RTPFrame dstRTP(dst, dstLen, 0);
+  dstLen = 0;
+  flags = 0;
 
   int srcPayloadSize = srcRTP.GetPayloadSize();
   unsigned char * payload;
@@ -957,7 +1331,7 @@ bool H263DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE 
 
   dstLen = dstRTP.GetPacketLen();
 
-  flags = PluginCodec_ReturnCoderLastFrame ;   // THIS NEEDS TO BE CHANGED TO DO CORRECT I-FRAME DETECTION
+  flags = PluginCodec_ReturnCoderLastFrame ;   // TODO: THIS NEEDS TO BE CHANGED TO DO CORRECT IFRAME DETECTION
 
   frameNum++;
 
@@ -972,12 +1346,12 @@ static void * create_decoder(const struct PluginCodec_Definition *)
 
 static int decoder_set_options(
       const struct PluginCodec_Definition *, 
-      void * _context, 
+      void * , 
       const char *, 
       void * parm, 
       unsigned * parmLen)
 {
-  H263DecoderContext * context = (H263DecoderContext *)_context;
+  //H263DecoderContext * context = (H263DecoderContext *)_context;
 
   if (parmLen == NULL || *parmLen != sizeof(const char **))
     return 0;
