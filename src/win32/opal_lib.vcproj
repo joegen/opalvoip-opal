@@ -1817,6 +1817,9 @@
 					RelativePath="..\..\include\codec\h263codec.h">
 				</File>
 				<File
+					RelativePath="..\..\include\codec\opalplugin.h">
+				</File>
+				<File
 					RelativePath="..\..\include\codec\opalpluginmgr.h">
 				</File>
 				<File
