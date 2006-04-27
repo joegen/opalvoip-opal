@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2121.2.14  2006/04/23 20:17:10  dsandras
+ * Revision 1.2121.2.15  2006/04/27 20:22:26  dsandras
+ * Backported fix from HEAD.
+ *
+ * Revision 2.147  2006/04/24 21:19:31  dsandras
+ * Fixed previous commit.
+ *
+ * Revision 2.120.2.14  2006/04/23 20:17:10  dsandras
  * Backport from HEAD.
  *
  * Revision 2.146  2006/04/23 20:12:52  dsandras
@@ -803,6 +809,8 @@ BOOL SIPConnection::SetAlerting(const PString & /*calleeName*/, BOOL /*withMedia
 
 BOOL SIPConnection::SetConnected()
 {
+  BOOL sdpFailure = TRUE;
+
   if (IsOriginating()) {
     PTRACE(2, "SIP\tSetConnected ignored on call we originated.");
     return TRUE;
@@ -812,16 +820,19 @@ BOOL SIPConnection::SetConnected()
 
   SDPSessionDescription sdpOut(GetLocalAddress());
 
-  // get the remote media formats
-  remoteSDP = originalInvite->GetSDP();
+  // get the remote media formats, if any
+  if (originalInvite->HasSDP()) {
+    remoteSDP = originalInvite->GetSDP();
 
-  BOOL failure = !OnSendSDPMediaDescription(remoteSDP, SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut);
-  failure = !OnSendSDPMediaDescription(remoteSDP, SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut) && failure;
-  if (failure) {
+    sdpFailure = !OnSendSDPMediaDescription(remoteSDP, SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut);
+    sdpFailure = !OnSendSDPMediaDescription(remoteSDP, SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut) && sdpFailure;
+  }
+  
+  if (sdpFailure) {
     SDPSessionDescription *sdp = (SDPSessionDescription *) &sdpOut;
-    failure = !BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
-    failure = !BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID) && failure;
-    if (failure) {
+    sdpFailure = !BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
+    sdpFailure = !BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID) && sdpFailure;
+    if (sdpFailure) {
       Release(EndedByCapabilityExchange);
       return FALSE;
     }
@@ -1560,6 +1571,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 {
   BOOL isReinvite = FALSE;
+  BOOL sdpFailure = TRUE;
  
   // Ignore duplicate INVITEs
   if (originalInvite && (originalInvite->GetMIME().GetCSeq() == request.GetMIME().GetCSeq())) {
@@ -1616,41 +1628,50 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     remoteFormatList.RemoveAll();
     SDPSessionDescription sdpOut(GetLocalAddress());
 
-    // get the remote media formats
-    SDPSessionDescription & sdpIn = originalInvite->GetSDP();
+    // get the remote media formats, if any
+    if (originalInvite->HasSDP()) {
 
-    // The Re-INVITE can be sent to change the RTP Session parameters,
-    // the current codecs, or to put the call on hold
-    if (sdpIn.GetDirection(OpalMediaFormat::DefaultAudioSessionID) == SDPMediaDescription::SendOnly && sdpIn.GetDirection(OpalMediaFormat::DefaultVideoSessionID) == SDPMediaDescription::SendOnly) {
+      SDPSessionDescription & sdpIn = originalInvite->GetSDP();
+      // The Re-INVITE can be sent to change the RTP Session parameters,
+      // the current codecs, or to put the call on hold
+      if (sdpIn.GetDirection(OpalMediaFormat::DefaultAudioSessionID) == SDPMediaDescription::SendOnly && sdpIn.GetDirection(OpalMediaFormat::DefaultVideoSessionID) == SDPMediaDescription::SendOnly) {
 
-      remote_hold = TRUE;
-      PauseMediaStreams(TRUE);
-      endpoint.OnHold(*this);
-    }
-    else {
-      
-      // If we receive a consecutive reinvite without the SendOnly
-      // parameter, then we are not on hold anymore
-      if (remote_hold) {
-	
-        remote_hold = FALSE;
-        PauseMediaStreams(FALSE);
+        remote_hold = TRUE;
+        PauseMediaStreams(TRUE);
         endpoint.OnHold(*this);
       }
+      else {
+
+        // If we receive a consecutive reinvite without the SendOnly
+        // parameter, then we are not on hold anymore
+        if (remote_hold) {
+
+          remote_hold = FALSE;
+          PauseMediaStreams(FALSE);
+          endpoint.OnHold(*this);
+        }
+      }
+
+      // Try to send SDP media description for audio and video
+      sdpFailure = !OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut);
+      sdpFailure = !OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut) && sdpFailure;
     }
-    
+
+    if (sdpFailure) {
+      SDPSessionDescription *sdp = (SDPSessionDescription *) &sdpOut;
+      sdpFailure = !BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
+      sdpFailure = !BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID) && sdpFailure;
+      if (sdpFailure) {
+        // Ignore a failed reInvite
+        return;
+      }
+    }
+
     // If it is a RE-INVITE that doesn't correspond to a HOLD, then
     // Close all media streams, they will be reopened.
     if (!IsConnectionOnHold()) {
       PWaitAndSignal m(streamsMutex);
       GetCall().RemoveMediaStreams();
-    }
-    
-    BOOL failure = !OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut);
-    failure = !OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut) && failure;
-    if (failure) {
-      Release(EndedByCapabilityExchange);
-      return;
     }
 
     // send the 200 OK response
