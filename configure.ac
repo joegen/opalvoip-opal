@@ -3,6 +3,12 @@ AC_INIT(include/opal/manager.h)
 AC_PROG_CC
 AC_PROG_CXX
 
+dnl this must be updated for every minor revision, and for
+dnl builds when and as necessary
+REQUIRED_PWLIB_MAJOR=1
+REQUIRED_PWLIB_MINOR=10
+REQUIRED_PWLIB_BUILD=0
+
 dnl ########################################################################
 dnl set the OPAL directory to the current directory
 
@@ -88,8 +94,43 @@ fi
 
 echo "PWLib prefix set to.... $PWLIBDIR"
 
-AC_SUBST(PWLIBDIR)
+if test "${PWLIBDIR:-unset}" = "unset" ; then
+  PWVERSION=`$PTLIB_CONFIG --version`
+  PW_MAJOR_VERSION=`echo $PW_VERSION | cut -d'.' -f1`
+  PW_MINOR_VERSION=`echo $PW_VERSION | cut -d'.' -f2`
+  PW_BUILD_NUMBER=`echo $PW_VERSION | cut -d'.' -f3`
+  
+else
+  PW_MAJOR_VERSION=`cat ${PWLIBDIR}/version.h | grep MAJOR_VERSION | cut -f3 -d' '`
+  PW_MINOR_VERSION=`cat ${PWLIBDIR}/version.h | grep MINOR_VERSION | cut -f3 -d' '`
+  PW_BUILD_NUMBER=`cat ${PWLIBDIR}/version.h | grep BUILD_NUMBER | cut -f3 -d' '`
+  PWVERSION="${PW_MAJOR_VERSION}.${PW_MINOR_VERSION}.${PW_BUILD_NUMBER}"
+fi
 
+AC_ARG_ENABLE(versioncheck,
+		[  --disable-versioncheck    disable PWLib version check],
+		PWLIB_VERSION_CHECK=$enableval)
+
+AC_MSG_CHECKING(Checking PWLib version ${PWVERSION})
+if test "${PWLIB_VERSION_CHECK}x" = "nox" ; then
+  AC_MSG_RESULT(check disabled)
+else
+  if test $PW_MAJOR_VERSION -lt $REQUIRED_PWLIB_MAJOR ; then
+    AC_MSG_RESULT(Major version less than required $REQUIRED_PWLIB_MAJOR)
+    exit 1
+  fi
+  if test $PW_MINOR_VERSION -lt $REQUIRED_PWLIB_MINOR ; then
+    AC_MSG_RESULT(Minor version less than required $REQUIRED_PWLIB_MINOR)
+    exit 1
+  fi
+  if test $PW_BUILD_NUMBER -lt $REQUIRED_PWLIB_BUILD ; then
+    AC_MSG_RESULT(Build version less than required $REQUIRED_PWLIB_BUILD)
+    exit 1
+  fi
+  AC_MSG_RESULT(ok)
+fi
+
+AC_SUBST(PWLIBDIR)
 
 dnl ########################################################################
 dnl Look for H263 codec
