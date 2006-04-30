@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2061.2.3  2006/04/30 13:50:29  csoutheren
+ * Revision 1.2061.2.4  2006/04/30 14:28:25  csoutheren
+ * Added disableui and srcep options
+ *
+ * Revision 2.60.2.3  2006/04/30 13:50:29  csoutheren
  * Add ability to set TextToSpeech algorithm
  *
  * Revision 2.60.2.2  2006/04/10 08:54:11  csoutheren
@@ -335,6 +338,7 @@ void SimpleOpalProcess::Main()
              "b-bandwidth:"
              "D-disable:"
              "d-dial-peer:"
+             "-disableui:"
              "e-silence."
              "f-fast-disable."
              "g-gatekeeper:"
@@ -367,6 +371,7 @@ void SimpleOpalProcess::Main()
              "S-no-sound."
              "-sound-in:"
              "-sound-out:"
+             "-srcep:"
              "-sip-listen:"
              "-sip-proxy:"
              "-sip-domain:"
@@ -412,6 +417,8 @@ void SimpleOpalProcess::Main()
             "  -p --password pwd       : Set password for user (gk or SIP authorisation).\n"
             "  -D --disable media      : Disable the specified codec (may be used multiple times)\n"
             "  -P --prefer media       : Prefer the specified codec (may be used multiple times)\n"
+            "  --srcep ep              : Set the source endpoint to use for making calls\n"
+            "  --disableui             : disable the user interface\n"
             "\n"
             "Audio options:\n"
             "  -j --jitter [min-]max   : Set minimum (optional) and maximum jitter buffer (in milliseconds).\n"
@@ -473,6 +480,7 @@ void SimpleOpalProcess::Main()
             "IVR options:\n"
             "  -V --no-ivr             : Disable IVR.\n"
             "  -x --vxml file          : Set vxml file to use for IVR.\n"
+            "  --tts engine            : Set the text to speech engine\n"
             "\n"
 #endif
             "IP options:\n"
@@ -486,7 +494,7 @@ void SimpleOpalProcess::Main()
             "     --rtp-base n         : Set RTP port base (default 5000)\n"
             "     --rtp-max n          : Set RTP port max (default base+199)\n"
             "     --rtp-tos n          : Set RTP packet IP TOS bits to n\n"
-	    "     --stun server        : Set STUN server\n"
+	          "     --stun server        : Set STUN server\n"
             "\n"
             "Debug options:\n"
 #if PTRACING
@@ -994,6 +1002,8 @@ BOOL MyManager::Initialise(PArgList & args)
   }
 #endif
 
+  srcEP = args.GetOptionString("srcEp", "pc:*");
+
   return TRUE;
 }
 
@@ -1062,7 +1072,9 @@ void MyManager::Main(PArgList & args)
       }
 
       cout << "Initiating call to \"" << args[0] << "\"\n";
-      if (potsEP != NULL)
+      if (!srcEP.IsEmpty())
+        SetUpCall(srcEP, args[0], currentCallToken);
+      else if (potsEP != NULL)
         SetUpCall("pots:*", args[0], currentCallToken);
       else
         SetUpCall("pc:*", args[0], currentCallToken);
@@ -1074,106 +1086,110 @@ void MyManager::Main(PArgList & args)
       break;
   }
 
-  cout << "Press ? for help." << endl;
-
-
- PStringStream help;
-
-   help << "Select:\n"
-          "  0-9 : send user indication message\n"
-          "  *,# : send user indication message\n"
-          "  M   : send text message to remote user\n"
-          "  C   : connect to remote host\n"
-          "  S   : Display statistics\n"
-          "  H   : Hang up phone\n"
-          "  L   : List speed dials\n"
-          "  D   : Create new speed dial\n"
-          "  {}  : Increase/reduce record volume\n"
-          "  []  : Increase/reduce playback volume\n"
-     "  V   : Display current volumes\n";
-   
-   PConsoleChannel console(PConsoleChannel::StandardInput);
-   for (;;) {
-     // display the prompt
-     cout << "Command ? " << flush;
-     
-     
-    // terminate the menu loop if console finished
-     char ch = (char)console.peek();
-     if (console.eof()) {
-      cout << "\nConsole gone - menu disabled" << endl;
-      goto endSimpleOPAL;
-     }
-     
-    console >> ch;
-    PTRACE(3, "console in audio test is " << ch);
-    switch (tolower(ch)) {
-    case 'x' :
-    case 'q' :
-      goto endSimpleOPAL;
-      break;
-    case '?' :       
-      cout << help ;
-      break;
-      
-    case 'y' :
-      AnswerCall(OpalConnection::AnswerCallNow);
-      console.ignore(INT_MAX, '\n');
-      break;
-      
-    case 'n' :
-      AnswerCall(OpalConnection::AnswerCallDenied);
-      console.ignore(INT_MAX, '\n');
-      break;
-
-    case 'l' :
-      ListSpeedDials();
-      break;
-      
-    case 'd' :
-      {
-	PString str;
-	console >> str;
-	NewSpeedDial(str.Trim());
-      }
-      break;
-      
-    case 'h' :
-      HangupCurrentCall();
-      break;
-
-    case 'c' :
-      if (!currentCallToken.IsEmpty())
-	cout << "Cannot make call whilst call in progress\n";
-      else {
-	PString str;
-	console >> str;
-	StartCall(str.Trim());
-      }
-      break;
-
-    case 'r':
-      cout << " current call token is \"" << currentCallToken << "\" " << endl;
-      break;
-
-    case 'm' :
-      if (currentCallToken.IsEmpty())
-	cout << "Cannot send a message while no call in progress\n";
-      else {
-	PString str;
-	console >> str;
-	SendMessageToRemoteNode(str);
-      }
-      break;
-      
-
-    default:;
-    }
-     
+  if (args.HasOption("disableui")) {
+    while (FindCallWithLock(currentCallToken) != NULL)
+      Sleep(1000);
   }
- endSimpleOPAL:
-   if (!currentCallToken.IsEmpty())
-     HangupCurrentCall();
+  else {
+    cout << "Press ? for help." << endl;
+
+    PStringStream help;
+
+    help << "Select:\n"
+            "  0-9 : send user indication message\n"
+            "  *,# : send user indication message\n"
+            "  M   : send text message to remote user\n"
+            "  C   : connect to remote host\n"
+            "  S   : Display statistics\n"
+            "  H   : Hang up phone\n"
+            "  L   : List speed dials\n"
+            "  D   : Create new speed dial\n"
+            "  {}  : Increase/reduce record volume\n"
+            "  []  : Increase/reduce playback volume\n"
+      "  V   : Display current volumes\n";
+     
+    PConsoleChannel console(PConsoleChannel::StandardInput);
+    for (;;) {
+      // display the prompt
+      cout << "Command ? " << flush;
+       
+       
+      // terminate the menu loop if console finished
+      char ch = (char)console.peek();
+      if (console.eof()) {
+        cout << "\nConsole gone - menu disabled" << endl;
+        goto endSimpleOPAL;
+      }
+       
+      console >> ch;
+      PTRACE(3, "console in audio test is " << ch);
+      switch (tolower(ch)) {
+      case 'x' :
+      case 'q' :
+        goto endSimpleOPAL;
+        break;
+      case '?' :       
+        cout << help ;
+        break;
+        
+      case 'y' :
+        AnswerCall(OpalConnection::AnswerCallNow);
+        console.ignore(INT_MAX, '\n');
+        break;
+        
+      case 'n' :
+        AnswerCall(OpalConnection::AnswerCallDenied);
+        console.ignore(INT_MAX, '\n');
+        break;
+
+      case 'l' :
+        ListSpeedDials();
+        break;
+        
+      case 'd' :
+        {
+	        PString str;
+	        console >> str;
+	        NewSpeedDial(str.Trim());
+        }
+        break;
+        
+      case 'h' :
+        HangupCurrentCall();
+        break;
+
+      case 'c' :
+        if (!currentCallToken.IsEmpty())
+	        cout << "Cannot make call whilst call in progress\n";
+        else {
+      	  PString str;
+	        console >> str;
+	        StartCall(str.Trim());
+        }
+        break;
+
+      case 'r':
+        cout << " current call token is \"" << currentCallToken << "\" " << endl;
+        break;
+
+      case 'm' :
+        if (currentCallToken.IsEmpty())
+	        cout << "Cannot send a message while no call in progress\n";
+        else {
+	        PString str;
+	        console >> str;
+	        SendMessageToRemoteNode(str);
+        }
+        break;
+
+      default:;
+      }
+       
+    }
+  endSimpleOPAL:
+    if (!currentCallToken.IsEmpty())
+      HangupCurrentCall();
+  }
 
    cout << "Console finished " << endl;
 }
@@ -1254,9 +1270,8 @@ void MyManager::StartCall(const PString & ostr)
     }
   }
 
-  if (!str.IsEmpty()) {
-    SetUpCall("pc:*", str, currentCallToken);
-  }
+  if (!str.IsEmpty())
+    SetUpCall(srcEP, str, currentCallToken);
 
   return;
 }

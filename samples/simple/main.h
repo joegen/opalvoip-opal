@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2019.2.1  2006/03/20 02:25:26  csoutheren
+ * Revision 1.2019.2.2  2006/04/30 14:28:25  csoutheren
+ * Added disableui and srcep options
+ *
+ * Revision 2.18.2.1  2006/03/20 02:25:26  csoutheren
  * Backports from CVS head
  *
  * Revision 2.19  2006/03/07 11:24:15  csoutheren
@@ -191,6 +194,7 @@ class MyManager : public OpalManager
 #endif
 
     BOOL pauseBeforeDialing;
+    PString srcEP;
 
     void HangupCurrentCall();
     void ListSpeedDials();
