@@ -22,7 +22,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2062  2006/03/07 11:24:15  csoutheren
+ * Revision 1.2063  2006/04/30 14:34:42  csoutheren
+ * Backport of IVR updates from PluginBranch
+ *
+ * Revision 2.60.2.3  2006/04/30 13:50:29  csoutheren
+ * Add ability to set TextToSpeech algorithm
+ *
+ * Revision 2.61  2006/03/07 11:24:15  csoutheren
  * Add --disable-grq flag
  *
  * Revision 2.60  2006/01/23 22:56:57  csoutheren
@@ -302,7 +308,6 @@
 
 PCREATE_PROCESS(SimpleOpalProcess);
 
-
 ///////////////////////////////////////////////////////////////
 
 SimpleOpalProcess::SimpleOpalProcess()
@@ -366,6 +371,7 @@ void SimpleOpalProcess::Main()
              "-stun:"
              "T-h245tunneldisable."
              "-translate:"
+             "-tts:"
 
 #if PTRACING
              "t-trace."
@@ -918,6 +924,12 @@ BOOL MyManager::Initialise(PArgList & args)
     ivrEP = new OpalIVREndPoint(*this);
     if (args.HasOption('x'))
       ivrEP->SetDefaultVXML(args.GetOptionString('x'));
+
+    PString ttsEngine = args.GetOptionString("tts");
+    if (ttsEngine.IsEmpty()) 
+      ttsEngine = PFactory<PTextToSpeech>::GetKeyList()[0];
+    if (!ttsEngine.IsEmpty()) 
+      ivrEP->SetDefaultTextToSpeech(ttsEngine);
   }
 #endif
 
