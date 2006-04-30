@@ -27,7 +27,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2026.2.3  2006/03/28 11:21:19  dsandras
+ * Revision 1.2026.2.4  2006/04/30 16:42:20  dsandras
+ * Backport from HEAD.
+ *
+ * Revision 2.30  2006/04/30 16:41:14  dsandras
+ * Allow exactly one sequence change after a call to SetRemoteSocketInfo. Fixes
+ * Ekiga bug #339866.
+ *
+ * Revision 2.25.2.3  2006/03/28 11:21:19  dsandras
  * Backported STUN sockets pair fix from HEAD.
  *
  * Revision 2.29  2006/03/28 11:20:22  dsandras
@@ -1113,6 +1120,7 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(const RTP_DataFrame & 
     }
     else if (allowSequenceChange) {
       expectedSequenceNumber = (WORD) (sequenceNumber + 1);
+      allowSequenceChange = FALSE;
     }
     else if (sequenceNumber < expectedSequenceNumber) {
       PTRACE(3, "RTP\tOut of order packet, received "
