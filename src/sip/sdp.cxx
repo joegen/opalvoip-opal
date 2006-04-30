@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2036  2006/04/23 20:12:52  dsandras
+ * Revision 1.2037  2006/04/30 09:58:44  csoutheren
+ * Added IPV6 handlng to SDP
+ *
+ * Revision 2.35  2006/04/23 20:12:52  dsandras
  * The RFC tells that the SDP answer SHOULD have the same payload type than the
  * SDP offer. Added rtpmap support to allow this. Fixes problems with Asterisk,
  * and Ekiga report #337456.
@@ -171,7 +174,11 @@ static OpalTransportAddress ParseConnectAddress(const PStringArray & tokens, PIN
 {
   if (tokens.GetSize() == offset+3) {
     if (tokens[offset] *= "IN") {
-      if (tokens[offset+1] *= "IP4")
+      if ((tokens[offset+1] *= "IP4") 
+#if P_HAS_IPV6
+        || (tokens[offset+1] *= "IP6")
+#endif
+        )
         return OpalTransportAddress(tokens[offset+2], 0, "udp");
       else {
         PTRACE(1, "SDP\tConnect address has invalid address type \"" << tokens[offset+1] << '"');
