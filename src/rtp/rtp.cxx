@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2030  2006/03/28 11:20:22  dsandras
+ * Revision 1.2031  2006/04/30 16:41:14  dsandras
+ * Allow exactly one sequence change after a call to SetRemoteSocketInfo. Fixes
+ * Ekiga bug #339866.
+ *
+ * Revision 2.29  2006/03/28 11:20:22  dsandras
  * If STUN can not create a socket pair for RTP/RTCP, create separate sockets
  * and continue. At worse, RTCP won't be received. The SIP part could reuse
  * the RTCP port (different from RTP port + 1) in its SDP if required.
@@ -1104,6 +1108,7 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(const RTP_DataFrame & 
     }
     else if (allowSequenceChange) {
       expectedSequenceNumber = (WORD) (sequenceNumber + 1);
+      allowSequenceChange = FALSE;
     }
     else if (sequenceNumber < expectedSequenceNumber) {
       PTRACE(3, "RTP\tOut of order packet, received "
