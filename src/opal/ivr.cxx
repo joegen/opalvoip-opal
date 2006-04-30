@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.cxx,v $
- * Revision 1.2012  2005/05/13 10:05:06  dsandras
+ * Revision 1.2012.4.1  2006/04/30 13:49:35  csoutheren
+ * Add ability to set TextToSpeech driver
+ * Add useful defaults for VXML handling
+ *
+ * Revision 2.11  2005/05/13 10:05:06  dsandras
  * Slightly modified code so that it compiles with pwlib HEAD.
  *
  * Revision 2.10  2004/08/14 07:56:39  rjongbloed
@@ -180,6 +184,10 @@ void OpalIVREndPoint::SetDefaultMediaFormats(const OpalMediaFormatList & formats
   inUseFlag.Signal();
 }
 
+BOOL OpalIVREndPoint::StartVXML()
+{
+  return FALSE;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -196,7 +204,7 @@ OpalIVRConnection::OpalIVRConnection(OpalCall & call,
 #pragma warning(push)
 #pragma warning(disable:4355)
 #endif
-    vxmlSession(this)
+    vxmlSession(this, PFactory<PTextToSpeech>::CreateInstance(ep.GetDefaultTextToSpeech()))
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
@@ -225,7 +233,7 @@ BOOL OpalIVRConnection::SetUpConnection()
   phase = ConnectedPhase;
   OnConnected();
 
-  if (!vxmlSession.Load(vxmlToLoad)) {
+  if (!StartVXML()) {
     PTRACE(1, "IVR\tVXML session not loaded, aborting.");
     Release(EndedByLocalUser);
     return FALSE;
@@ -239,6 +247,28 @@ BOOL OpalIVRConnection::SetUpConnection()
   return TRUE;
 }
 
+BOOL OpalIVRConnection::StartVXML()
+{
+  if (vxmlToLoad.IsEmpty()) 
+    vxmlToLoad = endpoint.GetDefaultVXML();
+
+  if (vxmlToLoad.IsEmpty())
+    return endpoint.StartVXML();
+
+  if (vxmlToLoad.Find("<?xml") == 0)
+    return vxmlSession.LoadVXML(vxmlToLoad);
+
+  else {
+    if (vxmlToLoad.Find("file:") == 0)
+      vxmlSession.PlayFile(vxmlToLoad.Mid(5), FALSE);
+    else
+      vxmlSession.PlayText(vxmlToLoad, PTextToSpeech::Default, FALSE);
+
+    vxmlSession.SetFinishWhenEmpty(TRUE);
+
+    return TRUE;
+  }
+}
 
 BOOL OpalIVRConnection::SetAlerting(const PString & calleeName, BOOL)
 {
@@ -266,7 +296,7 @@ BOOL OpalIVRConnection::SetConnected()
 
     phase = ConnectedPhase;
 
-    if (!vxmlSession.Load(vxmlToLoad)) {
+    if (!StartVXML()) {
       PTRACE(1, "IVR\tVXML session not loaded, aborting.");
       Release(EndedByLocalUser);
       return FALSE;
