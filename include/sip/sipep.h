@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2058  2006/04/11 21:58:25  dsandras
+ * Revision 1.2059  2006/04/30 17:24:39  dsandras
+ * Various clean ups.
+ *
+ * Revision 2.57  2006/04/11 21:58:25  dsandras
  * Various cleanups and fixes. Fixes Ekiga report #336444.
  *
  * Revision 2.56  2006/03/27 20:28:18  dsandras
@@ -783,7 +786,12 @@ class SIPEndPoint : public OpalEndPoint
      * That URL can be used in the FORM field of the PDU's. 
      * The host part can be different from the registration domain.
      */
-    const SIPURL GetRegisteredPartyName(const PString &);
+    virtual SIPURL GetRegisteredPartyName(const PString &);
+
+
+    /**Return the default registered party name URL.
+     */
+    virtual SIPURL GetDefaultRegisteredPartyName();
     
 
     /**Return the local URL for the given transport and user name.
@@ -795,7 +803,7 @@ class SIPEndPoint : public OpalEndPoint
      * If the transport is not running, the first listener transport
      * will be used, if any.
      */
-    const SIPURL GetLocalURL(
+    SIPURL GetLocalURL(
        const OpalTransport & transport,             ///< Transport on which we can receive new requests
        const PString & userName = PString::Empty()  ///< The user name part of the contact field
     );
