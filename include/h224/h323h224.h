@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323h224.h,v $
+ * Revision 1.2  2006/04/30 09:25:08  csoutheren
+ * Remove warning about missing newline
+ *
  * Revision 1.1  2006/04/20 16:48:17  hfriederich
  * Initial version of H.224/H.281 implementation.
  *
@@ -126,3 +129,4 @@ protected:
 };
 
 #endif // __OPAL_H323H224_H
+
