@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2064  2006/04/30 14:36:54  csoutheren
+ * Revision 1.2065  2006/04/30 14:42:00  dereksmithies
+ * Fix compile Sleep statement so it compiles on unix.
+ *
+ * Revision 2.63  2006/04/30 14:36:54  csoutheren
  * backports from PLuginBranch
  *
  * Revision 2.62  2006/04/30 14:34:42  csoutheren
@@ -1091,7 +1094,7 @@ void MyManager::Main(PArgList & args)
 
   if (args.HasOption("disableui")) {
     while (FindCallWithLock(currentCallToken) != NULL)
-      Sleep(1000);
+      PThread::Sleep(1000);
   }
   else {
     cout << "Press ? for help." << endl;
