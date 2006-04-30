@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.27  2006/04/30 10:36:24  rjongbloed
+ * Added icons to speed dial list.
+ *
  * Revision 1.26  2005/08/31 13:21:20  rjongbloed
  * Moved some video options to be in the options list from OpalMediaFormat
  * Added selection of video grabber preview window.
@@ -572,6 +575,8 @@ class MyManager : public wxFrame, public OpalManager
     wxSplitterWindow * m_splitter;
     wxTextCtrl       * m_logWindow;
     wxListCtrl       * m_speedDials;
+    wxImageList      * m_imageListNormal;
+    wxImageList      * m_imageListSmall;
     wxPanel          * m_answerPanel;
     wxPanel          * m_callingPanel;
     wxPanel          * m_inCallPanel;

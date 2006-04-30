@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cpp,v $
+ * Revision 1.36  2006/04/30 10:36:24  rjongbloed
+ * Added icons to speed dial list.
+ *
  * Revision 1.35  2006/04/09 12:15:30  rjongbloed
  * Added extra trace log to dump all known media formats and their options.
  *
@@ -354,7 +357,16 @@ MyManager::MyManager()
     m_callState(IdleState)
 {
   // Give it an icon
-  SetIcon( wxICON(OpenOphone) );
+  SetIcon(wxICON(AppIcon));
+
+  // Make an image list containing large icons
+  m_imageListNormal = new wxImageList(32, 32, true);
+  m_imageListNormal->Add(wxICON(OtherPhone)); // Order here is important!!
+  m_imageListNormal->Add(wxICON(H323Phone));
+  m_imageListNormal->Add(wxICON(SIPPhone));
+
+  m_imageListSmall = new wxImageList(16, 16, true);
+  m_imageListSmall->Add(wxICON(SmallPhone));
 }
 
 
@@ -367,6 +379,9 @@ MyManager::~MyManager()
     potsEP->RemoveAllLines();
 
   LogWindow.SetTextCtrl(NULL);
+
+  delete m_imageListNormal;
+  delete m_imageListSmall;
 }
 
 
@@ -766,6 +781,11 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
                                wxDefaultPosition, wxDefaultSize,
                                ListCtrlStyle[view] | wxLC_EDIT_LABELS | wxSUNKEN_BORDER);
 
+  if (view != e_DescriptionColumn) {
+    m_speedDials->SetImageList(m_imageListNormal, wxIMAGE_LIST_NORMAL);
+    m_speedDials->SetImageList(m_imageListSmall, wxIMAGE_LIST_SMALL);
+  }
+
   int width;
   static const char * const titles[e_NumColumns] = { "Name", "Number", "Address", "Description" };
 
@@ -797,7 +817,15 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
       config->SetPath(groupName);
       wxString number, address, description;
       if (config->Read(SpeedDialAddressKey, &address) && !address.empty()) {
-        int pos = m_speedDials->InsertItem(INT_MAX, groupName);
+        int icon = 0;
+        if (view == e_ViewLarge) {
+          if (address.StartsWith("h323"))
+            icon = 1;
+          else if (address.StartsWith("sip"))
+            icon = 2;
+        }
+
+        int pos = m_speedDials->InsertItem(INT_MAX, groupName, icon);
         m_speedDials->SetItem(pos, e_NumberColumn, config->Read(SpeedDialNumberKey, ""));
         m_speedDials->SetItem(pos, e_AddressColumn, address);
         m_speedDials->SetItem(pos, e_DescriptionColumn, config->Read(SpeedDialDescriptionKey, ""));
