@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2123  2006/04/11 21:13:57  dsandras
+ * Revision 1.2124  2006/04/30 17:24:40  dsandras
+ * Various clean ups.
+ *
+ * Revision 2.122  2006/04/11 21:13:57  dsandras
  * Modified GetRegisteredPartyName so that the DefaultLocalPartyName can be
  * used as result if no match is found for the called domain.
  *
@@ -1780,29 +1783,32 @@ BOOL SIPEndPoint::GetAuthentication(const PString & realm, SIPAuthentication &au
 }
 
 
-const SIPURL SIPEndPoint::GetRegisteredPartyName(const PString & host)
+SIPURL SIPEndPoint::GetRegisteredPartyName(const PString & host)
 {
   PSafePtr<SIPInfo> info = activeSIPInfo.FindSIPInfoByDomain(host, SIP_PDU::Method_REGISTER, PSafeReadOnly);
-  if (info == NULL) {
-
-    PString partyName = GetDefaultLocalPartyName();
-    if (partyName.Find('@') != P_MAX_INDEX)
-      return partyName;
-   
-    PIPSocket::Address localIP(PIPSocket::GetDefaultIpAny());
-    WORD localPort = GetDefaultSignalPort();
-    if (!GetListeners().IsEmpty())
-      GetListeners()[0].GetLocalAddress().GetIpAndPort(localIP, localPort);
-    OpalTransportAddress address = OpalTransportAddress(localIP, localPort, "udp");
-    SIPURL party(partyName, address, localPort);
-    return party;
-  }
+  
+  if (info == NULL) 
+    return GetDefaultRegisteredPartyName();
 
   return info->GetRegistrationAddress();
 }
 
 
-const SIPURL SIPEndPoint::GetLocalURL(const OpalTransport &transport, const PString & userName)
+SIPURL SIPEndPoint::GetDefaultRegisteredPartyName()
+{
+  PString partyName = GetDefaultLocalPartyName();
+
+  PIPSocket::Address localIP(PIPSocket::GetDefaultIpAny());
+  WORD localPort = GetDefaultSignalPort();
+  if (!GetListeners().IsEmpty())
+    GetListeners()[0].GetLocalAddress().GetIpAndPort(localIP, localPort);
+  OpalTransportAddress address = OpalTransportAddress(localIP, localPort, "udp");
+  SIPURL party(partyName, address, localPort);
+  return party;
+}
+
+
+SIPURL SIPEndPoint::GetLocalURL(const OpalTransport &transport, const PString & userName)
 {
   PIPSocket::Address ip(PIPSocket::GetDefaultIpAny());
   OpalTransportAddress contactAddress = transport.GetLocalAddress();
