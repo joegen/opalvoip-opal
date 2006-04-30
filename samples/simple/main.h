@@ -22,7 +22,16 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2020  2006/03/07 11:24:15  csoutheren
+ * Revision 1.2021  2006/04/30 14:36:54  csoutheren
+ * backports from PLuginBranch
+ *
+ * Revision 2.18.2.2  2006/04/30 14:28:25  csoutheren
+ * Added disableui and srcep options
+ *
+ * Revision 2.18.2.1  2006/03/20 02:25:26  csoutheren
+ * Backports from CVS head
+ *
+ * Revision 2.19  2006/03/07 11:24:15  csoutheren
  * Add --disable-grq flag
  *
  * Revision 2.18  2006/01/23 22:56:57  csoutheren
@@ -188,6 +197,7 @@ class MyManager : public OpalManager
 #endif
 
     BOOL pauseBeforeDialing;
+    PString srcEP;
 
     void HangupCurrentCall();
     void ListSpeedDials();
