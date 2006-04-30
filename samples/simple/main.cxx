@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2061.2.2  2006/04/10 08:54:11  csoutheren
+ * Revision 1.2061.2.3  2006/04/30 13:50:29  csoutheren
+ * Add ability to set TextToSpeech algorithm
+ *
+ * Revision 2.60.2.2  2006/04/10 08:54:11  csoutheren
  * Fix problem when H323 disabled
  *
  * Revision 2.60.2.1  2006/03/20 02:25:26  csoutheren
@@ -308,7 +311,6 @@
 
 PCREATE_PROCESS(SimpleOpalProcess);
 
-
 ///////////////////////////////////////////////////////////////
 
 SimpleOpalProcess::SimpleOpalProcess()
@@ -372,6 +374,7 @@ void SimpleOpalProcess::Main()
              "-stun:"
              "T-h245tunneldisable."
              "-translate:"
+             "-tts:"
 
 #if PTRACING
              "t-trace."
@@ -924,6 +927,12 @@ BOOL MyManager::Initialise(PArgList & args)
     ivrEP = new OpalIVREndPoint(*this);
     if (args.HasOption('x'))
       ivrEP->SetDefaultVXML(args.GetOptionString('x'));
+
+    PString ttsEngine = args.GetOptionString("tts");
+    if (ttsEngine.IsEmpty()) 
+      ttsEngine = PFactory<PTextToSpeech>::GetKeyList()[0];
+    if (!ttsEngine.IsEmpty()) 
+      ivrEP->SetDefaultTextToSpeech(ttsEngine);
   }
 #endif
 
