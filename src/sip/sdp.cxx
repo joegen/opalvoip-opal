@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2029.2.5  2006/04/25 01:06:22  csoutheren
+ * Revision 1.2029.2.6  2006/04/30 13:54:14  csoutheren
+ * Added handling for IPV6
+ *
+ * Revision 2.28.2.5  2006/04/25 01:06:22  csoutheren
  * Allow SIP-only codecs
  *
  * Revision 2.28.2.4  2006/04/19 07:52:30  csoutheren
@@ -175,9 +178,15 @@ static OpalTransportAddress ParseConnectAddress(const PStringArray & tokens, PIN
 {
   if (tokens.GetSize() == offset+3) {
     if (tokens[offset] *= "IN") {
-      if (tokens[offset+1] *= "IP4")
+      if (
+        (tokens[offset+1] *= "IP4")
+#if P_HAS_IPV6
+        || (tokens[offset+1] *= "IP6")
+#endif
+        )
         return OpalTransportAddress(tokens[offset+2], 0, "udp");
-      else {
+      else
+      {
         PTRACE(1, "SDP\tConnect address has invalid address type \"" << tokens[offset+1] << '"');
       }
     }
