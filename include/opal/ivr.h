@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.h,v $
- * Revision 1.2010  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2010.4.1  2006/04/30 13:49:34  csoutheren
+ * Add ability to set TextToSpeech driver
+ * Add useful defaults for VXML handling
+ *
+ * Revision 2.9  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.8  2004/08/14 07:56:29  rjongbloed
@@ -180,17 +184,32 @@ class OpalIVREndPoint : public OpalEndPoint
       const PString & vxml
     );
 
-    /**Set the default emdia formats for all connections using VXML.
+    /**Set the default media formats for all connections using VXML.
       */
     void SetDefaultMediaFormats(
       const OpalMediaFormatList & formats
     );
+
+    /** Called when a call needs to start the outgoing VXML.
+        This can be used to do different behaviour
+      */
+    virtual BOOL StartVXML();
+
+    /** Set/get the default text to speech engine used by the IVR  
+      */
+    void SetDefaultTextToSpeech(const PString & tts)
+    { defaultTts = tts; }
+
+    PString GetDefaultTextToSpeech() const
+    { return defaultTts; }
+
   //@}
 
   protected:
     unsigned            nextTokenNumber;
     PString             defaultVXML;
     OpalMediaFormatList defaultMediaFormats;
+    PString             defaultTts;
 };
 
 
@@ -292,6 +311,20 @@ class OpalIVRConnection : public OpalConnection
     /**Call is initiated as the A-Party.
       */
     virtual void InitiateCall();
+
+    /** Called when a call needs to start the outgoing VXML.
+        This can be used to do different behaviour
+      */
+    virtual BOOL StartVXML();
+
+    PTextToSpeech * SetTextToSpeech(PTextToSpeech * _tts, BOOL autoDelete = FALSE)
+    { return vxmlSession.SetTextToSpeech(_tts, autoDelete); }
+
+    PTextToSpeech * SetTextToSpeech(const PString & ttsName)
+    { return vxmlSession.SetTextToSpeech(ttsName); }
+
+    PTextToSpeech * GetTextToSpeech()
+    { return vxmlSession.GetTextToSpeech(); }
 
   protected:
     OpalIVREndPoint   & endpoint;
