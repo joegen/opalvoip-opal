@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2121.2.15  2006/04/27 20:22:26  dsandras
+ * Revision 1.2121.2.16  2006/05/01 09:53:58  dsandras
+ * Backported change from HEAD.
+ *
+ * Revision 2.120.2.15  2006/04/27 20:22:26  dsandras
  * Backported fix from HEAD.
  *
  * Revision 2.147  2006/04/24 21:19:31  dsandras
@@ -1160,9 +1163,6 @@ BOOL SIPConnection::WriteINVITE(OpalTransport & transport, void * param)
 
 BOOL SIPConnection::SetUpConnection()
 {
-  PStringList routeSet = GetRouteSet();
-  if (!routeSet.IsEmpty()) 
-    transportAddress = routeSet[0];
   SIPURL transportAddress = targetAddress;
 
   PTRACE(2, "SIP\tSetUpConnection: " << remotePartyAddress);
@@ -1174,6 +1174,9 @@ BOOL SIPConnection::SetUpConnection()
       transportAddress.SetPort(addrs [0].port);
     }
 #endif
+  PStringList routeSet = GetRouteSet();
+  if (!routeSet.IsEmpty()) 
+    transportAddress = routeSet[0];
 
   originating = TRUE;
 
