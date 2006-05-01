@@ -19,6 +19,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h281.cxx,v $
+ * Revision 1.3  2006/05/01 10:29:50  csoutheren
+ * Added pragams for gcc < 4
+ *
  * Revision 1.2  2006/04/24 12:53:50  rjongbloed
  * Port of H.224 Far End Camera Control to DevStudio/Windows
  *
@@ -28,6 +31,11 @@
  */
 
 #include <ptlib.h>
+
+#ifdef __GNUC__
+#pragma implementation "h281.h"
+#pragma implementation "h281handler.h"
+#endif
 
 #include <h224/h281.h>
 #include <h224/h281handler.h>
