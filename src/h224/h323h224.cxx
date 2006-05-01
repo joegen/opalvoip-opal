@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323h224.cxx,v $
+ * Revision 1.3  2006/05/01 10:29:50  csoutheren
+ * Added pragams for gcc < 4
+ *
  * Revision 1.2  2006/04/24 12:53:50  rjongbloed
  * Port of H.224 Far End Camera Control to DevStudio/Windows
  *
@@ -29,6 +32,10 @@
  */
 
 #include <ptlib.h>
+
+#ifdef __GNUC__
+#pragma implementation "h323h224.h"
+#endif
 
 #include <h224/h323h224.h>
 
