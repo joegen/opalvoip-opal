@@ -19,6 +19,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q922.cxx,v $
+ * Revision 1.3  2006/05/01 10:29:50  csoutheren
+ * Added pragams for gcc < 4
+ *
  * Revision 1.2  2006/04/24 12:53:50  rjongbloed
  * Port of H.224 Far End Camera Control to DevStudio/Windows
  *
@@ -28,6 +31,10 @@
  */
 
 #include <ptlib.h>
+
+#ifdef __GNUC__
+#pragma implementation "q922.h"
+#endif
 
 #include <h224/q922.h>
 
