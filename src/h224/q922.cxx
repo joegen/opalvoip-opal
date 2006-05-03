@@ -19,6 +19,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q922.cxx,v $
+ * Revision 1.4  2006/05/03 17:45:51  hfriederich
+ * reverting incorrect byte orderings in fcs from previous patch
+ *
  * Revision 1.3  2006/05/01 10:29:50  csoutheren
  * Added pragams for gcc < 4
  *
@@ -139,7 +142,7 @@ BOOL Q922_Frame::Decode(const BYTE *data, PINDEX size)
 		
       // Found end flag
       // FCS is contained in firstOctet and secondOctet.
-      WORD fcs = (firstOctet << 8) | secondOctet;
+      WORD fcs = (secondOctet << 8) | firstOctet;
 			
       // Calculate FCS from data to check
       WORD calculatedFCS = CalculateFCS((const BYTE *)theArray, arrayIndex);
@@ -229,8 +232,8 @@ BOOL Q922_Frame::Encode(BYTE *buffer, PINDEX & size, BYTE & theBitIndex) const
   }
 	
   // Encoding the FCS
-  EncodeOctet((BYTE)(fcs >> 8), buffer, octetIndex, bitIndex, onesCounter);
   EncodeOctet((BYTE)fcs, buffer, octetIndex, bitIndex, onesCounter);
+  EncodeOctet((BYTE)(fcs >> 8), buffer, octetIndex, bitIndex, onesCounter);
 	
   // Appending three FLAG sequences to the buffer
   // the buffer is not necessary byte aligned!
