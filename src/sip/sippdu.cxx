@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2093  2006/04/11 21:58:25  dsandras
+ * Revision 1.2094  2006/05/04 11:17:34  hfriederich
+ * improving SIPTransaction::Wait() to wait until transaction is complete instead of finished
+ *
+ * Revision 2.92  2006/04/11 21:58:25  dsandras
  * Various cleanups and fixes. Fixes Ekiga report #336444.
  *
  * Revision 2.91  2006/03/23 21:25:14  dsandras
@@ -2006,6 +2009,7 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
       return FALSE;
 
     state = Completed;
+    finished.Signal();
     retryTimer.Stop();
     completionTimer = endpoint.GetPduCleanUpTimeout();
   }
@@ -2100,6 +2104,8 @@ void SIPTransaction::SetTerminated(States newState)
     return;
   }
 
+  States oldState = state;
+  
   state = newState;
   PTRACE(3, "SIP\tSet state " << StateNames[newState] << " for transaction " << mime.GetCSeq());
 
@@ -2140,7 +2146,9 @@ void SIPTransaction::SetTerminated(States newState)
     }
   }
 
-  finished.Signal();
+  if(oldState != Completed) {
+    finished.Signal();
+  }
 }
 
 
