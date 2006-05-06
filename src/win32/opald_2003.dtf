@@ -33297,14 +33297,17 @@ EXPORTS
     ?GetDefaultListeners@OpalEndPoint@@UBE?AVPStringArray@@XZ @29853 NONAME
     ?GetDefaultListeners@SIPEndPoint@@UBE?AVPStringArray@@XZ @29854 NONAME
     ?GetDefaultLocalPartyName@OpalEndPoint@@QBEABVPString@@XZ @29855 NONAME
+    ?GetDefaultRegisteredPartyName@SIPEndPoint@@UAE?AVSIPURL@@XZ @41073 NONAME
     ?GetDefaultSessionID@H323AudioCapability@@UBEIXZ @29856 NONAME
     ?GetDefaultSessionID@H323Capability@@UBEIXZ @29857 NONAME
     ?GetDefaultSessionID@H323DataCapability@@UBEIXZ @29858 NONAME
     ?GetDefaultSessionID@H323VideoCapability@@UBEIXZ @29859 NONAME
     ?GetDefaultSessionID@OpalMediaFormat@@QBEIXZ @29860 NONAME
     ?GetDefaultSignalPort@OpalEndPoint@@QBEGXZ @29861 NONAME
+    ?GetDefaultTextToSpeech@OpalIVREndPoint@@QBE?AVPString@@XZ @41074 NONAME
     ?GetDefaultUdpPort@H323GatekeeperServer@@UAEGXZ @29862 NONAME
     ?GetDefaultUserName@OpalManager@@QBEABVPString@@XZ @29863 NONAME
+    ?GetDefaultVXML@OpalIVREndPoint@@QBEABVPString@@XZ @41075 NONAME
     ?GetDescription@OpalIxJDevice@@UBE?AVPString@@XZ @36113 NONAME
     ?GetDescription@OpalLine@@QBE?AVPString@@XZ @29864 NONAME
     ?GetDescription@OpalVoipBlasterDevice@@UBE?AVPString@@XZ @36116 NONAME
@@ -33599,7 +33602,7 @@ EXPORTS
     ?GetLocalNumber@IAX2EndPoint@@QAE?AVPString@@XZ @39372 NONAME
     ?GetLocalPartyAddress@SIPConnection@@QBE?AVPString@@XZ @30019 NONAME
     ?GetLocalPartyName@OpalConnection@@QBEABVPString@@XZ @30020 NONAME
-    ?GetLocalURL@SIPEndPoint@@QAE?BVSIPURL@@ABVOpalTransport@@ABVPString@@@Z @40309 NONAME
+    ?GetLocalURL@SIPEndPoint@@QAE?AVSIPURL@@ABVOpalTransport@@ABVPString@@@Z @41076 NONAME
     ?GetLocalUserName@H323EndPoint@@UBEABVPString@@XZ @30021 NONAME
     ?GetLocalUserName@IAX2EndPoint@@QAE?AVPString@@XZ @39373 NONAME
     ?GetLocalVideoSource@OpalH281Handler@@QAEAAVH281VideoSource@@W4VideoSource@1@@Z @40956 NONAME
@@ -33858,7 +33861,7 @@ EXPORTS
     ?GetRegisteredEndPointRejectTag@H323GatekeeperLRQ@@UBEIXZ @30184 NONAME
     ?GetRegisteredEndPointRejectTag@H323GatekeeperRRQ@@UBEIXZ @30185 NONAME
     ?GetRegisteredEndPointRejectTag@H323GatekeeperURQ@@UBEIXZ @30186 NONAME
-    ?GetRegisteredPartyName@SIPEndPoint@@QAE?BVSIPURL@@ABVPString@@@Z @36491 NONAME
+    ?GetRegisteredPartyName@SIPEndPoint@@UAE?AVSIPURL@@ABVPString@@@Z @41077 NONAME
     ?GetRegistrarAddress@SIPInfo@@UAEABVOpalTransportAddress@@XZ @40780 NONAME
     ?GetRegistrarTimeToLive@SIPEndPoint@@QBEABVPTimeInterval@@XZ @36492 NONAME
     ?GetRegistrationAddress@SIPInfo@@UAEABVSIPURL@@XZ @36493 NONAME
@@ -38676,6 +38679,7 @@ EXPORTS
     ?SetExtensionType@RTP_DataFrame@@QAEXH@Z @34213 NONAME
     ?SetExternalAddress@H323_ExternalRTPChannel@@QAEXABVH323TransportAddress@@0@Z @34214 NONAME
     ?SetFieldParameter@SIPMIMEInfo@@QAEXABVPString@@AAV2@0@Z @39958 NONAME
+    ?SetFinishWhenEmpty@PVXMLSession@@QAEXH@Z @41078 NONAME
     ?SetFMTP@SDPMediaFormat@@QAEXABVPString@@@Z @34215 NONAME
     ?SetFocusDirection@H281_Frame@@QAEXW4FocusDirection@1@@Z @41036 NONAME
     ?SetForcedReleaseAccepted@H323Connection@@UAEXXZ @34216 NONAME
@@ -38998,6 +39002,8 @@ EXPORTS
     ?StartStatusCheckTimer@IAX2Processor@@IAEXH@Z @39983 NONAME
     ?StartThread@OpalListener@@IAEHABVPNotifier@@H@Z @34451 NONAME
     ?StartTransmit@OpalH224Handler@@UAEXXZ @41057 NONAME
+    ?StartVXML@OpalIVRConnection@@UAEHXZ @41079 NONAME
+    ?StartVXML@OpalIVREndPoint@@UAEHXZ @41080 NONAME
     ?StateNames@H245NegLogicalChannel@@1QBQBDB @34452 NONAME
     ?StateNames@H245NegMasterSlaveDetermination@@1QBQBDB @34453 NONAME
     ?StateNames@H245NegTerminalCapabilitySet@@1QBQBDB @34454 NONAME
