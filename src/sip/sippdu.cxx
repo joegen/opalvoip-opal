@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2094  2006/05/04 11:17:34  hfriederich
+ * Revision 1.2095  2006/05/06 16:04:16  dsandras
+ * Fixed GetSendAddress to handle the case where the first route doesn't contain
+ * the 'lr' parameter. Fixes Ekiga report #340415.
+ *
+ * Revision 2.93  2006/05/04 11:17:34  hfriederich
  * improving SIPTransaction::Wait() to wait until transaction is complete instead of finished
  *
  * Revision 2.92  2006/04/11 21:58:25  dsandras
@@ -1629,22 +1633,19 @@ OpalTransportAddress SIP_PDU::GetViaAddress(OpalEndPoint &ep)
 
 OpalTransportAddress SIP_PDU::GetSendAddress(SIPConnection & connection)
 {
-  OpalTransportAddress address;
-
   PStringList routeSet = connection.GetRouteSet();
   if (!routeSet.IsEmpty()) {
 
     SIPURL firstRoute = routeSet[0];
     if (firstRoute.GetParamVars().Contains("lr")) {
-      address = OpalTransportAddress(firstRoute.GetHostAddress());
+      return OpalTransportAddress(firstRoute.GetHostAddress());
     }
   }
-  else if (!connection.GetEndPoint().GetProxy().IsEmpty()) // Old style proxies
-    address = connection.GetEndPoint().GetProxy().GetHostAddress();
-  else
-    address = GetURI().GetHostAddress();
-
-  return address;
+  
+  if (!connection.GetEndPoint().GetProxy().IsEmpty()) // Old style proxies
+    return connection.GetEndPoint().GetProxy().GetHostAddress();
+  
+  return GetURI().GetHostAddress();
 }
 
 
