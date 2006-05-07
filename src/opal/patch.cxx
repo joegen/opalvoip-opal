@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2020.2.2  2006/03/20 10:48:34  csoutheren
+ * Revision 1.2020.2.3  2006/05/07 14:03:54  dsandras
+ * Backport from HEAD.
+ *
+ * Revision 2.23  2006/05/07 14:03:04  dsandras
+ * Reverted patch 2.21 which could cause some deadlocks with H.323.
+ *
+ * Revision 2.19.2.2  2006/03/20 10:48:34  csoutheren
  * Backport from CVS head
  *
  * Revision 2.19.2.1  2006/02/06 04:38:37  csoutheren
@@ -172,7 +178,6 @@ void OpalMediaPatch::Main()
 {
   PTRACE(3, "Patch\tThread started for " << *this);
   PINDEX i;
-  BOOL readOK = TRUE;
 
   inUse.Wait();
   if (!source.IsSynchronous()) {
@@ -184,17 +189,10 @@ void OpalMediaPatch::Main()
     }
   }
 
-  RTP_DataFrame sourceFrame(source.GetDataSize());
   inUse.Signal();
-  while (readOK) {
+  RTP_DataFrame sourceFrame(source.GetDataSize());
+  while (source.ReadPacket(sourceFrame)) {
     inUse.Wait();
-    readOK = source.ReadPacket(sourceFrame);
-    if(!readOK)
-	  {
-      inUse.Signal();
-      break;
-    }
-
     FilterFrame(sourceFrame, source.GetMediaFormat());
 
     for (i = 0; i < sinks.GetSize(); i++)
