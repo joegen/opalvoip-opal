@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2024  2006/05/07 14:03:04  dsandras
+ * Revision 1.2025  2006/05/07 15:33:54  dsandras
+ * Reverted the last part of the patch.
+ *
+ * Revision 2.23  2006/05/07 14:03:04  dsandras
  * Reverted patch 2.21 which could cause some deadlocks with H.323.
  *
  * Revision 2.22  2006/04/09 12:12:54  rjongbloed
@@ -207,10 +210,10 @@ void OpalMediaPatch::Close()
 {
   PTRACE(3, "Patch\tClosing media patch " << *this);
 
-  inUse.Wait();
   filters.RemoveAll();
   source.Close();
 
+  inUse.Wait();
   // This relies on the channel close doing a RemoveSink() call
   while (sinks.GetSize() > 0) {
     OpalMediaStream * stream = sinks[0].stream;
