@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2020.2.3  2006/05/07 14:03:54  dsandras
+ * Revision 1.2020.2.4  2006/05/07 15:34:49  dsandras
+ * Backported fix from HEAD.
+ *
+ * Revision 2.24  2006/05/07 15:33:54  dsandras
+ * Reverted the last part of the patch.
+ *
+ * Revision 2.19.2.3  2006/05/07 14:03:54  dsandras
  * Backport from HEAD.
  *
  * Revision 2.23  2006/05/07 14:03:04  dsandras
@@ -213,10 +219,10 @@ void OpalMediaPatch::Close()
 {
   PTRACE(3, "Patch\tClosing media patch " << *this);
 
-  inUse.Wait();
   filters.RemoveAll();
   source.Close();
 
+  inUse.Wait();
   // This relies on the channel close doing a RemoveSink() call
   while (sinks.GetSize() > 0) {
     OpalMediaStream * stream = sinks[0].stream;
