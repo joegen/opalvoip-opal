@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2023  2006/04/09 12:12:54  rjongbloed
+ * Revision 1.2024  2006/05/07 14:03:04  dsandras
+ * Reverted patch 2.21 which could cause some deadlocks with H.323.
+ *
+ * Revision 2.22  2006/04/09 12:12:54  rjongbloed
  * Changed the media format option merging to include the transcoder formats.
  *
  * Revision 2.21  2006/03/20 10:37:47  csoutheren
@@ -169,7 +172,6 @@ void OpalMediaPatch::Main()
 {
   PTRACE(3, "Patch\tThread started for " << *this);
   PINDEX i;
-  BOOL readOK = TRUE;
 
   inUse.Wait();
   if (!source.IsSynchronous()) {
@@ -181,17 +183,10 @@ void OpalMediaPatch::Main()
     }
   }
 
-  RTP_DataFrame sourceFrame(source.GetDataSize());
   inUse.Signal();
-  while (readOK) {
+  RTP_DataFrame sourceFrame(source.GetDataSize());
+  while (source.ReadPacket(sourceFrame)) {
     inUse.Wait();
-    readOK = source.ReadPacket(sourceFrame);
-    if(!readOK)
-	  {
-      inUse.Signal();
-      break;
-    }
-
     FilterFrame(sourceFrame, source.GetMediaFormat());
 
     for (i = 0; i < sinks.GetSize(); i++)
