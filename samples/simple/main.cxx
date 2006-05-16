@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2061.2.4  2006/04/30 14:28:25  csoutheren
+ * Revision 1.2061.2.5  2006/05/16 07:03:09  csoutheren
+ * Fixed Linux compile system
+ *
+ * Revision 2.60.2.4  2006/04/30 14:28:25  csoutheren
  * Added disableui and srcep options
  *
  * Revision 2.60.2.3  2006/04/30 13:50:29  csoutheren
@@ -1088,7 +1091,7 @@ void MyManager::Main(PArgList & args)
 
   if (args.HasOption("disableui")) {
     while (FindCallWithLock(currentCallToken) != NULL)
-      Sleep(1000);
+      PThread::Sleep(1000);
   }
   else {
     cout << "Press ? for help." << endl;

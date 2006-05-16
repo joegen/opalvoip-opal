@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
+ * Revision 1.1.2.15  2006/05/16 07:03:09  csoutheren
+ * Fixed Linux compile system
+ *
  * Revision 1.1.2.14  2006/04/26 08:03:58  csoutheren
  * H.263 encoding and decoding now working from plugin for both SIP and H.323
  *
@@ -131,11 +134,11 @@ static const char * h323_cifMPI_tag                            = H323CAP_TAG_PRE
 static const char * h323_sqcifMPI_tag                          = H323CAP_TAG_PREFIX "_sqcifMPI";
 static const char * h323_cif4MPI_tag                           = H323CAP_TAG_PREFIX "_cif4MPI";
 static const char * h323_cif16MPI_tag                          = H323CAP_TAG_PREFIX "_cif16MPI";
-static const char * h323_slowSqcifMPI_tag                      = H323CAP_TAG_PREFIX "_slowSqcifMPI";
-static const char * h323_slowQcifMPI_tag                       = H323CAP_TAG_PREFIX "_slowQcifMPI";
-static const char * h323_slowCifMPI_tag                        = H323CAP_TAG_PREFIX "slowCifMPI";
-static const char * h323_slowCif4MPI_tag                       = H323CAP_TAG_PREFIX "_slowCif4MPI";
-static const char * h323_slowCif16MPI_tag                      = H323CAP_TAG_PREFIX "_slowCif16MPI";
+//static const char * h323_slowSqcifMPI_tag                      = H323CAP_TAG_PREFIX "_slowSqcifMPI";
+//static const char * h323_slowQcifMPI_tag                       = H323CAP_TAG_PREFIX "_slowQcifMPI";
+//static const char * h323_slowCifMPI_tag                        = H323CAP_TAG_PREFIX "slowCifMPI";
+//static const char * h323_slowCif4MPI_tag                       = H323CAP_TAG_PREFIX "_slowCif4MPI";
+//static const char * h323_slowCif16MPI_tag                      = H323CAP_TAG_PREFIX "_slowCif16MPI";
 static const char * h323_temporalSpatialTradeOffCapability_tag = H323CAP_TAG_PREFIX "_temporalSpatialTradeOffCapability";
 static const char * h323_unrestrictedVector_tag                = H323CAP_TAG_PREFIX "_unrestrictedVector";
 static const char * h323_arithmeticCoding_tag                  = H323CAP_TAG_PREFIX "_arithmeticCoding";      
@@ -1622,7 +1625,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
             if (
                 (fmt != NULL) && 
                 (fmt->encoderCodec->sdpFormat != NULL) &&
-                (strcmpi(encoderCodec->sdpFormat, fmt->encoderCodec->sdpFormat) == 0)
+                (strcasecmp(encoderCodec->sdpFormat, fmt->encoderCodec->sdpFormat) == 0)
                 ) {
               mediaFormat->rtpPayloadType = fmt->GetPayloadType();
               break;
@@ -1635,7 +1638,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
             if (
                 (fmt != NULL) && 
                 (fmt->encoderCodec->sdpFormat != NULL) &&
-                (strcmpi(encoderCodec->sdpFormat, fmt->encoderCodec->sdpFormat) == 0)
+                (strcasecmp(encoderCodec->sdpFormat, fmt->encoderCodec->sdpFormat) == 0)
                 ) {
               mediaFormat->rtpPayloadType = fmt->GetPayloadType();
               break;
@@ -2259,11 +2262,11 @@ BOOL H323H263PluginCapability::OnSendingPDU(H245_VideoCapability & cap) const
 
   h263.m_maxBitRate                        = (mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption, 327600) + 50) / 100;
   h263.m_temporalSpatialTradeOffCapability = mediaFormat.GetOptionBoolean(h323_temporalSpatialTradeOffCapability_tag, FALSE);
-	h263.m_unrestrictedVector	               = mediaFormat.GetOptionBoolean(h323_unrestrictedVector_tag, FALSE);
-	h263.m_arithmeticCoding	                 = mediaFormat.GetOptionBoolean(h323_arithmeticCoding_tag, FALSE);
-	h263.m_advancedPrediction	               = mediaFormat.GetOptionBoolean(h323_advancedPrediction_tag, FALSE);
-	h263.m_pbFrames	                         = mediaFormat.GetOptionBoolean(h323_pbFrames_tag, FALSE);
-	h263.m_errorCompensation                 = mediaFormat.GetOptionBoolean(h323_errorCompensation_tag, FALSE);
+  h263.m_unrestrictedVector	               = mediaFormat.GetOptionBoolean(h323_unrestrictedVector_tag, FALSE);
+  h263.m_arithmeticCoding	                 = mediaFormat.GetOptionBoolean(h323_arithmeticCoding_tag, FALSE);
+  h263.m_advancedPrediction	               = mediaFormat.GetOptionBoolean(h323_advancedPrediction_tag, FALSE);
+  h263.m_pbFrames	                         = mediaFormat.GetOptionBoolean(h323_pbFrames_tag, FALSE);
+  h263.m_errorCompensation                 = mediaFormat.GetOptionBoolean(h323_errorCompensation_tag, FALSE);
 
   {
     int hrdB = mediaFormat.GetOptionInteger(h323_hrdB_tag, -1);
