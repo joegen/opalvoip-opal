@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2061  2006/04/20 16:52:22  hfriederich
+ * Revision 1.2062  2006/05/23 17:26:52  dsandras
+ * Reverted previous patch preventing OnEstablished to be called with H.323 calls.
+ *
+ * Revision 2.60  2006/04/20 16:52:22  hfriederich
  * Adding support for H.224/H.281
  *
  * Revision 2.59  2006/04/09 12:12:54  rjongbloed
@@ -716,15 +719,15 @@ BOOL OpalConnection::OnOpenMediaStream(OpalMediaStream & stream)
   if (!endpoint.OnOpenMediaStream(*this, stream))
     return FALSE;
 
-  {
-    PWaitAndSignal m(mediaStreamMutex);
-    mediaStreams.Append(&stream);
-  }
+    {
+      PWaitAndSignal m(mediaStreamMutex);
+      mediaStreams.Append(&stream);
+    }
 
-  //if (phase == ConnectedPhase) {
-  //  SetPhase(EstablishedPhase);
-  //  OnEstablished();
-  //}
+  if (phase == ConnectedPhase) {
+    SetPhase(EstablishedPhase);
+    OnEstablished();
+  }
 
   return TRUE;
 }
