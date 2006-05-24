@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2148  2006/04/24 21:19:31  dsandras
+ * Revision 1.2149  2006/05/24 00:56:14  csoutheren
+ * Fixed problem with deferred answer on SIP calls
+ *
+ * Revision 2.147  2006/04/24 21:19:31  dsandras
  * Fixed previous commit.
  *
  * Revision 2.146  2006/04/23 20:12:52  dsandras
@@ -1676,10 +1679,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     return;
   }
 
-
   PTRACE(2, "SIP\tOnIncomingConnection succeeded for INVITE from " << request.GetURI() << " for " << *this);
   phase = SetUpPhase;
-  ownerCall.OnSetUp(*this);
 
   AnsweringCall(OnAnswerCall(remotePartyAddress));
 }
@@ -1700,6 +1701,7 @@ void SIPConnection::AnsweringCall(AnswerCallResponse response)
     case AlertingPhase:
       switch (response) {
         case AnswerCallNow:
+          ownerCall.OnSetUp(*this);
           SetConnected();
           break;
 
@@ -1718,7 +1720,7 @@ void SIPConnection::AnsweringCall(AnswerCallResponse response)
 
         case AnswerCallDeferred:
         case AnswerCallDeferredWithMedia:
-	case NumAnswerCallResponses:
+	      case NumAnswerCallResponses:
           break;
       }
       break;
