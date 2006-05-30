@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2106  2006/05/30 04:58:06  csoutheren
+ * Revision 1.2107  2006/05/30 11:33:02  hfriederich
+ * Porting support for H.460 from OpenH323
+ *
+ * Revision 2.105  2006/05/30 04:58:06  csoutheren
  * Added suport for SIP INFO message (untested as yet)
  * Fixed some issues with SIP state machine on answering calls
  * Fixed some formatting issues
@@ -1487,6 +1490,11 @@
 #include <codec/rfc2833.h>
 #include <h224/h323h224.h>
 
+#ifdef H323_H460
+#include <h323/h460.h>
+#include <h323/h4601.h>
+#endif
+
 const PTimeInterval MonitorCallStatusTime(0, 10); // Seconds
 
 #define new PNEW
@@ -1520,6 +1528,46 @@ const char * const H323Connection::FastStartStateNames[NumFastStartStates] = {
 };
 #endif
 
+#ifdef H323_H460
+static void ReceiveSetupFeatureSet(const H323Connection * connection, const H225_Setup_UUIE & pdu)
+{
+  H225_FeatureSet fs;
+  BOOL hasFeaturePDU = FALSE;
+  
+  if(pdu.HasOptionalField(H225_Setup_UUIE::e_neededFeatures)) {
+    fs.IncludeOptionalField(H225_FeatureSet::e_neededFeatures);
+    H225_ArrayOf_FeatureDescriptor & fsn = fs.m_neededFeatures;
+    fsn = pdu.m_neededFeatures;
+    hasFeaturePDU = TRUE;
+  }
+  
+  if(pdu.HasOptionalField(H225_Setup_UUIE::e_desiredFeatures)) {
+    fs.IncludeOptionalField(H225_FeatureSet::e_desiredFeatures);
+    H225_ArrayOf_FeatureDescriptor & fsn = fs.m_desiredFeatures;
+    fsn = pdu.m_desiredFeatures;
+    hasFeaturePDU = TRUE;
+  }
+  
+  if(pdu.HasOptionalField(H225_Setup_UUIE::e_supportedFeatures)) {
+    fs.IncludeOptionalField(H225_FeatureSet::e_supportedFeatures);
+    H225_ArrayOf_FeatureDescriptor & fsn = fs.m_supportedFeatures;
+    fsn = pdu.m_supportedFeatures;
+    hasFeaturePDU = TRUE;
+  }
+  
+  if (hasFeaturePDU) {
+	connection->OnReceiveFeatureSet(H460_MessageType::e_setup, fs);
+  }
+}
+#endif
+
+template <typename PDUType>
+static void ReceiveFeatureSet(const H323Connection * connection, unsigned code, const PDUType & pdu)
+{
+  if(pdu.HasOptionalField(PDUType::e_featureSet)) {
+    connection->OnReceiveFeatureSet(code, pdu.m_featureSet);
+  }
+}
 
 H323Connection::H323Connection(OpalCall & call,
                                H323EndPoint & ep,
@@ -1529,6 +1577,9 @@ H323Connection::H323Connection(OpalCall & call,
                                unsigned options)
   : OpalConnection(call, ep, token),
     endpoint(ep),
+#ifdef H323_H460
+    features(ep.GetFeatureSet()),
+#endif
     gkAccessTokenOID(ep.GetGkAccessTokenOID())
 {
   if (alias.IsEmpty())
@@ -1654,6 +1705,11 @@ H323Connection::H323Connection(OpalCall & call,
 
   remoteIsNAT = FALSE;
   alertDone   = FALSE;
+  
+#ifdef H323_H460
+  features.LoadFeatureSet(H460_Feature::FeatureSignal, this);
+#endif
+  
 }
 
 
@@ -2226,6 +2282,10 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
     if (signallingChannel->GetLocalAddress().IsEquivalent(localDestinationAddress))
       localDestinationAddress = '*';
   }
+  
+#ifdef H323_H460
+  ReceiveSetupFeatureSet(this, setup);
+#endif
 
   // Send back a H323 Call Proceeding PDU in case OnIncomingCall() takes a while
   PTRACE(3, "H225\tSending call proceeding PDU");
@@ -2461,6 +2521,10 @@ BOOL H323Connection::OnReceivedCallProceeding(const H323SignalPDU & pdu)
   SetRemoteVersions(call.m_protocolIdentifier);
   SetRemotePartyInfo(pdu);
   SetRemoteApplication(call.m_destinationInfo);
+  
+#ifdef H323_H460
+  ReceiveFeatureSet<H225_CallProceeding_UUIE>(this, H460_MessageType::e_callProceeding, call);
+#endif
 
   // Check for fastStart data and start fast
   if (call.HasOptionalField(H225_CallProceeding_UUIE::e_fastStart))
@@ -2508,6 +2572,10 @@ BOOL H323Connection::OnReceivedAlerting(const H323SignalPDU & pdu)
   SetRemoteVersions(alert.m_protocolIdentifier);
   SetRemotePartyInfo(pdu);
   SetRemoteApplication(alert.m_destinationInfo);
+  
+#ifdef H323_H460
+  ReceiveFeatureSet<H225_Alerting_UUIE>(this, H460_MessageType::e_alerting, alert);
+#endif
 
   // Check for fastStart data and start fast
   if (alert.HasOptionalField(H225_Alerting_UUIE::e_fastStart))
@@ -2546,6 +2614,10 @@ BOOL H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   SetRemoteVersions(connect.m_protocolIdentifier);
   SetRemotePartyInfo(pdu);
   SetRemoteApplication(connect.m_destinationInfo);
+  
+#ifdef H323_H460
+  ReceiveFeatureSet<H225_Connect_UUIE>(this, H460_MessageType::e_connect, connect);
+#endif
 
   if (!OnOutgoingCall(pdu)) {
     Release(EndedByNoAccept);
@@ -2626,6 +2698,10 @@ BOOL H323Connection::OnReceivedFacility(const H323SignalPDU & pdu)
   if (pdu.m_h323_uu_pdu.m_h323_message_body.GetTag() != H225_H323_UU_PDU_h323_message_body::e_facility)
     return FALSE;
   const H225_Facility_UUIE & fac = pdu.m_h323_uu_pdu.m_h323_message_body;
+  
+#ifdef H323_H460
+  ReceiveFeatureSet<H225_Facility_UUIE>(this, H460_MessageType::e_facility, fac);
+#endif
 
   SetRemoteVersions(fac.m_protocolIdentifier);
 
@@ -2739,6 +2815,8 @@ void H323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
 
   if (q931Cause == Q931::ErrorInCauseIE)
     q931Cause = pdu.GetQ931().GetCause();
+  
+  const H225_ReleaseComplete_UUIE & rc = pdu.m_h323_uu_pdu.m_h323_message_body;
 
   switch (connectionState) {
     case EstablishedConnection :
@@ -2760,6 +2838,10 @@ void H323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
         PTRACE(4, "H4502\tThe Remote Endpoint has rejected our transfer request and does not support H.450.2.");
         h4502handler->OnReceivedSetupReturnError(H4501_GeneralErrorList::e_notAvailable);
       }
+		  
+#ifdef H323_H460
+      ReceiveFeatureSet<H225_ReleaseComplete_UUIE>(this, H460_MessageType::e_releaseComplete, rc);
+#endif
 
       if (pdu.m_h323_uu_pdu.m_h323_message_body.GetTag() != H225_H323_UU_PDU_h323_message_body::e_releaseComplete)
         Release(EndedByRefusal);
@@ -5609,6 +5691,23 @@ void H323Connection::MonitorCallStatus()
   if (enforcedDurationLimit.GetResetTime() > 0 && enforcedDurationLimit == 0)
     ClearCall(EndedByDurationLimit);
 }
+
+BOOL H323Connection::OnSendFeatureSet(unsigned code, H225_FeatureSet & features) const
+{
+  return endpoint.OnSendFeatureSet(code, features);
+}
+
+void H323Connection::OnReceiveFeatureSet(unsigned code, const H225_FeatureSet & features) const
+{
+  endpoint.OnReceiveFeatureSet(code, features);
+}
+
+#ifdef H323_H460
+H460_FeatureSet * H323Connection::GetFeatureSet()
+{
+	return &features;
+}
+#endif
 
 
 /////////////////////////////////////////////////////////////////////////////

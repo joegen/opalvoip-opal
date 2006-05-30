@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.h,v $
- * Revision 1.2013  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2014  2006/05/30 11:33:02  hfriederich
+ * Porting support for H.460 from OpenH323
+ *
+ * Revision 2.12  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.11  2004/02/19 10:46:43  rjongbloed
@@ -256,6 +259,9 @@
 #include <h323/h225ras.h>
 #include <h323/h235auth.h>
 
+#ifdef H323_H460
+class H460_FeatureSet;
+#endif
 
 class H323Connection;
 class H225_ArrayOf_AliasAddress;
@@ -263,6 +269,7 @@ class H225_H323_UU_PDU;
 class H225_AlternateGK;
 class H225_ArrayOf_AlternateGK;
 class H225_ArrayOf_ServiceControlSession;
+class H225_FeatureSet;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -305,6 +312,8 @@ class H323Gatekeeper : public H225_RAS
     BOOL OnReceiveServiceControlIndication(const H225_ServiceControlIndication &);
     void OnSendGatekeeperRequest(H225_GatekeeperRequest & grq);
     void OnSendAdmissionRequest(H225_AdmissionRequest & arq);
+	BOOL OnSendFeatureSet(unsigned, H225_FeatureSet & features) const;
+	void OnReceiveFeatureSet(unsigned, const H225_FeatureSet & features) const;
   //@}
 
   /**@name Protocol operations */
@@ -473,6 +482,12 @@ class H323Gatekeeper : public H225_RAS
       const PString & password,            ///<  New password
       const PString & username = PString() ///<  Username for password
     );
+	
+    /*
+     * Return the call signalling address for the gatekeeper (if present)
+     */
+    H323TransportAddress GetGatekeeperRouteAddress() const
+    { return gkRouteAddress; }
   //@}
 
 
@@ -566,6 +581,11 @@ class H323Gatekeeper : public H225_RAS
     PSyncPoint monitorTickle;
 
     PDictionary<POrdinalKey, H323ServiceControlSession> serviceControlSessions;
+	
+#ifdef H323_H460
+    H460_FeatureSet & features;
+#endif
+	
 };
 
 
