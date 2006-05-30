@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2031  2006/03/07 11:23:46  csoutheren
+ * Revision 1.2032  2006/05/30 11:33:02  hfriederich
+ * Porting support for H.460 from OpenH323
+ *
+ * Revision 2.30  2006/03/07 11:23:46  csoutheren
  * Add ability to disable GRQ on GK registration
  *
  * Revision 2.29  2006/02/22 10:52:30  csoutheren
@@ -636,6 +639,10 @@
 #include <h323/h323pdu.h>
 #include <h323/h323rtp.h>
 
+#ifdef H323_H460
+#include <h323/h4601.h>
+#endif
+
 #define new PNEW
 
 static class PAuthInitialiseInstantiateMe
@@ -666,6 +673,9 @@ static PTimeInterval AdjustTimeout(unsigned seconds)
 H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
   : H225_RAS(ep, trans),
     requestMutex(1, 1),
+#ifdef H323_H460
+    features(ep.GetFeatureSet()),
+#endif
     authenticators(ep.CreateAuthenticators())
 {
   alternatePermanent = FALSE;
@@ -688,6 +698,10 @@ H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
                             PThread::NoAutoDeleteThread,
                             PThread::NormalPriority,
                             "GkMonitor:%x");
+  
+#ifdef H323_H460
+  features.LoadFeatureSet(H460_Feature::FeatureRas);
+#endif
 }
 
 
@@ -846,7 +860,7 @@ unsigned H323Gatekeeper::SetupGatekeeperRequest(H323RasPDU & request)
 
   grq.IncludeOptionalField(H225_GatekeeperRequest::e_supportsAltGK);
 
-  OnSendGatekeeperRequest(grq);
+  H225_RAS::OnSendGatekeeperRequest(request, grq);
 
   discoveryComplete = FALSE;
 
@@ -2432,6 +2446,24 @@ void H323Gatekeeper::AlternateInfo::PrintOn(ostream & strm) const
 
   if (priority > 0)
     strm << ";priority=" << priority;
+}
+
+BOOL H323Gatekeeper::OnSendFeatureSet(unsigned pduType, H225_FeatureSet & message) const
+{
+#ifdef H323_H460
+  return features.SendFeature(pduType, message);
+#else
+  return endpoint.OnReceiveFeatureSet(pduType, message);
+#endif
+}
+
+void H323Gatekeeper::OnReceiveFeatureSet(unsigned pduType, const H225_FeatureSet & message) const
+{
+#ifdef H323_H460
+  features.ReceiveFeature(pduType, message);
+#else
+  endpoint.OnReceiveFeatureSet(pduType, message);
+#endif
 }
 
 

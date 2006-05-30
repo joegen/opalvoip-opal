@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.cxx,v $
- * Revision 1.2019  2005/12/09 05:41:10  csoutheren
+ * Revision 1.2020  2006/05/30 11:33:02  hfriederich
+ * Porting support for H.460 from OpenH323
+ *
+ * Revision 2.18  2005/12/09 05:41:10  csoutheren
  * Added ability to set explicit Q.931 cause code on call end
  *
  * Revision 2.17  2005/09/04 06:23:39  rjongbloed
@@ -531,6 +534,9 @@
 #include <h323/h225ras.h>
 #include <h323/h235auth.h>
 
+#ifdef H323_H460
+#include <h323/h460.h>
+#endif
 
 #define new PNEW
 
@@ -833,6 +839,47 @@ PString H323GetApplicationInfo(const H225_VendorIdentifier & vendor)
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#ifdef H323_H460
+static void SendSetupFeatureSet(const H323Connection * connection, H225_Setup_UUIE & pdu)
+{
+  H225_FeatureSet fs;
+  
+  if(!connection->OnSendFeatureSet(H460_MessageType::e_setup, fs)) {
+    return;
+  }
+  
+  if(fs.HasOptionalField(H225_FeatureSet::e_neededFeatures)) {
+    pdu.IncludeOptionalField(H225_Setup_UUIE::e_neededFeatures);
+    H225_ArrayOf_FeatureDescriptor & fsn = pdu.m_neededFeatures;
+    fsn = fs.m_neededFeatures;
+  }
+  
+  if(fs.HasOptionalField(H225_FeatureSet::e_desiredFeatures)) {
+    pdu.IncludeOptionalField(H225_Setup_UUIE::e_desiredFeatures);
+    H225_ArrayOf_FeatureDescriptor & fsn = pdu.m_desiredFeatures;
+    fsn = fs.m_desiredFeatures;
+  }
+  
+  if(fs.HasOptionalField(H225_FeatureSet::e_supportedFeatures)) {
+    pdu.IncludeOptionalField(H225_Setup_UUIE::e_supportedFeatures);
+    H225_ArrayOf_FeatureDescriptor & fsn = pdu.m_supportedFeatures;
+    fsn = fs.m_supportedFeatures;
+  }
+}
+#endif
+
+template <typename PDUType>
+static void SendFeatureSet(const H323Connection * connection, unsigned code, PDUType & pdu)
+{
+  if(connection->OnSendFeatureSet(code, pdu.m_featureSet)) {
+    pdu.IncludeOptionalField(PDUType::e_featureSet);
+  } else {
+    pdu.RemoveOptionalField(PDUType::e_featureSet);
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 H323SignalPDU::H323SignalPDU()
 {
 }
@@ -891,6 +938,10 @@ H225_Setup_UUIE & H323SignalPDU::BuildSetup(const H323Connection & connection,
   }
 
   endpoint.SetEndpointTypeInfo(setup.m_sourceInfo);
+  
+#ifdef H323_H460
+  SendSetupFeatureSet(&connection, setup);
+#endif
 
   return setup;
 }
@@ -912,6 +963,10 @@ H225_CallProceeding_UUIE &
 
   proceeding.m_callIdentifier.m_guid = connection.GetCallIdentifier();
   connection.GetEndPoint().SetEndpointTypeInfo(proceeding.m_destinationInfo);
+  
+#ifdef H323_H460
+  SendFeatureSet<H225_CallProceeding_UUIE>(&connection, H460_MessageType::e_callProceeding, proceeding);
+#endif
 
   return proceeding;
 }
@@ -933,6 +988,10 @@ H225_Connect_UUIE & H323SignalPDU::BuildConnect(const H323Connection & connectio
   connect.m_conferenceID = connection.GetConferenceIdentifier();
 
   connection.GetEndPoint().SetEndpointTypeInfo(connect.m_destinationInfo);
+  
+#ifdef H323_H460
+  SendFeatureSet<H225_Connect_UUIE>(&connection, H460_MessageType::e_connect, connect);
+#endif
 
   return connect;
 }
@@ -970,6 +1029,10 @@ H225_Alerting_UUIE & H323SignalPDU::BuildAlerting(const H323Connection & connect
 
   alerting.m_callIdentifier.m_guid = connection.GetCallIdentifier();
   connection.GetEndPoint().SetEndpointTypeInfo(alerting.m_destinationInfo);
+  
+#ifdef H323_H460
+  SendFeatureSet<H225_Alerting_UUIE>(&connection, H460_MessageType::e_alerting, alerting);
+#endif
 
   return alerting;
 }
@@ -1125,6 +1188,10 @@ H225_ReleaseComplete_UUIE &
     q931pdu.SetCause(cause);
   else
     release.IncludeOptionalField(H225_ReleaseComplete_UUIE::e_reason);
+  
+#ifdef H323_H460
+  SendFeatureSet<H225_ReleaseComplete_UUIE>(&connection, H460_MessageType::e_releaseComplete, release);
+#endif
 
   return release;
 }
@@ -1145,6 +1212,10 @@ H225_Facility_UUIE * H323SignalPDU::BuildFacility(const H323Connection & connect
   SetH225Version(connection, fac.m_protocolIdentifier);
   fac.IncludeOptionalField(H225_Facility_UUIE::e_callIdentifier);
   fac.m_callIdentifier.m_guid = connection.GetCallIdentifier();
+  
+#ifdef H323_H460
+  SendFeatureSet<H225_Facility_UUIE>(&connection, H460_MessageType::e_facility, fac);
+#endif
 
   return &fac;
 }

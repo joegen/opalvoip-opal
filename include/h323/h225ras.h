@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h225ras.h,v $
- * Revision 1.2010  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2011  2006/05/30 11:33:02  hfriederich
+ * Porting support for H.460 from OpenH323
+ *
+ * Revision 2.9  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.8  2004/02/19 10:46:43  rjongbloed
@@ -231,6 +234,7 @@ class H225_ResourcesAvailableConfirm;
 class H225_InfoRequestAck;
 class H225_InfoRequestNak;
 class H225_ArrayOf_CryptoH323Token;
+class H225_FeatureSet;
 
 class H323EndPoint;
 class H323Connection;
@@ -434,6 +438,9 @@ class H225_RAS : public H323Transactor
     virtual void OnSendRequestInProgress(H225_RequestInProgress &);
     virtual BOOL OnReceiveRequestInProgress(const H323RasPDU &, const H225_RequestInProgress &);
     virtual BOOL OnReceiveRequestInProgress(const H225_RequestInProgress &);
+	
+	virtual BOOL OnSendFeatureSet(unsigned, H225_FeatureSet &) const { return FALSE; }
+	virtual void OnReceiveFeatureSet(unsigned, const H225_FeatureSet &) const {}
 
 
     /**Handle unknown PDU type.
