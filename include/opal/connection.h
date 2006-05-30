@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2054  2006/04/20 16:52:22  hfriederich
+ * Revision 1.2055  2006/05/30 04:58:06  csoutheren
+ * Added suport for SIP INFO message (untested as yet)
+ * Fixed some issues with SIP state machine on answering calls
+ * Fixed some formatting issues
+ *
+ * Revision 2.53  2006/04/20 16:52:22  hfriederich
  * Adding support for H.224/H.281
  *
  * Revision 2.52  2006/03/20 10:37:47  csoutheren
@@ -863,6 +868,34 @@ class OpalConnection : public PSafeObject
 
   /**@name User input */
   //@{
+    enum SendUserInputModes {
+      SendUserInputAsQ931,
+      SendUserInputAsString,
+      SendUserInputAsTone,
+      SendUserInputAsInlineRFC2833,
+      SendUserInputAsSeparateRFC2833,  // Not implemented
+      SendUserInputAsProtocolDefault,
+      NumSendUserInputModes
+    };
+#if PTRACING
+    friend ostream & operator<<(ostream & o, SendUserInputModes m);
+#endif
+
+    /**Set the user input indication transmission mode.
+      */
+    virtual void SetSendUserInputMode(SendUserInputModes mode);
+
+    /**Get the user input indication transmission mode.
+      */
+    virtual SendUserInputModes GetSendUserInputMode() const { return sendUserInputMode; }
+
+    /**Get the real user input indication transmission mode.
+       This will return the user input mode that will actually be used for
+       transmissions. It will be the value of GetSendUserInputMode() provided
+       the remote endpoint is capable of that mode.
+      */
+    virtual SendUserInputModes GetRealSendUserInputMode() const { return GetSendUserInputMode(); }
+
     /**Send a user input indication to the remote endpoint.
        This is for sending arbitrary strings as user indications.
 
@@ -1172,6 +1205,7 @@ class OpalConnection : public PSafeObject
     PString              calledDestinationNumber;
     PString              calledDestinationName;
 
+    SendUserInputModes    sendUserInputMode;
     PString               userInputString;
     PMutex                userInputMutex;
     PSyncPoint            userInputAvailable;
@@ -1181,7 +1215,7 @@ class OpalConnection : public PSafeObject
     OpalRFC2833Proto    * rfc2833Handler;
     OpalT120Protocol    * t120handler;
     OpalT38Protocol     * t38handler;
-	OpalH224Handler		* h224Handler;
+    OpalH224Handler		* h224Handler;
 
 
     MediaAddressesDict  mediaTransportAddresses;

@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2046  2006/03/08 21:54:54  dsandras
+ * Revision 1.2047  2006/05/30 04:58:06  csoutheren
+ * Added suport for SIP INFO message (untested as yet)
+ * Fixed some issues with SIP state machine on answering calls
+ * Fixed some formatting issues
+ *
+ * Revision 2.45  2006/03/08 21:54:54  dsandras
  * Forgot to commit this file.
  *
  * Revision 2.44  2006/03/06 22:52:59  csoutheren
@@ -421,6 +426,10 @@ class SIPConnection : public OpalConnection
       */
     virtual void OnReceivedREFER(SIP_PDU & pdu);
   
+    /**Handle an incoming INFO PDU
+      */
+    virtual void OnReceivedINFO(SIP_PDU & pdu);
+
     /**Handle an incoming BYE PDU
       */
     virtual void OnReceivedBYE(SIP_PDU & pdu);
@@ -503,6 +512,31 @@ class SIPConnection : public OpalConnection
     virtual BOOL ForwardCall(
       const PString & forwardParty   ///<  Party to forward call to.
     );
+
+    /**Get the real user input indication transmission mode.
+       This will return the user input mode that will actually be used for
+       transmissions. It will be the value of GetSendUserInputMode() provided
+       the remote endpoint is capable of that mode.
+      */
+    virtual SendUserInputModes GetRealSendUserInputMode() const;
+
+    /**Send a user input indication to the remote endpoint.
+       This sends DTMF emulation user input. If something more sophisticated
+       than the simple tones that can be sent using the SendUserInput()
+       function.
+
+       A duration of zero indicates that no duration is to be indicated.
+       A non-zero logical channel indicates that the tone is to be syncronised
+       with the logical channel at the rtpTimestamp value specified.
+
+       The tone parameter must be one of "0123456789#*ABCD!" where '!'
+       indicates a hook flash. If tone is a ' ' character then a
+       signalUpdate PDU is sent that updates the last tone indication
+       sent. See the H.245 specifcation for more details on this.
+
+       The default behaviour sends the tone using RFC2833.
+      */
+    BOOL SendUserInputTone(char tone, unsigned duration);
     
     /**Send a PDU using the connection transport.
      * The PDU is sent to the address given as argument.
@@ -517,7 +551,7 @@ class SIPConnection : public OpalConnection
       unsigned rtpSessionId
     );
 
-	SIPTransaction * GetTransaction (PString transactionID) { return transactions.GetAt(transactionID); }
+    SIPTransaction * GetTransaction (PString transactionID) { return transactions.GetAt(transactionID); }
 
     void AddTransaction(
       SIPTransaction * transaction

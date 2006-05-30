@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2062  2006/05/23 17:26:52  dsandras
+ * Revision 1.2063  2006/05/30 04:58:06  csoutheren
+ * Added suport for SIP INFO message (untested as yet)
+ * Fixed some issues with SIP state machine on answering calls
+ * Fixed some formatting issues
+ *
+ * Revision 2.61  2006/05/23 17:26:52  dsandras
  * Reverted previous patch preventing OnEstablished to be called with H.323 calls.
  *
  * Revision 2.60  2006/04/20 16:52:22  hfriederich
@@ -328,6 +333,26 @@ ostream & operator<<(ostream & o, OpalConnection::AnswerCallResponse s)
   return o;
 }
 
+ostream & operator<<(ostream & o, OpalConnection::SendUserInputModes m)
+{
+  static const char * const SendUserInputModeNames[OpalConnection::NumSendUserInputModes] = {
+    "SendUserInputAsQ931",
+    "SendUserInputAsString",
+    "SendUserInputAsTone",
+    "SendUserInputAsRFC2833",
+    "SendUserInputAsSeparateRFC2833",
+    "SendUserInputAsProtocolDefault"
+  };
+
+  if ((PINDEX)m >= PARRAYSIZE(SendUserInputModeNames))
+    o << "InvalidSendUserInputMode<" << (unsigned)m << '>';
+  else if (SendUserInputModeNames[m] == NULL)
+    o << "SendUserInputMode<" << (unsigned)m << '>';
+  else
+    o << SendUserInputModeNames[m];
+  return o;
+}
+
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
@@ -361,6 +386,7 @@ OpalConnection::OpalConnection(OpalCall & call,
   silenceDetector = NULL;
   echoCanceler = NULL;
   
+  sendUserInputMode = ep.GetSendUserInputMode();
   rfc2833Handler = new OpalRFC2833Proto(PCREATE_NOTIFIER(OnUserInputInlineRFC2833));
 
   t120handler = NULL;
@@ -953,6 +979,11 @@ BOOL OpalConnection::SetBandwidthUsed(unsigned releasedBandwidth,
   return TRUE;
 }
 
+void OpalConnection::SetSendUserInputMode(SendUserInputModes mode)
+{
+  PTRACE(2, "OPAL\tSetting default User Input send mode to " << mode);
+  sendUserInputMode = mode;
+}
 
 BOOL OpalConnection::SendUserInputString(const PString & value)
 {

@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2095  2006/05/06 16:04:16  dsandras
+ * Revision 1.2096  2006/05/30 04:58:06  csoutheren
+ * Added suport for SIP INFO message (untested as yet)
+ * Fixed some issues with SIP state machine on answering calls
+ * Fixed some formatting issues
+ *
+ * Revision 2.94  2006/05/06 16:04:16  dsandras
  * Fixed GetSendAddress to handle the case where the first route doesn't contain
  * the 'lr' parameter. Fixes Ekiga report #340415.
  *
@@ -386,7 +391,8 @@ static const char * const MethodNames[SIP_PDU::NumMethods] = {
   "SUBSCRIBE",
   "NOTIFY",
   "REFER",
-  "MESSAGE"
+  "MESSAGE",
+  "INFO"
 };
 
 static struct {
@@ -1535,10 +1541,9 @@ void SIP_PDU::SetAllow(void)
   PStringList methods;
   
   for (PINDEX i = 0 ; i < SIP_PDU::NumMethods ; i++) {
-  
-    if (PString(MethodNames[i]).Find("SUBSCRIBE") == P_MAX_INDEX
-	&& PString(MethodNames[i]).Find("REGISTER") == P_MAX_INDEX)
-    methods += MethodNames[i];
+    PString method(MethodNames[i]);
+    if (method.Find("SUBSCRIBE") == P_MAX_INDEX && method.Find("REGISTER") == P_MAX_INDEX)
+      methods += method;
   }
   
   str << setfill(',') << methods << setfill(' ');

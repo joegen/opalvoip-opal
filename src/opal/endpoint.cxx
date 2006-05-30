@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2037  2006/04/20 16:52:22  hfriederich
+ * Revision 1.2038  2006/05/30 04:58:06  csoutheren
+ * Added suport for SIP INFO message (untested as yet)
+ * Fixed some issues with SIP state machine on answering calls
+ * Fixed some formatting issues
+ *
+ * Revision 2.36  2006/04/20 16:52:22  hfriederich
  * Adding support for H.224/H.281
  *
  * Revision 2.35  2006/03/12 06:36:57  rjongbloed
@@ -188,6 +193,7 @@ OpalEndPoint::OpalEndPoint(OpalManager & mgr,
   defaultSignalPort = 0;
 
   initialBandwidth = BANDWITH_DEFAULT_INITIAL;
+  defaultSendUserInputMode = OpalConnection::SendUserInputAsProtocolDefault;
 
   if (defaultLocalPartyName.IsEmpty())
     defaultLocalPartyName = PProcess::Current().GetName() & "User";
