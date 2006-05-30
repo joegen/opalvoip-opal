@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2051  2006/05/30 04:58:06  csoutheren
+ * Revision 1.2052  2006/05/30 11:33:02  hfriederich
+ * Porting support for H.460 from OpenH323
+ *
+ * Revision 2.50  2006/05/30 04:58:06  csoutheren
  * Added suport for SIP INFO message (untested as yet)
  * Fixed some issues with SIP state machine on answering calls
  * Fixed some formatting issues
@@ -854,6 +857,11 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   gatekeeper = NULL;
 
   secondaryConnectionsActive.DisallowDeleteObjects();
+  
+#ifdef H323_H460
+  features.AttachEndPoint(this);
+  features.LoadFeatureSet(H460_Feature::FeatureBase);
+#endif
 
   PTRACE(3, "H323\tCreated endpoint.");
 }
@@ -1982,5 +1990,13 @@ void H323EndPoint::TranslateTCPAddress(PIPSocket::Address & localAddr,
   manager.TranslateIPAddress(localAddr, remoteAddr);
 }
 
+BOOL H323EndPoint::OnSendFeatureSet(unsigned, H225_FeatureSet & features)
+{
+	return FALSE;
+}
+
+void H323EndPoint::OnReceiveFeatureSet(unsigned, const H225_FeatureSet & features)
+{
+}
 
 /////////////////////////////////////////////////////////////////////////////

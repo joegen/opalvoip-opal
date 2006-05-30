@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2037  2006/05/30 04:58:05  csoutheren
+ * Revision 1.2038  2006/05/30 11:33:02  hfriederich
+ * Porting support for H.460 from OpenH323
+ *
+ * Revision 2.36  2006/05/30 04:58:05  csoutheren
  * Added suport for SIP INFO message (untested as yet)
  * Fixed some issues with SIP state machine on answering calls
  * Fixed some formatting issues
@@ -363,11 +366,16 @@
 #include <h323/h323caps.h>
 #include <h323/h235auth.h>
 
+#ifdef H323_H460
+#include <h323/h4601.h>
+#endif
+
 
 class H225_EndpointType;
 class H225_VendorIdentifier;
 class H225_H221NonStandard;
 class H225_ServiceControlDescriptor;
+class H225_FeatureSet;
 
 class H235SecurityInfo;
 
@@ -1385,6 +1393,20 @@ class H323EndPoint : public OpalEndPoint
      */
     void SetInitialBandwidth(unsigned bandwidth) { initialBandwidth = bandwidth; }
 
+    /**Called when an outgoing PDU requires a feature set
+     */
+    virtual BOOL OnSendFeatureSet(unsigned, H225_FeatureSet &);
+
+    /**Called when an incoming PDU contains a feature set
+     */
+    virtual void OnReceiveFeatureSet(unsigned, const H225_FeatureSet &);
+	
+#ifdef H323_H460
+    /** Get the Endpoing FeatureSet
+     */
+    H460_FeatureSet & GetFeatureSet() { return features.DeriveNewFeatureSet(); };
+#endif
+
     /**Return the STUN server to use.
        Returns NULL if address is a local address as per IsLocalAddress().
        Always returns the STUN server if address is zero.
@@ -1691,6 +1713,10 @@ class H323EndPoint : public OpalEndPoint
 
     mutable PAtomicInteger nextH450CallIdentity;
             /// Next available callIdentity for H450 Transfer operations via consultation.
+	
+#ifdef H323_H460
+    H460_FeatureSet features;
+#endif
 
 };
 

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h225ras.cxx,v $
- * Revision 1.2010  2004/02/19 10:47:03  rjongbloed
+ * Revision 1.2011  2006/05/30 11:33:02  hfriederich
+ * Porting support for H.460 from OpenH323
+ *
+ * Revision 2.9  2004/02/19 10:47:03  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.8  2003/01/07 04:39:53  robertj
@@ -257,6 +260,9 @@
 
 #include <ptclib/random.h>
 
+#ifdef H323_H460
+#include <h323/h460.h>
+#endif
 
 #define new PNEW
 
@@ -585,6 +591,16 @@ BOOL H225_RAS::OnReceiveRequestInProgress(const H225_RequestInProgress & /*rip*/
   return TRUE;
 }
 
+template <typename PDUType>
+static void SendFeatureSet(const H225_RAS * ras, unsigned code, PDUType & pdu)
+{
+  if(ras->OnSendFeatureSet(code, pdu.m_featureSet)) {
+    pdu.IncludeOptionalField(PDUType::e_featureSet);
+  } else {
+    pdu.RemoveOptionalField(PDUType::e_featureSet);
+  }
+}
+
 
 void H225_RAS::OnSendGatekeeperRequest(H323RasPDU &, H225_GatekeeperRequest & grq)
 {
@@ -592,6 +608,10 @@ void H225_RAS::OnSendGatekeeperRequest(H323RasPDU &, H225_GatekeeperRequest & gr
     grq.IncludeOptionalField(H225_GatekeeperRequest::e_gatekeeperIdentifier);
     grq.m_gatekeeperIdentifier = gatekeeperIdentifier;
   }
+	
+#ifdef H323_H460
+  SendFeatureSet<H225_GatekeeperRequest>(this, H460_MessageType::e_gatekeeperRequest, grq);
+#endif
 
   OnSendGatekeeperRequest(grq);
 }
@@ -608,6 +628,10 @@ void H225_RAS::OnSendGatekeeperConfirm(H323RasPDU &, H225_GatekeeperConfirm & gc
     gcf.IncludeOptionalField(H225_GatekeeperConfirm::e_gatekeeperIdentifier);
     gcf.m_gatekeeperIdentifier = gatekeeperIdentifier;
   }
+	
+#ifdef H323_H460
+  SendFeatureSet<H225_GatekeeperConfirm>(this, H460_MessageType::e_gatekeeperConfirm, gcf);
+#endif
 
   OnSendGatekeeperConfirm(gcf);
 }
@@ -624,6 +648,10 @@ void H225_RAS::OnSendGatekeeperReject(H323RasPDU &, H225_GatekeeperReject & grj)
     grj.IncludeOptionalField(H225_GatekeeperReject::e_gatekeeperIdentifier);
     grj.m_gatekeeperIdentifier = gatekeeperIdentifier;
   }
+	
+#ifdef H323_H460
+  SendFeatureSet<H225_GatekeeperReject>(this, H460_MessageType::e_gatekeeperReject, grj);
+#endif
 
   OnSendGatekeeperReject(grj);
 }
@@ -633,9 +661,20 @@ void H225_RAS::OnSendGatekeeperReject(H225_GatekeeperReject & /*grj*/)
 {
 }
 
+template <typename PDUType>
+static void ReceiveFeatureSet(const H225_RAS * ras, unsigned code, const PDUType & pdu)
+{
+  if(pdu.HasOptionalField(PDUType::e_featureSet)) {
+    ras->OnReceiveFeatureSet(code, pdu.m_featureSet);
+  }
+}
 
 BOOL H225_RAS::OnReceiveGatekeeperRequest(const H323RasPDU &, const H225_GatekeeperRequest & grq)
 {
+#ifdef H323_H460
+  ReceiveFeatureSet<H225_GatekeeperRequest>(this, H460_MessageType::e_gatekeeperRequest, grq);
+#endif
+
   return OnReceiveGatekeeperRequest(grq);
 }
 
@@ -663,6 +702,10 @@ BOOL H225_RAS::OnReceiveGatekeeperConfirm(const H323RasPDU &, const H225_Gatekee
       return FALSE;
     }
   }
+  
+#ifdef H323_H460
+  ReceiveFeatureSet<H225_GatekeeperConfirm>(this, H460_MessageType::e_gatekeeperConfirm, gcf);
+#endif
 
   return OnReceiveGatekeeperConfirm(gcf);
 }
@@ -678,6 +721,10 @@ BOOL H225_RAS::OnReceiveGatekeeperReject(const H323RasPDU &, const H225_Gatekeep
 {
   if (!CheckForResponse(H225_RasMessage::e_gatekeeperRequest, grj.m_requestSeqNum, &grj.m_rejectReason))
     return FALSE;
+	
+#ifdef H323_H460
+  ReceiveFeatureSet<H225_GatekeeperReject>(this, H460_MessageType::e_gatekeeperReject, grj);
+#endif
 
   return OnReceiveGatekeeperReject(grj);
 }
@@ -692,6 +739,11 @@ BOOL H225_RAS::OnReceiveGatekeeperReject(const H225_GatekeeperReject & /*grj*/)
 void H225_RAS::OnSendRegistrationRequest(H323RasPDU & pdu, H225_RegistrationRequest & rrq)
 {
   OnSendRegistrationRequest(rrq);
+	
+#ifdef H323_H460
+  SendFeatureSet<H225_RegistrationRequest>(this, H460_MessageType::e_registrationRequest, rrq);
+#endif
+	
   pdu.Prepare(rrq.m_tokens, H225_RegistrationRequest::e_tokens,
               rrq.m_cryptoTokens, H225_RegistrationRequest::e_cryptoTokens);
 }
@@ -708,6 +760,10 @@ void H225_RAS::OnSendRegistrationConfirm(H323RasPDU & pdu, H225_RegistrationConf
     rcf.IncludeOptionalField(H225_RegistrationConfirm::e_gatekeeperIdentifier);
     rcf.m_gatekeeperIdentifier = gatekeeperIdentifier;
   }
+	
+#ifdef H323_H460
+  SendFeatureSet<H225_RegistrationConfirm>(this, H460_MessageType::e_registrationConfirm, rcf);
+#endif
 
   OnSendRegistrationConfirm(rcf);
 
@@ -729,6 +785,10 @@ void H225_RAS::OnSendRegistrationReject(H323RasPDU & pdu, H225_RegistrationRejec
   }
 
   OnSendRegistrationReject(rrj);
+	
+#ifdef H323_H460
+  SendFeatureSet<H225_RegistrationReject>(this, H460_MessageType::e_registrationReject, rrj);
+#endif
 
   pdu.Prepare(rrj.m_tokens, H225_RegistrationReject::e_tokens,
               rrj.m_cryptoTokens, H225_RegistrationReject::e_cryptoTokens);
@@ -742,6 +802,10 @@ void H225_RAS::OnSendRegistrationReject(H225_RegistrationReject & /*rrj*/)
 
 BOOL H225_RAS::OnReceiveRegistrationRequest(const H323RasPDU &, const H225_RegistrationRequest & rrq)
 {
+#ifdef H323_H460
+  ReceiveFeatureSet<H225_RegistrationRequest>(this, H460_MessageType::e_registrationRequest, rrq);
+#endif
+	
   return OnReceiveRegistrationRequest(rrq);
 }
 
@@ -771,6 +835,10 @@ BOOL H225_RAS::OnReceiveRegistrationConfirm(const H323RasPDU & pdu, const H225_R
                          rcf.m_tokens, H225_RegistrationConfirm::e_tokens,
                          rcf.m_cryptoTokens, H225_RegistrationConfirm::e_cryptoTokens))
     return FALSE;
+  
+#ifdef H323_H460
+  ReceiveFeatureSet<H225_RegistrationConfirm>(this, H460_MessageType::e_registrationConfirm, rcf);
+#endif
 
   return OnReceiveRegistrationConfirm(rcf);
 }
@@ -791,6 +859,10 @@ BOOL H225_RAS::OnReceiveRegistrationReject(const H323RasPDU & pdu, const H225_Re
                          rrj.m_tokens, H225_RegistrationReject::e_tokens,
                          rrj.m_cryptoTokens, H225_RegistrationReject::e_cryptoTokens))
     return FALSE;
+  
+#ifdef H323_H460
+  ReceiveFeatureSet<H225_RegistrationReject>(this, H460_MessageType::e_registrationReject, rrj);
+#endif
 
   return OnReceiveRegistrationReject(rrj);
 }
@@ -901,6 +973,11 @@ BOOL H225_RAS::OnReceiveUnregistrationReject(const H225_UnregistrationReject & /
 void H225_RAS::OnSendAdmissionRequest(H323RasPDU & pdu, H225_AdmissionRequest & arq)
 {
   OnSendAdmissionRequest(arq);
+	
+#ifdef H323_H460
+  SendFeatureSet<H225_AdmissionRequest>(this, H460_MessageType::e_admissionRequest, arq);
+#endif
+	
   pdu.Prepare(arq.m_tokens, H225_AdmissionRequest::e_tokens,
               arq.m_cryptoTokens, H225_AdmissionRequest::e_cryptoTokens);
 }
@@ -914,6 +991,11 @@ void H225_RAS::OnSendAdmissionRequest(H225_AdmissionRequest & /*arq*/)
 void H225_RAS::OnSendAdmissionConfirm(H323RasPDU & pdu, H225_AdmissionConfirm & acf)
 {
   OnSendAdmissionConfirm(acf);
+	
+#ifdef H323_H460
+  SendFeatureSet<H225_AdmissionConfirm>(this, H460_MessageType::e_admissionConfirm, acf);
+#endif
+	
   pdu.Prepare(acf.m_tokens, H225_AdmissionConfirm::e_tokens,
               acf.m_cryptoTokens, H225_AdmissionConfirm::e_cryptoTokens);
 }
@@ -927,6 +1009,11 @@ void H225_RAS::OnSendAdmissionConfirm(H225_AdmissionConfirm & /*acf*/)
 void H225_RAS::OnSendAdmissionReject(H323RasPDU & pdu, H225_AdmissionReject & arj)
 {
   OnSendAdmissionReject(arj);
+	
+#ifdef H323_H460
+	SendFeatureSet<H225_AdmissionReject>(this, H460_MessageType::e_admissionReject, arj);
+#endif
+	
   pdu.Prepare(arj.m_tokens, H225_AdmissionReject::e_tokens,
               arj.m_cryptoTokens, H225_AdmissionReject::e_cryptoTokens);
 }
@@ -943,6 +1030,10 @@ BOOL H225_RAS::OnReceiveAdmissionRequest(const H323RasPDU & pdu, const H225_Admi
                          arq.m_tokens, H225_AdmissionRequest::e_tokens,
                          arq.m_cryptoTokens, H225_AdmissionRequest::e_cryptoTokens))
     return FALSE;
+	
+#ifdef H323_H460
+  ReceiveFeatureSet<H225_AdmissionRequest>(this, H460_MessageType::e_admissionRequest, arq);
+#endif
 
   return OnReceiveAdmissionRequest(arq);
 }
@@ -963,6 +1054,10 @@ BOOL H225_RAS::OnReceiveAdmissionConfirm(const H323RasPDU & pdu, const H225_Admi
                          acf.m_tokens, H225_AdmissionConfirm::e_tokens,
                          acf.m_cryptoTokens, H225_AdmissionConfirm::e_cryptoTokens))
     return FALSE;
+  
+#ifdef H323_H460
+  ReceiveFeatureSet<H225_AdmissionConfirm>(this, H460_MessageType::e_admissionConfirm, acf);
+#endif
 
   return OnReceiveAdmissionConfirm(acf);
 }
@@ -983,6 +1078,10 @@ BOOL H225_RAS::OnReceiveAdmissionReject(const H323RasPDU & pdu, const H225_Admis
                          arj.m_tokens, H225_AdmissionReject::e_tokens,
                          arj.m_cryptoTokens, H225_AdmissionReject::e_cryptoTokens))
     return FALSE;
+  
+#ifdef H323_H460
+  ReceiveFeatureSet<H225_AdmissionReject>(this, H460_MessageType::e_admissionReject, arj);
+#endif
 
   return OnReceiveAdmissionReject(arj);
 }
@@ -1189,6 +1288,11 @@ BOOL H225_RAS::OnReceiveDisengageReject(const H225_DisengageReject & /*drj*/)
 void H225_RAS::OnSendLocationRequest(H323RasPDU & pdu, H225_LocationRequest & lrq)
 {
   OnSendLocationRequest(lrq);
+	
+#ifdef H323_H460
+  SendFeatureSet<H225_LocationRequest>(this, H460_MessageType::e_locationRequest, lrq);
+#endif
+	
   pdu.Prepare(lrq.m_tokens, H225_LocationRequest::e_tokens,
               lrq.m_cryptoTokens, H225_LocationRequest::e_cryptoTokens);
 }
@@ -1205,6 +1309,10 @@ BOOL H225_RAS::OnReceiveLocationRequest(const H323RasPDU & pdu, const H225_Locat
                          lrq.m_tokens, H225_LocationRequest::e_tokens,
                          lrq.m_cryptoTokens, H225_LocationRequest::e_cryptoTokens))
     return FALSE;
+	
+#ifdef H323_H460
+  ReceiveFeatureSet<H225_LocationRequest>(this, H460_MessageType::e_locationRequest, lrq);
+#endif
 
   return OnReceiveLocationRequest(lrq);
 }
@@ -1219,6 +1327,11 @@ BOOL H225_RAS::OnReceiveLocationRequest(const H225_LocationRequest & /*lrq*/)
 void H225_RAS::OnSendLocationConfirm(H323RasPDU & pdu, H225_LocationConfirm & lcf)
 {
   OnSendLocationConfirm(lcf);
+	
+#ifdef H323_H460
+  SendFeatureSet<H225_LocationConfirm>(this, H460_MessageType::e_locationConfirm, lcf);
+#endif
+	
   pdu.Prepare(lcf.m_tokens, H225_LocationRequest::e_tokens,
               lcf.m_cryptoTokens, H225_LocationRequest::e_cryptoTokens);
 }
@@ -1238,6 +1351,10 @@ BOOL H225_RAS::OnReceiveLocationConfirm(const H323RasPDU &, const H225_LocationC
     H323TransportAddress & locatedAddress = *(H323TransportAddress *)lastRequest->responseInfo;
     locatedAddress = lcf.m_callSignalAddress;
   }
+  
+#ifdef H323_H460
+  ReceiveFeatureSet<H225_LocationConfirm>(this, H460_MessageType::e_locationConfirm, lcf);
+#endif
 
   return OnReceiveLocationConfirm(lcf);
 }
@@ -1252,6 +1369,11 @@ BOOL H225_RAS::OnReceiveLocationConfirm(const H225_LocationConfirm & /*lcf*/)
 void H225_RAS::OnSendLocationReject(H323RasPDU & pdu, H225_LocationReject & lrj)
 {
   OnSendLocationReject(lrj);
+	
+#ifdef H323_H460
+  SendFeatureSet<H225_LocationReject>(this, H460_MessageType::e_locationReject, lrj);
+#endif
+	
   pdu.Prepare(lrj.m_tokens, H225_LocationReject::e_tokens,
               lrj.m_cryptoTokens, H225_LocationReject::e_cryptoTokens);
 }
@@ -1271,6 +1393,10 @@ BOOL H225_RAS::OnReceiveLocationReject(const H323RasPDU & pdu, const H225_Locati
                          lrj.m_tokens, H225_LocationReject::e_tokens,
                          lrj.m_cryptoTokens, H225_LocationReject::e_cryptoTokens))
     return FALSE;
+  
+#ifdef H323_H460
+  ReceiveFeatureSet<H225_LocationReject>(this, H460_MessageType::e_locationReject, lrj);
+#endif
 
   return OnReceiveLocationReject(lrj);
 }
@@ -1348,6 +1474,11 @@ BOOL H225_RAS::OnReceiveInfoRequestResponse(const H225_InfoRequestResponse & /*i
 void H225_RAS::OnSendNonStandardMessage(H323RasPDU & pdu, H225_NonStandardMessage & nsm)
 {
   OnSendNonStandardMessage(nsm);
+	
+#ifdef H323_H460
+  SendFeatureSet<H225_NonStandardMessage>(this, H460_MessageType::e_nonStandardMessage, nsm);
+#endif
+	
   pdu.Prepare(nsm.m_tokens, H225_InfoRequestResponse::e_tokens,
               nsm.m_cryptoTokens, H225_InfoRequestResponse::e_cryptoTokens);
 }
@@ -1364,6 +1495,10 @@ BOOL H225_RAS::OnReceiveNonStandardMessage(const H323RasPDU & pdu, const H225_No
                          nsm.m_tokens, H225_NonStandardMessage::e_tokens,
                          nsm.m_cryptoTokens, H225_NonStandardMessage::e_cryptoTokens))
     return FALSE;
+	
+#ifdef H323_H460
+  ReceiveFeatureSet<H225_NonStandardMessage>(this, H460_MessageType::e_nonStandardMessage, nsm);
+#endif
 
   return OnReceiveNonStandardMessage(nsm);
 }
@@ -1484,6 +1619,11 @@ BOOL H225_RAS::OnReceiveResourcesAvailableConfirm(const H225_ResourcesAvailableC
 void H225_RAS::OnSendServiceControlIndication(H323RasPDU & pdu, H225_ServiceControlIndication & sci)
 {
   OnSendServiceControlIndication(sci);
+	
+#ifdef H323_H460
+  SendFeatureSet<H225_ServiceControlIndication>(this, H460_MessageType::e_serviceControlIndication, sci);
+#endif
+	
   pdu.Prepare(sci.m_tokens, H225_ServiceControlIndication::e_tokens,
               sci.m_cryptoTokens, H225_ServiceControlIndication::e_cryptoTokens);
 }
@@ -1500,6 +1640,10 @@ BOOL H225_RAS::OnReceiveServiceControlIndication(const H323RasPDU & pdu, const H
                          sci.m_tokens, H225_ServiceControlIndication::e_tokens,
                          sci.m_cryptoTokens, H225_ServiceControlIndication::e_cryptoTokens))
     return FALSE;
+	
+#ifdef H323_H460
+  ReceiveFeatureSet<H225_ServiceControlIndication>(this, H460_MessageType::e_serviceControlIndication, sci);
+#endif
 
   return OnReceiveServiceControlIndication(sci);
 }
@@ -1514,6 +1658,11 @@ BOOL H225_RAS::OnReceiveServiceControlIndication(const H225_ServiceControlIndica
 void H225_RAS::OnSendServiceControlResponse(H323RasPDU & pdu, H225_ServiceControlResponse & scr)
 {
   OnSendServiceControlResponse(scr);
+	
+#ifdef H323_H460
+  SendFeatureSet<H225_ServiceControlResponse>(this, H460_MessageType::e_serviceControlResponse, scr);
+#endif
+	
   pdu.Prepare(scr.m_tokens, H225_ResourcesAvailableConfirm::e_tokens,
               scr.m_cryptoTokens, H225_ResourcesAvailableConfirm::e_cryptoTokens);
 }
@@ -1533,6 +1682,10 @@ BOOL H225_RAS::OnReceiveServiceControlResponse(const H323RasPDU & pdu, const H22
                          scr.m_tokens, H225_ServiceControlResponse::e_tokens,
                          scr.m_cryptoTokens, H225_ServiceControlResponse::e_cryptoTokens))
     return FALSE;
+  
+#ifdef H323_H460
+  ReceiveFeatureSet<H225_ServiceControlResponse>(this, H460_MessageType::e_serviceControlResponse, scr);
+#endif
 
   return OnReceiveServiceControlResponse(scr);
 }

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2047  2006/05/30 04:58:05  csoutheren
+ * Revision 1.2048  2006/05/30 11:33:02  hfriederich
+ * Porting support for H.460 from OpenH323
+ *
+ * Revision 2.46  2006/05/30 04:58:05  csoutheren
  * Added suport for SIP INFO message (untested as yet)
  * Fixed some issues with SIP state machine on answering calls
  * Fixed some formatting issues
@@ -440,6 +443,7 @@ class H225_TransportAddress;
 class H225_ArrayOf_PASN_OctetString;
 class H225_ProtocolIdentifier;
 class H225_AdmissionRequest;
+class H225_FeatureSet;
 
 class H245_TerminalCapabilitySet;
 class H245_TerminalCapabilitySetReject;
@@ -479,6 +483,10 @@ class H4506Handler;
 class H45011Handler;
 
 class OpalCall;
+
+#ifdef H323_H460
+class H460_FeatureSet;
+#endif
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2220,7 +2228,16 @@ class H323Connection : public OpalConnection
       unsigned seconds  ///<  max duration of call in seconds
     );
   //@}
+	
+    virtual BOOL OnSendFeatureSet(unsigned, H225_FeatureSet &) const;
+	
+	virtual void OnReceiveFeatureSet(unsigned, const H225_FeatureSet &) const;
 
+#ifdef H323_H460
+    /** Get the connection FeatureSet
+     */
+    virtual H460_FeatureSet * GetFeatureSet();
+#endif
 
   protected:
     /**Internal function to check if call established.
@@ -2343,6 +2360,10 @@ class H323Connection : public OpalConnection
 
     // used to detect remote NAT endpoints
     BOOL remoteIsNAT;
+	
+#ifdef H323_H460
+	H460_FeatureSet & features;
+#endif
 
   private:
     PChannel * SwapHoldMediaChannels(PChannel * newChannel);
