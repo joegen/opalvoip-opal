@@ -438,6 +438,28 @@ if test "$h224" = "yes" ; then
 else
   AC_MSG_RESULT(disabled)
 fi
+
+dnl ########################################################################
+dnl
+dnl H.460
+dnl
+dnl MSWIN_DISPLAY h460,H.460
+dnl MSWIN_DEFINE  h460,H323_H460
+
+AC_ARG_ENABLE(h460,
+       [  --disable-h460          disable H.460])
+if test "${enable_h460}x" = "x" ; then
+  enable_h460=yes
+fi
+if test "$enable_h460" == "yes" ; then
+  H323_H460=1
+  AC_DEFINE(H323_H460, 1)
+else
+  H323_H460=
+  AC_MSG_NOTICE(Disabling H.460)
+fi
+AC_SUBST(H323_H460)
+
 dnl ########################################################################
 dnl
 dnl Quicknet xJACK cards

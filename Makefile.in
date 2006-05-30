@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.32  2006/05/30 12:04:08  hfriederich
+# Enabling to build H.460
+#
 # Revision 1.31  2006/04/22 14:05:47  dsandras
 # When building a shared library x that references symbols in libraries y,
 # the y libraries need to be added to the linker command always. Thanks to
@@ -364,6 +367,10 @@ SOURCES += $(ASN_CXX_FILES) \
            $(OPAL_SRCDIR)/h323/h501pdu.cxx \
            $(OPAL_SRCDIR)/h323/h323annexg.cxx \
            $(OPAL_SRCDIR)/h323/peclient.cxx \
+           
+ifdef H323_H460
+SOURCES += $(OPAL_SRCDIR)/h323/h4601.cxx
+endif
 
 ifdef HAS_OPENSSL
 SOURCES += $(OPAL_SRCDIR)/h235auth1.cxx
