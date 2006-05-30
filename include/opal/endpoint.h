@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2032  2006/04/20 16:52:22  hfriederich
+ * Revision 1.2033  2006/05/30 04:58:06  csoutheren
+ * Added suport for SIP INFO message (untested as yet)
+ * Fixed some issues with SIP state machine on answering calls
+ * Fixed some formatting issues
+ *
+ * Revision 2.31  2006/04/20 16:52:22  hfriederich
  * Adding support for H.224/H.281
  *
  * Revision 2.30  2006/02/22 10:40:09  csoutheren
@@ -728,6 +733,14 @@ class OpalEndPoint : public PObject
     /**Get the set of listeners (incoming call transports) for this endpoint.
      */
     const OpalListenerList & GetListeners() const { return listeners; }
+
+    /**Get the default mode for sending User Input Indications.
+      */
+    OpalConnection::SendUserInputModes GetSendUserInputMode() const { return defaultSendUserInputMode; }
+
+    /**Set the default mode for sending User Input Indications.
+      */
+    void SetSendUserInputMode(OpalConnection::SendUserInputModes mode) { defaultSendUserInputMode = mode; }
   //@}
 
 
@@ -740,6 +753,7 @@ class OpalEndPoint : public PObject
     PString         defaultDisplayName;
 
     unsigned initialBandwidth;  // in 100s of bits/sev
+    OpalConnection::SendUserInputModes defaultSendUserInputMode;
 
     OpalListenerList   listeners;
     PSyncPoint         allConnectionsCleared;

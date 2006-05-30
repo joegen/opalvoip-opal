@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2105  2006/04/20 16:52:22  hfriederich
+ * Revision 1.2106  2006/05/30 04:58:06  csoutheren
+ * Added suport for SIP INFO message (untested as yet)
+ * Fixed some issues with SIP state machine on answering calls
+ * Fixed some formatting issues
+ *
+ * Revision 2.104  2006/04/20 16:52:22  hfriederich
  * Adding support for H.224/H.281
  *
  * Revision 2.103  2006/04/10 05:17:47  csoutheren
@@ -1496,26 +1501,6 @@ const PTimeInterval MonitorCallStatusTime(0, 10); // Seconds
 
 #if PTRACING
 
-ostream & operator<<(ostream & o, H323Connection::SendUserInputModes m)
-{
-  static const char * const SendUserInputModeNames[H323Connection::NumSendUserInputModes] = {
-    "SendUserInputAsQ931",
-    "SendUserInputAsString",
-    "SendUserInputAsTone",
-    "SendUserInputAsRFC2833",
-    "SendUserInputAsSeparateRFC2833"
-  };
-
-  if ((PINDEX)m >= PARRAYSIZE(SendUserInputModeNames))
-    o << "InvalidSendUserInputMode<" << (unsigned)m << '>';
-  else if (SendUserInputModeNames[m] == NULL)
-    o << "SendUserInputMode<" << (unsigned)m << '>';
-  else
-    o << SendUserInputModeNames[m];
-  return o;
-}
-
-
 const char * const H323Connection::ConnectionStatesNames[NumConnectionStates] = {
   "NoConnectionActive",
   "AwaitingGatekeeperAdmission",
@@ -1599,7 +1584,6 @@ H323Connection::H323Connection(OpalCall & call,
 
   uuiesRequested = 0; // Empty set
   addAccessTokenToSetup = TRUE; // Automatic inclusion of ACF access token in SETUP
-  sendUserInputMode = endpoint.GetSendUserInputMode();
 
   mediaWaitForConnect = FALSE;
   transmitterSidePaused = FALSE;
@@ -5210,17 +5194,8 @@ BOOL H323Connection::SetBandwidthAvailable(unsigned newBandwidth, BOOL force)
 }
 
 
-void H323Connection::SetSendUserInputMode(SendUserInputModes mode)
-{
-  PAssert(mode != SendUserInputAsSeparateRFC2833, PUnimplementedFunction);
-
-  PTRACE(2, "H323\tSetting default User Input send mode to " << mode);
-  sendUserInputMode = mode;
-}
-
-
 static BOOL CheckSendUserInputMode(const H323Capabilities & caps,
-                                   H323Connection::SendUserInputModes mode)
+                                   OpalConnection::SendUserInputModes mode)
 {
   // If have remote capabilities, then verify we can send selected mode,
   // otherwise just return and accept it for future validation
@@ -5239,7 +5214,7 @@ static BOOL CheckSendUserInputMode(const H323Capabilities & caps,
 }
 
 
-H323Connection::SendUserInputModes H323Connection::GetRealSendUserInputMode() const
+OpalConnection::SendUserInputModes H323Connection::GetRealSendUserInputMode() const
 {
   // If have not yet exchanged capabilities (ie not finished setting up the
   // H.245 channel) then the only thing we can do is Q.931
@@ -5270,7 +5245,7 @@ BOOL H323Connection::SendUserInputString(const PString & value)
 
   PTRACE(2, "H323\tSendUserInput(\"" << value << "\"), using mode " << mode);
 
-  if (mode == SendUserInputAsString)
+  if (mode == SendUserInputAsString || mode == SendUserInputAsProtocolDefault)
     return SendUserInputIndicationString(value);
 
   return OpalConnection::SendUserInputString(value);
@@ -5289,6 +5264,7 @@ BOOL H323Connection::SendUserInputTone(char tone, unsigned duration)
       break;
 
     case SendUserInputAsString :
+    case SendUserInputAsProtocolDefault:
       SendUserInputIndicationString(PString(tone));
       break;
 

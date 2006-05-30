@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2037  2006/01/02 11:28:07  dsandras
+ * Revision 1.2038  2006/05/30 04:58:06  csoutheren
+ * Added suport for SIP INFO message (untested as yet)
+ * Fixed some issues with SIP state machine on answering calls
+ * Fixed some formatting issues
+ *
+ * Revision 2.36  2006/01/02 11:28:07  dsandras
  * Some documentation. Various code cleanups to prevent duplicate code.
  *
  * Revision 2.35  2005/12/04 15:02:00  dsandras
@@ -502,6 +507,7 @@ class SIP_PDU : public PObject
       Method_NOTIFY,
       Method_REFER,
       Method_MESSAGE,
+      Method_INFO,
       NumMethods
     };
 
@@ -677,6 +683,7 @@ class SIP_PDU : public PObject
     unsigned GetVersionMajor() const         { return versionMajor; }
     unsigned GetVersionMinor() const         { return versionMinor; }
     const PString & GetEntityBody() const    { return entityBody; }
+          PString & GetEntityBody()          { return entityBody; }
     const PString & GetInfo() const          { return info; }
     const SIPMIMEInfo & GetMIME() const      { return mime; }
           SIPMIMEInfo & GetMIME()            { return mime; }

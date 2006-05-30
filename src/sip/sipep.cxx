@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2124  2006/04/30 17:24:40  dsandras
+ * Revision 1.2125  2006/05/30 04:58:06  csoutheren
+ * Added suport for SIP INFO message (untested as yet)
+ * Fixed some issues with SIP state machine on answering calls
+ * Fixed some formatting issues
+ *
+ * Revision 2.123  2006/04/30 17:24:40  dsandras
  * Various clean ups.
  *
  * Revision 2.122  2006/04/11 21:13:57  dsandras
@@ -1008,12 +1013,12 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
 
     case SIP_PDU::Method_MESSAGE :
       {
-	OnReceivedMESSAGE(transport, *pdu);
+        OnReceivedMESSAGE(transport, *pdu);
         SIP_PDU response(*pdu, SIP_PDU::Successful_OK);
-	PString username = SIPURL(response.GetMIME().GetTo()).GetUserName();
-	response.GetMIME().SetContact(GetLocalURL(transport, username));
+        PString username = SIPURL(response.GetMIME().GetTo()).GetUserName();
+        response.GetMIME().SetContact(GetLocalURL(transport, username));
         response.Write(transport);
-	break;
+        break;
       }
    
     case SIP_PDU::Method_OPTIONS :
@@ -1315,8 +1320,8 @@ BOOL SIPEndPoint::OnReceivedNOTIFY (OpalTransport & transport, SIP_PDU & pdu)
 
       PTRACE(3, "SIP\tSubscription is " << pdu.GetMIME().GetSubscriptionState());
       if (pdu.GetMIME().GetExpires(0) != 0) {
-	int sec = pdu.GetMIME().GetExpires(0)*9/10;  
-	info->SetExpire(sec);
+	      int sec = pdu.GetMIME().GetExpires(0)*9/10;  
+	      info->SetExpire(sec);
       }
     }
   }
@@ -1385,7 +1390,6 @@ void SIPEndPoint::OnReceivedMESSAGE(OpalTransport & /*transport*/,
     from = from.Left(j); // Remove all parameters
   OnMessageReceived(from, pdu.GetEntityBody());
 }
-
 
 void SIPEndPoint::OnRegistrationFailed(const PString & /*host*/, 
 				       const PString & /*userName*/,

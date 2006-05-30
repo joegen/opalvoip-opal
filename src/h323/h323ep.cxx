@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2050  2006/04/20 16:52:22  hfriederich
+ * Revision 1.2051  2006/05/30 04:58:06  csoutheren
+ * Added suport for SIP INFO message (untested as yet)
+ * Fixed some issues with SIP state machine on answering calls
+ * Fixed some formatting issues
+ *
+ * Revision 2.49  2006/04/20 16:52:22  hfriederich
  * Adding support for H.224/H.281
  *
  * Revision 2.48  2006/03/12 06:36:57  rjongbloed
@@ -833,7 +838,6 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   canDisplayAmountString = FALSE;
   canEnforceDurationLimit = TRUE;
   callIntrusionProtectionLevel = 3; //H45011_CIProtectionLevel::e_fullProtection;
-  defaultSendUserInputMode = H323Connection::SendUserInputAsString;
 
   terminalType = e_TerminalOnly;
   clearCallOnRoundTripFail = FALSE;

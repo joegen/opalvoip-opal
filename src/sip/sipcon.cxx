@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2149  2006/05/24 00:56:14  csoutheren
+ * Revision 1.2150  2006/05/30 04:58:06  csoutheren
+ * Added suport for SIP INFO message (untested as yet)
+ * Fixed some issues with SIP state machine on answering calls
+ * Fixed some formatting issues
+ *
+ * Revision 2.148  2006/05/24 00:56:14  csoutheren
  * Fixed problem with deferred answer on SIP calls
  *
  * Revision 2.147  2006/04/24 21:19:31  dsandras
@@ -563,6 +568,8 @@
 
 typedef void (SIPConnection::* SIPMethodFunction)(SIP_PDU & pdu);
 
+static const char ApplicationDTMFRelayKey[] = "application/dtmf-relay";
+static const char ApplicationDTMFKey[]      = "application/dtmf";
 
 #define new PNEW
 
@@ -655,70 +662,69 @@ void SIPConnection::OnReleased()
 
   SetPhase(ReleasingPhase);
 
-  SIP_PDU response;
   SIPTransaction * byeTransaction = NULL;
 
   switch (releaseMethod) {
-  case ReleaseWithNothing :
-    break;
-
-  case ReleaseWithResponse :
-    // Build the response from the invite and send it to the correct
-    // destination specified in the Via field
-    switch (callEndReason) {
-    case EndedByAnswerDenied :
-	{
-	  SIP_PDU response(*originalInvite, SIP_PDU::GlobalFailure_Decline);
-	  SendPDU(response, originalInvite->GetViaAddress(endpoint));
-	}
+    case ReleaseWithNothing :
       break;
 
-    case EndedByLocalBusy :
-	{
-	  SIP_PDU response(*originalInvite, SIP_PDU::Failure_BusyHere);
-	  SendPDU(response, originalInvite->GetViaAddress(endpoint));
-	}
+    case ReleaseWithResponse :
+      // Build the response from the invite and send it to the correct
+      // destination specified in the Via field
+      switch (callEndReason) {
+        case EndedByAnswerDenied :
+          {
+	          SIP_PDU response(*originalInvite, SIP_PDU::GlobalFailure_Decline);
+	          SendPDU(response, originalInvite->GetViaAddress(endpoint));
+	        }
+          break;
+
+        case EndedByLocalBusy :
+          {
+	          SIP_PDU response(*originalInvite, SIP_PDU::Failure_BusyHere);
+	          SendPDU(response, originalInvite->GetViaAddress(endpoint));
+          }
+          break;
+
+        case EndedByCallerAbort :
+          {
+	          SIP_PDU response(*originalInvite, SIP_PDU::Failure_RequestTerminated);
+	          SendPDU(response, originalInvite->GetViaAddress(endpoint));
+          }
+          break;
+
+        case EndedByCapabilityExchange :
+          {
+	          SIP_PDU response(*originalInvite, SIP_PDU::Failure_UnsupportedMediaType);
+	          SendPDU(response, originalInvite->GetViaAddress(endpoint));
+          }
+          break;
+
+        case EndedByCallForwarded :
+          {
+	          SIP_PDU response(*originalInvite, SIP_PDU::Redirection_MovedTemporarily, NULL, forwardParty);
+	          SendPDU(response, originalInvite->GetViaAddress(endpoint));
+          }
+          break;
+
+        default :
+          {
+	          SIP_PDU response(*originalInvite, SIP_PDU::Failure_BadGateway);
+	          SendPDU(response, originalInvite->GetViaAddress(endpoint));
+          }
+      }
       break;
 
-    case EndedByCallerAbort :
-	{
-	  SIP_PDU response(*originalInvite, SIP_PDU::Failure_RequestTerminated);
-	  SendPDU(response, originalInvite->GetViaAddress(endpoint));
-	}
+    case ReleaseWithBYE :
+      // create BYE now & delete it later to prevent memory access errors
+      byeTransaction = new SIPTransaction(*this, *transport, SIP_PDU::Method_BYE);
       break;
 
-    case EndedByCapabilityExchange :
-	{
-	  SIP_PDU response(*originalInvite, SIP_PDU::Failure_UnsupportedMediaType);
-	  SendPDU(response, originalInvite->GetViaAddress(endpoint));
-	}
-      break;
-
-    case EndedByCallForwarded :
-	{
-	  SIP_PDU response(*originalInvite, SIP_PDU::Redirection_MovedTemporarily, NULL, forwardParty);
-	  SendPDU(response, originalInvite->GetViaAddress(endpoint));
-	}
-      break;
-
-    default :
-	{
-	  SIP_PDU response(*originalInvite, SIP_PDU::Failure_BadGateway);
-	  SendPDU(response, originalInvite->GetViaAddress(endpoint));
-	}
-    }
-    break;
-
-  case ReleaseWithBYE :
-    // create BYE now & delete it later to prevent memory access errors
-    byeTransaction = new SIPTransaction(*this, *transport, SIP_PDU::Method_BYE);
-    break;
-
-  case ReleaseWithCANCEL :
-    for (PINDEX i = 0; i < invitations.GetSize(); i++) {
-      if (invitations[i].SendCANCEL())
-	invitations[i].Wait();
-    }
+    case ReleaseWithCANCEL :
+      for (PINDEX i = 0; i < invitations.GetSize(); i++) {
+        if (invitations[i].SendCANCEL())
+          invitations[i].Wait();
+      }
   }
 
   // Close media
@@ -1404,6 +1410,9 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
     case SIP_PDU::Method_REFER :
       OnReceivedREFER(pdu);
       break;
+    case SIP_PDU::Method_INFO :
+      OnReceivedINFO(pdu);
+      break;
     case SIP_PDU::Method_MESSAGE :
     case SIP_PDU::Method_SUBSCRIBE :
     case SIP_PDU::Method_REGISTER :
@@ -1449,18 +1458,17 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
       PStringList recordRoute = response.GetMIME().GetRecordRoute();
       routeSet.RemoveAll();
       for (i = recordRoute.GetSize(); i > 0; i--)
-	routeSet.AppendString(recordRoute[i-1]);
+        routeSet.AppendString(recordRoute[i-1]);
     }
 
     // If we are in a dialog or create one, then targetAddress needs to be set
     // to the contact field in the 2xx/1xx response for a target refresh 
     // request
-    if (response.GetStatusCode()/100 == 2
-	|| response.GetStatusCode()/100 == 1) {
+    if (response.GetStatusCode()/100 == 2 || response.GetStatusCode()/100 == 1) {
       PString contact = response.GetMIME().GetContact();
       if (!contact.IsEmpty()) {
-	targetAddress = contact;
-	PTRACE(4, "SIP\tSet targetAddress to " << targetAddress);
+        targetAddress = contact;
+        PTRACE(4, "SIP\tSet targetAddress to " << targetAddress);
       }
     }
 
@@ -1470,14 +1478,14 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
       // ACK Constructed following 17.1.1.3
       if (response.GetStatusCode()/100 != 2) 
-	ack = SIPAck(endpoint, transaction, response);
+        ack = SIPAck(endpoint, transaction, response);
       else 
-	ack = SIPAck(transaction);
+        ack = SIPAck(transaction);
 
       // Send the PDU using the connection transport
       if (!SendPDU(ack, ack.GetSendAddress(*this))) {
-	Release(EndedByTransportFail);
-	return;
+        Release(EndedByTransportFail);
+        return;
       }
     }
   }
@@ -1682,6 +1690,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   PTRACE(2, "SIP\tOnIncomingConnection succeeded for INVITE from " << request.GetURI() << " for " << *this);
   phase = SetUpPhase;
 
+  ownerCall.OnSetUp(*this);
+
   AnsweringCall(OnAnswerCall(remotePartyAddress));
 }
 
@@ -1701,7 +1711,6 @@ void SIPConnection::AnsweringCall(AnswerCallResponse response)
     case AlertingPhase:
       switch (response) {
         case AnswerCallNow:
-          ownerCall.OnSetUp(*this);
           SetConnected();
           break;
 
@@ -2220,6 +2229,93 @@ void SIPConnection::OnRTPStatistics(const RTP_Session & session) const
 {
   endpoint.OnRTPStatistics(*this, session);
 }
+
+void SIPConnection::OnReceivedINFO(SIP_PDU & pdu)
+{
+  SIP_PDU::StatusCodes status = SIP_PDU::Failure_UnsupportedMediaType;
+  SIPMIMEInfo & mimeInfo = pdu.GetMIME();
+  PString contentType = mimeInfo.GetContentType();
+  if (contentType *= ApplicationDTMFRelayKey) {
+    PStringArray lines = pdu.GetEntityBody().Lines();
+    PINDEX i;
+    char tone = -1;
+    int duration = -1;
+    for (i = 0; i < lines.GetSize(); ++i) {
+      PStringArray tokens = lines[i].Tokenise('=', FALSE);
+      PString val;
+      if (tokens.GetSize() > 1)
+        val = tokens[1].Trim();
+      if (tokens.GetSize() > 0) {
+        if (tokens[0] *= "signal")
+          tone = val[0];
+        else if (tokens[0] *= "duration")
+          duration = val.AsInteger();
+      }
+    }
+    if (tone != -1)
+      OnUserInputTone(tone, duration == 0 ? 100 : tone);
+    status = SIP_PDU::Successful_OK;
+  }
+  else if (contentType *= ApplicationDTMFRelayKey) {
+    OnUserInputString(pdu.GetEntityBody().Trim());
+    status = SIP_PDU::Successful_OK;
+  }
+  else 
+    status = SIP_PDU::Failure_UnsupportedMediaType;
+
+  SIP_PDU response(pdu, status);
+  SendPDU(response, pdu.GetViaAddress(endpoint));
+}
+
+OpalConnection::SendUserInputModes SIPConnection::GetRealSendUserInputMode() const
+{
+  switch (sendUserInputMode) {
+    case SendUserInputAsString:
+    case SendUserInputAsTone:
+      return sendUserInputMode;
+    default:
+      break;
+  }
+
+  return SendUserInputAsInlineRFC2833;
+}
+
+BOOL SIPConnection::SendUserInputTone(char tone, unsigned duration)
+{
+  SendUserInputModes mode = GetRealSendUserInputMode();
+
+  PTRACE(2, "SIP\tSendUserInputTime('" << tone << "', " << duration << "), using mode " << mode);
+
+  switch (mode) {
+    case SendUserInputAsTone:
+    case SendUserInputAsString:
+      {
+        SIPTransaction * infoTransaction = new SIPTransaction(*this, *transport, SIP_PDU::Method_INFO);
+        SIPMIMEInfo & mimeInfo = infoTransaction->GetMIME();
+        PStringStream str;
+        if (mode == SendUserInputAsTone) {
+          mimeInfo.SetContentType(ApplicationDTMFRelayKey);
+          str << "Signal=" << tone << "\r\n" << "Duration=" << duration << "\r\n";
+        } else {
+          mimeInfo.SetContentType("application/dtmf-relay");
+          mimeInfo.SetContentType("application/dtmf");
+          str << tone;
+        }
+        infoTransaction->GetEntityBody() = str;
+        infoTransaction->Wait();
+        delete infoTransaction;
+      }
+      break;
+
+    // anything else - send as RFC 2833
+    case SendUserInputAsProtocolDefault:
+    default:
+      break;
+  }
+
+  return OpalConnection::SendUserInputTone(tone, duration);
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////
