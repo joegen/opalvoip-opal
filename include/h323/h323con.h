@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2046  2006/04/20 16:52:22  hfriederich
+ * Revision 1.2047  2006/05/30 04:58:05  csoutheren
+ * Added suport for SIP INFO message (untested as yet)
+ * Fixed some issues with SIP state machine on answering calls
+ * Fixed some formatting issues
+ *
+ * Revision 2.45  2006/04/20 16:52:22  hfriederich
  * Adding support for H.224/H.281
  *
  * Revision 2.44  2006/01/02 15:52:38  dsandras
@@ -1797,32 +1802,12 @@ class H323Connection : public OpalConnection
 
   /**@name Indications */
   //@{
-    enum SendUserInputModes {
-      SendUserInputAsQ931,
-      SendUserInputAsString,
-      SendUserInputAsTone,
-      SendUserInputAsInlineRFC2833,
-      SendUserInputAsSeparateRFC2833,  // Not implemented
-      NumSendUserInputModes
-    };
-#if PTRACING
-    friend ostream & operator<<(ostream & o, SendUserInputModes m);
-#endif
-
-    /**Set the user input indication transmission mode.
-      */
-    void SetSendUserInputMode(SendUserInputModes mode);
-
-    /**Get the user input indication transmission mode.
-      */
-    SendUserInputModes GetSendUserInputMode() const { return sendUserInputMode; }
-
     /**Get the real user input indication transmission mode.
        This will return the user input mode that will actually be used for
        transmissions. It will be the value of GetSendUserInputMode() provided
        the remote endpoint is capable of that mode.
       */
-    SendUserInputModes GetRealSendUserInputMode() const;
+    virtual SendUserInputModes GetRealSendUserInputMode() const;
 
     /**Send a user input indication to the remote endpoint.
        This is for sending arbitrary strings as user indications.
@@ -2272,8 +2257,7 @@ class H323Connection : public OpalConnection
     PString            gkAccessTokenOID;
     PBYTEArray         gkAccessTokenData;
     BOOL               addAccessTokenToSetup;
-    SendUserInputModes sendUserInputMode;
-	BOOL               alertDone;
+    BOOL               alertDone;
 
     H323Transport * signallingChannel;
     H323Transport * controlChannel;
@@ -2309,7 +2293,7 @@ class H323Connection : public OpalConnection
     BOOL transmitterSidePaused;
     BOOL earlyStart;
     BOOL startT120;
-	BOOL startH224;
+    BOOL startH224;
     PString    t38ModeChangeCapabilities;
     PSyncPoint digitsWaitFlag;
     BOOL       endSessionNeeded;
