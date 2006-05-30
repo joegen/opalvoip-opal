@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h4601.cxx,v $
+ * Revision 1.3  2006/05/30 18:15:52  hfriederich
+ * Reverting part of last change and alter function call
+ *
  * Revision 1.2  2006/05/30 11:30:41  hfriederich
  * Fixing some bugs introduced when porting H.460 from OpenH323 to OPAL and gcc4
  *
@@ -382,9 +385,9 @@ H460_FeatureContent  H460_FeatureParameter::operator=( const H460_FeatureTable &
 	return m_content; 
 }
 
-H460_FeatureContent  H460_FeatureParameter::operator=( const H460_Feature & value ) 
+H460_FeatureContent  H460_FeatureParameter::operator=( H460_Feature * value ) 
 {
-	m_content = H460_FeatureContent(value.GetCurrentTable());
+	m_content = H460_FeatureContent(value);
 	SetTag(e_content);
 	return m_content; 
 }
@@ -735,7 +738,7 @@ H460_FeatureParameter & H460_Feature::operator()(const H460_FeatureID & id)
 	return GetFeatureParameter(id);
 }
 
-H460_FeatureTable & H460_Feature::GetCurrentTable() const
+H460_FeatureTable & H460_Feature::GetCurrentTable()
 {
 	return *CurrentTable;
 }
