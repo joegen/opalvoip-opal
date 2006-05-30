@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
 * $Log: h4601.h,v $
+* Revision 1.2  2006/05/30 11:30:41  hfriederich
+* Fixing some bugs introduced when porting H.460 from OpenH323 to OPAL and gcc4
+*
 * Revision 1.1  2006/05/27 07:24:00  hfriederich
 * Initial port of H.460 files from OpenH323 to OPAL
 *
@@ -659,7 +662,7 @@ class H460_Feature : public H460<H225_FeatureDescriptor>
 
 	/** Get the Current Feature Table
 	  */
-	H460_FeatureTable & GetCurrentTable();
+	H460_FeatureTable & GetCurrentTable() const;
 
 	/** Set the current feature table
 	  */
