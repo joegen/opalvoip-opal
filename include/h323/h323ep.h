@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2036  2006/04/20 16:52:22  hfriederich
+ * Revision 1.2037  2006/05/30 04:58:05  csoutheren
+ * Added suport for SIP INFO message (untested as yet)
+ * Fixed some issues with SIP state machine on answering calls
+ * Fixed some formatting issues
+ *
+ * Revision 2.35  2006/04/20 16:52:22  hfriederich
  * Adding support for H.224/H.281
  *
  * Revision 2.34  2006/03/07 11:23:46  csoutheren
@@ -1283,14 +1288,6 @@ class H323EndPoint : public OpalEndPoint
       */
     virtual void OnReceivedInitiateReturnError();
 
-    /**Get the default mode for sending User Input Indications.
-      */
-    H323Connection::SendUserInputModes GetSendUserInputMode() const { return defaultSendUserInputMode; }
-
-    /**Set the default mode for sending User Input Indications.
-      */
-    void SetSendUserInputMode(H323Connection::SendUserInputModes mode) { defaultSendUserInputMode = mode; }
-
     /**See if should auto-start receive video channels on connection.
      */
     BOOL CanAutoStartReceiveVideo() const { return manager.CanAutoStartReceiveVideo(); }
@@ -1636,7 +1633,6 @@ class H323EndPoint : public OpalEndPoint
     BOOL        canDisplayAmountString;
     BOOL        canEnforceDurationLimit;
     unsigned    callIntrusionProtectionLevel;
-    H323Connection::SendUserInputModes defaultSendUserInputMode;
 
     BYTE          t35CountryCode;
     BYTE          t35Extension;
