@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: buildopts.h.in,v $
+ * Revision 1.14  2006/05/30 18:17:43  hfriederich
+ * Allow compilation of H.460 support
+ *
  * Revision 1.13  2006/04/20 16:56:41  hfriederich
  * Changes to allow compilation of H.224/H.281 code as well as to disable H.224 entirely
  *
@@ -92,6 +95,8 @@
 #undef	OPAL_SIP
 #undef	OPAL_H323
 #undef  OPAL_H224
+
+#undef  H323_H460
 
 #if !defined(OPAL_H323) || !OPAL_H323
 #define NO_H323
