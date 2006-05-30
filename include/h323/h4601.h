@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
 * $Log: h4601.h,v $
+* Revision 1.3  2006/05/30 18:15:51  hfriederich
+* Reverting part of last change and alter function call
+*
 * Revision 1.2  2006/05/30 11:30:41  hfriederich
 * Fixing some bugs introduced when porting H.460 from OpenH323 to OPAL and gcc4
 *
@@ -394,7 +397,7 @@ class H460_FeatureParameter : public H460<H225_EnumeratedParameter>
 	);
 
 	H460_FeatureContent operator=(
-	const H460_Feature & value
+	H460_Feature * value
 	);
 
 
@@ -662,7 +665,7 @@ class H460_Feature : public H460<H225_FeatureDescriptor>
 
 	/** Get the Current Feature Table
 	  */
-	H460_FeatureTable & GetCurrentTable() const;
+	H460_FeatureTable & GetCurrentTable();
 
 	/** Set the current feature table
 	  */
