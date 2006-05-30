@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h4601.cxx,v $
+ * Revision 1.2  2006/05/30 11:30:41  hfriederich
+ * Fixing some bugs introduced when porting H.460 from OpenH323 to OPAL and gcc4
+ *
  * Revision 1.1  2006/05/27 07:24:00  hfriederich
  * Initial port of H.460 files from OpenH323 to OPAL
  *
@@ -381,7 +384,7 @@ H460_FeatureContent  H460_FeatureParameter::operator=( const H460_FeatureTable &
 
 H460_FeatureContent  H460_FeatureParameter::operator=( const H460_Feature & value ) 
 {
-	m_content = H460_FeatureContent((const H225_Content &)value);
+	m_content = H460_FeatureContent(value.GetCurrentTable());
 	SetTag(e_content);
 	return m_content; 
 }
@@ -732,7 +735,7 @@ H460_FeatureParameter & H460_Feature::operator()(const H460_FeatureID & id)
 	return GetFeatureParameter(id);
 }
 
-H460_FeatureTable & H460_Feature::GetCurrentTable() 
+H460_FeatureTable & H460_Feature::GetCurrentTable() const
 {
 	return *CurrentTable;
 }
@@ -1037,7 +1040,7 @@ void H460_FeatureSet::RemoveFeature(H460_FeatureID id)
 			info << "OID Feature " << (OpalOID)id << "\n";
 			break;
 	   case H460_FeatureID::e_nonStandard:
-			info << "NonStd Feature " << (unsigned)id << "\n";
+			info << "NonStd Feature " << ((H225_GloballyUniqueID &)(id)).AsString() << "\n";
 			break;
 	}
 	PTRACE(4, info);
