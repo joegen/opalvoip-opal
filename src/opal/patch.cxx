@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2025  2006/05/07 15:33:54  dsandras
+ * Revision 1.2026  2006/06/03 12:42:36  shorne
+ * Fix compile error on MSVC6
+ *
+ * Revision 2.24  2006/05/07 15:33:54  dsandras
  * Reverted the last part of the patch.
  *
  * Revision 2.23  2006/05/07 14:03:04  dsandras
@@ -253,8 +256,8 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::Payl
     traceStream << "         " << option.GetName() << " = " << option.AsString() << '\n';
   }
   traceStream << "    to " << destinationFormat << '\n';
-  for (PINDEX i = 0; i < destinationFormat.GetOptionCount(); i++) {
-    const OpalMediaOption & option = destinationFormat.GetOption(i);
+  for (PINDEX j = 0; j < destinationFormat.GetOptionCount(); j++) {
+    const OpalMediaOption & option = destinationFormat.GetOption(j);
     traceStream << "         " << option.GetName() << " = " << option.AsString() << '\n';
   }
   traceStream << PTrace::End;
