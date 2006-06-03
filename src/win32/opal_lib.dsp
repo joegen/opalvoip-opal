@@ -457,6 +457,26 @@ SOURCE=..\iax2\sound.cxx
 SOURCE=..\iax2\transmit.cxx
 # End Source File
 # End Group
+# Begin Group "H224 Sources"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\h224\h224.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\h224\h281.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\h224\h323h224.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\h224\q922.cxx
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=.\precompile.cxx
@@ -822,6 +842,34 @@ SOURCE=..\..\include\iax2\transmit.h
 SOURCE=..\..\include\iax2\version.h
 # End Source File
 # End Group
+# Begin Group "H224 Headers"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\include\h224\h224.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\h224\h224handler.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\h224\h281.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\h224\h281handler.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\h224\h323h224.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\h224\q922.h
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=..\..\include\opal\buildopts.h
@@ -834,7 +882,7 @@ SOURCE=..\..\include\opal\buildopts.h.in
 
 USERDEP__BUILD="..\..\configure.ac"	"..\..\configure.exe"	
 # Begin Custom Build - Configuring Build Options
-InputDir=\opal\include\opal
+InputDir=\Storage\CVS_Head\opal\include\opal
 InputPath=..\..\include\opal\buildopts.h.in
 
 "$(InputDir)\buildopts.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
@@ -847,7 +895,7 @@ InputPath=..\..\include\opal\buildopts.h.in
 
 USERDEP__BUILD="..\..\configure.ac"	"..\..\configure.exe"	
 # Begin Custom Build - Configuring Build Options
-InputDir=\opal\include\opal
+InputDir=\Storage\CVS_Head\opal\include\opal
 InputPath=..\..\include\opal\buildopts.h.in
 
 "$(InputDir)\buildopts.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
@@ -860,7 +908,7 @@ InputPath=..\..\include\opal\buildopts.h.in
 
 USERDEP__BUILD="..\..\configure.ac"	"..\..\configure.exe"	
 # Begin Custom Build - Configuring Build Options
-InputDir=\opal\include\opal
+InputDir=\Storage\CVS_Head\opal\include\opal
 InputPath=..\..\include\opal\buildopts.h.in
 
 "$(InputDir)\buildopts.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
