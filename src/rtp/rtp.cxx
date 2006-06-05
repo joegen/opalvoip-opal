@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2031  2006/04/30 16:41:14  dsandras
+ * Revision 1.2032  2006/06/05 20:12:48  dsandras
+ * Prevent infinite loop when being unable to write to the control port of the
+ * RTP session. Fixes Ekiga #339306.
+ *
+ * Revision 2.30  2006/04/30 16:41:14  dsandras
  * Allow exactly one sequence change after a call to SetRemoteSocketInfo. Fixes
  * Ekiga bug #339866.
  *
@@ -2023,6 +2027,7 @@ BOOL RTP_UDP::WriteControl(RTP_ControlFrame & frame)
                << ", Write error on control port ("
                << controlSocket->GetErrorNumber(PChannel::LastWriteError) << "): "
                << controlSocket->GetErrorText(PChannel::LastWriteError));
+        return FALSE;
     }
   }
 
