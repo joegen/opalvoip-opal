@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2065  2006/04/30 14:42:00  dereksmithies
+ * Revision 1.2066  2006/06/05 05:26:39  csoutheren
+ * Added ability to test outgoing SIP INFO messages
+ *
+ * Revision 2.64  2006/04/30 14:42:00  dereksmithies
  * Fix compile Sleep statement so it compiles on unix.
  *
  * Revision 2.63  2006/04/30 14:36:54  csoutheren
@@ -379,6 +382,7 @@ void SimpleOpalProcess::Main()
              "-sip-proxy:"
              "-sip-domain:"
              "-sip-user-agent:"
+             "-sip-ui:"
              "-stun:"
              "T-h245tunneldisable."
              "-translate:"
@@ -445,6 +449,7 @@ void SimpleOpalProcess::Main()
             "     --sip-listen iface   : Interface/port(s) to listen for SIP requests\n"
             "                          : '*' is all interfaces, (default udp$:*:5060)\n"
             "     --sip-user-agent name: SIP UserAgent name to use.\n"
+            "     --sip-ui type        : Set type of user indications to use for SIP. Can be one of 'rfc2833', 'info-tone', 'info-string'.\n"
             "     --use-long-mime      : Use long MIME headers on outgoing SIP messages\n"
             "     --sip-domain str     : set authentication domain/realm\n"
             "\n"
@@ -892,6 +897,14 @@ BOOL MyManager::Initialise(PArgList & args)
 
     if (args.HasOption("sip-user-agent"))
       sipEP->SetUserAgent(args.GetOptionString("sip-user-agent"));
+
+    PString str = args.GetOptionString("sip-ui");
+    if (str *= "rfc2833")
+      sipEP->SetSendUserInputMode(OpalConnection::SendUserInputAsSeparateRFC2833);
+    else if (str *= "info-tone")
+      sipEP->SetSendUserInputMode(OpalConnection::SendUserInputAsTone);
+    else if (str *= "info-string")
+      sipEP->SetSendUserInputMode(OpalConnection::SendUserInputAsString);
 
     if (args.HasOption("sip-proxy"))
       sipEP->SetProxy(args.GetOptionString("sip-proxy"));
