@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2032  2006/05/30 11:33:02  hfriederich
+ * Revision 1.2033  2006/06/07 23:41:57  csoutheren
+ * Fixed compile warning on gcc
+ *
+ * Revision 2.31  2006/05/30 11:33:02  hfriederich
  * Porting support for H.460 from OpenH323
  *
  * Revision 2.30  2006/03/07 11:23:46  csoutheren
@@ -673,10 +676,10 @@ static PTimeInterval AdjustTimeout(unsigned seconds)
 H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
   : H225_RAS(ep, trans),
     requestMutex(1, 1),
-#ifdef H323_H460
-    features(ep.GetFeatureSet()),
-#endif
     authenticators(ep.CreateAuthenticators())
+#ifdef H323_H460
+    ,features(ep.GetFeatureSet())
+#endif
 {
   alternatePermanent = FALSE;
   discoveryComplete = FALSE;
