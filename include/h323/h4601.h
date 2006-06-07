@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
 * $Log: h4601.h,v $
+* Revision 1.4  2006/06/07 23:33:26  csoutheren
+* Removed warning on gcc 4.1.1
+*
 * Revision 1.3  2006/05/30 18:15:51  hfriederich
 * Reverting part of last change and alter function call
 *
@@ -685,7 +688,7 @@ class H460_Feature : public H460<H225_FeatureDescriptor>
   //@{
 	/** Get Feature Names 
 	*/
-	static PStringList H460_Feature::GetFeatureNames(PPluginManager * pluginMgr = NULL);
+	static PStringList GetFeatureNames(PPluginManager * pluginMgr = NULL);
 
 	/** Get Feature Friendly Names
 	*/
