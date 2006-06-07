@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323h224.cxx,v $
+ * Revision 1.4  2006/06/07 08:02:22  hfriederich
+ * Fixing crashes when creating the RTP session failed
+ *
  * Revision 1.3  2006/05/01 10:29:50  csoutheren
  * Added pragams for gcc < 4
  *
@@ -89,9 +92,13 @@ H323Channel * H323_H224Capability::CreateChannel(H323Connection & connection,
                                                  unsigned int sessionID,
                                                  const H245_H2250LogicalChannelParameters * /*params*/) const
 {
-  RTP_Session & session = *connection.UseSession(connection.GetTransport(), sessionID);
+  RTP_Session *session = connection.UseSession(connection.GetTransport(), sessionID);
 	
-  return new H323_H224Channel(connection, *this, direction, (RTP_UDP &)session, sessionID);
+  if(session == NULL) {
+    return NULL;
+  }
+  
+  return new H323_H224Channel(connection, *this, direction, (RTP_UDP &)*session, sessionID);
 }
 
 BOOL H323_H224Capability::OnSendingPDU(H245_DataApplicationCapability & pdu) const
