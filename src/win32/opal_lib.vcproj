@@ -929,6 +929,9 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\h323\h4601.cxx">
+				</File>
+				<File
 					RelativePath="..\h323\h501pdu.cxx">
 					<FileConfiguration
 						Name="Debug|Win32">
@@ -1984,6 +1987,12 @@
 					RelativePath="..\..\include\h323\h450pdu.h">
 				</File>
 				<File
+					RelativePath="..\..\include\h323\h460.h">
+				</File>
+				<File
+					RelativePath="..\..\include\h323\h4601.h">
+				</File>
+				<File
 					RelativePath="..\..\include\h323\h501pdu.h">
 				</File>
 				<File
@@ -2025,6 +2034,9 @@
 				</File>
 				<File
 					RelativePath="..\..\include\codec\h261codec.h">
+				</File>
+				<File
+					RelativePath="..\..\include\codec\h263codec.h">
 				</File>
 				<File
 					RelativePath="..\..\include\codec\ilbccodec.h">
