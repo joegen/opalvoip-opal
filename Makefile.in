@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.33  2006/06/08 07:03:16  csoutheren
+# Changed to force docs to build even when docs directory exists
+#
 # Revision 1.32  2006/05/30 12:04:08  hfriederich
 # Enabling to build H.460
 #
@@ -959,8 +962,10 @@ uninstall:
 	      $(DESTDIR)@LIBDIR@/$(OPAL_FILE).$(MAJOR_VERSION) \
 	      $(DESTDIR)@LIBDIR@/$(LIBNAME_PAT)
  
-docs:
+docs: FORCE
 	doxygen opal_cfg.dxy
+
+FORCE:
  
 
 # End of file #################################################################
