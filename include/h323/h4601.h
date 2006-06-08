@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
 * $Log: h4601.h,v $
+* Revision 1.5  2006/06/08 13:27:18  shorne
+* Resnc Opal and OpenH323 versions
+*
 * Revision 1.4  2006/06/07 23:33:26  csoutheren
 * Removed warning on gcc 4.1.1
 *
@@ -796,10 +799,10 @@ class H460_Feature : public H460<H225_FeatureDescriptor>
 
 	virtual BOOL OnSendReleaseComplete_UUIE(H225_FeatureDescriptor & pdu) { return FALSE; };
 	virtual void OnReceiveReleaseComplete_UUIE(const H225_FeatureDescriptor & pdu) {};
-	
+
 	virtual BOOL OnSendUnAllocatedPDU(H225_FeatureDescriptor & pdu) { return FALSE; };
 	virtual void OnReceivedUnAllocatedPDU(const H225_FeatureDescriptor & pdu) {};
-	
+
   //@}
 
   /**@name H501 Support */
