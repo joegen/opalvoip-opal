@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h4601.cxx,v $
+ * Revision 1.4  2006/06/08 02:01:57  csoutheren
+ * Removed error on gcc
+ *
  * Revision 1.3  2006/05/30 18:15:52  hfriederich
  * Reverting part of last change and alter function call
  *
@@ -137,10 +140,10 @@ PString H460_FeatureID::IDString() const
 			return "Std " & PString((unsigned)(*this));
 			break;
 	   case H225_GenericIdentifier::e_oid:
-			return "OID " & ((PASN_ObjectId &)(*this)).AsString();
+			return "OID " & ((const PASN_ObjectId &)(*this)).AsString();
 			break;
 	   default: //H225_GenericIdentifier::e_nonStandard:
-			return "NonStd " & ((H225_GloballyUniqueID &)(*this)).AsString();
+			return "NonStd " & ((const H225_GloballyUniqueID &)(*this)).AsString();
 			break;
 	}
 }
