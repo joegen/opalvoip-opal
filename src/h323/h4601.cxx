@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h4601.cxx,v $
+ * Revision 1.5  2006/06/08 13:27:18  shorne
+ * Resnc Opal and OpenH323 versions
+ *
  * Revision 1.4  2006/06/08 02:01:57  csoutheren
  * Removed error on gcc
  *
@@ -135,17 +138,22 @@ PINLINE H460_FeatureID & H460_FeatureID::operator=(PString ID)
 
 PString H460_FeatureID::IDString() const
 {
-	switch (GetFeatureType()) {
-	   case H225_GenericIdentifier::e_standard:
-			return "Std " & PString((unsigned)(*this));
-			break;
-	   case H225_GenericIdentifier::e_oid:
-			return "OID " & ((const PASN_ObjectId &)(*this)).AsString();
-			break;
-	   default: //H225_GenericIdentifier::e_nonStandard:
-			return "NonStd " & ((const H225_GloballyUniqueID &)(*this)).AsString();
-			break;
+	if (GetFeatureType() == H225_GenericIdentifier::e_standard) {
+		    const PASN_Integer & jint = *this;
+			return "Std " + jint;
 	}
+	
+	if (GetFeatureType() == H225_GenericIdentifier::e_oid) {
+	        const PASN_ObjectId & obj = *this;
+			return "OID " + obj.AsString();
+	}
+
+	if (GetFeatureType() == H225_GenericIdentifier::e_nonStandard) {
+		    const H225_GloballyUniqueID & gui = *this;
+			return "NonStd " + gui.AsString();
+	}
+
+	return PString();
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -1288,7 +1296,7 @@ PTRACE(6,"H460\tEncoding " << PTracePDU(MessageID) << " PDU for " << Feat.GetFea
 	  
 	  case H460_MessageType::e_releaseComplete:
 		    return Feat.OnSendReleaseComplete_UUIE(pdu);
-		  
+
 	  default:
 		    return Feat.OnSendUnAllocatedPDU(pdu);
 	}
@@ -1368,9 +1376,9 @@ PTRACE(6,"H460\tDecoding " << PTracePDU(MessageID) << " PDU for " << Feat.GetFea
                break;
 	  case H460_MessageType::e_releaseComplete :
 		       Feat.OnReceiveReleaseComplete_UUIE(pdu);
-		  
-	  default:
-			   Feat.OnReceivedUnAllocatedPDU(pdu);
+               break;
+      default:
+               Feat.OnReceivedUnAllocatedPDU(pdu);
 	}
 }
 
