@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2150  2006/05/30 04:58:06  csoutheren
+ * Revision 1.2151  2006/06/09 04:22:24  csoutheren
+ * Implemented mapping between SIP release codes and Q.931 codes as specified
+ *  by RFC 3398
+ *
+ * Revision 2.149  2006/05/30 04:58:06  csoutheren
  * Added suport for SIP INFO message (untested as yet)
  * Fixed some issues with SIP state machine on answering calls
  * Fixed some formatting issues
@@ -648,6 +652,83 @@ SIPConnection::~SIPConnection()
   PTRACE(3, "SIP\tDeleted connection.");
 }
 
+//
+// This table comes from RFC 3398 para 7.2.4.1
+//
+static struct Q931ReasonMapEntry {
+  unsigned q931Cause;
+  unsigned sipCode;
+} Q931ReasonToSIPCode[] = {
+  {   1, 404 }, // unallocated number                   404 Not Found
+  {   2, 404 }, // no route to network                  404 Not found
+  {   3, 404 }, // no route to destination              404 Not found
+  //{ 16, -- }, // normal call clearing                 --- (*)
+  {  17, 486 }, // user busy                            486 Busy here
+  {  18, 408 }, // no user responding                   408 Request Timeout
+  {  19, 480 }, // no answer from the user              480 Temporarily unavailable
+  {  20, 480 }, // subscriber absent                    480 Temporarily unavailable
+  {  21, 403 }, // call rejected                        403 Forbidden (+)
+  {  22, 410 }, // number changed (w/o diagnostic)      410 Gone
+  {  22, 301 }, // number changed (w/ diagnostic)       301 Moved Permanently
+  {  23, 410 }, // redirection to new destination       410 Gone
+  {  26, 404 }, // non-selected user clearing           404 Not Found (=)
+  {  27, 502 }, // destination out of order             502 Bad Gateway
+  {  28, 484 }, // address incomplete                   484 Address incomplete
+  {  29, 501 }, // facility rejected                    501 Not implemented
+  {  31, 480 }, // normal unspecified                   480 Temporarily unavailable
+  {  34, 503 }, // no circuit available                 503 Service unavailable
+  {  38, 503 }, // network out of order                 503 Service unavailable
+  {  41, 503 }, // temporary failure                    503 Service unavailable
+  {  42, 503 }, // switching equipment congestion       503 Service unavailable
+  {  47, 503 }, // resource unavailable                 503 Service unavailable
+  {  55, 403 }, // incoming calls barred within CUG     403 Forbidden
+  {  57, 403 }, // bearer capability not authorized     403 Forbidden
+  {  58, 503 }, // bearer capability not presently available     503 Service unavailable
+  {  65, 488 }, // bearer capability not implemented    488 Not Acceptable Here
+  {  70, 488 }, // only restricted digital avail        488 Not Acceptable Here
+  {  79, 501 }, // service or option not implemented    501 Not implemented
+  {  87, 403 }, // user not member of CUG               403 Forbidden
+  {  88, 503 }, // incompatible destination             503 Service unavailable
+  { 102, 504 }, // recovery of timer expiry             504 Gateway timeout
+  { 111, 500 }, // protocol error                       500 Server internal error
+  { 127, 500 }, // interworking unspecified             500 Server internal error
+};
+
+#define NUM_Q931_END_REASON_MAP_ENTRIES (sizeof(Q931ReasonToSIPCode) / sizeof(Q931ReasonToSIPCode[0]))
+
+static SIP_PDU::StatusCodes RFC3398_MapQ931ToSIPCode(unsigned q931Cause)
+{
+  PINDEX i;
+  for (i = 0; i < NUM_Q931_END_REASON_MAP_ENTRIES; ++i)
+    if (Q931ReasonToSIPCode[i].q931Cause == q931Cause)
+      return (SIP_PDU::StatusCodes)Q931ReasonToSIPCode[i].sipCode;
+
+  return SIP_PDU::Failure_BadGateway;
+}
+
+static struct CallEndReasonMapEntry {
+  OpalConnection::CallEndReason reason;
+  SIP_PDU::StatusCodes          sipCode;
+} EndReasonToSIPCode[] = {
+  { OpalConnection::EndedByAnswerDenied,       SIP_PDU::GlobalFailure_Decline },        // 603
+  { OpalConnection::EndedByLocalBusy,          SIP_PDU::Failure_BusyHere },             // 486
+  { OpalConnection::EndedByCallerAbort,        SIP_PDU::Failure_RequestTerminated },    // 487
+  { OpalConnection::EndedByCapabilityExchange, SIP_PDU::Failure_UnsupportedMediaType }, // 415
+  { OpalConnection::EndedByCallForwarded,      SIP_PDU::Redirection_MovedTemporarily }  // 302
+};
+
+#define NUM_CALL_END_REASON_MAP_ENTRIES (sizeof(EndReasonToSIPCode) / sizeof(EndReasonToSIPCode[0]))
+
+static SIP_PDU::StatusCodes MapEndReasonToSIPCode(OpalConnection::CallEndReason callEndReason)
+{
+  PINDEX i;
+  for (i = 0; i < NUM_CALL_END_REASON_MAP_ENTRIES; ++i)
+    if (EndReasonToSIPCode[i].reason == callEndReason)
+      return EndReasonToSIPCode[i].sipCode;
+
+  return SIP_PDU::Failure_BadGateway;
+}
+
 
 void SIPConnection::OnReleased()
 {
@@ -655,7 +736,7 @@ void SIPConnection::OnReleased()
   
   // OpalConnection::Release sets the phase to Releasing in the SIP Handler 
   // thread
-  if(GetPhase() >= ReleasedPhase){
+  if (GetPhase() >= ReleasedPhase){
     PTRACE(2, "SIP\tOnReleased: already released");
     return;
   };
@@ -669,49 +750,17 @@ void SIPConnection::OnReleased()
       break;
 
     case ReleaseWithResponse :
-      // Build the response from the invite and send it to the correct
-      // destination specified in the Via field
-      switch (callEndReason) {
-        case EndedByAnswerDenied :
-          {
-	          SIP_PDU response(*originalInvite, SIP_PDU::GlobalFailure_Decline);
-	          SendPDU(response, originalInvite->GetViaAddress(endpoint));
-	        }
-          break;
+      {
+        SIP_PDU::StatusCodes sipCode;
+        // if Q.931 code has been set and is not normal call clearing, then implement mapping specified 
+        // Otherwise implement default mapping
+        if (GetQ931Cause() != 0x100 && GetQ931Cause() != 0x16)
+          sipCode = RFC3398_MapQ931ToSIPCode(q931Cause);
+        else
+          sipCode = MapEndReasonToSIPCode(callEndReason);
 
-        case EndedByLocalBusy :
-          {
-	          SIP_PDU response(*originalInvite, SIP_PDU::Failure_BusyHere);
-	          SendPDU(response, originalInvite->GetViaAddress(endpoint));
-          }
-          break;
-
-        case EndedByCallerAbort :
-          {
-	          SIP_PDU response(*originalInvite, SIP_PDU::Failure_RequestTerminated);
-	          SendPDU(response, originalInvite->GetViaAddress(endpoint));
-          }
-          break;
-
-        case EndedByCapabilityExchange :
-          {
-	          SIP_PDU response(*originalInvite, SIP_PDU::Failure_UnsupportedMediaType);
-	          SendPDU(response, originalInvite->GetViaAddress(endpoint));
-          }
-          break;
-
-        case EndedByCallForwarded :
-          {
-	          SIP_PDU response(*originalInvite, SIP_PDU::Redirection_MovedTemporarily, NULL, forwardParty);
-	          SendPDU(response, originalInvite->GetViaAddress(endpoint));
-          }
-          break;
-
-        default :
-          {
-	          SIP_PDU response(*originalInvite, SIP_PDU::Failure_BadGateway);
-	          SendPDU(response, originalInvite->GetViaAddress(endpoint));
-          }
+	      SIP_PDU response(*originalInvite, sipCode);
+	      SendPDU(response, originalInvite->GetViaAddress(endpoint));
       }
       break;
 
@@ -1425,6 +1474,63 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
   }
 }
 
+//
+// This table comes from RFC 3398 para 8.2.6.1
+//
+static struct SIPCodeToQ931ReasonMapEntry {
+  unsigned  sipCode;
+  unsigned  q931Cause;
+} SIPCodeToQ931Reason[] = {
+  { 400 /* Bad Request                    */, 41 }, // Temporary Failure
+  { 401 /* Unauthorized                   */,   21 }, // Call rejected (*)
+  { 402 /* Payment required               */,   21 }, // Call rejected
+  { 403 /* Forbidden                      */,   21 }, // Call rejected
+  { 404 /* Not found                      */,    1 }, // Unallocated number
+  { 405 /* Method not allowed             */,   63 }, // Service or option unavailable
+  { 406 /* Not acceptable                 */,   79 }, // Service/option not implemented (+)
+  { 407 /* Proxy authentication required  */,   21 }, // Call rejected (*)
+  { 408 /* Request timeout                */,  102 }, // Recovery on timer expiry
+  { 410 /* Gone                           */,   22 }, // Number changed (w/o diagnostic)
+  { 413 /* Request Entity too long        */,  127 }, // Interworking (+)
+  { 414 /* Request-URI too long           */,  127 }, // Interworking (+)
+  { 415 /* Unsupported media type         */,   79 }, // Service/option not implemented (+)
+  { 416 /* Unsupported URI Scheme         */,  127 }, // Interworking (+)
+  { 420 /* Bad extension                  */,  127 }, // Interworking (+)
+  { 421 /* Extension Required             */,  127 }, // Interworking (+)
+  { 423 /* Interval Too Brief             */,  127 }, // Interworking (+)
+  { 480 /* Temporarily unavailable        */,   18 }, // No user responding
+  { 481 /* Call/Transaction Does not Exist*/,   41 }, // Temporary Failure
+  { 482 /* Loop Detected                  */,   25 }, // Exchange - routing error
+  { 483 /* Too many hops                  */,   25 }, // Exchange - routing error
+  { 484 /* Address incomplete             */,   28 }, // Invalid Number Format (+)
+  { 485 /* Ambiguous                      */,    1 }, // Unallocated number
+  { 486 /* Busy here                      */,   17 }, // User busy
+//  { 487 /* Request Terminated             */,  --- }, // (no mapping)
+  //{ 488 /* Not Acceptable here            */,  --- }, // by Warning header
+  { 500 /* Server internal error          */,   41 }, // Temporary failure
+  { 501 /* Not implemented                */,   79 }, // Not implemented, unspecified
+  { 502 /* Bad gateway                    */,   38 }, // Network out of order
+  { 503 /* Service unavailable            */,   41 }, // Temporary failure
+  { 504 /* Server time-out                */,  102 }, // Recovery on timer expiry
+  { 504 /* Version Not Supported          */,  127 }, // Interworking (+)
+  { 513 /* Message Too Large              */,  127 }, // Interworking (+)
+  { 600 /* Busy everywhere                */,   17 }, // User busy
+  { 603 /* Decline                        */,   21 }, // Call rejected
+  { 604 /* Does not exist anywhere        */,    1 }, // Unallocated number
+  //{ 606 /* Not acceptable                 */,  --- }, // by Warning header
+};
+
+#define NUM_SIPCODE_END_REASON_MAP_ENTRIES (sizeof(SIPCodeToQ931Reason) / sizeof(SIPCodeToQ931Reason[0]))
+
+static unsigned RFC3398_MapSIPCodeToQ931(unsigned sipCode)
+{
+  PINDEX i;
+  for (i = 0; i < NUM_SIPCODE_END_REASON_MAP_ENTRIES; ++i)
+    if (SIPCodeToQ931Reason[i].sipCode == sipCode)
+      return SIPCodeToQ931Reason[i].q931Cause;
+
+  return 41; // Temporary Failure
+}
 
 void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
 {
@@ -1512,26 +1618,41 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
       OnReceivedRedirection(response);
       break;
 
+/////////////////////
+
+    // for each of the following cases, map the SIP release code to the correct Q931 code as per RFC 3398
+
     case SIP_PDU::Failure_NotFound :
       Release(EndedByNoUser);
+      q931Cause = RFC3398_MapSIPCodeToQ931(SIP_PDU::Failure_NotFound);
       break;
 
     case SIP_PDU::Failure_RequestTimeout :
+      Release(EndedByTemporaryFailure);
+      q931Cause = RFC3398_MapSIPCodeToQ931(SIP_PDU::Failure_RequestTimeout);
+      break;
+
     case SIP_PDU::Failure_TemporarilyUnavailable :
       Release(EndedByTemporaryFailure);
+      q931Cause = RFC3398_MapSIPCodeToQ931(SIP_PDU::Failure_TemporarilyUnavailable);
       break;
       
     case SIP_PDU::Failure_Forbidden :
       Release(EndedBySecurityDenial);
+      q931Cause = RFC3398_MapSIPCodeToQ931(SIP_PDU::Failure_Forbidden);
       break;
 
     case SIP_PDU::Failure_BusyHere :
       Release(EndedByRemoteBusy);
+      q931Cause = RFC3398_MapSIPCodeToQ931(SIP_PDU::Failure_BusyHere);
       break;
 
     case SIP_PDU::Failure_UnsupportedMediaType :
       Release(EndedByCapabilityExchange);
+      q931Cause = RFC3398_MapSIPCodeToQ931(SIP_PDU::Failure_UnsupportedMediaType);
       break;
+
+///////////////
 
     default :
       switch (response.GetStatusCode()/100) {
@@ -1545,8 +1666,10 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
         default :
           // All other final responses cause a call end, if it is not a
           // local hold.
-          if (!local_hold)
+          if (!local_hold) {
             Release(EndedByRefusal);
+            q931Cause = RFC3398_MapSIPCodeToQ931(response.GetStatusCode());
+          }
           else {
             local_hold = FALSE; // It failed
             // Un-Pause the media streams
