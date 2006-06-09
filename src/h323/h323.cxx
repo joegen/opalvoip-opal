@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2107  2006/05/30 11:33:02  hfriederich
+ * Revision 1.2108  2006/06/09 07:17:22  csoutheren
+ * Fixed warning under gcc
+ *
+ * Revision 2.106  2006/05/30 11:33:02  hfriederich
  * Porting support for H.460 from OpenH323
  *
  * Revision 2.105  2006/05/30 04:58:06  csoutheren
@@ -1577,10 +1580,10 @@ H323Connection::H323Connection(OpalCall & call,
                                unsigned options)
   : OpalConnection(call, ep, token),
     endpoint(ep),
-#ifdef H323_H460
-    features(ep.GetFeatureSet()),
-#endif
     gkAccessTokenOID(ep.GetGkAccessTokenOID())
+#ifdef H323_H460
+    ,features(ep.GetFeatureSet())
+#endif
 {
   if (alias.IsEmpty())
     remotePartyName = remotePartyAddress = address;
