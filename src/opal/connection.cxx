@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2063  2006/05/30 04:58:06  csoutheren
+ * Revision 1.2064  2006/06/09 04:22:24  csoutheren
+ * Implemented mapping between SIP release codes and Q.931 codes as specified
+ *  by RFC 3398
+ *
+ * Revision 2.62  2006/05/30 04:58:06  csoutheren
  * Added suport for SIP INFO message (untested as yet)
  * Fixed some issues with SIP state machine on answering calls
  * Fixed some formatting issues
@@ -368,7 +372,8 @@ OpalConnection::OpalConnection(OpalCall & call,
     callEndTime(0),
     localPartyName(ep.GetDefaultLocalPartyName()),
     displayName(ep.GetDefaultDisplayName()),
-    remotePartyName(token)
+    remotePartyName(token),
+    q931Cause(0x100)
 {
   PTRACE(3, "OpalCon\tCreated connection " << *this);
 

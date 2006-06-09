@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2055  2006/05/30 04:58:06  csoutheren
+ * Revision 1.2056  2006/06/09 04:22:24  csoutheren
+ * Implemented mapping between SIP release codes and Q.931 codes as specified
+ *  by RFC 3398
+ *
+ * Revision 2.54  2006/05/30 04:58:06  csoutheren
  * Added suport for SIP INFO message (untested as yet)
  * Fixed some issues with SIP state machine on answering calls
  * Fixed some formatting issues
@@ -395,6 +399,16 @@ class OpalConnection : public PSafeObject
       PSyncPoint * sync,
       CallEndReason reason = EndedByLocalUser  ///<  Reason for call clearing
     );
+
+    /**Get the Q.931 cause code (Q.850) that terminated this call.
+       See Q931::CauseValues for common values.
+     */
+    unsigned GetQ931Cause() const { return q931Cause; }
+
+    /**Set the outgoing Q.931 cause code (Q.850) that is sent for this call
+       See Q931::CauseValues for common values.
+     */
+    void SetQ931Cause(unsigned v) { q931Cause = v; }
 
     /**Initiate the transfer of an existing call (connection) to a new remote 
        party.
@@ -1210,13 +1224,14 @@ class OpalConnection : public PSafeObject
     PMutex                userInputMutex;
     PSyncPoint            userInputAvailable;
     BOOL                  detectInBandDTMF;
+    unsigned              q931Cause;
+
     OpalSilenceDetector * silenceDetector;
-    OpalEchoCanceler  * echoCanceler;
+    OpalEchoCanceler    * echoCanceler;
     OpalRFC2833Proto    * rfc2833Handler;
     OpalT120Protocol    * t120handler;
     OpalT38Protocol     * t38handler;
-    OpalH224Handler		* h224Handler;
-
+    OpalH224Handler		  * h224Handler;
 
     MediaAddressesDict  mediaTransportAddresses;
     PMutex              mediaStreamMutex;

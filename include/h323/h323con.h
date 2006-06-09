@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2048  2006/05/30 11:33:02  hfriederich
+ * Revision 1.2049  2006/06/09 04:22:24  csoutheren
+ * Implemented mapping between SIP release codes and Q.931 codes as specified
+ *  by RFC 3398
+ *
+ * Revision 2.47  2006/05/30 11:33:02  hfriederich
  * Porting support for H.460 from OpenH323
  *
  * Revision 2.46  2006/05/30 04:58:05  csoutheren
@@ -2082,16 +2086,6 @@ class H323Connection : public OpalConnection
      */
     BOOL IsGatekeeperRouted() const { return gatekeeperRouted; }
 
-    /**Get the Q.931 cause code (Q.850) that terminated this call.
-       See Q931::CauseValues for common values.
-     */
-    unsigned GetQ931Cause() const { return q931Cause; }
-
-    /**Set the outgoing Q.931 cause code (Q.850) that is sent for this call
-       See Q931::CauseValues for common values.
-     */
-    void SetQ931Cause(unsigned v) { q931Cause = v; }
-
     /**Get the distinctive ring code for incoming call.
        This returns an integer from 0 to 7 that may indicate to an application
        that different ring cadences are to be used.
@@ -2296,8 +2290,6 @@ class H323Connection : public OpalConnection
       ShuttingDownConnection,
       NumConnectionStates
     } connectionState;
-
-    unsigned      q931Cause;
 
     unsigned   h225version;
     unsigned   h245version;
