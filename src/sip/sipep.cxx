@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2098.2.21  2006/04/30 17:26:22  dsandras
+ * Revision 1.2098.2.22  2006/06/10 15:40:05  dsandras
+ * Backported fix from HEAD.
+ *
+ * Revision 2.125  2006/06/10 15:37:33  dsandras
+ * Look for the expires field in the PDU if not present in the contact header.
+ *
+ * Revision 2.97.2.21  2006/04/30 17:26:22  dsandras
  * Backported various HEAD cleanups.
  *
  * Revision 2.123  2006/04/30 17:24:40  dsandras
@@ -1296,8 +1302,12 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 
     PString contact = response.GetMIME().GetContact();
     int sec = SIPURL(contact).GetParamVars()("expires").AsUnsigned();  
-    if (!sec && response.GetMIME().HasFieldParameter("expires", contact))
-      sec = response.GetMIME().GetFieldParameter("expires", contact).AsUnsigned();
+    if (!sec) {
+      if (response.GetMIME().HasFieldParameter("expires", contact))
+        sec = response.GetMIME().GetFieldParameter("expires", contact).AsUnsigned();
+      else
+        sec = response.GetMIME().GetExpires ();
+    }
     if (!sec)
       sec = 3600;
     info->SetExpire(sec*9/10);
