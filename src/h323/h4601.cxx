@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h4601.cxx,v $
+ * Revision 1.6  2006/06/11 00:18:35  csoutheren
+ * Added pragma for old gcc versions
+ *
  * Revision 1.5  2006/06/08 13:27:18  shorne
  * Resnc Opal and OpenH323 versions
  *
@@ -43,6 +46,11 @@
 */
 
 #include <ptlib.h>
+
+#ifdef __GNUC__
+#pragma implementation "h4601.h"
+#endif
+
 #include <h323/h460.h>
 
 #include <h323/h4601.h>
