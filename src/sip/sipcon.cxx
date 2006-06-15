@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2153  2006/06/15 00:29:58  csoutheren
+ * Revision 1.2154  2006/06/15 17:41:34  dsandras
+ * Definitely fixed recently introduced bug when forwarding calls.
+ *
+ * Revision 2.152  2006/06/15 00:29:58  csoutheren
  * Fixed warning on Linux
  *
  * Revision 2.151  2006/06/15 00:18:58  csoutheren
@@ -766,12 +769,12 @@ void SIPConnection::OnReleased()
           sipCode = MapEndReasonToSIPCode(callEndReason);
 
         // EndedByCallForwarded is a special case because it needs different paramaters
-        if (releaseMethod == (int)EndedByCallForwarded) {
+        if (callEndReason == (int)EndedByCallForwarded) {
           SIP_PDU response(*originalInvite, sipCode, NULL, forwardParty);
           SendPDU(response, originalInvite->GetViaAddress(endpoint));
         } else {
-  	      SIP_PDU response(*originalInvite, sipCode);
-	        SendPDU(response, originalInvite->GetViaAddress(endpoint));
+          SIP_PDU response(*originalInvite, sipCode);
+          SendPDU(response, originalInvite->GetViaAddress(endpoint));
         }
       }
       break;
