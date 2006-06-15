@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
 * $Log: h4601.h,v $
+* Revision 1.6  2006/06/15 15:34:25  shorne
+* More updates
+*
 * Revision 1.5  2006/06/08 13:27:18  shorne
 * Resnc Opal and OpenH323 versions
 *
@@ -506,13 +509,13 @@ class H460_FeatureTable : public H460<H225_ArrayOf_EnumeratedParameter>
 
 	/** Operator
 	*/
-    inline H460_FeatureParameter & operator()(
+    inline H460_FeatureParameter & operator[](
       PINDEX id  ///* Index position in the collection of the object.
-    ) const { return operator()(id); };
+    ) const { return operator[](id); };
 
 	/** Operator
 	*/
-	H460_FeatureParameter & operator()(
+	H460_FeatureParameter & operator[](
       PINDEX id  ///* Index position in the collection of the object.
     );
   //@}
@@ -927,19 +930,28 @@ class H460_FeatureOID : public H460_Feature
   //@{
 	/** Add item 
 	*/
-	H460_FeatureParameter & Add(OpalOID id, H460_FeatureContent & con);
+	H460_FeatureParameter & Add(const PString & id, H460_FeatureContent & con);
 
 	/** Delete item 
 	*/
-	void Remove(OpalOID id);
+	void Remove(const PString & id);
 
 	/** Replace item 
 	*/
-	void Replace(OpalOID id, H460_FeatureContent & con);
+	void Replace(const PString & id, H460_FeatureContent & con);
 
 	/** Has Parameter
 	  */
 	BOOL HasParameter(OpalOID id);
+
+	/** Contains a Parameter
+	  */
+	BOOL Contains(const PString & id);
+
+    /** Value of a parameter
+	  */
+	H460_FeatureParameter & Value(const PString & id);
+
   //@}
 
 	/** Operator
@@ -954,6 +966,8 @@ class H460_FeatureOID : public H460_Feature
       OpalOID id  ///* Index position in the collection of the object.
     );
 
+  protected:
+    PString GetBase();
 
 };
 ///////////////////////////////////////////////////////////////////////////////

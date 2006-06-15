@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h4601.cxx,v $
+ * Revision 1.7  2006/06/15 15:34:25  shorne
+ * More updates
+ *
  * Revision 1.6  2006/06/11 00:18:35  csoutheren
  * Added pragma for old gcc versions
  *
@@ -611,7 +614,7 @@ BOOL H460_FeatureTable::ParameterIsUnique(const H460_FeatureID & id)
 	   return FALSE;
 }
 
-H460_FeatureParameter & H460_FeatureTable::operator()(PINDEX id)
+H460_FeatureParameter & H460_FeatureTable::operator[](PINDEX id)
 {
 	return GetParameter(id);
 }
@@ -894,19 +897,22 @@ H460_FeatureOID::H460_FeatureOID(OpalOID Identifier)
 {
 }
 
-H460_FeatureParameter & H460_FeatureOID::Add(OpalOID id, H460_FeatureContent & con)
+H460_FeatureParameter & H460_FeatureOID::Add(const PString & id, H460_FeatureContent & con)
 {
-	return AddParameter(new H460_FeatureID(id),con);
+	PString val = GetBase() + "." + id;
+	return AddParameter(new H460_FeatureID(OpalOID(val)),con);
 }
 
-void H460_FeatureOID::Remove(OpalOID id)
+void H460_FeatureOID::Remove(const PString & id)
 {
-	RemoveParameter(H460_FeatureID(id));
+	PString val = GetBase() + "." + id;
+	RemoveParameter(H460_FeatureID(OpalOID(val)));
 }
 
-void H460_FeatureOID::Replace(OpalOID id, H460_FeatureContent & con)
+void H460_FeatureOID::Replace(const PString & id, H460_FeatureContent & con)
 {
-	ReplaceParameter(H460_FeatureID(id),con);
+	PString val = GetBase() + "." + id;
+	ReplaceParameter(H460_FeatureID(OpalOID(val)),con);
 }
 
 
@@ -918,7 +924,26 @@ BOOL H460_FeatureOID::HasParameter(OpalOID id)
 
 H460_FeatureParameter & H460_FeatureOID::operator[](OpalOID id)
 {
-	return GetFeatureParameter(H460_FeatureID(id));
+	PString val = GetBase() + "." + id.AsString();
+	return GetFeatureParameter(H460_FeatureID(OpalOID(val)));
+}
+
+BOOL H460_FeatureOID::Contains(const PString & id) 
+{
+	PString val = GetBase() + "." + id;
+	return  H460_Feature::Contains(OpalOID(val));
+}
+
+H460_FeatureParameter & H460_FeatureOID::Value(const PString & id)
+{
+	PString val = GetBase() + "." + id;
+	return  H460_Feature::Value(OpalOID(val));
+}
+
+PString H460_FeatureOID::GetBase()
+{
+	OpalOID id = (H460_FeatureID)m_id;
+    return id.AsString();
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -1103,8 +1128,30 @@ BOOL H460_FeatureSet::CreateFeatureSetPDU(H225_FeatureSet & fs, unsigned Message
 			<< " PDU\n" << featdesc );
 #endif
 
+/// For some completely silly reason the ITU decided to send/receive H460 Messages in two places,
+/// for some messages it is included in the messsage body FeatureSet (to Advertise it) and others 
+/// in the genericData field (as actual information). Even though a Feature is generic data. It is beyond
+/// me to determine Why it is so. Anyway if a message is to be carried in the genericData field it is given
+/// the default category of supported. 
+
+     PINDEX cat;
+     switch (MessageID) {
+        case H460_MessageType::e_gatekeeperRequest:
+        case H460_MessageType::e_gatekeeperConfirm:
+        case H460_MessageType::e_gatekeeperReject:
+        case H460_MessageType::e_registrationRequest:
+        case H460_MessageType::e_registrationConfirm: 
+        case H460_MessageType::e_registrationReject:
+        case H460_MessageType::e_setup:					
+        case H460_MessageType::e_callProceeding:
+            cat = feat.FeatureCategory;
+            break;
+        default:
+            cat = H460_Feature::FeatureSupported;
+	 }
+
           buildPDU = TRUE;
-		   switch (feat.FeatureCategory) {			// Add it to the correct feature list
+		   switch (cat) {			// Add it to the correct feature list
 			   case H460_Feature::FeatureNeeded:
 
 				  if (featdesc.GetDataLength() > 0) {
@@ -1161,6 +1208,8 @@ PTRACE(6,"H460\tRead FeatureSet " << PTracePDU(MessageID) << " PDU");
    switch (MessageID) {
 	 case H460_MessageType::e_gatekeeperRequest:
 	 case H460_MessageType::e_gatekeeperConfirm:
+     case H460_MessageType::e_registrationRequest:
+     case H460_MessageType::e_registrationConfirm: 
 	 case H460_MessageType::e_setup:
 	 case H460_MessageType::e_callProceeding:
 		 ProcessFirstPDU(fs);

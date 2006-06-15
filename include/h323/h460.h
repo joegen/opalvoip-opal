@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h460.h,v $
+ * Revision 1.2  2006/06/15 15:34:25  shorne
+ * More updates
+ *
  * Revision 1.1  2006/05/27 07:24:00  hfriederich
  * Initial port of H.460 files from OpenH323 to OPAL
  *
@@ -39,27 +42,28 @@ class H460_MessageType
 {
   public:
     enum {
-      e_gatekeeperRequest,
-      e_gatekeeperConfirm,
-      e_gatekeeperReject,
-      e_registrationRequest,
-      e_registrationConfirm, 
-      e_registrationReject,
-      e_admissionRequest,
-      e_admissionConfirm,
-      e_admissionReject,
-      e_locationRequest,
-      e_locationConfirm,
-      e_locationReject,
-      e_nonStandardMessage,
-      e_serviceControlIndication,
-      e_serviceControlResponse,
-	  e_setup,
-      e_callProceeding,
-      e_connect,
-      e_alerting,
-      e_facility,
-	  e_releaseComplete
+      e_gatekeeperRequest           = 0xf0,
+      e_gatekeeperConfirm           = 0xf1,
+      e_gatekeeperReject            = 0xf2,
+      e_registrationRequest         = 0xf3,
+      e_registrationConfirm         = 0xf4, 
+      e_registrationReject          = 0xf5,
+      e_admissionRequest            = 0xf6,
+      e_admissionConfirm            = 0xf7,
+      e_admissionReject             = 0xf8,
+      e_locationRequest             = 0xf9,
+      e_locationConfirm             = 0xfa,
+      e_locationReject              = 0xfb,
+      e_nonStandardMessage          = 0xfc,
+      e_serviceControlIndication    = 0xfd,
+      e_serviceControlResponse      = 0xfe,
+	  e_setup						= 0x05,   // Match Q931 message id
+      e_callProceeding				= 0x02,   // Match Q931 message id
+      e_connect						= 0x07,   // Match Q931 message id
+      e_alerting					= 0x01,   // Match Q931 message id
+      e_facility					= 0x62,   // Match Q931 message id
+	  e_releaseComplete				= 0x5a,   // Match Q931 message id
+	  e_unallocated					= 0xff
     };
 };
 
