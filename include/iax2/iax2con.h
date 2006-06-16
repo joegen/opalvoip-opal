@@ -25,6 +25,10 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2con.h,v $
+ *  Revision 1.7  2006/06/16 01:47:08  dereksmithies
+ *  Get the OnHold features of IAX2 to work correctly.
+ *  Thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
+ *
  *  Revision 1.6  2005/09/05 01:19:43  dereksmithies
  *  add patches from Adrian Sietsma to avoid multiple hangup packets at call end,
  *  and stop the sending of ping/lagrq packets at call end. Many thanks.
@@ -376,6 +380,21 @@ class IAX2Connection : public OpalConnection
       value defined by FullFrameVoice::AudioSc */
   unsigned int ChooseCodec();
 
+  /**Return TRUE if the current connection is on hold.*/
+  virtual BOOL IsConnectionOnHold();
+  
+  /**Take the current connection off hold*/
+  virtual void RetrieveConnection();
+  
+  /**Put the current connection on hold, suspending all media streams.*/
+  virtual void HoldConnection();
+  
+  /**Signal that the remote side has put the connection on hold*/
+  void RemoteHoldConnection();
+  
+  /**Signal that the remote side has retrieved the connection*/
+  void RemoteRetrieveConnection();
+
  protected:
   
   /**@name Internal, protected methods, which are invoked only by this
@@ -395,6 +414,12 @@ class IAX2Connection : public OpalConnection
     
   /**The thread that processes the list of pending frames on this class */
   IAX2Processor * iax2Processor;
+  
+  /**Whether the connection is on hold locally */
+  BOOL            local_hold;
+  
+  /**Whether the connection is on hold remotely */
+  BOOL            remote_hold;
   //@}
 };
 
@@ -405,7 +430,7 @@ class IAX2Connection : public OpalConnection
 
 #endif // IAX_CONNECTION_H
 /* The comment below is magic for those who use emacs to edit this file. */
-/* With the comment below, the tab key does auto indent to 4 spaces.     */
+/* With the comment below, the tab key does auto indent to 2 spaces.     */
 
 /*
  * Local Variables:

@@ -27,6 +27,10 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: transmit.h,v $
+ *  Revision 1.3  2006/06/16 01:47:08  dereksmithies
+ *  Get the OnHold features of IAX2 to work correctly.
+ *  Thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
+ *
  *  Revision 1.2  2005/08/26 03:07:38  dereksmithies
  *  Change naming convention, so all class names contain the string "IAX2"
  *
@@ -53,7 +57,7 @@
 #pragma interface
 #endif
 
-/**Manage the transmission of etherenet packets on the specified
+/**Manage the transmission of ethernet packets on the specified
    port.  All transmitted packets are received from any of the current
    connections.  A separate thread is used to wait on the request to
    send packets.  Full frame packets, which have been resent the

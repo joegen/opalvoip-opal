@@ -25,6 +25,10 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: ies.h,v $
+ *  Revision 1.5  2006/06/16 01:47:08  dereksmithies
+ *  Get the OnHold features of IAX2 to work correctly.
+ *  Thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
+ *
  *  Revision 1.4  2006/01/31 03:28:47  csoutheren
  *  Removed compile warnings and changed functions args to const refs
  *
@@ -1359,6 +1363,9 @@ class IAX2IeMusicOnHold : public IAX2IeNone
       
   Contents are undefined if the network data is bogus/invalid */
   IAX2IeMusicOnHold(BYTE length, BYTE *srcData) : IAX2IeNone(length, srcData) { };
+  
+  /**Construct with a predefined value (Typically used prior to transmission)*/
+  IAX2IeMusicOnHold() : IAX2IeNone() { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
