@@ -26,6 +26,10 @@
  *
  *
  *  $Log: processor.h,v $
+ *  Revision 1.8  2006/06/16 01:47:08  dereksmithies
+ *  Get the OnHold features of IAX2 to work correctly.
+ *  Thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
+ *
  *  Revision 1.7  2005/09/05 01:19:43  dereksmithies
  *  add patches from Adrian Sietsma to avoid multiple hangup packets at call end,
  *  and stop the sending of ping/lagrq packets at call end. Many thanks.
@@ -311,6 +315,12 @@ class IAX2Processor : public PThread
      the call is terminating under iax2 control  */
   BOOL IsCallTerminating() { return callStatus & callTerminating; }
   
+  /**Put the remote connection on hold*/
+  void SendHold();
+  
+  /**Take the remote connection of hold*/
+  void SendHoldRelease();
+  
  protected:
   
   /**Reference to the global variable of this program */
@@ -411,6 +421,12 @@ class IAX2Processor : public PThread
   
   /**Cause the text full frames to go out for this text message*/
   void SendTextMessage(PString & message);
+  
+  /**Send a message to put the remote connection on hold*/
+  void SendQuelchMessage();
+  
+  /**Send a message to take the remote connection off hold*/
+  void SendUnQuelchMessage();
 
   /**Cause a sound frame (which is full or mini) to be sent. 
      The data in the array is already compressed. */
@@ -815,6 +831,12 @@ class IAX2Processor : public PThread
   /**Flag to indicate we have to answer this call (i.e. send a
      FullFrameSessionControl::answer packet). */
   BOOL answerCallNow;
+  
+  /**Flag to indicate we have to send hold call*/
+  BOOL holdCall;
+  
+  /**Flag to indicate we have to send hold release*/
+  BOOL holdReleaseCall;
 
   /**Flag to indicate we need to do a status query on the other
      end. this means, send a PING and a LAGRQ packet, which happens
@@ -844,7 +866,7 @@ class IAX2Processor : public PThread
      capability, define the list of remote capabilities */
   void CheckForRemoteCapabilities(IAX2FullFrameProtocol *src);
 
-  /**Status of encryption for this processor - by default, no encrytpion */
+  /**Status of encryption for this processor - by default, no encryption */
   IAX2Encryption encryption;
 };
 
