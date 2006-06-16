@@ -28,6 +28,10 @@
  *
  *
  * $Log: iax2con.cxx,v $
+ * Revision 1.8  2006/06/16 01:47:08  dereksmithies
+ * Get the OnHold features of IAX2 to work correctly.
+ * Thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
+ *
  * Revision 1.7  2005/09/05 01:19:43  dereksmithies
  * add patches from Adrian Sietsma to avoid multiple hangup packets at call end,
  * and stop the sending of ping/lagrq packets at call end. Many thanks.
@@ -402,7 +406,52 @@ unsigned int IAX2Connection::ChooseCodec()
   return IAX2FullFrameVoice::OpalNameToIax2Value(strm);
 }
 
+BOOL IAX2Connection::IsConnectionOnHold()
+{  
+  return (local_hold || remote_hold);
+}
 
+void IAX2Connection::HoldConnection()
+{
+  if (local_hold)
+    return;
+    
+  local_hold = TRUE;
+  PauseMediaStreams(TRUE);
+  endpoint.OnHold(*this);
+  
+  iax2Processor->SendHold();
+}
+
+void IAX2Connection::RetrieveConnection()
+{
+  if (!local_hold)
+    return;
+  
+  local_hold = FALSE;
+  PauseMediaStreams(FALSE);  
+  endpoint.OnHold(*this);
+  
+  iax2Processor->SendHoldRelease();
+}
+
+void IAX2Connection::RemoteHoldConnection()
+{
+  if (remote_hold)
+    return;
+    
+  remote_hold = TRUE;
+  endpoint.OnHold(*this);
+}
+
+void IAX2Connection::RemoteRetrieveConnection()
+{
+  if (!remote_hold)
+    return;
+    
+  remote_hold = FALSE;    
+  endpoint.OnHold(*this);
+}
 
 
 

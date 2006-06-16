@@ -27,6 +27,10 @@
  *
  *
  * $Log: processor.cxx,v $
+ * Revision 1.15  2006/06/16 01:47:08  dereksmithies
+ * Get the OnHold features of IAX2 to work correctly.
+ * Thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
+ *
  * Revision 1.14  2005/09/05 01:19:44  dereksmithies
  * add patches from Adrian Sietsma to avoid multiple hangup packets at call end,
  * and stop the sending of ping/lagrq packets at call end. Many thanks.
@@ -158,10 +162,10 @@ void IAX2WaitingForAck::PrintOn(ostream & strm) const
 PString IAX2WaitingForAck::GetResponseAsString() const
 {
   switch(response) {
-  case RingingAcked :  return PString("Received acknnowledgement of a Ringing message");
-  case AcceptAcked  :  return PString("Received acknnowledgement of a Accept message");
-  case AuthRepAcked :  return PString("Received acknnowledgement of a AuthRep message");
-  case AnswerAcked  :  return PString("Received acknnowledgement of a Answer message");
+  case RingingAcked :  return PString("Received acknowledgement of a Ringing message");
+  case AcceptAcked  :  return PString("Received acknowledgement of a Accept message");
+  case AuthRepAcked :  return PString("Received acknowledgement of a AuthRep message");
+  case AnswerAcked  :  return PString("Received acknowledgement of a Answer message");
   default:;
   }
   
@@ -210,6 +214,9 @@ IAX2Processor::IAX2Processor(IAX2EndPoint &ep)
   answerCallNow = FALSE;
   audioFrameDuration = 0;
   audioCompressedBytes = 0;
+  
+  holdCall = FALSE;
+  holdReleaseCall = FALSE;
 }
 
 IAX2Processor::~IAX2Processor()
@@ -598,6 +605,12 @@ void IAX2Processor::ProcessLists()
 
   if (answerCallNow)
     SendAnswerMessageToRemoteNode();
+    
+  if (holdCall)
+    SendQuelchMessage();
+  
+  if (holdReleaseCall)
+    SendUnQuelchMessage();
 
   if (statusCheckOtherEnd)
     DoStatusCheck();
@@ -689,6 +702,18 @@ void IAX2Processor::SendText(const PString & text)
   textList.AppendString(text);
 }
 
+void IAX2Processor::SendHold()
+{
+  //TODO: check if this var should be protected by a mutex
+  holdCall = TRUE;
+}
+
+void IAX2Processor::SendHoldRelease()
+{
+  //TODO: check if this var should be protected by a mutex
+  holdReleaseCall = TRUE;
+}
+
 void IAX2Processor::SendDtmfMessage(char  message)
 {
   IAX2FullFrameDtmf *f = new IAX2FullFrameDtmf(this, message);
@@ -698,6 +723,24 @@ void IAX2Processor::SendDtmfMessage(char  message)
 void IAX2Processor::SendTextMessage(PString & message)
 {
   IAX2FullFrameText *f = new IAX2FullFrameText(this, message);
+  TransmitFrameToRemoteEndpoint(f);
+}
+
+void IAX2Processor::SendQuelchMessage()
+{
+  holdCall = FALSE;
+  
+  IAX2FullFrameProtocol *f = new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdQuelch);
+  //we'll request that music is played to them because everyone likes music when they're on hold ;)
+  f->AppendIe(new IAX2IeMusicOnHold());
+  TransmitFrameToRemoteEndpoint(f);
+}
+
+void IAX2Processor::SendUnQuelchMessage()
+{
+  holdReleaseCall = FALSE;
+  
+  IAX2FullFrameProtocol *f = new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdUnquelch); 
   TransmitFrameToRemoteEndpoint(f);
 }
 
@@ -890,11 +933,11 @@ void IAX2Processor::ProcessNetworkFrame(IAX2FullFrameSessionControl * src)
     break;
     
   case IAX2FullFrameSessionControl::callOnHold:      // Call has been placed on hold
-    con->PauseMediaStreams(TRUE);
+    con->RemoteHoldConnection();
     break;
     
   case IAX2FullFrameSessionControl::callHoldRelease: // Call is no longer on hold
-    con->PauseMediaStreams(FALSE);
+    con->RemoteRetrieveConnection();
     break;
     
   case IAX2FullFrameSessionControl::stopSounds:      // Moving from call setup to media flowing
