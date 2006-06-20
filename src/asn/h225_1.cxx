@@ -1173,6 +1173,7 @@ const static PASN_Names Names_H225_AliasAddress[]={
      ,{"email_ID",4}
      ,{"partyNumber",5}
      ,{"mobileUIM",6}
+     ,{"isupNumber",7}
 };
 #endif
 //
@@ -1182,7 +1183,7 @@ const static PASN_Names Names_H225_AliasAddress[]={
 H225_AliasAddress::H225_AliasAddress(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-    ,(const PASN_Names *)Names_H225_AliasAddress,7
+    ,(const PASN_Names *)Names_H225_AliasAddress,8
 #endif
 )
 {
@@ -1255,6 +1256,28 @@ H225_AliasAddress::operator const H225_MobileUIM &() const
 }
 
 
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+H225_AliasAddress::operator H225_IsupNumber &() const
+#else
+H225_AliasAddress::operator H225_IsupNumber &()
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H225_IsupNumber), PInvalidCast);
+#endif
+  return *(H225_IsupNumber *)choice;
+}
+
+
+H225_AliasAddress::operator const H225_IsupNumber &() const
+#endif
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H225_IsupNumber), PInvalidCast);
+#endif
+  return *(H225_IsupNumber *)choice;
+}
+
+
 BOOL H225_AliasAddress::CreateObject()
 {
   switch (tag) {
@@ -1283,6 +1306,9 @@ BOOL H225_AliasAddress::CreateObject()
       return TRUE;
     case e_mobileUIM :
       choice = new H225_MobileUIM();
+      return TRUE;
+    case e_isupNumber :
+      choice = new H225_IsupNumber();
       return TRUE;
   }
 
@@ -1883,6 +1909,204 @@ PObject * H225_GSM_UIM::Clone() const
   PAssert(IsClass(H225_GSM_UIM::Class()), PInvalidCast);
 #endif
   return new H225_GSM_UIM(*this);
+}
+
+
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_IsupNumber[]={
+      {"e164Number",0}
+     ,{"dataPartyNumber",1}
+     ,{"telexPartyNumber",2}
+     ,{"privateNumber",3}
+     ,{"nationalStandardPartyNumber",4}
+};
+#endif
+//
+// IsupNumber
+//
+
+H225_IsupNumber::H225_IsupNumber(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Choice(tag, tagClass, 5, TRUE
+#ifndef PASN_NOPRINTON
+    ,(const PASN_Names *)Names_H225_IsupNumber,5
+#endif
+)
+{
+}
+
+
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+H225_IsupNumber::operator H225_IsupPublicPartyNumber &() const
+#else
+H225_IsupNumber::operator H225_IsupPublicPartyNumber &()
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H225_IsupPublicPartyNumber), PInvalidCast);
+#endif
+  return *(H225_IsupPublicPartyNumber *)choice;
+}
+
+
+H225_IsupNumber::operator const H225_IsupPublicPartyNumber &() const
+#endif
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H225_IsupPublicPartyNumber), PInvalidCast);
+#endif
+  return *(H225_IsupPublicPartyNumber *)choice;
+}
+
+
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+H225_IsupNumber::operator H225_IsupDigits &() const
+#else
+H225_IsupNumber::operator H225_IsupDigits &()
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H225_IsupDigits), PInvalidCast);
+#endif
+  return *(H225_IsupDigits *)choice;
+}
+
+
+H225_IsupNumber::operator const H225_IsupDigits &() const
+#endif
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H225_IsupDigits), PInvalidCast);
+#endif
+  return *(H225_IsupDigits *)choice;
+}
+
+
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+H225_IsupNumber::operator H225_IsupPrivatePartyNumber &() const
+#else
+H225_IsupNumber::operator H225_IsupPrivatePartyNumber &()
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H225_IsupPrivatePartyNumber), PInvalidCast);
+#endif
+  return *(H225_IsupPrivatePartyNumber *)choice;
+}
+
+
+H225_IsupNumber::operator const H225_IsupPrivatePartyNumber &() const
+#endif
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H225_IsupPrivatePartyNumber), PInvalidCast);
+#endif
+  return *(H225_IsupPrivatePartyNumber *)choice;
+}
+
+
+BOOL H225_IsupNumber::CreateObject()
+{
+  switch (tag) {
+    case e_e164Number :
+      choice = new H225_IsupPublicPartyNumber();
+      return TRUE;
+    case e_dataPartyNumber :
+    case e_telexPartyNumber :
+    case e_nationalStandardPartyNumber :
+      choice = new H225_IsupDigits();
+      return TRUE;
+    case e_privateNumber :
+      choice = new H225_IsupPrivatePartyNumber();
+      return TRUE;
+  }
+
+  choice = NULL;
+  return FALSE;
+}
+
+
+PObject * H225_IsupNumber::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H225_IsupNumber::Class()), PInvalidCast);
+#endif
+  return new H225_IsupNumber(*this);
+}
+
+
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_NatureOfAddress[]={
+      {"unknown",0}
+     ,{"subscriberNumber",1}
+     ,{"nationalNumber",2}
+     ,{"internationalNumber",3}
+     ,{"networkSpecificNumber",4}
+     ,{"routingNumberNationalFormat",5}
+     ,{"routingNumberNetworkSpecificFormat",6}
+     ,{"routingNumberWithCalledDirectoryNumber",7}
+};
+#endif
+//
+// NatureOfAddress
+//
+
+H225_NatureOfAddress::H225_NatureOfAddress(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Choice(tag, tagClass, 8, TRUE
+#ifndef PASN_NOPRINTON
+    ,(const PASN_Names *)Names_H225_NatureOfAddress,8
+#endif
+)
+{
+}
+
+
+BOOL H225_NatureOfAddress::CreateObject()
+{
+  choice = (tag <= e_routingNumberWithCalledDirectoryNumber) ? new PASN_Null() : NULL;
+  return choice != NULL;
+}
+
+
+PObject * H225_NatureOfAddress::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H225_NatureOfAddress::Class()), PInvalidCast);
+#endif
+  return new H225_NatureOfAddress(*this);
+}
+
+
+//
+// IsupDigits
+//
+
+H225_IsupDigits::H225_IsupDigits(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_IA5String(tag, tagClass)
+{
+  SetConstraints(PASN_Object::FixedConstraint, 1, 128);
+  SetCharacterSet(PASN_Object::FixedConstraint, "0123456789ABCDE");
+}
+
+
+H225_IsupDigits & H225_IsupDigits::operator=(const char * v)
+{
+  SetValue(v);
+  return *this;
+}
+
+
+H225_IsupDigits & H225_IsupDigits::operator=(const PString & v)
+{
+  SetValue(v);
+  return *this;
+}
+
+
+PObject * H225_IsupDigits::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H225_IsupDigits::Class()), PInvalidCast);
+#endif
+  return new H225_IsupDigits(*this);
 }
 
 
@@ -4383,6 +4607,43 @@ PObject * H225_TransportChannelInfo::Clone() const
 
 
 #ifndef PASN_NOPRINTON
+const static PASN_Names Names_H225_RehomingModel[]={
+      {"gatekeeperBased",0}
+     ,{"endpointBased",1}
+};
+#endif
+//
+// RehomingModel
+//
+
+H225_RehomingModel::H225_RehomingModel(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Choice(tag, tagClass, 2, FALSE
+#ifndef PASN_NOPRINTON
+    ,(const PASN_Names *)Names_H225_RehomingModel,2
+#endif
+)
+{
+}
+
+
+BOOL H225_RehomingModel::CreateObject()
+{
+  choice = (tag <= e_endpointBased) ? new PASN_Null() : NULL;
+  return choice != NULL;
+}
+
+
+PObject * H225_RehomingModel::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H225_RehomingModel::Class()), PInvalidCast);
+#endif
+  return new H225_RehomingModel(*this);
+}
+
+
+
+#ifndef PASN_NOPRINTON
 const static PASN_Names Names_H225_RasMessage[]={
       {"gatekeeperRequest",0}
      ,{"gatekeeperConfirm",1}
@@ -5378,6 +5639,7 @@ const static PASN_Names Names_H225_RegistrationRejectReason[]={
      ,{"genericDataReason",15}
      ,{"neededFeatureNotSupported",16}
      ,{"securityError",17}
+     ,{"registerWithAssignedGK",18}
 };
 #endif
 //
@@ -5387,7 +5649,7 @@ const static PASN_Names Names_H225_RegistrationRejectReason[]={
 H225_RegistrationRejectReason::H225_RegistrationRejectReason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 8, TRUE
 #ifndef PASN_NOPRINTON
-    ,(const PASN_Names *)Names_H225_RegistrationRejectReason,18
+    ,(const PASN_Names *)Names_H225_RegistrationRejectReason,19
 #endif
 )
 {
@@ -5478,6 +5740,7 @@ BOOL H225_RegistrationRejectReason::CreateObject()
     case e_additiveRegistrationNotSupported :
     case e_genericDataReason :
     case e_neededFeatureNotSupported :
+    case e_registerWithAssignedGK :
       choice = new PASN_Null();
       return TRUE;
     case e_duplicateAlias :
@@ -5514,6 +5777,7 @@ const static PASN_Names Names_H225_UnregRequestReason[]={
      ,{"undefinedReason",3}
      ,{"maintenance",4}
      ,{"securityError",5}
+     ,{"registerWithAssignedGK",6}
 };
 #endif
 //
@@ -5523,7 +5787,7 @@ const static PASN_Names Names_H225_UnregRequestReason[]={
 H225_UnregRequestReason::H225_UnregRequestReason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 4, TRUE
 #ifndef PASN_NOPRINTON
-    ,(const PASN_Names *)Names_H225_UnregRequestReason,6
+    ,(const PASN_Names *)Names_H225_UnregRequestReason,7
 #endif
 )
 {
@@ -5560,6 +5824,7 @@ BOOL H225_UnregRequestReason::CreateObject()
     case e_securityDenial :
     case e_undefinedReason :
     case e_maintenance :
+    case e_registerWithAssignedGK :
       choice = new PASN_Null();
       return TRUE;
     case e_securityError :
@@ -5739,6 +6004,7 @@ const static PASN_Names Names_H225_TransportQOS[]={
       {"endpointControlled",0}
      ,{"gatekeeperControlled",1}
      ,{"noControl",2}
+     ,{"qOSCapabilities",3}
 };
 #endif
 //
@@ -5748,17 +6014,51 @@ const static PASN_Names Names_H225_TransportQOS[]={
 H225_TransportQOS::H225_TransportQOS(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-    ,(const PASN_Names *)Names_H225_TransportQOS,3
+    ,(const PASN_Names *)Names_H225_TransportQOS,4
 #endif
 )
 {
 }
 
 
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+H225_TransportQOS::operator H225_ArrayOf_QOSCapability &() const
+#else
+H225_TransportQOS::operator H225_ArrayOf_QOSCapability &()
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H225_ArrayOf_QOSCapability), PInvalidCast);
+#endif
+  return *(H225_ArrayOf_QOSCapability *)choice;
+}
+
+
+H225_TransportQOS::operator const H225_ArrayOf_QOSCapability &() const
+#endif
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H225_ArrayOf_QOSCapability), PInvalidCast);
+#endif
+  return *(H225_ArrayOf_QOSCapability *)choice;
+}
+
+
 BOOL H225_TransportQOS::CreateObject()
 {
-  choice = (tag <= e_noControl) ? new PASN_Null() : NULL;
-  return choice != NULL;
+  switch (tag) {
+    case e_endpointControlled :
+    case e_gatekeeperControlled :
+    case e_noControl :
+      choice = new PASN_Null();
+      return TRUE;
+    case e_qOSCapabilities :
+      choice = new H225_ArrayOf_QOSCapability();
+      choice->SetConstraints(PASN_Object::FixedConstraint, 1, 256);
+      return TRUE;
+  }
+
+  choice = NULL;
+  return FALSE;
 }
 
 
@@ -5952,6 +6252,7 @@ const static PASN_Names Names_H225_AdmissionRejectReason[]={
      ,{"securityDHmismatch",19}
      ,{"noRouteToDestination",20}
      ,{"unallocatedNumber",21}
+     ,{"registerWithAssignedGK",22}
 };
 #endif
 //
@@ -5961,7 +6262,7 @@ const static PASN_Names Names_H225_AdmissionRejectReason[]={
 H225_AdmissionRejectReason::H225_AdmissionRejectReason(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 8, TRUE
 #ifndef PASN_NOPRINTON
-    ,(const PASN_Names *)Names_H225_AdmissionRejectReason,22
+    ,(const PASN_Names *)Names_H225_AdmissionRejectReason,23
 #endif
 )
 {
@@ -6035,6 +6336,7 @@ BOOL H225_AdmissionRejectReason::CreateObject()
     case e_securityDHmismatch :
     case e_noRouteToDestination :
     case e_unallocatedNumber :
+    case e_registerWithAssignedGK :
       choice = new PASN_Null();
       return TRUE;
     case e_routeCallToSCN :

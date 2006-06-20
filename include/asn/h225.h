@@ -495,6 +495,7 @@ class H225_NonStandardIdentifier : public PASN_Choice
 class H225_TransportAddress;
 class H225_PartyNumber;
 class H225_MobileUIM;
+class H225_IsupNumber;
 
 class H225_AliasAddress : public PASN_Choice
 {
@@ -511,7 +512,8 @@ class H225_AliasAddress : public PASN_Choice
       e_transportID,
       e_email_ID,
       e_partyNumber,
-      e_mobileUIM
+      e_mobileUIM,
+      e_isupNumber
     };
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
@@ -531,6 +533,12 @@ class H225_AliasAddress : public PASN_Choice
 #else
     operator H225_MobileUIM &();
     operator const H225_MobileUIM &() const;
+#endif
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+    operator H225_IsupNumber &() const;
+#else
+    operator H225_IsupNumber &();
+    operator const H225_IsupNumber &() const;
 #endif
 
     BOOL CreateObject();
@@ -785,6 +793,100 @@ class H225_GSM_UIM : public PASN_Sequence
     void PrintOn(ostream & strm) const;
 #endif
     Comparison Compare(const PObject & obj) const;
+    PObject * Clone() const;
+};
+
+
+//
+// IsupNumber
+//
+
+class H225_IsupPublicPartyNumber;
+class H225_IsupDigits;
+class H225_IsupPrivatePartyNumber;
+
+class H225_IsupNumber : public PASN_Choice
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H225_IsupNumber, PASN_Choice);
+#endif
+  public:
+    H225_IsupNumber(unsigned tag = 0, TagClass tagClass = UniversalTagClass);
+
+    enum Choices {
+      e_e164Number,
+      e_dataPartyNumber,
+      e_telexPartyNumber,
+      e_privateNumber,
+      e_nationalStandardPartyNumber
+    };
+
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+    operator H225_IsupPublicPartyNumber &() const;
+#else
+    operator H225_IsupPublicPartyNumber &();
+    operator const H225_IsupPublicPartyNumber &() const;
+#endif
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+    operator H225_IsupDigits &() const;
+#else
+    operator H225_IsupDigits &();
+    operator const H225_IsupDigits &() const;
+#endif
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+    operator H225_IsupPrivatePartyNumber &() const;
+#else
+    operator H225_IsupPrivatePartyNumber &();
+    operator const H225_IsupPrivatePartyNumber &() const;
+#endif
+
+    BOOL CreateObject();
+    PObject * Clone() const;
+};
+
+
+//
+// NatureOfAddress
+//
+
+class H225_NatureOfAddress : public PASN_Choice
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H225_NatureOfAddress, PASN_Choice);
+#endif
+  public:
+    H225_NatureOfAddress(unsigned tag = 0, TagClass tagClass = UniversalTagClass);
+
+    enum Choices {
+      e_unknown,
+      e_subscriberNumber,
+      e_nationalNumber,
+      e_internationalNumber,
+      e_networkSpecificNumber,
+      e_routingNumberNationalFormat,
+      e_routingNumberNetworkSpecificFormat,
+      e_routingNumberWithCalledDirectoryNumber
+    };
+
+    BOOL CreateObject();
+    PObject * Clone() const;
+};
+
+
+//
+// IsupDigits
+//
+
+class H225_IsupDigits : public PASN_IA5String
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H225_IsupDigits, PASN_IA5String);
+#endif
+  public:
+    H225_IsupDigits(unsigned tag = UniversalIA5String, TagClass tagClass = UniversalTagClass);
+
+    H225_IsupDigits & operator=(const char * v);
+    H225_IsupDigits & operator=(const PString & v);
     PObject * Clone() const;
 };
 
@@ -1812,6 +1914,28 @@ class H225_TransportChannelInfo : public PASN_Sequence
 
 
 //
+// RehomingModel
+//
+
+class H225_RehomingModel : public PASN_Choice
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H225_RehomingModel, PASN_Choice);
+#endif
+  public:
+    H225_RehomingModel(unsigned tag = 0, TagClass tagClass = UniversalTagClass);
+
+    enum Choices {
+      e_gatekeeperBased,
+      e_endpointBased
+    };
+
+    BOOL CreateObject();
+    PObject * Clone() const;
+};
+
+
+//
 // RasMessage
 //
 
@@ -2168,7 +2292,8 @@ class H225_RegistrationRejectReason : public PASN_Choice
       e_invalidTerminalAliases,
       e_genericDataReason,
       e_neededFeatureNotSupported,
-      e_securityError
+      e_securityError,
+      e_registerWithAssignedGK
     };
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
@@ -2215,7 +2340,8 @@ class H225_UnregRequestReason : public PASN_Choice
       e_securityDenial,
       e_undefinedReason,
       e_maintenance,
-      e_securityError
+      e_securityError,
+      e_registerWithAssignedGK
     };
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
@@ -2315,6 +2441,8 @@ class H225_CallModel : public PASN_Choice
 // TransportQOS
 //
 
+class H225_ArrayOf_QOSCapability;
+
 class H225_TransportQOS : public PASN_Choice
 {
 #ifndef PASN_LEANANDMEAN
@@ -2326,8 +2454,16 @@ class H225_TransportQOS : public PASN_Choice
     enum Choices {
       e_endpointControlled,
       e_gatekeeperControlled,
-      e_noControl
+      e_noControl,
+      e_qOSCapabilities
     };
+
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+    operator H225_ArrayOf_QOSCapability &() const;
+#else
+    operator H225_ArrayOf_QOSCapability &();
+    operator const H225_ArrayOf_QOSCapability &() const;
+#endif
 
     BOOL CreateObject();
     PObject * Clone() const;
@@ -2415,7 +2551,8 @@ class H225_AdmissionRejectReason : public PASN_Choice
       e_securityErrors,
       e_securityDHmismatch,
       e_noRouteToDestination,
-      e_unallocatedNumber
+      e_unallocatedNumber,
+      e_registerWithAssignedGK
     };
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
@@ -3836,6 +3973,24 @@ class H225_ArrayOf_H248PackagesDescriptor : public PASN_Array
 
 
 //
+// RegistrationRequest_language
+//
+
+class H225_RegistrationRequest_language : public PASN_Array
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H225_RegistrationRequest_language, PASN_Array);
+#endif
+  public:
+    H225_RegistrationRequest_language(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    PASN_Object * CreateObject() const;
+    PASN_IA5String & operator[](PINDEX i) const;
+    PObject * Clone() const;
+};
+
+
+//
 // ArrayOf_RasUsageSpecification
 //
 
@@ -3884,6 +4039,26 @@ class H225_RegistrationRejectReason_invalidTerminalAliases : public PASN_Sequenc
     void PrintOn(ostream & strm) const;
 #endif
     Comparison Compare(const PObject & obj) const;
+    PObject * Clone() const;
+};
+
+
+//
+// ArrayOf_QOSCapability
+//
+
+class MULTIMEDIA_QOSCapability;
+
+class H225_ArrayOf_QOSCapability : public PASN_Array
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H225_ArrayOf_QOSCapability, PASN_Array);
+#endif
+  public:
+    H225_ArrayOf_QOSCapability(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    PASN_Object * CreateObject() const;
+    H245_QOSCapability & operator[](PINDEX i) const;
     PObject * Clone() const;
 };
 
@@ -3942,6 +4117,24 @@ class H225_ArrayOf_BandwidthDetails : public PASN_Array
 
     PASN_Object * CreateObject() const;
     H225_BandwidthDetails & operator[](PINDEX i) const;
+    PObject * Clone() const;
+};
+
+
+//
+// LocationRequest_language
+//
+
+class H225_LocationRequest_language : public PASN_Array
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H225_LocationRequest_language, PASN_Array);
+#endif
+  public:
+    H225_LocationRequest_language(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    PASN_Object * CreateObject() const;
+    PASN_IA5String & operator[](PINDEX i) const;
     PObject * Clone() const;
 };
 
@@ -4450,6 +4643,58 @@ class H225_ANSI_41_UIM : public PASN_Sequence
     PASN_OctetString m_qualificationInformationCode;
     PASN_IA5String m_sesn;
     PASN_IA5String m_soc;
+
+    PINDEX GetDataLength() const;
+    BOOL Decode(PASN_Stream & strm);
+    void Encode(PASN_Stream & strm) const;
+#ifndef PASN_NOPRINTON
+    void PrintOn(ostream & strm) const;
+#endif
+    Comparison Compare(const PObject & obj) const;
+    PObject * Clone() const;
+};
+
+
+//
+// IsupPublicPartyNumber
+//
+
+class H225_IsupPublicPartyNumber : public PASN_Sequence
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H225_IsupPublicPartyNumber, PASN_Sequence);
+#endif
+  public:
+    H225_IsupPublicPartyNumber(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    H225_NatureOfAddress m_natureOfAddress;
+    H225_IsupDigits m_address;
+
+    PINDEX GetDataLength() const;
+    BOOL Decode(PASN_Stream & strm);
+    void Encode(PASN_Stream & strm) const;
+#ifndef PASN_NOPRINTON
+    void PrintOn(ostream & strm) const;
+#endif
+    Comparison Compare(const PObject & obj) const;
+    PObject * Clone() const;
+};
+
+
+//
+// IsupPrivatePartyNumber
+//
+
+class H225_IsupPrivatePartyNumber : public PASN_Sequence
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H225_IsupPrivatePartyNumber, PASN_Sequence);
+#endif
+  public:
+    H225_IsupPrivatePartyNumber(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    H225_PrivateTypeOfNumber m_privateTypeOfNumber;
+    H225_IsupDigits m_address;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -5190,7 +5435,9 @@ class H225_GatekeeperConfirm : public PASN_Sequence
       e_integrity,
       e_integrityCheckValue,
       e_featureSet,
-      e_genericData
+      e_genericData,
+      e_assignedGatekeeper,
+      e_rehomingModel
     };
 
     H225_RequestSeqNum m_requestSeqNum;
@@ -5207,6 +5454,8 @@ class H225_GatekeeperConfirm : public PASN_Sequence
     H225_ICV m_integrityCheckValue;
     H225_FeatureSet m_featureSet;
     H225_ArrayOf_GenericData m_genericData;
+    H225_AlternateGK m_assignedGatekeeper;
+    H225_RehomingModel m_rehomingModel;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -5285,7 +5534,8 @@ class H225_RegistrationReject : public PASN_Sequence
       e_cryptoTokens,
       e_integrityCheckValue,
       e_featureSet,
-      e_genericData
+      e_genericData,
+      e_assignedGatekeeper
     };
 
     H225_RequestSeqNum m_requestSeqNum;
@@ -5299,6 +5549,7 @@ class H225_RegistrationReject : public PASN_Sequence
     H225_ICV m_integrityCheckValue;
     H225_FeatureSet m_featureSet;
     H225_ArrayOf_GenericData m_genericData;
+    H225_AlternateGK m_assignedGatekeeper;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -5336,7 +5587,8 @@ class H225_UnregistrationRequest : public PASN_Sequence
       e_endpointAliasPattern,
       e_supportedPrefixes,
       e_alternateGatekeeper,
-      e_genericData
+      e_genericData,
+      e_assignedGatekeeper
     };
 
     H225_RequestSeqNum m_requestSeqNum;
@@ -5354,6 +5606,7 @@ class H225_UnregistrationRequest : public PASN_Sequence
     H225_ArrayOf_SupportedPrefix m_supportedPrefixes;
     H225_ArrayOf_AlternateGK m_alternateGatekeeper;
     H225_ArrayOf_GenericData m_genericData;
+    H225_AlternateGK m_assignedGatekeeper;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -5383,7 +5636,8 @@ class H225_UnregistrationConfirm : public PASN_Sequence
       e_tokens,
       e_cryptoTokens,
       e_integrityCheckValue,
-      e_genericData
+      e_genericData,
+      e_assignedGatekeeper
     };
 
     H225_RequestSeqNum m_requestSeqNum;
@@ -5392,6 +5646,7 @@ class H225_UnregistrationConfirm : public PASN_Sequence
     H225_ArrayOf_CryptoH323Token m_cryptoTokens;
     H225_ICV m_integrityCheckValue;
     H225_ArrayOf_GenericData m_genericData;
+    H225_AlternateGK m_assignedGatekeeper;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -5466,7 +5721,8 @@ class H225_AdmissionReject : public PASN_Sequence
       e_integrityCheckValue,
       e_serviceControl,
       e_featureSet,
-      e_genericData
+      e_genericData,
+      e_assignedGatekeeper
     };
 
     H225_RequestSeqNum m_requestSeqNum;
@@ -5480,6 +5736,7 @@ class H225_AdmissionReject : public PASN_Sequence
     H225_ArrayOf_ServiceControlSession m_serviceControl;
     H225_FeatureSet m_featureSet;
     H225_ArrayOf_GenericData m_genericData;
+    H225_AlternateGK m_assignedGatekeeper;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -5645,7 +5902,8 @@ class H225_InfoRequest : public PASN_Sequence
       e_segmentedResponseSupported,
       e_nextSegmentRequested,
       e_capacityInfoRequested,
-      e_genericData
+      e_genericData,
+      e_assignedGatekeeper
     };
 
     H225_RequestSeqNum m_requestSeqNum;
@@ -5663,6 +5921,7 @@ class H225_InfoRequest : public PASN_Sequence
     PASN_Integer m_nextSegmentRequested;
     PASN_Null m_capacityInfoRequested;
     H225_ArrayOf_GenericData m_genericData;
+    H225_AlternateGK m_assignedGatekeeper;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -6749,7 +7008,10 @@ class H225_RegistrationConfirm : public PASN_Sequence
       e_featureServerAlias,
       e_capacityReportingSpec,
       e_featureSet,
-      e_genericData
+      e_genericData,
+      e_assignedGatekeeper,
+      e_rehomingModel,
+      e_transportQOS
     };
 
     H225_RequestSeqNum m_requestSeqNum;
@@ -6776,6 +7038,9 @@ class H225_RegistrationConfirm : public PASN_Sequence
     H225_CapacityReportingSpecification m_capacityReportingSpec;
     H225_FeatureSet m_featureSet;
     H225_ArrayOf_GenericData m_genericData;
+    H225_AlternateGK m_assignedGatekeeper;
+    H225_RehomingModel m_rehomingModel;
+    H225_TransportQOS m_transportQOS;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -6813,7 +7078,8 @@ class H225_BandwidthRequest : public PASN_Sequence
       e_capacity,
       e_usageInformation,
       e_bandwidthDetails,
-      e_genericData
+      e_genericData,
+      e_transportQOS
     };
 
     H225_RequestSeqNum m_requestSeqNum;
@@ -6834,6 +7100,7 @@ class H225_BandwidthRequest : public PASN_Sequence
     H225_RasUsageInformation m_usageInformation;
     H225_ArrayOf_BandwidthDetails m_bandwidthDetails;
     H225_ArrayOf_GenericData m_genericData;
+    H225_TransportQOS m_transportQOS;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -6864,7 +7131,8 @@ class H225_BandwidthConfirm : public PASN_Sequence
       e_cryptoTokens,
       e_integrityCheckValue,
       e_capacity,
-      e_genericData
+      e_genericData,
+      e_transportQOS
     };
 
     H225_RequestSeqNum m_requestSeqNum;
@@ -6875,6 +7143,7 @@ class H225_BandwidthConfirm : public PASN_Sequence
     H225_ICV m_integrityCheckValue;
     H225_CallCapacity m_capacity;
     H225_ArrayOf_GenericData m_genericData;
+    H225_TransportQOS m_transportQOS;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -7131,7 +7400,9 @@ class H225_GatekeeperRequest : public PASN_Sequence
       e_integrityCheckValue,
       e_supportsAltGK,
       e_featureSet,
-      e_genericData
+      e_genericData,
+      e_supportsAssignedGK,
+      e_assignedGatekeeper
     };
 
     H225_RequestSeqNum m_requestSeqNum;
@@ -7152,6 +7423,8 @@ class H225_GatekeeperRequest : public PASN_Sequence
     PASN_Null m_supportsAltGK;
     H225_FeatureSet m_featureSet;
     H225_ArrayOf_GenericData m_genericData;
+    PASN_Boolean m_supportsAssignedGK;
+    H225_AlternateGK m_assignedGatekeeper;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -7202,7 +7475,11 @@ class H225_RegistrationRequest : public PASN_Sequence
       e_featureSet,
       e_genericData,
       e_restart,
-      e_supportsACFSequences
+      e_supportsACFSequences,
+      e_supportsAssignedGK,
+      e_assignedGatekeeper,
+      e_transportQOS,
+      e_language
     };
 
     H225_RequestSeqNum m_requestSeqNum;
@@ -7238,6 +7515,10 @@ class H225_RegistrationRequest : public PASN_Sequence
     H225_ArrayOf_GenericData m_genericData;
     PASN_Null m_restart;
     PASN_Null m_supportsACFSequences;
+    PASN_Boolean m_supportsAssignedGK;
+    H225_AlternateGK m_assignedGatekeeper;
+    H225_TransportQOS m_transportQOS;
+    H225_RegistrationRequest_language m_language;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -7374,7 +7655,8 @@ class H225_AdmissionConfirm : public PASN_Sequence
       e_multipleCalls,
       e_featureSet,
       e_genericData,
-      e_modifiedSrcInfo
+      e_modifiedSrcInfo,
+      e_assignedGatekeeper
     };
 
     H225_RequestSeqNum m_requestSeqNum;
@@ -7405,6 +7687,7 @@ class H225_AdmissionConfirm : public PASN_Sequence
     H225_FeatureSet m_featureSet;
     H225_ArrayOf_GenericData m_genericData;
     H225_ArrayOf_AliasAddress m_modifiedSrcInfo;
+    H225_AlternateGK m_assignedGatekeeper;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -7447,7 +7730,8 @@ class H225_LocationRequest : public PASN_Sequence
       e_callIdentifier,
       e_bandWidth,
       e_sourceEndpointInfo,
-      e_canMapSrcAlias
+      e_canMapSrcAlias,
+      e_language
     };
 
     H225_RequestSeqNum m_requestSeqNum;
@@ -7471,6 +7755,7 @@ class H225_LocationRequest : public PASN_Sequence
     H225_BandWidth m_bandWidth;
     H225_ArrayOf_AliasAddress m_sourceEndpointInfo;
     PASN_Boolean m_canMapSrcAlias;
+    H225_LocationRequest_language m_language;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -7629,7 +7914,8 @@ class H225_DisengageConfirm : public PASN_Sequence
       e_capacity,
       e_circuitInfo,
       e_usageInformation,
-      e_genericData
+      e_genericData,
+      e_assignedGatekeeper
     };
 
     H225_RequestSeqNum m_requestSeqNum;
@@ -7641,6 +7927,7 @@ class H225_DisengageConfirm : public PASN_Sequence
     H225_CircuitInfo m_circuitInfo;
     H225_RasUsageInformation m_usageInformation;
     H225_ArrayOf_GenericData m_genericData;
+    H225_AlternateGK m_assignedGatekeeper;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
