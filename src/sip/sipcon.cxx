@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2154  2006/06/15 17:41:34  dsandras
+ * Revision 1.2155  2006/06/20 05:23:58  csoutheren
+ * Ignore INVITEs that arrive via different route for same call
+ * Ensure CANCELs are sent for all INVITEs in all cases
+ *
+ * Revision 2.153  2006/06/15 17:41:34  dsandras
  * Definitely fixed recently introduced bug when forwarding calls.
  *
  * Revision 2.152  2006/06/15 00:29:58  csoutheren
@@ -785,9 +789,22 @@ void SIPConnection::OnReleased()
       break;
 
     case ReleaseWithCANCEL :
-      for (PINDEX i = 0; i < invitations.GetSize(); i++) {
-        if (invitations[i].SendCANCEL())
-          invitations[i].Wait();
+      {
+        std::vector<BOOL> statuses;
+        statuses.resize(invitations.GetSize());
+        PINDEX i;
+        for (i = 0; i < invitations.GetSize(); i++) {
+          PTRACE(3, "SIP\tCancelling transaction " << i << " of " << invitations.GetSize());
+          statuses[i] = invitations[i].SendCANCEL();
+        }
+        for (i = 0; i < invitations.GetSize(); i++) {
+          if (statuses[i]) {
+            invitations[i].Wait();
+            PTRACE(3, "SIP\tTransaction " << i << " cancelled");
+          } else {
+            PTRACE(3, "SIP\tCould not cancel transaction " << i);
+          }
+        }
       }
   }
 
@@ -1702,12 +1719,21 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   BOOL isReinvite = FALSE;
   BOOL sdpFailure = TRUE;
  
-  // Ignore duplicate INVITEs
-  if (originalInvite && (originalInvite->GetMIME().GetCSeq() == request.GetMIME().GetCSeq())) {
-    PTRACE(2, "SIP\tIgnoring duplicate INVITE from " << request.GetURI());
-    return;
+  if (originalInvite != NULL) {
+
+    // Ignore duplicate INVITEs
+    if (originalInvite->GetMIME().GetCSeq() == request.GetMIME().GetCSeq()) {
+      PTRACE(2, "SIP\tIgnoring duplicate INVITE from " << request.GetURI());
+      return;
+    }
+
+    // Ignore INVITEs that arrive via a different branch
+    if (originalInvite->GetMIME().GetCallID() == request.GetMIME().GetCallID()) {
+      PTRACE(2, "SIP\tIgnoring duplicate INVITE arrived by different branch from " << request.GetURI());
+      return;
+    }
   }
-  
+
   // Is Re-INVITE?
   if (phase == EstablishedPhase 
       && ((!IsOriginating() && originalInvite != NULL)
@@ -2014,7 +2040,6 @@ void SIPConnection::OnReceivedCANCEL(SIP_PDU & request)
   // created this connection, all else ignored
   // Ignore the tag added by OPAL
   if (originalInvite != NULL) {
-
     origTo = originalInvite->GetMIME().GetTo();
     origFrom = originalInvite->GetMIME().GetFrom();
     origTo.Replace (";tag=" + GetTag (), "");
