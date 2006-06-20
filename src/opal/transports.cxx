@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2059  2006/02/18 19:00:38  dsandras
+ * Revision 1.2060  2006/06/20 05:22:30  csoutheren
+ * Remove bogus warning at run-time about converting "0.0.0.0"
+ *
+ * Revision 2.58  2006/02/18 19:00:38  dsandras
  * Added PTRACE statements.
  *
  * Revision 2.57  2005/11/29 11:49:35  dsandras
@@ -845,7 +848,7 @@ BOOL OpalInternalIPTransport::GetIpAndPort(const OpalTransportAddress & address,
     }
   }
 
-  if (host == "*") {
+  if (host == "*" || host == "0.0.0.0") {
     ip = PIPSocket::GetDefaultIpAny();
     return TRUE;
   }
