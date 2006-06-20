@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.h,v $
- * Revision 1.2015  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2016  2006/06/20 05:21:39  csoutheren
+ * Update to ASN for H.225v6
+ *
+ * Revision 2.14  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.13  2005/09/04 06:23:38  rjongbloed
@@ -315,7 +318,7 @@ class H225_RAS;
 class OpalGloballyUniqueID;
 
 
-#define H225_PROTOCOL_VERSION 4
+#define H225_PROTOCOL_VERSION 6
 #define H245_PROTOCOL_VERSION 11
 
 
