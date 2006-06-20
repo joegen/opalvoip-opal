@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2108  2006/06/09 07:17:22  csoutheren
+ * Revision 1.2109  2006/06/20 05:21:02  csoutheren
+ * Update to ASN for H.225v6
+ *
+ * Revision 2.107  2006/06/09 07:17:22  csoutheren
  * Fixed warning under gcc
  *
  * Revision 2.106  2006/05/30 11:33:02  hfriederich
@@ -2198,8 +2201,13 @@ void H323Connection::SetRemoteVersions(const H225_ProtocolIdentifier & protocolI
     case 3 :
       h245version = 5;  // H.323 version 3
       break;
-    default :
-      h245version = 7;  // H.323 version 4 (all we do so far)
+    case 4 :
+      h245version = 7;  // H.323 version 4
+      break;
+    case 5 :
+      h245version = 9;  // H.323 version 5 
+    default:
+      h245version = 11; // H.323 version 6
   }
   PTRACE(3, "H225\tSet protocol version to " << h225version
          << " and implying H.245 version " << h245version);

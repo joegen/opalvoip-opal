@@ -294,6 +294,39 @@ PObject * H225_ArrayOf_H248PackagesDescriptor::Clone() const
 
 
 //
+// RegistrationRequest_language
+//
+
+H225_RegistrationRequest_language::H225_RegistrationRequest_language(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Array(tag, tagClass)
+{
+}
+
+
+PASN_Object * H225_RegistrationRequest_language::CreateObject() const
+{
+  PASN_IA5String * obj = new PASN_IA5String;
+  obj->SetConstraints(PASN_Object::FixedConstraint, 1, 32);
+  return obj;
+}
+
+
+PASN_IA5String & H225_RegistrationRequest_language::operator[](PINDEX i) const
+{
+  return (PASN_IA5String &)array[i];
+}
+
+
+PObject * H225_RegistrationRequest_language::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H225_RegistrationRequest_language::Class()), PInvalidCast);
+#endif
+  return new H225_RegistrationRequest_language(*this);
+}
+
+
+//
 // ArrayOf_RasUsageSpecification
 //
 
@@ -424,6 +457,37 @@ PObject * H225_RegistrationRejectReason_invalidTerminalAliases::Clone() const
 
 
 //
+// ArrayOf_QOSCapability
+//
+
+H225_ArrayOf_QOSCapability::H225_ArrayOf_QOSCapability(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Array(tag, tagClass)
+{
+}
+
+
+PASN_Object * H225_ArrayOf_QOSCapability::CreateObject() const
+{
+  return new H245_QOSCapability;
+}
+
+
+H245_QOSCapability & H225_ArrayOf_QOSCapability::operator[](PINDEX i) const
+{
+  return (H245_QOSCapability &)array[i];
+}
+
+
+PObject * H225_ArrayOf_QOSCapability::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H225_ArrayOf_QOSCapability::Class()), PInvalidCast);
+#endif
+  return new H225_ArrayOf_QOSCapability(*this);
+}
+
+
+//
 // AdmissionConfirm_language
 //
 
@@ -515,6 +579,39 @@ PObject * H225_ArrayOf_BandwidthDetails::Clone() const
   PAssert(IsClass(H225_ArrayOf_BandwidthDetails::Class()), PInvalidCast);
 #endif
   return new H225_ArrayOf_BandwidthDetails(*this);
+}
+
+
+//
+// LocationRequest_language
+//
+
+H225_LocationRequest_language::H225_LocationRequest_language(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Array(tag, tagClass)
+{
+}
+
+
+PASN_Object * H225_LocationRequest_language::CreateObject() const
+{
+  PASN_IA5String * obj = new PASN_IA5String;
+  obj->SetConstraints(PASN_Object::FixedConstraint, 1, 32);
+  return obj;
+}
+
+
+PASN_IA5String & H225_LocationRequest_language::operator[](PINDEX i) const
+{
+  return (PASN_IA5String &)array[i];
+}
+
+
+PObject * H225_LocationRequest_language::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H225_LocationRequest_language::Class()), PInvalidCast);
+#endif
+  return new H225_LocationRequest_language(*this);
 }
 
 
@@ -1918,6 +2015,172 @@ PObject * H225_ANSI_41_UIM::Clone() const
   PAssert(IsClass(H225_ANSI_41_UIM::Class()), PInvalidCast);
 #endif
   return new H225_ANSI_41_UIM(*this);
+}
+
+
+//
+// IsupPublicPartyNumber
+//
+
+H225_IsupPublicPartyNumber::H225_IsupPublicPartyNumber(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+{
+}
+
+
+#ifndef PASN_NOPRINTON
+void H225_IsupPublicPartyNumber::PrintOn(ostream & strm) const
+{
+  int indent = strm.precision() + 2;
+  strm << "{\n";
+  strm << setw(indent+18) << "natureOfAddress = " << setprecision(indent) << m_natureOfAddress << '\n';
+  strm << setw(indent+10) << "address = " << setprecision(indent) << m_address << '\n';
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
+}
+#endif
+
+
+PObject::Comparison H225_IsupPublicPartyNumber::Compare(const PObject & obj) const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(&obj, H225_IsupPublicPartyNumber), PInvalidCast);
+#endif
+  const H225_IsupPublicPartyNumber & other = (const H225_IsupPublicPartyNumber &)obj;
+
+  Comparison result;
+
+  if ((result = m_natureOfAddress.Compare(other.m_natureOfAddress)) != EqualTo)
+    return result;
+  if ((result = m_address.Compare(other.m_address)) != EqualTo)
+    return result;
+
+  return PASN_Sequence::Compare(other);
+}
+
+
+PINDEX H225_IsupPublicPartyNumber::GetDataLength() const
+{
+  PINDEX length = 0;
+  length += m_natureOfAddress.GetObjectLength();
+  length += m_address.GetObjectLength();
+  return length;
+}
+
+
+BOOL H225_IsupPublicPartyNumber::Decode(PASN_Stream & strm)
+{
+  if (!PreambleDecode(strm))
+    return FALSE;
+
+  if (!m_natureOfAddress.Decode(strm))
+    return FALSE;
+  if (!m_address.Decode(strm))
+    return FALSE;
+
+  return UnknownExtensionsDecode(strm);
+}
+
+
+void H225_IsupPublicPartyNumber::Encode(PASN_Stream & strm) const
+{
+  PreambleEncode(strm);
+
+  m_natureOfAddress.Encode(strm);
+  m_address.Encode(strm);
+
+  UnknownExtensionsEncode(strm);
+}
+
+
+PObject * H225_IsupPublicPartyNumber::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H225_IsupPublicPartyNumber::Class()), PInvalidCast);
+#endif
+  return new H225_IsupPublicPartyNumber(*this);
+}
+
+
+//
+// IsupPrivatePartyNumber
+//
+
+H225_IsupPrivatePartyNumber::H225_IsupPrivatePartyNumber(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+{
+}
+
+
+#ifndef PASN_NOPRINTON
+void H225_IsupPrivatePartyNumber::PrintOn(ostream & strm) const
+{
+  int indent = strm.precision() + 2;
+  strm << "{\n";
+  strm << setw(indent+22) << "privateTypeOfNumber = " << setprecision(indent) << m_privateTypeOfNumber << '\n';
+  strm << setw(indent+10) << "address = " << setprecision(indent) << m_address << '\n';
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
+}
+#endif
+
+
+PObject::Comparison H225_IsupPrivatePartyNumber::Compare(const PObject & obj) const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(&obj, H225_IsupPrivatePartyNumber), PInvalidCast);
+#endif
+  const H225_IsupPrivatePartyNumber & other = (const H225_IsupPrivatePartyNumber &)obj;
+
+  Comparison result;
+
+  if ((result = m_privateTypeOfNumber.Compare(other.m_privateTypeOfNumber)) != EqualTo)
+    return result;
+  if ((result = m_address.Compare(other.m_address)) != EqualTo)
+    return result;
+
+  return PASN_Sequence::Compare(other);
+}
+
+
+PINDEX H225_IsupPrivatePartyNumber::GetDataLength() const
+{
+  PINDEX length = 0;
+  length += m_privateTypeOfNumber.GetObjectLength();
+  length += m_address.GetObjectLength();
+  return length;
+}
+
+
+BOOL H225_IsupPrivatePartyNumber::Decode(PASN_Stream & strm)
+{
+  if (!PreambleDecode(strm))
+    return FALSE;
+
+  if (!m_privateTypeOfNumber.Decode(strm))
+    return FALSE;
+  if (!m_address.Decode(strm))
+    return FALSE;
+
+  return UnknownExtensionsDecode(strm);
+}
+
+
+void H225_IsupPrivatePartyNumber::Encode(PASN_Stream & strm) const
+{
+  PreambleEncode(strm);
+
+  m_privateTypeOfNumber.Encode(strm);
+  m_address.Encode(strm);
+
+  UnknownExtensionsEncode(strm);
+}
+
+
+PObject * H225_IsupPrivatePartyNumber::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H225_IsupPrivatePartyNumber::Class()), PInvalidCast);
+#endif
+  return new H225_IsupPrivatePartyNumber(*this);
 }
 
 
@@ -4145,7 +4408,7 @@ PObject * H225_RTPSession::Clone() const
 //
 
 H225_GatekeeperConfirm::H225_GatekeeperConfirm(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 9)
+  : PASN_Sequence(tag, tagClass, 2, TRUE, 11)
 {
 }
 
@@ -4180,6 +4443,10 @@ void H225_GatekeeperConfirm::PrintOn(ostream & strm) const
     strm << setw(indent+13) << "featureSet = " << setprecision(indent) << m_featureSet << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
+  if (HasOptionalField(e_assignedGatekeeper))
+    strm << setw(indent+21) << "assignedGatekeeper = " << setprecision(indent) << m_assignedGatekeeper << '\n';
+  if (HasOptionalField(e_rehomingModel))
+    strm << setw(indent+16) << "rehomingModel = " << setprecision(indent) << m_rehomingModel << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
@@ -4256,6 +4523,10 @@ BOOL H225_GatekeeperConfirm::Decode(PASN_Stream & strm)
     return FALSE;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
     return FALSE;
+  if (!KnownExtensionDecode(strm, e_assignedGatekeeper, m_assignedGatekeeper))
+    return FALSE;
+  if (!KnownExtensionDecode(strm, e_rehomingModel, m_rehomingModel))
+    return FALSE;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4281,6 +4552,8 @@ void H225_GatekeeperConfirm::Encode(PASN_Stream & strm) const
   KnownExtensionEncode(strm, e_integrityCheckValue, m_integrityCheckValue);
   KnownExtensionEncode(strm, e_featureSet, m_featureSet);
   KnownExtensionEncode(strm, e_genericData, m_genericData);
+  KnownExtensionEncode(strm, e_assignedGatekeeper, m_assignedGatekeeper);
+  KnownExtensionEncode(strm, e_rehomingModel, m_rehomingModel);
 
   UnknownExtensionsEncode(strm);
 }
@@ -4440,7 +4713,7 @@ PObject * H225_GatekeeperReject::Clone() const
 //
 
 H225_RegistrationReject::H225_RegistrationReject(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 6)
+  : PASN_Sequence(tag, tagClass, 2, TRUE, 7)
 {
 }
 
@@ -4469,6 +4742,8 @@ void H225_RegistrationReject::PrintOn(ostream & strm) const
     strm << setw(indent+13) << "featureSet = " << setprecision(indent) << m_featureSet << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
+  if (HasOptionalField(e_assignedGatekeeper))
+    strm << setw(indent+21) << "assignedGatekeeper = " << setprecision(indent) << m_assignedGatekeeper << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
@@ -4539,6 +4814,8 @@ BOOL H225_RegistrationReject::Decode(PASN_Stream & strm)
     return FALSE;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
     return FALSE;
+  if (!KnownExtensionDecode(strm, e_assignedGatekeeper, m_assignedGatekeeper))
+    return FALSE;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4561,6 +4838,7 @@ void H225_RegistrationReject::Encode(PASN_Stream & strm) const
   KnownExtensionEncode(strm, e_integrityCheckValue, m_integrityCheckValue);
   KnownExtensionEncode(strm, e_featureSet, m_featureSet);
   KnownExtensionEncode(strm, e_genericData, m_genericData);
+  KnownExtensionEncode(strm, e_assignedGatekeeper, m_assignedGatekeeper);
 
   UnknownExtensionsEncode(strm);
 }
@@ -4580,7 +4858,7 @@ PObject * H225_RegistrationReject::Clone() const
 //
 
 H225_UnregistrationRequest::H225_UnregistrationRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, TRUE, 10)
+  : PASN_Sequence(tag, tagClass, 3, TRUE, 11)
 {
 }
 
@@ -4618,6 +4896,8 @@ void H225_UnregistrationRequest::PrintOn(ostream & strm) const
     strm << setw(indent+22) << "alternateGatekeeper = " << setprecision(indent) << m_alternateGatekeeper << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
+  if (HasOptionalField(e_assignedGatekeeper))
+    strm << setw(indent+21) << "assignedGatekeeper = " << setprecision(indent) << m_assignedGatekeeper << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
@@ -4697,6 +4977,8 @@ BOOL H225_UnregistrationRequest::Decode(PASN_Stream & strm)
     return FALSE;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
     return FALSE;
+  if (!KnownExtensionDecode(strm, e_assignedGatekeeper, m_assignedGatekeeper))
+    return FALSE;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4724,6 +5006,7 @@ void H225_UnregistrationRequest::Encode(PASN_Stream & strm) const
   KnownExtensionEncode(strm, e_supportedPrefixes, m_supportedPrefixes);
   KnownExtensionEncode(strm, e_alternateGatekeeper, m_alternateGatekeeper);
   KnownExtensionEncode(strm, e_genericData, m_genericData);
+  KnownExtensionEncode(strm, e_assignedGatekeeper, m_assignedGatekeeper);
 
   UnknownExtensionsEncode(strm);
 }
@@ -4743,7 +5026,7 @@ PObject * H225_UnregistrationRequest::Clone() const
 //
 
 H225_UnregistrationConfirm::H225_UnregistrationConfirm(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 4)
+  : PASN_Sequence(tag, tagClass, 1, TRUE, 5)
 {
 }
 
@@ -4764,6 +5047,8 @@ void H225_UnregistrationConfirm::PrintOn(ostream & strm) const
     strm << setw(indent+22) << "integrityCheckValue = " << setprecision(indent) << m_integrityCheckValue << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
+  if (HasOptionalField(e_assignedGatekeeper))
+    strm << setw(indent+21) << "assignedGatekeeper = " << setprecision(indent) << m_assignedGatekeeper << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
@@ -4814,6 +5099,8 @@ BOOL H225_UnregistrationConfirm::Decode(PASN_Stream & strm)
     return FALSE;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
     return FALSE;
+  if (!KnownExtensionDecode(strm, e_assignedGatekeeper, m_assignedGatekeeper))
+    return FALSE;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4830,6 +5117,7 @@ void H225_UnregistrationConfirm::Encode(PASN_Stream & strm) const
   KnownExtensionEncode(strm, e_cryptoTokens, m_cryptoTokens);
   KnownExtensionEncode(strm, e_integrityCheckValue, m_integrityCheckValue);
   KnownExtensionEncode(strm, e_genericData, m_genericData);
+  KnownExtensionEncode(strm, e_assignedGatekeeper, m_assignedGatekeeper);
 
   UnknownExtensionsEncode(strm);
 }
@@ -4967,7 +5255,7 @@ PObject * H225_UnregistrationReject::Clone() const
 //
 
 H225_AdmissionReject::H225_AdmissionReject(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 8)
+  : PASN_Sequence(tag, tagClass, 1, TRUE, 9)
 {
 }
 
@@ -4997,6 +5285,8 @@ void H225_AdmissionReject::PrintOn(ostream & strm) const
     strm << setw(indent+13) << "featureSet = " << setprecision(indent) << m_featureSet << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
+  if (HasOptionalField(e_assignedGatekeeper))
+    strm << setw(indent+21) << "assignedGatekeeper = " << setprecision(indent) << m_assignedGatekeeper << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
@@ -5060,6 +5350,8 @@ BOOL H225_AdmissionReject::Decode(PASN_Stream & strm)
     return FALSE;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
     return FALSE;
+  if (!KnownExtensionDecode(strm, e_assignedGatekeeper, m_assignedGatekeeper))
+    return FALSE;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5081,6 +5373,7 @@ void H225_AdmissionReject::Encode(PASN_Stream & strm) const
   KnownExtensionEncode(strm, e_serviceControl, m_serviceControl);
   KnownExtensionEncode(strm, e_featureSet, m_featureSet);
   KnownExtensionEncode(strm, e_genericData, m_genericData);
+  KnownExtensionEncode(strm, e_assignedGatekeeper, m_assignedGatekeeper);
 
   UnknownExtensionsEncode(strm);
 }
@@ -5471,7 +5764,7 @@ PObject * H225_DisengageReject::Clone() const
 //
 
 H225_InfoRequest::H225_InfoRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 11)
+  : PASN_Sequence(tag, tagClass, 2, TRUE, 12)
 {
   IncludeOptionalField(e_callIdentifier);
   m_nextSegmentRequested.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
@@ -5511,6 +5804,8 @@ void H225_InfoRequest::PrintOn(ostream & strm) const
     strm << setw(indent+24) << "capacityInfoRequested = " << setprecision(indent) << m_capacityInfoRequested << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
+  if (HasOptionalField(e_assignedGatekeeper))
+    strm << setw(indent+21) << "assignedGatekeeper = " << setprecision(indent) << m_assignedGatekeeper << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
@@ -5586,6 +5881,8 @@ BOOL H225_InfoRequest::Decode(PASN_Stream & strm)
     return FALSE;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
     return FALSE;
+  if (!KnownExtensionDecode(strm, e_assignedGatekeeper, m_assignedGatekeeper))
+    return FALSE;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5612,6 +5909,7 @@ void H225_InfoRequest::Encode(PASN_Stream & strm) const
   KnownExtensionEncode(strm, e_nextSegmentRequested, m_nextSegmentRequested);
   KnownExtensionEncode(strm, e_capacityInfoRequested, m_capacityInfoRequested);
   KnownExtensionEncode(strm, e_genericData, m_genericData);
+  KnownExtensionEncode(strm, e_assignedGatekeeper, m_assignedGatekeeper);
 
   UnknownExtensionsEncode(strm);
 }
@@ -8722,7 +9020,7 @@ PObject * H225_CircuitIdentifier::Clone() const
 //
 
 H225_RegistrationConfirm::H225_RegistrationConfirm(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, TRUE, 17)
+  : PASN_Sequence(tag, tagClass, 3, TRUE, 20)
 {
   IncludeOptionalField(e_willRespondToIRR);
   IncludeOptionalField(e_maintainConnection);
@@ -8778,6 +9076,12 @@ void H225_RegistrationConfirm::PrintOn(ostream & strm) const
     strm << setw(indent+13) << "featureSet = " << setprecision(indent) << m_featureSet << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
+  if (HasOptionalField(e_assignedGatekeeper))
+    strm << setw(indent+21) << "assignedGatekeeper = " << setprecision(indent) << m_assignedGatekeeper << '\n';
+  if (HasOptionalField(e_rehomingModel))
+    strm << setw(indent+16) << "rehomingModel = " << setprecision(indent) << m_rehomingModel << '\n';
+  if (HasOptionalField(e_transportQOS))
+    strm << setw(indent+15) << "transportQOS = " << setprecision(indent) << m_transportQOS << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
@@ -8881,6 +9185,12 @@ BOOL H225_RegistrationConfirm::Decode(PASN_Stream & strm)
     return FALSE;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
     return FALSE;
+  if (!KnownExtensionDecode(strm, e_assignedGatekeeper, m_assignedGatekeeper))
+    return FALSE;
+  if (!KnownExtensionDecode(strm, e_rehomingModel, m_rehomingModel))
+    return FALSE;
+  if (!KnownExtensionDecode(strm, e_transportQOS, m_transportQOS))
+    return FALSE;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8917,6 +9227,9 @@ void H225_RegistrationConfirm::Encode(PASN_Stream & strm) const
   KnownExtensionEncode(strm, e_capacityReportingSpec, m_capacityReportingSpec);
   KnownExtensionEncode(strm, e_featureSet, m_featureSet);
   KnownExtensionEncode(strm, e_genericData, m_genericData);
+  KnownExtensionEncode(strm, e_assignedGatekeeper, m_assignedGatekeeper);
+  KnownExtensionEncode(strm, e_rehomingModel, m_rehomingModel);
+  KnownExtensionEncode(strm, e_transportQOS, m_transportQOS);
 
   UnknownExtensionsEncode(strm);
 }
@@ -8936,7 +9249,7 @@ PObject * H225_RegistrationConfirm::Clone() const
 //
 
 H225_BandwidthRequest::H225_BandwidthRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 11)
+  : PASN_Sequence(tag, tagClass, 2, TRUE, 12)
 {
   IncludeOptionalField(e_callIdentifier);
   IncludeOptionalField(e_answeredCall);
@@ -8979,6 +9292,8 @@ void H225_BandwidthRequest::PrintOn(ostream & strm) const
     strm << setw(indent+19) << "bandwidthDetails = " << setprecision(indent) << m_bandwidthDetails << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
+  if (HasOptionalField(e_transportQOS))
+    strm << setw(indent+15) << "transportQOS = " << setprecision(indent) << m_transportQOS << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
@@ -9069,6 +9384,8 @@ BOOL H225_BandwidthRequest::Decode(PASN_Stream & strm)
     return FALSE;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
     return FALSE;
+  if (!KnownExtensionDecode(strm, e_transportQOS, m_transportQOS))
+    return FALSE;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9098,6 +9415,7 @@ void H225_BandwidthRequest::Encode(PASN_Stream & strm) const
   KnownExtensionEncode(strm, e_usageInformation, m_usageInformation);
   KnownExtensionEncode(strm, e_bandwidthDetails, m_bandwidthDetails);
   KnownExtensionEncode(strm, e_genericData, m_genericData);
+  KnownExtensionEncode(strm, e_transportQOS, m_transportQOS);
 
   UnknownExtensionsEncode(strm);
 }
@@ -9117,7 +9435,7 @@ PObject * H225_BandwidthRequest::Clone() const
 //
 
 H225_BandwidthConfirm::H225_BandwidthConfirm(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 5)
+  : PASN_Sequence(tag, tagClass, 1, TRUE, 6)
 {
 }
 
@@ -9141,6 +9459,8 @@ void H225_BandwidthConfirm::PrintOn(ostream & strm) const
     strm << setw(indent+11) << "capacity = " << setprecision(indent) << m_capacity << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
+  if (HasOptionalField(e_transportQOS))
+    strm << setw(indent+15) << "transportQOS = " << setprecision(indent) << m_transportQOS << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
@@ -9198,6 +9518,8 @@ BOOL H225_BandwidthConfirm::Decode(PASN_Stream & strm)
     return FALSE;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
     return FALSE;
+  if (!KnownExtensionDecode(strm, e_transportQOS, m_transportQOS))
+    return FALSE;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9216,6 +9538,7 @@ void H225_BandwidthConfirm::Encode(PASN_Stream & strm) const
   KnownExtensionEncode(strm, e_integrityCheckValue, m_integrityCheckValue);
   KnownExtensionEncode(strm, e_capacity, m_capacity);
   KnownExtensionEncode(strm, e_genericData, m_genericData);
+  KnownExtensionEncode(strm, e_transportQOS, m_transportQOS);
 
   UnknownExtensionsEncode(strm);
 }
@@ -9906,8 +10229,9 @@ PObject * H225_CircuitInfo::Clone() const
 //
 
 H225_GatekeeperRequest::H225_GatekeeperRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 4, TRUE, 10)
+  : PASN_Sequence(tag, tagClass, 4, TRUE, 12)
 {
+  IncludeOptionalField(e_supportsAssignedGK);
 }
 
 
@@ -9948,6 +10272,10 @@ void H225_GatekeeperRequest::PrintOn(ostream & strm) const
     strm << setw(indent+13) << "featureSet = " << setprecision(indent) << m_featureSet << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
+  if (HasOptionalField(e_supportsAssignedGK))
+    strm << setw(indent+21) << "supportsAssignedGK = " << setprecision(indent) << m_supportsAssignedGK << '\n';
+  if (HasOptionalField(e_assignedGatekeeper))
+    strm << setw(indent+21) << "assignedGatekeeper = " << setprecision(indent) << m_assignedGatekeeper << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
@@ -10043,6 +10371,10 @@ BOOL H225_GatekeeperRequest::Decode(PASN_Stream & strm)
     return FALSE;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
     return FALSE;
+  if (!KnownExtensionDecode(strm, e_supportsAssignedGK, m_supportsAssignedGK))
+    return FALSE;
+  if (!KnownExtensionDecode(strm, e_assignedGatekeeper, m_assignedGatekeeper))
+    return FALSE;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10074,6 +10406,8 @@ void H225_GatekeeperRequest::Encode(PASN_Stream & strm) const
   KnownExtensionEncode(strm, e_supportsAltGK, m_supportsAltGK);
   KnownExtensionEncode(strm, e_featureSet, m_featureSet);
   KnownExtensionEncode(strm, e_genericData, m_genericData);
+  KnownExtensionEncode(strm, e_supportsAssignedGK, m_supportsAssignedGK);
+  KnownExtensionEncode(strm, e_assignedGatekeeper, m_assignedGatekeeper);
 
   UnknownExtensionsEncode(strm);
 }
@@ -10093,11 +10427,12 @@ PObject * H225_GatekeeperRequest::Clone() const
 //
 
 H225_RegistrationRequest::H225_RegistrationRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, TRUE, 23)
+  : PASN_Sequence(tag, tagClass, 3, TRUE, 27)
 {
   IncludeOptionalField(e_keepAlive);
   IncludeOptionalField(e_willSupplyUUIEs);
   IncludeOptionalField(e_maintainConnection);
+  IncludeOptionalField(e_supportsAssignedGK);
 }
 
 
@@ -10165,6 +10500,14 @@ void H225_RegistrationRequest::PrintOn(ostream & strm) const
     strm << setw(indent+10) << "restart = " << setprecision(indent) << m_restart << '\n';
   if (HasOptionalField(e_supportsACFSequences))
     strm << setw(indent+23) << "supportsACFSequences = " << setprecision(indent) << m_supportsACFSequences << '\n';
+  if (HasOptionalField(e_supportsAssignedGK))
+    strm << setw(indent+21) << "supportsAssignedGK = " << setprecision(indent) << m_supportsAssignedGK << '\n';
+  if (HasOptionalField(e_assignedGatekeeper))
+    strm << setw(indent+21) << "assignedGatekeeper = " << setprecision(indent) << m_assignedGatekeeper << '\n';
+  if (HasOptionalField(e_transportQOS))
+    strm << setw(indent+15) << "transportQOS = " << setprecision(indent) << m_transportQOS << '\n';
+  if (HasOptionalField(e_language))
+    strm << setw(indent+11) << "language = " << setprecision(indent) << m_language << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
@@ -10295,6 +10638,14 @@ BOOL H225_RegistrationRequest::Decode(PASN_Stream & strm)
     return FALSE;
   if (!KnownExtensionDecode(strm, e_supportsACFSequences, m_supportsACFSequences))
     return FALSE;
+  if (!KnownExtensionDecode(strm, e_supportsAssignedGK, m_supportsAssignedGK))
+    return FALSE;
+  if (!KnownExtensionDecode(strm, e_assignedGatekeeper, m_assignedGatekeeper))
+    return FALSE;
+  if (!KnownExtensionDecode(strm, e_transportQOS, m_transportQOS))
+    return FALSE;
+  if (!KnownExtensionDecode(strm, e_language, m_language))
+    return FALSE;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10340,6 +10691,10 @@ void H225_RegistrationRequest::Encode(PASN_Stream & strm) const
   KnownExtensionEncode(strm, e_genericData, m_genericData);
   KnownExtensionEncode(strm, e_restart, m_restart);
   KnownExtensionEncode(strm, e_supportsACFSequences, m_supportsACFSequences);
+  KnownExtensionEncode(strm, e_supportsAssignedGK, m_supportsAssignedGK);
+  KnownExtensionEncode(strm, e_assignedGatekeeper, m_assignedGatekeeper);
+  KnownExtensionEncode(strm, e_transportQOS, m_transportQOS);
+  KnownExtensionEncode(strm, e_language, m_language);
 
   UnknownExtensionsEncode(strm);
 }
@@ -10660,7 +11015,7 @@ PObject * H225_AdmissionRequest::Clone() const
 //
 
 H225_AdmissionConfirm::H225_AdmissionConfirm(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 22)
+  : PASN_Sequence(tag, tagClass, 2, TRUE, 23)
 {
   m_irrFrequency.SetConstraints(PASN_Object::FixedConstraint, 1, 65535);
   IncludeOptionalField(e_willRespondToIRR);
@@ -10725,6 +11080,8 @@ void H225_AdmissionConfirm::PrintOn(ostream & strm) const
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
   if (HasOptionalField(e_modifiedSrcInfo))
     strm << setw(indent+18) << "modifiedSrcInfo = " << setprecision(indent) << m_modifiedSrcInfo << '\n';
+  if (HasOptionalField(e_assignedGatekeeper))
+    strm << setw(indent+21) << "assignedGatekeeper = " << setprecision(indent) << m_assignedGatekeeper << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
@@ -10832,6 +11189,8 @@ BOOL H225_AdmissionConfirm::Decode(PASN_Stream & strm)
     return FALSE;
   if (!KnownExtensionDecode(strm, e_modifiedSrcInfo, m_modifiedSrcInfo))
     return FALSE;
+  if (!KnownExtensionDecode(strm, e_assignedGatekeeper, m_assignedGatekeeper))
+    return FALSE;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10871,6 +11230,7 @@ void H225_AdmissionConfirm::Encode(PASN_Stream & strm) const
   KnownExtensionEncode(strm, e_featureSet, m_featureSet);
   KnownExtensionEncode(strm, e_genericData, m_genericData);
   KnownExtensionEncode(strm, e_modifiedSrcInfo, m_modifiedSrcInfo);
+  KnownExtensionEncode(strm, e_assignedGatekeeper, m_assignedGatekeeper);
 
   UnknownExtensionsEncode(strm);
 }
@@ -10890,7 +11250,7 @@ PObject * H225_AdmissionConfirm::Clone() const
 //
 
 H225_LocationRequest::H225_LocationRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 16)
+  : PASN_Sequence(tag, tagClass, 2, TRUE, 17)
 {
   IncludeOptionalField(e_canMapAlias);
   m_hopCount.SetConstraints(PASN_Object::FixedConstraint, 1, 255);
@@ -10942,6 +11302,8 @@ void H225_LocationRequest::PrintOn(ostream & strm) const
     strm << setw(indent+21) << "sourceEndpointInfo = " << setprecision(indent) << m_sourceEndpointInfo << '\n';
   if (HasOptionalField(e_canMapSrcAlias))
     strm << setw(indent+17) << "canMapSrcAlias = " << setprecision(indent) << m_canMapSrcAlias << '\n';
+  if (HasOptionalField(e_language))
+    strm << setw(indent+11) << "language = " << setprecision(indent) << m_language << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
@@ -11032,6 +11394,8 @@ BOOL H225_LocationRequest::Decode(PASN_Stream & strm)
     return FALSE;
   if (!KnownExtensionDecode(strm, e_canMapSrcAlias, m_canMapSrcAlias))
     return FALSE;
+  if (!KnownExtensionDecode(strm, e_language, m_language))
+    return FALSE;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11064,6 +11428,7 @@ void H225_LocationRequest::Encode(PASN_Stream & strm) const
   KnownExtensionEncode(strm, e_bandWidth, m_bandWidth);
   KnownExtensionEncode(strm, e_sourceEndpointInfo, m_sourceEndpointInfo);
   KnownExtensionEncode(strm, e_canMapSrcAlias, m_canMapSrcAlias);
+  KnownExtensionEncode(strm, e_language, m_language);
 
   UnknownExtensionsEncode(strm);
 }
@@ -11449,7 +11814,7 @@ PObject * H225_DisengageRequest::Clone() const
 //
 
 H225_DisengageConfirm::H225_DisengageConfirm(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 7)
+  : PASN_Sequence(tag, tagClass, 1, TRUE, 8)
 {
 }
 
@@ -11476,6 +11841,8 @@ void H225_DisengageConfirm::PrintOn(ostream & strm) const
     strm << setw(indent+19) << "usageInformation = " << setprecision(indent) << m_usageInformation << '\n';
   if (HasOptionalField(e_genericData))
     strm << setw(indent+14) << "genericData = " << setprecision(indent) << m_genericData << '\n';
+  if (HasOptionalField(e_assignedGatekeeper))
+    strm << setw(indent+21) << "assignedGatekeeper = " << setprecision(indent) << m_assignedGatekeeper << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
@@ -11532,6 +11899,8 @@ BOOL H225_DisengageConfirm::Decode(PASN_Stream & strm)
     return FALSE;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
     return FALSE;
+  if (!KnownExtensionDecode(strm, e_assignedGatekeeper, m_assignedGatekeeper))
+    return FALSE;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11551,6 +11920,7 @@ void H225_DisengageConfirm::Encode(PASN_Stream & strm) const
   KnownExtensionEncode(strm, e_circuitInfo, m_circuitInfo);
   KnownExtensionEncode(strm, e_usageInformation, m_usageInformation);
   KnownExtensionEncode(strm, e_genericData, m_genericData);
+  KnownExtensionEncode(strm, e_assignedGatekeeper, m_assignedGatekeeper);
 
   UnknownExtensionsEncode(strm);
 }
@@ -13575,4 +13945,4 @@ PObject * H225_Endpoint::Clone() const
 #endif // if ! H323_DISABLE_H225
 
 
-// End of h225_2.cxx
+// End of h225.cxx
