@@ -835,6 +835,25 @@ PObject * H245_GenericMessage::Clone() const
 
 
 //
+// GenericInformation
+//
+
+H245_GenericInformation::H245_GenericInformation(unsigned tag, PASN_Object::TagClass tagClass)
+  : H245_GenericMessage(tag, tagClass)
+{
+}
+
+
+PObject * H245_GenericInformation::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_GenericInformation::Class()), PInvalidCast);
+#endif
+  return new H245_GenericInformation(*this);
+}
+
+
+//
 // NonStandardParameter
 //
 
@@ -1074,7 +1093,7 @@ PObject * H245_MasterSlaveDeterminationReject::Clone() const
 //
 
 H245_TerminalCapabilitySet::H245_TerminalCapabilitySet(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 3, TRUE, 1)
 {
   m_capabilityTable.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
   m_capabilityDescriptors.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
@@ -1094,6 +1113,8 @@ void H245_TerminalCapabilitySet::PrintOn(ostream & strm) const
     strm << setw(indent+18) << "capabilityTable = " << setprecision(indent) << m_capabilityTable << '\n';
   if (HasOptionalField(e_capabilityDescriptors))
     strm << setw(indent+24) << "capabilityDescriptors = " << setprecision(indent) << m_capabilityDescriptors << '\n';
+  if (HasOptionalField(e_genericInformation))
+    strm << setw(indent+21) << "genericInformation = " << setprecision(indent) << m_genericInformation << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
@@ -1153,6 +1174,8 @@ BOOL H245_TerminalCapabilitySet::Decode(PASN_Stream & strm)
     return FALSE;
   if (HasOptionalField(e_capabilityDescriptors) && !m_capabilityDescriptors.Decode(strm))
     return FALSE;
+  if (!KnownExtensionDecode(strm, e_genericInformation, m_genericInformation))
+    return FALSE;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1170,6 +1193,7 @@ void H245_TerminalCapabilitySet::Encode(PASN_Stream & strm) const
     m_capabilityTable.Encode(strm);
   if (HasOptionalField(e_capabilityDescriptors))
     m_capabilityDescriptors.Encode(strm);
+  KnownExtensionEncode(strm, e_genericInformation, m_genericInformation);
 
   UnknownExtensionsEncode(strm);
 }
@@ -1358,11 +1382,92 @@ PObject * H245_CapabilityDescriptor::Clone() const
 
 
 //
+// TerminalCapabilitySetAck
+//
+
+H245_TerminalCapabilitySetAck::H245_TerminalCapabilitySetAck(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Sequence(tag, tagClass, 0, TRUE, 1)
+{
+}
+
+
+#ifndef PASN_NOPRINTON
+void H245_TerminalCapabilitySetAck::PrintOn(ostream & strm) const
+{
+  int indent = strm.precision() + 2;
+  strm << "{\n";
+  strm << setw(indent+17) << "sequenceNumber = " << setprecision(indent) << m_sequenceNumber << '\n';
+  if (HasOptionalField(e_genericInformation))
+    strm << setw(indent+21) << "genericInformation = " << setprecision(indent) << m_genericInformation << '\n';
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
+}
+#endif
+
+
+PObject::Comparison H245_TerminalCapabilitySetAck::Compare(const PObject & obj) const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(&obj, H245_TerminalCapabilitySetAck), PInvalidCast);
+#endif
+  const H245_TerminalCapabilitySetAck & other = (const H245_TerminalCapabilitySetAck &)obj;
+
+  Comparison result;
+
+  if ((result = m_sequenceNumber.Compare(other.m_sequenceNumber)) != EqualTo)
+    return result;
+
+  return PASN_Sequence::Compare(other);
+}
+
+
+PINDEX H245_TerminalCapabilitySetAck::GetDataLength() const
+{
+  PINDEX length = 0;
+  length += m_sequenceNumber.GetObjectLength();
+  return length;
+}
+
+
+BOOL H245_TerminalCapabilitySetAck::Decode(PASN_Stream & strm)
+{
+  if (!PreambleDecode(strm))
+    return FALSE;
+
+  if (!m_sequenceNumber.Decode(strm))
+    return FALSE;
+  if (!KnownExtensionDecode(strm, e_genericInformation, m_genericInformation))
+    return FALSE;
+
+  return UnknownExtensionsDecode(strm);
+}
+
+
+void H245_TerminalCapabilitySetAck::Encode(PASN_Stream & strm) const
+{
+  PreambleEncode(strm);
+
+  m_sequenceNumber.Encode(strm);
+  KnownExtensionEncode(strm, e_genericInformation, m_genericInformation);
+
+  UnknownExtensionsEncode(strm);
+}
+
+
+PObject * H245_TerminalCapabilitySetAck::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_TerminalCapabilitySetAck::Class()), PInvalidCast);
+#endif
+  return new H245_TerminalCapabilitySetAck(*this);
+}
+
+
+//
 // TerminalCapabilitySetReject
 //
 
 H245_TerminalCapabilitySetReject::H245_TerminalCapabilitySetReject(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, TRUE, 1)
 {
 }
 
@@ -1374,6 +1479,8 @@ void H245_TerminalCapabilitySetReject::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+17) << "sequenceNumber = " << setprecision(indent) << m_sequenceNumber << '\n';
   strm << setw(indent+8) << "cause = " << setprecision(indent) << m_cause << '\n';
+  if (HasOptionalField(e_genericInformation))
+    strm << setw(indent+21) << "genericInformation = " << setprecision(indent) << m_genericInformation << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
@@ -1415,6 +1522,8 @@ BOOL H245_TerminalCapabilitySetReject::Decode(PASN_Stream & strm)
     return FALSE;
   if (!m_cause.Decode(strm))
     return FALSE;
+  if (!KnownExtensionDecode(strm, e_genericInformation, m_genericInformation))
+    return FALSE;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1426,6 +1535,7 @@ void H245_TerminalCapabilitySetReject::Encode(PASN_Stream & strm) const
 
   m_sequenceNumber.Encode(strm);
   m_cause.Encode(strm);
+  KnownExtensionEncode(strm, e_genericInformation, m_genericInformation);
 
   UnknownExtensionsEncode(strm);
 }
@@ -1437,6 +1547,66 @@ PObject * H245_TerminalCapabilitySetReject::Clone() const
   PAssert(IsClass(H245_TerminalCapabilitySetReject::Class()), PInvalidCast);
 #endif
   return new H245_TerminalCapabilitySetReject(*this);
+}
+
+
+//
+// TerminalCapabilitySetRelease
+//
+
+H245_TerminalCapabilitySetRelease::H245_TerminalCapabilitySetRelease(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Sequence(tag, tagClass, 0, TRUE, 1)
+{
+}
+
+
+#ifndef PASN_NOPRINTON
+void H245_TerminalCapabilitySetRelease::PrintOn(ostream & strm) const
+{
+  int indent = strm.precision() + 2;
+  strm << "{\n";
+  if (HasOptionalField(e_genericInformation))
+    strm << setw(indent+21) << "genericInformation = " << setprecision(indent) << m_genericInformation << '\n';
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
+}
+#endif
+
+
+PINDEX H245_TerminalCapabilitySetRelease::GetDataLength() const
+{
+  PINDEX length = 0;
+  return length;
+}
+
+
+BOOL H245_TerminalCapabilitySetRelease::Decode(PASN_Stream & strm)
+{
+  if (!PreambleDecode(strm))
+    return FALSE;
+
+  if (!KnownExtensionDecode(strm, e_genericInformation, m_genericInformation))
+    return FALSE;
+
+  return UnknownExtensionsDecode(strm);
+}
+
+
+void H245_TerminalCapabilitySetRelease::Encode(PASN_Stream & strm) const
+{
+  PreambleEncode(strm);
+
+  KnownExtensionEncode(strm, e_genericInformation, m_genericInformation);
+
+  UnknownExtensionsEncode(strm);
+}
+
+
+PObject * H245_TerminalCapabilitySetRelease::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_TerminalCapabilitySetRelease::Class()), PInvalidCast);
+#endif
+  return new H245_TerminalCapabilitySetRelease(*this);
 }
 
 
@@ -2121,12 +2291,483 @@ PObject * H245_RSVPParameters::Clone() const
 
 
 //
+// ServicePriorityValue
+//
+
+H245_ServicePriorityValue::H245_ServicePriorityValue(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+{
+}
+
+
+#ifndef PASN_NOPRINTON
+void H245_ServicePriorityValue::PrintOn(ostream & strm) const
+{
+  int indent = strm.precision() + 2;
+  strm << "{\n";
+  if (HasOptionalField(e_nonStandardParameter))
+    strm << setw(indent+23) << "nonStandardParameter = " << setprecision(indent) << m_nonStandardParameter << '\n';
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
+}
+#endif
+
+
+PObject::Comparison H245_ServicePriorityValue::Compare(const PObject & obj) const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(&obj, H245_ServicePriorityValue), PInvalidCast);
+#endif
+  const H245_ServicePriorityValue & other = (const H245_ServicePriorityValue &)obj;
+
+  Comparison result;
+
+  if ((result = m_nonStandardParameter.Compare(other.m_nonStandardParameter)) != EqualTo)
+    return result;
+
+  return PASN_Sequence::Compare(other);
+}
+
+
+PINDEX H245_ServicePriorityValue::GetDataLength() const
+{
+  PINDEX length = 0;
+  if (HasOptionalField(e_nonStandardParameter))
+    length += m_nonStandardParameter.GetObjectLength();
+  return length;
+}
+
+
+BOOL H245_ServicePriorityValue::Decode(PASN_Stream & strm)
+{
+  if (!PreambleDecode(strm))
+    return FALSE;
+
+  if (HasOptionalField(e_nonStandardParameter) && !m_nonStandardParameter.Decode(strm))
+    return FALSE;
+
+  return UnknownExtensionsDecode(strm);
+}
+
+
+void H245_ServicePriorityValue::Encode(PASN_Stream & strm) const
+{
+  PreambleEncode(strm);
+
+  if (HasOptionalField(e_nonStandardParameter))
+    m_nonStandardParameter.Encode(strm);
+
+  UnknownExtensionsEncode(strm);
+}
+
+
+PObject * H245_ServicePriorityValue::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_ServicePriorityValue::Class()), PInvalidCast);
+#endif
+  return new H245_ServicePriorityValue(*this);
+}
+
+
+//
+// ServicePriority
+//
+
+H245_ServicePriority::H245_ServicePriority(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
+{
+}
+
+
+#ifndef PASN_NOPRINTON
+void H245_ServicePriority::PrintOn(ostream & strm) const
+{
+  int indent = strm.precision() + 2;
+  strm << "{\n";
+  if (HasOptionalField(e_nonStandardData))
+    strm << setw(indent+18) << "nonStandardData = " << setprecision(indent) << m_nonStandardData << '\n';
+  strm << setw(indent+27) << "servicePrioritySignalled = " << setprecision(indent) << m_servicePrioritySignalled << '\n';
+  if (HasOptionalField(e_servicePriorityValue))
+    strm << setw(indent+23) << "servicePriorityValue = " << setprecision(indent) << m_servicePriorityValue << '\n';
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
+}
+#endif
+
+
+PObject::Comparison H245_ServicePriority::Compare(const PObject & obj) const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(&obj, H245_ServicePriority), PInvalidCast);
+#endif
+  const H245_ServicePriority & other = (const H245_ServicePriority &)obj;
+
+  Comparison result;
+
+  if ((result = m_nonStandardData.Compare(other.m_nonStandardData)) != EqualTo)
+    return result;
+  if ((result = m_servicePrioritySignalled.Compare(other.m_servicePrioritySignalled)) != EqualTo)
+    return result;
+  if ((result = m_servicePriorityValue.Compare(other.m_servicePriorityValue)) != EqualTo)
+    return result;
+
+  return PASN_Sequence::Compare(other);
+}
+
+
+PINDEX H245_ServicePriority::GetDataLength() const
+{
+  PINDEX length = 0;
+  if (HasOptionalField(e_nonStandardData))
+    length += m_nonStandardData.GetObjectLength();
+  length += m_servicePrioritySignalled.GetObjectLength();
+  if (HasOptionalField(e_servicePriorityValue))
+    length += m_servicePriorityValue.GetObjectLength();
+  return length;
+}
+
+
+BOOL H245_ServicePriority::Decode(PASN_Stream & strm)
+{
+  if (!PreambleDecode(strm))
+    return FALSE;
+
+  if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
+    return FALSE;
+  if (!m_servicePrioritySignalled.Decode(strm))
+    return FALSE;
+  if (HasOptionalField(e_servicePriorityValue) && !m_servicePriorityValue.Decode(strm))
+    return FALSE;
+
+  return UnknownExtensionsDecode(strm);
+}
+
+
+void H245_ServicePriority::Encode(PASN_Stream & strm) const
+{
+  PreambleEncode(strm);
+
+  if (HasOptionalField(e_nonStandardData))
+    m_nonStandardData.Encode(strm);
+  m_servicePrioritySignalled.Encode(strm);
+  if (HasOptionalField(e_servicePriorityValue))
+    m_servicePriorityValue.Encode(strm);
+
+  UnknownExtensionsEncode(strm);
+}
+
+
+PObject * H245_ServicePriority::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_ServicePriority::Class()), PInvalidCast);
+#endif
+  return new H245_ServicePriority(*this);
+}
+
+
+//
+// AuthorizationParameters
+//
+
+H245_AuthorizationParameters::H245_AuthorizationParameters(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+{
+}
+
+
+#ifndef PASN_NOPRINTON
+void H245_AuthorizationParameters::PrintOn(ostream & strm) const
+{
+  int indent = strm.precision() + 2;
+  strm << "{\n";
+  if (HasOptionalField(e_nonStandardData))
+    strm << setw(indent+18) << "nonStandardData = " << setprecision(indent) << m_nonStandardData << '\n';
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
+}
+#endif
+
+
+PObject::Comparison H245_AuthorizationParameters::Compare(const PObject & obj) const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(&obj, H245_AuthorizationParameters), PInvalidCast);
+#endif
+  const H245_AuthorizationParameters & other = (const H245_AuthorizationParameters &)obj;
+
+  Comparison result;
+
+  if ((result = m_nonStandardData.Compare(other.m_nonStandardData)) != EqualTo)
+    return result;
+
+  return PASN_Sequence::Compare(other);
+}
+
+
+PINDEX H245_AuthorizationParameters::GetDataLength() const
+{
+  PINDEX length = 0;
+  if (HasOptionalField(e_nonStandardData))
+    length += m_nonStandardData.GetObjectLength();
+  return length;
+}
+
+
+BOOL H245_AuthorizationParameters::Decode(PASN_Stream & strm)
+{
+  if (!PreambleDecode(strm))
+    return FALSE;
+
+  if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
+    return FALSE;
+
+  return UnknownExtensionsDecode(strm);
+}
+
+
+void H245_AuthorizationParameters::Encode(PASN_Stream & strm) const
+{
+  PreambleEncode(strm);
+
+  if (HasOptionalField(e_nonStandardData))
+    m_nonStandardData.Encode(strm);
+
+  UnknownExtensionsEncode(strm);
+}
+
+
+PObject * H245_AuthorizationParameters::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_AuthorizationParameters::Class()), PInvalidCast);
+#endif
+  return new H245_AuthorizationParameters(*this);
+}
+
+
+//
+// QOSDescriptor
+//
+
+H245_QOSDescriptor::H245_QOSDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+{
+}
+
+
+#ifndef PASN_NOPRINTON
+void H245_QOSDescriptor::PrintOn(ostream & strm) const
+{
+  int indent = strm.precision() + 2;
+  strm << "{\n";
+  if (HasOptionalField(e_nonStandardData))
+    strm << setw(indent+18) << "nonStandardData = " << setprecision(indent) << m_nonStandardData << '\n';
+  strm << setw(indent+10) << "qosType = " << setprecision(indent) << m_qosType << '\n';
+  strm << setw(indent+11) << "qosClass = " << setprecision(indent) << m_qosClass << '\n';
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
+}
+#endif
+
+
+PObject::Comparison H245_QOSDescriptor::Compare(const PObject & obj) const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(&obj, H245_QOSDescriptor), PInvalidCast);
+#endif
+  const H245_QOSDescriptor & other = (const H245_QOSDescriptor &)obj;
+
+  Comparison result;
+
+  if ((result = m_nonStandardData.Compare(other.m_nonStandardData)) != EqualTo)
+    return result;
+  if ((result = m_qosType.Compare(other.m_qosType)) != EqualTo)
+    return result;
+  if ((result = m_qosClass.Compare(other.m_qosClass)) != EqualTo)
+    return result;
+
+  return PASN_Sequence::Compare(other);
+}
+
+
+PINDEX H245_QOSDescriptor::GetDataLength() const
+{
+  PINDEX length = 0;
+  if (HasOptionalField(e_nonStandardData))
+    length += m_nonStandardData.GetObjectLength();
+  length += m_qosType.GetObjectLength();
+  length += m_qosClass.GetObjectLength();
+  return length;
+}
+
+
+BOOL H245_QOSDescriptor::Decode(PASN_Stream & strm)
+{
+  if (!PreambleDecode(strm))
+    return FALSE;
+
+  if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
+    return FALSE;
+  if (!m_qosType.Decode(strm))
+    return FALSE;
+  if (!m_qosClass.Decode(strm))
+    return FALSE;
+
+  return UnknownExtensionsDecode(strm);
+}
+
+
+void H245_QOSDescriptor::Encode(PASN_Stream & strm) const
+{
+  PreambleEncode(strm);
+
+  if (HasOptionalField(e_nonStandardData))
+    m_nonStandardData.Encode(strm);
+  m_qosType.Encode(strm);
+  m_qosClass.Encode(strm);
+
+  UnknownExtensionsEncode(strm);
+}
+
+
+PObject * H245_QOSDescriptor::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_QOSDescriptor::Class()), PInvalidCast);
+#endif
+  return new H245_QOSDescriptor(*this);
+}
+
+
+//
+// GenericTransportParameters
+//
+
+H245_GenericTransportParameters::H245_GenericTransportParameters(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Sequence(tag, tagClass, 5, TRUE, 0)
+{
+  m_averageRate.SetConstraints(PASN_Object::FixedConstraint, 1, 4294967295U);
+  m_burst.SetConstraints(PASN_Object::FixedConstraint, 1, 4294967295U);
+  m_peakRate.SetConstraints(PASN_Object::FixedConstraint, 1, 4294967295U);
+  m_maxPktSize.SetConstraints(PASN_Object::FixedConstraint, 1, 4294967295U);
+}
+
+
+#ifndef PASN_NOPRINTON
+void H245_GenericTransportParameters::PrintOn(ostream & strm) const
+{
+  int indent = strm.precision() + 2;
+  strm << "{\n";
+  if (HasOptionalField(e_nonStandardData))
+    strm << setw(indent+18) << "nonStandardData = " << setprecision(indent) << m_nonStandardData << '\n';
+  if (HasOptionalField(e_averageRate))
+    strm << setw(indent+14) << "averageRate = " << setprecision(indent) << m_averageRate << '\n';
+  if (HasOptionalField(e_burst))
+    strm << setw(indent+8) << "burst = " << setprecision(indent) << m_burst << '\n';
+  if (HasOptionalField(e_peakRate))
+    strm << setw(indent+11) << "peakRate = " << setprecision(indent) << m_peakRate << '\n';
+  if (HasOptionalField(e_maxPktSize))
+    strm << setw(indent+13) << "maxPktSize = " << setprecision(indent) << m_maxPktSize << '\n';
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
+}
+#endif
+
+
+PObject::Comparison H245_GenericTransportParameters::Compare(const PObject & obj) const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(&obj, H245_GenericTransportParameters), PInvalidCast);
+#endif
+  const H245_GenericTransportParameters & other = (const H245_GenericTransportParameters &)obj;
+
+  Comparison result;
+
+  if ((result = m_nonStandardData.Compare(other.m_nonStandardData)) != EqualTo)
+    return result;
+  if ((result = m_averageRate.Compare(other.m_averageRate)) != EqualTo)
+    return result;
+  if ((result = m_burst.Compare(other.m_burst)) != EqualTo)
+    return result;
+  if ((result = m_peakRate.Compare(other.m_peakRate)) != EqualTo)
+    return result;
+  if ((result = m_maxPktSize.Compare(other.m_maxPktSize)) != EqualTo)
+    return result;
+
+  return PASN_Sequence::Compare(other);
+}
+
+
+PINDEX H245_GenericTransportParameters::GetDataLength() const
+{
+  PINDEX length = 0;
+  if (HasOptionalField(e_nonStandardData))
+    length += m_nonStandardData.GetObjectLength();
+  if (HasOptionalField(e_averageRate))
+    length += m_averageRate.GetObjectLength();
+  if (HasOptionalField(e_burst))
+    length += m_burst.GetObjectLength();
+  if (HasOptionalField(e_peakRate))
+    length += m_peakRate.GetObjectLength();
+  if (HasOptionalField(e_maxPktSize))
+    length += m_maxPktSize.GetObjectLength();
+  return length;
+}
+
+
+BOOL H245_GenericTransportParameters::Decode(PASN_Stream & strm)
+{
+  if (!PreambleDecode(strm))
+    return FALSE;
+
+  if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
+    return FALSE;
+  if (HasOptionalField(e_averageRate) && !m_averageRate.Decode(strm))
+    return FALSE;
+  if (HasOptionalField(e_burst) && !m_burst.Decode(strm))
+    return FALSE;
+  if (HasOptionalField(e_peakRate) && !m_peakRate.Decode(strm))
+    return FALSE;
+  if (HasOptionalField(e_maxPktSize) && !m_maxPktSize.Decode(strm))
+    return FALSE;
+
+  return UnknownExtensionsDecode(strm);
+}
+
+
+void H245_GenericTransportParameters::Encode(PASN_Stream & strm) const
+{
+  PreambleEncode(strm);
+
+  if (HasOptionalField(e_nonStandardData))
+    m_nonStandardData.Encode(strm);
+  if (HasOptionalField(e_averageRate))
+    m_averageRate.Encode(strm);
+  if (HasOptionalField(e_burst))
+    m_burst.Encode(strm);
+  if (HasOptionalField(e_peakRate))
+    m_peakRate.Encode(strm);
+  if (HasOptionalField(e_maxPktSize))
+    m_maxPktSize.Encode(strm);
+
+  UnknownExtensionsEncode(strm);
+}
+
+
+PObject * H245_GenericTransportParameters::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_GenericTransportParameters::Class()), PInvalidCast);
+#endif
+  return new H245_GenericTransportParameters(*this);
+}
+
+
+//
 // QOSCapability
 //
 
 H245_QOSCapability::H245_QOSCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 3, TRUE, 6)
 {
+  m_dscpValue.SetConstraints(PASN_Object::FixedConstraint, 0, 63);
 }
 
 
@@ -2141,6 +2782,18 @@ void H245_QOSCapability::PrintOn(ostream & strm) const
     strm << setw(indent+17) << "rsvpParameters = " << setprecision(indent) << m_rsvpParameters << '\n';
   if (HasOptionalField(e_atmParameters))
     strm << setw(indent+16) << "atmParameters = " << setprecision(indent) << m_atmParameters << '\n';
+  if (HasOptionalField(e_localQoS))
+    strm << setw(indent+11) << "localQoS = " << setprecision(indent) << m_localQoS << '\n';
+  if (HasOptionalField(e_genericTransportParameters))
+    strm << setw(indent+29) << "genericTransportParameters = " << setprecision(indent) << m_genericTransportParameters << '\n';
+  if (HasOptionalField(e_servicePriority))
+    strm << setw(indent+18) << "servicePriority = " << setprecision(indent) << m_servicePriority << '\n';
+  if (HasOptionalField(e_authorizationParameter))
+    strm << setw(indent+25) << "authorizationParameter = " << setprecision(indent) << m_authorizationParameter << '\n';
+  if (HasOptionalField(e_qosDescriptor))
+    strm << setw(indent+16) << "qosDescriptor = " << setprecision(indent) << m_qosDescriptor << '\n';
+  if (HasOptionalField(e_dscpValue))
+    strm << setw(indent+12) << "dscpValue = " << setprecision(indent) << m_dscpValue << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
@@ -2190,6 +2843,18 @@ BOOL H245_QOSCapability::Decode(PASN_Stream & strm)
     return FALSE;
   if (HasOptionalField(e_atmParameters) && !m_atmParameters.Decode(strm))
     return FALSE;
+  if (!KnownExtensionDecode(strm, e_localQoS, m_localQoS))
+    return FALSE;
+  if (!KnownExtensionDecode(strm, e_genericTransportParameters, m_genericTransportParameters))
+    return FALSE;
+  if (!KnownExtensionDecode(strm, e_servicePriority, m_servicePriority))
+    return FALSE;
+  if (!KnownExtensionDecode(strm, e_authorizationParameter, m_authorizationParameter))
+    return FALSE;
+  if (!KnownExtensionDecode(strm, e_qosDescriptor, m_qosDescriptor))
+    return FALSE;
+  if (!KnownExtensionDecode(strm, e_dscpValue, m_dscpValue))
+    return FALSE;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2205,6 +2870,12 @@ void H245_QOSCapability::Encode(PASN_Stream & strm) const
     m_rsvpParameters.Encode(strm);
   if (HasOptionalField(e_atmParameters))
     m_atmParameters.Encode(strm);
+  KnownExtensionEncode(strm, e_localQoS, m_localQoS);
+  KnownExtensionEncode(strm, e_genericTransportParameters, m_genericTransportParameters);
+  KnownExtensionEncode(strm, e_servicePriority, m_servicePriority);
+  KnownExtensionEncode(strm, e_authorizationParameter, m_authorizationParameter);
+  KnownExtensionEncode(strm, e_qosDescriptor, m_qosDescriptor);
+  KnownExtensionEncode(strm, e_dscpValue, m_dscpValue);
 
   UnknownExtensionsEncode(strm);
 }
@@ -5317,7 +5988,7 @@ PObject * H245_EncryptionSync::Clone() const
 //
 
 H245_OpenLogicalChannelReject::H245_OpenLogicalChannelReject(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, TRUE, 1)
 {
 }
 
@@ -5329,6 +6000,8 @@ void H245_OpenLogicalChannelReject::PrintOn(ostream & strm) const
   strm << "{\n";
   strm << setw(indent+30) << "forwardLogicalChannelNumber = " << setprecision(indent) << m_forwardLogicalChannelNumber << '\n';
   strm << setw(indent+8) << "cause = " << setprecision(indent) << m_cause << '\n';
+  if (HasOptionalField(e_genericInformation))
+    strm << setw(indent+21) << "genericInformation = " << setprecision(indent) << m_genericInformation << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
@@ -5370,6 +6043,8 @@ BOOL H245_OpenLogicalChannelReject::Decode(PASN_Stream & strm)
     return FALSE;
   if (!m_cause.Decode(strm))
     return FALSE;
+  if (!KnownExtensionDecode(strm, e_genericInformation, m_genericInformation))
+    return FALSE;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5381,6 +6056,7 @@ void H245_OpenLogicalChannelReject::Encode(PASN_Stream & strm) const
 
   m_forwardLogicalChannelNumber.Encode(strm);
   m_cause.Encode(strm);
+  KnownExtensionEncode(strm, e_genericInformation, m_genericInformation);
 
   UnknownExtensionsEncode(strm);
 }
@@ -5392,6 +6068,87 @@ PObject * H245_OpenLogicalChannelReject::Clone() const
   PAssert(IsClass(H245_OpenLogicalChannelReject::Class()), PInvalidCast);
 #endif
   return new H245_OpenLogicalChannelReject(*this);
+}
+
+
+//
+// OpenLogicalChannelConfirm
+//
+
+H245_OpenLogicalChannelConfirm::H245_OpenLogicalChannelConfirm(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Sequence(tag, tagClass, 0, TRUE, 1)
+{
+}
+
+
+#ifndef PASN_NOPRINTON
+void H245_OpenLogicalChannelConfirm::PrintOn(ostream & strm) const
+{
+  int indent = strm.precision() + 2;
+  strm << "{\n";
+  strm << setw(indent+30) << "forwardLogicalChannelNumber = " << setprecision(indent) << m_forwardLogicalChannelNumber << '\n';
+  if (HasOptionalField(e_genericInformation))
+    strm << setw(indent+21) << "genericInformation = " << setprecision(indent) << m_genericInformation << '\n';
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
+}
+#endif
+
+
+PObject::Comparison H245_OpenLogicalChannelConfirm::Compare(const PObject & obj) const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(&obj, H245_OpenLogicalChannelConfirm), PInvalidCast);
+#endif
+  const H245_OpenLogicalChannelConfirm & other = (const H245_OpenLogicalChannelConfirm &)obj;
+
+  Comparison result;
+
+  if ((result = m_forwardLogicalChannelNumber.Compare(other.m_forwardLogicalChannelNumber)) != EqualTo)
+    return result;
+
+  return PASN_Sequence::Compare(other);
+}
+
+
+PINDEX H245_OpenLogicalChannelConfirm::GetDataLength() const
+{
+  PINDEX length = 0;
+  length += m_forwardLogicalChannelNumber.GetObjectLength();
+  return length;
+}
+
+
+BOOL H245_OpenLogicalChannelConfirm::Decode(PASN_Stream & strm)
+{
+  if (!PreambleDecode(strm))
+    return FALSE;
+
+  if (!m_forwardLogicalChannelNumber.Decode(strm))
+    return FALSE;
+  if (!KnownExtensionDecode(strm, e_genericInformation, m_genericInformation))
+    return FALSE;
+
+  return UnknownExtensionsDecode(strm);
+}
+
+
+void H245_OpenLogicalChannelConfirm::Encode(PASN_Stream & strm) const
+{
+  PreambleEncode(strm);
+
+  m_forwardLogicalChannelNumber.Encode(strm);
+  KnownExtensionEncode(strm, e_genericInformation, m_genericInformation);
+
+  UnknownExtensionsEncode(strm);
+}
+
+
+PObject * H245_OpenLogicalChannelConfirm::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_OpenLogicalChannelConfirm::Class()), PInvalidCast);
+#endif
+  return new H245_OpenLogicalChannelConfirm(*this);
 }
 
 
@@ -13368,7 +14125,7 @@ PObject * H245_EncryptionAuthenticationAndIntegrity::Clone() const
 //
 
 H245_OpenLogicalChannel::H245_OpenLogicalChannel(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 2)
+  : PASN_Sequence(tag, tagClass, 1, TRUE, 3)
 {
 }
 
@@ -13386,6 +14143,8 @@ void H245_OpenLogicalChannel::PrintOn(ostream & strm) const
     strm << setw(indent+16) << "separateStack = " << setprecision(indent) << m_separateStack << '\n';
   if (HasOptionalField(e_encryptionSync))
     strm << setw(indent+17) << "encryptionSync = " << setprecision(indent) << m_encryptionSync << '\n';
+  if (HasOptionalField(e_genericInformation))
+    strm << setw(indent+21) << "genericInformation = " << setprecision(indent) << m_genericInformation << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
@@ -13437,6 +14196,8 @@ BOOL H245_OpenLogicalChannel::Decode(PASN_Stream & strm)
     return FALSE;
   if (!KnownExtensionDecode(strm, e_encryptionSync, m_encryptionSync))
     return FALSE;
+  if (!KnownExtensionDecode(strm, e_genericInformation, m_genericInformation))
+    return FALSE;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -13452,6 +14213,7 @@ void H245_OpenLogicalChannel::Encode(PASN_Stream & strm) const
     m_reverseLogicalChannelParameters.Encode(strm);
   KnownExtensionEncode(strm, e_separateStack, m_separateStack);
   KnownExtensionEncode(strm, e_encryptionSync, m_encryptionSync);
+  KnownExtensionEncode(strm, e_genericInformation, m_genericInformation);
 
   UnknownExtensionsEncode(strm);
 }
@@ -13749,7 +14511,7 @@ PObject * H245_RedundancyEncoding::Clone() const
 //
 
 H245_OpenLogicalChannelAck::H245_OpenLogicalChannelAck(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 3)
+  : PASN_Sequence(tag, tagClass, 1, TRUE, 4)
 {
 }
 
@@ -13768,6 +14530,8 @@ void H245_OpenLogicalChannelAck::PrintOn(ostream & strm) const
     strm << setw(indent+32) << "forwardMultiplexAckParameters = " << setprecision(indent) << m_forwardMultiplexAckParameters << '\n';
   if (HasOptionalField(e_encryptionSync))
     strm << setw(indent+17) << "encryptionSync = " << setprecision(indent) << m_encryptionSync << '\n';
+  if (HasOptionalField(e_genericInformation))
+    strm << setw(indent+21) << "genericInformation = " << setprecision(indent) << m_genericInformation << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
@@ -13816,6 +14580,8 @@ BOOL H245_OpenLogicalChannelAck::Decode(PASN_Stream & strm)
     return FALSE;
   if (!KnownExtensionDecode(strm, e_encryptionSync, m_encryptionSync))
     return FALSE;
+  if (!KnownExtensionDecode(strm, e_genericInformation, m_genericInformation))
+    return FALSE;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -13831,6 +14597,7 @@ void H245_OpenLogicalChannelAck::Encode(PASN_Stream & strm) const
   KnownExtensionEncode(strm, e_separateStack, m_separateStack);
   KnownExtensionEncode(strm, e_forwardMultiplexAckParameters, m_forwardMultiplexAckParameters);
   KnownExtensionEncode(strm, e_encryptionSync, m_encryptionSync);
+  KnownExtensionEncode(strm, e_genericInformation, m_genericInformation);
 
   UnknownExtensionsEncode(strm);
 }
