@@ -133,6 +133,28 @@ fi
 AC_SUBST(PWLIBDIR)
 
 dnl ########################################################################
+dnl get the gcc version
+
+if test x$GXX = xyes ; then
+  USE_GCC=yes
+  gcc_version=`$CXX -dumpversion`
+  AC_MSG_NOTICE(gcc version is $gcc_version);
+  GXX_MAJOR=`echo $gcc_version | sed 's/\..*$//'`
+  GXX_MINOR=[`echo $gcc_version | sed -e 's/[0-9][0-9]*\.//' -e 's/\..*$//'`]
+  GXX_PATCH=[`echo $gcc_version | sed -e 's/[0-9][0-9]*\.[0-9][0-9]*\.//' -e 's/\..*$//'`]
+
+  dnl cannot compile for less than gcc 3
+  AC_MSG_CHECKING(checking if gcc version is valid)
+  if test ${GXX_MAJOR} -lt 3 ; then
+    AC_MSG_RESULT(no)
+    AC_MSG_ERROR([OPAL requires gcc version 3 or later])
+  else
+    AC_MSG_RESULT(yes)
+  fi
+fi
+
+
+dnl ########################################################################
 dnl Look for H263 codec
 AC_ARG_ENABLE(h263avcodec,
 		[  --enable-h263avcodec    specify RFC 2190 compatible avcodec
