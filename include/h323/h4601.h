@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
 * $Log: h4601.h,v $
+* Revision 1.7  2006/06/21 04:54:14  csoutheren
+* Fixed build with latest PWLib
+*
 * Revision 1.6  2006/06/15 15:34:25  shorne
 * More updates
 *
@@ -56,6 +59,7 @@
 
 #include <asn/h225.h>
 #include <h323/transaddr.h>
+#include <ptlib/pluginmgr.h>
 #include <ptclib/url.h>
 
 
