@@ -2911,6 +2911,31 @@ fi
 
 
 
+
+if test x$GXX = xyes ; then
+  USE_GCC=yes
+  gcc_version=`$CXX -dumpversion`
+  { echo "$as_me:$LINENO: gcc version is $gcc_version" >&5
+echo "$as_me: gcc version is $gcc_version" >&6;};
+  GXX_MAJOR=`echo $gcc_version | sed 's/\..*$//'`
+  GXX_MINOR=`echo $gcc_version | sed -e 's/[0-9][0-9]*\.//' -e 's/\..*$//'`
+  GXX_PATCH=`echo $gcc_version | sed -e 's/[0-9][0-9]*\.[0-9][0-9]*\.//' -e 's/\..*$//'`
+
+    echo "$as_me:$LINENO: checking checking if gcc version is valid" >&5
+echo $ECHO_N "checking checking if gcc version is valid... $ECHO_C" >&6
+  if test ${GXX_MAJOR} -lt 3 ; then
+    echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+    { { echo "$as_me:$LINENO: error: OPAL requires gcc version 3 or later" >&5
+echo "$as_me: error: OPAL requires gcc version 3 or later" >&2;}
+   { (exit 1); exit 1; }; }
+  else
+    echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+  fi
+fi
+
+
 # Check whether --enable-h263avcodec or --disable-h263avcodec was given.
 if test "${enable_h263avcodec+set}" = set; then
   enableval="$enable_h263avcodec"
