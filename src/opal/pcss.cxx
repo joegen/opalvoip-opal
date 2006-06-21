@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2030  2005/12/29 16:23:09  dsandras
+ * Revision 1.2031  2006/06/21 04:54:15  csoutheren
+ * Fixed build with latest PWLib
+ *
+ * Revision 2.29  2005/12/29 16:23:09  dsandras
  * Use the correct clock rate for the canceller.
  *
  * Revision 2.28  2005/12/28 20:03:00  dsandras
@@ -142,6 +145,7 @@
 #include <opal/pcss.h>
 
 #include <ptlib/videoio.h>
+#include <ptlib/sound.h>
 #include <codec/silencedetect.h>
 #include <codec/echocancel.h>
 #include <codec/vidcodec.h>
