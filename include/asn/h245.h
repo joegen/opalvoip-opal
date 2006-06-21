@@ -936,54 +936,6 @@ class H245_CapabilityDescriptorNumber : public PASN_Integer
 
 
 //
-// TerminalCapabilitySetAck
-//
-
-class H245_TerminalCapabilitySetAck : public PASN_Sequence
-{
-#ifndef PASN_LEANANDMEAN
-    PCLASSINFO(H245_TerminalCapabilitySetAck, PASN_Sequence);
-#endif
-  public:
-    H245_TerminalCapabilitySetAck(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
-
-    H245_SequenceNumber m_sequenceNumber;
-
-    PINDEX GetDataLength() const;
-    BOOL Decode(PASN_Stream & strm);
-    void Encode(PASN_Stream & strm) const;
-#ifndef PASN_NOPRINTON
-    void PrintOn(ostream & strm) const;
-#endif
-    Comparison Compare(const PObject & obj) const;
-    PObject * Clone() const;
-};
-
-
-//
-// TerminalCapabilitySetRelease
-//
-
-class H245_TerminalCapabilitySetRelease : public PASN_Sequence
-{
-#ifndef PASN_LEANANDMEAN
-    PCLASSINFO(H245_TerminalCapabilitySetRelease, PASN_Sequence);
-#endif
-  public:
-    H245_TerminalCapabilitySetRelease(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
-
-
-    PINDEX GetDataLength() const;
-    BOOL Decode(PASN_Stream & strm);
-    void Encode(PASN_Stream & strm) const;
-#ifndef PASN_NOPRINTON
-    void PrintOn(ostream & strm) const;
-#endif
-    PObject * Clone() const;
-};
-
-
-//
 // Capability
 //
 
@@ -1338,6 +1290,54 @@ class H245_ATMParameters : public PASN_Sequence
     void PrintOn(ostream & strm) const;
 #endif
     Comparison Compare(const PObject & obj) const;
+    PObject * Clone() const;
+};
+
+
+//
+// QOSType
+//
+
+class H245_QOSType : public PASN_Choice
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_QOSType, PASN_Choice);
+#endif
+  public:
+    H245_QOSType(unsigned tag = 0, TagClass tagClass = UniversalTagClass);
+
+    enum Choices {
+      e_desired,
+      e_required
+    };
+
+    BOOL CreateObject();
+    PObject * Clone() const;
+};
+
+
+//
+// QOSClass
+//
+
+class H245_QOSClass : public PASN_Choice
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_QOSClass, PASN_Choice);
+#endif
+  public:
+    H245_QOSClass(unsigned tag = 0, TagClass tagClass = UniversalTagClass);
+
+    enum Choices {
+      e_class0,
+      e_class1,
+      e_class2,
+      e_class3,
+      e_class4,
+      e_class5
+    };
+
+    BOOL CreateObject();
     PObject * Clone() const;
 };
 
@@ -1775,14 +1775,6 @@ class H245_AudioCapability : public PASN_Choice
   public:
     H245_AudioCapability(unsigned tag = 0, TagClass tagClass = UniversalTagClass);
 
-// following code added by command line option
-
-#ifndef PASN_NOPRINTON
-void PrintOn(ostream & strm) const;
-#endif
-
-// end of added code
-
     enum Choices {
       e_nonStandard,
       e_g711Alaw64k,
@@ -1878,6 +1870,9 @@ void PrintOn(ostream & strm) const;
     operator const H245_NoPTAudioToneCapability &() const;
 #endif
 
+#ifndef PASN_NOPRINTON
+    void PrintOn(ostream & strm) const;
+#endif
     BOOL CreateObject();
     PObject * Clone() const;
 };
@@ -2289,6 +2284,7 @@ class H245_MediaEncryptionAlgorithm : public PASN_Choice
 //
 
 class H245_ArrayOf_NonStandardParameter;
+class H245_GenericCapability;
 
 class H245_UserInputCapability : public PASN_Choice
 {
@@ -2309,7 +2305,8 @@ class H245_UserInputCapability : public PASN_Choice
       e_encryptedBasicString,
       e_encryptedIA5String,
       e_encryptedGeneralString,
-      e_secureDTMF
+      e_secureDTMF,
+      e_genericUserInputCapability
     };
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
@@ -2317,6 +2314,12 @@ class H245_UserInputCapability : public PASN_Choice
 #else
     operator H245_ArrayOf_NonStandardParameter &();
     operator const H245_ArrayOf_NonStandardParameter &() const;
+#endif
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+    operator H245_GenericCapability &() const;
+#else
+    operator H245_GenericCapability &();
+    operator const H245_GenericCapability &() const;
 #endif
 
     BOOL CreateObject();
@@ -3142,31 +3145,6 @@ class H245_EscrowData : public PASN_Sequence
 
     PASN_ObjectId m_escrowID;
     PASN_BitString m_escrowValue;
-
-    PINDEX GetDataLength() const;
-    BOOL Decode(PASN_Stream & strm);
-    void Encode(PASN_Stream & strm) const;
-#ifndef PASN_NOPRINTON
-    void PrintOn(ostream & strm) const;
-#endif
-    Comparison Compare(const PObject & obj) const;
-    PObject * Clone() const;
-};
-
-
-//
-// OpenLogicalChannelConfirm
-//
-
-class H245_OpenLogicalChannelConfirm : public PASN_Sequence
-{
-#ifndef PASN_LEANANDMEAN
-    PCLASSINFO(H245_OpenLogicalChannelConfirm, PASN_Sequence);
-#endif
-  public:
-    H245_OpenLogicalChannelConfirm(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
-
-    H245_LogicalChannelNumber m_forwardLogicalChannelNumber;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -4789,6 +4767,7 @@ class H245_EncryptionCommand : public PASN_Choice
 class H245_NonStandardParameter;
 class H245_EndSessionCommand_gstnOptions;
 class H245_EndSessionCommand_isdnOptions;
+class H245_ArrayOf_GenericInformation;
 
 class H245_EndSessionCommand : public PASN_Choice
 {
@@ -4802,7 +4781,8 @@ class H245_EndSessionCommand : public PASN_Choice
       e_nonStandard,
       e_disconnect,
       e_gstnOptions,
-      e_isdnOptions
+      e_isdnOptions,
+      e_genericInformation
     };
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
@@ -4822,6 +4802,12 @@ class H245_EndSessionCommand : public PASN_Choice
 #else
     operator H245_EndSessionCommand_isdnOptions &();
     operator const H245_EndSessionCommand_isdnOptions &() const;
+#endif
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+    operator H245_ArrayOf_GenericInformation &() const;
+#else
+    operator H245_ArrayOf_GenericInformation &();
+    operator const H245_ArrayOf_GenericInformation &() const;
 #endif
 
     BOOL CreateObject();
@@ -5399,6 +5385,7 @@ class H245_UserInputIndication_signal;
 class H245_UserInputIndication_signalUpdate;
 class H245_UserInputIndication_extendedAlphanumeric;
 class H245_UserInputIndication_encryptedAlphanumeric;
+class H245_ArrayOf_GenericInformation;
 
 class H245_UserInputIndication : public PASN_Choice
 {
@@ -5415,7 +5402,8 @@ class H245_UserInputIndication : public PASN_Choice
       e_signal,
       e_signalUpdate,
       e_extendedAlphanumeric,
-      e_encryptedAlphanumeric
+      e_encryptedAlphanumeric,
+      e_genericInformation
     };
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
@@ -5453,6 +5441,12 @@ class H245_UserInputIndication : public PASN_Choice
 #else
     operator H245_UserInputIndication_encryptedAlphanumeric &();
     operator const H245_UserInputIndication_encryptedAlphanumeric &() const;
+#endif
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+    operator H245_ArrayOf_GenericInformation &() const;
+#else
+    operator H245_ArrayOf_GenericInformation &();
+    operator const H245_ArrayOf_GenericInformation &() const;
 #endif
 
     BOOL CreateObject();
@@ -5612,6 +5606,26 @@ class H245_ArrayOf_CapabilityDescriptor : public PASN_Array
 
     PASN_Object * CreateObject() const;
     H245_CapabilityDescriptor & operator[](PINDEX i) const;
+    PObject * Clone() const;
+};
+
+
+//
+// ArrayOf_GenericInformation
+//
+
+class H245_GenericInformation;
+
+class H245_ArrayOf_GenericInformation : public PASN_Array
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_ArrayOf_GenericInformation, PASN_Array);
+#endif
+  public:
+    H245_ArrayOf_GenericInformation(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    PASN_Object * CreateObject() const;
+    H245_GenericInformation & operator[](PINDEX i) const;
     PObject * Clone() const;
 };
 
@@ -11388,6 +11402,22 @@ class H245_GenericMessage : public PASN_Sequence
 
 
 //
+// GenericInformation
+//
+
+class H245_GenericInformation : public H245_GenericMessage
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_GenericInformation, H245_GenericMessage);
+#endif
+  public:
+    H245_GenericInformation(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    PObject * Clone() const;
+};
+
+
+//
 // NonStandardParameter
 //
 
@@ -11478,7 +11508,8 @@ class H245_TerminalCapabilitySet : public PASN_Sequence
     enum OptionalFields {
       e_multiplexCapability,
       e_capabilityTable,
-      e_capabilityDescriptors
+      e_capabilityDescriptors,
+      e_genericInformation
     };
 
     H245_SequenceNumber m_sequenceNumber;
@@ -11486,6 +11517,7 @@ class H245_TerminalCapabilitySet : public PASN_Sequence
     H245_MultiplexCapability m_multiplexCapability;
     H245_ArrayOf_CapabilityTableEntry m_capabilityTable;
     H245_ArrayOf_CapabilityDescriptor m_capabilityDescriptors;
+    H245_ArrayOf_GenericInformation m_genericInformation;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -11559,6 +11591,36 @@ class H245_CapabilityDescriptor : public PASN_Sequence
 
 
 //
+// TerminalCapabilitySetAck
+//
+
+class H245_TerminalCapabilitySetAck : public PASN_Sequence
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_TerminalCapabilitySetAck, PASN_Sequence);
+#endif
+  public:
+    H245_TerminalCapabilitySetAck(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    enum OptionalFields {
+      e_genericInformation
+    };
+
+    H245_SequenceNumber m_sequenceNumber;
+    H245_ArrayOf_GenericInformation m_genericInformation;
+
+    PINDEX GetDataLength() const;
+    BOOL Decode(PASN_Stream & strm);
+    void Encode(PASN_Stream & strm) const;
+#ifndef PASN_NOPRINTON
+    void PrintOn(ostream & strm) const;
+#endif
+    Comparison Compare(const PObject & obj) const;
+    PObject * Clone() const;
+};
+
+
+//
 // TerminalCapabilitySetReject
 //
 
@@ -11570,8 +11632,13 @@ class H245_TerminalCapabilitySetReject : public PASN_Sequence
   public:
     H245_TerminalCapabilitySetReject(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
 
+    enum OptionalFields {
+      e_genericInformation
+    };
+
     H245_SequenceNumber m_sequenceNumber;
     H245_TerminalCapabilitySetReject_cause m_cause;
+    H245_ArrayOf_GenericInformation m_genericInformation;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -11580,6 +11647,34 @@ class H245_TerminalCapabilitySetReject : public PASN_Sequence
     void PrintOn(ostream & strm) const;
 #endif
     Comparison Compare(const PObject & obj) const;
+    PObject * Clone() const;
+};
+
+
+//
+// TerminalCapabilitySetRelease
+//
+
+class H245_TerminalCapabilitySetRelease : public PASN_Sequence
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_TerminalCapabilitySetRelease, PASN_Sequence);
+#endif
+  public:
+    H245_TerminalCapabilitySetRelease(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    enum OptionalFields {
+      e_genericInformation
+    };
+
+    H245_ArrayOf_GenericInformation m_genericInformation;
+
+    PINDEX GetDataLength() const;
+    BOOL Decode(PASN_Stream & strm);
+    void Encode(PASN_Stream & strm) const;
+#ifndef PASN_NOPRINTON
+    void PrintOn(ostream & strm) const;
+#endif
     PObject * Clone() const;
 };
 
@@ -11772,6 +11867,164 @@ class H245_RSVPParameters : public PASN_Sequence
 
 
 //
+// ServicePriorityValue
+//
+
+class H245_ServicePriorityValue : public PASN_Sequence
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_ServicePriorityValue, PASN_Sequence);
+#endif
+  public:
+    H245_ServicePriorityValue(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    enum OptionalFields {
+      e_nonStandardParameter
+    };
+
+    H245_NonStandardParameter m_nonStandardParameter;
+
+    PINDEX GetDataLength() const;
+    BOOL Decode(PASN_Stream & strm);
+    void Encode(PASN_Stream & strm) const;
+#ifndef PASN_NOPRINTON
+    void PrintOn(ostream & strm) const;
+#endif
+    Comparison Compare(const PObject & obj) const;
+    PObject * Clone() const;
+};
+
+
+//
+// ServicePriority
+//
+
+class H245_ServicePriority : public PASN_Sequence
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_ServicePriority, PASN_Sequence);
+#endif
+  public:
+    H245_ServicePriority(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    enum OptionalFields {
+      e_nonStandardData,
+      e_servicePriorityValue
+    };
+
+    H245_NonStandardParameter m_nonStandardData;
+    PASN_Boolean m_servicePrioritySignalled;
+    H245_ServicePriorityValue m_servicePriorityValue;
+
+    PINDEX GetDataLength() const;
+    BOOL Decode(PASN_Stream & strm);
+    void Encode(PASN_Stream & strm) const;
+#ifndef PASN_NOPRINTON
+    void PrintOn(ostream & strm) const;
+#endif
+    Comparison Compare(const PObject & obj) const;
+    PObject * Clone() const;
+};
+
+
+//
+// AuthorizationParameters
+//
+
+class H245_AuthorizationParameters : public PASN_Sequence
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_AuthorizationParameters, PASN_Sequence);
+#endif
+  public:
+    H245_AuthorizationParameters(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    enum OptionalFields {
+      e_nonStandardData
+    };
+
+    H245_NonStandardParameter m_nonStandardData;
+
+    PINDEX GetDataLength() const;
+    BOOL Decode(PASN_Stream & strm);
+    void Encode(PASN_Stream & strm) const;
+#ifndef PASN_NOPRINTON
+    void PrintOn(ostream & strm) const;
+#endif
+    Comparison Compare(const PObject & obj) const;
+    PObject * Clone() const;
+};
+
+
+//
+// QOSDescriptor
+//
+
+class H245_QOSDescriptor : public PASN_Sequence
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_QOSDescriptor, PASN_Sequence);
+#endif
+  public:
+    H245_QOSDescriptor(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    enum OptionalFields {
+      e_nonStandardData
+    };
+
+    H245_NonStandardParameter m_nonStandardData;
+    H245_QOSType m_qosType;
+    H245_QOSClass m_qosClass;
+
+    PINDEX GetDataLength() const;
+    BOOL Decode(PASN_Stream & strm);
+    void Encode(PASN_Stream & strm) const;
+#ifndef PASN_NOPRINTON
+    void PrintOn(ostream & strm) const;
+#endif
+    Comparison Compare(const PObject & obj) const;
+    PObject * Clone() const;
+};
+
+
+//
+// GenericTransportParameters
+//
+
+class H245_GenericTransportParameters : public PASN_Sequence
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_GenericTransportParameters, PASN_Sequence);
+#endif
+  public:
+    H245_GenericTransportParameters(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    enum OptionalFields {
+      e_nonStandardData,
+      e_averageRate,
+      e_burst,
+      e_peakRate,
+      e_maxPktSize
+    };
+
+    H245_NonStandardParameter m_nonStandardData;
+    PASN_Integer m_averageRate;
+    PASN_Integer m_burst;
+    PASN_Integer m_peakRate;
+    PASN_Integer m_maxPktSize;
+
+    PINDEX GetDataLength() const;
+    BOOL Decode(PASN_Stream & strm);
+    void Encode(PASN_Stream & strm) const;
+#ifndef PASN_NOPRINTON
+    void PrintOn(ostream & strm) const;
+#endif
+    Comparison Compare(const PObject & obj) const;
+    PObject * Clone() const;
+};
+
+
+//
 // QOSCapability
 //
 
@@ -11786,12 +12039,24 @@ class H245_QOSCapability : public PASN_Sequence
     enum OptionalFields {
       e_nonStandardData,
       e_rsvpParameters,
-      e_atmParameters
+      e_atmParameters,
+      e_localQoS,
+      e_genericTransportParameters,
+      e_servicePriority,
+      e_authorizationParameter,
+      e_qosDescriptor,
+      e_dscpValue
     };
 
     H245_NonStandardParameter m_nonStandardData;
     H245_RSVPParameters m_rsvpParameters;
     H245_ATMParameters m_atmParameters;
+    PASN_Boolean m_localQoS;
+    H245_GenericTransportParameters m_genericTransportParameters;
+    H245_ServicePriority m_servicePriority;
+    H245_AuthorizationParameters m_authorizationParameter;
+    H245_QOSDescriptor m_qosDescriptor;
+    PASN_Integer m_dscpValue;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -12788,8 +13053,43 @@ class H245_OpenLogicalChannelReject : public PASN_Sequence
   public:
     H245_OpenLogicalChannelReject(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
 
+    enum OptionalFields {
+      e_genericInformation
+    };
+
     H245_LogicalChannelNumber m_forwardLogicalChannelNumber;
     H245_OpenLogicalChannelReject_cause m_cause;
+    H245_ArrayOf_GenericInformation m_genericInformation;
+
+    PINDEX GetDataLength() const;
+    BOOL Decode(PASN_Stream & strm);
+    void Encode(PASN_Stream & strm) const;
+#ifndef PASN_NOPRINTON
+    void PrintOn(ostream & strm) const;
+#endif
+    Comparison Compare(const PObject & obj) const;
+    PObject * Clone() const;
+};
+
+
+//
+// OpenLogicalChannelConfirm
+//
+
+class H245_OpenLogicalChannelConfirm : public PASN_Sequence
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H245_OpenLogicalChannelConfirm, PASN_Sequence);
+#endif
+  public:
+    H245_OpenLogicalChannelConfirm(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    enum OptionalFields {
+      e_genericInformation
+    };
+
+    H245_LogicalChannelNumber m_forwardLogicalChannelNumber;
+    H245_ArrayOf_GenericInformation m_genericInformation;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -15345,7 +15645,8 @@ class H245_OpenLogicalChannel : public PASN_Sequence
     enum OptionalFields {
       e_reverseLogicalChannelParameters,
       e_separateStack,
-      e_encryptionSync
+      e_encryptionSync,
+      e_genericInformation
     };
 
     H245_LogicalChannelNumber m_forwardLogicalChannelNumber;
@@ -15353,6 +15654,7 @@ class H245_OpenLogicalChannel : public PASN_Sequence
     H245_OpenLogicalChannel_reverseLogicalChannelParameters m_reverseLogicalChannelParameters;
     H245_NetworkAccessParameters m_separateStack;
     H245_EncryptionSync m_encryptionSync;
+    H245_ArrayOf_GenericInformation m_genericInformation;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -15468,7 +15770,8 @@ class H245_OpenLogicalChannelAck : public PASN_Sequence
       e_reverseLogicalChannelParameters,
       e_separateStack,
       e_forwardMultiplexAckParameters,
-      e_encryptionSync
+      e_encryptionSync,
+      e_genericInformation
     };
 
     H245_LogicalChannelNumber m_forwardLogicalChannelNumber;
@@ -15476,6 +15779,7 @@ class H245_OpenLogicalChannelAck : public PASN_Sequence
     H245_NetworkAccessParameters m_separateStack;
     H245_OpenLogicalChannelAck_forwardMultiplexAckParameters m_forwardMultiplexAckParameters;
     H245_EncryptionSync m_encryptionSync;
+    H245_ArrayOf_GenericInformation m_genericInformation;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
