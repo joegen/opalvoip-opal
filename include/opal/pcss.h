@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.h,v $
- * Revision 1.2020  2005/12/28 20:03:00  dsandras
+ * Revision 1.2021  2006/06/21 04:54:15  csoutheren
+ * Fixed build with latest PWLib
+ *
+ * Revision 2.19  2005/12/28 20:03:00  dsandras
  * Attach the silence detector in OnPatchMediaStream so that it can be attached
  * before the echo cancellation filter.
  *
@@ -101,10 +104,9 @@
 #pragma interface
 #endif
 
+#include <ptlib/sound.h>
 #include <opal/buildopts.h>
-
 #include <opal/endpoint.h>
-
 
 class OpalPCSSConnection;
 

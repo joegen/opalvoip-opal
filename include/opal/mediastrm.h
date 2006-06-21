@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2029  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2030  2006/06/21 04:54:15  csoutheren
+ * Fixed build with latest PWLib
+ *
+ * Revision 2.28  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.27  2005/09/04 06:23:38  rjongbloed
@@ -622,6 +625,8 @@ class OpalFileMediaStream : public OpalRawMediaStream
 /**This class describes a media stream that transfers data to/from a audio
    PSoundChannel.
   */
+class PSoundChannel;
+
 class OpalAudioMediaStream : public OpalRawMediaStream
 {
     PCLASSINFO(OpalAudioMediaStream, OpalRawMediaStream);
@@ -675,6 +680,9 @@ class OpalAudioMediaStream : public OpalRawMediaStream
 /**This class describes a media stream that transfers data to/from a
    PVideoDevice.
   */
+class PVideoInputDevice;
+class PVideoOutputDevice;
+
 class OpalVideoMediaStream : public OpalMediaStream
 {
     PCLASSINFO(OpalVideoMediaStream, OpalMediaStream);
