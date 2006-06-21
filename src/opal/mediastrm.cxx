@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2040  2005/12/30 14:30:02  dsandras
+ * Revision 1.2041  2006/06/21 04:54:15  csoutheren
+ * Fixed build with latest PWLib
+ *
+ * Revision 2.39  2005/12/30 14:30:02  dsandras
  * Removed the assumption that the jitter will contain a 8 kHz signal.
  *
  * Revision 2.38  2005/09/06 12:44:49  rjongbloed
@@ -174,6 +177,7 @@
 #include <opal/mediastrm.h>
 
 #include <ptlib/videoio.h>
+#include <ptlib/sound.h>
 #include <opal/patch.h>
 #include <codec/vidcodec.h>
 #include <lids/lid.h>

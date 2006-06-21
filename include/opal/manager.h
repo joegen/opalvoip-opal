@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2047  2006/04/20 16:52:22  hfriederich
+ * Revision 1.2048  2006/06/21 04:54:15  csoutheren
+ * Fixed build with latest PWLib
+ *
+ * Revision 2.46  2006/04/20 16:52:22  hfriederich
  * Adding support for H.224/H.281
  *
  * Revision 2.45  2005/11/30 13:35:26  csoutheren
@@ -195,6 +198,7 @@
 #include <codec/silencedetect.h>
 #include <codec/echocancel.h>
 #include <ptclib/pstun.h>
+#include <ptlib/videoio.h>
 
 class OpalEndPoint;
 class OpalMediaPatch;
