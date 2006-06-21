@@ -2680,137 +2680,6 @@ PObject * H245_CapabilityDescriptorNumber::Clone() const
 }
 
 
-//
-// TerminalCapabilitySetAck
-//
-
-H245_TerminalCapabilitySetAck::H245_TerminalCapabilitySetAck(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
-{
-}
-
-
-#ifndef PASN_NOPRINTON
-void H245_TerminalCapabilitySetAck::PrintOn(ostream & strm) const
-{
-  int indent = strm.precision() + 2;
-  strm << "{\n";
-  strm << setw(indent+17) << "sequenceNumber = " << setprecision(indent) << m_sequenceNumber << '\n';
-  strm << setw(indent-1) << setprecision(indent-2) << "}";
-}
-#endif
-
-
-PObject::Comparison H245_TerminalCapabilitySetAck::Compare(const PObject & obj) const
-{
-#ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(&obj, H245_TerminalCapabilitySetAck), PInvalidCast);
-#endif
-  const H245_TerminalCapabilitySetAck & other = (const H245_TerminalCapabilitySetAck &)obj;
-
-  Comparison result;
-
-  if ((result = m_sequenceNumber.Compare(other.m_sequenceNumber)) != EqualTo)
-    return result;
-
-  return PASN_Sequence::Compare(other);
-}
-
-
-PINDEX H245_TerminalCapabilitySetAck::GetDataLength() const
-{
-  PINDEX length = 0;
-  length += m_sequenceNumber.GetObjectLength();
-  return length;
-}
-
-
-BOOL H245_TerminalCapabilitySetAck::Decode(PASN_Stream & strm)
-{
-  if (!PreambleDecode(strm))
-    return FALSE;
-
-  if (!m_sequenceNumber.Decode(strm))
-    return FALSE;
-
-  return UnknownExtensionsDecode(strm);
-}
-
-
-void H245_TerminalCapabilitySetAck::Encode(PASN_Stream & strm) const
-{
-  PreambleEncode(strm);
-
-  m_sequenceNumber.Encode(strm);
-
-  UnknownExtensionsEncode(strm);
-}
-
-
-PObject * H245_TerminalCapabilitySetAck::Clone() const
-{
-#ifndef PASN_LEANANDMEAN
-  PAssert(IsClass(H245_TerminalCapabilitySetAck::Class()), PInvalidCast);
-#endif
-  return new H245_TerminalCapabilitySetAck(*this);
-}
-
-
-//
-// TerminalCapabilitySetRelease
-//
-
-H245_TerminalCapabilitySetRelease::H245_TerminalCapabilitySetRelease(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
-{
-}
-
-
-#ifndef PASN_NOPRINTON
-void H245_TerminalCapabilitySetRelease::PrintOn(ostream & strm) const
-{
-  int indent = strm.precision() + 2;
-  strm << "{\n";
-  strm << setw(indent-1) << setprecision(indent-2) << "}";
-}
-#endif
-
-
-PINDEX H245_TerminalCapabilitySetRelease::GetDataLength() const
-{
-  PINDEX length = 0;
-  return length;
-}
-
-
-BOOL H245_TerminalCapabilitySetRelease::Decode(PASN_Stream & strm)
-{
-  if (!PreambleDecode(strm))
-    return FALSE;
-
-
-  return UnknownExtensionsDecode(strm);
-}
-
-
-void H245_TerminalCapabilitySetRelease::Encode(PASN_Stream & strm) const
-{
-  PreambleEncode(strm);
-
-
-  UnknownExtensionsEncode(strm);
-}
-
-
-PObject * H245_TerminalCapabilitySetRelease::Clone() const
-{
-#ifndef PASN_LEANANDMEAN
-  PAssert(IsClass(H245_TerminalCapabilitySetRelease::Class()), PInvalidCast);
-#endif
-  return new H245_TerminalCapabilitySetRelease(*this);
-}
-
-
 
 #ifndef PASN_NOPRINTON
 const static PASN_Names Names_H245_Capability[]={
@@ -3904,6 +3773,84 @@ PObject * H245_ATMParameters::Clone() const
   PAssert(IsClass(H245_ATMParameters::Class()), PInvalidCast);
 #endif
   return new H245_ATMParameters(*this);
+}
+
+
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_QOSType[]={
+      {"desired",0}
+     ,{"required",1}
+};
+#endif
+//
+// QOSType
+//
+
+H245_QOSType::H245_QOSType(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Choice(tag, tagClass, 2, TRUE
+#ifndef PASN_NOPRINTON
+    ,(const PASN_Names *)Names_H245_QOSType,2
+#endif
+)
+{
+}
+
+
+BOOL H245_QOSType::CreateObject()
+{
+  choice = (tag <= e_required) ? new PASN_Null() : NULL;
+  return choice != NULL;
+}
+
+
+PObject * H245_QOSType::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_QOSType::Class()), PInvalidCast);
+#endif
+  return new H245_QOSType(*this);
+}
+
+
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H245_QOSClass[]={
+      {"class0",0}
+     ,{"class1",1}
+     ,{"class2",2}
+     ,{"class3",3}
+     ,{"class4",4}
+     ,{"class5",5}
+};
+#endif
+//
+// QOSClass
+//
+
+H245_QOSClass::H245_QOSClass(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Choice(tag, tagClass, 6, TRUE
+#ifndef PASN_NOPRINTON
+    ,(const PASN_Names *)Names_H245_QOSClass,6
+#endif
+)
+{
+}
+
+
+BOOL H245_QOSClass::CreateObject()
+{
+  choice = (tag <= e_class5) ? new PASN_Null() : NULL;
+  return choice != NULL;
+}
+
+
+PObject * H245_QOSClass::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_QOSClass::Class()), PInvalidCast);
+#endif
+  return new H245_QOSClass(*this);
 }
 
 
@@ -6828,6 +6775,7 @@ const static PASN_Names Names_H245_UserInputCapability[]={
      ,{"encryptedIA5String",8}
      ,{"encryptedGeneralString",9}
      ,{"secureDTMF",10}
+     ,{"genericUserInputCapability",11}
 };
 #endif
 //
@@ -6837,7 +6785,7 @@ const static PASN_Names Names_H245_UserInputCapability[]={
 H245_UserInputCapability::H245_UserInputCapability(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 6, TRUE
 #ifndef PASN_NOPRINTON
-    ,(const PASN_Names *)Names_H245_UserInputCapability,11
+    ,(const PASN_Names *)Names_H245_UserInputCapability,12
 #endif
 )
 {
@@ -6866,6 +6814,28 @@ H245_UserInputCapability::operator const H245_ArrayOf_NonStandardParameter &() c
 }
 
 
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+H245_UserInputCapability::operator H245_GenericCapability &() const
+#else
+H245_UserInputCapability::operator H245_GenericCapability &()
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_GenericCapability), PInvalidCast);
+#endif
+  return *(H245_GenericCapability *)choice;
+}
+
+
+H245_UserInputCapability::operator const H245_GenericCapability &() const
+#endif
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_GenericCapability), PInvalidCast);
+#endif
+  return *(H245_GenericCapability *)choice;
+}
+
+
 BOOL H245_UserInputCapability::CreateObject()
 {
   switch (tag) {
@@ -6884,6 +6854,9 @@ BOOL H245_UserInputCapability::CreateObject()
     case e_encryptedGeneralString :
     case e_secureDTMF :
       choice = new PASN_Null();
+      return TRUE;
+    case e_genericUserInputCapability :
+      choice = new H245_GenericCapability();
       return TRUE;
   }
 
@@ -9110,82 +9083,6 @@ PObject * H245_EscrowData::Clone() const
   PAssert(IsClass(H245_EscrowData::Class()), PInvalidCast);
 #endif
   return new H245_EscrowData(*this);
-}
-
-
-//
-// OpenLogicalChannelConfirm
-//
-
-H245_OpenLogicalChannelConfirm::H245_OpenLogicalChannelConfirm(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
-{
-}
-
-
-#ifndef PASN_NOPRINTON
-void H245_OpenLogicalChannelConfirm::PrintOn(ostream & strm) const
-{
-  int indent = strm.precision() + 2;
-  strm << "{\n";
-  strm << setw(indent+30) << "forwardLogicalChannelNumber = " << setprecision(indent) << m_forwardLogicalChannelNumber << '\n';
-  strm << setw(indent-1) << setprecision(indent-2) << "}";
-}
-#endif
-
-
-PObject::Comparison H245_OpenLogicalChannelConfirm::Compare(const PObject & obj) const
-{
-#ifndef PASN_LEANANDMEAN
-  PAssert(PIsDescendant(&obj, H245_OpenLogicalChannelConfirm), PInvalidCast);
-#endif
-  const H245_OpenLogicalChannelConfirm & other = (const H245_OpenLogicalChannelConfirm &)obj;
-
-  Comparison result;
-
-  if ((result = m_forwardLogicalChannelNumber.Compare(other.m_forwardLogicalChannelNumber)) != EqualTo)
-    return result;
-
-  return PASN_Sequence::Compare(other);
-}
-
-
-PINDEX H245_OpenLogicalChannelConfirm::GetDataLength() const
-{
-  PINDEX length = 0;
-  length += m_forwardLogicalChannelNumber.GetObjectLength();
-  return length;
-}
-
-
-BOOL H245_OpenLogicalChannelConfirm::Decode(PASN_Stream & strm)
-{
-  if (!PreambleDecode(strm))
-    return FALSE;
-
-  if (!m_forwardLogicalChannelNumber.Decode(strm))
-    return FALSE;
-
-  return UnknownExtensionsDecode(strm);
-}
-
-
-void H245_OpenLogicalChannelConfirm::Encode(PASN_Stream & strm) const
-{
-  PreambleEncode(strm);
-
-  m_forwardLogicalChannelNumber.Encode(strm);
-
-  UnknownExtensionsEncode(strm);
-}
-
-
-PObject * H245_OpenLogicalChannelConfirm::Clone() const
-{
-#ifndef PASN_LEANANDMEAN
-  PAssert(IsClass(H245_OpenLogicalChannelConfirm::Class()), PInvalidCast);
-#endif
-  return new H245_OpenLogicalChannelConfirm(*this);
 }
 
 
@@ -13432,6 +13329,7 @@ const static PASN_Names Names_H245_EndSessionCommand[]={
      ,{"disconnect",1}
      ,{"gstnOptions",2}
      ,{"isdnOptions",3}
+     ,{"genericInformation",4}
 };
 #endif
 //
@@ -13441,7 +13339,7 @@ const static PASN_Names Names_H245_EndSessionCommand[]={
 H245_EndSessionCommand::H245_EndSessionCommand(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, TRUE
 #ifndef PASN_NOPRINTON
-    ,(const PASN_Names *)Names_H245_EndSessionCommand,4
+    ,(const PASN_Names *)Names_H245_EndSessionCommand,5
 #endif
 )
 {
@@ -13514,6 +13412,28 @@ H245_EndSessionCommand::operator const H245_EndSessionCommand_isdnOptions &() co
 }
 
 
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+H245_EndSessionCommand::operator H245_ArrayOf_GenericInformation &() const
+#else
+H245_EndSessionCommand::operator H245_ArrayOf_GenericInformation &()
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_ArrayOf_GenericInformation), PInvalidCast);
+#endif
+  return *(H245_ArrayOf_GenericInformation *)choice;
+}
+
+
+H245_EndSessionCommand::operator const H245_ArrayOf_GenericInformation &() const
+#endif
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_ArrayOf_GenericInformation), PInvalidCast);
+#endif
+  return *(H245_ArrayOf_GenericInformation *)choice;
+}
+
+
 BOOL H245_EndSessionCommand::CreateObject()
 {
   switch (tag) {
@@ -13528,6 +13448,9 @@ BOOL H245_EndSessionCommand::CreateObject()
       return TRUE;
     case e_isdnOptions :
       choice = new H245_EndSessionCommand_isdnOptions();
+      return TRUE;
+    case e_genericInformation :
+      choice = new H245_ArrayOf_GenericInformation();
       return TRUE;
   }
 
@@ -15103,6 +15026,7 @@ const static PASN_Names Names_H245_UserInputIndication[]={
      ,{"signalUpdate",4}
      ,{"extendedAlphanumeric",5}
      ,{"encryptedAlphanumeric",6}
+     ,{"genericInformation",7}
 };
 #endif
 //
@@ -15112,7 +15036,7 @@ const static PASN_Names Names_H245_UserInputIndication[]={
 H245_UserInputIndication::H245_UserInputIndication(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 2, TRUE
 #ifndef PASN_NOPRINTON
-    ,(const PASN_Names *)Names_H245_UserInputIndication,7
+    ,(const PASN_Names *)Names_H245_UserInputIndication,8
 #endif
 )
 {
@@ -15251,6 +15175,28 @@ H245_UserInputIndication::operator const H245_UserInputIndication_encryptedAlpha
 }
 
 
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+H245_UserInputIndication::operator H245_ArrayOf_GenericInformation &() const
+#else
+H245_UserInputIndication::operator H245_ArrayOf_GenericInformation &()
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_ArrayOf_GenericInformation), PInvalidCast);
+#endif
+  return *(H245_ArrayOf_GenericInformation *)choice;
+}
+
+
+H245_UserInputIndication::operator const H245_ArrayOf_GenericInformation &() const
+#endif
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H245_ArrayOf_GenericInformation), PInvalidCast);
+#endif
+  return *(H245_ArrayOf_GenericInformation *)choice;
+}
+
+
 BOOL H245_UserInputIndication::CreateObject()
 {
   switch (tag) {
@@ -15274,6 +15220,9 @@ BOOL H245_UserInputIndication::CreateObject()
       return TRUE;
     case e_encryptedAlphanumeric :
       choice = new H245_UserInputIndication_encryptedAlphanumeric();
+      return TRUE;
+    case e_genericInformation :
+      choice = new H245_ArrayOf_GenericInformation();
       return TRUE;
   }
 
@@ -15632,6 +15581,37 @@ PObject * H245_ArrayOf_CapabilityDescriptor::Clone() const
   PAssert(IsClass(H245_ArrayOf_CapabilityDescriptor::Class()), PInvalidCast);
 #endif
   return new H245_ArrayOf_CapabilityDescriptor(*this);
+}
+
+
+//
+// ArrayOf_GenericInformation
+//
+
+H245_ArrayOf_GenericInformation::H245_ArrayOf_GenericInformation(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Array(tag, tagClass)
+{
+}
+
+
+PASN_Object * H245_ArrayOf_GenericInformation::CreateObject() const
+{
+  return new H245_GenericInformation;
+}
+
+
+H245_GenericInformation & H245_ArrayOf_GenericInformation::operator[](PINDEX i) const
+{
+  return (H245_GenericInformation &)array[i];
+}
+
+
+PObject * H245_ArrayOf_GenericInformation::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H245_ArrayOf_GenericInformation::Class()), PInvalidCast);
+#endif
+  return new H245_ArrayOf_GenericInformation(*this);
 }
 
 

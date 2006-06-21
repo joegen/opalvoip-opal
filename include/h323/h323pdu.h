@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.h,v $
- * Revision 1.2016  2006/06/20 05:21:39  csoutheren
+ * Revision 1.2017  2006/06/21 04:53:15  csoutheren
+ * Updated H.245 to version 13
+ *
+ * Revision 2.15  2006/06/20 05:21:39  csoutheren
  * Update to ASN for H.225v6
  *
  * Revision 2.14  2005/11/30 13:35:26  csoutheren
@@ -319,7 +322,7 @@ class OpalGloballyUniqueID;
 
 
 #define H225_PROTOCOL_VERSION 6
-#define H245_PROTOCOL_VERSION 11
+#define H245_PROTOCOL_VERSION 13
 
 
 ///////////////////////////////////////////////////////////////////////////////
