@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2048  2006/06/21 04:54:15  csoutheren
+ * Revision 1.2049  2006/06/21 23:43:27  csoutheren
+ * Fixed comment on OpalManager::SetTranslationAddress
+ *
+ * Revision 2.47  2006/06/21 04:54:15  csoutheren
  * Fixed build with latest PWLib
  *
  * Revision 2.46  2006/04/20 16:52:22  hfriederich
@@ -933,7 +936,7 @@ class OpalManager : public PObject
       */
     const PIPSocket::Address & GetTranslationAddress() const { return translationAddress; }
 
-    /**Set the default ILS server to use for user lookup.
+    /**Set the translation address to use for TranslateIPAddress().
       */
     void SetTranslationAddress(
       const PIPSocket::Address & address
