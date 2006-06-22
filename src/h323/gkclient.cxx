@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2033  2006/06/07 23:41:57  csoutheren
+ * Revision 1.2034  2006/06/22 22:44:24  csoutheren
+ * Fix compile problem when H.460 is disabled
+ *
+ * Revision 2.32  2006/06/07 23:41:57  csoutheren
  * Fixed compile warning on gcc
  *
  * Revision 2.31  2006/05/30 11:33:02  hfriederich
@@ -2456,7 +2459,7 @@ BOOL H323Gatekeeper::OnSendFeatureSet(unsigned pduType, H225_FeatureSet & messag
 #ifdef H323_H460
   return features.SendFeature(pduType, message);
 #else
-  return endpoint.OnReceiveFeatureSet(pduType, message);
+  return endpoint.OnSendFeatureSet(pduType, message);
 #endif
 }
 
