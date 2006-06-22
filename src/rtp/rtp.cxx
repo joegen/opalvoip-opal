@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2032  2006/06/05 20:12:48  dsandras
+ * Revision 1.2033  2006/06/22 00:26:26  csoutheren
+ * Fix formatting
+ *
+ * Revision 2.31  2006/06/05 20:12:48  dsandras
  * Prevent infinite loop when being unable to write to the control port of the
  * RTP session. Fixes Ekiga #339306.
  *
@@ -1882,24 +1885,19 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(PUDPSocket & socket
           remoteControlPort = port;
       }
 
-      if (!remoteTransmitAddress.IsValid()) {
-	
-	remoteTransmitAddress = addr;
-      } 
+      if (!remoteTransmitAddress.IsValid())
+      	remoteTransmitAddress = addr;
       else if (allowRemoteTransmitAddressChange && remoteAddress == addr) {
-
-	remoteTransmitAddress = addr;
-	allowRemoteTransmitAddressChange = FALSE;
+      	remoteTransmitAddress = addr;
+      	allowRemoteTransmitAddressChange = FALSE;
       }
       else if (remoteTransmitAddress != addr && !allowRemoteTransmitAddressChange && !ignoreOtherSources) {
-
-	PTRACE(1, "RTP_UDP\tSession " << sessionID << ", "
-	       << channelName << " PDU from incorrect host, "
-	       " is " << addr << " should be " << remoteTransmitAddress);
-	return RTP_Session::e_IgnorePacket;
+      	PTRACE(1, "RTP_UDP\tSession " << sessionID << ", "
+	             << channelName << " PDU from incorrect host, "
+	            " is " << addr << " should be " << remoteTransmitAddress);
+	      return RTP_Session::e_IgnorePacket;
       }
     }
-
     if (remoteAddress.IsValid() && !appliedQOS) 
       ApplyQOS(remoteAddress);
 
