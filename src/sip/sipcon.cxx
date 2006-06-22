@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2155  2006/06/20 05:23:58  csoutheren
+ * Revision 1.2156  2006/06/22 00:26:04  csoutheren
+ * Remove warning on gcc
+ *
+ * Revision 2.154  2006/06/20 05:23:58  csoutheren
  * Ignore INVITEs that arrive via different route for same call
  * Ensure CANCELs are sent for all INVITEs in all cases
  *
@@ -711,7 +714,7 @@ static struct Q931ReasonMapEntry {
 
 static SIP_PDU::StatusCodes RFC3398_MapQ931ToSIPCode(unsigned q931Cause)
 {
-  PINDEX i;
+  int i;
   for (i = 0; i < NUM_Q931_END_REASON_MAP_ENTRIES; ++i)
     if (Q931ReasonToSIPCode[i].q931Cause == q931Cause)
       return (SIP_PDU::StatusCodes)Q931ReasonToSIPCode[i].sipCode;
@@ -734,7 +737,7 @@ static struct CallEndReasonMapEntry {
 
 static SIP_PDU::StatusCodes MapEndReasonToSIPCode(OpalConnection::CallEndReason callEndReason)
 {
-  PINDEX i;
+  int i;
   for (i = 0; i < NUM_CALL_END_REASON_MAP_ENTRIES; ++i)
     if (EndReasonToSIPCode[i].reason == callEndReason)
       return EndReasonToSIPCode[i].sipCode;
