@@ -396,3 +396,19 @@ EXPORTS
     _spx_drft_init @33537 NONAME
     _wb_mode_query @33538 NONAME
     __spx_lpc @33539 NONAME
+    _filter_dc_notch @33732 NONAME
+    _fixed_point @33733 NONAME
+    _kiss_fft @33734 NONAME
+    _kiss_fftr @33735 NONAME
+    _kiss_fftri @33736 NONAME
+    _kiss_fftr_alloc @33737 NONAME
+    _kiss_fft_alloc @33738 NONAME
+    _kiss_fft_cleanup @33739 NONAME
+    _kiss_fft_stride @33740 NONAME
+    _spx_cos @33741 NONAME
+    _spx_fft @33742 NONAME
+    _spx_fft_destroy @33743 NONAME
+    _spx_fft_float @33744 NONAME
+    _spx_fft_init @33745 NONAME
+    _spx_ifft @33746 NONAME
+    _spx_ifft_float @33747 NONAME
