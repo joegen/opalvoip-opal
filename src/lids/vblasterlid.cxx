@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vblasterlid.cxx,v $
- * Revision 1.2008  2004/10/06 13:03:42  rjongbloed
+ * Revision 1.2009  2006/06/25 12:32:17  csoutheren
+ * Fix compile problems under VS 2005
+ *
+ * Revision 2.7  2004/10/06 13:03:42  rjongbloed
  * Added "configure" support for known LIDs
  * Changed LID GetName() function to be normalised against the GetAllNames()
  *   return values and fixed the pre-factory registration system.
@@ -293,7 +296,8 @@ BOOL OpalVoipBlasterDevice::Open(const PString & device)
 
   int status = VoipBlasterInterface::Status_Empty;
 
-  for (int i = 3; ringOn && i > 0; i--) {
+  int i;
+  for (i = 3; ringOn && i > 0; i--) {
 
     vBlaster.WriteCommand(VoipBlasterInterface::Command_VOL_3);
     vBlaster.WriteCommand(VoipBlasterInterface::Command_RING_OFF);
