@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2066  2006/06/05 05:26:39  csoutheren
+ * Revision 1.2067  2006/06/26 02:03:07  csoutheren
+ * Fixed problem when no TTS code installed
+ *
+ * Revision 2.65  2006/06/05 05:26:39  csoutheren
  * Added ability to test outgoing SIP INFO messages
  *
  * Revision 2.64  2006/04/30 14:42:00  dereksmithies
@@ -953,7 +956,7 @@ BOOL MyManager::Initialise(PArgList & args)
       ivrEP->SetDefaultVXML(args.GetOptionString('x'));
 
     PString ttsEngine = args.GetOptionString("tts");
-    if (ttsEngine.IsEmpty()) 
+    if (ttsEngine.IsEmpty() && PFactory<PTextToSpeech>::GetKeyList().size() > 0) 
       ttsEngine = PFactory<PTextToSpeech>::GetKeyList()[0];
     if (!ttsEngine.IsEmpty()) 
       ivrEP->SetDefaultTextToSpeech(ttsEngine);
