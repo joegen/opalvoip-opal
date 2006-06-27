@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2026  2006/06/03 12:42:36  shorne
+ * Revision 1.2027  2006/06/27 12:08:01  csoutheren
+ * Patch 1455568 - RFC2833 patch
+ * Thanks to Boris Pavacic
+ *
+ * Revision 2.25  2006/06/03 12:42:36  shorne
  * Fix compile error on MSVC6
  *
  * Revision 2.24  2006/05/07 15:33:54  dsandras
@@ -203,6 +207,9 @@ void OpalMediaPatch::Main()
     Sleep(5); // Permit to another thread to take the mutex
     if (len == 0)
       break;
+
+    // make a new, clean frame, so that silence frame won't confuse RFC2833 handler
+    sourceFrame = RTP_DataFrame(source.GetDataSize());
   }
 
   PTRACE(3, "Patch\tThread ended for " << *this);

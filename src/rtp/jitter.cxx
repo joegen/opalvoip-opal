@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.cxx,v $
- * Revision 1.2012  2005/12/30 15:22:40  dsandras
+ * Revision 1.2013  2006/06/27 12:08:01  csoutheren
+ * Patch 1455568 - RFC2833 patch
+ * Thanks to Boris Pavacic
+ *
+ * Revision 2.11  2005/12/30 15:22:40  dsandras
  * Synchronized with MIMAS OpenH323 version.
  *
  * Revision 2.10  2005/12/30 14:29:15  dsandras
@@ -484,13 +488,13 @@ void RTP_JitterBuffer::Main()
     else {
       DWORD time = currentReadFrame->GetTimestamp();
 
-      if (time > newestFrame->GetTimestamp()) {
+      if (time > newestFrame->GetTimestamp() || (time == newestFrame->GetTimestamp() && currentReadFrame->GetSequenceNumber() >= newestFrame->GetSequenceNumber())) {
         // Is newer than newst, put at that end of queue
         currentReadFrame->prev = newestFrame;
         newestFrame->next = currentReadFrame;
         newestFrame = currentReadFrame;
       }
-      else if (time <= oldestFrame->GetTimestamp()) {
+      else if (time < oldestFrame->GetTimestamp() || (time == oldestFrame->GetTimestamp() && currentReadFrame->GetSequenceNumber() < oldestFrame->GetSequenceNumber())) {
         // Is older than the oldest, put at that end of queue
         currentReadFrame->next = oldestFrame;
         oldestFrame->prev = currentReadFrame;
@@ -499,7 +503,7 @@ void RTP_JitterBuffer::Main()
       else {
         // Somewhere in between, locate its position
         Entry * frame = newestFrame->prev;
-        while (time < frame->GetTimestamp())
+        while (time < frame->GetTimestamp() || (time == frame->GetTimestamp() && currentReadFrame->GetSequenceNumber() < frame->GetSequenceNumber()))
           frame = frame->prev;
 
         currentReadFrame->prev = frame;
