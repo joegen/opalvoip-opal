@@ -22,6 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: opal_inc.mak.in,v $
+# Revision 1.11  2006/06/27 13:50:23  csoutheren
+# Patch 1375137 - Voicetronix patches and lid enhancements
+# Thanks to Frederich Heem
+#
 # Revision 1.10  2006/05/30 12:04:09  hfriederich
 # Enabling to build H.460
 #
@@ -71,7 +75,7 @@
 
 HAS_IXJ=@HAS_IXJ@
 HAS_SANGOMA=@HAS_SANGOMA@
-
+HAS_VPB=@HAS_VPB@
 
 OPALDIR=@OPALDIR@
 PWLIBDIR=@PWLIBDIR@
@@ -97,6 +101,7 @@ OPAL_LIBDIR = $(OPALDIR)/lib
 OPAL_SIP          = @OPAL_SIP@
 OPAL_H323         = @OPAL_H323@
 OPAL_IAX2         = @OPAL_IAX2@
+OPAL_LID	  = @OPAL_LID@
 OPAL_H224         = @OPAL_H224@
 OPAL_SYSTEM_SPEEX = @OPAL_SYSTEM_SPEEX@
 OPAL_ILBC	  = @OPAL_ILBC@
@@ -121,6 +126,9 @@ LDLIBS	    := -l$(OPAL_BASE)$(LIB_TYPE) $(LDLIBS)
 
 STDCCFLAGS  += -I$(OPAL_INCDIR)
 
+ifeq ($(HAS_VPB),1)
+LDLIBS += -lvpb
+endif
 
 $(TARGET) :	$(OPAL_LIBDIR)/$(OPAL_FILE)
 
