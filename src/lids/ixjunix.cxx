@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjunix.cxx,v $
- * Revision 1.2012  2005/01/15 09:19:40  csoutheren
+ * Revision 1.2013  2006/06/27 13:50:24  csoutheren
+ * Patch 1375137 - Voicetronix patches and lid enhancements
+ * Thanks to Frederich Heem
+ *
+ * Revision 2.11  2005/01/15 09:19:40  csoutheren
  * Fixed compile problems and IXJ link problems
  *
  * Revision 2.10  2004/02/19 10:47:05  rjongbloed
@@ -2195,7 +2199,7 @@ BOOL OpalIxJDevice::SetRemoveDTMF(unsigned, BOOL state)
 }
 
 
-unsigned OpalIxJDevice::IsToneDetected(unsigned)
+OpalLineInterfaceDevice::CallProgressTones OpalIxJDevice::IsToneDetected(unsigned)
 {
   PWaitAndSignal m(exceptionMutex);
   ExceptionInfo * info = GetException();
@@ -2222,7 +2226,7 @@ unsigned OpalIxJDevice::IsToneDetected(unsigned)
     tones |= CNGTone;
   }
 
-  return tones;
+  return (OpalLineInterfaceDevice::CallProgressTones)tones;
 }
 
 

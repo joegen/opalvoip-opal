@@ -26,7 +26,11 @@
  * Changed so only BUSY tone reports line hangup/busy.
  *
  * $Log: vpblid.cxx,v $
- * Revision 1.2010  2004/10/06 13:03:42  rjongbloed
+ * Revision 1.2011  2006/06/27 13:50:24  csoutheren
+ * Patch 1375137 - Voicetronix patches and lid enhancements
+ * Thanks to Frederich Heem
+ *
+ * Revision 2.9  2004/10/06 13:03:42  rjongbloed
  * Added "configure" support for known LIDs
  * Changed LID GetName() function to be normalised against the GetAllNames()
  *   return values and fixed the pre-factory registration system.
@@ -148,53 +152,91 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalVpbDevice::OpalVpbDevice()
+OpalVpbDevice::OpalVpbDevice() : OpalLineInterfaceDevice()
 {
-  cardNumber = 0;
-  lineCount = 0;
-  vpb_seterrormode(VPB_ERROR_CODE);
+  PTRACE(3, "VPB\tOpalVpbDevice::OpalVpbDevice");
+  setCardNumber(0);
+  m_uiLineCount = 0;
+  vpb_seterrormode(VPB_EXCEPTION);
+  memset(lineState, 0, sizeof(lineState));
 }
 
+OpalVpbDevice::~OpalVpbDevice()
+{
+  PTRACE(3, "VPB\tOpalVpbDevice::~OpalVpbDevice");
+  Close();
+}
 
 BOOL OpalVpbDevice::Open(const PString & device)
 {
+  PTRACE(3, "VPB\tOpalVpbDevice::Open " << device );
   Close();
 
-  cardNumber = device.AsUnsigned(10);
-
-  lineCount = 0;
-  while (lineCount < MaxLineCount && lineState[lineCount].Open(cardNumber, lineCount))
-    lineCount++;
-
-  os_handle = lineCount > 0 ? 1 : -1;
-
+  setCardNumber(device.AsUnsigned(10));
+  
+  m_uiLineCount = GetLineCount();
+  
+  try {
+    for(unsigned uiLineCount = 0; uiLineCount < m_uiLineCount; uiLineCount++){
+      lineState[uiLineCount].Open(getCardNumber(), uiLineCount);
+    }
+  } catch (VpbException v) {
+    PTRACE(1, "VPB\tOpalVpbDevice::Open Error code = "  << v.code << ", s = " << v.s << " api func = " << v.api_function);
+  }
+    
+  if(m_uiLineCount == 0){
+    os_handle = -1;
+  } else {
+    os_handle = 1;
+  }
+  
   return IsOpen();
 }
 
 
-BOOL OpalVpbDevice::LineState::Open(unsigned cardNumber, unsigned lineNumber)
+BOOL OpalVpbDevice::LineState::Open(unsigned int cardNumber, unsigned lineNumber)
 {
-  handle = vpb_open(cardNumber, lineNumber+1);
-  if (handle < 0)
+  PTRACE(3, "VPB\tOpalVpbDevice::LineState::Open " << cardNumber << ":" << lineNumber);
+  /* +1 is used for driver 2.4.8*/
+  handle = vpb_open(cardNumber, lineNumber);
+  if (handle < 0){
+    PTRACE(1, "VPB\tOpalVpbDevice::LineState::Open cannot open line " << cardNumber << ":" << lineNumber);    
     return FALSE;
-
+  }  
+  PTRACE(3, "VPB\tOpalVpbDevice::LineState::Open handle = " << handle);
   readIdle = writeIdle = TRUE;
   readFrameSize = writeFrameSize = 480;
   currentHookState = FALSE;
   vpb_sethook_sync(handle, VPB_ONHOOK);
+  PTRACE(3, "VPB\tOpalVpbDevice::LineState::Open line is on hook ");  
   vpb_set_event_mask(handle, VPB_MRING | VPB_MTONEDETECT );
   myToneThread = NULL;
-
+  PTRACE(4, "VPB\tOpalVpbDevice::LineState::Open OK");
   return TRUE;
 }
 
 
 BOOL OpalVpbDevice::Close()
 {
-  for (unsigned line = 0; line < lineCount; line++)
-    vpb_close(lineState[line].handle);
-
+  PTRACE(3, "VPB\tOpalVpbDevice::Close() IsOpen = " << IsOpen()); 
+  
+  if(IsOpen() == FALSE){
+    return TRUE;
+  }
+  
+  try{
+    for (unsigned line = 0; line < m_uiLineCount; line++){
+      SetLineOffHook(line, FALSE);
+      PTRACE(3, "VPB\tOpalVpbDevice::Close() handle = " << lineState[line].handle); 
+      vpb_close(lineState[line].handle);
+    }  
+  } catch (VpbException v) {
+    PTRACE(1, "VPB\tOpalVpbDevice::Close Error code = " << v.code << 
+              ", s = " << v.s << ", api func = " << v.api_function);
+  }
+  
   os_handle = -1;
+  m_uiLineCount = 0;
   return TRUE;
 }
 
@@ -207,7 +249,7 @@ PString OpalVpbDevice::GetDeviceType() const
 
 PString OpalVpbDevice::GetDeviceName() const
 {
-  return psprintf("%u", cardNumber);
+  return psprintf("%u", getCardNumber());
 }
 
 
@@ -220,30 +262,53 @@ PStringArray OpalVpbDevice::GetAllNames() const
 
 
 PString OpalVpbDevice::GetDescription() const
-{
-  char buf[100];
+{	
+	char buf[VPB_MAX_STR];
   vpb_get_model(buf);
-  return psprintf("VoiceTronics %s (%u)", buf, cardNumber);
+  return psprintf("VoiceTronics %s (%u)", buf, getCardNumber());
 }
 
 
 unsigned OpalVpbDevice::GetLineCount()
 {
-  return lineCount;
+  PTRACE(6, "VPB\tOpalVpbDevice::GetLineCount os_handle " << os_handle);
+  if(os_handle == 1){
+    return m_uiLineCount;
+  } 
+  
+  try {
+    int iHandle;
+    iHandle = vpb_open(getCardNumber(),/* 0 for driver 3.01*/1);
+    /* get the number of ports for this card */
+    m_uiLineCount = vpb_get_ports_per_card(/*getCardNumber()*/); 
+    
+    vpb_close(iHandle);
+    /* now it can be closed */
+    if((m_uiLineCount <= 0) || (m_uiLineCount > MaxLineCount)){
+      PTRACE(1, "VPB\tOpalVpbDevice::GetLineCount() line count is out of range");
+      m_uiLineCount = 0;
+    }
+  } catch (VpbException v) {
+    PTRACE(1, "VPB\tOpalVpbDevice::GetLineCount Error code = "  << v.code << 
+              ", s = " << v.s << " api func = " << v.api_function);
+  }
+  PTRACE(3, "VPB\tOpalVpbDevice::GetLineCount " << m_uiLineCount); 
+  return m_uiLineCount;
+  
 }
 
 BOOL OpalVpbDevice::IsLineDisconnected(unsigned line, BOOL /*checkForWink*/)
 {
   //  unsigned thisTone = IsToneDetected(line);
-  BOOL lineIsDisconnected = (IsToneDetected(line) == BusyTone);
+  BOOL lineIsDisconnected = (IsToneDetected(line) == (BusyTone | FastBusyTone));
 
-  PTRACE(3, "VPB\tLine " << line << " is disconnected: " << (lineIsDisconnected ? " TRUE" : "FALSE"));
+  PTRACE(6, "VPB\tLine " << line << " is disconnected: " << (lineIsDisconnected ? " TRUE" : "FALSE"));
   return lineIsDisconnected;
 }
 
 BOOL OpalVpbDevice::IsLineOffHook(unsigned line)
 {
-  if (line >= MaxLineCount)
+  if (line >= m_uiLineCount)
     return FALSE;
 
   return lineState[line].currentHookState;
@@ -252,7 +317,8 @@ BOOL OpalVpbDevice::IsLineOffHook(unsigned line)
 
 BOOL OpalVpbDevice::SetLineOffHook(unsigned line, BOOL newState)
 {
-  if (line >= MaxLineCount)
+  PTRACE(3, "VPB\tSetLineOffHook: line = " << line << ", newState = " << newState);
+  if (line >= m_uiLineCount)
     return FALSE;
 
   return lineState[line].SetLineOffHook(newState);
@@ -263,22 +329,30 @@ BOOL OpalVpbDevice::LineState::SetLineOffHook(BOOL newState)
 {
   currentHookState = newState;
   VPB_EVENT        event;
+  BOOL setHookOK = FALSE;
+  
+  PTRACE(3, "VPB\tSetLineOffHook handle = " << handle << ", to " << (newState ? "offhook" : "on hook"));
+    
+  try {
+    setHookOK = vpb_sethook_sync(handle, newState ? VPB_OFFHOOK : VPB_ONHOOK) >= 0;
+    PTRACE(3, "VPB\tSetLineOffHook "<< (setHookOK ? " succeeded." : " failed."));
 
-  BOOL setHookOK = vpb_sethook_sync(handle, newState ? VPB_OFFHOOK : VPB_ONHOOK) >= 0;
-  PTRACE(3, "vpb\tSetLineOffHook to " << (newState ? "offhook" : "on hook") << 
-	 (setHookOK ? " succeeded." : " failed."));
+    // clear DTMF buffer and event queue after changing hook state.
+    vpb_flush_digits(handle);   
+    while (vpb_get_event_ch_async(handle, &event) == VPB_OK);
 
-  // clear DTMF buffer and event queue after changing hook state.
-  vpb_flush_digits(handle);   
-  while (vpb_get_event_ch_async(handle, &event) == VPB_OK);
-
+  } catch (VpbException v) {
+    PTRACE(1, "VPB\tSetLineOffHook " << v.code << 
+        ", s = " << v.s << ", api func = " << v.api_function);
+    setHookOK = FALSE;
+  }  
   return setHookOK;
 }
 
 
 BOOL OpalVpbDevice::IsLineRinging(unsigned line, DWORD * cadence)
 {
-  if (line >= MaxLineCount)
+  if (line >= m_uiLineCount)
     return FALSE;
 
   return lineState[line].IsLineRinging(cadence);
@@ -344,7 +418,7 @@ static PINDEX FindCodec(const OpalMediaFormat & mediaFormat)
 
 BOOL OpalVpbDevice::SetReadFormat(unsigned line, const OpalMediaFormat & mediaFormat)
 {
-  if (line >= MaxLineCount)
+  if (line >= m_uiLineCount)
     return FALSE;
 
   PTRACE(4, "VPB\tSetReadFormat(" << mediaFormat << ')');
@@ -364,7 +438,7 @@ BOOL OpalVpbDevice::SetReadFormat(unsigned line, const OpalMediaFormat & mediaFo
 
 BOOL OpalVpbDevice::SetWriteFormat(unsigned line, const OpalMediaFormat & mediaFormat)
 {
-  if (line >= MaxLineCount)
+  if (line >= m_uiLineCount)
     return FALSE;
 
   PTRACE(4, "VPB\tSetWriteFormat(" << mediaFormat << ')');
@@ -400,7 +474,7 @@ OpalMediaFormat OpalVpbDevice::GetWriteFormat(unsigned line)
 
 BOOL OpalVpbDevice::StopReadCodec(unsigned line)
 {
-  if (line >= MaxLineCount)
+  if (line >= m_uiLineCount)
     return FALSE;
 
   PTRACE(3, "VPB\tStopReadCodec");
@@ -420,7 +494,7 @@ BOOL OpalVpbDevice::StopReadCodec(unsigned line)
 
 BOOL OpalVpbDevice::StopWriteCodec(unsigned line)
 {
-  if (line >= MaxLineCount)
+  if (line >= m_uiLineCount)
     return FALSE;
 
   PTRACE(1, "VPB\tStopWriteCodec");
@@ -440,7 +514,7 @@ BOOL OpalVpbDevice::StopWriteCodec(unsigned line)
 
 BOOL OpalVpbDevice::SetReadFrameSize(unsigned line, PINDEX size)
 {
-  if (line >= MaxLineCount)
+  if (line >= m_uiLineCount)
     return FALSE;
 
   lineState[line].readFrameSize = size;
@@ -450,7 +524,7 @@ BOOL OpalVpbDevice::SetReadFrameSize(unsigned line, PINDEX size)
 
 BOOL OpalVpbDevice::SetWriteFrameSize(unsigned line, PINDEX size)
 {
-  if (line >= MaxLineCount)
+  if (line >= m_uiLineCount)
     return FALSE;
 
   lineState[line].writeFrameSize = size;
@@ -460,7 +534,7 @@ BOOL OpalVpbDevice::SetWriteFrameSize(unsigned line, PINDEX size)
 
 PINDEX OpalVpbDevice::GetReadFrameSize(unsigned line)
 {
-  if (line >= MaxLineCount)
+  if (line >= m_uiLineCount)
     return FALSE;
 
   return lineState[line].readFrameSize;
@@ -469,7 +543,7 @@ PINDEX OpalVpbDevice::GetReadFrameSize(unsigned line)
 
 PINDEX OpalVpbDevice::GetWriteFrameSize(unsigned line)
 {
-  if (line >= MaxLineCount)
+  if (line >= m_uiLineCount)
     return FALSE;
 
   return lineState[line].writeFrameSize;
@@ -478,7 +552,7 @@ PINDEX OpalVpbDevice::GetWriteFrameSize(unsigned line)
 
 BOOL OpalVpbDevice::ReadFrame(unsigned line, void * buf, PINDEX & count)
 {
-  if (line >= MaxLineCount)
+  if (line >= m_uiLineCount)
     return FALSE;
 
   count = lineState[line].readFrameSize;
@@ -492,7 +566,7 @@ BOOL OpalVpbDevice::ReadFrame(unsigned line, void * buf, PINDEX & count)
 BOOL OpalVpbDevice::WriteFrame(unsigned line, const void * buf, PINDEX count, PINDEX & written)
 {
   written = 0;
-  if (line >= MaxLineCount)
+  if (line >= m_uiLineCount)
     return FALSE;
 
   PTRACE(4, "VPB\tWriteFrame before vpb_play_buf_sync");
@@ -506,7 +580,7 @@ BOOL OpalVpbDevice::WriteFrame(unsigned line, const void * buf, PINDEX count, PI
 
 BOOL OpalVpbDevice::SetRecordVolume(unsigned line, unsigned volume)
 {
-  if (line >= MaxLineCount)
+  if (line >= m_uiLineCount)
     return FALSE;
 
   return vpb_record_set_gain(lineState[line].handle, (float)(volume/100.0*24.0-12.0)) >= 0;
@@ -514,7 +588,7 @@ BOOL OpalVpbDevice::SetRecordVolume(unsigned line, unsigned volume)
 
 BOOL OpalVpbDevice::SetPlayVolume(unsigned line, unsigned volume)
 {
-  if (line >= MaxLineCount)
+  if (line >= m_uiLineCount)
     return FALSE;
 
   return vpb_play_set_gain(lineState[line].handle, (float)(volume/100.0*24.0-12.0)) >= 0;
@@ -523,7 +597,7 @@ BOOL OpalVpbDevice::SetPlayVolume(unsigned line, unsigned volume)
 
 char OpalVpbDevice::ReadDTMF(unsigned line)
 {
-  if (line >= MaxLineCount)
+  if (line >= m_uiLineCount)
     return '\0';
 
   VPB_DIGITS vd;
@@ -560,76 +634,88 @@ BOOL OpalVpbDevice::PlayFile(unsigned line, const PString & fn, BOOL syncOff=FAL
 	}
 	return TRUE;
 }
-*/
 
-/*
-// Ritorna il codice dell'evento sull'handle lineState[line].handle
-int OpalVpbDevice::GetVPBEvent(unsigned line)
-{
-	return vpb_get_event_mask(lineState[line].handle;
-}
 */
-
 BOOL OpalVpbDevice::PlayDTMF(unsigned line, const char * digits, DWORD, DWORD)
 {
-  if (line >= MaxLineCount)
+  if (line >= m_uiLineCount)
     return FALSE;
 
-  PTRACE(3, "VPB\tPlayDTMF: " << digits);
-  vpb_dial_sync(lineState[line].handle, (char *)digits);
-  vpb_dial_sync(lineState[line].handle, ",");
-
+  PTRACE(3, "VPB\tPlayDTMF line = " << line << ", digits = " << digits);
+  try {
+    vpb_dial_sync(lineState[line].handle, (char *)digits);
+    vpb_dial_sync(lineState[line].handle, ",");
+  } catch(VpbException v) {
+    PTRACE(1, "VPB\tPlayDTMF Error code = "  << v.code << ", s = " << v.s << " api func = " << v.api_function);
+    return FALSE;
+  }
   return TRUE;
 }
 
 
-int OpalVpbDevice::GetOSHandle(unsigned line)
+int OpalVpbDevice::GetLineHandle(unsigned line)
 {
   return lineState[line].handle;
 }
 
-unsigned OpalVpbDevice::IsToneDetected(unsigned line)
+OpalLineInterfaceDevice::CallProgressTones OpalVpbDevice::IsToneDetected(unsigned line)
 {
-  if (line >= MaxLineCount) {
-    PTRACE(3, "VPB\tTone Detect no tone detected, line is > MaxLineCount (" << MaxLineCount << ")");
+  if (line >= m_uiLineCount) {
+    PTRACE(1, "VPB\tTone Detect no tone detected, line is > MaxLineCount (" << MaxLineCount << ")");
     return NoTone;
   }
 
   VPB_EVENT event;
-  if (vpb_get_event_ch_async(lineState[line].handle, &event) == VPB_NO_EVENTS) {
-    PTRACE(3, "VPB\tTone Detect no events on line " << line << " in  tone detected");    
+  try{
+    if (vpb_get_event_ch_async(lineState[line].handle, &event) == VPB_NO_EVENTS) {
+      PTRACE(6, "VPB\tTone Detect no events on line " << line << " in  tone detected");    
+      return NoTone;
+    }
+  } catch (VpbException v) {
+    PTRACE(1, "VPB\tOpalVpbDevice::Open Error code = "  << v.code << ", s = " << v.s << " api func = " << v.api_function);
     return NoTone;
   }
-
+  
   if (event.type == VPB_RING) {
-    PTRACE(3, "VPB\t Tone Detect: Ring tone (generated from ring event)");
+    PTRACE(3, "VPB\t Tone Detect " << RingTone <<" on line " <<  getCardNumber() << "/" <<line);
     return RingTone;
   }
 
   if (event.type != VPB_TONEDETECT) {
-    PTRACE(3, "VPB\tTone Detect. Event type is not (ring | tone). No tone detected.");
+    PTRACE(3, "VPB\tTone Detect. Event type is not (ring | tone). type " << event.type);
     return NoTone;
   }
 
+  OpalLineInterfaceDevice::CallProgressTones tone = NoTone;
+      
   switch (event.data) {
     case VPB_DIAL :
-      PTRACE(3, "VPB\tTone Detect: Dial tone.");
-      return DialTone;
-
+      tone = DialTone;
+      break;
     case VPB_RINGBACK :
-      PTRACE(3, "VPB\tTone Detect: Ring tone.");
-      return RingTone;
-
+      tone = RingTone;
+      break;
     case VPB_BUSY :
-      PTRACE(3, "VPB\tTone Detect: Busy tone.");
-      return BusyTone;
-
+      tone = BusyTone;
+      break;
+    case VPB_FASTBUSY :
+      tone = FastBusyTone;
+      break;
     case VPB_GRUNT :
       PTRACE(3, "VPB\tTone Detect: Grunt tone.");
       break;
+      
+    case VPB_MWI :
+      tone = MwiTone;
+      break;
+      
+    default:
+      PTRACE(1, "VPB\tTone Detect: no a known tone." << event.data);
+      break;
   }
-
-  return NoTone;
+  
+  PTRACE(3, "VPB\tIsToneDetected: line = " << line << ", tone = " << tone);
+  return tone;
 }
 
 BOOL OpalVpbDevice::PlayTone(unsigned line, CallProgressTones tone)
@@ -711,6 +797,33 @@ BOOL OpalVpbDevice::StopAudio(unsigned line)
   return TRUE;
 }
 
+BOOL OpalVpbDevice::RecordAudioStart(unsigned line, const PString & fn)
+{
+  if(line >= m_uiLineCount){
+    return FALSE;
+  }
+  
+  PTRACE(3, "VPB\tRecordAudioStart recording on line " << line << " with file " << fn);
+  int iRv = vpb_record_file_async(lineState[line].handle, (char*)((const unsigned char*)fn), VPB_LINEAR);
+  if(iRv != 0){
+    PTRACE(1, "VPB\tRecordAudioStart recording on line " << line << " fails");
+  }      
+  return ( iRv == 0 ? TRUE: FALSE);
+}
+
+BOOL OpalVpbDevice::RecordAudioStop(unsigned line)
+{
+  if(line >= m_uiLineCount){
+    return FALSE;
+  }
+    
+  PTRACE(3, "VPB\tRecordAudioStop recording on line " << line);
+  int iRv = vpb_record_terminate(lineState[line].handle);
+  if(iRv != 0){
+    PTRACE(1, "VPB\tRecordAudioStop recording on line " << line << " fails");
+  }
+  return ( iRv == 0 ? TRUE: FALSE);
+}
 
 /////////////////////////////////////////////////////////////////////////////
 

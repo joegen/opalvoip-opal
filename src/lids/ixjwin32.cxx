@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjwin32.cxx,v $
- * Revision 1.2014  2006/06/21 04:54:15  csoutheren
+ * Revision 1.2015  2006/06/27 13:50:24  csoutheren
+ * Patch 1375137 - Voicetronix patches and lid enhancements
+ * Thanks to Frederich Heem
+ *
+ * Revision 2.13  2006/06/21 04:54:15  csoutheren
  * Fixed build with latest PWLib
  *
  * Revision 2.12  2004/10/06 13:03:41  rjongbloed
@@ -1919,7 +1923,7 @@ BOOL OpalIxJDevice::SetRemoveDTMF(unsigned, BOOL state)
 }
 
 
-unsigned OpalIxJDevice::IsToneDetected(unsigned line)
+OpalLineInterfaceDevice::CallProgressTones OpalIxJDevice::IsToneDetected(unsigned line)
 {
   if (line >= GetLineCount())
     return NoTone;

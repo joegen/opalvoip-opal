@@ -22,7 +22,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vpblid.h,v $
- * Revision 1.2011  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2012  2006/06/27 13:50:24  csoutheren
+ * Patch 1375137 - Voicetronix patches and lid enhancements
+ * Thanks to Frederich Heem
+ *
+ * Revision 2.10  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.9  2004/10/06 13:03:41  rjongbloed
@@ -165,7 +169,7 @@ class OpalVpbDevice : public OpalLineInterfaceDevice
     /**Destroy line interface device.
        This calls Close() on the device.
       */
-    ~OpalVpbDevice() { Close(); }
+    ~OpalVpbDevice();
 
     /**Open the device.
       */
@@ -343,8 +347,8 @@ class OpalVpbDevice : public OpalLineInterfaceDevice
 
     /**Return line handle
       */
-    int GetOSHandle(
-      unsigned line     ///<  Number of line
+    int GetLineHandle(
+      unsigned line     ///< Number of line
     );
 
     /**Read a DTMF digit detected.
@@ -369,8 +373,8 @@ class OpalVpbDevice : public OpalLineInterfaceDevice
 
     /**See if a tone is detected.
       */
-    virtual unsigned IsToneDetected(
-      unsigned line   ///<  Number of line
+    virtual CallProgressTones IsToneDetected(
+      unsigned line   ///< Number of line
     );
 
     virtual BOOL PlayTone(
@@ -388,14 +392,27 @@ class OpalVpbDevice : public OpalLineInterfaceDevice
     );
     
     virtual BOOL StopAudio(
-      unsigned line   ///Number of line
-    );
+        unsigned line   ///< Number of line
+                          );    
+    /**
+     * start recording audio
+     */
+    virtual BOOL RecordAudioStart(
+        unsigned line,            ///< line
+    const PString & filename  /// File Name
+                                 );
+    
+    /**
+     * stop recording audio
+     */
+        
+    virtual BOOL RecordAudioStop(
+      unsigned line            ///< line
+                                );
 
   protected:
-    unsigned cardNumber;
-    unsigned lineCount;
-
-    enum { MaxLineCount = 8 };
+    unsigned m_uiLineCount;
+    enum { MaxLineCount = 12 };
 
     struct LineState {
       BOOL Open(unsigned cardNumber, unsigned lineNumber);

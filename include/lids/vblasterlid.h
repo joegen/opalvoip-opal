@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vblasterlid.h,v $
- * Revision 1.2010  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2011  2006/06/27 13:50:24  csoutheren
+ * Patch 1375137 - Voicetronix patches and lid enhancements
+ * Thanks to Frederich Heem
+ *
+ * Revision 2.9  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.8  2004/10/06 13:03:41  rjongbloed
@@ -592,8 +596,8 @@ class OpalVoipBlasterDevice : public OpalLineInterfaceDevice
 
     /**See if a tone is detected.
       */
-    virtual unsigned IsToneDetected(
-      unsigned line   ///<  Number of line
+    virtual CallProgressTones IsToneDetected(
+      unsigned line   ///< Number of line
     );
 
     /**Play a tone.
