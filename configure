@@ -309,7 +309,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX OPALDIR INSTALLPREFIX LIBDIR PTLIB_CONFIG PWLIBDIR CPP EGREP RFC2190_AVCODEC RFC2190_AVCODEC_DIR SIZE16 SIZE32 OPAL_SYSTEM_SPEEX OPAL_HAVE_SPEEX_SPEEX_H OPAL_ILBC OPAL_AUDIO OPAL_VIDEO OPAL_SIP OPAL_H323 OPAL_T38FAX OPAL_IAX2 OPAL_H224 H323_H460 HAS_IXJ HAS_SANGOMA STDCCFLAGS ENDLDLIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX OPALDIR INSTALLPREFIX LIBDIR PTLIB_CONFIG PWLIBDIR CPP EGREP RFC2190_AVCODEC RFC2190_AVCODEC_DIR SIZE16 SIZE32 OPAL_SYSTEM_SPEEX OPAL_HAVE_SPEEX_SPEEX_H OPAL_ILBC OPAL_AUDIO OPAL_VIDEO OPAL_SIP OPAL_H323 OPAL_T38FAX OPAL_IAX2 OPAL_H224 H323_H460 HAS_IXJ OPAL_LID HAS_VPB HAS_SANGOMA STDCCFLAGS ENDLDLIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -859,6 +859,7 @@ Optional Features:
   --disable-iax           disable IAX2 protocol support
   --disable-h224          disable H.224 protocol support
   --disable-h460          disable H.460
+  --enable-vpb            enable voicetronix vpb
 
 Some influential environment variables:
   CC          C compiler command
@@ -6270,7 +6271,44 @@ fi
 
 
 
+cat >>confdefs.h <<\_ACEOF
+#define OPAL_LID 1
+_ACEOF
 
+OPAL_LID=1
+
+
+
+
+vpb=no
+# Check whether --enable-vpb or --disable-vpb was given.
+if test "${enable_vpb+set}" = set; then
+  enableval="$enable_vpb"
+  vpb=$enableval
+fi;
+echo "$as_me:$LINENO: checking Voicetronix vpb" >&5
+echo $ECHO_N "checking Voicetronix vpb... $ECHO_C" >&6
+if test "$vpb" = "yes" ; then
+  HAS_VPB=1
+
+  cat >>confdefs.h <<\_ACEOF
+#define HAS_VPB 1
+_ACEOF
+
+  echo "$as_me:$LINENO: result: enabled" >&5
+echo "${ECHO_T}enabled" >&6
+  OPAL_LID=1
+
+  cat >>confdefs.h <<\_ACEOF
+#define OPAL_LID 1
+_ACEOF
+
+else
+  HAS_VPB=0
+
+  echo "$as_me:$LINENO: result: disabled" >&5
+echo "${ECHO_T}disabled" >&6
+fi
 
 
 OLD_CPPFLAGS=$CPPFLAGS
@@ -7498,6 +7536,8 @@ s,@OPAL_IAX2@,$OPAL_IAX2,;t t
 s,@OPAL_H224@,$OPAL_H224,;t t
 s,@H323_H460@,$H323_H460,;t t
 s,@HAS_IXJ@,$HAS_IXJ,;t t
+s,@OPAL_LID@,$OPAL_LID,;t t
+s,@HAS_VPB@,$HAS_VPB,;t t
 s,@HAS_SANGOMA@,$HAS_SANGOMA,;t t
 s,@STDCCFLAGS@,$STDCCFLAGS,;t t
 s,@ENDLDLIBS@,$ENDLDLIBS,;t t

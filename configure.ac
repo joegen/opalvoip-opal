@@ -513,6 +513,13 @@ dnl
 dnl MSWIN_DISPLAY vblaster,Voice Blaster
 dnl MSWIN_DEFINE  vblaster,HAS_VBLASTER
 
+dnl ########################################################################
+dnl
+dnl LID, used for vpb, dialogic etc ...
+
+AC_DEFINE(OPAL_LID, 1)
+OPAL_LID=1
+AC_SUBST(OPAL_LID)
 
 dnl ########################################################################
 dnl
@@ -526,6 +533,24 @@ dnl MSWIN_CHECK_DIR   vpb,..\external\vpb-driver
 dnl MSWIN_CHECK_DIR   vpb,\vpb-driver
 dnl MSWIN_CHECK_DIR   vpb,c:\vpb-driver
 
+dnl MSWIN_DISPLAY vpb,Voicetrnix vpb support
+dnl MSWIN_DEFINE  vpb,HAS_VPB
+
+vpb=no
+AC_ARG_ENABLE(vpb,
+       [  --enable-vpb            enable voicetronix vpb],
+       vpb=$enableval)
+AC_MSG_CHECKING(Voicetronix vpb)
+if test "$vpb" = "yes" ; then
+  AC_SUBST(HAS_VPB, 1)
+  AC_DEFINE(HAS_VPB)
+  AC_MSG_RESULT(enabled)
+  AC_SUBST(OPAL_LID, 1)
+  AC_DEFINE(OPAL_LID)
+else
+  AC_SUBST(HAS_VPB, 0)
+  AC_MSG_RESULT(disabled)
+fi
 
 dnl ########################################################################
 dnl
