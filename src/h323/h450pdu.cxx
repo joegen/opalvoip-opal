@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h450pdu.cxx,v $
- * Revision 1.2017  2005/07/12 12:34:37  csoutheren
+ * Revision 1.2018  2006/06/27 12:54:35  csoutheren
+ * Patch 1374489 - h450.7 message center support
+ * Thanks to Frederich Heem
+ *
+ * Revision 2.16  2005/07/12 12:34:37  csoutheren
  * Fixes for H.450 errors and return values
  * Thanks to Iker Perez San Roman
  *
@@ -164,6 +168,7 @@
 #include <asn/h4502.h>
 #include <asn/h4504.h>
 #include <asn/h4506.h>
+#include <asn/h4507.h>
 #include <asn/h45011.h>
 
 
@@ -313,6 +318,36 @@ void H450ServiceAPDU::BuildCallWaiting(int invokeId, int numCallsWaiting)
   
   invoke.IncludeOptionalField(X880_Invoke::e_argument);
   invoke.m_argument.EncodeSubType(argument);
+}
+
+/* H450.7 */
+void H450ServiceAPDU::BuildMessageWaiting(int invokeId, 
+                                          H4507_H323_MWI_Operations  &mwiOp, 
+                                          PASN_Sequence &argument)
+{
+  X880_Invoke& invoke = BuildInvoke(invokeId, mwiOp);
+  
+  PTRACE(4, "H4507\tBuildMessageWaiting: invoke " << invokeId);
+  
+  invoke.IncludeOptionalField(X880_Invoke::e_argument);
+  invoke.m_argument.EncodeSubType(argument);
+}
+
+void H450ServiceAPDU::BuildInterrogateResult(int invokeId, 
+                                             H4507_MWIInterrogateRes &interrogateResult)
+{
+  PTRACE(4, "H4507\tBuildInterrogateResult: invoke " << invokeId);
+  X880_ReturnResult& result = BuildReturnResult(invokeId);
+  result.IncludeOptionalField(X880_ReturnResult::e_result);
+  result.m_result.m_opcode.SetTag(X880_Code::e_local);
+  PASN_Integer& operation = (PASN_Integer&) result.m_result.m_opcode;
+  operation.SetValue(H4507_H323_MWI_Operations::e_mwiInterrogate);
+  
+  PPER_Stream resultStream;
+  interrogateResult.Encode(resultStream);
+  resultStream.CompleteEncoding();
+  result.m_result.m_result.SetValue(resultStream);      
+  
 }
 
 
@@ -1710,6 +1745,95 @@ void H4506Handler::AttachToAlerting(H323SignalPDU & pdu,
 
   cwState = e_cw_Invoked;
 }
+/**
+ * Message waiting
+ */
+
+H4507Handler::H4507Handler(H323Connection & conn, H450xDispatcher & disp)
+  : H450xHandler(conn, disp)
+{
+  mwiState = e_mwi_Idle;
+  /* Allow to handle interrogate, only used by Mwi message center*/
+  dispatcher.AddOpCode(H4507_H323_MWI_Operations::e_mwiInterrogate, this);
+}
+
+void H4507Handler::OnReceivedMwiInterrogate(int linkedId,
+                                            int invokeId,
+                                            PASN_OctetString *argument)
+{
+  PTRACE(3, "H450.7\tOnReceivedMwiInterrogate" << *argument); 
+  //endpoint.OnMwiInterrogate(connection);
+
+}
+
+BOOL H4507Handler::OnReceivedInvoke(int opcode,
+                                    int invokeId,
+                                    int linkedId,
+                                    PASN_OctetString *argument)
+{
+  currentInvokeId = invokeId;
+  PTRACE(3, "H450.7\tOnReceivedInvoke: invokeId = " << invokeId); 
+
+  switch (opcode) {
+    case H4507_H323_MWI_Operations::e_mwiInterrogate:
+      OnReceivedMwiInterrogate(linkedId, invokeId, argument);
+      break;
+
+    default:
+      PTRACE(1, "H450.7\tOnReceivedInvoke, not an interrogate");
+      currentInvokeId = 0;
+      return FALSE;
+  }
+  
+  return TRUE;
+}
+
+
+void H4507Handler::AttachToSetup(H323SignalPDU & setupPDU,
+                                 H4507_H323_MWI_Operations  &mwiOp, 
+                                 PASN_Sequence &argument)
+{
+  PTRACE(3, "H450.7\tAttaching a Message waiting Invoke PDU to this setup message.");
+  
+  H450ServiceAPDU serviceAPDU;
+  
+  dispatcher.AddOpCode(mwiOp, this);
+  
+  // Store the message waiting invokeID associated with this connection
+  currentInvokeId = dispatcher.GetNextInvokeId();
+
+  serviceAPDU.BuildMessageWaiting(currentInvokeId, 
+                                  mwiOp,
+                                  argument);
+
+  serviceAPDU.AttachSupplementaryServiceAPDU(setupPDU);
+
+  mwiState = e_mwi_Invoked;
+}
+
+void H4507Handler::AttachInterrogateResultToPdu(H323SignalPDU & pdu,
+                                                H4507_MWIInterrogateRes &interrogateResult)
+{
+  PTRACE(3, "H450.7\tAttachInterrogateResultToPdu");
+  H450ServiceAPDU serviceAPDU;
+  serviceAPDU.BuildInterrogateResult(currentInvokeId, interrogateResult);
+  serviceAPDU.AttachSupplementaryServiceAPDU(pdu);
+
+  mwiState = e_mwi_Invoked;
+}
+
+
+void H4507Handler::AttachErrorToPdu(H323SignalPDU & pdu,
+                                    H4507_MessageWaitingIndicationErrors error)
+{
+  PTRACE(3, "H450.7\tAttachErrorToPdu");
+  H450ServiceAPDU serviceAPDU;
+  serviceAPDU.BuildReturnError(currentInvokeId, error.GetValue());
+  serviceAPDU.AttachSupplementaryServiceAPDU(pdu);
+
+  mwiState = e_mwi_Invoked;
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////

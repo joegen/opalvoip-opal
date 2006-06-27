@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2038  2006/05/30 11:33:02  hfriederich
+ * Revision 1.2039  2006/06/27 12:54:35  csoutheren
+ * Patch 1374489 - h450.7 message center support
+ * Thanks to Frederich Heem
+ *
+ * Revision 2.37  2006/05/30 11:33:02  hfriederich
  * Porting support for H.460 from OpenH323
  *
  * Revision 2.36  2006/05/30 04:58:05  csoutheren
@@ -841,7 +845,7 @@ class H323EndPoint : public OpalEndPoint
       PSafetyMode mode = PSafeReadWrite
     );
 
-    /** OnSetupSent is a hook for the appliation to attach H450 info in setup, 
+    /** OnSendSignalSetup is a hook for the appliation to attach H450 info in setup, 
         for instance, H450.7 Activate or Deactivate 
         @param connection the connection associated to the setup
         @param pduSetup the setup message to modify
