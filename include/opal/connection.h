@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2056  2006/06/09 04:22:24  csoutheren
+ * Revision 1.2057  2006/06/27 13:07:37  csoutheren
+ * Patch 1374533 - add h323 Progress handling
+ * Thanks to Frederich Heem
+ *
+ * Revision 2.55  2006/06/09 04:22:24  csoutheren
  * Implemented mapping between SIP release codes and Q.931 codes as specified
  *  by RFC 3398
  *
@@ -312,6 +316,7 @@ class OpalConnection : public PSafeObject
       AnswerCallDeferred,          /// As for AnswerCallPending but does not send Alerting PDU
       AnswerCallAlertWithMedia,    /// As for AnswerCallPending but starts media channels
       AnswerCallDeferredWithMedia, /// As for AnswerCallDeferred but starts media channels
+      AnswerCallProgress,          /// Answer the call with a h323 progress, or sip 183 session in progress, or ... 
       NumAnswerCallResponses
     };
 #if PTRACING

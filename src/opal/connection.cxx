@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2064  2006/06/09 04:22:24  csoutheren
+ * Revision 1.2065  2006/06/27 13:07:37  csoutheren
+ * Patch 1374533 - add h323 Progress handling
+ * Thanks to Frederich Heem
+ *
+ * Revision 2.63  2006/06/09 04:22:24  csoutheren
  * Implemented mapping between SIP release codes and Q.931 codes as specified
  *  by RFC 3398
  *
@@ -326,7 +330,8 @@ ostream & operator<<(ostream & o, OpalConnection::AnswerCallResponse s)
     "AnswerCallPending",
     "AnswerCallDeferred",
     "AnswerCallAlertWithMedia",
-    "AnswerCallDeferredWithMedia"
+    "AnswerCallDeferredWithMedia",
+    "AnswerCallProgress"
   };
   if ((PINDEX)s >= PARRAYSIZE(AnswerCallResponseNames))
     o << "InvalidAnswerCallResponse<" << (unsigned)s << '>';
