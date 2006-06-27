@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2156  2006/06/22 00:26:04  csoutheren
+ * Revision 1.2157  2006/06/27 13:50:25  csoutheren
+ * Patch 1375137 - Voicetronix patches and lid enhancements
+ * Thanks to Frederich Heem
+ *
+ * Revision 2.155  2006/06/22 00:26:04  csoutheren
  * Remove warning on gcc
  *
  * Revision 2.154  2006/06/20 05:23:58  csoutheren
@@ -714,7 +718,7 @@ static struct Q931ReasonMapEntry {
 
 static SIP_PDU::StatusCodes RFC3398_MapQ931ToSIPCode(unsigned q931Cause)
 {
-  int i;
+  unsigned int i;
   for (i = 0; i < NUM_Q931_END_REASON_MAP_ENTRIES; ++i)
     if (Q931ReasonToSIPCode[i].q931Cause == q931Cause)
       return (SIP_PDU::StatusCodes)Q931ReasonToSIPCode[i].sipCode;
@@ -737,7 +741,7 @@ static struct CallEndReasonMapEntry {
 
 static SIP_PDU::StatusCodes MapEndReasonToSIPCode(OpalConnection::CallEndReason callEndReason)
 {
-  int i;
+  unsigned int i;
   for (i = 0; i < NUM_CALL_END_REASON_MAP_ENTRIES; ++i)
     if (EndReasonToSIPCode[i].reason == callEndReason)
       return EndReasonToSIPCode[i].sipCode;
@@ -1559,7 +1563,7 @@ static struct SIPCodeToQ931ReasonMapEntry {
 
 static unsigned RFC3398_MapSIPCodeToQ931(unsigned sipCode)
 {
-  PINDEX i;
+  unsigned int i;
   for (i = 0; i < NUM_SIPCODE_END_REASON_MAP_ENTRIES; ++i)
     if (SIPCodeToQ931Reason[i].sipCode == sipCode)
       return SIPCodeToQ931Reason[i].q931Cause;
@@ -1878,6 +1882,7 @@ void SIPConnection::AnsweringCall(AnswerCallResponse response)
     case AlertingPhase:
       switch (response) {
         case AnswerCallNow:
+        case AnswerCallProgress:
           SetConnected();
           break;
 
@@ -1896,7 +1901,7 @@ void SIPConnection::AnsweringCall(AnswerCallResponse response)
 
         case AnswerCallDeferred:
         case AnswerCallDeferredWithMedia:
-	      case NumAnswerCallResponses:
+        case NumAnswerCallResponses:
           break;
       }
       break;
