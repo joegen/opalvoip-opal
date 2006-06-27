@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2050  2006/06/27 12:54:35  csoutheren
+ * Revision 1.2051  2006/06/27 13:07:37  csoutheren
+ * Patch 1374533 - add h323 Progress handling
+ * Thanks to Frederich Heem
+ *
+ * Revision 2.49  2006/06/27 12:54:35  csoutheren
  * Patch 1374489 - h450.7 message center support
  * Thanks to Frederich Heem
  *
@@ -587,6 +591,13 @@ class H323Connection : public OpalConnection
       H225_AdmissionRequest & arq
     );
 
+    
+    /**Indicate to remote endpoint we are sending a progress.
+
+      The default behaviour sends a PROGRESS pdu.
+     */
+    virtual BOOL SetProgressed();
+    
     /** Called when a connection is established.
         Default behaviour is to call H323EndPoint::OnConnectionEstablished
       */
@@ -1124,10 +1135,12 @@ class H323Connection : public OpalConnection
        which in turn will return AnswerCallNow.
      */
     virtual AnswerCallResponse OnAnswerCall(
-      const PString & callerName,       ///<  Name of caller
-      const H323SignalPDU & setupPDU,   ///<  Received setup PDU
-      H323SignalPDU & connectPDU        ///<  Connect PDU to send. 
+      const PString & callerName,       ///< Name of caller
+      const H323SignalPDU & setupPDU,   ///< Received setup PDU
+      H323SignalPDU & connectPDU,       ///< Connect PDU to send. 
+      H323SignalPDU & progressPDU       ///< Progress PDU to send. 
     );
+    
     virtual AnswerCallResponse OnAnswerCall(
       const PString & callerName        ///<  Name of caller
     );
@@ -2290,6 +2303,7 @@ class H323Connection : public OpalConnection
     H323SignalPDU * h245TunnelTxPDU;
     H323SignalPDU * alertingPDU;
     H323SignalPDU * connectPDU;
+    H323SignalPDU * progressPDU;
 
     enum ConnectionStates {
       NoConnectionActive,

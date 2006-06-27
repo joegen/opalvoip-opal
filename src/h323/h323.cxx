@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2111  2006/06/27 12:54:35  csoutheren
+ * Revision 1.2112  2006/06/27 13:07:37  csoutheren
+ * Patch 1374533 - add h323 Progress handling
+ * Thanks to Frederich Heem
+ *
+ * Revision 2.110  2006/06/27 12:54:35  csoutheren
  * Patch 1374489 - h450.7 message center support
  * Thanks to Frederich Heem
  *
@@ -1643,6 +1647,8 @@ H323Connection::H323Connection(OpalCall & call,
   alertingPDU = NULL;
   connectPDU = NULL;
 
+  progressPDU = NULL;
+  
   connectionState = NoConnectionActive;
   q931Cause = Q931::ErrorInCauseIE;
 
@@ -1739,6 +1745,7 @@ H323Connection::~H323Connection()
   delete controlChannel;
   delete alertingPDU;
   delete connectPDU;
+  delete progressPDU;
   delete holdMediaChannel;
 
   PTRACE(3, "H323\tConnection " << callToken << " deleted.");
@@ -2428,6 +2435,9 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
   // Build the reply with the channels we are actually using
   connectPDU = new H323SignalPDU;
   connectPDU->BuildConnect(*this);
+  
+  progressPDU = new H323SignalPDU;
+  progressPDU->BuildProgress(*this);
 
   // OK are now ready to send SETUP to remote protocol
   ownerCall.OnSetUp(*this);
@@ -2444,7 +2454,7 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
         // call the application callback to determine if to answer the call or not
         connectionState = AwaitingLocalAnswer;
         SetPhase(AlertingPhase);
-        AnsweringCall(OnAnswerCall(remotePartyName, setupPDU, *connectPDU));
+        AnsweringCall(OnAnswerCall(remotePartyName, setupPDU, *connectPDU, *progressPDU));
       }
     }
   }
@@ -2917,9 +2927,11 @@ BOOL H323Connection::ForwardCall(const PString & forwardParty)
 H323Connection::AnswerCallResponse
      H323Connection::OnAnswerCall(const PString & caller,
                                   const H323SignalPDU & setupPDU,
-                                  H323SignalPDU & connectPDU)
+                                  H323SignalPDU & connectPDU,
+                                  H323SignalPDU & progressPDU)
 {
-  return endpoint.OnAnswerCall(*this, caller, setupPDU, connectPDU);
+  PTRACE(3, "H323CON\tOnAnswerCall " << *this << ", caller = " << caller);
+  return endpoint.OnAnswerCall(*this, caller, setupPDU, connectPDU, progressPDU);
 }
 
 H323Connection::AnswerCallResponse
@@ -2940,6 +2952,13 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
     default : // AnswerCallDeferred
       break;
 
+    case AnswerCallProgress:
+    {
+      H323SignalPDU want245PDU;
+      want245PDU.BuildProgress(*this);
+      WriteSignalPDU(want245PDU);
+      break;
+    }  
     case AnswerCallDeferredWithMedia :
       if (!mediaWaitForConnect) {
         // create a new facility PDU if doing AnswerDeferredWithMedia
@@ -3408,6 +3427,68 @@ BOOL H323Connection::SetConnected()
 
   delete connectPDU;
   connectPDU = NULL;
+  delete alertingPDU;
+  alertingPDU = NULL;
+
+  connectedTime = PTime();
+
+  InternalEstablishedConnectionCheck();
+  return TRUE;
+}
+
+BOOL H323Connection::SetProgressed()
+{
+  mediaWaitForConnect = FALSE;
+
+  PTRACE(3, "H323\tSetProgressed " << *this);
+  if (progressPDU == NULL){
+    PTRACE(1, "H323\tSetProgressed progressPDU is null" << *this);
+    return FALSE;
+  }  
+
+  // Assure capabilities are set to other connections media list (if not already)
+  OnSetLocalCapabilities();
+
+  H225_Progress_UUIE & progress = progressPDU->m_h323_uu_pdu.m_h323_message_body;
+
+  // Now ask the application to select which channels to start
+  if (SendFastStartAcknowledge(progress.m_fastStart))
+    progress.IncludeOptionalField(H225_Connect_UUIE::e_fastStart);
+
+  // See if aborted call
+  if (connectionState == ShuttingDownConnection)
+    return FALSE;
+
+  // Set flag that we are up to CONNECT stage
+  //connectionState = HasExecutedSignalConnect;
+  //phase = ConnectedPhase;
+  /* TODO*/
+  //h450dispatcher->AttachToProgress(*progress);
+  if(endpoint.IsH245Disabled() == FALSE){
+    if (h245Tunneling) {
+      HandleTunnelPDU(progressPDU);
+  
+      // If no channels selected (or never provided) do traditional H245 start
+      if (fastStartState == FastStartDisabled) {
+        h245TunnelTxPDU = progressPDU; // Piggy back H245 on this reply
+        BOOL ok = StartControlNegotiations();
+        h245TunnelTxPDU = NULL;
+        if (!ok)
+          return FALSE;
+      }
+    }
+    else if (!controlChannel) { // Start separate H.245 channel if not tunneling.
+      if (!CreateIncomingControlChannel(progress.m_h245Address))
+        return FALSE;
+      progress.IncludeOptionalField(H225_Connect_UUIE::e_h245Address);
+    }
+  }
+  
+  if (!WriteSignalPDU(*progressPDU)) // Send H323 Connect PDU
+    return FALSE;
+
+  delete progressPDU;
+  progressPDU = NULL;
 
   delete alertingPDU;
   alertingPDU = NULL;
