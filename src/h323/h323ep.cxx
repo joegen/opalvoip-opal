@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2052  2006/05/30 11:33:02  hfriederich
+ * Revision 1.2053  2006/06/27 12:54:35  csoutheren
+ * Patch 1374489 - h450.7 message center support
+ * Thanks to Frederich Heem
+ *
+ * Revision 2.51  2006/05/30 11:33:02  hfriederich
  * Porting support for H.460 from OpenH323
  *
  * Revision 2.50  2006/05/30 04:58:06  csoutheren
@@ -1433,6 +1437,13 @@ BOOL H323EndPoint::IntrudeCall(const PString & remoteParty,
                           userData);
 }
 
+BOOL H323EndPoint::OnSendConnect(H323Connection & /*connection*/,
+                                 H323SignalPDU & /*connectPDU*/
+                                )
+{
+  return TRUE;
+}
+
 BOOL H323EndPoint::OnSendSignalSetup(H323Connection & /*connection*/,
                                      H323SignalPDU & /*setupPDU*/)
 {
@@ -1440,15 +1451,7 @@ BOOL H323EndPoint::OnSendSignalSetup(H323Connection & /*connection*/,
 }
 
 BOOL H323EndPoint::OnSendCallProceeding(H323Connection & /*connection*/,
-                                        H323SignalPDU & /*callProceedingPDU*/
-                                       )
-{
-  return TRUE;
-}
-
-BOOL H323EndPoint::OnSendConnect(H323Connection & /*connection*/,
-                                 H323SignalPDU & /*connectPDU*/
-                                )
+                                        H323SignalPDU & /*callProceedingPDU*/)
 {
   return TRUE;
 }

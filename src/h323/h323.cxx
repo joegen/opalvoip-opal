@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2110  2006/06/21 04:53:15  csoutheren
+ * Revision 1.2111  2006/06/27 12:54:35  csoutheren
+ * Patch 1374489 - h450.7 message center support
+ * Thanks to Frederich Heem
+ *
+ * Revision 2.109  2006/06/21 04:53:15  csoutheren
  * Updated H.245 to version 13
  *
  * Revision 2.108  2006/06/20 05:21:02  csoutheren
@@ -1710,6 +1714,7 @@ H323Connection::H323Connection(OpalCall & call,
   h4502handler = new H4502Handler(*this, *h450dispatcher);
   h4504handler = new H4504Handler(*this, *h450dispatcher);
   h4506handler = new H4506Handler(*this, *h450dispatcher);
+  h4507handler = new H4507Handler(*this, *h450dispatcher);
   h45011handler = new H45011Handler(*this, *h450dispatcher);
 
   remoteIsNAT = FALSE;

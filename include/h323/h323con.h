@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2049  2006/06/09 04:22:24  csoutheren
+ * Revision 1.2050  2006/06/27 12:54:35  csoutheren
+ * Patch 1374489 - h450.7 message center support
+ * Thanks to Frederich Heem
+ *
+ * Revision 2.48  2006/06/09 04:22:24  csoutheren
  * Implemented mapping between SIP release codes and Q.931 codes as specified
  *  by RFC 3398
  *
@@ -484,6 +488,7 @@ class H450xDispatcher;
 class H4502Handler;
 class H4504Handler;
 class H4506Handler;
+class H4507Handler;
 class H45011Handler;
 
 class OpalCall;
@@ -2233,6 +2238,13 @@ class H323Connection : public OpalConnection
     virtual H460_FeatureSet * GetFeatureSet();
 #endif
 
+    
+    /**
+     * get the H4507 handler
+     * @return a reference to the  H4507 handler
+     */
+    H4507Handler&  getH4507handler(){return *h4507handler;};
+    
   protected:
     /**Internal function to check if call established.
        This checks all the criteria for establishing a call an initiating the
@@ -2348,6 +2360,7 @@ class H323Connection : public OpalConnection
     H4502Handler                     * h4502handler;
     H4504Handler                     * h4504handler;
     H4506Handler                     * h4506handler;
+    H4507Handler                     * h4507handler;
     H45011Handler                    * h45011handler;
 
     // used to detect remote NAT endpoints
