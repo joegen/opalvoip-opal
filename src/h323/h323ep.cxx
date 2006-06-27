@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2053  2006/06/27 12:54:35  csoutheren
+ * Revision 1.2054  2006/06/27 13:07:37  csoutheren
+ * Patch 1374533 - add h323 Progress handling
+ * Thanks to Frederich Heem
+ *
+ * Revision 2.52  2006/06/27 12:54:35  csoutheren
  * Patch 1374489 - h450.7 message center support
  * Thanks to Frederich Heem
  *
@@ -826,7 +830,8 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
     callIntrusionT4(0,30),                  // Seconds
     callIntrusionT5(0,10),                  // Seconds
     callIntrusionT6(0,10),                  // Seconds
-    nextH450CallIdentity(0)
+    nextH450CallIdentity(0),
+    m_bH245Disabled(FALSE)
 {
   // Set port in OpalEndPoint class
   defaultSignalPort = DefaultTcpPort;
@@ -1693,7 +1698,8 @@ OpalConnection::AnswerCallResponse
        H323EndPoint::OnAnswerCall(H323Connection & connection,
                                   const PString & caller,
                                   const H323SignalPDU & /*setupPDU*/,
-                                  H323SignalPDU & /*connectPDU*/)
+                                  H323SignalPDU & /*connectPDU*/,
+                                  H323SignalPDU & /*progressPDU*/)
 {
   return connection.OnAnswerCall(caller);
 }

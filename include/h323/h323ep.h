@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2039  2006/06/27 12:54:35  csoutheren
+ * Revision 1.2040  2006/06/27 13:07:37  csoutheren
+ * Patch 1374533 - add h323 Progress handling
+ * Thanks to Frederich Heem
+ *
+ * Revision 2.38  2006/06/27 12:54:35  csoutheren
  * Patch 1374489 - h450.7 message center support
  * Thanks to Frederich Heem
  *
@@ -946,10 +950,11 @@ class H323EndPoint : public OpalEndPoint
        By default this calls OpalEndPoint::OnAnswerCall, which returns
      */
     virtual OpalConnection::AnswerCallResponse OnAnswerCall(
-      H323Connection & connection,    ///<  Connection that was established
-      const PString & callerName,       ///<  Name of caller
-      const H323SignalPDU & setupPDU,   ///<  Received setup PDU
-      H323SignalPDU & connectPDU        ///<  Connect PDU to send. 
+      H323Connection & connection,    ///< Connection that was established
+      const PString & callerName,       ///< Name of caller
+      const H323SignalPDU & setupPDU,   ///< Received setup PDU
+      H323SignalPDU & connectPDU,       ///< Connect PDU to send. 
+      H323SignalPDU & progressPDU        ///< Progress PDU to send. 
     );
     virtual OpalConnection::AnswerCallResponse OnAnswerCall(
        OpalConnection & connection,
