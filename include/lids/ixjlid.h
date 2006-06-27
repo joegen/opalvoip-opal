@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjlid.h,v $
- * Revision 1.2012  2005/12/15 21:15:44  dsandras
+ * Revision 1.2013  2006/06/27 13:50:23  csoutheren
+ * Patch 1375137 - Voicetronix patches and lid enhancements
+ * Thanks to Frederich Heem
+ *
+ * Revision 2.11  2005/12/15 21:15:44  dsandras
  * Fixed compilation with gcc 4.1.
  *
  * Revision 2.10  2005/11/30 13:35:26  csoutheren
@@ -737,8 +741,8 @@ class OpalIxJDevice : public OpalLineInterfaceDevice
 
     /**See if a tone is detected.
       */
-    virtual unsigned IsToneDetected(
-      unsigned line   ///<  Number of line
+    virtual CallProgressTones IsToneDetected(
+      unsigned line   ///< Number of line
     );
 
     /**Set a tones filter parameters.
